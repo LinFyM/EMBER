@@ -65,7 +65,7 @@ def _checkpoint_records(
     contract_sha256 = canonical_hash(training)
     world_size = int(training.get("runtime", {}).get("world_size", -1))
     if (
-        training.get("schema_version") != SOURCE_SFT_LAUNCH_SCHEMA
+        training.get("schema_version") not in {SOURCE_SFT_LAUNCH_SCHEMA, "ember_pi05_source_sft_launch_v2"}
         or training.get("mode") != "formal"
         or training.get("stage") != "development"
         or world_size <= 0
@@ -135,6 +135,8 @@ def _validation_tasks(
     panel: Mapping[str, Any],
     data_root: Path,
 ) -> tuple[WriterTaskAuthority, ...]:
+    if training.get("information_wall", {}).get("validation_actions_read") == 0:
+        raise Pi05SourceSFTError("this Source-SFT recipe forbids validation-action reads")
     target_ref = training.get("authorities", {}).get("target_data_manifest", {})
     if target_ref != panel["authorities"]["target_data_manifest"]:
         raise Pi05SourceSFTError(

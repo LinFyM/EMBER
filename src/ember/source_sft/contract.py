@@ -15,7 +15,7 @@ import torch
 import torch.distributed as dist
 
 from ember.lora import canonical_contract_sha256, task_lora_state_dict
-from ember.pi05_eval_contract import git_state
+from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import (
     DistributedContext,
@@ -25,13 +25,14 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_contract import append_jsonl
+from ember.source_sft.sampler import source_batch_sizes
 from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 from ember.writer.errors import WriterModelError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_SFT_CONFIG_SCHEMA = "ember_pi05_source_sft_v1"
-SOURCE_SFT_LAUNCH_SCHEMA = "ember_pi05_source_sft_launch_v2"
+SOURCE_SFT_LAUNCH_SCHEMA = "ember_pi05_source_sft_launch_v3"
 SOURCE_SFT_STAGES = ("development", "final")
 
 
@@ -83,7 +84,11 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
     ):
         raise Pi05SourceSFTError("Source-SFT target-data authority is not sealed 24/8/8")
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
-    if lora.source_base_config_sha256 != config["authorities"]["source_base_config"]["sha256"]:
+    source_ref = config["authorities"]["source_base_config"]
+    evaluation = read_json(authority_path(config, "evaluation_config"))
+    if (lora.source_base_config_sha256 != source_ref["sha256"]
+            or lora.source_base_config_sha256 != sha256_file(authority_path(config, "source_base_config"))
+            or evaluation["authorities"]["source_base_config"]["path"] != source_ref["path"]):
         raise Pi05SourceSFTError("Source-SFT LoRA and source-base authorities disagree")
     expected_stages = {
         "development": (["train"], 24, 1200),
@@ -120,6 +125,8 @@ def _validate_information_wall(config: Mapping[str, Any]) -> None:
         "held_evaluation_adaptation": "none",
     }
     adapter = config.get("adapter", {})
+    if "validation_actions_read" in config.get("information_wall", {}):
+        expected["validation_actions_read"] = 0
     if config.get("information_wall") != expected:
         raise Pi05SourceSFTError("Source-SFT information wall changed")
     if (
@@ -153,72 +160,65 @@ def parse_checkpoint_steps(value: str | Sequence[int], total_steps: int) -> tupl
     return steps
 
 
+def validate_active_training_recipe(config: Mapping[str, Any]) -> None:
+    """Historical configs remain readable evidence, never active training defaults."""
+    recipe, data = config.get("training_recipe", {}), config["data"]
+    lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    if (config.get("sealed_stage") != "development"
+            or recipe.get("kind") != "hierarchical_task_episode_chunk_mixed_v1"
+            or recipe.get("logical_world_size") != 4
+            or recipe.get("logical_per_rank_batch_size") != 144
+            or recipe.get("global_tasks_per_update") != 24
+            or recipe.get("global_samples_per_task_per_update") != 24
+            or recipe.get("rank_task_binding") != "none"
+            or lora.rank != 128 or lora.parameter_count != 10297344
+            or data.get("action_start_offset") != 1
+            or data.get("query_alignment") != "post_action_observation_future_control_v1"
+            or data.get("episodes_per_task") != 50 or data.get("demo_indices") != [0, 49]
+            or config["information_wall"].get("validation_actions_read") != 0):
+        raise Pi05SourceSFTError("use the aligned rank128 all-task Source-SFT recipe; historical training is retired")
+
+
 def resolve_runtime(
-    args: argparse.Namespace,
-    config: Mapping[str, Any],
-    context: DistributedContext,
+    args: argparse.Namespace, config: Mapping[str, Any], context: DistributedContext,
 ) -> tuple[int, int, tuple[int, ...]]:
-    if args.stage not in SOURCE_SFT_STAGES:
-        raise Pi05SourceSFTError("unknown Source-SFT stage")
     if args.stage != config.get("sealed_stage"):
-        raise Pi05SourceSFTError(
-            "Source-SFT stage needs its own immutable sealed config"
-        )
+        raise Pi05SourceSFTError("Source-SFT stage needs its own immutable sealed config")
+    validate_active_training_recipe(config)
     formal = config["stages"][args.stage]["formal_run"]
     if args.mode == "formal" and formal.get("status") != "sealed":
-        raise Pi05SourceSFTError(f"formal Source-SFT {args.stage} config is not sealed")
-    if args.stage == "final" and formal.get("status") != "sealed":
-        raise Pi05SourceSFTError("final Source-SFT cannot read validation actions before selection")
-    source = formal if args.mode == "formal" else config["profile_defaults"]
-    total_steps = args.total_steps or int(source["total_steps"])
-    batch_size = args.batch_size or int(source["per_rank_batch_size"])
+        raise Pi05SourceSFTError("formal Source-SFT physical profile is not sealed")
+    defaults = formal if args.mode == "formal" else config["profile_defaults"]
+    total_steps = args.total_steps or int(defaults["total_steps"])
+    batch_size = args.batch_size or int(defaults["per_rank_batch_size"])
     checkpoint_steps = parse_checkpoint_steps(
-        args.checkpoint_steps or source["checkpoint_steps"], total_steps
-    )
-    default_stop = int(source.get("selected_stop_step", total_steps))
-    stop_step = args.stop_after_step or default_stop
-    if min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps:
+        args.checkpoint_steps or defaults["checkpoint_steps"], total_steps)
+    stop_step = args.stop_after_step or total_steps
+    recipe = config["training_recipe"]
+    global_batch = int(recipe["logical_world_size"]) * int(recipe["logical_per_rank_batch_size"])
+    if (min(total_steps, batch_size, stop_step) <= 0 or stop_step > total_steps
+            or not 1 <= context.world_size <= 6):
         raise Pi05SourceSFTError("invalid Source-SFT runtime request")
-    expected_world_size = int(source.get("expected_world_size", 8))
-    if context.world_size != expected_world_size:
-        raise Pi05SourceSFTError(
-            "Source-SFT training requires exactly "
-            f"{expected_world_size} symmetric ranks"
-        )
+    max_local_queries = (global_batch + context.world_size - 1) // context.world_size
+    accumulation = (getattr(args, "gradient_accumulation_steps", None)
+                    or defaults.get("gradient_accumulation_steps")
+                    or (max_local_queries + batch_size - 1) // batch_size)
+    source_batch_sizes(global_batch, context.world_size, batch_size, accumulation)
     if args.mode == "formal":
-        expected = (
-            "sealed",
-            int(formal["expected_world_size"]),
-            int(formal["total_steps"]),
-            int(formal["per_rank_batch_size"]),
-            tuple(int(step) for step in formal["checkpoint_steps"]),
-        )
-        observed = (
-            formal.get("status"),
-            context.world_size,
-            total_steps,
-            batch_size,
-            checkpoint_steps,
-        )
-        stage_stops = tuple(
-            int(value) for value in formal.get("stage_stop_steps", [default_stop])
-        )
-        if (
-            observed != expected
-            or not stage_stops
-            or any(value not in checkpoint_steps for value in stage_stops)
-            or default_stop not in stage_stops
-            or stop_step not in stage_stops
-        ):
+        expected = (int(formal["expected_world_size"]), int(formal["total_steps"]),
+                    int(formal["per_rank_batch_size"]), int(formal["gradient_accumulation_steps"]),
+                    tuple(formal["checkpoint_steps"]))
+        if ((context.world_size, total_steps, batch_size, accumulation, checkpoint_steps) != expected
+                or stop_step not in formal["stage_stop_steps"]):
             raise Pi05SourceSFTError("formal Source-SFT launch differs from its sealed profile")
         state = git_state(REPO_ROOT)
-        if state["dirty_paths"]:
-            raise Pi05SourceSFTError("formal Source-SFT launch requires a clean worktree")
-        if args.resume is None and state["commit"] != state["origin_main"]:
-            raise Pi05SourceSFTError("fresh formal Source-SFT launch must be pushed")
+        if not git_state_is_clean_pushed_or_frozen_authority(state):
+            raise Pi05SourceSFTError("formal Source-SFT launch requires a clean pushed worktree")
+        if state["branch"] != "":
+            raise Pi05SourceSFTError("formal Source-SFT launch requires a detached frozen worktree")
         if context.numa_node is None or not context.cpu_affinity:
             raise Pi05SourceSFTError("formal Source-SFT launch requires GPU-local NUMA binding")
-    args.stop_after_step = stop_step
+    args.stop_after_step, args.gradient_accumulation_steps = stop_step, accumulation
     return total_steps, batch_size, checkpoint_steps
 
 
@@ -271,17 +271,15 @@ def _target_tasks(config: Mapping[str, Any], data_root: Path, stage: str) -> tup
     return tuple(tasks)
 
 
-def _validate_task_files(tasks: Sequence[SourceSFTTask], verify_hashes: bool) -> dict[str, Any]:
+def _validate_task_files(tasks: Sequence[SourceSFTTask]) -> dict[str, Any]:
     for task in tasks:
         path = task.authority.path
         if not path.is_file() or path.stat().st_size != task.authority.expected_bytes:
             raise Pi05SourceSFTError(f"Source-SFT HDF5 size changed: {task.global_task_id}")
-        if verify_hashes and sha256_file(path) != task.expected_hdf5_sha256:
-            raise Pi05SourceSFTError(f"Source-SFT HDF5 hash changed: {task.global_task_id}")
     return {
         "tasks_checked": len(tasks),
         "bytes_checked": sum(task.authority.expected_bytes for task in tasks),
-        "full_sha256_verified": verify_hashes,
+        "full_sha256_verified": False,
         "hdf5_identity_sha256": canonical_hash(
             [
                 [task.global_task_id, task.authority.expected_bytes, task.expected_hdf5_sha256]
@@ -296,16 +294,19 @@ def load_training_data(
     config: Mapping[str, Any],
     context: DistributedContext,
 ) -> tuple[FunctionalQueryDataset, tuple[SourceSFTTask, ...], dict[str, Any]]:
+    validate_active_training_recipe(config)
+    if args.stage != "development":
+        raise Pi05SourceSFTError("aligned Source-SFT reads train24 actions only")
     tasks = _target_tasks(config, args.data_root.resolve(), args.stage)
     validation = _broadcast(
-        context, lambda: _validate_task_files(tasks, not args.skip_data_sha)
+        context, lambda: _validate_task_files(tasks)
     )
     first_demo, last_demo = map(int, config["data"]["demo_indices"])
     dataset = FunctionalQueryDataset(
         [task.authority for task in tasks],
         demo_indices=range(first_demo, last_demo + 1),
         action_chunk_size=int(config["data"]["action_chunk_size"]),
-        action_start_offset=0,
+        action_start_offset=int(config["data"]["action_start_offset"]),
         max_open_files_per_worker=int(config["data"]["max_open_files_per_worker"]),
     )
     return dataset, tasks, validation
@@ -371,36 +372,17 @@ def build_contract(
     checkpoint_steps: Sequence[int],
 ) -> dict[str, Any]:
     contract_stop_step = _contract_stop_step(args, config, total_steps)
-    task_count = len(tasks)
-    recipe = config.get("training_recipe", {})
-    tasks_per_rank = int(recipe.get("tasks_per_rank_per_update", -1))
-    global_tasks_per_update = int(recipe.get("global_tasks_per_update", -1))
-    updates_per_cycle = int(
-        recipe.get("updates_per_complete_task_cycle", -1)
-    )
-    if (
-        task_count <= 0
-        or tasks_per_rank <= 1
-        or batch_size % tasks_per_rank
-        or context.world_size * tasks_per_rank != global_tasks_per_update
-        or global_tasks_per_update * updates_per_cycle != task_count
-    ):
-        raise Pi05SourceSFTError(
-            "Source-SFT cyclic mixed-task topology is inconsistent"
-        )
-    samples_per_task_per_visit = batch_size // tasks_per_rank
-    if (
-        total_steps % updates_per_cycle
-        or contract_stop_step % updates_per_cycle
-        or any(int(step) % updates_per_cycle for step in checkpoint_steps)
-    ):
-        raise Pi05SourceSFTError(
-            "Source-SFT checkpoints and stops must be complete task-cycle boundaries"
-        )
+    recipe = config["training_recipe"]
+    global_batch = int(recipe["logical_world_size"]) * int(recipe["logical_per_rank_batch_size"])
+    plan = source_batch_sizes(global_batch, context.world_size, batch_size, args.gradient_accumulation_steps)
+    if (len(tasks) != int(recipe["global_tasks_per_update"])
+            or global_batch != len(tasks) * int(recipe["global_samples_per_task_per_update"])):
+        raise Pi05SourceSFTError("Source-SFT logical task/query contract is inconsistent")
     local = {
         "rank": context.rank,
         "local_rank": context.local_rank,
         "device": str(context.device),
+        "gpu_uuid": str(torch.cuda.get_device_properties(context.local_rank).uuid),
         "numa_node": context.numa_node,
         "cpu_affinity": list(context.cpu_affinity or ()),
     }
@@ -448,17 +430,15 @@ def build_contract(
             "gpu0_extra_cuda_roles": 0,
             "ddp_object": "source_policy_with_shared_lora_only_trainable",
             "per_rank_batch_size": batch_size,
-            "effective_global_batch_size": context.world_size * batch_size,
-            "physical_batch_task_mixed": True,
-            "tasks_per_physical_batch": tasks_per_rank,
-            "global_tasks_per_update": global_tasks_per_update,
-            "updates_per_complete_task_cycle": updates_per_cycle,
-            "samples_per_task_per_visit": samples_per_task_per_visit,
-            "global_samples_per_selected_task_per_update": (
-                samples_per_task_per_visit
-            ),
-            "sampler_kind": "cyclic_subset_hierarchical_mixed_v2",
-            "loss_reduction": "equal_samples_per_task_then_batch_mean",
+            "gradient_accumulation_steps": args.gradient_accumulation_steps,
+            "microbatch_sizes_by_rank": [list(sizes) for sizes in plan],
+            "effective_global_batch_size": global_batch,
+            "global_tasks_per_update": len(tasks),
+            "global_samples_per_task_per_update": int(recipe["global_samples_per_task_per_update"]),
+            "logical_world_size": int(recipe["logical_world_size"]),
+            "logical_per_rank_batch_size": int(recipe["logical_per_rank_batch_size"]),
+            "sampler_kind": recipe["kind"],
+            "loss_reduction": "query_mean_weighted_by_microbatch_size_world_over_global_batch",
             "total_steps": total_steps,
             "selected_stop_step": contract_stop_step,
             "checkpoint_steps": list(checkpoint_steps),

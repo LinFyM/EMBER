@@ -1,8 +1,10 @@
-"""Symmetric-rank shared PI05 Source-SFT LoRA training."""
+"""Aligned all-task shared PI05 Source-SFT LoRA training."""
 
 from __future__ import annotations
 
 import argparse
+import contextlib
+from collections import Counter
 import json
 import re
 import time
@@ -34,6 +36,7 @@ from ember.pi05_source_checkpoint import (
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import (
     initialize_distributed,
+    initialize_deferred_process_group,
     load_policy,
     load_stats,
     reduce_max,
@@ -56,18 +59,13 @@ from ember.source_sft.contract import (
     reconcile_resume_contract,
     resolve_runtime,
     trainable_contract,
+    validate_active_training_recipe as _validate_active_training_recipe,
 )
-from ember.source_sft.online_validation import (
-    OnlineSourceSFTValidation,
-    evaluate_online_source_sft_checkpoint,
-    prepare_online_source_sft_validation,
-)
-from ember.source_sft.sampler import CyclicSubsetMixedBatchSampler
+from ember.source_sft.sampler import HierarchicalMixedBatchSampler
 from ember.writer.data import FunctionalQueryDataset
 
 
 _CHECKPOINT_NAME = re.compile(r"step_([0-9]{8})")
-_ACTIVE_TRAINING_RECIPE = "cyclic_subset_hierarchical_mixed_v2"
 
 
 @dataclass
@@ -78,7 +76,7 @@ class SourceSFTRuntime:
     dataset: FunctionalQueryDataset
     tasks: tuple[SourceSFTTask, ...]
     task_ids: tuple[int, ...]
-    sampler: CyclicSubsetMixedBatchSampler
+    sampler: HierarchicalMixedBatchSampler
     iterator: Iterator[dict[str, Any]]
     processor: Pi05LiberoProcessor
     policy: torch.nn.Module
@@ -94,7 +92,6 @@ class SourceSFTRuntime:
     resume_step: int
     metrics_path: Path
     metrics_rows: int
-    checkpoint_validation: OnlineSourceSFTValidation | None
 
 
 def _resume_step(checkpoint: Path | None) -> int:
@@ -106,49 +103,16 @@ def _resume_step(checkpoint: Path | None) -> int:
     return int(match.group(1))
 
 
-def _validate_active_training_recipe(config: Mapping[str, Any]) -> None:
-    recipe = config.get("training_recipe", {})
-    if not isinstance(recipe, Mapping):
-        raise Pi05SourceSFTError(
-            "legacy rank-pure Source-SFT training is retired; "
-            "use the canonical cyclic mixed-task recipe"
-        )
-    sealed_stage = str(config.get("sealed_stage", ""))
-    stage = config.get("stages", {}).get(sealed_stage, {})
-    global_tasks = int(recipe.get("global_tasks_per_update", -1))
-    declared_tasks = int(stage.get("task_count", -1))
-    expected_updates_per_cycle = (
-        declared_tasks // global_tasks
-        if global_tasks > 0 and declared_tasks % global_tasks == 0
-        else -1
-    )
-    if (
-        recipe.get("kind") != _ACTIVE_TRAINING_RECIPE
-        or recipe.get("rank_task_binding") != "none"
-        or int(recipe.get("tasks_per_rank_per_update", -1)) != 2
-        or global_tasks != 8
-        or int(recipe.get("updates_per_complete_task_cycle", -1))
-        != expected_updates_per_cycle
-        or recipe.get("loss_reduction")
-        != "equal samples per task then ordinary batch mean"
-    ):
-        raise Pi05SourceSFTError(
-            "legacy rank-pure Source-SFT training is retired; "
-            "use the canonical cyclic mixed-task recipe"
-        )
-
-
 def _scheduler(
     optimizer: torch.optim.Optimizer,
     config: Mapping[str, Any],
-    total_steps: int,
 ) -> torch.optim.lr_scheduler.LRScheduler:
     return CosineDecayWithWarmupSchedulerConfig(
         num_warmup_steps=int(config["warmup_steps"]),
         num_decay_steps=int(config["decay_steps"]),
         peak_lr=float(config["peak_lr"]),
         decay_lr=float(config["decay_lr"]),
-    ).build(optimizer, total_steps)
+    ).build(optimizer, int(config["timeline_steps"]))
 
 
 def _build_trainable_policy(
@@ -157,7 +121,6 @@ def _build_trainable_policy(
     source_config: Mapping[str, Any],
     config: Mapping[str, Any],
     context: DistributedContext,
-    total_steps: int,
 ) -> tuple[
     torch.nn.Module,
     Any,
@@ -165,8 +128,8 @@ def _build_trainable_policy(
     torch.optim.lr_scheduler.LRScheduler,
     dict[str, Any],
 ]:
-    policy = load_policy(Path(source["model_path"]), dict(source_config), context.device)
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
+    policy = load_policy(Path(source["model_path"]), dict(source_config), context.device)
     inject_task_lora(policy, lora)
     policy.train()
     trainable = trainable_contract(policy, lora)
@@ -179,7 +142,7 @@ def _build_trainable_policy(
         weight_decay=float(optimizer_config["weight_decay"]),
     )
     scheduler = _scheduler(
-        optimizer, config["optimization"]["scheduler"], total_steps
+        optimizer, config["optimization"]["scheduler"]
     )
     return policy, lora, optimizer, scheduler, trainable
 
@@ -193,14 +156,14 @@ def _loader(
     task_ids: tuple[int, ...],
     batch_size: int,
     initial_step: int,
-) -> tuple[CyclicSubsetMixedBatchSampler, DataLoader[Any]]:
-    sampler = CyclicSubsetMixedBatchSampler(
+) -> tuple[HierarchicalMixedBatchSampler, DataLoader[Any]]:
+    sampler = HierarchicalMixedBatchSampler(
         dataset,
         task_ids=task_ids,
         per_rank_batch_size=batch_size,
-        tasks_per_rank_per_update=int(
-            config["training_recipe"]["tasks_per_rank_per_update"]
-        ),
+        logical_world_size=int(config["training_recipe"]["logical_world_size"]),
+        logical_per_rank_batch_size=int(config["training_recipe"]["logical_per_rank_batch_size"]),
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
         start_step=initial_step,
         stop_step=args.stop_after_step,
         rank=context.rank,
@@ -246,7 +209,8 @@ def _wrap(policy: torch.nn.Module, context: DistributedContext) -> torch.nn.Modu
         output_device=context.local_rank,
         broadcast_buffers=False,
         find_unused_parameters=False,
-        static_graph=True,
+        static_graph=False,
+        gradient_as_bucket_view=True,
     )
 
 
@@ -261,21 +225,6 @@ def _build_processor(
         args.tokenizer_path,
         int(source["features"]["tokenizer_max_length"]),
         str(context.device),
-    )
-
-
-def _prepare_validation_monitor(
-    args: argparse.Namespace,
-    context: DistributedContext,
-    contract: Mapping[str, Any],
-) -> OnlineSourceSFTValidation | None:
-    if args.mode != "formal" or args.stage != "development":
-        return None
-    return prepare_online_source_sft_validation(
-        training=contract,
-        data_root=args.data_root,
-        context=context,
-        output_dir=args.output_dir,
     )
 
 
@@ -300,13 +249,17 @@ def prepare_runtime(
         args.checkpoint,
         evaluation_mode="formal",
     )
+    expected_source = config["frozen_source"]
+    if (Path(source["source_run"]).name != expected_source["run_name"]
+            or source["optimizer_step"] != expected_source["optimizer_step"]
+            or source["frozen_policy_subdir"] != expected_source["frozen_policy_subdir"]):
+        raise Pi05SourceSFTError("Source-SFT must use the prescribed aligned raw source1000")
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
     policy, lora, optimizer, scheduler, trainable = _build_trainable_policy(
         source=source,
         source_config=authorities.source_base_config,
         config=config,
         context=context,
-        total_steps=total_steps,
     )
     candidate_contract = build_contract(
         args=args,
@@ -325,6 +278,15 @@ def prepare_runtime(
     contract_sha256 = canonical_hash(contract)
     publish_contract(args, context, contract, contract_sha256)
 
+    sampler, loader = _loader(
+        args=args,
+        context=context,
+        config=config,
+        dataset=dataset,
+        task_ids=task_ids,
+        batch_size=batch_size,
+        initial_step=initial_step,
+    )
     resume_rng = None
     expected_metrics_rows = 0
     if args.resume is not None:
@@ -335,25 +297,7 @@ def prepare_runtime(
             lora_contract=lora,
             optimizer=optimizer,
             scheduler=scheduler,
-            per_rank_batch_size=batch_size,
-            tasks_per_rank_per_update=int(
-                config["training_recipe"]["tasks_per_rank_per_update"]
-            ),
-            global_tasks_per_update=int(
-                config["training_recipe"]["global_tasks_per_update"]
-            ),
-            updates_per_complete_task_cycle=int(
-                config["training_recipe"][
-                    "updates_per_complete_task_cycle"
-                ]
-            ),
-            samples_per_task_per_visit=(
-                batch_size
-                // int(
-                    config["training_recipe"]["tasks_per_rank_per_update"]
-                )
-            ),
-            sampler_seed=int(config["data"]["sampler_seed"]),
+            sampler=sampler,
             dataloader_generator_seed=int(config["optimization"]["seed"])
             + context.rank
             + 0x5F7,
@@ -361,15 +305,6 @@ def prepare_runtime(
         )
         if loaded != initial_step:
             raise Pi05SourceSFTError("Source-SFT resume path and state disagree")
-    sampler, loader = _loader(
-        args=args,
-        context=context,
-        config=config,
-        dataset=dataset,
-        task_ids=task_ids,
-        batch_size=batch_size,
-        initial_step=initial_step,
-    )
     wrapped = _wrap(policy, context)
     processor = _build_processor(args, context, authorities)
     metrics_path = args.output_dir / "metrics.jsonl"
@@ -380,11 +315,6 @@ def prepare_runtime(
         expected_rows=expected_metrics_rows,
     )
     iterator = iter(loader)
-    checkpoint_validation = _prepare_validation_monitor(
-        args,
-        context,
-        contract,
-    )
     torch.cuda.reset_peak_memory_stats(context.device)
     barrier(context)
     if resume_rng is not None:
@@ -412,7 +342,6 @@ def prepare_runtime(
         resume_step=initial_step,
         metrics_path=metrics_path,
         metrics_rows=metrics_rows,
-        checkpoint_validation=checkpoint_validation,
     )
 
 
@@ -427,41 +356,50 @@ def _batch_task_counts(batch: Mapping[str, Any]) -> dict[int, int]:
     }
 
 
+def _accumulate_gradients(runtime: SourceSFTRuntime, step: int) -> tuple[float, float, dict[int, int]]:
+    """One logical query mean; DDP's averaging cancels the world-size factor."""
+    loss_sum, data_seconds = 0.0, 0.0
+    task_counts: Counter[int] = Counter()
+    sampler = runtime.sampler
+    distributed = isinstance(runtime.wrapped, DistributedDataParallel)
+    for micro_index, size in enumerate(sampler.batch_sizes):
+        tick = time.monotonic()
+        batch = next(runtime.iterator)
+        data_seconds += time.monotonic() - tick
+        task_counts.update(_batch_task_counts(batch))
+        policy_batch = runtime.processor.training_batch(batch)
+        if len(policy_batch["action"]) != size:
+            raise Pi05SourceSFTError("Source-SFT physical microbatch changed size")
+        # Establish reducer bucket views on the first real backward, also after
+        # resume. All later intermediate backwards stay inside no_sync.
+        synchronize = micro_index == sampler.accumulation - 1 or (
+            step == runtime.resume_step and micro_index == 0)
+        sync = (contextlib.nullcontext() if not distributed or synchronize
+                else runtime.wrapped.no_sync())
+        with sync:
+            with torch.autocast(device_type=runtime.context.device.type,
+                                dtype=torch.bfloat16, enabled=runtime.context.device.type == "cuda"):
+                loss, _ = runtime.wrapped(policy_batch)
+                if not bool(torch.isfinite(loss).detach()):
+                    raise Pi05SourceSFTError(f"non-finite Source-SFT loss at step {step}")
+                weight = size * runtime.context.world_size / sampler.global_batch_size
+                weighted_loss = loss * weight
+            weighted_loss.backward()
+        loss_sum += float(loss.detach()) * weight
+    if dict(task_counts) != sampler.task_counts_for_step(step):
+        raise Pi05SourceSFTError("Source-SFT physical packing changed the logical task exposure")
+    if any(parameter.grad is not None for parameter in runtime.policy.parameters()
+           if not parameter.requires_grad):
+        raise Pi05SourceSFTError("frozen source policy accumulated gradients")
+    return loss_sum, data_seconds, dict(task_counts)
+
+
 def _one_step(runtime: SourceSFTRuntime, step: int, started: float) -> dict[str, Any]:
     tick = time.monotonic()
-    batch = next(runtime.iterator)
-    data_seconds = time.monotonic() - tick
-    task_counts = _batch_task_counts(batch)
-    expected_per_task = runtime.sampler.samples_per_task_per_visit
-    expected_task_ids = set(
-        runtime.sampler.tasks_for_step(
-            step,
-            rank=runtime.context.rank,
-        )
-    )
-    if (
-        set(task_counts) != expected_task_ids
-        or set(task_counts.values()) != {expected_per_task}
-    ):
-        raise Pi05SourceSFTError(
-            "Source-SFT physical batch is not exactly task-balanced"
-        )
-    policy_batch = runtime.processor.training_batch(batch)
-    runtime.optimizer.zero_grad(set_to_none=True)
-    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-        loss, _ = runtime.wrapped(policy_batch)
-    if not bool(torch.isfinite(loss).detach()):
-        raise Pi05SourceSFTError(f"non-finite Source-SFT loss at step {step}")
-    loss.backward()
-    if any(
-        parameter.grad is not None
-        for parameter in runtime.policy.parameters()
-        if not parameter.requires_grad
-    ):
-        raise Pi05SourceSFTError("frozen source policy accumulated gradients")
-    trainable = tuple(task_lora_state_dict(runtime.policy).values())
+    runtime.optimizer.zero_grad(set_to_none=not isinstance(runtime.wrapped, DistributedDataParallel))
+    loss_sum, data_seconds, task_counts = _accumulate_gradients(runtime, step)
     grad_norm = torch.nn.utils.clip_grad_norm_(
-        trainable,
+        tuple(task_lora_state_dict(runtime.policy).values()),
         float(runtime.config["optimization"]["optimizer"]["gradient_clip_norm"]),
     )
     if not bool(torch.isfinite(grad_norm).detach()):
@@ -471,88 +409,33 @@ def _one_step(runtime: SourceSFTRuntime, step: int, started: float) -> dict[str,
     runtime.scheduler.step()
     completed = step + 1
     step_seconds = reduce_max(time.monotonic() - tick, runtime.context)
-    examples = runtime.context.world_size * runtime.batch_size
-    global_task_ids = sorted(
-        task_id
-        for rank in range(runtime.context.world_size)
-        for task_id in runtime.sampler.tasks_for_step(step, rank=rank)
-    )
-    if (
-        len(global_task_ids) != runtime.sampler.global_tasks_per_update
-        or len(set(global_task_ids)) != len(global_task_ids)
-    ):
-        raise Pi05SourceSFTError(
-            "Source-SFT global update does not contain disjoint tasks"
-        )
+    examples = runtime.sampler.global_batch_size
     return {
         "optimizer_step": completed,
-        "mean_action_loss": reduce_mean(float(loss.detach()), runtime.context),
+        "micro_step": completed * runtime.sampler.accumulation,
+        "mean_action_loss": reduce_mean(loss_sum, runtime.context),
         "gradient_norm_before_clip_max": reduce_max(float(grad_norm), runtime.context),
         "applied_lr": applied_lr,
         "next_lr": float(runtime.optimizer.param_groups[0]["lr"]),
         "global_action_queries": completed * examples,
-        "rank0_task_ids": sorted(task_counts),
-        "global_task_ids_this_step": global_task_ids,
-        "rank0_samples_per_task": expected_per_task,
-        "global_samples_per_selected_task_this_step": expected_per_task,
-        "physical_batch_task_count": len(task_counts),
-        "global_task_count_this_step": len(global_task_ids),
-        "complete_task_cycle": (
-            runtime.sampler.updates_per_complete_task_cycle
-        ),
-        "loss_reduction": "equal_samples_per_task_then_batch_mean",
+        "rank0_task_counts": task_counts,
+        "global_task_ids_this_step": list(runtime.task_ids),
+        "global_samples_per_task_this_step": runtime.sampler.global_samples_per_task,
+        "global_task_count_this_step": len(runtime.task_ids),
+        "gradient_accumulation_steps": runtime.sampler.accumulation,
         "data_seconds_max": reduce_max(data_seconds, runtime.context),
         "step_seconds_max": step_seconds,
         "global_action_queries_per_second": examples / step_seconds,
         "elapsed_seconds": time.monotonic() - started,
-        "max_cuda_allocated_bytes": int(
-            reduce_max(
-                torch.cuda.max_memory_allocated(runtime.context.device),
-                runtime.context,
-            )
-        ),
-        "max_cuda_reserved_bytes": int(
-            reduce_max(
-                torch.cuda.max_memory_reserved(runtime.context.device),
-                runtime.context,
-            )
-        ),
+        "max_cuda_allocated_bytes": int(reduce_max(
+            torch.cuda.max_memory_allocated(runtime.context.device), runtime.context)),
+        "max_cuda_reserved_bytes": int(reduce_max(
+            torch.cuda.max_memory_reserved(runtime.context.device), runtime.context)),
     }
-
-
-def _run_checkpoint_validation(
-    runtime: SourceSFTRuntime,
-    checkpoint_cursor: int,
-) -> None:
-    if runtime.checkpoint_validation is None:
-        return
-    checkpoint_dir = (
-        runtime.args.output_dir
-        / "checkpoints"
-        / f"step_{checkpoint_cursor:08d}"
-    )
-    summary = evaluate_online_source_sft_checkpoint(
-        validation=runtime.checkpoint_validation,
-        context=runtime.context,
-        checkpoint_cursor=checkpoint_cursor,
-        checkpoint_dir=checkpoint_dir,
-        policy=runtime.policy,
-        processor=runtime.processor,
-    )
-    if runtime.context.is_main:
-        print(
-            json.dumps(
-                {"event": "validation_functional_loss", **summary},
-                sort_keys=True,
-            ),
-            flush=True,
-        )
 
 
 def run_steps(runtime: SourceSFTRuntime) -> None:
     started = time.monotonic()
-    if runtime.resume_step in runtime.checkpoint_steps:
-        _run_checkpoint_validation(runtime, runtime.resume_step)
     for step in range(runtime.resume_step, runtime.args.stop_after_step):
         row = _one_step(runtime, step, started)
         completed = int(row["optimizer_step"])
@@ -574,23 +457,9 @@ def run_steps(runtime: SourceSFTRuntime) -> None:
                 mode=runtime.args.mode,
                 metrics_rows=runtime.metrics_rows,
             )
-            _run_checkpoint_validation(runtime, completed)
     barrier(runtime.context)
     if runtime.context.is_main:
         stop = runtime.args.stop_after_step
-        validation_episodes = 400 if runtime.args.stage == "final" else 0
-        validation_summaries = (
-            [
-                json.loads(path.read_text(encoding="utf-8"))
-                for path in sorted(
-                    runtime.checkpoint_validation.output_dir.glob(
-                        "step_*/summary.json"
-                    )
-                )
-            ]
-            if runtime.checkpoint_validation is not None
-            else []
-        )
         write_json_atomic(
             runtime.args.output_dir / "run_summary.json",
             {
@@ -614,28 +483,26 @@ def run_steps(runtime: SourceSFTRuntime) -> None:
                 else None,
                 "train_tasks": len(runtime.task_ids),
                 "teacher_action_episodes_available": len(runtime.task_ids) * 50,
-                "validation_action_episodes_available": validation_episodes,
-                "validation_action_queries_read_by_checkpoint_monitor": sum(
-                    int(summary["row_count"]) for summary in validation_summaries
-                ),
-                "validation_checkpoint_monitor_count": len(validation_summaries),
+                "validation_action_episodes_available": 0,
+                "validation_action_queries_read_by_checkpoint_monitor": 0,
+                "validation_checkpoint_monitor_count": 0,
                 "validation_checkpoint_monitor_optimizer_updates": 0,
                 "test_action_reads": 0,
                 "teacher_video_value_reads": 0,
                 "trainable_parameter_count": runtime.contract["trainable"][
                     "parameter_count"
                 ],
-                "global_action_queries": stop
-                * runtime.context.world_size
-                * runtime.batch_size,
+                "global_action_queries": stop * runtime.sampler.global_batch_size,
             },
         )
 
 
 def train(args: argparse.Namespace) -> None:
-    context = initialize_distributed(require_numa=args.mode == "formal")
+    context = initialize_distributed(require_numa=args.mode == "formal", defer_process_group=True)
     runtime: SourceSFTRuntime | None = None
     try:
+        torch.empty(1, device=context.device).add_(1)
+        initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
         runtime = prepare_runtime(args, context)
         if context.is_main:
             print(
@@ -658,8 +525,6 @@ def train(args: argparse.Namespace) -> None:
     finally:
         if runtime is not None:
             runtime.dataset.close()
-            if runtime.checkpoint_validation is not None:
-                runtime.checkpoint_validation.close()
         if dist.is_available() and dist.is_initialized():
             dist.destroy_process_group()
 
@@ -669,9 +534,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO_ROOT / "configs/pi05_source_sft_development_v1.json",
+        default=REPO_ROOT / "configs/pi05_source_sft_aligned.json",
     )
-    parser.add_argument("--stage", choices=("development", "final"), required=True)
+    parser.add_argument("--stage", choices=("development",), default="development")
     parser.add_argument("--mode", choices=("profile", "formal"), required=True)
     parser.add_argument("--source-run", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -682,10 +547,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--total-steps", type=int)
     parser.add_argument("--stop-after-step", type=int)
     parser.add_argument("--checkpoint-steps", type=str)
-    parser.add_argument("--batch-size", type=int)
+    parser.add_argument("--batch-size", type=int, help="physical microbatch queries per rank")
+    parser.add_argument("--gradient-accumulation-steps", type=int)
     parser.add_argument("--num-workers", type=int)
     parser.add_argument("--log-every", type=int, default=1)
-    parser.add_argument("--skip-data-sha", action="store_true")
     parser.add_argument(
         "--allow-contract-compatible-code-resume",
         action="store_true",

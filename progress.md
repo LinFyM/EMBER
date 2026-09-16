@@ -1,20 +1,24 @@
 # EMBER progress
 
-## 当前状态（2026-09-16，A后续观察与一轮改进B goal）
+## 当前状态（2026-09-17，A后续观察与一轮改进B goal）
 
 Owner最新要求：继续A，摸清后续性能是否仍不稳定、视频特异性会改善还是恶化；结合原始v5.2至今近两个月
 实验分析问题、原因及改进；将改进称为本轮B，完成一轮正式训练和评测，无论解决与否同样分析后直接汇报，
 不另写报告。期间正常推进SFT。新的goal已创建为active，替代先前暂停／只到400的执行限制。
 本轮B尚未设计，历史双视角／learned H-read B不自动恢复；旧C仍关闭。
+Owner追加：先看1800的完整结果，若有反弹就继续，希望看到明显过拟合趋势再停止A；1800不再自动结束。
+后续每300更新观察train／validation与相邻保持，单次回落或两侧一起退化不足以命名过拟合；不以controls决定延长。
 
 按owner纠正，旧强视频特异性“没有在新A900复现出来”。A900完整诊断已结束：
 correct／other／wrong／no-video／shuffled／reversed=140／136／116／48／128／139（各400），
 所有2000新rows及48个最终workers通过；有限内容特异性保留，正确时序优势没有复现，不能据此称完全不看顺序。
 完整证据在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`和findings§109。
 
-A900→1200已在原gpu01物理0–3／四rank拓扑正常完成，仍使用冻结`575c189a`；validation400也已完成。
+A1200／1500完整节点已完成：correct135／112、train62／56。1800训练已正常结束（7200条件／151200queries），
+按owner询问一次性核对时正生成1800评测用LoRA，correct400／train96尚无完整结果；原后台序列继续运行。
+A900→1200使用原gpu01物理0–3／四rank拓扑与冻结`575c189a`；1500／1800使用`6393cbe1`。
 train96首次在worker启动前被实时GPU准入拒绝，60个shards全部pending、没有新增rows；原exit1与日志保留。
-重新检查双节点后，已从同一prepared队列以`start`恢复；当前后台序列PID1876702，完整节点后才读取科学结果。
+重新检查双节点后，从同一prepared队列以`start`恢复并正常完成；当前后台序列PID1876702，完整节点后才读取科学结果。
 恢复入口为`A/resume_after_admission.py`，不重跑已完成的训练、物化或validation400，原失败见`A/continuation_failure_01.json`。
 1500／1800的显式预算扩展已集成推送`6393cbe1`，新detached运行树为`.codex/tmp/source-aligned-A-extended-runtime`；
 原config、1200事件与run contract保留，扩展记录另存，模型／optimizer／LR／RNG恢复语义不变。

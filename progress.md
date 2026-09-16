@@ -12,8 +12,13 @@ correct／other／wrong／no-video／shuffled／reversed=140／136／116／48／
 所有2000新rows及48个最终workers通过；有限内容特异性保留，正确时序优势没有复现，不能据此称完全不看顺序。
 完整证据在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`和findings§109。
 
-当前正在准备从A900恢复到1200，并预注册1500／1800；预算外延仅允许保持原事件前缀和完整恢复语义，
-尚未启动新的A训练。每节点correct400／train96及四个有视频对照，固定映射，无视频复用source零LoRA48。
+已从A900在原gpu01物理0–3／四rank拓扑启动1200段，launcher1927597，仍使用冻结`575c189a`。
+1500／1800的显式预算扩展已集成推送`6393cbe1`，新detached运行树为`.codex/tmp/source-aligned-A-extended-runtime`；
+原config、1200事件与run contract保留，扩展记录另存，模型／optimizer／LR／RNG恢复语义不变。
+154项定向检查及真实事件核对通过：7200条件／151200queries的原1200前缀完全一致，train24等权、跨episode、
+46/4分池和offset1保持。证据在`A/budget_extension_validation.json`，不能代替后续真实完整恢复和闭环。
+每节点correct400／train96及四个有视频对照，固定映射，无视频复用source零LoRA48；后台顺序与资源准入
+登记于`A/continuation_launch_contract.json`，只等完成事件，完整节点读出后再进入下一训练段。
 Shared SFT由独立agent接续：一次核对gpu02 launcher3861019及原两rank有效，225/400、129600queries；
 以pidfd等待训练完成，计划400评测后继续425／450及各自评测，不轮询分数或持续盯看。
 A和主线文档由main负责，SFT agent只写既有SFT分析／formal输出，不修改共享源码或运行中的冻结树。

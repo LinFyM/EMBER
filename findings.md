@@ -1924,7 +1924,7 @@ Owner明确要求到此暂停讨论，不启动1200或B；已运行的SFT仅后�
 这些边界及精确参数上界分别保存在study的`archival_A_B_comparison_boundary.json`和`archival_B_horizon_weight_bound.json`；
 不据此自动补2×2、改架构或恢复训练，后续由owner讨论决定。
 
-## 109. 新A900有有限内容特异性，正确时序的稳定优势尚未建立（2026-09-16）
+## 109. 新A900有有限内容特异性，旧强视频／时序特异性未复现（2026-09-16）
 
 Owner单独指定已完成的A900做视频特异性诊断；固定`macro_00000900`，复用correct400，补五个完整400面板。
 全部初态、env／policy RNG、video ordinal及seed20260911严格配对。每个有视频臂逐task全50条视频各一次；

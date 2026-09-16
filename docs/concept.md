@@ -5,8 +5,9 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 人从他人教学迁移到自己身体的能力是科学动机；LIBERO结果本身不证明跨身体泛化。
 
 当前方法和执行边界见[Source时间对齐与v5.2复核](source_alignment_v52_plan.md)，状态见[progress](../progress.md)。
-先以原科学规格重训正确未来动作标签的source，再fresh比较A结构与B。以下流水线解释B；A保留同一Core／Procedure／完整A/B，
-以单agentview和完整50-H固定mean作已登记的结构参照。两者均使用正确offset1及匹配训练合同，不继承旧checkpoint分数。
+当前先继续对齐A并分析后续性能与视频特异性，再结合历史形成一轮改进B；新B尚未确定。以下保留已实现的v5.2读取框架：
+双视角／learned read属于历史B参照，当前A保留同一Core／Procedure／完整A/B，以单agentview和完整50-H fixed mean运行。
+两者都使用正确offset1；历史双视角B不自动成为本轮改进，旧checkpoint分数不赋给新模型。
 Process Pullback及其它已关闭机制从[研究历史](research_history.md)追溯。
 
 ## 从视频到一次性策略参数
@@ -57,8 +58,8 @@ Text/VL/Action Meta、Core、Procedure和完整A/B heads的信用均来自同一
 实现可先获得完整LoRA余切，再重放Writer并用frame checkpoint限制激活内存；source冻结，适配的Z/KV/H不跨更新缓存。
 
 跨episode监督、共享图文／动作坐标和共享heads是尝试获得可复用能力的理由，不保证迁移或保持。
-继续训练可能获取新行为，也可能破坏已经成功的条件。因此基线之后的有界对照只改变同一批训练事件的任务共现，
-保持模型、初始化、事件、queries、更新总数和全局学习率时间轴。它是未验证的假设，不是已知修复。
+继续训练可能获取新行为，也可能破坏已经成功的条件。此前同事件任务共现对照已作为历史证据保留，
+不再自动继续。当前先弄清A的学习演化，再依据完整事实选择一项有依据的改进。
 
 ## 怎样判断
 
@@ -67,6 +68,7 @@ Text/VL/Action Meta、Core、Procedure和完整A/B heads的信用均来自同一
 正式验证每task每轮全50条teacher各一次，state–video与policy RNG跨节点固定；train96是另一个明确登记的独立视频有限面板。
 
 有能力及相邻证据后验证same-task换视频，再冻结单checkpoint做最终wrong／no-video／shuffled／reversed controls。
-后者重排真实frames后完整生成，不参与训练、选点或架构修正。Test默认封闭，未来使用须先登记方法冻结。
+后者重排真实frames后完整生成，不参与训练或选点。当前owner另外授权按预注册节点观察A特异性演化，并结合A全貌分析改进，
+具体边界见active design；历史封闭诊断和Test不追溯反哺。Test默认封闭，未来使用须先登记方法冻结。
 历史恢复、训练任务新获取及局部保持可以是正证据，却不等于通过最终资格。连续有信息量节点没有改善时停止该假设，
 不靠无依据的种子、rank、scale或学习率小扫掩盖能力缺口。

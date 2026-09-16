@@ -1,37 +1,66 @@
-# Source时间对齐与v5.2复核（2026-09-15）
+# 对齐A的后续学习、问题分析与一轮改进B（2026-09-16）
 
-## 目标与授权
+## 当前目标与授权
 
-Owner评估了“同规格重训source→复现v5.2 A→测试B→按source影响决定后续”的顺序，随后明确要求
-“你设置个合适的goal推进这件事吧”。本计划据此成为active design，授权实现、验证、正式训练／评测和有依据的后续推进。
-先前C保持关闭，不恢复旧共现训练。实际状态只看progress，不把尚未运行的阶段写成结果。
+Owner最新要求调整goal：先把对齐A的情况弄清楚，继续训练，观察性能是否像原始v5.2一样不稳定、
+视频特异性会改善还是恶化；随后结合原始v5.2至今近两个月实验，分析存在的问题、原因与改进依据；
+最后把改进称为本轮B，完成一轮正式训练和评测，无论解决与否都分析清楚并直接汇报，不另写报告。
+期间正常推进共享SFT的训练与评测。此前A900后暂停、SFT仅训练至400和不运行新B的限制已解除。
+本轮B尚未设计，不自动继承历史双视角／learned H-read B；旧C及其它关闭窗口不自动恢复。
 
-2026-09-16 owner收敛本轮范围：先重新建立正确对齐的source、共享SFT和原始v5.2 A基线；
-若三者与错位版本在对应节点没有实质差异，允许不重训B，直接分析已有B相对A的差距并停下来讨论。
-只有基线变化使旧B不足以回答问题时才运行已登记的有限B窗口。无论是否补B，本轮结束于基线比较、
-差距分析及与owner讨论，不自动复查历史失败方法、补2×2其它角、追加视频controls或继续寻找>145的方法。
-上述最新范围覆盖下方旧的自动后续设想；>145及视频因果要求仍是项目正式方法资格，不是本轮无限续训的理由。
+措辞按owner纠正：旧v5.2的强视频特异性没有在新A900复现出来，不能改写成只是“没有稳定建立”。
+必要纠错和合理训练条件变化不能替方法表现开脱；这些差异只限制对具体根因的归属。
+当前A900为correct／other／wrong／no-video／shuffled／reversed=140／136／116／48／128／139，
+各400；完整结果见findings§109和`runs/analysis/source_alignment_20260915/A/video_specificity_step900`。
 
-同日owner进一步要求：A900完整验证结果出来后停下来讨论。A900当前已登记的correct400／train96完成并审计后，
-不启动A1200或新B；SFT按owner单独回复继续现有后台训练，到400步自动停止，不启动其后续评测或425／450续训。
-Goal已由owner暂停。下文1200及SFT450均保留为原登记预算，不构成此暂停之后的自动执行授权。
+## 第一阶段：继续A并弄清变化
 
-随后owner单独授权新的A900视频特异性诊断：固定`macro_00000900`及已有correct140/400，不重新选点。
-补same-task-other、cross-suite-wrong、no-video、shuffled、reversed各400；后两臂最后评测，真实RGB重排后
-完整生成LoRA，exact target language不变。所有臂复用seed20260911的50初态／视频ordinal及env／policy RNG；
-same-task-other逐行换视频且整轮无重复，wrong使用预定跨suite donor，no-video按现有零LoRA合同评测裸source。
-全部训练／架构／checkpoint选择反馈关闭，Test封闭。A900仍未通过>145或稳定资格，此处仅是owner授权的
-冻结模型原因诊断；完成逐task／suite、breadth、R/G/L、churn及任务bootstrap读出后报告并暂停。
-原件集中在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`，执行仍用冻结`575c189a`。
+在新结果产生前登记A1200／1500／1800，保存每100更新；沿已有A900精确恢复，不重置Writer、三Meta、
+optimizer、原100-warmup／12000-decay学习率时间轴、sampler／RNG、source或四rank／GPU UUID拓扑。
+选择1800是为覆盖历史A900后1200和1800已经暴露的保持问题；不是追逐>145、调参或扩大至收敛的承诺。
+本阶段固定追加900更新／3600个视频条件／75600 queries，累计1800更新／7200条件／151200 queries。
+保持每步4task×21queries、train24、46/4分池、offset1、单agentview／full50 mean、rank16完整LoRA及纯FM。
 
-该诊断已完整完成：correct／other／wrong／no-video／shuffled／reversed为140／136／116／48／128／139，
-每臂400条。内容替换有负向配对差值证据，正确时序相对打乱／倒序的稳定优势未建立；no-video只解释零LoRA干预。
-全部新2000条与48个最终workers通过，完整结果与边界见findings§109和上述目录的`readout.json`／`readout.md`。
-诊断到此结束，不恢复其它暂停阶段；这些对照不反馈训练、checkpoint选择或架构。
+先用原冻结575c189a完成900→1200；1500／1800需要显式、仅延长预算的resume支持，
+须验证已登记1200事件的前缀完全保持、原状态连续、架构／优化语义和所有既有证据不变后才使用。
+不篡改旧checkpoint、旧config或原run contract来绕过resume检查；必要实现从新的clean pushed detached树运行。
 
-先消除已确认的观测—动作标签错位，再判断source与Writer各自的能力限制。长期资格仍为validation8
-single-checkpoint strict correct严格>145/400、相邻稳定、低churn、四suite贡献、same-task换视频鲁棒性及冻结后的因果controls。
-Test保持关闭，部署信息墙、train24／validation8／test8和source71审计排除均不改变。
+每个新节点完成validation correct400和固定train96，再完成other／cross-suite-wrong／shuffled／reversed各400；
+时序臂在该节点最后测试，重排真实RGB后完整forward。沿用seed20260911的全50视频无放回state–video映射，
+以及env／policy seed7；no-video是同一冻结source的完整零LoRA，复用已审计48/400，不冒充新rollouts或language-only。
+比较相邻节点及900基准的逐task／suite、breadth、R/G/L、churn、Jaccard、任务bootstrap区间，
+并分别判断correct与other相对wrong／shuffled／reversed的差额及其变化；不能仅凭对照总分下降宣称视频利用改善。
+
+本轮owner明确授权按节点观察特异性，并结合A全貌分析改进。它覆盖此前仅在末点做封闭controls的阶段限制；
+不按controls选择checkpoint、延长A预算或构造训练loss，不使用validation/test动作产生梯度，Test保持关闭。
+A900原诊断的原始目的和冻结声明保留为历史，不倒改原件；本轮新的比较与解释另记在既有ledger和formal evidence。
+长任务按顺序后台运行，只在完整阶段结束时核验；不持续盯看队列、分数或逐分钟汇报，实际失败才介入。
+
+## 第二阶段：证据分析与本轮B
+
+A节点完成后综合历史原件，覆盖原始v5.2／v6、后续读取／出口／任务共现／过程路径／Pullback等实际实验；
+保留正负证据的适用条件，区分获取不足、已获能力丢失、未见任务迁移与视频特异性未复现。
+先给出完整数据与信用路径，再定位最早有证据支持的失效接口；纯loss、norm或架构名称不能代替闭环事实。
+明确哪些原因已有定位、哪些只是竞争假设，改进将改变什么预测以及为何不等价于已失败方法。
+必要的限定机制检查服务于区分解释，不把全部历史重跑，不借此自动添加多轮候选。
+
+形成一个有依据的改进，称为本轮B。保持科学目标、冻结source、split、信息墙和正式配对合同，
+具体架构、训练曝光、节点、预测及停止边界在B实现／profile后、formal训练前登记；默认与A有可比较曝光和映射。
+B采用fresh Writer和fresh优化状态，完成一轮正式训练、闭环、保持与视频对照；无论结果正负都给出同样完整分析。
+本goal结束条件是A弄清、原因与改进论证完成、B一轮实测及解释完成和SFT既定基线读出完成；
+>145仍是方法资格，但不是将一轮B自动扩大成多轮搜索的理由。最终直接向owner汇报，不另生成报告文档。
+
+## 并行共享SFT及资源
+
+原SFT400训练继续，按既定400→评测→425→评测→450→评测顺序完成后停止；原rank128／global576、
+2400步LR时间轴、raw source1000、offset1与无held-action读取不变。使用独立冻结16c81e29及原gpu02两rank。
+SFT操作由独立agent负责既有SFT输出，我方负责A和主线文档；各自launch前检查双节点实时资源及独立quota，
+不修改运行中的共用launcher、不重叠使用彼此正在运行的GPU。新阶段登记后无需再次向owner请求逐项许可。
+
+当前data1用量970873968KiB，soft1073741824KiB，余量约98.1GiB，共享83TiB；这是本阶段准备快照，launch前刷新。
+A后续三节点预留32GiB（checkpoint、四类实际视频LoRA banks、train banks及logs；other复用同视频完整LoRA），
+SFT剩余预留3GiB，B暂留40GiB但须设计／profile后再测并重核；总75GiB小于当前余量，不复制source或dataset。
+当前执行状态归progress，历史科学事实归findings／research_history；以下保留source重建和A原始训练规格。
 
 ## 已确认的时间关系
 
@@ -78,7 +107,7 @@ DDP保留已建立的gradient bucket views并原位清零；fresh／resume的首
 完成后固定raw1000做validation400及train96官方闭环，旧source47/400、17/96的同合同面板可明确复用。
 不使用held动作诊断或梯度，不按验证分数延长source或挑选source checkpoint。
 
-## 新source上的A与B
+## A原始训练规格与历史双视角B参照
 
 | 臂 | 教学输入 | 完整50-H读取 | 共有模型 |
 | --- | --- | --- | --- |
@@ -95,7 +124,7 @@ baseline task permutation分组，不用C分组。共同事件、flow噪声、ta
 每臂最多1200更新／4800条件／100800queries；每100保存，300／600／900／1200做correct400＋train96。
 各节点复用B seed20260911的state–video映射、env/policy seed7及全50视频无放回合同。
 
-先完成source、下节共享SFT及A，再决定是否需要新B；实现等独立工作可并行。旧B已有offset1，是source效应的主要下游参照。
+此前source基线计划已被上方三阶段goal替代；下表B仅指历史双视角参照，不是本轮待设计B。旧B已有offset1，是source效应的历史下游参照。
 旧A125／132只作历史定位；新A还修正了旧采样／标签合同，不能将其全部差额单归source。
 旧A正式映射使用video seed7，本轮A／B沿用已登记的seed20260911；两者都在每task使用全部50条视频各一次，
 但400组state–video配对仅8组相同。因此跨历史A的逐行R/G/L只在task／初态／env和policy RNG层面配对，
@@ -127,20 +156,13 @@ baseline task permutation分组，不用C分组。共同事件、flow噪声、ta
 正式仍从fresh identity开始；profile参数不复用，配置封存后从独立clean pushed detached运行树启动。
 小型CPU／profile与完整恢复证据保存在`runs/analysis/source_alignment_20260915/SFT/`。
 
-## 裁决与后续
+## 统一解释边界
 
-裸source与Writer分别报告absolute、相对各自source的增量、per-task／suite、breadth、R/G/L、churn、相邻overlap及
-配对task-bootstrap区间。Source同时影响原生观察与执行，裸source接近不能单独证明它对Writer影响小。
-固定比较旧B四节点，重视900与1200的共同方向及任务分布；每400净增20（5pp）预先登记为有实际规模的影响参考，
-必须结合不确定性、相邻一致性和覆盖，不作为新资格线。区间宽时保留“尚不确定”，不把不显著解释成等效。
-
-- 先比较新旧source、SFT与A的对应节点、per-task／suite、覆盖及相邻保持；不把不显著写成等效。
-- 三个基线若均无实质变化，按owner授权跳过新B，结合已有B及已核实的模型／监督／初始化差异分析。
-  这是是否追加计算的决定，不证明错位完全无影响；宽区间和不同底座造成的归因限制保留。
-- 若新基线存在重要变化，使旧B难以解释当前A，则完成既定B有限窗口后分析，不扩训练预算或做小扫。
-- 分析区分获取不足、已有能力丢失、覆盖迁移和具体模块假设；只有两个角不能唯一分开双视角与learned H-read。
-  无法唯一归因时列出仍存的竞争解释与最有区分力的后续，带证据停下来讨论，不自动实施。
-- 历史失败路线、2×2补角、最终视频controls及Test不在本轮自动执行范围。科学non-pass不自动作为工程bug。
+裸source、A、SFT和本轮B分别报告absolute、相对各自source增量、逐task／suite、breadth、R/G/L、churn、
+相邻overlap与任务bootstrap区间。Source同时影响观察与执行，裸source接近不能证明其对Writer影响小。
+旧A与新A存在训练及视频分配差异，不能把全部差额单归source；宽区间不等于等效。
+历史双视角／learned-read B的两个架构变量也不能由两个角唯一分开；是否采取其某项做法须服从本轮证据分析。
+本轮授权和完成判断以上方三阶段为准，不恢复先前“是否补旧B”的自动路线。
 
 ## 工程、存储与交付
 

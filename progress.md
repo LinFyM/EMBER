@@ -1,27 +1,30 @@
 # EMBER progress
 
-## 当前状态（2026-09-16，source时间对齐goal）
+## 当前状态（2026-09-16，A后续观察与一轮改进B goal）
 
-Owner最新单独授权“先把新的A900测试一下视频特异性，然后告诉我结果”。本次仅固定已完成的A900，
-复用correct400，补same-task-other、cross-suite-wrong、no-video、shuffled、reversed各400严格配对行。
-后两臂最后评测，真实RGB重排后完整生成；no-video为零LoRA／裸source干预，不是language-only Writer。
-这是未获性能资格checkpoint的封闭原因诊断，不选点、不训练、不反哺架构；A1200、新B和SFT评测／续训仍暂停。
-执行与原件集中在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`。
-五个对照已全部完成：correct140、other136、wrong116、no-video48、shuffled128、reversed139，均为400条。
-Other相对correct的R/G/L117/19/23、churn42、Jaccard .7358；任务bootstrap差值95%CI[-4,+1.5]pp。
-Wrong为92/24/48、churn72，差值CI[-12,-.5]pp；相对other少20条，差值CI[-10.5,-.25]pp，支持有限内容特异性。
-Shuffled／reversed相对correct为100/28/40与104/35/36，churn68／71；差值CI[-8.25,+2.25]／[-5.25,+4.5]pp。
-倒序总分接近但成功集合仍有交换，不能说输出不受顺序影响；当前未建立正确时序的稳定优势或动态必要性。
-No-video为完整零LoRA，48与裸source50接近；它不能替代language-only Writer基线或证明视频条件增量。
-全部2000条新rollouts、48个最终workers及五个评测launcher成功；单checkpoint、source／normalization、
-全50视频无放回、初态／RNG与真实RGB重排完整forward审计通过。两次无rollout的GPU准入拒绝原件保留。
-完整逐task／suite、breadth、R/G/L、churn、Jaccard与区间见该目录`readout.json`／`readout.md`及findings§109。
-本次诊断已结束并停止，A1200、新B、SFT评测／续训和Test仍不启动；原SFT后台至400的授权不变。
-Owner再次明确不需要持续盯看：既定对照按顺序后台完成，只在阶段结束读结果，不做逐分钟状态／分数轮询或汇报。
+Owner最新要求：继续A，摸清后续性能是否仍不稳定、视频特异性会改善还是恶化；结合原始v5.2至今近两个月
+实验分析问题、原因及改进；将改进称为本轮B，完成一轮正式训练和评测，无论解决与否同样分析后直接汇报，
+不另写报告。期间正常推进SFT。新的goal已创建为active，替代先前暂停／只到400的执行限制。
+本轮B尚未设计，历史双视角／learned H-read B不自动恢复；旧C仍关闭。
 
-Owner于2026-09-16最新要求A900完整验证结果出来后立即暂停讨论；Goal已由owner暂停，不启动A1200或新B。
-Owner明确保留在运行的SFT后台训练，到400步自动停止；不启动其评测或425／450续训。旧基线／必要B计划保留待讨论，不自动恢复。
-最新暂停边界优先于旧goal和下方执行年表。当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)。
+按owner纠正，旧强视频特异性“没有在新A900复现出来”。A900完整诊断已结束：
+correct／other／wrong／no-video／shuffled／reversed=140／136／116／48／128／139（各400），
+所有2000新rows及48个最终workers通过；有限内容特异性保留，正确时序优势没有复现，不能据此称完全不看顺序。
+完整证据在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`和findings§109。
+
+当前正在准备从A900恢复到1200，并预注册1500／1800；预算外延仅允许保持原事件前缀和完整恢复语义，
+尚未启动新的A训练。每节点correct400／train96及四个有视频对照，固定映射，无视频复用source零LoRA48。
+Shared SFT由独立agent接续：一次核对gpu02 launcher3861019及原两rank有效，225/400、129600queries；
+以pidfd等待训练完成，计划400评测后继续425／450及各自评测，不轮询分数或持续盯看。
+A和主线文档由main负责，SFT agent只写既有SFT分析／formal输出，不修改共享源码或运行中的冻结树。
+Active design仍为[对齐A后续学习与改进B](docs/source_alignment_v52_plan.md)；具体新节点与资源见该文件及task_plan。
+
+准备快照：data1 used970873968KiB／soft1073741824KiB，共享83TiB；A现有14.13GiB、SFT现有约.119GiB。
+新增A32GiB＋SFT3GiB＋待profile的B40GiB预算当前可容纳，launch前重新核验。
+以下为已完成source/A以及既有SFT训练的历史执行记录，旧暂停句仅描述当时状态，不覆盖上述最新授权。
+
+## 已完成A900及既有source／SFT执行记录
+
 A900已在原四rank拓扑正常完成，累计3600条件／75600queries；本段3285.437秒、累计10100.668秒。
 700／800／900完整恢复点检查通过，898次有效阶段更新的Writer及三Meta梯度均finite非零，source冻结。
 训练动作诊断FM .103778，不作闭环替代；496条件物化及correct400／train96完整完成，12个workers与两个launcher均exit0，严格配对审计通过。

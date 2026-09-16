@@ -5,12 +5,15 @@
 Owner于2026-09-16收敛本轮为先建立正确对齐的source、共享SFT和v5.2 A；三者若与旧版本变化有限，允许跳过新B。
 必要时完成已登记B后，分析B相对A的差距并停下来讨论；不自动重启历史失败方法、补2×2、controls或Test。
 Goal保持active，最新范围优先于旧goal的广泛后续措辞。当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)。
-共享SFT的offset1／历史rank128／global576／450步入口已整合推送至`c421933a`，独立开发树已退休，正式训练尚未启动。
+共享SFT的offset1／历史rank128／global576／450步入口已整合，独立开发树已退休；fresh formal已从`16c81e29`在gpu02物理1／3启动，launcher3861019。
+首步global576、loss .149509、梯度 .017673，formal合同、24task曝光与无held-action读取检查通过；先固定训练至400，再依序做400／425／450完整validation400。
 51项CPU检查通过（122.83秒），含真实三rank不等分片累积与随机checkpoint恢复；450步／259200条历史逻辑采样及900个实际LR值复核一致。
 保留新的单一训练路径，移除在线held-action监控接线；旧诊断入口也拒绝此配置读取validation actions。
 SFT的两卡micro64／累积5真实三步及step1→3完整恢复均exit0，梯度finite非零、source冻结；LoRA原生dtype与旧SFT一致。
 后两步平均74.596秒、reserved峰值32.934GiB，450步纯训练估计9.324小时；formal配置已据此封存，正式启动不复用profile参数。
 SFT使用独立冻结运行树；旧Writer冻结树保持`575c189a`，两路径的源模型引用均为新raw1000。
+SFT正式root为`runs/outputs/pi05_source_sft_aligned_rank128_dev_r2_b64_seed7_s450_20260916`；命令与资源在study的`SFT/training_launch_contract.json`。
+启动前data1 used961711756KiB、共享83TiB可用，SFT追加峰值3GiB与剩余Writer22GiB均在独立quota内；两节点合计6张有效GPU。
 Owner询问实现是否仍有未发现错误；定向复查训练—部署索引、读取模式、LoRA注入与缩放、梯度权重和完整恢复合同，未发现新合同违例。
 冻结Writer运行树的22项原生FM直接梯度、future-control、Meta重放、批量LoRA与模式／恢复相关检查新近全部通过（21.87秒）。
 证据在study的`implementation_review.json`及CPU日志；此结论不证明绝对无错，SFT独立入口仍待修正后的真实更新与恢复验证。

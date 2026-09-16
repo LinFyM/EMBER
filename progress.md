@@ -19,10 +19,11 @@ correct122/400、train63/96，breadth5／20，S/O/G/L为13/46/35/28与19/21/12/1
 1500→1800的validation R/G/L为79/43/33、churn76、Jaccard .5097、净差95%CI[-3.75,+9]pp；
 train为50/13/6、churn19、Jaccard .7246、CI[0,+15.625]pp。496行及24个workers通过配对审计，原件`A/node1800_primary_readout.json`。
 1800有名义反弹，按owner要求登记2100（1900／2000／2100保存、累计8400条件／176400queries）；不在1800停止。
-当前1800剩余视频对照按原序列执行；完成事件后PID4121375自动接2100，记录见`A/trend_continuation_launch_contract.json`。
+1800错视频对照首次在worker启动前被GPU准入拒绝，48个jobs均pending且无评测行；原失败见`A/continuation_failure_02.json`。
+已从同一prepared队列恢复，当前PID4175161；完成1800剩余对照后PID4175163自动接2100，记录见`A/trend_continuation_launch_contract.json`。
 A900→1200使用原gpu01物理0–3／四rank拓扑与冻结`575c189a`；1500／1800使用`6393cbe1`。
 train96首次在worker启动前被实时GPU准入拒绝，60个shards全部pending、没有新增rows；原exit1与日志保留。
-重新检查双节点后，从同一prepared队列以`start`恢复并正常完成；当前后台序列PID1876702，完整节点后才读取科学结果。
+重新检查双节点后，1200 train96从同一prepared队列以`start`恢复并正常完成；该恢复序列在1800上述准入拒绝后退出。
 恢复入口为`A/resume_after_admission.py`，不重跑已完成的训练、物化或validation400，原失败见`A/continuation_failure_01.json`。
 1500／1800的显式预算扩展已集成推送`6393cbe1`，新detached运行树为`.codex/tmp/source-aligned-A-extended-runtime`；
 原config、1200事件与run contract保留，扩展记录另存，模型／optimizer／LR／RNG恢复语义不变。

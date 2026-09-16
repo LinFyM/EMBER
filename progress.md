@@ -27,11 +27,18 @@ A／B均在正确source上通过最长105帧视频三次完整联合更新及部
 两节点snapshot确认gpu02物理0／1现有进程仅186／148MiB且0%利用率，按共驻合同使用；本批合计6张有效GPU。
 Source root为`runs/outputs/pi05_source_aligned_seed7_1k_20260915`；命令、双节点GPU／quota和日志均在`runs/analysis/source_alignment_20260915`。
 两组source原件及逐task／suite配对在study的`source/{validation,train}`及对应`*_comparison.json`。
-Fresh A300已从clean pushed detached `575c189a`在gpu01物理0–3启动，launcher355735、torchrun355737、ranks355760–355763；
-run_contract与完整4800事件计划已写出；已核验12更新、48条件／1008queries，step3起四组梯度均finite非零，source冻结。
+Fresh A300从clean pushed detached `575c189a`在gpu01物理0–3正常完成，训练3422.504秒、1200条件／25200queries。
+100／200／300完整checkpoint与0／300独立动作诊断保存；step3起298次更新四组梯度全部finite非零，source冻结，reserved峰值21.701GiB。
 共同global84、baseline分组和frame chunk8／microbatch8保持；参数、optimizer、scheduler和采样／RNG均fresh。
-启动前data1 used955586976KiB，soft余量112.68GiB，A/B剩余追加预算22GiB；独立冻结树为`.codex/tmp/source-aligned-writer-runtime`。
-本段停在300并先完成correct400＋train96，再按相同拓扑继续600／900／1200；尚无新A/B性能结果。
+完整correct400＋train96为99/400与36/96；breadth5／18，S/O/G/L分别10/38/31/20与11/11/10/4。
+相对新source的R/G/L为30/69/20与9/27/4，churn89／31，Jaccard .2521／.2250；差值95%CI[-3,+31.25]／[+12.5,+35.4167]pp。
+Validation逐task为0/10/35/3/0/31/20/0；train按固定24task顺序为2/4/1/1/1/2/1/3/1/2/3/1/0/4/3/0/3/0/2/1/1/0/0/0。
+两组496条完整、18个最终workers均exit0，全部source／checkpoint／视频／初态／RNG与信息墙检查通过；墙钟1009.883／560.788秒。
+Validation首次完成准备后被实时GPU准入拒绝，未启动workers或产生rows；复查双节点后从同一队列start成功，原exit1／日志保留。
+已见训练获取及四suite局部收益，尚无>145资格或相邻保持证据，不能由此提前判断source的下游效应。
+本节点完整证据在`runs/analysis/source_alignment_20260915/A/paired_readout.json`及训练／评测launch contracts。
+两面板完成后，A600已从300点在原四rank／GPU UUID拓扑精确续训，launcher662320；独立冻结树仍为`.codex/tmp/source-aligned-writer-runtime`。
+启动前data1 used958478248KiB，A实测2890084KiB，A/B剩余追加预算22GiB；下一节点仍须完整correct400＋train96。
 已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；
 后续固定raw step1000，EMA按原decay维护。本轮只修未来动作标签及必要采样支持，物理执行由profile确定。
 原8×A100峰值约71GB不能直接搬到A40；已依据实际更新与恢复profile采用microbatch／累积及rank0 CPU EMA。

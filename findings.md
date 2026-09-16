@@ -1827,3 +1827,27 @@ bootstrap按task聚类、20000次、seed20260915。Validation外层Bash因运行
 不据本结果扩source训练、挑checkpoint、恢复旧C或重启其它历史架构。
 原件见`runs/analysis/source_alignment_20260915/source/{validation,train}`与两份`*_comparison.json`；
 原训练／恢复及评测记录分别在`source_launch_contract.json`、`source_checkpoint_recovery.json`和`source_evaluation_launch_contract.json`。
+
+## 105. 对齐source上的A出现获取，保持与source下游效应仍待比较（2026-09-16）
+
+单agentview／完整50-horizon mean的A从`575c189a`fresh联合训练300次，保留v5.2共有初始化流、
+baseline分组、每更新4task×21queries及严格跨episode／46+4分池。实际1200条件／25200queries，
+3422.504秒；100／200／300完整checkpoint、原拓扑RNG和采样游标均已核验。
+身份初始化打开后的298次更新均有Writer和Text／VL／Action Meta有效finite信用，source始终冻结。
+
+| A300面板 | 新source | A | Breadth source→A | A S/O/G/L | Retained/Gained/Lost | Churn | Jaccard | task-bootstrap差值95%CI |
+| --- | ---: | ---: | --- | --- | --- | ---: | ---: | --- |
+| Validation | 50/400 | 99/400 | 3→5 | 10/38/31/20 | 30/69/20 | 89 | .2521 | [-3,+31.25]pp |
+| Train | 13/96 | 36/96 | 8→18 | 11/11/10/4 | 9/27/4 | 31 | .2250 | [+12.5,+35.4167]pp |
+
+Validation按global1/3/11/13/23/26/31/32为0/10/35/3/0/31/20/0；train按固定24task顺序为
+2/4/1/1/1/2/1/3/1/2/3/1/0/4/3/0/3/0/2/1/1/0/0/0。
+训练任务的独立视频闭环获取与覆盖增加；验证四suite均非零，但净收益区间仍跨零、原有成功丢失20条，
+单节点尚不能判断保持。该99不满足>145，也不证明视频必要性或source相对旧底座的因果增益。
+旧A900的125还涉及不同训练合同和曝光，不能直接与本300节点归因比较；新B及后续匹配节点继续按原登记执行。
+
+496条件均一次完整编译，validation全50视频各一次，所有source／normalization／checkpoint／task／state／RNG配对通过；
+18个最终workers均exit0。Validation首次在准备后被GPU实时准入拒绝，没有worker或rollout，
+双节点复查后从原prepared queue启动并完整成功，原exit1未抹除；未改准入逻辑、重选视频或重跑结果。
+两个面板墙钟1009.883／560.788秒，原件及逐任务配对为`runs/analysis/source_alignment_20260915/A/paired_readout.json`，
+训练与评测launch contracts保留全部命令、资源和失败记录。Controls与Test均未开放。

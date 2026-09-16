@@ -2092,3 +2092,35 @@ No-video仍复用同source零LoRA48，不是learned language-only或静态视频
 固定初态／RNG／teacher、每task全50视频无放回、逐行manifest及真实RGB重排全部审计通过。本节点没有工程异常。
 完整原件为`runs/analysis/source_alignment_20260915/A/continuation_readout.json`、`video_specificity_step2100/`、
 `training_completion_2100.json`及`trend_continuation_completion_2100.json`；后续状态归progress，不将本节点当作A或B全目标完成。
+
+## 113. A2400两侧总成功回落，训练覆盖扩展，时序优势仍未恢复（2026-09-17）
+
+2400沿原四rank从2100完整恢复，冻结329987c0、原模型／配方／LR不变；累计9600条件／201600queries，
+每task400条件，1104个teacher各8–9次。完整恢复点、原事件前缀与source冻结审计通过，identity后的四组梯度finite非零。
+本段3150.601秒，累计训练26277.237秒（7.299h）。
+
+| 面板 | 成功 | S/O/G/L | Breadth | 相对source的R/G/L | 2100→2400 R/G/L | 相邻churn | 相邻Jaccard | 相邻净差95%CI |
+| --- | ---: | --- | ---: | --- | --- | ---: | ---: | --- |
+| Validation | 106/400 | 5/40/40/21 | 5/8 | 37/69/13 | 87/19/35 | 54 | .6170 | [-9.5,+1]pp |
+| Train | 58/96 | 17/16/15/10 | 22/24 | 12/46/1 | 47/11/13 | 24 | .6620 | [-14.5833,+9.375]pp |
+
+Validation逐task按global1/3/11/13/23/26/31/32为0/5/38/2/0/40/21/0。
+相对2100，Spatial1→5，但Object53→40、Goal42→40、Long26→21；总成功净少16且旧成功丢失35。
+Train总成功少2而任务覆盖19→22；Object20→16、Spatial20→17，Goal12→15和Long8→10。
+覆盖扩展伴随原有成功条件丢失，不能仅用总分下降说没有学习，也不能把两侧回落直接叫典型过拟合。
+按owner要求追加2700（2500／2600／2700保存、累计10800条件／226800queries），判断仅用主面板，
+已写`A/node2400_primary_readout.json`及扩展launch contract，视频controls未参与是否延长。
+
+完整correct／other／wrong／no-video／shuffled／reversed为106／103／91／48／107／95。
+从correct到各对照的R/G/L分别为87/16/19、70/21/36、36/12/70、81/26/25、76/19/30，
+churn35／57／82／51／49，Jaccard .7131／.5512／.3051／.6136／.6080。
+Correct减wrong／shuffled／reversed的优势区间为[-2,+10.75]／[-3.5,+2.25]／[-.75,+6.5]pp，均跨零；
+other相对这三个对照的区间也均跨零。Correct与other本身差3、区间[-.75,+2.25]pp，并非统计等效证明。
+相对2100，wrong差距12→15由correct少16、wrong少19形成；shuffle差距16→−1因correct少16而shuffle多1，
+reverse差距保持11但两侧都少16。没有正确视频能力或时序利用随训练增强的证据，不把对照退化计为改进。
+No-video仍是同source零LoRA48，非learned language-only或静态视频baseline；信息与因果解释边界不变。
+
+2096条新评测及72个最终workers全部成功，评测墙钟5137.134秒；source／checkpoint／normalization、
+初态／RNG／teacher、全50视频无放回、逐行manifest与真实RGB重排审计通过，本节点没有工程异常。
+完整原件为study的`A/continuation_readout.json`、`video_specificity_step2400/`、`training_completion_2400.json`和
+`trend_continuation_completion_2400.json`。该节点未达性能或稳定资格，后续状态归progress，不提前裁决本轮B。

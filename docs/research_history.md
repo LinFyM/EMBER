@@ -1,5 +1,11 @@
 # EMBER research history
 
+2026-09-17完成对齐A2400：9600条件／201600queries，correct106/400、train58/96，breadth5／22。
+Validation S/O/G/L为5/40/40/21，2100→2400 R/G/L87/19/35、churn54；train47/11/13、churn24。
+验证与训练总成功均回落，训练任务覆盖反而19→22，未直接命名明显过拟合。六臂106/103/91/48/107/95，
+correct相对wrong／shuffled／reversed的区间均跨零；完整2096条新评测与72个最终workers通过，无本节点工程异常。
+完整事实见findings§113及study的`A/continuation_readout.json`；2700追加只依据主面板，当前执行归progress。
+
 2026-09-17完成对齐A2100：8400条件／176400queries，correct122/400、train60/96，breadth5／19。
 Validation S/O/G/L为1/53/42/26；相对1800总分持平，但R/G/L92/30/30、churn60，Spatial13→1被Object／Goal回升抵消。
 Train63→60，R/G/L52/8/11；还不能把这段波动判为明显过拟合。六臂为122/121/110/48/106/111，

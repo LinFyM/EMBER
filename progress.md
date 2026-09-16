@@ -14,26 +14,26 @@ correct／other／wrong／no-video／shuffled／reversed=140／136／116／48／
 所有2000新rows及48个最终workers通过；有限内容特异性保留，正确时序优势没有复现，不能据此称完全不看顺序。
 完整证据在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`和findings§109。
 
-A300／600／900／1200／1500／1800／2100的完整correct为99／88／140／135／112／122／122，
-train为36／47／54／62／56／63／60。2100累计8400条件／176400queries，每task350条件，完整恢复及原事件前缀审计通过。
-2100 validation122/400、train60/96，breadth5／19，S/O/G/L为1/53/42/26与20/20/12/8。
-1800→2100 validation R/G/L为92/30/30、churn60、Jaccard .6053、净差95%CI[-7.75,+6.5]pp；
-train为52/8/11、churn19、Jaccard .7324、CI[-12.5,+6.25]pp。验证总分持平伴随Spatial13→1与Object／Goal回升，
-训练任务轻微回落，尚不构成明显过拟合；主面板判断已保存`A/node2100_primary_readout.json`，controls未参与续训决定。
-2100的correct/other/wrong/no-video/shuffled/reversed为122/121/110/48/106/111；correct相对后三种错误视频的优势区间均跨零。
-完整2096条新评测、72个最终workers均通过，本节点没有工程异常；细节见findings§112与`A/continuation_readout.json`。
-1200／1500／1800完整节点及视频特异性演化见findings§111；两次worker前GPU准入拒绝均已从同队列恢复，原件保留。
+A300／600／900／1200／1500／1800／2100／2400的完整correct为99／88／140／135／112／122／122／106，
+train为36／47／54／62／56／63／60／58。2400累计9600条件／201600queries，每task400条件，完整恢复及原事件前缀审计通过。
+2400 validation106/400、train58/96，breadth5／22，S/O/G/L为5/40/40/21与17/16/15/10。
+2100→2400 validation R/G/L为87/19/35、churn54、Jaccard .6170、净差95%CI[-9.5,+1]pp；
+train为47/11/13、churn24、Jaccard .6620、CI[-14.5833,+9.375]pp。验证继续流失，训练总成功也回落，但覆盖19→22。
+这仍不足以直接判定明显过拟合；主面板判断已保存`A/node2400_primary_readout.json`，controls未参与续训决定。
+2400的correct/other/wrong/no-video/shuffled/reversed为106/103/91/48/107/95，correct相对wrong／shuffled／reversed的优势区间均跨零。
+完整2096条新评测、72个最终workers均通过，本节点没有工程异常；细节见findings§113与`A/continuation_readout.json`。
+1200–2100完整节点及视频特异性演化见findings§111–112；两次worker前GPU准入拒绝均已从同队列恢复，原件保留。
 
-按owner要求继续观察，2400已从完整2100点启动，PID763172；保存2200／2300／2400，累计目标9600条件／201600queries。
-沿原gpu01物理0–3／四rank／GPU UUID、8×4 microbatch、global84及原optimizer／LR／RNG恢复，配方不变。
+按owner要求继续观察，2700已从完整2400点启动，PID1337662；保存2500／2600／2700，累计目标10800条件／226800queries。
+沿原gpu01物理0–3／四rank／GPU UUID、各rank microbatch8、global84及原optimizer／LR／RNG恢复，配方不变。
 运行树为clean pushed detached `.codex/tmp/source-aligned-A-trend-runtime`（329987c0）；
 原1200的575c189a与1500／1800的6393cbe1及其完整合同保持。每个扩展预算记录于`budget_extensions/updates_XXXXXXXX/`，
-157项定向检查及真实1800→2100／2400事件／sampler核验通过，实际2100整段恢复与checkpoint审计也已完成。
-当前后台入口为`A/continue_registered.py --through-node 2400`，PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_2400.log`。
-2100完成记录已保存`A/trend_continuation_completion_2100.json`；当前节点与追加依据见`A/trend_continuation_launch_contract.json`。
+157项定向检查及真实1800→2100／2400事件／sampler核验通过，实际2100／2400整段恢复与checkpoint审计也已完成。
+当前后台入口为`A/continue_registered.py --through-node 2700`，PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_2700.log`。
+2400完成记录已保存`A/trend_continuation_completion_2400.json`；当前节点与追加依据见`A/trend_continuation_launch_contract.json`。
 每节点仍完成correct400／train96及四个视频对照，无视频复用source零LoRA48；只等完成事件，完整节点后判断是否追加。
 
-2400 launch前双节点GPU／process检查通过，data1 used1007552696KiB／soft1073741824KiB，A用50786180KiB。
+2700 launch前双节点GPU／process检查通过，data1 used1016523468KiB／soft1073741824KiB，A用59785920KiB。
 每个完整新节点预留12GiB，后续B40GiB，当前剩余52GiB预算可容纳；SFT剩余预算为零，后续launch仍重新核验。
 Shared SFT已于2026-09-17完成450步／259200 queries及400／425／450三个正式validation400，随后停止全部SFT作业。
 三点85／89／86，breadth6／5／5，四suite均非零；相邻R/G/L为66/23/19与64/22/25，churn42／47。

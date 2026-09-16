@@ -1999,3 +1999,55 @@ source与训练动作offset共同变化，且旧A100／runtime面板没有重跑
 首启至末评测结束38528.929秒（10.702h）。三个面板各400行、各6 workers，所有最终launcher／workers均exit0，
 policy／环境／RNG／normalization配对审计通过。没有工程异常、checkpoint选择或Test，全部SFT作业已停止，不续训。
 原件为`runs/analysis/source_alignment_20260915/SFT/{paired_readout.json,training_audit.json,completion.json,training_launch_contract.json}`。
+
+## 111. 对齐A至1800仍有能力交换，视频特异性没有随续训单调改善（2026-09-17）
+
+Owner授权从A900继续观察性能和视频特异性，并在1800有反弹时继续，直到能判断明显过拟合趋势。
+以下只覆盖已经完整结束的1200／1500／1800；没有选择checkpoint、开启Test或预定本轮B。
+架构、source raw1000、四rank、global84、46/4分池、跨episode、offset1及原optimizer／LR均保持。
+1200来自原冻结575c189a，1500／1800来自仅扩预算的6393cbe1；原事件前缀及完整恢复合同审计通过。
+1800累计7200个条件／151200queries，每task300个条件，1104个不同teacher条件各暴露6–7次；
+source冻结，identity后Writer与三Meta梯度finite非零，累计训练19901.951秒（5.528h）。
+
+每个节点均为同一固定teacher–初态映射的correct400与train96；S/O/G/L分母分别100／100／100／100和24／24／24／24。
+表中R/G/L从前一个300更新节点出发，区间为任务cluster bootstrap、20000次、seed20260915。
+
+| 节点 | Validation/400 | S/O/G/L | Breadth/8 | 相邻R/G/L | Churn | Jaccard | 净差95%CI | Train/96 | Train S/O/G/L | Train breadth/24 |
+| --- | ---: | --- | ---: | --- | ---: | ---: | --- | ---: | --- | ---: |
+| 1200 | 135 | 14/55/42/24 | 6 | 98/37/42 | 79 | .5537 | [-8.5,+6.5]pp | 62 | 20/19/13/10 | 20 |
+| 1500 | 112 | 4/47/40/21 | 6 | 82/30/53 | 83 | .4970 | [-15,+2.5]pp | 56 | 19/17/13/7 | 19 |
+| 1800 | 122 | 13/46/35/28 | 5 | 79/43/33 | 76 | .5097 | [-3.75,+9]pp | 63 | 19/21/12/11 | 20 |
+
+Validation按global1/3/11/13/23/26/31/32逐task分别为0/14/37/18/2/40/24/0、
+0/4/44/3/1/39/21/0、0/13/39/7/0/35/28/0。Spatial1与Long2三个点都零，1800又失去Goal3的少量成功。
+Train相邻R/G/L为48/14/6、50/6/12、50/13/6，churn20／18／19，Jaccard .7059／.7353／.7246；
+净差区间[0,+16.6667]／[-15.625,+2.0833]／[0,+15.625]pp。完整train24逐task数据保留在原始JSON。
+全部correct轨迹为99→88→140→135→112→122，train为36→47→54→62→56→63。
+1500两侧都回落、1800两侧都反弹，不能单独把1500命名为明确过拟合，也不能把1800净增10命名为保持修复。
+训练获取长程扩大而未见任务未超过900，但还要按owner要求继续观察多个完整节点；未达>145或相邻稳定资格。
+
+每个有视频臂每task全50条teacher各一次；other换同task视频，wrong保持目标language，时间臂重排真实RGB后完整forward。
+No-video始终复用同source零LoRA的48/400，不能解释成language-only Writer或静态视频baseline。
+
+| 节点 | Correct | Other | Wrong | No-video | Shuffled | Reversed | Correct−wrong | Correct−shuffled | Correct−reversed |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 900 | 140 | 136 | 116 | 48 | 128 | 139 | 24 | 12 | 1 |
+| 1200 | 135 | 128 | 106 | 48 | 107 | 121 | 29 | 28 | 14 |
+| 1500 | 112 | 120 | 104 | 48 | 108 | 89 | 8 | 4 | 23 |
+| 1800 | 122 | 127 | 98 | 48 | 112 | 113 | 24 | 10 | 9 |
+
+1200 correct相对shuffled／reversed的优势区间为[+1,+13.25]／[+.25,+8]pp，确有该节点上的有益顺序证据。
+1500相对shuffled为[-1,+3]pp，reverse为[+1,+13.25]pp；1800两者又为[-4.5,+8.5]／[-3.5,+9]pp。
+900→1500的reverse差额1→23，来自correct少28、reverse少50，其中差额增幅22中的21来自Goal6；
+这主要是倒序对照退化，不能叫正确视频能力提高。1800 correct回升10，但reverse回升24，差额随即23→9。
+900→1800 wrong差额同为24，是correct与wrong各少18；shuffle差额12→10、reverse1→9。
+这些相对900的差额变化区间均跨零，没有持续增强的视频特异性证据，旧v5.2强时序特异性仍未复现。
+1800 correct和other相对wrong仍分别净多24和29，优势区间[+.5,+12]／[+2,+13]pp，保留有限内容特异性。
+Other三个新节点相对correct为−7／+8／+5，但仍有67／38／51个初态成败交换；总分接近不代表逐初态稳定或统计等效。
+
+三个新节点各2096条、72个最终workers，共6288条及216个最终workers均成功；source／checkpoint／normalization、
+teacher／初态／RNG及逐行manifest审计通过，时间臂验证真实RGB重排。各节点评测墙钟5117.693／5104.992／5109.434秒。
+1200 train和1800 wrong曾在worker前GPU准入被拒，均无当次rollout，从同prepared队列恢复；原失败记录保留。
+视频controls只用于本次授权的演化与问题分析，不用于续训预算、checkpoint选择或训练loss；1800续训判断仅来自主面板反弹。
+原件为`runs/analysis/source_alignment_20260915/A/continuation_readout.json`、各`video_specificity_step*/`、
+`training_completion_*.json`、原与扩展launch contracts、完整checkpoints及两份`continuation_failure_*.json`。

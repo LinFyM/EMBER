@@ -1,5 +1,16 @@
 # EMBER research history
 
+2026-09-17完成对齐A的1200／1500／1800三个完整节点：correct135／112／122，train62／56／63；
+validation S/O/G/L为14/55/42/24、4/47/40/21、13/46/35/28，breadth6／6／5。
+自900起相邻validation R/G/L为98/37/42、82/30/53、79/43/33，churn79／83／76；名义反弹没有解决成功集合交换。
+三点correct/other/wrong/no-video/shuffled/reversed分别135/128/106/48/107/121、112/120/104/48/108/89、
+122/127/98/48/112/113；内容差额29→8→24，打乱28→4→10，倒序14→23→9，均未单调改善。
+1200两个时序优势区间为正，但1800均再跨零；1500倒序差距扩大主要是对照退化，不能计作正确能力进步。
+三个节点新增6288条闭环、216个最终workers均通过；1800累计7200条件／151200queries、训练5.528h。
+1200 train及1800 wrong各一次worker前GPU准入拒绝，均从同prepared队列恢复，原失败保留。
+完整事实、配对区间及解释边界见findings§111与`runs/analysis/source_alignment_20260915/A/continuation_readout.json`。
+这些证据仅覆盖到1800；后续授权及实际续训状态见progress，不据此将A全貌或本轮B标记完成。
+
 2026-09-17完成对齐source上的共享rank128 SFT：450更新／259200 queries，24tasks各10800queries，
 保持历史global576与2400步LR时间轴，使用正确offset1。400／425／450正式validation400为85／89／86，
 breadth6／5／5，S/O/G/L为7/43/25/10、9/48/23/9、10/36/27/13；相邻R/G/L为66/23/19与64/22/25。

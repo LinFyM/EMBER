@@ -2,8 +2,13 @@
 
 ## 当前状态（2026-09-16，source时间对齐goal）
 
-Owner最新要求“你设置个合适的goal推进这件事吧”；source重训与v5.2 A/B复核goal已创建并active。
-当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)，授权实现、验证、启动及按结果自主推进。
+Owner于2026-09-16收敛本轮为先建立正确对齐的source、共享SFT和v5.2 A；三者若与旧版本变化有限，允许跳过新B。
+必要时完成已登记B后，分析B相对A的差距并停下来讨论；不自动重启历史失败方法、补2×2、controls或Test。
+Goal保持active，最新范围优先于旧goal的广泛后续措辞。当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)。
+共享SFT按历史实际rank128／global576／450步登记修正；旧入口offset0与过时recipe已确认，隔离代码适配进行中，尚未启动新SFT。
+Owner询问实现是否仍有未发现错误；定向复查训练—部署索引、读取模式、LoRA注入与缩放、梯度权重和完整恢复合同，未发现新合同违例。
+冻结Writer运行树的22项原生FM直接梯度、future-control、Meta重放、批量LoRA与模式／恢复相关检查新近全部通过（21.87秒）。
+证据在study的`implementation_review.json`及CPU日志；此结论不证明绝对无错，SFT独立入口仍待修正后的真实更新与恢复验证。
 原C保持关闭；新source已从clean pushed detached `b8ea00e9`在gpu01物理0／1／2／3完成1000更新、256000 queries。
 全部1000行计数连续、global256／micro8×accum8一致，loss／gradient／LR均finite；终点loss .0835784、gradient .165120。
 训练至最后更新29290.086秒，通常约9.1 query/s；该墙钟不含最后失败的保存与元数据恢复。
@@ -37,8 +42,11 @@ Validation逐task为0/10/35/3/0/31/20/0；train按固定24task顺序为2/4/1/1/1
 Validation首次完成准备后被实时GPU准入拒绝，未启动workers或产生rows；复查双节点后从同一队列start成功，原exit1／日志保留。
 已见训练获取及四suite局部收益，尚无>145资格或相邻保持证据，不能由此提前判断source的下游效应。
 本节点完整证据在`runs/analysis/source_alignment_20260915/A/paired_readout.json`及训练／评测launch contracts。
-两面板完成后，A600已从300点在原四rank／GPU UUID拓扑精确续训，launcher662320；独立冻结树仍为`.codex/tmp/source-aligned-writer-runtime`。
-启动前data1 used958478248KiB，A实测2890084KiB，A/B剩余追加预算22GiB；下一节点仍须完整correct400＋train96。
+两面板完成后，A600已从300点在原四rank／GPU UUID拓扑精确续训并正常exit0；本段3392.728秒，累计2400条件／50400queries。
+400／500／600完整checkpoint检查通过；step3起598次更新四组梯度全部finite非零，source冻结，reserved峰值22.854GiB。
+独立train held动作诊断FM为.105642；此loss不代替闭环。累计训练6815.231秒，证据在`A/training_audit_600.json`。
+600点496条件物化已在gpu01物理0–3启动，launcher847996；独立冻结树仍为`.codex/tmp/source-aligned-writer-runtime`的`575c189a`。
+启动前data1 used959072544KiB，A实测3263852KiB，A/B剩余追加预算22GiB；仍须完成correct400＋train96后再续训900。
 已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；
 后续固定raw step1000，EMA按原decay维护。本轮只修未来动作标签及必要采样支持，物理执行由profile确定。
 原8×A100峰值约71GB不能直接搬到A40；已依据实际更新与恢复profile采用microbatch／累积及rank0 CPU EMA。

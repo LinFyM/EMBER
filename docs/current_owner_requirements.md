@@ -3,13 +3,15 @@
 本文保存owner的稳定目标、研究原则与协作要求。Owner最新明确表达优先于本文；本文优先于[AGENTS](../AGENTS.md)中的默认合同。
 当前授权和实际状态只看[progress](../progress.md)，执行计划只看[task_plan](../task_plan.md)。历史讨论与旧实验不构成重新启动授权。
 
-## 当前阶段的优先级：修正source，再复核v5.2（Owner 2026-09-15）
+## 当前阶段的优先级：重建正确基线，分析后讨论（Owner 2026-09-16）
 
 Owner已要求创建goal自主推进[source时间对齐与v5.2复核](source_alignment_v52_plan.md)：
-先以原科学规格fresh重训正确未来动作标签的source，再在新source上fresh复现A结构和训练B；
-依据裸source及A/B整条链的影响，决定有限复查历史架构，或继续解决v5.2性能、稳定性及视频特异性。
+最新范围先以原科学规格建立正确未来动作标签的source、共享SFT及原始v5.2 A。
+若三个基线与错位版本在对应节点没有实质变化，允许跳过新B，直接结合已有B分析差距；必要时才完成已登记B窗口。
+随后仔细分析B相对A的获取、保持与迁移差异，区分已验证事实和不能唯一归因的假设，停下来与owner讨论。
+不自动重启历史失败方法、补2×2、追加controls或继续探索新方法；>145是项目方法资格，不能成为无限扩大本轮的理由。
 本轮明确允许单agentview／完整H固定mean作为A结构参照；A/B共享正确offset1、严格跨episode及其它训练合同。
-此前C已停止，不恢复其剩余训练。具体节点、资源、后续分流及冻结视频读出按新active design与progress。
+此前C已停止，不恢复其剩余训练。具体节点、资源和比较合同按新active design与progress。
 以下保留已对齐的v5.2模型原则；旧执行顺序由新goal替代。
 
 Process Pullback及上一轮[v5.2恢复与保持对照](v52_return_plan.md)保留为历史参照，旧C剩余清单不能恢复执行。

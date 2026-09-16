@@ -2,8 +2,10 @@
 
 ## 当前目标与授权
 
-Owner于2026-09-15要求设置goal自主推进：同规格重训正确时间对齐的source，随后fresh复现v5.2 A结构并训练B，
-依据source对裸policy与Writer整条链的影响决定后续。Goal已active，合同见[active design](docs/source_alignment_v52_plan.md)。
+Owner于2026-09-15要求设置goal自主推进，2026-09-16收敛为先建立正确对齐的source、共享SFT和v5.2 A基线。
+若三者与旧版本没有实质变化，跳过新B，直接分析已有B相对A的差距；必要时才完成已登记B窗口。
+完成基线比较与差距分析后停下来讨论，不自动重启历史方法、补2×2或视频controls。Goal保持active，
+最新合同见[active design](docs/source_alignment_v52_plan.md)，旧goal的广泛后续范围由本次owner要求覆盖。
 原C保持关闭，不恢复611后的训练；既有source、A/B/C和Process Pullback证据保留。
 
 ## 执行顺序
@@ -14,19 +16,22 @@ Owner于2026-09-15要求设置goal自主推进：同规格重训正确时间对�
 2. **已完成：source训练与官方读出。** 已据profile锁定四rank、micro8／accum8及滚动完整checkpoint；
    clean pushed detached `b8ea00e9`的fresh1000更新已完成；最终保存超时后依据完整落盘状态恢复发布元数据，保留原失败记录。
    固定raw step1000为validation50/400、train13/96，旧source47／17；两组配对区间跨零，不按结果选source或扩步。
-3. **进行中：新source上的A，再B。** 共享正确数据／初始化／事件／LR及评测映射，分别fresh1200；
+3. **进行中：新source上的A与共享SFT。** A／必要时B共享正确数据／初始化／事件／LR及评测映射，分别fresh1200；
    A／B的新source最长视频profile已通过并封存；300／600／900／1200完整correct400＋train96，分开报告获取、保持及相对各自source的收益。
    A300已从`575c189a`完整完成：validation99/400、train36/96，四suite非零，尚无>145或相邻稳定资格；
-   两面板审计后已精确续训600。尚未进入B正式训练，不由裸source或A单节点提前裁决下游效应。
-4. **结果驱动后续。** 有重复实质改善可有限复查有局部正证据的source敏感旧架构；影响有限或A/B差异主导，
-   则聚焦v5.2，必要时补2×2另两角。区间宽时保留不确定，不机械二分。
-5. **冻结视频证据与交付。** 按预登记规则确认换视频鲁棒性及最终controls，Test关闭；未具资格的固定终点
-   读出仅作sealed post-hoc解释，不反哺训练／选点／后继架构修正。
+   600训练已正常完成，累计50400queries，正物化完整闭环条件。共享SFT按历史实际rank128／global576／450更新修正source与offset，代码适配进行中。
+   SFT固定400／425／450完整validation400；不复制旧在线validation动作监控。B尚未启动，待三个基线完成后决定。
+4. **基线裁决与必要的B。** 比较对应曝光节点、任务／suite分布、覆盖与保持；三基线变化有限则跳过新B。
+   变化重要则完成既定B窗口，保持预算，不追加扫参或历史架构。宽区间不当作等效证明。
+5. **分析并讨论。** 用已有和必要的新证据分析B相对A的差距，区分可确认事实与无法唯一归因的候选原因；
+   完成后停下来交owner讨论，不自动开展2×2、controls、Test或其它新方法。
 
 ## 资源、边界与完成判断
 
-S+A+B追加峰值预算112GiB，含本地缺失的原revision generic权重约13.5GiB；launch前重核data1独立quota、双节点GPU及实测峰值。
+S+A+B原追加峰值预算112GiB，含原revision generic权重约13.5GiB；SFT单独据profile追加小型checkpoint／rows预算，
+launch前重核data1独立quota、双节点GPU及实测峰值，不改变运行中的Writer冻结树。
 Source有效global256及原科学规格固定，物理microbatch／累积／EMA存放可等效调整；formal jobs来自clean pushed detached树。
 不改变source71审计排除、train24/validation8/test8、normalization、部署信息墙，不引入RL、第二adapter或无依据小扫。
-长期目标仍为>145/400及相邻稳定、覆盖、同task视频鲁棒性和视频必要性；局部涨分不能将goal标为完成。
+长期方法目标仍为>145/400及相邻稳定、覆盖、同task视频鲁棒性和视频必要性；本轮完成标准是最新owner指定的基线重建、
+必要的B、差距分析及讨论交付，不能以该方法目标为由无限扩展本轮。
 最新命令、资源与实测结果进入[progress](progress.md)，历史证据沿research_history追溯。

@@ -24,6 +24,9 @@ train96首次在worker启动前被实时GPU准入拒绝，60个shards全部pendi
 原config、1200事件与run contract保留，扩展记录另存，模型／optimizer／LR／RNG恢复语义不变。
 154项定向检查及真实事件核对通过：7200条件／151200queries的原1200前缀完全一致，train24等权、跨episode、
 46/4分池和offset1保持。证据在`A/budget_extension_validation.json`，不能代替后续真实完整恢复和闭环。
+1800以后的按段扩展支持已集成推送`329987c0`，冻结树`.codex/tmp/source-aligned-A-trend-runtime`；尚未启动新段。
+157项检查通过，真实1800采样状态到2100／2400的完整事件前缀、游标与task曝光核对通过（`A/trend_budget_validation.json`）。
+新预算各自保存于`budget_extensions/updates_XXXXXXXX/`，保留原1200／1800记录及旧checkpoint的真实运行来源；只扩预算，不改模型更新。
 每节点correct400／train96及四个有视频对照，固定映射，无视频复用source零LoRA48；后台顺序与资源准入
 登记于`A/continuation_launch_contract.json`，只等完成事件，完整节点读出后再进入下一训练段。
 Shared SFT已于2026-09-17完成450步／259200 queries及400／425／450三个正式validation400，随后停止全部SFT作业。

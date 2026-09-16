@@ -118,15 +118,21 @@ def _data_config(args, config):
         return config["data"]
     original = config["data"]["maximum_updates"]
     if (args.mode != "formal" or not getattr(args, "resume", None)
-            or type(extension) is not int or not original < extension <= 1800 or extension % 6
+            or type(extension) is not int or not original < extension <= config["optimization"]["decay_updates"] or extension % 6
             or checkpoint_macro(args.resume) < original):
-        raise ValueError("budget extension requires a formal resume at the original endpoint and complete rounds up to1800")
+        raise ValueError("budget extension requires a formal resume after the original endpoint within the unchanged decay clock")
     return {**config["data"], "maximum_updates": extension}
 
 
+def extension_record_path(output, name, updates):
+    """Keep each newly authorized budget immutable, including its runtime origin."""
+    return output / "budget_extensions" / f"updates_{updates:08d}" / name
+
+
 def _event_plan_path(args):
-    name = "training_events_extended.json" if getattr(args, "extend_to_update", None) else "training_events.json"
-    return args.output / name
+    extension = getattr(args, "extend_to_update", None)
+    return (extension_record_path(args.output, "training_events.json", extension) if extension
+            else args.output / "training_events.json")
 
 
 def _publish_event_plan(args, events):
@@ -135,6 +141,15 @@ def _publish_event_plan(args, events):
         original = read_json(args.output / "training_events.json")
         if original != event_plan_prefix(events, original["maximum_updates"]):
             raise ValueError("budget extension changed the original registered training events")
+        trainer = torch.load(args.resume / "trainer_state.pt", map_location="meta", mmap=True, weights_only=True)
+        previous_budget = trainer["sampler_state"]["event_contract"]["maximum_updates"]
+        if previous_budget != original["maximum_updates"]:
+            previous_path = extension_record_path(args.output, "training_events.json", previous_budget)
+            if not previous_path.exists():
+                previous_path = args.output / "training_events_extended.json"
+            previous = read_json(previous_path)
+            if previous["maximum_updates"] != previous_budget or previous != event_plan_prefix(events, previous_budget):
+                raise ValueError("budget extension changed the previous registered training events")
     if path.exists():
         if not args.resume:
             raise ValueError("fresh training refuses an existing event plan")
@@ -481,7 +496,7 @@ def run(args: argparse.Namespace) -> None:
     if context.is_main:
         _publish_contract(args.output / "run_contract.json", contract, resume=args.resume is not None)
         if getattr(args, "extend_to_update", None):
-            extension_path = args.output / "run_contract_extended.json"
+            extension_path = extension_record_path(args.output, "run_contract.json", args.extend_to_update)
             _publish_contract(extension_path, contract, resume=extension_path.exists())
     barrier(context)
     cursors = _restore(args, context, runtime, data, optimizer, scheduler, config)

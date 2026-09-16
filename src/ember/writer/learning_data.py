@@ -57,6 +57,7 @@ def load_learning_tasks(
 
 
 EVENT_SCHEMA = "v52_full_video_cross_episode_events_v1"
+MAXIMUM_UPDATES = 12_000  # The registered, unchanged optimizer decay clock.
 
 
 def event_plan_prefix(plan: Mapping[str, Any], updates: int) -> dict[str, Any]:
@@ -130,8 +131,8 @@ class WriterTrainingData:
         for name in ("seed", "sampler_seed", "teacher_video_seed", "maximum_updates"):
             if type(config.get(name)) is not int or config[name] < 0:
                 raise ValueError(f"training event {name} must be a non-negative integer")
-        if not 0 < config["maximum_updates"] <= 1800 or config["maximum_updates"] % 6:
-            raise ValueError("training events require complete six-update rounds, at most 1800 updates")
+        if not 0 < config["maximum_updates"] <= MAXIMUM_UPDATES or config["maximum_updates"] % 6:
+            raise ValueError("training events require complete six-update rounds within the 12000-update clock")
         if (config.get("tasks_per_update") != 4 or config.get("conditions_per_task") != 1
                 or config.get("queries_per_task") != 21 or tuple(config["cardinalities"]) != (1,)):
             raise ValueError("training events require four tasks, one video and 21 queries per task")

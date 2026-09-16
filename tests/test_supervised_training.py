@@ -14,7 +14,7 @@ from ember.pi05_source_checkpoint import DistributedContext
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.writer import learning_data
 from ember.writer.learning_data import WriterTrainingData, load_learning_tasks
-from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _run_contract, observer_mode_contract, _data_config, _publish_event_plan
+from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _run_contract, observer_mode_contract, _data_config, _publish_event_plan, extension_record_path
 from ember.writer.replay import sum_writer_gradients
 
 
@@ -409,8 +409,9 @@ def test_budget_extension_is_explicit_bounded_and_leaves_the_scientific_config_u
                            stop_after_step=1500, checkpoint_updates="1300,1400,1500")
     assert _segment_limit(args, config) == 1500
     assert _data_config(args, config) == config["data"] | {"maximum_updates": 1800}
+    assert _data_config(SimpleNamespace(**(vars(args) | {"extend_to_update": 2100})), config)["maximum_updates"] == 2100
     assert config == before
-    for change in ({"extend_to_update": None}, {"extend_to_update": 1806}, {"extend_to_update": 1501},
+    for change in ({"extend_to_update": None}, {"extend_to_update": 12006}, {"extend_to_update": 1501},
                    {"resume": None}, {"resume": tmp_path / "checkpoints/macro_00000900"}, {"mode": "profile"}):
         with pytest.raises(ValueError, match="budget|extension"):
             _segment_limit(SimpleNamespace(**(vars(args) | change)), config)
@@ -424,9 +425,11 @@ def test_extended_event_registration_preserves_original_and_rejects_rewritten_qu
     extended = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 1800})
     try:
         args.resume, args.extend_to_update = tmp_path / "macro_00001200", 1800
+        args.resume.mkdir()
+        torch.save({"sampler_state": sampler.sampler_state()}, args.resume / "trainer_state.pt")
         _publish_event_plan(args, extended.event_plan())
         assert (tmp_path / "training_events.json").read_bytes() == original_bytes
-        assert json.loads((tmp_path / "training_events_extended.json").read_text()) == extended.event_plan()
+        assert json.loads(extension_record_path(tmp_path, "training_events.json", 1800).read_text()) == extended.event_plan()
         changed = extended.event_plan()
         changed["events"][0]["action_frames"][0] += 1
         with pytest.raises(ValueError, match="original registered training events"):
@@ -437,6 +440,41 @@ def test_extended_event_registration_preserves_original_and_rejects_rewritten_qu
             _publish_event_plan(args, changed)
     finally:
         extended.close()
+
+
+def test_repeated_extension_preserves_legacy_and_every_previously_registered_query(tmp_path, sampler):
+    (tmp_path / "training_events.json").write_text(json.dumps(sampler.event_plan()))
+    previous = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 1800})
+    extended = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 2100})
+    following = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 2400})
+    legacy = tmp_path / "training_events_extended.json"
+    legacy.write_text(json.dumps(previous.event_plan()))
+    legacy_bytes = legacy.read_bytes()
+    resume = tmp_path / "checkpoints/macro_00001800"
+    resume.mkdir(parents=True)
+    torch.save({"sampler_state": previous.sampler_state()}, resume / "trainer_state.pt")
+    args = SimpleNamespace(output=tmp_path, resume=resume, extend_to_update=2100)
+    try:
+        changed = extended.event_plan()
+        changed["events"][1300 * 4]["action_frames"][0] += 1
+        with pytest.raises(ValueError, match="previous registered training events"):
+            _publish_event_plan(args, changed)
+        _publish_event_plan(args, extended.event_plan())
+        registered = extension_record_path(tmp_path, "training_events.json", 2100)
+        registered_bytes = registered.read_bytes()
+        torch.save({"sampler_state": extended.sampler_state()}, resume / "trainer_state.pt")
+        args.extend_to_update = 2400
+        changed = following.event_plan()
+        changed["events"][2000 * 4]["policy_rng_seed"] += 1
+        with pytest.raises(ValueError, match="previous registered training events"):
+            _publish_event_plan(args, changed)
+        _publish_event_plan(args, following.event_plan())
+        assert legacy.read_bytes() == legacy_bytes and registered.read_bytes() == registered_bytes
+        assert json.loads(extension_record_path(tmp_path, "training_events.json", 2400).read_text()) == following.event_plan()
+    finally:
+        previous.close()
+        extended.close()
+        following.close()
 
 
 def test_mid_segment_resume_finishes_original_registered_boundary(tmp_path, monkeypatch, config):

@@ -24,7 +24,7 @@ from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, RUN_SCHEMA, ST
     condition_id, file_record, inspect_writer_checkpoint, method_metadata, paired_video_sets,
     planned_episodes, selection_contract)
 from ember.writer.runtime import MODEL_DEFAULTS
-from ember.writer.training import observer_mode_contract
+from ember.writer.training import observer_mode_contract, extension_record_path
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -618,18 +618,20 @@ def test_checkpoint_inspection_keeps_optimizer_tensors_on_meta(bank, monkeypatch
     assert seen == ["trainer_state.pt"]
 
 
-def test_extended_checkpoint_uses_the_new_runtime_authority_without_rewriting_the_parent(bank):
+@pytest.mark.parametrize("budget,macro,legacy", [(1800, 1500, True), (2100, 2100, False)])
+def test_extended_checkpoint_uses_its_registered_runtime_without_rewriting_history(bank, budget, macro, legacy):
     _, manifest = bank
     old = Path(manifest["writer_checkpoint"]["path"])
-    checkpoint = old.with_name("macro_00001500")
+    checkpoint = old.with_name(f"macro_{macro:08d}")
     old.rename(checkpoint)
     trainer_path = checkpoint / "trainer_state.pt"
     trainer = torch.load(trainer_path, weights_only=True)
-    trainer["next_macro"] = trainer["training_state"]["updates"] = 1500
+    trainer["next_macro"] = trainer["training_state"]["updates"] = macro
+    trainer["sampler_state"] = {"event_contract": {"maximum_updates": budget}}
     torch.save(trainer, trainer_path)
     path = checkpoint / "checkpoint_manifest.json"
     saved = json.loads(path.read_text())
-    saved["next_macro"] = 1500
+    saved["next_macro"] = macro
     saved["files"]["trainer_state.pt"]["bytes"] = trainer_path.stat().st_size
     path.write_text(json.dumps(saved))
     parent_path = checkpoint.parent.parent / "run_contract.json"
@@ -638,11 +640,19 @@ def test_extended_checkpoint_uses_the_new_runtime_authority_without_rewriting_th
     parent_bytes = parent_path.read_bytes()
     with pytest.raises(Pi05SourceTrainingError, match="invalid JSON authority"):
         inspect_writer_checkpoint(checkpoint)
-    extension_path = parent_path.with_name("run_contract_extended.json")
+    extension_path = (parent_path.with_name("run_contract_extended.json") if legacy else
+                      extension_record_path(parent_path.parent, "run_contract.json", budget))
+    extension_path.parent.mkdir(parents=True, exist_ok=True)
     extended = copy.deepcopy(original)
     extended["git"]["commit"] = "b" * 40
-    extended["training"] = {"maximum_updates": 1800}
+    extended["training"] = {"maximum_updates": budget}
     extension_path.write_text(json.dumps(extended))
+    later_path = extension_record_path(parent_path.parent, "run_contract.json", 2400)
+    later_path.parent.mkdir(parents=True, exist_ok=True)
+    later = copy.deepcopy(extended)
+    later["git"]["commit"] = "c" * 40
+    later["training"]["maximum_updates"] = 2400
+    later_path.write_text(json.dumps(later))
     observed, authority = inspect_writer_checkpoint(checkpoint)
     assert observed == extended and authority["training_commit"] == "b" * 40
     assert authority["run_contract"]["path"] == str(extension_path)
@@ -651,7 +661,7 @@ def test_extended_checkpoint_uses_the_new_runtime_authority_without_rewriting_th
     extension_path.write_text(json.dumps(extended))
     with pytest.raises(ValueError, match="exceeds the registered budget"):
         inspect_writer_checkpoint(checkpoint)
-    extended["training"]["maximum_updates"] = 1800
+    extended["training"]["maximum_updates"] = budget
     extended["source"]["model_path"] = "/different/source"
     extension_path.write_text(json.dumps(extended))
     with pytest.raises(ValueError, match="exact-resume contract differs: source"):

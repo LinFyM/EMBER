@@ -21,9 +21,10 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
+from ember.writer.learning_data import MAXIMUM_UPDATES
 from ember.writer.materialization_workers import MaterializationWorkers, execution_devices
 from ember.writer.training import (RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
-                                   observer_mode_contract, require_resume_identity)
+                                   observer_mode_contract, require_resume_identity, extension_record_path)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
@@ -58,11 +59,20 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     macro = checkpoint_macro(checkpoint)
     run_path = checkpoint.parent.parent / "run_contract.json"
     run, manifest = read_json(run_path), read_json(checkpoint / "checkpoint_manifest.json")
+    for name, record in manifest["files"].items():
+        path = checkpoint / name
+        if not path.is_file() or path.stat().st_size != int(record["bytes"]):
+            raise ValueError(f"supervised Writer checkpoint file changed: {name}")
+    # Inspect scalar provenance without reading optimizer tensor payloads.
+    trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True, weights_only=True)
     if macro > run["config"]["data"]["maximum_updates"]:
-        run_path = run_path.with_name("run_contract_extended.json")
+        budget = trainer["sampler_state"]["event_contract"]["maximum_updates"]
+        run_path = extension_record_path(checkpoint.parent.parent, "run_contract.json", budget)
+        if not run_path.exists():
+            run_path = checkpoint.parent.parent / "run_contract_extended.json"
         extended = read_json(run_path)
         require_resume_identity(run, extended)
-        if not macro <= extended["training"]["maximum_updates"] <= 1800:
+        if not macro <= budget <= MAXIMUM_UPDATES or extended["training"]["maximum_updates"] != budget:
             raise ValueError("checkpoint exceeds the registered budget extension")
         run = extended
     observer = observer_mode_contract(run.get("model_config", {}))
@@ -89,13 +99,6 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
             or type(data.get("action_start_offset")) is not int
             or not frozen_authority(run.get("git", {})) or set(manifest.get("files", {})) != expected):
         raise ValueError("materialization requires a complete formal supervised Writer checkpoint")
-    for name, record in manifest["files"].items():
-        path = checkpoint / name
-        if not path.is_file() or path.stat().st_size != int(record["bytes"]):
-            raise ValueError(f"supervised Writer checkpoint file changed: {name}")
-    # mmap and meta placement inspect scalar provenance without reading the
-    # optimizer tensor payload or allocating a second optimizer in CPU memory.
-    trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True, weights_only=True)
     training = trainer.get("training_state", {})
     data_version = run.get("config", {}).get("data", {}).get("version")
     if (trainer.get("schema_version") != ECP_CHECKPOINT_SCHEMA or trainer.get("stage") != STAGE

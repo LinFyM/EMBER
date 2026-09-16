@@ -11,7 +11,7 @@ import pytest
 
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import task_logical_batch_policy_rng_seed
-from ember.writer.learning_data import EVENT_SCHEMA, LearningTask, WriterTrainingData
+from ember.writer.learning_data import EVENT_SCHEMA, LearningTask, WriterTrainingData, event_plan_prefix
 
 
 def test_teacher_video_store_selects_the_declared_rgb_view(tmp_path: Path) -> None:
@@ -242,6 +242,29 @@ def test_regrouping_and_json_resume_preserve_event_and_flow_identity(training_da
     assert baseline.event_plan()["events"] == second["events"]
 
 
+def test_budget_extension_preserves_all_old_events_and_resumes_the_next_unseen_round(training_data_factory):
+    original = training_data_factory(maximum_updates=1200)
+    continuous = training_data_factory(maximum_updates=1800)
+    assert event_plan_prefix(continuous.event_plan(), 1200) == original.event_plan()
+    for _ in range(1200):
+        assert original.next_iteration() == continuous.next_iteration()
+    saved = json.loads(json.dumps(original.sampler_state()))
+    resumed = training_data_factory(maximum_updates=1800)
+    with pytest.raises(ValueError, match="contract or grouping"):
+        resumed.restore_sampler(saved)
+    resumed.restore_sampler(saved, allow_budget_extension=True)
+    for _ in range(600):
+        assert resumed.next_iteration() == continuous.next_iteration()
+    assert resumed.counts == dict.fromkeys(range(24), 300)
+    assert resumed.sampler_state() == continuous.sampler_state()
+    changed = training_data_factory(maximum_updates=1800, teacher_video_seed=8)
+    with pytest.raises(ValueError, match="contract or grouping"):
+        changed.restore_sampler(saved, allow_budget_extension=True)
+    saved["next_step"] = 1201
+    with pytest.raises(ValueError, match="outside the registered"):
+        resumed.restore_sampler(saved, allow_budget_extension=True)
+
+
 def test_event_batch_reads_only_selected_actions_and_keeps_full_batch_rng(training_data_factory, monkeypatch):
     reads = []
     original = h5py.Dataset.__getitem__
@@ -290,7 +313,7 @@ def test_frozen_diagnostics_use_held_actions_and_exclude_the_condition_video(tra
 
 
 @pytest.mark.parametrize("change", [
-    {"task_ids": list(range(23))}, {"maximum_updates": 7}, {"conditions_per_task": 2},
+    {"task_ids": list(range(23))}, {"maximum_updates": 7}, {"maximum_updates": 1806}, {"conditions_per_task": 2},
     {"action_demos": list(range(50))}, {"video_demos": list(range(50))},
     {"diagnostic_action_demos": list(range(42, 46))}, {"grouping": "suite_random"},
     {"grouping": "explicit", "event_groups": [[0, 1, 2, 2]] * 12},

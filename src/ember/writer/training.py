@@ -14,12 +14,12 @@ from typing import Any
 import torch
 import torch.distributed as dist
 
-from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
+from ember.ecp.checkpoint import checkpoint_macro, load_ecp_checkpoint, save_ecp_checkpoint
 from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
-from ember.writer.learning_data import WriterTrainingData
+from ember.writer.learning_data import WriterTrainingData, event_plan_prefix
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import VideoConditionCache, build_runtime, require_architecture_identity
 from ember.writer.task_execution import cost_balanced_task_assignment
@@ -112,6 +112,40 @@ def _execution_config(args, config, context):
     return local, batches
 
 
+def _data_config(args, config):
+    extension = getattr(args, "extend_to_update", None)
+    if extension is None:
+        return config["data"]
+    original = config["data"]["maximum_updates"]
+    if (args.mode != "formal" or not getattr(args, "resume", None)
+            or type(extension) is not int or not original < extension <= 1800 or extension % 6
+            or checkpoint_macro(args.resume) < original):
+        raise ValueError("budget extension requires a formal resume at the original endpoint and complete rounds up to1800")
+    return {**config["data"], "maximum_updates": extension}
+
+
+def _event_plan_path(args):
+    name = "training_events_extended.json" if getattr(args, "extend_to_update", None) else "training_events.json"
+    return args.output / name
+
+
+def _publish_event_plan(args, events):
+    path = _event_plan_path(args)
+    if getattr(args, "extend_to_update", None):
+        original = read_json(args.output / "training_events.json")
+        if original != event_plan_prefix(events, original["maximum_updates"]):
+            raise ValueError("budget extension changed the original registered training events")
+    if path.exists():
+        if not args.resume:
+            raise ValueError("fresh training refuses an existing event plan")
+        if read_json(path) != events:
+            raise ValueError("exact-resume training events or grouping changed")
+    elif args.resume and not getattr(args, "extend_to_update", None):
+        raise ValueError("exact-resume requires its original registered event plan")
+    else:
+        write_json_atomic(path, events)
+
+
 def _gather(value, context):
     if context.world_size == 1:
         return [value]
@@ -143,7 +177,8 @@ def _run_contract(args, context, config, runtime, state):
             "optimizer": "fresh AdamW; one grouped functional update per four equally weighted tasks", "scaler": None,
             "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
             "logical_batch": _logical_batch(config),
-            "event_plan": str((args.output / "training_events.json").resolve()),
+            "event_plan": str(_event_plan_path(args).resolve()),
+            "maximum_updates": _data_config(args, config)["maximum_updates"],
             "update_version": config["update_version"], "data_version": config["data"]["version"],
             "checkpoint_updates": list(_checkpoint_nodes(args, config)),
         },
@@ -163,12 +198,15 @@ def _run_contract(args, context, config, runtime, state):
     }
 
 
+def require_resume_identity(old, contract):
+    for key in ("schema_version", "stage", "mode", "config", "model_config", "topology", "source"):
+        if old.get(key) != contract[key]:
+            raise ValueError(f"exact-resume contract differs: {key}")
+
+
 def _publish_contract(path, contract, *, resume):
     if resume:
-        old = read_json(path)
-        for key in ("schema_version", "stage", "mode", "config", "model_config", "topology", "source"):
-            if old.get(key) != contract[key]:
-                raise ValueError(f"exact-resume contract differs: {key}")
+        require_resume_identity(read_json(path), contract)
     else:
         if path.exists():
             raise ValueError("fresh run refuses an existing contract")
@@ -278,7 +316,8 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
     )
     if restored["training_state"] != _training_state(config, updates):
         raise ValueError("supervised checkpoint stage/update/data contract changed")
-    data.restore_sampler(restored["sampler_state"])
+    data.restore_sampler(restored["sampler_state"],
+                         allow_budget_extension=getattr(args, "extend_to_update", None) is not None)
     if data.sampler_state()["next_step"] != updates:
         raise ValueError("sampler and optimizer-update cursors differ")
     if context.is_main:
@@ -339,6 +378,8 @@ def _segment_limit(args, config):
         raise ValueError("smoke/profile without registered nodes needs an explicit positive --stop-after-step")
     if args.mode == "formal" and stop != nodes[-1]:
         raise ValueError("formal segment must stop at the last registered checkpoint node")
+    if stop > _data_config(args, config)["maximum_updates"]:
+        raise ValueError("segment exceeds the registered event budget; an explicit budget extension is required")
     return stop
 
 
@@ -426,19 +467,11 @@ def run(args: argparse.Namespace) -> None:
     torch.set_num_threads(int(args.cpu_threads))
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
-    data = WriterTrainingData(args.asset_root, config["data"],
+    data = WriterTrainingData(args.asset_root, _data_config(args, config),
                               camera_view=config["observer"]["camera_view"])
     if context.is_main:
         args.output.mkdir(parents=True, exist_ok=True)
-        events = data.event_plan()
-        event_path = args.output / "training_events.json"
-        if args.resume:
-            if read_json(event_path) != events:
-                raise ValueError("exact-resume training events or grouping changed")
-        elif event_path.exists():
-            raise ValueError("fresh training refuses an existing event plan")
-        else:
-            write_json_atomic(event_path, events)
+        _publish_event_plan(args, data.event_plan())
     runtime = build_runtime(args.asset_root, config, context.device)
     runtime.state.train()
     optimizer, scheduler = _optimization(runtime.state, config)
@@ -447,6 +480,9 @@ def run(args: argparse.Namespace) -> None:
     contract = _run_contract(args, context, config, runtime, state)
     if context.is_main:
         _publish_contract(args.output / "run_contract.json", contract, resume=args.resume is not None)
+        if getattr(args, "extend_to_update", None):
+            extension_path = args.output / "run_contract_extended.json"
+            _publish_contract(extension_path, contract, resume=extension_path.exists())
     barrier(context)
     cursors = _restore(args, context, runtime, data, optimizer, scheduler, config)
     updates, _ = cursors
@@ -473,5 +509,7 @@ def main() -> None:
     parser.add_argument("--checkpoint-updates", help="this segment's registered global optimizer-update nodes")
     parser.add_argument("--policy-microbatches", help="physical FM query chunks by rank, e.g. 8,4,8,8")
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--extend-to-update", type=int,
+                        help="explicit budget-only extension after the original endpoint; preserve the registered event prefix")
     parser.add_argument("--cpu-threads", type=int, default=4)
     run(parser.parse_args())

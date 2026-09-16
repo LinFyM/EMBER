@@ -59,6 +59,16 @@ def load_learning_tasks(
 EVENT_SCHEMA = "v52_full_video_cross_episode_events_v1"
 
 
+def event_plan_prefix(plan: Mapping[str, Any], updates: int) -> dict[str, Any]:
+    """Project an extended plan onto its original complete-round registration."""
+    if type(updates) is not int or not 0 < updates <= plan["maximum_updates"] or updates % 6:
+        raise ValueError("event prefix must contain registered complete six-update rounds")
+    prefix = {**plan, "maximum_updates": updates, "groups": plan["groups"][:updates]}
+    if "events" in plan:
+        prefix["events"] = plan["events"][:updates * 4]
+    return prefix
+
+
 def _episode_queries(task, lengths, order, *, seed, cursor, count, teacher_demo=None):
     """Walk an episode permutation; skip the teacher without consuming labels."""
     demos, frames = [], []
@@ -120,8 +130,8 @@ class WriterTrainingData:
         for name in ("seed", "sampler_seed", "teacher_video_seed", "maximum_updates"):
             if type(config.get(name)) is not int or config[name] < 0:
                 raise ValueError(f"training event {name} must be a non-negative integer")
-        if not 0 < config["maximum_updates"] <= 1200 or config["maximum_updates"] % 6:
-            raise ValueError("training events require complete six-update rounds, at most 1200 updates")
+        if not 0 < config["maximum_updates"] <= 1800 or config["maximum_updates"] % 6:
+            raise ValueError("training events require complete six-update rounds, at most 1800 updates")
         if (config.get("tasks_per_update") != 4 or config.get("conditions_per_task") != 1
                 or config.get("queries_per_task") != 21 or tuple(config["cardinalities"]) != (1,)):
             raise ValueError("training events require four tasks, one video and 21 queries per task")
@@ -290,11 +300,14 @@ class WriterTrainingData:
         return {"next_step": self.next_step, "task_occurrences": dict(self.counts),
                 "event_contract": self._event_contract()}
 
-    def restore_sampler(self, state: Mapping[str, Any]) -> None:
-        if state.get("event_contract") != self._event_contract():
+    def restore_sampler(self, state: Mapping[str, Any], *, allow_budget_extension: bool = False) -> None:
+        previous, expected = state.get("event_contract", {}), self._event_contract()
+        if allow_budget_extension:
+            expected = event_plan_prefix(expected, previous.get("maximum_updates"))
+        if previous != expected:
             raise ValueError("sampling event contract or grouping changed")
         step = state.get("next_step")
-        if type(step) is not int or not 0 <= step <= self.maximum_updates:
+        if type(step) is not int or not 0 <= step <= expected["maximum_updates"]:
             raise ValueError("sampler step is outside the registered training plan")
         counts = {int(task): count for task, count in state["task_occurrences"].items()}
         expected = dict.fromkeys(self.task_ids, 0)

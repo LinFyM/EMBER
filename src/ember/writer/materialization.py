@@ -22,7 +22,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
 from ember.writer.materialization_workers import MaterializationWorkers, execution_devices
-from ember.writer.training import RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION, observer_mode_contract
+from ember.writer.training import (RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
+                                   observer_mode_contract, require_resume_identity)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
@@ -57,6 +58,13 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     macro = checkpoint_macro(checkpoint)
     run_path = checkpoint.parent.parent / "run_contract.json"
     run, manifest = read_json(run_path), read_json(checkpoint / "checkpoint_manifest.json")
+    if macro > run["config"]["data"]["maximum_updates"]:
+        run_path = run_path.with_name("run_contract_extended.json")
+        extended = read_json(run_path)
+        require_resume_identity(run, extended)
+        if not macro <= extended["training"]["maximum_updates"] <= 1800:
+            raise ValueError("checkpoint exceeds the registered budget extension")
+        run = extended
     observer = observer_mode_contract(run.get("model_config", {}))
     if run["model_config"] != run.get("config", {}).get("model"):
         raise ValueError("checkpoint and run configuration disagree on the video Writer architecture")

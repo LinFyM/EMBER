@@ -14,7 +14,7 @@ from ember.pi05_source_checkpoint import DistributedContext
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.writer import learning_data
 from ember.writer.learning_data import WriterTrainingData, load_learning_tasks
-from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _run_contract, observer_mode_contract
+from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _run_contract, observer_mode_contract, _data_config, _publish_event_plan
 from ember.writer.replay import sum_writer_gradients
 
 
@@ -401,6 +401,42 @@ def test_new_segment_nodes_do_not_mutate_or_invalidate_learning_contract(tmp_pat
     resumed["topology"]["world_size"] = 3
     with pytest.raises(ValueError, match="topology"):
         _publish_contract(path, resumed, resume=True)
+
+
+def test_budget_extension_is_explicit_bounded_and_leaves_the_scientific_config_unchanged(tmp_path, config):
+    before = deepcopy(config)
+    args = SimpleNamespace(mode="formal", resume=tmp_path / "checkpoints/macro_00001200", extend_to_update=1800,
+                           stop_after_step=1500, checkpoint_updates="1300,1400,1500")
+    assert _segment_limit(args, config) == 1500
+    assert _data_config(args, config) == config["data"] | {"maximum_updates": 1800}
+    assert config == before
+    for change in ({"extend_to_update": None}, {"extend_to_update": 1806}, {"extend_to_update": 1501},
+                   {"resume": None}, {"resume": tmp_path / "checkpoints/macro_00000900"}, {"mode": "profile"}):
+        with pytest.raises(ValueError, match="budget|extension"):
+            _segment_limit(SimpleNamespace(**(vars(args) | change)), config)
+
+
+def test_extended_event_registration_preserves_original_and_rejects_rewritten_queries(tmp_path, sampler):
+    args = SimpleNamespace(output=tmp_path, resume=None, extend_to_update=None)
+    original = sampler.event_plan()
+    _publish_event_plan(args, original)
+    original_bytes = (tmp_path / "training_events.json").read_bytes()
+    extended = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 1800})
+    try:
+        args.resume, args.extend_to_update = tmp_path / "macro_00001200", 1800
+        _publish_event_plan(args, extended.event_plan())
+        assert (tmp_path / "training_events.json").read_bytes() == original_bytes
+        assert json.loads((tmp_path / "training_events_extended.json").read_text()) == extended.event_plan()
+        changed = extended.event_plan()
+        changed["events"][0]["action_frames"][0] += 1
+        with pytest.raises(ValueError, match="original registered training events"):
+            _publish_event_plan(args, changed)
+        changed = extended.event_plan()
+        changed["events"][-1]["policy_rng_seed"] += 1
+        with pytest.raises(ValueError, match="exact-resume training events"):
+            _publish_event_plan(args, changed)
+    finally:
+        extended.close()
 
 
 def test_mid_segment_resume_finishes_original_registered_boundary(tmp_path, monkeypatch, config):

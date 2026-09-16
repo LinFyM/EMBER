@@ -14,6 +14,7 @@ from ember.eval_adapters import (episode_adapter_fields, inspect_static_task_lor
                                  validate_episode_adapter_fields)
 from ember.lora import LORA_B_SUFFIX, LoRATarget, identity_lora_state
 from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_source_checkpoint import Pi05SourceTrainingError
 from ember.pi05_eval.recovery import _reinspect_adapter
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer import evaluation, materialization
@@ -59,7 +60,8 @@ def bank(tmp_path, request):
            "source": copy.deepcopy(SOURCE), "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729, "camera_view": "dual"}, "execution_precision": "native_bf16_writer_fm_fp32_lora"}, "model_config": {"horizon": 50}}
     run["model_config"] = dict(MODEL_DEFAULTS)
     run["config"]["data"] = {"version": "v52_full_video_cross_episode_events_v1",
-                            "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1"}
+                            "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
+                            "maximum_updates": 1200}
     run["config"]["schema_version"] = "ember_language_axial_writer_config_v1"
     run["config"]["optimization"] = {"loss": "main_fm"}
     run["config"]["model"] = dict(run["model_config"])
@@ -614,6 +616,46 @@ def test_checkpoint_inspection_keeps_optimizer_tensors_on_meta(bank, monkeypatch
     monkeypatch.setattr(torch, "load", metadata_load)
     inspect_writer_checkpoint(checkpoint)
     assert seen == ["trainer_state.pt"]
+
+
+def test_extended_checkpoint_uses_the_new_runtime_authority_without_rewriting_the_parent(bank):
+    _, manifest = bank
+    old = Path(manifest["writer_checkpoint"]["path"])
+    checkpoint = old.with_name("macro_00001500")
+    old.rename(checkpoint)
+    trainer_path = checkpoint / "trainer_state.pt"
+    trainer = torch.load(trainer_path, weights_only=True)
+    trainer["next_macro"] = trainer["training_state"]["updates"] = 1500
+    torch.save(trainer, trainer_path)
+    path = checkpoint / "checkpoint_manifest.json"
+    saved = json.loads(path.read_text())
+    saved["next_macro"] = 1500
+    saved["files"]["trainer_state.pt"]["bytes"] = trainer_path.stat().st_size
+    path.write_text(json.dumps(saved))
+    parent_path = checkpoint.parent.parent / "run_contract.json"
+    original = json.loads(parent_path.read_text()) | {"topology": {"world_size": 1}}
+    parent_path.write_text(json.dumps(original))
+    parent_bytes = parent_path.read_bytes()
+    with pytest.raises(Pi05SourceTrainingError, match="invalid JSON authority"):
+        inspect_writer_checkpoint(checkpoint)
+    extension_path = parent_path.with_name("run_contract_extended.json")
+    extended = copy.deepcopy(original)
+    extended["git"]["commit"] = "b" * 40
+    extended["training"] = {"maximum_updates": 1800}
+    extension_path.write_text(json.dumps(extended))
+    observed, authority = inspect_writer_checkpoint(checkpoint)
+    assert observed == extended and authority["training_commit"] == "b" * 40
+    assert authority["run_contract"]["path"] == str(extension_path)
+    assert parent_path.read_bytes() == parent_bytes
+    extended["training"]["maximum_updates"] = 1200
+    extension_path.write_text(json.dumps(extended))
+    with pytest.raises(ValueError, match="exceeds the registered budget"):
+        inspect_writer_checkpoint(checkpoint)
+    extended["training"]["maximum_updates"] = 1800
+    extended["source"]["model_path"] = "/different/source"
+    extension_path.write_text(json.dumps(extended))
+    with pytest.raises(ValueError, match="exact-resume contract differs: source"):
+        inspect_writer_checkpoint(checkpoint)
 
 
 @pytest.mark.parametrize("field,value", [("action_start_offset", 0), ("action_start_offset", True),

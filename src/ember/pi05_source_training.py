@@ -9,6 +9,7 @@ import json
 import sys
 import time
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -466,7 +467,12 @@ def run(args: argparse.Namespace) -> None:
     try:
         # Complete rank-local CUDA initialization before the dataset's first broadcast.
         torch.empty(1, device=context.device).add_(1)
-        initialize_deferred_process_group(context, rendezvous_root=args.output_dir.parent)
+        # The group's barriers also cover full policy, EMA and optimizer saves.
+        # Shared-storage stalls can exceed NCCL's ten-minute default.
+        initialize_deferred_process_group(
+            context, rendezvous_root=args.output_dir.parent,
+            collective_timeout=timedelta(hours=1),
+        )
         runtime = _prepare_training(args, context)
         _train(runtime)
     finally:

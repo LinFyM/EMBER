@@ -4,14 +4,24 @@
 
 Owner最新要求“你设置个合适的goal推进这件事吧”；source重训与v5.2 A/B复核goal已创建并active。
 当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)，授权实现、验证、启动及按结果自主推进。
-原C保持关闭；新source formal1000已从clean pushed detached `b8ea00e9`在gpu01物理0／1／2／3启动。
-四rank实际更新正常；第750步完整恢复点已写出，累计192000 queries；最近核验到step752／1000、192512 queries。
-前752步的计数连续、global256／micro8×accum8一致，loss／gradient均finite；当前稳定约9.1 query/s。
-第750步raw policy／EMA／optimizer／scheduler及四rank RNG齐全，scheduler、rank与采样游标均对应step750／micro6000，LR为5e-5。
-完整点31.513GiB，写盘后已继续更新；第250／500步恢复点均在下一完整点发布后按keep_latest=1退休，保留retention记录。
-strg01最新data1 used955360760KiB，soft余量112.90GiB，后续滚动保存预算充足。
-Launcher PID2965377；source root为`runs/outputs/pi05_source_aligned_seed7_1k_20260915`，
-命令、双节点GPU／quota和日志均在`runs/analysis/source_alignment_20260915`。尚无新source闭环或新A/B性能结果。
+原C保持关闭；新source已从clean pushed detached `b8ea00e9`在gpu01物理0／1／2／3完成1000更新、256000 queries。
+全部1000行计数连续、global256／micro8×accum8一致，loss／gradient／LR均finite；终点loss .0835784、gradient .165120。
+训练至最后更新29290.086秒，通常约9.1 query/s；该墙钟不含最后失败的保存与元数据恢复。
+最终保存遇共享存储长时间I/O等待，三个等待rank于600秒NCCL默认期限超时，原launcher exit1已保留，未误记为正常退出。
+终点raw policy／EMA、805份step1000 optimizer state和四rank RNG均已完整落盘并通过格式、游标检查。
+只将750恢复点的原scheduler沿已记录的250个LR转换推进至1000，补trainer／manifest／summary并原子发布；
+未重新更新模型、改写任何已落盘权重／optimizer／RNG或改变采样。恢复脚本及说明在study的`recover_source_step1000.py`与`source_checkpoint_recovery.json`。
+固定raw1000正式source检查通过，11个manifest文件和大小匹配，完整点31.513GiB；原生加载及三次更新验证后750已退休，250／500／750均保留retention记录。
+后续source入口显式使用一小时NCCL collective timeout以容纳大型保存；11项相关CPU检查通过，原训练冻结树不改动。
+strg01最新data1 used955362116KiB，soft余量112.90GiB，仅保留完整1000；Writer剩余预算充足。
+官方source validation400已在gpu01物理0–3启动（12 workers，launcher246274），train96在gpu02物理0运行（3 workers，launcher2626731）。
+Train首个launcher在准备阶段因漏传显式train24诊断面板被拒，未产生rollouts；补传旧source同一注册面板后准备通过，原exit1和日志保留。
+A／B均在正确source上通过最长105帧视频三次完整联合更新及部署，两个profile均exit0；第三步Writer和Text／VL／Action三Meta信用finite非零，source冻结。
+采用共同frame chunk8／policy microbatch8；后两次A平均17.673秒、B25.414秒，reserved峰值21.148／29.004GiB，部署3.905／6.052秒。
+两配置已登记实测profile；均丢弃profile参数，正式A／B继续使用相同fresh初始化流与已注册1200更新窗口。
+两节点snapshot确认gpu02物理0／1现有进程仅186／148MiB且0%利用率，按共驻合同使用；本批合计6张有效GPU。
+Source root为`runs/outputs/pi05_source_aligned_seed7_1k_20260915`；命令、双节点GPU／quota和日志均在`runs/analysis/source_alignment_20260915`。
+当前source闭环仍在运行，尚无完整新source分数或新A/B性能结果。
 已核对旧source：71tasks、全参数SFT、1000 updates、global256、warmup333／LR5e-5、原AdamW／BF16／normalization；
 后续固定raw step1000，EMA按原decay维护。本轮只修未来动作标签及必要采样支持，物理执行由profile确定。
 原8×A100峰值约71GB不能直接搬到A40；已依据实际更新与恢复profile采用microbatch／累积及rank0 CPU EMA。

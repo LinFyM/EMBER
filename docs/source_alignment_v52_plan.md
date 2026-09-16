@@ -24,6 +24,11 @@ same-task-other逐行换视频且整轮无重复，wrong使用预定跨suite don
 冻结模型原因诊断；完成逐task／suite、breadth、R/G/L、churn及任务bootstrap读出后报告并暂停。
 原件集中在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`，执行仍用冻结`575c189a`。
 
+该诊断已完整完成：correct／other／wrong／no-video／shuffled／reversed为140／136／116／48／128／139，
+每臂400条。内容替换有负向配对差值证据，正确时序相对打乱／倒序的稳定优势未建立；no-video只解释零LoRA干预。
+全部新2000条与48个最终workers通过，完整结果与边界见findings§109和上述目录的`readout.json`／`readout.md`。
+诊断到此结束，不恢复其它暂停阶段；这些对照不反馈训练、checkpoint选择或架构。
+
 先消除已确认的观测—动作标签错位，再判断source与Writer各自的能力限制。长期资格仍为validation8
 single-checkpoint strict correct严格>145/400、相邻稳定、低churn、四suite贡献、same-task换视频鲁棒性及冻结后的因果controls。
 Test保持关闭，部署信息墙、train24／validation8／test8和source71审计排除均不改变。

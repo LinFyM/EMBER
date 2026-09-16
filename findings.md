@@ -1895,7 +1895,7 @@ train按global0/2/4/5/7/9/12/14/15/16/18/19/20/21/22/25/28/29/34/35/36/37/38/39�
 4/3/3/2/2/2/3/4/2/2/4/3/2/4/3/0/4/0/2/4/0/0/1/0。
 
 A的训练获取36→47→54、验证99→88→140，说明这个结构在正确时间对齐和严格跨episode合同下仍能产生较强能力。
-但140没有超过145，相邻保持及两项零成功task仍未解决；没有selected checkpoint、same-task-other或最终controls。
+但140没有超过145，相邻保持及两项零成功task仍未解决；该correct节点读出时没有selected checkpoint或视频controls，后续单独授权的封闭诊断见§109。
 旧A900本机复核125→新140，名义+15、state/RNG配对R/G/L86/54/39、churn93、CI[-6.5,+16.75]pp；
 旧原132→新140为90/50/42、churn92、CI[-7.5,+15.25]pp。旧A与本轮video seed分别7／20260911，
 两者每task均全50视频各一次，但只有8/400行state–video完全相同；这些差额包含视频分配、source、标签及训练采样变化，
@@ -1923,3 +1923,47 @@ Owner明确要求到此暂停讨论，不启动1200或B；已运行的SFT仅后�
 旧A900本机125→旧B900的77还混有训练合同和392/400行teacher配对变化，两个架构角不能唯一分开双视角与H-read。
 这些边界及精确参数上界分别保存在study的`archival_A_B_comparison_boundary.json`和`archival_B_horizon_weight_bound.json`；
 不据此自动补2×2、改架构或恢复训练，后续由owner讨论决定。
+
+## 109. 新A900有有限内容特异性，正确时序的稳定优势尚未建立（2026-09-16）
+
+Owner单独指定已完成的A900做视频特异性诊断；固定`macro_00000900`，复用correct400，补五个完整400面板。
+全部初态、env／policy RNG、video ordinal及seed20260911严格配对。每个有视频臂逐task全50条视频各一次；
+other逐行换同task视频，wrong保留目标language并使用固定跨suite donor，shuffled／reversed重排真实RGB后完整forward。
+这不是合格checkpoint选择；不反馈训练或架构，Test关闭，A1200及其它暂停阶段不启动。
+
+下表R/G/L均从correct140转向相应对照，区间为8task、20000次bootstrap（seed20260915）的对照减correct差值。
+
+| 条件 | 成功/400 | S/O/G/L | Breadth/8 | Correct配对R/G/L | Churn | Jaccard | 净差95%CI |
+| --- | ---: | --- | ---: | --- | ---: | ---: | --- |
+| Correct | 140 | 17/60/30/33 | 6 | — | — | — | — |
+| Same-task-other | 136 | 17/59/25/35 | 5 | 117/19/23 | 42 | .7358 | [-4,+1.5]pp |
+| Cross-suite-wrong | 116 | 19/45/24/28 | 5 | 92/24/48 | 72 | .5610 | [-12,-.5]pp |
+| No-video／零LoRA | 48 | 0/1/42/5 | 4 | 31/17/109 | 126 | .1975 | [-47.5,-1.25]pp |
+| Shuffled | 128 | 13/46/35/34 | 5 | 100/28/40 | 68 | .5952 | [-8.25,+2.25]pp |
+| Reversed | 139 | 10/59/36/34 | 6 | 104/35/36 | 71 | .5943 | [-5.25,+4.5]pp |
+
+按global1/3/11/13/23/26/31/32，每task50条：correct为1/16/44/16/0/30/33/0，
+other为0/17/45/14/0/25/35/0，wrong为0/19/40/5/0/24/28/0，no-video为0/0/1/0/0/42/4/1，
+shuffled为0/13/37/9/0/35/34/0，reversed为1/9/42/17/0/36/34/0。
+
+Same-task换视频只净少4条，支持本面板上的总体鲁棒性，但仍有42个初态成败交换，不能宣称逐初态不变或统计等效。
+Wrong相对correct净少24条／6pp，损失主要在Object（60→45），Goal30→24、Long33→28，Spatial17→19；
+相对other净少20条，R/G/L87/29/49、churn78，区间[-10.5,-.25]pp。两种正确视频映射下方向一致，
+支持有限的视频内容特异性；wrong仍达到116/400，不足以证明正确教学内容是所有已获能力的必要条件。
+
+Shuffled相对correct净少12条／3pp，reversed仅净少1条／.25pp，两区间均跨零；
+相对other的差值区间也均跨零（shuffled[-8.25,+5.25]pp、reversed[-6,+8.25]pp）。
+倒序的Goal30→36、Long33→34抵消了Spatial17→10及Object60→59；总分接近伴随71个初态交换，
+所以不能说顺序完全不影响输出，但没有建立正确时间方向或有序动态的稳定性能优势。
+
+No-video按既有合同使用完整零A／B LoRA、零Writer调用和零teacher RGB读取，等价于移除生成的适配器。
+新48与先前裸source50接近：source→no-video为45/3/5、churn8、Jaccard .8491、区间[-2.25,+.75]pp。
+这不要求跨物理分片的逐bit或逐episode一致，也不能把整套适配器带来的增益全部解释成视频条件增量；
+它不是language-only Writer，更不是静态图像对照。本次没有新增这两种基线或进一步训练。
+
+五个新面板共2000条，48个最终workers与五个最终launcher均成功；checkpoint／source／normalization、
+400条件映射、信息墙、真实RGB变换和逐行manifest证据均审计通过。Other／wrong／no-video／shuffled／reversed
+墙钟为1174.783／1555.150／1694.250／920.068／954.094秒。Other和no-video各有一次启动前GPU准入拒绝，
+均没有rollout；原失败日志保留，后续成功结果独立核验。Owner要求只在完成后看结果，后半程采用后台顺序执行与完成事件等待。
+原件为`runs/analysis/source_alignment_20260915/A/video_specificity_step900/{readout.json,readout.md,launch_contract.json}`及各臂rows／completion。
+诊断已结束；140仍未过>145及相邻稳定资格，不选模型、不反馈训练或架构，继续保持owner暂停边界。

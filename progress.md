@@ -7,8 +7,16 @@ Owner最新单独授权“先把新的A900测试一下视频特异性，然后�
 后两臂最后评测，真实RGB重排后完整生成；no-video为零LoRA／裸source干预，不是language-only Writer。
 这是未获性能资格checkpoint的封闭原因诊断，不选点、不训练、不反哺架构；A1200、新B和SFT评测／续训仍暂停。
 执行与原件集中在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`。
-Same-task-other完整136/400，correct140；R/G/L117/19/23、churn42、Jaccard .7358，任务bootstrap差值95%CI[-4,+1.5]pp。
-四suite为17/59/25/35、breadth5；400条视频／初态／RNG审计与9个worker检查通过。其余对照尚在执行。
+五个对照已全部完成：correct140、other136、wrong116、no-video48、shuffled128、reversed139，均为400条。
+Other相对correct的R/G/L117/19/23、churn42、Jaccard .7358；任务bootstrap差值95%CI[-4,+1.5]pp。
+Wrong为92/24/48、churn72，差值CI[-12,-.5]pp；相对other少20条，差值CI[-10.5,-.25]pp，支持有限内容特异性。
+Shuffled／reversed相对correct为100/28/40与104/35/36，churn68／71；差值CI[-8.25,+2.25]／[-5.25,+4.5]pp。
+倒序总分接近但成功集合仍有交换，不能说输出不受顺序影响；当前未建立正确时序的稳定优势或动态必要性。
+No-video为完整零LoRA，48与裸source50接近；它不能替代language-only Writer基线或证明视频条件增量。
+全部2000条新rollouts、48个最终workers及五个评测launcher成功；单checkpoint、source／normalization、
+全50视频无放回、初态／RNG与真实RGB重排完整forward审计通过。两次无rollout的GPU准入拒绝原件保留。
+完整逐task／suite、breadth、R/G/L、churn、Jaccard与区间见该目录`readout.json`／`readout.md`及findings§109。
+本次诊断已结束并停止，A1200、新B、SFT评测／续训和Test仍不启动；原SFT后台至400的授权不变。
 Owner再次明确不需要持续盯看：既定对照按顺序后台完成，只在阶段结束读结果，不做逐分钟状态／分数轮询或汇报。
 
 Owner于2026-09-16最新要求A900完整验证结果出来后立即暂停讨论；Goal已由owner暂停，不启动A1200或新B。
@@ -22,7 +30,7 @@ A900 validation140/400、train54/96，breadth6／19，S/O/G/L为17/60/30/33与16
 600→900 validation保留68／新增72／丢失20，churn92、Jaccard .425，差值95%CI[0,+28.75]pp；train为39/15/8、churn23、Jaccard .6290。
 Validation按global1/3/11/13/23/26/31/32为1/16/44/16/0/30/33/0；四suite均非零，但两task仍零且相邻曲线99→88→140，未通过>145或稳定资格。
 两个面板墙钟1147.038／868.728秒；A训练／物化／评测进程已全部退出，当前停在完整900恢复点，没有启动1200或B。
-完整逐任务与相邻原件见`A/paired_readout.json`，历史900参照及其视频配对限制见`A/node900_reference_comparisons.json`和findings§107–108。
+完整逐任务与相邻原件见`A/paired_readout.json`，历史900参照及其视频配对限制见`A/node900_reference_comparisons.json`和findings§107–108；后续封闭视频诊断见§109。
 SFT继续占gpu02原两卡；暂停交付时已完成59步、33984queries，loss／梯度finite，实际命令明确`--stop-after-step 400`。
 共享SFT的offset1／历史rank128／global576／450步入口已整合，独立开发树已退休；fresh formal已从`16c81e29`在gpu02物理1／3启动，launcher3861019。
 首步global576、loss .149509、梯度 .017673，formal合同、24task曝光与无held-action读取检查通过；原登记的400／425／450评测当前暂停，仅训练至400。

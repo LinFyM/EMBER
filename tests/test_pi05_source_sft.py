@@ -45,6 +45,7 @@ from ember.source_sft.training import (
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs/pi05_source_sft_development_v1.json"
 FINAL_CONFIG = ROOT / "configs/pi05_source_sft_final_v1.json"
+ALIGNED_CONFIG = ROOT / "configs/pi05_source_sft_aligned.json"
 
 
 def test_development_config_selects_only_sealed_train_actions() -> None:
@@ -88,18 +89,19 @@ def test_development_config_selects_only_sealed_train_actions() -> None:
     assert config["information_wall"]["test_video_values_read"] == 0
 
 
-def test_development_formal_budget_is_independent_ceiling_search() -> None:
-    config = load_source_sft_config(CONFIG)
+def test_aligned_recipe_replaces_old_training_defaults():
+    config = load_source_sft_config(ALIGNED_CONFIG)
+    _validate_active_training_recipe(config)
     formal = config["stages"]["development"]["formal_run"]
-    assert formal["status"] == "sealed"
-    assert formal["expected_world_size"] == 8
-    assert formal["total_steps"] == 800
-    assert formal["per_rank_batch_size"] == 64
-    assert formal["checkpoint_steps"] == [100, 200, 400, 600, 800]
-    assert config["optimization"]["scheduler"]["warmup_steps"] == 100
-    assert config["optimization"]["scheduler"]["decay_steps"] == 800
-    assert "not matched to AS-Writer" in formal["selection_rule"]
-    assert formal["prior_matched_scale_result"]["optimizer_steps"] == 63
+    assert formal["total_steps"] == 450
+    assert formal["checkpoint_steps"] == [100, 200, 300, 400, 425, 450]
+    assert formal["validation_steps"] == [400, 425, 450]
+    assert config["optimization"]["scheduler"]["timeline_steps"] == 2400
+    assert config["data"]["action_start_offset"] == 1
+    assert config["information_wall"]["validation_actions_read"] == 0
+    for old in (CONFIG, FINAL_CONFIG):
+        with pytest.raises(Pi05SourceSFTError, match="historical training is retired"):
+            _validate_active_training_recipe(load_source_sft_config(old))
 
 
 def test_source_sft_batch_task_counts_preserve_mixed_identity() -> None:
@@ -205,43 +207,6 @@ def test_final_config_selects_32_source_actions_and_frozen_step_budget() -> None
     assert formal["per_rank_batch_size"] == 64
     assert formal["checkpoint_steps"] == [200, 400, 600, 800]
     assert formal["development_selection"]["selected_optimizer_step"] == 400
-def test_final_formal_runtime_keeps_development_scheduler_horizon(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from ember.source_sft import contract
-
-    config = load_source_sft_config(FINAL_CONFIG)
-    context = DistributedContext(
-        rank=0,
-        local_rank=0,
-        world_size=8,
-        device=torch.device("cpu"),
-        numa_node=0,
-        cpu_affinity=(0,),
-    )
-    monkeypatch.setattr(
-        contract,
-        "git_state",
-        lambda _: {"dirty_paths": [], "commit": "pushed", "origin_main": "pushed"},
-    )
-    args = SimpleNamespace(
-        stage="final",
-        mode="formal",
-        total_steps=None,
-        batch_size=None,
-        checkpoint_steps=None,
-        stop_after_step=None,
-        resume=None,
-        skip_data_sha=False,
-    )
-    assert contract.resolve_runtime(args, config, context) == (
-        800,
-        64,
-        (200, 400, 600, 800),
-    )
-    assert args.stop_after_step == 400
-
-
 class _TinyPolicy(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -250,6 +215,11 @@ class _TinyPolicy(torch.nn.Module):
 
 class _Sampler:
     per_rank_batch_size = 2
+    accumulation = 3
+
+    @staticmethod
+    def resume_contract():
+        return {"sampler_kind": "tiny", "microbatch_sizes": [2, 2, 2], "world_size": 1}
     samples_per_task_per_visit = 2
     tasks_per_rank_per_update = 2
     global_tasks_per_update = 2
@@ -263,7 +233,7 @@ class _Sampler:
         return {0: (0, 1)}
 
     @staticmethod
-    def consumed_identity_summary(start: int, stop: int) -> dict:
+    def consumed_summary(start: int, stop: int) -> dict:
         assert (start, stop) == (0, 1)
         return {
             "start_step": 0,
@@ -346,12 +316,7 @@ def test_source_sft_checkpoint_roundtrip_and_tamper_gate(
         lora_contract=_tiny_lora(),
         optimizer=optimizer,
         scheduler=scheduler,
-        per_rank_batch_size=2,
-        tasks_per_rank_per_update=2,
-        global_tasks_per_update=2,
-        updates_per_complete_task_cycle=1,
-        samples_per_task_per_visit=2,
-        sampler_seed=17,
+        sampler=_Sampler(),
         dataloader_generator_seed=23,
         contract_sha256=canonical_hash(contract),
     )
@@ -432,6 +397,7 @@ def _static_adapter_fixture(
     mode: str = "profile",
     world_size: int = 8,
     step: int = 4,
+    source_override: dict | None = None,
 ) -> tuple[Path, dict]:
     config = load_source_sft_config(config_path)
     lora = load_pi05_lora_contract(ROOT / config["authorities"]["lora_contract"]["path"])
@@ -446,7 +412,7 @@ def _static_adapter_fixture(
     (checkpoint / "trainer_state.pt").write_bytes(b"trainer")
     for rank in range(world_size):
         (checkpoint / f"rank_{rank:02d}_state.pt").write_bytes(f"rank-{rank}".encode())
-    source = _source()
+    source = _source() if source_override is None else source_override
     training = {
         "schema_version": SOURCE_SFT_LAUNCH_SCHEMA,
         "mode": mode,
@@ -478,6 +444,24 @@ def _static_adapter_fixture(
     manifest["canonical_payload_sha256"] = canonical_hash(manifest)
     write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
     return checkpoint, source
+
+
+def test_aligned_adapter_uses_current_evaluator_with_new_source_authority(tmp_path):
+    from ember.eval_adapters import inspect_source_sft_adapter
+
+    checkpoint, source = _static_adapter_fixture(
+        tmp_path, config_path=ALIGNED_CONFIG, world_size=2, step=3)
+    config = load_source_sft_config(ALIGNED_CONFIG)
+    # The evaluator adapter receives task metadata, never held action datasets.
+    import json
+    tasks = [SimpleNamespace(**row) for row in json.loads(
+        (ROOT / config["authorities"]["target_data_manifest"]["path"]).read_text())["tasks"]
+        if row["split_role"] == "validation"]
+    adapter = inspect_source_sft_adapter(config_path=ALIGNED_CONFIG, checkpoint=checkpoint,
+        source=source, tasks=tasks, evaluation_role="validation", require_formal=False)
+    assert adapter["checkpoint"]["step"] == 3
+    assert adapter["shared_adapter_count"] == 1
+    assert adapter["teacher_video_reads"] == adapter["test_action_reads"] == 0
 
 
 def test_formal_development_validation_accepts_published_checkpoint_before_summary(

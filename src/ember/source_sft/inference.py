@@ -105,7 +105,7 @@ def _validate_run_contract(
     del allow_missing_source_summary
     source_matches = source_reference_matches(run_contract.get("source"), source)
     valid = (
-        run_contract.get("schema_version") == SOURCE_SFT_LAUNCH_SCHEMA
+        run_contract.get("schema_version") in {SOURCE_SFT_LAUNCH_SCHEMA, "ember_pi05_source_sft_launch_v2"}
         and run_contract.get("config_sha256") == sha256_file(config_path)
         and stage == config.get("sealed_stage")
         and source_matches
@@ -161,7 +161,7 @@ def _formal_summary_sha(
         return None, "not_required"
     world_size = int(run_contract.get("runtime", {}).get("world_size", -1))
     formal = config["stages"][stage]["formal_run"]
-    expected_world_size = int(formal.get("expected_world_size", -1))
+    expected_world_size = int(formal.get("expected_world_size") or -1)
     if (
         run_contract.get("mode") != "formal"
         or formal.get("status") != "sealed"

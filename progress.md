@@ -14,8 +14,12 @@ correct／other／wrong／no-video／shuffled／reversed=140／136／116／48／
 所有2000新rows及48个最终workers通过；有限内容特异性保留，正确时序优势没有复现，不能据此称完全不看顺序。
 完整证据在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`和findings§109。
 
-A1200／1500完整节点已完成：correct135／112、train62／56。1800训练已正常结束（7200条件／151200queries），
-按owner询问一次性核对时正生成1800评测用LoRA，correct400／train96尚无完整结果；原后台序列继续运行。
+A1200／1500完整节点已完成：correct135／112、train62／56。1800训练及主面板已完成：7200条件／151200queries，
+correct122/400、train63/96，breadth5／20，S/O/G/L为13/46/35/28与19/21/12/11。
+1500→1800的validation R/G/L为79/43/33、churn76、Jaccard .5097、净差95%CI[-3.75,+9]pp；
+train为50/13/6、churn19、Jaccard .7246、CI[0,+15.625]pp。496行及24个workers通过配对审计，原件`A/node1800_primary_readout.json`。
+1800有名义反弹，按owner要求登记2100（1900／2000／2100保存、累计8400条件／176400queries）；不在1800停止。
+当前1800剩余视频对照按原序列执行；完成事件后PID4121375自动接2100，记录见`A/trend_continuation_launch_contract.json`。
 A900→1200使用原gpu01物理0–3／四rank拓扑与冻结`575c189a`；1500／1800使用`6393cbe1`。
 train96首次在worker启动前被实时GPU准入拒绝，60个shards全部pending、没有新增rows；原exit1与日志保留。
 重新检查双节点后，从同一prepared队列以`start`恢复并正常完成；当前后台序列PID1876702，完整节点后才读取科学结果。
@@ -24,9 +28,10 @@ train96首次在worker启动前被实时GPU准入拒绝，60个shards全部pendi
 原config、1200事件与run contract保留，扩展记录另存，模型／optimizer／LR／RNG恢复语义不变。
 154项定向检查及真实事件核对通过：7200条件／151200queries的原1200前缀完全一致，train24等权、跨episode、
 46/4分池和offset1保持。证据在`A/budget_extension_validation.json`，不能代替后续真实完整恢复和闭环。
-1800以后的按段扩展支持已集成推送`329987c0`，冻结树`.codex/tmp/source-aligned-A-trend-runtime`；尚未启动新段。
+1800以后的按段扩展支持已集成推送`329987c0`，冻结树`.codex/tmp/source-aligned-A-trend-runtime`；2100已排队，尚未进行新更新。
 157项检查通过，真实1800采样状态到2100／2400的完整事件前缀、游标与task曝光核对通过（`A/trend_budget_validation.json`）。
 新预算各自保存于`budget_extensions/updates_XXXXXXXX/`，保留原1200／1800记录及旧checkpoint的真实运行来源；只扩预算，不改模型更新。
+完整1500节点的新增checkpoints与去重LoRA banks实测约8.56GiB；2100预留12GiB、后续B40GiB，实际launch前核对实时独立quota。
 每节点correct400／train96及四个有视频对照，固定映射，无视频复用source零LoRA48；后台顺序与资源准入
 登记于`A/continuation_launch_contract.json`，只等完成事件，完整节点读出后再进入下一训练段。
 Shared SFT已于2026-09-17完成450步／259200 queries及400／425／450三个正式validation400，随后停止全部SFT作业。

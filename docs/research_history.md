@@ -337,7 +337,8 @@ owner重新对齐早期强能力参照，允许P/Q联合生成全部38-target ra
 
 ### meta73、target18与fully-random（旧§174--181）
 
-三组完整输出图都使用128 updates、每target1024 action queries、两条fit视频；mixed对照实际保持对应target采样、noise与权重审计。
+三组完整输出图都使用128 updates、每target1024 action queries、两条fit视频；mixed对照保持对应target采样与noise。
+两组各自task等权，但run contract的单target权重从1/73变为1/18，更新组成与总queries亦改变；不是仅改变映射数量的对照。
 这些是有限预算研究，不是整个函数类被穷尽。
 
 | 训练组合 | validation8预登记四点screen80 | terminal训练18task诊断 / 边界 |

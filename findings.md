@@ -858,7 +858,8 @@ spec的数量，也不等于已经证明相互独立、能区分操作顺序的�
   carrier43。该图有G2组件初始化、冻结observer和rank12 carrier＋生成rank4，不能作当前fresh完整输出的单变量参照。
 - 更接近当前输出合同的`041aff55`已经生成全部38-target rank16 A/B。其73-task组与`351feb48`仅18-target组
   都训练128更新、每target1024 action queries；后者的实际configuration audit确认只移除55个meta目标，
-  保持target身份、采样、noise、权重及optimizer。四点validation screen80为15/19/19/19对17/17/20/16；
+  保持target身份、采样、noise及optimizer；两组各自task等权，单个target权重实际从1/73变为1/18，
+  每update组成及总queries也改变，不能据此单独归因映射数量或梯度冲突。四点validation screen80为15/19/19/19对17/17/20/16；
   终点18训练task诊断为42/180对55/180、breadth9对13。这支持特定共享训练组合的能力取舍，
   不支持更多任务自然改善迁移，也不能把screen80外推为strict400；两组均未训练匹配无序参照。
 

@@ -12,7 +12,10 @@ correct／other／wrong／no-video／shuffled／reversed=140／136／116／48／
 所有2000新rows及48个最终workers通过；有限内容特异性保留，正确时序优势没有复现，不能据此称完全不看顺序。
 完整证据在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`和findings§109。
 
-已从A900在原gpu01物理0–3／四rank拓扑启动1200段，launcher1927597，仍使用冻结`575c189a`。
+A900→1200已在原gpu01物理0–3／四rank拓扑正常完成，仍使用冻结`575c189a`；validation400也已完成。
+train96首次在worker启动前被实时GPU准入拒绝，60个shards全部pending、没有新增rows；原exit1与日志保留。
+重新检查双节点后，已从同一prepared队列以`start`恢复；当前后台序列PID1876702，完整节点后才读取科学结果。
+恢复入口为`A/resume_after_admission.py`，不重跑已完成的训练、物化或validation400，原失败见`A/continuation_failure_01.json`。
 1500／1800的显式预算扩展已集成推送`6393cbe1`，新detached运行树为`.codex/tmp/source-aligned-A-extended-runtime`；
 原config、1200事件与run contract保留，扩展记录另存，模型／optimizer／LR／RNG恢复语义不变。
 154项定向检查及真实事件核对通过：7200条件／151200queries的原1200前缀完全一致，train24等权、跨episode、

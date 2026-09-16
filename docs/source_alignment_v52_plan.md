@@ -65,9 +65,11 @@ B采用fresh Writer和fresh优化状态，完成一轮正式训练、闭环、�
 SFT操作由独立agent负责既有SFT输出，我方负责A和主线文档；各自launch前检查双节点实时资源及独立quota，
 不修改运行中的共用launcher、不重叠使用彼此正在运行的GPU。新阶段登记后无需再次向owner请求逐项许可。
 
-当前data1用量970873968KiB，soft1073741824KiB，余量约98.1GiB，共享83TiB；这是本阶段准备快照，launch前刷新。
-A后续三节点预留32GiB（checkpoint、四类实际视频LoRA banks、train banks及logs；other复用同视频完整LoRA），
-SFT剩余预留3GiB，B暂留40GiB但须设计／profile后再测并重核；总75GiB小于当前余量，不复制source或dataset。
+原阶段准备时data1用量970873968KiB，soft1073741824KiB，余量约98.1GiB，共享83TiB；这是准备快照，launch前刷新。
+原A三个节点预留32GiB（checkpoint、四类实际视频LoRA banks、train banks及logs；other复用同视频完整LoRA），
+SFT当时预留3GiB、B40GiB，总75GiB小于当时余量。已完成1500节点的checkpoints和去重LoRA banks实测约8.56GiB，
+1800后每个新增300更新完整节点按12GiB预留；SFT完成后其剩余预算为零，B继续预留40GiB，设计／profile后再测并重核。
+不复制source或dataset。
 当前执行状态归progress，历史科学事实归findings／research_history；以下保留source重建和A原始训练规格。
 
 ## 已确认的时间关系

@@ -2051,3 +2051,44 @@ teacher／初态／RNG及逐行manifest审计通过，时间臂验证真实RGB�
 视频controls只用于本次授权的演化与问题分析，不用于续训预算、checkpoint选择或训练loss；1800续训判断仅来自主面板反弹。
 原件为`runs/analysis/source_alignment_20260915/A/continuation_readout.json`、各`video_specificity_step*/`、
 `training_completion_*.json`、原与扩展launch contracts、完整checkpoints及两份`continuation_failure_*.json`。
+
+## 112. A2100总分持平仍在交换任务能力，继续观察过拟合趋势（2026-09-17）
+
+2100从1800完整恢复，使用clean pushed detached329987c0；只扩训练预算，架构、配方、四rank／GPU UUID和原LR不变。
+累计8400条件／176400queries，每task350条件，1104个teacher条件各7–8次；完整checkpoint和原事件前缀审计通过。
+source冻结，Writer与三Meta的identity后梯度finite非零，本段3224.685秒，累计训练23126.636秒（6.424h）。
+
+| 面板 | 成功 | S/O/G/L | Breadth | 相对source的R/G/L | 1800→2100 R/G/L | 相邻churn | 相邻Jaccard | 相邻净差95%CI |
+| --- | ---: | --- | ---: | --- | --- | ---: | ---: | --- |
+| Validation | 122/400 | 1/53/42/26 | 5/8 | 43/79/7 | 92/30/30 | 60 | .6053 | [-7.75,+6.5]pp |
+| Train | 60/96 | 20/20/12/8 | 19/24 | 11/49/2 | 52/8/11 | 19 | .7324 | [-12.5,+6.25]pp |
+
+Validation逐task按global1/3/11/13/23/26/31/32为0/1/42/11/0/42/26/0。
+相对1800，Spatial13→1、Long28→26，被Object46→53与Goal35→42抵消；仍有30次获得和30次丢失。
+对source原成功的保留34→43，但新增88→79，两者也相互抵消；总分持平不意味着能力组合稳定。
+两个各42次成功的task占84/122（68.9%），三个task仍零，任务广度没有扩大。
+Train63→60，源于获得8、丢失11；这段没有训练能力增长与验证持续下降的共同证据，尚不足以判明显过拟合。
+依据已完成主面板登记2400继续观察，保存2200／2300／2400，累计目标9600条件／201600queries；
+决定与原件保存在`A/node2100_primary_readout.json`及`A/trend_continuation_launch_contract.json`，controls没有参与该判断。
+
+同task换视频、跨suite错视频及真实RGB重排均沿原配对合同。下表R/G/L从correct122转向对照，
+区间按correct减对照给出（任务cluster bootstrap、20000次、seed20260915）。
+
+| 条件 | 成功/400 | Correct→control R/G/L | Churn | Jaccard | Correct−control 95%CI |
+| --- | ---: | --- | ---: | ---: | --- |
+| Other | 121 | 99/22/23 | 45 | .6875 | [-2.25,+3]pp |
+| Wrong | 110 | 92/18/30 | 48 | .6571 | [-1.75,+8.25]pp |
+| No-video | 48 | 41/7/81 | 88 | .3178 | [+2.25,+39.75]pp |
+| Shuffled | 106 | 89/17/33 | 50 | .6403 | [-1.25,+10.75]pp |
+| Reversed | 111 | 86/25/36 | 61 | .5850 | [-2.25,+8.75]pp |
+
+Correct相对wrong／shuffled／reversed净多12／16／11，三个区间均跨零；other相对shuffled净多15，
+区间[+.5,+8.75]pp，保留这项局部顺序证据，但other相对wrong／reversed的区间跨零。
+1800→2100的wrong差距24→12来自wrong提高12而correct不变；shuffle／reverse差距10→16与9→11
+来自两个对照分别下降6和2，也不是正确视频能力提高。相对900的三项差距变化区间均跨零，没有持续增强的特异性。
+No-video仍复用同source零LoRA48，不是learned language-only或静态视频对照；总适配收益不能全部归给有序动态。
+
+2100全部2096条新评测与72个最终workers均成功，评测墙钟5015.263秒；source／checkpoint／normalization、
+固定初态／RNG／teacher、每task全50视频无放回、逐行manifest及真实RGB重排全部审计通过。本节点没有工程异常。
+完整原件为`runs/analysis/source_alignment_20260915/A/continuation_readout.json`、`video_specificity_step2100/`、
+`training_completion_2100.json`及`trend_continuation_completion_2100.json`；后续状态归progress，不将本节点当作A或B全目标完成。

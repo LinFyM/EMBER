@@ -1875,3 +1875,51 @@ train为29/18/7，churn25、Jaccard .5370，净差95%CI[+1.0417,+21.875]pp。
 
 两个600面板均完成完整严格配对，全部18个workers与两个launcher exit0；墙钟1120.709／667.014秒。
 视频无放回、同checkpoint、source／normalization、state与RNG审计通过，原件仍为study的`A/paired_readout.json`和launch contracts。
+
+## 107. 对齐A900达到140，获取回升而相邻稳定尚未建立（2026-09-16）
+
+A从600在原四rank拓扑精确恢复至900；累计3600条件／75600queries、九份完整checkpoint。
+本段3285.437秒、累计10100.668秒；step3起898次更新的Writer及三Meta梯度均finite非零，source冻结。
+独立train动作FM .105642→.103778，能力结论取自完整correct400／train96。
+
+| A900面板 | Source | A | Breadth | A S/O/G/L | Source配对R/G/L | Churn | Jaccard | 任务bootstrap净差95%CI |
+| --- | ---: | ---: | ---: | --- | --- | ---: | ---: | --- |
+| Validation | 50/400 | 140/400 | 6 | 17/60/30/33 | 36/104/14 | 118 | .2338 | [+1.5,+46.2563]pp |
+| Train | 13/96 | 54/96 | 19 | 16/18/13/7 | 13/41/0 | 41 | .2407 | [+30.2083,+55.2083]pp |
+
+600→900 validation R/G/L为68/72/20，churn92、Jaccard .425、净差95%CI[0,+28.75]pp；
+train为39/15/8，churn23、Jaccard .6290、净差95%CI[-1.0417,+15.625]pp。
+验证增加主要来自Long4→33和Object35→60，Spatial13→17，但Goal36→30；breadth仍6，不能只凭净增52称作保持修复。
+Validation按global1/3/11/13/23/26/31/32各50条为1/16/44/16/0/30/33/0；
+train按global0/2/4/5/7/9/12/14/15/16/18/19/20/21/22/25/28/29/34/35/36/37/38/39各4条为
+4/3/3/2/2/2/3/4/2/2/4/3/2/4/3/0/4/0/2/4/0/0/1/0。
+
+A的训练获取36→47→54、验证99→88→140，说明这个结构在正确时间对齐和严格跨episode合同下仍能产生较强能力。
+但140没有超过145，相邻保持及两项零成功task仍未解决；没有selected checkpoint、same-task-other或最终controls。
+旧A900本机复核125→新140，名义+15、state/RNG配对R/G/L86/54/39、churn93、CI[-6.5,+16.75]pp；
+旧原132→新140为90/50/42、churn92、CI[-7.5,+15.25]pp。旧A与本轮video seed分别7／20260911，
+两者每task均全50视频各一次，但只有8/400行state–video完全相同；这些差额包含视频分配、source、标签及训练采样变化，
+不能唯一归因时间修正，也不把宽区间解释成等效。
+旧B900的77→新A140保持相同state–video映射，R/G/L57/83/20、churn103、Jaccard .35625、CI[+4.25,+28]pp；
+仍同时改变source与读取模式，不能单独归因相机或H-read。A600为88而旧B600为105的曲线交叉事实仍保留。
+
+两bank完整496条件sealed；validation9和train3个workers、两个launcher全部exit0，source／normalization／checkpoint／
+state／env与policy RNG审计通过。Validation每task全50视频各一次，train沿用登记的4条独立教学视频；两个面板墙钟1147.038／868.728秒。
+原件为`runs/analysis/source_alignment_20260915/A/{paired_readout.json,training_audit_900.json,node900_reference_comparisons.json}`及launch contracts。
+Owner明确要求到此暂停讨论，不启动1200或B；已运行的SFT仅后台继续到400自动停止，后续评测和425／450续训均暂停。
+
+## 108. 旧B的H-read未发生强权重集中，但差距仍不能唯一归因（2026-09-16）
+
+为准备owner要求的B/A讨论，仅CPU读取旧B300／600／900／1200保存的1024维query与50维bias，
+并核对原`7f9f11a3:src/ember/writer/video_program.py`。没有新增模型forward、native激活读取、训练、rollout或视频controls。
+原公式用无affine RMSNorm的H产生logit，因此对任意H都有`||RMSNorm(H)|| <= sqrt(1024)`；
+所有horizon logits的跨度至多`D = 2||q|| + (max(b)-min(b))`，单个softmax权重不超过`1/(1+49 exp(-D))`。
+四点q范数为.11328／.16078／.21298／.26040，对应单位置权重上界2.533%／2.797%／3.106%／3.417%，均匀值为2%。
+这排除当前B在这些点把完整50-H压为少数位置的强权重集中解释；不是实际注意力分布的测量，也不能证明小读出变化
+对后续表示、信用分配或闭环无影响，更不能据此把差距全部归于双视角。
+
+旧B自身validation97→105→77→85，而train35→49→50→56。600→900的验证损失包含source已成功条件保留39→20，
+也包含相对source新增成功66→57；1200部分恢复source成功，却减少另一部分新增能力，不能概括成单一source遗忘。
+旧A900本机125→旧B900的77还混有训练合同和392/400行teacher配对变化，两个架构角不能唯一分开双视角与H-read。
+这些边界及精确参数上界分别保存在study的`archival_A_B_comparison_boundary.json`和`archival_B_horizon_weight_bound.json`；
+不据此自动补2×2、改架构或恢复训练，后续由owner讨论决定。

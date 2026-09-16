@@ -2,11 +2,21 @@
 
 ## 当前状态（2026-09-16，source时间对齐goal）
 
-Owner于2026-09-16收敛本轮为先建立正确对齐的source、共享SFT和v5.2 A；三者若与旧版本变化有限，允许跳过新B。
-必要时完成已登记B后，分析B相对A的差距并停下来讨论；不自动重启历史失败方法、补2×2、controls或Test。
-Goal保持active，最新范围优先于旧goal的广泛后续措辞。当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)。
+Owner于2026-09-16最新要求A900完整验证结果出来后立即暂停讨论；Goal已由owner暂停，不启动A1200或新B。
+Owner明确保留在运行的SFT后台训练，到400步自动停止；不启动其评测或425／450续训。旧基线／必要B计划保留待讨论，不自动恢复。
+最新暂停边界优先于旧goal和下方执行年表。当前active design为[Source时间对齐与v5.2复核](docs/source_alignment_v52_plan.md)。
+A900已在原四rank拓扑正常完成，累计3600条件／75600queries；本段3285.437秒、累计10100.668秒。
+700／800／900完整恢复点检查通过，898次有效阶段更新的Writer及三Meta梯度均finite非零，source冻结。
+训练动作诊断FM .103778，不作闭环替代；496条件物化及correct400／train96完整完成，12个workers与两个launcher均exit0，严格配对审计通过。
+A900 validation140/400、train54/96，breadth6／19，S/O/G/L为17/60/30/33与16/18/13/7。
+相对source R/G/L为36/104/14与13/41/0，churn118／41、Jaccard .2338／.2407；任务bootstrap差值95%CI[+1.5,+46.2563]／[+30.2083,+55.2083]pp。
+600→900 validation保留68／新增72／丢失20，churn92、Jaccard .425，差值95%CI[0,+28.75]pp；train为39/15/8、churn23、Jaccard .6290。
+Validation按global1/3/11/13/23/26/31/32为1/16/44/16/0/30/33/0；四suite均非零，但两task仍零且相邻曲线99→88→140，未通过>145或稳定资格。
+两个面板墙钟1147.038／868.728秒；A训练／物化／评测进程已全部退出，当前停在完整900恢复点，没有启动1200或B。
+完整逐任务与相邻原件见`A/paired_readout.json`，历史900参照及其视频配对限制见`A/node900_reference_comparisons.json`和findings§107–108。
+SFT继续占gpu02原两卡；暂停交付时已完成59步、33984queries，loss／梯度finite，实际命令明确`--stop-after-step 400`。
 共享SFT的offset1／历史rank128／global576／450步入口已整合，独立开发树已退休；fresh formal已从`16c81e29`在gpu02物理1／3启动，launcher3861019。
-首步global576、loss .149509、梯度 .017673，formal合同、24task曝光与无held-action读取检查通过；先固定训练至400，再依序做400／425／450完整validation400。
+首步global576、loss .149509、梯度 .017673，formal合同、24task曝光与无held-action读取检查通过；原登记的400／425／450评测当前暂停，仅训练至400。
 51项CPU检查通过（122.83秒），含真实三rank不等分片累积与随机checkpoint恢复；450步／259200条历史逻辑采样及900个实际LR值复核一致。
 保留新的单一训练路径，移除在线held-action监控接线；旧诊断入口也拒绝此配置读取validation actions。
 SFT的两卡micro64／累积5真实三步及step1→3完整恢复均exit0，梯度finite非零、source冻结；LoRA原生dtype与旧SFT一致。
@@ -16,7 +26,7 @@ SFT正式root为`runs/outputs/pi05_source_sft_aligned_rank128_dev_r2_b64_seed7_s
 启动前data1 used961711756KiB、共享83TiB可用，SFT追加峰值3GiB与剩余Writer22GiB均在独立quota内；两节点合计6张有效GPU。
 Owner询问实现是否仍有未发现错误；定向复查训练—部署索引、读取模式、LoRA注入与缩放、梯度权重和完整恢复合同，未发现新合同违例。
 冻结Writer运行树的22项原生FM直接梯度、future-control、Meta重放、批量LoRA与模式／恢复相关检查新近全部通过（21.87秒）。
-证据在study的`implementation_review.json`及CPU日志；此结论不证明绝对无错，SFT独立入口仍待修正后的真实更新与恢复验证。
+证据在study的`implementation_review.json`及CPU日志；此结论不证明绝对无错，SFT的真实更新与完整恢复证据见上文profile。
 原C保持关闭；新source已从clean pushed detached `b8ea00e9`在gpu01物理0／1／2／3完成1000更新、256000 queries。
 全部1000行计数连续、global256／micro8×accum8一致，loss／gradient／LR均finite；终点loss .0835784、gradient .165120。
 训练至最后更新29290.086秒，通常约9.1 query/s；该墙钟不含最后失败的保存与元数据恢复。

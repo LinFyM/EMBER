@@ -12,6 +12,10 @@ Owner评估了“同规格重训source→复现v5.2 A→测试B→按source影�
 差距分析及与owner讨论，不自动复查历史失败方法、补2×2其它角、追加视频controls或继续寻找>145的方法。
 上述最新范围覆盖下方旧的自动后续设想；>145及视频因果要求仍是项目正式方法资格，不是本轮无限续训的理由。
 
+同日owner进一步要求：A900完整验证结果出来后停下来讨论。A900当前已登记的correct400／train96完成并审计后，
+不启动A1200或新B；SFT按owner单独回复继续现有后台训练，到400步自动停止，不启动其后续评测或425／450续训。
+Goal已由owner暂停。下文1200及SFT450均保留为原登记预算，不构成此暂停之后的自动执行授权。
+
 先消除已确认的观测—动作标签错位，再判断source与Writer各自的能力限制。长期资格仍为validation8
 single-checkpoint strict correct严格>145/400、相邻稳定、低churn、四suite贡献、same-task换视频鲁棒性及冻结后的因果controls。
 Test保持关闭，部署信息墙、train24／validation8／test8和source71审计排除均不改变。
@@ -80,6 +84,10 @@ baseline task permutation分组，不用C分组。共同事件、flow噪声、ta
 
 先完成source、下节共享SFT及A，再决定是否需要新B；实现等独立工作可并行。旧B已有offset1，是source效应的主要下游参照。
 旧A125／132只作历史定位；新A还修正了旧采样／标签合同，不能将其全部差额单归source。
+旧A正式映射使用video seed7，本轮A／B沿用已登记的seed20260911；两者都在每task使用全部50条视频各一次，
+但400组state–video配对仅8组相同。因此跨历史A的逐行R/G/L只在task／初态／env和policy RNG层面配对，
+同时包含teacher分配变化；不得称作完整video-paired因果差额。本轮A的相邻节点及本轮A／B仍完全复用同一映射。
+实测边界与旧A900→旧B900读数见study的`archival_A_B_comparison_boundary.json`。
 
 ## 共享SFT基线补齐（2026-09-16 owner追加）
 

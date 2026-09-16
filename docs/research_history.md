@@ -20,6 +20,14 @@ breadth5／18、S/O/G/L为10/38/31/20与11/11/10/4；相对新source的R/G/L为3
 训练获取扩大，验证继续交换；未获>145或相邻保持资格。两面板496条、18个workers及launchers均exit0，配对审计通过。
 累计600更新／50400queries，完整训练与恢复证据保留；解释边界见findings§106。新B尚未启动，是否补跑服从新的基线比较范围。
 
+同日A900完整correct400／train96为140／54，breadth6／19，S/O/G/L为17/60/30/33与16/18/13/7；
+相对source R/G/L为36/104/14与13/41/0，600→900为68/72/20与39/15/8，验证churn92、Jaccard .425。
+能力获取回升，但99→88→140尚不构成相邻稳定，140也未超过145；两个验证task仍为零，无selected checkpoint或controls。
+累计900更新／75600queries、九份完整恢复点，496条件及12个workers／两个launcher均exit0，配对审计通过。
+旧A900原132／本机复核125与新140的视频分配仅8/400行相同，不能把差额当完整video-paired source因果增益。
+只读旧B参数证明其learned H-read在1200点任一位置权重至多约3.42%，排除强权重集中，不能证明读取改动无影响。
+上述结果与解释边界见findings§107–108及study原件。Owner随后指定A900读出后暂停讨论；仅SFT现有后台训练继续到400后停止。
+
 2026-09-14完成[Process Pullback Writer的900更新纯FM窗口](process_pullback_writer_design.md#9-900更新窗口完整结果与裁决2026-09-14)：
 3,600条件／230,400queries、六面板／1,488rows完整；train24／22／26（source17/96），validation64／72／64（source47/400）。
 保留局部获取，未见task保持与广度未建立；未获前置资格，无selected checkpoint、same-task-other或最终视频controls。

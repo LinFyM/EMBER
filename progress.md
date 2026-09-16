@@ -22,8 +22,10 @@ train96首次在worker启动前被实时GPU准入拒绝，60个shards全部pendi
 46/4分池和offset1保持。证据在`A/budget_extension_validation.json`，不能代替后续真实完整恢复和闭环。
 每节点correct400／train96及四个有视频对照，固定映射，无视频复用source零LoRA48；后台顺序与资源准入
 登记于`A/continuation_launch_contract.json`，只等完成事件，完整节点读出后再进入下一训练段。
-Shared SFT由独立agent接续：一次核对gpu02 launcher3861019及原两rank有效，225/400、129600queries；
-以pidfd等待训练完成，计划400评测后继续425／450及各自评测，不轮询分数或持续盯看。
+Shared SFT已于2026-09-17完成450步／259200 queries及400／425／450三个正式validation400，随后停止全部SFT作业。
+三点85／89／86，breadth6／5／5，四suite均非零；相邻R/G/L为66/23/19与64/22/25，churn42／47。
+训练与1200评测行、18个最终workers均通过审计；训练9.165h、评测1.383h，无held动作读取或Test，不选择checkpoint。
+未达>145；总分接近伴随成功集合交换，两个验证任务始终为零。完整比较与边界见findings§110及`SFT/paired_readout.json`。
 A和主线文档由main负责，SFT agent只写既有SFT分析／formal输出，不修改共享源码或运行中的冻结树。
 Active design仍为[对齐A后续学习与改进B](docs/source_alignment_v52_plan.md)；具体新节点与资源见该文件及task_plan。
 

@@ -1,5 +1,14 @@
 # EMBER research history
 
+2026-09-17完成对齐source上的共享rank128 SFT：450更新／259200 queries，24tasks各10800queries，
+保持历史global576与2400步LR时间轴，使用正确offset1。400／425／450正式validation400为85／89／86，
+breadth6／5／5，S/O/G/L为7/43/25/10、9/48/23/9、10/36/27/13；相邻R/G/L为66/23/19与64/22/25。
+相对source50净增35／39／36，但相邻仍有42／47次成败交换，两个任务持续为零，未获>145或充分广度资格。
+对应旧SFT109／107／74的差为−24／−18／+12；source及动作offset共同变化，旧A100面板未重跑，不能单因归属。
+训练与三个400面板审计通过，18个最终workers及全部launcher退出0；训练9.165h、评测1.383h，全部SFT作业已停止。
+无held动作读取、Test或checkpoint选择。完整数值与区间见findings§110，原件位于
+`runs/analysis/source_alignment_20260915/SFT/{paired_readout.json,training_audit.json,completion.json}`。
+
 2026-09-16完成[source时间对齐计划](source_alignment_v52_plan.md)中的同科学规格fresh source及固定raw1000读出：
 71tasks、全参数、1000更新／256000queries、原optimizer／normalization；`b8ea00e9`的所有更新均finite。
 最终保存因共享存储I/O触发NCCL 600秒等待超时；raw／EMA／optimizer／四rank RNG已完整落盘，

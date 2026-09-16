@@ -1968,3 +1968,34 @@ No-video按既有合同使用完整零A／B LoRA、零Writer调用和零teacher 
 均没有rollout；原失败日志保留，后续成功结果独立核验。Owner要求只在完成后看结果，后半程采用后台顺序执行与完成事件等待。
 原件为`runs/analysis/source_alignment_20260915/A/video_specificity_step900/{readout.json,readout.md,launch_contract.json}`及各臂rows／completion。
 诊断已结束；140仍未过>145及相邻稳定资格，不选模型、不反馈训练或架构，继续保持owner暂停边界。
+
+## 110. 对齐source的共享SFT三点85／89／86，有限净获取未补足广度（2026-09-17）
+
+Fresh共享rank128 LoRA从对齐source raw1000出发，固定`16c81e29`运行树，450更新／259200 queries，
+每task10800queries。保持历史global576、原2400步LR时间轴及原生LoRA dtype；监督使用offset1，
+24个train tasks每次更新各24queries，全部50 episodes/task覆盖，validation/test actions读取为零。
+400→425→450均在原gpu02两rank完整恢复，训练与checkpoint／optimizer／scheduler／sampler／RNG／cursor审计通过。
+
+三个正式面板均为同一组validation8×50初态及env／policy RNG，每个suite分母100；逐task按global1/3/11/13/23/26/31/32。
+
+| 节点 | 成功/400 | S/O/G/L | Breadth/8 | 逐task成功数 | 相对source50的R/G/L | 净差95%CI |
+| --- | ---: | --- | ---: | --- | --- | --- |
+| 400 | 85 | 7/43/25/10 | 6 | 1/6/39/4/0/25/10/0 | 25/60/25 | [-9,+31]pp |
+| 425 | 89 | 9/48/23/9 | 5 | 0/9/45/3/0/23/9/0 | 25/64/25 | [-10.25,+35.25]pp |
+| 450 | 86 | 10/36/27/13 | 5 | 0/10/33/3/0/27/13/0 | 28/58/22 | [-6.75,+27.5]pp |
+
+区间为8task cluster bootstrap、20000次、seed20260915。相对source的churn为85／89／80，Jaccard .2273／.2193／.2593。
+相邻400→425的R/G/L为66/23/19、churn42、Jaccard .6111、净差区间[-2,+4.75]pp；
+425→450为64/22/25、churn47、Jaccard .5766、区间[-8,+4.25]pp。
+总分接近不代表成功集合不变；global23与32三个点均零，Object主要依赖奶酪任务。四suite均非零且名义净获取保留，
+但未过>145，也没有充分任务广度；宽区间不能解释成与source等效。
+
+同节点旧SFT109／107／74→新85／89／86，R/G/L分别49/36/60、49/40/58、34/52/40，
+churn96／98／92，净差区间[-19.5,+4]／[-17.75,+7]／[-6.5,+12.75]pp。
+source与训练动作offset共同变化，且旧A100／runtime面板没有重跑，不能把差额唯一归于时间修正或某个硬件变量。
+也不能由此减轻新基线本身的能力缺口，或把它当Writer视频增量的证明。
+
+450步连续finite，训练墙钟32994.300秒（9.165h），三次评测共4980.081秒（1.383h）；
+首启至末评测结束38528.929秒（10.702h）。三个面板各400行、各6 workers，所有最终launcher／workers均exit0，
+policy／环境／RNG／normalization配对审计通过。没有工程异常、checkpoint选择或Test，全部SFT作业已停止，不续训。
+原件为`runs/analysis/source_alignment_20260915/SFT/{paired_readout.json,training_audit.json,completion.json,training_launch_contract.json}`。

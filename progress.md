@@ -1,11 +1,13 @@
 # EMBER progress
 
-## 当前状态（2026-09-17，当前训练结束后暂停）
+## 当前状态（2026-09-17，A3000训练完成，已暂停）
 
-Owner最新要求：“等目前所有的训练进程跑完，你就停一下吧”。Goal已暂停，当前只允许已启动的A3000训练段
-自然完成并保存完整恢复点；不启动新的LoRA物化、评测、续训或B。SFT此前已全部结束。
-已写入现有后台入口支持的`A/stop_continuation`信号；3000训练返回后先登记训练完成，再在下一GPU阶段前停止。
-当前仍是原训练PID1976606等待结束，未终止正在进行的优化或修改冻结运行树。后续只核验完成点与进程退出，等待owner新指示。
+Owner最新要求：“等目前所有的训练进程跑完，你就停一下吧”。A3000已自然完成，训练exit0，完整2800／2900／3000恢复点
+保存并通过审计；累计12000条件／252000queries，每task500条件。SFT此前已全部结束。
+`A/stop_continuation`信号在训练完成后拦住下一GPU阶段，3000的LoRA物化、评测及后续续训、B均未启动。
+原driver1976606及gpu01／gpu02上本任务训练、评测、后台调度进程均已退出；Goal保持paused，等待owner新指示。
+训练审计见`A/training_audit_3000.json`，暂停与进程证据见`A/owner_pause_completion_3000.json`。
+原控制器因暂停信号退出1的原件保留，原因是owner主动停止后续阶段，不是训练失败；canonical状态已登记为`paused_by_owner_after_training`。
 以下A→分析→B是尚未完成的既定目标及历史授权，不覆盖本次暂停；不得由未完成清单自动恢复执行。
 
 先前目标：继续A，摸清后续性能是否仍不稳定、视频特异性会改善还是恶化；结合原始v5.2至今近两个月
@@ -35,16 +37,17 @@ train为36／47／54／62／56／63／60／58／64。2700累计10800条件／226
 按相同checkpoint、manifest、400条件及RNG改用可用的gpu01四卡重新准备。后在temporal物化前遇一次strg01 quota SSH连接关闭，
 复查连接后从剩余两臂继续，未重训或重跑已完成面板。两份原失败、日志和完整2700完成记录均保留；当前2700全流程已结束。
 
-暂停请求前，3000已从完整2700点启动，PID1976606；保存2800／2900／3000，累计目标12000条件／252000queries。
+暂停请求前启动的3000段已从2700完整恢复并完成，保存2800／2900／3000，累计12000条件／252000queries。
 沿原gpu01物理0–3／四rank／GPU UUID、各rank microbatch8、global84及原optimizer／LR／RNG恢复，配方不变。
 运行树为clean pushed detached `.codex/tmp/source-aligned-A-trend-runtime`（329987c0）；
 原575c189a和6393cbe1及其完整合同保持，每个扩展预算记录于`budget_extensions/updates_XXXXXXXX/`。
-157项定向检查、真实事件／sampler核验及已完成2700整段恢复与checkpoint审计通过。
-当前后台入口为`A/continue_registered.py --through-node 3000`，PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_3000.log`。
+157项定向检查、真实事件／sampler核验及已完成3000整段恢复与checkpoint审计通过。
+3000本段训练3120.875秒，累计32467.264秒（9.019h）；source冻结、四组有效梯度finite非零，1104个teacher条件各10–11次。
+已结束入口为`A/continue_registered.py --through-node 3000`；历史PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_3000.log`。
 2700完成记录见`A/trend_continuation_completion_2700.json`；当前节点与追加依据见`A/trend_continuation_launch_contract.json`。
-每节点仍完成correct400／train96及四个视频对照，无视频复用source零LoRA48；只等完成事件，完整节点后判断是否追加。
+最新完整闭环节点仍为2700；3000只完成训练，不能给它赋予2700分数或宣称已评测。剩余面板与B均暂停，不自动追加节点。
 
-3000 launch前双节点GPU／process检查通过；gpu01物理4／5／6外部任务利用率29／30／35%，本节点训练及推理使用可用的0–3。
+3000 launch前双节点GPU／process检查通过；gpu01物理4／5／6外部任务利用率29／30／35%，登记使用可用的0–3，暂停前仅执行训练。
 data1 used1025526144KiB／soft1073741824KiB，A用68788268KiB，新节点预留12GiB可容纳。
 后续B的40GiB独立预留改在现有`/data0/user/ymdai/ember_runs`：data0 used108416500KiB／soft1073741824KiB，
 个人目录实测108416560KiB、共享可用1415871488KiB；两个filesystem分别核验，不合并quota，不复制或移动已有资产。
@@ -54,7 +57,7 @@ Shared SFT已于2026-09-17完成450步／259200 queries及400／425／450三个�
 训练与1200评测行、18个最终workers均通过审计；训练9.165h、评测1.383h，无held动作读取或Test，不选择checkpoint。
 未达>145；总分接近伴随成功集合交换，两个验证任务始终为零。完整比较与边界见findings§110及`SFT/paired_readout.json`。
 A和主线文档由main负责，SFT agent只写既有SFT分析／formal输出，不修改共享源码或运行中的冻结树。
-Active design仍为[对齐A后续学习与改进B](docs/source_alignment_v52_plan.md)；具体新节点与资源见该文件及task_plan。
+已暂停设计保留为[对齐A后续学习与改进B](docs/source_alignment_v52_plan.md)；未完成工作保存在task_plan，不能自动恢复。
 
 首次准备快照（2026-09-16）：data1 used970873968KiB／soft1073741824KiB，共享83TiB；当时A为14.13GiB、SFT约.119GiB。
 当时新增A32GiB＋SFT3GiB＋待profile的B40GiB预算可容纳；当前剩余预算与最新节点启动证据见上文，后续launch重新核验。

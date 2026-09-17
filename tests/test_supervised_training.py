@@ -16,6 +16,7 @@ from ember.writer import learning_data
 from ember.writer.learning_data import WriterTrainingData, load_learning_tasks
 from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _run_contract, observer_mode_contract, _data_config, _publish_event_plan, extension_record_path
 from ember.writer.replay import sum_writer_gradients
+from ember.writer.task_execution import condition_rank_groups, merge_condition_rows
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -322,14 +323,15 @@ def test_smoke_requires_explicit_stop_before_profile_node_registration():
         _checkpoint_nodes(args, config)
 
 
-@pytest.mark.parametrize("world_size", [1, 2, 3, 4])
+@pytest.mark.parametrize("world_size", [1, 2, 3, 4, 6])
 def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch, config, world_size):
     """Real placement and SUM helper, against an explicit logical-batch oracle."""
     state = torch.nn.Linear(2, 1, bias=False)
     with torch.no_grad():
         state.weight.copy_(torch.tensor([[.2, -.3]]))
-    features = torch.tensor([[1., 0.], [0., 2.], [3., -1.], [-1., 4.]])
-    targets = torch.tensor([[1.], [-1.], [2.], [0.]])
+    generator = torch.Generator().manual_seed(17)
+    features = torch.randn(4, 21, 2, generator=generator)
+    targets = torch.randn(4, 21, 1, generator=generator)
     loss = (state(features) - targets).square().mean()
     loss.backward()
     logical_gradient = state.weight.grad.clone()
@@ -342,9 +344,13 @@ def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch
             self.model = model
         def backward(self, draw):
             task = draw["task"]
-            value = .25 * (self.model(features[task:task + 1]) - targets[task:task + 1]).square().sum()
-            value.backward()
-            return {"queries": 21, "flow_loss": float(value.detach())}
+            start, count = draw["query_offset"], draw["query_count"]
+            chosen = slice(start, start + count)
+            value = (self.model(features[task, chosen]) - targets[task, chosen]).square().mean()
+            (value * .25 * count / 21).backward()
+            return {"queries": count, "flow_loss": float(value.detach()),
+                    "action_demos": [task] * count, "action_frames": list(range(start, start + count)),
+                    "action_start_indices": list(range(start + 1, start + count + 1))}
     models, local_rows = [], []
     for rank in range(world_size):
         model = deepcopy(state)
@@ -352,10 +358,20 @@ def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch
         context = DistributedContext(rank, rank, world_size, torch.device("cpu"))
         local_rows.append(_execute_step(Engine(model), data, context, config, draws, 1))
         models.append(model)
-    assert sorted(row["task"] for rows in local_rows for row in rows) == [0, 1, 2, 3]
+    logical_rows = merge_condition_rows([row for rows in local_rows for row in rows])
+    assert sorted(row["task"] for row in logical_rows) == [0, 1, 2, 3]
+    assert all(row["queries"] == 21 and row["condition_weight"] == .25 for row in logical_rows)
+    assert all(row["action_frames"] == list(range(21)) for row in logical_rows)
+    assert sum(row["flow_loss"] * row["condition_weight"] for row in logical_rows) == pytest.approx(float(loss.detach()))
     assert sum(row["queries"] for rows in local_rows for row in rows) == 84
     if world_size == 3:
         assert sorted(map(len, local_rows)) == [1, 1, 2]
+    if world_size == 6:
+        assert all(rows for rows in local_rows)
+        assert all(row["queries"] == 7 for rows in local_rows for row in rows)
+        assert all(len(row["execution_shards"]) == 3 for row in logical_rows)
+        for members in condition_rank_groups(world_size):
+            assert len({tuple(row["job_id"] for row in local_rows[rank]) for rank in members}) == 1
     combined = sum(model.weight.grad for model in models)
     def reduce(gradient, op):
         assert op == torch.distributed.ReduceOp.SUM
@@ -369,6 +385,17 @@ def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch
 def test_rank_count_cannot_expand_batch_or_create_idle_replicas(config):
     with pytest.raises(ValueError, match="useful ranks"):
         _execute_step(None, None, SimpleNamespace(world_size=5), config, (), 1)
+
+
+def test_query_shards_cannot_duplicate_or_drop_scientific_exposures():
+    rows = [{"job_id": task, "query_offset": offset, "queries": 7, "flow_loss": 1.,
+             "condition_weight": 1 / 12, "seconds": 1.}
+            for task in range(4) for offset in (0, 7, 14)]
+    assert len(merge_condition_rows(rows)) == 4
+    with pytest.raises(ValueError, match="overlap or leave a gap"):
+        merge_condition_rows(rows + [rows[0]])
+    with pytest.raises(ValueError, match="all 21 queries"):
+        merge_condition_rows(rows[:-1])
 
 
 def test_new_segment_nodes_do_not_mutate_or_invalidate_learning_contract(tmp_path, config):

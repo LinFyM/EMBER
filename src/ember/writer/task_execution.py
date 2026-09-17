@@ -1,24 +1,97 @@
 """Outcome-independent execution planning for shared Writer task batches.
 
 The scientific sampler decides which tasks belong to an optimizer update.  This
-module only decides where those already-selected tasks execute.  A task may be
-available on more than one rank when its frozen CPU evidence cache is
-selectively replicated; it is still executed exactly once per update.
+module only decides where those already-selected tasks execute. Six ranks use
+two groups of three, with disjoint native-frame and action-query work inside
+each condition. A condition still contributes exactly once per update.
 These plans only describe placement. Learned Action Meta responses cannot be
 reused across optimizer steps merely because a cache plan is available.
 """
 
 from __future__ import annotations
 
-from collections import Counter
+from collections import defaultdict
 from functools import lru_cache
 from typing import Mapping, Sequence
 
 
 RankTasks = tuple[tuple[int, ...], ...]
-StepCosts = tuple[tuple[int, int], ...]
 MAX_EXACT_ASSIGNMENT_COMBINATIONS = 100_000
-MAX_EXACT_REPLICATION_CANDIDATES = 64
+
+
+def condition_rank_groups(world_size: int) -> RankTasks:
+    """Keep four logical conditions while giving all six ranks useful work."""
+    if world_size == 6:
+        return ((0, 1, 2), (3, 4, 5))
+    if 1 <= world_size <= 4:
+        return tuple((rank,) for rank in range(world_size))
+    raise ValueError("condition execution supports 1-4 or six useful ranks")
+
+
+def initialize_condition_group(context):
+    """Create subgroups in one global order after deferred NCCL is ready."""
+    import torch.distributed as dist
+
+    groups = condition_rank_groups(context.world_size)
+    selected = None
+    for ranks in groups:
+        if len(ranks) > 1:
+            group = dist.new_group(ranks=list(ranks))
+            if context.rank in ranks:
+                selected = group
+    return selected
+
+
+def query_shard(count: int, members: Sequence[int], rank: int) -> tuple[int, int]:
+    """Return a contiguous slice of the unchanged logical policy RNG batch."""
+    index = tuple(members).index(rank)
+    size, remainder = divmod(count, len(members))
+    if size <= 0:
+        raise ValueError("query partition would leave an idle condition rank")
+    return index * size + min(index, remainder), size + int(index < remainder)
+
+
+def _combine_query_shards(parts: Sequence[dict]) -> dict:
+    row = dict(parts[0])
+    physical_keys = {key for key in row if key.endswith("_seconds") or key.startswith("input_cache_")}
+    physical_keys.update(("seconds", "execution_rank", "query_offset", "queries",
+                          "condition_weight", "fm_lora_gradient_norm", "policy_microbatch"))
+    row["execution_shards"] = [{key: part[key] for key in sorted(physical_keys) if key in part}
+                               for part in parts]
+    for key in physical_keys:
+        row.pop(key, None)
+    row["seconds"] = max(part["seconds"] for part in parts)
+    for key in ("action_demos", "action_frames", "action_start_indices"):
+        if key in parts[0]:
+            row[key] = [value for part in parts for value in part[key]]
+    for key in ("source_forward_calls", "compiled_forward_calls"):
+        if key in parts[0]:
+            row[key] = sum(part[key] for part in parts)
+    return row
+
+
+def merge_condition_rows(rows: Sequence[dict]) -> list[dict]:
+    """Reassemble physical query slices into four scientific exposure rows."""
+    by_job = defaultdict(list)
+    for row in rows:
+        by_job[row["job_id"]].append(row)
+    if len(by_job) != 4:
+        raise ValueError("an update must record exactly four logical conditions")
+    merged = []
+    for _, parts in sorted(by_job.items()):
+        parts.sort(key=lambda row: row["query_offset"])
+        cursor = 0
+        for part in parts:
+            if part["query_offset"] != cursor:
+                raise ValueError("condition query shards overlap or leave a gap")
+            cursor += part["queries"]
+        if cursor != 21:
+            raise ValueError("condition query shards must cover all 21 queries")
+        row = _combine_query_shards(parts) if len(parts) > 1 else dict(parts[0])
+        row.update(queries=cursor, query_offset=0, condition_weight=.25,
+                   flow_loss=sum(part["flow_loss"] * part["queries"] for part in parts) / cursor)
+        merged.append(row)
+    return merged
 
 
 def _normalized_execution_ranks(
@@ -203,282 +276,3 @@ def cost_balanced_task_assignment(
     return _cached_cost_balanced_assignment(
         tasks, normalized_costs, eligibility, int(world_size)
     )
-
-
-def assignment_makespan(
-    assignment: Sequence[Sequence[int]], costs: Mapping[int, int]
-) -> int:
-    """Return the largest predicted rank load for one assignment."""
-
-    tasks = tuple(task for row in assignment for task in row)
-    if len(tasks) != len(set(tasks)) or set(tasks) != set(map(int, costs)):
-        raise ValueError("shared Writer assignment coverage changed")
-    return max(
-        (sum(int(costs[task]) for task in row) for row in assignment),
-        default=0,
-    )
-
-
-def _execution_objective(
-    steps: Counter[StepCosts],
-    execution_ranks: Mapping[int, Sequence[int]],
-    world_size: int,
-) -> tuple[int, int]:
-    total = 0
-    tail = 0
-    for signature, count in steps.items():
-        costs = dict(signature)
-        if len(costs) <= world_size and all(
-            len(execution_ranks[task]) == world_size for task in costs
-        ):
-            makespan = max(costs.values())
-        else:
-            assignment = cost_balanced_task_assignment(
-                tuple(costs), costs, execution_ranks, world_size=world_size
-            )
-            makespan = assignment_makespan(assignment, costs)
-        total += int(count) * makespan
-        tail = max(tail, makespan)
-    return total, tail
-
-
-def _direct_move_replica_gains(
-    steps: Counter[StepCosts],
-    execution_ranks: Mapping[int, Sequence[int]],
-    *,
-    world_size: int,
-) -> Counter[tuple[int, int]]:
-    """Estimate all replica gains from feasible current-assignment moves."""
-
-    gains: Counter[tuple[int, int]] = Counter()
-    for signature, count in steps.items():
-        costs = dict(signature)
-        assignment = cost_balanced_task_assignment(
-            tuple(costs), costs, execution_ranks, world_size=world_size
-        )
-        loads = [sum(costs[value] for value in row) for row in assignment]
-        current = max(loads)
-        for source, row in enumerate(assignment):
-            for task in row:
-                cost = costs[task]
-                for destination in range(world_size):
-                    if destination in execution_ranks[task]:
-                        continue
-                    moved = list(loads)
-                    moved[source] -= cost
-                    moved[destination] += cost
-                    gain = current - max(moved)
-                    if gain > 0:
-                        gains[(task, destination)] += int(count) * gain
-    return gains
-
-
-def selective_replication_plan(
-    step_costs: Sequence[Mapping[int, int]],
-    *,
-    base_task_owners: Sequence[Sequence[int]],
-    cache_bytes: Mapping[int, int],
-    extra_budget_bytes: int,
-) -> dict[str, object]:
-    """Greedily buy only replicas that reduce finite-run predicted makespan.
-
-    The target is the same objective attainable if every selected task were
-    cached on every rank.  The planner stops at that target, when no replica
-    helps, or when the launch-specific host-memory budget is exhausted.
-    """
-
-    owners = tuple(tuple(map(int, row)) for row in base_task_owners)
-    world_size = len(owners)
-    owner_by_task = {task: rank for rank, row in enumerate(owners) for task in row}
-    normalized_steps: Counter[StepCosts] = Counter(
-        tuple(sorted((int(task), int(cost)) for task, cost in row.items()))
-        for row in step_costs
-    )
-    active_tasks = set(task for row in normalized_steps for task, _ in row)
-    supplied_sizes = {int(task): int(value) for task, value in cache_bytes.items()}
-    sizes = {
-        task: supplied_sizes[task] for task in active_tasks if task in supplied_sizes
-    }
-    if (
-        not normalized_steps
-        or not 1 <= world_size <= 6
-        or len(owner_by_task) != sum(len(row) for row in owners)
-        or not active_tasks <= set(owner_by_task)
-        or set(sizes) != active_tasks
-        or min(sizes.values(), default=0) <= 0
-        or int(extra_budget_bytes) < 0
-        or any(cost <= 0 for row in normalized_steps for _, cost in row)
-    ):
-        raise ValueError("shared Writer selective cache replication changed")
-
-    execution = {task: (owner_by_task[task],) for task in sorted(active_tasks)}
-    ideal = {task: tuple(range(world_size)) for task in sorted(active_tasks)}
-    objective = _execution_objective(normalized_steps, execution, world_size)
-    base_objective = objective
-    ideal_objective = _execution_objective(normalized_steps, ideal, world_size)
-    budget = int(extra_budget_bytes)
-    used = 0
-    replicas: list[tuple[int, int]] = []
-
-    candidate_count = len(active_tasks) * (world_size - 1)
-    exact_candidate_search = candidate_count <= MAX_EXACT_REPLICATION_CANDIDATES
-    while objective > ideal_objective:
-        if exact_candidate_search:
-            best_exact: (
-                tuple[
-                    tuple[int, int],
-                    int,
-                    int,
-                    dict[int, tuple[int, ...]],
-                ]
-                | None
-            ) = None
-            for task in sorted(active_tasks):
-                size = sizes[task]
-                if used + size > budget:
-                    continue
-                for rank in range(world_size):
-                    if rank in execution[task]:
-                        continue
-                    candidate_execution = dict(execution)
-                    candidate_execution[task] = tuple(sorted((*execution[task], rank)))
-                    candidate_objective = _execution_objective(
-                        normalized_steps, candidate_execution, world_size
-                    )
-                    if candidate_objective >= objective:
-                        continue
-                    candidate = (
-                        candidate_objective,
-                        size,
-                        task * world_size + rank,
-                        candidate_execution,
-                    )
-                    if best_exact is None or candidate[:3] < best_exact[:3]:
-                        best_exact = candidate
-            if best_exact is None:
-                break
-            objective, size, encoded, execution = best_exact
-        else:
-            # Full objective solves for every candidate scale quadratically in
-            # the task inventory. Rank candidates by weighted makespan gain per
-            # cache byte, then solve the exact finite objective only once for
-            # the selected eligibility expansion.
-            best_heuristic: tuple[int, int, int] | None = None
-            direct_gains = _direct_move_replica_gains(
-                normalized_steps, execution, world_size=world_size
-            )
-            for task in sorted(active_tasks):
-                size = sizes[task]
-                if used + size > budget:
-                    continue
-                for rank in range(world_size):
-                    if rank in execution[task]:
-                        continue
-                    gain = direct_gains[(task, rank)]
-                    if gain <= 0:
-                        continue
-                    encoded = task * world_size + rank
-                    candidate = (gain, size, encoded)
-                    if best_heuristic is None:
-                        best_heuristic = candidate
-                        continue
-                    best_gain, best_size, best_encoded = best_heuristic
-                    if gain * best_size > best_gain * size or (
-                        gain * best_size == best_gain * size
-                        and (gain, -size, -encoded)
-                        > (best_gain, -best_size, -best_encoded)
-                    ):
-                        best_heuristic = candidate
-            if best_heuristic is None:
-                break
-            _, size, encoded = best_heuristic
-            task, rank = divmod(encoded, world_size)
-            candidate_execution = dict(execution)
-            candidate_execution[task] = tuple(sorted((*execution[task], rank)))
-            candidate_objective = _execution_objective(
-                normalized_steps, candidate_execution, world_size
-            )
-            if candidate_objective >= objective:
-                break
-            execution = candidate_execution
-            objective = candidate_objective
-
-        task, rank = divmod(encoded, world_size)
-        used += size
-        replicas.append((task, rank))
-
-    rows = tuple(
-        tuple(sorted(task for task, ranks in execution.items() if rank in ranks))
-        for rank in range(world_size)
-    )
-    return {
-        "strategy": "finite_schedule_selective_cache_replication_cost_balanced_assignment",
-        "execution_ownership": rows,
-        "replicas": tuple(replicas),
-        "extra_cache_bytes": used,
-        "budget_bytes": budget,
-        "base_total_cost": base_objective[0],
-        "base_tail_cost": base_objective[1],
-        "predicted_total_cost": objective[0],
-        "predicted_tail_cost": objective[1],
-        "ideal_total_cost": ideal_objective[0],
-        "ideal_tail_cost": ideal_objective[1],
-        "unique_step_signatures": len(normalized_steps),
-        "planned_steps": sum(normalized_steps.values()),
-        "replica_search": (
-            "exact_candidate_objective"
-            if exact_candidate_search
-            else "direct_move_gain_per_byte_then_exact_objective"
-        ),
-    }
-
-
-def shared_mmap_execution_plan(
-    step_costs: Sequence[Mapping[int, int]],
-    *,
-    cache_bytes: Mapping[int, int],
-    world_size: int,
-) -> dict[str, object]:
-    """Plan exact scheduling when every rank maps the same physical cache."""
-
-    normalized_steps: Counter[StepCosts] = Counter(
-        tuple(sorted((int(task), int(cost)) for task, cost in row.items()))
-        for row in step_costs
-    )
-    active_tasks = set(task for row in normalized_steps for task, _ in row)
-    supplied_sizes = {int(task): int(value) for task, value in cache_bytes.items()}
-    sizes = {
-        task: supplied_sizes[task]
-        for task in active_tasks
-        if task in supplied_sizes
-    }
-    if (
-        not normalized_steps
-        or not 1 <= int(world_size) <= 6
-        or set(sizes) != active_tasks
-        or min(sizes.values(), default=0) <= 0
-        or any(cost <= 0 for row in normalized_steps for _, cost in row)
-    ):
-        raise ValueError("shared Writer mmap execution plan changed")
-    execution = {
-        task: tuple(range(int(world_size))) for task in sorted(active_tasks)
-    }
-    objective = _execution_objective(normalized_steps, execution, int(world_size))
-    rows = tuple(tuple(sorted(active_tasks)) for _ in range(int(world_size)))
-    return {
-        "strategy": "node_local_single_copy_mmap_cost_balanced_assignment",
-        "execution_ownership": rows,
-        "replicas": (),
-        "extra_cache_bytes": 0,
-        "shared_cache_bytes": sum(sizes.values()),
-        "budget_bytes": 0,
-        "base_total_cost": objective[0],
-        "base_tail_cost": objective[1],
-        "predicted_total_cost": objective[0],
-        "predicted_tail_cost": objective[1],
-        "ideal_total_cost": objective[0],
-        "ideal_tail_cost": objective[1],
-        "unique_step_signatures": len(normalized_steps),
-        "planned_steps": sum(normalized_steps.values()),
-        "replica_search": "not_applicable_shared_mmap",
-    }

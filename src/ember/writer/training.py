@@ -22,7 +22,10 @@ from ember.pi05_source_setup import initialize_deferred_process_group, initializ
 from ember.writer.learning_data import WriterTrainingData, event_plan_prefix
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import VideoConditionCache, build_runtime, require_architecture_identity
-from ember.writer.task_execution import cost_balanced_task_assignment
+from ember.writer.task_execution import (
+    condition_rank_groups, cost_balanced_task_assignment, initialize_condition_group,
+    merge_condition_rows, query_shard,
+)
 
 
 CONFIG_SCHEMA = "ember_unified_native_writer_config_v1"
@@ -181,6 +184,8 @@ def _run_contract(args, context, config, runtime, state):
             "host": socket.gethostname(), "world_size": context.world_size,
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"), "ranks": _gather(local, context),
+            "condition_rank_groups": [list(group) for group in condition_rank_groups(context.world_size)],
+            "within_condition": "disjoint_native_frames_and_queries_compact_autograd_gather_v1",
         },
         "training": {
             "writer_parameters": sum(p.numel() for p in runtime.state.writer.parameters()),
@@ -249,18 +254,20 @@ def _condition_jobs(data, config, draws):
 
 def _execute_step(engine, data, context, config, draws, step):
     logical = _logical_batch(config)
-    if not 1 <= context.world_size <= min(6, logical["conditions"]):
-        raise ValueError("condition parallelism requires 1 to min(6, condition count) useful ranks")
+    groups = condition_rank_groups(context.world_size)
+    group_index = next(index for index, members in enumerate(groups) if context.rank in members)
+    members = groups[group_index]
     by_job = _condition_jobs(data, config, draws)
     engine.step = step
     jobs = tuple(by_job)
     costs = {job: int(draw["frames"]) for job, draw in by_job.items()}
     assignment = cost_balanced_task_assignment(
-        jobs, costs, {job: tuple(range(context.world_size)) for job in jobs}, world_size=context.world_size,
+        jobs, costs, {job: tuple(range(len(groups))) for job in jobs}, world_size=len(groups),
     )
     rows = []
-    for job in assignment[context.rank]:
-        draw = by_job[job]
+    for job in assignment[group_index]:
+        offset, count = query_shard(by_job[job]["query_count"], members, context.rank)
+        draw = {**by_job[job], "query_offset": offset, "query_count": count}
         task = draw["task"]
         tick = time.perf_counter()
         metric = engine.backward(draw)
@@ -269,7 +276,9 @@ def _execute_step(engine, data, context, config, draws, step):
         rows.append({**metric, "step": step, "job_id": job, "task": task,
                      "suite": data.tasks[task].suite, "condition_index": draw["condition_index"],
                      "occurrence": draw["occurrence"], "K": 1,
-                     "condition_weight": logical["condition_weight"], "task_weight": logical["task_weight"],
+                     "condition_weight": logical["condition_weight"] * count / logical["queries_per_condition"],
+                     "task_weight": logical["task_weight"], "execution_rank": context.rank,
+                     "condition_ranks": list(members),
                      "video_demos": list(draw["video_demos"]), "frames": draw["frames"], "scheduling_frames": costs[job],
                      "query_seed": draw["query_seed"], "query_offset": draw["query_offset"],
                      "queries": draw["query_count"], "seconds": time.perf_counter() - tick})
@@ -349,7 +358,7 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
               "peak_allocated_gib": torch.cuda.max_memory_allocated(context.device) / 2**30,
               "peak_reserved_gib": torch.cuda.max_memory_reserved(context.device) / 2**30}
     packets = _gather(packet, context)
-    gathered = [row for packet in packets for row in packet["rows"]]
+    gathered = merge_condition_rows([row for packet in packets for row in packet["rows"]])
     metrics_rows += len(gathered)
     if context.is_main:
         for row in gathered:
@@ -472,8 +481,9 @@ def run(args: argparse.Namespace) -> None:
         raise ValueError("formal supervised training requires a clean pushed detached worktree")
     stop = _segment_limit(args, config)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
-    if not 1 <= context.world_size <= min(6, _logical_batch(config)["conditions"]):
-        raise ValueError("condition parallelism requires one node and 1 to min(6, condition count) useful GPUs")
+    condition_rank_groups(context.world_size)
+    if args.mode == "formal" and context.world_size != 6:
+        raise ValueError("registered unified Writer formal training requires six GPUs")
     execution_config, microbatches = _execution_config(args, config, context)
     if context.is_main:
         print(json.dumps({"physical_policy_microbatches": microbatches, "logical_queries_per_update": 84}), flush=True)
@@ -490,6 +500,7 @@ def run(args: argparse.Namespace) -> None:
     optimizer, scheduler = _optimization(runtime.state, config)
     args.output.mkdir(parents=True, exist_ok=True)
     initialize_deferred_process_group(context, rendezvous_root=args.output)
+    frame_parallel_group = initialize_condition_group(context)
     contract = _run_contract(args, context, config, runtime, state)
     if context.is_main:
         _publish_contract(args.output / "run_contract.json", contract, resume=args.resume is not None)
@@ -502,7 +513,8 @@ def run(args: argparse.Namespace) -> None:
     if updates >= stop:
         raise ValueError("supervised segment has no remaining registered updates")
     cache = VideoConditionCache(runtime, data, int(config["runtime"]["raw_video_cache_bytes"]))
-    engine = SupervisedEngine(runtime, data, cache, context, execution_config)
+    engine = SupervisedEngine(runtime, data, cache, context, execution_config,
+                              frame_parallel_group=frame_parallel_group)
     barrier(context)
     try:
         _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start)

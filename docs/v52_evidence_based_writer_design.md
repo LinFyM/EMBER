@@ -550,6 +550,20 @@ temporal负责同构block/decoder算子，model负责完整target路由与Factor
 同一canonical运行面整体替换旧Core/P调用，不保留平行生产fallback。新schema/fresh checkpoint，旧Writer不兼容resume。
 训练、数据、schedule、evaluator继续原有owner；不因为架构设计重写这些已成立的合同。
 
+### 10.2 六卡等效执行
+
+每次更新仍为4个不同task、各1条完整视频、各21个跨episode queries；每task权重1/4，统一一次Adam更新。
+六卡固定为rank(0,1,2)和(3,4,5)两组，按真实帧数将四个条件均衡分配到组，同组按相同次序处理条件。
+每组将真实帧连续分为三份，各卡只执行本地帧的两段native与grounded read；j9/j18只汇集紧凑的role网格，
+完整prefix/H边界仍留在本地。完整视频联合块和唯一参数decoder在组内复制计算，所有帧/role均参与读取。
+两次汇集的backward把各卡消费者余切作SUM再交回帧所有者；collective位于checkpoint重放闭包之外。
+
+每组的21个queries分成offset0/7/14三份，沿用原事件的完整随机batch21、seed和标签；每份FM权重为1/12。
+各卡参数梯度最后在六卡间SUM，无额外world-size除法，因此保持原4task/global84的目标与优化时钟。
+物理切片的日志重新合并为4条逻辑曝光，不增加task/video条件数。正式resume锁定六卡拓扑、两组成员和完整恢复状态。
+独立action诊断、物化与部署不传帧并行group，仍使用同一个完整Writer，避免不同任务误入collective。
+等效性接受正常物理batch与BF16/reduction order差异；正式启动前以真实吞吐、最长视频和完整恢复验证实现。
+
 ## 11. 训练与可证伪的验证合同
 
 本节为本轮训练比较的科学合同；实际资源、物理batch、峰值预算与launch在真实profile后封存，当前运行状态只看progress。

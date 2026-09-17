@@ -15,8 +15,10 @@ Owner最新明确要求：**新架构必须用六卡，并保持等效计算来�
 现在实现视频native帧分片与query分片，六卡参与实际计算。计划以两组三卡分担四个条件，
 组内在j9/j18统一表示处进行可微汇集，保留完整跨帧联合处理；以梯度等效、实际吞吐和恢复验证裁决实现。
 
-当前阶段：**六卡等效执行实现**。新架构本体及四卡profile已完成，formal尚未启动。
-配置已回到pending_six_gpu_profile，六卡代码、验证和profile完成并封存后再启动新方法。
+当前阶段：**六卡等效执行验证与profile**。两组三卡的native帧分片、query分片、梯度SUM与逻辑曝光聚合已实现；formal尚未启动。
+原生三进程Gloo检查覆盖2/2/1和1/1/0帧分片、已打开Meta/写回与checkpoint重算，输出和汇总梯度符合串行目标。
+完整FM的query切片保持原始随机batch/offset与汇总余切；1–4及6rank的任务分配验证保持4条件/84queries。
+配置保持pending_six_gpu_profile，真实六卡吞吐、最长视频和恢复验证完成并封存后再启动新方法。
 
 ## 已完成的整理与实现
 
@@ -30,6 +32,8 @@ Owner最新明确要求：**新架构必须用六卡，并保持等效计算来�
 实构造13,451,008参数；旧Core/P/AdaLN运行路径已替换，仅一个canonical Writer。两个实现worktree均已集成并移除。
 集成native/temporal/LoRA检查35项、训练/恢复/物化/评测相关196项通过。结构检查无hard，接口校验保持集中所有权。
 `5800c2dc`将冻结视觉embedding移出native checkpoint反向重算，14项相关检查通过；正式配置guard两项通过。
+`dac5ee70`增加原生紧凑网格的可微汇集，无参数/schema变化。task_execution中已无调用的旧cache复制/mmap规划退役；
+同一cost-balanced调度器负责条件分组，不新增并行runner或模型实现。原有长调度函数保持单一、确定性的分配职责。
 
 ## 实测执行配置与运行入口
 

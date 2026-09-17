@@ -170,3 +170,24 @@ def test_native_fm_prefix_stays_frozen_with_and_without_credit(native_fm_policy,
     assert len(credit['lora_cotangent']) == (76 if backward else 0)
     assert credit['compiled_forward_calls'] == 2
     assert all(parameter.grad is None and not parameter.requires_grad for parameter in policy.parameters())
+
+
+def test_query_rank_slices_preserve_full_fm_randomness_weight_and_cotangent(native_fm_policy):
+    from ember.writer.function_credit import paired_functional_credit
+    from ember.writer.functional import prepare_frozen_writer_policy
+
+    policy, contract = native_fm_policy
+    state = prepare_frozen_writer_policy(policy, contract)
+    batch = _fm_batch()
+    kwargs = dict(seed=37, device='cpu', random_batch=64, microbatch=1)
+    complete = paired_functional_credit(policy, state, contract, batch, offset=13, condition_weight=.25, **kwargs)
+    shards = []
+    for begin, end in ((0, 2), (2, 4), (4, 5)):
+        sliced = {key: value[begin:end] for key, value in batch.items()}
+        shards.append((end - begin, paired_functional_credit(
+            policy, state, contract, sliced, offset=13 + begin, condition_weight=.25 * (end - begin) / 5, **kwargs)))
+    assert sum(count * credit['flow_loss'] for count, credit in shards) / 5 == pytest.approx(complete['flow_loss'], rel=2e-5)
+    aggregate = torch.cat([sum(credit['lora_cotangent'][name] for _, credit in shards).flatten()
+                           for name in complete['lora_cotangent']])
+    expected = torch.cat([value.flatten() for value in complete['lora_cotangent'].values()])
+    torch.testing.assert_close(aggregate, expected, rtol=4e-4, atol=2e-6)

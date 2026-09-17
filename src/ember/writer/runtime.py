@@ -89,9 +89,9 @@ class WriterRuntime:
         offsets = torch.tensor([0, len(pixels)], dtype=torch.long, device=self.device)
         return pixels, positions, offsets, tokens, mask, span
 
-    def compile(self, condition: tuple) -> dict[str, torch.Tensor]:
+    def compile(self, condition: tuple, *, frame_parallel_group=None) -> dict[str, torch.Tensor]:
         with autocast(self.device):
-            return self.state.writer(*condition, policy=self.policy)
+            return self.state.writer(*condition, policy=self.policy, frame_parallel_group=frame_parallel_group)
 
 
 def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.device) -> WriterRuntime:

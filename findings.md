@@ -2285,6 +2285,12 @@ Train仍54/96，breadth18→20，相邻R/G/L43/11/11、churn22、Jaccard .6615�
 按已登记节点再取1500确认回落是否持续，保持训练配置与全部恢复状态；这是一次相邻确认，不以FM下降无限延长窗口。
 修正是否开展仍需具体失败证据、主要改变变量、预测与停止标准，最终controls不作为返工依据。
 
+1500训练期间复核任务覆盖这一候选解释：现有allowlist提供71个审计source specs，与train24构成95个名义任务，
+但同语言跨场景与spec数量不等于已证明独立的操作教学映射。§68及research_history§6已经记录75任务reader、
+73任务共享Writer及meta73/target18完整输出比较；扩展任务不是尚未试过的默认修复。
+本轮训练任务表现保持、validation回落只支持优先检查跨任务问题，尚未将覆盖不足识别为首要原因。
+当前图不同或训练task较少均不足以单独支持恢复95-task；本次只读复核没有增加梯度来源或改变sampler。
+
 原件：`runs/analysis/unified_writer_20260917/unified/paired_readout.json`、`analysis/step{600,900,1200}_*`、
 `training/{checkpoints,materialized,evaluation}`与`step600_execution.json`。600评测用五卡×三workers；
 避开p2当时升高的其他任务负载，不改变训练的六卡拓扑或配对条件。一次物化设备参数格式错误在CLI解析时退出，

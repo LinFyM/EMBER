@@ -44,6 +44,9 @@ Owner进一步要求提高显存利用后，已实测8/12/16/20帧chunk并选择
 另移除13个干净、已集成且无运行依赖的临时工作树。保留400个外部硬链接payload、一个评测不完整的bank、
 9个有未合入/未提交历史工作的worktree，以及全部formal checkpoint/raw rows/数据/source/专家材料。
 清理逐项原件：`runs/analysis/workspace_cleanup_20260917.json`。
+后续8组已结束profile的临时权重和重复文件已删除，共107文件、1,393,921,115字节（1.298GiB）；
+吞吐、梯度、恢复与原始曝光证据保留在study，记录为`profile_cleanup_20260918.json`。
+该清理不包含formal训练checkpoint或仍在使用的detached runtime。
 
 统一架构已集成：`11e96245`为temporal/model，`14432969`为native encoder，`199eade0`为runtime/schema。
 实构造13,451,008参数；旧Core/P/AdaLN运行路径已替换，仅一个canonical Writer。两个实现worktree均已集成并移除。

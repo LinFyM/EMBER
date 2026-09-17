@@ -1,9 +1,13 @@
 """Unified native Z/H reads, exact input roles, and differentiable Meta replay."""
 
+from copy import deepcopy
+from datetime import timedelta
 from types import SimpleNamespace
 
 import pytest
 import torch
+import torch.distributed as dist
+import torch.multiprocessing as mp
 from torch import nn
 from torch.nn import functional as F
 from transformers import GemmaConfig
@@ -343,3 +347,73 @@ def test_order_and_condition_boundaries_are_validated():
     invalid[2] = torch.tensor([0, 0, 3])
     with pytest.raises(VideoProgramError, match='video-language'):
         encoder(policy, *invalid)
+
+
+def _frame_parallel_case(args, frame_count):
+    frames = args[0][:1].expand(frame_count, -1, -1, -1, -1).clone()
+    for index in range(frame_count):
+        frames[index, 0] = 15 + index * 31
+        frames[index, 1] = 230 - index * 29
+    if frame_count == 5:
+        indices, offsets = torch.tensor([0, 5, 9, 0, 7]), torch.tensor([0, 3, 5])
+    else:
+        indices, offsets = torch.tensor([0, 0]), torch.tensor([0, 1, 2])
+    return (frames, indices, offsets, *args[3:])
+
+
+def _parameter_gradients(module):
+    return torch.cat([(value.grad if value.grad is not None else torch.zeros_like(value)).flatten()
+                      for value in module.parameters()])
+
+
+def _check_frame_parallel_case(rank, size, frame_count):
+    torch.manual_seed(32)
+    policy, parallel, args = _encoder(checkpoint=True)
+    _open_meta_and_writeback(parallel)
+    serial = deepcopy(parallel)
+    args = _frame_parallel_case(args, frame_count)
+    expected = serial(policy, *args)
+    cotangents = torch.randn((size, *expected[0].shape), generator=torch.Generator().manual_seed(913))
+    expected[0].backward(cotangents.sum(dim=0))
+    expected_gradient = _parameter_gradients(serial)
+
+    image_batches = []
+    bridge = policy.model.paligemma_with_expert
+    embed_image = bridge.embed_image
+
+    def count_images(images):
+        image_batches.append(images.shape[0])
+        return embed_image(images)
+
+    bridge.embed_image = count_images
+    observed = parallel(policy, *args, frame_parallel_group=dist.group.WORLD)
+    torch.testing.assert_close(observed[:4], expected[:4], rtol=3e-5, atol=3e-6)
+    assert observed[4] == expected[4]
+    local_frames = frame_count // size + int(rank < frame_count % size)
+    assert sum(image_batches) == 2 * local_frames
+    observed[0].backward(cotangents[rank])
+    observed_gradient = _parameter_gradients(parallel)
+    dist.all_reduce(observed_gradient, op=dist.ReduceOp.SUM)
+    # Frame batching and the order of summation can change low floating-point bits.
+    torch.testing.assert_close(observed_gradient, expected_gradient, rtol=3e-4, atol=3e-5)
+    assert sum(image_batches) == 2 * local_frames
+    assert all(value.grad is None for value in policy.parameters())
+    _assert_no_native_hooks(policy)
+
+
+def _frame_parallel_worker(rank, size, rendezvous):
+    torch.set_num_threads(1)
+    dist.init_process_group('gloo', init_method=f'file://{rendezvous}', rank=rank,
+                            world_size=size, timeout=timedelta(seconds=90))
+    try:
+        # Five frames split 2/2/1; two real frames split 1/1/0. Each rank consumes
+        # a different output cotangent, and the shared parameter gradients SUM.
+        for count in (5, 2):
+            _check_frame_parallel_case(rank, size, count)
+    finally:
+        dist.destroy_process_group()
+
+
+@pytest.mark.skipif(not dist.is_available() or not dist.is_gloo_available(), reason='Gloo is required')
+def test_three_rank_frame_shards_match_serial_outputs_and_aggregate_gradients(tmp_path):
+    mp.spawn(_frame_parallel_worker, args=(3, str(tmp_path / 'native-gloo')), nprocs=3, join=True)

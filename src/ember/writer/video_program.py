@@ -5,6 +5,7 @@ from __future__ import annotations
 from functools import partial
 
 import torch
+import torch.distributed as dist
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
@@ -14,6 +15,39 @@ from ember.writer.temporal import JointVideoStack, RMSNorm, token_role_addresses
 
 class VideoProgramError(RuntimeError):
     """Raised when the sealed teacher-video semantic interface changes."""
+
+
+def _frame_shard(total_frames: int, size: int, rank: int) -> tuple[int, int]:
+    """Contiguous balanced slices, including empty ranks for short videos."""
+    whole, remainder = divmod(total_frames, size)
+    start = rank * whole + min(rank, remainder)
+    return start, start + whole + int(rank < remainder)
+
+
+class _GatherFrameRows(torch.autograd.Function):
+    """Gather compact rows; return the SUM of all consumer cotangents to owners."""
+
+    @staticmethod
+    def forward(ctx, local_rows, group, total_frames):
+        size, rank = dist.get_world_size(group), dist.get_rank(group)
+        bounds = [_frame_shard(total_frames, size, index) for index in range(size)]
+        ctx.start, ctx.stop = bounds[rank]
+        ctx.group = group
+        if local_rows.shape[0] != ctx.stop - ctx.start:
+            raise VideoProgramError("native frame shard and compact rows disagree")
+        padded = local_rows.new_zeros((max(stop - start for start, stop in bounds), *local_rows.shape[1:]))
+        padded[:local_rows.shape[0]].copy_(local_rows)
+        gathered = [torch.empty_like(padded) for _ in range(size)]
+        dist.all_gather(gathered, padded, group=group)
+        return torch.cat([value[:stop - start] for value, (start, stop) in zip(gathered, bounds, strict=True)])
+
+    @staticmethod
+    def backward(ctx, gradient):
+        # The decoder is replicated with disjoint query cotangents. Averaging here
+        # would change the objective; parameter gradients are summed by the trainer.
+        combined = gradient.contiguous().clone()
+        dist.all_reduce(combined, op=dist.ReduceOp.SUM, group=ctx.group)
+        return combined[ctx.start:ctx.stop], None, None
 
 
 class TaskQueriedPatchGrounding(torch.nn.Module):
@@ -375,8 +409,24 @@ class Pi05UnifiedVideoEncoder(torch.nn.Module):
         padded = value.new_zeros((valid_frames.numel(), *value.shape[1:]))
         return padded.index_copy(0, flat_indices, value).reshape(*valid_frames.shape, *value.shape[1:])
 
+    def _collect_frame_rows(self, rows, reference, role_count, total_frames, group):
+        if rows:
+            local = torch.cat(rows)
+        else:
+            device_type = reference.device.type
+            dtype = (torch.get_autocast_dtype(device_type) if torch.is_autocast_enabled(device_type)
+                     else self.middle_read.language_projection.weight.dtype)
+            # An empty shard performs no native/image forward. The dependency on
+            # reference makes it visit both gather backwards with a zero gradient.
+            local = reference.new_empty((0, role_count, self.program_width), dtype=dtype)
+            local = local + reference.reshape(-1)[0].to(dtype) * 0.0
+        if group is None or dist.get_world_size(group) == 1:
+            return local
+        # Both collectives must stay outside all activation-replay closures.
+        return _GatherFrameRows.apply(local, group, total_frames)
+
     def forward(self, policy, frames, frame_indices, video_offsets,
-                language_tokens, language_mask, task_span_mask):
+                language_tokens, language_mask, task_span_mask, *, frame_parallel_group=None):
         """Return M[B,T,m+50,d], validity masks, shared role addresses and m."""
         core, ids, valid_tasks, valid_frames, flat_indices = self._validate_forward_batch(
             policy, frames, frame_indices, video_offsets, language_tokens, language_mask, task_span_mask
@@ -397,9 +447,15 @@ class Pi05UnifiedVideoEncoder(torch.nn.Module):
                 or suffix_attention.shape != suffix_padding.shape):
             raise VideoProgramError("PI05 fixed-probe suffix layout changed")
 
+        local_start, local_stop = 0, frames.shape[0]
+        if frame_parallel_group is not None:
+            size, rank = dist.get_world_size(frame_parallel_group), dist.get_rank(frame_parallel_group)
+            if size <= 0 or rank < 0:
+                raise VideoProgramError("native frame rank is outside its process group")
+            local_start, local_stop = _frame_shard(frames.shape[0], size, rank)
         chunks, middle_rows = [], []
-        for start in range(0, frames.shape[0], self.max_frames_per_encoder_call):
-            stop = min(start + self.max_frames_per_encoder_call, frames.shape[0])
+        for start in range(local_start, local_stop, self.max_frames_per_encoder_call):
+            stop = min(start + self.max_frames_per_encoder_call, local_stop)
             selected = ids[start:stop]
             count = stop - start
             native_args = (suffix.expand(count, -1, -1), suffix_padding.expand(count, -1),
@@ -413,7 +469,9 @@ class Pi05UnifiedVideoEncoder(torch.nn.Module):
             ))
             # Retain only the necessary native boundary, not a second full concatenation.
             chunks.append((start, stop, prefix, horizon))
-        middle = self._video_grid(torch.cat(middle_rows), valid_frames, flat_indices)
+        middle = self._collect_frame_rows(middle_rows, text_middle, valid_roles.shape[1],
+                                          frames.shape[0], frame_parallel_group)
+        middle = self._video_grid(middle, valid_frames, flat_indices)
         middle = self._checkpoint(self.middle_stack, middle, positions, valid_frames, valid_roles, addresses)
         middle = middle[valid_frames]
 
@@ -426,6 +484,8 @@ class Pi05UnifiedVideoEncoder(torch.nn.Module):
                 task_span_mask[selected], text_final[selected], valid_tasks[selected],
                 suffix_padding.expand(count, -1), suffix_attention.expand(count, -1), adarms.expand(count, -1),
             ))
-        memory = self._video_grid(torch.cat(final_rows), valid_frames, flat_indices)
+        memory = self._collect_frame_rows(final_rows, middle, valid_roles.shape[1],
+                                          frames.shape[0], frame_parallel_group)
+        memory = self._video_grid(memory, valid_frames, flat_indices)
         memory = self._checkpoint(self.final_stack, memory, positions, valid_frames, valid_roles, addresses)
         return memory, valid_frames, valid_roles, addresses, semantic_tokens

@@ -257,10 +257,13 @@ class CompleteLoRAWriter(torch.nn.Module):
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
         task_span_mask: torch.Tensor,
+        *,
+        frame_parallel_group=None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, int]:
+        parallel = {} if frame_parallel_group is None else {"frame_parallel_group": frame_parallel_group}
         return self.semantic_encoder(
             policy, frames, frame_indices, video_offsets,
-            language_tokens, language_mask, task_span_mask,
+            language_tokens, language_mask, task_span_mask, **parallel,
         )
 
     def forward(
@@ -273,10 +276,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         task_span_mask: torch.Tensor,
         *,
         policy: torch.nn.Module,
+        frame_parallel_group=None,
     ) -> dict[str, torch.Tensor]:
         memory, valid_frames, valid_roles, addresses, semantic_tokens = self.encode_task(
             policy, frames, frame_indices, video_offsets,
-            language_tokens, language_mask, task_span_mask,
+            language_tokens, language_mask, task_span_mask, frame_parallel_group=frame_parallel_group,
         )
         expert, action_in, action_out = self.compiler(
             memory, valid_frames, valid_roles, addresses, semantic_tokens,

@@ -15,7 +15,9 @@ Owner最新明确要求：**新架构必须用六卡，并保持等效计算来�
 已实现视频native帧分片与query分片，六卡参与实际计算。两组三卡分担四个条件，
 组内在j9/j18统一表示处进行可微汇集，保留完整跨帧联合处理；梯度等效、实际吞吐和恢复验证通过。
 
-当前阶段：**六卡正式训练封存与启动**。两组三卡的native帧分片、query分片、梯度SUM与逻辑曝光聚合已实现；formal尚未启动。
+当前阶段：**新Writer六卡正式训练首段0→600**。2026-09-17 23:23 CST已从clean pushed detached
+`184947cb` fresh启动，gpu02 p0/1/2/3/4/6，tmux `ember-unified-native-train`。
+正式run contract已核实六rank、两组三卡、global84与source trainable=0；每100保存完整状态，600后执行correct400/train96。
 原生三进程Gloo检查覆盖2/2/1和1/1/0帧分片、已打开Meta/写回与checkpoint重算，输出和汇总梯度符合串行目标。
 完整FM的query切片保持原始随机batch/offset与汇总余切；1–4及6rank的任务分配验证保持4条件/84queries。
 六卡已完成3→6完整恢复，24逻辑条件/504queries无重复计数；集成训练/物化/native检查66项通过。

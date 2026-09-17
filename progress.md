@@ -24,12 +24,17 @@ train为47/11/13、churn24、Jaccard .6620、CI[-14.5833,+9.375]pp。验证继�
 完整2096条新评测、72个最终workers均通过，本节点没有工程异常；细节见findings§113与`A/continuation_readout.json`。
 1200–2100完整节点及视频特异性演化见findings§111–112；两次worker前GPU准入拒绝均已从同队列恢复，原件保留。
 
-按owner要求继续观察，2700已从完整2400点启动，PID1337662；保存2500／2600／2700，累计目标10800条件／226800queries。
+按owner要求继续观察，2700已从完整2400点正常完成训练与correct／train LoRA物化；
+保存2500／2600／2700，累计10800条件／226800queries，本段训练3069.152秒。
 沿原gpu01物理0–3／四rank／GPU UUID、各rank microbatch8、global84及原optimizer／LR／RNG恢复，配方不变。
 运行树为clean pushed detached `.codex/tmp/source-aligned-A-trend-runtime`（329987c0）；
 原1200的575c189a与1500／1800的6393cbe1及其完整合同保持。每个扩展预算记录于`budget_extensions/updates_XXXXXXXX/`，
 157项定向检查及真实1800→2100／2400事件／sampler核验通过，实际2100／2400整段恢复与checkpoint审计也已完成。
-当前后台入口为`A/continue_registered.py --through-node 2700`，PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_2700.log`。
+原后台入口`A/continue_registered.py --through-node 2700`在validation准备后被GPU准入拒绝，60个shards仍全部pending，
+没有worker invocation或评测行；原训练、物化和失败日志保留。重新检查发现physical4外部任务有0→29%的利用率变化，
+本节点推理登记使用可用的gpu01 physical0–3。原未启动队列保留在`validation_correct_step2700_unstarted_admission_failure`，
+按相同checkpoint、manifest、400条件及RNG重新准备；不重训或重新生成已完成的LoRA。
+恢复入口为`A/recover2700.py`，PID1560954；当前PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_2700_retry1.log`。
 2400完成记录已保存`A/trend_continuation_completion_2400.json`；当前节点与追加依据见`A/trend_continuation_launch_contract.json`。
 每节点仍完成correct400／train96及四个视频对照，无视频复用source零LoRA48；只等完成事件，完整节点后判断是否追加。
 

@@ -283,8 +283,8 @@ class Pi05UnifiedVideoEncoder(torch.nn.Module):
                           for model, value, condition in zip((language, expert), hidden, conditions, strict=True)]
         return tuple(hidden)
 
-    def _lower_native(self, core, frames, language_tokens, language_mask, suffix,
-                      suffix_padding, suffix_attention, adarms):
+    def _embed_prefix(self, core, frames, language_tokens):
+        """Keep frozen vision work outside the native activation replay."""
         bridge = core.paligemma_with_expert
         with torch.no_grad():
             patches = bridge.embed_image(self._prepare_images(frames))
@@ -296,8 +296,12 @@ class Pi05UnifiedVideoEncoder(torch.nn.Module):
             raise VideoProgramError("PI05 complete real prefix embedding layout changed")
         prefix = torch.cat((patches.reshape(frames.shape[0], self.image_tokens, self.image_width), text), dim=1)
         dtype = bridge.paligemma.model.language_model.layers[0].self_attn.q_proj.weight.dtype
+        return prefix.to(dtype)
+
+    def _lower_native(self, core, prefix, language_mask, suffix,
+                      suffix_padding, suffix_attention, adarms):
         return self._native_layers(
-            core, prefix.to(dtype), suffix.to(dtype), language_mask, suffix_padding,
+            core, prefix, suffix.to(prefix.dtype), language_mask, suffix_padding,
             suffix_attention, adarms, 0, self.native_split_layer, final_norm=False,
         )
 
@@ -400,9 +404,9 @@ class Pi05UnifiedVideoEncoder(torch.nn.Module):
             count = stop - start
             native_args = (suffix.expand(count, -1, -1), suffix_padding.expand(count, -1),
                            suffix_attention.expand(count, -1), adarms.expand(count, -1))
+            prefix = self._embed_prefix(core, frames[start:stop], language_tokens[selected])
             prefix, horizon = self._checkpoint(
-                partial(self._lower_native, core), frames[start:stop], language_tokens[selected],
-                language_mask[selected], *native_args,
+                partial(self._lower_native, core), prefix, language_mask[selected], *native_args,
             )
             middle_rows.append(self._checkpoint(
                 self.middle_read, prefix, horizon, text_middle[selected], task_span_mask[selected], valid_tasks[selected]

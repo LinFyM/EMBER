@@ -181,7 +181,7 @@ def test_zero_writeback_preserves_native_read_with_actual_masks_positions_and_fi
     handles = [module.register_forward_hook(lambda _m, _i, _o: norm_calls.append(True))
                for module in (language.norm, expert.norm)]
     try:
-        middle_z, middle_h = encoder._lower_native(core, frames, tokens, mask, suffix,
+        middle_z, middle_h = encoder._lower_native(core, encoder._embed_prefix(core, frames, tokens), mask, suffix,
                                                   suffix_padding, suffix_attention, adarms)
         assert not norm_calls
         written = encoder._writeback(middle_z, middle_h, torch.randn(1, 53, 8), spans, 3)

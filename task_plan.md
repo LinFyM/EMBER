@@ -16,7 +16,7 @@ Owner已明确授权：先整理整个仓库及data1可删除资产，再实现�
    j9/j18各两层同构Z/H联合块、一次双写回、两层连续参数decoder和共享完整A/B heads；三Meta fresh联合纯FM。
    复用采样、真实FM/VJP重放、checkpoint及evaluator。通过有效梯度、原生接口、最长视频、数值稳定和完整恢复检查，
    用实际LoRA/s、queries/s及峰值选择physical batch/并行方式，不删视频、相机或H位置换速度。
-3. **待完成：首轮训练与匹配比较。** 冻结可审阅的训练/预算/节点/停止合同；从clean pushed detached trees运行。
+3. **进行中：首轮训练与匹配比较。** 冻结可审阅的训练/预算/节点/停止合同；从clean pushed detached trees运行。
    新架构与fresh v5.2匹配raw1000 source、双RGB、fullH实际learned read、train24、采样事件、FM和优化时钟。
    正式节点使用single-checkpoint correct400和train96，比较per-task/suite、breadth、相邻retained/gained/lost与churn。
    性能仍以>145及相邻资格为长期目标；不以内部指标代替真实能力，视频相对语言/静态增量另以有效参照验证。

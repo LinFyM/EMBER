@@ -6,7 +6,7 @@ Owner已授权仓库/data1整理、统一新架构实现和吞吐优化、与匹
 以及结果不佳但有明确改进空间时的修正重训，全部结束后详细汇报。已设置新的执行goal；
 上一轮仅分析/不实验限制已被本次授权替代。无关旧A/C等路线不恢复。
 
-当前阶段：**统一架构实现与实际profile**。源码整理已在clean pushed `bf8aea37`交付；尚未启动正式新训练。
+当前阶段：**实际profile与匹配正式训练**。源码整理已在clean pushed `bf8aea37`交付；fresh v5.2对照已启动，新架构正在profile。
 已退役旧ECP捕获合同、SFT在线验证模块、重复functional wrapper及结束A配置；相关110项检查和训练入口检查通过。
 已删除23,224个可重建物化payload，准确释放96.322GiB；另移除13个干净、已合入main且无运行依赖的临时工作树。
 保留400个有外部硬链接的payload、一个缺少完整评测原件的bank、9个有未合入/未提交历史工作的worktree，
@@ -14,8 +14,8 @@ Owner已授权仓库/data1整理、统一新架构实现和吞吐优化、与匹
 清理后strg01 quota：data1用922,230,408KiB/soft1,073,741,824KiB，余约144.49GiB；
 data0用108,483,544KiB，独立余约920.54GiB（launch前复核，非固定配额事实）。
 
-主代理负责canonical main中的runtime/schema、训练/物化合同、评测tests、profile与集成；两个独立工作树分别实现
-`video_program`原生分段与联合表示、`temporal/model`联合块及连续参数decoder。均从bf8aea37开始，写入范围不重叠。
+主代理负责canonical main中的runtime/schema、训练/物化合同、评测tests、profile与集成；两个独立工作树已分别完成
+`video_program`原生分段与联合表示、`temporal/model`联合块及连续参数decoder。均已集成，干净task-owned工作树已移除。
 单一active运行面整体替换，旧v5.2仅在clean detached sparse tree `.codex/tmp/unified-v52-baseline`保留本轮必要对照。
 模型实现采用`code-architecture-gate`；保留现有真实FM/VJP、task等权采样、checkpoint和动态评测调度。
 
@@ -33,22 +33,30 @@ v5.2非正式profile完成：105-frame最长train视频、21-query完整FM，8/8
 `runs/analysis/unified_writer_20260917`为symlink。`launch_contract.json`登记source、事件、2400预算/配对节点、
 最多200GiB新增峰值估计（含主比较、必要诊断和一轮条件修正，无大资产复制）及baseline冻结bf8aea37。
 Baseline为匹配双RGB/learned完整H50 fresh模型，先按旧runtime登记1200 events，再按预授权原事件prefix扩至2400；
-科学曝光和12k优化时钟与新架构相同。当前准备首个600节点，正式状态以run_contract、日志及本文件后续登记为准。
+科学曝光和12k优化时钟与新架构相同。Baseline首个0–600 formal窗口已启动：gpu01 p0/1/4，fresh，launcher PID245068；命令原件
+`runs/analysis/unified_writer_20260917/baseline/launch_600.sh`，日志`segment_600.log`，输出`baseline/training/`。
+统一新架构实现与runtime在clean pushed `199eade0`，其冻结sparse tree`.codex/tmp/unified-native-runtime`完成首轮真实profile：105帧/21-query，
+8/8热身后25.65–25.83秒、reserved20.27GiB；扩大到24/8仅降到24.85秒而升到40.27GiB。
+第3次更新中层联合块收到非零梯度，三Meta/双写回与完整76输出正常，source始终冻结。
+正在将冻结视觉embedding移出native checkpoint重放，以减少不必要计算；随后复测并验证正式多卡恢复。
+本轮两臂七节点共28份物化请求已按实际selection接口校验，每节点400+96条件；映射seed20260911，
+validation每task50条video各一次，train固定states32–35/held视频46–49。登记`paired_panel_registration.json`，
+执行入口`evaluate.sh`/`materialize.sh`复用各臂冻结runtime；尚未产生本轮闭环分数。
 
 ## Active design与执行准备
 
 - 唯一active design：[统一Writer设计](docs/v52_evidence_based_writer_design.md)，j9/j18各两层联合Z/H块、一次双写回、
-  两层连续参数decoder、三Meta共同学习及八组共享完整A/B输出。源码已实现，真实新模型profile待完成。
-- 匹配v5.2 baseline的源码可从pushed `176759a7`冻结，运行配置须匹配raw1000、双RGB/fullH、train24与优化事件；
+  两层连续参数decoder、三Meta共同学习及八组共享完整A/B输出。源码已实现，首轮真实profile通过；效率优化复测与多卡恢复待完成。
+- 匹配v5.2 baseline已从pushed `bf8aea37`冻结，运行配置匹配raw1000、双RGB/fullH、train24与优化事件；
   不把旧A的分数直接赋给新对照。不在canonical源码中保留两套生产Writer。
-- 训练、显存、GPU分配、独立quota及新增资产峰值在真正launch前按实际profile封存；当前没有正式新run。
+- Baseline的profile、三卡配置、独立quota及峰值预算已封存；新架构的formal配置在其profile完成后封存。
 - Frozen source、action-hidden视频、跨episode纯FM、paired400、controls与Test边界仍按AGENTS/active design执行。
 
 ## 已完成设计与历史状态
 
 第二轮设计在`176759a7`交付；完整证据审计、来源与限定见findings§115–116、
 [证据审计](docs/v52_evidence_audit_20260917.md)及[研究历史](docs/research_history.md)。
-设计解析13,451,008参数尚非runtime测量；静态重复不变性、地址Value边界、原生接口和信用开启已经审查，
+runtime实测13,451,008参数与设计解析一致；静态重复不变性、地址Value边界、原生接口和信用开启已检查，
 实际获取、迁移、视频增量、保持与资源峰值均待本轮实验。
 
 旧A3000训练已完成，2800/2900/3000完整恢复点保留；3000未评测，最新完整节点2700为108/400、train64/96。

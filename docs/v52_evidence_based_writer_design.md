@@ -1,14 +1,17 @@
-# 从 v5.2 证据推导的原生跨帧 Writer 设计
+# 从 v5.2 处理原则推导的统一 Writer 设计
 
-2026-09-17。本文交付 owner 要求的分析与架构设计；不是运行合同，不授权实现、训练、评测或恢复历史实验。
+2026-09-17，第二轮设计goal。本文是本轮唯一canonical设计交付；没有实现或启动实验。
 对应证据、预算、比较边界和原件见[证据审计](v52_evidence_audit_20260917.md)。
+首轮“中层联合栈＋原v5.2全部尾端”保留在Git `426dc5be`；它是比较对象，不是本轮默认答案。
 
 ## 1. 结论与要解决的问题
 
-本设计选择保留 v5.2 的视觉内容读取、归一化 Core/Procedure 编译器和八组共享完整 A/B 输出头，
-把新的建模能力放在**原生视觉语言／Action Expert 中间：对真实视觉任务 token 与完整动作响应一起做跨帧计算，
-同时写回两种原生 hidden，再让剩余原生层解释它们**。新增主干只有一种可堆叠的 Transformer block。
-它不把视频压成动作目标后再经固定 Jacobian 编译，也不要求输出落在冻结 native X/Y 或 PCA 的子空间。
+本轮选择**原生中层与末端使用同一种联合视频块，随后以单一参数槽状态生成完整LoRA**。
+原生1–9层 → 联合块×2 → Z/H双残差写回 → 原生10–18层 → 同构联合块×2 → 同构参数读出块×2 → 八组共享A/B头。
+取消独立Core编码器、独立Procedure编码器、P中心化和专门Core/P AdaLN；它们承担的内容获取、过程组织和条件化读取
+分别由统一视频表示与连续参数槽更新重新实现，不声称这些旧部件已被消融证明无用。
+保留真实视觉内容、完整H、源网络内部消费、内容先行的参数初始化、归一化、小型共享完整A/B出口与三Meta共同学习。
+这继承的是v5.2有依据的处理原则，而不是要求新的计算图逐模块包含v5.2。
 
 主要问题不是将 130 多的已有能力视作无用，而是：
 
@@ -22,7 +25,7 @@
    增加容量通过复制同构块，不依赖越来越多的专用监督、分段冻结或部署优化。
 
 长期资格仍为 validation8 single-checkpoint strict paired correct **>145/400**，并满足相邻稳定、breadth、
-四 suite、Goal/Long、换正确视频和最终因果 controls。本文没有将新设计的理论可行性写成这项资格已经成立。
+四 suite、Goal/Long、换正确视频和最终因果 controls。本文没有将新设计的理论可行性写成这项资格已经成立。设计选择明确，性能主张仍需新证据。
 
 ## 2. 证据究竟允许得出什么
 
@@ -30,7 +33,7 @@
 
 | 证据 | 能支持的判断 | 对设计的约束 |
 | --- | --- | --- |
-| 旧 v5.2 132、v6 task-complete 143、当前 A 140，以及各自完整曲线 | 普通 FM 的合法视频到完整 LoRA 可以获得真实能力；尚无稳定资格 | 保留已成功完整组合的主要读取／输出机制，不以全面重启推翻它 |
+| 旧 v5.2 132、v6 task-complete 143、当前 A 140，以及各自完整曲线 | 普通 FM 的合法视频到完整 LoRA 可以获得真实能力；尚无稳定资格 | 保留绝对内容、功能信用和有容量的输出原则；整组合正例不证明每个旧模块必须保留 |
 | v5.2 old900/TC150 同 3,600 条件为132/51；v6 同曝光为95/111 | 配方影响很大，且与架构交互；曝光相同不是优化过程相同 | 保留 task-balanced 小组更新和实际优化时钟，不能只匹配样本总数 |
 | 固定 native 因子投影损伤已知成功行为；P/Q 完整出口有局部正增益；Pullback free-A/B 行为优于 free-q | 若干固定出口确实排除了可取得的功能；具体干预不证明所有自由出口可学 | 输出保留可学习完整 A/B，不重新套固定 X/Y、PCA 或单一 q 的硬映射 |
 | 完整 P/Q 已有真实视频、四层共享主干、完整 A/B 和 FM，却多任务弱；Semantic-Path 也有小型共享 heads 和调制却弱 | “完整 A/B＋共享 Transformer＋FM”不是 v5.2 优势的充分解释 | 解释具体内容路径、归一化、读取位置和共同训练，而不是通用流程 |
@@ -191,311 +194,401 @@ W_m 初始为零。B 输出末层也为零，原图通常第一步只学习 B �
 它可能改进 P 的内容，却未改变上述 Core 顺序不变性。此前 H-only 候选不能被描述为已经解决主生成路径的消费问题。
 因此，本设计把同一跨帧计算的结果**同时写回 task-span Z 和完整 H**。
 
-## 5. 完整架构
+这条零导数结论限定于旧Core读取图。本轮改为末端Z/H联合处理后，H-only也能通过末端联合块影响语义memory和参数；
+不能继续声称它在新图中完全影响不了主要输出。仍选择双写回，是为了让原生后半段的视觉前缀和动作计算都消费跨帧上下文，
+而不仅在native结束后才让视觉内容与动作上下文结合。
+
+## 5. 从处理原则到统一架构的选择
+
+### 5.1 v5.2值得继承的是什么
+
+| 处理原则 | 比“video→native→LoRA→FM”多出的具体内容 | 本轮承接方式 |
+| --- | --- | --- |
+| 先有任务相关内容，再产生条件作用 | 多个task-token直接读取真实patch与上下文，内容没有被强制变成差分或少量动作目标 | 两个native边界都保留task语义和真实patch；参数槽首先从联合后的语义内容建立初值 |
+| 过程应修正实际内容解释 | 旧slot的P读取由c条件化，随后以gamma/beta改变同一个参数内容；不是两个独立LoRA相加 | 统一Z/H上下文参与原生续算；同一参数槽在取得内容后继续条件化读取全部联合证据 |
+| 在受控尺度的共享坐标中生成参数 | RMSNorm、256维slots、八个256→216→native-width heads；同family跨层共享输出坐标 | 保留256维、pre/post norm、同320个层/rank地址和八组heads；更换取得slot内容的计算 |
+| 输出作用由执行者状态决定 | A/B共同学习BAx，不绑定teacher激活与执行激活，也不预固定为source/PCA span | 保留完整38-target rank16的A=A0+ΔA、B=ΔB；没有native硬投影、q回拉或额外adapter |
+| 读取与参数生成一起适应真实功能信用 | Text/VL/Action Meta和Writer共同接受同一版本的跨episode FM | 所有读取、联合块、decoder和Meta fresh联合训练，source基础权重冻结 |
+
+这些是有证据约束的组合解释，不是逐项已识别的成功充分条件。P/Q、Video Functional、Semantic-Path等反例
+意味着“真实Value”“紧凑head”“共享Transformer”“可反传”各自都不够。新方案额外承担的是一个具体假设：
+**在保留目标内容与自由参数坐标的同时，让共同的图文—动作表示跨帧形成，再参与原生动作计算和参数查询。**
+不是先把视频压成另一个局部监督目标，再要求参数生成器追随那个目标。
+
+“统一”在这里有三个可核标准：视频理解只维护一种带语义/动作位置的表示；时间组织只使用一种可复制block；
+参数生成只维护一个连续更新的slot状态。不要求把输入维度、原生层和最终输出头伪装为完全相同的物理操作。
+
+### 5.2 为什么选择这一版
+
+| 实质不同的选择 | 优点 | 本轮判断 |
+| --- | --- | --- |
+| 首轮中层Z/H联合栈，再保留整套Core/P/AdaLN | 方便与旧图做较集中干预；整组合的历史依据最直接 | 是合理的控制实验候选，但不能因缺少删除消融就认定它是最协调的最终结构 |
+| 完全外部的统一视频Transformer＋参数decoder | 接口短，直接使用成熟的最终native响应，不需中层续算 | Video Functional/Horizon等已有较近的外部共同处理；纯模块合并没有补上原生消费这个新假设，因此本轮不选 |
+| **中层与末端的同构联合块＋内容起始的统一参数decoder** | 原生续算与完整视频理解有明确分工；保留内容锚点，取消独立过程摘要和特制融合；全H直到实际参数读取 | **本轮选择。** 同时重构表示和读出，整体比较负责；不冒充单模块消融或已证性能改进 |
+| 每隔少量native层都加新写回位置 | 可增加原生与视频交互轮次 | 没有证据要求先加多处接口；首版用一个内部位置。增加容量先复制既有联合block，不增加新的接口类型 |
+
+选择第三项不是因为“P看过同样信息所以可删除”。本轮将P的时间组织职责放入两处相同的联合块，
+将Core的内容职责保留在语义token与第一层参数读取，将条件融合改为同一个slot的连续内容依赖读取。
+这是明确更换计算分解；旧AdaLN可能有未保留的有用偏置，无法用函数类包含关系保证新图不退化。
+我们接受这项可检验代价，因为本轮目标是统一的整体方法，而非以最少改变量定位一个旧模块的效果。
+
+第9层是首版的平衡切点，前后各9层；不是“第9层已被证明最优”。仅一处写回使native消费假设具体、成本可控。
+末端再用同构块，是为了让各帧经过原生后半段后的新响应重新交流，再交参数查询；两处输入不同，不是同一张量原样重复计算。
+也不声称每一层都必需。当前每处两层让“帧内结合→跨帧传播”至少完成后再有一次跨角色组合；容量扩展只复制同一种块。
+
+### 5.3 最早多通路方案没有被当作反证淘汰
+
+此前讨论的真实形成链是：
+
+1. 最初方案保留丰富内容直达compiler；另由跨帧关系触发第二次真实帧读取，并在AE内部消费；compiler具体结构尚未确定。
+2. 后改成单次native计算中间的H残差写回，避免两次完整forward；引入“中层证据足够”的新假设，并非两者已证明等价。
+3. 在进一步具体化时，一度把R写成视觉pair-MLP再由当前H查询，未充分交代原来可读取其它帧H的输入。这是接口说明的收窄，
+   不是已有证据淘汰了其它帧H。
+4. 后来接回完整Core/P/AdaLN尾部，理由是控制实验改变量；又曾因信息访问重叠提议删除P。将访问重叠等同功能可替代不成立。
+5. 首轮正式文档改为Z/H联合同构栈并同时写回Z；双写回有真实mask依据。保留旧尾部仍是选择，不是推导出的必要条件。
+
+本轮不再混用“控制实验方便”和“整体结构统一”两套评价标准。职责对应如下：
+
+| 最早的功能通路 | 本轮保留在哪里 |
+| --- | --- |
+| 丰富内容直接可用，避免动态差分抹掉对象/关系 | 原生完整prefix、联合块残差、最终M的语义位置，以及S的内容初始化 |
+| 整段Z/H提供前后关系证据 | 每处联合块先混合全部语义/H位置，再按真实时间读取所有帧；明确保留所有帧H |
+| 过程进入native动作计算 | j9同时写Z/H，然后继续原生10–18层；原H与真实prefix均保留 |
+| 原生动作响应重新约束过程解释 | 后半native产生新的Z/H，末端同构块继续联合处理，fullH不先变成单向量 |
+| 观察知识转成执行状态可调用的作用 | 内容起始的S统一读取M，八组heads学习完整BA，真正的执行FM给全链信用 |
+
+因果作用保留，不等于每条作用必须单独命名一个网络。最早shared compiler未定；本轮现在给出了它的明确内容、状态和更新规则。
+
+### 5.4 一个具体的消费差异，而不只说“信息更全”
+
+双向理解可能把一个有用的全视频条件b(V)广播到所有帧。若旧P_t=q_t+b(V)，中心化后的Value为q_t−mean(q)，
+b不再直接进入Value；当所有q_t相同时，全部过程Value严格为零，寻址也无法恢复它。不能要求有益过程一定表现为帧间残余差异。
+这不是旧P实际已经发生该失败的诊断，也不是整个旧Writer都不能另行编码b。
+
+新memory允许M_t,r=c_t,r+b(V)。在decoder的线性Value读取中，由归一化权重之和为1，
+`W_O Σ α_t,r W_V M_t,r = W_O Σ α_t,r W_V c_t,r + W_O W_V b(V)`。
+因此共同的过程上下文有直接Value作用；它无需先经另一个专用调制矩阵，也不因帧间恒定被规定为零。
+最终norm/head仍可忽略该方向，所以这里只证明取消了一种具体结构限制，不证明动态信用一定胜过静态解。
+
+同时保留内容起始的S，是另一侧约束：不把新方案变成只有关系差分/过程码的生成器。
+这两项共同构成选择统一表示的理由；它们不能单独解释v5.2的全部历史优势，也不为新图提供旧图全部函数的包含定理。
+
+## 6. 完整可实现规格
 
 ```mermaid
 flowchart TD
-  A[exact language + 一条同步双相机 RGB 视频] --> B[真实前缀与公开 H50 probe<br/>逐帧 native 第1至9层]
-  B --> C[task-span Z9 与完整 H9<br/>投影到同一256维 token 网格]
-  C --> D[同构跨帧 Transformer block × N<br/>帧内联合读取 + 双向时间读取 + FFN]
-  D --> E[残差写回原生 task-span Z9 与 H9]
-  E --> F[原生第10至18层与原生最终norm]
-  F --> G[原 v5.2 读取端<br/>视觉 Core + 完整H50 learned read 后的 Procedure]
-  G --> H[原归一化 slot 编译器 + 八组共享 heads]
-  H --> I[唯一完整38-target rank16 LoRA]
-  I --> J[冻结source + LoRA<br/>只读机器人自身观测执行]
+  A[exact language + 同步双RGB视频<br/>stride5与真实末帧] --> B[原生VL / AE 第1–9层<br/>真实prefix与固定公开H50 probe]
+  B --> C[task-span与真实patch grounding + 完整H50<br/>联合token网格 R9]
+  C --> D[同构联合block ×2<br/>帧内混合 → 双向时间读取 → FFN]
+  D --> E[残差写回真实Z_task和H]
+  E --> F[原生VL / AE 第10–18层<br/>及原生最终norm]
+  F --> G[同样的grounding与完整H50读取<br/>同构联合block ×2 → 唯一memory M]
+  G --> H[同构参数decoder ×2<br/>先从M语义位置初始化S<br/>再以S查询全部M]
+  H --> I[最终RMSNorm + 八组共享heads<br/>唯一38-target rank16完整A/B]
+  I --> J[冻结source + 生成LoRA<br/>依自身观测闭环执行]
 ```
 
-部署前 Writer 一次运行，图中的读取侧 Meta、跨帧块和 Compiler 随后退出执行路径；
-部署只有冻结 source 加这套 LoRA，没有第二个 adapter、teacher video 回看或任务局部优化。
+### 6.1 原生输入与两个读取位置
 
-### 5.1 输入与原生前半段
+K=1，一条同步agentview/wrist RGB，stride5及真实末帧，official rotation/render/model处理；exact language。
+没有teacher action/state、reward、terminal、ID、filename、pose或policy outcome输入。
+每帧使用同一公开Gaussian suffix `50×32`、flow time=1，保留真实完整prefix；不是捏造teacher动作或空图forward。
+source基础权重始终冻结；三组rank4 Text/VL/Action Meta属于Writer，全部fresh联合训练。
 
-- K=1，真实同步 agentview＋wrist RGB，stride5、真实末帧，官方 rotation／224 模型预处理。
-- exact task language；语言 span 的定位来自文本 tokenization，不使用 task ID 或文件名作为模型输入。
-- 每帧同一个公开 Gaussian suffix，50×32，flow time=1；它是原生 flow 模型可接受的噪声输入，
-  有完整真实前缀，不是 fake teacher action 或缺失图像的占位 forward。
-- Text/VL/Action rank4 Meta 从合法 identity 初始化，与 Writer 共同训练；source 基础权重始终冻结。
-- 先运行原生第1–9层，保留完整 prefix Z9∈R^{T×(512+L)×2048} 及 H9∈R^{T×50×1024}。
-  512 是两相机各256 patch；原生 padding、位置、AdaRMS 条件和注意力合同不变。
+记T为真实采样帧数，m为tokenizer给出的有效task-token数。中层j9保留完整prefix
+`Z9[T,512+L,2048]`及`H9[T,50,1024]`；512为两相机各256 patch，L含原生合法prompt其余部分。
+仅将task-span的m个token拿入新增联合网格；其它prefix内容在native主路径完整保留。
+末端j18使用原生最终norm后的Z/H。j9按原生层间hidden处理，不提前使用原生final norm。
 
-**第9层是明确的工程选择，不是已测最优位置。** 它在前后各留下9层，避免直接把未读图的 embedding 当动作知识，
-也留下原生层消费新上下文。最终 H 的预测正例没有证明 H9 已同样充分；这一点保留为方法风险，不安排层位置扫描来掩盖它。
+Text Meta只对真实exact language作一次18层text-only读取，同时保留Q9和Q18；两处grounding使用对应深度的text query。
+不把final text hidden与mid-layer视觉坐标认定为天然等同，也不增加第二次完整text forward。
+两处投影和grounding参数独立，因为原生深度不同；它们使用同一个模块接口，不强制跨深度共享数值坐标。
 
-### 5.2 唯一新增主干：联合跨帧块
+### 6.2 同一种输入表示：保留语义位置和全部H位置
 
-每帧取实际 task-span 的 m 个 native token（不取 template／state token）及全部50个 H，分别线性投影：
-
-\[
- R^0_{t,:}=\left[P_Z Z^9_{t,task};\ P_H H^9_t\right]
- \in\mathbb R^{(m+50)\times d},\qquad d=256.
-\]
-
-没有 H 均值、固定事件槽、人工动作阶段或额外 pair-MLP。真实图像 patch 仍在原生 prefix 中保留；
-Z9_task 已从真实 patch 读取图文证据，原生后半段会继续读取完整 patch。
-
-对 R∈R^{T×(m+50)×d}，一层依次沿两条轴读取，再做逐token FFN：
+对j∈{9,18}，P_Z^j为2048→256，P_H^j为1024→256。P_Z^j在该处的task、patch和text query间共享。
+沿用v5.2实际TaskQueriedPatchGrounding的Q/K/O形式，Value直接来自投影后的真实patch：
 
 \[
- R^{mix}_{t,:}=R_{t,:}+\operatorname{MHA}_{role}(N_1(R_{t,:});a),
+ E^j_{t,\ell}=P_Z^jZ^j_{t,task,\ell}
+ +\operatorname{PatchRead}_j(P_Z^jQ^j_\ell,\ P_Z^jX^j_t),
+ \qquad
+ R^{j,0}_t=[E^j_t;\ P_H^jH^j_t].
 \]
-\[
- R^{time}_{:,r}=R^{mix}_{:,r}+\operatorname{MHA}_{time}(N_2(R^{mix}_{:,r});t),
- \qquad R'=R^{time}+W_2\operatorname{GELU}(W_1N_3(R^{time})).
-\]
 
-帧内 MHA 在该帧全部 task-span／H50 token 间联合读取；时间 MHA 对每个 r 读取全部真实帧。
-两者各有自己的Q/K/V/O，跨所有frame、token位置和task共享权重。N1–3为RMSNorm，8 heads，FFN expansion4，
-attention dropout=0，无因果 mask；padding 无效 token 不参与读取。
-帧内Q/K使用semantic/action类型地址及类型内language/horizon地址；时间Q/K使用真实raw-frame time的RoPE。
-新增地址只进入Q/K，Value来自内容。horizon地址与视频time分开，不以h=t或h→未来帧建立硬对应。
-全视频离线可用，因此允许跨前后帧读取；时间编码保留方向，不把双向理解误作无序集合。
-具体取a_r为两个可学习type向量之一加类型内索引的固定sinusoidal位置向量，
-帧内Q/K分别为W_Q(N(R)+a_r)、W_K(N(R)+a_r)，V为W_VN(R)；时间Q/K只对投影后内容施加raw-time RoPE。
-两套attention和FFN线性层均无bias，RMSNorm尺度初始为1；type向量小随机初始化，其余非零投影按常规fan-in初始化。
+PatchRead有独立Q、K、O的d×d线性层和query/patch RMSNorm，8 heads；没有从语言query到输出Value的直接残差。
+它不是物体检测器或跟踪标签。Z_task本身仍含语言，不能据上述query限制宣称排除了语言捷径。
 
-**重复的是这个相同接口的 block；各层参数独立。** 首个具体实例 N=4，增加 N 可直接增加容量，
-无需增加新的模块类型、标签或损失。N=4 与 d=256 是首个可审阅配置，不是规模最优定理。
-不同 frame、task 和机器人执行状态共享所有权重，没有 task embedding 字典。
+`R[T,m+50,256]`保留两种位置。m个语义位置负责按语言组织内容；50个动作位置保留原生horizon坐标。
+这里没有H均值、per-frame单向量P、event slot、固定阶段、局部纠正标签或低阶路径统计。
+256维是可学习消息宽度；中层原生完整Z/H还在残差主路径，所有原始patch也仍在后半native中。
+完整50只指没有删除horizon轴；2048/1024→256仍是有损投影，patch读取也有选择瓶颈，末端M不宣称无损保留全部native信息。
 
-帧内混合使每个语义／horizon位置先接触同帧两种内容；时间读取随后传播这些联合特征，再次堆叠便可重新组合它们。
-这没有要求同一个h在不同帧代表同一物体或同一动作阶段；h只是原生动作相对位置，跨h的信息在帧内算子中交换。
-这些是可表达的运算，不能在训练前把attention head命名为已学会“抓取”“因果”或“前置条件”。
+### 6.3 唯一的视频联合block
 
-选择这种轴分解还有一个与任务有关的结构理由。若真实RGB完全重复，公开probe和语言也相同，则R^0各帧相同。
-帧内算子不读frame位置，输出仍相同；时间attention的Value此时全部相同，无论RoPE怎样改变权重，加权结果仍相同。
-FFN逐token共享，所以可归纳得所有层各帧输出相同。于是不会仅因视频长度／时间位置而制造一条变化轨迹，
-但**保留非零静态内容和Core能力**，不强迫静态视频输出零LoRA。
-直接展平所有time×role token的attention没有这个保证：不同role的Value不同，时间位置可以改变role混合比例。
-这不是新增一个静态参照支路或静态清零loss；是同构block自身的性质。历史No-change实验已经提醒，
-这种性质单独不保证行为增益，本设计仍须证明native消费和闭环价值。
-
-### 5.3 同时写回，再让原生后半段解释
-
-将 R^N 按原来的两种 token 拆开：
+令S=m+50，N为不同模块各自的RMSNorm。一层为
 
 \[
- \widetilde Z^9_{t,task}=Z^9_{t,task}+U_ZR^N_{t,semantic},\qquad
- \widetilde H^9_t=H^9_t+U_HR^N_{t,action}.
+ R_1=R+\operatorname{MHA}_{role}(N_1(R);a),
+\]
+\[
+ R_2=R_1+\operatorname{MHA}_{time}(N_2(R_1);n),
+ \qquad
+ R'=R_2+W_2\operatorname{GELU}(W_1N_3(R_2)).
 \]
 
-U_Z∈R^{2048×256}、U_H∈R^{1024×256} 初始为零；其它 prefix token 原样保留，
-之后按原生第10–18层和最终 norm 继续计算。两个 up-projection 是同一个联合 block 栈的输出接口，没有额外动态 gate。
-256维只是新增消息的宽度，完整原生Z与H保留在残差主路径中；没有把H50×1024替换成一个256维视频摘要。
+- role attention在每一帧的全部S个位置间进行；time attention对每个role读取全部T帧，无causal mask。
+- 每套attention独立Q/K/V/O、8 heads；FFN expansion4；线性无bias、dropout0；无效task/padding不参与读取。
+- a是两种learned type向量之一，加该type内部固定sinusoidal位置；语义位置与horizon位置分别编号。
+  type向量共2×256，跨两处联合栈及decoder的memory地址共享；初始小随机，不能作为Value残差。
+- role的Q/K为W_Q/K(N(R)+a)，V为W_VN(R)；time对投影后的Q/K施加raw-frame-index RoPE，Value无时间注入。
+  原生token位置、视频时间n、action horizon h、flow time τ和native layer j互不替代。
+- j9和j18各串联2层，总4层；各层参数独立。可以在两处复制同构层扩深，不额外发明监督或模块类别。
 
-零写回使它退化为**相同双相机、相同 H-read 配置的 v5.2 图**。这不是恢复旧训练 checkpoint 的性能保证，
-也不是说 dual/learned 配置已经有旧单视角／均值分数。当前 A 与新实例的视角、H-read 也不同，比较时必须分清。
-零初始化会使新增栈在 up-projection 学到非零前没有上游信用；这是有限的启动过程，不设计分段冻结课程。
+沿同h做时间读取不是宣称同h对应同一实体或真实未来事件：帧内混合已允许跨h、跨语义交换；后续层继续重新组合。
+所有相同结构的操作跨frame/task共享参数，没有task embedding字典。全视频双向理解保留方向，但不将demonstration顺序当必须模仿的总序。
 
-写入 Z 的作用可由链式法则看清。令 F_> 为原生后半段，G_C 为原 Core 读取，则可能存在
+### 6.4 中层写回与原生消费
+
+只有j9需要写回：
 
 \[
- {\partial C\over\partial H^9}
- =J_{G_C}\,J_{F_>,ZZ}\,U_Z\,
- {\partial R^N_{semantic}\over\partial H^9}\ne0.
+ \widetilde Z^9_{t,task}=Z^9_{t,task}+U_ZR^{9,2}_{t,semantic},\qquad
+ \widetilde H^9_t=H^9_t+U_HR^{9,2}_{t,action}.
 \]
 
-它不再必须经过旧 W_m 才影响 Core。零初始化时该式仍为零；训练后非零也只证明可消费，不能证明消费有益。
-此外，Z 的变化会改变上层原生 Action 对视觉前缀的查询，H 的变化会继续经过原生 attention、MLP 和 time-conditioned norm。
-这正是与“把最终 H 送入一个更大的外部 Transformer”不同的具体计算。
+U_Z为256→2048，U_H为256→1024，均zero-init，其余非零线性用常规fan-in初始化；没有另一个gate。
+真实patch和其它prefix token在此接口处不变。再继续原生第10–18层及各自final norm，保持原mask、RoPE、AdaRMS条件和完整prefix。
+原生总计仍18层，不是两次18层。后半VL/Action Meta照常训练；基础参数冻结不等于hidden被冻结。
 
-不能声称这条梯度更短：它多经过 J_F，可能放大、衰减或扭曲信息；中间消息也可能偏离 source 预训练分布。
-新假设是 frozen native 后半段提供有用的图文／动作条件函数，联合训练能学出其可消费的上下文；不是 native 先验自动理解视频。
-这里冻结的是source基础权重；后半段的读取侧Meta仍共同训练。缓解脆弱性的具体希望是，
-过程信用与输出作用不再全部依赖晚期调制学到恰当的尺度／方向，Core和P均可消费同一过程上下文。
-这增加一条可学习的功能路径，却不保证优化会选它；若新U一直被忽略或原生层消除其作用，假设仍会失败。
+实际接口存在于安装版pi05的`compute_layer_complete`与joint forward层循环；现有Writer每帧原本就在此运行VL/AE联合18层。
+实现时须分段调用原逻辑并在condition内同步全部帧，不能用写回前预计算的后半prefix KV替代新prefix。
+写回只修改native激活；没有把teacher观察端H当成执行端X，输出A/B仍由真实执行信用学习。
 
-回到具体 task，这个接口要承担的职责是可说明的：
+只有改变H时，native prefix看不到它；同时改变Z使过程可以经原生上层再次影响patch/task解释及动作响应。
+反向链允许`H9 → R9_semantic → U_Z → Z18 → M_semantic → S`，不再必须穿过旧P/AdaLN。
+它不是更短梯度的定理：native Jacobian也可能衰减或扭曲新信息。中层消息可被忽略或损害预训练特征，属于这项研究假设的实质风险。
 
-- 黑碗被拿走后，“在盘子与ramekin之间”可能已不再描述它的当前位置。逐帧独立grounding可能漂移到另一个黑碗；
-  联合task-token/H读取可以把初始关系选出的实例与后续搬运状态联系起来，再让上层native在这个上下文下读真实patch。
-  这是可学习的身份连续性假设，并没有暗中提供物体ID、pose或跟踪标签。
-- 抽屉任务中，不同帧的把手接近、接触和抽屉位移共同约束“Open”如何实现；跨帧上下文可影响同一语义token及动作响应，
-  而最终LoRA仍由执行时自己的把手位置、视角和state选择动作，不按teacher的第几帧执行。
-- 微波炉任务中，后续放入／撤手／关门的上下文可以反过来帮助解释先前可通行的门与杯子关系。
-  它应表达与状态有关的前置关系，而非为初始已开的门虚构开门阶段。
-- 两物入篮时，两个对象的完成关系都要保留；双向跨帧表示不要求最终policy照抄demonstration的先后顺序。
-  成功合取与物理可行性决定何种行为有效，时间编码只是提供观察到的顺序。
+j18经过同样的grounding与2层联合块后，`M=R18,2[T,S,256]`就是唯一参数memory。
+没有末端再写回native的无用投影，也不再创建独立Core/P。M的语义和动作位置仍可区分，但均已经是联合、带上下文的内容。
 
-固定LoRA仍受source可观测状态与策略函数类限制；如果执行阶段本身存在无法由自身输入区分的状态，
-离线视频上下文不能凭空补出部署时不可见的信息。本文没有额外加入进度标签或运行中视频读取来绕开这个限制。
+### 6.5 一个连续更新的参数状态，保留“先内容、后条件化读取”
 
-### 5.4 保留的 v5.2 读取与生成端
-
-原生最终 Z／patch 仍通过原 task-queried patch grounding、FrameRead 和两层 language block 得到 C；
-不同的是，这些 Value 已允许包含有方向的全视频上下文。因此，最后的集合汇总不再迫使 C 对原视频置换不变。
-这与先独立编码再丢顺序不同；也没有强制 C 只取变化量。
-
-完整最终 H50 先做实际 learned attention read，再投影256，进入原两层 Procedure；
-H 的每个位置在跨帧栈和该 learned read 前都保留，不用 horizon mean 冒充读取完整 H。
-旧B的learned read在1200时单位置权重上界仅约3.42%，所以“它已塌缩到少数horizon”不是成立的解释。
-新联合栈的作用应来自读取前的跨帧／跨类型非线性计算，不能只靠把同一个末端均值换一个名称。
-原 Procedure 的 causal mask 保留，但其输入已包含全视频上下文，所以整个 Writer 是双向理解模型。
-之后沿用§4的 centered-P／AdaLN、最终 slot RMSNorm 和八组 heads，不增加另一套 LoRA 或外部校准器。
-
-为什么此处不把 Procedure 和调制一并删除：没有 matched 删除实验说明它们多余；
-新增栈处理的是中层 native 状态，P 汇总的是经过原生后半段重新解释的最终动作响应，两者输入和功能并不等价。
-保留它们是对完整正例的保守选择，**不是已经证明各部件必需、架构绝对最小或两次时序处理一定更好**。
-本文也不把“只改一个变量”当禁止重构的教条：双向中层联合处理、Z/H 双写回已经实质改变了 v5.2 的表示和消费方式。
-
-## 6. 为什么这种设计与实际 FM 训练相容
-
-对于训练 query 的自身观测 o、state s、动作 chunk a，令 x_τ=τ ε+(1−τ)a，velocity target 为 ε−a；
-实际代码继续使用已纠正的 observation/future-control offset1、source normalization 与 action mask。
-主损失为
+使用原320个layer/rank槽地址：18×16个expert位置，另有action-in/out各16个；q/v使用同层槽、不同family head。
+沿用query-table、module、layer、rank四部分地址与routing RMSNorm。它们只进Q/K，不是纯语言/任务Value。
+初始内容`S0=0[320,256]`。两层decoder使用完全相同的更新形式D，但参数独立：
 
 \[
- \mathcal L(\theta)=\mathbb E\bigl\|f_{W_s+\Delta W_\theta(L,V)}(o,s,L,x_\tau,\tau)
- -(\epsilon-a)\bigr\|^2_{valid\ action}.
+ A=S+\operatorname{CA}(Q=N_q(S)+r,\ K=N_m(M_*)+a,\ V=M_*),
+\]
+\[
+ B=A+\operatorname{SA}(Q=K=N_s(A)+r,\ V=A),\qquad
+ D(S,M_*)=B+\operatorname{FFN}(N_f(B)).
 \]
 
-训练动作只来自合法另一 episode；teacher V 不提供 action/state。梯度穿过冻结执行 policy 的计算到唯一 ΔW，
-再到所有 Writer 部件、联合跨帧块和三个读取侧 Meta。冻结权重不等于切断输入梯度。
-实现可沿用现有“完整LoRA叶节点FM余切→同参数版本Writer重放”的链式求导，不要求保存一张巨大的执行与视频联合图。
-原生两段的checkpoint重算须恢复对应Meta上下文和同一参数版本；不得把新中层Z/H作为可跨更新复用的冻结cache。
+每个attention含通常的Q/K/V/O投影；8 heads，FFN为d→4d→d GELU、无bias、dropout0，四个pre-RMSNorm独立。
+首层`S1=D1(0,M_semantic)`，第二层`S2=D2(S1,M_all)`，最后再RMSNorm送heads。
+若增加decoder深度，复制D，后续层都读M_all；没有新的专用融合模块。
 
-对某一被 LoRA 更新的执行线性层 y=(W_s+BA)x，若 G=∂L/∂y，则
+首层只读语义位置，是主动保留v5.2的内容起点，避免参数内容一开始仅由learned地址或50个horizon的token数量决定。
+这些语义位置已读过完整H与全视频，不是静态Core或语言-only旁路。第二层以S1为查询，读取语义及全部H位置，
+将补充证据写入同一个S。两层不是两套独立参数，也不把H提前压成每帧一个P再经gamma/beta影响输出。
+这不保证S1一定主导S2，也没有给两种memory强制等权；第二层相等logits时H总质量为50/(m+50)。
+模型可重新改变侧重，我们不为形式平衡再增加gate或loss；实际是否保留有效内容由功能与行为裁决。
+
+删除的是独立Core两层、独立P两层、P中心化和专门AdaLN；承接它们的是联合视频块、内容初始化和同状态条件化读取。
+共同广播到所有帧的有效过程上下文可以保留，不再因P减均值被规定为零。未声称新D与旧AdaLN数学等价、表达类严格包含旧图，
+也未声称信息更全就一定更好。它是较一致的归纳偏置，实际能力由整体fresh比较负责。
+
+memory地址a只有type及type内索引，没有frame地址；时间信息应已进入M内容，decoder不再增加一条只看视频长度/帧编号的Value。
+对固定M，conditional CA的梯度同时含Value的直接项和内容相关的寻址项；后续slot SA允许不同层/rank的参数决定相互协调。
+这是由真实内容形成输出的路径，不是已学会正确操作规律的证明。
+
+### 6.6 唯一完整输出与部署
+
+保留原八组FactorHeads：q_A/q_B、v_A/v_B、action-in_A/B、action-out_A/B，均为256→216→native width的无bias GELU网络。
+目标为18层q/v和两个边界线性，共38-target、76个A/B factors、rank16；A=A0+ΔA，B=ΔB。
+所有head末层按原合法identity方式zero-init，A0为合法非零模板，B0为零；LoRA alpha/rank=1，ΔW=BA。
+共享head仍有其学出的有限列空间，不是任意矩阵完备性；但该坐标由跨task FM学习，不被预固定为native/PCA span。
+
+Writer在rollout前运行一次。上述Meta、两处联合栈、memory与decoder都退出执行路径；仅冻结source＋生成的完整LoRA留在policy中。
+policy读取自己的双相机、8维state及language，按官方10-flow、前5动作replan等合同执行；不读取teacher视频或在任务内优化。
+固定参数通过当前执行激活`Δy_l(o)=B_lA_lx_l(o)`产生状态依赖行为，而非按teacher时间播放动作。
+
+## 7. 从具体任务检查整条职责链
+
+- **两只黑碗中的关系选物**：初始空间关系进入语义位置；其它帧H与语义共同提供搬运证据；写回Z允许原生上层带上下文读当前真实patch。
+  目标被拿起后原始“在两物之间”关系消失，并不要求每帧重新按当前位置找另一只碗。最后S仍要学到能由执行者自身观测触发的控制。
+- **打开中层抽屉**：视频展示把手接近、接触与位移；联合表示可比较状态变化和动作响应；不存在“h=某个视频未来帧”的强对应。
+  最终动作由执行者当前把手位置决定，不能从教学速度直接得到控制时钟。
+- **杯子入微波炉并关门**：开始门已开。视频中的放入、撤手、关门共同约束可行操作；全视频上下文可以帮助解释中间遮挡。
+  架构没有虚构开门标签；动作条件作用须由跨episode实际FM学会。
+- **汤罐与奶酪入篮**：两项完成关系都要保存；真实视频顺序是观察证据，不是成功谓词规定的唯一顺序。模型可按自身初态执行另一种合法顺序。
+
+这些是应承担的功能职责和可表达途径，不是已测到attention在做物体追踪、已学出显式前置条件或已有世界模型。
+一条观察轨迹也不唯一识别因果规律；跨task共享学习与source先验提供归纳来源，不提供必然识别的证明。
+若自身部署输入不能区分所需执行状态，固定LoRA不能凭空补出它没有观测到的信息。
+
+## 8. 学习、结构性质及主动反例检查
+
+### 8.1 真实FM与共同信用
+
+训练query来自同task另一episode的自身观测o、state s、正确action chunk a。令x_τ=τε+(1−τ)a，监督为ε−a：
 
 \[
- \nabla_B\mathcal L=G(Ax)^T,\qquad
- \nabla_A\mathcal L=B^TGx^T.
+ \mathcal L(\theta)=\mathbb E\|f_{W_s+\Delta W_\theta(L,V)}(o,s,L,x_\tau,\tau)-(\epsilon-a)\|^2_{valid}.
 \]
 
-这是执行 query 的实际 x 和功能误差 G，给出了“视频表示应产生何种参数作用”的信用，
-而不是要求 teacher observer 的 H 等于执行 x，或让观察侧 Meta 一同部署。
-因此 retained free A/B heads 负责学习两种坐标之间的映射；相同 source 权重也不能使两侧 hidden 自动可交换。
+沿已纠正offset1和冻结source normalization，只计算合法动作维度。梯度穿过冻结执行网络到完整LoRA，再到全部Writer和Meta。
+对执行层`y=(W_s+BA)x`，`∇_B L=G(Ax)^T`、`∇_A L=B^T G x^T`；x来自执行query，不是teacher H。
+参数生成器因此学习如何把视频条件转换为在不同执行状态有效的作用，不要求两种坐标天然等同。
 
-新的共享规律假设是：类似的物体关系变化、接触和约束，经过同一套 native 条件函数后，应有可复用的参数修正模式。
-联合栈提供学习这些规律的接口；24 个任务是否足以识别它、实际梯度是否会优先学习它，必须由实验回答。
-不从非零梯度、attention 图、可解码动作或 FM 下降直接推出有效视频教学。
+可沿用“LoRA叶节点余切→同参数版本Writer重放”的链式求导；不保存一张同时含全部执行queries与视频的巨大图。
+Meta在各段checkpoint重算时须正确安装；Z9/H9/联合状态不能跨optimizer版本缓存，也不能detach当冻结cache。
+所有模块fresh共同更新，没有G1–G3课程、辅助阶段标签、wrong/order loss、RL或trust回滚。
 
-### 6.1 明确的训练实例与比较合同
+### 8.2 零初始化不会造成逐层串行解锁课程
 
-以下是设计交付的建议合同，尚未成为已启动 active run；本次不执行。
+- 第一次主FM backward：B-head末层可有梯度；因B及其末层为零，通常尚无上游功能梯度。
+- B-head打开后的backward：终端联合块、decoder、读取Meta-B和中层U均存在信用路径；中层联合块内部仍受自身U=0阻断。
+- U更新后：中层联合块及其读取参数存在信用路径。多处写回的扩展也不要求所有U相乘，因为每处都有native residual主路径。
 
-- Source 使用已纠正 raw1000；train24/validation8/test8 不变。初轮不同时扩展 meta-task 数据。
-- 所有 Writer／三个 Meta／联合栈 fresh，optimizer、scheduler、sampler、RNG fresh；source 参数始终冻结。
-  A 使用原合法非零模板，B 为零；不复用旧 Writer 或阶段初始化。
-- 同 task teacher 与 query 跨 episode，训练池0–45，46–49仅训练任务诊断；同 episode 排除，
-  每更新4个等权 task、每条件21 queries，global84。执行采用真实自身双视角与8维 state。
-- 沿用当前 A 的 AdamW 与 LR 时钟：lr3e−4、betas(.9,.95)、eps1e−8、weight_decay1e−4、clip1；
-  warmup100、decay12000至1e−5。延长观察窗口不重启或压缩 LR 时钟。
-- 首个预登记观察窗口为2400 updates＝9600 teacher conditions／201600 queries，均衡安排约400 conditions/task；
-  correct400＋train96 节点为600/900/1200/1500/1800/2100/2400，每100保存完整状态。
-  这覆盖旧 v5.2 主要学习曝光及 v6-TC 的9600条件尺度，同时保留足够相邻节点；它仍不等于数学收敛证明。
-- 1200之前不因单次低分宣称架构失败。其后若两个相邻有信息量节点持续缺少获取，
-  结合 train/validation 和逐任务记录可提前作本窗口 non-pass；如有持续能力增益且缺乏平台，可另登记连续扩展。
-  不因 FM 下降单独续训，不因低分自动扫 rank/scale/seed/LR/层位置，也不无限等待 grokking。
-- 监督仅纯 FM，不混 RL、privileged G/field loss、temporal margin、wrong/shuffle/reverse 训练或 trust 回滚。
+这是路径可达性，不能保证每个task/参数每步非零，也不忽略Meta自身A/B初始化。纯weight decay可改变参数但不等于功能信用。
+不因首步上游零梯度宣称bug，也不能用这几步的有限启动解释数百步后的性能差。
+U=0只恢复给定Meta下逐帧独立的native读出；终端联合块和新decoder仍然存在，因此整个Writer不等价于v5.2。
+只有所有输出B仍为零时，生成的执行policy才与同一source的identity-LoRA函数一致；这不继承任何旧训练checkpoint的能力。
 
-为了回答**新中层消费是否有用**，必要的机制对照是同 dual／learned-H50 的 v5.2、关闭新增栈的 fresh 基线，
-共享组件按组件初始化种子匹配，采样、更新次数、LR、source 和配对相同；历史单视角 A 只能作背景参照。
-这个对照是实验中的 N=0 消融，不是保留第二套生产实现。首轮不再同时搜索 N、j 和输出头。
-这里N=0明确指整个新增读写接口恒等旁路，不保留一组仍可训练的down/up残差；否则它不是原v5.2基线。
+### 8.3 可以确定的三个性质
 
-如果预算只允许一个正式方法窗口，可以获得候选本身的资格结论，却不能把它相对旧 A 的差额唯一归因于跨帧写回。
-本文将这项可归因性限制提前写清，不用更多旧快照替代 matched 比较。
+**静态重复不凭帧编号产生过程。** 若真实双RGB、语言和probe在所有帧相同，native逐帧表示相同。帧内算子不读t；
+逐role的time attention中全部Value相同，所以任意RoPE权重的归一化和都等于同一个Value。FFN共享，归纳得到各帧仍相同。
+中层写回及后半native保持这一性质；末端M每个role是T份相同副本。decoder没有frame地址，CA中T份副本的softmax分子/分母同倍抵消。
+故在指定mask、无dropout、无时间Value/全序列统计等条件下，整个LoRA输出对重复次数T不变（忽略正常浮点差异）。
+有效role必须有同一组有效帧，padding从K/V排除，各有效query至少有一个key，原生位置在每帧内部重用，RMS有正epsilon。
+这保留非零静态能力，不等于“静态视频必须输出零LoRA”；No-change的旧失败阻止把这个性质当行为收益证明。
 
-### 6.2 闭环保持与脆弱性为什么还需要单独证明
+**顺序可影响内容起点和后续读取。** 非重复视频的time Q/K包含方向，改变顺序可改变R9及R18；S1虽只读语义位置，
+其Value已包含该上下文。因此显式顺序不再被限定在最后一个P/AdaLN入口。它是可表达性，不是任意权重/视频都必须改变输出的保证。
+若将frame和原时间标签一起置换，表示的仍是同一个带位置集合；最终输出应保持不变。真正的shuffle/reverse必须交换RGB内容，
+同时把它放到重排后序列的固定位置上。现有`frame_control`已将content permutation与natural positions分开，本设计继续此合同。
 
-部署动力学可写成 x_{t+1}=F(x_t,π_θ(x_t))。小更新下
+**纯地址不直接产生参数内容。** 在线性/FFN无bias、S0=0、Value不含地址的合同下，若M=0则S一直为零，head产生ΔA=B=0。
+真实静态图像或语言条件的native hidden并不是零，故这不是video必要性的证明，不能用它替代learned language-only参照。
 
-\[
- \delta x_{t+1}\approx(A_t+B_tJ_{\pi,x})\delta x_t+B_tJ_{\pi,\theta}\delta\theta.
-\]
+### 8.4 提前回答可预见的问题
 
-多步传播、接触边界和 teacher occupancy 之外的状态会使小参数变化造成大量成功交换。
-FM 在训练分布的下降、BA cosine 很高或 residual 很小，都不提供成功集合保持的上界。
-新设计保留内容与输出路径、共享坐标、归一化和 identity 起点，提供的是保持能力的合理偏置；
-没有直接解决离线监督的分布偏移，也没有保证旧成功不丢。
-
-因此要同时报告 retained/gained/lost、churn、Jaccard、per-task/per-suite、breadth 和 train/validation 走势。
-一次训练通过也不能宣称“对训练条件鲁棒”；后续只有在预登记、合理条件改变下仍保持同一行为结论，才支持该主张。
-不得以 source/source+LoRA 的裸分接近，推断它们给 Writer 的 native 表示或梯度几何也接近。
-
-## 7. 复杂度、数据流与可扩展性
-
-令 S=m+50、M=TS。每个新增 block 的主要参数约16d²，d256时约1.049M；N=4约4.194M。
-两组 down/up projection 共约1.573M，另有少量 norm／地址参数。
-因此首个实例在现有约10.24M Writer上新增约5.77M，总计约16M；这只是解析规模估计，不是假装已经profile的精确计数。
-增深一层约增加1.049M，输入输出接口保持不变。
-
-本block的attention计算约O(N(TS²+ST²)d)，投影／FFN另有O(NTSd²)，不能写成对视频长度线性。
-105帧、假设m=25时，一层两条轴共约142万token pairs，全部展平则约6200万；m=25只是示例，实际取tokenizer真实长度。
-采用高效attention kernel，正常BF16/TF32；解析计数不能替代端到端吞吐和峰值profile。
-
-原生 source 总计仍跑18层，而不是两次完整18层：逐帧 chunk 先到9层，在条件内汇集 R，跨帧计算后再按 chunk 运行后9层。
-中间真实 Z9/H9 必须保留或用同版本 activation checkpointing 重算；不能丢失 prefix、detach 训练路径，
-也不能跨 optimizer 更新缓存已适配的 Z/H。冻结视觉 embedding 可按原缓存合同复用。
-共享原生模块的两段和 text-only 查询仍属一次 Writer 调用；多卡只改变计算分片，不改变 task 权重。
-
-原先 dual/learned-H50 profile 的29.00GiB和约25.41秒/condition仅能作背景，不能赋给新栈。
-正式训练前必须用真实最长视频测完整 FM 更新、梯度、峰值显存、LoRA/s 和吞吐，再封存物理 batch。
-如果上述默认规模不能运行，应先公开成本证据并修订设计；不能静默裁掉帧、horizon 或真实 prefix 来维持方法名称。
-
-本轮只声称 K=1。未来 K>1 必须每视频先独立执行整个有序编码，再在单一参数生成前作集合聚合，并真实训练各 K；
-这里不预留一个未经训练的“动态 K 已支持”标签，也不平均多套 LoRA。
-
-## 8. 历史近似方案与未采用的替代方案
-
-| 方案 | 与本设计的关系及不直接采用的理由 |
+| 问题/反例 | 本轮固定立场；不因问题本身改变架构 |
 | --- | --- |
-| 只加更大外部时序 Transformer | P/Q、layered、Horizon 已有全 H 和多轮外部读写。不能假定再加深就补上 native 消费；本设计把学习结果送回真实中层 |
-| 展平全部time×role做一次全attention | 表达直接，但计算为(TS)²，也允许位置改变静态role的混合产生伪变化；采用帧内／时间两轴同构块，保留全H与跨帧传播 |
-| H-only 原生中层桥 | 有后续 Action 消费，但∂Core/∂H=0；不足以解决晚期 P 调制是唯一显式顺序入口的问题 |
-| 每帧 native memory 再跨帧聚合 | Dynamic-K/LMMPC/GOMQ 的 native memory 主要 one-way 读取，prefix/Action 不读取 memory；跨帧结果没有中层再入 |
-| Horizon 的 P→U→下一轮 Z 取证 | 确有外部循环读取，不能说历史没有交互；其 U 是外部256维，未写回真实 native prefix 并续算 |
-| 既有 layer10 native-reader | 是冻结视频表示向执行 AE 的逐层注入诊断，只训练小 reader、无联合 Writer 和 rollout；不等价于读取侧跨帧 Z/H 联训 |
-| 直接删 P／AdaLN，改统一新 decoder | 结构可更短，但没有 matched 证据证明原尾端冗余，且同时丢掉完整正例的输出作用方式；本设计暂不作此第二次重构 |
-| 强制只用时间差分／静态零输出 | 可能删除 absolute Core 能力；Dynamic-K 和受限 native 路线的负例限制了这条推断。顺序敏感也不等于成功增益 |
-| 仅输出局部动作 q／field 再固定 pullback | 有原生函数解释，但共同 q／PCA／Jacobian 像有硬限制，合法获取也未建立；保留完整可学参数生成 |
-| 按 G1→G2→G3 冻结分段 | 可定位局部接口，却与当前 fresh 联合纯 FM 合同不同；历史分段正例不能拼成一个成功系统 |
+| 语言或静态画面仍可能足够降低FM | 承认并保留§3.1的风险分析；架构选择是改善合法获取的归纳偏置，不伪造纯FM唯一动态最优解，不据此切掉绝对内容或临时添加辅助loss |
+| 内部写回可能被native消除 | 残差与共同Meta使路径可学，不能保证有效；终端统一处理保留完整最终响应。若匹配训练证明写回无益，应否定其增量，不把激活有差别当成功 |
+| 两处联合块是否重复 | 第一次影响native计算，第二次组织经过native消费后的新响应；同构层是重复运算的容量配置，不宣称每层都有独立人工语义；不按名称重复就删层 |
+| 新尾端已能读H，为什么还同时写Z | 新末端H-only也可影响参数；双写回的目标是原生后半VL与Action均带上下文计算，旧Core零导数不能被滥用为新图输出不可达证明 |
+| 为什么不是全部18层都插入 | 一处内部写回已经检验关键机制，首版避免增加无证据的接口；扩深先复制联合block。第9层是固定工程选择，不冒充最优层位 |
+| 取消P/AdaLN会不会丢能力 | 可能。职责已明确重实现，保留内容初始化/归一化/共享完整heads，但没有旧图函数类包含保证；整体fresh闭环比较决定是否接受这一代价 |
+| 只读task-span会不会丢小物体 | 每处额外由task query读取全部真实patch，原生prefix从未删patch；m/d有限仍可能成为选择瓶颈。保留真实证据可访问，不宣称无损压缩 |
+| 完整H是否真的被使用 | 两处role attention及末端参数读取都接收全部50位置，未预先均值；模型仍可学会忽略某些位置。保留接口不是有益使用的证据 |
+| 动作token的h是不是未来teacher时刻 | 不是；h是原生动作位置。与视频t分开编码，帧内操作允许跨h，没有强制物理对齐 |
+| 为什么不直接拿H生成A、把native知识写进去 | 观察端H与执行端X不同；固定A=H/RX或Jacobian回拉会加入已经有负证据的硬出口限制。选择由执行FM学习自由A/B映射 |
+| 13M参数是否一定比旧10M更稳 | 不一定。共享坐标降低参数规模不提供泛化/闭环保持上界；不凭参数数目宣称解决脆弱性 |
+| 是否还存在多通路 | 存在多种因果作用，但只维护统一M与连续S；不是多个expert/LoRA。强行只留差分通路会丢绝对内容，故不追求这种形式统一 |
+| 相邻成功集还能变化吗 | 能。闭环接触与分布偏移可放大更新，FM下降和参数小变都不保证保持；保持是独立行为资格，不把残差设计称作防遗忘算法 |
+| 旧负例是否都被归为训练不够 | 没有。复用完整审计的具体预算；有限non-pass、内部/privileged正控、长窗口退化分别约束判断，不用新命名复活已否定的同一组合 |
 
-外部工作只提供可行性背景：[ST-Adapter](https://arxiv.org/html/2206.13559)在冻结图像预训练模型中插入时空 adapter，
-说明原生层内增加时序计算是可实行的结构；它使用大型视频识别数据和分类目标，不证明本项目24任务下的 LoRA 编译可学。
-[TimeSformer](https://proceedings.mlr.press/v139/bertasius21a.html)比较过block内分开的时间／空间attention；
-本文是语义／动作响应两种token的轴分解，不能把其视频分类成绩当作本设计的验证。
-[π0.5 原论文](https://arxiv.org/html/2504.16054v1)描述的动作策略也不能被直接称为预训练视频过程模型。
-内部选择主要来自本仓库实际接口、正负实验和当前任务推导，不以外部论文替代 EMBER 证据。
+闭环线性化`δx_(t+1)≈(A_t+B_t J_π,x)δx_t+B_t J_π,θ δθ`说明，局部小变化可多步传播；接触边界更不由该线性近似保证。
+本设计没有从理论上解决所有保持、任务分布迁移或部分可观测问题。承认这些边界不会自动推翻统一结构的选择。
 
-## 9. 可证伪预测与裁决
+## 9. 与近似历史方法的实质差异
 
-| 待检验假设 | 支持它所需的观察 | 若不成立，必须承认什么 |
-| --- | --- | --- |
-| 中层 Z/H 写回让有用过程更易进入生成主路径 | matched dual/H50 基线上，完整训练后候选取得可重复的正确视频能力增量；机制检查与变化相符 | 只有梯度／order sensitivity 而无能力增益，不支持假设；不能再用“首次接通”解释 |
-| 它保留 v5.2 获取能力 | train/validation 有广泛、四suite的学习，相邻分数与旧能力规模相容；不能只剩两个任务 | 若学习充分仍显著弱于匹配 v5.2，就必须淘汰该具体设计，不能靠内容仍存在来否认退化 |
-| 视频教学具有必要增量且换正确视频稳健 | 合格后 same-task-other 保持；选定冻结单 checkpoint 后，正确视频对合法 language/static 参照及最终干预有行为证据 | no-video 使用零 LoRA 只回答相对 source 增益，不能替代 learned language-only 的捷径检验 |
-| 增加 N 是有用的容量扩展 | 在数据和预算适当时，更深同构块提供真实能力或保持收益 | 参数更多不自动成立；本次设计只保证接口可加深，不预承诺 scaling 曲线 |
-| 方法缓解合理条件变化的脆弱性 | 预登记的独立合理训练条件下，绝对能力及视频增量都复现 | 一次成功不能证明鲁棒；若仍消失，结构便利没有解决主要科学问题 |
+| 最近历史 | 本轮具体不同；仍保留的约束 |
+| --- | --- |
+| v5.2/v6 | 内容与自由参数坐标有真实能力；本轮将时间组织移入共同语义/动作状态与native续算，参数端不再独立组织C/P后做专门调制 |
+| P/Q与native memory | 已有完整H、多层读取、共享块和完整出口，不能宣称首次；所审旧memory为逐帧one-way，跨帧结果不写回真实Z/H再续native |
+| Horizon | 已有全H、端点视觉重读、局部/长程反复反馈；其反馈在native结束后的外部U中。本轮跨帧结果参与真实native层，且不先收缩为每帧P4与巨大独立D |
+| Video Functional及pure-FM/VL后续 | 已有E[T,L,256]、轴向块、真实Value、联合信用；H在初次pair-read后已压缩，跨帧发生在native之后，输出用旧大D。本轮原生中层消费、全H保持和紧凑共享完整heads三项共同改变；不能把旧失败归因唯一一项 |
+| Semantic-Path | 已有语义轴、fullH、自由紧凑heads、条件调制与纯FM；它把状态压成32维和二阶统计。本轮没有固定低阶过程统计，直接保留联合tokens并在真实native中消费；旧100更新不是所有此类函数的否定 |
+| native-reader诊断 | 确有执行AE中层注入，但固定视频E、只训练reader、无joint Writer闭环；不是本轮teacher读取側Z/H共同更新 |
+| 原生纠正场/Pullback | 有有限真正功能/闭环正控；合法共享获取弱或出口有限。本轮不要求先预测privileged纠正，不把最终BA限制为特定source span或一个q的回拉 |
 
-正式选择只用 complete single-checkpoint correct400、相邻成功集合和登记 qualification arms；
-每 task 的50次 init 必须用50条合法 teacher 各一次，跨 checkpoint 复用同一映射。
-训练96面板固定并声明有限视频复用。other 在正确能力与相邻资格后执行；selected checkpoint 冻结后补 wrong/no-video/shuffled/reversed，
-所有 controls 严格配对，shuffle/reverse 真正重排 RGB 后完整 forward。它们不参与 loss、checkpoint 选择或本轮架构返工。
-Test 保留到方法最终冻结；旧 sealed 诊断仅作历史记录。
+本轮没有新行为证据。区别清楚只能说明假设不同，不能把“历史没试过”当作推荐理由的全部。
+推荐理由是§5的内容/条件作用/共享坐标原则与§6–8的完整学习接口共同成立；正负实测仍拥有最后裁决权。
 
-若要正式声称“动态视频具有相对语言／静态先验的必要增量”，参照须是学习所得的合法模型，不能只用零LoRA。
-具体可审阅合同是：
+## 10. 参数、计算与实施边界
 
-- **language-only**：仅用现成真实text-only native分支、Text Meta与语言token块得到Core，Procedure恒零，
-  仍由同320-slot归一化读取和8组完整heads生成LoRA；同一主FM、task/query事件、优化时钟和观察预算。
-  不输入零图像、不构造假Action forward，也不让原视频分支替它提供隐含特征。
-- **static**：输入该合法teacher视频的真实第一帧同步双视角及exact language，使用同一候选的完整读取／生成结构，
-  仅时间长度T=1，fresh训练相同query预算。它能学习静态场景到完整LoRA，不是将训练好的视频模型突然喂黑图。
-  此臂的单帧是明确的诊断合同，不能冒充canonical完整stride5视频方法。
+d=256、两处各N=2个联合block，8-head，FFN4d；decoder深度2。按本规格逐项解析：
 
-这些参照及其选择节点须在各自训练前登记，独立充分学习后与冻结候选在同task/state/RNG和teacher ordinal上比较；
-不为凸显视频而故意削弱其训练。它们不必与候选每一参数完全相同，但须报告参数／曝光差异。
-不强制另训frame-set模型；相应地，最后shuffle/reverse退化只能支持固定模型的时序依赖，
-不能声称已经胜过所有充分学习的无序全帧方法。只有正确能力与正确视频增量一起成立，才接受视频教学主张。
+| 部分 | 参数数 |
+| --- | ---: |
+| Text/VL/Action rank4 Meta | 2,469,888 |
+| 两处Z/H down投影＋一处Z/H up投影 | 2,359,296 |
+| 两处真实patch grounding，含各自norm | 394,240 |
+| 4个联合block，含pre-norm | 4,197,376 |
+| 2个type向量 | 512 |
+| 2个参数decoder，含pre-norm | 2,099,200 |
+| 原slot地址及routing norm，最终输出norm | 91,904 |
+| 八组完整A/B heads | 1,838,592 |
+| **合计** | **13,451,008** |
 
-这里的最后一条边界尤其关键：**本设计解决了一个明确的表示／消费结构限制，尚未证明它就是特异性和脆弱性的主因。**
-如果 full matched 实验不支持它，应保留 v5.2 已获能力和其它正证据，否定这项具体原生中层消费假设；
-不能以本次失败宣称所有时序建模、所有视频教学或所有完整 A/B 路线都不可行。
+Meta数来自安装版18层、8个Q heads/1个KV head、head_dim256、VL2048/AE1024的q/k/v/o规格；
+这是设计解析计数，不是已实现模型的runtime报告。不包含冻结source。加一层联合block增加1,049,344个参数；
+两处同时各加一层增加2,098,688。继续复制decoder增加同构内容读写能力，不改变输出38-target合同。
 
-## 10. 交付范围与复核
+令S=m+50，每联合block的attention pairs为`T S² + S T²`，不是对T线性；投影/FFN另有`O(T S d²)`。
+以T105、m25为例，一层1,417,500 pairs，四层5,670,000；两层参数CA分别为320×105×25及320×105×75，
+共3,360,000；slot SA另有2×320²=204,800，patch grounding另计2×105×25×512=2,688,000。
+同一联合层直接展平全部T×S做attention则为62,015,625 pairs，轴分解有明确成本理由，非免费或线性视频模型。
 
-本次交付包含完整历史证据分类、可比较性与曝光审计、实际 train task 分析、v5.2 结构和优化推导、
-明确的新架构／初始化／梯度／成本／训练／验证合同及反例边界。
-没有新增训练、policy forward、闭环评测、held action 读取或源码实现；A3000和SFT仍按 owner 指令保持停止。
-后续性能、资源峰值和中层语义适配均未验证；本文可完成的是设计目标，不是科研性能目标。
+原生仍18层，有一个跨帧同步/写回边界。中间真实prefix/H须保留或按同版本checkpoint重算；末端逐chunk可形成M输入再释放不再需要的native缓冲。
+仅冻结视觉embedding可按现有合同缓存；不能复用写回前的后段KV。正常BF16/TF32及高效kernel可用，不追逐低位一致。
+真实最长视频的整次FM更新、LoRA/s、显存峰值、checkpoint重放与梯度仍须在未来实现后profile；此时不启动GPU或额度检查。
+若成本不可承受，公开具体证据再修订物理执行，不能静默缩短视频、去掉相机或预先均值H。
+
+### 10.1 未来实现时的单一所有权
+
+不是本次实施授权。若以后进入实现：现有video_program负责真实输入、分段native/Meta、统一视频表示及两处联合块；
+temporal负责同构block/decoder算子，model负责完整target路由与FactorHeads；现有function_credit/replay复用真实FM/VJP。
+同一canonical运行面整体替换旧Core/P调用，不保留平行生产fallback。新schema/fresh checkpoint，旧Writer不兼容resume。
+训练、数据、schedule、evaluator继续原有owner；不因为架构设计重写这些已成立的合同。
+
+## 11. 未来训练与可证伪的验证合同
+
+本节是可审阅的建议合同，尚无active run；所有旧实验继续暂停。
+
+- 纠正后的raw1000 source、固定train24/validation8/test8，首轮不扩meta tasks；three Meta/Writer/optimizer/scheduler/RNG均fresh。
+- teacher与action训练池0–45，同task排除同episode；46–49仅训练任务诊断。每次更新4个等权task，每条件21 queries，global84。
+- 纯FM，AdamW lr3e−4、betas(.9,.95)、eps1e−8、wd1e−4、clip1；warmup100、decay12000至1e−5，观察窗口不重启优化时钟。
+- 初始2400 updates＝9600条件／201600 queries，均衡约400条件/task；correct400＋train96在600/900/1200/1500/1800/2100/2400，
+  每100保留完整状态。1200前不以单点低分否定结构；之后两个相邻有信息量节点持续缺乏获取可按注册作non-pass。
+  有实质持续获取才讨论连续扩展，不因FM下降无限等待或扫seed/LR/层位/rank来挽救。
+
+**整体架构比较**使用相同source、dual/full50实际learned read、task/query事件、LR时钟和曝光的fresh v5.2作为参照。
+旧单相机A或旧source B只能作背景；本轮同时改视频组织和参数读出，因此结果只直接裁决整体方案。
+若要进一步宣称“native内部消费本身有增量”，还需同一统一末端、关闭整个j9新增读写的fresh对照。
+在已训练模型上把U临时置零只能解释该模型的依赖，不能替代fresh方法比较。预算不足时可以报告整体结果，但不得作超出比较的单因归属。
+这些是科学比较臂，不要求保留第二套生产实现，也不是现在启动多轮搜索的授权。
+
+正式资格仍由single-checkpoint correct严格>145/400、相邻稳定、breadth、四suite非零及Goal/Long承担；
+每task整轮50条teacher各一次，跨checkpoint与arms严格固定配对，报告retained/gained/lost、churn、Jaccard与逐task/suite。
+有正确能力与相邻证据后做same-task-other；冻结selected checkpoint后补wrong/no-video/shuffled/reversed，真实重排frames再完整forward。
+最终controls不进入loss、选点或架构返工；Test仍封闭。过去sealed材料只说明当时结果，不反哺本方案。
+
+要声称视频相对语言/静态先验有必要增量，参照须实际学习：
+
+- language-only用合法text-only native和可训练参数decoder/head形成独立诊断模型，不输入假图像或action suffix，不借用视频特征；
+  相同task/query预算、优化时钟，完整报告其架构与参数差异。不能把零LoRA当成learned language baseline。
+- static用真实第一帧同步双视角、同一候选全部处理、T=1，fresh匹配query预算；没有故意弱化训练。
+- 不强制另训frame-set；相应地，最终shuffle/reverse只支持固定模型的顺序依赖，不能证明优于所有充分学习的无序方法。
+
+提前固定判断：若正确绝对能力不足，不能靠错误条件更差接受方法；若正确能力有而视频增量没有，就只取得条件适配，
+没有实现视频教学目标；若两者出现但相邻/合理训练条件下消失，脆弱性未解决。若统一架构充分学习后显著弱于匹配v5.2，
+应拒绝该具体改造，而不是以“更优雅”或内部信号更好为它开脱。
+
+## 12. 设计立场与交付范围
+
+本轮选择明确：采用§6的两处同构联合处理、一次native双写回、内容起始的单一参数状态和共享完整heads。
+不再将首轮“桥接＋保留全部尾端”同时保留为另一份canonical候选；历史通过Git与§5.3追溯。
+决定来自功能职责、学习接口、明确成本和历史边界；不会因owner问到一个已登记的限制就立刻删除模块或增加新支路。
+若出现真实合同矛盾、新的反证或足以改变成本判断的测量，应据证据修订；“坚定”不要求维护被证伪的结论。
+
+本次可完成的是完整架构推导和主动反例检查，不是科学性能资格。source后半段消费、FM选择有益过程、未见任务保持和训练条件鲁棒性
+都仍是具体且可证伪的学习主张。结构性质、数学路径与可实现接口已经逐项给出；未把这些性质冒充实测成功。
+没有源码实现、模型forward、GPU运行、held动作使用、Test或旧实验恢复。全部原证据继续由独立审计保存。

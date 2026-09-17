@@ -2171,7 +2171,8 @@ Validation首次五卡准备后在worker前被GPU准入拒绝，保留原未启�
 ## 115. 全面证据审读限定v5.2解释，并形成原生中层跨帧设计（2026-09-17）
 
 Owner要求先全面整理正负证据与验证强度，再从实际task及理论数学交付完整架构；本次仅分析与文档，无新实验。
-Canonical原件为[证据审计](docs/v52_evidence_audit_20260917.md)和[架构推导](docs/v52_evidence_based_writer_design.md)，
+首轮原件为[证据审计](docs/v52_evidence_audit_20260917.md)和Git `426dc5be:docs/v52_evidence_based_writer_design.md`；
+[架构推导](docs/v52_evidence_based_writer_design.md)为同用途持续更新的canonical文档，后续统一设计见§116。首轮审计
 覆盖46个编号证据组及12组bank中间路线、预算/曝光、代码、比较混杂、充分/不足范围和专家论证修正。
 
 旧v5.2普通FM的真实能力及视频依赖不能抹除；但同主图的task-complete和当前A说明其性质不由架构名称自动保证。
@@ -2197,3 +2198,35 @@ Layered192/384的correct400只有255个不同task-video条件，不满足现行�
 跨episode FM允许已知task的静态解；新设计提供过程进入主生成路径的接口，不能强制优化学会有用动态。
 同样，native后半段能否消费新上下文、是否保持旧能力、是否改善合理条件变化下的特异性与保持，都尚未实测。
 文档已明确fresh全Writer/三Meta联合纯FM、建议曝光、matched dual/H50基线、成本和可证伪预测；不注册为可执行active run。
+
+## 116. 统一结构继承处理原则，不把缺少消融误作保留旧模块的理由（2026-09-17）
+
+Owner要求再次设goal，检查更协调的统一架构及原多通路形成链，提前回答可预见问题并形成明确设计立场。
+本轮复用完整历史证据审计，只新增文档/数学/接口分析，没有新模型forward、训练、评测或held数据使用。
+
+最初新方案的多通路是：丰富内容可直达compiler；跨帧关系触发真实帧重读并进入AE内部；原始H及真实prefix保留。
+shared compiler当时尚未规定Core/P/AdaLN。后改成单次forward中层桥，再为控制改变量接回旧尾端；
+曾把信息访问重叠误当功能可替代，进而建议删P，这一理由不成立。反过来，没有matched删除消融也不禁止整体重构。
+本轮明确继承因果职责而非模块清单，不再混用实验归因与最终架构统一两种选择标准。
+
+选择[统一设计](docs/v52_evidence_based_writer_design.md)：native1–9→联合Z/H block×2→双残差写回→native10–18及final norms→
+同构block×2→唯一M。320个slot的S0=0，首个同构decoder从M语义位置初始化内容，第二个由S读取全M；
+保留归一化、八组256→216→native完整A/B heads与三个rank4 Meta。取消独立Core/P、P中心化及专门AdaLN。
+M语义位置已经联合H与时间，不是静态Core；原生完整patch/H保留到对应读取，末端没有先做H均值。
+此选择不是旧图函数类包含定理，旧AdaLN可能有用；整体fresh匹配行为负责，而非宣称模块已被证明冗余。
+
+严格限定旧H-only结论：它不能通过native mask改变旧Core；新末端联合块已可让H影响语义M与输出。
+新设计双写回的理由是让原生后半VL与Action均消费上下文，不能继续误用旧Core零导数声称新图H-only完全无输出路径。
+若过程知识被广播为所有帧相同b(V)，P中心化会从Value删掉b；统一M可保留其直接Value作用。
+该代数例子说明去掉一个具体限制，不证明旧模型实际因此失败或新模型必然学到b。
+
+在逐token norm、同probe、时间仅进逐role Q/K、末端无frame地址、正确padding等条件下，整个新Writer对完全重复静态帧的次数T不变。
+不同真实帧的顺序敏感只是函数类能力；若frame连同原时间标签一起置换，仍是同一个带位置集合。
+现有frame_control将内容置换与natural positions分开，继续满足真正顺序干预的语义。
+零B/U只带来有限的信用开启过程，不形成随段数相乘的门；非零路径也不保证梯度足够。source冻结不允许no_grad切断中间输入信用。
+S0=0与地址仅Q/K只保证M=0时不产生内容；语言/静态仍可通过真实native Value和寻址被学习，不能据此宣称视频必用。
+
+按明确规格独立复核参数13,451,008；T105/m25的新增attention逻辑pairs每head为11,922,800（不含原生网络），
+不是实测吞吐/峰值，也不是线性T复杂度。尚未profile，当前不为文档工作检查GPU或quota。
+新图仍以合法同task跨episode纯FM共同学习，source、split、数据墙和正式paired400资格不变；所有旧运行继续暂停。
+内容保留、统一表示、共享坐标与identity起点不构成闭环保持保证。判断因新证据或真实合同冲突而修订，不因提出一个已登记限制就反转。

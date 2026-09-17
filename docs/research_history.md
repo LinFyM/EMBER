@@ -1,7 +1,15 @@
 # EMBER research history
 
-2026-09-17完成owner要求的全面证据审读与架构推导，交付
-[证据审计](v52_evidence_audit_20260917.md)和[原生中层跨帧Writer设计](v52_evidence_based_writer_design.md)。
+2026-09-17第二轮分析goal完成统一架构与设计立场复核，交付修订后的[统一Writer设计](v52_evidence_based_writer_design.md)。
+追溯确认最早多通路规定的是丰富内容直达、跨帧证据进入native及原上下文保留，尚未规定Core/P尾端；后续尾端保留出于控制改变量，
+不能用缺少删除消融推成模块必需。新方案以j9/j18各两层同构联合Z/H块、一次中层双写回和两层连续参数decoder承接这些职责，
+首层参数读取使用已联合的语义memory，次层读取全memory，保留三Meta与八组完整A/B头；不再独立建立Core/P或AdaLN。
+真实pi05接口、条件静态重复不变性、零初始化信用路径、完整H与有损通道投影的区别、可见位置控制及参数/复杂度核算均已检查；
+解析参数13,451,008。所有收益、迁移与保持仍未实测，没有源码实现、模型forward、GPU、held动作或Test使用；旧实验继续暂停。
+新方案不构成active run。首轮设计保存在Git `426dc5be`，证据审计继续复用，跨轮判断见findings§116。
+
+2026-09-17上一轮完成owner要求的全面证据审读与架构推导，交付
+[证据审计](v52_evidence_audit_20260917.md)和首版中层跨帧Writer设计（Git `426dc5be:docs/v52_evidence_based_writer_design.md`）。
 46个编号证据组及12组bank中间路线区分真实行为、功能/局部干预、结构性质、短预算和未执行；
 明确旧v5.2与新A主图近等价、配方交互显著，没有识别唯一成功原因，也没有v5.2尾端组件逐一必需的matched证据。
 从实际train task及源码推导旧Core对帧置换不变、H-only中层注入不能改变Core；本次交付选择中层Z/H共同跨帧写回再原生续算，

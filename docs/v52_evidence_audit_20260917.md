@@ -296,7 +296,8 @@ Program-bank interaction、EBSRI、Program-through-bank、全局路线、Policy-
 **尚缺且没有被本文伪造的消融：** v5.2同前端/训练下删除Procedure或AdaLN、P两层改summary、仅更换共享head、
 逐一冻结三个Meta、以及匹配新source/dual/H50的中层跨帧写回比较。
 历史Horizon语言删除、frozen置零、顺序干预和Semantic-Path整体替换不能替代这些实验。
-保留v5.2尾端的依据是完整正例与功能解释，不是已证明所有部件必需或绝对最简。
+首轮保留v5.2尾端的依据是完整正例与功能解释，不是已证明所有部件必需或绝对最简。
+第二轮设计允许整体重构；缺少这些消融只限制因果归属，不构成禁止替换模块的理由，见[统一设计§5](v52_evidence_based_writer_design.md#5-从处理原则到统一架构的选择)。
 
 本次审到的Dynamic-K/LMMPC/GOMQ native memory均逐帧计算，one-way mask不让prefix／Action读memory；
 跨帧阶段在native之后。Horizon有强外部反复取证，native-reader有执行侧中层注入，但都不同于拟议的

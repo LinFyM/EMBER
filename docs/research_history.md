@@ -1,5 +1,12 @@
 # EMBER research history
 
+2026-09-18完成统一Writer1200节点：4800条件／100800queries，correct67/400、train54/96，breadth5／20，
+S/O/G/L为1/17/36/13与16/17/12/9；900→1200相邻R/G/L52/15/57与43/11/11，churn72／22。
+Validation降42，差值95%CI[-22.5,-.25]pp；相对同source A1200的135少68、CI[-29,-6.5]pp，train也低于A62。
+训练总分持平、覆盖扩大、FM诊断仍微降，不能阻止未见任务表现回落；未识别实现错误或单个内部模块原因。
+完整496条件、496条闭环与30个workers通过，训练新增300更新2975.2秒；原状态续到预登记1500点确认是否持续。
+不以最终controls或无依据小扫返工。事实及边界见findings§117和study的`unified/paired_readout.json`。
+
 2026-09-18完成统一Writer900节点：3600条件／75600queries，correct109/400、train54/96，breadth6／18，
 S/O/G/L为9/43/31/26与15/20/12/7；600→900相邻R/G/L65/44/25与32/22/6、churn69／28。
 相对同source既有A900的140／54，训练总成功追平，validation少31、差值95%CI[-13.5,-1.75]pp。

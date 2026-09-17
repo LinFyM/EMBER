@@ -34,7 +34,14 @@ train为47/11/13、churn24、Jaccard .6620、CI[-14.5833,+9.375]pp。验证继�
 没有worker invocation或评测行；原训练、物化和失败日志保留。重新检查发现physical4外部任务有0→29%的利用率变化，
 本节点推理登记使用可用的gpu01 physical0–3。原未启动队列保留在`validation_correct_step2700_unstarted_admission_failure`，
 按相同checkpoint、manifest、400条件及RNG重新准备；不重训或重新生成已完成的LoRA。
-恢复入口为`A/recover2700.py`，PID1560954；当前PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_2700_retry1.log`。
+首次恢复已完成correct400／train96／other400／wrong400，48个最终workers均正常退出；
+随后在temporal物化前的strg01 quota查询遇SSH连接关闭，未启动新的GPU任务。连接复查已恢复，原失败原件保留。
+现从`A/recover2700.py --from-temporal`接着执行剩余两臂，PID1814024；
+当前PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_2700_retry2.log`。
+2700主面板独立审计为108/400与64/96，breadth5／20，S/O/G/L为6/50/37/15与20/20/16/8。
+2400→2700 R/G/L为81/27/25与48/16/10；相对1200 validation净降27（95%CI[-11.75,-2]pp），train62→64。
+主面板决定已保存`A/node2700_primary_readout.json`：最近验证小幅回升2、训练增加6，按owner要求再观察3000；
+待2700两臂完成及下一节点存储登记后启动，不按controls作续训决定。
 2400完成记录已保存`A/trend_continuation_completion_2400.json`；当前节点与追加依据见`A/trend_continuation_launch_contract.json`。
 每节点仍完成correct400／train96及四个视频对照，无视频复用source零LoRA48；只等完成事件，完整节点后判断是否追加。
 

@@ -25,13 +25,13 @@ Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习，并与匹配
 | 代码职责 | `src/ember/`下的owner |
 | --- | --- |
 | 原生图文／完整H读取与三组Meta | `writer/video_program.py`、`writer/meta_lora.py` |
-| 视频联合算子与连续参数slots（实现替换进行中） | `writer/temporal.py` |
+| 视频联合算子与连续参数slots | `writer/temporal.py` |
 | 唯一38-target完整A/B生成 | `writer/model.py`、`pi05_lora.py` |
 | 纯FM学习、采样与完整checkpoint | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py`、`ecp/checkpoint.py` |
 | 运行时、物化与strict闭环评测 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` |
 
 Canonical入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`和`scripts/evaluate_pi05.py`，
-配置与schema随active design落实，现有实现仍为v5.2，不能将设计状态当作已运行新模型。正式学习按预注册窗口在真实profile后执行；
+统一原生Writer已替换旧Core/P实现，采用独立schema与fresh初始化。正式学习按预注册窗口在真实profile后执行；
 旧checkpoint使用其原冻结runtime，不装入新架构。是否已有运行或结果只看progress。
 
 ## 数据与资产

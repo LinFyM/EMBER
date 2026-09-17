@@ -23,7 +23,7 @@ from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
 from ember.writer.learning_data import MAXIMUM_UPDATES
 from ember.writer.materialization_workers import MaterializationWorkers, execution_devices
-from ember.writer.training import (RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
+from ember.writer.training import (CONFIG_SCHEMA, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
                                    observer_mode_contract, require_resume_identity, extension_record_path)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
@@ -84,7 +84,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     data = config.get("data", {})
     identities = (
         (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
-        (config, {"schema_version": "ember_language_axial_writer_config_v1", "update_version": UPDATE_VERSION,
+        (config, {"schema_version": CONFIG_SCHEMA, "update_version": UPDATE_VERSION,
                   "execution_precision": "native_bf16_writer_fm_fp32_lora"}),
         (config.get("optimization", {}), {"loss": "main_fm"}),
         (config.get("observer", {}), observer),
@@ -242,14 +242,13 @@ def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, A
         "frame_stride": 5, "include_last_frame": True, "camera": "_and_".join(cameras) + "_rotated_180",
         "native_image_tokens": patches,
         "execution_rank": 16, "generated_tensor_count": 76, "native_response_shape": [50, 1024],
-        "native_response_source": "final_normalized_action_suffix_hidden",
-        "visual_token_source": f"actual_final_{patches}_image_patches_and_exact_task_span_tokens",
+        "native_response_source": "j9_action_suffix_hidden_and_final_native_normalized_suffix",
+        "visual_token_source": f"actual_j9_and_final_{patches}_image_patches_and_exact_task_span_tokens",
         "visual_token_gradient": "joint_Text_VL_Action_Meta_complete_Writer_replay",
-        "native_read": ("all_50_horizon_positions_to_learned_content_position_read_uniform_init"
-                        if run["model_config"]["horizon_read"] == "learned" else
-                        "all_50_horizon_positions_to_fixed_mean_zero_query_and_bias"),
-        "video_representation": "language_queried_video_content_Core_and_causal_Procedure",
-        "process_aggregation": "two_causal_blocks_raw_frame_position_RoPE_and_centered_slot_read",
+        "native_read": observer["horizon_read"], "native_write": observer["native_write"],
+        "video_representation": "joint_semantic_and_all50_horizon_token_memory",
+        "process_aggregation": "two_role_time_blocks_per_native_phase_raw_frame_RoPE_QK_only",
+        "parameter_decoder": "two_continuous_content_state_blocks_semantic_then_full_memory",
         "native_parameter_generation": "complete_A_B_from_eight_shared_family_heads",
         "training_stage": STAGE, "training_objective": "main_fm",
         "deployment_frozen_source_vjp": False, "source_parameter_training": False,
@@ -463,7 +462,7 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     if not requests:
         raise ValueError("materialization batch must contain at least one request")
     if any(request["selection"]["K"] != 1 for request in requests):
-        raise ValueError("canonical Core/Procedure Writer materialization requires the trained K=1 condition")
+        raise ValueError("canonical unified native Writer materialization requires the trained K=1 condition")
     if native_frame_chunk is not None and (type(native_frame_chunk) is not int or native_frame_chunk <= 0):
         raise ValueError("native frame chunk must be a positive physical batch size")
     outputs = [Path(request["output"]).resolve() for request in requests]

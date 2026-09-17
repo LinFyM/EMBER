@@ -20,7 +20,7 @@ from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer import evaluation, materialization
 from ember.writer.evaluation import (EVALUATION_SCHEMA, FrozenHorizonWriterAdapter, episode_evidence,
                                      inspect_horizon_writer_bank, validate_task_scope)
-from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION, adapter_metadata,
+from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, CONFIG_SCHEMA, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION, adapter_metadata,
     condition_id, file_record, inspect_writer_checkpoint, method_metadata, paired_video_sets,
     planned_episodes, selection_contract)
 from ember.writer.runtime import MODEL_DEFAULTS
@@ -62,7 +62,7 @@ def bank(tmp_path, request):
     run["config"]["data"] = {"version": "v52_full_video_cross_episode_events_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
                             "maximum_updates": 1200}
-    run["config"]["schema_version"] = "ember_language_axial_writer_config_v1"
+    run["config"]["schema_version"] = CONFIG_SCHEMA
     run["config"]["optimization"] = {"loss": "main_fm"}
     run["config"]["model"] = dict(run["model_config"])
     run["config"]["observer"].update(observer_mode_contract(run["model_config"]))
@@ -494,9 +494,8 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
         assert error.value.code == 2 and len(calls) == 1
 
 
-@pytest.mark.parametrize('camera_view,horizon_read,patches', [('agentview', 'fixed_mean', 256), ('dual', 'learned', 512)])
-def test_method_metadata_binds_complete_video_reads_and_single_full_lora(camera_view, horizon_read, patches):
-    model = MODEL_DEFAULTS | {'camera_view': camera_view, 'horizon_read': horizon_read}
+def test_method_metadata_binds_joint_native_reads_and_single_full_lora():
+    model = dict(MODEL_DEFAULTS)
     run = {"model_config": model, "config": {"update_version": UPDATE_VERSION,
         "observer": observer_mode_contract(model), "execution_precision": "native_bf16_writer_fm_fp32_lora"}}
     method = method_metadata(run)
@@ -506,18 +505,21 @@ def test_method_metadata_binds_complete_video_reads_and_single_full_lora(camera_
     assert method["source_parameter_training"] is False
     assert method["deployment_teacher_labels_loss_optimizer"] is False
     assert method["training_objective"] == "main_fm" and method["update_version"] == UPDATE_VERSION
-    assert method['native_image_tokens'] == patches
-    assert method['visual_token_source'] == f'actual_final_{patches}_image_patches_and_exact_task_span_tokens'
-    assert method['camera'] == ('agentview_and_eye_in_hand_rotated_180' if camera_view == 'dual' else 'agentview_rotated_180')
-    assert method['native_read'] == ('all_50_horizon_positions_to_learned_content_position_read_uniform_init'
-                                   if horizon_read == 'learned' else 'all_50_horizon_positions_to_fixed_mean_zero_query_and_bias')
+    assert method['native_image_tokens'] == 512
+    assert method['visual_token_source'] == 'actual_j9_and_final_512_image_patches_and_exact_task_span_tokens'
+    assert method['camera'] == 'agentview_and_eye_in_hand_rotated_180'
+    assert method['native_read'] == 'joint_role_time_blocks_preserving_all50_positions'
+    assert method['native_write'] == 'single_j9_task_span_and_horizon_residual_then_native_layers10_18'
     for arm in ('cross_suite_wrong', 'shuffled', 'reversed'):
         control = method_metadata(run, arm)
-        assert control['control_transform'] == f'real_{camera_view}_camera_RGB_before_complete_Writer_forward'
+        assert control['control_transform'] == 'real_dual_camera_RGB_before_complete_Writer_forward'
     assert method_metadata(run, 'no_video')['control_transform'] == 'identity_zero_delta_without_RGB_reads'
 
 
-@pytest.mark.parametrize("field,value", [("schema_version", "ember_horizon_relation_writer_joint_run_v1"),
+@pytest.mark.parametrize("field,value", [("schema_version", "ember_language_axial_writer_run_v1"),
+    ("stage", "language_axial_writer_fresh"),
+    ("update_version", "full_ab_pure_fm_joint_text_vl_action_meta_v1"),
+    ("schema_version", "ember_horizon_relation_writer_joint_run_v1"),
     ("schema_version", "ember_process_pullback_writer_run_v1"),
     ("schema_version", "ember_native_correction_writer_run_v1"),
     ("stage", "horizon_relation_writer_fresh_fm_rl_joint"), ("mode", "profile"),
@@ -541,7 +543,7 @@ def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(ba
         inspect_writer_checkpoint(checkpoint)
 
 
-@pytest.mark.parametrize("field", ["schema", "architecture", "action_horizon", "camera_view", "horizon_read"])
+@pytest.mark.parametrize("field", ["schema", "architecture", "action_horizon", "camera_view", "native_split_layer"])
 def test_shape_compatible_old_writer_requires_its_frozen_runtime(bank, field):
     _, manifest = bank
     checkpoint = Path(manifest["writer_checkpoint"]["path"])
@@ -565,36 +567,31 @@ def test_checkpoint_rejects_shape_compatible_run_model_disagreement(bank):
         inspect_writer_checkpoint(checkpoint)
 
 
-@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned')])
-def test_checkpoint_accepts_each_registered_mode_and_keeps_its_method_identity(bank, camera_view, horizon_read):
+def test_checkpoint_accepts_registered_unified_native_architecture(bank):
     _, manifest = bank
-    checkpoint = Path(manifest['writer_checkpoint']['path'])
-    path = checkpoint.parent.parent / 'run_contract.json'
-    run = json.loads(path.read_text())
-    run['model_config'].update(camera_view=camera_view, horizon_read=horizon_read)
-    run['config']['model'] = dict(run['model_config'])
-    run['config']['observer'].update(observer_mode_contract(run['model_config']))
-    path.write_text(json.dumps(run))
-    observed, _ = inspect_writer_checkpoint(checkpoint)
+    observed, _ = inspect_writer_checkpoint(Path(manifest['writer_checkpoint']['path']))
     method = method_metadata(observed)
-    assert method['model_config']['camera_view'] == camera_view
-    assert method['model_config']['horizon_read'] == horizon_read
+    assert method['model_config']['camera_view'] == 'dual'
+    assert method['model_config']['native_split_layer'] == 9
+    assert method['model_config']['joint_blocks'] == 2
+    assert method['model_config']['decoder_blocks'] == 2
 
 
-@pytest.mark.parametrize('damage', ['observer_camera', 'observer_read', 'observer_patches', 'model_pair', 'run_model'])
-def test_checkpoint_rejects_camera_and_horizon_mode_disagreement(bank, damage):
+@pytest.mark.parametrize('damage', ['observer_camera', 'observer_read', 'observer_patches',
+                                    'observer_write', 'model_horizon', 'run_model'])
+def test_checkpoint_rejects_native_model_and_observer_disagreement(bank, damage):
     _, manifest = bank
     checkpoint = Path(manifest['writer_checkpoint']['path'])
     path = checkpoint.parent.parent / 'run_contract.json'
     run = json.loads(path.read_text())
-    single = run['model_config'] | {'camera_view': 'agentview', 'horizon_read': 'fixed_mean'}
     if damage.startswith('observer_'):
-        field = {'observer_camera': 'camera_view', 'observer_read': 'horizon_read', 'observer_patches': 'native_inputs'}[damage]
-        run['config']['observer'][field] = observer_mode_contract(single)[field]
-    elif damage == 'model_pair':
-        run['model_config']['horizon_read'] = run['config']['model']['horizon_read'] = 'fixed_mean'
+        field = {'observer_camera': 'camera_view', 'observer_read': 'horizon_read',
+                 'observer_patches': 'native_inputs', 'observer_write': 'native_write'}[damage]
+        run['config']['observer'][field] = 'obsolete_read'
+    elif damage == 'model_horizon':
+        run['model_config']['action_horizon'] = run['config']['model']['action_horizon'] = 25
     else:
-        run['config']['model'] = single
+        run['config']['model']['native_split_layer'] = 6
     path.write_text(json.dumps(run))
     with pytest.raises(ValueError, match='architecture|formal supervised|disagree'):
         inspect_writer_checkpoint(checkpoint)

@@ -9,10 +9,10 @@ Owner已明确授权：先整理整个仓库及data1可删除资产，再实现�
 
 ## 计划与完成标准
 
-1. **进行中：仓库与空间整理。** 审计tracked源码、tests、scripts、configs、docs以及ignored运行资产；
+1. **已完成：仓库与空间整理。** 审计tracked源码、tests、scripts、configs、docs以及ignored运行资产；
    在strg01核实data0/data1独立quota与实际用量。按keep/consolidate/delete/review分类，核对调用与运行生命周期后删除。
    保留canonical数据/source、唯一checkpoint、原始正式证据及专家论证；压缩过时状态叙述，历史通过Git/research_history追溯。
-2. **待完成：统一架构实现与效率。** 按[active design](docs/v52_evidence_based_writer_design.md)整体替换canonical Writer：
+2. **进行中：统一架构实现与效率。** 按[active design](docs/v52_evidence_based_writer_design.md)整体替换canonical Writer：
    j9/j18各两层同构Z/H联合块、一次双写回、两层连续参数decoder和共享完整A/B heads；三Meta fresh联合纯FM。
    复用采样、真实FM/VJP重放、checkpoint及evaluator。通过有效梯度、原生接口、最长视频、数值稳定和完整恢复检查，
    用实际LoRA/s、queries/s及峰值选择physical batch/并行方式，不删视频、相机或H位置换速度。

@@ -1,8 +1,8 @@
 {
-  "schema_version": "ember_language_axial_writer_config_v1",
-  "status": "registered_source_aligned_v52_learning",
-  "design": "docs/source_alignment_v52_plan.md",
-  "update_version": "full_ab_pure_fm_joint_text_vl_action_meta_v1",
+  "schema_version": "ember_unified_native_writer_config_v1",
+  "status": "pending_unified_native_profile",
+  "design": "docs/v52_evidence_based_writer_design.md",
+  "update_version": "unified_native_full_ab_pure_fm_joint_meta_v1",
   "execution_precision": "native_bf16_writer_fm_fp32_lora",
   "data": {
     "task_ids": [
@@ -44,7 +44,7 @@
     "seed": 7,
     "sampler_seed": 20260721,
     "teacher_video_seed": 20260722,
-    "maximum_updates": 1200,
+    "maximum_updates": 2400,
     "grouping": "baseline",
     "queries_per_task": 21,
     "version": "v52_full_video_cross_episode_events_v1",
@@ -159,8 +159,8 @@
     ]
   },
   "model": {
-    "schema": "ember_language_axial_writer_v1",
-    "architecture": "video_core_procedure_complete_lora",
+    "schema": "ember_unified_native_writer_v1",
+    "architecture": "joint_native_video_continuous_parameter_lora",
     "image_width": 2048,
     "expert_width": 1024,
     "program_width": 256,
@@ -171,28 +171,27 @@
     "max_frames_per_encoder_call": 8,
     "action_horizon": 50,
     "padded_action_dim": 32,
-    "semantic_core_heads": 8,
-    "semantic_core_blocks": 2,
-    "frame_attention_initial_lambda": 0.05,
-    "procedure_heads": 8,
-    "procedure_blocks": 2,
-    "fusion_heads": 8,
+    "native_split_layer": 9,
+    "joint_heads": 8,
+    "joint_blocks": 2,
+    "decoder_heads": 8,
+    "decoder_blocks": 2,
     "factor_hidden_width": 216,
     "initialization_seed": 7,
     "activation_checkpointing": true,
-    "camera_view": "dual",
-    "horizon_read": "learned"
+    "camera_view": "dual"
   },
   "observer": {
-    "camera_view": "dual",
-    "native_inputs": "full512_patch_content_and_full50_learned_horizon_read",
     "meta_rank": 4,
     "vl_meta_rank": 4,
     "text_meta_rank": 4,
     "probe_seed": 23070,
     "flow_time": 1,
     "frame_chunk": 8,
-    "horizon_read": "softmax_shared_query_nonaffine_rms_H_plus_relative_bias_then_raw_H_values_uniform_init"
+    "camera_view": "dual",
+    "native_inputs": "full512_patch_content_task_span_and_all50_horizon_tokens_at_j9_j18",
+    "horizon_read": "joint_role_time_blocks_preserving_all50_positions",
+    "native_write": "single_j9_task_span_and_horizon_residual_then_native_layers10_18"
   },
   "optimization": {
     "seed": 7,
@@ -288,10 +287,13 @@
       ],
       "registration_status": "registered_before_formal_writer_training_and_scores",
       "optimizer_updates": [
-        300,
         600,
         900,
-        1200
+        1200,
+        1500,
+        1800,
+        2100,
+        2400
       ],
       "qualification_completion": "strict paired400 correct >145, adjacent stability, breadth, all four suites including Goal/Long; no checkpoint fusion",
       "same_task_other": "after correct absolute and adjacent qualification; before selected single checkpoint freeze"
@@ -345,10 +347,13 @@
       "paired": true,
       "purpose": "fixed train24 states32-35; held video pool46-49 with explicit schedule reuse",
       "optimizer_updates": [
-        300,
         600,
         900,
-        1200
+        1200,
+        1500,
+        1800,
+        2100,
+        2400
       ]
     },
     "supervised_validation": {
@@ -380,10 +385,13 @@
       ],
       "optimizer_updates": [
         0,
-        300,
         600,
         900,
-        1200
+        1200,
+        1500,
+        1800,
+        2100,
+        2400
       ],
       "action_demos": [
         46,
@@ -430,64 +438,66 @@
       900,
       1000,
       1100,
-      1200
+      1200,
+      1300,
+      1400,
+      1500,
+      1600,
+      1700,
+      1800,
+      1900,
+      2000,
+      2100,
+      2200,
+      2300,
+      2400
     ],
     "profile_registration": {
-      "status": "complete",
-      "scope": "fresh Writer on corrected raw source1000; real longest video, full cross-episode FM update and all three Meta credit",
-      "evidence_path": "runs/analysis/source_alignment_20260915/B/native_profile/results.json",
-      "runtime_commit": "b8ea00e9fbb86742ef076bac9dd35c5314cd5aed",
-      "source_checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
-      "native_frame_chunk": 8,
-      "policy_microbatch": 8,
-      "longest_train_frames": 105,
-      "full_joint_updates": 3,
-      "steady_seconds_per_condition": 25.414466026239097,
-      "peak_reserved_gib": 29.00390625,
-      "deployment_seconds": 6.051612017676234,
-      "all_meta_credit": true,
-      "source_trainable_parameters": 0,
+      "status": "pending",
+      "scope": "fresh unified native Writer; complete longest video and full cross-episode FM update, three Meta and middle writeback credit",
       "profile_initialization_reused": false
     },
     "shuffled_reversed_use": false,
     "test_use": false,
     "final_checkpoint_selection": false,
     "learning_window": {
-      "optimizer_updates": 1200,
+      "optimizer_updates": 2400,
       "conditions_per_update": 4,
       "queries_per_update": 84,
-      "teacher_conditions": 4800,
-      "supervised_queries": 100800,
+      "teacher_conditions": 9600,
+      "supervised_queries": 201600,
       "formal_correct_nodes": [
-        300,
         600,
         900,
-        1200
+        1200,
+        1500,
+        1800,
+        2100,
+        2400
       ],
-      "segment_policy": "same topology exact resume, complete registered correct400 and train96 before next segment",
-      "conditional_comparison": "source then fresh A then B; same baseline events, updates and LR clock; no C grouping or seed/LR/rank sweep"
+      "segment_policy": "same topology exact resume; complete registered correct400 and train96 before advancing the evidence decision",
+      "conditional_comparison": "fresh unified Writer and frozen v5.2; same raw1000 source, dual cameras, complete H50, baseline events and unchanged 12k LR clock"
     },
     "fresh_initialization": {
-      "writer": "fresh original template-A zero-B complete heads, Text/VL/Action Meta and uniform learned H read",
+      "writer": "fresh complete A/B heads, three Meta, joint video blocks and continuous parameter decoder; legal template-A zero-B, zero middle writeback",
       "optimizer": "fresh",
       "scheduler": "fresh",
       "sampler_and_rng": "fresh",
       "initial_step": 0
     },
     "protocol_migrations": [
-      "two synchronized cameras",
-      "learned complete 50 horizon read initialized at original mean",
-      "strict cross-episode queries",
-      "46 training and 4 held episodes",
-      "post-action obs future action offset1"
+      "unified role/time processing at native j9 and j18",
+      "one joint Z_task and H writeback consumed by native layers10-18",
+      "continuous semantic-content-first parameter decoder; all50 horizon positions retained"
     ],
     "comparison": {
-      "arm": "B",
-      "old_source_reference": "runs/analysis/v52_return_20260915/baseline/training",
-      "matched_A_contract": "single agentview and fixed full50 mean; all other Writer training contracts matched",
-      "event_plan": "same baseline task permutation, strict cross-episode 46-pool events and flow RNG as old B",
-      "initialization": "fresh shared construction order and RNG; no Writer checkpoint reuse or reseed",
-      "inference": "same fixed state-video pairing as old B; compare complete matched-node panels"
+      "arm": "unified",
+      "baseline_runtime_commit": "bf8aea37",
+      "baseline_initial_budget": 1200,
+      "baseline_pre_authorized_extension": 2400,
+      "event_plan": "same task grouping, teacher/action pairs and flow RNG for both complete windows",
+      "initialization": "fresh per architecture with initialization seed7; no trained Writer or profile reuse",
+      "inference": "same fixed state-video mapping; complete matched-node paired400 and train96"
     }
   },
   "source": {

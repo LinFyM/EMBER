@@ -27,7 +27,7 @@ def test_registered_formal_recipe_reaches_git_guard_before_device_initialization
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
     args = SimpleNamespace(mode="formal", config=ROOT / "configs/pi05_writer.json")
     configured = training._config(args.config)
-    configured["status"] = "registered_source_aligned_v52_learning"
+    configured["status"] = "registered_unified_native_writer_learning"
     configured["evidence"]["profile_registration"]["status"] = "complete"
     monkeypatch.setattr(training, "_config", lambda _: configured)
     with pytest.raises(ValueError, match="clean pushed detached worktree"):
@@ -82,9 +82,9 @@ def sampler(monkeypatch, config):
 
 
 def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tmp_path, config):
-    assert config["model"]["action_horizon"] == 50 and config["model"]["semantic_core_blocks"] == 2
-    assert config["model"]["procedure_blocks"] == 2 and config["data"]["queries_per_task"] == 21
-    for section, key, value in (("model", "procedure_blocks", 3), ("model", "action_horizon", 25),
+    assert config["model"]["action_horizon"] == 50 and config["model"]["joint_blocks"] == 2
+    assert config["model"]["decoder_blocks"] == 2 and config["data"]["queries_per_task"] == 21
+    for section, key, value in (("model", "decoder_blocks", 3), ("model", "action_horizon", 25),
                                ("data", "queries_per_task", 16), ("observer", "vl_meta_rank", 0),
                                ("data", "cardinalities", [1, 2, 4]), ("data", "tasks_per_update", 3),
                                ("data", "conditions_per_task", None), ("data", "conditions_per_task", 2)):
@@ -96,55 +96,44 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
             _config(path)
 
 
-@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned')])
-def test_registered_modes_keep_baseline_events_training_and_execution_pairing(tmp_path, config, camera_view, horizon_read):
-    changed = deepcopy(config)
-    changed['model'].update(camera_view=camera_view, horizon_read=horizon_read)
-    changed['observer'].update(observer_mode_contract(changed['model']))
-    path = tmp_path / 'mode.json'
-    path.write_text(json.dumps(changed))
-    configured = _config(path)
-    assert configured['data'] == config['data'] and configured['optimization'] == config['optimization']
-    assert configured['data']['grouping'] == 'baseline' and 'event_groups' not in configured['data']
-    assert configured['evidence']['qualification'] == config['evidence']['qualification']
-    assert configured['design'] == 'docs/source_alignment_v52_plan.md'
-    assert configured['source'] == {
+def test_unified_recipe_keeps_source_events_training_and_execution_pairing(config):
+    assert config['data']['grouping'] == 'baseline' and 'event_groups' not in config['data']
+    assert config['data']['maximum_updates'] == 2400
+    assert config['design'] == 'docs/v52_evidence_based_writer_design.md'
+    assert config['source'] == {
         'evaluation_config': 'configs/pi05_source_aligned_evaluation.json',
         'checkpoint': 'runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000'}
 
 
-@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned')])
-def test_run_contract_records_the_actual_camera_and_full_horizon_read(config, monkeypatch, tmp_path, camera_view, horizon_read):
-    config['model'].update(camera_view=camera_view, horizon_read=horizon_read)
-    config['observer'].update(observer_mode_contract(config['model']))
+def test_run_contract_records_native_read_and_write(config, monkeypatch, tmp_path):
     monkeypatch.setattr(torch.cuda, 'get_device_properties', lambda _: SimpleNamespace(uuid='cpu-fixture'))
     modules = {name: torch.nn.Linear(1, 1) for name in ('writer', 'meta', 'vl_meta', 'text_meta')}
     runtime = SimpleNamespace(state=SimpleNamespace(**modules), policy=torch.nn.Linear(1, 1).requires_grad_(False), source={})
     context = SimpleNamespace(rank=0, local_rank=0, world_size=1, numa_node=None, cpu_affinity=None)
     run = _run_contract(SimpleNamespace(output=tmp_path, mode='formal'), context, config, runtime, {})
     assert run['information_wall']['native_read'] == (
-        f'same-version final {camera_view} Z and full50 H to {horizon_read}; joint three-Meta checkpoint replay')
-    assert run['model_config']['camera_view'] == camera_view and run['model_config']['horizon_read'] == horizon_read
+        'same-version dual Z and all50 H at j9/j18; one native double write; joint three-Meta replay')
+    assert run['model_config']['native_split_layer'] == 9
+    assert run['information_wall']['reading_meta_in_execution'] is False
 
 
-@pytest.mark.parametrize('field', ['camera_view', 'native_inputs', 'horizon_read'])
+@pytest.mark.parametrize('field', ['camera_view', 'native_inputs', 'horizon_read', 'native_write'])
 def test_observer_mode_mismatch_is_rejected(tmp_path, config, field):
-    single = config['model'] | {'camera_view': 'agentview', 'horizon_read': 'fixed_mean'}
-    config['observer'][field] = observer_mode_contract(single)[field]
+    config['observer'][field] = 'obsolete_read'
     path = tmp_path / 'mismatched.json'
     path.write_text(json.dumps(config))
     with pytest.raises(ValueError, match='scientific contract'):
         _config(path)
 
 
-def test_registered_a_and_b_cannot_exact_resume_each_other(tmp_path, config):
+
+def test_native_architecture_changes_cannot_exact_resume(tmp_path, config):
     original = {'schema_version': 'run', 'stage': 'supervised', 'mode': 'formal', 'config': config,
                 'model_config': config['model'], 'topology': {'world_size': 4}, 'source': config['source']}
     path = tmp_path / 'run_contract.json'
     _publish_contract(path, original, resume=False)
     changed = deepcopy(original)
-    changed['config']['model'].update(camera_view='agentview', horizon_read='fixed_mean')
-    changed['config']['observer'].update(observer_mode_contract(changed['config']['model']))
+    changed['config']['model']['native_split_layer'] = 6
     changed['model_config'] = dict(changed['config']['model'])
     with pytest.raises(ValueError, match='exact-resume contract differs: config'):
         _publish_contract(path, changed, resume=True)
@@ -405,11 +394,11 @@ def test_new_segment_nodes_do_not_mutate_or_invalidate_learning_contract(tmp_pat
 
 def test_budget_extension_is_explicit_bounded_and_leaves_the_scientific_config_unchanged(tmp_path, config):
     before = deepcopy(config)
-    args = SimpleNamespace(mode="formal", resume=tmp_path / "checkpoints/macro_00001200", extend_to_update=1800,
-                           stop_after_step=1500, checkpoint_updates="1300,1400,1500")
-    assert _segment_limit(args, config) == 1500
-    assert _data_config(args, config) == config["data"] | {"maximum_updates": 1800}
-    assert _data_config(SimpleNamespace(**(vars(args) | {"extend_to_update": 2100})), config)["maximum_updates"] == 2100
+    args = SimpleNamespace(mode="formal", resume=tmp_path / "checkpoints/macro_00002400", extend_to_update=3000,
+                           stop_after_step=2700, checkpoint_updates="2500,2600,2700")
+    assert _segment_limit(args, config) == 2700
+    assert _data_config(args, config) == config["data"] | {"maximum_updates": 3000}
+    assert _data_config(SimpleNamespace(**(vars(args) | {"extend_to_update": 3300})), config)["maximum_updates"] == 3300
     assert config == before
     for change in ({"extend_to_update": None}, {"extend_to_update": 12006}, {"extend_to_update": 1501},
                    {"resume": None}, {"resume": tmp_path / "checkpoints/macro_00000900"}, {"mode": "profile"}):
@@ -422,14 +411,14 @@ def test_extended_event_registration_preserves_original_and_rejects_rewritten_qu
     original = sampler.event_plan()
     _publish_event_plan(args, original)
     original_bytes = (tmp_path / "training_events.json").read_bytes()
-    extended = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 1800})
+    extended = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 3000})
     try:
-        args.resume, args.extend_to_update = tmp_path / "macro_00001200", 1800
+        args.resume, args.extend_to_update = tmp_path / "macro_00002400", 3000
         args.resume.mkdir()
         torch.save({"sampler_state": sampler.sampler_state()}, args.resume / "trainer_state.pt")
         _publish_event_plan(args, extended.event_plan())
         assert (tmp_path / "training_events.json").read_bytes() == original_bytes
-        assert json.loads(extension_record_path(tmp_path, "training_events.json", 1800).read_text()) == extended.event_plan()
+        assert json.loads(extension_record_path(tmp_path, "training_events.json", 3000).read_text()) == extended.event_plan()
         changed = extended.event_plan()
         changed["events"][0]["action_frames"][0] += 1
         with pytest.raises(ValueError, match="original registered training events"):
@@ -444,33 +433,33 @@ def test_extended_event_registration_preserves_original_and_rejects_rewritten_qu
 
 def test_repeated_extension_preserves_legacy_and_every_previously_registered_query(tmp_path, sampler):
     (tmp_path / "training_events.json").write_text(json.dumps(sampler.event_plan()))
-    previous = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 1800})
-    extended = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 2100})
-    following = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 2400})
+    previous = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 3000})
+    extended = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 3300})
+    following = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 3600})
     legacy = tmp_path / "training_events_extended.json"
     legacy.write_text(json.dumps(previous.event_plan()))
     legacy_bytes = legacy.read_bytes()
-    resume = tmp_path / "checkpoints/macro_00001800"
+    resume = tmp_path / "checkpoints/macro_00003000"
     resume.mkdir(parents=True)
     torch.save({"sampler_state": previous.sampler_state()}, resume / "trainer_state.pt")
-    args = SimpleNamespace(output=tmp_path, resume=resume, extend_to_update=2100)
+    args = SimpleNamespace(output=tmp_path, resume=resume, extend_to_update=3300)
     try:
         changed = extended.event_plan()
-        changed["events"][1300 * 4]["action_frames"][0] += 1
+        changed["events"][2700 * 4]["action_frames"][0] += 1
         with pytest.raises(ValueError, match="previous registered training events"):
             _publish_event_plan(args, changed)
         _publish_event_plan(args, extended.event_plan())
-        registered = extension_record_path(tmp_path, "training_events.json", 2100)
+        registered = extension_record_path(tmp_path, "training_events.json", 3300)
         registered_bytes = registered.read_bytes()
         torch.save({"sampler_state": extended.sampler_state()}, resume / "trainer_state.pt")
-        args.extend_to_update = 2400
+        args.extend_to_update = 3600
         changed = following.event_plan()
-        changed["events"][2000 * 4]["policy_rng_seed"] += 1
+        changed["events"][3200 * 4]["policy_rng_seed"] += 1
         with pytest.raises(ValueError, match="previous registered training events"):
             _publish_event_plan(args, changed)
         _publish_event_plan(args, following.event_plan())
         assert legacy.read_bytes() == legacy_bytes and registered.read_bytes() == registered_bytes
-        assert json.loads(extension_record_path(tmp_path, "training_events.json", 2400).read_text()) == following.event_plan()
+        assert json.loads(extension_record_path(tmp_path, "training_events.json", 3600).read_text()) == following.event_plan()
     finally:
         previous.close()
         extended.close()

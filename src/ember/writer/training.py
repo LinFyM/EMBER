@@ -25,22 +25,21 @@ from ember.writer.runtime import VideoConditionCache, build_runtime, require_arc
 from ember.writer.task_execution import cost_balanced_task_assignment
 
 
-RUN_SCHEMA = "ember_language_axial_writer_run_v1"
-STAGE = "language_axial_writer_fresh"
-TRAINING_SCHEMA = "ember_language_axial_training_state_v1"
-UPDATE_VERSION = "full_ab_pure_fm_joint_text_vl_action_meta_v1"
+CONFIG_SCHEMA = "ember_unified_native_writer_config_v1"
+RUN_SCHEMA = "ember_unified_native_writer_run_v1"
+STAGE = "unified_native_writer_fresh"
+TRAINING_SCHEMA = "ember_unified_native_training_state_v1"
+UPDATE_VERSION = "unified_native_full_ab_pure_fm_joint_meta_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
-    """Bind declared RGB and full-horizon reads to the registered model pair."""
+    """Bind the full native axes and split read/write to checkpoint identity."""
     require_architecture_identity(model)
-    camera, read = model["camera_view"], model["horizon_read"]
-    patches = 512 if camera == "dual" else 256
-    return {"camera_view": camera,
-            "native_inputs": f"full{patches}_patch_content_and_full50_{read}_horizon_read",
-            "horizon_read": "softmax_shared_query_nonaffine_rms_H_plus_relative_bias_then_raw_H_values_uniform_init"
-                if read == "learned" else "uniform_fixed_zero_query_and_bias_over_all_50_raw_H_values"}
+    return {"camera_view": "dual",
+            "native_inputs": "full512_patch_content_task_span_and_all50_horizon_tokens_at_j9_j18",
+            "horizon_read": "joint_role_time_blocks_preserving_all50_positions",
+            "native_write": "single_j9_task_span_and_horizon_residual_then_native_layers10_18"}
 
 
 def _config(path: Path) -> dict[str, Any]:
@@ -51,13 +50,13 @@ def _config(path: Path) -> dict[str, Any]:
         "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
         "version": "v52_full_video_cross_episode_events_v1",
         "event_schema_version": "v52_full_video_cross_episode_events_v1",
-        "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722, "maximum_updates": 1200,
+        "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722, "maximum_updates": 2400,
     }
     expected_observer = {
         "flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "text_meta_rank": 4,
         "probe_seed": 7 + 0x5A17, **observer_mode_contract(config["model"]),
     }
-    if (config.get("schema_version") != "ember_language_axial_writer_config_v1"
+    if (config.get("schema_version") != CONFIG_SCHEMA
             or config["optimization"].get("joint_train_all_writer_modules") is not True
             or float(config["optimization"]["normalizer"]) != 1.0
             or config["optimization"]["loss"] != "main_fm"
@@ -69,7 +68,7 @@ def _config(path: Path) -> dict[str, Any]:
                 "native_output_calibration", "local_field_supervision"} & config.keys()
             or "trust_scales" in config["optimization"]
             or config.get("execution_precision") != "native_bf16_writer_fm_fp32_lora"):
-        raise ValueError("canonical Core/Procedure Writer scientific contract changed")
+        raise ValueError("canonical unified native Writer scientific contract changed")
     for key, expected in (("video_demos", range(46)), ("action_demos", range(46)),
                           ("diagnostic_action_demos", range(46, 50)), ("held_video_demos", range(46, 50))):
         if config["data"][key] != list(expected):
@@ -96,7 +95,7 @@ def _optimization(state, config):
         num_warmup_steps=int(opt["warmup_updates"]), num_decay_steps=int(opt["decay_updates"]),
         peak_lr=float(opt["lr"]), decay_lr=float(opt["decay_lr"]),
     # This bounded run covers only the beginning of the original 12k clock.
-    # The upstream builder otherwise rescales warmup/decay to the 1200 budget.
+    # The upstream builder otherwise rescales warmup/decay to the shorter run budget.
     ).build(optimizer, int(opt["decay_updates"]))
     return optimizer, scheduler
 
@@ -204,9 +203,8 @@ def _run_contract(args, context, config, runtime, state):
             "video_action_episodes": "main LoRA cross-episode", "gradient_normalizer": 1.0,
             "objective": config["optimization"]["loss"],
             "training_only_actions": "same-task cross-episode main FM execution queries only",
-            "native_read": f"same-version final {config['model']['camera_view']} Z and full50 H to "
-                           f"{config['model']['horizon_read']}; joint three-Meta checkpoint replay",
-            "complete_lora": "shared eight-family full A/B heads from video Core and Procedure modulation",
+            "native_read": "same-version dual Z and all50 H at j9/j18; one native double write; joint three-Meta replay",
+            "complete_lora": "shared eight-family full A/B heads from a continuous content-initialized parameter state",
             "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
             "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
@@ -466,7 +464,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    if args.mode == "formal" and (config["status"] != "registered_source_aligned_v52_learning"
+    if args.mode == "formal" and (config["status"] != "registered_unified_native_writer_learning"
                                   or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)

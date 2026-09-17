@@ -1,50 +1,43 @@
 # EMBER task plan
 
-## 当前目标与授权（Owner 2026-09-17，整套实验执行goal）
+## 本轮目标与完成状态（2026-09-18）
 
-Owner已明确授权：先整理整个仓库及data1可删除资产，再实现已选定的新架构并优化GPU吞吐，
-完成新架构训练/评测并与已有v5.2结果比较；结果不佳时，仅在有具体证据支持的改进空间时修正并重新训练，
-若充分证据显示没有可行改进则停止，最后详细汇报整套实验。本授权替代上一轮“只分析、不实现/实验”的限制。
-这是一项持续到实际实验与交付完成的goal，不以建立计划、启动训练或单个分数作为完成。
+Owner于2026-09-17授权的统一Writer整套实验工作已完成：仓库/data1整理、新架构实现与高效训练、
+比较已有v5.2、审视有依据的修正，以及报告交付。本轮在预注册1500节点作有界non-pass裁决。
+当前没有active design、运行或待自动执行的计划；实际证据与结束状态见[progress](progress.md)。
 
-## 计划与完成标准
+## 已完成事项
 
-1. **已完成：仓库与空间整理。** 审计tracked源码、tests、scripts、configs、docs以及ignored运行资产；
-   在strg01核实data0/data1独立quota与实际用量。按keep/consolidate/delete/review分类，核对调用与运行生命周期后删除。
-   保留canonical数据/source、唯一checkpoint、原始正式证据及专家论证；压缩过时状态叙述，历史通过Git/research_history追溯。
-2. **已完成：模型实现与六卡等效执行。** 按[active design](docs/v52_evidence_based_writer_design.md)整体替换canonical Writer：
-   j9/j18各两层同构Z/H联合块、一次双写回、两层连续参数decoder和共享完整A/B heads；三Meta fresh联合纯FM。
-   复用采样、真实FM/VJP重放、checkpoint及evaluator。通过有效梯度、原生接口、最长视频、数值稳定和完整恢复检查，
-   Owner最新明确要求六卡等效提速：保持4task/global84与原优化更新，完成native帧和query分片、梯度汇总等效及六卡恢复验证。
-   六卡同事件热身平均8.61秒，对四卡12.52秒为1.45倍吞吐；最长105帧下选择20帧物理chunk，
-   实际峰值34.04GiB、完整global84更新15.18秒。完整3→6恢复及逻辑曝光/梯度检查通过，不删视频、相机或H位置换速度。
-3. **进行中：新架构训练与既有结果比较。** 冻结可审阅的训练/预算/节点/停止合同；从clean pushed detached trees运行。
-   只fresh训练新架构，使用raw1000 source、双RGB、fullH、train24与已登记FM/优化时钟。
-   v5.2复用已有正式结果；按实际source/输入/预算差异解释整体比较，不再启动或续训旧方法。
-   正式节点使用single-checkpoint correct400和train96，比较per-task/suite、breadth、相邻retained/gained/lost与churn。
-   性能仍以>145及相邻资格为长期目标；不以内部指标代替真实能力，视频相对语言/静态增量另以有效参照验证。
-4. **待证据裁决：有依据的修正。** 区分工程错误、获取不足、迁移回落和合理科学non-pass。
-   只有具体失败接口、可检验改进假设及预先登记的新比较支持时，才实施集中修正并fresh重训；
-   不做无依据的rank/scale/seed/LR/dtype小扫，不用无限续训挽救明确坏结果，也不把一次局部失败扩大为全路线推翻。
-5. **待完成：全套裁决与交付。** 完成必要的正确视频稳定性、same-task-other、learned language/static参照及冻结后的最终controls；
-   汇总能力、视频作用、保持、成本、负结果与未解决问题，核对资产保留、单一运行面和Git交付，向owner详细报告后结束goal。
+1. **仓库与空间整理。** 核实data0/data1独立quota，审计源码、测试、脚本、配置、文档及运行资产。
+   退役确认过时/重复的代码与配置；清理23,224个可重建LoRA payload、13个干净已集成历史工作树，
+   以及本轮完成的profile和临时实现/运行工作树。保留正式证据、唯一checkpoint、数据/source和未合入工作。
+2. **统一模型与六卡执行。** 完成中层/末端同构Z/H处理、一次native双写回、连续参数状态和完整38-target A/B。
+   三Meta与Writer fresh联合纯FM。六卡真实帧/query分片保持4task/global84及一次更新，
+   通过梯度、原生接口、最长视频与完整恢复检查；profile选20帧chunk，六卡相对同事件四卡吞吐1.45倍。
+3. **正式学习与既有比较。** clean pushed frozen commit运行至1500，6000条件/126000queries，15个完整恢复点。
+   600/900/1200/1500各完成correct400与train96，共1984条完整闭环；同source配对A只复用已完成原件。
+   新模型验证90/109/67/84，train38/54/54/52；原v5.2 132/复核125作为不同source/video映射的描述性参照。
+4. **修正可行性裁决。** 没有发现可复现工程错误或能限定具体失败接口的证据。
+   已复核73/75-task及meta73/target18历史，不把95-task扩展或rank/scale/seed/LR/dtype扫描当作默认修复。
+   后段缺乏持续整体获取，1500反弹集中在单个Long任务；按停止条款结束，没有启动第二轮重训。
+5. **分析与交付。** 保留per-task/suite、breadth、retained/gained/lost、churn、Jaccard、配对区间与资源成本。
+   已生成[完整报告](runs/analysis/unified_writer_20260917/experiment_report.md)、
+   [逐任务表](runs/analysis/unified_writer_20260917/unified/analysis/primary_tables.md)及可导出图表；
+   当前状态、findings和research_history同步，源码、科学证据及正式checkpoint保留。
 
-## 研究与执行边界
+## 已关闭而非待执行的分支
 
-- Active design为[统一Writer设计](docs/v52_evidence_based_writer_design.md)；其结构已选定，运行参数只在真实profile后封存。
-- 固定source71/train24/validation8/test8、信息墙、normalization与official评测不变。无held梯度、无RL、Test仍关闭。
-- 初始建议窗口为2400更新（9600条件/201600queries），600起每300更新正式主面板，每100保存完整恢复状态；
-  具体成本与运行资源在launch前记录，不把建议预算冒充已分配资源或已启动运行。
-- 首轮整体方法比较不自动识别中层写回的独立贡献；若要提出该因果主张，需同一统一尾端且无j9读写的fresh比较。
-- 最终wrong/no-video/shuffled/reversed不进入训练、选点或架构返工。改进依据来自允许的主面板、训练证据及真实工程合同。
-- 单节点最多6张真正提高吞吐的A40；每次launch前双节点live检查，尊重其它任务，正式exact-resume锁拓扑。
-- 大资产复用canonical根。新大输出优先使用已有data0运行父目录，仍须其独立quota/峰值核价；data1清理不意味着可忽略配额。
-- 不恢复旧A3000评测、旧C或其它无关实验。Owner已明确不重训v5.2；对比复用已有v5.2及同source对齐A的正式结果。
+- 初始窗口上限2400，按预注册1200后的相邻证据条款在1500停止；1800/2100/2400未执行。
+  不宣称已训练2400、已完全收敛或穷尽所有统一架构的潜力。
+- 无节点达到correct严格>145/400及相邻资格，因此没有selected checkpoint。
+  后续same-task-other、learned language/static参照及冻结后最终wrong/no-video/shuffled/reversed controls未启动。
+  本轮未证明动态视频必要增量或时序特异性改善，未使用这些controls返工。
+- Owner取消的300点从未启动；误启动的重复v5.2在73步停止，不纳入科学比较，此后没有重启。
+- 未恢复旧A3000评测、C或其它无关实验；无Test使用、无held梯度、无RL。
 
-## 已完成工作与历史入口
+## 保留的依据
 
-- 2026-09-17证据审计保留46组证据及12组bank中间路线；[审计原件](docs/v52_evidence_audit_20260917.md)。
-- 首版中层桥设计保存在Git `426dc5be`；第二轮统一设计及数学/接口复核在`176759a7`，跨轮结论见findings§115–116。
-- 旧A已完成3000训练，最新完整闭环为2700；SFT400/425/450已完成。其完整历史、原件和原暂停状态见
-  [research_history](docs/research_history.md)、findings§107–114及`runs/analysis/source_alignment_20260915/`。
-  旧任务的未完成清单已由本次明确goal替代，保留事实，不保留并行执行路线。
+- [封存统一设计](docs/v52_evidence_based_writer_design.md)及[设计前证据审计](docs/v52_evidence_audit_20260917.md)。
+- findings§117、[研究历史](docs/research_history.md)及study的`experiment_completion.json`。
+- 正式运行代码commit `184947cbd9bb1f05c4a4684f390633f10374e0b2`及study内sealed config/命令/原件。
+  临时frozen worktree已在确认进程退出、干净且集成后删除；这不删除历史代码或checkpoint。

@@ -1,5 +1,17 @@
 # EMBER research history
 
+2026-09-18统一Writer整套实验在1500按预注册停止条款结束，作有界non-pass，不采纳本次改造。
+完整correct600/900/1200/1500为90/109/67/84，各400；train38/54/54/52，各96。
+1500 S/O/G/L为3/18/33/30与19/13/15/5，breadth5/8与19/24；相邻validation R/G/L43/41/24、churn65、J=.398，
+train41/11/13、churn24、J=.631。净回升17集中Long1，早期109总体能力未恢复；训练总成功停滞且suite之间交换。
+同source A1500为112/56；输入仍有agentview/H均值与双RGB/fullH差异，不作单模块因果归属。
+1500累计6000条件/126000queries、训练程序含诊断15073.5秒；15个完整checkpoint保留。
+四节点1984条闭环及120个worker完成记录全部通过，评测程序4328.5秒；没有Test、held梯度或RL。
+1800/2100/2400未执行，无qualification/selected checkpoint，后续视频资格/learned参照/最终controls未启动。
+修正审视没有识别工程错误或可检验的具体改动；历史73/75-task证据不支持默认扩到95-task，因此没有第二轮重训。
+本次不证明所有统一结构不可能，也不把未测视频增量写成零。源码与formal证据保留，profile及结束的临时工作树已清理。
+报告/裁决为`runs/analysis/unified_writer_20260917/{experiment_report.md,experiment_completion.json}`；完整解释见findings§117。
+
 2026-09-18完成统一Writer1200节点：4800条件／100800queries，correct67/400、train54/96，breadth5／20，
 S/O/G/L为1/17/36/13与16/17/12/9；900→1200相邻R/G/L52/15/57与43/11/11，churn72／22。
 Validation降42，差值95%CI[-22.5,-.25]pp；相对同source A1200的135少68、CI[-29,-6.5]pp，train也低于A62。

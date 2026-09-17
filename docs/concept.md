@@ -4,13 +4,13 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 使机器人从未见初始化闭环完成任务。语言说明目标与关注对象，视频中的操作内容和顺序应提供必要条件信息。
 人从他人教学迁移到自己身体的能力是科学动机；LIBERO结果本身不证明跨身体泛化。
 
-当前授权和实际状态见[progress](../progress.md)。Owner已授权统一Writer的实现与整套比较实验，旧A/C等历史路线不自动恢复。
-本轮采用[统一Writer设计](v52_evidence_based_writer_design.md)：继承v5.2的内容、条件作用、归一化和共享参数坐标，
-用原生中层/末端的同构联合Z/H处理与连续参数槽，替换独立Core/P及专门融合。实现和profile已经完成，正式训练状态见progress；v5.2比较复用既有结果，不重训旧方法。
-下述原理中涉及Core/P的具体形式，是已实现v5.2的历史解释；最新候选的完整接口、学习和边界以上述设计为准。
+当前授权和实际状态见[progress](../progress.md)。统一Writer的本轮实现/比较已经结束，旧A/C等历史路线不自动恢复。
+[封存统一设计](v52_evidence_based_writer_design.md)继承v5.2的内容、条件作用、归一化和共享参数坐标，
+用原生中层/末端的同构联合Z/H处理与连续参数槽，替换独立Core/P及专门融合；实际行为和有界裁决见findings§117。
+下述Core/P形式说明统一改造前v5.2衍生实现的接口，不等同于原始132分实验的实际输入/读法；历史比较口径见证据审计。
 Process Pullback及其它已关闭机制从[研究历史](research_history.md)追溯。
 
-## 当前候选：统一表示与一次性参数生成
+## 统一Writer实例：统一表示与一次性参数生成
 
 ```text
 exact language + K1同步双RGB，stride5和真实末帧
@@ -27,7 +27,7 @@ exact language + K1同步双RGB，stride5和真实末帧
 首层参数读取的语义memory已与H和完整视频联合处理，不是新的静态Core。三个Meta、联合块、decoder与head共同接受跨episode真实FM。
 内容保留、共享及归一化是学习偏置，不是视频必用、泛化或保持的保证；这些行为资格沿原科学目标独立验证。
 
-## 已实现v5.2的历史处理框架
+## v5.2衍生实现的历史处理框架
 
 ```text
 exact language + 一条同步agentview／eye_in_hand RGB视频（K=1）
@@ -76,7 +76,7 @@ Text/VL/Action Meta、Core、Procedure和完整A/B heads的信用均来自同一
 
 跨episode监督、共享图文／动作坐标和共享heads是尝试获得可复用能力的理由，不保证迁移或保持。
 继续训练可能获取新行为，也可能破坏已经成功的条件。此前同事件任务共现对照已作为历史证据保留，
-不再自动继续。当前方法见上方统一候选；其新实验独立按当前active design执行。
+不再自动继续。上方统一实例及此处历史框架都不构成自动恢复实验的授权；active design只能由progress登记。
 
 ## 怎样判断
 

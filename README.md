@@ -3,9 +3,9 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-当前按[统一Writer设计](docs/v52_evidence_based_writer_design.md)推进整套实验：真实图文与完整动作响应在原生中层/末端联合处理，
+代码包含[统一Writer设计](docs/v52_evidence_based_writer_design.md)的实现：真实图文与完整动作响应在原生中层/末端联合处理，
 一次中层双写回，再由连续参数状态和共享heads生成唯一38-target完整A/B LoRA。
-Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习，并与已有v5.2结果比较；实际实现、运行和结果以progress为准。
+Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习；已完成实验的结果、裁决及当前是否存在运行以progress为准。
 
 ## 阅读入口
 
@@ -13,7 +13,7 @@ Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习，并与已有
 | --- | --- |
 | [Owner要求](docs/current_owner_requirements.md) | 稳定目标、研究原则与最新裁决 |
 | [科学动机](docs/concept.md) | 完整方法链条、因果职责与待检验假设 |
-| [Active design](docs/v52_evidence_based_writer_design.md) | 本方法的接口、训练和证据合同 |
+| [封存统一设计](docs/v52_evidence_based_writer_design.md) | 已完成实例的接口、训练和证据合同 |
 | [当前计划](task_plan.md)／[当前进度](progress.md) | 当前goal、授权、实施证据与下一阶段 |
 | [AGENTS](AGENTS.md) | 科学、数据、评测、资源与Git合同 |
 | [Findings](findings.md)／[研究历史](docs/research_history.md) | 跨轮结论，以及封存设计、专家评审与formal原件索引 |

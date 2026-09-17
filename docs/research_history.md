@@ -1,5 +1,13 @@
 # EMBER research history
 
+2026-09-18完成统一Writer900节点：3600条件／75600queries，correct109/400、train54/96，breadth6／18，
+S/O/G/L为9/43/31/26与15/20/12/7；600→900相邻R/G/L65/44/25与32/22/6、churn69／28。
+相对同source既有A900的140／54，训练总成功追平，validation少31、差值95%CI[-13.5,-1.75]pp。
+验证较A同段更低churn来自新获44低于72，同时丢失25高于20，不能称保持改善；两个验证task仍为零。
+完整496条件、496条闭环与30个workers通过，600→900训练3160.0秒；两组主面板仍有获取，原状态续到1200。
+原v5.2固定900原132／复核125仅作不同source/video映射下的整体参照；未引入Test或最终controls作选择。
+事实及边界见findings§117与`runs/analysis/unified_writer_20260917/unified/paired_readout.json`。
+
 2026-09-18完成统一Writer首个600节点：2400条件／50400queries，correct90/400、train38/96，breadth4／17，
 S/O/G/L为0/37/32/21与9/11/12/6。同source及实际teacher/state/RNG配对的A600为88／47；
 新模型相对A的R/G/L为47/43/41与28/10/19、churn84／29、Jaccard .359／.491，任务bootstrap差值区间均跨零。

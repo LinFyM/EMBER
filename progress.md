@@ -15,7 +15,7 @@ Owner最新明确要求：**新架构必须用六卡，并保持等效计算来�
 已实现视频native帧分片与query分片，六卡参与实际计算。两组三卡分担四个条件，
 组内在j9/j18统一表示处进行可微汇集，保留完整跨帧联合处理；梯度等效、实际吞吐和恢复验证通过。
 
-当前阶段：**step600的correct400/train96已完成，原六卡拓扑正从完整600点恢复至900**。
+当前阶段：**step900的correct400/train96已完成，原六卡拓扑正从完整900点续至1200**。
 2026-09-17 23:23 CST从clean pushed detached `184947cb` fresh启动，gpu02 p0/1/2/3/4/6。
 六rank、两组三卡、global84与source trainable=0已核实；600步共2,400条件/50,400 queries，
 每100的完整状态均已保存，首段exit0、训练进程已退出。首段含诊断共6,100.5秒，实际allocated峰值34.06GiB。
@@ -23,8 +23,12 @@ step600物化使用gpu02 p0/1/3/4/6与20帧chunk，400＋96条件全部fresh生�
 首次调用因设备参数写成数字而在CLI解析阶段exit1，已改为`cuda:N`并保留原错误记录，未改训练或模型。
 两组评测均为同五卡、每卡3个persistent workers，496条完整、30个workers及两个launcher均exit0。
 p2此前另有27–45% SM活动，独立评测避开该卡；续训前双节点live复核时p2为4%利用率、40,038MiB余量。
-600→900恢复保持原p0/1/2/3/4/6、world6、global84、optimizer/scheduler/sampler/RNG与20帧chunk，
-tmux `ember-unified-native-train`，入口`unified/resume.sh 900`。资源与命令见`unified/step600_execution.json`及`step900_execution.json`。
+600→900保持原p0/1/2/3/4/6、world6、global84、optimizer/scheduler/sampler/RNG与20帧chunk，
+新增300更新用时3160.0秒，900点共3600条件/75600queries，完整恢复状态保存且exit0。
+900点496条件fresh物化及两组评测完成，使用p0/1/3/4/6、每卡3个workers；30个workers及两个launcher均exit0。
+900→1200继续原六卡与完整状态，tmux `ember-unified-native-train`、入口`unified/resume.sh 1200`。
+launch前p2共驻进程SM采样27–30%、余量40,038MiB，与已测六卡共驻条件相符；没有改变他人作业。
+资源与命令见`unified/step600_execution.json`、`step900_execution.json`及`step1200_execution.json`。
 Owner已撤销补300步评测的要求；300请求未执行即撤销，保留取消记录，首轮600及后续每300步的节奏不变。
 原生三进程Gloo检查覆盖2/2/1和1/1/0帧分片、已打开Meta/写回与checkpoint重算，输出和汇总梯度符合串行目标。
 完整FM的query切片保持原始随机batch/offset与汇总余切；1–4及6rank的任务分配验证保持4条件/84queries。
@@ -79,12 +83,14 @@ v5.2复用既有曲线/固定step900复核，同source比较复用对齐A的已�
 不以不同设置下的分差孤立归因于某个模块，不用最终controls返工架构；Test关闭、无RL或held梯度。
 正式性能仍须correct严格>145/400及相邻稳定、breadth、四suite/GoalLong和同task视频鲁棒性。
 
-首个完整600点为**correct90/400、train38/96**，breadth4/8与17/24；S/O/G/L为0/37/32/21与9/11/12/6。
-同source、实际teacher和state/RNG严格配对的A600为88/400与47/96；新模型相对A的R/G/L为47/43/41与28/10/19，
-churn84/29、Jaccard .359/.491。Long高于A600，但Spatial仍为0，训练Object也较弱，首点没有整体提升证据。
-相对裸source50/13观察到新增能力；不能把适配收益归给动态视频，也尚无新模型相邻保持证据。
-按注册1200前不由单点低分否定结构，配置不变继续900/1200；不由此启动controls或返工架构。
-完整原件为study的`unified/paired_readout.json`和`unified/analysis/step600_*`，跨轮解释见findings§117。
+完整600→900为**correct90→109/400、train38→54/96**，最新breadth6/8与18/24；
+900的S/O/G/L为9/43/31/26与15/20/12/7，训练Object已追上，validation四suite均非零。
+相邻validation R/G/L65/44/25、churn69、Jaccard .485；train32/22/6、churn28、Jaccard .533。
+同source及实际teacher/state/RNG配对的A900为140/400与54/96，新模型validation少31，差值95%CI[-13.5,-1.75]pp；
+训练总成功追平，但未见任务仍弱。相对A的600→900，验证新增44低于72、丢失25高于20，不能把更低churn当作保持改善。
+原v5.2固定900原132、复核125也高于新109，但source/输入/video映射不同，只作描述性整体参照。
+两组主面板仍在获取，按注册原配置继续1200；未作单模块归因、最终controls或无依据返工。
+完整原件为study的`unified/paired_readout.json`和`unified/analysis/step{600,900}_*`，跨轮解释见findings§117。
 
 旧A训练完成3000、最新完整评测2700为108/400与train64/96；3000评测不自动恢复。
 完整历史与设计证据见findings§107–116、[证据审计](docs/v52_evidence_audit_20260917.md)及

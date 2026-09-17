@@ -2167,3 +2167,33 @@ Validation首次五卡准备后在worker前被GPU准入拒绝，保留原未启�
 其后temporal物化前的一次quota SSH连接关闭经复查恢复，未重训或重跑已完成面板。两次失败和完整完成证据均保留。
 原件为study的`A/continuation_readout.json`、`video_specificity_step2700/`、`training_completion_2700.json`、
 `trend_continuation_completion_2700.json`与`trend_continuation_failure_2700_01/02.*`；尚未达到性能或相邻稳定资格。
+
+## 115. 全面证据审读限定v5.2解释，并形成原生中层跨帧设计（2026-09-17）
+
+Owner要求先全面整理正负证据与验证强度，再从实际task及理论数学交付完整架构；本次仅分析与文档，无新实验。
+Canonical原件为[证据审计](docs/v52_evidence_audit_20260917.md)和[架构推导](docs/v52_evidence_based_writer_design.md)，
+覆盖46个编号证据组及12组bank中间路线、预算/曝光、代码、比较混杂、充分/不足范围和专家论证修正。
+
+旧v5.2普通FM的真实能力及视频依赖不能抹除；但同主图的task-complete和当前A说明其性质不由架构名称自动保证。
+同曝光配方交互、具体固定出口损伤、P/Q完整出口局部增益均成立；完整P/Q、Semantic-Path和旧source dual/H50 B的负例，
+又阻止把“真实视频、完整H、共享块、fullAB、纯FM”共同框架当作v5.2的独有成功原因。
+较可信的是内容保留、条件化且归一化的共享输出坐标、共同读取适配与优化过程的组合解释，未识别唯一原因。
+没有找到v5.2同前端/训练下删P或AdaLN、两层P改summary的matched fresh行为消融；保留尾端不等于证明各部件必需。
+
+审计纠正：PNBTT只跑task-local free-query E1，Natural Program E2未跑；functional-polar只有profile；
+P/Q width256有训练/功能但无闭环；LocalField100仅400总条件、单task8–25次；G2-B macro60实际420次Adam。
+Layered192/384的correct400只有255个不同task-video条件，不满足现行无放回合同；
+但旧v5.2原始132已按每task全50视频各一次执行，不能按日期将所有早期结果统一降级。
+更完整的预算与边界见证据文档；短窗口non-pass不是整个函数类的充分否定，长步数局部solver也不是合法共享学习。
+
+对当前真实源码可作两个确定推导：旧v5.2逐帧native之后的Core是帧集合算子，固定参数下对帧置换不变；
+原生prefix不读Action suffix，所以H-only中层跨帧注入有∂Core/∂H=0。所有旧显式顺序影响只能经晚期P调制进入输出。
+因此本次设计选择在原生第9层后，取真实task-span Z与全部H50，经同构帧内混合/双向时间attention/FFN块，
+同时残差写回Z/H，再由第10–18层消费；保留v5.2内容读取与完整输出端。首个实例N4、d256，解析总规模约16M。
+时间位置只用于时间Q/K，帧内块不读frame位置，故重复静态视频不会单靠位置产生变化；同时保留非零静态Core能力。
+
+真实train0/20/37/39说明应处理初始关系选物、接触与状态转换、物理前置和目标合取：
+微波炉39初始已开，双物入篮37未规定物体先后，不能虚构总序。固定LoRA仍根据机器人自身观测执行，不能复制teacher时钟。
+跨episode FM允许已知task的静态解；新设计提供过程进入主生成路径的接口，不能强制优化学会有用动态。
+同样，native后半段能否消费新上下文、是否保持旧能力、是否改善合理条件变化下的特异性与保持，都尚未实测。
+文档已明确fresh全Writer/三Meta联合纯FM、建议曝光、matched dual/H50基线、成本和可证伪预测；不注册为可执行active run。

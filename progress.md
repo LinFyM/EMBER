@@ -15,7 +15,7 @@ Owner最新明确要求：**新架构必须用六卡，并保持等效计算来�
 已实现视频native帧分片与query分片，六卡参与实际计算。两组三卡分担四个条件，
 组内在j9/j18统一表示处进行可微汇集，保留完整跨帧联合处理；梯度等效、实际吞吐和恢复验证通过。
 
-当前阶段：**step1200的correct400/train96已完成，原六卡拓扑正从完整1200点续至1500**。
+当前阶段：**step1500训练及496条件LoRA生成已完成，correct400评测进行中，随后完成train96**。
 2026-09-17 23:23 CST从clean pushed detached `184947cb` fresh启动，gpu02 p0/1/2/3/4/6。
 六rank、两组三卡、global84与source trainable=0已核实；600步共2,400条件/50,400 queries，
 每100的完整状态均已保存，首段exit0、训练进程已退出。首段含诊断共6,100.5秒，实际allocated峰值34.06GiB。
@@ -28,7 +28,9 @@ p2此前另有27–45% SM活动，独立评测避开该卡；续训前双节点l
 900点496条件fresh物化及两组评测完成，使用p0/1/3/4/6、每卡3个workers；30个workers及两个launcher均exit0。
 900→1200原六卡与完整状态续训完成，新增300更新2975.2秒；共4800条件/100800queries，checkpoint完整、exit0。
 1200的496条件及两组闭环均完整，使用p0/1/3/4/6、每卡3个workers，30个workers及两个launcher均exit0。
-当前训练tmux `ember-unified-native-train`，入口`unified/resume.sh 1500`，保持六卡、global84、完整优化与采样状态。
+1200→1500保持六卡、global84、完整优化与采样状态，新增300更新2837.7秒，完整1500 checkpoint保存且exit0；
+累计6000条件／126000queries、训练程序时间15073.5秒。496条件均为新生成、物化exit0，五卡每卡三个workers正评测validation。
+1500训练入口为`unified/resume.sh 1500`，当前评测tmux `ember-unified-native-eval`。
 本次1500续训前p2的GPU利用率18%、余量40,038MiB，其余五卡0–2%；沿用已验证的六卡共驻执行。
 资源与命令见`unified/step{600,900,1200,1500}_execution.json`。
 Owner已撤销补300步评测的要求；300请求未执行即撤销，保留取消记录，首轮600及后续每300步的节奏不变。

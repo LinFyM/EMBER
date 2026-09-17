@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_unified_native_writer_config_v1",
-  "status": "pending_unified_native_profile",
+  "status": "pending_six_gpu_profile",
   "design": "docs/v52_evidence_based_writer_design.md",
   "update_version": "unified_native_full_ab_pure_fm_joint_meta_v1",
   "execution_precision": "native_bf16_writer_fm_fp32_lora",
@@ -453,9 +453,32 @@
       2400
     ],
     "profile_registration": {
-      "status": "pending",
+      "status": "pending_six_gpu_profile",
       "scope": "fresh unified native Writer; complete longest video and full cross-episode FM update, three Meta and middle writeback credit",
-      "profile_initialization_reused": false
+      "profile_initialization_reused": false,
+      "implementation_commit": "5800c2dce4367effdb89e951e9f2b6cbdce1404e",
+      "measurements": "runs/analysis/unified_writer_20260917/unified/native_profile.json",
+      "distributed_metrics": "runs/analysis/unified_writer_20260917/unified/ddp_profile_metrics.jsonl",
+      "longest_video_frames": 105,
+      "complete_cross_episode_queries": 21,
+      "native_frame_chunk": 8,
+      "policy_microbatch": 8,
+      "longest_update_seconds": [
+        24.707948836497962,
+        24.888772797770798
+      ],
+      "longest_peak_reserved_gib": 20.6171875,
+      "distributed_world_size": 4,
+      "distributed_restore_updates": [
+        3,
+        6
+      ],
+      "distributed_peak_reserved_gib": 21.025390625,
+      "packing_decision": "8/8; frame12 improves measured update time by about 2 percent at 9.8 GiB more memory; query12 is slower; retain headroom for co-resident processes",
+      "gradient_credit": "three Meta, middle/final joint blocks, both native writebacks, decoder and complete factor heads verified",
+      "formal_initialization": "fresh Writer and optimizer; no profile weights reused",
+      "requested_training_world_size": 6,
+      "six_gpu_requirement": "preserve four equally weighted tasks and global84 queries, source, sampler, objective and one optimizer update; implement native frame plus FM query partitioning and measure throughput before formal launch"
     },
     "shuffled_reversed_use": false,
     "test_use": false,
@@ -476,7 +499,7 @@
         2400
       ],
       "segment_policy": "same topology exact resume; complete registered correct400 and train96 before advancing the evidence decision",
-      "conditional_comparison": "fresh unified Writer and frozen v5.2; same raw1000 source, dual cameras, complete H50, baseline events and unchanged 12k LR clock"
+      "conditional_comparison": "fresh unified Writer versus existing completed v5.2 and same-source aligned-A results; record source, camera/H, recipe and exposure differences"
     },
     "fresh_initialization": {
       "writer": "fresh complete A/B heads, three Meta, joint video blocks and continuous parameter decoder; legal template-A zero-B, zero middle writeback",
@@ -492,12 +515,13 @@
     ],
     "comparison": {
       "arm": "unified",
-      "baseline_runtime_commit": "bf8aea37",
-      "baseline_initial_budget": 1200,
-      "baseline_pre_authorized_extension": 2400,
-      "event_plan": "same task grouping, teacher/action pairs and flow RNG for both complete windows",
-      "initialization": "fresh per architecture with initialization seed7; no trained Writer or profile reuse",
-      "inference": "same fixed state-video mapping; complete matched-node paired400 and train96"
+      "reference_policy": "reuse completed v5.2 checkpoints and formal evidence; no v5.2 training or resume",
+      "same_source_reference": "runs/analysis/source_alignment_20260915/A/training/evaluation",
+      "v52_fixed_checkpoint_reference": "runs/analysis/v52_return_20260915/reference_correct400",
+      "historical_curve_index": "docs/v52_evidence_audit_20260917.md",
+      "initialization": "fresh unified Writer seed7; no profile weights reused",
+      "inference": "fixed registered state-video mapping; compare paired rows only where source, environment and RNG contracts agree",
+      "causal_limit": "report source, camera/H read, recipe and budget differences; overall historical method comparison does not isolate one architectural module"
     }
   },
   "source": {

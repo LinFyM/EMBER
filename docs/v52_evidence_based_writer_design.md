@@ -553,7 +553,8 @@ temporal负责同构block/decoder算子，model负责完整target路由与Factor
 ## 11. 训练与可证伪的验证合同
 
 本节为本轮训练比较的科学合同；实际资源、物理batch、峰值预算与launch在真实profile后封存，当前运行状态只看progress。
-旧A3000/C等无关实验不自动恢复。新架构和匹配v5.2均fresh；v5.2使用冻结历史源码，不保留第二套canonical生产路径。
+旧A3000/C等无关实验不自动恢复。只有新架构fresh训练；Owner已明确v5.2训练过，复用其既有checkpoint和正式评测，
+不重训v5.2，也不保留第二套canonical生产Writer。先前由代理加入的fresh v5.2要求已撤销。
 
 - 纠正后的raw1000 source、固定train24/validation8/test8，首轮不扩meta tasks；three Meta/Writer/optimizer/scheduler/RNG均fresh。
 - teacher与action训练池0–45，同task排除同episode；46–49仅训练任务诊断。每次更新4个等权task，每条件21 queries，global84。
@@ -562,8 +563,9 @@ temporal负责同构block/decoder算子，model负责完整target路由与Factor
   每100保留完整状态。1200前不以单点低分否定结构；之后两个相邻有信息量节点持续缺乏获取可按注册作non-pass。
   有实质持续获取才讨论连续扩展，不因FM下降无限等待或扫seed/LR/层位/rank来挽救。
 
-**整体架构比较**使用相同source、dual/full50实际learned read、task/query事件、LR时钟和曝光的fresh v5.2作为参照。
-旧单相机A或旧source B只能作背景；本轮同时改视频组织和参数读出，因此结果只直接裁决整体方案。
+**整体方法比较**复用已完成的v5.2曲线、固定step900复核，以及同raw1000 source的对齐A系列。
+逐项登记source、camera/H读法、task/query事件、LR时钟和曝光差异，不将历史比较冒充所有条件相同的重新训练实验。
+本轮同时改变视频组织和参数读出，比较用于判断整体结果；不能唯一归因于其中一个模块。
 若要进一步宣称“native内部消费本身有增量”，还需同一统一末端、关闭整个j9新增读写的fresh对照。
 在已训练模型上把U临时置零只能解释该模型的依赖，不能替代fresh方法比较。预算不足时可以报告整体结果，但不得作超出比较的单因归属。
 这些是科学比较臂，不要求保留第二套生产实现。Owner允许结果不佳而有具体改进空间时集中修正并fresh重训，
@@ -582,7 +584,7 @@ temporal负责同构block/decoder算子，model负责完整target路由与Factor
 - 不强制另训frame-set；相应地，最终shuffle/reverse只支持固定模型的顺序依赖，不能证明优于所有充分学习的无序方法。
 
 提前固定判断：若正确绝对能力不足，不能靠错误条件更差接受方法；若正确能力有而视频增量没有，就只取得条件适配，
-没有实现视频教学目标；若两者出现但相邻/合理训练条件下消失，脆弱性未解决。若统一架构充分学习后显著弱于匹配v5.2，
+没有实现视频教学目标；若两者出现但相邻/合理训练条件下消失，脆弱性未解决。若统一架构充分学习后没有超过已有v5.2的有效能力，
 应拒绝该具体改造，而不是以“更优雅”或内部信号更好为它开脱。
 
 ## 12. 设计立场与交付范围

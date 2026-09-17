@@ -6,7 +6,7 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 
 当前授权和实际状态见[progress](../progress.md)。Owner已授权统一Writer的实现与整套比较实验，旧A/C等历史路线不自动恢复。
 本轮采用[统一Writer设计](v52_evidence_based_writer_design.md)：继承v5.2的内容、条件作用、归一化和共享参数坐标，
-用原生中层/末端的同构联合Z/H处理与连续参数槽，替换独立Core/P及专门融合。它尚未实现或训练，不赋予旧checkpoint分数。
+用原生中层/末端的同构联合Z/H处理与连续参数槽，替换独立Core/P及专门融合。实现和profile已经完成，正式训练状态见progress；v5.2比较复用既有结果，不重训旧方法。
 下述原理中涉及Core/P的具体形式，是已实现v5.2的历史解释；最新候选的完整接口、学习和边界以上述设计为准。
 Process Pullback及其它已关闭机制从[研究历史](research_history.md)追溯。
 

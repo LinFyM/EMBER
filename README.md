@@ -5,7 +5,7 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 
 当前按[统一Writer设计](docs/v52_evidence_based_writer_design.md)推进整套实验：真实图文与完整动作响应在原生中层/末端联合处理，
 一次中层双写回，再由连续参数状态和共享heads生成唯一38-target完整A/B LoRA。
-Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习，并与匹配v5.2比较；实际实现、运行和结果以progress为准。
+Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习，并与已有v5.2结果比较；实际实现、运行和结果以progress为准。
 
 ## 阅读入口
 

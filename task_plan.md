@@ -3,7 +3,7 @@
 ## 当前目标与授权（Owner 2026-09-17，整套实验执行goal）
 
 Owner已明确授权：先整理整个仓库及data1可删除资产，再实现已选定的新架构并优化GPU吞吐，
-完成与匹配v5.2的训练/评测；结果不佳时，仅在有具体证据支持的改进空间时修正并重新训练，
+完成新架构训练/评测并与已有v5.2结果比较；结果不佳时，仅在有具体证据支持的改进空间时修正并重新训练，
 若充分证据显示没有可行改进则停止，最后详细汇报整套实验。本授权替代上一轮“只分析、不实现/实验”的限制。
 这是一项持续到实际实验与交付完成的goal，不以建立计划、启动训练或单个分数作为完成。
 
@@ -12,12 +12,14 @@ Owner已明确授权：先整理整个仓库及data1可删除资产，再实现�
 1. **已完成：仓库与空间整理。** 审计tracked源码、tests、scripts、configs、docs以及ignored运行资产；
    在strg01核实data0/data1独立quota与实际用量。按keep/consolidate/delete/review分类，核对调用与运行生命周期后删除。
    保留canonical数据/source、唯一checkpoint、原始正式证据及专家论证；压缩过时状态叙述，历史通过Git/research_history追溯。
-2. **进行中：统一架构实现与效率。** 按[active design](docs/v52_evidence_based_writer_design.md)整体替换canonical Writer：
+2. **进行中：六卡等效执行；模型实现已完成。** 按[active design](docs/v52_evidence_based_writer_design.md)整体替换canonical Writer：
    j9/j18各两层同构Z/H联合块、一次双写回、两层连续参数decoder和共享完整A/B heads；三Meta fresh联合纯FM。
    复用采样、真实FM/VJP重放、checkpoint及evaluator。通过有效梯度、原生接口、最长视频、数值稳定和完整恢复检查，
+   Owner最新明确要求六卡等效提速：保持4task/global84与原优化更新，完成native帧和query分片、梯度汇总等效及六卡恢复验证。
    用实际LoRA/s、queries/s及峰值选择physical batch/并行方式，不删视频、相机或H位置换速度。
-3. **进行中：首轮训练与匹配比较。** 冻结可审阅的训练/预算/节点/停止合同；从clean pushed detached trees运行。
-   新架构与fresh v5.2匹配raw1000 source、双RGB、fullH实际learned read、train24、采样事件、FM和优化时钟。
+3. **进行中：新架构训练与既有结果比较。** 冻结可审阅的训练/预算/节点/停止合同；从clean pushed detached trees运行。
+   只fresh训练新架构，使用raw1000 source、双RGB、fullH、train24与已登记FM/优化时钟。
+   v5.2复用已有正式结果；按实际source/输入/预算差异解释整体比较，不再启动或续训旧方法。
    正式节点使用single-checkpoint correct400和train96，比较per-task/suite、breadth、相邻retained/gained/lost与churn。
    性能仍以>145及相邻资格为长期目标；不以内部指标代替真实能力，视频相对语言/静态增量另以有效参照验证。
 4. **待证据裁决：有依据的修正。** 区分工程错误、获取不足、迁移回落和合理科学non-pass。
@@ -36,7 +38,7 @@ Owner已明确授权：先整理整个仓库及data1可删除资产，再实现�
 - 最终wrong/no-video/shuffled/reversed不进入训练、选点或架构返工。改进依据来自允许的主面板、训练证据及真实工程合同。
 - 单节点最多6张真正提高吞吐的A40；每次launch前双节点live检查，尊重其它任务，正式exact-resume锁拓扑。
 - 大资产复用canonical根。新大输出优先使用已有data0运行父目录，仍须其独立quota/峰值核价；data1清理不意味着可忽略配额。
-- 不恢复旧A3000评测、旧C或其它无关实验。旧A/SFT为历史参照，新v5.2对照fresh并匹配当前合同。
+- 不恢复旧A3000评测、旧C或其它无关实验。Owner已明确不重训v5.2；对比复用已有v5.2及同source对齐A的正式结果。
 
 ## 已完成工作与历史入口
 

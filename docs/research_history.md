@@ -1,6 +1,11 @@
 # EMBER research history
 
-2026-09-17 Owner在两轮设计分析后授权统一Writer整套执行goal：仓库/data1整理、实现与吞吐优化、匹配v5.2训练评测，
+2026-09-17 22:29 CST Owner纠正代理擅自重复训练v5.2：已有v5.2训练结果应直接用于比较。
+代理立即停止误启动的fresh baseline，最后完整更新73，三rank全部退出，未到首个100步checkpoint，也未产生闭环面板；
+这属于执行范围错误，不是科学non-pass。保留`runs/analysis/unified_writer_20260917/baseline/owner_scope_correction.json`与日志，
+撤销全部重训/续训v5.2安排，新架构实现、profile和原goal继续。
+
+2026-09-17 Owner在两轮设计分析后授权统一Writer整套执行goal：仓库/data1整理、实现与吞吐优化、新架构训练及与已有v5.2结果比较，
 以及结果不佳但有明确证据支持时的集中修正重训，最后详细汇报。此前仅分析与新实验暂停限制被替代；旧A/C不自动恢复。
 当前active design为[统一Writer](v52_evidence_based_writer_design.md)，执行事实仍由progress登记。
 旧长篇状态/计划已由Git `176759a7`保留，历史科学证据继续由本文件、findings和formal原件承载。
@@ -1886,4 +1891,4 @@ R/G/L111/14/21、churn35、Jaccard .7603，breadth均6，S/O/G/L15/58/41/11；�
 旧NUMA汇总假设导致外层exit1；实测GPU3位于NUMA1，基于PCI与worker affinity证据完成CPU汇总修正，
 未更改旧rows或重跑。原件根runs/analysis/v52_return_20260915包含launch_contract、aggregate_reference、
 aggregation_topology、reference_correct400和reference_readout；原evaluate.exit=1保持。
-临时replay入口使命结束后退役，原operator／模型冻结树与Git继续保存。现行fresh基线另行登记，见active design；本条不赋予新模型旧分数。
+临时replay入口使命结束后退役，原operator／模型冻结树与Git继续保存。本轮依Owner纠正复用这些既有结果；本条不赋予新模型旧分数。

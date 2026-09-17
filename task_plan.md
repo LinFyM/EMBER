@@ -33,7 +33,7 @@ Owner已明确授权：先整理整个仓库及data1可删除资产，再实现�
 
 - Active design为[统一Writer设计](docs/v52_evidence_based_writer_design.md)；其结构已选定，运行参数只在真实profile后封存。
 - 固定source71/train24/validation8/test8、信息墙、normalization与official评测不变。无held梯度、无RL、Test仍关闭。
-- 初始建议窗口为2400更新（9600条件/201600queries），600起每300更新正式主面板，每100保存完整恢复状态；
+- 初始建议窗口为2400更新（9600条件/201600queries），300起每300更新正式主面板，每100保存完整恢复状态；
   具体成本与运行资源在launch前记录，不把建议预算冒充已分配资源或已启动运行。
 - 首轮整体方法比较不自动识别中层写回的独立贡献；若要提出该因果主张，需同一统一尾端且无j9读写的fresh比较。
 - 最终wrong/no-video/shuffled/reversed不进入训练、选点或架构返工。改进依据来自允许的主面板、训练证据及真实工程合同。

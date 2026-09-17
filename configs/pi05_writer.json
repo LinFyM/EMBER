@@ -285,8 +285,9 @@
         48,
         49
       ],
-      "registration_status": "registered_before_formal_writer_training_and_scores",
+      "registration_status": "step300_added_by_owner_before_first_closed_loop_scores; later_nodes_registered_before_training",
       "optimizer_updates": [
+        300,
         600,
         900,
         1200,
@@ -347,6 +348,7 @@
       "paired": true,
       "purpose": "fixed train24 states32-35; held video pool46-49 with explicit schedule reuse",
       "optimizer_updates": [
+        300,
         600,
         900,
         1200,
@@ -512,6 +514,7 @@
       "teacher_conditions": 9600,
       "supervised_queries": 201600,
       "formal_correct_nodes": [
+        300,
         600,
         900,
         1200,

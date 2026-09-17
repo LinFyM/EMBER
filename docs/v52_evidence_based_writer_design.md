@@ -573,12 +573,9 @@ temporal负责同构block/decoder算子，model负责完整target路由与Factor
 - 纠正后的raw1000 source、固定train24/validation8/test8，首轮不扩meta tasks；three Meta/Writer/optimizer/scheduler/RNG均fresh。
 - teacher与action训练池0–45，同task排除同episode；46–49仅训练任务诊断。每次更新4个等权task，每条件21 queries，global84。
 - 纯FM，AdamW lr3e−4、betas(.9,.95)、eps1e−8、wd1e−4、clip1；warmup100、decay12000至1e−5，观察窗口不重启优化时钟。
-- 初始2400 updates＝9600条件／201600 queries，均衡约400条件/task；correct400＋train96在300/600/900/1200/1500/1800/2100/2400，
+- 初始2400 updates＝9600条件／201600 queries，均衡约400条件/task；correct400＋train96在600/900/1200/1500/1800/2100/2400，
   每100保留完整状态。1200前不以单点低分否定结构；之后两个相邻有信息量节点持续缺乏获取可按注册作non-pass。
   有实质持续获取才讨论连续扩展，不因FM下降无限等待或扫seed/LR/层位/rank来挽救。
-
-300节点依Owner关于v5.2验证节奏的纠正在首个闭环分数产生前补登记；当前运行保留原sealed训练配置，
-通过独立评测请求补上同一state-video映射的300步完整面板，不改变训练事件、优化器、LR时钟或六卡拓扑。
 
 **整体方法比较**复用已完成的v5.2曲线、固定step900复核，以及同raw1000 source的对齐A系列。
 逐项登记source、camera/H读法、task/query事件、LR时钟和曝光差异，不将历史比较冒充所有条件相同的重新训练实验。

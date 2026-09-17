@@ -17,10 +17,8 @@ Owner最新明确要求：**新架构必须用六卡，并保持等效计算来�
 
 当前阶段：**新Writer六卡正式训练首段0→600**。2026-09-17 23:23 CST已从clean pushed detached
 `184947cb` fresh启动，gpu02 p0/1/2/3/4/6，tmux `ember-unified-native-train`。
-正式run contract已核实六rank、两组三卡、global84与source trainable=0；每100保存完整状态。
-Owner随后指出应与v5.2一致每300步验证，已在首个闭环分数产生前补登记300步correct400/train96，后续每300步验证。
-首段命令仍以600为停止点；300 checkpoint完成后，按实时资源使用独立节点并行评测，资源不足则在完整checkpoint处暂停训练。
-运行中的sealed配置与frozen tree保持原样，300评测由`evaluation_schedule_amendment.json`及独立requests登记，训练计算和恢复合同不变。
+正式run contract已核实六rank、两组三卡、global84与source trainable=0；每100保存完整状态，600后执行correct400/train96。
+Owner已撤销补300步评测的要求；300请求未执行即撤销，保留取消记录，首轮600及后续每300步的节奏不变。
 原生三进程Gloo检查覆盖2/2/1和1/1/0帧分片、已打开Meta/写回与checkpoint重算，输出和汇总梯度符合串行目标。
 完整FM的query切片保持原始随机batch/offset与汇总余切；1–4及6rank的任务分配验证保持4条件/84queries。
 六卡已完成3→6完整恢复，24逻辑条件/504queries无重复计数；集成训练/物化/native检查66项通过。
@@ -61,7 +59,7 @@ Study根为`/data0/user/ymdai/ember_runs/unified_writer_20260917`，仓库入口
 
 新架构配置为`configs/pi05_writer.json`，外部sealed copy为study的`unified/config.json`。
 冻结runtime在`.codex/tmp/unified-native-runtime`；`unified/launch_600.sh`为六卡首段入口，正式配置为20帧chunk。
-仅新方法的16份物化请求已校验：300/600/900/1200/1500/1800/2100/2400，每节点correct400和train96。
+仅新方法的14份物化请求已校验：600/900/1200/1500/1800/2100/2400，每节点correct400和train96。
 映射seed20260911；validation每task50条teacher各一次，train为states32–35和held视频46–49。
 `paired_panel_registration.json`登记范围，`materialize.sh`/`evaluate.sh`仅接受unified。
 

@@ -124,6 +124,19 @@ def _encoder(checkpoint=False, *, camera_view="dual", horizon_read="learned"):
     return policy, encoder, args
 
 
+def test_reading_meta_all_layers_receive_gradients_and_remove_scoped_hooks():
+    expert = _TinyBackbone(width=4).requires_grad_(False)
+    meta = MetaLoRAStack(expert.layers, rank=4)
+    with meta.installed(expert):
+        response = expert(torch.randn(2, 50, 4))
+    (response * torch.randn_like(response)).sum().backward()
+    assert all(parameter.grad is None for parameter in expert.parameters())
+    assert all(adapter.b.grad is not None and bool(adapter.b.grad.abs().sum() > 0)
+               for adapter in meta.adapters.values())
+    assert all(not module._forward_hooks and not module._forward_pre_hooks
+               for module in expert.modules())
+
+
 @pytest.mark.parametrize('mode', ['fixed_mean', 'learned'])
 def test_complete_horizon_read_starts_as_mean_and_preserves_its_registered_learning_mode(mode):
     read = LearnedHorizonRead(width=1024, horizon=50, mode=mode)

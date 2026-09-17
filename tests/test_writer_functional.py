@@ -26,7 +26,6 @@ from ember.writer.functional import (
     writer_chain_rule_surrogate,
 )
 from ember.writer.errors import WriterModelError
-from ember.writer.replay import functional_writer_backward, sum_writer_gradients
 
 
 class _FlowModel(torch.nn.Module):
@@ -426,53 +425,6 @@ def test_pi05_loss_only_masks_action_chunk_tail() -> None:
     velocity = policy.model.action_out_proj(policy.model.projection(actions)) + 0.005
     expected = (-actions - velocity)[0, 0].square().mean()
     assert torch.allclose(loss, expected)
-
-
-def test_writer_replay_matches_weighted_direct_gradient_with_policy_microbatches() -> None:
-    from lerobot.utils.constants import (
-        ACTION, OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS,
-    )
-
-    torch.manual_seed(7)
-    policy = _TinyPi05Policy()
-    contract = _tiny_pi05_contract()
-    writer = _writer(prepare_frozen_writer_policy(policy, contract))
-    with torch.no_grad():
-        writer.scale.fill_(0.02)
-    language, video, offsets = torch.randn(3, 5), torch.randn(9, 4, 7), torch.tensor([0, 9])
-    batch = {
-        "image": torch.randn(20, 3, 4, 4),
-        ACTION: torch.randn(20, 2, 3),
-        OBS_LANGUAGE_TOKENS: torch.ones(20, 4, dtype=torch.long),
-        OBS_LANGUAGE_ATTENTION_MASK: torch.ones(20, 4, dtype=torch.bool),
-    }
-    with (
-        scoped_policy_randomness(303, "cpu"),
-        scoped_policy_flow_time_sampling(policy, LATIN_BETA_TIME_SAMPLING_SCHEME),
-        scoped_policy_flow_noise_sampling(policy, ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME),
-    ):
-        direct_loss, _ = functional_lora_call(
-            policy, writer(language, video, offsets), contract, batch,
-        )
-    expected = torch.autograd.grad(direct_loss * 0.25 / 2.0, writer.scale)[0]
-    grad_modes = []
-
-    def materialize():
-        grad_modes.append(torch.is_grad_enabled())
-        return writer(language, video, offsets)
-
-    value, objective = functional_writer_backward(
-        materialize, policy, contract, batch=batch, normalizer=2.0, task_weight=0.25,
-        policy_rng_seed=303, policy_rng_device="cpu", policy_microbatch_size=4,
-        flow_time_sampling_scheme=LATIN_BETA_TIME_SAMPLING_SCHEME,
-        flow_noise_sampling_scheme=ANTITHETIC_GAUSSIAN_NOISE_SAMPLING_SCHEME,
-    )
-    sum_writer_gradients(tuple(writer.parameters()), world_size=1)
-    assert grad_modes == [False, True]
-    assert objective["gradient_mass"] == 0.125
-    torch.testing.assert_close(value, direct_loss.detach())
-    torch.testing.assert_close(writer.scale.grad, expected)
-    assert all(parameter.grad is None for parameter in policy.parameters())
 
 
 @pytest.mark.parametrize("policy_microbatch_size", (16, 10))

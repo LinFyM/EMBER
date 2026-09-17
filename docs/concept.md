@@ -4,8 +4,8 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 使机器人从未见初始化闭环完成任务。语言说明目标与关注对象，视频中的操作内容和顺序应提供必要条件信息。
 人从他人教学迁移到自己身体的能力是科学动机；LIBERO结果本身不证明跨身体泛化。
 
-当前授权和实际状态见[progress](../progress.md)。实验按owner要求暂停，不能从旧A/B或文内历史叙述恢复运行。
-本轮分析选定[统一Writer设计](v52_evidence_based_writer_design.md)：继承v5.2的内容、条件作用、归一化和共享参数坐标，
+当前授权和实际状态见[progress](../progress.md)。Owner已授权统一Writer的实现与整套比较实验，旧A/C等历史路线不自动恢复。
+本轮采用[统一Writer设计](v52_evidence_based_writer_design.md)：继承v5.2的内容、条件作用、归一化和共享参数坐标，
 用原生中层/末端的同构联合Z/H处理与连续参数槽，替换独立Core/P及专门融合。它尚未实现或训练，不赋予旧checkpoint分数。
 下述原理中涉及Core/P的具体形式，是已实现v5.2的历史解释；最新候选的完整接口、学习和边界以上述设计为准。
 Process Pullback及其它已关闭机制从[研究历史](research_history.md)追溯。
@@ -76,7 +76,7 @@ Text/VL/Action Meta、Core、Procedure和完整A/B heads的信用均来自同一
 
 跨episode监督、共享图文／动作坐标和共享heads是尝试获得可复用能力的理由，不保证迁移或保持。
 继续训练可能获取新行为，也可能破坏已经成功的条件。此前同事件任务共现对照已作为历史证据保留，
-不再自动继续。当前分析选择见上方统一候选，实验保持暂停。
+不再自动继续。当前方法见上方统一候选；其新实验独立按当前active design执行。
 
 ## 怎样判断
 

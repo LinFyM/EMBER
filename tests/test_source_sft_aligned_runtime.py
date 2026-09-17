@@ -93,6 +93,7 @@ def test_historical_lr_axis_is_not_compressed_to_450():
 @pytest.mark.parametrize("world,micro,accumulation", [(1, 32, 18), (2, 64, 5), (4, 64, 3)])
 def test_profile_resolves_physical_packing_without_changing_science(world, micro, accumulation):
     config = load_source_sft_config(CONFIG)
+    config["stages"]["development"]["formal_run"]["status"] = "pending_profile"
     args = SimpleNamespace(stage="development", mode="profile", total_steps=3, batch_size=micro,
                            checkpoint_steps="1,3", stop_after_step=1, gradient_accumulation_steps=None)
     assert resolve_runtime(args, config, SimpleNamespace(world_size=world)) == (3, micro, (1, 3))

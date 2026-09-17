@@ -1,5 +1,10 @@
 # EMBER research history
 
+2026-09-17 Owner在两轮设计分析后授权统一Writer整套执行goal：仓库/data1整理、实现与吞吐优化、匹配v5.2训练评测，
+以及结果不佳但有明确证据支持时的集中修正重训，最后详细汇报。此前仅分析与新实验暂停限制被替代；旧A/C不自动恢复。
+当前active design为[统一Writer](v52_evidence_based_writer_design.md)，执行事实仍由progress登记。
+旧长篇状态/计划已由Git `176759a7`保留，历史科学证据继续由本文件、findings和formal原件承载。
+
 2026-09-17第二轮分析goal完成统一架构与设计立场复核，交付修订后的[统一Writer设计](v52_evidence_based_writer_design.md)。
 追溯确认最早多通路规定的是丰富内容直达、跨帧证据进入native及原上下文保留，尚未规定Core/P尾端；后续尾端保留出于控制改变量，
 不能用缺少删除消融推成模块必需。新方案以j9/j18各两层同构联合Z/H块、一次中层双写回和两层连续参数decoder承接这些职责，
@@ -177,6 +182,13 @@ train24各384片段纯噪声生成，MSE有序.31625053／无序.31676502，均�
 小幅有序差额保留，但24/24task的有序估计均落后均值；停止把现成动作读出直接接入参数生成的提案依据，
 无新训练或rollout。CPU Gaussian边缘去噪FM=.26389586，亦优于旧两臂.81011446/.81128639；
 该task身份参照只作离线诊断，不用于部署。完整原件与解释边界见findings§75及`inverse_action_*`证据。
+
+## 2026-09-17：执行goal启动前的仓库生命周期整理
+
+删除已无生产调用的`ecp/contracts.py`、`source_sft/online_validation.py`及旧functional wrapper，
+退役已结束的A配置；Meta跨层梯度及hook清理检查迁入当前encoder测试。相关检查110项通过。
+压缩当前状态文件中的旧执行年表，原始内容仍见Git `176759a7`。正式checkpoint、raw rows及专家材料保留；
+物化缓存与工作树的逐项清理记录见`runs/analysis/workspace_cleanup_20260917.json`。
 
 ## 研究主线速览
 

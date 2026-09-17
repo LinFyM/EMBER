@@ -1,6 +1,7 @@
 # 从 v5.2 处理原则推导的统一 Writer 设计
 
-2026-09-17，第二轮设计goal。本文是本轮唯一canonical设计交付；没有实现或启动实验。
+2026-09-17，第二轮设计已完成，Owner随后授权整套实现/实验goal；本文登记为唯一active design。
+实现进度、实际launch资源、节点与结果只看[progress](../progress.md)；设计登记不等于新模型已经运行。
 对应证据、预算、比较边界和原件见[证据审计](v52_evidence_audit_20260917.md)。
 首轮“中层联合栈＋原v5.2全部尾端”保留在Git `426dc5be`；它是比较对象，不是本轮默认答案。
 
@@ -539,19 +540,20 @@ Meta数来自安装版18层、8个Q heads/1个KV head、head_dim256、VL2048/AE1
 
 原生仍18层，有一个跨帧同步/写回边界。中间真实prefix/H须保留或按同版本checkpoint重算；末端逐chunk可形成M输入再释放不再需要的native缓冲。
 仅冻结视觉embedding可按现有合同缓存；不能复用写回前的后段KV。正常BF16/TF32及高效kernel可用，不追逐低位一致。
-真实最长视频的整次FM更新、LoRA/s、显存峰值、checkpoint重放与梯度仍须在未来实现后profile；此时不启动GPU或额度检查。
+真实最长视频的整次FM更新、LoRA/s、显存峰值、checkpoint重放与梯度须在实现后profile；运行前核实实时GPU与独立quota。
 若成本不可承受，公开具体证据再修订物理执行，不能静默缩短视频、去掉相机或预先均值H。
 
-### 10.1 未来实现时的单一所有权
+### 10.1 实现的单一所有权
 
-不是本次实施授权。若以后进入实现：现有video_program负责真实输入、分段native/Meta、统一视频表示及两处联合块；
+Owner已授权本轮实现：现有video_program负责真实输入、分段native/Meta、统一视频表示及两处联合块；
 temporal负责同构block/decoder算子，model负责完整target路由与FactorHeads；现有function_credit/replay复用真实FM/VJP。
 同一canonical运行面整体替换旧Core/P调用，不保留平行生产fallback。新schema/fresh checkpoint，旧Writer不兼容resume。
 训练、数据、schedule、evaluator继续原有owner；不因为架构设计重写这些已成立的合同。
 
-## 11. 未来训练与可证伪的验证合同
+## 11. 训练与可证伪的验证合同
 
-本节是可审阅的建议合同，尚无active run；所有旧实验继续暂停。
+本节为本轮训练比较的科学合同；实际资源、物理batch、峰值预算与launch在真实profile后封存，当前运行状态只看progress。
+旧A3000/C等无关实验不自动恢复。新架构和匹配v5.2均fresh；v5.2使用冻结历史源码，不保留第二套canonical生产路径。
 
 - 纠正后的raw1000 source、固定train24/validation8/test8，首轮不扩meta tasks；three Meta/Writer/optimizer/scheduler/RNG均fresh。
 - teacher与action训练池0–45，同task排除同episode；46–49仅训练任务诊断。每次更新4个等权task，每条件21 queries，global84。
@@ -564,7 +566,8 @@ temporal负责同构block/decoder算子，model负责完整target路由与Factor
 旧单相机A或旧source B只能作背景；本轮同时改视频组织和参数读出，因此结果只直接裁决整体方案。
 若要进一步宣称“native内部消费本身有增量”，还需同一统一末端、关闭整个j9新增读写的fresh对照。
 在已训练模型上把U临时置零只能解释该模型的依赖，不能替代fresh方法比较。预算不足时可以报告整体结果，但不得作超出比较的单因归属。
-这些是科学比较臂，不要求保留第二套生产实现，也不是现在启动多轮搜索的授权。
+这些是科学比较臂，不要求保留第二套生产实现。Owner允许结果不佳而有具体改进空间时集中修正并fresh重训，
+改进须先写清失败证据、改变的主要变量、预测和停止标准；不做无依据的小扫或无限续训。
 
 正式资格仍由single-checkpoint correct严格>145/400、相邻稳定、breadth、四suite非零及Goal/Long承担；
 每task整轮50条teacher各一次，跨checkpoint与arms严格固定配对，报告retained/gained/lost、churn、Jaccard与逐task/suite。
@@ -589,6 +592,6 @@ temporal负责同构block/decoder算子，model负责完整target路由与Factor
 决定来自功能职责、学习接口、明确成本和历史边界；不会因owner问到一个已登记的限制就立刻删除模块或增加新支路。
 若出现真实合同矛盾、新的反证或足以改变成本判断的测量，应据证据修订；“坚定”不要求维护被证伪的结论。
 
-本次可完成的是完整架构推导和主动反例检查，不是科学性能资格。source后半段消费、FM选择有益过程、未见任务保持和训练条件鲁棒性
-都仍是具体且可证伪的学习主张。结构性质、数学路径与可实现接口已经逐项给出；未把这些性质冒充实测成功。
-没有源码实现、模型forward、GPU运行、held动作使用、Test或旧实验恢复。全部原证据继续由独立审计保存。
+第二轮分析已完成完整架构推导和主动反例检查，尚不构成科学性能资格。source后半段消费、FM选择有益过程、未见任务保持和训练条件鲁棒性
+仍是具体且可证伪的学习主张。结构性质、数学路径与可实现接口已经逐项给出；不把这些性质冒充实测成功。
+后续实现/实验已获Owner授权，按progress/task_plan记录事实。信息墙、Test封闭和全部原证据保留不因执行授权改变。

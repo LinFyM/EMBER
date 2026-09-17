@@ -5,12 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from ember.pi05_source_checkpoint import write_json_atomic
 from ember.source_sft.contract import Pi05SourceSFTError
-from ember.source_sft.online_validation import (
-    OnlineSourceSFTValidation,
-    _summary as source_sft_online_summary,
-)
 from ember.source_sft.validation import finalize_args as finalize_source_sft_args
 from ember.writer.validation_panel import (
     build_validation_loss_manifest,
@@ -126,31 +121,3 @@ def test_source_sft_validation_panel_cannot_be_truncated_formally() -> None:
                 max_groups_per_task=9,
             )
         )
-def test_source_sft_online_validation_never_reads_video(
-    tmp_path: Path,
-) -> None:
-    validation = OnlineSourceSFTValidation(
-        panel={},
-        manifest={},
-        dataset=SimpleNamespace(),  # type: ignore[arg-type]
-        output_dir=tmp_path,
-        local_keys=(),
-    )
-    step = tmp_path / "step_00000100"
-    step.mkdir()
-    write_json_atomic(
-        step / "rank_00_rows.json",
-        {
-            "rows": [
-                {
-                    "ordinal": 0,
-                    "checkpoint_cursor": 100,
-                    "global_task_id": 1,
-                    "loss": 1.0,
-                }
-            ]
-        },
-    )
-    summary = source_sft_online_summary(validation, 100, 1, 0.0)
-    assert summary["teacher_video_value_reads"] == 0
-    assert summary["optimizer_updates"] == 0

@@ -12,11 +12,12 @@ Owner已明确授权：先整理整个仓库及data1可删除资产，再实现�
 1. **已完成：仓库与空间整理。** 审计tracked源码、tests、scripts、configs、docs以及ignored运行资产；
    在strg01核实data0/data1独立quota与实际用量。按keep/consolidate/delete/review分类，核对调用与运行生命周期后删除。
    保留canonical数据/source、唯一checkpoint、原始正式证据及专家论证；压缩过时状态叙述，历史通过Git/research_history追溯。
-2. **进行中：六卡等效执行；模型实现已完成。** 按[active design](docs/v52_evidence_based_writer_design.md)整体替换canonical Writer：
+2. **已完成：模型实现与六卡等效执行。** 按[active design](docs/v52_evidence_based_writer_design.md)整体替换canonical Writer：
    j9/j18各两层同构Z/H联合块、一次双写回、两层连续参数decoder和共享完整A/B heads；三Meta fresh联合纯FM。
    复用采样、真实FM/VJP重放、checkpoint及evaluator。通过有效梯度、原生接口、最长视频、数值稳定和完整恢复检查，
    Owner最新明确要求六卡等效提速：保持4task/global84与原优化更新，完成native帧和query分片、梯度汇总等效及六卡恢复验证。
-   用实际LoRA/s、queries/s及峰值选择physical batch/并行方式，不删视频、相机或H位置换速度。
+   六卡同事件热身平均8.61秒，对四卡12.52秒为1.45倍吞吐；最长105帧下选择20帧物理chunk，
+   实际峰值34.04GiB、完整global84更新15.18秒。完整3→6恢复及逻辑曝光/梯度检查通过，不删视频、相机或H位置换速度。
 3. **进行中：新架构训练与既有结果比较。** 冻结可审阅的训练/预算/节点/停止合同；从clean pushed detached trees运行。
    只fresh训练新架构，使用raw1000 source、双RGB、fullH、train24与已登记FM/优化时钟。
    v5.2复用已有正式结果；按实际source/输入/预算差异解释整体比较，不再启动或续训旧方法。

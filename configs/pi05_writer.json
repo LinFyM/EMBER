@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_unified_native_writer_config_v1",
-  "status": "pending_six_gpu_profile",
+  "status": "registered_unified_native_writer_learning",
   "design": "docs/v52_evidence_based_writer_design.md",
   "update_version": "unified_native_full_ab_pure_fm_joint_meta_v1",
   "execution_precision": "native_bf16_writer_fm_fp32_lora",
@@ -168,7 +168,7 @@
     "vl_meta_lora_rank": 4,
     "action_meta_lora_rank": 4,
     "patch_grounding_heads": 8,
-    "max_frames_per_encoder_call": 8,
+    "max_frames_per_encoder_call": 20,
     "action_horizon": 50,
     "padded_action_dim": 32,
     "native_split_layer": 9,
@@ -187,7 +187,7 @@
     "text_meta_rank": 4,
     "probe_seed": 23070,
     "flow_time": 1,
-    "frame_chunk": 8,
+    "frame_chunk": 20,
     "camera_view": "dual",
     "native_inputs": "full512_patch_content_task_span_and_all50_horizon_tokens_at_j9_j18",
     "horizon_read": "joint_role_time_blocks_preserving_all50_positions",
@@ -453,32 +453,54 @@
       2400
     ],
     "profile_registration": {
-      "status": "pending_six_gpu_profile",
-      "scope": "fresh unified native Writer; complete longest video and full cross-episode FM update, three Meta and middle writeback credit",
-      "profile_initialization_reused": false,
-      "implementation_commit": "5800c2dce4367effdb89e951e9f2b6cbdce1404e",
-      "measurements": "runs/analysis/unified_writer_20260917/unified/native_profile.json",
-      "distributed_metrics": "runs/analysis/unified_writer_20260917/unified/ddp_profile_metrics.jsonl",
+      "status": "complete",
+      "scope": "six-GPU equivalent full-global84 training; longest105-frame native/Meta graph and complete checkpoint restore",
+      "implementation_commit": "6f19421a",
+      "measurements": "runs/analysis/unified_writer_20260917/unified/six_gpu_profile.json",
+      "requested_training_world_size": 6,
+      "distributed_world_size": 6,
+      "condition_rank_groups": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          4,
+          5
+        ]
+      ],
       "longest_video_frames": 105,
       "complete_cross_episode_queries": 21,
-      "native_frame_chunk": 8,
+      "native_frame_chunk": 20,
       "policy_microbatch": 8,
-      "longest_update_seconds": [
-        24.707948836497962,
-        24.888772797770798
-      ],
-      "longest_peak_reserved_gib": 20.6171875,
-      "distributed_world_size": 4,
+      "physical_queries_per_rank_condition": 7,
       "distributed_restore_updates": [
         3,
         6
       ],
-      "distributed_peak_reserved_gib": 21.025390625,
-      "packing_decision": "8/8; frame12 improves measured update time by about 2 percent at 9.8 GiB more memory; query12 is slower; retain headroom for co-resident processes",
-      "gradient_credit": "three Meta, middle/final joint blocks, both native writebacks, decoder and complete factor heads verified",
-      "formal_initialization": "fresh Writer and optimizer; no profile weights reused",
-      "requested_training_world_size": 6,
-      "six_gpu_requirement": "preserve four equally weighted tasks and global84 queries, source, sampler, objective and one optimizer update; implement native frame plus FM query partitioning and measure throughput before formal launch"
+      "distributed_restore_frame_chunk": 8,
+      "largest_selected_frame_chunk_verified": 20,
+      "longest_full_global84_update_seconds": [
+        15.186093258671463,
+        15.176714682020247,
+        15.164775379002094
+      ],
+      "longest_peak_allocated_gib": 34.03819704055786,
+      "longest_peak_reserved_gib": 43.76953125,
+      "packing_decision": "20 frames minimizes measured complete longest-panel update time; approximately 2 percent faster than 8 and 0.9 percent faster than 16; actual allocation34.04GiB leaves co-resident memory headroom; allocator cache varies with available device memory",
+      "gradient_credit": "three Meta; middle/final joint blocks; both writebacks; complete decoder/heads; source frozen",
+      "formal_initialization": "fresh Writer/optimizer/scheduler/sampler/RNG; no profile weights reused",
+      "profile_initialization_reused": false,
+      "prior_four_rank_profile": {
+        "implementation_commit": "5800c2dce4367effdb89e951e9f2b6cbdce1404e",
+        "measurements": "runs/analysis/unified_writer_20260917/unified/native_profile.json",
+        "distributed_metrics": "runs/analysis/unified_writer_20260917/unified/ddp_profile_metrics.jsonl",
+        "native_frame_chunk": 8,
+        "world_size": 4,
+        "warm_mean_seconds": 12.517306284233928
+      }
     },
     "shuffled_reversed_use": false,
     "test_use": false,

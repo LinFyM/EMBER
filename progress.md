@@ -12,13 +12,14 @@ Owner授权仓库/data1整理、新架构实现与高效训练、与已有v5.2�
 
 Owner最新明确要求：**新架构必须用六卡，并保持等效计算来提速**。此前代理建议四卡已被此要求替代。
 每step仍是4task×21 queries＝global84，source/采样/FM/权重和一次optimizer更新不变；
-现在实现视频native帧分片与query分片，六卡参与实际计算。计划以两组三卡分担四个条件，
-组内在j9/j18统一表示处进行可微汇集，保留完整跨帧联合处理；以梯度等效、实际吞吐和恢复验证裁决实现。
+已实现视频native帧分片与query分片，六卡参与实际计算。两组三卡分担四个条件，
+组内在j9/j18统一表示处进行可微汇集，保留完整跨帧联合处理；梯度等效、实际吞吐和恢复验证通过。
 
-当前阶段：**六卡等效执行验证与profile**。两组三卡的native帧分片、query分片、梯度SUM与逻辑曝光聚合已实现；formal尚未启动。
+当前阶段：**六卡正式训练封存与启动**。两组三卡的native帧分片、query分片、梯度SUM与逻辑曝光聚合已实现；formal尚未启动。
 原生三进程Gloo检查覆盖2/2/1和1/1/0帧分片、已打开Meta/写回与checkpoint重算，输出和汇总梯度符合串行目标。
 完整FM的query切片保持原始随机batch/offset与汇总余切；1–4及6rank的任务分配验证保持4条件/84queries。
-配置保持pending_six_gpu_profile，真实六卡吞吐、最长视频和恢复验证完成并封存后再启动新方法。
+六卡已完成3→6完整恢复，24逻辑条件/504queries无重复计数；集成训练/物化/native检查66项通过。
+Owner进一步要求提高显存利用后，已实测8/12/16/20帧chunk并选择20；配置已登记为formal可执行，正式权重仍须fresh。
 
 ## 已完成的整理与实现
 
@@ -37,20 +38,24 @@ Owner最新明确要求：**新架构必须用六卡，并保持等效计算来�
 
 ## 实测执行配置与运行入口
 
-最长train视频105帧、完整21-query FM：优化后8/8物理分块热身24.71–24.89秒，reserved20.62GiB。
-frame12仅约2%更快且额外占9.8GiB，query12更慢，故选择8/8。第3次更新确认中层联合块有梯度；
-三Meta、双写回、decoder与完整76输出正常，source始终冻结。四卡gpu02 p0/1/3/6完成1–3并完整恢复至6，
-热身/恢复更新9.42–14.16秒，峰值21.025GiB，24条件/504queries。正式初始化不复用任何profile权重。
-原件在`runs/analysis/unified_writer_20260917/unified/native_profile.json`及`ddp_profile_*`。
+六卡gpu02 p0/1/2/3/4/6，两组rank(0,1,2)/(3,4,5)。相同前6个注册更新、8帧chunk下，
+热身后六卡平均8.6068秒，四卡12.5173秒，吞吐提升1.454倍；六卡完整恢复至6，峰值reserved19.87GiB。
+最长105帧所在的实际4task/global84面板为task19/16/35/38、帧数52/31/48/105：
+8帧chunk热身15.52秒；12帧15.28–15.66；16帧15.15–15.48；20帧三次15.16–15.19，选择20。
+20帧实际峰值allocated34.04GiB，allocator reserved最高43.77GiB；共驻卡按可用容量回收缓存，实际分配有余量。
+采样中本任务SM：p2约71%，其余五卡85.5–92.7%；p2原进程约29.4%，与此前约26%接近。
+这是活动采样，不冒充他人作业的独立吞吐证明。三Meta、双写回及两处联合块皆有信用，source始终冻结。
+正式初始化不复用profile权重。统一原件入口：`runs/analysis/unified_writer_20260917/unified/six_gpu_profile.json`；
+旧单卡/四卡证据保留为profile历史，不构成当前资源配置。
 
 Study根为`/data0/user/ymdai/ember_runs/unified_writer_20260917`，仓库入口
 `runs/analysis/unified_writer_20260917`为symlink；复用canonical source/data，不复制大资产。
-最新strg01 data0用108,497,784KiB/soft1,073,741,824KiB，shared余1,359,764,568KiB；
-个人ember_runs实际54,692,421,632字节。预留新增峰值上限200GiB覆盖新方法、必要诊断及至多一轮集中修正。
+最新strg01 data0用108,502,252KiB/soft1,073,741,824KiB，shared余1,358,981,960KiB；
+个人ember_runs实际54,656,882,052字节。预留新增峰值上限200GiB覆盖新方法、必要诊断及至多一轮集中修正。
 这些是launch前快照，资源变化时刷新；data1独立预算不混用。
 
 新架构配置为`configs/pi05_writer.json`，外部sealed copy为study的`unified/config.json`。
-冻结runtime在`.codex/tmp/unified-native-runtime`；`unified/launch_600.sh`尚为未执行的四卡模板，六卡profile后替换；当前配置拒绝formal启动。
+冻结runtime在`.codex/tmp/unified-native-runtime`；`unified/launch_600.sh`为六卡首段入口，正式配置为20帧chunk。
 仅新方法的14份物化请求已校验：600/900/1200/1500/1800/2100/2400，每节点correct400和train96。
 映射seed20260911；validation每task50条teacher各一次，train为states32–35和held视频46–49。
 `paired_panel_registration.json`登记范围，`materialize.sh`/`evaluate.sh`仅接受unified。

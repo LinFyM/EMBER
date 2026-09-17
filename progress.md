@@ -15,9 +15,16 @@ Owner最新明确要求：**新架构必须用六卡，并保持等效计算来�
 已实现视频native帧分片与query分片，六卡参与实际计算。两组三卡分担四个条件，
 组内在j9/j18统一表示处进行可微汇集，保留完整跨帧联合处理；梯度等效、实际吞吐和恢复验证通过。
 
-当前阶段：**新Writer六卡正式训练首段0→600**。2026-09-17 23:23 CST已从clean pushed detached
-`184947cb` fresh启动，gpu02 p0/1/2/3/4/6，tmux `ember-unified-native-train`。
-正式run contract已核实六rank、两组三卡、global84与source trainable=0；每100保存完整状态，600后执行correct400/train96。
+当前阶段：**step600的correct400/train96已完成，原六卡拓扑正从完整600点恢复至900**。
+2026-09-17 23:23 CST从clean pushed detached `184947cb` fresh启动，gpu02 p0/1/2/3/4/6。
+六rank、两组三卡、global84与source trainable=0已核实；600步共2,400条件/50,400 queries，
+每100的完整状态均已保存，首段exit0、训练进程已退出。首段含诊断共6,100.5秒，实际allocated峰值34.06GiB。
+step600物化使用gpu02 p0/1/3/4/6与20帧chunk，400＋96条件全部fresh生成，exit0；
+首次调用因设备参数写成数字而在CLI解析阶段exit1，已改为`cuda:N`并保留原错误记录，未改训练或模型。
+两组评测均为同五卡、每卡3个persistent workers，496条完整、30个workers及两个launcher均exit0。
+p2此前另有27–45% SM活动，独立评测避开该卡；续训前双节点live复核时p2为4%利用率、40,038MiB余量。
+600→900恢复保持原p0/1/2/3/4/6、world6、global84、optimizer/scheduler/sampler/RNG与20帧chunk，
+tmux `ember-unified-native-train`，入口`unified/resume.sh 900`。资源与命令见`unified/step600_execution.json`及`step900_execution.json`。
 Owner已撤销补300步评测的要求；300请求未执行即撤销，保留取消记录，首轮600及后续每300步的节奏不变。
 原生三进程Gloo检查覆盖2/2/1和1/1/0帧分片、已打开Meta/写回与checkpoint重算，输出和汇总梯度符合串行目标。
 完整FM的query切片保持原始随机batch/offset与汇总余切；1–4及6rank的任务分配验证保持4条件/84queries。
@@ -53,8 +60,9 @@ Owner进一步要求提高显存利用后，已实测8/12/16/20帧chunk并选择
 
 Study根为`/data0/user/ymdai/ember_runs/unified_writer_20260917`，仓库入口
 `runs/analysis/unified_writer_20260917`为symlink；复用canonical source/data，不复制大资产。
-最新strg01 data0用108,502,252KiB/soft1,073,741,824KiB，shared余1,358,981,960KiB；
-个人ember_runs实际54,656,882,052字节。预留新增峰值上限200GiB覆盖新方法、必要诊断及至多一轮集中修正。
+step600物化前strg01 data0用109,489,132KiB/soft1,073,741,824KiB，shared余1,352,674,592KiB；
+data1独立用923,598,288KiB；个人ember_runs实际55,699,644,416字节。
+预留新增峰值上限200GiB覆盖新方法、必要诊断及至多一轮集中修正。
 这些是launch前快照，资源变化时刷新；data1独立预算不混用。
 
 新架构配置为`configs/pi05_writer.json`，外部sealed copy为study的`unified/config.json`。
@@ -69,7 +77,14 @@ Study根为`/data0/user/ymdai/ember_runs/unified_writer_20260917`，仓库入口
 v5.2复用既有曲线/固定step900复核，同source比较复用对齐A的已完成面板，不新增v5.2训练。
 比较需明确source、camera/H、recipe及曝光差异，只有合同相容的已有rows才做strict paired计算。
 不以不同设置下的分差孤立归因于某个模块，不用最终controls返工架构；Test关闭、无RL或held梯度。
-正式性能仍须correct严格>145/400及相邻稳定、breadth、四suite/GoalLong和同task视频鲁棒性；尚无新模型闭环分数。
+正式性能仍须correct严格>145/400及相邻稳定、breadth、四suite/GoalLong和同task视频鲁棒性。
+
+首个完整600点为**correct90/400、train38/96**，breadth4/8与17/24；S/O/G/L为0/37/32/21与9/11/12/6。
+同source、实际teacher和state/RNG严格配对的A600为88/400与47/96；新模型相对A的R/G/L为47/43/41与28/10/19，
+churn84/29、Jaccard .359/.491。Long高于A600，但Spatial仍为0，训练Object也较弱，首点没有整体提升证据。
+相对裸source50/13观察到新增能力；不能把适配收益归给动态视频，也尚无新模型相邻保持证据。
+按注册1200前不由单点低分否定结构，配置不变继续900/1200；不由此启动controls或返工架构。
+完整原件为study的`unified/paired_readout.json`和`unified/analysis/step600_*`，跨轮解释见findings§117。
 
 旧A训练完成3000、最新完整评测2700为108/400与train64/96；3000评测不自动恢复。
 完整历史与设计证据见findings§107–116、[证据审计](docs/v52_evidence_audit_20260917.md)及

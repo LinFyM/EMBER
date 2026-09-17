@@ -2230,3 +2230,37 @@ S0=0与地址仅Q/K只保证M=0时不产生内容；语言/静态仍可通过真
 不是实测吞吐/峰值，也不是线性T复杂度。尚未profile，当前不为文档工作检查GPU或quota。
 新图仍以合法同task跨episode纯FM共同学习，source、split、数据墙和正式paired400资格不变；所有旧运行继续暂停。
 内容保留、统一表示、共享坐标与identity起点不构成闭环保持保证。判断因新证据或真实合同冲突而修订，不因提出一个已登记限制就反转。
+
+## 117. 统一Writer正式窗口：600点有获取，尚无整体提升（2026-09-18）
+
+按Owner授权实现两处统一Z/H处理、一次原生双写回及连续参数读出，三Meta与Writer fresh共同纯FM。
+六卡两组三卡分别执行真实native帧与query分片，每次仍为4task／84queries，一次梯度汇总和optimizer更新；
+原生不等长及空分片、完整FM汇总梯度与恢复验证通过，source始终冻结。
+同事件六卡热身8.61秒对四卡12.52秒为1.45倍吞吐；最长105帧完整更新选择20帧chunk，
+实际allocated峰值34.04GiB、15.18秒。这些是执行证据，不是科学能力收益。
+
+首段600更新＝2400条件／50400queries，含启动及训练任务诊断共6100.5秒；每100完整恢复状态保留。
+首个正式correct400与固定train96面板全部完成，实际teacher／state／RNG、source、normalization、
+official处理及所有workers退出均通过原有比较器检查；validation每task全部50条teacher各一次。
+历史A使用agentview／H均值，新方法为双RGB／fullH；本轮是整体方法比较，不能把差值单因归给统一结构。
+
+| Step | 新模型validation / train | 既有A validation / train | 新模型breadth | Validation S/O/G/L | Train S/O/G/L |
+| ---: | --- | --- | --- | --- | --- |
+| 600 | 90/400；38/96 | 88/400；47/96 | 4/8；17/24 | 0/37/32/21 | 9/11/12/6 |
+
+600相对A的validation R/G/L为47/43/41、churn84、Jaccard .3588；train为28/10/19、churn29、Jaccard .4912。
+任务cluster bootstrap新−A差值95%CI为[-9.75,+12.25]pp与[-20.83,+2.08]pp，首点没有整体提升证据。
+新模型validation Long21对A4，但Spatial0对A13；train Object11对A19。差距同时涉及早期训练获取与未见任务覆盖，
+还不能只归因为迁移，或指认某个内部模块失败。两个不同方法的R/G/L不是同一模型的时间遗忘；新模型相邻保持尚未测得。
+
+相对裸source50/400、13/96，validation R/G/L31/59/19、churn78，train9/29/4、churn33。
+差值95%CI分别[-3.5,+27]pp与[+13.54,+39.58]pp；训练任务有获取，validation的跨任务不确定性仍大。
+没有learned language/static对照或最终controls，不能把新增适配归给动态视频。
+按预注册1200前不以一个低分点否定结构，保持全部训练条件与优化时钟，续到900再取同样完整面板；
+没有进行rank／scale／seed／LR小扫、Test读取或用最终controls返工；v5.2比较只复用已有正式结果，
+此前误启动后中止的重复run不进入科学比较。
+
+原件：`runs/analysis/unified_writer_20260917/unified/paired_readout.json`、`analysis/step600_*`、
+`training/{checkpoints,materialized,evaluation}`与`step600_execution.json`。600评测用五卡×三workers；
+避开p2当时升高的其他任务负载，不改变训练的六卡拓扑或配对条件。一次物化设备参数格式错误在CLI解析时退出，
+改为`cuda:N`后496条件fresh物化成功，原失败及完成记录均保留。

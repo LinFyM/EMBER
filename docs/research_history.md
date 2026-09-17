@@ -1,5 +1,14 @@
 # EMBER research history
 
+2026-09-18完成统一Writer首个600节点：2400条件／50400queries，correct90/400、train38/96，breadth4／17，
+S/O/G/L为0/37/32/21与9/11/12/6。同source及实际teacher/state/RNG配对的A600为88／47；
+新模型相对A的R/G/L为47/43/41与28/10/19、churn84／29、Jaccard .359／.491，任务bootstrap差值区间均跨零。
+Long较A600高，但validation Spatial为零、训练Object较弱；首点未显示整体提升，不能据此证明动态视频增量或相邻保持。
+600点及每100完整恢复状态保存，496个LoRA条件fresh物化、496条闭环及30个workers全部通过；
+一次物化CLI设备格式错误在worker前退出，修正为`cuda:N`后完成，原错误保留。
+依据预注册最小观察窗口维持配置续至900；v5.2比较只复用已有正式证据，未用Test或最终controls作选择。
+详见findings§117与`runs/analysis/unified_writer_20260917/unified/paired_readout.json`；执行状态仍由progress登记。
+
 2026-09-17 22:29 CST Owner纠正代理擅自重复训练v5.2：已有v5.2训练结果应直接用于比较。
 代理立即停止误启动的fresh baseline，最后完整更新73，三rank全部退出，未到首个100步checkpoint，也未产生闭环面板；
 这属于执行范围错误，不是科学non-pass。保留`runs/analysis/unified_writer_20260917/baseline/owner_scope_correction.json`与日志，

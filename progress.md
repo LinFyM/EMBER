@@ -14,39 +14,35 @@ correct／other／wrong／no-video／shuffled／reversed=140／136／116／48／
 所有2000新rows及48个最终workers通过；有限内容特异性保留，正确时序优势没有复现，不能据此称完全不看顺序。
 完整证据在`runs/analysis/source_alignment_20260915/A/video_specificity_step900`和findings§109。
 
-A300／600／900／1200／1500／1800／2100／2400的完整correct为99／88／140／135／112／122／122／106，
-train为36／47／54／62／56／63／60／58。2400累计9600条件／201600queries，每task400条件，完整恢复及原事件前缀审计通过。
-2400 validation106/400、train58/96，breadth5／22，S/O/G/L为5/40/40/21与17/16/15/10。
-2100→2400 validation R/G/L为87/19/35、churn54、Jaccard .6170、净差95%CI[-9.5,+1]pp；
-train为47/11/13、churn24、Jaccard .6620、CI[-14.5833,+9.375]pp。验证继续流失，训练总成功也回落，但覆盖19→22。
-这仍不足以直接判定明显过拟合；主面板判断已保存`A/node2400_primary_readout.json`，controls未参与续训决定。
-2400的correct/other/wrong/no-video/shuffled/reversed为106/103/91/48/107/95，correct相对wrong／shuffled／reversed的优势区间均跨零。
-完整2096条新评测、72个最终workers均通过，本节点没有工程异常；细节见findings§113与`A/continuation_readout.json`。
-1200–2100完整节点及视频特异性演化见findings§111–112；两次worker前GPU准入拒绝均已从同队列恢复，原件保留。
+A300／600／900／1200／1500／1800／2100／2400／2700的完整correct为99／88／140／135／112／122／122／106／108，
+train为36／47／54／62／56／63／60／58／64。2700累计10800条件／226800queries，每task450条件；
+完整恢复及原事件前缀审计通过，source冻结、identity后Writer与三Meta梯度finite非零，累计训练8.152h。
+2700 validation108/400、train64/96，breadth5／20，S/O/G/L为6/50/37/15与20/20/16/8。
+2400→2700 R/G/L为81/27/25与48/16/10，churn52／26，Jaccard .6090／.6486；净差95%CI为[-5,+7]／[-2.0833,+15.625]pp。
+相对1200，验证135→108（差值95%CI[-11.75,-2]pp），训练62→64；已出现训练保持而验证回落的较长趋势，
+但最近主面板验证小幅回升2、训练增加6，按owner要求再观察3000。依据已保存`A/node2700_primary_readout.json`，controls未参与决定。
+2700完整correct/other/wrong/no-video/shuffled/reversed为108/111/93/48/106/115；correct减wrong／shuffled／reversed的区间均跨零。
+相对2400，correct−reversed差额11→−7，变化95%CI[-8.5,-.75]pp，主要来自倒序增加20而correct只增加2。
+完整2096条新评测、72个最终workers和逐行科学合同均通过；细节见findings§114与`A/continuation_readout.json`。
 
-按owner要求继续观察，2700已从完整2400点正常完成训练与correct／train LoRA物化；
-保存2500／2600／2700，累计10800条件／226800queries，本段训练3069.152秒。
+2700曾在validation worker启动前被GPU准入拒绝；原五卡空队列保留在`validation_correct_step2700_unstarted_admission_failure`，
+按相同checkpoint、manifest、400条件及RNG改用可用的gpu01四卡重新准备。后在temporal物化前遇一次strg01 quota SSH连接关闭，
+复查连接后从剩余两臂继续，未重训或重跑已完成面板。两份原失败、日志和完整2700完成记录均保留；当前2700全流程已结束。
+
+3000已从完整2700点启动，PID1976606；保存2800／2900／3000，累计目标12000条件／252000queries。
 沿原gpu01物理0–3／四rank／GPU UUID、各rank microbatch8、global84及原optimizer／LR／RNG恢复，配方不变。
 运行树为clean pushed detached `.codex/tmp/source-aligned-A-trend-runtime`（329987c0）；
-原1200的575c189a与1500／1800的6393cbe1及其完整合同保持。每个扩展预算记录于`budget_extensions/updates_XXXXXXXX/`，
-157项定向检查及真实1800→2100／2400事件／sampler核验通过，实际2100／2400整段恢复与checkpoint审计也已完成。
-原后台入口`A/continue_registered.py --through-node 2700`在validation准备后被GPU准入拒绝，60个shards仍全部pending，
-没有worker invocation或评测行；原训练、物化和失败日志保留。重新检查发现physical4外部任务有0→29%的利用率变化，
-本节点推理登记使用可用的gpu01 physical0–3。原未启动队列保留在`validation_correct_step2700_unstarted_admission_failure`，
-按相同checkpoint、manifest、400条件及RNG重新准备；不重训或重新生成已完成的LoRA。
-首次恢复已完成correct400／train96／other400／wrong400，48个最终workers均正常退出；
-随后在temporal物化前的strg01 quota查询遇SSH连接关闭，未启动新的GPU任务。连接复查已恢复，原失败原件保留。
-现从`A/recover2700.py --from-temporal`接着执行剩余两臂，PID1814024；
-当前PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_2700_retry2.log`。
-2700主面板独立审计为108/400与64/96，breadth5／20，S/O/G/L为6/50/37/15与20/20/16/8。
-2400→2700 R/G/L为81/27/25与48/16/10；相对1200 validation净降27（95%CI[-11.75,-2]pp），train62→64。
-主面板决定已保存`A/node2700_primary_readout.json`：最近验证小幅回升2、训练增加6，按owner要求再观察3000；
-待2700两臂完成及下一节点存储登记后启动，不按controls作续训决定。
-2400完成记录已保存`A/trend_continuation_completion_2400.json`；当前节点与追加依据见`A/trend_continuation_launch_contract.json`。
+原575c189a和6393cbe1及其完整合同保持，每个扩展预算记录于`budget_extensions/updates_XXXXXXXX/`。
+157项定向检查、真实事件／sampler核验及已完成2700整段恢复与checkpoint审计通过。
+当前后台入口为`A/continue_registered.py --through-node 3000`，PID与日志见`A/trend_continuation.pid`及`A/trend_continuation_3000.log`。
+2700完成记录见`A/trend_continuation_completion_2700.json`；当前节点与追加依据见`A/trend_continuation_launch_contract.json`。
 每节点仍完成correct400／train96及四个视频对照，无视频复用source零LoRA48；只等完成事件，完整节点后判断是否追加。
 
-2700 launch前双节点GPU／process检查通过，data1 used1016523468KiB／soft1073741824KiB，A用59785920KiB。
-每个完整新节点预留12GiB，后续B40GiB，当前剩余52GiB预算可容纳；SFT剩余预算为零，后续launch仍重新核验。
+3000 launch前双节点GPU／process检查通过；gpu01物理4／5／6外部任务利用率29／30／35%，本节点训练及推理使用可用的0–3。
+data1 used1025526144KiB／soft1073741824KiB，A用68788268KiB，新节点预留12GiB可容纳。
+后续B的40GiB独立预留改在现有`/data0/user/ymdai/ember_runs`：data0 used108416500KiB／soft1073741824KiB，
+个人目录实测108416560KiB、共享可用1415871488KiB；两个filesystem分别核验，不合并quota，不复制或移动已有资产。
+B方法尚未选择，正式输出规模仍须设计后profile；每次实际launch继续核对独立预算，SFT剩余预算为零。
 Shared SFT已于2026-09-17完成450步／259200 queries及400／425／450三个正式validation400，随后停止全部SFT作业。
 三点85／89／86，breadth6／5／5，四suite均非零；相邻R/G/L为66/23/19与64/22/25，churn42／47。
 训练与1200评测行、18个最终workers均通过审计；训练9.165h、评测1.383h，无held动作读取或Test，不选择checkpoint。

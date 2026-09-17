@@ -1,5 +1,13 @@
 # EMBER research history
 
+2026-09-17完成对齐A2700：10800条件／226800queries，correct108/400、train64/96，breadth5／20，
+S/O/G/L为6/50/37/15与20/20/16/8；相邻R/G/L81/27/25与48/16/10，churn52／26。
+相对1200，验证135→108、差值CI[-11.75,-2]pp，训练62→64；最近小幅反弹后，仅据主面板登记3000继续观察。
+六臂为108/111/93/48/106/115，correct相对wrong／shuffled／reversed的区间均跨零；correct−reverse差额11→−7，
+变化CI[-8.5,-.75]pp，来自correct增加2而reverse增加20。时序正证据未保持，旧强特异性未复现。
+2096条新评测和72个最终workers全部通过；worker前GPU准入与后续quota SSH两次失败均已恢复，原件保留。
+完整事实及边界见findings§114与study的`A/continuation_readout.json`；当前执行状态归progress。
+
 2026-09-17完成对齐A2400：9600条件／201600queries，correct106/400、train58/96，breadth5／22。
 Validation S/O/G/L为5/40/40/21，2100→2400 R/G/L87/19/35、churn54；train47/11/13、churn24。
 验证与训练总成功均回落，训练任务覆盖反而19→22，未直接命名明显过拟合。六臂106/103/91/48/107/95，

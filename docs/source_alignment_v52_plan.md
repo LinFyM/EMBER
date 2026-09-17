@@ -70,6 +70,9 @@ SFT操作由独立agent负责既有SFT输出，我方负责A和主线文档；�
 SFT当时预留3GiB、B40GiB，总75GiB小于当时余量。已完成1500节点的checkpoints和去重LoRA banks实测约8.56GiB，
 1800后每个新增300更新完整节点按12GiB预留；SFT完成后其剩余预算为零，B继续预留40GiB，设计／profile后再测并重核。
 不复制source或dataset。
+3000登记时data1余量已不足同时放置下一A节点和B预留，B的40GiB改在既有`/data0/user/ymdai/ember_runs`独立预留；
+该filesystem的strg01 user quota、个人用量与共享容量已核验，具体快照归progress及launch contract。
+A已有与后续输出仍在data1，不合并两侧quota、不移动已有资产；实际B设计／profile后再次估价，每次launch检查适用预算。
 当前执行状态归progress，历史科学事实归findings／research_history；以下保留source重建和A原始训练规格。
 
 ## 已确认的时间关系

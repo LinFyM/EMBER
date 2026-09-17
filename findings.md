@@ -2124,3 +2124,46 @@ No-video仍是同source零LoRA48，非learned language-only或静态视频baseli
 初态／RNG／teacher、全50视频无放回、逐行manifest与真实RGB重排审计通过，本节点没有工程异常。
 完整原件为study的`A/continuation_readout.json`、`video_specificity_step2400/`、`training_completion_2400.json`和
 `trend_continuation_completion_2400.json`。该节点未达性能或稳定资格，后续状态归progress，不提前裁决本轮B。
+
+## 114. A2700训练成功回升，验证仍在低位，correct与倒序的差额转负（2026-09-17）
+
+2700从2400完整恢复，329987c0、原四rank／GPU UUID、模型／配方／LR不变；累计10800条件／226800queries，
+每task450条件，1104个teacher条件各9–10次。完整checkpoint、原事件前缀、source冻结与四组有效梯度审计通过。
+本段3069.152秒，累计训练29346.389秒（8.152h），reserved峰值24.305GiB。
+
+| 面板 | 成功 | S/O/G/L | Breadth | 相对source R/G/L | 2400→2700 R/G/L | 相邻churn | 相邻Jaccard | 相邻净差95%CI |
+| --- | ---: | --- | ---: | --- | --- | ---: | ---: | --- |
+| Validation | 108/400 | 6/50/37/15 | 5/8 | 35/73/15 | 81/27/25 | 52 | .6090 | [-5,+7]pp |
+| Train | 64/96 | 20/20/16/8 | 20/24 | 11/53/2 | 48/16/10 | 26 | .6486 | [-2.0833,+15.625]pp |
+
+Validation按global1/3/11/13/23/26/31/32为0/6/38/12/0/37/15/0；Object13从2→12，
+抵消Goal26从40→37、Long31从21→15的退化及其它交换，名义净回升2不等于广泛恢复。
+Train按固定24task顺序为3/4/3/3/4/3/4/4/4/2/3/3/2/4/4/2/4/0/2/3/3/0/0/0；
+成功增加6但覆盖22→20，Long37／38重新归零，Long总成功10→8。获取与保持仍需分开判断。
+相对1200，validation135→108、R/G/L82/26/53，净差95%CI[-11.75,-2]pp；train62→64、51/13/11，CI[-7.2917,+12.5]pp。
+相对900，validation140→108、83/25/57，CI[-18,+1.25]pp；train54→64、47/17/7，CI[+1.0417,+20.8333]pp。
+较长窗口已有训练能力保持／提高而验证回落的分离，不能将最近+2视作已恢复900／1200能力；
+同时遵循owner“反弹继续”的要求，再登记3000确认后续趋势。该决定只用完整主面板，保存于`A/node2700_primary_readout.json`。
+
+| 条件 | 成功/400 | Correct→control R/G/L | Churn | Jaccard | Correct−control 95%CI |
+| --- | ---: | --- | ---: | ---: | --- |
+| Other | 111 | 90/21/18 | 39 | .6977 | [-3.5,+1]pp |
+| Wrong | 93 | 70/23/38 | 61 | .5344 | [-2,+10.25]pp |
+| No-video | 48 | 33/15/75 | 90 | .2683 | [+.5,+34]pp |
+| Shuffled | 106 | 74/32/34 | 66 | .5286 | [-2,+4.25]pp |
+| Reversed | 115 | 79/36/29 | 65 | .5486 | [-6,+2.5]pp |
+
+Correct相对wrong／shuffled／reversed净差15／2／−7，三个区间均跨零；other对这三臂的区间也跨零。
+2400→2700的wrong差距仍为15，两臂都增加2；shuffle差距−1→2，由correct多2、shuffle少1形成。
+Reverse从95→115，而correct仅106→108，使correct−reverse从11→−7，差额变化CI[-8.5,-.75]pp。
+这是该区间相对倒序优势的下降；当前correct与reverse本身差值的区间仍跨零，不能称倒序普遍更好。
+从900到2700的wrong／shuffle／reverse差额变化−9／−10／−8，三个区间仍跨零。
+旧v5.2的强时序特异性未复现，1200的局部时序正证据没有随继续训练保持。No-video仍复用同source零LoRA48，
+不是learned language-only或静态视频baseline，不能将全部适配收益归给有序动态。
+
+完整2096条新评测、72个最终workers通过，评测墙钟5096.471秒；source／checkpoint／normalization、
+固定teacher／初态／RNG、全50视频无放回、逐行manifest与真实RGB重排全部审计通过。
+Validation首次五卡准备后在worker前被GPU准入拒绝，保留原未启动队列，在可用四卡上按相同科学条件重新准备；
+其后temporal物化前的一次quota SSH连接关闭经复查恢复，未重训或重跑已完成面板。两次失败和完整完成证据均保留。
+原件为study的`A/continuation_readout.json`、`video_specificity_step2700/`、`training_completion_2700.json`、
+`trend_continuation_completion_2700.json`与`trend_continuation_failure_2700_01/02.*`；尚未达到性能或相邻稳定资格。

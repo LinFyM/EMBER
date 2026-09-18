@@ -12,7 +12,8 @@ from torch import nn
 from torch.nn import functional as F
 
 from ember.writer.meta_lora import MetaLoRAStack
-from ember.writer.video_program import LearnedHorizonRead, Pi05LanguageAxialEncoder, VideoProgramError
+from ember.writer.procedure import RecurrentProcedureEncoder
+from ember.writer.video_program import Pi05LanguageAxialEncoder, VideoProgramError
 
 
 @pytest.fixture(autouse=True)
@@ -96,7 +97,7 @@ class _TinyCore(nn.Module):
         return value[:, None]
 
 
-def _encoder(checkpoint=False, *, camera_view="dual", horizon_read="learned"):
+def _encoder(checkpoint=False, *, camera_view="agentview", horizon_read="repeated_full"):
     policy = nn.Module()
     policy.model = _TinyCore()
     policy.requires_grad_(False)
@@ -123,41 +124,22 @@ def _encoder(checkpoint=False, *, camera_view="dual", horizon_read="learned"):
     return policy, encoder, args
 
 
-@pytest.mark.parametrize('mode', ['fixed_mean', 'learned'])
-def test_complete_horizon_read_starts_as_mean_and_preserves_its_registered_learning_mode(mode):
-    read = LearnedHorizonRead(width=1024, horizon=50, mode=mode)
-    hidden = torch.randn(2, 50, 1024, requires_grad=True)
-    pooled = read(hidden)
-    torch.testing.assert_close(pooled, hidden.mean(1))
-    pooled.square().sum().backward()
-    assert hidden.grad.abs().sum(-1).gt(0).all()
-    if mode == 'learned':
-        assert read.query.grad.norm() > 0 and read.bias.grad.abs().gt(0).all()
-        with torch.no_grad():
-            read.bias[-1] = 30
-        torch.testing.assert_close(read(hidden), hidden[:, -1])
-    else:
-        assert all(not value.requires_grad and value.grad is None for value in read.parameters())
-        torch.optim.AdamW(read.parameters(), lr=.1, weight_decay=.1).step()
-        assert all(value.count_nonzero() == 0 for value in read.parameters())
-        torch.testing.assert_close(read(hidden), hidden.mean(1))
-    with pytest.raises(VideoProgramError, match='complete native horizon'):
-        read(hidden[:, :49])
-
-
-@pytest.mark.parametrize('camera_view,horizon_read,patches', [('agentview', 'fixed_mean', 256), ('dual', 'learned', 512)])
-def test_declared_cameras_supply_only_their_real_patch_values_to_core(camera_view, horizon_read, patches):
-    policy, encoder, args = _encoder(camera_view=camera_view, horizon_read=horizon_read)
+@pytest.mark.parametrize('camera_view,patches', [('agentview', 256), ('dual', 512)])
+def test_declared_cameras_supply_real_evidence_and_the_full_native_horizon(camera_view, patches):
+    policy, encoder, args = _encoder(camera_view=camera_view)
     patch_inputs = []
     horizon_inputs = []
     encoder.patch_grounding.register_forward_pre_hook(lambda module, values: patch_inputs.append(values[1]))
-    encoder.horizon_read.register_forward_pre_hook(lambda module, values: horizon_inputs.append(values[0]))
-    text, evidence, interactions, valid = encoder(policy, *args)
+    bridge = policy.model.paligemma_with_expert
+    bridge.gemma_expert.model.register_forward_hook(lambda module, values, output: horizon_inputs.append(output))
+    text, evidence, interactions, horizon, valid = encoder(policy, *args)
     assert text.shape == (2, 3, 8) and evidence.shape == (3, 3, 8)
     assert interactions.shape == (3, 8) and valid.tolist() == [[True, True, False], [True] * 3]
+    assert horizon.shape == (3, 50, 8)
+    torch.testing.assert_close(horizon, torch.cat(horizon_inputs))
+    torch.testing.assert_close(interactions, encoder.interaction_projection(horizon.mean(1)))
     assert [value.shape[1] for value in patch_inputs] == [patches, patches]
     assert all(value.shape[1:] == (50, 8) for value in horizon_inputs)
-    bridge = policy.model.paligemma_with_expert
     expected = bridge.embed_image(encoder._prepare_images(args[0][:2])).reshape(2, patches, 8)
     assert bridge.image_prefixes[0].shape[1] == patches + args[2].shape[1]
     torch.testing.assert_close(bridge.image_prefixes[0][:, :patches], expected)
@@ -179,9 +161,9 @@ def test_declared_cameras_supply_only_their_real_patch_values_to_core(camera_vie
 
 
 @pytest.mark.parametrize('checkpoint', [False, True])
-@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned')])
-def test_frame_replay_keeps_all_three_meta_stacks_in_gradient_path(checkpoint, camera_view, horizon_read):
-    policy, encoder, args = _encoder(checkpoint, camera_view=camera_view, horizon_read=horizon_read)
+@pytest.mark.parametrize('camera_view', ['agentview', 'dual'])
+def test_frame_replay_keeps_all_three_meta_stacks_in_gradient_path(checkpoint, camera_view):
+    policy, encoder, args = _encoder(checkpoint, camera_view=camera_view)
     stacks = (encoder.text_meta_lora, encoder.vl_meta_lora, encoder.action_meta_lora)
     assert all(isinstance(stack, MetaLoRAStack) for stack in stacks)
     assert all(adapter.b.count_nonzero() == 0 for stack in stacks for adapter in stack.adapters.values())
@@ -190,14 +172,9 @@ def test_frame_replay_keeps_all_three_meta_stacks_in_gradient_path(checkpoint, c
             for adapter in stack.adapters.values():
                 adapter.b.normal_(std=.03)
     output = encoder(policy, *args)
-    sum(value.square().mean() for value in output[:3]).backward()
+    sum(value.square().mean() for value in output[:4]).backward()
     for stack in stacks:
         assert all(value.grad is not None and value.grad.norm() > 0 for value in stack.parameters())
-    if horizon_read == 'learned':
-        assert encoder.horizon_read.query.grad.norm() > 0
-        assert encoder.horizon_read.bias.grad.norm() > 0
-    else:
-        assert encoder.horizon_read.query.grad is None and encoder.horizon_read.bias.grad is None
     assert encoder.language_projection.weight.grad.norm() > 0
     assert encoder.interaction_projection.weight.grad.norm() > 0
     bridge = policy.model.paligemma_with_expert
@@ -212,30 +189,20 @@ def test_camera_modes_share_fresh_parameters_and_consume_the_same_rng_stream():
     # Start after unrelated upstream construction, as runtime does after its LoRA template.
     torch.rand(19)
     initial_rng = torch.get_rng_state()
-    policy_a, encoder_a, _ = _encoder(camera_view='agentview', horizon_read='fixed_mean')
+    policy_a, encoder_a, _ = _encoder(camera_view='agentview')
     after_a = torch.get_rng_state()
     torch.set_rng_state(initial_rng)
-    policy_b, encoder_b, _ = _encoder()
+    policy_b, encoder_b, _ = _encoder(camera_view='dual')
     assert torch.equal(torch.get_rng_state(), after_a)
     torch.testing.assert_close(policy_a.state_dict(), policy_b.state_dict(), rtol=0, atol=0)
     torch.testing.assert_close(encoder_a.state_dict(), encoder_b.state_dict(), rtol=0, atol=0)
 
 
-@pytest.mark.parametrize('camera_view,horizon_read', [('dual', 'fixed_mean'), ('agentview', 'learned'),
-                                                     ('eye_in_hand', 'fixed_mean'), ('dual', 'truncated')])
+@pytest.mark.parametrize('camera_view,horizon_read', [('agentview', 'fixed_mean'), ('dual', 'learned'),
+                                                     ('eye_in_hand', 'repeated_full'), ('dual', 'truncated')])
 def test_unregistered_camera_read_pairs_are_rejected(camera_view, horizon_read):
     with pytest.raises(VideoProgramError, match='dimensions'):
         _encoder(camera_view=camera_view, horizon_read=horizon_read)
-
-
-def test_fixed_mean_checkpoint_refuses_learned_nonuniform_weights():
-    fixed = LearnedHorizonRead(width=8, horizon=50, mode='fixed_mean')
-    fixed.load_state_dict(fixed.state_dict(), strict=True)
-    for name in ('query', 'bias'):
-        state = {key: value.clone() for key, value in fixed.state_dict().items()}
-        state[name][-1] = .1
-        with pytest.raises(VideoProgramError, match='fixed-mean horizon checkpoint'):
-            fixed.load_state_dict(state, strict=True)
 
 
 def test_checkpoint_and_physical_chunk_preserve_the_same_condition_read():
@@ -249,7 +216,7 @@ def test_checkpoint_and_physical_chunk_preserve_the_same_condition_read():
     observed = encoder(policy, *args)
     for left, right in zip(expected, observed, strict=True):
         torch.testing.assert_close(left, right)
-    sum(value.square().mean() for value in observed[:3]).backward()
+    sum(value.square().mean() for value in observed[:4]).backward()
     assert encoder.action_meta_lora.adapters['17_o_proj'].b.grad.norm() > 0
 
 
@@ -260,23 +227,43 @@ def _parameter_gradients(module):
                       for value in module.parameters()])
 
 
-def _check_frame_parallel_case(rank, size, frame_count):
+def _complete_video_program(module, policy, args, *, group=None):
+    text, evidence, initial, horizon, tokens = module['encoder'](
+        policy, *args, frame_parallel_group=group,
+    )
+    frames = horizon.shape[0]
+    procedure = module['procedure'](
+        initial[None], horizon[None], evidence[None], torch.arange(frames)[None] * 5,
+        torch.ones(1, frames, dtype=torch.bool), tokens,
+    )
+    return text, evidence, initial, horizon, procedure
+
+
+def _check_frame_parallel_case(rank, size, frame_count, mixed=False):
     torch.manual_seed(32)
-    policy, parallel, args = _encoder(checkpoint=True, camera_view='agentview', horizon_read='fixed_mean')
+    policy, encoder, args = _encoder(checkpoint=True)
+    procedure = RecurrentProcedureEncoder(width=8, expert_width=8, heads=2, blocks=2)
     with torch.no_grad():
-        for stack in (parallel.text_meta_lora, parallel.vl_meta_lora, parallel.action_meta_lora):
+        for stack in (encoder.text_meta_lora, encoder.vl_meta_lora, encoder.action_meta_lora):
             for adapter in stack.adapters.values():
                 adapter.b.normal_(std=.03)
+        for block in procedure.blocks:
+            block.horizon_read.output.weight.normal_(std=.1)
+            block.visual_read.output.weight.normal_(std=.1)
+    parallel = nn.ModuleDict({'encoder': encoder, 'procedure': procedure})
     serial = deepcopy(parallel)
     frames = args[0][:1].expand(frame_count, -1, -1, -1).clone()
     for index in range(frame_count):
         frames[index] = 15 + index * 31
-    ids = torch.tensor([0, 0, 0, 1, 1] if frame_count == 5 else [0, 1])
-    args = (frames, ids, *args[2:])
-    expected = serial(policy, *args)
+    args = (frames, torch.zeros(frame_count, dtype=torch.long), *(value[:1] for value in args[2:]))
+    with torch.autocast('cpu', dtype=torch.bfloat16, enabled=mixed):
+        expected = _complete_video_program(serial, policy, args)
+    if mixed:
+        assert expected[1].dtype == torch.bfloat16
+        assert expected[3].dtype == torch.float32
     generator = torch.Generator().manual_seed(913)
-    cotangents = [torch.randn((size, *value.shape), generator=generator) for value in expected[:3]]
-    torch.autograd.backward(expected[:3], [value.sum(0) for value in cotangents])
+    cotangents = [torch.randn((size, *value.shape), generator=generator) for value in expected]
+    torch.autograd.backward(expected, [value.sum(0) for value in cotangents])
     expected_gradient = _parameter_gradients(serial)
 
     image_batches = []
@@ -288,14 +275,20 @@ def _check_frame_parallel_case(rank, size, frame_count):
         return embed_image(images)
 
     bridge.embed_image = count_images
-    observed = parallel(policy, *args, frame_parallel_group=dist.group.WORLD)
-    torch.testing.assert_close(observed, expected, rtol=3e-5, atol=3e-6)
+    with torch.autocast('cpu', dtype=torch.bfloat16, enabled=mixed):
+        observed = _complete_video_program(parallel, policy, args, group=dist.group.WORLD)
+    torch.testing.assert_close(observed, expected, rtol=.03 if mixed else 3e-5,
+                               atol=.02 if mixed else 3e-6)
     local_frames = frame_count // size + int(rank < frame_count % size)
     assert sum(image_batches) == local_frames
-    torch.autograd.backward(observed[:3], [value[rank] for value in cotangents])
+    torch.autograd.backward(observed, [value[rank] for value in cotangents])
     observed_gradient = _parameter_gradients(parallel)
     dist.all_reduce(observed_gradient, op=dist.ReduceOp.SUM)
-    torch.testing.assert_close(observed_gradient, expected_gradient, rtol=3e-4, atol=3e-5)
+    if mixed:
+        relative_error = (observed_gradient - expected_gradient).norm() / expected_gradient.norm()
+        assert relative_error < .03
+    else:
+        torch.testing.assert_close(observed_gradient, expected_gradient, rtol=3e-4, atol=3e-5)
     # Checkpoint replay reads only this owner's real frames; an empty owner has
     # neither initial nor replay native calls, while contributing text gradients.
     assert sum(image_batches) == 2 * local_frames
@@ -308,12 +301,14 @@ def _frame_parallel_worker(rank, size, rendezvous):
     dist.init_process_group('gloo', init_method=f'file://{rendezvous}', rank=rank,
                             world_size=size, timeout=timedelta(seconds=90))
     try:
-        for count in (5, 2):
+        for count in (5, 1):
             _check_frame_parallel_case(rank, size, count)
+        _check_frame_parallel_case(rank, size, 1, mixed=True)
     finally:
         dist.destroy_process_group()
 
 
 @pytest.mark.skipif(not dist.is_available() or not dist.is_gloo_available(), reason='Gloo is required')
-def test_three_rank_frame_shards_match_serial_outputs_and_aggregate_gradients(tmp_path):
-    mp.spawn(_frame_parallel_worker, args=(3, str(tmp_path / 'native-gloo')), nprocs=3, join=True)
+@pytest.mark.parametrize('size', [2, 3])
+def test_full_horizon_frame_shards_match_serial_reads_and_aggregate_gradients(tmp_path, size):
+    mp.spawn(_frame_parallel_worker, args=(size, str(tmp_path / 'native-gloo')), nprocs=size, join=True)

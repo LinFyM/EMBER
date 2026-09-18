@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import math
-
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
@@ -13,7 +11,7 @@ from ember.writer.meta_lora import MetaLoRAStack
 from ember.writer.temporal import RMSNorm
 
 
-VIDEO_READ_MODES = (("agentview", "fixed_mean"), ("dual", "learned"))
+VIDEO_READ_MODES = (("agentview", "repeated_full"), ("dual", "repeated_full"))
 
 
 class VideoProgramError(RuntimeError):
@@ -28,7 +26,7 @@ def _frame_shard(total_frames: int, size: int, rank: int) -> tuple[int, int]:
 
 
 class _GatherFrameRows(torch.autograd.Function):
-    """Gather compact rows; return the SUM of all consumer cotangents to owners."""
+    """Gather full frame rows; return the SUM of consumer cotangents to owners."""
 
     @staticmethod
     def forward(ctx, local_rows, group, total_frames):
@@ -37,7 +35,7 @@ class _GatherFrameRows(torch.autograd.Function):
         ctx.start, ctx.stop = bounds[rank]
         ctx.group = group
         if local_rows.shape[0] != ctx.stop - ctx.start:
-            raise VideoProgramError("native frame shard and compact rows disagree")
+            raise VideoProgramError("native frame shard and gathered rows disagree")
         padded = local_rows.new_zeros((max(stop - start for start, stop in bounds), *local_rows.shape[1:]))
         padded[:local_rows.shape[0]].copy_(local_rows)
         gathered = [torch.empty_like(padded) for _ in range(size)]
@@ -121,35 +119,6 @@ class TaskQueriedPatchGrounding(torch.nn.Module):
         )
 
 
-class LearnedHorizonRead(torch.nn.Module):
-    """Read all raw horizon Values; fixed_mean freezes the zero query and bias."""
-
-    def __init__(self, *, width: int, horizon: int, mode: str = "learned") -> None:
-        super().__init__()
-        if min(width, horizon) <= 0 or mode not in ("fixed_mean", "learned"):
-            raise VideoProgramError("invalid learned horizon read dimensions")
-        self.mode = mode
-        self.query = torch.nn.Parameter(torch.zeros(width), requires_grad=mode == "learned")
-        self.bias = torch.nn.Parameter(torch.zeros(horizon), requires_grad=mode == "learned")
-
-    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
-        if self.mode == "fixed_mean" and any(
-            bool(state_dict[prefix + name].count_nonzero())
-            for name in ("query", "bias") if prefix + name in state_dict
-        ):
-            raise VideoProgramError("fixed-mean horizon checkpoint requires zero query and bias")
-        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
-
-    def forward(self, hidden: torch.Tensor) -> torch.Tensor:
-        if hidden.ndim != 3 or hidden.shape[1:] != (self.bias.numel(), self.query.numel()):
-            raise VideoProgramError("learned read needs the complete native horizon")
-        values = hidden.to(torch.float32)
-        normalized = values * torch.rsqrt(values.square().mean(dim=-1, keepdim=True) + 1e-6)
-        logits = (normalized * self.query).sum(dim=-1) / math.sqrt(self.query.numel())
-        weights = torch.softmax(logits + self.bias, dim=1)
-        return (weights[..., None] * values).sum(dim=1).to(hidden.dtype)
-
-
 class Pi05LanguageAxialEncoder(torch.nn.Module):
     """Produce text queries, aligned video evidence, and Action-Expert probes."""
 
@@ -172,8 +141,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         padded_action_dim: int,
         initialization_seed: int,
         activation_checkpointing: bool,
-        camera_view: str = "dual",
-        horizon_read: str = "learned",
+        camera_view: str = "agentview",
+        horizon_read: str = "repeated_full",
     ) -> None:
         super().__init__()
         dimensions = (
@@ -215,7 +184,6 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             program_width,
             bias=False,
         )
-        self.horizon_read = LearnedHorizonRead(width=expert_width, horizon=action_horizon, mode=horizon_read)
         self.patch_grounding = TaskQueriedPatchGrounding(
             width=program_width,
             heads=patch_grounding_heads,
@@ -451,8 +419,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
             valid_task_tokens,
         )
         evidence = multimodal_evidence + patch_evidence
-        interaction = self.interaction_projection(self.horizon_read(suffix_hidden))
-        return evidence, interaction
+        # H keeps the native stream dtype; projected E may use the autocast dtype.
+        return evidence, suffix_hidden.to(target_dtype)
 
     def _validate_forward_batch(
         self,
@@ -511,15 +479,13 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         )
         return core, valid_task_tokens, task_counts
 
-    def _collect_frame_rows(self, rows, reference, shape, total_frames, group):
+    def _collect_frame_rows(self, rows, reference, shape, total_frames, group, *, dtype=None):
         if rows:
             local = torch.cat(rows, dim=0)
         else:
             # Empty owners still participate in both gather backwards without
             # invoking the native policy on invented frames.
-            dtype = (torch.get_autocast_dtype(reference.device.type)
-                     if torch.is_autocast_enabled(reference.device.type)
-                     else self.language_projection.weight.dtype)
+            dtype = reference.dtype if dtype is None else dtype
             local = reference.new_empty((0, *shape), dtype=dtype)
             local = local + reference.reshape(-1)[0].to(dtype) * 0.0
         if group is None or dist.get_world_size(group) == 1:
@@ -537,8 +503,8 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         task_span_mask: torch.Tensor,
         *,
         frame_parallel_group=None,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Return aligned text/video evidence and one interaction per frame."""
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return text, E, initial mean-projected p, full native H, and token mask."""
 
         core, valid_task_tokens, _ = self._validate_forward_batch(
             policy,
@@ -584,7 +550,7 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 raise VideoProgramError("native frame rank is outside its process group")
             local_start, local_stop = _frame_shard(frames.shape[0], size, rank)
         evidence_rows = []
-        interaction_rows = []
+        horizon_rows = []
         for start in range(local_start, local_stop, self.max_frames_per_encoder_call):
             stop = min(start + self.max_frames_per_encoder_call, local_stop)
             rows = torch.arange(start, stop, device=frames.device)
@@ -618,21 +584,31 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
                 )
 
             if should_checkpoint:
-                evidence, interaction = checkpoint(
+                evidence, horizon = checkpoint(
                     invoke_frames,
                     *arguments,
                     use_reentrant=False,
                     preserve_rng_state=False,
                 )
             else:
-                evidence, interaction = invoke_frames(*arguments)
+                evidence, horizon = invoke_frames(*arguments)
             evidence_rows.append(evidence)
-            interaction_rows.append(interaction)
+            horizon_rows.append(horizon)
+        evidence = self._collect_frame_rows(
+            evidence_rows, text_queries, (maximum_task_tokens, self.program_width),
+            frames.shape[0], frame_parallel_group,
+        )
+        horizon = self._collect_frame_rows(
+            horizon_rows, text_queries, (self.action_horizon, self.expert_width),
+            frames.shape[0], frame_parallel_group,
+            dtype=core.paligemma_with_expert.paligemma.model.language_model.layers[0].self_attn.q_proj.weight.dtype,
+        )
+        # Only the initial A state is a mean. Every subsequent read receives H50.
+        initial = self.interaction_projection(horizon.to(torch.float32).mean(dim=1).to(horizon.dtype))
         return (
             text_queries,
-            self._collect_frame_rows(evidence_rows, text_queries,
-                                     (maximum_task_tokens, self.program_width), frames.shape[0], frame_parallel_group),
-            self._collect_frame_rows(interaction_rows, text_queries,
-                                     (self.program_width,), frames.shape[0], frame_parallel_group),
+            evidence,
+            initial,
+            horizon,
             valid_task_tokens,
         )

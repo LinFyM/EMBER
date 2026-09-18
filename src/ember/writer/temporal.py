@@ -1,4 +1,4 @@
-"""A-matched language Core, frame-set Procedure, and normalized LoRA fusion."""
+"""Language Core, ordered content attention, and normalized Core/P fusion."""
 
 from __future__ import annotations
 
@@ -149,13 +149,12 @@ class TokenAlignedFrameSetAttention(torch.nn.Module):
 class RoPEContentBlock(torch.nn.Module):
     """Pre-norm content Transformer with position RoPE only in Q/K."""
 
-    def __init__(self, *, width: int, heads: int, causal: bool, rotary: bool = True) -> None:
+    def __init__(self, *, width: int, heads: int, causal: bool) -> None:
         super().__init__()
         if min(width, heads) <= 0 or width % heads or (width // heads) % 2:
             raise VariableEpisodeInputError("invalid content Transformer dimensions")
         self.heads = int(heads)
         self.causal = bool(causal)
-        self.rotary = bool(rotary)
         self.attention_norm = RMSNorm(width)
         self.query = torch.nn.Linear(width, width, bias=False)
         self.key = torch.nn.Linear(width, width, bias=False)
@@ -185,8 +184,7 @@ class RoPEContentBlock(torch.nn.Module):
         normalized = self.attention_norm(content)
         query = _split_heads(self.query(normalized), self.heads)
         key = _split_heads(self.key(normalized), self.heads)
-        if self.rotary:
-            query, key = _apply_rope(query, positions), _apply_rope(key, positions)
+        query, key = _apply_rope(query, positions), _apply_rope(key, positions)
         value = _split_heads(self.value(content), self.heads)
         allowed = valid_mask[:, None, None, :]
         if self.causal:
@@ -258,46 +256,24 @@ class LanguageSemanticCore(torch.nn.Module):
         return content, weights
 
 
-class FrameSetProcedureEncoder(torch.nn.Module):
-    """Keep all A response content without video positions or causal masking."""
-
-    def __init__(self, *, width: int, heads: int, blocks: int) -> None:
-        super().__init__()
-        if blocks <= 0:
-            raise VariableEpisodeInputError("invalid frame-set Procedure encoder")
-        self.blocks = torch.nn.ModuleList(
-            RoPEContentBlock(width=width, heads=heads, causal=False, rotary=False)
-            for _ in range(blocks)
-        )
-
-    def forward(
-        self,
-        content: torch.Tensor,
-        positions: torch.Tensor,
-        valid_mask: torch.Tensor,
-    ) -> torch.Tensor:
-        if not bool(valid_mask[:, 0].all()):
-            raise VariableEpisodeInputError("Procedure must contain a valid first frame")
-        value = content.masked_fill(~valid_mask[..., None], 0.0)
-        for block in self.blocks:
-            value = block(value, positions, valid_mask)
-        return value.masked_fill(~valid_mask[..., None], 0.0)
-
-
 class ContentCrossAttention(torch.nn.Module):
     """Cross-attend while routing/position affect only Q/K, never content V."""
 
-    def __init__(self, *, width: int, heads: int, rotary_keys: bool) -> None:
+    def __init__(
+        self, *, width: int, heads: int, rotary_keys: bool,
+        memory_width: int | None = None,
+    ) -> None:
         super().__init__()
-        if min(width, heads) <= 0 or width % heads:
+        memory_width = width if memory_width is None else memory_width
+        if min(width, heads, memory_width) <= 0 or width % heads:
             raise VariableEpisodeInputError("invalid content cross-attention")
         if rotary_keys and (width // heads) % 2:
             raise VariableEpisodeInputError("rotary cross-attention head is odd")
         self.heads = int(heads)
         self.rotary_keys = bool(rotary_keys)
         self.query = torch.nn.Linear(width, width, bias=False)
-        self.key = torch.nn.Linear(width, width, bias=False)
-        self.value = torch.nn.Linear(width, width, bias=False)
+        self.key = torch.nn.Linear(memory_width, width, bias=False)
+        self.value = torch.nn.Linear(memory_width, width, bias=False)
         self.output = torch.nn.Linear(width, width, bias=False)
 
     def forward(
@@ -313,7 +289,8 @@ class ContentCrossAttention(torch.nn.Module):
             or memory_key.ndim != 3
             or memory_value.shape != memory_key.shape
             or query_key.shape[0] != memory_key.shape[0]
-            or query_key.shape[-1] != memory_key.shape[-1]
+            or query_key.shape[-1] != self.query.in_features
+            or memory_key.shape[-1] != self.key.in_features
             or valid_memory.shape != memory_key.shape[:2]
             or valid_memory.dtype != torch.bool
         ):
@@ -369,13 +346,13 @@ class CoreSlotReader(torch.nn.Module):
 
 
 class ProcedureSlotReader(torch.nn.Module):
-    """Read centered frame-set content with the original Core-conditioned query."""
+    """Read centered ordered Procedure with the original Core-conditioned query."""
 
     def __init__(self, *, width: int, heads: int) -> None:
         super().__init__()
         self.core_norm = RMSNorm(width)
         self.memory_norm = RMSNorm(width)
-        self.attention = ContentCrossAttention(width=width, heads=heads, rotary_keys=False)
+        self.attention = ContentCrossAttention(width=width, heads=heads, rotary_keys=True)
 
     def forward(
         self,
@@ -395,6 +372,7 @@ class ProcedureSlotReader(torch.nn.Module):
             self.memory_norm(procedure),
             centered,
             valid_procedure,
+            positions,
         )
         return slots, normalized_core, centered
 

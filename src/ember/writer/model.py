@@ -1,4 +1,4 @@
-"""A-matched Core and frame-set Procedure PI05 Writer."""
+"""Language Core and recurrent video-teaching Procedure PI05 Writer."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from typing import Mapping
 import torch
 
 from ember.writer.errors import WriterModelError
+from ember.writer.procedure import RecurrentProcedureEncoder
 from ember.writer.temporal import (
-    FrameSetProcedureEncoder,
     LanguageSemanticCore,
     SlotNormalizedCoreProcedureCompiler,
 )
@@ -179,7 +179,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         initialization_seed: int,
         activation_checkpointing: bool,
         camera_view: str = "agentview",
-        horizon_read: str = "fixed_mean",
+        horizon_read: str = "repeated_full",
     ) -> None:
         super().__init__()
         if (
@@ -201,7 +201,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             or semantic_core_blocks != 2
             or abs(float(frame_attention_initial_lambda) - 0.05) > 1e-12
             or procedure_heads != 8
-            or procedure_blocks != 2
+            or procedure_blocks <= 0
             or fusion_heads != 8
             or factor_hidden_width != 216
         ):
@@ -233,10 +233,12 @@ class CompleteLoRAWriter(torch.nn.Module):
             blocks=semantic_core_blocks,
             frame_attention_initial_lambda=frame_attention_initial_lambda,
         )
-        self.procedure = FrameSetProcedureEncoder(
+        self.procedure = RecurrentProcedureEncoder(
             width=program_width,
+            expert_width=expert_width,
             heads=procedure_heads,
             blocks=procedure_blocks,
+            action_horizon=action_horizon,
         )
         self.compiler = SlotNormalizedCoreProcedureCompiler(
             width=program_width,
@@ -321,9 +323,10 @@ class CompleteLoRAWriter(torch.nn.Module):
         self,
         frame_evidence: torch.Tensor,
         interactions: torch.Tensor,
+        horizon: torch.Tensor,
         frame_indices: torch.Tensor,
         offsets: tuple[int, ...],
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         batch = len(offsets) - 1
         lengths = tuple(right - left for left, right in zip(offsets, offsets[1:]))
         maximum = max(lengths)
@@ -338,6 +341,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             maximum,
             self.program_width,
         )
+        packed_horizon = horizon.new_zeros(batch, maximum, *horizon.shape[1:])
         positions = torch.zeros(
             batch,
             maximum,
@@ -362,10 +366,11 @@ class CompleteLoRAWriter(torch.nn.Module):
                 )
             packed_evidence[row, :length] = frame_evidence[left:right]
             packed_interactions[row, :length] = interactions[left:right]
+            packed_horizon[row, :length] = horizon[left:right]
             # Retain the original raw-frame clock, including a shorter final stride.
             positions[row, :length] = active_positions
             valid_frames[row, :length] = True
-        return packed_evidence, packed_interactions, positions, valid_frames
+        return packed_evidence, packed_interactions, packed_horizon, positions, valid_frames
 
     def encode_task(
         self,
@@ -416,6 +421,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             text_queries,
             frame_evidence,
             interactions,
+            horizon,
             valid_task_tokens,
         ) = self.semantic_encoder(
             policy,
@@ -429,11 +435,13 @@ class CompleteLoRAWriter(torch.nn.Module):
         (
             packed_evidence,
             packed_interactions,
+            packed_horizon,
             positions,
             valid_frames,
         ) = self._pack_video_program(
             frame_evidence,
             interactions,
+            horizon,
             frame_indices,
             offsets,
         )
@@ -445,8 +453,11 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         procedure_memory = self.procedure(
             packed_interactions,
+            packed_horizon,
+            packed_evidence,
             positions,
             valid_frames,
+            valid_task_tokens,
         )
         return (
             core_memory,

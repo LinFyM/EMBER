@@ -1,5 +1,13 @@
 # EMBER research history
 
+2026-09-18按Owner同意完成固定A900的Core／Procedure四格交叉诊断：新增384条train闭环、168条功能记录，复用288条对角线。
+CC58、CW34／35、WC56／56、WW38／38，各96；固定其他Core仅换正确P均净增18，两个task-cluster95%CI均为正。
+从完整正确换Core保留51／48、丢失7／10、新增5／8；交互+6.25／+5.208pp、区间跨零，未见强同视频配套必要性。
+剔除donor自身task仍保持P正增量；三组FM对角线与前轮逐task一致。结果支持P携带主要视频差异且原融合可消费，
+不证明Core可删、真实顺序理解、未见task迁移或fresh改造收益；没有选择新架构／恢复训练。
+所有21workers exit0、96jobs／384新rows通过，闭环514.90秒；无更新、held动作、Test或模型选择。
+原件见findings§119与`runs/analysis/v52_core_procedure_cross_20260918/report.md`，基线见前次机制诊断。
+
 2026-09-18按Owner新的约130–140接受标准及快速诊断授权，完成固定A900/SFT450的机制检查；没有新训练或恢复旧run。
 预注册train24×10臂、每task32固定query，以及每臂init32–35的96次闭环，合计240条功能记录、960条新rollout。
 正确A58→关闭Procedure34，R/G/L27/7/31、差值−25pp、95%CI[−40.625,−9.375]pp；breadth21→15。

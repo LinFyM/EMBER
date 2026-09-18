@@ -2364,3 +2364,50 @@ wrong→correct R/G/L92/48/24，净+6pp、CI[.5,12]pp，保留真实视频依赖
 240条功能记录、240个shards/960 rows和全部21个worker退出通过；闭环原引擎六卡18workers约1424.64秒。
 完整逐task/suite、R/G/L/churn/Jaccard、配对区间、合同及限制见
 `runs/analysis/v52_mechanism_audit_20260918/{report.md,functional_summary.json,closed_loop_summary.json,historical_sft_comparison.json,completion.json}`。
+
+## 119. 正确视频增量随Procedure跨Core保留，同视频配套不是主要能力的必要条件（2026-09-18）
+
+Owner同意四格交叉冻结诊断。固定A900／aligned raw1000、target language、teacher46及train24的init32–35，
+两条donor仍为task0／39的demo46。encode_task后交换Core memory/token mask与P memory/真实positions/frame mask；
+重新计算原Core条件化P读取、AdaLN、postfusion与全部A/B，未混合最终LoRA或改变权重。
+新增四臂384条闭环，复用§118三条对角线288行；168条功能记录中三条对角线逐task FM重放差值均为0。
+所有任务内query/action位置、state、language、env与policy RNG配对通过；无训练、held动作、Test或模型选择。
+
+| 条件（各96） | donor0 | donor39 |
+| --- | ---: | ---: |
+| 正确Core＋正确P（CC，共享既有参照） | 58 | 58 |
+| 正确Core＋donor P（CW） | 34 | 35 |
+| donor Core＋正确P（WC） | 56 | 56 |
+| donor Core＋donor P（WW） | 38 | 38 |
+
+固定正确Core，换入正确P为34→58／35→58，R/G/L31/27/3与29/29/6；
+差值+25／+23.958pp，task-cluster95%CI[12.5,37.5]／[9.375,38.542]pp。
+固定donor Core，换入正确P均38→56，R/G/L32/24/6与29/27/9；
+差值+18.75pp，CI[7.292,30.208]／[4.167,34.375]pp。
+因此正确P携带的行为增量能在另一条视频的Core下发挥，不要求同视频Core才能恢复大部分能力。
+这仍使用目标task自己的正确P，不是跨task迁移实验。
+
+从CC换到WC，两组保留51／48个成功，丢失7／10、新增5／8，净少2；
+churn12／18、Jaccard.810／.727。WC→CC差值+2.083pp的CI均跨零，但不据此宣称等价或Core无用。
+CC−CW−WC＋WW交互+6.25／+5.208pp，CI[−1.042,13.542]／[−5.208,15.625]，没有明确强配套效应。
+WC的S/O/G/L为16/18/14/8与15/19/14/8，breadth21／20；CC为17/19/15/7、breadth21。
+CW的S/O/G/L为9/11/8/6与10/13/4/8，breadth均17；完整逐task统计保留在报告。
+
+donor自身task属于恒等输入例外，全部新增恒等条件逐state success与既有CC一致。
+剔除自身task后，donor0的CC/CW/WC/WW为55/31/53/35、donor39为58/35/56/38，各92；
+两个P条件收益区间仍为正，Core条件收益区间仍跨零，结论不依赖同视频例外。
+
+FM的CC/CW/WC/WW分别.107362545/.119309240/.107362669/.119416467（donor0），
+以及.107362545/.122011357/.107556256/.122609594（donor39）。功能方向与闭环一致，损失幅度不能当成功贡献比例。
+查询仍为每task32个、episodes47–49、flow seed20260918，与teacher46分离。
+
+该结果进一步支持原P通路及融合已经能传递有益视频差异，当前不支持把晚入口或同视频配套作为优先重构理由。
+Core还提供内容及P查询；其视频来源在两组干预中可替换，不证明Core可删或纯语言化。
+语言同时影响Core/P，P也可能含多状态／静态语义；没有单独证明真实顺序关系、未见任务泛化或fresh改造收益。
+混合memory可能分布外；两个固定donor不代表所有视频，所有新结果只属train24有限面板，不是validation400。
+本轮没有识别新统一图的唯一退化原因或指定新架构；后续问题收窄到已有P的视频内容及其迁移，保留已验证功能。
+
+原runtime来自clean pushed detached575c189a；三个生成worker约194.8秒、allocated峰值9.956GiB，
+18个闭环worker完成96jobs／384新rows，首claim至末完成514.90秒，allocated峰值9.338GiB。
+全部21workers exit0、无活动进程；干净临时runtime移除，原Git／脚本／96适配器及raw rows保留，新增约477MiB。
+原件：`runs/analysis/v52_core_procedure_cross_20260918/{registration.json,report.md,functional_summary.json,closed_loop_summary.json,completion.json}`。

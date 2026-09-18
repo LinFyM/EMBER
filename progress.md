@@ -1,14 +1,20 @@
 # EMBER progress
 
-## 当前状态（2026-09-18，Core／Procedure交叉诊断）
+## 当前状态（2026-09-18，Core／Procedure交叉诊断完成）
 
-Owner同意执行讨论中的四格交叉实验。固定已有A900，保留目标language及原有train24×init32–35面板，
-两条固定donor仍为task0／39的demo46；在encode_task之后交换完整Core与Procedure memory，
-Procedure携带自身真实frame positions／mask，原Core条件查询、AdaLN、postfusion与全A/B heads重新计算。
-新增四臂共384次闭环；完整正确与两组完整donor的三条对角线复用上一轮原件，FM对角线重新计算校验接口。
-先登记合同再执行，无训练、held动作、Test或checkpoint选择。这是冻结诊断，不是active新架构或恢复旧训练。
-原件：[交叉诊断预注册](runs/analysis/v52_core_procedure_cross_20260918/registration.json)。
-诊断区分正确过程的可迁移功能与同视频Core/P配合；混合memory可能分布外，不能直接推导fresh改造收益。
+Owner同意的四格交叉实验已完成，无active design、训练或待自动执行的实验。
+固定A900、目标language、teacher46与train24×init32–35；新增四臂384条闭环，复用既有三条对角线288行。
+完整正确58/96；正确Core＋其他P为34／35；其他Core＋正确P均56；完整固定视频均38。
+固定其他Core只换入正确P，均净增18，95%CI[7.292,30.208]／[4.167,34.375]pp；剔除donor自身task后仍为正。
+从完整正确换Core保留51／48、丢失7／10、新增5／8，净少2；不是完全等价，但大部分已有能力保持。
+Core/P成功率交互+6.25／+5.208pp，区间均含零，不支持强同视频配套是当前总体能力必要条件。
+正确视频的主要增量随P记忆带入，原融合能够消费；不证明Core可删、P已理解顺序或跨未见任务迁移。
+没有识别fresh改造的唯一瓶颈，也未选择新架构；优先保留已验证分工，将后续问题收窄到P的视频内容与迁移。
+
+168条功能记录中三组对角线逐task损失与前轮重放差值均为0，query／RNG及全部672行配对检查通过。
+三个生成与18个闭环workers全部exit0、无活动进程；96jobs全部完成，首claim至末完成514.90秒。
+无更新、held动作、Test、RL或checkpoint选择。详见[报告](runs/analysis/v52_core_procedure_cross_20260918/report.md)、
+findings§119及study的completion.json；干净临时575c189a runtime清理，Git、脚本、适配器与raw rows保留。
 
 ## 已完成状态（2026-09-18，v5.2冻结机制诊断完成）
 

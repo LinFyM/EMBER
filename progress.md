@@ -10,7 +10,7 @@ Active design为[匹配合同](docs/learned_frameset_reference_design.md)，专�
 预注册新参照同1200更新、4800条件/100800queries，节点300/600/900/1200，主解释900+1200相邻证据。
 已完成实现、CPU合同检查、105帧最长视频profile与三卡6更新/第4步完整恢复。
 三路Meta真实信用通过，4800事件与A全字段一致；约12–14秒/更新、峰值20.65GiB。
-profile权重丢弃；正式fresh已从clean pushed detached `a9d8614964abfcddef40eb82f2862623f587ffa6` 启动，当前已从600完整恢复至第三段600→900。
+profile权重丢弃；正式fresh已从clean pushed detached `a9d8614964abfcddef40eb82f2862623f587ffa6` 启动，当前已从900完整恢复至最后一段900→1200。
 资源为gpu02三卡，固定全窗口1200；driver顺序执行四节点及各correct400/train96。
 已完成节点如下；每格均为single checkpoint、固定state-video配对，比较合同检查通过。
 
@@ -18,10 +18,12 @@ profile权重丢弃；正式fresh已从clean pushed detached `a9d8614964abfcddef
 | ---: | ---: | ---: | ---: | ---: |
 | 300 | 79 | 99 | 33 | 36 |
 | 600 | 109 | 88 | 40 | 47 |
+| 900 | 142 | 140 | 49 | 54 |
 
-validation的A→set：300为R/G/L=54/25/45、600为54/55/34；两点set breadth均5。
-对应task-cluster差值95%CI为[-12.50,+1.25]与[-4.00,+16.50]百分点。早期优势方向交叉，不能选单点裁决或宣称等价。
-900/1200仍为预注册主解释节点；局部结果不改变窗口、方法或seed。
+validation的A→set：300为R/G/L=54/25/45；600为54/55/34；900为102/40/38。
+第900步A→set breadth6→7，suite Spatial17→14、Object60→61、Goal30→38、Long33→29；四suite均非零。
+900的task-cluster差值95%CI为[-4.00,+5.75]百分点。当前总分接近但不是等价证明，须完成1200相邻证据。
+Owner随后再次明确“到1200就停，没必要再往后”；严格以1200为训练终点，完成该点评测、分析和推送，不续训。
 本地study：`runs/analysis/a_learned_frameset_20260918/`；launch、profile、严格匹配事件和逐段log均在其中。
 study使用data0，整个窗口新增峰值预算20GiB；独立user quota与共享容量已在formal launch前复核。
 唯一干预移除视频RoPE、因果mask及读取时间寻址；为此匹配A的agentview/fixed-mean H历史口径，不改变未来新架构的长期接口原则。

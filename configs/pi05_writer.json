@@ -230,8 +230,18 @@
       "unit": "task_cluster"
     },
     "profile_registration": {
-      "status": "pending",
-      "scope": "real A-matched native read, complete joint FM and exact-resume; select physical topology before formal launch"
+      "status": "complete",
+      "world_size": 3,
+      "reference": "docs/review_materials/20260918/profile_summary.json",
+      "native_frame_chunk": 8,
+      "policy_microbatches": [
+        8,
+        8,
+        8
+      ],
+      "formal_initialization": "fresh; profile weights never reused",
+      "event_equivalence": "all4800 A events identical",
+      "topology_reason": "three eligible useful GPUs; keep same logical84 and original12k scheduler"
     },
     "protocol_migrations": [
       "A historical agentview and fixed-mean H retained for matched diagnostic only",

@@ -8,7 +8,9 @@ Active design为[匹配合同](docs/learned_frameset_reference_design.md)，专�
 
 已核对A原run contract、575c189a源码及四节点原始结果：correct300/600/900/1200为99/88/140/135，train36/47/54/62。
 预注册新参照同1200更新、4800条件/100800queries，节点300/600/900/1200，主解释900+1200相邻证据。
-已完成实现与CPU合同检查；正在gpu02进行最长真实视频的可丢弃profile，尚未启动formal训练或评测。
+已完成实现、CPU合同检查、105帧最长视频profile与三卡6更新/第4步完整恢复。
+三路Meta真实信用通过，4800事件与A全字段一致；约12–14秒/更新、峰值20.65GiB。
+profile权重丢弃，下一步从clean pushed detached runtime正式fresh启动；尚无新闭环分数。
 新study计划使用data0，新增峰值预算20GiB；data0/data1独立user quota及共享容量已作规划检查，launch前刷新。
 唯一干预移除视频RoPE、因果mask及读取时间寻址；为此匹配A的agentview/fixed-mean H历史口径，不改变未来新架构的长期接口原则。
 

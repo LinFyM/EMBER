@@ -1,0 +1,46 @@
+{
+  "status": "complete",
+  "runtime_commit": "f025ff8e",
+  "world_size": 3,
+  "mode": "disposable_profile",
+  "physical_policy_microbatches": [
+    8,
+    8,
+    8
+  ],
+  "native_frame_chunk": 8,
+  "logical_conditions_per_update": 4,
+  "logical_queries_per_update": 84,
+  "optimizer_updates": 6,
+  "resume_from_update": 4,
+  "resume_completed_update": 6,
+  "fresh_formal_initialization": true,
+  "profile_weights_reused": false,
+  "longest_video_frames": 105,
+  "longest_joint_seconds": [
+    17.888166999444366,
+    17.18608671054244,
+    17.19409123621881
+  ],
+  "source_trainable_parameters": 0,
+  "all_meta_credit": true,
+  "update_seconds": [
+    13.683049835264683,
+    11.77070695348084,
+    12.134744596667588,
+    12.400412579067051,
+    13.983682828955352,
+    12.473172515630722
+  ],
+  "mean_update_seconds": 12.74096155151104,
+  "peak_allocated_gib": 20.643603801727295,
+  "peak_reserved_gib": 21.708984375,
+  "event_plan": {
+    "matched_A_events": 4800,
+    "all_event_fields_equal": true,
+    "supervised_queries": 100800
+  },
+  "selection_reason": "three eligible low-utilization devices; measured original chunk8/microbatch8 fits with substantial headroom; no need to wait for six cards",
+  "verification": "215 distinct CPU tests across targeted invocations; two stale camera-negative fixtures corrected and rerun; nonzero complete-LoRA permutation invariance and native Gloo sharding gradients included",
+  "scope": "mechanism and execution only; no scientific performance claim"
+}

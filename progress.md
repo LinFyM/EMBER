@@ -10,11 +10,18 @@ Active design为[匹配合同](docs/learned_frameset_reference_design.md)，专�
 预注册新参照同1200更新、4800条件/100800queries，节点300/600/900/1200，主解释900+1200相邻证据。
 已完成实现、CPU合同检查、105帧最长视频profile与三卡6更新/第4步完整恢复。
 三路Meta真实信用通过，4800事件与A全字段一致；约12–14秒/更新、峰值20.65GiB。
-profile权重丢弃；正式fresh已从clean pushed detached `a9d8614964abfcddef40eb82f2862623f587ffa6` 启动，当前已从300完整恢复至第二段300→600。
+profile权重丢弃；正式fresh已从clean pushed detached `a9d8614964abfcddef40eb82f2862623f587ffa6` 启动，当前已从600完整恢复至第三段600→900。
 资源为gpu02三卡，固定全窗口1200；driver顺序执行四节点及各correct400/train96。
-第300步已完成：validation79/400（A99），train33/96（A36）；配对合同检查通过。
-validation的A→set R/G/L=54/25/45，breadth5→5，task-cluster差值95%CI为[-12.50,+1.25]百分点。
-这是早期获取节点，不据此选择checkpoint或裁决顺序贡献；900/1200仍为主解释节点。
+已完成节点如下；每格均为single checkpoint、固定state-video配对，比较合同检查通过。
+
+| 更新 | frame-set validation /400 | A /400 | frame-set train /96 | A /96 |
+| ---: | ---: | ---: | ---: | ---: |
+| 300 | 79 | 99 | 33 | 36 |
+| 600 | 109 | 88 | 40 | 47 |
+
+validation的A→set：300为R/G/L=54/25/45、600为54/55/34；两点set breadth均5。
+对应task-cluster差值95%CI为[-12.50,+1.25]与[-4.00,+16.50]百分点。早期优势方向交叉，不能选单点裁决或宣称等价。
+900/1200仍为预注册主解释节点；局部结果不改变窗口、方法或seed。
 本地study：`runs/analysis/a_learned_frameset_20260918/`；launch、profile、严格匹配事件和逐段log均在其中。
 study使用data0，整个窗口新增峰值预算20GiB；独立user quota与共享容量已在formal launch前复核。
 唯一干预移除视频RoPE、因果mask及读取时间寻址；为此匹配A的agentview/fixed-mean H历史口径，不改变未来新架构的长期接口原则。

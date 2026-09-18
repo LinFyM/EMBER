@@ -48,7 +48,8 @@ task ID与文件名均不进入模型。执行policy读取机器人自身观测/
 
 Text Meta只处理exact language，形成对齐的任务查询。VL Meta在真实双视角native prefix上提供任务上下文与图像位置内容；
 Core的Value来自这些真实视频内容。它允许共享的对象、关系和任务语义支撑动作，不能因为后继窄出口失败而删除这条已存在能力的路径。
-语言决定关注位置，却没有独立Value出口直接生成有效LoRA。
+Text-only分支在读取处提供Query，没有独立的裸语言Value出口；但原生图文task-span和patch hidden已经接受语言条件化，
+前者还直接进入Core内容。这不保证视频不可替代，必须区分目标语言条件化参数、静态视觉上下文与正确教学的额外行为价值。
 
 Action Meta通过相同真实prefix和一个对全部任务共用的固定50×32 Gaussian probe读取原生Action Expert。
 这里的H是条件化动作计算响应，不是从视频恢复的teacher action，也不是待执行的动作标签。完整50个位置保留到实际learned read：
@@ -80,8 +81,9 @@ Text/VL/Action Meta、Core、Procedure和完整A/B heads的信用均来自同一
 
 ## 怎样判断
 
-首先看正确视频的single-checkpoint strict paired400绝对能力，长期正式资格为严格>145/400及相邻稳定、
-低churn、高breadth、四suite贡献和Goal/Long能力；训练loss或较低参数漂移不替代闭环。
+首先看正确视频的single-checkpoint strict paired400绝对能力；接受标准以Owner最新要求为准，当前接受约130–140及更可信的视频特异性。
+继续检查相邻能力、成功集合保持、breadth、四suite及Goal/Long贡献，允许少量正常churn；历史严格>145合同只约束对应封存实验。
+训练loss或较低参数漂移不替代闭环。
 正式验证每task每轮全50条teacher各一次，state–video与policy RNG跨节点固定；train96是另一个明确登记的独立视频有限面板。
 
 有能力及相邻证据后验证same-task换视频，再冻结单checkpoint做最终wrong／no-video／shuffled／reversed controls。

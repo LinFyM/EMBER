@@ -1,12 +1,22 @@
 # EMBER progress
 
-## 当前状态（2026-09-18，v5.2机制与SFT差距诊断）
+## 当前状态（2026-09-18，v5.2冻结机制诊断完成）
 
 Owner更新接受标准为约130–140能力及更好的视频特异性，接受小幅正常churn，并明确授权快速、有判别力的原因实验。
-当前没有新架构或训练run；active诊断为[冻结A900机制检查](runs/analysis/v52_mechanism_audit_20260918/registration.json)。
-只使用train24的合法视频及动作、既有checkpoint；固定真实视频区分目标语言条件化参数与同一公共LoRA，
-并检查旧Procedure调制的实际功能贡献。无参数更新、held-action读取、Test或checkpoint选择。
-SFT/Writer既有400行比较和训练合同正在只读复核；新功能面板已经登记，尚未产生结果。
+本轮[报告](runs/analysis/v52_mechanism_audit_20260918/report.md)已完成；没有active design、训练或待自动执行的实验。
+固定A900、SFT450，完成train24的240条功能记录及10臂×24任务×4初态的960条闭环；全部21个workers正常退出。
+新面板使用teacher46及初态32–35，teacher在四初态复用；不等于旧train96映射或正式validation400。
+
+完整正确A58/96，关闭Procedure调制34，R/G/L27/7/31，差值−25pp、95%CI[−40.625,−9.375]pp。
+固定视频0/39并保留目标语言各38；固定同一LoRA仅13/10；Source12、SFT450为47。
+关闭Procedure后，正确/固定0/固定39为34/33/38；两组配对交互为+19.792/+25pp且区间不含零。
+旧过程路径有直接闭环贡献，正确视频增量主要经该路径；这不证明顺序理解，也不等于fresh删模块的训练结果。
+语言条件参数确有能力作用；当前SFT不是理论上界，错误视频Writer也没有在本新面板普遍超过SFT。
+
+既有400行复核保留A correct140/wrong116及SFT85/89/86；wrong净优势主要集中task3/31，不能概括为全面更强的公共LoRA。
+新证据没有唯一定位统一图少31/68分的内部原因，没有证明“晚期时序入口”是实际瓶颈。
+原执行器和动态队列复用，闭环约23.7分钟；参数更新、held-action读取、Test与checkpoint选择均为零。
+原件、逐task/suite、breadth、配对R/G/L/churn和区间见报告；跨轮结论见findings§118。
 统一Writer原goal已经结束，以下为已完成实验的记录，不恢复其训练或评测。
 
 ## 已完成状态（2026-09-18，统一Writer整套实验结束）

@@ -1,5 +1,17 @@
 # EMBER research history
 
+2026-09-18按Owner新的约130–140接受标准及快速诊断授权，完成固定A900/SFT450的机制检查；没有新训练或恢复旧run。
+预注册train24×10臂、每task32固定query，以及每臂init32–35的96次闭环，合计240条功能记录、960条新rollout。
+正确A58→关闭Procedure34，R/G/L27/7/31、差值−25pp、95%CI[−40.625,−9.375]pp；breadth21→15。
+固定真实视频0/39＋目标语言为38/38，固定同一LoRA13/10；Source12、SFT47。
+关闭Procedure后三种视频为34/33/38，正确video相对固定video的Procedure收益交互+19.792/+25pp，区间均为正。
+旧P/AdaLN有直接行为贡献，主要正确视频增量经此路径；不等于顺序理解、fresh删除效果或“晚入口”瓶颈证明。
+既有五组400行复核保留A140/wrong116与SFT85/89/86；wrong优势主要集中task3/31，不是全面稳健公共LoRA优势。
+模型接近参数量但条件化、数据池、task共现与优化时钟不同；SFT不是理论上界，新固定视频train96也没有胜过SFT。
+新面板teacher46在四初态复用，与旧train96映射及validation400分开；无held动作、Test、参数更新或checkpoint选择。
+原引擎和clean575c189a复用，全部21workers正常退出，闭环1424.64秒。原件和解释见findings§118与
+`runs/analysis/v52_mechanism_audit_20260918/report.md`。统一图退化的唯一内部原因仍未定位，本次未选择后续架构。
+
 2026-09-18统一Writer整套实验在1500按预注册停止条款结束，作有界non-pass，不采纳本次改造。
 完整correct600/900/1200/1500为90/109/67/84，各400；train38/54/54/52，各96。
 1500 S/O/G/L为3/18/33/30与19/13/15/5，breadth5/8与19/24；相邻validation R/G/L43/41/24、churn65、J=.398，

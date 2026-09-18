@@ -2317,3 +2317,50 @@ Train相邻54→52、R/G/L41/11/13、churn24、Jaccard .6308，breadth20→19；
 `training/{checkpoints,materialized,evaluation}`与`step600_execution.json`。600评测用五卡×三workers；
 避开p2当时升高的其他任务负载，不改变训练的六卡拓扑或配对条件。一次物化设备参数格式错误在CLI解析时退出，
 改为`cuda:N`后496条件fresh物化成功，原失败及完成记录均保留。
+
+## 118. A900的过程路径确有行为贡献，语言条件参数不能等同于公共SFT（2026-09-18）
+
+Owner接受约130–140及更可信的视频特异性，允许小幅正常churn，并授权快速原因实验。
+固定A900、SFT450与同一aligned raw1000 source，在预注册train24上完成10臂功能和闭环；无新训练、held动作或Test。
+新闭环每臂96条，init32–35、teacher46复用四初态；不同于旧A train96视频映射，也不是validation400。
+两条固定真实视频为预定Spatial0/Long9的demo46，不按结果选优；在其自身任务上不是错视频。
+
+| 条件 | 成功/96 | Breadth/24 | S/O/G/L（各24） |
+| --- | ---: | ---: | --- |
+| 正确A | 58 | 21 | 17/19/15/7 |
+| 正确A关闭Procedure→AdaLN | 34 | 15 | 11/10/6/7 |
+| 固定视频0＋目标语言 | 38 | 19 | 9/12/10/7 |
+| 固定视频39＋目标语言 | 38 | 16 | 11/11/8/8 |
+| 固定同一LoRA0／39 | 13／10 | 7／5 | 9/0/4/0；1/1/6/2 |
+| Source／SFT450 | 12／47 | 7／18 | 2/1/6/3；14/11/15/7 |
+
+关闭Procedure只将同次编译的gamma/beta置零，其余Core、heads和权重不变；正确58→34的R/G/L27/7/31，
+净−25pp、task-cluster95%CI[−40.625,−9.375]pp，说明旧路径对当前执行有实际贡献。
+它不能证明fresh删除后必然较差，也不把模块名“Procedure”当作已经学会顺序关系的证据。
+完整正确/固定0/固定39为58/38/38，关闭Procedure后为34/33/38；正确video的Procedure收益减固定video的收益，
+两组配对交互+19.792/+25pp，CI[3.125,38.542]/[6.25,44.792]pp。
+因此本面板正确视频的主要增量经旧P/AdaLN表达；旧Core晚期接时序的结构事实仍未被证明是实际容量瓶颈。
+
+固定RGB时保留Writer目标语言，相对固定LoRA分别13→38、10→38，R/G/L11/27/2与6/32/4，两个区间均为正；
+执行policy在所有臂都保持正确目标语言，故这一差额定位到参数生成条件化。
+575c189a源码中Core evidence含native图文task-span及patch hidden，二者均接受语言条件化；外部text-only只作Q不保证视频不可替代。
+这解释“同数据／近参数量的SFT不是Writer上界”，不证明两个函数族的严格包含，也不把两条donor LoRA当最优共享适配器。
+
+功能面板768次固定动作queries×10臂，正确FM.107363→关闭P.116807，24/24任务均变差；
+固定video完整为.119416/.122610，关闭P后.116873/.117521，正确关闭P为.116807。
+SFT的.101378更低但闭环47低于58，且train96差值区间含零；FM不能代替行为。
+queries来自episodes47–49，Writer未训练而SFT见过；这项不对称保留。
+SFT与A任务ID/source/38targets一致，但A4×21、SFT24×24、更新次数与LR阶段不同。
+A登记参数10,238,778含三Meta和1074个冻结horizon参数，可训练10,237,704；SFT10,297,344。
+SFT450条metrics与声明LR吻合，没有发现缩水batch、错误schedule或rank不符；其训练闭环只新增450单点，不能唯一判断过拟合。
+
+既有validation400重新核对correct140/wrong116、SFT400/425/450为85/89/86。
+wrong净多31/27/30，task3/31贡献31/29/24；还丢失28/23/28个SFT成功，两个比较区间跨零。
+wrong→correct R/G/L92/48/24，净+6pp、CI[.5,12]pp，保留真实视频依赖；不等于时序必要性或相邻稳定。
+新固定video在train96为38/38，低于SFT47，故“任意错误视频都胜SFT”不成立；本轮没有直接分解验证116的全部来源。
+
+新统一图多变量改造少31/68分的唯一内部原因仍未定位；不能将本轮冻结消融扩大成所有后继失败的共同根因。
+当前支持保留已证有用的功能，并将目标聚焦于正确视频相对语言条件参数参照的可迁移增量；尚未选定新架构或新训练。
+240条功能记录、240个shards/960 rows和全部21个worker退出通过；闭环原引擎六卡18workers约1424.64秒。
+完整逐task/suite、R/G/L/churn/Jaccard、配对区间、合同及限制见
+`runs/analysis/v52_mechanism_audit_20260918/{report.md,functional_summary.json,closed_loop_summary.json,historical_sft_comparison.json,completion.json}`。

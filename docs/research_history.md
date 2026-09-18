@@ -1955,9 +1955,15 @@ R/G/L111/14/21、churn35、Jaccard .7603，breadth均6，S/O/G/L15/58/41/11；�
 aggregation_topology、reference_correct400和reference_readout；原evaluate.exit=1保持。
 临时replay入口使命结束后退役，原operator／模型冻结树与Git继续保存。本轮依Owner纠正复用这些既有结果；本条不赋予新模型旧分数。
 
-## 2026-09-18：A匹配learned frame-set诊断登记
+## 2026-09-18：A匹配learned frame-set诊断完成
 
 Owner按新专家意见授权fresh集合参照，复用A原300/600/900/1200节点，不重训A。
 专家原文和预注册合同见[评审](review_materials/20260918/expert_review.md)与[设计](learned_frameset_reference_design.md)。
 仅移除视频帧RoPE、Procedure因果mask及读取时间寻址；agentview/fixed-mean H为本轮历史匹配例外。
-本条记录为实验前登记，当前执行状态见progress，不能解释为已经获得新的性能证据。
+以上合同先于实验登记。正式版本`a9d86149`完成1200更新、4800条件与100800queries，按Owner要求1200停止。
+validation四节点set79/109/142/118，对A99/88/140/135；train33/40/49/57，对A36/47/54/62。
+900能达142，1200却未保持；set相邻丢失51、新增27，Long双物体放篮28→10。A相邻140→135，但churn79仍高。
+本轮不证明无序相邻等强，也不证明有序在两个节点全面占优；有限能力保持假设与方法边界见findings§120。
+所有面板及配对检查完成，12个完整checkpoint和正式原件保留在`runs/analysis/a_learned_frameset_20260918/`。
+[结果报告](review_materials/20260918/frameset_report.md)、[逐task/suite表](review_materials/20260918/result_tables.md)与1984对CSV/汇总/图表进入远程交付。
+本设计已封存，无active run，不从历史记录恢复训练。

@@ -2413,3 +2413,41 @@ Core还提供内容及P查询；其视频来源在两组干预中可替换，不
 18个闭环worker完成96jobs／384新rows，首claim至末完成514.90秒，allocated峰值9.338GiB。
 全部21workers exit0、无活动进程；干净临时runtime移除，原Git／脚本／96适配器及raw rows保留，新增约477MiB。
 原件：`runs/analysis/v52_core_procedure_cross_20260918/{registration.json,report.md,functional_summary.json,closed_loop_summary.json,completion.json}`。
+
+## 120. A匹配learned frame-set：可达142，但未保住相邻能力（2026-09-18）
+
+按专家意见完成唯一fresh集合参照，固定1200停止；不重训A、不并开新图、不按controls选节点。
+本轮只删除视频frame RoPE、Procedure causal mask及读取时间寻址；保留真实帧、语言/空间/horizon位置、三Meta、
+Core/P中心化与AdaLN、共享完整A/B和A的采样/优化更新语义，使用历史agentview/fixed-mean H口径。
+正式运行`a9d86149`，历史A`575c189a`；1200更新、4800条件、100800queries，12个完整checkpoint。
+所有400/96行面板完成，source/normalization、环境与policy RNG、teacher映射和全事件匹配检查通过。
+
+| 更新 | A validation /400 | frame-set /400 | A train /96 | frame-set /96 |
+| ---: | ---: | ---: | ---: | ---: |
+| 300 | 99 | 79 | 36 | 33 |
+| 600 | 88 | 109 | 47 | 40 |
+| 900 | 140 | 142 | 54 | 49 |
+| 1200 | 135 | 118 | 62 | 57 |
+
+主解释900与1200：A→set R/G/L分别102/40/38、90/28/45；churn78、73；Jaccard .567、.552；
+breadth6→7、6→5；差值任务簇95%CI为[-4.00,+5.75]、[-12.00,+1.75]百分点（8簇、20,000次、seed20260915）。
+两个节点四suite均非零，900的Spatial/Object/Goal/Long为A17/60/30/33、set14/61/38/29；
+1200为A14/55/42/24、set8/59/41/10。
+
+set900→1200为142→118、R/G/L91/27/51、churn78、Jaccard .538、breadth7→5；
+A为140→135、98/37/42、churn79、Jaccard .554、breadth6→6。总churn相近，差别是set丢失较多、补回较少。
+set的Long29→10，主要是双物体放篮28→10（保留8、新增2、丢失20），A同任务33→24（20/4/13）；
+Spatial降6、Object降2、Goal升3。train同期49→57（42/15/7）继续改善，不能把validation回落解释成全局未学习。
+开抽屉放碗set主节点均0、A0/2；开灶放壶set1/0、A0/0，尚无可靠能力支撑顺序关系判断。
+
+给定播放顺序不是该配方到达约140总分的必要输入，但单点142不证明无序参照相邻等强。
+A在1200和Long能力保持有优势，900又不支持A总体占优；结果未满足“有序稳定胜出”或“无序稳定等强”的简单二分。
+本轮允许提出旧顺序路径可能帮助特定任务保持的有限假设，未定位唯一内部机制，更不证明删除或加深时序模块会改善。
+多帧内容、物理关系及隐含过程推断仍存在；不能推导视频无用、静态图等价或语言独立充分。
+单训练seed/8验证任务、区间含零均不构成统计等价；未运行新controls/Test/RL，不升级为最终视频因果资格。
+§118–119关于旧P内容被消费的事实继续有效，本轮只补足给定播放顺序训练参照。
+
+[完整报告](docs/review_materials/20260918/frameset_report.md)、[逐任务表](docs/review_materials/20260918/result_tables.md)、
+[1984对精简CSV](docs/review_materials/20260918/paired_successes.csv)及汇总/图表已整理；原件保留在
+`runs/analysis/a_learned_frameset_20260918/`，旧A原件在`runs/analysis/source_alignment_20260915/A/`。
+本轮完成，不自动开展新实验。

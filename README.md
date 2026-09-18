@@ -3,13 +3,13 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-**当前goal：按专家意见完成A的learned frame-set匹配诊断，并推送可复核结果。**
-最新要求是约130–140的已有能力、更可信的视频特异性，以及可复制模块加深和自然扩参的合理结构；
-需综合全部相关历史证据。本轮只移除A的视频顺序处理，复用A已有结果；当前状态见[progress](progress.md)。
+**A的learned frame-set匹配诊断已完成，训练停在1200。**
+集合参照900/1200为142/118，A为140/135：能达到约140，但未证明相邻能力保持同样强。
+[完整结果与分析](docs/review_materials/20260918/frameset_report.md)包含四节点、逐任务配对与success-set保持；当前无运行中的实验或active design。
 
-本轮[active design](docs/learned_frameset_reference_design.md)恢复A的Core、Procedure、AdaLN与共享完整A/B头，
-仅将视频处理改为真实帧集合；三Meta和Writer以匹配A的跨episode FM从头共同学习。
-已结束统一Writer由Git和[封存设计](docs/v52_evidence_based_writer_design.md)保存，不是本轮另一个训练臂。
+[封存匹配设计](docs/learned_frameset_reference_design.md)保留A的Core、Procedure、AdaLN、三Meta与共享完整A/B头，
+仅移除给定视频帧序处理并fresh训练；这不是未来架构选择。长期要求仍是保留已有能力、增强可信的视频特异性与自然可扩展结构。
+已结束统一Writer由Git和[封存设计](docs/v52_evidence_based_writer_design.md)保存。状态见[progress](progress.md)。
 
 ## 阅读入口
 
@@ -24,8 +24,8 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 | [AGENTS](AGENTS.md) | 科学、数据、评测、资源与Git合同 |
 | [Findings](findings.md)／[研究历史](docs/research_history.md) | 跨轮结论，以及封存设计、专家评审与formal原件索引 |
 
-讨论时先读Owner要求和证据审计，再看[findings](findings.md)§117–119：统一Writer终局、A900机制诊断及Core/Procedure交叉。
-后两次诊断只支持其固定模型、train24有限面板上的结论，没有证明下一架构必须保留Core/P、只能改Procedure或不能整体重构。
+讨论时先读Owner要求和证据审计，再看[findings](findings.md)§117–120：统一Writer终局、A900机制诊断、Core/Procedure交叉及匹配frame-set训练。
+A900机制与Core/Procedure交叉两次冻结诊断只支持其固定模型、train24有限面板上的结论，没有证明下一架构必须保留Core/P、只能改Procedure或不能整体重构。
 旧实验与咨询均从研究历史按问题追溯；历史中的“当前／下一步”不构成执行授权。
 
 ## 代码所有权与运行入口

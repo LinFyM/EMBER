@@ -1,35 +1,30 @@
 # EMBER progress
 
-## 当前状态（2026-09-18，A的learned frame-set参照goal已启动）
+## 当前状态（2026-09-18，A learned frame-set诊断已完成）
 
-Owner提供专家意见，明确要求设置goal，完成专家要求的工作并把相关结果推送远程。
-本范围替代此前暂停：只fresh训练与既有强A匹配的无序集合参照，不重训A、不并开新架构。
-Active design为[匹配合同](docs/learned_frameset_reference_design.md)，专家原文保存在[评审材料](docs/review_materials/20260918/expert_review.md)。
-
-已核对A原run contract、575c189a源码及四节点原始结果：correct300/600/900/1200为99/88/140/135，train36/47/54/62。
-预注册新参照同1200更新、4800条件/100800queries，节点300/600/900/1200，主解释900+1200相邻证据。
-已完成实现、CPU合同检查、105帧最长视频profile与三卡6更新/第4步完整恢复。
-三路Meta真实信用通过，4800事件与A全字段一致；约12–14秒/更新、峰值20.65GiB。
-profile权重丢弃；正式fresh已从clean pushed detached `a9d8614964abfcddef40eb82f2862623f587ffa6` 启动，当前已从900完整恢复至最后一段900→1200。
-资源为gpu02三卡，固定全窗口1200；driver顺序执行四节点及各correct400/train96。
-已完成节点如下；每格均为single checkpoint、固定state-video配对，比较合同检查通过。
+Owner授权的唯一匹配诊断已完成1200更新、四节点strict paired400及train96；训练严格停在1200。
+所有worker和driver正常退出；无运行中的训练/评测，无待自动启动的新实验，当前没有active design。
+[封存合同](docs/learned_frameset_reference_design.md)与[专家原文](docs/review_materials/20260918/expert_review.md)保持登记时口径；
+结果、解释和可复核精简原件见[完整报告](docs/review_materials/20260918/frameset_report.md)。
 
 | 更新 | frame-set validation /400 | A /400 | frame-set train /96 | A /96 |
 | ---: | ---: | ---: | ---: | ---: |
 | 300 | 79 | 99 | 33 | 36 |
 | 600 | 109 | 88 | 40 | 47 |
 | 900 | 142 | 140 | 49 | 54 |
+| 1200 | 118 | 135 | 57 | 62 |
 
-validation的A→set：300为R/G/L=54/25/45；600为54/55/34；900为102/40/38。
-第900步A→set breadth6→7，suite Spatial17→14、Object60→61、Goal30→38、Long33→29；四suite均非零。
-900的task-cluster差值95%CI为[-4.00,+5.75]百分点。当前总分接近但不是等价证明，须完成1200相邻证据。
-Owner随后再次明确“到1200就停，没必要再往后”；严格以1200为训练终点，完成该点评测、分析和推送，不续训。
-本地study：`runs/analysis/a_learned_frameset_20260918/`；launch、profile、严格匹配事件和逐段log均在其中。
-study使用data0，整个窗口新增峰值预算20GiB；独立user quota与共享容量已在formal launch前复核。
-唯一干预移除视频RoPE、因果mask及读取时间寻址；为此匹配A的agentview/fixed-mean H历史口径，不改变未来新架构的长期接口原则。
+集合参照900能达到142，但1200未保住该能力，不能宣称与A相邻等强，也不能说A在两个节点全面更好。
+主节点A→set R/G/L为102/40/38、90/28/45，breadth6→7、6→5；差值任务簇95%CI为[-4,+5.75]、[-12,+1.75]百分点。
+set900→1200保留91、获得27、丢失51，churn78（A79），Long29→10，主要是双物体放篮28→10。
+train49→57继续提高而validation回落；有限单seed结果不证明顺序普遍无用，也不支持立即删除或加深旧时序处理。
 
-完成标准是执行整个预注册诊断、保存证据与分析、推送main；不要求特定分数，不从最终controls选点。
-所有稳定目标和信息墙继续有效；不恢复A3000评测、C或其它已关闭实验。详细阶段见[task_plan](task_plan.md)。
+正式版本为clean pushed detached `a9d8614964abfcddef40eb82f2862623f587ffa6`，历史A为`575c189a`；
+4800条件/100800queries完成，12个完整checkpoint保留，profile权重未进入formal。
+本地canonical study：`runs/analysis/a_learned_frameset_20260918/`；远程保留1984对精简CSV、汇总、图表及报告。
+既有source/normalization、4800采样事件、逐行RNG和teacher映射均已核对；8个新面板全部完成。
+本轮仅移除视频RoPE、因果mask及读取时间寻址，匹配历史A的agentview/fixed-mean H；不改变未来接口原则。
+Test、RL、新controls及其它关闭实验均未运行。已完成的目标不构成下一实验授权。
 
 ## 已完成实验与证据入口
 
@@ -39,7 +34,7 @@ study使用data0，整个窗口新增峰值预算20GiB；独立user quota与共�
 | A900机制诊断 | train24固定96条件，正确58、关Procedure34、固定视频保留目标语言38/38、固定LoRA13/10、Source12、SFT47 | 旧过程路径有行为贡献，不证明顺序理解或fresh删除效果。findings§118 |
 | Core/Procedure交叉 | CC58、CW34/35、WC56/56、WW38/38，各96；新增384闭环，复用288对角线 | 正确P增量能跨两个donor Core发挥；不证明Core可删、未见任务迁移或下一架构应只改P。findings§119 |
 
-完整正负历史先读[46组证据审计及补表](docs/v52_evidence_audit_20260917.md)，再读[findings](findings.md)§117–119。
+完整正负历史先读[46组证据审计及补表](docs/v52_evidence_audit_20260917.md)，再读[findings](findings.md)§117–120。
 源码版本、旧专家评审、各轮逐task/suite、R/G/L/churn及formal原件由[研究历史](docs/research_history.md)索引。
 统一实验及两次诊断的详细报告分别位于本地：
 
@@ -48,10 +43,10 @@ study使用data0，整个窗口新增峰值预算20GiB；独立user quota与共�
 - `runs/analysis/v52_core_procedure_cross_20260918/report.md`
 
 这些`runs/`原件是ignored本地资产；远程仓库保留源码、合同、历史审计和findings结论，不包含checkpoint或数据集。
-本轮源码正由匹配A的frame-set实现替换；已封存统一正式训练版本为`184947cb`，旧A冻结诊断版本为`575c189a`。
+本轮canonical源码已替换为匹配A的frame-set实现；已封存统一正式训练版本为`184947cb`，旧A冻结诊断版本为`575c189a`。
 保留复现入口不表示已经选择或恢复该方法。旧A3000评测、C及其它关闭窗口均未恢复；Test保持关闭。
 
-## 本次仓库整理
+## 此前仓库整理
 
 已检查源码、12个脚本入口、34个测试文件、27份配置、文档和ignored临时目录；未发现需要本轮改动的第二套Writer实现。
 已合并重复的当前计划/进度叙述，补齐可扩展结构要求，纠正最近诊断的推断范围，并更新README讨论入口。

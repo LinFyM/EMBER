@@ -14,7 +14,7 @@ from ember.pi05_source_checkpoint import DistributedContext
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.writer import learning_data
 from ember.writer.learning_data import WriterTrainingData, load_learning_tasks
-from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _run_contract, observer_mode_contract, _data_config, _publish_event_plan, extension_record_path
+from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _run_contract, observer_mode_contract, _publish_event_plan
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.task_execution import condition_rank_groups, merge_condition_rows
 
@@ -28,7 +28,7 @@ def test_registered_formal_recipe_reaches_git_guard_before_device_initialization
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
     args = SimpleNamespace(mode="formal", config=ROOT / "configs/pi05_writer.json")
     configured = training._config(args.config)
-    configured["status"] = "registered_a_frameset_reference_learning"
+    configured["status"] = "registered_video_teaching_learning"
     configured["evidence"]["profile_registration"]["status"] = "complete"
     monkeypatch.setattr(training, "_config", lambda _: configured)
     with pytest.raises(ValueError, match="clean pushed detached worktree"):
@@ -71,13 +71,13 @@ def config(tmp_path):
 
 @pytest.fixture
 def sampler(monkeypatch, config):
-    tasks = {task: SimpleNamespace(suite=f"suite{task // 6}", authority=object(), episode_lengths=(4,) * 50)
+    tasks = {task: SimpleNamespace(suite=f"suite{task // 6}", authority=object(), episode_lengths=(11,) * 50)
              for task in range(24)}
     monkeypatch.setattr(learning_data, "load_learning_tasks", lambda *_: tasks)
     monkeypatch.setattr(learning_data, "RawTeacherVideoStore", lambda *a, **kw:
                         SimpleNamespace(frame_counts=lambda task, demo: (4, 2), close=lambda: None))
     monkeypatch.setattr(learning_data, "FunctionalQueryDataset", lambda *a, **kw:
-                        SimpleNamespace(task_episode_rows={task: {demo: (0, 1, 2) for demo in range(46)}
+                        SimpleNamespace(task_episode_rows={task: {demo: tuple(range(10)) for demo in range(46)}
                                                             for task in range(24)}, close=lambda: None))
     return WriterTrainingData(ROOT, config["data"])
 
@@ -97,24 +97,24 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
             _config(path)
 
 
-def test_frameset_recipe_keeps_A_source_events_training_and_execution_pairing(config):
+def test_teaching_recipe_keeps_A_source_and_adds_bounded_joint_supervision(config):
     assert config['data']['grouping'] == 'baseline' and 'event_groups' not in config['data']
-    assert config['data']['maximum_updates'] == 1200
-    assert config['design'] == 'docs/learned_frameset_reference_design.md'
+    assert config['data']['maximum_updates'] == 1500
+    assert config['design'] == 'docs/video_teaching_writer_design.md'
     assert config['source'] == {
         'evaluation_config': 'configs/pi05_source_aligned_evaluation.json',
         'checkpoint': 'runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000'}
 
 
-def test_run_contract_records_A_read_and_frame_order_removal(config, monkeypatch, tmp_path):
+def test_run_contract_records_full_reads_and_both_label_routes(config, monkeypatch, tmp_path):
     monkeypatch.setattr(torch.cuda, 'get_device_properties', lambda _: SimpleNamespace(uuid='cpu-fixture'))
     modules = {name: torch.nn.Linear(1, 1) for name in ('writer', 'meta', 'vl_meta', 'text_meta')}
     runtime = SimpleNamespace(state=SimpleNamespace(**modules), policy=torch.nn.Linear(1, 1).requires_grad_(False), source={})
     context = SimpleNamespace(rank=0, local_rank=0, world_size=1, numa_node=None, cpu_affinity=None)
     run = _run_contract(SimpleNamespace(output=tmp_path, mode='formal'), context, config, runtime, {})
     assert run['information_wall']['native_read'] == (
-        'A-matched final agentview Z and fixed mean of full50 H; joint three-Meta replay')
-    assert run['model_config']['horizon_read'] == 'fixed_mean'
+        'repeated full50 H and ordered adjacent E content; joint three-Meta replay')
+    assert run['model_config']['horizon_read'] == 'repeated_full'
     assert run['information_wall']['reading_meta_in_execution'] is False
 
 
@@ -164,9 +164,11 @@ class _ToySupervisedEngine:
         # One globally weighted condition. This is an update-cadence oracle,
         # not a proxy for the native main FM control objective.
         main = sum(p.square().sum() for p in self.state.parameters())
-        loss = draw["query_count"] / 84 * main
+        loss = (draw["query_count"] / 84 + draw["teaching_count"] / 84) * main
         loss.backward()
-        return {"flow_loss": float(main.detach()), "queries": draw["query_count"]}
+        return {"flow_loss": float(main.detach()), "queries": draw["query_count"],
+                "teaching_queries": draw["teaching_count"], "teaching_query_offset": draw["teaching_offset"],
+                "teaching_loss": float(main.detach()), "teaching_weight": draw["teaching_count"] / 84}
 
 def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config):
     conditions = 1
@@ -190,22 +192,23 @@ def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler,
             torch.testing.assert_close(a, b, rtol=0, atol=0)
 
 
-def test_original_cosine_clock_is_not_compressed_to_the_bounded_run(config):
+def test_original_first900_clock_and_registered_cosine_tail(config):
     import math
+    from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
     optimizer, scheduler = _optimization(torch.nn.Linear(1, 1), config)
-    peak = config["optimization"]["lr"]
-    assert optimizer.param_groups[0]["lr"] == pytest.approx(peak / 101)
+    reference = torch.optim.AdamW(torch.nn.Linear(1, 1).parameters(), lr=3e-4)
+    original = CosineDecayWithWarmupSchedulerConfig(num_warmup_steps=100, num_decay_steps=12000,
+        peak_lr=3e-4, decay_lr=1e-5).build(reference, 12000)
     rates = {}
-    for step in range(1, 1201):
-        optimizer.step()
-        scheduler.step()
-        if step in (99, 100, 1200):
-            rates[step] = optimizer.param_groups[0]["lr"]
-    assert rates[99] == pytest.approx(peak * (1 - .01 * (1 - 1 / 101)))
-    for step in (100, 1200):
-        expected = 1e-5 + (peak - 1e-5) * .5 * (1 + math.cos(math.pi * step / 12000))
-        assert rates[step] == pytest.approx(expected)
-    assert rates[1200] > .00029
+    for step in range(1501):
+        if step <= 900:
+            assert optimizer.param_groups[0]['lr'] == pytest.approx(reference.param_groups[0]['lr'])
+        if step in (900, 1200, 1500):
+            rates[step] = optimizer.param_groups[0]['lr']
+        optimizer.step(); scheduler.step()
+        reference.step(); original.step()
+    assert rates[1200] == pytest.approx(rates[900] * .55)
+    assert rates[1500] == pytest.approx(rates[900] * .1)
 
 
 def test_checkpoint_restores_next_update_and_sampler(tmp_path, monkeypatch, config):
@@ -323,7 +326,7 @@ def test_smoke_requires_explicit_stop_before_profile_node_registration():
         _checkpoint_nodes(args, config)
 
 
-@pytest.mark.parametrize("world_size", [1, 2, 3, 4, 6])
+@pytest.mark.parametrize("world_size", [1, 2, 3, 4, 5, 6])
 def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch, config, world_size):
     """Real placement and SUM helper, against an explicit logical-batch oracle."""
     state = torch.nn.Linear(2, 1, bias=False)
@@ -332,12 +335,16 @@ def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch
     generator = torch.Generator().manual_seed(17)
     features = torch.randn(4, 21, 2, generator=generator)
     targets = torch.randn(4, 21, 1, generator=generator)
-    loss = (state(features) - targets).square().mean()
+    teaching_features = torch.randn(4, 7, 2, generator=generator)
+    teaching_targets = torch.randn(4, 7, 1, generator=generator)
+    main_loss = (state(features) - targets).square().mean()
+    teaching_loss = (state(teaching_features) - teaching_targets).square().mean()
+    loss = main_loss + teaching_loss / 3
     loss.backward()
     logical_gradient = state.weight.grad.clone()
     draws = tuple({"task": task, "occurrence": 0, "video_demos": (task,), "query_seed": 17 + task,
                    "frames": [19, 11, 7, 4][task], "job_id": task, "condition_index": 0,
-                   "query_offset": 0, "query_count": 21} for task in range(4))
+                   "query_offset": 0, "query_count": 21, "teaching_offset": 0, "teaching_count": 7} for task in range(4))
     data = SimpleNamespace(tasks={task: SimpleNamespace(suite=f"suite{task}") for task in range(4)})
     class Engine:
         def __init__(self, model):
@@ -347,8 +354,14 @@ def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch
             start, count = draw["query_offset"], draw["query_count"]
             chosen = slice(start, start + count)
             value = (self.model(features[task, chosen]) - targets[task, chosen]).square().mean()
-            (value * .25 * count / 21).backward()
+            tstart, tcount = draw['teaching_offset'], draw['teaching_count']
+            tchosen = slice(tstart, tstart + tcount)
+            taught = (self.model(teaching_features[task, tchosen]) - teaching_targets[task, tchosen]).square().mean()
+            (value * .25 * count / 21 + taught * .25 / 3 * tcount / 7).backward()
             return {"queries": count, "flow_loss": float(value.detach()),
+                    "teaching_queries": tcount, "teaching_query_offset": tstart,
+                    "teaching_loss": float(taught.detach()), "teaching_weight": .25 / 3 * tcount / 7,
+                    "teaching_action_frames": list(range(tstart, tstart + tcount)),
                     "action_demos": [task] * count, "action_frames": list(range(start, start + count)),
                     "action_start_indices": list(range(start + 1, start + count + 1))}
     models, local_rows = [], []
@@ -362,16 +375,12 @@ def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch
     assert sorted(row["task"] for row in logical_rows) == [0, 1, 2, 3]
     assert all(row["queries"] == 21 and row["condition_weight"] == .25 for row in logical_rows)
     assert all(row["action_frames"] == list(range(21)) for row in logical_rows)
-    assert sum(row["flow_loss"] * row["condition_weight"] for row in logical_rows) == pytest.approx(float(loss.detach()))
+    assert sum(row["flow_loss"] * row["condition_weight"] for row in logical_rows) == pytest.approx(float(main_loss.detach()))
     assert sum(row["queries"] for rows in local_rows for row in rows) == 84
-    if world_size == 3:
-        assert sorted(map(len, local_rows)) == [1, 1, 2]
-    if world_size == 6:
-        assert all(rows for rows in local_rows)
-        assert all(row["queries"] == 7 for rows in local_rows for row in rows)
-        assert all(len(row["execution_shards"]) == 3 for row in logical_rows)
-        for members in condition_rank_groups(world_size):
-            assert len({tuple(row["job_id"] for row in local_rows[rank]) for rank in members}) == 1
+    assert sum(row['teaching_queries'] for rows in local_rows for row in rows) == 28
+    assert all(row['teaching_action_frames'] == list(range(7)) for row in logical_rows)
+    assert sum(row['teaching_loss'] * row['teaching_weight'] for row in logical_rows) == pytest.approx(float(teaching_loss.detach()) / 3)
+    assert all(local_rows)
     combined = sum(model.weight.grad for model in models)
     def reduce(gradient, op):
         assert op == torch.distributed.ReduceOp.SUM
@@ -384,17 +393,20 @@ def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch
 
 def test_rank_count_cannot_expand_batch_or_create_idle_replicas(config):
     with pytest.raises(ValueError, match="useful ranks"):
-        _execute_step(None, None, SimpleNamespace(world_size=5), config, (), 1)
+        _execute_step(None, None, SimpleNamespace(world_size=7), config, (), 1)
 
 
 def test_query_shards_cannot_duplicate_or_drop_scientific_exposures():
     rows = [{"job_id": task, "query_offset": offset, "queries": 7, "flow_loss": 1.,
-             "condition_weight": 1 / 12, "seconds": 1.}
+             "condition_weight": 1 / 12, "seconds": 1.,
+             "teaching_query_offset": {0: 0, 7: 3, 14: 5}[offset],
+             "teaching_queries": 3 if offset == 0 else 2, "teaching_loss": 2.,
+             "teaching_weight": (3 if offset == 0 else 2) / 84}
             for task in range(4) for offset in (0, 7, 14)]
     assert len(merge_condition_rows(rows)) == 4
     with pytest.raises(ValueError, match="overlap or leave a gap"):
         merge_condition_rows(rows + [rows[0]])
-    with pytest.raises(ValueError, match="all 21 queries"):
+    with pytest.raises(ValueError, match="all 21 main"):
         merge_condition_rows(rows[:-1])
 
 
@@ -419,78 +431,20 @@ def test_new_segment_nodes_do_not_mutate_or_invalidate_learning_contract(tmp_pat
         _publish_contract(path, resumed, resume=True)
 
 
-def test_budget_extension_is_explicit_bounded_and_leaves_the_scientific_config_unchanged(tmp_path, config):
-    before = deepcopy(config)
-    args = SimpleNamespace(mode="formal", resume=tmp_path / "checkpoints/macro_00002400", extend_to_update=3000,
-                           stop_after_step=2700, checkpoint_updates="2500,2600,2700")
-    assert _segment_limit(args, config) == 2700
-    assert _data_config(args, config) == config["data"] | {"maximum_updates": 3000}
-    assert _data_config(SimpleNamespace(**(vars(args) | {"extend_to_update": 3300})), config)["maximum_updates"] == 3300
-    assert config == before
-    for change in ({"extend_to_update": None}, {"extend_to_update": 12006}, {"extend_to_update": 1501},
-                   {"resume": None}, {"resume": tmp_path / "checkpoints/macro_00000900"}, {"mode": "profile"}):
-        with pytest.raises(ValueError, match="budget|extension"):
-            _segment_limit(SimpleNamespace(**(vars(args) | change)), config)
-
-
-def test_extended_event_registration_preserves_original_and_rejects_rewritten_queries(tmp_path, sampler):
-    args = SimpleNamespace(output=tmp_path, resume=None, extend_to_update=None)
+def test_registered_event_plan_is_immutable_and_budget_cannot_grow(tmp_path, sampler, config):
+    args = SimpleNamespace(output=tmp_path, resume=None)
     original = sampler.event_plan()
     _publish_event_plan(args, original)
-    original_bytes = (tmp_path / "training_events.json").read_bytes()
-    extended = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 3000})
-    try:
-        args.resume, args.extend_to_update = tmp_path / "macro_00002400", 3000
-        args.resume.mkdir()
-        torch.save({"sampler_state": sampler.sampler_state()}, args.resume / "trainer_state.pt")
-        _publish_event_plan(args, extended.event_plan())
-        assert (tmp_path / "training_events.json").read_bytes() == original_bytes
-        assert json.loads(extension_record_path(tmp_path, "training_events.json", 3000).read_text()) == extended.event_plan()
-        changed = extended.event_plan()
-        changed["events"][0]["action_frames"][0] += 1
-        with pytest.raises(ValueError, match="original registered training events"):
-            _publish_event_plan(args, changed)
-        changed = extended.event_plan()
-        changed["events"][-1]["policy_rng_seed"] += 1
-        with pytest.raises(ValueError, match="exact-resume training events"):
-            _publish_event_plan(args, changed)
-    finally:
-        extended.close()
-
-
-def test_repeated_extension_preserves_legacy_and_every_previously_registered_query(tmp_path, sampler):
-    (tmp_path / "training_events.json").write_text(json.dumps(sampler.event_plan()))
-    previous = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 3000})
-    extended = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 3300})
-    following = WriterTrainingData(ROOT, sampler.config | {"maximum_updates": 3600})
-    legacy = tmp_path / "training_events_extended.json"
-    legacy.write_text(json.dumps(previous.event_plan()))
-    legacy_bytes = legacy.read_bytes()
-    resume = tmp_path / "checkpoints/macro_00003000"
-    resume.mkdir(parents=True)
-    torch.save({"sampler_state": previous.sampler_state()}, resume / "trainer_state.pt")
-    args = SimpleNamespace(output=tmp_path, resume=resume, extend_to_update=3300)
-    try:
-        changed = extended.event_plan()
-        changed["events"][2700 * 4]["action_frames"][0] += 1
-        with pytest.raises(ValueError, match="previous registered training events"):
-            _publish_event_plan(args, changed)
-        _publish_event_plan(args, extended.event_plan())
-        registered = extension_record_path(tmp_path, "training_events.json", 3300)
-        registered_bytes = registered.read_bytes()
-        torch.save({"sampler_state": extended.sampler_state()}, resume / "trainer_state.pt")
-        args.extend_to_update = 3600
-        changed = following.event_plan()
-        changed["events"][3200 * 4]["policy_rng_seed"] += 1
-        with pytest.raises(ValueError, match="previous registered training events"):
-            _publish_event_plan(args, changed)
-        _publish_event_plan(args, following.event_plan())
-        assert legacy.read_bytes() == legacy_bytes and registered.read_bytes() == registered_bytes
-        assert json.loads(extension_record_path(tmp_path, "training_events.json", 3600).read_text()) == following.event_plan()
-    finally:
-        previous.close()
-        extended.close()
-        following.close()
+    with pytest.raises(ValueError, match='existing event plan'):
+        _publish_event_plan(args, original)
+    args.resume = tmp_path / 'checkpoints/macro_00000100'
+    _publish_event_plan(args, original)
+    changed = deepcopy(original)
+    changed['events'][0]['teaching']['action_frames'][0] += 5
+    with pytest.raises(ValueError, match='exact-resume training events'):
+        _publish_event_plan(args, changed)
+    with pytest.raises(ValueError, match='1500-update event budget'):
+        _segment_limit(SimpleNamespace(mode='formal', stop_after_step=1800, checkpoint_updates='1800'), config)
 
 
 def test_mid_segment_resume_finishes_original_registered_boundary(tmp_path, monkeypatch, config):
@@ -566,6 +520,7 @@ def test_retired_supervision_and_prior_configs_are_rejected(tmp_path, config, fi
 
 @pytest.mark.parametrize("key,value", [("job_id", 0), ("condition_index", 1),
                                       ("query_offset", 1), ("query_count", 20),
+                                      ("teaching_offset", 1), ("teaching_count", 6),
                                       ("video_demos", (99, 100))])
 def test_duplicate_or_misaligned_conditions_fail_before_backward(sampler, config, key, value):
     draws = list(sampler.next_iteration())

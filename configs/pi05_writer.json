@@ -59,7 +59,7 @@
       48,
       49
     ],
-    "event_schema_version": "v52_full_video_cross_episode_events_v1",
+    "event_schema_version": "video_teaching_joint_query_events_v1",
     "extra_meta_tasks": [],
     "frame_stride": 5,
     "grouping": "baseline",
@@ -70,7 +70,7 @@
       49
     ],
     "include_last_frame": true,
-    "maximum_updates": 1200,
+    "maximum_updates": 1500,
     "queries_per_task": 21,
     "query_alignment": "post_action_observation_future_control_v1",
     "sampler_seed": 20260721,
@@ -103,7 +103,7 @@
     ],
     "tasks_per_update": 4,
     "teacher_video_seed": 20260722,
-    "version": "v52_full_video_cross_episode_events_v1",
+    "version": "video_teaching_joint_query_events_v1",
     "video_demos": [
       0,
       1,
@@ -151,9 +151,12 @@
       43,
       44,
       45
-    ]
+    ],
+    "teaching_queries_per_task": 7,
+    "teaching_seed": 20260919,
+    "teaching_episode": "same_video"
   },
-  "design": "docs/learned_frameset_reference_design.md",
+  "design": "docs/video_teaching_writer_design.md",
   "evidence": {
     "checkpoint_updates": [
       100,
@@ -167,31 +170,33 @@
       900,
       1000,
       1100,
-      1200
+      1200,
+      1300,
+      1400,
+      1500
     ],
     "comparison": {
-      "arm": "learned_frame_set",
+      "arm": "same_video_teaching",
       "matched_A_contract": "runs/analysis/source_alignment_20260915/A/training/run_contract.json",
       "matched_A_commit": "575c189a743be121bc9801092b0d94b3a53285e6",
-      "intervention": "remove video-frame RoPE, causal mask and Procedure-read frame-time addressing only",
-      "initialization": "same A construction order and seed, no additional randomized modules; fresh all states",
-      "event_plan": "same baseline A1200 events, cross-episode 46-pool, flow RNG, task weights and update clock",
+      "intervention": "repeated full H and adjacent E procedure reads plus through-LoRA teaching and registered LR tail; A is historical reference, not a single-variable causal comparison",
+      "initialization": "fresh Writer and three Meta with legal identity outputs and zero new read residuals",
+      "event_plan": "preserve A primary21 events and RNG; add independently registered seven teaching queries per condition",
       "inference": "reuse A fixed state-video-env/policy pairing and original results; no A retraining",
       "primary_adjacent_nodes": [
         900,
-        1200
+        1200,
+        1500
       ],
       "reference_correct_counts": {
-        "300": 99,
-        "600": 88,
         "900": 140,
-        "1200": 135
+        "1200": 135,
+        "1500": 112
       },
       "reference_train_counts": {
-        "300": 36,
-        "600": 47,
         "900": 54,
-        "1200": 62
+        "1200": 62,
+        "1500": 56
       },
       "controls_for_selection": false,
       "equivalence_claim": "neither similar totals nor confidence intervals crossing zero establish equivalence"
@@ -202,51 +207,47 @@
       "optimizer": "fresh",
       "sampler_and_rng": "fresh",
       "scheduler": "fresh",
-      "writer": "same A identity templates, zero heads and three Meta; no frame-order operations"
+      "writer": "fresh complete A/B Writer with joint three Meta and zero additional read residuals"
     },
     "learning_window": {
-      "conditional_comparison": "one fresh frame-set arm through1200; compare fixed A nodes; no score-based extension or sweep",
+      "conditional_comparison": "if adjacent correct>=130 and same-task-other does not collapse, one fresh matched cross-episode-teaching ablation through1500",
       "conditions_per_update": 4,
       "formal_correct_nodes": [
-        300,
-        600,
         900,
-        1200
+        1200,
+        1500
       ],
-      "optimizer_updates": 1200,
+      "optimizer_updates": 1500,
       "queries_per_update": 84,
-      "segment_policy": "same topology exact resume, complete registered correct400 and train96 before next segment",
-      "supervised_queries": 100800,
-      "teacher_conditions": 4800
+      "segment_policy": "same topology exact resume; each formal node has correct400 and train96",
+      "supervised_queries": 126000,
+      "teacher_conditions": 6000,
+      "teaching_queries_per_update": 28,
+      "total_queries_per_update": 112,
+      "teaching_queries": 42000,
+      "total_queries": 168000
     },
     "paired_inference": {
       "bootstrap_replicates": 20000,
       "bootstrap_seed": 20260915,
       "confidence": 0.95,
-      "final_primary": [],
+      "final_primary": [
+        "same_video_minus_matched_cross_episode_teaching_if_triggered"
+      ],
       "primary": [
-        "frame_set_minus_historical_A_at_matched_node"
+        "same_video_teaching_minus_historical_A_at_matched_node"
       ],
       "unit": "task_cluster"
     },
     "profile_registration": {
-      "status": "complete",
-      "world_size": 3,
-      "reference": "docs/review_materials/20260918/profile_summary.json",
-      "native_frame_chunk": 8,
-      "policy_microbatches": [
-        8,
-        8,
-        8
-      ],
-      "formal_initialization": "fresh; profile weights never reused",
-      "event_equivalence": "all4800 A events identical",
-      "topology_reason": "three eligible useful GPUs; keep same logical84 and original12k scheduler"
+      "status": "pending",
+      "formal_initialization": "fresh; profile weights never reused"
     },
     "protocol_migrations": [
-      "A historical agentview and fixed-mean H retained for matched diagnostic only",
-      "video-frame order removed from Procedure and its slot read",
-      "fresh identity and exact optimizer/event clocks retained"
+      "retain original Core-conditioned complete A/B consumer and ordered Procedure",
+      "same-video five-step endpoint action supervision through the generated LoRA jointly with cross-episode FM",
+      "both loss cotangents update all Writer and three Meta via one replay",
+      "first900 A LR clock, then cosine tail to tenth of lr900 by1500"
     ],
     "qualification": {
       "K": 1,
@@ -254,14 +255,13 @@
         "correct"
       ],
       "optimizer_updates": [
-        300,
-        600,
         900,
-        1200
+        1200,
+        1500
       ],
-      "qualification_completion": "diagnostic completion at all four registered nodes, no performance qualification or selected checkpoint",
+      "qualification_completion": "all three correct400 and train96; adjacent correct>=130 triggers same-task-other, frozen controls and conditional matched ablation",
       "registration_status": "registered_before_formal_writer_training_and_scores",
-      "same_task_other": "not run in this matched order-learning diagnostic",
+      "same_task_other": "only qualifying adjacent nodes; paired full50 per task; selection by preregistered minimum correct/other scores",
       "seed": 20260911,
       "selection_mode": "per_init_ordinal",
       "state_count": 50,
@@ -341,10 +341,9 @@
       "gradients": false,
       "optimizer_updates": [
         0,
-        300,
-        600,
         900,
-        1200
+        1200,
+        1500
       ],
       "queries_per_task": 128,
       "query_pairing": "same-task independent held action episode; exclude condition teacher",
@@ -424,10 +423,9 @@
         35
       ],
       "optimizer_updates": [
-        300,
-        600,
         900,
-        1200
+        1200,
+        1500
       ],
       "paired": true,
       "purpose": "fixed train24 states32-35; held video pool46-49 with explicit schedule reuse",
@@ -437,29 +435,35 @@
         48,
         49
       ]
-    }
+    },
+    "post_selection_controls": [
+      "cross_suite_wrong",
+      "shuffled",
+      "reversed",
+      "no_video"
+    ]
   },
   "execution_precision": "native_bf16_writer_fm_fp32_lora",
   "model": {
     "action_horizon": 50,
     "action_meta_lora_rank": 4,
     "activation_checkpointing": true,
-    "architecture": "video_core_frameset_procedure_complete_lora",
+    "architecture": "video_core_recurrent_procedure_complete_lora",
     "camera_view": "agentview",
     "expert_width": 1024,
     "factor_hidden_width": 216,
     "frame_attention_initial_lambda": 0.05,
     "fusion_heads": 8,
-    "horizon_read": "fixed_mean",
+    "horizon_read": "repeated_full",
     "image_width": 2048,
     "initialization_seed": 7,
-    "max_frames_per_encoder_call": 8,
+    "max_frames_per_encoder_call": 4,
     "padded_action_dim": 32,
     "patch_grounding_heads": 8,
     "procedure_blocks": 2,
     "procedure_heads": 8,
     "program_width": 256,
-    "schema": "ember_a_frameset_writer_v1",
+    "schema": "ember_video_teaching_writer_v1",
     "semantic_core_blocks": 2,
     "semantic_core_heads": 8,
     "text_meta_lora_rank": 4,
@@ -468,14 +472,14 @@
   "observer": {
     "camera_view": "agentview",
     "flow_time": 1,
-    "frame_chunk": 8,
-    "horizon_read": "uniform_fixed_zero_query_and_bias_over_all_50_raw_H_values",
+    "frame_chunk": 4,
+    "horizon_read": "repeated_content_position_attention_over_all_50_raw_H_values",
     "meta_rank": 4,
-    "native_inputs": "full256_patch_content_and_full50_fixed_mean_horizon_read",
+    "native_inputs": "full256_patch_content_and_repeated_full50_H_adjacent_E_reads",
     "probe_seed": 23070,
     "text_meta_rank": 4,
     "vl_meta_rank": 4,
-    "video_order": "frame_set_no_frame_RoPE_no_causal_mask_no_temporal_read_address"
+    "video_order": "causal_RoPE_with_real_frame_positions_and_ordered_adjacent_roles"
   },
   "optimization": {
     "betas": [
@@ -487,22 +491,28 @@
     "eps": 1e-08,
     "grad_clip": 1.0,
     "joint_train_all_writer_modules": true,
-    "loss": "main_fm",
+    "loss": "main_fm_plus_video_teaching",
     "lr": 0.0003,
     "normalizer": 1.0,
     "seed": 7,
     "warmup_updates": 100,
-    "weight_decay": 0.0001
+    "weight_decay": 0.0001,
+    "teaching_weight": 0.3333333333333333,
+    "teaching_prefix_steps": 5,
+    "teaching_flow_time": 1,
+    "tail_start_update": 900,
+    "tail_end_update": 1500,
+    "tail_final_ratio": 0.1
   },
   "runtime": {
     "policy_microbatch": 8,
     "raw_video_cache_bytes": 2147483648
   },
-  "schema_version": "ember_a_frameset_writer_config_v1",
+  "schema_version": "ember_video_teaching_writer_config_v1",
   "source": {
     "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
     "evaluation_config": "configs/pi05_source_aligned_evaluation.json"
   },
-  "status": "registered_a_frameset_reference_learning",
-  "update_version": "a_frameset_full_ab_pure_fm_joint_meta_v1"
+  "status": "registered_video_teaching_learning",
+  "update_version": "video_teaching_full_ab_joint_meta_v1"
 }

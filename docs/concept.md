@@ -16,6 +16,18 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 下述Core/P形式说明统一改造前v5.2衍生实现的接口，不等同于原始132分实验的实际输入/读法；历史比较口径见证据审计。
 Process Pullback及其它已关闭机制从[研究历史](research_history.md)追溯。
 
+## 当前教学候选：同一套参数承担两种动作责任
+
+[最终修订](review_materials/20260919/expert_proposal.md)保留有证据价值的完整自由 A/B 消费者，
+通过同视频动作监督检验生成参数是否更有益地利用所看操作。主实验使用 action-hidden agentview、exact language 和完整 stride5 视频。
+逐帧 native 读取产生 E 与 H50；每个过程块依次读完整 H、带前后角色的相邻 E，再沿真实视频位置做 causal RoPE 交互。
+Core 条件化的居中 P／AdaLN、归一化与八组共享 heads 生成唯一完整 LoRA。
+
+同一套 LoRA 同时接受21个跨 episode 主 FM query 和7个同视频 query；后者在纯噪声端点只监督真实未来五步，
+分别平均后以1与1/3相加，再将总信用回传整个 Writer 和三个 Meta。动作和 state 只在生成之后进入执行监督，不能成为 Writer 输入。
+没有独立动作预测头或 P-only 梯度。重复读取和联合信用提供可检验偏置，不保证视频必要性、未见初始化迁移或保持。
+完整合同及与历史 Local Action、Video Functional、Native Correction、Horizon 的异同见[当前设计](video_teaching_writer_design.md)。
+
 ## 统一Writer实例：统一表示与一次性参数生成
 
 ```text
@@ -64,7 +76,7 @@ Action Meta通过相同真实prefix和一个对全部任务共用的固定50×32
 
 Procedure沿真实frame indices做因果注意力，表达过去条件对后续操作的限制；Core与Procedure在同一套Writer里融合。
 这是一种有顺序的归纳偏置，尚不证明网络有益地理解“先A后B”。Video time、action horizon、flow time和layer depth各有独立含义。
-这是历史v5.2实际计算图的因果Procedure；本轮候选已将其职责移入联合表示，不能从本段恢复旧方法选择。
+这是历史v5.2实际计算图的因果Procedure；统一Writer曾将其职责移入联合表示；当前教学候选的完整读取与监督另见上节。
 
 共享rank slots通过Core Value产生内容，再由居中的Procedure Value调制；完整A和B均由共享family heads生成。
 输出没有被限制在固定source局部PCA/span中，也不存在第二expert或并行adapter。

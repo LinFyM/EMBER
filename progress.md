@@ -1,9 +1,21 @@
 # EMBER progress
 
-## 当前状态（2026-09-18，A learned frame-set诊断已完成）
+## 当前状态（2026-09-19，专家修订执行goal已启动）
+
+Owner明确要求完成专家意见、推送并汇报。Active design为[同视频教学候选](docs/video_teaching_writer_design.md)。
+主实验先用单相机agentview；新增教学项与主FM经同一套LoRA联合训练全部Writer/Meta，source冻结。
+模型与训练实现已集成，尚无新formal运行。CPU累计246项通过：真实PI05主/五步端点损失、标签隔离、
+联合一次重放、四任务更新、1–6卡不同分片归一、完整checkpoint/resume、物化与视频controls，
+以及完整H/E、零残差退回有序P、BF16空分片与原生重放。首轮六个旧文案/旧架构fixture断言已修正复测。
+源代码新增一个117行Procedure读取owner，退役frame-set和预算扩展分支；架构检查无新增hard，
+既有native/temporal/物化大文件保持或缩小，较长shape校验仍与其张量接口同属一个owner。
+接下来做真实最长视频和分布式profile（权重丢弃）；1500上限、900/1200/1500节点不变，正式拓扑待实测。
+新输出统一位于data0的`runs/analysis/video_teaching_20260919`链接目标，quota与预计<=60GiB条件性总增长已检查。
+
+## 上轮完成记录（2026-09-18，A learned frame-set诊断）
 
 Owner授权的唯一匹配诊断已完成1200更新、四节点strict paired400及train96；训练严格停在1200。
-所有worker和driver正常退出；无运行中的训练/评测，无待自动启动的新实验，当前没有active design。
+所有worker和driver正常退出；无运行中的训练/评测，无待自动启动的新实验，当时没有active design。
 [封存合同](docs/learned_frameset_reference_design.md)与[专家原文](docs/review_materials/20260918/expert_review.md)保持登记时口径；
 结果、解释和可复核精简原件见[完整报告](docs/review_materials/20260918/frameset_report.md)。
 

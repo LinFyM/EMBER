@@ -1,4 +1,4 @@
-"""A-matched frame-set Writer and raw input preparation."""
+"""Video-teaching Writer and action-hidden raw input preparation."""
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -18,8 +18,8 @@ from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.video_program import VIDEO_READ_MODES
 
 
-MODEL_SCHEMA = "ember_a_frameset_writer_v1"
-ARCHITECTURE = "video_core_frameset_procedure_complete_lora"
+MODEL_SCHEMA = "ember_video_teaching_writer_v1"
+ARCHITECTURE = "video_core_recurrent_procedure_complete_lora"
 MODEL_DEFAULTS = {
     "schema": MODEL_SCHEMA, "architecture": ARCHITECTURE,
     "image_width": 2048, "expert_width": 1024, "program_width": 256,
@@ -29,7 +29,7 @@ MODEL_DEFAULTS = {
     "semantic_core_heads": 8, "semantic_core_blocks": 2, "frame_attention_initial_lambda": .05,
     "procedure_heads": 8, "procedure_blocks": 2, "fusion_heads": 8,
     "factor_hidden_width": 216, "initialization_seed": 7, "activation_checkpointing": True,
-    "camera_view": "agentview", "horizon_read": "fixed_mean",
+    "camera_view": "agentview", "horizon_read": "repeated_full",
 }
 
 
@@ -41,7 +41,7 @@ def require_architecture_identity(model: Mapping[str, Any]) -> None:
             or type(model["max_frames_per_encoder_call"]) is not int
             or model["max_frames_per_encoder_call"] <= 0
             or type(model["activation_checkpointing"]) is not bool):
-        raise ValueError("canonical A frame-set Writer architecture changed")
+        raise ValueError("canonical video-teaching Writer architecture changed")
 
 
 def autocast(device: torch.device):

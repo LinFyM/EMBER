@@ -1,4 +1,4 @@
-"""Official full-horizon main FM credit through the complete generated LoRA."""
+"""Main FM and endpoint video-teaching credit through one complete LoRA."""
 from __future__ import annotations
 
 from contextlib import ExitStack
@@ -24,7 +24,8 @@ class FlowSample:
     action_width: int
 
 
-def flow_sample(policy, batch, *, seed: int, device, random_batch: int, offset: int) -> FlowSample:
+def flow_sample(policy, batch, *, seed: int, device, random_batch: int, offset: int,
+                noise_endpoint: bool = False) -> FlowSample:
     from lerobot.utils.constants import ACTION, OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
 
     images, masks = policy._preprocess_images(dict(batch))
@@ -38,18 +39,22 @@ def flow_sample(policy, batch, *, seed: int, device, random_batch: int, offset: 
             policy, INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
             logical_batch_size=random_batch, batch_offset=offset))
         noise = policy.model.sample_noise(actions.shape, actions.device)
-        time = policy.model.sample_time(len(actions), actions.device)
+        time = (torch.ones(len(actions), device=actions.device) if noise_endpoint
+                else policy.model.sample_time(len(actions), actions.device))
     return FlowSample(
         (images, masks, batch[OBS_LANGUAGE_TOKENS], batch[OBS_LANGUAGE_ATTENTION_MASK], actions, noise, time),
         noise - actions, int(policy.config.output_features[ACTION].shape[0]),
     )
 
 
-def mean_velocity_loss(prediction: Tensor, target: Tensor, width: int) -> Tensor:
-    """Official PI05 mean over the complete horizon and actual action dimensions."""
+def mean_velocity_loss(prediction: Tensor, target: Tensor, width: int, *, prefix_steps: int | None = None) -> Tensor:
+    """Mean over real action dimensions and the full or explicitly taught horizon."""
     if prediction.shape != target.shape or prediction.ndim != 3 or not 0 < width <= prediction.shape[-1]:
         raise ValueError("paired flow output lost native horizon/action dimensions")
-    return (prediction[..., :width].float() - target[..., :width].float()).square().mean()
+    if prefix_steps is not None and (type(prefix_steps) is not int or not 0 < prefix_steps <= prediction.shape[1]):
+        raise ValueError("teaching prefix must fit the actual native horizon")
+    return (prediction[:, :prefix_steps, :width].float()
+            - target[:, :prefix_steps, :width].float()).square().mean()
 
 
 class NativeFlowPrediction(nn.Module):
@@ -89,8 +94,9 @@ def _add(destination: dict[str, Tensor], values: Mapping[str, Tensor], weight: f
 
 def paired_functional_credit(policy, state, contract, batch, *,
                              seed: int, device, random_batch: int, offset: int, microbatch: int,
-                             condition_weight: float, backward: bool = True) -> dict[str, Any]:
-    """Return the complete LoRA cotangent of cross-episode main FM only."""
+                             condition_weight: float, backward: bool = True,
+                             noise_endpoint: bool = False, prefix_steps: int | None = None) -> dict[str, Any]:
+    """Return a separately normalized loss and its weighted complete-LoRA cotangent."""
     validate_lora_state(state, contract)
     if any(parameter.requires_grad for parameter in policy.parameters()):
         raise ValueError("functional credit requires a frozen physical policy")
@@ -105,14 +111,15 @@ def paired_functional_credit(policy, state, contract, batch, *,
         stop = min(total, start + chunk)
         sliced = {name: value[start:stop] if isinstance(value, Tensor) and value.ndim and len(value) == total else value
                   for name, value in batch.items()}
-        sample = flow_sample(policy, sliced, seed=seed, device=device, random_batch=random_batch, offset=offset + start)
+        sample = flow_sample(policy, sliced, seed=seed, device=device, random_batch=random_batch,
+                             offset=offset + start, noise_endpoint=noise_endpoint)
         weight = (stop - start) / total
         leaves = {name: value.detach().requires_grad_(backward) for name, value in state.items()}
         with torch.set_grad_enabled(backward):
             prediction = torch.func.functional_call(
                 owner, {"policy." + name: value for name, value in leaves.items()}, (sample,), strict=False)
             calls += 1
-            value = mean_velocity_loss(prediction, sample.target, sample.action_width)
+            value = mean_velocity_loss(prediction, sample.target, sample.action_width, prefix_steps=prefix_steps)
             if backward:
                 gradients = torch.autograd.grad(value, tuple(leaves.values()))
                 _add(gradient, dict(zip(leaves, gradients, strict=True)), weight * condition_weight)

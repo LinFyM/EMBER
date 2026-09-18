@@ -16,6 +16,15 @@ Owner要求识别能区分架构的具体机制，明确每项分析或改动针
 结构应职责清楚，能够复制同类模块加深，并自然扩展参数规模；这不是必须沿用旧Core/P或仅修改Procedure的要求。
 是否保留、替换或删除模块均须由完整推导支持，允许实质重构；原v5.2不重训的要求继续有效。
 
+## 经最终LoRA的教学候选授权（2026-09-19）
+
+Owner要求设置goal完成[专家最终修订](review_materials/20260919/expert_proposal.md)、推送远程并汇报；替代上一goal完成后的无active状态。
+采用一套生成LoRA的跨episode主FM与同视频短程动作辅助目标，两项共同更新整个Writer与三组Meta，source冻结。
+本授权明确允许登记的同episode辅助功能误差经实际LoRA回传；主功能监督仍严格跨episode，所有部署信息墙保持。
+恢复有序A骨架并加入完整H/真实相邻视觉重复读取，保留完整A/B和四任务逻辑更新；不采用已撤回的P-only教学梯度。
+Owner最终明确主实验先用单相机agentview；完成后由证据决定是否值得补双相机，不自动追加。
+本轮候选、1500上限与条件性消融见[设计](video_teaching_writer_design.md)，实际状态见progress。
+
 ## 专家建议的匹配诊断授权（2026-09-18）
 
 Owner随后提供[专家意见](review_materials/20260918/expert_review.md)，明确授权设置goal并完成其中要求的工作、推送相关结果。

@@ -3,13 +3,12 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-**A的learned frame-set匹配诊断已完成，训练停在1200。**
-集合参照900/1200为142/118，A为140/135：能达到约140，但未证明相邻能力保持同样强。
-[完整结果与分析](docs/review_materials/20260918/frameset_report.md)包含四节点、逐任务配对与success-set保持；当前无运行中的实验或active design。
+**当前在实现经最终 LoRA 的同视频教学候选。** 主实验单相机 agentview；重复完整 H／相邻视觉读取与有序 Procedure，
+同视频五步教学和跨 episode 主 FM 联合更新整个 Writer 与三组 Meta。方法、1500 更新窗口与条件性后续见[设计](docs/video_teaching_writer_design.md)，实际状态见[progress](progress.md)。
 
-[封存匹配设计](docs/learned_frameset_reference_design.md)保留A的Core、Procedure、AdaLN、三Meta与共享完整A/B头，
-仅移除给定视频帧序处理并fresh训练；这不是未来架构选择。长期要求仍是保留已有能力、增强可信的视频特异性与自然可扩展结构。
-已结束统一Writer由Git和[封存设计](docs/v52_evidence_based_writer_design.md)保存。状态见[progress](progress.md)。
+上轮 A 的 learned frame-set 匹配诊断已经完成：900/1200 为142/118，A为140/135，未证明相邻等强；
+[完整报告](docs/review_materials/20260918/frameset_report.md)与[封存合同](docs/learned_frameset_reference_design.md)保留原比较边界。
+旧实验只作为历史依据，不自动恢复执行。
 
 ## 阅读入口
 
@@ -17,7 +16,7 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 | --- | --- |
 | [Owner要求](docs/current_owner_requirements.md) | 稳定目标、研究原则与最新裁决 |
 | [科学动机](docs/concept.md) | 完整方法链条、因果职责与待检验假设 |
-| [当前匹配诊断](docs/learned_frameset_reference_design.md)／[专家原文](docs/review_materials/20260918/expert_review.md) | 唯一干预、固定节点、比较与交付合同 |
+| [当前教学候选](docs/video_teaching_writer_design.md)／[专家最终修订](docs/review_materials/20260919/expert_proposal.md) | 部署图、联合损失、有界训练评测与交付合同 |
 | [完整历史证据审计](docs/v52_evidence_audit_20260917.md) | 46组实验及bank/chart补表的机制、预算、正负证据与比较边界 |
 | [封存统一设计](docs/v52_evidence_based_writer_design.md) | 已完成实例的接口、训练和证据合同 |
 | [当前计划](task_plan.md)／[当前进度](progress.md) | 当前goal、授权、实施证据与下一阶段 |
@@ -33,13 +32,13 @@ A900机制与Core/Procedure交叉两次冻结诊断只支持其固定模型、tr
 | 代码职责 | `src/ember/`下的owner |
 | --- | --- |
 | 原生图文／完整H读取与三组Meta | `writer/video_program.py`、`writer/meta_lora.py` |
-| 语义Core、帧集合Procedure与条件化参数slots | `writer/temporal.py` |
+| 语义Core、重复过程读取与条件化参数slots | `writer/temporal.py`、`writer/procedure.py` |
 | 唯一38-target完整A/B生成 | `writer/model.py`、`pi05_lora.py` |
-| 纯FM学习、采样与完整checkpoint | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py`、`ecp/checkpoint.py` |
+| 主FM与同视频教学、采样与完整checkpoint | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py`、`ecp/checkpoint.py` |
 | 运行时、物化与strict闭环评测 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` |
 
 Canonical入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`和`scripts/evaluate_pi05.py`，
-frame-set参照使用独立schema与fresh初始化；A的历史checkpoint使用其冻结runtime，不装入参照继续训练。
+教学候选使用独立schema与fresh初始化；旧A和frame-set的checkpoint使用其冻结runtime，不装入新模型继续训练。
 本轮之外的旧实验不由保留入口自动恢复。
 
 ## 数据与资产

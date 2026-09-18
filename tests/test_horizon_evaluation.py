@@ -24,7 +24,7 @@ from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, CONFIG_SCHEMA,
     condition_id, file_record, inspect_writer_checkpoint, method_metadata, paired_video_sets,
     planned_episodes, selection_contract)
 from ember.writer.runtime import MODEL_DEFAULTS
-from ember.writer.training import observer_mode_contract, extension_record_path
+from ember.writer.training import observer_mode_contract
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,11 +59,11 @@ def bank(tmp_path, request):
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
            "source": copy.deepcopy(SOURCE), "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729, "camera_view": "dual"}, "execution_precision": "native_bf16_writer_fm_fp32_lora"}, "model_config": {"horizon": 50}}
     run["model_config"] = dict(MODEL_DEFAULTS)
-    run["config"]["data"] = {"version": "v52_full_video_cross_episode_events_v1",
+    run["config"]["data"] = {"version": "video_teaching_joint_query_events_v1",
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
                             "maximum_updates": 1200}
     run["config"]["schema_version"] = CONFIG_SCHEMA
-    run["config"]["optimization"] = {"loss": "main_fm"}
+    run["config"]["optimization"] = {"loss": "main_fm_plus_video_teaching"}
     run["config"]["model"] = dict(run["model_config"])
     run["config"]["observer"].update(observer_mode_contract(run["model_config"]))
     run["config"]["observer"]["frame_chunk"] = 4
@@ -335,7 +335,7 @@ def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(re
         assert manifest["conditions"][0]["writer_value"] == index + 1
         assert manifest["conditions"][0]["meta_value"] == (index + 1) * 10
         assert manifest["conditions"][0]["vl_meta_value"] == (index + 1) * 100
-        assert manifest["method"]["training_objective"] == "main_fm"
+        assert manifest["method"]["training_objective"] == "main_fm_plus_video_teaching"
         assert manifest["materialization_execution"]["native_frame_chunk"] == (native_frame_chunk or 4)
         assert manifest["method"]["observer"]["frame_chunk"] == 4
         assert manifest["information_wall"]["total_writer_invocations"] == 1
@@ -494,7 +494,7 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
         assert error.value.code == 2 and len(calls) == 1
 
 
-def test_method_metadata_binds_A_reads_frame_set_and_single_full_lora():
+def test_method_metadata_binds_repeated_full_reads_and_single_full_lora():
     model = dict(MODEL_DEFAULTS)
     run = {"model_config": model, "config": {"update_version": UPDATE_VERSION,
         "observer": observer_mode_contract(model), "execution_precision": "native_bf16_writer_fm_fp32_lora"}}
@@ -504,12 +504,12 @@ def test_method_metadata_binds_A_reads_frame_set_and_single_full_lora():
     assert method["deployment_frozen_source_vjp"] is False
     assert method["source_parameter_training"] is False
     assert method["deployment_teacher_labels_loss_optimizer"] is False
-    assert method["training_objective"] == "main_fm" and method["update_version"] == UPDATE_VERSION
+    assert method["training_objective"] == "main_fm_plus_video_teaching" and method["update_version"] == UPDATE_VERSION
     assert method['native_image_tokens'] == 256
     assert method['visual_token_source'] == 'actual_final_256_image_patches_and_exact_task_span_tokens'
     assert method['camera'] == 'agentview_rotated_180'
-    assert method['native_read'] == 'uniform_fixed_zero_query_and_bias_over_all_50_raw_H_values'
-    assert method['video_order'] == 'frame_set_no_frame_RoPE_no_causal_mask_no_temporal_read_address'
+    assert method['native_read'] == 'repeated_content_position_attention_over_all_50_raw_H_values'
+    assert method['video_order'] == 'causal_RoPE_with_real_frame_positions_and_ordered_adjacent_roles'
     for arm in ('cross_suite_wrong', 'shuffled', 'reversed'):
         control = method_metadata(run, arm)
         assert control['control_transform'] == 'real_agentview_camera_RGB_before_complete_Writer_forward'
@@ -567,12 +567,12 @@ def test_checkpoint_rejects_shape_compatible_run_model_disagreement(bank):
         inspect_writer_checkpoint(checkpoint)
 
 
-def test_checkpoint_accepts_registered_A_frameset_architecture(bank):
+def test_checkpoint_accepts_registered_video_teaching_architecture(bank):
     _, manifest = bank
     observed, _ = inspect_writer_checkpoint(Path(manifest['writer_checkpoint']['path']))
     method = method_metadata(observed)
     assert method['model_config']['camera_view'] == 'agentview'
-    assert method['model_config']['horizon_read'] == 'fixed_mean'
+    assert method['model_config']['horizon_read'] == 'repeated_full'
     assert method['model_config']['procedure_blocks'] == 2
     assert method['model_config']['semantic_core_blocks'] == 2
 
@@ -613,56 +613,6 @@ def test_checkpoint_inspection_keeps_optimizer_tensors_on_meta(bank, monkeypatch
     monkeypatch.setattr(torch, "load", metadata_load)
     inspect_writer_checkpoint(checkpoint)
     assert seen == ["trainer_state.pt"]
-
-
-@pytest.mark.parametrize("budget,macro,legacy", [(1800, 1500, True), (2100, 2100, False)])
-def test_extended_checkpoint_uses_its_registered_runtime_without_rewriting_history(bank, budget, macro, legacy):
-    _, manifest = bank
-    old = Path(manifest["writer_checkpoint"]["path"])
-    checkpoint = old.with_name(f"macro_{macro:08d}")
-    old.rename(checkpoint)
-    trainer_path = checkpoint / "trainer_state.pt"
-    trainer = torch.load(trainer_path, weights_only=True)
-    trainer["next_macro"] = trainer["training_state"]["updates"] = macro
-    trainer["sampler_state"] = {"event_contract": {"maximum_updates": budget}}
-    torch.save(trainer, trainer_path)
-    path = checkpoint / "checkpoint_manifest.json"
-    saved = json.loads(path.read_text())
-    saved["next_macro"] = macro
-    saved["files"]["trainer_state.pt"]["bytes"] = trainer_path.stat().st_size
-    path.write_text(json.dumps(saved))
-    parent_path = checkpoint.parent.parent / "run_contract.json"
-    original = json.loads(parent_path.read_text()) | {"topology": {"world_size": 1}}
-    parent_path.write_text(json.dumps(original))
-    parent_bytes = parent_path.read_bytes()
-    with pytest.raises(Pi05SourceTrainingError, match="invalid JSON authority"):
-        inspect_writer_checkpoint(checkpoint)
-    extension_path = (parent_path.with_name("run_contract_extended.json") if legacy else
-                      extension_record_path(parent_path.parent, "run_contract.json", budget))
-    extension_path.parent.mkdir(parents=True, exist_ok=True)
-    extended = copy.deepcopy(original)
-    extended["git"]["commit"] = "b" * 40
-    extended["training"] = {"maximum_updates": budget}
-    extension_path.write_text(json.dumps(extended))
-    later_path = extension_record_path(parent_path.parent, "run_contract.json", 2400)
-    later_path.parent.mkdir(parents=True, exist_ok=True)
-    later = copy.deepcopy(extended)
-    later["git"]["commit"] = "c" * 40
-    later["training"]["maximum_updates"] = 2400
-    later_path.write_text(json.dumps(later))
-    observed, authority = inspect_writer_checkpoint(checkpoint)
-    assert observed == extended and authority["training_commit"] == "b" * 40
-    assert authority["run_contract"]["path"] == str(extension_path)
-    assert parent_path.read_bytes() == parent_bytes
-    extended["training"]["maximum_updates"] = 1200
-    extension_path.write_text(json.dumps(extended))
-    with pytest.raises(ValueError, match="exceeds the registered budget"):
-        inspect_writer_checkpoint(checkpoint)
-    extended["training"]["maximum_updates"] = budget
-    extended["source"]["model_path"] = "/different/source"
-    extension_path.write_text(json.dumps(extended))
-    with pytest.raises(ValueError, match="exact-resume contract differs: source"):
-        inspect_writer_checkpoint(checkpoint)
 
 
 @pytest.mark.parametrize("field,value", [("action_start_offset", 0), ("action_start_offset", True),

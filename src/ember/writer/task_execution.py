@@ -20,12 +20,14 @@ MAX_EXACT_ASSIGNMENT_COMBINATIONS = 100_000
 
 
 def condition_rank_groups(world_size: int) -> RankTasks:
-    """Keep four logical conditions while giving all six ranks useful work."""
+    """Keep four logical conditions while giving up to six ranks useful work."""
     if world_size == 6:
         return ((0, 1, 2), (3, 4, 5))
+    if world_size == 5:
+        return ((0, 1, 2), (3, 4))
     if 1 <= world_size <= 4:
         return tuple((rank,) for rank in range(world_size))
-    raise ValueError("condition execution supports 1-4 or six useful ranks")
+    raise ValueError("condition execution supports one through six useful ranks")
 
 
 def initialize_condition_group(context):
@@ -55,16 +57,18 @@ def _combine_query_shards(parts: Sequence[dict]) -> dict:
     row = dict(parts[0])
     physical_keys = {key for key in row if key.endswith("_seconds") or key.startswith("input_cache_")}
     physical_keys.update(("seconds", "execution_rank", "query_offset", "queries",
-                          "condition_weight", "fm_lora_gradient_norm", "policy_microbatch"))
+                          "condition_weight", "fm_lora_gradient_norm", "policy_microbatch",
+                          "teaching_query_offset", "teaching_queries", "teaching_weight", "teaching_lora_gradient_norm"))
     row["execution_shards"] = [{key: part[key] for key in sorted(physical_keys) if key in part}
                                for part in parts]
     for key in physical_keys:
         row.pop(key, None)
     row["seconds"] = max(part["seconds"] for part in parts)
-    for key in ("action_demos", "action_frames", "action_start_indices"):
+    for key in ("action_demos", "action_frames", "action_start_indices",
+                "teaching_action_demos", "teaching_action_frames", "teaching_action_start_indices"):
         if key in parts[0]:
             row[key] = [value for part in parts for value in part[key]]
-    for key in ("source_forward_calls", "compiled_forward_calls"):
+    for key in ("source_forward_calls", "compiled_forward_calls", "teaching_compiled_forward_calls"):
         if key in parts[0]:
             row[key] = sum(part[key] for part in parts)
     return row
@@ -80,16 +84,22 @@ def merge_condition_rows(rows: Sequence[dict]) -> list[dict]:
     merged = []
     for _, parts in sorted(by_job.items()):
         parts.sort(key=lambda row: row["query_offset"])
-        cursor = 0
+        cursor, teaching_cursor = 0, 0
         for part in parts:
             if part["query_offset"] != cursor:
                 raise ValueError("condition query shards overlap or leave a gap")
             cursor += part["queries"]
-        if cursor != 21:
-            raise ValueError("condition query shards must cover all 21 queries")
+            if part["teaching_query_offset"] != teaching_cursor:
+                raise ValueError("condition teaching shards overlap or leave a gap")
+            teaching_cursor += part["teaching_queries"]
+        if cursor != 21 or teaching_cursor != 7:
+            raise ValueError("condition query shards must cover all 21 main and seven teaching queries")
         row = _combine_query_shards(parts) if len(parts) > 1 else dict(parts[0])
         row.update(queries=cursor, query_offset=0, condition_weight=.25,
-                   flow_loss=sum(part["flow_loss"] * part["queries"] for part in parts) / cursor)
+                   flow_loss=sum(part["flow_loss"] * part["queries"] for part in parts) / cursor,
+                   teaching_queries=teaching_cursor, teaching_query_offset=0,
+                   teaching_weight=sum(part["teaching_weight"] for part in parts),
+                   teaching_loss=sum(part["teaching_loss"] * part["teaching_queries"] for part in parts) / teaching_cursor)
         merged.append(row)
     return merged
 

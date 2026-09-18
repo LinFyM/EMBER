@@ -1,20 +1,15 @@
 # EMBER task plan
 
-## 已完成goal（2026-09-18，专家建议的A learned frame-set参照）
+## 当前goal（2026-09-19，经最终LoRA的同视频教学）
 
-Owner已授权执行[专家意见](docs/review_materials/20260918/expert_review.md)的唯一训练诊断并推送相关结果；此前暂停被本范围取代。
-已完成的封存设计：[learned frame-set匹配合同](docs/learned_frameset_reference_design.md)。
+完成[专家最终修订](docs/review_materials/20260919/expert_proposal.md)，实现、真实验证、训练评测、分析后推送并汇报。
+Active design：[方法与有界实验合同](docs/video_teaching_writer_design.md)。主实验单相机agentview，后续双相机仅据证据裁决。
 
-1. **已完成：登记与实现。** 核对A原件，恢复其已验证模块及初始化顺序，仅移除视频位置/因果mask/读取时间寻址。
-   保留全部真实帧、语言/空间/horizon位置、三Meta、完整A/B、采样事件与优化时钟；替换已结束统一图，不并留fallback。
-2. **已完成：验证与profile。** 集合不变性、真实信用、事件匹配、恢复和物化合同；真实最长视频/更新profile，选合法高效资源。
-3. **已完成：正式fresh1200。** 每100保存完整checkpoint，300/600/900/1200各完成correct400及train96，原拓扑分段exact-resume。Owner再次明确1200即停止，不延长。
-4. **已完成：配对解释。** 复用既有A四节点，重点900+1200，报告task/suite/breadth/R/G/L/churn/相邻保持与区间，不挑峰值宣称等价。
-5. **已完成：远程交付。** 推送代码、专家原文、预注册、结果汇总和精简可复核raw rows，更新状态与研究历史，确认main同步后结束goal。
+1. **已完成：合同与实现。** 保留A完整参数骨架，加入重复完整H/相邻视觉读取；同视频教学与跨episode主FM共同训练全部Writer/Meta。
+2. **进行中：CPU与真实profile。** 数据对齐、标签信息墙、两组归一与重放、1–6卡逻辑不变、最长视频及完整resume；profile权重不入formal。
+3. **待完成：fresh主实验。** 1500硬上限，900/1200/1500各correct400/train96，真实资源由profile登记。
+4. **待完成：有界后续与分析。** 按预注册相邻能力决定other/冻结controls及唯一监督配对消融；双相机默认不补，不开展无依据扫描。
+5. **待完成：远程交付。** 更新结果、findings与研究历史，推送代码/合同/精简证据，核对main后完成goal。
 
-不重训原A或原v5.2，不并开新架构、不用wrong/shuffle/reverse选点、不碰Test/held梯度/RL。
-结果可以是正、负或不确定；目标是完成专家要求的匹配诊断，不是强行取得某种结论。
-当前实际资源与进度见[progress](progress.md)，历史实验不自动恢复。
-
-结果：validation79/109/142/118，A99/88/140/135；train33/40/49/57，A36/47/54/62。
-主节点未证明无序相邻等强；详见[报告](docs/review_materials/20260918/frameset_report.md)。无active design，不自动开展下一实验。
+上轮frame-set已结束1200，结果79/109/142/118，对A99/88/140/135；[报告](docs/review_materials/20260918/frameset_report.md)。
+不重训旧A/v5.2，不恢复旧路线，不用controls选点，不访问Test或RL。负结果也须完整分析交付。

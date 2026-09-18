@@ -21,10 +21,10 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
-from ember.writer.learning_data import MAXIMUM_UPDATES
+from ember.writer.learning_data import EVENT_SCHEMA
 from ember.writer.materialization_workers import MaterializationWorkers, execution_devices
 from ember.writer.training import (CONFIG_SCHEMA, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
-                                   observer_mode_contract, require_resume_identity, extension_record_path)
+                                   observer_mode_contract)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
@@ -66,15 +66,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     # Inspect scalar provenance without reading optimizer tensor payloads.
     trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True, weights_only=True)
     if macro > run["config"]["data"]["maximum_updates"]:
-        budget = trainer["sampler_state"]["event_contract"]["maximum_updates"]
-        run_path = extension_record_path(checkpoint.parent.parent, "run_contract.json", budget)
-        if not run_path.exists():
-            run_path = checkpoint.parent.parent / "run_contract_extended.json"
-        extended = read_json(run_path)
-        require_resume_identity(run, extended)
-        if not macro <= budget <= MAXIMUM_UPDATES or extended["training"]["maximum_updates"] != budget:
-            raise ValueError("checkpoint exceeds the registered budget extension")
-        run = extended
+        raise ValueError("checkpoint exceeds the registered training budget")
     observer = observer_mode_contract(run.get("model_config", {}))
     if run["model_config"] != run.get("config", {}).get("model"):
         raise ValueError("checkpoint and run configuration disagree on the video Writer architecture")
@@ -86,9 +78,9 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
         (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
         (config, {"schema_version": CONFIG_SCHEMA, "update_version": UPDATE_VERSION,
                   "execution_precision": "native_bf16_writer_fm_fp32_lora"}),
-        (config.get("optimization", {}), {"loss": "main_fm"}),
+        (config.get("optimization", {}), {"loss": "main_fm_plus_video_teaching"}),
         (config.get("observer", {}), observer),
-        (data, {"version": "v52_full_video_cross_episode_events_v1", "action_start_offset": 1,
+        (data, {"version": EVENT_SCHEMA, "action_start_offset": 1,
                 "query_alignment": "post_action_observation_future_control_v1"}),
         (manifest, {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": STAGE,
                     "run_contract_schema": RUN_SCHEMA, "next_macro": macro}),
@@ -246,11 +238,11 @@ def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, A
         "visual_token_source": f"actual_final_{patches}_image_patches_and_exact_task_span_tokens",
         "visual_token_gradient": "joint_Text_VL_Action_Meta_complete_Writer_replay",
         "native_read": observer["horizon_read"], "video_order": observer["video_order"],
-        "video_representation": "language_queried_video_content_Core_and_frame_set_Procedure",
-        "process_aggregation": "two_noncausal_blocks_without_frame_RoPE_and_centered_slot_read_without_time_address",
+        "video_representation": "language_queried_video_Core_and_ordered_recurrent_Procedure",
+        "process_aggregation": "repeated_full_H50_and_adjacent_E_reads_then_causal_RoPE_with_centered_slot_read",
         "parameter_decoder": "A_matched_Core_conditioned_Procedure_AdaLN_postfusion_and_final_RMSNorm",
         "native_parameter_generation": "complete_A_B_from_eight_shared_family_heads",
-        "training_stage": STAGE, "training_objective": "main_fm",
+        "training_stage": STAGE, "training_objective": "main_fm_plus_video_teaching",
         "deployment_frozen_source_vjp": False, "source_parameter_training": False,
         "deployment_grad_context": "no_grad_complete_Writer_forward",
         "deployment_teacher_labels_loss_optimizer": False, "writer_execution": "one_pre_rollout_call",

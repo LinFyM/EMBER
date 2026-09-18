@@ -56,18 +56,8 @@ def load_learning_tasks(
     return output
 
 
-EVENT_SCHEMA = "v52_full_video_cross_episode_events_v1"
-MAXIMUM_UPDATES = 12_000  # The registered, unchanged optimizer decay clock.
-
-
-def event_plan_prefix(plan: Mapping[str, Any], updates: int) -> dict[str, Any]:
-    """Project an extended plan onto its original complete-round registration."""
-    if type(updates) is not int or not 0 < updates <= plan["maximum_updates"] or updates % 6:
-        raise ValueError("event prefix must contain registered complete six-update rounds")
-    prefix = {**plan, "maximum_updates": updates, "groups": plan["groups"][:updates]}
-    if "events" in plan:
-        prefix["events"] = plan["events"][:updates * 4]
-    return prefix
+EVENT_SCHEMA = "video_teaching_joint_query_events_v1"
+MAXIMUM_UPDATES = 1_500
 
 
 def _episode_queries(task, lengths, order, *, seed, cursor, count, teacher_demo=None):
@@ -128,14 +118,17 @@ class WriterTrainingData:
             raise ValueError("Writer requires post-action observations with future-control labels")
         if config.get("event_schema_version") != EVENT_SCHEMA:
             raise ValueError("training event schema must be explicitly registered")
-        for name in ("seed", "sampler_seed", "teacher_video_seed", "maximum_updates"):
+        for name in ("seed", "sampler_seed", "teacher_video_seed", "teaching_seed", "maximum_updates"):
             if type(config.get(name)) is not int or config[name] < 0:
                 raise ValueError(f"training event {name} must be a non-negative integer")
         if not 0 < config["maximum_updates"] <= MAXIMUM_UPDATES or config["maximum_updates"] % 6:
-            raise ValueError("training events require complete six-update rounds within the 12000-update clock")
+            raise ValueError("training events require complete six-update rounds within the 1500-update window")
         if (config.get("tasks_per_update") != 4 or config.get("conditions_per_task") != 1
                 or config.get("queries_per_task") != 21 or tuple(config["cardinalities"]) != (1,)):
             raise ValueError("training events require four tasks, one video and 21 queries per task")
+        if (config.get("teaching_queries_per_task") != 7
+                or config.get("teaching_episode") not in {"same_video", "cross_episode"}):
+            raise ValueError("video teaching requires seven queries with a registered episode relation")
         if any(tuple(config[name]) != tuple(range(46)) for name in ("video_demos", "action_demos")):
             raise ValueError("training video/action pools must be episodes 0 through 45")
         if any(tuple(config[name]) != tuple(range(46, 50))
@@ -170,8 +163,8 @@ class WriterTrainingData:
         events = []
         for task in self.task_ids:
             lengths = self.tasks[task].episode_lengths
-            if len(lengths) != 50 or min(lengths) < 2:
-                raise ValueError("training events require 50 episodes with future-control support")
+            if len(lengths) != 50 or min(lengths) < 6:
+                raise ValueError("training events require 50 episodes with five real future actions")
             order = np.random.default_rng(
                 np.random.SeedSequence([self.sampler_seed, task, 0xE91]),
             ).permutation(self.action_pool).tolist()
@@ -197,9 +190,28 @@ class WriterTrainingData:
                         demo_indices=demos, frame_indices=frames,
                     ), "policy_random_batch_size": 21,
                     "frames": (lengths[teacher] - 1) // 5 + 1 + bool((lengths[teacher] - 1) % 5),
+                    "teaching": self._teaching_event(task, occurrence, teacher, lengths),
                 })
         events.sort(key=lambda event: (event["occurrence"], event["task"]))
         return tuple(events)
+
+    def _teaching_event(self, task, occurrence, teacher, lengths):
+        demo = teacher
+        seed = self.config["teaching_seed"]
+        if self.config["teaching_episode"] == "cross_episode":
+            rng = np.random.default_rng(np.random.SeedSequence([seed, task, occurrence, 0xE91]))
+            demo = int(rng.choice([value for value in self.action_pool if value != teacher]))
+        legal = np.arange(0, lengths[demo] - 5, 5)
+        replacement = len(legal) < 7
+        rng = np.random.default_rng(np.random.SeedSequence([seed, task, occurrence, 0xF4A]))
+        frames = rng.choice(legal, size=7, replace=replacement).tolist()
+        noise_seed = int(np.random.SeedSequence(
+            [self.seed, seed, task, occurrence, 0x701CE],
+        ).generate_state(1, dtype=np.uint64)[0]) & ((1 << 63) - 1)
+        return {"task": task, "action_demos": [demo] * 7, "action_frames": frames,
+                "action_start_indices": [frame + 1 for frame in frames],
+                "policy_rng_seed": noise_seed, "policy_random_batch_size": 7,
+                "episode_relation": self.config["teaching_episode"], "sampling_with_replacement": replacement}
 
     def _event_contract(self) -> dict[str, Any]:
         return {"schema_version": EVENT_SCHEMA, "seed": self.seed, "sampler_seed": self.sampler_seed,
@@ -207,6 +219,8 @@ class WriterTrainingData:
                 "grouping": self.config["grouping"], "groups": [list(group) for group in self._groups],
                 "task_ids": list(self.task_ids), "video_demos": list(self.video_pool),
                 "action_demos": list(self.action_pool), "queries_per_task": 21,
+                "teaching_queries_per_task": 7, "teaching_seed": self.config["teaching_seed"],
+                "teaching_episode": self.config["teaching_episode"],
                 "action_start_offset": 1, "query_alignment": self.config["query_alignment"],
                 "episode_lengths": [list(self.tasks[task].episode_lengths) for task in self.task_ids]}
 
@@ -225,6 +239,7 @@ class WriterTrainingData:
             draws.append({"job_id": len(draws), "condition_index": 0, "task": task,
                           "occurrence": event["occurrence"], "video_demos": (event["teacher_demo"],),
                           "query_seed": event["query_seed"], "query_offset": 0, "query_count": 21,
+                          "teaching_offset": 0, "teaching_count": 7,
                           "frames": event["frames"]})
             self.counts[task] += 1
         self.next_step += 1
@@ -240,13 +255,15 @@ class WriterTrainingData:
         )
 
     def action_batch(self, task: int, occurrence: int, demos: Sequence[int], *, query_seed: int,
-                     query_offset: int = 0, query_count: int | None = None):
+                     query_offset: int = 0, query_count: int | None = None, teaching: bool = False):
         if (task not in self.tasks or type(occurrence) is not int
                 or not 0 <= occurrence < self.maximum_updates // 6):
             raise ValueError("action query is outside the registered task/visit events")
         event = self._events[occurrence * 24 + self.task_ids.index(task)]
         if tuple(demos) != (event["teacher_demo"],) or query_seed != event["query_seed"]:
             raise ValueError("action query differs from its registered training event")
+        if teaching:
+            event = event["teaching"]
         return self._collate_event(self.queries, event, query_offset=query_offset, query_count=query_count)
 
     def _diagnostic_dataset(self) -> FunctionalQueryDataset:
@@ -301,10 +318,8 @@ class WriterTrainingData:
         return {"next_step": self.next_step, "task_occurrences": dict(self.counts),
                 "event_contract": self._event_contract()}
 
-    def restore_sampler(self, state: Mapping[str, Any], *, allow_budget_extension: bool = False) -> None:
+    def restore_sampler(self, state: Mapping[str, Any]) -> None:
         previous, expected = state.get("event_contract", {}), self._event_contract()
-        if allow_budget_extension:
-            expected = event_plan_prefix(expected, previous.get("maximum_updates"))
         if previous != expected:
             raise ValueError("sampling event contract or grouping changed")
         step = state.get("next_step")

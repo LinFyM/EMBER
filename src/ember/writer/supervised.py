@@ -1,4 +1,4 @@
-"""Pure cross-episode FM with complete-LoRA credit and joint Writer replay."""
+"""Cross-episode FM and video teaching share one complete-LoRA Writer replay."""
 from __future__ import annotations
 
 import time
@@ -20,7 +20,7 @@ class SupervisedEngine:
         timings[name] = time.perf_counter() - start
         return time.perf_counter()
 
-    def _credit(self, state, batch, trace, offset, *, backward, condition_weight=.25):
+    def _credit(self, state, batch, trace, offset, *, backward, condition_weight=.25, teaching=False):
         with autocast(self.device):
             return paired_functional_credit(
                 self.runtime.policy, state, self.runtime.lora, batch,
@@ -28,6 +28,7 @@ class SupervisedEngine:
                 random_batch=trace.get("policy_random_batch_size", len(trace["action_demos"])), offset=offset,
                 microbatch=min(int(self.config["runtime"]["policy_microbatch"]), len(trace["action_demos"])),
                 condition_weight=condition_weight, backward=backward,
+                noise_endpoint=teaching, prefix_steps=5 if teaching else None,
             )
 
     def backward(self, draw) -> dict:
@@ -48,16 +49,36 @@ class SupervisedEngine:
         batch = runtime.processor.training_batch(raw)
         start = self._time(timings, "query_preparation_seconds", start)
         credit = self._credit(state, batch, trace, draw["query_offset"], backward=True, condition_weight=weight)
-        del batch, raw, state
+        del batch, raw
         start = self._time(timings, "fm_vjp_seconds", start)
         cotangent = credit.pop("lora_cotangent")
         fm_norm = float(torch.stack([value.norm() for value in cotangent.values()]).norm())
+        raw, teaching_trace = self.data.action_batch(
+            task, draw["occurrence"], demos, query_seed=draw["query_seed"],
+            query_offset=draw["teaching_offset"], query_count=draw["teaching_count"], teaching=True,
+        )
+        batch = runtime.processor.training_batch(raw)
+        teaching_weight = .25 * float(self.config["optimization"]["teaching_weight"]) * draw["teaching_count"] / 7
+        teaching = self._credit(state, batch, teaching_trace, draw["teaching_offset"], backward=True,
+                                condition_weight=teaching_weight, teaching=True)
+        del batch, raw, state
+        teaching_cotangent = teaching.pop("lora_cotangent")
+        teaching_norm = float(torch.stack([value.norm() for value in teaching_cotangent.values()]).norm())
+        for name in cotangent:
+            cotangent[name].add_(teaching_cotangent[name])
+        del teaching_cotangent
+        start = self._time(timings, "teaching_vjp_seconds", start)
         generated = runtime.compile(condition, frame_parallel_group=self.frame_parallel_group)
         torch.autograd.backward(tuple(generated.values()),
                                 tuple(cotangent[name].to(value) for name, value in generated.items()))
         self._time(timings, "writer_vjp_seconds", start)
-        return {**credit, "task_weight": .25, "condition_weight": weight, "normalizer": 1.,
+        return {**credit, "teaching_loss": teaching["flow_loss"], "task_weight": .25,
+                "condition_weight": weight, "teaching_weight": teaching_weight, "normalizer": 1.,
                 "fm_lora_gradient_norm": fm_norm, "queries": len(trace["action_demos"]),
+                "teaching_lora_gradient_norm": teaching_norm,
+                "teaching_queries": len(teaching_trace["action_demos"]),
+                "teaching_compiled_forward_calls": teaching["compiled_forward_calls"],
+                **{"teaching_" + name: value for name, value in teaching_trace.items()},
                 **trace, **timings, "input_cache_hits": self.cache.hits - hits,
                 "input_cache_misses": self.cache.misses - misses, "input_cache_bytes": self.cache.bytes,
                 "policy_microbatch": int(self.config["runtime"]["policy_microbatch"])}

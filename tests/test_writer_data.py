@@ -11,7 +11,7 @@ import pytest
 
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import task_logical_batch_policy_rng_seed
-from ember.writer.learning_data import EVENT_SCHEMA, LearningTask, WriterTrainingData, event_plan_prefix
+from ember.writer.learning_data import EVENT_SCHEMA, LearningTask, WriterTrainingData
 
 
 def test_teacher_video_store_selects_the_declared_rgb_view(tmp_path: Path) -> None:
@@ -122,7 +122,7 @@ def test_future_control_matches_next_observed_transition_and_has_no_terminal_que
 def training_data_factory(tmp_path, monkeypatch):
     """Use real lazy HDF5 reads with small observations and metadata for train24."""
     path = tmp_path / "train.hdf5"
-    lengths = tuple(5 + demo % 4 for demo in range(50))
+    lengths = tuple(31 + demo % 10 for demo in range(50))
     with h5py.File(path, "w") as handle:
         for demo, length in enumerate(lengths):
             group = handle.create_group(f"data/demo_{demo}")
@@ -141,7 +141,8 @@ def training_data_factory(tmp_path, monkeypatch):
     opened = []
     def create(*, camera_view="dual", **changes):
         config = {"seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722,
-                  "maximum_updates": 12, "grouping": "baseline", "event_schema_version": EVENT_SCHEMA,
+                  "maximum_updates": 12, "teaching_seed": 20260919, "teaching_queries_per_task": 7,
+                  "teaching_episode": "same_video", "grouping": "baseline", "event_schema_version": EVENT_SCHEMA,
                   "task_ids": list(range(24)), "tasks_per_update": 4, "conditions_per_task": 1,
                   "queries_per_task": 21, "cardinalities": [1], "video_demos": list(range(46)),
                   "action_demos": list(range(46)), "diagnostic_action_demos": list(range(46, 50)),
@@ -242,30 +243,6 @@ def test_regrouping_and_json_resume_preserve_event_and_flow_identity(training_da
     assert baseline.event_plan()["events"] == second["events"]
 
 
-@pytest.mark.parametrize("old_budget,new_budget", [(1200, 1800), (1800, 2100)])
-def test_budget_extension_preserves_all_old_events_and_resumes_the_next_unseen_round(training_data_factory, old_budget, new_budget):
-    original = training_data_factory(maximum_updates=old_budget)
-    continuous = training_data_factory(maximum_updates=new_budget)
-    assert event_plan_prefix(continuous.event_plan(), old_budget) == original.event_plan()
-    for _ in range(old_budget):
-        assert original.next_iteration() == continuous.next_iteration()
-    saved = json.loads(json.dumps(original.sampler_state()))
-    resumed = training_data_factory(maximum_updates=new_budget)
-    with pytest.raises(ValueError, match="contract or grouping"):
-        resumed.restore_sampler(saved)
-    resumed.restore_sampler(saved, allow_budget_extension=True)
-    for _ in range(new_budget - old_budget):
-        assert resumed.next_iteration() == continuous.next_iteration()
-    assert resumed.counts == dict.fromkeys(range(24), new_budget // 6)
-    assert resumed.sampler_state() == continuous.sampler_state()
-    changed = training_data_factory(maximum_updates=new_budget, teacher_video_seed=8)
-    with pytest.raises(ValueError, match="contract or grouping"):
-        changed.restore_sampler(saved, allow_budget_extension=True)
-    saved["next_step"] = old_budget + 1
-    with pytest.raises(ValueError, match="outside the registered"):
-        resumed.restore_sampler(saved, allow_budget_extension=True)
-
-
 def test_event_batch_reads_only_selected_actions_and_keeps_full_batch_rng(training_data_factory, monkeypatch):
     reads = []
     original = h5py.Dataset.__getitem__
@@ -296,6 +273,38 @@ def test_event_batch_reads_only_selected_actions_and_keeps_full_batch_rng(traini
         data.action_batch(draw["task"], draw["occurrence"], (46,), query_seed=draw["query_seed"])
     with pytest.raises(ValueError, match="registered training event"):
         data.action_batch(draw["task"], draw["occurrence"], draw["video_demos"], query_seed=0)
+
+
+def test_teaching_queries_use_five_real_next_actions_and_matched_ablation_noise(training_data_factory):
+    same = training_data_factory()
+    other = training_data_factory(teaching_episode="cross_episode")
+    same_plan, other_plan = same.event_plan(), other.event_plan()
+    for left, right in zip(same_plan["events"], other_plan["events"], strict=True):
+        assert {k: v for k, v in left.items() if k != "teaching"} == {
+            k: v for k, v in right.items() if k != "teaching"}
+        a, b = left["teaching"], right["teaching"]
+        assert a["policy_rng_seed"] == b["policy_rng_seed"] != left["policy_rng_seed"]
+        assert set(a["action_demos"]) == {left["teacher_demo"]}
+        assert left["teacher_demo"] not in b["action_demos"]
+        for taught in (a, b):
+            demo = taught["action_demos"][0]
+            length = same.tasks[left["task"]].episode_lengths[demo]
+            legal = list(range(0, length - 5, 5))
+            assert set(taught["action_frames"]) <= set(legal)
+            assert taught["sampling_with_replacement"] == (len(legal) < 7)
+            if len(legal) >= 7:
+                assert len(set(taught["action_frames"])) == 7
+    draw = same.next_iteration()[0]
+    batch, trace = same.action_batch(draw["task"], draw["occurrence"], draw["video_demos"],
+                                    query_seed=draw["query_seed"], teaching=True)
+    assert not batch["action_is_pad"][:, :5].any()
+    expected = (np.asarray(trace["action_demos"])[:, None] * 100
+                + np.asarray(trace["action_frames"])[:, None] + np.arange(1, 6)[None])
+    np.testing.assert_array_equal(batch["action"][:, :5, 0].numpy(), expected)
+    assert trace["policy_random_batch_size"] == 7
+    changed = same.sampler_state()
+    with pytest.raises(ValueError, match="contract or grouping"):
+        other.restore_sampler(changed)
 
 
 def test_frozen_diagnostics_use_held_actions_and_exclude_the_condition_video(training_data_factory):

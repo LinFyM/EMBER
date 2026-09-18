@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import socket
 import sys
@@ -14,12 +15,12 @@ from typing import Any
 import torch
 import torch.distributed as dist
 
-from ember.ecp.checkpoint import checkpoint_macro, load_ecp_checkpoint, save_ecp_checkpoint
+from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
 from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
-from ember.writer.learning_data import WriterTrainingData, event_plan_prefix
+from ember.writer.learning_data import EVENT_SCHEMA, WriterTrainingData
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import VideoConditionCache, build_runtime, require_architecture_identity
 from ember.writer.task_execution import (
@@ -28,21 +29,21 @@ from ember.writer.task_execution import (
 )
 
 
-CONFIG_SCHEMA = "ember_a_frameset_writer_config_v1"
-RUN_SCHEMA = "ember_a_frameset_writer_run_v1"
-STAGE = "a_frameset_writer_fresh"
-TRAINING_SCHEMA = "ember_a_frameset_training_state_v1"
-UPDATE_VERSION = "a_frameset_full_ab_pure_fm_joint_meta_v1"
+CONFIG_SCHEMA = "ember_video_teaching_writer_config_v1"
+RUN_SCHEMA = "ember_video_teaching_writer_run_v1"
+STAGE = "video_teaching_writer_fresh"
+TRAINING_SCHEMA = "ember_video_teaching_training_state_v1"
+UPDATE_VERSION = "video_teaching_full_ab_joint_meta_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
-    """Bind the A-matched native read and absence of video-time addressing."""
+    """Bind the ordered full-horizon and adjacent-content native reads."""
     require_architecture_identity(model)
     return {"camera_view": "agentview",
-            "native_inputs": "full256_patch_content_and_full50_fixed_mean_horizon_read",
-            "horizon_read": "uniform_fixed_zero_query_and_bias_over_all_50_raw_H_values",
-            "video_order": "frame_set_no_frame_RoPE_no_causal_mask_no_temporal_read_address"}
+            "native_inputs": "full256_patch_content_and_repeated_full50_H_adjacent_E_reads",
+            "horizon_read": "repeated_content_position_attention_over_all_50_raw_H_values",
+            "video_order": "causal_RoPE_with_real_frame_positions_and_ordered_adjacent_roles"}
 
 
 def _config(path: Path) -> dict[str, Any]:
@@ -51,18 +52,24 @@ def _config(path: Path) -> dict[str, Any]:
         "extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
         "queries_per_task": 21, "tasks_per_update": 4, "conditions_per_task": 1, "cardinalities": [1],
         "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
-        "version": "v52_full_video_cross_episode_events_v1",
-        "event_schema_version": "v52_full_video_cross_episode_events_v1",
-        "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722, "maximum_updates": 1200,
+        "version": EVENT_SCHEMA, "event_schema_version": EVENT_SCHEMA,
+        "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722, "maximum_updates": 1500,
+        "teaching_queries_per_task": 7, "teaching_seed": 20260919,
     }
     expected_observer = {
         "flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "text_meta_rank": 4,
         "probe_seed": 7 + 0x5A17, **observer_mode_contract(config["model"]),
     }
+    expected_optimization = {
+        "loss": "main_fm_plus_video_teaching", "joint_train_all_writer_modules": True,
+        "normalizer": 1., "teaching_weight": 1 / 3, "teaching_prefix_steps": 5, "teaching_flow_time": 1,
+        "tail_start_update": 900, "tail_end_update": 1500, "tail_final_ratio": .1,
+        "seed": 7, "lr": 3e-4, "betas": [.9, .95], "eps": 1e-8, "weight_decay": 1e-4,
+        "grad_clip": 1., "warmup_updates": 100, "decay_updates": 12000, "decay_lr": 1e-5,
+    }
     if (config.get("schema_version") != CONFIG_SCHEMA
-            or config["optimization"].get("joint_train_all_writer_modules") is not True
-            or float(config["optimization"]["normalizer"]) != 1.0
-            or config["optimization"]["loss"] != "main_fm"
+            or any(config["optimization"].get(key) != value for key, value in expected_optimization.items())
+            or config["data"].get("teaching_episode") not in {"same_video", "cross_episode"}
             or any(config["data"].get(key) != value for key, value in expected_data.items())
             or type(config["data"].get("action_start_offset")) is not int
             or any(config["observer"].get(key) != value for key, value in expected_observer.items())
@@ -71,7 +78,7 @@ def _config(path: Path) -> dict[str, Any]:
                 "native_output_calibration", "local_field_supervision"} & config.keys()
             or "trust_scales" in config["optimization"]
             or config.get("execution_precision") != "native_bf16_writer_fm_fp32_lora"):
-        raise ValueError("canonical A frame-set Writer scientific contract changed")
+        raise ValueError("canonical video-teaching Writer scientific contract changed")
     for key, expected in (("video_demos", range(46)), ("action_demos", range(46)),
                           ("diagnostic_action_demos", range(46, 50)), ("held_video_demos", range(46, 50))):
         if config["data"][key] != list(expected):
@@ -86,20 +93,28 @@ def _config(path: Path) -> dict[str, Any]:
     return config
 
 
+def _learning_rate_multiplier(step, opt):
+    def original(index):
+        if index < opt["warmup_updates"]:
+            return (index + 1) / (opt["warmup_updates"] + 1)
+        floor = opt["decay_lr"] / opt["lr"]
+        return floor + (1 - floor) * .5 * (1 + math.cos(math.pi * index / opt["decay_updates"]))
+    start, end = opt["tail_start_update"], opt["tail_end_update"]
+    if step <= start:
+        return original(step)
+    progress = min(1., (step - start) / (end - start))
+    ratio = opt["tail_final_ratio"]
+    return original(start) * (ratio + (1 - ratio) * .5 * (1 + math.cos(math.pi * progress)))
+
+
 def _optimization(state, config):
-    from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
 
     opt = config["optimization"]
     optimizer = torch.optim.AdamW(
         state.parameters(), lr=float(opt["lr"]), betas=tuple(opt["betas"]),
         eps=float(opt["eps"]), weight_decay=float(opt["weight_decay"]),
     )
-    scheduler = CosineDecayWithWarmupSchedulerConfig(
-        num_warmup_steps=int(opt["warmup_updates"]), num_decay_steps=int(opt["decay_updates"]),
-        peak_lr=float(opt["lr"]), decay_lr=float(opt["decay_lr"]),
-    # This bounded run covers only the beginning of the original 12k clock.
-    # The upstream builder otherwise rescales warmup/decay to the shorter run budget.
-    ).build(optimizer, int(opt["decay_updates"]))
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step: _learning_rate_multiplier(step, opt))
     return optimizer, scheduler
 
 
@@ -114,50 +129,18 @@ def _execution_config(args, config, context):
     return local, batches
 
 
-def _data_config(args, config):
-    extension = getattr(args, "extend_to_update", None)
-    if extension is None:
-        return config["data"]
-    original = config["data"]["maximum_updates"]
-    if (args.mode != "formal" or not getattr(args, "resume", None)
-            or type(extension) is not int or not original < extension <= config["optimization"]["decay_updates"] or extension % 6
-            or checkpoint_macro(args.resume) < original):
-        raise ValueError("budget extension requires a formal resume after the original endpoint within the unchanged decay clock")
-    return {**config["data"], "maximum_updates": extension}
-
-
-def extension_record_path(output, name, updates):
-    """Keep each newly authorized budget immutable, including its runtime origin."""
-    return output / "budget_extensions" / f"updates_{updates:08d}" / name
-
-
 def _event_plan_path(args):
-    extension = getattr(args, "extend_to_update", None)
-    return (extension_record_path(args.output, "training_events.json", extension) if extension
-            else args.output / "training_events.json")
+    return args.output / "training_events.json"
 
 
 def _publish_event_plan(args, events):
     path = _event_plan_path(args)
-    if getattr(args, "extend_to_update", None):
-        original = read_json(args.output / "training_events.json")
-        if original != event_plan_prefix(events, original["maximum_updates"]):
-            raise ValueError("budget extension changed the original registered training events")
-        trainer = torch.load(args.resume / "trainer_state.pt", map_location="meta", mmap=True, weights_only=True)
-        previous_budget = trainer["sampler_state"]["event_contract"]["maximum_updates"]
-        if previous_budget != original["maximum_updates"]:
-            previous_path = extension_record_path(args.output, "training_events.json", previous_budget)
-            if not previous_path.exists():
-                previous_path = args.output / "training_events_extended.json"
-            previous = read_json(previous_path)
-            if previous["maximum_updates"] != previous_budget or previous != event_plan_prefix(events, previous_budget):
-                raise ValueError("budget extension changed the previous registered training events")
     if path.exists():
         if not args.resume:
             raise ValueError("fresh training refuses an existing event plan")
         if read_json(path) != events:
             raise ValueError("exact-resume training events or grouping changed")
-    elif args.resume and not getattr(args, "extend_to_update", None):
+    elif args.resume:
         raise ValueError("exact-resume requires its original registered event plan")
     else:
         write_json_atomic(path, events)
@@ -197,20 +180,21 @@ def _run_contract(args, context, config, runtime, state):
             "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
             "logical_batch": _logical_batch(config),
             "event_plan": str(_event_plan_path(args).resolve()),
-            "maximum_updates": _data_config(args, config)["maximum_updates"],
+            "maximum_updates": config["data"]["maximum_updates"],
             "update_version": config["update_version"], "data_version": config["data"]["version"],
             "checkpoint_updates": list(_checkpoint_nodes(args, config)),
         },
         "information_wall": {
-            "deployment_inputs": ["exact language", "complete sampled RGB frame set"],
-            "frame_indices": "sampling provenance only; no learned temporal addressing",
+            "deployment_inputs": ["exact language", "complete internally ordered RGB video"],
+            "frame_indices": "real sampled positions for ordered Procedure",
             "execution_adapters": 1, "reading_meta_in_execution": False,
             "validation_test_gradients": False, "shuffled_reversed": False,
-            "video_action_episodes": "main LoRA cross-episode", "gradient_normalizer": 1.0,
+            "video_action_episodes": {"main": "cross_episode", "teaching": config["data"]["teaching_episode"]},
+            "gradient_normalizer": 1.0,
             "objective": config["optimization"]["loss"],
-            "training_only_actions": "same-task cross-episode main FM execution queries only",
-            "native_read": "A-matched final agentview Z and fixed mean of full50 H; joint three-Meta replay",
-            "complete_lora": "shared eight-family full A/B heads from original Core-conditioned centered frame-set Procedure AdaLN",
+            "training_only_actions": "execution-query inputs and targets, loaded after RGB-language-only compilation",
+            "native_read": "repeated full50 H and ordered adjacent E content; joint three-Meta replay",
+            "complete_lora": "shared eight-family full A/B heads from Core-conditioned centered Procedure AdaLN",
             "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
             "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
@@ -240,6 +224,8 @@ def _grad_norm(parameters) -> float:
 def _logical_batch(config):
     return {"tasks": 4, "conditions_per_task": 1, "conditions": 4, "K": 1,
             "queries_per_task": 21, "queries_per_condition": 21, "queries_per_update": 84,
+            "teaching_queries_per_task": 7, "teaching_queries_per_update": 28,
+            "total_queries_per_update": 112, "teaching_weight": config["optimization"]["teaching_weight"],
             "task_weight": .25, "condition_weight": .25, "gradient_reduction": "SUM"}
 
 
@@ -248,8 +234,9 @@ def _condition_jobs(data, config, draws):
     tasks = {draw["task"] for draw in draws}
     if (len(draws) != 4 or len(by_job) != 4 or len(tasks) != 4 or not tasks <= set(data.tasks)
             or any(draw["condition_index"] != 0 or len(draw["video_demos"]) != 1
-                   or draw["query_count"] != 21 or draw["query_offset"] != 0 for draw in draws)):
-        raise ValueError("each update requires four distinct equal-weight K1 task events and 21 queries each")
+                   or draw["query_count"] != 21 or draw["query_offset"] != 0
+                   or draw["teaching_count"] != 7 or draw["teaching_offset"] != 0 for draw in draws)):
+        raise ValueError("each update requires four distinct equal-weight K1 tasks with 21 main and seven teaching queries")
     return by_job
 
 
@@ -268,11 +255,13 @@ def _execute_step(engine, data, context, config, draws, step):
     rows = []
     for job in assignment[group_index]:
         offset, count = query_shard(by_job[job]["query_count"], members, context.rank)
-        draw = {**by_job[job], "query_offset": offset, "query_count": count}
+        teaching_offset, teaching_count = query_shard(by_job[job]["teaching_count"], members, context.rank)
+        draw = {**by_job[job], "query_offset": offset, "query_count": count,
+                "teaching_offset": teaching_offset, "teaching_count": teaching_count}
         task = draw["task"]
         tick = time.perf_counter()
         metric = engine.backward(draw)
-        if int(metric["queries"]) != draw["query_count"]:
+        if int(metric["queries"]) != draw["query_count"] or int(metric["teaching_queries"]) != teaching_count:
             raise RuntimeError("supervised engine did not execute the registered FM exposure")
         rows.append({**metric, "step": step, "job_id": job, "task": task,
                      "suite": data.tasks[task].suite, "condition_index": draw["condition_index"],
@@ -339,8 +328,7 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
     )
     if restored["training_state"] != _training_state(config, updates):
         raise ValueError("supervised checkpoint stage/update/data contract changed")
-    data.restore_sampler(restored["sampler_state"],
-                         allow_budget_extension=getattr(args, "extend_to_update", None) is not None)
+    data.restore_sampler(restored["sampler_state"])
     if data.sampler_state()["next_step"] != updates:
         raise ValueError("sampler and optimizer-update cursors differ")
     if context.is_main:
@@ -368,9 +356,14 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
             "step": updates, "optimizer_updates": updates,
             "seconds": seconds,
             "mean_flow_loss": sum(r["flow_loss"] * r["condition_weight"] for r in gathered),
+            "mean_teaching_loss": sum(r["teaching_loss"] * r["task_weight"] for r in gathered),
+            "mean_total_loss": sum(r["flow_loss"] * r["condition_weight"]
+                                   + r["teaching_loss"] * r["teaching_weight"] for r in gathered),
             **norms, "lr_next": scheduler.get_last_lr()[0], "exposures": metrics_rows,
             "condition_exposures": metrics_rows, "task_exposures": updates * 4,
             "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
+            "teaching_queries": updates * _logical_batch(config)["teaching_queries_per_update"],
+            "total_queries": updates * _logical_batch(config)["total_queries_per_update"],
             "rank_memory": [{key: value for key, value in packet.items() if key != "rows"} for packet in packets],
             "peak_allocated_gib": max(packet["peak_allocated_gib"] for packet in packets),
             "peak_reserved_gib": max(packet["peak_reserved_gib"] for packet in packets),
@@ -401,8 +394,8 @@ def _segment_limit(args, config):
         raise ValueError("smoke/profile without registered nodes needs an explicit positive --stop-after-step")
     if args.mode == "formal" and stop != nodes[-1]:
         raise ValueError("formal segment must stop at the last registered checkpoint node")
-    if stop > _data_config(args, config)["maximum_updates"]:
-        raise ValueError("segment exceeds the registered event budget; an explicit budget extension is required")
+    if stop > config["data"]["maximum_updates"]:
+        raise ValueError("segment exceeds the registered 1500-update event budget")
     return stop
 
 
@@ -465,6 +458,8 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
             "optimizer_updates": updates, "exposures": metrics_rows,
             "condition_exposures": metrics_rows, "task_exposures": updates * 4,
             "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
+            "teaching_queries": updates * _logical_batch(config)["teaching_queries_per_update"],
+            "total_queries": updates * _logical_batch(config)["total_queries_per_update"],
             "seconds": time.perf_counter() - start,
             "scientific_qualification": False, "next": "registered held-action and paired closed-loop evidence",
         })
@@ -474,7 +469,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    if args.mode == "formal" and (config["status"] != "registered_a_frameset_reference_learning"
+    if args.mode == "formal" and (config["status"] != "registered_video_teaching_learning"
                                   or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)
@@ -484,14 +479,15 @@ def run(args: argparse.Namespace) -> None:
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     condition_rank_groups(context.world_size)
     if args.mode == "formal" and context.world_size != config["evidence"]["profile_registration"]["world_size"]:
-        raise ValueError("formal frame-set training requires its registered profiled topology")
+        raise ValueError("formal video-teaching training requires its registered profiled topology")
     execution_config, microbatches = _execution_config(args, config, context)
     if context.is_main:
-        print(json.dumps({"physical_policy_microbatches": microbatches, "logical_queries_per_update": 84}), flush=True)
+        print(json.dumps({"physical_policy_microbatches": microbatches,
+                          "logical_batch": _logical_batch(config)}), flush=True)
     torch.set_num_threads(int(args.cpu_threads))
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
-    data = WriterTrainingData(args.asset_root, _data_config(args, config),
+    data = WriterTrainingData(args.asset_root, config["data"],
                               camera_view=config["observer"]["camera_view"])
     if context.is_main:
         args.output.mkdir(parents=True, exist_ok=True)
@@ -505,9 +501,6 @@ def run(args: argparse.Namespace) -> None:
     contract = _run_contract(args, context, config, runtime, state)
     if context.is_main:
         _publish_contract(args.output / "run_contract.json", contract, resume=args.resume is not None)
-        if getattr(args, "extend_to_update", None):
-            extension_path = extension_record_path(args.output, "run_contract.json", args.extend_to_update)
-            _publish_contract(extension_path, contract, resume=extension_path.exists())
     barrier(context)
     cursors = _restore(args, context, runtime, data, optimizer, scheduler, config)
     updates, _ = cursors
@@ -535,7 +528,5 @@ def main() -> None:
     parser.add_argument("--checkpoint-updates", help="this segment's registered global optimizer-update nodes")
     parser.add_argument("--policy-microbatches", help="physical FM query chunks by rank, e.g. 8,4,8,8")
     parser.add_argument("--resume", type=Path)
-    parser.add_argument("--extend-to-update", type=int,
-                        help="explicit budget-only extension after the original endpoint; preserve the registered event prefix")
     parser.add_argument("--cpu-threads", type=int, default=4)
     run(parser.parse_args())

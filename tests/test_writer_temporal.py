@@ -1,20 +1,9 @@
-"""Behavioral contracts for joint video tokens and complete-LoRA parameter decoding."""
-
-from pathlib import Path
-from types import SimpleNamespace
-
+"""Verify the A-matched removal of frame order without removing content."""
 import pytest
 import torch
 from torch import nn
-
-from ember.lora import identity_lora_state, validate_lora_state
-from ember.pi05_lora import load_pi05_lora_contract
-from ember.writer.model import CompleteLoRAWriter, build_lora_tensor_specs
-from ember.writer.temporal import (
-    ContinuousParameterDecoder, JointVideoStack, VariableEpisodeInputError,
-    token_role_addresses,
-)
-
+from ember.writer.temporal import (FrameSetProcedureEncoder, LanguageSemanticCore,
+    RoPEContentBlock, SlotNormalizedCoreProcedureCompiler)
 
 @pytest.fixture(autouse=True)
 def small_cpu_work():
@@ -24,198 +13,129 @@ def small_cpu_work():
     yield
     torch.set_num_threads(previous)
 
+def components():
+    core = LanguageSemanticCore(width=16, heads=4, blocks=2, frame_attention_initial_lambda=.05)
+    procedure = FrameSetProcedureEncoder(width=16, heads=4, blocks=2)
+    compiler = SlotNormalizedCoreProcedureCompiler(width=16, heads=4, initialization_seed=8)
+    with torch.no_grad():
+        compiler.modulation.weight.normal_(std=.1)
+    return core, procedure, compiler
 
-def _components(*, width=16, semantic=3, horizon=5):
-    types = nn.Parameter(torch.randn(2, width) * .02)
-    return (JointVideoStack(width, 4, 2), ContinuousParameterDecoder(width, 4, 2, 7),
-            types, token_role_addresses(types, semantic, horizon))
+@pytest.mark.parametrize('permutation', [[3,0,4,1,2], [4,3,2,1,0]])
+def test_content_equivariance_and_nonzero_slot_invariance(permutation):
+    core, procedure, compiler = components()
+    q, evidence = torch.randn(1,3,16), torch.randn(1,5,3,16)
+    response = torch.randn(1,5,16,requires_grad=True)
+    valid, tokens = torch.ones(1,5,dtype=torch.bool), torch.ones(1,3,dtype=torch.bool)
+    positions = torch.tensor([[0,5,10,15,18]])
+    c, _ = core(q,evidence,valid,tokens)
+    p = procedure(response,positions,valid)
+    expected = compiler(c,tokens,p,positions,valid)
+    changed_c, _ = core(q,evidence[:,permutation],valid,tokens)
+    changed_p = procedure(response[:,permutation],positions,valid)
+    torch.testing.assert_close(changed_c,c,atol=2e-6,rtol=2e-5)
+    torch.testing.assert_close(changed_p,p[:,permutation],atol=2e-6,rtol=2e-5)
+    torch.testing.assert_close(compiler(changed_c,tokens,changed_p,positions,valid),expected,atol=3e-6,rtol=3e-5)
+    different = response.detach().clone()
+    different[:,2] += torch.randn(16)
+    other = compiler(c,tokens,procedure(different,positions,valid),positions,valid)
+    assert not torch.allclose(other[0],expected[0])
+    sum((value*torch.randn_like(value)).sum() for value in expected).backward()
+    assert bool((response.grad.norm(dim=-1)>0).all())
 
+def test_frame_indices_do_not_address_procedure_or_reader():
+    _, procedure, compiler = components()
+    x, c = torch.randn(1,5,16), torch.randn(1,3,16)
+    valid, tokens = torch.ones(1,5,dtype=torch.bool),torch.ones(1,3,dtype=torch.bool)
+    first, second = torch.tensor([[0,5,10,15,18]]),torch.tensor([[0,91,142,245,699]])
+    p = procedure(x,first,valid)
+    torch.testing.assert_close(procedure(x,second,valid),p)
+    torch.testing.assert_close(compiler(c,tokens,p,first,valid),compiler(c,tokens,p,second,valid))
+    assert all(not b.causal and not b.rotary for b in procedure.blocks)
+    assert not compiler.procedure_reader.attention.rotary_keys
 
-def _read(stack, decoder, memory, positions, frames, roles, addresses, semantic):
-    joint = stack(memory, positions, frames, roles, addresses)
-    return joint, decoder(joint, frames, roles, addresses, semantic)
+def test_language_positions_are_retained():
+    core,_,_ = components()
+    q,evidence = torch.randn(1,4,16),torch.randn(1,3,4,16)
+    valid,tokens = torch.ones(1,3,dtype=torch.bool),torch.ones(1,4,dtype=torch.bool)
+    permutation=[2,0,3,1]
+    expected,_ = core(q,evidence,valid,tokens)
+    observed,_ = core(q[:,permutation],evidence[:,:,permutation],valid,tokens)
+    assert all(b.rotary for b in core.blocks)
+    assert not torch.allclose(observed,expected[:,permutation],atol=1e-5,rtol=1e-5)
 
+def test_padding_has_no_content_or_gradient():
+    _,procedure,_ = components()
+    x=torch.randn(2,5,16,requires_grad=True)
+    valid=torch.tensor([[True,True,True,False,False],[True]*5])
+    positions=torch.tensor([[0,5,9,0,0],[0,5,10,15,19]])
+    observed=procedure(x,positions,valid)
+    torch.testing.assert_close(observed[:1,:3],procedure(x[:1,:3],positions[:1,:3],valid[:1,:3]))
+    assert observed[~valid].count_nonzero()==0
+    observed.square().sum().backward()
+    assert x.grad[~valid].count_nonzero()==0
 
-def test_role_addresses_share_types_and_restart_the_within_type_index():
-    types = nn.Parameter(torch.randn(2, 16))
-    short = token_role_addresses(types, 2, 3)
-    long = token_role_addresses(types, 5, 3)
-    torch.testing.assert_close(short[:2], long[:2])
-    torch.testing.assert_close(short[2:], long[5:])
-    torch.testing.assert_close(short[0] - types[0], short[2] - types[1])
-    short.square().sum().backward()
-    assert types.grad is not None and bool((types.grad.norm(dim=1) > 0).all())
+def test_same_parameter_count_and_initialization_rng():
+    torch.manual_seed(7)
+    original=nn.ModuleList(RoPEContentBlock(width=16,heads=4,causal=True) for _ in range(2))
+    expected_rng=torch.get_rng_state()
+    torch.manual_seed(7)
+    frame_set=FrameSetProcedureEncoder(width=16,heads=4,blocks=2)
+    assert torch.equal(torch.get_rng_state(),expected_rng)
+    assert sum(p.numel() for p in original.parameters())==sum(p.numel() for p in frame_set.parameters())
 
-
-@pytest.mark.parametrize('repeat', [2, 7])
-def test_static_repetition_preserves_joint_content_and_complete_parameter_slots(repeat):
-    stack, decoder, _, addresses = _components()
-    memory = torch.randn(1, 1, 8, 16)
-    roles = torch.ones(1, 8, dtype=torch.bool)
-    once, expected = _read(stack, decoder, memory, torch.zeros(1, 1, dtype=torch.long),
-                           torch.ones(1, 1, dtype=torch.bool), roles, addresses, 3)
-    positions = (torch.arange(repeat) * 5)[None]
-    joint, observed = _read(stack, decoder, memory.expand(-1, repeat, -1, -1), positions,
-                           torch.ones(1, repeat, dtype=torch.bool), roles, addresses, 3)
-    torch.testing.assert_close(joint, once.expand_as(joint), atol=2e-6, rtol=2e-5)
-    torch.testing.assert_close(observed, expected, atol=3e-6, rtol=2e-5)
-    assert bool(observed[0].norm() > 0)  # Repetition invariance does not erase static content.
-
-
-def test_padding_matches_individual_unpadded_conditions_and_receives_no_gradient():
-    stack, decoder, types, addresses = _components(semantic=4, horizon=3)
-    frames = torch.tensor([[True, True, True, False, False], [True] * 5])
-    roles = torch.tensor([[True, True, False, False, True, True, True], [True] * 7])
-    mask = frames[:, :, None] & roles[:, None, :]
-    memory = torch.randn(2, 5, 7, 16).masked_fill(~mask[..., None], 10_000.).requires_grad_()
-    positions = torch.tensor([[0, 5, 8, 0, 0], [0, 5, 10, 15, 19]])
-    joint, observed = _read(stack, decoder, memory, positions, frames, roles, addresses, 4)
-    assert joint[~mask].count_nonzero() == 0
-    for row, semantic in enumerate((2, 4)):
-        selected = memory[row:row + 1, frames[row]][:, :, roles[row]]
-        small_frames = torch.ones(selected.shape[:2], dtype=torch.bool)
-        small_roles = torch.ones(1, selected.shape[2], dtype=torch.bool)
-        _, expected = _read(stack, decoder, selected, positions[row:row + 1, frames[row]],
-                            small_frames, small_roles, token_role_addresses(types, semantic, 3), semantic)
-        torch.testing.assert_close(tuple(value[row:row + 1] for value in observed), expected,
-                                   atol=3e-6, rtol=2e-5)
-    sum((value * torch.randn_like(value)).sum() for value in observed).backward()
-    assert memory.grad[~mask].count_nonzero() == 0
-    assert bool(torch.isfinite(memory.grad).all())
-
-
-def test_real_frame_reordering_changes_content_but_reindexing_the_same_sequence_does_not():
-    stack, decoder, _, addresses = _components()
-    memory = torch.randn(1, 4, 8, 16)
-    positions = torch.tensor([[0, 5, 10, 14]])
-    frames, roles = torch.ones(1, 4, dtype=torch.bool), torch.ones(1, 8, dtype=torch.bool)
-    _, expected = _read(stack, decoder, memory, positions, frames, roles, addresses, 3)
-    permutation = torch.tensor([3, 1, 0, 2])
-    _, reindexed = _read(stack, decoder, memory[:, permutation], positions[:, permutation],
-                        frames, roles, addresses, 3)
-    torch.testing.assert_close(reindexed, expected, atol=4e-6, rtol=3e-5)
-    _, reordered = _read(stack, decoder, memory[:, permutation], positions, frames, roles, addresses, 3)
-    assert max(float((left - right).detach().abs().max()) for left, right in zip(expected, reordered)) > 1e-4
-
-
-def test_nonzero_addresses_cannot_create_parameter_content_from_zero_memory():
-    stack, decoder, _, addresses = _components()
-    memory = torch.zeros(2, 4, 8, 16)
-    positions = torch.tensor([[0, 5, 10, 14], [0, 5, 10, 14]])
-    frames, roles = torch.ones(2, 4, dtype=torch.bool), torch.ones(2, 8, dtype=torch.bool)
-    joint, output = _read(stack, decoder, memory, positions, frames, roles, addresses * 100., 3)
-    assert joint.count_nonzero() == 0
-    assert all(value.count_nonzero() == 0 for value in output)
-
-
-def test_semantic_initialization_precedes_a_read_of_all_action_positions():
-    _, decoder, _, addresses = _components()
-    first_read = ContinuousParameterDecoder(16, 4, 1, 7)
-    memory = torch.randn(1, 3, 8, 16)
-    memory[:, :, :3] = 0
-    frames, roles = torch.ones(1, 3, dtype=torch.bool), torch.ones(1, 8, dtype=torch.bool)
-    assert all(value.count_nonzero() == 0 for value in first_read(memory, frames, roles, addresses, 3))
-    assert all(bool(value.norm() > 0) for value in decoder(memory, frames, roles, addresses, 3))
-
-
-@pytest.mark.parametrize('bf16', [False, True])
-def test_full_horizon_content_and_temporal_readers_have_finite_functional_credit(bf16):
-    stack, decoder, types, addresses = _components(horizon=50)
-    memory = torch.randn(1, 3, 53, 16, requires_grad=True)
-    with torch.autocast('cpu', dtype=torch.bfloat16, enabled=bf16):
-        _, output = _read(stack, decoder, memory, torch.tensor([[0, 5, 9]]),
-                          torch.ones(1, 3, dtype=torch.bool), torch.ones(1, 53, dtype=torch.bool), addresses, 3)
-    sum((value * torch.randn_like(value)).mean() for value in output).backward()
-    for module in (stack, decoder):
-        assert all(parameter.grad is not None and bool(torch.isfinite(parameter.grad).all())
-                   for parameter in module.parameters())
-    assert bool((torch.linalg.vector_norm(memory.grad[:, :, 3:], dim=(0, 1, 3)) > 0).all())
-    assert bool(types.grad.norm() > 0)
-    assert bool(stack.blocks[0].time_attention.query.weight.grad.norm() > 0)
-    assert bool(decoder.blocks[1].cross_attention.value.weight.grad.norm() > 0)
-
-
-def test_parameter_counts_match_the_registered_blocks_and_copy_depth():
-    stack = JointVideoStack(256, 8, 2)
-    decoder = ContinuousParameterDecoder(256, 8, 2, 7)
-    assert sum(p.numel() for p in stack.parameters()) == 2 * 1_049_344
-    assert sum(p.numel() for p in decoder.parameters()) == 2 * 1_049_600 + 91_904
-    assert sum(p.numel() for p in stack.blocks[0].parameters()) == 1_049_344
-    assert sum(p.numel() for p in decoder.blocks[0].parameters()) == 1_049_600
-
-
-@pytest.mark.parametrize('invalid', ['frames', 'roles', 'positions', 'semantic'])
-def test_invalid_memory_contracts_fail_before_all_masked_attention(invalid):
-    stack, decoder, _, addresses = _components()
-    memory = torch.randn(1, 2, 8, 16)
-    frames, roles = torch.ones(1, 2, dtype=torch.bool), torch.ones(1, 8, dtype=torch.bool)
-    positions, semantic = torch.tensor([[0, 5]]), 3
-    if invalid == 'frames':
-        frames[:] = False
-    elif invalid == 'roles':
-        roles[:] = False
-    elif invalid == 'positions':
-        positions = positions.float()
-    else:
-        roles[:, :semantic] = False
-    with pytest.raises(VariableEpisodeInputError):
-        _read(stack, decoder, memory, positions, frames, roles, addresses, semantic)
-
-
-class _MemoryEncoder(nn.Module):
-    """A unit-test boundary supplying joint memory without loading source weights."""
-
+class EvidenceEncoder(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
-        self.constructor = kwargs
-        self.content = nn.Parameter(torch.randn(1, 2, 53, 256) * .1)
-        self.types = nn.Parameter(torch.randn(2, 256) * .02)
+        self.scale=nn.Parameter(torch.randn(256)*.1)
+    def forward(self, policy, frames, ids, tokens, masks, spans, *, frame_parallel_group=None):
+        self.group=frame_parallel_group
+        signal=frames.float().mean(dim=tuple(range(1,frames.ndim)))/255
+        axis=torch.linspace(.1,2.,256)
+        evidence=(signal[:,None,None]+axis[None,None]+torch.arange(3)[None,:,None]*.2).sin()*self.scale
+        interactions=(signal[:,None]*axis).cos()*self.scale
+        query=(tokens[:,:3,None].float()+axis).sin()
+        return query,evidence,interactions,torch.ones(tokens.shape[0],3,dtype=torch.bool)
 
-    def forward(self, policy, frames, indices, offsets, tokens, masks, spans):
-        batch = tokens.shape[0]
-        self.received_indices = indices
-        return (self.content.expand(batch, -1, -1, -1), torch.ones(batch, 2, dtype=torch.bool),
-                torch.ones(batch, 53, dtype=torch.bool), token_role_addresses(self.types, 3, 50), 3)
-
-
-@pytest.mark.parametrize('batch', [1, 2])
-def test_complete_writer_keeps_identity_all_targets_and_decoder_credit(monkeypatch, batch):
-    from ember.writer import video_program
-
-    monkeypatch.setattr(video_program, 'Pi05UnifiedVideoEncoder', _MemoryEncoder, raising=False)
-    contract = load_pi05_lora_contract(Path(__file__).resolve().parents[1] / 'configs/pi05_lora_v1.json')
-    template = identity_lora_state(contract)
-    backbone = SimpleNamespace(layers=range(18))
-    model = CompleteLoRAWriter(
-        build_lora_tensor_specs(template), template_state=template,
-        paligemma_model=backbone, expert_model=backbone, image_width=2048, expert_width=1024,
-        program_width=256, text_meta_lora_rank=4, vl_meta_lora_rank=4, action_meta_lora_rank=4,
-        patch_grounding_heads=8, max_frames_per_encoder_call=4, action_horizon=50, padded_action_dim=32,
-        factor_hidden_width=216, initialization_seed=7, activation_checkpointing=True,
-    )
-    assert 'decoder_blocks' not in model.semantic_encoder.constructor
-    assert model.semantic_encoder.constructor['native_split_layer'] == 9
-    assert sum(p.numel() for p in model.factor_heads.parameters()) == 1_838_592
-    frames = torch.randint(0, 256, (2 * batch, 2, 3, 4, 4), dtype=torch.uint8)
-    indices = torch.tensor([0, 5] * batch)
-    tokens = torch.ones(batch, 3, dtype=torch.long)
-    masks = torch.ones_like(tokens, dtype=torch.bool)
-    args = (frames, indices, torch.arange(batch + 1) * 2, tokens, masks, masks)
-    state = model(*args, policy=None)
-    assert model.semantic_encoder.received_indices is indices
-    assert len(state) == 76
-    one = state if batch == 1 else {name: value[0] for name, value in state.items()}
-    validate_lora_state(one, contract)
-    expected = template if batch == 1 else {name: value[None].expand(batch, -1, -1) for name, value in template.items()}
-    torch.testing.assert_close(state, expected)
-    sum((value - .1).square().mean() for value in state.values()).backward()
-    assert all(bool(head.network[-1].weight.grad.norm() > 0) for head in model.factor_heads.values())
-    model.zero_grad(set_to_none=True)
+@pytest.mark.parametrize('batch',[1,2])
+def test_complete_writer_nonidentity_set_contract(monkeypatch,batch):
+    from pathlib import Path
+    from types import SimpleNamespace
+    from ember.lora import identity_lora_state,validate_lora_state
+    from ember.pi05_lora import load_pi05_lora_contract
+    from ember.writer import model as module
+    monkeypatch.setattr(module,'Pi05LanguageAxialEncoder',EvidenceEncoder)
+    contract=load_pi05_lora_contract(Path(__file__).resolve().parents[1]/'configs/pi05_lora_v1.json')
+    template=identity_lora_state(contract)
+    backbone=SimpleNamespace(layers=range(18))
+    model=module.CompleteLoRAWriter(module.build_lora_tensor_specs(template),template_state=template,
+        paligemma_model=backbone,expert_model=backbone,image_width=2048,expert_width=1024,
+        program_width=256,text_meta_lora_rank=4,vl_meta_lora_rank=4,action_meta_lora_rank=4,
+        patch_grounding_heads=8,max_frames_per_encoder_call=8,action_horizon=50,padded_action_dim=32,
+        semantic_core_heads=8,semantic_core_blocks=2,frame_attention_initial_lambda=.05,
+        procedure_heads=8,procedure_blocks=2,fusion_heads=8,factor_hidden_width=216,
+        initialization_seed=7,activation_checkpointing=True)
+    assert sum(p.numel() for p in model.factor_heads.parameters())==1_838_592
+    frames=torch.arange(batch*3,dtype=torch.uint8)[:,None,None,None].expand(-1,3,4,4)*37
+    indices=torch.tensor([0,5,8]*batch)
+    tokens=torch.arange(1,4).expand(batch,-1)
+    masks=torch.ones_like(tokens,dtype=torch.bool)
+    args=(frames,indices,torch.arange(batch+1)*3,tokens,masks,masks)
+    state=model(*args,policy=None)
+    assert len(state)==76
+    validate_lora_state(state if batch==1 else {k:v[0] for k,v in state.items()},contract)
+    expected=template if batch==1 else {k:v[None].expand(batch,-1,-1) for k,v in template.items()}
+    torch.testing.assert_close(state,expected)
     with torch.no_grad():
         for head in model.factor_heads.values():
             head.network[-1].weight.normal_(std=.01)
-    learned = model(*args, policy=None)
+        model.compiler.modulation.weight.normal_(std=.01)
+    learned=model(*args,policy=None,frame_parallel_group='forwarded-group')
+    assert model.semantic_encoder.group=='forwarded-group'
+    permutation=torch.tensor([2,0,1])[None]+torch.arange(batch)[:,None]*3
+    permuted=model(frames[permutation.flatten()],*args[1:],policy=None)
+    torch.testing.assert_close(permuted,learned,atol=3e-6,rtol=3e-5)
+    assert any(not torch.allclose(learned[k],expected[k]) for k in learned)
     sum(value.square().mean() for value in learned.values()).backward()
-    assert bool(model.semantic_encoder.content.grad.norm() > 0)
-    assert bool(model.compiler.blocks[0].cross_attention.value.weight.grad.norm() > 0)
-    assert bool(model.compiler.blocks[1].cross_attention.value.weight.grad.norm() > 0)
+    assert model.semantic_encoder.scale.grad.norm()>0
+    assert model.compiler.modulation.weight.grad.norm()>0

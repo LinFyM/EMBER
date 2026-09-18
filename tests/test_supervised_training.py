@@ -28,7 +28,7 @@ def test_registered_formal_recipe_reaches_git_guard_before_device_initialization
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
     args = SimpleNamespace(mode="formal", config=ROOT / "configs/pi05_writer.json")
     configured = training._config(args.config)
-    configured["status"] = "registered_unified_native_writer_learning"
+    configured["status"] = "registered_a_frameset_reference_learning"
     configured["evidence"]["profile_registration"]["status"] = "complete"
     monkeypatch.setattr(training, "_config", lambda _: configured)
     with pytest.raises(ValueError, match="clean pushed detached worktree"):
@@ -83,9 +83,9 @@ def sampler(monkeypatch, config):
 
 
 def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tmp_path, config):
-    assert config["model"]["action_horizon"] == 50 and config["model"]["joint_blocks"] == 2
-    assert config["model"]["decoder_blocks"] == 2 and config["data"]["queries_per_task"] == 21
-    for section, key, value in (("model", "decoder_blocks", 3), ("model", "action_horizon", 25),
+    assert config["model"]["action_horizon"] == 50 and config["model"]["procedure_blocks"] == 2
+    assert config["model"]["semantic_core_blocks"] == 2 and config["data"]["queries_per_task"] == 21
+    for section, key, value in (("model", "procedure_blocks", 3), ("model", "action_horizon", 25),
                                ("data", "queries_per_task", 16), ("observer", "vl_meta_rank", 0),
                                ("data", "cardinalities", [1, 2, 4]), ("data", "tasks_per_update", 3),
                                ("data", "conditions_per_task", None), ("data", "conditions_per_task", 2)):
@@ -97,28 +97,28 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
             _config(path)
 
 
-def test_unified_recipe_keeps_source_events_training_and_execution_pairing(config):
+def test_frameset_recipe_keeps_A_source_events_training_and_execution_pairing(config):
     assert config['data']['grouping'] == 'baseline' and 'event_groups' not in config['data']
-    assert config['data']['maximum_updates'] == 2400
-    assert config['design'] == 'docs/v52_evidence_based_writer_design.md'
+    assert config['data']['maximum_updates'] == 1200
+    assert config['design'] == 'docs/learned_frameset_reference_design.md'
     assert config['source'] == {
         'evaluation_config': 'configs/pi05_source_aligned_evaluation.json',
         'checkpoint': 'runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000'}
 
 
-def test_run_contract_records_native_read_and_write(config, monkeypatch, tmp_path):
+def test_run_contract_records_A_read_and_frame_order_removal(config, monkeypatch, tmp_path):
     monkeypatch.setattr(torch.cuda, 'get_device_properties', lambda _: SimpleNamespace(uuid='cpu-fixture'))
     modules = {name: torch.nn.Linear(1, 1) for name in ('writer', 'meta', 'vl_meta', 'text_meta')}
     runtime = SimpleNamespace(state=SimpleNamespace(**modules), policy=torch.nn.Linear(1, 1).requires_grad_(False), source={})
     context = SimpleNamespace(rank=0, local_rank=0, world_size=1, numa_node=None, cpu_affinity=None)
     run = _run_contract(SimpleNamespace(output=tmp_path, mode='formal'), context, config, runtime, {})
     assert run['information_wall']['native_read'] == (
-        'same-version dual Z and all50 H at j9/j18; one native double write; joint three-Meta replay')
-    assert run['model_config']['native_split_layer'] == 9
+        'A-matched final agentview Z and fixed mean of full50 H; joint three-Meta replay')
+    assert run['model_config']['horizon_read'] == 'fixed_mean'
     assert run['information_wall']['reading_meta_in_execution'] is False
 
 
-@pytest.mark.parametrize('field', ['camera_view', 'native_inputs', 'horizon_read', 'native_write'])
+@pytest.mark.parametrize('field', ['camera_view', 'native_inputs', 'horizon_read', 'video_order'])
 def test_observer_mode_mismatch_is_rejected(tmp_path, config, field):
     config['observer'][field] = 'obsolete_read'
     path = tmp_path / 'mismatched.json'
@@ -134,7 +134,7 @@ def test_native_architecture_changes_cannot_exact_resume(tmp_path, config):
     path = tmp_path / 'run_contract.json'
     _publish_contract(path, original, resume=False)
     changed = deepcopy(original)
-    changed['config']['model']['native_split_layer'] = 6
+    changed['config']['model']['procedure_blocks'] = 3
     changed['model_config'] = dict(changed['config']['model'])
     with pytest.raises(ValueError, match='exact-resume contract differs: config'):
         _publish_contract(path, changed, resume=True)
@@ -536,7 +536,7 @@ def test_physical_microbatches_leave_the_shared_recipe_unchanged(config):
 
 def test_unregistered_camera_binding_is_rejected_and_cannot_exact_resume(tmp_path, config):
     changed = deepcopy(config)
-    changed["observer"]["camera_view"] = "agentview"
+    changed["observer"]["camera_view"] = "dual"
     cfg_path = tmp_path / "dual.json"
     cfg_path.write_text(json.dumps(changed))
     with pytest.raises(ValueError, match="scientific contract"):

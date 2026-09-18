@@ -15,7 +15,15 @@ Owner要求识别能区分架构的具体机制，明确每项分析或改动针
 设计必须综合全部相关历史正负证据及其预算、配方与适用条件，不能只根据最近两次诊断确定路线。
 结构应职责清楚，能够复制同类模块加深，并自然扩展参数规模；这不是必须沿用旧Core/P或仅修改Procedure的要求。
 是否保留、替换或删除模块均须由完整推导支持，允许实质重构；原v5.2不重训的要求继续有效。
-当前研究已由Owner暂停，待其自行与专家讨论；暂停及仓库整理状态见[progress](../progress.md)。
+
+## 专家建议的匹配诊断授权（2026-09-18）
+
+Owner随后提供[专家意见](review_materials/20260918/expert_review.md)，明确授权设置goal并完成其中要求的工作、推送相关结果。
+本轮只fresh训练与强A匹配的learned frame-set参照，复用A既有预定节点，不重训原A，不同时开新架构路线。
+仅移除video-frame位置/因果mask/读取时间寻址，保留真实帧内容、三Meta、完整A/B、采样和优化更新语义。
+为解释既有A，本诊断匹配其agentview/fixed-mean H历史口径；这项限定例外不改变未来新方法的完整读取原则。
+比较相邻节点、覆盖和成功集合，不能只凭总分接近宣布等价，不以wrong/shuffle/reverse选择节点或训练惩罚错误输入。
+本授权在上述范围内替代暂停；执行合同与状态见[active design](learned_frameset_reference_design.md)和[progress](../progress.md)。
 
 ## 统一Writer整套实验的Owner授权（2026-09-17）
 

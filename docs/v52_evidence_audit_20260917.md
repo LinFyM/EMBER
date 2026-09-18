@@ -6,7 +6,7 @@
 **时间边界：** 本文审计截点为2026-09-17，末尾设计选择属于当时的工作假设。
 此后统一Writer有界实验及两次冻结机制诊断见[findings](../findings.md)§117–119与[研究历史](research_history.md)。
 其中部分“尚缺消融”已获得限定范围的新证据；不能将本文旧假设或最新两次诊断单独当作下一架构的充分依据。
-当前研究已暂停，最新要求及实际状态分别见[Owner要求](current_owner_requirements.md)和[progress](../progress.md)。
+最新要求及实际状态分别见[Owner要求](current_owner_requirements.md)和[progress](../progress.md)。
 
 ## 1. 审计口径
 

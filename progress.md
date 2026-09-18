@@ -1,15 +1,19 @@
 # EMBER progress
 
-## 当前状态（2026-09-18，Owner暂停研究，整理仓库供专家讨论）
+## 当前状态（2026-09-18，A的learned frame-set参照goal已启动）
 
-Owner最新要求是停止当前分析，整理本地仓库并推送远程，由其自行与专家讨论。
-架构分析及两项只读并行核对已停止；没有active design、训练、评测或待自动执行的实验。
-后续研究等待Owner新指示；旧goal、设计、配置和历史中的“下一步”不恢复执行授权。
+Owner提供专家意见，明确要求设置goal，完成专家要求的工作并把相关结果推送远程。
+本范围替代此前暂停：只fresh训练与既有强A匹配的无序集合参照，不重训A、不并开新架构。
+Active design为[匹配合同](docs/learned_frameset_reference_design.md)，专家原文保存在[评审材料](docs/review_materials/20260918/expert_review.md)。
 
-当前接受约130–140的能力及更可信的视频特异性，允许少量正常churn。
-结构必须合理，能够复制同类模块加深并自然扩展参数；设计须综合全部相关历史证据及其预算、配方和适用条件。
-“保留Core/P、只改Procedure、停止整体重构”是代理过早的路线建议，现已撤回，不是Owner要求。
-没有选定下一架构；原v5.2不重训的要求继续有效。稳定要求见[Owner要求](docs/current_owner_requirements.md)。
+已核对A原run contract、575c189a源码及四节点原始结果：correct300/600/900/1200为99/88/140/135，train36/47/54/62。
+预注册新参照同1200更新、4800条件/100800queries，节点300/600/900/1200，主解释900+1200相邻证据。
+已完成实现与CPU合同检查；正在gpu02进行最长真实视频的可丢弃profile，尚未启动formal训练或评测。
+新study计划使用data0，新增峰值预算20GiB；data0/data1独立user quota及共享容量已作规划检查，launch前刷新。
+唯一干预移除视频RoPE、因果mask及读取时间寻址；为此匹配A的agentview/fixed-mean H历史口径，不改变未来新架构的长期接口原则。
+
+完成标准是执行整个预注册诊断、保存证据与分析、推送main；不要求特定分数，不从最终controls选点。
+所有稳定目标和信息墙继续有效；不恢复A3000评测、C或其它已关闭实验。详细阶段见[task_plan](task_plan.md)。
 
 ## 已完成实验与证据入口
 
@@ -28,7 +32,7 @@ Owner最新要求是停止当前分析，整理本地仓库并推送远程，由
 - `runs/analysis/v52_core_procedure_cross_20260918/report.md`
 
 这些`runs/`原件是ignored本地资产；远程仓库保留源码、合同、历史审计和findings结论，不包含checkpoint或数据集。
-当前源码是已封存统一Writer的唯一实现；统一正式训练版本为`184947cb`，旧A冻结诊断版本为`575c189a`。
+本轮源码正由匹配A的frame-set实现替换；已封存统一正式训练版本为`184947cb`，旧A冻结诊断版本为`575c189a`。
 保留复现入口不表示已经选择或恢复该方法。旧A3000评测、C及其它关闭窗口均未恢复；Test保持关闭。
 
 ## 本次仓库整理

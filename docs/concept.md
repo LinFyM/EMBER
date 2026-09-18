@@ -5,7 +5,9 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 人从他人教学迁移到自己身体的能力是科学动机；LIBERO结果本身不证明跨身体泛化。
 
 架构须职责清楚，支持复制同类模块加深与自然扩参；具体结构由全部相关历史证据共同约束，不能只据局部诊断固定路线。
-当前研究已暂停，由Owner自行与专家讨论；授权和实际状态见[progress](../progress.md)。
+当前按Owner提供的专家意见，执行[A的learned frame-set匹配诊断](learned_frameset_reference_design.md)；
+保持A其余内容/生成/训练路径，仅移除视频位置、因果mask及读取时间寻址，辨别给定播放顺序的学习收益。
+这项历史输入匹配诊断不选择未来新架构；授权和实际状态见[progress](../progress.md)。
 统一Writer的本轮实现/比较已经结束，旧A/C等历史路线不自动恢复。
 [封存统一设计](v52_evidence_based_writer_design.md)继承v5.2的内容、条件作用、归一化和共享参数坐标，
 用原生中层/末端的同构联合Z/H处理与连续参数槽，替换独立Core/P及专门融合；实际行为和有界裁决见findings§117。

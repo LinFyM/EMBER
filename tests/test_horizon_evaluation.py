@@ -360,7 +360,7 @@ def test_resident_batch_rejects_cross_contract_reuse_before_loading(resident_mat
     requests, runs, builds, _ = resident_materialization
     changed = runs[Path(requests[1]["checkpoint"])]
     if field == "camera_view":
-        changed["config"]["observer"]["camera_view"] = "agentview"
+        changed["config"]["observer"]["camera_view"] = "dual"
     elif field == "observer":
         changed["config"][field]["probe_seed"] += 1
     else:
@@ -494,7 +494,7 @@ def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, m
         assert error.value.code == 2 and len(calls) == 1
 
 
-def test_method_metadata_binds_joint_native_reads_and_single_full_lora():
+def test_method_metadata_binds_A_reads_frame_set_and_single_full_lora():
     model = dict(MODEL_DEFAULTS)
     run = {"model_config": model, "config": {"update_version": UPDATE_VERSION,
         "observer": observer_mode_contract(model), "execution_precision": "native_bf16_writer_fm_fp32_lora"}}
@@ -505,14 +505,14 @@ def test_method_metadata_binds_joint_native_reads_and_single_full_lora():
     assert method["source_parameter_training"] is False
     assert method["deployment_teacher_labels_loss_optimizer"] is False
     assert method["training_objective"] == "main_fm" and method["update_version"] == UPDATE_VERSION
-    assert method['native_image_tokens'] == 512
-    assert method['visual_token_source'] == 'actual_j9_and_final_512_image_patches_and_exact_task_span_tokens'
-    assert method['camera'] == 'agentview_and_eye_in_hand_rotated_180'
-    assert method['native_read'] == 'joint_role_time_blocks_preserving_all50_positions'
-    assert method['native_write'] == 'single_j9_task_span_and_horizon_residual_then_native_layers10_18'
+    assert method['native_image_tokens'] == 256
+    assert method['visual_token_source'] == 'actual_final_256_image_patches_and_exact_task_span_tokens'
+    assert method['camera'] == 'agentview_rotated_180'
+    assert method['native_read'] == 'uniform_fixed_zero_query_and_bias_over_all_50_raw_H_values'
+    assert method['video_order'] == 'frame_set_no_frame_RoPE_no_causal_mask_no_temporal_read_address'
     for arm in ('cross_suite_wrong', 'shuffled', 'reversed'):
         control = method_metadata(run, arm)
-        assert control['control_transform'] == 'real_dual_camera_RGB_before_complete_Writer_forward'
+        assert control['control_transform'] == 'real_agentview_camera_RGB_before_complete_Writer_forward'
     assert method_metadata(run, 'no_video')['control_transform'] == 'identity_zero_delta_without_RGB_reads'
 
 
@@ -543,7 +543,7 @@ def test_old_joint_or_profile_checkpoint_cannot_be_materialized_as_supervised(ba
         inspect_writer_checkpoint(checkpoint)
 
 
-@pytest.mark.parametrize("field", ["schema", "architecture", "action_horizon", "camera_view", "native_split_layer"])
+@pytest.mark.parametrize("field", ["schema", "architecture", "action_horizon", "camera_view", "horizon_read"])
 def test_shape_compatible_old_writer_requires_its_frozen_runtime(bank, field):
     _, manifest = bank
     checkpoint = Path(manifest["writer_checkpoint"]["path"])
@@ -567,18 +567,18 @@ def test_checkpoint_rejects_shape_compatible_run_model_disagreement(bank):
         inspect_writer_checkpoint(checkpoint)
 
 
-def test_checkpoint_accepts_registered_unified_native_architecture(bank):
+def test_checkpoint_accepts_registered_A_frameset_architecture(bank):
     _, manifest = bank
     observed, _ = inspect_writer_checkpoint(Path(manifest['writer_checkpoint']['path']))
     method = method_metadata(observed)
-    assert method['model_config']['camera_view'] == 'dual'
-    assert method['model_config']['native_split_layer'] == 9
-    assert method['model_config']['joint_blocks'] == 2
-    assert method['model_config']['decoder_blocks'] == 2
+    assert method['model_config']['camera_view'] == 'agentview'
+    assert method['model_config']['horizon_read'] == 'fixed_mean'
+    assert method['model_config']['procedure_blocks'] == 2
+    assert method['model_config']['semantic_core_blocks'] == 2
 
 
 @pytest.mark.parametrize('damage', ['observer_camera', 'observer_read', 'observer_patches',
-                                    'observer_write', 'model_horizon', 'run_model'])
+                                    'observer_order', 'model_horizon', 'run_model'])
 def test_checkpoint_rejects_native_model_and_observer_disagreement(bank, damage):
     _, manifest = bank
     checkpoint = Path(manifest['writer_checkpoint']['path'])
@@ -586,12 +586,12 @@ def test_checkpoint_rejects_native_model_and_observer_disagreement(bank, damage)
     run = json.loads(path.read_text())
     if damage.startswith('observer_'):
         field = {'observer_camera': 'camera_view', 'observer_read': 'horizon_read',
-                 'observer_patches': 'native_inputs', 'observer_write': 'native_write'}[damage]
+                 'observer_patches': 'native_inputs', 'observer_order': 'video_order'}[damage]
         run['config']['observer'][field] = 'obsolete_read'
     elif damage == 'model_horizon':
         run['model_config']['action_horizon'] = run['config']['model']['action_horizon'] = 25
     else:
-        run['config']['model']['native_split_layer'] = 6
+        run['config']['model']['procedure_blocks'] = 3
     path.write_text(json.dumps(run))
     with pytest.raises(ValueError, match='architecture|formal supervised|disagree'):
         inspect_writer_checkpoint(checkpoint)

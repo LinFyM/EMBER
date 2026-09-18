@@ -3,13 +3,13 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-**当前研究已暂停，由Owner自行与专家讨论。没有active design、训练或待自动执行的实验。**
+**当前goal：按专家意见完成A的learned frame-set匹配诊断，并推送可复核结果。**
 最新要求是约130–140的已有能力、更可信的视频特异性，以及可复制模块加深和自然扩参的合理结构；
-需综合全部相关历史证据，尚未选定下一架构。当前状态见[progress](progress.md)。
+需综合全部相关历史证据。本轮只移除A的视频顺序处理，复用A已有结果；当前状态见[progress](progress.md)。
 
-代码保留[已封存统一Writer设计](docs/v52_evidence_based_writer_design.md)的实现：真实图文与完整动作响应在原生中层/末端联合处理，
-一次中层双写回，再由连续参数状态和共享heads生成唯一38-target完整A/B LoRA。
-Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习；已完成实验的结果、裁决及当前是否存在运行以progress为准。
+本轮[active design](docs/learned_frameset_reference_design.md)恢复A的Core、Procedure、AdaLN与共享完整A/B头，
+仅将视频处理改为真实帧集合；三Meta和Writer以匹配A的跨episode FM从头共同学习。
+已结束统一Writer由Git和[封存设计](docs/v52_evidence_based_writer_design.md)保存，不是本轮另一个训练臂。
 
 ## 阅读入口
 
@@ -17,6 +17,7 @@ Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习；已完成实
 | --- | --- |
 | [Owner要求](docs/current_owner_requirements.md) | 稳定目标、研究原则与最新裁决 |
 | [科学动机](docs/concept.md) | 完整方法链条、因果职责与待检验假设 |
+| [当前匹配诊断](docs/learned_frameset_reference_design.md)／[专家原文](docs/review_materials/20260918/expert_review.md) | 唯一干预、固定节点、比较与交付合同 |
 | [完整历史证据审计](docs/v52_evidence_audit_20260917.md) | 46组实验及bank/chart补表的机制、预算、正负证据与比较边界 |
 | [封存统一设计](docs/v52_evidence_based_writer_design.md) | 已完成实例的接口、训练和证据合同 |
 | [当前计划](task_plan.md)／[当前进度](progress.md) | 当前goal、授权、实施证据与下一阶段 |
@@ -32,14 +33,14 @@ Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习；已完成实
 | 代码职责 | `src/ember/`下的owner |
 | --- | --- |
 | 原生图文／完整H读取与三组Meta | `writer/video_program.py`、`writer/meta_lora.py` |
-| 视频联合算子与连续参数slots | `writer/temporal.py` |
+| 语义Core、帧集合Procedure与条件化参数slots | `writer/temporal.py` |
 | 唯一38-target完整A/B生成 | `writer/model.py`、`pi05_lora.py` |
 | 纯FM学习、采样与完整checkpoint | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py`、`ecp/checkpoint.py` |
 | 运行时、物化与strict闭环评测 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` |
 
 Canonical入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`和`scripts/evaluate_pi05.py`，
-统一原生Writer已替换旧Core/P实现，采用独立schema与fresh初始化；其已结束实验未被采纳为最终方法。
-旧checkpoint使用其原冻结runtime，不装入新架构。保留入口用于复现，不构成恢复执行授权。
+frame-set参照使用独立schema与fresh初始化；A的历史checkpoint使用其冻结runtime，不装入参照继续训练。
+本轮之外的旧实验不由保留入口自动恢复。
 
 ## 数据与资产
 

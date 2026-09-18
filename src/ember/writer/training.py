@@ -28,21 +28,21 @@ from ember.writer.task_execution import (
 )
 
 
-CONFIG_SCHEMA = "ember_unified_native_writer_config_v1"
-RUN_SCHEMA = "ember_unified_native_writer_run_v1"
-STAGE = "unified_native_writer_fresh"
-TRAINING_SCHEMA = "ember_unified_native_training_state_v1"
-UPDATE_VERSION = "unified_native_full_ab_pure_fm_joint_meta_v1"
+CONFIG_SCHEMA = "ember_a_frameset_writer_config_v1"
+RUN_SCHEMA = "ember_a_frameset_writer_run_v1"
+STAGE = "a_frameset_writer_fresh"
+TRAINING_SCHEMA = "ember_a_frameset_training_state_v1"
+UPDATE_VERSION = "a_frameset_full_ab_pure_fm_joint_meta_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
-    """Bind the full native axes and split read/write to checkpoint identity."""
+    """Bind the A-matched native read and absence of video-time addressing."""
     require_architecture_identity(model)
-    return {"camera_view": "dual",
-            "native_inputs": "full512_patch_content_task_span_and_all50_horizon_tokens_at_j9_j18",
-            "horizon_read": "joint_role_time_blocks_preserving_all50_positions",
-            "native_write": "single_j9_task_span_and_horizon_residual_then_native_layers10_18"}
+    return {"camera_view": "agentview",
+            "native_inputs": "full256_patch_content_and_full50_fixed_mean_horizon_read",
+            "horizon_read": "uniform_fixed_zero_query_and_bias_over_all_50_raw_H_values",
+            "video_order": "frame_set_no_frame_RoPE_no_causal_mask_no_temporal_read_address"}
 
 
 def _config(path: Path) -> dict[str, Any]:
@@ -53,7 +53,7 @@ def _config(path: Path) -> dict[str, Any]:
         "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
         "version": "v52_full_video_cross_episode_events_v1",
         "event_schema_version": "v52_full_video_cross_episode_events_v1",
-        "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722, "maximum_updates": 2400,
+        "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722, "maximum_updates": 1200,
     }
     expected_observer = {
         "flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "text_meta_rank": 4,
@@ -71,7 +71,7 @@ def _config(path: Path) -> dict[str, Any]:
                 "native_output_calibration", "local_field_supervision"} & config.keys()
             or "trust_scales" in config["optimization"]
             or config.get("execution_precision") != "native_bf16_writer_fm_fp32_lora"):
-        raise ValueError("canonical unified native Writer scientific contract changed")
+        raise ValueError("canonical A frame-set Writer scientific contract changed")
     for key, expected in (("video_demos", range(46)), ("action_demos", range(46)),
                           ("diagnostic_action_demos", range(46, 50)), ("held_video_demos", range(46, 50))):
         if config["data"][key] != list(expected):
@@ -202,14 +202,15 @@ def _run_contract(args, context, config, runtime, state):
             "checkpoint_updates": list(_checkpoint_nodes(args, config)),
         },
         "information_wall": {
-            "deployment_inputs": ["exact language", "ordered RGB videos", "original frame indices"],
+            "deployment_inputs": ["exact language", "complete sampled RGB frame set"],
+            "frame_indices": "sampling provenance only; no learned temporal addressing",
             "execution_adapters": 1, "reading_meta_in_execution": False,
             "validation_test_gradients": False, "shuffled_reversed": False,
             "video_action_episodes": "main LoRA cross-episode", "gradient_normalizer": 1.0,
             "objective": config["optimization"]["loss"],
             "training_only_actions": "same-task cross-episode main FM execution queries only",
-            "native_read": "same-version dual Z and all50 H at j9/j18; one native double write; joint three-Meta replay",
-            "complete_lora": "shared eight-family full A/B heads from a continuous content-initialized parameter state",
+            "native_read": "A-matched final agentview Z and fixed mean of full50 H; joint three-Meta replay",
+            "complete_lora": "shared eight-family full A/B heads from original Core-conditioned centered frame-set Procedure AdaLN",
             "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
             "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
@@ -473,7 +474,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    if args.mode == "formal" and (config["status"] != "registered_unified_native_writer_learning"
+    if args.mode == "formal" and (config["status"] != "registered_a_frameset_reference_learning"
                                   or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)
@@ -482,8 +483,8 @@ def run(args: argparse.Namespace) -> None:
     stop = _segment_limit(args, config)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     condition_rank_groups(context.world_size)
-    if args.mode == "formal" and context.world_size != 6:
-        raise ValueError("registered unified Writer formal training requires six GPUs")
+    if args.mode == "formal" and context.world_size != config["evidence"]["profile_registration"]["world_size"]:
+        raise ValueError("formal frame-set training requires its registered profiled topology")
     execution_config, microbatches = _execution_config(args, config, context)
     if context.is_main:
         print(json.dumps({"physical_policy_microbatches": microbatches, "logical_queries_per_update": 84}), flush=True)

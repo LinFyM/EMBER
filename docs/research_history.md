@@ -1954,3 +1954,10 @@ R/G/L111/14/21、churn35、Jaccard .7603，breadth均6，S/O/G/L15/58/41/11；�
 未更改旧rows或重跑。原件根runs/analysis/v52_return_20260915包含launch_contract、aggregate_reference、
 aggregation_topology、reference_correct400和reference_readout；原evaluate.exit=1保持。
 临时replay入口使命结束后退役，原operator／模型冻结树与Git继续保存。本轮依Owner纠正复用这些既有结果；本条不赋予新模型旧分数。
+
+## 2026-09-18：A匹配learned frame-set诊断登记
+
+Owner按新专家意见授权fresh集合参照，复用A原300/600/900/1200节点，不重训A。
+专家原文和预注册合同见[评审](review_materials/20260918/expert_review.md)与[设计](learned_frameset_reference_design.md)。
+仅移除视频帧RoPE、Procedure因果mask及读取时间寻址；agentview/fixed-mean H为本轮历史匹配例外。
+本条记录为实验前登记，当前执行状态见progress，不能解释为已经获得新的性能证据。

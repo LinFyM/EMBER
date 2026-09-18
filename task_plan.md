@@ -8,7 +8,7 @@ Active design：[learned frame-set匹配合同](docs/learned_frameset_reference_
 1. **已完成：登记与实现。** 核对A原件，恢复其已验证模块及初始化顺序，仅移除视频位置/因果mask/读取时间寻址。
    保留全部真实帧、语言/空间/horizon位置、三Meta、完整A/B、采样事件与优化时钟；替换已结束统一图，不并留fallback。
 2. **已完成：验证与profile。** 集合不变性、真实信用、事件匹配、恢复和物化合同；真实最长视频/更新profile，选合法高效资源。
-3. **下一阶段：正式fresh1200。** 每100保存完整checkpoint，300/600/900/1200各完成correct400及train96，原拓扑分段exact-resume。
+3. **进行中：正式fresh1200。** 每100保存完整checkpoint，300/600/900/1200各完成correct400及train96，原拓扑分段exact-resume。
 4. **待完成：配对解释。** 复用既有A四节点，重点900+1200，报告task/suite/breadth/R/G/L/churn/相邻保持与区间，不挑峰值宣称等价。
 5. **待完成：远程交付。** 推送代码、专家原文、预注册、结果汇总和精简可复核raw rows，更新状态与研究历史，确认main同步后结束goal。
 

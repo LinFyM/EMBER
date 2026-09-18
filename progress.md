@@ -1,6 +1,16 @@
 # EMBER progress
 
-## 当前状态（2026-09-18，v5.2冻结机制诊断完成）
+## 当前状态（2026-09-18，Core／Procedure交叉诊断）
+
+Owner同意执行讨论中的四格交叉实验。固定已有A900，保留目标language及原有train24×init32–35面板，
+两条固定donor仍为task0／39的demo46；在encode_task之后交换完整Core与Procedure memory，
+Procedure携带自身真实frame positions／mask，原Core条件查询、AdaLN、postfusion与全A/B heads重新计算。
+新增四臂共384次闭环；完整正确与两组完整donor的三条对角线复用上一轮原件，FM对角线重新计算校验接口。
+先登记合同再执行，无训练、held动作、Test或checkpoint选择。这是冻结诊断，不是active新架构或恢复旧训练。
+原件：[交叉诊断预注册](runs/analysis/v52_core_procedure_cross_20260918/registration.json)。
+诊断区分正确过程的可迁移功能与同视频Core/P配合；混合memory可能分布外，不能直接推导fresh改造收益。
+
+## 已完成状态（2026-09-18，v5.2冻结机制诊断完成）
 
 Owner更新接受标准为约130–140能力及更好的视频特异性，接受小幅正常churn，并明确授权快速、有判别力的原因实验。
 本轮[报告](runs/analysis/v52_mechanism_audit_20260918/report.md)已完成；没有active design、训练或待自动执行的实验。

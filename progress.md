@@ -4,7 +4,7 @@
 
 Owner明确要求完成专家意见、推送并汇报。Active design为[同视频教学候选](docs/video_teaching_writer_design.md)。
 主实验先用单相机agentview；新增教学项与主FM经同一套LoRA联合训练全部Writer/Meta，source冻结。
-模型与训练实现已集成，尚无新formal运行。CPU累计246项通过：真实PI05主/五步端点损失、标签隔离、
+模型与训练实现已集成，fresh正式训练正在运行，尚无新闭环结果。CPU累计246项通过：真实PI05主/五步端点损失、标签隔离、
 联合一次重放、四任务更新、1–6卡不同分片归一、完整checkpoint/resume、物化与视频controls，
 以及完整H/E、零残差退回有序P、BF16空分片与原生重放。首轮六个旧文案/旧架构fixture断言已修正复测。
 源代码新增一个117行Procedure读取owner，退役frame-set和预算扩展分支；架构检查无新增hard，
@@ -60,7 +60,8 @@ Test、RL、新controls及其它关闭实验均未运行。已完成的目标不
 - `runs/analysis/v52_core_procedure_cross_20260918/report.md`
 
 这些`runs/`原件是ignored本地资产；远程仓库保留源码、合同、历史审计和findings结论，不包含checkpoint或数据集。
-本轮canonical源码已替换为匹配A的frame-set实现；已封存统一正式训练版本为`184947cb`，旧A冻结诊断版本为`575c189a`。
+frame-set实现已封存于`b9bd90ac`；当前canonical源码为同视频教学候选，正式训练版本见上文。
+已封存统一正式训练版本为`184947cb`，旧A冻结诊断版本为`575c189a`。
 保留复现入口不表示已经选择或恢复该方法。旧A3000评测、C及其它关闭窗口均未恢复；Test保持关闭。
 
 ## 此前仓库整理

@@ -1,106 +1,41 @@
 # EMBER progress
 
-## 当前状态（2026-09-18，Core／Procedure交叉诊断完成）
+## 当前状态（2026-09-18，Owner暂停研究，整理仓库供专家讨论）
 
-Owner同意的四格交叉实验已完成，无active design、训练或待自动执行的实验。
-固定A900、目标language、teacher46与train24×init32–35；新增四臂384条闭环，复用既有三条对角线288行。
-完整正确58/96；正确Core＋其他P为34／35；其他Core＋正确P均56；完整固定视频均38。
-固定其他Core只换入正确P，均净增18，95%CI[7.292,30.208]／[4.167,34.375]pp；剔除donor自身task后仍为正。
-从完整正确换Core保留51／48、丢失7／10、新增5／8，净少2；不是完全等价，但大部分已有能力保持。
-Core/P成功率交互+6.25／+5.208pp，区间均含零，不支持强同视频配套是当前总体能力必要条件。
-正确视频的主要增量随P记忆带入，原融合能够消费；不证明Core可删、P已理解顺序或跨未见任务迁移。
-没有识别fresh改造的唯一瓶颈，也未选择新架构；优先保留已验证分工，将后续问题收窄到P的视频内容与迁移。
+Owner最新要求是停止当前分析，整理本地仓库并推送远程，由其自行与专家讨论。
+架构分析及两项只读并行核对已停止；没有active design、训练、评测或待自动执行的实验。
+后续研究等待Owner新指示；旧goal、设计、配置和历史中的“下一步”不恢复执行授权。
 
-168条功能记录中三组对角线逐task损失与前轮重放差值均为0，query／RNG及全部672行配对检查通过。
-三个生成与18个闭环workers全部exit0、无活动进程；96jobs全部完成，首claim至末完成514.90秒。
-无更新、held动作、Test、RL或checkpoint选择。详见[报告](runs/analysis/v52_core_procedure_cross_20260918/report.md)、
-findings§119及study的completion.json；干净临时575c189a runtime清理，Git、脚本、适配器与raw rows保留。
+当前接受约130–140的能力及更可信的视频特异性，允许少量正常churn。
+结构必须合理，能够复制同类模块加深并自然扩展参数；设计须综合全部相关历史证据及其预算、配方和适用条件。
+“保留Core/P、只改Procedure、停止整体重构”是代理过早的路线建议，现已撤回，不是Owner要求。
+没有选定下一架构；原v5.2不重训的要求继续有效。稳定要求见[Owner要求](docs/current_owner_requirements.md)。
 
-## 已完成状态（2026-09-18，v5.2冻结机制诊断完成）
+## 已完成实验与证据入口
 
-Owner更新接受标准为约130–140能力及更好的视频特异性，接受小幅正常churn，并明确授权快速、有判别力的原因实验。
-本轮[报告](runs/analysis/v52_mechanism_audit_20260918/report.md)已完成；没有active design、训练或待自动执行的实验。
-固定A900、SFT450，完成train24的240条功能记录及10臂×24任务×4初态的960条闭环；全部21个workers正常退出。
-新面板使用teacher46及初态32–35，teacher在四初态复用；不等于旧train96映射或正式validation400。
+| 实验 | 已完成事实 | 解释边界与入口 |
+| --- | --- | --- |
+| 统一Writer | 600/900/1200/1500 correct为90/109/67/84，各400；train为38/54/54/52，各96。1500按原合同结束 | 有界non-pass，不采纳本次改造；不证明所有统一结构不可行。findings§117、[封存设计](docs/v52_evidence_based_writer_design.md) |
+| A900机制诊断 | train24固定96条件，正确58、关Procedure34、固定视频保留目标语言38/38、固定LoRA13/10、Source12、SFT47 | 旧过程路径有行为贡献，不证明顺序理解或fresh删除效果。findings§118 |
+| Core/Procedure交叉 | CC58、CW34/35、WC56/56、WW38/38，各96；新增384闭环，复用288对角线 | 正确P增量能跨两个donor Core发挥；不证明Core可删、未见任务迁移或下一架构应只改P。findings§119 |
 
-完整正确A58/96，关闭Procedure调制34，R/G/L27/7/31，差值−25pp、95%CI[−40.625,−9.375]pp。
-固定视频0/39并保留目标语言各38；固定同一LoRA仅13/10；Source12、SFT450为47。
-关闭Procedure后，正确/固定0/固定39为34/33/38；两组配对交互为+19.792/+25pp且区间不含零。
-旧过程路径有直接闭环贡献，正确视频增量主要经该路径；这不证明顺序理解，也不等于fresh删模块的训练结果。
-语言条件参数确有能力作用；当前SFT不是理论上界，错误视频Writer也没有在本新面板普遍超过SFT。
+完整正负历史先读[46组证据审计及补表](docs/v52_evidence_audit_20260917.md)，再读[findings](findings.md)§117–119。
+源码版本、旧专家评审、各轮逐task/suite、R/G/L/churn及formal原件由[研究历史](docs/research_history.md)索引。
+统一实验及两次诊断的详细报告分别位于本地：
 
-既有400行复核保留A correct140/wrong116及SFT85/89/86；wrong净优势主要集中task3/31，不能概括为全面更强的公共LoRA。
-新证据没有唯一定位统一图少31/68分的内部原因，没有证明“晚期时序入口”是实际瓶颈。
-原执行器和动态队列复用，闭环约23.7分钟；参数更新、held-action读取、Test与checkpoint选择均为零。
-原件、逐task/suite、breadth、配对R/G/L/churn和区间见报告；跨轮结论见findings§118。
-统一Writer原goal已经结束，以下为已完成实验的记录，不恢复其训练或评测。
+- `runs/analysis/unified_writer_20260917/experiment_report.md`
+- `runs/analysis/v52_mechanism_audit_20260918/report.md`
+- `runs/analysis/v52_core_procedure_cross_20260918/report.md`
 
-## 已完成状态（2026-09-18，统一Writer整套实验结束）
+这些`runs/`原件是ignored本地资产；远程仓库保留源码、合同、历史审计和findings结论，不包含checkpoint或数据集。
+当前源码是已封存统一Writer的唯一实现；统一正式训练版本为`184947cb`，旧A冻结诊断版本为`575c189a`。
+保留复现入口不表示已经选择或恢复该方法。旧A3000评测、C及其它关闭窗口均未恢复；Test保持关闭。
 
-本轮仓库/data1整理、统一新架构实现、六卡等效执行、正式训练、既有v5.2比较和修正可行性审视已完成。
-科研窗口按预注册的1200步后停止条款在1500结束，结果为**有界scientific non-pass**；不采纳本次改造。
-该实验没有active design、active run或selected checkpoint，也没有待自动执行的后续节点。
-已生成[完整报告](runs/analysis/unified_writer_20260917/experiment_report.md)、
-[结构化裁决](runs/analysis/unified_writer_20260917/experiment_completion.json)及[逐任务表](runs/analysis/unified_writer_20260917/unified/analysis/primary_tables.md)。
-原设计保留为[封存设计](docs/v52_evidence_based_writer_design.md)；历史论证及每节点事实见findings§117与research_history。
+## 本次仓库整理
 
-Owner本轮授权整理、实现、高效训练、比较已有v5.2，以及有具体改进依据时修正重训。
-Owner随后明确要求六卡等效提速、不得重训或续训v5.2，并取消300节点评测；均按最后要求执行。
-此前误启动的重复v5.2已在73步停止，无100步checkpoint或闭环结果，不纳入科学比较；处置原件为study的
-`baseline/owner_scope_correction.json`。旧A3000评测、C和其它历史实验均未恢复。
-
-## 完整行为结果与裁决
-
-| Step | 新模型correct /400 | Train /96 | 验证/训练breadth | 既有A correct /400 | A train /96 |
-| ---: | ---: | ---: | --- | ---: | ---: |
-| 600 | 90 | 38 | 4/8；17/24 | 88 | 47 |
-| 900 | 109 | 54 | 6/8；18/24 | 140 | 54 |
-| 1200 | 67 | 54 | 5/8；20/24 | 135 | 62 |
-| 1500 | 84 | 52 | 5/8；19/24 | 112 | 56 |
-
-1500的validation S/O/G/L为3/18/33/30，train为19/13/15/5。
-1200→1500 validation R/G/L43/41/24、churn65、Jaccard .398；train41/11/13、churn24、Jaccard .631。
-验证净回升17集中于Long1（13→30），其它suite净和为零；900→1500仍为109→84，train54→52。
-后段未形成持续整体获取，成功保持和覆盖缺口仍在。初始上限2400不等于必须耗尽；1800/2100/2400未执行。
-这是本架构/配方/有界窗口的停止判断，不证明全部统一结构不可能成功，也不把某个内部模块命名为根因。
-
-同raw1000 source、实际teacher/state/RNG配对的A900/1200比新模型多31/68，差值95%区间不含零；
-1500新−A为−28，95%区间[-22.25,+4]pp含零。A为agentview/H均值，新模型为双RGB/fullH，不能孤立归因一个模块。
-原始v5.2固定900的132、同映射复核125使用不同source/video映射，只作描述性整体参照。
-没有节点达到correct严格>145/400，因此没有qualification或selected checkpoint。
-后续same-task-other、learned language/static和冻结后最终controls未启动；动态视频必要性与时序特异性改善未获证明。
-Test未使用、held梯度为零、没有RL或用最终controls返工。
-
-修正审视没有找到可复现工程错误或可先明确失败接口/主变量/预测的具体改动。
-既有73/75-task及meta73/target18历史不支持把95-task扩展当默认修复；没有新增梯度来源或做rank/scale/seed/LR/dtype扫描。
-因此没有第二轮重训。报告保留早期有效学习和Long局部反弹，不将non-pass写成完全没有获取。
-
-## 实现、资源与正式证据
-
-Canonical Writer为两处同构Z/H联合块、一次native双写回、连续参数读出和完整38-target A/B，13,451,008个可训练参数。
-三Meta与Writer fresh共同纯FM，source trainable=0；双RGB、fullH、K1、stride5及信息墙保留。
-六卡p0/1/2/3/4/6，两组三卡执行真实帧/query分片，仍是4task/global84/一次optimizer更新。
-原生不等长/空分片、汇总梯度及完整恢复验证通过；最长105帧选择20帧chunk，实际峰值约34.04GiB。
-相同事件8帧chunk热身六卡8.61秒对四卡12.52秒，吞吐1.45倍；不把它解释成对v5.2的整体成本优势。
-
-正式训练commit为clean pushed detached `184947cbd9bb1f05c4a4684f390633f10374e0b2`；
-1500更新累计6000条件/126000queries，程序含诊断15073.5秒（4.19h），实际allocated最高34.06GiB。
-100至1500每100的15个完整checkpoint均保留，六rank状态、optimizer/scheduler/sampler/RNG连续。
-四节点各400+96条件均fresh生成，1984条闭环及120个worker完成记录全部通过；评测程序合计4328.5秒。
-各节点均使用五张当时合适的GPU、每卡三个persistent workers；独立评测与六卡训练拓扑分开。
-
-Study为`/data0/user/ymdai/ember_runs/unified_writer_20260917`，仓库入口`runs/analysis/unified_writer_20260917`为symlink。
-run contract、每节点命令/双节点preflight/quota、checkpoint manifest、raw rows、aggregate、completion和分析均保留。
-全部本轮训练/生成/评测进程及tmux已退出；干净、已集成的临时frozen runtime已删除，代码由上述Git commit保留。
-
-## 清理与交付
-
-源码整理`bf8aea37`退役旧ECP捕获、SFT在线验证、重复functional wrapper及结束A配置，相关110项检查通过。
-统一架构及六卡实现已集成，模型/native/训练/恢复/物化/评测检查通过；近期结果文档维护没有重跑无关测试。
-删除23,224个可重建LoRA payload，准确释放96.322GiB，并移除13个干净、已集成历史工作树；
-另删除8组已完成profile的107个临时/重复文件，逻辑大小1.298GiB，关键profile证据保留在study。
-保留数据/source、全部formal checkpoint/raw rows、外部硬链接payload、不完整bank及9个有未合入/未提交工作树。
-原件为`runs/analysis/workspace_cleanup_20260917.json`、study的`profile_cleanup_20260918.json`与`experiment_completion.json`。
-收尾strg01独立quota快照：data0用121009828KiB，data1用922241376KiB，各自soft1073741824KiB；两者不混算。
-
-详细结果、比较边界、停止/未重训理由和未执行范围以完整报告为统一交付入口；源代码继续只有一个canonical Writer实现。
+已检查源码、12个脚本入口、34个测试文件、27份配置、文档和ignored临时目录；未发现需要本轮改动的第二套Writer实现。
+已合并重复的当前计划/进度叙述，补齐可扩展结构要求，纠正最近诊断的推断范围，并更新README讨论入口。
+删除12个Python/pytest缓存目录的156个可重建文件，文件占用3,678,208字节；不改科研代码或配置。
+保留九个含未合入commit或未提交改动的旧工作树，以及全部正式证据、唯一checkpoint、数据和模型。
+未核定为可删除的历史临时记录保留；不以本次整理改变历史实验结果或扩大资产删除范围。
+本轮检查范围为文档diff、受影响链接、Git状态与远程同步；不重复运行训练、GPU检查或无关测试。

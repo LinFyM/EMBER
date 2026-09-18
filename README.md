@@ -3,7 +3,11 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-代码包含[统一Writer设计](docs/v52_evidence_based_writer_design.md)的实现：真实图文与完整动作响应在原生中层/末端联合处理，
+**当前研究已暂停，由Owner自行与专家讨论。没有active design、训练或待自动执行的实验。**
+最新要求是约130–140的已有能力、更可信的视频特异性，以及可复制模块加深和自然扩参的合理结构；
+需综合全部相关历史证据，尚未选定下一架构。当前状态见[progress](progress.md)。
+
+代码保留[已封存统一Writer设计](docs/v52_evidence_based_writer_design.md)的实现：真实图文与完整动作响应在原生中层/末端联合处理，
 一次中层双写回，再由连续参数状态和共享heads生成唯一38-target完整A/B LoRA。
 Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习；已完成实验的结果、裁决及当前是否存在运行以progress为准。
 
@@ -13,11 +17,14 @@ Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习；已完成实
 | --- | --- |
 | [Owner要求](docs/current_owner_requirements.md) | 稳定目标、研究原则与最新裁决 |
 | [科学动机](docs/concept.md) | 完整方法链条、因果职责与待检验假设 |
+| [完整历史证据审计](docs/v52_evidence_audit_20260917.md) | 46组实验及bank/chart补表的机制、预算、正负证据与比较边界 |
 | [封存统一设计](docs/v52_evidence_based_writer_design.md) | 已完成实例的接口、训练和证据合同 |
 | [当前计划](task_plan.md)／[当前进度](progress.md) | 当前goal、授权、实施证据与下一阶段 |
 | [AGENTS](AGENTS.md) | 科学、数据、评测、资源与Git合同 |
 | [Findings](findings.md)／[研究历史](docs/research_history.md) | 跨轮结论，以及封存设计、专家评审与formal原件索引 |
 
+讨论时先读Owner要求和证据审计，再看[findings](findings.md)§117–119：统一Writer终局、A900机制诊断及Core/Procedure交叉。
+后两次诊断只支持其固定模型、train24有限面板上的结论，没有证明下一架构必须保留Core/P、只能改Procedure或不能整体重构。
 旧实验与咨询均从研究历史按问题追溯；历史中的“当前／下一步”不构成执行授权。
 
 ## 代码所有权与运行入口
@@ -31,8 +38,8 @@ Writer与Text/VL/Action Meta以纯跨episode FM从头共同学习；已完成实
 | 运行时、物化与strict闭环评测 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` |
 
 Canonical入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`和`scripts/evaluate_pi05.py`，
-统一原生Writer已替换旧Core/P实现，采用独立schema与fresh初始化。正式学习按预注册窗口在真实profile后执行；
-旧checkpoint使用其原冻结runtime，不装入新架构。是否已有运行或结果只看progress。
+统一原生Writer已替换旧Core/P实现，采用独立schema与fresh初始化；其已结束实验未被采纳为最终方法。
+旧checkpoint使用其原冻结runtime，不装入新架构。保留入口用于复现，不构成恢复执行授权。
 
 ## 数据与资产
 

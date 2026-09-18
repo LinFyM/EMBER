@@ -9,7 +9,10 @@ Owner明确要求完成专家意见、推送并汇报。Active design为[同视�
 以及完整H/E、零残差退回有序P、BF16空分片与原生重放。首轮六个旧文案/旧架构fixture断言已修正复测。
 源代码新增一个117行Procedure读取owner，退役frame-set和预算扩展分支；架构检查无新增hard，
 既有native/temporal/物化大文件保持或缩小，较长shape校验仍与其张量接口同属一个owner。
-接下来做真实最长视频和分布式profile（权重丢弃）；1500上限、900/1200/1500节点不变，正式拓扑待实测。
+真实profile及4→6完整恢复已完成；[摘要](docs/review_materials/20260919/profile_summary.json)。最长105帧在chunk16/micro16下约16.3–16.6秒，
+双卡六更新均值16.75秒，分配显存峰值32.41GiB；四任务与84+28 queries语义保持，所有6000主事件及RNG与A逐项相同。
+正式窗口已登记gpu02两卡、frame chunk16、policy microbatch16、fresh初始化及1500硬终点；接下来从clean pushed detached版本启动。
+900/1200/1500各correct400/train96，selected及额外消融只按预注册条件触发。profile权重不进入正式训练。
 新输出统一位于data0的`runs/analysis/video_teaching_20260919`链接目标，quota与预计<=60GiB条件性总增长已检查。
 
 ## 上轮完成记录（2026-09-18，A learned frame-set诊断）

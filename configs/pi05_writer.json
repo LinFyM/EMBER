@@ -201,7 +201,7 @@
       "controls_for_selection": false,
       "equivalence_claim": "neither similar totals nor confidence intervals crossing zero establish equivalence"
     },
-    "final_checkpoint_selection": false,
+    "final_checkpoint_selection": "conditional_after_preregistered_adjacent_correct_and_same_task_other_evidence",
     "fresh_initialization": {
       "initial_step": 0,
       "optimizer": "fresh",
@@ -240,8 +240,17 @@
       "unit": "task_cluster"
     },
     "profile_registration": {
-      "status": "pending",
-      "formal_initialization": "fresh; profile weights never reused"
+      "status": "complete",
+      "world_size": 2,
+      "reference": "docs/review_materials/20260919/profile_summary.json",
+      "native_frame_chunk": 16,
+      "policy_microbatches": [
+        16,
+        16
+      ],
+      "formal_initialization": "fresh; profile weights never reused",
+      "event_equivalence": "all6000 historical A primary events and RNG identical",
+      "topology_reason": "two suitable GPUs; actual16/16 profile improves throughput within co-residency budget"
     },
     "protocol_migrations": [
       "retain original Core-conditioned complete A/B consumer and ordered Procedure",
@@ -328,7 +337,7 @@
         49
       ]
     },
-    "shuffled_reversed_use": false,
+    "shuffled_reversed_use": "frozen_post_selection_only",
     "supervised_validation": {
       "K": 1,
       "action_demos": [
@@ -457,7 +466,7 @@
     "horizon_read": "repeated_full",
     "image_width": 2048,
     "initialization_seed": 7,
-    "max_frames_per_encoder_call": 4,
+    "max_frames_per_encoder_call": 16,
     "padded_action_dim": 32,
     "patch_grounding_heads": 8,
     "procedure_blocks": 2,
@@ -472,7 +481,7 @@
   "observer": {
     "camera_view": "agentview",
     "flow_time": 1,
-    "frame_chunk": 4,
+    "frame_chunk": 16,
     "horizon_read": "repeated_content_position_attention_over_all_50_raw_H_values",
     "meta_rank": 4,
     "native_inputs": "full256_patch_content_and_repeated_full50_H_adjacent_E_reads",
@@ -505,7 +514,7 @@
     "tail_final_ratio": 0.1
   },
   "runtime": {
-    "policy_microbatch": 8,
+    "policy_microbatch": 16,
     "raw_video_cache_bytes": 2147483648
   },
   "schema_version": "ember_video_teaching_writer_config_v1",

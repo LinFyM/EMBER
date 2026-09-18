@@ -3,7 +3,7 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-**当前在实现经最终 LoRA 的同视频教学候选。** 主实验单相机 agentview；重复完整 H／相邻视觉读取与有序 Procedure，
+**经最终 LoRA 的同视频教学候选已完成实现与真实 profile，正在进入正式训练。** 主实验单相机 agentview；重复完整 H／相邻视觉读取与有序 Procedure，
 同视频五步教学和跨 episode 主 FM 联合更新整个 Writer 与三组 Meta。方法、1500 更新窗口与条件性后续见[设计](docs/video_teaching_writer_design.md)，实际状态见[progress](progress.md)。
 
 上轮 A 的 learned frame-set 匹配诊断已经完成：900/1200 为142/118，A为140/135，未证明相邻等强；

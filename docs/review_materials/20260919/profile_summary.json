@@ -1,0 +1,65 @@
+{
+  "status": "complete",
+  "runtime_commit": "4d3bebb4a4f6922773c5b07af550d6cace17ec67",
+  "mode": "disposable_profile",
+  "world_size": 2,
+  "native_frame_chunk": 16,
+  "physical_policy_microbatches": [
+    16,
+    16
+  ],
+  "logical_conditions_per_update": 4,
+  "logical_main_queries_per_update": 84,
+  "logical_teaching_queries_per_update": 28,
+  "optimizer_updates": 6,
+  "resume_from_update": 4,
+  "resume_completed_update": 6,
+  "longest_video_frames": 105,
+  "source_trainable_parameters": 0,
+  "all_meta_credit": true,
+  "profile_weights_reused": false,
+  "update_seconds": [
+    21.05367565713823,
+    13.86879542004317,
+    16.015410284511745,
+    16.651750630699098,
+    18.65929106157273,
+    14.275528174825013
+  ],
+  "mean_update_seconds": 16.75407520479833,
+  "peak_allocated_gib": 32.40926265716553,
+  "peak_reserved_gib": 35.232421875,
+  "longest_comparison": {
+    "8": {
+      "seconds": [
+        18.244740548543632,
+        17.77299846149981,
+        17.511394432745874
+      ],
+      "peak_allocated_gib": 20.674504280090332,
+      "deployment_seconds": 4.026818516664207
+    },
+    "16": {
+      "seconds": [
+        16.550398267805576,
+        16.344949688762426,
+        16.53047782741487
+      ],
+      "peak_allocated_gib": 32.38570690155029,
+      "deployment_seconds": 3.760091428644955
+    }
+  },
+  "event_plan": {
+    "status": "matched",
+    "reference": "runs/analysis/source_alignment_20260915/A/training/training_events_extended.json",
+    "primary_A_events": 6000,
+    "main_queries": 126000,
+    "teaching_queries": 42000,
+    "all_primary_event_fields_equal": true,
+    "teaching_replacement_events": 0,
+    "longest_frames": 105
+  },
+  "selection_reason": "two currently suitable GPUs; chunk16/micro16 reduces longest-video elapsed time by about7.7percent with sufficient co-residency headroom; unchanged four-task update",
+  "verification": "246 distinct CPU tests plus actual-source longest-video and two-rank complete checkpoint resume",
+  "scope": "mechanism, throughput and resume only; no scientific performance claim"
+}

@@ -1,10 +1,19 @@
 # EMBER progress
 
-## 当前状态（2026-09-18，统一Writer整套实验结束）
+## 当前状态（2026-09-18，v5.2机制与SFT差距诊断）
+
+Owner更新接受标准为约130–140能力及更好的视频特异性，接受小幅正常churn，并明确授权快速、有判别力的原因实验。
+当前没有新架构或训练run；active诊断为[冻结A900机制检查](runs/analysis/v52_mechanism_audit_20260918/registration.json)。
+只使用train24的合法视频及动作、既有checkpoint；固定真实视频区分目标语言条件化参数与同一公共LoRA，
+并检查旧Procedure调制的实际功能贡献。无参数更新、held-action读取、Test或checkpoint选择。
+SFT/Writer既有400行比较和训练合同正在只读复核；新功能面板已经登记，尚未产生结果。
+统一Writer原goal已经结束，以下为已完成实验的记录，不恢复其训练或评测。
+
+## 已完成状态（2026-09-18，统一Writer整套实验结束）
 
 本轮仓库/data1整理、统一新架构实现、六卡等效执行、正式训练、既有v5.2比较和修正可行性审视已完成。
 科研窗口按预注册的1200步后停止条款在1500结束，结果为**有界scientific non-pass**；不采纳本次改造。
-当前没有active design、active run或selected checkpoint，也没有待自动执行的后续节点。
+该实验没有active design、active run或selected checkpoint，也没有待自动执行的后续节点。
 已生成[完整报告](runs/analysis/unified_writer_20260917/experiment_report.md)、
 [结构化裁决](runs/analysis/unified_writer_20260917/experiment_completion.json)及[逐任务表](runs/analysis/unified_writer_20260917/unified/analysis/primary_tables.md)。
 原设计保留为[封存设计](docs/v52_evidence_based_writer_design.md)；历史论证及每节点事实见findings§117与research_history。

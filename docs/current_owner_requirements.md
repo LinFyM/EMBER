@@ -3,6 +3,18 @@
 本文保存owner的稳定目标、研究原则与协作要求。Owner最新明确表达优先于本文；本文优先于[AGENTS](../AGENTS.md)中的默认合同。
 当前授权和实际状态只看[progress](../progress.md)，执行计划只看[task_plan](../task_plan.md)。历史讨论与旧实验不构成重新启动授权。
 
+## 当前接受标准与原因研究授权（2026-09-18）
+
+Owner接受验证能力保持在130多、140左右的候选，当前不再以超过145或150作为开展后续工作的硬门槛；
+重点是相对v5.2更清楚、更有益的视频特异性。允许已有能力中少量正常的获取/丢失，不能把任何churn都当失败。
+历史实验仍按当时封存合同报告，不追溯改写其分数或资格裁决。
+
+Owner要求识别能区分架构的具体机制，明确每项分析或改动针对性能、视频特异性或稳定性中的哪一项。
+共同拥有语言、native响应、共享头等属性不构成成功原因。允许能快速区分解释的冻结诊断和小实验，
+不把缺少因果证据仅作为停止推理的理由；是否保留或删除旧模块均须据实际作用判断。
+当前先检查错误视频Writer相对共享SFT的优势、语言条件化参数与公共适配器的区别，以及旧Procedure的实际贡献。
+这没有选择新架构、授权重复长训练或提交A作为最终方法；原v5.2不重训的要求继续有效。
+
 ## 统一Writer整套实验的Owner授权（2026-09-17）
 
 Owner明确设立新的执行goal，授权依次完成：
@@ -67,8 +79,8 @@ Owner同日明确纠正：v5.2已经训练过，本轮复用既有checkpoint与�
 
 ## 3. 证据与推进判断
 
-- 长期正式性能目标为validation8 strict single-checkpoint paired correct严格>145/400，并有相邻稳定、低churn、高breadth、
-  四suite非零、Goal/Long贡献、same-task换视频及最终视频因果证据。历史恢复及局部学习与正式资格分开记录。
+- 当前性能接受标准服从本文开头的Owner最新取舍：约130–140及更可信的视频特异性，不要求零churn。
+  仍报告single-checkpoint paired400、相邻成功保持、breadth、各suite、换视频与因果证据；历史>145资格合同保留其历史口径。
 - 闭环实际能力先于loss、reconstruction、norm/rank/cosine、内部margin及surrogate。充分且可比的学习后仍弱于source／SFT参照，
   属于严重能力缺口；小幅涨分或loss下降不能将其降格成调参问题，也不能由此唯一归因某个模块。
 - 能力与相邻资格成立后补same-task-other，选定并冻结单checkpoint，再做wrong／no-video／shuffled／reversed最终controls。

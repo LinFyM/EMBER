@@ -46,9 +46,9 @@ EMBER研究能否从generic `lerobot/pi05_base`建立的冻结π0.5-LIBERO sourc
 当前目标是Writer初次生成的LoRA立即有效。生成LoRA后的task-local RL是后续独立实验，不能混入当前
 zero-interaction分数。
 
-唯一正式性能目标线为validation8 strict paired correct严格`>145/400`。通过还必须由相邻single
-checkpoints、低churn、高breadth、四个suite均非零、Goal/Long贡献、same-task不同视频鲁棒性和最终视频
-因果controls共同证明，不能是训练波动中的偶然峰值。
+性能接受标准以`docs/current_owner_requirements.md`中的owner最新取舍为准；不得把历史`>145/400`合同
+自动恢复为新的硬门槛。仍须用strict single-checkpoint paired400、相邻能力保持、任务/suite覆盖、
+same-task换视频和视频因果证据说明结果，区分正常小幅交换与大范围能力丢失，不以偶然峰值代表稳定能力。
 
 closed-loop absolute性能首先选择方法。LoRA norm/rank/cosine、reconstruction、functional loss、内部时序margin、
 hidden差异和surrogate只作定位证据，不能为了数值漂亮接受明显更差的闭环性能。

@@ -11,7 +11,9 @@ Owner明确要求完成专家意见、推送并汇报。Active design为[同视�
 既有native/temporal/物化大文件保持或缩小，较长shape校验仍与其张量接口同属一个owner。
 真实profile及4→6完整恢复已完成；[摘要](docs/review_materials/20260919/profile_summary.json)。最长105帧在chunk16/micro16下约16.3–16.6秒，
 双卡六更新均值16.75秒，分配显存峰值32.41GiB；四任务与84+28 queries语义保持，所有6000主事件及RNG与A逐项相同。
-正式窗口已登记gpu02两卡、frame chunk16、policy microbatch16、fresh初始化及1500硬终点；接下来从clean pushed detached版本启动。
+正式窗口已从clean pushed detached `39c3919c9dd54713f7bff6aa24d275e4a6231ff0` fresh启动：
+gpu02两卡、frame chunk16、policy microbatch16，1500硬终点。实际run contract核对source可训练参数为0、主84＋教学28。
+本地执行记录在`runs/analysis/video_teaching_20260919/launch_contract.json`，tmux driver按固定节点训练、物化和评测。
 900/1200/1500各correct400/train96，selected及额外消融只按预注册条件触发。profile权重不进入正式训练。
 新输出统一位于data0的`runs/analysis/video_teaching_20260919`链接目标，quota与预计<=60GiB条件性总增长已检查。
 

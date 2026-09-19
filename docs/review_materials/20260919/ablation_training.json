@@ -1,0 +1,102 @@
+{
+  "schema_version": "ember_video_teaching_training_audit_v1",
+  "complete": true,
+  "relation": "cross_episode",
+  "training_commit": "bd497edcc51e645131663caa0c0f5ae1835895e4",
+  "fresh_start": true,
+  "source_trainable_parameters": 0,
+  "optimizer_updates": 1500,
+  "conditions": 6000,
+  "main_queries": 126000,
+  "teaching_queries": 42000,
+  "total_queries": 168000,
+  "all_recorded_events_match_plan": true,
+  "gradients_after_identity": {
+    "writer_grad_norm": {
+      "updates_after_identity_opening": 1498,
+      "finite_positive_updates": 1498,
+      "minimum": 0.08425827324390411,
+      "median": 0.17205871641635895,
+      "maximum": 2.656181812286377
+    },
+    "meta_grad_norm": {
+      "updates_after_identity_opening": 1498,
+      "finite_positive_updates": 1498,
+      "minimum": 1.5101905281866834e-09,
+      "median": 0.00019836147112073377,
+      "maximum": 0.006433564703911543
+    },
+    "vl_meta_grad_norm": {
+      "updates_after_identity_opening": 1498,
+      "finite_positive_updates": 1498,
+      "minimum": 2.405754912615521e-06,
+      "median": 0.0029055747436359525,
+      "maximum": 0.043377585709095
+    },
+    "text_meta_grad_norm": {
+      "updates_after_identity_opening": 1498,
+      "finite_positive_updates": 1498,
+      "minimum": 1.3085931982459442e-07,
+      "median": 0.00016679826512699947,
+      "maximum": 0.0036970898509025574
+    }
+  },
+  "all_update_losses_finite": true,
+  "full_checkpoint_steps": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900,
+    1000,
+    1100,
+    1200,
+    1300,
+    1400,
+    1500
+  ],
+  "world_size": 2,
+  "update_compute_seconds": 24638.058031012304,
+  "average_update_seconds": 16.42537202067487,
+  "maximum_allocated_gib": 32.42458200454712,
+  "maximum_reserved_gib": 35.236328125,
+  "per_task_conditions": {
+    "0": 250,
+    "2": 250,
+    "4": 250,
+    "5": 250,
+    "7": 250,
+    "9": 250,
+    "12": 250,
+    "14": 250,
+    "15": 250,
+    "16": 250,
+    "18": 250,
+    "19": 250,
+    "20": 250,
+    "21": 250,
+    "22": 250,
+    "25": 250,
+    "28": 250,
+    "29": 250,
+    "34": 250,
+    "35": 250,
+    "36": 250,
+    "37": 250,
+    "38": 250,
+    "39": 250
+  },
+  "unique_teacher_conditions": 1104,
+  "held_train_FM": {
+    "0": 0.14683008682914078,
+    "900": 0.10500066979633023,
+    "1200": 0.10029755082602303,
+    "1500": 0.0984041551516081
+  },
+  "held_diagnostic_inputs_paired_and_no_gradient": true,
+  "diagnostics_used_for_selection": false
+}

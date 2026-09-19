@@ -6,7 +6,7 @@ Owner明确要求完成专家意见、推送并汇报。Active design为[同视�
 Owner随后要求再观察训练趋势；已登记两臂各从完整1500继续至2100，1800/2100评测，2100双方换视频。
 原窗口选择和1500 controls保持冻结；续训入口已实现，71项相关CPU检查通过，
 真实8400事件核对保持两臂各自前6000事件、全部主事件/RNG及教学噪声种子；现有后台任务继续。
-续训代码/合同已推送d1474ce0，并建立clean detached runtime；`continuation/driver.sh`已在tmux排队，
+续训代码/合同已推送d1474ce0，并建立clean detached runtime；`continuation/driver.sh`已从完整1500实际开始主臂续训，
 Owner要求利用空闲卡后，原串行控制器已在1500物化正常结束处退役，现改为训练与评测流水并行；
 两臂训练保持原world2／GPU拓扑，1800 checkpoint发布即交额外合格卡物化与闭环，不再等整臂评测结束。
 保留调度前脚本、状态及新分配记录；切换时旧控制器已进入1500 validation的worker启动，
@@ -22,7 +22,11 @@ Owner要求利用空闲卡后，原串行控制器已在1500物化正常结束�
 按预登记规则，胜出相邻对为1200/1500（四分数最小值159），主候选冻结1500（correct/other均165）；[冻结记录](docs/review_materials/20260919/selected_main.json)。
 1500 correct→other保留143、获得22、丢失22，churn44；换视频未整体崩塌，Long仍有明显条件更替，不能把同分说成逐行等价。
 已触发唯一匹配cross-episode前缀消融，配置与主训练仅教学episode关系这一科学变量不同；fresh1500，同三个主节点，并在主selected1500固定补other400。
-匹配消融运行中。冻结1500的wrong/shuffled/reversed/no-video已全部完成，为124/113/113/50（各400）；
+匹配消融1500窗口与固定other已完成，1888对结果及6000事件审计通过；[消融报告](docs/review_materials/20260919/ablation_report.md)。
+消融correct900/1200/1500为125/136/147，train59/60/62，固定other155；同视频主臂对应多24/38/18和other多10。
+三个correct差值CI分别[0,12.5]、[2,21]、[0.25,9]pp，other差值CI[-2.75,7.5]pp；两臂breadth均5，不能宣称换视频优势已稳健成立。
+消融末段仍上涨，同视频174→165回落，因此两臂追加窗口继续回答后续趋势；不以当前单点改动2100上限。
+冻结1500的wrong/shuffled/reversed/no-video已全部完成，为124/113/113/50（各400）；
 真实RGB重排、完整重编码、source与逐行state/RNG/video映射核对通过，全部worker正常退出；[独立读出](docs/review_materials/20260919/controls_report.md)。
 shuffle/reverse各比correct净少52，任务簇95%CI分别[-27.50,-2.25]、[-30.75,-0.50]pp；wrong区间跨零。
 效应较集中于Spatial task3，Long在wrong反而23→33，三个任务仍为零。支持此点的顺序敏感性，不证明普遍过程理解或教学项单独有效。

@@ -1,0 +1,38 @@
+{
+  "schema_version": "ember_video_teaching_parallel_scheduling_v1",
+  "registered_unix": 1789823167.0887523,
+  "reason": "owner requests fuller use of idle GPUs",
+  "scientific_contract_changed": false,
+  "training_world_size": 2,
+  "training_topology": "unchanged parent node, physical devices, rank mapping and CPU affinity",
+  "training_order": [
+    "main 1500-to-2100",
+    "ablation 1500-to-2100"
+  ],
+  "checkpoints": [
+    1600,
+    1700,
+    1800,
+    1900,
+    2000,
+    2100
+  ],
+  "closed_loop_nodes": [
+    1800,
+    2100
+  ],
+  "fixed_other_node": 2100,
+  "new_checkpoint_selection": false,
+  "training_code_commit": "d1474ce0c64e28e892ef80606d411f3cd21b6681",
+  "evaluation": "existing frozen materializer and cost-balanced persistent evaluator; ready panels dispatched to extra live eligible GPUs",
+  "replicas_per_gpu": 3,
+  "device_selection": "both-node live preflight; memory headroom, ownership, utilization and global physical-device cap",
+  "training_and_evaluation_overlap": true,
+  "original_ablation_remaining_rows": 896,
+  "continuation_rows": 2784,
+  "total_remaining_rows": 3680,
+  "pipeline_jobs": 20,
+  "registered_storage_budget_gib": 80,
+  "additional_copies_of_models_or_data": false,
+  "rollback": "original serial drivers saved locally before controller replacement; no active GPU command interrupted"
+}

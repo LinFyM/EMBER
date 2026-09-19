@@ -136,6 +136,11 @@ LR不重启也不重新升高，直接沿用既有函数在1500后的常数尾�
 复用唯一训练入口，增加显式完整checkpoint continuation；原run contract、checkpoint和原件只读。
 子run使用独立output root并登记parent；复制少量历史metrics/exposures/diagnostics后只追加新更新，不复制模型或数据集。
 普通exact-resume继续要求原config/topology；新窗口只能按登记的1500→2100扩展，禁止fresh或静默延长原run。
-继续使用原world2和物理拓扑；已运行的消融及controls先按原计划完成，然后在资源核验后顺序续训两臂。
+继续使用原world2和物理拓扑。Owner随后要求充分利用空闲卡，执行调度改为训练与物化／闭环流水并行：
+两臂仍在原训练拓扑上依次完成600更新，各自一段直接到2100并保留全部100倍数保存点和1800诊断；
+1800完整checkpoint发布后即可在其它live合格卡物化和评测，不等待训练进程退出。
+原消融完成1500训练／物化后，其余闭环也移入同一评测队列，不再阻塞主续训；不改变任何科学节点或选点口径。
+评测按可运行的完整面板分配节点，每面板沿用cost-balanced动态queue及每卡3个persistent workers；
+每次launch同时刷新两节点，占用总量遵守AGENTS上限，等待checkpoint时不占卡。
 最长视频、模型和物理batch均未改变，复用原profile；预计额外训练计算约5.5小时，另计2784次闭环及物化。
 data0为两臂续训额外预留20GiB，本study总预计上限由60调整为80GiB；launch前刷新quota、共享容量与GPU。

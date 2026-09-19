@@ -12,6 +12,7 @@ Active design：[方法与有界实验合同](docs/video_teaching_writer_design.
    消融correct125/136/147，fixed other155；[配对结果](docs/review_materials/20260919/ablation_report.md)。
    Owner追加观察后续趋势：两臂保留完整1500训练状态，各继续至2100；1800/2100 correct400/train96，2100双方other400。
    固定尾段LR、原采样流和物理拓扑，新增窗口单独报告，不改写原选择。按Owner要求利用额外空闲卡并行物化／评测，训练不再等评测。
+   Owner追加消融1500视频特异性：wrong/shuffled/reversed各400，复用已有correct/other与共同零LoRA source面板，完成匹配controls比较。
    本轮不补双相机，不开展无依据扫描。
 5. **待完成：远程交付。** 更新结果、findings与研究历史，推送代码/合同/精简证据，核对main后完成goal。
 

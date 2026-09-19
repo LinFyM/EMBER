@@ -26,6 +26,9 @@ Owner要求利用空闲卡后，原串行控制器已在1500物化正常结束�
 消融correct900/1200/1500为125/136/147，train59/60/62，固定other155；同视频主臂对应多24/38/18和other多10。
 三个correct差值CI分别[0,12.5]、[2,21]、[0.25,9]pp，other差值CI[-2.75,7.5]pp；两臂breadth均5，不能宣称换视频优势已稳健成立。
 消融末段仍上涨，同视频174→165回落，因此两臂追加窗口继续回答后续趋势；不以当前单点改动2100上限。
+Owner随后要求消融也做视频特异性检查：已固定消融1500，追加wrong/shuffled/reversed各400并加入并行队列；
+correct/other复用147/155，no-video经source、normalization、policy、environment和逐行RNG配对核对后复用共同source50。
+新增1200闭环、峰值8GiB，仍在study总80GiB预算内；不改续训或选点，将比较两臂correct到control的差值之差。
 冻结1500的wrong/shuffled/reversed/no-video已全部完成，为124/113/113/50（各400）；
 真实RGB重排、完整重编码、source与逐行state/RNG/video映射核对通过，全部worker正常退出；[独立读出](docs/review_materials/20260919/controls_report.md)。
 shuffle/reverse各比correct净少52，任务簇95%CI分别[-27.50,-2.25]、[-30.75,-0.50]pp；wrong区间跨零。

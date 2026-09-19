@@ -100,7 +100,8 @@ selected固定后才做paired wrong/shuffled/reversed/no-video；真实重排fra
 只将7额外query换成同task另一episode（排除teacher），从该episode相同规则合法stride5位置采样。
 固定同一1500窗口和节点，与主候选逐行比较。这区分具体教学对应关系与额外动作监督，失败时不追扫权重/seed。
 消融启动前，以已经冻结的主候选节点固定补一轮same-task-other400，与主候选同节点作配对比较；
-不据消融分数另选节点，也不为消融追加wrong/shuffled/reversed或其它训练臂。该补充检验收益能否随同任务换视频保留。
+不据消融分数另选节点。原登记不追加消融wrong/order；Owner随后明确追加的固定1500视频特异性检查见§9。
+该other补充检验收益能否随同任务换视频保留，不增加其它训练臂。
 
 Owner授权单相机结束后自行判断是否补双相机；默认不补。只有具体证据指向视角遮挡/接触信息缺失，
 且增加相机有独立于失败候选整体重构的合理收益预期时，才在启动前追加唯一双相机合同与资源预算；不得因低分自动加一臂。
@@ -144,3 +145,18 @@ LR不重启也不重新升高，直接沿用既有函数在1500后的常数尾�
 每次launch同时刷新两节点，占用总量遵守AGENTS上限，等待checkpoint时不占卡。
 最长视频、模型和物理batch均未改变，复用原profile；预计额外训练计算约5.5小时，另计2784次闭环及物化。
 data0为两臂续训额外预留20GiB，本study总预计上限由60调整为80GiB；launch前刷新quota、共享容量与GPU。
+
+## 9. Owner追加的消融视频特异性检查（2026-09-19）
+
+Owner在消融原窗口结束、两臂续训期间明确提出消融组也做视频特异性检查。
+固定原先已经登记的消融1500，不根据新增control结果选点；与主组冻结1500构成同预算、同checkpoint节点的比较。
+correct147/400与same-task-other155/400复用既有完整面板；新增cross-suite-wrong、shuffled、reversed各400。
+三种control严格复用主组相同的task/state/env-policy RNG/video ordinal及RGB变换，重排真实frames后完整forward。
+共同no-video使用已完成的主组零LoRA/source identity面板50/400；复用前核对source、normalization、policy、
+environment、RNG及逐行配对，不伪造消融Writer前向，也不重复400次相同source评测。
+
+报告各臂correct/other到control的逐task/suite、breadth、R/G/L和CI，并报告两臂“correct减control”的配对差值之差；
+task-cluster bootstrap仍为20,000次、seed20260915。顺序破坏降分须结合正确性能与换视频保持解释，不能只以更大降幅判优。
+这些读出不进入梯度、架构修改、checkpoint选择或当前1500→2100配方；2100不新增一套controls，Test/RL仍关闭。
+额外预计峰值8GiB（三个约2GiB LoRA bank、评测与临时余量），沿用总study 80GiB上限；加入已有空闲卡评测流水线。
+[独立登记](review_materials/20260919/ablation_controls_registration.json)保存冻结节点、复用依据和实际执行口径。

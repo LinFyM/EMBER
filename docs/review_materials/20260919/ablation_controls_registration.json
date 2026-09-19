@@ -1,0 +1,42 @@
+{
+  "schema_version": "ember_matched_ablation_controls_v1",
+  "registered_unix": 1789828602.8390937,
+  "authorization": "owner explicitly requests video-specificity checks for ablation",
+  "fixed_checkpoint_macro": 1500,
+  "checkpoint_selection": false,
+  "training_feedback": false,
+  "architecture_feedback": false,
+  "test": false,
+  "rl": false,
+  "runtime_commit": "bd497edcc51e645131663caa0c0f5ae1835895e4",
+  "new_panels": [
+    "cross_suite_wrong",
+    "shuffled",
+    "reversed"
+  ],
+  "new_rows": 1200,
+  "existing_panels": {
+    "correct": 147,
+    "same_task_other": 155
+  },
+  "reused_no_video": {
+    "source": "main1500 paired zero-LoRA source identity",
+    "successes": 50,
+    "rows": 400,
+    "source_policy_normalization_environment_rng_pairing_verified": true,
+    "writer_invocations": 0,
+    "is_learned_language_only": false
+  },
+  "paired_conditions": "same original 400 task-state-RNG-video mappings and control transforms as main1500",
+  "primary_readout": "within-arm correct and same-task-other to each control; matched difference in correct-minus-control gap",
+  "bootstrap": {
+    "unit": "task_cluster",
+    "draws": 20000,
+    "seed": 20260915,
+    "confidence": 0.95
+  },
+  "controls_seen_before_fixed_ablation_selection": false,
+  "extra_disk_peak_gib": 8,
+  "study_total_budget_gib": 80,
+  "scheduling": "join existing ready-panel pipeline on extra live eligible GPUs; continuation scientific schedule unchanged"
+}

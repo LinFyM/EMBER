@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态（2026-09-19，专家修订执行goal已启动）
+## 当前状态（2026-09-20，专家修订执行goal进行中）
 
 Owner明确要求完成专家意见、推送并汇报。Active design为[同视频教学候选](docs/video_teaching_writer_design.md)。
 Owner随后要求再观察训练趋势；已登记两臂各从完整1500继续至2100，1800/2100评测，2100双方换视频。
@@ -14,6 +14,8 @@ Owner要求利用空闲卡后，原串行控制器已在1500物化正常结束�
 续训仍严格以2100为终点，原科学合同、所有配对面板和1500冻结选择不变。
 2026-09-20凌晨主臂已完成2100，600个追加更新、完整父历史/采样/拓扑与四组正梯度核对通过，更新计算9877.17秒。
 1800完整correct160/400、train64/96；相对1500为−5／−1，验证R/G/L127/33/38，CI跨零，尚未证明续训提升。
+主2100完整correct158/400、other156/400、train67/96，五个追加评测面板核对通过；
+1500→2100 correct净−7，other净−9，其other差值CI为[-5,-0.25]pp，当前尾段未带来主组提升。
 原双卡已从消融完整1500开始追加600更新。评测进一步按显存安排每卡1–3个persistent workers；
 一张剩余约15.6GiB且持续低利用率的额外卡已通过现有准入，开始消融reversed400，原训练／评测worker未被中断。
 资源不足、尚无worker启动的shuffled准入尝试已保存，原sealed面板已换到合格卡继续，不按分数重跑或替换。
@@ -33,7 +35,9 @@ Owner要求利用空闲卡后，原串行控制器已在1500物化正常结束�
 消融末段仍上涨，同视频174→165回落，因此两臂追加窗口继续回答后续趋势；不以当前单点改动2100上限。
 Owner随后要求消融也做视频特异性检查：已固定消融1500，追加wrong/shuffled/reversed各400并加入并行队列；
 correct/other复用147/155，no-video经source、normalization、policy、environment和逐行RNG配对核对后复用共同source50。
-新增1200闭环、峰值8GiB，仍在study总80GiB预算内；不改续训或选点，将比较两臂correct到control的差值之差。
+新增1200闭环已完成，消融wrong/shuffled/reversed为122/104/86；两组逐行变换、source/RNG和所有worker核对通过。
+correct参照DID为+16/+9/−9条，95%CI为[-4.5,12]/[-5.5,9]/[-11.25,3.5]pp，other参照也均跨零。
+两组都有顺序敏感性，尚未证明同视频教学增强该特异性；[匹配controls报告](docs/review_materials/20260919/ablation_controls_report.md)。
 冻结1500的wrong/shuffled/reversed/no-video已全部完成，为124/113/113/50（各400）；
 真实RGB重排、完整重编码、source与逐行state/RNG/video映射核对通过，全部worker正常退出；[独立读出](docs/review_materials/20260919/controls_report.md)。
 shuffle/reverse各比correct净少52，任务簇95%CI分别[-27.50,-2.25]、[-30.75,-0.50]pp；wrong区间跨零。
@@ -45,7 +49,8 @@ Owner在2026-09-20凌晨追加：资源/时间允许时补双相机，并说明�
 chunk16/micro16在空闲A40上OOM，属于物理batch可行性结果，日志保留。将用有余量的batch做四卡实际更新与resume，
 进一步的chunk8/micro16最长实测约25.6–25.8秒、峰值28.18GiB；四卡六更新均值15.624秒及完整4→6恢复通过。
 已据此登记唯一fresh1500双相机正式对照，预计包含15%余量及尾部1小时约8.49小时，约10:19收齐；
-正式入口复查两节点、quota与冻结commit后执行，原source／四任务21＋7／seed／优化曲线不变。
+正式入口已复查两节点和quota，从clean pushed detached35124aa9在同节点四卡fresh启动；
+实际run contract的source冻结、world4、四任务21＋7及全部6000计划事件/RNG与主组匹配核对通过。
 仅900/1200/1500 correct400/train96与fixed1500 other400，不新增selection、controls、续训、Test或RL；
 本study峰值预算随双相机正式臂由80扩为105GiB。
 900/1200/1500冻结train held-action FM为0.104706/0.100551/0.098260（初始0.146830）；900与A同一24任务诊断输入已核对，A同点0.103778。

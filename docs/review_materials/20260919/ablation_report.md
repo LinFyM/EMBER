@@ -17,7 +17,7 @@
 所有validation面板为400条，八task各50条合法teacher videos整轮各一次；train为登记的24×4有限面板。
 逐行task、state、language、env/policy RNG、teacher映射、source、checkpoint和completion核对通过。
 消融不另选checkpoint；other固定在已冻结的主1500。本报告读出时未执行消融wrong/order controls、Test或RL。
-Owner随后授权的[固定1500视频特异性检查](ablation_controls_registration.json)另行登记，尚不纳入以下已完成结果。
+Owner随后授权的[固定1500视频特异性检查](ablation_controls_report.md)现已完成，另行报告，不混入以下原窗口结果。
 
 ## 绝对能力与配对差值
 
@@ -78,7 +78,7 @@ churn57、Jaccard .665。它的总分125→136→147持续上涨。
 它没有单独识别完整H/相邻视觉读取的作用，也没有与“完全去掉辅助query”比较。
 换视频优势区间跨零、只有一个seed且三个任务仍零成功，因此保留有限正向结论。
 主1500的[视频controls](controls_report.md)支持该点的有益顺序敏感性，其效应并不均匀；
-这不能进一步证明同视频教学导致了全部顺序效应，须等待Owner新追加的消融匹配wrong/order面板。
+新完成的[消融匹配controls](ablation_controls_report.md)显示两组均有顺序敏感性，但wrong／shuffle／reverse的两组视频增量之差区间均跨零；不能将全部顺序效应归因于同视频教学。
 
 继续训练两臂有明确价值：观察同视频组能否恢复并保持、跨episode组是否继续追近，而不是因某个中间高点提前选优。
 追加节点遵守[续训登记](continuation_registration.json)，原1500冻结选择保持不变。

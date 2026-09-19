@@ -16,7 +16,9 @@ Owner要求利用空闲卡后，原串行控制器已在1500物化正常结束�
 1800完整correct160/400、train64/96；相对1500为−5／−1，验证R/G/L127/33/38，CI跨零，尚未证明续训提升。
 主2100完整correct158/400、other156/400、train67/96，五个追加评测面板核对通过；
 1500→2100 correct净−7，other净−9，其other差值CI为[-5,-0.25]pp，当前尾段未带来主组提升。
-原双卡已从消融完整1500开始追加600更新。评测进一步按显存安排每卡1–3个persistent workers；
+消融也已严格完成2100，600个追加更新及四组正梯度/原状态连续性核对通过，新增更新计算9693.00秒。
+两臂[续训训练审计](docs/review_materials/20260919/continuation_training_audits.json)已保存；消融1800/2100闭环正在两张额外卡完成，双相机四卡训练继续。
+评测进一步按显存安排每卡1–3个persistent workers；
 一张剩余约15.6GiB且持续低利用率的额外卡已通过现有准入，开始消融reversed400，原训练／评测worker未被中断。
 资源不足、尚无worker启动的shuffled准入尝试已保存，原sealed面板已换到合格卡继续，不按分数重跑或替换。
 主实验先用单相机agentview；新增教学项与主FM经同一套LoRA联合训练全部Writer/Meta，source冻结。

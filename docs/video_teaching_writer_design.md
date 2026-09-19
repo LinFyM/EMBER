@@ -186,3 +186,10 @@ Owner明确表示若后续空闲资源充足、训练所需时间不长，可以
 disposable profile最多新增2GiB，权重不进入formal；条件性正式臂另预留25GiB，使study总体预算上限为105GiB。
 首次核验data0用量171947552KiB、独立quota1073741824KiB、共享余量1266771968KiB，足以覆盖该峰值；
 正式启动前重新检查实际GPU与storage，并登记测得的批量、拓扑、时间估算和clean pushed detached runtime。
+
+实际profile已完成：frame chunk8／policy microbatch16，最长105帧三次完整21＋7更新约25.6–25.8秒、峰值28.18GiB。
+同节点四卡六更新均值15.624秒、峰值28.18GiB，完整4→6恢复通过；六个更新覆盖一个四任务采样周期。
+据此登记唯一fresh1500双相机正式臂，源码接口为f51ba24e，配置为`configs/pi05_writer_dual_camera.json`。
+以六更新均值×1500×1.15加1小时最终物化／评测／汇总估计约8.49小时，登记时预计2026-09-20约10:19完成；
+这是资源与吞吐估计，不保证固定完工时刻。逐节点物化／闭环与训练重叠，原单相机两臂证据仍优先完成。
+[实际profile与启动登记](review_materials/20260919/dual_camera_registration.json)保留时间估算、固定节点和无额外controls边界。

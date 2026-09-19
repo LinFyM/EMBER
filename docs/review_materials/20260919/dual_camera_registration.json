@@ -1,0 +1,84 @@
+{
+  "schema_version": "ember_dual_teacher_camera_launch_registration_v1",
+  "registered_cst": "2026-09-20T01:49:45.270405+08:00",
+  "owner_deadline_cst": "2026-09-20T11:00:00+08:00",
+  "authorization": "conditional idle-resource dual-camera request and 11:00 work start",
+  "profile": {
+    "complete": true,
+    "world_size": 4,
+    "frame_chunk": 8,
+    "policy_microbatches": [
+      16,
+      16,
+      16,
+      16
+    ],
+    "update_seconds": [
+      22.339390881359577,
+      11.931922784075141,
+      16.286762438714504,
+      15.79452066635713,
+      16.396101463586092,
+      10.995907600037754
+    ],
+    "mean_update_seconds": 15.624100972355032,
+    "peak_allocated_gib": 28.175850868225098,
+    "peak_reserved_gib": 31.826171875,
+    "complete_resume_4_to_6": true,
+    "profile_weights_reused": false,
+    "remaining_to_11_seconds": 33038.860541,
+    "estimated_training_plus_tail_seconds": 30551.57417731243,
+    "estimate_basis": "1500 updates at six-update mean plus15percent overhead, plus1h final materialization/evaluation/reporting; earlier nodes pipeline concurrently",
+    "fits_estimated_morning_window": true,
+    "status": "complete",
+    "source_implementation_commit": "f51ba24e598b15c99defdf27e798f012a90894d9",
+    "formal_profile_weights_reused": false,
+    "longest_video": {
+      "sampled_frames": 105,
+      "frame_chunk": 8,
+      "policy_microbatch": 16,
+      "updates": 3,
+      "peak_allocated_gib": 28.178436279296875,
+      "last_two_update_seconds": [
+        25.623503418639302,
+        25.839262144174427
+      ]
+    },
+    "rejected_physical_profile": "frame16 policy16 OOM during backward; disposable attempt retained",
+    "all_four_gradient_groups_finite_positive_after_identity_opening": true,
+    "full_world4_checkpoint_resume_verified": true
+  },
+  "estimated_complete_cst_at_registration": "2026-09-20T10:18:56.844582+08:00",
+  "scope": {
+    "fresh_updates": 1500,
+    "world_size": 4,
+    "frame_chunk": 8,
+    "policy_microbatches": [
+      16,
+      16,
+      16,
+      16
+    ],
+    "correct_nodes": [
+      900,
+      1200,
+      1500
+    ],
+    "validation_rows_per_node": 400,
+    "train_rows_per_node": 96,
+    "fixed_same_task_other_node": 1500,
+    "additional_rows": 1888,
+    "checkpoint_selection": false,
+    "controls": [],
+    "test": false,
+    "rl": false,
+    "further_continuation": false
+  },
+  "source_frozen": true,
+  "dataset_and_model_copies": false,
+  "additional_formal_storage_budget_gib": 25,
+  "total_study_storage_budget_gib": 105,
+  "resource_rule": "live both-node admission immediately before launch; max6 unless idle count>10 permits8; max6 per node",
+  "execution": "same four GPUs on one node, exact resume locks topology; four-task logical update unchanged",
+  "launch_status": "registered_before_formal_launch"
+}

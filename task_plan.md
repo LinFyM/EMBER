@@ -14,7 +14,7 @@ Active design：[方法与有界实验合同](docs/video_teaching_writer_design.
    固定尾段LR、原采样流和物理拓扑，新增窗口单独报告，不改写原选择。按Owner要求利用额外空闲卡并行物化／评测，训练不再等评测。
    Owner追加消融1500视频特异性：wrong/shuffled/reversed各400，复用已有correct/other与共同零LoRA source面板，完成匹配controls比较。
    Owner在2026-09-20凌晨追加：资源和总耗时允许时补双相机，约11:00开始工作。
-   正在测真实双相机吞吐；可行时只启动§10登记的fresh1500相机对照与1888条配对闭环，不开展其它扫描。
+   最长视频与四卡真实吞吐、完整恢复已通过；按§10启动唯一fresh1500相机对照与1888条配对闭环，预计约10:19收齐，不开展其它扫描。
 5. **待完成：远程交付。** 更新结果、findings与研究历史，推送代码/合同/精简证据，核对main后完成goal。
 
 上轮frame-set已结束1200，结果79/109/142/118，对A99/88/140/135；[报告](docs/review_materials/20260918/frameset_report.md)。

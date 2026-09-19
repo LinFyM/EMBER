@@ -200,15 +200,97 @@ def test_original_first900_clock_and_registered_cosine_tail(config):
     original = CosineDecayWithWarmupSchedulerConfig(num_warmup_steps=100, num_decay_steps=12000,
         peak_lr=3e-4, decay_lr=1e-5).build(reference, 12000)
     rates = {}
-    for step in range(1501):
+    for step in range(2101):
         if step <= 900:
             assert optimizer.param_groups[0]['lr'] == pytest.approx(reference.param_groups[0]['lr'])
         if step in (900, 1200, 1500):
             rates[step] = optimizer.param_groups[0]['lr']
+        if step > 1500:
+            assert optimizer.param_groups[0]['lr'] == pytest.approx(rates[1500])
         optimizer.step(); scheduler.step()
         reference.step(); original.step()
     assert rates[1200] == pytest.approx(rates[900] * .55)
     assert rates[1500] == pytest.approx(rates[900] * .1)
+
+
+def test_continuation_requires_full_parent_and_rejects_scientific_or_topology_change(tmp_path, config):
+    from ember.writer.continuation import CONTINUATION, prepare_continuation, require_continuation_start
+
+    child = deepcopy(config)
+    child['continuation'] = dict(CONTINUATION)
+    child['data']['maximum_updates'] = 2100
+    path = tmp_path / 'config.json'
+    path.write_text(json.dumps(child))
+    assert _config(path)['data']['maximum_updates'] == 2100
+    args = SimpleNamespace(resume=None, extend_from=None, output=tmp_path/'child')
+    with pytest.raises(ValueError, match='cannot start fresh'):
+        require_continuation_start(args, child)
+    parent = tmp_path/'parent'
+    parent.mkdir()
+    args.extend_from = parent/'checkpoints/macro_00001500'
+    require_continuation_start(args, child)
+    original = {'schema_version':'run', 'stage':'stage', 'mode':'formal', 'config':config,
+                'model_config':config['model'], 'source':config['source'], 'topology':{'world_size':2},
+                'execution':{'policy_microbatches':[16,16]}, 'git':{'commit':'sealed-parent'}}
+    (parent/'run_contract.json').write_text(json.dumps(original))
+    candidate = {**original, 'config':child}
+    prepare_continuation(args, candidate)
+    assert candidate['continuation']['parent_training_commit'] == 'sealed-parent'
+    for section, key, value in [('config','optimization',dict(child['optimization'], lr=1e-3)),
+                                ('topology','world_size',3)]:
+        changed = deepcopy(candidate)
+        changed[section][key] = value
+        with pytest.raises(ValueError, match='budget and evidence|topology'):
+            prepare_continuation(args, changed)
+    args.resume = args.extend_from
+    with pytest.raises(ValueError, match='cannot also exact-resume'):
+        require_continuation_start(args, child)
+
+
+def test_continuation_restores_real_optimizer_rng_scheduler_and_next_update(tmp_path, monkeypatch, sampler, config):
+    from ember.writer.continuation import CONTINUATION
+    from ember.writer.training import _restore, STAGE, RUN_SCHEMA
+
+    monkeypatch.setattr('ember.ecp.checkpoint.capture_rng', lambda _: torch.get_rng_state())
+    monkeypatch.setattr('ember.ecp.checkpoint.restore_rng', lambda state, _: torch.set_rng_state(state))
+    context = DistributedContext(0, 0, 1, torch.device('cpu'))
+    model = torch.nn.Linear(3, 2)
+    optimizer, scheduler = _optimization(model, config)
+    def update(state, opt, clock):
+        opt.zero_grad(set_to_none=True)
+        loss = state(torch.randn(4,3)).square().mean()
+        loss.backward(); opt.step(); clock.step()
+        return loss.detach()
+    for _ in range(1500):
+        sampler.next_iteration()
+        update(model, optimizer, scheduler)
+    parent, output = tmp_path/'parent', tmp_path/'continued'
+    output.mkdir()
+    checkpoint = save_ecp_checkpoint(output_dir=parent, macro=1500, stage=STAGE, context=context,
+        model=model, optimizer=optimizer, scheduler=scheduler, run_contract_schema=RUN_SCHEMA,
+        metrics_rows=6000, sampler_state=sampler.sampler_state(), training_state=_training_state(config,1500))
+    for filename, steps in [('metrics.jsonl',range(1,1501)),
+                            ('exposures.jsonl',[s for s in range(1,1501) for _ in range(4)]),
+                            ('diagnostics.jsonl',[s for s in config['evidence']['supervised_validation']['optimizer_updates'] for _ in range(24)])]:
+        (parent/filename).write_text(''.join(json.dumps({'step':s})+'\n' for s in steps))
+    expected_loss = update(model, optimizer, scheduler)
+    expected_weight = model.weight.detach().clone()
+    child_config = deepcopy(config)
+    child_config['continuation'] = dict(CONTINUATION)
+    child_config['data']['maximum_updates'] = 2100
+    child_data = WriterTrainingData(ROOT, child_config['data'])
+    child_model = torch.nn.Linear(3,2)
+    child_opt, child_clock = _optimization(child_model, child_config)
+    args = SimpleNamespace(resume=None, extend_from=checkpoint, output=output, mode='formal')
+    assert _restore(args,context,SimpleNamespace(state=child_model),child_data,child_opt,child_clock,child_config)==(1500,6000)
+    assert child_clock.last_epoch == child_data.next_step == 1500
+    assert all(int(v['step'])==1500 for v in child_opt.state.values())
+    assert all(r['occurrence']==250 for r in child_data.next_iteration())
+    torch.testing.assert_close(update(child_model,child_opt,child_clock),expected_loss)
+    torch.testing.assert_close(child_model.weight,expected_weight)
+    assert len((parent/'metrics.jsonl').read_text().splitlines())==1500
+    assert len((output/'exposures.jsonl').read_text().splitlines())==6000
+    child_data.close()
 
 
 def test_checkpoint_restores_next_update_and_sampler(tmp_path, monkeypatch, config):

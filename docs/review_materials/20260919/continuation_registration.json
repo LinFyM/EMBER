@@ -1,0 +1,52 @@
+{
+  "schema_version": "ember_continuation_registration_audit_v1",
+  "parent_updates": 1500,
+  "continued_updates": 2100,
+  "parent_events_preserved_per_arm": 6000,
+  "total_events_per_arm": 8400,
+  "added_events_per_arm": 2400,
+  "all8400_primary_events_and_rng_match_between_arms": true,
+  "all8400_teaching_noise_seeds_match_between_arms": true,
+  "event_groups_match": true,
+  "original_control_scores_read": false,
+  "decision": "bounded matched continuation,600 extra updates per arm, fixed1800/2100; no new checkpoint selection",
+  "owner_request": "observe whether the later training trend can improve",
+  "main_correct_at900_1200_1500": [
+    149,
+    174,
+    165
+  ],
+  "main_other_at900_1200_1500": [
+    140,
+    159,
+    165
+  ],
+  "held_train_FM_at900_1200_1500": [
+    0.10470611638932799,
+    0.1005507178294162,
+    0.09825957601424307
+  ],
+  "unchanged_lr_after1500": 2.959936384576631e-05,
+  "new_panels": {
+    "each_arm_1800": [
+      "correct400",
+      "train96"
+    ],
+    "each_arm_2100": [
+      "correct400",
+      "train96",
+      "same_task_other400"
+    ]
+  },
+  "added_closed_loop_rows": 2784,
+  "source_graph_and_functional_objectives_changed": false,
+  "related_CPU_tests_passed": 71,
+  "guard_refactor_recheck_passed": 11,
+  "guard_refactor_recheck_is_subset": true,
+  "architecture_new_hard_violations": 0,
+  "source_ownership": "continuation.py owns parent authority, prefix identity and inherited metric history; existing runner and checkpoint loader execute all updates",
+  "configurations": [
+    "configs/pi05_writer_continuation.json",
+    "configs/pi05_writer_cross_episode_continuation.json"
+  ]
+}

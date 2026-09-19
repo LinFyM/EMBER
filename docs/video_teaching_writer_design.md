@@ -18,6 +18,7 @@ Core是当前计算接口、内容起点和过程查询，不再宣称它是已�
 
 完成标准：完成候选实现、真实profile和完整1500更新窗口、预定闭环与配对分析；有保留价值时完成唯一监督消融与冻结后controls；
 保存可复核结果并推送main。科学结果允许正、负或不确定，不要求以特定分数结束goal，不无限续训或扫描。
+Owner随后要求观察后续训练趋势，追加的1500→2100有界续训见§8；原窗口、1500选点及其controls不追溯改写。
 
 ## 2. 唯一部署图与模块职责
 
@@ -110,3 +111,30 @@ Owner授权单相机结束后自行判断是否补双相机；默认不补。只
 frame-set实现退役至Git b9bd90ac、封存合同和formal artifacts，不保留平行fallback。
 模型子任务在独立worktree；主代理负责训练、数据、配置、文档、最终集成验证与运行。保留完整checkpoint和raw eval资产在本地，
 远程推送源码、合同、专家修订、结果分析及精简配对证据；不会把本地权重或数据集加入Git。
+
+## 8. Owner追加的后续趋势窗口（2026-09-19）
+
+Owner在主窗口结束、唯一消融和1500 controls运行期间提出“后续趋势还没观察清楚”，要求考虑继续训练。
+登记本扩展时尚未读取本轮wrong/shuffled/reversed/no-video分数；扩展依据仅为原correct/other与监督趋势。
+主correct149→174→165、other140→159→165，held train FM0.104706→0.100551→0.098260；
+末100更新主FM均值0.100032、教学0.048987，尚不能证明能力平台或保证续训有益。
+
+两臂均从各自完整1500 checkpoint继续600更新，固定1800、2100节点，2100硬终点。
+保留Writer/三Meta、optimizer moments、scheduler、全部rank RNG和采样游标；架构、21+7 query、lambda、source、相机均不变。
+LR不重启也不重新升高，直接沿用既有函数在1500后的常数尾值2.959936384576631e-5。
+事件表保持原6000条件及所有主/教学RNG，按原采样流追加2400条件；每臂累计8400条件、176400主＋58800教学query。
+
+1800/2100各做correct400与train96；2100双方固定再做same-task-other400，保持原state/video/env/policy映射。
+报告每臂1500→1800→2100的逐task/suite、breadth、R/G/L、churn、Jaccard和task-cluster bootstrap CI；
+同时比较相同预算的两臂。held train FM只作冻结诊断。所有新增节点均报告，不以观察中的高点另选checkpoint。
+本追加仅回答低LR尾段能否继续改善，不新做LR/seed扫描，不恢复旧A，不由control分数修改训练。
+
+原selected1500及其controls继续作为原窗口的冻结证据；后续更高分也不能继承1500的因果资格。
+本次不为新增节点再扩一套wrong/order controls。若后续需要更新正式方法选择，须另行明确登记其资格口径。
+
+复用唯一训练入口，增加显式完整checkpoint continuation；原run contract、checkpoint和原件只读。
+子run使用独立output root并登记parent；复制少量历史metrics/exposures/diagnostics后只追加新更新，不复制模型或数据集。
+普通exact-resume继续要求原config/topology；新窗口只能按登记的1500→2100扩展，禁止fresh或静默延长原run。
+继续使用原world2和物理拓扑；已运行的消融及controls先按原计划完成，然后在资源核验后顺序续训两臂。
+最长视频、模型和物理batch均未改变，复用原profile；预计额外训练计算约5.5小时，另计2784次闭环及物化。
+data0为两臂续训额外预留20GiB，本study总预计上限由60调整为80GiB；launch前刷新quota、共享容量与GPU。

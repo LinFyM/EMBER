@@ -3,8 +3,9 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-**经最终 LoRA 的同视频教学候选已完成实现与真实 profile，正在进入正式训练。** 主实验单相机 agentview；重复完整 H／相邻视觉读取与有序 Procedure，
-同视频五步教学和跨 episode 主 FM 联合更新整个 Writer 与三组 Meta。方法、1500 更新窗口与条件性后续见[设计](docs/video_teaching_writer_design.md)，实际状态见[progress](progress.md)。
+**同视频教学候选已完成主1500窗口，正在执行匹配消融与冻结视频 controls。** 主实验单相机 agentview；重复完整 H／相邻视觉读取与有序 Procedure，
+同视频五步教学和跨 episode 主 FM 联合更新整个 Writer 与三组 Meta。Owner追加两臂至2100的同配方续训以观察趋势；
+原窗口与追加合同见[设计](docs/video_teaching_writer_design.md)，实际状态见[progress](progress.md)。
 
 上轮 A 的 learned frame-set 匹配诊断已经完成：900/1200 为142/118，A为140/135，未证明相邻等强；
 [完整报告](docs/review_materials/20260918/frameset_report.md)与[封存合同](docs/learned_frameset_reference_design.md)保留原比较边界。
@@ -34,11 +35,12 @@ A900机制与Core/Procedure交叉两次冻结诊断只支持其固定模型、tr
 | 原生图文／完整H读取与三组Meta | `writer/video_program.py`、`writer/meta_lora.py` |
 | 语义Core、重复过程读取与条件化参数slots | `writer/temporal.py`、`writer/procedure.py` |
 | 唯一38-target完整A/B生成 | `writer/model.py`、`pi05_lora.py` |
-| 主FM与同视频教学、采样与完整checkpoint | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py`、`ecp/checkpoint.py` |
+| 主FM与同视频教学、采样与完整checkpoint | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py`、`writer/continuation.py`、`ecp/checkpoint.py` |
 | 运行时、物化与strict闭环评测 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` |
 
 Canonical入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`和`scripts/evaluate_pi05.py`，
-教学候选使用独立schema与fresh初始化；旧A和frame-set的checkpoint使用其冻结runtime，不装入新模型继续训练。
+教学候选使用独立schema与fresh初始化；同架构的后续窗口继承其完整训练状态。
+旧A和frame-set的checkpoint使用其冻结runtime，不装入新模型继续训练。
 本轮之外的旧实验不由保留入口自动恢复。
 
 ## 数据与资产

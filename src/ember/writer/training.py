@@ -21,6 +21,10 @@ from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
 from ember.writer.learning_data import EVENT_SCHEMA, WriterTrainingData
+from ember.writer.continuation import (
+    inherit_history, prepare_continuation, require_continuation_config,
+    require_continuation_start, require_extended_prefix,
+)
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import VideoConditionCache, build_runtime, require_architecture_identity
 from ember.writer.task_execution import (
@@ -48,12 +52,13 @@ def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
+    require_continuation_config(config)
     expected_data = {
         "extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
         "queries_per_task": 21, "tasks_per_update": 4, "conditions_per_task": 1, "cardinalities": [1],
         "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
         "version": EVENT_SCHEMA, "event_schema_version": EVENT_SCHEMA,
-        "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722, "maximum_updates": 1500,
+        "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722,
         "teaching_queries_per_task": 7, "teaching_seed": 20260919,
     }
     expected_observer = {
@@ -135,6 +140,9 @@ def _event_plan_path(args):
 
 def _publish_event_plan(args, events):
     path = _event_plan_path(args)
+    if getattr(args, "extend_from", None):
+        parent = args.extend_from.resolve().parent.parent / "training_events.json"
+        require_extended_prefix(read_json(parent), events)
     if path.exists():
         if not args.resume:
             raise ValueError("fresh training refuses an existing event plan")
@@ -176,7 +184,8 @@ def _run_contract(args, context, config, runtime, state):
             "vl_meta_parameters": sum(p.numel() for p in runtime.state.vl_meta.parameters()),
             "text_meta_parameters": sum(p.numel() for p in runtime.state.text_meta.parameters()),
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
-            "optimizer": "fresh AdamW; one grouped functional update per four equally weighted tasks", "scaler": None,
+            "optimizer": ("parent AdamW state preserved" if config.get("continuation") else "fresh AdamW")
+                         + "; one grouped functional update per four equally weighted tasks", "scaler": None,
             "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
             "logical_batch": _logical_batch(config),
             "event_plan": str(_event_plan_path(args).resolve()),
@@ -317,21 +326,25 @@ def _training_state(config, updates):
 
 
 def _restore(args, context, runtime, data, optimizer, scheduler, config):
-    if not args.resume:
+    parent = getattr(args, "extend_from", None)
+    checkpoint = args.resume or parent
+    if not checkpoint:
         return 0, 0
-    if args.resume.resolve().parent.parent != args.output.resolve():
+    if not parent and checkpoint.resolve().parent.parent != args.output.resolve():
         raise ValueError("exact-resume checkpoint must belong to its original run root")
     restored = {}
     updates, metrics_rows = load_ecp_checkpoint(
-        checkpoint=args.resume, stage=STAGE, context=context, model=runtime.state,
+        checkpoint=checkpoint, stage=STAGE, context=context, model=runtime.state,
         optimizer=optimizer, scheduler=scheduler, run_contract_schema=RUN_SCHEMA, restored_state=restored,
     )
     if restored["training_state"] != _training_state(config, updates):
         raise ValueError("supervised checkpoint stage/update/data contract changed")
-    data.restore_sampler(restored["sampler_state"])
-    if data.sampler_state()["next_step"] != updates:
-        raise ValueError("sampler and optimizer-update cursors differ")
+    data.restore_sampler(restored["sampler_state"], extend_completed=parent is not None)
+    if data.sampler_state()["next_step"] != updates or scheduler.last_epoch != updates:
+        raise ValueError("sampler, scheduler and optimizer-update cursors differ")
     if context.is_main:
+        if parent:
+            inherit_history(checkpoint, args.output)
         reconcile_metrics(args.output / "exposures.jsonl", updates, metrics_rows, cursor_key="step", packet_label="exposures")
         reconcile_metrics(args.output / "metrics.jsonl", updates, updates, cursor_key="step", packet_label="metrics")
         if args.mode == "formal":
@@ -395,7 +408,7 @@ def _segment_limit(args, config):
     if args.mode == "formal" and stop != nodes[-1]:
         raise ValueError("formal segment must stop at the last registered checkpoint node")
     if stop > config["data"]["maximum_updates"]:
-        raise ValueError("segment exceeds the registered 1500-update event budget")
+        raise ValueError(f"segment exceeds the registered {config['data']['maximum_updates']}-update event budget")
     return stop
 
 
@@ -431,8 +444,9 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
     # A resumed segment keeps its original registered nodes. The restored
     # cursor skips completed nodes while the loop retains the registered stop.
     if context.is_main:
+        checkpoint = getattr(args, "resume", None) or getattr(args, "extend_from", None)
         print(json.dumps({"segment_start": updates, "segment_stop": stop, "checkpoint_updates": nodes,
-                          "resume": str(args.resume) if getattr(args, "resume", None) else None}), flush=True)
+                          "resume": str(checkpoint) if checkpoint else None}), flush=True)
     if args.mode == "formal" and updates == 0 and 0 in config["evidence"]["supervised_validation"]["optimizer_updates"]:
         _validate_actions(args, engine, data, context, config, 0)
     while updates < stop:
@@ -469,6 +483,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
+    require_continuation_start(args, config)
     if args.mode == "formal" and (config["status"] != "registered_video_teaching_learning"
                                   or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
@@ -500,6 +515,8 @@ def run(args: argparse.Namespace) -> None:
     frame_parallel_group = initialize_condition_group(context)
     contract = _run_contract(args, context, config, runtime, state)
     if context.is_main:
+        if getattr(args, "extend_from", None):
+            prepare_continuation(args, contract)
         _publish_contract(args.output / "run_contract.json", contract, resume=args.resume is not None)
     barrier(context)
     cursors = _restore(args, context, runtime, data, optimizer, scheduler, config)
@@ -528,5 +545,6 @@ def main() -> None:
     parser.add_argument("--checkpoint-updates", help="this segment's registered global optimizer-update nodes")
     parser.add_argument("--policy-microbatches", help="physical FM query chunks by rank, e.g. 8,4,8,8")
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--extend-from", type=Path, help="complete parent1500 state for the registered 2100 continuation")
     parser.add_argument("--cpu-threads", type=int, default=4)
     run(parser.parse_args())

@@ -243,6 +243,35 @@ def test_regrouping_and_json_resume_preserve_event_and_flow_identity(training_da
     assert baseline.event_plan()["events"] == second["events"]
 
 
+@pytest.mark.parametrize('relation', ['same_video', 'cross_episode'])
+def test_completed_window_continuation_preserves_events_and_next_round(training_data_factory, relation):
+    from ember.writer.continuation import require_extended_prefix
+
+    parent = training_data_factory(maximum_updates=1500, teaching_episode=relation)
+    child = training_data_factory(maximum_updates=2100, teaching_episode=relation)
+    parent_plan, child_plan = parent.event_plan(), child.event_plan()
+    require_extended_prefix(parent_plan, child_plan)
+    for _ in range(1500):
+        parent.next_iteration()
+    saved = parent.sampler_state()
+    with pytest.raises(ValueError, match='contract or grouping'):
+        child.restore_sampler(saved)
+    child.restore_sampler(saved, extend_completed=True)
+    draws = child.next_iteration()
+    expected = [child_plan['events'][i] for i in child_plan['groups'][1500]]
+    assert [(r['task'], r['occurrence'], r['query_seed']) for r in draws] == [
+        (r['task'], r['occurrence'], r['query_seed']) for r in expected]
+    assert all(r['occurrence'] == 250 for r in draws)
+    changed = deepcopy(parent_plan)
+    changed['events'][0]['teaching']['policy_rng_seed'] += 1
+    with pytest.raises(ValueError, match='every parent event'):
+        require_extended_prefix(changed, child_plan)
+    changed = deepcopy(saved)
+    changed['next_step'] = 1200
+    with pytest.raises(ValueError, match='completed parent1500'):
+        child.restore_sampler(changed, extend_completed=True)
+
+
 def test_event_batch_reads_only_selected_actions_and_keeps_full_batch_rng(training_data_factory, monkeypatch):
     reads = []
     original = h5py.Dataset.__getitem__

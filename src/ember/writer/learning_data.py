@@ -18,6 +18,7 @@ from torch.utils.data import default_collate
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import task_logical_batch_policy_rng_seed
+from ember.writer.continuation import require_extended_prefix
 
 
 @dataclass(frozen=True)
@@ -57,7 +58,7 @@ def load_learning_tasks(
 
 
 EVENT_SCHEMA = "video_teaching_joint_query_events_v1"
-MAXIMUM_UPDATES = 1_500
+MAXIMUM_UPDATES = 2_100
 
 
 def _episode_queries(task, lengths, order, *, seed, cursor, count, teacher_demo=None):
@@ -122,7 +123,7 @@ class WriterTrainingData:
             if type(config.get(name)) is not int or config[name] < 0:
                 raise ValueError(f"training event {name} must be a non-negative integer")
         if not 0 < config["maximum_updates"] <= MAXIMUM_UPDATES or config["maximum_updates"] % 6:
-            raise ValueError("training events require complete six-update rounds within the 1500-update window")
+            raise ValueError("training events require complete six-update rounds within the 2100-update ceiling")
         if (config.get("tasks_per_update") != 4 or config.get("conditions_per_task") != 1
                 or config.get("queries_per_task") != 21 or tuple(config["cardinalities"]) != (1,)):
             raise ValueError("training events require four tasks, one video and 21 queries per task")
@@ -318,9 +319,13 @@ class WriterTrainingData:
         return {"next_step": self.next_step, "task_occurrences": dict(self.counts),
                 "event_contract": self._event_contract()}
 
-    def restore_sampler(self, state: Mapping[str, Any]) -> None:
+    def restore_sampler(self, state: Mapping[str, Any], *, extend_completed: bool = False) -> None:
         previous, expected = state.get("event_contract", {}), self._event_contract()
-        if previous != expected:
+        if extend_completed:
+            if state.get("next_step") != 1500:
+                raise ValueError("continuation requires a completed parent1500 sampler")
+            require_extended_prefix(previous, expected)
+        elif previous != expected:
             raise ValueError("sampling event contract or grouping changed")
         step = state.get("next_step")
         if type(step) is not int or not 0 <= step <= expected["maximum_updates"]:

@@ -23,7 +23,9 @@ Owner要求设置goal完成[专家最终修订](review_materials/20260919/expert
 本授权明确允许登记的同episode辅助功能误差经实际LoRA回传；主功能监督仍严格跨episode，所有部署信息墙保持。
 恢复有序A骨架并加入完整H/真实相邻视觉重复读取，保留完整A/B和四任务逻辑更新；不采用已撤回的P-only教学梯度。
 Owner最终明确主实验先用单相机agentview；完成后由证据决定是否值得补双相机，不自动追加。
-本轮候选、1500上限与条件性消融见[设计](video_teaching_writer_design.md)，实际状态见progress。
+本轮候选、原1500窗口与条件性消融见[设计](video_teaching_writer_design.md)，实际状态见progress。
+Owner随后要求考虑继续训练以观察后续趋势；具体有界续训另行登记，保留完整训练状态与配对可比性，
+原选定checkpoint及其controls保持原窗口的证据口径。
 
 ## 专家建议的匹配诊断授权（2026-09-18）
 

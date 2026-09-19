@@ -34,5 +34,10 @@
   "pipeline_jobs": 20,
   "registered_storage_budget_gib": 80,
   "additional_copies_of_models_or_data": false,
-  "rollback": "original serial drivers saved locally before controller replacement; no active GPU command interrupted"
+  "rollback": "original serial drivers and incomplete evaluator startup preserved locally; training and completed results retained",
+  "handoff_recovery": {
+    "panel": "original ablation validation1500",
+    "completed_shards_in_interrupted_startup": 0,
+    "action": "preserve attempt and restart identical fixed 400-condition panel on an extra GPU"
+  }
 }

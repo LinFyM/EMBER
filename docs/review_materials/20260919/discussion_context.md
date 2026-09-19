@@ -41,7 +41,7 @@ exact language + RGB video → source读取 / 三Meta → E与完整H50
 
 Owner 后续追加的 1500→2100 用两组各自完整训练状态继续：optimizer、scheduler、sampler、rank RNG 和原 world2 拓扑保留，LR 不重启，尾值固定约 2.95994e-5。1800／2100 均做 correct400 与 train96，2100 各补 other400。它回答低 LR 尾段能否继续提升；不是任意更长预算或新学习率的结论。原 selected1500 及其 controls 不因此改写。
 
-Owner 再追加消融视频特异性检查：两组都固定 1500，用相同 task／state／policy RNG／video ordinal 和真实 RGB 变换比较 wrong、shuffled、reversed。报告组内 correct 或 other 相对 control 的差，并比较两组的差值之差。共同 zero-LoRA source 面板只计一次。它不是 learned language-only 或静态视觉 prior；相对它的提高不能证明视频相对这些未训练参照的必要增量。
+Owner 再追加消融视频特异性检查：两组都固定 1500，用相同 task／state／policy RNG／video ordinal 和真实 RGB 变换比较 wrong、shuffled、reversed。各臂始终保留目标 exact language；wrong 仅换跨 suite 的教学视频，shuffle／reverse 仅改变真实帧顺序。报告组内 correct 或 other 相对 control 的差，并比较两组的差值之差。共同 zero-LoRA source 面板只计一次。它不是 learned language-only 或静态视觉 prior；相对它的提高不能证明视频相对这些未训练参照的必要增量。
 
 条件性双相机只添加相同教学 episode、相同帧索引的同步 eye-in-hand RGB；执行 policy 原本就使用双执行相机。其余科学配方及 fresh1500 预算与主组匹配，四任务逻辑更新保持，物理卡数与 chunk 按实际吞吐调整。全部 900／1200／1500 correct400／train96 和 fixed1500 other400 均报告；没有为它追加 wrong／order、续训或新的 checkpoint 选择。相机增量不能被唯一归因于遮挡或接触信息。
 

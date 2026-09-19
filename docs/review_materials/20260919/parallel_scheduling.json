@@ -25,7 +25,6 @@
   "new_checkpoint_selection": false,
   "training_code_commit": "d1474ce0c64e28e892ef80606d411f3cd21b6681",
   "evaluation": "existing frozen materializer and cost-balanced persistent evaluator; ready panels dispatched to extra live eligible GPUs",
-  "replicas_per_gpu": 3,
   "device_selection": "both-node live preflight; memory headroom, ownership, utilization and global physical-device cap",
   "training_and_evaluation_overlap": true,
   "original_ablation_remaining_rows": 896,
@@ -39,5 +38,32 @@
     "panel": "original ablation validation1500",
     "completed_shards_in_interrupted_startup": 0,
     "action": "preserve attempt and restart identical fixed 400-condition panel on an extra GPU"
+  },
+  "initial_replicas_per_gpu": 3,
+  "replica_adaptation": {
+    "registered_unix": 1789833813.9713485,
+    "reason": "owner requests full useful use of idle GPUs; four idle devices have 15-16 GiB free and cannot host three replicas",
+    "scientific_contract_changed": false,
+    "frozen_runtime_commands_unchanged": true,
+    "replicas_per_gpu": [
+      1,
+      2,
+      3
+    ],
+    "per_replica_budget_mib": 12288,
+    "headroom_mib": 2048,
+    "evaluator_admission_minimum_free_mib": {
+      "1": 14336,
+      "2": 26624,
+      "3": 38912
+    },
+    "materializer_minimum_free_mib": 22000,
+    "device_selection": "both-node live memory and ownership; <=10 percent utilization; consecutive low-util snapshots for co-residency",
+    "global_physical_device_cap": "6 unless >10 genuinely idle GPUs, then8; per-node <=6",
+    "training_topology_changed": false,
+    "queue_and_pairing_changed": false,
+    "running_gpu_workers_interrupted": false,
+    "preserved_controller_count": 2,
+    "rollback": "restore scheduling_before_adaptive_replicas/evaluation_pipeline.py and resume previous paused dispatcher before any new dispatcher is active"
   }
 }

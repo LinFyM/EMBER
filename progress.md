@@ -4,11 +4,12 @@
 
 Owner明确要求完成专家意见、推送并汇报。Active design为[同视频教学候选](docs/video_teaching_writer_design.md)。
 主实验先用单相机agentview；新增教学项与主FM经同一套LoRA联合训练全部Writer/Meta，source冻结。
-模型与训练实现已集成，fresh正式训练已完成900节点及其闭环，正在从完整checkpoint恢复至1200。
-900节点correct为149/400（A同点140），train为50/96（A54）；496对条件、RNG、source与完成状态核对通过。
-验证R/G/L为106/43/34，churn77，breadth6→5；增量主要来自Goal30→42，其余Spatial17→15、Object60→60、Long33→32。
-差值任务簇95%CI为[-2,+9]百分点。仅有一个节点，尚不能判断相邻保持或视频必要性；继续原定1500硬终点。
-900冻结train held-action FM为0.104706（初始0.146830），历史A同点0.103778；同一24任务诊断输入已核对。
+模型与训练实现已集成，fresh正式训练已完成900/1200及其闭环，正在从完整1200 checkpoint恢复至1500硬终点。
+两节点correct为149/174（各400，A为140/135），train为50/67（各96，A54/62）；992对条件、RNG、source与完成状态核对通过。
+相对A，验证R/G/L为106/43/34、112/62/23，churn77/85，breadth均6→5；差值任务簇95%CI为[-2,+9]、[-1.5,+22.25]百分点。
+900→1200自身保留118、获得56、丢失31，churn87；Spatial15→36、Object60→76、Goal42→45，但Long32→17。
+已满足相邻correct工作线，下一步按合同补same-task-other，再决定selected与唯一匹配消融；目前未选择checkpoint或证明视频必要性。
+900/1200冻结train held-action FM为0.104706/0.100551（初始0.146830）；900与A同一24任务诊断输入已核对，A同点0.103778。
 CPU累计246项通过：真实PI05主/五步端点损失、标签隔离、
 联合一次重放、四任务更新、1–6卡不同分片归一、完整checkpoint/resume、物化与视频controls，
 以及完整H/E、零残差退回有序P、BF16空分片与原生重放。首轮六个旧文案/旧架构fixture断言已修正复测。

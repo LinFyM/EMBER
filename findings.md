@@ -2451,3 +2451,65 @@ A在1200和Long能力保持有优势，900又不支持A总体占优；结果未�
 [1984对精简CSV](docs/review_materials/20260918/paired_successes.csv)及汇总/图表已整理；原件保留在
 `runs/analysis/a_learned_frameset_20260918/`，旧A原件在`runs/analysis/source_alignment_20260915/A/`。
 本轮完成，不自动开展新实验。
+
+## 121. 经最终LoRA的同视频教学：原窗口增量未保持至2100，匹配顺序特异性增量未成立（2026-09-20）
+
+按专家最后修订实现重复完整H50／相邻E读取，保留A的Core/P、条件化融合和完整38-target A/B输出。
+每更新四task等权；同一套生成LoRA接受21个跨episode主FM与7个同视频tau1／未来五步教学query，
+两项均值按1和1/3共同更新全部Writer及Text/VL/Action Meta，source冻结。没有沿用已撤回的P-only教学梯度。
+唯一匹配消融保留图、监督量、噪声流、seed7、学习率与预算，只把辅助query改为同task另一episode。
+它识别辅助监督与所看视频的对应关系，不单独识别H/E读取，也不是辅助loss有无的比较。
+
+| 更新 | 同视频 correct /400 | 消融 correct /400 | 同视频 train /96 | 消融 train /96 |
+| ---: | ---: | ---: | ---: | ---: |
+| 900 | 149 | 125 | 50 | 59 |
+| 1200 | 174 | 136 | 67 | 60 |
+| 1500 | 165 | 147 | 65 | 62 |
+| 1800 | 160 | 136 | 64 | 65 |
+| 2100 | 158 | 159 | 67 | 67 |
+
+原窗口三个correct匹配差值为+24/+38/+18，task-cluster95%CI为[0,12.5]/[2,21]/[0.25,9]pp；
+1500 other为同视频165、消融155，差值CI[-2.75,7.5]pp。支持该有限窗口的正确能力增量，不能宣称换视频优势稳健。
+主组other900/1200/1500为140/159/165，按训练前登记的相邻对规则选定1500后冻结；1200的174不是selected结果。
+correct→other1500保留143、获得22、丢失22；同分不等于逐行相同。
+历史A对应correct140/135/112，但还同时存在读取、辅助监督和LR尾段差异，只作整体配对参照，未重训旧A或v5.2。
+
+Owner要求观察后续趋势后，两臂从各自完整1500状态继续600步，保留optimizer/scheduler/sampler/rank RNG/world2，
+固定LR尾值2.959936384576631e-5，不重启。主组1500→2100 correct165→158，R/G/L132/26/33、churn59、
+J=.691、CI[-5.75,3]pp；other165→156，R/G/L136/20/29、CI[-5,-0.25]pp，未见当前尾段改善。
+消融correct147→136→159；1500→2100为R/G/L122/37/25、CI[-3.25,10.25]pp，other155→161、CI[-2.25,5.75]pp。
+2100消融→同视频correct159→158、R/G/L117/41/42、CI[-5.75,4.5]pp；other161→156、CI[-6.25,3.5]pp。
+原1500的正确能力优势没有保持到末点，但159对158不证明消融更好或两组等价；没有新的checkpoint选择。
+
+主组1500→2100 S/O/G/L35/59/48/23→34/61/44/19；消融37/50/42/18→33/68/38/20。
+消融净增主要来自Object，抵消Spatial/Goal各少4；不能把总分回升写成全面改善。
+两组2100 correct breadth均6/8，分别仅因task1与task32出现一次成功；other breadth仍5。
+主组task23/32至2100仍零成功，原1500三个零任务的描述不能不加时间限定地沿用到全部末点。
+两组冻结train-action FM1500→2100从.098259576/.098404155降至.097725476/.097496695，
+没有同步转为更强未见任务闭环；最早确定的缺口在闭环能力、保持与任务覆盖，唯一内部原因仍未定位。
+
+Owner追加的匹配视频检查固定两组1500，不按control结果选点、修改结构或训练：
+
+| 模型（各400） | correct | other | wrong | shuffled | reversed | 共用source |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 同视频 | 165 | 165 | 124 | 113 | 113 | 50 |
+| 消融 | 147 | 155 | 122 | 104 | 86 | 50 |
+
+两组correct相对shuffle/reverse均有正的组内差值区间；教学是否增强特异性须直接看matched DID。
+以correct参照，wrong/shuffle/reverse的两组优势差分别+16/+9/−9条，CI[-4.5,12]/[-5.5,9]/[-11.25,3.5]pp；
+以other参照为+8/+1/−17，CI[-7.5,9.75]/[-6.5,6.25]/[-12.75,1.75]pp。六个区间均跨零。
+因此两组都有顺序敏感性，但尚未证明同视频监督增强这些视频／顺序优势。
+主组task3 correct/shuffle/reverse35/6/0，Long wrong反而23→33，效应分布不均；不能直接写成普遍过程理解。
+共同zero-LoRA面板是冻结source，不是learned language-only/static prior；其DID仅复现原两臂分差。
+2100没有新增controls，也不能继承1500的因果资格。
+
+两臂累计4200实际更新、16,800条件访问、470,400主＋辅助query（不重复计续训复制的父历史）；
+8400主事件及教学噪声流逐臂一致、source冻结、完整恢复和所有新增梯度组核对通过。
+本单相机部分33个正式面板/10,160次新闭环全部完成，共同source只计一次；全池视频、逐行state/RNG、真实RGB重排及workers均通过。
+正式主/消融/续训runtime分别39c3919c/bd497edc/d1474ce0，均来自clean pushed detached commit。
+只用固定24 train task产生梯度；validation8簇、一个训练seed、20,000次bootstrap且未多重校正限制外推；无Test、RL或融合。
+
+原件位于`runs/analysis/video_teaching_20260919/`；远程保留[原窗口匹配报告](docs/review_materials/20260919/ablation_report.md)、
+[完整续训报告](docs/review_materials/20260919/continuation_report.md)、[匹配视频检查](docs/review_materials/20260919/ablation_controls_report.md)、
+[逐任务／相邻表](docs/review_materials/20260919/discussion_tables.md)与CSV/JSON。
+后续新增相机属于独立fresh对照，不由本段归因；不因有限尾段结果宣称所有更长训练无效，也不自动恢复本尾段。

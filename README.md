@@ -26,7 +26,7 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 | [AGENTS](AGENTS.md) | 科学、数据、评测、资源与Git合同 |
 | [Findings](findings.md)／[研究历史](docs/research_history.md) | 跨轮结论，以及封存设计、专家评审与formal原件索引 |
 
-讨论时先读Owner要求和证据审计，再看[findings](findings.md)§117–120：统一Writer终局、A900机制诊断、Core/Procedure交叉及匹配frame-set训练。
+讨论时先读Owner要求和证据审计，再看[findings](findings.md)§117–121：统一Writer终局、A900机制诊断、Core/Procedure交叉、匹配frame-set和同视频教学完整窗口。
 A900机制与Core/Procedure交叉两次冻结诊断只支持其固定模型、train24有限面板上的结论，没有证明下一架构必须保留Core/P、只能改Procedure或不能整体重构。
 旧实验与咨询均从研究历史按问题追溯；历史中的“当前／下一步”不构成执行授权。
 

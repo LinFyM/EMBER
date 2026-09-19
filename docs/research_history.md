@@ -1,5 +1,20 @@
 # EMBER research history
 
+2026-09-20完成专家最终修订的同视频教学单相机部分：主组与唯一匹配cross-episode辅助消融各fresh1500，
+再按Owner授权从完整状态继续至2100；33个正式面板/10,160条新闭环全部通过，source面板只计一次。
+主组correct900/1200/1500/1800/2100为149/174/165/160/158，消融125/136/147/136/159；
+train50/67/65/64/67与59/60/62/65/67。主selected1500按原相邻规则冻结，后续不重选。
+原1500匹配correct增量+18的CI[.25,9]pp，other165对155区间跨零；2100correct158对159、other156对161均未保持主组优势。
+主组other1500→2100净−9、CI[-5,-.25]pp；消融Object增益抵消Spatial/Goal回落，不能以末点恢复宣称全面提升。
+固定1500的主组correct/other/wrong/shuffle/reverse/source165/165/124/113/113/50，消融147/155/122/104/86/50。
+两组均顺序敏感，但correct参照DID为+16/+9/−9条、other参照+8/+1/−17条，六个任务簇区间全部跨零。
+没有证明同视频教学增强这些视频／时序优势；zero-source不是learned language-only，2100不继承旧controls。
+全部两项功能信用共同训练整个Writer与三Meta，source冻结；非P-only，辅助消融只改episode对应关系。
+累计4200更新、470,400queries，事件、完整恢复、四任务等权及正式评测核对通过；没有Test/RL、融合或旧A重训。
+完整结论及限制见findings§121、[续训报告](review_materials/20260919/continuation_report.md)、
+[匹配controls](review_materials/20260919/ablation_controls_report.md)和[方法／实际输入说明](review_materials/20260919/discussion_context.md)。
+正式runtime为39c3919c/bd497edc/d1474ce0；双相机另属Owner后续授权的fresh对照，不混入本组归因。
+
 2026-09-18 Owner明确要求暂停研究，整理本地仓库并推送远程，由其自行与专家讨论。
 此前Owner纠正：须综合全部相关历史实验，结构合理且可复制同类模块加深、自然扩展参数；
 不能只据最近两次诊断将路线限定为保留Core/P、只改Procedure或禁止整体重构。

@@ -8,6 +8,8 @@
 
 主组先用 agentview。匹配消融保留模型、query 数、loss、噪声流、seed、学习率和训练预算，仅将辅助 query 改为同 task 另一 episode。因此该比较识别辅助监督与所看视频的对应关系，不能单独识别新增完整 H／相邻视觉读取，也不是“有辅助 loss 对无辅助 loss”。历史 A 与本候选同时存在读取、监督及登记的学习率尾段变化，只能作为整体参考。
 
+正式run contract按模块登记：Writer 12,077,320参数，Action Meta 626,688，VL Meta与Text Meta各921,600；三臂这些参数计数一致，source可训练参数为0。复制Procedure块可以扩展实际H/E读取和时间计算，但本轮没有开展宽度、深度或rank扫描。
+
 ## 数据、优化和执行口径
 
 source复用generic `lerobot/pi05_base`经审计source71建立的aligned1000 checkpoint，排除目标40重叠spec；normalization由该source训练数据冻结。Writer仅在固定train24的episodes0–45上产生梯度，46–49只用于冻结诊断；本轮没有增加独立meta task。validation8/test8固定，不重划分。

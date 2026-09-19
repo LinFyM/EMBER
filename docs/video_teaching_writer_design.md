@@ -65,7 +65,8 @@ teacher动作/state仅作训练标签/执行query；在Writer生成前不读取�
 
 全部fresh，seed7，AdamW lr3e-4、betas(.9,.95)、eps1e-8、wd1e-4、clip1。
 前900更新沿用A的warmup100/decay12000/floor1e-5时间函数；随后600更新按cosine衰减至900节点学习率的0.1。
-1500硬终点；共6000条件、126000主query、42000教学query。LR尾段是预注册选择，不宣称已修复遗忘。
+原预注册窗口以1500为硬终点；共6000条件、126000主query、42000教学query。Owner追加续训另见§8。
+LR尾段是预注册选择，不宣称已修复遗忘。
 
 四task均在同一phi_t上计算，最后global SUM、一次clip/Adam/scheduler。1–4卡逐条件放置；5卡用3+2组、6卡用3+3组。
 组内可分原生帧与主/教学query，完整H/E可微gather后才做全视频过程计算；按各自21和7分母加权，禁止额外除world size。

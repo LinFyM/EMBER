@@ -6,6 +6,8 @@ Owner明确要求完成专家意见、推送并汇报。Active design为[同视�
 Owner随后要求再观察训练趋势；已登记两臂各从完整1500继续至2100，1800/2100评测，2100双方换视频。
 原窗口选择和1500 controls保持冻结；续训入口已实现，71项相关CPU检查通过，
 真实8400事件核对保持两臂各自前6000事件、全部主事件/RNG及教学噪声种子；现有后台任务继续。
+续训代码/合同已推送d1474ce0，并建立clean detached runtime；`continuation/driver.sh`已在tmux排队，
+等待原消融和controls成功完成后，核验quota及两节点GPU再顺序启动两臂。尚未执行新增GPU更新。
 主实验先用单相机agentview；新增教学项与主FM经同一套LoRA联合训练全部Writer/Meta，source冻结。
 主训练严格完成1500硬终点，15个完整checkpoint保留；1500条更新连续，6000条件、126000主query＋42000教学query完成。
 900/1200/1500 correct为149/174/165（各400，A为140/135/112），train为50/67/65（各96，A54/62/56）。
@@ -29,7 +31,8 @@ CPU累计246项通过：真实PI05主/五步端点损失、标签隔离、
 gpu02两卡、frame chunk16、policy microbatch16，1500硬终点。实际run contract核对source可训练参数为0、主84＋教学28。
 本地执行记录在`runs/analysis/video_teaching_20260919/launch_contract.json`，tmux driver按固定节点训练、物化和评测。
 900/1200/1500各correct400/train96，selected及额外消融只按预注册条件触发。profile权重不进入正式训练。
-新输出统一位于data0的`runs/analysis/video_teaching_20260919`链接目标，quota与预计<=60GiB条件性总增长已检查。
+新输出统一位于data0的`runs/analysis/video_teaching_20260919`链接目标；原预算60GiB，追加续训预留20GiB，总预算80GiB。
+登记时data0 quota使用146206060KiB、额度1073741824KiB；续训前会重新核验，而非依赖此历史快照。
 
 ## 上轮完成记录（2026-09-18，A learned frame-set诊断）
 

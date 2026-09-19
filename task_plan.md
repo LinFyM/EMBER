@@ -8,9 +8,9 @@ Active design：[方法与有界实验合同](docs/video_teaching_writer_design.
 1. **已完成：合同与实现。** 保留A完整参数骨架，加入重复完整H/相邻视觉读取；同视频教学与跨episode主FM共同训练全部Writer/Meta。
 2. **已完成：CPU与真实profile。** 数据对齐、标签信息墙、两组归一与重放、1–6卡逻辑不变、最长视频及完整resume；profile权重不入formal。
 3. **已完成：fresh主实验。** 严格1500上限；900/1200/1500 correct149/174/165（各400）、train50/67/65（各96），完整配对核对通过。
-4. **进行中：有界续训与分析。** 原窗口other、唯一监督配对消融及冻结后controls已完成，主候选保持冻结1500。
+4. **进行中：双相机与总分析。** 原窗口other、唯一监督配对消融及冻结后controls已完成，主候选保持冻结1500。
    消融correct125/136/147，fixed other155；[配对结果](docs/review_materials/20260919/ablation_report.md)。
-   Owner追加观察后续趋势：两臂保留完整1500训练状态，训练均已严格完成2100；正在收齐1800/2100 correct400/train96及2100双方other400。
+   Owner追加观察后续趋势：两臂保留完整1500训练状态，训练与所有新增面板均已完成：主correct160/158、other156，消融136/159、other161；[续训报告](docs/review_materials/20260919/continuation_report.md)。
    固定尾段LR、原采样流和物理拓扑，新增窗口单独报告，不改写原选择。按Owner要求利用额外空闲卡并行物化／评测，训练不再等评测。
    Owner追加消融1500视频特异性：wrong/shuffled/reversed各400，复用已有correct/other与共同零LoRA source面板，完成匹配controls比较。
    Owner在2026-09-20凌晨追加：资源和总耗时允许时补双相机，约11:00开始工作。

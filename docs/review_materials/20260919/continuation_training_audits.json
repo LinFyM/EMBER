@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_completed_continuation_training_pair_v1",
   "training_complete": true,
-  "closed_loop_readout_complete": false,
+  "closed_loop_readout_complete": true,
   "continuation_runtime_commit": "d1474ce0c64e28e892ef80606d411f3cd21b6681",
   "arms": {
     "main": {
@@ -56,5 +56,7 @@
         "2100": 0.09749669511802495
       }
     }
-  }
+  },
+  "new_panels": 10,
+  "new_rollouts": 2784
 }

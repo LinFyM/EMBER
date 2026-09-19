@@ -1,0 +1,32 @@
+{
+  "purpose": "input illustration only, independent of policy outcomes",
+  "selection": "longest train video selected by the pre-training profile",
+  "global_train_task": 38,
+  "teacher_demo": 36,
+  "exact_language": "put both moka pots on the stove",
+  "raw_frame_count": 517,
+  "sampled_frames": 105,
+  "displayed_sample_indices": [
+    0,
+    34,
+    69,
+    104
+  ],
+  "displayed_original_frame_indices": [
+    0,
+    170,
+    345,
+    516
+  ],
+  "cameras": [
+    "agentview",
+    "eye_in_hand"
+  ],
+  "synchronized": true,
+  "rotation_degrees": 180,
+  "frame_stride": 5,
+  "include_last_frame": true,
+  "rgb_only": true,
+  "teacher_actions_or_states_read": false,
+  "outcome_used_for_selection": false
+}

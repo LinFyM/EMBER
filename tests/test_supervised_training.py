@@ -88,6 +88,7 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
     for section, key, value in (("model", "procedure_blocks", 3), ("model", "action_horizon", 25),
                                ("data", "queries_per_task", 16), ("observer", "vl_meta_rank", 0),
                                ("data", "cardinalities", [1, 2, 4]), ("data", "tasks_per_update", 3),
+                               ("model", "camera_view", "eye_in_hand"),
                                ("data", "conditions_per_task", None), ("data", "conditions_per_task", 2)):
         changed = deepcopy(config)
         changed[section][key] = value
@@ -95,6 +96,20 @@ def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tm
         path.write_text(json.dumps(changed))
         with pytest.raises(ValueError, match="contract|architecture"):
             _config(path)
+
+
+def test_dual_camera_contract_binds_both_views_without_changing_learning_recipe(tmp_path, config):
+    value = deepcopy(config)
+    value['model']['camera_view'] = 'dual'
+    path = tmp_path / 'dual.json'
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match='scientific contract'):
+        _config(path)
+    value['observer'].update(observer_mode_contract(value['model']))
+    path.write_text(json.dumps(value))
+    observed = _config(path)
+    assert observed['observer']['native_inputs'].startswith('full512_patch_content')
+    assert observed['data'] == config['data'] and observed['optimization'] == config['optimization']
 
 
 def test_teaching_recipe_keeps_A_source_and_adds_bounded_joint_supervision(config):

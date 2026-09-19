@@ -34,7 +34,7 @@ MODEL_DEFAULTS = {
 
 
 def require_architecture_identity(model: Mapping[str, Any]) -> None:
-    variable = {"max_frames_per_encoder_call", "activation_checkpointing"}
+    variable = {"max_frames_per_encoder_call", "activation_checkpointing", "camera_view"}
     if (set(model) != set(MODEL_DEFAULTS)
             or any(model[key] != value for key, value in MODEL_DEFAULTS.items() if key not in variable)
             or (model["camera_view"], model["horizon_read"]) not in VIDEO_READ_MODES

@@ -161,3 +161,28 @@ task-cluster bootstrap仍为20,000次、seed20260915。顺序破坏降分须结�
 这些读出不进入梯度、架构修改、checkpoint选择或当前1500→2100配方；2100不新增一套controls，Test/RL仍关闭。
 额外预计峰值8GiB（三个约2GiB LoRA bank、评测与临时余量），沿用总study 80GiB上限；加入已有空闲卡评测流水线。
 [独立登记](review_materials/20260919/ablation_controls_registration.json)保存冻结节点、复用依据和实际执行口径。
+
+## 10. Owner追加的双相机条件性对照（2026-09-20凌晨）
+
+Owner明确表示若后续空闲资源充足、训练所需时间不长，可以补双相机，并说明约11:00才开始工作。
+这覆盖§6原先的默认不补安排，但不是按单相机control分数修正模型。先测真实双相机最长视频与候选多卡吞吐，
+仅在live合格同节点资源、完整1500训练及必要配对评测预计能在上午形成有用材料时启动；不空占卡等待。
+现有两臂2100续训及固定1500 controls继续完成，不能以新增实验替代已授权的证据。
+
+仅增加同一teacher episode、同一帧索引的真实eye-in-hand RGB。Writer输入为同步agentview＋eye-in-hand，
+两路各180度旋转、stride5和真实末帧不变，原生prefix保留512个图像patch；H仍为完整50，所有模块和参数形状不变。
+复用既有dual读取实现，仅使canonical配置校验接受已声明的双相机模式并绑定正确observer口径，不建立第二套模型实现。
+执行policy原本就使用两执行相机；本干预只改变教学条件可见的RGB。state/actions仍只属于训练标签或正常执行query。
+
+若可行，唯一新增臂fresh训练1500更新：固定source/normalization、seed7、train24、episode角色、全部主/教学采样及RNG、
+四task逻辑更新、21＋7 query、same-video教学、tau1/前缀5/权重1/3、三Meta与完整Writer联合梯度、原学习率曲线。
+不从单相机checkpoint续接。chunk、microbatch、物理world依据实际profile选择，formal exact-resume随后锁定该拓扑。
+每100更新保存完整状态；900/1200/1500各correct400与train96，固定1500再做same-task-other400，共1888次闭环。
+复用原task/state/video/env-policy映射，报告与单相机主臂同预算的逐task/suite、保持/获得/丢失、churn、相邻重合与CI。
+全部节点均报告，不按新增分数选择checkpoint或追加更长训练；1500是固定比较点，不继承单相机1500的controls资格。
+不自动增加双相机消融、wrong/order controls、Test或RL。该对照只回答增加教学视角在当前配方下是否有增量，
+不能据正负结果单独归因到遮挡、接触信息或某个读取模块。
+
+disposable profile最多新增2GiB，权重不进入formal；条件性正式臂另预留25GiB，使study总体预算上限为105GiB。
+首次核验data0用量171947552KiB、独立quota1073741824KiB、共享余量1266771968KiB，足以覆盖该峰值；
+正式启动前重新检查实际GPU与storage，并登记测得的批量、拓扑、时间估算和clean pushed detached runtime。

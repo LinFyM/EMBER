@@ -44,8 +44,9 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
     """Bind the ordered full-horizon and adjacent-content native reads."""
     require_architecture_identity(model)
-    return {"camera_view": "agentview",
-            "native_inputs": "full256_patch_content_and_repeated_full50_H_adjacent_E_reads",
+    patches = 512 if model["camera_view"] == "dual" else 256
+    return {"camera_view": model["camera_view"],
+            "native_inputs": f"full{patches}_patch_content_and_repeated_full50_H_adjacent_E_reads",
             "horizon_read": "repeated_content_position_attention_over_all_50_raw_H_values",
             "video_order": "causal_RoPE_with_real_frame_positions_and_ordered_adjacent_roles"}
 

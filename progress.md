@@ -38,7 +38,12 @@ correct/other复用147/155，no-video经source、normalization、policy、enviro
 真实RGB重排、完整重编码、source与逐行state/RNG/video映射核对通过，全部worker正常退出；[独立读出](docs/review_materials/20260919/controls_report.md)。
 shuffle/reverse各比correct净少52，任务簇95%CI分别[-27.50,-2.25]、[-30.75,-0.50]pp；wrong区间跨零。
 效应较集中于Spatial task3，Long在wrong反而23→33，三个任务仍为零。支持此点的顺序敏感性，不证明普遍过程理解或教学项单独有效。
-no-video是零LoRA/source，不是learned language-only。Controls不改变主checkpoint、架构、消融或已登记的续训配方；本轮不补双相机。
+no-video是零LoRA/source，不是learned language-only。Controls不改变主checkpoint、架构、消融或已登记的续训配方。
+Owner在2026-09-20凌晨追加：资源/时间允许时补双相机，并说明约11:00开始工作；条件性合同见active design§10。
+复用现有dual读取，只修正两个canonical camera门禁并补observer绑定检查，222项相关CPU检查通过。
+真实最长105帧dual已通过三次完整21＋7功能信用与部署生成，chunk8/micro8峰值28.18GiB，后两次约26.4秒；
+chunk16/micro16在空闲A40上OOM，属于物理batch可行性结果，日志保留。将用有余量的batch做四卡实际更新与resume，
+再按1500训练、物化和1888次配对闭环的总估时裁决，不提前声称已经启动正式双相机训练。
 900/1200/1500冻结train held-action FM为0.104706/0.100551/0.098260（初始0.146830）；900与A同一24任务诊断输入已核对，A同点0.103778。
 CPU累计246项通过：真实PI05主/五步端点损失、标签隔离、
 联合一次重放、四任务更新、1–6卡不同分片归一、完整checkpoint/resume、物化与视频controls，

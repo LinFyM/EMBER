@@ -97,6 +97,8 @@ selected固定后才做paired wrong/shuffled/reversed/no-video；真实重排fra
 相同图、相机、seed、21主query、7额外query、tau1、前缀5、lambda1/3、全部联合梯度和LR；
 只将7额外query换成同task另一episode（排除teacher），从该episode相同规则合法stride5位置采样。
 固定同一1500窗口和节点，与主候选逐行比较。这区分具体教学对应关系与额外动作监督，失败时不追扫权重/seed。
+消融启动前，以已经冻结的主候选节点固定补一轮same-task-other400，与主候选同节点作配对比较；
+不据消融分数另选节点，也不为消融追加wrong/shuffled/reversed或其它训练臂。该补充检验收益能否随同任务换视频保留。
 
 Owner授权单相机结束后自行判断是否补双相机；默认不补。只有具体证据指向视角遮挡/接触信息缺失，
 且增加相机有独立于失败候选整体重构的合理收益预期时，才在启动前追加唯一双相机合同与资源预算；不得因低分自动加一臂。

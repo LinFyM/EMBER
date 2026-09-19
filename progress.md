@@ -9,8 +9,11 @@ Owner明确要求完成专家意见、推送并汇报。Active design为[同视�
 1488对条件、RNG、source与完成状态核对通过，主driver及六个评测面板均正常退出。
 相对A，验证R/G/L为106/43/34、112/62/23、93/72/19，churn77/85/91，breadth均6→5；差值任务簇95%CI为[-2,+9]、[-1.5,+22.25]、[+1,+29.25]百分点。
 自身相邻R/G/L为118/56/31、135/30/39，churn87/69（A79/83）；四suite均非零，但验证breadth保持5/8，Long为32→17→23。
-两个相邻对均满足correct工作线，三个节点的same-task-other400已排队执行；复用各节点全部400个已生成条件，只重排固定state–video映射。
-目前未选择checkpoint或证明视频必要性；换视频结果齐全后按预登记规则冻结selected，再决定唯一匹配消融并完成最终controls。
+三个节点same-task-other400全部完成，为140/159/165；每节点复用全部400个已有条件，整轮50视频/task与逐行不同映射核对通过。
+按预登记规则，胜出相邻对为1200/1500（四分数最小值159），主候选冻结1500（correct/other均165）；[冻结记录](docs/review_materials/20260919/selected_main.json)。
+1500 correct→other保留143、获得22、丢失22，churn44；换视频未整体崩塌，Long仍有明显条件更替，不能把同分说成逐行等价。
+已触发唯一匹配cross-episode前缀消融，配置与主训练仅教学episode关系这一科学变量不同；fresh1500，同三个主节点，并在主selected1500固定补other400。
+接下来执行该消融与冻结1500的wrong/shuffled/reversed/no-video；controls不改变主checkpoint、架构或消融配方。未见具体相机信息缺失证据，本轮不补双相机。
 900/1200冻结train held-action FM为0.104706/0.100551（初始0.146830）；900与A同一24任务诊断输入已核对，A同点0.103778。
 CPU累计246项通过：真实PI05主/五步端点损失、标签隔离、
 联合一次重放、四任务更新、1–6卡不同分片归一、完整checkpoint/resume、物化与视频controls，

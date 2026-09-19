@@ -1,0 +1,38 @@
+{
+  "schema_version": "ember_video_teaching_selected_main_v1",
+  "frozen_at_utc": "2026-09-19T04:15:14.569586+00:00",
+  "selected_checkpoint_macro": 1500,
+  "winning_adjacent_pair": [
+    1200,
+    1500
+  ],
+  "correct_counts": {
+    "900": 149,
+    "1200": 174,
+    "1500": 165
+  },
+  "same_task_other_counts": {
+    "900": 140,
+    "1200": 159,
+    "1500": 165
+  },
+  "selection_rule": "maximize pair minimum over both correct/other counts, tie later pair; then maximize node minimum, tie later node",
+  "source_runtime_commit": "39c3919c9dd54713f7bff6aa24d275e4a6231ff0",
+  "further_main_training": false,
+  "controls_seen_at_selection": false,
+  "controls_may_change_checkpoint_or_architecture": false,
+  "matched_ablation_triggered": true,
+  "ablation_only_scientific_change": "extra seven prefix queries from another same-task episode instead of teacher episode",
+  "ablation_window": 1500,
+  "ablation_primary_nodes": [
+    900,
+    1200,
+    1500
+  ],
+  "ablation_fixed_same_task_other_node": 1500,
+  "ablation_checkpoint_selection": false,
+  "dual_camera_supplement": false,
+  "dual_camera_decision": "no specific view-occlusion or missing-contact evidence; retain single-agentview within this study",
+  "test": false,
+  "rl": false
+}

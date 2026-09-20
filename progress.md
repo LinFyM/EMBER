@@ -1,5 +1,11 @@
 # EMBER progress
 
+## Writer冻结与MT-BC续行（2026-09-21）
+
+Writer step1800完整correct Validation400及控制器均退出0，92/400。1600→1800严格配对保留/获得/丢失82/10/29、churn39、覆盖5→5；最近完整节点满足登记的持续下降规则，控制器正式`stop=true, reason=sustained_decline`，没有再启动下一段。9个完整节点依次为110、92、115、87、117、80、97、111、92；唯一最高为step1000的117，已写`writer_selection.json`与`method_freeze.json`，无并列other破同分。选中step1000的same-task-other Validation400正在gpu02用0/1/2/4物化及评测；对应原始correct400与checkpoint均保留。首个对照launcher因冻结runtime提交号抄漏四位，在任何物化/评测前exit1；保留旧exit及故障JSON，原子修正后重新启动同一checkpoint、seed、映射与评测合同。此次工程错误不改变科学结果。
+
+MT-BC step200完整correct Validation400退出0，133/400，刷新最佳且正式`stop=false`；150→200严格配对保留/获得/丢失77/56/22、churn78、覆盖6→6。唯一控制器已自动进入step250，当前两卡阶段不为重新分卡而中断；下一阶段按live卡况重新选择。单卡首50更新平均148.902秒/步，双卡51–150更新约75.3–75.4秒/步，约1.98倍更新吞吐。本轮Writer已结束，暂无继续调整其物理训练配置的收益；释放的gpu02四卡立即用于选中Writer的Validation视频对照。对照及MT-BC均按完整exit和400行结果裁决，不读取部分成功率。
+
 ## 吞吐续行与Source完整节点（2026-09-20）
 
 Writer step1600完整correct Validation400退出0，111/400；仍低于历史最佳1000的117，但1200/1400/1600依次80/97/111呈上升，正式早停`stop=false`。1400→1600配对保留/获得/丢失64/47/33、churn80、任务覆盖5→5，原始JSON保留。不得只因连续三点未刷新最佳而忽略斜率条件提前停训。

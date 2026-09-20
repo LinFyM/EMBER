@@ -2,6 +2,8 @@
 
 ## 吞吐续行与Source完整节点（2026-09-20）
 
+多卡MT-BC profile的独立clean pushed detached runtime已备于`.codex/tmp/coverage-mtbc-flex-runtime`，commit`e0d60f75`；候选入口为study/launch/profile_mtbc_striped.sh，`bash -n`通过，尚未启动。当前Writer4卡＋MT-BC1卡已占5张物理卡，合同总上限6张，另起至少2卡profile会越界；等释放资源后须重新live检查双节点和quota再launch。现有正式MT-BC控制器仍按旧冻结runtime运行，不自动采用该候选。
+
 Writer第二个完整correct Validation节点400更新已退出0：400行、12个worker均退出0，成功92/400；200节点为110/400。两节点不足以触发登记的早停，正式history裁决`stop=false`、当前最佳仍为200。控制器已从400完整checkpoint自动续训至600，实际训练进程核对存在；此下降不作科学终止或改配方依据。MT-BC首段50仍在运行，尚无正式完整Validation结果。
 
 Source释放gpu01:1后，在两节点合计6卡上限内完成独立MT-BC microbatch72/accum8的3更新profile，退出0。与旧micro64/accum9同为每更新576 queries；旧/新平均149.760/146.437秒，steady两步148.668/146.726秒，峰值reserved 33.635/36.707 GiB。不同物理卡、仅3更新的约2%优势不足以证明稳定提速，正式运行暂保留micro64，优先等待卡数变化后测多卡。一次性profile的6个权重/优化器载荷共127,000,368字节已退役，run contract、metrics、summary、checkpoint manifest、launch log/exit和`payload_retirement.json`保留；不能用它resume。

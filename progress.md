@@ -1,5 +1,11 @@
 # EMBER progress
 
+## 吞吐续行与Source完整节点（2026-09-20）
+
+Source在新协议上的Validation400已完成：`source_validation.exit=0`，正式results有400个不同task/state行，worker退出0，成功51/400。此前`exit=1`仅为已修复的准入失败，不是本次结论。Writer和MT-BC仍由各自后台控制器推进，未为这次代码变更打断运行或启动重复轨迹。
+
+Owner要求训练恢复不绑定物理卡数、节点内减少慢条件拖累。MT-BC已在`1c36908e`实现完整optimizer节点的显式物理拓扑恢复：原36×16逻辑查询、loss权重和optimizer/scheduler沿用，checkpoint记录新物理拓扑；新rank建立独立RNG，换卡后不称bitwise exact。36任务交错分片把慢任务分摊到各rank，评测仍用原动态队列。旧v4单卡checkpoint迁到双卡CPU DDP后，下一步参数与单卡参考一致；相关52项测试及编译通过。正式使用前仍须从clean pushed frozen runtime做真实多卡吞吐/显存检查，完整阶段边界live核验双节点GPU及quota；现有运行中的frozen worktree和脚本不原地改写。
+
 ## 接手续行快照（2026-09-20 18:14 CST）
 
 `main`工作区干净，本地与远端`main`均为`07467977`；两个detached runtime仍由正式任务使用。当前Codex任务已建立继续推进的goal。Source新Validation评测与MT-BC首段50更新在gpu01仍有实际进程；`source_validation.exit=1`是17:07首次准入失败留下的旧文件，当前运行结束后才可据新exit及完整产物裁决。MT-BC控制器正在等待首段完整评测。

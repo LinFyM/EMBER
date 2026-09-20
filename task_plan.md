@@ -1,11 +1,11 @@
 # EMBER task plan
 
-## 当前目标（2026-09-20，Owner已授权启动）
+## 当前目标（2026-09-20，Owner要求先看报告并讨论）
 
 固定EMBER-1V单相机1500，完成论文实验与图文原始报告。当前active合同：[论文实验](docs/paper_experiments_design.md)。
 
 1. **已完成：冻结资产与Test接口。** Source-71、MT-BC425、EMBER1500；development24模型Test用途已验证并推送45a39ba1。
-2. **进行中：Test能力。** 三个完整400面板收齐后判断EMBER−MT-BC≥40；不足即停止下游询问Owner。
+2. **已完成，未达推进门槛：Test能力。** Source78、MT-BC74、EMBER82，各400；差值+8<+40。Owner选择先看报告，与专家讨论后再决定；后续步骤暂停。
 3. **条件执行：Test视频证据。** other/wrong/shuffle/reverse各400；缺失或不明确则停止询问。
 4. **条件执行：单support FT。** validation/test16任务，独立演示选点集FM选点，eval50不参与选择；劣势触发三support复核。
 5. **条件执行：两臂task-local RL。** 先Train接口/学习资格，按登记区段结束后读结果；不达预期暂停。

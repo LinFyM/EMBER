@@ -1,5 +1,11 @@
 # EMBER research history
 
+2026-09-20完成冻结development24模型Test能力阶段：Source1000=78/400、MT-BC425=74/400、EMBER1500=82/400。
+EMBER−MT-BC+8（2pp），低于Owner推进门槛+40；任务簇bootstrap95%CI[-8.51,11.25]pp，配对保留/获得/丢失50/32/24。
+三面板1200行、18worker全部完成且合同核对通过；模型与完整视频映射在读取Test前固定，没有按Test换点。
+视频controls、FT、RL和外部实验未启动。Owner选择先看报告并与专家讨论，不恢复后续实验。
+正式runtime45a39ba1已清理；资产与统计见[报告](review_materials/20260920/test_capacity/report.md)、findings§123。
+
 2026-09-20按Owner凌晨授权完成唯一fresh1500双相机对照，教学输入添加同步手眼RGB，执行policy仍按原双相机合同。
 correct900/1200/1500为117/108/108，对agentview149/174/165；fixed1500 other105，对165。
 三个correct配对差值95%CI均低于零，末点[-27,-4]pp，other[-27.75,-2.75]pp；不能视为当前配方的改进。

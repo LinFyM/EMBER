@@ -1,0 +1,5827 @@
+{
+  "schema_version": "ember_paper_test_capacity_readout_v1",
+  "counts": {
+    "source": 78,
+    "mtbc": 74,
+    "ember": 82
+  },
+  "proceed_min_delta": 40,
+  "observed_delta": 8,
+  "proceed": false,
+  "rows": 1200,
+  "bootstrap": {
+    "unit": "task",
+    "replicates": 20000,
+    "seed": 20260915
+  },
+  "comparisons": {
+    "source_to_mtbc": {
+      "rows": 400,
+      "reference_successes": 78,
+      "candidate_successes": 74,
+      "retained": 40,
+      "gained": 34,
+      "lost": 38,
+      "churn_count": 72,
+      "churn_fraction": 0.18,
+      "success_set_jaccard": 0.35714285714285715,
+      "retained_keys": [
+        [
+          "libero_10",
+          3,
+          0
+        ],
+        [
+          "libero_10",
+          3,
+          2
+        ],
+        [
+          "libero_10",
+          3,
+          8
+        ],
+        [
+          "libero_10",
+          3,
+          10
+        ],
+        [
+          "libero_10",
+          3,
+          20
+        ],
+        [
+          "libero_10",
+          3,
+          35
+        ],
+        [
+          "libero_10",
+          3,
+          37
+        ],
+        [
+          "libero_10",
+          3,
+          38
+        ],
+        [
+          "libero_goal",
+          4,
+          1
+        ],
+        [
+          "libero_goal",
+          4,
+          7
+        ],
+        [
+          "libero_goal",
+          4,
+          8
+        ],
+        [
+          "libero_goal",
+          4,
+          10
+        ],
+        [
+          "libero_goal",
+          4,
+          11
+        ],
+        [
+          "libero_goal",
+          4,
+          13
+        ],
+        [
+          "libero_goal",
+          4,
+          14
+        ],
+        [
+          "libero_goal",
+          4,
+          15
+        ],
+        [
+          "libero_goal",
+          4,
+          17
+        ],
+        [
+          "libero_goal",
+          4,
+          18
+        ],
+        [
+          "libero_goal",
+          4,
+          21
+        ],
+        [
+          "libero_goal",
+          4,
+          22
+        ],
+        [
+          "libero_goal",
+          4,
+          23
+        ],
+        [
+          "libero_goal",
+          4,
+          24
+        ],
+        [
+          "libero_goal",
+          4,
+          26
+        ],
+        [
+          "libero_goal",
+          4,
+          29
+        ],
+        [
+          "libero_goal",
+          4,
+          30
+        ],
+        [
+          "libero_goal",
+          4,
+          31
+        ],
+        [
+          "libero_goal",
+          4,
+          32
+        ],
+        [
+          "libero_goal",
+          4,
+          33
+        ],
+        [
+          "libero_goal",
+          4,
+          34
+        ],
+        [
+          "libero_goal",
+          4,
+          37
+        ],
+        [
+          "libero_goal",
+          4,
+          38
+        ],
+        [
+          "libero_goal",
+          4,
+          40
+        ],
+        [
+          "libero_goal",
+          4,
+          41
+        ],
+        [
+          "libero_goal",
+          4,
+          42
+        ],
+        [
+          "libero_goal",
+          4,
+          43
+        ],
+        [
+          "libero_goal",
+          4,
+          44
+        ],
+        [
+          "libero_goal",
+          4,
+          45
+        ],
+        [
+          "libero_goal",
+          4,
+          46
+        ],
+        [
+          "libero_goal",
+          4,
+          49
+        ],
+        [
+          "libero_spatial",
+          6,
+          36
+        ]
+      ],
+      "gained_keys": [
+        [
+          "libero_10",
+          3,
+          4
+        ],
+        [
+          "libero_10",
+          3,
+          30
+        ],
+        [
+          "libero_10",
+          3,
+          44
+        ],
+        [
+          "libero_goal",
+          4,
+          4
+        ],
+        [
+          "libero_goal",
+          4,
+          5
+        ],
+        [
+          "libero_goal",
+          4,
+          6
+        ],
+        [
+          "libero_goal",
+          4,
+          9
+        ],
+        [
+          "libero_goal",
+          4,
+          12
+        ],
+        [
+          "libero_goal",
+          4,
+          16
+        ],
+        [
+          "libero_goal",
+          4,
+          19
+        ],
+        [
+          "libero_goal",
+          4,
+          20
+        ],
+        [
+          "libero_goal",
+          4,
+          25
+        ],
+        [
+          "libero_goal",
+          4,
+          27
+        ],
+        [
+          "libero_goal",
+          4,
+          28
+        ],
+        [
+          "libero_goal",
+          4,
+          36
+        ],
+        [
+          "libero_object",
+          0,
+          0
+        ],
+        [
+          "libero_object",
+          0,
+          3
+        ],
+        [
+          "libero_object",
+          0,
+          6
+        ],
+        [
+          "libero_object",
+          0,
+          8
+        ],
+        [
+          "libero_object",
+          0,
+          9
+        ],
+        [
+          "libero_object",
+          0,
+          10
+        ],
+        [
+          "libero_object",
+          0,
+          24
+        ],
+        [
+          "libero_object",
+          0,
+          25
+        ],
+        [
+          "libero_object",
+          0,
+          28
+        ],
+        [
+          "libero_object",
+          0,
+          31
+        ],
+        [
+          "libero_object",
+          0,
+          38
+        ],
+        [
+          "libero_object",
+          0,
+          41
+        ],
+        [
+          "libero_object",
+          0,
+          43
+        ],
+        [
+          "libero_object",
+          0,
+          47
+        ],
+        [
+          "libero_object",
+          0,
+          49
+        ],
+        [
+          "libero_spatial",
+          6,
+          26
+        ],
+        [
+          "libero_spatial",
+          6,
+          37
+        ],
+        [
+          "libero_spatial",
+          8,
+          8
+        ],
+        [
+          "libero_spatial",
+          8,
+          35
+        ]
+      ],
+      "lost_keys": [
+        [
+          "libero_10",
+          0,
+          46
+        ],
+        [
+          "libero_10",
+          3,
+          1
+        ],
+        [
+          "libero_10",
+          3,
+          3
+        ],
+        [
+          "libero_10",
+          3,
+          5
+        ],
+        [
+          "libero_10",
+          3,
+          6
+        ],
+        [
+          "libero_10",
+          3,
+          7
+        ],
+        [
+          "libero_10",
+          3,
+          9
+        ],
+        [
+          "libero_10",
+          3,
+          13
+        ],
+        [
+          "libero_10",
+          3,
+          15
+        ],
+        [
+          "libero_10",
+          3,
+          19
+        ],
+        [
+          "libero_10",
+          3,
+          21
+        ],
+        [
+          "libero_10",
+          3,
+          22
+        ],
+        [
+          "libero_10",
+          3,
+          23
+        ],
+        [
+          "libero_10",
+          3,
+          24
+        ],
+        [
+          "libero_10",
+          3,
+          25
+        ],
+        [
+          "libero_10",
+          3,
+          26
+        ],
+        [
+          "libero_10",
+          3,
+          28
+        ],
+        [
+          "libero_10",
+          3,
+          36
+        ],
+        [
+          "libero_10",
+          3,
+          39
+        ],
+        [
+          "libero_10",
+          3,
+          40
+        ],
+        [
+          "libero_10",
+          3,
+          41
+        ],
+        [
+          "libero_10",
+          3,
+          42
+        ],
+        [
+          "libero_10",
+          3,
+          43
+        ],
+        [
+          "libero_10",
+          3,
+          45
+        ],
+        [
+          "libero_10",
+          3,
+          46
+        ],
+        [
+          "libero_10",
+          3,
+          47
+        ],
+        [
+          "libero_10",
+          3,
+          48
+        ],
+        [
+          "libero_10",
+          3,
+          49
+        ],
+        [
+          "libero_goal",
+          4,
+          2
+        ],
+        [
+          "libero_goal",
+          4,
+          3
+        ],
+        [
+          "libero_goal",
+          4,
+          39
+        ],
+        [
+          "libero_goal",
+          4,
+          47
+        ],
+        [
+          "libero_goal",
+          4,
+          48
+        ],
+        [
+          "libero_spatial",
+          6,
+          6
+        ],
+        [
+          "libero_spatial",
+          6,
+          40
+        ],
+        [
+          "libero_spatial",
+          8,
+          7
+        ],
+        [
+          "libero_spatial",
+          8,
+          22
+        ],
+        [
+          "libero_spatial",
+          8,
+          34
+        ]
+      ],
+      "per_task": [
+        {
+          "suite": "libero_10",
+          "task_id": 0,
+          "rows": 50,
+          "reference_successes": 1,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 1,
+          "churn_count": 1,
+          "churn_fraction": 0.02,
+          "success_set_jaccard": 0.0,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": [
+            [
+              "libero_10",
+              0,
+              46
+            ]
+          ]
+        },
+        {
+          "suite": "libero_10",
+          "task_id": 3,
+          "rows": 50,
+          "reference_successes": 35,
+          "candidate_successes": 11,
+          "retained": 8,
+          "gained": 3,
+          "lost": 27,
+          "churn_count": 30,
+          "churn_fraction": 0.6,
+          "success_set_jaccard": 0.21052631578947367,
+          "retained_keys": [
+            [
+              "libero_10",
+              3,
+              0
+            ],
+            [
+              "libero_10",
+              3,
+              2
+            ],
+            [
+              "libero_10",
+              3,
+              8
+            ],
+            [
+              "libero_10",
+              3,
+              10
+            ],
+            [
+              "libero_10",
+              3,
+              20
+            ],
+            [
+              "libero_10",
+              3,
+              35
+            ],
+            [
+              "libero_10",
+              3,
+              37
+            ],
+            [
+              "libero_10",
+              3,
+              38
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_10",
+              3,
+              4
+            ],
+            [
+              "libero_10",
+              3,
+              30
+            ],
+            [
+              "libero_10",
+              3,
+              44
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              3,
+              1
+            ],
+            [
+              "libero_10",
+              3,
+              3
+            ],
+            [
+              "libero_10",
+              3,
+              5
+            ],
+            [
+              "libero_10",
+              3,
+              6
+            ],
+            [
+              "libero_10",
+              3,
+              7
+            ],
+            [
+              "libero_10",
+              3,
+              9
+            ],
+            [
+              "libero_10",
+              3,
+              13
+            ],
+            [
+              "libero_10",
+              3,
+              15
+            ],
+            [
+              "libero_10",
+              3,
+              19
+            ],
+            [
+              "libero_10",
+              3,
+              21
+            ],
+            [
+              "libero_10",
+              3,
+              22
+            ],
+            [
+              "libero_10",
+              3,
+              23
+            ],
+            [
+              "libero_10",
+              3,
+              24
+            ],
+            [
+              "libero_10",
+              3,
+              25
+            ],
+            [
+              "libero_10",
+              3,
+              26
+            ],
+            [
+              "libero_10",
+              3,
+              28
+            ],
+            [
+              "libero_10",
+              3,
+              36
+            ],
+            [
+              "libero_10",
+              3,
+              39
+            ],
+            [
+              "libero_10",
+              3,
+              40
+            ],
+            [
+              "libero_10",
+              3,
+              41
+            ],
+            [
+              "libero_10",
+              3,
+              42
+            ],
+            [
+              "libero_10",
+              3,
+              43
+            ],
+            [
+              "libero_10",
+              3,
+              45
+            ],
+            [
+              "libero_10",
+              3,
+              46
+            ],
+            [
+              "libero_10",
+              3,
+              47
+            ],
+            [
+              "libero_10",
+              3,
+              48
+            ],
+            [
+              "libero_10",
+              3,
+              49
+            ]
+          ]
+        },
+        {
+          "suite": "libero_goal",
+          "task_id": 4,
+          "rows": 50,
+          "reference_successes": 36,
+          "candidate_successes": 43,
+          "retained": 31,
+          "gained": 12,
+          "lost": 5,
+          "churn_count": 17,
+          "churn_fraction": 0.34,
+          "success_set_jaccard": 0.6458333333333334,
+          "retained_keys": [
+            [
+              "libero_goal",
+              4,
+              1
+            ],
+            [
+              "libero_goal",
+              4,
+              7
+            ],
+            [
+              "libero_goal",
+              4,
+              8
+            ],
+            [
+              "libero_goal",
+              4,
+              10
+            ],
+            [
+              "libero_goal",
+              4,
+              11
+            ],
+            [
+              "libero_goal",
+              4,
+              13
+            ],
+            [
+              "libero_goal",
+              4,
+              14
+            ],
+            [
+              "libero_goal",
+              4,
+              15
+            ],
+            [
+              "libero_goal",
+              4,
+              17
+            ],
+            [
+              "libero_goal",
+              4,
+              18
+            ],
+            [
+              "libero_goal",
+              4,
+              21
+            ],
+            [
+              "libero_goal",
+              4,
+              22
+            ],
+            [
+              "libero_goal",
+              4,
+              23
+            ],
+            [
+              "libero_goal",
+              4,
+              24
+            ],
+            [
+              "libero_goal",
+              4,
+              26
+            ],
+            [
+              "libero_goal",
+              4,
+              29
+            ],
+            [
+              "libero_goal",
+              4,
+              30
+            ],
+            [
+              "libero_goal",
+              4,
+              31
+            ],
+            [
+              "libero_goal",
+              4,
+              32
+            ],
+            [
+              "libero_goal",
+              4,
+              33
+            ],
+            [
+              "libero_goal",
+              4,
+              34
+            ],
+            [
+              "libero_goal",
+              4,
+              37
+            ],
+            [
+              "libero_goal",
+              4,
+              38
+            ],
+            [
+              "libero_goal",
+              4,
+              40
+            ],
+            [
+              "libero_goal",
+              4,
+              41
+            ],
+            [
+              "libero_goal",
+              4,
+              42
+            ],
+            [
+              "libero_goal",
+              4,
+              43
+            ],
+            [
+              "libero_goal",
+              4,
+              44
+            ],
+            [
+              "libero_goal",
+              4,
+              45
+            ],
+            [
+              "libero_goal",
+              4,
+              46
+            ],
+            [
+              "libero_goal",
+              4,
+              49
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              4,
+              4
+            ],
+            [
+              "libero_goal",
+              4,
+              5
+            ],
+            [
+              "libero_goal",
+              4,
+              6
+            ],
+            [
+              "libero_goal",
+              4,
+              9
+            ],
+            [
+              "libero_goal",
+              4,
+              12
+            ],
+            [
+              "libero_goal",
+              4,
+              16
+            ],
+            [
+              "libero_goal",
+              4,
+              19
+            ],
+            [
+              "libero_goal",
+              4,
+              20
+            ],
+            [
+              "libero_goal",
+              4,
+              25
+            ],
+            [
+              "libero_goal",
+              4,
+              27
+            ],
+            [
+              "libero_goal",
+              4,
+              28
+            ],
+            [
+              "libero_goal",
+              4,
+              36
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_goal",
+              4,
+              2
+            ],
+            [
+              "libero_goal",
+              4,
+              3
+            ],
+            [
+              "libero_goal",
+              4,
+              39
+            ],
+            [
+              "libero_goal",
+              4,
+              47
+            ],
+            [
+              "libero_goal",
+              4,
+              48
+            ]
+          ]
+        },
+        {
+          "suite": "libero_goal",
+          "task_id": 7,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_object",
+          "task_id": 0,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 15,
+          "retained": 0,
+          "gained": 15,
+          "lost": 0,
+          "churn_count": 15,
+          "churn_fraction": 0.3,
+          "success_set_jaccard": 0.0,
+          "retained_keys": [],
+          "gained_keys": [
+            [
+              "libero_object",
+              0,
+              0
+            ],
+            [
+              "libero_object",
+              0,
+              3
+            ],
+            [
+              "libero_object",
+              0,
+              6
+            ],
+            [
+              "libero_object",
+              0,
+              8
+            ],
+            [
+              "libero_object",
+              0,
+              9
+            ],
+            [
+              "libero_object",
+              0,
+              10
+            ],
+            [
+              "libero_object",
+              0,
+              24
+            ],
+            [
+              "libero_object",
+              0,
+              25
+            ],
+            [
+              "libero_object",
+              0,
+              28
+            ],
+            [
+              "libero_object",
+              0,
+              31
+            ],
+            [
+              "libero_object",
+              0,
+              38
+            ],
+            [
+              "libero_object",
+              0,
+              41
+            ],
+            [
+              "libero_object",
+              0,
+              43
+            ],
+            [
+              "libero_object",
+              0,
+              47
+            ],
+            [
+              "libero_object",
+              0,
+              49
+            ]
+          ],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_object",
+          "task_id": 7,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_spatial",
+          "task_id": 6,
+          "rows": 50,
+          "reference_successes": 3,
+          "candidate_successes": 3,
+          "retained": 1,
+          "gained": 2,
+          "lost": 2,
+          "churn_count": 4,
+          "churn_fraction": 0.08,
+          "success_set_jaccard": 0.2,
+          "retained_keys": [
+            [
+              "libero_spatial",
+              6,
+              36
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_spatial",
+              6,
+              26
+            ],
+            [
+              "libero_spatial",
+              6,
+              37
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_spatial",
+              6,
+              6
+            ],
+            [
+              "libero_spatial",
+              6,
+              40
+            ]
+          ]
+        },
+        {
+          "suite": "libero_spatial",
+          "task_id": 8,
+          "rows": 50,
+          "reference_successes": 3,
+          "candidate_successes": 2,
+          "retained": 0,
+          "gained": 2,
+          "lost": 3,
+          "churn_count": 5,
+          "churn_fraction": 0.1,
+          "success_set_jaccard": 0.0,
+          "retained_keys": [],
+          "gained_keys": [
+            [
+              "libero_spatial",
+              8,
+              8
+            ],
+            [
+              "libero_spatial",
+              8,
+              35
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_spatial",
+              8,
+              7
+            ],
+            [
+              "libero_spatial",
+              8,
+              22
+            ],
+            [
+              "libero_spatial",
+              8,
+              34
+            ]
+          ]
+        }
+      ],
+      "per_suite": [
+        {
+          "suite": "libero_10",
+          "rows": 100,
+          "reference_successes": 36,
+          "candidate_successes": 11,
+          "retained": 8,
+          "gained": 3,
+          "lost": 28,
+          "churn_count": 31,
+          "churn_fraction": 0.31,
+          "success_set_jaccard": 0.20512820512820512,
+          "retained_keys": [
+            [
+              "libero_10",
+              3,
+              0
+            ],
+            [
+              "libero_10",
+              3,
+              2
+            ],
+            [
+              "libero_10",
+              3,
+              8
+            ],
+            [
+              "libero_10",
+              3,
+              10
+            ],
+            [
+              "libero_10",
+              3,
+              20
+            ],
+            [
+              "libero_10",
+              3,
+              35
+            ],
+            [
+              "libero_10",
+              3,
+              37
+            ],
+            [
+              "libero_10",
+              3,
+              38
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_10",
+              3,
+              4
+            ],
+            [
+              "libero_10",
+              3,
+              30
+            ],
+            [
+              "libero_10",
+              3,
+              44
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              0,
+              46
+            ],
+            [
+              "libero_10",
+              3,
+              1
+            ],
+            [
+              "libero_10",
+              3,
+              3
+            ],
+            [
+              "libero_10",
+              3,
+              5
+            ],
+            [
+              "libero_10",
+              3,
+              6
+            ],
+            [
+              "libero_10",
+              3,
+              7
+            ],
+            [
+              "libero_10",
+              3,
+              9
+            ],
+            [
+              "libero_10",
+              3,
+              13
+            ],
+            [
+              "libero_10",
+              3,
+              15
+            ],
+            [
+              "libero_10",
+              3,
+              19
+            ],
+            [
+              "libero_10",
+              3,
+              21
+            ],
+            [
+              "libero_10",
+              3,
+              22
+            ],
+            [
+              "libero_10",
+              3,
+              23
+            ],
+            [
+              "libero_10",
+              3,
+              24
+            ],
+            [
+              "libero_10",
+              3,
+              25
+            ],
+            [
+              "libero_10",
+              3,
+              26
+            ],
+            [
+              "libero_10",
+              3,
+              28
+            ],
+            [
+              "libero_10",
+              3,
+              36
+            ],
+            [
+              "libero_10",
+              3,
+              39
+            ],
+            [
+              "libero_10",
+              3,
+              40
+            ],
+            [
+              "libero_10",
+              3,
+              41
+            ],
+            [
+              "libero_10",
+              3,
+              42
+            ],
+            [
+              "libero_10",
+              3,
+              43
+            ],
+            [
+              "libero_10",
+              3,
+              45
+            ],
+            [
+              "libero_10",
+              3,
+              46
+            ],
+            [
+              "libero_10",
+              3,
+              47
+            ],
+            [
+              "libero_10",
+              3,
+              48
+            ],
+            [
+              "libero_10",
+              3,
+              49
+            ]
+          ]
+        },
+        {
+          "suite": "libero_goal",
+          "rows": 100,
+          "reference_successes": 36,
+          "candidate_successes": 43,
+          "retained": 31,
+          "gained": 12,
+          "lost": 5,
+          "churn_count": 17,
+          "churn_fraction": 0.17,
+          "success_set_jaccard": 0.6458333333333334,
+          "retained_keys": [
+            [
+              "libero_goal",
+              4,
+              1
+            ],
+            [
+              "libero_goal",
+              4,
+              7
+            ],
+            [
+              "libero_goal",
+              4,
+              8
+            ],
+            [
+              "libero_goal",
+              4,
+              10
+            ],
+            [
+              "libero_goal",
+              4,
+              11
+            ],
+            [
+              "libero_goal",
+              4,
+              13
+            ],
+            [
+              "libero_goal",
+              4,
+              14
+            ],
+            [
+              "libero_goal",
+              4,
+              15
+            ],
+            [
+              "libero_goal",
+              4,
+              17
+            ],
+            [
+              "libero_goal",
+              4,
+              18
+            ],
+            [
+              "libero_goal",
+              4,
+              21
+            ],
+            [
+              "libero_goal",
+              4,
+              22
+            ],
+            [
+              "libero_goal",
+              4,
+              23
+            ],
+            [
+              "libero_goal",
+              4,
+              24
+            ],
+            [
+              "libero_goal",
+              4,
+              26
+            ],
+            [
+              "libero_goal",
+              4,
+              29
+            ],
+            [
+              "libero_goal",
+              4,
+              30
+            ],
+            [
+              "libero_goal",
+              4,
+              31
+            ],
+            [
+              "libero_goal",
+              4,
+              32
+            ],
+            [
+              "libero_goal",
+              4,
+              33
+            ],
+            [
+              "libero_goal",
+              4,
+              34
+            ],
+            [
+              "libero_goal",
+              4,
+              37
+            ],
+            [
+              "libero_goal",
+              4,
+              38
+            ],
+            [
+              "libero_goal",
+              4,
+              40
+            ],
+            [
+              "libero_goal",
+              4,
+              41
+            ],
+            [
+              "libero_goal",
+              4,
+              42
+            ],
+            [
+              "libero_goal",
+              4,
+              43
+            ],
+            [
+              "libero_goal",
+              4,
+              44
+            ],
+            [
+              "libero_goal",
+              4,
+              45
+            ],
+            [
+              "libero_goal",
+              4,
+              46
+            ],
+            [
+              "libero_goal",
+              4,
+              49
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              4,
+              4
+            ],
+            [
+              "libero_goal",
+              4,
+              5
+            ],
+            [
+              "libero_goal",
+              4,
+              6
+            ],
+            [
+              "libero_goal",
+              4,
+              9
+            ],
+            [
+              "libero_goal",
+              4,
+              12
+            ],
+            [
+              "libero_goal",
+              4,
+              16
+            ],
+            [
+              "libero_goal",
+              4,
+              19
+            ],
+            [
+              "libero_goal",
+              4,
+              20
+            ],
+            [
+              "libero_goal",
+              4,
+              25
+            ],
+            [
+              "libero_goal",
+              4,
+              27
+            ],
+            [
+              "libero_goal",
+              4,
+              28
+            ],
+            [
+              "libero_goal",
+              4,
+              36
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_goal",
+              4,
+              2
+            ],
+            [
+              "libero_goal",
+              4,
+              3
+            ],
+            [
+              "libero_goal",
+              4,
+              39
+            ],
+            [
+              "libero_goal",
+              4,
+              47
+            ],
+            [
+              "libero_goal",
+              4,
+              48
+            ]
+          ]
+        },
+        {
+          "suite": "libero_object",
+          "rows": 100,
+          "reference_successes": 0,
+          "candidate_successes": 15,
+          "retained": 0,
+          "gained": 15,
+          "lost": 0,
+          "churn_count": 15,
+          "churn_fraction": 0.15,
+          "success_set_jaccard": 0.0,
+          "retained_keys": [],
+          "gained_keys": [
+            [
+              "libero_object",
+              0,
+              0
+            ],
+            [
+              "libero_object",
+              0,
+              3
+            ],
+            [
+              "libero_object",
+              0,
+              6
+            ],
+            [
+              "libero_object",
+              0,
+              8
+            ],
+            [
+              "libero_object",
+              0,
+              9
+            ],
+            [
+              "libero_object",
+              0,
+              10
+            ],
+            [
+              "libero_object",
+              0,
+              24
+            ],
+            [
+              "libero_object",
+              0,
+              25
+            ],
+            [
+              "libero_object",
+              0,
+              28
+            ],
+            [
+              "libero_object",
+              0,
+              31
+            ],
+            [
+              "libero_object",
+              0,
+              38
+            ],
+            [
+              "libero_object",
+              0,
+              41
+            ],
+            [
+              "libero_object",
+              0,
+              43
+            ],
+            [
+              "libero_object",
+              0,
+              47
+            ],
+            [
+              "libero_object",
+              0,
+              49
+            ]
+          ],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_spatial",
+          "rows": 100,
+          "reference_successes": 6,
+          "candidate_successes": 5,
+          "retained": 1,
+          "gained": 4,
+          "lost": 5,
+          "churn_count": 9,
+          "churn_fraction": 0.09,
+          "success_set_jaccard": 0.1,
+          "retained_keys": [
+            [
+              "libero_spatial",
+              6,
+              36
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_spatial",
+              6,
+              26
+            ],
+            [
+              "libero_spatial",
+              6,
+              37
+            ],
+            [
+              "libero_spatial",
+              8,
+              8
+            ],
+            [
+              "libero_spatial",
+              8,
+              35
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_spatial",
+              6,
+              6
+            ],
+            [
+              "libero_spatial",
+              6,
+              40
+            ],
+            [
+              "libero_spatial",
+              8,
+              7
+            ],
+            [
+              "libero_spatial",
+              8,
+              22
+            ],
+            [
+              "libero_spatial",
+              8,
+              34
+            ]
+          ]
+        }
+      ],
+      "reference_breadth": 5,
+      "candidate_breadth": 5,
+      "task_cluster_bootstrap_rate_difference_95ci": [
+        -0.16749999999999998,
+        0.1225
+      ]
+    },
+    "source_to_ember": {
+      "rows": 400,
+      "reference_successes": 78,
+      "candidate_successes": 82,
+      "retained": 47,
+      "gained": 35,
+      "lost": 31,
+      "churn_count": 66,
+      "churn_fraction": 0.165,
+      "success_set_jaccard": 0.415929203539823,
+      "retained_keys": [
+        [
+          "libero_10",
+          3,
+          7
+        ],
+        [
+          "libero_10",
+          3,
+          8
+        ],
+        [
+          "libero_10",
+          3,
+          20
+        ],
+        [
+          "libero_10",
+          3,
+          21
+        ],
+        [
+          "libero_10",
+          3,
+          24
+        ],
+        [
+          "libero_10",
+          3,
+          26
+        ],
+        [
+          "libero_10",
+          3,
+          35
+        ],
+        [
+          "libero_10",
+          3,
+          43
+        ],
+        [
+          "libero_goal",
+          4,
+          1
+        ],
+        [
+          "libero_goal",
+          4,
+          2
+        ],
+        [
+          "libero_goal",
+          4,
+          3
+        ],
+        [
+          "libero_goal",
+          4,
+          7
+        ],
+        [
+          "libero_goal",
+          4,
+          8
+        ],
+        [
+          "libero_goal",
+          4,
+          10
+        ],
+        [
+          "libero_goal",
+          4,
+          11
+        ],
+        [
+          "libero_goal",
+          4,
+          13
+        ],
+        [
+          "libero_goal",
+          4,
+          14
+        ],
+        [
+          "libero_goal",
+          4,
+          15
+        ],
+        [
+          "libero_goal",
+          4,
+          17
+        ],
+        [
+          "libero_goal",
+          4,
+          18
+        ],
+        [
+          "libero_goal",
+          4,
+          21
+        ],
+        [
+          "libero_goal",
+          4,
+          22
+        ],
+        [
+          "libero_goal",
+          4,
+          23
+        ],
+        [
+          "libero_goal",
+          4,
+          24
+        ],
+        [
+          "libero_goal",
+          4,
+          26
+        ],
+        [
+          "libero_goal",
+          4,
+          29
+        ],
+        [
+          "libero_goal",
+          4,
+          30
+        ],
+        [
+          "libero_goal",
+          4,
+          31
+        ],
+        [
+          "libero_goal",
+          4,
+          32
+        ],
+        [
+          "libero_goal",
+          4,
+          33
+        ],
+        [
+          "libero_goal",
+          4,
+          34
+        ],
+        [
+          "libero_goal",
+          4,
+          37
+        ],
+        [
+          "libero_goal",
+          4,
+          38
+        ],
+        [
+          "libero_goal",
+          4,
+          39
+        ],
+        [
+          "libero_goal",
+          4,
+          40
+        ],
+        [
+          "libero_goal",
+          4,
+          41
+        ],
+        [
+          "libero_goal",
+          4,
+          43
+        ],
+        [
+          "libero_goal",
+          4,
+          44
+        ],
+        [
+          "libero_goal",
+          4,
+          45
+        ],
+        [
+          "libero_goal",
+          4,
+          46
+        ],
+        [
+          "libero_goal",
+          4,
+          47
+        ],
+        [
+          "libero_goal",
+          4,
+          48
+        ],
+        [
+          "libero_goal",
+          4,
+          49
+        ],
+        [
+          "libero_spatial",
+          6,
+          6
+        ],
+        [
+          "libero_spatial",
+          6,
+          36
+        ],
+        [
+          "libero_spatial",
+          6,
+          40
+        ],
+        [
+          "libero_spatial",
+          8,
+          7
+        ]
+      ],
+      "gained_keys": [
+        [
+          "libero_10",
+          3,
+          4
+        ],
+        [
+          "libero_10",
+          3,
+          27
+        ],
+        [
+          "libero_10",
+          3,
+          29
+        ],
+        [
+          "libero_10",
+          3,
+          31
+        ],
+        [
+          "libero_goal",
+          4,
+          0
+        ],
+        [
+          "libero_goal",
+          4,
+          4
+        ],
+        [
+          "libero_goal",
+          4,
+          6
+        ],
+        [
+          "libero_goal",
+          4,
+          9
+        ],
+        [
+          "libero_goal",
+          4,
+          12
+        ],
+        [
+          "libero_goal",
+          4,
+          16
+        ],
+        [
+          "libero_goal",
+          4,
+          19
+        ],
+        [
+          "libero_goal",
+          4,
+          20
+        ],
+        [
+          "libero_goal",
+          4,
+          25
+        ],
+        [
+          "libero_goal",
+          4,
+          27
+        ],
+        [
+          "libero_goal",
+          4,
+          28
+        ],
+        [
+          "libero_goal",
+          4,
+          35
+        ],
+        [
+          "libero_goal",
+          4,
+          36
+        ],
+        [
+          "libero_spatial",
+          6,
+          1
+        ],
+        [
+          "libero_spatial",
+          6,
+          12
+        ],
+        [
+          "libero_spatial",
+          6,
+          20
+        ],
+        [
+          "libero_spatial",
+          6,
+          24
+        ],
+        [
+          "libero_spatial",
+          6,
+          26
+        ],
+        [
+          "libero_spatial",
+          6,
+          37
+        ],
+        [
+          "libero_spatial",
+          6,
+          38
+        ],
+        [
+          "libero_spatial",
+          6,
+          39
+        ],
+        [
+          "libero_spatial",
+          6,
+          45
+        ],
+        [
+          "libero_spatial",
+          6,
+          46
+        ],
+        [
+          "libero_spatial",
+          6,
+          47
+        ],
+        [
+          "libero_spatial",
+          6,
+          49
+        ],
+        [
+          "libero_spatial",
+          8,
+          0
+        ],
+        [
+          "libero_spatial",
+          8,
+          8
+        ],
+        [
+          "libero_spatial",
+          8,
+          10
+        ],
+        [
+          "libero_spatial",
+          8,
+          15
+        ],
+        [
+          "libero_spatial",
+          8,
+          35
+        ],
+        [
+          "libero_spatial",
+          8,
+          48
+        ]
+      ],
+      "lost_keys": [
+        [
+          "libero_10",
+          0,
+          46
+        ],
+        [
+          "libero_10",
+          3,
+          0
+        ],
+        [
+          "libero_10",
+          3,
+          1
+        ],
+        [
+          "libero_10",
+          3,
+          2
+        ],
+        [
+          "libero_10",
+          3,
+          3
+        ],
+        [
+          "libero_10",
+          3,
+          5
+        ],
+        [
+          "libero_10",
+          3,
+          6
+        ],
+        [
+          "libero_10",
+          3,
+          9
+        ],
+        [
+          "libero_10",
+          3,
+          10
+        ],
+        [
+          "libero_10",
+          3,
+          13
+        ],
+        [
+          "libero_10",
+          3,
+          15
+        ],
+        [
+          "libero_10",
+          3,
+          19
+        ],
+        [
+          "libero_10",
+          3,
+          22
+        ],
+        [
+          "libero_10",
+          3,
+          23
+        ],
+        [
+          "libero_10",
+          3,
+          25
+        ],
+        [
+          "libero_10",
+          3,
+          28
+        ],
+        [
+          "libero_10",
+          3,
+          36
+        ],
+        [
+          "libero_10",
+          3,
+          37
+        ],
+        [
+          "libero_10",
+          3,
+          38
+        ],
+        [
+          "libero_10",
+          3,
+          39
+        ],
+        [
+          "libero_10",
+          3,
+          40
+        ],
+        [
+          "libero_10",
+          3,
+          41
+        ],
+        [
+          "libero_10",
+          3,
+          42
+        ],
+        [
+          "libero_10",
+          3,
+          45
+        ],
+        [
+          "libero_10",
+          3,
+          46
+        ],
+        [
+          "libero_10",
+          3,
+          47
+        ],
+        [
+          "libero_10",
+          3,
+          48
+        ],
+        [
+          "libero_10",
+          3,
+          49
+        ],
+        [
+          "libero_goal",
+          4,
+          42
+        ],
+        [
+          "libero_spatial",
+          8,
+          22
+        ],
+        [
+          "libero_spatial",
+          8,
+          34
+        ]
+      ],
+      "per_task": [
+        {
+          "suite": "libero_10",
+          "task_id": 0,
+          "rows": 50,
+          "reference_successes": 1,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 1,
+          "churn_count": 1,
+          "churn_fraction": 0.02,
+          "success_set_jaccard": 0.0,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": [
+            [
+              "libero_10",
+              0,
+              46
+            ]
+          ]
+        },
+        {
+          "suite": "libero_10",
+          "task_id": 3,
+          "rows": 50,
+          "reference_successes": 35,
+          "candidate_successes": 12,
+          "retained": 8,
+          "gained": 4,
+          "lost": 27,
+          "churn_count": 31,
+          "churn_fraction": 0.62,
+          "success_set_jaccard": 0.20512820512820512,
+          "retained_keys": [
+            [
+              "libero_10",
+              3,
+              7
+            ],
+            [
+              "libero_10",
+              3,
+              8
+            ],
+            [
+              "libero_10",
+              3,
+              20
+            ],
+            [
+              "libero_10",
+              3,
+              21
+            ],
+            [
+              "libero_10",
+              3,
+              24
+            ],
+            [
+              "libero_10",
+              3,
+              26
+            ],
+            [
+              "libero_10",
+              3,
+              35
+            ],
+            [
+              "libero_10",
+              3,
+              43
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_10",
+              3,
+              4
+            ],
+            [
+              "libero_10",
+              3,
+              27
+            ],
+            [
+              "libero_10",
+              3,
+              29
+            ],
+            [
+              "libero_10",
+              3,
+              31
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              3,
+              0
+            ],
+            [
+              "libero_10",
+              3,
+              1
+            ],
+            [
+              "libero_10",
+              3,
+              2
+            ],
+            [
+              "libero_10",
+              3,
+              3
+            ],
+            [
+              "libero_10",
+              3,
+              5
+            ],
+            [
+              "libero_10",
+              3,
+              6
+            ],
+            [
+              "libero_10",
+              3,
+              9
+            ],
+            [
+              "libero_10",
+              3,
+              10
+            ],
+            [
+              "libero_10",
+              3,
+              13
+            ],
+            [
+              "libero_10",
+              3,
+              15
+            ],
+            [
+              "libero_10",
+              3,
+              19
+            ],
+            [
+              "libero_10",
+              3,
+              22
+            ],
+            [
+              "libero_10",
+              3,
+              23
+            ],
+            [
+              "libero_10",
+              3,
+              25
+            ],
+            [
+              "libero_10",
+              3,
+              28
+            ],
+            [
+              "libero_10",
+              3,
+              36
+            ],
+            [
+              "libero_10",
+              3,
+              37
+            ],
+            [
+              "libero_10",
+              3,
+              38
+            ],
+            [
+              "libero_10",
+              3,
+              39
+            ],
+            [
+              "libero_10",
+              3,
+              40
+            ],
+            [
+              "libero_10",
+              3,
+              41
+            ],
+            [
+              "libero_10",
+              3,
+              42
+            ],
+            [
+              "libero_10",
+              3,
+              45
+            ],
+            [
+              "libero_10",
+              3,
+              46
+            ],
+            [
+              "libero_10",
+              3,
+              47
+            ],
+            [
+              "libero_10",
+              3,
+              48
+            ],
+            [
+              "libero_10",
+              3,
+              49
+            ]
+          ]
+        },
+        {
+          "suite": "libero_goal",
+          "task_id": 4,
+          "rows": 50,
+          "reference_successes": 36,
+          "candidate_successes": 48,
+          "retained": 35,
+          "gained": 13,
+          "lost": 1,
+          "churn_count": 14,
+          "churn_fraction": 0.28,
+          "success_set_jaccard": 0.7142857142857143,
+          "retained_keys": [
+            [
+              "libero_goal",
+              4,
+              1
+            ],
+            [
+              "libero_goal",
+              4,
+              2
+            ],
+            [
+              "libero_goal",
+              4,
+              3
+            ],
+            [
+              "libero_goal",
+              4,
+              7
+            ],
+            [
+              "libero_goal",
+              4,
+              8
+            ],
+            [
+              "libero_goal",
+              4,
+              10
+            ],
+            [
+              "libero_goal",
+              4,
+              11
+            ],
+            [
+              "libero_goal",
+              4,
+              13
+            ],
+            [
+              "libero_goal",
+              4,
+              14
+            ],
+            [
+              "libero_goal",
+              4,
+              15
+            ],
+            [
+              "libero_goal",
+              4,
+              17
+            ],
+            [
+              "libero_goal",
+              4,
+              18
+            ],
+            [
+              "libero_goal",
+              4,
+              21
+            ],
+            [
+              "libero_goal",
+              4,
+              22
+            ],
+            [
+              "libero_goal",
+              4,
+              23
+            ],
+            [
+              "libero_goal",
+              4,
+              24
+            ],
+            [
+              "libero_goal",
+              4,
+              26
+            ],
+            [
+              "libero_goal",
+              4,
+              29
+            ],
+            [
+              "libero_goal",
+              4,
+              30
+            ],
+            [
+              "libero_goal",
+              4,
+              31
+            ],
+            [
+              "libero_goal",
+              4,
+              32
+            ],
+            [
+              "libero_goal",
+              4,
+              33
+            ],
+            [
+              "libero_goal",
+              4,
+              34
+            ],
+            [
+              "libero_goal",
+              4,
+              37
+            ],
+            [
+              "libero_goal",
+              4,
+              38
+            ],
+            [
+              "libero_goal",
+              4,
+              39
+            ],
+            [
+              "libero_goal",
+              4,
+              40
+            ],
+            [
+              "libero_goal",
+              4,
+              41
+            ],
+            [
+              "libero_goal",
+              4,
+              43
+            ],
+            [
+              "libero_goal",
+              4,
+              44
+            ],
+            [
+              "libero_goal",
+              4,
+              45
+            ],
+            [
+              "libero_goal",
+              4,
+              46
+            ],
+            [
+              "libero_goal",
+              4,
+              47
+            ],
+            [
+              "libero_goal",
+              4,
+              48
+            ],
+            [
+              "libero_goal",
+              4,
+              49
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              4,
+              0
+            ],
+            [
+              "libero_goal",
+              4,
+              4
+            ],
+            [
+              "libero_goal",
+              4,
+              6
+            ],
+            [
+              "libero_goal",
+              4,
+              9
+            ],
+            [
+              "libero_goal",
+              4,
+              12
+            ],
+            [
+              "libero_goal",
+              4,
+              16
+            ],
+            [
+              "libero_goal",
+              4,
+              19
+            ],
+            [
+              "libero_goal",
+              4,
+              20
+            ],
+            [
+              "libero_goal",
+              4,
+              25
+            ],
+            [
+              "libero_goal",
+              4,
+              27
+            ],
+            [
+              "libero_goal",
+              4,
+              28
+            ],
+            [
+              "libero_goal",
+              4,
+              35
+            ],
+            [
+              "libero_goal",
+              4,
+              36
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_goal",
+              4,
+              42
+            ]
+          ]
+        },
+        {
+          "suite": "libero_goal",
+          "task_id": 7,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_object",
+          "task_id": 0,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_object",
+          "task_id": 7,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_spatial",
+          "task_id": 6,
+          "rows": 50,
+          "reference_successes": 3,
+          "candidate_successes": 15,
+          "retained": 3,
+          "gained": 12,
+          "lost": 0,
+          "churn_count": 12,
+          "churn_fraction": 0.24,
+          "success_set_jaccard": 0.2,
+          "retained_keys": [
+            [
+              "libero_spatial",
+              6,
+              6
+            ],
+            [
+              "libero_spatial",
+              6,
+              36
+            ],
+            [
+              "libero_spatial",
+              6,
+              40
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_spatial",
+              6,
+              1
+            ],
+            [
+              "libero_spatial",
+              6,
+              12
+            ],
+            [
+              "libero_spatial",
+              6,
+              20
+            ],
+            [
+              "libero_spatial",
+              6,
+              24
+            ],
+            [
+              "libero_spatial",
+              6,
+              26
+            ],
+            [
+              "libero_spatial",
+              6,
+              37
+            ],
+            [
+              "libero_spatial",
+              6,
+              38
+            ],
+            [
+              "libero_spatial",
+              6,
+              39
+            ],
+            [
+              "libero_spatial",
+              6,
+              45
+            ],
+            [
+              "libero_spatial",
+              6,
+              46
+            ],
+            [
+              "libero_spatial",
+              6,
+              47
+            ],
+            [
+              "libero_spatial",
+              6,
+              49
+            ]
+          ],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_spatial",
+          "task_id": 8,
+          "rows": 50,
+          "reference_successes": 3,
+          "candidate_successes": 7,
+          "retained": 1,
+          "gained": 6,
+          "lost": 2,
+          "churn_count": 8,
+          "churn_fraction": 0.16,
+          "success_set_jaccard": 0.1111111111111111,
+          "retained_keys": [
+            [
+              "libero_spatial",
+              8,
+              7
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_spatial",
+              8,
+              0
+            ],
+            [
+              "libero_spatial",
+              8,
+              8
+            ],
+            [
+              "libero_spatial",
+              8,
+              10
+            ],
+            [
+              "libero_spatial",
+              8,
+              15
+            ],
+            [
+              "libero_spatial",
+              8,
+              35
+            ],
+            [
+              "libero_spatial",
+              8,
+              48
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_spatial",
+              8,
+              22
+            ],
+            [
+              "libero_spatial",
+              8,
+              34
+            ]
+          ]
+        }
+      ],
+      "per_suite": [
+        {
+          "suite": "libero_10",
+          "rows": 100,
+          "reference_successes": 36,
+          "candidate_successes": 12,
+          "retained": 8,
+          "gained": 4,
+          "lost": 28,
+          "churn_count": 32,
+          "churn_fraction": 0.32,
+          "success_set_jaccard": 0.2,
+          "retained_keys": [
+            [
+              "libero_10",
+              3,
+              7
+            ],
+            [
+              "libero_10",
+              3,
+              8
+            ],
+            [
+              "libero_10",
+              3,
+              20
+            ],
+            [
+              "libero_10",
+              3,
+              21
+            ],
+            [
+              "libero_10",
+              3,
+              24
+            ],
+            [
+              "libero_10",
+              3,
+              26
+            ],
+            [
+              "libero_10",
+              3,
+              35
+            ],
+            [
+              "libero_10",
+              3,
+              43
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_10",
+              3,
+              4
+            ],
+            [
+              "libero_10",
+              3,
+              27
+            ],
+            [
+              "libero_10",
+              3,
+              29
+            ],
+            [
+              "libero_10",
+              3,
+              31
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              0,
+              46
+            ],
+            [
+              "libero_10",
+              3,
+              0
+            ],
+            [
+              "libero_10",
+              3,
+              1
+            ],
+            [
+              "libero_10",
+              3,
+              2
+            ],
+            [
+              "libero_10",
+              3,
+              3
+            ],
+            [
+              "libero_10",
+              3,
+              5
+            ],
+            [
+              "libero_10",
+              3,
+              6
+            ],
+            [
+              "libero_10",
+              3,
+              9
+            ],
+            [
+              "libero_10",
+              3,
+              10
+            ],
+            [
+              "libero_10",
+              3,
+              13
+            ],
+            [
+              "libero_10",
+              3,
+              15
+            ],
+            [
+              "libero_10",
+              3,
+              19
+            ],
+            [
+              "libero_10",
+              3,
+              22
+            ],
+            [
+              "libero_10",
+              3,
+              23
+            ],
+            [
+              "libero_10",
+              3,
+              25
+            ],
+            [
+              "libero_10",
+              3,
+              28
+            ],
+            [
+              "libero_10",
+              3,
+              36
+            ],
+            [
+              "libero_10",
+              3,
+              37
+            ],
+            [
+              "libero_10",
+              3,
+              38
+            ],
+            [
+              "libero_10",
+              3,
+              39
+            ],
+            [
+              "libero_10",
+              3,
+              40
+            ],
+            [
+              "libero_10",
+              3,
+              41
+            ],
+            [
+              "libero_10",
+              3,
+              42
+            ],
+            [
+              "libero_10",
+              3,
+              45
+            ],
+            [
+              "libero_10",
+              3,
+              46
+            ],
+            [
+              "libero_10",
+              3,
+              47
+            ],
+            [
+              "libero_10",
+              3,
+              48
+            ],
+            [
+              "libero_10",
+              3,
+              49
+            ]
+          ]
+        },
+        {
+          "suite": "libero_goal",
+          "rows": 100,
+          "reference_successes": 36,
+          "candidate_successes": 48,
+          "retained": 35,
+          "gained": 13,
+          "lost": 1,
+          "churn_count": 14,
+          "churn_fraction": 0.14,
+          "success_set_jaccard": 0.7142857142857143,
+          "retained_keys": [
+            [
+              "libero_goal",
+              4,
+              1
+            ],
+            [
+              "libero_goal",
+              4,
+              2
+            ],
+            [
+              "libero_goal",
+              4,
+              3
+            ],
+            [
+              "libero_goal",
+              4,
+              7
+            ],
+            [
+              "libero_goal",
+              4,
+              8
+            ],
+            [
+              "libero_goal",
+              4,
+              10
+            ],
+            [
+              "libero_goal",
+              4,
+              11
+            ],
+            [
+              "libero_goal",
+              4,
+              13
+            ],
+            [
+              "libero_goal",
+              4,
+              14
+            ],
+            [
+              "libero_goal",
+              4,
+              15
+            ],
+            [
+              "libero_goal",
+              4,
+              17
+            ],
+            [
+              "libero_goal",
+              4,
+              18
+            ],
+            [
+              "libero_goal",
+              4,
+              21
+            ],
+            [
+              "libero_goal",
+              4,
+              22
+            ],
+            [
+              "libero_goal",
+              4,
+              23
+            ],
+            [
+              "libero_goal",
+              4,
+              24
+            ],
+            [
+              "libero_goal",
+              4,
+              26
+            ],
+            [
+              "libero_goal",
+              4,
+              29
+            ],
+            [
+              "libero_goal",
+              4,
+              30
+            ],
+            [
+              "libero_goal",
+              4,
+              31
+            ],
+            [
+              "libero_goal",
+              4,
+              32
+            ],
+            [
+              "libero_goal",
+              4,
+              33
+            ],
+            [
+              "libero_goal",
+              4,
+              34
+            ],
+            [
+              "libero_goal",
+              4,
+              37
+            ],
+            [
+              "libero_goal",
+              4,
+              38
+            ],
+            [
+              "libero_goal",
+              4,
+              39
+            ],
+            [
+              "libero_goal",
+              4,
+              40
+            ],
+            [
+              "libero_goal",
+              4,
+              41
+            ],
+            [
+              "libero_goal",
+              4,
+              43
+            ],
+            [
+              "libero_goal",
+              4,
+              44
+            ],
+            [
+              "libero_goal",
+              4,
+              45
+            ],
+            [
+              "libero_goal",
+              4,
+              46
+            ],
+            [
+              "libero_goal",
+              4,
+              47
+            ],
+            [
+              "libero_goal",
+              4,
+              48
+            ],
+            [
+              "libero_goal",
+              4,
+              49
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              4,
+              0
+            ],
+            [
+              "libero_goal",
+              4,
+              4
+            ],
+            [
+              "libero_goal",
+              4,
+              6
+            ],
+            [
+              "libero_goal",
+              4,
+              9
+            ],
+            [
+              "libero_goal",
+              4,
+              12
+            ],
+            [
+              "libero_goal",
+              4,
+              16
+            ],
+            [
+              "libero_goal",
+              4,
+              19
+            ],
+            [
+              "libero_goal",
+              4,
+              20
+            ],
+            [
+              "libero_goal",
+              4,
+              25
+            ],
+            [
+              "libero_goal",
+              4,
+              27
+            ],
+            [
+              "libero_goal",
+              4,
+              28
+            ],
+            [
+              "libero_goal",
+              4,
+              35
+            ],
+            [
+              "libero_goal",
+              4,
+              36
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_goal",
+              4,
+              42
+            ]
+          ]
+        },
+        {
+          "suite": "libero_object",
+          "rows": 100,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_spatial",
+          "rows": 100,
+          "reference_successes": 6,
+          "candidate_successes": 22,
+          "retained": 4,
+          "gained": 18,
+          "lost": 2,
+          "churn_count": 20,
+          "churn_fraction": 0.2,
+          "success_set_jaccard": 0.16666666666666666,
+          "retained_keys": [
+            [
+              "libero_spatial",
+              6,
+              6
+            ],
+            [
+              "libero_spatial",
+              6,
+              36
+            ],
+            [
+              "libero_spatial",
+              6,
+              40
+            ],
+            [
+              "libero_spatial",
+              8,
+              7
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_spatial",
+              6,
+              1
+            ],
+            [
+              "libero_spatial",
+              6,
+              12
+            ],
+            [
+              "libero_spatial",
+              6,
+              20
+            ],
+            [
+              "libero_spatial",
+              6,
+              24
+            ],
+            [
+              "libero_spatial",
+              6,
+              26
+            ],
+            [
+              "libero_spatial",
+              6,
+              37
+            ],
+            [
+              "libero_spatial",
+              6,
+              38
+            ],
+            [
+              "libero_spatial",
+              6,
+              39
+            ],
+            [
+              "libero_spatial",
+              6,
+              45
+            ],
+            [
+              "libero_spatial",
+              6,
+              46
+            ],
+            [
+              "libero_spatial",
+              6,
+              47
+            ],
+            [
+              "libero_spatial",
+              6,
+              49
+            ],
+            [
+              "libero_spatial",
+              8,
+              0
+            ],
+            [
+              "libero_spatial",
+              8,
+              8
+            ],
+            [
+              "libero_spatial",
+              8,
+              10
+            ],
+            [
+              "libero_spatial",
+              8,
+              15
+            ],
+            [
+              "libero_spatial",
+              8,
+              35
+            ],
+            [
+              "libero_spatial",
+              8,
+              48
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_spatial",
+              8,
+              22
+            ],
+            [
+              "libero_spatial",
+              8,
+              34
+            ]
+          ]
+        }
+      ],
+      "reference_breadth": 5,
+      "candidate_breadth": 4,
+      "task_cluster_bootstrap_rate_difference_95ci": [
+        -0.14500000000000002,
+        0.135
+      ]
+    },
+    "mtbc_to_ember": {
+      "rows": 400,
+      "reference_successes": 74,
+      "candidate_successes": 82,
+      "retained": 50,
+      "gained": 32,
+      "lost": 24,
+      "churn_count": 56,
+      "churn_fraction": 0.14,
+      "success_set_jaccard": 0.4716981132075472,
+      "retained_keys": [
+        [
+          "libero_10",
+          3,
+          4
+        ],
+        [
+          "libero_10",
+          3,
+          8
+        ],
+        [
+          "libero_10",
+          3,
+          20
+        ],
+        [
+          "libero_10",
+          3,
+          35
+        ],
+        [
+          "libero_goal",
+          4,
+          1
+        ],
+        [
+          "libero_goal",
+          4,
+          4
+        ],
+        [
+          "libero_goal",
+          4,
+          6
+        ],
+        [
+          "libero_goal",
+          4,
+          7
+        ],
+        [
+          "libero_goal",
+          4,
+          8
+        ],
+        [
+          "libero_goal",
+          4,
+          9
+        ],
+        [
+          "libero_goal",
+          4,
+          10
+        ],
+        [
+          "libero_goal",
+          4,
+          11
+        ],
+        [
+          "libero_goal",
+          4,
+          12
+        ],
+        [
+          "libero_goal",
+          4,
+          13
+        ],
+        [
+          "libero_goal",
+          4,
+          14
+        ],
+        [
+          "libero_goal",
+          4,
+          15
+        ],
+        [
+          "libero_goal",
+          4,
+          16
+        ],
+        [
+          "libero_goal",
+          4,
+          17
+        ],
+        [
+          "libero_goal",
+          4,
+          18
+        ],
+        [
+          "libero_goal",
+          4,
+          19
+        ],
+        [
+          "libero_goal",
+          4,
+          20
+        ],
+        [
+          "libero_goal",
+          4,
+          21
+        ],
+        [
+          "libero_goal",
+          4,
+          22
+        ],
+        [
+          "libero_goal",
+          4,
+          23
+        ],
+        [
+          "libero_goal",
+          4,
+          24
+        ],
+        [
+          "libero_goal",
+          4,
+          25
+        ],
+        [
+          "libero_goal",
+          4,
+          26
+        ],
+        [
+          "libero_goal",
+          4,
+          27
+        ],
+        [
+          "libero_goal",
+          4,
+          28
+        ],
+        [
+          "libero_goal",
+          4,
+          29
+        ],
+        [
+          "libero_goal",
+          4,
+          30
+        ],
+        [
+          "libero_goal",
+          4,
+          31
+        ],
+        [
+          "libero_goal",
+          4,
+          32
+        ],
+        [
+          "libero_goal",
+          4,
+          33
+        ],
+        [
+          "libero_goal",
+          4,
+          34
+        ],
+        [
+          "libero_goal",
+          4,
+          36
+        ],
+        [
+          "libero_goal",
+          4,
+          37
+        ],
+        [
+          "libero_goal",
+          4,
+          38
+        ],
+        [
+          "libero_goal",
+          4,
+          40
+        ],
+        [
+          "libero_goal",
+          4,
+          41
+        ],
+        [
+          "libero_goal",
+          4,
+          43
+        ],
+        [
+          "libero_goal",
+          4,
+          44
+        ],
+        [
+          "libero_goal",
+          4,
+          45
+        ],
+        [
+          "libero_goal",
+          4,
+          46
+        ],
+        [
+          "libero_goal",
+          4,
+          49
+        ],
+        [
+          "libero_spatial",
+          6,
+          26
+        ],
+        [
+          "libero_spatial",
+          6,
+          36
+        ],
+        [
+          "libero_spatial",
+          6,
+          37
+        ],
+        [
+          "libero_spatial",
+          8,
+          8
+        ],
+        [
+          "libero_spatial",
+          8,
+          35
+        ]
+      ],
+      "gained_keys": [
+        [
+          "libero_10",
+          3,
+          7
+        ],
+        [
+          "libero_10",
+          3,
+          21
+        ],
+        [
+          "libero_10",
+          3,
+          24
+        ],
+        [
+          "libero_10",
+          3,
+          26
+        ],
+        [
+          "libero_10",
+          3,
+          27
+        ],
+        [
+          "libero_10",
+          3,
+          29
+        ],
+        [
+          "libero_10",
+          3,
+          31
+        ],
+        [
+          "libero_10",
+          3,
+          43
+        ],
+        [
+          "libero_goal",
+          4,
+          0
+        ],
+        [
+          "libero_goal",
+          4,
+          2
+        ],
+        [
+          "libero_goal",
+          4,
+          3
+        ],
+        [
+          "libero_goal",
+          4,
+          35
+        ],
+        [
+          "libero_goal",
+          4,
+          39
+        ],
+        [
+          "libero_goal",
+          4,
+          47
+        ],
+        [
+          "libero_goal",
+          4,
+          48
+        ],
+        [
+          "libero_spatial",
+          6,
+          1
+        ],
+        [
+          "libero_spatial",
+          6,
+          6
+        ],
+        [
+          "libero_spatial",
+          6,
+          12
+        ],
+        [
+          "libero_spatial",
+          6,
+          20
+        ],
+        [
+          "libero_spatial",
+          6,
+          24
+        ],
+        [
+          "libero_spatial",
+          6,
+          38
+        ],
+        [
+          "libero_spatial",
+          6,
+          39
+        ],
+        [
+          "libero_spatial",
+          6,
+          40
+        ],
+        [
+          "libero_spatial",
+          6,
+          45
+        ],
+        [
+          "libero_spatial",
+          6,
+          46
+        ],
+        [
+          "libero_spatial",
+          6,
+          47
+        ],
+        [
+          "libero_spatial",
+          6,
+          49
+        ],
+        [
+          "libero_spatial",
+          8,
+          0
+        ],
+        [
+          "libero_spatial",
+          8,
+          7
+        ],
+        [
+          "libero_spatial",
+          8,
+          10
+        ],
+        [
+          "libero_spatial",
+          8,
+          15
+        ],
+        [
+          "libero_spatial",
+          8,
+          48
+        ]
+      ],
+      "lost_keys": [
+        [
+          "libero_10",
+          3,
+          0
+        ],
+        [
+          "libero_10",
+          3,
+          2
+        ],
+        [
+          "libero_10",
+          3,
+          10
+        ],
+        [
+          "libero_10",
+          3,
+          30
+        ],
+        [
+          "libero_10",
+          3,
+          37
+        ],
+        [
+          "libero_10",
+          3,
+          38
+        ],
+        [
+          "libero_10",
+          3,
+          44
+        ],
+        [
+          "libero_goal",
+          4,
+          5
+        ],
+        [
+          "libero_goal",
+          4,
+          42
+        ],
+        [
+          "libero_object",
+          0,
+          0
+        ],
+        [
+          "libero_object",
+          0,
+          3
+        ],
+        [
+          "libero_object",
+          0,
+          6
+        ],
+        [
+          "libero_object",
+          0,
+          8
+        ],
+        [
+          "libero_object",
+          0,
+          9
+        ],
+        [
+          "libero_object",
+          0,
+          10
+        ],
+        [
+          "libero_object",
+          0,
+          24
+        ],
+        [
+          "libero_object",
+          0,
+          25
+        ],
+        [
+          "libero_object",
+          0,
+          28
+        ],
+        [
+          "libero_object",
+          0,
+          31
+        ],
+        [
+          "libero_object",
+          0,
+          38
+        ],
+        [
+          "libero_object",
+          0,
+          41
+        ],
+        [
+          "libero_object",
+          0,
+          43
+        ],
+        [
+          "libero_object",
+          0,
+          47
+        ],
+        [
+          "libero_object",
+          0,
+          49
+        ]
+      ],
+      "per_task": [
+        {
+          "suite": "libero_10",
+          "task_id": 0,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_10",
+          "task_id": 3,
+          "rows": 50,
+          "reference_successes": 11,
+          "candidate_successes": 12,
+          "retained": 4,
+          "gained": 8,
+          "lost": 7,
+          "churn_count": 15,
+          "churn_fraction": 0.3,
+          "success_set_jaccard": 0.21052631578947367,
+          "retained_keys": [
+            [
+              "libero_10",
+              3,
+              4
+            ],
+            [
+              "libero_10",
+              3,
+              8
+            ],
+            [
+              "libero_10",
+              3,
+              20
+            ],
+            [
+              "libero_10",
+              3,
+              35
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_10",
+              3,
+              7
+            ],
+            [
+              "libero_10",
+              3,
+              21
+            ],
+            [
+              "libero_10",
+              3,
+              24
+            ],
+            [
+              "libero_10",
+              3,
+              26
+            ],
+            [
+              "libero_10",
+              3,
+              27
+            ],
+            [
+              "libero_10",
+              3,
+              29
+            ],
+            [
+              "libero_10",
+              3,
+              31
+            ],
+            [
+              "libero_10",
+              3,
+              43
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              3,
+              0
+            ],
+            [
+              "libero_10",
+              3,
+              2
+            ],
+            [
+              "libero_10",
+              3,
+              10
+            ],
+            [
+              "libero_10",
+              3,
+              30
+            ],
+            [
+              "libero_10",
+              3,
+              37
+            ],
+            [
+              "libero_10",
+              3,
+              38
+            ],
+            [
+              "libero_10",
+              3,
+              44
+            ]
+          ]
+        },
+        {
+          "suite": "libero_goal",
+          "task_id": 4,
+          "rows": 50,
+          "reference_successes": 43,
+          "candidate_successes": 48,
+          "retained": 41,
+          "gained": 7,
+          "lost": 2,
+          "churn_count": 9,
+          "churn_fraction": 0.18,
+          "success_set_jaccard": 0.82,
+          "retained_keys": [
+            [
+              "libero_goal",
+              4,
+              1
+            ],
+            [
+              "libero_goal",
+              4,
+              4
+            ],
+            [
+              "libero_goal",
+              4,
+              6
+            ],
+            [
+              "libero_goal",
+              4,
+              7
+            ],
+            [
+              "libero_goal",
+              4,
+              8
+            ],
+            [
+              "libero_goal",
+              4,
+              9
+            ],
+            [
+              "libero_goal",
+              4,
+              10
+            ],
+            [
+              "libero_goal",
+              4,
+              11
+            ],
+            [
+              "libero_goal",
+              4,
+              12
+            ],
+            [
+              "libero_goal",
+              4,
+              13
+            ],
+            [
+              "libero_goal",
+              4,
+              14
+            ],
+            [
+              "libero_goal",
+              4,
+              15
+            ],
+            [
+              "libero_goal",
+              4,
+              16
+            ],
+            [
+              "libero_goal",
+              4,
+              17
+            ],
+            [
+              "libero_goal",
+              4,
+              18
+            ],
+            [
+              "libero_goal",
+              4,
+              19
+            ],
+            [
+              "libero_goal",
+              4,
+              20
+            ],
+            [
+              "libero_goal",
+              4,
+              21
+            ],
+            [
+              "libero_goal",
+              4,
+              22
+            ],
+            [
+              "libero_goal",
+              4,
+              23
+            ],
+            [
+              "libero_goal",
+              4,
+              24
+            ],
+            [
+              "libero_goal",
+              4,
+              25
+            ],
+            [
+              "libero_goal",
+              4,
+              26
+            ],
+            [
+              "libero_goal",
+              4,
+              27
+            ],
+            [
+              "libero_goal",
+              4,
+              28
+            ],
+            [
+              "libero_goal",
+              4,
+              29
+            ],
+            [
+              "libero_goal",
+              4,
+              30
+            ],
+            [
+              "libero_goal",
+              4,
+              31
+            ],
+            [
+              "libero_goal",
+              4,
+              32
+            ],
+            [
+              "libero_goal",
+              4,
+              33
+            ],
+            [
+              "libero_goal",
+              4,
+              34
+            ],
+            [
+              "libero_goal",
+              4,
+              36
+            ],
+            [
+              "libero_goal",
+              4,
+              37
+            ],
+            [
+              "libero_goal",
+              4,
+              38
+            ],
+            [
+              "libero_goal",
+              4,
+              40
+            ],
+            [
+              "libero_goal",
+              4,
+              41
+            ],
+            [
+              "libero_goal",
+              4,
+              43
+            ],
+            [
+              "libero_goal",
+              4,
+              44
+            ],
+            [
+              "libero_goal",
+              4,
+              45
+            ],
+            [
+              "libero_goal",
+              4,
+              46
+            ],
+            [
+              "libero_goal",
+              4,
+              49
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              4,
+              0
+            ],
+            [
+              "libero_goal",
+              4,
+              2
+            ],
+            [
+              "libero_goal",
+              4,
+              3
+            ],
+            [
+              "libero_goal",
+              4,
+              35
+            ],
+            [
+              "libero_goal",
+              4,
+              39
+            ],
+            [
+              "libero_goal",
+              4,
+              47
+            ],
+            [
+              "libero_goal",
+              4,
+              48
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_goal",
+              4,
+              5
+            ],
+            [
+              "libero_goal",
+              4,
+              42
+            ]
+          ]
+        },
+        {
+          "suite": "libero_goal",
+          "task_id": 7,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_object",
+          "task_id": 0,
+          "rows": 50,
+          "reference_successes": 15,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 15,
+          "churn_count": 15,
+          "churn_fraction": 0.3,
+          "success_set_jaccard": 0.0,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": [
+            [
+              "libero_object",
+              0,
+              0
+            ],
+            [
+              "libero_object",
+              0,
+              3
+            ],
+            [
+              "libero_object",
+              0,
+              6
+            ],
+            [
+              "libero_object",
+              0,
+              8
+            ],
+            [
+              "libero_object",
+              0,
+              9
+            ],
+            [
+              "libero_object",
+              0,
+              10
+            ],
+            [
+              "libero_object",
+              0,
+              24
+            ],
+            [
+              "libero_object",
+              0,
+              25
+            ],
+            [
+              "libero_object",
+              0,
+              28
+            ],
+            [
+              "libero_object",
+              0,
+              31
+            ],
+            [
+              "libero_object",
+              0,
+              38
+            ],
+            [
+              "libero_object",
+              0,
+              41
+            ],
+            [
+              "libero_object",
+              0,
+              43
+            ],
+            [
+              "libero_object",
+              0,
+              47
+            ],
+            [
+              "libero_object",
+              0,
+              49
+            ]
+          ]
+        },
+        {
+          "suite": "libero_object",
+          "task_id": 7,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_spatial",
+          "task_id": 6,
+          "rows": 50,
+          "reference_successes": 3,
+          "candidate_successes": 15,
+          "retained": 3,
+          "gained": 12,
+          "lost": 0,
+          "churn_count": 12,
+          "churn_fraction": 0.24,
+          "success_set_jaccard": 0.2,
+          "retained_keys": [
+            [
+              "libero_spatial",
+              6,
+              26
+            ],
+            [
+              "libero_spatial",
+              6,
+              36
+            ],
+            [
+              "libero_spatial",
+              6,
+              37
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_spatial",
+              6,
+              1
+            ],
+            [
+              "libero_spatial",
+              6,
+              6
+            ],
+            [
+              "libero_spatial",
+              6,
+              12
+            ],
+            [
+              "libero_spatial",
+              6,
+              20
+            ],
+            [
+              "libero_spatial",
+              6,
+              24
+            ],
+            [
+              "libero_spatial",
+              6,
+              38
+            ],
+            [
+              "libero_spatial",
+              6,
+              39
+            ],
+            [
+              "libero_spatial",
+              6,
+              40
+            ],
+            [
+              "libero_spatial",
+              6,
+              45
+            ],
+            [
+              "libero_spatial",
+              6,
+              46
+            ],
+            [
+              "libero_spatial",
+              6,
+              47
+            ],
+            [
+              "libero_spatial",
+              6,
+              49
+            ]
+          ],
+          "lost_keys": []
+        },
+        {
+          "suite": "libero_spatial",
+          "task_id": 8,
+          "rows": 50,
+          "reference_successes": 2,
+          "candidate_successes": 7,
+          "retained": 2,
+          "gained": 5,
+          "lost": 0,
+          "churn_count": 5,
+          "churn_fraction": 0.1,
+          "success_set_jaccard": 0.2857142857142857,
+          "retained_keys": [
+            [
+              "libero_spatial",
+              8,
+              8
+            ],
+            [
+              "libero_spatial",
+              8,
+              35
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_spatial",
+              8,
+              0
+            ],
+            [
+              "libero_spatial",
+              8,
+              7
+            ],
+            [
+              "libero_spatial",
+              8,
+              10
+            ],
+            [
+              "libero_spatial",
+              8,
+              15
+            ],
+            [
+              "libero_spatial",
+              8,
+              48
+            ]
+          ],
+          "lost_keys": []
+        }
+      ],
+      "per_suite": [
+        {
+          "suite": "libero_10",
+          "rows": 100,
+          "reference_successes": 11,
+          "candidate_successes": 12,
+          "retained": 4,
+          "gained": 8,
+          "lost": 7,
+          "churn_count": 15,
+          "churn_fraction": 0.15,
+          "success_set_jaccard": 0.21052631578947367,
+          "retained_keys": [
+            [
+              "libero_10",
+              3,
+              4
+            ],
+            [
+              "libero_10",
+              3,
+              8
+            ],
+            [
+              "libero_10",
+              3,
+              20
+            ],
+            [
+              "libero_10",
+              3,
+              35
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_10",
+              3,
+              7
+            ],
+            [
+              "libero_10",
+              3,
+              21
+            ],
+            [
+              "libero_10",
+              3,
+              24
+            ],
+            [
+              "libero_10",
+              3,
+              26
+            ],
+            [
+              "libero_10",
+              3,
+              27
+            ],
+            [
+              "libero_10",
+              3,
+              29
+            ],
+            [
+              "libero_10",
+              3,
+              31
+            ],
+            [
+              "libero_10",
+              3,
+              43
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              3,
+              0
+            ],
+            [
+              "libero_10",
+              3,
+              2
+            ],
+            [
+              "libero_10",
+              3,
+              10
+            ],
+            [
+              "libero_10",
+              3,
+              30
+            ],
+            [
+              "libero_10",
+              3,
+              37
+            ],
+            [
+              "libero_10",
+              3,
+              38
+            ],
+            [
+              "libero_10",
+              3,
+              44
+            ]
+          ]
+        },
+        {
+          "suite": "libero_goal",
+          "rows": 100,
+          "reference_successes": 43,
+          "candidate_successes": 48,
+          "retained": 41,
+          "gained": 7,
+          "lost": 2,
+          "churn_count": 9,
+          "churn_fraction": 0.09,
+          "success_set_jaccard": 0.82,
+          "retained_keys": [
+            [
+              "libero_goal",
+              4,
+              1
+            ],
+            [
+              "libero_goal",
+              4,
+              4
+            ],
+            [
+              "libero_goal",
+              4,
+              6
+            ],
+            [
+              "libero_goal",
+              4,
+              7
+            ],
+            [
+              "libero_goal",
+              4,
+              8
+            ],
+            [
+              "libero_goal",
+              4,
+              9
+            ],
+            [
+              "libero_goal",
+              4,
+              10
+            ],
+            [
+              "libero_goal",
+              4,
+              11
+            ],
+            [
+              "libero_goal",
+              4,
+              12
+            ],
+            [
+              "libero_goal",
+              4,
+              13
+            ],
+            [
+              "libero_goal",
+              4,
+              14
+            ],
+            [
+              "libero_goal",
+              4,
+              15
+            ],
+            [
+              "libero_goal",
+              4,
+              16
+            ],
+            [
+              "libero_goal",
+              4,
+              17
+            ],
+            [
+              "libero_goal",
+              4,
+              18
+            ],
+            [
+              "libero_goal",
+              4,
+              19
+            ],
+            [
+              "libero_goal",
+              4,
+              20
+            ],
+            [
+              "libero_goal",
+              4,
+              21
+            ],
+            [
+              "libero_goal",
+              4,
+              22
+            ],
+            [
+              "libero_goal",
+              4,
+              23
+            ],
+            [
+              "libero_goal",
+              4,
+              24
+            ],
+            [
+              "libero_goal",
+              4,
+              25
+            ],
+            [
+              "libero_goal",
+              4,
+              26
+            ],
+            [
+              "libero_goal",
+              4,
+              27
+            ],
+            [
+              "libero_goal",
+              4,
+              28
+            ],
+            [
+              "libero_goal",
+              4,
+              29
+            ],
+            [
+              "libero_goal",
+              4,
+              30
+            ],
+            [
+              "libero_goal",
+              4,
+              31
+            ],
+            [
+              "libero_goal",
+              4,
+              32
+            ],
+            [
+              "libero_goal",
+              4,
+              33
+            ],
+            [
+              "libero_goal",
+              4,
+              34
+            ],
+            [
+              "libero_goal",
+              4,
+              36
+            ],
+            [
+              "libero_goal",
+              4,
+              37
+            ],
+            [
+              "libero_goal",
+              4,
+              38
+            ],
+            [
+              "libero_goal",
+              4,
+              40
+            ],
+            [
+              "libero_goal",
+              4,
+              41
+            ],
+            [
+              "libero_goal",
+              4,
+              43
+            ],
+            [
+              "libero_goal",
+              4,
+              44
+            ],
+            [
+              "libero_goal",
+              4,
+              45
+            ],
+            [
+              "libero_goal",
+              4,
+              46
+            ],
+            [
+              "libero_goal",
+              4,
+              49
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              4,
+              0
+            ],
+            [
+              "libero_goal",
+              4,
+              2
+            ],
+            [
+              "libero_goal",
+              4,
+              3
+            ],
+            [
+              "libero_goal",
+              4,
+              35
+            ],
+            [
+              "libero_goal",
+              4,
+              39
+            ],
+            [
+              "libero_goal",
+              4,
+              47
+            ],
+            [
+              "libero_goal",
+              4,
+              48
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_goal",
+              4,
+              5
+            ],
+            [
+              "libero_goal",
+              4,
+              42
+            ]
+          ]
+        },
+        {
+          "suite": "libero_object",
+          "rows": 100,
+          "reference_successes": 15,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 15,
+          "churn_count": 15,
+          "churn_fraction": 0.15,
+          "success_set_jaccard": 0.0,
+          "retained_keys": [],
+          "gained_keys": [],
+          "lost_keys": [
+            [
+              "libero_object",
+              0,
+              0
+            ],
+            [
+              "libero_object",
+              0,
+              3
+            ],
+            [
+              "libero_object",
+              0,
+              6
+            ],
+            [
+              "libero_object",
+              0,
+              8
+            ],
+            [
+              "libero_object",
+              0,
+              9
+            ],
+            [
+              "libero_object",
+              0,
+              10
+            ],
+            [
+              "libero_object",
+              0,
+              24
+            ],
+            [
+              "libero_object",
+              0,
+              25
+            ],
+            [
+              "libero_object",
+              0,
+              28
+            ],
+            [
+              "libero_object",
+              0,
+              31
+            ],
+            [
+              "libero_object",
+              0,
+              38
+            ],
+            [
+              "libero_object",
+              0,
+              41
+            ],
+            [
+              "libero_object",
+              0,
+              43
+            ],
+            [
+              "libero_object",
+              0,
+              47
+            ],
+            [
+              "libero_object",
+              0,
+              49
+            ]
+          ]
+        },
+        {
+          "suite": "libero_spatial",
+          "rows": 100,
+          "reference_successes": 5,
+          "candidate_successes": 22,
+          "retained": 5,
+          "gained": 17,
+          "lost": 0,
+          "churn_count": 17,
+          "churn_fraction": 0.17,
+          "success_set_jaccard": 0.22727272727272727,
+          "retained_keys": [
+            [
+              "libero_spatial",
+              6,
+              26
+            ],
+            [
+              "libero_spatial",
+              6,
+              36
+            ],
+            [
+              "libero_spatial",
+              6,
+              37
+            ],
+            [
+              "libero_spatial",
+              8,
+              8
+            ],
+            [
+              "libero_spatial",
+              8,
+              35
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_spatial",
+              6,
+              1
+            ],
+            [
+              "libero_spatial",
+              6,
+              6
+            ],
+            [
+              "libero_spatial",
+              6,
+              12
+            ],
+            [
+              "libero_spatial",
+              6,
+              20
+            ],
+            [
+              "libero_spatial",
+              6,
+              24
+            ],
+            [
+              "libero_spatial",
+              6,
+              38
+            ],
+            [
+              "libero_spatial",
+              6,
+              39
+            ],
+            [
+              "libero_spatial",
+              6,
+              40
+            ],
+            [
+              "libero_spatial",
+              6,
+              45
+            ],
+            [
+              "libero_spatial",
+              6,
+              46
+            ],
+            [
+              "libero_spatial",
+              6,
+              47
+            ],
+            [
+              "libero_spatial",
+              6,
+              49
+            ],
+            [
+              "libero_spatial",
+              8,
+              0
+            ],
+            [
+              "libero_spatial",
+              8,
+              7
+            ],
+            [
+              "libero_spatial",
+              8,
+              10
+            ],
+            [
+              "libero_spatial",
+              8,
+              15
+            ],
+            [
+              "libero_spatial",
+              8,
+              48
+            ]
+          ],
+          "lost_keys": []
+        }
+      ],
+      "reference_breadth": 5,
+      "candidate_breadth": 4,
+      "task_cluster_bootstrap_rate_difference_95ci": [
+        -0.08506249999999993,
+        0.1125
+      ]
+    }
+  },
+  "launch_contract": {
+    "schema_version": "ember_paper_test_20260920_v1",
+    "registered_utc": "2026-09-20T06:13:28.217662+00:00",
+    "runtime_commit": "45a39ba18e300ea88957e3c1e27b0e3a43a58bfb",
+    "writer_macro": 1500,
+    "mtbc_step": 425,
+    "source_step": 1000,
+    "test_global_ids": [
+      6,
+      8,
+      10,
+      17,
+      24,
+      27,
+      30,
+      33
+    ],
+    "state_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "video_seed": 20260911,
+    "panels": [
+      "source",
+      "mtbc",
+      "ember"
+    ],
+    "rows_each": 400,
+    "proceed_min_ember_minus_mtbc": 40,
+    "data0_peak_additional_GiB": 5,
+    "commands": [
+      "ssh gpu01 bash run_panel.sh source 0,1",
+      "ssh gpu01 bash run_panel.sh mtbc 2,5",
+      "bash run_panel.sh ember 0,3"
+    ],
+    "allocation": {
+      "gpu01": {
+        "source": [
+          0,
+          1
+        ],
+        "mtbc": [
+          2,
+          5
+        ]
+      },
+      "gpu02": {
+        "ember": [
+          0,
+          3
+        ]
+      }
+    },
+    "evaluation_replicas_per_gpu": 3,
+    "materialization_frame_chunk": 8,
+    "materialization_workers": 2,
+    "no_training": true,
+    "periodic_progress_reads": false,
+    "history_test_exposure": "20260915 sealed shared L/R terminal900 source86/correct49; different historical method/source, not used for this selection"
+  },
+  "completed_workers": {
+    "source": 6,
+    "mtbc": 6,
+    "ember": 6
+  },
+  "actual_allocation": {
+    "reason": "gpu02 physical 3 occupied before launch; preflight rejected before materialization",
+    "source_gpu01": [
+      0,
+      1
+    ],
+    "mtbc_gpu01": [
+      2,
+      5
+    ],
+    "ember_gpu02": [
+      0,
+      1
+    ],
+    "scientific_contract_changed": false
+  },
+  "evaluation_wall_seconds": {
+    "source": 1636.734369277954,
+    "mtbc": 1656.6803328990936,
+    "ember": 1698.9710874557495
+  }
+}

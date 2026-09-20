@@ -2549,3 +2549,14 @@ train成绩52→64→67，固定train-action FM900/1200/1500为.104100628/.09983
 完整[双相机报告](docs/review_materials/20260919/dual_camera_report.md)、[总报告](docs/review_materials/20260919/final_report.md)、
 [专家提示词](docs/review_materials/20260919/expert_discussion_prompt.md)、[完成清单](docs/review_materials/20260919/completion.json)
 与逐task/suite CSV、训练趋势、相机示例及配对原件共同保存。本轮结束后的研究选择交Owner与专家讨论，不自动启动后继训练。
+
+## 123. 冻结1500的Test优势未保持：82对74，未达+40门槛（2026-09-20）
+
+冻结Source1000、MT-BC425与EMBER1500的Test8分别78/74/82，各400；EMBER相对MT-BC仅+8（2pp）。
+任务簇bootstrap95%差值区间[-8.51,11.25]pp，配对保留/获得/丢失50/32/24，churn56；breadth为Source5、MT-BC5、EMBER4。
+Spatial为6/5/22，Object0/15/0，Goal36/43/48，Long36/11/12（各suite100）。
+局部Spatial增益不足以支持广泛迁移优势；Object的15条损失与Long相对Source的24条损失必须同时报告。
+1200行完整、18个worker正常退出、source/normalization与state/RNG配对、50teacher无放回调度已核对。
+这是当前冻结方法在固定Test面板上的有效负结果，不自动指向工程缺陷或否定全部视频到LoRA方法。
+没有Test视频controls，不能断言Test特异性成立或消失。没有根据结果更换checkpoint、增seed或调架构。
+Owner选择先看[图文报告](docs/review_materials/20260920/test_capacity/report.md)并与专家讨论，所有下游暂停。

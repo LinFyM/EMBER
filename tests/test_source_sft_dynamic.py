@@ -63,6 +63,36 @@ def test_explicit_physical_resume_preserves_original_scientific_contract(tmp_pat
         reconcile_resume_contract(args, candidate)
 
 
+def test_code_compatible_resume_accepts_only_identical_tokenizer_manifest_move(tmp_path):
+    old_manifest = tmp_path / "old" / "tokenizer.json"
+    new_manifest = tmp_path / "new" / "tokenizer.json"
+    for path in (old_manifest, new_manifest):
+        path.parent.mkdir()
+        path.write_text('{"tokenizer": "same"}')
+    existing = dict(git=dict(commit="old", branch=""), training_control=CONTROL,
+                    runtime=dict(selected_stop_step=50, total_steps=50,
+                                 checkpoint_steps=[25, 50]),
+                    tokenizer=dict(path="canonical.model", bytes=123,
+                                   manifest_path=str(old_manifest)))
+    (tmp_path / "run_contract.json").write_text(json.dumps(existing))
+    args = SimpleNamespace(output_dir=tmp_path,
+        resume=tmp_path / "checkpoints/step_00000050",
+        allow_contract_compatible_code_resume=True)
+    candidate = deepcopy(existing)
+    candidate["git"]["commit"] = "new"
+    candidate["runtime"].update(selected_stop_step=100, total_steps=100,
+                                checkpoint_steps=[25, 50, 75, 100])
+    candidate["tokenizer"]["manifest_path"] = str(new_manifest)
+    assert reconcile_resume_contract(args, candidate) == existing
+    new_manifest.write_text('{"tokenizer": "changed"}')
+    with pytest.raises(WriterModelError, match="tokenizer authority changed"):
+        reconcile_resume_contract(args, candidate)
+    new_manifest.write_text(old_manifest.read_text())
+    candidate["tokenizer"]["path"] = "different.model"
+    with pytest.raises(WriterModelError, match="tokenizer authority changed"):
+        reconcile_resume_contract(args, candidate)
+
+
 def test_formal_mtbc_resolves_four_cards_only_for_explicit_checkpoint_migration(monkeypatch):
     import ember.source_sft.contract as module
     root = Path(__file__).resolve().parents[1]

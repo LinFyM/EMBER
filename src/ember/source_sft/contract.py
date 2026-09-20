@@ -638,6 +638,21 @@ def reconcile_resume_contract(
                 "Source-SFT code-compatible resume did not isolate one commit change"
             )
         normalized["git"] = existing_git
+    if normalized.get("tokenizer") != existing.get("tokenizer"):
+        old_tokenizer = existing.get("tokenizer", {})
+        new_tokenizer = normalized.get("tokenizer", {})
+        old_manifest = Path(old_tokenizer.get("manifest_path", ""))
+        new_manifest = Path(new_tokenizer.get("manifest_path", ""))
+        if (
+            not getattr(args, "allow_contract_compatible_code_resume", False)
+            or {k: v for k, v in old_tokenizer.items() if k != "manifest_path"}
+            != {k: v for k, v in new_tokenizer.items() if k != "manifest_path"}
+            or not old_manifest.is_file()
+            or not new_manifest.is_file()
+            or old_manifest.read_bytes() != new_manifest.read_bytes()
+        ):
+            raise Pi05SourceSFTError("Source-SFT resume tokenizer authority changed")
+        normalized["tokenizer"] = old_tokenizer
     if normalized != existing:
         raise Pi05SourceSFTError(
             "Source-SFT code-compatible resume changed the scientific contract"

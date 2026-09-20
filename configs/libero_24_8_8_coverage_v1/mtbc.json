@@ -111,7 +111,7 @@
       "available_action_episodes": 1800,
       "selection_data": "full validation400 rollouts only; validation/test action values are never read",
       "formal_run": {
-        "status": "pending_profile",
+        "status": "sealed",
         "expected_world_size": 1,
         "total_steps": null,
         "per_rank_batch_size": 64,
@@ -120,7 +120,9 @@
         "stage_stop_steps": [],
         "validation_steps": [],
         "selection_rule": "best full400 validation from one dynamically stopped trajectory; earliest tie",
-        "profile_evidence": "pending"
+        "profile_evidence": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/profiles/mtbc",
+        "profile_peak_reserved_gib": 33.634765625,
+        "profile_mean_update_seconds": 149.76026871567592
       }
     },
     "final": {

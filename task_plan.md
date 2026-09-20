@@ -1,23 +1,18 @@
 # EMBER task plan
 
-## 当前目标（2026-09-20，Owner要求先看报告并讨论）
+## 当前目标（2026-09-20，Owner授权单次覆盖重训）
 
-固定EMBER-1V单相机1500，完成论文实验与图文原始报告。当前active合同：[论文实验](docs/paper_experiments_design.md)。
+保留后继论文实验计划，先完成新覆盖协议的一次fresh EMBER与MT-BC训练，得到唯一选定模型。
 
-1. **已完成：冻结资产与Test接口。** Source-71、MT-BC425、EMBER1500；development24模型Test用途已验证并推送45a39ba1。
-2. **已完成，未达推进门槛：Test能力。** Source78、MT-BC74、EMBER82，各400；差值+8<+40。Owner选择先看报告，与专家讨论后再决定；后续步骤暂停。
-3. **条件执行：Test视频证据。** other/wrong/shuffle/reverse各400；缺失或不明确则停止询问。
-4. **条件执行：单support FT。** validation/test16任务，独立演示选点集FM选点，eval50不参与选择；劣势触发三support复核。
-5. **条件执行：两臂task-local RL。** 先Train接口/学习资格，按登记区段结束后读结果；不达预期暂停。
-6. **条件执行：外部比较与报告。** 优先WIZARD，再ViVLA资格核查与透明复现；图、表、成本、成功失败案例及原件可追溯。
+1. **完成：数据与执行合同。** 审计新24/8/8与12辅助任务操作覆盖、等价泄漏、canonical数据；锁定等权采样和动态早停。
+2. **完成：统一协议入口。** 训练、物化、评测共用显式协议，完整恢复与增量事件计划，补必要接口验证。
+3. **进行中：配置profile，随后一次fresh正式训练/方法。** Source复用，两节点合规调度；固定完整Validation间隔，独立早停与最佳checkpoint。
+4. **条件执行：冻结性能及视频对照。** 新Test paired400相对MT-BC至少+40，视频内容/顺序证据与same-task-other无明显问题；否则停止商量。
+5. **条件执行：原后继计划。** 独立演示选点的单support FT及必要三support复核、两臂task-local RL、合格外部比较，交付图文报告。
 
-## 执行边界
+## 边界
 
-不重训旧Writer、不追扫、不合并32任务；不反复轮询日志。资源按live双节点GPU与独立quota确定，无日历硬截止。
-Owner阈值用于推进决策，不能以改实验直到获胜作为完成条件。常规工程问题在范围内修复，重大歧义交Owner。
-维护canonical main，正式运行使用clean pushed detached worktree；运行结束清理task-owned临时树/载荷，保留证据。
-
-## 已完成历史入口
-
-[20260920全面清理](docs/research_history.md#workspace-cleanup-20260920)；
-[上一轮总报告](docs/review_materials/20260919/final_report.md)。历史路线和清理记录不恢复执行。
+只各一条fresh轨迹，不做k折、额外seed、Unpaired重训；不改架构loss，不合并Validation再训练。
+旧协议及负结果保留；新协议是受旧结果启发的受控泛化实验，不称全项目盲测。
+充分使用双节点可用及安全共驻GPU，遵守总卡上限；完整阶段结束后读结果，不反复轮询。
+维护main并推送，formal从clean pushed detached runtime运行，及时清理确认无用资产，保留正式证据。

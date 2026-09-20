@@ -146,7 +146,7 @@ def frozen_control_assets(tmp_path, monkeypatch):
     monkeypatch.setattr(evaluation, "load_pi05_lora_contract", lambda _path: lora)
     checkpoint = {"path": str(tmp_path / "macro_00000900"), "macro": 900}
     run = {"source": SOURCE, "model_config": dict(MODEL_DEFAULTS), "config": {
-        "observer": {"camera_view": "dual", "frame_chunk": 4}, "update_version": materialization.UPDATE_VERSION,
+        "data": {}, "observer": {"camera_view": "dual", "frame_chunk": 4}, "update_version": materialization.UPDATE_VERSION,
         "execution_precision": "native_bf16_writer_fm_fp32_lora"}}
     monkeypatch.setattr(materialization, "git_state", lambda _root: GIT)
     monkeypatch.setattr(materialization, "inspect_writer_checkpoint", lambda _path: (run, checkpoint))

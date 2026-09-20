@@ -1,0 +1,173 @@
+{
+  "schema_version": "ember_pi05_source_sft_v1",
+  "sealed_stage": "development",
+  "authorities": {
+    "target_data_manifest": {
+      "path": "configs/libero_24_8_8_coverage_v1/manifest.json"
+    },
+    "evaluation_config": {
+      "path": "configs/libero_24_8_8_coverage_v1/evaluation.json"
+    },
+    "lora_contract": {
+      "path": "configs/pi05_lora_rank128_aligned.json",
+      "sha256": "379ee28989f55ef571f82d9999a5a1c0c6e53906c8297dd216b79d88b814da6f"
+    },
+    "source_base_config": {
+      "path": "configs/pi05_source_aligned.json",
+      "sha256": "be2c885b4f76fef68bc0d5e2da1a8aa0a47640673ff77c18a1bc2d19566f8dda"
+    },
+    "tokenizer_manifest": {
+      "path": "configs/libero_24_8_8_v1/pi05_tokenizer_manifest.json",
+      "sha256": "948bf1ec1f2768833bead66b2e829154e3304c1c09fe9c48813a79f06e47426c"
+    }
+  },
+  "information_wall": {
+    "policy_input": "correct task language plus current policy observation only",
+    "forbidden_inputs": [
+      "teacher_video",
+      "reward",
+      "terminal",
+      "task_id",
+      "filename",
+      "policy_outcome"
+    ],
+    "development_action_split_roles": [
+      "train"
+    ],
+    "final_action_split_roles": [
+      "train",
+      "validation"
+    ],
+    "test_actions_read": 0,
+    "test_video_values_read": 0,
+    "held_evaluation_adaptation": "none",
+    "validation_actions_read": 0
+  },
+  "adapter": {
+    "contract": "configs/pi05_lora_rank128_aligned.json",
+    "initialization": "fresh deterministic functional identity from the frozen source base for each stage",
+    "kind": "one_shared_multitask_pi05_lora",
+    "per_task_adapter": false,
+    "stacked_shared_source_adapter": false
+  },
+  "data": {
+    "action_chunk_size": 50,
+    "demo_indices": [
+      0,
+      49
+    ],
+    "episodes_per_task": 50,
+    "max_open_files_per_worker": 24,
+    "sampler_seed": 20260723,
+    "sampling": "36 tasks x16 queries per optimizer update; same canonical hierarchical stream",
+    "action_start_offset": 1,
+    "query_alignment": "post_action_observation_future_control_v1"
+  },
+  "loader": {
+    "num_workers_per_rank": 2,
+    "prefetch_factor": 2
+  },
+  "optimization": {
+    "gradient_checkpointing": true,
+    "method": "shared_multitask_lora_action_sft",
+    "normalization": "frozen filtered-LIBERO-90 source normalization",
+    "optimizer": {
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "gradient_clip_norm": 1.0,
+      "name": "AdamW",
+      "weight_decay": 0.0001
+    },
+    "precision": "bfloat16",
+    "scheduler": {
+      "decay_lr": 1e-05,
+      "decay_steps": 1200,
+      "kind": "cosine_warmup_clamped_v1",
+      "peak_lr": 0.0003,
+      "warmup_steps": 150,
+      "timeline_steps": 1200,
+      "timeline_note": "LR time scale only; never a stopping limit; clamp floor afterwards"
+    },
+    "seed": 7,
+    "source_policy": "final formal frozen raw policy"
+  },
+  "profile_defaults": {
+    "total_steps": 3,
+    "per_rank_batch_size": 16,
+    "checkpoint_steps": [
+      1,
+      3
+    ]
+  },
+  "stages": {
+    "development": {
+      "action_split_roles": [
+        "train"
+      ],
+      "task_count": 36,
+      "available_action_episodes": 1800,
+      "selection_data": "full validation400 rollouts only; validation/test action values are never read",
+      "formal_run": {
+        "status": "pending_profile",
+        "expected_world_size": 1,
+        "total_steps": null,
+        "per_rank_batch_size": 64,
+        "gradient_accumulation_steps": 9,
+        "checkpoint_steps": [],
+        "stage_stop_steps": [],
+        "validation_steps": [],
+        "selection_rule": "best full400 validation from one dynamically stopped trajectory; earliest tie",
+        "profile_evidence": "pending"
+      }
+    },
+    "final": {
+      "action_split_roles": [
+        "train",
+        "validation"
+      ],
+      "task_count": 44,
+      "available_action_episodes": 2200,
+      "selection_data": "no test outcomes; retrain once from fresh identity after development selection",
+      "formal_run": {
+        "status": "blocked_not_part_of_aligned_baseline",
+        "expected_world_size": 8,
+        "total_steps": 0,
+        "per_rank_batch_size": 0,
+        "checkpoint_steps": [],
+        "maximum_wall_clock_minutes": 120,
+        "budget_role": "guardrail_not_target",
+        "selection_rule": "copy the frozen development hyperparameters and retrain from the prescribed fresh identity state; never resume the development LoRA; stop at the selected schedule or guardrail and record any apparent undertraining"
+      }
+    }
+  },
+  "checkpointing": {
+    "atomic_publish": true,
+    "retained_state": "shared LoRA, optimizer, scheduler, disabled BF16 scaler, per-rank RNG, logical optimizer cursor, physical microbatch cursor and topology, metrics cursor, contract and manifest"
+  },
+  "frozen_source": {
+    "run_name": "pi05_source_aligned_seed7_1k_20260915",
+    "optimizer_step": 1000,
+    "frozen_policy_subdir": "policy"
+  },
+  "training_recipe": {
+    "cross_rank_assignment": "deterministic disjoint global task offsets",
+    "exact_resume": "pure logical optimizer-step stream; physical topology, microbatches, loader seeds and rank RNG remain locked",
+    "kind": "hierarchical_task_episode_chunk_mixed_v1",
+    "loss_reduction": "equal samples per task then ordinary batch mean",
+    "physical_batch": "concatenate original four logical rank batches, then partition into physical rank microbatches",
+    "rank_task_binding": "none",
+    "sampling": "uniform task then no-replacement episode cycles then no-replacement action-chunk cycles",
+    "logical_world_size": 4,
+    "logical_per_rank_batch_size": 144,
+    "global_tasks_per_update": 36,
+    "global_samples_per_task_per_update": 16
+  },
+  "training_control": {
+    "kind": "validation_early_stopping",
+    "checkpoint_interval": 25,
+    "validation_interval": 50
+  }
+}

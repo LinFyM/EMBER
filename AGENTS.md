@@ -82,14 +82,15 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 ## 6. Fixed data and benchmark contract
 
 - LIBERO Spatial/Object/Goal/Long共40 tasks；
-- development split固定为`configs/libero_24_8_8_v1/`的24 train / 8 validation / 8 test，不得按结果改ID；
+- development使用active design登记的唯一显式24 train / 8 validation / 8 test协议；历史协议保留，不覆盖原结果。
+  Owner明确授权的覆盖重划须在fresh训练前冻结并审计完整任务等价泄漏，不得在运行中按结果改ID；
 - source corpus由LIBERO-90 specification audit排除与目标40重合的19 tasks后保留71 tasks，每task 50条成功episode；
 - successor Writer/meta-training可使用train24，以及LIBERO-90中经过精确语义/specification审计、明确排除固定
   validation/test tasks及其重复项的其它任务；必须保存显式allowlist与provenance，不得以更多同task episodes冒充
   更多独立meta-task mappings；
 - 不得使用读过目标40 actions的`pi05_libero`；
 - normalization只从过滤后的source actions/states计算并冻结；validation/test不得重算；
-- 方法选定后才允许按规定合并32 source / 8 test并从fresh重训。
+- 合并Validation重训只在Owner明确授权的合同中允许；不得从历史final-stage配置自行恢复。
 
 ## 7. Training and decision contract
 

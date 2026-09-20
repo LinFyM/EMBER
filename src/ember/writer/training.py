@@ -51,6 +51,19 @@ def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
             "video_order": "causal_RoPE_with_real_frame_positions_and_ordered_adjacent_roles"}
 
 
+def _validate_dynamic_schedule(config):
+    opt = config["optimization"]
+    if (any(type(opt.get(key)) is not int for key in
+            ("warmup_updates", "tail_start_update", "tail_end_update", "decay_updates"))
+            or not 0 <= opt["warmup_updates"] <= opt["tail_start_update"] < opt["tail_end_update"]
+            or opt["decay_updates"] <= opt["tail_end_update"]
+            or not 0 < opt["tail_final_ratio"] <= 1
+            or config["model"]["camera_view"] != "agentview"
+            or config["data"].get("teaching_episode") != "same_video"
+            or not config["data"].get("protocol")):
+        raise ValueError("dynamic Writer schedule or single-camera teaching contract changed")
+
+
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     require_continuation_config(config)
@@ -77,16 +90,7 @@ def _config(path: Path) -> dict[str, Any]:
     if dynamic:
         for key in ("warmup_updates", "tail_start_update", "tail_end_update", "tail_final_ratio", "decay_updates"):
             expected_optimization.pop(key)
-        opt = config["optimization"]
-        if (any(type(opt.get(key)) is not int for key in
-                ("warmup_updates", "tail_start_update", "tail_end_update", "decay_updates"))
-                or not 0 <= opt["warmup_updates"] <= opt["tail_start_update"] < opt["tail_end_update"]
-                or opt["decay_updates"] <= opt["tail_end_update"]
-                or not 0 < opt["tail_final_ratio"] <= 1
-                or config["model"]["camera_view"] != "agentview"
-                or config["data"].get("teaching_episode") != "same_video"
-                or not config["data"].get("protocol")):
-            raise ValueError("dynamic Writer schedule or single-camera teaching contract changed")
+        _validate_dynamic_schedule(config)
     if (config.get("schema_version") != CONFIG_SCHEMA
             or any(config["optimization"].get(key) != value for key, value in expected_optimization.items())
             or config["data"].get("teaching_episode") not in {"same_video", "cross_episode"}

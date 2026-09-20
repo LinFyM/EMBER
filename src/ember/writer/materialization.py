@@ -65,7 +65,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
             raise ValueError(f"supervised Writer checkpoint file changed: {name}")
     # Inspect scalar provenance without reading optimizer tensor payloads.
     trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True, weights_only=True)
-    if macro > run["config"]["data"]["maximum_updates"]:
+    if run["config"]["data"]["maximum_updates"] is not None and macro > run["config"]["data"]["maximum_updates"]:
         raise ValueError("checkpoint exceeds the registered training budget")
     observer = observer_mode_contract(run.get("model_config", {}))
     if run["model_config"] != run.get("config", {}).get("model"):
@@ -325,6 +325,7 @@ def _reusable_conditions(path, *, asset_root, run, checkpoint, selection):
     if (manifest.get("schema_version") != BANK_SCHEMA or manifest.get("kind") != BANK_KIND
             or manifest.get("status") != "sealed" or manifest.get("single_complete_rank16") is not True
             or manifest.get("writer_checkpoint") != checkpoint or manifest.get("source") != run["source"]
+            or manifest.get("task_protocol") != run["config"]["data"].get("protocol")
             or manifest.get("method") != method_metadata(run)
             or manifest.get("lora_contract") != file_record(lora_path)
             or Path(manifest.get("asset_root", "")).resolve() != asset_root.resolve()
@@ -333,7 +334,8 @@ def _reusable_conditions(path, *, asset_root, run, checkpoint, selection):
             or manifest.get("arm") not in {"correct", "same_task_other"}
             or not frozen_authority(manifest.get("materialization_git", {}))):
         raise ValueError("reused LoRAs require identical checkpoint/source/preprocessing/generation contracts")
-    validate_task_scope(manifest["tasks"], manifest["evaluation_role"], asset_root)
+    validate_task_scope(manifest["tasks"], manifest["evaluation_role"], asset_root,
+                        run["config"]["data"].get("protocol"))
     validate_information_wall(manifest)
     _inspect_conditions(manifest, path.parent, load_pi05_lora_contract(lora_path))
     return {row["condition_id"]: row for row in manifest["conditions"]}
@@ -391,12 +393,13 @@ def _materialize(
     from ember.writer.evaluation import validate_task_scope
 
     role = "train" if selection["evaluation_role"] == "development_train" else selection["evaluation_role"]
-    tasks = load_learning_tasks(asset_root, selection["task_ids"], role=role)
+    tasks = load_learning_tasks(asset_root, selection["task_ids"], role=role,
+                                protocol_path=run["config"]["data"].get("protocol"))
     rows = [{"global_task_id": task, "suite": value.suite, "task_id": value.suite_task_id,
              "language": value.authority.language, "split_role": role,
              "teacher_source": file_record(value.authority.path), "episodes": planned_episodes(selection, task)}
             for task, value in tasks.items()]
-    validate_task_scope(rows, selection["evaluation_role"], asset_root)
+    validate_task_scope(rows, selection["evaluation_role"], asset_root, run["config"]["data"].get("protocol"))
     task_rows = {row["global_task_id"]: row for row in rows}
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -413,6 +416,7 @@ def _materialize(
     no_video = selection["arm"] == "no_video"
     manifest = {"schema_version": BANK_SCHEMA, "kind": BANK_KIND, "status": "sealed",
                 "arm": selection["arm"], "evaluation_role": selection["evaluation_role"], "selection": dict(selection),
+                "task_protocol": run["config"]["data"].get("protocol"),
                 "asset_root": str(asset_root.resolve()), "source": run["source"],
                 "writer_checkpoint": checkpoint_record, "materialization_git": repository,
                 "lora_contract": file_record(lora_path), "method": method_metadata(run, selection["arm"]),

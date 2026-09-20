@@ -1,6 +1,15 @@
 # EMBER progress
 
-## 当前状态（2026-09-20，Test未达门槛，Owner要求先看报告）
+## 当前状态（2026-09-20，新goal：单次覆盖重训）
+
+Owner已授权采用专家最后的24/8/8＋12辅助方案重训EMBER与MT-BC，Source复用；性能及特异性正常后继续原后继实验。
+协议与训练入口接入完成。17:03启动一次性配置profile：gpu02:0,1,2,4 Writer9updates；gpu01:0 MT-BC3updates。两节点tmux与真实训练PID已核对，尚未启动正式训练。Active design：[覆盖重训合同](docs/coverage_retraining_design.md)。任务规格与36个训练HDF5 metadata覆盖审计通过，未读held动作。
+coverage_audit已完成36任务规格/metadata审计；训练组件分别完成并集成。CPU集成94项中原fixture缺data字段造成5项失败，修复fixture后45项视频测试通过；另8项协议/早停测试通过。
+配置profile与日志：`/data0/user/ymdai/ember_runs/coverage_retraining_20260920`。合计5卡；Writer含低负载共驻卡。完整结束后读结果，等待期间接入评测编排。
+新训练无固定2000/600硬终点，仅固定观察间隔；不追加fresh seed或k折；不达预期停下询问。
+低负载GPU可共驻，双节点live选卡；不监控代理、不读取部分评测成绩。
+
+## 前阶段已封存：旧Test未达门槛
 
 冻结Source1000 / MT-BC425 / EMBER1500的Test8各400已完成：78 / 74 / 82。
 EMBER只领先MT-BC8条（2pp），低于Owner至少40条的推进门槛；任务簇bootstrap95%CI为[-8.51,11.25]pp。

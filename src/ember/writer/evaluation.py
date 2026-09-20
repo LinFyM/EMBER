@@ -17,6 +17,7 @@ from ember.lora import (copy_task_lora_state_, expected_lora_state_shapes, ident
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
+from ember.task_protocol import load_task_authorities
 from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, adapter_metadata, condition_id,
     file_record, frozen_authority, inspect_writer_checkpoint, method_metadata, planned_episodes,
     selection_contract, source_matches)
@@ -28,11 +29,11 @@ EVALUATION_SCHEMA = "ember_video_writer_eval_adapter_v1"
 EPISODE_SCHEMA = "ember_video_writer_episode_v1"
 
 
-def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root: Path) -> None:
+def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root: Path,
+                        protocol_path: str | None = None) -> None:
     if role not in {"development_train", "validation", "test"}:
         raise ValueError("video Writer evaluation requires a registered target split")
-    protocol = read_json(asset_root / "configs/libero_24_8_8_v1/protocol.json")
-    manifest = read_json(asset_root / "configs/pi05_target_data_v1/manifest.json")
+    protocol, manifest = load_task_authorities(asset_root, protocol_path)
     canonical = {int(row["global_task_id"]): row for row in manifest["tasks"]}
     split = "train" if role == "development_train" else role
     expected = {(suite, task) for suite, roles in protocol["split"]["suites"].items() for task in roles[split]}
@@ -94,7 +95,7 @@ def _validate_video_frames(videos, demos, lengths, control=None) -> None:
 def _inspect_conditions(manifest: Mapping[str, Any], root: Path, lora) -> None:
     conditions = {row["condition_id"]: row for row in manifest["conditions"]}
     tasks = {row["global_task_id"]: row for row in manifest["tasks"]}
-    authority = read_json(Path(manifest["asset_root"]) / "configs/pi05_target_data_v1/manifest.json")
+    _, authority = load_task_authorities(Path(manifest["asset_root"]), manifest.get("task_protocol"))
     lengths = {row["global_task_id"]: row["demonstrations"]["episode_lengths"] for row in authority["tasks"]}
     referenced = {episode["condition_id"] for row in tasks.values() for episode in row["episodes"]}
     if len(conditions) != len(manifest["conditions"]) or set(conditions) != referenced:
@@ -162,7 +163,7 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
             or not frozen_authority(manifest["materialization_git"])
             or not source_matches(manifest["source"], source)):
         raise ValueError("video Writer bank scope/source/commit changed")
-    validate_task_scope(rows, role, Path(manifest["asset_root"]))
+    validate_task_scope(rows, role, Path(manifest["asset_root"]), manifest.get("task_protocol"))
     _validate_round(selection, rows, require_formal)
     for row in rows:
         if row["episodes"] != planned_episodes(selection, row["global_task_id"]):
@@ -202,6 +203,8 @@ def inspect_horizon_writer_bank(
         manifest = read_json(path)
         _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
+        if manifest.get("task_protocol") != run["config"]["data"].get("protocol"):
+            raise ValueError("bank task protocol differs from its trained Writer")
         if checkpoint != manifest["writer_checkpoint"] or manifest["method"] != method_metadata(run, manifest["arm"]) or not source_matches(run["source"], source):
             raise ValueError("Writer checkpoint or method provenance changed")
         diagnostic = inspect_diagnostic_contract(manifest.get("diagnostic_contract"), selection=manifest["selection"],

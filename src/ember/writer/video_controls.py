@@ -36,17 +36,18 @@ METHOD_FREEZE_DECLARATION = {
 
 def require_control_selection(selection):
     if selection["evaluation_role"] == "test" and (
-            selection["arm"] != "correct" or selection["K"] != 1
+            selection["arm"] not in {"correct", "same_task_other", "cross_suite_wrong", "shuffled", "reversed"}
+            or selection["K"] != 1
             or selection["mode"] != "per_init_ordinal" or selection["fixed_videos"]
             or selection["init_state_ids"] != list(range(50))
             or selection["video_pool"] != list(range(50))):
-        raise ValueError("sealed Test requires fixed test8, K1 correct and all 50 canonical state/video ordinals")
+        raise ValueError("sealed Test requires fixed test8, K1 correct or registered controls and all 50 canonical state/video ordinals")
     if selection["arm"] in CONTROL_ARMS and (
-            selection["evaluation_role"] != "validation" or selection["K"] != 1
+            selection["evaluation_role"] not in {"validation", "test"} or selection["K"] != 1
             or selection["mode"] != "per_init_ordinal" or selection["fixed_videos"]
             or selection["init_state_ids"] != list(range(50))
             or selection["video_pool"] != list(range(50))):
-        raise ValueError("selected-checkpoint controls require validation8, K1 and all 50 canonical state/video ordinals")
+        raise ValueError("selected-checkpoint controls require validation8/test8, K1 and all 50 canonical state/video ordinals")
 
 
 def video_task_id(selection, task):
@@ -55,7 +56,7 @@ def video_task_id(selection, task):
     if selection["arm"] != "cross_suite_wrong":
         return task
     keys = [(SUITE_ORDER[value // 10], value % 10) for value in selection["task_ids"]]
-    mapping = task_video_mapping(keys, {key: "validation" for key in keys}, "cross_suite_wrong")
+    mapping = task_video_mapping(keys, {key: selection["evaluation_role"] for key in keys}, "cross_suite_wrong")
     return next(row["video_global_task_id"] for row in mapping if row["language_global_task_id"] == task)
 
 
@@ -63,7 +64,7 @@ def control_provenance(selection, task, rows):
     donor = video_task_id(selection, task)
     source = rows[donor] if donor is not None else None
     return {"arm": selection["arm"], "selection_seed": selection["seed"],
-            "language_global_task_id": task, "language_split_role": "validation",
+            "language_global_task_id": task, "language_split_role": selection["evaluation_role"],
             "video_global_task_id": donor,
             "video_suite": source["suite"] if source else None,
             "video_task_id": source["task_id"] if source else None,
@@ -89,11 +90,17 @@ def controlled_frames(indices, *, control, demo):
 
 def inspect_diagnostic_contract(value, *, selection, checkpoint, run, asset_root):
     """Bind controls to one frozen selected checkpoint and its actual correct map."""
-    from ember.writer.materialization import file_record, method_metadata
-    from ember.writer.evaluation import _inspect_scope
-
     if selection["evaluation_role"] == "test":
-        return _inspect_sealed_test(value, selection=selection, checkpoint=checkpoint, run=run)
+        sealed = _inspect_sealed_test(value, selection=selection, checkpoint=checkpoint, run=run)
+        if selection["arm"] != "correct":
+            record, correct = _inspect_paired_correct(value["paired_correct_manifest"], selection=selection,
+                checkpoint=checkpoint, run=run, asset_root=asset_root)
+            reference_freeze = _inspect_sealed_test(correct.get("diagnostic_contract"),
+                selection=correct["selection"], checkpoint=checkpoint, run=run)
+            if reference_freeze["method_freeze"] != sealed["method_freeze"]:
+                raise ValueError("Test controls must retain the paired correct bank method freeze")
+            sealed["paired_correct_manifest"] = record
+        return sealed
     if selection["arm"] not in CONTROL_ARMS:
         if value is not None:
             raise ValueError("a frozen diagnostic declaration belongs only to video controls")
@@ -105,7 +112,16 @@ def inspect_diagnostic_contract(value, *, selection, checkpoint, run, asset_root
             or type(value.get("checkpoint_macro")) is not int
             or value["checkpoint_macro"] <= 0 or checkpoint.get("macro") != value["checkpoint_macro"]):
         raise ValueError("video controls require the explicit frozen selected-checkpoint diagnostic declaration")
-    reference = value["paired_correct_manifest"]
+    record, _ = _inspect_paired_correct(value["paired_correct_manifest"], selection=selection,
+        checkpoint=checkpoint, run=run, asset_root=asset_root)
+    return {**DIAGNOSTIC_DECLARATION, "checkpoint_macro": value["checkpoint_macro"], "paired_correct_manifest": record}
+
+
+def _inspect_paired_correct(reference, *, selection, checkpoint, run, asset_root):
+    """Reuse the canonical complete correct400 map for either held split."""
+    from ember.writer.materialization import file_record, method_metadata
+    from ember.writer.evaluation import _inspect_scope
+
     path = Path(reference["path"] if isinstance(reference, dict) else reference).resolve()
     record = file_record(path)
     if isinstance(reference, dict) and reference != record:
@@ -114,23 +130,27 @@ def inspect_diagnostic_contract(value, *, selection, checkpoint, run, asset_root
     if (correct.get("arm") != "correct" or correct.get("writer_checkpoint") != checkpoint
             or correct.get("selection") != dict(selection, arm="correct")
             or correct.get("method") != method_metadata(run)
+            or correct.get("task_protocol") != run["config"]["data"].get("protocol")
             or Path(correct["asset_root"]).resolve() != asset_root.resolve()):
         raise ValueError("diagnostic controls must retain the frozen selected-checkpoint correct400 checkpoint and map")
     keys = [(row["suite"], row["task_id"]) for row in correct["tasks"]]
-    _inspect_scope(correct, run["source"], keys, "validation", None, True)
+    _inspect_scope(correct, run["source"], keys, selection["evaluation_role"], None, True)
     references = {episode["condition_id"] for row in correct["tasks"] for episode in row["episodes"]}
     if len(correct["conditions"]) != 400 or {row["condition_id"] for row in correct["conditions"]} != references:
         raise ValueError("diagnostic reference must retain the complete 400-condition correct bank")
-    return {**DIAGNOSTIC_DECLARATION, "checkpoint_macro": value["checkpoint_macro"], "paired_correct_manifest": record}
+    return record, correct
 
 
 def _inspect_sealed_test(value, *, selection, checkpoint, run):
-    """Require the explicit end of training/design before the sole correct Test400."""
+    """Require the explicit end of training/design before correct Test400 or its paired frozen controls."""
     from ember.writer.materialization import file_record, method_metadata
 
     require_control_selection(selection)
+    fields = {*SEALED_TEST_DECLARATION, "checkpoint_macro", "method_freeze"}
+    if selection["arm"] != "correct":
+        fields.add("paired_correct_manifest")
     if (not isinstance(value, dict)
-            or set(value) != {*SEALED_TEST_DECLARATION, "checkpoint_macro", "method_freeze"}
+            or set(value) != fields
             or any(value.get(key) != expected for key, expected in SEALED_TEST_DECLARATION.items())
             or type(value.get("checkpoint_macro")) is not int
             or value["checkpoint_macro"] <= 0 or checkpoint.get("macro") != value["checkpoint_macro"]):

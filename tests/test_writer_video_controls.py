@@ -67,13 +67,16 @@ def test_partial_or_train_control_rounds_are_rejected(changes):
 
 @pytest.mark.parametrize("arm", CONTROL_ARMS[:-1])
 @pytest.mark.parametrize('camera_view', ['agentview', 'dual'])
-def test_real_declared_camera_pixels_are_reordered_before_complete_reads(tmp_path, arm, camera_view):
-    selected = selection(arm)
-    tasks = load_learning_tasks(ROOT, VALIDATION, role="validation")
-    rows = {task: {"suite": value.suite, "task_id": value.suite_task_id, "split_role": "validation",
+@pytest.mark.parametrize("role", ["validation", "test"])
+def test_real_declared_camera_pixels_are_reordered_before_complete_reads(tmp_path, arm, camera_view, role):
+    ids = TEST if role == "test" else VALIDATION
+    task_id = ids[0]
+    selected = selection(arm, role=role, task_ids=ids)
+    tasks = load_learning_tasks(ROOT, ids, role=role)
+    rows = {task: {"suite": value.suite, "task_id": value.suite_task_id, "split_role": role,
                    "teacher_source": {"path": str(value.authority.path), "bytes": value.authority.expected_bytes}}
             for task, value in tasks.items()}
-    control = control_provenance(selected, 1, rows)
+    control = control_provenance(selected, task_id, rows)
     donor, demo = tasks[control["video_global_task_id"]], 9
     donor = replace(donor, episode_lengths=(17,) * 50)
     indices = np.array([0, 5, 10, 15, 16])
@@ -102,12 +105,12 @@ def test_real_declared_camera_pixels_are_reordered_before_complete_reads(tmp_pat
     worker = object.__new__(materialization_workers.ResidentCompiler)
     worker.runtime, worker.store, worker.tasks = current, SimpleNamespace(load=load), tasks | {donor.authority.task_id: donor}
     worker.output, worker.record = tmp_path, {"path": "/frozen/900", "macro": 900}
-    record = worker.compile({"task": 1, "demos": [demo], "control": control})
+    record = worker.compile({"task": task_id, "demos": [demo], "control": control})
     content, displayed, evidence = controlled_frames(indices, control=control, demo=demo)
     assert evidence['transform_stage'] == 'declared_real_camera_RGB_before_complete_Writer_forward'
     assert torch.equal(prepared[0][0][0], torch.from_numpy(frames)[content])
     assert torch.equal(prepared[0][1][0], displayed)
-    assert prepared[0][2] == tasks[1].authority.language
+    assert prepared[0][2] == tasks[task_id].authority.language
     assert [value[0] for value in reads] == ["RGB", "writer"]
     assert record["video_control"] == control
     assert all(record["teacher_videos"][0][key] == value for key, value in evidence.items())
@@ -119,7 +122,7 @@ def test_real_declared_camera_pixels_are_reordered_before_complete_reads(tmp_pat
             evaluation._validate_video_frames(damaged, [demo], donor.episode_lengths, control)
     wrong = replace(donor, authority=replace(donor.authority, task_id=99))
     with pytest.raises(ValueError, match="actual donor"):
-        materialization._compile_condition(current, worker.store, tasks[1], [demo], tmp_path,
+        materialization._compile_condition(current, worker.store, tasks[task_id], [demo], tmp_path,
                                             worker.record, control=control, video_task=wrong)
 
 
@@ -246,7 +249,7 @@ def test_no_video_materializes_without_runtime_or_pixels_and_executes_source_ide
 
 
 @pytest.fixture
-def frozen_test_assets(frozen_control_assets, tmp_path):
+def frozen_test_assets(frozen_control_assets, tmp_path, request):
     root, run, checkpoint, _, _, lora = frozen_control_assets
     target_path = root / "configs/pi05_target_data_v1/manifest.json"
     target = json.loads(target_path.read_text())
@@ -256,6 +259,24 @@ def frozen_test_assets(frozen_control_assets, tmp_path):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"synthetic fixture; no real Test episode is opened")
             row["hdf5"]["bytes"] = path.stat().st_size
+    if getattr(request, "param", None) == "coverage":
+        protocol_path = "configs/libero_24_8_8_coverage_v1/protocol.json"
+        coverage = json.loads((ROOT / "configs/libero_24_8_8_coverage_v1/manifest.json").read_text())
+        for relative in (protocol_path, "configs/pi05_source_corpus_v1/source_manifest.json"):
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text((ROOT / relative).read_text())
+        canonical = {row["global_task_id"]: row for row in target["tasks"]}
+        for row in coverage["tasks"]:
+            if row["global_task_id"] in canonical:
+                if row["split_role"] == "test":
+                    path = root / "data/datasets" / target["dataset"]["revision"] / row["hdf5"]["relative_path"]
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(b"synthetic coverage Test RGB fixture")
+                    canonical[row["global_task_id"]]["hdf5"]["bytes"] = path.stat().st_size
+                row["hdf5"]["bytes"] = canonical[row["global_task_id"]]["hdf5"]["bytes"]
+        (root / "configs/libero_24_8_8_coverage_v1/manifest.json").write_text(json.dumps(coverage))
+        run["config"]["data"]["protocol"] = protocol_path
     target_path.write_text(json.dumps(target))
     freeze = tmp_path / "method_freeze.json"
     freeze.write_text(json.dumps(METHOD_FREEZE_DECLARATION | {"terminal_macro": 900,
@@ -294,8 +315,8 @@ def test_test_requires_the_exact_frozen_method_and_terminal_checkpoint(frozen_te
 
 @pytest.mark.parametrize("changes", [dict(cardinality=2), dict(init_state_ids=tuple(range(49))),
     dict(video_pool=tuple(range(49))), dict(mode="fixed_per_task"),
-    *(dict(arm=arm) for arm in ("same_task_other", *CONTROL_ARMS))])
-def test_test_cannot_select_partial_rounds_few_shot_or_other_arms(changes):
+    dict(arm="no_video")])
+def test_test_cannot_select_partial_rounds_few_shot_or_unregistered_arms(changes):
     values = dict(role="test", task_ids=TEST, cardinality=1, arm="correct", mode="per_init_ordinal",
                   seed=7, init_state_ids=tuple(range(50)), video_pool=tuple(range(50)))
     with pytest.raises(ValueError):
@@ -304,12 +325,16 @@ def test_test_cannot_select_partial_rounds_few_shot_or_other_arms(changes):
 
 @pytest.fixture
 def test_cpu_compiler(frozen_test_assets, monkeypatch):
-    root, _, _, _, lora = frozen_test_assets
-    tasks = load_learning_tasks(root, TEST, role="test")
+    from ember.task_protocol import load_task_authorities
+    root, run, _, _, lora = frozen_test_assets
+    protocol = run["config"]["data"].get("protocol")
+    _, manifest = load_task_authorities(root, protocol)
+    test_ids = tuple(row["global_task_id"] for row in manifest["tasks"] if row["split_role"] == "test")
+    tasks = load_learning_tasks(root, test_ids, role="test", protocol_path=protocol)
     reads, stages = [], []
 
     def load(task, demo):
-        assert task in TEST and 0 <= demo < 50
+        assert task in tasks and 0 <= demo < 50
         reads.append((task, demo))
         raw = tasks[task].episode_lengths[demo]
         indices = list(range(0, raw, 5))
@@ -413,3 +438,85 @@ def test_complete_frozen_test400_uses_the_canonical_compiler_and_official_adapte
     with pytest.raises(Pi05EvaluationError, match="freeze"):
         evaluation.inspect_horizon_writer_bank(manifest_path=path, source=SOURCE, task_keys=keys,
             evaluation_role="test", require_formal=True)
+
+
+@pytest.fixture
+def paired_test_bank(frozen_test_assets, test_cpu_compiler, tmp_path):
+    from ember.task_protocol import load_task_authorities
+    root, run, checkpoint, declaration, _ = frozen_test_assets
+    _, manifest = load_task_authorities(root, run["config"]["data"].get("protocol"))
+    ids = [row["global_task_id"] for row in manifest["tasks"] if row["split_role"] == "test"]
+    path, = materialization.materialize_requests(asset_root=root, device=torch.device("cpu"), requests=[{
+        "checkpoint": checkpoint["path"], "output": str(tmp_path / "paired_correct"), "role": "test",
+        "task_ids": ids, "k": 1, "arm": "correct", "state_count": 50, "seed": 7,
+        "diagnostic_contract": declaration}])
+    return path, declaration | {"paired_correct_manifest": str(path)}, ids
+
+
+@pytest.mark.parametrize("frozen_test_assets", ["coverage"], indirect=True)
+@pytest.mark.parametrize("arm", ("same_task_other", "cross_suite_wrong", "shuffled", "reversed"))
+def test_frozen_coverage_test_controls_use_same_checkpoint_full_pairing_and_real_compiler(
+    frozen_test_assets, test_cpu_compiler, paired_test_bank, tmp_path, arm):
+    root, _, checkpoint, _, _ = frozen_test_assets
+    anchor, declaration, ids = paired_test_bank
+    assert ids == [8, 9, 10, 18, 24, 27, 30, 33]
+    reference = json.loads(anchor.read_text())
+    path, = materialization.materialize_requests(asset_root=root, device=torch.device("cpu"), requests=[{
+        "checkpoint": checkpoint["path"], "output": str(tmp_path / arm), "role": "test",
+        "task_ids": ids, "k": 1, "arm": arm, "state_count": 50, "seed": 7,
+        "diagnostic_contract": declaration}])
+    keys = [(row["suite"], row["task_id"]) for row in reference["tasks"]]
+    adapter = evaluation.inspect_horizon_writer_bank(manifest_path=path, source=SOURCE, task_keys=keys,
+        evaluation_role="test", require_formal=True)
+    assert len(adapter["conditions"]) == 400
+    assert adapter["task_protocol"] == "configs/libero_24_8_8_coverage_v1/protocol.json"
+    assert adapter["diagnostic_contract"]["paired_correct_manifest"] == file_record(anchor)
+    assert len(test_cpu_compiler[0]) == 800
+    for actual, correct in zip(adapter["tasks"], reference["tasks"], strict=True):
+        assert actual["split_role"] == "test"
+        assert sorted(row["teacher_demo_indices"][0] for row in actual["episodes"]) == list(range(50))
+        for row, paired in zip(actual["episodes"], correct["episodes"], strict=True):
+            assert row["init_state_id"] == paired["init_state_id"]
+            assert row["paired_correct_demos"] == paired["paired_correct_demos"]
+            assert row["paired_other_demos"] == paired["paired_other_demos"]
+            assert (row["teacher_demo_indices"] != paired["teacher_demo_indices"]) == (arm == "same_task_other")
+    if arm != "same_task_other":
+        for condition in adapter["conditions"]:
+            control = condition["video_control"]
+            assert control["language_split_role"] == control["video_split_role"] == "test"
+            if arm == "cross_suite_wrong":
+                assert control["video_global_task_id"] // 10 != control["language_global_task_id"] // 10
+            elif arm == "reversed":
+                video = condition["teacher_videos"][0]
+                assert video["source_frame_indices"] == list(reversed(video["frame_indices"]))
+    # Evaluator rechecks the immutable pairing authority after materialization.
+    damaged = json.loads(anchor.read_text())
+    damaged["selection"]["seed"] += 1
+    anchor.write_text(json.dumps(damaged))
+    with pytest.raises(Pi05EvaluationError, match="manifest changed|checkpoint and map"):
+        evaluation.inspect_horizon_writer_bank(manifest_path=path, source=SOURCE, task_keys=keys,
+            evaluation_role="test", require_formal=True)
+
+
+@pytest.mark.parametrize("damage", ["missing_pair", "unsealed_pair", "seed", "protocol", "partial", "feedback"])
+def test_test_controls_reject_unsealed_or_changed_correct_reference(
+    frozen_test_assets, paired_test_bank, damage):
+    root, run, checkpoint, _, _ = frozen_test_assets
+    path, declaration, ids = paired_test_bank
+    selected = selection("same_task_other", role="test", task_ids=ids)
+    reference = json.loads(path.read_text())
+    if damage == "missing_pair":
+        declaration.pop("paired_correct_manifest")
+    elif damage == "feedback":
+        declaration["training_feedback"] = True
+    elif damage == "seed":
+        selected["seed"] += 1
+    elif damage == "protocol":
+        reference["task_protocol"] = "another/protocol.json"
+    elif damage == "partial":
+        reference["conditions"].pop()
+    else:
+        reference["diagnostic_contract"] = None
+    path.write_text(json.dumps(reference))
+    with pytest.raises(ValueError):
+        inspect_diagnostic_contract(declaration, selection=selected, checkpoint=checkpoint, run=run, asset_root=root)

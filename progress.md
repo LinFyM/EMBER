@@ -2,6 +2,8 @@
 
 ## Writer冻结与MT-BC续行（2026-09-21）
 
+已从正式完整面板导出选中Writer的九节点CSV、可复用SVG/PNG与绘图源码、实测训练循环成本和逐任务/逐suite配对CSV，原件在新study/analysis。选中Writer1000相对Source Validation为117对51/400，严格配对保留/获得/丢失36/81/15，覆盖同为4/8任务。新增成功主要集中在Object1（1→43）、Long1（5→27），Spatial3为0→8；Goal6为42→39、Spatial6为3→0，Long9、Goal3、Object6仍是0。Goal6的BDDL实际为cream cheese On bowl，不能从语言中的“in”推断训练已覆盖In。Writer1800更新循环实测合计17684.20秒、均值9.825秒/步、峰值reserved22.803GiB；不包含物化、评测与阶段开销。冻结Writer的Test correct声明已经用新eval runtime完成只读元数据准入校验，尚未启动Test。
+
 Writer step1800完整correct Validation400及控制器均退出0，92/400。1600→1800严格配对保留/获得/丢失82/10/29、churn39、覆盖5→5；最近完整节点满足登记的持续下降规则，控制器正式`stop=true, reason=sustained_decline`，没有再启动下一段。9个完整节点依次为110、92、115、87、117、80、97、111、92；唯一最高为step1000的117，已写`writer_selection.json`与`method_freeze.json`，无并列other破同分。选中step1000的same-task-other Validation400正在gpu02用0/1/2/4物化及评测；对应原始correct400与checkpoint均保留。首个对照launcher因冻结runtime提交号抄漏四位，在任何物化/评测前exit1；保留旧exit及故障JSON，原子修正后重新启动同一checkpoint、seed、映射与评测合同。此次工程错误不改变科学结果。
 
 MT-BC step200完整correct Validation400退出0，133/400，刷新最佳且正式`stop=false`；150→200严格配对保留/获得/丢失77/56/22、churn78、覆盖6→6。唯一控制器已自动进入step250，当前两卡阶段不为重新分卡而中断；下一阶段按live卡况重新选择。单卡首50更新平均148.902秒/步，双卡51–150更新约75.3–75.4秒/步，约1.98倍更新吞吐。本轮Writer已结束，暂无继续调整其物理训练配置的收益；释放的gpu02四卡立即用于选中Writer的Validation视频对照。对照及MT-BC均按完整exit和400行结果裁决，不读取部分成功率。

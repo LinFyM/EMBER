@@ -134,12 +134,12 @@ def training_data_factory(tmp_path, monkeypatch):
             obs.create_dataset("gripper_states", data=np.zeros((length, 2), dtype=np.float32))
             for camera in ("agentview_rgb", "eye_in_hand_rgb"):
                 obs.create_dataset(camera, data=np.zeros((length, 2, 2, 3), dtype=np.uint8))
-    def metadata(_asset_root, task_ids):
+    def metadata(_asset_root, task_ids, **kwargs):
         return {task: LearningTask(WriterTaskAuthority(task, f"task{task}", path, path.stat().st_size),
                                    f"suite{task // 6}", task % 6, lengths) for task in task_ids}
     monkeypatch.setattr("ember.writer.learning_data.load_learning_tasks", metadata)
     opened = []
-    def create(*, camera_view="dual", **changes):
+    def create(*, camera_view="dual", planned_updates=None, **changes):
         config = {"seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722,
                   "maximum_updates": 12, "teaching_seed": 20260919, "teaching_queries_per_task": 7,
                   "teaching_episode": "same_video", "grouping": "baseline", "event_schema_version": EVENT_SCHEMA,
@@ -148,7 +148,7 @@ def training_data_factory(tmp_path, monkeypatch):
                   "action_demos": list(range(46)), "diagnostic_action_demos": list(range(46, 50)),
                   "held_video_demos": list(range(46, 50)), "action_start_offset": 1,
                   "query_alignment": "post_action_observation_future_control_v1", **changes}
-        data = WriterTrainingData(tmp_path, config, camera_view=camera_view)
+        data = WriterTrainingData(tmp_path, config, camera_view=camera_view, planned_updates=planned_updates)
         opened.append(data)
         return data
     yield create
@@ -361,3 +361,22 @@ def test_frozen_diagnostics_use_held_actions_and_exclude_the_condition_video(tra
 def test_training_plan_rejects_contract_and_round_changes(training_data_factory, change):
     with pytest.raises(ValueError):
         training_data_factory(**change)
+
+
+def test_dynamic_train36_balances_and_resumes_across_partial_round(training_data_factory):
+    options = dict(maximum_updates=None, protocol="coverage/protocol.json", task_ids=list(range(36)))
+    first = training_data_factory(planned_updates=200, **options)
+    longer = training_data_factory(planned_updates=400, **options)
+    assert first.event_plan() == longer.event_plan()
+    assert "events" not in first.event_plan() and "groups" not in first.event_plan()
+    for step in range(200):
+        assert first.next_iteration() == longer.next_iteration()
+        if (step + 1) % 9 == 0:
+            assert len(set(first.counts.values())) == 1
+    resumed = training_data_factory(planned_updates=400, **options)
+    resumed.restore_sampler(json.loads(json.dumps(first.sampler_state())))
+    for _ in range(200, 400):
+        assert resumed.next_iteration() == longer.next_iteration()
+    assert resumed.sampler_state() == longer.sampler_state()
+    assert all(event["teacher_demo"] not in event["action_demos"] for event in resumed._events)
+    assert all(event["teaching"]["action_demos"] == [event["teacher_demo"]] * 7 for event in resumed._events)

@@ -17,6 +17,13 @@ CONTINUATION = {
 def require_continuation_config(config):
     declaration = config.get("continuation")
     budget = config["data"].get("maximum_updates")
+    control = config.get("training_control")
+    if control is not None:
+        if (declaration is not None or budget is not None
+                or control != {"kind": "validation_early_stopping", "checkpoint_interval": 100,
+                               "validation_interval": 200}):
+            raise ValueError("dynamic training requires the registered validation control and no fixed budget")
+        return
     if (type(budget) is not int or budget != (2100 if declaration else 1500)
             or (declaration is not None and declaration != CONTINUATION)):
         raise ValueError("canonical training budget or continuation scientific contract changed")

@@ -1,4 +1,4 @@
-"""Train24 sampling for supervised video-to-LoRA learning.
+"""Registered-task sampling for supervised video-to-LoRA learning.
 
 Task and episode identities are orchestration metadata. The model receives only
 the returned RGB arrays, real frame indices and exact task language.
@@ -15,7 +15,6 @@ import numpy as np
 import torch
 from torch.utils.data import default_collate
 
-from ember.pi05_source_checkpoint import read_json
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import task_logical_batch_policy_rng_seed
 from ember.writer.continuation import require_extended_prefix
@@ -30,13 +29,13 @@ class LearningTask:
 
 
 def load_learning_tasks(
-    asset_root: Path, task_ids: Sequence[int], *, role: str = "train",
+    asset_root: Path, task_ids: Sequence[int], *, role: str = "train", protocol_path: str | None = None,
 ) -> dict[int, LearningTask]:
     """Load task metadata only; training callers retain the fixed train default."""
     if role not in {"train", "validation", "test"}:
         raise ValueError("task metadata requires a registered target split")
-    manifest = read_json(asset_root / "configs/pi05_target_data_v1/manifest.json")
-    protocol = read_json(asset_root / "configs/libero_24_8_8_v1/protocol.json")
+    from ember.task_protocol import load_task_authorities
+    _, manifest = load_task_authorities(asset_root, protocol_path)
     selected = tuple(map(int, task_ids))
     if not selected or len(set(selected)) != len(selected):
         raise ValueError("learning tasks must be explicit and unique")
@@ -46,7 +45,7 @@ def load_learning_tasks(
     for task_id in selected:
         row = rows[task_id]
         suite, local = row["suite"], int(row["task_id"])
-        if row["split_role"] != role or local not in protocol["split"]["suites"][suite][role]:
+        if row["split_role"] != role:
             raise ValueError("selected task crosses the fixed target split")
         authority = WriterTaskAuthority(
             task_id, str(row["language"]), data_root / row["hdf5"]["relative_path"], int(row["hdf5"]["bytes"]),
@@ -79,7 +78,8 @@ def _episode_queries(task, lengths, order, *, seed, cursor, count, teacher_demo=
 class WriterTrainingData:
     """Fixed task/video/query events, grouped independently of device ownership."""
 
-    def __init__(self, asset_root: Path, config: Mapping[str, Any], *, camera_view: str = "dual") -> None:
+    def __init__(self, asset_root: Path, config: Mapping[str, Any], *, camera_view: str = "dual",
+                 planned_updates: int | None = None) -> None:
         self.asset_root, self.config = asset_root, deepcopy(dict(config))
         self._validate_config()
         if camera_view not in ("agentview", "dual"):
@@ -87,12 +87,19 @@ class WriterTrainingData:
         self.seed = config["seed"]
         self.sampler_seed = config["sampler_seed"]
         self.teacher_video_seed = config["teacher_video_seed"]
-        self.maximum_updates = config["maximum_updates"]
+        self.dynamic = config["maximum_updates"] is None
+        if self.dynamic and (type(planned_updates) is not int or planned_updates <= 0):
+            raise ValueError("dynamic events require a positive planned segment stop")
+        self.maximum_updates = planned_updates if self.dynamic else config["maximum_updates"]
         self.camera_view, self.conditions_per_task = camera_view, 1
-        self.tasks = load_learning_tasks(asset_root, config["task_ids"])
+        kwargs = {"protocol_path": config["protocol"]} if config.get("protocol") else {}
+        self.tasks = load_learning_tasks(asset_root, config["task_ids"], **kwargs)
         self.task_ids = tuple(sorted(self.tasks))
-        if len(self.task_ids) != 24 or len({task.suite for task in self.tasks.values()}) != 4:
-            raise ValueError("training events require the complete fixed train24 split")
+        if len(self.task_ids) != (36 if self.dynamic else 24):
+            raise ValueError("training events require the complete registered train split")
+        self.round_updates = len(self.task_ids) // 4
+        self.rounds = (self.maximum_updates + self.round_updates - 1) // self.round_updates
+        self.generated_updates = self.rounds * self.round_updates
         self.video_pool = tuple(config["video_demos"])
         self.action_pool = tuple(config["action_demos"])
         self.diagnostic_pool = tuple(config["diagnostic_action_demos"])
@@ -119,11 +126,14 @@ class WriterTrainingData:
             raise ValueError("Writer requires post-action observations with future-control labels")
         if config.get("event_schema_version") != EVENT_SCHEMA:
             raise ValueError("training event schema must be explicitly registered")
-        for name in ("seed", "sampler_seed", "teacher_video_seed", "teaching_seed", "maximum_updates"):
+        for name in ("seed", "sampler_seed", "teacher_video_seed", "teaching_seed"):
             if type(config.get(name)) is not int or config[name] < 0:
                 raise ValueError(f"training event {name} must be a non-negative integer")
-        if not 0 < config["maximum_updates"] <= MAXIMUM_UPDATES or config["maximum_updates"] % 6:
+        budget = config.get("maximum_updates")
+        if budget is not None and (type(budget) is not int or not 0 < budget <= MAXIMUM_UPDATES or budget % 6):
             raise ValueError("training events require complete six-update rounds within the 2100-update ceiling")
+        if budget is None and (not config.get("protocol") or config.get("grouping") != "baseline"):
+            raise ValueError("dynamic training requires an explicit task protocol and baseline rounds")
         if (config.get("tasks_per_update") != 4 or config.get("conditions_per_task") != 1
                 or config.get("queries_per_task") != 21 or tuple(config["cardinalities"]) != (1,)):
             raise ValueError("training events require four tasks, one video and 21 queries per task")
@@ -140,24 +150,24 @@ class WriterTrainingData:
         grouping = self.config.get("grouping")
         if grouping == "baseline" and "event_groups" not in self.config:
             groups = []
-            for occurrence in range(self.maximum_updates // 6):
+            for occurrence in range(self.rounds):
                 order = np.random.default_rng(
                     np.random.SeedSequence([self.sampler_seed, occurrence]),
                 ).permutation(self.task_ids)
-                groups.extend(order[start:start + 4].tolist() for start in range(0, 24, 4))
+                groups.extend(order[start:start + 4].tolist() for start in range(0, len(self.task_ids), 4))
         elif grouping == "explicit":
             groups = self.config.get("event_groups", ())
         else:
             raise ValueError("grouping must be baseline or explicitly supplied event_groups")
-        if (len(groups) != self.maximum_updates or any(
+        if (len(groups) != self.generated_updates or any(
                 len(group) != 4 or any(type(task) is not int for task in group)
                 or len(set(group)) != 4 for group in groups)):
             raise ValueError("event_groups require exactly four distinct tasks per update")
-        for start in range(0, self.maximum_updates, 6):
-            if sorted(task for group in groups[start:start + 6] for task in group) != list(self.task_ids):
-                raise ValueError("each round must contain every train24 event exactly once")
+        for start in range(0, self.generated_updates, self.round_updates):
+            if sorted(task for group in groups[start:start + self.round_updates] for task in group) != list(self.task_ids):
+                raise ValueError("each round must contain every registered task event exactly once")
         task_offset = {task: offset for offset, task in enumerate(self.task_ids)}
-        return tuple(tuple((step // 6) * 24 + task_offset[task] for task in group)
+        return tuple(tuple((step // self.round_updates) * len(self.task_ids) + task_offset[task] for task in group)
                      for step, group in enumerate(groups))
 
     def _build_events(self) -> tuple[dict[str, Any], ...]:
@@ -170,7 +180,7 @@ class WriterTrainingData:
                 np.random.SeedSequence([self.sampler_seed, task, 0xE91]),
             ).permutation(self.action_pool).tolist()
             cursor = 0
-            for occurrence in range(self.maximum_updates // 6):
+            for occurrence in range(self.rounds):
                 cycle, offset = divmod(occurrence, len(self.video_pool))
                 teacher = int(np.random.default_rng(np.random.SeedSequence(
                     [self.teacher_video_seed, task, cycle, 0x71DE0],
@@ -215,18 +225,27 @@ class WriterTrainingData:
                 "episode_relation": self.config["teaching_episode"], "sampling_with_replacement": replacement}
 
     def _event_contract(self) -> dict[str, Any]:
-        return {"schema_version": EVENT_SCHEMA, "seed": self.seed, "sampler_seed": self.sampler_seed,
+        contract = {"schema_version": EVENT_SCHEMA, "seed": self.seed, "sampler_seed": self.sampler_seed,
                 "teacher_video_seed": self.teacher_video_seed, "maximum_updates": self.maximum_updates,
-                "grouping": self.config["grouping"], "groups": [list(group) for group in self._groups],
+                "grouping": self.config["grouping"],
                 "task_ids": list(self.task_ids), "video_demos": list(self.video_pool),
                 "action_demos": list(self.action_pool), "queries_per_task": 21,
                 "teaching_queries_per_task": 7, "teaching_seed": self.config["teaching_seed"],
                 "teaching_episode": self.config["teaching_episode"],
                 "action_start_offset": 1, "query_alignment": self.config["query_alignment"],
                 "episode_lengths": [list(self.tasks[task].episode_lengths) for task in self.task_ids]}
+        if self.dynamic:
+            contract.update(maximum_updates=None, protocol=self.config["protocol"],
+                            algorithm="balanced_task_rounds_cross_episode_queries_v1",
+                            tasks_per_update=4, round_updates=self.round_updates)
+        else:
+            contract["groups"] = [list(group) for group in self._groups]
+        return contract
 
     def event_plan(self) -> dict[str, Any]:
-        """Return all events in round/task order; groups reference zero-based event indices."""
+        """Register the stable dynamic algorithm or the complete legacy bounded plan."""
+        if self.dynamic:
+            return self._event_contract()
         return {**self._event_contract(), "group_reference": "zero_based_event_index",
                 "event_order": "occurrence_then_sorted_task", "events": deepcopy(list(self._events))}
 
@@ -258,9 +277,9 @@ class WriterTrainingData:
     def action_batch(self, task: int, occurrence: int, demos: Sequence[int], *, query_seed: int,
                      query_offset: int = 0, query_count: int | None = None, teaching: bool = False):
         if (task not in self.tasks or type(occurrence) is not int
-                or not 0 <= occurrence < self.maximum_updates // 6):
+                or not 0 <= occurrence < self.rounds):
             raise ValueError("action query is outside the registered task/visit events")
-        event = self._events[occurrence * 24 + self.task_ids.index(task)]
+        event = self._events[occurrence * len(self.task_ids) + self.task_ids.index(task)]
         if tuple(demos) != (event["teacher_demo"],) or query_seed != event["query_seed"]:
             raise ValueError("action query differs from its registered training event")
         if teaching:
@@ -328,7 +347,7 @@ class WriterTrainingData:
         elif previous != expected:
             raise ValueError("sampling event contract or grouping changed")
         step = state.get("next_step")
-        if type(step) is not int or not 0 <= step <= expected["maximum_updates"]:
+        if type(step) is not int or not 0 <= step <= self.maximum_updates:
             raise ValueError("sampler step is outside the registered training plan")
         counts = {int(task): count for task, count in state["task_occurrences"].items()}
         expected = dict.fromkeys(self.task_ids, 0)

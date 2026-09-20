@@ -73,6 +73,20 @@ def _config(path: Path) -> dict[str, Any]:
         "seed": 7, "lr": 3e-4, "betas": [.9, .95], "eps": 1e-8, "weight_decay": 1e-4,
         "grad_clip": 1., "warmup_updates": 100, "decay_updates": 12000, "decay_lr": 1e-5,
     }
+    dynamic = config.get("training_control") is not None
+    if dynamic:
+        for key in ("warmup_updates", "tail_start_update", "tail_end_update", "tail_final_ratio", "decay_updates"):
+            expected_optimization.pop(key)
+        opt = config["optimization"]
+        if (any(type(opt.get(key)) is not int for key in
+                ("warmup_updates", "tail_start_update", "tail_end_update", "decay_updates"))
+                or not 0 <= opt["warmup_updates"] <= opt["tail_start_update"] < opt["tail_end_update"]
+                or opt["decay_updates"] <= opt["tail_end_update"]
+                or not 0 < opt["tail_final_ratio"] <= 1
+                or config["model"]["camera_view"] != "agentview"
+                or config["data"].get("teaching_episode") != "same_video"
+                or not config["data"].get("protocol")):
+            raise ValueError("dynamic Writer schedule or single-camera teaching contract changed")
     if (config.get("schema_version") != CONFIG_SCHEMA
             or any(config["optimization"].get(key) != value for key, value in expected_optimization.items())
             or config["data"].get("teaching_episode") not in {"same_video", "cross_episode"}
@@ -89,8 +103,8 @@ def _config(path: Path) -> dict[str, Any]:
                           ("diagnostic_action_demos", range(46, 50)), ("held_video_demos", range(46, 50))):
         if config["data"][key] != list(expected):
             raise ValueError(f"registered episode roles changed: {key}")
-    if len(config["data"]["task_ids"]) != 24:
-        raise ValueError("development gradients require all fixed train24 tasks")
+    if len(set(config["data"]["task_ids"])) != (36 if dynamic else 24):
+        raise ValueError("development gradients require the complete registered training task set")
     if any(type(value) is not int or value <= 0 for value in config["runtime"].values()):
         raise ValueError("runtime batches and cache budget must be positive integers")
     if type(config["observer"]["frame_chunk"]) is not int or config["observer"]["frame_chunk"] <= 0:
@@ -396,6 +410,15 @@ def _validate_checkpoint_nodes(nodes, *, allow_empty=False):
 
 def _checkpoint_nodes(args, config):
     supplied = getattr(args, "checkpoint_updates", None)
+    if config.get("training_control"):
+        stop = args.stop_after_step
+        if type(stop) is not int or stop <= 0:
+            raise ValueError("dynamic training requires an explicit positive --stop-after-step")
+        interval = config["training_control"]["checkpoint_interval"]
+        nodes = tuple(range(interval, stop + 1, interval))
+        if supplied is not None and tuple(map(int, supplied.split(","))) != nodes:
+            raise ValueError("dynamic checkpoint nodes must follow the registered interval")
+        return nodes
     nodes = tuple(config["evidence"]["checkpoint_updates"]) if supplied is None else tuple(map(int, supplied.split(",")))
     _validate_checkpoint_nodes(nodes, allow_empty=args.mode != "formal")
     return nodes
@@ -406,6 +429,10 @@ def _segment_limit(args, config):
     stop = args.stop_after_step if args.stop_after_step is not None else (nodes[-1] if nodes else None)
     if type(stop) is not int or stop <= 0:
         raise ValueError("smoke/profile without registered nodes needs an explicit positive --stop-after-step")
+    if config.get("training_control"):
+        if args.mode == "formal" and stop % config["training_control"]["validation_interval"]:
+            raise ValueError("formal dynamic segments must end at a complete validation boundary")
+        return stop
     if args.mode == "formal" and stop != nodes[-1]:
         raise ValueError("formal segment must stop at the last registered checkpoint node")
     if stop > config["data"]["maximum_updates"]:
@@ -504,7 +531,7 @@ def run(args: argparse.Namespace) -> None:
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
     data = WriterTrainingData(args.asset_root, config["data"],
-                              camera_view=config["observer"]["camera_view"])
+                              camera_view=config["observer"]["camera_view"], planned_updates=stop)
     if context.is_main:
         args.output.mkdir(parents=True, exist_ok=True)
         _publish_event_plan(args, data.event_plan())

@@ -4,9 +4,11 @@
 
 Owner已授权执行冻结1500的论文实验，并明确Test至少领先MT-BC40/400、FT独立演示选点与负结果暂停要求。
 Active design：[paper_experiments_design](docs/paper_experiments_design.md)。24任务MT-BC Test入口已实现并推送45a39ba1；13项Source-SFT与45项Writer controls/Test测试通过。
-Test能力三组已提交：Source/MT-BC各gpu01两卡，EMBER在gpu02两卡先物化后评测，合计六卡；各组400完整行。
+初次nohup启动没有存活到实际计算；Owner指出后核实两节点无本轮进程、零评测行，证据见study/initial_launch_failure.json。
+已改用tmux持久启动器：Source/MT-BC分别在gpu01的0,1/2,5上实际启动六个worker；EMBER在gpu02的0,1上实际启动物化进程，之后接评测。科学合同不变。
+EMBER原定gpu02:3被其它任务占用，preflight在物化前拒绝；改用0,1的记录见study/allocation_retry.json。总占用仍为六卡。
 Study为runs/analysis/paper_experiments_20260920；launch_contract.json记录固定资产、阈值和资源，run_panel.sh为实际命令。
-Luna completion_watch只监控三个exit标志，完成/异常通知，不读取中间成绩。完整三组后运行study/readout.py核对并裁决。
+已停止Luna completion_watch和其等待进程；改为主线程直接等待tmux完成信号，启动后一次核实实际进程。完整三组后运行study/readout.py核对并裁决。
 正式frozen worktree为.codex/tmp/paper-runtime（45a39ba1），运行结束清理；主树不参与当前计算。
 现有main干净起点cc320bf4；上午全面清理已完成，保留原件并按本轮用途维护资产，不重复无关全树扫描。
 训练/评测按完整阶段完成通知再读结果，不反复轮询；不达预期停止后续任务询问Owner。

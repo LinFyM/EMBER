@@ -577,7 +577,7 @@ def test_static_source_sft_adapter_is_shared_and_role_gated(tmp_path: Path) -> N
     )
     assert seen["evaluation_role"] == "seen_panel"
 
-    with pytest.raises(Pi05SourceSFTError, match="cannot be evaluated"):
+    with pytest.raises(Pi05SourceSFTError, match="task panel changed"):
         inspect_source_sft_evaluation(
             config_path=CONFIG,
             checkpoint=checkpoint,
@@ -596,3 +596,25 @@ def test_static_source_sft_adapter_is_shared_and_role_gated(tmp_path: Path) -> N
             evaluation_role="validation",
             require_formal=False,
         )
+
+
+def test_completed_development_model_can_report_test_without_final_retraining(tmp_path):
+    from ember.pi05_source_checkpoint import read_json
+    checkpoint, source = _static_adapter_fixture(tmp_path, config_path=ALIGNED_CONFIG,
+        mode="formal", world_size=2, step=425)
+    manifest = read_json(ROOT / "configs/pi05_target_data_v1/manifest.json")
+    test_keys = [(row["suite"], row["task_id"]) for row in manifest["tasks"] if row["split_role"] == "test"]
+    kwargs = dict(config_path=ALIGNED_CONFIG, checkpoint=checkpoint, source=source,
+                  task_keys=test_keys, evaluation_role="test", require_formal=True)
+    with pytest.raises(Pi05SourceSFTError, match="completed Source-SFT run summary"):
+        inspect_source_sft_evaluation(**kwargs)
+    run = read_json(checkpoint.parent.parent / "run_contract.json")
+    write_json_atomic(checkpoint.parent.parent / "run_summary.json", {
+        "schema_version": "ember_pi05_source_sft_run_summary_v1", "contract_sha256": canonical_hash(run),
+        "stage": "development", "completed_optimizer_steps": 450, "test_action_reads": 0,
+    })
+    adapter = inspect_source_sft_evaluation(**kwargs)
+    assert adapter["stage"] == "development"
+    assert adapter["evaluation_role"] == "test"
+    assert adapter["checkpoint"]["step"] == 425
+    assert adapter["test_action_reads"] == adapter["teacher_video_reads"] == 0

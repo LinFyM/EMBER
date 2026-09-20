@@ -3,6 +3,23 @@
 本文保存owner的稳定目标、研究原则与协作要求。Owner最新明确表达优先于本文；本文优先于[AGENTS](../AGENTS.md)中的默认合同。
 当前授权和实际状态只看[progress](../progress.md)，执行计划只看[task_plan](../task_plan.md)。历史讨论与旧实验不构成重新启动授权。
 
+## 冻结模型论文实验授权（2026-09-20）
+
+Owner已设置新goal：固定单相机K1同视频教学1500 checkpoint，保留train24/validation8/test8，不重训Writer、source或合并32任务。
+先完成Source-71、MT-BC-24、EMBER的完整Test paired400；EMBER必须比MT-BC至少多40个成功才继续。
+然后补other/wrong/shuffle/reverse；视频或时序证据消失、不明确时停止下游询问Owner，不以Test修正模型或选点。
+MT-BC采用已知Validation最高425节点；合并共享LoRA后用于后续局部适应。历史450合同不改写。
+FT仅用一条support做梯度更新，从同task其余演示中预先划出独立选点集，按固定查询FM loss选checkpoint；
+既有每task50个eval episodes仅评估、不选点。额外选点动作标签计入信息成本。默认覆盖validation/test全部16任务。
+若EMBER明显落后FT，先补两条预定support分别重复（合计三条，不融合不选优）；持续劣势或结论混杂即询问Owner。
+RL直接训练EMBER生成A/B，对照合并MT-BC底座上的fresh identity A/B，均38-target rank16；Writer和底座冻结，
+optimizer/critic fresh。目标是全部预定交互预算点EMBER平均曲线领先；不理想时停止下一段并报告。
+允许这些独立task-local实验使用目标task support动作、选点动作及局部RL reward；不得更新共享Writer/source/MT-BC，
+不得回流零交互模型设计。先封存零交互结果，再开放目标适应用途。FT/RL详细预算在训练侧资格后、held实验前登记。
+不按三天期限缩水实验；完整训练/评测阶段结束后统一读结果，不反复读取进度。可用Luna低成本监控完成/异常。
+遇到无法定夺或不达预期结果暂停下游询问；顺利则交付可追溯的图文报告。同步清理确认无用代码、文档、分支/worktree
+及大资产，保留正式证据和用途未决资产；quota不足先报告，不越限。实际状态与active合同见progress/task_plan。
+
 ## 当前接受标准与设计要求（2026-09-18）
 
 Owner接受验证能力保持在130多、140左右的候选，当前不再以超过145或150作为开展后续工作的硬门槛；

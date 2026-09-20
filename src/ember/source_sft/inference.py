@@ -37,8 +37,10 @@ STATIC_ADAPTER_SCHEMA = "ember_pi05_source_sft_eval_adapter_v1"
 
 
 def _validate_evaluation_role(stage: str, role: str) -> None:
+    # Frozen development models may be reported on Test without retraining on
+    # validation. Training stage and action-data permissions remain unchanged.
     allowed = {
-        "development": {"development_train", "seen_panel", "validation"},
+        "development": {"development_train", "seen_panel", "validation", "test"},
         "final": {"final_source", "seen_panel", "test"},
     }
     if role not in allowed.get(stage, set()):

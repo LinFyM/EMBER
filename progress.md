@@ -1,19 +1,16 @@
 # EMBER progress
 
-## 当前维护状态（2026-09-20，全面清理完成）
+## 当前状态（2026-09-20，论文实验goal启动）
 
-当前仅一个canonical工作树和main分支（本地、远程）；14个额外worktree及26个本地／6个远程分支已移除。
-未合入历史和三个未提交原型先保存至推送的evidence tags，没有丢弃唯一改动；这些历史源码不进入当前实现。
-90个可重建bank载荷、491个disposable profile参数及55个Python缓存目录已清理；大载荷和worktree释放111.96GiB。
-源码与相关测试净减936行，删除旧接口及其专属测试；重复叙述和exposure原件已合并，历史链接指向冻结commit。
-71项相关CPU测试、14项最终辅助代码复检（重叠）、三个CLI入口与45面板／7216行证据核对通过。
-逐项依据、保留资产及复现方法见[本次清理记录](docs/research_history.md#workspace-cleanup-20260920)。
-科研状态保持下述完成状态，没有新训练或active design。
+Owner已授权执行冻结1500的论文实验，并明确Test至少领先MT-BC40/400、FT独立演示选点与负结果暂停要求。
+Active design：[paper_experiments_design](docs/paper_experiments_design.md)。24任务MT-BC Test入口已实现；13项Source-SFT与45项Writer controls/Test测试通过，尚未启动GPU作业。
+现有main干净起点cc320bf4；上午全面清理已完成，保留原件并按本轮用途维护资产，不重复无关全树扫描。
+训练/评测按完整阶段完成通知再读结果，不反复轮询；不达预期停止后续任务询问Owner。
 
-## 当前状态（2026-09-20，本轮执行与交付完成）
+## 上轮已封存结果（2026-09-20）
 
 Owner授权的专家最终修订、主候选、唯一匹配消融、后续趋势、消融视频特异性和条件性双相机全部完成。
-当前无active design、运行中的本轮作业或待自动启动实验；[合同](docs/video_teaching_writer_design.md)已封存。
+该轮没有剩余作业；[合同](docs/video_teaching_writer_design.md)已封存。
 先读[专家讨论总报告](docs/review_materials/20260919/final_report.md)与[可复制提示词](docs/review_materials/20260919/expert_discussion_prompt.md)。
 
 | 更新 | 同视频 correct /400 | 消融 correct /400 | 双相机 correct /400 |

@@ -1,21 +1,23 @@
 # EMBER task plan
 
-## 当前任务（2026-09-20，仓库全面整理完成）
+## 当前目标（2026-09-20，Owner已授权启动）
 
-Owner要求的Git、空间、退役代码和文档整理已落实；无待自动启动的科研实验。
+固定EMBER-1V单相机1500，完成论文实验与图文原始报告。当前active合同：[论文实验](docs/paper_experiments_design.md)。
 
-1. **Git：** 移除14个额外worktree、26个本地和6个远程任务分支，只保留main。三份未提交原型及三条未合入历史线已保存为推送的evidence tags。
-2. **空间：** 清理90个可重建物化bank的23,880个载荷、491个明确disposable的profile参数，以及Python缓存；大载荷和worktree共释放111.96GiB。
-3. **代码与文档：** 退役旧功能梯度包装、输入接口、静态评测和SmolVLA测试合同，合并重复状态叙述，删除过时设计跳转页，固定历史源码链接并复用重复exposure原件。
-4. **验证：** 71项相关CPU测试通过，最后测试辅助代码精简后14项复检通过（与前者重叠）；三个CLI帮助入口、45面板证据核对、文档链接和diff检查通过。
+1. **进行中：冻结资产与Test接口。** Source-71、MT-BC425、EMBER1500；修正development24模型的登记Test用途，验证后推送。
+2. **待执行：Test能力。** 三个完整400面板收齐后判断EMBER−MT-BC≥40；不足即停止下游询问Owner。
+3. **条件执行：Test视频证据。** other/wrong/shuffle/reverse各400；缺失或不明确则停止询问。
+4. **条件执行：单support FT。** validation/test16任务，独立演示选点集FM选点，eval50不参与选择；劣势触发三support复核。
+5. **条件执行：两臂task-local RL。** 先Train接口/学习资格，按登记区段结束后读结果；不达预期暂停。
+6. **条件执行：外部比较与报告。** 优先WIZARD，再ViVLA资格核查与透明复现；图、表、成本、成功失败案例及原件可追溯。
 
-具体清理范围、保留依据、源码恢复标签和本地逐文件清单见[研究历史](docs/research_history.md#workspace-cleanup-20260920)。
-数据集、source、正式唯一checkpoint、原始实验结果和必要上游资产保留；未启动训练或改变科学裁决。
+## 执行边界
 
-## 科研状态
+不重训旧Writer、不追扫、不合并32任务；不反复轮询日志。资源按live双节点GPU与独立quota确定，无日历硬截止。
+Owner阈值用于推进决策，不能以改实验直到获胜作为完成条件。常规工程问题在范围内修复，重大歧义交Owner。
+维护canonical main，正式运行使用clean pushed detached worktree；运行结束清理task-owned临时树/载荷，保留证据。
 
-同视频教学候选、唯一匹配消融、后续训练趋势、视频特异性和双相机对照均已完成，无active design。
-[封存合同](docs/video_teaching_writer_design.md) · [专家总报告](docs/review_materials/20260919/final_report.md) ·
-[可复制讨论提示词](docs/review_materials/20260919/expert_discussion_prompt.md) · [完成清单](docs/review_materials/20260919/completion.json)。
-原1500选点不变；主组续训优势未保持，匹配controls未证明教学项增强视频特异性，双相机未改善当前配方。
-后继选择由Owner与专家讨论，已有结果或保留的历史源码不构成新实验授权。
+## 已完成历史入口
+
+[20260920全面清理](docs/research_history.md#workspace-cleanup-20260920)；
+[上一轮总报告](docs/review_materials/20260919/final_report.md)。历史路线和清理记录不恢复执行。

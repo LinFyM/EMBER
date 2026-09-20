@@ -29,8 +29,10 @@ held动作/状态/reward不进入共享训练。Writer每task demo0..45训练、
 Writer每4个不同task一次update；36task随机轮转，每9updates覆盖每task一次，轮次与GPU分片独立。
 事件由固定seed与task/occurrence决定，保存稳定算法合同、逐条件实际曝光和sampler cursor；扩展区段保留全部历史前缀。
 MT-BC每update逻辑576查询，36task各16；4个逻辑rank各144，物理卡数/microbatch只负责分片。
-LR时钟按36/24的任务曝光伸展：Writer warmup150、原cosine时钟18000、tail1350..2250后保持0.1倍tail起点LR；
-MT-BC warmup150、decay1200，衰减后保持1e-5非零floor。时钟与训练终止解耦，后续不改LR、不重置optimizer。
+本轮预注册LR时钟按36/24伸展：Writer warmup150、原cosine时钟18000、tail1350..2250后保持0.1倍tail起点LR；
+MT-BC warmup150、decay1200，衰减后保持1e-5非零floor。Writer每步只抽4task，因此该伸展近似保持每task曝光相位；
+MT-BC每步已覆盖全部task各16query，该伸展是显式延长其每task学习时钟，不能称作与旧配方曝光等价。
+时钟与训练终止解耦，后续不改LR、不重置optimizer。
 配置maximum_updates/total_steps=null表示没有科学硬终点；每段明确stop_after_step，原topology/optimizer/scheduler/rank RNG完整恢复。
 
 ## 完整Validation与停止规则

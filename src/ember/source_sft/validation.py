@@ -38,7 +38,10 @@ from ember.pi05_source_checkpoint import (
     write_json_atomic,
 )
 from ember.pi05_source_setup import initialize_distributed, load_policy, load_stats
-from ember.source_sft.checkpoint import validate_source_sft_checkpoint_files
+from ember.source_sft.checkpoint import (
+    SOURCE_SFT_CHECKPOINT_SCHEMA,
+    validate_source_sft_checkpoint_files,
+)
 from ember.source_sft.contract import (
     REPO_ROOT,
     SOURCE_SFT_LAUNCH_SCHEMA,
@@ -84,9 +87,14 @@ def _checkpoint_records(
             )
         manifest = validate_source_sft_checkpoint_files(
             checkpoint,
-            world_size=world_size,
+            world_size=None,
             contract_sha256=contract_sha256,
         )
+        checkpoint_world = sum(name.startswith("rank_") and name.endswith("_state.pt")
+                               for name in manifest["files"])
+        if (checkpoint_world != world_size
+                and manifest.get("schema_version") != SOURCE_SFT_CHECKPOINT_SCHEMA):
+            raise Pi05SourceSFTError("validation checkpoint topology changed without transition metadata")
         cursor = int(manifest.get("consumed", {}).get("next_step", -1))
         lora_file = manifest.get("files", {}).get("lora.safetensors", {})
         if (

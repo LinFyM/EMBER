@@ -23,7 +23,10 @@ from ember.pi05_source_checkpoint import (
     sha256_file,
     source_reference_matches,
 )
-from ember.source_sft.checkpoint import validate_source_sft_checkpoint_files
+from ember.source_sft.checkpoint import (
+    SOURCE_SFT_CHECKPOINT_SCHEMA,
+    validate_source_sft_checkpoint_files,
+)
 from ember.source_sft.contract import (
     SOURCE_SFT_LAUNCH_SCHEMA,
     Pi05SourceSFTError,
@@ -132,12 +135,17 @@ def _validate_checkpoint_contract(
     run_contract_sha: str,
     stage: str,
 ) -> tuple[dict[str, Any], int]:
-    world_size = int(run_contract.get("runtime", {}).get("world_size", -1))
     manifest = validate_source_sft_checkpoint_files(
         checkpoint,
-        world_size=world_size,
+        world_size=None,
         contract_sha256=run_contract_sha,
     )
+    original_world = int(run_contract.get("runtime", {}).get("world_size", -1))
+    checkpoint_world = sum(name.startswith("rank_") and name.endswith("_state.pt")
+                           for name in manifest["files"])
+    if (checkpoint_world != original_world
+            and manifest.get("schema_version") != SOURCE_SFT_CHECKPOINT_SCHEMA):
+        raise Pi05SourceSFTError("Source-SFT checkpoint topology changed without transition metadata")
     step = int(manifest.get("consumed", {}).get("next_step", -1))
     if checkpoint.name != f"step_{step:08d}" or not checkpoint_declared(run_contract, step):
         raise Pi05SourceSFTError("Source-SFT evaluation checkpoint is not declared")

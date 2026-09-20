@@ -17,8 +17,14 @@ from torch.utils.data import DataLoader, default_collate
 
 from ember.lora import LoRATarget, inject_task_lora, task_lora_state_dict
 from ember.pi05_lora import load_pi05_lora_contract
-from ember.pi05_source_checkpoint import DistributedContext, canonical_hash, restore_rng
-from ember.source_sft.checkpoint import load_source_sft_checkpoint, save_source_sft_checkpoint
+from ember.pi05_source_checkpoint import (
+    DistributedContext, canonical_hash, read_json, restore_rng, sha256_file,
+    write_json_atomic,
+)
+from ember.source_sft.checkpoint import (
+    load_source_sft_checkpoint, save_source_sft_checkpoint,
+    validate_source_sft_checkpoint_files,
+)
 from ember.source_sft.contract import (
     Pi05SourceSFTError, load_source_sft_config, load_training_data, resolve_runtime,
 )
@@ -133,7 +139,8 @@ class _TinyPolicy(torch.nn.Module):
         return loss, {}
 
 
-def _runtime(*, world=1, rank=0, micro=4, start=0, stochastic=False):
+def _runtime(*, world=1, rank=0, micro=4, start=0, stochastic=False,
+             physical_packing="contiguous"):
     config = load_source_sft_config(CONFIG)
     lora = replace(load_pi05_lora_contract(ROOT / "configs/pi05_lora_rank128_aligned.json"),
                    targets=(LoRATarget("proj", 3, 4),), rank=2, alpha=2)
@@ -147,7 +154,8 @@ def _runtime(*, world=1, rank=0, micro=4, start=0, stochastic=False):
     accumulation = ((20 + world - 1) // world + micro - 1) // micro
     sampler = HierarchicalMixedBatchSampler(dataset, task_ids=(0, 1), logical_world_size=2,
         logical_per_rank_batch_size=10, per_rank_batch_size=micro, gradient_accumulation_steps=accumulation,
-        start_step=start, stop_step=3, rank=rank, world_size=world, seed=20260723)
+        start_step=start, stop_step=3, rank=rank, world_size=world, seed=20260723,
+        physical_packing=physical_packing)
     iterator = iter(DataLoader(dataset, batch_sampler=sampler, generator=torch.Generator().manual_seed(123)))
     return SimpleNamespace(policy=policy, wrapped=policy, lora_contract=lora, optimizer=optimizer,
         scheduler=scheduler, sampler=sampler, iterator=iterator, config=config, resume_step=start,
@@ -220,9 +228,9 @@ def test_checkpoint_restores_optimizer_scheduler_rng_and_logical_cursor(tmp_path
     kwargs = dict(checkpoint=checkpoint, context=resumed.context, policy=resumed.policy,
         lora_contract=resumed.lora_contract, optimizer=resumed.optimizer, scheduler=resumed.scheduler,
         sampler=resumed.sampler, dataloader_generator_seed=123, contract_sha256=canonical_hash(contract))
-    step, rng, rows = load_source_sft_checkpoint(**kwargs)
+    step, rng, rows, offset = load_source_sft_checkpoint(**kwargs)
     restore_rng(rng, resumed.context)
-    assert (step, rows) == (1, 1)
+    assert (step, rows, offset) == (1, 1, 0)
     assert (random.random(), np.random.random(), torch.rand(())) == expected_random
     actual_row = _one_step(resumed, 1, time.monotonic())
     for key in ("applied_lr", "next_lr", "global_action_queries", "micro_step", "mean_action_loss"):
@@ -236,3 +244,92 @@ def test_checkpoint_restores_optimizer_scheduler_rng_and_logical_cursor(tmp_path
     changed = _runtime(micro=5, start=1)
     with pytest.raises(Pi05SourceSFTError, match="resume state changed"):
         load_source_sft_checkpoint(**{**kwargs, "sampler": changed.sampler})
+
+
+def _migration_worker(rank, rendezvous, checkpoint_path, expected_path, contract):
+    torch.set_num_threads(1)
+    dist.init_process_group("gloo", init_method=f"file://{rendezvous}", world_size=2, rank=rank)
+    try:
+        with pytest.MonkeyPatch.context() as patch:
+            _cpu_memory_stats(patch)
+            patch.setattr(torch.cuda, "get_rng_state", lambda _: torch.zeros(1, dtype=torch.uint8))
+            patch.setattr(torch.cuda, "set_rng_state", lambda state, device: None)
+            runtime = _runtime(world=2, rank=rank, start=1,
+                               physical_packing="task_striped")
+            runtime.wrapped = DDP(runtime.policy, gradient_as_bucket_view=True,
+                                  broadcast_buffers=False)
+            with pytest.raises(Pi05SourceSFTError, match="manifest changed"):
+                load_source_sft_checkpoint(checkpoint=Path(checkpoint_path),
+                    context=runtime.context, policy=runtime.policy,
+                    lora_contract=runtime.lora_contract, optimizer=runtime.optimizer,
+                    scheduler=runtime.scheduler, sampler=runtime.sampler,
+                    dataloader_generator_seed=123 + rank,
+                    contract_sha256=canonical_hash(contract))
+            step, rng, rows, offset = load_source_sft_checkpoint(
+                checkpoint=Path(checkpoint_path), context=runtime.context,
+                policy=runtime.policy, lora_contract=runtime.lora_contract,
+                optimizer=runtime.optimizer, scheduler=runtime.scheduler,
+                sampler=runtime.sampler, dataloader_generator_seed=123 + rank,
+                contract_sha256=canonical_hash(contract), allow_physical_resume=True)
+            assert (step, rows, offset) == (1, 1, 2)
+            restore_rng(rng, runtime.context)
+            row = _one_step(runtime, 1, time.monotonic())
+            assert row["global_action_queries"] == 40
+            expected = torch.load(expected_path, weights_only=True)
+            for name, value in task_lora_state_dict(runtime.policy).items():
+                torch.testing.assert_close(value, expected[name], rtol=1e-7, atol=1e-10)
+            assert runtime.scheduler.last_epoch == 2
+            assert {int(state["step"]) for state in runtime.optimizer.state.values()} == {2}
+            saved = save_source_sft_checkpoint(output_dir=Path(checkpoint_path).parents[1],
+                step=2, context=runtime.context, policy=runtime.policy,
+                optimizer=runtime.optimizer, scheduler=runtime.scheduler,
+                sampler=runtime.sampler, contract=contract, mode="profile",
+                metrics_rows=2, micro_step_offset=offset)
+            if rank == 0:
+                manifest = validate_source_sft_checkpoint_files(saved, world_size=None,
+                    contract_sha256=canonical_hash(contract))
+                assert (manifest["physical_world_size"], manifest["physical_packing"]) == (
+                    2, "task_striped")
+                assert manifest["consumed"]["next_micro_step"] == 8
+    finally:
+        dist.destroy_process_group()
+
+
+def test_complete_step_migrates_one_to_two_ranks_without_changing_logical_update(
+    tmp_path, monkeypatch,
+):
+    _cpu_memory_stats(monkeypatch)
+    monkeypatch.setattr(torch.cuda, "get_rng_state", lambda _: torch.zeros(1, dtype=torch.uint8))
+    first = _runtime()
+    _one_step(first, 0, time.monotonic())
+    contract = {"stage": "development", "runtime": {
+        "total_steps": 3, "dataloader_generator_seed_base": 123}}
+    checkpoint = save_source_sft_checkpoint(output_dir=tmp_path, step=1,
+        context=first.context, policy=first.policy, optimizer=first.optimizer,
+        scheduler=first.scheduler, sampler=first.sampler, contract=contract,
+        mode="profile", metrics_rows=1)
+    # The running formal MT-BC checkpoint uses the previous v4 schema.
+    for name, schema in (("trainer_state.pt", "ember_pi05_source_sft_trainer_state_v4"),
+                         ("rank_00_state.pt", "ember_pi05_source_sft_rank_state_v4")):
+        path = checkpoint / name
+        state = torch.load(path, weights_only=False)
+        state["schema_version"] = schema
+        state.pop("micro_step_offset")
+        torch.save(state, path)
+    manifest = read_json(checkpoint / "checkpoint_manifest.json")
+    manifest["schema_version"] = "ember_pi05_source_sft_checkpoint_v4"
+    manifest.pop("physical_world_size")
+    manifest.pop("physical_packing")
+    for name in ("trainer_state.pt", "rank_00_state.pt"):
+        path = checkpoint / name
+        manifest["files"][name] = {"bytes": path.stat().st_size,
+                                     "sha256": sha256_file(path)}
+    manifest.pop("canonical_payload_sha256")
+    manifest["canonical_payload_sha256"] = canonical_hash(manifest)
+    write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
+    _one_step(first, 1, time.monotonic())
+    expected_path = tmp_path / "reference_lora.pt"
+    torch.save(task_lora_state_dict(first.policy, clone=True), expected_path)
+    mp.start_processes(_migration_worker, args=(str(tmp_path / "gloo-migration"),
+        str(checkpoint), str(expected_path), contract), nprocs=2, join=True,
+        start_method="spawn")

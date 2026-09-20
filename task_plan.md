@@ -25,6 +25,6 @@ Writer部署只读exact language和action-hidden有序视频，一次生成完�
 
 每次真正launch/resume前查双节点实时GPU与data0/data1独立quota、预计峰值；总物理卡和单节点上限按AGENTS执行。正式训练/评测来自clean pushed detached runtime，不干扰其他用户进程。保留运行依赖worktree，结束且确认无引用后再清理。
 
-阶段切换时用已登记profile和完整阶段用时检查训练更新/秒、LoRA/秒、评测rows/秒、GPU利用率及峰值显存；优先填满合同允许的合格物理卡和安全共驻余量。仅针对实测瓶颈优化物理batch、评测副本/动态队列或kernel，并验证逻辑任务权重、完整恢复、配对映射与数值稳定性；活跃frozen runtime不原地改写。
+阶段切换时用已登记profile和完整阶段用时检查训练更新/秒、LoRA/秒、评测rows/秒、GPU利用率及峰值显存；优先填满合同允许的合格物理卡和安全共驻余量。MT-BC在完整checkpoint边界可按真实两节点卡况迁移到更有吞吐的单节点、调整物理卡数；必须保持同一条576查询轨迹和optimizer/scheduler状态，并登记换拓扑RNG边界。训练用任务交错分片检查rank等待，评测用动态队列防止长任务拖住全队；慢条件仍完整执行。仅针对实测瓶颈优化物理batch、评测副本/动态队列或kernel，并验证逻辑任务权重、配对映射与数值稳定性；活跃frozen runtime不原地改写。
 
 结果不达标是科学负结果，工程失败按层定位并在原合同内恢复。只删确认可再生成且无后继依赖的载荷；checkpoint、raw rows、manifest与旧正式证据保留。修改集成`main`并推送，文档按实际阶段更新，不用频繁轮询代替现有控制器。

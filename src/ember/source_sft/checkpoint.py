@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import uuid
 from pathlib import Path
 from typing import Any, Mapping
@@ -32,9 +33,11 @@ from ember.source_sft.sampler import HierarchicalMixedBatchSampler
 
 
 LEGACY_SOURCE_SFT_CHECKPOINT_SCHEMA = "ember_pi05_source_sft_checkpoint_v2"
-SOURCE_SFT_CHECKPOINT_SCHEMA = "ember_pi05_source_sft_checkpoint_v4"
-SOURCE_SFT_TRAINER_SCHEMA = "ember_pi05_source_sft_trainer_state_v4"
-SOURCE_SFT_RANK_SCHEMA = "ember_pi05_source_sft_rank_state_v4"
+PREVIOUS_SOURCE_SFT_CHECKPOINT_SCHEMA = "ember_pi05_source_sft_checkpoint_v4"
+SOURCE_SFT_CHECKPOINT_SCHEMA = "ember_pi05_source_sft_checkpoint_v5"
+SOURCE_SFT_TRAINER_SCHEMA = "ember_pi05_source_sft_trainer_state_v5"
+SOURCE_SFT_RANK_SCHEMA = "ember_pi05_source_sft_rank_state_v5"
+_RANK_FILE = re.compile(r"rank_([0-9]{2})_state\.pt")
 
 
 def _nonce(context: DistributedContext) -> str:
@@ -86,13 +89,15 @@ def _write_rank_state(
     sampler: HierarchicalMixedBatchSampler,
     contract: Mapping[str, Any],
     saved_rng: Mapping[str, Any],
+    micro_step_offset: int,
 ) -> None:
     torch.save(
         {
             "schema_version": SOURCE_SFT_RANK_SCHEMA,
             "next_step": step,
             "next_optimizer_step": step,
-            "next_micro_step": step * sampler.accumulation,
+            "next_micro_step": step * sampler.accumulation + micro_step_offset,
+            "micro_step_offset": micro_step_offset,
             "sampler": sampler.resume_contract(),
             "dataloader_generator_seed": int(
                 contract["runtime"]["dataloader_generator_seed_base"]
@@ -119,6 +124,7 @@ def _publish_shared_checkpoint(
     contract: Mapping[str, Any],
     mode: str,
     metrics_rows: int,
+    micro_step_offset: int,
 ) -> None:
     state = task_lora_state_dict(policy, clone=True)
     save_file(
@@ -130,7 +136,8 @@ def _publish_shared_checkpoint(
             "schema_version": SOURCE_SFT_TRAINER_SCHEMA,
             "next_step": step,
             "next_optimizer_step": step,
-            "next_micro_step": step * sampler.accumulation,
+            "next_micro_step": step * sampler.accumulation + micro_step_offset,
+            "micro_step_offset": micro_step_offset,
             "gradient_accumulation_offset": 0,
             "optimizer": optimizer.state_dict(),
             "scheduler": scheduler.state_dict(),
@@ -155,12 +162,14 @@ def _publish_shared_checkpoint(
         "max_action_episodes_per_task": max(map(len, coverage.values())),
         "next_step": step,
         "next_optimizer_step": step,
-        "next_micro_step": step * sampler.accumulation,
+        "next_micro_step": step * sampler.accumulation + micro_step_offset,
     }
     manifest = {
         "schema_version": SOURCE_SFT_CHECKPOINT_SCHEMA,
         "contract_sha256": canonical_hash(contract),
         "stage": contract["stage"],
+        "physical_world_size": sampler.world_size,
+        "physical_packing": sampler.physical_packing,
         "consumed": consumed,
         "files": _checkpoint_files(temporary),
     }
@@ -184,6 +193,7 @@ def save_source_sft_checkpoint(
     contract: Mapping[str, Any],
     mode: str,
     metrics_rows: int,
+    micro_step_offset: int = 0,
 ) -> Path:
     total_steps = int(contract.get("runtime", {}).get("total_steps", -1))
     if (
@@ -217,6 +227,7 @@ def save_source_sft_checkpoint(
             sampler=sampler,
             contract=contract,
             saved_rng=saved_rng,
+            micro_step_offset=micro_step_offset,
         )
     except Exception as caught:
         error = caught
@@ -238,6 +249,7 @@ def save_source_sft_checkpoint(
                 contract=contract,
                 mode=mode,
                 metrics_rows=metrics_rows,
+                micro_step_offset=micro_step_offset,
             )
     except Exception as caught:
         error = caught
@@ -249,7 +261,7 @@ def save_source_sft_checkpoint(
 def validate_source_sft_checkpoint_files(
     checkpoint: Path,
     *,
-    world_size: int,
+    world_size: int | None,
     contract_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Verify every file before any optimizer or RNG pickle is read."""
@@ -257,21 +269,32 @@ def validate_source_sft_checkpoint_files(
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
     payload = dict(manifest)
     digest = payload.pop("canonical_payload_sha256", None)
+    files = manifest.get("files", {})
+    if not isinstance(files, dict):
+        raise Pi05SourceSFTError("Source-SFT checkpoint manifest changed")
+    rank_numbers = sorted(int(match.group(1)) for name in files
+                          if (match := _RANK_FILE.fullmatch(name)))
+    source_world_size = len(rank_numbers) if world_size is None else world_size
     expected = {
         "lora.safetensors",
         "trainer_state.pt",
-        *(f"rank_{rank:02d}_state.pt" for rank in range(world_size)),
+        *(f"rank_{rank:02d}_state.pt" for rank in range(source_world_size)),
     }
-    files = manifest.get("files", {})
     if (
         manifest.get("schema_version")
         not in {
             LEGACY_SOURCE_SFT_CHECKPOINT_SCHEMA,
             "ember_pi05_source_sft_checkpoint_v3",
+            PREVIOUS_SOURCE_SFT_CHECKPOINT_SCHEMA,
             SOURCE_SFT_CHECKPOINT_SCHEMA,
         }
         or canonical_hash(payload) != digest
         or not isinstance(files, dict)
+        or source_world_size <= 0
+        or rank_numbers != list(range(source_world_size))
+        or (manifest.get("schema_version") == SOURCE_SFT_CHECKPOINT_SCHEMA
+            and (manifest.get("physical_world_size") != source_world_size
+                 or manifest.get("physical_packing") not in {"contiguous", "task_striped"}))
         or set(files) != expected
         or (
             contract_sha256 is not None
@@ -301,13 +324,14 @@ def load_source_sft_checkpoint(
     sampler: HierarchicalMixedBatchSampler,
     dataloader_generator_seed: int,
     contract_sha256: str,
-) -> tuple[int, dict[str, Any], int]:
+    allow_physical_resume: bool = False,
+) -> tuple[int, dict[str, Any], int, int]:
     validation: list[Any] = [None]
     if context.is_main:
         try:
             validation[0] = validate_source_sft_checkpoint_files(
                 checkpoint,
-                world_size=context.world_size,
+                world_size=None if allow_physical_resume else context.world_size,
                 contract_sha256=contract_sha256,
             )
         except Exception as error:
@@ -321,28 +345,49 @@ def load_source_sft_checkpoint(
         map_location=context.device,
         weights_only=False,
     )
-    rank_state = torch.load(
-        checkpoint / f"rank_{context.rank:02d}_state.pt",
-        map_location="cpu",
-        weights_only=False,
-    )
+    source_world_size = sum(bool(_RANK_FILE.fullmatch(name))
+                            for name in validation[0]["files"])
+    source_rank = min(context.rank, source_world_size - 1)
+    rank_state = torch.load(checkpoint / f"rank_{source_rank:02d}_state.pt",
+                            map_location="cpu", weights_only=False)
     next_step = int(trainer.get("next_step", -1))
-    expected_micro = next_step * sampler.accumulation
+    source_sampler = rank_state.get("sampler", {})
+    source_accumulation = int(source_sampler.get("gradient_accumulation_steps", -1))
+    old_offset = int(trainer.get("micro_step_offset", 0))
+    expected_micro = next_step * source_accumulation + old_offset
+    logical_keys = (
+        "sampler_kind", "sampler_seed", "task_ids", "logical_world_size",
+        "logical_per_rank_batch_size", "global_batch_size",
+    )
+    logical_match = all(source_sampler.get(key) == sampler.resume_contract().get(key)
+                        for key in logical_keys)
+    physical_match = source_sampler == sampler.resume_contract()
+    trainer_schema = trainer.get("schema_version")
+    rank_schema = rank_state.get("schema_version")
     if (
-        trainer.get("schema_version") != SOURCE_SFT_TRAINER_SCHEMA
+        trainer_schema not in {"ember_pi05_source_sft_trainer_state_v4",
+                               SOURCE_SFT_TRAINER_SCHEMA}
         or trainer.get("contract_sha256") != contract_sha256
-        or rank_state.get("schema_version") != SOURCE_SFT_RANK_SCHEMA
-        or rank_state.get("sampler") != sampler.resume_contract()
+        or rank_schema not in {"ember_pi05_source_sft_rank_state_v4",
+                               SOURCE_SFT_RANK_SCHEMA}
+        or not logical_match
+        or (not allow_physical_resume and not physical_match)
+        or (not allow_physical_resume and source_world_size != context.world_size)
+        or int(source_sampler.get("world_size", -1)) != source_world_size
+        or int(source_sampler.get("rank", -1)) != source_rank
+        or int(rank_state.get("micro_step_offset", 0)) != old_offset
         or int(rank_state.get("next_step", -1)) != next_step
         or int(rank_state.get("next_optimizer_step", -1)) != next_step
         or int(rank_state.get("next_micro_step", -1)) != expected_micro
-        or rank_state.get("dataloader_generator_seed") != dataloader_generator_seed
+        or rank_state.get("dataloader_generator_seed") != (
+            dataloader_generator_seed + source_rank - context.rank)
         or rank_state.get("worker_random_transforms") is not False
         or int(trainer.get("next_optimizer_step", -1)) != next_step
         or int(trainer.get("next_micro_step", -1)) != expected_micro
         or int(trainer.get("gradient_accumulation_offset", -1)) != 0
         or checkpoint.name != f"step_{next_step:08d}"
-        or validation[0].get("schema_version") != SOURCE_SFT_CHECKPOINT_SCHEMA
+        or validation[0].get("schema_version") not in {
+            PREVIOUS_SOURCE_SFT_CHECKPOINT_SCHEMA, SOURCE_SFT_CHECKPOINT_SCHEMA}
         or int(validation[0].get("consumed", {}).get("next_step", -1)) != next_step
         or int(validation[0].get("consumed", {}).get("next_micro_step", -1)) != expected_micro
         or int(trainer.get("metrics_rows", -1)) < 0
@@ -353,4 +398,6 @@ def load_source_sft_checkpoint(
     copy_task_lora_state_(policy, state, lora_contract)
     optimizer.load_state_dict(trainer["optimizer"])
     scheduler.load_state_dict(trainer["scheduler"])
-    return next_step, rank_state["rng"], int(trainer["metrics_rows"])
+    rng = rank_state["rng"] if context.rank < source_world_size else capture_rng(context)
+    micro_step_offset = expected_micro - next_step * sampler.accumulation
+    return next_step, rng, int(trainer["metrics_rows"]), micro_step_offset

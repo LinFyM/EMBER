@@ -169,7 +169,8 @@ Owner同日明确纠正：v5.2已经训练过，本轮复用既有checkpoint与�
 
 - 从算法设计时考虑训练、物化和闭环总成本，以真实LoRA/s、samples/s、墙钟、利用率与峰值显存衡量；不以最低显存、占满显存或堆卡代替效率。
   真实长视频的明显计算失衡应先修正，吞吐阈值不能取代科学判断。
-- 物理batch、chunk和设备分工不改变完整输入、任务权重、全局更新、checkpoint或exact-resume语义；接受正常BF16/TF32与高效kernel低位差异。
+- 物理batch、chunk和设备分工不改变完整输入、任务权重、全局更新和checkpoint选择。MT-BC应能在完整更新节点按可用卡数恢复并重分片；同拓扑恢复保持原exact-resume语义，换拓扑时保留逻辑查询流、模型、optimizer和scheduler，但逐rank RNG及低位数值轨迹可以改变，须明确登记。接受正常BF16/TF32与高效kernel低位差异。
+- 节点内吞吐以完整训练更新和评测完成时间衡量，避免一张慢卡或一种长任务使其他卡长期等待。训练按任务成本均衡物理分片，评测使用动态队列和persistent workers；不为消除慢任务而漏评、缩短horizon、重加权任务或降低正式行数。空出的合格GPU在下一个完整阶段边界优先复用，跨节点迁移训练须从同一条轨迹的完整checkpoint恢复。
   GPU并发上限、两节点live检查、NUMA/NCCL、quota、formal frozen commit和Git集成按[AGENTS](../AGENTS.md)执行，不在本文复制运行规则。
 - 复用canonical数据、source、环境与资产。清理须覆盖仓库文件及其过时正文，不仅更换输出位置或建立in-tree archive。
   退役内容由Git、已有历史索引和formal证据保存；明确temporary／duplicate内容才删除，保留数据集、源模型、唯一checkpoint与正式原件。

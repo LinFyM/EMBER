@@ -213,6 +213,17 @@ def resolve_runtime(
         raise Pi05SourceSFTError("formal Source-SFT physical profile is not sealed")
     defaults = formal if args.mode == "formal" else config["profile_defaults"]
     control = dynamic_control(config)
+    physical_resume = bool(getattr(args, "allow_physical_resume", False))
+    if physical_resume and (
+        args.mode != "formal" or args.resume is None or not control
+        or not getattr(args, "allow_contract_compatible_code_resume", False)
+    ):
+        raise Pi05SourceSFTError(
+            "physical Source-SFT resume requires a dynamic formal checkpoint and explicit code compatibility"
+        )
+    if (getattr(args, "physical_packing", "contiguous") != "contiguous"
+            and not physical_resume and args.mode == "formal"):
+        raise Pi05SourceSFTError("formal task-striped packing requires physical resume")
     total_steps, checkpoint_steps = _runtime_steps(args, defaults, control)
     batch_size = args.batch_size or int(defaults["per_rank_batch_size"])
     stop_step = args.stop_after_step or total_steps
@@ -223,14 +234,15 @@ def resolve_runtime(
         raise Pi05SourceSFTError("invalid Source-SFT runtime request")
     max_local_queries = (global_batch + context.world_size - 1) // context.world_size
     accumulation = (getattr(args, "gradient_accumulation_steps", None)
-                    or defaults.get("gradient_accumulation_steps")
+                    or (None if physical_resume else defaults.get("gradient_accumulation_steps"))
                     or (max_local_queries + batch_size - 1) // batch_size)
     source_batch_sizes(global_batch, context.world_size, batch_size, accumulation)
     if args.mode == "formal":
         expected = (int(formal["expected_world_size"]), total_steps if control else int(formal["total_steps"]),
                     int(formal["per_rank_batch_size"]), int(formal["gradient_accumulation_steps"]),
                     checkpoint_steps if control else tuple(formal["checkpoint_steps"]))
-        if ((context.world_size, total_steps, batch_size, accumulation, checkpoint_steps) != expected
+        if ((not physical_resume
+             and (context.world_size, total_steps, batch_size, accumulation, checkpoint_steps) != expected)
                 or (not control and stop_step not in formal["stage_stop_steps"])):
             raise Pi05SourceSFTError("formal Source-SFT launch differs from its sealed profile")
         state = git_state(REPO_ROOT)
@@ -473,6 +485,8 @@ def build_contract(
             "worker_random_transforms": False,
             "worker_rng_contract": "fixed DataLoader-derived worker seeds; all sample selection is a pure deterministic sampler function",
             "rank_topology": topology,
+            **({"physical_packing": args.physical_packing}
+               if getattr(args, "physical_packing", "contiguous") != "contiguous" else {}),
         },
         "trainable": dict(trainable),
         "software": _software_versions(),
@@ -484,6 +498,7 @@ def publish_contract(
     context: DistributedContext,
     contract: Mapping[str, Any],
     contract_sha256: str,
+    requested_runtime: Mapping[str, Any] | None = None,
 ) -> None:
     def operation() -> dict[str, bool]:
         if args.output_dir.exists() and any(args.output_dir.iterdir()) and args.resume is None:
@@ -524,6 +539,16 @@ def publish_contract(
                     > int(contract["runtime"]["selected_stop_step"])
                 ),
                 "requested_stop_after_step": int(args.stop_after_step),
+                "physical_resume": bool(getattr(args, "allow_physical_resume", False)),
+                **({"requested_physical_runtime": {
+                    key: requested_runtime[key] for key in (
+                        "world_size", "per_rank_batch_size",
+                        "gradient_accumulation_steps", "microbatch_sizes_by_rank",
+                        "num_workers_per_rank", "rank_topology",
+                    ) if key in requested_runtime
+                } | {"physical_packing": requested_runtime.get(
+                    "physical_packing", "contiguous")}}
+                   if requested_runtime is not None else {}),
                 "resume": str(args.resume) if args.resume else None,
                 "started_unix": time.time(),
             },
@@ -588,6 +613,18 @@ def reconcile_resume_contract(
             raise Pi05SourceSFTError("dynamic Source-SFT extension changed its interval schedule")
         normalized["runtime"]["total_steps"] = existing_runtime["total_steps"]
         normalized["runtime"]["checkpoint_steps"] = existing_runtime["checkpoint_steps"]
+    if getattr(args, "allow_physical_resume", False):
+        if args.resume is None or not dynamic_control(existing):
+            raise Pi05SourceSFTError("physical resume requires a dynamic checkpoint")
+        for key in (
+            "world_size", "per_rank_batch_size", "gradient_accumulation_steps",
+            "microbatch_sizes_by_rank", "num_workers_per_rank", "rank_topology",
+            "physical_packing",
+        ):
+            if key in existing_runtime:
+                normalized["runtime"][key] = existing_runtime[key]
+            else:
+                normalized["runtime"].pop(key, None)
     existing_git = existing.get("git", {})
     candidate_git = candidate.get("git", {})
     if existing_git != candidate_git:

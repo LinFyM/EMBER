@@ -95,6 +95,7 @@ class SourceSFTRuntime:
     resume_step: int
     metrics_path: Path
     metrics_rows: int
+    micro_step_offset: int = 0
 
 
 def _resume_step(checkpoint: Path | None) -> int:
@@ -178,6 +179,7 @@ def _loader(
         rank=context.rank,
         world_size=context.world_size,
         seed=int(config["data"]["sampler_seed"]),
+        physical_packing=getattr(args, "physical_packing", "contiguous"),
     )
     loader = DataLoader(
         dataset,
@@ -285,7 +287,8 @@ def prepare_runtime(
     )
     contract = reconcile_resume_contract(args, candidate_contract)
     contract_sha256 = canonical_hash(contract)
-    publish_contract(args, context, contract, contract_sha256)
+    publish_contract(args, context, contract, contract_sha256,
+                     requested_runtime=candidate_contract["runtime"])
 
     sampler, loader = _loader(
         args=args,
@@ -298,8 +301,9 @@ def prepare_runtime(
     )
     resume_rng = None
     expected_metrics_rows = 0
+    micro_step_offset = 0
     if args.resume is not None:
-        loaded, resume_rng, expected_metrics_rows = load_source_sft_checkpoint(
+        loaded, resume_rng, expected_metrics_rows, micro_step_offset = load_source_sft_checkpoint(
             checkpoint=args.resume,
             context=context,
             policy=policy,
@@ -311,6 +315,7 @@ def prepare_runtime(
             + context.rank
             + 0x5F7,
             contract_sha256=contract_sha256,
+            allow_physical_resume=bool(getattr(args, "allow_physical_resume", False)),
         )
         if loaded != initial_step:
             raise Pi05SourceSFTError("Source-SFT resume path and state disagree")
@@ -351,6 +356,7 @@ def prepare_runtime(
         resume_step=initial_step,
         metrics_path=metrics_path,
         metrics_rows=metrics_rows,
+        micro_step_offset=micro_step_offset,
     )
 
 
@@ -421,7 +427,8 @@ def _one_step(runtime: SourceSFTRuntime, step: int, started: float) -> dict[str,
     examples = runtime.sampler.global_batch_size
     return {
         "optimizer_step": completed,
-        "micro_step": completed * runtime.sampler.accumulation,
+        "micro_step": completed * runtime.sampler.accumulation
+        + getattr(runtime, "micro_step_offset", 0),
         "mean_action_loss": reduce_mean(loss_sum, runtime.context),
         "gradient_norm_before_clip_max": reduce_max(float(grad_norm), runtime.context),
         "applied_lr": applied_lr,
@@ -465,6 +472,7 @@ def run_steps(runtime: SourceSFTRuntime) -> None:
                 contract=runtime.contract,
                 mode=runtime.args.mode,
                 metrics_rows=runtime.metrics_rows,
+                micro_step_offset=runtime.micro_step_offset,
             )
     barrier(runtime.context)
     if runtime.context.is_main:
@@ -560,6 +568,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--checkpoint-steps", type=str)
     parser.add_argument("--batch-size", type=int, help="physical microbatch queries per rank")
     parser.add_argument("--gradient-accumulation-steps", type=int)
+    parser.add_argument("--physical-packing", choices=("contiguous", "task_striped"),
+                        default="contiguous")
+    parser.add_argument(
+        "--allow-physical-resume", action="store_true",
+        help="Resume a complete dynamic formal checkpoint with a different physical world size, "
+             "microbatch packing or worker topology; preserve the logical 576-query stream.",
+    )
     parser.add_argument("--num-workers", type=int)
     parser.add_argument("--log-every", type=int, default=1)
     parser.add_argument(

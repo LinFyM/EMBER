@@ -216,10 +216,15 @@ class _TinyPolicy(torch.nn.Module):
 class _Sampler:
     per_rank_batch_size = 2
     accumulation = 3
+    world_size = 1
+    physical_packing = "contiguous"
 
     @staticmethod
     def resume_contract():
-        return {"sampler_kind": "tiny", "microbatch_sizes": [2, 2, 2], "world_size": 1}
+        return {"sampler_kind": "tiny", "sampler_seed": 17, "task_ids": [0, 1],
+                "logical_world_size": 1, "logical_per_rank_batch_size": 6,
+                "global_batch_size": 6, "gradient_accumulation_steps": 3,
+                "rank": 0, "microbatch_sizes": [2, 2, 2], "world_size": 1}
     samples_per_task_per_visit = 2
     tasks_per_rank_per_update = 2
     global_tasks_per_update = 2
@@ -309,7 +314,7 @@ def test_source_sft_checkpoint_roundtrip_and_tamper_gate(
     with torch.no_grad():
         for value in task_lora_state_dict(policy).values():
             value.add_(1)
-    step, rng, rows = load_source_sft_checkpoint(
+    step, rng, rows, offset = load_source_sft_checkpoint(
         checkpoint=checkpoint,
         context=context,
         policy=policy,
@@ -320,7 +325,7 @@ def test_source_sft_checkpoint_roundtrip_and_tamper_gate(
         dataloader_generator_seed=23,
         contract_sha256=canonical_hash(contract),
     )
-    assert (step, rng, rows) == (1, {"cursor": 9}, 1)
+    assert (step, rng, rows, offset) == (1, {"cursor": 9}, 1, 0)
     for name, value in task_lora_state_dict(policy).items():
         torch.testing.assert_close(value, expected[name], rtol=0, atol=0)
 
@@ -438,6 +443,8 @@ def _static_adapter_fixture(
         "schema_version": SOURCE_SFT_CHECKPOINT_SCHEMA,
         "contract_sha256": canonical_hash(training),
         "stage": "development",
+        "physical_world_size": world_size,
+        "physical_packing": "contiguous",
         "consumed": {"next_step": step},
         "files": files,
     }

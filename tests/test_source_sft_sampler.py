@@ -93,6 +93,29 @@ def test_sft_packing_refuses_empty_microbatches():
         _sft_sampler(_sft_dataset(), world=4, micro=64, accumulation=4)
 
 
+@pytest.mark.parametrize("world", range(1, 7))
+def test_task_striped_packing_preserves_36_task_logical_batch(world):
+    dataset = _subset_dataset(tuple(range(36)))
+    accumulation = (576 // world + 63) // 64
+    samplers = [HierarchicalMixedBatchSampler(
+        dataset, task_ids=tuple(range(36)), logical_world_size=4,
+        logical_per_rank_batch_size=144, per_rank_batch_size=64,
+        gradient_accumulation_steps=accumulation, start_step=0, stop_step=2,
+        rank=rank, world_size=world, seed=20260920,
+        physical_packing="task_striped",
+    ) for rank in range(world)]
+    for step in range(2):
+        logical = samplers[0].global_rows_for_step(step)
+        physical = [row for sampler in samplers for micro in range(accumulation)
+                    for row in sampler.batch_for_step(step, micro)]
+        assert Counter(physical) == Counter(logical)
+        assert set(Counter(dataset.frame_index[row][0] for row in logical).values()) == {16}
+        assert max(sum(sampler.task_counts_for_step(step).values()) for sampler in samplers) - min(
+            sum(sampler.task_counts_for_step(step).values()) for sampler in samplers) <= 1
+    if world == 4:
+        assert all(set(sampler.task_counts_for_step(0).values()) == {4} for sampler in samplers)
+
+
 @pytest.mark.parametrize("world,micro,accumulation", [(4, 4, 16), (4, 8, 8), (2, 8, 16),
     (3, 8, 11), (3, 16, 6), (4, 12, 6), (5, 8, 7), (6, 8, 6)])
 def test_source_base_keeps_original_global256_task_episode_stream(world, micro, accumulation):

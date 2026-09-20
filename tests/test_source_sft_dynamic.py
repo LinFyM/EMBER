@@ -11,7 +11,10 @@ import torch
 from ember.source_sft.control import (
     checkpoint_declared, clamped_lr_multiplier, validate_coverage_manifest,
 )
-from ember.source_sft.contract import reconcile_resume_contract, _target_tasks
+from ember.source_sft.contract import (
+    _target_tasks, load_source_sft_config, reconcile_resume_contract,
+    resolve_runtime,
+)
 from ember.writer.errors import WriterModelError
 from ember.source_sft.sampler import HierarchicalMixedBatchSampler
 
@@ -32,6 +35,51 @@ def test_dynamic_contract_extension_preserves_checkpoint_hash(tmp_path):
     candidate["runtime"]["world_size"] = 3
     with pytest.raises(WriterModelError, match="scientific contract"):
         reconcile_resume_contract(args, candidate)
+
+
+def test_explicit_physical_resume_preserves_original_scientific_contract(tmp_path):
+    existing = dict(git=dict(commit="old", branch=""), training_control=CONTROL,
+                    runtime=dict(selected_stop_step=50, total_steps=50,
+                                 checkpoint_steps=[25, 50], world_size=1,
+                                 per_rank_batch_size=64, gradient_accumulation_steps=9,
+                                 microbatch_sizes_by_rank=[[64] * 9],
+                                 num_workers_per_rank=2, rank_topology={"0": "gpu01:0"},
+                                 effective_global_batch_size=576))
+    (tmp_path / "run_contract.json").write_text(json.dumps(existing))
+    args = SimpleNamespace(output_dir=tmp_path,
+        resume=tmp_path / "checkpoints/step_00000050", allow_physical_resume=True,
+        allow_contract_compatible_code_resume=True)
+    candidate = deepcopy(existing)
+    candidate["git"]["commit"] = "new"
+    candidate["runtime"].update(selected_stop_step=100, total_steps=100,
+        checkpoint_steps=[25, 50, 75, 100], world_size=4,
+        per_rank_batch_size=64, gradient_accumulation_steps=3,
+        microbatch_sizes_by_rank=[[64, 64, 16]] * 4,
+        rank_topology={str(rank): f"gpu02:{rank}" for rank in range(4)},
+        physical_packing="task_striped")
+    assert reconcile_resume_contract(args, candidate) == existing
+    candidate["runtime"]["effective_global_batch_size"] = 575
+    with pytest.raises(WriterModelError, match="scientific contract"):
+        reconcile_resume_contract(args, candidate)
+
+
+def test_formal_mtbc_resolves_four_cards_only_for_explicit_checkpoint_migration(monkeypatch):
+    import ember.source_sft.contract as module
+    root = Path(__file__).resolve().parents[1]
+    config = load_source_sft_config(root / "configs/libero_24_8_8_coverage_v1/mtbc.json")
+    monkeypatch.setattr(module, "git_state", lambda _: {"branch": "", "commit": "new"})
+    monkeypatch.setattr(module, "git_state_is_clean_pushed_or_frozen_authority", lambda _: True)
+    args = SimpleNamespace(stage="development", mode="formal", total_steps=None,
+        checkpoint_steps=None, stop_after_step=100, batch_size=None,
+        gradient_accumulation_steps=None, resume=Path("step_00000050"),
+        allow_contract_compatible_code_resume=True, allow_physical_resume=False,
+        physical_packing="task_striped")
+    context = SimpleNamespace(world_size=4, numa_node=0, cpu_affinity=[0])
+    with pytest.raises(WriterModelError, match="task-striped packing requires physical resume"):
+        resolve_runtime(args, config, context)
+    args.allow_physical_resume = True
+    assert resolve_runtime(args, config, context) == (100, 64, (25, 50, 75, 100))
+    assert args.gradient_accumulation_steps == 3
 
 
 def test_clamped_lr_and_exact_scheduler_resume():

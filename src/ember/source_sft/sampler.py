@@ -112,6 +112,7 @@ class HierarchicalMixedBatchSampler(Sampler[list[int]]):
         logical_world_size: int, logical_per_rank_batch_size: int,
         per_rank_batch_size: int, gradient_accumulation_steps: int,
         start_step: int, stop_step: int, rank: int, world_size: int, seed: int,
+        physical_packing: str = "contiguous",
     ) -> None:
         tasks = tuple(sorted(int(value) for value in task_ids))
         rows_by_task = dataset.task_episode_rows
@@ -119,7 +120,8 @@ class HierarchicalMixedBatchSampler(Sampler[list[int]]):
                 or logical_world_size <= 0 or logical_per_rank_batch_size <= 0
                 or logical_per_rank_batch_size % len(tasks)
                 or not 0 <= start_step <= stop_step or not 0 <= rank < world_size
-                or seed < 0 or set(tasks) - set(rows_by_task)):
+                or seed < 0 or set(tasks) - set(rows_by_task)
+                or physical_packing not in {"contiguous", "task_striped"}):
             raise WriterModelError("invalid hierarchical mixed-task sampler")
         episodes = {task: rows_by_task[task] for task in tasks}
         counts = {len(value) for value in episodes.values()}
@@ -139,6 +141,7 @@ class HierarchicalMixedBatchSampler(Sampler[list[int]]):
         self.rank_offset = sum(sum(sizes) for sizes in self.batch_plan[:rank])
         self.per_rank_batch_size, self.accumulation = per_rank_batch_size, gradient_accumulation_steps
         self.seed, self.rank, self.world_size = seed, rank, world_size
+        self.physical_packing = physical_packing
         self.start_step, self.stop_step = start_step, stop_step
 
     def __len__(self) -> int:
@@ -183,17 +186,33 @@ class HierarchicalMixedBatchSampler(Sampler[list[int]]):
     def batch_for_step(self, step: int, micro_index: int) -> list[int]:
         if not 0 <= micro_index < self.accumulation:
             raise WriterModelError("invalid hierarchical microbatch index")
-        start = self.rank_offset + sum(self.batch_sizes[:micro_index])
-        return list(self.global_rows_for_step(step)[start:start + self.batch_sizes[micro_index]])
+        start = sum(self.batch_sizes[:micro_index])
+        rows = self.physical_rows_for_step(step)
+        return list(rows[start:start + self.batch_sizes[micro_index]])
+
+    @lru_cache(maxsize=8)
+    def physical_rows_for_step(self, step: int) -> tuple[int, ...]:
+        rows = self.global_rows_for_step(step)
+        if self.physical_packing == "contiguous":
+            return rows[self.rank_offset:self.rank_offset + sum(self.batch_sizes)]
+        by_task: dict[int, list[int]] = {task: [] for task in self.task_ids}
+        for row in rows:
+            by_task[self.dataset.frame_index[row][0]].append(row)
+        physical: list[list[int]] = [[] for _ in range(self.world_size)]
+        for task_index, task in enumerate(self.task_ids):
+            for offset, row in enumerate(by_task[task]):
+                physical[(task_index + offset) % self.world_size].append(row)
+        if tuple(map(len, physical)) != tuple(sum(sizes) for sizes in self.batch_plan):
+            raise WriterModelError("task-striped physical packing changed rank query counts")
+        return tuple(physical[self.rank])
 
     def task_counts_for_step(self, step: int) -> dict[int, int]:
-        rows = self.global_rows_for_step(step)
+        rows = self.physical_rows_for_step(step)
         frame_index = self.dataset.frame_index
-        return dict(Counter(frame_index[row][0] for row in
-                            rows[self.rank_offset:self.rank_offset + sum(self.batch_sizes)]))
+        return dict(Counter(frame_index[row][0] for row in rows))
 
     def resume_contract(self) -> dict[str, Any]:
-        return {
+        record = {
             "sampler_kind": self.kind, "sampler_seed": self.seed,
             "task_ids": list(self.task_ids), "world_size": self.world_size,
             "rank": self.rank, "per_rank_batch_size": self.per_rank_batch_size,
@@ -203,6 +222,9 @@ class HierarchicalMixedBatchSampler(Sampler[list[int]]):
             "logical_per_rank_batch_size": self.logical_per_rank_batch_size,
             "global_batch_size": self.global_batch_size,
         }
+        if self.physical_packing != "contiguous":
+            record["physical_packing"] = self.physical_packing
+        return record
 
     def coverage_for_steps(self, start_step: int, stop_step: int) -> dict[int, tuple[int, ...]]:
         if not 0 <= start_step <= stop_step:

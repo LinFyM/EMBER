@@ -33,7 +33,7 @@ MT-BC每update逻辑576查询，36task各16；4个逻辑rank各144，物理卡�
 MT-BC warmup150、decay1200，衰减后保持1e-5非零floor。Writer每步只抽4task，因此该伸展近似保持每task曝光相位；
 MT-BC每步已覆盖全部task各16query，该伸展是显式延长其每task学习时钟，不能称作与旧配方曝光等价。
 时钟与训练终止解耦，后续不改LR、不重置optimizer。
-配置maximum_updates/total_steps=null表示没有科学硬终点；每段明确stop_after_step，原topology/optimizer/scheduler/rank RNG完整恢复。
+配置maximum_updates/total_steps=null表示没有科学硬终点；每段明确stop_after_step。同拓扑保持原optimizer/scheduler/rank RNG exact-resume。MT-BC允许在完整optimizer checkpoint切换单节点物理world size、microbatch、worker拓扑和任务交错分片；逻辑576查询、36任务各16、全局loss权重、optimizer/scheduler时钟及验证节点不变。换拓扑显式登记新旧配置，保留原rank RNG可恢复部分，新rank建立独立RNG；此后随机轨迹和低位浮点不称bitwise exact。Writer目前仍按原拓扑exact-resume。
 
 ## 完整Validation与停止规则
 
@@ -60,7 +60,7 @@ Writer每100保存、每200完成correct400；MT-BC每25保存、每50完成vali
 ## 资源与运行
 
 两节点合计卡数遵守AGENTS现行上限；低负载他人GPU可安全共驻，按实际峰值及吞吐选择，不抢占。
-优先Writer多卡与MT-BC异节点并行；释放/重用区段之间的卡供完整评测。每次launch检查live卡况，formal来自clean pushed detached runtime。
+优先Writer多卡与MT-BC异节点并行；释放/重用区段之间的卡供完整评测。Writer结束后，可在MT-BC完整更新/评测边界将同一训练轨迹迁到有足够合格卡的单节点，并用已验证的拓扑恢复提高吞吐；不跨节点拼DDP，不启动第二条MT-BC。各节点先分别完成必要的完整评测，不让一个长任务或慢worker阻塞其他节点的独立工作。评测继续cost-balanced动态队列、long-first和persistent workers；训练任务交错分片减少慢任务集中到某rank，真实多卡profile检查step墙钟、各rank等待、有效queries/s和显存峰值，若扩卡不提速则保留更高吞吐的安排。每次launch检查live卡况，formal来自clean pushed detached runtime。
 2026-09-20启动准备quota：data0约90GiB使用、data1约860GiB，各soft1TiB；新输出选data0，初始预留50GiB并控制checkpoint/cache保留。
 大产物使用前重新核对peak预算；不复制source/dataset。每个400-LoRA bank约2GiB，完成正式原件与报告后清理无后继依赖载荷。
 确切GPU、profile、命令、commit及launch路径在实际启动前登记一次，未launch不得写成运行中。

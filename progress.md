@@ -1,5 +1,15 @@
 # EMBER progress
 
+## 当前维护状态（2026-09-20，全面清理完成）
+
+当前仅一个canonical工作树和main分支（本地、远程）；14个额外worktree及26个本地／6个远程分支已移除。
+未合入历史和三个未提交原型先保存至推送的evidence tags，没有丢弃唯一改动；这些历史源码不进入当前实现。
+90个可重建bank载荷、491个disposable profile参数及55个Python缓存目录已清理；大载荷和worktree释放111.96GiB。
+源码与相关测试净减936行，删除旧接口及其专属测试；重复叙述和exposure原件已合并，历史链接指向冻结commit。
+71项相关CPU测试、14项最终辅助代码复检（重叠）、三个CLI入口与45面板／7216行证据核对通过。
+逐项依据、保留资产及复现方法见[本次清理记录](docs/research_history.md#workspace-cleanup-20260920)。
+科研状态保持下述完成状态，没有新训练或active design。
+
 ## 当前状态（2026-09-20，本轮执行与交付完成）
 
 Owner授权的专家最终修订、主候选、唯一匹配消融、后续趋势、消融视频特异性和条件性双相机全部完成。
@@ -29,62 +39,13 @@ Owner授权的专家最终修订、主候选、唯一匹配消融、后续趋势
 source始终冻结，完整resume、6000/8400事件、全池teacher映射、逐行state/RNG和真实RGB变换核对通过。
 实现阶段CPU检查主教学图累计246项、相机相关222项通过（覆盖有重叠）；后续分析只读取已有证据，不新增模型forward。
 
-正式主/消融/续训/双相机runtime为clean pushed detached39c3919c/bd497edc/d1474ce0/35124aa9；
+正式主/消融/续训/双相机的冻结commit为39c3919c/bd497edc/d1474ce0/35124aa9；临时runtime树已移除，可按commit重建。
 本地原件统一在`runs/analysis/video_teaching_20260919/`，远程保留方法、配对CSV/JSON、曲线、输入示例和报告。
 findings§121–122与[研究历史](docs/research_history.md)保存完整解释及边界；后继选择供Owner与专家讨论，需新的明确授权。
 
-## 上轮完成记录（2026-09-18，A learned frame-set诊断）
+## 历史证据入口
 
-Owner授权的唯一匹配诊断已完成1200更新、四节点strict paired400及train96；训练严格停在1200。
-所有worker和driver正常退出；无运行中的训练/评测，无待自动启动的新实验，当时没有active design。
-[封存合同](docs/learned_frameset_reference_design.md)与[专家原文](docs/review_materials/20260918/expert_review.md)保持登记时口径；
-结果、解释和可复核精简原件见[完整报告](docs/review_materials/20260918/frameset_report.md)。
-
-| 更新 | frame-set validation /400 | A /400 | frame-set train /96 | A /96 |
-| ---: | ---: | ---: | ---: | ---: |
-| 300 | 79 | 99 | 33 | 36 |
-| 600 | 109 | 88 | 40 | 47 |
-| 900 | 142 | 140 | 49 | 54 |
-| 1200 | 118 | 135 | 57 | 62 |
-
-集合参照900能达到142，但1200未保住该能力，不能宣称与A相邻等强，也不能说A在两个节点全面更好。
-主节点A→set R/G/L为102/40/38、90/28/45，breadth6→7、6→5；差值任务簇95%CI为[-4,+5.75]、[-12,+1.75]百分点。
-set900→1200保留91、获得27、丢失51，churn78（A79），Long29→10，主要是双物体放篮28→10。
-train49→57继续提高而validation回落；有限单seed结果不证明顺序普遍无用，也不支持立即删除或加深旧时序处理。
-
-正式版本为clean pushed detached `a9d8614964abfcddef40eb82f2862623f587ffa6`，历史A为`575c189a`；
-4800条件/100800queries完成，12个完整checkpoint保留，profile权重未进入formal。
-本地canonical study：`runs/analysis/a_learned_frameset_20260918/`；远程保留1984对精简CSV、汇总、图表及报告。
-既有source/normalization、4800采样事件、逐行RNG和teacher映射均已核对；8个新面板全部完成。
-本轮仅移除视频RoPE、因果mask及读取时间寻址，匹配历史A的agentview/fixed-mean H；不改变未来接口原则。
-Test、RL、新controls及其它关闭实验均未运行。已完成的目标不构成下一实验授权。
-
-## 已完成实验与证据入口
-
-| 实验 | 已完成事实 | 解释边界与入口 |
-| --- | --- | --- |
-| 统一Writer | 600/900/1200/1500 correct为90/109/67/84，各400；train为38/54/54/52，各96。1500按原合同结束 | 有界non-pass，不采纳本次改造；不证明所有统一结构不可行。findings§117、[封存设计](docs/v52_evidence_based_writer_design.md) |
-| A900机制诊断 | train24固定96条件，正确58、关Procedure34、固定视频保留目标语言38/38、固定LoRA13/10、Source12、SFT47 | 旧过程路径有行为贡献，不证明顺序理解或fresh删除效果。findings§118 |
-| Core/Procedure交叉 | CC58、CW34/35、WC56/56、WW38/38，各96；新增384闭环，复用288对角线 | 正确P增量能跨两个donor Core发挥；不证明Core可删、未见任务迁移或下一架构应只改P。findings§119 |
-
-完整正负历史先读[46组证据审计及补表](docs/v52_evidence_audit_20260917.md)，再读[findings](findings.md)§117–122。
-源码版本、旧专家评审、各轮逐task/suite、R/G/L/churn及formal原件由[研究历史](docs/research_history.md)索引。
-统一实验及两次诊断的详细报告分别位于本地：
-
-- `runs/analysis/unified_writer_20260917/experiment_report.md`
-- `runs/analysis/v52_mechanism_audit_20260918/report.md`
-- `runs/analysis/v52_core_procedure_cross_20260918/report.md`
-
-这些`runs/`原件是ignored本地资产；远程仓库保留源码、合同、历史审计和findings结论，不包含checkpoint或数据集。
-frame-set实现已封存于`b9bd90ac`；当前canonical源码为同视频教学候选，正式训练版本见上文。
-已封存统一正式训练版本为`184947cb`，旧A冻结诊断版本为`575c189a`。
-保留复现入口不表示已经选择或恢复该方法。旧A3000评测、C及其它关闭窗口均未恢复；Test保持关闭。
-
-## 此前仓库整理
-
-已检查源码、12个脚本入口、34个测试文件、27份配置、文档和ignored临时目录；未发现需要本轮改动的第二套Writer实现。
-已合并重复的当前计划/进度叙述，补齐可扩展结构要求，纠正最近诊断的推断范围，并更新README讨论入口。
-删除12个Python/pytest缓存目录的156个可重建文件，文件占用3,678,208字节；不改科研代码或配置。
-保留九个含未合入commit或未提交改动的旧工作树，以及全部正式证据、唯一checkpoint、数据和模型。
-未核定为可删除的历史临时记录保留；不以本次整理改变历史实验结果或扩大资产删除范围。
-本轮检查范围为文档diff、受影响链接、Git状态与远程同步；不重复运行训练、GPU检查或无关测试。
+[A的learned frame-set报告](docs/review_materials/20260918/frameset_report.md)保留上轮匹配诊断；
+[46组证据审计](docs/v52_evidence_audit_20260917.md)、[findings](findings.md)§117–122及
+[研究历史](docs/research_history.md)索引统一Writer、A900机制、Core/Procedure交叉与更早实验。
+历史结果、旧源码与配置均按各自封存口径解释，不恢复已结束路线。

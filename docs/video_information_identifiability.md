@@ -1,5 +1,7 @@
 # 视频信息、训练目标与可识别性复核
 
+本文为封存的历史机制分析；文中的“当前”与goal状态指分析时点，源码链接固定到历史版本。最新状态见[progress](../progress.md)。
+
 2026-09-13。本文是已结束实验后的理论分析，不是active design或新运行授权。
 目标仍是正确视频在唯一完整LoRA中的可重复有益增量及迁移；不降低已登记资格，也不恢复旧训练。
 
@@ -117,8 +119,8 @@ ordered是否已形成值得保护的行为收益。不能安排一个无论结�
 
 ## 6. 可复核依据
 
-- 当前源码：[prior窗口](../src/ember/writer/video_prior.py)、[全部帧的编码与memory](../src/ember/writer/video.py)、
-  [独立跨episode采样](../src/ember/writer/learning_data.py)。冻结611770d1对应路径为本次旧模型的原件。
+- 当时源码：[prior窗口](https://github.com/LinFyM/EMBER/blob/611770d13ab71bcee8284539914372935d07387e/src/ember/writer/video_prior.py)、[全部帧的编码与memory](https://github.com/LinFyM/EMBER/blob/611770d13ab71bcee8284539914372935d07387e/src/ember/writer/video.py)、
+  [独立跨episode采样](https://github.com/LinFyM/EMBER/blob/611770d13ab71bcee8284539914372935d07387e/src/ember/writer/learning_data.py)。冻结611770d1对应路径为本次旧模型的原件。
 - 本机已安装LIBERO：`libero/envs/problems/libero_*_manipulation.py`的`_check_success`／`_eval_predicate`，
   `libero/envs/predicates/base_predicates.py`及`libero/envs/object_states/base_object_states.py`。
   检查的是实际子类，不以抽象base的默认False作为success实现。
@@ -353,7 +355,7 @@ source47→71则保留12、增加59、丢失35，其中Goal的41次source成功�
 
 ### 10.2 当前loss只识别空间边际，不能识别每个query的对象角色
 
-这一结论来自实际[attention实现](../src/ember/writer/attention.py)与[监督实现](../src/ember/writer/spatial_supervision.py)，
+这一结论来自实际[attention实现](https://github.com/LinFyM/EMBER/blob/fc31785e56440deb42fa8b66cb09688f4ff1dde9/src/ember/writer/attention.py)与[监督实现](https://github.com/LinFyM/EMBER/blob/fc31785e56440deb42fa8b66cb09688f4ff1dde9/src/ember/writer/spatial_supervision.py)，
 不依赖新的模型干预。设某帧的实际视觉attention为π[h,l,p]，h是head，l是语言query，p是patch。
 代码对head和query求概率均值，再与物体或运动目标m[p]计算KL：
 

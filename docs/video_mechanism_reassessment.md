@@ -1,6 +1,6 @@
 # 正确视频机制复核：形成过程、证据缺口与迭代依据
 
-日期：2026-09-11。本文服务Owner最新三步goal，当前完成架构形成过程审查，失效定位尚未完成。授权与执行只看[progress](../progress.md)，计划只看[task_plan](../task_plan.md)。95-task扩展不恢复。
+历史分析快照：2026-09-11。文中的当前状态、门槛和授权均指当时阶段，源码链接固定到对应版本。授权与执行只看[progress](../progress.md)，计划只看[task_plan](../task_plan.md)。95-task扩展不恢复。
 
 ## 1. 要解决的问题
 
@@ -57,7 +57,7 @@ R_t=\mathrm{PreActionOut}\big(\mathrm{AE}_{\theta_0,\mu}(KV_t,\xi_0,s=1)\big),
 
 R为最终归一化后50×1024 hidden，source完整计算仍运行；共享probe为50×32固定Gaussian。没有teacher state/action，也没有在teacher路径执行完整10步采样。因此h只有动作生成位置角色，不是已校准的教师未来动作。共用probe减少独立噪声，也可能产生公共horizon结构；高对角对应不能自动解释成实际过程。
 
-代码核对：[native.py](../src/ember/writer/native.py)90–167行。真实Z包括patch与exact task tokens，所以“来自视频分支”仍可能主要承载语言/场景共同语义。
+代码核对：[native.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/native.py)90–167行。真实Z包括patch与exact task tokens，所以“来自视频分支”仍可能主要承载语言/场景共同语义。
 
 ### 4.2 软对应新增了什么
 
@@ -74,7 +74,7 @@ softmax包括空匹配；对应内容m、相对位移分布ρ与非空质量进�
 
 先让全部50条新关系通过一层完整H attention，共同形成Q，再分别读取Z_u/Z_t，联合当前状态、匹配内容、位移、gap与两端视觉差形成M。这样另一行新对应能影响本行看什么；先逐对核实保留证据归属。
 
-代码确有这条依赖：[relation.py](../src/ember/writer/relation.py)63–104行。但Q/M还直接包含当前状态、语言和两端绝对内容；这些可用内容没有被要求必须由真实变化解释。视觉读取是一次learned attention，没有外部“接触已成立”真值认证。“核实”描述设计职责，不能直接作为实验结论。
+代码确有这条依赖：[relation.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/relation.py)63–104行。但Q/M还直接包含当前状态、语言和两端绝对内容；这些可用内容没有被要求必须由真实变化解释。视觉读取是一次learned attention，没有外部“接触已成立”真值认证。“核实”描述设计职责，不能直接作为实验结论。
 
 ### 4.4 三条有序轴各有用途
 
@@ -82,7 +82,7 @@ H-query沿h双向；GRU沿历史起点u从早到晚读取，消息区间[u,t]重
 
 每组临时H-read得到E_t，一层past+self temporal得到P_t；前三组用当前U与P共同决定非线性回写，下一组重读原始Z。它避免单Key attention或简单相同广播的退化；没有恢复未来证据。第四组P直接送Compiler，不做无用途回写。
 
-代码对应[relation.py](../src/ember/writer/relation.py)106–146行、[horizon.py](../src/ember/writer/horizon.py)61–96、164–186行。完整U保留、组间无detach，但数学依赖不证明有益依赖。
+代码对应[relation.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/relation.py)106–146行、[horizon.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/horizon.py)61–96、164–186行。完整U保留、组间无detach，但数学依赖不证明有益依赖。
 
 ### 4.5 参数生成与共享学习
 
@@ -97,19 +97,19 @@ D按target/rank/side独立，跨task共享，末映射329,515,008参数。其动
 
 对其它条件c′，同一D更新仍有δb(c′)=−ηg(c)〈h(c),h(c′)〉。独立rank不隔离task；相似代码不一定无用，也可能造成共享更新耦合。该式不是完整AdamW训练的精确因果归因。
 
-代码：[attention.py](../src/ember/writer/attention.py)85–103行、[native_factor.py](../src/ember/writer/native_factor.py)。任何h相似或D大小都不能单独命名为根因。
+代码：[attention.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/attention.py)85–103行、[native_factor.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/native_factor.py)。任何h相似或D大小都不能单独命名为根因。
 
 ### 4.6 正常训练的信用怎样到达
 
 同task视频与独立episode action queries；源policy读取自己的观测、state、语言及noisy action，普通FM误差先对生成A/B求梯度，重放Writer，再重放Meta。训练只用正确顺序的视频。冻结Z/KV可缓存，更新中的R不可跨step缓存；R-leaf与上游Meta没有永久断梯度。
 
-实际源码：[supervised.py](../src/ember/writer/supervised.py)27–72、[learning_data.py](../src/ember/writer/learning_data.py)93–164。首步B=0导致上游短暂零梯度是初始化代数，不能重演为SEOD式永久断梯度解释。
+实际源码：[supervised.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/supervised.py)27–72、[learning_data.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/learning_data.py)93–164。首步B=0导致上游短暂零梯度是初始化代数，不能重演为SEOD式永久断梯度解释。
 
 设X含执行观测、语言、noisy action和flow time。理想平方损失下视频的Bayes风险收益为E‖E[Y|X,V]−E[Y|X]‖²；若task内独立且语言确定task，该量可能为0。但实际有限共享生成器的未见任务规律尚未确定，视频仍可帮助推断。该推导说明没有自动保证，不说明优化为何选择某条路，也不能解释旧v5.2成功与当前失败的差别。
 
 ## 5. C相对off到底改变什么
 
-C保留上述完整R→P4过程图，另从真实Z保留task-token轴读取patch、沿帧无时间集合读取为S。每槽先读S得到s，以s条件化读取P4，Value用P4减该视频时间均值，融合s/p再用原D生成完整LoRA。代码：[semantic.py](../src/ember/writer/semantic.py)、[horizon.py](../src/ember/writer/horizon.py)230–237行。
+C保留上述完整R→P4过程图，另从真实Z保留task-token轴读取patch、沿帧无时间集合读取为S。每槽先读S得到s，以s条件化读取P4，Value用P4减该视频时间均值，融合s/p再用原D生成完整LoRA。代码：[semantic.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/semantic.py)、[horizon.py](https://github.com/LinFyM/EMBER/blob/a79a7623fafb258ad9695c28ffa61df7242381f7/src/ember/writer/horizon.py)230–237行。
 
 它检验的是“直接语义内容＋语义条件化变化消费”是否更容易由普通FM学习，不是强制动态唯一入口。S可独立支持任务；融合可以忽略p。
 

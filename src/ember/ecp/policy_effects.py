@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any
 
 import torch
 
@@ -24,32 +24,6 @@ def _autocast(device: torch.device, *, native_precision: bool = False):
         torch.autocast("cuda", dtype=torch.bfloat16)
         if device.type == "cuda"
         else nullcontext()
-    )
-
-
-@torch.no_grad()
-def prepare_execution_policy_prefix(
-    policy: torch.nn.Module,
-    batch: Mapping[str, torch.Tensor],
-    *, native_precision: bool = False,
-) -> ExecutionPolicyPrefix:
-    """Embed the exact prefix used by ``PI05Policy.predict_action_chunk``."""
-
-    from lerobot.utils.constants import (
-        OBS_LANGUAGE_ATTENTION_MASK,
-        OBS_LANGUAGE_TOKENS,
-    )
-
-    tokens = batch[OBS_LANGUAGE_TOKENS]
-    masks = batch[OBS_LANGUAGE_ATTENTION_MASK]
-    images, image_masks = policy._preprocess_images(batch)
-    with _autocast(tokens.device, native_precision=native_precision):
-        embeddings, padding, _ = policy.model.embed_prefix(
-            images, image_masks, tokens, masks
-        )
-    return ExecutionPolicyPrefix(
-        embeddings=embeddings.detach(),
-        padding=padding.detach(),
     )
 
 

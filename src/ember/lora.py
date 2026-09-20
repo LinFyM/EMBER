@@ -32,7 +32,7 @@ class LoRATarget:
 
 
 class LoRAContract(Protocol):
-    """Structural interface shared by retired SmolVLA and active PI05 contracts."""
+    """Structural interface for task-local LoRA topology and metadata."""
 
     targets: tuple[LoRATarget, ...]
     rank: int
@@ -47,47 +47,6 @@ class LoRAContract(Protocol):
     def state_tensor_count(self) -> int: ...
 
     def to_dict(self) -> dict[str, Any]: ...
-
-
-@dataclass(frozen=True)
-class SmolVLALoRAContract:
-    targets: tuple[LoRATarget, ...]
-    rank: int
-    alpha: int
-    dropout: float
-    identity_seed: int
-    foundation_revision: str | None = None
-
-    @property
-    def parameter_count(self) -> int:
-        return self.rank * sum(target.parameter_count_per_rank for target in self.targets)
-
-    @property
-    def state_tensor_count(self) -> int:
-        return 2 * len(self.targets)
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "schema_version": "ember_smolvla_lora_v1",
-            "foundation_revision": self.foundation_revision,
-            "adapter": {
-                "rank": self.rank,
-                "alpha": self.alpha,
-                "dropout": self.dropout,
-                "identity_seed": self.identity_seed,
-            },
-            "target_count": len(self.targets),
-            "state_tensor_count": self.state_tensor_count,
-            "trainable_parameter_count": self.parameter_count,
-            "targets": [
-                {
-                    "name": target.name,
-                    "in_features": target.in_features,
-                    "out_features": target.out_features,
-                }
-                for target in self.targets
-            ],
-        }
 
 
 def canonical_contract_sha256(contract: LoRAContract) -> str:

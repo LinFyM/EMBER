@@ -552,7 +552,7 @@ owner要求在正式推进前充分讨论，并以另一段“从π0.5静态图�
 
 以下是9月6日的历史推导顺序。其中past-only及内容差分的定义已被下一小节覆盖，不能恢复为当前实施合同。
 初稿原文保留在Git `12d9689c:docs/causal_layered_video_writer_design.md`；最新完整公式在
-[新设计记录](layered_relation_video_writer_design.md)：
+[当时的完整设计](https://github.com/LinFyM/EMBER/blob/e868de525fda0a20c597dee2c7bffe5717f5e2fd/docs/layered_relation_video_writer_design.md)：
 
 1. 保留exact language与原生Gemma图文prefix；Action Expert共享Meta适配观察侧，vision/Gemma冻结。
 2. 将video时间T与relative action horizon H分开，在H压缩前真正进行跨帧处理；不把H位置命名为物体/阶段。
@@ -1993,3 +1993,42 @@ validation四节点set79/109/142/118，对A99/88/140/135；train33/40/49/57，�
 所有面板及配对检查完成，12个完整checkpoint和正式原件保留在`runs/analysis/a_learned_frameset_20260918/`。
 [结果报告](review_materials/20260918/frameset_report.md)、[逐task/suite表](review_materials/20260918/result_tables.md)与1984对CSV/汇总/图表进入远程交付。
 本设计已封存，无active run，不从历史记录恢复训练。
+
+<a id="workspace-cleanup-20260920"></a>
+## 2026-09-20：完整仓库整理与历史保存
+
+Owner要求清理多余worktree／分支、无用大文件及退役代码文档。以干净且已推送的9ee81a43为起点，
+核对两节点无相关训练／物化／评测作业后，移除全部14个额外worktree、26个本地和6个远程任务分支；仅保留main。
+已合入或patch-equivalent的分支归main历史，独有历史及未提交原型先封存并核对远程标签，再移除工作树与分支：
+
+| 保留目的 | 已推送Git标签 |
+| --- | --- |
+| Horizon条件读取完整历史 | `evidence/horizon-causal-retrieval-20260920` |
+| Horizon共享参数完整历史 | `evidence/horizon-causal-sharing-20260920` |
+| v6历史参照 | `evidence/v6-causal-reference-20260920` |
+| 未验证meta95原型 | `evidence/retired-horizon-meta95-20260920` |
+| 未验证meta95数据原型 | `evidence/retired-horizon-meta95-data-20260920` |
+| 未验证native-factor原型 | `evidence/retired-native-factor-readout-20260920` |
+
+后三者只保存独有WIP，不表示验证通过、科学采纳或合入当前实现。已完成formal runtime均保留其clean pushed commit，
+未来获授权复现时可从记录的commit/tag创建detached checkout，不长期保留闲置worktree。
+
+清理90个物化LoRA bank的23,880个载荷：88个对应已完成评测，另2个为已结束研究的零增量identity/source-control缓存。
+Writer/source checkpoint、生成commit、teacher/frame/state映射及原始评测仍保留，可按原manifest重新物化。
+历史manifest继续记录生成时的真实路径；这些载荷被明确退役，不把路径缺失解释为原实验未完成。
+另移除491个明确disposable的profile/smoke参数文件；保留其合同、manifest、完成记录、吞吐与机制日志。
+部分旧profile权重曾服务已完成的generation-profile；其吞吐JSON仍在，退休载荷不再支持直接重放该临时profile。
+所有删除集合的hardlinks均完整核对，无清单外链接。连同worktree，按实际分配块计释放111.96GiB：
+/data0为97,527,799,808字节，/data1为22,689,996,800字节；另清理55个Python缓存目录的164文件及过期Git临时对象。
+本地逐文件清单、inode／占块、上游恢复依据和原分支tip保存在`runs/analysis/workspace_cleanup_20260920.json`。
+
+正式唯一checkpoint、dataset、foundation/source、V-JEPA历史上游权重／源码、occupancy与其它唯一轨迹、PECS正式依赖、
+原始rows／metrics／contracts／logs／图像证据全部保留；不凭目录名称删除formal profile或唯一诊断。
+独立quota的清理后实测保留在本地清单，未改变额度。
+
+源码退役旧functional loss/gradient/surrogate包装、三个无人消费的输入接口、旧静态评测调度和SmolVLA测试合同；
+保留当前直接功能信用、动态评测队列、LoRA／RNG不变量以及source/expert共享基础设施。源码和相关测试净减936行。
+概念文档回归稳定信息流，progress和README去掉重复旧状态；删除过时的分层设计跳转页，历史原文由冻结Git链接保存。
+五个重复exposure分片改引用已保留原件，原始记录数不变；历史分析源码链接固定到对应commit。
+71项相关CPU测试通过；测试辅助代码最后精简后14项复检通过（与71项重叠），三个canonical CLI帮助入口正常，
+45个证据面板／7216行／43项配对核对、受影响本地链接和diff检查通过。未启动科研训练或闭环评测，科学结果不变。

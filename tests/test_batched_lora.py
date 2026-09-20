@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import replace
+from pathlib import Path
 
 import torch
 
 from ember.batched_lora import BatchedLoRAInference
 from ember.lora import (
     LoRATarget,
-    SmolVLALoRAContract,
     copy_task_lora_state_,
     inject_task_lora,
     task_lora_state_dict,
 )
+from ember.pi05_lora import Pi05LoRAContract, load_pi05_lora_contract
 
 
 class _TinyPolicy(torch.nn.Module):
@@ -23,8 +25,9 @@ class _TinyPolicy(torch.nn.Module):
         return self.proj(value)
 
 
-def _contract() -> SmolVLALoRAContract:
-    return SmolVLALoRAContract(
+def _contract() -> Pi05LoRAContract:
+    return replace(
+        load_pi05_lora_contract(Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"),
         targets=(LoRATarget("proj", 5, 3),),
         rank=2,
         alpha=2,

@@ -9,10 +9,6 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 先读[专家讨论总报告](docs/review_materials/20260919/final_report.md)与[可复制提示词](docs/review_materials/20260919/expert_discussion_prompt.md)；
 完整曲线、逐任务表、输入示例和精简原件均已归档。[封存合同](docs/video_teaching_writer_design.md)与[进度](progress.md)保留授权和执行边界，当前无active design或自动后续实验。
 
-上轮 A 的 learned frame-set 匹配诊断已经完成：900/1200 为142/118，A为140/135，未证明相邻等强；
-[完整报告](docs/review_materials/20260918/frameset_report.md)与[封存合同](docs/learned_frameset_reference_design.md)保留原比较边界。
-旧实验只作为历史依据，不自动恢复执行。
-
 ## 阅读入口
 
 | 文档 | 职责 |
@@ -22,7 +18,6 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 | [封存教学候选](docs/video_teaching_writer_design.md)／[专家最终修订](docs/review_materials/20260919/expert_proposal.md) | 部署图、联合损失、有界训练评测与交付合同 |
 | [本轮总报告](docs/review_materials/20260919/final_report.md)／[专家提示词](docs/review_materials/20260919/expert_discussion_prompt.md) | 完整结果、比较边界、原件入口与讨论问题 |
 | [完整历史证据审计](docs/v52_evidence_audit_20260917.md) | 46组实验及bank/chart补表的机制、预算、正负证据与比较边界 |
-| [封存统一设计](docs/v52_evidence_based_writer_design.md) | 已完成实例的接口、训练和证据合同 |
 | [当前计划](task_plan.md)／[当前进度](progress.md) | 当前goal、授权、实施证据与下一阶段 |
 | [AGENTS](AGENTS.md) | 科学、数据、评测、资源与Git合同 |
 | [Findings](findings.md)／[研究历史](docs/research_history.md) | 跨轮结论，以及封存设计、专家评审与formal原件索引 |
@@ -43,7 +38,7 @@ A900机制与Core/Procedure交叉两次冻结诊断只支持其固定模型、tr
 
 Canonical入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`和`scripts/evaluate_pi05.py`，
 教学候选使用独立schema与fresh初始化；同架构的后续窗口继承其完整训练状态。
-旧A和frame-set的checkpoint使用其冻结runtime，不装入新模型继续训练。
+旧checkpoint须从记录的Git commit重建冻结runtime；已结束实验不长期保留worktree。
 本轮之外的旧实验不由保留入口自动恢复。
 
 ## 数据与资产

@@ -4,110 +4,55 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 使机器人从未见初始化闭环完成任务。语言说明目标与关注对象，视频中的操作内容和顺序应提供必要条件信息。
 人从他人教学迁移到自己身体的能力是科学动机；LIBERO结果本身不证明跨身体泛化。
 
-架构须职责清楚，支持复制同类模块加深与自然扩参；具体结构由全部相关历史证据共同约束，不能只据局部诊断固定路线。
-已按Owner提供的专家意见完成[A的learned frame-set匹配诊断](learned_frameset_reference_design.md)；
-保持A其余内容/生成/训练路径，仅移除视频位置、因果mask及读取时间寻址，辨别给定播放顺序的学习收益。
-集合参照900/1200为142/118，A为140/135；给定顺序不是到达约140的必要输入，但本轮未证明相邻等强。
-具体任务保持与不确定性见[结果报告](review_materials/20260918/frameset_report.md)。
-这项历史输入匹配诊断不选择未来新架构；授权和实际状态见[progress](../progress.md)。
-统一Writer的本轮实现/比较已经结束，旧A/C等历史路线不自动恢复。
-[封存统一设计](v52_evidence_based_writer_design.md)继承v5.2的内容、条件作用、归一化和共享参数坐标，
-用原生中层/末端的同构联合Z/H处理与连续参数槽，替换独立Core/P及专门融合；实际行为和有界裁决见findings§117。
-下述Core/P形式说明统一改造前v5.2衍生实现的接口，不等同于原始132分实验的实际输入/读法；历史比较口径见证据审计。
-Process Pullback及其它已关闭机制从[研究历史](research_history.md)追溯。
+本文保留科学对象、信息流与证据标准。稳定要求以[Owner要求](current_owner_requirements.md)为准；
+当前授权及active design只看[progress](../progress.md)，已完成实例的配置、曲线与结论由封存设计和报告保存。
 
-## 教学候选：同一套参数承担两种动作责任
-
-[最终修订](review_materials/20260919/expert_proposal.md)保留有证据价值的完整自由 A/B 消费者，
-通过同视频动作监督检验生成参数是否更有益地利用所看操作。主实验使用 action-hidden agentview、exact language 和完整 stride5 视频。
-逐帧 native 读取产生 E 与 H50；每个过程块依次读完整 H、带前后角色的相邻 E，再沿真实视频位置做 causal RoPE 交互。
-Core 条件化的居中 P／AdaLN、归一化与八组共享 heads 生成唯一完整 LoRA。
-
-同一套 LoRA 同时接受21个跨 episode 主 FM query 和7个同视频 query；后者在纯噪声端点只监督真实未来五步，
-分别平均后以1与1/3相加，再将总信用回传整个 Writer 和三个 Meta。动作和 state 只在生成之后进入执行监督，不能成为 Writer 输入。
-没有独立动作预测头或 P-only 梯度。重复读取和联合信用提供可检验偏置，不保证视频必要性、未见初始化迁移或保持。
-完整合同及与历史 Local Action、Video Functional、Native Correction、Horizon 的异同见[封存设计](video_teaching_writer_design.md)。
-本轮候选、匹配消融、后续训练趋势与双相机比较均已完成；[总报告](review_materials/20260919/final_report.md)和findings§121–122
-区分原窗口的能力增量、未保持的后续优势及尚未证实的特异性增量，不由局部结果确定唯一内部原因。
-
-## 统一Writer实例：统一表示与一次性参数生成
+## 信息如何成为执行能力
 
 ```text
-exact language + K1同步双RGB，stride5和真实末帧
-  → 原生前9层：真实prefix、完整H50和三组读取Meta
-  → task-span/真实patch与H组成同一网格，联合block×2
-  → 同时残差写回Z/H，原生后9层继续解释
-  → 同构联合block×2形成唯一memory M，保留语义和全部horizon位置
-  → 同构参数decoder：先从M语义位置建立内容，再以该内容读取全部M
-  → 同一slot状态、归一化和八组共享完整A/B heads
-  → 一套LoRA在执行时根据机器人自己的观测产生状态条件化控制
+exact task language + action-hidden、内部有序的正确教学RGB视频
+  → stride5及真实末帧；每条视频独立编码，保留时序与视角身份
+  → 冻结source的真实图文prefix与原生Action Expert读取
+  → 任务相关视觉内容、动作计算响应及跨帧操作关系
+  → 共享Writer把这些条件编译为唯一38-target完整A/B LoRA
+  → rollout前固定参数；source根据机器人自身观测与state闭环执行
 ```
 
-丰富视觉内容、跨帧证据和原生动作知识仍有明确因果作用；统一不等于删除这些作用或只保留动态差分。
-首层参数读取的语义memory已与H和完整视频联合处理，不是新的静态Core。三个Meta、联合块、decoder与head共同接受跨episode真实FM。
-内容保留、共享及归一化是学习偏置，不是视频必用、泛化或保持的保证；这些行为资格沿原科学目标独立验证。
+语言负责目标与关注对象，视频提供实际操作及其后果，执行观测确定机器人目前应做什么。
+共享Text/VL/Action读取Meta属于Writer；source基础权重冻结。原生动作知识必须在视频理解中有明确计算作用，
+不能以无真实prefix、假动作query或无意义forward代替。H是条件化动作计算响应，并非恢复出的teacher action或待执行标签；
+完整50个horizon位置应保留到实际learned read。Video time、action horizon、flow time和layer depth分别解释。
 
-## v5.2衍生实现的历史处理框架
+操作内容、顺序与条件作用可以由不同结构表达；Core、Procedure、memory token和具体decoder都是候选实现。
+模块须职责清楚、能复制加深并自然扩参；选择由完整相关历史及实际行为决定，不把某次局部诊断变成永久结构限制。
+共享参数和结构依赖提供学习偏置，不保证视频必要性、迁移或能力保持。
 
-```text
-exact language + 一条同步agentview／eye_in_hand RGB视频（K=1）
-  → stride5完整视频及真实末帧，每时点两相机共512个真实patch tokens
-  → 冻结π0.5基础 + 独立Text／VL／Action读取Meta
-  → exact text queries、逐帧图文内容Z、完整50-horizon动作响应H
-  → language查询真实视频patch与task-span内容，形成语义Core
-  → 共享learned horizon read把H形成逐帧动作响应摘要，真实顺序Procedure理解其变化
-  → 320个rank slots读取Core与居中的Procedure，后者通过AdaLN调制前者
-  → 八类共享family heads输出唯一38-target、rank16完整A/B LoRA
-  → 冻结source根据机器人自身当前观测闭环执行，LoRA全程固定
-```
+## 信息墙与共同学习
 
-两相机是同一时点的同步观测，不是K=2，不平均视角或原始frames。Teacher action、state/proprio、reward、terminal、
-task ID与文件名均不进入模型。执行policy读取机器人自身观测/state，与teacher信息墙不同。
+Teacher action、state/proprio、reward、terminal、task ID、filename、pose和policy outcome不进入部署Writer。
+执行policy使用机器人自己的观测/state，与teacher信息墙不同。一套生成LoRA覆盖所有38个执行目标，
+不挑视频、不平均最终LoRA、不融合checkpoint，也不部署第二expert adapter。
+两相机是同一时点的同步观测，不是K=2；如声称dynamic K，必须训练覆盖各cardinality，并只在集合阶段做置换不变聚合。
 
-## 历史v5.2：各模块传递什么
-
-Text Meta只处理exact language，形成对齐的任务查询。VL Meta在真实双视角native prefix上提供任务上下文与图像位置内容；
-Core的Value来自这些真实视频内容。它允许共享的对象、关系和任务语义支撑动作，不能因为后继窄出口失败而删除这条已存在能力的路径。
-Text-only分支在读取处提供Query，没有独立的裸语言Value出口；但原生图文task-span和patch hidden已经接受语言条件化，
-前者还直接进入Core内容。这不保证视频不可替代，必须区分目标语言条件化参数、静态视觉上下文与正确教学的额外行为价值。
-
-Action Meta通过相同真实prefix和一个对全部任务共用的固定50×32 Gaussian probe读取原生Action Expert。
-这里的H是条件化动作计算响应，不是从视频恢复的teacher action，也不是待执行的动作标签。完整50个位置保留到实际learned read：
-一个共享内容查询与50个相对位置bias对raw H加权，然后接原投影。查询与bias从零开始，初始函数等价于旧mean；
-随后监督可学习各horizon内容和位置的不同作用，没有在读取前截断或平均H。
-
-Procedure沿真实frame indices做因果注意力，表达过去条件对后续操作的限制；Core与Procedure在同一套Writer里融合。
-这是一种有顺序的归纳偏置，尚不证明网络有益地理解“先A后B”。Video time、action horizon、flow time和layer depth各有独立含义。
-这是历史v5.2实际计算图的因果Procedure；统一Writer曾将其职责移入联合表示；当前教学候选的完整读取与监督另见上节。
-
-共享rank slots通过Core Value产生内容，再由居中的Procedure Value调制；完整A和B均由共享family heads生成。
-输出没有被限制在固定source局部PCA/span中，也不存在第二expert或并行adapter。
-原生Action Expert提供理解视频的动作先验；最终参数作用仍由完整非线性policy及真实闭环判断。
-
-## 历史v5.2：怎样共同学习
-
-Writer与三组Meta从fresh参数／优化状态共同训练；基础LoRA为合法A模板、B=0，各head末端、Meta B和AdaLN按原图零初始化。
-首步先使输出head离开零，后续更新逐步打开上游信用。实际profile须覆盖这一启动过程，不能因第一步上游为零就判定断图，
-也不能仅靠随机解锁后的小图梯度宣称真实训练已连通。
-
-唯一训练目标是同task、严格跨episode的主执行FM：每个video产生一套LoRA，监督其在同task其它episodes的真实观测上预测未来动作。
-动作观测对齐遵循现行offset1合同；归一化只用冻结source统计。每更新4个不同task，各21个queries，先按task等权再统一更新。
-Text/VL/Action Meta、Core、Procedure和完整A/B heads的信用均来自同一参数版本的FM。
-实现可先获得完整LoRA余切，再重放Writer并用frame checkpoint限制激活内存；source冻结，适配的Z/KV/H不跨更新缓存。
-
-跨episode监督、共享图文／动作坐标和共享heads是尝试获得可复用能力的理由，不保证迁移或保持。
-继续训练可能获取新行为，也可能破坏已经成功的条件。此前同事件任务共现对照已作为历史证据保留，
-不再自动继续。上方统一实例及此处历史框架都不构成自动恢复实验的授权；active design只能由progress登记。
+主监督来自同task、严格跨episode的真实执行FM。授权的训练期辅助标签须登记来源、梯度消费者和权重，
+只能在生成之后用于监督，不得进入条件表示。Writer与读取Meta从fresh状态共同学习，source冻结；
+合法identity可使首步部分上游信用为零，须核实后续实际学习过程，不能由单次梯度或机制smoke宣称方法成功。
+适配的Z/KV/H不能跨参数更新缓存，validation/test不产生梯度。部署无teacher标签、loss、optimizer或环境试错。
 
 ## 怎样判断
 
-首先看正确视频的single-checkpoint strict paired400绝对能力；接受标准以Owner最新要求为准，当前接受约130–140及更可信的视频特异性。
-继续检查相邻能力、成功集合保持、breadth、四suite及Goal/Long贡献，允许少量正常churn；历史严格>145合同只约束对应封存实验。
-训练loss或较低参数漂移不替代闭环。
-正式验证每task每轮全50条teacher各一次，state–video与policy RNG跨节点固定；train96是另一个明确登记的独立视频有限面板。
+首先看single-checkpoint strict paired400的正确视频绝对能力，再看相邻成功保持、任务广度、四suite、获取/丢失与churn。
+性能接受标准服从Owner最新要求，历史门槛只约束对应封存实验；loss、参数几何和内部时序margin不替代闭环。
+正式K1每task每轮使用全部50条teacher各一次，state–video映射与policy RNG跨checkpoint固定。
 
-有能力及相邻证据后验证same-task换视频，再冻结单checkpoint做最终wrong／no-video／shuffled／reversed controls。
-后者重排真实frames后完整生成，不参与训练或选点。历史A阶段另获owner授权，按预注册节点观察特异性演化并用于问题分析；
-该实验现已暂停，其原合同不构成恢复授权。历史封闭诊断和Test不追溯反哺，Test默认封闭，未来使用须先登记方法冻结。
-历史恢复、训练任务新获取及局部保持可以是正证据，却不等于通过最终资格。连续有信息量节点没有改善时停止该假设，
-不靠无依据的种子、rank、scale或学习率小扫掩盖能力缺口。
+同task换视频检验条件覆盖；选定并冻结checkpoint后，以严格配对的wrong／no-video／shuffled／reversed controls检查视频作用。
+顺序干预须重排真实frames后完整forward，不能用hidden扰动代替。输入敏感、顺序敏感和正确教学带来有益增量分别判断；
+source不是learned language-only/static prior。开发诊断及其反馈范围须另有明确登记，Test默认封闭。
+连续有信息量节点没有改善时，应综合证据裁决实际检验的假设，不靠无依据的小扫或无限续训延长。
+
+## 已完成方法与证据入口
+
+- [同视频教学设计](video_teaching_writer_design.md)与[最终报告](review_materials/20260919/final_report.md)：完整A/B生成、H与相邻视觉重复读取、跨episode主FM和同视频短程功能信用，以及匹配消融、续训和双相机比较。
+- [learned frame-set合同](learned_frameset_reference_design.md)与[匹配诊断报告](review_materials/20260918/frameset_report.md)：给定播放顺序的学习作用及相邻能力边界。
+- [统一Writer封存设计](v52_evidence_based_writer_design.md)与[46组历史证据审计](v52_evidence_audit_20260917.md)：统一表示实例、v5.2及后继正负证据与比较条件。
+- [研究历史](research_history.md)与[findings](../findings.md)：旧专家论证、源码commit、formal原件和跨轮结论。保留历史不构成恢复执行授权。

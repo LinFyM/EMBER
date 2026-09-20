@@ -1,47 +1,24 @@
 from __future__ import annotations
 
+from dataclasses import replace
+from pathlib import Path
+
 import torch
 
 from ember.lora import (
     LORA_B_SUFFIX,
     LoRATarget,
-    SmolVLALoRAContract,
     copy_task_lora_state_,
     functional_lora_call,
     inject_task_lora,
     task_lora_state_dict,
 )
-
-
-class _Attention(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.q_proj = torch.nn.Linear(3, 4, bias=False)
-        self.v_proj = torch.nn.Linear(3, 2, bias=False)
-
-
-class _Layer(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.self_attn = _Attention()
-
-
-class _Expert(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.layers = torch.nn.ModuleList([_Layer() for _ in range(16)])
-
-
-class _VLMWithExpert(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.lm_expert = _Expert()
+from ember.pi05_lora import Pi05LoRAContract, load_pi05_lora_contract
 
 
 class _Core(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        self.vlm_with_expert = _VLMWithExpert()
         self.state_proj = torch.nn.Linear(3, 4, bias=False)
         self.action_in_proj = torch.nn.Linear(3, 4, bias=False)
         self.action_out_proj = torch.nn.Linear(4, 3, bias=False)
@@ -58,8 +35,9 @@ class _Policy(torch.nn.Module):
         return self.model.state_proj(value)
 
 
-def _small_contract() -> SmolVLALoRAContract:
-    return SmolVLALoRAContract(
+def _small_contract() -> Pi05LoRAContract:
+    return replace(
+        load_pi05_lora_contract(Path(__file__).resolve().parents[1] / "configs/pi05_lora_v1.json"),
         targets=(LoRATarget("model.state_proj", 3, 4),),
         rank=2,
         alpha=1,

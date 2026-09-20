@@ -191,47 +191,6 @@ class RawTeacherVideoStore:
         self._handles.clear()
 
 
-def pack_teacher_condition(
-    store: RawTeacherVideoStore,
-    *,
-    task_id: int,
-    demos: Sequence[int],
-    language: tuple[Any, Any, Any],
-    device: Any,
-) -> tuple[tuple[Any, ...], dict[str, Any]]:
-    """Pack one K-video Writer condition without reading privileged fields."""
-
-    import torch
-
-    videos = tuple(store.load(task_id, demo) for demo in demos)
-    if not videos or len(videos) > 4 or len(set(demos)) != len(demos):
-        raise WriterModelError("Writer condition requires one to four unique videos")
-    frames = torch.cat([torch.from_numpy(video.frames) for video in videos]).to(
-        device=device, non_blocking=True
-    )
-    indices = torch.cat([torch.from_numpy(video.frame_indices) for video in videos]).to(
-        device=device, non_blocking=True
-    )
-    counts = torch.tensor([video.frames.shape[0] for video in videos], dtype=torch.long)
-    packed = (
-        frames,
-        indices,
-        torch.cat((torch.zeros(1, dtype=torch.long), counts.cumsum(0))),
-        torch.tensor([0, len(videos)], dtype=torch.long),
-        *language,
-    )
-    return packed, {
-        "K": len(videos),
-        "teacher_demo_indices": list(demos),
-        "available_stride5_frames": [int(len(video.frame_indices)) for video in videos],
-        "sampled_frames": [int(value) for value in counts.tolist()],
-        "total_available_stride5_frames": sum(
-            int(len(video.frame_indices)) for video in videos
-        ),
-        "total_sampled_frames": int(counts.sum()),
-    }
-
-
 class FunctionalQueryDataset:
     """Lazy source-only observation/action chunks for Writer or direct LoRA."""
 

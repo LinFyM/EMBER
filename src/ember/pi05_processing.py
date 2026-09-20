@@ -192,57 +192,6 @@ class Pi05LiberoProcessor:
         )
 
 
-class Pi05PureLanguageTokenizer:
-    """Tokenize only task language for Writer features, with no policy state prompt."""
-
-    def __init__(self, tokenizer_path: Path, max_length: int, device: str) -> None:
-        import sentencepiece
-
-        if max_length <= 0:
-            raise ValueError("pure-language tokenizer max length must be positive")
-        self._tokenizer = sentencepiece.SentencePieceProcessor(
-            model_file=str(tokenizer_path)
-        )
-        self._max_length = max_length
-        self._device = device
-
-    @staticmethod
-    def format_prompt(task: str) -> str:
-        cleaned = str(task).strip().replace("_", " ").replace("\n", " ")
-        if not cleaned:
-            raise ValueError("Writer task language must be non-empty")
-        return f"Task: {cleaned}\n"
-
-    def __call__(self, tasks: Sequence[str]) -> tuple[Any, Any]:
-        import torch
-
-        if not tasks or isinstance(tasks, (str, bytes)):
-            raise ValueError("pure-language tokenizer requires a task sequence")
-        prompts = [self.format_prompt(task) for task in tasks]
-        encoded = self._tokenizer.encode(prompts, add_bos=True)
-        lengths = [len(values) for values in encoded]
-        if any(length > self._max_length for length in lengths):
-            raise ValueError(
-                "Writer task language exceeds the sealed tokenizer length: "
-                f"{lengths} > {self._max_length}"
-            )
-        tokens = torch.zeros(
-            (len(prompts), self._max_length),
-            dtype=torch.long,
-            device=self._device,
-        )
-        masks = torch.zeros_like(tokens, dtype=torch.bool)
-        for row, values in enumerate(encoded):
-            if values:
-                tokens[row, : len(values)] = torch.as_tensor(
-                    values, dtype=torch.long, device=self._device
-                )
-                masks[row, : len(values)] = True
-        if not bool(masks.any(dim=1).all()):
-            raise ValueError("pure-language tokenization produced an empty task")
-        return tokens, masks
-
-
 class Pi05TeacherPrefixTokenizer:
     """Build the sealed state-free teacher prompt for the video Writer."""
 

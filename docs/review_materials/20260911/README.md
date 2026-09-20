@@ -26,7 +26,7 @@
 
 | 标识 | 源码与原配置 | 科学区别 |
 | --- | --- | --- |
-| main canonical | [main horizon.py](../../../src/ember/writer/horizon.py)、[默认配置](../../../configs/pi05_horizon_writer_v1.json) | Compiler额外语言query启用；已实现dual输入，但默认agentview；默认节点是旧首段配置快照，不是下一轮launch |
+| 当时的 main 快照 | [main horizon.py](https://github.com/LinFyM/EMBER/blob/043b58ca3f1f3e7ed699b876f4964be96654c7e5/src/ember/writer/horizon.py)、[默认配置](https://github.com/LinFyM/EMBER/blob/043b58ca3f1f3e7ed699b876f4964be96654c7e5/configs/pi05_horizon_writer_v1.json) | Compiler额外语言query启用；已实现dual输入，但默认agentview；默认节点是旧首段配置快照，不是下一轮launch |
 | all7 | [9abc9b95](https://github.com/LinFyM/EMBER/tree/9abc9b956d76b6a9918bcd9836eee25806a9448b)、[配置](model_records/all7/run_contract.json) | 当前逐帧上下文条件版本的原始对照；单视角、独立D |
 | off7/off11 | [45e16633 horizon.py](https://github.com/LinFyM/EMBER/blob/45e16633394e1baa9af8cefba698661b41aab539/src/ember/writer/horizon.py#L186)、[off7配置](model_records/off7/run_contract.json)、[off11配置](model_records/off11/run_contract.json) | `backend_conditioning=local_h_read`使额外Compiler query route归零；保留exact language、local和H-read；独立D与main相同 |
 | shared7 | [c63f55dc](https://github.com/LinFyM/EMBER/tree/c63f55dc7e36ed51b426063f68caa49245b5af76)、[配置](model_records/shared7/run_contract.json) | 在all背景把同target不同rank的A/B侧D绑定；该实验未被采纳 |

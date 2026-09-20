@@ -12,7 +12,7 @@ from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
 from ember.lora import LoRAContract
-from ember.writer.coordinate import CoordinateLoRADecoder
+from ember.writer.native_factor import NativeFactorLoRADecoder
 from ember.writer.relation import LocalRelationBlock
 
 
@@ -27,21 +27,17 @@ class LayeredWriterConfig:
     blocks: int = 4
     radius: int = 4
     compiler_blocks: int = 2
-    coordinate_width: int = 64
-    coordinate_readout: str = "target_rank"
+    factor_width: int = 64
     edge_chunk: int = 16
-    coordinate_chunk: int = 256
     activation_checkpoint: bool = True
 
     def __post_init__(self) -> None:
         positive = (self.width, self.heads, self.layers, self.horizon, self.native_width,
-                    self.language_width, self.coordinate_width, self.edge_chunk, self.coordinate_chunk)
+                    self.language_width, self.factor_width, self.edge_chunk)
         if min(positive) <= 0 or self.width % self.heads:
             raise ValueError("Writer dimensions must be positive and width divisible by heads")
         if min(self.blocks, self.radius) < 0 or self.compiler_blocks <= 0:
             raise ValueError("invalid relation radius/block or compiler block count")
-        if self.coordinate_readout != "target_rank":
-            raise ValueError("canonical coordinate readout must be target_rank; incompatible models require fresh training")
 
 
 class _Attention(nn.Module):
@@ -107,8 +103,7 @@ class LayeredRelationWriter(nn.Module):
         self.memory_layers = nn.Parameter(torch.empty(config.layers, width))
         self.time_projection = nn.Linear(width, width, bias=False)
         self.compiler = nn.ModuleList([_CompilerBlock(width, config.heads) for _ in range(config.compiler_blocks)])
-        self.decoder = CoordinateLoRADecoder(contract, width, config.coordinate_width,
-                                             config.coordinate_chunk, config.activation_checkpoint)
+        self.decoder = NativeFactorLoRADecoder(contract, width, config.factor_width)
         for parameter in (self.language_query, self.layer_embedding, self.read_layers,
                           self.target_queries, self.rank_queries, self.memory_layers):
             nn.init.normal_(parameter, std=0.02)

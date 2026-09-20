@@ -34,7 +34,7 @@ def _contract(full: bool = False):
 def _config(**kwargs) -> LayeredWriterConfig:
     return replace(LayeredWriterConfig(width=12, heads=3, layers=2, horizon=4,
                                       native_width=6, language_width=8, blocks=2, radius=1,
-                                      coordinate_width=5, edge_chunk=2, coordinate_chunk=3,
+                                      factor_width=5, edge_chunk=2,
                                       activation_checkpoint=False), **kwargs)
 
 
@@ -131,8 +131,9 @@ def test_variable_length_video_set_is_permutation_invariant(cardinality: int) ->
     config = _config()
     writer = LayeredRelationWriter(_contract(), config)
     with torch.no_grad():
-        writer.decoder.a_readout.normal_(std=0.05)
-        writer.decoder.b_readout.normal_(std=0.05)
+        for group in writer.decoder.groups:
+            group.a_weight.normal_(std=0.05)
+            group.b_weight.normal_(std=0.05)
     inputs = [_input(length, config) for length in (1, 3, 5, 2)[:cardinality]]
     videos, times = map(list, zip(*inputs, strict=True))
     embeddings, mask = _language(config)
@@ -220,7 +221,7 @@ def test_identity_start_then_functional_update_reaches_upstream(checkpointed: bo
     optimizer = torch.optim.SGD(writer.parameters(), lr=0.02)
     initial = writer([response], [times], *language)
     _functional_tensor_loss(initial, contract, inputs, targets).backward()
-    assert writer.decoder.b_readout.grad.abs().sum() > 0
+    assert writer.decoder.groups[0].b_weight.grad.abs().sum() > 0
     assert writer.input_projection.weight.grad.abs().sum() == 0
     optimizer.step()
     optimizer.zero_grad(set_to_none=True)
@@ -229,17 +230,18 @@ def test_identity_start_then_functional_update_reaches_upstream(checkpointed: bo
     _functional_tensor_loss(generated, contract, inputs, targets).backward()
     for parameter in (writer.input_projection.weight, writer.language_input.weight,
                       writer.relation_blocks[0].message.relative, writer.horizon_read.value.weight,
-                      writer.compiler[0].cross.value.weight, writer.decoder.groups[0].b_coordinates):
+                      writer.compiler[0].cross.value.weight, writer.decoder.groups[0].b_weight):
         assert parameter.grad is not None and parameter.grad.abs().sum() > 0
     assert response.grad is not None and response.grad.abs().sum() > 0
 
 
 def test_chunked_checkpoint_graph_matches_dense_edge_graph_and_vjp() -> None:
     config = _config(blocks=1)
-    dense = LayeredRelationWriter(_contract(), replace(config, edge_chunk=100, coordinate_chunk=100))
+    dense = LayeredRelationWriter(_contract(), replace(config, edge_chunk=100))
     chunked = LayeredRelationWriter(_contract(), replace(config, activation_checkpoint=True))
     with torch.no_grad():
-        dense.decoder.b_readout.normal_(std=0.03)
+        for group in dense.decoder.groups:
+            group.b_weight.normal_(std=0.03)
     chunked.load_state_dict(dense.state_dict())
     response, times = _input(4, config)
     left, right = response.requires_grad_(), response.detach().clone().requires_grad_()

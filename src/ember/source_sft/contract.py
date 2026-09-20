@@ -26,6 +26,7 @@ from ember.pi05_source_checkpoint import (
 )
 from ember.pi05_source_contract import append_jsonl
 from ember.source_sft.sampler import source_batch_sizes
+from ember.source_sft.control import dynamic_control, validate_coverage_manifest
 from ember.writer.data import FunctionalQueryDataset, WriterTaskAuthority
 from ember.writer.errors import WriterModelError
 
@@ -75,12 +76,15 @@ def _validate_authorities(config: Mapping[str, Any]) -> None:
 def _validate_protocol(config: Mapping[str, Any]) -> None:
     manifest = read_json(authority_path(config, "target_data_manifest"))
     roles = manifest.get("summary", {}).get("roles", {})
+    coverage = manifest.get("protocol") == "configs/libero_24_8_8_coverage_v1/protocol.json"
+    if coverage:
+        validate_coverage_manifest(manifest, read_json(REPO_ROOT / manifest["protocol"]))
     if (
         manifest.get("schema_version") != "ember_pi05_target_data_manifest_v1"
-        or int(manifest.get("summary", {}).get("tasks", -1)) != 40
-        or int(manifest.get("summary", {}).get("episodes", -1)) != 2000
+        or int(manifest.get("summary", {}).get("tasks", -1)) != (52 if coverage else 40)
+        or int(manifest.get("summary", {}).get("episodes", -1)) != (2600 if coverage else 2000)
         or {role: len(roles.get(role, ())) for role in ("train", "validation", "test")}
-        != {"train": 24, "validation": 8, "test": 8}
+        != {"train": 36 if coverage else 24, "validation": 8, "test": 8}
     ):
         raise Pi05SourceSFTError("Source-SFT target-data authority is not sealed 24/8/8")
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
@@ -91,8 +95,8 @@ def _validate_protocol(config: Mapping[str, Any]) -> None:
             or evaluation["authorities"]["source_base_config"]["path"] != source_ref["path"]):
         raise Pi05SourceSFTError("Source-SFT LoRA and source-base authorities disagree")
     expected_stages = {
-        "development": (["train"], 24, 1200),
-        "final": (["train", "validation"], 32, 1600),
+        "development": (["train"], 36 if coverage else 24, 1800 if coverage else 1200),
+        "final": (["train", "validation"], 44 if coverage else 32, 2200 if coverage else 1600),
     }
     if set(config.get("stages", {})) != set(expected_stages):
         raise Pi05SourceSFTError("Source-SFT stage set changed")
@@ -144,6 +148,11 @@ def load_source_sft_config(path: Path) -> dict[str, Any]:
     _validate_authorities(config)
     _validate_protocol(config)
     _validate_information_wall(config)
+    if dynamic_control(config):
+        formal = config["stages"][config["sealed_stage"]]["formal_run"]
+        if (formal.get("total_steps") is not None
+                or config["optimization"]["scheduler"].get("kind") != "cosine_warmup_clamped_v1"):
+            raise Pi05SourceSFTError("dynamic Source-SFT needs an unbounded run and clamped LR clock")
     if config.get("sealed_stage") not in SOURCE_SFT_STAGES:
         raise Pi05SourceSFTError("Source-SFT config does not seal exactly one stage")
     return config
@@ -164,12 +173,13 @@ def validate_active_training_recipe(config: Mapping[str, Any]) -> None:
     """Historical configs remain readable evidence, never active training defaults."""
     recipe, data = config.get("training_recipe", {}), config["data"]
     lora = load_pi05_lora_contract(authority_path(config, "lora_contract"))
-    if (config.get("sealed_stage") != "development"
+    tasks = int(config["stages"]["development"]["task_count"])
+    if (tasks not in (24, 36) or config.get("sealed_stage") != "development"
             or recipe.get("kind") != "hierarchical_task_episode_chunk_mixed_v1"
             or recipe.get("logical_world_size") != 4
             or recipe.get("logical_per_rank_batch_size") != 144
-            or recipe.get("global_tasks_per_update") != 24
-            or recipe.get("global_samples_per_task_per_update") != 24
+            or recipe.get("global_tasks_per_update") != tasks
+            or recipe.get("global_samples_per_task_per_update") != 576 // tasks
             or recipe.get("rank_task_binding") != "none"
             or lora.rank != 128 or lora.parameter_count != 10297344
             or data.get("action_start_offset") != 1
@@ -177,6 +187,19 @@ def validate_active_training_recipe(config: Mapping[str, Any]) -> None:
             or data.get("episodes_per_task") != 50 or data.get("demo_indices") != [0, 49]
             or config["information_wall"].get("validation_actions_read") != 0):
         raise Pi05SourceSFTError("use the aligned rank128 all-task Source-SFT recipe; historical training is retired")
+
+
+def _runtime_steps(args: argparse.Namespace, defaults: Mapping[str, Any],
+                   control: Mapping[str, Any] | None) -> tuple[int, tuple[int, ...]]:
+    if control and args.mode == "formal":
+        if (args.total_steps is not None or args.checkpoint_steps is not None
+                or not args.stop_after_step
+                or args.stop_after_step % control["validation_interval"]):
+            raise Pi05SourceSFTError("dynamic formal training requires a validation interval endpoint only")
+        endpoint = int(args.stop_after_step)
+        return endpoint, tuple(range(control["checkpoint_interval"], endpoint + 1, control["checkpoint_interval"]))
+    total = args.total_steps or int(defaults["total_steps"])
+    return total, parse_checkpoint_steps(args.checkpoint_steps or defaults["checkpoint_steps"], total)
 
 
 def resolve_runtime(
@@ -189,10 +212,9 @@ def resolve_runtime(
     if args.mode == "formal" and formal.get("status") != "sealed":
         raise Pi05SourceSFTError("formal Source-SFT physical profile is not sealed")
     defaults = formal if args.mode == "formal" else config["profile_defaults"]
-    total_steps = args.total_steps or int(defaults["total_steps"])
+    control = dynamic_control(config)
+    total_steps, checkpoint_steps = _runtime_steps(args, defaults, control)
     batch_size = args.batch_size or int(defaults["per_rank_batch_size"])
-    checkpoint_steps = parse_checkpoint_steps(
-        args.checkpoint_steps or defaults["checkpoint_steps"], total_steps)
     stop_step = args.stop_after_step or total_steps
     recipe = config["training_recipe"]
     global_batch = int(recipe["logical_world_size"]) * int(recipe["logical_per_rank_batch_size"])
@@ -205,11 +227,11 @@ def resolve_runtime(
                     or (max_local_queries + batch_size - 1) // batch_size)
     source_batch_sizes(global_batch, context.world_size, batch_size, accumulation)
     if args.mode == "formal":
-        expected = (int(formal["expected_world_size"]), int(formal["total_steps"]),
+        expected = (int(formal["expected_world_size"]), total_steps if control else int(formal["total_steps"]),
                     int(formal["per_rank_batch_size"]), int(formal["gradient_accumulation_steps"]),
-                    tuple(formal["checkpoint_steps"]))
+                    checkpoint_steps if control else tuple(formal["checkpoint_steps"]))
         if ((context.world_size, total_steps, batch_size, accumulation, checkpoint_steps) != expected
-                or stop_step not in formal["stage_stop_steps"]):
+                or (not control and stop_step not in formal["stage_stop_steps"])):
             raise Pi05SourceSFTError("formal Source-SFT launch differs from its sealed profile")
         state = git_state(REPO_ROOT)
         if not git_state_is_clean_pushed_or_frozen_authority(state):
@@ -348,6 +370,8 @@ def _software_versions() -> dict[str, Any]:
 def _contract_stop_step(
     args: argparse.Namespace, config: Mapping[str, Any], total_steps: int
 ) -> int:
+    if dynamic_control(config):
+        return int(args.stop_after_step)
     if args.mode == "formal":
         return int(
             config["stages"][args.stage]["formal_run"].get(
@@ -411,6 +435,7 @@ def build_contract(
         "training_recipe": dict(config.get("training_recipe", {})),
         "data": dict(config["data"]),
         "optimization": dict(config["optimization"]),
+        **({"training_control": dict(config["training_control"])} if dynamic_control(config) else {}),
         "stage_contract": dict(stage),
         "tasks": [
             {
@@ -543,7 +568,7 @@ def reconcile_resume_contract(
     if (
         existing_stop <= 0
         or candidate_stop < existing_stop
-        or candidate_stop > int(existing_runtime.get("total_steps", -1))
+        or (not dynamic_control(existing) and candidate_stop > int(existing_runtime.get("total_steps", -1)))
     ):
         raise Pi05SourceSFTError(
             "Source-SFT resume cannot shorten or exceed its sealed stage axis"
@@ -554,6 +579,15 @@ def reconcile_resume_contract(
         **candidate_runtime,
         "selected_stop_step": existing_stop,
     }
+    if dynamic_control(existing):
+        control = dynamic_control(existing)
+        if (candidate_stop % control["validation_interval"]
+                or candidate_runtime.get("total_steps") != candidate_stop
+                or candidate_runtime.get("checkpoint_steps") != list(range(
+                    control["checkpoint_interval"], candidate_stop + 1, control["checkpoint_interval"]))):
+            raise Pi05SourceSFTError("dynamic Source-SFT extension changed its interval schedule")
+        normalized["runtime"]["total_steps"] = existing_runtime["total_steps"]
+        normalized["runtime"]["checkpoint_steps"] = existing_runtime["checkpoint_steps"]
     existing_git = existing.get("git", {})
     candidate_git = candidate.get("git", {})
     if existing_git != candidate_git:

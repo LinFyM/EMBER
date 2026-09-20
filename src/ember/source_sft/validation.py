@@ -15,6 +15,7 @@ import torch.distributed as dist
 from safetensors.torch import load_file
 from torch.utils.data import default_collate
 
+from ember.source_sft.control import checkpoint_declared, dynamic_control
 from ember.lora import (
     copy_task_lora_state_,
     inject_task_lora,
@@ -91,7 +92,7 @@ def _checkpoint_records(
         if (
             cursor <= 0
             or checkpoint.name != f"step_{cursor:08d}"
-            or cursor not in training["runtime"]["checkpoint_steps"]
+            or not checkpoint_declared(training, cursor)
         ):
             raise Pi05SourceSFTError(
                 "validation Source-SFT checkpoint cursor changed"

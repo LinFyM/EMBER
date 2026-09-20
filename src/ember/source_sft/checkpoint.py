@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import torch
+from ember.source_sft.control import dynamic_control, checkpoint_declared
 import torch.distributed as dist
 from safetensors.torch import load_file, save_file
 
@@ -187,7 +188,7 @@ def save_source_sft_checkpoint(
     total_steps = int(contract.get("runtime", {}).get("total_steps", -1))
     if (
         mode not in {"profile", "formal"}
-        or not 0 < step <= total_steps
+        or (not checkpoint_declared(contract, step) if dynamic_control(contract) else not 0 < step <= total_steps)
     ):
         raise Pi05SourceSFTError("Source-SFT checkpoint step is outside its contract")
     temporary = (

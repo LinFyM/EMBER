@@ -8,6 +8,7 @@ from typing import Any, Mapping, Sequence
 import torch
 from safetensors.torch import load_file
 
+from ember.source_sft.control import checkpoint_declared, dynamic_control
 from ember.lora import (
     canonical_contract_sha256,
     copy_task_lora_state_,
@@ -138,10 +139,7 @@ def _validate_checkpoint_contract(
         contract_sha256=run_contract_sha,
     )
     step = int(manifest.get("consumed", {}).get("next_step", -1))
-    declared_steps = tuple(
-        int(value) for value in run_contract.get("runtime", {}).get("checkpoint_steps", ())
-    )
-    if checkpoint.name != f"step_{step:08d}" or step not in declared_steps:
+    if checkpoint.name != f"step_{step:08d}" or not checkpoint_declared(run_contract, step):
         raise Pi05SourceSFTError("Source-SFT evaluation checkpoint is not declared")
     if manifest.get("stage") != stage:
         raise Pi05SourceSFTError("Source-SFT checkpoint stage changed")
@@ -186,6 +184,9 @@ def _formal_summary_sha(
         or int(summary.get("test_action_reads", -1)) != 0
     ):
         raise Pi05SourceSFTError("Source-SFT run summary changed")
+    if dynamic_control(run_contract) and evaluation_role == "test":
+        if summary.get("training_complete") is not True or summary.get("selected_checkpoint_step") != step:
+            raise Pi05SourceSFTError("Test requires completed dynamic training and a frozen selected checkpoint")
     return sha256_file(summary_path), "completed_run_summary"
 
 

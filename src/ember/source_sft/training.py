@@ -14,6 +14,9 @@ from typing import Any, Iterator, Mapping
 
 import torch
 import torch.distributed as dist
+from functools import partial
+from ember.source_sft.control import dynamic_control, clamped_lr_multiplier
+
 from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
@@ -107,6 +110,12 @@ def _scheduler(
     optimizer: torch.optim.Optimizer,
     config: Mapping[str, Any],
 ) -> torch.optim.lr_scheduler.LRScheduler:
+    if config.get("kind") == "cosine_warmup_clamped_v1":
+        multiplier = partial(clamped_lr_multiplier, warmup=int(config["warmup_steps"]),
+                             decay=int(config["decay_steps"]), peak=float(config["peak_lr"]),
+                             floor=float(config["decay_lr"]))
+        multiplier(0)
+        return torch.optim.lr_scheduler.LambdaLR(optimizer, multiplier)
     return CosineDecayWithWarmupSchedulerConfig(
         num_warmup_steps=int(config["warmup_steps"]),
         num_decay_steps=int(config["decay_steps"]),
@@ -466,6 +475,8 @@ def run_steps(runtime: SourceSFTRuntime) -> None:
                 "schema_version": "ember_pi05_source_sft_run_summary_v1",
                 "contract_sha256": runtime.contract_sha256,
                 "stage": runtime.args.stage,
+                **({"training_complete": False, "selected_checkpoint_step": None}
+                   if dynamic_control(runtime.config) else {}),
                 "completed_optimizer_steps": stop,
                 "requested_optimizer_steps": runtime.total_steps,
                 "stopped_early_for_profile": (

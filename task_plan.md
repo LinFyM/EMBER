@@ -9,8 +9,8 @@ Owner提供的专家原始对话解释了两项已采纳决策：held所需对�
 | 阶段 | 执行与交付证据 | 进入下一阶段的条件 |
 | --- | --- | --- |
 | 1. 协议与训练入口：已完成 | 唯一24/8/8＋12协议、BDDL/HDF5 metadata覆盖与等价泄漏审计、36任务采样及两方法fresh配置；保留Long9、Goal6、Long8、Spatial9等未完整覆盖的边界。 | 协议在fresh训练前冻结；不得以对象仅出现在画面或初态已满足谓词冒充操作监督。 |
-| 2. 训练与完整Validation：进行中 | 复用Source-71；Writer每200更新、MT-BC每50更新完成correct400，保留每节点raw rows、checkpoint、sampler/optimizer恢复状态及早停历史。后台控制器负责分段和早停；只在完整节点或故障退出后处理。 | 两条轨迹分别按登记的持续下降或平台规则结束。非零退出先按工程层诊断和原合同恢复；不能把资源截断写成科学收敛。 |
-| 3. 唯一选点与Validation资格 | 审核完整节点、任务/suite曲线及相邻success-set；MT-BC取correct最高且同分最早。Writer先对所有correct并列最佳补other400，按other最高、再按最早选定。冻结checkpoint及视频映射，完成selected correct/other/wrong/shuffle/reverse配对400与Source参照。 | correct和other的有效能力、相邻稳定性及视频内容/顺序证据可解释；other明显退化或特异性不清楚则停止询问，不重选或调参。 |
+| 2. 训练与完整Validation：Writer已结束，MT-BC进行中 | 复用Source-71；Writer每200更新、MT-BC每50更新完成correct400，保留每节点raw rows、checkpoint、sampler/optimizer恢复状态及早停历史。后台控制器负责分段和早停；只在完整节点或故障退出后处理。 | 两条轨迹分别按登记的持续下降或平台规则结束。非零退出先按工程层诊断和原合同恢复；不能把资源截断写成科学收敛。 |
+| 3. 唯一选点与Validation资格：Writer对照进行中 | 审核完整节点、任务/suite曲线及相邻success-set；MT-BC取correct最高且同分最早。Writer先对所有correct并列最佳补other400，按other最高、再按最早选定。冻结checkpoint及视频映射，完成selected correct/other/wrong/shuffle/reverse配对400与Source参照。 | correct和other的有效能力、相邻稳定性及视频内容/顺序证据可解释；other明显退化或特异性不清楚则停止询问，不重选或调参。 |
 | 4. Test主表与硬门槛 | 用冻结模型完成Source、MT-BC、EMBER correct各400；检查exit、manifest、固定state-video映射和raw rows，报告per-task、per-suite、breadth、R/G/L、churn及task-cluster bootstrap。 | EMBER成功数减MT-BC成功数至少40/400，才进入Test视频对照。若不足，保留正式负结果并停止下游。 |
 | 5. Test视频对照与零交互封存 | 门槛通过后完成EMBER other/wrong/shuffled/reversed各400，按同task、state、RNG与video ordinal配对；冻结零交互模型、表格及成本。 | correct/other相对错误内容和时间干预的证据清楚；优势消失或区间不明确则停止讨论，不依据Test换模型。 |
 | 6. 单演示FT比较 | 先完成merged MT-BC底座＋fresh rank16接口的功能等价检查和Train配方资格；在held适应前锁定每task support、独立选点集、固定查询、预算与节点。默认Validation/Test全16任务，各用相同一条support比较一次编译的EMBER与监督FT，并各评50个独立初态。 | 完整报告每task结果、FT曲线和动作标签成本。EMBER明显落后时按登记规则追加两条独立support，不融合或挑优；持续落后或混杂则停止询问。 |

@@ -4,8 +4,8 @@
 
 固定EMBER-1V单相机1500，完成论文实验与图文原始报告。当前active合同：[论文实验](docs/paper_experiments_design.md)。
 
-1. **进行中：冻结资产与Test接口。** Source-71、MT-BC425、EMBER1500；修正development24模型的登记Test用途，验证后推送。
-2. **待执行：Test能力。** 三个完整400面板收齐后判断EMBER−MT-BC≥40；不足即停止下游询问Owner。
+1. **已完成：冻结资产与Test接口。** Source-71、MT-BC425、EMBER1500；development24模型Test用途已验证并推送45a39ba1。
+2. **进行中：Test能力。** 三个完整400面板收齐后判断EMBER−MT-BC≥40；不足即停止下游询问Owner。
 3. **条件执行：Test视频证据。** other/wrong/shuffle/reverse各400；缺失或不明确则停止询问。
 4. **条件执行：单support FT。** validation/test16任务，独立演示选点集FM选点，eval50不参与选择；劣势触发三support复核。
 5. **条件执行：两臂task-local RL。** 先Train接口/学习资格，按登记区段结束后读结果；不达预期暂停。

@@ -17,7 +17,7 @@ EMBER只领先MT-BC8条（2pp），低于Owner至少40条的推进门槛；任�
 Owner已选择先看报告并与专家讨论；controls、FT、RL及外部比较全部停止，等待新指示，不重选模型。
 [图文报告](docs/review_materials/20260920/test_capacity/report.md)附逐任务、suite、breadth、配对成功集合与CSV原始行。
 Active design登记[paper_experiments_design](docs/paper_experiments_design.md)，当前仅为已冻结待裁决合同，不授权自动进入下一阶段。
-Study：runs/analysis/paper_experiments_20260920；正式结果、manifest、物化bank及readout.py保留，方便Owner后续复核。
+Study：runs/analysis/paper_experiments_20260920；正式结果、manifest及readout.py保留；400个旧物化LoRA载荷已在新训练启动后退役，可从保留的formal1500 checkpoint重新生成。
 首次nohup提交未存活；tmux重新提交后正常完成。EMBER原定gpu02:3忙，物化前拒绝后改gpu02:0,1，科学合同不变。
 证据见study/initial_launch_failure.json、allocation_retry.json及每组launcher_completion.json。
 临时detached runtime 45a39ba1已在完成后删除；无本轮分支。原checkpoint与数据不动，未为本轮创建新训练checkpoint。
@@ -68,3 +68,5 @@ Source新Validation初次提交因旧入口固定32GiB要求在worker启动前�
 MT-BC profile完整3updates通过，每步36task各16queries，平均149.76s/update、预留33.64GiB。已从clean pushed detached3ebb979b启动fresh首段50→完整400（gpu01:0），正式训练PID已核验；不复用profile权重。Writer已按profile冻结正式首段，Source共驻评测在worker启动前的限制已修复。
 
 当前三条正式作业及等待：Writer阶段完成信号`ember-coverage-writer-stage-complete`（gpu02），MT-BC同名mtbc信号（gpu01），Source `ember-coverage-source-validation-complete`（gpu01）。不读中间日志/成功率。
+
+本轮已清理400个已结束旧Test物化载荷及18个完成profile参数文件，释放实际占块2,489,434,112字节；完整清单在新study/asset_retirement.json。全部旧formal checkpoint、raw rows及profile合同/指标/恢复证据保留。

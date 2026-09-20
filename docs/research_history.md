@@ -2048,3 +2048,5 @@ Owner先审阅[结果报告](review_materials/20260920/test_capacity/report.md)�
 新性能与特异性通过后才恢复原FT/RL/外部比较。新协议受旧结果启发，不声称全项目盲测。
 初始CPU接口检查、Writer36task profile及真实9→10完整恢复、MT-BC3步36task等权profile通过；只作为执行资格。
 正式Writer冻结1a32a0cf、MT-BC冻结3ebb979b，各fresh训练；具体当前状态由progress维护，不在此预报科学结论。
+
+该次启动后的定向维护另退役旧Test正确视频bank的400个可再生LoRA载荷及本次完成profile的18个参数文件，释放2.32GiB实际占块；不删除任何formal checkpoint、评测行、合同或指标。明细为coverage_retraining_20260920/asset_retirement.json；profile权重已明确不再支持直接resume。

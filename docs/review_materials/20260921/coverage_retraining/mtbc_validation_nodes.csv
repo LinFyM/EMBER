@@ -1,0 +1,11 @@
+method,optimizer_updates,validation_rows,correct_successes,success_rate,task_breadth,evaluation_wall_seconds,selected,stopping_node,results
+mtbc,50,400,82,0.205,5,3295.219885110855,False,False,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000050/results.json
+mtbc,100,400,112,0.28,5,1648.6735439300537,False,False,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000100/results.json
+mtbc,150,400,99,0.2475,6,1670.748872756958,False,False,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000150/results.json
+mtbc,200,400,133,0.3325,6,1619.4484162330627,False,False,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000200/results.json
+mtbc,250,400,136,0.34,6,1640.6377274990082,False,False,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000250/results.json
+mtbc,300,400,155,0.3875,6,701.3658471107483,True,False,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000300/results.json
+mtbc,350,400,131,0.3275,7,723.1968636512756,False,False,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000350/results.json
+mtbc,400,400,130,0.325,5,703.7903883457184,False,False,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000400/results.json
+mtbc,450,400,138,0.345,5,710.9971477985382,False,False,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000450/results.json
+mtbc,500,400,119,0.2975,5,721.3856484889984,False,True,/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000500/results.json

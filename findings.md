@@ -9,7 +9,9 @@
 新24/8/8＋12协议的唯一Writer选中step1000，correct/other/wrong/shuffled/reversed完整Validation400依次为117/119/107/86/62。
 correct相对wrong只高10/400；以8个task为簇、保留每task全部50配对初态的20,000次bootstrap，wrong−correct为−2.5pp，95%百分位区间[−6.5,+0.5]pp。差异主要来自Object1和Spatial3，不能清楚证明正确视频内容相对跨suite错误视频是必要增量。
 reversed−correct为−13.75pp，区间[−24.75,−3.5]pp，支持该冻结模型对时间方向敏感；shuffled−correct为−7.75pp，区间[−16.5,+0.51]pp，点估计下降但任务簇区间跨零。other−correct为+0.5pp，区间[−2,+3.25]pp，没有严重同任务换视频退化。
-三种干预各400行、全部worker正常退出；wrong的8个donor均跨suite，shuffled/reversed每条都重排真实RGB后完整forward，且与correct使用同一task/state/teacher序号与RNG合同。现阶段把内容特异性记为科学上不清楚，暂停新Test及后继FT/RL/外部比较，等待Owner裁决；MT-BC独立训练继续。完整图表与原件索引见[覆盖重训报告](docs/review_materials/20260921/coverage_retraining/report.md)。
+三种干预各400行、全部worker正常退出；wrong的8个donor均跨suite，shuffled/reversed每条都重排真实RGB后完整forward，且与correct使用同一task/state/teacher序号与RNG合同。现阶段把内容特异性记为科学上不清楚，暂停新Test及后继FT/RL/外部比较，等待Owner裁决；MT-BC独立训练随后按原合同完成。完整图表与原件索引见[覆盖重训报告](docs/review_materials/20260921/coverage_retraining/report.md)。
+
+MT-BC后来按原合同完成10个完整correct400节点，step500持续下降早停，唯一最高step300为155/400；Writer唯一最高step1000为117/400。两模型在同一Validation8逐行配对，Writer−MT-BC为−38/400，任务簇bootstrap95%百分位区间[−29.75,+6.5]pp，成功任务覆盖4/8对6/8。Writer在Long1/Goal6/Object1局部更好，主要损失来自Spatial3、Object6和Spatial6。两方法训练演示范围与每更新任务/查询语义不同，不能把此差异归为单一架构因果；也不能用Validation差值冒充尚未执行的新Test硬门槛。MT-BC完成后上述视频内容不清楚的暂停裁决仍有效，Test/FT/RL/外部比较待Owner明确决定。
 
 §94–100记录固定纠正闭环、语义路径比较、冻结行为回放、局部场、G P rank前提及Process Pullback纯FM窗口的完整结果。
 这些结果不能混成一套已经取得有益视频特异性的模型；旧普通FM及其它合法视频Writer的能力正例也继续保留。

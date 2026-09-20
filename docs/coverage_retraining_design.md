@@ -60,7 +60,7 @@ Writer每100保存、每200完成correct400；MT-BC每25保存、每50完成vali
 ## 资源与运行
 
 两节点合计卡数遵守AGENTS现行上限；低负载他人GPU可安全共驻，按实际峰值及吞吐选择，不抢占。
-优先Writer多卡与MT-BC异节点并行；释放/重用区段之间的卡供完整评测。Writer结束后，可在MT-BC完整更新/评测边界将同一训练轨迹迁到有足够合格卡的单节点，并用已验证的拓扑恢复提高吞吐；不跨节点拼DDP，不启动第二条MT-BC。各节点先分别完成必要的完整评测，不让一个长任务或慢worker阻塞其他节点的独立工作。评测继续cost-balanced动态队列、long-first和persistent workers；完整节点显示普通任务分片成本明显超过预分配长任务时，普通分片限制为一个env batch以缩短队列尾部，仍覆盖相同初态和视频映射。训练任务交错分片减少慢任务集中到某rank，真实多卡profile检查step墙钟、各rank等待、有效queries/s和显存峰值，若扩卡不提速则保留更高吞吐的安排。每次launch检查live卡况，formal来自clean pushed detached runtime。
+优先Writer多卡与MT-BC异节点并行；释放/重用区段之间的卡供完整评测。Source释放的卡可在MT-BC完整checkpoint边界用于同一轨迹的两卡续训；Writer结束后，还可迁到有足够合格卡的单节点。总物理卡数与真实峰值仍须在每次launch检查；不跨节点拼DDP，不启动第二条MT-BC。当前Writer4卡＋MT-BC评测1卡时，另起两卡profile会超过6卡上限，故MT-BC下一完整正式段作为首次真实两卡吞吐/显存观察；已通过旧单卡checkpoint到两卡的CPU分布式更新测试，若正式段发生工程失败则从最近完整checkpoint修复，若扩卡不提速则在完整节点切回更高吞吐的物理安排，不改科学配方。各节点先分别完成必要的完整评测，不让一个长任务或慢worker阻塞其他节点的独立工作。评测继续cost-balanced动态队列、long-first和persistent workers；完整节点显示普通任务分片成本明显超过预分配长任务时，普通分片限制为一个env batch以缩短队列尾部，仍覆盖相同初态和视频映射。训练任务交错分片减少慢任务集中到某rank，按完整段检查step墙钟、各rank等待、有效queries/s和显存峰值。formal来自clean pushed detached runtime。
 2026-09-20启动准备quota：data0约90GiB使用、data1约860GiB，各soft1TiB；新输出选data0，初始预留50GiB并控制checkpoint/cache保留。
 大产物使用前重新核对peak预算；不复制source/dataset。每个400-LoRA bank约2GiB，完成正式原件与报告后清理无后继依赖载荷。
 确切GPU、profile、命令、commit及launch路径在实际启动前登记一次，未launch不得写成运行中。

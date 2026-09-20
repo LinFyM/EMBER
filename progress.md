@@ -2,6 +2,8 @@
 
 ## 吞吐续行与Source完整节点（2026-09-20）
 
+MT-BC恢复评测完成后，现有唯一控制器将自动从step50启动step100；未来stage_mtbc.sh已原子切换为gpu01:0,1单节点DDP双卡，来自clean pushed detached `e0d60f75`，micro64/accum5、task-striped物理分片、显式v4→v5完整节点恢复，同一576查询与optimizer/scheduler时钟。实际启动仍由stage先检查双节点GPU总上限、峰值余量与storage gate。准确命令/环境、输入、输出、恢复语义、失败处置记于study/launch/mtbc_step100_physical_transition.json；目前状态为等待step50完整评测，尚未launch。两卡一次性profile与并行Writer4卡＋MT-BC评测1卡会超过6卡上限，因此step100正式段将提供首次真实多卡吞吐/显存证据；CPU旧v4→两卡更新测试已过，工程失败保留step50。旧stage_mtbc脚本备份于study/launch/stage_mtbc_before_two_card_resume_20260920.sh。训练/评测准入均加一次10秒有界重试，显式传播storage/GPU工具失败；活跃旧inode不改。
+
 MT-BC首段50更新训练已完成并通过v4完整checkpoint/合同校验。训练进程释放gpu01:0后，19:19的评测准入快照显示该卡无进程、空闲45,752 MiB但瞬时util=100%，原stage在任何评测worker启动前退出1，控制器随即退出1；尚无MT-BC Validation分数。原exit、控制器exit和GPU快照已归档，事实与未证实的采样原因记录于study/launch/mtbc_first_stage_evaluation_preflight_failure.json。双节点重新live预检显示gpu01:0空闲且util=0后，独立`recover_mtbc_evaluation.sh`仅用原step50 checkpoint启动正式400行评测和readout，实际launcher与3个worker已核对；不重训、不换配方。原MT-BC控制器已作为唯一续行者重新启动，并确认只等待恢复的stage-complete信号；恢复脚本完整exit/400行readout成功后由它自动裁决并从step50继续，失败则退出。两份未来stage launcher已原子更新：评测准入首次失败时保存原快照、等待10秒、再做一次完整双节点预检；仍失败则正常退出并保留证据。原文件备份在study/launch/stage_before_gpu_quiescence_retry_20260920.sh。
 
 后续全新评测面板已接入clean pushed detached evaluator runtime `.codex/tmp/coverage-eval-runtime`（`bee2d5e8`），两份stage launcher经`bash -n`与最小diff核对后以`os.replace`原子替换；已启动的Writer600阶段继续读旧inode，不被中断。MT-BC50原stage在评测前已经失败，独立恢复评测使用新runtime。未来stage只在评测命令使用新runtime；训练、checkpoint与物化仍来自各自原冻结runtime，evaluation/MT-BC配置字节一致。旧launcher备份于study/launch/stage_before_eval_queue_upgrade_20260920.sh；回退须先写临时副本再原子替换两份stage文件，不能原地覆盖活跃inode。新分片实际吞吐待后续完整400面板验证，既有完整队列不迁移。

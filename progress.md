@@ -2,6 +2,8 @@
 
 ## 吞吐续行与Source完整节点（2026-09-20）
 
+已用正式比较器对全部完成的paired Validation行做阶段统计，原始比较JSON保存在新study/analysis：Source→Writer200为51→110/400，保留/获得/丢失37/73/14；Writer200→400为110→92/400，保留/获得/丢失52/40/58，success-set churn98，任务覆盖5→6。两次比较均通过完整评测完成记录、共同source/normalization、逐行task/state/RNG与Writer视频ordinal检查。这只是已完成节点的邻近证据，不替代后续400节点、早停或最终选点，也不按这一轮下降调配方。
+
 已原子安装后续MT-BC物理分卡入口：step100仍固定gpu01:0,1、micro64/accum5；step150及以后每段在旧评测进程释放后读取双节点实时GPU快照，只从gpu01选择状态合格、无进程、空余至少38GiB且利用率不高于10%的卡。Writer控制器未以exit0结束时，持续预留其gpu02四卡；结束后释放该预留，按当时空闲卡数决定总上限6或8，单节点最多6。选择结果及原始快照逐段留在study/launch，训练和评测前仍分别做完整GPU与存储准入。保存的真实快照演练：Writer活动时选gpu01:0,1；模拟其结束后选gpu01:0,1,2,5,6，均符合当前6卡总上限。此为物理调度，科学合同、逻辑576查询、选点与早停不变；实际多卡提速须看完整正式段。原双卡入口备份于study/launch/stage_mtbc_before_dynamic_allocation_20260920.sh，`bash -n`与选卡演练通过；脚本使用原子替换，未触碰正在执行的控制器或恢复评测inode。
 
 MT-BC恢复评测完成后，现有唯一控制器将自动从step50启动step100；未来stage_mtbc.sh已原子切换为gpu01:0,1单节点DDP双卡，来自clean pushed detached `e0d60f75`，micro64/accum5、task-striped物理分片、显式v4→v5完整节点恢复，同一576查询与optimizer/scheduler时钟。实际启动仍由stage先检查双节点GPU总上限、峰值余量与storage gate。准确命令/环境、输入、输出、恢复语义、失败处置记于study/launch/mtbc_step100_physical_transition.json；目前状态为等待step50完整评测，尚未launch。两卡一次性profile与并行Writer4卡＋MT-BC评测1卡会超过6卡上限，因此step100正式段将提供首次真实多卡吞吐/显存证据；CPU旧v4→两卡更新测试已过，工程失败保留step50。旧stage_mtbc脚本备份于study/launch/stage_mtbc_before_two_card_resume_20260920.sh。训练/评测准入均加一次10秒有界重试，显式传播storage/GPU工具失败；活跃旧inode不改。

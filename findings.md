@@ -4,6 +4,13 @@
 当前Owner要求见[稳定要求](docs/current_owner_requirements.md)，当前授权、设计和执行状态只看[progress](progress.md)。
 完整历史索引、旧设计及原始证据入口见[research_history](docs/research_history.md)。
 
+## 当前覆盖重训 Writer 的视频证据（2026-09-21）
+
+新24/8/8＋12协议的唯一Writer选中step1000，correct/other/wrong/shuffled/reversed完整Validation400依次为117/119/107/86/62。
+correct相对wrong只高10/400；以8个task为簇、保留每task全部50配对初态的20,000次bootstrap，wrong−correct为−2.5pp，95%百分位区间[−6.5,+0.5]pp。差异主要来自Object1和Spatial3，不能清楚证明正确视频内容相对跨suite错误视频是必要增量。
+reversed−correct为−13.75pp，区间[−24.75,−3.5]pp，支持该冻结模型对时间方向敏感；shuffled−correct为−7.75pp，区间[−16.5,+0.51]pp，点估计下降但任务簇区间跨零。other−correct为+0.5pp，区间[−2,+3.25]pp，没有严重同任务换视频退化。
+三种干预各400行、全部worker正常退出；wrong的8个donor均跨suite，shuffled/reversed每条都重排真实RGB后完整forward，且与correct使用同一task/state/teacher序号与RNG合同。现阶段把内容特异性记为科学上不清楚，暂停新Test及后继FT/RL/外部比较，等待Owner裁决；MT-BC独立训练继续。完整图表与原件索引见[覆盖重训报告](docs/review_materials/20260921/coverage_retraining/report.md)。
+
 §94–100记录固定纠正闭环、语义路径比较、冻结行为回放、局部场、G P rank前提及Process Pullback纯FM窗口的完整结果。
 这些结果不能混成一套已经取得有益视频特异性的模型；旧普通FM及其它合法视频Writer的能力正例也继续保留。
 

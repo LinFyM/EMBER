@@ -1,6 +1,6 @@
 # EMBER 覆盖重训：正式证据报告（编制中）
 
-> 状态：Writer 训练与 correct/other Validation 已完成；MT-BC 训练和 Writer 视频因果对照仍在后台运行。本稿只记载已经完成且通过正式 exit、400 行及 worker 检查的结果。Test、FT、RL 和外部比较尚未执行，不从本稿推断其结果。
+> 状态：Writer 训练及五个 Validation 视频臂已完成；MT-BC 训练仍在后台运行。新 Test、FT、RL 和外部比较尚未执行。Writer 的时间倒序敏感性有证据，但 wrong-video 的内容特异性不清楚；依Owner合同暂停下游，等待裁决。本稿只记载已经完成且通过正式 exit、400 行及 worker 检查的结果。
 
 ## 研究问题与协议边界
 
@@ -18,18 +18,38 @@ Source 在新 Validation8 为 **51/400**。Writer 每200次更新完成一个 co
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | correct 成功／400 | 110 | 92 | 115 | 87 | **117** | 80 | 97 | 111 | 92 |
 
+![Writer完整Validation曲线](writer_validation_curve.png)
+
 相对于新 Validation 的 Source，选中 Writer 为 **117 对 51／400**，逐行配对保留/获得/丢失 **36/81/15**，成功任务覆盖均为 **4/8**。提升集中于 Object1（1→43）与 Long1（5→27），Spatial3 为0→8；Goal6 为42→39、Spatial6 为3→0，Long9、Goal3、Object6 仍为0。该总分优势不代表八个任务都改进。8任务簇、各50配对初态的20,000次 bootstrap 给出 +16.5 个百分点点估计与 **[−1.0，+39.0]** 百分位区间；仅一个训练 seed，区间不能证明跨训练 seed 稳定性。
 
-选中 Writer 同任务换视频 other400 已完成 **119/400**，与 correct117配对保留/获得/丢失 **100/19/17**。两臂各任务50条视频无放回，逐行视频也不同；other−correct 点估计 **+0.5** 个百分点，任务簇 bootstrap 95%百分位区间 **[−2.0，+3.25]**。此结果支持同任务视频条件更换后总体能力未出现严重下降；wrong/shuffle/reverse 仍需确定视频内容与顺序是否有必要增量。
+选中 Writer 同任务换视频 other400 已完成 **119/400**，与 correct117配对保留/获得/丢失 **100/19/17**。两臂各任务50条视频无放回，逐行视频也不同；other−correct 点估计 **+0.5** 个百分点，任务簇 bootstrap 95%百分位区间 **[−2.0，+3.25]**。此结果支持同任务视频条件更换后总体能力未出现严重下降；其余视频对照见下节。
 
-MT-BC 的完整曲线和选点、选中 Writer 的 wrong/shuffle/reverse、各自正式材料路径、完整失败案例将在后台作业结束后补入。
+## 冻结 Writer 的视频对照与当前裁决
+
+选中 checkpoint1000 的五个臂都完成正式 Validation400，全部12个worker/臂正常退出。wrong 使用8个跨suite donor task；shuffled 和 reversed 各400个条件都变换了真实 RGB 帧顺序，再完整运行观察器与 Writer。后两臂逐行使用与 correct 相同的同任务 teacher demo，state、policy/environment RNG 与视频 ordinal 按正式比较器配对。
+
+| 视频臂 | 成功／400 | 相对correct百分点 | 任务簇bootstrap 95%百分位区间 | correct→该臂保留/获得/丢失 |
+| --- | ---: | ---: | ---: | ---: |
+| correct | 117 | — | — | — |
+| same-task-other | 119 | +0.50 | [−2.00, +3.25] | 100/19/17 |
+| cross-suite-wrong | 107 | −2.50 | [−6.50, +0.50] | 88/19/29 |
+| shuffled | 86 | −7.75 | [−16.50, +0.51] | 64/22/53 |
+| reversed | 62 | −13.75 | [−24.75, −3.50] | 52/10/65 |
+
+![冻结Writer的Validation视频对照](writer_validation_controls.png)
+
+倒序下降55/400，且8任务簇区间低于零，支持该冻结模型在此面板对视频时间方向敏感。乱序点估计下降31/400，但任务簇区间跨零。跨suite错误视频只下降10/400，任务簇区间也跨零；Long1在wrong下还增加1条、Goal6不变，内容效果主要来自Object1的4条和Spatial3的7条。故现有结果**不能清楚证明正确教学视频内容相对错误视频是必要增量**。这是科学资格问题，当前没有完整结果指向工程合同错误；不通过重新选点、换seed或改配方补救。
+
+按预登记规则，视频内容特异性不清楚时暂停新Test和FT/RL/外部比较，向Owner报告并询问。MT-BC独立训练控制器继续完成原授权的完整Validation与选点；其结果不会反过来改Writer checkpoint或上述视频判断。
+
+MT-BC 的完整曲线和选点、后续Owner裁决及未执行范围将在后台作业结束后补入。
 
 ## 成本与限制
 
 Writer 的1800次更新循环实测合计 **17,684.20 秒（约4.91小时）**，平均 **9.825 秒/更新**，四卡最大记录 reserved **22.803 GiB/卡**；累计201,600查询，其中151,200条跨 episode 主查询、50,400条同视频教学查询。该时长不含模型物化、Validation、启动和阶段切换。选中 Writer correct400 的纯评测墙钟为873.25秒，other400为871.91秒，均使用4卡×3 worker。物化的准确墙钟尚无正式计时，不从文件时间戳推造数值。
 
-本轮 Writer 按完整 correct Validation 选择，即便1000后的节点出现反弹也未改早停规则。其高分集中于少数任务，视频因果对照和 MT-BC 仍是资格判断的重要部分。新 Test 严格等待模型与视频资格冻结后才运行；若 EMBER−MT-BC 少于40/400，即停止 Test 视频 controls 与所有后继 FT/RL/外部比较。
+本轮 Writer 按完整 correct Validation 选择，即便1000后的节点出现反弹也未改早停规则。其高分集中于少数任务，视频内容必要性未获清楚支持，且 MT-BC 仍在训练。新 Test 严格等待Owner对资格问题的裁决；若获准执行主表，仍需检查 EMBER−MT-BC 至少40/400，否则停止 Test 视频 controls 与所有后继 FT/RL/外部比较。
 
 ## 原始材料（待总表完成后封装）
 
-当前正式原件保存在 `/data0/user/ymdai/ember_runs/coverage_retraining_20260920`：`writer_selection.json`、`method_freeze.json`、`writer_validation_history.json`、`evaluation/{source_validation,writer_00001000,writer_00001000_other}`、`analysis/writer_validation_nodes.csv`、`analysis/source_to_selected_writer_1000_paired.json`、`analysis/writer_1000_correct_vs_other_validation.json`、相关逐任务CSV、bootstrap JSON、绘图源码与SVG/PNG。最终提交时把报告所用小型图表及CSV一并封装，并列出全部正式 checkpoint、exit 与 manifest 的溯源路径。
+当前正式原件保存在 `/data0/user/ymdai/ember_runs/coverage_retraining_20260920`：`writer_selection.json`、`method_freeze.json`、`writer_validation_history.json`、`evaluation/{source_validation,writer_00001000,writer_00001000_other,writer_00001000_cross_suite_wrong,writer_00001000_shuffled,writer_00001000_reversed}`、`analysis/writer_1000_correct_vs_*_validation.json`、对应bootstrap JSON与`writer_validation_control_integrity.json`。本目录封装了[节点CSV](writer_validation_nodes.csv)、[视频对照CSV](writer_validation_controls.csv)、[对照完整性JSON](writer_validation_control_integrity.json)、[逐任务CSV](source_to_selected_writer_per_task.csv)、[逐suite CSV](source_to_selected_writer_per_suite.csv)、两张图的PNG/SVG及[曲线](plot_writer_validation.py)、[视频对照](plot_writer_validation_controls.py)、[bootstrap](bootstrap_paired_tasks.py)可复用源码。最终还需列出MT-BC正式checkpoint、exit及manifest的溯源路径。

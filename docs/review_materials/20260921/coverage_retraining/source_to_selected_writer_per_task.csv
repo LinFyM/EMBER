@@ -1,0 +1,9 @@
+suite,task_id,rows,reference_successes,candidate_successes,retained,gained,lost,churn_count,language,delta_successes
+libero_10,1,50,5,27,3,24,2,26,put both the cream cheese box and the butter in the basket,22
+libero_10,9,50,0,0,0,0,0,0,put the yellow and white mug in the microwave and close it,0
+libero_goal,3,50,0,0,0,0,0,0,open the top drawer and put the bowl inside,0
+libero_goal,6,50,42,39,32,7,10,17,put the cream cheese in the bowl,-3
+libero_object,1,50,1,43,1,42,0,42,pick up the cream cheese and place it in the basket,42
+libero_object,6,50,0,0,0,0,0,0,pick up the butter and place it in the basket,0
+libero_spatial,3,50,0,8,0,8,0,8,pick up the black bowl on the cookie box and place it on the plate,8
+libero_spatial,6,50,3,0,0,0,3,3,pick up the black bowl next to the cookie box and place it on the plate,-3

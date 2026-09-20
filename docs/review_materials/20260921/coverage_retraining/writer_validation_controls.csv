@@ -1,0 +1,6 @@
+arm,rows,successes,success_rate,evaluation_wall_seconds,difference_from_correct_pp,task_cluster_bootstrap_lo_pp,task_cluster_bootstrap_hi_pp,paired_retained,paired_gained,paired_lost
+correct,400,117,0.2925,873.2508702278137,,,,,,
+other,400,119,0.2975,871.9075303077698,0.5,-2.0,3.25,100,19,17
+cross_suite_wrong,400,107,0.2675,874.1615223884583,-2.5,-6.5,0.5,88,19,29
+shuffled,400,86,0.215,899.9472527503967,-7.75,-16.5,0.5062499999994543,64,22,53
+reversed,400,62,0.155,924.0452620983124,-13.75,-24.75,-3.5000000000000004,52,10,65

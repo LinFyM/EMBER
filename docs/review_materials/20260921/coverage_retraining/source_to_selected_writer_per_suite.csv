@@ -1,0 +1,5 @@
+suite,rows,reference_successes,candidate_successes,retained,gained,lost,churn_count,delta_successes
+libero_10,100,5,27,3,24,2,26,22
+libero_goal,100,42,39,32,7,10,17,-3
+libero_object,100,1,43,1,42,0,42,42
+libero_spatial,100,3,8,0,8,3,11,5

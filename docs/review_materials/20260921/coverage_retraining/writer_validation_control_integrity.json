@@ -1,0 +1,57 @@
+{
+  "schema_version": "ember_selected_writer_validation_control_integrity_v1",
+  "selected_macro": 1000,
+  "rows": 400,
+  "arms": {
+    "cross_suite_wrong": {
+      "complete_conditions": 400,
+      "frame_order_changed_conditions": 0,
+      "cross_suite_donor_task_pairs": [
+        [
+          3,
+          11
+        ],
+        [
+          6,
+          16
+        ],
+        [
+          11,
+          23
+        ],
+        [
+          16,
+          26
+        ],
+        [
+          23,
+          31
+        ],
+        [
+          26,
+          39
+        ],
+        [
+          31,
+          3
+        ],
+        [
+          39,
+          6
+        ]
+      ]
+    },
+    "shuffled": {
+      "complete_conditions": 400,
+      "frame_order_changed_conditions": 400,
+      "cross_suite_donor_task_pairs": [],
+      "same_teacher_demo_per_paired_row": 400
+    },
+    "reversed": {
+      "complete_conditions": 400,
+      "frame_order_changed_conditions": 400,
+      "cross_suite_donor_task_pairs": [],
+      "same_teacher_demo_per_paired_row": 400
+    }
+  }
+}

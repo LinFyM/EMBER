@@ -1,0 +1,25 @@
+{
+  "schema_version": "ember_coverage_paired_task_cluster_bootstrap_v1",
+  "comparison": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/analysis/writer_1000_correct_vs_reversed_validation.json",
+  "task_count": 8,
+  "paired_states_per_task": 50,
+  "draws": 20000,
+  "seed": 20260915,
+  "resampling_unit": "task; all 50 paired states retained",
+  "estimand": "candidate_minus_reference_success_rate_percentage_points",
+  "point_estimate": -13.75,
+  "percentile_95_interval": [
+    -24.75,
+    -3.5000000000000004
+  ],
+  "per_task_success_difference": [
+    -19,
+    0,
+    0,
+    -15,
+    -14,
+    0,
+    -8,
+    1
+  ]
+}

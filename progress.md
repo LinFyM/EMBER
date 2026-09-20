@@ -2,6 +2,8 @@
 
 ## Writer冻结与MT-BC续行（2026-09-21）
 
+选中Writer1000的五个完整Validation视频臂correct/other/wrong/shuffled/reversed已全部退出0、各400行、各12个worker退出0：117/119/107/86/62。correct→wrong保留/获得/丢失88/19/29；wrong−correct为−2.5pp、8任务簇bootstrap95%百分位区间[−6.5,+0.5]pp。correct→shuffled为64/22/53、−7.75pp、区间[−16.5,+0.51]pp；correct→reversed为52/10/65、−13.75pp、区间[−24.75,−3.5]pp。完整manifest确认wrong8个donor均跨suite，shuffle/reverse各400条件重排真实RGB并完整forward；后两臂与correct逐行同teacher demo。时间倒序敏感性明确，错误内容的必要增量不清楚，这是科学资格问题而非已证实工程故障。按Owner边界暂停新Test及FT/RL/外部比较并请求裁决；MT-BC唯一控制器继续完成原授权训练/完整Validation，不因Writer结果停训。正式比较、bootstrap与图文报告在新study/analysis及`docs/review_materials/20260921/coverage_retraining`。
+
 选中Writer1000的same-task-other Validation400已正式退出0：119/400，12个worker全部0退出；correct为117/400。两臂各覆盖8任务×50无放回视频，逐行400个other视频均不同于对应correct。正式比较器核对400配对行，保留/获得/丢失100/19/17、churn36，覆盖同为4/8，suite依次Long27→26、Goal39→43、Object43→45、Spatial8→5。未出现严重same-task换视频下降，已登记`writer_selected_00001000_other_qualification.json`，仅准许继续冻结的Validation wrong/shuffled/reversed诊断；特异性尚待这些完整结果，不因此启动Test。三项对照在gpu02独立控制器顺序执行，按每次live双节点GPU资源选卡，与MT-BC后台控制器并行。首次controls launcher的Bash局部变量在赋值前展开，GPU预检前exit1；已保留旧exit/故障JSON并原子修复，重新启动的唯一session已经进入wrong物化，科学合同未变。
 
 已从正式完整面板导出选中Writer的九节点CSV、可复用SVG/PNG与绘图源码、实测训练循环成本和逐任务/逐suite配对CSV，原件在新study/analysis。选中Writer1000相对Source Validation为117对51/400，严格配对保留/获得/丢失36/81/15，覆盖同为4/8任务。新增成功主要集中在Object1（1→43）、Long1（5→27），Spatial3为0→8；Goal6为42→39、Spatial6为3→0，Long9、Goal3、Object6仍是0。Goal6的BDDL实际为cream cheese On bowl，不能从语言中的“in”推断训练已覆盖In。Writer1800更新循环实测合计17684.20秒、均值9.825秒/步、峰值reserved22.803GiB；不包含物化、评测与阶段开销。冻结Writer的Test correct声明已经用新eval runtime完成只读元数据准入校验，尚未启动Test。

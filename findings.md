@@ -2560,3 +2560,14 @@ Spatial为6/5/22，Object0/15/0，Goal36/43/48，Long36/11/12（各suite100）�
 这是当前冻结方法在固定Test面板上的有效负结果，不自动指向工程缺陷或否定全部视频到LoRA方法。
 没有Test视频controls，不能断言Test特异性成立或消失。没有根据结果更换checkpoint、增seed或调架构。
 Owner选择先看[图文报告](docs/review_materials/20260920/test_capacity/report.md)并与专家讨论，所有下游暂停。
+
+## 124. 覆盖重训检验的是训练支持内组合迁移（2026-09-20）
+
+Owner采用新的单次24/8/8＋12 source辅助划分，两方法统一36任务等权；Source71与normalization复用。
+[覆盖审计](configs/libero_24_8_8_coverage_v1/coverage.md)核对BDDL语义、对象/装置及训练HDF5 metadata；不读取held数值标签。
+Long9 cup→microwave仍是新组合/几何，训练支持来自L4操作cup及aux33关闭microwave、aux3放入后关闭；
+不能声称训练包含向microwave放入物体。Goal6原始规格是On cream_cheese bowl，不是In。
+Long8初始炉灶已开启，Turnon证据实际来自Long2；Spatial9柜顶取回与aux15放置方向不同。
+这些区别保留为泛化边界，不能用task名或对象词匹配冒充逐任务完整技能已训练。
+新方案同时改变split、辅助任务支持、曝光时钟与动态停止，不支持把未来差值唯一归因于其中一项。
+旧Test78/74/82与失败门槛保留；新Test并非项目历史从未接触的数据。当前profile只证明吞吐、梯度和恢复，不证明新模型性能。

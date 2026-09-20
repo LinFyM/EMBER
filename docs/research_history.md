@@ -2038,3 +2038,13 @@ Writer/source checkpoint、生成commit、teacher/frame/state映射及原始评�
 五个重复exposure分片改引用已保留原件，原始记录数不变；历史分析源码链接固定到对应commit。
 71项相关CPU测试通过；测试辅助代码最后精简后14项复检通过（与71项重叠），三个canonical CLI帮助入口正常，
 45个证据面板／7216行／43项配对核对、受影响本地链接和diff检查通过。未启动科研训练或闭环评测，科学结果不变。
+
+## 2026-09-20：旧Test未过门槛后登记单次覆盖重训
+
+固定Source1000、MT-BC425、EMBER1500的旧Test各400为78/74/82；+8低于Owner要求的+40，后继实验停止。
+Owner先审阅[结果报告](review_materials/20260920/test_capacity/report.md)，与专家讨论后明确授权新单划分24/8/8＋12辅助任务，
+仅fresh训练一次EMBER与MT-BC，复用Source71，不追加seed/k折/新架构；旧协议与失败结果保留。
+新[覆盖合同](coverage_retraining_design.md)登记36任务等权、固定完整Validation间隔和独立动态早停；
+新性能与特异性通过后才恢复原FT/RL/外部比较。新协议受旧结果启发，不声称全项目盲测。
+初始CPU接口检查、Writer36task profile及真实9→10完整恢复、MT-BC3步36task等权profile通过；只作为执行资格。
+正式Writer冻结1a32a0cf、MT-BC冻结3ebb979b，各fresh训练；具体当前状态由progress维护，不在此预报科学结论。

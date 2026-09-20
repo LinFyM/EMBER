@@ -16,12 +16,11 @@ held所需操作对象、装置与基本操作必须有实际训练支持；不�
 只在完整训练区段和评测完成后读结果，不反复读进度，不用监控子代理；独立工程/数据审计可按仓库规则并行。
 详细执行合同见progress登记的新设计；旧论文实验中的FT/RL方法、信息墙和停止条件继续适用。
 
-## 冻结模型论文实验授权（2026-09-20）
+## 保留的论文后继实验要求（2026-09-20）
 
-Owner已设置新goal：固定单相机K1同视频教学1500 checkpoint，保留train24/validation8/test8，不重训Writer、source或合并32任务。
-先完成Source-71、MT-BC-24、EMBER的完整Test paired400；EMBER必须比MT-BC至少多40个成功才继续。
-然后补other/wrong/shuffle/reverse；视频或时序证据消失、不明确时停止下游询问Owner，不以Test修正模型或选点。
-MT-BC采用已知Validation最高425节点；合并共享LoRA后用于后续局部适应。历史450合同不改写。
+旧协议曾冻结EMBER1500与MT-BC425，完成Test78/74/82后未达+40门槛；该阶段已封存，
+其固定checkpoint和不重训限制由上方新授权替代。后继比较使用新协议各自唯一选定模型，MT-BC先合并共享LoRA。
+完整Test paired400的+40门槛及冻结后视频对照要求保持；Test不用于重新挑选模型。
 FT仅用一条support做梯度更新，从同task其余演示中预先划出独立选点集，按固定查询FM loss选checkpoint；
 既有每task50个eval episodes仅评估、不选点。额外选点动作标签计入信息成本。默认覆盖validation/test全部16任务。
 若EMBER明显落后FT，先补两条预定support分别重复（合计三条，不融合不选优）；持续劣势或结论混杂即询问Owner。
@@ -29,13 +28,13 @@ RL直接训练EMBER生成A/B，对照合并MT-BC底座上的fresh identity A/B�
 optimizer/critic fresh。目标是全部预定交互预算点EMBER平均曲线领先；不理想时停止下一段并报告。
 允许这些独立task-local实验使用目标task support动作、选点动作及局部RL reward；不得更新共享Writer/source/MT-BC，
 不得回流零交互模型设计。先封存零交互结果，再开放目标适应用途。FT/RL详细预算在训练侧资格后、held实验前登记。
-不按三天期限缩水实验；完整训练/评测阶段结束后统一读结果，不反复读取进度。可用Luna低成本监控完成/异常。
+不按三天期限缩水实验；完整训练/评测阶段结束后统一读结果，不反复读取进度。最新要求不用监控代理，采用作业结束信号。
 遇到无法定夺或不达预期结果暂停下游询问；顺利则交付可追溯的图文报告。同步清理确认无用代码、文档、分支/worktree
 及大资产，保留正式证据和用途未决资产；quota不足先报告，不越限。实际状态与active合同见progress/task_plan。
 
-## 当前接受标准与设计要求（2026-09-18）
+## 历史开发接受标准及通用设计原则（2026-09-18）
 
-Owner接受验证能力保持在130多、140左右的候选，当前不再以超过145或150作为开展后续工作的硬门槛；
+旧划分下Owner曾接受验证能力保持在130多、140左右的候选，不要求超过145或150；这些绝对分数不移植到新划分。
 重点是相对v5.2更清楚、更有益的视频特异性。允许已有能力中少量正常的获取/丢失，不能把任何churn都当失败。
 历史实验仍按当时封存合同报告，不追溯改写其分数或资格裁决。
 
@@ -132,12 +131,12 @@ Owner同日明确纠正：v5.2已经训练过，本轮复用既有checkpoint与�
 
 ## 3. 证据与推进判断
 
-- 当前性能接受标准服从本文开头的Owner最新取舍：约130–140及更可信的视频特异性，不要求零churn。
+- 当前性能接受标准服从本文开头的Owner最新取舍；新划分不套用旧130–140分数，且不要求零churn。
   仍报告single-checkpoint paired400、相邻成功保持、breadth、各suite、换视频与因果证据；历史>145资格合同保留其历史口径。
 - 闭环实际能力先于loss、reconstruction、norm/rank/cosine、内部margin及surrogate。充分且可比的学习后仍弱于source／SFT参照，
   属于严重能力缺口；小幅涨分或loss下降不能将其降格成调参问题，也不能由此唯一归因某个模块。
 - 能力与相邻资格成立后补same-task-other，选定并冻结单checkpoint，再做wrong／no-video／shuffled／reversed最终controls。
-  controls不进入训练或checkpoint选择；常规最终controls不反哺架构，当前owner明确授权的A问题分析范围见本文件开头。
+  controls不进入训练或checkpoint选择；常规最终controls不反哺架构；历史A问题诊断只按其当时授权解释。
 - Owner单独授权的原因诊断可固定已结束窗口的末尾checkpoint，独立完成上述视频对照，无须先获方法性能资格。
   这不是合格checkpoint选择；保持冻结、不选优，不反哺下一方法训练或架构设计，诊断与原资格裁决分别解释。
 - 正式评测使用single-checkpoint完整400配对行，不用80-row screen、checkpoint union或融合选模型。

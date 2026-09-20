@@ -65,4 +65,6 @@ findings§121–122与[研究历史](docs/research_history.md)保存完整解释
 
 Source新Validation初次提交因旧入口固定32GiB要求在worker启动前拒绝；已按source单worker与materialized policy共用12GiB+2GiB预算修复，在1a32a0cf冻结runtime重启，无已完成rollout被丢弃。
 
-MT-BC profile完整3updates通过，每步36task各16queries，平均149.76s/update、预留33.64GiB。首段拟fresh至50后完整400；不复用profile权重。Writer已按profile冻结正式首段，Source共驻评测在worker启动前的限制已修复。
+MT-BC profile完整3updates通过，每步36task各16queries，平均149.76s/update、预留33.64GiB。已从clean pushed detached3ebb979b启动fresh首段50→完整400（gpu01:0），正式训练PID已核验；不复用profile权重。Writer已按profile冻结正式首段，Source共驻评测在worker启动前的限制已修复。
+
+当前三条正式作业及等待：Writer阶段完成信号`ember-coverage-writer-stage-complete`（gpu02），MT-BC同名mtbc信号（gpu01），Source `ember-coverage-source-validation-complete`（gpu01）。不读中间日志/成功率。

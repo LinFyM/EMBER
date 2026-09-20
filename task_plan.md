@@ -6,7 +6,7 @@
 
 1. **完成：数据与执行合同。** 审计新24/8/8与12辅助任务操作覆盖、等价泄漏、canonical数据；锁定等权采样和动态早停。
 2. **完成：统一协议入口。** 训练、物化、评测共用显式协议，完整恢复与增量事件计划，补必要接口验证。
-3. **进行中：配置profile，随后一次fresh正式训练/方法。** Source复用，两节点合规调度；固定完整Validation间隔，独立早停与最佳checkpoint。
+3. **进行中：一次fresh正式训练/方法。** Profile已完成；Source复用，Writer从200节点恢复并续训，MT-BC首段与Source新Validation运行中。两节点合规调度；固定完整Validation间隔，独立早停与最佳checkpoint。
 4. **条件执行：冻结性能及视频对照。** 新Test paired400相对MT-BC至少+40，视频内容/顺序证据与same-task-other无明显问题；否则停止商量。
 5. **条件执行：原后继计划。** 独立演示选点的单support FT及必要三support复核、两臂task-local RL、合格外部比较，交付图文报告。
 

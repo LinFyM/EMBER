@@ -2,6 +2,8 @@
 
 ## 吞吐续行与Source完整节点（2026-09-20）
 
+Writer step1400完整correct Validation400退出0，97/400；高于1200的80，仍低于历史最佳1000的117，正式早停`stop=false`。1200→1400配对保留/获得/丢失51/46/29、churn75、任务覆盖5→5，比较JSON保留在新study/analysis。最近未改善窗口只有两个点且出现回升，不触发登记规则；控制器继续。
+
 Writer step1200完整correct Validation400退出0，80/400；正式早停`stop=false`，当前最佳仍为step1000的117。1000→1200配对保留/获得/丢失65/15/52、churn67，任务覆盖4→5，原始JSON在新study/analysis。此为刷新高点后的第一个下降节点，不自行提前停止或按结果改训练合同。
 
 MT-BC step100双卡续行及完整Validation400退出0：112/400，刷新step50的82，正式早停`stop=false`、当前最佳100。50→100配对保留/获得/丢失58/54/24、churn78、任务覆盖5→5；Source→MT-BC100为51→112、27/85/24，原始JSON在新study/analysis。双卡50更新平均75.331秒/步、峰值reserved32.934GiB/卡；首段单卡50更新平均148.902秒/步、峰值33.635GiB，实测约1.98倍更新吞吐。两段各更新36任务×16=576查询，step50→51累计micro-step450→455，step100为700，optimizer/LR连续；原step50 checkpoint与run合同保持。控制器已自动进入step150，动态分卡快照在Writer仍运行时选择gpu01:0,1，合计6张物理卡。后续若Writer结束则下个完整阶段重新live选卡，实际扩卡收益仍须测量。

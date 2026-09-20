@@ -288,7 +288,7 @@ def resident_materialization(tmp_path, monkeypatch):
         tensors["vl_meta.weight"].fill_(value * 100)
         save_file(tensors, str(checkpoint / "ecp.safetensors"))
         runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": dict(MODEL_DEFAULTS),
-            "config": {"update_version": UPDATE_VERSION, "execution_precision": "native_bf16_writer_fm_fp32_lora",
+            "config": {"data": {}, "update_version": UPDATE_VERSION, "execution_precision": "native_bf16_writer_fm_fp32_lora",
                 "model": dict(MODEL_DEFAULTS), "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4,
                                                             **observer_mode_contract(MODEL_DEFAULTS)}}}
         requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),

@@ -9,6 +9,19 @@ coverage_audit已完成36任务规格/metadata审计；训练组件分别完成�
 新训练无固定2000/600硬终点，仅固定观察间隔；不追加fresh seed或k折；不达预期停下询问。
 低负载GPU可共驻，双节点live选卡；不监控代理、不读取部分评测成绩。
 
+### 当前执行与资产
+
+Source新Validation初次提交因旧入口固定32GiB要求在worker启动前拒绝；已按source单worker与materialized policy共用12GiB+2GiB预算修复，在1a32a0cf冻结runtime重启，无已完成rollout被丢弃。
+
+MT-BC profile完整3updates通过，每步36task各16queries，平均149.76s/update、预留33.64GiB。已从clean pushed detached3ebb979b启动fresh首段50→完整400（gpu01:0），正式训练PID已核验；不复用profile权重。Writer已按profile冻结正式首段，Source共驻评测在worker启动前的限制已修复。
+
+当前三条正式作业及等待：Writer阶段完成信号`ember-coverage-writer-stage-complete`（gpu02），MT-BC同名mtbc信号（gpu01），Source `ember-coverage-source-validation-complete`（gpu01）。不读中间日志/成功率。
+
+本轮已清理400个已结束旧Test物化载荷及18个完成profile参数文件，释放实际占块2,489,434,112字节；完整清单在新study/asset_retirement.json。全部旧formal checkpoint、raw rows及profile合同/指标/恢复证据保留。
+
+
+Test other/wrong/shuffle/reverse接口已通过canonical编译/评测路径开放，需同method_freeze及paired_correct_manifest。两处旧fixture补data字段后，horizon/video-controls合计148项CPU检查通过；尚未授权越过性能门槛运行Test controls。
+
 ## 前阶段已封存：旧Test未达门槛
 
 冻结Source1000 / MT-BC425 / EMBER1500的Test8各400已完成：78 / 74 / 82。
@@ -62,11 +75,3 @@ findings§121–122与[研究历史](docs/research_history.md)保存完整解释
 [46组证据审计](docs/v52_evidence_audit_20260917.md)、[findings](findings.md)§117–122及
 [研究历史](docs/research_history.md)索引统一Writer、A900机制、Core/Procedure交叉与更早实验。
 历史结果、旧源码与配置均按各自封存口径解释，不恢复已结束路线。
-
-Source新Validation初次提交因旧入口固定32GiB要求在worker启动前拒绝；已按source单worker与materialized policy共用12GiB+2GiB预算修复，在1a32a0cf冻结runtime重启，无已完成rollout被丢弃。
-
-MT-BC profile完整3updates通过，每步36task各16queries，平均149.76s/update、预留33.64GiB。已从clean pushed detached3ebb979b启动fresh首段50→完整400（gpu01:0），正式训练PID已核验；不复用profile权重。Writer已按profile冻结正式首段，Source共驻评测在worker启动前的限制已修复。
-
-当前三条正式作业及等待：Writer阶段完成信号`ember-coverage-writer-stage-complete`（gpu02），MT-BC同名mtbc信号（gpu01），Source `ember-coverage-source-validation-complete`（gpu01）。不读中间日志/成功率。
-
-本轮已清理400个已结束旧Test物化载荷及18个完成profile参数文件，释放实际占块2,489,434,112字节；完整清单在新study/asset_retirement.json。全部旧formal checkpoint、raw rows及profile合同/指标/恢复证据保留。

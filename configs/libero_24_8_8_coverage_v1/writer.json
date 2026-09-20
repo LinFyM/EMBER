@@ -202,9 +202,9 @@
       "unit": "task_cluster"
     },
     "profile_registration": {
-      "status": "pending",
+      "status": "complete",
       "world_size": 4,
-      "reference": "profile_pending",
+      "reference": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/profiles/writer",
       "native_frame_chunk": 8,
       "policy_microbatches": [
         16,
@@ -212,7 +212,11 @@
         16,
         16
       ],
-      "formal_initialization": "fresh; no profile weights reused"
+      "formal_initialization": "fresh; no profile weights reused",
+      "validated_updates": 10,
+      "exact_resume": "macro9 to10, full optimizer/scheduler/sampler/RNG restored",
+      "mean_update_seconds": 9.436857871918214,
+      "peak_reserved_gib": 21.376953125
     },
     "protocol_migrations": [
       "target24 plus audited source12",

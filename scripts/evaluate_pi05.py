@@ -277,7 +277,7 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
         physical_gpu_ids,
         materialized_lora_replicas=(
             int(contract["parallel"]["replicas_per_gpu"])
-            if (contract.get("adapter") or {}).get("kind")
+            if contract.get("adapter") is None or (contract.get("adapter") or {}).get("kind")
             in {HORIZON_WRITER_KIND, STATIC_TASK_LORA_KIND}
             else None
         ),

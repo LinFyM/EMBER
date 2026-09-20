@@ -3,7 +3,7 @@
 ## 当前状态（2026-09-20，新goal：单次覆盖重训）
 
 Owner已授权采用专家最后的24/8/8＋12辅助方案重训EMBER与MT-BC，Source复用；性能及特异性正常后继续原后继实验。
-协议与训练入口接入完成。17:03启动一次性配置profile：gpu02:0,1,2,4 Writer9updates；gpu01:0 MT-BC3updates。两节点tmux与真实训练PID已核对，尚未启动正式训练。Active design：[覆盖重训合同](docs/coverage_retraining_design.md)。任务规格与36个训练HDF5 metadata覆盖审计通过，未读held动作。
+协议与训练入口接入完成。17:03启动一次性配置profile：gpu02:0,1,2,4 Writer9updates；gpu01:0 MT-BC3updates。两节点tmux与真实训练PID已核对，尚未启动正式训练。Writer9步覆盖全部36task，随后完整resume至10通过；均值9.44s/update、peak21.38GiB。Active design：[覆盖重训合同](docs/coverage_retraining_design.md)。任务规格与36个训练HDF5 metadata覆盖审计通过，未读held动作。
 coverage_audit已完成36任务规格/metadata审计；训练组件分别完成并集成。CPU集成94项中原fixture缺data字段造成5项失败，修复fixture后45项视频测试通过；另8项协议/早停测试通过。
 配置profile与日志：`/data0/user/ymdai/ember_runs/coverage_retraining_20260920`。合计5卡；Writer含低负载共驻卡。完整结束后读结果，等待期间接入评测编排。
 新训练无固定2000/600硬终点，仅固定观察间隔；不追加fresh seed或k折；不达预期停下询问。
@@ -62,3 +62,5 @@ findings§121–122与[研究历史](docs/research_history.md)保存完整解释
 [46组证据审计](docs/v52_evidence_audit_20260917.md)、[findings](findings.md)§117–122及
 [研究历史](docs/research_history.md)索引统一Writer、A900机制、Core/Procedure交叉与更早实验。
 历史结果、旧源码与配置均按各自封存口径解释，不恢复已结束路线。
+
+Source新Validation初次提交因旧入口固定32GiB要求在worker启动前拒绝；已按source单worker与materialized policy共用12GiB+2GiB预算修复，准备重启，无已完成rollout被丢弃。

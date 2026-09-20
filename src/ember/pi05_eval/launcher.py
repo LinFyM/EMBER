@@ -16,6 +16,7 @@ from ember.pi05_assets import Pi05EvaluationError
 
 MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT = 10
 # Measured materialized-LoRA workers peak below 12 GiB including CUDA context.
+# The identical frozen source without an adapter also fits this per-worker budget.
 EVALUATOR_WORKER_MEMORY_MIB = 12 * 1024
 EVALUATOR_GPU_HEADROOM_MIB = 2 * 1024
 OTHER_EVALUATOR_FREE_MEMORY_MIB = 32 * 1024

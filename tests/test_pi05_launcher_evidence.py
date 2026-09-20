@@ -43,9 +43,9 @@ def test_gpu_admission_uses_remaining_capacity_and_live_load(
     ({"kind": "horizon_writer_lora_bank"}, 2),
     ({"kind": "static_task_lora_bank"}, 2),
     ({"kind": "task_local_expert_bank"}, None),
-    (None, None),
+    (None, 2),
 ])
-def test_launcher_passes_replica_budget_for_materialized_banks(
+def test_launcher_passes_replica_budget_for_materialized_banks_and_source(
     tmp_path: Path, monkeypatch, adapter: dict | None, expected_replicas: int | None,
 ) -> None:
     from scripts import evaluate_pi05

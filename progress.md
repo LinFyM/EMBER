@@ -2,6 +2,8 @@
 
 ## 吞吐续行与Source完整节点（2026-09-20）
 
+MT-BC step50恢复correct Validation已完成400行、3个worker退出0：82/400，正式readout`stop=false`。Source→MT-BC50逐行配对51→82，保留/获得/丢失36/46/15，原始比较在新study/analysis。控制器随后自动启动step100，但新增stage内嵌Python预检的`else6`语法错误使两次准入都在训练进程启动前失败，stage和控制器exit1；旧exit、两次GPU快照、storage记录和故障JSON均已封存，step50 checkpoint与完整结果未变。已原子修为`else 6`，编译两段内嵌Python，并在gpu01用原失败快照复跑准入均通过；双节点实时GPU和strg01 data0额度也通过。唯一MT-BC控制器已从完整step50重新续接，实际gpu01双卡torchrun训练进程核验存在，原科学合同不变；真实step100退出和完整评测仍待确认。故障与重启记录在study/launch/mtbc_step100_physical_transition.json及mtbc_step100_embedded_preflight_failure.json。
+
 Writer step600完整correct Validation400已正常退出：115/400，刷新200节点的110/400；正式history裁决`stop=false`、当前最佳600，控制器继续登记的下一段。400→600严格配对成功集保留/获得/丢失70/45/22、churn67，任务覆盖6→6；Source→Writer600为51→115、39/76/12，任务覆盖4→6。原始比较JSON已写入新study/analysis，不以单节点峰值提前冻结模型。
 
 已用正式比较器对全部完成的paired Validation行做阶段统计，原始比较JSON保存在新study/analysis：Source→Writer200为51→110/400，保留/获得/丢失37/73/14；Writer200→400为110→92/400，保留/获得/丢失52/40/58，success-set churn98，任务覆盖5→6。两次比较均通过完整评测完成记录、共同source/normalization、逐行task/state/RNG与Writer视频ordinal检查。这只是已完成节点的邻近证据，不替代后续400节点、早停或最终选点，也不按这一轮下降调配方。

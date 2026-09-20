@@ -1,6 +1,9 @@
-# 冻结24任务模型的论文实验合同
+# 论文后继实验合同与旧冻结24任务实验记录
 
 2026-09-20，Owner明确设置goal并授权。实际进度只看[progress](../progress.md)。
+
+适用范围：第1–2节保留旧冻结1500/425与旧split的封存合同；新方法身份与split由[覆盖重训合同](coverage_retraining_design.md)替代。
+第3–5节的FT/RL/外部比较、信息墙与停止条件继续适用，输入替换为新协议各自唯一选定模型。下述旧checkpoint编号不用于新训练选点。
 
 ## 1. 固定方法与用途
 
@@ -51,3 +54,15 @@ WIZARD优先核查专家标签、输出覆盖、尺度表示及实现可得性�
 Git按main集成推送、clean detached runtime；数据/source/tokenizer复用。大资产前查strg01独立quota及峰值。
 本阶段预计三能力面板仅一套400-LoRA bank约2GiB，加日志和余量预留5GiB；controls另四bank约8GiB，后续launch前重估。
 保留正式manifest/raw rows/aggregate/checkpoint来源，bank为可重建临时资产，用完确认无依赖后删除载荷；不删除唯一科研证据。
+
+## 6. 后继接口只读核查（尚未运行适应实验）
+
+FT/RL的共同缺口是合并共享MT-BC后重新安装fresh rank16。现有`source_sft/inference.py::FrozenSourceSFTAdapter`只安装rank128，
+`lora.py::inject_task_lora`明确拒绝已有LoRA；不能直接叠加第二套adapter，也不能假设返回的是有`merge_and_unload`方法的PeftModel。
+已安装PEFT的`inject_adapter_in_model`返回被就地修改的原policy；官方tuner合并逻辑先merge各层、恢复base层，再删除peft_config。
+后续实现须对38个合法target完成相同步骤，冻结合并后的底座，再用现有identity初始化安装rank16；
+数值资格比较相同observations/state/noise的动作输出，允许正常BF16舍入，不要求逐bit一致。优先进程内合并，避免每task复制完整9GB底座。
+
+既有`expert_manifold/expert_training.py`是训练任务专家入口，绑定train任务清单及多演示dataset；
+不能靠关闭角色检查把它变成held单support FT。可复用FM batch优化、offset1数据处理和完整checkpoint，
+但support、独立选点episode、eval50及目标局部梯度权限需由独立且明确的适应合同绑定，共享训练的信息墙保持。

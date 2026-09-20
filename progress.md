@@ -2,6 +2,8 @@
 
 ## 吞吐续行与Source完整节点（2026-09-20）
 
+已原子安装后续MT-BC物理分卡入口：step100仍固定gpu01:0,1、micro64/accum5；step150及以后每段在旧评测进程释放后读取双节点实时GPU快照，只从gpu01选择状态合格、无进程、空余至少38GiB且利用率不高于10%的卡。Writer控制器未以exit0结束时，持续预留其gpu02四卡；结束后释放该预留，按当时空闲卡数决定总上限6或8，单节点最多6。选择结果及原始快照逐段留在study/launch，训练和评测前仍分别做完整GPU与存储准入。保存的真实快照演练：Writer活动时选gpu01:0,1；模拟其结束后选gpu01:0,1,2,5,6，均符合当前6卡总上限。此为物理调度，科学合同、逻辑576查询、选点与早停不变；实际多卡提速须看完整正式段。原双卡入口备份于study/launch/stage_mtbc_before_dynamic_allocation_20260920.sh，`bash -n`与选卡演练通过；脚本使用原子替换，未触碰正在执行的控制器或恢复评测inode。
+
 MT-BC恢复评测完成后，现有唯一控制器将自动从step50启动step100；未来stage_mtbc.sh已原子切换为gpu01:0,1单节点DDP双卡，来自clean pushed detached `e0d60f75`，micro64/accum5、task-striped物理分片、显式v4→v5完整节点恢复，同一576查询与optimizer/scheduler时钟。实际启动仍由stage先检查双节点GPU总上限、峰值余量与storage gate。准确命令/环境、输入、输出、恢复语义、失败处置记于study/launch/mtbc_step100_physical_transition.json；目前状态为等待step50完整评测，尚未launch。两卡一次性profile与并行Writer4卡＋MT-BC评测1卡会超过6卡上限，因此step100正式段将提供首次真实多卡吞吐/显存证据；CPU旧v4→两卡更新测试已过，工程失败保留step50。旧stage_mtbc脚本备份于study/launch/stage_mtbc_before_two_card_resume_20260920.sh。训练/评测准入均加一次10秒有界重试，显式传播storage/GPU工具失败；活跃旧inode不改。
 
 MT-BC首段50更新训练已完成并通过v4完整checkpoint/合同校验。训练进程释放gpu01:0后，19:19的评测准入快照显示该卡无进程、空闲45,752 MiB但瞬时util=100%，原stage在任何评测worker启动前退出1，控制器随即退出1；尚无MT-BC Validation分数。原exit、控制器exit和GPU快照已归档，事实与未证实的采样原因记录于study/launch/mtbc_first_stage_evaluation_preflight_failure.json。双节点重新live预检显示gpu01:0空闲且util=0后，独立`recover_mtbc_evaluation.sh`仅用原step50 checkpoint启动正式400行评测和readout，实际launcher与3个worker已核对；不重训、不换配方。原MT-BC控制器已作为唯一续行者重新启动，并确认只等待恢复的stage-complete信号；恢复脚本完整exit/400行readout成功后由它自动裁决并从step50继续，失败则退出。两份未来stage launcher已原子更新：评测准入首次失败时保存原快照、等待10秒、再做一次完整双节点预检；仍失败则正常退出并保留证据。原文件备份在study/launch/stage_before_gpu_quiescence_retry_20260920.sh。
@@ -10,7 +12,7 @@ MT-BC首段50更新训练已完成并通过v4完整checkpoint/合同校验。训
 
 已完成的Writer400面板给出具体评测尾部：12个persistent workers的400行/48分片耗时1000.34秒；最后一个分片完成前约200秒已有5个worker退出领取，尾部主要是16初态的普通Spatial分片，单分片耗时约244–279秒。当前动态队列有效但普通分片相对Long优先分片过大。主树已按实测针对性收紧：当最长普通分片估算成本超过最长预平衡优先分片1.5倍时，普通分片限为一个env batch；对应4卡×3副本400面板由48分片改为66分片，仍覆盖原400个task/state一次。105项queue/horizon测试通过。此项只用于以后全新输出目录的评测；正在运行的冻结runtime及现有队列未改，实际墙钟收益待新完整面板核验。
 
-多卡MT-BC profile的独立clean pushed detached runtime已备于`.codex/tmp/coverage-mtbc-flex-runtime`，commit`e0d60f75`；候选入口为study/launch/profile_mtbc_striped.sh，`bash -n`通过，尚未启动。当前Writer4卡＋MT-BC1卡已占5张物理卡，合同总上限6张，另起至少2卡profile会越界；等释放资源后须重新live检查双节点和quota再launch。现有正式MT-BC控制器仍按旧冻结runtime运行，不自动采用该候选。
+多卡MT-BC的独立clean pushed detached runtime已备于`.codex/tmp/coverage-mtbc-flex-runtime`，commit`e0d60f75`；一次性候选profile入口study/launch/profile_mtbc_striped.sh未启动。Writer4卡＋MT-BC1卡同时运行时另起至少2卡profile会超过当时6卡总上限，因此正式step100作为首个多卡吞吐观察。旧step50训练来自原冻结runtime，后续完整阶段由控制器调用新runtime，不并行启动第二条训练轨迹。
 
 Writer第二个完整correct Validation节点400更新已退出0：400行、12个worker均退出0，成功92/400；200节点为110/400。两节点不足以触发登记的早停，正式history裁决`stop=false`、当前最佳仍为200。控制器已从400完整checkpoint自动续训至600，实际训练进程核对存在；此下降不作科学终止或改配方依据。当时MT-BC首段50仍在训练，尚无正式完整Validation结果。
 

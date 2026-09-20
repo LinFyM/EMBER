@@ -25,6 +25,9 @@ MT-BC profile完整3updates通过，每步36task各16queries，平均149.76s/upd
 
 Test other/wrong/shuffle/reverse接口已通过canonical编译/评测路径开放，需同method_freeze及paired_correct_manifest。两处旧fixture补data字段后，horizon/video-controls合计148项CPU检查通过；尚未授权越过性能门槛运行Test controls。
 
+Writer首段200及correct400物化完成后，最初shell launcher退出2，未启动评测；其运行期间曾原地改写launcher，疑似解析位置受影响，原stderr未保留，不能确证。
+已保存`writer_first_stage_launch_failure.json`，使用独立不可变`recover_writer_evaluation.sh`仅启动该bank的完整评测，不重训或重新物化。后续脚本变更采用原子替换，现有进程继续读原inode；阶段恢复通过后再接回控制器。
+
 ## 前阶段已封存：旧Test未达门槛
 
 冻结Source1000 / MT-BC425 / EMBER1500的Test8各400已完成：78 / 74 / 82。

@@ -2,6 +2,8 @@
 
 ## Writer冻结与MT-BC续行（2026-09-21）
 
+两条训练与五个Writer Validation视频臂结束后，核对gpu01/gpu02无本轮runtime进程，五个clean detached frozen worktree已用`git worktree remove`清理；Git现只保留main worktree，运行代码仍由已记录并已推送的commit追溯。selected Writer1000的other/wrong/shuffled/reversed四个bank各400个可再生LoRA payload退休，合计名义8,257,888,000字节，逐bank`payload_retirement.json`记录完整checkpoint及保留物；manifest、正式400行结果、worker日志与checkpoint未删。最终停止节点Writer1800 bank仍按原保留合同持有payload。`.codex/tmp`其它约402MiB内容未确认归属，保持不动。两模型训练/Validation阶段图文报告和原始CSV/JSON已推送main；Writer内容特异性不清楚的新Test暂停裁决未变。
+
 MT-BC step500完整correct Validation400、15个worker与全训练控制器均exit0：119/400；最近400/450/500为130/138/119，正式持续下降规则`stop=true`，没有再启动新段。10个完整节点依次82/112/99/133/136/155/131/130/138/119；唯一correct最高step300为155，已写`mtbc_selection.json`并冻结checkpoint，MT-BC同分规则无需触发。450→500配对保留/获得/丢失102/17/36、churn53、覆盖5→5。Source→选定MT-BC300为51→155、保留/获得/丢失36/119/15、覆盖4→6。与Writer选中1000的117严格配对，以MT-BC为参考Writer保留/获得/丢失87/30/68、覆盖6→4，Writer−MT-BC为−38/400；8任务簇bootstrap95%百分位区间[−29.75,+6.5]pp。此仍是Validation，不替代Test的+40门槛；Writer视频内容资格待Owner裁决，新Test及FT/RL/外部比较均未启动。MT-BC十节点CSV、完整双方法曲线PNG/SVG/源码、逐任务/逐suite CSV及成本JSON已汇入study/analysis和阶段报告。500次更新最大rank步时合计30349.24秒、累计288000查询；五卡阶段均值约31.3秒/更新，逻辑36×16保持。
 
 MT-BC step450五卡完整correct Validation400和15个worker exit0：138/400；当前最佳仍step300的155，正式早停`stop=false`。最近350/400/450为131/130/138，出现回升、线性斜率为正，不能因连续三个低于最佳就误触发持续下降。400→450配对保留/获得/丢失98/40/32、churn72，覆盖5→5。五卡401–450平均31.342秒/更新、峰值reserved32.934GiB，36任务×16查询不变，累计259200查询。控制器继续原合同，无手工重复launch。

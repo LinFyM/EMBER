@@ -2,6 +2,8 @@
 
 ## 吞吐续行与Source完整节点（2026-09-20）
 
+按Owner要求对已完成的Writer前800更新做只读吞吐检查：四个200更新区段平均步时依次9.996、9.848、10.163、9.815秒，最近601–800中位9.244秒、95百分位15.141秒，峰值reserved22.787GiB，梯度同步均值约0.029秒/步。profile均值9.44秒/步与正式记录同量级；记录没有逐rank计算等待分解，较长尾步还不能归因。上一轮两卡的frame chunk8→16在最长视频上缩短步时约7.7%，本轮四卡frame8尚无匹配对照。当前Writer4卡＋MT-BC2卡已按6卡上限运行，不另起并发GPU profile；若训练仍需较长时间且出现安全资源窗口，再做同逻辑更新的短对照，不静默改活跃Writer的exact-resume配置。
+
 Writer step800完整correct Validation400退出0，87/400；正式早停`stop=false`，历史最佳仍为step600的115/400。600→800严格配对成功集保留/获得/丢失62/25/53、churn78，任务覆盖6→5；比较JSON在新study/analysis。当前四个完整Writer节点为110、92、115、87；不因这一次下降提前终止或改变配方。
 
 MT-BC step100首个双卡恢复在准入修复后仍于optimizer更新前拒绝：旧run合同与新冻结runtime候选合同归一后的唯一差异，是同内容tokenizer manifest在两个worktree里的绝对路径。已用只读双卡诊断捕获实际候选合同，核对两个manifest字节相同；`6950f761`只在其它tokenizer字段及两个manifest内容均相同时接受路径迁移，真实失败候选与新runtime路径均能严格归一到原step50合同。9项聚焦测试通过，内容/模型路径变化仍拒绝。第二次失败exit、训练stderr、准入快照、候选合同和独立故障JSON保留；step50 checkpoint未变、step100无checkpoint。新的clean pushed detached runtime `.codex/tmp/coverage-mtbc-resume-runtime` 为`6950f761`，阶段脚本再次原子替换。双节点实时GPU与strg01额度通过后，唯一控制器重新续接；正式日志已出现`resume_step=50, stop_after_step=100, tasks=36`和原run合同hash，双卡训练进程在运行。完整step100结果和真实吞吐仍待确认；不将这次工程拒绝解释为科学结果。

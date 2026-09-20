@@ -211,15 +211,27 @@ def build_cost_balanced_shards(
         target_cost=target_cost,
         worker_slot_count=worker_slot_count,
     )
-    by_task = [
-        _task_chunks(
-            task,
-            env_batch_size=env_batch_size,
-            target_cost=target_cost,
-            max_states_per_shard=ordinary_state_cap,
+    def ordinary_chunks(cap: int | None) -> list[list[tuple[int, ...]]]:
+        return [
+            _task_chunks(task, env_batch_size=env_batch_size,
+                         target_cost=target_cost, max_states_per_shard=cap)
+            for task in ordinary_tasks
+        ]
+
+    by_task = ordinary_chunks(ordinary_state_cap)
+    if shards and by_task:
+        longest_priority = max(shard.estimated_cost for shard in shards)
+        longest_ordinary = max(
+            task.horizon * len(state_ids)
+            for task, task_shards in zip(ordinary_tasks, by_task, strict=True)
+            for state_ids in task_shards
         )
-        for task in ordinary_tasks
-    ]
+        # A late ordinary shard should not keep most workers idle after the
+        # pre-balanced long tasks. One env batch is the smallest full GPU wave.
+        if 2 * longest_ordinary > 3 * longest_priority:
+            ordinary_state_cap = min(ordinary_state_cap or env_batch_size,
+                                     env_batch_size)
+            by_task = ordinary_chunks(ordinary_state_cap)
     for shard_index in range(max((len(value) for value in by_task), default=0)):
         for task, task_shards in zip(ordinary_tasks, by_task, strict=True):
             if shard_index >= len(task_shards):

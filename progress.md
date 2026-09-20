@@ -2,6 +2,8 @@
 
 ## 吞吐续行与Source完整节点（2026-09-20）
 
+已完成的Writer400面板给出具体评测尾部：12个persistent workers的400行/48分片耗时1000.34秒；最后一个分片完成前约200秒已有5个worker退出领取，尾部主要是16初态的普通Spatial分片，单分片耗时约244–279秒。当前动态队列有效但普通分片相对Long优先分片过大。主树已按实测针对性收紧：当最长普通分片估算成本超过最长预平衡优先分片1.5倍时，普通分片限为一个env batch；对应4卡×3副本400面板由48分片改为66分片，仍覆盖原400个task/state一次。105项queue/horizon测试通过。此项只用于以后全新输出目录的评测；正在运行的冻结runtime及现有队列未改，实际墙钟收益待新完整面板核验。
+
 多卡MT-BC profile的独立clean pushed detached runtime已备于`.codex/tmp/coverage-mtbc-flex-runtime`，commit`e0d60f75`；候选入口为study/launch/profile_mtbc_striped.sh，`bash -n`通过，尚未启动。当前Writer4卡＋MT-BC1卡已占5张物理卡，合同总上限6张，另起至少2卡profile会越界；等释放资源后须重新live检查双节点和quota再launch。现有正式MT-BC控制器仍按旧冻结runtime运行，不自动采用该候选。
 
 Writer第二个完整correct Validation节点400更新已退出0：400行、12个worker均退出0，成功92/400；200节点为110/400。两节点不足以触发登记的早停，正式history裁决`stop=false`、当前最佳仍为200。控制器已从400完整checkpoint自动续训至600，实际训练进程核对存在；此下降不作科学终止或改配方依据。MT-BC首段50仍在运行，尚无正式完整Validation结果。

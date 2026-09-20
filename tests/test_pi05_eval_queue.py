@@ -248,6 +248,28 @@ def test_four_gpu_six_replica_panel_keeps_two_ordinary_waves_after_long_work(
     assert queue_summary(path)["status_counts"] == {"claimed": 72, "pending": 24}
 
 
+def test_four_gpu_three_replica_panel_splits_ordinary_tail_into_full_env_batches():
+    tasks = tuple(
+        EvaluationTask(suite, task_id, horizon, tuple(range(50)))
+        for task_id, (suite, horizon) in enumerate((
+            ("libero_spatial", 220), ("libero_spatial", 220),
+            ("libero_object", 280), ("libero_object", 280),
+            ("libero_goal", 300), ("libero_goal", 300),
+            ("libero_10", 520), ("libero_10", 520),
+        ))
+    )
+    shards = build_cost_balanced_shards(tasks, env_batch_size=8,
+        target_cost=4160, physical_gpu_count=4, replicas_per_gpu=3)
+    priority = [shard for shard in shards if shard.horizon == 520]
+    ordinary = [shard for shard in shards if shard.horizon != 520]
+    assert len(priority) == 24 and len(ordinary) == 42
+    assert max(len(shard.init_state_ids) for shard in ordinary) == 8
+    assert sum(len(shard.init_state_ids) for shard in ordinary) == 300
+    assert len({(shard.suite, shard.task_id, state_id)
+                for shard in shards for state_id in shard.init_state_ids}) == 400
+    assert {shard.preferred_gpu for shard in priority} == set(range(4))
+
+
 def test_queue_claim_completion_and_contract_resume(tmp_path: Path) -> None:
     path = tmp_path / "queue.sqlite3"
     shards = build_cost_balanced_shards(_tasks(), env_batch_size=8)

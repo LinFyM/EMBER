@@ -1,5 +1,16 @@
 # EMBER research history
 
+2026-09-20按Owner凌晨授权完成唯一fresh1500双相机对照，教学输入添加同步手眼RGB，执行policy仍按原双相机合同。
+correct900/1200/1500为117/108/108，对agentview149/174/165；fixed1500 other105，对165。
+三个correct配对差值95%CI均低于零，末点[-27,-4]pp，other[-27.75,-2.75]pp；不能视为当前配方的改进。
+train52/64/67及frozen FM持续改善未转为验证收益；末点correct breadth6中的task1仅一次，other breadth7中的task1/23也各一次。
+同一6000事件、参数量、实际queries/noise和优化预算匹配；物理world4/frame8，source冻结，正式版本35124aa9。
+新增7面板/1888行与训练审计全部通过；没有双相机controls、续训或新选点，不由此否定所有双相机方法。
+连同下述单相机部分，整轮在08:50完成40面板/12,048条新闭环、5700更新与638,400queries，57个唯一arm/step完整checkpoint保留；随后两节点确认本轮作业退出。
+结论见findings§122、[双相机报告](review_materials/20260919/dual_camera_report.md)、[总报告](review_materials/20260919/final_report.md)、
+[专家讨论提示词](review_materials/20260919/expert_discussion_prompt.md)与[完成清单](review_materials/20260919/completion.json)。
+本轮授权已经完成，无active design或自动后继实验；原selected1500及各阶段预登记保留原口径。
+
 2026-09-20完成专家最终修订的同视频教学单相机部分：主组与唯一匹配cross-episode辅助消融各fresh1500，
 再按Owner授权从完整状态继续至2100；33个正式面板/10,160条新闭环全部通过，source面板只计一次。
 主组correct900/1200/1500/1800/2100为149/174/165/160/158，消融125/136/147/136/159；

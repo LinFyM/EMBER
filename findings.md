@@ -2513,3 +2513,39 @@ Owner追加的匹配视频检查固定两组1500，不按control结果选点、�
 [完整续训报告](docs/review_materials/20260919/continuation_report.md)、[匹配视频检查](docs/review_materials/20260919/ablation_controls_report.md)、
 [逐任务／相邻表](docs/review_materials/20260919/discussion_tables.md)与CSV/JSON。
 后续新增相机属于独立fresh对照，不由本段归因；不因有限尾段结果宣称所有更长训练无效，也不自动恢复本尾段。
+
+## 122. 同视频教学的双相机对照未改善当前配方；整轮证据已完成（2026-09-20）
+
+Owner凌晨授权在资源与时间允许时补双相机。经最长105帧及四卡真实吞吐／完整恢复检查后，
+执行唯一fresh1500：仅给Writer添加同步eye-in-hand教学RGB，执行policy本来就使用双相机。
+source、seed7、train24、参数量、6000事件、实际query及噪声、21＋7监督、AdamW与LR预算保持匹配；
+物理world2/frame16改为world4/frame8，每rank policy microbatch16，四任务等权更新语义保持。
+
+| 更新 | agentview correct /400 | dual correct /400 | agentview train /96 | dual train /96 |
+| ---: | ---: | ---: | ---: | ---: |
+| 900 | 149 | 117 | 50 | 52 |
+| 1200 | 174 | 108 | 67 | 64 |
+| 1500 | 165 | 108 | 65 | 67 |
+
+三个correct净差为−32/−66/−57，task-cluster95%CI为[-14.5,-1.5]/[-31.5,-4.25]/[-27,-4]pp。
+1500单→双保留93、获得15、丢失72，churn87，J=.517；S/O/G/L35/59/48/23→10/43/36/19。
+双相机末点correct breadth6/8仅因task1出现一次成功；不能以覆盖计数掩盖既有能力下降。
+fixed1500 other165→105，保留88、获得17、丢失77，CI[-27.75,-2.75]pp；dual breadth7/8中task1与23各只有一次成功，task32仍零。
+
+dual900→1200保留77、获得31、丢失40；1200→1500虽同为108，仍保留78、获得30、丢失30，churn60、J=.565。
+dual correct→other108→105，保留76、获得29、丢失32，CI[-3.25,1.75]pp；总分相近不等价于条件行为稳定。
+train成绩52→64→67，固定train-action FM900/1200/1500为.104100628/.099837918/.098245136；
+末点与agentview .098259576接近，训练任务提升及FM下降没有转化为未见任务能力。
+没有唯一定位表示、泛化或优化方面的内部原因；真实相机／完整帧、事件、source冻结、四组有限正梯度及全部worker核对均通过。
+
+当前配方的双相机补充不构成有效改进，不宣称所有双相机方法无效，也不归因于某一接触、遮挡或数值机制。
+只有一个训练seed、八个validation task簇，bootstrap20,000次、seed20260915且未多重校正。
+没有双相机wrong/shuffle/reverse、续训或新选点；不继承单相机1500的controls资格。原selected1500保持冻结，无Test/RL或自动新实验。
+
+双相机1500更新计算22233.25秒、均值14.822秒、allocated峰值28.175GiB；15个完整checkpoint保留，formal runtime为clean pushed detached35124aa9。
+新增7面板/1888行全部审计通过；整个study在08:50完成40面板/12,048条新闭环、5700实际更新、638,400queries与57个唯一arm/step完整checkpoint。
+续训复制的父历史不重复计数，共同source只计一次；08:51两节点核验本轮无运行中的GPU或训练／物化／评测作业。
+
+完整[双相机报告](docs/review_materials/20260919/dual_camera_report.md)、[总报告](docs/review_materials/20260919/final_report.md)、
+[专家提示词](docs/review_materials/20260919/expert_discussion_prompt.md)、[完成清单](docs/review_materials/20260919/completion.json)
+与逐task/suite CSV、训练趋势、相机示例及配对原件共同保存。本轮结束后的研究选择交Owner与专家讨论，不自动启动后继训练。

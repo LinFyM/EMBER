@@ -16,7 +16,7 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 下述Core/P形式说明统一改造前v5.2衍生实现的接口，不等同于原始132分实验的实际输入/读法；历史比较口径见证据审计。
 Process Pullback及其它已关闭机制从[研究历史](research_history.md)追溯。
 
-## 当前教学候选：同一套参数承担两种动作责任
+## 教学候选：同一套参数承担两种动作责任
 
 [最终修订](review_materials/20260919/expert_proposal.md)保留有证据价值的完整自由 A/B 消费者，
 通过同视频动作监督检验生成参数是否更有益地利用所看操作。主实验使用 action-hidden agentview、exact language 和完整 stride5 视频。
@@ -26,7 +26,9 @@ Core 条件化的居中 P／AdaLN、归一化与八组共享 heads 生成唯一�
 同一套 LoRA 同时接受21个跨 episode 主 FM query 和7个同视频 query；后者在纯噪声端点只监督真实未来五步，
 分别平均后以1与1/3相加，再将总信用回传整个 Writer 和三个 Meta。动作和 state 只在生成之后进入执行监督，不能成为 Writer 输入。
 没有独立动作预测头或 P-only 梯度。重复读取和联合信用提供可检验偏置，不保证视频必要性、未见初始化迁移或保持。
-完整合同及与历史 Local Action、Video Functional、Native Correction、Horizon 的异同见[当前设计](video_teaching_writer_design.md)。
+完整合同及与历史 Local Action、Video Functional、Native Correction、Horizon 的异同见[封存设计](video_teaching_writer_design.md)。
+本轮候选、匹配消融、后续训练趋势与双相机比较均已完成；[总报告](review_materials/20260919/final_report.md)和findings§121–122
+区分原窗口的能力增量、未保持的后续优势及尚未证实的特异性增量，不由局部结果确定唯一内部原因。
 
 ## 统一Writer实例：统一表示与一次性参数生成
 

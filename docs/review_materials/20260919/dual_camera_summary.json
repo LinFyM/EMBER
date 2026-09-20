@@ -1,0 +1,3608 @@
+{
+  "schema_version": "ember_matched_teacher_camera_comparison_v1",
+  "complete": true,
+  "steps": [
+    900,
+    1200,
+    1500
+  ],
+  "fixed_other_step": 1500,
+  "checkpoint_selection": false,
+  "test": false,
+  "rl": false,
+  "camera_controls_performed": false,
+  "comparison_direction": "dual minus agentview",
+  "training": {
+    "schema_version": "ember_video_teaching_training_audit_v1",
+    "complete": true,
+    "relation": "same_video",
+    "training_commit": "35124aa965a0081b29c060e682ee9a1aaf1982b3",
+    "fresh_start": true,
+    "source_trainable_parameters": 0,
+    "optimizer_updates": 1500,
+    "conditions": 6000,
+    "main_queries": 126000,
+    "teaching_queries": 42000,
+    "total_queries": 168000,
+    "all_recorded_events_match_plan": true,
+    "gradients_after_identity": {
+      "writer_grad_norm": {
+        "updates_after_identity_opening": 1498,
+        "finite_positive_updates": 1498,
+        "minimum": 0.07239878922700882,
+        "median": 0.1735531985759735,
+        "maximum": 2.9850869178771973
+      },
+      "meta_grad_norm": {
+        "updates_after_identity_opening": 1498,
+        "finite_positive_updates": 1498,
+        "minimum": 7.715214023207295e-10,
+        "median": 0.0001678859771345742,
+        "maximum": 0.0013607018627226353
+      },
+      "vl_meta_grad_norm": {
+        "updates_after_identity_opening": 1498,
+        "finite_positive_updates": 1498,
+        "minimum": 1.8417175624563242e-06,
+        "median": 0.003061858471482992,
+        "maximum": 0.052234403789043427
+      },
+      "text_meta_grad_norm": {
+        "updates_after_identity_opening": 1498,
+        "finite_positive_updates": 1498,
+        "minimum": 1.4197317455000302e-07,
+        "median": 0.00023339626932283863,
+        "maximum": 0.009249758906662464
+      }
+    },
+    "all_update_losses_finite": true,
+    "full_checkpoint_steps": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900,
+      1000,
+      1100,
+      1200,
+      1300,
+      1400,
+      1500
+    ],
+    "world_size": 4,
+    "update_compute_seconds": 22233.248186295852,
+    "average_update_seconds": 14.822165457530568,
+    "maximum_allocated_gib": 28.175286293029785,
+    "maximum_reserved_gib": 29.931640625,
+    "per_task_conditions": {
+      "0": 250,
+      "2": 250,
+      "4": 250,
+      "5": 250,
+      "7": 250,
+      "9": 250,
+      "12": 250,
+      "14": 250,
+      "15": 250,
+      "16": 250,
+      "18": 250,
+      "19": 250,
+      "20": 250,
+      "21": 250,
+      "22": 250,
+      "25": 250,
+      "28": 250,
+      "29": 250,
+      "34": 250,
+      "35": 250,
+      "36": 250,
+      "37": 250,
+      "38": 250,
+      "39": 250
+    },
+    "unique_teacher_conditions": 1104,
+    "held_train_FM": {
+      "0": 0.14683008682914078,
+      "900": 0.10410062805749476,
+      "1200": 0.09983791802854587,
+      "1500": 0.09824513622637217
+    },
+    "held_diagnostic_inputs_paired_and_no_gradient": true,
+    "diagnostics_used_for_selection": false,
+    "events_and_logical_updates_identical_to_monocular": true,
+    "actual_6000_conditions_and_all_query_noise_streams_match": true,
+    "parameter_counts_and_optimization_unchanged": true,
+    "registered_module_parameter_counts": {
+      "writer_parameters": 12077320,
+      "meta_parameters": 626688,
+      "vl_meta_parameters": 921600,
+      "text_meta_parameters": 921600
+    },
+    "paired_frozen_diagnostic_inputs": true,
+    "intentional_physical_difference": "world2 frame16 to world4 frame8; per-rank policy microbatch16",
+    "only_scientific_intervention": "synchronized eye-in-hand teacher RGB added"
+  },
+  "matched": {
+    "validation": {
+      "900": {
+        "reference": "[STUDY]/training/evaluation/validation_correct_step900",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/validation_correct_step900",
+        "panel": "validation",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 400,
+          "reference_successes": 149,
+          "candidate_successes": 117,
+          "retained": 91,
+          "gained": 26,
+          "lost": 58,
+          "churn_count": 84,
+          "churn_fraction": 0.21,
+          "success_set_jaccard": 0.52,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 32,
+              "candidate_successes": 22,
+              "retained": 14,
+              "gained": 8,
+              "lost": 18,
+              "churn_count": 26,
+              "churn_fraction": 0.52,
+              "success_set_jaccard": 0.35
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 6,
+              "rows": 50,
+              "reference_successes": 42,
+              "candidate_successes": 34,
+              "retained": 29,
+              "gained": 5,
+              "lost": 13,
+              "churn_count": 18,
+              "churn_fraction": 0.36,
+              "success_set_jaccard": 0.6170212765957447
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 46,
+              "candidate_successes": 36,
+              "retained": 35,
+              "gained": 1,
+              "lost": 11,
+              "churn_count": 12,
+              "churn_fraction": 0.24,
+              "success_set_jaccard": 0.7446808510638298
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 14,
+              "candidate_successes": 16,
+              "retained": 6,
+              "gained": 10,
+              "lost": 8,
+              "churn_count": 18,
+              "churn_fraction": 0.36,
+              "success_set_jaccard": 0.25
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 15,
+              "candidate_successes": 9,
+              "retained": 7,
+              "gained": 2,
+              "lost": 8,
+              "churn_count": 10,
+              "churn_fraction": 0.2,
+              "success_set_jaccard": 0.4117647058823529
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 100,
+              "reference_successes": 32,
+              "candidate_successes": 22,
+              "retained": 14,
+              "gained": 8,
+              "lost": 18,
+              "churn_count": 26,
+              "churn_fraction": 0.26,
+              "success_set_jaccard": 0.35
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 100,
+              "reference_successes": 42,
+              "candidate_successes": 34,
+              "retained": 29,
+              "gained": 5,
+              "lost": 13,
+              "churn_count": 18,
+              "churn_fraction": 0.18,
+              "success_set_jaccard": 0.6170212765957447
+            },
+            {
+              "suite": "libero_object",
+              "rows": 100,
+              "reference_successes": 60,
+              "candidate_successes": 52,
+              "retained": 41,
+              "gained": 11,
+              "lost": 19,
+              "churn_count": 30,
+              "churn_fraction": 0.3,
+              "success_set_jaccard": 0.5774647887323944
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 100,
+              "reference_successes": 15,
+              "candidate_successes": 9,
+              "retained": 7,
+              "gained": 2,
+              "lost": 8,
+              "churn_count": 10,
+              "churn_fraction": 0.1,
+              "success_set_jaccard": 0.4117647058823529
+            }
+          ],
+          "reference_breadth": 5,
+          "candidate_breadth": 5,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            -0.14500000000000002,
+            -0.015
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      },
+      "1200": {
+        "reference": "[STUDY]/training/evaluation/validation_correct_step1200",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/validation_correct_step1200",
+        "panel": "validation",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 400,
+          "reference_successes": 174,
+          "candidate_successes": 108,
+          "retained": 91,
+          "gained": 17,
+          "lost": 83,
+          "churn_count": 100,
+          "churn_fraction": 0.25,
+          "success_set_jaccard": 0.47643979057591623,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 17,
+              "candidate_successes": 16,
+              "retained": 8,
+              "gained": 8,
+              "lost": 9,
+              "churn_count": 17,
+              "churn_fraction": 0.34,
+              "success_set_jaccard": 0.32
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 6,
+              "rows": 50,
+              "reference_successes": 45,
+              "candidate_successes": 39,
+              "retained": 36,
+              "gained": 3,
+              "lost": 9,
+              "churn_count": 12,
+              "churn_fraction": 0.24,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 46,
+              "candidate_successes": 35,
+              "retained": 33,
+              "gained": 2,
+              "lost": 13,
+              "churn_count": 15,
+              "churn_fraction": 0.3,
+              "success_set_jaccard": 0.6875
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 30,
+              "candidate_successes": 12,
+              "retained": 8,
+              "gained": 4,
+              "lost": 22,
+              "churn_count": 26,
+              "churn_fraction": 0.52,
+              "success_set_jaccard": 0.23529411764705882
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 36,
+              "candidate_successes": 6,
+              "retained": 6,
+              "gained": 0,
+              "lost": 30,
+              "churn_count": 30,
+              "churn_fraction": 0.6,
+              "success_set_jaccard": 0.16666666666666666
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 100,
+              "reference_successes": 17,
+              "candidate_successes": 16,
+              "retained": 8,
+              "gained": 8,
+              "lost": 9,
+              "churn_count": 17,
+              "churn_fraction": 0.17,
+              "success_set_jaccard": 0.32
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 100,
+              "reference_successes": 45,
+              "candidate_successes": 39,
+              "retained": 36,
+              "gained": 3,
+              "lost": 9,
+              "churn_count": 12,
+              "churn_fraction": 0.12,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "rows": 100,
+              "reference_successes": 76,
+              "candidate_successes": 47,
+              "retained": 41,
+              "gained": 6,
+              "lost": 35,
+              "churn_count": 41,
+              "churn_fraction": 0.41,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 100,
+              "reference_successes": 36,
+              "candidate_successes": 6,
+              "retained": 6,
+              "gained": 0,
+              "lost": 30,
+              "churn_count": 30,
+              "churn_fraction": 0.3,
+              "success_set_jaccard": 0.16666666666666666
+            }
+          ],
+          "reference_breadth": 5,
+          "candidate_breadth": 5,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            -0.315,
+            -0.042499999999999996
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      },
+      "1500": {
+        "reference": "[STUDY]/training/evaluation/validation_correct_step1500",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/validation_correct_step1500",
+        "panel": "validation",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 400,
+          "reference_successes": 165,
+          "candidate_successes": 108,
+          "retained": 93,
+          "gained": 15,
+          "lost": 72,
+          "churn_count": 87,
+          "churn_fraction": 0.2175,
+          "success_set_jaccard": 0.5166666666666667,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 23,
+              "candidate_successes": 19,
+              "retained": 12,
+              "gained": 7,
+              "lost": 11,
+              "churn_count": 18,
+              "churn_fraction": 0.36,
+              "success_set_jaccard": 0.4
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 6,
+              "rows": 50,
+              "reference_successes": 48,
+              "candidate_successes": 36,
+              "retained": 35,
+              "gained": 1,
+              "lost": 13,
+              "churn_count": 14,
+              "churn_fraction": 0.28,
+              "success_set_jaccard": 0.7142857142857143
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 42,
+              "candidate_successes": 31,
+              "retained": 29,
+              "gained": 2,
+              "lost": 13,
+              "churn_count": 15,
+              "churn_fraction": 0.3,
+              "success_set_jaccard": 0.6590909090909091
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 17,
+              "candidate_successes": 12,
+              "retained": 9,
+              "gained": 3,
+              "lost": 8,
+              "churn_count": 11,
+              "churn_fraction": 0.22,
+              "success_set_jaccard": 0.45
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.02,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 35,
+              "candidate_successes": 9,
+              "retained": 8,
+              "gained": 1,
+              "lost": 27,
+              "churn_count": 28,
+              "churn_fraction": 0.56,
+              "success_set_jaccard": 0.2222222222222222
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 100,
+              "reference_successes": 23,
+              "candidate_successes": 19,
+              "retained": 12,
+              "gained": 7,
+              "lost": 11,
+              "churn_count": 18,
+              "churn_fraction": 0.18,
+              "success_set_jaccard": 0.4
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 100,
+              "reference_successes": 48,
+              "candidate_successes": 36,
+              "retained": 35,
+              "gained": 1,
+              "lost": 13,
+              "churn_count": 14,
+              "churn_fraction": 0.14,
+              "success_set_jaccard": 0.7142857142857143
+            },
+            {
+              "suite": "libero_object",
+              "rows": 100,
+              "reference_successes": 59,
+              "candidate_successes": 43,
+              "retained": 38,
+              "gained": 5,
+              "lost": 21,
+              "churn_count": 26,
+              "churn_fraction": 0.26,
+              "success_set_jaccard": 0.59375
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 100,
+              "reference_successes": 35,
+              "candidate_successes": 10,
+              "retained": 8,
+              "gained": 2,
+              "lost": 27,
+              "churn_count": 29,
+              "churn_fraction": 0.29,
+              "success_set_jaccard": 0.21621621621621623
+            }
+          ],
+          "reference_breadth": 5,
+          "candidate_breadth": 6,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            -0.27,
+            -0.04
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      }
+    },
+    "train": {
+      "900": {
+        "reference": "[STUDY]/training/evaluation/train_correct_step900",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/train_correct_step900",
+        "panel": "train",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 96,
+          "reference_successes": 50,
+          "candidate_successes": 52,
+          "retained": 40,
+          "gained": 12,
+          "lost": 10,
+          "churn_count": 22,
+          "churn_fraction": 0.22916666666666666,
+          "success_set_jaccard": 0.6451612903225806,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 2,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 2,
+              "retained": 0,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 1,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 1,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 2,
+              "churn_count": 3,
+              "churn_fraction": 0.75,
+              "success_set_jaccard": 0.25
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 1,
+              "gained": 2,
+              "lost": 1,
+              "churn_count": 3,
+              "churn_fraction": 0.75,
+              "success_set_jaccard": 0.25
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 4,
+              "retained": 2,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 4,
+              "retained": 3,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 4,
+              "retained": 3,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 1,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.3333333333333333
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.5
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 24,
+              "reference_successes": 5,
+              "candidate_successes": 4,
+              "retained": 2,
+              "gained": 2,
+              "lost": 3,
+              "churn_count": 5,
+              "churn_fraction": 0.20833333333333334,
+              "success_set_jaccard": 0.2857142857142857
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 24,
+              "reference_successes": 14,
+              "candidate_successes": 13,
+              "retained": 11,
+              "gained": 2,
+              "lost": 3,
+              "churn_count": 5,
+              "churn_fraction": 0.20833333333333334,
+              "success_set_jaccard": 0.6875
+            },
+            {
+              "suite": "libero_object",
+              "rows": 24,
+              "reference_successes": 15,
+              "candidate_successes": 18,
+              "retained": 13,
+              "gained": 5,
+              "lost": 2,
+              "churn_count": 7,
+              "churn_fraction": 0.2916666666666667,
+              "success_set_jaccard": 0.65
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 24,
+              "reference_successes": 16,
+              "candidate_successes": 17,
+              "retained": 14,
+              "gained": 3,
+              "lost": 2,
+              "churn_count": 5,
+              "churn_fraction": 0.20833333333333334,
+              "success_set_jaccard": 0.7368421052631579
+            }
+          ],
+          "reference_breadth": 18,
+          "candidate_breadth": 18,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            -0.07291666666666667,
+            0.11458333333333333
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      },
+      "1200": {
+        "reference": "[STUDY]/training/evaluation/train_correct_step1200",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/train_correct_step1200",
+        "panel": "train",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 96,
+          "reference_successes": 67,
+          "candidate_successes": 64,
+          "retained": 57,
+          "gained": 7,
+          "lost": 10,
+          "churn_count": 17,
+          "churn_fraction": 0.17708333333333334,
+          "success_set_jaccard": 0.7702702702702703,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 1,
+              "gained": 2,
+              "lost": 1,
+              "churn_count": 3,
+              "churn_fraction": 0.75,
+              "success_set_jaccard": 0.25
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 1,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 1,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 4,
+              "retained": 3,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 4,
+              "retained": 3,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 2,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 24,
+              "reference_successes": 10,
+              "candidate_successes": 10,
+              "retained": 8,
+              "gained": 2,
+              "lost": 2,
+              "churn_count": 4,
+              "churn_fraction": 0.16666666666666666,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 24,
+              "reference_successes": 13,
+              "candidate_successes": 15,
+              "retained": 11,
+              "gained": 4,
+              "lost": 2,
+              "churn_count": 6,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6470588235294118
+            },
+            {
+              "suite": "libero_object",
+              "rows": 24,
+              "reference_successes": 22,
+              "candidate_successes": 20,
+              "retained": 19,
+              "gained": 1,
+              "lost": 3,
+              "churn_count": 4,
+              "churn_fraction": 0.16666666666666666,
+              "success_set_jaccard": 0.8260869565217391
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 24,
+              "reference_successes": 22,
+              "candidate_successes": 19,
+              "retained": 19,
+              "gained": 0,
+              "lost": 3,
+              "churn_count": 3,
+              "churn_fraction": 0.125,
+              "success_set_jaccard": 0.8636363636363636
+            }
+          ],
+          "reference_breadth": 21,
+          "candidate_breadth": 22,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            -0.11458333333333333,
+            0.041666666666666664
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      },
+      "1500": {
+        "reference": "[STUDY]/training/evaluation/train_correct_step1500",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/train_correct_step1500",
+        "panel": "train",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 96,
+          "reference_successes": 65,
+          "candidate_successes": 67,
+          "retained": 57,
+          "gained": 10,
+          "lost": 8,
+          "churn_count": 18,
+          "churn_fraction": 0.1875,
+          "success_set_jaccard": 0.76,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 1,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 4,
+              "retained": 1,
+              "gained": 3,
+              "lost": 0,
+              "churn_count": 3,
+              "churn_fraction": 0.75,
+              "success_set_jaccard": 0.25
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 1,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.3333333333333333
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 1,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 3,
+              "retained": 1,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.3333333333333333
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 24,
+              "reference_successes": 8,
+              "candidate_successes": 13,
+              "retained": 6,
+              "gained": 7,
+              "lost": 2,
+              "churn_count": 9,
+              "churn_fraction": 0.375,
+              "success_set_jaccard": 0.4
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 24,
+              "reference_successes": 15,
+              "candidate_successes": 14,
+              "retained": 13,
+              "gained": 1,
+              "lost": 2,
+              "churn_count": 3,
+              "churn_fraction": 0.125,
+              "success_set_jaccard": 0.8125
+            },
+            {
+              "suite": "libero_object",
+              "rows": 24,
+              "reference_successes": 20,
+              "candidate_successes": 20,
+              "retained": 18,
+              "gained": 2,
+              "lost": 2,
+              "churn_count": 4,
+              "churn_fraction": 0.16666666666666666,
+              "success_set_jaccard": 0.8181818181818182
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 24,
+              "reference_successes": 22,
+              "candidate_successes": 20,
+              "retained": 20,
+              "gained": 0,
+              "lost": 2,
+              "churn_count": 2,
+              "churn_fraction": 0.08333333333333333,
+              "success_set_jaccard": 0.9090909090909091
+            }
+          ],
+          "reference_breadth": 22,
+          "candidate_breadth": 21,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            -0.0625,
+            0.125
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      }
+    }
+  },
+  "adjacent": {
+    "validation": {
+      "900_to_1200": {
+        "reference": "[STUDY]/dual_camera/training/evaluation/validation_correct_step900",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/validation_correct_step1200",
+        "panel": "validation",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 400,
+          "reference_successes": 117,
+          "candidate_successes": 108,
+          "retained": 77,
+          "gained": 31,
+          "lost": 40,
+          "churn_count": 71,
+          "churn_fraction": 0.1775,
+          "success_set_jaccard": 0.5202702702702703,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 22,
+              "candidate_successes": 16,
+              "retained": 9,
+              "gained": 7,
+              "lost": 13,
+              "churn_count": 20,
+              "churn_fraction": 0.4,
+              "success_set_jaccard": 0.3103448275862069
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 6,
+              "rows": 50,
+              "reference_successes": 34,
+              "candidate_successes": 39,
+              "retained": 31,
+              "gained": 8,
+              "lost": 3,
+              "churn_count": 11,
+              "churn_fraction": 0.22,
+              "success_set_jaccard": 0.7380952380952381
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 36,
+              "candidate_successes": 35,
+              "retained": 30,
+              "gained": 5,
+              "lost": 6,
+              "churn_count": 11,
+              "churn_fraction": 0.22,
+              "success_set_jaccard": 0.7317073170731707
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 16,
+              "candidate_successes": 12,
+              "retained": 3,
+              "gained": 9,
+              "lost": 13,
+              "churn_count": 22,
+              "churn_fraction": 0.44,
+              "success_set_jaccard": 0.12
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 9,
+              "candidate_successes": 6,
+              "retained": 4,
+              "gained": 2,
+              "lost": 5,
+              "churn_count": 7,
+              "churn_fraction": 0.14,
+              "success_set_jaccard": 0.36363636363636365
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 100,
+              "reference_successes": 22,
+              "candidate_successes": 16,
+              "retained": 9,
+              "gained": 7,
+              "lost": 13,
+              "churn_count": 20,
+              "churn_fraction": 0.2,
+              "success_set_jaccard": 0.3103448275862069
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 100,
+              "reference_successes": 34,
+              "candidate_successes": 39,
+              "retained": 31,
+              "gained": 8,
+              "lost": 3,
+              "churn_count": 11,
+              "churn_fraction": 0.11,
+              "success_set_jaccard": 0.7380952380952381
+            },
+            {
+              "suite": "libero_object",
+              "rows": 100,
+              "reference_successes": 52,
+              "candidate_successes": 47,
+              "retained": 33,
+              "gained": 14,
+              "lost": 19,
+              "churn_count": 33,
+              "churn_fraction": 0.33,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 100,
+              "reference_successes": 9,
+              "candidate_successes": 6,
+              "retained": 4,
+              "gained": 2,
+              "lost": 5,
+              "churn_count": 7,
+              "churn_fraction": 0.07,
+              "success_set_jaccard": 0.36363636363636365
+            }
+          ],
+          "reference_breadth": 5,
+          "candidate_breadth": 5,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            -0.0625,
+            0.0225
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      },
+      "1200_to_1500": {
+        "reference": "[STUDY]/dual_camera/training/evaluation/validation_correct_step1200",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/validation_correct_step1500",
+        "panel": "validation",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 400,
+          "reference_successes": 108,
+          "candidate_successes": 108,
+          "retained": 78,
+          "gained": 30,
+          "lost": 30,
+          "churn_count": 60,
+          "churn_fraction": 0.15,
+          "success_set_jaccard": 0.5652173913043478,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 16,
+              "candidate_successes": 19,
+              "retained": 11,
+              "gained": 8,
+              "lost": 5,
+              "churn_count": 13,
+              "churn_fraction": 0.26,
+              "success_set_jaccard": 0.4583333333333333
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 6,
+              "rows": 50,
+              "reference_successes": 39,
+              "candidate_successes": 36,
+              "retained": 31,
+              "gained": 5,
+              "lost": 8,
+              "churn_count": 13,
+              "churn_fraction": 0.26,
+              "success_set_jaccard": 0.7045454545454546
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 35,
+              "candidate_successes": 31,
+              "retained": 25,
+              "gained": 6,
+              "lost": 10,
+              "churn_count": 16,
+              "churn_fraction": 0.32,
+              "success_set_jaccard": 0.6097560975609756
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 12,
+              "candidate_successes": 12,
+              "retained": 7,
+              "gained": 5,
+              "lost": 5,
+              "churn_count": 10,
+              "churn_fraction": 0.2,
+              "success_set_jaccard": 0.4117647058823529
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 1,
+              "rows": 50,
+              "reference_successes": 0,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.02,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 3,
+              "rows": 50,
+              "reference_successes": 6,
+              "candidate_successes": 9,
+              "retained": 4,
+              "gained": 5,
+              "lost": 2,
+              "churn_count": 7,
+              "churn_fraction": 0.14,
+              "success_set_jaccard": 0.36363636363636365
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 100,
+              "reference_successes": 16,
+              "candidate_successes": 19,
+              "retained": 11,
+              "gained": 8,
+              "lost": 5,
+              "churn_count": 13,
+              "churn_fraction": 0.13,
+              "success_set_jaccard": 0.4583333333333333
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 100,
+              "reference_successes": 39,
+              "candidate_successes": 36,
+              "retained": 31,
+              "gained": 5,
+              "lost": 8,
+              "churn_count": 13,
+              "churn_fraction": 0.13,
+              "success_set_jaccard": 0.7045454545454546
+            },
+            {
+              "suite": "libero_object",
+              "rows": 100,
+              "reference_successes": 47,
+              "candidate_successes": 43,
+              "retained": 32,
+              "gained": 11,
+              "lost": 15,
+              "churn_count": 26,
+              "churn_fraction": 0.26,
+              "success_set_jaccard": 0.5517241379310345
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 100,
+              "reference_successes": 6,
+              "candidate_successes": 10,
+              "retained": 4,
+              "gained": 6,
+              "lost": 2,
+              "churn_count": 8,
+              "churn_fraction": 0.08,
+              "success_set_jaccard": 0.3333333333333333
+            }
+          ],
+          "reference_breadth": 5,
+          "candidate_breadth": 6,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            -0.0325,
+            0.03
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      }
+    },
+    "train": {
+      "900_to_1200": {
+        "reference": "[STUDY]/dual_camera/training/evaluation/train_correct_step900",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/train_correct_step1200",
+        "panel": "train",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 96,
+          "reference_successes": 52,
+          "candidate_successes": 64,
+          "retained": 43,
+          "gained": 21,
+          "lost": 9,
+          "churn_count": 30,
+          "churn_fraction": 0.3125,
+          "success_set_jaccard": 0.589041095890411,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 2,
+              "retained": 0,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 1,
+              "gained": 2,
+              "lost": 1,
+              "churn_count": 3,
+              "churn_fraction": 0.75,
+              "success_set_jaccard": 0.25
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 2,
+              "retained": 0,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 1,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 1,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 4,
+              "retained": 3,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 2,
+              "retained": 0,
+              "gained": 2,
+              "lost": 1,
+              "churn_count": 3,
+              "churn_fraction": 0.75,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 4,
+              "retained": 2,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 2,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 1,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 4,
+              "retained": 2,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.5
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 1,
+              "gained": 2,
+              "lost": 1,
+              "churn_count": 3,
+              "churn_fraction": 0.75,
+              "success_set_jaccard": 0.25
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 24,
+              "reference_successes": 4,
+              "candidate_successes": 10,
+              "retained": 3,
+              "gained": 7,
+              "lost": 1,
+              "churn_count": 8,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.2727272727272727
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 24,
+              "reference_successes": 13,
+              "candidate_successes": 15,
+              "retained": 12,
+              "gained": 3,
+              "lost": 1,
+              "churn_count": 4,
+              "churn_fraction": 0.16666666666666666,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "rows": 24,
+              "reference_successes": 18,
+              "candidate_successes": 20,
+              "retained": 15,
+              "gained": 5,
+              "lost": 3,
+              "churn_count": 8,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6521739130434783
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 24,
+              "reference_successes": 17,
+              "candidate_successes": 19,
+              "retained": 13,
+              "gained": 6,
+              "lost": 4,
+              "churn_count": 10,
+              "churn_fraction": 0.4166666666666667,
+              "success_set_jaccard": 0.5652173913043478
+            }
+          ],
+          "reference_breadth": 18,
+          "candidate_breadth": 22,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            0.020833333333333332,
+            0.22916666666666666
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      },
+      "1200_to_1500": {
+        "reference": "[STUDY]/dual_camera/training/evaluation/train_correct_step1200",
+        "candidate": "[STUDY]/dual_camera/training/evaluation/train_correct_step1500",
+        "panel": "train",
+        "source_changed": false,
+        "source_checkpoints": [
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+          "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+        ],
+        "normalization_evidence": [
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          },
+          {
+            "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+            "source": "recorded_file"
+          }
+        ],
+        "all_workers_exit_zero": true,
+        "workers": [
+          6,
+          6
+        ],
+        "comparison": {
+          "rows": 96,
+          "reference_successes": 64,
+          "candidate_successes": 67,
+          "retained": 60,
+          "gained": 7,
+          "lost": 4,
+          "churn_count": 11,
+          "churn_fraction": 0.11458333333333333,
+          "success_set_jaccard": 0.8450704225352113,
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 4,
+              "retained": 3,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_10",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 1,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 4,
+              "retained": 3,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 1,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 6,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 8,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 4,
+              "reference_successes": 2,
+              "candidate_successes": 3,
+              "retained": 2,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.6666666666666666
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 2,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 4,
+              "retained": 3,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 4,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.25,
+              "success_set_jaccard": 0.75
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 5,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 7,
+              "rows": 4,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 9,
+              "rows": 4,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 24,
+              "reference_successes": 10,
+              "candidate_successes": 13,
+              "retained": 10,
+              "gained": 3,
+              "lost": 0,
+              "churn_count": 3,
+              "churn_fraction": 0.125,
+              "success_set_jaccard": 0.7692307692307693
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 24,
+              "reference_successes": 15,
+              "candidate_successes": 14,
+              "retained": 13,
+              "gained": 1,
+              "lost": 2,
+              "churn_count": 3,
+              "churn_fraction": 0.125,
+              "success_set_jaccard": 0.8125
+            },
+            {
+              "suite": "libero_object",
+              "rows": 24,
+              "reference_successes": 20,
+              "candidate_successes": 20,
+              "retained": 19,
+              "gained": 1,
+              "lost": 1,
+              "churn_count": 2,
+              "churn_fraction": 0.08333333333333333,
+              "success_set_jaccard": 0.9047619047619048
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 24,
+              "reference_successes": 19,
+              "candidate_successes": 20,
+              "retained": 18,
+              "gained": 2,
+              "lost": 1,
+              "churn_count": 3,
+              "churn_fraction": 0.125,
+              "success_set_jaccard": 0.8571428571428571
+            }
+          ],
+          "reference_breadth": 22,
+          "candidate_breadth": 21,
+          "task_cluster_bootstrap_rate_difference_95ci": [
+            -0.03125,
+            0.09375
+          ],
+          "candidate_nonzero_suites": 4
+        }
+      }
+    }
+  },
+  "audit": {
+    "validation_correct_step900": {
+      "rows": 400,
+      "successes": 117,
+      "workers": 6,
+      "all_workers_exit_zero": true,
+      "camera_method_and_episode_evidence_match": true,
+      "whole_panel_teacher_mapping_match": true,
+      "wall_seconds": 1686.372597694397
+    },
+    "validation_correct_step1200": {
+      "rows": 400,
+      "successes": 108,
+      "workers": 6,
+      "all_workers_exit_zero": true,
+      "camera_method_and_episode_evidence_match": true,
+      "whole_panel_teacher_mapping_match": true,
+      "wall_seconds": 1679.2028245925903
+    },
+    "validation_correct_step1500": {
+      "rows": 400,
+      "successes": 108,
+      "workers": 6,
+      "all_workers_exit_zero": true,
+      "camera_method_and_episode_evidence_match": true,
+      "whole_panel_teacher_mapping_match": true,
+      "wall_seconds": 1682.2389345169067
+    },
+    "train_correct_step900": {
+      "rows": 96,
+      "successes": 52,
+      "workers": 6,
+      "all_workers_exit_zero": true,
+      "camera_method_and_episode_evidence_match": true,
+      "whole_panel_teacher_mapping_match": true,
+      "wall_seconds": 494.7733619213104
+    },
+    "train_correct_step1200": {
+      "rows": 96,
+      "successes": 64,
+      "workers": 6,
+      "all_workers_exit_zero": true,
+      "camera_method_and_episode_evidence_match": true,
+      "whole_panel_teacher_mapping_match": true,
+      "wall_seconds": 453.92502880096436
+    },
+    "train_correct_step1500": {
+      "rows": 96,
+      "successes": 67,
+      "workers": 6,
+      "all_workers_exit_zero": true,
+      "camera_method_and_episode_evidence_match": true,
+      "whole_panel_teacher_mapping_match": true,
+      "wall_seconds": 438.6871600151062
+    },
+    "validation_same_task_other_step1500": {
+      "rows": 400,
+      "successes": 105,
+      "workers": 6,
+      "all_workers_exit_zero": true,
+      "camera_method_and_episode_evidence_match": true,
+      "whole_panel_teacher_mapping_match": true,
+      "wall_seconds": 1670.2073047161102
+    }
+  },
+  "matched_fixed_other": {
+    "reference": "[STUDY]/training/evaluation/validation_same_task_other_step1500",
+    "candidate": "[STUDY]/dual_camera/training/evaluation/validation_same_task_other_step1500",
+    "panel": "validation",
+    "source_changed": false,
+    "source_checkpoints": [
+      "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+      "[REPO]/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+    ],
+    "normalization_evidence": [
+      {
+        "path": "[REPO]/.codex/tmp/video-teaching-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+        "source": "recorded_file"
+      },
+      {
+        "path": "[REPO]/.codex/tmp/video-teaching-dual-runtime/configs/pi05_source_corpus_v1/source_normalization.json",
+        "source": "recorded_file"
+      }
+    ],
+    "all_workers_exit_zero": true,
+    "workers": [
+      6,
+      6
+    ],
+    "comparison": {
+      "rows": 400,
+      "reference_successes": 165,
+      "candidate_successes": 105,
+      "retained": 88,
+      "gained": 17,
+      "lost": 77,
+      "churn_count": 94,
+      "churn_fraction": 0.235,
+      "success_set_jaccard": 0.4835164835164835,
+      "per_task": [
+        {
+          "suite": "libero_10",
+          "task_id": 1,
+          "rows": 50,
+          "reference_successes": 21,
+          "candidate_successes": 22,
+          "retained": 12,
+          "gained": 10,
+          "lost": 9,
+          "churn_count": 19,
+          "churn_fraction": 0.38,
+          "success_set_jaccard": 0.3870967741935484
+        },
+        {
+          "suite": "libero_10",
+          "task_id": 2,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 0,
+          "retained": 0,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": null
+        },
+        {
+          "suite": "libero_goal",
+          "task_id": 3,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 1,
+          "retained": 0,
+          "gained": 1,
+          "lost": 0,
+          "churn_count": 1,
+          "churn_fraction": 0.02,
+          "success_set_jaccard": 0.0
+        },
+        {
+          "suite": "libero_goal",
+          "task_id": 6,
+          "rows": 50,
+          "reference_successes": 47,
+          "candidate_successes": 33,
+          "retained": 33,
+          "gained": 0,
+          "lost": 14,
+          "churn_count": 14,
+          "churn_fraction": 0.28,
+          "success_set_jaccard": 0.7021276595744681
+        },
+        {
+          "suite": "libero_object",
+          "task_id": 1,
+          "rows": 50,
+          "reference_successes": 43,
+          "candidate_successes": 28,
+          "retained": 26,
+          "gained": 2,
+          "lost": 17,
+          "churn_count": 19,
+          "churn_fraction": 0.38,
+          "success_set_jaccard": 0.5777777777777777
+        },
+        {
+          "suite": "libero_object",
+          "task_id": 3,
+          "rows": 50,
+          "reference_successes": 22,
+          "candidate_successes": 12,
+          "retained": 9,
+          "gained": 3,
+          "lost": 13,
+          "churn_count": 16,
+          "churn_fraction": 0.32,
+          "success_set_jaccard": 0.36
+        },
+        {
+          "suite": "libero_spatial",
+          "task_id": 1,
+          "rows": 50,
+          "reference_successes": 0,
+          "candidate_successes": 1,
+          "retained": 0,
+          "gained": 1,
+          "lost": 0,
+          "churn_count": 1,
+          "churn_fraction": 0.02,
+          "success_set_jaccard": 0.0
+        },
+        {
+          "suite": "libero_spatial",
+          "task_id": 3,
+          "rows": 50,
+          "reference_successes": 32,
+          "candidate_successes": 8,
+          "retained": 8,
+          "gained": 0,
+          "lost": 24,
+          "churn_count": 24,
+          "churn_fraction": 0.48,
+          "success_set_jaccard": 0.25
+        }
+      ],
+      "per_suite": [
+        {
+          "suite": "libero_10",
+          "rows": 100,
+          "reference_successes": 21,
+          "candidate_successes": 22,
+          "retained": 12,
+          "gained": 10,
+          "lost": 9,
+          "churn_count": 19,
+          "churn_fraction": 0.19,
+          "success_set_jaccard": 0.3870967741935484
+        },
+        {
+          "suite": "libero_goal",
+          "rows": 100,
+          "reference_successes": 47,
+          "candidate_successes": 34,
+          "retained": 33,
+          "gained": 1,
+          "lost": 14,
+          "churn_count": 15,
+          "churn_fraction": 0.15,
+          "success_set_jaccard": 0.6875
+        },
+        {
+          "suite": "libero_object",
+          "rows": 100,
+          "reference_successes": 65,
+          "candidate_successes": 40,
+          "retained": 35,
+          "gained": 5,
+          "lost": 30,
+          "churn_count": 35,
+          "churn_fraction": 0.35,
+          "success_set_jaccard": 0.5
+        },
+        {
+          "suite": "libero_spatial",
+          "rows": 100,
+          "reference_successes": 32,
+          "candidate_successes": 9,
+          "retained": 8,
+          "gained": 1,
+          "lost": 24,
+          "churn_count": 25,
+          "churn_fraction": 0.25,
+          "success_set_jaccard": 0.24242424242424243
+        }
+      ],
+      "reference_breadth": 5,
+      "candidate_breadth": 7,
+      "task_cluster_bootstrap_rate_difference_95ci": [
+        -0.27749999999999997,
+        -0.027500000000000004
+      ],
+      "candidate_nonzero_suites": 4
+    }
+  },
+  "dual_correct_to_other": {
+    "rows": 400,
+    "reference_successes": 108,
+    "candidate_successes": 105,
+    "retained": 76,
+    "gained": 29,
+    "lost": 32,
+    "churn_count": 61,
+    "churn_fraction": 0.1525,
+    "success_set_jaccard": 0.5547445255474452,
+    "per_task": [
+      {
+        "suite": "libero_10",
+        "task_id": 1,
+        "rows": 50,
+        "reference_successes": 19,
+        "candidate_successes": 22,
+        "retained": 9,
+        "gained": 13,
+        "lost": 10,
+        "churn_count": 23,
+        "churn_fraction": 0.46,
+        "success_set_jaccard": 0.28125
+      },
+      {
+        "suite": "libero_10",
+        "task_id": 2,
+        "rows": 50,
+        "reference_successes": 0,
+        "candidate_successes": 0,
+        "retained": 0,
+        "gained": 0,
+        "lost": 0,
+        "churn_count": 0,
+        "churn_fraction": 0.0,
+        "success_set_jaccard": null
+      },
+      {
+        "suite": "libero_goal",
+        "task_id": 3,
+        "rows": 50,
+        "reference_successes": 0,
+        "candidate_successes": 1,
+        "retained": 0,
+        "gained": 1,
+        "lost": 0,
+        "churn_count": 1,
+        "churn_fraction": 0.02,
+        "success_set_jaccard": 0.0
+      },
+      {
+        "suite": "libero_goal",
+        "task_id": 6,
+        "rows": 50,
+        "reference_successes": 36,
+        "candidate_successes": 33,
+        "retained": 31,
+        "gained": 2,
+        "lost": 5,
+        "churn_count": 7,
+        "churn_fraction": 0.14,
+        "success_set_jaccard": 0.8157894736842105
+      },
+      {
+        "suite": "libero_object",
+        "task_id": 1,
+        "rows": 50,
+        "reference_successes": 31,
+        "candidate_successes": 28,
+        "retained": 23,
+        "gained": 5,
+        "lost": 8,
+        "churn_count": 13,
+        "churn_fraction": 0.26,
+        "success_set_jaccard": 0.6388888888888888
+      },
+      {
+        "suite": "libero_object",
+        "task_id": 3,
+        "rows": 50,
+        "reference_successes": 12,
+        "candidate_successes": 12,
+        "retained": 7,
+        "gained": 5,
+        "lost": 5,
+        "churn_count": 10,
+        "churn_fraction": 0.2,
+        "success_set_jaccard": 0.4117647058823529
+      },
+      {
+        "suite": "libero_spatial",
+        "task_id": 1,
+        "rows": 50,
+        "reference_successes": 1,
+        "candidate_successes": 1,
+        "retained": 1,
+        "gained": 0,
+        "lost": 0,
+        "churn_count": 0,
+        "churn_fraction": 0.0,
+        "success_set_jaccard": 1.0
+      },
+      {
+        "suite": "libero_spatial",
+        "task_id": 3,
+        "rows": 50,
+        "reference_successes": 9,
+        "candidate_successes": 8,
+        "retained": 5,
+        "gained": 3,
+        "lost": 4,
+        "churn_count": 7,
+        "churn_fraction": 0.14,
+        "success_set_jaccard": 0.4166666666666667
+      }
+    ],
+    "per_suite": [
+      {
+        "suite": "libero_10",
+        "rows": 100,
+        "reference_successes": 19,
+        "candidate_successes": 22,
+        "retained": 9,
+        "gained": 13,
+        "lost": 10,
+        "churn_count": 23,
+        "churn_fraction": 0.23,
+        "success_set_jaccard": 0.28125
+      },
+      {
+        "suite": "libero_goal",
+        "rows": 100,
+        "reference_successes": 36,
+        "candidate_successes": 34,
+        "retained": 31,
+        "gained": 3,
+        "lost": 5,
+        "churn_count": 8,
+        "churn_fraction": 0.08,
+        "success_set_jaccard": 0.7948717948717948
+      },
+      {
+        "suite": "libero_object",
+        "rows": 100,
+        "reference_successes": 43,
+        "candidate_successes": 40,
+        "retained": 30,
+        "gained": 10,
+        "lost": 13,
+        "churn_count": 23,
+        "churn_fraction": 0.23,
+        "success_set_jaccard": 0.5660377358490566
+      },
+      {
+        "suite": "libero_spatial",
+        "rows": 100,
+        "reference_successes": 10,
+        "candidate_successes": 9,
+        "retained": 6,
+        "gained": 3,
+        "lost": 4,
+        "churn_count": 7,
+        "churn_fraction": 0.07,
+        "success_set_jaccard": 0.46153846153846156
+      }
+    ],
+    "reference_breadth": 6,
+    "candidate_breadth": 7,
+    "task_cluster_bootstrap_rate_difference_95ci": [
+      -0.0325,
+      0.0175
+    ]
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "schema_version": "ember_video_teaching_completed_study_v1",
+  "complete": true,
+  "experiment_completed_cst": "2026-09-20T08:50:02.269022+08:00",
+  "analysis_verified_cst": "2026-09-20T08:53:17.603704+08:00",
+  "new_complete_panels": 40,
+  "new_complete_rollout_rows": 12048,
+  "historical_A_retrained": false,
+  "historical_A_rows_counted_as_new": false,
+  "common_zero_lora_panel_counted_once": true,
+  "actual_updates": {
+    "main": 2100,
+    "ablation": 2100,
+    "dual_camera": 1500,
+    "total": 5700
+  },
+  "condition_visits": 22800,
+  "main_queries": 478800,
+  "teaching_queries": 159600,
+  "total_queries": 638400,
+  "independent_train_tasks_per_arm": 24,
+  "unique_full_checkpoint_arm_steps_retained": 57,
+  "original_selected_main_step": 1500,
+  "original_selection_record_unchanged": true,
+  "later_owner_extensions": [
+    "bounded_1500_to_2100_continuation",
+    "matched_ablation_video_controls",
+    "fresh_dual_teacher_camera"
+  ],
+  "new_checkpoint_selection": false,
+  "dual_camera_controls_performed": false,
+  "test": false,
+  "rl": false,
+  "source_frozen": true,
+  "all_registered_panels_audited": true,
+  "all_final_workers_exit_zero": true,
+  "driver_exit_markers": {
+    "driver.exit": 0,
+    "ablation/driver.exit": 0,
+    "ablation/controls_driver.exit": 0,
+    "continuation/driver.exit": 0,
+    "continuation/evaluation_pipeline.exit": 0,
+    "continuation/evaluation_pipeline_dual.exit": 0,
+    "continuation/main/training.exit": 0,
+    "continuation/main/driver.exit": 0,
+    "continuation/ablation/training.exit": 0,
+    "continuation/ablation/driver.exit": 0,
+    "dual_camera/training.exit": 0,
+    "dual_camera/evaluation_driver.exit": 0,
+    "dual_camera/driver.exit": 0
+  },
+  "runtime_shutdown": {
+    "nodes_checked": 2,
+    "checked_at_cst": "2026-09-20T08:51:37.633065+08:00",
+    "active_study_gpu_processes": 0,
+    "active_study_workload_processes": 0
+  },
+  "formal_runtime_commits": {
+    "main": "39c3919c9dd54713f7bff6aa24d275e4a6231ff0",
+    "ablation": "bd497edcc51e645131663caa0c0f5ae1835895e4",
+    "continuation": "d1474ce0c64e28e892ef80606d411f3cd21b6681",
+    "dual_camera": "35124aa965a0081b29c060e682ee9a1aaf1982b3"
+  },
+  "export_row_checks": {
+    "all_completed_rollouts": 12048,
+    "task_groups": 528,
+    "suite_groups": 160
+  },
+  "primary_artifacts": [
+    "final_report.md",
+    "expert_discussion_prompt.md",
+    "discussion_context.md",
+    "continuation_report.md",
+    "ablation_report.md",
+    "ablation_controls_report.md",
+    "dual_camera_report.md",
+    "discussion_tables.md",
+    "discussion_summary.json",
+    "all_completed_rollouts.csv",
+    "per_task_metrics.csv",
+    "per_suite_metrics.csv",
+    "learning_overview.png",
+    "dual_camera_overview.png",
+    "matched_controls_overview.png",
+    "teacher_camera_example.png",
+    "optimization_overview.png",
+    "optimization_trace.csv",
+    "optimization_trace_summary.json"
+  ],
+  "limitations": [
+    "single_training_seed",
+    "eight_validation_task_clusters",
+    "unadjusted_task_bootstrap_intervals",
+    "no_learned_language_only_or_static_prior_baseline",
+    "no_controls_at_2100_or_dual_camera"
+  ],
+  "automatic_followup_experiments": false
+}

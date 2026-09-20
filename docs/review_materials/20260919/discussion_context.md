@@ -39,6 +39,8 @@ exact language + RGB video → source读取 / 三Meta → E与完整H50
 
 原窗口是 fresh 1500 更新；900／1200／1500 均报告完整 correct400 与 train96。主组在满足登记条件后完成三个节点 other400，以预注册相邻对规则冻结 selected1500，之后才读取该点的视频 controls。消融固定使用主组的 1500 比较点，不自行选优。
 
+`selected_main.json`中“不再续训／不补双相机”保留的是9月19日选点时的原窗口决定；之后Owner的新要求分别登记于设计§8–10。追加实验不回写这份历史选择，也不把启动前registration的状态字段当成最终完成状态。
+
 Owner 后续追加的 1500→2100 用两组各自完整训练状态继续：optimizer、scheduler、sampler、rank RNG 和原 world2 拓扑保留，LR 不重启，尾值固定约 2.95994e-5。1800／2100 均做 correct400 与 train96，2100 各补 other400。它回答低 LR 尾段能否继续提升；不是任意更长预算或新学习率的结论。原 selected1500 及其 controls 不因此改写。
 
 Owner 再追加消融视频特异性检查：两组都固定 1500，用相同 task／state／policy RNG／video ordinal 和真实 RGB 变换比较 wrong、shuffled、reversed。各臂始终保留目标 exact language；wrong 仅换跨 suite 的教学视频，shuffle／reverse 仅改变真实帧顺序。报告组内 correct 或 other 相对 control 的差，并比较两组的差值之差。共同 zero-LoRA source 面板只计一次。它不是 learned language-only 或静态视觉 prior；相对它的提高不能证明视频相对这些未训练参照的必要增量。

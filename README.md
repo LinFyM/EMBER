@@ -3,11 +3,11 @@
 EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
 让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
 
-**同视频教学候选、匹配消融、两组续训和固定视频 controls已完成，双相机对照正在运行。** 主实验单相机 agentview；重复完整 H／相邻视觉读取与有序 Procedure，
-同视频五步教学和跨 episode 主 FM 联合更新整个 Writer 与三组 Meta。两臂2100 correct为158/159，原1500的主组增量未持续到末点；[续训完整结果](docs/review_materials/20260919/continuation_report.md)。
-按Owner凌晨授权新增的双相机fresh1500已通过真实四卡profile并启动；
-[匹配视频controls](docs/review_materials/20260919/ablation_controls_report.md)显示尚未证明教学项增强了顺序特异性。
-原窗口与追加合同见[设计](docs/video_teaching_writer_design.md)，实际状态见[progress](progress.md)。
+**本轮教学候选、匹配消融、续训、视频检查与双相机对照全部完成。** 共40个正式面板、12,048条新增闭环；
+主组与消融2100 correct为158/159，原1500的主组增量未保持到末点，匹配controls尚未证明教学项增强视频特异性。
+双相机900/1200/1500为117/108/108，固定other105，未改善当前配方。
+先读[专家讨论总报告](docs/review_materials/20260919/final_report.md)与[可复制提示词](docs/review_materials/20260919/expert_discussion_prompt.md)；
+完整曲线、逐任务表、输入示例和精简原件均已归档。[封存合同](docs/video_teaching_writer_design.md)与[进度](progress.md)保留授权和执行边界，当前无active design或自动后续实验。
 
 上轮 A 的 learned frame-set 匹配诊断已经完成：900/1200 为142/118，A为140/135，未证明相邻等强；
 [完整报告](docs/review_materials/20260918/frameset_report.md)与[封存合同](docs/learned_frameset_reference_design.md)保留原比较边界。
@@ -19,14 +19,15 @@ EMBER研究从exact task language与action-hidden教学视频，在rollout前一
 | --- | --- |
 | [Owner要求](docs/current_owner_requirements.md) | 稳定目标、研究原则与最新裁决 |
 | [科学动机](docs/concept.md) | 完整方法链条、因果职责与待检验假设 |
-| [当前教学候选](docs/video_teaching_writer_design.md)／[专家最终修订](docs/review_materials/20260919/expert_proposal.md) | 部署图、联合损失、有界训练评测与交付合同 |
+| [封存教学候选](docs/video_teaching_writer_design.md)／[专家最终修订](docs/review_materials/20260919/expert_proposal.md) | 部署图、联合损失、有界训练评测与交付合同 |
+| [本轮总报告](docs/review_materials/20260919/final_report.md)／[专家提示词](docs/review_materials/20260919/expert_discussion_prompt.md) | 完整结果、比较边界、原件入口与讨论问题 |
 | [完整历史证据审计](docs/v52_evidence_audit_20260917.md) | 46组实验及bank/chart补表的机制、预算、正负证据与比较边界 |
 | [封存统一设计](docs/v52_evidence_based_writer_design.md) | 已完成实例的接口、训练和证据合同 |
 | [当前计划](task_plan.md)／[当前进度](progress.md) | 当前goal、授权、实施证据与下一阶段 |
 | [AGENTS](AGENTS.md) | 科学、数据、评测、资源与Git合同 |
 | [Findings](findings.md)／[研究历史](docs/research_history.md) | 跨轮结论，以及封存设计、专家评审与formal原件索引 |
 
-讨论时先读Owner要求和证据审计，再看[findings](findings.md)§117–121：统一Writer终局、A900机制诊断、Core/Procedure交叉、匹配frame-set和同视频教学完整窗口。
+讨论时先读Owner要求和证据审计，再看[findings](findings.md)§117–122：统一Writer终局、A900机制诊断、Core/Procedure交叉、匹配frame-set、同视频教学完整窗口与双相机对照。
 A900机制与Core/Procedure交叉两次冻结诊断只支持其固定模型、train24有限面板上的结论，没有证明下一架构必须保留Core/P、只能改Procedure或不能整体重构。
 旧实验与咨询均从研究历史按问题追溯；历史中的“当前／下一步”不构成执行授权。
 

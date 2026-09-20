@@ -1,87 +1,37 @@
 # EMBER progress
 
-## 当前状态（2026-09-20，专家修订执行goal进行中）
+## 当前状态（2026-09-20，本轮执行与交付完成）
 
-Owner明确要求完成专家意见、推送并汇报。Active design为[同视频教学候选](docs/video_teaching_writer_design.md)。
-Owner随后要求再观察训练趋势；已登记两臂各从完整1500继续至2100，1800/2100评测，2100双方换视频。
-原窗口选择和1500 controls保持冻结；续训入口已实现，71项相关CPU检查通过，
-真实8400事件核对保持两臂各自前6000事件、全部主事件/RNG及教学噪声种子；现有后台任务继续。
-续训代码/合同已推送d1474ce0，并建立clean detached runtime；`continuation/driver.sh`已从完整1500实际开始主臂续训，
-Owner要求利用空闲卡后，原串行控制器已在1500物化正常结束处退役，现改为训练与评测流水并行；
-两臂训练保持原world2／GPU拓扑，1800 checkpoint发布即交额外合格卡物化与闭环，不再等整臂评测结束。
-保留调度前脚本、状态及新分配记录；切换时旧控制器已进入1500 validation的worker启动，
-该未完成尝试（0个完成shard）随旧终端关闭，已原样保存并在额外卡按原400条件重新开始；训练与已完成结果均保留。
-续训仍严格以2100为终点，原科学合同、所有配对面板和1500冻结选择不变。
-2026-09-20凌晨主臂已完成2100，600个追加更新、完整父历史/采样/拓扑与四组正梯度核对通过，更新计算9877.17秒。
-1800完整correct160/400、train64/96；相对1500为−5／−1，验证R/G/L127/33/38，CI跨零，尚未证明续训提升。
-主2100完整correct158/400、other156/400、train67/96，五个追加评测面板核对通过；
-1500→2100 correct净−7，other净−9，其other差值CI为[-5,-0.25]pp，当前尾段未带来主组提升。
-消融也已严格完成2100，600个追加更新及四组正梯度/原状态连续性核对通过，新增更新计算9693.00秒。
-两臂续训及全部10个新增面板已在约05:00收齐，2784行和完整状态恢复审计通过；
-消融1800/2100为correct136/159、train65/67，2100 other161；主组对应160/158、64/67、other156。
-1500→2100消融correct净+12，95%CI[-3.25,10.25]pp；other155→161，CI[-2.25,5.75]pp。
-2100两臂correct159→158，R/G/L117/41/42，CI[-5.75,4.5]pp；other161→156，CI[-6.25,3.5]pp。
-原1500正确能力增量未保持到末点，不宣称消融更好或两组等价；[完整续训报告](docs/review_materials/20260919/continuation_report.md)。
-双相机四卡训练继续，原26项评测队列全部退出0，双相机后续队列已自动接手。
-约05:40，900完整checkpoint已发布并在另一节点两张合格卡上物化；即时核验启动后总占用6张（4训练＋2物化），达到当前6卡上限。
-900的400＋96条件已sealed，实际camera为双路RGB、native image tokens512、冻结35124aa9。
-900完整correct为117/400，对单相机149；R/G/L91/26/58、churn84、J=.520，差值95%CI[-14.5,-1.5]pp，breadth均5。
-双相机S/O/G/L9/52/34/22，逐task（1/3/11/13/23/26/31/32）0/9/36/16/0/34/22/0；
-400行相机/完整帧/视频映射/source与全部6workers核对通过，闭环1686.37秒。
-train900也已完成52/96（单相机50），R/G/L40/12/10、CI[-7.29,11.46]pp；6workers正常退出，闭环494.77秒。
-双相机frozen train-action FM900为0.104100628（单相机0.104706116），训练面板与loss没有对应验证成功下降；不能唯一定位内部原因。
-首点不支持增加教学相机的能力增量，仍按预先登记的1200/1500节点观察；不将该科学结果当实现错误或追加扫描的理由。
-评测进一步按显存安排每卡1–3个persistent workers；
-一张剩余约15.6GiB且持续低利用率的额外卡已通过现有准入，开始消融reversed400，原训练／评测worker未被中断。
-资源不足、尚无worker启动的shuffled准入尝试已保存，原sealed面板已换到合格卡继续，不按分数重跑或替换。
-主实验先用单相机agentview；新增教学项与主FM经同一套LoRA联合训练全部Writer/Meta，source冻结。
-主训练严格完成1500硬终点，15个完整checkpoint保留；1500条更新连续，6000条件、126000主query＋42000教学query完成。
-900/1200/1500 correct为149/174/165（各400，A为140/135/112），train为50/67/65（各96，A54/62/56）。
-1488对条件、RNG、source与完成状态核对通过，主driver及六个评测面板均正常退出。
-相对A，验证R/G/L为106/43/34、112/62/23、93/72/19，churn77/85/91，breadth均6→5；差值任务簇95%CI为[-2,+9]、[-1.5,+22.25]、[+1,+29.25]百分点。
-自身相邻R/G/L为118/56/31、135/30/39，churn87/69（A79/83）；四suite均非零，但验证breadth保持5/8，Long为32→17→23。
-三个节点same-task-other400全部完成，为140/159/165；每节点复用全部400个已有条件，整轮50视频/task与逐行不同映射核对通过。
-按预登记规则，胜出相邻对为1200/1500（四分数最小值159），主候选冻结1500（correct/other均165）；[冻结记录](docs/review_materials/20260919/selected_main.json)。
-1500 correct→other保留143、获得22、丢失22，churn44；换视频未整体崩塌，Long仍有明显条件更替，不能把同分说成逐行等价。
-已触发唯一匹配cross-episode前缀消融，配置与主训练仅教学episode关系这一科学变量不同；fresh1500，同三个主节点，并在主selected1500固定补other400。
-匹配消融1500窗口与固定other已完成，1888对结果及6000事件审计通过；[消融报告](docs/review_materials/20260919/ablation_report.md)。
-消融correct900/1200/1500为125/136/147，train59/60/62，固定other155；同视频主臂对应多24/38/18和other多10。
-三个correct差值CI分别[0,12.5]、[2,21]、[0.25,9]pp，other差值CI[-2.75,7.5]pp；两臂breadth均5，不能宣称换视频优势已稳健成立。
-消融末段仍上涨，同视频174→165回落，因此两臂追加窗口继续回答后续趋势；不以当前单点改动2100上限。
-Owner随后要求消融也做视频特异性检查：已固定消融1500，追加wrong/shuffled/reversed各400并加入并行队列；
-correct/other复用147/155，no-video经source、normalization、policy、environment和逐行RNG配对核对后复用共同source50。
-新增1200闭环已完成，消融wrong/shuffled/reversed为122/104/86；两组逐行变换、source/RNG和所有worker核对通过。
-correct参照DID为+16/+9/−9条，95%CI为[-4.5,12]/[-5.5,9]/[-11.25,3.5]pp，other参照也均跨零。
-两组都有顺序敏感性，尚未证明同视频教学增强该特异性；[匹配controls报告](docs/review_materials/20260919/ablation_controls_report.md)。
-冻结1500的wrong/shuffled/reversed/no-video已全部完成，为124/113/113/50（各400）；
-真实RGB重排、完整重编码、source与逐行state/RNG/video映射核对通过，全部worker正常退出；[独立读出](docs/review_materials/20260919/controls_report.md)。
-shuffle/reverse各比correct净少52，任务簇95%CI分别[-27.50,-2.25]、[-30.75,-0.50]pp；wrong区间跨零。
-效应较集中于Spatial task3，Long在wrong反而23→33，三个任务仍为零。支持此点的顺序敏感性，不证明普遍过程理解或教学项单独有效。
-no-video是零LoRA/source，不是learned language-only。Controls不改变主checkpoint、架构、消融或已登记的续训配方。
-Owner在2026-09-20凌晨追加：资源/时间允许时补双相机，并说明约11:00开始工作；条件性合同见active design§10。
-复用现有dual读取，只修正两个canonical camera门禁并补observer绑定检查，222项相关CPU检查通过。
-真实最长105帧dual已通过三次完整21＋7功能信用与部署生成，chunk8/micro8峰值28.18GiB，后两次约26.4秒；
-chunk16/micro16在空闲A40上OOM，属于物理batch可行性结果，日志保留。将用有余量的batch做四卡实际更新与resume，
-进一步的chunk8/micro16最长实测约25.6–25.8秒、峰值28.18GiB；四卡六更新均值15.624秒及完整4→6恢复通过。
-已据此登记唯一fresh1500双相机正式对照，预计包含15%余量及尾部1小时约8.49小时，约10:19收齐；
-正式入口已复查两节点和quota，从clean pushed detached35124aa9在同节点四卡fresh启动；
-实际run contract的source冻结、world4、四任务21＋7及全部6000计划事件/RNG与主组匹配核对通过。
-仅900/1200/1500 correct400/train96与fixed1500 other400，不新增selection、controls、续训、Test或RL；
-本study峰值预算随双相机正式臂由80扩为105GiB。
-900/1200/1500冻结train held-action FM为0.104706/0.100551/0.098260（初始0.146830）；900与A同一24任务诊断输入已核对，A同点0.103778。
-CPU累计246项通过：真实PI05主/五步端点损失、标签隔离、
-联合一次重放、四任务更新、1–6卡不同分片归一、完整checkpoint/resume、物化与视频controls，
-以及完整H/E、零残差退回有序P、BF16空分片与原生重放。首轮六个旧文案/旧架构fixture断言已修正复测。
-源代码新增一个117行Procedure读取owner，退役frame-set和预算扩展分支；架构检查无新增hard，
-既有native/temporal/物化大文件保持或缩小，较长shape校验仍与其张量接口同属一个owner。
-真实profile及4→6完整恢复已完成；[摘要](docs/review_materials/20260919/profile_summary.json)。最长105帧在chunk16/micro16下约16.3–16.6秒，
-双卡六更新均值16.75秒，分配显存峰值32.41GiB；四任务与84+28 queries语义保持，所有6000主事件及RNG与A逐项相同。
-正式窗口已从clean pushed detached `39c3919c9dd54713f7bff6aa24d275e4a6231ff0` fresh启动：
-gpu02两卡、frame chunk16、policy microbatch16，1500硬终点。实际run contract核对source可训练参数为0、主84＋教学28。
-本地执行记录在`runs/analysis/video_teaching_20260919/launch_contract.json`，tmux driver按固定节点训练、物化和评测。
-900/1200/1500各correct400/train96，selected及额外消融只按预注册条件触发。profile权重不进入正式训练。
-新输出统一位于data0的`runs/analysis/video_teaching_20260919`链接目标；原预算60GiB，追加续训预留20GiB，总预算80GiB。
-登记时data0 quota使用146206060KiB、额度1073741824KiB；续训前会重新核验，而非依赖此历史快照。
+Owner授权的专家最终修订、主候选、唯一匹配消融、后续趋势、消融视频特异性和条件性双相机全部完成。
+当前无active design、运行中的本轮作业或待自动启动实验；[合同](docs/video_teaching_writer_design.md)已封存。
+先读[专家讨论总报告](docs/review_materials/20260919/final_report.md)与[可复制提示词](docs/review_materials/20260919/expert_discussion_prompt.md)。
+
+| 更新 | 同视频 correct /400 | 消融 correct /400 | 双相机 correct /400 |
+| ---: | ---: | ---: | ---: |
+| 900 | 149 | 125 | 117 |
+| 1200 | 174 | 136 | 108 |
+| 1500 | 165 | 147 | 108 |
+| 1800 | 160 | 136 | 未运行 |
+| 2100 | 158 | 159 | 未运行 |
+
+原1500相邻qualification选定主checkpoint后保持冻结；1200的174不作selected结果，追加窗口不重选。
+主组1500→2100 correct165→158、other165→156；消融147→159、other155→161。
+主组原窗口的正确能力增量未保持到末点，不证明消融更好或两者等价；[续训报告](docs/review_materials/20260919/continuation_report.md)。
+固定1500的主组correct/other/wrong/shuffle/reverse/source为165/165/124/113/113/50，消融147/155/122/104/86/50。
+两组都有顺序敏感性，但六个匹配DID区间均跨零，尚未证明教学项增强视频特异性；[视频检查](docs/review_materials/20260919/ablation_controls_report.md)。
+双相机fixed1500 other105，correct/other相对单相机均下降；train52/64/67及FM下降未转为验证能力；[相机对照](docs/review_materials/20260919/dual_camera_report.md)。
+2100和双相机没有额外controls，不能继承旧因果结论。无Test、RL、融合、挑视频或旧A/v5.2重训。
+
+全部40个正式面板、12,048条新闭环、5700实际更新及638,400主＋辅助queries核对通过，共同source与续训父历史只计一次。
+保留57个唯一arm/step完整checkpoint、run contract、manifest、raw rows和worker日志；[完成清单](docs/review_materials/20260919/completion.json)。
+双相机按真实四卡profile采用world4/frame8/microbatch16，训练与物化／闭环流水并行，末轮三面板在两节点六卡并行。
+全部训练/driver/正式workers正常退出；08:50评测收齐，08:51两节点核验无本轮GPU或训练／物化／评测作业。
+source始终冻结，完整resume、6000/8400事件、全池teacher映射、逐行state/RNG和真实RGB变换核对通过。
+实现阶段CPU检查主教学图累计246项、相机相关222项通过（覆盖有重叠）；后续分析只读取已有证据，不新增模型forward。
+
+正式主/消融/续训/双相机runtime为clean pushed detached39c3919c/bd497edc/d1474ce0/35124aa9；
+本地原件统一在`runs/analysis/video_teaching_20260919/`，远程保留方法、配对CSV/JSON、曲线、输入示例和报告。
+findings§121–122与[研究历史](docs/research_history.md)保存完整解释及边界；后继选择供Owner与专家讨论，需新的明确授权。
 
 ## 上轮完成记录（2026-09-18，A learned frame-set诊断）
 
@@ -117,7 +67,7 @@ Test、RL、新controls及其它关闭实验均未运行。已完成的目标不
 | A900机制诊断 | train24固定96条件，正确58、关Procedure34、固定视频保留目标语言38/38、固定LoRA13/10、Source12、SFT47 | 旧过程路径有行为贡献，不证明顺序理解或fresh删除效果。findings§118 |
 | Core/Procedure交叉 | CC58、CW34/35、WC56/56、WW38/38，各96；新增384闭环，复用288对角线 | 正确P增量能跨两个donor Core发挥；不证明Core可删、未见任务迁移或下一架构应只改P。findings§119 |
 
-完整正负历史先读[46组证据审计及补表](docs/v52_evidence_audit_20260917.md)，再读[findings](findings.md)§117–120。
+完整正负历史先读[46组证据审计及补表](docs/v52_evidence_audit_20260917.md)，再读[findings](findings.md)§117–122。
 源码版本、旧专家评审、各轮逐task/suite、R/G/L/churn及formal原件由[研究历史](docs/research_history.md)索引。
 统一实验及两次诊断的详细报告分别位于本地：
 

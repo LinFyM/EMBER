@@ -1,5 +1,9 @@
 # 经最终LoRA的同视频教学：模型与训练合同
 
+状态：2026-09-20已执行完成并封存。原1500窗口、§8续训、§9消融controls与§10双相机均已收齐；
+[总报告](review_materials/20260919/final_report.md)与[完成清单](review_materials/20260919/completion.json)记录最终事实。
+下文保留各阶段的预登记口径，不构成继续训练或新增实验的授权。
+
 2026-09-19。Owner明确授权设置goal、完成[专家最终修订](review_materials/20260919/expert_proposal.md)、推送并汇报。
 本文先于新候选训练与分数登记。最后一轮修订覆盖初始提案中的P-only教学梯度；整个Writer与三个Meta共同学习。
 Owner随后明确主实验先用单相机agentview；单相机结束后才据具体证据判断双相机是否值得补做，不自动增加实验。

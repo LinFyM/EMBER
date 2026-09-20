@@ -2,6 +2,8 @@
 
 ## Writer冻结与MT-BC续行（2026-09-21）
 
+MT-BC step300在gpu01五卡续行及完整Validation400均退出0，15个worker全部0退出：155/400，刷新step250的136，正式早停`stop=false`、最佳300。250→300配对保留/获得/丢失111/44/25、churn69，覆盖6→6。Writer冻结1000 correct117相对当前MT-BC300为−38/400；严格配对以MT-BC为参考，保留/Writer获得/Writer丢失87/30/68，覆盖6→4。此为Validation阶段的当前最佳对比，不把MT-BC300提前选成最终模型，也不替代未来Test硬门槛。五卡251–300每步仍36任务各16查询，平均31.369秒/更新、峰值reserved32.934GiB/卡；先前双卡201–250为75.303秒/更新，实测约2.40倍更新吞吐。正式Validation评测墙钟由双卡250的1640.64秒降至五卡300的701.37秒，约2.34倍吞吐。控制器继续登记的下一完整节点；不因Writer差距自行调配方或提前停训。
+
 MT-BC step250完整correct Validation400与6个worker均exit0：136/400，刷新step200的133，正式早停`stop=false`，最佳为250。200→250严格配对保留/获得/丢失94/42/39、churn81，覆盖仍为6/8；Source→MT-BC250为51→136、保留/获得/丢失24/112/27、覆盖4→6。双卡201–250平均75.303秒/更新、峰值reserved32.934GiB，全部更新仍36任务各16查询，累计查询在step250为144000。Writer对照完成并释放gpu02后，MT-BC唯一控制器在step300的live分卡快照选择gpu01:0,1,2,5,6共5卡；已登记为物理拓扑切换，需在完整step300节点再核验真实吞吐与评测，不以分卡数本身宣称加速。Writer科学资格问题不改变MT-BC早停合同；新Test仍暂停待Owner裁决。
 
 选中Writer1000的五个完整Validation视频臂correct/other/wrong/shuffled/reversed已全部退出0、各400行、各12个worker退出0：117/119/107/86/62。correct→wrong保留/获得/丢失88/19/29；wrong−correct为−2.5pp、8任务簇bootstrap95%百分位区间[−6.5,+0.5]pp。correct→shuffled为64/22/53、−7.75pp、区间[−16.5,+0.51]pp；correct→reversed为52/10/65、−13.75pp、区间[−24.75,−3.5]pp。完整manifest确认wrong8个donor均跨suite，shuffle/reverse各400条件重排真实RGB并完整forward；后两臂与correct逐行同teacher demo。时间倒序敏感性明确，错误内容的必要增量不清楚，这是科学资格问题而非已证实工程故障。按Owner边界暂停新Test及FT/RL/外部比较并请求裁决；MT-BC唯一控制器继续完成原授权训练/完整Validation，不因Writer结果停训。正式比较、bootstrap与图文报告在新study/analysis及`docs/review_materials/20260921/coverage_retraining`。

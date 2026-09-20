@@ -2,6 +2,8 @@
 
 ## 吞吐续行与Source完整节点（2026-09-20）
 
+Writer step800完整correct Validation400退出0，87/400；正式早停`stop=false`，历史最佳仍为step600的115/400。600→800严格配对成功集保留/获得/丢失62/25/53、churn78，任务覆盖6→5；比较JSON在新study/analysis。当前四个完整Writer节点为110、92、115、87；不因这一次下降提前终止或改变配方。
+
 MT-BC step100首个双卡恢复在准入修复后仍于optimizer更新前拒绝：旧run合同与新冻结runtime候选合同归一后的唯一差异，是同内容tokenizer manifest在两个worktree里的绝对路径。已用只读双卡诊断捕获实际候选合同，核对两个manifest字节相同；`6950f761`只在其它tokenizer字段及两个manifest内容均相同时接受路径迁移，真实失败候选与新runtime路径均能严格归一到原step50合同。9项聚焦测试通过，内容/模型路径变化仍拒绝。第二次失败exit、训练stderr、准入快照、候选合同和独立故障JSON保留；step50 checkpoint未变、step100无checkpoint。新的clean pushed detached runtime `.codex/tmp/coverage-mtbc-resume-runtime` 为`6950f761`，阶段脚本再次原子替换。双节点实时GPU与strg01额度通过后，唯一控制器重新续接；正式日志已出现`resume_step=50, stop_after_step=100, tasks=36`和原run合同hash，双卡训练进程在运行。完整step100结果和真实吞吐仍待确认；不将这次工程拒绝解释为科学结果。
 
 MT-BC step50恢复correct Validation已完成400行、3个worker退出0：82/400，正式readout`stop=false`。Source→MT-BC50逐行配对51→82，保留/获得/丢失36/46/15，原始比较在新study/analysis。控制器随后自动启动step100，但新增stage内嵌Python预检的`else6`语法错误使两次准入都在训练进程启动前失败，stage和控制器exit1；旧exit、两次GPU快照、storage记录和故障JSON均已封存，step50 checkpoint与完整结果未变。已原子修为`else 6`，编译两段内嵌Python，并在gpu01用原失败快照复跑准入均通过；双节点实时GPU和strg01 data0额度也通过。唯一MT-BC控制器已从完整step50重新续接，实际gpu01双卡torchrun训练进程核验存在，原科学合同不变；真实step100退出和完整评测仍待确认。故障与重启记录在study/launch/mtbc_step100_physical_transition.json及mtbc_step100_embedded_preflight_failure.json。

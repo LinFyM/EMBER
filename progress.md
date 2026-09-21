@@ -1,5 +1,21 @@
 # EMBER progress
 
+## 当前执行：Writer N1800恒定低学习率修复（2026-09-21）
+
+Owner要求按专家最新修正设置goal并推进。Active design为
+[Writer低学习率修复合同](docs/writer_low_lr_repair_design.md)：唯一父节点是覆盖重训正式N1800完整状态，
+仅把global1801起的applied LR改为`2.959936e-5`；新phase每100更新完成correct Validation400，并按
+phase-only持续下降、平台或长期无进展规则停止。新phase未严格超过117则保留N1000并停止；超过后才补
+same-task-other400/cross-suite-wrong400。本阶段不启动Test、FT、RL、外部比较或其它补救。
+
+已确认当前goal此前为空；新goal已经建立。`main`工作区开工前干净，本地与`origin/main`均为`a401cc39`。
+已在现有Writer trainer内实现显式phase continuation、固定LR scheduler恢复语义、global/phase双cursor与独立早停纯函数；
+正式GPU尚未启动。86项聚焦CPU测试通过，覆盖旧路径不变、父状态/首步LR、checkpoint重载、global1800事件连续性、
+完整Validation400准入及三条phase停止规则；候选配置与实际父run contract只读比对通过。父checkpoint已核对：
+world4，模型51,033,768 bytes，trainer state约97MB，四rank RNG齐全，
+global/scheduler/sampler cursor均1800，AdamW含545个参数状态，父applied LR为`1.627965011517147e-4`。
+启动前仍须提交推送、建立clean detached runtime、完成双节点live GPU与data0/data1 quota检查。
+
 ## Writer稳定性修订诊断完整交付（2026-09-21）
 
 Owner要求阅读最新专家意见并按修正方案继续。复用已完成E0/E1，原E2及其不完整文件正式取消；

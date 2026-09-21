@@ -1,6 +1,17 @@
 # EMBER task plan
 
-## 当前目标：Writer训练稳定性修订诊断已交付，等待Owner/专家裁决（2026-09-21）
+## 当前目标：N1800恒定低学习率修复续训（2026-09-21）
+
+Owner已按专家最新修正授权[Writer低学习率修复合同](docs/writer_low_lr_repair_design.md)。从正式N1800完整
+状态只开一条phase continuation，以`2.959936e-5`从global1801开始恒定续训；保持四卡topology、完整
+optimizer/sampler/rank RNG和原36任务监督合同。每100更新完成correct Validation400，只用新phase完整节点执行
+三条停止规则。新phase最高不严格超过117则保留原N1000并停止；严格超过后才冻结唯一候选并补other/wrong。
+本目标不启动Test、FT、RL、外部比较或其它补救分支。
+
+当前先完成现有trainer的窄范围phase接口、CPU恢复/首步LR/重载/事件连续性验证、active合同与clean pushed
+detached runtime；随后一次性live检查双节点GPU和独立quota，启动唯一控制器。实验运行期间不轮询部分分数。
+
+## 已完成阶段：Writer训练稳定性修订诊断
 
 按Owner转交的专家最后修订执行[Writer稳定性修订诊断](docs/writer_stability_diagnostics_design.md)。复用已完成
 E0/E1，取消且不恢复原E2；只从O1200/N1800完整父状态各做高/低固定LR的36步短窗，随后完成每臂36条
@@ -9,9 +20,9 @@ compact动作探针、四个held任务各state0..3的闭环及既有16条E1轨�
 
 四臂、终点探针、闭环和轨迹导出均已完整exit0，脱敏原始包见
 [corrected diagnostics](docs/review_materials/20260921/writer_stability_diagnostics/corrected/README.md)。当前没有运行中
-实验；下一步必须由Owner/专家解释证据并决定是否恢复覆盖重训主线，执行agent不自行选择O-H/O-L/N-H/N-L。
+诊断实验；Owner/专家已据此选择正式N1800低LR修复，执行agent仍不把O-H/O-L/N-H/N-L作为正式父状态。
 
-原覆盖重训主线保留如下；修订诊断交付后由Owner与专家裁决科学问题，不能自动恢复第4阶段。
+原覆盖重训主线保留如下；当前修复阶段结束前不能自动恢复第4阶段。
 
 ## 覆盖重训裁决顺序（2026-09-20，当前下游暂停）
 

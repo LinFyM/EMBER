@@ -272,6 +272,24 @@ def test_completed_window_continuation_preserves_events_and_next_round(training_
         child.restore_sampler(changed, extend_completed=True)
 
 
+def test_dynamic_low_lr_phase_restores_global1800_without_task_event_gap(training_data_factory):
+    changes = {"maximum_updates": None, "protocol": "configs/libero_24_8_8_coverage_v1/protocol.json",
+               "task_ids": list(range(36))}
+    parent = training_data_factory(planned_updates=1800, **changes)
+    child = training_data_factory(planned_updates=1900, **changes)
+    uninterrupted = training_data_factory(planned_updates=1900, **changes)
+    for _ in range(1800):
+        parent.next_iteration()
+        uninterrupted.next_iteration()
+    child.restore_sampler(parent.sampler_state(), extend_from_step=1800)
+    expected, actual = uninterrupted.next_iteration(), child.next_iteration()
+    assert [(row["task"], row["occurrence"], row["query_seed"]) for row in actual] == [
+        (row["task"], row["occurrence"], row["query_seed"]) for row in expected
+    ]
+    assert child.next_step == 1801
+    assert sum(child.counts.values()) == 1801 * 4
+
+
 def test_event_batch_reads_only_selected_actions_and_keeps_full_batch_rng(training_data_factory, monkeypatch):
     reads = []
     original = h5py.Dataset.__getitem__

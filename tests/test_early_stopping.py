@@ -1,6 +1,6 @@
 import pytest
 
-from ember.early_stopping import validation_decision
+from ember.early_stopping import phase_validation_decision, validation_decision
 
 
 def decide(scores):
@@ -33,3 +33,30 @@ def test_partial_or_skipped_panels_cannot_stop_training():
                 {"step": 200, "episodes": 400, "complete": False, "successes": 80}]:
         with pytest.raises(ValueError):
             validation_decision([row], interval=200)
+
+
+def phase_decide(scores):
+    return phase_validation_decision([
+        {"step": 1800 + 100 * (i + 1), "phase_step": 100 * (i + 1),
+         "episodes": 400, "complete": True, "successes": score}
+        for i, score in enumerate(scores)
+    ])
+
+
+def test_phase_history_excludes_parent_and_uses_registered_global_cursor():
+    result = phase_decide([120, 130, 121, 118, 116])
+    assert result["stop"] and result["reason"] == "sustained_decline"
+    assert result["best_step"] == 2000 and result["best_phase_step"] == 200
+    with pytest.raises(ValueError, match="phase stopping"):
+        phase_validation_decision([
+            {"step": 1800, "phase_step": 0, "episodes": 400,
+             "complete": True, "successes": 92}
+        ])
+
+
+def test_phase_plateau_and_long_oscillation_have_distinct_reasons():
+    assert phase_decide([124, 123, 121, 124, 122, 121])["reason"] == "plateau"
+    result = phase_decide([120, 140, 100, 139, 101, 139, 138, 137])
+    assert result["reason"] == "no_progress_review"
+    assert result["status"] == "无进展，停止复核"
+    assert not phase_decide([120, 140, 100, 139, 101, 138, 141])["stop"]

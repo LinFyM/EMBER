@@ -1,10 +1,15 @@
 # EMBER task plan
 
-## 当前目标状态：Owner停止并暂停后继实验（2026-09-21）
+## 当前目标：Writer输出空间与code投影诊断（2026-09-21）
 
-Owner已明确停止N1800恒定低学习率修复，原因是五个完整phase节点均未恢复到原N1000：1900/2000/2100/2200/2300依次为101/92/95/98/101，phase最高101低于117。正式证据截止2300；global2400只完成训练，Validation在形成正式400行前被中断，不能纳入曲线。按预登记资格规则保留原N1000，未启动other/wrong controls、Test、FT、RL、外部比较或任何新补救。
+Owner授权按专家最新收敛方案执行[输出空间投影诊断合同](docs/writer_output_space_projection_design.md)。本轮只做
+A0三checkpoint CPU空间检查、A1十六次无梯度视频编译，以及SELF/NEWSPACE/SHRINK三臂共48条冻结闭环；
+复用既有O1200原始16条参照。禁止反向传播、训练、Test、FT、RL、完整E2及自动拆head后继。
 
-本阶段图文与原始材料已封存于[Writer低学习率修复报告](docs/review_materials/20260921/writer_low_lr_repair/report.md)。当前不再推进实验；goal按Owner要求暂停。后续只有Owner明确恢复或登记新目标后才执行，不能从下方历史顺序自动恢复。
+执行顺序：先登记资产和实现可复算投影/code接口；完成CPU与最小合成检查后提交推送并创建clean detached runtime；
+GPU launch前实时检查两节点与quota；A1按模型并行、A2按三臂并行使用安全可用GPU；只在完整exit后汇总。
+最终交付head谱、code几何、逐层有效更新误差、48条原始闭环、O1200配对统计、SELF首replan数值检查和图文报告，
+随后停止等待Owner/专家裁决。
 
 ## 已完成阶段：Writer训练稳定性修订诊断
 

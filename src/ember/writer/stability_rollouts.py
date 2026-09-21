@@ -191,16 +191,43 @@ def _rollout_contract(
     }
 
 
+def _writer_panel_adapter(
+    loaded: LoadedWriter,
+    *,
+    asset_root: Path,
+    selected_ids: Sequence[int],
+    installed: Mapping[int, Mapping[str, Any]],
+    states: Mapping[str, Mapping[str, torch.Tensor]] | None,
+    evidence: Mapping[str, Mapping[str, Any]] | None,
+) -> DiagnosticWriterAdapter:
+    if states is None:
+        states, evidence = compile_panel(loaded, asset_root=asset_root, task_ids=selected_ids)
+    else:
+        expected = {
+            f"{installed[task]['suite']}:{int(installed[task]['task_id'])}:{state}"
+            for task in selected_ids for state in range(4)
+        }
+        if set(states) != expected or set(evidence or {}) != expected:
+            raise ValueError("precompiled Writer panel does not match requested task/state rows")
+    return DiagnosticWriterAdapter(loaded, states, evidence or {})
+
+
 def run_asset_rollouts(
     *, asset: str, asset_root: Path, output: Path, physical_gpu_id: int,
     current_evaluation_contract: Path, loaded_writer: LoadedWriter | None,
     frozen_policy: FrozenPolicy | None, panel_ids: Sequence[int] | None = None,
     compact_capture: bool = False,
     full_capture_conditions: Sequence[tuple[int, int]] = (),
+    precompiled_states: Mapping[str, Mapping[str, torch.Tensor]] | None = None,
+    precompiled_evidence: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Run a registered stability-diagnostic closed-loop panel."""
     if (loaded_writer is None) == (frozen_policy is None):
         raise ValueError("rollout needs exactly one Writer or physical frozen policy")
+    if (precompiled_states is None) != (precompiled_evidence is None):
+        raise ValueError("precompiled Writer states and evidence must be supplied together")
+    if precompiled_states is not None and loaded_writer is None:
+        raise ValueError("precompiled states require a loaded Writer policy")
     output.mkdir(parents=True, exist_ok=False)
     assets_root = (
         asset_root
@@ -225,8 +252,10 @@ def run_asset_rollouts(
     writer = loaded_writer is not None
     adapter = None
     if writer:
-        states, evidence = compile_panel(loaded_writer, asset_root=asset_root, task_ids=selected_ids)
-        adapter = DiagnosticWriterAdapter(loaded_writer, states, evidence)
+        adapter = _writer_panel_adapter(
+            loaded_writer, asset_root=asset_root, selected_ids=selected_ids, installed=installed,
+            states=precompiled_states, evidence=precompiled_evidence,
+        )
         policy, processor = loaded_writer.runtime.policy, loaded_writer.runtime.processor
     else:
         policy, processor = frozen_policy.policy, frozen_policy.processor

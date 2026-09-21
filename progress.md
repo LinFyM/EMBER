@@ -1,5 +1,17 @@
 # EMBER progress
 
+## 当前执行：Writer输出空间与code投影诊断（2026-09-21）
+
+Owner要求执行专家最新方案。Active design为[Writer输出空间投影诊断](docs/writer_output_space_projection_design.md)：
+A0读取O1200/N1000/N1800三份checkpoint；A1在global5/7/12/37的demo46/48完成16次无梯度编译；A2复用
+held global3/11/26/31、state0..3和既有O1200参照，对SELF/NEWSPACE/SHRINK各运行16条冻结闭环。
+不训练、不反向传播，不启动Test/FT/RL/完整E2或拆head后继。
+
+已读取专家最后收敛意见并建立新goal。开工时`main`工作区干净，本地与`origin/main`均为`95d22588`；
+现有稳定性诊断已提供正式O1200/N1000/N1800加载、固定held任务安装、official rollout、compact轨迹及O1200原始
+16条参照，可直接复用。O1200原始四任务各state0..3齐全；三份checkpoint与所需trainer/manifest存在。
+当前仅有上一阶段已停止后的detached runtime，无活动实验进程。正式新GPU实验尚未launch。
+
 ## 当前状态：Writer低学习率修复已由Owner停止（2026-09-21）
 
 Owner判断性能已经无法提升并明确要求停止。唯一低学习率phase已终止，双节点均无本实验训练、物化或评测进程；没有启动Test、FT、RL、外部比较或其它补救分支。正式完整correct Validation400节点为：1900=101、2000=92、2100=95、2200=98、2300=101。phase最高101/400，未严格超过原N1000的117/400，因此按冻结资格规则保留N1000，不执行same-task-other或cross-suite-wrong。

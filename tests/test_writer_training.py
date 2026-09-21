@@ -58,6 +58,29 @@ def test_dynamic_config_accepts_clock_and_preserves_loss(tmp_path):
         _config(path)
 
 
+def test_auxiliary_pairing_dynamic_config_requires_the_exact_opt_in_declaration(tmp_path):
+    import json
+    from pathlib import Path
+    from ember.writer.training import _config
+
+    root = Path(__file__).resolve().parents[1]
+    candidate = json.loads((root / "configs/libero_24_8_8_coverage_v1/writer_aux_cross_episode.json").read_text())
+    path = tmp_path / "writer_aux.json"
+    path.write_text(json.dumps(candidate))
+    assert _config(path)["data"]["teaching_episode"] == "cross_episode"
+
+    candidate.pop("experiment")
+    path.write_text(json.dumps(candidate))
+    with pytest.raises(ValueError, match="auxiliary pairing"):
+        _config(path)
+
+    candidate = json.loads((root / "configs/libero_24_8_8_coverage_v1/writer_aux_cross_episode.json").read_text())
+    candidate["optimization"]["lr"] = 1e-5
+    path.write_text(json.dumps(candidate))
+    with pytest.raises(ValueError, match="auxiliary pairing"):
+        _config(path)
+
+
 def test_low_lr_phase_uses_fixed_first_update_and_checkpoint_resume(tmp_path, monkeypatch):
     monkeypatch.setattr("ember.ecp.checkpoint.capture_rng", lambda _: torch.get_rng_state())
     monkeypatch.setattr("ember.ecp.checkpoint.restore_rng", lambda state, _: torch.set_rng_state(state))

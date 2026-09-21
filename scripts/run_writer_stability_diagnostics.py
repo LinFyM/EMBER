@@ -68,6 +68,10 @@ def _device(value: str) -> torch.device:
     if result.type != "cuda":
         raise ValueError("diagnostics require CUDA")
     torch.cuda.set_device(result)
+    from ember.writer.topology import bind_current_process_to_cuda_numa
+
+    if not bind_current_process_to_cuda_numa(torch.cuda.current_device()):
+        raise ValueError("diagnostics require GPU-local NUMA placement")
     torch.set_num_threads(4)
     torch.backends.cuda.matmul.allow_tf32 = True
     return result

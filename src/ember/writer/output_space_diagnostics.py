@@ -120,17 +120,35 @@ def capture_factor_codes(writer: torch.nn.Module) -> Iterator[dict[str, list[tor
             handle.remove()
 
 
+def codes_by_numeric_layer(
+    rows: list[torch.Tensor], layer_order: list[int], family: str,
+) -> torch.Tensor:
+    """Restore lexical tensor-spec calls to the policy's numerical layer order."""
+    if len(rows) != 18 or len(layer_order) != 18 or sorted(layer_order) != list(range(18)):
+        raise ValueError(f"{family} code capture changed call count or layer coverage")
+    if any(tuple(row.shape) != (1, 16, 216) for row in rows):
+        raise ValueError(f"{family} code capture changed shape")
+    by_layer = {layer: row[0] for layer, row in zip(layer_order, rows, strict=True)}
+    return torch.stack([by_layer[layer] for layer in range(18)], dim=0).contiguous()
+
+
 @torch.no_grad()
 def compile_with_codes(loaded: Any, condition: tuple) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
     writer = loaded.runtime.state.writer
+    layer_order: dict[str, list[int]] = {family: [] for family in FAMILIES}
+    for item in writer.tensor_specs:
+        family, layer = writer._decoding[item.name]
+        if family in FAMILIES:
+            if layer is None:
+                raise ValueError(f"{family} tensor spec lost its policy layer")
+            layer_order[family].append(layer)
     with capture_factor_codes(writer) as captured:
         with autocast(loaded.runtime.device):
             state = loaded.runtime.compile(condition)
-    codes = {}
-    for family, rows in captured.items():
-        if len(rows) != 18 or any(tuple(row.shape) != (1, 16, 216) for row in rows):
-            raise ValueError(f"{family} code capture changed call count or shape")
-        codes[family] = torch.stack([row[0] for row in rows], dim=0).contiguous()
+    codes = {
+        family: codes_by_numeric_layer(rows, layer_order[family], family)
+        for family, rows in captured.items()
+    }
     return ({name: value.detach().to(device="cpu", dtype=torch.float32) for name, value in state.items()}, codes)
 
 

@@ -47,6 +47,16 @@ def test_output_column_space_uses_all_numerically_independent_columns() -> None:
     assert overlap["chordal_distance"] < 1e-6
 
 
+def test_captured_factor_codes_restore_numeric_layer_order() -> None:
+    from ember.writer.output_space_diagnostics import codes_by_numeric_layer
+
+    lexical_order = [0, 1, *range(10, 18), *range(2, 10)]
+    rows = [torch.full((1, 16, 216), float(layer)) for layer in lexical_order]
+    codes = codes_by_numeric_layer(rows, lexical_order, "q_b")
+    assert tuple(codes.shape) == (18, 16, 216)
+    torch.testing.assert_close(codes[:, 0, 0], torch.arange(18, dtype=torch.float32))
+
+
 def test_output_projection_arms_preserve_self_and_match_shrink_norm() -> None:
     from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
     from ember.writer.output_space_diagnostics import (

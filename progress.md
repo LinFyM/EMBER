@@ -1,5 +1,34 @@
 # EMBER progress
 
+## 2026-09-22：新 session 交接准备与 PR #3 本地审查
+
+已读取专家关于辅助配对、fresh 重训和动作 FM 科学依据的最新连续讨论。当前无 EMBER 训练、物化或评测
+tmux/session；gpu01、gpu02 未发现引用仓库 `.codex/tmp` runtime 的进程。没有启动新的 GPU 实验。
+
+远程 draft [PR #3](https://github.com/LinFyM/EMBER/pull/3)，分支
+`codex/ember-cross-episode-aux-20260922`，commit `ed7b5550`。它以`main@7f62c7b7`为参照，只开放一条
+fresh `data.teaching_episode=cross_episode`候选，保留原36任务、Source、模型、LR、21主查询、7辅助查询、
+端点前缀和`1/3`权重；PR 本身未启动训练、Test、FT或RL。
+
+canonical `.venv` 已执行`tests/test_writer_auxiliary_pairing.py`：61 passed。CPU preflight 使用真实
+coverage manifest和原`training/writer/exposures.jsonl`重放1800步/7200条件：teacher与21个主查询事件一致、
+辅助噪声一致、辅助episode排除teacher、未来5动作合法、无有放回条件、7200条原曝光全部匹配。结果只证明
+实现和配对合同可执行，不证明候选性能或端点前缀辅助项有效。
+
+代码架构检查尚未通过：active-source diff为+825/-1，`scripts/writer_aux_pairing.py::load_panel`、
+`src/ember/writer/auxiliary_pairing.py::audit_events`和受改动的`training.py::_config`触发复杂度硬门槛；新增
+status/selection校验与既有控制器职责也需收敛。PR保持draft且未合入main。下一执行者应先修正这一工程边界，
+或在Owner选择纯主FM问题时另立明确合同；不得把两种问题混成同一实验。
+
+旧低LR detached runtime已确认工作树干净、两节点无引用进程并已移除；本次PR审查worktree也已删除，Git只保留
+canonical main worktree。全部正式study、checkpoint、raw rows、报告和PR分支保留。`paper-export`按Owner要求不使用。
+
+Owner随后追加约七小时无人值守授权：要求安全范围内充分利用GPU和墙钟。新session须在launch前预登记overnight预算；
+早停首次触发时保存原合同裁决，预算仍有余量时可从完整checkpoint继续单独标记的post-stop extension。主候选稳定运行
+后，若有不干扰它的GPU与足够完成完整结果的时间，可自主登记并执行一个高价值独立实验，优先候选为纯主FM基准；
+不做临时超参小扫或打开Test/FT/RL。运行监控依赖controller与完成信号，不进行十秒级轮询、不读部分分数、不派
+subagent反复监督。
+
 ## Writer输出空间与code投影诊断完整交付（2026-09-21）
 
 Owner要求执行专家最新方案。Active design为[Writer输出空间投影诊断](docs/writer_output_space_projection_design.md)：

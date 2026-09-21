@@ -1,5 +1,49 @@
 # EMBER task plan
 
+## 待新 session 接续：Writer 辅助目标的下一条 fresh 对照（2026-09-22）
+
+当前没有 active run，也没有已登记为 active design 的新实验。专家最新意见把下一步收敛为两个需要明确区分的科学问题：
+
+1. 已准备的单变量配对对照：保留 `tau=1`、前5步和权重 `1/3`，只把7个辅助查询从
+   `same_video` 改为同任务另一 episode。它回答辅助监督的 episode 配对是否影响学习。
+2. 附加目标本身的价值：只使用同任务跨 episode、随机 flow time、完整 horizon 的原生 FM。
+   它回答端点前缀辅助项是否有净收益，属于另一条实验合同。
+
+主 FM 的随机 flow time、完整动作 chunk 和速度 MSE 有 π0.5 原生训练依据。端点前缀辅助项的固定
+`tau=1`、前5步和 `1/3` 是实验性设置；按名义系数计算，前5步占组合目标32.5%，单个前5步位置的权重
+是其余位置的4.33倍，整项目标系数的25%来自精确端点。历史 same-video/cross-episode 对照均保留这些设置，
+所以只能识别配对差异，不能证明辅助项整体必要。
+
+远程 draft [PR #3](https://github.com/LinFyM/EMBER/pull/3)（`ed7b5550`）已实现第一项 fresh 配对对照，
+尚未合入 `main`、尚未启动训练。canonical 环境中该分支测试为61 passed；使用原 coverage 的
+`exposures.jsonl` 和真实 manifest 完成1800步/7200条件元数据 preflight，主事件、teacher、辅助噪声、
+episode排除和未来5动作合法性均通过。架构检查仍为 BLOCK：新增活跃源码825行，三个新增/增长函数复杂度
+超过门槛，且状态/选点入口与既有控制器存在可收敛空间。因此 PR 当前是可审查实现草案，不是可直接合并的
+canonical 运行面。
+
+新 session 若按既有授权执行配对对照，应先在 PR 上收敛实现、复用既有面板校验/早停/选点能力、解除架构
+BLOCK，再合入并按 formal launch 合同启动唯一 fresh Writer。若 Owner 改为检验纯主 FM，应先登记新的单变量
+设计和配置，不能在 PR #3 下静默删除辅助项。两条实验不得并行启动，也不恢复 Test、FT、RL 或外部比较。
+
+### 本次约七小时无人值守窗口的追加授权
+
+Owner要求在其休息期间优先利用可安全使用的GPU与墙钟，不因某个节点先结束让整个阶段空转。新session应在首次
+正式launch前，根据实时GPU、已有吞吐和评测耗时登记一个与中间分数无关的overnight计算上限；可以用截止时间、
+最大完整Validation节点或两者中先到者表示。原早停规则仍在首次触发时立即写出正式裁决并冻结“按原合同停止”的
+结果；若预登记overnight预算尚有余量，Owner明确授权同一轨迹从完整checkpoint继续到overnight上限，作为单独标记的
+post-stop extension。最终同时报告原早停点、扩展节点和全程最高点，不能删除早停前后的不利节点，也不能把扩展写成
+原规则未触发。是否允许扩展节点参与最终checkpoint选择，必须在扩展启动前写入active design；不能看到分数后决定。
+
+主候选进入稳定后台运行后，若仍有不会干扰它的合格GPU和显著剩余时间，新session可自主开展一个有明确判别价值、
+能在窗口内形成完整结果的独立实验。优先考虑专家已指出的纯跨episode、随机flow time、完整horizon主FM基准；它须有
+独立config/study、明确单变量对照、完整Validation和资源边界，不能冒充PR #3的配对消融。不得临时做seed/LR/head小扫，
+不得打开Test、FT、RL或外部比较。若窗口不足以完成有意义的训练加完整评测，用余量完成实现、preflight、物化准备、
+报告或其它不依赖结果的工作，不为占卡启动低价值任务。
+
+运行期由detached controller承担训练、完整评测、早停记录和分段续行。主agent使用tmux完成信号、进程exit或控制器
+最终状态做阻塞等待；不得每10秒／每分钟轮询日志、GPU、部分分数、tmux或subagent状态。只在真正launch/resume前、
+完整节点完成、明确工程退出、controller异常消失或资源重新分配时读取一次所需状态。长等待不通过一轮轮LLM调用执行。
+
 ## 已完成目标：Writer输出空间与code投影诊断（2026-09-21）
 
 Owner授权按专家最新收敛方案执行[输出空间投影诊断合同](docs/writer_output_space_projection_design.md)。本轮只做

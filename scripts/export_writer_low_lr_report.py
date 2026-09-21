@@ -96,7 +96,7 @@ def suite_rows(label: str, step: int, panel: Mapping[str, Any]) -> list[dict[str
             for suite, values in sorted(grouped.items())]
 
 
-def _training_cost(study: Path) -> dict[str, Any]:
+def _training_cost(study: Path, *, expected_end_step: int) -> dict[str, Any]:
     metrics_path = study / "training" / "writer" / "metrics.jsonl"
     metrics = [json.loads(line) for line in metrics_path.read_text().splitlines() if line.strip()]
     phase = [row for row in metrics if int(row.get("step", row.get("optimizer_updates", 0))) > PARENT_STEP]
@@ -105,6 +105,8 @@ def _training_cost(study: Path) -> dict[str, Any]:
     steps = [int(row.get("step", row["optimizer_updates"])) for row in phase]
     if steps != list(range(PARENT_STEP + 1, steps[-1] + 1)):
         raise ValueError("low-LR phase metrics are not a contiguous update sequence")
+    if steps[-1] != expected_end_step or len(steps) != expected_end_step - PARENT_STEP:
+        raise ValueError("low-LR phase metrics do not reach the registered stopping node")
     seconds = [float(row["seconds"]) for row in phase]
     applied = {float(row["lr_applied"]) for row in phase}
     if len(applied) != 1:
@@ -178,6 +180,11 @@ def export(study: Path, original: Path, output: Path) -> dict[str, Any]:
         raise ValueError("original coverage Writer reference changed")
     nodes = [{"phase": "coverage", "global_step": row["step"], "phase_step": "",
               "successes": row["successes"], "episodes": 400} for row in old_nodes]
+    phase_steps = [int(row["step"]) for row in phase["history"]]
+    if phase_steps != list(range(1900, phase_steps[-1] + 1, 100)):
+        raise ValueError("low-LR phase history skipped or reordered a registered Validation400 node")
+    if int(phase["decision"].get("last_step", -1)) != phase_steps[-1]:
+        raise ValueError("low-LR phase stopping cursor disagrees with its complete history")
     nodes += [{"phase": "low_lr", "global_step": row["step"], "phase_step": row["phase_step"],
                "successes": row["successes"], "episodes": 400} for row in phase["history"]]
 
@@ -189,8 +196,11 @@ def export(study: Path, original: Path, output: Path) -> dict[str, Any]:
     }
     for row in phase["history"]:
         step = int(row["step"])
-        panels[f"phase_{step}_correct"] = (step, load_panel(
-            study / "evaluation" / f"writer_{step:08d}", expected_arm="correct", expected_step=step))
+        panel = load_panel(study / "evaluation" / f"writer_{step:08d}",
+                           expected_arm="correct", expected_step=step)
+        if panel["overall"]["successes"] != int(row["successes"]):
+            raise ValueError(f"phase history score changed at step {step}")
+        panels[f"phase_{step}_correct"] = (step, panel)
     selected_step = int(selection["selected_macro"])
     if selection["selected_study"] == "original":
         selected_label = "original_n1000_correct"
@@ -251,7 +261,7 @@ def export(study: Path, original: Path, output: Path) -> dict[str, Any]:
         comparisons["correct_vs_cross_suite_wrong"] = paired_counts(
             selected_panel, panels["selected_cross_suite_wrong"][1])
     write_json_atomic(output / "writer_low_lr_paired_statistics.json", comparisons)
-    cost = _training_cost(study)
+    cost = _training_cost(study, expected_end_step=phase_steps[-1])
     write_json_atomic(output / "writer_low_lr_cost.json", cost)
     shutil.copy2(study / "writer_phase_validation_history.json", output / "writer_phase_validation_history.json")
     shutil.copy2(study / "writer_low_lr_selection.json", output / "writer_low_lr_selection.json")

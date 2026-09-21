@@ -40,7 +40,8 @@ wrong明确不进入选点。11项phase早停、完整面板读取和选点测�
 报告导出入口`scripts/export_writer_low_lr_report.py`也已预置，但只接受controller exit0、已停止phase和已完成选点；
 若phase入选，还会强制要求选中节点的other400与wrong400完整退出后才生成报告。它一次性导出旧曲线＋修复phase曲线
 （1800标LR intervention）、逐任务、逐suite、相邻R/G/L、选中模型相对N1000的配对统计、失败行、实际controls、
-训练成本、精简原始行以及PNG/SVG/Markdown。12项相关聚焦测试通过，旧N1000正式400行读取验证为117。
+训练成本、精简原始行以及PNG/SVG/Markdown。导出器还会交叉核对phase节点连续性、停止游标、每个正式面板分数
+以及metrics必须完整到停止步，拒绝截断材料。13项相关聚焦测试通过，旧N1000正式400行读取验证为117。
 
 ## Writer稳定性修订诊断完整交付（2026-09-21）
 

@@ -45,7 +45,7 @@ from ember.writer.stability_diagnostics import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-ASSET_ROOT = REPO_ROOT
+ASSET_ROOT = Path("/data1/user/ymdai/projects/EMBER")
 STUDY_ROOT = Path("/data0/user/ymdai/ember_runs/writer_stability_diagnostics_20260921")
 OLD_ROOT = Path("/data0/user/ymdai/ember_runs/video_teaching_20260919/training")
 NEW_ROOT = Path("/data0/user/ymdai/ember_runs/coverage_retraining_20260920")

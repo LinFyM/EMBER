@@ -13,6 +13,10 @@ O1200/O1500/N1000/N1800的optimizer/scheduler cursor分别为1200/1500/1000/1800
 GPU检查及data0/data1独立quota检查。运行根预定为
 `/data0/user/ymdai/ember_runs/writer_stability_diagnostics_20260921`，尚未启动GPU任务。
 
+首个E0启动在任何模型forward前因工程路径错误exit1：新detached runtime没有canonical主仓库的`runs`资产
+链接，而诊断入口误把代码runtime当作asset root。stderr与初始exit保留；没有生成`e0_integrity.json`，GPU已释放，
+checkpoint未写入。修复只把代码runtime与canonical只读asset root分离，不改变任务、节点、梯度或优化合同。
+
 ## 远端差异审计材料补交（2026-09-21）
 
 Owner要求把专家分析旧/新Writer差异所需及相邻材料推送远端。已从现有正式原件只读导出[诊断包](docs/review_materials/20260921/coverage_retraining/diagnostics/README.md)：旧Writer5、新Writer9、新MT-BC10及Source节点和已完成的视频对照共34个Validation400面板的13,600行精简成功标记；逐节点逐任务、相邻成功集合、旧1200/新1800五个共同held任务配对；旧/新Writer3,900更新指标及15,600任务曝光、按step/occurrence分组汇总、训练/评测Git与轮转位置；新MT-BC500更新指标。导出脚本和数据口径一并保留。完整checkpoint、视频与原始run contracts仍在study，不复制进Git。该补交不改科学资格裁决：新Test、FT、RL和外部比较仍等待Owner决定。

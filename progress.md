@@ -16,6 +16,9 @@ GPU检查及data0/data1独立quota检查。运行根预定为
 首个E0启动在任何模型forward前因工程路径错误exit1：新detached runtime没有canonical主仓库的`runs`资产
 链接，而诊断入口误把代码runtime当作asset root。stderr与初始exit保留；没有生成`e0_integrity.json`，GPU已释放，
 checkpoint未写入。修复只把代码runtime与canonical只读asset root分离，不改变任务、节点、梯度或优化合同。
+修复后E0在gpu01:2完整exit0：O1200/N1800的main与teaching四条完整Writer梯度均finite，两个父节点分别
+恢复545/545个AdamW状态，Adam step为1200/1800；原生frame chunk16/8及原checkpoint world2/4均与
+资产一致，正式stderr为空。E0没有更新参数，准许按固定合同进入E1。
 
 ## 远端差异审计材料补交（2026-09-21）
 

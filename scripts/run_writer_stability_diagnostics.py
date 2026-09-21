@@ -13,7 +13,7 @@ from typing import Any, Mapping, Sequence
 
 import torch
 
-from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.pi05_source_checkpoint import read_json, sha256_file, write_json_atomic
 from ember.writer.runtime import VideoConditionCache
 from ember.writer.stability_diagnostics import (
     DIAGNOSTIC_SCHEMA,
@@ -195,9 +195,12 @@ def _load_frozen(asset: str, device: torch.device):
         return None, source_policy(name=asset, asset_root=ASSET_ROOT, current_run=current, device=device)
     if asset == "M300":
         adapter = read_json(MTBC_EVAL_CONTRACT)["adapter"]
+        config_path = ASSET_ROOT / "configs/libero_24_8_8_coverage_v1/mtbc.json"
+        if sha256_file(config_path) != adapter["config"]["sha256"]:
+            raise ValueError("canonical MT-BC config differs from the frozen evaluation authority")
         return None, source_policy(
             name=asset, asset_root=ASSET_ROOT, current_run=current, device=device,
-            mtbc_config=Path(adapter["config"]["path"]), mtbc_checkpoint=MTBC_CHECKPOINT,
+            mtbc_config=config_path, mtbc_checkpoint=MTBC_CHECKPOINT,
         )
     raise ValueError(f"unknown diagnostic asset: {asset}")
 

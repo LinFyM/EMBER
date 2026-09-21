@@ -180,9 +180,15 @@ def run_asset_rollouts(
     if (loaded_writer is None) == (frozen_policy is None):
         raise ValueError("rollout needs exactly one Writer or physical frozen policy")
     output.mkdir(parents=True, exist_ok=False)
+    assets_root = (
+        asset_root
+        / "data/simulation/ember_assets/datasets/libero-assets"
+        / "0b3ea86be5fe169d0fd036ae63d1070ec09e90f6"
+    ).resolve()
     os.environ.update(
         MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl", MUJOCO_EGL_DEVICE_ID=str(physical_gpu_id),
         LIBERO_CONFIG_PATH=str((output / "libero_config").resolve()),
+        EMBER_LIBERO_ASSETS_ROOT=str(assets_root),
     )
     installed, paths = _selected_task_contracts(asset_root, output)
     panel_ids = list(COMMON_HELD_TASKS)

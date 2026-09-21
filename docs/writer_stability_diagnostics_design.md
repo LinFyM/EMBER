@@ -42,7 +42,9 @@ finite及optimizer state相互独立。输出`assets.json`与`e0_integrity.json`
   O1500、N1000、N1800、M300、S1000，共160条。四个LIBERO-90任务对旧Writer是训练外任务，明确标记。
 
 每条保存成功、终止、控制步数、每次replan的执行观察/状态/动作、teacher身份，以及模拟器可提供的目标谓词。
-视频映射、状态、环境与policy RNG预先固定；总计280条，只作诊断。
+视频映射固定为每个task的state0..3分别使用teacher demo0..3；状态、环境与policy RNG预先固定。轨迹保存
+evaluator实际送入policy的图像/归一化state和policy生成的归一化action chunk，并由正式postprocessor执行；
+总计280条，只作诊断。
 
 ## 4. E2：真实任务梯度与独立单步更新
 
@@ -55,6 +57,7 @@ gradient Gram矩阵；保存矩阵，不保存高维梯度向量。
 全36 joint、全36 main-only、零当前梯度但保留Adam历史与weight decay。固定LR
 `1.6279650115e-4`，全局clip一次、AdamW一步，每次后恢复父状态。探针比较父节点与更新节点的主FM、
 真实10步flow前5步误差及动作变化；非零更新另做norm-matched纯参数位移测量副本。
+每个单步版本使用E1-A完整固定面板（36任务×8条），父节点动作作为action-change基准。
 
 ## 5. E3：父状态×学习率2×2短窗
 
@@ -66,6 +69,7 @@ gradient Gram矩阵；保存矩阵，不保存高维梯度向量。
 局部0、18、36、72保存固定Train36动作探针；18、36、72对共同held五任务×state0..3做闭环，新增240条。
 保存每步LR、loss、更新norm和task事件，以及per-task success、gained/lost和动作变化。每次模型更新后重新
 编译teacher条件，只允许跨版本缓存原始RGB和frame index。72步后无论趋势如何都结束，不自动延长。
+Train36动作探针复用E1-A完整固定面板；闭环同样使用state0..3→teacher demo0..3映射。
 
 ## 6. 执行、产物与裁决
 
@@ -80,3 +84,14 @@ gradient Gram矩阵；保存矩阵，不保存高维梯度向量。
 `shadow_task_exposures.csv`、`shadow_probe_rows.csv`、`shadow_rollout_rows.csv`、
 `trajectory_manifest.csv`和`completion.json`。README只陈述完成范围、缺失项和事实结果，不提前写因果归因。
 
+## 7. 实现职责与生命周期
+
+`writer/stability_diagnostics.py`只负责checkpoint/Adam恢复、梯度、固定动作探针和参数更新；
+`writer/stability_rollouts.py`只负责把固定condition编译为LoRA并调用仓库唯一official `rollout_shard`；
+`scripts/run_writer_stability_diagnostics.py`只登记资产和编排阶段。三者不进入训练器、materializer或evaluator的
+默认入口，也不替代这些canonical实现。新增表面约1300行是E0–E3可复算合同所需，复用已有runtime、FM credit、
+采样器、LoRA batch执行、LIBERO环境池和rollout实现，没有复制第二套训练/评测器。
+
+本诊断结束后删除detached runtime、临时高维梯度和可再生成bank；保留这三个显式诊断入口、轻量结果与设计，
+用于报告复算。若E0–E3结论已进入最终研究历史且不再要求代码级复算，则由后续明确清理任务删除这些显式入口；
+它们在此之前没有默认调用者，不构成偶然active fallback。

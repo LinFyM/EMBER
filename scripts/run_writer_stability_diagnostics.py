@@ -405,18 +405,23 @@ def _virtual_update_specs(batches, tasks, q_vectors, j_vectors):
     return specs
 
 
-def _run_virtual_updates(loaded, data, batches, tasks, q_vectors, j_vectors):
+def _run_virtual_updates(
+    loaded, data, tasks, q_vectors, j_vectors, *,
+    update_specs, include_parent: bool,
+):
     parent = snapshot_parent(loaded)
     parent_model = parent[0]
     parent_rows = _probe_loaded_rows(loaded, data)
     parent_by_key = {_probe_key(row): row for row in parent_rows}
     if len(parent_by_key) != 36 * 8:
         raise ValueError("E2 parent probe is incomplete")
-    rows = _annotate_virtual_probes(
-        parent_rows, parent_by_key, asset=loaded.name, update="parent", measurement="parent",
-        step={"preclip_grad_norm": 0.0, "parameter_displacement_norm": 0.0, "lr": 0.0},
-    )
-    for update_name, vectors, weights in _virtual_update_specs(batches, tasks, q_vectors, j_vectors):
+    rows = []
+    if include_parent:
+        rows.extend(_annotate_virtual_probes(
+            parent_rows, parent_by_key, asset=loaded.name, update="parent", measurement="parent",
+            step={"preclip_grad_norm": 0.0, "parameter_displacement_norm": 0.0, "lr": 0.0},
+        ))
+    for update_name, vectors, weights in update_specs:
         restore_parent(loaded, parent)
         combined = tuple(sum(vector[i].mul(weight) for vector, weight in zip(vectors, weights, strict=True))
                          for i in range(len(vectors[0])))
@@ -441,9 +446,14 @@ def _run_virtual_updates(loaded, data, batches, tasks, q_vectors, j_vectors):
     return rows
 
 
-def e2(output: Path, device: torch.device, asset: str) -> None:
+def e2(
+    output: Path, device: torch.device, asset: str, *,
+    shard_index: int = 0, num_shards: int = 1,
+) -> None:
     if asset not in {"O1200", "N1800"}:
         raise ValueError("E2 only admits O1200 or N1800")
+    if num_shards < 1 or not 0 <= shard_index < num_shards:
+        raise ValueError("invalid E2 shard")
     current = _current_run()
     loaded = load_writer(name=asset, checkpoint=WRITER_ASSETS[asset], asset_root=ASSET_ROOT,
                          device=device, fixed_lr=HIGH_LR)
@@ -471,13 +481,22 @@ def e2(output: Path, device: torch.device, asset: str) -> None:
             **{("j_" + key): value for key, value in grouped_gradient_metrics(loaded.parameter_names, j).items()},
             **qm, **{("teaching_" + key): value for key, value in sm.items()},
         })
-    _write_csv(output / "parts" / f"task_gradient_metrics_{asset}.csv", metric_rows)
-    gram = _gradient_gram(asset, loaded.parameter_names,
-                          {"gQ": q_vectors, "gS": s_vectors, "gJ": j_vectors}, tasks)
-    _write_csv(output / "parts" / f"task_gradient_gram_{asset}.csv", gram)
+    if shard_index == 0:
+        _write_csv(output / "parts" / f"task_gradient_metrics_{asset}.csv", metric_rows)
+        gram = _gradient_gram(asset, loaded.parameter_names,
+                              {"gQ": q_vectors, "gS": s_vectors, "gJ": j_vectors}, tasks)
+        _write_csv(output / "parts" / f"task_gradient_gram_{asset}.csv", gram)
 
-    virtual_rows = _run_virtual_updates(loaded, data, batches, tasks, q_vectors, j_vectors)
-    _write_csv(output / "parts" / f"virtual_update_rows_{asset}.csv", virtual_rows)
+    specs = _virtual_update_specs(batches, tasks, q_vectors, j_vectors)
+    selected = [spec for index, spec in enumerate(specs) if index % num_shards == shard_index]
+    if len(specs) != 21 or not selected:
+        raise ValueError("E2 registered update partition changed")
+    virtual_rows = _run_virtual_updates(
+        loaded, data, tasks, q_vectors, j_vectors,
+        update_specs=selected, include_parent=shard_index == 0,
+    )
+    suffix = "" if num_shards == 1 else f"_shard_{shard_index:02d}_of_{num_shards:02d}"
+    _write_csv(output / "parts" / f"virtual_update_rows_{asset}{suffix}.csv", virtual_rows)
     data.close()
 
 
@@ -558,6 +577,9 @@ def main() -> None:
         command.add_argument("--device", default="cuda:0")
         if name in {"e1-probe", "e1-rollout", "e2"}:
             command.add_argument("--asset", required=True)
+        if name == "e2":
+            command.add_argument("--shard-index", type=int, default=0)
+            command.add_argument("--num-shards", type=int, default=1)
         if name == "e1-rollout":
             command.add_argument("--physical-gpu-id", type=int, required=True)
         if name == "e3-rollout":
@@ -579,7 +601,7 @@ def main() -> None:
     elif args.command == "e1-rollout":
         e1_rollout(output, device, args.asset, args.physical_gpu_id)
     elif args.command == "e2":
-        e2(output, device, args.asset)
+        e2(output, device, args.asset, shard_index=args.shard_index, num_shards=args.num_shards)
     elif args.command == "e3":
         e3(output, device, args.branch)
     else:

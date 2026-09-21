@@ -23,6 +23,12 @@ status/selection校验与既有控制器职责也需收敛。PR保持draft且未
 旧低LR detached runtime已确认工作树干净、两节点无引用进程并已移除；本次PR审查worktree也已删除，Git只保留
 canonical main worktree。全部正式study、checkpoint、raw rows、报告和PR分支保留。`paper-export`按Owner要求不使用。
 
+Owner随后追加约七小时无人值守授权：要求安全范围内充分利用GPU和墙钟。新session须在launch前预登记overnight预算；
+早停首次触发时保存原合同裁决，预算仍有余量时可从完整checkpoint继续单独标记的post-stop extension。主候选稳定运行
+后，若有不干扰它的GPU与足够完成完整结果的时间，可自主登记并执行一个高价值独立实验，优先候选为纯主FM基准；
+不做临时超参小扫或打开Test/FT/RL。运行监控依赖controller与完成信号，不进行十秒级轮询、不读部分分数、不派
+subagent反复监督。
+
 ## Writer输出空间与code投影诊断完整交付（2026-09-21）
 
 Owner要求执行专家最新方案。Active design为[Writer输出空间投影诊断](docs/writer_output_space_projection_design.md)：

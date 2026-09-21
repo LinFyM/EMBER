@@ -25,6 +25,25 @@ canonical 运行面。
 BLOCK，再合入并按 formal launch 合同启动唯一 fresh Writer。若 Owner 改为检验纯主 FM，应先登记新的单变量
 设计和配置，不能在 PR #3 下静默删除辅助项。两条实验不得并行启动，也不恢复 Test、FT、RL 或外部比较。
 
+### 本次约七小时无人值守窗口的追加授权
+
+Owner要求在其休息期间优先利用可安全使用的GPU与墙钟，不因某个节点先结束让整个阶段空转。新session应在首次
+正式launch前，根据实时GPU、已有吞吐和评测耗时登记一个与中间分数无关的overnight计算上限；可以用截止时间、
+最大完整Validation节点或两者中先到者表示。原早停规则仍在首次触发时立即写出正式裁决并冻结“按原合同停止”的
+结果；若预登记overnight预算尚有余量，Owner明确授权同一轨迹从完整checkpoint继续到overnight上限，作为单独标记的
+post-stop extension。最终同时报告原早停点、扩展节点和全程最高点，不能删除早停前后的不利节点，也不能把扩展写成
+原规则未触发。是否允许扩展节点参与最终checkpoint选择，必须在扩展启动前写入active design；不能看到分数后决定。
+
+主候选进入稳定后台运行后，若仍有不会干扰它的合格GPU和显著剩余时间，新session可自主开展一个有明确判别价值、
+能在窗口内形成完整结果的独立实验。优先考虑专家已指出的纯跨episode、随机flow time、完整horizon主FM基准；它须有
+独立config/study、明确单变量对照、完整Validation和资源边界，不能冒充PR #3的配对消融。不得临时做seed/LR/head小扫，
+不得打开Test、FT、RL或外部比较。若窗口不足以完成有意义的训练加完整评测，用余量完成实现、preflight、物化准备、
+报告或其它不依赖结果的工作，不为占卡启动低价值任务。
+
+运行期由detached controller承担训练、完整评测、早停记录和分段续行。主agent使用tmux完成信号、进程exit或控制器
+最终状态做阻塞等待；不得每10秒／每分钟轮询日志、GPU、部分分数、tmux或subagent状态。只在真正launch/resume前、
+完整节点完成、明确工程退出、controller异常消失或资源重新分配时读取一次所需状态。长等待不通过一轮轮LLM调用执行。
+
 ## 已完成目标：Writer输出空间与code投影诊断（2026-09-21）
 
 Owner授权按专家最新收敛方案执行[输出空间投影诊断合同](docs/writer_output_space_projection_design.md)。本轮只做

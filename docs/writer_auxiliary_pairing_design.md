@@ -27,10 +27,9 @@
 
 - `configs/libero_24_8_8_coverage_v1/writer_aux_cross_episode.json`：可供现有trainer读取的候选配置。
 - `src/ember/writer/training.py`：显式声明新变体后才允许36任务cross_episode；旧默认路径保持。
-- `src/ember/writer/auxiliary_pairing.py`：科学配置匹配检查、原采样器元数据重放、真实曝光核验、动态停止、选点和后继测量预算。
-- `scripts/writer_aux_pairing.py`：`preflight`和`status`两个CPU入口；可附加`status --finalize`写入正式选点/冻结声明。
-- `tests/test_writer_auxiliary_pairing.py`：配置拒绝、实际采样函数、损失范围/分母、早停、同分other与完整面板验证。
-- `docs/experiments/auxiliary_pairing_fresh_spec.json`：原执行规格及实现入口。
+- `src/ember/writer/auxiliary_pairing.py`：严格配置匹配、生产采样器的真实元数据重放，以及原same-video曝光核验。
+- `scripts/writer_aux_pairing.py`：唯一新增CPU入口，只执行上述preflight。
+- `tests/test_writer_training.py`和`tests/test_writer_data.py`：分别拥有opt-in配置与原采样器/辅助查询的回归验证。
 
 没有改动模型、原生forward、损失实现、数据角色或采样算法。日志字段`teaching_loss`为向后兼容继续保留；其episode语义由`data.teaching_episode`和真实事件记录确定。
 
@@ -39,15 +38,15 @@
 1. 在canonical仓库拉取本分支并审查差异；运行下述测试。按仓库约定集成/推送后，为实际运行创建clean pushed detached worktree。
 2. 在`progress.md`和`task_plan.md`登记本次单路fresh候选、状态与本设计；保留所有旧实验。这里的交付不宣称GPU任务已经启动。
 3. 使用canonical资产根和原coverage study，运行CPU preflight。原Source/数据不复制。
-4. 沿用现有本地分段controller、NUMA/torchrun包装器、materializer和官方evaluator。该脚本只提供机械决定，不另建GPU调度系统。
-5. 每200更新完成correct400后调用status；按其JSON完成下一段、全部同分other或最终测量。严格保留原资源上限与每次launch检查。
+4. 沿用现有coverage分段controller、NUMA/torchrun包装器、materializer和官方evaluator。controller继续拥有完整面板读取、`validation_decision`、同分other选点、冻结声明和测量分支；本PR不保留第二套status/selection/finalize代码。
+5. 每200更新完成correct400后，controller只在训练、物化、评测都完整退出且400行原件齐全时读取结果，再按既有选点合同进入下一段、同分other或预登记测量。严格保留原资源上限与每次launch检查。
 
 ```bash
-# 使用仓库既有Python环境。
-PYTHONPATH=src python -m pytest -q tests/test_writer_auxiliary_pairing.py
+# 使用仓库既有Python环境；新断言归入现有所有者。
+PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_writer_training.py tests/test_writer_data.py
 
 # ASSET_ROOT、REFERENCE_STUDY、STUDY由canonical资产解析；不要填到Git配置里。
-PYTHONPATH=src python scripts/writer_aux_pairing.py preflight \
+PYTHONPATH=src .venv/bin/python scripts/writer_aux_pairing.py \
   --asset-root "$ASSET_ROOT" \
   --reference-exposures "$REFERENCE_STUDY/training/writer/exposures.jsonl" \
   --output "$STUDY/launch/preflight.json"
@@ -65,7 +64,7 @@ PYTHONPATH=src python scripts/writer_aux_pairing.py preflight \
 
 后续区段保持配置，增加`--resume <STUDY>/training/writer/checkpoints/macro_00000200`并将stop推进至400，依此类推。
 首次fresh禁止`--extend-from`或`--phase-from`；恢复候选自己的checkpoint沿用现有exact-resume检查。
-配置中的profile是对原同架构四卡profile的明确复用，字段`new_profile_executed=false`；正式launch仍需本地检查实际资源与首次更新。
+配置中的profile沿用已登记的同架构四卡观测；正式launch仍需本地检查实际资源与首次更新。
 
 物化/评测输出目录沿用：
 
@@ -75,32 +74,11 @@ PYTHONPATH=src python scripts/writer_aux_pairing.py preflight \
 # other分别使用 _other 后缀。
 ```
 
-```bash
-PYTHONPATH=src python scripts/writer_aux_pairing.py status \
-  --study "$STUDY" --endpoint 200
-```
-
-`selection_plan.status`只会要求继续下一段、补全最高correct并列节点的other400，或返回唯一selected候选。
-所有400行、worker退出、checkpoint与视频映射必须完整；存在partial目录时拒绝把它作为结果使用。
-资源边界沿用后文六节点无新高规则。停止或平台时不把117/155参照分数混入候选自己的早停历史。
-
-停止且同分other齐全后：
-
-```bash
-PYTHONPATH=src python scripts/writer_aux_pairing.py status \
-  --study "$STUDY" --endpoint "$LAST_COMPLETE_STEP" --finalize
-```
-
-它写入新study的`writer_aux_selection.json`。仅当分数分支需要controls时，再写`method_freeze.json`和`launch/writer_selected_<step>_diagnostic_contract.json`，供既有materializer使用。
-已存在的不同选点声明不会被覆盖。旧study的选定Writer/MT-BC始终不改写。
-最终测量预算来自`selection_plan.controls_required`；它不给Test/FT/RL授权，也不根据wrong/order成绩重选模型。
-本地controller负责实际GPU命令和完成后的图文导出，复用当前报告/绘图入口；不需要重建训练器。
+controller保留原有的完整性检查：400个唯一task/state行、worker全0退出、materialization manifest、固定视频映射与checkpoint/run-contract一致。资源边界沿用后文六节点无新高规则；停止或平台时不把117/155参照分数混入候选自己的早停历史。停止且同分other齐全后，controller写入本study自己的selection、`method_freeze.json`和诊断声明；旧study的选定Writer/MT-BC绝不改写。最终测量分支不给Test/FT/RL授权，也不根据wrong/order成绩重选模型。
 
 ## 验证范围
 
-在当前隔离工作环境中，CPU单测为60 passed、1 skipped，修改文件通过语法编译。纯生产函数从固定源码直接执行；原training.py与原配置使用Git对象内容核对后再修改。
-跳过项是完整LeRobot依赖环境下的trainer-parser集成检查；这里没有服务器资产、完整LeRobot栈或GPU训练环境。
-本地Codex应在项目既有环境补跑该项和必要的原回归测试。实际metadata/历史exposures核验由上述preflight完成，未运行前不能报告通过。
+当前分支尚未把重构后的测试或preflight标记为通过。`test_writer_training.py`覆盖显式opt-in，`test_writer_data.py`覆盖真实采样器的主/辅助事件关系；实际metadata/历史exposures核验只能由上述preflight完成，未运行前不能报告通过。
 这些测试证明实现与协议检查的局部行为，不证明候选性能，也不替代正式GPU资格。
 
 ---
@@ -109,7 +87,7 @@ PYTHONPATH=src python scripts/writer_aux_pairing.py status \
 
 ## 0. 决定、证据状态与授权范围
 
-依据远程快照：`main@7f62c7b70e608e0dc97d06cb7004a698fd5b5fea`。
+实现基线为`main@78b03bd3d2d9094f825811f573144cfc8d876ff7`；same-video参照配置及其原始覆盖运行仍锚定于`7f62c7b70e608e0dc97d06cb7004a698fd5b5fea`。
 
 本计划建议执行一条新的 fresh Writer 轨迹，保留共同 Source-71、当前 36 个训练任务、模型结构和训练配方，仅将 7 个辅助动作查询改成同任务另一 episode。原覆盖训练的 same-video 轨迹作为已经完成的比较参照。
 

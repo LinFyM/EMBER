@@ -173,9 +173,8 @@
   "evidence": {
     "checkpoint_updates": [],
     "comparison": {
-      "arm": "coverage36_cross_episode_endpoint_prefix",
-      "reference": "coverage36_same_video_teaching",
-      "intervention": "Only the seven endpoint-prefix queries use a different same-task episode; no claim of root-cause repair."
+      "arm": "coverage36_same_video_teaching",
+      "intervention": "owner semantic coverage and dynamic training; old split is historical evidence only"
     },
     "final_checkpoint_selection": "best_complete_validation_correct_then_uniform_tied_other_then_earliest",
     "fresh_initialization": {
@@ -195,18 +194,17 @@
       "bootstrap_seed": 20260915,
       "confidence": 0.95,
       "final_primary": [
-        "selected_cross_episode_minus_frozen_mtbc300"
+        "same_video_minus_matched_cross_episode_teaching_if_triggered"
       ],
       "primary": [
-        "cross_episode_minus_same_video_at_matched_step"
+        "same_video_teaching_minus_historical_A_at_matched_node"
       ],
       "unit": "task_cluster"
     },
     "profile_registration": {
       "status": "complete",
-      "basis": "reuse_existing_coverage_same_architecture_profile",
       "world_size": 4,
-      "reference_config": "configs/libero_24_8_8_coverage_v1/writer.json",
+      "reference": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/profiles/writer",
       "native_frame_chunk": 8,
       "policy_microbatches": [
         16,
@@ -214,9 +212,11 @@
         16,
         16
       ],
-      "new_profile_executed": false,
-      "formal_initialization": "fresh; no old Writer/MT-BC/profile weights reused",
-      "local_requirement": "Confirm asset access, NUMA, GPU availability and quota before launch."
+      "formal_initialization": "fresh; no profile weights reused",
+      "validated_updates": 10,
+      "exact_resume": "macro9 to10, full optimizer/scheduler/sampler/RNG restored",
+      "mean_update_seconds": 9.436857871918214,
+      "peak_reserved_gib": 21.376953125
     },
     "protocol_migrations": [
       "target24 plus audited source12",
@@ -410,12 +410,11 @@
       ]
     },
     "post_selection_controls": [
-      "same_task_other",
       "cross_suite_wrong",
       "shuffled",
-      "reversed"
-    ],
-    "measurement_policy": "docs/experiments/auxiliary_pairing_fresh_spec.json"
+      "reversed",
+      "no_video"
+    ]
   },
   "execution_precision": "native_bf16_writer_fm_fp32_lora",
   "model": {

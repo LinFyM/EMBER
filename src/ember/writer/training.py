@@ -69,8 +69,6 @@ def _validate_dynamic_schedule(config):
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     require_continuation_config(config)
-    if "experiment" in config and config.get("training_control") is None:
-        raise ValueError("registered auxiliary-pairing experiments require dynamic training")
     expected_data = {
         "extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
         "queries_per_task": 21, "tasks_per_update": 4, "conditions_per_task": 1, "cardinalities": [1],

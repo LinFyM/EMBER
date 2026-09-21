@@ -1,5 +1,9 @@
 # EMBER progress
 
+## 远端差异审计材料补交（2026-09-21）
+
+Owner要求把专家分析旧/新Writer差异所需及相邻材料推送远端。已从现有正式原件只读导出[诊断包](docs/review_materials/20260921/coverage_retraining/diagnostics/README.md)：旧Writer5、新Writer9、新MT-BC10及Source节点和已完成的视频对照共34个Validation400面板的13,600行精简成功标记；逐节点逐任务、相邻成功集合、旧1200/新1800五个共同held任务配对；旧/新Writer3,900更新指标及15,600任务曝光、按step/occurrence分组汇总、训练/评测Git与轮转位置；新MT-BC500更新指标。导出脚本和数据口径一并保留。完整checkpoint、视频与原始run contracts仍在study，不复制进Git。该补交不改科学资格裁决：新Test、FT、RL和外部比较仍等待Owner决定。
+
 ## Writer冻结与MT-BC续行（2026-09-21）
 
 两条训练与五个Writer Validation视频臂结束后，核对gpu01/gpu02无本轮runtime进程，五个clean detached frozen worktree已用`git worktree remove`清理；Git现只保留main worktree，运行代码仍由已记录并已推送的commit追溯。selected Writer1000的other/wrong/shuffled/reversed四个bank各400个可再生LoRA payload退休，合计名义8,257,888,000字节，逐bank`payload_retirement.json`记录完整checkpoint及保留物；manifest、正式400行结果、worker日志与checkpoint未删。最终停止节点Writer1800 bank仍按原保留合同持有payload。`.codex/tmp`其它约402MiB内容未确认归属，保持不动。两模型训练/Validation阶段图文报告和原始CSV/JSON已推送main；Writer内容特异性不清楚的新Test暂停裁决未变。

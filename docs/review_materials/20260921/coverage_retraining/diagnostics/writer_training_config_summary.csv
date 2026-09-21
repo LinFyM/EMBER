@@ -1,0 +1,22 @@
+section,field,old,new
+optimization,lr,0.0003,0.0003
+optimization,warmup_updates,100,150
+optimization,decay_updates,12000,18000
+optimization,decay_lr,1e-05,1e-05
+optimization,tail_start_update,900,1350
+optimization,tail_end_update,1500,2250
+optimization,tail_final_ratio,0.1,0.1
+optimization,teaching_weight,0.3333333333333333,0.3333333333333333
+optimization,betas,"[0.9, 0.95]","[0.9, 0.95]"
+optimization,grad_clip,1.0,1.0
+data,task_ids,"[0, 2, 4, 5, 7, 9, 12, 14, 15, 16, 18, 19, 20, 21, 22, 25, 28, 29, 34, 35, 36, 37, 38, 39]","[0, 1, 2, 4, 5, 7, 12, 13, 14, 15, 17, 19, 20, 21, 22, 25, 28, 29, 32, 34, 35, 36, 37, 38, 42, 43, 51, 55, 56, 62, 64, 73, 95, 96, 97, 101]"
+data,tasks_per_update,4,4
+data,queries_per_task,21,21
+data,teaching_queries_per_task,7,7
+data,video_demos,"[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45]","[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45]"
+data,action_demos,"[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45]","[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45]"
+data,teacher_video_seed,20260722,20260722
+data,sampler_seed,20260721,20260721
+observer,frame_chunk,16,8
+observer,camera_view,agentview,agentview
+observer,horizon_read,repeated_content_position_attention_over_all_50_raw_H_values,repeated_content_position_attention_over_all_50_raw_H_values

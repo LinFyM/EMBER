@@ -1,10 +1,13 @@
 # Active design：36任务 Writer 辅助 episode 配对 fresh 对照（2026-09-22）
 
-状态：已登记、尚未启动训练、物化或闭环。正式study根预留为
-`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`；首次launch的commit、GPU/quota快照、
-overnight上限及post-stop extension选点资格只能在live formal preflight后写入该study的run contract和本文件，不能根据
-中间分数补改。原same-video、旧24任务消融与低LR修复的配置和结果保持原样。当前实现仅开放本文件登记的一个fresh
-cross-episode候选。
+状态：formal preflight已登记、尚未启动训练、物化或闭环。study根为
+`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`，run contract为
+`launch/launch_contract.json`；runtime固定为clean pushed detached `64947492`。2026-09-22 03:10 CST的双节点快照中，
+gpu01无安全训练卡；gpu02:0--3均为低util、已知owner `gqma`的小显存共驻，最小空闲45858 MiB，按旧Writer
+22.803 GiB峰值登记四卡frame8。data0/data1独立quota和data0共享余量均通过16 GiB峰值预算。当前窗口的训练上限
+预注册为correct400完整节点1200；首次原早停记录独立冻结，之后的post-stop extension节点允许参与单独的extended-run
+最终选点，均不得根据中间分数补改。原same-video、旧24任务消融与低LR修复的配置和结果保持原样。当前实现仅开放本文件
+登记的一个fresh cross-episode候选。
 
 ## 两个损失的精确定义
 
@@ -212,15 +215,17 @@ T 个实际更新对应 4T 次视频条件、84T 主查询、28T 辅助查询。
 
 统计历史仅使用此fresh轨迹。N1000/117和M300/155只作参照线，不写入候选自己的早停历史。
 
-### 5.1 无人值守预算与post-stop extension（首次live preflight后生效）
+### 5.1 已登记的无人值守预算与post-stop extension
 
-首次formal launch前，根据双节点实际安全GPU、独立quota、旧四卡frame8训练耗时和完整correct400耗时，在study的
-launch contract中预先填写最大完整Validation节点（必要时再加固定截止时间）与控制面板预留。该上限独立于任何
-中间成功率。首次触发原两条早停规则时，controller立即保存触发节点、理由、截至该点的原合同选点和最佳checkpoint。
+2026-09-22 03:10 CST formal preflight以gpu02:0--3四卡frame8登记训练节点`200..1200`，而非读取任何中间成功率决定。
+成本上限使用旧四卡mean update 9.8246 s、correct400评测873.25 s、每面板377 s物化/控制余量：1200训练和六个
+correct400预计19289 s，另预留四个选中节点测量面板5000 s；data0额外峰值预算16 GiB。gpu01没有安全训练卡，且剩余
+GPU没有不干扰主候选、能完成一条训练加完整400的余量，因此本窗口不启动纯主FM基准。
 
-若预登记预算尚有余量，controller可从该完整checkpoint继续到已登记上限，所有后续完整节点标为post-stop extension；
-不得删除下降节点或重写原早停事实。extension是否参与一份独立的extended-run最终选点，及该选点是否触发本设计§6的
-冻结后测量，必须在extension开始前写入launch contract，且不能由extension成绩决定。
+首次触发原两条早停规则时，controller立即保存触发节点、理由、截至该点的完整历史、最佳checkpoint集合和
+`original_early_stop_selection.json`。若同分最高需要other400，先完成这些选点前提再继续；随后同一轨迹可仅到节点1200，
+所有新节点标为post-stop extension。原合同选点保持冻结；extension节点预先允许参与独立`extended_run_final_selection.json`，
+并按相同correct/other/earliest规则决定其冻结后测量。不得删除下降节点、重写原早停事实或依据extension成绩改变上限。
 
 ## 6. 模型选择与自动后继工作
 

@@ -13,9 +13,11 @@ controller继续拥有完整400读取、早停、同分other选点、冻结与�
 不证明性能。架构门禁已无硬违规；动态 Writer 普通恢复可显式记录物理拓扑切换，同时保持逻辑更新、任务权重、
 optimizer、scheduler与事件计划。
 
-尚未启动训练、物化或闭环。首次 formal launch 前必须从clean pushed detached runtime取得双节点GPU/进程与
-data0/data1独立quota快照，并在设计和run contract中写入实际GPU安排、峰值预算、最大完整Validation节点和
-post-stop extension的选点资格。不会在本合同下静默删除辅助项、启动纯主FM、Test、FT、RL或外部比较。
+formal preflight已登记但尚未启动训练、物化或闭环：runtime为clean pushed detached`64947492`，gpu02:0--3四卡
+frame8在低util、已知`gqma`共驻下有最小45858 MiB空闲；gpu01无安全训练卡。data0/data1独立quota和data0共享余量
+满足16 GiB峰值预算。与中间分数无关的训练上限为correct400节点1200；原早停选点冻结，post-stop extension节点
+预先允许参与单独最终选点。该快照将在真正launch前由controller重新核验；不会在本合同下静默删除辅助项、启动纯主FM、
+Test、FT、RL或外部比较。
 
 ### 本次约七小时无人值守窗口的追加授权
 

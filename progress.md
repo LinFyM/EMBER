@@ -18,10 +18,13 @@ controller、完整面板和选点入口。最终事件preflight以真实coverag
 continuation/low-LR phase。相关完整Writer训练回归为59 passed，拓扑目标回归为4 passed，architecture guard为
 REVIEW且无硬违规。
 
-正式study根预留为`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`，但尚未创建或启动
-GPU任务。下一步是将当前变更提交推送、创建detached runtime，然后一次性获取gpu01/gpu02与data0/data1实时
-preflight，登记实际设备、peak预算、与中间分数无关的overnight最大完整节点和post-stop extension选点资格。
-Test、FT、RL、外部比较和纯主FM均未启动；`paper-export`不使用。
+formal study根已创建为`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`，尚未启动GPU任务。
+2026-09-22 03:10 CST live preflight：gpu01所有卡已有高util或不足余量的他人任务；gpu02:0--3为同一已知`gqma`小显存、
+0% util共驻，最小空闲45858 MiB，故按旧22.803 GiB Writer峰值登记四卡frame8。data0 quota为124210612/1073741824 KiB、
+data1为901849716/1073741824 KiB，data0共享可用1177469952 KiB；16 GiB峰值预算通过。launch contract固定训练节点
+200..1200、四个选中测量面板预留、原早停记录和允许进入独立最终选点的post-stop extension。controller将在真正launch
+前重新核验相同设备身份/余量，且只在真实分段边界再查资源。没有足够不干扰的GPU/墙钟启动独立纯主FM；Test、FT、RL、
+外部比较均未启动，`paper-export`不使用。
 
 ## Writer输出空间与code投影诊断完整交付（2026-09-21）
 

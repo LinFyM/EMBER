@@ -20,6 +20,16 @@ checkpoint未写入。修复只把代码runtime与canonical只读asset root分�
 恢复545/545个AdamW状态，Adam step为1200/1800；原生frame chunk16/8及原checkpoint world2/4均与
 资产一致，正式stderr为空。E0没有更新参数，准许按固定合同进入E1。
 
+E1已完整结束。E1-A六模型各288条固定动作探针全部exit0，共1728行；合并表逐条件加入相对Source的
+10步flow前5步动作差值。E1-B先以Source的52条正式批次验证闭环、轨迹与阶段谓词链，再在五张物理卡上
+并行其余模型；六模型共280条、280个轨迹，全部exit0、stderr为空，成功标记与最终目标谓词一致。首次
+Source闭环在任何episode前因未设置sealed LIBERO assets环境exit1，故障栈与旧exit保留；修复只补运行资产
+authority，没有改变面板、状态、视频、RNG或模型。E1合并表、轨迹索引与事实汇总位于正式study根。
+
+E2在E1完整验收后启动：gpu01:0运行O1200、gpu02:1运行N1800，同用当前36任务事件1801..1809及固定
+`1.6279650115e-4`。两进程分别计算完整gQ/gS/gJ、Gram矩阵、21个独立Adam单步和20个norm-matched副本；
+当前仍在运行，未读取部分指标。E3继续等待E2完整exit与正式产物，不跨阶段提前启动。
+
 ## 远端差异审计材料补交（2026-09-21）
 
 Owner要求把专家分析旧/新Writer差异所需及相邻材料推送远端。已从现有正式原件只读导出[诊断包](docs/review_materials/20260921/coverage_retraining/diagnostics/README.md)：旧Writer5、新Writer9、新MT-BC10及Source节点和已完成的视频对照共34个Validation400面板的13,600行精简成功标记；逐节点逐任务、相邻成功集合、旧1200/新1800五个共同held任务配对；旧/新Writer3,900更新指标及15,600任务曝光、按step/occurrence分组汇总、训练/评测Git与轮转位置；新MT-BC500更新指标。导出脚本和数据口径一并保留。完整checkpoint、视频与原始run contracts仍在study，不复制进Git。该补交不改科学资格裁决：新Test、FT、RL和外部比较仍等待Owner决定。

@@ -24,7 +24,7 @@ from ember.writer.stability_diagnostics import FrozenPolicy, LoadedWriter
 COMMON_HELD_TASKS = (3, 11, 23, 26, 31)
 TRAIN_PANEL_TASKS = (5, 7, 12, 37, 43, 96, 51, 73)
 E1_TRAIN_MODELS = {"O1500", "N1000", "N1800", "M300", "S1000"}
-EVALUATION_CONFIG = "configs/pi05_target_evaluation_v1.json"
+EVALUATION_CONFIG = "configs/libero_24_8_8_coverage_v1/evaluation.json"
 CURRENT_PROTOCOL = "configs/libero_24_8_8_coverage_v1/protocol.json"
 
 
@@ -228,4 +228,3 @@ def run_asset_rollouts(
     if len(rows) != expected:
         raise ValueError(f"diagnostic rollout row count changed: {len(rows)} != {expected}")
     return rows
-

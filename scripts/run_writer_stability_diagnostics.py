@@ -451,7 +451,7 @@ def e2(output: Path, device: torch.device, asset: str) -> None:
     batches = event_window(data, first_step=1801, last_step=1809)
     cache = VideoConditionCache(loaded.runtime, data, 2**30)
     tasks = [int(draw["task"]) for batch in batches for draw in batch]
-    if len(tasks) != len(set(tasks)) != 0 or set(tasks) != set(data.task_ids):
+    if len(tasks) != 36 or len(set(tasks)) != 36 or set(tasks) != set(data.task_ids):
         raise ValueError("E2 events1801..1809 do not cover each current task exactly once")
     q_vectors, s_vectors, j_vectors, metric_rows = [], [], [], []
     draws = {int(draw["task"]): draw for batch in batches for draw in batch}

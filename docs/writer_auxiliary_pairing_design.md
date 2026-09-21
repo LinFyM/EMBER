@@ -1,6 +1,10 @@
-# 实现交付说明（2026-09-22）
+# Active design：36任务 Writer 辅助 episode 配对 fresh 对照（2026-09-22）
 
-状态：计划与代码已准备；尚未启动任何训练、物化或闭环。原same-video、旧24任务消融与低LR修复的配置和结果保持原样。当前实现仅开放本文件登记的一个fresh cross-episode候选。
+状态：已登记、尚未启动训练、物化或闭环。正式study根预留为
+`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`；首次launch的commit、GPU/quota快照、
+overnight上限及post-stop extension选点资格只能在live formal preflight后写入该study的run contract和本文件，不能根据
+中间分数补改。原same-video、旧24任务消融与低LR修复的配置和结果保持原样。当前实现仅开放本文件登记的一个fresh
+cross-episode候选。
 
 ## 两个损失的精确定义
 
@@ -27,18 +31,19 @@
 
 - `configs/libero_24_8_8_coverage_v1/writer_aux_cross_episode.json`：可供现有trainer读取的候选配置。
 - `src/ember/writer/training.py`：显式声明新变体后才允许36任务cross_episode；旧默认路径保持。
+- `src/ember/ecp/checkpoint.py`：默认同拓扑full-state恢复；仅ordinary dynamic resume的显式opt-in可以转换物理world size。
 - `src/ember/writer/auxiliary_pairing.py`：严格配置匹配、生产采样器的真实元数据重放，以及原same-video曝光核验。
 - `scripts/writer_aux_pairing.py`：唯一新增CPU入口，只执行上述preflight。
 - `tests/test_writer_training.py`和`tests/test_writer_data.py`：分别拥有opt-in配置与原采样器/辅助查询的回归验证。
 
 没有改动模型、原生forward、损失实现、数据角色或采样算法。日志字段`teaching_loss`为向后兼容继续保留；其episode语义由`data.teaching_episode`和真实事件记录确定。
 
-## 本地Codex接入顺序
+## 已登记的执行顺序
 
-1. 在canonical仓库拉取本分支并审查差异；运行下述测试。按仓库约定集成/推送后，为实际运行创建clean pushed detached worktree。
-2. 在`progress.md`和`task_plan.md`登记本次单路fresh候选、状态与本设计；保留所有旧实验。这里的交付不宣称GPU任务已经启动。
+1. PR #3已收敛、合入并推送；所有平行status/selection入口已删除。当前canonical代码仍须在实际launch前以clean pushed detached worktree固定。
+2. 已在`progress.md`和`task_plan.md`登记本次单路fresh候选、状态与本设计；保留所有旧实验，且不把CPU验证写成GPU资格。
 3. 使用canonical资产根和原coverage study，运行CPU preflight。原Source/数据不复制。
-4. 沿用现有coverage分段controller、NUMA/torchrun包装器、materializer和官方evaluator。controller继续拥有完整面板读取、`validation_decision`、同分other选点、冻结声明和测量分支；本PR不保留第二套status/selection/finalize代码。
+4. 沿用现有coverage分段controller、NUMA/torchrun包装器、materializer和官方evaluator。controller继续拥有完整面板读取、`validation_decision`、同分other选点、冻结声明和测量分支；本设计不保留第二套status/selection/finalize代码。
 5. 每200更新完成correct400后，controller只在训练、物化、评测都完整退出且400行原件齐全时读取结果，再按既有选点合同进入下一段、同分other或预登记测量。严格保留原资源上限与每次launch检查。
 
 ```bash
@@ -63,8 +68,10 @@ PYTHONPATH=src .venv/bin/python scripts/writer_aux_pairing.py \
 ```
 
 后续区段保持配置，增加`--resume <STUDY>/training/writer/checkpoints/macro_00000200`并将stop推进至400，依此类推。
-首次fresh禁止`--extend-from`或`--phase-from`；恢复候选自己的checkpoint沿用现有exact-resume检查。
-配置中的profile沿用已登记的同架构四卡观测；正式launch仍需本地检查实际资源与首次更新。
+首次fresh禁止`--extend-from`或`--phase-from`。默认恢复要求同物理拓扑；仅ordinary dynamic resume可显式附加
+`--allow-topology-change`，从完整候选checkpoint恢复模型、optimizer、scheduler、sampler与immutable events，同时登记
+`topology_transitions.jsonl`。它不适用于continuation或low-LR phase，且不承诺随机轨迹或低位浮点bitwise相同。
+配置中的profile沿用已登记的同架构四卡观测；首次formal launch仍须使用world4并检查实际资源与首次更新。
 
 物化/评测输出目录沿用：
 
@@ -87,7 +94,8 @@ controller保留原有的完整性检查：400个唯一task/state行、worker全
 
 ## 0. 决定、证据状态与授权范围
 
-实现基线为`main@78b03bd3d2d9094f825811f573144cfc8d876ff7`；same-video参照配置及其原始覆盖运行仍锚定于`7f62c7b70e608e0dc97d06cb7004a698fd5b5fea`。
+实现基线为合入PR #3后的canonical `main`；实际clean pushed detached runtime commit写入launch contract。same-video
+参照配置及其原始覆盖运行仍锚定于`7f62c7b70e608e0dc97d06cb7004a698fd5b5fea`。
 
 本计划建议执行一条新的 fresh Writer 轨迹，保留共同 Source-71、当前 36 个训练任务、模型结构和训练配方，仅将 7 个辅助动作查询改成同任务另一 episode。原覆盖训练的 same-video 轨迹作为已经完成的比较参照。
 
@@ -148,7 +156,8 @@ teacher、21 主查询、任务序列、主 RNG 必须与原 fresh 覆盖训练�
 3. 辅助合法位置 p 满足 p 为 stride5 位置且后面有 5 个真实动作；保留不足7位置时登记有放回的既有行为。
 4. 正确 mean_21 / mean_7 / 1/3 / task_weight；禁止额外除 world_size。
 5. 相同构造和 initialization seed 应产生相同初始 Writer/Meta；若原始 step0 资产缺失，记录“由相同构造重建检查”，不能写成比对了不存在的原资产。
-6. fresh optimizer 状态确实为空；恢复候选自己的 checkpoint 后 cursor、LR 与 RNG 连续。
+6. fresh optimizer 状态确实为空；同拓扑恢复候选自己的checkpoint后cursor、LR与RNG连续。显式拓扑转换只允许在完整
+   ordinary dynamic checkpoint后发生，必须记录新旧world size、RNG来源和保持不变的逻辑更新/optimizer/scheduler/sampler。
 7. 原 same-video 动态配置、旧24任务消融配置和既有评测不被新接口破坏。
 
 没有具体异常就不扩大 E0/E1/E2，也不增加额外闭环 smoke。第一条正式更新检查 finite、实际 LR、任务与辅助事件；工程通过后继续同一条轨迹。
@@ -181,7 +190,9 @@ teacher、21 主查询、任务序列、主 RNG 必须与原 fresh 覆盖训练�
 
 本轮保留原 LR 日程，避免同时检验新优化计划。日程的已知局限仍记录。不能继承最近低LR修复阶段的固定 2.959936e-5。
 
-若原拓扑无法安全使用，应等待合法资源或报告资源阻塞；不静默改拓扑/精度后宣称逐步等价。物理 microbatch 的合法调整依现有数值/逻辑合同登记，无需为填满显存而改变数学 batch。
+首次formal launch优先且只使用已登记的world4/frame8。后续完整checkpoint若原拓扑不再安全可用，ordinary dynamic
+resume可显式登记物理拓扑转换；不得静默改拓扑/精度后宣称逐步等价。物理microbatch的合法调整依现有数值/逻辑合同
+登记，无需为填满显存而改变数学batch。
 
 T 个实际更新对应 4T 次视频条件、84T 主查询、28T 辅助查询。日志与完成统计使用真实执行量，不将样本重复计为新演示。
 
@@ -200,6 +211,16 @@ T 个实际更新对应 4T 次视频条件、84T 主查询、28T 辅助查询。
 - 非finite、资源失败、流程异常或Owner stop标为对应中断；保留最近完整状态。
 
 统计历史仅使用此fresh轨迹。N1000/117和M300/155只作参照线，不写入候选自己的早停历史。
+
+### 5.1 无人值守预算与post-stop extension（首次live preflight后生效）
+
+首次formal launch前，根据双节点实际安全GPU、独立quota、旧四卡frame8训练耗时和完整correct400耗时，在study的
+launch contract中预先填写最大完整Validation节点（必要时再加固定截止时间）与控制面板预留。该上限独立于任何
+中间成功率。首次触发原两条早停规则时，controller立即保存触发节点、理由、截至该点的原合同选点和最佳checkpoint。
+
+若预登记预算尚有余量，controller可从该完整checkpoint继续到已登记上限，所有后续完整节点标为post-stop extension；
+不得删除下降节点或重写原早停事实。extension是否参与一份独立的extended-run最终选点，及该选点是否触发本设计§6的
+冻结后测量，必须在extension开始前写入launch contract，且不能由extension成绩决定。
 
 ## 6. 模型选择与自动后继工作
 
@@ -271,7 +292,9 @@ C. 候选最高 >=156：
 
 禁止用无科学收益的GPU工作填满空闲时间。流程成功或失败都执行材料封存与推送。
 
-工程故障：从最近完整候选checkpoint恢复相同条件；同类故障最多两次修复重试，仍失败则记录阻塞并退出。不得把资源中断写成持续下降或收敛。若修复改变数学目标/数值算法，停止并登记，不继续作为原因果对照。
+工程故障：从最近完整候选checkpoint恢复相同条件；默认同拓扑exact resume，若必须转换物理world size，只走上述显式
+ordinary dynamic恢复并保留其RNG边界。同类故障最多两次修复重试，仍失败则记录阻塞并退出。不得把资源中断写成持续下降
+或收敛。若修复改变数学目标/数值算法，停止并登记，不继续作为原因果对照。
 
 所有正式运行来自clean、pushed、detached runtime，不原地改写正在运行的代码。
 

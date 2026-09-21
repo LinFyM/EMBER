@@ -1,4 +1,4 @@
-"""Hashless exact-resume checkpoints shared by ECP training stages."""
+"""Hashless full-state checkpoints with exact restore by default."""
 
 from __future__ import annotations
 
@@ -115,6 +115,63 @@ def save_ecp_checkpoint(
     return final
 
 
+def _checkpoint_world_size(
+    manifest: Mapping[str, Any],
+    *,
+    stage: str,
+    macro: int,
+    context: DistributedContext,
+    run_contract_schema: str,
+    allow_world_size_change: bool,
+) -> int:
+    world_size = int(manifest.get("world_size", -1))
+    expected_files = {
+        "ecp.safetensors",
+        "trainer_state.pt",
+        *(f"rank_{rank:02d}_state.pt" for rank in range(world_size)),
+    }
+    if (
+        manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
+        or manifest.get("stage") != stage
+        or int(manifest.get("next_macro", -1)) != macro
+        or world_size <= 0
+        or (not allow_world_size_change and world_size != context.world_size)
+        or manifest.get("run_contract_schema") != run_contract_schema
+        or set(manifest.get("files", {})) != expected_files
+    ):
+        raise ValueError("ECP checkpoint authority changed")
+    return world_size
+
+
+def _load_rank_states(checkpoint: Path, *, stage: str, macro: int, world_size: int) -> list[dict[str, Any]]:
+    states = [
+        torch.load(checkpoint / f"rank_{rank:02d}_state.pt", map_location="cpu", weights_only=False)
+        for rank in range(world_size)
+    ]
+    for rank, state in enumerate(states):
+        if (
+            state.get("schema_version") != ECP_CHECKPOINT_SCHEMA
+            or state.get("stage") != stage
+            or int(state.get("rank", -1)) != rank
+            or int(state.get("world_size", -1)) != world_size
+            or int(state.get("next_macro", -1)) != macro
+        ):
+            raise ValueError("ECP checkpoint cursor changed")
+    return states
+
+
+def _validate_trainer_state(
+    trainer: Mapping[str, Any], *, stage: str, macro: int, expected_sampler_state: Mapping[str, Any] | None
+) -> None:
+    if (
+        trainer.get("schema_version") != ECP_CHECKPOINT_SCHEMA
+        or trainer.get("stage") != stage
+        or int(trainer.get("next_macro", -1)) != macro
+        or (expected_sampler_state is not None and trainer.get("sampler_state") != dict(expected_sampler_state))
+    ):
+        raise ValueError("ECP checkpoint cursor changed")
+
+
 def load_ecp_checkpoint(
     *,
     checkpoint: Path,
@@ -126,23 +183,14 @@ def load_ecp_checkpoint(
     run_contract_schema: str,
     expected_sampler_state: Mapping[str, Any] | None = None,
     restored_state: dict[str, Any] | None = None,
+    allow_world_size_change: bool = False,
 ) -> tuple[int, int]:
     macro = checkpoint_macro(checkpoint)
     manifest = read_json(checkpoint / "checkpoint_manifest.json")
-    expected_files = {
-        "ecp.safetensors",
-        "trainer_state.pt",
-        *(f"rank_{rank:02d}_state.pt" for rank in range(context.world_size)),
-    }
-    if (
-        manifest.get("schema_version") != ECP_CHECKPOINT_SCHEMA
-        or manifest.get("stage") != stage
-        or int(manifest.get("next_macro", -1)) != macro
-        or int(manifest.get("world_size", -1)) != context.world_size
-        or manifest.get("run_contract_schema") != run_contract_schema
-        or set(manifest.get("files", {})) != expected_files
-    ):
-        raise ValueError("ECP checkpoint authority changed")
+    checkpoint_world_size = _checkpoint_world_size(
+        manifest, stage=stage, macro=macro, context=context, run_contract_schema=run_contract_schema,
+        allow_world_size_change=allow_world_size_change,
+    )
     for name, record in manifest["files"].items():
         path = checkpoint / name
         if not path.is_file() or path.stat().st_size != int(record["bytes"]):
@@ -154,26 +202,21 @@ def load_ecp_checkpoint(
     trainer = torch.load(
         checkpoint / "trainer_state.pt", map_location="cpu", weights_only=False
     )
-    rank_state = torch.load(
-        checkpoint / f"rank_{context.rank:02d}_state.pt",
-        map_location="cpu",
-        weights_only=False,
+    _validate_trainer_state(trainer, stage=stage, macro=macro, expected_sampler_state=expected_sampler_state)
+    rank_states = _load_rank_states(
+        checkpoint, stage=stage, macro=macro, world_size=checkpoint_world_size
     )
-    if (
-        trainer.get("schema_version") != ECP_CHECKPOINT_SCHEMA
-        or trainer.get("stage") != stage
-        or rank_state.get("schema_version") != ECP_CHECKPOINT_SCHEMA
-        or rank_state.get("stage") != stage
-        or int(rank_state.get("rank", -1)) != context.rank
-        or int(rank_state.get("world_size", -1)) != context.world_size
-        or int(trainer.get("next_macro", -1)) != macro
-        or int(rank_state.get("next_macro", -1)) != macro
-        or (expected_sampler_state is not None and trainer.get("sampler_state") != dict(expected_sampler_state))
-    ):
-        raise ValueError("ECP checkpoint cursor changed")
     optimizer.load_state_dict(trainer["optimizer"])
     scheduler.load_state_dict(trainer["scheduler"])
-    restore_rng(rank_state["rng"], context)
+    if context.rank < checkpoint_world_size:
+        restore_rng(rank_states[context.rank]["rng"], context)
     if restored_state is not None:
         restored_state.update(sampler_state=trainer.get("sampler_state"), training_state=trainer.get("training_state"))
+        if checkpoint_world_size != context.world_size:
+            restored_state["topology_resume"] = {
+                "checkpoint_world_size": checkpoint_world_size,
+                "current_world_size": context.world_size,
+                "checkpoint_rng_ranks": list(range(min(checkpoint_world_size, context.world_size))),
+                "fresh_seeded_ranks": list(range(checkpoint_world_size, context.world_size)),
+            }
     return macro, int(trainer["metrics_rows"])

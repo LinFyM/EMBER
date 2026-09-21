@@ -1,33 +1,27 @@
 # EMBER progress
 
-## 2026-09-22：新 session 交接准备与 PR #3 本地审查
+## 2026-09-22：辅助 episode 配对 fresh 对照已登记，等待 formal launch preflight
 
-已读取专家关于辅助配对、fresh 重训和动作 FM 科学依据的最新连续讨论。当前无 EMBER 训练、物化或评测
-tmux/session；gpu01、gpu02 未发现引用仓库 `.codex/tmp` runtime 的进程。没有启动新的 GPU 实验。
+已读取最新Owner/专家连续意见并创建本轮goal。唯一 active design 是36任务的 fresh
+`data.teaching_episode=cross_episode` Writer：Source-71、normalization、36任务、K=1、完整38-target
+rank16 A/B、Writer/三Meta fresh、21主＋7辅助、`tau=1`前5步和`1/3`均保持；唯一科学变量为辅助 action
+episode 与teacher的对应关系。它不能被表述为纯原生FM或端点前缀辅助项整体的检验。
 
-远程 draft [PR #3](https://github.com/LinFyM/EMBER/pull/3)，分支
-`codex/ember-cross-episode-aux-20260922`，commit `ed7b5550`。它以`main@7f62c7b7`为参照，只开放一条
-fresh `data.teaching_episode=cross_episode`候选，保留原36任务、Source、模型、LR、21主查询、7辅助查询、
-端点前缀和`1/3`权重；PR 本身未启动训练、Test、FT或RL。
+[PR #3](https://github.com/LinFyM/EMBER/pull/3)已合入并推送`main@5f3e2150`；临时PR/integration worktree和
+本地临时分支均已清理，canonical main保持唯一工作树。实现已删除平行status/selection路径，复用coverage
+controller、完整面板和选点入口。最终事件preflight以真实coverage manifest与原`exposures.jsonl`重放1800更新、
+7200条件，通过teacher/主21事件、辅助噪声、episode排除、未来5动作、无有放回和原曝光逐行核验。
 
-canonical `.venv` 已执行`tests/test_writer_auxiliary_pairing.py`：61 passed。CPU preflight 使用真实
-coverage manifest和原`training/writer/exposures.jsonl`重放1800步/7200条件：teacher与21个主查询事件一致、
-辅助噪声一致、辅助episode排除teacher、未来5动作合法、无有放回条件、7200条原曝光全部匹配。结果只证明
-实现和配对合同可执行，不证明候选性能或端点前缀辅助项有效。
+为满足物理资源恢复合同，canonical Writer增加受限的`--allow-topology-change`：仅ordinary dynamic
+`--resume`允许改变物理world size；模型、optimizer、scheduler、sampler、immutable event plan、逻辑4任务更新和
+任务权重保持，且`topology_transitions.jsonl`记录RNG来源与新旧world size。默认仍为严格同拓扑恢复；不会用于
+continuation/low-LR phase。相关完整Writer训练回归为59 passed，拓扑目标回归为4 passed，architecture guard为
+REVIEW且无硬违规。
 
-代码架构检查尚未通过：active-source diff为+825/-1，`scripts/writer_aux_pairing.py::load_panel`、
-`src/ember/writer/auxiliary_pairing.py::audit_events`和受改动的`training.py::_config`触发复杂度硬门槛；新增
-status/selection校验与既有控制器职责也需收敛。PR保持draft且未合入main。下一执行者应先修正这一工程边界，
-或在Owner选择纯主FM问题时另立明确合同；不得把两种问题混成同一实验。
-
-旧低LR detached runtime已确认工作树干净、两节点无引用进程并已移除；本次PR审查worktree也已删除，Git只保留
-canonical main worktree。全部正式study、checkpoint、raw rows、报告和PR分支保留。`paper-export`按Owner要求不使用。
-
-Owner随后追加约七小时无人值守授权：要求安全范围内充分利用GPU和墙钟。新session须在launch前预登记overnight预算；
-早停首次触发时保存原合同裁决，预算仍有余量时可从完整checkpoint继续单独标记的post-stop extension。主候选稳定运行
-后，若有不干扰它的GPU与足够完成完整结果的时间，可自主登记并执行一个高价值独立实验，优先候选为纯主FM基准；
-不做临时超参小扫或打开Test/FT/RL。运行监控依赖controller与完成信号，不进行十秒级轮询、不读部分分数、不派
-subagent反复监督。
+正式study根预留为`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`，但尚未创建或启动
+GPU任务。下一步是将当前变更提交推送、创建detached runtime，然后一次性获取gpu01/gpu02与data0/data1实时
+preflight，登记实际设备、peak预算、与中间分数无关的overnight最大完整节点和post-stop extension选点资格。
+Test、FT、RL、外部比较和纯主FM均未启动；`paper-export`不使用。
 
 ## Writer输出空间与code投影诊断完整交付（2026-09-21）
 

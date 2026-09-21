@@ -40,6 +40,7 @@ STAGE = "video_teaching_writer_fresh"
 TRAINING_SCHEMA = "ember_video_teaching_training_state_v1"
 UPDATE_VERSION = "video_teaching_full_ab_joint_meta_v1"
 REPO_ROOT = Path(__file__).resolve().parents[3]
+TOPOLOGY_TRANSITION_SCHEMA = "ember_writer_topology_transition_v1"
 
 
 def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
@@ -215,7 +216,11 @@ def _run_contract(args, context, config, runtime, state):
             "optimizer": ("parent AdamW state preserved" if
                           (config.get("continuation") or config.get("phase_continuation")) else "fresh AdamW")
                          + "; one grouped functional update per four equally weighted tasks", "scaler": None,
-            "resume_contract": "same config, topology, sampler streams, optimizer updates and complete state",
+            "resume_contract": {
+                "default": "same config, physical topology, sampler streams, optimizer updates and complete state",
+                "topology_transition": "ordinary dynamic --resume with explicit --allow-topology-change only",
+                "preserved_on_transition": ["logical_batch", "event_plan", "optimizer", "scheduler", "sampler"],
+            },
             "logical_batch": _logical_batch(config),
             "event_plan": str(_event_plan_path(args).resolve()),
             "maximum_updates": config["data"]["maximum_updates"],
@@ -239,15 +244,19 @@ def _run_contract(args, context, config, runtime, state):
     }
 
 
-def require_resume_identity(old, contract):
-    for key in ("schema_version", "stage", "mode", "config", "model_config", "topology", "source"):
+def require_resume_identity(old, contract, *, allow_topology_change=False):
+    for key in ("schema_version", "stage", "mode", "config", "model_config", "source"):
         if old.get(key) != contract[key]:
             raise ValueError(f"exact-resume contract differs: {key}")
+    if old.get("topology") != contract["topology"] and not allow_topology_change:
+        raise ValueError("exact-resume contract differs: topology")
+    if allow_topology_change and old.get("training", {}).get("logical_batch") != contract["training"]["logical_batch"]:
+        raise ValueError("topology transition changed the logical Writer update")
 
 
-def _publish_contract(path, contract, *, resume):
+def _publish_contract(path, contract, *, resume, allow_topology_change=False):
     if resume:
-        require_resume_identity(read_json(path), contract)
+        require_resume_identity(read_json(path), contract, allow_topology_change=allow_topology_change)
     else:
         if path.exists():
             raise ValueError("fresh run refuses an existing contract")
@@ -404,6 +413,7 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
     updates, metrics_rows = load_ecp_checkpoint(
         checkpoint=checkpoint, stage=STAGE, context=context, model=runtime.state,
         optimizer=optimizer, scheduler=scheduler, run_contract_schema=RUN_SCHEMA, restored_state=restored,
+        allow_world_size_change=bool(getattr(args, "allow_topology_change", False)),
     )
     if restored["training_state"] != _training_state(config, updates):
         raise ValueError("supervised checkpoint stage/update/data contract changed")
@@ -415,6 +425,24 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
     _activate_phase_schedule(optimizer, scheduler, runtime, config, updates,
                              initial_transition=phase_parent is not None)
     if context.is_main:
+        if getattr(args, "allow_topology_change", False):
+            transition = restored.get("topology_resume", {
+                "checkpoint_world_size": context.world_size,
+                "current_world_size": context.world_size,
+                "checkpoint_rng_ranks": list(range(context.world_size)),
+                "fresh_seeded_ranks": [],
+            })
+            append_jsonl(args.output / "topology_transitions.jsonl", {
+                "schema_version": TOPOLOGY_TRANSITION_SCHEMA,
+                "checkpoint": str(checkpoint.resolve()), "checkpoint_macro": updates,
+                **transition,
+                "preserved": {
+                    "logical_batch": _logical_batch(config),
+                    "event_plan": "registered immutable dynamic events",
+                    "optimizer_scheduler": "restored checkpoint trainer state",
+                    "task_weighting": "one grouped update over four equally weighted tasks",
+                },
+            })
         if parent:
             inherit_history(checkpoint, args.output)
         reconcile_metrics(args.output / "exposures.jsonl", updates, metrics_rows, cursor_key="step", packet_label="exposures")
@@ -425,6 +453,20 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
             if count or (args.output / "diagnostics.jsonl").exists():
                 reconcile_metrics(args.output / "diagnostics.jsonl", updates, count, cursor_key="step", packet_label="diagnostics")
     return updates, metrics_rows
+
+
+def _require_topology_resume(args, config):
+    requested = bool(getattr(args, "allow_topology_change", False))
+    if requested and (
+        not getattr(args, "resume", None)
+        or getattr(args, "extend_from", None)
+        or getattr(args, "phase_from", None)
+        or not config.get("training_control")
+        or config.get("continuation")
+        or config.get("phase_continuation")
+    ):
+        raise ValueError("physical topology transition requires an ordinary dynamic --resume")
+    return requested
 
 
 def _record_iteration(args, context, config, rows, norms, updates, metrics_rows, seconds, scheduler):
@@ -575,6 +617,7 @@ def run(args: argparse.Namespace) -> None:
 
     config = _config(args.config)
     require_continuation_start(args, config)
+    allow_topology_change = _require_topology_resume(args, config)
     if args.mode == "formal" and (config["status"] != "registered_video_teaching_learning"
                                   or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
@@ -584,7 +627,8 @@ def run(args: argparse.Namespace) -> None:
     stop = _segment_limit(args, config)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     condition_rank_groups(context.world_size)
-    if args.mode == "formal" and context.world_size != config["evidence"]["profile_registration"]["world_size"]:
+    if (args.mode == "formal" and not allow_topology_change
+            and context.world_size != config["evidence"]["profile_registration"]["world_size"]):
         raise ValueError("formal video-teaching training requires its registered profiled topology")
     execution_config, microbatches = _execution_config(args, config, context)
     if context.is_main:
@@ -610,7 +654,8 @@ def run(args: argparse.Namespace) -> None:
             prepare_phase_continuation(args, contract)
         elif getattr(args, "extend_from", None):
             prepare_continuation(args, contract)
-        _publish_contract(args.output / "run_contract.json", contract, resume=args.resume is not None)
+        _publish_contract(args.output / "run_contract.json", contract, resume=args.resume is not None,
+                          allow_topology_change=allow_topology_change)
     barrier(context)
     cursors = _restore(args, context, runtime, data, optimizer, scheduler, config)
     updates, _ = cursors
@@ -638,6 +683,8 @@ def main() -> None:
     parser.add_argument("--checkpoint-updates", help="this segment's registered global optimizer-update nodes")
     parser.add_argument("--policy-microbatches", help="physical FM query chunks by rank, e.g. 8,4,8,8")
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--allow-topology-change", action="store_true",
+                        help="allow an ordinary dynamic resume to use a changed physical topology")
     parser.add_argument("--extend-from", type=Path, help="complete parent1500 state for the registered 2100 continuation")
     parser.add_argument("--phase-from", type=Path,
                         help="complete formal N1800 state for the registered low-LR repair phase")

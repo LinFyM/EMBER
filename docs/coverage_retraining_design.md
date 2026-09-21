@@ -33,7 +33,7 @@ MT-BC每update逻辑576查询，36task各16；4个逻辑rank各144，物理卡�
 MT-BC warmup150、decay1200，衰减后保持1e-5非零floor。Writer每步只抽4task，因此该伸展近似保持每task曝光相位；
 MT-BC每步已覆盖全部task各16query，该伸展是显式延长其每task学习时钟，不能称作与旧配方曝光等价。
 时钟与训练终止解耦，后续不改LR、不重置optimizer。
-配置maximum_updates/total_steps=null表示没有科学硬终点；每段明确stop_after_step。同拓扑保持原optimizer/scheduler/rank RNG exact-resume。MT-BC允许在完整optimizer checkpoint切换单节点物理world size、microbatch、worker拓扑和任务交错分片；逻辑576查询、36任务各16、全局loss权重、optimizer/scheduler时钟及验证节点不变。换拓扑显式登记新旧配置，保留原rank RNG可恢复部分，新rank建立独立RNG；此后随机轨迹和低位浮点不称bitwise exact。Writer目前仍按原拓扑exact-resume。
+配置maximum_updates/total_steps=null表示没有科学硬终点；每段明确stop_after_step。同拓扑保持原optimizer/scheduler/rank RNG exact-resume。动态Writer在完整候选checkpoint上仅可通过ordinary `--resume --allow-topology-change`切换物理world size；配置、immutable event plan、逻辑4任务更新、任务权重、optimizer/scheduler和验证节点不变，`topology_transitions.jsonl`登记新旧world size与RNG来源。原rank仍恢复其checkpoint RNG，新出现rank保留初始化时的RNG，之后随机轨迹和低位浮点不称bitwise exact。MT-BC允许在完整optimizer checkpoint切换单节点物理world size、microbatch、worker拓扑和任务交错分片；逻辑576查询、36任务各16、全局loss权重、optimizer/scheduler时钟及验证节点不变。换拓扑显式登记新旧配置，保留原rank RNG可恢复部分，新rank建立独立RNG；此后随机轨迹和低位浮点不称bitwise exact。
 
 ## 完整Validation与停止规则
 

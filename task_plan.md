@@ -1,29 +1,21 @@
 # EMBER task plan
 
-## 待新 session 接续：Writer 辅助目标的下一条 fresh 对照（2026-09-22）
+## 当前 active design：36任务 Writer 辅助 episode 配对 fresh 对照（2026-09-22）
 
-当前没有 active run，也没有已登记为 active design 的新实验。专家最新意见把下一步收敛为两个需要明确区分的科学问题：
+当前唯一 active design 是[辅助配对合同](docs/writer_auxiliary_pairing_design.md)，预留 study 根为
+`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`。它只把7个辅助查询从
+`same_video` 改为同任务另一 episode，保留固定`tau=1`、前5步和权重`1/3`；因此只回答辅助 episode
+配对是否影响学习，不能回答端点前缀辅助项整体是否有价值。
 
-1. 已准备的单变量配对对照：保留 `tau=1`、前5步和权重 `1/3`，只把7个辅助查询从
-   `same_video` 改为同任务另一 episode。它回答辅助监督的 episode 配对是否影响学习。
-2. 附加目标本身的价值：只使用同任务跨 episode、随机 flow time、完整 horizon 的原生 FM。
-   它回答端点前缀辅助项是否有净收益，属于另一条实验合同。
+[PR #3](https://github.com/LinFyM/EMBER/pull/3)已收敛并合入`main`：新增状态/选点路径已删除，现有覆盖
+controller继续拥有完整400读取、早停、同分other选点、冻结与后继测量。候选配置、生产事件preflight和既有
+采样器回归均复用同一训练面；真实原coverage manifest/exposures的1800步、7200条件重放通过，证明事件合同，
+不证明性能。架构门禁已无硬违规；动态 Writer 普通恢复可显式记录物理拓扑切换，同时保持逻辑更新、任务权重、
+optimizer、scheduler与事件计划。
 
-主 FM 的随机 flow time、完整动作 chunk 和速度 MSE 有 π0.5 原生训练依据。端点前缀辅助项的固定
-`tau=1`、前5步和 `1/3` 是实验性设置；按名义系数计算，前5步占组合目标32.5%，单个前5步位置的权重
-是其余位置的4.33倍，整项目标系数的25%来自精确端点。历史 same-video/cross-episode 对照均保留这些设置，
-所以只能识别配对差异，不能证明辅助项整体必要。
-
-远程 draft [PR #3](https://github.com/LinFyM/EMBER/pull/3)（`ed7b5550`）已实现第一项 fresh 配对对照，
-尚未合入 `main`、尚未启动训练。canonical 环境中该分支测试为61 passed；使用原 coverage 的
-`exposures.jsonl` 和真实 manifest 完成1800步/7200条件元数据 preflight，主事件、teacher、辅助噪声、
-episode排除和未来5动作合法性均通过。架构检查仍为 BLOCK：新增活跃源码825行，三个新增/增长函数复杂度
-超过门槛，且状态/选点入口与既有控制器存在可收敛空间。因此 PR 当前是可审查实现草案，不是可直接合并的
-canonical 运行面。
-
-新 session 若按既有授权执行配对对照，应先在 PR 上收敛实现、复用既有面板校验/早停/选点能力、解除架构
-BLOCK，再合入并按 formal launch 合同启动唯一 fresh Writer。若 Owner 改为检验纯主 FM，应先登记新的单变量
-设计和配置，不能在 PR #3 下静默删除辅助项。两条实验不得并行启动，也不恢复 Test、FT、RL 或外部比较。
+尚未启动训练、物化或闭环。首次 formal launch 前必须从clean pushed detached runtime取得双节点GPU/进程与
+data0/data1独立quota快照，并在设计和run contract中写入实际GPU安排、峰值预算、最大完整Validation节点和
+post-stop extension的选点资格。不会在本合同下静默删除辅助项、启动纯主FM、Test、FT、RL或外部比较。
 
 ### 本次约七小时无人值守窗口的追加授权
 

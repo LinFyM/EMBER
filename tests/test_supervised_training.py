@@ -14,7 +14,7 @@ from ember.pi05_source_checkpoint import DistributedContext
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.writer import learning_data
 from ember.writer.learning_data import WriterTrainingData, load_learning_tasks
-from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _run_contract, observer_mode_contract, _publish_event_plan
+from ember.writer.training import _update, _config, _optimization, _training_state, _run_segment, _execute_step, _segment_limit, _checkpoint_nodes, _publish_contract, _require_topology_resume, _run_contract, observer_mode_contract, _publish_event_plan
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.task_execution import condition_rank_groups, merge_condition_rows
 
@@ -153,6 +153,34 @@ def test_native_architecture_changes_cannot_exact_resume(tmp_path, config):
     changed['model_config'] = dict(changed['config']['model'])
     with pytest.raises(ValueError, match='exact-resume contract differs: config'):
         _publish_contract(path, changed, resume=True)
+
+
+def test_dynamic_topology_resume_is_explicit_and_keeps_the_logical_update(tmp_path):
+    logical_batch = {"tasks": 4, "conditions": 4, "queries_per_update": 84}
+    original = {
+        "schema_version": "run", "stage": "supervised", "mode": "formal", "config": {},
+        "model_config": {}, "topology": {"world_size": 4}, "source": {},
+        "training": {"logical_batch": logical_batch},
+    }
+    path = tmp_path / "run_contract.json"
+    _publish_contract(path, original, resume=False)
+    changed = deepcopy(original)
+    changed["topology"] = {"world_size": 2}
+    with pytest.raises(ValueError, match="topology"):
+        _publish_contract(path, changed, resume=True)
+    _publish_contract(path, changed, resume=True, allow_topology_change=True)
+
+    changed["training"]["logical_batch"] = {"tasks": 3}
+    with pytest.raises(ValueError, match="logical Writer update"):
+        _publish_contract(path, changed, resume=True, allow_topology_change=True)
+
+    dynamic = {"training_control": {"kind": "validation_early_stopping"}}
+    resume = SimpleNamespace(allow_topology_change=True, resume=tmp_path / "macro", extend_from=None,
+                             phase_from=None)
+    assert _require_topology_resume(resume, dynamic)
+    with pytest.raises(ValueError, match="ordinary dynamic"):
+        _require_topology_resume(SimpleNamespace(allow_topology_change=True, resume=None,
+                                                 extend_from=None, phase_from=None), dynamic)
 
 
 @pytest.mark.parametrize("offset", [0, True, None])
@@ -391,6 +419,47 @@ def test_checkpoint_restores_next_update_and_sampler(tmp_path, monkeypatch, conf
     assert scheduler.last_epoch == 1
     torch.testing.assert_close(update(), expected_loss)
     torch.testing.assert_close(model.weight, expected_weight)
+
+
+def test_checkpoint_topology_transition_restores_full_trainer_state(tmp_path, monkeypatch, config):
+    restored_rng = []
+    monkeypatch.setattr("ember.ecp.checkpoint.capture_rng", lambda _: torch.get_rng_state())
+    monkeypatch.setattr("ember.ecp.checkpoint.restore_rng", lambda state, _: restored_rng.append(state))
+    old_context = DistributedContext(0, 0, 1, torch.device("cpu"))
+    model = torch.nn.Linear(3, 2)
+    optimizer, scheduler = _optimization(model, config)
+    optimizer.zero_grad(set_to_none=True)
+    model(torch.ones(4, 3)).square().mean().backward()
+    optimizer.step()
+    scheduler.step()
+    checkpoint = save_ecp_checkpoint(
+        output_dir=tmp_path, macro=1, stage="supervised_test", context=old_context,
+        model=model, optimizer=optimizer, scheduler=scheduler,
+        run_contract_schema="supervised_test_v1", metrics_rows=4,
+        sampler_state={"next_step": 1}, training_state={"cursor": 1},
+    )
+    new_context = DistributedContext(1, 1, 2, torch.device("cpu"))
+    restored_model = torch.nn.Linear(3, 2)
+    restored_optimizer, restored_scheduler = _optimization(restored_model, config)
+    args = dict(
+        checkpoint=checkpoint, stage="supervised_test", context=new_context,
+        model=restored_model, optimizer=restored_optimizer, scheduler=restored_scheduler,
+        run_contract_schema="supervised_test_v1",
+    )
+    with pytest.raises(ValueError, match="authority"):
+        load_ecp_checkpoint(**args)
+    restored = {}
+    assert load_ecp_checkpoint(**args, restored_state=restored, allow_world_size_change=True) == (1, 4)
+    torch.testing.assert_close(restored_model.weight, model.weight)
+    assert restored_scheduler.last_epoch == scheduler.last_epoch
+    assert restored == {
+        "sampler_state": {"next_step": 1}, "training_state": {"cursor": 1},
+        "topology_resume": {
+            "checkpoint_world_size": 1, "current_world_size": 2,
+            "checkpoint_rng_ranks": [0], "fresh_seeded_ranks": [1],
+        },
+    }
+    assert not restored_rng
 
 
 def test_resume_retains_distinct_orphaned_exposure_and_step_evidence(tmp_path):

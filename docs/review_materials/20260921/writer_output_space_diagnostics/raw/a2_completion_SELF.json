@@ -1,0 +1,10 @@
+{
+  "arm": "SELF",
+  "backward": false,
+  "optimizer_updates": 0,
+  "projection_rows": 576,
+  "rollouts": 16,
+  "schema_version": "ember_writer_output_space_diagnostics_v1",
+  "status": "complete",
+  "test_use": false
+}

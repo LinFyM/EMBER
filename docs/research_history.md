@@ -2050,3 +2050,16 @@ Owner先审阅[结果报告](review_materials/20260920/test_capacity/report.md)�
 正式Writer冻结1a32a0cf、MT-BC冻结3ebb979b，各fresh训练；具体当前状态由progress维护，不在此预报科学结论。
 
 该次启动后的定向维护另退役旧Test正确视频bank的400个可再生LoRA载荷及本次完成profile的18个参数文件，释放2.32GiB实际占块；不删除任何formal checkpoint、评测行、合同或指标。明细为coverage_retraining_20260920/asset_retirement.json；profile权重已明确不再支持直接resume。
+
+## 2026-09-21：Writer输出空间与code冻结投影诊断
+
+按专家收敛方案完成A0三checkpoint输出空间、A1十六次无梯度视频编译及A2 SELF/NEWSPACE/SHRINK各16条
+冻结闭环。基础实现与A0/A2来自clean pushed `2848684f`；A1初版暴露词典序tensor-spec调用被误解释为数值
+layer顺序的工程错误，旧结果封存后由`36e7f791`修复并完整重跑。修复A1的288 factor rows/模型重建误差最大
+低于.001745；所有正式exit0、stderr为空，没有Test、反向传播、optimizer更新或checkpoint选择。
+
+O1200/SELF/NEWSPACE/SHRINK在固定global3/11/26/31、state0..3上为11/11/11/9。NEWSPACE显著改变
+q-B/v-B更新方向但未降低总成功，SHRINK在相同逐层范数下少2条；结果不支持“新B空间删去旧有效方向”作为当前
+根因。N1000 code、B及BA比O1200更趋同，只保留为后续可能讨论的系数映射证据。本轮在报告交付后关闭，未启动
+split-head、完整E2、Test、FT或RL。轻量原始表、图及复算源码见
+`docs/review_materials/20260921/writer_output_space_diagnostics/`；正式study保留code tensor和compact轨迹。

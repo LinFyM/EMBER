@@ -1,16 +1,24 @@
 # EMBER progress
 
-## 当前执行：Writer输出空间与code投影诊断（2026-09-21）
+## Writer输出空间与code投影诊断完整交付（2026-09-21）
 
 Owner要求执行专家最新方案。Active design为[Writer输出空间投影诊断](docs/writer_output_space_projection_design.md)：
 A0读取O1200/N1000/N1800三份checkpoint；A1在global5/7/12/37的demo46/48完成16次无梯度编译；A2复用
 held global3/11/26/31、state0..3和既有O1200参照，对SELF/NEWSPACE/SHRINK各运行16条冻结闭环。
 不训练、不反向传播，不启动Test/FT/RL/完整E2或拆head后继。
 
-已读取专家最后收敛意见并建立新goal。开工时`main`工作区干净，本地与`origin/main`均为`95d22588`；
-现有稳定性诊断已提供正式O1200/N1000/N1800加载、固定held任务安装、official rollout、compact轨迹及O1200原始
-16条参照，可直接复用。O1200原始四任务各state0..3齐全；三份checkpoint与所需trainer/manifest存在。
-当前仅有上一阶段已停止后的detached runtime，无活动实验进程。正式新GPU实验尚未launch。
+A0三checkpoint、A1两模型各8次编译、A2三臂各16条闭环均已完整exit0；无Test、反向传播、optimizer更新或
+checkpoint选择。O1200/SELF/NEWSPACE/SHRINK成功为11/11/11/9；相对O1200的R/G/L分别为10/1/1、
+8/3/3、8/1/3。NEWSPACE将q-B有效更新范数平均保留69.5%、方向`rho`改变量0.719，v-B分别为96.3%和
+0.267；总成功仍与O1200相同。SHRINK匹配逐层范数却降至9，故本轮不支持新B空间删除旧有效方向的解释。
+
+A1初版发现并修复明确工程错误：hook调用遵循词典序tensor specs，却被误当成数值layer顺序。旧A1完整封存，
+A0/A2不受影响；修复提交`36e7f791`已推送并从clean detached runtime重跑，`C @ code`重建relative-L2最大
+0.1745%，两模型正式stderr为空。N1000的rank-centered code能量约0.8%–0.95%，O1200约5.35%；实际B/BA
+也更单方向化，只作为系数映射候选定位，不自动授权拆head或新训练。
+
+[图文报告和轻量原始统计](docs/review_materials/20260921/writer_output_space_diagnostics/report.md)已生成；正式study保留
+code safetensors、48条compact轨迹、launch合同与无效A1事故证据。当前没有运行中实验，按专家合同停止等待裁决。
 
 ## 当前状态：Writer低学习率修复已由Owner停止（2026-09-21）
 

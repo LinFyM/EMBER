@@ -1,0 +1,17 @@
+arm,global_task_id,language,successes,trials,mean_steps
+O1200,3,pick up the black bowl on the cookie box and place it on the plate,2,4,165.5
+O1200,11,pick up the cream cheese and place it in the basket,3,4,172.75
+O1200,26,put the cream cheese in the bowl,4,4,108.25
+O1200,31,put both the cream cheese box and the butter in the basket,2,4,478.5
+SELF,3,pick up the black bowl on the cookie box and place it on the plate,2,4,164.0
+SELF,11,pick up the cream cheese and place it in the basket,4,4,162.5
+SELF,26,put the cream cheese in the bowl,4,4,110.5
+SELF,31,put both the cream cheese box and the butter in the basket,1,4,517.25
+NEWSPACE,3,pick up the black bowl on the cookie box and place it on the plate,3,4,165.0
+NEWSPACE,11,pick up the cream cheese and place it in the basket,4,4,135.0
+NEWSPACE,26,put the cream cheese in the bowl,4,4,98.5
+NEWSPACE,31,put both the cream cheese box and the butter in the basket,0,4,520.0
+SHRINK,3,pick up the black bowl on the cookie box and place it on the plate,1,4,190.75
+SHRINK,11,pick up the cream cheese and place it in the basket,4,4,138.5
+SHRINK,26,put the cream cheese in the bowl,4,4,108.0
+SHRINK,31,put both the cream cheese box and the butter in the basket,0,4,520.0

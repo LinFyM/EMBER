@@ -1,0 +1,72 @@
+{
+  "a1_demos": [
+    46,
+    48
+  ],
+  "a1_tasks": [
+    5,
+    7,
+    12,
+    37
+  ],
+  "a2_states": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "a2_tasks": [
+    3,
+    11,
+    26,
+    31
+  ],
+  "arms": [
+    "SELF",
+    "NEWSPACE",
+    "SHRINK"
+  ],
+  "assets": {
+    "N1000": {
+      "checkpoint": "N1000",
+      "manifest": {
+        "bytes": 542,
+        "path": "checkpoint_manifest.json"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "ecp.safetensors"
+      }
+    },
+    "N1800": {
+      "checkpoint": "N1800",
+      "manifest": {
+        "bytes": 542,
+        "path": "checkpoint_manifest.json"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "ecp.safetensors"
+      }
+    },
+    "O1200": {
+      "checkpoint": "O1200",
+      "manifest": {
+        "bytes": 434,
+        "path": "checkpoint_manifest.json"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "ecp.safetensors"
+      }
+    }
+  },
+  "backward": false,
+  "checkpoint_selection_use": false,
+  "design": "docs/writer_output_space_projection_design.md",
+  "fresh_training": false,
+  "runtime_commit": "2848684f681d7c1ccedee57ba1a58583b73cb5da",
+  "schema_version": "ember_writer_output_space_diagnostics_v1",
+  "status": "registered",
+  "test_use": false
+}

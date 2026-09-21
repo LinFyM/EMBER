@@ -1,6 +1,6 @@
 # EMBER task plan
 
-## 当前目标：Writer输出空间与code投影诊断（2026-09-21）
+## 已完成目标：Writer输出空间与code投影诊断（2026-09-21）
 
 Owner授权按专家最新收敛方案执行[输出空间投影诊断合同](docs/writer_output_space_projection_design.md)。本轮只做
 A0三checkpoint CPU空间检查、A1十六次无梯度视频编译，以及SELF/NEWSPACE/SHRINK三臂共48条冻结闭环；
@@ -10,6 +10,10 @@ A0三checkpoint CPU空间检查、A1十六次无梯度视频编译，以及SELF/
 GPU launch前实时检查两节点与quota；A1按模型并行、A2按三臂并行使用安全可用GPU；只在完整exit后汇总。
 最终交付head谱、code几何、逐层有效更新误差、48条原始闭环、O1200配对统计、SELF首replan数值检查和图文报告，
 随后停止等待Owner/专家裁决。
+
+A0/A1/A2已经按合同完整结束。O1200/SELF/NEWSPACE/SHRINK在固定16条件上为11/11/11/9；NEWSPACE
+没有造成净成功下降，因此不支持“新B空间删除旧有效方向”的解释。N1000 code与实际B/BA更趋同，只登记为
+系数映射候选定位。当前没有获授权的后继实验，不自动恢复Test、FT、RL、完整E2或split-head训练。
 
 ## 已完成阶段：Writer训练稳定性修订诊断
 

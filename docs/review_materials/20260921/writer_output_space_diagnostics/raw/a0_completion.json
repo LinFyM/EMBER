@@ -1,0 +1,33 @@
+{
+  "assets": [
+    "O1200",
+    "N1000",
+    "N1800"
+  ],
+  "families": [
+    "q_b",
+    "v_b"
+  ],
+  "schema_version": "ember_writer_output_space_diagnostics_v1",
+  "status": "complete",
+  "template_checks": [
+    {
+      "asset": "O1200",
+      "b_nonzero_values": 0,
+      "b_templates": 38,
+      "template_tensors": 76
+    },
+    {
+      "asset": "N1000",
+      "b_nonzero_values": 0,
+      "b_templates": 38,
+      "template_tensors": 76
+    },
+    {
+      "asset": "N1800",
+      "b_nonzero_values": 0,
+      "b_templates": 38,
+      "template_tensors": 76
+    }
+  ]
+}

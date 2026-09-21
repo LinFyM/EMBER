@@ -1,0 +1,13 @@
+{
+  "a0_assets": 3,
+  "a1_compilations": 16,
+  "a1_repair_runtime_commit": "36e7f791dc8993569ca68dbe1873842a61fedde1",
+  "a2_rollouts": 48,
+  "all_formal_exits_zero": true,
+  "backward": false,
+  "base_runtime_commit": "2848684f681d7c1ccedee57ba1a58583b73cb5da",
+  "baseline_rows": 16,
+  "optimizer_updates": 0,
+  "schema_version": "ember_writer_output_space_export_v1",
+  "test_use": false
+}

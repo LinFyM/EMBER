@@ -1,0 +1,14 @@
+{
+  "affected_scope": "A1 captured-code numerical-layer association and reconstruction rows only",
+  "cause": "factor-head hook calls followed lexically sorted tensor specs but were interpreted as numeric layer order",
+  "evidence": "layers 0/1 reconstructed at about 0.17 percent relative L2 while lexically displaced layers did not",
+  "initial_runtime_commit": "2848684f681d7c1ccedee57ba1a58583b73cb5da",
+  "repair_runtime_commit": "36e7f791dc8993569ca68dbe1873842a61fedde1",
+  "schema_version": "ember_writer_output_space_a1_incident_v1",
+  "status": "invalidated_and_repaired",
+  "unaffected_scope": [
+    "A0",
+    "A2 projection transforms",
+    "A2 rollouts"
+  ]
+}

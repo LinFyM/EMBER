@@ -1,0 +1,9 @@
+{
+  "asset": "O1200",
+  "backward": false,
+  "code_tensors": 16,
+  "compilations": 8,
+  "factor_rows": 288,
+  "schema_version": "ember_writer_output_space_diagnostics_v1",
+  "status": "complete"
+}

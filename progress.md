@@ -24,6 +24,13 @@ global/scheduler/sampler cursor均1800，AdamW含545个参数状态，父applied
 存在时复制可选diagnostics，并把optimizer/scheduler完整状态核验移到历史文件复制之前；4项聚焦恢复回归通过。
 科学配置、父节点、LR、四卡topology、事件和评测合同未变；修复提交推送后从干净新运行根重启唯一1900段。
 
+修复提交`f1e1d938`已推送，原detached runtime在无进程后删除并以同路径重建为该提交；失败输出根改名封存，
+没有从不完整状态恢复。唯一controller已重新启动1900段，stage实时GPU/storage准入再次通过。首个正式更新已核对：
+`segment_start/global_step=1800`、`phase_step=0`，update1801实际`lr_applied=lr_next=2.959936e-5`，四组模块
+grad norm与总norm均finite，事件/累计exposure从7200续到7204，四rank峰值reserved为21.24--21.40GiB。
+这证明完整父状态、固定LR首步与四卡执行接口已实际接通，不代表闭环性能。controller将自行完成1900训练、完整
+Validation400、phase-only readout和后续分段；接下来只在完整节点或明确exit后读取结果，不轮询部分成功率。
+
 ## Writer稳定性修订诊断完整交付（2026-09-21）
 
 Owner要求阅读最新专家意见并按修正方案继续。复用已完成E0/E1，原E2及其不完整文件正式取消；

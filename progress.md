@@ -31,6 +31,12 @@ grad norm与总norm均finite，事件/累计exposure从7200续到7204，四rank�
 这证明完整父状态、固定LR首步与四卡执行接口已实际接通，不代表闭环性能。controller将自行完成1900训练、完整
 Validation400、phase-only readout和后续分段；接下来只在完整节点或明确exit后读取结果，不轮询部分成功率。
 
+已加入唯一收尾入口`scripts/finalize_writer_low_lr_phase.py`，把冻结裁决转成可复算程序：完整phase未停止时拒绝
+选点；phase最高不超过117时指向原N1000且不启动新controls；严格超过时选择phase correct最高，并列则只有在每个
+并列节点完整same-task-other400到齐后按other最高、仍同分最早裁决。新phase入选后才生成绑定正确checkpoint与
+correct400 manifest的method freeze和diagnostic declaration，后续仅准许same-task-other与cross-suite-wrong；
+wrong明确不进入选点。11项phase早停、完整面板读取和选点测试通过，另用旧正式other400验证读取器返回119。
+
 ## Writer稳定性修订诊断完整交付（2026-09-21）
 
 Owner要求阅读最新专家意见并按修正方案继续。复用已完成E0/E1，原E2及其不完整文件正式取消；

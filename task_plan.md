@@ -8,8 +8,9 @@ optimizer/sampler/rank RNG和原36任务监督合同。每100更新完成correct
 三条停止规则。新phase最高不严格超过117则保留原N1000并停止；严格超过后才冻结唯一候选并补other/wrong。
 本目标不启动Test、FT、RL、外部比较或其它补救分支。
 
-当前先完成现有trainer的窄范围phase接口、CPU恢复/首步LR/重载/事件连续性验证、active合同与clean pushed
-detached runtime；随后一次性live检查双节点GPU和独立quota，启动唯一控制器。实验运行期间不轮询部分分数。
+phase接口、CPU恢复/首步LR/重载/事件连续性验证、active合同与clean pushed detached runtime均已完成；
+唯一控制器已从N1800启动。实验运行期间不轮询部分分数。收尾由登记脚本严格执行：不超过117直接保留
+N1000；严格超过且correct并列时等待所有并列节点的other400，再按other最高、仍同分最早选点；wrong永不参与选择。
 
 ## 已完成阶段：Writer训练稳定性修订诊断
 

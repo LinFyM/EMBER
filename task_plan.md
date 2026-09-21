@@ -1,6 +1,15 @@
 # EMBER task plan
 
-## 当前目标与裁决顺序（2026-09-20）
+## 当前目标：Writer训练稳定性诊断（2026-09-21）
+
+按Owner转交的专家最终方案完整执行[E0–E3](docs/writer_stability_diagnostics_design.md)。本轮只解释旧/新
+Writer训练差异：复用六个冻结资产，完成执行完整性、固定动作探针、小规模闭环、逐任务真实梯度、独立
+单步更新和父状态×学习率2×2的72步诊断窗。不得fresh训练、运行新Test、改变冻结选点或启动FT/RL。
+E0明确工程错误才停止；若E0通过，E1–E3按固定内容执行，结果不用于临时改变后续阶段。
+
+原覆盖重训主线保留如下；E0–E3交付后再由Owner依据诊断讨论科学问题，不能自动恢复第4阶段。
+
+## 覆盖重训裁决顺序（2026-09-20，当前下游暂停）
 
 在已冻结的[覆盖重训合同](docs/coverage_retraining_design.md)下，各完成一条fresh EMBER Writer和MT-BC轨迹，按完整Validation选出各自唯一checkpoint。资格通过后依次做固定模型Test、[单演示FT与task-local RL](docs/paper_experiments_design.md)、合格的外部比较，交付图文报告及原始统计材料。科学门槛失败或结论无法定夺时停止下游，先交付当阶段证据并询问Owner。实际进程、exit与产物只在[progress](progress.md)记录；本文件保留执行顺序和通过条件。
 

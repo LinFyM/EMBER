@@ -1,5 +1,18 @@
 # EMBER progress
 
+## Writer训练稳定性诊断启动（2026-09-21）
+
+Owner要求完整执行专家最后登记的E0–E3，不采用对话中较早且已撤回的续训或补救建议。Active design为
+[Writer训练稳定性诊断](docs/writer_stability_diagnostics_design.md)。已一次性核对O1200、O1500、N1000、
+N1800四个Writer checkpoint均含完整51,033,768-byte权重、约97MB trainer state与对应2/4-rank RNG文件；
+O1200/O1500/N1000/N1800的optimizer/scheduler cursor分别为1200/1500/1000/1800，Writer AdamW均为
+545个参数状态。M300和S1000正式资产也存在。旧训练frame chunk16/world2，新训练frame chunk8/world4；
+诊断更新将恢复各父节点独立Adam历史，但用统一当前36任务事件。新Test、FT、RL和外部比较继续暂停。
+
+实现隔离在`codex/writer-stability-diagnostics`；正式GPU执行前仍需clean pushed frozen runtime、双节点live
+GPU检查及data0/data1独立quota检查。运行根预定为
+`/data0/user/ymdai/ember_runs/writer_stability_diagnostics_20260921`，尚未启动GPU任务。
+
 ## 远端差异审计材料补交（2026-09-21）
 
 Owner要求把专家分析旧/新Writer差异所需及相邻材料推送远端。已从现有正式原件只读导出[诊断包](docs/review_materials/20260921/coverage_retraining/diagnostics/README.md)：旧Writer5、新Writer9、新MT-BC10及Source节点和已完成的视频对照共34个Validation400面板的13,600行精简成功标记；逐节点逐任务、相邻成功集合、旧1200/新1800五个共同held任务配对；旧/新Writer3,900更新指标及15,600任务曝光、按step/occurrence分组汇总、训练/评测Git与轮转位置；新MT-BC500更新指标。导出脚本和数据口径一并保留。完整checkpoint、视频与原始run contracts仍在study，不复制进Git。该补交不改科学资格裁决：新Test、FT、RL和外部比较仍等待Owner决定。

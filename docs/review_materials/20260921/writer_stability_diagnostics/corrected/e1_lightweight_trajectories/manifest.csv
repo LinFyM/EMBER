@@ -1,0 +1,17 @@
+asset,suite,task_id,init_state_id,success,control_steps,frame_control_step_stride,video,video_bytes,video_frames
+O1200,libero_spatial,3,0,True,118,5,videos/O1200_libero_spatial_task_03_state_000.mp4,43306,24
+O1200,libero_spatial,3,1,False,220,5,videos/O1200_libero_spatial_task_03_state_001.mp4,72191,44
+O1200,libero_spatial,3,2,True,104,5,videos/O1200_libero_spatial_task_03_state_002.mp4,38857,21
+O1200,libero_spatial,3,3,False,220,5,videos/O1200_libero_spatial_task_03_state_003.mp4,81822,44
+O1200,libero_10,1,0,True,463,5,videos/O1200_libero_10_task_01_state_000.mp4,162261,93
+O1200,libero_10,1,1,True,411,5,videos/O1200_libero_10_task_01_state_001.mp4,132897,83
+O1200,libero_10,1,2,False,520,5,videos/O1200_libero_10_task_01_state_002.mp4,159263,104
+O1200,libero_10,1,3,False,520,5,videos/O1200_libero_10_task_01_state_003.mp4,132756,104
+N1800,libero_spatial,3,0,False,220,5,videos/N1800_libero_spatial_task_03_state_000.mp4,61315,44
+N1800,libero_spatial,3,1,False,220,5,videos/N1800_libero_spatial_task_03_state_001.mp4,53544,44
+N1800,libero_spatial,3,2,False,220,5,videos/N1800_libero_spatial_task_03_state_002.mp4,75100,44
+N1800,libero_spatial,3,3,False,220,5,videos/N1800_libero_spatial_task_03_state_003.mp4,50203,44
+N1800,libero_10,1,0,False,520,5,videos/N1800_libero_10_task_01_state_000.mp4,170205,104
+N1800,libero_10,1,1,False,520,5,videos/N1800_libero_10_task_01_state_001.mp4,163546,104
+N1800,libero_10,1,2,False,520,5,videos/N1800_libero_10_task_01_state_002.mp4,171945,104
+N1800,libero_10,1,3,False,520,5,videos/N1800_libero_10_task_01_state_003.mp4,170403,104

@@ -1,0 +1,52 @@
+{
+  "branch_terminal_probe_means": {
+    "N-H": {
+      "action_delta_mse_vs_parent": 0.004216445125873886,
+      "full_mse": 0.07529843577908145,
+      "inference_first5_mse": 0.052721217003030084,
+      "tau1_first5_mse": 0.03565400486048828
+    },
+    "N-L": {
+      "action_delta_mse_vs_parent": 0.0015841814321093908,
+      "full_mse": 0.07502488916118939,
+      "inference_first5_mse": 0.05046288785524666,
+      "tau1_first5_mse": 0.03452961184343116
+    },
+    "O-H": {
+      "action_delta_mse_vs_parent": 0.007083270493442089,
+      "full_mse": 0.07876674365252256,
+      "inference_first5_mse": 0.054112368405589625,
+      "tau1_first5_mse": 0.040467118902597576
+    },
+    "O-L": {
+      "action_delta_mse_vs_parent": 0.003248297619292215,
+      "full_mse": 0.08212884841486812,
+      "inference_first5_mse": 0.05350225812031163,
+      "tau1_first5_mse": 0.04082305636903685
+    }
+  },
+  "branch_terminal_successes_of_16": {
+    "N-H": 7,
+    "N-L": 10,
+    "O-H": 11,
+    "O-L": 10
+  },
+  "branches": [
+    "O-H",
+    "O-L",
+    "N-H",
+    "N-L"
+  ],
+  "causal_attribution": "not_performed_by_execution_agent",
+  "checkpoint_selection_use": false,
+  "existing_e1_lightweight_conditions": 16,
+  "schema_version": "ember_writer_stability_corrected_export_v1",
+  "status": "complete",
+  "task_events": 576,
+  "terminal_full_image_trajectories": 8,
+  "terminal_probes": 144,
+  "terminal_rollouts": 64,
+  "terminal_trajectory_rows": 64,
+  "test_use": false,
+  "training_steps": 144
+}

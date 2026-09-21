@@ -1,0 +1,29 @@
+{
+  "action_scope": "actually_executed_prefix_from_normalized_50x7_policy_chunks",
+  "assets": [
+    "O1200",
+    "N1800"
+  ],
+  "conditions": 16,
+  "frame_control_step_stride": 5,
+  "init_state_ids": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "model_forward_or_rollout": false,
+  "schema_version": "ember_writer_e1_lightweight_trajectories_v1",
+  "source_execution": "existing_E1_only",
+  "tasks": [
+    {
+      "suite": "libero_spatial",
+      "task_id": 3
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 1
+    }
+  ],
+  "video_layout": "base_camera_left_wrist_camera_side_by_side_128px_each"
+}

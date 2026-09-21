@@ -2580,3 +2580,22 @@ Long8初始炉灶已开启，Turnon证据实际来自Long2；Spatial9柜顶取�
 这些区别保留为泛化边界，不能用task名或对象词匹配冒充逐任务完整技能已训练。
 新方案同时改变split、辅助任务支持、曝光时钟与动态停止，不支持把未来差值唯一归因于其中一项。
 旧Test78/74/82与失败门槛保留；新Test并非项目历史从未接触的数据。当前profile只证明吞吐、梯度和恢复，不证明新模型性能。
+
+## 125. 修订四臂短窗已完成；终点事实不足以由执行agent选择分支（2026-09-21）
+
+专家修订取消原E2，复用完整E0/E1，只从O1200/N1800完整Writer与AdamW状态分别以高/低固定LR运行
+当前36任务事件1801..1836。四臂各36更新、144实际task events、36条terminal compact probe及四个held任务
+×state0..3闭环全部exit0；合计144 training steps、576 task events、144 probes、64 rollouts。四个九更新周期均
+覆盖36任务一次。闭环只在每臂Spatial3-state0和Long1-state0保存图像，因此64条轨迹中8条full、56条compact；
+既有E1另只读导出16条轻量双相机视频和5536个实际执行归一化动作，不做新forward或rollout。
+
+相同16条件的小闭环成功数为：O1200父节点11，O-H 11，O-L 10；N1800父节点8，N-H 7，N-L 10。
+逐任务顺序global3/11/26/31为：O1200 2/3/4/2，O-H 3/3/4/1，O-L 3/3/4/0；N1800 0/4/4/0，
+N-H 0/3/4/0，N-L 2/4/4/0。terminal actual10-step flow first5 MSE均值为O-H .054112、O-L .053502、
+N-H .052721、N-L .050463；父O1200/N1800为.054557/.050687。相对父动作delta MSE均值依次为
+.007083/.003248/.004216/.001584。
+
+这些是四任务×四状态和36个固定动作query的诊断事实，不是Validation400、模型资格或因果归因。
+高/低LR在两个父状态上的闭环方向不一致，且probe MSE与闭环成功不能互相替代；执行agent不据此选择分支、
+续训或启动Test/FT/RL。脱敏原始表、completion、轨迹索引和轻量视频保存在
+`docs/review_materials/20260921/writer_stability_diagnostics/corrected`，后续解释与决策交Owner/专家。

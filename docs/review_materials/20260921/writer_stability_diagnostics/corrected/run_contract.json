@@ -1,0 +1,120 @@
+{
+  "allocation": {
+    "N-H": {
+      "host": "gpu02",
+      "physical_gpu_index": 0
+    },
+    "N-L": {
+      "host": "gpu02",
+      "physical_gpu_index": 4
+    },
+    "O-H": {
+      "host": "gpu01",
+      "physical_gpu_index": 2
+    },
+    "O-L": {
+      "host": "gpu01",
+      "physical_gpu_index": 4
+    }
+  },
+  "correction_of": "<STUDY>/launch/launch_contract.json",
+  "created_unix": 1789975825.0191572,
+  "dependencies": [
+    "completed E0",
+    "completed E1",
+    "O1200 full Writer+AdamW",
+    "N1800 full Writer+AdamW",
+    "current coverage36 events1801..1836"
+  ],
+  "existing_e1_export": {
+    "conditions": 16,
+    "model_forward_or_rollout": false,
+    "path": "<STUDY>/analysis/e1_lightweight_trajectories"
+  },
+  "failure_policy": "retain evidence; repair only engineering failures without changing the registered scientific contract",
+  "git_authority": "clean pushed origin/main detached runtime",
+  "git_commit": "b75ab08ef51b73cae4205b01f301e66451899583",
+  "gpu_policy": {
+    "allocation_revision": "prelaunch contention moved gpu01:0 and gpu01:1 to gpu02:0 and gpu02:4; no branch launched under prior allocation",
+    "cluster_limit": 6,
+    "live_checked_hosts": [
+      "gpu01",
+      "gpu02"
+    ],
+    "node_limit": 6,
+    "physical_gpus": 4,
+    "shared_gpu": "gpu02:0 and gpu02:4; about 0.7/5.8GiB low-load foreign contexts; >=17GiB headroom after measured Writer peak"
+  },
+  "output_root": "<STUDY>",
+  "peak_additional_storage_estimate_gib": 2,
+  "quota_snapshot": {
+    "data0_soft_blocks": 1073741824,
+    "data0_used_blocks": 119760704,
+    "data1_soft_blocks": 1073741824,
+    "data1_used_blocks": 902068368
+  },
+  "runtime_workspace": "<REPO>/.codex/tmp/writer-stability-runtime",
+  "schema_version": "ember_writer_stability_corrected_launch_v1",
+  "scientific_use": {
+    "checkpoint_selection": false,
+    "downstream_continuation": false,
+    "fresh_training": false,
+    "test": false
+  },
+  "stage": "corrected four-arm 36-update terminal diagnostic",
+  "status": "registered_before_gpu_execution",
+  "terminal_probe": {
+    "noise_seed": 2026092101,
+    "parent_baseline": "existing E1 frozen_probe_rows.csv",
+    "query_demo": 47,
+    "query_fraction": 0.25,
+    "rows_per_branch": 36,
+    "teacher_demo": 46,
+    "total_rows": 144
+  },
+  "terminal_rollout": {
+    "full_image_conditions_per_branch": [
+      [
+        3,
+        0
+      ],
+      [
+        31,
+        0
+      ]
+    ],
+    "full_image_trajectories_total": 8,
+    "global_task_ids": [
+      3,
+      11,
+      26,
+      31
+    ],
+    "rows_per_branch": 16,
+    "state_ids": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "total_rows": 64
+  },
+  "training": {
+    "balanced_cycles": 4,
+    "branches": [
+      "O-H",
+      "O-L",
+      "N-H",
+      "N-L"
+    ],
+    "events": [
+      1801,
+      1836
+    ],
+    "main_queries_per_task": 21,
+    "task_events_per_branch": 144,
+    "teaching_queries_per_task": 7,
+    "teaching_weight": 0.3333333333333333,
+    "updates_per_branch": 36
+  }
+}

@@ -1,15 +1,23 @@
 # EMBER progress
 
-## Writer稳定性诊断按专家修订恢复（2026-09-21）
+## Writer稳定性修订诊断完整交付（2026-09-21）
 
-Owner要求阅读最新专家意见并按修正方案继续。已登记新goal：复用已完成E0/E1，原E2及其不完整文件正式
-取消；剩余只做O-H/O-L/N-H/N-L四臂各36更新、每臂36条终点compact probe、每臂16条四任务闭环，
-并从既有E1原件导出16条轻量轨迹。四臂不作正式模型选择，不自动继续Test/FT/RL。
+Owner要求阅读最新专家意见并按修正方案继续。复用已完成E0/E1，原E2及其不完整文件正式取消；
+O-H/O-L/N-H/N-L四臂各36更新、每臂36条终点compact probe、每臂16条四任务闭环，以及既有E1
+原件的16条轻量轨迹均已完成。controller、四个train和四个rollout全部exit0；两节点已核对无本诊断进程。
 
 修订合同冻结当前36任务事件1801..1836；高/低LR分别为`1.6279650115e-4`/`2.959936e-5`。终点闭环
 固定global 3/11/26/31、state0..3、teacher demo0..3；每分支只有Spatial3-state0与Long1-state0保存
 完整图像，其余行只保存state/action与谓词。实现将在既有official `rollout_shard`的诊断捕获接口上增加
-向后兼容compact模式，不复制评测循环。正式GPU启动前仍须clean pushed frozen runtime、双节点live GPU和quota检查。
+向后兼容compact模式，不复制评测循环。正式执行来自clean pushed commit `b75ab08e`；启动前data0/data1独立
+quota满足额外2GiB峰值，因gpu01:0/1被他人新任务占用，live分配调整为gpu01:2/4与gpu02:0/4，四臂仍两节点
+各两卡、逻辑合同不变。四臂各36 steps、144 task events、36 probes、16 rollouts全部验收；合计144/576/144/64，
+四周期平衡且仅8条终点轨迹含图像，另16条E1轻量视频含5536个实际执行动作记录。
+
+四任务小面板的父节点/高LR/低LR成功数为：O1200 11/16、O-H 11、O-L 10；N1800 8/16、N-H 7、
+N-L 10。终点36任务probe的mean actual-flow MSE为O-H .054112、O-L .053502、N-H .052721、N-L .050463；
+这些只是登记面板事实，不作因果归因或分支选择。脱敏原始包、8条全图像轨迹索引和16条轻量视频位于
+`docs/review_materials/20260921/writer_stability_diagnostics/corrected`。Test/FT/RL继续暂停等待Owner/专家裁决。
 
 ## Writer训练稳定性诊断启动（2026-09-21）
 

@@ -1,11 +1,15 @@
 # EMBER task plan
 
-## 当前目标：Writer训练稳定性修订诊断（2026-09-21）
+## 当前目标：Writer训练稳定性修订诊断已交付，等待Owner/专家裁决（2026-09-21）
 
 按Owner转交的专家最后修订执行[Writer稳定性修订诊断](docs/writer_stability_diagnostics_design.md)。复用已完成
 E0/E1，取消且不恢复原E2；只从O1200/N1800完整父状态各做高/低固定LR的36步短窗，随后完成每臂36条
 compact动作探针、四个held任务各state0..3的闭环及既有16条E1轨迹轻量导出。四臂结果只交付事实证据，
 不选新正式模型、不自动续训，也不启动Test、FT、RL或外部比较。
+
+四臂、终点探针、闭环和轨迹导出均已完整exit0，脱敏原始包见
+[corrected diagnostics](docs/review_materials/20260921/writer_stability_diagnostics/corrected/README.md)。当前没有运行中
+实验；下一步必须由Owner/专家解释证据并决定是否恢复覆盖重训主线，执行agent不自行选择O-H/O-L/N-H/N-L。
 
 原覆盖重训主线保留如下；修订诊断交付后由Owner与专家裁决科学问题，不能自动恢复第4阶段。
 

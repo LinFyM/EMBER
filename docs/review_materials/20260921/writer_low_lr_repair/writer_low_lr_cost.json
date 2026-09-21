@@ -1,0 +1,14 @@
+{
+  "applied_lr": 2.959936e-05,
+  "global_end_step": 2400,
+  "global_start_step": 1801,
+  "main_queries": 50400,
+  "peak_reserved_gib": 22.802734375,
+  "phase_updates": 600,
+  "schema_version": "ember_writer_low_lr_cost_v1",
+  "teaching_queries": 16800,
+  "total_queries": 67200,
+  "update_seconds_mean": 10.668310305142464,
+  "update_seconds_p95": 16.206322303041816,
+  "update_seconds_sum": 6400.986183085479
+}

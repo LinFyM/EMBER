@@ -1,0 +1,15 @@
+phase,global_step,phase_step,successes,episodes
+coverage,200,,110,400
+coverage,400,,92,400
+coverage,600,,115,400
+coverage,800,,87,400
+coverage,1000,,117,400
+coverage,1200,,80,400
+coverage,1400,,97,400
+coverage,1600,,111,400
+coverage,1800,,92,400
+low_lr,1900,100,101,400
+low_lr,2000,200,92,400
+low_lr,2100,300,95,400
+low_lr,2200,400,98,400
+low_lr,2300,500,101,400

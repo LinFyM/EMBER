@@ -1,0 +1,28 @@
+{
+  "abandoned_evaluation_step": 2400,
+  "controls_required": [],
+  "correct_successes": 117,
+  "method_freeze": "coverage-study:/method_freeze.json",
+  "other_successes": {},
+  "other_tiebreak_required": false,
+  "outcome": "retain_original_n1000",
+  "owner_stop": "writer-low-lr-study:/launch/owner_stop_20260921.json",
+  "phase_best_successes": 101,
+  "phase_history": "writer-low-lr-study:/writer_phase_validation_history.json",
+  "phase_last_complete_validation_step": 2300,
+  "phase_stop_reason": "owner_requested_stop",
+  "phase_tied_best_steps": [
+    1900,
+    2300
+  ],
+  "phase_training_end_step": 2400,
+  "qualification_arm": "correct",
+  "schema_version": "ember_writer_low_lr_selection_v1",
+  "selected_checkpoint": "coverage-study:/training/writer/checkpoints/macro_00001000",
+  "selected_macro": 1000,
+  "selected_study": "original",
+  "selection_rule": "phase correct400 must strictly exceed original N1000=117; tied phase correct uses other400 then earliest",
+  "status": "selected",
+  "termination": "owner_requested_stop",
+  "wrong_used_for_selection": false
+}

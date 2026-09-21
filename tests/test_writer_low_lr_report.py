@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from scripts.export_writer_low_lr_report import _training_cost, paired_counts
+from scripts.export_writer_low_lr_report import _copy_portable_json, _training_cost, paired_counts
 
 
 def panel(values):
@@ -27,3 +27,13 @@ def test_training_cost_requires_contiguous_metrics_through_stop(tmp_path):
     assert result["phase_updates"] == 100 and result["total_queries"] == 11200
     with pytest.raises(ValueError, match="stopping node"):
         _training_cost(tmp_path, expected_end_step=2000)
+
+
+def test_portable_json_replaces_host_roots_without_changing_metrics(tmp_path):
+    source = tmp_path / "source.json"
+    destination = tmp_path / "destination.json"
+    source.write_text(json.dumps({"path": "/data/run/results.json", "scores": [101, 92]}))
+    _copy_portable_json(source, destination, {"/data/run": "study:"})
+    assert json.loads(destination.read_text()) == {
+        "path": "study:/results.json", "scores": [101, 92],
+    }

@@ -52,3 +52,10 @@ def test_selection_rejects_running_or_incomplete_phase():
     invalid["history"][0]["episodes"] = 399
     with pytest.raises(ValueError, match="Validation400"):
         choose_phase_checkpoint(invalid)
+
+
+def test_owner_stop_can_finalize_completed_nodes_without_claiming_registered_early_stop():
+    value = phase([101, 92, 95, 98, 101], stop=False)
+    result = choose_phase_checkpoint(value, owner_stop=True)
+    assert result["outcome"] == "retain_original_n1000"
+    assert result["phase_stop_reason"] == "owner_requested_stop"

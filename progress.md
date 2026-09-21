@@ -1,47 +1,12 @@
 # EMBER progress
 
-## 当前执行：Writer N1800恒定低学习率修复（2026-09-21）
+## 当前状态：Writer低学习率修复已由Owner停止（2026-09-21）
 
-Owner要求按专家最新修正设置goal并推进。Active design为
-[Writer低学习率修复合同](docs/writer_low_lr_repair_design.md)：唯一父节点是覆盖重训正式N1800完整状态，
-仅把global1801起的applied LR改为`2.959936e-5`；新phase每100更新完成correct Validation400，并按
-phase-only持续下降、平台或长期无进展规则停止。新phase未严格超过117则保留N1000并停止；超过后才补
-same-task-other400/cross-suite-wrong400。本阶段不启动Test、FT、RL、外部比较或其它补救。
+Owner判断性能已经无法提升并明确要求停止。唯一低学习率phase已终止，双节点均无本实验训练、物化或评测进程；没有启动Test、FT、RL、外部比较或其它补救分支。正式完整correct Validation400节点为：1900=101、2000=92、2100=95、2200=98、2300=101。phase最高101/400，未严格超过原N1000的117/400，因此按冻结资格规则保留N1000，不执行same-task-other或cross-suite-wrong。
 
-已确认当前goal此前为空；新goal已经建立。`main`工作区开工前干净，本地与`origin/main`均为`a401cc39`。
-已在现有Writer trainer内实现显式phase continuation、固定LR scheduler恢复语义、global/phase双cursor与独立早停纯函数；
-正式GPU尚未启动。86项聚焦CPU测试通过，覆盖旧路径不变、父状态/首步LR、checkpoint重载、global1800事件连续性、
-完整Validation400准入及三条phase停止规则；候选配置与实际父run contract只读比对通过。父checkpoint已核对：
-world4，模型51,033,768 bytes，trainer state约97MB，四rank RNG齐全，
-global/scheduler/sampler cursor均1800，AdamW含545个参数状态，父applied LR为`1.627965011517147e-4`。
-首轮提交推送、clean detached runtime、双节点live GPU与data0/data1 quota检查均已完成。
+训练已完成到global2400并保留完整checkpoint，但Owner停止时对应Validation仍在执行，未形成`results.json`或`launcher_completion.json`，所以正式证据截止global2300。中断竞态使stage/controller的exit文件写成0；该exit不能覆盖正式产物完整性要求，global2400不得作为完整评测节点或科学结果。停止事实与边界记录于study的`launch/owner_stop_20260921.json`，选点记录为`writer_low_lr_selection.json`。
 
-首次1900段来自clean pushed detached `15e4ba00`，双节点GPU与独立quota准入均通过，gpu02四个正式rank已启动；
-但在任何optimizer update前，历史继承把不存在的可选`diagnostics.jsonl`当成必需文件，rank0抛出
-`FileNotFoundError`，stage/controller均exit1。父覆盖训练没有登记held-action诊断节点，因此本来就没有该文件；
-`metrics.jsonl`、`exposures.jsonl`及完整父checkpoint均存在。这是明确的工程恢复接口错误，不是科学结果。
-原train log、exit、资源/quota快照和未更新的输出根保留。修复限定为历史继承仍强制metrics/exposures，仅在父文件
-存在时复制可选diagnostics，并把optimizer/scheduler完整状态核验移到历史文件复制之前；4项聚焦恢复回归通过。
-科学配置、父节点、LR、四卡topology、事件和评测合同未变；修复提交推送后从干净新运行根重启唯一1900段。
-
-修复提交`f1e1d938`已推送，原detached runtime在无进程后删除并以同路径重建为该提交；失败输出根改名封存，
-没有从不完整状态恢复。唯一controller已重新启动1900段，stage实时GPU/storage准入再次通过。首个正式更新已核对：
-`segment_start/global_step=1800`、`phase_step=0`，update1801实际`lr_applied=lr_next=2.959936e-5`，四组模块
-grad norm与总norm均finite，事件/累计exposure从7200续到7204，四rank峰值reserved为21.24--21.40GiB。
-这证明完整父状态、固定LR首步与四卡执行接口已实际接通，不代表闭环性能。controller将自行完成1900训练、完整
-Validation400、phase-only readout和后续分段；接下来只在完整节点或明确exit后读取结果，不轮询部分成功率。
-
-已加入唯一收尾入口`scripts/finalize_writer_low_lr_phase.py`，把冻结裁决转成可复算程序：完整phase未停止时拒绝
-选点；phase最高不超过117时指向原N1000且不启动新controls；严格超过时选择phase correct最高，并列则只有在每个
-并列节点完整same-task-other400到齐后按other最高、仍同分最早裁决。新phase入选后才生成绑定正确checkpoint与
-correct400 manifest的method freeze和diagnostic declaration，后续仅准许same-task-other与cross-suite-wrong；
-wrong明确不进入选点。11项phase早停、完整面板读取和选点测试通过，另用旧正式other400验证读取器返回119。
-
-报告导出入口`scripts/export_writer_low_lr_report.py`也已预置，但只接受controller exit0、已停止phase和已完成选点；
-若phase入选，还会强制要求选中节点的other400与wrong400完整退出后才生成报告。它一次性导出旧曲线＋修复phase曲线
-（1800标LR intervention）、逐任务、逐suite、相邻R/G/L、选中模型相对N1000的配对统计、失败行、实际controls、
-训练成本、精简原始行以及PNG/SVG/Markdown。导出器还会交叉核对phase节点连续性、停止游标、每个正式面板分数
-以及metrics必须完整到停止步，拒绝截断材料。13项相关聚焦测试通过，旧N1000正式400行读取验证为117。
+图文报告与原始统计材料位于[Writer低学习率修复报告](docs/review_materials/20260921/writer_low_lr_repair/report.md)，包括完整曲线、逐任务、逐suite、相邻R/G/L、选中correct失败行、训练成本、精简原始rows、选点和Owner停止记录。phase共执行600次更新（1801..2400），累计67200 queries；训练循环合计6400.99秒，峰值reserved 22.803 GiB/卡。本实验结论是固定低学习率续训未恢复到N1000水平，属于科学负结果，不按工程故障继续补救。
 
 ## Writer稳定性修订诊断完整交付（2026-09-21）
 

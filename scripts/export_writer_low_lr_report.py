@@ -7,7 +7,6 @@ import argparse
 import csv
 import json
 import math
-import shutil
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -29,9 +28,25 @@ PARENT_STEP = 1800
 
 def _write_csv(path: Path, rows: Iterable[Mapping[str, Any]], fields: list[str]) -> None:
     with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _copy_portable_json(source: Path, destination: Path, replacements: Mapping[str, str]) -> None:
+    """Copy JSON evidence while replacing host-local roots with stable provenance labels."""
+    def portable(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {key: portable(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [portable(item) for item in value]
+        if isinstance(value, str):
+            for prefix, label in replacements.items():
+                if value.startswith(prefix):
+                    return label + value[len(prefix):]
+        return value
+
+    write_json_atomic(destination, portable(read_json(source)))
 
 
 def load_panel(directory: Path, *, expected_arm: str, expected_step: int) -> dict[str, Any]:
@@ -124,7 +139,7 @@ def _training_cost(study: Path, *, expected_end_step: int) -> dict[str, Any]:
 
 
 def _plot_curve(output: Path, nodes: list[dict[str, Any]], selected_step: int, selected_score: int,
-                stop_step: int) -> None:
+                stop_step: int, *, owner_stopped: bool) -> None:
     old = [row for row in nodes if row["phase"] == "coverage"]
     phase = [row for row in nodes if row["phase"] == "low_lr"]
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10})
@@ -148,7 +163,8 @@ def _plot_curve(output: Path, nodes: list[dict[str, Any]], selected_step: int, s
     ax.scatter([selected_step], [selected_score], marker="*", s=210, color="#009E73", zorder=5,
                label=f"Selected: {selected_step} ({selected_score}/400)")
     stop_score = next(row["successes"] for row in phase if row["global_step"] == stop_step)
-    ax.annotate(f"Phase stop {stop_score}", (stop_step, stop_score), xytext=(-8, -21),
+    stop_label = f"Last complete {stop_score}" if owner_stopped else f"Phase stop {stop_score}"
+    ax.annotate(stop_label, (stop_step, stop_score), xytext=(-8, -21),
                 textcoords="offset points", ha="right")
     ax.set_xlabel("Global Writer optimizer update")
     ax.set_ylabel("Successful rollouts / 400")
@@ -160,17 +176,31 @@ def _plot_curve(output: Path, nodes: list[dict[str, Any]], selected_step: int, s
     for suffix in ("png", "svg"):
         fig.savefig(output / f"writer_low_lr_validation_curve.{suffix}", dpi=180, facecolor="white")
     plt.close(fig)
+    svg = output / "writer_low_lr_validation_curve.svg"
+    svg.write_text("\n".join(line.rstrip() for line in svg.read_text().splitlines()) + "\n")
 
 
 def export(study: Path, original: Path, output: Path) -> dict[str, Any]:
-    controller_exit = study / "launch" / "writer_training_controller.exit"
-    if not controller_exit.is_file() or controller_exit.read_text().strip() != "0":
-        raise ValueError("low-LR training controller has not completed successfully")
     phase = read_json(study / "writer_phase_validation_history.json")
     selection = read_json(study / "writer_low_lr_selection.json")
-    if (phase.get("schema_version") != PHASE_SCHEMA or not phase.get("decision", {}).get("stop")
+    owner_stopped = selection.get("termination") == "owner_requested_stop"
+    controller_exit = study / "launch" / "writer_training_controller.exit"
+    if not controller_exit.is_file():
+        raise ValueError("low-LR training controller completion record is missing")
+    if not owner_stopped and controller_exit.read_text().strip() != "0":
+        raise ValueError("low-LR training controller has not completed successfully")
+    if (phase.get("schema_version") != PHASE_SCHEMA
+            or (not phase.get("decision", {}).get("stop") and not owner_stopped)
             or selection.get("schema_version") != SELECTION_SCHEMA or selection.get("status") != "selected"):
         raise ValueError("low-LR phase is not stopped and finalized")
+    owner_stop = None
+    if owner_stopped:
+        owner_stop_path = Path(selection["owner_stop"])
+        owner_stop = read_json(owner_stop_path)
+        if (owner_stop.get("schema_version") != "ember_writer_low_lr_owner_stop_v1"
+                or owner_stop.get("formal_evidence_cutoff_step") != phase["history"][-1]["step"]
+                or owner_stop.get("training_completed_through_step") != selection.get("phase_training_end_step")):
+            raise ValueError("owner stop record changed after selection")
     old_history = read_json(original / "writer_validation_history.json")
     old_nodes = old_history["history"]
     if [(row["step"], row["successes"]) for row in old_nodes] != [
@@ -261,11 +291,17 @@ def export(study: Path, original: Path, output: Path) -> dict[str, Any]:
         comparisons["correct_vs_cross_suite_wrong"] = paired_counts(
             selected_panel, panels["selected_cross_suite_wrong"][1])
     write_json_atomic(output / "writer_low_lr_paired_statistics.json", comparisons)
-    cost = _training_cost(study, expected_end_step=phase_steps[-1])
+    training_end_step = int(selection.get("phase_training_end_step", phase_steps[-1]))
+    cost = _training_cost(study, expected_end_step=training_end_step)
     write_json_atomic(output / "writer_low_lr_cost.json", cost)
-    shutil.copy2(study / "writer_phase_validation_history.json", output / "writer_phase_validation_history.json")
-    shutil.copy2(study / "writer_low_lr_selection.json", output / "writer_low_lr_selection.json")
-    _plot_curve(output, nodes, selected_step, selected_score, int(phase["decision"]["last_step"]))
+    portable_roots = {str(study): "writer-low-lr-study:", str(original): "coverage-study:"}
+    _copy_portable_json(study / "writer_phase_validation_history.json",
+                        output / "writer_phase_validation_history.json", portable_roots)
+    _copy_portable_json(study / "writer_low_lr_selection.json",
+                        output / "writer_low_lr_selection.json", portable_roots)
+    if owner_stopped:
+        _copy_portable_json(owner_stop_path, output / owner_stop_path.name, portable_roots)
+    _plot_curve(output, nodes, selected_step, selected_score, phase_steps[-1], owner_stopped=owner_stopped)
 
     phase_scores = ", ".join(f"{row['step']}:{row['successes']}" for row in phase["history"])
     controls = "未执行；phase未严格超过117，按合同保留原N1000。"
@@ -273,9 +309,16 @@ def export(study: Path, original: Path, output: Path) -> dict[str, Any]:
         other = panels["selected_other"][1]["overall"]["successes"]
         wrong = panels["selected_cross_suite_wrong"][1]["overall"]["successes"]
         controls = f"选中phase节点的same-task-other为 **{other}/400**，cross-suite-wrong为 **{wrong}/400**。"
+    termination = (f"Owner在global{training_end_step}训练完成、对应Validation尚未形成正式400行时明确要求停止；"
+                   f"因此正式曲线截止global{phase_steps[-1]}，未宣称触发预登记早停。"
+                   if owner_stopped else
+                   f"预登记早停在global{phase['decision']['last_step']}触发，原因为`{phase['decision']['reason']}`。")
+    status = ("Owner在五个完整phase节点后明确停止；正式证据已封存并按资格规则完成选点。"
+              if owner_stopped else
+              "唯一低学习率phase已按登记早停规则结束并完成选点。")
     report = f"""# Writer N1800 恒定低学习率修复续训报告
 
-> 状态：唯一低学习率phase已按登记规则停止并完成选点。本报告不包含Test、FT、RL、外部比较或其它补救分支。
+> 状态：{status}本报告不包含Test、FT、RL、外部比较或其它补救分支。
 
 ## 合同与执行
 
@@ -286,8 +329,7 @@ Validation400执行phase早停。首次启动在任何更新前因可选diagnost
 
 ## 完整曲线、停止与选点
 
-新phase完整节点为 **{phase_scores}**（均为成功数/400）。停止节点为global
-**{phase['decision']['last_step']}**，原因为`{phase['decision']['reason']}`。phase最高为
+新phase完整节点为 **{phase_scores}**（均为成功数/400）。{termination} phase最高为
 **{selection['phase_best_successes']}/400**。最终裁决为`{selection['outcome']}`，选中global
 **{selected_step}**，correct为 **{selected_score}/400**。phase分数必须严格超过原N1000的117才可替换；并列correct只用
 same-task-other破同分，wrong从不参与选点。
@@ -305,7 +347,7 @@ same-task-other破同分，wrong从不参与选点。
 逐节点逐任务、逐suite、相邻节点R/G/L和选中correct失败行分别见随附CSV；phase及实际执行controls的400行精简原始记录见
 `writer_low_lr_validation_rows.csv`，正式完整JSON仍保留在study。
 
-phase共执行 **{cost['phase_updates']}** 次更新，训练循环合计 **{cost['update_seconds_sum']:.2f}秒**，平均
+phase共执行 **{cost['phase_updates']}** 次更新（其中正式Validation截止{phase_steps[-1]}），训练循环合计 **{cost['update_seconds_sum']:.2f}秒**，平均
 **{cost['update_seconds_mean']:.3f}秒/更新**，记录峰值reserved **{cost['peak_reserved_gib']:.3f} GiB/卡**；累计
 **{cost['total_queries']}** queries。训练耗时不含物化、闭环评测和阶段切换。
 

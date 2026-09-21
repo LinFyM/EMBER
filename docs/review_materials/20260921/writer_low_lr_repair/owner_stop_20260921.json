@@ -1,0 +1,44 @@
+{
+  "abandoned_evaluation_status": "not formal evidence; results.json and launcher_completion.json absent at termination",
+  "abandoned_evaluation_step": 2400,
+  "action": "terminated the sole tmux controller and its current step2400 formal Validation process; no further node or control will be launched",
+  "checkpoint_2400_preserved": true,
+  "completed_validation_nodes": [
+    {
+      "episodes": 400,
+      "step": 1900,
+      "successes": 101
+    },
+    {
+      "episodes": 400,
+      "step": 2000,
+      "successes": 92
+    },
+    {
+      "episodes": 400,
+      "step": 2100,
+      "successes": 95
+    },
+    {
+      "episodes": 400,
+      "step": 2200,
+      "successes": 98
+    },
+    {
+      "episodes": 400,
+      "step": 2300,
+      "successes": 101
+    }
+  ],
+  "downstream_launched": false,
+  "formal_evidence_cutoff_step": 2300,
+  "phase_best_successes": 101,
+  "process_verification": "no Writer training, materialization, or evaluation process remained on the training node after termination",
+  "reason": "Owner judged the low-LR phase performance had not improved enough and explicitly requested stopping further evaluation.",
+  "reference_n1000_successes": 117,
+  "requested_at": "2026-09-21T21:16:48+08:00",
+  "schema_version": "ember_writer_low_lr_owner_stop_v1",
+  "selection_consequence": "retain original N1000; no same-task-other or cross-suite-wrong for the repair phase",
+  "stage_exit_note": "writer_00002400.exit and writer_training_controller.exit contain 0 because Ctrl-C arrived during shell/evaluator teardown; they do not certify step2400. Formal validity is bounded by required results/completion/readout artifacts.",
+  "training_completed_through_step": 2400
+}

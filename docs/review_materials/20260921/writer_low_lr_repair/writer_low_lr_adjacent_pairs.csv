@@ -1,0 +1,6 @@
+reference,candidate,reference_step,candidate_step,retained,gained,lost,churn
+parent_n1800_correct,phase_1900_correct,1800,1900,82,19,10,29
+phase_1900_correct,phase_2000_correct,1900,2000,87,5,14,19
+phase_2000_correct,phase_2100_correct,2000,2100,83,12,9,21
+phase_2100_correct,phase_2200_correct,2100,2200,85,13,10,23
+phase_2200_correct,phase_2300_correct,2200,2300,87,14,11,25

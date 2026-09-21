@@ -1,16 +1,10 @@
 # EMBER task plan
 
-## 当前目标：N1800恒定低学习率修复续训（2026-09-21）
+## 当前目标状态：Owner停止并暂停后继实验（2026-09-21）
 
-Owner已按专家最新修正授权[Writer低学习率修复合同](docs/writer_low_lr_repair_design.md)。从正式N1800完整
-状态只开一条phase continuation，以`2.959936e-5`从global1801开始恒定续训；保持四卡topology、完整
-optimizer/sampler/rank RNG和原36任务监督合同。每100更新完成correct Validation400，只用新phase完整节点执行
-三条停止规则。新phase最高不严格超过117则保留原N1000并停止；严格超过后才冻结唯一候选并补other/wrong。
-本目标不启动Test、FT、RL、外部比较或其它补救分支。
+Owner已明确停止N1800恒定低学习率修复，原因是五个完整phase节点均未恢复到原N1000：1900/2000/2100/2200/2300依次为101/92/95/98/101，phase最高101低于117。正式证据截止2300；global2400只完成训练，Validation在形成正式400行前被中断，不能纳入曲线。按预登记资格规则保留原N1000，未启动other/wrong controls、Test、FT、RL、外部比较或任何新补救。
 
-phase接口、CPU恢复/首步LR/重载/事件连续性验证、active合同与clean pushed detached runtime均已完成；
-唯一控制器已从N1800启动。实验运行期间不轮询部分分数。收尾由登记脚本严格执行：不超过117直接保留
-N1000；严格超过且correct并列时等待所有并列节点的other400，再按other最高、仍同分最早选点；wrong永不参与选择。
+本阶段图文与原始材料已封存于[Writer低学习率修复报告](docs/review_materials/20260921/writer_low_lr_repair/report.md)。当前不再推进实验；goal按Owner要求暂停。后续只有Owner明确恢复或登记新目标后才执行，不能从下方历史顺序自动恢复。
 
 ## 已完成阶段：Writer训练稳定性修订诊断
 

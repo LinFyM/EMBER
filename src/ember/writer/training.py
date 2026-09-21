@@ -21,6 +21,7 @@ from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
 from ember.writer.learning_data import EVENT_SCHEMA, WriterTrainingData
+from ember.writer.auxiliary_pairing import declared_dynamic_episode
 from ember.writer.continuation import (
     LOW_LR_REPAIR, inherit_history, prepare_continuation, prepare_phase_continuation,
     require_continuation_config, require_continuation_start, require_extended_prefix,
@@ -52,6 +53,7 @@ def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
 
 
 def _validate_dynamic_schedule(config):
+    expected_episode = declared_dynamic_episode(config, REPO_ROOT)
     opt = config["optimization"]
     if (any(type(opt.get(key)) is not int for key in
             ("warmup_updates", "tail_start_update", "tail_end_update", "decay_updates"))
@@ -59,7 +61,7 @@ def _validate_dynamic_schedule(config):
             or opt["decay_updates"] <= opt["tail_end_update"]
             or not 0 < opt["tail_final_ratio"] <= 1
             or config["model"]["camera_view"] != "agentview"
-            or config["data"].get("teaching_episode") != "same_video"
+            or config["data"].get("teaching_episode") != expected_episode
             or not config["data"].get("protocol")):
         raise ValueError("dynamic Writer schedule or single-camera teaching contract changed")
 
@@ -67,6 +69,8 @@ def _validate_dynamic_schedule(config):
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     require_continuation_config(config)
+    if "experiment" in config and config.get("training_control") is None:
+        raise ValueError("registered auxiliary-pairing experiments require dynamic training")
     expected_data = {
         "extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
         "queries_per_task": 21, "tasks_per_update": 4, "conditions_per_task": 1, "cardinalities": [1],

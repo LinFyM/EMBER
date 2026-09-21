@@ -294,6 +294,22 @@ def test_low_lr_phase_requires_n1800_and_only_registered_schedule_change(tmp_pat
         prepare_phase_continuation(args, changed)
 
 
+def test_history_inheritance_requires_training_rows_but_allows_no_diagnostics(tmp_path):
+    from ember.writer.continuation import inherit_history
+
+    parent = tmp_path / "parent"
+    checkpoint = parent / "checkpoints/macro_00001800"
+    checkpoint.mkdir(parents=True)
+    (parent / "metrics.jsonl").write_text('{"step":1800}\n')
+    (parent / "exposures.jsonl").write_text('{"step":1800}\n')
+    output = tmp_path / "child"
+    output.mkdir()
+    inherit_history(checkpoint, output)
+    assert (output / "metrics.jsonl").read_text() == '{"step":1800}\n'
+    assert (output / "exposures.jsonl").read_text() == '{"step":1800}\n'
+    assert not (output / "diagnostics.jsonl").exists()
+
+
 def test_continuation_restores_real_optimizer_rng_scheduler_and_next_update(tmp_path, monkeypatch, sampler, config):
     from ember.writer.continuation import CONTINUATION
     from ember.writer.training import _restore, STAGE, RUN_SCHEMA

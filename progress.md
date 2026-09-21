@@ -14,7 +14,15 @@ same-task-other400/cross-suite-wrong400。本阶段不启动Test、FT、RL、外
 完整Validation400准入及三条phase停止规则；候选配置与实际父run contract只读比对通过。父checkpoint已核对：
 world4，模型51,033,768 bytes，trainer state约97MB，四rank RNG齐全，
 global/scheduler/sampler cursor均1800，AdamW含545个参数状态，父applied LR为`1.627965011517147e-4`。
-启动前仍须提交推送、建立clean detached runtime、完成双节点live GPU与data0/data1 quota检查。
+首轮提交推送、clean detached runtime、双节点live GPU与data0/data1 quota检查均已完成。
+
+首次1900段来自clean pushed detached `15e4ba00`，双节点GPU与独立quota准入均通过，gpu02四个正式rank已启动；
+但在任何optimizer update前，历史继承把不存在的可选`diagnostics.jsonl`当成必需文件，rank0抛出
+`FileNotFoundError`，stage/controller均exit1。父覆盖训练没有登记held-action诊断节点，因此本来就没有该文件；
+`metrics.jsonl`、`exposures.jsonl`及完整父checkpoint均存在。这是明确的工程恢复接口错误，不是科学结果。
+原train log、exit、资源/quota快照和未更新的输出根保留。修复限定为历史继承仍强制metrics/exposures，仅在父文件
+存在时复制可选diagnostics，并把optimizer/scheduler完整状态核验移到历史文件复制之前；4项聚焦恢复回归通过。
+科学配置、父节点、LR、四卡topology、事件和评测合同未变；修复提交推送后从干净新运行根重启唯一1900段。
 
 ## Writer稳定性修订诊断完整交付（2026-09-21）
 

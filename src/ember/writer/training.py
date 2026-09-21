@@ -410,6 +410,8 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
                          extend_from_step=(LOW_LR_REPAIR["parent_updates"] if phase_parent else None))
     if data.sampler_state()["next_step"] != updates or scheduler.last_epoch != updates:
         raise ValueError("sampler, scheduler and optimizer-update cursors differ")
+    _activate_phase_schedule(optimizer, scheduler, runtime, config, updates,
+                             initial_transition=phase_parent is not None)
     if context.is_main:
         if parent:
             inherit_history(checkpoint, args.output)
@@ -420,8 +422,6 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
             count = sum(node <= updates for node in nodes) * len(data.tasks)
             if count or (args.output / "diagnostics.jsonl").exists():
                 reconcile_metrics(args.output / "diagnostics.jsonl", updates, count, cursor_key="step", packet_label="diagnostics")
-    _activate_phase_schedule(optimizer, scheduler, runtime, config, updates,
-                             initial_transition=phase_parent is not None)
     return updates, metrics_rows
 
 

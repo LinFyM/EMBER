@@ -143,7 +143,13 @@ def prepare_phase_continuation(args, contract):
 
 
 def inherit_history(checkpoint, output):
-    for name in ("metrics.jsonl", "exposures.jsonl", "diagnostics.jsonl"):
-        with (checkpoint.parent.parent / name).open("rb") as source:
+    parent = checkpoint.parent.parent
+    for name in ("metrics.jsonl", "exposures.jsonl"):
+        with (parent / name).open("rb") as source:
             with (output / name).open("xb") as target:
+                shutil.copyfileobj(source, target)
+    diagnostics = parent / "diagnostics.jsonl"
+    if diagnostics.is_file():
+        with diagnostics.open("rb") as source:
+            with (output / diagnostics.name).open("xb") as target:
                 shutil.copyfileobj(source, target)

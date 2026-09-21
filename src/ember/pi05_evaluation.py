@@ -26,6 +26,12 @@ from ember.pi05_eval.exploration import (
     add_exploration_noise, episode_exploration_fields,
     validate_episode_exploration, validate_exploration_contract,
 )
+from ember.pi05_eval.trajectory_capture import (
+    capture_level,
+    initialize_capture,
+    record_replan,
+    save_capture,
+)
 from ember.pi05_eval_queue import (
     EvaluationClaim,
     EvaluationShard,
@@ -152,7 +158,7 @@ def _start_fixed_episode(
     root_seed: int,
     dummy: np.ndarray,
     task_adapter: Any | None,
-    capture_occupancy: bool,
+    capture_level: str | None,
 ) -> dict[str, Any]:
     env.seed(root_seed)
     env.reset()
@@ -177,9 +183,7 @@ def _start_fixed_episode(
     }
     if prepared is not None:
         slot["episode_adapter"] = prepared
-    if capture_occupancy:
-        slot["replay_observations"] = []
-        slot["replay_action_chunks"] = []
+    initialize_capture(slot, capture_level)
     if contract.get("diagnostic_stage_predicates") is not None:
         states, values = _stage_predicate_snapshot(env)
         slot.update(
@@ -224,10 +228,10 @@ def _plan_action_chunks(
     for group in groups:
         if task_adapter is not None and not batched_adapter:
             task_adapter.install(group[0]["episode_adapter"])
-        processed = [
-            preprocess(libero_policy_input(slot["obs"], str(task["language"])))
-            for slot in group
+        raw_inputs = [
+            libero_policy_input(slot["obs"], str(task["language"])) for slot in group
         ]
+        processed = [preprocess(value) for value in raw_inputs]
         batch = {
             key: torch.cat([item[key] for item in processed], dim=0)
             for key in processed[0]
@@ -263,17 +267,7 @@ def _plan_action_chunks(
         for row, (slot, plan, seed) in enumerate(
             zip(group, actions, seeds, strict=True)
         ):
-            if "replay_observations" in slot:
-                slot["replay_observations"].append(
-                    {
-                        key: value.detach().to(device="cpu").contiguous()
-                        for key, value in processed[row].items()
-                        if isinstance(value, torch.Tensor)
-                    }
-                )
-                slot["replay_action_chunks"].append(
-                    chunks[row : row + 1].detach().to(device="cpu").contiguous()
-                )
+            record_replan(slot, raw_inputs[row], processed[row], chunks[row : row + 1])
             slot["action_plan"].extend(plan[:replan_steps])
             slot["policy_noise_seeds"].append(seed)
             slot["replan_index"] += 1
@@ -300,7 +294,7 @@ def rollout_shard(
     root_seed = int(contract["rng"]["inference_seed"])
     worker_started = time.monotonic()
     rows: list[dict[str, Any]] = []
-    capture_occupancy = contract.get("diagnostic_occupancy_capture") is not None
+    occupancy_capture = contract.get("diagnostic_occupancy_capture")
 
     active_count = min(len(envs), len(state_ids))
     active_envs = envs[:active_count]
@@ -315,7 +309,7 @@ def rollout_shard(
             root_seed=root_seed,
             dummy=dummy,
             task_adapter=task_adapter,
-            capture_occupancy=capture_occupancy,
+            capture_level=capture_level(occupancy_capture, task, int(state_id)),
         )
         for env, state_id in zip(active_envs, state_ids[:active_count], strict=True)
     ]
@@ -370,35 +364,9 @@ def rollout_shard(
                     "final_satisfied": list(slot["stage_predicate_last"]),
                     "peak_satisfied_count": int(slot["stage_predicate_peak"]),
                 }
-            if capture_occupancy:
-                import torch
-
-                capture = contract["diagnostic_occupancy_capture"]
-                root = Path(str(capture["trajectory_root"]))
-                root.mkdir(parents=True, exist_ok=True)
-                path = root / (
-                    f"{task['suite']}_task_{int(task['task_id']):02d}_"
-                    f"state_{int(slot['init_state_id']):03d}.pt"
-                )
-                torch.save(
-                    {
-                        "schema_version": "ember_pi05_occupancy_trajectory_v1",
-                        "suite": task["suite"],
-                        "task_id": int(task["task_id"]),
-                        "init_state_id": int(slot["init_state_id"]),
-                        "success": bool(done),
-                        "steps": int(slot["steps"]),
-                        "policy_noise_seeds": tuple(slot["policy_noise_seeds"]),
-                        "observations": tuple(slot["replay_observations"]),
-                        "action_chunks": tuple(slot["replay_action_chunks"]),
-                    },
-                    path,
-                )
-                row["occupancy_trajectory"] = {
-                    "path": str(path),
-                    "bytes": path.stat().st_size,
-                    "replans": len(slot["replay_observations"]),
-                }
+            trajectory = save_capture(occupancy_capture, task, slot, success=bool(done))
+            if trajectory is not None:
+                row["occupancy_trajectory"] = trajectory
             row.update(
                 episode_adapter_fields(
                     contract, task_adapter, slot.get("episode_adapter")
@@ -415,7 +383,9 @@ def rollout_shard(
                     root_seed=root_seed,
                     dummy=dummy,
                     task_adapter=task_adapter,
-                    capture_occupancy=capture_occupancy,
+                    capture_level=capture_level(
+                        occupancy_capture, task, int(state_ids[next_state])
+                    ),
                 )
                 next_state += 1
             else:

@@ -1,5 +1,16 @@
 # EMBER progress
 
+## Writer稳定性诊断按专家修订恢复（2026-09-21）
+
+Owner要求阅读最新专家意见并按修正方案继续。已登记新goal：复用已完成E0/E1，原E2及其不完整文件正式
+取消；剩余只做O-H/O-L/N-H/N-L四臂各36更新、每臂36条终点compact probe、每臂16条四任务闭环，
+并从既有E1原件导出16条轻量轨迹。四臂不作正式模型选择，不自动继续Test/FT/RL。
+
+修订合同冻结当前36任务事件1801..1836；高/低LR分别为`1.6279650115e-4`/`2.959936e-5`。终点闭环
+固定global 3/11/26/31、state0..3、teacher demo0..3；每分支只有Spatial3-state0与Long1-state0保存
+完整图像，其余行只保存state/action与谓词。实现将在既有official `rollout_shard`的诊断捕获接口上增加
+向后兼容compact模式，不复制评测循环。正式GPU启动前仍须clean pushed frozen runtime、双节点live GPU和quota检查。
+
 ## Writer训练稳定性诊断启动（2026-09-21）
 
 Owner要求完整执行专家最后登记的E0–E3，不采用对话中较早且已撤回的续训或补救建议。Active design为

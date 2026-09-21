@@ -6,7 +6,6 @@ import argparse
 import csv
 import gc
 import json
-import math
 from pathlib import Path
 import time
 from typing import Any, Mapping, Sequence
@@ -22,21 +21,14 @@ from ember.writer.stability_diagnostics import (
     LOW_LR,
     PROBE_NOISE_SEEDS,
     PROBE_TEACHER_QUERY,
-    TEACHING_WEIGHT,
-    combine_gradients,
     current_training_data,
-    displacement_from_parent,
     event_window,
-    gradient_dot,
-    grouped_gradient_metrics,
     load_writer,
     optimizer_step,
     probe_dataset,
     probe_items,
     probe_one,
-    restore_parent,
     save_diagnostic_checkpoint,
-    snapshot_parent,
     source_policy,
     validate_optimizer_state,
     writer_condition_gradient,
@@ -144,7 +136,7 @@ def register(output: Path) -> None:
         "test_use": False,
         "checkpoint_selection_use": False,
         "asset_names": list(assets),
-        "stage_order": ["E0", "E1", "E2", "E3"],
+        "stage_order": ["E0", "E1", "E3-corrected"],
         "output_root": str(output.resolve()),
     })
     write_json_atomic(output / "assets.json", {"schema_version": DIAGNOSTIC_SCHEMA, "assets": assets})
@@ -306,7 +298,11 @@ def e1_rollout(output: Path, device: torch.device, asset: str, physical_gpu_id: 
 
 def e3_rollout(output: Path, device: torch.device, branch: str, local_step: int,
                physical_gpu_id: int) -> None:
-    from ember.writer.stability_rollouts import run_asset_rollouts
+    from ember.writer.stability_rollouts import (
+        E3_FULL_CAPTURE_CONDITIONS,
+        E3_HELD_TASKS,
+        run_asset_rollouts,
+    )
 
     parent_asset = "O1200" if branch.startswith("O-") else "N1800"
     loaded = load_writer(
@@ -324,180 +320,48 @@ def e3_rollout(output: Path, device: torch.device, branch: str, local_step: int,
         current_evaluation_contract=NEW_ROOT / "evaluation/source_validation/run_contract.json",
         loaded_writer=loaded,
         frozen_policy=None,
+        panel_ids=E3_HELD_TASKS,
+        compact_capture=True,
+        full_capture_conditions=E3_FULL_CAPTURE_CONDITIONS,
     )
     normalized = [{**row, "branch": branch, "local_step": local_step, "parent_asset": parent_asset}
                   for row in rows]
     _write_csv(output / "parts" / f"shadow_rollout_rows_{branch}_{local_step:03d}.csv", normalized)
 
 
-def _sum_gradient(left: Sequence[torch.Tensor], right: Sequence[torch.Tensor], scale: float) -> tuple[torch.Tensor, ...]:
-    return tuple(a + b.mul(scale) for a, b in zip(left, right, strict=True))
-
-
-def _gradient_gram(asset: str, names: Sequence[str], gradients: Mapping[str, Sequence[Sequence[torch.Tensor]]], tasks: Sequence[int]):
-    rows = []
-    for component, vectors in gradients.items():
-        for i, left_task in enumerate(tasks):
-            for j, right_task in enumerate(tasks):
-                rows.append({
-                    "asset": asset,
-                    "component": component,
-                    "left_task": left_task,
-                    "right_task": right_task,
-                    "dot": gradient_dot(vectors[i], vectors[j]),
-                })
-    return rows
-
-
-def _norm_matched_step(loaded, parent_model, gradient, displacement: float) -> None:
-    loaded.runtime.state.load_state_dict(parent_model, strict=True)
-    norm = math.sqrt(sum(float(value.square().sum()) for value in gradient))
-    if not math.isfinite(norm) or norm <= 0 or displacement < 0:
-        raise FloatingPointError("invalid norm-matched displacement")
-    scale = displacement / norm
-    with torch.no_grad():
-        for parameter, value in zip(loaded.runtime.state.parameters(), gradient, strict=True):
-            parameter.add_(value.to(parameter), alpha=-scale)
-
-
 def _action_delta_mse(row: Mapping[str, Any], parent: Mapping[str, Any]) -> float:
-    left = torch.tensor(row["inference_first5_actions"], dtype=torch.float32)
-    right = torch.tensor(parent["inference_first5_actions"], dtype=torch.float32)
+    def tensor(value: Any) -> torch.Tensor:
+        return torch.tensor(json.loads(value) if isinstance(value, str) else value, dtype=torch.float32)
+
+    left = tensor(row["inference_first5_actions"])
+    right = tensor(parent["inference_first5_actions"])
     if left.shape != right.shape:
         raise ValueError("virtual probe and parent action shapes differ")
     return float((left - right).square().mean())
 
 
 def _probe_key(row: Mapping[str, Any]) -> tuple[Any, ...]:
-    return tuple(row[key] for key in (
-        "global_task_id", "teacher_demo", "query_demo", "query_fraction", "query_position", "noise_seed"
-    ))
-
-
-def _annotate_virtual_probes(rows, parents, *, asset, update, measurement, step):
-    result = []
-    for row in rows:
-        parent = parents[_probe_key(row)]
-        result.append({
-            "asset": asset,
-            "update": update,
-            "measurement": measurement,
-            **step,
-            **{key: value for key, value in row.items() if key != "asset"},
-            "action_delta_mse_vs_parent": _action_delta_mse(row, parent),
-        })
-    return result
-
-
-def _virtual_update_specs(batches, tasks, q_vectors, j_vectors):
-    specs = []
-    for index, batch in enumerate(batches, start=1):
-        positions = [tasks.index(int(draw["task"])) for draw in batch]
-        specs.extend((
-            (f"batch_{index:02d}_joint", [j_vectors[p] for p in positions], [0.25] * 4),
-            (f"batch_{index:02d}_main", [q_vectors[p] for p in positions], [0.25] * 4),
-        ))
-    specs.extend((
-        ("all36_joint", j_vectors, [1 / 36] * 36),
-        ("all36_main", q_vectors, [1 / 36] * 36),
-        ("zero_current_gradient", [tuple(torch.zeros_like(value) for value in q_vectors[0])], [1.0]),
-    ))
-    return specs
-
-
-def _run_virtual_updates(
-    loaded, data, tasks, q_vectors, j_vectors, *,
-    update_specs, include_parent: bool,
-):
-    parent = snapshot_parent(loaded)
-    parent_model = parent[0]
-    parent_rows = _probe_loaded_rows(loaded, data)
-    parent_by_key = {_probe_key(row): row for row in parent_rows}
-    if len(parent_by_key) != 36 * 8:
-        raise ValueError("E2 parent probe is incomplete")
-    rows = []
-    if include_parent:
-        rows.extend(_annotate_virtual_probes(
-            parent_rows, parent_by_key, asset=loaded.name, update="parent", measurement="parent",
-            step={"preclip_grad_norm": 0.0, "parameter_displacement_norm": 0.0, "lr": 0.0},
-        ))
-    for update_name, vectors, weights in update_specs:
-        restore_parent(loaded, parent)
-        combined = tuple(sum(vector[i].mul(weight) for vector, weight in zip(vectors, weights, strict=True))
-                         for i in range(len(vectors[0])))
-        step = optimizer_step(loaded, gradients=[combined], weights=[1.0], lr=HIGH_LR)
-        probes = _probe_loaded_rows(loaded, data)
-        rows.extend(_annotate_virtual_probes(
-            probes, parent_by_key, asset=loaded.name, update=update_name, measurement="adam", step=step
-        ))
-        if update_name != "zero_current_gradient":
-            _norm_matched_step(loaded, parent_model, combined, step["parameter_displacement_norm"])
-            matched = {
-                "preclip_grad_norm": math.sqrt(sum(float(value.square().sum()) for value in combined)),
-                "parameter_displacement_norm": displacement_from_parent(loaded, parent_model),
-                "lr": HIGH_LR,
-            }
-            probes = _probe_loaded_rows(loaded, data)
-            rows.extend(_annotate_virtual_probes(
-                probes, parent_by_key, asset=loaded.name, update=update_name,
-                measurement="norm_matched_raw_gradient", step=matched,
-            ))
-    restore_parent(loaded, parent)
-    return rows
-
-
-def e2(
-    output: Path, device: torch.device, asset: str, *,
-    shard_index: int = 0, num_shards: int = 1,
-) -> None:
-    if asset not in {"O1200", "N1800"}:
-        raise ValueError("E2 only admits O1200 or N1800")
-    if num_shards < 1 or not 0 <= shard_index < num_shards:
-        raise ValueError("invalid E2 shard")
-    current = _current_run()
-    loaded = load_writer(name=asset, checkpoint=WRITER_ASSETS[asset], asset_root=ASSET_ROOT,
-                         device=device, fixed_lr=HIGH_LR)
-    data = current_training_data(ASSET_ROOT, current, planned_updates=1809)
-    batches = event_window(data, first_step=1801, last_step=1809)
-    cache = VideoConditionCache(loaded.runtime, data, 2**30)
-    tasks = [int(draw["task"]) for batch in batches for draw in batch]
-    if len(tasks) != 36 or len(set(tasks)) != 36 or set(tasks) != set(data.task_ids):
-        raise ValueError("E2 events1801..1809 do not cover each current task exactly once")
-    q_vectors, s_vectors, j_vectors, metric_rows = [], [], [], []
-    draws = {int(draw["task"]): draw for batch in batches for draw in batch}
-    for task in tasks:
-        q, qm = writer_condition_gradient(loaded, data, cache, draws[task], component="main")
-        s, sm = writer_condition_gradient(loaded, data, cache, draws[task], component="teaching")
-        j = _sum_gradient(q, s, TEACHING_WEIGHT)
-        q_vectors.append(q)
-        s_vectors.append(s)
-        j_vectors.append(j)
-        metric_rows.append({
-            "asset": asset, "global_task_id": task, "suite": data.tasks[task].suite,
-            "suite_task_id": data.tasks[task].suite_task_id,
-            "q_s_inner_product": gradient_dot(q, s),
-            **{("q_" + key): value for key, value in grouped_gradient_metrics(loaded.parameter_names, q).items()},
-            **{("s_" + key): value for key, value in grouped_gradient_metrics(loaded.parameter_names, s).items()},
-            **{("j_" + key): value for key, value in grouped_gradient_metrics(loaded.parameter_names, j).items()},
-            **qm, **{("teaching_" + key): value for key, value in sm.items()},
-        })
-    if shard_index == 0:
-        _write_csv(output / "parts" / f"task_gradient_metrics_{asset}.csv", metric_rows)
-        gram = _gradient_gram(asset, loaded.parameter_names,
-                              {"gQ": q_vectors, "gS": s_vectors, "gJ": j_vectors}, tasks)
-        _write_csv(output / "parts" / f"task_gradient_gram_{asset}.csv", gram)
-
-    specs = _virtual_update_specs(batches, tasks, q_vectors, j_vectors)
-    selected = [spec for index, spec in enumerate(specs) if index % num_shards == shard_index]
-    if len(specs) != 21 or not selected:
-        raise ValueError("E2 registered update partition changed")
-    virtual_rows = _run_virtual_updates(
-        loaded, data, tasks, q_vectors, j_vectors,
-        update_specs=selected, include_parent=shard_index == 0,
+    return (
+        int(row["global_task_id"]), int(row["teacher_demo"]), int(row["query_demo"]),
+        float(row["query_fraction"]), int(row["query_position"]), int(row["noise_seed"]),
     )
-    suffix = "" if num_shards == 1 else f"_shard_{shard_index:02d}_of_{num_shards:02d}"
-    _write_csv(output / "parts" / f"virtual_update_rows_{asset}{suffix}.csv", virtual_rows)
-    data.close()
+
+
+def _parent_compact_probes(output: Path, asset: str) -> dict[tuple[Any, ...], dict[str, Any]]:
+    path = output / "frozen_probe_rows.csv"
+    with path.open(newline="", encoding="utf-8") as handle:
+        rows = [
+            row for row in csv.DictReader(handle)
+            if row["asset"] == asset
+            and int(row["teacher_demo"]) == 46
+            and int(row["query_demo"]) == 47
+            and float(row["query_fraction"]) == 0.25
+            and int(row["noise_seed"]) == PROBE_NOISE_SEEDS[0]
+        ]
+    parents = {_probe_key(row): row for row in rows}
+    if len(rows) != 36 or len(parents) != 36:
+        raise ValueError(f"E3 parent compact probe is incomplete for {asset}: {len(rows)}")
+    return parents
 
 
 def e3(output: Path, device: torch.device, branch: str) -> None:
@@ -510,20 +374,13 @@ def e3(output: Path, device: torch.device, branch: str) -> None:
     parent_step = int(WRITER_ASSETS[asset].name.rsplit("_", 1)[-1])
     loaded = load_writer(name=asset, checkpoint=WRITER_ASSETS[asset], asset_root=ASSET_ROOT,
                          device=device, fixed_lr=lr)
-    data = current_training_data(ASSET_ROOT, current, planned_updates=1872)
-    batches = event_window(data, first_step=1801, last_step=1872)
+    data = current_training_data(ASSET_ROOT, current, planned_updates=1836)
+    batches = event_window(data, first_step=1801, last_step=1836)
     cache = VideoConditionCache(loaded.runtime, data, 2**30)
     branch_root = output / "shadow" / branch
     branch_root.mkdir(parents=True, exist_ok=False)
     steps, exposures = [], []
-    save_diagnostic_checkpoint(loaded, branch_root / "local_000", local_step=0, parent_step=parent_step)
-    initial_probes = _probe_loaded_rows(loaded, data)
-    initial_by_key = {_probe_key(row): row for row in initial_probes}
-    probe_rows = [{
-        "branch": branch, "parent_asset": asset, "local_step": 0,
-        **{key: value for key, value in row.items() if key != "asset"},
-        "action_delta_mse_vs_local0": 0.0,
-    } for row in initial_probes]
+    parent_by_key = _parent_compact_probes(output, asset)
     for local_step, batch in enumerate(batches, start=1):
         started = time.perf_counter()
         gradients, losses = [], []
@@ -547,21 +404,30 @@ def e3(output: Path, device: torch.device, branch: str) -> None:
             "mean_teaching_loss": sum(row["teaching_loss"] for row in losses) / 4,
             **result,
         })
-        if local_step in {18, 36, 72}:
-            save_diagnostic_checkpoint(loaded, branch_root / f"local_{local_step:03d}",
-                                       local_step=local_step, parent_step=parent_step)
-            for row in _probe_loaded_rows(loaded, data):
-                probe_rows.append({
-                    "branch": branch, "parent_asset": asset, "local_step": local_step,
-                    **{key: value for key, value in row.items() if key != "asset"},
-                    "action_delta_mse_vs_local0": _action_delta_mse(row, initial_by_key[_probe_key(row)]),
-                })
+    if len(steps) != 36 or len(exposures) != 144:
+        raise ValueError("E3 corrected window did not produce 36 updates and 144 task events")
+    save_diagnostic_checkpoint(
+        loaded, branch_root / "local_036", local_step=36, parent_step=parent_step
+    )
+    probe_rows = []
+    for row in _probe_loaded_rows(loaded, data, compact=True):
+        parent = parent_by_key[_probe_key(row)]
+        probe_rows.append({
+            "branch": branch, "parent_asset": asset, "local_step": 36,
+            **{key: value for key, value in row.items() if key != "asset"},
+            "parent_full_mse": float(parent["full_mse"]),
+            "parent_tau1_first5_mse": float(parent["tau1_first5_mse"]),
+            "parent_inference_first5_mse": float(parent["inference_first5_mse"]),
+            "action_delta_mse_vs_parent": _action_delta_mse(row, parent),
+        })
+    if len(probe_rows) != 36:
+        raise ValueError(f"E3 compact terminal probe row count differs: {len(probe_rows)} != 36")
     _write_csv(output / "parts" / f"shadow_training_steps_{branch}.csv", steps)
     _write_csv(output / "parts" / f"shadow_task_exposures_{branch}.csv", exposures)
     _write_csv(output / "parts" / f"shadow_probe_rows_{branch}.csv", probe_rows)
     write_json_atomic(branch_root / "completion.json", {
         "schema_version": DIAGNOSTIC_SCHEMA, "status": "complete", "branch": branch,
-        "parent_asset": asset, "parent_step": parent_step, "local_updates": 72,
+        "parent_asset": asset, "parent_step": parent_step, "local_updates": 36,
         "fixed_lr": lr, "scheduler_steps": 0, "test_use": False,
     })
     data.close()
@@ -572,19 +438,16 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=STUDY_ROOT)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("register")
-    for name in ("e0", "e1-probe", "e1-rollout", "e2", "e3", "e3-rollout"):
+    for name in ("e0", "e1-probe", "e1-rollout", "e3", "e3-rollout"):
         command = sub.add_parser(name)
         command.add_argument("--device", default="cuda:0")
-        if name in {"e1-probe", "e1-rollout", "e2"}:
+        if name in {"e1-probe", "e1-rollout"}:
             command.add_argument("--asset", required=True)
-        if name == "e2":
-            command.add_argument("--shard-index", type=int, default=0)
-            command.add_argument("--num-shards", type=int, default=1)
         if name == "e1-rollout":
             command.add_argument("--physical-gpu-id", type=int, required=True)
         if name == "e3-rollout":
             command.add_argument("--branch", choices=("O-H", "O-L", "N-H", "N-L"), required=True)
-            command.add_argument("--local-step", type=int, choices=(18, 36, 72), required=True)
+            command.add_argument("--local-step", type=int, choices=(36,), required=True)
             command.add_argument("--physical-gpu-id", type=int, required=True)
         if name == "e3":
             command.add_argument("--branch", choices=("O-H", "O-L", "N-H", "N-L"), required=True)
@@ -600,8 +463,6 @@ def main() -> None:
         e1_probe(output, device, args.asset)
     elif args.command == "e1-rollout":
         e1_rollout(output, device, args.asset, args.physical_gpu_id)
-    elif args.command == "e2":
-        e2(output, device, args.asset, shard_index=args.shard_index, num_shards=args.num_shards)
     elif args.command == "e3":
         e3(output, device, args.branch)
     else:

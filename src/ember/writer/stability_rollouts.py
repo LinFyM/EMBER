@@ -22,6 +22,8 @@ from ember.writer.stability_diagnostics import FrozenPolicy, LoadedWriter
 
 
 COMMON_HELD_TASKS = (3, 11, 23, 26, 31)
+E3_HELD_TASKS = (3, 11, 26, 31)
+E3_FULL_CAPTURE_CONDITIONS = ((3, 0), (31, 0))
 TRAIN_PANEL_TASKS = (5, 7, 12, 37, 43, 96, 51, 73)
 E1_TRAIN_MODELS = {"O1500", "N1000", "N1800", "M300", "S1000"}
 EVALUATION_CONFIG = "configs/libero_24_8_8_coverage_v1/evaluation.json"
@@ -80,7 +82,7 @@ def _selected_task_contracts(asset_root: Path, output: Path) -> tuple[dict[int, 
         raise ValueError("target and LIBERO-90 evaluation installations differ")
     rows = {**{_task_global_id(row.suite, row.task_id): asdict(row) for row in target},
             **{_task_global_id(row.suite, row.task_id): asdict(row) for row in meta}}
-    selected = set(COMMON_HELD_TASKS) | set(TRAIN_PANEL_TASKS)
+    selected = set(COMMON_HELD_TASKS) | set(TRAIN_PANEL_TASKS) | set(E3_HELD_TASKS)
     if not selected <= rows.keys():
         raise ValueError("diagnostic rollout tasks are absent from installed authorities")
     return {task: rows[task] for task in selected}, paths
@@ -147,8 +149,31 @@ def compile_panel(
 
 def _rollout_contract(
     *, base: Mapping[str, Any], paths: Mapping[str, str], tasks: Sequence[Mapping[str, Any]],
-    trajectory_root: Path, writer: bool,
+    trajectory_root: Path, writer: bool, compact_capture: bool = False,
+    full_capture_conditions: Sequence[tuple[int, int]] = (),
 ) -> dict[str, Any]:
+    capture = {
+        "schema_version": "ember_writer_stability_trajectory_capture_v1",
+        "trajectory_root": str(trajectory_root),
+        "checkpoint_selection_use": False,
+        "test_use": False,
+    }
+    if compact_capture:
+        by_global = {_task_global_id(str(row["suite"]), int(row["task_id"])): row for row in tasks}
+        if any(task not in by_global for task, _state in full_capture_conditions):
+            raise ValueError("full trajectory capture condition is outside the rollout panel")
+        capture.update({
+            "schema_version": "ember_writer_stability_terminal_trajectory_capture_v2",
+            "mode": "compact",
+            "full_conditions": [
+                {
+                    "suite": by_global[task]["suite"],
+                    "task_id": int(by_global[task]["task_id"]),
+                    "init_state_id": state,
+                }
+                for task, state in full_capture_conditions
+            ],
+        })
     return {
         "environment": dict(base["environment"]),
         "policy": dict(base["policy"]),
@@ -157,12 +182,7 @@ def _rollout_contract(
         "libero_paths": dict(paths),
         "tasks": list(tasks),
         "adapter": {"kind": HORIZON_WRITER_KIND} if writer else None,
-        "diagnostic_occupancy_capture": {
-            "schema_version": "ember_writer_stability_trajectory_capture_v1",
-            "trajectory_root": str(trajectory_root),
-            "checkpoint_selection_use": False,
-            "test_use": False,
-        },
+        "diagnostic_occupancy_capture": capture,
         "diagnostic_stage_predicates": {
             "schema_version": "ember_writer_stability_stage_predicates_v1",
             "checkpoint_selection_use": False,
@@ -174,9 +194,11 @@ def _rollout_contract(
 def run_asset_rollouts(
     *, asset: str, asset_root: Path, output: Path, physical_gpu_id: int,
     current_evaluation_contract: Path, loaded_writer: LoadedWriter | None,
-    frozen_policy: FrozenPolicy | None,
+    frozen_policy: FrozenPolicy | None, panel_ids: Sequence[int] | None = None,
+    compact_capture: bool = False,
+    full_capture_conditions: Sequence[tuple[int, int]] = (),
 ) -> list[dict[str, Any]]:
-    """Run exactly the E1-B panels registered for one frozen asset."""
+    """Run a registered stability-diagnostic closed-loop panel."""
     if (loaded_writer is None) == (frozen_policy is None):
         raise ValueError("rollout needs exactly one Writer or physical frozen policy")
     output.mkdir(parents=True, exist_ok=False)
@@ -191,29 +213,39 @@ def run_asset_rollouts(
         EMBER_LIBERO_ASSETS_ROOT=str(assets_root),
     )
     installed, paths = _selected_task_contracts(asset_root, output)
-    panel_ids = list(COMMON_HELD_TASKS)
-    if asset in E1_TRAIN_MODELS:
-        panel_ids += list(TRAIN_PANEL_TASKS)
+    if panel_ids is None:
+        selected_ids = list(COMMON_HELD_TASKS)
+        if asset in E1_TRAIN_MODELS:
+            selected_ids += list(TRAIN_PANEL_TASKS)
+    else:
+        selected_ids = list(panel_ids)
+    if len(selected_ids) != len(set(selected_ids)):
+        raise ValueError("diagnostic rollout panel contains duplicate tasks")
     base = json.loads(current_evaluation_contract.read_text())
     writer = loaded_writer is not None
     adapter = None
     if writer:
-        states, evidence = compile_panel(loaded_writer, asset_root=asset_root, task_ids=panel_ids)
+        states, evidence = compile_panel(loaded_writer, asset_root=asset_root, task_ids=selected_ids)
         adapter = DiagnosticWriterAdapter(loaded_writer, states, evidence)
         policy, processor = loaded_writer.runtime.policy, loaded_writer.runtime.processor
     else:
         policy, processor = frozen_policy.policy, frozen_policy.processor
     contract = _rollout_contract(
-        base=base, paths=paths, tasks=[installed[task] for task in panel_ids],
+        base=base, paths=paths, tasks=[installed[task] for task in selected_ids],
         trajectory_root=output / "trajectories", writer=writer,
+        compact_capture=compact_capture, full_capture_conditions=full_capture_conditions,
     )
     pool = PersistentTaskEnvironmentPool(contract, physical_gpu_id=physical_gpu_id)
     rows = []
     try:
-        for global_task_id in panel_ids:
+        for global_task_id in selected_ids:
             task = installed[global_task_id]
             envs, init_states = pool.switch(task)
-            panel = "common_held" if global_task_id in COMMON_HELD_TASKS else "train"
+            panel = (
+                "terminal_held" if panel_ids is not None
+                else "common_held" if global_task_id in COMMON_HELD_TASKS
+                else "train"
+            )
             for row in rollout_shard(
                 envs=envs, init_states=init_states, task=task, state_ids=tuple(range(4)),
                 contract=contract, policy=policy, preprocess=processor,
@@ -230,7 +262,7 @@ def run_asset_rollouts(
         pool.close()
         if adapter is not None:
             adapter.close()
-    expected = 20 + (32 if asset in E1_TRAIN_MODELS else 0)
+    expected = 4 * len(selected_ids)
     if len(rows) != expected:
         raise ValueError(f"diagnostic rollout row count changed: {len(rows)} != {expected}")
     return rows

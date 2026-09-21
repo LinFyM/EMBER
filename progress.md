@@ -37,6 +37,11 @@ Validation400、phase-only readout和后续分段；接下来只在完整节点�
 correct400 manifest的method freeze和diagnostic declaration，后续仅准许same-task-other与cross-suite-wrong；
 wrong明确不进入选点。11项phase早停、完整面板读取和选点测试通过，另用旧正式other400验证读取器返回119。
 
+报告导出入口`scripts/export_writer_low_lr_report.py`也已预置，但只接受controller exit0、已停止phase和已完成选点；
+若phase入选，还会强制要求选中节点的other400与wrong400完整退出后才生成报告。它一次性导出旧曲线＋修复phase曲线
+（1800标LR intervention）、逐任务、逐suite、相邻R/G/L、选中模型相对N1000的配对统计、失败行、实际controls、
+训练成本、精简原始行以及PNG/SVG/Markdown。12项相关聚焦测试通过，旧N1000正式400行读取验证为117。
+
 ## Writer稳定性修订诊断完整交付（2026-09-21）
 
 Owner要求阅读最新专家意见并按修正方案继续。复用已完成E0/E1，原E2及其不完整文件正式取消；

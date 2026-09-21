@@ -1,0 +1,54 @@
+{
+  "by_asset": {
+    "M300": {
+      "action_delta_mse_vs_source": 0.03783323050061409,
+      "first5_mse": 0.06315939121122938,
+      "full_mse": 0.07694639021388462,
+      "inference_first5_mse": 0.07180353895495904,
+      "rows": 288,
+      "tau1_first5_mse": 0.04716636439358505
+    },
+    "N1000": {
+      "action_delta_mse_vs_source": 0.04046641601563296,
+      "first5_mse": 0.06349741006367064,
+      "full_mse": 0.07904551887703645,
+      "inference_first5_mse": 0.07096959807838882,
+      "rows": 288,
+      "tau1_first5_mse": 0.04479407821458557
+    },
+    "N1800": {
+      "action_delta_mse_vs_source": 0.039028255113451205,
+      "first5_mse": 0.056108341888223855,
+      "full_mse": 0.07428430179586737,
+      "inference_first5_mse": 0.0686512291431427,
+      "rows": 288,
+      "tau1_first5_mse": 0.03931802934514255
+    },
+    "O1200": {
+      "action_delta_mse_vs_source": 0.04444544735163284,
+      "first5_mse": 0.06550949232445823,
+      "full_mse": 0.0851516777377886,
+      "inference_first5_mse": 0.07387252015986531,
+      "rows": 288,
+      "tau1_first5_mse": 0.04687034369433402
+    },
+    "O1500": {
+      "action_delta_mse_vs_source": 0.050474665892047466,
+      "first5_mse": 0.06485559942343065,
+      "full_mse": 0.08521644856470327,
+      "inference_first5_mse": 0.07303560252734718,
+      "rows": 288,
+      "tau1_first5_mse": 0.046317911875020296
+    },
+    "S1000": {
+      "action_delta_mse_vs_source": 0.0,
+      "first5_mse": 0.10102718416439732,
+      "full_mse": 0.10660223192988066,
+      "inference_first5_mse": 0.10170474661087307,
+      "rows": 288,
+      "tau1_first5_mse": 0.07469761706306599
+    }
+  },
+  "row_count": 1728,
+  "schema_version": "ember_writer_stability_e1_probe_summary_v1"
+}

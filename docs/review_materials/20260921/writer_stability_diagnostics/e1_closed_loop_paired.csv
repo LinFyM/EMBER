@@ -1,0 +1,53 @@
+panel,suite,task_id,global_task_id,init_state_id,paired_teacher_demo,language,O1200_success,O1200_steps,O1500_success,O1500_steps,N1000_success,N1000_steps,N1800_success,N1800_steps,M300_success,M300_steps,S1000_success,S1000_steps
+common_held,libero_spatial,3,3,0,0,pick up the black bowl on the cookie box and place it on the plate,True,118,True,118,True,142,False,220,True,103,False,220
+common_held,libero_spatial,3,3,1,1,pick up the black bowl on the cookie box and place it on the plate,False,220,False,220,False,220,False,220,True,111,False,220
+common_held,libero_spatial,3,3,2,2,pick up the black bowl on the cookie box and place it on the plate,True,104,True,111,False,220,False,220,True,146,False,220
+common_held,libero_spatial,3,3,3,3,pick up the black bowl on the cookie box and place it on the plate,False,220,False,220,False,220,False,220,False,220,False,220
+common_held,libero_object,1,11,0,0,pick up the cream cheese and place it in the basket,False,280,False,280,True,217,True,163,True,176,False,280
+common_held,libero_object,1,11,1,1,pick up the cream cheese and place it in the basket,True,130,True,276,False,280,True,183,False,280,False,280
+common_held,libero_object,1,11,2,2,pick up the cream cheese and place it in the basket,True,154,False,280,True,233,True,153,False,280,False,280
+common_held,libero_object,1,11,3,3,pick up the cream cheese and place it in the basket,True,127,True,122,True,177,True,157,True,158,False,280
+common_held,libero_goal,3,23,0,0,open the top drawer and put the bowl inside,False,300,False,300,False,300,False,300,False,300,False,300
+common_held,libero_goal,3,23,1,1,open the top drawer and put the bowl inside,False,300,False,300,False,300,False,300,False,300,False,300
+common_held,libero_goal,3,23,2,2,open the top drawer and put the bowl inside,False,300,False,300,False,300,False,300,False,300,False,300
+common_held,libero_goal,3,23,3,3,open the top drawer and put the bowl inside,False,300,False,300,False,300,False,300,False,300,False,300
+common_held,libero_goal,6,26,0,0,put the cream cheese in the bowl,True,100,True,98,True,97,True,115,True,97,True,109
+common_held,libero_goal,6,26,1,1,put the cream cheese in the bowl,True,118,True,103,True,91,True,123,True,112,True,124
+common_held,libero_goal,6,26,2,2,put the cream cheese in the bowl,True,106,True,97,True,90,True,110,True,107,True,136
+common_held,libero_goal,6,26,3,3,put the cream cheese in the bowl,True,109,True,96,True,80,True,105,True,97,False,300
+common_held,libero_10,1,31,0,0,put both the cream cheese box and the butter in the basket,True,463,False,520,False,520,False,520,False,520,False,520
+common_held,libero_10,1,31,1,1,put both the cream cheese box and the butter in the basket,True,411,True,448,False,520,False,520,False,520,False,520
+common_held,libero_10,1,31,2,2,put both the cream cheese box and the butter in the basket,False,520,False,520,False,520,False,520,False,520,False,520
+common_held,libero_10,1,31,3,3,put both the cream cheese box and the butter in the basket,False,520,True,357,False,520,False,520,True,354,False,520
+train,libero_spatial,5,5,0,0,pick up the black bowl on the ramekin and place it on the plate,,,False,220,False,220,False,220,False,220,False,220
+train,libero_spatial,5,5,1,1,pick up the black bowl on the ramekin and place it on the plate,,,True,107,True,80,True,89,True,111,False,220
+train,libero_spatial,5,5,2,2,pick up the black bowl on the ramekin and place it on the plate,,,True,95,True,86,True,146,True,106,False,220
+train,libero_spatial,5,5,3,3,pick up the black bowl on the ramekin and place it on the plate,,,False,220,False,220,True,141,False,220,False,220
+train,libero_spatial,7,7,0,0,pick up the black bowl on the stove and place it on the plate,,,True,111,True,118,True,127,True,146,False,220
+train,libero_spatial,7,7,1,1,pick up the black bowl on the stove and place it on the plate,,,True,123,True,126,True,190,True,169,False,220
+train,libero_spatial,7,7,2,2,pick up the black bowl on the stove and place it on the plate,,,True,142,False,220,True,145,False,220,False,220
+train,libero_spatial,7,7,3,3,pick up the black bowl on the stove and place it on the plate,,,True,116,True,113,True,118,False,220,False,220
+train,libero_object,2,12,0,0,pick up the salad dressing and place it in the basket,,,True,157,True,117,False,280,False,280,False,280
+train,libero_object,2,12,1,1,pick up the salad dressing and place it in the basket,,,False,280,False,280,False,280,False,280,False,280
+train,libero_object,2,12,2,2,pick up the salad dressing and place it in the basket,,,True,111,False,280,False,280,False,280,False,280
+train,libero_object,2,12,3,3,pick up the salad dressing and place it in the basket,,,False,280,False,280,False,280,False,280,False,280
+train,libero_10,7,37,0,0,put both the alphabet soup and the cream cheese box in the basket,,,True,280,False,520,True,297,True,274,False,520
+train,libero_10,7,37,1,1,put both the alphabet soup and the cream cheese box in the basket,,,True,298,False,520,False,520,False,520,False,520
+train,libero_10,7,37,2,2,put both the alphabet soup and the cream cheese box in the basket,,,True,298,False,520,True,256,True,278,False,520
+train,libero_10,7,37,3,3,put both the alphabet soup and the cream cheese box in the basket,,,False,520,False,520,False,520,False,520,False,520
+train,libero_90,3,43,0,0,put the butter at the back in the top drawer of the cabinet and close it,,,False,400,True,169,True,172,True,172,True,175
+train,libero_90,3,43,1,1,put the butter at the back in the top drawer of the cabinet and close it,,,False,400,False,400,False,400,False,400,False,400
+train,libero_90,3,43,2,2,put the butter at the back in the top drawer of the cabinet and close it,,,True,216,True,174,True,173,True,175,True,182
+train,libero_90,3,43,3,3,put the butter at the back in the top drawer of the cabinet and close it,,,False,400,False,400,False,400,False,400,False,400
+train,libero_90,11,51,0,0,open the top drawer of the cabinet,,,True,75,True,59,True,72,True,60,True,78
+train,libero_90,11,51,1,1,open the top drawer of the cabinet,,,True,84,True,75,True,81,True,217,False,400
+train,libero_90,11,51,2,2,open the top drawer of the cabinet,,,True,82,True,66,True,73,True,67,True,81
+train,libero_90,11,51,3,3,open the top drawer of the cabinet,,,True,88,True,71,True,88,True,72,True,227
+train,libero_90,33,73,0,0,close the microwave,,,True,253,True,179,True,152,True,195,False,400
+train,libero_90,33,73,1,1,close the microwave,,,True,228,True,192,True,181,True,176,True,188
+train,libero_90,33,73,2,2,close the microwave,,,False,400,True,232,True,369,False,400,False,400
+train,libero_90,33,73,3,3,close the microwave,,,False,400,False,400,False,400,True,196,False,400
+train,libero_90,56,96,0,0,pick up the butter and put it in the tray,,,True,66,True,80,True,87,True,82,True,87
+train,libero_90,56,96,1,1,pick up the butter and put it in the tray,,,False,400,True,76,True,76,True,81,True,82
+train,libero_90,56,96,2,2,pick up the butter and put it in the tray,,,True,67,True,78,True,87,True,87,True,87
+train,libero_90,56,96,3,3,pick up the butter and put it in the tray,,,True,68,True,82,True,92,True,92,True,91

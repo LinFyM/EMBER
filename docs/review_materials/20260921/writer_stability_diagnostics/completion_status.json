@@ -1,0 +1,22 @@
+{
+  "checkpoint_selection_use": false,
+  "complete_stages": [
+    "E0",
+    "E1-A",
+    "E1-B"
+  ],
+  "e0_rows": 4,
+  "e1_probe_rows": 1728,
+  "e1_rollout_rows": 280,
+  "fresh_training": false,
+  "incomplete_stages": [
+    "E2",
+    "E3"
+  ],
+  "partial_e2_exported": false,
+  "paused_by_owner": true,
+  "schema_version": "ember_writer_stability_remote_bundle_v1",
+  "test_use": false,
+  "trajectory_index_rows": 280,
+  "trajectory_payloads_exported": false
+}

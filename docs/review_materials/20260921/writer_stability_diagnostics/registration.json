@@ -1,0 +1,23 @@
+{
+  "asset_names": [
+    "O1200",
+    "O1500",
+    "N1000",
+    "N1800",
+    "M300",
+    "S1000"
+  ],
+  "checkpoint_selection_use": false,
+  "design": "docs/writer_stability_diagnostics_design.md",
+  "fresh_training": false,
+  "output_root": "<writer-stability-study>",
+  "schema_version": "ember_writer_stability_diagnostics_v1",
+  "stage_order": [
+    "E0",
+    "E1",
+    "E2",
+    "E3"
+  ],
+  "status": "paused_after_e1",
+  "test_use": false
+}

@@ -36,6 +36,12 @@ E2进程。E2没有形成完整shard集合，不能作为科学结果；E3及下
 `launch/owner_pause_20260921.json`。若恢复且合同不变，E2须从两个原父checkpoint重新运行全部登记shard；
 若要缩减规模，必须先由Owner裁决新的诊断范围，不能把现有部分文件冒充完成结果。
 
+Owner要求先把已有结果交给专家。已在
+`docs/review_materials/20260921/writer_stability_diagnostics`整理E0/E1脱敏结果包：1728条动作探针、280条
+闭环原始行、逐状态配对表、280条轨迹索引、汇总CSV/JSON、PNG/SVG及绘图/导出源码。checkpoint、轨迹
+张量、主机绝对路径和未完成E2部分文件均未进入Git；报告明确小闭环不是Validation400，根因在E2/E3暂停后
+仍未解决，并附需要专家裁决的缩减问题。
+
 ## 远端差异审计材料补交（2026-09-21）
 
 Owner要求把专家分析旧/新Writer差异所需及相邻材料推送远端。已从现有正式原件只读导出[诊断包](docs/review_materials/20260921/coverage_retraining/diagnostics/README.md)：旧Writer5、新Writer9、新MT-BC10及Source节点和已完成的视频对照共34个Validation400面板的13,600行精简成功标记；逐节点逐任务、相邻成功集合、旧1200/新1800五个共同held任务配对；旧/新Writer3,900更新指标及15,600任务曝光、按step/occurrence分组汇总、训练/评测Git与轮转位置；新MT-BC500更新指标。导出脚本和数据口径一并保留。完整checkpoint、视频与原始run contracts仍在study，不复制进Git。该补交不改科学资格裁决：新Test、FT、RL和外部比较仍等待Owner决定。

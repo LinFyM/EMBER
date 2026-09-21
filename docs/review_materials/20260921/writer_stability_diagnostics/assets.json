@@ -1,0 +1,109 @@
+{
+  "assets": {
+    "M300": {
+      "checkpoint": "<coverage-study>/training/mtbc/checkpoints/step_00000300",
+      "config": {
+        "path": "<repo>/.codex/tmp/coverage-mtbc-resume-runtime/configs/libero_24_8_8_coverage_v1/mtbc.json",
+        "sha256": "8b7f5300b2a1da707bd0668f0080cdb07d3a73ad075cfd86a5026efcf1a65e84"
+      },
+      "kind": "mtbc",
+      "lora": {
+        "bytes": 21147856,
+        "path": "<coverage-study>/training/mtbc/checkpoints/step_00000300/lora.safetensors"
+      },
+      "manifest": {
+        "bytes": 1859,
+        "path": "<coverage-study>/training/mtbc/checkpoints/step_00000300/checkpoint_manifest.json"
+      }
+    },
+    "N1000": {
+      "checkpoint": "<coverage-study>/training/writer/checkpoints/macro_00001000",
+      "checkpoint_manifest": {
+        "bytes": 542,
+        "path": "<coverage-study>/training/writer/checkpoints/macro_00001000/checkpoint_manifest.json"
+      },
+      "kind": "writer",
+      "run_contract": {
+        "bytes": 20337,
+        "path": "<coverage-study>/training/writer/run_contract.json"
+      },
+      "trainer_state": {
+        "bytes": 97090090,
+        "path": "<coverage-study>/training/writer/checkpoints/macro_00001000/trainer_state.pt"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "<coverage-study>/training/writer/checkpoints/macro_00001000/ecp.safetensors"
+      }
+    },
+    "N1800": {
+      "checkpoint": "<coverage-study>/training/writer/checkpoints/macro_00001800",
+      "checkpoint_manifest": {
+        "bytes": 542,
+        "path": "<coverage-study>/training/writer/checkpoints/macro_00001800/checkpoint_manifest.json"
+      },
+      "kind": "writer",
+      "run_contract": {
+        "bytes": 20337,
+        "path": "<coverage-study>/training/writer/run_contract.json"
+      },
+      "trainer_state": {
+        "bytes": 97090090,
+        "path": "<coverage-study>/training/writer/checkpoints/macro_00001800/trainer_state.pt"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "<coverage-study>/training/writer/checkpoints/macro_00001800/ecp.safetensors"
+      }
+    },
+    "O1200": {
+      "checkpoint": "<old-video-study>/training/checkpoints/macro_00001200",
+      "checkpoint_manifest": {
+        "bytes": 434,
+        "path": "<old-video-study>/training/checkpoints/macro_00001200/checkpoint_manifest.json"
+      },
+      "kind": "writer",
+      "run_contract": {
+        "bytes": 20154,
+        "path": "<old-video-study>/training/run_contract.json"
+      },
+      "trainer_state": {
+        "bytes": 97118314,
+        "path": "<old-video-study>/training/checkpoints/macro_00001200/trainer_state.pt"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "<old-video-study>/training/checkpoints/macro_00001200/ecp.safetensors"
+      }
+    },
+    "O1500": {
+      "checkpoint": "<old-video-study>/training/checkpoints/macro_00001500",
+      "checkpoint_manifest": {
+        "bytes": 434,
+        "path": "<old-video-study>/training/checkpoints/macro_00001500/checkpoint_manifest.json"
+      },
+      "kind": "writer",
+      "run_contract": {
+        "bytes": 20154,
+        "path": "<old-video-study>/training/run_contract.json"
+      },
+      "trainer_state": {
+        "bytes": 97118314,
+        "path": "<old-video-study>/training/checkpoints/macro_00001500/trainer_state.pt"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "<old-video-study>/training/checkpoints/macro_00001500/ecp.safetensors"
+      }
+    },
+    "S1000": {
+      "checkpoint": "<repo>/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+      "kind": "source",
+      "manifest": {
+        "bytes": 2007,
+        "path": "<repo>/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000/checkpoint_manifest.json"
+      }
+    }
+  },
+  "schema_version": "ember_writer_stability_diagnostics_v1"
+}

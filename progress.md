@@ -10,7 +10,7 @@ J18完整验证已被Owner否决，不执行；失败状态专家监督历史已
 沿用现有记录，不新增面向Owner的报告文件；本机session约07:30读取状态制作PPT，不使用Test选择方法。
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
 
-## 当前运行快照（2026-09-23 02:51）
+## 当前运行快照（2026-09-23 03:08）
 
 正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
 clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
@@ -22,6 +22,15 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 当前尚无新正式Validation成绩。首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
 07:30前最多12物理卡的并行在Owner临时授权内；07:30之后必须重新压到常规总量再继续，09:00前可补结果。
 不使用J18 Validation，不按Test或shuffle/reverse结果再改方法。旧MTBC300 Test metadata修复脚本已只读核验，尚未apply或运行Test。
+
+03:08评测watcher已在尚无Validation行时正常停止并切到独立clean pushed detached运行树
+`.codex/tmp/task-mixing-evaluation-runtime`，commit`c9844dfc`。该窄运维修正为canonical evaluator增加显式
+`--gpu-max-utilization-percent`（默认仍10，本次按Owner共驻授权传100），记录实际准入阈值，保留原显存要求；
+74项launcher/queue检查通过。实际GPU01所选卡约0–52%利用率、各34–42GiB空余，watcher仍每次双节点live核验并要求每卡28GiB余量。
+训练runtime/配置/参数/查询流未改；新的评测runtime与训练runtime在模型、物化与评分逻辑上相同。
+原等待attempt的退出、脚本、日志及stop marker保留于`launch/validation_waiter_original_attempt`，新命令与
+data1 quota（902248336/1073741824KiB，额外worktree估计512MiB）见`launch/evaluation_runtime_amendment.json`。
+正式训练约15秒/更新，尚未到首个200节点；冻结后controls/Test单臂执行和唯一freeze工具均已准备，只检查命令/声明，未启动held Test。
 
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 

@@ -1,0 +1,47 @@
+{
+  "source": "coverage_task_mixing_20260923/diagnostics/fresh400_train72/aggregate.json",
+  "evaluation": "36 registered Train tasks x fixed states0/1; teacher46/48; 72 rows per model; not formal400; no gradients or checkpoint selection",
+  "limitation": "Different training histories and small panel. Descriptive comparison, not matched causal effect or held-task performance.",
+  "paired_counts": {
+    "C600": {
+      "retained": 36,
+      "gained": 11,
+      "lost": 3,
+      "both_failed": 22,
+      "net": 8,
+      "churn": 14,
+      "rows": 72,
+      "rng_prefix_verified": true
+    },
+    "J54": {
+      "retained": 37,
+      "gained": 10,
+      "lost": 9,
+      "both_failed": 16,
+      "net": 1,
+      "churn": 19,
+      "rows": 72,
+      "rng_prefix_verified": true
+    },
+    "D54": {
+      "retained": 42,
+      "gained": 5,
+      "lost": 11,
+      "both_failed": 14,
+      "net": -6,
+      "churn": 16,
+      "rows": 72,
+      "rng_prefix_verified": true
+    },
+    "MTBC300": {
+      "retained": 37,
+      "gained": 10,
+      "lost": 7,
+      "both_failed": 18,
+      "net": 3,
+      "churn": 17,
+      "rows": 72,
+      "rng_prefix_verified": true
+    }
+  }
+}

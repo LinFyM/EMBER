@@ -1,0 +1,6 @@
+model,role,successes,episodes,task_breadth,libero_spatial,libero_object,libero_goal,libero_10,libero_90
+Fresh400,train_diagnostic,47,72,30,9,6,7,3,22
+C600,train_diagnostic,39,72,23,9,2,7,0,21
+J54,train_diagnostic,46,72,28,5,5,8,5,23
+D54,train_diagnostic,53,72,31,8,8,7,7,23
+MTBC300,train_diagnostic,44,72,27,7,5,6,3,23

@@ -61,6 +61,20 @@ Long1/Object1上升，Spatial仍弱，训练侧小试收益尚未转化为已验
 原件与配对比较在`launch/writer_00000400_readout.json`及`writer_00000400_reference_comparisons.json`；
 同一PPT结果包已更新到18个完整面板、7200条success投影，仍无选定模型、controls或Test。
 
+04:50登记并启动一次冻结fresh400的Train72诊断，沿用C600/J54/D54相同36任务、states0/1、teacher46/48，
+只测correct，不产生梯度、不参与选点。目的限定为区分已见任务获取不足与held迁移不足；不同训练历史不冒充匹配因果对照。
+复用既有`head_step_pilot_20260923/panel.py`及已核验相同模型实现，strict载入当前400步完整Writer权重；
+gpu01:0/1/2/4各一worker，最多20分钟，gpu02训练继续，预计不延迟下个600节点评测。
+双节点live已核验，所用gpu01各42–46GiB空余、0–3%利用率；data0 quota used152997092/1073741824KiB，
+study4933996KiB，新增峰值≤1GiB。登记/逐worker原件在当前study的`diagnostics/fresh400_train72`，完整72行后才读分。
+
+04:59该Train72诊断四worker全部exit0，72唯一task/state、同teacher、环境种子及policy噪声共同前缀核验通过。
+fresh400为47/72、30任务有成功；Spatial/Object/Goal/Long/meta分别9/6/7/3/22。
+同条件C60039、J54=46、D54=53、MTBC300=44；fresh400相对C600保留36、得11、失3，相对MTBC保留37、得10、失7。
+因此该早期模型并非普遍缺少训练侧学习能力，已见任务表现高于C600而完整Validation117低于C600154；
+支持继续把能力获取与跨任务迁移分开解释，不能把训练侧正证据当held收益或唯一根因。不同训练历史与小面板边界保留。
+全部GPU01诊断进程已随四worker退出，Validation watcher按原节点等待600；未追加优化或改变formal选点。
+
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 
 capacity_route八worker全部完成160闭环，父／完整Writer／free code／固定范数code／free A/B=9/16/11/11/14（各32），

@@ -1,0 +1,229 @@
+{
+  "formal": false,
+  "role": "train_diagnostic",
+  "source_aggregates": [
+    "/data0/user/ymdai/ember_runs/overnight_root_cause_20260922/task_diversity_pilot_20260923/aggregate_panels.json",
+    "/data0/user/ymdai/ember_runs/overnight_root_cause_20260922/task_diversity_pilot_20260923/replication/aggregate.json"
+  ],
+  "initialization": "Both J54 and D54 continue the same C600 Writer and full Adam state for 54 updates; these are not the fresh formal checkpoints.",
+  "intervention": "4 versus 12 task/video conditions per optimizer update, with fixed 84 main plus 28 auxiliary labels.",
+  "panel_registration": "The replication was registered after reading the initial complete panel; the combined64 is descriptive, not a prospectively registered single confirmatory panel.",
+  "deployment": "One generated adapter per condition; no adapter averaging or selection.",
+  "scope": "Known training tasks with held-out diagnostic demonstrations. This does not establish unseen-task generalization.",
+  "paired": {
+    "initial": {
+      "J54_correct_vs_same_task_other": {
+        "retained": 9,
+        "gained": 6,
+        "lost": 3,
+        "both_failed": 14,
+        "net": 3,
+        "churn": 9,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "J54_correct_vs_wrong": {
+        "retained": 11,
+        "gained": 4,
+        "lost": 4,
+        "both_failed": 13,
+        "net": 0,
+        "churn": 8,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "D54_correct_vs_same_task_other": {
+        "retained": 13,
+        "gained": 4,
+        "lost": 3,
+        "both_failed": 12,
+        "net": 1,
+        "churn": 7,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "D54_correct_vs_wrong": {
+        "retained": 13,
+        "gained": 4,
+        "lost": 1,
+        "both_failed": 14,
+        "net": 3,
+        "churn": 5,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "D54_vs_J54_correct": {
+        "retained": 11,
+        "gained": 6,
+        "lost": 4,
+        "both_failed": 11,
+        "net": 2,
+        "churn": 10,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "D54_vs_J54_same_task_other": {
+        "retained": 10,
+        "gained": 6,
+        "lost": 2,
+        "both_failed": 14,
+        "net": 4,
+        "churn": 8,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "D54_vs_J54_wrong": {
+        "retained": 12,
+        "gained": 2,
+        "lost": 3,
+        "both_failed": 15,
+        "net": -1,
+        "churn": 5,
+        "rows": 32,
+        "rng_prefix_verified": true
+      }
+    },
+    "replication_and_combined": {
+      "replication_D54_vs_J54_correct": {
+        "retained": 7,
+        "gained": 6,
+        "lost": 4,
+        "both_failed": 15,
+        "net": 2,
+        "churn": 10,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "replication_D54_vs_J54_same_task_other": {
+        "retained": 9,
+        "gained": 6,
+        "lost": 3,
+        "both_failed": 14,
+        "net": 3,
+        "churn": 9,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "replication_D54_vs_J54_wrong": {
+        "retained": 7,
+        "gained": 4,
+        "lost": 3,
+        "both_failed": 18,
+        "net": 1,
+        "churn": 7,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "replication_J54_correct_vs_same_task_other": {
+        "retained": 9,
+        "gained": 2,
+        "lost": 3,
+        "both_failed": 18,
+        "net": -1,
+        "churn": 5,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "replication_J54_correct_vs_wrong": {
+        "retained": 7,
+        "gained": 4,
+        "lost": 3,
+        "both_failed": 18,
+        "net": 1,
+        "churn": 7,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "replication_D54_correct_vs_same_task_other": {
+        "retained": 11,
+        "gained": 2,
+        "lost": 4,
+        "both_failed": 15,
+        "net": -2,
+        "churn": 6,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "replication_D54_correct_vs_wrong": {
+        "retained": 8,
+        "gained": 5,
+        "lost": 3,
+        "both_failed": 16,
+        "net": 2,
+        "churn": 8,
+        "rows": 32,
+        "rng_prefix_verified": true
+      },
+      "combined_D54_vs_J54_correct": {
+        "retained": 18,
+        "gained": 12,
+        "lost": 8,
+        "both_failed": 26,
+        "net": 4,
+        "churn": 20,
+        "rows": 64,
+        "rng_prefix_verified": true
+      },
+      "combined_D54_vs_J54_same_task_other": {
+        "retained": 19,
+        "gained": 12,
+        "lost": 5,
+        "both_failed": 28,
+        "net": 7,
+        "churn": 17,
+        "rows": 64,
+        "rng_prefix_verified": true
+      },
+      "combined_D54_vs_J54_wrong": {
+        "retained": 19,
+        "gained": 6,
+        "lost": 6,
+        "both_failed": 33,
+        "net": 0,
+        "churn": 12,
+        "rows": 64,
+        "rng_prefix_verified": true
+      },
+      "combined_J54_correct_vs_same_task_other": {
+        "retained": 18,
+        "gained": 8,
+        "lost": 6,
+        "both_failed": 32,
+        "net": 2,
+        "churn": 14,
+        "rows": 64,
+        "rng_prefix_verified": true
+      },
+      "combined_J54_correct_vs_wrong": {
+        "retained": 18,
+        "gained": 8,
+        "lost": 7,
+        "both_failed": 31,
+        "net": 1,
+        "churn": 15,
+        "rows": 64,
+        "rng_prefix_verified": true
+      },
+      "combined_D54_correct_vs_same_task_other": {
+        "retained": 24,
+        "gained": 6,
+        "lost": 7,
+        "both_failed": 27,
+        "net": -1,
+        "churn": 13,
+        "rows": 64,
+        "rng_prefix_verified": true
+      },
+      "combined_D54_correct_vs_wrong": {
+        "retained": 21,
+        "gained": 9,
+        "lost": 4,
+        "both_failed": 30,
+        "net": 5,
+        "churn": 13,
+        "rows": 64,
+        "rng_prefix_verified": true
+      }
+    }
+  }
+}

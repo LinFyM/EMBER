@@ -41,6 +41,22 @@ B54只做一次预定终点，不扫query档位；部署/模型/损失不变。D
 为节约等待时间，仅在独立`codex/task-diversity-overnight` worktree准备12条件canonical采样/六卡实现；主树科研代码尚未改动，
 没有因工程准备而默认采用方法，是否集成取决于闭环证据。
 
+02:14 D54训练完整exit0：54更新、648条件、4536主+1512辅，实际每步12不同task，Adam654/sampler762，1110.70秒。
+B54随后在gpu02:0/1/2/3/4/6启动，D54七个终点worker在gpu01:0/1/2执行；最多三独立evaluator共驻gpu01:1，
+第三个在前两者完成模型载入且实时余量>16.5GiB后启动，其余两卡各两worker。全部真实计算，当前9物理卡在临时授权内；
+未使用gpu01:4当时95%外部负载，也未操作任何他人进程。D54按完整168行终点统一裁决，尚未读取部分成绩。
+新strg01 quota为data0/data1 147076084/902139496KiB；本夜study仅2.0GiB，单完整C600 checkpoint142MiB，现有诊断新增16GiB
+预算充裕，formal若获实证将另登记其峰值预算。正式fresh仍未启动。
+
+02:29 D54完整168行已核验：Train72=53（J54=46，42保留/11得/4失），视频CC/other/wrong=17/16/14（J=15/12/15）。
+此为同标签预算下的正向初证，视频差额仍小；补充固定八任务states36–39、teacher47/49、J54/D54三臂192行复核，
+gpu01:0/1/2各两worker；全部完成后统一裁决，不增加checkpoint搜索。B54完整54步exit0，原168行终点评测随后启动，
+gpu02:0/1/2/3/4/6各一worker，wrong在gpu01:1共驻第三worker（启动前实测18.4GiB余量）。
+02:34启动新12条件实现的六卡profile6→exact-resume7，独立worktree2f6e4e6b、105项相关CPU测试已通过。
+profile在gpu02六卡与上述每卡一个本人eval共驻，最少27.9GiB余量，预估训练24GiB；非正式fresh。
+新输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；strg01实测data0用148015368KiB、soft1073741824KiB，
+共享可用1020929024KiB，登记后续最大新增32GiB（当前profile≤1GiB），复用全部source/data资产。正式采用与选点合同仍待闭环裁决。
+
 ## 2026-09-23 01:35：Owner再次明确实证门槛与最终Test
 
 Owner补充：不得草率启动正式训练，必须有实证；Validation出现好结果后须做Test。07:30是首轮交付节点而非强制停止，

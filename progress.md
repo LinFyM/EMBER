@@ -10,7 +10,7 @@ J18完整验证已被Owner否决，不执行；失败状态专家监督历史已
 沿用现有记录，不新增面向Owner的报告文件；本机session约07:30读取状态制作PPT，不使用Test选择方法。
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
 
-## 当前运行快照（2026-09-23 03:46）
+## 当前运行快照（2026-09-23 04:00）
 
 正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
 clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
@@ -19,7 +19,8 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；exact commands/env、allocation、quota、profile、选点合同均在launch目录。
 最新data0 quota used148345752KiB、soft1073741824KiB；当前study289780KiB，新增峰值32GiB有余量；Source/data无复制。
 部署和损失未变；fresh不是C600续训，也不复用profile权重。所有先行诊断workers已exit0，无其它本轮GPU任务遗留。
-当前尚无新正式Validation成绩。首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
+首个正式Validation200完整成绩为103/400（见下方04:00记录），未达到改善门槛；继续原登记轨迹。
+首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
 07:30前最多12物理卡的并行在Owner临时授权内；07:30之后必须重新压到常规总量再继续，09:00前可补结果。
 不使用J18 Validation，不按Test或shuffle/reverse结果再改方法。旧MTBC300 Test metadata修复脚本已只读核验，尚未apply或运行Test。
 
@@ -30,12 +31,20 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 训练runtime/配置/参数/查询流未改；新的评测runtime与训练runtime在模型、物化与评分逻辑上相同。
 原等待attempt的退出、脚本、日志及stop marker保留于`launch/validation_waiter_original_attempt`，新命令与
 data1 quota（902248336/1073741824KiB，额外worktree估计512MiB）见`launch/evaluation_runtime_amendment.json`。
-正式训练约15秒/更新，尚未到首个200节点；冻结后controls/Test单臂执行和唯一freeze工具均已准备，只检查命令/声明，未启动held Test。
+03:08时正式训练约15秒/更新，尚未到首个200节点；冻结后controls/Test单臂执行和唯一freeze工具均已准备，只检查命令/声明，未启动held Test。
 
 03:46追加：100步完整checkpoint及canonical读取验证通过；200步已于03:42发布，400套验证条件LoRA物化exit0，
 03:46在上述GPU01六卡共12个persistent workers开始完整correct400。实际run contract与launch preflight确认
 eval commit c9844dfc、Writer200、Validation/formal/400及利用率上限100，显存门槛保留；当前未读取部分成功率。
 训练继续，最近100更新均值14.63秒；若跑满1200，当前估计约07:46结束（不含最后节点评测），实际随负载更新。
+
+04:00首个完整400结束，12个workers均exit0、400唯一task/state及配对核验通过：200步103/400，breadth6；
+按Long1/Long9/Goal3/Goal6/Object1/Object6/Spatial3/Spatial6依次6/0/0/42/36/2/11/6，各50。
+低于旧C200=151、C600=154、MTBC300=155；相对旧C200，Spatial3减少36条、Long1减少13条，是主要缺口。
+此前Train小试的正向收益尚未在这个fresh泛化节点复现，不能称已修复；不由200点直接推断完整轨迹上限。
+继续预先登记的400/600等节点，不临时改变训练配方或加密选点；当前无选定模型，未开Test/controls。
+原件在`evaluation/writer_00000200_correct/results.json`与`launch/writer_00000200_readout.json`，严格配对比较在
+`launch/writer_00000200_reference_comparisons.json`。watcher已释放GPU01，等待完整400步checkpoint。
 
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 

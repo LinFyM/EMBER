@@ -2,7 +2,7 @@
 
 ## 状态与目的
 
-本设计响应 Owner 转交的专家后续意见，状态为**已登记、待实现核验与资源 preflight**。它是冻结资产上的有界
+本设计响应 Owner 转交的专家后续意见，状态为**已登记、实现核验和首次资源 preflight 已完成、待 GPU launch**。它是冻结资产上的有界
 分析实验，不是新的 Writer 候选训练，也不改变已完成的跨 episode 辅助配对结论。
 
 目标只有两项：
@@ -31,6 +31,18 @@
 总上限在第一次 GPU launch 前固定为：最多 120 分钟 GPU 墙钟、D1 544 条函数 probe、D2 72 个唯一 task condition 与
 16 个虚拟候选、D3 最多 54 个真实更新、最多 160 条训练侧闭环。D3 只在 D1/D2 全部通过实现/完整性检查、且保守估算能在
 上限内完成其全部三个分支和终点测量时启动；不因任一部分分数选择性启动或取消某一分支。
+
+### 首次 launch 资源与时间登记
+
+2026-09-22 的一次性 live preflight 覆盖 gpu01、gpu02 与两块独立个人 quota。采用 gpu01:0（空闲，45,435 MiB
+余量）和 gpu02:1--3（各有同一外部、0% util、约148 MiB context；各余量45,906 MiB）的四卡短时共驻安排；后者
+只在有实际 phase 时占用，绝不保留空卡。已知 Writer 峰值低于该共驻余量，且总物理卡数4，符合节点/集群上限。
+data0/data1 的已用 quota 分别为 142,199,872 / 902,103,016 KiB（soft quota 均为1,073,741,824 KiB）；本 study 不复制
+Source、dataset、tokenizer 或 assets，预估额外峰值不超过8 GiB。
+
+launch 时起算连续120分钟的绝对截止；controller 只按 phase exit、完整行数和预登记时间门控继续。D3 的三臂必须整体
+开始，且仅当 D1/D2 全部成功并距截止至少65分钟时才启动；否则登记为 `not_started_insufficient_preregistered_time`
+并停止，不读取或依据任何部分性能。D3 不是早停后的 extension，不能参与任何正式 checkpoint 选择。
 
 ## D1：Core / Procedure 路径消融
 

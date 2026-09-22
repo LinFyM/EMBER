@@ -1,13 +1,14 @@
 # EMBER task plan
 
-## 当前 active design：Writer 因果路径与辅助梯度诊断（2026-09-22，待 launch）
+## 当前 active design：Writer 因果路径与辅助梯度诊断（2026-09-22，preflight 已完成，待 launch）
 
 Owner 要求按专家后续意见完成有界分析实验；合同见
 [Writer 因果路径与辅助梯度诊断](docs/writer_causal_diagnostics_20260922.md)。它只在冻结 O1200/C600/C1200、M300、
 Source 上运行 D1 Core/Procedure 路径消融、D2 主/辅助梯度与 AdamW 虚拟更新，并仅在预登记120分钟总 GPU 预算仍能
 完整覆盖时做 C600 的 D3 三臂各18步微训练。禁止新 fresh 训练、Validation/Test、FT、RL、外部比较、自动选点、自动
 调参或无限延长。实现、测试、clean pushed detached runtime、GPU/quota preflight 与正式原始行齐全后才开始；D3 不会
-按部分分数选择性执行。
+按部分分数选择性执行。首次 live preflight 已登记 gpu01:0 与低负载共驻的 gpu02:1--3；不预留空卡，120分钟绝对截止
+独立于分数，D3 仅在 D1/D2 都完整成功且保留至少65分钟时整体启动。
 
 ## 当前状态：36任务 Writer 辅助 episode 配对 fresh 对照已完成（2026-09-22）
 

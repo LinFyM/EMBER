@@ -1,13 +1,16 @@
 # EMBER progress
 
-## 2026-09-22：Writer 因果路径与辅助梯度诊断已登记，尚未 launch
+## 2026-09-22：Writer 因果路径与辅助梯度诊断已登记、preflight 完成，尚未 launch
 
 Owner 转交专家后续方案后，已把它收敛为
 [有界 D1/D2/D3 合同](docs/writer_causal_diagnostics_20260922.md)：D1 用八个训练 task 的 CC/CW/WC/WW/CO 固定路径
 比较；D2 用 C600 原始 events604..612 分离 `g_Q`、已含1/3的`g_A`、AdamW J/Q/M/Z；D3 仅在完整 preflight 和总
 120分钟 GPU 预算可覆盖时，从 C600 做 J/Q/M 各18更新及终点测量。当前仅创建隔离实现 worktree，未启动任何 GPU
 进程、训练、正式 Validation/Test、FT、RL 或外部比较，也未读取部分性能结果。后续结果只会在所有预登记行、manifest、
-worker completion 与 exit 核对后写入本文件和 findings。
+worker completion 与 exit 核对后写入本文件和 findings。一次性 live GPU/配额预检已完成：gpu01:0 空闲；gpu02:1--3
+为0% util、约148 MiB外部 context 的短时共驻，均有约45 GiB余量；data0/data1 quota 已用分别142,199,872/
+902,103,016 KiB，soft quota 均1,073,741,824 KiB，额外峰值登记为不超过8 GiB。launch 起连续120分钟绝对截止，
+D3 只在 D1/D2 全部成功且至少剩余65分钟时三臂整体启动；该判断只取时间和完整性，不读取任何部分分数。
 
 ## 2026-09-22：辅助配对正式结果专家复核包
 

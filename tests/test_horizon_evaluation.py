@@ -24,6 +24,7 @@ from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, CONFIG_SCHEMA,
     condition_id, file_record, inspect_writer_checkpoint, method_metadata, paired_video_sets,
     planned_episodes, selection_contract)
 from ember.writer.runtime import MODEL_DEFAULTS
+from ember.writer.learning_data import EVENT_SCHEMA
 from ember.writer.training import observer_mode_contract
 
 
@@ -59,7 +60,7 @@ def bank(tmp_path, request):
     run = {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal", "git": GIT,
            "source": copy.deepcopy(SOURCE), "config": {"update_version": UPDATE_VERSION, "data": {"version": "fixture_supervised_data_v1"}, "observer": {"probe_seed": 1729, "camera_view": "dual"}, "execution_precision": "native_bf16_writer_fm_fp32_lora"}, "model_config": {"horizon": 50}}
     run["model_config"] = dict(MODEL_DEFAULTS)
-    run["config"]["data"] = {"version": "video_teaching_joint_query_events_v1",
+    run["config"]["data"] = {"version": EVENT_SCHEMA,
                             "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
                             "maximum_updates": 1200}
     run["config"]["schema_version"] = CONFIG_SCHEMA

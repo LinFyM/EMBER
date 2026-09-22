@@ -270,9 +270,9 @@ def test_joint_losses_replay_one_writer_and_all_meta_once():
                 'compiled_forward_calls': 1, 'source_forward_calls': 0}
     engine._credit = credit
     result = engine.backward({'task': 0, 'video_demos': (3,), 'occurrence': 0, 'query_seed': 1,
-        'query_offset': 0, 'query_count': 21, 'teaching_offset': 0, 'teaching_count': 7})
+        'query_offset': 0, 'query_count': 7, 'teaching_offset': 0, 'teaching_count': 2})
     assert calls == [('compile', False), ('labels', False), ('labels', True), ('compile', True)]
     assert state_ids[0] == state_ids[1]
     for parameter in parameters.values():
-        assert parameter.grad == pytest.approx(.25 * 2 * 9 + 1/12 * 2 * 8)
-    assert result['queries'] == 21 and result['teaching_queries'] == 7
+        assert parameter.grad == pytest.approx(1/12 * 2 * 9 + 1/36 * 2 * 8)
+    assert result['queries'] == 7 and result['teaching_queries'] == 2

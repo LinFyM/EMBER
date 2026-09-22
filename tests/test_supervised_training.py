@@ -22,11 +22,23 @@ from ember.writer.task_execution import condition_rank_groups, merge_condition_r
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _test_recipe():
+    value = json.loads((ROOT / 'configs/pi05_writer.json').read_text())
+    from ember.writer.learning_data import EVENT_SCHEMA
+    from ember.writer.training import TASK_MIXING_DECLARATION, UPDATE_VERSION
+    value['experiment'] = dict(TASK_MIXING_DECLARATION)
+    value['update_version'] = UPDATE_VERSION
+    value['data'].update(tasks_per_update=12, queries_per_task=7, teaching_query_counts=[3, 2, 2] * 4,
+                         version=EVENT_SCHEMA, event_schema_version=EVENT_SCHEMA, teaching_episode='cross_episode')
+    value['data'].pop('teaching_queries_per_task')
+    return value
+
+
 def test_registered_formal_recipe_reaches_git_guard_before_device_initialization(monkeypatch):
     from ember.writer import training
 
     monkeypatch.setattr(training, "git_state", lambda _: {"branch": "main"})
-    args = SimpleNamespace(mode="formal", config=ROOT / "configs/pi05_writer.json")
+    args = SimpleNamespace(mode="formal", config=ROOT / "configs/libero_24_8_8_coverage_v1/writer_task_diversity.json")
     configured = training._config(args.config)
     configured["status"] = "registered_video_teaching_learning"
     configured["evidence"]["profile_registration"]["status"] = "complete"
@@ -38,7 +50,7 @@ def test_registered_formal_recipe_reaches_git_guard_before_device_initialization
 def test_formal_launch_rejects_unregistered_recipe(tmp_path):
     from ember.writer import training
 
-    value = json.loads((ROOT / "configs/pi05_writer.json").read_text())
+    value = _test_recipe()
     value["status"] = "unregistered"
     path = tmp_path / "config.json"
     path.write_text(json.dumps(value))
@@ -57,7 +69,7 @@ def test_fixed_validation_cannot_enter_gradient_loader():
 def config(tmp_path):
     # Hold a complete K1 recipe and a short test-only evidence schedule;
     # actual segment nodes are separately registered by each launch.
-    value = json.loads((ROOT / "configs/pi05_writer.json").read_text())
+    value = _test_recipe()
     value["data"]["cardinalities"] = [1]
     value["data"]["conditions_per_task"] = 1
     value["optimization"].pop("fresh_joint_writer_and_meta", None)
@@ -84,7 +96,7 @@ def sampler(monkeypatch, config):
 
 def test_config_is_complete_and_rejects_silent_graph_or_supervision_reduction(tmp_path, config):
     assert config["model"]["action_horizon"] == 50 and config["model"]["procedure_blocks"] == 2
-    assert config["model"]["semantic_core_blocks"] == 2 and config["data"]["queries_per_task"] == 21
+    assert config["model"]["semantic_core_blocks"] == 2 and config["data"]["queries_per_task"] == 7
     for section, key, value in (("model", "procedure_blocks", 3), ("model", "action_horizon", 25),
                                ("data", "queries_per_task", 16), ("observer", "vl_meta_rank", 0),
                                ("data", "cardinalities", [1, 2, 4]), ("data", "tasks_per_update", 3),
@@ -207,11 +219,11 @@ class _ToySupervisedEngine:
         # One globally weighted condition. This is an update-cadence oracle,
         # not a proxy for the native main FM control objective.
         main = sum(p.square().sum() for p in self.state.parameters())
-        loss = (draw["query_count"] / 84 + draw["teaching_count"] / 84) * main
+        loss = (1 / 12 + 1 / 36) * main
         loss.backward()
         return {"flow_loss": float(main.detach()), "queries": draw["query_count"],
                 "teaching_queries": draw["teaching_count"], "teaching_query_offset": draw["teaching_offset"],
-                "teaching_loss": float(main.detach()), "teaching_weight": draw["teaching_count"] / 84}
+                "teaching_loss": float(main.detach()), "teaching_weight": 1 / 36}
 
 def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler, config):
     conditions = 1
@@ -224,7 +236,7 @@ def test_supervised_update_uses_all_tasks_once_without_rollout_or_trust(sampler,
     optimizer, scheduler = _optimization(state, config)
     context = DistributedContext(0, 0, 1, torch.device("cpu"))
     rows, norms = _update(engine, runtime, sampler, context, config, optimizer, scheduler, 1)
-    assert len(rows) == 4 * conditions and sampler.sampler_state()["next_step"] == 1
+    assert len(rows) == 12 * conditions and sampler.sampler_state()["next_step"] == 1
     assert scheduler.last_epoch == 1
     assert all(int(value["step"]) == 1 for value in optimizer.state.values())
     assert norms["writer_grad_norm"] > 0 and norms["meta_grad_norm"] > 0
@@ -359,9 +371,9 @@ def test_continuation_restores_real_optimizer_rng_scheduler_and_next_update(tmp_
     output.mkdir()
     checkpoint = save_ecp_checkpoint(output_dir=parent, macro=1500, stage=STAGE, context=context,
         model=model, optimizer=optimizer, scheduler=scheduler, run_contract_schema=RUN_SCHEMA,
-        metrics_rows=6000, sampler_state=sampler.sampler_state(), training_state=_training_state(config,1500))
+        metrics_rows=18000, sampler_state=sampler.sampler_state(), training_state=_training_state(config,1500))
     for filename, steps in [('metrics.jsonl',range(1,1501)),
-                            ('exposures.jsonl',[s for s in range(1,1501) for _ in range(4)]),
+                            ('exposures.jsonl',[s for s in range(1,1501) for _ in range(12)]),
                             ('diagnostics.jsonl',[s for s in config['evidence']['supervised_validation']['optimizer_updates'] for _ in range(24)])]:
         (parent/filename).write_text(''.join(json.dumps({'step':s})+'\n' for s in steps))
     expected_loss = update(model, optimizer, scheduler)
@@ -373,14 +385,14 @@ def test_continuation_restores_real_optimizer_rng_scheduler_and_next_update(tmp_
     child_model = torch.nn.Linear(3,2)
     child_opt, child_clock = _optimization(child_model, child_config)
     args = SimpleNamespace(resume=None, extend_from=checkpoint, output=output, mode='formal')
-    assert _restore(args,context,SimpleNamespace(state=child_model),child_data,child_opt,child_clock,child_config)==(1500,6000)
+    assert _restore(args,context,SimpleNamespace(state=child_model),child_data,child_opt,child_clock,child_config)==(1500,18000)
     assert child_clock.last_epoch == child_data.next_step == 1500
     assert all(int(v['step'])==1500 for v in child_opt.state.values())
-    assert all(r['occurrence']==250 for r in child_data.next_iteration())
+    assert all(r['occurrence']==750 for r in child_data.next_iteration())
     torch.testing.assert_close(update(child_model,child_opt,child_clock),expected_loss)
     torch.testing.assert_close(child_model.weight,expected_weight)
     assert len((parent/'metrics.jsonl').read_text().splitlines())==1500
-    assert len((output/'exposures.jsonl').read_text().splitlines())==6000
+    assert len((output/'exposures.jsonl').read_text().splitlines())==18000
     child_data.close()
 
 
@@ -405,7 +417,7 @@ def test_checkpoint_restores_next_update_and_sampler(tmp_path, monkeypatch, conf
     checkpoint = save_ecp_checkpoint(
         output_dir=tmp_path, macro=1, stage="supervised_test", context=context,
         model=model, optimizer=optimizer, scheduler=scheduler,
-        run_contract_schema="supervised_test_v1", metrics_rows=4, sampler_state=sampler, training_state=training,
+        run_contract_schema="supervised_test_v1", metrics_rows=12, sampler_state=sampler, training_state=training,
     )
     expected_loss = update()
     expected_weight = model.weight.detach().clone()
@@ -414,7 +426,7 @@ def test_checkpoint_restores_next_update_and_sampler(tmp_path, monkeypatch, conf
     with pytest.raises(ValueError, match="cursor changed"):
         load_ecp_checkpoint(**args, expected_sampler_state={"next_step": 3})
     restored = {}
-    assert load_ecp_checkpoint(**args, restored_state=restored) == (1, 4)
+    assert load_ecp_checkpoint(**args, restored_state=restored) == (1, 12)
     assert restored == {"sampler_state": sampler, "training_state": training}
     assert scheduler.last_epoch == 1
     torch.testing.assert_close(update(), expected_loss)
@@ -495,11 +507,11 @@ def test_segment_saves_complete_supervised_boundary(tmp_path, monkeypatch, sampl
     assert completion["optimizer_updates"] == stop and not completion["scientific_qualification"]
     assert len((tmp_path / "metrics.jsonl").read_text().splitlines()) == stop
     exposures = [json.loads(line) for line in (tmp_path / "exposures.jsonl").read_text().splitlines()]
-    assert len(exposures) == stop * 4 * conditions
+    assert len(exposures) == stop * 12 * conditions
     metrics = json.loads((tmp_path / "metrics.jsonl").read_text().splitlines()[-1])
     assert metrics["supervised_queries"] == sum(row["queries"] for row in exposures) == stop * 84
-    assert metrics["condition_exposures"] == metrics["exposures"] == stop * 4 * conditions
-    assert metrics["task_exposures"] == stop * 4
+    assert metrics["condition_exposures"] == metrics["exposures"] == stop * 12 * conditions
+    assert metrics["task_exposures"] == stop * 12
     latest = [row for row in exposures if row["step"] == stop]
     assert metrics["mean_flow_loss"] == pytest.approx(sum(row["flow_loss"] for row in latest) / len(latest))
     assert "mean_local_field_loss" not in metrics and "mean_joint_loss" not in metrics
@@ -528,7 +540,7 @@ def test_execution_chunking_and_profile_selected_checkpoint_nodes_are_configurab
 
 
 def test_smoke_requires_explicit_stop_before_profile_node_registration():
-    config = _config(ROOT / "configs/pi05_writer.json")
+    config = _test_recipe()
     config["evidence"]["checkpoint_updates"] = []
     args = SimpleNamespace(mode="smoke", stop_after_step=2, checkpoint_updates=None)
     assert _checkpoint_nodes(args, config) == () and _segment_limit(args, config) == 2
@@ -541,65 +553,67 @@ def test_smoke_requires_explicit_stop_before_profile_node_registration():
 
 
 @pytest.mark.parametrize("world_size", [1, 2, 3, 4, 5, 6])
-def test_four_task_gradient_is_independent_of_uneven_rank_assignment(monkeypatch, config, world_size):
-    """Real placement and SUM helper, against an explicit logical-batch oracle."""
+@pytest.mark.parametrize("full_queries", [False, True])
+def test_twelve_task_gradient_matches_condition_mean_oracle(monkeypatch, config, world_size, full_queries):
+    """Actual placement/SUM against separate means, including auxiliary counts 2/3."""
+    if full_queries:
+        config['data'].update(queries_per_task=21, teaching_query_counts=[7] * 12)
+    main_count = config['data']['queries_per_task']
+    aux_counts = config['data']['teaching_query_counts']
     state = torch.nn.Linear(2, 1, bias=False)
     with torch.no_grad():
         state.weight.copy_(torch.tensor([[.2, -.3]]))
     generator = torch.Generator().manual_seed(17)
-    features = torch.randn(4, 21, 2, generator=generator)
-    targets = torch.randn(4, 21, 1, generator=generator)
-    teaching_features = torch.randn(4, 7, 2, generator=generator)
-    teaching_targets = torch.randn(4, 7, 1, generator=generator)
-    main_loss = (state(features) - targets).square().mean()
-    teaching_loss = (state(teaching_features) - teaching_targets).square().mean()
-    loss = main_loss + teaching_loss / 3
-    loss.backward()
+    features = torch.randn(12, 21, 2, generator=generator)
+    targets = torch.randn(12, 21, 1, generator=generator)
+    teaching_features = torch.randn(12, 7, 2, generator=generator)
+    teaching_targets = torch.randn(12, 7, 1, generator=generator)
+    main_loss = (state(features[:, :main_count]) - targets[:, :main_count]).square().mean()
+    teaching_loss = sum((state(teaching_features[t, :n]) - teaching_targets[t, :n]).square().mean()
+                        for t, n in enumerate(aux_counts)) / 12
+    (main_loss + teaching_loss / 3).backward()
     logical_gradient = state.weight.grad.clone()
-    draws = tuple({"task": task, "occurrence": 0, "video_demos": (task,), "query_seed": 17 + task,
-                   "frames": [19, 11, 7, 4][task], "job_id": task, "condition_index": 0,
-                   "query_offset": 0, "query_count": 21, "teaching_offset": 0, "teaching_count": 7} for task in range(4))
-    data = SimpleNamespace(tasks={task: SimpleNamespace(suite=f"suite{task}") for task in range(4)})
+    draws = tuple({'task': task, 'occurrence': 0, 'video_demos': (task,), 'query_seed': 17 + task,
+                   'frames': [19, 11, 7, 4][task % 4], 'job_id': task, 'condition_index': 0,
+                   'query_offset': 0, 'query_count': main_count, 'teaching_offset': 0,
+                   'teaching_count': aux_counts[task]} for task in range(12))
+    data = SimpleNamespace(tasks={task: SimpleNamespace(suite=f'suite{task}') for task in range(12)})
     class Engine:
         def __init__(self, model):
             self.model = model
         def backward(self, draw):
-            task = draw["task"]
-            start, count = draw["query_offset"], draw["query_count"]
-            chosen = slice(start, start + count)
-            value = (self.model(features[task, chosen]) - targets[task, chosen]).square().mean()
-            tstart, tcount = draw['teaching_offset'], draw['teaching_count']
-            tchosen = slice(tstart, tstart + tcount)
-            taught = (self.model(teaching_features[task, tchosen]) - teaching_targets[task, tchosen]).square().mean()
-            (value * .25 * count / 21 + taught * .25 / 3 * tcount / 7).backward()
-            return {"queries": count, "flow_loss": float(value.detach()),
-                    "teaching_queries": tcount, "teaching_query_offset": tstart,
-                    "teaching_loss": float(taught.detach()), "teaching_weight": .25 / 3 * tcount / 7,
-                    "teaching_action_frames": list(range(tstart, tstart + tcount)),
-                    "action_demos": [task] * count, "action_frames": list(range(start, start + count)),
-                    "action_start_indices": list(range(start + 1, start + count + 1))}
+            task, count, taught_count = draw['task'], draw['query_count'], draw['teaching_count']
+            value = (self.model(features[task, :count]) - targets[task, :count]).square().mean()
+            taught = (self.model(teaching_features[task, :taught_count]) - teaching_targets[task, :taught_count]).square().mean()
+            (value / 12 + taught / 36).backward()
+            return {'queries': count, 'flow_loss': float(value.detach()),
+                    'teaching_queries': taught_count, 'teaching_query_offset': 0,
+                    'teaching_loss': float(taught.detach()), 'teaching_weight': 1 / 36,
+                    'action_frames': list(range(count)), 'teaching_action_frames': list(range(taught_count))}
     models, local_rows = [], []
     for rank in range(world_size):
         model = deepcopy(state)
         model.zero_grad(set_to_none=True)
-        context = DistributedContext(rank, rank, world_size, torch.device("cpu"))
+        context = DistributedContext(rank, rank, world_size, torch.device('cpu'))
         local_rows.append(_execute_step(Engine(model), data, context, config, draws, 1))
         models.append(model)
-    logical_rows = merge_condition_rows([row for rows in local_rows for row in rows])
-    assert sorted(row["task"] for row in logical_rows) == [0, 1, 2, 3]
-    assert all(row["queries"] == 21 and row["condition_weight"] == .25 for row in logical_rows)
-    assert all(row["action_frames"] == list(range(21)) for row in logical_rows)
-    assert sum(row["flow_loss"] * row["condition_weight"] for row in logical_rows) == pytest.approx(float(main_loss.detach()))
-    assert sum(row["queries"] for rows in local_rows for row in rows) == 84
-    assert sum(row['teaching_queries'] for rows in local_rows for row in rows) == 28
-    assert all(row['teaching_action_frames'] == list(range(7)) for row in logical_rows)
-    assert sum(row['teaching_loss'] * row['teaching_weight'] for row in logical_rows) == pytest.approx(float(teaching_loss.detach()) / 3)
+    logical_rows = merge_condition_rows([row for rows in local_rows for row in rows],
+                                       main_queries=main_count, teaching_queries=aux_counts)
+    assert [row['task'] for row in logical_rows] == list(range(12))
+    assert sum(row['condition_weight'] for row in logical_rows) == pytest.approx(1)
+    assert sum(row['teaching_weight'] for row in logical_rows) == pytest.approx(1 / 3)
+    assert sum(row['queries'] for row in logical_rows) == 12 * main_count
+    assert sum(row['teaching_queries'] for row in logical_rows) == sum(aux_counts)
+    assert sum(row['flow_loss'] / 12 for row in logical_rows) == pytest.approx(float(main_loss.detach()))
+    assert sum(row['teaching_loss'] / 36 for row in logical_rows) == pytest.approx(float(teaching_loss.detach()) / 3)
     assert all(local_rows)
+    if world_size in (4, 6):
+        assert {len(rows) for rows in local_rows} == {12 // world_size}
     combined = sum(model.weight.grad for model in models)
     def reduce(gradient, op):
         assert op == torch.distributed.ReduceOp.SUM
         gradient.copy_(combined)
-    monkeypatch.setattr("ember.writer.replay.dist.all_reduce", reduce)
+    monkeypatch.setattr('ember.writer.replay.dist.all_reduce', reduce)
     for model in models:
         sum_writer_gradients(tuple(model.parameters()), world_size=world_size)
         torch.testing.assert_close(model.weight.grad, logical_gradient, rtol=1e-5, atol=1e-6)
@@ -610,18 +624,21 @@ def test_rank_count_cannot_expand_batch_or_create_idle_replicas(config):
         _execute_step(None, None, SimpleNamespace(world_size=7), config, (), 1)
 
 
-def test_query_shards_cannot_duplicate_or_drop_scientific_exposures():
-    rows = [{"job_id": task, "query_offset": offset, "queries": 7, "flow_loss": 1.,
-             "condition_weight": 1 / 12, "seconds": 1.,
-             "teaching_query_offset": {0: 0, 7: 3, 14: 5}[offset],
-             "teaching_queries": 3 if offset == 0 else 2, "teaching_loss": 2.,
-             "teaching_weight": (3 if offset == 0 else 2) / 84}
-            for task in range(4) for offset in (0, 7, 14)]
-    assert len(merge_condition_rows(rows)) == 4
-    with pytest.raises(ValueError, match="overlap or leave a gap"):
-        merge_condition_rows(rows + [rows[0]])
-    with pytest.raises(ValueError, match="all 21 main"):
-        merge_condition_rows(rows[:-1])
+def test_complete_conditions_cannot_duplicate_drop_or_change_weights():
+    counts = [3, 2, 2] * 4
+    rows = [{'job_id': task, 'task': task, 'query_offset': 0, 'queries': 7,
+             'condition_weight': 1 / 12, 'task_weight': 1 / 12,
+             'teaching_query_offset': 0, 'teaching_queries': counts[task], 'teaching_weight': 1 / 36}
+            for task in range(12)]
+    kwargs = dict(main_queries=7, teaching_queries=counts)
+    assert len(merge_condition_rows(rows, **kwargs)) == 12
+    with pytest.raises(ValueError, match='twelve distinct'):
+        merge_condition_rows(rows + [rows[0]], **kwargs)
+    with pytest.raises(ValueError, match='twelve distinct'):
+        merge_condition_rows(rows[:-1], **kwargs)
+    rows[0]['teaching_weight'] = 3 / 84
+    with pytest.raises(ValueError, match='weighting'):
+        merge_condition_rows(rows, **kwargs)
 
 
 def test_new_segment_nodes_do_not_mutate_or_invalidate_learning_contract(tmp_path, config):
@@ -739,5 +756,5 @@ def test_retired_supervision_and_prior_configs_are_rejected(tmp_path, config, fi
 def test_duplicate_or_misaligned_conditions_fail_before_backward(sampler, config, key, value):
     draws = list(sampler.next_iteration())
     draws[1] = {**draws[1], key: value}
-    with pytest.raises(ValueError, match="four distinct"):
+    with pytest.raises(ValueError, match="twelve distinct"):
         _execute_step(None, sampler, SimpleNamespace(world_size=4, rank=0), config, draws, 1)

@@ -1,18 +1,18 @@
 """Outcome-independent execution planning for shared Writer task batches.
 
-The scientific sampler decides which tasks belong to an optimizer update.  This
-module only decides where those already-selected tasks execute. Six ranks use
-two groups of three, with disjoint native-frame and action-query work inside
-each condition. A condition still contributes exactly once per update.
+The sampler owns the twelve conditions in each update. Every condition executes
+whole on one rank; four ranks receive three conditions and six receive two.
 These plans only describe placement. Learned Action Meta responses cannot be
 reused across optimizer steps merely because a cache plan is available.
 """
 
 from __future__ import annotations
 
-from collections import defaultdict
 from functools import lru_cache
+import math
 from typing import Mapping, Sequence
+
+from ember.writer.learning_data import TASKS_PER_UPDATE
 
 
 RankTasks = tuple[tuple[int, ...], ...]
@@ -20,88 +20,39 @@ MAX_EXACT_ASSIGNMENT_COMBINATIONS = 100_000
 
 
 def condition_rank_groups(world_size: int) -> RankTasks:
-    """Keep four logical conditions while giving up to six ranks useful work."""
-    if world_size == 6:
-        return ((0, 1, 2), (3, 4, 5))
-    if world_size == 5:
-        return ((0, 1, 2), (3, 4))
-    if 1 <= world_size <= 4:
+    """A complete condition has one rank; no frame/query process subgroups."""
+    if 1 <= world_size <= 6:
         return tuple((rank,) for rank in range(world_size))
     raise ValueError("condition execution supports one through six useful ranks")
 
 
-def initialize_condition_group(context):
-    """Create subgroups in one global order after deferred NCCL is ready."""
-    import torch.distributed as dist
-
-    groups = condition_rank_groups(context.world_size)
-    selected = None
-    for ranks in groups:
-        if len(ranks) > 1:
-            group = dist.new_group(ranks=list(ranks))
-            if context.rank in ranks:
-                selected = group
-    return selected
-
-
-def query_shard(count: int, members: Sequence[int], rank: int) -> tuple[int, int]:
-    """Return a contiguous slice of the unchanged logical policy RNG batch."""
-    index = tuple(members).index(rank)
-    size, remainder = divmod(count, len(members))
-    if size <= 0:
-        raise ValueError("query partition would leave an idle condition rank")
-    return index * size + min(index, remainder), size + int(index < remainder)
+def condition_assignment(jobs, costs, *, world_size):
+    """Cost-balance complete conditions with equal counts when divisible."""
+    condition_rank_groups(world_size)
+    ordered = sorted(jobs, key=lambda job: (-costs[job], job))
+    assigned, loads = [[] for _ in range(world_size)], [0] * world_size
+    for start in range(0, len(ordered), world_size):
+        ranks = sorted(range(world_size), key=lambda rank: (loads[rank], rank))
+        for rank, job in zip(ranks, ordered[start:start + world_size]):
+            assigned[rank].append(job)
+            loads[rank] += costs[job]
+    return tuple(tuple(group) for group in assigned)
 
 
-def _combine_query_shards(parts: Sequence[dict]) -> dict:
-    row = dict(parts[0])
-    physical_keys = {key for key in row if key.endswith("_seconds") or key.startswith("input_cache_")}
-    physical_keys.update(("seconds", "execution_rank", "query_offset", "queries",
-                          "condition_weight", "fm_lora_gradient_norm", "policy_microbatch",
-                          "teaching_query_offset", "teaching_queries", "teaching_weight", "teaching_lora_gradient_norm"))
-    row["execution_shards"] = [{key: part[key] for key in sorted(physical_keys) if key in part}
-                               for part in parts]
-    for key in physical_keys:
-        row.pop(key, None)
-    row["seconds"] = max(part["seconds"] for part in parts)
-    for key in ("action_demos", "action_frames", "action_start_indices",
-                "teaching_action_demos", "teaching_action_frames", "teaching_action_start_indices"):
-        if key in parts[0]:
-            row[key] = [value for part in parts for value in part[key]]
-    for key in ("source_forward_calls", "compiled_forward_calls", "teaching_compiled_forward_calls"):
-        if key in parts[0]:
-            row[key] = sum(part[key] for part in parts)
-    return row
-
-
-def merge_condition_rows(rows: Sequence[dict]) -> list[dict]:
-    """Reassemble physical query slices into four scientific exposure rows."""
-    by_job = defaultdict(list)
-    for row in rows:
-        by_job[row["job_id"]].append(row)
-    if len(by_job) != 4:
-        raise ValueError("an update must record exactly four logical conditions")
-    merged = []
-    for _, parts in sorted(by_job.items()):
-        parts.sort(key=lambda row: row["query_offset"])
-        cursor, teaching_cursor = 0, 0
-        for part in parts:
-            if part["query_offset"] != cursor:
-                raise ValueError("condition query shards overlap or leave a gap")
-            cursor += part["queries"]
-            if part["teaching_query_offset"] != teaching_cursor:
-                raise ValueError("condition teaching shards overlap or leave a gap")
-            teaching_cursor += part["teaching_queries"]
-        if cursor != 21 or teaching_cursor != 7:
-            raise ValueError("condition query shards must cover all 21 main and seven teaching queries")
-        row = _combine_query_shards(parts) if len(parts) > 1 else dict(parts[0])
-        row.update(queries=cursor, query_offset=0, condition_weight=.25,
-                   flow_loss=sum(part["flow_loss"] * part["queries"] for part in parts) / cursor,
-                   teaching_queries=teaching_cursor, teaching_query_offset=0,
-                   teaching_weight=sum(part["teaching_weight"] for part in parts),
-                   teaching_loss=sum(part["teaching_loss"] * part["teaching_queries"] for part in parts) / teaching_cursor)
-        merged.append(row)
-    return merged
+def merge_condition_rows(rows: Sequence[dict], *, main_queries: int, teaching_queries: Sequence[int]) -> list[dict]:
+    """Validate one complete, equally weighted exposure row per condition."""
+    if (len(rows) != TASKS_PER_UPDATE or sorted(row["job_id"] for row in rows) != list(range(TASKS_PER_UPDATE))
+            or len({row["task"] for row in rows}) != TASKS_PER_UPDATE):
+        raise ValueError("an update must record exactly twelve distinct complete conditions")
+    merged = sorted(rows, key=lambda row: row["job_id"])
+    for row, teaching_count in zip(merged, teaching_queries, strict=True):
+        if (row["query_offset"] != 0 or row["teaching_query_offset"] != 0
+                or row["queries"] != main_queries or row["teaching_queries"] != teaching_count
+                or not math.isclose(row["condition_weight"], 1 / TASKS_PER_UPDATE)
+                or not math.isclose(row["task_weight"], 1 / TASKS_PER_UPDATE)
+                or not math.isclose(row["teaching_weight"], 1 / (3 * TASKS_PER_UPDATE))):
+            raise ValueError("condition exposure or equal task weighting changed")
+    return [dict(row) for row in merged]
 
 
 def _normalized_execution_ranks(

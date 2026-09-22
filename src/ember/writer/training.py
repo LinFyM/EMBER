@@ -20,8 +20,10 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
-from ember.writer.learning_data import EVENT_SCHEMA, WriterTrainingData
-from ember.writer.auxiliary_pairing import declared_dynamic_episode
+from ember.writer.learning_data import (
+    EVENT_SCHEMA, MAIN_EVENT_QUERIES, TEACHING_EVENT_QUERIES,
+    TASKS_PER_UPDATE, WriterTrainingData, query_allocation,
+)
 from ember.writer.continuation import (
     LOW_LR_REPAIR, inherit_history, prepare_continuation, prepare_phase_continuation,
     require_continuation_config, require_continuation_start, require_extended_prefix,
@@ -29,8 +31,7 @@ from ember.writer.continuation import (
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import VideoConditionCache, build_runtime, require_architecture_identity
 from ember.writer.task_execution import (
-    condition_rank_groups, cost_balanced_task_assignment, initialize_condition_group,
-    merge_condition_rows, query_shard,
+    condition_assignment, condition_rank_groups, cost_balanced_task_assignment, merge_condition_rows,
 )
 
 
@@ -38,7 +39,11 @@ CONFIG_SCHEMA = "ember_video_teaching_writer_config_v1"
 RUN_SCHEMA = "ember_video_teaching_writer_run_v1"
 STAGE = "video_teaching_writer_fresh"
 TRAINING_SCHEMA = "ember_video_teaching_training_state_v1"
-UPDATE_VERSION = "video_teaching_full_ab_joint_meta_v1"
+UPDATE_VERSION = "video_teaching_twelve_condition_joint_meta_v2"
+TASK_MIXING_DECLARATION = {
+    "kind": "coverage_task_mixing_fresh_v1", "conditions": TASKS_PER_UPDATE,
+    "initialization": "fresh", "event_query_pools": [MAIN_EVENT_QUERIES, TEACHING_EVENT_QUERIES],
+}
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TOPOLOGY_TRANSITION_SCHEMA = "ember_writer_topology_transition_v1"
 
@@ -54,17 +59,28 @@ def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
 
 
 def _validate_dynamic_schedule(config):
-    expected_episode = declared_dynamic_episode(config, REPO_ROOT)
+    reference = read_json(REPO_ROOT / "configs/libero_24_8_8_coverage_v1/writer_aux_cross_episode.json")
+    if (config["source"] != reference["source"]
+            or any(config["data"].get(key) != reference["data"].get(key) for key in ("task_ids", "protocol"))):
+        raise ValueError("task-mixing source or audited train-task authority changed")
     opt = config["optimization"]
+    if opt != reference["optimization"]:
+        raise ValueError("task-mixing scientific contract preserves the original loss, Adam and LR schedule")
     if (any(type(opt.get(key)) is not int for key in
             ("warmup_updates", "tail_start_update", "tail_end_update", "decay_updates"))
             or not 0 <= opt["warmup_updates"] <= opt["tail_start_update"] < opt["tail_end_update"]
             or opt["decay_updates"] <= opt["tail_end_update"]
             or not 0 < opt["tail_final_ratio"] <= 1
             or config["model"]["camera_view"] != "agentview"
-            or config["data"].get("teaching_episode") != expected_episode
+            or config["data"].get("teaching_episode") != "cross_episode"
             or not config["data"].get("protocol")):
         raise ValueError("dynamic Writer schedule or single-camera teaching contract changed")
+
+
+def _query_contract(config):
+    if config.get("experiment") != TASK_MIXING_DECLARATION:
+        raise ValueError("canonical task-mixing scientific contract requires its explicit declaration")
+    return query_allocation(config["data"], 0)
 
 
 def _config(path: Path) -> dict[str, Any]:
@@ -72,11 +88,11 @@ def _config(path: Path) -> dict[str, Any]:
     require_continuation_config(config)
     expected_data = {
         "extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
-        "queries_per_task": 21, "tasks_per_update": 4, "conditions_per_task": 1, "cardinalities": [1],
+        "tasks_per_update": TASKS_PER_UPDATE, "conditions_per_task": 1, "cardinalities": [1],
         "action_start_offset": 1, "query_alignment": "post_action_observation_future_control_v1",
         "version": EVENT_SCHEMA, "event_schema_version": EVENT_SCHEMA,
         "seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722,
-        "teaching_queries_per_task": 7, "teaching_seed": 20260919,
+        "teaching_seed": 20260919,
     }
     expected_observer = {
         "flow_time": 1, "meta_rank": 4, "vl_meta_rank": 4, "text_meta_rank": 4,
@@ -90,6 +106,7 @@ def _config(path: Path) -> dict[str, Any]:
         "grad_clip": 1., "warmup_updates": 100, "decay_updates": 12000, "decay_lr": 1e-5,
     }
     dynamic = config.get("training_control") is not None
+    _query_contract(config)
     if dynamic:
         for key in ("warmup_updates", "tail_start_update", "tail_end_update", "tail_final_ratio", "decay_updates"):
             expected_optimization.pop(key)
@@ -205,7 +222,7 @@ def _run_contract(args, context, config, runtime, state):
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"), "ranks": _gather(local, context),
             "condition_rank_groups": [list(group) for group in condition_rank_groups(context.world_size)],
-            "within_condition": "disjoint_native_frames_and_queries_compact_autograd_gather_v1",
+            "within_condition": "whole_video_and_query_prefixes_on_one_rank_no_frame_subgroup",
         },
         "training": {
             "writer_parameters": sum(p.numel() for p in runtime.state.writer.parameters()),
@@ -215,7 +232,7 @@ def _run_contract(args, context, config, runtime, state):
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
             "optimizer": ("parent AdamW state preserved" if
                           (config.get("continuation") or config.get("phase_continuation")) else "fresh AdamW")
-                         + "; one grouped functional update per four equally weighted tasks", "scaler": None,
+                         + "; one grouped functional update per twelve equally weighted tasks", "scaler": None,
             "resume_contract": {
                 "default": "same config, physical topology, sampler streams, optimizer updates and complete state",
                 "topology_transition": "ordinary dynamic --resume with explicit --allow-topology-change only",
@@ -269,53 +286,53 @@ def _grad_norm(parameters) -> float:
 
 
 def _logical_batch(config):
-    return {"tasks": 4, "conditions_per_task": 1, "conditions": 4, "K": 1,
-            "queries_per_task": 21, "queries_per_condition": 21, "queries_per_update": 84,
-            "teaching_queries_per_task": 7, "teaching_queries_per_update": 28,
-            "total_queries_per_update": 112, "teaching_weight": config["optimization"]["teaching_weight"],
-            "task_weight": .25, "condition_weight": .25, "gradient_reduction": "SUM"}
+    main, teaching = _query_contract(config)
+    return {"tasks": TASKS_PER_UPDATE, "conditions_per_task": 1, "conditions": TASKS_PER_UPDATE, "K": 1,
+            "queries_per_task": main, "queries_per_condition": main, "queries_per_update": TASKS_PER_UPDATE * main,
+            "teaching_query_counts": list(teaching), "teaching_queries_per_update": sum(teaching),
+            "total_queries_per_update": TASKS_PER_UPDATE * main + sum(teaching),
+            "policy_random_batch_sizes": {"main": MAIN_EVENT_QUERIES, "teaching": TEACHING_EVENT_QUERIES},
+            "teaching_weight": config["optimization"]["teaching_weight"],
+            "task_weight": 1 / TASKS_PER_UPDATE, "condition_weight": 1 / TASKS_PER_UPDATE,
+            "gradient_reduction": "SUM"}
 
 
-def _condition_jobs(data, config, draws):
+def _condition_jobs(data, config, draws, step):
     by_job = {draw["job_id"]: draw for draw in draws}
     tasks = {draw["task"] for draw in draws}
-    if (len(draws) != 4 or len(by_job) != 4 or len(tasks) != 4 or not tasks <= set(data.tasks)
+    main, teaching = query_allocation(config["data"], step - 1)
+    if (len(draws) != TASKS_PER_UPDATE or set(by_job) != set(range(TASKS_PER_UPDATE))
+            or len(tasks) != TASKS_PER_UPDATE or not tasks <= set(data.tasks)
             or any(draw["condition_index"] != 0 or len(draw["video_demos"]) != 1
-                   or draw["query_count"] != 21 or draw["query_offset"] != 0
-                   or draw["teaching_count"] != 7 or draw["teaching_offset"] != 0 for draw in draws)):
-        raise ValueError("each update requires four distinct equal-weight K1 tasks with 21 main and seven teaching queries")
+                   or draw["query_count"] != main or draw["query_offset"] != 0
+                   or draw["teaching_count"] != teaching[draw["job_id"]]
+                   or draw["teaching_offset"] != 0 for draw in draws)):
+        raise ValueError("each update requires twelve distinct K1 conditions with the registered query allocation")
     return by_job
 
 
 def _execute_step(engine, data, context, config, draws, step):
     logical = _logical_batch(config)
-    groups = condition_rank_groups(context.world_size)
-    group_index = next(index for index, members in enumerate(groups) if context.rank in members)
-    members = groups[group_index]
-    by_job = _condition_jobs(data, config, draws)
+    condition_rank_groups(context.world_size)
+    by_job = _condition_jobs(data, config, draws, step)
     engine.step = step
     jobs = tuple(by_job)
     costs = {job: int(draw["frames"]) for job, draw in by_job.items()}
-    assignment = cost_balanced_task_assignment(
-        jobs, costs, {job: tuple(range(len(groups))) for job in jobs}, world_size=len(groups),
-    )
+    assignment = condition_assignment(jobs, costs, world_size=context.world_size)
     rows = []
-    for job in assignment[group_index]:
-        offset, count = query_shard(by_job[job]["query_count"], members, context.rank)
-        teaching_offset, teaching_count = query_shard(by_job[job]["teaching_count"], members, context.rank)
-        draw = {**by_job[job], "query_offset": offset, "query_count": count,
-                "teaching_offset": teaching_offset, "teaching_count": teaching_count}
+    for job in assignment[context.rank]:
+        draw = by_job[job]
         task = draw["task"]
         tick = time.perf_counter()
         metric = engine.backward(draw)
-        if int(metric["queries"]) != draw["query_count"] or int(metric["teaching_queries"]) != teaching_count:
+        if int(metric["queries"]) != draw["query_count"] or int(metric["teaching_queries"]) != draw["teaching_count"]:
             raise RuntimeError("supervised engine did not execute the registered FM exposure")
         rows.append({**metric, "step": step, "job_id": job, "task": task,
                      "suite": data.tasks[task].suite, "condition_index": draw["condition_index"],
                      "occurrence": draw["occurrence"], "K": 1,
-                     "condition_weight": logical["condition_weight"] * count / logical["queries_per_condition"],
+                     "condition_weight": logical["condition_weight"],
                      "task_weight": logical["task_weight"], "execution_rank": context.rank,
-                     "condition_ranks": list(members),
+                     "condition_ranks": [context.rank],
                      "video_demos": list(draw["video_demos"]), "frames": draw["frames"], "scheduling_frames": costs[job],
                      "query_seed": draw["query_seed"], "query_offset": draw["query_offset"],
                      "queries": draw["query_count"], "seconds": time.perf_counter() - tick})
@@ -440,7 +457,7 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
                     "logical_batch": _logical_batch(config),
                     "event_plan": "registered immutable dynamic events",
                     "optimizer_scheduler": "restored checkpoint trainer state",
-                    "task_weighting": "one grouped update over four equally weighted tasks",
+                    "task_weighting": "one grouped update over twelve equally weighted tasks",
                 },
             })
         if parent:
@@ -474,7 +491,9 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
               "peak_allocated_gib": torch.cuda.max_memory_allocated(context.device) / 2**30,
               "peak_reserved_gib": torch.cuda.max_memory_reserved(context.device) / 2**30}
     packets = _gather(packet, context)
-    gathered = merge_condition_rows([row for packet in packets for row in packet["rows"]])
+    main, teaching = query_allocation(config["data"], updates - 1)
+    gathered = merge_condition_rows([row for packet in packets for row in packet["rows"]],
+                                   main_queries=main, teaching_queries=teaching)
     metrics_rows += len(gathered)
     if context.is_main:
         for row in gathered:
@@ -487,7 +506,7 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
             "mean_total_loss": sum(r["flow_loss"] * r["condition_weight"]
                                    + r["teaching_loss"] * r["teaching_weight"] for r in gathered),
             **norms, "lr_next": scheduler.get_last_lr()[0], "exposures": metrics_rows,
-            "condition_exposures": metrics_rows, "task_exposures": updates * 4,
+            "condition_exposures": metrics_rows, "task_exposures": updates * TASKS_PER_UPDATE,
             "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
             "teaching_queries": updates * _logical_batch(config)["teaching_queries_per_update"],
             "total_queries": updates * _logical_batch(config)["total_queries_per_update"],
@@ -603,7 +622,7 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
         write_json_atomic(args.output / "completion.json", {
             "schema_version": RUN_SCHEMA, "status": "segment_complete", "mode": args.mode,
             "optimizer_updates": updates, "exposures": metrics_rows,
-            "condition_exposures": metrics_rows, "task_exposures": updates * 4,
+            "condition_exposures": metrics_rows, "task_exposures": updates * TASKS_PER_UPDATE,
             "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
             "teaching_queries": updates * _logical_batch(config)["teaching_queries_per_update"],
             "total_queries": updates * _logical_batch(config)["total_queries_per_update"],
@@ -647,7 +666,6 @@ def run(args: argparse.Namespace) -> None:
     optimizer, scheduler = _optimization(runtime.state, config)
     args.output.mkdir(parents=True, exist_ok=True)
     initialize_deferred_process_group(context, rendezvous_root=args.output)
-    frame_parallel_group = initialize_condition_group(context)
     contract = _run_contract(args, context, config, runtime, state)
     if context.is_main:
         if getattr(args, "phase_from", None):
@@ -662,8 +680,7 @@ def run(args: argparse.Namespace) -> None:
     if updates >= stop:
         raise ValueError("supervised segment has no remaining registered updates")
     cache = VideoConditionCache(runtime, data, int(config["runtime"]["raw_video_cache_bytes"]))
-    engine = SupervisedEngine(runtime, data, cache, context, execution_config,
-                              frame_parallel_group=frame_parallel_group)
+    engine = SupervisedEngine(runtime, data, cache, context, execution_config)
     barrier(context)
     try:
         _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start)
@@ -675,7 +692,8 @@ def run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/pi05_writer.json")
+    parser.add_argument("--config", type=Path,
+                        default=REPO_ROOT / "configs/libero_24_8_8_coverage_v1/writer_task_diversity.json")
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("smoke", "profile", "formal"), required=True)

@@ -10,7 +10,7 @@ J18完整验证已被Owner否决，不执行；失败状态专家监督历史已
 沿用现有记录，不新增面向Owner的报告文件；本机session约07:30读取状态制作PPT，不使用Test选择方法。
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
 
-## 当前运行快照（2026-09-23 04:47）
+## 当前运行快照（2026-09-23 05:35）
 
 正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
 clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
@@ -19,7 +19,7 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；exact commands/env、allocation、quota、profile、选点合同均在launch目录。
 最新data0 quota used148345752KiB、soft1073741824KiB；当前study289780KiB，新增峰值32GiB有余量；Source/data无复制。
 部署和损失未变；fresh不是C600续训，也不复用profile权重。所有先行诊断workers已exit0，无其它本轮GPU任务遗留。
-完整Validation200/400成绩分别为103/117（见下方记录），均未达到改善门槛；继续原登记轨迹。
+完整Validation200/400/600成绩分别为103/117/142（见下方记录），尚未达到改善门槛；继续原登记轨迹。
 首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
 07:30前最多12物理卡的并行在Owner临时授权内；07:30之后必须重新压到常规总量再继续，09:00前可补结果。
 不使用J18 Validation，不按Test或shuffle/reverse结果再改方法。旧MTBC300 Test metadata修复脚本已只读核验，尚未apply或运行Test。
@@ -74,6 +74,15 @@ fresh400为47/72、30任务有成功；Spatial/Object/Goal/Long/meta分别9/6/7/
 因此该早期模型并非普遍缺少训练侧学习能力，已见任务表现高于C600而完整Validation117低于C600154；
 支持继续把能力获取与跨任务迁移分开解释，不能把训练侧正证据当held收益或唯一根因。不同训练历史与小面板边界保留。
 全部GPU01诊断进程已随四worker退出，Validation watcher按原节点等待600；未追加优化或改变formal选点。
+
+05:35第三个完整Validation400结束，600步142/400，12 workers exit0、400唯一条件与配对合同通过。
+按Long1/Long9/Goal3/Goal6/Object1/Object6/Spatial3/Spatial6依次26/0/0/44/30/5/11/26，各50；breadth仍6。
+相对fresh400保留88、得54、失29，净+25；相对MTBC300保留87、得55、失68，净-13；相对旧C600仍低12。
+Spatial6有所恢复，但Object1较400步减少14条，不能把总分回升解释为全部能力同步改善。继续原登记800/1000/1200节点。
+PPT包已更新为19个完整Validation面板、7600条success投影；无选定模型、controls或Test。当前速度仍约14.6秒/步，
+跑满1200预计07:46结束训练；07:30后恢复常规卡数，优先保证冻结后主要视频对照和有资格时的两条Test400。
+后续独立panel helper已准备使用canonical `--reuse-manifest`加速other：两臂同50视频全集的LoRA按精确条件复用，
+重新构建other映射并完整运行400闭环，wrong/shuffle/reverse不复用；未修改正在运行的训练/Validation进程。
 
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 

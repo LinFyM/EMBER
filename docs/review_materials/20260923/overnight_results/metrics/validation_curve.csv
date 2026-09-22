@@ -17,3 +17,4 @@ Previous EMBER,1000,validation,correct,129,400,32.25,False
 Previous EMBER,1200,validation,correct,124,400,31.0,False
 Task-mixing EMBER,200,validation,correct,103,400,25.75,False
 Task-mixing EMBER,400,validation,correct,117,400,29.25,False
+Task-mixing EMBER,600,validation,correct,142,400,35.5,False

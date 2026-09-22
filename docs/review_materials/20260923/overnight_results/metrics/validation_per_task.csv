@@ -143,3 +143,11 @@ Task-mixing EMBER,400,validation,correct,libero_object,1,pick up the cream chees
 Task-mixing EMBER,400,validation,correct,libero_object,6,pick up the butter and place it in the basket,1,50
 Task-mixing EMBER,400,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,3,50
 Task-mixing EMBER,400,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,9,50
+Task-mixing EMBER,600,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,26,50
+Task-mixing EMBER,600,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+Task-mixing EMBER,600,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+Task-mixing EMBER,600,validation,correct,libero_goal,6,put the cream cheese in the bowl,44,50
+Task-mixing EMBER,600,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,30,50
+Task-mixing EMBER,600,validation,correct,libero_object,6,pick up the butter and place it in the basket,5,50
+Task-mixing EMBER,600,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,11,50
+Task-mixing EMBER,600,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,26,50

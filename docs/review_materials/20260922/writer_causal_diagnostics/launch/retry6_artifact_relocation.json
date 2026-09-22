@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-22",
+  "controller": "retry6",
+  "source_parts": [
+    "parts/gradient_rows_C600.csv",
+    "parts/gradient_rows_O1200.csv",
+    "parts/virtual_update_rows_C600.csv",
+    "parts/virtual_update_rows_O1200.csv",
+    "parts/virtual_probe_rows_C600.csv",
+    "parts/virtual_probe_rows_O1200.csv",
+    "parts/cost_d2_C600.json",
+    "parts/cost_d2_O1200.json"
+  ],
+  "source_final": [
+    "path_probe_rows.csv",
+    "path_rollout_rows.csv",
+    "gradient_rows.csv",
+    "virtual_update_rows.csv",
+    "microtrain_steps.csv",
+    "microtrain_probe_rows.csv",
+    "microtrain_rollout_rows.csv",
+    "path_effects.csv",
+    "trajectory_manifest.csv",
+    "costs.json",
+    "completion.json"
+  ],
+  "destination": "invalid_retry5_group_joint_norm_field_collision",
+  "reason": "retry5 completed all computation, but D2 group rows merged a draw-level full-Writer joint_grad_norm over the group-specific field. Preserve every pre-correction D2 and aggregate payload; regenerate only D2 and final aggregates with commit 107806f5. D1 and D3 raw parts remain canonical and are not rerun.",
+  "scientific_effect": "none on frozen assets, event draws, native gradients, AdamW virtual updates, D3 states, or closed-loop rows; this is a reporting-field repair"
+}

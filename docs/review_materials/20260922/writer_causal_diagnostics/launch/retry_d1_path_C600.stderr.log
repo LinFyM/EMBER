@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7fe99d30/scripts/run_writer_causal_diagnostics.py", line 500, in <module>
+    main()
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7fe99d30/scripts/run_writer_causal_diagnostics.py", line 488, in main
+    d1_path(output, device, args.asset)
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7fe99d30/scripts/run_writer_causal_diagnostics.py", line 189, in d1_path
+    panel = compile_path_panel(loaded, CausalRawInputCache(loaded, data), check_cc=True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7fe99d30/src/ember/writer/causal_diagnostics.py", line 256, in compile_path_panel
+    panel[(task, cohort.label, arm)] = compile_path(
+                                       ^^^^^^^^^^^^^
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7fe99d30/src/ember/writer/causal_diagnostics.py", line 215, in compile_path
+    available = {label: source(label) for label in {core_label, procedure_label}}
+                        ^^^^^^^^^^^^^
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7fe99d30/src/ember/writer/causal_diagnostics.py", line 206, in source
+    encoded[key] = _encode(
+                   ^^^^^^^^
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7fe99d30/src/ember/writer/causal_diagnostics.py", line 159, in _encode
+    encoded, trace = loaded.runtime.state.writer.encode_task(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: CompleteLoRAWriter.encode_task() got multiple values for argument 'policy'

@@ -1,0 +1,121 @@
+{
+  "schema_version": "ember_writer_causal_diagnostics_v1",
+  "stages": [
+    {
+      "key": "d1_baseline_M300",
+      "rows": 32,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 29.679397085681558
+    },
+    {
+      "key": "d1_baseline_Source",
+      "rows": 32,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 28.334824819117785
+    },
+    {
+      "key": "d1_path_C1200",
+      "rows": 160,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 186.9043675083667
+    },
+    {
+      "key": "d1_path_C600",
+      "rows": 160,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 167.1958969901316
+    },
+    {
+      "key": "d1_path_O1200",
+      "rows": 160,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 183.2873137332499
+    },
+    {
+      "key": "d1_rollout_C600_CC",
+      "rows": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 429.10256988182664
+    },
+    {
+      "key": "d1_rollout_C600_CO",
+      "rows": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 378.6525905658491
+    },
+    {
+      "key": "d1_rollout_C600_CW",
+      "rows": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 449.403191505
+    },
+    {
+      "key": "d1_rollout_C600_WC",
+      "rows": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 439.818988841027
+    },
+    {
+      "key": "d1_rollout_C600_WW",
+      "rows": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 424.04813221283257
+    },
+    {
+      "key": "d1_rollout_O1200_CC",
+      "rows": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 365.3370941160247
+    },
+    {
+      "key": "d1_rollout_O1200_WW",
+      "rows": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 366.02514999732375
+    },
+    {
+      "key": "d2_C600",
+      "probes": 256,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 980.8849442349747,
+      "virtual_candidates": 8
+    },
+    {
+      "key": "d2_O1200",
+      "probes": 256,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 938.783529211767,
+      "virtual_candidates": 8
+    },
+    {
+      "key": "d3_J",
+      "probes": 64,
+      "rollouts": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 1630.388652341906,
+      "updates": 18
+    },
+    {
+      "key": "d3_M",
+      "probes": 64,
+      "rollouts": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 1791.4273947309703,
+      "updates": 18
+    },
+    {
+      "key": "d3_Q",
+      "probes": 64,
+      "rollouts": 16,
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 1688.2854159316048,
+      "updates": 18
+    },
+    {
+      "key": "finalize",
+      "schema_version": "ember_writer_causal_diagnostics_v1",
+      "seconds": 0.9082242893055081
+    }
+  ],
+  "total_recorded_seconds": 10478.46767799696
+}

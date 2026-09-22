@@ -1,0 +1,8 @@
+{
+  "date": "2026-09-22",
+  "controller": "retry4",
+  "source": "rollouts/d1/C600",
+  "destination": "rollouts/invalid_retry2_pre_rollout_keyerror/C600",
+  "reason": "retry2 created only per-arm LIBERO configuration directories before failing in the legacy current-task panel lookup (KeyError: 14); no rollout result rows or closed-loop outcomes were written. Preserve this aborted payload outside the active D1 output root so retry4 can materialize a fresh, non-overwriting rollout panel.",
+  "scientific_effect": "none; frozen assets, panel, mapping, seeds, and all already-complete D1 function-probe rows are unchanged"
+}

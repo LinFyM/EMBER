@@ -20,8 +20,9 @@
 最终 `completion.json` 登记 D1 544条路径 probe与112条闭环、D2 16条 virtual update、D3 54次真实更新、192条终点
 probe与48条终点闭环，均来自允许的训练侧面板；`status=complete`、`d3.status=complete`。最终 D2 重放的 controller、
 C600/O1200 worker、finalize和detached runtime均 exit=0；D1/D3 已先完整完成且不因报告字段修正重跑。登记stage-worker
-成本10,478.47秒、有效launch累计82.6分钟，未超过120分钟上限。完整结果、逐task表、原始CSV和错误原件入口为
-`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/analysis/causal_diagnostics_report.md`。
+成本10,478.47秒、有效launch累计82.6分钟，未超过120分钟上限。完整结果、逐task表、原始CSV和错误原件已推送为
+[远程专家审计包](review_materials/20260922/writer_causal_diagnostics/README.md)；canonical study 仍位于
+`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/`。
 
 可采纳的严格结论仅为：Core/Procedure replacement 都有真实下游功能影响，当前端点前缀辅助项在Writer参数空间中是
 非零且不完全同向的梯度项，18步 J/Q/M 均产生不同的训练侧success set；没有臂在总分、breadth和保持上统一占优。

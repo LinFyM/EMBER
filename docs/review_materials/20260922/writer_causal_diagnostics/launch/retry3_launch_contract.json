@@ -1,0 +1,16 @@
+{
+  "schema_version": "ember_writer_causal_diagnostics_launch_v1",
+  "status": "registered_before_retry3_gpu_execution",
+  "restarts": {
+    "initial": "detached code root misused as canonical asset root",
+    "retry1": "policy argument ordering to encode_task",
+    "retry2": "legacy rollout panel task map excluded current registered task IDs",
+    "only_retry3_change": "extend the existing rollout contract lookup with explicit additional panel IDs; direct unit regression passed"
+  },
+  "git": {"commit": "75b1ead6ce76c0584a351538110da8b8a73d725f", "authority": "clean pushed origin/main detached runtime", "runtime": "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-75b1ead6"},
+  "scientific_contract_unchanged": {"d1_path_probes": 544, "d1_rollouts": 112, "d2_unique_conditions": 72, "d2_virtual_candidates": 16, "d3_updates_if_time_gate_passes": 54, "gpu_wallclock_seconds": 7200, "d3_min_remaining_seconds": 3900, "no_partial_metric_reading": true, "no_checkpoint_selection": true},
+  "resource_preflight": "retry3_gpu_preflight_launch.json",
+  "quota_preflight": "retry3_quota_preflight.txt",
+  "allocation": "gpu01:0 plus Owner-authorized low-occupancy gpu02:1--3 co-use; no foreign process modification",
+  "final_acceptance": "worker/controller exits, completion.json, exact required rows, registration/assets, trajectory manifest and retained failure evidence"
+}

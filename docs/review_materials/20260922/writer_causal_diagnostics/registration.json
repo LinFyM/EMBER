@@ -1,0 +1,79 @@
+{
+  "assets": {
+    "C1200": {
+      "checkpoint": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00001200",
+      "kind": "writer",
+      "manifest": {
+        "bytes": 542,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00001200/checkpoint_manifest.json"
+      },
+      "trainer_state": {
+        "bytes": 97090090,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00001200/trainer_state.pt"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00001200/ecp.safetensors"
+      }
+    },
+    "C600": {
+      "checkpoint": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600",
+      "kind": "writer",
+      "manifest": {
+        "bytes": 541,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/checkpoint_manifest.json"
+      },
+      "trainer_state": {
+        "bytes": 97090090,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/trainer_state.pt"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/ecp.safetensors"
+      }
+    },
+    "M300": {
+      "checkpoint": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/training/mtbc/checkpoints/step_00000300",
+      "kind": "mtbc",
+      "weights": {
+        "bytes": 21147856,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/training/mtbc/checkpoints/step_00000300/lora.safetensors"
+      }
+    },
+    "O1200": {
+      "checkpoint": "/data0/user/ymdai/ember_runs/video_teaching_20260919/training/checkpoints/macro_00001200",
+      "kind": "writer",
+      "manifest": {
+        "bytes": 434,
+        "path": "/data0/user/ymdai/ember_runs/video_teaching_20260919/training/checkpoints/macro_00001200/checkpoint_manifest.json"
+      },
+      "trainer_state": {
+        "bytes": 97118314,
+        "path": "/data0/user/ymdai/ember_runs/video_teaching_20260919/training/checkpoints/macro_00001200/trainer_state.pt"
+      },
+      "weights": {
+        "bytes": 51033768,
+        "path": "/data0/user/ymdai/ember_runs/video_teaching_20260919/training/checkpoints/macro_00001200/ecp.safetensors"
+      }
+    },
+    "Source": {
+      "checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+      "kind": "source",
+      "model_path": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000/policy"
+    }
+  },
+  "checkpoint_selection_use": false,
+  "d1_probe_count": 544,
+  "d1_rollout_count": 112,
+  "d2_unique_conditions": 72,
+  "d2_virtual_candidates": 16,
+  "d3_actual_updates": 54,
+  "d3_rollout_count": 48,
+  "design": "docs/writer_causal_diagnostics_20260922.md",
+  "fresh_training": false,
+  "gpu_wallclock_limit_seconds": 7200,
+  "schema_version": "ember_writer_causal_diagnostics_v1",
+  "status": "registered",
+  "test_use": false,
+  "validation_use": false
+}

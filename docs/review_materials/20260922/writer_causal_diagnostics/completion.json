@@ -1,0 +1,19 @@
+{
+  "checkpoint_selection_use": false,
+  "d3": {
+    "status": "complete"
+  },
+  "fresh_training": false,
+  "rows": {
+    "micro_probes": 192,
+    "micro_rollouts": 48,
+    "micro_updates": 54,
+    "path_probes": 544,
+    "path_rollouts": 112,
+    "virtual_updates": 16
+  },
+  "schema_version": "ember_writer_causal_diagnostics_v1",
+  "status": "complete",
+  "test_use": false,
+  "validation_use": false
+}

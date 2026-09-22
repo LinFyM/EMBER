@@ -3,9 +3,9 @@
 ## Writer 因果路径与辅助梯度诊断：完整证据边界（2026-09-22）
 
 冻结 D1/D2/D3 已完整结束（544条路径 probe、112条路径闭环、16条虚拟更新、54条微训练更新、192条终点 probe、
-48条终点闭环），完整报告与原始行在
-`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/analysis/causal_diagnostics_report.md`。它不使用
-Validation/Test，也不进入 checkpoint 选择。
+48条终点闭环），完整报告与全部结构化原始行已作为远程
+[专家审计包](docs/review_materials/20260922/writer_causal_diagnostics/README.md)上传；canonical 本地 study 仍在
+`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/`。它不使用 Validation/Test，也不进入 checkpoint 选择。
 
 D1 显示只有 Procedure donor replacement（CW）即可在 O1200/C600 上比只有 Core donor replacement（WC）产生明显更大的
 动作和 fused/LoRA 变化；二者都通过真实解码器消费者。C600 小面板 CC/CO/CW/WC/WW=2/5/3/5/4，O1200 CC/WW均为10/16，

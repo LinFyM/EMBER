@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-6924f5b8/scripts/run_writer_causal_diagnostics.py", line 499, in <module>
+    main()
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-6924f5b8/scripts/run_writer_causal_diagnostics.py", line 489, in main
+    d1_baseline(output, device, args.asset)
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-6924f5b8/scripts/run_writer_causal_diagnostics.py", line 213, in d1_baseline
+    data, policy = current_training_data(REPO_ROOT, current, planned_updates=1), _baseline_policy(asset, device)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-6924f5b8/src/ember/writer/stability_diagnostics.py", line 173, in current_training_data
+    return WriterTrainingData(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-6924f5b8/src/ember/writer/learning_data.py", line 110, in __init__
+    self.videos = RawTeacherVideoStore(authorities, frame_stride=5, camera_view=camera_view)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-6924f5b8/src/ember/writer/data.py", line 142, in __init__
+    verify_authority(authority)
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-6924f5b8/src/ember/writer/data.py", line 51, in verify_authority
+    raise WriterModelError(f"task authority changed: {authority.task_id}")
+ember.writer.errors.WriterModelError: task authority changed: 0

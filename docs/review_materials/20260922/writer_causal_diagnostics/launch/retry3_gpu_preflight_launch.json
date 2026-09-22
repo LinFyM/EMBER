@@ -1,0 +1,892 @@
+{
+  "nodes": [
+    "gpu01",
+    "gpu02"
+  ],
+  "node_results": {
+    "gpu01": {
+      "gpus": [
+        {
+          "index": 0,
+          "uuid": "GPU-658b6043-6454-1228-bffc-0e2fe22e5013",
+          "serial": "1322123016829",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 633,
+          "util_gpu_pct": 3,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 45435,
+          "state": "candidate",
+          "reasons": [],
+          "processes": []
+        },
+        {
+          "index": 1,
+          "uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+          "serial": "1322123016717",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 6666,
+          "util_gpu_pct": 99,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 39402,
+          "state": "busy",
+          "reasons": [
+            "utilization>5%",
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['jjxie', 'phjiang']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+              "pid": 4014499,
+              "process_name": "python",
+              "used_memory_mib": 3984,
+              "owner": "jjxie"
+            },
+            {
+              "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+              "pid": 765933,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+              "pid": 768864,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+              "pid": 771606,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+              "pid": 772358,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+          "serial": "1323323054796",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 3084,
+          "util_gpu_pct": 99,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 42984,
+          "state": "busy",
+          "reasons": [
+            "utilization>5%",
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['jjxie', 'phjiang']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+              "pid": 4014498,
+              "process_name": "python",
+              "used_memory_mib": 402,
+              "owner": "jjxie"
+            },
+            {
+              "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+              "pid": 765786,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+              "pid": 771682,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+              "pid": 771752,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+              "pid": 772441,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "uuid": "GPU-e59426ed-ed41-cb75-2190-f50841cff288",
+          "serial": "1322123017117",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 41860,
+          "util_gpu_pct": 0,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 4208,
+          "state": "busy",
+          "reasons": [
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['nlge']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-e59426ed-ed41-cb75-2190-f50841cff288",
+              "pid": 2410201,
+              "process_name": "VLLM::EngineCore",
+              "used_memory_mib": 41850,
+              "owner": "nlge"
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "uuid": "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+          "serial": "1323023029218",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 2676,
+          "util_gpu_pct": 99,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 43392,
+          "state": "busy",
+          "reasons": [
+            "utilization>5%",
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['phjiang']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+              "pid": 766067,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+              "pid": 770214,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+              "pid": 770286,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+              "pid": 771504,
+              "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+              "used_memory_mib": 662,
+              "owner": "phjiang"
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "uuid": "GPU-87fd2935-5a07-f3e5-b91f-372785d7034f",
+          "serial": "1322123016860",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 2752,
+          "util_gpu_pct": 66,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 43316,
+          "state": "busy",
+          "reasons": [
+            "utilization>5%",
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['yhzhang']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-87fd2935-5a07-f3e5-b91f-372785d7034f",
+              "pid": 2418207,
+              "process_name": "/data1/user/yhzhang/system_paper/venv_s0/bin/python",
+              "used_memory_mib": 2742,
+              "owner": "yhzhang"
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "uuid": "GPU-21b5514a-82f0-4d24-21ea-1f8198d20915",
+          "serial": "1322123016843",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 2752,
+          "util_gpu_pct": 27,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 43316,
+          "state": "busy",
+          "reasons": [
+            "utilization>5%",
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['yhzhang']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-21b5514a-82f0-4d24-21ea-1f8198d20915",
+              "pid": 2414120,
+              "process_name": "/data1/user/yhzhang/system_paper/venv_s0/bin/python",
+              "used_memory_mib": 2742,
+              "owner": "yhzhang"
+            }
+          ]
+        }
+      ],
+      "processes": [
+        {
+          "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+          "pid": 4014499,
+          "process_name": "python",
+          "used_memory_mib": 3984,
+          "owner": "jjxie"
+        },
+        {
+          "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+          "pid": 765933,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+          "pid": 768864,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+          "pid": 771606,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-845a7b73-38e2-8a13-12ab-4be97474ef13",
+          "pid": 772358,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+          "pid": 4014498,
+          "process_name": "python",
+          "used_memory_mib": 402,
+          "owner": "jjxie"
+        },
+        {
+          "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+          "pid": 765786,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+          "pid": 771682,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+          "pid": 771752,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-47449b15-979e-d354-57b8-82d1d5eae19a",
+          "pid": 772441,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-e59426ed-ed41-cb75-2190-f50841cff288",
+          "pid": 2410201,
+          "process_name": "VLLM::EngineCore",
+          "used_memory_mib": 41850,
+          "owner": "nlge"
+        },
+        {
+          "gpu_uuid": "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+          "pid": 766067,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+          "pid": 770214,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+          "pid": 770286,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-2d30f244-9a07-c9d4-8753-525d098dbe3b",
+          "pid": 771504,
+          "process_name": "/data0/user/phjiang/.conda/envs/py11/bin/python3.11",
+          "used_memory_mib": 662,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-87fd2935-5a07-f3e5-b91f-372785d7034f",
+          "pid": 2418207,
+          "process_name": "/data1/user/yhzhang/system_paper/venv_s0/bin/python",
+          "used_memory_mib": 2742,
+          "owner": "yhzhang"
+        },
+        {
+          "gpu_uuid": "GPU-21b5514a-82f0-4d24-21ea-1f8198d20915",
+          "pid": 2414120,
+          "process_name": "/data1/user/yhzhang/system_paper/venv_s0/bin/python",
+          "used_memory_mib": 2742,
+          "owner": "yhzhang"
+        }
+      ],
+      "process_check_error": null
+    },
+    "gpu02": {
+      "gpus": [
+        {
+          "index": 0,
+          "uuid": "GPU-2f8ac922-88b6-5c94-af12-70b67ddbdde8",
+          "serial": "1322123017069",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 2897,
+          "util_gpu_pct": 0,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 43171,
+          "state": "busy",
+          "reasons": [
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['gqma', 'ychen']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-2f8ac922-88b6-5c94-af12-70b67ddbdde8",
+              "pid": 1883489,
+              "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+              "used_memory_mib": 186,
+              "owner": "gqma"
+            },
+            {
+              "gpu_uuid": "GPU-2f8ac922-88b6-5c94-af12-70b67ddbdde8",
+              "pid": 1132774,
+              "process_name": "python",
+              "used_memory_mib": 2682,
+              "owner": "ychen"
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "uuid": "GPU-19cb2d30-d2ca-77b5-54a5-6b23fd2eede4",
+          "serial": "1324822000574",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 1760,
+          "util_gpu_pct": 7,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 44308,
+          "state": "busy",
+          "reasons": [
+            "utilization>5%",
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['gqma', 'twlu']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-19cb2d30-d2ca-77b5-54a5-6b23fd2eede4",
+              "pid": 1883489,
+              "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+              "used_memory_mib": 148,
+              "owner": "gqma"
+            },
+            {
+              "gpu_uuid": "GPU-19cb2d30-d2ca-77b5-54a5-6b23fd2eede4",
+              "pid": 1311438,
+              "process_name": "/data0/user/twlu/.conda/envs/ldns-round8-py311/bin/python",
+              "used_memory_mib": 1592,
+              "owner": "twlu"
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "uuid": "GPU-944f32c9-2377-7d51-5b03-c62053fc3ecb",
+          "serial": "1323323054976",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 518,
+          "util_gpu_pct": 0,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 45550,
+          "state": "busy",
+          "reasons": [
+            "active_compute_processes owners=['gqma', 'twlu']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-944f32c9-2377-7d51-5b03-c62053fc3ecb",
+              "pid": 1883489,
+              "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+              "used_memory_mib": 148,
+              "owner": "gqma"
+            },
+            {
+              "gpu_uuid": "GPU-944f32c9-2377-7d51-5b03-c62053fc3ecb",
+              "pid": 1312903,
+              "process_name": "/data0/user/twlu/.conda/envs/ldns-round8-py311/bin/python",
+              "used_memory_mib": 350,
+              "owner": "twlu"
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "uuid": "GPU-c0c11da8-07ae-b68b-00dc-c3bda27d49ae",
+          "serial": "1324822000148",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 1760,
+          "util_gpu_pct": 0,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 44308,
+          "state": "busy",
+          "reasons": [
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['gqma', 'twlu']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-c0c11da8-07ae-b68b-00dc-c3bda27d49ae",
+              "pid": 1883489,
+              "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+              "used_memory_mib": 148,
+              "owner": "gqma"
+            },
+            {
+              "gpu_uuid": "GPU-c0c11da8-07ae-b68b-00dc-c3bda27d49ae",
+              "pid": 1314669,
+              "process_name": "/data0/user/twlu/.conda/envs/ldns-round8-py311/bin/python",
+              "used_memory_mib": 1592,
+              "owner": "twlu"
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "uuid": "GPU-f53f86b8-427c-93f6-3bcb-cdc18d81ffbc",
+          "serial": "1322123016961",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 5754,
+          "util_gpu_pct": 2,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 40314,
+          "state": "busy",
+          "reasons": [
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['gqma', 'yhzhang']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-f53f86b8-427c-93f6-3bcb-cdc18d81ffbc",
+              "pid": 1442240,
+              "process_name": "/data0/user/yhzhang/.conda/envs/verl/bin/python",
+              "used_memory_mib": 982,
+              "owner": "yhzhang"
+            },
+            {
+              "gpu_uuid": "GPU-f53f86b8-427c-93f6-3bcb-cdc18d81ffbc",
+              "pid": 1442803,
+              "process_name": "/data0/user/yhzhang/.conda/envs/verl/bin/python",
+              "used_memory_mib": 982,
+              "owner": "yhzhang"
+            },
+            {
+              "gpu_uuid": "GPU-f53f86b8-427c-93f6-3bcb-cdc18d81ffbc",
+              "pid": 1883489,
+              "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+              "used_memory_mib": 3741,
+              "owner": "gqma"
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "uuid": "GPU-155eb744-6321-a1c7-d347-ba22dc6f0195",
+          "serial": "1322123016766",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 39369,
+          "util_gpu_pct": 97,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 6699,
+          "state": "busy",
+          "reasons": [
+            "utilization>5%",
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['gqma', 'yqzhang']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-155eb744-6321-a1c7-d347-ba22dc6f0195",
+              "pid": 1883489,
+              "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+              "used_memory_mib": 148,
+              "owner": "gqma"
+            },
+            {
+              "gpu_uuid": "GPU-155eb744-6321-a1c7-d347-ba22dc6f0195",
+              "pid": 4090710,
+              "process_name": "python",
+              "used_memory_mib": 38120,
+              "owner": "yqzhang"
+            },
+            {
+              "gpu_uuid": "GPU-155eb744-6321-a1c7-d347-ba22dc6f0195",
+              "pid": 4093999,
+              "process_name": "/data0/user/yqzhang/.conda/envs/jlliu_py311/bin/python",
+              "used_memory_mib": 712,
+              "owner": "yqzhang"
+            },
+            {
+              "gpu_uuid": "GPU-155eb744-6321-a1c7-d347-ba22dc6f0195",
+              "pid": 4094000,
+              "process_name": "/data0/user/yqzhang/.conda/envs/jlliu_py311/bin/python",
+              "used_memory_mib": 360,
+              "owner": "yqzhang"
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+          "serial": "1322123017018",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 10988,
+          "util_gpu_pct": 99,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 35080,
+          "state": "busy",
+          "reasons": [
+            "utilization>5%",
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['gqma', 'phjiang', 'yfwang']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+              "pid": 2266203,
+              "process_name": "/data0/user/yfwang/.conda/envs/sam3/bin/python",
+              "used_memory_mib": 4584,
+              "owner": "yfwang"
+            },
+            {
+              "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+              "pid": 1883489,
+              "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+              "used_memory_mib": 148,
+              "owner": "gqma"
+            },
+            {
+              "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+              "pid": 1429474,
+              "process_name": "/data0/user/phjiang/.conda/envs/grokking/bin/python",
+              "used_memory_mib": 2074,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+              "pid": 1431734,
+              "process_name": "/data0/user/phjiang/.conda/envs/grokking/bin/python",
+              "used_memory_mib": 2074,
+              "owner": "phjiang"
+            },
+            {
+              "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+              "pid": 1432057,
+              "process_name": "/data0/user/phjiang/.conda/envs/grokking/bin/python",
+              "used_memory_mib": 2074,
+              "owner": "phjiang"
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "uuid": "GPU-99beeb2b-ce8f-e51d-a718-68bd93deff8a",
+          "serial": "1322123016788",
+          "name": "NVIDIA A40",
+          "mem_total_mib": 46068,
+          "mem_used_mib": 23583,
+          "util_gpu_pct": 100,
+          "compute_mode": "Default",
+          "driver_version": "595.45.04",
+          "mem_free_mib": 22485,
+          "state": "busy",
+          "reasons": [
+            "utilization>5%",
+            "memory_used>1000MiB",
+            "active_compute_processes owners=['gqma', 'yqzhang']"
+          ],
+          "processes": [
+            {
+              "gpu_uuid": "GPU-99beeb2b-ce8f-e51d-a718-68bd93deff8a",
+              "pid": 1883489,
+              "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+              "used_memory_mib": 148,
+              "owner": "gqma"
+            },
+            {
+              "gpu_uuid": "GPU-99beeb2b-ce8f-e51d-a718-68bd93deff8a",
+              "pid": 1228071,
+              "process_name": "python",
+              "used_memory_mib": 23406,
+              "owner": "yqzhang"
+            }
+          ]
+        }
+      ],
+      "processes": [
+        {
+          "gpu_uuid": "GPU-2f8ac922-88b6-5c94-af12-70b67ddbdde8",
+          "pid": 1883489,
+          "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+          "used_memory_mib": 186,
+          "owner": "gqma"
+        },
+        {
+          "gpu_uuid": "GPU-2f8ac922-88b6-5c94-af12-70b67ddbdde8",
+          "pid": 1132774,
+          "process_name": "python",
+          "used_memory_mib": 2682,
+          "owner": "ychen"
+        },
+        {
+          "gpu_uuid": "GPU-19cb2d30-d2ca-77b5-54a5-6b23fd2eede4",
+          "pid": 1883489,
+          "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+          "used_memory_mib": 148,
+          "owner": "gqma"
+        },
+        {
+          "gpu_uuid": "GPU-19cb2d30-d2ca-77b5-54a5-6b23fd2eede4",
+          "pid": 1311438,
+          "process_name": "/data0/user/twlu/.conda/envs/ldns-round8-py311/bin/python",
+          "used_memory_mib": 1592,
+          "owner": "twlu"
+        },
+        {
+          "gpu_uuid": "GPU-944f32c9-2377-7d51-5b03-c62053fc3ecb",
+          "pid": 1883489,
+          "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+          "used_memory_mib": 148,
+          "owner": "gqma"
+        },
+        {
+          "gpu_uuid": "GPU-944f32c9-2377-7d51-5b03-c62053fc3ecb",
+          "pid": 1312903,
+          "process_name": "/data0/user/twlu/.conda/envs/ldns-round8-py311/bin/python",
+          "used_memory_mib": 350,
+          "owner": "twlu"
+        },
+        {
+          "gpu_uuid": "GPU-c0c11da8-07ae-b68b-00dc-c3bda27d49ae",
+          "pid": 1883489,
+          "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+          "used_memory_mib": 148,
+          "owner": "gqma"
+        },
+        {
+          "gpu_uuid": "GPU-c0c11da8-07ae-b68b-00dc-c3bda27d49ae",
+          "pid": 1314669,
+          "process_name": "/data0/user/twlu/.conda/envs/ldns-round8-py311/bin/python",
+          "used_memory_mib": 1592,
+          "owner": "twlu"
+        },
+        {
+          "gpu_uuid": "GPU-f53f86b8-427c-93f6-3bcb-cdc18d81ffbc",
+          "pid": 1442240,
+          "process_name": "/data0/user/yhzhang/.conda/envs/verl/bin/python",
+          "used_memory_mib": 982,
+          "owner": "yhzhang"
+        },
+        {
+          "gpu_uuid": "GPU-f53f86b8-427c-93f6-3bcb-cdc18d81ffbc",
+          "pid": 1442803,
+          "process_name": "/data0/user/yhzhang/.conda/envs/verl/bin/python",
+          "used_memory_mib": 982,
+          "owner": "yhzhang"
+        },
+        {
+          "gpu_uuid": "GPU-f53f86b8-427c-93f6-3bcb-cdc18d81ffbc",
+          "pid": 1883489,
+          "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+          "used_memory_mib": 3741,
+          "owner": "gqma"
+        },
+        {
+          "gpu_uuid": "GPU-155eb744-6321-a1c7-d347-ba22dc6f0195",
+          "pid": 1883489,
+          "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+          "used_memory_mib": 148,
+          "owner": "gqma"
+        },
+        {
+          "gpu_uuid": "GPU-155eb744-6321-a1c7-d347-ba22dc6f0195",
+          "pid": 4090710,
+          "process_name": "python",
+          "used_memory_mib": 38120,
+          "owner": "yqzhang"
+        },
+        {
+          "gpu_uuid": "GPU-155eb744-6321-a1c7-d347-ba22dc6f0195",
+          "pid": 4093999,
+          "process_name": "/data0/user/yqzhang/.conda/envs/jlliu_py311/bin/python",
+          "used_memory_mib": 712,
+          "owner": "yqzhang"
+        },
+        {
+          "gpu_uuid": "GPU-155eb744-6321-a1c7-d347-ba22dc6f0195",
+          "pid": 4094000,
+          "process_name": "/data0/user/yqzhang/.conda/envs/jlliu_py311/bin/python",
+          "used_memory_mib": 360,
+          "owner": "yqzhang"
+        },
+        {
+          "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+          "pid": 2266203,
+          "process_name": "/data0/user/yfwang/.conda/envs/sam3/bin/python",
+          "used_memory_mib": 4584,
+          "owner": "yfwang"
+        },
+        {
+          "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+          "pid": 1883489,
+          "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+          "used_memory_mib": 148,
+          "owner": "gqma"
+        },
+        {
+          "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+          "pid": 1429474,
+          "process_name": "/data0/user/phjiang/.conda/envs/grokking/bin/python",
+          "used_memory_mib": 2074,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+          "pid": 1431734,
+          "process_name": "/data0/user/phjiang/.conda/envs/grokking/bin/python",
+          "used_memory_mib": 2074,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-dcb80c6b-7e59-30a4-21ed-0c750252624b",
+          "pid": 1432057,
+          "process_name": "/data0/user/phjiang/.conda/envs/grokking/bin/python",
+          "used_memory_mib": 2074,
+          "owner": "phjiang"
+        },
+        {
+          "gpu_uuid": "GPU-99beeb2b-ce8f-e51d-a718-68bd93deff8a",
+          "pid": 1883489,
+          "process_name": "/var/tmp/gqma/dexverse6-env/bin/python",
+          "used_memory_mib": 148,
+          "owner": "gqma"
+        },
+        {
+          "gpu_uuid": "GPU-99beeb2b-ce8f-e51d-a718-68bd93deff8a",
+          "pid": 1228071,
+          "process_name": "python",
+          "used_memory_mib": 23406,
+          "owner": "yqzhang"
+        }
+      ],
+      "process_check_error": null
+    }
+  },
+  "bad_nodes": {},
+  "candidates": [
+    {
+      "node": "gpu01",
+      "index": 0,
+      "uuid": "GPU-658b6043-6454-1228-bffc-0e2fe22e5013",
+      "serial": "1322123016829",
+      "name": "NVIDIA A40",
+      "mem_total_mib": 46068,
+      "mem_used_mib": 633,
+      "util_gpu_pct": 3,
+      "compute_mode": "Default",
+      "driver_version": "595.45.04",
+      "mem_free_mib": 45435,
+      "state": "candidate",
+      "reasons": [],
+      "processes": []
+    }
+  ],
+  "recommendation": {
+    "node": "gpu01",
+    "index": 0,
+    "uuid": "GPU-658b6043-6454-1228-bffc-0e2fe22e5013",
+    "serial": "1322123016829",
+    "name": "NVIDIA A40",
+    "mem_total_mib": 46068,
+    "mem_used_mib": 633,
+    "util_gpu_pct": 3,
+    "compute_mode": "Default",
+    "driver_version": "595.45.04",
+    "mem_free_mib": 45435,
+    "state": "candidate",
+    "reasons": [],
+    "processes": []
+  }
+}

@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-75b1ead6/scripts/run_writer_causal_diagnostics.py", line 500, in <module>
+    main()
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-75b1ead6/scripts/run_writer_causal_diagnostics.py", line 494, in main
+    d2(output, device, args.asset)
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-75b1ead6/scripts/run_writer_causal_diagnostics.py", line 275, in d2
+    raise ValueError(f"causal main+aux gradient replay residual is too large: {linearity}")
+ValueError: causal main+aux gradient replay residual is too large: 7.120799273252487e-05

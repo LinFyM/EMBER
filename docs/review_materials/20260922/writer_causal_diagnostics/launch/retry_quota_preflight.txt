@@ -1,0 +1,6 @@
+Disk quotas for User ymdai (1027)
+Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
+/dev/sdb1            142201524 1073741824 1084227584   00 [--------] /data0
+Disk quotas for User ymdai (1027)
+Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
+/dev/sdc1            902842148 1073741824 1084227584   00 [--------] /data1

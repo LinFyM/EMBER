@@ -11,7 +11,8 @@ D1 证明 Core/Procedure replacement 均影响 bundle、LoRA 与动作，且 O12
 Core；但 C600 的错误/同任务其他视频在16条闭环小面板上不低于 CC，不能写成正确视频内容必要性。D2 显示当前已含
 `tau=1`、前5步和`1/3`的辅助项为非零、非标量复制的 Writer 梯度，且与 AdamW 状态共同作用；D3 的 J/Q/M 三臂各18步
 均新增训练侧成功，J 总分6/16而Q breadth更高（5），没有统一赢家。它们不选择正式 checkpoint，不改变 PR #3 的辅助
-episode 配对结论，也不证明辅助项整体或其三个组成部分必要。完整报告和原始行位于
+episode 配对结论，也不证明辅助项整体或其三个组成部分必要。专家可从远程
+[审计包](docs/review_materials/20260922/writer_causal_diagnostics/README.md)复算；canonical 本地报告和原始行位于
 `/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/analysis/causal_diagnostics_report.md`。
 
 ## 历史执行记录：Writer 因果路径与辅助梯度诊断（D1 完整、D2 工程修正后待续跑）

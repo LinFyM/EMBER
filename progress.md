@@ -11,8 +11,9 @@ D1 的 Procedure donor replacement 在 O1200/C600 造成比 Core donor replaceme
 两条路径都被真实消费者使用；但 C600 的 CC/CO/CW/WC/WW 训练侧面板为2/5/3/5/4，不能主张正确视频内容优于其它路径。
 D2 的全 Writer `||g_A||/||g_Q||` 在 C600/O1200 的 B4/B36 为.978/.728/.890/.526，且全局cos为.113/.192/.243/.286；
 所有 J preclip norm<1。D3 从C600各18步的CC闭环为 J=6/16 breadth4、Q=5/16 breadth5、M=5/16 breadth4，success set
-不同，不能选择统一优胜臂。完整表格、逐task闭环、完整性与成本见
-`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/analysis/causal_diagnostics_report.md`；登记 stage-worker
+不同，不能选择统一优胜臂。完整表格、逐task闭环、完整性与成本已推送为远程
+[专家审计包](docs/review_materials/20260922/writer_causal_diagnostics/README.md)；canonical 本地报告仍在
+`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/analysis/causal_diagnostics_report.md`。登记 stage-worker
 成本10,478.47秒，累计有效launch墙钟82.6分钟，低于120分钟预登记上限。
 
 早期 asset-root、encoder、旧VJP等价性与D2 CSV字段问题的 exit、stderr 和无效原件均被保留。旧 VJP 问题已修为直接记录

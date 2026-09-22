@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7190bf07/scripts/run_writer_causal_diagnostics.py", line 500, in <module>
+    main()
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7190bf07/scripts/run_writer_causal_diagnostics.py", line 492, in main
+    d1_rollout(output, device, args.asset, args.arm, args.physical_gpu_id)
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7190bf07/scripts/run_writer_causal_diagnostics.py", line 248, in d1_rollout
+    rows = run_asset_rollouts(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7190bf07/src/ember/writer/stability_rollouts.py", line 260, in run_asset_rollouts
+    adapter = _writer_panel_adapter(
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7190bf07/src/ember/writer/stability_rollouts.py", line 208, in _writer_panel_adapter
+    f"{installed[task]['suite']}:{int(installed[task]['task_id'])}:{state}"
+       ~~~~~~~~~^^^^^^
+KeyError: 14

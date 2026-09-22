@@ -1,0 +1,31 @@
+{
+  "schema_version": "ember_writer_causal_diagnostics_launch_v1",
+  "status": "registered_before_retry_gpu_execution",
+  "restarts": {
+    "initial_launch": "controller.exit=1 before any probe/rollout/metric row",
+    "verified_engineering_cause": "detached code worktree was passed as the authority/asset root",
+    "only_change": "runner now resolves task authorities and frozen assets from canonical read-only /data1/user/ymdai/projects/EMBER"
+  },
+  "study_root": "/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922",
+  "git": {
+    "commit": "7fe99d30036541f1859ee6a7a9f1c90809714848",
+    "authority": "clean pushed origin/main detached runtime",
+    "runtime": "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7fe99d30"
+  },
+  "scientific_contract_unchanged": {
+    "d1_path_probes": 544,
+    "d1_rollouts": 112,
+    "d2_unique_conditions": 72,
+    "d2_virtual_candidates": 16,
+    "d3_updates_if_time_gate_passes": 54,
+    "gpu_wallclock_seconds": 7200,
+    "d3_min_remaining_seconds": 3900,
+    "partial_metric_reading": false,
+    "checkpoint_selection": false,
+    "validation_test_ft_rl": false
+  },
+  "resource_preflight": "retry_gpu_preflight_launch.json",
+  "quota_preflight": "retry_quota_preflight.txt",
+  "allocation": "retry preflight found gpu02:1--3 carrying active foreign 9--11% workloads, so use only exclusive gpu01:0 sequentially; this resource-only reduction leaves all scientific rows and time gates unchanged",
+  "acceptance": "retry worker/controller exits, required rows, completion.json, registration/assets and trajectory manifest; preserve initial failure separately"
+}

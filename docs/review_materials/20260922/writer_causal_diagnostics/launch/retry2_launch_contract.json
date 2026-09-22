@@ -1,0 +1,29 @@
+{
+  "schema_version": "ember_writer_causal_diagnostics_launch_v1",
+  "status": "registered_before_retry2_gpu_execution",
+  "restarts": {
+    "initial": "detached runtime used as asset root before any measurement",
+    "retry1": "encode_task policy was passed as both a positional condition and keyword before any measurement",
+    "only_retry2_change": "canonical policy-first encode_task call; covered by a focused unit regression"
+  },
+  "git": {
+    "commit": "7190bf0776826a9ebc1d4e13d70a1ece1c384f1a",
+    "authority": "clean pushed origin/main detached runtime",
+    "runtime": "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-7190bf07"
+  },
+  "scientific_contract_unchanged": {
+    "d1_path_probes": 544,
+    "d1_rollouts": 112,
+    "d2_unique_conditions": 72,
+    "d2_virtual_candidates": 16,
+    "d3_updates_if_time_gate_passes": 54,
+    "gpu_wallclock_seconds": 7200,
+    "d3_min_remaining_seconds": 3900,
+    "no_partial_metric_reading": true,
+    "no_checkpoint_selection": true
+  },
+  "resource_preflight": "retry2_gpu_preflight_launch.json",
+  "quota_preflight": "retry2_quota_preflight.txt",
+  "allocation": "gpu01:0 plus gpu02:1--3 co-use of low-utilization GPUs, explicitly authorized by Owner; no foreign process is modified",
+  "final_acceptance": "worker/controller exits, completion.json, exact required rows, registration/assets, trajectory manifest and retained failure evidence"
+}

@@ -1,0 +1,55 @@
+{
+  "schema_version": "ember_writer_causal_diagnostics_launch_v1",
+  "status": "registered_before_gpu_execution",
+  "study_root": "/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922",
+  "git": {
+    "commit": "6924f5b84ef770299982c4d3b5118dc5dd1be474",
+    "authority": "clean pushed origin/main detached runtime",
+    "runtime": "/data1/user/ymdai/projects/EMBER/.codex/tmp/writer-causal-runtime-6924f5b8"
+  },
+  "entrypoint": "/data1/user/ymdai/projects/EMBER/.venv/bin/python scripts/run_writer_causal_diagnostics.py",
+  "registration": "registration.json",
+  "scientific_scope": {
+    "fresh_training": false,
+    "validation": false,
+    "test": false,
+    "ft": false,
+    "rl": false,
+    "checkpoint_selection": false,
+    "partial_metric_reading": false
+  },
+  "resources": {
+    "preflight_snapshot": "gpu_preflight_launch.json",
+    "quota_snapshot": {
+      "data0_used_kib": 142199872,
+      "data1_used_kib": 902103016,
+      "soft_quota_kib": 1073741824,
+      "additional_peak_gib": 8,
+      "large_asset_copies": false
+    },
+    "allocation": {
+      "gpu01:0": "exclusive D1/D2/D3 phase work",
+      "gpu02:1": "D1/D2/D3 short co-resident phase work",
+      "gpu02:2": "D1/D3 short co-resident phase work",
+      "gpu02:3": "D1 short co-resident phase work"
+    },
+    "co_residency_basis": "immediately before launch gpu01:0 was a candidate (3% util,633MiB used,45,435MiB free); gpu02:1/2/3 had 0%/6%/7% util,592/612/612MiB used and45,476/45,456/45,456MiB free.  Historical Writer peak was22.803GiB, leaving more than22GiB headroom on each short co-resident gpu02 device; no empty GPU is reserved"
+  },
+  "time_budget": {
+    "wallclock_seconds_from_controller_start": 7200,
+    "hard_deadline_enforced_per_gpu_phase": true,
+    "d3_min_remaining_seconds": 3900,
+    "d3_gate": "all D1/D2 worker exits are zero and only the registered remaining-time condition holds",
+    "post_stop_extension": "not applicable; no result may select a formal checkpoint"
+  },
+  "fixed_phase_plan": {
+    "d1": {"path_probes": 544, "rollouts": 112},
+    "d2": {"unique_conditions": 72, "virtual_candidates": 16, "probes": 512},
+    "d3": {"branches": ["J", "Q", "M"], "updates": 54, "probes": 192, "rollouts": 48, "optional_only_by_time": true}
+  },
+  "acceptance": {
+    "controller": "worker exit files plus controller exit and tmux completion signal",
+    "final": "completion.json, required row counts, registration/assets, trajectory manifest, and worker completion are checked after controller exit",
+    "failure": "retain all partial evidence; repair only a verified engineering contract violation without changing the design"
+  }
+}

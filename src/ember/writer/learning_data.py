@@ -56,8 +56,24 @@ def load_learning_tasks(
     return output
 
 
-EVENT_SCHEMA = "video_teaching_joint_query_events_v1"
+EVENT_SCHEMA = "video_teaching_task_mixing_events_v2"
 MAXIMUM_UPDATES = 2_100
+TASKS_PER_UPDATE = 12
+MAIN_EVENT_QUERIES = 21
+TEACHING_EVENT_QUERIES = 7
+
+
+def query_allocation(config, update_index):
+    """Actual query counts; full event/RNG pools remain independently fixed."""
+    main, teaching = config.get("queries_per_task"), config.get("teaching_query_counts")
+    if (type(main) is not int or main not in (7, 21)
+            or not isinstance(teaching, list) or len(teaching) != TASKS_PER_UPDATE
+            or any(type(count) is not int for count in teaching)
+            or teaching not in ([3, 2, 2] * 4, [7] * TASKS_PER_UPDATE)
+            or "teaching_queries_per_task" in config):
+        raise ValueError("task-mixing query contract requires main 7/21 and an explicit rotating auxiliary allocation")
+    return main, tuple(teaching[(position - update_index) % TASKS_PER_UPDATE]
+                       for position in range(TASKS_PER_UPDATE))
 
 
 def _episode_queries(task, lengths, order, *, seed, cursor, count, teacher_demo=None):
@@ -97,7 +113,7 @@ class WriterTrainingData:
         self.task_ids = tuple(sorted(self.tasks))
         if len(self.task_ids) != (36 if self.dynamic else 24):
             raise ValueError("training events require the complete registered train split")
-        self.round_updates = len(self.task_ids) // 4
+        self.round_updates = len(self.task_ids) // TASKS_PER_UPDATE
         self.rounds = (self.maximum_updates + self.round_updates - 1) // self.round_updates
         self.generated_updates = self.rounds * self.round_updates
         self.video_pool = tuple(config["video_demos"])
@@ -130,16 +146,18 @@ class WriterTrainingData:
             if type(config.get(name)) is not int or config[name] < 0:
                 raise ValueError(f"training event {name} must be a non-negative integer")
         budget = config.get("maximum_updates")
-        if budget is not None and (type(budget) is not int or not 0 < budget <= MAXIMUM_UPDATES or budget % 6):
-            raise ValueError("training events require complete six-update rounds within the 2100-update ceiling")
+        round_updates = len(config["task_ids"]) // TASKS_PER_UPDATE
+        if budget is not None and (type(budget) is not int or not 0 < budget <= MAXIMUM_UPDATES
+                                   or not round_updates or budget % round_updates):
+            raise ValueError("training events require complete twelve-task rounds within the 2100-update ceiling")
         if budget is None and (not config.get("protocol") or config.get("grouping") != "baseline"):
             raise ValueError("dynamic training requires an explicit task protocol and baseline rounds")
-        if (config.get("tasks_per_update") != 4 or config.get("conditions_per_task") != 1
-                or config.get("queries_per_task") != 21 or tuple(config["cardinalities"]) != (1,)):
-            raise ValueError("training events require four tasks, one video and 21 queries per task")
-        if (config.get("teaching_queries_per_task") != 7
-                or config.get("teaching_episode") not in {"same_video", "cross_episode"}):
-            raise ValueError("video teaching requires seven queries with a registered episode relation")
+        if (config.get("tasks_per_update") != TASKS_PER_UPDATE or config.get("conditions_per_task") != 1
+                or tuple(config["cardinalities"]) != (1,)):
+            raise ValueError("training events require twelve tasks and one video per task")
+        query_allocation(config, 0)
+        if config.get("teaching_episode") not in {"same_video", "cross_episode"}:
+            raise ValueError("video teaching requires a registered episode relation")
         if any(tuple(config[name]) != tuple(range(46)) for name in ("video_demos", "action_demos")):
             raise ValueError("training video/action pools must be episodes 0 through 45")
         if any(tuple(config[name]) != tuple(range(46, 50))
@@ -154,15 +172,16 @@ class WriterTrainingData:
                 order = np.random.default_rng(
                     np.random.SeedSequence([self.sampler_seed, occurrence]),
                 ).permutation(self.task_ids)
-                groups.extend(order[start:start + 4].tolist() for start in range(0, len(self.task_ids), 4))
+                groups.extend(order[start:start + TASKS_PER_UPDATE].tolist()
+                              for start in range(0, len(self.task_ids), TASKS_PER_UPDATE))
         elif grouping == "explicit":
             groups = self.config.get("event_groups", ())
         else:
             raise ValueError("grouping must be baseline or explicitly supplied event_groups")
         if (len(groups) != self.generated_updates or any(
-                len(group) != 4 or any(type(task) is not int for task in group)
-                or len(set(group)) != 4 for group in groups)):
-            raise ValueError("event_groups require exactly four distinct tasks per update")
+                len(group) != TASKS_PER_UPDATE or any(type(task) is not int for task in group)
+                or len(set(group)) != TASKS_PER_UPDATE for group in groups)):
+            raise ValueError("event_groups require exactly twelve distinct tasks per update")
         for start in range(0, self.generated_updates, self.round_updates):
             if sorted(task for group in groups[start:start + self.round_updates] for task in group) != list(self.task_ids):
                 raise ValueError("each round must contain every registered task event exactly once")
@@ -187,7 +206,7 @@ class WriterTrainingData:
                 )).permutation(self.video_pool)[offset])
                 demos, frames, cursor = _episode_queries(
                     task, lengths, order, seed=self.sampler_seed, cursor=cursor,
-                    count=21, teacher_demo=teacher,
+                    count=MAIN_EVENT_QUERIES, teacher_demo=teacher,
                 )
                 query_seed = int(np.random.SeedSequence(
                     [self.sampler_seed, task, occurrence, 0x51555259],
@@ -199,7 +218,7 @@ class WriterTrainingData:
                     "policy_rng_seed": task_logical_batch_policy_rng_seed(
                         optimization_seed=self.seed, task_id=task, task_visit=occurrence,
                         demo_indices=demos, frame_indices=frames,
-                    ), "policy_random_batch_size": 21,
+                    ), "policy_random_batch_size": MAIN_EVENT_QUERIES,
                     "frames": (lengths[teacher] - 1) // 5 + 1 + bool((lengths[teacher] - 1) % 5),
                     "teaching": self._teaching_event(task, occurrence, teacher, lengths),
                 })
@@ -213,15 +232,15 @@ class WriterTrainingData:
             rng = np.random.default_rng(np.random.SeedSequence([seed, task, occurrence, 0xE91]))
             demo = int(rng.choice([value for value in self.action_pool if value != teacher]))
         legal = np.arange(0, lengths[demo] - 5, 5)
-        replacement = len(legal) < 7
+        replacement = len(legal) < TEACHING_EVENT_QUERIES
         rng = np.random.default_rng(np.random.SeedSequence([seed, task, occurrence, 0xF4A]))
-        frames = rng.choice(legal, size=7, replace=replacement).tolist()
+        frames = rng.choice(legal, size=TEACHING_EVENT_QUERIES, replace=replacement).tolist()
         noise_seed = int(np.random.SeedSequence(
             [self.seed, seed, task, occurrence, 0x701CE],
         ).generate_state(1, dtype=np.uint64)[0]) & ((1 << 63) - 1)
-        return {"task": task, "action_demos": [demo] * 7, "action_frames": frames,
+        return {"task": task, "action_demos": [demo] * TEACHING_EVENT_QUERIES, "action_frames": frames,
                 "action_start_indices": [frame + 1 for frame in frames],
-                "policy_rng_seed": noise_seed, "policy_random_batch_size": 7,
+                "policy_rng_seed": noise_seed, "policy_random_batch_size": TEACHING_EVENT_QUERIES,
                 "episode_relation": self.config["teaching_episode"], "sampling_with_replacement": replacement}
 
     def _event_contract(self) -> dict[str, Any]:
@@ -229,15 +248,18 @@ class WriterTrainingData:
                 "teacher_video_seed": self.teacher_video_seed, "maximum_updates": self.maximum_updates,
                 "grouping": self.config["grouping"],
                 "task_ids": list(self.task_ids), "video_demos": list(self.video_pool),
-                "action_demos": list(self.action_pool), "queries_per_task": 21,
-                "teaching_queries_per_task": 7, "teaching_seed": self.config["teaching_seed"],
+                "action_demos": list(self.action_pool), "queries_per_task": self.config["queries_per_task"],
+                "teaching_query_counts": list(self.config["teaching_query_counts"]),
+                "main_event_queries": MAIN_EVENT_QUERIES, "teaching_event_queries": TEACHING_EVENT_QUERIES,
+                "teaching_rotation": "condition_position_minus_global_zero_based_update_mod12",
+                "tasks_per_update": TASKS_PER_UPDATE, "teaching_seed": self.config["teaching_seed"],
                 "teaching_episode": self.config["teaching_episode"],
                 "action_start_offset": 1, "query_alignment": self.config["query_alignment"],
                 "episode_lengths": [list(self.tasks[task].episode_lengths) for task in self.task_ids]}
         if self.dynamic:
             contract.update(maximum_updates=None, protocol=self.config["protocol"],
-                            algorithm="balanced_task_rounds_cross_episode_queries_v1",
-                            tasks_per_update=4, round_updates=self.round_updates)
+                            algorithm="balanced_twelve_task_rounds_original_query_prefixes_v2",
+                            round_updates=self.round_updates)
         else:
             contract["groups"] = [list(group) for group in self._groups]
         return contract
@@ -252,14 +274,15 @@ class WriterTrainingData:
     def next_iteration(self) -> tuple[dict[str, Any], ...]:
         if self.next_step >= self.maximum_updates:
             raise StopIteration("the registered training event plan is exhausted")
+        main_count, teaching_counts = query_allocation(self.config, self.next_step)
         draws = []
         for event_index in self._groups[self.next_step]:
             event = self._events[event_index]
             task = event["task"]
             draws.append({"job_id": len(draws), "condition_index": 0, "task": task,
                           "occurrence": event["occurrence"], "video_demos": (event["teacher_demo"],),
-                          "query_seed": event["query_seed"], "query_offset": 0, "query_count": 21,
-                          "teaching_offset": 0, "teaching_count": 7,
+                          "query_seed": event["query_seed"], "query_offset": 0, "query_count": main_count,
+                          "teaching_offset": 0, "teaching_count": teaching_counts[len(draws)],
                           "frames": event["frames"]})
             self.counts[task] += 1
         self.next_step += 1

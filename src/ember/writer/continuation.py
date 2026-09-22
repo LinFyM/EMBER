@@ -78,7 +78,7 @@ def require_extended_prefix(previous, current, *, parent_updates=1500, child_upd
     prefix["maximum_updates"] = parent_updates
     prefix["groups"] = prefix["groups"][:parent_updates]
     if "events" in prefix:
-        prefix["events"] = prefix["events"][:parent_updates * 4]
+        prefix["events"] = prefix["events"][:parent_updates * current["tasks_per_update"]]
     if previous != prefix:
         raise ValueError("continued sampler must preserve every parent event, RNG and group")
 

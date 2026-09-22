@@ -5,6 +5,7 @@ import time
 import torch
 
 from ember.writer.function_credit import paired_functional_credit
+from ember.writer.learning_data import TASKS_PER_UPDATE
 from ember.writer.runtime import autocast
 
 
@@ -20,7 +21,7 @@ class SupervisedEngine:
         timings[name] = time.perf_counter() - start
         return time.perf_counter()
 
-    def _credit(self, state, batch, trace, offset, *, backward, condition_weight=.25, teaching=False):
+    def _credit(self, state, batch, trace, offset, *, backward, condition_weight=1., teaching=False):
         with autocast(self.device):
             return paired_functional_credit(
                 self.runtime.policy, state, self.runtime.lora, batch,
@@ -37,7 +38,7 @@ class SupervisedEngine:
         task, demos = draw["task"], draw["video_demos"]
         hits, misses = self.cache.hits, self.cache.misses
         condition = self.cache.condition(task, demos)
-        weight = .25 * draw["query_count"] / 21
+        weight = 1 / TASKS_PER_UPDATE
         start = self._time(timings, "input_seconds", start)
         with torch.no_grad():
             state = runtime.compile(condition, frame_parallel_group=self.frame_parallel_group)
@@ -58,7 +59,7 @@ class SupervisedEngine:
             query_offset=draw["teaching_offset"], query_count=draw["teaching_count"], teaching=True,
         )
         batch = runtime.processor.training_batch(raw)
-        teaching_weight = .25 * float(self.config["optimization"]["teaching_weight"]) * draw["teaching_count"] / 7
+        teaching_weight = weight * float(self.config["optimization"]["teaching_weight"])
         teaching = self._credit(state, batch, teaching_trace, draw["teaching_offset"], backward=True,
                                 condition_weight=teaching_weight, teaching=True)
         del batch, raw, state
@@ -72,7 +73,7 @@ class SupervisedEngine:
         torch.autograd.backward(tuple(generated.values()),
                                 tuple(cotangent[name].to(value) for name, value in generated.items()))
         self._time(timings, "writer_vjp_seconds", start)
-        return {**credit, "teaching_loss": teaching["flow_loss"], "task_weight": .25,
+        return {**credit, "teaching_loss": teaching["flow_loss"], "task_weight": weight,
                 "condition_weight": weight, "teaching_weight": teaching_weight, "normalizer": 1.,
                 "fm_lora_gradient_norm": fm_norm, "queries": len(trace["action_demos"]),
                 "teaching_lora_gradient_norm": teaching_norm,

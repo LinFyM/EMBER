@@ -141,10 +141,10 @@ def training_data_factory(tmp_path, monkeypatch):
     opened = []
     def create(*, camera_view="dual", planned_updates=None, **changes):
         config = {"seed": 7, "sampler_seed": 20260721, "teacher_video_seed": 20260722,
-                  "maximum_updates": 12, "teaching_seed": 20260919, "teaching_queries_per_task": 7,
+                  "maximum_updates": 12, "teaching_seed": 20260919, "teaching_query_counts": [3, 2, 2] * 4,
                   "teaching_episode": "same_video", "grouping": "baseline", "event_schema_version": EVENT_SCHEMA,
-                  "task_ids": list(range(24)), "tasks_per_update": 4, "conditions_per_task": 1,
-                  "queries_per_task": 21, "cardinalities": [1], "video_demos": list(range(46)),
+                  "task_ids": list(range(24)), "tasks_per_update": 12, "conditions_per_task": 1,
+                  "queries_per_task": 7, "cardinalities": [1], "video_demos": list(range(46)),
                   "action_demos": list(range(46)), "diagnostic_action_demos": list(range(46, 50)),
                   "held_video_demos": list(range(46, 50)), "action_start_offset": 1,
                   "query_alignment": "post_action_observation_future_control_v1", **changes}
@@ -180,17 +180,17 @@ def test_registered_camera_modes_share_events_and_read_only_declared_rgb(trainin
 
 
 def test_full_training_plan_has_balanced_rounds_and_cross_episode_events(training_data_factory):
-    data = training_data_factory(maximum_updates=1200)
+    data = training_data_factory(maximum_updates=400)
     plan = data.event_plan()
     assert json.loads(json.dumps(plan)) == plan
-    assert len(plan["events"]) == 4800 and len(plan["groups"]) == 1200
+    assert len(plan["events"]) == 4800 and len(plan["groups"]) == 400
     assert sorted(event_index for group in plan["groups"] for event_index in group) == list(range(4800))
     for occurrence in range(200):
-        draws = [data.next_iteration() for _ in range(6)]
+        draws = [data.next_iteration() for _ in range(2)]
         tasks = [draw["task"] for group in draws for draw in group]
         expected = np.random.default_rng(np.random.SeedSequence([20260721, occurrence])).permutation(range(24))
         assert tasks == expected.tolist()
-        assert all([draw["job_id"] for draw in group] == list(range(4)) for group in draws)
+        assert all([draw["job_id"] for draw in group] == list(range(12)) for group in draws)
         assert all(draw["occurrence"] == occurrence for group in draws for draw in group)
     assert data.counts == dict.fromkeys(range(24), 200)
     with pytest.raises(StopIteration):
@@ -213,8 +213,8 @@ def test_full_training_plan_has_balanced_rounds_and_cross_episode_events(trainin
 
 def test_regrouping_and_json_resume_preserve_event_and_flow_identity(training_data_factory):
     baseline = training_data_factory()
-    explicit = training_data_factory(grouping="explicit", event_groups=[list(range(start, start + 4))
-                                    for _ in range(2) for start in range(0, 24, 4)])
+    explicit = training_data_factory(grouping="explicit", event_groups=[list(range(start, start + 12))
+                                    for _ in range(6) for start in range(0, 24, 12)])
     first, second = baseline.event_plan(), explicit.event_plan()
     assert first["groups"] != second["groups"]
     assert first["events"] == second["events"]
@@ -261,7 +261,7 @@ def test_completed_window_continuation_preserves_events_and_next_round(training_
     expected = [child_plan['events'][i] for i in child_plan['groups'][1500]]
     assert [(r['task'], r['occurrence'], r['query_seed']) for r in draws] == [
         (r['task'], r['occurrence'], r['query_seed']) for r in expected]
-    assert all(r['occurrence'] == 250 for r in draws)
+    assert all(r['occurrence'] == 750 for r in draws)
     changed = deepcopy(parent_plan)
     changed['events'][0]['teaching']['policy_rng_seed'] += 1
     with pytest.raises(ValueError, match='every parent event'):
@@ -287,7 +287,7 @@ def test_dynamic_low_lr_phase_restores_global1800_without_task_event_gap(trainin
         (row["task"], row["occurrence"], row["query_seed"]) for row in expected
     ]
     assert child.next_step == 1801
-    assert sum(child.counts.values()) == 1801 * 4
+    assert sum(child.counts.values()) == 1801 * 12
 
 
 def test_event_batch_reads_only_selected_actions_and_keeps_full_batch_rng(training_data_factory, monkeypatch):
@@ -389,7 +389,7 @@ def test_dynamic_train36_balances_and_resumes_across_partial_round(training_data
     assert "events" not in first.event_plan() and "groups" not in first.event_plan()
     for step in range(200):
         assert first.next_iteration() == longer.next_iteration()
-        if (step + 1) % 9 == 0:
+        if (step + 1) % 3 == 0:
             assert len(set(first.counts.values())) == 1
     resumed = training_data_factory(planned_updates=400, **options)
     resumed.restore_sampler(json.loads(json.dumps(first.sampler_state())))
@@ -398,3 +398,34 @@ def test_dynamic_train36_balances_and_resumes_across_partial_round(training_data
     assert resumed.sampler_state() == longer.sampler_state()
     assert all(event["teacher_demo"] not in event["action_demos"] for event in resumed._events)
     assert all(event["teaching"]["action_demos"] == [event["teacher_demo"]] * 7 for event in resumed._events)
+
+
+def test_task_mixing_prefixes_keep_full_rng_pools_and_rotate_across_resume(training_data_factory):
+    data = training_data_factory()
+    restored = training_data_factory()
+    seen = Counter()
+    for step in range(3):
+        draws = data.next_iteration()
+        assert len({draw['task'] for draw in draws}) == 12
+        assert sum(draw['query_count'] for draw in draws) == 84
+        assert sum(draw['teaching_count'] for draw in draws) == 28
+        seen.update(draw['job_id'] for draw in draws if draw['teaching_count'] == 3)
+        for draw in draws:
+            for teaching, count, pool in ((False, 7, 21), (True, draw['teaching_count'], 7)):
+                _, trace = data.action_batch(draw['task'], draw['occurrence'], draw['video_demos'],
+                    query_seed=draw['query_seed'], query_count=count, teaching=teaching)
+                assert len(trace['action_demos']) == count
+                assert trace['policy_random_batch_size'] == pool and trace['query_offset'] == 0
+        if step == 0:
+            restored.restore_sampler(json.loads(json.dumps(data.sampler_state())))
+        else:
+            assert restored.next_iteration() == draws
+    assert seen == dict.fromkeys(range(12), 1)
+    full = training_data_factory(queries_per_task=21, teaching_query_counts=[7] * 12)
+    assert full._events == data._events
+    assert full._groups == data._groups
+    draws = full.next_iteration()
+    assert sum(d['query_count'] for d in draws) == 252
+    assert sum(d['teaching_count'] for d in draws) == 84
+    with pytest.raises(ValueError, match='contract or grouping'):
+        full.restore_sampler(data.sampler_state())

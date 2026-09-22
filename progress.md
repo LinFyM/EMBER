@@ -10,7 +10,7 @@ J18完整验证已被Owner否决，不执行；失败状态专家监督历史已
 沿用现有记录，不新增面向Owner的报告文件；本机session约07:30读取状态制作PPT，不使用Test选择方法。
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
 
-## 当前运行快照（2026-09-23 03:08）
+## 当前运行快照（2026-09-23 03:46）
 
 正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
 clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
@@ -31,6 +31,11 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 原等待attempt的退出、脚本、日志及stop marker保留于`launch/validation_waiter_original_attempt`，新命令与
 data1 quota（902248336/1073741824KiB，额外worktree估计512MiB）见`launch/evaluation_runtime_amendment.json`。
 正式训练约15秒/更新，尚未到首个200节点；冻结后controls/Test单臂执行和唯一freeze工具均已准备，只检查命令/声明，未启动held Test。
+
+03:46追加：100步完整checkpoint及canonical读取验证通过；200步已于03:42发布，400套验证条件LoRA物化exit0，
+03:46在上述GPU01六卡共12个persistent workers开始完整correct400。实际run contract与launch preflight确认
+eval commit c9844dfc、Writer200、Validation/formal/400及利用率上限100，显存门槛保留；当前未读取部分成功率。
+训练继续，最近100更新均值14.63秒；若跑满1200，当前估计约07:46结束（不含最后节点评测），实际随负载更新。
 
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 

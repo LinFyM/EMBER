@@ -2753,3 +2753,26 @@ wrong6/2/3、净−1；三项任务簇区间均跨零。因此L18相对父的+7�
 O1200的OFF原进程40分钟退出124，保留28条完成轨迹并仅补余下4条；C600路径与L18通过同bank分卡完成，原退出143保留。
 逐臂32条件、语言、环境种子与policy-noise共同前缀核对通过。00:01确认两节点本小时作业全部退出，没有正式训练、Test或RL。
 内部脚本、原始行、分卡/恢复登记与汇总保留在既有study的`one_hour`；不新增单独报告文件。
+
+
+## 129. 当前C600同起点局部学习不复现“自由A/B明显优于完整Writer”（2026-09-23）
+
+Owner本夜授权的新Train-only矩阵，在共同8 tasks [5,7,12,14,20,25,34,37]、teacher16、states32–35上，
+父C600／private完整Writer／free实际compiler code／固定加权RMS壳面code／free完整A/B分别为9/16/11/11/14（各32）。
+所有学习臂从相同C600权重与实际生成LoRA起步，fresh AdamW、相同24次task-local主21＋跨episode辅7查询/noise；
+直接优化与code仅作oracle，不作为部署方法。完整Writer对父R/G/L=6/10/3，自由A/B为5/9/4。
+独立demo46–49的前5步10-flow动作MSE为.10837/.10041/.11392/.11394/.11357；不以此替代闭环。
+
+四个学习臂首步在同两个训练query上做预注册有界动作RMS校准，不按成败选LR。direct实际/Writer步幅比.811–1.115；
+code及code_norm在task12仍约.442、task20约.692/.646，其余约.801–.927，因此不能宣称完全等步幅或模型类上界已证明。
+该实际预算未出现“直接A/B明显胜过完整Writer”；freecode与保径向约束code净分相同。既有9月15日freeq18/freeAB46的结论
+不能直接套到当前模型，当前证据不支持据此扩宽head、删除slot norm或宣称视频前端无法获取能力。剩余共享训练与跨task泛化
+问题未被此局部oracle解决，也不因privateWriter涨分就称视频有效增量已建立。
+八个worker与五臂160条闭环完整exit0，task/state/language/env/policy噪声共同前缀核验通过；有限teacher复用范围已登记。
+原件在`/data0/user/ymdai/ember_runs/overnight_root_cause_20260922/capacity_route_20260923/aggregate.json`及其registration、worker原始行。
+
+同一C600起点的额外更新拆分完成8个真实task梯度、原Adam及fresh Adam各七个冻结组合，共224实际动作查询。
+原Adam中new-head/old-code的动作变化在7/8任务大于old-head/new-code，但原头更新也将同task查询动作MSE均值从.10959降到.09479，
+完整更新.09304，而仅将W2位移乘1/sqrt216的完整更新.10231；这只支持头部相对功能步幅较大，尚不支持它有害或应删除。
+该梯度是单task单位权重，不是生产四task平均，已明确保存此限制。后继H54仅测试这项步幅平衡能否改善真实闭环，不据几何直接开fresh。
+原件为同study的`head_step_20260923/results`；H54实际状态看progress，不由此段自动恢复实验。

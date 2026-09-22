@@ -84,6 +84,12 @@ PPT包已更新为19个完整Validation面板、7600条success投影；无选定
 后续独立panel helper已准备使用canonical `--reuse-manifest`加速other：两臂同50视频全集的LoRA按精确条件复用，
 重新构建other映射并完整运行400闭环，wrong/shuffle/reverse不复用；未修改正在运行的训练/Validation进程。
 
+05:44一项纯推理物理batch检查结束：固定fresh600、9条Train诊断视频（含该池最长视频），frame chunk8/16/32
+分别0.603/0.643/0.659 LoRA/s，最大reserved9.74/10.66/12.49GiB，全部shape/finite通过、GPU作业exit0。
+32相对8仅约9.4%编译阶段收益，当前继续使用8，不改变运行中/后续配对设置；保留更直接的other精确bank复用优化。
+没有梯度、闭环、Test或模型选择；原件在`diagnostics/native_chunk_profile`。首个入口命名遮蔽stdlib profile的import失败
+已保留为`import_failure.*`，改为`benchmark_chunks.py`后运行成功；失败未发生模型计算。
+
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 
 capacity_route八worker全部完成160闭环，父／完整Writer／free code／固定范数code／free A/B=9/16/11/11/14（各32），

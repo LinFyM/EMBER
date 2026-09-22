@@ -33,9 +33,12 @@ def _storage_root() -> Path:
 
 def gpu_preflight(
     physical_gpu_ids: Sequence[int], *, materialized_lora_replicas: int | None = None,
+    max_utilization_percent: int = MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
 ) -> dict[str, Any]:
     """Record storage, CUDA runtime, GPU telemetry, and co-scheduled processes."""
 
+    if not 0 <= max_utilization_percent <= 100:
+        raise Pi05EvaluationError("GPU utilization limit must be between 0 and 100")
     import torch
 
     required_memory_mib = OTHER_EVALUATOR_FREE_MEMORY_MIB
@@ -147,7 +150,7 @@ def gpu_preflight(
         "device_names": [name_by_index[index] for index in physical_gpu_ids],
         "compute_applications": owned_applications,
         "gpu_admission_policy": {
-            "max_utilization_percent": MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
+            "max_utilization_percent": max_utilization_percent,
             "min_free_memory_mib": required_memory_mib,
             "materialized_lora_replicas": materialized_lora_replicas,
             "materialized_worker_memory_mib": EVALUATOR_WORKER_MEMORY_MIB,
@@ -169,13 +172,17 @@ def gpu_preflight(
 
 
 def evaluator_gpus_are_eligible(preflight: Mapping[str, Any]) -> bool:
-    """Admit low-load devices by remaining capacity, regardless of peer allocation."""
+    """Apply the recorded live-load limit and unchanged free-memory budget."""
     telemetry = preflight.get("gpu_telemetry", ())
     expected = preflight.get("physical_gpu_ids", ())
-    required_memory_mib = int(preflight["gpu_admission_policy"]["min_free_memory_mib"])
+    policy = preflight["gpu_admission_policy"]
+    required_memory_mib = int(policy["min_free_memory_mib"])
+    max_utilization_percent = int(policy.get(
+        "max_utilization_percent", MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
+    ))
     return len(telemetry) == len(expected) and all(
         int(row["utilization_percent"])
-        <= MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT
+        <= max_utilization_percent
         and int(row["memory_total_mib"]) - int(row["memory_used_mib"])
         >= required_memory_mib
         for row in telemetry

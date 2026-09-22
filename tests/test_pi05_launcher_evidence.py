@@ -6,7 +6,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from ember.pi05_eval.launcher import evaluator_gpus_are_eligible
+from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval.launcher import evaluator_gpus_are_eligible, gpu_preflight
 from ember.pi05_eval.launcher_evidence import launcher_attempt_summary
 from ember.pi05_eval.recovery import worker_command_matches
 from ember.pi05_eval_queue import publish_json_exclusive
@@ -39,6 +40,42 @@ def test_gpu_admission_uses_remaining_capacity_and_live_load(
     assert evaluator_gpus_are_eligible(preflight) is eligible
 
 
+@pytest.mark.parametrize("memory_used_mib,eligible", [(16998, True), (19445, False)])
+def test_explicit_coscheduling_limit_preserves_memory_requirement(memory_used_mib, eligible):
+    preflight = {
+        "physical_gpu_ids": [2],
+        "gpu_admission_policy": {
+            "min_free_memory_mib": 26624, "max_utilization_percent": 100,
+        },
+        "gpu_telemetry": [{
+            "physical_gpu": 2, "memory_total_mib": 46068,
+            "memory_used_mib": memory_used_mib, "utilization_percent": 55,
+        }],
+    }
+    assert evaluator_gpus_are_eligible(preflight) is eligible
+
+
+@pytest.mark.parametrize("limit", [-1, 101])
+def test_preflight_rejects_invalid_load_limit_before_device_access(limit):
+    with pytest.raises(Pi05EvaluationError, match="between 0 and 100"):
+        gpu_preflight([0], max_utilization_percent=limit)
+
+
+@pytest.mark.parametrize("command", ["start", "resume"])
+@pytest.mark.parametrize("limit", [None, "100", "-1", "101"])
+def test_launcher_load_limit_cli(monkeypatch, command, limit):
+    from scripts import evaluate_pi05
+    arguments = ["evaluate_pi05.py", command, "--output-dir", "/unused"]
+    if limit is not None:
+        arguments += ["--gpu-max-utilization-percent", limit]
+    monkeypatch.setattr("sys.argv", arguments)
+    if limit in {"-1", "101"}:
+        with pytest.raises(SystemExit):
+            evaluate_pi05.parse_args()
+    else:
+        assert evaluate_pi05.parse_args().gpu_max_utilization_percent == (10 if limit is None else 100)
+
+
 @pytest.mark.parametrize("adapter,expected_replicas", [
     ({"kind": "horizon_writer_lora_bank"}, 2),
     ({"kind": "static_task_lora_bank"}, 2),
@@ -64,7 +101,8 @@ def test_launcher_passes_replica_budget_for_materialized_banks_and_source(
     monkeypatch.setattr(evaluate_pi05, "_gpu_preflight", preflight)
     with pytest.raises(RuntimeError, match="stop before GPU access"):
         evaluate_pi05._start_workers_locked(tmp_path, resume=False)
-    assert observed == {"gpu_ids": (0,), "materialized_lora_replicas": expected_replicas}
+    assert observed == {"gpu_ids": (0,), "materialized_lora_replicas": expected_replicas,
+                        "max_utilization_percent": 10}
 
 
 def _invocation_events(

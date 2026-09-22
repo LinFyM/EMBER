@@ -17,6 +17,7 @@ from typing import Any, Mapping
 from ember.eval_adapters import HORIZON_WRITER_KIND, STATIC_TASK_LORA_KIND
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.launcher import (
+    MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
     evaluator_gpus_are_eligible as _evaluator_gpus_are_eligible,
     gpu_preflight as _gpu_preflight,
     spawn_worker_processes,
@@ -49,6 +50,21 @@ def _positive_int(value: str) -> int:
     if parsed <= 0:
         raise argparse.ArgumentTypeError("must be a positive integer")
     return parsed
+
+
+def _utilization_percent(value: str) -> int:
+    parsed = int(value)
+    if not 0 <= parsed <= 100:
+        raise argparse.ArgumentTypeError("must be between 0 and 100")
+    return parsed
+
+
+def _add_launch_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--gpu-max-utilization-percent", type=_utilization_percent,
+        default=MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
+        help="Explicit co-scheduling limit for this launch; free-memory checks still apply.",
+    )
 
 
 def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
@@ -102,9 +118,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     for name in ("prepare", "run"):
-        _add_prepare_arguments(commands.add_parser(name))
+        command = commands.add_parser(name)
+        _add_prepare_arguments(command)
+        if name == "run":
+            _add_launch_arguments(command)
     for name in ("start", "resume", "aggregate"):
-        commands.add_parser(name).add_argument("--output-dir", type=Path, required=True)
+        command = commands.add_parser(name)
+        command.add_argument("--output-dir", type=Path, required=True)
+        if name != "aggregate":
+            _add_launch_arguments(command)
     worker = commands.add_parser("worker")
     worker.add_argument("--output-dir", type=Path, required=True)
     worker.add_argument("--worker-id", required=True)
@@ -267,7 +289,10 @@ def _publish_launcher_completion(
     )
 
 
-def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
+def _start_workers_locked(
+    output_dir: Path, *, resume: bool,
+    max_utilization_percent: int = MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
+) -> dict[str, Any]:
     output_dir = output_dir.resolve()
     contract, ready_to_aggregate = _recover_locked_queue(output_dir, resume=resume)
     if ready_to_aggregate:
@@ -275,6 +300,7 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
     physical_gpu_ids = tuple(int(value) for value in contract["parallel"]["physical_gpu_ids"])
     preflight = _gpu_preflight(
         physical_gpu_ids,
+        max_utilization_percent=max_utilization_percent,
         materialized_lora_replicas=(
             int(contract["parallel"]["replicas_per_gpu"])
             if contract.get("adapter") is None or (contract.get("adapter") or {}).get("kind")
@@ -342,7 +368,10 @@ def _start_workers_locked(output_dir: Path, *, resume: bool) -> dict[str, Any]:
     return _finalize_aggregate(output_dir)
 
 
-def start_workers(output_dir: Path, *, resume: bool) -> dict[str, Any]:
+def start_workers(
+    output_dir: Path, *, resume: bool,
+    max_utilization_percent: int = MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
+) -> dict[str, Any]:
     output_dir = output_dir.resolve()
     lock_path = output_dir / ".launcher.lock"
     try:
@@ -354,7 +383,9 @@ def start_workers(output_dir: Path, *, resume: bool) -> dict[str, Any]:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             raise Pi05EvaluationError("another evaluator launcher owns this run") from error
-        return _start_workers_locked(output_dir, resume=resume)
+        return _start_workers_locked(
+            output_dir, resume=resume, max_utilization_percent=max_utilization_percent,
+        )
 
 
 def main() -> int:
@@ -362,11 +393,14 @@ def main() -> int:
     if args.command in {"prepare", "run"}:
         prepare_run(args)
         if args.command == "run":
-            start_workers(args.output_dir, resume=False)
+            start_workers(args.output_dir, resume=False,
+                          max_utilization_percent=args.gpu_max_utilization_percent)
     elif args.command == "start":
-        start_workers(args.output_dir, resume=False)
+        start_workers(args.output_dir, resume=False,
+                      max_utilization_percent=args.gpu_max_utilization_percent)
     elif args.command == "resume":
-        start_workers(args.output_dir, resume=True)
+        start_workers(args.output_dir, resume=True,
+                      max_utilization_percent=args.gpu_max_utilization_percent)
     elif args.command == "worker":
         from ember.pi05_evaluation import run_worker
 

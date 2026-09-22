@@ -16,6 +16,31 @@ capacity_route八worker全部完成160闭环，父／完整Writer／free code／
 结论与校准限制见findings§129。没有复现当前free A/B明显胜完整Writer，不据旧oracle结果扩大head或移除归一化。
 H54的共享54步窄修正与J54视频对照正在运行；待完整终点面板后裁决。正式训练尚未启动，Owner最新实证要求保持。
 
+01:54追加一个独立、固定标签预算的任务混合检验D54，输出`overnight_root_cause_20260922/task_diversity_pilot_20260923`。
+MT-BC每更新覆盖36任务，而当前Writer仅4任务；八任务末层head梯度单次测量的样本方差.1463、均值范数平方.01854，
+但此量混有query噪声，不能单独宣布任务干扰为根因。D54保留C600全部Adam、54更新与原LR，将每更新84主+28辅标签
+分到12个原sampler条件（各7主、轮换2/3辅；每条件主权1/12、辅1/36），消耗原事件601–762，teacher条件为648而非216。
+CPU原事件审计54步均12不同task；最终Adam654/sampler762分别记录，不冒充原拓扑exact resume。未缩W2，也未叠加H54改法。
+gpu02:1/2/3/4实时余量充分，另节点三张H54评测卡，总物理7卡在Owner临时授权内；新增≤1GiB，在已核验data0诊断预算内。
+终点仍为原Train72以及共同Train8×4的correct/other/wrong各32，完整面板后对比J54；只有正确绝对能力和有益视频贡献一起
+出现清楚改善才支持正式推进，单纯wrong下降或混杂小幅交换不批准。
+
+01:57 H54全部终点exit0并完成配对核验：Train72=46，与J54相同，双方6得6失；共同Train8视频CC/other/wrong=
+11/9/13，J54为15/12/15。缩小末层输出步幅未改善两个目标，不推进该配方正式训练。正式fresh仍未启动。
+旧LIBERO90 evaluator的meta_train/meta_validation_oracle标签与原objective pilot统一写train的标签不同；均在当前明确36任务
+allowlist内，任务/state/language/teacher/env及policy RNG共同前缀一致，原始字段保留而不静默改写。
+历史核对找到9月9日8e45a27b的固定query预算扩大task覆盖方案，但Owner当时停止、未执行；已跑task-complete则混改Adam次数/
+标签预算/LR阶段，不能当D54匹配负例。旧4task强模型也说明少task并非充分失败原因。追加八task第二组独立query梯度只估计
+任务间/查询噪声两项，用于检验方差动机；不更新参数、不取代闭环裁决，gpu01:4运行，当前总物理5卡。
+
+02:03第二组query梯度已exit0：末层W2查询噪声迹估计.09217，扣除两次估计噪声后的任务间迹.03743；在简化独立查询近似下，
+固定标签的4→12条件只预测约19%总方差下降。此为八task各一video的有限测量，辅助query同episode使缩放近似，不代表全Writer/
+Adam方向或根因。登记B54作为D54的完整查询对照：同12任务/视频、同601–762事件、同54更新与C600 Adam，每条件21主+7辅，
+每条件总权仍1/12和1/36，共252+84标签/更新；同时减少两种采样噪声，但标签与计算量为J54/D54的三倍，不能宣称等数据预算。
+B54只做一次预定终点，不扫query档位；部署/模型/损失不变。D54和B54均须通过相同闭环标准，正式fresh尚未启动。
+为节约等待时间，仅在独立`codex/task-diversity-overnight` worktree准备12条件canonical采样/六卡实现；主树科研代码尚未改动，
+没有因工程准备而默认采用方法，是否集成取决于闭环证据。
+
 ## 2026-09-23 01:35：Owner再次明确实证门槛与最终Test
 
 Owner补充：不得草率启动正式训练，必须有实证；Validation出现好结果后须做Test。07:30是首轮交付节点而非强制停止，

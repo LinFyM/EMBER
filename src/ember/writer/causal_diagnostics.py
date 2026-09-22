@@ -157,8 +157,8 @@ def _encode(loaded: LoadedWriter, cache: CausalRawInputCache, *, language_task: 
     condition = cache.condition(language_task=language_task, video_task=video_task, demo=demo)
     with torch.no_grad(), autocast(loaded.runtime.device):
         encoded, trace = loaded.runtime.state.writer.encode_task(
+            loaded.runtime.policy,
             *condition,
-            policy=loaded.runtime.policy,
             return_trace=True,
         )
     core, valid_core, procedure, positions, valid_frames, _attention = encoded

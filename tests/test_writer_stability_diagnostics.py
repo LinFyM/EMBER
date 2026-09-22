@@ -123,6 +123,30 @@ def test_causal_path_selection_keeps_masks_positions_with_memory() -> None:
     assert core is correct and procedure is other
 
 
+def test_causal_encode_passes_policy_before_runtime_condition() -> None:
+    from ember.writer.causal_diagnostics import _encode
+
+    observed = {}
+
+    class Writer:
+        def encode_task(self, policy, *condition, return_trace):
+            observed["policy"] = policy
+            observed["condition"] = condition
+            observed["return_trace"] = return_trace
+            encoded = tuple(torch.tensor([float(index)]) for index in range(6))
+            return encoded, {"frame_evidence": encoded[0], "horizon": encoded[1]}
+
+    policy = object()
+    loaded = SimpleNamespace(runtime=SimpleNamespace(
+        device=torch.device("cpu"), policy=policy, state=SimpleNamespace(writer=Writer()),
+    ))
+    condition = tuple(object() for _ in range(6))
+    cache = SimpleNamespace(condition=lambda **_kwargs: condition)
+    result = _encode(loaded, cache, language_task=5, video_task=5, demo=46)
+    assert observed == {"policy": policy, "condition": condition, "return_trace": True}
+    assert result.core.item() == 0.0 and result.procedure.item() == 2.0
+
+
 class _CausalAllGroups(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()

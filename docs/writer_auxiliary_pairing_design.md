@@ -1,13 +1,24 @@
 # Active design：36任务 Writer 辅助 episode 配对 fresh 对照（2026-09-22）
 
-状态：formal preflight已登记、尚未启动训练、物化或闭环。study根为
+状态：**正式完成；当前不是active design。** study根为
 `/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`，run contract为
-`launch/launch_contract.json`；runtime固定为clean pushed detached `64947492`。2026-09-22 03:10 CST的双节点快照中，
-gpu01无安全训练卡；gpu02:0--3均为低util、已知owner `gqma`的小显存共驻，最小空闲45858 MiB，按旧Writer
-22.803 GiB峰值登记四卡frame8。data0/data1独立quota和data0共享余量均通过16 GiB峰值预算。当前窗口的训练上限
-预注册为correct400完整节点1200；首次原早停记录独立冻结，之后的post-stop extension节点允许参与单独的extended-run
-最终选点，均不得根据中间分数补改。原same-video、旧24任务消融与低LR修复的配置和结果保持原样。当前实现仅开放本文件
-登记的一个fresh cross-episode候选。
+`launch/launch_contract.json`，运行时为clean pushed detached `64947492`。03:10 CST资源与配额preflight后，gpu02:0--3
+的world4/frame8轨迹完成至预登记correct400节点1200；controller exit=0，所有八个正式面板均有400条唯一行、正确
+manifest、固定映射和12个worker全零退出。runtime工作树已仅作为历史代码谱系，不构成继续运行授权。
+
+## 已完成结果与结论（2026-09-22）
+
+cross-episode correct400在200..1200为`151,120,154,137,129,124`，相对same-video参照
+`110,92,115,87,117,80`逐点为`+41,+28,+39,+50,+12,+44`。原早停在1200以`sustained_decline`触发，故没有
+post-stop extension；原合同和extended-run均按`correct → other → earliest`选中step600=154。该点same-task-other=160、
+cross-suite-wrong=153；154落在预登记118..155分支，未做shuffle/reverse。完整报告、CSV/JSON及图为
+`analysis/report/pairing_report.md`。
+
+结果支持本合同内“跨episode**辅助配对**优于same-video辅助配对”，但不支持稳定的总体恢复：154仍低冻结MT-BC300=155一分，
+且200→400、400→600、600→800的R/G/L=84/36/67、80/74/40、101/36/53。600相对same-video的R/G/L=78/76/37，
+Spatial净+45而Goal/Object各净−8/−7。correct−wrong=+1、correct−other=−6，且没有顺序controls，不能声称视频内容或
+顺序特异性恢复。它不检验也不证明端点辅助项整体、`tau=1`、前5步或`1/3`；纯跨episode随机flow-time完整50-horizon主FM仍是
+独立未执行假设。Test、FT、RL、外部比较与任何补救训练均未授权。
 
 ## 两个损失的精确定义
 
@@ -42,6 +53,8 @@ gpu01无安全训练卡；gpu02:0--3均为低util、已知owner `gqma`的小显�
 没有改动模型、原生forward、损失实现、数据角色或采样算法。日志字段`teaching_loss`为向后兼容继续保留；其episode语义由`data.teaching_episode`和真实事件记录确定。
 
 ## 已登记的执行顺序
+
+以下为执行前冻结的合同记录，实验完成后不构成继续训练、纯主FM或任何下游阶段的授权。
 
 1. PR #3已收敛、合入并推送；所有平行status/selection入口已删除。当前canonical代码仍须在实际launch前以clean pushed detached worktree固定。
 2. 已在`progress.md`和`task_plan.md`登记本次单路fresh候选、状态与本设计；保留所有旧实验，且不把CPU验证写成GPU资格。
@@ -88,8 +101,9 @@ controller保留原有的完整性检查：400个唯一task/state行、worker全
 
 ## 验证范围
 
-当前分支尚未把重构后的测试或preflight标记为通过。`test_writer_training.py`覆盖显式opt-in，`test_writer_data.py`覆盖真实采样器的主/辅助事件关系；实际metadata/历史exposures核验只能由上述preflight完成，未运行前不能报告通过。
-这些测试证明实现与协议检查的局部行为，不证明候选性能，也不替代正式GPU资格。
+`test_writer_training.py`与`test_writer_data.py`的相关回归以及真实metadata/历史exposures preflight均已通过；后者重放
+1800更新、7200条件，并核验teacher/主21、辅助噪声、teacher排除、未来5动作、无有放回与原曝光。它们只证明实现和
+协议检查的局部行为，不证明候选性能，也不替代已经完成的正式400面板证据。
 
 ---
 
@@ -106,7 +120,7 @@ controller保留原有的完整性检查：400个唯一task/state行、worker全
 
 本轮不执行 N1000 辅助切换续训；省去先续训、后 fresh 的重复成本。只允许一条 fresh 跨 episode 候选；无 MT-BC 重训、无第二 seed、无其它 Writer 候选。架构、数据划分、Source、LR、辅助权重、任务 batch 均保持。禁止采用 merged MT-BC 底座、常量输出支路、拆 head 或新增几何正则。
 
-向 Codex 下达本协议意味着建议授权其中的一次 fresh 训练；本文件本身仅为执行规格，尚无实验被启动或完成。
+该一次fresh训练已经完成；本文件的其余条款保留为冻结执行规格和结果解释边界，不恢复任何新的运行授权。
 
 ## 1. 唯一科学变量
 
@@ -227,6 +241,10 @@ GPU没有不干扰主候选、能完成一条训练加完整400的余量，因�
 所有新节点标为post-stop extension。原合同选点保持冻结；extension节点预先允许参与独立`extended_run_final_selection.json`，
 并按相同correct/other/earliest规则决定其冻结后测量。不得删除下降节点、重写原早停事实或依据extension成绩改变上限。
 
+实际执行中，前六个完整节点正好达到1200；最后三点137/129/124均低于此前最高154，满足持续下降，首次早停记录
+在1200冻结。因触发点就是预登记上限，`post_stop_extension_nodes=[]`；`original_early_stop_selection.json`和
+`extended_run_final_selection.json`均选600=154，保留了这一事实而未把1200后的不存在节点写成extension。
+
 ## 6. 模型选择与自动后继工作
 
 ### 6.1 训练结束时选择
@@ -246,6 +264,9 @@ B. 候选最高为118..155：
 - 冻结唯一候选后完成other400、wrong400；已合法完成的other直接复用。
 - 不追加order/Test/FT/RL。
 - 记录有限恢复；对MT-BC的优势尚未建立。训练停止前已执行的上升段按统一规则处理。
+
+实际走B分支：600=154，same-task-other=160，cross-suite-wrong=153；没有shuffle/reverse、Test、FT或RL。other高于
+correct和wrong只低1说明这两个单点控制不能支持正确视频内容恢复，且没有时间顺序测量。controls从未用于重选600。
 
 C. 候选最高 >=156：
 - 冻结唯一候选后完成other、wrong、shuffle、reverse各400。

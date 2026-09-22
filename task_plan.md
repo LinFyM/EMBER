@@ -1,42 +1,28 @@
 # EMBER task plan
 
-## 当前 active design：36任务 Writer 辅助 episode 配对 fresh 对照（2026-09-22）
+## 当前状态：36任务 Writer 辅助 episode 配对 fresh 对照已完成（2026-09-22）
 
-当前唯一 active design 是[辅助配对合同](docs/writer_auxiliary_pairing_design.md)，预留 study 根为
-`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`。它只把7个辅助查询从
-`same_video` 改为同任务另一 episode，保留固定`tau=1`、前5步和权重`1/3`；因此只回答辅助 episode
-配对是否影响学习，不能回答端点前缀辅助项整体是否有价值。
+本轮[辅助配对合同](docs/writer_auxiliary_pairing_design.md)已执行并封存，当前**没有 active design 或获授权的后继
+训练**。study根为`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`；完整报告为
+`analysis/report/pairing_report.md`。候选只把7个辅助查询从`same_video`改为同任务另一episode，固定保留
+`tau=1`、前5步和权重`1/3`。
 
-[PR #3](https://github.com/LinFyM/EMBER/pull/3)已收敛并合入`main`：新增状态/选点路径已删除，现有覆盖
-controller继续拥有完整400读取、早停、同分other选点、冻结与后继测量。候选配置、生产事件preflight和既有
-采样器回归均复用同一训练面；真实原coverage manifest/exposures的1800步、7200条件重放通过，证明事件合同，
-不证明性能。架构门禁已无硬违规；动态 Writer 普通恢复可显式记录物理拓扑切换，同时保持逻辑更新、任务权重、
-optimizer、scheduler与事件计划。
+clean pushed detached runtime `64947492`在gpu02:0--3、world4/frame8完成1200更新和六个correct Validation400。
+controller exit为0；每个正式面板均复核400条唯一task/state行、materialization manifest、固定配对映射和12个worker
+全零退出。correct曲线为`200..1200 = 151, 120, 154, 137, 129, 124`；原早停在1200以`sustained_decline`触发，
+所以没有post-stop extension。按`correct → other → earliest`选中step600的154/400；same-task-other=160、
+cross-suite-wrong=153，二者都未参与选点。154比同节点same-video115高39、比原Writer最佳117高37，但仍低冻结
+MT-BC300=155一分。
 
-formal preflight已登记但尚未启动训练、物化或闭环：runtime为clean pushed detached`64947492`，gpu02:0--3四卡
-frame8在低util、已知`gqma`共驻下有最小45858 MiB空闲；gpu01无安全训练卡。data0/data1独立quota和data0共享余量
-满足16 GiB峰值预算。与中间分数无关的训练上限为correct400节点1200；原早停选点冻结，post-stop extension节点
-预先允许参与单独最终选点。该快照将在真正launch前由controller重新核验；不会在本合同下静默删除辅助项、启动纯主FM、
-Test、FT、RL或外部比较。
+cross-episode在六个匹配节点都超过same-video（差`+41,+28,+39,+50,+12,+44`），但相邻成功集不稳定：200→400、
+400→600、600→800的R/G/L分别为84/36/67、80/74/40、101/36/53。选中点相对same-video的R/G/L=78/76/37，
+Spatial净+45而Goal/Object各净−8/−7；不能把绝对增益写成普遍保持或全面恢复。由于154落在118..155的预登记分支，
+仅完成other/wrong，未执行shuffle/reverse；正确视频相对wrong只+1，other反而+6，不能声称恢复视频内容或顺序特异性。
 
-### 本次约七小时无人值守窗口的追加授权
-
-Owner要求在其休息期间优先利用可安全使用的GPU与墙钟，不因某个节点先结束让整个阶段空转。新session应在首次
-正式launch前，根据实时GPU、已有吞吐和评测耗时登记一个与中间分数无关的overnight计算上限；可以用截止时间、
-最大完整Validation节点或两者中先到者表示。原早停规则仍在首次触发时立即写出正式裁决并冻结“按原合同停止”的
-结果；若预登记overnight预算尚有余量，Owner明确授权同一轨迹从完整checkpoint继续到overnight上限，作为单独标记的
-post-stop extension。最终同时报告原早停点、扩展节点和全程最高点，不能删除早停前后的不利节点，也不能把扩展写成
-原规则未触发。是否允许扩展节点参与最终checkpoint选择，必须在扩展启动前写入active design；不能看到分数后决定。
-
-主候选进入稳定后台运行后，若仍有不会干扰它的合格GPU和显著剩余时间，新session可自主开展一个有明确判别价值、
-能在窗口内形成完整结果的独立实验。优先考虑专家已指出的纯跨episode、随机flow time、完整horizon主FM基准；它须有
-独立config/study、明确单变量对照、完整Validation和资源边界，不能冒充PR #3的配对消融。不得临时做seed/LR/head小扫，
-不得打开Test、FT、RL或外部比较。若窗口不足以完成有意义的训练加完整评测，用余量完成实现、preflight、物化准备、
-报告或其它不依赖结果的工作，不为占卡启动低价值任务。
-
-运行期由detached controller承担训练、完整评测、早停记录和分段续行。主agent使用tmux完成信号、进程exit或控制器
-最终状态做阻塞等待；不得每10秒／每分钟轮询日志、GPU、部分分数、tmux或subagent状态。只在真正launch/resume前、
-完整节点完成、明确工程退出、controller异常消失或资源重新分配时读取一次所需状态。长等待不通过一轮轮LLM调用执行。
+[PR #3](https://github.com/LinFyM/EMBER/pull/3)已合入`main`，其状态/选点重复路径已删除并复用现有controller。真实
+1800步、7200条件事件重放以及全部完成后的正式完整性检查均通过。该结果支持“在本合同下跨episode**辅助配对**改善了
+same-video参照”，不证明端点前缀辅助项整体、`tau=1`、前5步或`1/3`必要；纯跨episode随机flow-time完整50-horizon
+主FM仍是未执行的独立假设。Test、FT、RL、外部比较和任何LR/seed/rank/head补救均未启动；等待Owner决定下一设计。
 
 ## 已完成目标：Writer输出空间与code投影诊断（2026-09-21）
 

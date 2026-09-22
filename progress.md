@@ -1,30 +1,30 @@
 # EMBER progress
 
-## 2026-09-22：辅助 episode 配对 fresh 对照已登记，等待 formal launch preflight
+## 2026-09-22：36任务 Writer 辅助 episode 配对 fresh 对照正式完成
 
-已读取最新Owner/专家连续意见并创建本轮goal。唯一 active design 是36任务的 fresh
-`data.teaching_episode=cross_episode` Writer：Source-71、normalization、36任务、K=1、完整38-target
-rank16 A/B、Writer/三Meta fresh、21主＋7辅助、`tau=1`前5步和`1/3`均保持；唯一科学变量为辅助 action
-episode 与teacher的对应关系。它不能被表述为纯原生FM或端点前缀辅助项整体的检验。
+本轮唯一变量为`data.teaching_episode: same_video → cross_episode`，其余Source-71、normalization、36任务、
+K=1、38-target rank16 A/B、fresh Writer/三Meta、每更新4任务、每task主21＋辅助7、`tau=1`前5步/`1/3`、seed、
+采样、优化器和LR时钟均不变。PR #3已合入`main`；它删除平行status/selection路径，复用coverage controller。真实
+coverage manifest与`exposures.jsonl`的1800更新、7200条件preflight通过teacher/主21、辅助噪声、teacher排除、未来5动作、
+无有放回及历史曝光逐行核验；该检查只证明事件合同。
 
-[PR #3](https://github.com/LinFyM/EMBER/pull/3)已合入并推送`main@5f3e2150`；临时PR/integration worktree和
-本地临时分支均已清理，canonical main保持唯一工作树。实现已删除平行status/selection路径，复用coverage
-controller、完整面板和选点入口。最终事件preflight以真实coverage manifest与原`exposures.jsonl`重放1800更新、
-7200条件，通过teacher/主21事件、辅助噪声、episode排除、未来5动作、无有放回和原曝光逐行核验。
+正式运行来自clean pushed detached runtime `64947492`。03:10 CST资源/配额preflight后，controller在gpu02:0--3
+（已知`gqma`小显存共驻、world4/frame8）完成至预登记上限1200；没有启动纯主FM、Test、FT、RL或外部比较。controller
+exit=0，六个correct和两个分支评测面板均有400条唯一Validation行、正确manifest、固定配对映射与12个worker全零退出。
+correct400为`151, 120, 154, 137, 129, 124`（step200..1200）；早停规则在1200以`sustained_decline`首次触发，故原
+early-stop选点与extended-run选点都为step600=154，post-stop extension为空。
 
-为满足物理资源恢复合同，canonical Writer增加受限的`--allow-topology-change`：仅ordinary dynamic
-`--resume`允许改变物理world size；模型、optimizer、scheduler、sampler、immutable event plan、逻辑4任务更新和
-任务权重保持，且`topology_transitions.jsonl`记录RNG来源与新旧world size。默认仍为严格同拓扑恢复；不会用于
-continuation/low-LR phase。相关完整Writer训练回归为59 passed，拓扑目标回归为4 passed，architecture guard为
-REVIEW且无硬违规。
+600的same-task-other=160、cross-suite-wrong=153；154处于118..155分支，因而不执行shuffle/reverse。全部同节点相对
+same-video为`+41,+28,+39,+50,+12,+44`，但600仍比冻结MT-BC300=155低1，且相邻R/G/L为84/36/67、80/74/40、
+101/36/53、107/22/30、98/26/31，未建立稳定保持。选中600相对same-video=115的R/G/L=78/76/37、J=.4084，
+Spatial净+45而Goal/Object净−8/−7。视频对照也不支持恢复性主张：correct−wrong=+1，correct−other=−6，且无顺序
+controls。结论严格限为本合同下跨episode**辅助配对**相对same-video的性能改善；不证明辅助项整体或其tau/前缀/权重，
+也不支持视频内容/顺序特异性恢复。
 
-formal study根已创建为`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922`，尚未启动GPU任务。
-2026-09-22 03:10 CST live preflight：gpu01所有卡已有高util或不足余量的他人任务；gpu02:0--3为同一已知`gqma`小显存、
-0% util共驻，最小空闲45858 MiB，故按旧22.803 GiB Writer峰值登记四卡frame8。data0 quota为124210612/1073741824 KiB、
-data1为901849716/1073741824 KiB，data0共享可用1177469952 KiB；16 GiB峰值预算通过。launch contract固定训练节点
-200..1200、四个选中测量面板预留、原早停记录和允许进入独立最终选点的post-stop extension。controller将在真正launch
-前重新核验相同设备身份/余量，且只在真实分段边界再查资源。没有足够不干扰的GPU/墙钟启动独立纯主FM；Test、FT、RL、
-外部比较均未启动，`paper-export`不使用。
+正式原件、完整性汇总、CSV/JSON和图表在
+`/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/analysis/report/`；训练loop为11720.8秒，
+六个correct评测5228.9秒、含两个后继面板6994.0秒，物化3200条件但manifest未记录elapsed。本轮已结束，当前无运行中
+EMBER任务或active design；不自动继续训练、调参或启动后继实验。
 
 ## Writer输出空间与code投影诊断完整交付（2026-09-21）
 

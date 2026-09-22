@@ -2,6 +2,7 @@ import copy
 import csv
 import importlib.util
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -145,6 +146,30 @@ def test_causal_encode_passes_policy_before_runtime_condition() -> None:
     result = _encode(loaded, cache, language_task=5, video_task=5, demo=46)
     assert observed == {"policy": policy, "condition": condition, "return_trace": True}
     assert result.core.item() == 0.0 and result.procedure.item() == 2.0
+
+
+def test_rollout_contracts_accept_registered_current_train_panel(monkeypatch, tmp_path) -> None:
+    from ember.writer import stability_rollouts
+
+    @dataclass
+    class Row:
+        suite: str
+        task_id: int
+
+    suites = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
+    targets = [Row(suite, task) for suite in suites for task in range(10)]
+    meta = [Row("libero_90", task) for task in (3, 11, 33, 56)]
+
+    def installed(_authorities, *, role, state_count, libero_config_dir):
+        assert state_count == 4 and libero_config_dir == tmp_path / "libero_config"
+        return (targets if role == "all_targets" else meta), {"root": "fixed"}
+
+    monkeypatch.setattr(stability_rollouts, "load_evaluation_authorities", lambda *_args: object())
+    monkeypatch.setattr(stability_rollouts, "inspect_installed_target_tasks", installed)
+    rows, _paths = stability_rollouts._selected_task_contracts(
+        Path("/assets"), tmp_path, additional_ids=(14, 20, 25, 34),
+    )
+    assert {14, 20, 25, 34} <= set(rows)
 
 
 class _CausalAllGroups(torch.nn.Module):

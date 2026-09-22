@@ -70,7 +70,9 @@ def _task_global_id(suite: str, task_id: int) -> int:
     return 40 + task_id if suite == "libero_90" else suites.index(suite) * 10 + task_id
 
 
-def _selected_task_contracts(asset_root: Path, output: Path) -> tuple[dict[int, dict[str, Any]], dict[str, str]]:
+def _selected_task_contracts(
+    asset_root: Path, output: Path, *, additional_ids: Sequence[int] = ()
+) -> tuple[dict[int, dict[str, Any]], dict[str, str]]:
     authorities = load_evaluation_authorities(asset_root / EVALUATION_CONFIG, asset_root)
     target, paths = inspect_installed_target_tasks(
         authorities, role="all_targets", state_count=4, libero_config_dir=output / "libero_config"
@@ -82,7 +84,7 @@ def _selected_task_contracts(asset_root: Path, output: Path) -> tuple[dict[int, 
         raise ValueError("target and LIBERO-90 evaluation installations differ")
     rows = {**{_task_global_id(row.suite, row.task_id): asdict(row) for row in target},
             **{_task_global_id(row.suite, row.task_id): asdict(row) for row in meta}}
-    selected = set(COMMON_HELD_TASKS) | set(TRAIN_PANEL_TASKS) | set(E3_HELD_TASKS)
+    selected = set(COMMON_HELD_TASKS) | set(TRAIN_PANEL_TASKS) | set(E3_HELD_TASKS) | set(map(int, additional_ids))
     if not selected <= rows.keys():
         raise ValueError("diagnostic rollout tasks are absent from installed authorities")
     return {task: rows[task] for task in selected}, paths
@@ -241,7 +243,6 @@ def run_asset_rollouts(
         LIBERO_CONFIG_PATH=str((output / "libero_config").resolve()),
         EMBER_LIBERO_ASSETS_ROOT=str(assets_root),
     )
-    installed, paths = _selected_task_contracts(asset_root, output)
     if panel_ids is None:
         selected_ids = list(COMMON_HELD_TASKS)
         if asset in E1_TRAIN_MODELS:
@@ -253,6 +254,7 @@ def run_asset_rollouts(
     state_ids = tuple(int(value) for value in state_ids)
     if not state_ids or len(state_ids) != len(set(state_ids)) or any(value < 0 for value in state_ids):
         raise ValueError("diagnostic rollout state ids must be unique non-negative integers")
+    installed, paths = _selected_task_contracts(asset_root, output, additional_ids=selected_ids)
     base = json.loads(current_evaluation_contract.read_text())
     writer = loaded_writer is not None
     adapter = None

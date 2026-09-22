@@ -11,7 +11,7 @@ J18完整验证已被Owner否决，不执行；失败状态专家监督历史已
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
 Owner进一步明确：07:30后可继续，09:00组会前的新结果仍可补入汇报；有好Validation必须完成冻结模型与MT-BC的Test对照。
 
-## 当前运行快照（2026-09-23 07:14）
+## 当前运行快照（2026-09-23 07:48）
 
 正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
 clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
@@ -20,7 +20,8 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；exact commands/env、allocation、quota、profile、选点合同均在launch目录。
 最新data0 quota used148345752KiB、soft1073741824KiB；当前study289780KiB，新增峰值32GiB有余量；Source/data无复制。
 部署和损失未变；fresh不是C600续训，也不复用profile权重。所有先行诊断workers已exit0，无其它本轮GPU任务遗留。
-完整Validation200/400/600/800/1000成绩分别为103/117/142/141/138，尚未达到改善门槛；继续原登记1200节点。
+完整Validation200/400/600/800/1000成绩分别为103/117/142/141/138，尚未达到改善门槛。
+正式训练已于07:46:59正常exit0结束1200更新；07:48在训练卡完全释放后恢复最后1200节点的完整评测，仍未选定模型。
 首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
 07:30前最多12物理卡的并行在Owner临时授权内；07:30之后必须重新压到常规总量再继续，09:00前可补结果。
 不使用J18 Validation，不按Test或shuffle/reverse结果再改方法。旧MTBC300 Test metadata修复脚本已只读核验，尚未apply或运行Test。
@@ -109,6 +110,14 @@ PPT包更新到21个完整Validation面板、8400条success投影，未选模型
 目的是避免07:30以后1200 checkpoint刚发布而训练GPU尚未释放时两节点同时用12卡。训练继续至1200，预计07:47退出；
 须在训练exit和GPU释放核验后归档此次stop/completion/driver日志，移除这一个任务自有stop marker，以相同冻结runtime/命令恢复最后1200评测。
 此次暂停没有按分数改变节点、模型、种子、视频映射或训练配方。预计最后完整结果08:05附近，再执行唯一冻结点的视频对照。
+
+07:47完整训练结束核验：1200实际更新、14400个task/video条件、100800主＋33600辅助queries；全程均值14.602秒/步，
+末100步14.712秒。1200 checkpoint完整发布，launcher exit0。双节点live核验本任务训练/评测GPU进程已全部释放。
+07:48恢复GPU01原六卡、每卡2 worker的最后1200节点；runtime、完整400条件与原命令保持，
+tmux为`ember-task-mixing-validation-final-20260923`，本次allocation总计6张物理卡。
+资源暂停的stop/completion/driver日志已原件归档到`launch/validation_resource_pause_after1000`；新恢复记录为
+`launch/validation_final_resume.json`。data0最新quota used160305856/1073741824KiB，study12236972KiB，
+剩余正式面板及条件性Test的保守新增峰值16GiB可容纳，未复制Source/data。仍只在完整1200面板后按原规则冻结。
 
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 

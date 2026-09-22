@@ -1,6 +1,25 @@
 # EMBER findings
 
-## Writer 因果路径与辅助梯度诊断：预登记边界（2026-09-22，结果待定）
+## Writer 因果路径与辅助梯度诊断：完整证据边界（2026-09-22）
+
+冻结 D1/D2/D3 已完整结束（544条路径 probe、112条路径闭环、16条虚拟更新、54条微训练更新、192条终点 probe、
+48条终点闭环），完整报告与原始行在
+`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/analysis/causal_diagnostics_report.md`。它不使用
+Validation/Test，也不进入 checkpoint 选择。
+
+D1 显示只有 Procedure donor replacement（CW）即可在 O1200/C600 上比只有 Core donor replacement（WC）产生明显更大的
+动作和 fused/LoRA 变化；二者都通过真实解码器消费者。C600 小面板 CC/CO/CW/WC/WW=2/5/3/5/4，O1200 CC/WW均为10/16，
+所以这不是正确视频内容或顺序在闭环上必要的证据。
+
+D2 的生产 native BF16 复放中，辅助项定义为已含权重的 `g_A=g_J-g_Q`。四个资产/窗口的 `||g_A||/||g_Q||` 是
+.978/.728/.890/.526，全局 `cos(g_Q,g_A)` 是 .113/.192/.243/.286，且各 J preclip norm<1；因此当前辅助项既非零也非
+主项的标量复制，但不能由梯度量级推出闭环因果效力或将其分解为 `tau=1`、前5步和`1/3`各自的效应。
+
+D3 固定 C600、events601..618、同一LR的18步端点中，J=6/16 breadth4、Q=5/16 breadth5、M=5/16 breadth4；三臂都有
+相对初始2/16的新增成功且 success set 不同。J仅在总成功多一条而没有覆盖/保持上的统一优势，故不选择 J/Q/M，不修改
+正式 cross-episode 辅助配对路线，也不声称辅助项整体有效或无效。
+
+## Writer 因果路径与辅助梯度诊断：预登记与中间工程记录（历史）
 
 本轮 D1/D2/D3 只检验冻结路径、当前辅助项的梯度/AdamW短窗作用和18步微训练端点；其合同在
 [`docs/writer_causal_diagnostics_20260922.md`](docs/writer_causal_diagnostics_20260922.md)。尚无结果，不能把既有

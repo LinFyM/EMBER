@@ -1,6 +1,25 @@
 # EMBER progress
 
-## 2026-09-22：Writer 因果路径与辅助梯度诊断 D1 完成，D2 工程修正后待续跑
+## 2026-09-22：Writer 因果路径与辅助梯度诊断 D1/D2/D3 完整交付
+
+专家后续的有界 D1/D2/D3 已结束，未启动 fresh 训练、正式 Validation/Test、FT、RL 或外部比较。最终
+`completion.json` 为 `status=complete`、`d3.status=complete`；canonical 原始表有544条路径 probe、112条路径闭环、
+16条虚拟 AdamW 候选、54条微训练更新、192条微训练 probe 与48条微训练闭环。最终 retry6 的 controller、D2 C600、
+D2 O1200、finalize 及 detached checkout 都 exit=0；D1/D3 已在 retry5 全零退出完成，retry6 只重放 D2/aggregate。
+
+D1 的 Procedure donor replacement 在 O1200/C600 造成比 Core donor replacement 更大的动作/Compiler/LoRA 改变，说明
+两条路径都被真实消费者使用；但 C600 的 CC/CO/CW/WC/WW 训练侧面板为2/5/3/5/4，不能主张正确视频内容优于其它路径。
+D2 的全 Writer `||g_A||/||g_Q||` 在 C600/O1200 的 B4/B36 为.978/.728/.890/.526，且全局cos为.113/.192/.243/.286；
+所有 J preclip norm<1。D3 从C600各18步的CC闭环为 J=6/16 breadth4、Q=5/16 breadth5、M=5/16 breadth4，success set
+不同，不能选择统一优胜臂。完整表格、逐task闭环、完整性与成本见
+`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/analysis/causal_diagnostics_report.md`；登记 stage-worker
+成本10,478.47秒，累计有效launch墙钟82.6分钟，低于120分钟预登记上限。
+
+早期 asset-root、encoder、旧VJP等价性与D2 CSV字段问题的 exit、stderr 和无效原件均被保留。旧 VJP 问题已修为直接记录
+native `g_J`、`g_Q` 和参数空间 `g_A=g_J-g_Q`；一事件残差`7.276e-12`。本诊断仅提供路径和辅助项整体的定位证据，
+不恢复视频内容/顺序特异性主张、不定位唯一历史根因，也不自动授权纯主FM、LR/seed/rank/head补救或后继训练。
+
+## 2026-09-22：Writer 因果路径与辅助梯度诊断中间记录（已由上方完整交付取代）
 
 Owner 转交专家后续方案后，已把它收敛为
 [有界 D1/D2/D3 合同](docs/writer_causal_diagnostics_20260922.md)：D1 用八个训练 task 的 CC/CW/WC/WW/CO 固定路径

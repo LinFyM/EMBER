@@ -1,6 +1,20 @@
 # EMBER task plan
 
-## 当前 active design：Writer 因果路径与辅助梯度诊断（2026-09-22，D1 完整，D2 工程修正后待续跑）
+## 已完成：Writer 因果路径与辅助梯度诊断（2026-09-22）
+
+专家要求的有界 D1/D2/D3 已在冻结 O1200/C600/C1200、M300 与 Source 上完整封存；当前**没有 active design 或获授权的
+后继训练**。最终 `completion.json` 为 complete：544 条 D1 路径 probe、112 条 D1 训练侧闭环、16 条 D2 AdamW 虚拟更新、
+54 次 D3 真实更新、192 条 D3 终点 probe 和48条 D3 终点闭环；最终 controller、worker、finalize 与 clean detached runtime
+均 exit=0。D2 分组表曾有仅影响报告字段的同名覆盖，原载荷保留，修复后只重放 D2/aggregate；D1/D3 未重跑。
+
+D1 证明 Core/Procedure replacement 均影响 bundle、LoRA 与动作，且 O1200/C600 上仅换 Procedure 的动作变化大于仅换
+Core；但 C600 的错误/同任务其他视频在16条闭环小面板上不低于 CC，不能写成正确视频内容必要性。D2 显示当前已含
+`tau=1`、前5步和`1/3`的辅助项为非零、非标量复制的 Writer 梯度，且与 AdamW 状态共同作用；D3 的 J/Q/M 三臂各18步
+均新增训练侧成功，J 总分6/16而Q breadth更高（5），没有统一赢家。它们不选择正式 checkpoint，不改变 PR #3 的辅助
+episode 配对结论，也不证明辅助项整体或其三个组成部分必要。完整报告和原始行位于
+`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/analysis/causal_diagnostics_report.md`。
+
+## 历史执行记录：Writer 因果路径与辅助梯度诊断（D1 完整、D2 工程修正后待续跑）
 
 Owner 要求按专家后续意见完成有界分析实验；合同见
 [Writer 因果路径与辅助梯度诊断](docs/writer_causal_diagnostics_20260922.md)。它只在冻结 O1200/C600/C1200、M300、

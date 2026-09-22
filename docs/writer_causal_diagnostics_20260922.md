@@ -2,7 +2,7 @@
 
 ## 状态与目的
 
-本设计响应 Owner 转交的专家后续意见，状态为**已登记、实现核验和首次资源 preflight 已完成、待 GPU launch**。它是冻结资产上的有界
+本设计响应 Owner 转交的专家后续意见，状态为**已完整执行并封存**。它是冻结资产上的有界
 分析实验，不是新的 Writer 候选训练，也不改变已完成的跨 episode 辅助配对结论。
 
 目标只有两项：
@@ -14,6 +14,19 @@
 
 它不声称定位历史性能下降的唯一根因，不选择正式 checkpoint，不产生 Test/FT/RL/外部比较，也不据结果自动启动
 纯主 FM、改 LR、换 seed、改 head 或延长训练。
+
+### 执行闭环（2026-09-22）
+
+最终 `completion.json` 登记 D1 544条路径 probe与112条闭环、D2 16条 virtual update、D3 54次真实更新、192条终点
+probe与48条终点闭环，均来自允许的训练侧面板；`status=complete`、`d3.status=complete`。最终 D2 重放的 controller、
+C600/O1200 worker、finalize和detached runtime均 exit=0；D1/D3 已先完整完成且不因报告字段修正重跑。登记stage-worker
+成本10,478.47秒、有效launch累计82.6分钟，未超过120分钟上限。完整结果、逐task表、原始CSV和错误原件入口为
+`/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/analysis/causal_diagnostics_report.md`。
+
+可采纳的严格结论仅为：Core/Procedure replacement 都有真实下游功能影响，当前端点前缀辅助项在Writer参数空间中是
+非零且不完全同向的梯度项，18步 J/Q/M 均产生不同的训练侧success set；没有臂在总分、breadth和保持上统一占优。
+因此本设计不选择后继候选，不证明正确视频内容/顺序特异性，也不证明辅助项整体或`tau=1`、前5步、`1/3`任何组成部分
+必要。
 
 ## 冻结资产、数据边界与预算
 

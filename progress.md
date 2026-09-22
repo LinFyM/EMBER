@@ -2,15 +2,16 @@
 
 ## 当前授权与时限（2026-09-23 00:52）
 
-Owner已睡眠，明确要求创建goal并自主完成安排；撤销先前的正式训练前等待确认要求。最晚07:30交付本夜真实结果，
+Owner已睡眠，明确要求创建goal并自主完成安排；撤销先前的正式训练前等待确认要求。07:30交付当时已完成的真实结果，
 争取02:30、最晚03:00开始fresh，最多1200步；训练、完整Validation与主要视频对照目标四小时，不要求额外相邻稳定性证明。
 早有明确好点可停止训练转视频对照，余量可用于后续分析/独立RL。唯一固定标签预算12条件fresh已于02:51启动，见下方当前快照。
 J18完整验证已被Owner否决，不执行；失败状态专家监督历史已纠正：8月21日966353e确实做过learner-state aggregation，
 44/44→54/47（每臂250）仍未保留专家能力，因此不把它列为未试新方向。目标仍是明显超过MT-BC300=155/400且视频提供有益增量。
 沿用现有记录，不新增面向Owner的报告文件；本机session约07:30读取状态制作PPT，不使用Test选择方法。
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
+Owner进一步明确：07:30后可继续，09:00组会前的新结果仍可补入汇报；有好Validation必须完成冻结模型与MT-BC的Test对照。
 
-## 当前运行快照（2026-09-23 05:35）
+## 当前运行快照（2026-09-23 06:30）
 
 正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
 clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
@@ -19,7 +20,7 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；exact commands/env、allocation、quota、profile、选点合同均在launch目录。
 最新data0 quota used148345752KiB、soft1073741824KiB；当前study289780KiB，新增峰值32GiB有余量；Source/data无复制。
 部署和损失未变；fresh不是C600续训，也不复用profile权重。所有先行诊断workers已exit0，无其它本轮GPU任务遗留。
-完整Validation200/400/600成绩分别为103/117/142（见下方记录），尚未达到改善门槛；继续原登记轨迹。
+完整Validation200/400/600/800成绩分别为103/117/142/141（见下方记录），尚未达到改善门槛；继续原登记1000/1200节点。
 首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
 07:30前最多12物理卡的并行在Owner临时授权内；07:30之后必须重新压到常规总量再继续，09:00前可补结果。
 不使用J18 Validation，不按Test或shuffle/reverse结果再改方法。旧MTBC300 Test metadata修复脚本已只读核验，尚未apply或运行Test。
@@ -89,6 +90,14 @@ PPT包已更新为19个完整Validation面板、7600条success投影；无选定
 32相对8仅约9.4%编译阶段收益，当前继续使用8，不改变运行中/后续配对设置；保留更直接的other精确bank复用优化。
 没有梯度、闭环、Test或模型选择；原件在`diagnostics/native_chunk_profile`。首个入口命名遮蔽stdlib profile的import失败
 已保留为`import_failure.*`，改为`benchmark_chunks.py`后运行成功；失败未发生模型计算。
+
+06:25第四个完整Validation400结束，800步141/400，12 workers exit0、400唯一条件与配对合同通过。
+按Long1/Long9/Goal3/Goal6/Object1/Object6/Spatial3/Spatial6依次13/0/0/42/46/4/12/24，各50；breadth仍6。
+相对本轨迹600步保留108、得33、失34；相对MTBC300保留91、得50、失64，净-14；相对旧C600净-13。
+Object1增加16条同时Long1减少13条，未出现整体继续改善；当前最好600步142仍低于MTBC300的155。
+PPT包更新到20个完整Validation面板、8000条success投影；无selected checkpoint、controls或Test。
+06:30实际训练889更新，继续原登记节点，不追加科学分支。预计1000完整评测在07:15附近、1200完整评测在08:05附近。
+07:30后按常规总卡数调度；若未达180则按既定预算内最佳点冻结并完成视频对照，如实交付未解决结果，不下调门槛或用Test选点。
 
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 

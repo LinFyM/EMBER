@@ -1,0 +1,191 @@
+{
+  "generated_utc": "2026-09-22T20:07:43.587135+00:00",
+  "training_process_exited": false,
+  "training_exit": null,
+  "latest_complete_validation_step": 200,
+  "latest_successes": 103,
+  "selected_step": null,
+  "qualification_successes": 180,
+  "test_results_in_this_bundle": false,
+  "protocol": "libero_24_8_8_coverage_v1",
+  "training_commit": "0684ee0593b79b29ca4c86e43e47133143be8c27",
+  "source_results_root_label": "ember_runs",
+  "sources": [
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 50,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000050/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:f54a465343544f3995702ee63b59bb06",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 100,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000100/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:1c761497883c458b959ebf52f01c0301",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 150,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000150/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:b1addd4e0d9b47bf8adbc5e453823265",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 200,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000200/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:fb2d06bbc3d646a5a5743b9b22d8b305",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 250,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000250/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:404b3804e6d344dcbc882be8ef9367fe",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 300,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000300/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:1c85c7df430b462a9b372578edc0ba93",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 350,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000350/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:935e314eb14a41208b4c9622b17da2eb",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 400,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000400/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:432018b9e3f246f1ae3e369152242443",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 450,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000450/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:566968a811d34b39b8e553d6e4abb6fb",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "MT-BC",
+      "optimizer_updates": 500,
+      "source_results": "coverage_retraining_20260920/evaluation/mtbc_00000500/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:b6ff0d53be454685b423f57594ed2c6b",
+      "evaluation_commit": "bee2d5e85db9d796daefe32c904457c753d1e31e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "Previous EMBER",
+      "optimizer_updates": 200,
+      "source_results": "coverage_retraining_cross_episode_aux_20260922/evaluation/writer_00000200_correct/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:e5e5ece050144c35add45a31b2e580a3",
+      "evaluation_commit": "64947492f48d9ec20fa8d2bf70d98da02ebf126e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "Previous EMBER",
+      "optimizer_updates": 400,
+      "source_results": "coverage_retraining_cross_episode_aux_20260922/evaluation/writer_00000400_correct/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:824650d3915f4e5da17596d506f43339",
+      "evaluation_commit": "64947492f48d9ec20fa8d2bf70d98da02ebf126e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "Previous EMBER",
+      "optimizer_updates": 600,
+      "source_results": "coverage_retraining_cross_episode_aux_20260922/evaluation/writer_00000600_correct/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:35b0207e829144828ac67c1bbf1cc41d",
+      "evaluation_commit": "64947492f48d9ec20fa8d2bf70d98da02ebf126e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "Previous EMBER",
+      "optimizer_updates": 800,
+      "source_results": "coverage_retraining_cross_episode_aux_20260922/evaluation/writer_00000800_correct/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:bd8da56a867c424eb540a9288e106c70",
+      "evaluation_commit": "64947492f48d9ec20fa8d2bf70d98da02ebf126e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "Previous EMBER",
+      "optimizer_updates": 1000,
+      "source_results": "coverage_retraining_cross_episode_aux_20260922/evaluation/writer_00001000_correct/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:f58bab2c40de4d27a2fab560483b508e",
+      "evaluation_commit": "64947492f48d9ec20fa8d2bf70d98da02ebf126e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "Previous EMBER",
+      "optimizer_updates": 1200,
+      "source_results": "coverage_retraining_cross_episode_aux_20260922/evaluation/writer_00001200_correct/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:3952cfa92ab648a0a1441443039c8ade",
+      "evaluation_commit": "64947492f48d9ec20fa8d2bf70d98da02ebf126e",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "Task-mixing EMBER",
+      "optimizer_updates": 200,
+      "source_results": "coverage_task_mixing_20260923/evaluation/writer_00000200_correct/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:c958b0b0c69749758031e752d2465a80",
+      "evaluation_commit": "c9844dfc8db6adf68ed232236bd90d1572f583f5",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    }
+  ],
+  "notes": [
+    "Only complete formal Validation400 panels are included.",
+    "Success-row CSV is a projection; complete RNG/video records remain in source results.",
+    "Optimizer-update counts have different condition/query budgets across methods.",
+    "A low early point does not establish the terminal performance of the run."
+  ]
+}

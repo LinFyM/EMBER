@@ -1,0 +1,48 @@
+{
+  "exported_at_utc": "2026-09-22T20:07:45+00:00",
+  "project": "EMBER",
+  "run_id": "overnight_20260923",
+  "src": "/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923/presentation_inputs",
+  "out": "/data1/user/ymdai/projects/EMBER/docs/review_materials/20260923/overnight_results",
+  "copy_mode": "rsync",
+  "stats": {
+    "files": 8,
+    "total_bytes": 642943
+  },
+  "git": {
+    "root": null,
+    "commit": null,
+    "dirty": null
+  },
+  "metrics": {
+    "found": false
+  },
+  "skipped_counts": {},
+  "filters": {
+    "allowed_exts": [
+      ".csv",
+      ".eps",
+      ".jpeg",
+      ".jpg",
+      ".json",
+      ".pdf",
+      ".png",
+      ".svg",
+      ".tex",
+      ".tsv",
+      ".yaml",
+      ".yml"
+    ],
+    "excluded_exts": [
+      ".bin",
+      ".ckpt",
+      ".npy",
+      ".npz",
+      ".pt",
+      ".pth",
+      ".safetensors"
+    ],
+    "max_file_bytes": 52428800,
+    "max_tex_bytes": 262144
+  }
+}

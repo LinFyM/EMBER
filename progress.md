@@ -46,6 +46,14 @@ eval commit c9844dfc、Writer200、Validation/formal/400及利用率上限100，
 原件在`evaluation/writer_00000200_correct/results.json`与`launch/writer_00000200_readout.json`，严格配对比较在
 `launch/writer_00000200_reference_comparisons.json`。watcher已释放GPU01，等待完整400步checkpoint。
 
+04:08完成小试到正式实现的只读审计：12条件权重主1/12、辅1/36，84+28标签、完整21/7随机池的前缀选取、
+三Meta回传、全局SUM后clip1再Adam均一致，source冻结无变化；未发现支持修正当前运行的工程缺陷。
+D54为C600完整Adam上的54步固定LR，当前是fresh及150步warmup，不能把小试成功等同于fresh成功。
+另记录辅助第三条query的轮换相位在事件601–762处相差两格，总标签和均值权重不变，无证据解释当前泛化缺口。
+PPT用小型结果包位于`docs/review_materials/20260923/overnight_results`：17个已完成Validation400面板、
+6800条success投影、逐任务CSV/配对统计与PNG/SVG/PDF图，完整原始RNG/video记录仍在各正式run。
+`launch/refresh_presentation.py`和paper-export可更新同一目录；当前新模型仅200=103，尚无selected checkpoint或Test。
+
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 
 capacity_route八worker全部完成160闭环，父／完整Writer／free code／固定范数code／free A/B=9/16/11/11/14（各32），

@@ -1,0 +1,18 @@
+method,optimizer_updates,role,arm,successes,episodes,percent,selected
+MT-BC,50,validation,correct,82,400,20.5,False
+MT-BC,100,validation,correct,112,400,28.0,False
+MT-BC,150,validation,correct,99,400,24.75,False
+MT-BC,200,validation,correct,133,400,33.25,False
+MT-BC,250,validation,correct,136,400,34.0,False
+MT-BC,300,validation,correct,155,400,38.75,True
+MT-BC,350,validation,correct,131,400,32.75,False
+MT-BC,400,validation,correct,130,400,32.5,False
+MT-BC,450,validation,correct,138,400,34.5,False
+MT-BC,500,validation,correct,119,400,29.75,False
+Previous EMBER,200,validation,correct,151,400,37.75,False
+Previous EMBER,400,validation,correct,120,400,30.0,False
+Previous EMBER,600,validation,correct,154,400,38.5,True
+Previous EMBER,800,validation,correct,137,400,34.25,False
+Previous EMBER,1000,validation,correct,129,400,32.25,False
+Previous EMBER,1200,validation,correct,124,400,31.0,False
+Task-mixing EMBER,200,validation,correct,103,400,25.75,False

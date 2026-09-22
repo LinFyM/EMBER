@@ -1,0 +1,137 @@
+method,optimizer_updates,role,arm,suite,task_id,language,successes,episodes
+MT-BC,50,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,7,50
+MT-BC,50,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,50,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+MT-BC,50,validation,correct,libero_goal,6,put the cream cheese in the bowl,36,50
+MT-BC,50,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,30,50
+MT-BC,50,validation,correct,libero_object,6,pick up the butter and place it in the basket,0,50
+MT-BC,50,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,2,50
+MT-BC,50,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,7,50
+MT-BC,100,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,13,50
+MT-BC,100,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,100,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+MT-BC,100,validation,correct,libero_goal,6,put the cream cheese in the bowl,29,50
+MT-BC,100,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,34,50
+MT-BC,100,validation,correct,libero_object,6,pick up the butter and place it in the basket,0,50
+MT-BC,100,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,23,50
+MT-BC,100,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,13,50
+MT-BC,150,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,15,50
+MT-BC,150,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,150,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+MT-BC,150,validation,correct,libero_goal,6,put the cream cheese in the bowl,24,50
+MT-BC,150,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,40,50
+MT-BC,150,validation,correct,libero_object,6,pick up the butter and place it in the basket,1,50
+MT-BC,150,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,16,50
+MT-BC,150,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,3,50
+MT-BC,200,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,22,50
+MT-BC,200,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,200,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+MT-BC,200,validation,correct,libero_goal,6,put the cream cheese in the bowl,32,50
+MT-BC,200,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,32,50
+MT-BC,200,validation,correct,libero_object,6,pick up the butter and place it in the basket,7,50
+MT-BC,200,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,29,50
+MT-BC,200,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,11,50
+MT-BC,250,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,24,50
+MT-BC,250,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,250,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+MT-BC,250,validation,correct,libero_goal,6,put the cream cheese in the bowl,23,50
+MT-BC,250,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,33,50
+MT-BC,250,validation,correct,libero_object,6,pick up the butter and place it in the basket,9,50
+MT-BC,250,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,40,50
+MT-BC,250,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,7,50
+MT-BC,300,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,20,50
+MT-BC,300,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,300,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+MT-BC,300,validation,correct,libero_goal,6,put the cream cheese in the bowl,36,50
+MT-BC,300,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,35,50
+MT-BC,300,validation,correct,libero_object,6,pick up the butter and place it in the basket,12,50
+MT-BC,300,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,43,50
+MT-BC,300,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,9,50
+MT-BC,350,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,25,50
+MT-BC,350,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,350,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,1,50
+MT-BC,350,validation,correct,libero_goal,6,put the cream cheese in the bowl,32,50
+MT-BC,350,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,16,50
+MT-BC,350,validation,correct,libero_object,6,pick up the butter and place it in the basket,22,50
+MT-BC,350,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,34,50
+MT-BC,350,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,1,50
+MT-BC,400,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,23,50
+MT-BC,400,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,400,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+MT-BC,400,validation,correct,libero_goal,6,put the cream cheese in the bowl,33,50
+MT-BC,400,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,11,50
+MT-BC,400,validation,correct,libero_object,6,pick up the butter and place it in the basket,26,50
+MT-BC,400,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,37,50
+MT-BC,400,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,0,50
+MT-BC,450,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,25,50
+MT-BC,450,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,450,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+MT-BC,450,validation,correct,libero_goal,6,put the cream cheese in the bowl,36,50
+MT-BC,450,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,28,50
+MT-BC,450,validation,correct,libero_object,6,pick up the butter and place it in the basket,11,50
+MT-BC,450,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,38,50
+MT-BC,450,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,0,50
+MT-BC,500,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,20,50
+MT-BC,500,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+MT-BC,500,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+MT-BC,500,validation,correct,libero_goal,6,put the cream cheese in the bowl,34,50
+MT-BC,500,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,16,50
+MT-BC,500,validation,correct,libero_object,6,pick up the butter and place it in the basket,16,50
+MT-BC,500,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,33,50
+MT-BC,500,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,0,50
+Previous EMBER,200,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,19,50
+Previous EMBER,200,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+Previous EMBER,200,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+Previous EMBER,200,validation,correct,libero_goal,6,put the cream cheese in the bowl,38,50
+Previous EMBER,200,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,33,50
+Previous EMBER,200,validation,correct,libero_object,6,pick up the butter and place it in the basket,0,50
+Previous EMBER,200,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,47,50
+Previous EMBER,200,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,14,50
+Previous EMBER,400,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,21,50
+Previous EMBER,400,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+Previous EMBER,400,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,5,50
+Previous EMBER,400,validation,correct,libero_goal,6,put the cream cheese in the bowl,32,50
+Previous EMBER,400,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,29,50
+Previous EMBER,400,validation,correct,libero_object,6,pick up the butter and place it in the basket,0,50
+Previous EMBER,400,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,29,50
+Previous EMBER,400,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,4,50
+Previous EMBER,600,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,22,50
+Previous EMBER,600,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+Previous EMBER,600,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+Previous EMBER,600,validation,correct,libero_goal,6,put the cream cheese in the bowl,34,50
+Previous EMBER,600,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,33,50
+Previous EMBER,600,validation,correct,libero_object,6,pick up the butter and place it in the basket,2,50
+Previous EMBER,600,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,41,50
+Previous EMBER,600,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,22,50
+Previous EMBER,800,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,25,50
+Previous EMBER,800,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+Previous EMBER,800,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+Previous EMBER,800,validation,correct,libero_goal,6,put the cream cheese in the bowl,41,50
+Previous EMBER,800,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,11,50
+Previous EMBER,800,validation,correct,libero_object,6,pick up the butter and place it in the basket,0,50
+Previous EMBER,800,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,45,50
+Previous EMBER,800,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,15,50
+Previous EMBER,1000,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,19,50
+Previous EMBER,1000,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+Previous EMBER,1000,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+Previous EMBER,1000,validation,correct,libero_goal,6,put the cream cheese in the bowl,44,50
+Previous EMBER,1000,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,13,50
+Previous EMBER,1000,validation,correct,libero_object,6,pick up the butter and place it in the basket,0,50
+Previous EMBER,1000,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,42,50
+Previous EMBER,1000,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,11,50
+Previous EMBER,1200,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,14,50
+Previous EMBER,1200,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+Previous EMBER,1200,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+Previous EMBER,1200,validation,correct,libero_goal,6,put the cream cheese in the bowl,46,50
+Previous EMBER,1200,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,19,50
+Previous EMBER,1200,validation,correct,libero_object,6,pick up the butter and place it in the basket,0,50
+Previous EMBER,1200,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,41,50
+Previous EMBER,1200,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,4,50
+Task-mixing EMBER,200,validation,correct,libero_10,1,put both the cream cheese box and the butter in the basket,6,50
+Task-mixing EMBER,200,validation,correct,libero_10,9,put the yellow and white mug in the microwave and close it,0,50
+Task-mixing EMBER,200,validation,correct,libero_goal,3,open the top drawer and put the bowl inside,0,50
+Task-mixing EMBER,200,validation,correct,libero_goal,6,put the cream cheese in the bowl,42,50
+Task-mixing EMBER,200,validation,correct,libero_object,1,pick up the cream cheese and place it in the basket,36,50
+Task-mixing EMBER,200,validation,correct,libero_object,6,pick up the butter and place it in the basket,2,50
+Task-mixing EMBER,200,validation,correct,libero_spatial,3,pick up the black bowl on the cookie box and place it on the plate,11,50
+Task-mixing EMBER,200,validation,correct,libero_spatial,6,pick up the black bowl next to the cookie box and place it on the plate,6,50

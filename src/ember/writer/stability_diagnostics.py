@@ -309,7 +309,9 @@ def snapshot_parent(loaded: LoadedWriter) -> tuple[dict[str, torch.Tensor], dict
 def restore_parent(loaded: LoadedWriter, snapshot: tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]) -> None:
     model, optimizer = snapshot
     loaded.runtime.state.load_state_dict(model, strict=True)
-    loaded.optimizer.load_state_dict(optimizer)
+    # Optimizer.load_state_dict can retain tensor references from its argument;
+    # virtual candidates must not mutate the reusable parent snapshot.
+    loaded.optimizer.load_state_dict(copy.deepcopy(optimizer))
 
 
 def save_diagnostic_checkpoint(loaded: LoadedWriter, output: Path, *, local_step: int, parent_step: int) -> Path:

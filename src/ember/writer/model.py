@@ -383,6 +383,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         task_span_mask: torch.Tensor,
         *,
         frame_parallel_group=None,
+        return_trace: bool = False,
     ) -> tuple[
         torch.Tensor,
         torch.Tensor,
@@ -459,7 +460,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             valid_frames,
             valid_task_tokens,
         )
-        return (
+        encoded = (
             core_memory,
             valid_task_tokens,
             procedure_memory,
@@ -467,6 +468,49 @@ class CompleteLoRAWriter(torch.nn.Module):
             valid_frames,
             frame_attention,
         )
+        if not return_trace:
+            return encoded
+        return encoded, {
+            "frame_evidence": frame_evidence,
+            "interactions": interactions,
+            "horizon": horizon,
+        }
+
+    def compile_encoded_task(
+        self,
+        core_memory: torch.Tensor,
+        valid_core: torch.Tensor,
+        procedure_memory: torch.Tensor,
+        positions: torch.Tensor,
+        valid_frames: torch.Tensor,
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
+        """Decode one explicitly paired Core/Procedure bundle through the canonical compiler."""
+        if core_memory.shape[0] != procedure_memory.shape[0]:
+            raise WriterModelError("Core and Procedure condition batches differ")
+        expert, action_in, action_out = self.compiler(
+            core_memory,
+            valid_core,
+            procedure_memory,
+            positions,
+            valid_frames,
+        )
+        result: dict[str, torch.Tensor] = {}
+        for item in self.tensor_specs:
+            key, layer = self._decoding[item.name]
+            if key.startswith("action_in_"):
+                source = action_in
+            elif key.startswith("action_out_"):
+                source = action_out
+            else:
+                if layer is None:
+                    raise WriterModelError("expert LoRA output lost its layer")
+                source = expert[:, layer]
+            rows = self.factor_heads[key](source)
+            generated = rows.transpose(-1, -2) if item.transpose_output else rows
+            template = getattr(self, self._template_buffers[item.name])
+            value = generated.to(dtype=template.dtype) + template[None]
+            result[item.name] = value[0] if core_memory.shape[0] == 1 else value
+        return result, {"expert": expert, "action_in": action_in, "action_out": action_out}
 
     def forward(
         self,
@@ -497,27 +541,11 @@ class CompleteLoRAWriter(torch.nn.Module):
             task_span_mask,
             frame_parallel_group=frame_parallel_group,
         )
-        expert, action_in, action_out = self.compiler(
+        result, _trace = self.compile_encoded_task(
             core_memory,
             valid_core,
             procedure_memory,
             positions,
             valid_frames,
         )
-        result: dict[str, torch.Tensor] = {}
-        for item in self.tensor_specs:
-            key, layer = self._decoding[item.name]
-            if key.startswith("action_in_"):
-                source = action_in
-            elif key.startswith("action_out_"):
-                source = action_out
-            else:
-                if layer is None:
-                    raise WriterModelError("expert LoRA output lost its layer")
-                source = expert[:, layer]
-            rows = self.factor_heads[key](source)
-            generated = rows.transpose(-1, -2) if item.transpose_output else rows
-            template = getattr(self, self._template_buffers[item.name])
-            value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = value[0] if core_memory.shape[0] == 1 else value
         return result

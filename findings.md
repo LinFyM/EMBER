@@ -1,5 +1,12 @@
 # EMBER findings
 
+## Writer 因果路径与辅助梯度诊断：预登记边界（2026-09-22，结果待定）
+
+本轮 D1/D2/D3 只检验冻结路径、当前辅助项的梯度/AdamW短窗作用和18步微训练端点；其合同在
+[`docs/writer_causal_diagnostics_20260922.md`](docs/writer_causal_diagnostics_20260922.md)。尚无结果，不能把既有
+same-video/cross-episode 或历史 Core/Procedure 消融的发现外推为本轮结论。尤其 Q 对 J/M 的任何差异最多检验当前
+端点前缀辅助项整体，不能分别证明或否定 `tau=1`、前5步和`1/3`；所有结果也不自动授权新的正式训练路线。
+
 本文件保留跨轮结论及其适用边界；历史段落的“当前／下一步／active”只表示当时时点。
 当前Owner要求见[稳定要求](docs/current_owner_requirements.md)，当前授权、设计和执行状态只看[progress](progress.md)。
 完整历史索引、旧设计及原始证据入口见[research_history](docs/research_history.md)。

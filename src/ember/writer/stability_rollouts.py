@@ -196,6 +196,7 @@ def _writer_panel_adapter(
     *,
     asset_root: Path,
     selected_ids: Sequence[int],
+    state_ids: Sequence[int],
     installed: Mapping[int, Mapping[str, Any]],
     states: Mapping[str, Mapping[str, torch.Tensor]] | None,
     evidence: Mapping[str, Mapping[str, Any]] | None,
@@ -205,7 +206,7 @@ def _writer_panel_adapter(
     else:
         expected = {
             f"{installed[task]['suite']}:{int(installed[task]['task_id'])}:{state}"
-            for task in selected_ids for state in range(4)
+            for task in selected_ids for state in state_ids
         }
         if set(states) != expected or set(evidence or {}) != expected:
             raise ValueError("precompiled Writer panel does not match requested task/state rows")
@@ -216,6 +217,7 @@ def run_asset_rollouts(
     *, asset: str, asset_root: Path, output: Path, physical_gpu_id: int,
     current_evaluation_contract: Path, loaded_writer: LoadedWriter | None,
     frozen_policy: FrozenPolicy | None, panel_ids: Sequence[int] | None = None,
+    state_ids: Sequence[int] = (0, 1, 2, 3),
     compact_capture: bool = False,
     full_capture_conditions: Sequence[tuple[int, int]] = (),
     precompiled_states: Mapping[str, Mapping[str, torch.Tensor]] | None = None,
@@ -248,12 +250,15 @@ def run_asset_rollouts(
         selected_ids = list(panel_ids)
     if len(selected_ids) != len(set(selected_ids)):
         raise ValueError("diagnostic rollout panel contains duplicate tasks")
+    state_ids = tuple(int(value) for value in state_ids)
+    if not state_ids or len(state_ids) != len(set(state_ids)) or any(value < 0 for value in state_ids):
+        raise ValueError("diagnostic rollout state ids must be unique non-negative integers")
     base = json.loads(current_evaluation_contract.read_text())
     writer = loaded_writer is not None
     adapter = None
     if writer:
         adapter = _writer_panel_adapter(
-            loaded_writer, asset_root=asset_root, selected_ids=selected_ids, installed=installed,
+            loaded_writer, asset_root=asset_root, selected_ids=selected_ids, state_ids=state_ids, installed=installed,
             states=precompiled_states, evidence=precompiled_evidence,
         )
         policy, processor = loaded_writer.runtime.policy, loaded_writer.runtime.processor
@@ -276,7 +281,7 @@ def run_asset_rollouts(
                 else "train"
             )
             for row in rollout_shard(
-                envs=envs, init_states=init_states, task=task, state_ids=tuple(range(4)),
+                envs=envs, init_states=init_states, task=task, state_ids=state_ids,
                 contract=contract, policy=policy, preprocess=processor,
                 postprocess=processor.unnormalize_action, task_adapter=adapter,
             ):
@@ -291,7 +296,7 @@ def run_asset_rollouts(
         pool.close()
         if adapter is not None:
             adapter.close()
-    expected = 4 * len(selected_ids)
+    expected = len(state_ids) * len(selected_ids)
     if len(rows) != expected:
         raise ValueError(f"diagnostic rollout row count changed: {len(rows)} != {expected}")
     return rows

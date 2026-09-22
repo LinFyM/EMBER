@@ -88,6 +88,11 @@ J/F固定54更新，重放原events601–654、每更新4tasks、21+7查询、�
 脚本为study/objective_pilot/objective_pilot.py，复用冻结runtime的SupervisedEngine与原rollout helper；无canonical训练源码改动。
 预计三臂各一GPU，J/F训练加评测45–65分钟，P更早结束；每臂硬上限90分钟。结束后统一解释，正式训练仍须Owner确认。
 
+在P/J/F尚未读分前补充一个冻结参照：M300原始rank128在完全相同36 Train tasks×state0/1运行72闭环，
+不新增probe、不训练、不换checkpoint。它用来判断更新后的Writer是否只是靠近已有训练侧公共策略能力，
+不改变上方F相对P/J的预登记判断，不成为新模型选点。复用P释放的GPU，预计15–25分钟，上限30分钟，预计不延长主实验墙钟。
+目标24与Source辅助12仍分开；只在72行完整且P/J/F全部完成后一起解释。
+
 ## 比较口径补核：Spatial3错误视频donor的冻结2×2
 
 核对旧新原始condition发现：旧O1500的Spatial3 wrong来自Object3/global13，新C600来自Object1/global11。

@@ -4,13 +4,26 @@
 
 Owner已睡眠，明确要求创建goal并自主完成安排；撤销先前的正式训练前等待确认要求。最晚07:30交付本夜真实结果，
 争取02:30、最晚03:00开始fresh，最多1200步；训练、完整Validation与主要视频对照目标四小时，不要求额外相邻稳定性证明。
-早有明确好点可停止训练转视频对照，余量可用于后续分析/独立RL。当前仍无正式新训练在途，正在进行有界原因检验与小试准备。
+早有明确好点可停止训练转视频对照，余量可用于后续分析/独立RL。唯一固定标签预算12条件fresh已于02:51启动，见下方当前快照。
 J18完整验证已被Owner否决，不执行；失败状态专家监督历史已纠正：8月21日966353e确实做过learner-state aggregation，
 44/44→54/47（每臂250）仍未保留专家能力，因此不把它列为未试新方向。目标仍是明显超过MT-BC300=155/400且视频提供有益增量。
 沿用现有记录，不新增面向Owner的报告文件；本机session约07:30读取状态制作PPT，不使用Test选择方法。
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
 
-## 2026-09-23 01:36：局部容量矩阵完成，当前窄修正仍在验证
+## 当前运行快照（2026-09-23 02:51）
+
+正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
+clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
+tmux`ember-task-mixing-train-20260923`；Validation gpu01:0/1/2/4/5/6，每卡2 persistent workers，
+tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只消费完整200倍数checkpoint并在每次launch前双节点live检查。
+输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；exact commands/env、allocation、quota、profile、选点合同均在launch目录。
+最新data0 quota used148345752KiB、soft1073741824KiB；当前study289780KiB，新增峰值32GiB有余量；Source/data无复制。
+部署和损失未变；fresh不是C600续训，也不复用profile权重。所有先行诊断workers已exit0，无其它本轮GPU任务遗留。
+当前尚无新正式Validation成绩。首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
+07:30前最多12物理卡的并行在Owner临时授权内；07:30之后必须重新压到常规总量再继续，09:00前可补结果。
+不使用J18 Validation，不按Test或shuffle/reverse结果再改方法。旧MTBC300 Test metadata修复脚本已只读核验，尚未apply或运行Test。
+
+## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 
 capacity_route八worker全部完成160闭环，父／完整Writer／free code／固定范数code／free A/B=9/16/11/11/14（各32），
 结论与校准限制见findings§129。没有复现当前free A/B明显胜完整Writer，不据旧oracle结果扩大head或移除归一化。

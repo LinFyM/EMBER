@@ -57,6 +57,16 @@ profile在gpu02六卡与上述每卡一个本人eval共驻，最少27.9GiB余量
 新输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；strg01实测data0用148015368KiB、soft1073741824KiB，
 共享可用1020929024KiB，登记后续最大新增32GiB（当前profile≤1GiB），复用全部source/data资产。正式采用与选点合同仍待闭环裁决。
 
+02:46固定新条件复核192行全部exit0：D54的CC/other/wrong=13/15/11，J54=11/12/10（各32）；
+与原面板合计D30/31/25、J26/24/25（各64），两次正确视频的绝对改善同向，wrong总数未变。B54原168行也完整exit0：
+Train72=47，视频19/17/14；较D53的整体能力不足，不用三倍标签的B配方正式训练。唯一采用固定标签预算D，
+其初步正证据尚不证明新任务泛化或全部根因。相关结果见findings§130，不再扩展本轮小矩阵。
+六卡profile6→完整resume7已通过，实际每步12不同任务、84主+28辅、每rank2条件，mean20.12s含本人eval共驻，
+peak allocated20.70/reserved25.11GiB。原训练105 tests加物化/controls153 tests通过；旧fixture schema已同步，校验未放宽。
+主树已整合12条件单一运行面；正式合同登记在active [夜间设计](docs/overnight_root_cause_analysis_20260922.md)末节。
+正式fresh最多1200、checkpoint100间隔但仅200倍数correct400选点；首个完整节点≥180冻结，未达则预算内最高分、同分取早。
+冻结后补视频controls；≥180则完整Test400+既定MTBC300 Test400，无Test反馈。正在提交/推送及最后live准入，尚未正式launch。
+
 ## 2026-09-23 01:35：Owner再次明确实证门槛与最终Test
 
 Owner补充：不得草率启动正式训练，必须有实证；Validation出现好结果后须做Test。07:30是首轮交付节点而非强制停止，

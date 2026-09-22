@@ -114,3 +114,46 @@ Goal6、Long1的donor也随协议改变。此问题不改已有各自面板事�
 第一批结果合并后，只对得到具体支持且尚未被历史证据淘汰的一个机制登记短程配对验证。
 须明确它与既有D3的J/Q/M及失败低LR续训有何不同，并保留原目标/数据/训练侧闭环的对照。
 若没有得到支持的干预，不用新的泛化说法包装根因，也不自动投入正式训练。正式方案一律等待Owner确认。
+
+## 2026-09-23：有实证后的任务覆盖干预与唯一fresh合同
+
+本节按Owner00:52后自主授权取代上文历史确认停点；保留所有信息墙和正式400合同。Owner要求正式训练前必须有闭环实证，
+07:30前交付首轮结果、09:00前可补充；07:30前临时取消物理卡数量上限，之后恢复常规共享资源边界。
+
+原每更新4个task/video条件、每条件21主+7辅。改为12个不同task/video条件，每条件7主，辅助数量按位置轮换[3,2,2]×4；
+动作标签总数仍84+28，条件主均值权为1/12、辅均值权为1/36。实际查询是原21/7事件与policy RNG池的前缀，不更改信息来源。
+因此主辅助期望目标、36任务等权、Source、模型、Adam及LR不变；每次共享更新同时覆盖的条件增加，teacher曝光为原来三倍。
+将单条件梯度写为g(c,x)，条件数B、每条件查询q的独立采样近似给出
+Var(g_hat)=Var_c(E_x[g|c])/B + E_c(Var_x[g|c])/(Bq)。固定Bq时只减少第一项；辅助位置同episode、Adam非线性和有限任务池
+限制这个近似，不能由方差式直接推出闭环改进。当前八任务有限W2测量仅给出约19%的总方差下降估计，不是完整Writer因果证明。
+
+实证来自相同C600完整Adam状态和54次共享更新的Train-only比较：原J54在36任务×2初态为46/72，固定预算D54为53/72，
+有成功的任务从28/36增至31/36；相对J实际42保留、11新增、4丢失，目标24任务净增7/48，额外meta不变。
+共同8任务的两组固定初态/正确视频分别得到D/J的17/15及13/11，另一正确视频16/12及15/12（每格32）；
+合计correct/other/wrong为D30/31/25、J26/24/25（各64），不是靠破坏wrong扩大差值。第二组在第一组完整结果后登记，
+使用states36–39与demo47/49；两组都保留，不当作预先固定的单一确认试验。新任务泛化仍未知。
+完整查询对照B54保留12条件而每条件恢复21+7，即三倍标签；Train72为47，video32为19/17/14。
+B只在小视频面板更强，整体能力没有保留D的收益，且标签成本三倍，故唯一正式方案选择D，不进行两个fresh选优。
+该结果也反对“噪声越少就一定越好”的简化解释；本轮确认的是具体采样干预有初步正收益，未确认全部问题的唯一根因。
+
+正式从step0初始化完整Writer及三组Meta、fresh Adam/scheduler/sampler；Source-71冻结。每轮3次更新遍历36任务，
+原教学视频/动作pool0–45、跨episode主项和跨episode辅助项不变，8 Validation与8 Test均无梯度。
+使用`configs/libero_24_8_8_coverage_v1/writer_task_diversity.json`，单相机K1、完整38-target rank16 LoRA，
+6 ranks各处理2个完整条件，frame8/micro16，不跨rank分视频；NCCL_P2P_DISABLE=1和GPU NUMA绑定。
+真实六卡profile6步覆盖两轮，完整resume到7通过；20.12秒/步包含每卡一个本人eval共驻，allocated20.70/reserved25.11GiB。
+profile权重不进入formal。相关训练/事件105项与物化/视频合同153项CPU测试通过；后者旧schema fixture已同步，运行校验未放宽。
+
+至多1200 optimizer updates，完整checkpoint每100步保存；只在200/400/600/800/1000/1200做新协议correct400。
+训练GPU02与物化/评测GPU01并行，long-first dynamic queue与persistent workers，不静态分task，全部50 teacher各一次。
+预先将180/400设为可提前冻结的实用好点（相对既定MT-BC300=155净+25、6.25pp，不宣称统计显著性门槛）：
+首个完整登记节点达到180即冻结该点并结束后续共享训练/选点。若至预算仍无180，按完整节点最高correct选唯一点、同分选早，
+如实说明未达到本夜绝对性能目标。只存而未登记评测的100倍数中间点不另行搜索；不追加seed、rank或LR扫参。
+
+选定后才补全same-task-other及cross-suite-wrong各400，shuffled/reversed最后执行，不反哺架构/训练/选点。
+Validation达到180后封存方法及唯一checkpoint，执行新Test8 correct400和既定MT-BC300 Test400；即使视频差额不如预期也保留Test检验，
+不按Test重选模型。后继独立FT/RL仍受历史Test相对MT-BC至少+40/400门槛约束，不能混入当前监督结果。
+报告任务/suite、breadth、配对得失与原始行；Owner不要求额外稳定性证明，不因正常少量交换拒绝明显提升。
+若在途额外Validation400已开始则完整收尾并标为不影响已冻结选择；不隐藏后续数据，也不改变选点。
+
+正式输出为`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`，live quota和新增峰值32GiB登记于该run的launch记录；
+同一条轨迹的clean pushed detached runtime和完整恢复资产按原合同保留。所有本节正证据均已完成后才采用本配方，未使用新Validation/Test分数设计。

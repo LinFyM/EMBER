@@ -201,7 +201,7 @@
       "arm": "coverage36_twelve_condition_prefix_queries",
       "intervention": "twelve equal task/video conditions with 84 main plus 28 auxiliary labels per update"
     },
-    "final_checkpoint_selection": "best_complete_validation_correct_then_uniform_tied_other_then_earliest",
+    "final_checkpoint_selection": "first_complete_registered_correct400_at_least180_else_best_at_budget_tie_earliest",
     "fresh_initialization": {
       "initial_step": 0,
       "optimizer": "fresh",
@@ -211,7 +211,7 @@
     },
     "learning_window": {
       "optimizer_updates": 1200,
-      "stop": "at most1200 optimizer updates; registered validation early stopping",
+      "stop": "at most1200; first complete registered correct400>=180 ends further training/selection; otherwise best complete registered point at budget",
       "conditions_per_update": 12
     },
     "paired_inference": {
@@ -227,8 +227,22 @@
       "unit": "task_cluster"
     },
     "profile_registration": {
-      "status": "pending",
-      "world_size": 6
+      "status": "complete",
+      "world_size": 6,
+      "profile_run": "/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923/profiles/writer",
+      "fresh_updates": 6,
+      "resume_endpoint": 7,
+      "mean_update_seconds": 20.118737469272066,
+      "max_update_seconds": 23.94668444711715,
+      "peak_allocated_gib": 20.696298599243164,
+      "peak_reserved_gib": 25.11328125,
+      "conditions_per_update": 12,
+      "main_queries_per_update": 84,
+      "aux_queries_per_update": 28,
+      "conditions_per_rank": 2,
+      "formal_uses_profile_weights": false,
+      "co_resident": "one own diagnostic evaluator per card; time estimate includes contention",
+      "code_commit": "2f6e4e6be1db52bc3dea77a142317227df6a71be"
     },
     "protocol_migrations": [
       "target24 plus audited source12",
@@ -249,8 +263,8 @@
         1200
       ],
       "qualification_completion": "pre-registered full400 at updates200,400,600,800,1000,1200",
-      "registration_status": "pending_closed_loop_adoption_and_formal_registration",
-      "same_task_other": "frozen tied correct candidates uniformly; selected model always full400",
+      "registration_status": "registered_after_D54_complete_pilot_and_independent_condition_replication",
+      "same_task_other": "selected frozen checkpoint only; full400; no checkpoint-selection feedback",
       "seed": 20260911,
       "selection_mode": "per_init_ordinal",
       "state_count": 50,
@@ -315,7 +329,9 @@
         47,
         48,
         49
-      ]
+      ],
+      "early_good_point_successes": 180,
+      "reference_mtbc_successes": 155
     },
     "shuffled_reversed_use": "frozen_post_selection_only",
     "supervised_validation": {
@@ -433,7 +449,30 @@
       "shuffled",
       "reversed",
       "no_video"
-    ]
+    ],
+    "pilot_adoption": {
+      "selected": "D54_fixed_label_budget",
+      "train72": {
+        "original_J54": 46,
+        "D54": 53,
+        "full_queries_B54": 47
+      },
+      "video64_correct_other_wrong": {
+        "original_J54": [
+          26,
+          24,
+          25
+        ],
+        "D54": [
+          30,
+          31,
+          25
+        ]
+      },
+      "held_validation_test_used": false,
+      "scope": "preliminary causal intervention evidence on training tasks, not proof of a unique root cause or held generalization",
+      "reference": "docs/overnight_root_cause_analysis_20260922.md"
+    }
   },
   "execution_precision": "native_bf16_writer_fm_fp32_lora",
   "model": {
@@ -505,7 +544,7 @@
     "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
     "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json"
   },
-  "status": "pending_task_mixing_validation",
+  "status": "registered_video_teaching_learning",
   "update_version": "video_teaching_twelve_condition_joint_meta_v2",
   "training_control": {
     "kind": "validation_early_stopping",

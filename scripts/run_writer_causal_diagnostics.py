@@ -88,6 +88,13 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
             writer.writerow({key: _json_cell(row.get(key)) for key in fields})
 
 
+def _write_empty_csv(path: Path, fields: Sequence[str]) -> None:
+    """Preserve a registered output schema when the time-gated D3 is not started."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        csv.DictWriter(handle, fieldnames=sorted(fields)).writeheader()
+
+
 def _read_rows(paths: Iterable[Path]) -> list[dict[str, str]]:
     rows = []
     for path in paths:
@@ -403,7 +410,9 @@ def _effects(rows: Sequence[Mapping[str, str]], rollouts: Sequence[Mapping[str, 
     return [*_probe_effects(rows), *_rollout_effects(rollouts)]
 
 
-def finalize(output: Path) -> None:
+def finalize(output: Path, *, d3_status: str) -> None:
+    if d3_status not in {"complete", "not_started_insufficient_preregistered_time"}:
+        raise ValueError(f"unsupported D3 finalization status: {d3_status}")
     started = time.perf_counter()
     parts = output / "parts"
     path_rows = _read_rows(sorted(parts.glob("path_probe_rows_*.csv")))
@@ -413,29 +422,36 @@ def finalize(output: Path) -> None:
     micro_steps = _read_rows(sorted(parts.glob("microtrain_steps_*.csv")))
     micro_probes = _read_rows(sorted(parts.glob("microtrain_probe_rows_*.csv")))
     micro_rollouts = _read_rows(sorted(parts.glob("microtrain_rollout_rows_*.csv")))
-    if (len(path_rows), len(rollout_rows), len(updates), len(micro_steps), len(micro_probes), len(micro_rollouts)) != (544, 112, 16, 54, 192, 48):
+    expected_micro = (54, 192, 48) if d3_status == "complete" else (0, 0, 0)
+    if (len(path_rows), len(rollout_rows), len(updates), len(micro_steps), len(micro_probes), len(micro_rollouts)) != (544, 112, 16, *expected_micro):
         raise ValueError("causal diagnostic final row counts are incomplete")
     _write_csv(output / "path_probe_rows.csv", path_rows)
     _write_csv(output / "path_rollout_rows.csv", rollout_rows)
     _write_csv(output / "gradient_rows.csv", gradients)
     _write_csv(output / "virtual_update_rows.csv", updates)
-    _write_csv(output / "microtrain_steps.csv", micro_steps)
-    _write_csv(output / "microtrain_probe_rows.csv", micro_probes)
-    _write_csv(output / "microtrain_rollout_rows.csv", micro_rollouts)
+    if d3_status == "complete":
+        _write_csv(output / "microtrain_steps.csv", micro_steps)
+        _write_csv(output / "microtrain_probe_rows.csv", micro_probes)
+        _write_csv(output / "microtrain_rollout_rows.csv", micro_rollouts)
+    else:
+        _write_empty_csv(output / "microtrain_steps.csv", ("branch", "local_step", "global_event_step"))
+        _write_empty_csv(output / "microtrain_probe_rows.csv", ("branch", "global_task_id", "arm"))
+        _write_empty_csv(output / "microtrain_rollout_rows.csv", ("branch", "global_task_id", "success"))
     _write_csv(output / "path_effects.csv", _effects(path_rows, rollout_rows))
     trajectory = [{key: row.get(key) for key in ("d1_asset", "path_arm", "branch", "global_task_id", "suite", "task_id", "init_state_id", "success", "steps")}
                   for row in [*rollout_rows, *micro_rollouts]]
     _write_csv(output / "trajectory_manifest.csv", trajectory)
+    _cost(output, "finalize", started)
     costs = [read_json(path) for path in sorted(parts.glob("cost_*.json"))]
     write_json_atomic(output / "costs.json", {"schema_version": DIAGNOSTIC_SCHEMA, "stages": costs,
                                                  "total_recorded_seconds": sum(float(row["seconds"]) for row in costs)})
     write_json_atomic(output / "completion.json", {
         "schema_version": DIAGNOSTIC_SCHEMA, "status": "complete", "fresh_training": False,
         "validation_use": False, "test_use": False, "checkpoint_selection_use": False,
+        "d3": {"status": d3_status},
         "rows": {"path_probes": 544, "path_rollouts": 112, "virtual_updates": 16,
-                 "micro_updates": 54, "micro_probes": 192, "micro_rollouts": 48},
+                 "micro_updates": expected_micro[0], "micro_probes": expected_micro[1], "micro_rollouts": expected_micro[2]},
     })
-    _cost(output, "finalize", started)
 
 
 def main() -> None:
@@ -456,14 +472,15 @@ def main() -> None:
     item.add_argument("--branch", choices=("J", "Q", "M"), required=True)
     item.add_argument("--device", default="cuda:0")
     item.add_argument("--physical-gpu-id", type=int, required=True)
-    sub.add_parser("finalize")
+    item = sub.add_parser("finalize")
+    item.add_argument("--d3-status", choices=("complete", "not_started_insufficient_preregistered_time"), default="complete")
     args = parser.parse_args()
     output = args.output.resolve()
     if args.command == "register":
         register(output)
         return
     if args.command == "finalize":
-        finalize(output)
+        finalize(output, d3_status=args.d3_status)
         return
     device = _device(args.device)
     if args.command == "d1-path":

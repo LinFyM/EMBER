@@ -43,6 +43,8 @@ Source、dataset、tokenizer 或 assets，预估额外峰值不超过8 GiB。
 launch 时起算连续120分钟的绝对截止；controller 只按 phase exit、完整行数和预登记时间门控继续。D3 的三臂必须整体
 开始，且仅当 D1/D2 全部成功并距截止至少65分钟时才启动；否则登记为 `not_started_insufficient_preregistered_time`
 并停止，不读取或依据任何部分性能。D3 不是早停后的 extension，不能参与任何正式 checkpoint 选择。
+若该预登记时间门控不满足，D1/D2 仍完整封存：三个 `microtrain_*.csv` 保留空 schema，`completion.json` 显式写入
+`not_started_insufficient_preregistered_time`，而不是把缺失 D3 行伪装成运行失败或完整三阶段结果。
 
 ## D1：Core / Procedure 路径消融
 

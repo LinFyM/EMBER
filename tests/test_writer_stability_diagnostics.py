@@ -1,4 +1,8 @@
 import copy
+import csv
+import importlib.util
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import torch
@@ -211,3 +215,42 @@ def test_causal_virtual_candidates_match_adamw_and_m_scaling() -> None:
         for key in ("step", "exp_avg", "exp_avg_sq"):
             torch.testing.assert_close(loaded.optimizer.state[parameter][key], joint_optimizer.state[reference_parameter][key],
                                        rtol=0, atol=1e-7)
+
+
+def test_causal_finalization_preserves_d1_d2_when_preregistered_time_skips_d3(tmp_path) -> None:
+    script_path = Path(__file__).resolve().parents[1] / "scripts/run_writer_causal_diagnostics.py"
+    spec = importlib.util.spec_from_file_location("writer_causal_runner", script_path)
+    assert spec is not None and spec.loader is not None
+    runner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(runner)
+
+    def write_rows(name, rows) -> None:
+        path = tmp_path / "parts" / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fields = sorted({key for row in rows for key in row})
+        with path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(rows)
+
+    path_rows = [
+        {"asset": "C600", "arm": arm, "global_task_id": "5", "cohort": "A", "query_position": "1",
+         "noise_seed": "2", "query_fraction": "0.25", "full_mse": "1", "first5_mse": "1",
+         "tau1_first5_mse": "1", "inference_first5_mse": "1"}
+        for arm in ("CC", "CW", "WC", "WW", "CO")
+    ]
+    path_rows.extend({"asset": "M300", "arm": "CC"} for _ in range(539))
+    write_rows("path_probe_rows_fixture.csv", path_rows)
+    write_rows("path_rollout_rows_fixture.csv", [{"d1_asset": "C600", "path_arm": "CC", "success": "True"} for _ in range(112)])
+    write_rows("gradient_rows_fixture.csv", [{"asset": "C600"}])
+    write_rows("virtual_update_rows_fixture.csv", [{"asset": "C600"} for _ in range(16)])
+
+    runner.finalize(tmp_path, d3_status="not_started_insufficient_preregistered_time")
+    completion = json.loads((tmp_path / "completion.json").read_text())
+    assert completion["status"] == "complete"
+    assert completion["d3"]["status"] == "not_started_insufficient_preregistered_time"
+    assert completion["rows"]["micro_updates"] == 0
+    with (tmp_path / "microtrain_steps.csv").open(newline="", encoding="utf-8") as handle:
+        assert list(csv.DictReader(handle)) == []
+    costs = json.loads((tmp_path / "costs.json").read_text())
+    assert {row["key"] for row in costs["stages"]} == {"finalize"}

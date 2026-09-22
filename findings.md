@@ -12,6 +12,10 @@ Writer VJP 相加”不等于生产的“联合 LoRA cotangent 后一次 native 
 明确以 `g_A=g_J-g_Q` 的参数空间分解记录辅助项，并让 J/M 直接用 native `g_J`。这不是关于辅助项有效性的结果，也不
 改变其`tau=1`、前5与`1/3`合同；旧 abort 只保留为工程证据，修正后的完整 D2/D3 前不得产生科学结论。
 
+native-J 版 D2/D3虽已完整运行，但在正式解读前又发现 D2 group CSV 的同名 `joint_grad_norm` 被 draw-level 全 Writer
+指标覆盖。该错误不改变梯度、optimizer、虚拟更新、D3 state 或任何闭环行；为避免错误的按组证据，保留原载荷并只重放
+D2/aggregate。重新生成的完整分组表落盘前，本轮仍不形成关于辅助项的结论。
+
 本文件保留跨轮结论及其适用边界；历史段落的“当前／下一步／active”只表示当时时点。
 当前Owner要求见[稳定要求](docs/current_owner_requirements.md)，当前授权、设计和执行状态只看[progress](progress.md)。
 完整历史索引、旧设计及原始证据入口见[research_history](docs/research_history.md)。

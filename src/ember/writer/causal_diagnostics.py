@@ -616,8 +616,9 @@ def _window_aggregates(per_batch, batch_losses) -> dict[str, dict[str, Any]]:
 def _gradient_window_rows(loaded: LoadedWriter, windows: Mapping[str, Mapping[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for window, value in windows.items():
+        losses = {key: metric for key, metric in value["losses"].items() if key != "joint_grad_norm"}
         for row in _gradient_group_stats(loaded.parameter_names, value["q"], value["a"], value["joint"]):
-            rows.append({"window": window, "batch_index": None, **row, **value["losses"]})
+            rows.append({"window": window, "batch_index": None, **row, **losses})
     return rows
 
 

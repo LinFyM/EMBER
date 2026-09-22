@@ -22,6 +22,11 @@ Writer VJP；两者的舍入位置不同，故该 abort 是测量实现错误而
 原 D2 exit/stderr 与无结果目录保留。下一 clean pushed detached runtime 只重跑 D2，时间门控通过才整体运行 D3；不重算
 已完成 D1，也不读取任何部分性能来决定是否继续。
 
+native-J 版 retry5 已以全零 worker/controller/finalize exit 完成 D2 的16个虚拟候选与 D3 三臂各18次更新、192条终点
+probe、48条终点闭环。结果分析在 D2 分组表发现仅有一处 CSV 字段合并错误：draw-level 全 Writer `joint_grad_norm`
+覆盖了本应按七组记录的同名列；D2 的 `g_J/Q/A`、J/Q/M/Z optimizer 更新、D3 state 和所有闭环均不受影响。保留 retry5
+原始行，修复字段覆盖后只重放 D2 并重新 finalization；不得重跑 D1/D3 或把旧分组表作为科学证据。
+
 ## 当前状态：36任务 Writer 辅助 episode 配对 fresh 对照已完成（2026-09-22）
 
 本轮[辅助配对合同](docs/writer_auxiliary_pairing_design.md)已执行并封存，当前**没有 active design 或获授权的后继

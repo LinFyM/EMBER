@@ -285,6 +285,24 @@ def test_causal_virtual_candidate_uses_supplied_native_joint_gradient() -> None:
                                        reference_optimizer.state[reference_parameter][key], rtol=0, atol=1e-7)
 
 
+def test_causal_group_joint_norm_is_not_overwritten_by_draw_metric() -> None:
+    from ember.writer.causal_diagnostics import _gradient_window_rows
+
+    loaded = SimpleNamespace(parameter_names=("factor_heads.unit",))
+    windows = {
+        "B4": {
+            "q": (torch.tensor([1.0]),),
+            "a": (torch.tensor([2.0]),),
+            "joint": (torch.tensor([3.0]),),
+            "losses": {"main_loss": 0.25, "joint_grad_norm": 99.0},
+        },
+    }
+    rows = _gradient_window_rows(loaded, windows)
+    factor_head = next(row for row in rows if row["group"] == "factor_heads")
+    assert factor_head["joint_grad_norm"] == 3.0
+    assert factor_head["main_loss"] == 0.25
+
+
 def test_causal_finalization_preserves_d1_d2_when_preregistered_time_skips_d3(tmp_path) -> None:
     script_path = Path(__file__).resolve().parents[1] / "scripts/run_writer_causal_diagnostics.py"
     spec = importlib.util.spec_from_file_location("writer_causal_runner", script_path)

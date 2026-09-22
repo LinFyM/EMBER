@@ -10,7 +10,7 @@ J18完整验证已被Owner否决，不执行；失败状态专家监督历史已
 沿用现有记录，不新增面向Owner的报告文件；本机session约07:30读取状态制作PPT，不使用Test选择方法。
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
 
-## 当前运行快照（2026-09-23 04:00）
+## 当前运行快照（2026-09-23 04:47）
 
 正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
 clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
@@ -19,7 +19,7 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；exact commands/env、allocation、quota、profile、选点合同均在launch目录。
 最新data0 quota used148345752KiB、soft1073741824KiB；当前study289780KiB，新增峰值32GiB有余量；Source/data无复制。
 部署和损失未变；fresh不是C600续训，也不复用profile权重。所有先行诊断workers已exit0，无其它本轮GPU任务遗留。
-首个正式Validation200完整成绩为103/400（见下方04:00记录），未达到改善门槛；继续原登记轨迹。
+完整Validation200/400成绩分别为103/117（见下方记录），均未达到改善门槛；继续原登记轨迹。
 首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
 07:30前最多12物理卡的并行在Owner临时授权内；07:30之后必须重新压到常规总量再继续，09:00前可补结果。
 不使用J18 Validation，不按Test或shuffle/reverse结果再改方法。旧MTBC300 Test metadata修复脚本已只读核验，尚未apply或运行Test。
@@ -53,6 +53,13 @@ D54为C600完整Adam上的54步固定LR，当前是fresh及150步warmup，不能
 PPT用小型结果包位于`docs/review_materials/20260923/overnight_results`：17个已完成Validation400面板、
 6800条success投影、逐任务CSV/配对统计与PNG/SVG/PDF图，完整原始RNG/video记录仍在各正式run。
 `launch/refresh_presentation.py`和paper-export可更新同一目录；当前新模型仅200=103，尚无selected checkpoint或Test。
+
+04:47第二个完整Validation400结束，12 workers均exit0、400唯一条件与配对合同核验通过：400步117/400，breadth6；
+按Long1/Long9/Goal3/Goal6/Object1/Object6/Spatial3/Spatial6依次23/0/0/37/44/1/3/9，各50。
+相对本轨迹200步保留76、得41、失27，净+14；相对MTBC300保留78、得39、失77，仍净-38。
+Long1/Object1上升，Spatial仍弱，训练侧小试收益尚未转化为已验证的整体泛化改善。不据该点改配方或加密选点，继续600等原节点。
+原件与配对比较在`launch/writer_00000400_readout.json`及`writer_00000400_reference_comparisons.json`；
+同一PPT结果包已更新到18个完整面板、7200条success投影，仍无选定模型、controls或Test。
 
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 

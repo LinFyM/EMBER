@@ -128,6 +128,8 @@ probe、curve 或基于中间分数的续训。
 `run_writer_causal_diagnostics.py` 只是单 phase runner，不分配 GPU、不启动 worker、不充当第二套 controller。
 它们不接入普通训练、materialization 或正式 Validation 入口；若 Owner 不采纳任何由本轮提出的后继假设，在本轮结果
 封存并可由 Git/正式原件复算后，将在下一次相关 cleanup 中退役该专用 runner/module，而不是成为平行 Writer 路径。
+runner 的 detached runtime 只提供已推送代码；任务 authorities、Source、dataset 与评测 assets 一律通过 canonical
+`/data1/user/ymdai/projects/EMBER` 只读 asset root 解析，不能把临时 worktree 当作资产副本或 authority。
 
 study 根拟为 `/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922`。必须保留：
 

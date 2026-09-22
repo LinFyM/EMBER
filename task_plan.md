@@ -10,6 +10,10 @@ Source 上运行 D1 Core/Procedure 路径消融、D2 主/辅助梯度与 AdamW �
 按部分分数选择性执行。首次 live preflight 已登记 gpu01:0 与低负载共驻的 gpu02:1--3；不预留空卡，120分钟绝对截止
 独立于分数，D3 仅在 D1/D2 都完整成功且保留至少65分钟时整体启动。
 
+首次 launch 的四个 D1 worker 均在首次数据 authority 校验前后 exit=1，未产生任何性能或闭环行；已确认是 detached
+runtime 错当 asset root 的工程路径错误。该失败原件保留，修复只令 runner 通过 canonical 只读 asset root 读取 authorities/
+assets，重新从 clean pushed runtime 执行同一合同；不得把此类 pre-probe exit 记为 D1 科学结果。
+
 ## 当前状态：36任务 Writer 辅助 episode 配对 fresh 对照已完成（2026-09-22）
 
 本轮[辅助配对合同](docs/writer_auxiliary_pairing_design.md)已执行并封存，当前**没有 active design 或获授权的后继

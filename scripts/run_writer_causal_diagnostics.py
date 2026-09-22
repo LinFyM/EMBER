@@ -42,7 +42,8 @@ from ember.writer.stability_diagnostics import (
 )
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+# The detached runtime supplies code only; task authorities and frozen assets remain canonical and read-only.
+ASSET_ROOT = Path("/data1/user/ymdai/projects/EMBER")
 STUDY_ROOT = Path("/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922")
 OLD_CHECKPOINT = Path("/data0/user/ymdai/ember_runs/video_teaching_20260919/training/checkpoints/macro_00001200")
 CURRENT_ROOT = Path("/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922")
@@ -155,17 +156,17 @@ def register(output: Path) -> None:
 def _load_writer(asset: str, device: torch.device, *, fixed_lr: float | None = None):
     if asset not in WRITER_ASSETS:
         raise ValueError(f"unknown Writer asset: {asset}")
-    return load_writer(name=asset, checkpoint=WRITER_ASSETS[asset], asset_root=REPO_ROOT, device=device, fixed_lr=fixed_lr)
+    return load_writer(name=asset, checkpoint=WRITER_ASSETS[asset], asset_root=ASSET_ROOT, device=device, fixed_lr=fixed_lr)
 
 
 def _baseline_policy(asset: str, device: torch.device):
     current = _current_run()
     if asset == "Source":
-        return source_policy(name=asset, asset_root=REPO_ROOT, current_run=current, device=device)
+        return source_policy(name=asset, asset_root=ASSET_ROOT, current_run=current, device=device)
     if asset == "M300":
         return source_policy(
-            name=asset, asset_root=REPO_ROOT, current_run=current, device=device,
-            mtbc_config=REPO_ROOT / "configs/libero_24_8_8_coverage_v1/mtbc.json",
+            name=asset, asset_root=ASSET_ROOT, current_run=current, device=device,
+            mtbc_config=ASSET_ROOT / "configs/libero_24_8_8_coverage_v1/mtbc.json",
             mtbc_checkpoint=MTBC_CHECKPOINT,
         )
     raise ValueError(f"unknown frozen baseline: {asset}")
@@ -180,7 +181,7 @@ def _optimizer_lr(loaded) -> float:
 
 def d1_path(output: Path, device: torch.device, asset: str) -> None:
     started, current = time.perf_counter(), _current_run()
-    data = current_training_data(REPO_ROOT, current, planned_updates=1)
+    data = current_training_data(ASSET_ROOT, current, planned_updates=1)
     loaded = _load_writer(asset, device)
     try:
         loaded.runtime.state.eval()
@@ -210,7 +211,7 @@ def d1_path(output: Path, device: torch.device, asset: str) -> None:
 
 def d1_baseline(output: Path, device: torch.device, asset: str) -> None:
     started, current = time.perf_counter(), _current_run()
-    data, policy = current_training_data(REPO_ROOT, current, planned_updates=1), _baseline_policy(asset, device)
+    data, policy = current_training_data(ASSET_ROOT, current, planned_updates=1), _baseline_policy(asset, device)
     try:
         rows = []
         for request in registered_path_probes(data):
@@ -239,13 +240,13 @@ def d1_rollout(output: Path, device: torch.device, asset: str, arm: str, physica
     if asset == "O1200" and arm not in {"CC", "WW"}:
         raise ValueError("O1200 D1 rollout only registers CC and WW")
     started, current = time.perf_counter(), _current_run()
-    data, loaded = current_training_data(REPO_ROOT, current, planned_updates=1), _load_writer(asset, device)
+    data, loaded = current_training_data(ASSET_ROOT, current, planned_updates=1), _load_writer(asset, device)
     try:
         loaded.runtime.state.eval()
         panel = compile_path_panel(loaded, CausalRawInputCache(loaded, data), arms=(arm,), check_cc=arm == "CC")
         states, evidence = rollout_path_states(panel, arm=arm, asset=asset)
         rows = run_asset_rollouts(
-            asset=asset, asset_root=REPO_ROOT, output=output / "rollouts" / "d1" / asset / arm,
+            asset=asset, asset_root=ASSET_ROOT, output=output / "rollouts" / "d1" / asset / arm,
             physical_gpu_id=physical_gpu_id, current_evaluation_contract=EVALUATION_CONTRACT,
             loaded_writer=loaded, frozen_policy=None, panel_ids=PATH_TASKS, state_ids=(0, 1),
             compact_capture=True, full_capture_conditions=PATH_TRAJECTORY_CONDITIONS,
@@ -263,7 +264,7 @@ def d1_rollout(output: Path, device: torch.device, asset: str, arm: str, physica
 
 def d2(output: Path, device: torch.device, asset: str) -> None:
     started, current = time.perf_counter(), _current_run()
-    data = current_training_data(REPO_ROOT, current, planned_updates=612)
+    data = current_training_data(ASSET_ROOT, current, planned_updates=612)
     loaded = _load_writer(asset, device)
     try:
         groups = validate_causal_parameter_groups(loaded)
@@ -321,7 +322,7 @@ def d3(output: Path, device: torch.device, branch: str, physical_gpu_id: int) ->
     if branch not in {"J", "Q", "M"}:
         raise ValueError("causal D3 branch must be J, Q, or M")
     started, current = time.perf_counter(), _current_run()
-    data = current_training_data(REPO_ROOT, current, planned_updates=618)
+    data = current_training_data(ASSET_ROOT, current, planned_updates=618)
     loaded = _load_writer("C600", device, fixed_lr=FIXED_LR)
     branch_root = output / "microtrain" / branch
     try:
@@ -348,7 +349,7 @@ def d3(output: Path, device: torch.device, branch: str, physical_gpu_id: int) ->
                                                              reference=cc, reference_metric=cc_row)})
         states, evidence = rollout_path_states(panel, arm="CC", asset=f"C600-{branch}")
         rollout_rows = run_asset_rollouts(
-            asset=f"C600-{branch}", asset_root=REPO_ROOT, output=branch_root / "rollouts",
+            asset=f"C600-{branch}", asset_root=ASSET_ROOT, output=branch_root / "rollouts",
             physical_gpu_id=physical_gpu_id, current_evaluation_contract=EVALUATION_CONTRACT,
             loaded_writer=loaded, frozen_policy=None, panel_ids=PATH_TASKS, state_ids=(0, 1),
             compact_capture=True, full_capture_conditions=PATH_TRAJECTORY_CONDITIONS,

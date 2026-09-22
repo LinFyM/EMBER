@@ -12,6 +12,12 @@ worker completion 与 exit 核对后写入本文件和 findings。一次性 live
 902,103,016 KiB，soft quota 均1,073,741,824 KiB，额外峰值登记为不超过8 GiB。launch 起连续120分钟绝对截止，
 D3 只在 D1/D2 全部成功且至少剩余65分钟时三臂整体启动；该判断只取时间和完整性，不读取任何部分分数。
 
+首次 controller 在任何 D1 probe 或 rollout 前以 exit=1 停止；四个首批 worker 都报 `task authority changed: 0`，没有生成
+性能行、rollout、D2/D3 或 `completion.json`。原因已由最小复现验证：runner 把 detached code runtime 当 asset root，而
+该 worktree 不含 canonical `runs` authority 链接。修复仅把 code root 与只读 canonical asset root 分离；`current_training_data`
+在 canonical root 的36任务直接重放成功，9项相关单测通过，architecture guard=PASS。初始 launch 的 exit/stderr/preflight
+均保留为工程故障证据；将从新的 clean pushed detached runtime 重新开始同一注册合同，不改变任务、资产、预算或科学变量。
+
 ## 2026-09-22：辅助配对正式结果专家复核包
 
 按Owner要求，已从sealed正式产物机械导出并推送[轻量复核包](docs/review_materials/20260922/auxiliary_pairing_fresh/README.md)，不重跑视频、GPU诊断或训练。包中保留六个correct400节点2400条逐行结果、C600 other/wrong各400条严格配对行、C600与same-video/MT-BC300/Source各400条配对行、11个面板的rows/manifest/worker完整性、1200步训练主/辅助loss、LR和既有梯度统计、36任务exposure汇总、成本及合同/停止/选点/C600完整resume资产索引。

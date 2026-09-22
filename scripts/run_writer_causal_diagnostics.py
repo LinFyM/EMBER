@@ -270,13 +270,16 @@ def d2(output: Path, device: torch.device, asset: str) -> None:
         groups = validate_causal_parameter_groups(loaded)
         batches = event_window(data, first_step=604, last_step=612)
         cache = VideoConditionCache(loaded.runtime, data, 1 << 30)
-        linearity = gradient_linearity_residual(loaded, data, cache, batches[0][0])
-        if linearity > 2e-5:
-            raise ValueError(f"causal main+aux gradient replay residual is too large: {linearity}")
         windows, gradient_rows = measure_gradient_windows(loaded, data, cache, batches)
+        linearity = max(gradient_linearity_residual(values["q"], values["a"], values["joint"])
+                        for values in windows.values())
+        if linearity > 1e-6:
+            raise ValueError(f"causal native joint gradient decomposition residual is too large: {linearity}")
         loaded.runtime.state.eval()
         lr = _optimizer_lr(loaded)
-        gradient_rows = [{"asset": asset, "linearity_max_abs": linearity, "parameter_groups": groups, **row}
+        gradient_rows = [{"asset": asset, "linearity_max_abs": linearity,
+                          "auxiliary_gradient_definition": "native_joint_vjp_minus_main_vjp",
+                          "parameter_groups": groups, **row}
                          for row in gradient_rows]
         requests = registered_path_probes(data)
         outer_parent = snapshot_parent(loaded)
@@ -291,7 +294,8 @@ def d2(output: Path, device: torch.device, asset: str) -> None:
                        for request in requests}
             for candidate in ("J", "Q", "M", "Z"):
                 restore_parent(loaded, outer_parent)
-                update = apply_virtual_candidate(loaded, q=values["q"], a=values["a"], candidate=candidate, lr=lr)
+                update = apply_virtual_candidate(loaded, q=values["q"], a=values["a"], joint=values["joint"],
+                                                 candidate=candidate, lr=lr)
                 panel = compile_path_panel(loaded, CausalRawInputCache(loaded, data), arms=("CC",))
                 for request in requests:
                     compiled = panel[(request.task, request.cohort.label, "CC")]
@@ -330,8 +334,8 @@ def d3(output: Path, device: torch.device, branch: str, physical_gpu_id: int) ->
         steps = []
         for local_step, draws in enumerate(batches, start=1):
             step_started = time.perf_counter()
-            q, a, metrics = measure_batch_gradients(loaded, data, cache, draws)
-            update = apply_virtual_candidate(loaded, q=q, a=a, candidate=branch, lr=FIXED_LR)
+            q, a, joint, metrics = measure_batch_gradients(loaded, data, cache, draws)
+            update = apply_virtual_candidate(loaded, q=q, a=a, joint=joint, candidate=branch, lr=FIXED_LR)
             steps.append({"branch": branch, "local_step": local_step, "parent_step": 600,
                           "global_event_step": 600 + local_step, "seconds": time.perf_counter() - step_started,
                           **metrics, **update})

@@ -266,6 +266,25 @@ def test_causal_virtual_candidates_match_adamw_and_m_scaling() -> None:
                                        rtol=0, atol=1e-7)
 
 
+def test_causal_virtual_candidate_uses_supplied_native_joint_gradient() -> None:
+    from ember.writer.causal_diagnostics import apply_virtual_candidate
+    from ember.writer.stability_diagnostics import snapshot_parent
+
+    loaded = _causal_tiny_loaded()
+    parent = snapshot_parent(loaded)
+    q = tuple(torch.full_like(parameter, 0.12, device="cpu") for parameter in loaded.runtime.state.parameters())
+    a = tuple(torch.full_like(parameter, -0.03, device="cpu") for parameter in loaded.runtime.state.parameters())
+    native_joint = tuple(torch.full_like(parameter, 0.10, device="cpu") for parameter in loaded.runtime.state.parameters())
+    apply_virtual_candidate(loaded, q=q, a=a, joint=native_joint, candidate="J", lr=0.1)
+    reference, reference_optimizer, _before = _causal_reference(parent, native_joint)
+    for actual, expected in zip(_causal_values(loaded.runtime.state), _causal_values(reference), strict=True):
+        torch.testing.assert_close(actual, expected, rtol=0, atol=1e-7)
+    for parameter, reference_parameter in zip(loaded.runtime.state.parameters(), reference.parameters(), strict=True):
+        for key in ("step", "exp_avg", "exp_avg_sq"):
+            torch.testing.assert_close(loaded.optimizer.state[parameter][key],
+                                       reference_optimizer.state[reference_parameter][key], rtol=0, atol=1e-7)
+
+
 def test_causal_finalization_preserves_d1_d2_when_preregistered_time_skips_d3(tmp_path) -> None:
     script_path = Path(__file__).resolve().parents[1] / "scripts/run_writer_causal_diagnostics.py"
     spec = importlib.util.spec_from_file_location("writer_causal_runner", script_path)

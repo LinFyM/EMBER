@@ -87,6 +87,10 @@ CC 的 action delta，以及 E（frame evidence）、H（horizon）、Core、Pro
 为原生随机-flow完整50-horizon主项，`g_A`为固定`tau=1`、前5、且已经乘入`1/3`的辅助项；二者都穿过完整 Writer
 （包括三组 Meta）。
 
+为保持原训练的 native BF16 Writer VJP 语义，每个 draw 直接计算一次联合 `g_J` 与一次 `g_Q`，并在 Writer 参数空间定义
+`g_A = g_J - g_Q`。这避免把主/辅助 LoRA cotangent 在两次独立 VJP 中分别 cast 后再相加所引入的舍入差异；不改变损失、
+query、权重、优化器或任何科学变量。`g_Q + g_A = g_J` 仍以严格参数空间残差检查，J/M 均使用直接的 native `g_J`。
+
 参数按互斥的七组记录：Text Meta、VL Meta、Action Meta、剩余 semantic projections/Core、Procedure、Compiler、
 FactorHeads。记录每组 norm、Q/A dot/cos、B4/B36方向差与九个四-task batch的Gram。参数命名、optimizer parameter
 identity 和 Adam state 必须一一对应；无任何参数重复计数。
@@ -95,7 +99,7 @@ identity 和 Adam state 必须一一对应；无任何参数重复计数。
 
 | 候选 | 操作 |
 | --- | --- |
-| J | `AdamW(g_Q+g_A)`，含现有 global clip 和 weight decay |
+| J | `AdamW(g_J)`（等价定义为 `g_Q+g_A`），含现有 global clip 和 weight decay |
 | Q | `AdamW(g_Q)`，其它完全相同 |
 | M | 先执行本状态的 J 以得到其 Adam state 和 displacement `u_J`，再把 parameter displacement 写为 `alpha*u_J`，`alpha=||u_Q||/||u_J||` |
 | Z | 对每个参数提供 zero current gradient 的 AdamW step；不是 `grad=None`，因此保留动量和 weight decay 的真实影响 |

@@ -7,6 +7,11 @@
 same-video/cross-episode 或历史 Core/Procedure 消融的发现外推为本轮结论。尤其 Q 对 J/M 的任何差异最多检验当前
 端点前缀辅助项整体，不能分别证明或否定 `tau=1`、前5步和`1/3`；所有结果也不自动授权新的正式训练路线。
 
+工程执行中，D1 的544条函数行与112条闭环行已完整落盘但尚未读取得分；旧 D2 在任何结果行写入前发现其“独立 Q/A
+Writer VJP 相加”不等于生产的“联合 LoRA cotangent 后一次 native BF16 Writer VJP”。后者才是训练实际更新，故本设计
+明确以 `g_A=g_J-g_Q` 的参数空间分解记录辅助项，并让 J/M 直接用 native `g_J`。这不是关于辅助项有效性的结果，也不
+改变其`tau=1`、前5与`1/3`合同；旧 abort 只保留为工程证据，修正后的完整 D2/D3 前不得产生科学结论。
+
 本文件保留跨轮结论及其适用边界；历史段落的“当前／下一步／active”只表示当时时点。
 当前Owner要求见[稳定要求](docs/current_owner_requirements.md)，当前授权、设计和执行状态只看[progress](progress.md)。
 完整历史索引、旧设计及原始证据入口见[research_history](docs/research_history.md)。

@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 2026-09-22：Writer 因果路径与辅助梯度诊断已登记、preflight 完成，尚未 launch
+## 2026-09-22：Writer 因果路径与辅助梯度诊断 D1 完成，D2 工程修正后待续跑
 
 Owner 转交专家后续方案后，已把它收敛为
 [有界 D1/D2/D3 合同](docs/writer_causal_diagnostics_20260922.md)：D1 用八个训练 task 的 CC/CW/WC/WW/CO 固定路径
@@ -17,6 +17,14 @@ D3 只在 D1/D2 全部成功且至少剩余65分钟时三臂整体启动；该�
 该 worktree 不含 canonical `runs` authority 链接。修复仅把 code root 与只读 canonical asset root 分离；`current_training_data`
 在 canonical root 的36任务直接重放成功，9项相关单测通过，architecture guard=PASS。初始 launch 的 exit/stderr/preflight
 均保留为工程故障证据；将从新的 clean pushed detached runtime 重新开始同一注册合同，不改变任务、资产、预算或科学变量。
+
+后续 retry 已完整写出 D1：函数 probe 共544条，闭环面板共112条，所有对应 worker exit=0；这里只核对行数、manifest
+与 exit，尚未读取或汇总性能值。retry4 的两个 D2 worker 都在生成任何 gradient/virtual-update 行之前因同一旧完整性
+断言退出。最小复现显示旧断言比较了“分别 main/teaching Writer VJP 后相加”和“先合并 LoRA cotangent、以 native BF16
+做一次 joint Writer VJP”；C600 的相对L2差异约0.76%，来自 cotangent cast/reduction 位置，而非任务、事件或冻结资产。
+因此修正为 native `g_J` 与 `g_Q` 的参数空间分解 `g_A=g_J-g_Q`，并令 J/M 用直接 `g_J`；这是对原训练计算图的忠实
+重放，不改变辅助目标的科学定义。D1 原始行和所有失败 launch 原件均保留；D2/D3 会从新的 clean pushed detached runtime
+续跑，D3仍只由完整性和预登记时间门控决定，不能依据D1/D2的部分分数启动或取消。
 
 ## 2026-09-22：辅助配对正式结果专家复核包
 

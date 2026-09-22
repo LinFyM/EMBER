@@ -1,6 +1,6 @@
 # EMBER task plan
 
-## 当前 active design：Writer 因果路径与辅助梯度诊断（2026-09-22，preflight 已完成，待 launch）
+## 当前 active design：Writer 因果路径与辅助梯度诊断（2026-09-22，D1 完整，D2 工程修正后待续跑）
 
 Owner 要求按专家后续意见完成有界分析实验；合同见
 [Writer 因果路径与辅助梯度诊断](docs/writer_causal_diagnostics_20260922.md)。它只在冻结 O1200/C600/C1200、M300、
@@ -13,6 +13,14 @@ Source 上运行 D1 Core/Procedure 路径消融、D2 主/辅助梯度与 AdamW �
 首次 launch 的四个 D1 worker 均在首次数据 authority 校验前后 exit=1，未产生任何性能或闭环行；已确认是 detached
 runtime 错当 asset root 的工程路径错误。该失败原件保留，修复只令 runner 通过 canonical 只读 asset root 读取 authorities/
 assets，重新从 clean pushed runtime 执行同一合同；不得把此类 pre-probe exit 记为 D1 科学结果。
+
+随后重启已完成 D1 的全部函数与闭环行：544 条路径 probe 和112条闭环面板均有 worker exit=0；在完成性核对前没有
+读取或解释其中任何得分。D2 的 C600/O1200 都在写入梯度/虚拟更新行前停止：旧实现把 main 和 teaching 分别经过两次
+Writer VJP 后相加，再与一次 native joint VJP 作绝对误差比较。生产路径实际先合并 LoRA cotangent、再以 BF16 做一次
+Writer VJP；两者的舍入位置不同，故该 abort 是测量实现错误而非科学结果。已将 D2/D3 改为直接取得 native `g_J`、
+取得 `g_Q` 并定义参数空间 `g_A=g_J-g_Q`，J/M 使用直接 `g_J`；损失、事件、权重、AdamW、任务和预算均未改变。
+原 D2 exit/stderr 与无结果目录保留。下一 clean pushed detached runtime 只重跑 D2，时间门控通过才整体运行 D3；不重算
+已完成 D1，也不读取任何部分性能来决定是否继续。
 
 ## 当前状态：36任务 Writer 辅助 episode 配对 fresh 对照已完成（2026-09-22）
 

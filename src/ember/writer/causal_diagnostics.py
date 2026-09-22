@@ -18,7 +18,6 @@ from ember.writer.data import FunctionalQueryDataset
 from ember.writer.runtime import autocast
 from ember.writer.stability_diagnostics import (
     LoadedWriter,
-    TEACHING_WEIGHT,
     combine_gradients,
     gradient_dot,
     optimizer_step,
@@ -489,13 +488,15 @@ def _gradient_group_stats(
     names: Sequence[str],
     q: Sequence[torch.Tensor],
     a: Sequence[torch.Tensor],
+    joint: Sequence[torch.Tensor],
 ) -> list[dict[str, Any]]:
-    accum = {group: {"q": 0.0, "a": 0.0, "dot": 0.0, "count": 0} for group in GRADIENT_GROUPS}
-    for name, q_value, a_value in zip(names, q, a, strict=True):
+    accum = {group: {"q": 0.0, "a": 0.0, "joint": 0.0, "dot": 0.0, "count": 0} for group in GRADIENT_GROUPS}
+    for name, q_value, a_value, joint_value in zip(names, q, a, joint, strict=True):
         group = causal_parameter_group(name)
         cell = accum[group]
         cell["q"] += float(q_value.float().square().sum())
         cell["a"] += float(a_value.float().square().sum())
+        cell["joint"] += float(joint_value.float().square().sum())
         cell["dot"] += float(q_value.float().flatten().dot(a_value.float().flatten()))
         cell["count"] += 1
     rows = []
@@ -508,7 +509,7 @@ def _gradient_group_stats(
             "parameter_count": cell["count"],
             "q_grad_norm": q_norm,
             "a_grad_norm": a_norm,
-            "joint_grad_norm": math.sqrt(max(cell["q"] + cell["a"] + 2.0 * cell["dot"], 0.0)),
+            "joint_grad_norm": math.sqrt(cell["joint"]),
             "q_a_dot": cell["dot"],
             "q_a_cosine": cell["dot"] / max(q_norm * a_norm, 1e-20),
         })
@@ -516,57 +517,72 @@ def _gradient_group_stats(
 
 
 def measure_draw_gradients(loaded: LoadedWriter, data, cache, draw: Mapping[str, Any]) -> tuple[
-    tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], dict[str, float]
+    tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], dict[str, float]
 ]:
-    """Get unaveraged Q and already weighted A gradients for one real event draw."""
+    """Get a native mixed-precision J VJP and its Q/A decomposition for one draw.
+
+    The production Writer first adds the main and weighted auxiliary LoRA
+    cotangents, then casts that joint cotangent into the native Writer VJP.
+    Replaying the two Writer VJPs separately changes that BF16 rounding point.
+    Therefore ``A`` is defined at Writer-parameter space as ``J - Q`` rather
+    than as an independently rounded teaching-only VJP.
+    """
     q, q_metrics = writer_condition_gradient(loaded, data, cache, draw, component="main")
-    a_raw, a_metrics = writer_condition_gradient(loaded, data, cache, draw, component="teaching")
-    a = _scaled_gradient(a_raw, TEACHING_WEIGHT)
-    return q, a, {
+    joint, joint_metrics = writer_condition_gradient(loaded, data, cache, draw, component="joint")
+    if len(q) != len(joint):
+        raise ValueError("causal native joint and main parameter counts differ")
+    a = tuple(joint_value - q_value for q_value, joint_value in zip(q, joint, strict=True))
+    return q, a, joint, {
         "main_loss": float(q_metrics["main_loss"]),
-        "auxiliary_loss": float(a_metrics["teaching_loss"]),
+        "auxiliary_loss": float(joint_metrics["teaching_loss"]),
         "main_grad_norm": _gradient_norm(q),
         "auxiliary_grad_norm": _gradient_norm(a),
+        "joint_grad_norm": _gradient_norm(joint),
     }
 
 
 def measure_batch_gradients(loaded: LoadedWriter, data, cache, draws: Sequence[Mapping[str, Any]]) -> tuple[
-    tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], dict[str, float]
+    tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], dict[str, float]
 ]:
     if len(draws) != 4:
         raise ValueError("causal microtrain update requires four registered tasks")
     values = [measure_draw_gradients(loaded, data, cache, draw) for draw in draws]
-    q, a = _mean_gradient([value[0] for value in values]), _mean_gradient([value[1] for value in values])
+    q = _mean_gradient([value[0] for value in values])
+    a = _mean_gradient([value[1] for value in values])
+    joint = _mean_gradient([value[2] for value in values])
     metrics = {
-        key: sum(value[2][key] for value in values) / len(values)
-        for key in values[0][2]
+        key: sum(value[3][key] for value in values) / len(values)
+        for key in values[0][3]
     }
-    return q, a, metrics
+    return q, a, joint, metrics
 
 
-def gradient_linearity_residual(loaded: LoadedWriter, data, cache, draw: Mapping[str, Any]) -> float:
-    """Check that separately replayed Q+A equals the existing joint Writer replay."""
-    q, a, _metrics = measure_draw_gradients(loaded, data, cache, draw)
-    joint, _joint_metrics = writer_condition_gradient(loaded, data, cache, draw, component="joint")
+def gradient_linearity_residual(
+    q: Sequence[torch.Tensor], a: Sequence[torch.Tensor], joint: Sequence[torch.Tensor]
+) -> float:
+    """Check the native parameter-space Q + (J - Q) decomposition."""
     if len(q) != len(a) or len(q) != len(joint):
-        raise ValueError("causal gradient replay parameter counts differ")
+        raise ValueError("causal native gradient parameter counts differ")
     return max(float((q_value + a_value - joint_value).abs().max())
                for q_value, a_value, joint_value in zip(q, a, joint, strict=True))
 
 
 def _collect_gradient_batches(loaded: LoadedWriter, data, cache, batches) -> tuple[list[Any], list[dict[str, float]], list[dict[str, Any]]]:
-    per_batch: list[tuple[tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]] = []
+    per_batch: list[tuple[tuple[torch.Tensor, ...], tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]] = []
     batch_losses: list[dict[str, float]] = []
     rows: list[dict[str, Any]] = []
     for batch_index, draws in enumerate(batches, start=1):
-        q_values, a_values, losses = [], [], []
+        q_values, a_values, joint_values, losses = [], [], [], []
         for draw in draws:
-            q, a, metrics = measure_draw_gradients(loaded, data, cache, draw)
+            q, a, joint, metrics = measure_draw_gradients(loaded, data, cache, draw)
             q_values.append(q)
             a_values.append(a)
+            joint_values.append(joint)
             losses.append(metrics)
-        q_batch, a_batch = _mean_gradient(q_values), _mean_gradient(a_values)
-        per_batch.append((q_batch, a_batch))
+        q_batch = _mean_gradient(q_values)
+        a_batch = _mean_gradient(a_values)
+        joint_batch = _mean_gradient(joint_values)
+        per_batch.append((q_batch, a_batch, joint_batch))
         batch_losses.append({key: sum(value[key] for value in losses) / len(losses) for key in losses[0]})
         rows.extend({
             "record": "draw",
@@ -581,13 +597,16 @@ def _collect_gradient_batches(loaded: LoadedWriter, data, cache, batches) -> tup
 
 
 def _window_aggregates(per_batch, batch_losses) -> dict[str, dict[str, Any]]:
-    b4_q, b4_a = per_batch[0]
-    b36_q, b36_a = _mean_gradient([item[0] for item in per_batch]), _mean_gradient([item[1] for item in per_batch])
+    b4_q, b4_a, b4_joint = per_batch[0]
+    b36_q = _mean_gradient([item[0] for item in per_batch])
+    b36_a = _mean_gradient([item[1] for item in per_batch])
+    b36_joint = _mean_gradient([item[2] for item in per_batch])
     return {
-        "B4": {"q": b4_q, "a": b4_a, "draw_count": 4, "losses": batch_losses[0]},
+        "B4": {"q": b4_q, "a": b4_a, "joint": b4_joint, "draw_count": 4, "losses": batch_losses[0]},
         "B36": {
             "q": b36_q,
             "a": b36_a,
+            "joint": b36_joint,
             "draw_count": 36,
             "losses": {key: sum(value[key] for value in batch_losses) / len(batch_losses) for key in batch_losses[0]},
         },
@@ -597,17 +616,15 @@ def _window_aggregates(per_batch, batch_losses) -> dict[str, dict[str, Any]]:
 def _gradient_window_rows(loaded: LoadedWriter, windows: Mapping[str, Mapping[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for window, value in windows.items():
-        for row in _gradient_group_stats(loaded.parameter_names, value["q"], value["a"]):
+        for row in _gradient_group_stats(loaded.parameter_names, value["q"], value["a"], value["joint"]):
             rows.append({"window": window, "batch_index": None, **row, **value["losses"]})
     return rows
 
 
 def _batch_gram_rows(per_batch) -> list[dict[str, Any]]:
     rows = []
-    for left_index, (left_q, left_a) in enumerate(per_batch, start=1):
-        left_joint = tuple(q + a for q, a in zip(left_q, left_a, strict=True))
-        for right_index, (right_q, right_a) in enumerate(per_batch[:left_index], start=1):
-            right_joint = tuple(q + a for q, a in zip(right_q, right_a, strict=True))
+    for left_index, (_left_q, _left_a, left_joint) in enumerate(per_batch, start=1):
+        for right_index, (_right_q, _right_a, right_joint) in enumerate(per_batch[:left_index], start=1):
             dot = gradient_dot(left_joint, right_joint)
             rows.append({
                 "record": "batch_gram",
@@ -656,12 +673,17 @@ def apply_virtual_candidate(
     *,
     q: Sequence[torch.Tensor],
     a: Sequence[torch.Tensor],
+    joint: Sequence[torch.Tensor] | None = None,
     candidate: str,
     lr: float,
 ) -> dict[str, Any]:
     """Leave ``loaded`` at J/Q/M/Z, preserving the required AdamW semantics."""
     if candidate not in {"J", "Q", "M", "Z"}:
         raise ValueError("unknown causal virtual candidate")
+    if joint is None:
+        joint = tuple(q_value + a_value for q_value, a_value in zip(q, a, strict=True))
+    if len(q) != len(a) or len(q) != len(joint):
+        raise ValueError("causal candidate gradient parameter counts differ")
     parent = snapshot_parent(loaded)
     before = _parameter_snapshot(loaded)
     if candidate == "Q":
@@ -671,14 +693,14 @@ def apply_virtual_candidate(
         result = optimizer_step(loaded, gradients=(_zero_gradient_like(loaded),), weights=(1.0,), lr=lr)
         alpha = None
     elif candidate == "J":
-        result = optimizer_step(loaded, gradients=(q, a), weights=(1.0, 1.0), lr=lr)
+        result = optimizer_step(loaded, gradients=(joint,), weights=(1.0,), lr=lr)
         alpha = None
     else:
         q_result = optimizer_step(loaded, gradients=(q,), weights=(1.0,), lr=lr)
         q_norm = float(q_result["parameter_displacement_norm"])
         restore_parent(loaded, parent)
         before = _parameter_snapshot(loaded)
-        result = optimizer_step(loaded, gradients=(q, a), weights=(1.0, 1.0), lr=lr)
+        result = optimizer_step(loaded, gradients=(joint,), weights=(1.0,), lr=lr)
         joint_norm = float(result["parameter_displacement_norm"])
         if joint_norm <= 0:
             raise ValueError("causal M candidate has zero joint AdamW displacement")

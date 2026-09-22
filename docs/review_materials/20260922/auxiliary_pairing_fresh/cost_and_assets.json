@@ -1,0 +1,344 @@
+{
+  "c600_full_resume_state": {
+    "all_files_present_and_sized": true,
+    "checkpoint": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600",
+    "files": [
+      {
+        "bytes": 51033768,
+        "exists": true,
+        "manifest_bytes": 51033768,
+        "matches_manifest_bytes": true,
+        "name": "ecp.safetensors",
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/ecp.safetensors"
+      },
+      {
+        "bytes": 14869,
+        "exists": true,
+        "manifest_bytes": 14869,
+        "matches_manifest_bytes": true,
+        "name": "rank_00_state.pt",
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/rank_00_state.pt"
+      },
+      {
+        "bytes": 14869,
+        "exists": true,
+        "manifest_bytes": 14869,
+        "matches_manifest_bytes": true,
+        "name": "rank_01_state.pt",
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/rank_01_state.pt"
+      },
+      {
+        "bytes": 14869,
+        "exists": true,
+        "manifest_bytes": 14869,
+        "matches_manifest_bytes": true,
+        "name": "rank_02_state.pt",
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/rank_02_state.pt"
+      },
+      {
+        "bytes": 14869,
+        "exists": true,
+        "manifest_bytes": 14869,
+        "matches_manifest_bytes": true,
+        "name": "rank_03_state.pt",
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/rank_03_state.pt"
+      },
+      {
+        "bytes": 97090090,
+        "exists": true,
+        "manifest_bytes": 97090090,
+        "matches_manifest_bytes": true,
+        "name": "trainer_state.pt",
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/trainer_state.pt"
+      }
+    ],
+    "manifest": {
+      "bytes": 541,
+      "exists": true,
+      "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/checkpoints/macro_00000600/checkpoint_manifest.json"
+    },
+    "scope_note": "Presence is an artifact fact, not authorization or a new-resume contract.",
+    "stage": "video_teaching_writer_fresh",
+    "world_size": 4
+  },
+  "controller_completion": {
+    "bytes": 441,
+    "exists": true,
+    "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/controller_completion.json"
+  },
+  "cost": {
+    "panels": {
+      "all_evaluation_wall_seconds": 6993.97478055954,
+      "all_materialized_conditions": 3200,
+      "correct400_evaluation_wall_seconds": 5228.939609289169,
+      "correct400_materialized_conditions": 2400,
+      "materialization_elapsed_seconds": "not recorded by formal manifests; condition counts reported without inventing wall time",
+      "panels": [
+        {
+          "arm": "correct",
+          "evaluation_wall_seconds": 865.676488161087,
+          "label": "cross_episode_correct_200",
+          "materialized_conditions": 400,
+          "step": 200,
+          "workers": 12
+        },
+        {
+          "arm": "correct",
+          "evaluation_wall_seconds": 883.9618365764618,
+          "label": "cross_episode_correct_400",
+          "materialized_conditions": 400,
+          "step": 400,
+          "workers": 12
+        },
+        {
+          "arm": "correct",
+          "evaluation_wall_seconds": 871.1136109828949,
+          "label": "cross_episode_correct_600",
+          "materialized_conditions": 400,
+          "step": 600,
+          "workers": 12
+        },
+        {
+          "arm": "correct",
+          "evaluation_wall_seconds": 852.8299844264984,
+          "label": "cross_episode_correct_800",
+          "materialized_conditions": 400,
+          "step": 800,
+          "workers": 12
+        },
+        {
+          "arm": "correct",
+          "evaluation_wall_seconds": 882.4802486896515,
+          "label": "cross_episode_correct_1000",
+          "materialized_conditions": 400,
+          "step": 1000,
+          "workers": 12
+        },
+        {
+          "arm": "correct",
+          "evaluation_wall_seconds": 872.8774404525757,
+          "label": "cross_episode_correct_1200",
+          "materialized_conditions": 400,
+          "step": 1200,
+          "workers": 12
+        },
+        {
+          "arm": "same_task_other",
+          "evaluation_wall_seconds": 877.3039689064026,
+          "label": "same_task_other_600",
+          "materialized_conditions": 400,
+          "step": 600,
+          "workers": 12
+        },
+        {
+          "arm": "cross_suite_wrong",
+          "evaluation_wall_seconds": 887.7312023639679,
+          "label": "cross_suite_wrong_600",
+          "materialized_conditions": 400,
+          "step": 600,
+          "workers": 12
+        }
+      ]
+    },
+    "training": {
+      "auxiliary_queries": 33600,
+      "main_queries": 100800,
+      "max_peak_reserved_gib": 22.802734375,
+      "mean_update_seconds": 9.767335298822728,
+      "p95_update_seconds": 15.10366659425199,
+      "physical_training_gpus": 4,
+      "total_queries": 134400,
+      "update_loop_seconds": 11720.802358587272,
+      "updates": 1200
+    }
+  },
+  "effective_training_config": {
+    "bytes": 19059,
+    "exists": true,
+    "path": "docs/review_materials/20260922/auxiliary_pairing_fresh/effective_training_config.json",
+    "source_run_contract": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/run_contract.json"
+  },
+  "extended_run_final_selection": {
+    "correct_successes": 154,
+    "diagnostic_contract": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/launch/writer_selected_00000600_diagnostic_contract.json",
+    "history_through_step": 1200,
+    "method_freeze": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/method_freeze.json",
+    "other_successes": {
+      "600": 160
+    },
+    "other_tiebreak_required": false,
+    "qualification_arm": "correct",
+    "schema_version": "ember_writer_auxiliary_pairing_selection_v1",
+    "scope": "extended_run_final",
+    "selected_macro": 600,
+    "selected_other_successes": 160,
+    "selection_rule": "highest correct400; all tied highest receive same_task_other400; highest other then earliest",
+    "status": "selected",
+    "tied_best_steps": [
+      600
+    ],
+    "wrong_used_for_selection": false
+  },
+  "formal_config": {
+    "bytes": 9948,
+    "exists": true,
+    "path": "/data1/user/ymdai/projects/EMBER/configs/libero_24_8_8_coverage_v1/writer_aux_cross_episode.json"
+  },
+  "launch_contract": {
+    "bytes": 6517,
+    "exists": true,
+    "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/launch/launch_contract.json"
+  },
+  "not_recorded": [
+    "materialization_elapsed_seconds"
+  ],
+  "original_early_stop": {
+    "best_checkpoints": [
+      600
+    ],
+    "best_correct_successes": 154,
+    "complete_history": [
+      {
+        "complete": true,
+        "episodes": 400,
+        "step": 200,
+        "successes": 151
+      },
+      {
+        "complete": true,
+        "episodes": 400,
+        "step": 400,
+        "successes": 120
+      },
+      {
+        "complete": true,
+        "episodes": 400,
+        "step": 600,
+        "successes": 154
+      },
+      {
+        "complete": true,
+        "episodes": 400,
+        "step": 800,
+        "successes": 137
+      },
+      {
+        "complete": true,
+        "episodes": 400,
+        "step": 1000,
+        "successes": 129
+      },
+      {
+        "complete": true,
+        "episodes": 400,
+        "step": 1200,
+        "successes": 124
+      }
+    ],
+    "decision": {
+      "best_step": 600,
+      "best_successes": 154,
+      "completed_nodes": 6,
+      "last_step": 1200,
+      "reason": "sustained_decline",
+      "stop": true,
+      "tied_best_steps": [
+        600
+      ]
+    },
+    "post_stop_extension_authorized_through": 1200,
+    "schema_version": "ember_writer_auxiliary_pairing_original_early_stop_v1",
+    "trigger_reason": "sustained_decline",
+    "trigger_step": 1200
+  },
+  "original_selection": {
+    "correct_successes": 154,
+    "history_through_step": 1200,
+    "other_successes": {
+      "600": 160
+    },
+    "other_tiebreak_required": false,
+    "qualification_arm": "correct",
+    "schema_version": "ember_writer_auxiliary_pairing_selection_v1",
+    "scope": "original_early_stop",
+    "selected_macro": 600,
+    "selected_other_successes": 160,
+    "selection_rule": "highest correct400; all tied highest receive same_task_other400; highest other then earliest",
+    "status": "selected",
+    "tied_best_steps": [
+      600
+    ],
+    "wrong_used_for_selection": false
+  },
+  "reference_assets": {
+    "mtbc_300": {
+      "launcher_completion.json": {
+        "bytes": 3716,
+        "exists": true,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000300/launcher_completion.json"
+      },
+      "results.json": {
+        "bytes": 911379,
+        "exists": true,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000300/results.json"
+      },
+      "run_contract.json": {
+        "bytes": 19503,
+        "exists": true,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/mtbc_00000300/run_contract.json"
+      }
+    },
+    "same_video_600": {
+      "launcher_completion.json": {
+        "bytes": 3970,
+        "exists": true,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/writer_00000600/launcher_completion.json"
+      },
+      "results.json": {
+        "bytes": 4084275,
+        "exists": true,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/writer_00000600/results.json"
+      },
+      "run_contract.json": {
+        "bytes": 743434,
+        "exists": true,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/writer_00000600/run_contract.json"
+      }
+    },
+    "source_validation": {
+      "launcher_completion.json": {
+        "bytes": 1850,
+        "exists": true,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/source_validation/launcher_completion.json"
+      },
+      "results.json": {
+        "bytes": 897403,
+        "exists": true,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/source_validation/results.json"
+      },
+      "run_contract.json": {
+        "bytes": 17394,
+        "exists": true,
+        "path": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/source_validation/run_contract.json"
+      }
+    }
+  },
+  "reference_root": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920",
+  "schema_version": "ember_writer_auxiliary_pairing_review_packet_v1",
+  "selected_controls_contract": {
+    "bytes": 395,
+    "exists": true,
+    "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/launch/writer_selected_00000600_diagnostic_contract.json"
+  },
+  "study_root": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922",
+  "training_contract": {
+    "bytes": 20989,
+    "exists": true,
+    "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/training/writer/run_contract.json"
+  },
+  "validation_history": {
+    "bytes": 260880,
+    "exists": true,
+    "path": "/data0/user/ymdai/ember_runs/coverage_retraining_cross_episode_aux_20260922/writer_validation_history.json"
+  }
+}

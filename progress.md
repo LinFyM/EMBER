@@ -1,5 +1,11 @@
 # EMBER progress
 
+## 2026-09-22：辅助配对正式结果专家复核包
+
+按Owner要求，已从sealed正式产物机械导出并推送[轻量复核包](docs/review_materials/20260922/auxiliary_pairing_fresh/README.md)，不重跑视频、GPU诊断或训练。包中保留六个correct400节点2400条逐行结果、C600 other/wrong各400条严格配对行、C600与same-video/MT-BC300/Source各400条配对行、11个面板的rows/manifest/worker完整性、1200步训练主/辅助loss、LR和既有梯度统计、36任务exposure汇总、成本及合同/停止/选点/C600完整resume资产索引。
+
+C600相对MT-BC300的逐行配对为共同成功111、C600-only 43、MT-BC-only 44；相对wrong为共同成功111、correct-only 43、wrong-only 42。所有配对task/state、language、environment seed与policy seed root一致；因不同成功时点而长度不同的policy-noise序列均在共同前缀一致。正式manifest未记录materialization elapsed，包中显式标作`not_recorded`。这只是供专家判断能力共享、交换和后继可行性的材料，不新增科学结论或后继授权。
+
 ## 2026-09-22：36任务 Writer 辅助 episode 配对 fresh 对照正式完成
 
 本轮唯一变量为`data.teaching_episode: same_video → cross_episode`，其余Source-71、normalization、36任务、

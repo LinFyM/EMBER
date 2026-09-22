@@ -1,5 +1,16 @@
 # EMBER findings
 
+## O1200/C600 既有执行轨迹：失败定位材料的严格边界（2026-09-22）
+
+专家要求从已完成 D1 `CC` 轨迹观察最早行为差异，而非继续训练或扩展消融。事后按每 suite 的 task/state 升序固定选择
+一个旧成功/新失败、teacher 条件相同的行：Spatial 5/1、Object 2/0、Goal 0/1、Long 4/1；因选择使用已有结果，四对
+不构成新的性能率样本。所有原件是 compact capture，保存 action chunk 和 replan state 而不含逐时刻 RGB；将保存的
+实际执行前缀重放后，8/8 trajectory 的 replan Pi05 state（最大绝对误差0）、success/steps、stage predicate
+transitions、ever/final/peak 均与原始正式行一致。因此远程
+[行为复核包](docs/review_materials/20260922/writer_causal_diagnostics/behavior_pairs/README.md)中的视频、action/state 和
+predicate 时间线是已验证的保存动作重放，不是新 policy rollout。它没有自行判定“抓取/目标/摆动”等错误类别，也不能证明
+唯一根因或改变现有训练结论；该判定留给专家。
+
 ## Writer 因果路径与辅助梯度诊断：完整证据边界（2026-09-22）
 
 冻结 D1/D2/D3 已完整结束（544条路径 probe、112条路径闭环、16条虚拟更新、54条微训练更新、192条终点 probe、

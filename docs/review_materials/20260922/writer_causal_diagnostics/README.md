@@ -3,6 +3,10 @@
 本目录是正式 study `writer_causal_diagnostics_20260922` 的可推送审计副本。它让只能访问远程仓库的审计者能够读取
 完整合同、实现修正、逐条件结构化结果、完成性和成本，而无需访问 `/data0`。先阅读[结果报告](report.md)，再按下表复核。
 
+专家随后要求用既有真实执行轨迹定位最早行为差异。相应的四个固定 `O1200 success / C600 failure` 对照，连同已验证的
+保存动作重放画面、逐控制步动作/状态、完整谓词时间线和同一 teacher 轻量视频，位于
+[behavior_pairs/README.md](behavior_pairs/README.md)。这是事后失败定位材料，不是新成功率样本、评测、训练或模型推理。
+
 本包不包含 checkpoint、源数据、视频、完整 rollout trajectory tensor 或环境资产等大二进制；这些不适合提交 Git，仍保留在
 canonical study 根。所有用于报告计算的**结构化原始行**均在本目录 `raw/`，所以不需要这些二进制即可重算本报告的均值、
 success、breadth、R/G/L、Jaccard 与成本总计。
@@ -18,6 +22,7 @@ success、breadth、R/G/L、Jaccard 与成本总计。
 | D3 三臂18步的实际 loss/gradient/displacement、probe和48条闭环 | `raw/microtrain_steps.csv`、`raw/microtrain_probe_rows.csv`、`raw/microtrain_rollout_rows.csv` |
 | 轨迹和条件键的本地留存索引 | `raw/trajectory_manifest.csv` |
 | stage-worker 成本 | `costs.json` |
+| 四个固定旧成功/新失败对照的执行画面、动作/状态、谓词和 teacher 视频 | [behavior_pairs/README.md](behavior_pairs/README.md) |
 | 初始 launch 到 retry6 的全部文本 launch/exit/stdout/stderr、contract 与 preflight | `launch/` |
 | 结果的保守解释与不可成立主张 | [结果报告](report.md) |
 

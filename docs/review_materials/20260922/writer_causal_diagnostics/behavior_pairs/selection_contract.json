@@ -1,0 +1,72 @@
+{
+  "action_postprocess": "Pi05LiberoProcessor.unnormalize_action on saved normalized chunks, CPU only",
+  "arm": "CC",
+  "assets": [
+    "O1200",
+    "C600"
+  ],
+  "camera_view": "policy_view_agentview_and_wrist_rotated_180",
+  "full_capture_excluded_not_old_success_current_failure": [
+    {
+      "global_task_id": 5,
+      "init_state_id": 0
+    },
+    {
+      "global_task_id": 37,
+      "init_state_id": 1
+    }
+  ],
+  "model_forward_or_action_sampling": false,
+  "not_a_new_success_rate_sample": true,
+  "original_environment_contract": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/evaluation/source_validation/run_contract.json",
+  "physical_gpu_id_for_egl_render_only": 4,
+  "purpose": "post_hoc_failure_localization_only",
+  "saved_action_replay_only": true,
+  "schema_version": "ember_writer_causal_behavior_pair_review_v1",
+  "selected_pairs": [
+    {
+      "global_task_id": 5,
+      "init_state_id": 1,
+      "other_demo": 46,
+      "pair_id": "libero_spatial_task_05_state_001",
+      "suite": "libero_spatial",
+      "task_id": 5,
+      "teacher_demo": 48
+    },
+    {
+      "global_task_id": 12,
+      "init_state_id": 0,
+      "other_demo": 48,
+      "pair_id": "libero_object_task_02_state_000",
+      "suite": "libero_object",
+      "task_id": 2,
+      "teacher_demo": 46
+    },
+    {
+      "global_task_id": 20,
+      "init_state_id": 1,
+      "other_demo": 46,
+      "pair_id": "libero_goal_task_00_state_001",
+      "suite": "libero_goal",
+      "task_id": 0,
+      "teacher_demo": 48
+    },
+    {
+      "global_task_id": 34,
+      "init_state_id": 1,
+      "other_demo": 46,
+      "pair_id": "libero_10_task_04_state_001",
+      "suite": "libero_10",
+      "task_id": 4,
+      "teacher_demo": 48
+    }
+  ],
+  "selection_rule": "within each suite, sort old-success/current-failure CC matches by task_id then init_state_id and retain first",
+  "selection_uses_completed_outcomes": true,
+  "source_study": "/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922",
+  "source_tables": [
+    "/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/parts/path_rollout_rows_O1200_CC.csv",
+    "/data0/user/ymdai/ember_runs/writer_causal_diagnostics_20260922/parts/path_rollout_rows_C600_CC.csv"
+  ],
+  "writer_or_policy_model_loaded": false
+}

@@ -1,5 +1,15 @@
 # EMBER task plan
 
+## 已完成：既有 O1200/C600 执行轨迹的专家失败定位材料（2026-09-22）
+
+按专家最新意见，没有恢复任何训练、策略推理、正式 Validation/Test、FT、RL 或外部比较；只从已完成 D1 `CC` 行事后选择
+每 suite 一个 `O1200 success / C600 failure` 条件（Spatial 5/1、Object 2/0、Goal 0/1、Long 4/1）。四对都是既有
+compact capture，故仅重放已保存 action chunk 的实际执行前缀，并逐 replan 核对保存 Pi05 state、原始 success/steps 和
+stage-predicate transitions；八条轨迹均完全匹配，最大 state 绝对误差0。远程专家可从
+[行为复核包](docs/review_materials/20260922/writer_causal_diagnostics/behavior_pairs/README.md)查看同时间轴并排执行画面、
+逐控制步实际 action/robot state、完整目标谓词时间线、原始变化点和同一 action-hidden teacher 轻量画面。它是事后失败
+定位材料，不能作为新成功率或根因结论；当前仍无 active design 或获授权的后继训练。
+
 ## 已完成：Writer 因果路径与辅助梯度诊断（2026-09-22）
 
 专家要求的有界 D1/D2/D3 已在冻结 O1200/C600/C1200、M300 与 Source 上完整封存；当前**没有 active design 或获授权的

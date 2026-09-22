@@ -1,5 +1,19 @@
 # EMBER progress
 
+## 2026-09-22：O1200/C600 既有执行轨迹专家失败定位材料
+
+专家要求停止新增训练/梯度/模块消融，只读取既有 D1 `O1200/CC` 与 `C600/CC` 真实执行，以便定位最早动作错误。按事后
+固定规则（每 suite 中 `task_id`、`init_state_id` 升序的第一个 O1200 success/C600 failure 且同 teacher 条件）选择
+Spatial 5/1、Object 2/0、Goal 0/1、Long 4/1；它们不是新的 success-rate 样本。原件均为 compact capture，故以保存的
+normalized action chunk 的实际五步执行前缀，经 source normalization 反归一化后在原环境重放，未加载或调用 Writer、
+source policy、checkpoint、action sampler 或模型 forward。gpu01:4 的一次 EGL 只读重放完成后，8/8 trajectory 的每个
+保存 replan Pi05 state（最大绝对误差0）、success/steps和全部 stage-predicate transitions 都与原始行一致。
+
+[远程行为复核包](docs/review_materials/20260922/writer_causal_diagnostics/behavior_pairs/README.md)包含四个同步并排执行视频、
+2,035 条逐控制步 action/state、完整 predicate timeline、原始 predicate transition、逐轨迹 fidelity 表、原始选中行，
+以及同一 action-hidden teacher 的轻量视频/contact sheet。预保存 full RGB 的 global5/state0、global37/state1 都因
+O1200 本身失败而明确排除，不被误作正反比较。材料仅供专家判定错误类别；不在此归因性能下降或启动后继实验。
+
 ## 2026-09-22：Writer 因果路径与辅助梯度诊断 D1/D2/D3 完整交付
 
 专家后续的有界 D1/D2/D3 已结束，未启动 fresh 训练、正式 Validation/Test、FT、RL 或外部比较。最终

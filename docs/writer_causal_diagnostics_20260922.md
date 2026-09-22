@@ -29,6 +29,17 @@ C600/O1200 worker、finalize和detached runtime均 exit=0；D1/D3 已先完整�
 因此本设计不选择后继候选，不证明正确视频内容/顺序特异性，也不证明辅助项整体或`tau=1`、前5步、`1/3`任何组成部分
 必要。
 
+### 既有执行轨迹的事后失败定位材料（2026-09-22）
+
+专家在本 study 封存后只要求读取已完成的 `O1200/CC` 与 `C600/CC` 真实执行，不授权新的模型推理、训练或评测。
+导出器按每个 suite 的 `task_id`、`init_state_id` 升序，事后固定选择一个 `O1200 success=True`、`C600 success=False`
+且 teacher 条件相同的行（Spatial 5/1、Object 2/0、Goal 0/1、Long 4/1）。四个 compact trajectory 原件只含 replan
+state 和保存的 normalized action chunk，所以仅将已保存的实际五步前缀用原生 normalization 反归一化后重放环境；
+不构造或调用 Writer、source policy、checkpoint、action sampler 或模型 forward。每条重放的全部保存 replan state、
+success/steps 和原始 stage-predicate transitions 都完全一致，最大 state 绝对误差为0，故可作为已验证的保存动作重放。
+远程审计材料在[behavior_pairs/README.md](review_materials/20260922/writer_causal_diagnostics/behavior_pairs/README.md)。
+该事后四对不能当作新的成功率样本，也不由执行 agent 给出错误类别或唯一根因；错误类别留给专家依据画面/时间线判断。
+
 ## 冻结资产、数据边界与预算
 
 | 代号 | 冻结资产 | 本设计中的用途 |

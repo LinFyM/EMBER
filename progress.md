@@ -11,7 +11,7 @@ J18完整验证已被Owner否决，不执行；失败状态专家监督历史已
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
 Owner进一步明确：07:30后可继续，09:00组会前的新结果仍可补入汇报；有好Validation必须完成冻结模型与MT-BC的Test对照。
 
-## 当前运行快照（2026-09-23 06:30）
+## 当前运行快照（2026-09-23 07:14）
 
 正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
 clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
@@ -20,7 +20,7 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；exact commands/env、allocation、quota、profile、选点合同均在launch目录。
 最新data0 quota used148345752KiB、soft1073741824KiB；当前study289780KiB，新增峰值32GiB有余量；Source/data无复制。
 部署和损失未变；fresh不是C600续训，也不复用profile权重。所有先行诊断workers已exit0，无其它本轮GPU任务遗留。
-完整Validation200/400/600/800成绩分别为103/117/142/141（见下方记录），尚未达到改善门槛；继续原登记1000/1200节点。
+完整Validation200/400/600/800/1000成绩分别为103/117/142/141/138，尚未达到改善门槛；继续原登记1200节点。
 首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
 07:30前最多12物理卡的并行在Owner临时授权内；07:30之后必须重新压到常规总量再继续，09:00前可补结果。
 不使用J18 Validation，不按Test或shuffle/reverse结果再改方法。旧MTBC300 Test metadata修复脚本已只读核验，尚未apply或运行Test。
@@ -100,6 +100,15 @@ PPT包更新到20个完整Validation面板、8000条success投影；无selected 
 07:30后按常规总卡数调度；若未达180则按既定预算内最佳点冻结并完成视频对照，如实交付未解决结果，不下调门槛或用Test选点。
 另在同一PPT数据包补齐启动前J54/D54训练侧视频小试的初始32、复核32及描述性合计64的CSV、配对统计和图。
 明确标注共同C600+54更新、非fresh、非Validation，以及复核在首面板后登记；不把30/31/25当成新正式模型的成绩。
+
+07:12第五个完整Validation400结束，1000步138/400，12 workers均exit0、唯一条件与配对合同通过。
+按Long1/Long9/Goal3/Goal6/Object1/Object6/Spatial3/Spatial6依次20/0/0/47/41/2/17/11，各50；breadth6。
+相对800步保留100、得38、失41；相对MTBC300保留94、得44、失61，净-17。当前最佳仍600步142，未达到本夜绝对性能目标。
+PPT包更新到21个完整Validation面板、8400条success投影，未选模型、未开视频controls或Test。
+07:04提前写入`launch/stop_validation.json`资源暂停请求；watcher按合同完整收尾1000后正常`stopped_by_root`，不改变训练。
+目的是避免07:30以后1200 checkpoint刚发布而训练GPU尚未释放时两节点同时用12卡。训练继续至1200，预计07:47退出；
+须在训练exit和GPU释放核验后归档此次stop/completion/driver日志，移除这一个任务自有stop marker，以相同冻结runtime/命令恢复最后1200评测。
+此次暂停没有按分数改变节点、模型、种子、视频映射或训练配方。预计最后完整结果08:05附近，再执行唯一冻结点的视频对照。
 
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 

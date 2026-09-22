@@ -1,6 +1,6 @@
 # Writer 辅助 episode 配对 fresh 对照：专家复核包
 
-这是对正式 study `coverage_retraining_cross_episode_aux_20260922` 的轻量、可逐行复核摘录。它只复制结构化指标与元数据，不复制 checkpoint、视频、动作标签、原始 rollout 日志或大资产；所有数值都来自已经 sealed 的正式产物。
+这是对正式 study `coverage_retraining_cross_episode_aux_20260922` 的轻量、可逐行复核摘录。它只复制结构化指标与元数据，不复制 checkpoint、视频、动作标签、原始 rollout 日志或大资产；所有数值都来自已经 sealed 的正式产物。需要直接阅读结果时先看[轻量正式复核报告](report.md)。
 
 本包不启动新训练、物化或评测，也不把辅助 episode 配对的对照外推为端点前缀辅助目标本身的价值。
 

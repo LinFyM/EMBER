@@ -11,7 +11,7 @@ J18完整验证已被Owner否决，不执行；失败状态专家监督历史已
 Owner随后追加：07:30前GPU数量无上限，低占用卡大胆共驻以节约时间；覆盖此前六卡限制及初始goal文字，以真实吞吐/余量安排。
 Owner进一步明确：07:30后可继续，09:00组会前的新结果仍可补入汇报；有好Validation必须完成冻结模型与MT-BC的Test对照。
 
-## 当前运行快照（2026-09-23 07:48）
+## 当前运行快照（2026-09-23 08:08）
 
 正式fresh与独立Validation watcher已在02:51:26 CST提交；冻结runtime为`.codex/tmp/task-diversity-implementation`，
 clean pushed detached commit`0684ee0593b79b29ca4c86e43e47133143be8c27`。训练gpu02:0/1/2/3/4/6，
@@ -20,9 +20,10 @@ tmux`ember-task-mixing-validation-20260923`。训练不等待评测，评测只�
 输出`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；exact commands/env、allocation、quota、profile、选点合同均在launch目录。
 最新data0 quota used148345752KiB、soft1073741824KiB；当前study289780KiB，新增峰值32GiB有余量；Source/data无复制。
 部署和损失未变；fresh不是C600续训，也不复用profile权重。所有先行诊断workers已exit0，无其它本轮GPU任务遗留。
-完整Validation200/400/600/800/1000成绩分别为103/117/142/141/138，尚未达到改善门槛。
-正式训练已于07:46:59正常exit0结束1200更新；07:48在训练卡完全释放后恢复最后1200节点的完整评测，仍未选定模型。
-首个完整correct400≥180冻结并停止新选点，随后controls及Test+MTBC；未达则最多1200内如实裁决。
+完整Validation200/400/600/800/1000/1200为103/117/142/141/138/107，绝对性能目标未达。
+正式训练已于07:46:59正常exit0结束1200更新，六个完整评测节点均已结束；按原预算内最佳规则唯一冻结本run600步142/400。
+该点仅用于本study最终视频对照，不取代旧C600154或MTBC300155参照。`qualified_for_test=false`，未启动Test/FT/RL。
+08:06启动冻结点other400（gpu01:0/2/4）和wrong400（gpu02:0/1/2），各每卡3 workers，合计6物理卡；之后才做shuffle/reverse。
 07:30前最多12物理卡的并行在Owner临时授权内；07:30之后必须重新压到常规总量再继续，09:00前可补结果。
 不使用J18 Validation，不按Test或shuffle/reverse结果再改方法。旧MTBC300 Test metadata修复脚本已只读核验，尚未apply或运行Test。
 
@@ -118,6 +119,16 @@ tmux为`ember-task-mixing-validation-final-20260923`，本次allocation总计6�
 资源暂停的stop/completion/driver日志已原件归档到`launch/validation_resource_pause_after1000`；新恢复记录为
 `launch/validation_final_resume.json`。data0最新quota used160305856/1073741824KiB，study12236972KiB，
 剩余正式面板及条件性Test的保守新增峰值16GiB可容纳，未复制Source/data。仍只在完整1200面板后按原规则冻结。
+
+08:03最后一个完整Validation400结束，1200步107/400，12 workers exit0；六节点watcher完整结束。
+按Long1/Long9/Goal3/Goal6/Object1/Object6/Spatial3/Spatial6依次3/0/0/42/33/0/0/29，各50；breadth4。
+相对1000保留78、得29、失60，净-31；相对本run最佳600保留82、得25、失60，净-35。
+08:05按原规则封存`writer_selection.json`和`method_freeze.json`：唯一selected600、correct142、后续训练/选点均false。
+没有任何节点达到180，故不进入本轮Test资格；没有改阈值、补中间节点、增加seed或把D54小试权重升级为正式候选。
+08:06在双节点live确认本任务GPU已释放、每张拟用卡余量超过42GiB后启动other/wrong各400；精确命令及分卡见
+`launch/frozen_primary_panels_launch.json`，tmux为`ember-mix600-other-20260923`和`ember-mix600-wrong-20260923`。
+other经canonical reuse-manifest复用同checkpoint/同视频的完整LoRA，但重新构建不同的state-video映射并做全部400闭环；wrong完整重编译。
+PPT包更新到22个完整Validation曲线面板、8800条投影，并开始单独保存唯一冻结点的controls；当前仅correct已完成，不能预填视频结论。
 
 ## 执行记录（2026-09-23 01:36–02:50）：局部诊断到任务覆盖小试
 

@@ -1,13 +1,19 @@
 {
-  "generated_utc": "2026-09-22T23:13:41.869971+00:00",
-  "training_process_exited": false,
-  "training_exit": null,
-  "latest_complete_validation_step": 1000,
-  "latest_successes": 138,
-  "selected_step": null,
+  "generated_utc": "2026-09-23T00:06:58.230378+00:00",
+  "training_process_exited": true,
+  "training_exit": "0",
+  "latest_complete_validation_step": 1200,
+  "latest_successes": 107,
+  "selected_step": 600,
   "qualification_successes": 180,
   "test_results_in_this_bundle": false,
-  "frozen_panels": [],
+  "frozen_panels": [
+    {
+      "panel": "writer/validation/correct",
+      "results": "coverage_task_mixing_20260923/evaluation/writer_00000600_correct/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:7e5407d77b9f494c874707de6434a2c2"
+    }
+  ],
   "protocol": "libero_24_8_8_coverage_v1",
   "training_commit": "0684ee0593b79b29ca4c86e43e47133143be8c27",
   "source_results_root_label": "ember_runs",
@@ -217,6 +223,16 @@
       "optimizer_updates": 1000,
       "source_results": "coverage_task_mixing_20260923/evaluation/writer_00001000_correct/results.json",
       "contract_reference": "ember_pi05_target_eval_launch_v2:d079766064f34117b0cfa3674a144f9b",
+      "evaluation_commit": "c9844dfc8db6adf68ed232236bd90d1572f583f5",
+      "complete_unique_rows": 400,
+      "role": "validation",
+      "arm": "correct"
+    },
+    {
+      "method": "Task-mixing EMBER",
+      "optimizer_updates": 1200,
+      "source_results": "coverage_task_mixing_20260923/evaluation/writer_00001200_correct/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:76fc661f4bdd4dd6bf4bc919a8277c90",
       "evaluation_commit": "c9844dfc8db6adf68ed232236bd90d1572f583f5",
       "complete_unique_rows": 400,
       "role": "validation",

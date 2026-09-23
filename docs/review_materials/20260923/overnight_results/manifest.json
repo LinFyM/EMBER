@@ -1,13 +1,13 @@
 {
-  "exported_at_utc": "2026-09-22T23:14:22+00:00",
+  "exported_at_utc": "2026-09-23T00:08:17+00:00",
   "project": "EMBER",
   "run_id": "overnight_20260923",
   "src": "/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923/presentation_inputs",
   "out": "/data1/user/ymdai/projects/EMBER/docs/review_materials/20260923/overnight_results",
   "copy_mode": "rsync",
   "stats": {
-    "files": 16,
-    "total_bytes": 925639
+    "files": 23,
+    "total_bytes": 1113438
   },
   "git": {
     "root": null,

@@ -1,0 +1,2 @@
+method,optimizer_updates,role,arm,successes,episodes,percent
+writer,600,validation,correct,142,400,35.5

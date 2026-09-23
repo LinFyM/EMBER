@@ -145,6 +145,9 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - 不新增SHA-256、MD5或大量防御性校验。只保留信息墙、shape、finite、OOM、asset、pairing、checkpoint和resume
   正确性所需检查。
 - profile以真实LoRA/s、samples/s、最长视频稳定性、GPU利用率和显存峰值选择batch，不以最低显存为目标。
+- 正式长任务正常运行期间，等待进程退出事件或完成标记；不要按固定间隔反复读取训练进度、日志、checkpoint或缓存。
+  进程结束后再统一核验退出码、完成记录和产物。仅在出现故障迹象、需要即时资源调度或Owner明确要求状态时，
+  做有针对性的轻量检查，避免重复读取共享缓存。
 
 ## 10. Storage, artifacts, Git and documentation
 

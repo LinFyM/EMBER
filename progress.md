@@ -1,14 +1,20 @@
 # EMBER progress
 
-## 当前状态：两轮收尾完成，研究保持暂停（2026-09-23）
+## 当前状态：收尾完成，已授权新session接续研究（2026-09-23）
 
-Owner认为仅清理缓存不充分，明确要求进一步裁剪历史checkpoint。本轮按关键权重/历史参照/当前依赖/恢复用途择点，
+Owner最新指令是让新session陪同分析EMBER、尝试解决根因，短期可继续既定安排，具体实验可以派发其它session。
+这取代此前全局暂停后继工作的状态；本轮仅准备交接，没有启动训练、发送实验任务或创建新session。
+新主讨论/执行session的实际ID尚未登记，不沿用已停止Luna或旧主讨论作为收件人。
+**接续的active design为[条件编译四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)**，
+当前阶段是交接与未验证WIP复审，未恢复运行。短期步骤、结果解释分支和派发要求见[task_plan](task_plan.md)。
+接手后在既有授权内完成实现/核验/有界诊断；旧的组会deadline、无上限GPU及其它历史运行许可不恢复。
+
+此前Owner认为仅清理缓存不充分，明确要求进一步裁剪历史checkpoint。追加清理按关键权重/历史参照/当前依赖/恢复用途择点，
 额外回收360.759 GiB；连同首轮53.007 GiB，两轮累计413.766 GiB。data1用户配额实测从846.3降至485.6/1024 GiB，
 data0仍为122.1/1024 GiB。原始评测、配置、关键模型及当前诊断依赖继续保留。
 
-Owner最新要求只整理仓库，不再开展或派发实验。Luna由Owner停止；**没有创建Sol任务**。
-没有active experiment design。旧计划、设计中的启动许可、GPU特例与时间窗口均不自动生效。
-长期理解、文档/代码/缓存与worktree整理、追加资产退休均已完成；后续研究由Owner另外安排。
+两轮清理按当时暂停研究的要求执行；Luna由Owner停止，**没有创建Sol任务**。
+长期理解、文档/代码/缓存与worktree整理、追加资产退休已完成并在`b711c2af`集成推送。
 
 ## 追加checkpoint裁剪
 
@@ -33,7 +39,7 @@ Owner最新要求只整理仓库，不再开展或派发实验。Luna由Owner停
 1. [Owner要求](docs/current_owner_requirements.md)：固定LoRA可达下界并非公共底座课程；有益视频利用、理论解释深度与协作边界。
 2. [Concept](docs/concept.md)：完整pipeline，以及生成Jacobian、端点/前缀监督、任务关系覆盖三类待检验解释。
 3. [Findings](findings.md)§127–133与[研究历史](docs/research_history.md)：近期原件、正负证据和不能外推的结论。
-4. [暂停的条件编译设计](docs/designs/conditional_compilation_diagnostics_design.md)：四臂用途、混杂与未覆盖的数据原因。
+4. [接续的条件编译设计](docs/designs/conditional_compilation_diagnostics_design.md)：四臂用途、混杂与未覆盖的数据原因。
 
 ## 当前实证快照
 
@@ -61,7 +67,7 @@ Owner最新要求只整理仓库，不再开展或派发实验。Luna由Owner停
 已push分支 **`codex/conditional-compilation-diagnostics`，commit `73267f53`** 保存Luna全部未完成实现。
 没有合入main；主线只保留[设计](docs/designs/conditional_compilation_diagnostics_design.md)、
 `configs/conditional_compilation_diagnostics_v1/experiment_spec.json`和`partition_audit.json`。
-登记根为`/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923/registration.json`，状态是暂停。
+登记根为`/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923/registration.json`，状态是已授权接手、尚未恢复运行。
 
 候选fit28＝官方Train中的seen target16＋已审计aux12；diagnostic-held8是其余官方Train任务，官方24/8/8未改。
 A直接共享rank16、B语言Writer、C完整视频Writer、D相同视频结构但第二监督组改tau1/前5步；均计划fresh。
@@ -69,11 +75,11 @@ A直接共享rank16、B语言Writer、C完整视频Writer、D相同视频结构�
 完整分组、步数、节点与每个比较的边界以冻结spec和设计为准；本批**未做GPU smoke、未启动四臂训练、没有新成绩**。
 
 已知未修复错误：WIP `supervised.py`中`validate`错误缩进在`configured_endpoint`的return之后，未成为
-`SupervisedEngine.validate`；只做syntax compile不能发现该问题。后继若获新授权，应先审查整个WIP diff及真实调用接口，
+`SupervisedEngine.validate`；只做syntax compile不能发现该问题。接手应先审查整个WIP diff及真实调用接口，
 不能把已完成的CPU配置/事件审计误称训练实现已通过。不要为清理而删除这条未合并分支。
 
-恢复WIP需从该已推送分支新建隔离worktree，并把本次main清理逐项协调后验证；不在main直接覆盖未验证代码。
-本段只提供恢复位置，不构成运行指令；由Owner与新session决定继续、修正或放弃候选。
+从最新main创建隔离worktree，将该已推送WIP逐项整合后验证，不整体恢复旧文档状态或已退役实现。
+新主讨论依据既定四臂合同推进并独立判断结果；执行任务不能把此交接扩大为任意新实验。
 
 ## 首轮收尾记录（追加checkpoint裁剪前）
 
@@ -96,4 +102,4 @@ A直接共享rank16、B语言Writer、C完整视频Writer、D相同视频结构�
 - 最终main包含文档/代码清理与验证修正，按仓库交付规则推送远端；仅保留canonical worktree。
   收尾没有启动新GPU实验、创建Sol或给任何任务派发后继实验。
 
-没有后继实验派发；不要根据文档清理恢复任何运行。
+上述首轮收尾段是历史事实；新的接续授权以本文件顶部为准。本轮交接仍未派发或启动实验。

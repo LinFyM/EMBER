@@ -3,8 +3,8 @@
 EMBER研究把exact task language与action-hidden教学视频，在rollout前一次编译为冻结π0.5 source的一套完整
 task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正确视频中的操作内容应贡献真实执行价值。
 
-**仓库收尾已完成，研究执行按Owner要求保持暂停，等待另一个session接手。** 没有获授权的自动后继实验。未验证的四臂实现只保存在独立Git分支，
-不属于main可运行方法；具体恢复位置、已知问题及最终结果见[progress](progress.md)。
+**仓库收尾已完成，Owner已授权新的主讨论session接续机制分析与既定有界诊断，可派发具体实验。** 当前仍处交接阶段，尚未恢复运行。
+未验证的四臂实现只保存在独立Git分支，不属于main可运行方法；实际状态及恢复位置见[progress](progress.md)，短期推进见[task_plan](task_plan.md)。
 
 ## 阅读顺序与唯一职责
 
@@ -28,7 +28,7 @@ task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正�
 | `scripts/` | 薄CLI、环境构建、数据封存和结果比较入口；已结束的专用诊断脚本由Git保存 |
 | `tests/` | 对当前实现及稳定科学/恢复/配对合同的CPU检查 |
 | `configs/` | 显式数据协议、方法配置和审计；不同协议分别保留，不能覆盖旧结果 |
-| `docs/designs/` | 有独立科学合同价值的设计/计划，文件头标明历史或暂停；是否active只看progress |
+| `docs/designs/` | 有独立科学合同价值的设计/计划，文件头说明当前/历史状态；是否active只看progress |
 | `docs/analyses/` | 有独立论证价值的机制分析和审计；不是运行授权 |
 | `docs/review_materials/` | 按日期/研究组织的小型专家材料、原始行、图表与证据包；各README解释当时范围 |
 | `evidence/` | Git跟踪的资产manifest与迁移provenance，不存模型权重 |
@@ -58,7 +58,7 @@ Source/MT-BC入口为`scripts/train_source_base.py`和`scripts/train_source_sft.
 
 当前coverage协议在[configs/libero_24_8_8_coverage_v1](configs/libero_24_8_8_coverage_v1/coverage.md)，
 旧`libero_24_8_8_v1`仅按封存合同解释；source71审计位于`configs/pi05_source_corpus_v1/`。
-新的fit28/diagnostic-held8候选在[暂停设计](docs/designs/conditional_compilation_diagnostics_design.md)，官方24/8/8未改。
+新的fit28/diagnostic-held8诊断合同在[接续设计](docs/designs/conditional_compilation_diagnostics_design.md)，官方24/8/8未改。
 
 历史重点可从[46组证据审计](docs/analyses/v52_evidence_audit_20260917.md)、
 [旧教学候选总报告](docs/review_materials/20260919/final_report.md)、

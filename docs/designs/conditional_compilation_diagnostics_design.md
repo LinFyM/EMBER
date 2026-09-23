@@ -1,32 +1,29 @@
-# 条件参数生成的四臂诊断（暂停合同）
+# 条件参数生成的四臂诊断（接续合同）
 
-> 状态：2026-09-23被Owner暂停。以下为冻结方案及当时执行授权，不能据此恢复实验；最新授权见[progress](../../progress.md)。实现草稿未通过GPU验证。
+> 状态：2026-09-23暂停及仓库收尾后，Owner已授权新主讨论session接续分析和既定短期安排，可派发具体实验。当前仍处交接，尚未恢复运行。
+> 科学参数保持原冻结spec；实现草稿未通过GPU验证。最新分工、授权和状态见[progress](../../progress.md)。
 
 任务标识：`conditional_compilation_diagnostics_20260923`。
 配套机器规格：`configs/conditional_compilation_diagnostics_v1/experiment_spec.json`。两者共同定义本批工作；不得自行修改科研参数。
 这是执行合同，不是给 Owner 阅读的结果报告。
 
-## 0. 当时的授权、分工与消费顺序（已终止）
+## 0. 接续授权、分工与消费顺序
 
-当时Owner的指令是：“详细规划好具体的实验流程，然后可以把活继续派给luna session。不过luna只能干说清楚明确要求和指令的活，所以你在安排的时候要足够详细。”
-本交接据此授权：实现本合同、完成必要工程验证、运行四条有界 fresh 诊断及规定评测、保存证据和回报。先前全局暂停对这四臂的对应部分已被本次指令取代；除此之外不恢复其它实验。
+Owner最新要求由新的主讨论session继续分析根因、尝试修复，短期可以继续之前安排，具体实验可以派发给其它session。
+本合同的有界四臂可据此继续实现、验证、执行和交付；不因上一阶段全局暂停再索要一次相同启动许可。
+本session仅交接，没有代为启动。新主讨论与执行者尚未指定ID，应在registration/spec的协调元数据中登记后再发送任务；
+原Luna已经停止，旧任务ID只作历史provenance，不能据旧示例自动联系。
 
-接收任务：`01a0cc37-2740-71a1-b470-153548d41f87`，现名“了解 EMBER 仓库”，gpu02，仓库 `/data1/user/ymdai/projects/EMBER`。
-主讨论/科研决策任务：`01a0c8da-0058-7951-8d1c-9c2233079f7e`。
+1. 先检查本批登记和实际完成状态，避免重复启动。Source1000/MT-BC300 Test400已经完整交付，不再等待或重复补测。
+2. 科学任务、配方在主讨论读取baseline Test前固定；保持本合同及spec的数据、目标、节点、选择规则，不由Test结果改动。
+3. 正式合同/spec/partition audit已在main；未验证实现保存在`codex/conditional-compilation-diagnostics@73267f53`。
+   从最新main隔离开发，逐项整合WIP，不恢复旧清理状态或旧文档路径。已知validate缩进错误及实际调用接口必须核验。
+4. 新主讨论负责竞争假设、结果解释、科学变更和后继干预；执行任务负责实现、验证、调度、记录和Git集成。
+   任务身份/方法定义等科学矛盾反馈主讨论；普通工程问题在既定合同内自行解决。写入范围和运行树所有者必须明确。
+5. 下述工程检查、资源和Git合同通过后可启动四臂；完成本批后执行任务停止新增实验并回报主讨论。
+   执行任务不自行追加第5臂、超参搜索、旧v5.2重训、正式Validation/Test、FT/RL或修正训练。
 
-按顺序执行：
-
-1. 检查本批是否已经登记/执行；同一批消息不重复启动。
-2. 继续完成已经启动的 Source1000 与 MT-BC300 Test400 补测，保留原合同、选点、输出。不要中断它们。CPU 实现准备可以并行，但新 GPU 作业必须等它们完成并释放资源。
-3. 本批任务/配方已经在 baseline Test 结果被主讨论任务读取前固定。无论该 Test 分数如何，都不据它改本批划分、目标、节点或参数；只将 baseline 事实单独报告。
-4. 将本执行合同原文提升为 `docs/designs/conditional_compilation_diagnostics_design.md`，将 JSON 提升为 `configs/conditional_compilation_diagnostics_v1/experiment_spec.json`。如需更正矛盾，先通知主任务，不静默改科学字段。
-5. 在 `progress.md` 和 `task_plan.md` 顶部登记本次授权、active design、阶段和明确边界。旧暂停段落保留并标注适用范围，不把历史“下一步”复活。
-6. 你负责实现、验证、调度、记录和 Git 集成；主任务负责解释科研结果和决定后继改法。遇到任务身份/方法定义等科学矛盾时停受影响阶段，给主任务列出精确矛盾；普通工程问题在既定合同内自行解决。
-7. 按下述工程检查全部通过后自行启动这四臂，不再向 Owner 申请一次启动批准。完成本批后停止新增实验，通知主任务。不要自行追加第5臂、换超参、选新 seed、重训旧v5.2、恢复旧shuffle/reverse、跑新的正式Validation/Test、FT/RL或36任务正式候选。
-
-此前主任务给你的“baseline结束后清理旧worktree”要求撤销；你专注本批实验。运行目录及旧worktree善后由主任务负责协调。不要为此打断实验。
-
-本主任务只写此临时交接目录，不会与你同时修改代码或仓库状态文件。你将材料提升到已提交的正式位置、确认收到后，可以删除这份已消费的临时交接目录；正式合同是后续唯一引用。不要删除未消费的旧任务证据。
+四条曲线只是定位证据；后继如何形成可区分解释的干预，见[task_plan](../../task_plan.md)。新主讨论不能把本批排名当成根因答案。
 
 ## 1. 科学问题与本批能够识别的范围
 
@@ -166,8 +163,8 @@ D与C共享第二组Gaussian noise；C另外按同一个合法FM time采样函�
 
 ## 6. 工程实施与启动前检查
 
-使用 `codex/conditional-compilation-diagnostics` 独立开发worktree；先从最新clean pushed main创建。baseline的frozen evaluator继续原树运行，严禁修改它。
-你可以在baseline运行期间做CPU实现/检查；GPU profile要等baseline两臂完成。开发树和正式detached runtime均遵守现有存储放置及Git合同。
+从最新clean pushed main创建新的`codex/`隔离开发分支/worktree，将已有WIP逐项迁移并修复后核验，保留原WIP分支直到确认整合完整。
+baseline补测已经完成，无运行中的baseline evaluator需要等待。开发树和正式detached runtime均遵守现有存储放置及Git合同。
 本批完成验证后及时集成main并push；四条正式诊断都从同一clean pushed detached commit运行。运行中不热改源文件。
 
 已有owner及具体改动位置：
@@ -297,9 +294,10 @@ target language/执行state/env RNG/policy RNG保持，teacher ordinal按canonic
 小型合同/指标/源码按项目Git规则提交main并push，不提交checkpoint、bank、dataset或大视频。主任务稍后统一解释并安排下一批。
 
 完成全部规定项目后，向主讨论任务发送简短完成消息，包含commit、run root、四臂六节点总表、C/D各自selected的correct/other/wrong分数及是否有缺项；如果部分被工程/数据问题阻塞，准确列出，不冒称整批完成。
-可以用已经验证的 `codex queue --thread 01a0c8da-0058-7951-8d1c-9c2233079f7e --message '...'` 回传；长内容用文件路径或安全的引用变量。保留双方模型配置，不另建任务、不使用exec resume代发消息。
+向新登记的主讨论任务回传，使用`codex-session-messaging`技能核实接收方和Queue/Steer语义；消息以`由agent发送：`及来源ID开头。
+长内容用文件路径或安全的引用变量。保留双方模型配置，不擅自另建任务，不使用exec resume代发消息。
 
-通知时点仅为：收到并登记、工程ready/正式启动、整批完成或需要科研决定的阻塞。不发送例行心跳，不额外承担仓库大清理。
+有实际结果、工程ready/正式启动或需要科研决定的阻塞时回报；普通收到/读文件无需回传，不发送例行心跳，不承担已经完成的仓库大清理。
 
 ## 11. 暂停前讨论的解释边界（2026-09-23）
 
@@ -312,4 +310,4 @@ A/B比较包括参数化、条件映射和优化；B/C还改变活动模块/容�
 应同时看已见任务获取、未见任务迁移、Source相对新增/丢失及correct/other/wrong成功集合。
 若未来开展机制验证，应先提出竞争解释和可反驳预测，再单独登记干预；此处提出的端点/前缀拆分、条件学习几何、
 定向任务支持对照仅为讨论中的后继思路，均未执行、未授权，不得自动追加到本四臂。
-Owner随后停止研究及派发；所有后继工作须由接手session按最新owner授权决定。
+该讨论后Owner曾停止研究及派发，随后已授权新session接续，见§0；上面的机制建议仍不是执行任务可自行追加的实验清单。

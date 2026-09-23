@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-23T00:06:58.230378+00:00",
+  "generated_utc": "2026-09-23T00:32:36.660303+00:00",
   "training_process_exited": true,
   "training_exit": "0",
   "latest_complete_validation_step": 1200,
@@ -12,6 +12,16 @@
       "panel": "writer/validation/correct",
       "results": "coverage_task_mixing_20260923/evaluation/writer_00000600_correct/results.json",
       "contract_reference": "ember_pi05_target_eval_launch_v2:7e5407d77b9f494c874707de6434a2c2"
+    },
+    {
+      "panel": "writer/validation/other",
+      "results": "coverage_task_mixing_20260923/evaluation/writer_00000600_validation_other/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:7d29e44b3e1749e2915ab3f46ffad6d0"
+    },
+    {
+      "panel": "writer/validation/wrong",
+      "results": "coverage_task_mixing_20260923/evaluation/writer_00000600_validation_wrong/results.json",
+      "contract_reference": "ember_pi05_target_eval_launch_v2:7674d0bb18954a32aa2f35875ff42102"
     }
   ],
   "protocol": "libero_24_8_8_coverage_v1",

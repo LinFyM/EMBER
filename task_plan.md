@@ -1,11 +1,11 @@
 # EMBER task plan
 
-## 当前目标：完成仓库收尾并交接（2026-09-23）
+## 已完成：仓库收尾与交接（2026-09-23）
 
-Owner已停止实验推进、新执行任务创建和后继实验派发。当前只整理对话中的长期要求、文档、代码脚本、
-可删除大资产和worktree；后续研究由Owner另行安排。详细快照以[progress](progress.md)为唯一入口。
+Owner已停止实验推进、新执行任务创建和后继实验派发。本次长期要求、文档、代码脚本、
+可删除大资产和worktree收尾已完成；后续研究由Owner另行安排。详细快照以[progress](progress.md)为唯一入口。
 
-## 收尾范围与完成条件
+## 已完成的收尾范围
 
 - 稳定理解写入[Owner要求](docs/current_owner_requirements.md)和[concept](docs/concept.md)，区分事实、假设与授权。
 - 文档按职责组织，当前计划/进度移除历史重复；独有科学证据在findings、research_history和review_materials保留。

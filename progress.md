@@ -1,10 +1,10 @@
 # EMBER progress
 
-## 当前授权：仓库收尾交接，研究暂停（2026-09-23）
+## 当前状态：收尾完成，研究保持暂停（2026-09-23）
 
 Owner最新要求只整理仓库，不再开展或派发实验。Luna由Owner停止；**没有创建Sol任务**。
 没有active experiment design。旧计划、设计中的启动许可、GPU特例与时间窗口均不自动生效。
-本任务只整合长期理解、清理文档/代码/可删除资产并封存交接；最终由Owner另外安排研究接手。
+本次长期理解、文档/代码/可删除资产与worktree收尾已完成并集成main；后续由Owner另外安排研究接手。
 
 ## 接手先读
 
@@ -62,11 +62,16 @@ A直接共享rank16、B语言Writer、C完整视频Writer、D相同视频结构�
 - 108项受影响CPU检查：107项首次通过；1项引用旧文档路径的断言修正后单独通过。三个canonical CLI的`--help`均exit0。
   40份配置JSON解析通过，Markdown本地链接无失效，源码/脚本/测试无对退役诊断模块的残留引用；未运行GPU或新科研验证。
 - 三个临时worktree已移除，仅剩main；已合并的cleanup-code分支删除，未合并WIP的本地/远程分支保留且远端核对为`73267f53`。
-- 大资产已完成首批回收：52个可再生LoRA bank共9739个路径（9339个唯一inode），44.924 GiB；
+- 大资产已完成回收：52个可再生LoRA bank共9739个路径（9339个唯一inode），44.924 GiB；
   明确一次性的profile载荷0.276 GiB；worktree副本0.731 GiB、已消费handoff/下载缓存/派生预览0.246 GiB。
-  Hardlink按实际inode计数，未将重复链接当成双份空间。原manifest和重建依赖保留，载荷原目录有退役标记。
+  追加核实574个旧物化manifest、1717个payload，回收6.794 GiB。连同生成cache和本次临时文件，总计回收53.007 GiB：
+  data0为38.682 GiB、data1为14.326 GiB。Hardlink按实际inode计数；原manifest和全部重建依赖保留，载荷原目录有退役标记。
+  strg01收尾配额实测data0 122.1/1024 GiB、data1 846.3/1024 GiB；这是实时用户用量，不是共享磁盘空闲量。
 - 清理账目：`runs/analysis/workspace_cleanup_20260923/storage_cleanup.json`；Source/teacher/正式checkpoint、raw rows与
   不可确认可再生的authority/task-local/轨迹证据保留。data1的大头是约530 GiB formal checkpoint载荷，另有约59 GiB探索checkpoint，
-  不能根据负结果或目录名当作缓存删除。旧scratch中的唯一诊断记录和可用uv安装器也保留。
+  不能根据负结果或目录名当作缓存删除。277组authority/task-local/特殊转换或provenance不全的产物有逐项保留原因，
+  不凭“cache”命名推断可删。旧scratch中的唯一诊断记录和可用uv安装器也保留。
+- 最终main包含文档/代码清理与验证修正，按仓库交付规则推送远端；仅保留canonical worktree。
+  收尾没有启动新GPU实验、创建Sol或给任何任务派发后继实验。
 
 没有后继实验派发；不要根据文档清理恢复任何运行。

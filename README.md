@@ -3,7 +3,7 @@
 EMBER研究把exact task language与action-hidden教学视频，在rollout前一次编译为冻结π0.5 source的一套完整
 task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正确视频中的操作内容应贡献真实执行价值。
 
-**研究执行已按Owner要求停止，当前为仓库收尾交接。** 没有获授权的自动后继实验。未验证的四臂实现只保存在独立Git分支，
+**仓库收尾已完成，研究执行按Owner要求保持暂停，等待另一个session接手。** 没有获授权的自动后继实验。未验证的四臂实现只保存在独立Git分支，
 不属于main可运行方法；具体恢复位置、已知问题及最终结果见[progress](progress.md)。
 
 ## 阅读顺序与唯一职责

@@ -1,5 +1,7 @@
 # 给 Luna 执行任务：条件参数生成的四臂诊断
 
+> 状态：2026-09-23被Owner暂停。以下为冻结方案及当时执行授权，不能据此恢复实验；最新授权见progress.md。实现草稿未通过GPU验证。
+
 任务标识：`conditional_compilation_diagnostics_20260923`。
 配套机器规格：本文件同目录的 `experiment_spec.json`。两者共同定义本批工作；不得自行修改科研参数。
 这是执行合同，不是给 Owner 阅读的结果报告。

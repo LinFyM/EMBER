@@ -133,6 +133,23 @@ class FactorHead(torch.nn.Module):
         return self.network(value)
 
 
+class DirectLoRAParameters(torch.nn.Module):
+    """One shared, fresh identity-initialized LoRA parameterization without a compiler."""
+
+    def __init__(self, template_state: Mapping[str, torch.Tensor]) -> None:
+        super().__init__()
+        if not template_state:
+            raise WriterModelError("direct LoRA baseline requires a complete identity template")
+        self.names = tuple(sorted(template_state))
+        self.values = torch.nn.ParameterList(
+            torch.nn.Parameter(template_state[name].detach().clone().contiguous())
+            for name in self.names
+        )
+
+    def forward(self) -> dict[str, torch.Tensor]:
+        return dict(zip(self.names, self.values, strict=True))
+
+
 class CompleteLoRAWriter(torch.nn.Module):
     """Map task language and one raw video to the sealed rank-16 task LoRA."""
 
@@ -283,6 +300,46 @@ class CompleteLoRAWriter(torch.nn.Module):
             or observed_layers != set(range(self.EXPERT_LAYERS))
         ):
             raise WriterModelError("sealed PI05 LoRA modules changed topology")
+
+    def set_language_only_trainable(self) -> None:
+        """Train only the native text reader, language Core, shared compiler, and full factor heads."""
+        self.requires_grad_(False)
+        modules = (
+            self.semantic_encoder.text_meta_lora,
+            self.semantic_encoder.language_projection,
+            self.semantic_core.blocks,
+            self.compiler.routing_norm,
+            self.compiler.core_reader,
+            self.compiler.procedure_reader.core_norm,
+            self.compiler.post_fusion,
+            self.factor_heads,
+        )
+        for module in modules:
+            module.requires_grad_(True)
+        for parameter in (self.compiler.query_table, self.compiler.module_identity,
+                          self.compiler.layer_identity, self.compiler.rank_identity):
+            parameter.requires_grad_(True)
+
+    def compile_language_task(
+        self,
+        policy: torch.nn.Module,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
+        """Compile from exact language through Text Meta and the shared Core-only path."""
+        text_queries, valid_core = self.semantic_encoder.encode_text_only(
+            policy, language_tokens, language_mask, task_span_mask,
+        )
+        core_memory = self.semantic_core.language_only(text_queries, valid_core)
+        slots, trace = self.compiler.core_only_slots(core_memory, valid_core)
+        expert_stop = self.EXPERT_LAYERS * self.PUBLIC_LORA_RANK
+        expert = slots[:, :expert_stop].reshape(
+            slots.shape[0], self.EXPERT_LAYERS, self.PUBLIC_LORA_RANK, self.program_width,
+        )
+        action_in = slots[:, expert_stop:expert_stop + self.PUBLIC_LORA_RANK]
+        action_out = slots[:, -self.PUBLIC_LORA_RANK:]
+        return self._decode_outputs(expert, action_in, action_out, slots.shape[0]), trace
 
     @staticmethod
     def _validated_offsets(
@@ -494,6 +551,16 @@ class CompleteLoRAWriter(torch.nn.Module):
             positions,
             valid_frames,
         )
+        result = self._decode_outputs(expert, action_in, action_out, core_memory.shape[0])
+        return result, {"expert": expert, "action_in": action_in, "action_out": action_out}
+
+    def _decode_outputs(
+        self,
+        expert: torch.Tensor,
+        action_in: torch.Tensor,
+        action_out: torch.Tensor,
+        batch_size: int,
+    ) -> dict[str, torch.Tensor]:
         result: dict[str, torch.Tensor] = {}
         for item in self.tensor_specs:
             key, layer = self._decoding[item.name]
@@ -509,8 +576,8 @@ class CompleteLoRAWriter(torch.nn.Module):
             generated = rows.transpose(-1, -2) if item.transpose_output else rows
             template = getattr(self, self._template_buffers[item.name])
             value = generated.to(dtype=template.dtype) + template[None]
-            result[item.name] = value[0] if core_memory.shape[0] == 1 else value
-        return result, {"expert": expert, "action_in": action_in, "action_out": action_out}
+            result[item.name] = value[0] if batch_size == 1 else value
+        return result
 
     def forward(
         self,

@@ -97,6 +97,9 @@ def _inspect_conditions(manifest: Mapping[str, Any], root: Path, lora) -> None:
     tasks = {row["global_task_id"]: row for row in manifest["tasks"]}
     _, authority = load_task_authorities(Path(manifest["asset_root"]), manifest.get("task_protocol"))
     lengths = {row["global_task_id"]: row["demonstrations"]["episode_lengths"] for row in authority["tasks"]}
+    conditional = manifest.get("method", {}).get("schema_version") == "ember_conditional_compilation_method_v1"
+    parameterization = manifest.get("method", {}).get("parameterization", "video_writer")
+    uses_video = parameterization == "video_writer"
     referenced = {episode["condition_id"] for row in tasks.values() for episode in row["episodes"]}
     if len(conditions) != len(manifest["conditions"]) or set(conditions) != referenced:
         raise ValueError("condition bank contains duplicates, missing rows, or unused adapters")
@@ -110,14 +113,26 @@ def _inspect_conditions(manifest: Mapping[str, Any], root: Path, lora) -> None:
         no_video = arm == "no_video"
         donor = control["video_global_task_id"] if control else condition["global_task_id"]
         identity = {field: task[field] for field in ("suite", "task_id", "language")}
+        expected_invocations = (0 if no_video or parameterization == "direct_lora" else
+                                condition.get("writer_invocations", 0) if conditional and parameterization == "language_writer" else
+                                1)
         identity.update(condition_id=condition_id(task["global_task_id"], demos, arm=arm, video_task=donor),
                         teacher_demo_indices=sorted(set(demos)), video_control=control,
-                        writer_invocations=0 if no_video else 1, single_complete_rank16=True)
+                        writer_invocations=expected_invocations, single_complete_rank16=True)
+        if conditional:
+            identity.update(parameterization=parameterization,
+                            teacher_video_values_read=len(demos) if uses_video and not no_video else 0)
         if (any(condition.get(field) != value for field, value in identity.items())
                 or len(demos) != (0 if no_video else manifest["selection"]["K"])
                 or Path(condition["adapter"]["path"]).resolve() != root / f"{key}.safetensors"):
             raise ValueError("materialized condition task/video/adapter provenance changed")
-        _validate_video_frames(condition["teacher_videos"], demos, lengths[donor] if donor is not None else (), control)
+        if uses_video and not no_video:
+            _validate_video_frames(condition["teacher_videos"], demos,
+                                   lengths[donor] if donor is not None else (), control)
+        elif condition.get("teacher_videos") != []:
+            raise ValueError("non-video parameterization must not claim teacher RGB evidence")
+        if conditional and parameterization == "language_writer" and condition.get("writer_invocations") not in (0, 1):
+            raise ValueError("cached language Writer invocation count must be zero or one per condition")
         for episode in task["episodes"]:
             if episode["condition_id"] == key and episode["teacher_demo_indices"] != demos:
                 raise ValueError("episode mapping changed its actual teacher K-set")
@@ -177,6 +192,31 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
 def validate_information_wall(manifest) -> None:
     wall = manifest["information_wall"]
     no_video = manifest["arm"] == "no_video"
+    if manifest.get("method", {}).get("schema_version") == "ember_conditional_compilation_method_v1":
+        parameterization = manifest["method"]["parameterization"]
+        uses_video = parameterization == "video_writer" and not no_video
+        conditions = manifest["conditions"]
+        expected_inputs = ([] if no_video or parameterization == "direct_lora" else
+                           ["exact task language"] if parameterization == "language_writer" else
+                           ["exact task language", "ordered RGB videos", "original frame indices"])
+        invocation_count = sum(int(row.get("writer_invocations", 0)) for row in conditions)
+        video_read_count = sum(int(row.get("teacher_video_values_read", 0)) for row in conditions)
+        required = {"parameterization": parameterization, "deployment_inputs": expected_inputs,
+                    "teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
+                    "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
+                    "materialization_rgb_video_reads": len(conditions) if uses_video else 0,
+                    "teacher_video_values_read": video_read_count,
+                    "parameterization_invocations": invocation_count,
+                    "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
+                    "outcome_dependent_video_selection": False,
+                    "shuffled_reversed_wrong_no_video": manifest["arm"] in CONTROL_ARMS}
+        if (any(wall.get(key) != value for key, value in required.items())
+                or video_read_count != (len(conditions) if uses_video else 0)
+                or (parameterization == "direct_lora" and invocation_count != 0)
+                or (parameterization == "video_writer" and invocation_count != (0 if no_video else len(conditions)))
+                or (parameterization == "language_writer" and not 0 < invocation_count <= len(conditions))):
+            raise ValueError("conditional Writer information wall changed")
+        return
     required = {"teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
                 "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
                 "writer_invocations_per_unique_condition": 0 if no_video else 1,

@@ -1,5 +1,17 @@
 # EMBER task plan
 
+## 当前：Owner停止执行，未验证实现封存待交接（2026-09-23）
+
+Owner已停止Luna，并撤销本次讨论任务的新任务创建、实验推进和派发。四臂科学合同保留为待接手方案；
+不得从下方历史授权自行恢复。本分支保留被中断的实现草稿，未合入main，未完成GPU smoke、恢复检查或正式训练。
+只完成过CPU配置/采样事件核对；没有四臂学习曲线或实验结论。Source/MT-BC既有Test已完成，无须重做。
+
+已知未修复问题：`src/ember/writer/supervised.py`中的`validate`误嵌入`configured_endpoint`函数return之后，
+因此`SupervisedEngine.validate`缺失；语法通过不代表接口可用。后续接手者须审查整份实现diff，不能只修此处就启动。
+原执行任务为`01a0cc37-2740-71a1-b470-153548d41f87`，主讨论为`01a0c8da-0058-7951-8d1c-9c2233079f7e`。
+Owner此前提出创建Sol任务，随后明确取消；没有创建Sol任务或发出新实验指令。
+本分支将提交/push以保留草稿，物理worktree可移除；后续须由Owner另行交接/授权。
+
 ## 当前Active Design：条件编译四臂诊断（2026-09-23）
 
 Owner授权study `conditional_compilation_diagnostics_20260923`。执行合同、固定科学规格和任务等价审计已提升至：

@@ -313,6 +313,36 @@ class Pi05LanguageAxialEncoder(torch.nn.Module):
         projected = self.language_projection(text_hidden[:, 1:])
         return projected.masked_fill(~text_padding[:, 1:, None], 0.0)
 
+    def encode_text_only(
+        self,
+        policy: torch.nn.Module,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Encode exact task language through the native text path, without image or suffix inputs."""
+        if (language_tokens.ndim != 2 or language_tokens.shape[0] <= 0
+                or language_mask.shape != language_tokens.shape or language_mask.dtype != torch.bool
+                or task_span_mask.shape != language_tokens.shape or task_span_mask.dtype != torch.bool
+                or bool((task_span_mask & ~language_mask).any()) or bool(task_span_mask[:, 0].any())
+                or not bool(task_span_mask.any(dim=1).all())):
+            raise VideoProgramError("invalid native language-only task batch")
+        counts = task_span_mask.sum(dim=1)
+        maximum_task_tokens = int(counts.max())
+        valid_task_tokens = (torch.arange(maximum_task_tokens, device=language_tokens.device)[None]
+                             < counts[:, None])
+        core = policy.model
+
+        def invoke(token_values: torch.Tensor, span_values: torch.Tensor) -> torch.Tensor:
+            return self._encode_text(core, token_values, span_values, maximum_task_tokens)
+
+        if self.activation_checkpointing and self.training and torch.is_grad_enabled():
+            text_queries = checkpoint(invoke, language_tokens, task_span_mask,
+                                      use_reentrant=False, preserve_rng_state=False)
+        else:
+            text_queries = invoke(language_tokens, task_span_mask)
+        return text_queries, valid_task_tokens
+
     def _encode_microbatch(
         self,
         core: torch.nn.Module,

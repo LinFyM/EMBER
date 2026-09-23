@@ -233,6 +233,24 @@ class LanguageSemanticCore(torch.nn.Module):
             for _ in range(blocks)
         )
 
+    def _compose_language(self, content: torch.Tensor, valid_task_tokens: torch.Tensor) -> torch.Tensor:
+        positions = torch.arange(
+            content.shape[1],
+            dtype=torch.long,
+            device=content.device,
+        )[None].expand(content.shape[0], -1)
+        for block in self.blocks:
+            content = block(content, positions, valid_task_tokens)
+        return content
+
+    def language_only(self, text_queries: torch.Tensor, valid_task_tokens: torch.Tensor) -> torch.Tensor:
+        """Run the registered language Core blocks without inventing a frame axis."""
+        if (text_queries.ndim != 3 or valid_task_tokens.shape != text_queries.shape[:2]
+                or valid_task_tokens.dtype != torch.bool
+                or not bool(valid_task_tokens.any(dim=1).all())):
+            raise VariableEpisodeInputError("invalid language-only Core memory")
+        return self._compose_language(text_queries, valid_task_tokens)
+
     def forward(
         self,
         text_queries: torch.Tensor,
@@ -246,14 +264,7 @@ class LanguageSemanticCore(torch.nn.Module):
             valid_frames,
             valid_task_tokens,
         )
-        positions = torch.arange(
-            content.shape[1],
-            dtype=torch.long,
-            device=content.device,
-        )[None].expand(content.shape[0], -1)
-        for block in self.blocks:
-            content = block(content, positions, valid_task_tokens)
-        return content, weights
+        return self._compose_language(content, valid_task_tokens), weights
 
 
 class ContentCrossAttention(torch.nn.Module):
@@ -540,6 +551,21 @@ class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
             "adaln_beta": beta,
             "fused_slots": fused,
         }
+
+    def core_only_slots(
+        self,
+        core: torch.Tensor,
+        valid_core: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        """Compile language Core memory through the shared routing and post-fusion path only."""
+        if (core.ndim != 3 or valid_core.shape != core.shape[:2]
+                or valid_core.dtype != torch.bool or not bool(valid_core.any(dim=1).all())):
+            raise VariableEpisodeInputError("invalid language-only compiler memory")
+        routing = self.routing_norm(self._routing())[None].expand(core.shape[0], -1, -1)
+        core_slots = self.core_reader(routing, core, valid_core)
+        normalized_core = self.procedure_reader.core_norm(core_slots)
+        output = self.post_fusion(normalized_core, routing)
+        return output, {"core_slots": core_slots, "normalized_core_slots": normalized_core}
 
     def forward(
         self,

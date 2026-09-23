@@ -127,7 +127,7 @@ def test_dual_camera_contract_binds_both_views_without_changing_learning_recipe(
 def test_teaching_recipe_keeps_A_source_and_adds_bounded_joint_supervision(config):
     assert config['data']['grouping'] == 'baseline' and 'event_groups' not in config['data']
     assert config['data']['maximum_updates'] == 1500
-    assert config['design'] == 'docs/video_teaching_writer_design.md'
+    assert config['design'] == 'docs/designs/video_teaching_writer_design.md'
     assert config['source'] == {
         'evaluation_config': 'configs/pi05_source_aligned_evaluation.json',
         'checkpoint': 'runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000'}

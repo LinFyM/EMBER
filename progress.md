@@ -58,6 +58,15 @@ A直接共享rank16、B语言Writer、C完整视频Writer、D相同视频结构�
 - 长期要求和concept已整合；docs按designs/analyses/review_materials分工，历史材料有明确状态。
 - task_plan和progress只保留当前状态，重复历史移至既有研究历史/发现入口；原详细过程可从Git恢复。
 - 已结束的stability/output-space/causal专用诊断和low-LR执行面退役；历史实现以`7b18030c`及run记录的commit恢复。
-- 代码验证、资产回收数字及最终Git/worktree状态将在本次收尾完成时登记于本节。
+- 代码retirement净删5101行、删除15个专用文件；保留常规resume、topology migration和1500→2100 continuation。
+- 108项受影响CPU检查：107项首次通过；1项引用旧文档路径的断言修正后单独通过。三个canonical CLI的`--help`均exit0。
+  40份配置JSON解析通过，Markdown本地链接无失效，源码/脚本/测试无对退役诊断模块的残留引用；未运行GPU或新科研验证。
+- 三个临时worktree已移除，仅剩main；已合并的cleanup-code分支删除，未合并WIP的本地/远程分支保留且远端核对为`73267f53`。
+- 大资产已完成首批回收：52个可再生LoRA bank共9739个路径（9339个唯一inode），44.924 GiB；
+  明确一次性的profile载荷0.276 GiB；worktree副本0.731 GiB、已消费handoff/下载缓存/派生预览0.246 GiB。
+  Hardlink按实际inode计数，未将重复链接当成双份空间。原manifest和重建依赖保留，载荷原目录有退役标记。
+- 清理账目：`runs/analysis/workspace_cleanup_20260923/storage_cleanup.json`；Source/teacher/正式checkpoint、raw rows与
+  不可确认可再生的authority/task-local/轨迹证据保留。data1的大头是约530 GiB formal checkpoint载荷，另有约59 GiB探索checkpoint，
+  不能根据负结果或目录名当作缓存删除。旧scratch中的唯一诊断记录和可用uv安装器也保留。
 
 没有后继实验派发；不要根据文档清理恢复任何运行。

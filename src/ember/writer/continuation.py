@@ -13,30 +13,13 @@ CONTINUATION = {
     "checkpoint_selection": False,
 }
 
-LOW_LR_REPAIR = {
-    "kind": "coverage_writer_low_lr_repair_v1",
-    "parent_updates": 1800,
-    "first_global_update": 1801,
-    "fixed_lr": 2.959936e-5,
-    "parent_applied_lr": 1.627965011517147e-4,
-    "optimizer_scheduler_sampler_rng": "preserve_complete_parent_state",
-    "checkpoint_interval": 100,
-    "validation_interval": 100,
-    "selection_reference_successes": 117,
-}
-
 
 def require_continuation_config(config):
+    if "phase_continuation" in config:
+        raise ValueError("low-LR phase continuation is retired; use its frozen historical runtime")
     declaration = config.get("continuation")
-    phase = config.get("phase_continuation")
     budget = config["data"].get("maximum_updates")
     control = config.get("training_control")
-    if phase is not None:
-        if (phase != LOW_LR_REPAIR or declaration is not None or budget is not None
-                or control != {"kind": "validation_early_stopping", "checkpoint_interval": 100,
-                               "validation_interval": 100}):
-            raise ValueError("low-LR repair requires its registered phase continuation contract")
-        return
     if control is not None:
         if (declaration is not None or budget is not None
                 or control != {"kind": "validation_early_stopping", "checkpoint_interval": 100,
@@ -50,17 +33,7 @@ def require_continuation_config(config):
 
 def require_continuation_start(args, config):
     parent = getattr(args, "extend_from", None)
-    phase_parent = getattr(args, "phase_from", None)
     resume = getattr(args, "resume", None)
-    phase = config.get("phase_continuation")
-    if phase_parent and (parent or resume or phase != LOW_LR_REPAIR):
-        raise ValueError("low-LR phase needs its registered config and cannot also exact-resume")
-    if phase and not (phase_parent or resume):
-        raise ValueError("low-LR phase cannot start fresh; restore the complete N1800 checkpoint")
-    if phase_parent is None and phase is None and getattr(args, "phase_from", None):
-        raise ValueError("phase parent requires the registered low-LR repair config")
-    if phase and parent:
-        raise ValueError("low-LR phase cannot use the historical bounded continuation interface")
     if parent and (resume or config.get("continuation") != CONTINUATION):
         raise ValueError("continuation needs its registered config and cannot also exact-resume")
     if config.get("continuation") and not (parent or resume):
@@ -105,40 +78,6 @@ def prepare_continuation(args, contract):
         "parent_run_contract": str(parent_root / "run_contract.json"),
         "parent_training_commit": parent["git"]["commit"],
         "history": "copy parent metrics/exposures/diagnostics; append only new updates",
-    }
-
-
-def prepare_phase_continuation(args, contract):
-    """Validate that the new run changes only the registered schedule intervention."""
-    checkpoint = args.phase_from.resolve()
-    parent_root = checkpoint.parent.parent
-    phase = contract["config"].get("phase_continuation")
-    if checkpoint_macro(checkpoint) != LOW_LR_REPAIR["parent_updates"]:
-        raise ValueError("low-LR repair requires the complete formal N1800 checkpoint")
-    if args.output.resolve() == parent_root:
-        raise ValueError("low-LR repair requires a distinct output root")
-    if phase != LOW_LR_REPAIR:
-        raise ValueError("low-LR repair declaration changed")
-    parent = read_json(parent_root / "run_contract.json")
-    before, after = deepcopy(parent["config"]), deepcopy(contract["config"])
-    before.pop("evidence")
-    after.pop("evidence")
-    before.pop("design", None)
-    after.pop("design", None)
-    after.pop("phase_continuation", None)
-    after["training_control"] = before["training_control"]
-    if before != after:
-        raise ValueError("low-LR repair may change only its phase, evidence, design and validation cadence")
-    for field in ("schema_version", "stage", "mode", "model_config", "topology", "source", "execution"):
-        if parent[field] != contract[field]:
-            raise ValueError(f"low-LR repair parent contract differs: {field}")
-    contract["phase_continuation"] = {
-        **LOW_LR_REPAIR,
-        "parent_checkpoint": str(checkpoint),
-        "parent_run_contract": str(parent_root / "run_contract.json"),
-        "parent_training_commit": parent["git"]["commit"],
-        "schedule_semantics": "parent state restored first; fixed LR applies beginning at global update 1801",
-        "history": "copy parent metrics/exposures/diagnostics; append global and phase cursors",
     }
 
 

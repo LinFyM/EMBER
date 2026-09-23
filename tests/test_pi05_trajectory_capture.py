@@ -8,11 +8,6 @@ from ember.pi05_eval.trajectory_capture import (
     record_replan,
     save_capture,
 )
-from ember.writer.stability_rollouts import (
-    E3_FULL_CAPTURE_CONDITIONS,
-    E3_HELD_TASKS,
-    _rollout_contract,
-)
 
 
 def _slot(level: str) -> dict:
@@ -68,33 +63,3 @@ def test_legacy_capture_payload_remains_v1(tmp_path: Path) -> None:
     assert payload["schema_version"] == "ember_pi05_occupancy_trajectory_v1"
     assert "observations" in payload
     assert "states" not in payload
-
-
-def test_e3_rollout_contract_registers_four_tasks_and_two_full_conditions(tmp_path: Path) -> None:
-    assert E3_HELD_TASKS == (3, 11, 26, 31)
-    assert E3_FULL_CAPTURE_CONDITIONS == ((3, 0), (31, 0))
-    tasks = [
-        {"suite": "libero_spatial", "task_id": 3},
-        {"suite": "libero_object", "task_id": 1},
-        {"suite": "libero_goal", "task_id": 6},
-        {"suite": "libero_10", "task_id": 1},
-    ]
-    contract = _rollout_contract(
-        base={
-            "environment": {},
-            "policy": {},
-            "rng": {},
-        },
-        paths={},
-        tasks=tasks,
-        trajectory_root=tmp_path,
-        writer=True,
-        compact_capture=True,
-        full_capture_conditions=E3_FULL_CAPTURE_CONDITIONS,
-    )
-    capture = contract["diagnostic_occupancy_capture"]
-    assert capture["mode"] == "compact"
-    assert capture["full_conditions"] == [
-        {"suite": "libero_spatial", "task_id": 3, "init_state_id": 0},
-        {"suite": "libero_10", "task_id": 1, "init_state_id": 0},
-    ]

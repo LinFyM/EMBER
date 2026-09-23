@@ -25,7 +25,7 @@ from ember.writer.learning_data import (
     TASKS_PER_UPDATE, WriterTrainingData, query_allocation,
 )
 from ember.writer.continuation import (
-    LOW_LR_REPAIR, inherit_history, prepare_continuation, prepare_phase_continuation,
+    inherit_history, prepare_continuation,
     require_continuation_config, require_continuation_start, require_extended_prefix,
 )
 from ember.writer.replay import sum_writer_gradients
@@ -152,16 +152,14 @@ def _learning_rate_multiplier(step, opt):
 
 
 def _optimization(state, config):
-
     opt = config["optimization"]
     optimizer = torch.optim.AdamW(
         state.parameters(), lr=float(opt["lr"]), betas=tuple(opt["betas"]),
         eps=float(opt["eps"]), weight_decay=float(opt["weight_decay"]),
     )
-    phase = config.get("phase_continuation")
-    multiplier = ((lambda _step: float(phase["fixed_lr"]) / float(opt["lr"]))
-                  if phase else (lambda step: _learning_rate_multiplier(step, opt)))
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, multiplier)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimizer, lambda step: _learning_rate_multiplier(step, opt),
+    )
     return optimizer, scheduler
 
 
@@ -182,12 +180,10 @@ def _event_plan_path(args):
 
 def _publish_event_plan(args, events):
     path = _event_plan_path(args)
-    parent_checkpoint = getattr(args, "phase_from", None) or getattr(args, "extend_from", None)
+    parent_checkpoint = getattr(args, "extend_from", None)
     if parent_checkpoint:
         parent = parent_checkpoint.resolve().parent.parent / "training_events.json"
-        phase = getattr(args, "phase_from", None)
         require_extended_prefix(read_json(parent), events,
-                                parent_updates=(LOW_LR_REPAIR["parent_updates"] if phase else 1500),
                                 child_updates=(events.get("maximum_updates") or 2100))
     if path.exists():
         if not args.resume:
@@ -231,7 +227,7 @@ def _run_contract(args, context, config, runtime, state):
             "text_meta_parameters": sum(p.numel() for p in runtime.state.text_meta.parameters()),
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
             "optimizer": ("parent AdamW state preserved" if
-                          (config.get("continuation") or config.get("phase_continuation")) else "fresh AdamW")
+                          config.get("continuation") else "fresh AdamW")
                          + "; one grouped functional update per twelve equally weighted tasks", "scaler": None,
             "resume_contract": {
                 "default": "same config, physical topology, sampler streams, optimizer updates and complete state",
@@ -344,9 +340,6 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
     if len(applied_lrs) != 1:
         raise ValueError("Writer requires one applied learning rate across optimizer groups")
     applied_lr = next(iter(applied_lrs))
-    phase = config.get("phase_continuation")
-    if phase and not math.isclose(applied_lr, float(phase["fixed_lr"]), rel_tol=1e-10, abs_tol=1e-12):
-        raise ValueError("low-LR repair update would use a non-registered learning rate")
     draws = data.next_iteration()
     optimizer.zero_grad(set_to_none=True)
     rows, error = [], None
@@ -388,39 +381,8 @@ def _training_state(config, updates):
             "update_version": config["update_version"], "data_version": config["data"]["version"]}
 
 
-def _activate_phase_schedule(optimizer, scheduler, runtime, config, updates, *, initial_transition):
-    phase = config.get("phase_continuation")
-    if not phase:
-        return
-    parent = int(phase["parent_updates"])
-    if updates < parent or (initial_transition and updates != parent):
-        raise ValueError("low-LR repair restored an invalid global cursor")
-    parameters = list(runtime.state.parameters())
-    owned = [parameter for group in optimizer.param_groups for parameter in group["params"]]
-    if len(owned) != len(parameters) or {id(p) for p in owned} != {id(p) for p in parameters}:
-        raise ValueError("low-LR repair optimizer parameter ownership changed")
-    if set(optimizer.state) != set(owned):
-        raise ValueError("low-LR repair requires complete AdamW state for every trainable parameter")
-    steps = {int(state["step"].item()) for state in optimizer.state.values()}
-    if steps != {updates}:
-        raise ValueError("low-LR repair AdamW step cursor differs from the global cursor")
-    if scheduler.last_epoch != updates:
-        raise ValueError("low-LR repair scheduler cursor differs from the global cursor")
-    fixed = float(phase["fixed_lr"])
-    current = {float(group["lr"]) for group in optimizer.param_groups}
-    expected = float(phase["parent_applied_lr"] if initial_transition else fixed)
-    if len(current) != 1 or not math.isclose(next(iter(current)), expected, rel_tol=1e-10, abs_tol=1e-12):
-        raise ValueError("low-LR repair restored an unexpected applied learning rate")
-    if initial_transition:
-        for group in optimizer.param_groups:
-            group["lr"] = fixed
-        scheduler._last_lr = [fixed for _ in optimizer.param_groups]
-    elif any(not math.isclose(value, fixed, rel_tol=1e-10, abs_tol=1e-12) for value in current):
-        raise ValueError("low-LR repair exact-resume did not preserve the fixed learning rate")
-
-
 def _restore(args, context, runtime, data, optimizer, scheduler, config):
-    parent = getattr(args, "phase_from", None) or getattr(args, "extend_from", None)
+    parent = getattr(args, "extend_from", None)
     checkpoint = args.resume or parent
     if not checkpoint:
         return 0, 0
@@ -434,13 +396,9 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
     )
     if restored["training_state"] != _training_state(config, updates):
         raise ValueError("supervised checkpoint stage/update/data contract changed")
-    phase_parent = getattr(args, "phase_from", None)
-    data.restore_sampler(restored["sampler_state"], extend_completed=(parent is not None and phase_parent is None),
-                         extend_from_step=(LOW_LR_REPAIR["parent_updates"] if phase_parent else None))
+    data.restore_sampler(restored["sampler_state"], extend_completed=parent is not None)
     if data.sampler_state()["next_step"] != updates or scheduler.last_epoch != updates:
         raise ValueError("sampler, scheduler and optimizer-update cursors differ")
-    _activate_phase_schedule(optimizer, scheduler, runtime, config, updates,
-                             initial_transition=phase_parent is not None)
     if context.is_main:
         if getattr(args, "allow_topology_change", False):
             transition = restored.get("topology_resume", {
@@ -477,10 +435,8 @@ def _require_topology_resume(args, config):
     if requested and (
         not getattr(args, "resume", None)
         or getattr(args, "extend_from", None)
-        or getattr(args, "phase_from", None)
         or not config.get("training_control")
         or config.get("continuation")
-        or config.get("phase_continuation")
     ):
         raise ValueError("physical topology transition requires an ordinary dynamic --resume")
     return requested
@@ -514,8 +470,6 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
             "peak_allocated_gib": max(packet["peak_allocated_gib"] for packet in packets),
             "peak_reserved_gib": max(packet["peak_reserved_gib"] for packet in packets),
         }
-        if config.get("phase_continuation"):
-            metric["phase_step"] = updates - int(config["phase_continuation"]["parent_updates"])
         append_jsonl(args.output / "metrics.jsonl", metric)
         print(json.dumps(metric), flush=True)
     return metrics_rows
@@ -592,12 +546,9 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
     # A resumed segment keeps its original registered nodes. The restored
     # cursor skips completed nodes while the loop retains the registered stop.
     if context.is_main:
-        checkpoint = (getattr(args, "resume", None) or getattr(args, "phase_from", None)
-                      or getattr(args, "extend_from", None))
+        checkpoint = getattr(args, "resume", None) or getattr(args, "extend_from", None)
         print(json.dumps({"segment_start": updates, "segment_stop": stop, "checkpoint_updates": nodes,
                           "global_step": updates,
-                          "phase_step": (updates - LOW_LR_REPAIR["parent_updates"]
-                                         if config.get("phase_continuation") else None),
                           "resume": str(checkpoint) if checkpoint else None}), flush=True)
     if args.mode == "formal" and updates == 0 and 0 in config["evidence"]["supervised_validation"]["optimizer_updates"]:
         _validate_actions(args, engine, data, context, config, 0)
@@ -668,9 +619,7 @@ def run(args: argparse.Namespace) -> None:
     initialize_deferred_process_group(context, rendezvous_root=args.output)
     contract = _run_contract(args, context, config, runtime, state)
     if context.is_main:
-        if getattr(args, "phase_from", None):
-            prepare_phase_continuation(args, contract)
-        elif getattr(args, "extend_from", None):
+        if getattr(args, "extend_from", None):
             prepare_continuation(args, contract)
         _publish_contract(args.output / "run_contract.json", contract, resume=args.resume is not None,
                           allow_topology_change=allow_topology_change)
@@ -704,7 +653,5 @@ def main() -> None:
     parser.add_argument("--allow-topology-change", action="store_true",
                         help="allow an ordinary dynamic resume to use a changed physical topology")
     parser.add_argument("--extend-from", type=Path, help="complete parent1500 state for the registered 2100 continuation")
-    parser.add_argument("--phase-from", type=Path,
-                        help="complete formal N1800 state for the registered low-LR repair phase")
     parser.add_argument("--cpu-threads", type=int, default=4)
     run(parser.parse_args())

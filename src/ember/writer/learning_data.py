@@ -366,17 +366,12 @@ class WriterTrainingData:
         state: Mapping[str, Any],
         *,
         extend_completed: bool = False,
-        extend_from_step: int | None = None,
     ) -> None:
         previous, expected = state.get("event_contract", {}), self._event_contract()
-        if extend_completed and extend_from_step is not None:
-            raise ValueError("choose one continuation cursor declaration")
-        parent_step = 1500 if extend_completed else extend_from_step
-        if parent_step is not None:
-            if state.get("next_step") != parent_step:
-                raise ValueError(f"continuation requires a completed parent{parent_step} sampler")
-            require_extended_prefix(previous, expected, parent_updates=parent_step,
-                                    child_updates=self.maximum_updates)
+        if extend_completed:
+            if state.get("next_step") != 1500:
+                raise ValueError("continuation requires a completed parent1500 sampler")
+            require_extended_prefix(previous, expected, child_updates=self.maximum_updates)
         elif previous != expected:
             raise ValueError("sampling event contract or grouping changed")
         step = state.get("next_step")

@@ -187,12 +187,11 @@ def test_dynamic_topology_resume_is_explicit_and_keeps_the_logical_update(tmp_pa
         _publish_contract(path, changed, resume=True, allow_topology_change=True)
 
     dynamic = {"training_control": {"kind": "validation_early_stopping"}}
-    resume = SimpleNamespace(allow_topology_change=True, resume=tmp_path / "macro", extend_from=None,
-                             phase_from=None)
+    resume = SimpleNamespace(allow_topology_change=True, resume=tmp_path / "macro", extend_from=None)
     assert _require_topology_resume(resume, dynamic)
     with pytest.raises(ValueError, match="ordinary dynamic"):
         _require_topology_resume(SimpleNamespace(allow_topology_change=True, resume=None,
-                                                 extend_from=None, phase_from=None), dynamic)
+                                                 extend_from=None), dynamic)
 
 
 @pytest.mark.parametrize("offset", [0, True, None])
@@ -302,36 +301,13 @@ def test_continuation_requires_full_parent_and_rejects_scientific_or_topology_ch
         require_continuation_start(args, child)
 
 
-def test_low_lr_phase_requires_n1800_and_only_registered_schedule_change(tmp_path):
-    from ember.writer.continuation import (
-        LOW_LR_REPAIR, prepare_phase_continuation, require_continuation_start,
-    )
-
-    parent_config = json.loads((ROOT / "configs/libero_24_8_8_coverage_v1/writer.json").read_text())
-    child_config = json.loads((ROOT / "configs/libero_24_8_8_coverage_v1/writer_low_lr_repair.json").read_text())
-    parent_root = tmp_path / "parent"
-    checkpoint = parent_root / "checkpoints/macro_00001800"
-    checkpoint.mkdir(parents=True)
-    common = {
-        "schema_version": "run", "stage": "stage", "mode": "formal",
-        "model_config": parent_config["model"], "source": parent_config["source"],
-        "topology": {"world_size": 4}, "execution": {"policy_microbatches": [16] * 4},
-        "git": {"commit": "sealed-n1800"},
-    }
-    (parent_root / "run_contract.json").write_text(json.dumps({**common, "config": parent_config}))
-    args = SimpleNamespace(resume=None, extend_from=None, phase_from=None, output=tmp_path / "child")
-    with pytest.raises(ValueError, match="cannot start fresh"):
-        require_continuation_start(args, child_config)
-    args.phase_from = checkpoint
-    require_continuation_start(args, child_config)
-    candidate = {**common, "config": child_config}
-    prepare_phase_continuation(args, candidate)
-    assert candidate["phase_continuation"]["fixed_lr"] == LOW_LR_REPAIR["fixed_lr"]
-    assert candidate["phase_continuation"]["parent_training_commit"] == "sealed-n1800"
-    changed = deepcopy(candidate)
-    changed["config"]["optimization"]["teaching_weight"] = 1.0
-    with pytest.raises(ValueError, match="may change only"):
-        prepare_phase_continuation(args, changed)
+@pytest.mark.parametrize("phase", [{"kind": "coverage_writer_low_lr_repair_v1"}, {}, None])
+def test_retired_low_lr_phase_cannot_silently_use_the_default_schedule(tmp_path, config, phase):
+    config["phase_continuation"] = phase
+    path = tmp_path / "retired_phase.json"
+    path.write_text(json.dumps(config))
+    with pytest.raises(ValueError, match="phase continuation is retired"):
+        _config(path)
 
 
 def test_history_inheritance_requires_training_rows_but_allows_no_diagnostics(tmp_path):

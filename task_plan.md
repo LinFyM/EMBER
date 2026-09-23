@@ -1,6 +1,16 @@
 # EMBER task plan
 
-## 当前：按Owner要求暂停（2026-09-23 08:34后）
+## 当前：Owner授权补齐 coverage baseline Test（2026-09-23）
+
+本任务只运行当前 `libero_24_8_8_coverage_v1` 固定 Test8 上的 Source1000 与已冻结 MT-BC300 两个各400行正式评测；这是对此前暂停的窄范围例外，其余 EMBER训练/controls、rank16训练、FT、RL及其他实验继续暂停。完整交接合同保存在本机handoff文件，正式条件登记在新study的`registration.json`与各evaluator `run_contract.json`。
+
+固定资产：Source为`runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000`；MT-BC唯一选点依据`/data0/user/ymdai/ember_runs/coverage_retraining_20260920/mtbc_selection.json`，checkpoint为`training/mtbc/checkpoints/step_00000300`（原rank128）。既有Validation完整行复用，Source51/400、MT-BC155/400。不得读取Test重选checkpoint、修改split或启动其他实验。
+
+当前准备进度：唯一MT-BC summary核验脚本已只读通过10个完整Validation节点、冻结选择及checkpoint manifest，并已按授权协调`training_complete=true`和`selected_checkpoint_step=300`；原summary字节备份已保存，权重、optimizer和历史成绩未改。Source1000/MT-BC300、tokenizer、当前coverage协议及clean frozen evaluator `c9844dfc`均已定位，输出根定为`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923`。配额现场为data0 160.8/1024GiB、data1 860.7/1024GiB；新评测不复制模型或数据，保守预留新增不超过4GiB。12:34 CST双节点preflight仅gpu01:0/4为空闲卡，故计划总计6张：Source用gpu01:0/2/4、每卡2 replicas；MT-BC用gpu02:0/2/3、每卡3 replicas。所选共驻设备当时util 0–3%，显存空闲约40–46GiB，设备所有者可见；Source及MT-BC的evaluator admission余量分别至少32GiB及38GiB。完整GPU/进程快照见study `launch/gpu_preflight_before_launch.json`；启动前还会再次核验漂移并按新快照复算准入。
+
+交付以完整唯一400行、worker全exit0、source/MT-BC逐行任务与初态/RNG配对为前提。报告两划分Validation/Test总表、逐任务/逐suite、breadth、Test内retained/gained/lost/churn与按任务聚类的描述性不确定性；Val/Test任务不同，不作逐行配对。Test已历史暴露，本次是Owner授权的提前baseline测量，不触发split或后续路线自动调整。
+
+## 前序全局暂停快照（2026-09-23 08:34；除本次两项baseline外仍有效）
 
 Owner醒后要求暂时停下；本轮全部实验已停止，不自动恢复。1200步fresh及六个完整Validation已结束，最佳142/400，
 未超过MTBC300155/400；冻结600步correct/other/wrong为142/132/105，各400。不存在已验证的联合修复。

@@ -1,6 +1,16 @@
 # EMBER progress
 
-## 当前状态：Owner要求暂停（2026-09-23 08:34后）
+## 当前状态：仅执行Owner授权的两项baseline Test（2026-09-23）
+
+主讨论任务已明确交接：仅为当前coverage划分的Source1000与冻结MT-BC300在Test8各补测完整400条闭环。此前暂停继续约束其他所有实验；不开展EMBER训练/视频controls、rank16训练、FT、RL，不恢复已中止shuffle/reverse，不按Test重选checkpoint、换划分或调参。
+
+固定Test任务为Spatial8/9、Object0/8、Goal4/7、Long0/3（global IDs 8/9/10/18/24/27/30/33），每任务init0..49。official preprocessing、seed7、固定Source normalization、long-first动态队列和persistent workers均复用`configs/libero_24_8_8_coverage_v1/`及canonical evaluator。Validation原件复用Source51/400与MT-BC300 155/400；Test8与Validation8不是同一组任务。
+
+截至启动准备：Source1000 checkpoint manifest/1000 optimizer step、MT-BC selection（唯一step300/155）、完整rank128 checkpoint及10个MT-BC Validation节点均已核验；MT-BC run summary窄协调已执行，原字节备份位于`/data0/user/ymdai/ember_runs/overnight_root_cause_20260922/test_baseline_preparation/run_summary.before_reconciliation.exact.json`，没有改checkpoint/optimizer/历史成绩，也未读取Test。clean detached evaluator `.codex/tmp/task-mixing-evaluation-runtime` 为`c9844dfc8db6adf68ed232236bd90d1572f583f5`，与main当前评测代码及本次配置相关部分一致；tokenizer复用本地sealed资产。
+
+输出根为`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923`，此前不存在。strg01 quota：data0 160.8GiB/1TiB、data1 860.7GiB/1TiB；共享容量分别约921GiB及82TiB。预计新增≤4GiB，无模型/数据复制。12:34 CST双节点GPU preflight当时仅gpu01:0/4为空闲A40，因此按常规上限使用6张：Source分配gpu01:0/2/4、每卡2 replicas；MT-BC分配gpu02:0/2/3、每卡3 replicas。gpu01:2与gpu02:0/2/3上有其他用户低占用进程，利用率均0%、空闲显存约45GiB，分别满足Source≥32GiB及MT-BC≥38GiB的evaluator admission门槛；高利用率或显存不足设备排除。完整节点/UUID/进程快照见study `launch/gpu_preflight_before_launch.json`。正式启动前再次实时检查并根据新状态复核该分配；两份evaluator contract会记录准入参数和worker状态。
+
+## 前序全局暂停快照（2026-09-23 08:34；本次交接仅局部授权）
 
 Owner醒后明确要求暂时停下，覆盖此前继续到09:00的授权；没有自动后继实验。
 已向本任务gpu02 reverse进程组3483233、gpu01 shuffle进程组3973895发送SIGTERM，并核验两组均无剩余进程。

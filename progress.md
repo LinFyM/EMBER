@@ -1,10 +1,32 @@
 # EMBER progress
 
-## 当前状态：收尾完成，研究保持暂停（2026-09-23）
+## 当前状态：两轮收尾完成，研究保持暂停（2026-09-23）
+
+Owner认为仅清理缓存不充分，明确要求进一步裁剪历史checkpoint。本轮按关键权重/历史参照/当前依赖/恢复用途择点，
+额外回收360.759 GiB；连同首轮53.007 GiB，两轮累计413.766 GiB。data1用户配额实测从846.3降至485.6/1024 GiB，
+data0仍为122.1/1024 GiB。原始评测、配置、关键模型及当前诊断依赖继续保留。
 
 Owner最新要求只整理仓库，不再开展或派发实验。Luna由Owner停止；**没有创建Sol任务**。
 没有active experiment design。旧计划、设计中的启动许可、GPU特例与时间窗口均不自动生效。
-本次长期理解、文档/代码/可删除资产与worktree收尾已完成并集成main；后续由Owner另外安排研究接手。
+长期理解、文档/代码/缓存与worktree整理、追加资产退休均已完成；后续研究由Owner另外安排。
+
+## 追加checkpoint裁剪
+
+- 9月8–14日33条结束路线：回收222.737 GiB，保留70个关键权重路径；8月3–7日12条结束/作废路线：
+  回收115.220 GiB，保留24个代表权重及64份完整评测原件。合计174个历史checkpoint：94个`weights_only`、80个`metadata_only`。
+- Source1000预先固定使用raw policy；退休无使用用途的optimizer及未选EMA副本，回收22.802 GiB。
+  raw policy的canonical inspector在删除前后返回相同结果，正式推理仍可用；Source完整训练恢复和EMA不再可用。
+- 合计删除256个大载荷路径、255个独立inode：trainer约287.989 GiB、Source optimizer 14.090 GiB、
+  非关键Writer权重49.968 GiB、未用EMA 8.712 GiB。保留原合同/manifest、日志/指标、原始结果和小型rank RNG记录。
+- 删除trainer的历史Writer不再exact resume；其原冻结CLI会因完整文件校验而拒绝加载，今后重放需要明确支持
+  weights-only的读取路径，不能伪造trainer或重写历史manifest。已导出9月模型的标量/结构元数据；8月模型所需元数据在原合同/consumed中。
+  9个受影响的物化缓存退役记录已同步上游可用性。当前checkpoint retirement记录优先于旧日志的“完整保留/可直接重建”描述。
+- 94个保留权重的safetensors头均可读；O1200/C600/C1200/MT-BC300的全部manifest文件和大小核对通过，
+  库存无计划外消失文件。数据、teacher/native observer/stable carrier/fit19依赖、旧V5.2参照和近期完整训练轨迹未动。
+  本轮没有运行模型、GPU实验或重算科研结果。data1已盘点checkpoint载荷从592.366降至231.607 GiB；
+  剩余小型历史节点不一概宣称必不可少，但本轮未对缺少逐项退休依据的资产继续扩大删除。
+- 精确清单及验证：`runs/analysis/workspace_cleanup_20260923/checkpoint_retirement/closeout.json`；
+  每个受影响checkpoint原目录有`checkpoint_retirement.json`，历史manifest保持原内容。
 
 ## 接手先读
 
@@ -53,7 +75,7 @@ A直接共享rank16、B语言Writer、C完整视频Writer、D相同视频结构�
 恢复WIP需从该已推送分支新建隔离worktree，并把本次main清理逐项协调后验证；不在main直接覆盖未验证代码。
 本段只提供恢复位置，不构成运行指令；由Owner与新session决定继续、修正或放弃候选。
 
-## 本次收尾记录
+## 首轮收尾记录（追加checkpoint裁剪前）
 
 - 长期要求和concept已整合；docs按designs/analyses/review_materials分工，历史材料有明确状态。
 - task_plan和progress只保留当前状态，重复历史移至既有研究历史/发现入口；原详细过程可从Git恢复。

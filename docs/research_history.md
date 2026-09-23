@@ -2,6 +2,20 @@
 
 本文记录各时点的事实和当时合同；历史“当前/下一步/授权”不持续生效。最新授权只看[progress](../progress.md)。
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
+历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
+
+## 2026-09-23：按实际用途裁剪历史checkpoint
+
+Owner否定“唯一checkpoint都保留”的首轮边界，要求进一步实质回收。逐条核对历史裁决、关键评测节点和现存依赖后，
+45条8月/9月结束路线的174份完整Writer checkpoint退役为94份关键权重存档和80份仅元数据记录，回收337.957 GiB。
+Source1000按原合同只使用raw policy，未用EMA及训练optimizer再回收22.802 GiB，canonical Source推理检查保持通过。
+本轮合计360.759 GiB，加首轮53.007 GiB累计413.766 GiB；strg01的data1用户用量由846.3降至485.6 GiB。
+
+原始评测、训练指标、合同、manifest、当前模型/诊断依赖、teacher与数据保留。旧路线选择保存的权重不能再exact resume，
+原冻结CLI的全文件校验仍要求已删除trainer，重放需显式适配weights-only；没有伪造trainer或改写历史manifest。
+9个已退役物化缓存同步更新上游状态；94个关键权重头、当前O1200/C600/C1200/MT-BC300文件合同及Source入口核验通过。
+详细生命周期依据、逐文件删除清单与可用性记录在`runs/analysis/workspace_cleanup_20260923/checkpoint_retirement/`。
+没有新科研实验、结果重算、后继任务或新工作树。原实现和科研结论不因存储退休而改写。
 
 ## 2026-09-23：组会后讨论、条件诊断暂停与仓库收尾
 
@@ -24,7 +38,7 @@ Luna尚未启动GPU smoke或四臂训练，Owner停止后全部未验证源码�
 四臂仅做整体环节定位，参数化、条件与活动模块有混杂，固定数据无法独自确定数据构成原因；无第五臂自动授权。
 
 收尾将文档按职责归类、当前状态去重，退役已结束诊断和low-LR专用执行面；原代码保留在`7b18030c`及各formal commit。
-唯一checkpoint、数据和formal原件保留，确认可重建的物化载荷/临时产物按退役记录清理；最终数字见progress。
+首轮保留唯一checkpoint、数据和formal原件，清理确认可重建的物化载荷/临时产物；随后Owner追加checkpoint裁剪，见上节。
 没有因收尾运行新实验，也不把暂停草稿提升为已经验证的方法。
 
 ## 2026-09-23：夜间fresh最终结果与授权终止

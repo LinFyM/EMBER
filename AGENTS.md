@@ -162,7 +162,9 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - 稳定目标写入`current_owner_requirements`和`concept`；当前goal与计划写入`task_plan.md`，即时进度写入
   `progress.md`；历史结果写入`research_history.md`，跨轮结论写入`findings.md`。不得向`AGENTS.md`追加动态
   实验年表。
-- 只删除明确obsolete、temporary或duplicate内容；formal evidence、唯一checkpoint、dataset和所有权不清内容保留。
+- 只删除生命周期已核实结束的内容；数据集、原始formal结果、关键模型和当前依赖保留。历史checkpoint不因唯一或formal标签永久保留：
+  按Owner最新清理授权择点保存关键权重，退休无恢复用途的训练状态及冗余中间点，记录删除清单和实际可用范围。
+  权重存档与完整训练checkpoint须区分，不把已删除optimizer的存档继续称为exact-resume资产；所有权不清的内容不动。
 
 ## 11. Collaboration
 

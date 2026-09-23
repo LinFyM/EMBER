@@ -67,7 +67,9 @@ Writer与读取Meta默认fresh联合学习，source冻结；辅助query只作监
 MT-BC在完整更新节点按已登记合同变更物理分片，可保留逻辑流及optimizer/scheduler，不称逐rank RNG/浮点轨迹bitwise exact。
 实时GPU、独立quota、完整恢复、clean pushed frozen runtime和Git交付按AGENTS；科学non-pass不自动变成工程bug。
 保持一个canonical运行面，退役专用实现由Git保存、正式原件与复现commit保留；把旧代码移入archive不算清理。
-唯一checkpoint、数据源、正式证据及所有权未明资产保留；可再生缓存和明确临时产物核实后删除，报告实际释放空间。
+历史checkpoint不因“唯一存在”或“formal”标签而永久保留。已结束路线按关键结论复现、比较参照、当前依赖和明确恢复用途择点保留；
+无继续用途的optimizer/RNG大载荷、冗余中间节点及作废产物可以核实后退役。保留必要权重、配置、原始评测和统计，
+登记退役范围；weights-only存档不得再声称可exact resume或原CLI完整可用。数据源、关键模型与所有权未明资产仍保护。
 
 ## 6. 沟通与交接
 

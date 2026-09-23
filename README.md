@@ -67,5 +67,8 @@ Source/MT-BC入口为`scripts/train_source_base.py`和`scripts/train_source_sft.
 [夜间结果包](docs/review_materials/20260923/overnight_results/README.md)进入。
 这些材料服务不同历史问题，不合并成一条未经匹配的性能曲线。
 
-数据集、Source、唯一checkpoint及正式原始证据保留。可再生的物化LoRA载荷退役时，保留manifest、生成checkpoint、
-条件映射和复现commit，并在原目录登记payload retirement；需要重放历史评测时先按登记重建缓存。
+数据集、实际使用的Source、当前比较/诊断依赖和正式原始证据保留。历史checkpoint按用途择点保存关键权重，
+已结束路线的续训状态及非关键中间权重不永久保留；本次裁剪范围和回收量见[progress](progress.md)。
+各checkpoint中的`checkpoint_retirement.json`记录当前可用性，原manifest记录的是历史完整状态。
+`weights_only`存档不能精确续训，部分历史CLI仍要求完整trainer，重放前须显式适配权重加载；`metadata_only`不再含模型权重。
+已退役物化载荷的manifest、条件映射和复现commit保留，重建前同时检查`payload_retirement.json`及其上游checkpoint状态。

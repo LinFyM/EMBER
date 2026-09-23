@@ -2831,3 +2831,9 @@ fresh400为47/72、breadth30；C60039、J54=46、D54=53、M30044。fresh400对C6
 训练与模型选择已停止，600步的method freeze和原始400行已封存。最终video controls按原计划在冻结后执行，结果待完整面板，
 不得将D54的30/31/25或旧模型的视频结论移植到这个fresh模型。本轮尚无Test/FT/RL，也未把诊断权重提升为另一正式候选。
 原件：`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`；小型PPT数据与图位于`docs/review_materials/20260923/overnight_results`。
+
+## 132. Frozen MT-BC300 在历史暴露 Test8 上高于 Source，但增益小于 Validation（2026-09-23）
+
+Owner授权的 coverage 划分 Test8 baseline 已按相同400个task/state、环境与policy RNG及噪声共同前缀完成配对。Source1000为75/400，MT-BC300为121/400（+46，+11.5个百分点）；breadth为4/8→7/8，success-set保留/新增/丢失46/75/29，churn104/400（26.0%），Jaccard .3067。按8个任务聚类的增益95%描述bootstrap区间为[−0.5,+22.75]个百分点，包含零且范围较宽，不构成等效性或显著性结论。
+
+同协议Validation Source/MT-BC为51/155，增益104（+26.0个百分点），R/G/L=36/119/15，breadth4→6。Test的MT-BC增益比Validation低14.5个百分点；对不重叠任务集独立重采样所得95%描述区间为[−41,+9.5]个百分点，同样不能据此断定泛化差距。本Test任务此前已有历史暴露，因此它是Owner授权的提前baseline测量，不应描述为新盲测；Test结果未用于checkpoint或方法选择。按suite的Source→MT-BC为Test Spatial3→20、Object0→31、Goal36→46、Long36→24。全量逐task/suite与配对行见`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923/analysis/`下CSV/JSON。

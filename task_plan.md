@@ -1,14 +1,18 @@
 # EMBER task plan
 
-## 当前：Owner授权补齐 coverage baseline Test（2026-09-23）
+## 已完成：Owner授权补齐 coverage baseline Test（2026-09-23）
 
 本任务只运行当前 `libero_24_8_8_coverage_v1` 固定 Test8 上的 Source1000 与已冻结 MT-BC300 两个各400行正式评测；这是对此前暂停的窄范围例外，其余 EMBER训练/controls、rank16训练、FT、RL及其他实验继续暂停。完整交接合同保存在本机handoff文件，正式条件登记在新study的`registration.json`与各evaluator `run_contract.json`。
 
 固定资产：Source为`runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000`；MT-BC唯一选点依据`/data0/user/ymdai/ember_runs/coverage_retraining_20260920/mtbc_selection.json`，checkpoint为`training/mtbc/checkpoints/step_00000300`（原rank128）。既有Validation完整行复用，Source51/400、MT-BC155/400。不得读取Test重选checkpoint、修改split或启动其他实验。
 
-当前进度：MT-BC summary依据10个完整Validation节点、冻结step300/155选择及checkpoint manifest通过核验；按授权只协调`training_complete=true`和`selected_checkpoint_step=300`，原summary字节已备份，权重、optimizer及历史成绩不变。唯一输出根为`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923`；不复制模型/数据，新增峰值预算≤4GiB。两次首次wrapper尝试因重复CLI前缀退出2，均未生成evaluator contract、worker或GPU计算；原脚本、日志和退出码保留。修正wrapper后于12:49 CST在gpu01/gpu02启动attempt02，两臂命令、资产、checkpoint、GPU分配及输出目录均未变。Source和MT-BC的正式Test `run_contract.json`均已生成，准确覆盖8个固定Test任务×init0..49；Source为step1000、无adapter、6 workers（gpu01:0/2/4×2），MT-BC为唯一共享rank128 step300 LoRA、9 workers（gpu02:0/2/3×3），held test action reads为0。两session当前运行；完整`results.json`与`launcher_completion.json`尚未产生，不读中间分数。最新双节点preflight在study `launch/gpu_preflight_retry02.json`，独立配额快照在`launch/storage_preflight_retry02.txt`。
+完成情况：MT-BC summary依据10个完整Validation节点、冻结step300/155选择及checkpoint manifest通过核验；按授权只协调`training_complete=true`和`selected_checkpoint_step=300`，原summary字节已备份，权重、optimizer及历史成绩不变。两次首次wrapper尝试因重复CLI前缀解析退出2，均未生成evaluator contract、worker或GPU计算；脚本、日志和exit文件保留。修正wrapper后于12:49 CST在gpu01/gpu02启动attempt02，正式命令及登记输入、checkpoint、GPU分配和输出目录不变。唯一输出根为`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923`；未复制模型/数据，新增未超过预估4GiB。
 
-交付以完整唯一400行、worker全exit0、source/MT-BC逐行任务与初态/RNG配对为前提。报告两划分Validation/Test总表、逐任务/逐suite、breadth、Test内retained/gained/lost/churn与按任务聚类的描述性不确定性；Val/Test任务不同，不作逐行配对。Test已历史暴露，本次是Owner授权的提前baseline测量，不触发split或后续路线自动调整。
+Source1000与MT-BC300 Test均完成400/400条唯一条件、所有worker exit0。Source为75/400（18.75%，breadth 4/8），MT-BC为121/400（30.25%，breadth 7/8）；逐行配对保留/新增/丢失46/75/29，churn 104/400（26.0%），Jaccard 0.3067。MT-BC相对Source的8-task聚类bootstrap 95%描述区间为−0.5至+22.75个百分点。复用Validation为51/400与155/400，增益分别+26.0个百分点；Test增益比Validation少14.5个百分点，独立task-cluster描述区间−41至+9.5个百分点。两划分任务不同，不做跨划分逐行配对；Test任务历史上已暴露，本次按Owner授权提前补测，结果不用于选择模型、划分、参数或后续路线。完整逐task/suite表与配对证据位于study `analysis/`；运行原件为各arm的`results.json`、`launcher_completion.json`和`run_contract.json`。
+
+正式交付核验通过，scope已关闭。此前全局暂停对其它实验继续有效；不自动启动训练、controls、FT、RL或其它工作。
+
+验收合同已通过：两臂各完整唯一400行、worker全exit0，Source/MT-BC的task/state/language/env/policy RNG及实际replan噪声共同前缀配对。已报告两划分总表、逐任务/逐suite、breadth、Test内retained/gained/lost/churn与按任务聚类的描述性不确定性；Val/Test任务不同，不作跨划分逐行配对。Test已历史暴露，本次是Owner授权的提前baseline测量，不触发split或后续路线自动调整。
 
 ## 前序全局暂停快照（2026-09-23 08:34；除本次两项baseline外仍有效）
 

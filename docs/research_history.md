@@ -2085,3 +2085,22 @@ q-B/v-B更新方向但未降低总成功，SHRINK在相同逐层范数下少2条
 根因。N1000 code、B及BA比O1200更趋同，只保留为后续可能讨论的系数映射证据。本轮在报告交付后关闭，未启动
 split-head、完整E2、Test、FT或RL。轻量原始表、图及复算源码见
 `docs/review_materials/20260921/writer_output_space_diagnostics/`；正式study保留code tensor和compact轨迹。
+
+## 2026-09-23：Owner授权的coverage baseline Test8完成
+
+全局暂停后Owner从主讨论任务明确授权的唯一范围，是当前`libero_24_8_8_coverage_v1` Test8上冻结Source1000及MT-BC300各完成一轮400条件评测；EMBER训练、rank16训练、视频controls、FT、RL和暂停的shuffle/reverse均未开展或恢复。Validation复用已完成面板（Source51/400，MT-BC155/400）；固定Test任务为Spatial8/9、Object0/8、Goal4/7、Long0/3（global IDs 8/9/10/18/24/27/30/33），每任务state0–49、seed7。Test task set与Validation不同。协议metadata标明这些Test任务有历史曝光，本次不作为全新盲测。
+
+Source checkpoint为`pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000`，MT-BC按原唯一选择`coverage_retraining_20260920/mtbc_selection.json`使用完整rank128 step300 checkpoint。两臂共用冻结base/normalization，未读held teacher action/state/reward。首轮启动wrapper因重复CLI前缀在argparse阶段exit2，未创建evaluator合同或启动worker/GPU计算；错误脚本、日志和exit码留存。仅修正wrapper argv后，attempt02于12:49 CST使用原合同、资产、设备和输出路径启动，两个运行均完成且所有workers exit0。
+
+400个相同task/state行的language、environment seed、policy seed root及policy/environment/RNG合同一致。policy-noise seeds按每条轨迹实际replan次数保存；149行的序列长度不同（最大差50次），所有实际执行部分的共同前缀均逐seed一致，未执行的尾部不纳入配对。
+
+| Split | Source | MT-BC300 | MT-BC−Source | Breadth S→M | 配对R/G/L | Churn | Task-cluster 95%描述区间 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Validation | 51/400 (12.75%) | 155/400 (38.75%) | +104 (+26.0pp) | 4→6 | 36/119/15 | 134 (33.5%) | [+5.25,+49.75]pp |
+| Test | 75/400 (18.75%) | 121/400 (30.25%) | +46 (+11.5pp) | 4→7 | 46/75/29 | 104 (26.0%) | [−0.5,+22.75]pp |
+
+Test配对Jaccard为.3067。Test−Validation的MT-BC增益差为−14.5pp；按两个互不重叠的8-task集合独立聚类重采样，95%描述区间[−41,+9.5]pp。以上bootstrap仅描述任务簇差异，任务数少且区间宽，不能作等效性判断或显著性结论，也不在Validation与Test之间逐行配对。
+
+Test各任务Source→MT-BC成功数及R/G/L如下：Long0 1→0 (0/0/1)，Long3 35→24 (15/9/20)；Goal4 36→42 (29/13/7)，Goal7 0→4 (0/4/0)；Object0 0→11 (0/11/0)，Object8 0→20 (0/20/0)；Spatial8 3→11 (2/9/1)，Spatial9 0→9 (0/9/0)。按suite：Long36→24、Goal36→46、Object0→31、Spatial3→20。完整Validation/Test per-task、per-suite行保存在study `analysis/per_task.csv`与`per_suite.csv`；summary、paired comparison、启动合同、worker/completion及raw results均位于`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923/`。
+
+该组结果确认固定协议下冻结baseline的实际分数与task交换，不触发训练资格、checkpoint改选、协议变更或后续路线调整。此次窄范围任务完成后，全局暂停继续约束其它所有实验。

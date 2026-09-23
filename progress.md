@@ -1,14 +1,16 @@
 # EMBER progress
 
-## 当前状态：仅执行Owner授权的两项baseline Test（2026-09-23）
+## 已完成：Owner授权的两项baseline Test（2026-09-23）
 
 主讨论任务已明确交接：仅为当前coverage划分的Source1000与冻结MT-BC300在Test8各补测完整400条闭环。此前暂停继续约束其他所有实验；不开展EMBER训练/视频controls、rank16训练、FT、RL，不恢复已中止shuffle/reverse，不按Test重选checkpoint、换划分或调参。
 
 固定Test任务为Spatial8/9、Object0/8、Goal4/7、Long0/3（global IDs 8/9/10/18/24/27/30/33），每任务init0..49。official preprocessing、seed7、固定Source normalization、long-first动态队列和persistent workers均复用`configs/libero_24_8_8_coverage_v1/`及canonical evaluator。Validation原件复用Source51/400与MT-BC300 155/400；Test8与Validation8不是同一组任务。
 
-截至当前：Source1000 checkpoint manifest/1000 optimizer step、MT-BC selection（唯一step300/155）、完整rank128 checkpoint及10个MT-BC Validation节点均已核验；MT-BC run summary窄协调已执行，原字节备份位于`/data0/user/ymdai/ember_runs/overnight_root_cause_20260922/test_baseline_preparation/run_summary.before_reconciliation.exact.json`，没有改checkpoint/optimizer/历史成绩，也未读取Test。clean detached evaluator `.codex/tmp/task-mixing-evaluation-runtime` 为`c9844dfc8db6adf68ed232236bd90d1572f583f5`，与main当前评测代码及本次配置相关部分一致；tokenizer复用本地sealed资产。首轮两个launcher wrapper因重复CLI前缀在解析期exit2，未建evaluation contract/worker或占用GPU；原脚本、日志、exit文件保留。修正仅在启动wrapper，attempt02于12:49 CST在两个节点分别启动，实验输入、参数、GPU/输出路径完全沿用登记合同。两臂evaluator contract已验证角色test/formal、Test8任务和初态、Source step1000与MT-BC唯一rank128 step300；MT-BC contract记载`test_action_reads=0`。截至此记录两轮`results.json`/launcher completion尚未完成；未读取部分成功率。
+Source1000 checkpoint manifest/1000 optimizer step、MT-BC唯一step300/155选择、rank128 checkpoint及10个完整MT-BC Validation节点均已核验；按授权协调MT-BC run summary状态，原字节备份为`/data0/user/ymdai/ember_runs/overnight_root_cause_20260922/test_baseline_preparation/run_summary.before_reconciliation.exact.json`，未改权重、optimizer或历史成绩。Evaluator使用clean detached runtime `c9844dfc8db6adf68ed232236bd90d1572f583f5`。首轮wrapper因重复CLI前缀在解析期exit2，未建合同、worker或占用GPU，原脚本/日志/exit保留；修正wrapper后attempt02在gpu01/gpu02启动，命令参数和资产不变。Source与MT-BC两个Test合同均为formal、固定8任务×50初态；MT-BC为唯一共享step300 rank128 LoRA，合同记录`test_action_reads=0`。
 
-输出根为`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923`，此前不存在。strg01 launch前quota：data0 160.8GiB/1TiB、data1 860.1GiB/1TiB；最新共享容量data0约916GiB。预计新增≤4GiB，无模型/数据复制。常规总卡上限按仅2张空闲卡降为6张；Source使用gpu01:0/2/4、每卡2 replicas；MT-BC使用gpu02:0/2/3、每卡3 replicas。共驻卡上其他用户进程util 0%，空闲显存约45GiB；Source/MT-BC对应准入余量要求32/38GiB，启动前快照均通过。启动前最终设备与quota原件为study `launch/gpu_preflight_retry02.json`、`launch/storage_preflight_retry02.txt`；各arm运行时contract和launcher也保存节点级GPU准入状态。
+输出根为`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923`。strg01 launch前quota分别为data0 160.8GiB、data1 860.1GiB（各1TiB）；预计新增≤4GiB，未复制模型/数据。受空闲卡数量限制，本轮共用6张A40：Source gpu01:0/2/4、每卡2 replicas；MT-BC gpu02:0/2/3、每卡3 replicas。启动前共驻设备余量和负载通过准入；快照保留于`launch/gpu_preflight_retry02.json`和`launch/storage_preflight_retry02.txt`。
+
+两臂均于2026-09-23约13:13 CST完成，launcher exit 0；Source 6 workers、MT-BC 9 workers全部exit0，queue分别覆盖400行，完整results/summary/completion与合同引用一致。canonical paired comparator核验两臂任务/初态/language/env seed/policy seed及noise共同前缀一致，共用base checkpoint与normalization；无held teacher action/state/reward读取。Source 75/400（18.75%，breadth4/8），MT-BC 121/400（30.25%，breadth7/8），Test内R/G/L=46/75/29、churn104（26.0%）、Jaccard0.3067。对应Validation为51/400与155/400，增益+26.0pp；Test增益+11.5pp，Test−Validation为−14.5pp，独立任务簇描述区间[−41,+9.5]pp。Test内MT-BC增益的任务簇95%描述区间[−0.5,+22.75]pp；每划分仅8任务簇，不作等效性检验。测试任务此前已历史暴露。详细逐task/suite数据、聚类不确定性和分析合同见`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923/analysis/`；本任务已完成，未依据Test结果启动或改变其它实验。
 
 ## 前序全局暂停快照（2026-09-23 08:34；本次交接仅局部授权）
 

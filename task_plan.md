@@ -1,5 +1,18 @@
 # EMBER task plan
 
+## 当前Active Design：条件编译四臂诊断（2026-09-23）
+
+Owner授权study `conditional_compilation_diagnostics_20260923`。执行合同、固定科学规格和任务等价审计已提升至：
+[`docs/conditional_compilation_diagnostics_design.md`](docs/conditional_compilation_diagnostics_design.md)、
+`configs/conditional_compilation_diagnostics_v1/experiment_spec.json`、
+`configs/conditional_compilation_diagnostics_v1/partition_audit.json`。
+本设计比较A_direct16、B_language、C_video_fm、D_video_aux；四臂均从Source1000 fresh初始化、rank16、各1260更新，按合同完成CPU/GPU smoke/profile、冻结面板、控制及探针。旧有MT-BC300 Test补测已单独完成并关闭；baseline结果在科学参数固定后才被审阅，只追加既定Source面板上的保留/新增/丢失描述，不修改任务划分、配方、优化、选点或GPU实验预算。
+
+fit28由seen target16和固定aux12组成，diagnostic-held8是剩余官方train target任务；LIBERO官方24/8/8不变，官方Validation/Test不新增评测。仅本study四臂与合同列明的诊断获授权；禁止第五臂、调参、官方新Validation/Test、FT、RL及其它实验。结果不得自动触发下一轮修复。本Active Design外的先前暂停仍有效。
+
+当前阶段：固定合同/审计已核对，正在提交Active Design登记；尚未开始模型实现、smoke或formal GPU训练。下一步先完成单一实现与CPU验证，再做live资源核验和已授权smoke/profile；全部就绪后从clean pushed detached commit依次启动四臂正式运行。
+
+
 ## 已完成：Owner授权补齐 coverage baseline Test（2026-09-23）
 
 本任务只运行当前 `libero_24_8_8_coverage_v1` 固定 Test8 上的 Source1000 与已冻结 MT-BC300 两个各400行正式评测；这是对此前暂停的窄范围例外，其余 EMBER训练/controls、rank16训练、FT、RL及其他实验继续暂停。完整交接合同保存在本机handoff文件，正式条件登记在新study的`registration.json`与各evaluator `run_contract.json`。

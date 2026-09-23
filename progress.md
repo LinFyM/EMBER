@@ -1,5 +1,17 @@
 # EMBER progress
 
+## 当前Active Design：conditional_compilation_diagnostics_20260923
+
+Owner已授权按[`docs/conditional_compilation_diagnostics_design.md`](docs/conditional_compilation_diagnostics_design.md)执行固定四臂诊断；科学规格与partition audit位于`configs/conditional_compilation_diagnostics_v1/`。Source1000/MT-BC300 Test补测已完成并单独交付于commit `7b18030c8592261ea780b149419c8584c5bacbb6`；Val/Test基线结果在四臂、任务划分和训练配方固定之后才被审阅，唯一新增项是使用原定Source held400/seen64面板报告相对Source的retained/gained/lost/churn和定义好的率，不增加rollout或GPU实验。
+
+已完成：
+- fit28/held8 overlay、seen16、aux12与父协议对齐；official suite train/validation/test仍是24/8/8，fit/held均不含official Validation/Test ID。
+- 8个held完整BDDL规格与canonical overlap audit一致；逐个对fit28和列明closest fit规格比较无精确等价项；Source71=canonical Source90减19个审计重叠任务。
+- 从主分支`7b18030c8592261ea780b149419c8584c5bacbb6`建立隔离分支`codex/conditional-compilation-diagnostics`。Source quota snapshot：data0 168588484 KiB/1073741824 KiB、data1 902146152 KiB/1073741824 KiB；共享空闲约data0 907 GiB、data1 82 TiB。新增workspace约0.25 GiB，data0 study上限96 GiB、data1本任务workspace/运行代码上限2 GiB；study root仍不存在，尚未创建输出。启动前须按合同刷新quota/容量与双节点GPU状态。
+
+当前阶段：Active Design合同材料正在正式登记；尚未做模型实现、GPU smoke/profile或正式GPU训练。完成登记提交并回传主讨论后继续；不等待批准。四臂各1260更新及全部规定评测/保留由合同精确限定。本study以外仍保持暂停，禁止第五臂、调参、官方新Validation/Test、FT和RL。
+
+
 ## 已完成：Owner授权的两项baseline Test（2026-09-23）
 
 主讨论任务已明确交接：仅为当前coverage划分的Source1000与冻结MT-BC300在Test8各补测完整400条闭环。此前暂停继续约束其他所有实验；不开展EMBER训练/视频controls、rank16训练、FT、RL，不恢复已中止shuffle/reverse，不按Test重选checkpoint、换划分或调参。

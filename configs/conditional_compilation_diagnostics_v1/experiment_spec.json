@@ -1,0 +1,830 @@
+{
+  "schema_version": "ember_conditional_compilation_diagnostic_spec_v1",
+  "study_id": "conditional_compilation_diagnostics_20260923",
+  "created_at": "2026-09-23T13:04:22.803054+08:00",
+  "owner_authorization": "2026-09-23: detailed experimental planning and delegation to existing Luna execution task; this four-arm diagnostic batch is authorized",
+  "coordinator_thread_id": "01a0c8da-0058-7951-8d1c-9c2233079f7e",
+  "executor_thread_id": "01a0cc37-2740-71a1-b470-153548d41f87",
+  "planning_source_commit": "3270ec53f208c2b5d9c9ecee612882db6da421fe",
+  "protocol": {
+    "parent": "configs/libero_24_8_8_coverage_v1/protocol.json",
+    "manifest": "configs/libero_24_8_8_coverage_v1/manifest.json",
+    "role_overlay_only": true,
+    "parent_train36": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      7,
+      12,
+      13,
+      14,
+      15,
+      17,
+      19,
+      20,
+      21,
+      22,
+      25,
+      28,
+      29,
+      32,
+      34,
+      35,
+      36,
+      37,
+      38,
+      42,
+      43,
+      51,
+      55,
+      56,
+      62,
+      64,
+      73,
+      95,
+      96,
+      97,
+      101
+    ],
+    "fit28": [
+      2,
+      4,
+      5,
+      7,
+      12,
+      13,
+      17,
+      19,
+      22,
+      25,
+      28,
+      29,
+      32,
+      34,
+      35,
+      37,
+      42,
+      43,
+      51,
+      55,
+      56,
+      62,
+      64,
+      73,
+      95,
+      96,
+      97,
+      101
+    ],
+    "diagnostic_held8": [
+      0,
+      1,
+      14,
+      15,
+      20,
+      21,
+      36,
+      38
+    ],
+    "seen_target16": [
+      2,
+      4,
+      5,
+      7,
+      12,
+      13,
+      17,
+      19,
+      22,
+      25,
+      28,
+      29,
+      32,
+      34,
+      35,
+      37
+    ],
+    "official_validation_and_test_unchanged": true,
+    "split_selection_basis": "task specifications and four-suite balance; not current baseline Test outcomes",
+    "held_rows": [
+      {
+        "global_task_id": 0,
+        "suite": "libero_spatial",
+        "task_id": 0,
+        "language": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+        "fit_support": [
+          2,
+          4,
+          5,
+          7,
+          28
+        ],
+        "limitation": "between plate/ramekin target selection held; manipulations supported, selector relation not duplicated"
+      },
+      {
+        "global_task_id": 1,
+        "suite": "libero_spatial",
+        "task_id": 1,
+        "language": "pick up the black bowl next to the ramekin and place it on the plate",
+        "fit_support": [
+          2,
+          4,
+          5,
+          7,
+          28
+        ],
+        "limitation": "next-to-ramekin target selection held; exact selector is absent"
+      },
+      {
+        "global_task_id": 14,
+        "suite": "libero_object",
+        "task_id": 4,
+        "language": "pick up the ketchup and place it in the basket",
+        "fit_support": [
+          12,
+          13,
+          17,
+          19,
+          37
+        ],
+        "source_support_local_ids": [
+          32,
+          58
+        ],
+        "limitation": "ketchup is not an action target in fit28; Source71 has ketchup-to-drawer/tray; novel target-object transfer at Writer-training level"
+      },
+      {
+        "global_task_id": 15,
+        "suite": "libero_object",
+        "task_id": 5,
+        "language": "pick up the tomato sauce and place it in the basket",
+        "fit_support": [
+          12,
+          13,
+          17,
+          19,
+          37
+        ],
+        "source_support_local_ids": [
+          59
+        ],
+        "limitation": "tomato_sauce is not an action target in fit28; Source71 local59 has exact BDDL type tomato_sauce to tray; novel target-object transfer at Writer-training level"
+      },
+      {
+        "global_task_id": 20,
+        "suite": "libero_goal",
+        "task_id": 0,
+        "language": "open the middle drawer of the cabinet",
+        "fit_support": [
+          51
+        ],
+        "limitation": "opening top drawer supports operation; middle drawer geometry/selector is held"
+      },
+      {
+        "global_task_id": 21,
+        "suite": "libero_goal",
+        "task_id": 1,
+        "language": "put the bowl on the stove",
+        "fit_support": [
+          28,
+          32,
+          7
+        ],
+        "limitation": "bowl transport and object-on-stove supported separately; bowl-to-stove pairing held; taking from stove is not placing on it"
+      },
+      {
+        "global_task_id": 36,
+        "suite": "libero_10",
+        "task_id": 6,
+        "language": "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+        "fit_support": [
+          34,
+          101,
+          37
+        ],
+        "limitation": "mug placement, pudding manipulation and two-object goals supported; pudding right-of-plate relation is held"
+      },
+      {
+        "global_task_id": 38,
+        "suite": "libero_10",
+        "task_id": 8,
+        "language": "put both moka pots on the stove",
+        "fit_support": [
+          32,
+          34,
+          37
+        ],
+        "limitation": "one moka-to-stove and multi-object tasks supported; two moka placement held; stove initially on, no new Turnon instruction"
+      }
+    ],
+    "selection_basis_detail": "Selected on BDDL roles, composition and exact object types before reading current Test outcomes; Source salad_dressing vs new_salad_dressing mismatch was not treated as exact type support."
+  },
+  "assets": {
+    "source_checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+    "source_config": {
+      "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+      "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json"
+    },
+    "normalization": "existing frozen filtered Source71 normalization; resolve from configs/pi05_writer_data_v1.json",
+    "rank": 16,
+    "targets": 38,
+    "asset_root": "/data1/user/ymdai/projects/EMBER"
+  },
+  "arms": [
+    {
+      "id": "A_direct16",
+      "parameterization": "direct_shared_lora",
+      "objective": "matched_full_fm",
+      "description": "Matched direct rank16 LoRA optimization reference, not a reproduction of historical rank128 MT-BC recipe"
+    },
+    {
+      "id": "B_language",
+      "parameterization": "language_writer",
+      "objective": "matched_full_fm",
+      "description": "Train a text-only native reader/Core/compiler/full A-B generator from fresh initialization"
+    },
+    {
+      "id": "C_video_fm",
+      "parameterization": "video_writer",
+      "objective": "matched_full_fm",
+      "description": "Canonical video Writer, both query groups use random-time full-horizon FM"
+    },
+    {
+      "id": "D_video_aux",
+      "parameterization": "video_writer",
+      "objective": "main_fm_plus_cross_episode_endpoint_prefix",
+      "description": "Same Writer and labels as C; only the second query-group objective changes to tau1/first5"
+    }
+  ],
+  "sampling": {
+    "model_seed": 7,
+    "sampler_seed": 20260721,
+    "teacher_video_seed": 20260722,
+    "teaching_seed": 20260919,
+    "fit_action_demos": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45
+    ],
+    "fit_video_demos": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45
+    ],
+    "reserved_demo_indices": [
+      46,
+      47,
+      48,
+      49
+    ],
+    "tasks_per_update": 4,
+    "main_queries_per_condition": 21,
+    "extra_queries_per_condition": 7,
+    "extra_episode_relation": "cross_episode",
+    "main_queries_episode_distinct": true,
+    "condition_weight": 0.25,
+    "extra_group_weight": 0.3333333333333333,
+    "loss_total_scale": 1.3333333333333333,
+    "frame_stride": 5,
+    "include_last_frame": true,
+    "camera_view": "agentview",
+    "horizon": 50,
+    "action_start_offset": 1,
+    "query_alignment": "post_action_observation_future_control_v1",
+    "event_stream_shared_across_all_arms": true
+  },
+  "optimization": {
+    "optimizer": "AdamW",
+    "seed": 7,
+    "lr": 0.0003,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.0001,
+    "grad_clip": 1.0,
+    "warmup_updates": 150,
+    "decay_updates": 18000,
+    "decay_lr": 1e-05,
+    "tail_start_update": 1350,
+    "tail_end_update": 2250,
+    "tail_final_ratio": 0.1,
+    "scheduler_function": "ember.writer.training._learning_rate_multiplier; same applied sequence across all four arms",
+    "precision": "existing BF16/TF32 contract",
+    "source_frozen": true,
+    "fresh_initialization": true,
+    "updates": 1260,
+    "checkpoint_interval": 105,
+    "evaluation_updates": [
+      210,
+      420,
+      630,
+      840,
+      1050,
+      1260
+    ],
+    "task_events_per_arm": 5040,
+    "queries_per_arm": 141120,
+    "main_group_queries_per_arm": 105840,
+    "extra_group_queries_per_arm": 35280,
+    "visits_per_fit_task": 180,
+    "queries_per_fit_task": 5040,
+    "interpretation": "Fixed-budget matched optimization comparison; not a claim of convergence or best possible MT-BC16"
+  },
+  "evaluation": {
+    "environment_seed": 7,
+    "policy_seed": 7,
+    "video_schedule_seed": 20260911,
+    "diagnostic_held": {
+      "task_ids": [
+        0,
+        1,
+        14,
+        15,
+        20,
+        21,
+        36,
+        38
+      ],
+      "state_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
+      ],
+      "episodes": 400,
+      "canonical_role": "development_train",
+      "mode": "formal",
+      "teacher_demos": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
+      ],
+      "sampling_mode": "without_replacement"
+    },
+    "seen": {
+      "task_ids": [
+        2,
+        4,
+        5,
+        7,
+        12,
+        13,
+        17,
+        19,
+        22,
+        25,
+        28,
+        29,
+        32,
+        34,
+        35,
+        37
+      ],
+      "state_ids": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "episodes": 64,
+      "canonical_role": "development_train",
+      "mode": "screen",
+      "teacher_for_state": {
+        "0": 46,
+        "1": 47,
+        "2": 48,
+        "3": 49
+      }
+    },
+    "source_panels": [
+      "diagnostic_held400",
+      "seen64"
+    ],
+    "per_checkpoint_panels": [
+      "diagnostic_held400_correct",
+      "seen64_correct"
+    ],
+    "selection": {
+      "scope": "diagnostic only",
+      "metric": "maximum correct successes on complete diagnostic_held400 among the six registered nodes",
+      "ties": "earliest update",
+      "controls_used": false,
+      "loss_used": false
+    },
+    "selected_video_controls": {
+      "arms": [
+        "C_video_fm",
+        "D_video_aux"
+      ],
+      "conditions": [
+        "same_task_other",
+        "cross_suite_wrong"
+      ],
+      "episodes_each": 400,
+      "same_task_other_demo_offset": 17,
+      "wrong_donor_global_ids": {
+        "0": 14,
+        "1": 15,
+        "14": 20,
+        "15": 21,
+        "20": 36,
+        "21": 38,
+        "36": 0,
+        "38": 1
+      },
+      "no_temporal_controls": true
+    },
+    "total_registered_rollouts": 13200,
+    "capture": {
+      "compact_all_rows": true,
+      "full_conditions": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          25
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          25
+        ],
+        [
+          14,
+          0
+        ],
+        [
+          14,
+          25
+        ],
+        [
+          15,
+          0
+        ],
+        [
+          15,
+          25
+        ],
+        [
+          20,
+          0
+        ],
+        [
+          20,
+          25
+        ],
+        [
+          21,
+          0
+        ],
+        [
+          21,
+          25
+        ],
+        [
+          36,
+          0
+        ],
+        [
+          36,
+          25
+        ],
+        [
+          38,
+          0
+        ],
+        [
+          38,
+          25
+        ]
+      ],
+      "capture_at_updates": [
+        630,
+        1260
+      ],
+      "arms": [
+        "A_direct16",
+        "B_language",
+        "C_video_fm",
+        "D_video_aux"
+      ],
+      "stage_predicates": true
+    },
+    "bootstrap": {
+      "cluster": "task",
+      "resamples": 20000,
+      "seed": 20260923,
+      "interval": "percentile 95%; descriptive, single training seed",
+      "paired_within_panel": true
+    }
+  },
+  "post_freeze_action_probes": {
+    "models": "one selected checkpoint from each A/B/C/D plus Source1000",
+    "task_ids": [
+      0,
+      1,
+      14,
+      15,
+      20,
+      21,
+      36,
+      38,
+      2,
+      4,
+      5,
+      7,
+      12,
+      13,
+      17,
+      19,
+      22,
+      25,
+      28,
+      29,
+      32,
+      34,
+      35,
+      37
+    ],
+    "condition_groups": [
+      {
+        "teacher": 46,
+        "action_demo": 47
+      },
+      {
+        "teacher": 48,
+        "action_demo": 49
+      }
+    ],
+    "query_fraction_positions": [
+      0.2,
+      0.6
+    ],
+    "index_rule": "floor(fraction*(episode_length-2)), then action_start=frame+1",
+    "flow_steps": 10,
+    "primary_action_dimensions": 7,
+    "reported_horizons": [
+      5,
+      50
+    ],
+    "policy_noise_seed_root": 20260923,
+    "allowed_teacher_conditions": [
+      "correct"
+    ],
+    "gradients": false,
+    "queries_per_model": 96,
+    "held_labels_only_after_all_training_and_selection_frozen": true
+  },
+  "outputs": {
+    "planned_run_root": "/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923",
+    "planned_config_root": "configs/conditional_compilation_diagnostics_v1",
+    "planned_design": "docs/conditional_compilation_diagnostics_design.md",
+    "maximum_additional_data0_gib": 96,
+    "maximum_additional_data1_gib": 2,
+    "no_asset_copy": true
+  },
+  "execution": {
+    "baseline_test_task_finishes_first": true,
+    "implementation_may_overlap_baseline_cpu_only": true,
+    "formal_from_clean_pushed_detached_worktree": true,
+    "normal_gpu_limits_apply": true,
+    "no_cross_node_ddp": true,
+    "scientific_extension_requires_coordinator_instruction": true,
+    "stop_after_this_batch": true,
+    "new_official_validation": false,
+    "new_test": false,
+    "ft": false,
+    "rl": false,
+    "rerun_old_v52": false
+  },
+  "last_revised_at": "2026-09-23T13:19:54+08:00",
+  "baseline_review_after_scientific_parameters_fixed": {
+    "owner_requested": true,
+    "source": "/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923/analysis/summary.json",
+    "validation": {
+      "source_successes": 51,
+      "mtbc_successes": 155,
+      "episodes_each": 400
+    },
+    "test": {
+      "source_successes": 75,
+      "mtbc_successes": 121,
+      "episodes_each": 400,
+      "source_to_mtbc_retained": 46,
+      "gained": 75,
+      "lost": 29
+    },
+    "decision": "No change to task partition, arms, data, optimization, nodes, selection, controls, or rollout budget. Add source-relative descriptive decomposition using already registered panels.",
+    "limits": [
+      "Do not infer overall Test difficulty from one aggregate.",
+      "Do not infer split validity or invalidity from aggregate score equality or inequality.",
+      "No Test-conditioned task selection, hyperparameter tuning, checkpoint selection, or downstream repair."
+    ]
+  },
+  "analysis_addition_source_relative": {
+    "scope": "Every arm and registered checkpoint on held400 and seen64, with task/suite/panel breakdowns",
+    "fields": [
+      "source_successes",
+      "source_failures",
+      "retained",
+      "gained",
+      "lost",
+      "churn",
+      "net_gain=gained-lost",
+      "retention_rate=retained/source_successes",
+      "acquisition_rate=gained/source_failures"
+    ],
+    "zero_denominator": "NA, never zero-imputed; retain raw counts",
+    "source": "Existing registered Source panels; identical task/state/environment/policy RNG within each panel",
+    "additional_rollouts": 0,
+    "cross_panel_pairing": false
+  }
+}

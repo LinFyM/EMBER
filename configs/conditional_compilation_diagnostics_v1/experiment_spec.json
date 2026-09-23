@@ -3,8 +3,8 @@
   "study_id": "conditional_compilation_diagnostics_20260923",
   "created_at": "2026-09-23T13:04:22.803054+08:00",
   "owner_authorization": "2026-09-23 after repository closeout: owner authorizes a new primary discussion session to continue root-cause analysis and the existing short-term plan, with concrete experiments delegable to other sessions. This four-arm diagnostic may proceed after required implementation and launch checks; no launch occurred during handoff.",
-  "coordinator_thread_id": null,
-  "executor_thread_id": null,
+  "coordinator_thread_id": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+  "executor_thread_id": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
   "planning_source_commit": "3270ec53f208c2b5d9c9ecee612882db6da421fe",
   "protocol": {
     "parent": "configs/libero_24_8_8_coverage_v1/protocol.json",
@@ -832,5 +832,15 @@
     "coordinator_thread_id": "01a0c8da-0058-7951-8d1c-9c2233079f7e",
     "executor_thread_id": "01a0cc37-2740-71a1-b470-153548d41f87"
   },
-  "coordination_status": "authorized_successor_handoff; new coordinator and actual executor IDs must be registered before dispatch; old Luna is stopped"
+  "coordination_status": "actual_successor_ids_verified; queue_dispatch_prepared; implementation_review_required_before_launch",
+  "successor_coordination": {
+    "registered_at_utc": "2026-09-23T09:26:51.555319+00:00",
+    "coordinator_title": "接管 EMBER 科学决策与实验",
+    "executor_title": "了解 EMBER 仓库现状",
+    "host_id": "remote-ssh-discovered:BCI-GPU02",
+    "dispatch_mode": "Queue",
+    "completion_return_to": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+    "stop_after_batch": true,
+    "scientific_parameters_changed": false
+  }
 }

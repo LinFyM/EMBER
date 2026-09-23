@@ -1,12 +1,16 @@
 # EMBER progress
 
-## 当前状态：收尾完成，已授权新session接续研究（2026-09-23）
+## 当前状态：主讨论已接管，向Sol交接既定四臂（2026-09-23）
 
-Owner最新指令是让新session陪同分析EMBER、尝试解决根因，短期可继续既定安排，具体实验可以派发其它session。
-这取代此前全局暂停后继工作的状态；本轮仅准备交接，没有启动训练、发送实验任务或创建新session。
-新主讨论/执行session的实际ID尚未登记，不沿用已停止Luna或旧主讨论作为收件人。
+Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
+每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
+主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机、当前空闲。
+双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
 **接续的active design为[条件编译四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)**，
-当前阶段是交接与未验证WIP复审，未恢复运行。短期步骤、结果解释分支和派发要求见[task_plan](task_plan.md)。
+当前阶段是登记实际分工并Queue派发WIP复审/修复及既定有界诊断；发送回执记录在study的`coordination/`，尚无本批GPU结果。
+Sol在独立worktree拥有代码、训练配置、测试和run产物；主讨论拥有科学解释及主线状态文档，集成前协调避免覆盖。
+短期步骤、结果解释分支和派发要求见[task_plan](task_plan.md)。
 接手后在既有授权内完成实现/核验/有界诊断；旧的组会deadline、无上限GPU及其它历史运行许可不恢复。
 
 此前Owner认为仅清理缓存不充分，明确要求进一步裁剪历史checkpoint。追加清理按关键权重/历史参照/当前依赖/恢复用途择点，

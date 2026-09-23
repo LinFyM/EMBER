@@ -5,13 +5,32 @@
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机、当前空闲。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，派发前空闲，现已接手。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
 **接续的active design为[条件编译四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)**，
-当前阶段是登记实际分工并Queue派发WIP复审/修复及既定有界诊断；发送回执记录在study的`coordination/`，尚无本批GPU结果。
+Queue已接受：message `01a0cd98-6793-7d13-8646-e54fef12f271`；Sol已在turn
+`01a0cd98-6796-7aa3-b6ae-8c5638bd0f1a`明确接手，并创建`EMBER-conditional-exec`／`codex/conditional-exec`隔离树审阅WIP。
+这证明已开始处理派发，尚不代表工程ready或实验完成。完整派发/回执在study的`coordination/`；目前尚无本批GPU结果。
 Sol在独立worktree拥有代码、训练配置、测试和run产物；主讨论拥有科学解释及主线状态文档，集成前协调避免覆盖。
 短期步骤、结果解释分支和派发要求见[task_plan](task_plan.md)。
 接手后在既有授权内完成实现/核验/有界诊断；旧的组会deadline、无上限GPU及其它历史运行许可不恢复。
+
+### 本次接管的证据核验与判断
+
+已按README读取当前合同、concept、findings§127–133，沿历史审计回看7–9月路线、9月11日完整专家论证、
+9月19日教学提案及最终修订、近期输出空间/因果/配对报告和实际Core/Procedure/FactorHeads/采样/功能信用代码。
+本轮只做历史只读复算，没有新增模型forward、梯度、rollout或Test读取。
+
+- 原始行重算旧v5.2/v6的四个匹配访问面板，确认132/51与95/111的配方交互，仍保留Adam次数/LR/查询数混杂。
+- 原始行重算C与夜间fresh各六correct节点及各自other/wrong：16个完整400面板，唯一行、50视频及worker退出通过。
+  两模型selected600之间1200行逐臂核对task/state/语言、env/policy噪声共同前缀、真实teacher帧元数据、Source与normalization一致。
+  correct154→142是保留94/新增48/丢失60；other160→132是88/44/72；wrong153→105是81/24/72。
+  因而correct−wrong从1增至37伴随两种正确输入绝对下降；这是跨运行描述，不是隔离了单一训练机制的因果估计。
+- C600局部接口五臂的160条原始行重新计数为9/16/11/11/14（每臂32），没有自由A/B显著占优的依据。
+  该检查有task-local、有限预算和步幅校准限制，不能反证所有共享生成的优化问题。
+
+小型复算证据在`coordination/scientific_recheck_20260923.json`；跨轮记录见findings§134。
+当前竞争解释、可反驳预测及四臂不能回答的部分写入task_plan；未登记任何第五臂或自动后继训练。
 
 此前Owner认为仅清理缓存不充分，明确要求进一步裁剪历史checkpoint。追加清理按关键权重/历史参照/当前依赖/恢复用途择点，
 额外回收360.759 GiB；连同首轮53.007 GiB，两轮累计413.766 GiB。data1用户配额实测从846.3降至485.6/1024 GiB，

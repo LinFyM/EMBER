@@ -2847,3 +2847,27 @@ A/B改变参数化和条件映射，B/C还改变活动模块，C/D改变tau＋ho
 
 讨论中的生成Jacobian、纯噪声端点动作回归及任务关系覆盖解释记录于concept；它们是可检验机制框架，不是已证实结论。
 不得将“需要以后用有判别力的干预补齐”写成已经获批的第5臂或自动后继训练。
+
+## 134. 接管只读复算：视频差距扩大伴随正确能力下降，不是已验证修复（2026-09-23）
+
+新主讨论从canonical results.json复算原cross-episode辅助C与夜间12条件fresh N各六correct节点及selected600的other/wrong，
+共16个已完成400面板；全部400唯一task/state、每task50视频各一次、worker exit0。跨运行selected600的三组1200对条件
+另核对语言、环境/policy RNG共同前缀、condition ID、teacher真实帧元数据、Source及冻结normalization内容一致。
+
+| 同一评测臂，C600→N600 | 成功数 | 保留/新增/丢失 | churn |
+| --- | --- | --- | --- |
+| correct | 154→142 | 94/48/60 | 108 |
+| same-task-other | 160→132 | 88/44/72 | 116 |
+| cross-suite-wrong | 153→105 | 81/24/72 | 96 |
+
+correct−wrong从1增至37的变化可分为correct少12、wrong少48；另一正确视频也少28。它保留N模型内部正确视频有优势的事实，
+但不能当作相对C同时改善绝对能力与有益视频利用的证据。总分接近也不代表同一成功集合；correct仍有48得60失。
+这是跨运行描述，训练条件曝光/每条件查询和初始化学习历史不同；controls没有用来修改当前四臂科学参数或选点。
+
+同时重读7月/8月四个原始匹配访问面板，复核v5.2 old900/TC150=132/51、v6 old900/TC150=95/111，
+保留Adam次数、LR阶段及查询预算混杂。C600局部接口五臂160条原始行复算为parent/private Writer/free code/code_norm/freeAB
+=9/16/11/11/14（每臂32）；有限task-local预算及动作步幅校准不构成整体容量上界，也不支持由旧freeAB正例直接判当前head受限。
+
+本轮无新增forward、梯度、rollout或Test读取。复算源路径与逐面板计数保存在
+`/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923/coordination/scientific_recheck_20260923.json`。
+机制预测只进入task_plan；这些机械复算没有确定统一根因，也没有新增第五臂授权。

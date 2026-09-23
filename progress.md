@@ -9,7 +9,7 @@ Owner已授权按[`docs/conditional_compilation_diagnostics_design.md`](docs/con
 - 8个held完整BDDL规格与canonical overlap audit一致；逐个对fit28和列明closest fit规格比较无精确等价项；Source71=canonical Source90减19个审计重叠任务。
 - 从主分支`7b18030c8592261ea780b149419c8584c5bacbb6`建立隔离分支`codex/conditional-compilation-diagnostics`。Source quota snapshot：data0 168588484 KiB/1073741824 KiB、data1 902146152 KiB/1073741824 KiB；共享空闲约data0 907 GiB、data1 82 TiB。新增workspace约0.25 GiB，data0 study上限96 GiB、data1本任务workspace/运行代码上限2 GiB；study root仍不存在，尚未创建输出。启动前须按合同刷新quota/容量与双节点GPU状态。
 
-当前阶段：Active Design合同材料正在正式登记；尚未做模型实现、GPU smoke/profile或正式GPU训练。完成登记提交并回传主讨论后继续；不等待批准。四臂各1260更新及全部规定评测/保留由合同精确限定。本study以外仍保持暂停，禁止第五臂、调参、官方新Validation/Test、FT和RL。
+当前阶段：Active Design/spec/audit已在push commit `520225ddcf448bf93a4c77c6758c1e539b5026c5`登记；study root `/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923/registration.json` 已建立。模型实现、CPU验证、GPU smoke/profile和formal GPU训练尚未开始。现在继续隔离实现，不等待批准。四臂各1260更新及全部规定评测/保留由合同精确限定。本study以外仍保持暂停，禁止第五臂、调参、官方新Validation/Test、FT和RL。
 
 
 ## 已完成：Owner授权的两项baseline Test（2026-09-23）

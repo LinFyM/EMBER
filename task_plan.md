@@ -10,7 +10,7 @@ Owner授权study `conditional_compilation_diagnostics_20260923`。执行合同�
 
 fit28由seen target16和固定aux12组成，diagnostic-held8是剩余官方train target任务；LIBERO官方24/8/8不变，官方Validation/Test不新增评测。仅本study四臂与合同列明的诊断获授权；禁止第五臂、调参、官方新Validation/Test、FT、RL及其它实验。结果不得自动触发下一轮修复。本Active Design外的先前暂停仍有效。
 
-当前阶段：固定合同/审计已核对，正在提交Active Design登记；尚未开始模型实现、smoke或formal GPU训练。下一步先完成单一实现与CPU验证，再做live资源核验和已授权smoke/profile；全部就绪后从clean pushed detached commit依次启动四臂正式运行。
+当前阶段：Active Design与partition audit已提交并push，study registration.json已创建；模型实现、CPU验证、smoke/profile与formal GPU训练均未开始。下一步完成单一实现与CPU验证，再做live资源核验和已授权smoke/profile；全部就绪后从clean pushed detached commit依次启动四臂正式运行。
 
 
 ## 已完成：Owner授权补齐 coverage baseline Test（2026-09-23）

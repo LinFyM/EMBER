@@ -3,18 +3,18 @@
 EMBER研究把exact task language与action-hidden教学视频，在rollout前一次编译为冻结π0.5 source的一套完整
 task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正确视频中的操作内容应贡献真实执行价值。
 
-**仓库收尾已完成，主讨论已接管科学判断，并向Owner指定的现有Sol任务交接既定有界诊断。** 当前处于WIP复审/修复交接阶段，尚无本批GPU结果。
-未验证的四臂实现只保存在独立Git分支，不属于main可运行方法；实际状态及恢复位置见[progress](progress.md)，短期推进见[task_plan](task_plan.md)。
+**主讨论负责科学判断，Owner指定的Sol执行既定四臂诊断；C/D已于2026-09-23正式启动。** 实现经修复和工程验证，已在`43d801b1`集成推送main，尚无完整闭环结果。
+正式运行使用该提交的独立冻结树；实际状态及原始证据位置见[progress](progress.md)，科学解释和后继判断见[task_plan](task_plan.md)。仓库收尾已完成，无需重做。
 
 ## 阅读顺序与唯一职责
 
 | 入口 | 职责 |
 | --- | --- |
 | [Owner要求](docs/current_owner_requirements.md) | 理论下界、研究目标、解释深度、方法与协作边界 |
-| [当前进度](progress.md)／[当前计划](task_plan.md) | 当前授权、交接快照与本次收尾；历史许可不在此持续生效 |
+| [当前进度](progress.md)／[当前计划](task_plan.md) | 当前授权、运行快照与科学计划；历史许可不在此持续生效 |
 | [Concept](docs/concept.md) | 完整信息流、模块因果职责、数学解释框架与待验证假设 |
 | [AGENTS](AGENTS.md) | 科学、数据、评测、资源、工程与Git合同 |
-| [Findings](findings.md) | 编号的跨轮发现；结论保留适用范围，最新结果见§131–133 |
+| [Findings](findings.md) | 编号的跨轮发现；结论保留适用范围，近期结果及原件复核见§131–134 |
 | [研究历史](docs/research_history.md) | 按时点追溯设计、专家讨论、原始证据和复现commit |
 
 新任务先读Owner要求和当前状态，按问题沿历史索引追溯；不把所有旧设计的“下一步”合并成待办。

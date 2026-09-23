@@ -5,7 +5,8 @@
 Owner已指定本任务`01a0cd94-65da-7b22-8ca9-7ba35f454632`接管主讨论与科学判断，现有Sol任务
 `01a0cd90-ebb7-77a1-a20b-a858825d2f66`负责具体实现和实验。双方实际身份已核对并登记，旧暂停不阻断既定四臂。
 本批采用Queue派发；Sol完成或遇科学阻塞时主动回报本任务，完成后停止新增实验；主讨论核对原件、分析后再派发下一批。
-不使用已停止Luna/旧主讨论ID，不新建任务或更改对方模型。当前证据、资产和WIP位置见[progress](progress.md)。
+不使用已停止Luna/旧主讨论ID，不新建任务或更改对方模型。实现已在`43d801b1`集成推送，C/D正式训练已启动；
+当前证据、资产和运行快照见[progress](progress.md)。
 
 目标是提高正确条件下的绝对闭环能力，并建立有益的视频增量，理解能力保持和跨任务迁移；不是只做完一个矩阵。
 固定LoRA是可达下界参照，不是公共底座课程。推理深度与方法边界以[Owner要求](docs/current_owner_requirements.md)为准。
@@ -53,7 +54,7 @@ Owner已指定本任务`01a0cd94-65da-7b22-8ca9-7ba35f454632`接管主讨论与�
 三种解释可以并存。裁决先看同节点完整曲线与能力获得/丢失，再看固定selected的controls和post-freeze probe；
 不能由一个最佳分数选择唯一机制，也不能为了符合预测修改既定选点。四臂完成后由主讨论核对原件，选择信息量最高的单项干预。
 
-## 第一阶段：接住已有证据和未完成实现
+## 第一阶段：接住已有证据和未完成实现（已完成）
 
 1. 先读Owner要求、progress、[concept](docs/concept.md)、findings§127–133，再沿[研究历史](docs/research_history.md)
    阅读与当前假设相关的完整旧论证、源码和原始结果。把事实、机制假设、已被反例削弱的解释分开，不能从零重新猜测。
@@ -63,11 +64,13 @@ Owner已指定本任务`01a0cd94-65da-7b22-8ca9-7ba35f454632`接管主讨论与�
    先修复已知`SupervisedEngine.validate`缩进错误，再核验实际forward/backward、保存恢复和物化/评测接口。
    不能直接把旧分支整体覆盖main，不能因syntax compile通过就宣布工程实现完成。
 
+上述历史复核和工程交接已完成；原WIP经修复验证后以`43d801b1`集成，核验边界见progress。
+
 ## 第二阶段：既定四臂是短期定位起点
 
 接续设计为[条件编译四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)，机器规格为
 `configs/conditional_compilation_diagnostics_v1/experiment_spec.json`；已授权接手后完成实现、核验及有界诊断，
-工程合同通过后无需为同一四臂重复索要启动许可。还没有GPU smoke、四臂训练或新成绩。
+工程合同通过后无需为同一四臂重复索要启动许可。当前四臂smoke/恢复及接口检查已完成，C/D已启动，A/B随后；尚无完整闭环成绩。
 
 | 比较 | 本批能够回答 | 不能直接断言 |
 | --- | --- | --- |

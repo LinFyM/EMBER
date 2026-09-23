@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：主讨论已接管，向Sol交接既定四臂（2026-09-23）
+## 当前状态：Sol已启动四臂中的C/D，主讨论负责科学裁决（2026-09-23）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -10,10 +10,33 @@ Owner最新指令是由本任务接管主讨论与科学决策，以历史证据
 **接续的active design为[条件编译四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)**，
 Queue已接受：message `01a0cd98-6793-7d13-8646-e54fef12f271`；Sol已在turn
 `01a0cd98-6796-7aa3-b6ae-8c5638bd0f1a`明确接手，并创建`EMBER-conditional-exec`／`codex/conditional-exec`隔离树审阅WIP。
-这证明已开始处理派发，尚不代表工程ready或实验完成。完整派发/回执在study的`coordination/`；目前尚无本批GPU结果。
+该Queue已由Sol实际消费；实现已在`43d801b16ee3ed0bc80f963c89ad003b7cc40732`集成推送main，C/D正式训练已启动。
+完整派发/回执在study的`coordination/`；目前尚无本批完整闭环结果。
 Sol在独立worktree拥有代码、训练配置、测试和run产物；主讨论拥有科学解释及主线状态文档，集成前协调避免覆盖。
 短期步骤、结果解释分支和派发要求见[task_plan](task_plan.md)。
 接手后在既有授权内完成实现/核验/有界诊断；旧的组会deadline、无上限GPU及其它历史运行许可不恢复。
+
+### 工程核验及正式运行快照
+
+Study根：`/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923`。
+正式运行树：`/data1/user/ymdai/projects/EMBER-conditional-formal`，主讨论实查为clean、detached的`43d801b1`。
+`launch/formal_launch_contract.json`登记精确命令、四臂共同commit、资源、预计增长和恢复合同；
+`registration.json`已由Sol更新为`formal_training_CD_running`。
+
+- Sol报告CPU针对性检查304+17+5通过。主讨论已核对源码中`SupervisedEngine.validate`归属修复、
+  四臂smoke的1..4宏步记录、各自2→4恢复日志及第4步checkpoint manifest；每臂累计448条动作查询。
+- `launch/profile_longest_C.json`和`profile_longest_D.json`记录最长fit视频347原始帧→71采样帧、full H50、
+  21+7查询及非零活动梯度，峰值reserved约22.69GiB。`materialization_eval_interface_smoke.json`
+  记录一次Writer编译、真实adapter加载及1×50×7动作输出，明确`formal_score=false`；这些只证明工程接通。
+- D于10:32:12 UTC在gpu01的0/4卡启动，C于10:32:35 UTC在gpu02的0/1/2/3卡启动，合计6张物理卡。
+  主讨论18:38北京时间只读核对formal run contract：同一commit、dirty为空、world size分别2/4；
+  当时D已18步、C已27步。A/B尚未启动，按登记顺序随后运行；不以此瞬时步数解释科学效果。
+- 已核对launch前两节点GPU记录及strg01两文件系统独立quota原件。合同预计data0新增峰值约76.5GiB，低于96GiB预算；
+  每次后续launch/resume仍由执行者刷新资源状态。训练约7–8小时是基于profile的估计，评测ETA待首个完整面板实测。
+
+本次只更新运行状态，不改变科学参数、节点或选点规则，不触碰冻结运行树；无需重复启动批准。
+继续按六节点完整held400/seen64、Source相对保持/获得/丢失及冻结选点后的C/D视频controls裁决。
+执行者完成本批主动回报并停止追加实验，主讨论核对原件后才派发下一项针对性干预。
 
 ### 本次接管的证据核验与判断
 
@@ -85,23 +108,19 @@ data0仍为122.1/1024 GiB。原始评测、配置、关键模型及当前诊断�
 - `/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923`：Source/MT-BC Test原件，交付commit`7b18030c`。
 - [夜间小型结果包](docs/review_materials/20260923/overnight_results/README.md)：当时PPT使用的指标与图，不包含后续baseline Test。
 
-## 未完成代码的唯一交接位置
+## 原WIP交接与已完成集成
 
-已push分支 **`codex/conditional-compilation-diagnostics`，commit `73267f53`** 保存Luna全部未完成实现。
-没有合入main；主线只保留[设计](docs/designs/conditional_compilation_diagnostics_design.md)、
-`configs/conditional_compilation_diagnostics_v1/experiment_spec.json`和`partition_audit.json`。
-登记根为`/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923/registration.json`，状态是已授权接手、尚未恢复运行。
+原分支 **`codex/conditional-compilation-diagnostics@73267f53`** 保存Luna未完成实现，仅作历史交接来源。
+Sol从最新main隔离开发并逐项修复、验证后，以`43d801b1`集成推送；没有整体恢复旧文档或已退役实现。
+当前设计、`experiment_spec.json`和`partition_audit.json`的科学合同保持；运行状态以本文件顶部和study登记为准。
 
 候选fit28＝官方Train中的seen target16＋已审计aux12；diagnostic-held8是其余官方Train任务，官方24/8/8未改。
 A直接共享rank16、B语言Writer、C完整视频Writer、D相同视频结构但第二监督组改tau1/前5步；均计划fresh。
 这只能定位整体环节，不能唯一分离参数化/活动容量，也没有数据构成干预。旧MT-BC看过这组held8，不能充当A的未见任务结果。
-完整分组、步数、节点与每个比较的边界以冻结spec和设计为准；本批**未做GPU smoke、未启动四臂训练、没有新成绩**。
+完整分组、步数、节点与每个比较的边界以冻结spec和设计为准；工程验证和C/D启动不构成新的性能结论。
 
-已知未修复错误：WIP `supervised.py`中`validate`错误缩进在`configured_endpoint`的return之后，未成为
-`SupervisedEngine.validate`；只做syntax compile不能发现该问题。接手应先审查整个WIP diff及真实调用接口，
-不能把已完成的CPU配置/事件审计误称训练实现已通过。不要为清理而删除这条未合并分支。
-
-从最新main创建隔离worktree，将该已推送WIP逐项整合后验证，不整体恢复旧文档状态或已退役实现。
+原WIP的`validate`曾错误缩进在`configured_endpoint`的return之后；现已恢复为`SupervisedEngine`方法，
+并补齐实际forward/backward、保存恢复及物化/评测接口验证。原WIP分支不作为formal运行来源。
 新主讨论依据既定四臂合同推进并独立判断结果；执行任务不能把此交接扩大为任意新实验。
 
 ## 首轮收尾记录（追加checkpoint裁剪前）
@@ -125,4 +144,4 @@ A直接共享rank16、B语言Writer、C完整视频Writer、D相同视频结构�
 - 最终main包含文档/代码清理与验证修正，按仓库交付规则推送远端；仅保留canonical worktree。
   收尾没有启动新GPU实验、创建Sol或给任何任务派发后继实验。
 
-上述首轮收尾段是历史事实；新的接续授权以本文件顶部为准。本轮交接仍未派发或启动实验。
+上述首轮收尾段是历史事实；当前接续授权、实际收件人及四臂启动状态以本文件顶部为准。

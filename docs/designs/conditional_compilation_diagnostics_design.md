@@ -1,7 +1,7 @@
 # 条件参数生成的四臂诊断（接续合同）
 
-> 状态：2026-09-23主讨论已接管，实际Sol执行任务已登记，进入WIP复审/修复交接；尚无本批GPU结果。
-> 科学参数保持原冻结spec；实现草稿未通过GPU验证。最新分工、授权和状态见[progress](../../progress.md)。
+> 状态：2026-09-23四臂实现已修复验证并在`43d801b1`集成推送；Sol已启动C/D正式训练，尚无完整闭环结果。
+> 科学参数保持原冻结spec；正式运行使用同commit的clean detached冻结树。最新分工、授权和状态见[progress](../../progress.md)。
 
 任务标识：`conditional_compilation_diagnostics_20260923`。
 配套机器规格：`configs/conditional_compilation_diagnostics_v1/experiment_spec.json`。两者共同定义本批工作；不得自行修改科研参数。
@@ -16,8 +16,8 @@ Owner最新要求由新的主讨论session继续分析根因、尝试修复，�
 
 1. 先检查本批登记和实际完成状态，避免重复启动。Source1000/MT-BC300 Test400已经完整交付，不再等待或重复补测。
 2. 科学任务、配方在主讨论读取baseline Test前固定；保持本合同及spec的数据、目标、节点、选择规则，不由Test结果改动。
-3. 正式合同/spec/partition audit已在main；未验证实现保存在`codex/conditional-compilation-diagnostics@73267f53`。
-   从最新main隔离开发，逐项整合WIP，不恢复旧清理状态或旧文档路径。已知validate缩进错误及实际调用接口必须核验。
+3. 正式合同/spec/partition audit已在main；原WIP来源为`codex/conditional-compilation-diagnostics@73267f53`。
+   Sol已从最新main隔离开发并逐项修复验证，以`43d801b1`集成；原WIP不能作为formal运行来源，不恢复旧清理状态或旧文档路径。
 4. 新主讨论负责竞争假设、结果解释、科学变更和后继干预；执行任务负责实现、验证、调度、记录和Git集成。
    任务身份/方法定义等科学矛盾反馈主讨论；普通工程问题在既定合同内自行解决。写入范围和运行树所有者必须明确。
 5. 下述工程检查、资源和Git合同通过后可启动四臂；完成本批后执行任务停止新增实验并回报主讨论。

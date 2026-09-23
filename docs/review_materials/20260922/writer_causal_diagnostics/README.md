@@ -15,7 +15,7 @@ success、breadth、R/G/L、Jaccard 与成本总计。
 
 | 问题 | 远程材料 |
 | --- | --- |
-| 预登记目标、D1/D2/D3 边界、允许数据和解释限制 | [设计合同](../../../writer_causal_diagnostics_20260922.md)、`registration.json`、`launch/launch_contract.json` |
+| 预登记目标、D1/D2/D3 边界、允许数据和解释限制 | [设计合同](../../../designs/writer_causal_diagnostics_20260922.md)、`registration.json`、`launch/launch_contract.json` |
 | 最终完成性、行数、是否使用 Validation/Test/选点 | `completion.json`、`raw/trajectory_manifest.csv` |
 | 全部 D1 路径 probe、路径效应与112条闭环 | `raw/path_probe_rows.csv`、`raw/path_effects.csv`、`raw/path_rollout_rows.csv` |
 | D2 native 联合梯度、七个互斥组、batch Gram、J/Q/M/Z 虚拟更新 | `raw/gradient_rows.csv`、`raw/virtual_update_rows.csv`、`raw/virtual_probe_rows_C600.csv`、`raw/virtual_probe_rows_O1200.csv` |

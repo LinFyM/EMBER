@@ -156,7 +156,7 @@
     "teaching_seed": 20260919,
     "teaching_episode": "same_video"
   },
-  "design": "docs/video_teaching_writer_design.md",
+  "design": "docs/designs/video_teaching_writer_design.md",
   "evidence": {
     "checkpoint_updates": [
       100,

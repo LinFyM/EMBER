@@ -224,7 +224,7 @@
     "interval_steps": 10,
     "raw_metrics": "one JSONL row per optimizer step"
   },
-  "design": "docs/source_alignment_v52_plan.md",
+  "design": "docs/designs/source_alignment_v52_plan.md",
   "reference_run": "runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722",
   "runtime": {
     "ema_device": "cpu",

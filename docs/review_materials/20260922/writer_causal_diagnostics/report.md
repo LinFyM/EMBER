@@ -1,7 +1,7 @@
 # Writer 因果路径与辅助梯度诊断：D1/D2/D3 完整结果
 
 本报告对应 2026-09-22 登记的冻结分析合同，而非新的 Writer 训练候选。完整合同见仓库
-`docs/writer_causal_diagnostics_20260922.md`；所有原始表、launch contract、exit 和失败重试原件均保留在本 study 根。
+`docs/designs/writer_causal_diagnostics_20260922.md`；所有原始表、launch contract、exit 和失败重试原件均保留在本 study 根。
 
 ## 完整性、运行边界与成本
 

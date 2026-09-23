@@ -23,7 +23,7 @@ Owner特别强调：**v5.2用普通正样本动作监督，没有视频contrast/
 - [v5.2设计](https://github.com/LinFyM/EMBER/blob/529da6bbe290f7393422937aa7cc278cee732107/docs/action_forecast_writer_v5_2_design.md)：§2明确normal-order positive-only动作监督，不允许contrast/order loss。
 - [实际配置](https://github.com/LinFyM/EMBER/blob/529da6bbe290f7393422937aa7cc278cee732107/configs/pi05_as_writer_language_axial_v5_2.json)：`single_video_multi_action_positive_functional_loss`，以及读取、训练和曝光合同。
 - [真实训练step](https://github.com/LinFyM/EMBER/blob/529da6bbe290f7393422937aa7cc278cee732107/src/ember/writer/as_step.py)与[functional接口](https://github.com/LinFyM/EMBER/blob/529da6bbe290f7393422937aa7cc278cee732107/src/ember/writer/functional.py)：主动作loss经生成LoRA回传Writer。
-- [已导出的五臂合同、汇总和逐条结果](../20260907/records/historical_v52/)，其中采用`step0900_529da6b`记录；不要与task-complete版本混同。
+- [已导出的五臂合同、汇总和逐条结果](../20260907/records/historical_v52)，其中采用`step0900_529da6b`记录；不要与task-complete版本混同。
 - [历史账本§2](../../research_history.md#early-writers)与[9月7日评审](../20260907/expert_review_round1.md)：保留交叉recipe结果及后续解释边界。
 
 我们不把这些分数升级为v5.2已通过全部科学资格，也不把旧400与当前train24诊断96当成同口径差值。错误/乱序输入的分布变化和缺少公平训练static baseline仍限制“普遍动态理解”的结论；历史controls只用于解释既有结果，不成为新架构、loss或checkpoint的搜索信号。但这些边界不能抹掉普通监督曾学出正确视频依赖的正证据。

@@ -121,9 +121,9 @@ train200差额+12，task-cluster95%CI[.05208,.20833]，三个suite有净收益�
 本摘要对应仓库`LinFyM/EMBER`的科学证据快照`f29f319a`；仓库中的旧“active/next”仅表示当时时点。
 
 - 最后一次专家原文：`docs/review_materials/video_specificity_20260911/expert_final_functional_credit.md`。
-- 原方案与历次具体修订：`docs/video_functional_writer_design.md`；综合结果和边界：`findings.md`第56–71节。
-- 局部动作与冻结先验设计：`docs/local_action_grounded_writer_design.md`、`docs/pretrained_video_grounded_writer_design.md`。
-- 在途修正：`docs/execution_aligned_writer_design.md`、`progress.md`。本摘要之后的新分数不包含在上述结论中。
+- 原方案与历次具体修订：`docs/designs/video_functional_writer_design.md`；综合结果和边界：`findings.md`第56–71节。
+- 局部动作与冻结先验设计：`docs/designs/local_action_grounded_writer_design.md`、`docs/designs/pretrained_video_grounded_writer_design.md`。
+- 在途修正：`docs/designs/execution_aligned_writer_design.md`、`progress.md`。本摘要之后的新分数不包含在上述结论中。
 - 早期正负证据：`docs/review_materials/video_specificity_20260911/EVIDENCE_MAP.md`及`docs/research_history.md`。
 
 原始checkpoint、视频和全部新raw rows不在本prompt里；有些`runs/`原件仅在项目本地，不能把路径列出等同于你已获得数据。若需进一步核验，请明确索取哪一组证据，不假装已经看过缺失材料。

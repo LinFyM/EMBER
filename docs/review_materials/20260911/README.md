@@ -10,17 +10,17 @@
 
 已收到[第一轮专家回复原文](expert_review_round1.md)。最新转发入口为[第二轮追问](FOLLOWUP_PROMPT.md)：重点要求解释v5.2普通监督已有的视频依赖、当前架构与学习路径的差异，以及保持/过程辅助监督的优先依据。原证据包与实验结果未改变。
 
-后续已收到[第二轮专家修订原文](expert_review_round2.md)。Owner随后明确授权自主科研执行；采纳范围、独立判断和实验合同见[接续设计](../../video_consumption_writer_design.md)，现场见[progress](../../../progress.md)。本包上述暂停文字只描述初次咨询时点，证据仍按其原始身份解释。
+后续已收到[第二轮专家修订原文](expert_review_round2.md)。Owner随后明确授权自主科研执行；采纳范围、独立判断和实验合同见[接续设计](../../designs/video_consumption_writer_design.md)，现场见[progress](../../../progress.md)。本包上述暂停文字只描述初次咨询时点，证据仍按其原始身份解释。
 
 ## 1. 远程可用的证据与模型身份
 
 - [index.json](index.json)：8个学习run的精确commit/原配置、每份本地原件对应的已提交文件、导出范围。
 - [panel_summary.json](panel_summary.json)：直接从13,901条导出outcome rows复算的119个面板成功数、per-task、per-suite和breadth。
 - [verify_evidence.py](verify_evidence.py)：仅需Python标准库，复算全部面板，并核验两初始化的all/off和最新九臂跨模型实际配对。运行`python docs/review_materials/20260911/verify_evidence.py`即可。
-- [analysis/](analysis/)：完整学习矩阵、几何/信用分析、有限更新与视频控制；含640个真实视频条件和32个reader信用条件的逐条件JSONL。
-- [panels/](panels/)：全部119面板的逐条结果、元数据和学习面板执行合同；包含policy-noise seeds、teacher选择和已有stage predicates。
-- [methods/](methods/)：临时诊断脚本的路径规范化、非执行文本快照，可检查干预是否真的作用于原始RGB、查询或参数组。
-- [figures/](figures/)：既有BBQ四例、橙汁一例的所有干预臂轨迹contact sheets；没有新增或改绘轨迹。
+- [analysis/](analysis)：完整学习矩阵、几何/信用分析、有限更新与视频控制；含640个真实视频条件和32个reader信用条件的逐条件JSONL。
+- [panels/](panels)：全部119面板的逐条结果、元数据和学习面板执行合同；包含policy-noise seeds、teacher选择和已有stage predicates。
+- [methods/](methods)：临时诊断脚本的路径规范化、非执行文本快照，可检查干预是否真的作用于原始RGB、查询或参数组。
+- [figures/](figures)：既有BBQ四例、橙汁一例的所有干预臂轨迹contact sheets；没有新增或改绘轨迹。
 
 **main不等于126候选。** 此包科学源码参照为`043b58ca`（整理前main）；整理不采纳候选科学行为。请使用下面的精确版本：
 
@@ -92,7 +92,7 @@ Compiler-off的验证净收益在两个初始化为+36/+11；init7换另一正�
 | 重复中帧 | 51 | 53 |
 | 重复末帧 | 48 | 53 |
 
-来源：[最强候选对照](analysis/best_video_controls.json)、[all200/400对照](analysis/all_video_controls.json)、对应[逐条面板](panels/diagnostics/best_model_video_controls/step400/)。off完整相对all仅+2（保留43/新增10/丢8），错误与静态条件也改善。该固定面板未建立正确动态过程的稳定必要增量；不能把validation收益解释为该问题已解决。
+来源：[最强候选对照](analysis/best_video_controls.json)、[all200/400对照](analysis/all_video_controls.json)、对应[逐条面板](panels/diagnostics/best_model_video_controls/step400)。off完整相对all仅+2（保留43/新增10/丢8），错误与静态条件也改善。该固定面板未建立正确动态过程的稳定必要增量；不能把validation收益解释为该问题已解决。
 
 输入仍改变行为：off首帧丢6增11，跨suite错误丢4增10，倒序丢9增8。两条正确视频都成功的47个state中，三种静态全失败为0，两种错误全失败为0，乱序/倒序都失败为5。这些是描述性逐state集合，不是可部署union、新gate或普遍时序理解证明。冻结输入变化、每task两条正确视频/四初态及单视角限制结论；没有单独训练的language/static baseline，也不能据此证明纯task记忆或完全忽略视频。此前只测all后概括当前方法是分析选择错误；本包明确给出补测后的最强候选结果。
 
@@ -107,7 +107,7 @@ Compiler-off的验证净收益在两个初始化为+36/+11；init7换另一正�
 | all200/400的BBQ四例，D400单独致3例转绿瓶，P400单独2例，C400单独0例；有交互 | 输出映射与读取端都可影响目标选择；只改Compiler不足以覆盖已见故障机制 | 四例是全局错误率；P/C/D混合等于分别训练；回退某块即完整修复 |
 | train8端点旧P/C+新D为22/32，高于全400的18，但也丢5 | D更新里存在有用能力，同时有保持代价与共同适应 | D普遍没学会；该混合是可选的新模型 |
 
-源数据：[实际视频统计](analysis/actual_video_summary.json)、[reader信用](analysis/reader_credit_summary.json)、[D学习核](analysis/decoder_kernel_summary.json)、[Q中介](analysis/query_mediator.json)、[有限更新](analysis/bounded_updates/)、[BBQ](analysis/bbq_endpoint/)、[橙汁](analysis/orange_replay/)、[端点](analysis/endpoint_swaps/)。全部详细论证见[findings§39–49](../../../findings.md)。
+源数据：[实际视频统计](analysis/actual_video_summary.json)、[reader信用](analysis/reader_credit_summary.json)、[D学习核](analysis/decoder_kernel_summary.json)、[Q中介](analysis/query_mediator.json)、[有限更新](analysis/bounded_updates)、[BBQ](analysis/bbq_endpoint)、[橙汁](analysis/orange_replay)、[端点](analysis/endpoint_swaps)。全部详细论证见[findings§39–49](../../../findings.md)。
 
 有限更新从all7完整400的临时副本做401–404四macro，共1024 queries；受害的四个预选训练task不在本次更新中。M是四次零当前梯度AdamW，保留m/v、decay与scheduler；FULL−M含真实梯度及其后续moment影响。单卡串行是诊断拓扑，不是formal exact-resume。混合P/C/D的状态未共同训练。橙汁CD失败仍围绕正确盒子操作，P/PC/PD/PCD则转选BBQ；目标选择失败与操作失败分开标注。
 

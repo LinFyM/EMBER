@@ -7,6 +7,34 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 本文保留科学对象、信息流与证据标准。稳定要求以[Owner要求](current_owner_requirements.md)为准；
 当前授权及active design只看[progress](../progress.md)，已完成实例的配置、曲线与结论由封存设计和报告保存。
 
+## 可达能力、学习过程与部署效果是三层问题
+
+令Writer输出为`G_phi(language, video)`。Owner提出的固定LoRA退化解是
+`G_phi(language, video) = theta_shared`：如果模型类能表示这一常量映射，同rank共享LoRA的可达策略就在其解空间中。
+这是理想可达能力的下界参照，不是对有限训练轨迹的保证，也不推出先训练公共底座的课程。
+研究问题是端到端学习怎样实现并超过这一解；不能把rank差异或当前实现限制当作研究结论。
+
+性能是正确条件下的闭环能力；特异性用于解释教学内容的有益作用；稳定性描述能力如何在训练和条件变化中保持。
+视频输入引起Proxy、LoRA或动作变化，最多证明影响存在。正确视频和另一正确视频都获得能力，且相对于合法语言/static参照
+有增量，才更接近“Writer利用了教学内容”的主张；仅wrong下降或时间重排敏感不够。
+
+下面三点是2026-09-23讨论形成的解释框架，**不是已经验证的根因或新实验授权**：
+
+1. **生成参数的学习几何。** 写`theta_i=G_phi(z_i)`，`J_i=dG_phi(z_i)/dphi`，
+   `g_j=dL_j/dtheta_j`；普通SGD的一阶输出位移为`delta theta_i ≈ -eta sum_j alpha_j J_i J_j^T g_j`。
+   因而任务间功能迁移依赖生成器建立的条件联系；Adam、裁剪和有限步幅还须按真实更新核验。
+   这个公式不证明梯度冲突、某个头受限或改归一化有效。当前私有Writer与自由A/B的局部比较未显示后者明显占优，不能沿用旧模型的容量诊断。
+2. **辅助目标改变了什么。** 实际flow输入`x_tau=(1-tau)*a+tau*epsilon`，目标`epsilon-a`。
+   tau=1时速度MSE等于`epsilon-v(epsilon,1,condition)`对真实动作的MSE；它从纯噪声端点强调条件预测，
+   但条件也含执行观测和语言，不保证教学视频被利用。第二组从mean50改成mean5，使其中每个执行前缀位置的名义系数增大10倍；
+   这不是实测梯度10倍，也不是10步flow最终动作误差。端点、horizon和episode配对是不同变量，不混称标准FM或单一辅助机制。
+3. **学习条件映射需要任务关系。** 同task跨episode查询有助于阻断逐帧复制，但同task固定语言和多条视频也允许已见任务识别。
+   更多episode不等于更多独立任务映射；训练支持、视觉表征、共享参数和损失一起决定是否学出可迁移操作关系。
+   这不等于视频无信息或理论上必然无用。检验数据原因应固定诊断目标，再控制训练支持与总监督预算。
+
+固定四臂只能分辨直接参数优化、语言条件生成、完整视频路径和目标组合的整体差异；不能单独定位具体模块或数据根因。
+后继须预先区分竞争解释，再以针对性干预检验功能预测及闭环收益，而非把四条曲线本身称为根因答案。
+
 ## 信息如何成为执行能力
 
 ```text
@@ -52,7 +80,7 @@ source不是learned language-only/static prior。开发诊断及其反馈范围�
 
 ## 已完成方法与证据入口
 
-- [同视频教学设计](video_teaching_writer_design.md)与[最终报告](review_materials/20260919/final_report.md)：完整A/B生成、H与相邻视觉重复读取、跨episode主FM和同视频短程功能信用，以及匹配消融、续训和双相机比较。
-- [learned frame-set合同](learned_frameset_reference_design.md)与[匹配诊断报告](review_materials/20260918/frameset_report.md)：给定播放顺序的学习作用及相邻能力边界。
-- [统一Writer封存设计](v52_evidence_based_writer_design.md)与[46组历史证据审计](v52_evidence_audit_20260917.md)：统一表示实例、v5.2及后继正负证据与比较条件。
+- [同视频教学设计](designs/video_teaching_writer_design.md)与[最终报告](review_materials/20260919/final_report.md)：完整A/B生成、H与相邻视觉重复读取、跨episode主FM和同视频短程功能信用，以及匹配消融、续训和双相机比较。
+- [learned frame-set合同](designs/learned_frameset_reference_design.md)与[匹配诊断报告](review_materials/20260918/frameset_report.md)：给定播放顺序的学习作用及相邻能力边界。
+- [统一Writer封存设计](designs/v52_evidence_based_writer_design.md)与[46组历史证据审计](analyses/v52_evidence_audit_20260917.md)：统一表示实例、v5.2及后继正负证据与比较条件。
 - [研究历史](research_history.md)与[findings](../findings.md)：旧专家论证、源码commit、formal原件和跨轮结论。保留历史不构成恢复执行授权。

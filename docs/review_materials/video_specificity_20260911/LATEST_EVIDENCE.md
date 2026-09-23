@@ -38,7 +38,7 @@ R400与旧off400动作query预算相同，但视频条件分配不同。更多�
 
 原件：[首轮汇总](analysis/consumption/first_round_summary.json)、[R续训](analysis/consumption/r_continuation_summary.json)、
 [off续训](analysis/consumption/off_continuation_summary.json)、[旧off曝光](analysis/consumption/old_off_exposure_reference.json)、
-[query对齐](analysis/consumption/old_off_query_alignment.json)。逐条rows见[学习面板](panels/learning/)，原配置、学习曲线与曝光见[model_records](model_records/)。
+[query对齐](analysis/consumption/old_off_query_alignment.json)。逐条rows见[学习面板](panels/learning)，原配置、学习曲线与曝光见[model_records](model_records)。
 
 ## 3. C完整冻结输入诊断
 
@@ -59,7 +59,7 @@ wrong保留目标语言，shuffle先重排真实RGB再完整重算；呈现索�
 
 登记与方法：[registration](analysis/mechanism/registration.json)、[输入变换脚本](methods/mechanism_panel.py.txt)、
 [统计方法](methods/mechanism_analysis.py.txt)。[全部配对比较](analysis/mechanism/behavior_summary.json)与
-[C200逐条rows](panels/mechanism/c200/)可直接复核；旧off完整九臂复用[旧包](../20260911/panels/diagnostics/best_model_video_controls/step400/)。
+[C200逐条rows](panels/mechanism/c200)可直接复核；旧off完整九臂复用[旧包](../20260911/panels/diagnostics/best_model_video_controls/step400)。
 
 ## 4. 表示与功能路径：已观察到什么
 
@@ -85,7 +85,7 @@ correct对shuffle有微小平均优势，不能说完全没有顺序信息，也
 固定S时换static过程仅增加FM .000044；监督函数中的微小差异不能直接替代行为。
 
 原件：[表示trace与路径manifest](analysis/paths/manifest.json)、[路径行为](analysis/paths/behavior_summary.json)、
-[路径rows](panels/paths/c200/)、[路径方法](methods/path_intervention.py.txt)、
+[路径rows](panels/paths/c200)、[路径方法](methods/path_intervention.py.txt)、
 [主动作表](analysis/mechanism/functional_summary.json)、[主动作配对](analysis/mechanism/functional_comparison.json)、
 [路径动作表](analysis/paths/functional_summary.json)。主面板12288与路径2048次预测合计14336，无模型更新。
 
@@ -119,8 +119,8 @@ fresh100/200训练完成，累计51200queries；独立留出FM由.151451降至.1
 原件：[完整模型合同](model_records/nochange/run_contract.json)、[profile](analysis/nochange/profile_summary.json)、
 [动作诊断](analysis/nochange/action_diagnostic.json)、[100摘要](analysis/nochange/step100_summary.json)、
 [200配对与区间](analysis/nochange/step200_summary.json)、[暂停记录](analysis/nochange/owner_pause.json)、
-[完整学习与行为rows](panels/learning/nochange/)、[训练机制rows](panels/mechanism/nochange200/)。
-数学合同见[无变化参照设计](../../video_change_reference_design.md)，真实统计方法见[脚本快照](methods/nochange_analysis.py.txt)。
+[完整学习与行为rows](panels/learning/nochange)、[训练机制rows](panels/mechanism/nochange200)。
+数学合同见[无变化参照设计](../../designs/video_change_reference_design.md)，真实统计方法见[脚本快照](methods/nochange_analysis.py.txt)。
 
 ## 6. 尚未建立的结论
 

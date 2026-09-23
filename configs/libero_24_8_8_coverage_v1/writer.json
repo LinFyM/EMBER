@@ -169,7 +169,7 @@
     "teaching_episode": "same_video",
     "protocol": "configs/libero_24_8_8_coverage_v1/protocol.json"
   },
-  "design": "docs/coverage_retraining_design.md",
+  "design": "docs/designs/coverage_retraining_design.md",
   "evidence": {
     "checkpoint_updates": [],
     "comparison": {

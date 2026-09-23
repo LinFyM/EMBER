@@ -1,50 +1,71 @@
 # EMBER
 
-EMBER研究从exact task language与action-hidden教学视频，在rollout前一次生成冻结π0.5 source的一套完整task-conditioned LoRA，
-让机器人从未见初始化闭环执行。语言说明目标，正确视频中的操作内容与顺序应贡献真实执行价值。
+EMBER研究把exact task language与action-hidden教学视频，在rollout前一次编译为冻结π0.5 source的一套完整
+task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正确视频中的操作内容应贡献真实执行价值。
 
-当前goal、授权与运行状态以[进度](progress.md)为准。[覆盖重训合同](docs/coverage_retraining_design.md)登记新的24/8/8＋12辅助任务协议及两方法独立选点；
-后续FT/RL/外部比较沿用[论文实验合同](docs/paper_experiments_design.md)，须先通过性能与视频对照。
-历史证据包括[教学候选总报告](docs/review_materials/20260919/final_report.md)和[旧划分Test负结果](docs/review_materials/20260920/test_capacity/report.md)，
-旧实验分数及冻结checkpoint不改写为新协议结果。
+**研究执行已按Owner要求停止，当前为仓库收尾交接。** 没有获授权的自动后继实验。未验证的四臂实现只保存在独立Git分支，
+不属于main可运行方法；具体恢复位置、已知问题及最终结果见[progress](progress.md)。
 
-## 阅读入口
+## 阅读顺序与唯一职责
 
-| 文档 | 职责 |
+| 入口 | 职责 |
 | --- | --- |
-| [Owner要求](docs/current_owner_requirements.md) | 稳定目标、研究原则与最新裁决 |
-| [科学动机](docs/concept.md) | 完整方法链条、因果职责与待检验假设 |
-| [覆盖重训合同](docs/coverage_retraining_design.md)／[语义覆盖审计](configs/libero_24_8_8_coverage_v1/coverage.md) | 新任务协议、采样、早停及冻结后的裁决 |
-| [封存教学候选](docs/video_teaching_writer_design.md)／[专家最终修订](docs/review_materials/20260919/expert_proposal.md) | 部署图、联合损失、有界训练评测与交付合同 |
-| [教学候选总报告](docs/review_materials/20260919/final_report.md)／[专家提示词](docs/review_materials/20260919/expert_discussion_prompt.md) | 完整结果、比较边界、原件入口与讨论问题 |
-| [完整历史证据审计](docs/v52_evidence_audit_20260917.md) | 46组实验及bank/chart补表的机制、预算、正负证据与比较边界 |
-| [当前计划](task_plan.md)／[当前进度](progress.md) | 当前goal、授权、实施证据与下一阶段 |
-| [AGENTS](AGENTS.md) | 科学、数据、评测、资源与Git合同 |
-| [Findings](findings.md)／[研究历史](docs/research_history.md) | 跨轮结论，以及封存设计、专家评审与formal原件索引 |
+| [Owner要求](docs/current_owner_requirements.md) | 理论下界、研究目标、解释深度、方法与协作边界 |
+| [当前进度](progress.md)／[当前计划](task_plan.md) | 当前授权、交接快照与本次收尾；历史许可不在此持续生效 |
+| [Concept](docs/concept.md) | 完整信息流、模块因果职责、数学解释框架与待验证假设 |
+| [AGENTS](AGENTS.md) | 科学、数据、评测、资源、工程与Git合同 |
+| [Findings](findings.md) | 编号的跨轮发现；结论保留适用范围，最新结果见§131–133 |
+| [研究历史](docs/research_history.md) | 按时点追溯设计、专家讨论、原始证据和复现commit |
 
-讨论时先读Owner要求和证据审计，再看[findings](findings.md)§117–124：统一Writer终局、A900机制诊断、Core/Procedure交叉、匹配frame-set、同视频教学完整窗口与双相机对照。
-A900机制与Core/Procedure交叉两次冻结诊断只支持其固定模型、train24有限面板上的结论，没有证明下一架构必须保留Core/P、只能改Procedure或不能整体重构。
-旧实验与咨询均从研究历史按问题追溯；历史中的“当前／下一步”不构成执行授权。
+新任务先读Owner要求和当前状态，按问题沿历史索引追溯；不把所有旧设计的“下一步”合并成待办。
+完整相关历史需要综合，但不要求每次重读全部文件。理论下界不等于优化保证，也不指定公共底座课程。
 
-## 代码所有权与运行入口
+## 目录职责
 
-| 代码职责 | `src/ember/`下的owner |
+| 目录 | 内容与生命周期 |
 | --- | --- |
-| 原生图文／完整H读取与三组Meta | `writer/video_program.py`、`writer/meta_lora.py` |
-| 语义Core、重复过程读取与条件化参数slots | `writer/temporal.py`、`writer/procedure.py` |
+| `src/ember/` | 唯一维护中的Writer、Source/MT-BC、数据及评测实现 |
+| `scripts/` | 薄CLI、环境构建、数据封存和结果比较入口；已结束的专用诊断脚本由Git保存 |
+| `tests/` | 对当前实现及稳定科学/恢复/配对合同的CPU检查 |
+| `configs/` | 显式数据协议、方法配置和审计；不同协议分别保留，不能覆盖旧结果 |
+| `docs/designs/` | 有独立科学合同价值的设计/计划，文件头标明历史或暂停；是否active只看progress |
+| `docs/analyses/` | 有独立论证价值的机制分析和审计；不是运行授权 |
+| `docs/review_materials/` | 按日期/研究组织的小型专家材料、原始行、图表与证据包；各README解释当时范围 |
+| `evidence/` | Git跟踪的资产manifest与迁移provenance，不存模型权重 |
+| `data/`、`models/`、`runs/`、`.venv/` | ignored本地资产与环境，远程仓库不包含这些大文件 |
+
+文档职责分开：稳定规则不记录动态分数，进度不复制整段历史，历史设计不伪装成当前方法。
+封存材料中的旧源码路径按其记录的Git commit解释；已退役入口不在main维持兼容副本。
+
+## 当前代码所有权
+
+| 职责 | `src/ember/`中的owner |
+| --- | --- |
+| 原生图文／完整H读取、三组Meta | `writer/video_program.py`、`writer/meta_lora.py` |
+| Core、Procedure与条件化参数slots | `writer/temporal.py`、`writer/procedure.py` |
 | 唯一38-target完整A/B生成 | `writer/model.py`、`pi05_lora.py` |
-| 主FM与同视频教学、采样与完整checkpoint | `writer/supervised.py`、`writer/function_credit.py`、`writer/training.py`、`writer/learning_data.py`、`writer/continuation.py`、`ecp/checkpoint.py` |
-| 运行时、物化与strict闭环评测 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py`、`pi05_eval/` |
+| 主/辅助功能监督、采样、训练与恢复 | `writer/{supervised,function_credit,learning_data,training,continuation}.py`、`ecp/checkpoint.py` |
+| Writer运行时与物化 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py` |
+| Source与共享LoRA监督 | `pi05_source_training.py`、`source_sft/` |
+| 配对闭环、队列、协议与结果 | `pi05_eval/`、`pi05_eval_queue.py`、`pi05_eval_contract.py`、`pi05_eval_results.py` |
 
-Canonical入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`和`scripts/evaluate_pi05.py`，
-教学候选使用独立schema与fresh初始化；同架构的后续窗口继承其完整训练状态。
-旧checkpoint须从记录的Git commit重建冻结runtime；已结束实验不长期保留worktree。
-本轮之外的旧实验不由保留入口自动恢复。
+Writer入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`、`scripts/evaluate_pi05.py`。
+Source/MT-BC入口为`scripts/train_source_base.py`和`scripts/train_source_sft.py`；复用同一评测合同。
+已结束的stability/output-space/causal诊断与low-LR专用执行面已退役，原实现可从`7b18030c`及各run记录的commit恢复。
+常规完整恢复和已登记的1500→2100 continuation保留；旧low-LR phase配置不再接受，避免静默改变学习率。
 
-## 数据与资产
+## 数据与证据入口
 
-新覆盖split与两方法配置在`configs/libero_24_8_8_coverage_v1/`；旧`configs/libero_24_8_8_v1/`只按封存合同解释。
-source71审计在`configs/pi05_source_corpus_v1/`；变更split须Owner明确授权，不能按结果自行改ID。
-`data/`、`models/`、`runs/`、`.venv/`为ignored本地资产；复用canonical根，不复制大资产。
-源码退役不删除数据集、源模型、唯一checkpoint或formal证据；远程读取者不应假定能访问这些本地资产。
-验证应按实际改动选择已有检查，具体运行及通过范围记录在progress。
+当前coverage协议在[configs/libero_24_8_8_coverage_v1](configs/libero_24_8_8_coverage_v1/coverage.md)，
+旧`libero_24_8_8_v1`仅按封存合同解释；source71审计位于`configs/pi05_source_corpus_v1/`。
+新的fit28/diagnostic-held8候选在[暂停设计](docs/designs/conditional_compilation_diagnostics_design.md)，官方24/8/8未改。
+
+历史重点可从[46组证据审计](docs/analyses/v52_evidence_audit_20260917.md)、
+[旧教学候选总报告](docs/review_materials/20260919/final_report.md)、
+[旧划分Test](docs/review_materials/20260920/test_capacity/report.md)、
+[因果诊断](docs/review_materials/20260922/writer_causal_diagnostics/README.md)和
+[夜间结果包](docs/review_materials/20260923/overnight_results/README.md)进入。
+这些材料服务不同历史问题，不合并成一条未经匹配的性能曲线。
+
+数据集、Source、唯一checkpoint及正式原始证据保留。可再生的物化LoRA载荷退役时，保留manifest、生成checkpoint、
+条件映射和复现commit，并在原目录登记payload retirement；需要重放历史评测时先按登记重建缓存。

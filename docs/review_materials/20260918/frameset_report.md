@@ -53,7 +53,7 @@ A同任务33→24（20/4/13）；这支持有序路径可能有助于该能力�
 ## 问题与合同
 
 本实验执行[专家意见](expert_review.md)提出的唯一训练诊断：已有约130–140/400能力的A，在相近学习条件下是否从给定视频播放顺序获得额外收益。
-[预注册设计](../../learned_frameset_reference_design.md)先于新训练与分数确定；固定训练到1200，节点300/600/900/1200，主要解释相邻900和1200。
+[预注册设计](../../designs/learned_frameset_reference_design.md)先于新训练与分数确定；固定训练到1200，节点300/600/900/1200，主要解释相邻900和1200。
 Owner再次明确1200停止；没有延长窗口、重训A、并开新架构或按controls挑点。
 
 唯一科学干预：从fresh训练起移除Procedure中的视频frame-index RoPE和causal mask，以及Procedure到参数槽读取的时间寻址。

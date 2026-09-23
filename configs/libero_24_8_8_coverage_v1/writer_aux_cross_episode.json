@@ -169,7 +169,7 @@
     "teaching_episode": "cross_episode",
     "protocol": "configs/libero_24_8_8_coverage_v1/protocol.json"
   },
-  "design": "docs/writer_auxiliary_pairing_design.md",
+  "design": "docs/designs/writer_auxiliary_pairing_design.md",
   "evidence": {
     "checkpoint_updates": [],
     "comparison": {

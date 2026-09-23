@@ -91,9 +91,9 @@ Writer输入是exact task language与action-hidden完整教学RGB，经冻结sou
 
 同一套LoRA同时接受21个同task跨episode主FM query与7个所看视频的短程教学query。教学端点tau=1，监督未来真实五步；两项各自归一后按1与1/3相加，共同更新整个Writer及三Meta，source始终冻结。匹配消融只把7个辅助query改为同task另一episode，因此识别的是监督和所看视频的对应关系，不是辅助loss有无，也不单独识别新增H/E读取。没有沿用已撤回的P-only梯度方案。
 
-历史A correct900/1200/1500为140/135/112；当前主组为149/174/165。同一source、映射和主query可配对，但读取、辅助监督、登记LR尾段同时不同，不能把整体提升归因给其中单一模块。旧A、frame-set及原v5.2没有被重训。更多历史依据从[证据审计](../../v52_evidence_audit_20260917.md)和[研究历史](../../research_history.md)按问题追溯。
+历史A correct900/1200/1500为140/135/112；当前主组为149/174/165。同一source、映射和主query可配对，但读取、辅助监督、登记LR尾段同时不同，不能把整体提升归因给其中单一模块。旧A、frame-set及原v5.2没有被重训。更多历史依据从[证据审计](../../analyses/v52_evidence_audit_20260917.md)和[研究历史](../../research_history.md)按问题追溯。
 
-[详细数据流水线、输入实例和解释边界](discussion_context.md) · [专家最终修订原文](expert_proposal.md) · [封存实验合同](../../video_teaching_writer_design.md)
+[详细数据流水线、输入实例和解释边界](discussion_context.md) · [专家最终修订原文](expert_proposal.md) · [封存实验合同](../../designs/video_teaching_writer_design.md)
 
 ## 工程、资源和证据完整性
 

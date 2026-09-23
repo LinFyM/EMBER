@@ -1,5 +1,47 @@
 # EMBER research history
 
+本文记录各时点的事实和当时合同；历史“当前/下一步/授权”不持续生效。最新授权只看[progress](../progress.md)。
+设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
+
+## 2026-09-23：组会后讨论、条件诊断暂停与仓库收尾
+
+Owner要求停止研究推进和后继实验派发，改为整理全仓库后交由另一session接手。没有创建Sol任务。
+对话中新增的稳定理解归入[Owner要求](current_owner_requirements.md)：固定Writer LoRA是模型类可达下界，
+不保证有限优化器达到、也不指定公共底座课程；视频特异性旨在说明有益教学利用；现象差异必须进一步提出机制和竞争预测。
+生成Jacobian、辅助端点/执行前缀目标、任务关系覆盖的解释框架归入[concept](concept.md)，均未被写成已证根因。
+
+组会后Source1000/MT-BC300 coverage Test补测已交付于`7b18030c`：75/121，各400；Validation对应51/155。
+Test配对R/G/L=46/75/29，breadth4→7；8任务簇增益95%描述区间[−0.5,+22.75]pp。两split任务不同，
+且Test此前已有暴露；不能跨split逐行配对、判断“统一更难”或根据该结果反哺设计。完整合同与raw rows保存在
+`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923`；推断边界见findings§132。
+首次wrapper仅在解析期exit2，无GPU计算；修正attempt02完整结束。评测runtime`c9844dfc`可由Git恢复。
+
+后登记[条件编译四臂设计](designs/conditional_compilation_diagnostics_design.md)及
+`configs/conditional_compilation_diagnostics_v1/{experiment_spec,partition_audit}.json`，fit28/diagnostic-held8均取自授权Train36，
+官方24/8/8不改；完整BDDL审计无精确held-fit等价项。合同/登记commit`520225dd`和`35bde8de`。
+Luna尚未启动GPU smoke或四臂训练，Owner停止后全部未验证源码封存到已push分支
+`codex/conditional-compilation-diagnostics@73267f53`，不合main；已知validate缩进错误记录在progress。
+四臂仅做整体环节定位，参数化、条件与活动模块有混杂，固定数据无法独自确定数据构成原因；无第五臂自动授权。
+
+收尾将文档按职责归类、当前状态去重，退役已结束诊断和low-LR专用执行面；原代码保留在`7b18030c`及各formal commit。
+唯一checkpoint、数据和formal原件保留，确认可重建的物化载荷/临时产物按退役记录清理；最终数字见progress。
+没有因收尾运行新实验，也不把暂停草稿提升为已经验证的方法。
+
+## 2026-09-23：夜间fresh最终结果与授权终止
+
+Owner夜间曾授权两小时内完成有依据的小试、随后fresh不超过约1200更新，暂不要求稳定性证明，
+正式前无需另报批，07:30前GPU数量不设限；这些deadline/设备/启动例外均只属于该夜，现已终止。
+固定标签12条件D54在Train72及另一个固定视频面板有正向小试，才进入fresh；不是从方差理论直接跳到大训练。
+主线fresh在clean pushed `0684ee05`运行1200更新，完整Validation曲线103/117/142/141/138/107；
+按冻结规则selected600=142，未超过MT-BC155，既有训练側收益没有转为正式泛化修复。
+selected600的correct/other/wrong=142/132/105，各400；correct相对wrong保留91/增加51/丢失14，
+相对other保留113/增加29/丢失19。三臂绝对值均低于原C600的154/160/153，不能宣称联合解决两目标。
+08:34 Owner醒来要求暂停，shuffle/reverse尚未完成即停止；当前EMBER Test、FT、RL未启动。
+原件在`/data0/user/ymdai/ember_runs/coverage_task_mixing_20260923`，小型导出见
+[夜间结果包](review_materials/20260923/overnight_results/README.md)，结论见findings§130–133。
+
+## 此前记录
+
 2026-09-23完成Owner追加一小时检验，原件在既有overnight study的`one_hour`，结论见findings§128。
 新旧共同Train8×state32–35的A900/O1200/C600正确17/20/8、wrong10/13/8、关闭Procedure11/20/6。
 两个完整Writer梯度分解不支持视频采样波动是主要修复靶点；静态末帧边界信号可精确消除，但旧模型也存在。
@@ -123,10 +165,10 @@ Long较A600高，但validation Spatial为零、训练Object较弱；首点未显
 
 2026-09-17 Owner在两轮设计分析后授权统一Writer整套执行goal：仓库/data1整理、实现与吞吐优化、新架构训练及与已有v5.2结果比较，
 以及结果不佳但有明确证据支持时的集中修正重训，最后详细汇报。此前仅分析与新实验暂停限制被替代；旧A/C不自动恢复。
-当前active design为[统一Writer](v52_evidence_based_writer_design.md)，执行事实仍由progress登记。
+当前active design为[统一Writer](designs/v52_evidence_based_writer_design.md)，执行事实仍由progress登记。
 旧长篇状态/计划已由Git `176759a7`保留，历史科学证据继续由本文件、findings和formal原件承载。
 
-2026-09-17第二轮分析goal完成统一架构与设计立场复核，交付修订后的[统一Writer设计](v52_evidence_based_writer_design.md)。
+2026-09-17第二轮分析goal完成统一架构与设计立场复核，交付修订后的[统一Writer设计](designs/v52_evidence_based_writer_design.md)。
 追溯确认最早多通路规定的是丰富内容直达、跨帧证据进入native及原上下文保留，尚未规定Core/P尾端；后续尾端保留出于控制改变量，
 不能用缺少删除消融推成模块必需。新方案以j9/j18各两层同构联合Z/H块、一次中层双写回和两层连续参数decoder承接这些职责，
 首层参数读取使用已联合的语义memory，次层读取全memory，保留三Meta与八组完整A/B头；不再独立建立Core/P或AdaLN。
@@ -135,7 +177,7 @@ Long较A600高，但validation Spatial为零、训练Object较弱；首点未显
 新方案不构成active run。首轮设计保存在Git `426dc5be`，证据审计继续复用，跨轮判断见findings§116。
 
 2026-09-17上一轮完成owner要求的全面证据审读与架构推导，交付
-[证据审计](v52_evidence_audit_20260917.md)和首版中层跨帧Writer设计（Git `426dc5be:docs/v52_evidence_based_writer_design.md`）。
+[证据审计](analyses/v52_evidence_audit_20260917.md)和首版中层跨帧Writer设计（Git `426dc5be:docs/v52_evidence_based_writer_design.md`）。
 46个编号证据组及12组bank中间路线区分真实行为、功能/局部干预、结构性质、短预算和未执行；
 明确旧v5.2与新A主图近等价、配方交互显著，没有识别唯一成功原因，也没有v5.2尾端组件逐一必需的matched证据。
 从实际train task及源码推导旧Core对帧置换不变、H-only中层注入不能改变Core；本次交付选择中层Z/H共同跨帧写回再原生续算，
@@ -188,7 +230,7 @@ breadth6／5／5，S/O/G/L为7/43/25/10、9/48/23/9、10/36/27/13；相邻R/G/L�
 无held动作读取、Test或checkpoint选择。完整数值与区间见findings§110，原件位于
 `runs/analysis/source_alignment_20260915/SFT/{paired_readout.json,training_audit.json,completion.json}`。
 
-2026-09-16完成[source时间对齐计划](source_alignment_v52_plan.md)中的同科学规格fresh source及固定raw1000读出：
+2026-09-16完成[source时间对齐计划](designs/source_alignment_v52_plan.md)中的同科学规格fresh source及固定raw1000读出：
 71tasks、全参数、1000更新／256000queries、原optimizer／normalization；`b8ea00e9`的所有更新均finite。
 最终保存因共享存储I/O触发NCCL 600秒等待超时；raw／EMA／optimizer／四rank RNG已完整落盘，
 只从750点按原调度重建scheduler并恢复发布元数据，未重做模型更新或改写已保存训练状态，原exit1和恢复记录保留。
@@ -225,60 +267,60 @@ source／checkpoint／视频／初态／RNG／真实RGB重排审计通过，两�
 完整统计与解释边界见findings§109及`runs/analysis/source_alignment_20260915/A/video_specificity_step900/readout.json`。
 此后停止诊断，不选模型、不反馈训练或架构，不启动A1200、新B、SFT评测／续训或Test。
 
-2026-09-14完成[Process Pullback Writer的900更新纯FM窗口](process_pullback_writer_design.md#9-900更新窗口完整结果与裁决2026-09-14)：
+2026-09-14完成[Process Pullback Writer的900更新纯FM窗口](designs/process_pullback_writer_design.md#9-900更新窗口完整结果与裁决2026-09-14)：
 3,600条件／230,400queries、六面板／1,488rows完整；train24／22／26（source17/96），validation64／72／64（source47/400）。
 保留局部获取，未见task保持与广度未建立；未获前置资格，无selected checkpoint、same-task-other或最终视频controls。
 本轮结束原样续训，不自动回到v5.2；完整证据及有限原因分析见findings§100与本轮`READOUT.md`、`bounded900_decision.json`。
 
-2026-09-14完成[Process Pullback Writer的G P出口功能前提](process_pullback_writer_design.md#8-first-learning-window-registration2026-09-14正式训练闭环前)：
+2026-09-14完成[Process Pullback Writer的G P出口功能前提](designs/process_pullback_writer_design.md#8-first-learning-window-registration2026-09-14正式训练闭环前)：
 de7237a8、96条件／1,536 query、两worker exit0；t1／full10 source改善CI下界.001426／.001918，4／3个suite净正。
 PCA16保留原G平均改善72.56%／76.29%，有明确功能损失；仅通过本出口privileged前提，未产生合法Writer闭环成绩。
 原件见`runs/analysis/process_pullback_writer_20260914/functional/summary.json`与findings§99。
 
-2026-09-14完成[局部纠正场Writer的完整比较](local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)：
+2026-09-14完成[局部纠正场Writer的完整比较](designs/local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)：
 两臂fresh100、四checkpoint与八面板／1,984rows完整，24个worker均exit0且配对审计通过。
 train96有序／无序18/16→17/17，validation48/47→47/50，source17/96与47/400；三个预登记资格均失败。
 合法获取仍弱，接近source的低churn不能当新能力保持；按登记关闭当前局部监督／参数消费联合组合。
 privileged G及局部场函数正例的原边界保留，完整事实见findings§98与下方同日条目；整体goal未完成。
 
-2026-09-14完成[固定真实纠正的闭环前提](native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)：
+2026-09-14完成[固定真实纠正的闭环前提](analyses/native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)：
 原480episodes全部结束，source17/96、demo16–19为21/25/20/24；配对净+5.73pp，24task-cluster95%CI[+1.04,+12.5]pp。
 四teacher／四init均净正，S/G/L三suite正，按原四项资格通过后关闭。Object仍零，task35贡献11/22净增。
 这是privileged训练侧实际控制作用证据，不能计入合法视频Writer、held或有益顺序成绩；45worker和controller全部exit0。
 完整raw、配对、六组teacher重合、逐task统计和失败attempt1原件均保留，临时59行static准入退役；跨轮边界见findings§94。
 
-2026-09-13完成[现存更新的幅度／方向分析](native_correction_acquisition_audit.md#8-幅度方向分析完整结果与关闭裁决)：
+2026-09-13完成[现存更新的幅度／方向分析](analyses/native_correction_acquisition_audit.md#8-幅度方向分析完整结果与关闭裁决)：
 3c3c4897登记后CPU只读384条件，14.183秒exit0。最优privileged整体倍率仅消除3.87%–6.32%的当前参数误差；
 四个H−J区间均严格负、每模型24/24task方向缺口更大，按登记关闭整体gain修复的主要依据。
 当前单位行A的最小B范数比中位数约256–387，限定了低投影下界的可用性解释，但不是有限模型容量或唯一根因证明。
 全量分组／系数代价／验证与边界见findings§93及下方历史条目；没有新模型forward、梯度、query或环境步，goal未完成。
 
-2026-09-13完成[原生纠正获取分解](native_correction_acquisition_audit.md#6-完整结果与关闭裁决)：
+2026-09-13完成[原生纠正获取分解](analyses/native_correction_acquisition_audit.md#6-完整结果与关闭裁决)：
 四冻结checkpoint×train24/demo16–19共384次合法生成，原始配对及正交误差分解通过。
 66.9%–70.6%的参数误差位于当前A空间内，四个task-cluster F−D区间均严格负，按登记第二分支关闭。
 停止把扩A空间当必要首项修正；任意B的乐观下界不证明有限共享B、RGB充分性或闭环修复。
 完整矩阵、实际曝光与数值范围见findings§92及下方历史条目；没有新训练、held读取或selected checkpoint，goal未完成。
 
-2026-09-13完成[Native Correction Writer](native_correction_writer_design.md#10-完整有界结果与关闭裁决)：
+2026-09-13完成[Native Correction Writer](designs/native_correction_writer_design.md#10-完整有界结果与关闭裁决)：
 两臂各fresh200、8个配对面板／1,984rows完整且审计通过；validation有序／无序100为50/51、200为50/49。
 有序净增区间均未严格正，增量−1→+1、净正suite0/1，按原资格关闭，无selected checkpoint或最终controls。
 保留相对source47的名义+3、Goal41保持、较低churn及frame_set训练15→20的有限正收益；breadth未扩展。
 原生真纠正oracle的跨episode功能前提仍成立；合法共享获取缺口尚不能唯一归到R/A、B、读取或RGB信息。
 完整事实、比较限制与原件见findings§91及下方同日历史条目；完整goal未完成，不恢复该组合训练。
 
-2026-09-13完成[可见物体与运动落点监督](visible_object_grounded_writer_design.md#9-完整有界结果与关闭裁决)：
+2026-09-13完成[可见物体与运动落点监督](designs/visible_object_grounded_writer_design.md#9-完整有界结果与关闭裁决)：
 两臂各fresh200、100/200的8个闭环面板／1,984rows全部完成并审计通过。validation有序／无序为20/24、71/70，
 净率95%CI均跨零、有序净差未相邻同向，按登记关闭；无selected checkpoint或最终controls。
 空间监督在200节点相对旧纯FM使两臂53→71、39→70且区间为正；不能把non-pass写成无学习收益。
 有序相邻保留19/20次旧成功，低J主要来自新增；相对source则Goal41→9、Object5→59，能力保持边界不同。
 完整资格、正负事实与原件索引见findings§85及设计§9；整体goal未完成，不恢复旧运行。
 
-2026-09-13完成[原生端点×视角诊断](source_endpoint_readout_audit.md)：三个新增单元各384位置全部exit0，复用dual/full10。
+2026-09-13完成[原生端点×视角诊断](analyses/source_endpoint_readout_audit.md)：三个新增单元各384位置全部exit0，复用dual/full10。
 agentview full10/t1均值/t1公共probe MSE=.36548/.34789/.34732，dual=.13673/.13217/.13177，任务均值.25060。
 同读出下dual相对agentview全部24/24task改善、区间严格正；增加flow深度未补偿单视角限制，触发预登记视觉范围分支。
 该source动作预测证据不证明视频过程或LoRA闭环收益；下一步核对双视角历史与当前先验输入合同。详见findings§78与原件endpoint_*。
 
-2026-09-13新增[冻结source状态输入诊断](source_state_input_audit.md)：三臂各384位置完整完成，MSE free/mean/true
+2026-09-13新增[冻结source状态输入诊断](analyses/source_state_input_audit.md)：三臂各384位置完整完成，MSE free/mean/true
 为.13673/.14173/.12469，动作均值.25060。free−true区间跨零，状态补全前提未通过；state-free完整采样优于
 动作均值的正事实保留，但不证明单步H／过程表示充分或视频因果收益。原件与完整边界见findings§77及诊断第5节。
 
@@ -293,12 +335,12 @@ immutable Git原件和formal artifacts。历史中的资格、假设和“下一
 逐轮findings及所有旧设计、专家原文也在同一提交。下文“旧§”均指这一冻结账本，避免重编号后误定位。
 [查看完整旧账本](https://github.com/LinFyM/EMBER/blob/fcdb6e43706c5fcedf10eaa5d2d459602b263016/docs/research_history.md)。
 
-2026-09-13只读补充：[视频信息与可识别性复核](video_information_identifiability.md)澄清全帧frame_set与显式顺序的
+2026-09-13只读补充：[视频信息与可识别性复核](analyses/video_information_identifiability.md)澄清全帧frame_set与显式顺序的
 不同信息内容，审计train24当前状态目标，并追踪原9个受益task在新交叉条件上的合计净额−1/288。
 独立训练臂比较不等于固定模型的顺序干预；跨episode FM允许视频无关解不等于视频无法帮助有限模型迁移。
 详见findings§74及既有冻结复核analysis中的`conditional_information_audit.py/json`。没有新训练、rollout或最终controls。
 
-2026-09-13随后完成[冻结局部动作生成诊断](frozen_local_action_decode_audit.md)：固定旧local两臂step200，
+2026-09-13随后完成[冻结局部动作生成诊断](analyses/frozen_local_action_decode_audit.md)：固定旧local两臂step200，
 train24各384片段纯噪声生成，MSE有序.31625053／无序.31676502，均不如task mean .25059744。
 小幅有序差额保留，但24/24task的有序估计均落后均值；停止把现成动作读出直接接入参数生成的提案依据，
 无新训练或rollout。CPU Gaussian边缘去噪FM=.26389586，亦优于旧两臂.81011446/.81128639；
@@ -401,7 +443,7 @@ GOMQ cycle2/3/4为151/135/131，相邻churn42、34。cycle2五臂151/139/131/127
 `3075b3c7:docs/evidence/gomq_20260824/gomq_cycle2_effective_rank16_strict400.json`（旧§3）。这不授权dtype、rank、seed扫描或旧run恢复。
 
 <a id="native-capacity"></a>
-**2026-09-09冻结诊断补充：** 原fresh K1的200/600已完成A/A2/A3共6144 train-side FM queries及预登记64条validation行为回放，全部无参数更新。首层language内容残差比仅该层language检索的移除影响大；P4/cross有实际功能，不能据此宣布动态理解、捷径根因或fresh删除有效。回放9/32→7/32，与各自历史子集7/32有成功集合分叉，原正式110/82不改；图像定位了错误目标/实例、组合子目标和具体抓取混合缺口，并保留正确双目标成功。完整报告与原件索引：[冻结诊断](horizon_k1_frozen_diagnostics_20260909.md)。后续fresh内容路径对照只以当前progress登记为准，不从此历史条目恢复执行。
+**2026-09-09冻结诊断补充：** 原fresh K1的200/600已完成A/A2/A3共6144 train-side FM queries及预登记64条validation行为回放，全部无参数更新。首层language内容残差比仅该层language检索的移除影响大；P4/cross有实际功能，不能据此宣布动态理解、捷径根因或fresh删除有效。回放9/32→7/32，与各自历史子集7/32有成功集合分叉，原正式110/82不改；图像定位了错误目标/实例、组合子目标和具体抓取混合缺口，并保留正确双目标成功。完整报告与原件索引：[冻结诊断](analyses/horizon_k1_frozen_diagnostics_20260909.md)。后续fresh内容路径对照只以当前progress登记为准，不从此历史条目恢复执行。
 
 ## 3. 从privileged容量到G1/G2机制证据
 
@@ -944,7 +986,7 @@ Owner要求先与专家讨论清楚，不能把一轮分析直接转化为实施
 训练选择为fresh Writer/Meta的FM辅助共享Writer RL，同版本采集和求梯度后一次更新，Gaussian动作探索、LOO baseline、
 Q/M decision子采样、实际10步flow反传和有限候选KL检查。旧GOMQ的成功expert occupancy蒸馏不能当作这条新信用路径已通过。
 
-[正式设计](horizon_relation_video_writer_design.md)登记了完整输入/shape/公式/初始化/梯度/数据/采样/恢复/验证/迁移合同；
+[正式设计](designs/horizon_relation_video_writer_design.md)登记了完整输入/shape/公式/初始化/梯度/数据/采样/恢复/验证/迁移合同；
 旧18层设计正文由Git e868de525fda0a20c597dee2c7bffe5717f5e2fd追溯，活动路径仅保留历史入口。
 代码仍是旧layered实现，384永久停止，未选selected checkpoint。未补width256闭环、未整支合并native-head草稿。
 
@@ -1152,7 +1194,7 @@ vs source47，500/600分别33/37/14与41/41/6，churn51/47、J=.392857/.465909�
 
 Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正式及其它新实验均未启动。只读审计核对原b6d70d98训练、f1330697评测、44个旧400行面板、专家原文与机制历史，CPU重算当前原始结果/采样/模块学习状态及已存LoRA几何，没有新增forward或rollout。
 历史四任务v5.2/v6已有132/121，全任务配方效果又方向相反；不能只凭旧v6-fast143将当前弱分优先归因4task。600的81/82成功集中source原成功对应的三个任务，而200这些任务外28成功到600只剩1；同时train held52→59→67。最受支持的是训练分布学习未稳定转化为跨task能力，具体架构/表示/共享与FM/优化作用未被单独识别。
-完整报告`docs/horizon_k1_evidence_review_20260909.md`；CPU派生统计`runs/analysis/horizon_relation_writer_20260908/k1_fresh/evidence_review_20260909/`。已写但未运行的24task源码/config/tests保留为暂停草稿，不算任何科学结果，不由本次报告恢复。
+完整报告`docs/analyses/horizon_k1_evidence_review_20260909.md`；CPU派生统计`runs/analysis/horizon_relation_writer_20260908/k1_fresh/evidence_review_20260909/`。已写但未运行的24task源码/config/tests保留为暂停草稿，不算任何科学结果，不由本次报告恢复。
 
 ## 2026-09-09 首层语言内容对照首段：早期增益未成为200整体提高
 
@@ -1160,7 +1202,7 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 
 新100/200为75/110，对照原55/110；breadth均6/8。新相邻R/G/L55/55/20、churn75、J=.4231；原200→新200为86/24/24，同分110。新S/O/G/L1/36/31/7→3/59/38/10，global1/23未获取。新200 train96为46、breadth18，原52、breadth20，R/G/L39/7/13。相同3072query held FM新/原.111184/.111353均值接近，不能替代行为结论。
 
-只支持早期validation增益及部分能力交换，未证明整体修复、唯一根因或资格。完整报告`docs/horizon_k1_first_query_only_20260909.md`，原件`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/first_segment_evidence.json`及新run `runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909/`。保留既有近等价历史边界；后续状态只由progress/active design解释。
+只支持早期validation增益及部分能力交换，未证明整体修复、唯一根因或资格。完整报告`docs/analyses/horizon_k1_first_query_only_20260909.md`，原件`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/first_segment_evidence.json`及新run `runs/outputs/horizon_k1_first_query_only_v1_seed7_20260909/`。保留既有近等价历史边界；后续状态只由progress/active design解释。
 
 ## 2026-09-09 首层语言内容对照至400：局部保持收益，目标未扩展
 
@@ -1168,7 +1210,7 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 
 新300/400 correct106/103，S/O/G/L0/64/35/7→3/52/39/9、breadth4→6；原86/87。新200→300 R/G/L77/29/33、churn62/J=.554；300→40077/26/29、churn55/J=.5833。BBQ新28→24→10，原24→1→3，回落部分缓解但仍复现；其它任务补偿使总分只由110→106→103。两个validation task始终0，未满足目标线、breadth、Long或稳定性。
 
-400 train96=59、breadth22，对新20046为R/G/L35/24/11，对原40059为46/13/13；S/O/G/L12/21/19/7，对原17/18/17/7。训练侧获取仍在，validation未持续扩大。冻结held FM.105737594，对原.106271931，11/24任务更低；无梯度/optimizer且sampler不变。严格配对、六worker exit0和全部原件见`k1_first_query_only/segment200_400/round_evidence.json`及[完整报告](horizon_k1_first_query_only_20260909.md)。
+400 train96=59、breadth22，对新20046为R/G/L35/24/11，对原40059为46/13/13；S/O/G/L12/21/19/7，对原17/18/17/7。训练侧获取仍在，validation未持续扩大。冻结held FM.105737594，对原.106271931，11/24任务更低；无梯度/optimizer且sampler不变。严格配对、六worker exit0和全部原件见`k1_first_query_only/segment200_400/round_evidence.json`及[完整报告](analyses/horizon_k1_first_query_only_20260909.md)。
 
 本轮保留内容移除的局部收益，未认定唯一根因或整体修复，不原样追加500/600。下一步机制分析与任何新实验由progress及后续登记解释；本历史段不恢复执行。
 
@@ -1178,7 +1220,7 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 
 自身FM200→400=.111621→.106557，source=.154875；其它23task−自身margin .009396→.015491，同suite .003599→.005578。400两teacher两半面板均优于其它23task均值为24/24，同suite为18/24，训练内任务特化继续增强。此结果支持把持续训练获取与验证退化分开，不证明充分语义理解、不用微小FM排名选择adapter、不替代视频因果或闭环。
 
-[完整报告](horizon_k1_functional_assignment_20260909.md)与`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/`保存注册、两执行版本、完整24行及汇总。后续学习干预尚须另登记，本段无新结构或训练启动。
+[完整报告](analyses/horizon_k1_functional_assignment_20260909.md)与`runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/`保存注册、两执行版本、完整24行及汇总。后续学习干预尚须另登记，本段无新结构或训练启动。
 
 ## 2026-09-09 逐帧上下文过程条件首段：52/103，尚无整体收益
 
@@ -1186,7 +1228,7 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 
 100/200 correct52/103，对前轮75/110；S/O/G/L0/26/22/4→1/54/37/11、breadth6→7，200两个弱task各仅1/50。相邻R/G/L38/65/14、churn79/J=.3248；前轮200→本轮76/27/34、churn61/J=.5547，其中Long仅2/9/8。200 train96=41，对前轮46为35/6/11，S/O/G/L11/11/13/6、breadth18。配对held FM200 .111031413，对前轮 .111183766，均值接近没有变成行为收益。
 
-本首段未证明语义访问有效、稳定breadth或模块根因。相对缺口23→7、自身52→103仍获取，被登记为补300/400区分较慢获取与保持的依据，而非正结果。进一步执行状态只看progress/active design，不由本历史段恢复。完整[报告](horizon_k1_frame_contextual_20260909.md)、`k1_frame_contextual/first_segment_evidence.json`、两个`step*/completed_summary.json`及`train96_step200/`保留逐task/suite、成功集合、配对与退出证据。
+本首段未证明语义访问有效、稳定breadth或模块根因。相对缺口23→7、自身52→103仍获取，被登记为补300/400区分较慢获取与保持的依据，而非正结果。进一步执行状态只看progress/active design，不由本历史段恢复。完整[报告](analyses/horizon_k1_frame_contextual_20260909.md)、`k1_frame_contextual/first_segment_evidence.json`、两个`step*/completed_summary.json`及`train96_step200/`保留逐task/suite、成功集合、配对与退出证据。
 
 ## 2026-09-09 上下文条件完整400：90/400，保持干预无整体收益
 
@@ -1194,7 +1236,7 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 
 400 train96=49、breadth20（前轮59），对本轮20041为30/19/11；held3072 FM .105074533（前轮.105737594）。训练、checkpoint、全部896新bank条件、闭环配对与worker退出均通过；续段wrapper3308.24秒，300/400 validation1981.63/2055.91秒，train96673.07秒。本轮不追加500/600，转Owner最新授权的诊断分析，禁止正式架构/训练改动和正式launch。
 
-完整[100–400报告](horizon_k1_frame_contextual_20260909.md)，原件`k1_frame_contextual/segment200_400/round_evidence.json`；诊断另见[报告](horizon_k1_causal_diagnostics_20260909.md)，不从本历史段恢复实验。
+完整[100–400报告](analyses/horizon_k1_frame_contextual_20260909.md)，原件`k1_frame_contextual/segment200_400/round_evidence.json`；诊断另见[报告](analyses/horizon_k1_causal_diagnostics_20260909.md)，不从本历史段恢复实验。
 
 
 ## 2026-09-09 完整原因诊断：676行闭环与固定接口反证
@@ -1203,7 +1245,7 @@ Owner随后停止条件组织分叉，并要求仅深入分析已有证据，正
 
 B3 normal/H-read零/Compiler零/visual零/all-language零为51/54/52/54/40（各96），单分支净效应小而得失混合。C source/normal/P4/C/A-B/expert为4/18/17/20/15/16（各32）；task7 free-C局部4/4对normal1/4不构成整体修复。A/B原fit改善在新噪声下仅保留6.8%，独立episode八task全部变差，局部fit不能当容量或有效学习的上界。两条Long正常回放已经选择第二对象后执行失败，旧专家同状态也未完成相同目标。
 
-[完整报告](horizon_k1_causal_diagnostics_20260909.md) §13给出原因排序与方案，原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_diagnostics_20260909/summary.json`。未使用最终视频controls/Test或held梯度，没有正式模型/配方修改或训练启动；本历史段不恢复实验。
+[完整报告](analyses/horizon_k1_causal_diagnostics_20260909.md) §13给出原因排序与方案，原件总索引`runs/analysis/horizon_relation_writer_20260908/causal_diagnostics_20260909/summary.json`。未使用最终视频controls/Test或held梯度，没有正式模型/配方修改或训练启动；本历史段不恢复实验。
 
 ## 2026-09-09 后端条件fresh学习：联合检索删除有收益，保持缺口仍在
 
@@ -1301,7 +1343,7 @@ R400终点与train96随后完整结束：correct85，四suite1/45/32/7、breadth
 
 ## 55. 2026-09-11：完整形成链复核后，C冻结机制面板完成
 
-Owner要求先还原科学动机、数学与专家形成链，再定位并持续修正正确视频失效，补充correct必须高于source。形成链及旧6000条rows复核记录见[机制复核](video_mechanism_reassessment.md)。随后C100/200六臂、匹配S及固定八task路径替换1472新闭环和14336配对动作预测完成，无训练或held梯度。C200 correct42/96、两错46/46、乱序45、静态49、S51、source15；固定正确S时correct/静态过程同为15/32。C在训练任务上获得source增量，却未使正确过程产生净收益；两个节点不证明收敛。
+Owner要求先还原科学动机、数学与专家形成链，再定位并持续修正正确视频失效，补充correct必须高于source。形成链及旧6000条rows复核记录见[机制复核](analyses/video_mechanism_reassessment.md)。随后C100/200六臂、匹配S及固定八task路径替换1472新闭环和14336配对动作预测完成，无训练或held梯度。C200 correct42/96、两错46/46、乱序45、静态49、S51、source15；固定正确S时correct/静态过程同为15/32。C在训练任务上获得source增量，却未使正确过程产生净收益；两个节点不证明收敛。
 
 具体表示缺陷为重复画面仍产生较强中心化P4。依据该性质与功能/闭环干预，准备局部真实历史GRU减同gap/窗口静态参照GRU，只改过程更新、保留正样本FM，尚无新学习结果。详细边界、原件和相邻集合见findings§54；候选设计与后续授权只能从当时progress确认。本历史段不恢复运行。
 
@@ -1316,7 +1358,7 @@ Owner要求先还原科学动机、数学与专家形成链，再定位并持续
 
 ## 2026-09-11：视频功能信用候选与旧运行路径退役
 
-Owner接受视频特异性优先的新候选；完整合同见`docs/video_functional_writer_design.md`及本日专家原文包。
+Owner接受视频特异性优先的新候选；完整合同见`docs/designs/video_functional_writer_design.md`及本日专家原文包。
 新video.py替代horizon/relation/semantic/frame_evidence；旧图专属测试随之退役，原生H、语言span、时序因果、完整LoRA、集合聚合与梯度合同由新行为测试覆盖。
 旧C/无变化参照实现保留于Git d1b62535及原formal冻结worktrees/configs/artifacts；其负结果不等于淘汰完整H或视频信息。新实现尚无科学结果。
 
@@ -1595,12 +1637,12 @@ ordered200 correct与frame_set成功重合25、gained/lost5/5；other重合23、
 `runs/analysis/local_action_grounded_20260912/bounded_200_decision.json`、`paired_summary.json`、
 `step100/learning_comparison.json`、`step200/learning_comparison.json`。逐task/suite、breadth、source、
 R/G/L、churn、相邻与换视频成功集合完整保留于paired_summary；精确命令及每项completion由同根launch records索引。
-设计及其停止条款为[Local Action Grounded Writer](local_action_grounded_writer_design.md)§7，本条目不恢复该run。
+设计及其停止条款为[Local Action Grounded Writer](designs/local_action_grounded_writer_design.md)§7，本条目不恢复该run。
 
 
 ## 2026-09-12：冻结视频先验有界比较关闭
 
-[Pretrained Video Grounded设计](pretrained_video_grounded_writer_design.md)以冻结V-JEPA2.1过去四帧dense特征，
+[Pretrained Video Grounded设计](designs/pretrained_video_grounded_writer_design.md)以冻结V-JEPA2.1过去四帧dense特征，
 经任务条件化Value读取进入完整native H和唯一LoRA，只有主FM；匹配参照为同encoder逐帧重复图与无序Writer。
 两臂fresh200各800条件／51,200queries，实际采样匹配，冻结实现`611770d1`；8个correct面板／1,984rows全部完成。
 train100/200有序41/52、静态41/40；200差额CI[.05208,.20833]为正，应保留为单节点训练行为正例。
@@ -1618,13 +1660,13 @@ validation100有序53／静态48，差额CI[0,.025]未达严格下界；200为33
 未将旧endpoint、expert、D共享或同task视频扩展重新当作未试机制。
 对train24 action16–41共624episode／107,825行只读量化相邻控制差异，原始7维MSE=.0094648085，
 夹爪切换率=.0141226233；没有forward、梯度、新rollout或held动作访问。
-结合已核实post-action生产时序，登记[Execution-Aligned设计](execution_aligned_writer_design.md)，
+结合已核实post-action生产时序，登记[Execution-Aligned设计](designs/execution_aligned_writer_design.md)，
 修正主FM与留出动作的未来标签对应，实际实施和新训练状态只看progress，不由登记推断已有性能结果。
 
 
 ## 2026-09-13：执行时间对齐有界比较关闭，激活冻结正例交叉复核
 
-[Execution-Aligned设计](execution_aligned_writer_design.md)保留正确post-action未来标签对应，
+[Execution-Aligned设计](designs/execution_aligned_writer_design.md)保留正确post-action未来标签对应，
 两臂fresh200及8个correct面板／1,984rows全部完成，冻结运行面2ecf1770，所有worker exit0。
 train100/200有序44/51、静态36/53；早期净增8未保持。validation有序61/72、静态65/81，
 两节点差额CI[−.0325,.01]/[−.0425,0]；有序200的S/O/G/L=0/62/8/2、breadth4，未获资格。
@@ -1635,7 +1677,7 @@ train100/200有序44/51、静态36/53；早期净增8未保持。validation有�
 全部checkpoint、bank、学习诊断、raw rows及completion保留。夜间controller正常结束；早期共享文件可见性
 时差及有界恢复记录亦保留，无重复评测。新旧query支持不同，不把历史差异单因归给offset。
 
-新outcome前由3c2534db登记的[冻结正例复核§6](frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)
+新outcome前由3c2534db登记的[冻结正例复核§6](analyses/frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)
 由完整non-pass触发：旧611770d1固定200双模型，24task×4video×8state加独立source192，共1,728rollout上限，
 零新训练／编译。它用于检验能力差额的跨条件支持，不能据此选checkpoint或宣称顺序因果与迁移。
 具体启动及结果仍以progress和新formal artifacts为准；本条登记不预写尚未发生的结果。
@@ -1643,7 +1685,7 @@ train100/200有序44/51、静态36/53；早期净增8未保持。validation有�
 
 ## 2026-09-13：旧冻结正例的1,728次交叉复核关闭
 
-[预注册复核§6](frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)已完整执行：
+[预注册复核§6](analyses/frozen_positive_replication_audit.md#6-条件性正确收益复核合同新outcome产生前登记)已完整执行：
 旧611770d1双模型固定200，train24×teacher46–49×states0–7交叉，两模型各768加source192，
 零新训练／Writer调用，原192个LoRA复用，所有1,728行与配对身份／RNG检查通过、9面板全部worker exit0。
 有序359/768、静态361/768（−.26042pp），四video有序净额0/+4/+2/−8；source32/192。
@@ -1681,7 +1723,7 @@ controller正常exit0；无selected checkpoint、最终controls、Test或RL。�
 
 ## 2026-09-13：跨初态相对几何检索前提关闭
 
-[预登记诊断](cross_init_relation_retrieval_audit.md)比较同一条演示的privileged绝对／相对几何1-NN动作Value，
+[预登记诊断](analyses/cross_init_relation_retrieval_audit.md)比较同一条演示的privileged绝对／相对几何1-NN动作Value，
 不用可训练task→参数映射。固定train24、action16–19与诊断42–45、stride5及后续5×7动作，
 384个episode对、13,064位置完整；9f90a14d冻结执行99.37秒、exit0，6,513个存储几何状态恢复。
 绝对／相对／video_mean MSE=.12443553/.12634790/.25459689，绝对−相对CI[−.00421347,+.00027549]跨零，
@@ -1697,7 +1739,7 @@ registration、raw_rows、geometry_schema、episode_scores、summary、evidence_
 
 ## 2026-09-13：操作语义标签实现及语义rank反例
 
-Owner要求继续推导、实施并按结果调整后，完成[操作语义可行性](operation_semantics_feasibility.md)的有界CPU实现：
+Owner要求继续推导、实施并按结果调整后，完成[操作语义可行性](analyses/operation_semantics_feasibility.md)的有界CPU实现：
 train24×8episode、6,668状态，7bd8a6f5冻结84.34秒exit0。186/192episode有双指接触转换，但抽屉6/8条在采样位置
 没有双指同时接触，区域owning body也不构成区域谓词。停止将二者直接当通用操作阶段，不调整阈值／挑task。
 同时给出直接A监督的零B和共享A反例，防止把语义loss准确当作视频有益传递。
@@ -1707,7 +1749,7 @@ train24×8episode、6,668状态，7bd8a6f5冻结84.34秒exit0。186/192episode�
 
 ## 2026-09-13：局部物理效果的真实动作干预
 
-[操作语义§6–7](operation_semantics_feasibility.md)完成288条件×17分支、24,480高层动作步；
+[操作语义§6–7](analyses/operation_semantics_feasibility.md)完成288条件×17分支、24,480高层动作步；
 fcd9a613冻结434.79秒exit0，CPU无模型／LoRA／梯度。局部J预测未拟合组合方向的MSE相对零变化降低70.26%，
 差额CI严格为正、23/24task及四suite正，但误差比例.29736未达登记<.25，关闭其加权FM提案，不扫扰动／task／时长。
 Object较准、Goal／Long残余较大，正负边界共同保留；夹爪离散干预不能与不同幅度的连续扰动直接比大小归因。
@@ -1717,7 +1759,7 @@ Object较准、Goal／Long残余较大，正负边界共同保留；夹爪离散
 ## 物体与运动落点监督的数据实施（2026-09-13）
 
 Owner要求继续仔细推导、实施并按结果调整。v4/v5/Horizon近邻审计区分实际物体mask监督、task/padding mask和冻结回放，
-据错误对象绑定证据登记[Visible-Object Grounded Writer](visible_object_grounded_writer_design.md)。新增信用落到实际
+据错误对象绑定证据登记[Visible-Object Grounded Writer](designs/visible_object_grounded_writer_design.md)。新增信用落到实际
 native/prior视觉cross-attention Q/K；标签仅训练侧，部署接口、全部共同学习模块与完整LoRA出口保持。
 
 05fe7ebe冻结完成train24×teacher0–15共384条CPU标签，257.81秒、13,626采样帧／13,242支持帧／10,819运动帧，
@@ -1727,7 +1769,7 @@ runs/analysis/visible_object_grounding_20260913。初次命令早于worktree复�
 
 ## 2026-09-13：真纠正到原生参数的跨episode功能前提通过
 
-[原生纠正传递诊断](native_corrective_transfer_audit.md)从train24/demo16–19真实动作误差构造裸source的
+[原生纠正传递诊断](analyses/native_corrective_transfer_audit.md)从train24/demo16–19真实动作误差构造裸source的
 38-target weight方向，一次rank16投影与teacher定幅；不是action-hidden部署或新Writer。
 f39d594f clean pushed detached完成两oracle共192套／3,072组合，独立42–45 query无梯度、无环境步。
 三个worker与formal均exit0，墙钟110.63／113.15／113.28秒，显存峰值11.014GiB。
@@ -1745,7 +1787,7 @@ state-free full10 83/96条件改善，task2/34/37平均非正全部保留。按�
 
 ## 2026-09-13：原生纠正Writer完整闭环未获有益有序资格
 
-[Native Correction Writer](native_correction_writer_design.md)以固定裸source输入构成A、自由B表达纠正，
+[Native Correction Writer](designs/native_correction_writer_design.md)以固定裸source输入构成A、自由B表达纠正，
 由真实oracle完整ΔW提供共享训练目标，保留原空间信用与跨episode主FM。教学池登记为16–41，
 主query逐条件排除teacher；该条件不同于上一空间监督的0–15，不声称曝光匹配的单变量消融。
 
@@ -1783,7 +1825,7 @@ evidence_audit、training_pairing/readout、launch contract及training下的全�
 100/200的已见条件49/67条，200已见D仍.628765/.636050；不能仅归未见教学video。
 本96标签action-out能量87.6726%，弱奇异方向仍保留；乐观下界不证明有限共享B可达、RGB充分或参数误差等同闭环价值。
 
-按[诊断§4](native_correction_acquisition_audit.md#4-预登记读出与停止条件)第二分支关闭，停止把扩A空间当必要首项修正。
+按[诊断§4](analyses/native_correction_acquisition_audit.md#4-预登记读出与停止条件)第二分支关闭，停止把扩A空间当必要首项修正。
 旧fixed-A投影丢失行为、G1容量及G3共享获取负例继续约束解释；不唯一定位B／读取端，不追加模型、阈值、训练或controls。
 原件`runs/analysis/native_correction_writer_20260913/acquisition_audit/`保留384套生成结果、四完整decomposition、
 summary／decision／readout、registration／launch及全部log／exit。原checkpoint和label仅引用、未复制或修改。
@@ -1791,7 +1833,7 @@ summary／decision／readout、registration／launch及全部log／exit。原che
 
 ## 2026-09-13：全局幅度无法解释主要纠正误差，弱坐标代价明确
 
-[获取诊断§7–8](native_correction_acquisition_audit.md#8-幅度方向分析完整结果与关闭裁决)以3c3c4897预登记，
+[获取诊断§7–8](analyses/native_correction_acquisition_audit.md#8-幅度方向分析完整结果与关闭裁决)以3c3c4897预登记，
 只读前项四模型384套因子与同视频label，CPU14.183秒exit0。六组小矩阵、真实投影重算、三项恒等式与等权汇总通过。
 100有序／无序的方向J与幅度H为.599946/.037671、.598835/.036758；200为.582501/.047122、.578330/.056906。
 四个task-cluster H−J区间均严格负、每模型24/24task均值J>H，整体倍率只消除实际误差3.87%–6.32%，按登记关闭。
@@ -1810,7 +1852,7 @@ summary、task等权曝光分组、decision、readout、分析／报告源码及
 
 ## 2026-09-14：固定真实纠正完成跨初始化闭环前提
 
-[固定G闭环§7](native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)的原480episodes完整结束。
+[固定G闭环§7](analyses/native_corrective_closed_loop_audit.md#7-完整结果与关闭裁决2026-09-14)的原480episodes完整结束。
 source17/96、四teacher21/25/20/24，task等权净+5.73pp、CI[+1.04,+12.5]pp；四teacher、四init均净正，
 S/G/L三suite净正，四项预注册前提全部通过。Object仍零，task35贡献11/22净增，不能称广泛任务能力。
 这把§88的独立动作正证据推进到具体privileged更新的有限闭环作用；仍不是合法RGB生成、时序必要性或held迁移证据。
@@ -1819,7 +1861,7 @@ S/G/L三suite净正，四项预注册前提全部通过。Object仍零，task35�
 
 ## 2026-09-14：语义状态路径的完整有序／无序比较未获资格
 
-[完整联合设计与裁决](semantic_path_writer_design.md#8-完整50100结果与关闭裁决2026-09-14)在5116deb0 clean pushed frozen
+[完整联合设计与裁决](designs/semantic_path_writer_design.md#8-完整50100结果与关闭裁决2026-09-14)在5116deb0 clean pushed frozen
 完成两臂fresh100；每臂400条件／25,600主FM queries，四checkpoint、八bank和1,984闭环rows全部完整。
 原生R/Z双向状态理解、二阶有向路径、条件调制及自由完整A/B只以跨episode主FM共同学习；
 独立fresh全帧frame_set保留相同学习模块、输入、优化与实际曝光，只替换无参数路径／集合统计。
@@ -1842,7 +1884,7 @@ validation有序净率95%区间[−1.25,+2.50]、[−1.75,+5.00]pp，两个节�
 
 ## 2026-09-14：语义路径四模型固定行为回放完成
 
-[冻结回放](semantic_path_behavior_replay.md#5-完整结果与关闭)固定原ordered/frame_set的50/100节点，
+[冻结回放](analyses/semantic_path_behavior_replay.md#5-完整结果与关闭)固定原ordered/frame_set的50/100节点，
 全部validation8、各init0/12/25/37，共128次，原bank和视频／RNG映射不变。原子集→重放成功为7→5、5→9、3→5、1→1，
 120/128结果相同，身份与RNG前缀配对通过；原400成绩不变，回放不选模型。24worker exit0，累计812.30秒。
 
@@ -1856,7 +1898,7 @@ validation有序净率95%区间[−1.25,+2.50]、[−1.75,+5.00]pp，两个节�
 
 ## 2026-09-14：局部纠正场rank16的固定函数前提通过
 
-[设计与完整裁决](local_correction_field_design.md#7-固定算子完整结果与下一阶段)使用原G的96个train条件、原source／eta／query映射，
+[设计与完整裁决](designs/local_correction_field_design.md#7-固定算子完整结果与下一阶段)使用原G的96个train条件、原source／eta／query映射，
 从真实cotangent C先作rank16，再与同帧X收缩为完整LoRA。4f55968d clean pushed detached的三个worker全部exit0。
 两读出source MSE .11977705/.16493043降至.11351439/.15574597，两个task-cluster改善区间严格正，均四suite净正。
 与原G实测误差接近、配对区间跨零；局部场几何与真实输出分开记录，未声称等价、无损或闭环成功。
@@ -1865,7 +1907,7 @@ validation有序净率95%区间[−1.25,+2.50]、[−1.75,+5.00]pp，两个节�
 
 ## 2026-09-14：合法局部纠正场的完整共享学习比较关闭
 
-[设计§8–10](local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)从同位置过程和裸source X预测局部场，
+[设计§8–10](designs/local_correction_field_design.md#10-完整50100结果与关闭裁决2026-09-14)从同位置过程和裸source X预测局部场，
 预测场本身接受真实cotangent监督并形成唯一完整LoRA；不是旧独立辅助动作出口，也没有部署VJP或真实动作输入。
 50dafb05两臂独立fresh100、各400条件／25,600queries，46aaf22d完成四checkpoint的八bank和八闭环面板。
 完整曝光、source／视频／初态／RNG、真实stride5末帧与38-target身份通过；1,984rows、24个worker全exit0，无失败重试。
@@ -1880,7 +1922,7 @@ validation有序净率95%区间[−1.25,+2.50]、[−1.75,+5.00]pp，两个节�
 原有privileged G与局部场函数前提仍是限定正事实，不能合并为已实现的合法Writer。没有Test、RL或checkpoint融合。
 八面板累计评测17,987.69秒。原件在`runs/analysis/local_correction_field_writer_20260914/`，
 保留READOUT、paired_readout、bounded100_decision、全部checkpoint／bank／raw rows及训练／物化／评测合同与completion。
-整体goal未完成；理论中对应的获取预测按[工作理论§11](temporal_control_compilation_theory.md#11-局部纠正场比较后的学习假设修正2026-09-14)降级。
+整体goal未完成；理论中对应的获取预测按[工作理论§11](analyses/temporal_control_compilation_theory.md#11-局部纠正场比较后的学习假设修正2026-09-14)降级。
 
 ## 2026-09-14：按Owner要求清理磁盘及活动仓库内容
 
@@ -2012,7 +2054,7 @@ aggregation_topology、reference_correct400和reference_readout；原evaluate.ex
 ## 2026-09-18：A匹配learned frame-set诊断完成
 
 Owner按新专家意见授权fresh集合参照，复用A原300/600/900/1200节点，不重训A。
-专家原文和预注册合同见[评审](review_materials/20260918/expert_review.md)与[设计](learned_frameset_reference_design.md)。
+专家原文和预注册合同见[评审](review_materials/20260918/expert_review.md)与[设计](designs/learned_frameset_reference_design.md)。
 仅移除视频帧RoPE、Procedure因果mask及读取时间寻址；agentview/fixed-mean H为本轮历史匹配例外。
 以上合同先于实验登记。正式版本`a9d86149`完成1200更新、4800条件与100800queries，按Owner要求1200停止。
 validation四节点set79/109/142/118，对A99/88/140/135；train33/40/49/57，对A36/47/54/62。
@@ -2066,7 +2108,7 @@ Writer/source checkpoint、生成commit、teacher/frame/state映射及原始评�
 固定Source1000、MT-BC425、EMBER1500的旧Test各400为78/74/82；+8低于Owner要求的+40，后继实验停止。
 Owner先审阅[结果报告](review_materials/20260920/test_capacity/report.md)，与专家讨论后明确授权新单划分24/8/8＋12辅助任务，
 仅fresh训练一次EMBER与MT-BC，复用Source71，不追加seed/k折/新架构；旧协议与失败结果保留。
-新[覆盖合同](coverage_retraining_design.md)登记36任务等权、固定完整Validation间隔和独立动态早停；
+新[覆盖合同](designs/coverage_retraining_design.md)登记36任务等权、固定完整Validation间隔和独立动态早停；
 新性能与特异性通过后才恢复原FT/RL/外部比较。新协议受旧结果启发，不声称全项目盲测。
 初始CPU接口检查、Writer36task profile及真实9→10完整恢复、MT-BC3步36task等权profile通过；只作为执行资格。
 正式Writer冻结1a32a0cf、MT-BC冻结3ebb979b，各fresh训练；具体当前状态由progress维护，不在此预报科学结论。

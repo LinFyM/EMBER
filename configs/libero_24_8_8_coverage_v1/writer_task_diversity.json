@@ -471,7 +471,7 @@
       },
       "held_validation_test_used": false,
       "scope": "preliminary causal intervention evidence on training tasks, not proof of a unique root cause or held generalization",
-      "reference": "docs/overnight_root_cause_analysis_20260922.md"
+      "reference": "docs/analyses/overnight_root_cause_analysis_20260922.md"
     }
   },
   "execution_precision": "native_bf16_writer_fm_fp32_lora",

@@ -24,16 +24,16 @@
 
 | 分组 | 内容 |
 | --- | --- |
-| [current_train24](records/current_train24/) | 当前384步run合同、metrics、exposures、192/384资格评测、熟悉/held视频诊断、登记与裁决 |
-| [current_source_reference](records/current_source_reference/) | 当前严格400行比较使用的47/400 source原始参照 |
-| [current_mechanism](records/current_mechanism/) | 已有真实GPU机制/profile记录；只作工程与成本证据 |
-| [current_short4_original](records/current_short4_original/)、[current_coordinate_control](records/current_coordinate_control/)、[current_readout_control](records/current_readout_control/) | 原始short4及两次受控修正的合同、完整已选运行指标、配对行为与诊断 |
-| [historical_v52](records/historical_v52/)、[historical_v52_taskcomplete](records/historical_v52_taskcomplete/)、[historical_v6_fast](records/historical_v6_fast/) | 早期强Writer的训练合同、学习曲线、correct及同checkpoint视频controls |
-| [historical_source_sft](records/historical_source_sft/) | rank128 train24 SFT合同、metrics、400/425结果及已有口径兼容性核查 |
-| [historical_dynamic_slot](records/historical_dynamic_slot/)、[historical_shared_core](records/historical_shared_core/)、[historical_as139](records/historical_as139/)、[historical_lpcp](records/historical_lpcp/) | 后续多视频方法的初始化继承、冻结范围、训练与结果；两个AS139相关方法不能混同 |
-| [historical_gomq](records/historical_gomq/)、[historical_gomq_rank16](records/historical_gomq_rank16/) | GOMQ已有周期与视频controls、训练credit记录、等效rank16重物化；不把151解释成稳定selected模型 |
-| [pq_shared](records/pq_shared/)、[pq_single_task](records/pq_single_task/) | 完整P/Q共享与同图clone的已有功能/行为比较 |
-| [pq_random128](records/pq_random128/)、[pq_random256](records/pq_random256/) | 匹配曝光的fully-random宽度对照合同、指标和checkpoint元数据；width256没有闭环结果 |
+| [current_train24](records/current_train24) | 当前384步run合同、metrics、exposures、192/384资格评测、熟悉/held视频诊断、登记与裁决 |
+| [current_source_reference](records/current_source_reference) | 当前严格400行比较使用的47/400 source原始参照 |
+| [current_mechanism](records/current_mechanism) | 已有真实GPU机制/profile记录；只作工程与成本证据 |
+| [current_short4_original](records/current_short4_original)、[current_coordinate_control](records/current_coordinate_control)、[current_readout_control](records/current_readout_control) | 原始short4及两次受控修正的合同、完整已选运行指标、配对行为与诊断 |
+| [historical_v52](records/historical_v52)、[historical_v52_taskcomplete](records/historical_v52_taskcomplete)、[historical_v6_fast](records/historical_v6_fast) | 早期强Writer的训练合同、学习曲线、correct及同checkpoint视频controls |
+| [historical_source_sft](records/historical_source_sft) | rank128 train24 SFT合同、metrics、400/425结果及已有口径兼容性核查 |
+| [historical_dynamic_slot](records/historical_dynamic_slot)、[historical_shared_core](records/historical_shared_core)、[historical_as139](records/historical_as139)、[historical_lpcp](records/historical_lpcp) | 后续多视频方法的初始化继承、冻结范围、训练与结果；两个AS139相关方法不能混同 |
+| [historical_gomq](records/historical_gomq)、[historical_gomq_rank16](records/historical_gomq_rank16) | GOMQ已有周期与视频controls、训练credit记录、等效rank16重物化；不把151解释成稳定selected模型 |
+| [pq_shared](records/pq_shared)、[pq_single_task](records/pq_single_task) | 完整P/Q共享与同图clone的已有功能/行为比较 |
+| [pq_random128](records/pq_random128)、[pq_random256](records/pq_random256) | 匹配曝光的fully-random宽度对照合同、指标和checkpoint元数据；width256没有闭环结果 |
 
 精确覆盖以index.json为准。这是针对第一轮审查缺口的补充包，不是整个runs目录，也不代表所有历史分支的原始记录都已公开。
 

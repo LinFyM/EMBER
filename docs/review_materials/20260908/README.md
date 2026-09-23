@@ -1,7 +1,7 @@
 # 专家讨论原文与 Owner 最终裁决
 
 本目录保留 Owner 提供的后续四份完整专家回复。原文逐字保存，不把后来的裁决改写进专家原文；
-当前唯一方法定义见 [horizon_relation_video_writer_design.md](../../horizon_relation_video_writer_design.md)，
+当前唯一方法定义见 [horizon_relation_video_writer_design.md](../../designs/horizon_relation_video_writer_design.md)，
 当前授权与实施状态见 [progress.md](../../../progress.md)。这些材料没有产生新训练或闭环证据。
 
 ## 原文顺序与适用范围

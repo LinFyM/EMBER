@@ -14,10 +14,10 @@ Pi05 state、success/steps 和 stage-predicate transitions 对照；若任一对
 
 | suite | task/state | O1200 | C600 | teacher | paired execution | replay fidelity |
 | --- | --- | ---: | ---: | ---: | --- | --- |
-| libero_spatial | 5/1 | success, 143 | failure, 220 | 48 | [`libero_spatial_task_05_state_001.mp4`](libero_spatial_task_05_state_001.mp4) | O=verified_saved_action_replay; C=verified_saved_action_replay |
-| libero_object | 2/0 | success, 202 | failure, 280 | 46 | [`libero_object_task_02_state_000.mp4`](libero_object_task_02_state_000.mp4) | O=verified_saved_action_replay; C=verified_saved_action_replay |
-| libero_goal | 0/1 | success, 116 | failure, 300 | 48 | [`libero_goal_task_00_state_001.mp4`](libero_goal_task_00_state_001.mp4) | O=verified_saved_action_replay; C=verified_saved_action_replay |
-| libero_10 | 4/1 | success, 254 | failure, 520 | 48 | [`libero_10_task_04_state_001.mp4`](libero_10_task_04_state_001.mp4) | O=verified_saved_action_replay; C=verified_saved_action_replay |
+| libero_spatial | 5/1 | success, 143 | failure, 220 | 48 | [`libero_spatial_task_05_state_001.mp4`](paired_execution/libero_spatial_task_05_state_001.mp4) | O=verified_saved_action_replay; C=verified_saved_action_replay |
+| libero_object | 2/0 | success, 202 | failure, 280 | 46 | [`libero_object_task_02_state_000.mp4`](paired_execution/libero_object_task_02_state_000.mp4) | O=verified_saved_action_replay; C=verified_saved_action_replay |
+| libero_goal | 0/1 | success, 116 | failure, 300 | 48 | [`libero_goal_task_00_state_001.mp4`](paired_execution/libero_goal_task_00_state_001.mp4) | O=verified_saved_action_replay; C=verified_saved_action_replay |
+| libero_10 | 4/1 | success, 254 | failure, 520 | 48 | [`libero_10_task_04_state_001.mp4`](paired_execution/libero_10_task_04_state_001.mp4) | O=verified_saved_action_replay; C=verified_saved_action_replay |
 
 ## 文件与阅读顺序
 

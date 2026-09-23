@@ -20,8 +20,14 @@ from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_fro
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_contract import append_jsonl, reconcile_metrics
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
+from ember.writer.conditional_contract import (
+    CONFIG_SCHEMA as CONDITIONAL_CONFIG_SCHEMA,
+    EXPERIMENT as CONDITIONAL_EXPERIMENT,
+    UPDATE_VERSION as CONDITIONAL_UPDATE_VERSION,
+    validate_config as _conditional_config,
+)
 from ember.writer.learning_data import (
-    EVENT_SCHEMA, MAIN_EVENT_QUERIES, TEACHING_EVENT_QUERIES,
+    CONDITIONAL_EVENT_SCHEMA, EVENT_SCHEMA, MAIN_EVENT_QUERIES, TEACHING_EVENT_QUERIES,
     TASKS_PER_UPDATE, WriterTrainingData, query_allocation,
 )
 from ember.writer.continuation import (
@@ -78,6 +84,12 @@ def _validate_dynamic_schedule(config):
 
 
 def _query_contract(config):
+    if config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT:
+        if config["experiment"].get("arm_id") not in {"A_direct16", "B_language", "C_video_fm", "D_video_aux"}:
+            raise ValueError("conditional compilation requires one of its four registered arms")
+        if config["data"].get("event_schema_version") != CONDITIONAL_EVENT_SCHEMA:
+            raise ValueError("conditional compilation event schema changed")
+        return query_allocation(config["data"], 0)
     if config.get("experiment") != TASK_MIXING_DECLARATION:
         raise ValueError("canonical task-mixing scientific contract requires its explicit declaration")
     return query_allocation(config["data"], 0)
@@ -85,6 +97,8 @@ def _query_contract(config):
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
+    if config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT:
+        return _conditional_config(config)
     require_continuation_config(config)
     expected_data = {
         "extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
@@ -153,8 +167,13 @@ def _learning_rate_multiplier(step, opt):
 
 def _optimization(state, config):
     opt = config["optimization"]
+    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    parameters = (tuple(parameter for parameter in state.parameters() if parameter.requires_grad)
+                  if conditional else tuple(state.parameters()))
+    if not parameters:
+        raise ValueError("Writer parameterization has no trainable parameters")
     optimizer = torch.optim.AdamW(
-        state.parameters(), lr=float(opt["lr"]), betas=tuple(opt["betas"]),
+        parameters, lr=float(opt["lr"]), betas=tuple(opt["betas"]),
         eps=float(opt["eps"]), weight_decay=float(opt["weight_decay"]),
     )
     scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -166,10 +185,16 @@ def _optimization(state, config):
 def _execution_config(args, config, context):
     """Physical query chunks do not change the complete logical FM batch."""
     supplied = getattr(args, "policy_microbatches", None)
-    batches = ([int(config["runtime"]["policy_microbatch"])] * context.world_size
+    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    profile = config.get("evidence", {}).get("profile_registration", {})
+    registered = profile.get("policy_microbatches") if conditional and profile.get("status") == "complete" else None
+    batches = (list(map(int, registered)) if supplied is None and registered is not None else
+               [int(config["runtime"]["policy_microbatch"])] * context.world_size
                if supplied is None else list(map(int, supplied.split(","))))
     if len(batches) != context.world_size or any(value <= 0 for value in batches):
         raise ValueError("physical microbatches need one positive value per rank")
+    if registered is not None and batches != list(map(int, registered)):
+        raise ValueError("formal physical policy microbatches must match the registered full-video profile")
     local = {**config, "runtime": {**config["runtime"], "policy_microbatch": batches[context.rank]}}
     return local, batches
 
@@ -208,6 +233,17 @@ def _run_contract(args, context, config, runtime, state):
     properties = torch.cuda.get_device_properties(context.local_rank)
     local = {"rank": context.rank, "local_rank": context.local_rank, "gpu_uuid": str(properties.uuid),
              "numa_node": context.numa_node, "cpu_affinity": list(context.cpu_affinity or ())}
+    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    tasks_per_update = int(config["data"].get("tasks_per_update", TASKS_PER_UPDATE))
+    parameterization = getattr(runtime, "parameterization", "video_writer")
+    uses_video = getattr(runtime, "uses_video", True)
+    deployment_inputs = {
+        "direct_lora": [],
+        "language_writer": ["exact task language"],
+        "video_writer": ["exact task language", "complete internally ordered RGB video"],
+    }[parameterization]
+    trainable = ([(name, parameter) for name, parameter in runtime.state.named_parameters()
+                  if parameter.requires_grad] if conditional else [])
     return {
         "schema_version": RUN_SCHEMA, "stage": STAGE, "mode": args.mode, "command": sys.argv,
         "git": state, "source": runtime.source, "config": config,
@@ -218,7 +254,9 @@ def _run_contract(args, context, config, runtime, state):
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"), "ranks": _gather(local, context),
             "condition_rank_groups": [list(group) for group in condition_rank_groups(context.world_size)],
-            "within_condition": "whole_video_and_query_prefixes_on_one_rank_no_frame_subgroup",
+            "within_condition": ("whole_video_and_query_prefixes_on_one_rank_no_frame_subgroup"
+                                 if parameterization == "video_writer" else
+                                 "one_task_parameterization_and_query_prefixes_on_one_rank"),
         },
         "training": {
             "writer_parameters": sum(p.numel() for p in runtime.state.writer.parameters()),
@@ -226,9 +264,12 @@ def _run_contract(args, context, config, runtime, state):
             "vl_meta_parameters": sum(p.numel() for p in runtime.state.vl_meta.parameters()),
             "text_meta_parameters": sum(p.numel() for p in runtime.state.text_meta.parameters()),
             "source_trainable_parameters": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
+            **({"trainable_parameter_names": [name for name, _ in trainable],
+                "trainable_parameter_count": sum(parameter.numel() for _, parameter in trainable)}
+               if conditional else {}),
             "optimizer": ("parent AdamW state preserved" if
                           config.get("continuation") else "fresh AdamW")
-                         + "; one grouped functional update per twelve equally weighted tasks", "scaler": None,
+                         + f"; one grouped functional update per {tasks_per_update} equally weighted tasks", "scaler": None,
             "resume_contract": {
                 "default": "same config, physical topology, sampler streams, optimizer updates and complete state",
                 "topology_transition": "ordinary dynamic --resume with explicit --allow-topology-change only",
@@ -241,16 +282,25 @@ def _run_contract(args, context, config, runtime, state):
             "checkpoint_updates": list(_checkpoint_nodes(args, config)),
         },
         "information_wall": {
-            "deployment_inputs": ["exact language", "complete internally ordered RGB video"],
-            "frame_indices": "real sampled positions for ordered Procedure",
+            "deployment_inputs": deployment_inputs,
+            "parameterization": parameterization,
+            "frame_indices": ("real sampled positions for ordered Procedure" if uses_video else None),
             "execution_adapters": 1, "reading_meta_in_execution": False,
             "validation_test_gradients": False, "shuffled_reversed": False,
             "video_action_episodes": {"main": "cross_episode", "teaching": config["data"]["teaching_episode"]},
             "gradient_normalizer": 1.0,
             "objective": config["optimization"]["loss"],
-            "training_only_actions": "execution-query inputs and targets, loaded after RGB-language-only compilation",
-            "native_read": "repeated full50 H and ordered adjacent E content; joint three-Meta replay",
-            "complete_lora": "shared eight-family full A/B heads from Core-conditioned centered Procedure AdaLN",
+            "training_only_actions": ("execution-query inputs and targets, loaded after task compilation"
+                                      if conditional else
+                                      "execution-query inputs and targets, loaded after RGB-language-only compilation"),
+            "native_read": ("repeated full50 H and ordered adjacent E content; joint three-Meta replay"
+                            if uses_video else
+                            "exact native text-only language path" if parameterization == "language_writer" else
+                            "none; shared direct identity-initialized full A/B parameters"),
+            "complete_lora": ("shared eight-family full A/B heads from Core-conditioned centered Procedure AdaLN"
+                              if uses_video else
+                              "shared eight-family full A/B heads from language-only Core slots" if parameterization == "language_writer" else
+                              "shared trainable full A/B parameters across all tasks"),
             "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
             "rl_rollouts": False, "rl_loss": False, "trust_rollback": False,
         },
@@ -283,13 +333,14 @@ def _grad_norm(parameters) -> float:
 
 def _logical_batch(config):
     main, teaching = _query_contract(config)
-    return {"tasks": TASKS_PER_UPDATE, "conditions_per_task": 1, "conditions": TASKS_PER_UPDATE, "K": 1,
-            "queries_per_task": main, "queries_per_condition": main, "queries_per_update": TASKS_PER_UPDATE * main,
+    tasks_per_update = int(config["data"].get("tasks_per_update", TASKS_PER_UPDATE))
+    return {"tasks": tasks_per_update, "conditions_per_task": 1, "conditions": tasks_per_update, "K": 1,
+            "queries_per_task": main, "queries_per_condition": main, "queries_per_update": tasks_per_update * main,
             "teaching_query_counts": list(teaching), "teaching_queries_per_update": sum(teaching),
-            "total_queries_per_update": TASKS_PER_UPDATE * main + sum(teaching),
+            "total_queries_per_update": tasks_per_update * main + sum(teaching),
             "policy_random_batch_sizes": {"main": MAIN_EVENT_QUERIES, "teaching": TEACHING_EVENT_QUERIES},
             "teaching_weight": config["optimization"]["teaching_weight"],
-            "task_weight": 1 / TASKS_PER_UPDATE, "condition_weight": 1 / TASKS_PER_UPDATE,
+            "task_weight": 1 / tasks_per_update, "condition_weight": 1 / tasks_per_update,
             "gradient_reduction": "SUM"}
 
 
@@ -297,13 +348,15 @@ def _condition_jobs(data, config, draws, step):
     by_job = {draw["job_id"]: draw for draw in draws}
     tasks = {draw["task"] for draw in draws}
     main, teaching = query_allocation(config["data"], step - 1)
-    if (len(draws) != TASKS_PER_UPDATE or set(by_job) != set(range(TASKS_PER_UPDATE))
-            or len(tasks) != TASKS_PER_UPDATE or not tasks <= set(data.tasks)
+    tasks_per_update = int(config["data"].get("tasks_per_update", TASKS_PER_UPDATE))
+    if (len(draws) != tasks_per_update or set(by_job) != set(range(tasks_per_update))
+            or len(tasks) != tasks_per_update or not tasks <= set(data.tasks)
             or any(draw["condition_index"] != 0 or len(draw["video_demos"]) != 1
                    or draw["query_count"] != main or draw["query_offset"] != 0
                    or draw["teaching_count"] != teaching[draw["job_id"]]
                    or draw["teaching_offset"] != 0 for draw in draws)):
-        raise ValueError("each update requires twelve distinct K1 conditions with the registered query allocation")
+        count = "four" if tasks_per_update == 4 else "twelve"
+        raise ValueError(f"each update requires {count} distinct K1 conditions with the registered query allocation")
     return by_job
 
 
@@ -313,7 +366,9 @@ def _execute_step(engine, data, context, config, draws, step):
     by_job = _condition_jobs(data, config, draws, step)
     engine.step = step
     jobs = tuple(by_job)
-    costs = {job: int(draw["frames"]) for job, draw in by_job.items()}
+    uses_video = getattr(getattr(engine, "runtime", None), "uses_video", True)
+    costs = {job: int(draw["frames"]) if uses_video else 1
+             for job, draw in by_job.items()}
     assignment = condition_assignment(jobs, costs, world_size=context.world_size)
     rows = []
     for job in assignment[context.rank]:
@@ -350,7 +405,9 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
     failures = [value for value in _gather(error, context) if value]
     if failures:
         raise RuntimeError(f"supervised backward failed on a rank: {failures}")
-    parameters = tuple(runtime.state.parameters())
+    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    parameters = (tuple(parameter for parameter in runtime.state.parameters() if parameter.requires_grad)
+                  if conditional else tuple(runtime.state.parameters()))
     if context.device.type == "cuda":
         torch.cuda.synchronize(context.device)
     tick = time.perf_counter()
@@ -415,7 +472,7 @@ def _restore(args, context, runtime, data, optimizer, scheduler, config):
                     "logical_batch": _logical_batch(config),
                     "event_plan": "registered immutable dynamic events",
                     "optimizer_scheduler": "restored checkpoint trainer state",
-                    "task_weighting": "one grouped update over twelve equally weighted tasks",
+                    "task_weighting": f"one grouped update over {config['data'].get('tasks_per_update', TASKS_PER_UPDATE)} equally weighted tasks",
                 },
             })
         if parent:
@@ -449,7 +506,8 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
     packets = _gather(packet, context)
     main, teaching = query_allocation(config["data"], updates - 1)
     gathered = merge_condition_rows([row for packet in packets for row in packet["rows"]],
-                                   main_queries=main, teaching_queries=teaching)
+                                   main_queries=main, teaching_queries=teaching,
+                                   tasks_per_update=int(config["data"].get("tasks_per_update", TASKS_PER_UPDATE)))
     metrics_rows += len(gathered)
     if context.is_main:
         for row in gathered:
@@ -462,7 +520,8 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
             "mean_total_loss": sum(r["flow_loss"] * r["condition_weight"]
                                    + r["teaching_loss"] * r["teaching_weight"] for r in gathered),
             **norms, "lr_next": scheduler.get_last_lr()[0], "exposures": metrics_rows,
-            "condition_exposures": metrics_rows, "task_exposures": updates * TASKS_PER_UPDATE,
+            "condition_exposures": metrics_rows,
+            "task_exposures": updates * config["data"].get("tasks_per_update", TASKS_PER_UPDATE),
             "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
             "teaching_queries": updates * _logical_batch(config)["teaching_queries_per_update"],
             "total_queries": updates * _logical_batch(config)["total_queries_per_update"],
@@ -573,7 +632,8 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
         write_json_atomic(args.output / "completion.json", {
             "schema_version": RUN_SCHEMA, "status": "segment_complete", "mode": args.mode,
             "optimizer_updates": updates, "exposures": metrics_rows,
-            "condition_exposures": metrics_rows, "task_exposures": updates * TASKS_PER_UPDATE,
+            "condition_exposures": metrics_rows,
+            "task_exposures": updates * config["data"].get("tasks_per_update", TASKS_PER_UPDATE),
             "supervised_queries": updates * _logical_batch(config)["queries_per_update"],
             "teaching_queries": updates * _logical_batch(config)["teaching_queries_per_update"],
             "total_queries": updates * _logical_batch(config)["total_queries_per_update"],
@@ -586,10 +646,25 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    require_continuation_start(args, config)
-    allow_topology_change = _require_topology_resume(args, config)
-    if args.mode == "formal" and (config["status"] != "registered_video_teaching_learning"
-                                  or config["evidence"]["profile_registration"]["status"] != "complete"):
+    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    if conditional:
+        if getattr(args, "extend_from", None) or getattr(args, "phase_from", None):
+            raise ValueError("conditional compilation arms are fresh and cannot inherit a checkpoint")
+        if getattr(args, "allow_topology_change", False):
+            raise ValueError("conditional compilation exact-resume preserves its registered topology")
+        allow_topology_change = False
+        if args.mode == "formal" and config["evidence"]["profile_registration"].get("status") != "complete":
+            raise ValueError("formal conditional training needs completed smoke/profile registration")
+        if args.mode == "smoke" and (args.stop_after_step is None or args.stop_after_step > 4):
+            raise ValueError("conditional arm smoke is limited to four consecutive macro updates")
+        if args.mode == "profile" and (args.stop_after_step is None or args.stop_after_step > 1):
+            raise ValueError("conditional full-video differentiable profile is limited to one disposable macro update")
+    else:
+        require_continuation_start(args, config)
+        allow_topology_change = _require_topology_resume(args, config)
+    if args.mode == "formal" and not conditional and (
+            config["status"] != "registered_video_teaching_learning"
+            or config["evidence"]["profile_registration"]["status"] != "complete"):
         raise ValueError("formal learning needs the post-profile checkpoint and exposure registration")
     state = git_state(REPO_ROOT)
     if args.mode == "formal" and (state["branch"] or not git_state_is_clean_pushed_or_frozen_authority(state)):
@@ -608,7 +683,8 @@ def run(args: argparse.Namespace) -> None:
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
     data = WriterTrainingData(args.asset_root, config["data"],
-                              camera_view=config["observer"]["camera_view"], planned_updates=stop)
+                              camera_view=config["observer"]["camera_view"], planned_updates=stop,
+                              use_videos=config.get("experiment", {}).get("parameterization", "video_writer") == "video_writer")
     if context.is_main:
         args.output.mkdir(parents=True, exist_ok=True)
         _publish_event_plan(args, data.event_plan())

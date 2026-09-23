@@ -184,7 +184,10 @@ def _start_fixed_episode(
     if prepared is not None:
         slot["episode_adapter"] = prepared
     initialize_capture(slot, capture_level)
-    if contract.get("diagnostic_stage_predicates") is not None:
+    stage_contract = contract.get("diagnostic_stage_predicates")
+    if stage_contract is not None and (
+        not stage_contract.get("full_conditions_only") or capture_level == "full"
+    ):
         states, values = _stage_predicate_snapshot(env)
         slot.update(
             {
@@ -267,7 +270,8 @@ def _plan_action_chunks(
         for row, (slot, plan, seed) in enumerate(
             zip(group, actions, seeds, strict=True)
         ):
-            record_replan(slot, raw_inputs[row], processed[row], chunks[row : row + 1])
+            record_replan(slot, raw_inputs[row], processed[row], chunks[row : row + 1],
+                          plan[:replan_steps])
             slot["action_plan"].extend(plan[:replan_steps])
             slot["policy_noise_seeds"].append(seed)
             slot["replan_index"] += 1
@@ -476,7 +480,12 @@ def _validate_episode_row(
         init_state_id=state_id,
     )
     stage = row.get("stage_predicates")
-    if contract.get("diagnostic_stage_predicates") is None:
+    stage_contract = contract.get("diagnostic_stage_predicates")
+    stage_required = stage_contract is not None and (
+        not stage_contract.get("full_conditions_only")
+        or capture_level(contract.get("diagnostic_occupancy_capture"), task, state_id) == "full"
+    )
+    if not stage_required:
         stage_valid = stage is None
     else:
         final_predicates = (

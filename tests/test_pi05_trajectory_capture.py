@@ -22,6 +22,7 @@ def _slot(level: str) -> dict:
         {"observation.state": torch.arange(8, dtype=torch.float32)},
         {"image": torch.ones((1, 3, 4, 4)), "token": torch.ones((1, 2), dtype=torch.long)},
         torch.zeros((1, 50, 7)),
+        torch.ones((5, 7)),
     )
     return slot
 
@@ -51,7 +52,10 @@ def test_compact_capture_keeps_state_action_and_only_selected_images(tmp_path: P
     assert full["capture_level"] == "full"
     assert "observations" not in compact
     assert len(compact["states"]) == len(compact["action_chunks"]) == 1
+    assert len(compact["executed_action_prefixes"]) == 1
+    assert compact["replan_steps"] == (7,)
     assert len(full["states"]) == len(full["action_chunks"]) == len(full["observations"]) == 1
+    assert full["replan_predicates"] == (None,)
     assert tuple(compact["states"][0].shape) == (8,)
 
 

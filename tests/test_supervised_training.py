@@ -617,6 +617,20 @@ def test_complete_conditions_cannot_duplicate_drop_or_change_weights():
         merge_condition_rows(rows, **kwargs)
 
 
+def test_four_condition_exposures_keep_registered_weights():
+    rows = [{'job_id': task, 'task': task, 'query_offset': 0, 'queries': 21,
+             'condition_weight': 1 / 4, 'task_weight': 1 / 4,
+             'teaching_query_offset': 0, 'teaching_queries': 7, 'teaching_weight': 1 / 12}
+            for task in range(4)]
+    kwargs = dict(main_queries=21, teaching_queries=[7] * 4, tasks_per_update=4)
+    assert len(merge_condition_rows(rows, **kwargs)) == 4
+    with pytest.raises(ValueError, match='four distinct'):
+        merge_condition_rows(rows[:-1], **kwargs)
+    rows[0]['teaching_weight'] = 1 / 36
+    with pytest.raises(ValueError, match='weighting'):
+        merge_condition_rows(rows, **kwargs)
+
+
 def test_new_segment_nodes_do_not_mutate_or_invalidate_learning_contract(tmp_path, config):
     original = {"schema_version": "run", "stage": "supervised", "mode": "formal", "config": config,
                 "model_config": config["model"], "topology": {"world_size": 4}, "source": {"policy": "frozen"},

@@ -39,18 +39,22 @@ def condition_assignment(jobs, costs, *, world_size):
     return tuple(tuple(group) for group in assigned)
 
 
-def merge_condition_rows(rows: Sequence[dict], *, main_queries: int, teaching_queries: Sequence[int]) -> list[dict]:
+def merge_condition_rows(rows: Sequence[dict], *, main_queries: int,
+                         teaching_queries: Sequence[int], tasks_per_update: int = TASKS_PER_UPDATE) -> list[dict]:
     """Validate one complete, equally weighted exposure row per condition."""
-    if (len(rows) != TASKS_PER_UPDATE or sorted(row["job_id"] for row in rows) != list(range(TASKS_PER_UPDATE))
-            or len({row["task"] for row in rows}) != TASKS_PER_UPDATE):
-        raise ValueError("an update must record exactly twelve distinct complete conditions")
+    if (tasks_per_update not in (4, TASKS_PER_UPDATE) or len(teaching_queries) != tasks_per_update
+            or len(rows) != tasks_per_update
+            or sorted(row["job_id"] for row in rows) != list(range(tasks_per_update))
+            or len({row["task"] for row in rows}) != tasks_per_update):
+        count = "four" if tasks_per_update == 4 else "twelve"
+        raise ValueError(f"an update must record exactly {count} distinct complete conditions")
     merged = sorted(rows, key=lambda row: row["job_id"])
     for row, teaching_count in zip(merged, teaching_queries, strict=True):
         if (row["query_offset"] != 0 or row["teaching_query_offset"] != 0
                 or row["queries"] != main_queries or row["teaching_queries"] != teaching_count
-                or not math.isclose(row["condition_weight"], 1 / TASKS_PER_UPDATE)
-                or not math.isclose(row["task_weight"], 1 / TASKS_PER_UPDATE)
-                or not math.isclose(row["teaching_weight"], 1 / (3 * TASKS_PER_UPDATE))):
+                or not math.isclose(row["condition_weight"], 1 / tasks_per_update)
+                or not math.isclose(row["task_weight"], 1 / tasks_per_update)
+                or not math.isclose(row["teaching_weight"], 1 / (3 * tasks_per_update))):
             raise ValueError("condition exposure or equal task weighting changed")
     return [dict(row) for row in merged]
 

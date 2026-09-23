@@ -108,6 +108,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-expert-step", type=_positive_int)
     parser.add_argument("--static-task-lora-manifest", type=Path)
     parser.add_argument("--occupancy-capture-selection", type=Path)
+    parser.add_argument("--trajectory-capture-selection", type=Path)
     parser.add_argument("--task-subset-selection", type=Path)
     parser.add_argument("--capture-stage-predicates", action="store_true")
     parser.add_argument("--frozen-replay-registration", type=Path,

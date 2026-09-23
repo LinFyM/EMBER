@@ -14,6 +14,48 @@ from ember.writer.functional import task_logical_batch_policy_rng_seed
 from ember.writer.learning_data import EVENT_SCHEMA, LearningTask, WriterTrainingData
 
 
+def test_conditional_plan_covers_fit28_and_never_uses_held_actions(monkeypatch):
+    from ember.writer import learning_data
+    from ember.writer.training import _config
+
+    root = Path(__file__).resolve().parents[1]
+    config_root = root / "configs/conditional_compilation_diagnostics_v1"
+    configs = [_config(next(config_root.glob(f"train_{arm}_*.json"))) for arm in "ABCD"]
+    assert all(config["data"] == configs[0]["data"] for config in configs[1:])
+    changed = deepcopy(configs[0]["data"])
+    changed["task_ids"] = sorted([0, *changed["task_ids"][1:]])
+    with pytest.raises(ValueError, match="task/event contract"):
+        WriterTrainingData(root, changed, camera_view="agentview", use_videos=False)
+
+    tasks = {task: LearningTask(WriterTaskAuthority(task, "task", Path("/unused"), 0),
+                                "suite", task, (100,) * 50)
+             for task in configs[0]["data"]["task_ids"]}
+    monkeypatch.setattr(learning_data, "load_learning_tasks", lambda *_a, **_kw: tasks)
+
+    class QueryRows:
+        def __init__(self, authorities, *, demo_indices, **_kwargs):
+            self.task_episode_rows = {authority.task_id: {demo: tuple(range(99)) for demo in demo_indices}
+                                      for authority in authorities}
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(learning_data, "FunctionalQueryDataset", QueryRows)
+    data = WriterTrainingData(root, configs[0]["data"], camera_view="agentview", use_videos=False)
+    try:
+        first_round = [draw for _ in range(7) for draw in data.next_iteration()]
+        assert len(first_round) == 28
+        assert sorted(draw["task"] for draw in first_round) == configs[0]["data"]["task_ids"]
+        assert all(draw["query_count"] == 21 and draw["teaching_count"] == 7 for draw in first_round)
+        for event in data._events[:28]:
+            assert event["teacher_demo"] in range(46)
+            assert len(set(event["action_demos"])) == 21
+            assert event["teacher_demo"] not in event["action_demos"]
+            assert set(event["teaching"]["action_demos"]) <= set(range(46)) - {event["teacher_demo"]}
+    finally:
+        data.close()
+
+
 def test_teacher_video_store_selects_the_declared_rgb_view(tmp_path: Path) -> None:
     path = tmp_path / "video.hdf5"
     with h5py.File(path, "w") as handle:

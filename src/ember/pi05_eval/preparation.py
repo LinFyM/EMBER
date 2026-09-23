@@ -43,6 +43,7 @@ from ember.pi05_source_checkpoint import read_json
 
 
 TASK_SUBSET_SELECTION_SCHEMA = "ember_pi05_task_subset_selection_v1"
+TRAJECTORY_CAPTURE_SELECTION_SCHEMA = "ember_pi05_registered_trajectory_capture_v1"
 TRAIN24_FOLD0_HELD = (
     (0, 0, "libero_spatial", 0),
     (5, 9, "libero_spatial", 9),
@@ -388,6 +389,57 @@ def _stage_predicate_capture(
     }
 
 
+def _registered_trajectory_capture(
+    args: Any, tasks: Sequence[Any], output_dir: Path,
+    task_subset: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    path = getattr(args, "trajectory_capture_selection", None)
+    if path is None:
+        return None, None
+    if (task_subset is None or args.role != "development_train"
+            or getattr(args, "occupancy_capture_selection", None) is not None
+            or bool(getattr(args, "capture_stage_predicates", False))):
+        raise Pi05EvaluationError("registered trajectory capture requires a train subset")
+    path = path.resolve()
+    manifest = read_json(path)
+    full = tuple((str(row["suite"]), int(row["task_id"]), int(row["init_state_id"]))
+                 for row in manifest.get("full_conditions", ()))
+    cases = {(str(task.suite), int(task.task_id), int(state))
+             for task in tasks for state in task.init_state_ids}
+    if (manifest.get("schema_version") != TRAJECTORY_CAPTURE_SELECTION_SCHEMA
+            or manifest.get("task_subset_selection") != task_subset["selection_path"]
+            or manifest.get("mode") != "compact"
+            or len(full) != len(set(full)) or not set(full) <= cases
+            or manifest.get("stage_predicates") is not bool(full)
+            or any(manifest.get(key) is not False for key in (
+                "training_gradient_use", "checkpoint_selection_use", "validation_use", "test_use"))):
+        raise Pi05EvaluationError("registered trajectory capture selection changed")
+    capture = {
+        "schema_version": TRAJECTORY_CAPTURE_SELECTION_SCHEMA,
+        "selection_path": str(path), "selection_bytes": path.stat().st_size,
+        "mode": "compact", "full_conditions": [
+            {"suite": suite, "task_id": task_id, "init_state_id": state}
+            for suite, task_id, state in full
+        ],
+        "trajectory_root": str((output_dir / "trajectories").resolve()),
+        "training_gradient_use": False, "checkpoint_selection_use": False,
+        "validation_use": False, "test_use": False,
+    }
+    stage = None
+    if full:
+        stage = {
+            "schema_version": "ember_pi05_stage_predicate_capture_v1",
+            "capture": "registered_full_conditions_post_settling_then_every_action_change",
+            "predicate_source": "installed_LIBERO_BDDL_goal_conjunction",
+            "full_conditions_only": True,
+            "training_gradient_use": False, "checkpoint_selection_use": False,
+            "validation_action_reads": 0, "validation_reward_reads": 0,
+            "held_data_use": False,
+            "claim_boundary": "BDDL predicates are partial progress signals",
+        }
+    return capture, stage
+
+
 def _prepared_payload(
     args: Any,
     *,
@@ -434,6 +486,10 @@ def _prepared_payload(
         adapter_kind=adapter_kind,
     )
     stage_predicates = _stage_predicate_capture(args, occupancy_capture)
+    if getattr(args, "trajectory_capture_selection", None) is not None:
+        occupancy_capture, stage_predicates = _registered_trajectory_capture(
+            args, tasks, output_dir, task_subset
+        )
     model = inspect_source_checkpoint(
         authorities,
         args.source_run,

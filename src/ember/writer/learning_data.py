@@ -15,6 +15,7 @@ import numpy as np
 import torch
 from torch.utils.data import default_collate
 
+from ember.pi05_source_checkpoint import read_json
 from ember.writer.data import FunctionalQueryDataset, RawTeacherVideoStore, WriterTaskAuthority
 from ember.writer.functional import task_logical_batch_policy_rng_seed
 from ember.writer.continuation import require_extended_prefix
@@ -57,6 +58,7 @@ def load_learning_tasks(
 
 
 EVENT_SCHEMA = "video_teaching_task_mixing_events_v2"
+CONDITIONAL_EVENT_SCHEMA = "conditional_compilation_diagnostics_events_v1"
 MAXIMUM_UPDATES = 2_100
 TASKS_PER_UPDATE = 12
 MAIN_EVENT_QUERIES = 21
@@ -65,6 +67,15 @@ TEACHING_EVENT_QUERIES = 7
 
 def query_allocation(config, update_index):
     """Actual query counts; full event/RNG pools remain independently fixed."""
+    if config.get("event_schema_version") == CONDITIONAL_EVENT_SCHEMA:
+        tasks_per_update = config.get("tasks_per_update")
+        main = config.get("queries_per_task")
+        extra = config.get("teaching_queries_per_task")
+        if (tasks_per_update != 4 or main != MAIN_EVENT_QUERIES
+                or extra != TEACHING_EVENT_QUERIES or type(update_index) is not int
+                or update_index < 0):
+            raise ValueError("conditional compilation requires four tasks with fixed 21+7 query groups")
+        return main, (extra,) * tasks_per_update
     main, teaching = config.get("queries_per_task"), config.get("teaching_query_counts")
     if (type(main) is not int or main not in (7, 21)
             or not isinstance(teaching, list) or len(teaching) != TASKS_PER_UPDATE
@@ -95,8 +106,10 @@ class WriterTrainingData:
     """Fixed task/video/query events, grouped independently of device ownership."""
 
     def __init__(self, asset_root: Path, config: Mapping[str, Any], *, camera_view: str = "dual",
-                 planned_updates: int | None = None) -> None:
+                 planned_updates: int | None = None, use_videos: bool = True) -> None:
         self.asset_root, self.config = asset_root, deepcopy(dict(config))
+        self.conditional_compilation = config.get("event_schema_version") == CONDITIONAL_EVENT_SCHEMA
+        self.tasks_per_update = int(config.get("tasks_per_update", TASKS_PER_UPDATE))
         self._validate_config()
         if camera_view not in ("agentview", "dual"):
             raise ValueError("v5.2 training requires the registered agentview or dual camera mode")
@@ -111,9 +124,12 @@ class WriterTrainingData:
         kwargs = {"protocol_path": config["protocol"]} if config.get("protocol") else {}
         self.tasks = load_learning_tasks(asset_root, config["task_ids"], **kwargs)
         self.task_ids = tuple(sorted(self.tasks))
-        if len(self.task_ids) != (36 if self.dynamic else 24):
+        expected_tasks = 28 if self.conditional_compilation else (36 if self.dynamic else 24)
+        if len(self.task_ids) != expected_tasks:
             raise ValueError("training events require the complete registered train split")
-        self.round_updates = len(self.task_ids) // TASKS_PER_UPDATE
+        self.round_updates = len(self.task_ids) // self.tasks_per_update
+        if len(self.task_ids) % self.tasks_per_update:
+            raise ValueError("task rounds must divide evenly into the configured macro update")
         self.rounds = (self.maximum_updates + self.round_updates - 1) // self.round_updates
         self.generated_updates = self.rounds * self.round_updates
         self.video_pool = tuple(config["video_demos"])
@@ -123,7 +139,8 @@ class WriterTrainingData:
         self._groups = self._build_groups()
         self._events = self._build_events()
         authorities = tuple(task.authority for task in self.tasks.values())
-        self.videos = RawTeacherVideoStore(authorities, frame_stride=5, camera_view=camera_view)
+        self.videos = (RawTeacherVideoStore(authorities, frame_stride=5, camera_view=camera_view)
+                       if use_videos else None)
         self.queries = FunctionalQueryDataset(authorities, demo_indices=self.action_pool,
                                               action_chunk_size=50, action_start_offset=1)
         self.query_rows = self.queries.task_episode_rows
@@ -140,19 +157,49 @@ class WriterTrainingData:
         if (type(config.get("action_start_offset")) is not int or config["action_start_offset"] != 1
                 or config.get("query_alignment") != "post_action_observation_future_control_v1"):
             raise ValueError("Writer requires post-action observations with future-control labels")
+        if self.conditional_compilation:
+            spec = read_json(self.asset_root / "configs/conditional_compilation_diagnostics_v1/experiment_spec.json")
+            if (config.get("task_ids") != sorted(set(config.get("task_ids", ())))
+                    or len(config["task_ids"]) != 28
+                    or config["task_ids"] != spec["protocol"]["fit28"]
+                    or config.get("version") != CONDITIONAL_EVENT_SCHEMA
+                    or config.get("maximum_updates") != 1_260
+                    or config.get("tasks_per_update") != 4
+                    or config.get("conditions_per_task") != 1
+                    or tuple(config.get("cardinalities", ())) != (1,)
+                    or config.get("queries_per_task") != MAIN_EVENT_QUERIES
+                    or config.get("teaching_queries_per_task") != TEACHING_EVENT_QUERIES
+                    or config.get("grouping") != "baseline"
+                    or config.get("frame_stride") != 5
+                    or config.get("include_last_frame") is not True
+                    or config.get("teaching_episode") != "cross_episode"
+                    or not config.get("protocol")):
+                raise ValueError("conditional compilation task/event contract changed")
+            for name in ("seed", "sampler_seed", "teacher_video_seed", "teaching_seed"):
+                if type(config.get(name)) is not int or config[name] < 0:
+                    raise ValueError(f"Writer event {name} must be a non-negative integer")
+            if (tuple(config.get("video_demos", ())) != tuple(range(46))
+                    or tuple(config.get("action_demos", ())) != tuple(range(46))
+                    or tuple(config.get("diagnostic_action_demos", ())) != tuple(range(46, 50))
+                    or tuple(config.get("held_video_demos", ())) != tuple(range(46, 50))):
+                raise ValueError("conditional compilation episode roles changed")
+            query_allocation(config, 0)
+            if config["maximum_updates"] % 7:
+                raise ValueError("conditional compilation rounds must contain exactly seven macro updates")
+            return
         if config.get("event_schema_version") != EVENT_SCHEMA:
             raise ValueError("training event schema must be explicitly registered")
         for name in ("seed", "sampler_seed", "teacher_video_seed", "teaching_seed"):
             if type(config.get(name)) is not int or config[name] < 0:
                 raise ValueError(f"training event {name} must be a non-negative integer")
         budget = config.get("maximum_updates")
-        round_updates = len(config["task_ids"]) // TASKS_PER_UPDATE
+        round_updates = len(config["task_ids"]) // self.tasks_per_update
         if budget is not None and (type(budget) is not int or not 0 < budget <= MAXIMUM_UPDATES
                                    or not round_updates or budget % round_updates):
             raise ValueError("training events require complete twelve-task rounds within the 2100-update ceiling")
         if budget is None and (not config.get("protocol") or config.get("grouping") != "baseline"):
             raise ValueError("dynamic training requires an explicit task protocol and baseline rounds")
-        if (config.get("tasks_per_update") != TASKS_PER_UPDATE or config.get("conditions_per_task") != 1
+        if (self.tasks_per_update != TASKS_PER_UPDATE or config.get("conditions_per_task") != 1
                 or tuple(config["cardinalities"]) != (1,)):
             raise ValueError("training events require twelve tasks and one video per task")
         query_allocation(config, 0)
@@ -172,16 +219,16 @@ class WriterTrainingData:
                 order = np.random.default_rng(
                     np.random.SeedSequence([self.sampler_seed, occurrence]),
                 ).permutation(self.task_ids)
-                groups.extend(order[start:start + TASKS_PER_UPDATE].tolist()
-                              for start in range(0, len(self.task_ids), TASKS_PER_UPDATE))
+                groups.extend(order[start:start + self.tasks_per_update].tolist()
+                              for start in range(0, len(self.task_ids), self.tasks_per_update))
         elif grouping == "explicit":
             groups = self.config.get("event_groups", ())
         else:
             raise ValueError("grouping must be baseline or explicitly supplied event_groups")
         if (len(groups) != self.generated_updates or any(
-                len(group) != TASKS_PER_UPDATE or any(type(task) is not int for task in group)
-                or len(set(group)) != TASKS_PER_UPDATE for group in groups)):
-            raise ValueError("event_groups require exactly twelve distinct tasks per update")
+                len(group) != self.tasks_per_update or any(type(task) is not int for task in group)
+                or len(set(group)) != self.tasks_per_update for group in groups)):
+            raise ValueError("event_groups do not match the registered distinct-task macro size")
         for start in range(0, self.generated_updates, self.round_updates):
             if sorted(task for group in groups[start:start + self.round_updates] for task in group) != list(self.task_ids):
                 raise ValueError("each round must contain every registered task event exactly once")
@@ -244,18 +291,24 @@ class WriterTrainingData:
                 "episode_relation": self.config["teaching_episode"], "sampling_with_replacement": replacement}
 
     def _event_contract(self) -> dict[str, Any]:
-        contract = {"schema_version": EVENT_SCHEMA, "seed": self.seed, "sampler_seed": self.sampler_seed,
+        schema = CONDITIONAL_EVENT_SCHEMA if self.conditional_compilation else EVENT_SCHEMA
+        main_count, teaching_counts = query_allocation(self.config, 0)
+        contract = {"schema_version": schema, "seed": self.seed, "sampler_seed": self.sampler_seed,
                 "teacher_video_seed": self.teacher_video_seed, "maximum_updates": self.maximum_updates,
                 "grouping": self.config["grouping"],
                 "task_ids": list(self.task_ids), "video_demos": list(self.video_pool),
-                "action_demos": list(self.action_pool), "queries_per_task": self.config["queries_per_task"],
-                "teaching_query_counts": list(self.config["teaching_query_counts"]),
-                "main_event_queries": MAIN_EVENT_QUERIES, "teaching_event_queries": TEACHING_EVENT_QUERIES,
-                "teaching_rotation": "condition_position_minus_global_zero_based_update_mod12",
-                "tasks_per_update": TASKS_PER_UPDATE, "teaching_seed": self.config["teaching_seed"],
+                "action_demos": list(self.action_pool), "queries_per_task": main_count,
+                "teaching_query_counts": list(teaching_counts),
+                "main_event_queries": main_count, "teaching_event_queries": TEACHING_EVENT_QUERIES,
+                "tasks_per_update": self.tasks_per_update, "teaching_seed": self.config["teaching_seed"],
                 "teaching_episode": self.config["teaching_episode"],
                 "action_start_offset": 1, "query_alignment": self.config["query_alignment"],
                 "episode_lengths": [list(self.tasks[task].episode_lengths) for task in self.task_ids]}
+        if not self.conditional_compilation:
+            contract["teaching_rotation"] = "condition_position_minus_global_zero_based_update_mod12"
+        else:
+            contract["loss_total_scale"] = 4 / 3
+            contract["shared_across_arms"] = True
         if self.dynamic:
             contract.update(maximum_updates=None, protocol=self.config["protocol"],
                             algorithm="balanced_twelve_task_rounds_original_query_prefixes_v2",
@@ -289,6 +342,8 @@ class WriterTrainingData:
         return tuple(draws)
 
     def load_videos(self, task: int, demos: Sequence[int]):
+        if self.videos is None:
+            raise ValueError("this training parameterization has no teacher-video input")
         if len(demos) != 1:
             raise ValueError("the registered teaching condition requires exactly one video")
         videos = tuple(self.videos.load(task, demo) for demo in demos)
@@ -387,7 +442,8 @@ class WriterTrainingData:
         self.next_step, self.counts = step, counts
 
     def close(self) -> None:
-        self.videos.close()
+        if self.videos is not None:
+            self.videos.close()
         self.queries.close()
         if self.diagnostic_queries is not None:
             self.diagnostic_queries.close()

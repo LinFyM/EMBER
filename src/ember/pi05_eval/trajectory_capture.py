@@ -34,12 +34,16 @@ def initialize_capture(slot: dict[str, Any], level: str | None) -> None:
     slot["occupancy_capture_level"] = level
     slot["replay_states"] = []
     slot["replay_action_chunks"] = []
+    slot["replay_executed_prefixes"] = []
+    slot["replay_replan_steps"] = []
     if level == "full":
         slot["replay_observations"] = []
+        slot["replay_replan_predicates"] = []
 
 
 def record_replan(
-    slot: dict[str, Any], raw_input: Mapping[str, Any], processed: Mapping[str, Any], chunk: Any
+    slot: dict[str, Any], raw_input: Mapping[str, Any], processed: Mapping[str, Any],
+    chunk: Any, executed_prefix: Any | None = None,
 ) -> None:
     if "replay_action_chunks" not in slot:
         return
@@ -49,7 +53,13 @@ def record_replan(
         raw_input["observation.state"].detach().to(device="cpu").contiguous()
     )
     slot["replay_action_chunks"].append(chunk.detach().to(device="cpu").contiguous())
+    slot["replay_replan_steps"].append(int(slot["steps"]))
+    if executed_prefix is not None:
+        slot["replay_executed_prefixes"].append(torch.as_tensor(executed_prefix).clone())
     if "replay_observations" in slot:
+        slot["replay_replan_predicates"].append(
+            list(slot["stage_predicate_last"]) if "stage_predicate_last" in slot else None
+        )
         slot["replay_observations"].append(
             {
                 key: value.detach().to(device="cpu").contiguous()
@@ -85,6 +95,8 @@ def save_capture(
         "steps": int(slot["steps"]),
         "policy_noise_seeds": tuple(slot["policy_noise_seeds"]),
         "action_chunks": tuple(slot["replay_action_chunks"]),
+        "executed_action_prefixes": tuple(slot["replay_executed_prefixes"]),
+        "replan_steps": tuple(slot["replay_replan_steps"]),
     }
     if "mode" not in capture:
         payload = {
@@ -101,6 +113,7 @@ def save_capture(
         }
         if level == "full":
             payload["observations"] = tuple(slot["replay_observations"])
+            payload["replan_predicates"] = tuple(slot["replay_replan_predicates"])
     torch.save(payload, path)
     return {
         "path": str(path),

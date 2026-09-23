@@ -14,6 +14,7 @@ class SupervisedEngine:
         self.runtime, self.data, self.cache, self.config = runtime, data, cache, config
         self.device, self.step = context.device, 0
         self.frame_parallel_group = frame_parallel_group
+        self.tasks_per_update = int(config["data"].get("tasks_per_update", TASKS_PER_UPDATE))
 
     def _time(self, timings, name, start):
         if self.device.type == "cuda":
@@ -22,6 +23,7 @@ class SupervisedEngine:
         return time.perf_counter()
 
     def _credit(self, state, batch, trace, offset, *, backward, condition_weight=1., teaching=False):
+        endpoint = teaching and bool(configured_endpoint(self.config))
         with autocast(self.device):
             return paired_functional_credit(
                 self.runtime.policy, state, self.runtime.lora, batch,
@@ -29,7 +31,7 @@ class SupervisedEngine:
                 random_batch=trace.get("policy_random_batch_size", len(trace["action_demos"])), offset=offset,
                 microbatch=min(int(self.config["runtime"]["policy_microbatch"]), len(trace["action_demos"])),
                 condition_weight=condition_weight, backward=backward,
-                noise_endpoint=teaching, prefix_steps=5 if teaching else None,
+                noise_endpoint=endpoint, prefix_steps=5 if endpoint else None,
             )
 
     def backward(self, draw) -> dict:
@@ -38,7 +40,7 @@ class SupervisedEngine:
         task, demos = draw["task"], draw["video_demos"]
         hits, misses = self.cache.hits, self.cache.misses
         condition = self.cache.condition(task, demos)
-        weight = 1 / TASKS_PER_UPDATE
+        weight = 1 / self.tasks_per_update
         start = self._time(timings, "input_seconds", start)
         with torch.no_grad():
             state = runtime.compile(condition, frame_parallel_group=self.frame_parallel_group)
@@ -94,3 +96,13 @@ class SupervisedEngine:
         credit.pop("lora_cotangent")
         return {"task": task, "suite": self.data.tasks[task].suite, "video_demos": [demo],
                 **credit, "queries": queries, **trace, "gradients": False}
+
+
+def configured_endpoint(config):
+    """Whether the registered second query group uses tau=1 and a five-action prefix."""
+    experiment = config.get("experiment")
+    if experiment is None:
+        return True
+    if experiment.get("kind") != "conditional_compilation_diagnostics_20260923":
+        raise ValueError("unrecognized conditional teaching objective")
+    return experiment.get("extra_endpoint_prefix") is True

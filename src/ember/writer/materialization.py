@@ -23,8 +23,9 @@ from ember.pi05_target_data import SUITE_ORDER
 from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
 from ember.writer.learning_data import EVENT_SCHEMA
 from ember.writer.materialization_workers import MaterializationWorkers, execution_devices
-from ember.writer.training import (CONFIG_SCHEMA, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
-                                   observer_mode_contract)
+from ember.writer.training import (CONDITIONAL_CONFIG_SCHEMA, CONDITIONAL_EXPERIMENT, CONFIG_SCHEMA,
+                                   CONDITIONAL_UPDATE_VERSION, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
+                                   _conditional_config, observer_mode_contract)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
@@ -74,17 +75,34 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     config = run["config"]
     data = config.get("data", {})
-    identities = (
-        (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
-        (config, {"schema_version": CONFIG_SCHEMA, "update_version": UPDATE_VERSION,
-                  "execution_precision": "native_bf16_writer_fm_fp32_lora"}),
-        (config.get("optimization", {}), {"loss": "main_fm_plus_video_teaching"}),
-        (config.get("observer", {}), observer),
-        (data, {"version": EVENT_SCHEMA, "action_start_offset": 1,
-                "query_alignment": "post_action_observation_future_control_v1"}),
-        (manifest, {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": STAGE,
-                    "run_contract_schema": RUN_SCHEMA, "next_macro": macro}),
-    )
+    conditional = config.get("schema_version") == CONDITIONAL_CONFIG_SCHEMA
+    if conditional:
+        _conditional_config(config)
+        parameterization = config["experiment"]["parameterization"]
+        observer = {**observer, "route": parameterization}
+        identities = (
+            (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
+            (config, {"schema_version": CONDITIONAL_CONFIG_SCHEMA, "update_version": CONDITIONAL_UPDATE_VERSION,
+                      "execution_precision": "native_bf16_writer_fm_fp32_lora"}),
+            (config.get("optimization", {}), {"loss": config["experiment"]["objective"]}),
+            (config.get("observer", {}), observer),
+            (data, {"version": "conditional_compilation_diagnostics_events_v1", "action_start_offset": 1,
+                    "query_alignment": "post_action_observation_future_control_v1"}),
+            (manifest, {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": STAGE,
+                        "run_contract_schema": RUN_SCHEMA, "next_macro": macro}),
+        )
+    else:
+        identities = (
+            (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
+            (config, {"schema_version": CONFIG_SCHEMA, "update_version": UPDATE_VERSION,
+                      "execution_precision": "native_bf16_writer_fm_fp32_lora"}),
+            (config.get("optimization", {}), {"loss": "main_fm_plus_video_teaching"}),
+            (config.get("observer", {}), observer),
+            (data, {"version": EVENT_SCHEMA, "action_start_offset": 1,
+                    "query_alignment": "post_action_observation_future_control_v1"}),
+            (manifest, {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": STAGE,
+                        "run_contract_schema": RUN_SCHEMA, "next_macro": macro}),
+        )
     if (macro <= 0 or not 1 <= world_size <= 6
             or any(value.get(key) != wanted for value, fields in identities for key, wanted in fields.items())
             or {"local_field_supervision", "correction_supervision", "spatial_supervision"} & config.keys()
@@ -96,7 +114,7 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     if (trainer.get("schema_version") != ECP_CHECKPOINT_SCHEMA or trainer.get("stage") != STAGE
             or trainer.get("next_macro") != macro or not data_version
             or training != {"schema_version": TRAINING_SCHEMA, "updates": macro,
-                            "update_version": UPDATE_VERSION, "data_version": data_version}):
+                            "update_version": config["update_version"], "data_version": data_version}):
         raise ValueError("supervised Writer training state or optimizer-update cursor changed")
     return run, {"path": str(checkpoint), "macro": macro,
                  "weights": file_record(checkpoint / "ecp.safetensors"),
@@ -134,13 +152,16 @@ def selection_contract(
         raise ValueError("validation schedules require all 50 teacher videos")
     origin = 32 if role == "development_train" and set(states) <= set(TRAIN_DIAGNOSTIC_INIT_STATE_IDS) else 0
     restricted = sorted(pool) != list(range(50))
+    reserved_seen = (role == "development_train" and mode == "per_init_ordinal"
+                     and states == tuple(range(4)) and tuple(sorted(pool)) == tuple(range(46, 50)))
     if mode == "per_init_ordinal" and restricted and (
             cardinality != 1 or min(states) < origin or max(states) - origin >= len(pool)):
         raise ValueError("finite-pool K1 diagnostics need one distinct allowed video per init state; use states32..35 for four videos")
     selection = {"evaluation_role": role, "task_ids": list(tasks), "K": cardinality, "arm": arm,
             "mode": mode, "seed": seed, "init_state_ids": list(states), "video_pool": sorted(pool),
             "fixed_videos": fixed, "outcome_dependence": False, "gradient_use": False,
-            "without_replacement": mode == "per_init_ordinal", "schedule": VIDEO_SCHEDULE,
+            "without_replacement": mode == "per_init_ordinal",
+            "schedule": "conditional_compilation_reserved_seen_v1" if reserved_seen else VIDEO_SCHEDULE,
             "without_replacement_scope": ("per_task_per_arm_round" if cardinality == 1 else "canonical_cyclic_K_windows")
                 if mode == "per_init_ordinal" else "fixed_diagnostic_video_reuse",
             "schedule_state_origin": origin if restricted else 0,
@@ -164,9 +185,10 @@ def request_init_state_ids(
             raise ValueError("count-only Writer requests require 10 or 50 initial states")
         return tuple(range(count))
     states = tuple(init_state_ids)
-    if (role != "development_train" or states != TRAIN_DIAGNOSTIC_INIT_STATE_IDS
+    if (role != "development_train" or states not in (TRAIN_DIAGNOSTIC_INIT_STATE_IDS, tuple(range(4)))
             or state_count not in (None, len(states))):
-        raise ValueError("explicit Writer init states require development_train states32..35 and count4")
+        raise ValueError("explicit Writer init states require development_train states32..35 and count4, "
+                         "or registered seen states0..3 and count4")
     return states
 
 
@@ -177,6 +199,10 @@ def paired_video_sets(selection: Mapping[str, Any], task: int, ordinal: int) -> 
         raise ValueError("Writer video schedule requires a target40 task")
     suite, local_task = SUITE_ORDER[task // 10], task % 10
     seed, pool = int(selection["seed"]), selection["video_pool"]
+    if selection["schedule"] == "conditional_compilation_reserved_seen_v1":
+        if ordinal not in range(4):
+            raise ValueError("reserved seen-panel video ordinal is outside states0..3")
+        return (46 + ordinal,), (46 + (ordinal + 1) % 4,)
     if selection["mode"] == "per_init_ordinal" and pool == list(range(50)):
         correct, other = paired_condition_demo_indices(seed, suite, local_task, ordinal,
             "same_task_other", 50, "without_replacement", k)
@@ -225,6 +251,45 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, Any]:
     observer = observer_mode_contract(run["model_config"])
+    conditional = run.get("config", {}).get("schema_version") == CONDITIONAL_CONFIG_SCHEMA
+    if conditional:
+        config = run["config"]
+        parameterization = config["experiment"]["parameterization"]
+        deployment_inputs = {
+            "direct_lora": [],
+            "language_writer": ["exact task language"],
+            "video_writer": ["exact task language", "ordered RGB videos", "original frame indices"],
+        }[parameterization]
+        if arm == "no_video":
+            deployment_inputs = []
+        method = {
+            "schema_version": "ember_conditional_compilation_method_v1",
+            "model_config": run["model_config"], "observer": config["observer"],
+            "execution_precision": config["execution_precision"],
+            "parameterization": parameterization,
+            "training_objective": config["optimization"]["loss"],
+            "checkpoint_state": ("one shared direct full A/B parameter set" if parameterization == "direct_lora"
+                                 else "complete Writer state; only the registered language path is trainable"
+                                 if parameterization == "language_writer"
+                                 else "complete video Writer including Text/VL/Action Meta and public probe"),
+            "deployment_inputs": deployment_inputs,
+            "execution_rank": 16, "generated_tensor_count": 76,
+            "training_stage": STAGE, "update_version": config["update_version"],
+            "macro_cursor": "optimizer_updates", "deployment_frozen_source_vjp": False,
+            "source_parameter_training": False, "deployment_grad_context": "no_grad_complete_parameterization",
+            "deployment_teacher_labels_loss_optimizer": False,
+            "writer_execution": ("none; direct shared A/B parameters" if parameterization == "direct_lora"
+                                 else "one pre-rollout text-only call" if parameterization == "language_writer"
+                                 else "one pre-rollout video-conditioned call"),
+            "teacher_schedule_use": "pairing metadata only" if parameterization != "video_writer"
+                                     else "one selected teacher video per condition",
+            "teacher_video_values_read": 0 if parameterization != "video_writer" or arm == "no_video" else 1,
+        }
+        if arm in CONTROL_ARMS:
+            method["diagnostic_control"] = arm
+            method["control_transform"] = ("identity_zero_delta_without_RGB_reads" if arm == "no_video" else
+                                            "real_agentview_camera_RGB_before_complete_Writer_forward")
+        return method
     cameras = teacher_camera_names(observer["camera_view"])
     patches = len(cameras) * 256
     metadata = {
@@ -269,28 +334,49 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint, *, contr
     if control is not None and (donor.authority.task_id != control["video_global_task_id"]
                                 or task.authority.task_id != control["language_global_task_id"]):
         raise ValueError("actual donor or target language identity differs from the registered video control")
-    videos = tuple(store.load(donor.authority.task_id, demo) for demo in demos)
-    if any(video.raw_frame_count != donor.episode_lengths[demo] for demo, video in zip(demos, videos, strict=True)):
-        raise ValueError("actual teacher frame count differs from its data authority")
-    frames, indices, records = [], [], []
-    for demo, video in zip(demos, videos, strict=True):
-        frame, index = torch.from_numpy(video.frames), torch.from_numpy(video.frame_indices)
-        record = {"demo_index": demo, "raw_frame_count": video.raw_frame_count,
-                  "sampled_frame_count": len(index), "frame_indices": index.tolist()}
+    records = []
+    parameterization = getattr(runtime, "parameterization", "video_writer")
+    if parameterization == "direct_lora":
         if control is not None:
-            content, index, evidence = controlled_frames(index, control=control, demo=demo)
-            frame = frame[content]
-            record.update(evidence)
-        frames.append(frame)
-        indices.append(index)
-        records.append(record)
-    condition = runtime.prepare(tuple(frames), tuple(indices), task.authority.language)
+            raise ValueError("direct shared LoRA has no video control input")
+        condition = None
+        writer_invocations = 0
+    elif parameterization == "language_writer":
+        if control is not None:
+            raise ValueError("language-only Writer has no video control input")
+        condition = runtime.prepare_language(task.authority.language)
+        writer_invocations = 1
+    elif parameterization == "video_writer":
+        if store is None:
+            raise ValueError("video Writer materialization requires its registered teacher-video store")
+        videos = tuple(store.load(donor.authority.task_id, demo) for demo in demos)
+        if any(video.raw_frame_count != donor.episode_lengths[demo] for demo, video in zip(demos, videos, strict=True)):
+            raise ValueError("actual teacher frame count differs from its data authority")
+        frames, indices = [], []
+        for demo, video in zip(demos, videos, strict=True):
+            frame, index = torch.from_numpy(video.frames), torch.from_numpy(video.frame_indices)
+            record = {"demo_index": demo, "raw_frame_count": video.raw_frame_count,
+                      "sampled_frame_count": len(index), "frame_indices": index.tolist()}
+            if control is not None:
+                content, index, evidence = controlled_frames(index, control=control, demo=demo)
+                frame = frame[content]
+                record.update(evidence)
+            frames.append(frame)
+            indices.append(index)
+            records.append(record)
+        condition = runtime.prepare(tuple(frames), tuple(indices), task.authority.language)
+        writer_invocations = 1
+    else:
+        raise ValueError("unknown conditional Writer parameterization")
     with torch.no_grad():
         generated = runtime.compile(condition)
-    return _save_condition(generated, runtime.lora, task, demos, records, output, checkpoint, control=control)
+    return _save_condition(generated, runtime.lora, task, demos, records, output, checkpoint,
+                           control=control, parameterization=parameterization,
+                           writer_invocations=writer_invocations)
 
 
-def _save_condition(generated, lora, task, demos, videos, output, checkpoint, *, control=None):
+def _save_condition(generated, lora, task, demos, videos, output, checkpoint, *, control=None,
+                    parameterization="video_writer", writer_invocations=1):
     state = {name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
              for name, value in generated.items()}
     validate_lora_state(state, lora)
@@ -303,7 +389,9 @@ def _save_condition(generated, lora, task, demos, videos, output, checkpoint, *,
     record = {"condition_id": identifier, "global_task_id": task.authority.task_id,
             "suite": task.suite, "task_id": task.suite_task_id, "language": task.authority.language,
             "teacher_demo_indices": list(demos), "teacher_videos": videos,
-            "adapter": file_record(path), "writer_invocations": 0 if control and control["arm"] == "no_video" else 1,
+            "teacher_video_values_read": len(videos), "parameterization": parameterization,
+            "adapter": file_record(path),
+            "writer_invocations": 0 if control and control["arm"] == "no_video" else writer_invocations,
             "single_complete_rank16": True}
     if control is not None:
         record["video_control"] = control
@@ -414,36 +502,88 @@ def _materialize(
         checkpoint=checkpoint, run=run, checkpoint_record=checkpoint_record, workers=workers,
         reusable=reusable, lora_path=lora_path, no_video=selection["arm"] == "no_video")
     no_video = selection["arm"] == "no_video"
+    conditional = run.get("config", {}).get("schema_version") == CONDITIONAL_CONFIG_SCHEMA
+    parameterization = run["config"].get("experiment", {}).get("parameterization", "video_writer")
+    uses_video = parameterization == "video_writer" and not no_video
+    compiler_invocations = sum(int(row.get("writer_invocations", 0)) for row in conditions.values())
+    if conditional:
+        deployment_inputs = ([] if no_video or parameterization == "direct_lora" else
+                             ["exact task language"] if parameterization == "language_writer" else
+                             ["exact task language", "ordered RGB videos", "original frame indices"])
+        information_wall = {
+            "parameterization": parameterization,
+            "deployment_inputs": deployment_inputs,
+            "teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
+            "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
+            "materialization_rgb_video_reads": len(conditions) if uses_video else 0,
+            "teacher_video_values_read": sum(int(row.get("teacher_video_values_read", 0))
+                                               for row in conditions.values()),
+            "parameterization_invocations": compiler_invocations,
+            "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
+            "writer_execution_per_unique_condition": ("none" if parameterization == "direct_lora" else
+                                                      "cached_native_text_compile" if parameterization == "language_writer" else
+                                                      "one_complete_video_compile_per_condition"),
+            "outcome_dependent_video_selection": False,
+            "shuffled_reversed_wrong_no_video": selection["arm"] in CONTROL_ARMS,
+        }
+    else:
+        information_wall = {
+            "deployment_inputs": [] if no_video else ["exact language", "RGB videos", "displayed frame indices"],
+            "teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
+            "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
+            "writer_invocations_per_unique_condition": 0 if no_video else 1,
+            "total_writer_invocations": 0 if no_video else len(conditions),
+            "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
+            "outcome_dependent_video_selection": False,
+            "shuffled_reversed_wrong_no_video": selection["arm"] in CONTROL_ARMS,
+        }
     manifest = {"schema_version": BANK_SCHEMA, "kind": BANK_KIND, "status": "sealed",
                 "arm": selection["arm"], "evaluation_role": selection["evaluation_role"], "selection": dict(selection),
                 "task_protocol": run["config"]["data"].get("protocol"),
                 "asset_root": str(asset_root.resolve()), "source": run["source"],
                 "writer_checkpoint": checkpoint_record, "materialization_git": repository,
                 "lora_contract": file_record(lora_path), "method": method_metadata(run, selection["arm"]),
-                "materialization_execution": {"native_frame_chunk": workers.config["observer"]["frame_chunk"] if not no_video else None,
+                "materialization_execution": {"native_frame_chunk": workers.config["observer"].get("frame_chunk") if uses_video else None,
                     "devices": list(map(str, workers.devices)) if not no_video else [],
                     "workers": len(workers.devices) if not no_video else 0,
-                    "dispatch": "source_identity_cpu" if no_video else "longest_video_first_dynamic_conditions"},
+                    "dispatch": "source_identity_cpu" if no_video else
+                        "longest_video_first_dynamic_conditions" if uses_video else "task_parameterization_dynamic_conditions"},
                 "tasks": rows, "conditions": [conditions[key] for key in planned], "single_complete_rank16": True,
                 "compilation": {"new_conditions": len(conditions) - len(reused), "reused_conditions": len(reused),
                     "reuse_manifest": file_record(reuse_manifest) if reuse_manifest is not None else None,
                     "reused_condition_ids": reused},
-                "information_wall": {"deployment_inputs": [] if no_video else ["exact language", "RGB videos", "displayed frame indices"],
-                    "teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
-                    "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
-                    "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
-                    "writer_invocations_per_unique_condition": 0 if no_video else 1,
-                    "total_writer_invocations": 0 if no_video else len(conditions),
-                    "outcome_dependent_video_selection": False,
-                    "shuffled_reversed_wrong_no_video": selection["arm"] in CONTROL_ARMS}}
+                "information_wall": information_wall}
     if diagnostic_contract is not None:
         manifest["diagnostic_contract"] = dict(diagnostic_contract)
-        manifest["information_wall"]["materialization_rgb_video_reads"] = 0 if no_video else len(conditions)
-    else:
+        if not conditional:
+            manifest["information_wall"]["materialization_rgb_video_reads"] = 0 if no_video else len(conditions)
+    elif not conditional:
         manifest["information_wall"]["deployment_inputs"] = ["exact language", "ordered RGB videos", "original frame indices"]
     path = output / "manifest.json"
     write_json_atomic(path, manifest)
     return path
+
+
+def _validate_conditional_selection(selection: Mapping[str, Any], config: Mapping[str, Any]) -> None:
+    """Bind this study's banks to its two registered training-role panels."""
+    spec = read_json(REPO_ROOT / config["study_spec"])
+    evaluation = spec["evaluation"]
+    held, seen = evaluation["diagnostic_held"], evaluation["seen"]
+    tasks = selection["task_ids"]
+    if tasks == held["task_ids"]:
+        states, pool, schedule = held["state_ids"], held["teacher_demos"], VIDEO_SCHEDULE
+        permitted_arms = {"correct", "same_task_other", "cross_suite_wrong"}
+    elif tasks == seen["task_ids"]:
+        states, pool, schedule = seen["state_ids"], list(range(46, 50)), "conditional_compilation_reserved_seen_v1"
+        permitted_arms = {"correct"}
+    else:
+        raise ValueError("conditional bank tasks are outside registered held400 and seen64 panels")
+    if (selection["evaluation_role"] != "development_train" or selection["K"] != 1
+            or selection["mode"] != "per_init_ordinal"
+            or selection["seed"] != evaluation["video_schedule_seed"]
+            or selection["init_state_ids"] != states or selection["video_pool"] != pool
+            or selection["schedule"] != schedule or selection["arm"] not in permitted_arms):
+        raise ValueError("conditional bank pairing differs from its registered panel")
 
 
 def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device | None = None,
@@ -465,6 +605,20 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     if len(set(outputs)) != len(outputs) or any(path.exists() for path in outputs):
         raise ValueError("materialization outputs must be distinct new directories")
     inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
+    for request, (run, _) in zip(requests, inspected, strict=True):
+        if run.get("config", {}).get("schema_version") != CONDITIONAL_CONFIG_SCHEMA:
+            continue
+        _validate_conditional_selection(request["selection"], run["config"])
+        arm_id = run["config"]["experiment"]["arm_id"]
+        selected_arm = request["selection"]["arm"]
+        if arm_id in {"A_direct16", "B_language"} and selected_arm != "correct":
+            raise ValueError("direct and language arms reuse their correct result; no video control reruns are registered")
+        if arm_id in {"C_video_fm", "D_video_aux"} and selected_arm not in {
+                "correct", "same_task_other", "cross_suite_wrong"}:
+            raise ValueError("conditional study permits only correct, selected same-task-other, and cross-suite-wrong banks")
+        if arm_id in {"C_video_fm", "D_video_aux"} and selected_arm in {"same_task_other", "cross_suite_wrong"} \
+                and request.get("diagnostic_contract") is None:
+            raise ValueError("video controls require the sealed selected-checkpoint diagnostic declaration")
     first = inspected[0][0]
     expected = (first["source"], first["model_config"], first["config"]["observer"])
     for run, _ in inspected:

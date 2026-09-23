@@ -47,6 +47,7 @@ class ResidentCompiler:
         affinity = _configure_device(device, cpu_threads)
         self.runtime = build_runtime(asset_root, config, device)
         self.device, self.request, self.checkpoint, self.store = device, None, None, None
+        self.nonvideo_cache = {}
         print(json.dumps({"materialization_worker": {"pid": os.getpid(), "device": str(device),
                                                      "cpu_affinity": affinity}}), flush=True)
 
@@ -64,21 +65,46 @@ class ResidentCompiler:
             runtime.state.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device=str(self.device)), strict=True)
             runtime.state.requires_grad_(False).eval()
             runtime.policy.eval()
-            expected = torch.randn(50, 32, generator=torch.Generator().manual_seed(int(run["config"]["observer"]["probe_seed"])))
-            if not torch.equal(runtime.state.probe.cpu(), expected):
-                raise ValueError("checkpoint public probe differs from its declared seed")
+            if runtime.state.probe is not None:
+                expected = torch.randn(50, 32, generator=torch.Generator().manual_seed(
+                    int(run["config"]["observer"]["probe_seed"])))
+                if not torch.equal(runtime.state.probe.cpu(), expected):
+                    raise ValueError("checkpoint public probe differs from its declared seed")
             if runtime.lora.rank != 16 or len(runtime.lora.targets) != 38:
                 raise ValueError("materialization must produce one complete 38-target rank16 LoRA")
+            self.nonvideo_cache.clear()
             self.checkpoint = checkpoint
         # Only model weights persist. Adapted Z/KV/H and source coordinates are
         # local to bank._compile_condition and never retained across conditions.
-        self.store = bank.RawTeacherVideoStore(tuple(task.authority for task in tasks.values()), frame_stride=5,
-                                              camera_view=run["config"]["observer"].get("camera_view", "agentview"))
+        self.store = (bank.RawTeacherVideoStore(tuple(task.authority for task in tasks.values()), frame_stride=5,
+                                               camera_view=run["config"]["observer"].get("camera_view", "agentview"))
+                      if getattr(runtime, "uses_video", True) else None)
         self.tasks, self.output, self.record, self.request = tasks, output, record, output
 
     def compile(self, job):
-        from ember.writer.materialization import _compile_condition
+        from ember.writer.materialization import _compile_condition, _save_condition
 
+        if not getattr(self.runtime, "uses_video", True):
+            task = self.tasks[job["task"]]
+            if self.runtime.parameterization == "direct_lora":
+                cache_key, condition, invocations = ("direct",), None, 0
+            else:
+                cache_key = ("language", job["task"])
+                invocations = 1
+            if cache_key not in self.nonvideo_cache:
+                if self.runtime.parameterization == "language_writer":
+                    condition = self.runtime.prepare_language(task.authority.language)
+                with torch.no_grad():
+                    generated = self.runtime.compile(condition)
+                self.nonvideo_cache[cache_key] = {
+                    name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
+                    for name, value in generated.items()
+                }
+            else:
+                invocations = 0
+            return _save_condition(self.nonvideo_cache[cache_key], self.runtime.lora, task, job["demos"], [],
+                                   self.output, self.record, parameterization=self.runtime.parameterization,
+                                   writer_invocations=invocations)
         control = job.get("control")
         extras = {"control": control, "video_task": self.tasks[control["video_global_task_id"]]} if control else {}
         return _compile_condition(self.runtime, self.store, self.tasks[job["task"]], job["demos"],

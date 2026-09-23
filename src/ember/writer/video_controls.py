@@ -34,6 +34,23 @@ METHOD_FREEZE_DECLARATION = {
 }
 
 
+def _registered_conditional_held_control(selection) -> bool:
+    """Admit only the sealed train-role held400 post-selection video controls."""
+    if selection["evaluation_role"] != "development_train" or selection["arm"] not in {
+        "same_task_other", "cross_suite_wrong"
+    }:
+        return False
+    spec = read_json(Path(__file__).resolve().parents[3] /
+                     "configs/conditional_compilation_diagnostics_v1/experiment_spec.json")
+    held = spec["evaluation"]["diagnostic_held"]
+    return (selection["task_ids"] == held["task_ids"]
+            and selection["init_state_ids"] == held["state_ids"]
+            and selection["video_pool"] == held["teacher_demos"]
+            and selection["seed"] == spec["evaluation"]["video_schedule_seed"]
+            and selection["K"] == 1 and selection["mode"] == "per_init_ordinal"
+            and selection["fixed_videos"] == {})
+
+
 def require_control_selection(selection):
     if selection["evaluation_role"] == "test" and (
             selection["arm"] not in {"correct", "same_task_other", "cross_suite_wrong", "shuffled", "reversed"}
@@ -42,7 +59,7 @@ def require_control_selection(selection):
             or selection["init_state_ids"] != list(range(50))
             or selection["video_pool"] != list(range(50))):
         raise ValueError("sealed Test requires fixed test8, K1 correct or registered controls and all 50 canonical state/video ordinals")
-    if selection["arm"] in CONTROL_ARMS and (
+    if selection["arm"] in CONTROL_ARMS and not _registered_conditional_held_control(selection) and (
             selection["evaluation_role"] not in {"validation", "test"} or selection["K"] != 1
             or selection["mode"] != "per_init_ordinal" or selection["fixed_videos"]
             or selection["init_state_ids"] != list(range(50))
@@ -101,7 +118,7 @@ def inspect_diagnostic_contract(value, *, selection, checkpoint, run, asset_root
                 raise ValueError("Test controls must retain the paired correct bank method freeze")
             sealed["paired_correct_manifest"] = record
         return sealed
-    if selection["arm"] not in CONTROL_ARMS:
+    if selection["arm"] not in CONTROL_ARMS and not _registered_conditional_held_control(selection):
         if value is not None:
             raise ValueError("a frozen diagnostic declaration belongs only to video controls")
         return None

@@ -65,6 +65,17 @@ Goal21 other绑定同1260 correct100的Goal21投影，按原offset17复用已生
 因此只记Steer已接受，不称执行者已处理；未重发。派发、回执、查询与主讨论CPU复现证据位于
 `coordination/stage1_subset_materialization_{dispatch.txt,dispatch_receipt.json,delivery.json,coordinator_evidence.json}`。
 
+### E1评测准备失败，执行者继续窄修正（2026-09-25）
+
+Sol已实现并推送E1=`bda68cd86ca86d17802cda8b5a6fdbe0b9ba6b86`，登记6条工程smoke通过；
+主讨论核对`C_S01_1260_core_correct`已封存100个condition，bank记录训练7dc、物化E1与原50-video映射。
+该面板在prepare退出1，尚未进入start：失败日志指向`registered_passive_capture.prepare_selection`的旧
+`launch/selectors`约束，而真实参数为`launch/stage1/selectors`；对应evaluation目录尚未生成，无闭环行。
+原件见`launch/eval_C_S01_1260_core_correct{.log,_command.json,_exit.json}`及该E1 bank manifest。
+主讨论检查隔离开发diff，仅修正selector目录约束/路径解析及相应测试；Sol回报相关31项通过，正完成剩余回归与E2集成。
+按既有授权继续：保留E1失败证据，以新clean pushed detached E2统一有效bank与评测；具体E2及真实prepare成功尚待验收。
+训练、数据、18面板1500行66cases和停止合同未改，无新的科学结果；不新增指令或打断执行者当前修复。
+
 ### 前一次成本修订（2026-09-24 14:38 UTC；已被第一阶段合同取代）
 
 Owner询问本批成本与信息量是否匹配。主讨论核对发现16704/21868条用于六节点完整曲线，
@@ -95,7 +106,7 @@ Sol报告普通canonical trajectory capture不含逐控制步对象/EEF/夹爪�
 训练/恢复/物化/3300函数预测仍从该提交执行；所有尚未启动的新正式闭环统一固定新的评测实现提交E。
 E仅修复被动采集和prepare/resume/逐行验收，须验证不改变控制、RNG、LoRA/policy或成功/时限规则。
 不接受缺项，不重训，不用额外正式闭环补trace；该采集裁决当时保持21868/82case，后续独立成本修订将条数降为9932。
-精确E与修订launch/provenance由Sol实现、验证、集成后登记，原训练合同不追改；当前E尚未产生，不能称修复完成。
+精确E与修订launch/provenance由Sol实现、验证、集成后登记，原训练合同不追改；该裁决登记时E尚未产生，后续状态见上方E1/E2记录。
 具体验收、工程smoke和停止边界见设计§6。正在运行的训练持续等待退出事件；只暂缓受影响的正式评测。
 修订已在`c3f4a768`推送；10:48 UTC以Steer送入Sol当前turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`。
 10:49 UTC通过该turn的full items核对完整正文，并读取Sol明确回应：保留7dc训练/物化，建立独立评测E并先验证采集。

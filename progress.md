@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：四臂完成并复核，登记冻结前段轨迹干预（2026-09-24）
+## 当前状态：冻结前段轨迹干预已启动，资源中断后按原合同续跑（2026-09-24）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -14,17 +14,40 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 **当前active design为[冻结前段轨迹与视频条件因果诊断](docs/designs/frozen_prefix_causality_design.md)**，
 机器规格`configs/frozen_prefix_causality_v1/experiment_spec.json`；设计提交`3258e304`已推送，已向同一Sol执行者Queue派发具体实验。
 2026-09-24 00:55 UTC入队回执`01a0d0e9-1dee-79b3-abfd-2c59a20e20ab`；一次只读查询确认消息已进入新活跃轮
-`01a0d0e9-1df2-70a0-94fc-0a1f7742a897`，尚未据此宣称实现完成或正式分支已启动。
+`01a0d0e9-1df2-70a0-94fc-0a1f7742a897`；该次查询只证明投递，后续正式执行状态见下方。
 精确正文、回执和查询证据在旧study的`coordination/prefix_dispatch_20260924.{txt,json}`；不重复发送或要求例行确认。
 原[四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)已完成：54面板13200行、四臂全部1260更新、
 selected controls及480条登记动作probe齐全；Sol主动完成回报后已停止新增实验，registration为`registered_batch_complete`。
 主讨论独立原始行复核和裁决见findings§135。新批次研究根为`/data0/user/ymdai/ember_runs/frozen_prefix_causality_20260924`，
-创建及资源检查由Sol执行；旧四臂runtime和产物只读保留，不改原训练、选点或结论。
+运行资产已由Sol建立，资源准入及续跑仍由Sol执行；旧四臂runtime和产物只读保留，不改原训练、选点或结论。
 Sol在独立worktree拥有代码、训练配置、测试和run产物；主讨论拥有科学解释及主线状态文档，集成前协调避免覆盖。
 短期步骤、结果解释分支和派发要求见[task_plan](task_plan.md)。
 接手后在既有授权内完成实现/核验/有界诊断；旧的组会deadline、无上限GPU及其它历史运行许可不恢复。
 长任务正常期间等待完成或异常事件，不固定间隔读取训练进度、日志、checkpoint或共享缓存；
 9月23日长期授权本身未转发Sol；现在只派发经过分析后形成的具体实验。
+
+### 冻结干预执行与资源中断恢复
+
+正式实现`1f583d9e31e55c798ee98833f48ddf740d05247d`已集成推送；运行树为
+`/data1/user/ymdai/projects/EMBER-frozen-prefix-formal`。Sol报告66项针对性测试、固定case smoke和pilot16完成。
+本批目标仍是1600分支，未改模型、条件、训练或科学参数。
+
+- 首次资源阻塞发生时已完成pilot16与后续四面板396，共412个唯一分支；第五面板
+  `B_k50_to_B_remaining`只完成prepare。gpu01 GPU查询多次超时，SSH正常；原控制器exit1和失败日志保留。
+  这是资源准入中断，不是模型或科学假设失败。
+- 主讨论在2026-09-24 02:16 UTC按节点本机运行原identity-aware helper，两节点GPU和进程归属均返回，
+  未知节点/进程检查错误均为空。该快照只能证明查询当时恢复；超时的驱动/硬件根因未定。
+  原件在本study的`coordination/resource_recheck_20260924T021615Z_gpu{01,02}.json`。
+- 随后的针对性核对确认Sol已自行通过新的双节点准入，启动原`run_remaining_continuation.sh`，
+  第五面板使用gpu02的0/1/2/3四张卡；登记状态为`remaining_continuation_starting`，尚无整批完成信号。
+  没有重复派发或另起worker；后续等待Sol完成/异常事件，不周期读取运行进度。
+- 主讨论只读取阻塞前已完成的八份面板，独立核对412唯一分支、worker exit0、原bank/teacher/RNG及重放误差；
+  已登记的28个full cases对应元数据齐全。B/k25的两任务四followers共400分支，前段动作、对象轨迹、
+  初态/截断完整sim state和controller状态配对一致；保存state的最大重放误差为0。
+  复算代码及原件索引在`coordination/partial_recheck_412.{py,json}`。
+- B/k25同策略接手相对旧原行：Object14为45→45（保留43、得2、失2），Goal21为42→44（保留38、得6、失4）。
+  这说明新旧执行存在成功集合变化，不能把旧自然rollout与新分支的所有差异算作因果收益。
+  不追逐逐bit复现；按原设计，以新执行合同内的配对分支为主要比较，并等待C前段及k50完整结果后统一裁决。
 
 ### 四臂结果与下一步理由
 

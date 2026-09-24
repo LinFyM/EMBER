@@ -12,7 +12,11 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，前三批已完成，新批投递状态如下。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
 **当前active design为[同状态交叉视频动作函数诊断](docs/designs/crossed_video_action_field_design.md)**，
-机器规格`configs/crossed_video_action_field_v1/experiment_spec.json`；准备Queue给上述Sol。
+机器规格`configs/crossed_video_action_field_v1/experiment_spec.json`，设计提交`d19fb26a`已推送。
+2026-09-24 05:42 UTC已核对Queue正文进入上述Sol的进行中turn：
+Queue `01a0d1ee-e815-7da3-b863-52e83708b5c5`，turn `01a0d1ee-e818-78a3-88ba-f091050d29db`。
+正文、入队及投递核验在前批动作通道study的`coordination/crossed_video_dispatch_20260924.{txt,json}`
+和`crossed_video_delivery_20260924.json`；这证明已接收任务，不代表正式预测已启动或完成。
 新研究根为`/data0/user/ymdai/ember_runs/crossed_video_action_field_20260924`，由Sol核对quota后创建；
 固定两任务50初态、原C前段0/10/20步共300queries，交叉50正确视频bank，加B/Source/封存wrong参照，共15900次10-flow预测。
 无训练、新teacher标签读取、新物化或新完整闭环；不把预测差异当部署成绩。

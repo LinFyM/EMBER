@@ -18,22 +18,42 @@ def _spec(repo_root: Path) -> tuple[Path, dict[str, Any]]:
     path = (repo_root / SPEC_RELATIVE).resolve()
     spec = read_json(path)
     amendment = spec.get('execution', {}).get('implementation_provenance_amendment', {})
+    scope = spec.get('execution', {}).get('scientific_evaluation_scope_amendment', {})
+    evaluation = spec.get('evaluation', {})
     if (spec.get('schema_version') != 'ember_relational_support_causality_spec_v1'
             or spec.get('study_id') != 'relational_support_causality_20260924'
             or amendment.get('id') != 'passive_capture_fix_before_formal_evaluation_20260924'
             or amendment.get('retrain') is not False
             or amendment.get('accept_missing_trace') is not False
-            or spec.get('evaluation', {}).get('capture', {}).get('continuous_object_eef_gripper') is not True
-            or spec['evaluation']['capture'].get('stage_predicates') is not True):
+            or scope.get('id') != 'fixed_endpoint_and_adjacent_evaluation_20260924'
+            or evaluation.get('executed_updates') != [1050, 1260]
+            or evaluation.get('selection', {}).get('fixed_update') != 1260
+            or evaluation.get('total_registered_rollouts_max') != 9932
+            or evaluation.get('capture', {}).get('continuous_object_eef_gripper') is not True
+            or evaluation['capture'].get('stage_predicates') is not True):
         raise Pi05EvaluationError('relational passive-capture science registration changed')
     return path, spec
 
 
-def is_registered_request(args: Any, repo_root: Path, output_dir: Path) -> bool:
-    _, spec = _spec(repo_root)
+def _formal_panel_scope(spec: Mapping[str, Any], output_dir: Path) -> bool:
     study = Path(spec['outputs']['planned_run_root']).resolve()
-    return (Path(args.config).resolve() == (repo_root / EVALUATION_RELATIVE).resolve()
-            and output_dir.resolve().is_relative_to(study / 'evaluation'))
+    root = study / 'evaluation'
+    output = output_dir.resolve()
+    if not output.is_relative_to(root):
+        return False
+    arms = [row['id'] for row in spec['arms']]
+    updates = spec['evaluation']['executed_updates']
+    plan = spec['evaluation']['controls_after_all_training_correct_panels_and_selection_frozen']
+    panels = {f'{arm}_{step}_{panel}' for arm in arms for step in updates
+              for panel in ('held', 'seen')}
+    panels.update(f'{arm}_1260_support' for arm in arms)
+    panels.update(f'Source_{panel}' for panel in ('held', 'seen', 'support'))
+    panels.update(f'{arm}_1260_other' for arm in plan['same_task_other_at1260'])
+    panels.update(f'{arm}_1260_wrong' for arm in plan['cross_suite_wrong_at1260'])
+    if (len(panels) != 39 or plan['same_task_other_at_selected_if_not1260']
+            or output.parent != root or output.name not in panels):
+        raise Pi05EvaluationError('relational formal panel is outside fixed-endpoint evaluation scope')
+    return True
 
 
 def prepare_selection(
@@ -43,6 +63,7 @@ def prepare_selection(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     spec_path, spec = _spec(repo_root)
     study = Path(spec['outputs']['planned_run_root']).resolve()
+    _formal_panel_scope(spec, output_dir)
     actual = {(str(task.suite), int(task.task_id), int(state))
               for task in tasks for state in task.init_state_ids}
     if (manifest.get('passive_control_trace') != TAG
@@ -145,10 +166,10 @@ def _trace_and_stage_match(
 def validate_contract(contract: Mapping[str, Any], repo_root: Path) -> None:
     output_dir = Path(contract['output_dir']).resolve()
     _, spec = _spec(repo_root)
-    study = Path(spec['outputs']['planned_run_root']).resolve()
+    formal_panel = _formal_panel_scope(spec, output_dir)
     capture = contract.get('diagnostic_occupancy_capture') or {}
     if not capture.get('passive_trace'):
-        if output_dir.is_relative_to(study / 'evaluation'):
+        if formal_panel:
             raise Pi05EvaluationError('relational formal evaluation lacks passive all-row capture')
         return
     path = Path(capture['selection_path'])
@@ -187,6 +208,10 @@ def attach_requested_capture(
     args: Any, contract: dict[str, Any], repo_root: Path, output_dir: Path,
 ) -> None:
     capture = contract.get('diagnostic_occupancy_capture') or {}
-    if is_registered_request(args, repo_root, output_dir) and not capture.get('passive_trace'):
-        raise Pi05EvaluationError('relational formal evaluation requires passive all-row capture')
+    _, spec = _spec(repo_root)
+    if _formal_panel_scope(spec, output_dir):
+        if Path(args.config).resolve() != (repo_root / EVALUATION_RELATIVE).resolve():
+            raise Pi05EvaluationError('relational formal evaluation config changed')
+        if not capture.get('passive_trace'):
+            raise Pi05EvaluationError('relational formal evaluation requires passive all-row capture')
     attach_provenance(contract, repo_root)

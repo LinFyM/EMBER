@@ -248,11 +248,21 @@ def _registration(tmp_path):
     spec={'schema_version':'ember_relational_support_causality_spec_v1',
           'study_id':'relational_support_causality_20260924',
           'outputs':{'planned_run_root':str(study)},
-          'evaluation':{'capture':{'continuous_object_eef_gripper':True,'stage_predicates':True}},
+          'arms':[{'id':arm} for arm in ('C_S00','C_S01','C_S10','C_S11','B_S00','B_S11')],
+          'evaluation':{'capture':{'continuous_object_eef_gripper':True,'stage_predicates':True},
+                        'executed_updates':[1050,1260],
+                        'selection':{'fixed_update':1260},
+                        'total_registered_rollouts_max':9932,
+                        'controls_after_all_training_correct_panels_and_selection_frozen':{
+                            'same_task_other_at1260':['C_S00','C_S01','C_S10','C_S11'],
+                            'cross_suite_wrong_at1260':['C_S00','C_S11'],
+                            'same_task_other_at_selected_if_not1260':[]}},
           'execution':{'implementation_provenance_amendment':{
               'id':'passive_capture_fix_before_formal_evaluation_20260924',
               'retrain':False,'accept_missing_trace':False,
-              'training_materialization_and_query_commit':TRAINING}}}
+              'training_materialization_and_query_commit':TRAINING},
+              'scientific_evaluation_scope_amendment':{
+                  'id':'fixed_endpoint_and_adjacent_evaluation_20260924'}}}
     spec_path.write_text(json.dumps(spec))
     config=repo/'configs/relational_support_causality_v1/evaluation.json'
     config.write_text('{}')
@@ -274,13 +284,14 @@ def _registration(tmp_path):
 
 def test_registration_empty_full_still_requires_every_row_and_resume(tmp_path):
     repo,study,selection,args,task,subset,manifest=_registration(tmp_path)
-    capture,stage=prepare_from_manifest(args,repo_root=repo,output_dir=study/'evaluation/panel',
+    panel=study/'evaluation/Source_support'
+    capture,stage=prepare_from_manifest(args,repo_root=repo,output_dir=panel,
         task_subset=subset,tasks=[task],manifest=manifest,selection_path=selection,full=())
     assert capture['full_conditions']==[] and stage['full_conditions_only'] is False
     with pytest.raises(Pi05EvaluationError,match='requires passive'):
         attach_requested_capture(args, {'diagnostic_occupancy_capture':None}, repo,
-                                 study/'evaluation/panel')
-    contract={'output_dir':str(study/'evaluation/panel'),'git':{'commit':'evaluation_commit'},
+                                 panel)
+    contract={'output_dir':str(panel),'git':{'commit':'evaluation_commit'},
               'adapter':None,'tasks':[{'suite':'libero_90','task_id':36,'init_state_ids':[0,1]}],
               'diagnostic_task_subset':subset,'diagnostic_occupancy_capture':capture,
               'diagnostic_stage_predicates':stage}
@@ -297,12 +308,13 @@ def test_registration_empty_full_still_requires_every_row_and_resume(tmp_path):
 
 def test_passive_registration_rejects_bank_from_other_training_commit(tmp_path):
     repo,study,selection,args,task,subset,manifest=_registration(tmp_path)
-    capture,stage=prepare_from_manifest(args,repo_root=repo,output_dir=study/'evaluation/panel',
+    panel=study/'evaluation/B_S00_1260_support'
+    capture,stage=prepare_from_manifest(args,repo_root=repo,output_dir=panel,
         task_subset=subset,tasks=[task],manifest=manifest,selection_path=selection,full=())
     adapter={'writer_checkpoint':{'training_commit':TRAINING},
              'materialization_git':{'commit':'another_commit'},
              'manifest':{'path':str(study/'materialization/B_smoke/manifest.json'),'bytes':12}}
-    contract={'output_dir':str(study/'evaluation/panel'),'git':{'commit':'evaluation_commit'},
+    contract={'output_dir':str(panel),'git':{'commit':'evaluation_commit'},
               'adapter':adapter,'tasks':[{'suite':'libero_90','task_id':36,'init_state_ids':[0,1]}],
               'diagnostic_task_subset':subset,'diagnostic_occupancy_capture':capture,
               'diagnostic_stage_predicates':stage}
@@ -312,3 +324,11 @@ def test_passive_registration_rejects_bank_from_other_training_commit(tmp_path):
     attach_provenance(contract,repo)
     validate_contract(contract,repo)
     assert contract['passive_capture_provenance']['bank_manifest']==adapter['manifest']
+
+
+def test_passive_registration_rejects_omitted_evaluation_update(tmp_path):
+    repo,study,selection,args,task,subset,manifest=_registration(tmp_path)
+    with pytest.raises(Pi05EvaluationError,match='fixed-endpoint evaluation scope'):
+        prepare_from_manifest(args,repo_root=repo,
+            output_dir=study/'evaluation/B_S00_420_support',
+            task_subset=subset,tasks=[task],manifest=manifest,selection_path=selection,full=())

@@ -10,6 +10,7 @@
 冻结训练配置中的六个`evidence.evaluation_updates`与spec的对应optimization字段保留为原训练元数据；
 实际评测节点的唯一authority是`evaluation.executed_updates`，不能据旧训练元数据启动已取消的面板。
 本修订允许机械同步评测注册、task/state子集调度、固定1260记录和阶段验收/汇总；这些改动与被动采集修复一起集成到唯一E。
+随后核实7dc物化入口不接受本阶段子集，§6已授权把选择/校验修正一并纳入E；训练和Writer生成计算保持原语义。
 不能借规模修订改变policy forward、环境/动作/成功规则或原预定义1260科学对比。
 主讨论`01a0cd94-65da-7b22-8ca9-7ba35f454632`负责设计和解释；现有Sol
 `01a0cd90-ebb7-77a1-a20b-a858825d2f66`负责实现、执行和原件回报，使用Queue接收后续任务。
@@ -209,24 +210,49 @@ smoke独立且不可作formal初始化/成绩；正常低位差异接受，不�
 2026-09-24正式闭环尚未启动时，发现该提交的普通capture未实现登记的逐控制步对象/EEF/夹爪，
 且阶段谓词仅对full cases启用。按下述显式工程修订实行**分阶段唯一clean pushed detached commit**：
 
-- 六臂训练、完整恢复、Writer物化仍固定；暂缓的函数预测如后续派发也沿用
+- 六臂训练、完整恢复保持固定；暂缓的函数预测如后续派发也沿用
   `7dc95edbba00cf61439700d77fb321eb8df95c07`，原树
   `/data1/user/ymdai/projects/EMBER-relational-support-formal`保持只读；未启动臂也不切训练实现，不重训。
-- 全部新正式闭环，包括当前第一阶段六臂1260子集、controls、support和Source，统一使用一个新增的评测冻结提交E，
+- 本阶段全部新bank物化和正式闭环，包括六臂1260子集、controls、support和Source闭环，统一使用一个新增冻结提交E，
   树`/data1/user/ymdai/projects/EMBER-relational-support-evaluation-formal`。
-  E从最新main集成，精确commit在首个正式评测前写入研究根的capture修订launch合同；不能按臂或节点混用评测实现。
-- E只允许修改被动轨迹采集、当前阶段的子集注册/调度/分析、对应prepare/resume/row验收与必要测试/文档；训练配置、Source、Writer、
-  sampler/优化器/损失、LoRA物化与应用、policy forward、动作预处理/后处理/执行、RNG、环境reset/settling、
+  E从最新main集成，精确commit在首个正式bank/评测前写入研究根的修订launch合同；不能按臂或节点混用物化/评测实现。
+- E只允许修改被动轨迹采集、当前阶段的物化选择/校验和子集注册/调度/分析、对应prepare/resume/row验收与必要测试/文档；训练配置、Source、Writer、
+  sampler/优化器/损失、实际单condition LoRA生成与应用、policy forward、动作预处理/后处理/执行、RNG、环境reset/settling、
   success/horizon/排队规则均保持。若实际修复需要越过该边界，暂停受影响评测并向主讨论报告。
 - `training_commit`、bank物化来源和`evaluation_commit`分别如实记入run/完成provenance；
   不追改原训练合同，不把两个阶段冒称同一实现提交。旧五批冻结树/原件不动。
+
+**第一阶段子集物化裁决（2026-09-25，北京时间）：** 冻结7dc的`_validate_conditional_selection`要求完整held8或四support，
+并匹配原50个states；`request_init_state_ids`的count-only仅接受10/50。主讨论从冻结树实际复现两类拒绝，
+另确认Goal21-only other的声明及paired-correct校验仍依赖旧完整held400。这是阶段入口合同不相容，不是科学阴性。
+明确撤销“本阶段实际bank必须从7dc运行”的限制，改为**materialization_commit = evaluation_commit = E**；
+训练提交、权重、真实生成计算与原逐条件输入身份不变，不通过预生成暂缓bank来绕过边界。
+
+- 只准许本批schema及`evaluation.stage1.panels`中该arm固定1260的正式模型面板；Source无需Writer bank。
+  task/state/condition、role、seed、K1、50视频池、完整checkpoint与信息墙均须显式校验；旧研究及官方Val/Test的准入不放宽。
+  复用现有materialization/controls/evaluation owner，按实际请求路径修正解析、选择、封存、加载与prepare/resume；
+  不用monkeypatch、伪造完整manifest或新建平行编译器绕开校验，非法面板须在启动GPU前拒绝。
+- 令`L(t,s)=G_phi(language_t,V[pi_t(s)])`。缩减只取登记的`(t,s)`子集，不改`G_phi`、`pi_t`或其输入；
+  support保持原50排列的前20个state。逐行对照旧完整面板的condition ID、teacher编号、配对other与video ordinal，
+  检验这一限制操作不重新抽样，也不改变帧选择、public probe或单condition生成语义。
+- Goal21 other仍绑定本臂同一1260的correct bank，允许从Object14/Goal21 correct100中投影出Goal21的50行作为配对参照；
+  其checkpoint/source/生成合同、逐state正确视频与other offset17均须校验，不能只把400数量断言删掉。
+  correct的Goal21已包含全部50teacher，other按对应condition复用现有LoRA及真实来源，仅重排episode映射，不重复Writer forward。
+- 针对性CPU验收覆盖实际JSON请求→selection→bank/诊断声明→evaluator prepare/resume链，
+  以及被暂缓held6/support state20..49、wrong、错误arm/checkpoint/映射和官方Val/Test越界的拒绝。
+  从冻结7dc生成的原50-state排列表做逐行映射参照，不能只用新版函数自证。生成核心的task-scoped Git diff须确认未改。
+  GPU接口复用已登记Source/B/C/support工程smoke及现成smoke资产，把新路径纳入原≤12条episode预算；
+  不额外训练、不运行完整旧bank作对照、不为逐bit一致重复生成或重跑闭环。
+- 在`launch/stage1_subset_materialization_amendment.json`记录E、训练7dc、映射验收、bank范围/复用、命令和原预算内smoke结果。
+  若实现需要改变单condition生成计算或映射，停止受影响bank并回报；窄修正验收并冻结E后自主继续1500阶段。
+  其它科学对比、18面板/1500行/66cases/0函数预测、数据墙、GPU/存储上限及阶段结束信号均保持。
 
 采集修订不接受原件缺项，也不重跑正式闭环补采集。其原21868预算随后经9932修订，当前只授权1500条第一阶段；
 66个当前full cases、信息墙、Goal21主要对比、bootstrap和资源上限按本版§5，不把规模修订混称为被动采集代码修复。
 采集语义为settling结束时t=0与每个实际`env.step(action)`后各一次：T条7维实际动作对应T+1条
 物体body位置、EEF位置/姿态、夹爪及BDDL谓词；不称MuJoCo内部每个积分步采样。
 对象身份从各task实际环境/BDDL注册取得，不复用旧两任务的硬编码roles，也不以8D state推算对象轨迹。
-所有compact/full行均须有这些原件、终止前缀一致和路径索引；full仍仅登记82案例。环境privileged读数仅写结果，
+所有compact/full行均须有这些原件、终止前缀一致和路径索引；full仅登记本阶段66案例。环境privileged读数仅写结果，
 不得进入policy/Writer条件、梯度或checkpoint选择。注册selection、prepare、resume与逐行验收须显式拒绝缺项，不能静默降级。
 
 实施前后用一个最小、真实的重复动作流证明被动读取不增加`env.step`、不消耗policy RNG、不改变动作和终止语义；

@@ -52,6 +52,15 @@ Source两目标100加六support各20为120。50-state主问题与原teacher映�
 完整派发正文、接受回执和当时查询证据在`coordination/stage1_core_{dispatch.txt,dispatch_receipt.json,delivery.json}`，
 本次回报见`coordination/stage1_core_acknowledgement.json`。该回报不代表E已冻结、执行器修订已验收或正式评测已经完成。
 
+### 第一阶段物化接口冲突与裁决（2026-09-25）
+
+Sol回报7dc完整held/support选择限制与1500阶段不相容；主讨论从冻结树CPU复现held两任务及support20拒绝，
+并确认Goal21-only other还受旧完整held400诊断声明/配对参照限制。原50-video排列表取state子集的映射本身不变。
+按设计§6/spec的新subset物化修订，允许将选择/校验及其prepare/resume适配纳入尚未冻结的唯一E，
+本阶段`materialization_commit = evaluation_commit = E`，训练及单condition生成语义仍固定7dc；不预物化暂缓面板。
+Goal21 other绑定同1260 correct100的Goal21投影，按原offset17复用已生成的50个teacher条件，不增加Writer forward。
+目标、采样、科学对比、18面板1500行66cases及资源预算未改；实现和实际GPU接口仍由Sol完成验收，当前不称修复已完成。
+
 ### 前一次成本修订（2026-09-24 14:38 UTC；已被第一阶段合同取代）
 
 Owner询问本批成本与信息量是否匹配。主讨论核对发现16704/21868条用于六节点完整曲线，

@@ -74,6 +74,7 @@ def prepare_selection(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     spec_path, spec = _spec(repo_root)
     study = Path(spec['outputs']['planned_run_root']).resolve()
+    selector_root = study / 'launch' / 'stage1' / 'selectors'
     panel = _formal_panel_scope(spec, output_dir)
     actual = {(str(task.suite), int(task.task_id), int(state))
               for task in tasks for state in task.init_state_ids}
@@ -88,8 +89,8 @@ def prepare_selection(
             or args.mode not in {'formal', 'screen'}
             or Path(args.config).resolve() != (repo_root / EVALUATION_RELATIVE).resolve()
             or not output_dir.resolve().is_relative_to(study)
-            or not selection_path.is_relative_to(study / 'launch' / 'selectors')
-            or not Path(task_subset['selection_path']).is_relative_to(study / 'launch' / 'selectors')
+            or not selection_path.resolve().is_relative_to(selector_root)
+            or not Path(task_subset['selection_path']).resolve().is_relative_to(selector_root)
             or len(full) != len(set(full)) or not set(full) <= actual):
         raise Pi05EvaluationError('relational passive-capture selection changed')
     capture = {

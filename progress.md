@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：Sol已启动四臂中的C/D，主讨论负责科学裁决（2026-09-23）
+## 当前状态：四臂完成并复核，登记冻结前段轨迹干预（2026-09-24）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -11,18 +11,31 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
 实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，派发前空闲，现已接手。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**接续的active design为[条件编译四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)**，
-Queue已接受：message `01a0cd98-6793-7d13-8646-e54fef12f271`；Sol已在turn
-`01a0cd98-6796-7aa3-b6ae-8c5638bd0f1a`明确接手，并创建`EMBER-conditional-exec`／`codex/conditional-exec`隔离树审阅WIP。
-该Queue已由Sol实际消费；实现已在`43d801b16ee3ed0bc80f963c89ad003b7cc40732`集成推送main，C/D正式训练已启动。
-完整派发/回执在study的`coordination/`；目前尚无本批完整闭环结果。
+**当前active design为[冻结前段轨迹与视频条件因果诊断](docs/designs/frozen_prefix_causality_design.md)**，
+机器规格`configs/frozen_prefix_causality_v1/experiment_spec.json`；准备向同一Sol执行者Queue派发具体实验。
+原[四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)已完成：54面板13200行、四臂全部1260更新、
+selected controls及480条登记动作probe齐全；Sol主动完成回报后已停止新增实验，registration为`registered_batch_complete`。
+主讨论独立原始行复核和裁决见findings§135。新批次研究根为`/data0/user/ymdai/ember_runs/frozen_prefix_causality_20260924`，
+创建及资源检查由Sol执行；旧四臂runtime和产物只读保留，不改原训练、选点或结论。
 Sol在独立worktree拥有代码、训练配置、测试和run产物；主讨论拥有科学解释及主线状态文档，集成前协调避免覆盖。
 短期步骤、结果解释分支和派发要求见[task_plan](task_plan.md)。
 接手后在既有授权内完成实现/核验/有界诊断；旧的组会deadline、无上限GPU及其它历史运行许可不恢复。
 长任务正常期间等待完成或异常事件，不固定间隔读取训练进度、日志、checkpoint或共享缓存；
-本次授权更新未查询运行进度、未改变冻结实现、未向Sol发送消息，也未派发新增实验。
+9月23日长期授权本身未转发Sol；现在只派发经过分析后形成的具体实验。
 
-### 工程核验及正式运行快照
+### 四臂结果与下一步理由
+
+Source held58/400、seen9/64；A/B/C/D selected为420/630/420/1050，held108/124/110/123，
+对应Source R/G/L为49/59/9、48/76/10、34/76/24、40/83/18。B后四节点高于A，
+不支持生成链普遍不会学习；C有能力获得，但保留损失更大。C controls110/98/126、D123/110/80，
+D相对wrong有优势，却尚未证明优于语言B的正确视频增量；D末段held丢60得28、seen仍改善。
+
+实际flow probe与闭环不一致，固定画面出现错误对象和同任务反例；历史已有异质失败及空间监督的局限。
+据此下一批冻结B630/C420，以两任务、50初态、两种保存动作前段、25/50步截断和四个接手条件组成1600个分支，
+直接区分状态历史与同状态的策略/视频条件作用。无训练、无新增held expert actions、无官方Validation/Test或checkpoint选择。
+这仍是有反驳条件的定位干预；待原件回报后由主讨论继续分析，不把分支成功率当新部署方法成绩。
+
+### 四臂工程核验及启动历史快照（2026-09-23）
 
 Study根：`/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923`。
 正式运行树：`/data1/user/ymdai/projects/EMBER-conditional-formal`，主讨论实查为clean、detached的`43d801b1`。

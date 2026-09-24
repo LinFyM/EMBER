@@ -2871,3 +2871,53 @@ correct−wrong从1增至37的变化可分为correct少12、wrong少48；另一�
 本轮无新增forward、梯度、rollout或Test读取。复算源路径与逐面板计数保存在
 `/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923/coordination/scientific_recheck_20260923.json`。
 机制预测只进入task_plan；这些机械复算没有确定统一根因，也没有新增第五臂授权。
+
+## 135. 四臂完成：语言生成学到能力，视频条件与保持仍未共同改善（2026-09-24）
+
+Study：`/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923`；运行commit`43d801b1`。
+主讨论从54份原始results.json独立重算13200行，核对唯一task/state、worker exit0、clean运行commit、
+共同语言/env/policy RNG前缀、跨节点teacher映射及C/D完整重编码的other/wrong条件；全部与机械汇总一致。
+四臂均1260更新、141120动作查询、12 checkpoints；选点严格按六个held400 correct节点最大值，同分取早。
+复算脚本与结果在study的`coordination/registered_batch_recheck_20260924.{py,json}`，未新增模型forward、rollout或held动作读取。
+
+| 固定模型 | selected | held400 | seen64（同点） | Source相对保留/获得/丢失 |
+| --- | --- | --- | --- | --- |
+| Source1000 | 固定1000 | 58 | 9 | — |
+| A直接rank16 | 420 | 108 | 19 | 49/59/9 |
+| B语言Writer | 630 | 124 | 27 | 48/76/10 |
+| C视频纯FM | 420 | 110 | 22 | 34/76/24 |
+| D视频辅助 | 1050 | 123 | 31 | 40/83/18 |
+
+同节点held差值B−A为`[4,-10,20,13,16,17]`，C−B为`[-2,12,-19,-13,-8,-19]`，
+D−C为`[25,-3,3,7,13,-9]`（210..1260）。B后四节点超过A，且seen学习没有普遍弱于A，
+削弱“生成参数链普遍无法获取直接LoRA能力”的强解释；不能据此宣布优化/decoder无问题。
+C@420与B@630都获得76个Source失败条件，但不代表同一成功集合：B→C保留82、获得28、丢失42。
+C并非完全不会学习，而是获取与保持的分布不同。所有最佳点不同训练时长，不能只由最佳排名判断因果。
+
+C selected correct/other/wrong＝110/98/126；D＝123/110/80。C→D的三种输入分别变化+13/+12/−46，
+correct−wrong差从−16变成+43，其中46/59来自wrong下降；两种正确输入也有小幅正变化，但没有建立超过语言B的收益。
+B selected→D selected保留95、获得28、丢失29；总分−1不等于策略等价。
+D内部correct比wrong多43（共同63、correct-only60、wrong-only17），other比wrong多30，
+说明这批冻结条件中正确视频确有相对错误视频的优势；尚不说明动态内容必要，也不构成绝对能力与有益视频增量的共同修复。
+按8任务簇的描述性95%区间，D correct−wrong为[2.25,21.75]pp、other−wrong为[1.75,14]pp；
+D−B selected为[−5.5,4.5]pp。单训练seed、少任务簇、选点后的条件性区间均限制外推；区间未校正六点选最大。
+correct→other下降12/13也可能包含选点对固定state-video配对的乐观偏差，不能单独宣称视频质量导致不稳。
+
+D1050→1260，held123→91，保留63/得28/失60；seen31→36，保留26/得10/失5。
+held任务净变化：Goal21−25、Spatial0−10、Long36/38合计−8、Object14−2、Object15+13。
+这不是全能力统一崩溃；损益集中且同时存在，不能由下降直接断言梯度冲突或唯一遗忘机制。
+
+登记的actual10-flow probe每模型held32/seen64条。held前5步真实动作MSE为
+Source .05498、A .04407、B .04357、C .03974、D .04213；seen为.07576/.05799/.04395/.04450/.03558。
+C的held平均误差更小却没有更强闭环；D的seen误差更小也不能推出held更稳定。
+这些是固定演示观测、少量位置的同动作目标误差，未识别实际状态分布、对象离散选择或后续恢复原因。
+
+固定full cases中Goal21/state0：B630成功，C630可见将盘子移到炉子上，D630成功，D1260失败且碗仍在原处。
+另一固定state25四者均成功，D630直到295步才成功；因此同任务也不是统一行为模式。
+图像只提供对象选择与状态历史的竞争线索，不能直接等同grounding根因。9月14日Semantic-Path全128回放已呈异质失败，
+9月13日空间Q/K监督改善一般能力却未恢复Goal；这两个历史边界继续有效。
+本次图像索引：study下`coordination/goal21_fixed_state{0,25}_timeline.png`，源为原始full轨迹，无重新rollout。
+
+裁决：关闭四臂定位批次；不把D视作已验证修复，不立即增加一条训练配方。下一项登记为冻结前段轨迹与视频条件干预，
+在已暴露的两个Train诊断任务上，区分共同状态下的条件作用和早期动作造成的历史效应；设计见`docs/designs/frozen_prefix_causality_design.md`。
+这些机制仍待干预证实，当前没有统一根因。

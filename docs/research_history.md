@@ -4,6 +4,20 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-24：四臂诊断完成，登记冻结前段轨迹干预
+
+正式实现`43d801b1`的四臂均完成1260更新。54个面板共13200闭环、selected视频controls及5×96登记动作probe完成，
+Sol主动回报后停止新增实验。主讨论独立复核全部原始行、配对和选点；跨轮裁决见findings§135。
+研究根：`/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923`，原件和复算在`analysis/`及`coordination/`。
+
+Source held58，A/B/C/D最佳为108/124/110/123；C视频三条件110/98/126，D123/110/80。
+语言生成没有普遍弱于直接参数优化；视频路径取得能力但保持与增量未共同改善。D末段held123→91，seen31→36，
+不能把selected峰值或wrong下降当作已解决根因。固定案例与历史异质失败共同要求进一步区分条件作用和状态历史。
+
+主讨论据Owner持续授权登记[冻结前段轨迹与视频条件诊断](designs/frozen_prefix_causality_design.md)，
+固定B630/C420及两任务的50初态，重放保存的前25/50动作后交叉接手，共1600个分支；无训练或官方Validation/Test。
+它是下一项机制干预，登记时尚无结果，不构成新部署方法成绩；具体执行与投递状态见progress。
+
 ## 2026-09-23：主讨论接管，实际Sol接收四臂任务
 
 Owner指定主讨论`01a0cd94-65da-7b22-8ca9-7ba35f454632`负责科学判断，现有Sol

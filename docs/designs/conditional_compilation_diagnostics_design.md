@@ -1,7 +1,7 @@
 # 条件参数生成的四臂诊断（接续合同）
 
-> 状态：2026-09-23四臂实现已修复验证并在`43d801b1`集成推送；Sol已启动C/D正式训练，尚无完整闭环结果。
-> 科学参数保持原冻结spec；正式运行使用同commit的clean detached冻结树。最新分工、授权和状态见[progress](../../progress.md)。
+> 状态：2026-09-24已完成并关闭；54面板13200原始行已由主讨论独立复核，结果与解释边界见findings§135。
+> 本文保留原冻结科学合同和`43d801b1`正式运行依据，不据旧待办重复执行。当前下一批见[progress](../../progress.md)。
 
 任务标识：`conditional_compilation_diagnostics_20260923`。
 配套机器规格：`configs/conditional_compilation_diagnostics_v1/experiment_spec.json`。两者共同定义本批工作；不得自行修改科研参数。

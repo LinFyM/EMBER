@@ -59,6 +59,7 @@ def load_learning_tasks(
 
 EVENT_SCHEMA = "video_teaching_task_mixing_events_v2"
 CONDITIONAL_EVENT_SCHEMA = "conditional_compilation_diagnostics_events_v1"
+RELATIONAL_EVENT_SCHEMA = "relational_support_causality_events_v1"
 MAXIMUM_UPDATES = 2_100
 TASKS_PER_UPDATE = 12
 MAIN_EVENT_QUERIES = 21
@@ -67,7 +68,7 @@ TEACHING_EVENT_QUERIES = 7
 
 def query_allocation(config, update_index):
     """Actual query counts; full event/RNG pools remain independently fixed."""
-    if config.get("event_schema_version") == CONDITIONAL_EVENT_SCHEMA:
+    if config.get("event_schema_version") in {CONDITIONAL_EVENT_SCHEMA, RELATIONAL_EVENT_SCHEMA}:
         tasks_per_update = config.get("tasks_per_update")
         main = config.get("queries_per_task")
         extra = config.get("teaching_queries_per_task")
@@ -102,13 +103,62 @@ def _episode_queries(task, lengths, order, *, seed, cursor, count, teacher_demo=
     return demos, frames, cursor
 
 
+def _bounded_task_ids(asset_root: Path, config: Mapping[str, Any]) -> list[int]:
+    relational = config.get("event_schema_version") == RELATIONAL_EVENT_SCHEMA
+    spec_path = ("configs/relational_support_causality_v1/experiment_spec.json" if relational else
+                 "configs/conditional_compilation_diagnostics_v1/experiment_spec.json")
+    spec = read_json(asset_root / spec_path)
+    if relational:
+        if (config.get("study_spec") != spec_path
+                or config.get("protocol") != spec["protocol"]["path"]):
+            raise ValueError("relation-support event authority changed")
+        selected = spec["protocol"]["pools"].get(config.get("pool_id"))
+        if selected is None or set(selected) & set(spec["protocol"]["diagnostic_held8"]):
+            raise ValueError("relation-support gradient pool crosses the held task wall")
+        return selected
+    return spec["protocol"]["fit28"]
+
+
+def _validate_bounded_event_fields(config: Mapping[str, Any], task_ids: Sequence[int]) -> None:
+    if (config.get("task_ids") != sorted(set(config.get("task_ids", ())))
+            or len(config["task_ids"]) != 28 or config["task_ids"] != task_ids
+            or config.get("version") != config.get("event_schema_version")
+            or config.get("maximum_updates") != 1_260
+            or config.get("tasks_per_update") != 4
+            or config.get("conditions_per_task") != 1
+            or tuple(config.get("cardinalities", ())) != (1,)
+            or config.get("queries_per_task") != MAIN_EVENT_QUERIES
+            or config.get("teaching_queries_per_task") != TEACHING_EVENT_QUERIES
+            or config.get("grouping") != "baseline"
+            or config.get("frame_stride") != 5
+            or config.get("include_last_frame") is not True
+            or config.get("teaching_episode") != "cross_episode"
+            or not config.get("protocol")):
+        raise ValueError("bounded conditional task/event contract changed")
+
+
+def _validate_bounded_episode_roles(config: Mapping[str, Any]) -> None:
+    for name in ("seed", "sampler_seed", "teacher_video_seed", "teaching_seed"):
+        if type(config.get(name)) is not int or config[name] < 0:
+            raise ValueError(f"Writer event {name} must be a non-negative integer")
+    if (tuple(config.get("video_demos", ())) != tuple(range(46))
+            or tuple(config.get("action_demos", ())) != tuple(range(46))
+            or tuple(config.get("diagnostic_action_demos", ())) != tuple(range(46, 50))
+            or tuple(config.get("held_video_demos", ())) != tuple(range(46, 50))):
+        raise ValueError("bounded conditional episode roles changed")
+    query_allocation(config, 0)
+    if config["maximum_updates"] % 7:
+        raise ValueError("bounded conditional rounds require seven macro updates")
+
+
 class WriterTrainingData:
     """Fixed task/video/query events, grouped independently of device ownership."""
 
     def __init__(self, asset_root: Path, config: Mapping[str, Any], *, camera_view: str = "dual",
                  planned_updates: int | None = None, use_videos: bool = True) -> None:
         self.asset_root, self.config = asset_root, deepcopy(dict(config))
-        self.conditional_compilation = config.get("event_schema_version") == CONDITIONAL_EVENT_SCHEMA
+        self.conditional_compilation = config.get("event_schema_version") in {
+            CONDITIONAL_EVENT_SCHEMA, RELATIONAL_EVENT_SCHEMA}
         self.tasks_per_update = int(config.get("tasks_per_update", TASKS_PER_UPDATE))
         self._validate_config()
         if camera_view not in ("agentview", "dual"):
@@ -158,34 +208,8 @@ class WriterTrainingData:
                 or config.get("query_alignment") != "post_action_observation_future_control_v1"):
             raise ValueError("Writer requires post-action observations with future-control labels")
         if self.conditional_compilation:
-            spec = read_json(self.asset_root / "configs/conditional_compilation_diagnostics_v1/experiment_spec.json")
-            if (config.get("task_ids") != sorted(set(config.get("task_ids", ())))
-                    or len(config["task_ids"]) != 28
-                    or config["task_ids"] != spec["protocol"]["fit28"]
-                    or config.get("version") != CONDITIONAL_EVENT_SCHEMA
-                    or config.get("maximum_updates") != 1_260
-                    or config.get("tasks_per_update") != 4
-                    or config.get("conditions_per_task") != 1
-                    or tuple(config.get("cardinalities", ())) != (1,)
-                    or config.get("queries_per_task") != MAIN_EVENT_QUERIES
-                    or config.get("teaching_queries_per_task") != TEACHING_EVENT_QUERIES
-                    or config.get("grouping") != "baseline"
-                    or config.get("frame_stride") != 5
-                    or config.get("include_last_frame") is not True
-                    or config.get("teaching_episode") != "cross_episode"
-                    or not config.get("protocol")):
-                raise ValueError("conditional compilation task/event contract changed")
-            for name in ("seed", "sampler_seed", "teacher_video_seed", "teaching_seed"):
-                if type(config.get(name)) is not int or config[name] < 0:
-                    raise ValueError(f"Writer event {name} must be a non-negative integer")
-            if (tuple(config.get("video_demos", ())) != tuple(range(46))
-                    or tuple(config.get("action_demos", ())) != tuple(range(46))
-                    or tuple(config.get("diagnostic_action_demos", ())) != tuple(range(46, 50))
-                    or tuple(config.get("held_video_demos", ())) != tuple(range(46, 50))):
-                raise ValueError("conditional compilation episode roles changed")
-            query_allocation(config, 0)
-            if config["maximum_updates"] % 7:
-                raise ValueError("conditional compilation rounds must contain exactly seven macro updates")
+            _validate_bounded_event_fields(config, _bounded_task_ids(self.asset_root, config))
+            _validate_bounded_episode_roles(config)
             return
         if config.get("event_schema_version") != EVENT_SCHEMA:
             raise ValueError("training event schema must be explicitly registered")
@@ -291,7 +315,7 @@ class WriterTrainingData:
                 "episode_relation": self.config["teaching_episode"], "sampling_with_replacement": replacement}
 
     def _event_contract(self) -> dict[str, Any]:
-        schema = CONDITIONAL_EVENT_SCHEMA if self.conditional_compilation else EVENT_SCHEMA
+        schema = self.config["event_schema_version"] if self.conditional_compilation else EVENT_SCHEMA
         main_count, teaching_counts = query_allocation(self.config, 0)
         contract = {"schema_version": schema, "seed": self.seed, "sampler_seed": self.sampler_seed,
                 "teacher_video_seed": self.teacher_video_seed, "maximum_updates": self.maximum_updates,
@@ -308,7 +332,11 @@ class WriterTrainingData:
             contract["teaching_rotation"] = "condition_position_minus_global_zero_based_update_mod12"
         else:
             contract["loss_total_scale"] = 4 / 3
-            contract["shared_across_arms"] = True
+            if schema == RELATIONAL_EVENT_SCHEMA:
+                contract["pool_id"] = self.config["pool_id"]
+                contract["pairing"] = "common26_across_pools_and_full_stream_within_pool"
+            else:
+                contract["shared_across_arms"] = True
         if self.dynamic:
             contract.update(maximum_updates=None, protocol=self.config["protocol"],
                             algorithm="balanced_twelve_task_rounds_original_query_prefixes_v2",

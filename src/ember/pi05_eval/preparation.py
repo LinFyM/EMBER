@@ -231,11 +231,8 @@ def _registered_subset_valid(
     manifest: Mapping[str, Any], args: Any, tasks: Sequence[Any],
     declared: tuple[tuple[Any, ...], ...], ordinals: tuple[int, ...],
 ) -> bool:
-    registered = {
-        (ordinal, SUITE_ORDER.index(task.suite) * 10 + int(task.task_id),
-         str(task.suite), int(task.task_id))
-        for ordinal, task in enumerate(tasks)
-    }
+    registered = {(ordinal, _registered_global_task_id(task), str(task.suite), int(task.task_id))
+                  for ordinal, task in enumerate(tasks)}
     fitting_diagnostic = (
         args.role == "development_train"
         and manifest.get("outcome_dependence") is True
@@ -262,6 +259,24 @@ def _registered_subset_valid(
     )
 
 
+def _registered_global_task_id(task: Any) -> int:
+    if task.suite == "libero_90":
+        return 40 + int(task.task_id)
+    return SUITE_ORDER.index(task.suite) * 10 + int(task.task_id)
+
+
+def _registered_support_subset_valid(manifest: Mapping[str, Any], declared: Sequence[tuple[Any, ...]]) -> bool:
+    authority = "configs/relational_support_causality_v1/experiment_spec.json"
+    if manifest.get("study_spec") != authority:
+        return False
+    spec = read_json(Path(__file__).resolve().parents[3] / authority)
+    arm = next((row for row in spec["arms"] if row["id"] == manifest.get("arm_id")), None)
+    expected_ids = (arm["support_eval_global_ids"] if arm is not None else
+                    spec["evaluation"]["source_reference"]["support_global_ids"]
+                    if manifest.get("panel") == "source_reference_support6" else None)
+    return expected_ids is not None and [row[1] for row in declared] == expected_ids
+
+
 def _task_subset_tasks(
     args: Any,
     tasks: Sequence[Any],
@@ -274,7 +289,7 @@ def _task_subset_tasks(
     if (
         getattr(args, "occupancy_capture_selection", None) is not None
         or (str(args.mode), int(args.state_count)) not in {("screen", 4), ("screen", 5), ("screen", 8), ("screen", 10), ("formal", 50)}
-        or args.role != "development_train"
+        or args.role not in {"development_train", "nonheld_meta"}
         or adapter_kind not in {None, "task_expert", "static_task_lora"}
     ):
         raise Pi05EvaluationError("formal task subset request changed")
@@ -297,8 +312,11 @@ def _task_subset_tasks(
         else "train24_fold0_profile1" if declared == TRAIN24_FOLD0_PROFILE
         else "registered_train_subset"
     )
-    if not _registered_subset_valid(manifest, args, tasks, declared, ordinals):
+    if ((args.role == "nonheld_meta" and not _registered_support_subset_valid(manifest, declared))
+            or not _registered_subset_valid(manifest, args, tasks, declared, ordinals)):
         raise Pi05EvaluationError("formal task subset selection changed")
+    if args.role == "nonheld_meta":
+        panel = "registered_relational_support_tasks"
     by_key = {(str(task.suite), int(task.task_id)): task for task in tasks}
     keys = tuple((row[2], row[3]) for row in declared)
     if len(by_key) != len(tasks) or any(key not in by_key for key in keys):
@@ -396,7 +414,7 @@ def _registered_trajectory_capture(
     path = getattr(args, "trajectory_capture_selection", None)
     if path is None:
         return None, None
-    if (task_subset is None or args.role != "development_train"
+    if (task_subset is None or args.role not in {"development_train", "nonheld_meta"}
             or getattr(args, "occupancy_capture_selection", None) is not None
             or bool(getattr(args, "capture_stage_predicates", False))):
         raise Pi05EvaluationError("registered trajectory capture requires a train subset")

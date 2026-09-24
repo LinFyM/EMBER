@@ -31,12 +31,22 @@ EPISODE_SCHEMA = "ember_video_writer_episode_v1"
 
 def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root: Path,
                         protocol_path: str | None = None) -> None:
-    if role not in {"development_train", "validation", "test"}:
+    if role not in {"development_train", "nonheld_meta", "validation", "test"}:
         raise ValueError("video Writer evaluation requires a registered target split")
     protocol, manifest = load_task_authorities(asset_root, protocol_path)
     canonical = {int(row["global_task_id"]): row for row in manifest["tasks"]}
-    split = "train" if role == "development_train" else role
-    expected = {(suite, task) for suite, roles in protocol["split"]["suites"].items() for task in roles[split]}
+    split = "train" if role in {"development_train", "nonheld_meta"} else role
+    if role == "nonheld_meta":
+        authority = protocol.get("study_authority")
+        if authority != "configs/relational_support_causality_v1/experiment_spec.json":
+            raise ValueError("support bank requires the registered study protocol")
+        spec = read_json(asset_root / authority)
+        allowed_sets = {tuple(arm["support_eval_global_ids"]) for arm in spec["arms"]}
+        if tuple(row["global_task_id"] for row in rows) not in allowed_sets:
+            raise ValueError("support bank is outside the four-task registered arm subset")
+        expected = {("libero_90", task - 40) for group in allowed_sets for task in group}
+    else:
+        expected = {(suite, task) for suite, roles in protocol["split"]["suites"].items() for task in roles[split]}
     keys = [(str(row["suite"]), int(row["task_id"])) for row in rows]
     if not keys or len(set(keys)) != len(keys) or not set(keys) <= expected or (split != "train" and set(keys) != expected):
         raise ValueError("task bank crosses the fixed split or omits validation8/test8 tasks")

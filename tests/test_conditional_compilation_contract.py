@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,12 +13,15 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.preparation import _registered_trajectory_capture
 from ember.pi05_eval.preparation import _task_subset_tasks
 from ember.pi05_eval_contract import resolve_role_task_keys
-from ember.writer import materialization, video_controls
+from ember.writer import learning_data, materialization, video_controls
+from ember.writer.learning_data import WriterTrainingData
 from ember.writer.materialization import planned_episodes, selection_contract
+from ember.writer.training import _config
 from ember.writer.video_controls import video_task_id
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SPEC = json.loads((ROOT / "configs/relational_support_causality_v1/experiment_spec.json").read_text())
 
 
 def test_seen_panel_uses_reserved_videos_in_registered_state_order():
@@ -114,3 +118,107 @@ def test_full_registered_eval_subsets_keep_train_role(tmp_path, panel, mode, cou
     selected, record = _task_subset_tasks(args, installed, adapter_kind="static_task_lora")
     assert len(selected) == len(selected_ids)
     assert record["global_task_ids"] == selected_ids
+
+
+# Frozen relation-support task pools reuse the conditional Writer execution owner.
+def _arm_config(arm):
+    return _config(ROOT / f"configs/relational_support_causality_v1/train_{arm}.json")
+
+
+def test_six_fresh_configs_only_admit_their_registered_fit28(tmp_path):
+    held = set(SPEC["protocol"]["diagnostic_held8"])
+    for arm in SPEC["arms"]:
+        config = _arm_config(arm["id"])
+        assert config["data"]["task_ids"] == arm["fit28"]
+        assert len(config["data"]["task_ids"]) == 28
+        assert not held.intersection(config["data"]["task_ids"])
+        changed = deepcopy(config)
+        changed["data"]["task_ids"][0] = SPEC["protocol"]["diagnostic_held8"][0]
+        path = tmp_path / "invalid.json"
+        path.write_text(json.dumps(changed))
+        with pytest.raises(ValueError, match="recipe"):
+            _config(path)
+
+
+def test_common26_events_and_same_pool_language_video_are_identical(monkeypatch):
+    ids = set(task for arm in SPEC["arms"] for task in arm["fit28"])
+    tasks = {task: SimpleNamespace(suite="libero_90" if task >= 40 else "target",
+                                  authority=object(), episode_lengths=(51,) * 50) for task in ids}
+    monkeypatch.setattr(learning_data, "load_learning_tasks", lambda *_a, **_kw: tasks_for(_a[1], tasks))
+    monkeypatch.setattr(learning_data, "RawTeacherVideoStore", lambda *_a, **_kw:
+                        SimpleNamespace(close=lambda: None))
+    monkeypatch.setattr(learning_data, "FunctionalQueryDataset", lambda authorities, **_kw:
+                        SimpleNamespace(task_episode_rows={task: {demo: range(50) for demo in range(46)}
+                                                              for task in ids}, close=lambda: None))
+    plans = {}
+    for arm in SPEC["arms"]:
+        config = _arm_config(arm["id"])
+        data = WriterTrainingData(ROOT, config["data"], camera_view="agentview",
+                                  use_videos=arm["parameterization"] == "video_writer")
+        plans[arm["id"]] = data.event_plan()
+        assert len(plans[arm["id"]]["groups"]) == 1260
+        assert len(plans[arm["id"]]["events"]) == 5040
+        data.close()
+    common = set(SPEC["protocol"]["common26"])
+    baseline = plans["C_S00"]
+    assert plans["B_S11"] == plans["C_S11"]
+    for arm in SPEC["arms"]:
+        plan = plans[arm["id"]]
+        if arm["pool"] == "S00":
+            assert plan == baseline
+        for group, reference in zip(plan["groups"], baseline["groups"], strict=True):
+            tasks_now = [plan["events"][index]["task"] for index in group]
+            tasks_before = [baseline["events"][index]["task"] for index in reference]
+            assert [task for task in tasks_now if task in common] == [task for task in tasks_before if task in common]
+        now = {event["task"]: [] for event in plan["events"]}
+        before = {event["task"]: [] for event in baseline["events"]}
+        for event in plan["events"]:
+            now[event["task"]].append(event)
+        for event in baseline["events"]:
+            before[event["task"]].append(event)
+        assert all(now[task] == before[task] for task in common)
+
+
+def tasks_for(task_ids, tasks):
+    return {task: tasks[task] for task in task_ids}
+
+
+def test_support_bank_uses_correct_local_id_and_50_video_round():
+    arm = SPEC["arms"][0]
+    support = SPEC["evaluation"]["support_knowledge_panels"]
+    selection = materialization.selection_contract(
+        role="nonheld_meta", task_ids=arm["support_eval_global_ids"], cardinality=1,
+        arm="correct", mode="per_init_ordinal", seed=SPEC["evaluation"]["video_schedule_seed"],
+        init_state_ids=support["states"], video_pool=support["teacher_demos"])
+    materialization._validate_conditional_selection(selection, _arm_config(arm["id"]))
+    episodes = materialization.planned_episodes(selection, 58)
+    assert len(episodes) == 50
+    assert {row["teacher_demo_indices"][0] for row in episodes} == set(range(50))
+    assert episodes[0]["init_state_id"] == 0
+
+
+def test_support_evaluator_subset_is_explicit(tmp_path):
+    arm = SPEC["arms"][0]
+    ids = SPEC["evaluation"]["source_reference"]["support_global_ids"]
+    installed = tuple(SimpleNamespace(suite="libero_90", task_id=task - 40,
+                                      init_state_ids=tuple(range(50))) for task in ids)
+    selected_ids = arm["support_eval_global_ids"]
+    ordinals = [ids.index(task) for task in selected_ids]
+    manifest = {
+        "schema_version": "ember_pi05_task_subset_selection_v1", "role": "nonheld_meta",
+        "mode": "formal", "state_count": 50, "init_state_ids": list(range(50)),
+        "task_ordinals": ordinals, "global_task_ids": selected_ids,
+        "tasks": [{"global_task_id": task, "suite": "libero_90", "task_id": task - 40}
+                  for task in selected_ids],
+        "study_spec": "configs/relational_support_causality_v1/experiment_spec.json",
+        "arm_id": arm["id"], "outcome_dependence": False,
+        "validation_use": False, "test_use": False,
+    }
+    path = tmp_path / "subset.json"
+    path.write_text(json.dumps(manifest))
+    args = SimpleNamespace(role="nonheld_meta", mode="formal", state_count=50,
+                           init_state_ids=None, occupancy_capture_selection=None,
+                           task_subset_selection=path)
+    selected, record = _task_subset_tasks(args, installed, adapter_kind="static_task_lora")
+    assert [task.task_id for task in selected] == [task - 40 for task in selected_ids]
+    assert record["diagnostic_subset"] == "registered_relational_support_tasks"

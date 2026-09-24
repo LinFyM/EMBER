@@ -40,6 +40,7 @@ from ember.pi05_eval_queue import (
     publish_json_exclusive,
 )
 from ember.pi05_source_checkpoint import read_json
+from ember.pi05_eval.registered_passive_capture import attach_requested_capture
 
 
 TASK_SUBSET_SELECTION_SCHEMA = "ember_pi05_task_subset_selection_v1"
@@ -409,7 +410,7 @@ def _stage_predicate_capture(
 
 def _registered_trajectory_capture(
     args: Any, tasks: Sequence[Any], output_dir: Path,
-    task_subset: Mapping[str, Any] | None,
+    task_subset: Mapping[str, Any] | None, repo_root: Path,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     path = getattr(args, "trajectory_capture_selection", None)
     if path is None:
@@ -422,6 +423,14 @@ def _registered_trajectory_capture(
     manifest = read_json(path)
     full = tuple((str(row["suite"]), int(row["task_id"]), int(row["init_state_id"]))
                  for row in manifest.get("full_conditions", ()))
+    if manifest.get("passive_control_trace") is not None:
+        from ember.pi05_eval.registered_passive_capture import prepare_from_manifest
+
+        return prepare_from_manifest(
+            args, repo_root=repo_root, output_dir=output_dir,
+            task_subset=task_subset, tasks=tasks, manifest=manifest,
+            selection_path=path, full=full,
+        )
     cases = {(str(task.suite), int(task.task_id), int(state))
              for task in tasks for state in task.init_state_ids}
     if (manifest.get("schema_version") != TRAJECTORY_CAPTURE_SELECTION_SCHEMA
@@ -542,7 +551,7 @@ def _prepared_payload(
     stage_predicates = _stage_predicate_capture(args, occupancy_capture)
     if getattr(args, "trajectory_capture_selection", None) is not None:
         occupancy_capture, stage_predicates = _registered_trajectory_capture(
-            args, tasks, output_dir, task_subset
+            args, tasks, output_dir, task_subset, repo_root
         )
     model = inspect_source_checkpoint(
         authorities,
@@ -599,6 +608,7 @@ def _prepared_payload(
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicates
     contract["diagnostic_task_subset"] = task_subset
+    attach_requested_capture(args, contract, repo_root, output_dir)
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

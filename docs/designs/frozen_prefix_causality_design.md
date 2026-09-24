@@ -1,6 +1,6 @@
 # 冻结策略的前段轨迹与视频条件因果诊断
 
-> 2026-09-24登记。主讨论负责科学裁决，Sol负责实现和执行；当前状态见[progress](../../progress.md)。
+> 2026-09-24完成并关闭：1600分支已独立复核，结果和解释边界见findings§136。原冻结合同保留，不据此重复执行；当前状态见[progress](../../progress.md)。
 > 本批不训练、不选checkpoint；分支执行是定位用的干预，不是EMBER部署候选或新的正式400成绩。
 
 机器规格：`configs/frozen_prefix_causality_v1/experiment_spec.json`。

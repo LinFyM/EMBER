@@ -4,6 +4,19 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-24：1600前段交换完成，定位早期接近状态并登记通道干预
+
+正式实现`1f583d9e`，研究根`/data0/user/ymdai/ember_runs/frozen_prefix_causality_20260924`。
+20面板1600分支、64固定full cases、40登记配对比较完成；主讨论独立复核原始行、状态历史及bootstrap，见findings§136。
+资源准入中断的原退出记录保留，所有实际面板worker exit0。没有新训练、held expert action或官方Validation/Test读取。
+
+Goal中B前段对固定接手者普遍有利，Object无同向普遍优势；第25步物体body位置相同，机器人末端位置不同。
+新旧同策略接手也有结果变化，故只用新合同内配对为主要因果比较。没有证明统一根因、有益视频增量或部署修复。
+后验几何与固定案例在study的`coordination/`，完整原件在`formal/`、`raw/`、`analysis/`。
+
+据此登记[接近阶段动作通道设计](designs/approach_channel_causality_design.md)：固定前25步x/y与z命令来源2×2，加完整B参照，
+两task×50初态×5前段×2接手者共1000分支，用实际几何/接触与闭环区分水平偏置和下降协调；登记时尚无结果。
+
 ## 2026-09-24：四臂诊断完成，登记冻结前段轨迹干预
 
 正式实现`43d801b1`的四臂均完成1260更新。54个面板共13200闭环、selected视频controls及5×96登记动作probe完成，

@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：冻结前段轨迹干预已启动，资源中断后按原合同续跑（2026-09-24）
+## 当前状态：1600前段干预已完成，登记接近阶段通道因果实验（2026-09-24）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,24 +9,37 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，四臂已完成，新批投递状态如下。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，前两批已完成，新批投递状态如下。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[冻结前段轨迹与视频条件因果诊断](docs/designs/frozen_prefix_causality_design.md)**，
-机器规格`configs/frozen_prefix_causality_v1/experiment_spec.json`；设计提交`3258e304`已推送，已向同一Sol执行者Queue派发具体实验。
-2026-09-24 00:55 UTC入队回执`01a0d0e9-1dee-79b3-abfd-2c59a20e20ab`；一次只读查询确认消息已进入新活跃轮
-`01a0d0e9-1df2-70a0-94fc-0a1f7742a897`；该次查询只证明投递，后续正式执行状态见下方。
-精确正文、回执和查询证据在旧study的`coordination/prefix_dispatch_20260924.{txt,json}`；不重复发送或要求例行确认。
+**当前active design为[接近阶段动作通道因果干预](docs/designs/approach_channel_causality_design.md)**，
+机器规格`configs/approach_channel_causality_v1/experiment_spec.json`；准备Queue给同一Sol执行者。
+新研究根为`/data0/user/ymdai/ember_runs/approach_channel_causality_20260924`，由Sol核对quota后创建；
+固定两任务50初态、前25步五种动作来源、B/C两种接手者，共1000分支，无训练或新增teacher标签读取。
+前一批[冻结前段交换](docs/designs/frozen_prefix_causality_design.md)已完成并关闭；原入队回执
+`01a0d0e9-1dee-79b3-abfd-2c59a20e20ab`及正文保留在四臂study的`coordination/prefix_dispatch_20260924.{txt,json}`。
 原[四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)已完成：54面板13200行、四臂全部1260更新、
 selected controls及480条登记动作probe齐全；Sol主动完成回报后已停止新增实验，registration为`registered_batch_complete`。
-主讨论独立原始行复核和裁决见findings§135。新批次研究根为`/data0/user/ymdai/ember_runs/frozen_prefix_causality_20260924`，
-运行资产已由Sol建立，资源准入及续跑仍由Sol执行；旧四臂runtime和产物只读保留，不改原训练、选点或结论。
+主讨论独立原始行复核和裁决见findings§135–136。前段交换研究根为`/data0/user/ymdai/ember_runs/frozen_prefix_causality_20260924`，
+完成信号`analysis/completion.json`；20正式面板worker exit0。两个已完成study、冻结运行树和原件只读保留。
 Sol在独立worktree拥有代码、训练配置、测试和run产物；主讨论拥有科学解释及主线状态文档，集成前协调避免覆盖。
 短期步骤、结果解释分支和派发要求见[task_plan](task_plan.md)。
 接手后在既有授权内完成实现/核验/有界诊断；旧的组会deadline、无上限GPU及其它历史运行许可不恢复。
 长任务正常期间等待完成或异常事件，不固定间隔读取训练进度、日志、checkpoint或共享缓存；
 9月23日长期授权本身未转发Sol；现在只派发经过分析后形成的具体实验。
 
-### 冻结干预执行与资源中断恢复
+### 1600前段干预完成与裁决
+
+Sol主动回报完成并停止新增实验。唯一正式实现`1f583d9e`；64固定双相机full cases、400旧k0引用与40登记配对比较齐全。
+主讨论从20份原始results独立复核1600唯一分支、原bank/teacher/RNG、同锚历史，并复算配对R/G/L及bootstrap，均与汇总一致。
+见本study的`coordination/completed_recheck.{py,json}`、`approach_geometry.{py,json}`和四张固定case拼图。
+
+Goal同一接手者在B前段后点估计均更高；Object无B前段普遍优势。第25步物体body位置相同，但C的末端较低，
+水平接近在Goal较远、Object较近。这支持早期机器人接近状态的局部因果作用，未确定动作通道或Writer学习根因。
+同历史correct/wrong差异未得到统一方向的证据，也不等于视频无作用。新旧纯策略续接的差异继续保留。
+完整判断见findings§136；下一批用x/y与z来源2×2干预、完整B参照及新合同内对照，区分水平偏置与下降/对齐协调。
+单纯换动作不是部署修复；有行为因果证据后还须追查生成LoRA的相应计算/学习原因。
+
+### 冻结干预执行与资源中断恢复历史（2026-09-24 02:16 UTC）
 
 正式实现`1f583d9e31e55c798ee98833f48ddf740d05247d`已集成推送；运行树为
 `/data1/user/ymdai/projects/EMBER-frozen-prefix-formal`。Sol报告66项针对性测试、固定case smoke和pilot16完成。

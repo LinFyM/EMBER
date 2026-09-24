@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：任务关系支持学习干预已登记，准备向Sol派发（2026-09-24）
+## 当前状态：任务关系支持学习干预已派发，完整合同进入Sol当前轮（2026-09-24）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,12 +9,17 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，五批已完成。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，五批已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
 **当前active design为[任务关系支持的学习干预](docs/designs/relational_support_causality_design.md)**，
 机器合同`configs/relational_support_causality_v1/experiment_spec.json`。主讨论已完成metadata/完整BDDL/可辨识关系审计，
 冻结四个fit28池、四C与两B、共同1260节点的因果对比、六节点完整评测及资源/停止合同；尚无本批模型结果。
-当前为登记与派发准备，不能据此声称Sol已接收或GPU训练已启动；实际Queue与接收凭据随后在下方登记。
+设计已在`6972486e`集成推送。2026-09-24 09:19 UTC以Queue派发，message
+`01a0d2b6-24e5-7ae0-a1a9-30077bd8cc4e`；09:19:59 UTC从现有app-server核对**完整正文**进入Sol的
+inProgress turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`，当前cwd及实际标题亦已核对。
+正文/入队回执/逐字投递核验保存在前批readout study的
+`coordination/relational_support_dispatch_20260924.{txt,json}`与`relational_support_delivery_20260924.json`。
+这证明接收方当前轮已有任务，尚未证明正式训练启动或任何新实验完成；Sol按合同完成工程/资源准入后自主启动并回报。
 Owner明确纠正“下一合同尚未定稿便结束主讨论推进”的错误。执行者完成一批等待派发不约束主讨论继续分析，
 主讨论已把下一项推进到可执行合同；已有授权内不重复索要许可，也不为让实验不停而仓促试改法。
 

@@ -60,6 +60,10 @@ Teacher action、state/proprio、reward、terminal、task ID、filename、pose�
 
 Writer在rollout前生成一套完整38-target LoRA；不挑视频、平均最终LoRA、融合checkpoint或并行部署第二expert adapter。
 Core/Procedure、rank、memory token和decoder是候选实现，可以实质重构，但须保留科学边界并给出完整可检验原理。
+Owner进一步明确：架构与训练方式不必守住现有方案，可以参考元学习、VLA等外部工作，同时必须保留这两个月推进形成的自身特色。
+落实时保留教学视频到一次完整LoRA编译、原生策略知识参与理解、跨初态闭环与有益视频增量这条研究主线，
+以及已经积累的正负证据；具体模块和训练配方按机制证据取舍。借鉴应说明原工作解决了什么、与EMBER的条件差异、
+自身保留和新增的计算机制，不把沿用模块名当特色，也不把外部论文的结果当作本项目已验证的修复。
 结构应能复制同类模块加深、自然扩参；不能因某次局部诊断永久限定“只能改Procedure”。
 原生Action Expert知识须在视频理解中有明确作用，不能以zero-image、fake query或缺少真实prefix的forward声称用上backbone。
 Video time、action horizon、flow time和layer depth分开；完整50-horizon保留到真实learned read，stride5保留真实末帧。

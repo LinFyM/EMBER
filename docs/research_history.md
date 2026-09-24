@@ -4,6 +4,13 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-24：开放外部方法借鉴，保留EMBER教学编译主线
+
+Owner明确可以参考元学习、VLA重构架构与训练方式，同时保留两个月形成的自身特色。
+主讨论核对元模仿学习、Vid2Robot/VIMA、LAPA和Doc-to-LoRA的原始方法与适用条件，并接回历史动态读取、
+原生纠正及功能蒸馏的正负证据，形成[机制对照](analyses/external_mechanisms_and_ember_identity_20260924.md)。
+只完成文献与理论分析，未确诊根因、采纳新架构或追加实验；当时active仍为1000分支动作通道干预。
+
 ## 2026-09-24：1600前段交换完成，定位早期接近状态并登记通道干预
 
 正式实现`1f583d9e`，研究根`/data0/user/ymdai/ember_runs/frozen_prefix_causality_20260924`。

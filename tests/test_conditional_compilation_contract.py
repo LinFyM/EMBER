@@ -79,7 +79,7 @@ def test_registered_trajectory_capture_selects_only_fixed_cases(tmp_path):
     args = SimpleNamespace(role="development_train", trajectory_capture_selection=manifest_path,
                            occupancy_capture_selection=None, capture_stage_predicates=False)
     capture, stage = _registered_trajectory_capture(
-        args, (task,), tmp_path / "output", {"selection_path": subset_path}
+        args, (task,), tmp_path / "output", {"selection_path": subset_path}, ROOT
     )
     assert capture["full_conditions"] == manifest["full_conditions"]
     assert stage["full_conditions_only"] is True
@@ -87,7 +87,7 @@ def test_registered_trajectory_capture_selects_only_fixed_cases(tmp_path):
         {"suite": "libero_spatial", "task_id": 0, "init_state_id": 50}]}))
     with pytest.raises(Pi05EvaluationError, match="capture selection changed"):
         _registered_trajectory_capture(args, (task,), tmp_path / "output",
-                                       {"selection_path": subset_path})
+                                       {"selection_path": subset_path}, ROOT)
 
 
 @pytest.mark.parametrize("panel,mode,count", [("diagnostic_held", "formal", 50), ("seen", "screen", 4)])

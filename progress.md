@@ -51,6 +51,16 @@ E仅修复被动采集和prepare/resume/逐行验收，须验证不改变控制�
 这证明接续修复已被处理，尚不证明修复完成。正文/接受回执/逐字投递及回应在本study的
 `coordination/passive_capture_fix_dispatch.txt`、`passive_capture_fix_dispatch_receipt.json`和`passive_capture_fix_delivery.json`。
 
+2026-09-24 11:21 UTC，Sol的隔离实现为`0da61891`，尚未冻结为正式评测E。主讨论审阅完整source diff，
+确认只涉及采集/prepare/resume/row验收六个文件；AST复核动作规划、rollout、初态和逐行验收除明确采集调用外保持。
+主讨论独立运行采集/runtime两文件22项通过；另发现旧固定case测试的两个调用漏传新增`repo_root`，已复现失败。
+11:20 UTC以Steer送达，11:21 UTC核对完整正文及Sol明确接续修正；不据此声称该回归已复验通过。
+工程smoke预登记6条（上限12），任务均属共同26；真实环境/模型检查尚待合格GPU余量。
+旧C/B工程checkpoint实际来自`6972486e`开发状态，须保留真实来源；不能冒充7dc正式bank或声称已通过正式prepare。
+Sol已确认该边界，正式bank的prepare/resume仍按严格来源验收。审阅记录为
+`coordination/main_passive_capture_code_recheck.json`，正文/回执/回应为`passive_capture_review_{steer.txt,receipt.json,delivery.json}`。
+本次未读取正式训练进度、metrics或checkpoint；无新的科学结果。
+
 ### 本批启动核对与已落实的执行修正（2026-09-24 10:31 UTC）
 
 主讨论核对源码和六份真实`training_events.json`：每臂5040条件、每task 180次，共同26个任务的完整事件与宏步位置相同，

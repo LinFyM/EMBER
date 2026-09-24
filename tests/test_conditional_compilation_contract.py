@@ -183,7 +183,7 @@ def tasks_for(task_ids, tasks):
     return {task: tasks[task] for task in task_ids}
 
 
-def test_support_bank_uses_correct_local_id_and_50_video_round():
+def test_support_stage1_uses_original_50_video_schedule_prefix():
     arm = SPEC["arms"][0]
     support = SPEC["evaluation"]["support_knowledge_panels"]
     selection = materialization.selection_contract(
@@ -192,8 +192,12 @@ def test_support_bank_uses_correct_local_id_and_50_video_round():
         init_state_ids=support["states"], video_pool=support["teacher_demos"])
     materialization._validate_conditional_selection(selection, _arm_config(arm["id"]))
     episodes = materialization.planned_episodes(selection, 58)
-    assert len(episodes) == 50
-    assert {row["teacher_demo_indices"][0] for row in episodes} == set(range(50))
+    assert len(episodes) == 20
+    from ember.expert_manifold.video_schedule import reference_demo_index
+    expected=[reference_demo_index(SPEC["evaluation"]["video_schedule_seed"],"libero_90",18,state,
+                                   demo_count=50,sampling_mode="without_replacement") for state in range(50)]
+    assert [row["teacher_demo_indices"][0] for row in episodes] == expected[:20]
+    assert len(set(expected)) == 50
     assert episodes[0]["init_state_id"] == 0
 
 
@@ -201,12 +205,12 @@ def test_support_evaluator_subset_is_explicit(tmp_path):
     arm = SPEC["arms"][0]
     ids = SPEC["evaluation"]["source_reference"]["support_global_ids"]
     installed = tuple(SimpleNamespace(suite="libero_90", task_id=task - 40,
-                                      init_state_ids=tuple(range(50))) for task in ids)
+                                      init_state_ids=tuple(range(20))) for task in ids)
     selected_ids = arm["support_eval_global_ids"]
     ordinals = [ids.index(task) for task in selected_ids]
     manifest = {
         "schema_version": "ember_pi05_task_subset_selection_v1", "role": "nonheld_meta",
-        "mode": "formal", "state_count": 50, "init_state_ids": list(range(50)),
+        "mode": "screen", "state_count": 20, "init_state_ids": list(range(20)),
         "task_ordinals": ordinals, "global_task_ids": selected_ids,
         "tasks": [{"global_task_id": task, "suite": "libero_90", "task_id": task - 40}
                   for task in selected_ids],
@@ -216,9 +220,9 @@ def test_support_evaluator_subset_is_explicit(tmp_path):
     }
     path = tmp_path / "subset.json"
     path.write_text(json.dumps(manifest))
-    args = SimpleNamespace(role="nonheld_meta", mode="formal", state_count=50,
+    args = SimpleNamespace(role="nonheld_meta", mode="screen", state_count=20,
                            init_state_ids=None, occupancy_capture_selection=None,
-                           task_subset_selection=path)
+                           task_subset_selection=path, trajectory_capture_selection=tmp_path/"capture.json")
     selected, record = _task_subset_tasks(args, installed, adapter_kind="static_task_lora")
     assert [task.task_id for task in selected] == [task - 40 for task in selected_ids]
     assert record["diagnostic_subset"] == "registered_relational_support_tasks"

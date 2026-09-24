@@ -275,6 +275,10 @@ def _registered_support_subset_valid(manifest: Mapping[str, Any], declared: Sequ
     expected_ids = (arm["support_eval_global_ids"] if arm is not None else
                     spec["evaluation"]["source_reference"]["support_global_ids"]
                     if manifest.get("panel") == "source_reference_support6" else None)
+    stage20 = (manifest.get("mode") == "screen" and manifest.get("state_count") == 20)
+    if stage20 and (spec["evaluation"].get("active_stage") != "mechanism_core_v1"
+                    or manifest.get("init_state_ids") != list(range(20))):
+        return False
     return expected_ids is not None and [row[1] for row in declared] == expected_ids
 
 
@@ -289,7 +293,11 @@ def _task_subset_tasks(
         return tuple(tasks), None
     if (
         getattr(args, "occupancy_capture_selection", None) is not None
-        or (str(args.mode), int(args.state_count)) not in {("screen", 4), ("screen", 5), ("screen", 8), ("screen", 10), ("formal", 50)}
+        or (str(args.mode), int(args.state_count)) not in {
+            ("screen", 4), ("screen", 5), ("screen", 8), ("screen", 10),
+            ("screen", 20), ("formal", 50)}
+        or (args.mode == "screen" and args.state_count == 20
+            and (args.role != "nonheld_meta" or getattr(args, "trajectory_capture_selection", None) is None))
         or args.role not in {"development_train", "nonheld_meta"}
         or adapter_kind not in {None, "task_expert", "static_task_lora"}
     ):

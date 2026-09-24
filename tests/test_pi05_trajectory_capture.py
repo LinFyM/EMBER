@@ -240,59 +240,54 @@ def test_horizon_final_sample_and_B_C_condition_identity(tmp_path):
         validate_passive_trace_row(row,contract,task)
 
 
-def _registration(tmp_path):
+def _registration(tmp_path, label='Source_core_correct'):
     repo=tmp_path/'repo'
     spec_path=repo/'configs/relational_support_causality_v1/experiment_spec.json'
     spec_path.parent.mkdir(parents=True)
     study=tmp_path/'study'
-    spec={'schema_version':'ember_relational_support_causality_spec_v1',
-          'study_id':'relational_support_causality_20260924',
-          'outputs':{'planned_run_root':str(study)},
-          'arms':[{'id':arm} for arm in ('C_S00','C_S01','C_S10','C_S11','B_S00','B_S11')],
-          'evaluation':{'capture':{'continuous_object_eef_gripper':True,'stage_predicates':True},
-                        'executed_updates':[1050,1260],
-                        'selection':{'fixed_update':1260},
-                        'total_registered_rollouts_max':9932,
-                        'controls_after_all_training_correct_panels_and_selection_frozen':{
-                            'same_task_other_at1260':['C_S00','C_S01','C_S10','C_S11'],
-                            'cross_suite_wrong_at1260':['C_S00','C_S11'],
-                            'same_task_other_at_selected_if_not1260':[]}},
-          'execution':{'implementation_provenance_amendment':{
-              'id':'passive_capture_fix_before_formal_evaluation_20260924',
-              'retrain':False,'accept_missing_trace':False,
-              'training_materialization_and_query_commit':TRAINING},
-              'scientific_evaluation_scope_amendment':{
-                  'id':'fixed_endpoint_and_adjacent_evaluation_20260924'}}}
+    source=Path(__file__).resolve().parents[1]/'configs/relational_support_causality_v1/experiment_spec.json'
+    spec=json.loads(source.read_text())
+    spec['outputs']['planned_run_root']=str(study)
     spec_path.write_text(json.dumps(spec))
     config=repo/'configs/relational_support_causality_v1/evaluation.json'
     config.write_text('{}')
-    selection=study/'launch/selectors/support_full.json'
+    panel=next(row for row in spec['evaluation']['stage1']['panels'] if row['id']==label)
+    selection=study/'launch/selectors/stage1_full.json'
     selection.parent.mkdir(parents=True)
+    def local(gid):
+        return ('libero_90',gid-40) if gid>=40 else (
+            ('libero_spatial','libero_object','libero_goal','libero_10')[gid//10],gid%10)
+    full=[{'suite':local(gid)[0],'task_id':local(gid)[1],'init_state_id':state}
+          for gid,state in panel['full_task_state_pairs']]
     manifest={'schema_version':'ember_pi05_registered_trajectory_capture_v1',
               'passive_control_trace':TAG,
               'study_spec':'configs/relational_support_causality_v1/experiment_spec.json',
-              'stage_predicates':True,'full_conditions':[],
+              'stage_predicates':True,'full_conditions':full,
               'task_subset_selection':str(study/'launch/selectors/subset.json'),
               'mode':'compact', 'training_gradient_use':False, 'checkpoint_selection_use':False,
               'validation_use':False, 'test_use':False}
     selection.write_text(json.dumps(manifest))
-    args=SimpleNamespace(config=config,role='nonheld_meta',mode='formal')
-    task=SimpleNamespace(suite='libero_90',task_id=36,init_state_ids=(0,1))
+    args=SimpleNamespace(config=config,role='nonheld_meta' if 'support' in panel['kind'] else 'development_train',
+                         mode='formal' if len(panel['state_ids'])==50 else 'screen')
+    tasks=[SimpleNamespace(suite=local(gid)[0],task_id=local(gid)[1],
+                           init_state_ids=tuple(panel['state_ids'])) for gid in panel['task_ids']]
     subset={'selection_path':manifest['task_subset_selection']}
-    return repo,study,selection,args,task,subset,manifest
+    return repo,study,selection,args,tasks,subset,manifest
 
 
-def test_registration_empty_full_still_requires_every_row_and_resume(tmp_path):
-    repo,study,selection,args,task,subset,manifest=_registration(tmp_path)
-    panel=study/'evaluation/Source_support'
+def test_registration_requires_every_row_and_resume(tmp_path):
+    repo,study,selection,args,tasks,subset,manifest=_registration(tmp_path)
+    panel=study/'evaluation/Source_core_correct'
     capture,stage=prepare_from_manifest(args,repo_root=repo,output_dir=panel,
-        task_subset=subset,tasks=[task],manifest=manifest,selection_path=selection,full=())
-    assert capture['full_conditions']==[] and stage['full_conditions_only'] is False
+        task_subset=subset,tasks=tasks,manifest=manifest,selection_path=selection,
+        full=tuple((row['suite'],row['task_id'],row['init_state_id']) for row in manifest['full_conditions']))
+    assert capture['full_conditions']==manifest['full_conditions'] and stage['full_conditions_only'] is False
     with pytest.raises(Pi05EvaluationError,match='requires passive'):
         attach_requested_capture(args, {'diagnostic_occupancy_capture':None}, repo,
                                  panel)
     contract={'output_dir':str(panel),'git':{'commit':'evaluation_commit'},
-              'adapter':None,'tasks':[{'suite':'libero_90','task_id':36,'init_state_ids':[0,1]}],
+              'adapter':None,'tasks':[{'suite':task.suite,'task_id':task.task_id,
+                                       'init_state_ids':list(task.init_state_ids)} for task in tasks],
               'diagnostic_task_subset':subset,'diagnostic_occupancy_capture':capture,
               'diagnostic_stage_predicates':stage}
     attach_provenance(contract,repo)
@@ -307,15 +302,17 @@ def test_registration_empty_full_still_requires_every_row_and_resume(tmp_path):
 
 
 def test_passive_registration_rejects_bank_from_other_training_commit(tmp_path):
-    repo,study,selection,args,task,subset,manifest=_registration(tmp_path)
-    panel=study/'evaluation/B_S00_1260_support'
+    repo,study,selection,args,tasks,subset,manifest=_registration(tmp_path,'B_S00_1260_support_core')
+    panel=study/'evaluation/B_S00_1260_support_core'
     capture,stage=prepare_from_manifest(args,repo_root=repo,output_dir=panel,
-        task_subset=subset,tasks=[task],manifest=manifest,selection_path=selection,full=())
+        task_subset=subset,tasks=tasks,manifest=manifest,selection_path=selection,
+        full=tuple((row['suite'],row['task_id'],row['init_state_id']) for row in manifest['full_conditions']))
     adapter={'writer_checkpoint':{'training_commit':TRAINING},
              'materialization_git':{'commit':'another_commit'},
              'manifest':{'path':str(study/'materialization/B_smoke/manifest.json'),'bytes':12}}
     contract={'output_dir':str(panel),'git':{'commit':'evaluation_commit'},
-              'adapter':adapter,'tasks':[{'suite':'libero_90','task_id':36,'init_state_ids':[0,1]}],
+              'adapter':adapter,'tasks':[{'suite':task.suite,'task_id':task.task_id,
+                                          'init_state_ids':list(task.init_state_ids)} for task in tasks],
               'diagnostic_task_subset':subset,'diagnostic_occupancy_capture':capture,
               'diagnostic_stage_predicates':stage}
     with pytest.raises(Pi05EvaluationError,match='provenance'):
@@ -327,8 +324,29 @@ def test_passive_registration_rejects_bank_from_other_training_commit(tmp_path):
 
 
 def test_passive_registration_rejects_omitted_evaluation_update(tmp_path):
-    repo,study,selection,args,task,subset,manifest=_registration(tmp_path)
-    with pytest.raises(Pi05EvaluationError,match='fixed-endpoint evaluation scope'):
+    repo,study,selection,args,tasks,subset,manifest=_registration(tmp_path,'B_S00_1260_support_core')
+    with pytest.raises(Pi05EvaluationError,match='stage1 scope'):
         prepare_from_manifest(args,repo_root=repo,
             output_dir=study/'evaluation/B_S00_420_support',
-            task_subset=subset,tasks=[task],manifest=manifest,selection_path=selection,full=())
+            task_subset=subset,tasks=tasks,manifest=manifest,selection_path=selection,full=())
+
+
+def test_passive_registration_allows_empty_full_only_outside_formal_stage(tmp_path):
+    repo,study,selection,args,tasks,subset,manifest=_registration(tmp_path)
+    manifest['full_conditions']=[]
+    selection.write_text(json.dumps(manifest))
+    capture,stage=prepare_from_manifest(args,repo_root=repo,output_dir=study/'smoke/empty_full',
+        task_subset=subset,tasks=tasks,manifest=manifest,selection_path=selection,full=())
+    assert capture['full_conditions']==[] and stage['full_conditions_only'] is False
+    with pytest.raises(Pi05EvaluationError,match='full selection'):
+        prepare_from_manifest(args,repo_root=repo,output_dir=study/'evaluation/Source_core_correct',
+            task_subset=subset,tasks=tasks,manifest=manifest,selection_path=selection,full=())
+
+
+def test_stage1_registration_rejects_missing_state(tmp_path):
+    repo,study,selection,args,tasks,subset,manifest=_registration(tmp_path)
+    tasks[0].init_state_ids=tasks[0].init_state_ids[:-1]
+    full=tuple((row['suite'],row['task_id'],row['init_state_id']) for row in manifest['full_conditions'])
+    with pytest.raises(Pi05EvaluationError,match='stage1 cases'):
+        prepare_from_manifest(args,repo_root=repo,output_dir=study/'evaluation/Source_core_correct',
+            task_subset=subset,tasks=tasks,manifest=manifest,selection_path=selection,full=full)

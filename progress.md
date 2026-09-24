@@ -46,6 +46,10 @@ E仅修复被动采集和prepare/resume/逐行验收，须验证不改变控制�
 不接受缺项，不重训，不用额外正式闭环补trace；全批21868/82case、信息墙和科学参数保持。
 精确E与修订launch/provenance由Sol实现、验证、集成后登记，原训练合同不追改；当前E尚未产生，不能称修复完成。
 具体验收、工程smoke和停止边界见设计§6。正在运行的训练持续等待退出事件；只暂缓受影响的正式评测。
+修订已在`c3f4a768`推送；10:48 UTC以Steer送入Sol当前turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`。
+10:49 UTC通过该turn的full items核对完整正文，并读取Sol明确回应：保留7dc训练/物化，建立独立评测E并先验证采集。
+这证明接续修复已被处理，尚不证明修复完成。正文/接受回执/逐字投递及回应在本study的
+`coordination/passive_capture_fix_dispatch.txt`、`passive_capture_fix_dispatch_receipt.json`和`passive_capture_fix_delivery.json`。
 
 ### 本批启动核对与已落实的执行修正（2026-09-24 10:31 UTC）
 

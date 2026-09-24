@@ -440,6 +440,15 @@ def _registered_trajectory_capture(
     return capture, stage
 
 
+def _diagnostic_subset_name(
+    occupancy_capture: Mapping[str, Any] | None,
+    task_subset: Mapping[str, Any] | None,
+) -> str | None:
+    if occupancy_capture is not None:
+        return str(occupancy_capture.get("diagnostic_subset", "successful_on_policy_occupancy"))
+    return str(task_subset["diagnostic_subset"]) if task_subset is not None else None
+
+
 def _prepared_payload(
     args: Any,
     *,
@@ -494,18 +503,20 @@ def _prepared_payload(
         authorities,
         args.source_run,
         args.checkpoint,
-        evaluation_mode=args.mode,
+        evaluation_mode=("formal" if getattr(args, "frozen_prefix_panel", None) else args.mode),
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    diagnostic_subset = (
-        str(
-            occupancy_capture.get(
-                "diagnostic_subset", "successful_on_policy_occupancy"
-            )
+    if getattr(args, "frozen_prefix_panel", None) is not None:
+        from ember.pi05_eval.frozen_prefix import prepare_payload
+
+        if task_subset is not None or occupancy_capture is not None or source_sft_requested or adapter_kind != "static_task_lora":
+            raise Pi05EvaluationError("frozen-prefix panel cannot combine with another diagnostic")
+        return prepare_payload(
+            args, authorities=authorities, installed_tasks=installed_tasks,
+            model=model, tokenizer=tokenizer, libero_paths=libero_paths,
+            output_dir=output_dir, repo_root=repo_root, command=command,
         )
-        if occupancy_capture is not None
-        else str(task_subset["diagnostic_subset"]) if task_subset is not None else None
-    )
+    diagnostic_subset = _diagnostic_subset_name(occupancy_capture, task_subset)
     inspection_tasks = (
         installed_tasks
         if diagnostic_subset and adapter_kind == "task_expert"

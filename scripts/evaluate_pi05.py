@@ -113,6 +113,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--capture-stage-predicates", action="store_true")
     parser.add_argument("--frozen-replay-registration", type=Path,
                         help="Registered read-only trajectory replay of a completed correct-video panel.")
+    parser.add_argument("--frozen-prefix-panel", type=Path,
+                        help="Registered two-task saved-action prefix intervention panel.")
 
 
 def parse_args() -> argparse.Namespace:

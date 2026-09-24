@@ -117,6 +117,10 @@ def _reinspect_adapter(
             )
         return inspected
     if adapter.get("kind") in {"static_task_lora_bank", "horizon_writer_lora_bank"}:
+        if contract.get("frozen_prefix_intervention") is not None:
+            from ember.pi05_eval.frozen_prefix import reinspect_adapter
+
+            return reinspect_adapter(contract, model)
         capture = contract.get("diagnostic_occupancy_capture") or {}
         if capture.get("schema_version") == "ember_pi05_frozen_replay_capture_v1":
             from ember.pi05_eval.preparation import _frozen_replay_capture
@@ -177,7 +181,7 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         authorities,
         Path(contract["model"]["source_run"]),
         Path(contract["model"]["checkpoint"]),
-        evaluation_mode=contract["mode"],
+        evaluation_mode=("formal" if contract.get("frozen_prefix_intervention") else contract["mode"]),
     )
     tokenizer = inspect_tokenizer(authorities, Path(contract["tokenizer"]["path"]))
     if model != contract["model"] or tokenizer != contract["tokenizer"]:

@@ -7,7 +7,6 @@ import math
 import os
 import string
 import time
-from collections import deque
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -15,22 +14,20 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from ember.eval_adapters import (
-    episode_adapter_fields,
     load_evaluation_adapter as _load_evaluation_adapter,
     validate_episode_adapter_fields,
 )
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import load_run_contract, policy_noise_seed
 from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
+from ember.pi05_eval.episode import finish_episode_row, start_fixed_episode, update_stage_predicates
 from ember.pi05_eval.exploration import (
-    add_exploration_noise, episode_exploration_fields,
+    add_exploration_noise,
     validate_episode_exploration, validate_exploration_contract,
 )
 from ember.pi05_eval.trajectory_capture import (
     capture_level,
-    initialize_capture,
     record_replan,
-    save_capture,
 )
 from ember.pi05_eval_queue import (
     EvaluationClaim,
@@ -107,102 +104,6 @@ def task_lookup(contract: Mapping[str, Any]) -> dict[tuple[str, int], dict[str, 
     return tasks
 
 
-def _stage_predicate_snapshot(
-    env: Any,
-    states: Sequence[Sequence[str]] | None = None,
-) -> tuple[tuple[tuple[str, ...], ...], tuple[bool, ...]]:
-    owner = getattr(env, "env", env)
-    raw_states = (
-        tuple(tuple(str(value) for value in state) for state in states)
-        if states is not None
-        else tuple(
-            tuple(str(value) for value in state)
-            for state in owner.parsed_problem["goal_state"]
-        )
-    )
-    if not raw_states or not callable(getattr(owner, "_eval_predicate", None)):
-        raise Pi05EvaluationError("stage diagnosis requires LIBERO BDDL predicates")
-    return raw_states, tuple(bool(owner._eval_predicate(state)) for state in raw_states)
-
-
-def _update_stage_predicates(env: Any, slot: dict[str, Any]) -> None:
-    states, values = _stage_predicate_snapshot(
-        env,
-        slot["stage_predicate_states"],
-    )
-    slot["stage_predicate_ever"] = tuple(
-        before or current
-        for before, current in zip(
-            slot["stage_predicate_ever"], values, strict=True
-        )
-    )
-    slot["stage_predicate_peak"] = max(
-        int(slot["stage_predicate_peak"]),
-        sum(values),
-    )
-    if values != slot["stage_predicate_last"]:
-        slot["stage_predicate_transitions"].append(
-            {"step": int(slot["steps"]), "satisfied": list(values)}
-        )
-        slot["stage_predicate_last"] = values
-    slot["stage_predicate_states"] = states
-
-
-def _start_fixed_episode(
-    *,
-    env: Any,
-    init_state_id: int,
-    init_states: Any,
-    task: Mapping[str, Any],
-    contract: Mapping[str, Any],
-    root_seed: int,
-    dummy: np.ndarray,
-    task_adapter: Any | None,
-    capture_level: str | None,
-) -> dict[str, Any]:
-    env.seed(root_seed)
-    env.reset()
-    observation = env.set_init_state(init_states[init_state_id])
-    for _ in range(int(contract["environment"]["dummy_settling_steps"])):
-        observation, _, _, _ = env.step(dummy)
-    prepared = None
-    if task_adapter is not None:
-        prepared = task_adapter.prepare_episode(
-            suite=str(task["suite"]),
-            task_id=int(task["task_id"]),
-            init_state_id=init_state_id,
-        )
-    slot = {
-        "init_state_id": init_state_id,
-        "obs": observation,
-        "steps": 0,
-        "replan_index": 0,
-        "policy_noise_seeds": [],
-        "action_plan": deque(),
-        "started": time.monotonic(),
-    }
-    if prepared is not None:
-        slot["episode_adapter"] = prepared
-    initialize_capture(slot, capture_level)
-    stage_contract = contract.get("diagnostic_stage_predicates")
-    if stage_contract is not None and (
-        not stage_contract.get("full_conditions_only") or capture_level == "full"
-    ):
-        states, values = _stage_predicate_snapshot(env)
-        slot.update(
-            {
-                "stage_predicate_states": states,
-                "stage_predicate_last": values,
-                "stage_predicate_ever": values,
-                "stage_predicate_peak": sum(values),
-                "stage_predicate_transitions": [
-                    {"step": 0, "satisfied": list(values)}
-                ],
-            }
-        )
-    return slot
-
-
 def _plan_action_chunks(
     slots: Sequence[dict[str, Any] | None],
     *,
@@ -217,7 +118,8 @@ def _plan_action_chunks(
 ) -> None:
     import torch
 
-    planning = [slot for slot in slots if slot is not None and not slot["action_plan"]]
+    planning = [slot for slot in slots if slot is not None and not slot["action_plan"]
+                and not slot.get("prefix_terminal", False)]
     if not planning:
         return
     batched_adapter = task_adapter is not None and callable(
@@ -299,22 +201,27 @@ def rollout_shard(
     worker_started = time.monotonic()
     rows: list[dict[str, Any]] = []
     occupancy_capture = contract.get("diagnostic_occupancy_capture")
+    prefix_intervention = contract.get("frozen_prefix_intervention")
+
+    def start_slot(env: Any, state_id: int) -> dict[str, Any]:
+        slot = start_fixed_episode(
+            env=env, init_state_id=int(state_id), init_states=init_states,
+            task=task, contract=contract, root_seed=root_seed, dummy=dummy,
+            task_adapter=task_adapter,
+            capture_level=capture_level(occupancy_capture, task, int(state_id)),
+        )
+        if prefix_intervention is not None:
+            from ember.pi05_eval.prefix_replay import replay_prefix
+
+            replay_prefix(env=env, slot=slot, task=task,
+                          contract=contract, preprocess=preprocess)
+        return slot
 
     active_count = min(len(envs), len(state_ids))
     active_envs = envs[:active_count]
     next_state = active_count
     slots: list[dict[str, Any] | None] = [
-        _start_fixed_episode(
-            env=env,
-            init_state_id=int(state_id),
-            init_states=init_states,
-            task=task,
-            contract=contract,
-            root_seed=root_seed,
-            dummy=dummy,
-            task_adapter=task_adapter,
-            capture_level=capture_level(occupancy_capture, task, int(state_id)),
-        )
+        start_slot(env, int(state_id))
         for env, state_id in zip(active_envs, state_ids[:active_count], strict=True)
     ]
     policy.reset()
@@ -334,63 +241,28 @@ def rollout_shard(
         for slot_index, (env, slot) in enumerate(zip(active_envs, slots, strict=True)):
             if slot is None:
                 continue
-            obs, _, done, _ = env.step(slot["action_plan"].popleft())
-            slot["obs"] = obs
-            slot["steps"] += 1
-            if "stage_predicate_states" in slot:
-                _update_stage_predicates(env, slot)
+            if slot.get("prefix_terminal", False):
+                done = True
+            else:
+                action = slot["action_plan"].popleft()
+                obs, _, done, _ = env.step(action)
+                slot["obs"] = obs
+                slot["steps"] += 1
+                if "stage_predicate_states" in slot:
+                    update_stage_predicates(env, slot)
+                if prefix_intervention is not None:
+                    from ember.pi05_eval.prefix_replay import record_tail_step
+
+                    record_tail_step(env, slot, action)
             if not bool(done) and slot["steps"] < max_steps:
                 continue
-            finished = time.monotonic()
-            row = {
-                "suite": task["suite"],
-                "task_id": int(task["task_id"]),
-                "split_role": task["split_role"],
-                "language": task["language"],
-                "init_state_id": int(slot["init_state_id"]),
-                "env_seed": root_seed,
-                "policy_seed_root": root_seed,
-                "policy_noise_seeds": list(slot["policy_noise_seeds"]),
-                "success": bool(done),
-                "steps": int(slot["steps"]),
-                "wall_seconds": finished - float(slot["started"]),
-                "finished_at": finished - worker_started,
-            }
-            row.update(episode_exploration_fields(contract, slot))
-            if "stage_predicate_states" in slot:
-                row["stage_predicates"] = {
-                    "schema_version": "ember_pi05_stage_predicate_episode_v1",
-                    "predicates": [
-                        list(state) for state in slot["stage_predicate_states"]
-                    ],
-                    "transitions": slot["stage_predicate_transitions"],
-                    "ever_satisfied": list(slot["stage_predicate_ever"]),
-                    "final_satisfied": list(slot["stage_predicate_last"]),
-                    "peak_satisfied_count": int(slot["stage_predicate_peak"]),
-                }
-            trajectory = save_capture(occupancy_capture, task, slot, success=bool(done))
-            if trajectory is not None:
-                row["occupancy_trajectory"] = trajectory
-            row.update(
-                episode_adapter_fields(
-                    contract, task_adapter, slot.get("episode_adapter")
-                )
-            )
-            rows.append(row)
+            slot["episode_done"] = bool(done)
+            rows.append(finish_episode_row(
+                slot=slot, task=task, contract=contract,
+                task_adapter=task_adapter, worker_started=worker_started,
+            ))
             if next_state < len(state_ids):
-                slots[slot_index] = _start_fixed_episode(
-                    env=env,
-                    init_state_id=int(state_ids[next_state]),
-                    init_states=init_states,
-                    task=task,
-                    contract=contract,
-                    root_seed=root_seed,
-                    dummy=dummy,
-                    task_adapter=task_adapter,
-                    capture_level=capture_level(
-                        occupancy_capture, task, int(state_ids[next_state])
-                    ),
-                )
+                slots[slot_index] = start_slot(env, int(state_ids[next_state]))
                 next_state += 1
             else:
                 slots[slot_index] = None
@@ -516,6 +388,10 @@ def _validate_episode_row(
         raise Pi05EvaluationError(
             f"raw evaluation row contract changed: {shard.job_id}"
         )
+    if contract.get("frozen_prefix_intervention") is not None:
+        from ember.pi05_eval.prefix_replay import validate_row
+
+        validate_row(row, contract)
 
 
 def _complete_published_shard(

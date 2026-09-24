@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：关系支持训练继续，评测收缩为固定终点与相邻点并修复采集合同（2026-09-24）
+## 当前状态：保留六臂训练，先执行1500条核心诊断再裁决补测（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -13,7 +13,7 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
 **当前active design为[任务关系支持的学习干预](docs/designs/relational_support_causality_design.md)**，
 机器合同`configs/relational_support_causality_v1/experiment_spec.json`。主讨论已完成metadata/完整BDDL/可辨识关系审计，
-冻结四个fit28池、四C与两B、共同1260节点的因果对比及资源/停止合同；原六节点评测已被下述事前成本修订替代，尚无本批闭环结果。
+冻结四个fit28池、四C与两B、共同1260节点的因果对比及资源/停止合同；原六节点及9932方案已被下述1500条阶段合同替代，尚无本批闭环结果。
 设计已在`6972486e`集成推送。2026-09-24 09:19 UTC以Queue派发，message
 `01a0d2b6-24e5-7ae0-a1a9-30077bd8cc4e`；09:19:59 UTC从现有app-server核对**完整正文**进入Sol的
 inProgress turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`，当前cwd及实际标题亦已核对。
@@ -24,15 +24,33 @@ Owner明确纠正“下一合同尚未定稿便结束主讨论推进”的错误
 主讨论已把下一项推进到可执行合同；已有授权内不重复索要许可，也不为让实验不停而仓促试改法。
 
 新study根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`，正式树
-`/data1/user/ymdai/projects/EMBER-relational-support-formal`。计划六臂各1260更新/141120query，修订后共9932闭环、
-3300既有query真实flow预测、82固定full cases；data0峰值≤128GiB/data1新增代码≤1GiB，同时最多6物理GPU。
+`/data1/user/ymdai/projects/EMBER-relational-support-formal`。六臂各1260更新/141120query保持，当前阶段仅1500闭环、
+66固定full cases，不启动3300函数预测；data0峰值≤128GiB/data1新增代码≤1GiB，同时最多6物理GPU。
 实现已集成推送`7dc95edbba00cf61439700d77fb321eb8df95c07`，正式树为该clean detached commit。
 Sol完成CPU 91+9项、六臂4更新/2→4恢复、最长full-H50及新support物化→评测smoke，查询strg01独立quota与共享容量；
 预计data0峰值新增120GiB低于128GiB，data1开发/正式树合计约503MiB。精确原合同为`launch/formal_launch_contract.json`。
 主讨论已调用canonical task authority验证新manifest58任务/Train42/Val8/Test8；每个optimizer的白名单仍只有登记fit28。
 Source71及官方24/8/8未改；无新增held expert或官方Val/Test读取。完整机制与竞争解释见task_plan第七阶段和findings§140。
 
-### 尚无正式闭环结果时的成本修订（2026-09-24 14:38 UTC）
+### 当前第一阶段合同（2026-09-24 16:39 UTC／北京时间9月25日00:39）
+
+Owner先要求只回答剩余时间和价值，随后明确要求按“核心诊断先做、分析后再补”指导Sol。
+主讨论核对本批evaluation的run_contract/results/launcher_completion仍均为0，先登记18面板1500行，不读取成绩后筛面板。
+全部模型仍固定1260：六臂14/21各50state为600，四C的Goal21 other各50为200，六臂新增四support各20为480，
+Source两目标100加六support各20为120。50-state主问题与原teacher映射完整保留，support只截原映射state0..19。
+66个full cases是原病例在当前面板中的交集；全行被动采集合同继续。1050、其它held6、seen64、Object other、wrong和3300预测暂缓。
+
+六臂训练和12个完整checkpoint保留；00:26按Owner状态请求核对前三C已1260/exit0，C11和两B已按原lane启动。
+第一阶段允许已完成臂/Source在剩余训练进行时先评，按对应臂checkpoint/exit与E/采集验证准入，仍合计≤6物理GPU。
+执行者输出`analysis/stage1_completion.json`后主动Queue主讨论并停止新增评测；主讨论核对原件后自主裁决必要补测。
+当前只有局部机制判断，不能宣称held400性能、完整保持、相邻稳定性或有益视频因果修复。新合同详见design§5/spec stage1。
+合同在`057c57e2`集成推送。16:49 UTC向当时idle的Sol以Queue派发，回执
+`01a0d452-8a88-7702-b8e4-de5c4ec1518b`，新turn为`01a0d452-8a9e-7a90-ba43-46992e91beb3`。
+已核对该turn为inProgress；当次app-server full items仍为空，尚未逐字核对正文或读到Sol回应，不冒称已处理，也未重发。
+完整派发正文、接受回执和当前查询证据在`coordination/stage1_core_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
+执行器接续验收仍待Sol回报；文档与Queue接受不代表新评测已经启动或完成。
+
+### 前一次成本修订（2026-09-24 14:38 UTC；已被第一阶段合同取代）
 
 Owner询问本批成本与信息量是否匹配。主讨论核对发现16704/21868条用于六节点完整曲线，
 而核心1260交互仍只有一个训练seed、Goal21的50配对状态；增加早期节点不会补足独立重复。

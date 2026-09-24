@@ -122,19 +122,23 @@ def attach_provenance(contract: dict[str, Any], repo_root: Path) -> None:
     if not capture.get('passive_trace'):
         return
     _, spec = _spec(repo_root)
+    panel = _formal_panel_scope(spec, Path(contract['output_dir']))
     training = spec['execution']['implementation_provenance_amendment'][
         'training_materialization_and_query_commit']
     adapter = contract.get('adapter')
+    if panel is not None and ((panel['arm'] == 'Source') != (adapter is None)):
+        raise Pi05EvaluationError('stage1 Source/bank panel identity changed')
     if adapter is not None:
         if (adapter.get('writer_checkpoint', {}).get('training_commit') != training
-                or adapter.get('materialization_git', {}).get('commit') != training
+                or adapter.get('materialization_git', {}).get('commit') != contract['git']['commit']
+                or (panel is not None and adapter.get('registered_stage1_panel_id') != panel['id'])
                 or not Path(adapter['manifest']['path']).resolve().is_relative_to(
                     Path(spec['outputs']['planned_run_root']) / 'materialization')):
             raise Pi05EvaluationError('relational bank training or materialization provenance changed')
     contract['passive_capture_provenance'] = {
         'amendment_id': 'passive_capture_fix_before_formal_evaluation_20260924',
         'training_commit': training,
-        'bank_materialization_commit': training if adapter is not None else None,
+        'bank_materialization_commit': contract['git']['commit'] if adapter is not None else None,
         'bank_manifest': adapter['manifest'] if adapter is not None else None,
         'evaluation_commit': contract['git']['commit'],
     }

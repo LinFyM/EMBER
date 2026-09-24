@@ -282,6 +282,15 @@ def _registered_support_subset_valid(manifest: Mapping[str, Any], declared: Sequ
     return expected_ids is not None and [row[1] for row in declared] == expected_ids
 
 
+def _registered_subset_mode_allowed(args: Any) -> bool:
+    ordinary = {("screen", 4), ("screen", 5), ("screen", 8), ("screen", 10), ("formal", 50)}
+    mode = str(args.mode), int(args.state_count)
+    if mode in ordinary:
+        return True
+    return (mode == ("screen", 20) and args.role == "nonheld_meta"
+            and getattr(args, "trajectory_capture_selection", None) is not None)
+
+
 def _task_subset_tasks(
     args: Any,
     tasks: Sequence[Any],
@@ -293,11 +302,7 @@ def _task_subset_tasks(
         return tuple(tasks), None
     if (
         getattr(args, "occupancy_capture_selection", None) is not None
-        or (str(args.mode), int(args.state_count)) not in {
-            ("screen", 4), ("screen", 5), ("screen", 8), ("screen", 10),
-            ("screen", 20), ("formal", 50)}
-        or (args.mode == "screen" and args.state_count == 20
-            and (args.role != "nonheld_meta" or getattr(args, "trajectory_capture_selection", None) is None))
+        or not _registered_subset_mode_allowed(args)
         or args.role not in {"development_train", "nonheld_meta"}
         or adapter_kind not in {None, "task_expert", "static_task_lora"}
     ):

@@ -15,6 +15,7 @@ from ember.batched_lora import BatchedLoRAInference
 from ember.lora import (copy_task_lora_state_, expected_lora_state_shapes, identity_lora_state,
                         inject_task_lora, task_lora_state_dict, validate_lora_state)
 from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval_contract import git_state
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
 from ember.task_protocol import load_task_authorities
@@ -23,6 +24,7 @@ from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, adapter_metada
     selection_contract, source_matches)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
                                          inspect_diagnostic_contract)
+from ember.writer.relational_contract import CONFIG_SCHEMA as RELATIONAL_CONFIG_SCHEMA, registered_stage1_bank_panel
 
 
 EVALUATION_SCHEMA = "ember_video_writer_eval_adapter_v1"
@@ -253,6 +255,14 @@ def inspect_horizon_writer_bank(
         manifest = read_json(path)
         _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
+        if run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA:
+            panel = registered_stage1_bank_panel(run["config"], manifest["selection"],
+                checkpoint=Path(checkpoint["path"]), output=path.parent)
+            current = git_state(Path(__file__).resolve().parents[3])
+            if (run["git"]["commit"] != "7dc95edbba00cf61439700d77fb321eb8df95c07"
+                    or manifest.get("registered_stage1_panel_id") != panel["id"]
+                    or manifest["materialization_git"]["commit"] != current["commit"]):
+                raise ValueError("stage1 bank training, panel or E materialization identity changed")
         if manifest.get("task_protocol") != run["config"]["data"].get("protocol"):
             raise ValueError("bank task protocol differs from its trained Writer")
         if checkpoint != manifest["writer_checkpoint"] or manifest["method"] != method_metadata(run, manifest["arm"]) or not source_matches(run["source"], source):
@@ -261,6 +271,14 @@ def inspect_horizon_writer_bank(
                                                 checkpoint=checkpoint, run=run, asset_root=Path(manifest["asset_root"]))
         if manifest.get("diagnostic_contract") != diagnostic:
             raise ValueError("frozen diagnostic contract changed")
+        if run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA and panel["kind"] == "target_other":
+            expected_ids = {episode["condition_id"] for episode in planned_episodes(manifest["selection"], 21)}
+            compilation = manifest.get("compilation", {})
+            if (len(expected_ids) != 50 or compilation.get("new_conditions") != 0
+                    or compilation.get("reused_conditions") != 50
+                    or set(compilation.get("reused_condition_ids", [])) != expected_ids
+                    or compilation.get("reuse_manifest") != diagnostic["paired_correct_manifest"]):
+                raise ValueError("stage1 Goal21 other must only reuse its paired correct LoRAs")
         lora_path = Path(manifest["lora_contract"]["path"])
         if manifest["lora_contract"] != file_record(lora_path):
             raise ValueError("LoRA topology authority changed")

@@ -308,6 +308,7 @@ def test_passive_registration_rejects_bank_from_other_training_commit(tmp_path):
         task_subset=subset,tasks=tasks,manifest=manifest,selection_path=selection,
         full=tuple((row['suite'],row['task_id'],row['init_state_id']) for row in manifest['full_conditions']))
     adapter={'writer_checkpoint':{'training_commit':TRAINING},
+             'registered_stage1_panel_id':'B_S00_1260_support_core',
              'materialization_git':{'commit':'another_commit'},
              'manifest':{'path':str(study/'materialization/B_smoke/manifest.json'),'bytes':12}}
     contract={'output_dir':str(panel),'git':{'commit':'evaluation_commit'},
@@ -317,10 +318,13 @@ def test_passive_registration_rejects_bank_from_other_training_commit(tmp_path):
               'diagnostic_stage_predicates':stage}
     with pytest.raises(Pi05EvaluationError,match='provenance'):
         attach_provenance(contract,repo)
-    adapter['materialization_git']['commit']=TRAINING
+    adapter['materialization_git']['commit']='evaluation_commit'
     attach_provenance(contract,repo)
     validate_contract(contract,repo)
     assert contract['passive_capture_provenance']['bank_manifest']==adapter['manifest']
+    adapter['registered_stage1_panel_id']='C_S00_1260_support_core'
+    with pytest.raises(Pi05EvaluationError,match='provenance'):
+        attach_provenance(contract,repo)
 
 
 def test_passive_registration_rejects_omitted_evaluation_update(tmp_path):

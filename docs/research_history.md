@@ -4,6 +4,18 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-24：动作读出干预完成，未验证输出层冻结修复
+
+正式实现`ed2df051`，根`/data0/user/ymdai/ember_runs/readout_realization_causality_20260924`；
+300query/1200预测、400配对闭环、16固定full cases与全部worker完成，未训练或读取新expert/官方Val/Test标签。
+主讨论从原NPZ与results独立复算配对/trace、12个成功对比和36个函数对比及bootstrap，核对固定派生mask并查看16case。
+复核代码和原件索引在`coordination/main_recheck.{py,json}`，完整裁决见findings§139。
+
+00/01/10/11成功数Object0/0/41/46、Goal35/33/30/28，各50初态。
+Goal关闭读出只净+2，区间[−4,+8]例，并未兑现初态动作朝B变化的事前预测；Object净−5，区间[−10,0]例。
+主要早期函数差异由内部适配实现，但不能据此确定内部某层或学习根因。关闭本批，不采纳冻结读出层或继续局部层扫描。
+主讨论转向任务关系支持与功能学习信用的判别设计，尚未注册/派发下一批；长期授权继续，Sol按批次合同停止新增实验。
+
 ## 2026-09-24：15900次交叉视频预测完成，转向动作读出与内部适配的因果边界
 
 正式实现`2cfd1da9`，根`/data0/user/ymdai/ember_runs/crossed_video_action_field_20260924`；300query、15900预测、四worker exit0。

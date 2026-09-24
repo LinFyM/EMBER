@@ -1,6 +1,7 @@
 # 冻结动作读出与内部适配的因果分解
 
-> 2026-09-24登记；仅冻结计算干预，不训练、不选择部署方法。执行状态与实际接收方见progress。
+> 2026-09-24登记并完成；正式实现ed2df051，主讨论独立复核与裁决见findings§139。本设计已关闭，不自动恢复或扩展实验。
+> 以下保留事前合同；仅冻结计算干预，不训练、不选择部署方法。当前状态与实际接收方见progress。
 
 Study：`readout_realization_causality_20260924`。
 规格：`configs/readout_realization_causality_v1/experiment_spec.json`。

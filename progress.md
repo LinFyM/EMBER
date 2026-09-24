@@ -92,6 +92,10 @@ E2原runtime/selector/原件保持，E3另冻新树；新增代码上限仅为�
 两个global77 job报错、两个global58 job被终止；只读queue核对四job合计20个登记state上界。其它worker是否已执行控制步
 不能从零完整行推断；中止尝试据实单列。本次明确授权修复后重启该未完成support80一次，不增加100条重评或自动无限重试。
 E3真实无动作接口、回归和最终集成仍待Sol完成，不称故障已修复或本批已完成；阶段科学对比和结束信号保持。
+裁决在`07feec2d`集成推送（同时已含Sol的arena窄修`eca62e49`，完整例外准入尚待接续）。18:46 UTC核对Sol上一轮已完成，
+未发送Steer，改用Queue接续既有任务，回执`01a0d4be-0b65-75e0-8680-b76d3d5e0da0`；18:47 UTC从新活跃turn
+`01a0d4be-0b69-73d3-a1c7-8f91886c43b3`核对完整正文，尚未见后续回复，不称实现完成。
+正文、回执、送达与独立验收记录见`coordination/arena_region_capture_exception_{dispatch.txt,dispatch_receipt.json,delivery.json,coordinator_evidence.json}`。
 
 ### 前一次成本修订（2026-09-24 14:38 UTC；已被第一阶段合同取代）
 

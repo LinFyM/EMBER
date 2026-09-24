@@ -19,6 +19,51 @@ SPEC_PATH = "configs/relational_support_causality_v1/experiment_spec.json"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
+def _matches_stage1_selection(selection: dict[str, Any], panel: dict[str, Any], seed: int) -> bool:
+    support = panel["kind"] == "support_correct"
+    wanted = {
+        "evaluation_role": "nonheld_meta" if support else "development_train",
+        "arm": "same_task_other" if panel["kind"] == "target_other" else "correct",
+        "task_ids": panel["task_ids"], "init_state_ids": panel["state_ids"],
+        "video_pool": list(range(50)), "seed": seed, "K": 1,
+        "mode": "per_init_ordinal", "schedule": "expert_manifold_canonical_permutation_v1",
+        "fixed_videos": {}, "without_replacement": True,
+    }
+    return all(selection.get(key) == value for key, value in wanted.items())
+
+
+def registered_stage1_bank_panel(
+    config: dict[str, Any], selection: dict[str, Any], *,
+    checkpoint: Path | None = None, output: Path | None = None,
+) -> dict[str, Any]:
+    """Admit only one exact materialization panel from the current study stage."""
+    if config.get("schema_version") != CONFIG_SCHEMA or config.get("study_spec") != SPEC_PATH:
+        raise ValueError("stage1 bank requires the registered relation-support training schema")
+    spec = read_json(REPO_ROOT / SPEC_PATH)
+    stage = spec["evaluation"]["stage1"]
+    amendment = spec["execution"].get("stage1_subset_materialization_amendment", {})
+    arms = {row["id"]: row for row in spec["arms"]}
+    arm_id = config.get("experiment", {}).get("arm_id")
+    if (amendment.get("id") != "stage1_subset_materialization_in_E_20260925"
+            or spec["evaluation"].get("active_stage") != "mechanism_core_v1"
+            or len(stage["panels"]) != 18 or stage.get("expected_rows") != 1500
+            or arm_id not in arms):
+        raise ValueError("stage1 bank authority or trained arm changed")
+    matching = [row for row in stage["panels"] if row["arm"] == arm_id and row["kind"] in
+                {"target_correct", "target_other", "support_correct"}]
+    for panel in matching:
+        if not _matches_stage1_selection(selection, panel, spec["evaluation"]["video_schedule_seed"]):
+            continue
+        root = Path(spec["outputs"]["planned_run_root"]).resolve()
+        if (checkpoint is not None and checkpoint.resolve()
+                != root/"training"/arm_id/"checkpoints"/"macro_00001260"):
+            raise ValueError("stage1 bank checkpoint is not this arm's completed1260")
+        if output is not None and output.resolve() != root/"materialization"/panel["id"]:
+            raise ValueError("stage1 bank output does not identify its exact panel")
+        return panel
+    raise ValueError("bank selection is outside registered stage1 task/state/condition scope")
+
+
 def validate_config(config: dict[str, Any]) -> dict[str, Any]:
     """Compare every scientific field with a frozen B/C recipe and the new spec."""
     if config.get("schema_version") != CONFIG_SCHEMA or config.get("study_spec") != SPEC_PATH:

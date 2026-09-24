@@ -16,6 +16,7 @@ from ember.pi05_eval_contract import resolve_role_task_keys
 from ember.writer import learning_data, materialization, video_controls
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.materialization import planned_episodes, selection_contract
+from ember.writer.relational_contract import registered_stage1_bank_panel
 from ember.writer.training import _config
 from ember.writer.video_controls import video_task_id
 
@@ -79,7 +80,7 @@ def test_registered_trajectory_capture_selects_only_fixed_cases(tmp_path):
     args = SimpleNamespace(role="development_train", trajectory_capture_selection=manifest_path,
                            occupancy_capture_selection=None, capture_stage_predicates=False)
     capture, stage = _registered_trajectory_capture(
-        args, (task,), tmp_path / "output", {"selection_path": subset_path}
+        args, (task,), tmp_path / "output", {"selection_path": subset_path}, ROOT
     )
     assert capture["full_conditions"] == manifest["full_conditions"]
     assert stage["full_conditions_only"] is True
@@ -87,7 +88,7 @@ def test_registered_trajectory_capture_selects_only_fixed_cases(tmp_path):
         {"suite": "libero_spatial", "task_id": 0, "init_state_id": 50}]}))
     with pytest.raises(Pi05EvaluationError, match="capture selection changed"):
         _registered_trajectory_capture(args, (task,), tmp_path / "output",
-                                       {"selection_path": subset_path})
+                                       {"selection_path": subset_path}, ROOT)
 
 
 @pytest.mark.parametrize("panel,mode,count", [("diagnostic_held", "formal", 50), ("seen", "screen", 4)])
@@ -183,7 +184,7 @@ def tasks_for(task_ids, tasks):
     return {task: tasks[task] for task in task_ids}
 
 
-def test_support_bank_uses_correct_local_id_and_50_video_round():
+def test_support_stage1_uses_original_50_video_schedule_prefix():
     arm = SPEC["arms"][0]
     support = SPEC["evaluation"]["support_knowledge_panels"]
     selection = materialization.selection_contract(
@@ -192,8 +193,12 @@ def test_support_bank_uses_correct_local_id_and_50_video_round():
         init_state_ids=support["states"], video_pool=support["teacher_demos"])
     materialization._validate_conditional_selection(selection, _arm_config(arm["id"]))
     episodes = materialization.planned_episodes(selection, 58)
-    assert len(episodes) == 50
-    assert {row["teacher_demo_indices"][0] for row in episodes} == set(range(50))
+    assert len(episodes) == 20
+    from ember.expert_manifold.video_schedule import reference_demo_index
+    expected=[reference_demo_index(SPEC["evaluation"]["video_schedule_seed"],"libero_90",18,state,
+                                   demo_count=50,sampling_mode="without_replacement") for state in range(50)]
+    assert [row["teacher_demo_indices"][0] for row in episodes] == expected[:20]
+    assert len(set(expected)) == 50
     assert episodes[0]["init_state_id"] == 0
 
 
@@ -201,12 +206,12 @@ def test_support_evaluator_subset_is_explicit(tmp_path):
     arm = SPEC["arms"][0]
     ids = SPEC["evaluation"]["source_reference"]["support_global_ids"]
     installed = tuple(SimpleNamespace(suite="libero_90", task_id=task - 40,
-                                      init_state_ids=tuple(range(50))) for task in ids)
+                                      init_state_ids=tuple(range(20))) for task in ids)
     selected_ids = arm["support_eval_global_ids"]
     ordinals = [ids.index(task) for task in selected_ids]
     manifest = {
         "schema_version": "ember_pi05_task_subset_selection_v1", "role": "nonheld_meta",
-        "mode": "formal", "state_count": 50, "init_state_ids": list(range(50)),
+        "mode": "screen", "state_count": 20, "init_state_ids": list(range(20)),
         "task_ordinals": ordinals, "global_task_ids": selected_ids,
         "tasks": [{"global_task_id": task, "suite": "libero_90", "task_id": task - 40}
                   for task in selected_ids],
@@ -216,9 +221,116 @@ def test_support_evaluator_subset_is_explicit(tmp_path):
     }
     path = tmp_path / "subset.json"
     path.write_text(json.dumps(manifest))
-    args = SimpleNamespace(role="nonheld_meta", mode="formal", state_count=50,
+    args = SimpleNamespace(role="nonheld_meta", mode="screen", state_count=20,
                            init_state_ids=None, occupancy_capture_selection=None,
-                           task_subset_selection=path)
+                           task_subset_selection=path, trajectory_capture_selection=tmp_path/"capture.json")
     selected, record = _task_subset_tasks(args, installed, adapter_kind="static_task_lora")
     assert [task.task_id for task in selected] == [task - 40 for task in selected_ids]
     assert record["diagnostic_subset"] == "registered_relational_support_tasks"
+
+
+# Exact stage1 bank admission without loading models or consuming GPU work.
+STAGE_RUN = Path(SPEC["outputs"]["planned_run_root"])
+
+def _selection(panel):
+    support = panel['kind'] == 'support_correct'
+    return materialization.selection_contract(
+        role='nonheld_meta' if support else 'development_train',
+        task_ids=panel['task_ids'], cardinality=1,
+        arm='same_task_other' if panel['kind'] == 'target_other' else 'correct',
+        mode='per_init_ordinal', seed=SPEC['evaluation']['video_schedule_seed'],
+        init_state_ids=panel['state_ids'], video_pool=list(range(50)))
+
+
+def _config_for(panel):
+    return _config(ROOT/'configs/relational_support_causality_v1'/f"train_{panel['arm']}.json")
+
+
+def _panel(arm, kind):
+    return next(row for row in SPEC['evaluation']['stage1']['panels']
+                if row['arm'] == arm and row['kind'] == kind)
+
+
+def test_exact_sixteen_stage1_bank_requests_and_outputs():
+    banks = [row for row in SPEC['evaluation']['stage1']['panels'] if row['arm'] != 'Source']
+    assert len(banks) == 16
+    for panel in banks:
+        selection = _selection(panel)
+        config = _config_for(panel)
+        checkpoint = STAGE_RUN/'training'/panel['arm']/'checkpoints/macro_00001260'
+        output = STAGE_RUN/'materialization'/panel['id']
+        materialization._validate_conditional_selection(selection, config)
+        assert registered_stage1_bank_panel(config, selection,
+            checkpoint=checkpoint, output=output)['id'] == panel['id']
+        assert sum(len(materialization.planned_episodes(selection,gid))
+                   for gid in panel['task_ids']) == panel['expected_rows']
+        assert selection['video_pool'] == list(range(50))
+    assert sum(row['expected_rows'] for row in banks) == 1280
+
+
+@pytest.mark.parametrize('change', ['deferred_task','support_state','wrong_control','wrong_arm',
+                                   'wrong_seed','wrong_pool','wrong_checkpoint','wrong_output'])
+def test_stage1_bank_scope_rejects_deferred_and_wrong_identity(change):
+    panel = _panel('C_S00','support_correct' if change == 'support_state' else 'target_correct')
+    selection = deepcopy(_selection(panel))
+    config = _config_for(panel)
+    checkpoint = STAGE_RUN/'training'/panel['arm']/'checkpoints/macro_00001260'
+    output = STAGE_RUN/'materialization'/panel['id']
+    if change == 'deferred_task':
+        selection['task_ids'].append(0)
+    elif change == 'support_state':
+        selection['init_state_ids'].append(20)
+    elif change == 'wrong_control':
+        selection['arm'] = 'cross_suite_wrong'
+    elif change == 'wrong_arm':
+        config = _config(ROOT/'configs/relational_support_causality_v1/train_C_S11.json')
+    elif change == 'wrong_seed':
+        selection['seed'] += 1
+    elif change == 'wrong_pool':
+        selection['video_pool'] = list(range(20))
+    elif change == 'wrong_checkpoint':
+        checkpoint = STAGE_RUN/'training'/panel['arm']/'checkpoints/macro_00001050'
+    else:
+        output = STAGE_RUN/'materialization'/f"{panel['id']}_extra"
+    with pytest.raises(ValueError, match='stage1|registered'):
+        registered_stage1_bank_panel(config, selection, checkpoint=checkpoint, output=output)
+
+
+def test_json_request_admits_registered_nonheld20_only_before_gpu(monkeypatch):
+    panel = _panel('C_S00','support_correct')
+    request = {'checkpoint':str(STAGE_RUN/'training/C_S00/checkpoints/macro_00001260'),
+               'output':str(STAGE_RUN/'materialization'/panel['id']),
+               'role':'nonheld_meta','task_ids':panel['task_ids'],'k':1,
+               'arm':'correct','selection_mode':'per_init_ordinal',
+               'video_pool':list(range(50)),'state_count':20,
+               'seed':SPEC['evaluation']['video_schedule_seed']}
+    monkeypatch.setattr(materialization,'_materialize_batch',
+                        lambda **kwargs: kwargs['requests'])
+    normalized = materialization.materialize_requests(asset_root=ROOT,requests=[request],device=None)
+    assert normalized[0]['selection']['init_state_ids'] == list(range(20))
+    assert normalized[0]['selection']['video_pool'] == list(range(50))
+    with pytest.raises(ValueError,match='stage1 support'):
+        materialization.materialize_requests(asset_root=ROOT,
+            requests=[request|{'output':str(STAGE_RUN/'materialization/deferred_support')}],device=None)
+    with pytest.raises(ValueError,match='registered nonheld20'):
+        materialization.request_init_state_ids(role='nonheld_meta',state_count=20)
+
+
+def test_goal21_other_requires_same_arm1260_reference_declaration(monkeypatch):
+    panel = _panel('C_S00','target_other')
+    selection = _selection(panel)
+    config = _config_for(panel)
+    record = {'path':'/sealed/correct100/manifest.json','bytes':123}
+    monkeypatch.setattr(video_controls,'_inspect_stage1_goal_correct',lambda *_args,**_kwargs:record)
+    declaration = {**video_controls.DIAGNOSTIC_DECLARATION,
+                   'stage1_panel_id':panel['id'],'checkpoint_macro':1260,
+                   'paired_correct_manifest':record}
+    result = video_controls.inspect_diagnostic_contract(declaration,selection=selection,
+        checkpoint={'macro':1260},run={'config':config},asset_root=ROOT)
+    assert result['paired_correct_manifest'] == record
+    with pytest.raises(ValueError,match='stage1 Goal21'):
+        video_controls.inspect_diagnostic_contract(declaration|{'stage1_panel_id':'wrong'},
+            selection=selection,checkpoint={'macro':1260},run={'config':config},asset_root=ROOT)
+    with pytest.raises(ValueError,match='stage1 Goal21'):
+        video_controls.inspect_diagnostic_contract(declaration,
+            selection=selection,checkpoint={'macro':1050},run={'config':config},asset_root=ROOT)

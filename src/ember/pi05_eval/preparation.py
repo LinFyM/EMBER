@@ -40,6 +40,7 @@ from ember.pi05_eval_queue import (
     publish_json_exclusive,
 )
 from ember.pi05_source_checkpoint import read_json
+from ember.pi05_eval.registered_passive_capture import attach_requested_capture
 
 
 TASK_SUBSET_SELECTION_SCHEMA = "ember_pi05_task_subset_selection_v1"
@@ -274,7 +275,20 @@ def _registered_support_subset_valid(manifest: Mapping[str, Any], declared: Sequ
     expected_ids = (arm["support_eval_global_ids"] if arm is not None else
                     spec["evaluation"]["source_reference"]["support_global_ids"]
                     if manifest.get("panel") == "source_reference_support6" else None)
+    stage20 = (manifest.get("mode") == "screen" and manifest.get("state_count") == 20)
+    if stage20 and (spec["evaluation"].get("active_stage") != "mechanism_core_v1"
+                    or manifest.get("init_state_ids") != list(range(20))):
+        return False
     return expected_ids is not None and [row[1] for row in declared] == expected_ids
+
+
+def _registered_subset_mode_allowed(args: Any) -> bool:
+    ordinary = {("screen", 4), ("screen", 5), ("screen", 8), ("screen", 10), ("formal", 50)}
+    mode = str(args.mode), int(args.state_count)
+    if mode in ordinary:
+        return True
+    return (mode == ("screen", 20) and args.role == "nonheld_meta"
+            and getattr(args, "trajectory_capture_selection", None) is not None)
 
 
 def _task_subset_tasks(
@@ -288,7 +302,7 @@ def _task_subset_tasks(
         return tuple(tasks), None
     if (
         getattr(args, "occupancy_capture_selection", None) is not None
-        or (str(args.mode), int(args.state_count)) not in {("screen", 4), ("screen", 5), ("screen", 8), ("screen", 10), ("formal", 50)}
+        or not _registered_subset_mode_allowed(args)
         or args.role not in {"development_train", "nonheld_meta"}
         or adapter_kind not in {None, "task_expert", "static_task_lora"}
     ):
@@ -409,7 +423,7 @@ def _stage_predicate_capture(
 
 def _registered_trajectory_capture(
     args: Any, tasks: Sequence[Any], output_dir: Path,
-    task_subset: Mapping[str, Any] | None,
+    task_subset: Mapping[str, Any] | None, repo_root: Path,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     path = getattr(args, "trajectory_capture_selection", None)
     if path is None:
@@ -422,6 +436,14 @@ def _registered_trajectory_capture(
     manifest = read_json(path)
     full = tuple((str(row["suite"]), int(row["task_id"]), int(row["init_state_id"]))
                  for row in manifest.get("full_conditions", ()))
+    if manifest.get("passive_control_trace") is not None:
+        from ember.pi05_eval.registered_passive_capture import prepare_from_manifest
+
+        return prepare_from_manifest(
+            args, repo_root=repo_root, output_dir=output_dir,
+            task_subset=task_subset, tasks=tasks, manifest=manifest,
+            selection_path=path, full=full,
+        )
     cases = {(str(task.suite), int(task.task_id), int(state))
              for task in tasks for state in task.init_state_ids}
     if (manifest.get("schema_version") != TRAJECTORY_CAPTURE_SELECTION_SCHEMA
@@ -542,7 +564,7 @@ def _prepared_payload(
     stage_predicates = _stage_predicate_capture(args, occupancy_capture)
     if getattr(args, "trajectory_capture_selection", None) is not None:
         occupancy_capture, stage_predicates = _registered_trajectory_capture(
-            args, tasks, output_dir, task_subset
+            args, tasks, output_dir, task_subset, repo_root
         )
     model = inspect_source_checkpoint(
         authorities,
@@ -599,6 +621,7 @@ def _prepared_payload(
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicates
     contract["diagnostic_task_subset"] = task_subset
+    attach_requested_capture(args, contract, repo_root, output_dir)
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

@@ -11,7 +11,7 @@ import numpy as np
 from ember.eval_adapters import episode_adapter_fields
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.exploration import episode_exploration_fields
-from ember.pi05_eval.trajectory_capture import initialize_capture, save_capture
+from ember.pi05_eval.trajectory_capture import (initialize_capture, save_capture, save_passive_trace, start_passive_trace)
 
 
 def stage_predicate_snapshot(
@@ -78,6 +78,7 @@ def start_fixed_episode(
             "stage_predicate_ever": values, "stage_predicate_peak": sum(values),
             "stage_predicate_transitions": [{"step": 0, "satisfied": list(values)}],
         })
+    start_passive_trace(env, slot, contract.get("diagnostic_occupancy_capture"))
     return slot
 
 
@@ -122,5 +123,8 @@ def finish_episode_row(
                               success=bool(slot["episode_done"]))
     if trajectory is not None:
         row["occupancy_trajectory"] = trajectory
+    passive = save_passive_trace(contract.get("diagnostic_occupancy_capture"), task, slot)
+    if passive is not None:
+        row["continuous_control_trace"] = passive
     row.update(episode_adapter_fields(contract, task_adapter, slot.get("episode_adapter")))
     return row

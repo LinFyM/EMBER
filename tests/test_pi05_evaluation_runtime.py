@@ -749,3 +749,17 @@ def test_aggregate_rejects_raw_file_size_change(tmp_path: Path) -> None:
     (tmp_path / relative).write_text("{}\n", encoding="utf-8")
     with pytest.raises(Pi05EvaluationError, match="size changed"):
         aggregate_run(tmp_path)
+
+
+def test_registered_passive_capture_missing_raw_trace_fails_shard_validation(tmp_path: Path) -> None:
+    contract = _contract(tmp_path)
+    contract['diagnostic_occupancy_capture'] = {
+        'mode': 'compact', 'full_conditions': [], 'trajectory_root': str(tmp_path/'trajectories'),
+        'passive_trace': {'schema_version': 'ember_relational_support_passive_capture_v1',
+                          'trace_root': str(tmp_path/'continuous_traces')},
+    }
+    shard = EvaluationShard(job_id='passive-shard',ordinal=0,suite='libero_spatial',
+                            task_id=0,horizon=220,init_state_ids=(0,1),estimated_cost=440)
+    payload = _payload(contract, shard)
+    with pytest.raises(Pi05EvaluationError, match='passive trace row identity'):
+        validate_shard_result(payload, contract=contract, shard=shard)

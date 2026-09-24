@@ -27,7 +27,9 @@ from ember.pi05_eval.exploration import (
 )
 from ember.pi05_eval.trajectory_capture import (
     capture_level,
+    record_passive_step,
     record_replan,
+    validate_passive_trace_row,
 )
 from ember.pi05_eval_queue import (
     EvaluationClaim,
@@ -255,6 +257,7 @@ def rollout_shard(
                 slot["steps"] += 1
                 if "stage_predicate_states" in slot:
                     update_stage_predicates(env, slot)
+                record_passive_step(env, slot, action, occupancy_capture)
                 if prefix_intervention is not None:
                     from ember.pi05_eval.prefix_replay import record_tail_step
 
@@ -406,6 +409,7 @@ def _validate_episode_row(
         from ember.pi05_eval.readout_trace import validate_row
 
         validate_row(row, contract)
+    validate_passive_trace_row(row, contract, task)
 
 
 def _complete_published_shard(

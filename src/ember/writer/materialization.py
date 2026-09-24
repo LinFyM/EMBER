@@ -27,7 +27,8 @@ from ember.writer.training import (CONDITIONAL_CONFIG_SCHEMA, CONDITIONAL_EXPERI
                                    CONDITIONAL_UPDATE_VERSION, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
                                    _conditional_config, observer_mode_contract)
 from ember.writer.relational_contract import (CONFIG_SCHEMA as RELATIONAL_CONFIG_SCHEMA,
-    UPDATE_VERSION as RELATIONAL_UPDATE_VERSION, validate_config as _relational_config)
+    UPDATE_VERSION as RELATIONAL_UPDATE_VERSION, validate_config as _relational_config,
+    registered_stage1_bank_panel)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
@@ -174,6 +175,7 @@ def selection_contract(
 
 def request_init_state_ids(
     *, role: str, init_state_ids: Sequence[int] | None = None, state_count: int | None = None,
+    registered_stage1: bool = False,
 ) -> tuple[int, ...]:
     """Resolve the existing count API or the registered train diagnostic panel."""
     if role == "test":
@@ -183,8 +185,8 @@ def request_init_state_ids(
         return states
     if init_state_ids is None:
         count = 50 if state_count is None else state_count
-        if count not in (10, 50):
-            raise ValueError("count-only Writer requests require 10 or 50 initial states")
+        if count not in (10, 50) and not (role == "nonheld_meta" and count == 20 and registered_stage1):
+            raise ValueError("count-only Writer requests require 10 or 50 initial states, or registered nonheld20")
         return tuple(range(count))
     states = tuple(init_state_ids)
     if (role != "development_train" or states not in (TRAIN_DIAGNOSTIC_INIT_STATE_IDS, tuple(range(4)))
@@ -481,6 +483,7 @@ def _materialize(
     run: Mapping[str, Any], checkpoint_record: Mapping[str, Any],
     repository: Mapping[str, Any], reuse_manifest: Path | None = None,
     reusable: Mapping[str, Any] | None = None, diagnostic_contract: Mapping[str, Any] | None = None,
+    registered_stage1_panel: Mapping[str, Any] | None = None,
 ) -> Path:
     from ember.writer.learning_data import load_learning_tasks
     from ember.writer.evaluation import validate_task_scope
@@ -564,25 +567,27 @@ def _materialize(
             manifest["information_wall"]["materialization_rgb_video_reads"] = 0 if no_video else len(conditions)
     elif not conditional:
         manifest["information_wall"]["deployment_inputs"] = ["exact language", "ordered RGB videos", "original frame indices"]
+    _attach_stage1_panel_identity(manifest, registered_stage1_panel)
     path = output / "manifest.json"
     write_json_atomic(path, manifest)
     return path
 
 
+def _attach_stage1_panel_identity(manifest, panel) -> None:
+    if panel is not None:
+        manifest["registered_stage1_panel_id"] = panel["id"]
+
+
 def _validate_conditional_selection(selection: Mapping[str, Any], config: Mapping[str, Any]) -> None:
     """Bind this study's banks to its two registered training-role panels."""
+    if config["schema_version"] == RELATIONAL_CONFIG_SCHEMA:
+        registered_stage1_bank_panel(config, selection)
+        return
     spec = read_json(REPO_ROOT / config["study_spec"])
     evaluation = spec["evaluation"]
     held, seen = evaluation["diagnostic_held"], evaluation["seen"]
     tasks = selection["task_ids"]
-    if (config["schema_version"] == RELATIONAL_CONFIG_SCHEMA
-            and tasks == next(arm["support_eval_global_ids"] for arm in spec["arms"]
-                              if arm["id"] == config["experiment"]["arm_id"])):
-        support = evaluation["support_knowledge_panels"]
-        states, pool, schedule = support["states"], support["teacher_demos"], VIDEO_SCHEDULE
-        permitted_arms = {"correct"}
-        role = "nonheld_meta"
-    elif tasks == held["task_ids"]:
+    if tasks == held["task_ids"]:
         states, pool, schedule = held["state_ids"], held["teacher_demos"], VIDEO_SCHEDULE
         permitted_arms = {"correct", "same_task_other", "cross_suite_wrong"}
         role = "development_train"
@@ -600,10 +605,44 @@ def _validate_conditional_selection(selection: Mapping[str, Any], config: Mappin
         raise ValueError("conditional bank pairing differs from its registered panel")
 
 
+def _registered_request_panel(request, run, record):
+    schema = run.get("config", {}).get("schema_version")
+    if schema not in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}:
+        return None
+    _validate_conditional_selection(request["selection"], run["config"])
+    panel = None
+    if schema == RELATIONAL_CONFIG_SCHEMA:
+        if run["git"]["commit"] != "7dc95edbba00cf61439700d77fb321eb8df95c07":
+            raise ValueError("stage1 bank must use the frozen 7dc training checkpoint")
+        panel = registered_stage1_bank_panel(run["config"], request["selection"],
+            checkpoint=Path(record["path"]), output=Path(request["output"]))
+    arm_id = run["config"]["experiment"]["arm_id"]
+    selected_arm = request["selection"]["arm"]
+    if arm_id in {"A_direct16", "B_language", "B_S00", "B_S11"} and selected_arm != "correct":
+        raise ValueError("direct and language arms reuse their correct result; no video control reruns are registered")
+    if arm_id in {"C_video_fm", "D_video_aux", "C_S00", "C_S01", "C_S10", "C_S11"} and selected_arm not in {
+            "correct", "same_task_other", "cross_suite_wrong"}:
+        raise ValueError("conditional study permits only correct, selected same-task-other, and cross-suite-wrong banks")
+    if arm_id in {"C_video_fm", "D_video_aux", "C_S00", "C_S01", "C_S10", "C_S11"} and selected_arm in {
+            "same_task_other", "cross_suite_wrong"} and request.get("diagnostic_contract") is None:
+        raise ValueError("video controls require the sealed selected-checkpoint diagnostic declaration")
+    return panel
+
+
+def _require_stage1_goal_other_reuse(request, panel, diagnostic, reused) -> None:
+    if panel is None or panel["kind"] != "target_other":
+        return
+    expected = {episode["condition_id"] for episode in planned_episodes(request["selection"], 21)}
+    if (request.get("reuse_manifest") is None or diagnostic is None
+            or Path(request["reuse_manifest"]).resolve()
+            != Path(diagnostic["paired_correct_manifest"]["path"]).resolve()
+            or len(expected) != 50 or not expected <= set(reused)):
+        raise ValueError("stage1 Goal21 other requires all 50 paired correct LoRAs before GPU launch")
+
+
 def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device | None = None,
                        devices: Sequence[torch.device] | None = None, cpu_threads: int = 4,
                        native_frame_chunk: int | None = None) -> list[Path]:
-    selected_devices = execution_devices(device, devices)
     if type(cpu_threads) is not int or cpu_threads <= 0:
         raise ValueError("materialization CPU threads must be positive")
     repository = git_state(REPO_ROOT)
@@ -619,20 +658,8 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     if len(set(outputs)) != len(outputs) or any(path.exists() for path in outputs):
         raise ValueError("materialization outputs must be distinct new directories")
     inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
-    for request, (run, _) in zip(requests, inspected, strict=True):
-        if run.get("config", {}).get("schema_version") not in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}:
-            continue
-        _validate_conditional_selection(request["selection"], run["config"])
-        arm_id = run["config"]["experiment"]["arm_id"]
-        selected_arm = request["selection"]["arm"]
-        if arm_id in {"A_direct16", "B_language", "B_S00", "B_S11"} and selected_arm != "correct":
-            raise ValueError("direct and language arms reuse their correct result; no video control reruns are registered")
-        if arm_id in {"C_video_fm", "D_video_aux", "C_S00", "C_S01", "C_S10", "C_S11"} and selected_arm not in {
-                "correct", "same_task_other", "cross_suite_wrong"}:
-            raise ValueError("conditional study permits only correct, selected same-task-other, and cross-suite-wrong banks")
-        if arm_id in {"C_video_fm", "D_video_aux", "C_S00", "C_S01", "C_S10", "C_S11"} and selected_arm in {"same_task_other", "cross_suite_wrong"} \
-                and request.get("diagnostic_contract") is None:
-            raise ValueError("video controls require the sealed selected-checkpoint diagnostic declaration")
+    registered_panels = [_registered_request_panel(request, run, record)
+                         for request, (run, record) in zip(requests, inspected, strict=True)]
     first = inspected[0][0]
     expected = (first["source"], first["model_config"], first["config"]["observer"])
     for run, _ in inspected:
@@ -644,6 +671,9 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     reusable = [_reusable_conditions(request.get("reuse_manifest"), asset_root=asset_root,
         run=run, checkpoint=record, selection=request["selection"])
         for request, (run, record) in zip(requests, inspected, strict=True)]
+    for request, panel, diagnostic, reused in zip(requests, registered_panels, diagnostics, reusable, strict=True):
+        _require_stage1_goal_other_reuse(request, panel, diagnostic, reused)
+    selected_devices = execution_devices(device, devices)
     # One asset root fixes LoRA/tokenizer/normalization authorities. Workers may
     # reuse weights for the same checkpoint, never adapted Z/KV/H or generated LoRAs.
     runtime_config = {**first["config"], "model": first["model_config"],
@@ -652,11 +682,13 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         runtime_config["observer"]["frame_chunk"] = native_frame_chunk
     results, workers = [], None
     with ExitStack() as stack:
-        for request, (run, record), reused, diagnostic in zip(requests, inspected, reusable, diagnostics, strict=True):
+        for request, (run, record), reused, diagnostic, panel in zip(
+                requests, inspected, reusable, diagnostics, registered_panels, strict=True):
             if request["selection"]["arm"] != "no_video" and workers is None:
                 workers = stack.enter_context(MaterializationWorkers(asset_root=asset_root, config=runtime_config,
                                                devices=selected_devices, cpu_threads=cpu_threads))
-            normalized = {**request, "diagnostic_contract": diagnostic}
+            normalized = {**request, "diagnostic_contract": diagnostic,
+                          "registered_stage1_panel": panel}
             results.append(_materialize(asset_root=asset_root, workers=workers, run=run, reusable=reused,
                            checkpoint_record=record, repository=repository, **normalized))
     return results
@@ -684,10 +716,21 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
     for request in requests:
         if not isinstance(request, Mapping) or set(request) - fields:
             raise ValueError("unknown request fields; asset root and device belong to the whole batch")
+        stage1_20 = request.get("role") == "nonheld_meta" and request.get("state_count") == 20
+        if stage1_20:
+            spec = read_json(REPO_ROOT / "configs/relational_support_causality_v1/experiment_spec.json")
+            root = Path(spec["outputs"]["planned_run_root"]).resolve() / "materialization"
+            support = {row["id"] for row in spec["evaluation"]["stage1"]["panels"]
+                       if row["kind"] == "support_correct"}
+            output = Path(request["output"]).resolve()
+            if (spec["evaluation"].get("active_stage") != "mechanism_core_v1"
+                    or output.parent != root or output.name not in support):
+                raise ValueError("nonheld20 Writer request is outside stage1 support panels")
         selection = selection_contract(role=request["role"], task_ids=request["task_ids"], cardinality=request["k"],
             arm=request.get("arm", "correct"), mode=request.get("selection_mode", "per_init_ordinal"),
             seed=request.get("seed", DEFAULT_SELECTION_SEED), init_state_ids=request_init_state_ids(
-                role=request["role"], init_state_ids=request.get("init_state_ids"), state_count=request.get("state_count")),
+                role=request["role"], init_state_ids=request.get("init_state_ids"),
+                state_count=request.get("state_count"), registered_stage1=stage1_20),
             video_pool=request.get("video_pool", tuple(range(50))), fixed_videos=request.get("fixed_videos"))
         normalized.append({"checkpoint": Path(request["checkpoint"]).resolve(),
                            "output": Path(request["output"]).resolve(), "selection": selection,

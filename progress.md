@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：关系支持训练继续，正式评测启动前修复已确认的采集合同缺口（2026-09-24）
+## 当前状态：关系支持训练继续，评测收缩为固定终点与相邻点并修复采集合同（2026-09-24）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -13,7 +13,7 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
 **当前active design为[任务关系支持的学习干预](docs/designs/relational_support_causality_design.md)**，
 机器合同`configs/relational_support_causality_v1/experiment_spec.json`。主讨论已完成metadata/完整BDDL/可辨识关系审计，
-冻结四个fit28池、四C与两B、共同1260节点的因果对比、六节点完整评测及资源/停止合同；尚无本批模型结果。
+冻结四个fit28池、四C与两B、共同1260节点的因果对比及资源/停止合同；原六节点评测已被下述事前成本修订替代，尚无本批闭环结果。
 设计已在`6972486e`集成推送。2026-09-24 09:19 UTC以Queue派发，message
 `01a0d2b6-24e5-7ae0-a1a9-30077bd8cc4e`；09:19:59 UTC从现有app-server核对**完整正文**进入Sol的
 inProgress turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`，当前cwd及实际标题亦已核对。
@@ -24,13 +24,31 @@ Owner明确纠正“下一合同尚未定稿便结束主讨论推进”的错误
 主讨论已把下一项推进到可执行合同；已有授权内不重复索要许可，也不为让实验不停而仓促试改法。
 
 新study根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`，正式树
-`/data1/user/ymdai/projects/EMBER-relational-support-formal`。计划六臂各1260更新/141120query，最多21868闭环、
+`/data1/user/ymdai/projects/EMBER-relational-support-formal`。计划六臂各1260更新/141120query，修订后共9932闭环、
 3300既有query真实flow预测、82固定full cases；data0峰值≤128GiB/data1新增代码≤1GiB，同时最多6物理GPU。
 实现已集成推送`7dc95edbba00cf61439700d77fb321eb8df95c07`，正式树为该clean detached commit。
 Sol完成CPU 91+9项、六臂4更新/2→4恢复、最长full-H50及新support物化→评测smoke，查询strg01独立quota与共享容量；
 预计data0峰值新增120GiB低于128GiB，data1开发/正式树合计约503MiB。精确原合同为`launch/formal_launch_contract.json`。
 主讨论已调用canonical task authority验证新manifest58任务/Train42/Val8/Test8；每个optimizer的白名单仍只有登记fit28。
 Source71及官方24/8/8未改；无新增held expert或官方Val/Test读取。完整机制与竞争解释见task_plan第七阶段和findings§140。
+
+### 尚无正式闭环结果时的成本修订（2026-09-24 14:38 UTC）
+
+Owner询问本批成本与信息量是否匹配。主讨论核对发现16704/21868条用于六节点完整曲线，
+而核心1260交互仍只有一个训练seed、Goal21的50配对状态；增加早期节点不会补足独立重复。
+此时evaluation下run_contract/results/launcher_completion均为0，没有读取本批闭环分数后选择性删减。
+
+保留六臂训练与全部12个checkpoint、1260主比较、支持操作获取、Source保持与视频对照；
+只执行1050/1260的六臂held400+seen64（5568），固定1260报告、不再择优，controls2400、support1200、Source764，合计9932。
+3300功能预测与82固定full cases保持。取消210/420/630/840评测和selected额外other，不取消任何已产生证据。
+代价是没有早期学习曲线与最佳点结论；本批定位具体关系支持假说，不能以大矩阵数量保证统一根因。
+新authority为spec的`evaluation.executed_updates`；旧optimization/evidence节点表只保留原冻结训练身份。
+实际调度/分析须由Sol接续该修订并验收，旧自动评测脚本不可直接运行；原7dc训练不热改、不重训。
+合同修订已在`a473a6b6`推送。14:43 UTC以Queue送达当时idle的Sol任务，回执
+`01a0d3df-3b39-7a63-b970-7e7a5713b30e`；14:44 UTC核对完整正文进入新turn
+`01a0d3df-3b3d-77d2-85a4-b0a9e933c360`，Sol明确接续新节点/固定点/机械分析，同时保持训练等待退出事件。
+这是已接收并开始处理，尚不等于执行器已修订验收。正文、回执和完整正文核验见本study
+`coordination/evaluation_scope_reduction_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
 
 ### 正式评测前的采集缺口与裁决（2026-09-24）
 
@@ -43,9 +61,23 @@ Sol报告普通canonical trajectory capture不含逐控制步对象/EEF/夹爪�
 主讨论裁决并修订active design§6/spec：保留全部六臂训练及其`7dc95edb`冻结树，
 训练/恢复/物化/3300函数预测仍从该提交执行；所有尚未启动的新正式闭环统一固定新的评测实现提交E。
 E仅修复被动采集和prepare/resume/逐行验收，须验证不改变控制、RNG、LoRA/policy或成功/时限规则。
-不接受缺项，不重训，不用额外正式闭环补trace；全批21868/82case、信息墙和科学参数保持。
+不接受缺项，不重训，不用额外正式闭环补trace；该采集裁决当时保持21868/82case，后续独立成本修订将条数降为9932。
 精确E与修订launch/provenance由Sol实现、验证、集成后登记，原训练合同不追改；当前E尚未产生，不能称修复完成。
 具体验收、工程smoke和停止边界见设计§6。正在运行的训练持续等待退出事件；只暂缓受影响的正式评测。
+修订已在`c3f4a768`推送；10:48 UTC以Steer送入Sol当前turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`。
+10:49 UTC通过该turn的full items核对完整正文，并读取Sol明确回应：保留7dc训练/物化，建立独立评测E并先验证采集。
+这证明接续修复已被处理，尚不证明修复完成。正文/接受回执/逐字投递及回应在本study的
+`coordination/passive_capture_fix_dispatch.txt`、`passive_capture_fix_dispatch_receipt.json`和`passive_capture_fix_delivery.json`。
+
+2026-09-24 11:21 UTC，Sol的隔离实现为`0da61891`，尚未冻结为正式评测E。主讨论审阅完整source diff，
+确认只涉及采集/prepare/resume/row验收六个文件；AST复核动作规划、rollout、初态和逐行验收除明确采集调用外保持。
+主讨论独立运行采集/runtime两文件22项通过；另发现旧固定case测试的两个调用漏传新增`repo_root`，已复现失败。
+11:20 UTC以Steer送达，11:21 UTC核对完整正文及Sol明确接续修正；不据此声称该回归已复验通过。
+工程smoke预登记6条（上限12），任务均属共同26；真实环境/模型检查尚待合格GPU余量。
+旧C/B工程checkpoint实际来自`6972486e`开发状态，须保留真实来源；不能冒充7dc正式bank或声称已通过正式prepare。
+Sol已确认该边界，正式bank的prepare/resume仍按严格来源验收。审阅记录为
+`coordination/main_passive_capture_code_recheck.json`，正文/回执/回应为`passive_capture_review_{steer.txt,receipt.json,delivery.json}`。
+本次未读取正式训练进度、metrics或checkpoint；无新的科学结果。
 
 ### 本批启动核对与已落实的执行修正（2026-09-24 10:31 UTC）
 

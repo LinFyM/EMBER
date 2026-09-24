@@ -26,8 +26,12 @@ from ember.writer.conditional_contract import (
     UPDATE_VERSION as CONDITIONAL_UPDATE_VERSION,
     validate_config as _conditional_config,
 )
+from ember.writer.relational_contract import (
+    EXPERIMENT as RELATIONAL_EXPERIMENT,
+    validate_config as _relational_config,
+)
 from ember.writer.learning_data import (
-    CONDITIONAL_EVENT_SCHEMA, EVENT_SCHEMA, MAIN_EVENT_QUERIES, TEACHING_EVENT_QUERIES,
+    CONDITIONAL_EVENT_SCHEMA, RELATIONAL_EVENT_SCHEMA, EVENT_SCHEMA, MAIN_EVENT_QUERIES, TEACHING_EVENT_QUERIES,
     TASKS_PER_UPDATE, WriterTrainingData, query_allocation,
 )
 from ember.writer.continuation import (
@@ -52,6 +56,10 @@ TASK_MIXING_DECLARATION = {
 }
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TOPOLOGY_TRANSITION_SCHEMA = "ember_writer_topology_transition_v1"
+
+
+def _bounded_conditional(config):
+    return config.get("experiment", {}).get("kind") in {CONDITIONAL_EXPERIMENT, RELATIONAL_EXPERIMENT}
 
 
 def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
@@ -84,6 +92,10 @@ def _validate_dynamic_schedule(config):
 
 
 def _query_contract(config):
+    if config.get("experiment", {}).get("kind") == RELATIONAL_EXPERIMENT:
+        if config["data"].get("event_schema_version") != RELATIONAL_EVENT_SCHEMA:
+            raise ValueError("relation-support event schema changed")
+        return query_allocation(config["data"], 0)
     if config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT:
         if config["experiment"].get("arm_id") not in {"A_direct16", "B_language", "C_video_fm", "D_video_aux"}:
             raise ValueError("conditional compilation requires one of its four registered arms")
@@ -97,8 +109,10 @@ def _query_contract(config):
 
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
-    if config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT:
-        return _conditional_config(config)
+    validator = {RELATIONAL_EXPERIMENT: _relational_config,
+                 CONDITIONAL_EXPERIMENT: _conditional_config}.get(config.get("experiment", {}).get("kind"))
+    if validator is not None:
+        return validator(config)
     require_continuation_config(config)
     expected_data = {
         "extra_meta_tasks": [], "frame_stride": 5, "include_last_frame": True,
@@ -167,7 +181,7 @@ def _learning_rate_multiplier(step, opt):
 
 def _optimization(state, config):
     opt = config["optimization"]
-    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    conditional = _bounded_conditional(config)
     parameters = (tuple(parameter for parameter in state.parameters() if parameter.requires_grad)
                   if conditional else tuple(state.parameters()))
     if not parameters:
@@ -185,7 +199,7 @@ def _optimization(state, config):
 def _execution_config(args, config, context):
     """Physical query chunks do not change the complete logical FM batch."""
     supplied = getattr(args, "policy_microbatches", None)
-    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    conditional = _bounded_conditional(config)
     profile = config.get("evidence", {}).get("profile_registration", {})
     registered = profile.get("policy_microbatches") if conditional and profile.get("status") == "complete" else None
     batches = (list(map(int, registered)) if supplied is None and registered is not None else
@@ -233,7 +247,7 @@ def _run_contract(args, context, config, runtime, state):
     properties = torch.cuda.get_device_properties(context.local_rank)
     local = {"rank": context.rank, "local_rank": context.local_rank, "gpu_uuid": str(properties.uuid),
              "numa_node": context.numa_node, "cpu_affinity": list(context.cpu_affinity or ())}
-    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    conditional = _bounded_conditional(config)
     tasks_per_update = int(config["data"].get("tasks_per_update", TASKS_PER_UPDATE))
     parameterization = getattr(runtime, "parameterization", "video_writer")
     uses_video = getattr(runtime, "uses_video", True)
@@ -405,7 +419,7 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
     failures = [value for value in _gather(error, context) if value]
     if failures:
         raise RuntimeError(f"supervised backward failed on a rank: {failures}")
-    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    conditional = _bounded_conditional(config)
     parameters = (tuple(parameter for parameter in runtime.state.parameters() if parameter.requires_grad)
                   if conditional else tuple(runtime.state.parameters()))
     if context.device.type == "cuda":
@@ -646,7 +660,7 @@ def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
-    conditional = config.get("experiment", {}).get("kind") == CONDITIONAL_EXPERIMENT
+    conditional = _bounded_conditional(config)
     if conditional:
         if getattr(args, "extend_from", None) or getattr(args, "phase_from", None):
             raise ValueError("conditional compilation arms are fresh and cannot inherit a checkpoint")

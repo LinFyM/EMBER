@@ -26,6 +26,8 @@ from ember.writer.materialization_workers import MaterializationWorkers, executi
 from ember.writer.training import (CONDITIONAL_CONFIG_SCHEMA, CONDITIONAL_EXPERIMENT, CONFIG_SCHEMA,
                                    CONDITIONAL_UPDATE_VERSION, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
                                    _conditional_config, observer_mode_contract)
+from ember.writer.relational_contract import (CONFIG_SCHEMA as RELATIONAL_CONFIG_SCHEMA,
+    UPDATE_VERSION as RELATIONAL_UPDATE_VERSION, validate_config as _relational_config)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
@@ -75,18 +77,18 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     config = run["config"]
     data = config.get("data", {})
-    conditional = config.get("schema_version") == CONDITIONAL_CONFIG_SCHEMA
+    conditional = config.get("schema_version") in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}
     if conditional:
-        _conditional_config(config)
+        (_relational_config if config["schema_version"] == RELATIONAL_CONFIG_SCHEMA else _conditional_config)(config)
         parameterization = config["experiment"]["parameterization"]
         observer = {**observer, "route": parameterization}
         identities = (
             (run, {"schema_version": RUN_SCHEMA, "stage": STAGE, "mode": "formal"}),
-            (config, {"schema_version": CONDITIONAL_CONFIG_SCHEMA, "update_version": CONDITIONAL_UPDATE_VERSION,
+            (config, {"schema_version": config["schema_version"], "update_version": config["update_version"],
                       "execution_precision": "native_bf16_writer_fm_fp32_lora"}),
             (config.get("optimization", {}), {"loss": config["experiment"]["objective"]}),
             (config.get("observer", {}), observer),
-            (data, {"version": "conditional_compilation_diagnostics_events_v1", "action_start_offset": 1,
+            (data, {"version": data["event_schema_version"], "action_start_offset": 1,
                     "query_alignment": "post_action_observation_future_control_v1"}),
             (manifest, {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": STAGE,
                         "run_contract_schema": RUN_SCHEMA, "next_macro": macro}),
@@ -137,7 +139,7 @@ def selection_contract(
     fixed_videos: Mapping[str, Sequence[int]] | None = None,
 ) -> dict[str, Any]:
     tasks, states, pool = tuple(task_ids), tuple(init_state_ids), tuple(video_pool)
-    if (role not in {"development_train", "validation", "test"} or cardinality not in (1, 2, 4)
+    if (role not in {"development_train", "nonheld_meta", "validation", "test"} or cardinality not in (1, 2, 4)
             or arm not in {"correct", "same_task_other", *CONTROL_ARMS} or mode not in {"fixed_per_task", "per_init_ordinal"}
             or not tasks or len(set(tasks)) != len(tasks) or seed < 0
             or not states or tuple(sorted(set(states))) != states or not set(states) <= set(range(50))
@@ -195,9 +197,9 @@ def request_init_state_ids(
 def paired_video_sets(selection: Mapping[str, Any], task: int, ordinal: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
     """Use the shared task permutation, independent of worker/checkpoint/cursor."""
     k = int(selection["K"])
-    if not 0 <= task < 40:
-        raise ValueError("Writer video schedule requires a target40 task")
-    suite, local_task = SUITE_ORDER[task // 10], task % 10
+    if not 0 <= task < 111:
+        raise ValueError("Writer video schedule requires a target40 or Source71 task")
+    suite, local_task = ("libero_90", task - 40) if task >= 40 else (SUITE_ORDER[task // 10], task % 10)
     seed, pool = int(selection["seed"]), selection["video_pool"]
     if selection["schedule"] == "conditional_compilation_reserved_seen_v1":
         if ordinal not in range(4):
@@ -251,7 +253,7 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, Any]:
     observer = observer_mode_contract(run["model_config"])
-    conditional = run.get("config", {}).get("schema_version") == CONDITIONAL_CONFIG_SCHEMA
+    conditional = run.get("config", {}).get("schema_version") in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}
     if conditional:
         config = run["config"]
         parameterization = config["experiment"]["parameterization"]
@@ -285,6 +287,9 @@ def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, A
                                      else "one selected teacher video per condition",
             "teacher_video_values_read": 0 if parameterization != "video_writer" or arm == "no_video" else 1,
         }
+        if config["schema_version"] == RELATIONAL_CONFIG_SCHEMA:
+            method["study_id"] = config["experiment"]["kind"]
+            method["training_pool"] = config["experiment"]["pool"]
         if arm in CONTROL_ARMS:
             method["diagnostic_control"] = arm
             method["control_transform"] = ("identity_zero_delta_without_RGB_reads" if arm == "no_video" else
@@ -480,7 +485,7 @@ def _materialize(
     from ember.writer.learning_data import load_learning_tasks
     from ember.writer.evaluation import validate_task_scope
 
-    role = "train" if selection["evaluation_role"] == "development_train" else selection["evaluation_role"]
+    role = "train" if selection["evaluation_role"] in {"development_train", "nonheld_meta"} else selection["evaluation_role"]
     tasks = load_learning_tasks(asset_root, selection["task_ids"], role=role,
                                 protocol_path=run["config"]["data"].get("protocol"))
     rows = [{"global_task_id": task, "suite": value.suite, "task_id": value.suite_task_id,
@@ -502,7 +507,7 @@ def _materialize(
         checkpoint=checkpoint, run=run, checkpoint_record=checkpoint_record, workers=workers,
         reusable=reusable, lora_path=lora_path, no_video=selection["arm"] == "no_video")
     no_video = selection["arm"] == "no_video"
-    conditional = run.get("config", {}).get("schema_version") == CONDITIONAL_CONFIG_SCHEMA
+    conditional = run.get("config", {}).get("schema_version") in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}
     parameterization = run["config"].get("experiment", {}).get("parameterization", "video_writer")
     uses_video = parameterization == "video_writer" and not no_video
     compiler_invocations = sum(int(row.get("writer_invocations", 0)) for row in conditions.values())
@@ -570,15 +575,24 @@ def _validate_conditional_selection(selection: Mapping[str, Any], config: Mappin
     evaluation = spec["evaluation"]
     held, seen = evaluation["diagnostic_held"], evaluation["seen"]
     tasks = selection["task_ids"]
-    if tasks == held["task_ids"]:
+    if (config["schema_version"] == RELATIONAL_CONFIG_SCHEMA
+            and tasks == next(arm["support_eval_global_ids"] for arm in spec["arms"]
+                              if arm["id"] == config["experiment"]["arm_id"])):
+        support = evaluation["support_knowledge_panels"]
+        states, pool, schedule = support["states"], support["teacher_demos"], VIDEO_SCHEDULE
+        permitted_arms = {"correct"}
+        role = "nonheld_meta"
+    elif tasks == held["task_ids"]:
         states, pool, schedule = held["state_ids"], held["teacher_demos"], VIDEO_SCHEDULE
         permitted_arms = {"correct", "same_task_other", "cross_suite_wrong"}
+        role = "development_train"
     elif tasks == seen["task_ids"]:
         states, pool, schedule = seen["state_ids"], list(range(46, 50)), "conditional_compilation_reserved_seen_v1"
         permitted_arms = {"correct"}
+        role = "development_train"
     else:
         raise ValueError("conditional bank tasks are outside registered held400 and seen64 panels")
-    if (selection["evaluation_role"] != "development_train" or selection["K"] != 1
+    if (selection["evaluation_role"] != role or selection["K"] != 1
             or selection["mode"] != "per_init_ordinal"
             or selection["seed"] != evaluation["video_schedule_seed"]
             or selection["init_state_ids"] != states or selection["video_pool"] != pool
@@ -606,17 +620,17 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         raise ValueError("materialization outputs must be distinct new directories")
     inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
     for request, (run, _) in zip(requests, inspected, strict=True):
-        if run.get("config", {}).get("schema_version") != CONDITIONAL_CONFIG_SCHEMA:
+        if run.get("config", {}).get("schema_version") not in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}:
             continue
         _validate_conditional_selection(request["selection"], run["config"])
         arm_id = run["config"]["experiment"]["arm_id"]
         selected_arm = request["selection"]["arm"]
-        if arm_id in {"A_direct16", "B_language"} and selected_arm != "correct":
+        if arm_id in {"A_direct16", "B_language", "B_S00", "B_S11"} and selected_arm != "correct":
             raise ValueError("direct and language arms reuse their correct result; no video control reruns are registered")
-        if arm_id in {"C_video_fm", "D_video_aux"} and selected_arm not in {
+        if arm_id in {"C_video_fm", "D_video_aux", "C_S00", "C_S01", "C_S10", "C_S11"} and selected_arm not in {
                 "correct", "same_task_other", "cross_suite_wrong"}:
             raise ValueError("conditional study permits only correct, selected same-task-other, and cross-suite-wrong banks")
-        if arm_id in {"C_video_fm", "D_video_aux"} and selected_arm in {"same_task_other", "cross_suite_wrong"} \
+        if arm_id in {"C_video_fm", "D_video_aux", "C_S00", "C_S01", "C_S10", "C_S11"} and selected_arm in {"same_task_other", "cross_suite_wrong"} \
                 and request.get("diagnostic_contract") is None:
             raise ValueError("video controls require the sealed selected-checkpoint diagnostic declaration")
     first = inspected[0][0]

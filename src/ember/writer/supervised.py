@@ -103,6 +103,7 @@ def configured_endpoint(config):
     experiment = config.get("experiment")
     if experiment is None:
         return True
-    if experiment.get("kind") != "conditional_compilation_diagnostics_20260923":
+    if experiment.get("kind") not in {"conditional_compilation_diagnostics_20260923",
+                                      "relational_support_causality_20260924"}:
         raise ValueError("unrecognized conditional teaching objective")
     return experiment.get("extra_endpoint_prefix") is True

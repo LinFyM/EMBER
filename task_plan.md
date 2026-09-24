@@ -11,7 +11,8 @@ Owner已指定本任务`01a0cd94-65da-7b22-8ca9-7ba35f454632`接管主讨论与�
 15900次[交叉视频函数诊断](docs/designs/crossed_video_action_field_design.md)也已完成，见findings§138；
 随后[动作读出与内部适配因果分解](docs/designs/readout_realization_causality_design.md)已完成，见findings§139。
 当前执行[任务关系支持的学习干预](docs/designs/relational_support_causality_design.md)，四个C和两个fresh语言B，
-训练/物化/函数预测固定`7dc95edb`、各训练臂world2；三个C已并行启动，B的正式拓扑恢复补验已通过。
+训练及暂缓的函数预测固定`7dc95edb`、各训练臂world2；B的正式拓扑恢复补验已通过。
+第一阶段物化与闭环统一由新冻结提交E执行；只修正物化子集选择/验收及被动采集，单condition Writer生成计算保持，见设计§6。
 正式闭环启动前发现逐控制步轨迹与全行谓词的采集缺口，现按设计§6修复被动采集，全部闭环将统一冻结新评测提交；
 原训练继续，不接受原件缺项或为补采集重跑正式闭环。Owner进一步要求核心诊断后再补，16:39 UTC在尚无闭环结果时登记第一阶段：
 固定1260，六臂14/21各50state、四C Goal21 other各50、新增support各20及配对Source，共18面板1500行、66固定案例。

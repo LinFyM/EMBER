@@ -1546,7 +1546,7 @@
       "engineering_smoke_uses_existing_smoke_models_and_authorized_training_tasks": true,
       "engineering_smoke_not_scientific_evidence_or_formal_initialization": true,
       "out_of_scope_change_requires_coordinator_decision": true,
-      "scope_note": "Capture repair stays required; staged_evaluation_amendment supersedes only current evaluation scope, scheduling, reporting and counts before all formal rollouts."
+      "scope_note": "Capture repair stays required; staged_evaluation_amendment governs current scope. stage1_subset_materialization_amendment supersedes the materialization commit constraint below; training/query authority and single-condition generation semantics remain unchanged."
     },
     "scientific_evaluation_scope_amendment": {
       "id": "fixed_endpoint_and_adjacent_evaluation_20260924",
@@ -1608,7 +1608,8 @@
       "training_and_optimization_unchanged": true,
       "frozen_training_config_evaluation_metadata_unchanged": true,
       "all_12_checkpoints_per_arm_retained": true,
-      "all_actual_bank_computation_from7dc95edb": true,
+      "all_actual_bank_computation_from7dc95edb": false,
+      "materialization_authority": "execution.stage1_subset_materialization_amendment",
       "all_current_formal_evaluation_from_one_E_commit": true,
       "original_and_fixed_endpoint_full_masters_not_authorized": true,
       "one_active_stage_scope_guard": true,
@@ -1627,6 +1628,55 @@
       "completion_then_stop_new_evaluation": true,
       "followup_by_coordinator_with_existing_authorization": true,
       "dispatch_record": "coordination/stage1_core_dispatch.txt"
+    },
+    "stage1_subset_materialization_amendment": {
+      "id": "stage1_subset_materialization_in_E_20260925",
+      "registered_utc": "2026-09-24T17:02:43Z",
+      "coordinator": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+      "reason": "Frozen7dc rejects held2 and support20 and assumes complete held400 for other controls. Admit only registered stage1 subsets without computing deferred banks or changing single-condition generation.",
+      "training_and_deferred_query_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+      "generation_semantics_reference_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+      "all_new_stage1_materialization_and_evaluation_from_one_E_commit": true,
+      "materialization_commit_equals_evaluation_commit": true,
+      "E_must_be_clean_pushed_detached": true,
+      "E_record_before_first_formal_bank_or_rollout": "launch/stage1_subset_materialization_amendment.json",
+      "panel_authority": "evaluation.stage1.panels",
+      "formal_model_checkpoint_update": 1260,
+      "source_requires_no_writer_bank": true,
+      "allowed_changes": [
+        "existing request parsing and selection validation for exact study/arm/stage task-state-condition scope",
+        "stage-scoped bank manifests, loading, prepare/resume and provenance",
+        "Goal21 other declaration bound to same1260 correct100 Goal21 projection",
+        "reuse same-checkpoint/source/generation-contract condition LoRAs for canonical other permutation",
+        "targeted mapping, admission and real interface checks within existing smoke budget"
+      ],
+      "unchanged": [
+        "training checkpoints, topology, optimizer, scheduler, data and gradients",
+        "single-condition runtime.prepare/runtime.compile and complete38-target LoRA generation/application",
+        "Source, normalization, preprocessing, ordered frames and public probe",
+        "canonical50-video permutation, condition identity, ordinal and other offset17",
+        "policy/environment/RNG/success/horizon semantics",
+        "stage1 scientific contrasts and18panels/1500rollouts/66cases/0functional_predictions"
+      ],
+      "support_states": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+      "support_video_pool_remains50": true,
+      "other_correct_reference": "same arm1260 correct100 bank projected to Goal21 states0..49, with full identity and pairing validation",
+      "other_reuses_existing_correct_conditions_without_writer_recompute": true,
+      "deferred_bank_precomputation_allowed": false,
+      "old_study_and_official_validation_test_admission_unchanged": true,
+      "validation": [
+        "actual request-to-bank-to-evaluator prepare/resume path for registered subsets",
+        "all selected episode rows match frozen7dc canonical50 reference metadata",
+        "reject deferred task/state/control, wrong arm/checkpoint/map and out-of-scope roles before GPU",
+        "scoped Git diff confirms condition generation core unchanged",
+        "existing Source/B/C/support engineering smoke covers revised interfaces within12episode cap"
+      ],
+      "no_full_old_bank_or_retraining_for_validation": true,
+      "no_bitwise_or_full_tensor_scan_requirement": true,
+      "stop_if_condition_generation_or_mapping_must_change": true,
+      "existing_gpu_storage_and_smoke_limits_unchanged": true,
+      "continue_after_validation_without_additional_approval": true,
+      "dispatch_record": "coordination/stage1_subset_materialization_dispatch.txt"
     }
   }
 }

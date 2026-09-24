@@ -3,12 +3,13 @@
 2026-09-24，主讨论登记的下一批有界训练；是否active以`progress.md`为准。
 机器合同：`configs/relational_support_causality_v1/experiment_spec.json`；完整任务审计、protocol、manifest及evaluation在同目录。
 
-**评测规模修订（2026-09-24 14:38 UTC，任何本批正式闭环结果产生前）：** 六臂训练与1260主因果问题保持，
-仅执行1050/1260两个固定评测节点，1260为事前指定的唯一报告模型，1050只检验相邻保持；取消最佳点选择。
-闭环从原上限21868收缩为9932条。原六节点计划由Git保留，不再授权执行210/420/630/840评测或selected额外controls。
+**当前执行修订（2026-09-24 16:39 UTC／北京时间9月25日00:39，仍无本批正式闭环结果）：**
+六臂训练与固定1260主问题保持，先完成§5的1500条核心诊断，然后向主讨论回报并停止新增评测。
+原21868全矩阵及14:38 UTC的9932方案均由Git/原launch记录保留，不能自动执行；是否追加由实际证据缺口决定。
+1260仍是事前固定模型，没有最佳点选择；1050相邻点及全面性能验证暂缓，不能由本阶段声称已通过。
 冻结训练配置中的六个`evidence.evaluation_updates`与spec的对应optimization字段保留为原训练元数据；
 实际评测节点的唯一authority是`evaluation.executed_updates`，不能据旧训练元数据启动已取消的面板。
-本修订另允许机械同步评测注册、调度、固定1260记录和结果验收/汇总；这些改动与被动采集修复一起集成到唯一E。
+本修订允许机械同步评测注册、task/state子集调度、固定1260记录和阶段验收/汇总；这些改动与被动采集修复一起集成到唯一E。
 不能借规模修订改变policy forward、环境/动作/成功规则或原预定义1260科学对比。
 主讨论`01a0cd94-65da-7b22-8ca9-7ba35f454632`负责设计和解释；现有Sol
 `01a0cd90-ebb7-77a1-a20b-a858825d2f66`负责实现、执行和原件回报，使用Queue接收后续任务。
@@ -33,7 +34,7 @@ Source71已经见过本批全部新增任务，变化只发生在Writer的共享
 - 旧G2、局部动作读取、Core/Procedure交换、末P修复、任务隔离及private/freeAB已存在正负证据；
   本批不增加读取器、输出rank、辅助loss、更新缩放或公共底座课程来混合解释。
 - Object14在fit28缺少ketchup动作目标时仍得到46/50，是“缺某类训练对象就必然失败”的直接反例。
-  本批保留它及全部held8，不为修Goal牺牲已获能力。
+  第一阶段保留它作为能力保持参照；其它held任务若未补评则不声称完整能力保持。
 
 ## 2. 数学模型、可检验预测与边界
 
@@ -80,12 +81,13 @@ S00/S01/S10的Goal21目标行不在行空间，S11在；相应投影残差约.60
 | 新支持任务本身没有学好 | 看每臂四个支持任务的真实闭环和Source保持；不能拿未习得的关系否定所有可组合学习 |
 | 非线性的任务难度、场景或优化交互 | 即使I_C为正仍可能存在；单seed两处任务替换不能唯一证明内部加性表示 |
 
-主对比是1260时Goal21 correct的交互及配对区间；其余节点完整报告，不能事后挑交互最大的点。
-强支持需要交互与C11绝对改善同时成立，other方向一致，且晚期相邻节点不是一闪而过。
+主对比是1260时Goal21 correct的交互及配对区间；不搜索其它节点或事后挑交互最大的点。
+第一阶段看交互与C11绝对改善是否同时出现、other是否同向。相邻保持暂未检验，阳性只能作为需要进一步验证的局部证据。
 若区间跨零，只能说证据不足；若只见主效应，就修订解释，不把任何涨分都归于图连通。
 若关键支持任务近乎不成功或显著损害Source能力，明确保留“支持操作尚未习得”；支持任务高分本身也不证明可组合。
 
-视频收益要求正确和另一正确视频的绝对能力、相同数据的fresh语言B、同模型wrong对照一起解释。
+最终视频收益需要正确和另一正确视频的绝对能力、相同数据的fresh语言B、同模型wrong对照一起解释。
+第一阶段没有wrong，只辨别局部关系支持与条件收益，不能宣称视频因果修复已经验证。
 差中差`(C11−C00)−(B11−B00)`受语言B已有较高分和成功率上界影响，不能单独证明视频更会组合。
 C11即使高于B11，也还涉及不同活动模块；正确内容相对wrong的益处必须来自correct/other改善，不能靠wrong退步。
 本批不声明动态时序必要性，亦不把单seed诊断held8当新方法的官方泛化资格。
@@ -136,7 +138,7 @@ demo46..49只作无梯度评测；不新增held expert action/state读取、统�
   不为制造一致添加随机种子别名或重写采样算法。
 - AdamW lr3e−4、betas(.9,.95)、eps1e−8、wd1e−4、clip1；warmup150、decay18000、floor1e−5，
   tail1350..2250/ratio.1在本窗口不启动。每宏步一次更新；不继承旧optimizer/checkpoint。
-- 完整checkpoint每105宏步，共12/臂；实际评测只执行1050/1260。保存完整恢复状态及applied LR，不删除原checkpoint。
+- 完整checkpoint每105宏步，共12/臂；当前实际评测只执行1260。保存完整恢复状态及applied LR，不删除原checkpoint。
   窗口不足以声称收敛/容量上限，完成后不因结果差自行续训或扫seed/LR/rank。
 
 ## 5. 闭环、controls与学习作用检查
@@ -145,33 +147,47 @@ demo46..49只作无梯度评测；不新增held expert action/state读取、统�
 settling10、成功即停，目标四suite horizon220/280/300/520；新增LIBERO90 support horizon400。
 动态队列、long-first和persistent workers复用canonical evaluator，不另写近似环境。
 
-1. 六臂1050/1260两个固定节点各held400＋seen64，共5568条。held task各50states/50正确teacher无放回，seed20260911，跨臂/节点固定映射。
-   seen16×4，state0..3对应teacher46..49。B同task可复用一套LoRA，标注实际teacher values read=0。
-2. **六臂均在任何结果产生前固定1260为唯一报告模型**，1050只作相邻保持参照，不按结果换点。
-   不搜索最佳checkpoint；没有六节点曲线或早期峰值的结论。机制主比较始终共用1260，原来主要假设和检验不变。
-3. 六臂全部训练、两个correct节点完成并核对固定1260记录后，四C的1260各跑held400 other（偏移17），
-   C00/C11的1260各跑held400 wrong（原跨suite固定donor），共2400 control rows；没有selected额外面板。
-   不跑shuffle/reverse、不以wrong约束训练或按control重选模型。
-4. 每臂1260评其四个新增支持任务，各50states/50teacher无放回，共1200。
-   evaluator用nonheld_meta加**显式global/local正确转换的subset**，不是运行全71，也不是旧15架构validation。
-   这是学过操作的获取/保持检查，不是held泛化分数，不影响选点。
-5. 新运行同合同Source：held400、seen64、六个新增support各50，共764；新批主配对不拿旧Source行替代。
+当前只授权以下**第一阶段机制诊断**，不是正式held400性能资格。数据和执行preprocessing不变；
+所有模型事前固定1260，不选checkpoint。主问题Goal21保持原50个初态和50条teacher无放回映射，未因缩规模减少主要比较的样本量。
 
-共9932闭环（5568 correct＋2400 controls＋1200 support＋764 Source）。完整保存全部逐state success、实际动作、stage predicates、连续对象/EEF/夹爪和条件引用。
-1260的六correct、四other、两wrong和Source在task14/21、state0/25固定双相机full；
-support每臂四task的state0及Source六task state0也full，共82cases，事前固定，不按成败挑例。
+| 面板 | 模型/条件 | task与state | 行数 |
+| --- | --- | --- | --- |
+| 目标与保持参照correct | 六臂 | Object14、Goal21，各state0..49 | 600 |
+| 主任务另一正确视频 | 四C | Goal21，state0..49，原offset17映射 | 200 |
+| 新增支持操作 | 六臂 | 每臂原四个support任务，各state0..19 | 480 |
+| 新Source目标参照 | Source | Object14、Goal21，各state0..49 | 100 |
+| 新Source支持参照 | Source | 原六个新增support任务，各state0..19 | 120 |
+| 合计 | 18个面板 | 所有面板固定后才开始读取新结果 | 1500 |
 
-所有主要对比见spec：i/j各条件效应、交互、C端点、B端点、同pool C−B及差中差；
-逐task/suite/held400、seen64与1050→1260相邻节点报告Source R/G/L、churn、breadth、成功集合Jaccard。
-controls同时报告correct/other的绝对数、配对保持交换和wrong，不只给差值。
-bootstrap20000/seed20260924：总体以task为cluster，各task以state为cluster；跨臂/视频/节点共同抽样。
-区间只反映这些初始化/任务的不确定性，不覆盖单training seed的训练方差，不能把多对比择优当事前显著结果。
+支持20行必须截取原50-state/50-video映射的state0..19，不因缩小面板重新排列teacher；
+只是合法50视频池中无重复的20条，不能称使用了全部50条。追加时可补state20..49并复用原20行，无需重跑。
+不同task的支持面板不冒称动作/环境逐行配对；同task的Source、B/C和共同支持任务按原state/RNG配对。
 
-核对事前固定1260记录且correct面板完成后，用交叉视频study已封存300个实际query（14/21各50state、原C轨迹0/10/20时点）做3300次真实10-flow：
-四C的1260 correct/other、两B1260及Source共11条件。复用query、stateless noise及条件映射；不读取新expert标签，不梯度、不重新选点。
-保存full50×7 normalized/environment动作和前5 scaled OSC xyz，复算四C动作函数交互及相对B/Source差异。
-朝封存旧B630−C420方向的投影是连接前段因果结果的辅助读数，不是expert目标，也不是修复的必要充分条件。
-若成功改善而早期函数不变，须修订“早期接近解释了本轮收益”；若函数变了而闭环未改善，不能称问题已解决。
+保留所有行实际动作、stage predicates、连续对象/EEF/夹爪trace和条件引用。
+原固定full病例取当前面板的交集：六correct加Source的14/21×state0/25为28例，四other的Goal21×state0/25为8例，
+六臂support各四task state0及Source六task state0为30例，共66例。不为补回其它full病例增加rollout。
+不读取新held expert action/state，不读官方Validation/Test，不由局部成绩改变当前训练或第一阶段面板。
+
+**当前不启动：** 1050相邻点、其余held6、seen64、Object14 other、全部wrong、3300个封存query功能预测。
+旧六节点和9932自动入口不能绕过当前stage范围启动这些工作，也不预物化暂缓面板的LoRA。
+原件、训练checkpoint、映射和原预算记录保留；暂缓项目不是永久禁止，也不是第一阶段完成时必须自动补齐的清单。
+
+**第一阶段分析与验收：**
+
+- 维持Goal21 correct的原1260主交互`C11-C10-C01+C00`、C11-C00、两个因子的条件效应；other报告相同四C对比。
+  两任务correct报告B11-B00、同池C-B、差中差及Source R/G/L；other报告同模型correct-other和相应Source配对。
+- support逐task报告绝对成功数、Source参照及同task R/G/L；20状态只能初步区分明显未习得和较好表现，
+  中间结果或宽区间不能宣布“全部支持充分掌握”。这些检查也不证明所有旧共同任务或全部关系路径已掌握。
+- bootstrap20000/seed20260924保持；每个任务按state联合重采样，保持四C/B/Source/video条件配对。
+  两任务分别报告，不计算或外推八任务总体、四suite覆盖、相邻稳定性或正式held400分数。
+- 输出1500唯一原始行、18个面板回执、固定1260身份、per-task及配对对比、66cases和trace索引；
+  第一阶段完成信号为`analysis/stage1_completion.json`，明确deferred工作和未验证主张，不能写整套9932已完成。
+
+**阶段间裁决：** Sol不按中途分数自行扩展，完成1500后主动Queue主讨论并停止新增评测；主讨论核对后决定下一项。
+若出现局部绝对收益和预期交互，再针对视频因果、其它任务保持或1050相邻稳定性中最关键的缺口追加；
+若支持任务表现差，先定位操作未习得；若支持已有较好表现而主任务没有收益，削弱该具体支持修复预测，
+但不直接定罪架构，也不自动补全矩阵。区间宽到影响决策时，明确需要新的初态、独立训练重复还是特定对照，
+不得把同一状态/模型反复评测当作独立信息。追加前写明问题、面板/样本、预算与停止条件，保留本阶段主比较。
 
 ## 6. 实现、资源与验收
 
@@ -193,20 +209,20 @@ smoke独立且不可作formal初始化/成绩；正常低位差异接受，不�
 2026-09-24正式闭环尚未启动时，发现该提交的普通capture未实现登记的逐控制步对象/EEF/夹爪，
 且阶段谓词仅对full cases启用。按下述显式工程修订实行**分阶段唯一clean pushed detached commit**：
 
-- 六臂训练、完整恢复、Writer物化及3300函数预测仍固定
+- 六臂训练、完整恢复、Writer物化仍固定；暂缓的函数预测如后续派发也沿用
   `7dc95edbba00cf61439700d77fb321eb8df95c07`，原树
   `/data1/user/ymdai/projects/EMBER-relational-support-formal`保持只读；未启动臂也不切训练实现，不重训。
-- 全部新正式闭环，包括六臂两个固定节点、controls、support和Source，统一使用一个新增的评测冻结提交E，
+- 全部新正式闭环，包括当前第一阶段六臂1260子集、controls、support和Source，统一使用一个新增的评测冻结提交E，
   树`/data1/user/ymdai/projects/EMBER-relational-support-evaluation-formal`。
   E从最新main集成，精确commit在首个正式评测前写入研究根的capture修订launch合同；不能按臂或节点混用评测实现。
-- E只允许修改被动轨迹采集、对应prepare/resume/row验收与必要测试/文档；训练配置、Source、Writer、
+- E只允许修改被动轨迹采集、当前阶段的子集注册/调度/分析、对应prepare/resume/row验收与必要测试/文档；训练配置、Source、Writer、
   sampler/优化器/损失、LoRA物化与应用、policy forward、动作预处理/后处理/执行、RNG、环境reset/settling、
   success/horizon/排队规则均保持。若实际修复需要越过该边界，暂停受影响评测并向主讨论报告。
 - `training_commit`、bank物化来源和`evaluation_commit`分别如实记入run/完成provenance；
   不追改原训练合同，不把两个阶段冒称同一实现提交。旧五批冻结树/原件不动。
 
-采集修订不接受原件缺项，也不重跑正式闭环补采集。其原21868预算已由本设计开头的独立成本修订收缩为9932，
-82个full cases、信息墙、主要对比、bootstrap和资源上限保持；不把规模修订混称为被动采集代码修复。
+采集修订不接受原件缺项，也不重跑正式闭环补采集。其原21868预算随后经9932修订，当前只授权1500条第一阶段；
+66个当前full cases、信息墙、Goal21主要对比、bootstrap和资源上限按本版§5，不把规模修订混称为被动采集代码修复。
 采集语义为settling结束时t=0与每个实际`env.step(action)`后各一次：T条7维实际动作对应T+1条
 物体body位置、EEF位置/姿态、夹爪及BDDL谓词；不称MuJoCo内部每个积分步采样。
 对象身份从各task实际环境/BDDL注册取得，不复用旧两任务的硬编码roles，也不以8D state推算对象轨迹。
@@ -218,7 +234,10 @@ smoke独立且不可作formal初始化/成绩；正常低位差异接受，不�
 使用已有smoke模型/Source、已授权训练任务和固定state；独立标明工程用途，不用于科学分数、选点或正式初始化。
 Sol须事先登记smoke病例及观测目标，复用现有smoke资产，不为低位数值一致反复重跑。
 实际记录采集开销/每行大小并重估峰值；无合格GPU余量时先做CPU和环境检查，不打断正式训练腾卡。
-全部针对性检查通过、E集成push并冻结、原件修订合同齐全后，按既有授权自主启动全部新正式评测，无需再次审批。
+全部针对性检查通过、E集成push并冻结、阶段launch合同齐全后，按既有授权自主启动第一阶段，无需再次审批。
+Source与已完成训练臂可在剩余臂继续训练时物化/评测：只核验对应臂1260完整checkpoint和launcher exit，
+不得为启动一个已就绪面板等待六臂全部训练结束；仍须每launch双节点live准入及合计≤6物理GPU。
+利用已结束lane释放的设备，不中断训练、抢占他人任务或改变训练拓扑；保持退出事件接续，不新增进度轮询。
 
 研究根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`；先在strg01检查data0/data1独立quota、
 共享容量和实际个人用量，再建大输出。初估banks80＋完整checkpoint10＋闭环25＋临时5≈120GiB，硬上限128GiB；
@@ -237,17 +256,11 @@ Sol须事先登记smoke病例及观测目标，复用现有smoke资产，不为�
 
 ## 7. 完成信号和主讨论裁决
 
-输出唯一completion、完整launch/worker退出回执、每臂实际5040events/141120queries、12完整checkpoint、全部面板逐行原件、
-1050/1260配对结果、事前固定1260记录、controls、支持任务成绩、配对/相邻RGL、预定bootstrap、3300预测及82case索引、实际存储。
-统计代码放run的launch/analysis owner，主讨论能从原行重算；不要只给排名或面向Owner长报告。
-派发/接收凭据登记实际双方UUID，Sol完成后主动Queue回主讨论，停止新增实验，等待下一份具体任务。
+输出`analysis/stage1_completion.json`、18面板完整launch/worker退出回执、1500唯一原始行、固定1260记录、
+新增支持任务成绩、预定义配对对比/区间、66case/trace索引及实际存储。训练仍按原合同核验六臂5040events/141120queries、
+12完整checkpoint；先完成的训练与第一阶段面板可以先准备，但科学阶段裁决等待所有登记面板齐全。
+统计代码复用run的launch/analysis owner，主讨论能从原行重算；不为改面板另造并行evaluator。
+实际双方UUID、Queue/Steer回执和新阶段合同保存于coordination及launch；Sol完成1500后主动Queue主讨论，停止新增评测。
 
-主讨论持续负责核验与解释：有交互不等于统一根因，有数据收益不等于视频收益，单点收益不等于能力保持。
-信息量边界：核心Goal21交互仍只有50个配对初始化、一个训练seed；反复评早期节点不会增加独立训练重复。
-本批可区分具体关系支持预测、一般数据效应和支持操作尚未习得，不能一次裁决所有架构/训练/数据根因。
-所有9932条是当前事前确定的有界证据集，不因中途分数好坏再改节点、任务、视频controls或补回旧曲线。
-9932限制本批自动执行，不是永久禁止追加评测。主讨论分析后若发现会影响下一步判断的具体证据缺口，
-可按已有授权登记有界补测，说明竞争解释、所需新增信息、追加面板/预算与停止条件，再派发Sol。
-保留当前原件、关键checkpoint和原主比较；补测明确标为后续验证，不自动补完整矩阵或为择优追逐分数。
-若本机制非通过，记录失败的具体预测与操作习得情况，按证据决定功能信用或架构机制干预；不自动换成更多任务/更大rank/更久训练。
-批次结束是执行者的边界，不是主讨论停止分析、等待Owner催促的理由。
+当前只支持固定两任务和新增支持操作的局部机制判断；视频因果修复、完整held400能力、suite覆盖和相邻稳定性均待相应补证。
+主讨论分析后按已有授权决定必要补测，不把批次结束当作停止科学分析的理由，也不自动恢复旧9932/21868矩阵。

@@ -12,7 +12,7 @@ from ember.pi05_eval.registered_passive_capture import (
     TAG, attach_provenance, attach_requested_capture, prepare_from_manifest, validate_contract,
 )
 from ember.pi05_eval.trajectory_capture import (
-    capture_level, initialize_capture, record_passive_step, record_replan,
+    _passive_body_registry, capture_level, initialize_capture, record_passive_step, record_replan,
     save_capture, save_passive_trace, validate_passive_trace_row,
 )
 from ember.pi05_evaluation import rollout_shard
@@ -207,6 +207,37 @@ def test_actual_rollout_source_records_each_control_step_and_composite_goal(tmp_
     Path(info['trace']['path']).unlink()
     with pytest.raises(Pi05EvaluationError,match='trace file'):
         validate_passive_trace_row(row,contract,_task())
+
+
+def test_arena_goal_region_uses_actual_site_parent_without_claiming_an_object_body():
+    env=_Env()
+    env.workspace_name='kitchen_table'
+    name='kitchen_table_plate_right_region'
+    env.object_sites_dict={name:object()}
+    env.parsed_problem['regions'][name]={
+        'target':'kitchen_table','ranges':[[-.05,.05,.05,.15]],
+        'yaw_rotation':[0.,0.]}
+    class ArenaModel(_Model):
+        site_bodyid=np.array([2])
+        def site_name2id(self, value):
+            assert value==name
+            return 0
+        def site_id2name(self, index):
+            assert index==0
+            return name
+        def body_id2name(self, index):
+            return 'table' if index==2 else super().body_id2name(index)
+    env.sim.model=ArenaModel()
+    _,goals=_passive_body_registry(env,{'stage_predicate_states':[['on','white_bowl_1',name]]})
+    region=goals[0][1]
+    assert region['kind']=='region' and region['target']=='kitchen_table'
+    assert region['target_kind']=='arena_workspace'
+    assert region['site_id']==0 and region['site_name']==name
+    assert region['site_parent_body_id']==2 and region['site_parent_body_name']=='table'
+    assert 'target_body_id' not in region
+    env.workspace_name='other_workspace'
+    with pytest.raises(Pi05EvaluationError,match='actual body'):
+        _passive_body_registry(env,{'stage_predicate_states':[['on','white_bowl_1',name]]})
 
 
 def test_horizon_final_sample_and_B_C_condition_identity(tmp_path):

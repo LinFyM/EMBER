@@ -44,7 +44,11 @@ Owner询问本批成本与信息量是否匹配。主讨论核对发现16704/218
 代价是没有早期学习曲线与最佳点结论；本批定位具体关系支持假说，不能以大矩阵数量保证统一根因。
 新authority为spec的`evaluation.executed_updates`；旧optimization/evidence节点表只保留原冻结训练身份。
 实际调度/分析须由Sol接续该修订并验收，旧自动评测脚本不可直接运行；原7dc训练不热改、不重训。
-本段登记的是主讨论科学裁决，尚不等于执行器已更新。派发/接收回执随后记入本study的coordination。
+合同修订已在`a473a6b6`推送。14:43 UTC以Queue送达当时idle的Sol任务，回执
+`01a0d3df-3b39-7a63-b970-7e7a5713b30e`；14:44 UTC核对完整正文进入新turn
+`01a0d3df-3b3d-77d2-85a4-b0a9e933c360`，Sol明确接续新节点/固定点/机械分析，同时保持训练等待退出事件。
+这是已接收并开始处理，尚不等于执行器已修订验收。正文、回执和完整正文核验见本study
+`coordination/evaluation_scope_reduction_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
 
 ### 正式评测前的采集缺口与裁决（2026-09-24）
 

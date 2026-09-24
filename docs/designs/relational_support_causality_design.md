@@ -181,8 +181,37 @@ checkpoint恢复、50视频映射、support subset/400步horizon、固定cases�
 至少各一条新white-bowl/pan数据走真实训练与一次support评测smoke，避免只测旧task掩盖metadata/资产身份错误。
 smoke独立且不可作formal初始化/成绩；正常低位差异接受，不扩大dtype或逐bit追查。
 
-资源合同用formal-training-launch技能。正式六臂及其新闭环、函数预测都来自**同一clean pushed detached实现commit**，
-计划树`/data1/user/ymdai/projects/EMBER-relational-support-formal`；旧五批冻结树不动。
+资源合同用formal-training-launch技能。原登记要求正式六臂及新闭环/函数预测来自同一实现commit；
+2026-09-24正式闭环尚未启动时，发现该提交的普通capture未实现登记的逐控制步对象/EEF/夹爪，
+且阶段谓词仅对full cases启用。按下述显式工程修订实行**分阶段唯一clean pushed detached commit**：
+
+- 六臂训练、完整恢复、Writer物化及3300函数预测仍固定
+  `7dc95edbba00cf61439700d77fb321eb8df95c07`，原树
+  `/data1/user/ymdai/projects/EMBER-relational-support-formal`保持只读；未启动臂也不切训练实现，不重训。
+- 全部新正式闭环，包括六臂六节点、controls、support和Source，统一使用一个新增的评测冻结提交E，
+  树`/data1/user/ymdai/projects/EMBER-relational-support-evaluation-formal`。
+  E从最新main集成，精确commit在首个正式评测前写入研究根的capture修订launch合同；不能按臂或节点混用评测实现。
+- E只允许修改被动轨迹采集、对应prepare/resume/row验收与必要测试/文档；训练配置、Source、Writer、
+  sampler/优化器/损失、LoRA物化与应用、policy forward、动作预处理/后处理/执行、RNG、环境reset/settling、
+  success/horizon/排队规则均保持。若实际修复需要越过该边界，暂停受影响评测并向主讨论报告。
+- `training_commit`、bank物化来源和`evaluation_commit`分别如实记入run/完成provenance；
+  不追改原训练合同，不把两个阶段冒称同一实现提交。旧五批冻结树/原件不动。
+
+本修订不接受原件缺项，也不重跑正式闭环补采集。仍最多21868条登记闭环、82个full cases，信息墙、
+选点、对比、bootstrap和资源上限不变；只有数据采集和阶段provenance修复。
+采集语义为settling结束时t=0与每个实际`env.step(action)`后各一次：T条7维实际动作对应T+1条
+物体body位置、EEF位置/姿态、夹爪及BDDL谓词；不称MuJoCo内部每个积分步采样。
+对象身份从各task实际环境/BDDL注册取得，不复用旧两任务的硬编码roles，也不以8D state推算对象轨迹。
+所有compact/full行均须有这些原件、终止前缀一致和路径索引；full仍仅登记82案例。环境privileged读数仅写结果，
+不得进入policy/Writer条件、梯度或checkpoint选择。注册selection、prepare、resume与逐行验收须显式拒绝缺项，不能静默降级。
+
+实施前后用一个最小、真实的重复动作流证明被动读取不增加`env.step`、不消耗policy RNG、不改变动作和终止语义；
+覆盖Source无adapter、B、C以及compact/full和nonheld support的接口。新GPU工程smoke最多12条episode，
+使用已有smoke模型/Source、已授权训练任务和固定state；独立标明工程用途，不用于科学分数、选点或正式初始化。
+Sol须事先登记smoke病例及观测目标，复用现有smoke资产，不为低位数值一致反复重跑。
+实际记录采集开销/每行大小并重估峰值；无合格GPU余量时先做CPU和环境检查，不打断正式训练腾卡。
+全部针对性检查通过、E集成push并冻结、原件修订合同齐全后，按既有授权自主启动全部新正式评测，无需再次审批。
+
 研究根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`；先在strg01检查data0/data1独立quota、
 共享容量和实际个人用量，再建大输出。初估banks80＋完整checkpoint10＋闭环25＋临时5≈120GiB，硬上限128GiB；
 新增data1开发/冻结代码≤1GiB。已有一份C held400 bank约2GiB、完整C/B checkpoint约142/95MiB，是初估依据，启动前需实测细化。

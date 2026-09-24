@@ -1200,7 +1200,7 @@
     "no_asset_copy": true
   },
   "execution": {
-    "formal_from_one_clean_pushed_detached_commit": true,
+    "formal_from_one_clean_pushed_detached_commit": false,
     "physical_gpu_count_max": 6,
     "both_nodes_live_admission_each_launch": true,
     "no_cross_node_ddp": true,
@@ -1227,6 +1227,39 @@
     "rl": false,
     "architecture_change": false,
     "extra_losses": false,
-    "followup_requires_coordinator_dispatch": true
+    "followup_requires_coordinator_dispatch": true,
+    "implementation_provenance_amendment": {
+      "id": "passive_capture_fix_before_formal_evaluation_20260924",
+      "reason": "Ordinary registered capture lacked per-control-step object/EEF/gripper and all-row stage predicates; no formal closed-loop panel has started.",
+      "coordinator": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+      "training_materialization_and_query_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+      "training_tree_immutable": true,
+      "all_formal_closed_loop_panels_one_new_clean_pushed_detached_evaluation_commit": true,
+      "evaluation_commit_recorded_in": "launch/passive_capture_amendment.json before first formal evaluation",
+      "evaluation_runtime_tree": "/data1/user/ymdai/projects/EMBER-relational-support-evaluation-formal",
+      "allowed_changes": [
+        "passive trajectory observation and serialization",
+        "capture registration, prepare, resume and per-row validation",
+        "targeted tests and documentation"
+      ],
+      "unchanged": [
+        "all training and checkpoint semantics",
+        "Source and normalization",
+        "Writer and LoRA generation/application",
+        "policy forward and action processing/execution",
+        "environment reset/settling, RNG, success and horizon",
+        "task/state/video mappings, checkpoint selection and scientific contrasts",
+        "formal rollout and fixed-case budgets"
+      ],
+      "record_training_bank_and_evaluation_origins_separately": true,
+      "retrain": false,
+      "accept_missing_trace": false,
+      "repeat_formal_rollouts_to_backfill": false,
+      "disposable_engineering_smoke_episodes_max": 12,
+      "engineering_smoke_cases_registered_before_launch": true,
+      "engineering_smoke_uses_existing_smoke_models_and_authorized_training_tasks": true,
+      "engineering_smoke_not_scientific_evidence_or_formal_initialization": true,
+      "out_of_scope_change_requires_coordinator_decision": true
+    }
   }
 }

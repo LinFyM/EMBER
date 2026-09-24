@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：任务关系支持学习干预正式训练，恢复补验与并行调度已核对（2026-09-24）
+## 当前状态：关系支持训练继续，正式评测启动前修复已确认的采集合同缺口（2026-09-24）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -31,6 +31,21 @@ Sol完成CPU 91+9项、六臂4更新/2→4恢复、最长full-H50及新support�
 预计data0峰值新增120GiB低于128GiB，data1开发/正式树合计约503MiB。精确原合同为`launch/formal_launch_contract.json`。
 主讨论已调用canonical task authority验证新manifest58任务/Train42/Val8/Test8；每个optimizer的白名单仍只有登记fit28。
 Source71及官方24/8/8未改；无新增held expert或官方Val/Test读取。完整机制与竞争解释见task_plan第七阶段和findings§140。
+
+### 正式评测前的采集缺口与裁决（2026-09-24）
+
+Sol报告普通canonical trajectory capture不含逐控制步对象/EEF/夹爪，正式闭环尚未启动。
+主讨论核对`pi05_evaluation.py`、`episode.py`、`trajectory_capture.py`及`readout_trace.py`确认：
+旧连续trace只受readout intervention门控，且其roles仅支持旧两任务；普通8D replan state不能重建对象轨迹。
+同一检查还确认`preparation._registered_trajectory_capture`仅为full cases启用stage predicates，
+也不满足本批全部逐state保存谓词的要求。此前主讨论ready检查未覆盖这两项原件字段，不能据ready称其已验收。
+
+主讨论裁决并修订active design§6/spec：保留全部六臂训练及其`7dc95edb`冻结树，
+训练/恢复/物化/3300函数预测仍从该提交执行；所有尚未启动的新正式闭环统一固定新的评测实现提交E。
+E仅修复被动采集和prepare/resume/逐行验收，须验证不改变控制、RNG、LoRA/policy或成功/时限规则。
+不接受缺项，不重训，不用额外正式闭环补trace；全批21868/82case、信息墙和科学参数保持。
+精确E与修订launch/provenance由Sol实现、验证、集成后登记，原训练合同不追改；当前E尚未产生，不能称修复完成。
+具体验收、工程smoke和停止边界见设计§6。正在运行的训练持续等待退出事件；只暂缓受影响的正式评测。
 
 ### 本批启动核对与已落实的执行修正（2026-09-24 10:31 UTC）
 

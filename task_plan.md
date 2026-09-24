@@ -11,7 +11,9 @@ Owner已指定本任务`01a0cd94-65da-7b22-8ca9-7ba35f454632`接管主讨论与�
 15900次[交叉视频函数诊断](docs/designs/crossed_video_action_field_design.md)也已完成，见findings§138；
 随后[动作读出与内部适配因果分解](docs/designs/readout_realization_causality_design.md)已完成，见findings§139。
 当前执行[任务关系支持的学习干预](docs/designs/relational_support_causality_design.md)，四个C和两个fresh语言B，
-同一冻结实现`7dc95edb`、各臂world2；三个C已并行启动，B的正式拓扑恢复补验已通过。
+训练/物化/函数预测固定`7dc95edb`、各训练臂world2；三个C已并行启动，B的正式拓扑恢复补验已通过。
+正式闭环启动前发现逐控制步轨迹与全行谓词的采集缺口，现按设计§6修复被动采集，全部闭环将统一冻结新评测提交；
+原训练继续，科学参数/闭环预算不变，不接受原件缺项或为补采集重跑正式闭环。
 active design/精确投递及实现状态见[progress](progress.md)；五批旧结果不被新登记覆盖。
 
 目标是提高正确条件下的绝对闭环能力，并建立有益的视频增量，理解能力保持和跨任务迁移；不是只做完一个矩阵。

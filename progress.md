@@ -9,10 +9,13 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，派发前空闲，现已接手。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，四臂已完成，新批投递状态如下。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
 **当前active design为[冻结前段轨迹与视频条件因果诊断](docs/designs/frozen_prefix_causality_design.md)**，
-机器规格`configs/frozen_prefix_causality_v1/experiment_spec.json`；准备向同一Sol执行者Queue派发具体实验。
+机器规格`configs/frozen_prefix_causality_v1/experiment_spec.json`；设计提交`3258e304`已推送，已向同一Sol执行者Queue派发具体实验。
+2026-09-24 00:55 UTC入队回执`01a0d0e9-1dee-79b3-abfd-2c59a20e20ab`；一次只读查询确认消息已进入新活跃轮
+`01a0d0e9-1df2-70a0-94fc-0a1f7742a897`，尚未据此宣称实现完成或正式分支已启动。
+精确正文、回执和查询证据在旧study的`coordination/prefix_dispatch_20260924.{txt,json}`；不重复发送或要求例行确认。
 原[四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)已完成：54面板13200行、四臂全部1260更新、
 selected controls及480条登记动作probe齐全；Sol主动完成回报后已停止新增实验，registration为`registered_batch_complete`。
 主讨论独立原始行复核和裁决见findings§135。新批次研究根为`/data0/user/ymdai/ember_runs/frozen_prefix_causality_20260924`，

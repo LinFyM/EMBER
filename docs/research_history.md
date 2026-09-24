@@ -4,6 +4,17 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-24：从冻结作用诊断转入任务关系支持的学习干预
+
+读出干预关闭后，Owner纠正主讨论在下一合同未定稿时停止推进；长期授权允许继续分析并派发具体下一步。
+主讨论完成[任务关系支持设计](designs/relational_support_causality_design.md)：四个固定fit28池的两处关系替换，
+四个fresh视频C加端点两个fresh语言B，Source/模型/目标/任务数/1260更新与查询预算固定。
+候选Source71元任务及完整BDDL核对通过；两对替换只有语言/目标不同，场景/初始分布定义相同。
+低阶对象—目标加性模型中，只有两处同时补齐才使黑碗→炉面的目标行可由已有关系表示；这不是已验证的网络计算机制。
+主预测为共同1260节点的C交互及绝对收益，同时看other、语言参照、支持任务是否学会和八任务能力保持。
+审计与明确限制见findings§140，数据/评测/资源/接收者在`configs/relational_support_causality_v1/`。
+该登记时尚无本批模型结果；此前五批结果和冻结树保持，实际启动/投递状态由progress记录。
+
 ## 2026-09-24：动作读出干预完成，未验证输出层冻结修复
 
 正式实现`ed2df051`，根`/data0/user/ymdai/ember_runs/readout_realization_causality_20260924`；

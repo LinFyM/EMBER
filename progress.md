@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：读出因果干预完成，主讨论分析学习来源；暂无新派发实验（2026-09-24）
+## 当前状态：任务关系支持学习干预已登记，准备向Sol派发（2026-09-24）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -11,8 +11,20 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
 实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，五批已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前没有active实验design；主讨论已完成本批原件复核，转向学习机制的判别设计，尚未向Sol派发下一批。**
-这不是恢复历史暂停、要求Owner再次许可或宣告研究完成；长期授权继续有效，Sol按原合同完成后停止新增实验。
+**当前active design为[任务关系支持的学习干预](docs/designs/relational_support_causality_design.md)**，
+机器合同`configs/relational_support_causality_v1/experiment_spec.json`。主讨论已完成metadata/完整BDDL/可辨识关系审计，
+冻结四个fit28池、四C与两B、共同1260节点的因果对比、六节点完整评测及资源/停止合同；尚无本批模型结果。
+当前为登记与派发准备，不能据此声称Sol已接收或GPU训练已启动；实际Queue与接收凭据随后在下方登记。
+Owner明确纠正“下一合同尚未定稿便结束主讨论推进”的错误。执行者完成一批等待派发不约束主讨论继续分析，
+主讨论已把下一项推进到可执行合同；已有授权内不重复索要许可，也不为让实验不停而仓促试改法。
+
+新study拟用根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`，正式树
+`/data1/user/ymdai/projects/EMBER-relational-support-formal`。计划六臂各1260更新/141120query，最多21868闭环、
+3300既有query真实flow预测、82固定full cases；data0峰值≤128GiB/data1新增代码≤1GiB，同时最多6物理GPU。
+启动前由Sol完成实际数据/梯度/恢复/接口验证、实时双节点GPU和strg01独立quota准入，集成push后冻结同一实现commit。
+主讨论已调用canonical task authority验证新manifest58任务/Train42/Val8/Test8；每个optimizer的白名单仍只有登记fit28。
+Source71及官方24/8/8未改；无新增held expert或官方Val/Test读取。完整机制与竞争解释见task_plan第七阶段和findings§140。
+
 最近完成的[动作读出与内部适配因果分解](docs/designs/readout_realization_causality_design.md)，
 机器规格`configs/readout_realization_causality_v1/experiment_spec.json`，设计提交`4e1f5cfc`，正式实现`ed2df051`。
 2026-09-24 07:05 UTC曾核对Queue正文进入Sol进行中turn：Queue `01a0d23b-bf4c-75d1-bdb5-5f434a1b3540`，

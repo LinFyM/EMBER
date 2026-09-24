@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "version": "relational_support_causality_v1",
+  "purpose": "Fixed official target split; registered Source71 auxiliary allowlist for matched relation-support intervention",
+  "split": {
+    "algorithm": "owner_authorized_semantic_coverage_single_split",
+    "suites": {
+      "libero_spatial": {
+        "train": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7
+        ],
+        "validation": [
+          3,
+          6
+        ],
+        "test": [
+          8,
+          9
+        ]
+      },
+      "libero_object": {
+        "train": [
+          2,
+          3,
+          4,
+          5,
+          7,
+          9
+        ],
+        "validation": [
+          1,
+          6
+        ],
+        "test": [
+          0,
+          8
+        ]
+      },
+      "libero_goal": {
+        "train": [
+          0,
+          1,
+          2,
+          5,
+          8,
+          9
+        ],
+        "validation": [
+          3,
+          6
+        ],
+        "test": [
+          4,
+          7
+        ]
+      },
+      "libero_10": {
+        "train": [
+          2,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "validation": [
+          1,
+          9
+        ],
+        "test": [
+          0,
+          3
+        ]
+      }
+    }
+  },
+  "auxiliary_train": {
+    "suite": "libero_90",
+    "task_ids": [
+      2,
+      3,
+      11,
+      15,
+      16,
+      18,
+      22,
+      24,
+      33,
+      36,
+      37,
+      40,
+      41,
+      43,
+      55,
+      56,
+      57,
+      61
+    ],
+    "global_task_id_offset": 40
+  },
+  "data_manifest": "configs/relational_support_causality_v1/manifest.json",
+  "pi05_feasibility": {
+    "model": "Physical-Intelligence/openpi pi05_base",
+    "forbidden_model": "pi05_libero",
+    "openpi_revision": "15a9616a00943ada6c20a0f158e3adb39df2ccac",
+    "weight_updates": 0,
+    "normalization_source": "frozen filtered Source-71 only",
+    "validation_action_reads": 0,
+    "test_action_reads": 0,
+    "num_trials_per_task": 50,
+    "envs_per_policy_process": 8,
+    "seed": 7,
+    "render_resolution": 256,
+    "model_resolution": 224,
+    "num_steps_wait": 10,
+    "dummy_action": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0
+    ],
+    "model_chunk_size": 50,
+    "policy_n_action_steps": 10,
+    "replan_steps": 5,
+    "num_inference_steps": 10,
+    "max_steps": {
+      "libero_spatial": 220,
+      "libero_object": 280,
+      "libero_goal": 300,
+      "libero_10": 520,
+      "libero_90": 400
+    },
+    "terminal_action": "frozen evaluation subject to owner registered gates"
+  },
+  "historical_test_exposure": true,
+  "old_protocol": "configs/libero_24_8_8_v1/protocol.json",
+  "test_tasks": [
+    {
+      "suite": "libero_spatial",
+      "task_id": 8,
+      "language": "pick up the black bowl next to the plate and place it on the plate",
+      "bddl_file": "pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate.bddl",
+      "init_states_file": "pick_up_the_black_bowl_next_to_the_plate_and_place_it_on_the_plate.pruned_init"
+    },
+    {
+      "suite": "libero_spatial",
+      "task_id": 9,
+      "language": "pick up the black bowl on the wooden cabinet and place it on the plate",
+      "bddl_file": "pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate.bddl",
+      "init_states_file": "pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate.pruned_init"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 0,
+      "language": "pick up the alphabet soup and place it in the basket",
+      "bddl_file": "pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl",
+      "init_states_file": "pick_up_the_alphabet_soup_and_place_it_in_the_basket.pruned_init"
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 8,
+      "language": "pick up the chocolate pudding and place it in the basket",
+      "bddl_file": "pick_up_the_chocolate_pudding_and_place_it_in_the_basket.bddl",
+      "init_states_file": "pick_up_the_chocolate_pudding_and_place_it_in_the_basket.pruned_init"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 4,
+      "language": "put the bowl on top of the cabinet",
+      "bddl_file": "put_the_bowl_on_top_of_the_cabinet.bddl",
+      "init_states_file": "put_the_bowl_on_top_of_the_cabinet.pruned_init"
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 7,
+      "language": "turn on the stove",
+      "bddl_file": "turn_on_the_stove.bddl",
+      "init_states_file": "turn_on_the_stove.pruned_init"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 0,
+      "language": "put both the alphabet soup and the tomato sauce in the basket",
+      "bddl_file": "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket.bddl",
+      "init_states_file": "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket.pruned_init"
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 3,
+      "language": "put the black bowl in the bottom drawer of the cabinet and close it",
+      "bddl_file": "KITCHEN_SCENE4_put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it.bddl",
+      "init_states_file": "KITCHEN_SCENE4_put_the_black_bowl_in_the_bottom_drawer_of_the_cabinet_and_close_it.pruned_init"
+    }
+  ],
+  "study_authority": "configs/relational_support_causality_v1/experiment_spec.json"
+}

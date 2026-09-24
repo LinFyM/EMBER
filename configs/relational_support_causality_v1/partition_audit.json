@@ -1,0 +1,1625 @@
+{
+  "schema_version": "ember_relational_support_metadata_audit_v1",
+  "created_at_utc": "2026-09-24T09:08:05.966202+00:00",
+  "inputs": [
+    "configs/pi05_source_corpus_v1/overlap_audit.json",
+    "configs/pi05_source_corpus_v1/source_manifest.json",
+    "configs/libero_24_8_8_coverage_v1/protocol.json",
+    "configs/libero_24_8_8_coverage_v1/manifest.json"
+  ],
+  "scope": "metadata and complete installed BDDL only; zero newly decoded HDF5 arrays, zero model calls",
+  "old_fit28": [
+    2,
+    4,
+    5,
+    7,
+    12,
+    13,
+    17,
+    19,
+    22,
+    25,
+    28,
+    29,
+    32,
+    34,
+    35,
+    37,
+    42,
+    43,
+    51,
+    55,
+    56,
+    62,
+    64,
+    73,
+    95,
+    96,
+    97,
+    101
+  ],
+  "removed_common_to_every_arm": [
+    43,
+    56,
+    95,
+    96
+  ],
+  "common24": [
+    2,
+    4,
+    5,
+    7,
+    12,
+    13,
+    17,
+    19,
+    22,
+    25,
+    28,
+    29,
+    32,
+    34,
+    35,
+    37,
+    42,
+    51,
+    55,
+    62,
+    64,
+    73,
+    97,
+    101
+  ],
+  "common26": [
+    2,
+    4,
+    5,
+    7,
+    12,
+    13,
+    17,
+    19,
+    22,
+    25,
+    28,
+    29,
+    32,
+    34,
+    35,
+    37,
+    42,
+    51,
+    55,
+    58,
+    62,
+    64,
+    73,
+    83,
+    97,
+    101
+  ],
+  "diagnostic_held8": [
+    0,
+    1,
+    14,
+    15,
+    20,
+    21,
+    36,
+    38
+  ],
+  "official_split_unchanged": true,
+  "common26_sorted_slots_identical": true,
+  "new_source71_global_ids": [
+    58,
+    76,
+    77,
+    80,
+    81,
+    83
+  ],
+  "source71_active_no_exact_target40_match": true,
+  "new_tasks": [
+    {
+      "global_task_id": 58,
+      "local_source_task_id": 18,
+      "language": "put the frying pan on the stove",
+      "full_specification": {
+        "fixtures": "(:fixtures kitchen_table - kitchen_table flat_stove_1 - flat_stove )",
+        "goal": "(:goal (And (On chefmate_8_frypan_1 flat_stove_1_cook_region)) )",
+        "init": "(:init (On flat_stove_1 kitchen_table_flat_stove_init_region) (On chefmate_8_frypan_1 kitchen_table_frypan_init_region) (On moka_pot_1 kitchen_table_moka_pot_init_region) )",
+        "obj_of_interest": "(:obj_of_interest chefmate_8_frypan_1 flat_stove_1 )",
+        "objects": "(:objects chefmate_8_frypan_1 - chefmate_8_frypan moka_pot_1 - moka_pot )"
+      },
+      "quality": {
+        "status": "pass_with_note",
+        "warning_count": 1,
+        "warnings": [
+          {
+            "code": "legacy_env_bddl_suite",
+            "message": "producer env_args names a legacy suite while the canonical BDDL basename matches"
+          }
+        ]
+      }
+    },
+    {
+      "global_task_id": 76,
+      "local_source_task_id": 36,
+      "language": "put the white bowl on the plate",
+      "full_specification": {
+        "fixtures": "(:fixtures kitchen_table - kitchen_table microwave_1 - microwave )",
+        "goal": "(:goal (And (On white_bowl_1 plate_1)) )",
+        "init": "(:init (On white_bowl_1 microwave_1_top_side) (On microwave_1 kitchen_table_microwave_init_region) (Close microwave_1) (On plate_1 kitchen_table_plate_init_region) )",
+        "obj_of_interest": "(:obj_of_interest white_bowl_1 plate_1 )",
+        "objects": "(:objects white_bowl_1 - white_bowl plate_1 - plate )"
+      },
+      "quality": {
+        "status": "pass_with_note",
+        "warning_count": 1,
+        "warnings": [
+          {
+            "code": "legacy_env_bddl_suite",
+            "message": "producer env_args names a legacy suite while the canonical BDDL basename matches"
+          }
+        ]
+      }
+    },
+    {
+      "global_task_id": 77,
+      "local_source_task_id": 37,
+      "language": "put the white bowl to the right of the plate",
+      "full_specification": {
+        "fixtures": "(:fixtures kitchen_table - kitchen_table microwave_1 - microwave )",
+        "goal": "(:goal (And (On white_bowl_1 kitchen_table_plate_right_region)) )",
+        "init": "(:init (On white_bowl_1 microwave_1_top_side) (On microwave_1 kitchen_table_microwave_init_region) (Close microwave_1) (On plate_1 kitchen_table_plate_init_region) )",
+        "obj_of_interest": "(:obj_of_interest white_bowl_1 plate_1 )",
+        "objects": "(:objects white_bowl_1 - white_bowl plate_1 - plate )"
+      },
+      "quality": {
+        "status": "pass_with_note",
+        "warning_count": 1,
+        "warnings": [
+          {
+            "code": "legacy_env_bddl_suite",
+            "message": "producer env_args names a legacy suite while the canonical BDDL basename matches"
+          }
+        ]
+      }
+    },
+    {
+      "global_task_id": 80,
+      "local_source_task_id": 40,
+      "language": "put the frying pan on the cabinet shelf",
+      "full_specification": {
+        "fixtures": "(:fixtures kitchen_table - kitchen_table flat_stove_1 - flat_stove wooden_two_layer_shelf_1 - wooden_two_layer_shelf )",
+        "goal": "(:goal (And (In chefmate_8_frypan_1 wooden_two_layer_shelf_1_top_region)) )",
+        "init": "(:init (On flat_stove_1 kitchen_table_flat_stove_init_region) (On chefmate_8_frypan_1 kitchen_table_frypan_init_region) (On white_bowl_1 kitchen_table_white_bowl_init_region) (On wooden_two_layer_shelf_1 kitchen_table_wooden_two_layer_shelf_init_region) )",
+        "obj_of_interest": "(:obj_of_interest chefmate_8_frypan_1 wooden_two_layer_shelf_1 )",
+        "objects": "(:objects white_bowl_1 - white_bowl chefmate_8_frypan_1 - chefmate_8_frypan )"
+      },
+      "quality": {
+        "status": "pass_with_note",
+        "warning_count": 1,
+        "warnings": [
+          {
+            "code": "legacy_env_bddl_suite",
+            "message": "producer env_args names a legacy suite while the canonical BDDL basename matches"
+          }
+        ]
+      }
+    },
+    {
+      "global_task_id": 81,
+      "local_source_task_id": 41,
+      "language": "put the frying pan on top of the cabinet",
+      "full_specification": {
+        "fixtures": "(:fixtures kitchen_table - kitchen_table flat_stove_1 - flat_stove wooden_two_layer_shelf_1 - wooden_two_layer_shelf )",
+        "goal": "(:goal (And (On chefmate_8_frypan_1 wooden_two_layer_shelf_1_top_side)) )",
+        "init": "(:init (On flat_stove_1 kitchen_table_flat_stove_init_region) (On chefmate_8_frypan_1 kitchen_table_frypan_init_region) (On white_bowl_1 kitchen_table_white_bowl_init_region) (On wooden_two_layer_shelf_1 kitchen_table_wooden_two_layer_shelf_init_region) )",
+        "obj_of_interest": "(:obj_of_interest chefmate_8_frypan_1 wooden_two_layer_shelf_1 )",
+        "objects": "(:objects white_bowl_1 - white_bowl chefmate_8_frypan_1 - chefmate_8_frypan )"
+      },
+      "quality": {
+        "status": "pass_with_note",
+        "warning_count": 1,
+        "warnings": [
+          {
+            "code": "legacy_env_bddl_suite",
+            "message": "producer env_args names a legacy suite while the canonical BDDL basename matches"
+          }
+        ]
+      }
+    },
+    {
+      "global_task_id": 83,
+      "local_source_task_id": 43,
+      "language": "put the white bowl on top of the cabinet",
+      "full_specification": {
+        "fixtures": "(:fixtures kitchen_table - kitchen_table flat_stove_1 - flat_stove wooden_two_layer_shelf_1 - wooden_two_layer_shelf )",
+        "goal": "(:goal (And (On white_bowl_1 wooden_two_layer_shelf_1_top_side)) )",
+        "init": "(:init (On flat_stove_1 kitchen_table_flat_stove_init_region) (On chefmate_8_frypan_1 kitchen_table_frypan_init_region) (On white_bowl_1 kitchen_table_white_bowl_init_region) (On wooden_two_layer_shelf_1 kitchen_table_wooden_two_layer_shelf_init_region) )",
+        "obj_of_interest": "(:obj_of_interest white_bowl_1 wooden_two_layer_shelf_1 )",
+        "objects": "(:objects white_bowl_1 - white_bowl chefmate_8_frypan_1 - chefmate_8_frypan )"
+      },
+      "quality": {
+        "status": "pass_with_note",
+        "warning_count": 1,
+        "warnings": [
+          {
+            "code": "legacy_env_bddl_suite",
+            "message": "producer env_args names a legacy suite while the canonical BDDL basename matches"
+          }
+        ]
+      }
+    }
+  ],
+  "controlled_bddl_pairs": [
+    {
+      "global_ids": [
+        76,
+        77
+      ],
+      "full_bddl_changed_blocks": [
+        ":goal",
+        ":language"
+      ],
+      "regions_fixtures_objects_init_identical": true,
+      "demonstrations_and_saved_init_states_not_asserted_identical": true
+    },
+    {
+      "global_ids": [
+        80,
+        81
+      ],
+      "full_bddl_changed_blocks": [
+        ":goal",
+        ":language"
+      ],
+      "regions_fixtures_objects_init_identical": true,
+      "demonstrations_and_saved_init_states_not_asserted_identical": true
+    }
+  ],
+  "longest_fit_video_metadata": {
+    "raw_frames": 347,
+    "global_task_id": 29,
+    "demo": 0
+  },
+  "graph_definition": "Bipartite graph of typed moved object and typed goal destination including On/In and region; goal On/In only. Fixtures are not merged by natural-language name. This is a surrogate supervision graph, not the full knowledge of Source or Writer.",
+  "additive_surrogate_columns": [
+    "destination::In::basket::_contain_region",
+    "destination::In::desk_caddy::_back_contain_region",
+    "destination::In::white_cabinet::_bottom_region",
+    "destination::In::wooden_cabinet::_top_region",
+    "destination::In::wooden_tray::_contain_region",
+    "destination::In::wooden_two_layer_shelf::_top_region",
+    "destination::On::flat_stove::_cook_region",
+    "destination::On::kitchen_table::_plate_right_region",
+    "destination::On::plate::self",
+    "destination::On::table::_stove_front_region",
+    "destination::On::wine_rack::_top_region",
+    "destination::On::wooden_cabinet::_top_side",
+    "destination::On::wooden_two_layer_shelf::_top_side",
+    "object::akita_black_bowl",
+    "object::alphabet_soup",
+    "object::bbq_sauce",
+    "object::black_book",
+    "object::chefmate_8_frypan",
+    "object::chocolate_pudding",
+    "object::cream_cheese",
+    "object::milk",
+    "object::moka_pot",
+    "object::orange_juice",
+    "object::plate",
+    "object::porcelain_mug",
+    "object::salad_dressing",
+    "object::white_bowl",
+    "object::white_yellow_mug",
+    "object::wine_bottle"
+  ],
+  "target_edge": {
+    "task": 21,
+    "object": "object::akita_black_bowl",
+    "destination": "destination::On::flat_stove::_cook_region",
+    "raw_predicate": [
+      "On",
+      "akita_black_bowl_1",
+      "flat_stove_1_cook_region"
+    ]
+  },
+  "pools": {
+    "S00": {
+      "fit_task_ids": [
+        2,
+        4,
+        5,
+        7,
+        12,
+        13,
+        17,
+        19,
+        22,
+        25,
+        28,
+        29,
+        32,
+        34,
+        35,
+        37,
+        42,
+        51,
+        55,
+        58,
+        62,
+        64,
+        73,
+        77,
+        80,
+        83,
+        97,
+        101
+      ],
+      "edges": [
+        {
+          "task": 2,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 4,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 5,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 7,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 12,
+          "object": "object::salad_dressing",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "salad_dressing_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 13,
+          "object": "object::bbq_sauce",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "bbq_sauce_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 17,
+          "object": "object::milk",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "milk_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 19,
+          "object": "object::orange_juice",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "orange_juice_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 22,
+          "object": "object::wine_bottle",
+          "destination": "destination::On::wooden_cabinet::_top_side",
+          "raw_predicate": [
+            "On",
+            "wine_bottle_1",
+            "wooden_cabinet_1_top_side"
+          ]
+        },
+        {
+          "task": 25,
+          "object": "object::plate",
+          "destination": "destination::On::table::_stove_front_region",
+          "raw_predicate": [
+            "On",
+            "plate_1",
+            "main_table_stove_front_region"
+          ]
+        },
+        {
+          "task": 28,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 29,
+          "object": "object::wine_bottle",
+          "destination": "destination::On::wine_rack::_top_region",
+          "raw_predicate": [
+            "On",
+            "wine_bottle_1",
+            "wine_rack_1_top_region"
+          ]
+        },
+        {
+          "task": 32,
+          "object": "object::moka_pot",
+          "destination": "destination::On::flat_stove::_cook_region",
+          "raw_predicate": [
+            "On",
+            "moka_pot_1",
+            "flat_stove_1_cook_region"
+          ]
+        },
+        {
+          "task": 34,
+          "object": "object::porcelain_mug",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "porcelain_mug_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 34,
+          "object": "object::white_yellow_mug",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "white_yellow_mug_1",
+            "plate_2"
+          ]
+        },
+        {
+          "task": 35,
+          "object": "object::black_book",
+          "destination": "destination::In::desk_caddy::_back_contain_region",
+          "raw_predicate": [
+            "In",
+            "black_book_1",
+            "desk_caddy_1_back_contain_region"
+          ]
+        },
+        {
+          "task": 37,
+          "object": "object::alphabet_soup",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "alphabet_soup_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 37,
+          "object": "object::cream_cheese",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "cream_cheese_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 42,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::In::wooden_cabinet::_top_region",
+          "raw_predicate": [
+            "In",
+            "akita_black_bowl_1",
+            "wooden_cabinet_1_top_region"
+          ]
+        },
+        {
+          "task": 55,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::wooden_cabinet::_top_side",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_2",
+            "wooden_cabinet_1_top_side"
+          ]
+        },
+        {
+          "task": 58,
+          "object": "object::chefmate_8_frypan",
+          "destination": "destination::On::flat_stove::_cook_region",
+          "raw_predicate": [
+            "On",
+            "chefmate_8_frypan_1",
+            "flat_stove_1_cook_region"
+          ]
+        },
+        {
+          "task": 64,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::In::white_cabinet::_bottom_region",
+          "raw_predicate": [
+            "In",
+            "akita_black_bowl_1",
+            "white_cabinet_1_bottom_region"
+          ]
+        },
+        {
+          "task": 77,
+          "object": "object::white_bowl",
+          "destination": "destination::On::kitchen_table::_plate_right_region",
+          "raw_predicate": [
+            "On",
+            "white_bowl_1",
+            "kitchen_table_plate_right_region"
+          ]
+        },
+        {
+          "task": 80,
+          "object": "object::chefmate_8_frypan",
+          "destination": "destination::In::wooden_two_layer_shelf::_top_region",
+          "raw_predicate": [
+            "In",
+            "chefmate_8_frypan_1",
+            "wooden_two_layer_shelf_1_top_region"
+          ]
+        },
+        {
+          "task": 83,
+          "object": "object::white_bowl",
+          "destination": "destination::On::wooden_two_layer_shelf::_top_side",
+          "raw_predicate": [
+            "On",
+            "white_bowl_1",
+            "wooden_two_layer_shelf_1_top_side"
+          ]
+        },
+        {
+          "task": 97,
+          "object": "object::cream_cheese",
+          "destination": "destination::In::wooden_tray::_contain_region",
+          "raw_predicate": [
+            "In",
+            "cream_cheese_1",
+            "wooden_tray_1_contain_region"
+          ]
+        },
+        {
+          "task": 101,
+          "object": "object::chocolate_pudding",
+          "destination": "destination::In::wooden_tray::_contain_region",
+          "raw_predicate": [
+            "In",
+            "chocolate_pudding_1",
+            "wooden_tray_1_contain_region"
+          ]
+        }
+      ],
+      "target_connected": false,
+      "example_path": [],
+      "design_rank": 23,
+      "rank_with_target_row": 24,
+      "target_row_projection_residual_l2": 0.6009252125773316
+    },
+    "S01": {
+      "fit_task_ids": [
+        2,
+        4,
+        5,
+        7,
+        12,
+        13,
+        17,
+        19,
+        22,
+        25,
+        28,
+        29,
+        32,
+        34,
+        35,
+        37,
+        42,
+        51,
+        55,
+        58,
+        62,
+        64,
+        73,
+        77,
+        81,
+        83,
+        97,
+        101
+      ],
+      "edges": [
+        {
+          "task": 2,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 4,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 5,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 7,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 12,
+          "object": "object::salad_dressing",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "salad_dressing_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 13,
+          "object": "object::bbq_sauce",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "bbq_sauce_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 17,
+          "object": "object::milk",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "milk_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 19,
+          "object": "object::orange_juice",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "orange_juice_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 22,
+          "object": "object::wine_bottle",
+          "destination": "destination::On::wooden_cabinet::_top_side",
+          "raw_predicate": [
+            "On",
+            "wine_bottle_1",
+            "wooden_cabinet_1_top_side"
+          ]
+        },
+        {
+          "task": 25,
+          "object": "object::plate",
+          "destination": "destination::On::table::_stove_front_region",
+          "raw_predicate": [
+            "On",
+            "plate_1",
+            "main_table_stove_front_region"
+          ]
+        },
+        {
+          "task": 28,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 29,
+          "object": "object::wine_bottle",
+          "destination": "destination::On::wine_rack::_top_region",
+          "raw_predicate": [
+            "On",
+            "wine_bottle_1",
+            "wine_rack_1_top_region"
+          ]
+        },
+        {
+          "task": 32,
+          "object": "object::moka_pot",
+          "destination": "destination::On::flat_stove::_cook_region",
+          "raw_predicate": [
+            "On",
+            "moka_pot_1",
+            "flat_stove_1_cook_region"
+          ]
+        },
+        {
+          "task": 34,
+          "object": "object::porcelain_mug",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "porcelain_mug_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 34,
+          "object": "object::white_yellow_mug",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "white_yellow_mug_1",
+            "plate_2"
+          ]
+        },
+        {
+          "task": 35,
+          "object": "object::black_book",
+          "destination": "destination::In::desk_caddy::_back_contain_region",
+          "raw_predicate": [
+            "In",
+            "black_book_1",
+            "desk_caddy_1_back_contain_region"
+          ]
+        },
+        {
+          "task": 37,
+          "object": "object::alphabet_soup",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "alphabet_soup_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 37,
+          "object": "object::cream_cheese",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "cream_cheese_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 42,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::In::wooden_cabinet::_top_region",
+          "raw_predicate": [
+            "In",
+            "akita_black_bowl_1",
+            "wooden_cabinet_1_top_region"
+          ]
+        },
+        {
+          "task": 55,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::wooden_cabinet::_top_side",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_2",
+            "wooden_cabinet_1_top_side"
+          ]
+        },
+        {
+          "task": 58,
+          "object": "object::chefmate_8_frypan",
+          "destination": "destination::On::flat_stove::_cook_region",
+          "raw_predicate": [
+            "On",
+            "chefmate_8_frypan_1",
+            "flat_stove_1_cook_region"
+          ]
+        },
+        {
+          "task": 64,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::In::white_cabinet::_bottom_region",
+          "raw_predicate": [
+            "In",
+            "akita_black_bowl_1",
+            "white_cabinet_1_bottom_region"
+          ]
+        },
+        {
+          "task": 77,
+          "object": "object::white_bowl",
+          "destination": "destination::On::kitchen_table::_plate_right_region",
+          "raw_predicate": [
+            "On",
+            "white_bowl_1",
+            "kitchen_table_plate_right_region"
+          ]
+        },
+        {
+          "task": 81,
+          "object": "object::chefmate_8_frypan",
+          "destination": "destination::On::wooden_two_layer_shelf::_top_side",
+          "raw_predicate": [
+            "On",
+            "chefmate_8_frypan_1",
+            "wooden_two_layer_shelf_1_top_side"
+          ]
+        },
+        {
+          "task": 83,
+          "object": "object::white_bowl",
+          "destination": "destination::On::wooden_two_layer_shelf::_top_side",
+          "raw_predicate": [
+            "On",
+            "white_bowl_1",
+            "wooden_two_layer_shelf_1_top_side"
+          ]
+        },
+        {
+          "task": 97,
+          "object": "object::cream_cheese",
+          "destination": "destination::In::wooden_tray::_contain_region",
+          "raw_predicate": [
+            "In",
+            "cream_cheese_1",
+            "wooden_tray_1_contain_region"
+          ]
+        },
+        {
+          "task": 101,
+          "object": "object::chocolate_pudding",
+          "destination": "destination::In::wooden_tray::_contain_region",
+          "raw_predicate": [
+            "In",
+            "chocolate_pudding_1",
+            "wooden_tray_1_contain_region"
+          ]
+        }
+      ],
+      "target_connected": false,
+      "example_path": [],
+      "design_rank": 23,
+      "rank_with_target_row": 24,
+      "target_row_projection_residual_l2": 0.5270462766947299
+    },
+    "S10": {
+      "fit_task_ids": [
+        2,
+        4,
+        5,
+        7,
+        12,
+        13,
+        17,
+        19,
+        22,
+        25,
+        28,
+        29,
+        32,
+        34,
+        35,
+        37,
+        42,
+        51,
+        55,
+        58,
+        62,
+        64,
+        73,
+        76,
+        80,
+        83,
+        97,
+        101
+      ],
+      "edges": [
+        {
+          "task": 2,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 4,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 5,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 7,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 12,
+          "object": "object::salad_dressing",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "salad_dressing_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 13,
+          "object": "object::bbq_sauce",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "bbq_sauce_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 17,
+          "object": "object::milk",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "milk_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 19,
+          "object": "object::orange_juice",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "orange_juice_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 22,
+          "object": "object::wine_bottle",
+          "destination": "destination::On::wooden_cabinet::_top_side",
+          "raw_predicate": [
+            "On",
+            "wine_bottle_1",
+            "wooden_cabinet_1_top_side"
+          ]
+        },
+        {
+          "task": 25,
+          "object": "object::plate",
+          "destination": "destination::On::table::_stove_front_region",
+          "raw_predicate": [
+            "On",
+            "plate_1",
+            "main_table_stove_front_region"
+          ]
+        },
+        {
+          "task": 28,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 29,
+          "object": "object::wine_bottle",
+          "destination": "destination::On::wine_rack::_top_region",
+          "raw_predicate": [
+            "On",
+            "wine_bottle_1",
+            "wine_rack_1_top_region"
+          ]
+        },
+        {
+          "task": 32,
+          "object": "object::moka_pot",
+          "destination": "destination::On::flat_stove::_cook_region",
+          "raw_predicate": [
+            "On",
+            "moka_pot_1",
+            "flat_stove_1_cook_region"
+          ]
+        },
+        {
+          "task": 34,
+          "object": "object::porcelain_mug",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "porcelain_mug_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 34,
+          "object": "object::white_yellow_mug",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "white_yellow_mug_1",
+            "plate_2"
+          ]
+        },
+        {
+          "task": 35,
+          "object": "object::black_book",
+          "destination": "destination::In::desk_caddy::_back_contain_region",
+          "raw_predicate": [
+            "In",
+            "black_book_1",
+            "desk_caddy_1_back_contain_region"
+          ]
+        },
+        {
+          "task": 37,
+          "object": "object::alphabet_soup",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "alphabet_soup_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 37,
+          "object": "object::cream_cheese",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "cream_cheese_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 42,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::In::wooden_cabinet::_top_region",
+          "raw_predicate": [
+            "In",
+            "akita_black_bowl_1",
+            "wooden_cabinet_1_top_region"
+          ]
+        },
+        {
+          "task": 55,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::wooden_cabinet::_top_side",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_2",
+            "wooden_cabinet_1_top_side"
+          ]
+        },
+        {
+          "task": 58,
+          "object": "object::chefmate_8_frypan",
+          "destination": "destination::On::flat_stove::_cook_region",
+          "raw_predicate": [
+            "On",
+            "chefmate_8_frypan_1",
+            "flat_stove_1_cook_region"
+          ]
+        },
+        {
+          "task": 64,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::In::white_cabinet::_bottom_region",
+          "raw_predicate": [
+            "In",
+            "akita_black_bowl_1",
+            "white_cabinet_1_bottom_region"
+          ]
+        },
+        {
+          "task": 76,
+          "object": "object::white_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "white_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 80,
+          "object": "object::chefmate_8_frypan",
+          "destination": "destination::In::wooden_two_layer_shelf::_top_region",
+          "raw_predicate": [
+            "In",
+            "chefmate_8_frypan_1",
+            "wooden_two_layer_shelf_1_top_region"
+          ]
+        },
+        {
+          "task": 83,
+          "object": "object::white_bowl",
+          "destination": "destination::On::wooden_two_layer_shelf::_top_side",
+          "raw_predicate": [
+            "On",
+            "white_bowl_1",
+            "wooden_two_layer_shelf_1_top_side"
+          ]
+        },
+        {
+          "task": 97,
+          "object": "object::cream_cheese",
+          "destination": "destination::In::wooden_tray::_contain_region",
+          "raw_predicate": [
+            "In",
+            "cream_cheese_1",
+            "wooden_tray_1_contain_region"
+          ]
+        },
+        {
+          "task": 101,
+          "object": "object::chocolate_pudding",
+          "destination": "destination::In::wooden_tray::_contain_region",
+          "raw_predicate": [
+            "In",
+            "chocolate_pudding_1",
+            "wooden_tray_1_contain_region"
+          ]
+        }
+      ],
+      "target_connected": false,
+      "example_path": [],
+      "design_rank": 23,
+      "rank_with_target_row": 24,
+      "target_row_projection_residual_l2": 0.5838742081211422
+    },
+    "S11": {
+      "fit_task_ids": [
+        2,
+        4,
+        5,
+        7,
+        12,
+        13,
+        17,
+        19,
+        22,
+        25,
+        28,
+        29,
+        32,
+        34,
+        35,
+        37,
+        42,
+        51,
+        55,
+        58,
+        62,
+        64,
+        73,
+        76,
+        81,
+        83,
+        97,
+        101
+      ],
+      "edges": [
+        {
+          "task": 2,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 4,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 5,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 7,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 12,
+          "object": "object::salad_dressing",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "salad_dressing_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 13,
+          "object": "object::bbq_sauce",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "bbq_sauce_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 17,
+          "object": "object::milk",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "milk_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 19,
+          "object": "object::orange_juice",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "orange_juice_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 22,
+          "object": "object::wine_bottle",
+          "destination": "destination::On::wooden_cabinet::_top_side",
+          "raw_predicate": [
+            "On",
+            "wine_bottle_1",
+            "wooden_cabinet_1_top_side"
+          ]
+        },
+        {
+          "task": 25,
+          "object": "object::plate",
+          "destination": "destination::On::table::_stove_front_region",
+          "raw_predicate": [
+            "On",
+            "plate_1",
+            "main_table_stove_front_region"
+          ]
+        },
+        {
+          "task": 28,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 29,
+          "object": "object::wine_bottle",
+          "destination": "destination::On::wine_rack::_top_region",
+          "raw_predicate": [
+            "On",
+            "wine_bottle_1",
+            "wine_rack_1_top_region"
+          ]
+        },
+        {
+          "task": 32,
+          "object": "object::moka_pot",
+          "destination": "destination::On::flat_stove::_cook_region",
+          "raw_predicate": [
+            "On",
+            "moka_pot_1",
+            "flat_stove_1_cook_region"
+          ]
+        },
+        {
+          "task": 34,
+          "object": "object::porcelain_mug",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "porcelain_mug_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 34,
+          "object": "object::white_yellow_mug",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "white_yellow_mug_1",
+            "plate_2"
+          ]
+        },
+        {
+          "task": 35,
+          "object": "object::black_book",
+          "destination": "destination::In::desk_caddy::_back_contain_region",
+          "raw_predicate": [
+            "In",
+            "black_book_1",
+            "desk_caddy_1_back_contain_region"
+          ]
+        },
+        {
+          "task": 37,
+          "object": "object::alphabet_soup",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "alphabet_soup_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 37,
+          "object": "object::cream_cheese",
+          "destination": "destination::In::basket::_contain_region",
+          "raw_predicate": [
+            "In",
+            "cream_cheese_1",
+            "basket_1_contain_region"
+          ]
+        },
+        {
+          "task": 42,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::In::wooden_cabinet::_top_region",
+          "raw_predicate": [
+            "In",
+            "akita_black_bowl_1",
+            "wooden_cabinet_1_top_region"
+          ]
+        },
+        {
+          "task": 55,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::On::wooden_cabinet::_top_side",
+          "raw_predicate": [
+            "On",
+            "akita_black_bowl_2",
+            "wooden_cabinet_1_top_side"
+          ]
+        },
+        {
+          "task": 58,
+          "object": "object::chefmate_8_frypan",
+          "destination": "destination::On::flat_stove::_cook_region",
+          "raw_predicate": [
+            "On",
+            "chefmate_8_frypan_1",
+            "flat_stove_1_cook_region"
+          ]
+        },
+        {
+          "task": 64,
+          "object": "object::akita_black_bowl",
+          "destination": "destination::In::white_cabinet::_bottom_region",
+          "raw_predicate": [
+            "In",
+            "akita_black_bowl_1",
+            "white_cabinet_1_bottom_region"
+          ]
+        },
+        {
+          "task": 76,
+          "object": "object::white_bowl",
+          "destination": "destination::On::plate::self",
+          "raw_predicate": [
+            "On",
+            "white_bowl_1",
+            "plate_1"
+          ]
+        },
+        {
+          "task": 81,
+          "object": "object::chefmate_8_frypan",
+          "destination": "destination::On::wooden_two_layer_shelf::_top_side",
+          "raw_predicate": [
+            "On",
+            "chefmate_8_frypan_1",
+            "wooden_two_layer_shelf_1_top_side"
+          ]
+        },
+        {
+          "task": 83,
+          "object": "object::white_bowl",
+          "destination": "destination::On::wooden_two_layer_shelf::_top_side",
+          "raw_predicate": [
+            "On",
+            "white_bowl_1",
+            "wooden_two_layer_shelf_1_top_side"
+          ]
+        },
+        {
+          "task": 97,
+          "object": "object::cream_cheese",
+          "destination": "destination::In::wooden_tray::_contain_region",
+          "raw_predicate": [
+            "In",
+            "cream_cheese_1",
+            "wooden_tray_1_contain_region"
+          ]
+        },
+        {
+          "task": 101,
+          "object": "object::chocolate_pudding",
+          "destination": "destination::In::wooden_tray::_contain_region",
+          "raw_predicate": [
+            "In",
+            "chocolate_pudding_1",
+            "wooden_tray_1_contain_region"
+          ]
+        }
+      ],
+      "target_connected": true,
+      "example_path": [
+        {
+          "from": "object::akita_black_bowl",
+          "to": "destination::On::plate::self",
+          "global_task_id": 2
+        },
+        {
+          "from": "destination::On::plate::self",
+          "to": "object::white_bowl",
+          "global_task_id": 76
+        },
+        {
+          "from": "object::white_bowl",
+          "to": "destination::On::wooden_two_layer_shelf::_top_side",
+          "global_task_id": 83
+        },
+        {
+          "from": "destination::On::wooden_two_layer_shelf::_top_side",
+          "to": "object::chefmate_8_frypan",
+          "global_task_id": 81
+        },
+        {
+          "from": "object::chefmate_8_frypan",
+          "to": "destination::On::flat_stove::_cook_region",
+          "global_task_id": 58
+        }
+      ],
+      "design_rank": 23,
+      "rank_with_target_row": 23,
+      "target_row_projection_residual_l2": 3.5650103061036477e-14
+    }
+  },
+  "exact_signed_edge_identity": {
+    "global_ids": [
+      28,
+      76,
+      83,
+      81,
+      58
+    ],
+    "coefficients": [
+      1,
+      -1,
+      1,
+      -1,
+      1
+    ],
+    "equals_goal21_row": true
+  },
+  "limits": [
+    "Source71 already contains every added task; Source knowledge unchanged.",
+    "Spatial7 already shows taking a black bowl from the stove; initial relations and reverse skills are not represented by this goal graph.",
+    "Language, scene and native priors can resolve ambiguities outside this additive surrogate.",
+    "Each task has different trajectories; matching BDDL initial distributions does not assert paired expert actions or saved states.",
+    "S11 is a test of a graph-derived prediction, not a proof that the current model implements additive factors."
+  ],
+  "registration_builder_provenance": "/data0/user/ymdai/ember_runs/readout_realization_causality_20260924/coordination/relational_support_registration_builder.py",
+  "canonical_loader_validation": {
+    "tasks": 58,
+    "train_metadata_tasks": 42,
+    "validation_tasks": 8,
+    "test_tasks": 8,
+    "new_six_file_existence_and_registered_bytes": "pass; no new hashes or array reads"
+  }
+}

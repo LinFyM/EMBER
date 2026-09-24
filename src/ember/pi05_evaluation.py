@@ -216,6 +216,10 @@ def rollout_shard(
 
             replay_prefix(env=env, slot=slot, task=task,
                           contract=contract, preprocess=preprocess)
+        if contract.get("readout_realization_intervention") is not None:
+            from ember.pi05_eval.readout_trace import start_trace
+
+            start_trace(env, slot, task)
         return slot
 
     active_count = min(len(envs), len(state_ids))
@@ -255,6 +259,10 @@ def rollout_shard(
                     from ember.pi05_eval.prefix_replay import record_tail_step
 
                     record_tail_step(env, slot, action)
+                if contract.get("readout_realization_intervention") is not None:
+                    from ember.pi05_eval.readout_trace import record_step
+
+                    record_step(env, slot, action)
             if not bool(done) and slot["steps"] < max_steps:
                 continue
             slot["episode_done"] = bool(done)
@@ -392,6 +400,10 @@ def _validate_episode_row(
     if (contract.get("frozen_prefix_intervention") is not None
             or contract.get("approach_channel_intervention") is not None):
         from ember.pi05_eval.prefix_replay import validate_row
+
+        validate_row(row, contract)
+    if contract.get("readout_realization_intervention") is not None:
+        from ember.pi05_eval.readout_trace import validate_row
 
         validate_row(row, contract)
 

@@ -297,7 +297,8 @@ class PreparedHorizonLoRA:
 class FrozenHorizonWriterAdapter:
     """Execution only: no observer, video, Meta, or learned Writer is loaded."""
 
-    def __init__(self, *, policy, source, evaluation_adapter, task_keys, device, require_formal) -> None:
+    def __init__(self, *, policy, source, evaluation_adapter, task_keys, device, require_formal,
+                 readout_intervention=None) -> None:
         del device, require_formal
         adapter = evaluation_adapter
         self.records = {(row["suite"], row["task_id"]): row for row in adapter["tasks"]}
@@ -314,16 +315,40 @@ class FrozenHorizonWriterAdapter:
         policy.eval()
         self.batched = BatchedLoRAInference(policy, self.lora)
         self.identity = identity_lora_state(self.lora)
+        self.readout_intervention = readout_intervention
+        self.masked_manifest = None
+        if readout_intervention is not None:
+            from ember.pi05_eval.readout_state import SCHEMA
+
+            path = Path(readout_intervention["derived_manifest"]["path"])
+            if not path.is_file() or path.stat().st_size != int(readout_intervention["derived_manifest"]["bytes"]):
+                raise Pi05EvaluationError("readout derived manifest changed")
+            self.masked_manifest = read_json(path)
+            if self.masked_manifest.get("schema_version") != SCHEMA:
+                raise Pi05EvaluationError("readout derived manifest schema changed")
         self._states: OrderedDict[str, dict[str, torch.Tensor]] = OrderedDict()
         self._installed: str | None = None
 
     def _state(self, key: str) -> dict[str, torch.Tensor]:
+        group = (self.readout_intervention or {}).get("group", "11")
         if key in self._states:
             self._states.move_to_end(key)
             return self._states[key]
         condition = self.conditions[key]
         _inspect_adapter_file(condition, self.adapter["writer_checkpoint"], self.lora)
-        state = load_file(condition["adapter"]["path"], device="cpu")
+        if group in ("01", "10"):
+            from ember.pi05_eval.readout_state import load_masked_state
+
+            if self.masked_manifest["conditions"][key]["original"] != condition["adapter"]:
+                raise Pi05EvaluationError("readout derived state original provenance changed")
+            state = load_masked_state(self.masked_manifest, condition_id=key,
+                                      group=group, lora=self.lora)
+        else:
+            state = load_file(condition["adapter"]["path"], device="cpu")
+            if group == "00":
+                from ember.pi05_eval.readout_state import mask_state
+
+                state = mask_state(state, self.lora, "00")
         validate_lora_state(state, self.lora)
         if any(value.dtype != torch.float32 or not torch.isfinite(value).all() for value in state.values()):
             raise Pi05EvaluationError("runtime adapter has nonfinite or non-FP32 values")

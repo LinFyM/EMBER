@@ -449,7 +449,7 @@ def _diagnostic_subset_name(
     return str(task_subset["diagnostic_subset"]) if task_subset is not None else None
 
 
-def _registered_prefix_payload(
+def _registered_intervention_payload(
     args: Any, *, task_subset: Any, occupancy_capture: Any,
     source_sft_requested: bool, adapter_kind: str | None,
     authorities: Any, installed_tasks: Sequence[Any], model: Mapping[str, Any],
@@ -458,14 +458,17 @@ def _registered_prefix_payload(
 ) -> tuple[dict[str, Any], tuple[Any, ...], dict[str, Any]] | None:
     frozen = getattr(args, "frozen_prefix_panel", None) is not None
     channel = getattr(args, "approach_channel_panel", None) is not None
-    if not (frozen or channel):
+    readout = getattr(args, "readout_realization_panel", None) is not None
+    if not (frozen or channel or readout):
         return None
-    if (frozen and channel or task_subset is not None or occupancy_capture is not None
+    if (sum((frozen, channel, readout)) != 1
+            or task_subset is not None or occupancy_capture is not None
             or source_sft_requested or adapter_kind != "static_task_lora"):
-        raise Pi05EvaluationError("registered prefix panel cannot combine with another diagnostic")
-    from ember.pi05_eval import approach_channel, frozen_prefix
+        raise Pi05EvaluationError("registered intervention cannot combine with another diagnostic")
+    from ember.pi05_eval import approach_channel, frozen_prefix, readout_panel
 
-    prepare = frozen_prefix.prepare_payload if frozen else approach_channel.prepare_payload
+    prepare = (frozen_prefix.prepare_payload if frozen else
+               approach_channel.prepare_payload if channel else readout_panel.prepare_payload)
     return prepare(
         args, authorities=authorities, installed_tasks=installed_tasks,
         model=model, tokenizer=tokenizer, libero_paths=libero_paths,
@@ -528,18 +531,19 @@ def _prepared_payload(
         args.source_run,
         args.checkpoint,
         evaluation_mode=("formal" if (getattr(args, "frozen_prefix_panel", None)
-                                      or getattr(args, "approach_channel_panel", None)) else args.mode),
+                                      or getattr(args, "approach_channel_panel", None)
+                                      or getattr(args, "readout_realization_panel", None)) else args.mode),
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    prefix_payload = _registered_prefix_payload(
+    intervention_payload = _registered_intervention_payload(
         args, task_subset=task_subset, occupancy_capture=occupancy_capture,
         source_sft_requested=source_sft_requested, adapter_kind=adapter_kind,
         authorities=authorities, installed_tasks=installed_tasks,
         model=model, tokenizer=tokenizer, libero_paths=libero_paths,
         output_dir=output_dir, repo_root=repo_root, command=command,
     )
-    if prefix_payload is not None:
-        return prefix_payload
+    if intervention_payload is not None:
+        return intervention_payload
     diagnostic_subset = _diagnostic_subset_name(occupancy_capture, task_subset)
     inspection_tasks = (
         installed_tasks

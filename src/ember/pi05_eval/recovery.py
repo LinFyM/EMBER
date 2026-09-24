@@ -117,6 +117,10 @@ def _reinspect_adapter(
             )
         return inspected
     if adapter.get("kind") in {"static_task_lora_bank", "horizon_writer_lora_bank"}:
+        if contract.get("readout_realization_intervention") is not None:
+            from ember.pi05_eval.readout_panel import reinspect_adapter
+
+            return reinspect_adapter(contract, model)
         if contract.get("approach_channel_intervention") is not None:
             from ember.pi05_eval.approach_channel import reinspect_adapter
 
@@ -186,7 +190,8 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         Path(contract["model"]["source_run"]),
         Path(contract["model"]["checkpoint"]),
         evaluation_mode=("formal" if (contract.get("frozen_prefix_intervention")
-                                      or contract.get("approach_channel_intervention")) else contract["mode"]),
+                                      or contract.get("approach_channel_intervention")
+                                      or contract.get("readout_realization_intervention")) else contract["mode"]),
     )
     tokenizer = inspect_tokenizer(authorities, Path(contract["tokenizer"]["path"]))
     if model != contract["model"] or tokenizer != contract["tokenizer"]:

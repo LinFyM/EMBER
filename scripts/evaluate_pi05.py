@@ -117,6 +117,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
                         help="Registered two-task saved-action prefix intervention panel.")
     parser.add_argument("--approach-channel-panel", type=Path,
                         help="Registered two-task saved-action channel intervention panel.")
+    parser.add_argument("--readout-realization-panel", type=Path,
+                        help="Registered two-task frozen 37/1 LoRA intervention panel.")
 
 
 def parse_args() -> argparse.Namespace:

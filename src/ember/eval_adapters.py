@@ -198,6 +198,7 @@ def load_evaluation_adapter(
     if adapter.get("kind") == HORIZON_WRITER_KIND:
         from ember.writer.evaluation import FrozenHorizonWriterAdapter
 
+        common["readout_intervention"] = contract.get("readout_realization_intervention")
         return FrozenHorizonWriterAdapter(**common)
     raise Pi05EvaluationError("unsupported evaluation adapter kind")
 

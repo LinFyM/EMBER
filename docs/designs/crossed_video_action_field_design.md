@@ -1,6 +1,6 @@
 # 同状态交叉视频动作函数诊断
 
-> 2026-09-24登记。仅冻结推理与固定历史观测重放，无训练或新部署成绩。实际接收方与状态见progress。
+> 2026-09-24登记并完成关闭；15900原始预测已独立复核，裁决见findings§138。无训练或新部署成绩。
 
 Study：`crossed_video_action_field_20260924`；spec：`configs/crossed_video_action_field_v1/experiment_spec.json`。
 研究根：`/data0/user/ymdai/ember_runs/crossed_video_action_field_20260924`，由Sol核对quota后创建。

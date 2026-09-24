@@ -1,6 +1,6 @@
 # EMBER task plan
 
-## 当前：动作通道干预已完成，沿同状态视频条件上溯动作函数（2026-09-24）
+## 当前：交叉视频函数诊断已完成，区分最终读出与内部适配的因果作用（2026-09-24）
 
 Owner已指定本任务`01a0cd94-65da-7b22-8ca9-7ba35f454632`接管主讨论与科学判断，现有Sol任务
 `01a0cd90-ebb7-77a1-a20b-a858825d2f66`负责具体实现和实验。双方实际身份已核对并登记，旧暂停不阻断既定四臂。
@@ -8,7 +8,8 @@ Owner已指定本任务`01a0cd94-65da-7b22-8ca9-7ba35f454632`接管主讨论与�
 不使用已停止Luna/旧主讨论ID，不新建任务或更改对方模型。四臂已完成，主讨论独立复核13200原始行，
 继而完成1600个[冻结前段轨迹与视频条件干预](docs/designs/frozen_prefix_causality_design.md)，独立复核见findings§136；
 继而完成1000个[接近阶段动作通道干预](docs/designs/approach_channel_causality_design.md)，独立复核见findings§137；
-当前登记[同状态交叉视频动作函数诊断](docs/designs/crossed_video_action_field_design.md)，证据和分工见[progress](progress.md)。
+15900次[交叉视频函数诊断](docs/designs/crossed_video_action_field_design.md)也已完成，见findings§138；
+当前登记[动作读出与内部适配因果分解](docs/designs/readout_realization_causality_design.md)，证据和分工见[progress](progress.md)。
 
 目标是提高正确条件下的绝对闭环能力，并建立有益的视频增量，理解能力保持和跨任务迁移；不是只做完一个矩阵。
 固定LoRA是可达下界参照，不是公共底座课程。推理深度与方法边界以[Owner要求](docs/current_owner_requirements.md)为准。
@@ -146,7 +147,7 @@ D的正确视频相对wrong有优势，尚无超过B的绝对视频增量，末�
 只换z确实抬高末端却使成功27→19，联合xyz未高于xy。Object有不同方向及正确目标位移后的失败。
 关闭本批，不扩动作通道扫描，不据此直接修改训练；假设及不确定性见findings§137。
 
-## 第五阶段：同状态交叉视频动作函数诊断（当前）
+## 第五阶段：同状态交叉视频动作函数诊断（已完成）
 
 按[设计](docs/designs/crossed_video_action_field_design.md)复用冻结C420的每task50个正确视频banks，
 在两个task各50初态、原C前段0/10/20步的相同query上全交叉，并加同query的B/Source/封存wrong参照，共15900实际10-flow预测。
@@ -155,6 +156,16 @@ D的正确视频相对wrong有优势，尚无超过B的绝对视频增量，末�
 将C相对B的水平输出差异分成正确视频池共有分量与换视频的变化，再分视频主效应/状态交互。
 这直接区分具体视频变化与池共有映射，不能把均值叫语言分量或把小方差判为视频无用；B也不是expert动作目标。
 结果与已验证的命令干预共同约束后继表示、生成与学习机制假设，不从某个离线比值直接选架构。
+
+已确认本窗口C/B函数差异主要为各正确视频共有分量，限幅不是主要解释；wrong仍产生函数作用。
+Source的Goal保持损害和Object获得并存，不统一回退Source。历史已回答的Core/P交换、末P边界和task隔离不原样重做。
+
+## 第六阶段：动作读出与内部适配因果分解（当前）
+
+按[设计](docs/designs/readout_realization_causality_design.md)固定C420的action_out与其余37个LoRA，作四格开/关。
+复用300真实query作1200实际flow预测，记录最终读出直接作用及后续flow反馈；同时完成两任务四格的400配对闭环。
+既检验Goal的旧能力损害，也保留Object的新能力反例；不按函数距离代替成功，也不把确定性冻结mask视作训练修复。
+本批检验“参数作用通过哪个计算接口实现”，后继还须根据结果检验其学习来源；不默认冻结输出层、改优化器或增加新loss。
 
 ### 保留的后继解释分支
 

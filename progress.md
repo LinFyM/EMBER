@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：1000动作通道干预已完成，登记同状态交叉视频函数诊断（2026-09-24）
+## 当前状态：15900交叉视频预测已完成，登记动作读出与内部适配因果分解（2026-09-24）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,26 +9,29 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，前三批已完成，新批投递状态如下。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，四批已完成，新批投递状态如下。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[同状态交叉视频动作函数诊断](docs/designs/crossed_video_action_field_design.md)**，
-机器规格`configs/crossed_video_action_field_v1/experiment_spec.json`，设计提交`d19fb26a`已推送。
-2026-09-24 05:42 UTC已核对Queue正文进入上述Sol的进行中turn：
+**当前active design为[动作读出与内部适配因果分解](docs/designs/readout_realization_causality_design.md)**，
+机器规格`configs/readout_realization_causality_v1/experiment_spec.json`，准备Queue给上述Sol。
+新根`/data0/user/ymdai/ember_runs/readout_realization_causality_20260924`由Sol查quota后创建。
+固定C420的最终action_out与其余37个LoRA四格开/关，300既有query共1200预测、两任务50初态共400配对闭环。
+只读出真实flow计算和冻结参数干预，不训练、不读取新expert标签、不新运行Writer；不把本批当部署成绩。
+
+前批[交叉视频函数诊断](docs/designs/crossed_video_action_field_design.md)已完成关闭，正式实现`2cfd1da9`；
+设计提交`d19fb26a`，2026-09-24 05:42 UTC曾核对Queue正文进入Sol的turn：
 Queue `01a0d1ee-e815-7da3-b863-52e83708b5c5`，turn `01a0d1ee-e818-78a3-88ba-f091050d29db`。
 正文、入队及投递核验在前批动作通道study的`coordination/crossed_video_dispatch_20260924.{txt,json}`
-和`crossed_video_delivery_20260924.json`；这证明已接收任务，不代表正式预测已启动或完成。
-新研究根为`/data0/user/ymdai/ember_runs/crossed_video_action_field_20260924`，由Sol核对quota后创建；
-固定两任务50初态、原C前段0/10/20步共300queries，交叉50正确视频bank，加B/Source/封存wrong参照，共15900次10-flow预测。
-无训练、新teacher标签读取、新物化或新完整闭环；不把预测差异当部署成绩。
+和`crossed_video_delivery_20260924.json`。完成根`/data0/user/ymdai/ember_runs/crossed_video_action_field_20260924`；
+300queries、15900实际10-flow预测与四worker exit0，主讨论已独立核对并重算全部主分量及区间，见findings§138。
 前批[动作通道干预](docs/designs/approach_channel_causality_design.md)已完成关闭；原Queue回执`01a0d183-f68c-7bc3-b566-b8343b712cf8`，
 turn `01a0d183-f68f-7932-aea8-daa787fd268a`；正文与回执仍在前段study的`coordination/approach_dispatch_20260924.{txt,json}`。
 前一批[冻结前段交换](docs/designs/frozen_prefix_causality_design.md)已完成并关闭；原入队回执
 `01a0d0e9-1dee-79b3-abfd-2c59a20e20ab`及正文保留在四臂study的`coordination/prefix_dispatch_20260924.{txt,json}`。
 原[四臂诊断](docs/designs/conditional_compilation_diagnostics_design.md)已完成：54面板13200行、四臂全部1260更新、
 selected controls及480条登记动作probe齐全；Sol主动完成回报后已停止新增实验，registration为`registered_batch_complete`。
-主讨论独立原始行复核和裁决见findings§135–137。前段交换研究根为`/data0/user/ymdai/ember_runs/frozen_prefix_causality_20260924`，
+主讨论独立原始行复核和裁决见findings§135–138。前段交换研究根为`/data0/user/ymdai/ember_runs/frozen_prefix_causality_20260924`，
 动作通道根为`/data0/user/ymdai/ember_runs/approach_channel_causality_20260924`，均有`analysis/completion.json`。
-三个已完成study、冻结运行树和原件只读保留。
+四个已完成study、冻结运行树和原件只读保留；协调复核记录单独放study的coordination目录。
 Sol在独立worktree拥有代码、训练配置、测试和run产物；主讨论拥有科学解释及主线状态文档，集成前协调避免覆盖。
 短期步骤、结果解释分支和派发要求见[task_plan](task_plan.md)。
 接手后在既有授权内完成实现/核验/有界诊断；旧的组会deadline、无上限GPU及其它历史运行许可不恢复。
@@ -41,6 +44,17 @@ Owner明确允许参考元学习、VLA并实质调整架构/训练，同时要�
 已将该要求写入稳定要求；主讨论完成一轮[外部机制与历史证据对照](docs/analyses/external_mechanisms_and_ember_identity_20260924.md)。
 该分析保留一次教学编译、原生动作知识、零交互跨初态执行和有益视频增量，开放具体实现与训练组织。
 该文献分析未选择新训练或修改当时1000分支；后继冻结函数诊断依据本批原始证据单独登记。
+
+### 15900交叉视频预测完成与裁决
+
+唯一实现`2cfd1da9`，formal树`/data1/user/ymdai/projects/EMBER-crossed-video-field-formal`。
+300query×53条件的全部原预测、原100条C轨迹/bank/噪声/OSC/两因素分量及bootstrap已由主讨论独立复核。
+代码与复算在本study的`coordination/completed_recheck.{py,json}`；source/readout矩阵的补充事后描述在`output_operator_geometry.json`。
+
+Object的V/T为.113/.183/.388%，Goal为3.532/1.419/3.735%；C/B共有分量为主，限幅不是主要解释。
+wrong仍改变动作，不能称视频关闭；小幅条件变化也不能直接换算为闭环影响。Source原Goal40→C25、Object0→C46，保持与获得须一起解释。
+关闭本批，下一项在action_out这一个明确计算边界分解直接读出和flow反馈，并以四格配对闭环核验；不直接采纳删层或训练修改。
+首次gpu02的0/1/2/3准入被拒时零预测启动，随后0/1/2完成；保留拒绝原件，无科学缺项。
 
 ### 1000动作通道干预完成与裁决
 

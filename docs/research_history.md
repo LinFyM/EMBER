@@ -4,6 +4,15 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-24：15900次交叉视频预测完成，转向动作读出与内部适配的因果边界
+
+正式实现`2cfd1da9`，根`/data0/user/ymdai/ember_runs/crossed_video_action_field_20260924`；300query、15900预测、四worker exit0。
+主讨论从原NPZ/轨迹/bank独立复核并重算主分量及bootstrap，见findings§138。
+Object三个早期时间V/T=.113/.183/.388%，Goal为3.532/1.419/3.735%，C/B共有分量占主要函数差异；
+wrong仍改变动作，低正确池变异不是忽略视频的证据。Source原有Goal40→C25与Object0→46同时保留。
+关闭本批，登记[冻结动作读出与内部适配因果分解](designs/readout_realization_causality_design.md)：
+final action_out与其它37个适配四格，1200同query预测及400配对诊断闭环；无训练、新expert标签或部署修复声明。
+
 ## 2026-09-24：1000动作通道干预完成，登记同状态交叉视频函数诊断
 
 正式实现`6a9ea40c`，研究根`/data0/user/ymdai/ember_runs/approach_channel_causality_20260924`。

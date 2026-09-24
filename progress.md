@@ -13,7 +13,8 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
 **当前active design为[任务关系支持的学习干预](docs/designs/relational_support_causality_design.md)**，
 机器合同`configs/relational_support_causality_v1/experiment_spec.json`。主讨论已完成metadata/完整BDDL/可辨识关系审计，
-冻结四个fit28池、四C与两B、共同1260节点的因果对比及资源/停止合同；原六节点及9932方案已被下述1500条阶段合同替代，尚无本批闭环结果。
+冻结四个fit28池、四C与两B、共同1260节点的因果对比及资源/停止合同；原六节点及9932方案已被下述1500条阶段合同替代。
+本批C_S01 correct100已完成；其余面板待E3被动区域修正后继续，尚未进行完整矩阵的科学裁决。
 设计已在`6972486e`集成推送。2026-09-24 09:19 UTC以Queue派发，message
 `01a0d2b6-24e5-7ae0-a1a9-30077bd8cc4e`；09:19:59 UTC从现有app-server核对**完整正文**进入Sol的
 inProgress turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`，当前cwd及实际标题亦已核对。
@@ -25,7 +26,7 @@ Owner明确纠正“下一合同尚未定稿便结束主讨论推进”的错误
 
 新study根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`，正式树
 `/data1/user/ymdai/projects/EMBER-relational-support-formal`。六臂各1260更新/141120query保持，当前阶段仅1500闭环、
-66固定full cases，不启动3300函数预测；data0峰值≤128GiB/data1新增代码≤1GiB，同时最多6物理GPU。
+66固定full cases，不启动3300函数预测；data0峰值≤128GiB/data1新增代码≤1.25GiB（保留E2并另冻E3），同时最多6物理GPU。
 实现已集成推送`7dc95edbba00cf61439700d77fb321eb8df95c07`，正式树为该clean detached commit。
 Sol完成CPU 91+9项、六臂4更新/2→4恢复、最长full-H50及新support物化→评测smoke，查询strg01独立quota与共享容量；
 预计data0峰值新增120GiB低于128GiB，data1开发/正式树合计约503MiB。精确原合同为`launch/formal_launch_contract.json`。
@@ -75,6 +76,22 @@ Sol已实现并推送E1=`bda68cd86ca86d17802cda8b5a6fdbe0b9ba6b86`，登记6条�
 主讨论检查隔离开发diff，仅修正selector目录约束/路径解析及相应测试；Sol回报相关31项通过，正完成剩余回归与E2集成。
 按既有授权继续：保留E1失败证据，以新clean pushed detached E2统一有效bank与评测；具体E2及真实prepare成功尚待验收。
 训练、数据、18面板1500行66cases和停止合同未改，无新的科学结果；不新增指令或打断执行者当前修复。
+
+### E2完成100行后遇arena区域采集故障，保留原行并准许E3窄修（2026-09-25）
+
+E2=`e9e518cd623b58ad6a23ebec376383c565da7dda`的C_S01 correct100已完整；主讨论独立验收唯一task/state集合、
+4full、100条连续trace及4个worker exit0，所有goal region均走不受修正影响的对象/fixture分支。
+support80在global77 t0遇arena workspace不在普通fixture字典的采集错误；真实site/parent及八任务BDDL审计见
+`smoke/stage1_region_registry_probe.json`、`launch/stage1_region_bddl_audit.json`。主讨论审阅窄修diff确认只扩展该被动登记分支。
+科学裁决保留全部E2 correct100及两个合法E2 bank，剩余17面板1400行使用E3；C_S01 other继续复用E2 correct条件。
+不按成绩筛行、不为统一commit重评；按设计§6/spec `passive_arena_region_exception`逐panel保存真实版本和生成来源。
+E2原runtime/selector/原件保持，E3另冻新树；新增代码上限仅为此从1GiB调到1.25GiB，复制前仍核验quota，GPU/data0不变。
+主讨论核验launcher摘要时见到总成功计数，尚未分析逐task效果；本裁决依据修正范围与原件完整性，不宣称全程盲态。
+
+失败原件`evaluation/C_S01_1260_support_core/failures/launcher_1790274533615647026.json`显示0完整行，
+两个global77 job报错、两个global58 job被终止；只读queue核对四job合计20个登记state上界。其它worker是否已执行控制步
+不能从零完整行推断；中止尝试据实单列。本次明确授权修复后重启该未完成support80一次，不增加100条重评或自动无限重试。
+E3真实无动作接口、回归和最终集成仍待Sol完成，不称故障已修复或本批已完成；阶段科学对比和结束信号保持。
 
 ### 前一次成本修订（2026-09-24 14:38 UTC；已被第一阶段合同取代）
 

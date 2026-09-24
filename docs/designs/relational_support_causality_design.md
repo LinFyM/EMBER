@@ -9,7 +9,7 @@
 1260仍是事前固定模型，没有最佳点选择；1050相邻点及全面性能验证暂缓，不能由本阶段声称已通过。
 冻结训练配置中的六个`evidence.evaluation_updates`与spec的对应optimization字段保留为原训练元数据；
 实际评测节点的唯一authority是`evaluation.executed_updates`，不能据旧训练元数据启动已取消的面板。
-本修订允许机械同步评测注册、task/state子集调度、固定1260记录和阶段验收/汇总；这些改动与被动采集修复一起集成到唯一E。
+本修订允许机械同步评测注册、task/state子集调度、固定1260记录和阶段验收/汇总；初始要求集成到唯一E，后续仅允许§6登记的E2/E3被动采集例外。
 随后核实7dc物化入口不接受本阶段子集，§6已授权把选择/校验修正一并纳入E；训练和Writer生成计算保持原语义。
 不能借规模修订改变policy forward、环境/动作/成功规则或原预定义1260科学对比。
 主讨论`01a0cd94-65da-7b22-8ca9-7ba35f454632`负责设计和解释；现有Sol
@@ -215,7 +215,7 @@ smoke独立且不可作formal初始化/成绩；正常低位差异接受，不�
   `/data1/user/ymdai/projects/EMBER-relational-support-formal`保持只读；未启动臂也不切训练实现，不重训。
 - 本阶段全部新bank物化和正式闭环，包括六臂1260子集、controls、support和Source闭环，统一使用一个新增冻结提交E，
   树`/data1/user/ymdai/projects/EMBER-relational-support-evaluation-formal`。
-  E从最新main集成，精确commit在首个正式bank/评测前写入研究根的修订launch合同；不能按臂或节点混用物化/评测实现。
+  E从最新main集成，精确commit在首个正式bank/评测前写入研究根的修订launch合同；除下述E2/E3显式例外，不按臂或节点混用物化/评测实现。
 - E只允许修改被动轨迹采集、当前阶段的物化选择/校验和子集注册/调度/分析、对应prepare/resume/row验收与必要测试/文档；训练配置、Source、Writer、
   sampler/优化器/损失、实际单condition LoRA生成与应用、policy forward、动作预处理/后处理/执行、RNG、环境reset/settling、
   success/horizon/排队规则均保持。若实际修复需要越过该边界，暂停受影响评测并向主讨论报告。
@@ -225,7 +225,7 @@ smoke独立且不可作formal初始化/成绩；正常低位差异接受，不�
 **第一阶段子集物化裁决（2026-09-25，北京时间）：** 冻结7dc的`_validate_conditional_selection`要求完整held8或四support，
 并匹配原50个states；`request_init_state_ids`的count-only仅接受10/50。主讨论从冻结树实际复现两类拒绝，
 另确认Goal21-only other的声明及paired-correct校验仍依赖旧完整held400。这是阶段入口合同不相容，不是科学阴性。
-明确撤销“本阶段实际bank必须从7dc运行”的限制，改为**materialization_commit = evaluation_commit = E**；
+明确撤销“本阶段实际bank必须从7dc运行”的限制，初始改为**materialization_commit = evaluation_commit = E**，后续仅限下述E2/E3例外；
 训练提交、权重、真实生成计算与原逐条件输入身份不变，不通过预生成暂缓bank来绕过边界。
 
 - 只准许本批schema及`evaluation.stage1.panels`中该arm固定1260的正式模型面板；Source无需Writer bank。
@@ -247,6 +247,30 @@ smoke独立且不可作formal初始化/成绩；正常低位差异接受，不�
   若实现需要改变单condition生成计算或映射，停止受影响bank并回报；窄修正验收并冻结E后自主继续1500阶段。
   其它科学对比、18面板/1500行/66cases/0函数预测、数据墙、GPU/存储上限及阶段结束信号均保持。
 
+**E2/E3被动区域登记例外（2026-09-25，北京时间）：** E2=`e9e518cd623b58ad6a23ebec376383c565da7dda`下
+`C_S01_1260_core_correct`已产生完整100行；support首批因global77的arena workspace不在普通fixture字典而失败。
+主讨论复核100行唯一身份、4full、100条T+1 trace和worker exit0；这些行的goal region均走原对象/fixture分支。
+已审阅的窄修正只让arena region从真实sim site及parent body登记身份，不改变policy、环境转移或成功判定。
+因此允许以下明确版本差异，保留全部已完成证据，不为提交号统一重评100行：
+
+- **保留E2全部correct100；剩余17面板1400行用E3。** 不筛state或按成绩取舍，不把E2原件改写成E3。
+  E3须为新clean pushed detached树；只允许arena被动身份修正、此例外的准入/provenance/分析适配及必要测试文档。
+  训练7dc、checkpoint1260、Writer生成、实际动作/环境/RNG/成功规则、映射和科学对比保持。
+- 两个已经封存的E2 bank `C_S01_1260_core_correct`及`C_S01_1260_support_core`继续使用，不重新Writer forward。
+  E3下C_S01 Goal21 other仍从该E2 correct bank复用条件；新other manifest记录E3组装及E2 LoRA来源。
+  其余新bank由E3生成。只接受这两个精确bank来源及上述复用链，仍核验本臂checkpoint/source/condition/pairing；E1不进入有效矩阵。
+- 在`launch/arena_region_capture_exception.json`逐panel登记实际evaluation commit、bank生成/组装来源、原manifest路径和验收。
+  已完成E2面板按自身冻结runtime/合同验收；新面板按E3验收，分析汇合只按原stage1白名单，不用新spec字节数覆盖旧provenance。
+  保留E2 runtime及已完成面板/selector/bank原件。E3另建`EMBER-relational-support-evaluation-e3-formal`，
+  新增代码预算仅为保留E2读取路径从1GiB提高到1.25GiB；实际复制前仍须独立quota和峰值核验，data0及GPU上限不变。
+- 有效矩阵仍为1500行，不额外重跑已完成100。失败support启动单独记账：两global77 job在t0报错，另两global58 job被终止，
+  共4个claimed job、登记state集合上界20；`completed_rows=0`不证明其它worker零控制步。
+  如无更精确原件，保留实际控制步未知和20个state尝试的保守上界；本次已发生的中止尝试作为明确预算例外，
+  授权修复后只重启尚无有效行的support80一次，再完成其它登记面板。不得称实际启动尝试严格只有1500，或无限自动重试。
+- 验收聚焦真实global77 site/parent身份、原对象分支不变、零动作接口不修改sim/RNG、E2例外正确接入且非法来源仍拒绝。
+  复用已经完成的policy smoke；剩余环境检查计入原≤12工程预算，不为此次纯采集修复重训、重跑完整bank或完整policy smoke矩阵。
+  最终E2→E3 diff若涉及生成/控制/任务/采样语义，停止并回报；满足以上边界后自主继续，不需再次例行批准。
+
 采集修订不接受原件缺项，也不重跑正式闭环补采集。其原21868预算随后经9932修订，当前只授权1500条第一阶段；
 66个当前full cases、信息墙、Goal21主要对比、bootstrap和资源上限按本版§5，不把规模修订混称为被动采集代码修复。
 采集语义为settling结束时t=0与每个实际`env.step(action)`后各一次：T条7维实际动作对应T+1条
@@ -267,7 +291,7 @@ Source与已完成训练臂可在剩余臂继续训练时物化/评测：只核�
 
 研究根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`；先在strg01检查data0/data1独立quota、
 共享容量和实际个人用量，再建大输出。初估banks80＋完整checkpoint10＋闭环25＋临时5≈120GiB，硬上限128GiB；
-新增data1开发/冻结代码≤1GiB。已有一份C held400 bank约2GiB、完整C/B checkpoint约142/95MiB，是初估依据，启动前需实测细化。
+新增data1开发/冻结代码≤1.25GiB（仅上述保留E2并另冻E3的例外；原上限1GiB）。已有一份C held400 bank约2GiB、完整C/B checkpoint约142/95MiB，是初估依据，启动前需实测细化。
 不复制source/dataset/tokenizer/assets，不以共享df替代quota，不删旧原件腾空间。
 
 本批同时最多6物理GPU，所有训练、物化、评测统一计数；每launch/resume两节点live identity/owner准入，

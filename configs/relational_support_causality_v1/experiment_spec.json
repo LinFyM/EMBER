@@ -1475,7 +1475,7 @@
     "planned_run_root": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924",
     "planned_runtime_tree": "/data1/user/ymdai/projects/EMBER-relational-support-formal",
     "maximum_additional_data0_gib": 128,
-    "maximum_additional_data1_gib": 1,
+    "maximum_additional_data1_gib": 1.25,
     "preliminary_peak_estimate_gib": {
       "lora_banks": 80,
       "complete_checkpoints": 10,
@@ -1520,7 +1520,8 @@
       "coordinator": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
       "training_materialization_and_query_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
       "training_tree_immutable": true,
-      "all_formal_closed_loop_panels_one_new_clean_pushed_detached_evaluation_commit": true,
+      "all_formal_closed_loop_panels_one_new_clean_pushed_detached_evaluation_commit": false,
+      "bounded_commit_exception": "execution.passive_arena_region_exception",
       "evaluation_commit_recorded_in": "launch/passive_capture_amendment.json before first formal evaluation",
       "evaluation_runtime_tree": "/data1/user/ymdai/projects/EMBER-relational-support-evaluation-formal",
       "allowed_changes": [
@@ -1610,7 +1611,8 @@
       "all_12_checkpoints_per_arm_retained": true,
       "all_actual_bank_computation_from7dc95edb": false,
       "materialization_authority": "execution.stage1_subset_materialization_amendment",
-      "all_current_formal_evaluation_from_one_E_commit": true,
+      "all_current_formal_evaluation_from_one_E_commit": false,
+      "bounded_commit_exception": "execution.passive_arena_region_exception",
       "original_and_fixed_endpoint_full_masters_not_authorized": true,
       "one_active_stage_scope_guard": true,
       "allowed_changes": [
@@ -1636,8 +1638,9 @@
       "reason": "Frozen7dc rejects held2 and support20 and assumes complete held400 for other controls. Admit only registered stage1 subsets without computing deferred banks or changing single-condition generation.",
       "training_and_deferred_query_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
       "generation_semantics_reference_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
-      "all_new_stage1_materialization_and_evaluation_from_one_E_commit": true,
-      "materialization_commit_equals_evaluation_commit": true,
+      "all_new_stage1_materialization_and_evaluation_from_one_E_commit": false,
+      "materialization_commit_equals_evaluation_commit": false,
+      "bounded_commit_exception": "execution.passive_arena_region_exception",
       "E_must_be_clean_pushed_detached": true,
       "E_record_before_first_formal_bank_or_rollout": "launch/stage1_subset_materialization_amendment.json",
       "panel_authority": "evaluation.stage1.panels",
@@ -1677,6 +1680,61 @@
       "existing_gpu_storage_and_smoke_limits_unchanged": true,
       "continue_after_validation_without_additional_approval": true,
       "dispatch_record": "coordination/stage1_subset_materialization_dispatch.txt"
+    },
+    "passive_arena_region_exception": {
+      "id": "retain_unaffected_E2_and_fix_arena_registry_E3_20260925",
+      "registered_utc": "2026-09-24T18:43:47Z",
+      "coordinator": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+      "reason": "Arena workspace region metadata fails at t0 for global77; completed target100 uses unchanged object/fixture branch. Preserve all valid rows without an outcome-dependent selection or repeat.",
+      "training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+      "E2_commit": "e9e518cd623b58ad6a23ebec376383c565da7dda",
+      "retained_E2_evaluation_panels": ["C_S01_1260_core_correct"],
+      "retained_E2_rows": 100,
+      "remaining_E3_panels": 17,
+      "remaining_E3_rows": 1400,
+      "retained_E2_banks": ["C_S01_1260_core_correct", "C_S01_1260_support_core"],
+      "E3_other_may_reuse_E2_correct_conditions": "C_S01_1260_goal_other",
+      "other_E3_banks_require_E3_materialization": true,
+      "E1_excluded_from_valid_matrix": true,
+      "retained_E2_runtime": "/data1/user/ymdai/projects/EMBER-relational-support-evaluation-formal",
+      "new_E3_runtime": "/data1/user/ymdai/projects/EMBER-relational-support-evaluation-e3-formal",
+      "preserve_retained_panel_bank_selector_and_runtime_originals": true,
+      "E3_must_be_clean_pushed_detached": true,
+      "E3_and_per_panel_origin_record_before_launch": "launch/arena_region_capture_exception.json",
+      "allowed_changes_from_E2": [
+        "passive arena-workspace region identity from real sim site and parent body",
+        "exact retained-bank provenance exceptions and reused-condition source records",
+        "launch and analysis dispatch to each panel's actual frozen authority",
+        "targeted tests and documentation"
+      ],
+      "unchanged": [
+        "training, checkpoints, Source, Writer input and single-condition generation",
+        "policy/action/environment/RNG/success/horizon semantics",
+        "task/state/video mapping and fixed1260 contrasts",
+        "all18panel/1500validrow/66fullcase/0functional-prediction scope"
+      ],
+      "failed_support_invocation": "4f7ce6eeb9db4b84b27c1cb2ec4ed6c4",
+      "failed_support_completed_rows": 0,
+      "failed_support_claimed_jobs": 4,
+      "failed_support_claimed_state_union_upper_bound": 20,
+      "failed_support_initialization_and_control_steps_must_be_reported_separately": true,
+      "zero_rows_does_not_prove_zero_control_attempts": true,
+      "bounded_exception": "Already incurred failed launch attempts are retained separately; retry its uncompleted support80 once after repair. No replay of completed correct100 and no automatic further retries.",
+      "support_worker_detail": "Two global77 jobs failed at t0; two global58 jobs were terminated. Preserve unknown actual control progress unless existing evidence resolves it.",
+      "validation": [
+        "all retained100 identities/traces complete and goal regions use unchanged body branch",
+        "real global77 site/parent identity and no-action sim/RNG check",
+        "exact E2 bank allowlist plus E3 provenance admission and old-panel validation from E2",
+        "final diff does not change generation, control, task or sampling semantics"
+      ],
+      "no_extra_policy_smoke_matrix_or_bank_recomputation": true,
+      "engineering_smoke_episode_cap_unchanged": 12,
+      "additional_data1_gib_cap": 1.25,
+      "data1_cap_reason": "Retain E2 runtime at recorded path and add one E3 frozen code tree; current four trees total about0.96GiB.",
+      "data0_and_gpu_caps_unchanged": true,
+      "decision_exposure_note": "Coordinator saw total success count in launcher metadata while checking completion; no per-task effect analysis or row selection. Retain all100 by code-scope and integrity criteria.",
+      "continue_after_validation_without_additional_approval": true,
+      "dispatch_record": "coordination/arena_region_capture_exception_dispatch.txt"
     }
   }
 }

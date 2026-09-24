@@ -1,6 +1,6 @@
 # 接近阶段动作通道的冻结因果干预
 
-> 2026-09-24登记；执行状态与实际接收方见[progress](../../progress.md)。本批是机制定位，不是训练修复或部署方法。
+> 2026-09-24登记并完成关闭；1000原始分支已独立复核，裁决见findings§137。本批是机制定位，不是训练修复或部署方法。
 
 Spec：`configs/approach_channel_causality_v1/experiment_spec.json`。
 Study：`approach_channel_causality_20260924`，研究根`/data0/user/ymdai/ember_runs/approach_channel_causality_20260924`。

@@ -4,6 +4,15 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-24：1000动作通道干预完成，登记同状态交叉视频函数诊断
+
+正式实现`6a9ea40c`，研究根`/data0/user/ymdai/ember_runs/approach_channel_causality_20260924`。
+1000唯一分支、14面板、48 worker exit0；主讨论复核动作来源、同历史、几何/接触和全部32登记配对比较，见findings§137。
+Goal的C接手只换xy成功27→40、只换z27→19；实际几何与对象读数支持水平接近的局部作用，反对单独抬高即可修复。
+Object并无普遍同向收益且存在正确目标移动后失败；未定位统一训练根因或得到新部署方法。
+关闭本批，登记[同状态交叉视频动作函数诊断](designs/crossed_video_action_field_design.md)：
+300固定早期queries×50正确视频条件，加B/Source/封存wrong参照，共15900实际10-flow预测；无训练、新expert标签或新完整闭环。
+
 ## 2026-09-24：开放外部方法借鉴，保留EMBER教学编译主线
 
 Owner明确可以参考元学习、VLA重构架构与训练方式，同时保留两个月形成的自身特色。

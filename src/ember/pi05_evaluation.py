@@ -201,7 +201,8 @@ def rollout_shard(
     worker_started = time.monotonic()
     rows: list[dict[str, Any]] = []
     occupancy_capture = contract.get("diagnostic_occupancy_capture")
-    prefix_intervention = contract.get("frozen_prefix_intervention")
+    prefix_intervention = (contract.get("frozen_prefix_intervention")
+                           or contract.get("approach_channel_intervention"))
 
     def start_slot(env: Any, state_id: int) -> dict[str, Any]:
         slot = start_fixed_episode(
@@ -388,7 +389,8 @@ def _validate_episode_row(
         raise Pi05EvaluationError(
             f"raw evaluation row contract changed: {shard.job_id}"
         )
-    if contract.get("frozen_prefix_intervention") is not None:
+    if (contract.get("frozen_prefix_intervention") is not None
+            or contract.get("approach_channel_intervention") is not None):
         from ember.pi05_eval.prefix_replay import validate_row
 
         validate_row(row, contract)

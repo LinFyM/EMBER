@@ -102,7 +102,7 @@ def _validate_request(
     prohibited = (
         "task_subset_selection", "trajectory_capture_selection", "occupancy_capture_selection",
         "frozen_replay_registration", "capture_stage_predicates", "exploration_sigma",
-        "init_state_ids",
+        "init_state_ids", "approach_channel_panel",
     )
     if (observed != expected or any(getattr(args, name, None) for name in prohibited)
             or not panel_path.is_relative_to(Path(spec["run_root"]).resolve())

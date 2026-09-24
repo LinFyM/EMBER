@@ -449,6 +449,30 @@ def _diagnostic_subset_name(
     return str(task_subset["diagnostic_subset"]) if task_subset is not None else None
 
 
+def _registered_prefix_payload(
+    args: Any, *, task_subset: Any, occupancy_capture: Any,
+    source_sft_requested: bool, adapter_kind: str | None,
+    authorities: Any, installed_tasks: Sequence[Any], model: Mapping[str, Any],
+    tokenizer: Mapping[str, Any], libero_paths: Mapping[str, str],
+    output_dir: Path, repo_root: Path, command: Sequence[str],
+) -> tuple[dict[str, Any], tuple[Any, ...], dict[str, Any]] | None:
+    frozen = getattr(args, "frozen_prefix_panel", None) is not None
+    channel = getattr(args, "approach_channel_panel", None) is not None
+    if not (frozen or channel):
+        return None
+    if (frozen and channel or task_subset is not None or occupancy_capture is not None
+            or source_sft_requested or adapter_kind != "static_task_lora"):
+        raise Pi05EvaluationError("registered prefix panel cannot combine with another diagnostic")
+    from ember.pi05_eval import approach_channel, frozen_prefix
+
+    prepare = frozen_prefix.prepare_payload if frozen else approach_channel.prepare_payload
+    return prepare(
+        args, authorities=authorities, installed_tasks=installed_tasks,
+        model=model, tokenizer=tokenizer, libero_paths=libero_paths,
+        output_dir=output_dir, repo_root=repo_root, command=command,
+    )
+
+
 def _prepared_payload(
     args: Any,
     *,
@@ -503,19 +527,19 @@ def _prepared_payload(
         authorities,
         args.source_run,
         args.checkpoint,
-        evaluation_mode=("formal" if getattr(args, "frozen_prefix_panel", None) else args.mode),
+        evaluation_mode=("formal" if (getattr(args, "frozen_prefix_panel", None)
+                                      or getattr(args, "approach_channel_panel", None)) else args.mode),
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    if getattr(args, "frozen_prefix_panel", None) is not None:
-        from ember.pi05_eval.frozen_prefix import prepare_payload
-
-        if task_subset is not None or occupancy_capture is not None or source_sft_requested or adapter_kind != "static_task_lora":
-            raise Pi05EvaluationError("frozen-prefix panel cannot combine with another diagnostic")
-        return prepare_payload(
-            args, authorities=authorities, installed_tasks=installed_tasks,
-            model=model, tokenizer=tokenizer, libero_paths=libero_paths,
-            output_dir=output_dir, repo_root=repo_root, command=command,
-        )
+    prefix_payload = _registered_prefix_payload(
+        args, task_subset=task_subset, occupancy_capture=occupancy_capture,
+        source_sft_requested=source_sft_requested, adapter_kind=adapter_kind,
+        authorities=authorities, installed_tasks=installed_tasks,
+        model=model, tokenizer=tokenizer, libero_paths=libero_paths,
+        output_dir=output_dir, repo_root=repo_root, command=command,
+    )
+    if prefix_payload is not None:
+        return prefix_payload
     diagnostic_subset = _diagnostic_subset_name(occupancy_capture, task_subset)
     inspection_tasks = (
         installed_tasks

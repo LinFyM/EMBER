@@ -1,6 +1,8 @@
 """The frozen intervention replays actual actions and retains the global RNG clock."""
 
+import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -8,8 +10,11 @@ import torch
 
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.frozen_prefix import _panel_scope
+from ember.pi05_eval.approach_channel import _panel_scope as _approach_panel_scope
+from ember.pi05_eval.approach_channel_replay import compose_prefix_commands
+from ember.pi05_eval.contact_trace import audit_contact_geometries, sample_robot_object_contacts
 from ember.pi05_eval.prefix_replay import _state_error, replay_prefix
-from ember.pi05_eval.trajectory_capture import initialize_capture
+from ember.pi05_eval.trajectory_capture import initialize_capture, record_replan, save_capture
 from ember.pi05_eval_contract import policy_noise_seed
 
 
@@ -101,3 +106,98 @@ def test_replay_uses_executed_actions_and_starts_tail_at_global_fifth_replan(
     assert slot["policy_noise_seeds"] == seeds[:5]
     assert policy_noise_seed(7, suite, task_id, state_id, slot["replan_index"]) == seeds[5]
     assert slot["prefix_terminal"] is False
+
+
+APPROACH_SPEC = json.loads((Path(__file__).resolve().parents[1] /
+                   "configs/approach_channel_causality_v1/experiment_spec.json").read_text())
+
+
+def _panel(prefix: str, follower: str, phase: str, states: list[int], task_ids: list[int]) -> dict:
+    return {
+        "schema_version": "ember_approach_channel_panel_v1",
+        "study_id": APPROACH_SPEC["study_id"], "prefix": prefix, "follower": follower,
+        "phase": phase, "state_ids": states, "task_ids": task_ids,
+        "training_gradient_use": False, "checkpoint_selection_use": False,
+        "validation_use": False, "test_use": False,
+    }
+
+
+def test_panel_scope_preserves_pilot_and_mixed_coverage():
+    pilot = _panel("B_all", "C_correct", "pilot", [0, 25], [14, 21])
+    mixed = _panel("B_xy_C_rest", "B", "mixed", list(range(50)), [14, 21])
+    assert _approach_panel_scope(pilot, APPROACH_SPEC)[3] == (0, 25)
+    assert _approach_panel_scope(mixed, APPROACH_SPEC)[3] == tuple(range(50))
+    assert _approach_panel_scope(_panel("B_xy_C_rest", "C_correct", "smoke", [0], [21]), APPROACH_SPEC)[4] == (("libero_goal", 1),)
+    with pytest.raises(Pi05EvaluationError):
+        _approach_panel_scope({**mixed, "state_ids": list(range(49))}, APPROACH_SPEC)
+    with pytest.raises(Pi05EvaluationError):
+        _approach_panel_scope({**pilot, "validation_use": True}, APPROACH_SPEC)
+
+
+def test_composition_keeps_exact_registered_environment_channels():
+    offsets = np.arange(25, dtype=np.float32)[:, None]
+    b = np.broadcast_to(offsets + np.arange(7, dtype=np.float32)[None, :], (25, 7)).copy()
+    c = -b - 1
+    donors = {"B": b, "C_correct": c}
+    for name, spec in APPROACH_SPEC["prefixes"].items():
+        sources = tuple(spec["channel_donors"])
+        actual = compose_prefix_commands(donors, sources)
+        for channel, donor in enumerate(sources):
+            assert np.array_equal(actual[:, channel], donors[donor][:, channel]), name
+    assert np.array_equal(compose_prefix_commands(donors, ("B",) * 7), b)
+    with pytest.raises(Pi05EvaluationError):
+        compose_prefix_commands({"B": b, "C_correct": np.full((25, 7), np.nan)}, ("B",) * 7)
+
+
+def test_contact_identity_uses_geom_and_body_ancestry():
+    class Model:
+        ngeom = 4
+        body_parentid = [0, 0, 1, 0, 3, 0]
+        geom_bodyid = [2, 4, 5, 1]
+
+        def body_name2id(self, name):
+            return {"robot0_base": 1}[name]
+
+        def body_id2name(self, index):
+            return {1: "robot0_base", 2: "robot0_gripper", 3: "ketchup_root",
+                    4: "ketchup_shell", 5: "basket_root"}[index]
+
+        def geom_id2name(self, index):
+            return ("robot_finger", "ketchup_geom", "basket_geom", "robot_arm")[index]
+
+    data = SimpleNamespace(ncon=3, contact=[
+        SimpleNamespace(geom1=0, geom2=1, dist=-0.002),
+        SimpleNamespace(geom1=3, geom2=2, dist=0.005),
+        SimpleNamespace(geom1=1, geom2=2, dist=-0.001),
+    ])
+    owner = SimpleNamespace(
+        sim=SimpleNamespace(model=Model(), data=data),
+        robots=[SimpleNamespace(robot_model=SimpleNamespace(root_body="robot0_base"))],
+        obj_body_id={"ketchup_1": 3, "basket_1": 5},
+    )
+    indexed, audit = audit_contact_geometries(
+        SimpleNamespace(env=owner), ("ketchup_1", "basket_1"))
+    pairs = sample_robot_object_contacts(SimpleNamespace(env=owner), indexed)
+    assert audit["robot_geom_count"] == 2
+    assert audit["object_geom_counts"] == {"ketchup_1": 1, "basket_1": 1}
+    assert [(p["object_name"], p["robot_body_name"], p["minimum_distance_m"])
+            for p in pairs] == [("ketchup_1", "robot0_gripper", -0.002),
+                               ("basket_1", "robot0_base", 0.005)]
+
+
+def test_capture_marks_external_prefix_without_fake_prediction(tmp_path):
+    slot = {"init_state_id": 0, "steps": 10, "policy_noise_seeds": [1, 2]}
+    initialize_capture(slot, "compact")
+    raw = {"observation.state": torch.zeros((1, 8))}
+    record_replan(slot, raw, {}, None, np.ones((5, 7), dtype=np.float32),
+                  command_kind="external_saved_action")
+    record_replan(slot, raw, {}, torch.zeros((1, 50, 32)), np.zeros((5, 7), dtype=np.float32))
+    task = {"suite": "libero_goal", "task_id": 1}
+    capture = {"mode": "compact", "trajectory_root": str(tmp_path),
+               "external_prefix_commands": True}
+    result = save_capture(capture, task, slot, success=False)
+    saved = torch.load(result["path"], map_location="cpu", weights_only=True)
+    assert saved["schema_version"] == "ember_pi05_approach_channel_trajectory_v1"
+    assert saved["command_kinds"] == ("external_saved_action", "model_prediction")
+    assert saved["action_chunks"][0] is None
+    assert torch.equal(saved["executed_action_prefixes"][0], torch.ones((5, 7)))

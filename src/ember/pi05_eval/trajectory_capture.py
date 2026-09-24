@@ -43,7 +43,8 @@ def initialize_capture(slot: dict[str, Any], level: str | None) -> None:
 
 def record_replan(
     slot: dict[str, Any], raw_input: Mapping[str, Any], processed: Mapping[str, Any],
-    chunk: Any, executed_prefix: Any | None = None,
+    chunk: Any | None, executed_prefix: Any | None = None,
+    *, command_kind: str = "model_prediction",
 ) -> None:
     if "replay_action_chunks" not in slot:
         return
@@ -52,7 +53,12 @@ def record_replan(
     slot["replay_states"].append(
         raw_input["observation.state"].detach().to(device="cpu").contiguous()
     )
-    slot["replay_action_chunks"].append(chunk.detach().to(device="cpu").contiguous())
+    if command_kind not in ("model_prediction", "external_saved_action") or (chunk is None) != (command_kind == "external_saved_action"):
+        raise Pi05EvaluationError("diagnostic capture command provenance changed")
+    slot["replay_action_chunks"].append(
+        None if chunk is None else chunk.detach().to(device="cpu").contiguous()
+    )
+    slot.setdefault("replay_command_kinds", []).append(command_kind)
     slot["replay_replan_steps"].append(int(slot["steps"]))
     if executed_prefix is not None:
         slot["replay_executed_prefixes"].append(torch.as_tensor(executed_prefix).clone())
@@ -106,7 +112,9 @@ def save_capture(
         }
     else:
         payload = {
-            "schema_version": "ember_pi05_diagnostic_trajectory_v2",
+            "schema_version": ("ember_pi05_approach_channel_trajectory_v1"
+                               if capture.get("external_prefix_commands") else
+                               "ember_pi05_diagnostic_trajectory_v2"),
             "capture_level": level,
             **common,
             "states": tuple(slot["replay_states"]),
@@ -114,6 +122,8 @@ def save_capture(
         if level == "full":
             payload["observations"] = tuple(slot["replay_observations"])
             payload["replan_predicates"] = tuple(slot["replay_replan_predicates"])
+        if capture.get("external_prefix_commands"):
+            payload["command_kinds"] = tuple(slot["replay_command_kinds"])
     torch.save(payload, path)
     return {
         "path": str(path),

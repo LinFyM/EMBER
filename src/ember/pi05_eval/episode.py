@@ -98,10 +98,13 @@ def finish_episode_row(
         "finished_at": finished - worker_started,
     }
     row.update(episode_exploration_fields(contract, slot))
-    if contract.get("frozen_prefix_intervention") is not None:
+    if (contract.get("frozen_prefix_intervention") is not None
+            or contract.get("approach_channel_intervention") is not None):
         from ember.pi05_eval.prefix_replay import finish_trace
 
-        row["frozen_prefix_intervention"] = finish_trace(slot, task, contract)
+        name = ("approach_channel_intervention" if contract.get("approach_channel_intervention")
+                else "frozen_prefix_intervention")
+        row[name] = finish_trace(slot, task, contract)
     if "stage_predicate_states" in slot:
         row["stage_predicates"] = {
             "schema_version": "ember_pi05_stage_predicate_episode_v1",

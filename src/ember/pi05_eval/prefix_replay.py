@@ -155,6 +155,12 @@ def replay_prefix(
     preprocess: Any,
 ) -> None:
     """Step the real environment/controller with already denormalized saved actions."""
+    if contract.get("approach_channel_intervention") is not None:
+        from ember.pi05_eval.approach_channel_replay import replay_channel_prefix
+
+        replay_channel_prefix(env=env, slot=slot, task=task,
+                              contract=contract, preprocess=preprocess)
+        return
     from ember.pi05_eval.episode import update_stage_predicates
 
     intervention = contract["frozen_prefix_intervention"]
@@ -221,6 +227,10 @@ def record_tail_step(env: Any, slot: dict[str, Any], action: Any) -> None:
     trace = slot.get("prefix_trace")
     if trace is not None:
         _append(trace, env, slot["obs"], slot, np.asarray(action, dtype=np.float32))
+        if "contact_pairs" in trace:
+            from ember.pi05_eval.approach_channel_replay import record_tail_contacts
+
+            record_tail_contacts(env, slot)
 
 
 def _displacements(positions: np.ndarray, names: tuple[str, ...], cut: int) -> dict[str, Any]:
@@ -242,6 +252,10 @@ def _displacements(positions: np.ndarray, names: tuple[str, ...], cut: int) -> d
 
 
 def finish_trace(slot: Mapping[str, Any], task: Mapping[str, Any], contract: Mapping[str, Any]) -> dict[str, Any]:
+    if contract.get("approach_channel_intervention") is not None:
+        from ember.pi05_eval.approach_channel_replay import finish_channel_trace
+
+        return finish_channel_trace(slot, task, contract)
     trace = slot["prefix_trace"]
     intervention = contract["frozen_prefix_intervention"]
     root = Path(intervention["trace_root"])
@@ -280,6 +294,11 @@ def finish_trace(slot: Mapping[str, Any], task: Mapping[str, Any], contract: Map
 
 
 def validate_row(row: Mapping[str, Any], contract: Mapping[str, Any]) -> None:
+    if contract.get("approach_channel_intervention") is not None:
+        from ember.pi05_eval.approach_channel_replay import validate_channel_row
+
+        validate_channel_row(row, contract)
+        return
     intervention = contract["frozen_prefix_intervention"]
     prefix = row.get("frozen_prefix_intervention")
     if not isinstance(prefix, Mapping) or prefix.get("schema_version") != ROW_SCHEMA:

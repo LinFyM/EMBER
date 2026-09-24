@@ -853,15 +853,17 @@
       "seen64_correct"
     ],
     "per_checkpoint_total_rows": 464,
-    "all_nodes_all_arms_rows": 16704,
+    "all_nodes_all_arms_rows": 5568,
     "causal_primary_update": 1260,
     "selection": {
-      "scope": "diagnostic descriptive candidate only; primary causal contrasts remain at common update1260",
-      "metric": "maximum correct successes on complete diagnostic_held400 among the six registered nodes",
-      "ties": "earliest update",
+      "scope": "No outcome-based checkpoint selection; all six arms fixed to1260 before any formal rollout, 1050 is adjacency reference only",
+      "method": "preregistered_fixed_update",
+      "fixed_update": 1260,
       "controls_used": false,
       "loss_used": false,
-      "per_task_selection": false
+      "per_task_selection": false,
+      "outcome_based_selection": false,
+      "report_early_peaks": false
     },
     "controls_after_all_training_correct_panels_and_selection_frozen": {
       "same_task_other_at1260": [
@@ -870,10 +872,7 @@
         "C_S10",
         "C_S11"
       ],
-      "same_task_other_at_selected_if_not1260": [
-        "C_S00",
-        "C_S11"
-      ],
+      "same_task_other_at_selected_if_not1260": [],
       "cross_suite_wrong_at1260": [
         "C_S00",
         "C_S11"
@@ -890,7 +889,7 @@
         "36": 0,
         "38": 1
       },
-      "maximum_control_rows": 3200,
+      "maximum_control_rows": 2400,
       "shuffled": false,
       "reversed": false,
       "no_video": false
@@ -1029,7 +1028,7 @@
       "total_rows": 764,
       "old_results_context_only": true
     },
-    "total_registered_rollouts_max": 21868,
+    "total_registered_rollouts_max": 9932,
     "capture": {
       "compact_all_rows": true,
       "stage_predicates": true,
@@ -1085,9 +1084,15 @@
       "within_model_at1260": "correct-other for four C; correct-wrong and other-wrong for C_S00/C_S11",
       "scope": "each held task, suite, held400; seen64 correct counterparts; all raw success sets",
       "source_RGL": "all arm/node correct held+seen; controls and support with their fresh Source counterparts",
-      "adjacency": "all five adjacent transitions per arm, retained/gained/lost, churn, Jaccard, task/suite coverage",
-      "no_cross_checkpoint_union": true
-    }
+      "adjacency": "Only1050->1260 per arm: retained/gained/lost, churn, Jaccard, task/suite coverage; no six-node learning curve or early-peak claim.",
+      "no_cross_checkpoint_union": true,
+      "correct_at_every_node_scope": "The listed contrasts apply only to executed_updates1050/1260; primary remains Goal21 correct at1260."
+    },
+    "executed_updates": [
+      1050,
+      1260
+    ],
+    "executed_updates_authority": "Only this field authorizes actual evaluation; optimization.evaluation_updates is retained original frozen training metadata, not a launch list."
   },
   "post_freeze_functional_probe": {
     "upstream_study": "/data0/user/ymdai/ember_runs/crossed_video_action_field_20260924",
@@ -1259,7 +1264,52 @@
       "engineering_smoke_cases_registered_before_launch": true,
       "engineering_smoke_uses_existing_smoke_models_and_authorized_training_tasks": true,
       "engineering_smoke_not_scientific_evidence_or_formal_initialization": true,
-      "out_of_scope_change_requires_coordinator_decision": true
+      "out_of_scope_change_requires_coordinator_decision": true,
+      "scope_note": "This capture-only amendment preserved the original selection and rollout budget at its own decision time; scientific_evaluation_scope_amendment separately supersedes only the evaluation schedule, selection and counts before all formal rollouts."
+    },
+    "scientific_evaluation_scope_amendment": {
+      "id": "fixed_endpoint_and_adjacent_evaluation_20260924",
+      "registered_utc": "2026-09-24T14:38:20Z",
+      "reason": "Cost and decision-value review before any formal closed-loop score; remove early descriptive curves and best-point search, preserve the primary causal comparison and retention/video checks.",
+      "coordinator": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+      "pre_amendment_evaluation_run_contracts": 0,
+      "pre_amendment_results_files": 0,
+      "original_rollouts_max": 21868,
+      "revised_rollouts_max": 9932,
+      "omitted_evaluation_updates": [
+        210,
+        420,
+        630,
+        840
+      ],
+      "executed_evaluation_updates": [
+        1050,
+        1260
+      ],
+      "fixed_report_update": 1260,
+      "training_and_optimization_unchanged": true,
+      "frozen_training_config_evaluation_metadata_unchanged": true,
+      "all_12_checkpoints_per_arm_retained": true,
+      "training_materialization_and_query_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+      "all_formal_evaluation_one_E_commit": true,
+      "capture_amendment_still_required": true,
+      "original_launch_scripts_must_be_replaced_before_evaluation": true,
+      "omitted_panels_must_not_be_automatically_backfilled": true,
+      "fixed_cases": 82,
+      "functional_predictions": 3300,
+      "remaining_limitations": [
+        "one training seed",
+        "primary Goal21 contrast still only50 paired states",
+        "no early learning-curve or best-checkpoint conclusion",
+        "not a unified architecture/training/data root-cause verdict"
+      ],
+      "dispatch_record": "coordination/evaluation_scope_reduction_dispatch.txt",
+      "allowed_E_and_launch_changes": [
+        "mechanically consume executed_updates1050/1260",
+        "record predetermined1260 without outcome-based selection",
+        "update panel/bank generation, counts and analysis to9932",
+        "preserve all1260 scientific contrasts, mappings, controls, capture and policy/environment behavior"
+      ]
     }
   }
 }

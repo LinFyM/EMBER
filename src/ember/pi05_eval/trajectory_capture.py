@@ -165,7 +165,28 @@ def _passive_body_registry(env: Any, slot: Mapping[str, Any]) -> tuple[list[dict
                 region = regions[name]
                 target = str(region["target"])
                 if target not in by_name:
-                    raise Pi05EvaluationError(f"passive trace region target has no actual body: {name}")
+                    if (target != getattr(owner, "workspace_name", None)
+                            or name not in owner.object_sites_dict):
+                        raise Pi05EvaluationError(f"passive trace region target has no actual body: {name}")
+                    try:
+                        site_id = int(model.site_name2id(name))
+                        site_name = model.site_id2name(site_id)
+                        parent_id = int(model.site_bodyid[site_id])
+                        parent_name = model.body_id2name(parent_id)
+                    except (KeyError, ValueError, IndexError) as error:
+                        raise Pi05EvaluationError(f"passive trace arena region lacks actual site: {name}") from error
+                    if site_name != name or not isinstance(parent_name, str) or not parent_name:
+                        raise Pi05EvaluationError(f"passive trace arena region site/body changed: {name}")
+                    classified.append({
+                        "name": name, "kind": "region", "target": target,
+                        "target_kind": "arena_workspace", "site_id": site_id,
+                        "site_name": site_name, "site_parent_body_id": parent_id,
+                        "site_parent_body_name": parent_name,
+                        "ranges": [[float(value) for value in rectangle]
+                                   for rectangle in region["ranges"]],
+                        "yaw_rotation": [float(value) for value in region["yaw_rotation"]],
+                    })
+                    continue
                 classified.append({"name": name, "kind": "region", "target": target,
                                    "target_body_id": by_name[target]["body_id"],
                                    "target_body_name": by_name[target]["body_name"],

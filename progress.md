@@ -12,7 +12,11 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（了解 EMBER 仓库现状，Owner指定Sol）；已核对同仓库/主机，前两批已完成，新批投递状态如下。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
 **当前active design为[接近阶段动作通道因果干预](docs/designs/approach_channel_causality_design.md)**，
-机器规格`configs/approach_channel_causality_v1/experiment_spec.json`；准备Queue给同一Sol执行者。
+机器规格`configs/approach_channel_causality_v1/experiment_spec.json`；设计登记提交`13ce584d`已推送。
+2026-09-24 03:44 UTC已Queue给上述Sol，回执`01a0d183-f68c-7bc3-b566-b8343b712cf8`；
+随后核对正文已进入新turn `01a0d183-f68f-7932-aea8-daa787fd268a`，状态`inProgress`。
+这只确认任务送达并开始处理，不代表实现或正式运行已完成。投递正文、CLI回执和一次送达核验保存在前段study的
+`coordination/approach_dispatch_20260924.{txt,json}`与`approach_delivery_20260924.json`。
 新研究根为`/data0/user/ymdai/ember_runs/approach_channel_causality_20260924`，由Sol核对quota后创建；
 固定两任务50初态、前25步五种动作来源、B/C两种接手者，共1000分支，无训练或新增teacher标签读取。
 前一批[冻结前段交换](docs/designs/frozen_prefix_causality_design.md)已完成并关闭；原入队回执

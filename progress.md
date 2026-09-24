@@ -60,6 +60,10 @@ Sol回报7dc完整held/support选择限制与1500阶段不相容；主讨论从�
 本阶段`materialization_commit = evaluation_commit = E`，训练及单condition生成语义仍固定7dc；不预物化暂缓面板。
 Goal21 other绑定同1260 correct100的Goal21投影，按原offset17复用已生成的50个teacher条件，不增加Writer forward。
 目标、采样、科学对比、18面板1500行66cases及资源预算未改；实现和实际GPU接口仍由Sol完成验收，当前不称修复已完成。
+裁决在`32d5a7b1`集成推送；17:04 UTC以Steer送入Sol活跃turn
+`01a0d452-8a9e-7a90-ba43-46992e91beb3`，接口返回同一turnId。当次full查询未显示完整新正文或后续回复，
+因此只记Steer已接受，不称执行者已处理；未重发。派发、回执、查询与主讨论CPU复现证据位于
+`coordination/stage1_subset_materialization_{dispatch.txt,dispatch_receipt.json,delivery.json,coordinator_evidence.json}`。
 
 ### 前一次成本修订（2026-09-24 14:38 UTC；已被第一阶段合同取代）
 

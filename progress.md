@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：任务关系支持学习干预已派发，完整合同进入Sol当前轮（2026-09-24）
+## 当前状态：任务关系支持学习干预正式训练，恢复补验与并行调度已核对（2026-09-24）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -19,16 +19,43 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 inProgress turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`，当前cwd及实际标题亦已核对。
 正文/入队回执/逐字投递核验保存在前批readout study的
 `coordination/relational_support_dispatch_20260924.{txt,json}`与`relational_support_delivery_20260924.json`。
-这证明接收方当前轮已有任务，尚未证明正式训练启动或任何新实验完成；Sol按合同完成工程/资源准入后自主启动并回报。
+上述Queue记录证明当时已接收任务；随后实现、正式启动及工程补验记录见下，尚无本批科学结果。
 Owner明确纠正“下一合同尚未定稿便结束主讨论推进”的错误。执行者完成一批等待派发不约束主讨论继续分析，
 主讨论已把下一项推进到可执行合同；已有授权内不重复索要许可，也不为让实验不停而仓促试改法。
 
-新study拟用根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`，正式树
+新study根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`，正式树
 `/data1/user/ymdai/projects/EMBER-relational-support-formal`。计划六臂各1260更新/141120query，最多21868闭环、
 3300既有query真实flow预测、82固定full cases；data0峰值≤128GiB/data1新增代码≤1GiB，同时最多6物理GPU。
-启动前由Sol完成实际数据/梯度/恢复/接口验证、实时双节点GPU和strg01独立quota准入，集成push后冻结同一实现commit。
+实现已集成推送`7dc95edbba00cf61439700d77fb321eb8df95c07`，正式树为该clean detached commit。
+Sol完成CPU 91+9项、六臂4更新/2→4恢复、最长full-H50及新support物化→评测smoke，查询strg01独立quota与共享容量；
+预计data0峰值新增120GiB低于128GiB，data1开发/正式树合计约503MiB。精确原合同为`launch/formal_launch_contract.json`。
 主讨论已调用canonical task authority验证新manifest58任务/Train42/Val8/Test8；每个optimizer的白名单仍只有登记fit28。
 Source71及官方24/8/8未改；无新增held expert或官方Val/Test读取。完整机制与竞争解释见task_plan第七阶段和findings§140。
+
+### 本批启动核对与已落实的执行修正（2026-09-24 10:31 UTC）
+
+主讨论核对源码和六份真实`training_events.json`：每臂5040条件、每task 180次，共同26个任务的完整事件与宏步位置相同，
+同池B/C的完整事件流相同；跨episode/21+7权重、Source冻结、活动梯度、最长347原始帧→71采样帧及新support接口通过。
+独立核对脚本和结果为本study的`coordination/main_ready_recheck.{py,json}`；工程smoke不代表模型效果。
+
+启动记录显示原方案六臂在同一对卡串行、训练约25小时。一次双节点实时快照确认gpu02有充足共驻余量；
+同时发现B两臂完整恢复仅用world1，正式world2此前只有一步profile。主讨论于10:19 UTC以**Steer**纠正当前执行轮，
+要求保留已启动C_S00、补齐B的正式拓扑恢复并并行尚未启动的臂。正文/接受回执为
+`coordination/ready_execution_steer{.txt,_receipt.json}`；Sol的处理回报为`launch/schedule_revision_message.txt`，
+其Queue回执`01a0d2f6-1af0-7150-9d61-08ec0c591a18`发回本主讨论。摘要API未显示后追加Steer正文，
+不据此声称逐字可见；接受回执、执行者明确回应和完成产物共同验证已处理，见`ready_execution_steer_delivery.json`。
+
+- B_S00/B_S11在同一冻结实现、world2各完成4更新/448真实query和2→4恢复，四段exit0。
+  主讨论直接核对完整checkpoint中的optimizer步数、scheduler、sampler cursor、两rank状态/RNG及后续text-meta梯度，
+  Source仍冻结；补验权重不用于formal初始化。原world1证据保留，缺项已关闭。
+- 三个C的正式启动合同已核对：C_S00在gpu01/1,4，C_S01在gpu02/0,1，C_S10在gpu02/2,3，共6物理卡、每臂world2。
+  后续依次复用为C_S11、B_S00、B_S11；每次launch仍由Sol重新做双节点live准入。C_S00未中断。
+- 修订合同`launch/formal_launch_contract_amendment.json`和`formal_schedule_handoff.json`保留原记录；
+  原串行控制器只负责C_S00，后五臂无启动地交接，新调度使用唯一launch记录避免重复。训练估计约11小时，后续评测ETA未实测。
+
+独立补验与三臂启动核对见`coordination/main_ready_amendment_recheck.{py,json}`；模型、训练数据、科学参数和冻结实现均未变。
+这次只核对已完成smoke和正式启动合同，没有读取正式训练的进度、metrics或checkpoint。
+随后按退出/完成或异常事件接续；等待整批原件后作科学裁决，不以工程通过宣布根因或修复。
 
 最近完成的[动作读出与内部适配因果分解](docs/designs/readout_realization_causality_design.md)，
 机器规格`configs/readout_realization_causality_v1/experiment_spec.json`，设计提交`4e1f5cfc`，正式实现`ed2df051`。

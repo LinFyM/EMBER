@@ -252,7 +252,7 @@ def _registration(tmp_path, label='Source_core_correct'):
     config=repo/'configs/relational_support_causality_v1/evaluation.json'
     config.write_text('{}')
     panel=next(row for row in spec['evaluation']['stage1']['panels'] if row['id']==label)
-    selection=study/'launch/selectors/stage1_full.json'
+    selection=study/'launch/stage1/selectors/stage1_full.json'
     selection.parent.mkdir(parents=True)
     def local(gid):
         return ('libero_90',gid-40) if gid>=40 else (
@@ -263,7 +263,7 @@ def _registration(tmp_path, label='Source_core_correct'):
               'passive_control_trace':TAG,
               'study_spec':'configs/relational_support_causality_v1/experiment_spec.json',
               'stage_predicates':True,'full_conditions':full,
-              'task_subset_selection':str(study/'launch/selectors/subset.json'),
+              'task_subset_selection':str(study/'launch/stage1/selectors/subset.json'),
               'mode':'compact', 'training_gradient_use':False, 'checkpoint_selection_use':False,
               'validation_use':False, 'test_use':False}
     selection.write_text(json.dumps(manifest))
@@ -299,6 +299,18 @@ def test_registration_requires_every_row_and_resume(tmp_path):
     contract.pop('diagnostic_occupancy_capture')
     with pytest.raises(Pi05EvaluationError,match='lacks passive'):
         validate_contract(contract,repo)
+
+
+def test_stage1_registration_rejects_legacy_selector_directory(tmp_path):
+    repo,study,selection,args,tasks,subset,manifest=_registration(tmp_path)
+    old=study/'launch/selectors/stage1_full.json'
+    old.parent.mkdir(parents=True)
+    old.write_text(selection.read_text())
+    full=tuple((row['suite'],row['task_id'],row['init_state_id'])
+               for row in manifest['full_conditions'])
+    with pytest.raises(Pi05EvaluationError,match='selection changed'):
+        prepare_from_manifest(args,repo_root=repo,output_dir=study/'evaluation/Source_core_correct',
+            task_subset=subset,tasks=tasks,manifest=manifest,selection_path=old,full=full)
 
 
 def test_passive_registration_rejects_bank_from_other_training_commit(tmp_path):

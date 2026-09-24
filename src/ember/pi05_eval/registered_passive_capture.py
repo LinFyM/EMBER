@@ -130,16 +130,27 @@ def attach_provenance(contract: dict[str, Any], repo_root: Path) -> None:
     if panel is not None and ((panel['arm'] == 'Source') != (adapter is None)):
         raise Pi05EvaluationError('stage1 Source/bank panel identity changed')
     if adapter is not None:
+        from ember.writer.relational_contract import stage1_bank_materialization_commit
+        manifest_path = Path(adapter['manifest']['path'])
+        try:
+            bank_commit = stage1_bank_materialization_commit(
+                panel_id=panel['id'], manifest_path=manifest_path,
+                evaluation_commit=contract['git']['commit'], spec=spec
+            ) if panel is not None else contract['git']['commit']
+        except ValueError as exc:
+            raise Pi05EvaluationError('relational bank provenance changed') from exc
         if (adapter.get('writer_checkpoint', {}).get('training_commit') != training
-                or adapter.get('materialization_git', {}).get('commit') != contract['git']['commit']
+                or adapter.get('materialization_git', {}).get('commit') != bank_commit
                 or (panel is not None and adapter.get('registered_stage1_panel_id') != panel['id'])
-                or not Path(adapter['manifest']['path']).resolve().is_relative_to(
+                or not manifest_path.resolve().is_relative_to(
                     Path(spec['outputs']['planned_run_root']) / 'materialization')):
             raise Pi05EvaluationError('relational bank training or materialization provenance changed')
+    else:
+        bank_commit = None
     contract['passive_capture_provenance'] = {
         'amendment_id': 'passive_capture_fix_before_formal_evaluation_20260924',
         'training_commit': training,
-        'bank_materialization_commit': contract['git']['commit'] if adapter is not None else None,
+        'bank_materialization_commit': bank_commit,
         'bank_manifest': adapter['manifest'] if adapter is not None else None,
         'evaluation_commit': contract['git']['commit'],
     }

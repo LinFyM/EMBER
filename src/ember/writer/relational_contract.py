@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from ember.pi05_source_checkpoint import read_json
 from ember.task_protocol import load_task_authorities
@@ -62,6 +62,26 @@ def registered_stage1_bank_panel(
             raise ValueError("stage1 bank output does not identify its exact panel")
         return panel
     raise ValueError("bank selection is outside registered stage1 task/state/condition scope")
+
+
+def stage1_bank_materialization_commit(
+    *, panel_id: str, manifest_path: Path, evaluation_commit: str,
+    spec: Mapping[str, Any] | None = None,
+) -> str:
+    """Admit only the two sealed E2 banks retained by the E2/E3 decision."""
+    spec = spec if spec is not None else read_json(REPO_ROOT / SPEC_PATH)
+    exception = spec['execution'].get('passive_arena_region_exception', {})
+    study = Path(spec['outputs']['planned_run_root']).resolve()
+    expected = (study / 'materialization' / panel_id / 'manifest.json').resolve()
+    if (exception.get('id') != 'retain_unaffected_E2_and_fix_arena_registry_E3_20260925'
+            or manifest_path.resolve() != expected):
+        raise ValueError('stage1 bank manifest is outside its exact registered output')
+    if panel_id in exception['retained_E2_banks']:
+        if (panel_id not in {'C_S01_1260_core_correct', 'C_S01_1260_support_core'}
+                or evaluation_commit == exception['E2_commit']):
+            raise ValueError('retained E2 bank requires the separate E3 evaluation authority')
+        return exception['E2_commit']
+    return evaluation_commit
 
 
 def validate_config(config: dict[str, Any]) -> dict[str, Any]:

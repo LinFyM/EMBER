@@ -16,7 +16,7 @@ from ember.pi05_eval_contract import resolve_role_task_keys
 from ember.writer import learning_data, materialization, video_controls
 from ember.writer.learning_data import WriterTrainingData
 from ember.writer.materialization import planned_episodes, selection_contract
-from ember.writer.relational_contract import registered_stage1_bank_panel
+from ember.writer.relational_contract import registered_stage1_bank_panel, stage1_bank_materialization_commit
 from ember.writer.training import _config
 from ember.writer.video_controls import video_task_id
 
@@ -266,6 +266,26 @@ def test_exact_sixteen_stage1_bank_requests_and_outputs():
                    for gid in panel['task_ids']) == panel['expected_rows']
         assert selection['video_pool'] == list(range(50))
     assert sum(row['expected_rows'] for row in banks) == 1280
+
+
+def test_stage1_e2_bank_exception_is_exactly_two_manifests():
+    exception = SPEC['execution']['passive_arena_region_exception']
+    e2 = exception['E2_commit']
+    e3 = 'new_clean_evaluation_commit'
+    for label in exception['retained_E2_banks']:
+        path = STAGE_RUN/'materialization'/label/'manifest.json'
+        assert stage1_bank_materialization_commit(
+            panel_id=label, manifest_path=path, evaluation_commit=e3) == e2
+        with pytest.raises(ValueError, match='separate E3'):
+            stage1_bank_materialization_commit(
+                panel_id=label, manifest_path=path, evaluation_commit=e2)
+        with pytest.raises(ValueError, match='exact registered output'):
+            stage1_bank_materialization_commit(
+                panel_id=label, manifest_path=path.parent/'copy.json', evaluation_commit=e3)
+    other = 'C_S01_1260_goal_other'
+    assert stage1_bank_materialization_commit(
+        panel_id=other, manifest_path=STAGE_RUN/'materialization'/other/'manifest.json',
+        evaluation_commit=e3) == e3
 
 
 @pytest.mark.parametrize('change', ['deferred_task','support_state','wrong_control','wrong_arm',

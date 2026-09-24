@@ -156,6 +156,7 @@ def _inspect_stage1_goal_correct(reference, *, selection, checkpoint, run, asset
     from ember.writer.evaluation import _inspect_conditions, _inspect_scope, validate_information_wall
     from ember.writer.materialization import (file_record, method_metadata, planned_episodes,
                                                selection_contract)
+    from ember.writer.relational_contract import stage1_bank_materialization_commit
 
     path = Path(reference["path"] if isinstance(reference, dict) else reference).resolve()
     record = file_record(path)
@@ -168,6 +169,9 @@ def _inspect_stage1_goal_correct(reference, *, selection, checkpoint, run, asset
         arm="correct", mode="per_init_ordinal", seed=selection["seed"],
         init_state_ids=list(range(50)), video_pool=list(range(50)))
     repository = git_state(Path(__file__).resolve().parents[3])
+    bank_commit = stage1_bank_materialization_commit(
+        panel_id=f"{arm_id}_1260_core_correct", manifest_path=path,
+        evaluation_commit=repository["commit"])
     if (correct.get("arm") != "correct"
             or correct.get("registered_stage1_panel_id") != f"{arm_id}_1260_core_correct"
             or correct.get("writer_checkpoint") != checkpoint
@@ -175,7 +179,7 @@ def _inspect_stage1_goal_correct(reference, *, selection, checkpoint, run, asset
             or correct.get("method") != method_metadata(run)
             or correct.get("source") != run["source"]
             or correct.get("task_protocol") != run["config"]["data"].get("protocol")
-            or correct.get("materialization_git", {}).get("commit") != repository["commit"]
+            or correct.get("materialization_git", {}).get("commit") != bank_commit
             or Path(correct["asset_root"]).resolve() != asset_root.resolve()
             or [row["global_task_id"] for row in correct["tasks"]] != [14, 21]
             or len(correct["conditions"]) != 100):

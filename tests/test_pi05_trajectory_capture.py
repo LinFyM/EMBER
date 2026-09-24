@@ -353,7 +353,7 @@ def test_passive_registration_rejects_bank_from_other_training_commit(tmp_path):
     adapter={'writer_checkpoint':{'training_commit':TRAINING},
              'registered_stage1_panel_id':'B_S00_1260_support_core',
              'materialization_git':{'commit':'another_commit'},
-             'manifest':{'path':str(study/'materialization/B_smoke/manifest.json'),'bytes':12}}
+             'manifest':{'path':str(study/'materialization/B_S00_1260_support_core/manifest.json'),'bytes':12}}
     contract={'output_dir':str(panel),'git':{'commit':'evaluation_commit'},
               'adapter':adapter,'tasks':[{'suite':task.suite,'task_id':task.task_id,
                                           'init_state_ids':list(task.init_state_ids)} for task in tasks],
@@ -366,6 +366,37 @@ def test_passive_registration_rejects_bank_from_other_training_commit(tmp_path):
     validate_contract(contract,repo)
     assert contract['passive_capture_provenance']['bank_manifest']==adapter['manifest']
     adapter['registered_stage1_panel_id']='C_S00_1260_support_core'
+    with pytest.raises(Pi05EvaluationError,match='provenance'):
+        attach_provenance(contract,repo)
+
+
+def test_passive_registration_accepts_only_retained_e2_support_bank(tmp_path):
+    label = 'C_S01_1260_support_core'
+    repo,study,selection,args,tasks,subset,manifest = _registration(tmp_path,label)
+    capture,stage = prepare_from_manifest(args,repo_root=repo,
+        output_dir=study/'evaluation'/label,task_subset=subset,tasks=tasks,
+        manifest=manifest,selection_path=selection,
+        full=tuple((row['suite'],row['task_id'],row['init_state_id'])
+                   for row in manifest['full_conditions']))
+    e2 = json.loads((repo/'configs/relational_support_causality_v1/experiment_spec.json').read_text())[
+        'execution']['passive_arena_region_exception']['E2_commit']
+    adapter = {'writer_checkpoint':{'training_commit':TRAINING},
+               'registered_stage1_panel_id':label,
+               'materialization_git':{'commit':e2},
+               'manifest':{'path':str(study/'materialization'/label/'manifest.json'),'bytes':12}}
+    contract = {'output_dir':str(study/'evaluation'/label),'git':{'commit':'e3_commit'},
+                'adapter':adapter,'tasks':[{'suite':task.suite,'task_id':task.task_id,
+                                             'init_state_ids':list(task.init_state_ids)} for task in tasks],
+                'diagnostic_task_subset':subset,'diagnostic_occupancy_capture':capture,
+                'diagnostic_stage_predicates':stage}
+    attach_provenance(contract,repo)
+    validate_contract(contract,repo)
+    assert contract['passive_capture_provenance']['bank_materialization_commit']==e2
+    adapter['materialization_git']['commit']='old_e1_commit'
+    with pytest.raises(Pi05EvaluationError,match='provenance'):
+        attach_provenance(contract,repo)
+    adapter['materialization_git']['commit']=e2
+    adapter['manifest']['path']=str(study/'materialization/another_bank/manifest.json')
     with pytest.raises(Pi05EvaluationError,match='provenance'):
         attach_provenance(contract,repo)
 

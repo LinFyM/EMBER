@@ -256,12 +256,15 @@ def inspect_horizon_writer_bank(
         _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
         if run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA:
+            from ember.writer.relational_contract import stage1_bank_materialization_commit
             panel = registered_stage1_bank_panel(run["config"], manifest["selection"],
                 checkpoint=Path(checkpoint["path"]), output=path.parent)
             current = git_state(Path(__file__).resolve().parents[3])
+            bank_commit = stage1_bank_materialization_commit(
+                panel_id=panel["id"], manifest_path=path, evaluation_commit=current["commit"])
             if (run["git"]["commit"] != "7dc95edbba00cf61439700d77fb321eb8df95c07"
                     or manifest.get("registered_stage1_panel_id") != panel["id"]
-                    or manifest["materialization_git"]["commit"] != current["commit"]):
+                    or manifest["materialization_git"]["commit"] != bank_commit):
                 raise ValueError("stage1 bank training, panel or E materialization identity changed")
         if manifest.get("task_protocol") != run["config"]["data"].get("protocol"):
             raise ValueError("bank task protocol differs from its trained Writer")

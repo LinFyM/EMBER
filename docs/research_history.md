@@ -4,6 +4,21 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-25：原生读取交叉400条完成；后续映射传递损害，进入单项监督增删分解
+
+正式实现edca1a35、父训练7dc95edb，两个endpoint bank沿用原E3，其余新物化和全部新闭环同一冻结提交。
+研究根`/data0/user/ymdai/ember_runs/native_reader_transfer_causality_20260925`；主讨论从400行、全部连续trace重算16对比/12配对、
+函数分解及几何，原始及核验分别在`analysis/`与`coordination/main_recheck.{py,json}`，完整边界见findings§144。
+Object四格45/42/36/37、Goal39/38/19/28；Goal换W两背景均有害，而N1在W1背景补偿，不能归罪原生读取或直接冻结它。
+W仍涵盖多个外部模块。首轮W函数分量沿黑碗→plate的后验投影50/50为正，读取分量多反向；非目标先动几乎都是plate。
+这是控制偏移的路径证据，尚不是内部语义、学习统一根因或修复。新self相对旧成功集合变动单列，未拼接旧分数。
+实际保守GPU总时长1.091小时、data0新增2.18GiB，未用训练/held expert/官方Val或Test。
+
+登记[单项任务当前信用的学习干预](designs/support_slot_credit_causality_design.md)：共同C00@1155，
+只在4个slot上保留77/替换76/归零77当前信用，其余27任务全部原事件固定，各28更新。
+新400闭环含未更新父参照，首slot后30真实flow及128供体FM读出；不扩大原关系支持矩阵。
+它区分原替换混在一起的有害新增与保护丢失，并保留较早共同适应/历史Adam解释；是否active与投递见progress。
+
 ## 2026-09-25：关系支持1500条完成，未兑现绝对收益；转入受控数据端点的原生读取交叉
 
 六臂固定1260来自7dc95edb；C01 correct100沿用E2=e9e518cd，其余17面板1400行来自E3=385ae992，

@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：关系支持1500条已复核，接续原生读取与其余Writer的冻结因果交叉（2026-09-25）
+## 当前状态：冻结交叉400条已复核，登记单个任务当前信用的三臂短程干预（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,30 +9,32 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，六批已完成。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近原生读取交叉批次已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[原生读取Meta与其余Writer的冻结交叉](docs/designs/native_reader_transfer_causality_design.md)**，
-机器合同`configs/native_reader_transfer_causality_v1/experiment_spec.json`。只使用前批C_S00/C_S10固定1260父模型，
-两任务四格400新闭环、16full，无训练/新expert标签/官方Val或Test。具体实现和执行仍由同一Sol任务承担。
-关系支持第一阶段18面板1500行、66full、全行T+1连续trace已完成并经主讨论独立复算；六臂1260/exit0，
-保留E2 correct100与登记bank例外，其余1400来自E3=`385ae992`。29个预定对比、44组配对均复核一致。
-主预测未兑现：Goal C11 correct35/other33，对C00的36/40没有绝对改善；正交互区间均跨零。
-新批只追查C00→C10这一具体数据敏感性的传递位置，不声称原生读取一定有害或已找到统一根因，详见findings§143。
+**当前active design为[单个任务当前信用的有限学习干预](docs/designs/support_slot_credit_causality_design.md)**，
+机器合同`configs/support_slot_credit_causality_v1/experiment_spec.json`。同一C_S00@1155完整起点，
+KEEP77/SWAP76/DROP77各28个更新（1156..1183），固定另27任务；加未更新父参照，两任务共400闭环。
+首次被干预更新1160后30次真实10-flow、合法76/77共128条无梯度FM读出，16full及全400条连续trace。
+唯一问题是区分76监督的有害新增、77监督的保护丢失和共同学习/历史路径；不冻结模块、扩训或自动补旧矩阵。
+父完整checkpoint已核对，原两training_events的108个共同事件完全相同、4个替换slot与有效query预算已CPU审计。
+新根`/data0/user/ymdai/ember_runs/support_slot_credit_causality_20260925`；data0≤8GiB、新代码≤768MiB，
+每训练臂world2、项目≤6物理GPU、正式合计≤8 GPU-hours。实际资源准入、实现验证、完整恢复与执行由Sol负责。
+新合同已具备；本段登记时尚未派发，也不代表正式学习已启动。派发和接手回执随后补在本段。
 
-### 当前冻结交叉的登记与派发（2026-09-25）
+### 最近完成：原生读取与其余Writer交叉及科学裁决（2026-09-25）
 
-三组N只含Text/VL/Action Meta，其余可学习参数为W；source、76模板和固定probe保持。四格N0W0/N1W0/N0W1/N1W1，
-0/1对应C_S00/C_S10，两个self参照在新批内评测。全部global14/21各50state、原correct视频映射与RNG，
-首次真实flow与闭环共同判断，不能仅据norm或混合模型排名归因。单训练seed、混合权重未共同训练的边界明确登记。
-新study预定`/data0/user/ymdai/ember_runs/native_reader_transfer_causality_20260925`；新data0≤8GiB、data1代码≤768MiB，
-项目合计≤6物理GPU；实际创建产物/launch前由Sol检查独立quota和双节点实时资源。工程smoke≤4，正式pilot8计入400。
-完成后主动Queue主讨论，停止新增实验；原关系支持deferred矩阵不自动恢复。
-设计及本批科学裁决已在`fc0ccb87`推送。03:28 UTC（北京时间11:28）向idle的Sol以Queue派发，回执
-`01a0d69b-dec0-7ed1-8dcb-9dc99e21f7a1`；03:29 UTC核对完整正文进入inProgress turn
-`01a0d69b-dec5-7aa2-8604-390186ac5ed2`，并读到Sol明确接手独立实现/验收、随后执行400条并回传完成信号。
-正文/回执/回应保存在前批study的`coordination/native_reader_transfer_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
-这证明任务已收到并进入实现，尚不代表新正式物化/闭环已经启动。主讨论已完成CPU父参数划分/shape/77固定buffer同一性审计，
-见`coordination/native_reader_parent_partition_audit.json`；真实混合生成、self恢复和GPU接口由Sol继续验证。
+正式实现/新评测`edca1a3548af538d5724431ef53a7293653eb42b`，clean pushed detached树
+`/data1/user/ymdai/projects/EMBER-native-reader-transfer-formal`；两个self bank来自原E3，两个混合bank各100次新完整生成。
+研究根`/data0/user/ymdai/ember_runs/native_reader_transfer_causality_20260925`，8面板400有效行、16full、400条T+1 trace，全部worker exit0。
+主讨论检查实际N/W载入、self恢复，独立复算所有原始行、12组R/G/L、16对比及bootstrap、100首轮分解和连续几何，均一致；
+原件`analysis/`，复核`coordination/main_recheck.{py,json}`，后验plate方向`coordination/goal_bowl_plate_projection.json`。
+四格N0W0/N1W0/N0W1/N1W1：Object45/42/36/37，Goal39/38/19/28；N只含三Meta、W为其它全部可学习映射。
+Goal换W两背景均显著更差，N1在W1下恢复9条；不能据此冻结N、归罪单一head或把混合当修复，完整裁决见findings§144。
+Goal先动非目标物主要是plate；W首轮沿黑碗→plate的命令偏移50/50同向。该后验方向将接受下一批事前检验。
+新self相对旧stage1有正常成功集合变化，主要对比只用新四格。实际保守1.091 GPU-hours、data0新增2.18GiB。
+本批关闭，Sol已停止新增实验；主讨论继续设计并派发，不将执行者的停止点当成主讨论停工理由。
+原派发使用Queue，回执01a0d69b-dec0-7ed1-8dcb-9dc99e21f7a1及正文接收记录，
+保留在关系支持study的`coordination/native_reader_transfer_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
 
 ### 最近完成的关系支持批次及历史启动记录
 

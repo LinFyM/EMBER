@@ -1,0 +1,995 @@
+{
+  "schema_version": "ember_support_slot_credit_causality_v1",
+  "study_id": "support_slot_credit_causality_20260925",
+  "status": "registered_for_implementation_and_bounded_execution",
+  "design": "docs/designs/support_slot_credit_causality_design.md",
+  "coordination": {
+    "main_thread": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+    "executor_thread": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+    "dispatch": "Queue",
+    "completion": "Queue originals then stop new experiments"
+  },
+  "parent": {
+    "arm": "C_S00",
+    "checkpoint": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/checkpoints/macro_00001155",
+    "macro": 1155,
+    "training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+    "world_size": 2,
+    "base_config": "configs/relational_support_causality_v1/train_C_S00.json",
+    "restore": [
+      "model",
+      "optimizer",
+      "scheduler",
+      "rank0_rng",
+      "rank1_rng"
+    ],
+    "mutable_parent": false
+  },
+  "data": {
+    "protocol": "configs/relational_support_causality_v1/protocol.json",
+    "source": "unchanged source1000 and normalization in parent run contract",
+    "gradient_task_union": [
+      2,
+      4,
+      5,
+      7,
+      12,
+      13,
+      17,
+      19,
+      22,
+      25,
+      28,
+      29,
+      32,
+      34,
+      35,
+      37,
+      42,
+      51,
+      55,
+      58,
+      62,
+      64,
+      73,
+      76,
+      77,
+      80,
+      83,
+      97,
+      101
+    ],
+    "diagnostic_held8": [
+      0,
+      1,
+      14,
+      15,
+      20,
+      21,
+      36,
+      38
+    ],
+    "S00_event_plan": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/training_events.json",
+    "S10_event_plan": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S10/training_events.json",
+    "common27": [
+      2,
+      4,
+      5,
+      7,
+      12,
+      13,
+      17,
+      19,
+      22,
+      25,
+      28,
+      29,
+      32,
+      34,
+      35,
+      37,
+      42,
+      51,
+      55,
+      58,
+      62,
+      64,
+      73,
+      80,
+      83,
+      97,
+      101
+    ],
+    "fit_episodes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45
+    ],
+    "expert_action_wall": "No diagnostic-held8 or official Validation/Test expert action/state reads or gradients",
+    "deployment_inputs": [
+      "exact_language",
+      "action_hidden_RGB"
+    ],
+    "stride": 5
+  },
+  "training": {
+    "branch_kind": "controlled_full_state_fork_not_original_exact_resume",
+    "all_writer_and_native_meta_trainable": true,
+    "source_frozen": true,
+    "world_size": 2,
+    "first_macro": 1156,
+    "last_macro": 1183,
+    "updates_per_arm": 28,
+    "task_events_per_arm": 112,
+    "query_slots_per_arm": 3136,
+    "main_queries_per_event": 21,
+    "extra_queries_per_event": 7,
+    "main_weight": 0.25,
+    "extra_weight": 0.08333333333333333,
+    "extra_full_H_random_tau": true,
+    "donor_macros": [
+      1160,
+      1165,
+      1175,
+      1178
+    ],
+    "donor_occurrences": [
+      165,
+      166,
+      167,
+      168
+    ],
+    "arms": [
+      {
+        "id": "KEEP77",
+        "event_plan": "S00",
+        "zero_current_gradient_task": null,
+        "active_queries": 3136
+      },
+      {
+        "id": "SWAP76",
+        "event_plan": "S10",
+        "zero_current_gradient_task": null,
+        "active_queries": 3136
+      },
+      {
+        "id": "DROP77",
+        "event_plan": "S00",
+        "zero_current_gradient_task": 77,
+        "active_queries": 3024
+      }
+    ],
+    "event_mapping": [
+      {
+        "macro": 1156,
+        "S00_event_indices": [
+          4633,
+          4631,
+          4639,
+          4647
+        ],
+        "S10_event_indices": [
+          4633,
+          4631,
+          4639,
+          4647
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1157,
+        "S00_event_indices": [
+          4640,
+          4644,
+          4627,
+          4641
+        ],
+        "S10_event_indices": [
+          4640,
+          4644,
+          4627,
+          4641
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1158,
+        "S00_event_indices": [
+          4624,
+          4626,
+          4646,
+          4634
+        ],
+        "S10_event_indices": [
+          4624,
+          4626,
+          4646,
+          4634
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1159,
+        "S00_event_indices": [
+          4628,
+          4638,
+          4635,
+          4623
+        ],
+        "S10_event_indices": [
+          4628,
+          4638,
+          4635,
+          4623
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1160,
+        "S00_event_indices": [
+          4629,
+          4643,
+          4625,
+          4645
+        ],
+        "S10_event_indices": [
+          4629,
+          4643,
+          4625,
+          4645
+        ],
+        "slot_position": 1
+      },
+      {
+        "macro": 1161,
+        "S00_event_indices": [
+          4637,
+          4620,
+          4642,
+          4636
+        ],
+        "S10_event_indices": [
+          4637,
+          4620,
+          4642,
+          4636
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1162,
+        "S00_event_indices": [
+          4632,
+          4621,
+          4630,
+          4622
+        ],
+        "S10_event_indices": [
+          4632,
+          4621,
+          4630,
+          4622
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1163,
+        "S00_event_indices": [
+          4659,
+          4670,
+          4668,
+          4673
+        ],
+        "S10_event_indices": [
+          4659,
+          4670,
+          4668,
+          4673
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1164,
+        "S00_event_indices": [
+          4674,
+          4657,
+          4669,
+          4648
+        ],
+        "S10_event_indices": [
+          4674,
+          4657,
+          4669,
+          4648
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1165,
+        "S00_event_indices": [
+          4671,
+          4652,
+          4651,
+          4661
+        ],
+        "S10_event_indices": [
+          4671,
+          4652,
+          4651,
+          4661
+        ],
+        "slot_position": 0
+      },
+      {
+        "macro": 1166,
+        "S00_event_indices": [
+          4660,
+          4662,
+          4656,
+          4655
+        ],
+        "S10_event_indices": [
+          4660,
+          4662,
+          4656,
+          4655
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1167,
+        "S00_event_indices": [
+          4654,
+          4653,
+          4664,
+          4667
+        ],
+        "S10_event_indices": [
+          4654,
+          4653,
+          4664,
+          4667
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1168,
+        "S00_event_indices": [
+          4663,
+          4658,
+          4672,
+          4675
+        ],
+        "S10_event_indices": [
+          4663,
+          4658,
+          4672,
+          4675
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1169,
+        "S00_event_indices": [
+          4649,
+          4666,
+          4650,
+          4665
+        ],
+        "S10_event_indices": [
+          4649,
+          4666,
+          4650,
+          4665
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1170,
+        "S00_event_indices": [
+          4698,
+          4688,
+          4686,
+          4687
+        ],
+        "S10_event_indices": [
+          4698,
+          4688,
+          4686,
+          4687
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1171,
+        "S00_event_indices": [
+          4683,
+          4700,
+          4701,
+          4702
+        ],
+        "S10_event_indices": [
+          4683,
+          4700,
+          4701,
+          4702
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1172,
+        "S00_event_indices": [
+          4679,
+          4682,
+          4693,
+          4678
+        ],
+        "S10_event_indices": [
+          4679,
+          4682,
+          4693,
+          4678
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1173,
+        "S00_event_indices": [
+          4703,
+          4680,
+          4691,
+          4681
+        ],
+        "S10_event_indices": [
+          4703,
+          4680,
+          4691,
+          4681
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1174,
+        "S00_event_indices": [
+          4694,
+          4685,
+          4677,
+          4689
+        ],
+        "S10_event_indices": [
+          4694,
+          4685,
+          4677,
+          4689
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1175,
+        "S00_event_indices": [
+          4697,
+          4692,
+          4684,
+          4699
+        ],
+        "S10_event_indices": [
+          4697,
+          4692,
+          4684,
+          4699
+        ],
+        "slot_position": 3
+      },
+      {
+        "macro": 1176,
+        "S00_event_indices": [
+          4696,
+          4690,
+          4695,
+          4676
+        ],
+        "S10_event_indices": [
+          4696,
+          4690,
+          4695,
+          4676
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1177,
+        "S00_event_indices": [
+          4704,
+          4705,
+          4712,
+          4709
+        ],
+        "S10_event_indices": [
+          4704,
+          4705,
+          4712,
+          4709
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1178,
+        "S00_event_indices": [
+          4727,
+          4726,
+          4715,
+          4710
+        ],
+        "S10_event_indices": [
+          4727,
+          4726,
+          4715,
+          4710
+        ],
+        "slot_position": 0
+      },
+      {
+        "macro": 1179,
+        "S00_event_indices": [
+          4728,
+          4731,
+          4717,
+          4718
+        ],
+        "S10_event_indices": [
+          4728,
+          4731,
+          4717,
+          4718
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1180,
+        "S00_event_indices": [
+          4729,
+          4725,
+          4711,
+          4721
+        ],
+        "S10_event_indices": [
+          4729,
+          4725,
+          4711,
+          4721
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1181,
+        "S00_event_indices": [
+          4722,
+          4713,
+          4730,
+          4707
+        ],
+        "S10_event_indices": [
+          4722,
+          4713,
+          4730,
+          4707
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1182,
+        "S00_event_indices": [
+          4720,
+          4714,
+          4723,
+          4719
+        ],
+        "S10_event_indices": [
+          4720,
+          4714,
+          4723,
+          4719
+        ],
+        "slot_position": null
+      },
+      {
+        "macro": 1183,
+        "S00_event_indices": [
+          4716,
+          4706,
+          4708,
+          4724
+        ],
+        "S10_event_indices": [
+          4716,
+          4706,
+          4708,
+          4724
+        ],
+        "slot_position": null
+      }
+    ],
+    "gradient_gate": "both main and extra loss contributions for this task only; no other accumulated gradient cleared; no denominator renormalization",
+    "optimizer": "exact parent AdamW m/v, LR schedule, clip, decay; all 28 steps retained",
+    "branch_sampler": "branch cursor0..28 plus original macro/event references; no fabricated prior76 exposure",
+    "pilot_last_macro": 1160,
+    "pilot_counts_in_training": true,
+    "full_checkpoint_macros": [
+      1160,
+      1183
+    ],
+    "no_adaptive_continuation": true
+  },
+  "evaluation": {
+    "model_order": [
+      "P1155",
+      "KEEP77",
+      "SWAP76",
+      "DROP77"
+    ],
+    "parent_unupdated": true,
+    "branch_macro": 1183,
+    "tasks": [
+      {
+        "global_task_id": 14,
+        "suite": "libero_object",
+        "task_id": 4
+      },
+      {
+        "global_task_id": 21,
+        "suite": "libero_goal",
+        "task_id": 1
+      }
+    ],
+    "init_state_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "teacher_schedule": {
+      "seed": 20260911,
+      "mode": "per_init_ordinal",
+      "arm": "correct",
+      "K": 1,
+      "video_pool": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
+      ],
+      "without_replacement": true
+    },
+    "policy_env_seed": 7,
+    "new_rollouts": 400,
+    "pilot_rollouts": 8,
+    "pilot_counts_in_400": true,
+    "full_states": [
+      0,
+      25
+    ],
+    "full_cases": 16,
+    "continuous_T_plus_1_trace_all_rows": true,
+    "stage_predicates_all_rows": true,
+    "canonical_evaluation": true,
+    "contrasts": [
+      {
+        "id": "SWAP76_minus_DROP77",
+        "terms": {
+          "SWAP76": 1,
+          "DROP77": -1
+        }
+      },
+      {
+        "id": "KEEP77_minus_DROP77",
+        "terms": {
+          "KEEP77": 1,
+          "DROP77": -1
+        }
+      },
+      {
+        "id": "SWAP76_minus_KEEP77",
+        "terms": {
+          "SWAP76": 1,
+          "KEEP77": -1
+        }
+      },
+      {
+        "id": "KEEP77_minus_P1155",
+        "terms": {
+          "KEEP77": 1,
+          "P1155": -1
+        }
+      },
+      {
+        "id": "SWAP76_minus_P1155",
+        "terms": {
+          "SWAP76": 1,
+          "P1155": -1
+        }
+      },
+      {
+        "id": "DROP77_minus_P1155",
+        "terms": {
+          "DROP77": 1,
+          "P1155": -1
+        }
+      }
+    ],
+    "bootstrap": {
+      "cluster": "initial_state",
+      "joint_within_task": true,
+      "resamples": 20000,
+      "seed": 20260925,
+      "training_seeds": 1,
+      "multiplicity_adjusted": false
+    }
+  },
+  "first_donor_function_probe": {
+    "macro": 1160,
+    "arms": [
+      "KEEP77",
+      "SWAP76",
+      "DROP77"
+    ],
+    "tasks": [
+      14,
+      21
+    ],
+    "init_state_ids": [
+      0,
+      10,
+      20,
+      30,
+      40
+    ],
+    "query_control_step": 0,
+    "query_root": "/data0/user/ymdai/ember_runs/crossed_video_action_field_20260924",
+    "query_index": "query_index.jsonl",
+    "teacher_schedule": "same task/state schedule as final evaluation",
+    "flow_steps": 10,
+    "predictions": 30,
+    "fresh_complete_lora_conditions": 30,
+    "gradients": false,
+    "new_environment_rollouts": 0,
+    "action_output": [
+      "full50x7_normalized",
+      "first5_denormalized",
+      "first5_canonical_OSC"
+    ],
+    "primary_Goal_projection": "unit vector from initial akita_black_bowl_1 body xy to plate_1 body xy, analysis only"
+  },
+  "donor_FM_probe": {
+    "models": [
+      "P1155",
+      "KEEP77",
+      "SWAP76",
+      "DROP77"
+    ],
+    "tasks": [
+      76,
+      77
+    ],
+    "teacher_demo": 46,
+    "query_episodes": [
+      47,
+      48,
+      49
+    ],
+    "queries_per_task": 16,
+    "seed": 20260925,
+    "canonical_diagnostic_batch": true,
+    "random_tau_fullH": true,
+    "rows": 128,
+    "writer_conditions": 8,
+    "gradients": false,
+    "ten_flow_predictions": 0
+  },
+  "geometry": {
+    "persistent_displacement_cm": [
+      1,
+      2,
+      3
+    ],
+    "consecutive_control_samples": 5,
+    "eef_sample_step": 25,
+    "plate_first_separate_from_other_nontarget_objects": true,
+    "not_grasp_or_semantic_labels": true
+  },
+  "engineering": {
+    "max_nonformal_rollouts": 4,
+    "nonformal_task": 58,
+    "nonformal_state": 0,
+    "reuse_same_architecture_profile": true,
+    "official_data": false,
+    "frozen_runtime": "one clean pushed detached commit for all new formal computations",
+    "parent_provenance_separate": true,
+    "restore_from_1160_before_remaining": true,
+    "must_test": [
+      "event stream identity",
+      "task-only gradient gate",
+      "world2 sums and active gradients",
+      "source freeze",
+      "full optimizer scheduler rank RNG restore",
+      "correct sampler provenance",
+      "bank to canonical evaluation with continuous trace"
+    ]
+  },
+  "resources": {
+    "study_root": "/data0/user/ymdai/ember_runs/support_slot_credit_causality_20260925",
+    "new_data0_gib_max": 8,
+    "new_data1_mib_max": 768,
+    "formal_gpu_hour_cap": 8,
+    "initial_gpu_hours_estimate": [
+      2,
+      3
+    ],
+    "project_physical_gpu_max": 6,
+    "training_world_size": 2,
+    "independent_strg01_quotas_and_shared_capacity_required": true,
+    "both_nodes_live_admission_each_launch": true,
+    "normal_wait": "one persistent exit event wait; no periodic log or cache polling"
+  },
+  "completion": {
+    "path": "analysis/completion.json",
+    "required": [
+      "84 training macros",
+      "400 paired new rollouts",
+      "16 full cases",
+      "400 T+1 traces",
+      "30 first-donor predictions",
+      "128 donor FM rows",
+      "12 paired contrasts",
+      "RGL churn Jaccard",
+      "actual command resource provenance and all missing items"
+    ],
+    "stop_new_work_after_completion": true
+  },
+  "excluded": [
+    "new architecture",
+    "module freezes",
+    "new LR rank seed scan",
+    "automatic additional steps or checkpoints",
+    "deferred relational stage2",
+    "other wrong shuffled reversed controls",
+    "official Validation/Test",
+    "held expert labels",
+    "RL",
+    "deployment performance claims"
+  ]
+}

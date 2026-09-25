@@ -18,7 +18,12 @@ P/RAW/RB均以新统一冻结提交物化/评测：48个bank、八合法task×st
 首个task2/state32/teacher46三格pilot计入96；没有额外工程episode、预测矩阵、新采集/held/官方Val/Test。
 新study `/data0/user/ymdai/ember_runs/return_score_update_causality_20260925`；新data0≤3GiB、代码≤768MiB，
 预计.8–1.2 GPU-hours，含初始化/物化/工程/失败/评测硬限1.5小时，同时最多两卡、项目≤6。
-实际实现/资源准入由Sol负责，派发回执另记；登记不等于已开跑。本批完成主动Queue原件，停止新增实验。
+实际实现/资源准入由Sol负责。本批完成主动Queue原件，停止新增实验。
+设计/spec及§148裁决在`325a20b0`集成推送；以Queue派给原Sol任务，回执
+`01a0d8e1-6298-7b61-9302-4269e510c783`。14:05:02 UTC核对完整正文进入inProgress turn
+`01a0d8e1-629b-7b71-b998-77b7e9716803`，并读到Sol接手固定stage1、核对来源和隔离实现的明确回应。
+当前为已接手实现，尚未称GPU启动。正文/送达/回应在前批score-conditioning study的
+`coordination/score_update_{dispatch.txt,delivery.json}`；没有重复派发。
 
 ### 最近完成：冻结信用分解与主讨论裁决（2026-09-25）
 

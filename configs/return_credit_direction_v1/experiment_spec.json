@@ -1,0 +1,663 @@
+{
+  "schema_version": "ember_return_credit_direction_v1",
+  "study_id": "return_credit_direction_causality_20260925",
+  "status": "registered_single_direction_batch",
+  "design": "docs/designs/return_credit_direction_design.md",
+  "scientific_owner_thread": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+  "executor_thread": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+  "parent": {
+    "arm": "C_S00",
+    "macro": 1155,
+    "checkpoint": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/checkpoints/macro_00001155",
+    "training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+    "config": "configs/relational_support_causality_v1/train_C_S00.json",
+    "event_plan": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/training_events.json",
+    "world_size": 2,
+    "mutable": false,
+    "restore_each_case": [
+      "model",
+      "Adam_m_v_step",
+      "scheduler",
+      "rank0_rng",
+      "rank1_rng"
+    ],
+    "actual_optimizer_transition_per_candidate": [
+      1155,
+      1156
+    ],
+    "sequential_case_updates": false,
+    "restore": "all Writer parameters and fixed buffers only; fresh diagnostic SGD, no parent Adam/sampler continuation"
+  },
+  "data": {
+    "gradient_tasks": [
+      2,
+      5,
+      12,
+      17,
+      22,
+      25,
+      34,
+      37
+    ],
+    "diagnostic_held8_forbidden": [
+      0,
+      1,
+      14,
+      15,
+      20,
+      21,
+      36,
+      38
+    ],
+    "official_validation_test_read": false,
+    "deployment_teacher_actions_state_reward": false,
+    "teacher_frame_stride": 5,
+    "include_real_final_frame": true,
+    "teacher_camera": "agentview",
+    "full_action_horizon": 50,
+    "lora_targets": 38,
+    "lora_rank": 16,
+    "FM_event_plan": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/training_events.json",
+    "FM_events": [
+      {
+        "task": 2,
+        "event_index": 4620,
+        "occurrence": 165,
+        "teacher_demo": 34,
+        "query_seed": 8718189675677263617,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 5,
+        "event_index": 4622,
+        "occurrence": 165,
+        "teacher_demo": 13,
+        "query_seed": 1583862036955021796,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 12,
+        "event_index": 4624,
+        "occurrence": 165,
+        "teacher_demo": 38,
+        "query_seed": 8367169150746044198,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 17,
+        "event_index": 4626,
+        "occurrence": 165,
+        "teacher_demo": 8,
+        "query_seed": 5426963497494447905,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 22,
+        "event_index": 4628,
+        "occurrence": 165,
+        "teacher_demo": 5,
+        "query_seed": 7047393652329820214,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 25,
+        "event_index": 4629,
+        "occurrence": 165,
+        "teacher_demo": 36,
+        "query_seed": 9173293126052326048,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 34,
+        "event_index": 4633,
+        "occurrence": 165,
+        "teacher_demo": 2,
+        "query_seed": 5364887941983678881,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 37,
+        "event_index": 4635,
+        "occurrence": 165,
+        "teacher_demo": 45,
+        "query_seed": 7687574707375105932,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    ],
+    "FM_main_queries": 21,
+    "FM_extra_queries": 7,
+    "FM_queries_total": 224,
+    "FM_query_demos": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45
+    ],
+    "FM_gradient_task_weight": 0.125,
+    "FM_extra_loss_weight": 0.3333333333333333,
+    "FM_tau_full_H": "unchanged original events; neither endpoint nor prefix-only"
+  },
+  "collection": {
+    "model": "P",
+    "conditions": [
+      {
+        "task": 2,
+        "event_index": 4620,
+        "occurrence": 165,
+        "teacher_demo": 34,
+        "query_seed": 8718189675677263617,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 5,
+        "event_index": 4622,
+        "occurrence": 165,
+        "teacher_demo": 13,
+        "query_seed": 1583862036955021796,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 12,
+        "event_index": 4624,
+        "occurrence": 165,
+        "teacher_demo": 38,
+        "query_seed": 8367169150746044198,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 17,
+        "event_index": 4626,
+        "occurrence": 165,
+        "teacher_demo": 8,
+        "query_seed": 5426963497494447905,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 22,
+        "event_index": 4628,
+        "occurrence": 165,
+        "teacher_demo": 5,
+        "query_seed": 7047393652329820214,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 25,
+        "event_index": 4629,
+        "occurrence": 165,
+        "teacher_demo": 36,
+        "query_seed": 9173293126052326048,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 34,
+        "event_index": 4633,
+        "occurrence": 165,
+        "teacher_demo": 2,
+        "query_seed": 5364887941983678881,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 37,
+        "event_index": 4635,
+        "occurrence": 165,
+        "teacher_demo": 45,
+        "query_seed": 7687574707375105932,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "replicas": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    ],
+    "task_count": 8,
+    "groups": 32,
+    "replicas_per_group": 4,
+    "episodes": 128,
+    "pilot": {
+      "task": 2,
+      "state": 0,
+      "replicas": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "episodes": 4,
+      "included_in_128": true
+    },
+    "reward": "official binary success only",
+    "state_distribution": "current P under registered normalized Gaussian action exploration",
+    "covariance": {
+      "time_major": true,
+      "action_dim": 7,
+      "execution_steps": 5,
+      "temporal_rho": 0.8,
+      "action_std": [
+        0.05,
+        0.05,
+        0.05,
+        0.05,
+        0.05,
+        0.05,
+        0.1
+      ],
+      "formula": "kron(C_rho,diag(action_std**2))"
+    },
+    "native_flow_seed_root": 7,
+    "native_flow_seed_function": "canonical policy_noise_seed(7,suite,local_task,init_state_id,replan); same across four replicas",
+    "exploration_seed": "int(np.random.SeedSequence([20260925,global_task,init_state_id,replica,replan,0x524C]).generate_state(1,dtype=np.uint64)[0]) & ((1<<63)-1)",
+    "exploration_sample": "CPU torch.Generator(seed); randn(35,float32) @ lower_cholesky(Sigma).T; add to first5 normalized actions before canonical postprocess; no extra clipping",
+    "reservoir_seed": "int(np.random.SeedSequence([20260925,global_task,init_state_id,replica,0xDEC1]).generate_state(1,dtype=np.uint64)[0]) & ((1<<63)-1)",
+    "decision_sample": "uniform without replacement, M=min(4,Q), numpy default_rng(reservoir_seed), Algorithm R using integers(0,Q_so_far) for replacements; reward-independent",
+    "maximum_retained_decisions": 512,
+    "early_success_latent": "retain full actually sampled 35-vector and joint Gaussian score; executed prefix mask separately; no post-success decisions",
+    "additional_engineering_smoke_episodes_max": 4,
+    "zero_decision_case": "no score contribution, retained reward/trace, no Q/M division"
+  },
+  "gradient": {
+    "return_direction": "positive expected-return score gradient",
+    "return_weight": 0.0078125,
+    "advantage": "R_i - mean(other three replicas in same task/teacher/init-state group)",
+    "decision_weight": "Q/M, not 1/M alone",
+    "cotangent": "advantage * (Q/M) * inverse_covariance @ (latent_action - collection_mean) / 128",
+    "flow_vjp": "actual ten Euler steps, full 50x32 state, native source precision, all 38 targets both A and B; output first5x7",
+    "writer_vjp": "full current video Writer and three Meta blocks, frozen Source, no adapted-activation cache across versions",
+    "stop_gradients": [
+      "environment",
+      "rewards",
+      "advantages",
+      "latent_actions",
+      "collection_means",
+      "native_flow_noise",
+      "covariance"
+    ],
+    "halve_diagnostic": "init states0,2 versus1,3, each intact four-replica groups, each covers8 tasks; report raw per-half directions and task contributions, no weighting or selection",
+    "FM_direction": "negative gradient of (1/8)*sum_task(mean21 + mean7/3)",
+    "all_advantages_zero": "complete collection/FM audit, record unidentifiable, do not invent R/NEG candidates or run candidate evaluation",
+    "direction_geometry_readout": "norm and dot/cosine of g_R, g_F and intact even/odd state-group g_R estimates; descriptive, not selection"
+  },
+  "intervention": {
+    "states": [
+      "P",
+      "R",
+      "NEG",
+      "FM"
+    ],
+    "updates_per_candidate": 1,
+    "optimizer": "fresh torch.optim.SGD, momentum0, weight_decay0, no clipping; independent parent initialization",
+    "scheduler": "fresh constant schedule, one update",
+    "step_norm": 0.17076466164261486,
+    "step_norm_source": "RMS of seven BASE actual total parameter displacements in metatask_lookahead_credit_20260925; fixed before current data",
+    "R": "phi + r*g_R/||g_R||",
+    "NEG": "phi - r*g_R/||g_R||",
+    "FM": "phi + r*g_F/||g_F||",
+    "zero_gradient": "record and stop corresponding non-identifiable candidate; never divide by artificial epsilon/amplify zero",
+    "no_scale_search": true,
+    "claim_equal_function_displacement": false,
+    "save_actual_action_displacement": true,
+    "gradient_weights_and_optimizer_save": true
+  },
+  "evaluation": {
+    "states": [
+      "P",
+      "R",
+      "NEG",
+      "FM"
+    ],
+    "task_ids": [
+      2,
+      5,
+      12,
+      17,
+      22,
+      25,
+      34,
+      37
+    ],
+    "init_state_ids": [
+      32,
+      33,
+      34,
+      35
+    ],
+    "teacher_demos": [
+      46,
+      47
+    ],
+    "episodes_per_state": 64,
+    "total_episodes": 256,
+    "exploration": false,
+    "seed": 7,
+    "canonical_preprocessing_and_horizons": true,
+    "fresh_P_references": true,
+    "cross_arm_rng_pairing": true,
+    "cross_teacher_rng_pairing": true,
+    "finite_teacher_reuse": "explicit mechanistic pool, each teacher reused across4 state IDs; not strict400/50-video qualification",
+    "comparisons": [
+      [
+        "R",
+        "P"
+      ],
+      [
+        "NEG",
+        "P"
+      ],
+      [
+        "FM",
+        "P"
+      ],
+      [
+        "R",
+        "NEG"
+      ],
+      [
+        "R",
+        "FM"
+      ],
+      [
+        "NEG",
+        "FM"
+      ]
+    ],
+    "all_per_task_suite_success_sets": true,
+    "RGL_churn_jaccard": true,
+    "per_teacher_and_equal_teacher_average": true,
+    "no_checkpoint_selection": true,
+    "bootstrap": {
+      "replicates": 20000,
+      "seed": 20260925,
+      "hierarchy": [
+        "8 tasks with replacement",
+        "4 states within sampled task with replacement"
+      ],
+      "paired_teachers": true,
+      "joint_draws_for_all_comparisons": true,
+      "descriptive_only": true
+    }
+  },
+  "capture": {
+    "all_384_action_state_traces": true,
+    "all_384_continuous_object_eef_gripper_T_plus_1": true,
+    "all_384_stage_predicates": true,
+    "collection_selected_decisions": "RGB/state/native noise/mu_old/unclipped u/Q/M/batch/executed mask sufficient for real flow replay and complete cotangent",
+    "full_cases": {
+      "evaluation_tasks": [
+        2,
+        12,
+        22,
+        34
+      ],
+      "state_ids": [
+        32
+      ],
+      "teachers": [
+        46
+      ],
+      "all_four_arms": true,
+      "dual_camera": true,
+      "count": 16
+    }
+  },
+  "implementation": {
+    "single_clean_pushed_detached_commit": true,
+    "parent_read_only": true,
+    "historical_reference": "e1ea3596 writer/flow.py and rl_math.py; principles only, no old joint trainer or .1/16 factor or trust-halving revival",
+    "reuse_current_canonical_evaluator_writer": true,
+    "passive_task_registry_audit_before_launch": true,
+    "flow_parity_first5_normalized_rms_max": 0.01,
+    "normal_BF16_differences_allowed": true,
+    "activation_checkpoint_flow_allowed": true,
+    "no_prefix_fake_or_teacher_privileged_input": true,
+    "resume": "atomic completed groups/candidates/panels; no resampling completed rows or reusing partial trajectories as complete",
+    "zero_action_environment_registry_probes_max": 8,
+    "registry_probe_scope": "one per registered task, environment initialization and passive identity read only, no env.step/policy forward/reward selection"
+  },
+  "resources": {
+    "study_root": "/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925",
+    "formal_gpu_hours_expected": [
+      2,
+      3
+    ],
+    "formal_gpu_hours_max": 4,
+    "data0_new_gib_max": 8,
+    "data1_new_code_mib_max": 768,
+    "preferred_gradient_world_size": 2,
+    "gradient_topology": "same node",
+    "project_physical_gpus_max": 6,
+    "live_both_nodes_each_launch": true,
+    "strg01_independent_quotas_before_new_root": true,
+    "formal_episodes_max": 384,
+    "engineering_smoke_episodes_max": 4,
+    "normal_wait": "single continuous process exit wait; no periodic log/checkpoint/cache polls",
+    "metering": "account physical GPU allocation from launch/CUDA initialization through completion including materialization, VJP and candidate replay; core timers after model build are not conservative bounds"
+  },
+  "stop": "after registered batch or genuine resource/engineering/scientific blocker; Queue main with raw results/limitations/resources; no long RL, extra seed, scale, checkpoint, held or official Val/Test",
+  "readouts": {
+    "collection_decision_replays": "at most512 fixed real decisions, parent VJP/replay and each of R/NEG/FM once; full50x7 normalized, first5 environment/OSC, observed finite displacement; no extra query selection",
+    "candidate_replay_predictions_max": 1536,
+    "parent_replay_predictions_max": 512,
+    "extra_teacher_or_expert_queries": 0,
+    "counts_exclude_recomputation_internal_to_activation_checkpointing": true
+  },
+  "interpretation_limits": [
+    "FM and return use expert versus on-policy query states; objective and occupancy are not separately identified",
+    "matched Euclidean parameter length does not imply matched function change",
+    "return gradient targets J_Sigma; independent canonical evaluation is J0, so a negative is also compatible with exploration mismatch",
+    "one parent, one collection seed, eight seen gradient tasks, two held-out videos and four evaluation states per task; no new-task or video necessity claim",
+    "FM arm is a normalized fresh-SGD direction, not the original Adam training update"
+  ]
+}

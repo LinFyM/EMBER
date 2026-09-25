@@ -1,5 +1,8 @@
 # 任务分组lookahead是否改变有用学习信用：先检验计算前提
 
+> 已完成并关闭：实现99c6491a，原始结果与主讨论核验见findings§146。TASK没有提供超越BASE的收益依据；
+> 不自动接长训练。以下保留原注册合同，不作为当前执行授权。
+
 2026-09-25。是否active只看progress；机器合同`configs/metatask_lookahead_credit_v1/experiment_spec.json`。
 主讨论01a0cd94-65da-7b22-8ca9-7ba35f454632；执行者为现有Sol 01a0cd90-ebb7-77a1-a20b-a858825d2f66。
 本批是七组独立单步学习诊断，不是连续训练、候选模型选择或新部署评测。

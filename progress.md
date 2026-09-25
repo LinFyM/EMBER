@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：单项监督短程干预已复核，登记跨任务lookahead的单步计算诊断（2026-09-25）
+## 当前状态：lookahead已复核关闭，登记成功信用的有限方向干预（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,21 +9,28 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近单项监督短程批次已完成。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近lookahead七组批次已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[任务分组lookahead计算诊断](docs/designs/metatask_lookahead_credit_design.md)**，
-机器合同`configs/metatask_lookahead_credit_v1/experiment_spec.json`。这是七个独立case的单步学习计算，
-共同恢复C_S00@1155，各用原1156..1162的一组四task事件，合计恰好覆盖S00 fit28各一次。
-普通BASE、TASK跨task分组lookahead、MIX混合task分组参照；每case不接续上一case，不选择部署模型。
-固定3584条合法non-held独立episode FM、448次真实10-flow、224诊断bank，无新rollout、held输入或正式Val/Test读取。
-新data0≤6GiB/data1代码≤768MiB，正式≤4 GPU-hours、world2且项目≤6物理卡；Sol核对原件/准入后执行。
-完成七组立即主动Queue原件并停止新增实验；主讨论继续核验，只有计算前提支持才另登记短程共同学习及闭环。
-合同和上一批裁决在`7cce1129`推送。07:34:59 UTC（北京时间15:34）以Queue发给现有Sol，
-回执`01a0d77d-2983-7970-b915-a2b5c93210bc`；07:35:30核对完整正文进入inProgress turn
-`01a0d77d-2988-7ef1-8a81-e13ad54bccca`，并读到Sol明确接手独立父状态/随机流审阅、隔离实现与七组执行的回应。
-正文、回执和逐字投递/回应保存在上一批study的
-`coordination/metatask_lookahead_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
-当前是已接手实现与工程核对，不据此称正式计算已经开始或计算前提已经通过。
+**当前active design为[成功信用方向干预](docs/designs/return_credit_direction_design.md)**，
+机器合同`configs/return_credit_direction_v1/experiment_spec.json`。固定C_S00@1155、八个合法fit任务，
+一次128条探索采集产生共享回报方向；比较其正/反方向、同teacher原FM方向及未更新父。
+候选各自只做一次fresh SGD、固定参数步长，不继承父Adam、不做连续训练或部署适应。
+随后独立states32..35与teacher46/47最多256闭环、16full；总384正式episode，工程smoke最多4。
+没有held输入/梯度、官方Val/Test、strict400资格或新视频必要性声明。全组无reward变化则报告未识别并停止候选评测。
+新data0≤8GiB/data1代码≤768MiB，正式≤4 GPU-hours、项目≤6物理卡。先验收现有evaluator/真实10-flow VJP，
+由Sol负责隔离实现、准入、执行和退出后主动Queue；当前设计已登记，派发记录在核验送达后补入。
+
+### 最近完成：lookahead七组及主讨论裁决（2026-09-25）
+
+唯一实现`99c6491a27f68d124bb4a13d5e23ed1c2632665b`，根
+`/data0/user/ymdai/ember_runs/metatask_lookahead_credit_20260925`；七case、224bank、3584FM、448实际flow，全部exit0。
+主讨论审阅真实权重/梯度路径并从所有rank rows/flow NPZ独立复算六个bootstrap和配对、有限分解、实际步幅，
+原件`analysis/`，核验`coordination/main_recheck.{py,json}`。完整解释见findings§146。
+TASK−BASE独立FM及前缀MSE均无收益依据；TASK−MIX前缀差约94%集中在单个夹爪query，不能当普遍修复。
+1.224%最大分组梯度余项限制细小修正归因，不据此追加精度试验或认定工程错误。
+本批关闭，不延长lookahead、不把单步代理当闭环。case核心计算计时1.0195 GPU-hours（不含初始化），data0新增3.294GiB。
+原派发为Queue message `01a0d77d-2983-7970-b915-a2b5c93210bc`，turn `01a0d77d-2988-7ef1-8a81-e13ad54bccca`；
+当时完整正文与Sol明确回应已核对，记录在前批support-slot study的`coordination/metatask_lookahead_*`。
 
 ### 最近完成：单项监督的有限学习与裁决（2026-09-25）
 

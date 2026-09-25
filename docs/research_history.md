@@ -4,6 +4,19 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-25：lookahead七组完成，没有超越普通更新；登记实际成功信用方向试验
+
+唯一正式实现99c6491a，研究根`/data0/user/ymdai/ember_runs/metatask_lookahead_credit_20260925`。
+七独立case覆盖fit28一次，224bank/3584FM/448真实flow/七份exit0齐全；21候选及28虚拟权重不称续训checkpoint。
+主讨论核对实现与全部原始rows/NPZ/实际位移，重算六个配对bootstrap，原件`analysis/`及`coordination/main_recheck.{py,json}`。
+TASK−BASE的FM与前缀MSE均未给出收益依据；TASK−MIX前缀差约94%由单个夹爪query贡献，保留原件不删除该点。
+正常BF16分组余项最多1.224%，未分离其全部功能传播，不冒称纯曲率因果，也不据此追加精度排查。
+完整判断findings§146；本批关闭，case核心计时1.0195 GPU-hours（不含初始化）、3.294GiB，无新环境步/held输入/部署成绩。
+
+登记[成功信用方向干预](designs/return_credit_direction_design.md)：同父、八合法训练task、128探索episode，
+一次共享回报梯度与反方向、原FM方向各自小更新；与父在独立state/two correct videos最多256闭环。
+不把回报方向改善直接归罪FM，也不预授权长RL或held/Test。是否active与送达只看progress。
+
 ## 2026-09-25：单项监督有限学习的方向预测未成立；先检验任务分组lookahead的计算前提
 
 正式唯一实现e58e8169，父C_S00@1155来源7dc95edb。Study为

@@ -1,6 +1,6 @@
 # EMBER task plan
 
-## 当前：单项监督的方向预测未成立，先检验跨任务lookahead的计算前提（2026-09-25）
+## 当前：lookahead没有收益依据，直接检验成功信用的共享学习方向（2026-09-25）
 
 Owner已指定本任务`01a0cd94-65da-7b22-8ca9-7ba35f454632`接管主讨论与科学判断，现有Sol任务
 `01a0cd90-ebb7-77a1-a20b-a858825d2f66`负责具体实现和实验。双方实际身份已核对并登记，旧暂停不阻断既定四臂。
@@ -19,11 +19,17 @@ Goal四格39/38/19/28支持后续条件映射传递损害，读取适配部分�
 P/KEEP/SWAP/DROP的Object46/41/43/39、Goal40/42/45/48；新增76的第一步作用在五个固定Goal初态均远离plate，
 保留77也未提供预期Goal保护。不能给task贴固定有害标签，不能把DROP的单任务高点称为修复，也不延长此窗口追逐预期。
 
-当前登记[任务分组lookahead计算诊断](docs/designs/metatask_lookahead_credit_design.md)：固定同一C00@1155，
-取原七组事件覆盖fit28，每组均独立从父状态做BASE、真实task分组及混合task分组的单步计算。
-先检查学习信用在独立episode与真实10-flow前缀上的作用，不预先开启新长训练、held闭环或架构大改。
-机器合同`configs/metatask_lookahead_credit_v1/experiment_spec.json`；3584条只读FM、448次真实10-flow，无新环境步。
-这不是“梯度一致就是根因”的宣言；只有计算前提可信，才另登记有限共同学习及配对闭环，验证绝对能力、保持和有益视频。
+[任务分组lookahead计算诊断](docs/designs/metatask_lookahead_credit_design.md)七组已完成并关闭，见findings§146。
+TASK没有优于BASE；MIX变差不能当作TASK有效。普通FM与实际动作代理仍不等同于闭环能力，
+正常BF16余项保留为辨识限制，不开启追逐精度的实验。
+
+当前登记[成功信用方向干预](docs/designs/return_credit_direction_design.md)，机器合同
+`configs/return_credit_direction_v1/experiment_spec.json`。八个合法训练task固定父C00@1155，先采集128条当前policy探索轨迹，
+仅用官方成功标签形成一个共享回报梯度；与其反向、同teacher原FM方向各做一次相同参数步长的独立更新。
+四格含未更新父，在独立初态及两条正确视频最多256闭环；零奖励差异时登记未识别而不虚构学习信号。
+数学问题是闭环信用是否能经现有条件映射变成可转移的能力，方向反转提供对照；不是预设RL能救场。
+本批FM与回报的query状态分布不同，步长也不保证相同功能变化；必须如实限制归因。
+不预授权长RL、更多seed/尺度、held/官方Val/Test或架构改造，正结果也不直接证明视频必要性。
 实际派发、资源与执行状态见[progress](progress.md)。
 
 目标是提高正确条件下的绝对闭环能力，并建立有益的视频增量，理解能力保持和跨任务迁移；不是只做完一个矩阵。
@@ -39,8 +45,8 @@ Owner纠正主讨论在上一批结束、下一合同未定稿时停止的错误
 Owner要求开放架构与训练方式，参考元学习/VLA，同时保留两个月形成的自身特色。
 主讨论已核对元模仿学习、Vid2Robot/VIMA、LAPA及Doc-to-LoRA原始来源，并与已有动态读取、原生纠正、
 语义路径和功能蒸馏的正负证据对应，见[外部机制与EMBER主线](docs/analyses/external_mechanisms_and_ember_identity_20260924.md)。
-这些文献没有直接选定新架构。后继lookahead仅借鉴MLDG/Fish的跨任务更新思想，具体数学、不同控制目标的适用限制、
-混合分组参照和小试停止条件另在当前设计登记，不能以文献结果保证本项目改善。
+这些文献没有直接选定新架构。已结束lookahead借鉴MLDG/Fish，但未取得超过BASE的收益，不恢复该路线的长训练。
+当前成功信用采用明确的Gaussian score估计和正反方向干预；旧RL profile只是实现参考，不能替代本批科学证据。
 继续区分条件信息是否可辨识、视频知识是否被提取、控制作用是否能编译、以及获取后的能力是否保持。
 保留的特色是可检验的教学编译与原生知识利用；读取器、表示、参数生成和训练组织均可据证据实质重构。
 

@@ -286,6 +286,11 @@ def _worker(stage, spec, root, config, commit, physical_gpu, queue, stop):
         raise
 
 
+def same_common_seed_prefix(left, right):
+    common = min(len(left), len(right))
+    return common > 0 and left[:common] == right[:common]
+
+
 def check_pilot(spec, root, commit):
     keys = tuple((cell, 2, 34, 0) for cell in CELLS)
     rows = []
@@ -294,13 +299,14 @@ def check_pilot(spec, root, commit):
         if payload["implementation_commit"] != commit or tuple(payload["key"]) != key:
             raise ValueError("objective-alignment pilot identity changed")
         rows.append(payload["row"])
-    if (any(row["policy_noise_seeds"] != rows[0]["policy_noise_seeds"] for row in rows)
+    if (any(not same_common_seed_prefix(row["policy_noise_seeds"], rows[0]["policy_noise_seeds"])
+            for row in rows)
             or rows[0]["bank_record"] != rows[1]["bank_record"]
             or rows[2]["bank_record"] != rows[3]["bank_record"]
-            or rows[0]["diagnostic_exploration"]["noise_seeds"] !=
-               rows[1]["diagnostic_exploration"]["noise_seeds"]
-            or rows[2]["diagnostic_exploration"]["noise_seeds"] !=
-               rows[3]["diagnostic_exploration"]["noise_seeds"]):
+            or any(not same_common_seed_prefix(
+                row["diagnostic_exploration"]["noise_seeds"],
+                rows[0]["diagnostic_exploration"]["noise_seeds"])
+                for row in rows)):
         raise ValueError("objective-alignment pilot pairing or bank reuse changed")
     starts = []
     for row in rows:

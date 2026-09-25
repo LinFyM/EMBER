@@ -31,7 +31,8 @@ from scripts.return_credit_analysis import _paired_native_noise
 from scripts.return_score_update import SPEC_PATH as SCORE_UPDATE_SPEC, bank_keys, episode_keys
 from scripts.return_score_update_analysis import _bootstrap as score_update_bootstrap, _compare as score_update_compare
 from ember.pi05_source_checkpoint import read_json
-from scripts.return_objective_alignment import SPEC_PATH as ALIGNMENT_SPEC, bank_keys as alignment_banks, episode_keys as alignment_episodes
+from scripts.return_objective_alignment import (SPEC_PATH as ALIGNMENT_SPEC, bank_keys as alignment_banks,
+    episode_keys as alignment_episodes, same_common_seed_prefix)
 
 
 def _contract(enabled=False):
@@ -135,6 +136,13 @@ def test_objective_alignment_planner_copies_one_pre_noise_mean_without_extra_for
     expected = add_exploration_noise(torch.full((1, 50, 7), 2.),
         [expected_slot], task=task, contract=contract)
     torch.testing.assert_close(slot["replay_action_chunks"][0], expected)
+
+
+def test_objective_alignment_pairs_only_replans_both_episodes_actually_reached():
+    assert same_common_seed_prefix([11, 12], [11, 12, 13])
+    assert same_common_seed_prefix([11, 12, 13], [11, 12])
+    assert not same_common_seed_prefix([11, 12], [11, 99, 13])
+    assert not same_common_seed_prefix([], [11])
 
 
 def test_score_update_registered_96_scope_and_joint_teacher_state_bootstrap():

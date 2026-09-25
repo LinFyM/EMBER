@@ -16,7 +16,8 @@ from ember.pi05_eval_contract import policy_noise_seed
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.materialization import file_record
 from scripts.return_objective_alignment import (CELLS, SPEC_PATH, _bank_path, _episode_path,
-    _metadata, authority, bank_keys, bank_record, episode_contract, episode_keys)
+    _metadata, authority, bank_keys, bank_record, episode_contract, episode_keys,
+    same_common_seed_prefix)
 
 
 CONTRASTS = {
@@ -109,15 +110,16 @@ def _check_pairing(spec, root, rows_by_key, first):
         for state in condition["init_state_ids"]:
             paired = [first[cell, task, teacher, state] for cell in CELLS]
             group = [rows_by_key[cell, task, teacher, state] for cell in CELLS]
-            if (any(row["policy_noise_seeds"] != group[0]["policy_noise_seeds"] for row in group)
+            if (any(not same_common_seed_prefix(row["policy_noise_seeds"], group[0]["policy_noise_seeds"])
+                    for row in group)
                     or any(np.max(np.abs(item["first_state"] - paired[0]["first_state"])) > 1e-4
                            for item in paired[1:])
                     or group[0]["bank_record"] != group[1]["bank_record"]
                     or group[2]["bank_record"] != group[3]["bank_record"]
-                    or group[0]["diagnostic_exploration"]["noise_seeds"] !=
-                       group[1]["diagnostic_exploration"]["noise_seeds"]
-                    or group[1]["diagnostic_exploration"]["noise_seeds"] !=
-                       group[3]["diagnostic_exploration"]["noise_seeds"]):
+                    or any(not same_common_seed_prefix(
+                        row["diagnostic_exploration"]["noise_seeds"],
+                        group[0]["diagnostic_exploration"]["noise_seeds"])
+                        for row in group)):
                 raise ValueError("objective-alignment four-cell initial query/bank/RNG pairing changed")
 
 

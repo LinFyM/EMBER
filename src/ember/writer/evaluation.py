@@ -25,6 +25,7 @@ from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, adapter_metada
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
                                          inspect_diagnostic_contract)
 from ember.writer.relational_contract import CONFIG_SCHEMA as RELATIONAL_CONFIG_SCHEMA, registered_stage1_bank_panel
+from ember.writer.language_content_contract import validate_evaluation_bank
 
 
 EVALUATION_SCHEMA = "ember_video_writer_eval_adapter_v1"
@@ -187,7 +188,8 @@ def _validate_round(selection, rows, require_formal) -> None:
 
 
 def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal,
-                   native_reader_transfer_cell=None, support_slot_model=None) -> None:
+                   native_reader_transfer_cell=None, support_slot_model=None,
+                   language_content_panel=None) -> None:
     role = manifest["evaluation_role"]
     selection = _selection(manifest["selection"])
     rows = manifest["tasks"]
@@ -214,7 +216,11 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
             requested = tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ()))
             if (requested != tuple(selection["init_state_ids"])
                     and not ((native_reader_transfer_cell or support_slot_model)
-                             and requested in ((0,), tuple(range(1, 50))))):
+                             and requested in ((0,), tuple(range(1, 50))))
+                    and not (language_content_panel is not None
+                             and language_content_panel["model"] == "B630"
+                             and language_content_panel["kind"] == "held_correct"
+                             and requested == tuple(range(10)))):
                 raise ValueError("bank and evaluator must use the same exact fixed init states")
 
 
@@ -300,14 +306,18 @@ def inspect_horizon_writer_bank(
     native_reader_transfer_cell: str | None = None,
     support_slot_model: str | None = None,
     support_slot_phase: str = "final",
+    language_content_panel: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Validate condition provenance and paired row coverage before workers start."""
     try:
         path = manifest_path.resolve()
         manifest = read_json(path)
         _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal,
-                       native_reader_transfer_cell, support_slot_model)
+                       native_reader_transfer_cell, support_slot_model, language_content_panel)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
+        if language_content_panel is not None:
+            validate_evaluation_bank(language_content_panel, path, manifest, run,
+                                     git_state(Path(__file__).resolve().parents[3])["commit"])
         panel = _validate_registered_bank_origin(manifest, path, run, checkpoint,
                                                   native_reader_transfer_cell, support_slot_model,
                                                   support_slot_phase)

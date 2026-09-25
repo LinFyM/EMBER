@@ -29,6 +29,10 @@ from ember.writer.training import (CONDITIONAL_CONFIG_SCHEMA, CONDITIONAL_EXPERI
 from ember.writer.relational_contract import (CONFIG_SCHEMA as RELATIONAL_CONFIG_SCHEMA,
     UPDATE_VERSION as RELATIONAL_UPDATE_VERSION, validate_config as _relational_config,
     registered_stage1_bank_panel)
+from ember.writer.language_content_contract import (
+    CONFIG_SCHEMA as LANGUAGE_CONTENT_CONFIG_SCHEMA, bank_panel as language_content_bank_panel,
+    validate_config as _language_content_config,
+)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
@@ -78,9 +82,14 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     expected = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world_size))}
     config = run["config"]
     data = config.get("data", {})
-    conditional = config.get("schema_version") in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}
+    conditional = config.get("schema_version") in {
+        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA}
     if conditional:
-        (_relational_config if config["schema_version"] == RELATIONAL_CONFIG_SCHEMA else _conditional_config)(config)
+        {RELATIONAL_CONFIG_SCHEMA: _relational_config,
+         CONDITIONAL_CONFIG_SCHEMA: _conditional_config,
+         LANGUAGE_CONTENT_CONFIG_SCHEMA: _language_content_config}[config["schema_version"]](config)
+        if config["schema_version"] == LANGUAGE_CONTENT_CONFIG_SCHEMA and macro > 630:
+            raise ValueError("language-content bank cannot use a checkpoint after macro630")
         parameterization = config["experiment"]["parameterization"]
         observer = {**observer, "route": parameterization}
         identities = (
@@ -261,7 +270,8 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 
 def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, Any]:
     observer = observer_mode_contract(run["model_config"])
-    conditional = run.get("config", {}).get("schema_version") in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}
+    conditional = run.get("config", {}).get("schema_version") in {
+        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA}
     if conditional:
         config = run["config"]
         parameterization = config["experiment"]["parameterization"]
@@ -298,6 +308,9 @@ def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, A
         if config["schema_version"] == RELATIONAL_CONFIG_SCHEMA:
             method["study_id"] = config["experiment"]["kind"]
             method["training_pool"] = config["experiment"]["pool"]
+        if config["schema_version"] == LANGUAGE_CONTENT_CONFIG_SCHEMA:
+            method["study_id"] = config["experiment"]["kind"]
+            method["language_content_path"] = config["experiment"]["language_content_path"]
         if arm in CONTROL_ARMS:
             method["diagnostic_control"] = arm
             method["control_transform"] = ("identity_zero_delta_without_RGB_reads" if arm == "no_video" else
@@ -524,7 +537,8 @@ def _materialize(
         reusable=reusable, lora_path=lora_path, no_video=selection["arm"] == "no_video",
         native_transfer=native_transfer)
     no_video = selection["arm"] == "no_video"
-    conditional = run.get("config", {}).get("schema_version") in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}
+    conditional = run.get("config", {}).get("schema_version") in {
+        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA}
     parameterization = run["config"].get("experiment", {}).get("parameterization", "video_writer")
     uses_video = parameterization == "video_writer" and not no_video
     compiler_invocations = sum(int(row.get("writer_invocations", 0)) for row in conditions.values())
@@ -602,6 +616,9 @@ def _validate_conditional_selection(selection: Mapping[str, Any], config: Mappin
     if config["schema_version"] == RELATIONAL_CONFIG_SCHEMA:
         registered_stage1_bank_panel(config, selection)
         return
+    if config["schema_version"] == LANGUAGE_CONTENT_CONFIG_SCHEMA:
+        # The exact output/checkpoint identity is checked by _registered_request_panel.
+        return
     spec = read_json(REPO_ROOT / config["study_spec"])
     evaluation = spec["evaluation"]
     held, seen = evaluation["diagnostic_held"], evaluation["seen"]
@@ -626,7 +643,13 @@ def _validate_conditional_selection(selection: Mapping[str, Any], config: Mappin
 
 def _registered_request_panel(request, run, record):
     schema = run.get("config", {}).get("schema_version")
-    if schema not in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}:
+    if schema not in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA}:
+        return None
+    if schema == LANGUAGE_CONTENT_CONFIG_SCHEMA:
+        language_content_bank_panel(run["config"], request["selection"],
+                                    checkpoint=Path(record["path"]), output=Path(request["output"]))
+        if request.get("reuse_manifest") is not None or request.get("diagnostic_contract") is not None:
+            raise ValueError("language-content banks require fresh complete correct/other video forward")
         return None
     _validate_conditional_selection(request["selection"], run["config"])
     panel = None
@@ -691,7 +714,9 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     first = inspected[0][0]
     expected = (first["source"], first["model_config"], first["config"]["observer"])
     for run, _ in inspected:
-        if (run["source"], run["model_config"], run["config"]["observer"]) != expected:
+        if ((run["source"], run["model_config"], run["config"]["observer"]) != expected
+                or run["config"].get("experiment", {}).get("language_content_path")
+                   != first["config"].get("experiment", {}).get("language_content_path")):
             raise ValueError("resident batch requires identical source, model, and observer contracts")
     diagnostics = [inspect_diagnostic_contract(request.get("diagnostic_contract"), selection=request["selection"],
                    checkpoint=record, run=run, asset_root=asset_root)

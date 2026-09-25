@@ -237,6 +237,8 @@ class LanguageSemanticCore(torch.nn.Module):
             "language_content_scale",
             torch.nn.Parameter(torch.zeros(())) if language_content_path else None,
         )
+        self.capture_forward_summary = False
+        self.last_forward_summary = None
 
     def _compose_language(self, content: torch.Tensor, valid_task_tokens: torch.Tensor) -> torch.Tensor:
         positions = torch.arange(
@@ -269,6 +271,16 @@ class LanguageSemanticCore(torch.nn.Module):
             valid_frames,
             valid_task_tokens,
         )
+        if self.capture_forward_summary and self.training and torch.is_grad_enabled():
+            mask = valid_task_tokens[..., None].to(content.dtype)
+            frame = (content.detach().float() * mask).flatten()
+            scaled_text = ((self.language_content_scale.detach() if self.language_content_scale is not None
+                            else 0.0) * text_queries.detach().float() * mask).flatten()
+            self.last_forward_summary = {
+                "valid_token_scaled_text_l2": scaled_text.norm(),
+                "valid_token_frame_read_l2": frame.norm(),
+                "valid_token_inner_product": torch.dot(scaled_text, frame),
+            }
         if self.language_content_scale is not None:
             content = content + self.language_content_scale * text_queries
         return self._compose_language(content, valid_task_tokens), weights

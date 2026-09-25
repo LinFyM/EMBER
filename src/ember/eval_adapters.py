@@ -114,6 +114,7 @@ def inspect_static_task_lora_adapter(
     require_formal: bool,
     native_reader_transfer_cell: str | None = None,
     support_slot_model: str | None = None,
+    language_content_panel: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ember.pi05_source_checkpoint import read_json
     from ember.writer.materialization import BANK_SCHEMA
@@ -130,6 +131,7 @@ def inspect_static_task_lora_adapter(
             evaluation_role=evaluation_role, require_formal=require_formal,
             native_reader_transfer_cell=native_reader_transfer_cell,
             support_slot_model=support_slot_model,
+            language_content_panel=language_content_panel,
         )
     from ember.static_task_lora import inspect_static_task_lora_bank
 

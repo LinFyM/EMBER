@@ -30,6 +30,10 @@ from ember.writer.relational_contract import (
     EXPERIMENT as RELATIONAL_EXPERIMENT,
     validate_config as _relational_config,
 )
+from ember.writer.language_content_contract import (
+    EXPERIMENT as LANGUAGE_CONTENT_EXPERIMENT,
+    validate_config as _language_content_config,
+)
 from ember.writer.learning_data import (
     CONDITIONAL_EVENT_SCHEMA, RELATIONAL_EVENT_SCHEMA, EVENT_SCHEMA, MAIN_EVENT_QUERIES, TEACHING_EVENT_QUERIES,
     TASKS_PER_UPDATE, WriterTrainingData, query_allocation,
@@ -63,7 +67,8 @@ TOPOLOGY_TRANSITION_SCHEMA = "ember_writer_topology_transition_v1"
 
 
 def _bounded_conditional(config):
-    return config.get("experiment", {}).get("kind") in {CONDITIONAL_EXPERIMENT, RELATIONAL_EXPERIMENT}
+    return config.get("experiment", {}).get("kind") in {
+        CONDITIONAL_EXPERIMENT, RELATIONAL_EXPERIMENT, LANGUAGE_CONTENT_EXPERIMENT}
 
 
 def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
@@ -96,6 +101,10 @@ def _validate_dynamic_schedule(config):
 
 
 def _query_contract(config):
+    if config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT:
+        if config["data"].get("event_schema_version") != CONDITIONAL_EVENT_SCHEMA:
+            raise ValueError("language-content-path event schema changed")
+        return query_allocation(config["data"], 0)
     if config.get("experiment", {}).get("kind") == RELATIONAL_EXPERIMENT:
         if config["data"].get("event_schema_version") != RELATIONAL_EVENT_SCHEMA:
             raise ValueError("relation-support event schema changed")
@@ -114,7 +123,8 @@ def _query_contract(config):
 def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     validator = {RELATIONAL_EXPERIMENT: _relational_config,
-                 CONDITIONAL_EXPERIMENT: _conditional_config}.get(config.get("experiment", {}).get("kind"))
+                 CONDITIONAL_EXPERIMENT: _conditional_config,
+                 LANGUAGE_CONTENT_EXPERIMENT: _language_content_config}.get(config.get("experiment", {}).get("kind"))
     if validator is not None:
         return validator(config)
     require_continuation_config(config)
@@ -445,6 +455,14 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
              "meta_grad_norm": _grad_norm(runtime.state.meta.parameters()),
              "vl_meta_grad_norm": _grad_norm(runtime.state.vl_meta.parameters()),
              "text_meta_grad_norm": _grad_norm(runtime.state.text_meta.parameters())}
+    scale = None
+    if config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT:
+        scale = runtime.state.writer.semantic_core.language_content_scale
+        norms["scale_before_update"] = float(scale.detach()) if scale is not None else 0.0
+        norms["reduced_scale_gradient_before_clip"] = (
+            float(scale.grad.detach()) if scale is not None and scale.grad is not None else 0.0)
+        if scale is not None and scale.grad is None:
+            raise ValueError("enabled language-content scalar has no reduced gradient")
     norms["lr_applied"] = applied_lr
     norms["total_grad_norm"] = float(torch.nn.utils.clip_grad_norm_(
         parameters, float(config["optimization"]["grad_clip"]), error_if_nonfinite=True))
@@ -453,6 +471,8 @@ def _update(engine, runtime, data, context, config, optimizer, scheduler, step):
     tick = time.perf_counter()
     optimizer.step()
     scheduler.step()
+    if config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT:
+        norms["scale_after_update"] = float(scale.detach()) if scale is not None else 0.0
     if context.device.type == "cuda":
         torch.cuda.synchronize(context.device)
         norms.update(gradient_sync_seconds=sync_seconds, optimizer_seconds=time.perf_counter() - tick)
@@ -586,6 +606,12 @@ def _checkpoint_nodes(args, config):
         return nodes
     nodes = tuple(config["evidence"]["checkpoint_updates"]) if supplied is None else tuple(map(int, supplied.split(",")))
     _validate_checkpoint_nodes(nodes, allow_empty=args.mode != "formal")
+    if config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT:
+        registered = tuple(config["evidence"]["checkpoint_updates"])
+        if args.mode == "formal" and nodes != registered:
+            raise ValueError("language-content formal checkpoints are exactly the six registered 630-prefix nodes")
+        if nodes and max(nodes) > 630:
+            raise ValueError("language-content checkpoint exceeds the registered 630 prefix")
     return nodes
 
 
@@ -598,6 +624,8 @@ def _segment_limit(args, config):
         return stop
     if type(stop) is not int or stop <= 0:
         raise ValueError("smoke/profile without registered nodes needs an explicit positive --stop-after-step")
+    if config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT and stop > 630:
+        raise ValueError("language-content training must stop at macro630")
     if config.get("training_control"):
         if args.mode == "formal" and stop % config["training_control"]["validation_interval"]:
             raise ValueError("formal dynamic segments must end at a complete validation boundary")

@@ -77,6 +77,8 @@ class SupervisedEngine:
         del teaching_cotangent
         start = self._time(timings, "teaching_vjp_seconds", start)
         generated = runtime.compile(condition, frame_parallel_group=self.frame_parallel_group)
+        summary = getattr(getattr(runtime.state.writer, "semantic_core", None),
+                          "last_forward_summary", None)
         torch.autograd.backward(tuple(generated.values()),
                                 tuple(cotangent[name].to(value) for name, value in generated.items()))
         self._time(timings, "writer_vjp_seconds", start)
@@ -86,6 +88,7 @@ class SupervisedEngine:
                 "teaching_lora_gradient_norm": teaching_norm,
                 "teaching_queries": len(teaching_trace["action_demos"]),
                 "teaching_compiled_forward_calls": teaching["compiled_forward_calls"],
+                **({name: float(value) for name, value in summary.items()} if summary is not None else {}),
                 **{"teaching_" + name: value for name, value in teaching_trace.items()},
                 **trace, **timings, "input_cache_hits": self.cache.hits - hits,
                 "input_cache_misses": self.cache.misses - misses, "input_cache_bytes": self.cache.bytes,
@@ -135,6 +138,7 @@ def configured_endpoint(config):
     if experiment is None:
         return True
     if experiment.get("kind") not in {"conditional_compilation_diagnostics_20260923",
-                                      "relational_support_causality_20260924"}:
+                                      "relational_support_causality_20260924",
+                                      "language_content_path_causality_20260926"}:
         raise ValueError("unrecognized conditional teaching objective")
     return experiment.get("extra_endpoint_prefix") is True

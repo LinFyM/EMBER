@@ -148,11 +148,18 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
         bridge = policy.model.paligemma_with_expert
         model = {key: config["model"][key] for key in LANGUAGE_AXIAL_WRITER_CONSTRUCTOR_KEYS}
         model["max_frames_per_encoder_call"] = int(config["observer"]["frame_chunk"])
+        from ember.writer.language_content_contract import EXPERIMENT as LANGUAGE_CONTENT_EXPERIMENT
+
+        model["language_content_path"] = (
+            config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT
+            and config["experiment"]["language_content_path"] is True)
         writer = CompleteLoRAWriter(
             build_lora_tensor_specs(template), template_state=template,
             paligemma_model=bridge.paligemma.model.language_model,
             expert_model=bridge.gemma_expert.model, **model,
         )
+        writer.semantic_core.capture_forward_summary = (
+            config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT)
         if parameterization == "language_writer":
             writer.set_language_only_trainable()
     state = WriterState(writer).to(device)

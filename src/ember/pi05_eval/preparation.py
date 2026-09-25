@@ -190,6 +190,7 @@ def _inspect_adapter(
     source_sft_requested: bool,
     model: Mapping[str, Any],
     tasks: Sequence[Any],
+    output_dir: Path | None = None,
 ) -> Mapping[str, Any] | None:
     if source_sft_requested:
         return inspect_source_sft_adapter(
@@ -201,6 +202,9 @@ def _inspect_adapter(
             require_formal=args.mode != "smoke",
         )
     if adapter_kind == "static_task_lora":
+        from ember.writer.language_content_contract import evaluation_panel
+
+        language_content_panel = evaluation_panel(output_dir) if output_dir is not None else None
         if getattr(args, "frozen_replay_registration", None) is not None:
             registration = _frozen_replay_registration(args)
             reference = load_run_contract(Path(registration["reference_output"]) / "run_contract.json")
@@ -216,6 +220,7 @@ def _inspect_adapter(
             require_formal=args.mode != "smoke",
             native_reader_transfer_cell=getattr(args, "native_reader_transfer_cell", None),
             support_slot_model=getattr(args, "support_slot_model", None),
+            language_content_panel=language_content_panel,
         )
     if adapter_kind != "task_expert":
         return None
@@ -619,6 +624,7 @@ def _prepared_payload(
         source_sft_requested=source_sft_requested,
         model=model,
         tasks=inspection_tasks,
+        output_dir=output_dir,
     )
     if diagnostic_subset and adapter_kind == "task_expert":
         adapter = select_task_expert_adapter_tasks(

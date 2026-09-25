@@ -195,6 +195,18 @@ def _trace_and_stage_match(
 
 
 def validate_contract(contract: Mapping[str, Any], repo_root: Path) -> None:
+    from ember.pi05_eval.language_content_capture import (
+        TAG as LANGUAGE_TAG, validate_contract as validate_language, evaluation_panel,
+    )
+
+    language_tag = (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+                    .get('schema_version'))
+    panel = evaluation_panel(Path(contract['output_dir']))
+    if panel is not None or language_tag == LANGUAGE_TAG:
+        if panel is None:
+            raise Pi05EvaluationError('language-content passive capture is outside its registered study')
+        validate_language(contract, repo_root)
+        return
     output_dir = Path(contract['output_dir']).resolve()
     _, spec = _spec(repo_root)
     formal_panel = _formal_panel_scope(spec, output_dir)
@@ -230,6 +242,12 @@ def prepare_from_manifest(
     tasks: Sequence[Any], manifest: Mapping[str, Any], selection_path: Path,
     full: tuple[tuple[str, int, int], ...],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    from ember.pi05_eval.language_content_capture import TAG as LANGUAGE_TAG, prepare_from_manifest as prepare_language
+
+    if manifest.get('passive_control_trace') == LANGUAGE_TAG:
+        return prepare_language(args, repo_root=repo_root, output_dir=output_dir,
+                                task_subset=task_subset, tasks=tasks, manifest=manifest,
+                                selection_path=selection_path, full=full)
     if (manifest.get('schema_version') != 'ember_pi05_registered_trajectory_capture_v1'
             or manifest.get('task_subset_selection') != task_subset['selection_path']
             or manifest.get('mode') != 'compact'
@@ -246,6 +264,11 @@ def prepare_from_manifest(
 def attach_requested_capture(
     args: Any, contract: dict[str, Any], repo_root: Path, output_dir: Path,
 ) -> None:
+    from ember.pi05_eval.language_content_capture import evaluation_panel, attach_requested_capture as attach_language
+
+    if evaluation_panel(output_dir) is not None:
+        attach_language(args, contract, repo_root, output_dir)
+        return
     capture = contract.get('diagnostic_occupancy_capture') or {}
     _, spec = _spec(repo_root)
     if _formal_panel_scope(spec, output_dir):

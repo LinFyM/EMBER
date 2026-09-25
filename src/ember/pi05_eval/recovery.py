@@ -145,6 +145,8 @@ def _reinspect_adapter(
                 raise Pi05EvaluationError("frozen replay registration changed after prepare")
             reference = load_run_contract(Path(capture["reference_output"]) / "run_contract.json")
             tasks = tuple(argparse.Namespace(**row) for row in reference["tasks"])
+        from ember.writer.language_content_contract import evaluation_panel
+
         return inspect_static_task_lora_adapter(
             manifest_path=Path(adapter["manifest"]["path"]),
             source=model,
@@ -153,6 +155,7 @@ def _reinspect_adapter(
             require_formal=require_formal,
             native_reader_transfer_cell=(contract.get("native_reader_transfer") or {}).get("cell"),
             support_slot_model=(contract.get("support_slot_credit") or {}).get("model"),
+            language_content_panel=evaluation_panel(Path(contract["output_dir"])),
         )
     raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
 

@@ -26,7 +26,13 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 首次真实flow与闭环共同判断，不能仅据norm或混合模型排名归因。单训练seed、混合权重未共同训练的边界明确登记。
 新study预定`/data0/user/ymdai/ember_runs/native_reader_transfer_causality_20260925`；新data0≤8GiB、data1代码≤768MiB，
 项目合计≤6物理GPU；实际创建产物/launch前由Sol检查独立quota和双节点实时资源。工程smoke≤4，正式pilot8计入400。
-完成后主动Queue主讨论，停止新增实验；原关系支持deferred矩阵不自动恢复。当前合同已写入，派发回执待下方接续登记。
+完成后主动Queue主讨论，停止新增实验；原关系支持deferred矩阵不自动恢复。
+设计及本批科学裁决已在`fc0ccb87`推送。03:28 UTC（北京时间11:28）向idle的Sol以Queue派发，回执
+`01a0d69b-dec0-7ed1-8dcb-9dc99e21f7a1`；03:29 UTC核对完整正文进入inProgress turn
+`01a0d69b-dec5-7aa2-8604-390186ac5ed2`，并读到Sol明确接手独立实现/验收、随后执行400条并回传完成信号。
+正文/回执/回应保存在前批study的`coordination/native_reader_transfer_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
+这证明任务已收到并进入实现，尚不代表新正式物化/闭环已经启动。主讨论已完成CPU父参数划分/shape/77固定buffer同一性审计，
+见`coordination/native_reader_parent_partition_audit.json`；真实混合生成、self恢复和GPU接口由Sol继续验证。
 
 ### 最近完成的关系支持批次及历史启动记录
 

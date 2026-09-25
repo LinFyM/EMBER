@@ -4,6 +4,21 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-25：夹爪信用修正的96条闭环完成，新增成功没有恢复原能力损失
+
+实现/候选/48bank/96闭环统一34ea27bd，study `/data0/user/ymdai/ember_runs/return_score_update_causality_20260925`。
+12full、96条T+1/谓词齐全，全部worker exit0；主讨论核对全部原始行/轨迹/候选实际更新并重算三比较与bootstrap，
+记录`coordination/main_recheck.{py,json}`，完整裁决findings§149。
+P/RAW/RB为15/13/15；RB保留RAW全部13条、新增2条，但新增只在teacher46，两个候选丢掉相同三条父成功。
+RB对父12/3/3，总分持平且breadth6→5；强保持预测未兑现，未采纳为修复。
+同SGD alpha，步长.170765/.180095；旧P同subset18→15单列，未拼入主对照。
+实际.702061 GPU-hours、data0 1221.21MiB、代码504.16MiB；未补states34/35或继续训练。
+
+登记[冻结探索目标对齐](designs/return_objective_alignment_design.md)：固定P/RB、原八teacher与states0..3，
+模型×探索开关128条，新探索replica4、16bank/16full，无梯度/参数更新。
+它针对旧批事前保留的J_Sigma/J0混杂；不是再次比较更新排名，亦不证明视频必要性。
+是否active及实际送达以progress为准。
+
 ## 2026-09-25：夹爪条件化信用分解完成，方向作用明显但两半一致性未改善
 
 实现d6348660，study `/data0/user/ymdai/ember_runs/return_score_conditioning_20260925`。

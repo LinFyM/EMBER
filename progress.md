@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：冻结信用分解已复核，登记96条闭环补验（2026-09-25）
+## 当前状态：96条闭环已独立复核，登记128条冻结探索目标交叉（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,21 +9,39 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近冻结信用分解已完成。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近96条score-update闭环已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[96条闭环补验](docs/designs/return_score_update_design.md)**，
-机器合同`configs/return_score_update_v1/experiment_spec.json`。固定父C_S00@1155与d634封存RAW/RB梯度，
-两候选各从父独立一次fresh SGD、相同系数.0005958611283，不继承父Adam或新增梯度。
-P/RAW/RB均以新统一冻结提交物化/评测：48个bank、八合法task×states32/33×teacher46/47×三臂，共96闭环、12full。
-首个task2/state32/teacher46三格pilot计入96；没有额外工程episode、预测矩阵、新采集/held/官方Val/Test。
-新study `/data0/user/ymdai/ember_runs/return_score_update_causality_20260925`；新data0≤3GiB、代码≤768MiB，
-预计.8–1.2 GPU-hours，含初始化/物化/工程/失败/评测硬限1.5小时，同时最多两卡、项目≤6。
-实际实现/资源准入由Sol负责。本批完成主动Queue原件，停止新增实验。
-设计/spec及§148裁决在`325a20b0`集成推送；以Queue派给原Sol任务，回执
-`01a0d8e1-6298-7b61-9302-4269e510c783`。14:05:02 UTC核对完整正文进入inProgress turn
-`01a0d8e1-629b-7b71-b998-77b7e9716803`，并读到Sol接手固定stage1、核对来源和隔离实现的明确回应。
-当前为已接手实现，尚未称GPU启动。正文/送达/回应在前批score-conditioning study的
-`coordination/score_update_{dispatch.txt,delivery.json}`；没有重复派发。
+**当前active design为[探索目标对齐交叉](docs/designs/return_objective_alignment_design.md)**，
+机器合同`configs/return_objective_alignment_v1/experiment_spec.json`。
+固定原C_S00@1155父P与34ea27bd已保存RB候选，不新训练/梯度/候选；
+原八个采集teacher、states0..3，P/RB×J0/J_Sigma四格128闭环，探索新replica4未参与旧梯度。
+16个新bank由两噪声格共享，16full及全128条T+1 trace；task2/state0四格pilot计入128。
+新study `/data0/user/ymdai/ember_runs/return_objective_alignment_causality_20260925`；
+新data0≤3GiB、代码≤768MiB，预计.8–1.2、硬限1.5 GPU-hours，含全部GPU初始化/工程/失败/物化/评测。
+最多同时两卡、项目≤6，由Sol做实际live资源准入；所有新bank/闭环统一一个clean pushed detached提交，旧权重只读。
+不自动补seed/step/state、改变Sigma或接续RL，128完成主动Queue主讨论并停止新增实验。
+当前设计/spec已写入，尚未派发；送达回执随后按实际情况登记，不称GPU已启动。
+
+### 最近完成：score-update stage1及主讨论裁决（2026-09-25）
+
+统一正式实现/候选/物化/评测34ea27bdd5fa5064e16f821edf5e1ebc0968253c，根
+`/data0/user/ymdai/ember_runs/return_score_update_causality_20260925`。
+48bank/96唯一行/12full及全T+1 trace齐全，全部worker exit0，失败正式episode0。
+主讨论核对每行completion/轨迹/trace/候选权重，独立复算三对比、bootstrap和首轮函数，
+`coordination/main_recheck.{py,json}`保存证据；完整判断findings§149。
+P/RAW/RB为15/13/15；RB−RAW为13/2/0，新增都在teacher46，且不是恢复RAW丢掉的父成功。
+RB−P为12/3/3，RAW−P为12/1/3；相同的三条父成功仍丢失，任务breadth6/4/5。
+强能力保持预测未兑现，不续训或补states34/35；下一项只检验旧批事前保留的探索目标差异。
+同alpha更新步长RAW/RB约.170765/.180095，固定77buffer未变；首态夹爪sign三对比均未改变。
+旧P同subset18→本批15单列，不混入主对照或据正常差异重跑。
+实测GPU计时合计.7020605942小时，data0 1221.21MiB/代码504.16MiB在限内。
+
+### 已完成score-update的派发记录
+
+设计/spec及§148裁决在`325a20b0`推送；Queue回执`01a0d8e1-6298-7b61-9302-4269e510c783`。
+14:05:02 UTC核对完整正文进入turn `01a0d8e1-629b-7b71-b998-77b7e9716803`及Sol明确回应。
+正文/送达/回应在score-conditioning study的`coordination/score_update_{dispatch.txt,delivery.json}`；没有重复派发。
+本批现已完成，不从旧active记录恢复其它state。
 
 ### 最近完成：冻结信用分解与主讨论裁决（2026-09-25）
 

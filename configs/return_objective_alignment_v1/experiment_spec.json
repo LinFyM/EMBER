@@ -1,0 +1,345 @@
+{
+  "schema_version": "ember_return_objective_alignment_v1",
+  "study_id": "return_objective_alignment_causality_20260925",
+  "coordinator": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+  "executor": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+  "design": "docs/designs/return_objective_alignment_design.md",
+  "models": {
+    "P": {
+      "weights": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/checkpoints/macro_00001155/ecp.safetensors",
+      "parent_checkpoint": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/checkpoints/macro_00001155",
+      "macro": 1155,
+      "training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07"
+    },
+    "RB": {
+      "weights": "/data0/user/ymdai/ember_runs/return_score_update_causality_20260925/candidates/RB/weights.safetensors",
+      "completion": "/data0/user/ymdai/ember_runs/return_score_update_causality_20260925/candidates/RB/completion.json",
+      "candidate_commit": "34ea27bdd5fa5064e16f821edf5e1ebc0968253c",
+      "alpha": 0.0005958611283018859,
+      "recompute": false
+    },
+    "config": "configs/relational_support_causality_v1/train_C_S00.json",
+    "all_frozen": true,
+    "source_frozen": true,
+    "new_updates": 0,
+    "new_gradients": 0,
+    "new_candidates": 0
+  },
+  "evaluation": {
+    "cells": [
+      {
+        "name": "P_J0",
+        "model": "P",
+        "exploration": false
+      },
+      {
+        "name": "P_JS",
+        "model": "P",
+        "exploration": true
+      },
+      {
+        "name": "RB_J0",
+        "model": "RB",
+        "exploration": false
+      },
+      {
+        "name": "RB_JS",
+        "model": "RB",
+        "exploration": true
+      }
+    ],
+    "conditions": [
+      {
+        "task": 2,
+        "teacher_demo": 34,
+        "event_index": 4620,
+        "occurrence": 165,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 5,
+        "teacher_demo": 13,
+        "event_index": 4622,
+        "occurrence": 165,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 12,
+        "teacher_demo": 38,
+        "event_index": 4624,
+        "occurrence": 165,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 17,
+        "teacher_demo": 8,
+        "event_index": 4626,
+        "occurrence": 165,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 22,
+        "teacher_demo": 5,
+        "event_index": 4628,
+        "occurrence": 165,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 25,
+        "teacher_demo": 36,
+        "event_index": 4629,
+        "occurrence": 165,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 34,
+        "teacher_demo": 2,
+        "event_index": 4633,
+        "occurrence": 165,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "task": 37,
+        "teacher_demo": 45,
+        "event_index": 4635,
+        "occurrence": 165,
+        "init_state_ids": [
+          0,
+          1,
+          2,
+          3
+        ]
+      }
+    ],
+    "task_role": "legal fit/train only; original return-credit collection conditions",
+    "init_state_ids": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "episodes_per_cell": 32,
+    "total_episodes": 128,
+    "teacher_reuse": "one fixed original collection teacher per task; crossed with all four states and both models/noise settings",
+    "environment_seed": 7,
+    "policy_seed_root": 7,
+    "num_inference_steps": 10,
+    "replan_steps": 5,
+    "dummy_settling_steps": 10,
+    "action_shape": [
+      50,
+      7
+    ],
+    "state_dim": 8,
+    "render_resolution": 256,
+    "model_resolution": 224,
+    "suite_horizons": {
+      "libero_spatial": 220,
+      "libero_object": 280,
+      "libero_goal": 300,
+      "libero_10": 520
+    },
+    "pilot": {
+      "task": 2,
+      "state": 0,
+      "teacher": 34,
+      "cells": [
+        "P_J0",
+        "P_JS",
+        "RB_J0",
+        "RB_JS"
+      ],
+      "episodes": 4,
+      "included_in_128": true,
+      "score_based_gate": false
+    },
+    "additional_engineering_episodes_max": 0,
+    "additional_environment_probes_max": 0,
+    "held_inputs": false,
+    "official_validation_test": false,
+    "new_reward_gradient_collection": false,
+    "success_used_for_frozen_diagnostic_only": true
+  },
+  "exploration": {
+    "replica": 4,
+    "old_replicas_excluded": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "space": "normalized first5x7 before canonical source postprocess",
+    "temporal_rho": 0.8,
+    "action_std": [
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.1
+    ],
+    "covariance": "C_rho kron diag(action_std squared)",
+    "seed_root": 20260925,
+    "seed_substream": 21068,
+    "seed_formula": "int(np.random.SeedSequence([20260925,global_task,state,4,replan,0x524C]).generate_state(1,dtype=np.uint64)[0]) & ((1<<63)-1)",
+    "generator": "independent CPU torch.Generator per decision; float32 normal35 @ CPU float32 cholesky.T; time-major reshape(5,7)",
+    "noise_paired_across_models": true,
+    "flow_noise_preserved": true,
+    "additional_clip": false,
+    "gripper_override": false,
+    "J0": "exact passthrough; no global RNG consumption",
+    "training_credit_reservoir": false,
+    "scope": "explicit new frozen evaluation scope in canonical exploration owner; do not broaden old screen or return-credit collection contracts"
+  },
+  "materialization": {
+    "banks_total": 16,
+    "models": [
+      "P",
+      "RB"
+    ],
+    "conditions_per_model": 8,
+    "targets": 38,
+    "rank": 16,
+    "writer_invocations_per_model_task": 1,
+    "same_bank_file_across_exploration_cells": true,
+    "states_reuse_bank": true,
+    "all_new_banks_and_rollouts_one_clean_pushed_detached_commit": true,
+    "weights_reused_readonly_with_original_commits": true,
+    "no_old_scores_in_primary_comparisons": true,
+    "teacher_actions_states_rewards_ids_as_condition": false
+  },
+  "capture": {
+    "all_rows_compact": true,
+    "continuous_object_eef_gripper": "all128 post-settling t0 and each executed control step T+1",
+    "stage_predicates": "all128 T+1",
+    "pre_exploration_normalized_means": "existing forward first5x7 at every replan; passive copy; no extra forward",
+    "post_exploration_action_chunks": true,
+    "policy_and_exploration_seed_lists": true,
+    "full_cases": {
+      "tasks": [
+        2,
+        12,
+        22,
+        34
+      ],
+      "state": 0,
+      "cells": [
+        "P_J0",
+        "P_JS",
+        "RB_J0",
+        "RB_JS"
+      ],
+      "count": 16
+    },
+    "extra_frozen_predictions_max": 0,
+    "extra_contact_probes": false
+  },
+  "analysis": {
+    "contrasts": {
+      "Delta_Sigma": {
+        "RB_JS": 1,
+        "P_JS": -1
+      },
+      "Delta0": {
+        "RB_J0": 1,
+        "P_J0": -1
+      },
+      "noise_at_P": {
+        "P_JS": 1,
+        "P_J0": -1
+      },
+      "noise_at_RB": {
+        "RB_JS": 1,
+        "RB_J0": -1
+      },
+      "interaction": {
+        "RB_JS": 1,
+        "P_JS": -1,
+        "RB_J0": -1,
+        "P_J0": 1
+      }
+    },
+    "paired_sets": "four simple differences retained/gained/lost/churn/Jaccard; all cell success sets",
+    "per_task_suite_breadth": true,
+    "bootstrap": {
+      "draws": 20000,
+      "seed": 20260925,
+      "confidence": 0.95,
+      "rng": "numpy.default_rng",
+      "sampling": "vectorized task_draw shape(20000,8), then state_draw shape(20000,8,4); preserve all four cells; same draws for every contrast"
+    },
+    "first_replan_readout": "reuse128 rollout outputs; compare model means and actual first5 xyz/rotation/gripper/sign per noise setting",
+    "verify_noise_injection_from_saved_means_seeds_chunks_and_actions": true,
+    "no_model_selection": true,
+    "no_deployment_claim": true,
+    "no_video_necessity_claim": true,
+    "inference_boundary": "one fresh exploration sequence per old training condition; not conditional-noise variance or held-task generalization"
+  },
+  "resources": {
+    "study_root": "/data0/user/ymdai/ember_runs/return_objective_alignment_causality_20260925",
+    "new_data0_gib_max": 3,
+    "new_data1_code_mib_max": 768,
+    "gpu_hours_expected": [
+      0.8,
+      1.2
+    ],
+    "gpu_hours_hard_max": 1.5,
+    "include_initialization_materialization_engineering_failures": true,
+    "simultaneous_gpu_max": 2,
+    "project_physical_gpu_max": 6,
+    "storage_admission": "strg01 independent data0/data1 quota plus shared capacity before new root",
+    "gpu_admission": "both nodes live identity/ownership/memory/project count before each GPU launch"
+  },
+  "completion": {
+    "required": [
+      "16 bank provenance records",
+      "128 unique raw episode rows and worker exits",
+      "128 continuous T+1 traces and predicates",
+      "16 dual-camera full cases",
+      "per-replan mean/noise/applied-action audit",
+      "five paired contrasts and joint bootstrap",
+      "exact launch commands environment and full-process GPU accounting",
+      "completion.json"
+    ],
+    "notify": "Queue main coordinator with original paths, missing items, resources and completion signal; stop new experiments",
+    "failure": "preserve raw attempt and actual episode/control-step accounting; no automatic rerun",
+    "automatic_followup": false,
+    "long_running_monitoring": "one persistent exit-event wait; no routine log/cache polling"
+  }
+}

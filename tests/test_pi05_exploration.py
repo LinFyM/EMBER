@@ -27,6 +27,9 @@ from ember.pi05_eval_results import AGGREGATE_SCHEMA, paired_success_comparison
 from ember.pi05_evaluation import SHARD_RESULT_SCHEMA, _plan_action_chunks, rollout_shard, validate_shard_result
 from scripts.compare_pi05_results import compare
 from scripts.return_credit_analysis import _paired_native_noise
+from scripts.return_score_update import SPEC_PATH as SCORE_UPDATE_SPEC, bank_keys, episode_keys
+from scripts.return_score_update_analysis import _bootstrap as score_update_bootstrap, _compare as score_update_compare
+from ember.pi05_source_checkpoint import read_json
 
 
 def _contract(enabled=False):
@@ -43,6 +46,29 @@ def _contract(enabled=False):
 
 def _slots(states=(32, 33)):
     return [{"init_state_id": state, "replan_index": 2} for state in states]
+
+
+def test_score_update_registered_96_scope_and_joint_teacher_state_bootstrap():
+    spec = read_json(SCORE_UPDATE_SPEC)
+    banks, episodes = bank_keys(spec), episode_keys(spec)
+    assert len(banks) == len(set(banks)) == 48
+    assert len(episodes) == len(set(episodes)) == 96
+    assert len([key for key in episodes if key[1] in (2, 12, 22, 34)
+                and key[2:] == (46, 32)]) == 12
+    success = {}
+    for task in spec["evaluation"]["task_ids"]:
+        for state in (32, 33):
+            for teacher in (46, 47):
+                for arm, value in {"P": 0, "RAW": teacher == 46, "RB": 1}.items():
+                    success[(task, state, teacher), arm] = int(value)
+    bootstrap = score_update_bootstrap(spec, success)["comparisons"]["RB-RAW"]
+    assert bootstrap["46"]["ci95"] == [0, 0]
+    assert bootstrap["47"]["ci95"] == [1, 1]
+    assert bootstrap["equal_two_teachers"]["ci95"] == [.5, .5]
+    comparison = score_update_compare(success, spec["evaluation"]["task_ids"],
+                                      (46, 47), "RB", "RAW")
+    assert len(comparison["retained"]) == len(comparison["gained"]) == 16
+    assert comparison["lost"] == []
 
 
 def test_return_score_conditioning_independent_limit_and_temporal_correlation():

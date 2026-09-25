@@ -176,7 +176,8 @@ def _validate_round(selection, rows, require_formal) -> None:
             raise ValueError("same-task-other must differ from correct for every init state")
 
 
-def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal) -> None:
+def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal,
+                   native_reader_transfer_cell=None) -> None:
     role = manifest["evaluation_role"]
     selection = _selection(manifest["selection"])
     rows = manifest["tasks"]
@@ -197,7 +198,8 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
             raise ValueError("episode video ordinal or deterministic pairing changed")
         if task_init_state_ids is not None:
             requested = tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ()))
-            if requested != tuple(selection["init_state_ids"]):
+            if (requested != tuple(selection["init_state_ids"])
+                    and not (native_reader_transfer_cell and requested in ((0,), tuple(range(1, 50))))):
                 raise ValueError("bank and evaluator must use the same exact fixed init states")
 
 
@@ -244,28 +246,44 @@ def validate_information_wall(manifest) -> None:
         raise ValueError("video Writer information wall changed")
 
 
+def _validate_registered_bank_origin(manifest, path, run, checkpoint, native_reader_transfer_cell):
+    if native_reader_transfer_cell is not None:
+        from ember.pi05_eval.native_reader_transfer import validate_bank
+
+        current = git_state(Path(__file__).resolve().parents[3])
+        validate_bank(manifest, path, native_reader_transfer_cell, current["commit"])
+        return None
+    if run["config"].get("schema_version") != RELATIONAL_CONFIG_SCHEMA:
+        return None
+    from ember.writer.relational_contract import stage1_bank_materialization_commit
+
+    panel = registered_stage1_bank_panel(run["config"], manifest["selection"],
+        checkpoint=Path(checkpoint["path"]), output=path.parent)
+    current = git_state(Path(__file__).resolve().parents[3])
+    bank_commit = stage1_bank_materialization_commit(
+        panel_id=panel["id"], manifest_path=path, evaluation_commit=current["commit"])
+    if (run["git"]["commit"] != "7dc95edbba00cf61439700d77fb321eb8df95c07"
+            or manifest.get("registered_stage1_panel_id") != panel["id"]
+            or manifest["materialization_git"]["commit"] != bank_commit):
+        raise ValueError("stage1 bank training, panel or E materialization identity changed")
+    return panel
+
+
 def inspect_horizon_writer_bank(
     *, manifest_path: Path, source: Mapping[str, Any], task_keys: Sequence[tuple[str, int]],
     evaluation_role: str, require_formal: bool,
     task_init_state_ids: Mapping[tuple[str, int], Sequence[int]] | None = None,
+    native_reader_transfer_cell: str | None = None,
 ) -> dict[str, Any]:
     """Validate condition provenance and paired row coverage before workers start."""
     try:
         path = manifest_path.resolve()
         manifest = read_json(path)
-        _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal)
+        _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal,
+                       native_reader_transfer_cell)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
-        if run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA:
-            from ember.writer.relational_contract import stage1_bank_materialization_commit
-            panel = registered_stage1_bank_panel(run["config"], manifest["selection"],
-                checkpoint=Path(checkpoint["path"]), output=path.parent)
-            current = git_state(Path(__file__).resolve().parents[3])
-            bank_commit = stage1_bank_materialization_commit(
-                panel_id=panel["id"], manifest_path=path, evaluation_commit=current["commit"])
-            if (run["git"]["commit"] != "7dc95edbba00cf61439700d77fb321eb8df95c07"
-                    or manifest.get("registered_stage1_panel_id") != panel["id"]
-                    or manifest["materialization_git"]["commit"] != bank_commit):
-                raise ValueError("stage1 bank training, panel or E materialization identity changed")
+        panel = _validate_registered_bank_origin(manifest, path, run, checkpoint,
+                                                  native_reader_transfer_cell)
         if manifest.get("task_protocol") != run["config"]["data"].get("protocol"):
             raise ValueError("bank task protocol differs from its trained Writer")
         if checkpoint != manifest["writer_checkpoint"] or manifest["method"] != method_metadata(run, manifest["arm"]) or not source_matches(run["source"], source):
@@ -274,7 +292,8 @@ def inspect_horizon_writer_bank(
                                                 checkpoint=checkpoint, run=run, asset_root=Path(manifest["asset_root"]))
         if manifest.get("diagnostic_contract") != diagnostic:
             raise ValueError("frozen diagnostic contract changed")
-        if run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA and panel["kind"] == "target_other":
+        if (native_reader_transfer_cell is None and run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA
+                and panel["kind"] == "target_other"):
             expected_ids = {episode["condition_id"] for episode in planned_episodes(manifest["selection"], 21)}
             compilation = manifest.get("compilation", {})
             if (len(expected_ids) != 50 or compilation.get("new_conditions") != 0

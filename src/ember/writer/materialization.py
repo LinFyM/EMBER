@@ -437,7 +437,7 @@ def _reusable_conditions(path, *, asset_root, run, checkpoint, selection):
 
 
 def _compile_bank_conditions(*, planned, tasks, output, checkpoint, run, checkpoint_record,
-                             workers, reusable, lora_path, no_video):
+                             workers, reusable, lora_path, no_video, native_transfer=None):
     conditions = {}
     reused = []
     for key in (key for key in planned if key in (reusable or {})):
@@ -459,7 +459,7 @@ def _compile_bank_conditions(*, planned, tasks, output, checkpoint, run, checkpo
     jobs = sorted((job for key, job in planned.items() if key not in conditions),
                   key=lambda job: -sum(tasks[job.get("control", {}).get("video_global_task_id", job["task"])].episode_lengths[demo]
                                        for demo in job["demos"]))
-    request = (checkpoint, run, checkpoint_record, tasks, output)
+    request = (checkpoint, run, checkpoint_record, tasks, output, native_transfer)
     for job, record in workers.compile(request, jobs) if jobs else ():
         key = job["condition_id"]
         path = output / f"{key}.safetensors"
@@ -484,6 +484,7 @@ def _materialize(
     repository: Mapping[str, Any], reuse_manifest: Path | None = None,
     reusable: Mapping[str, Any] | None = None, diagnostic_contract: Mapping[str, Any] | None = None,
     registered_stage1_panel: Mapping[str, Any] | None = None,
+    native_transfer: Mapping[str, Any] | None = None,
 ) -> Path:
     from ember.writer.learning_data import load_learning_tasks
     from ember.writer.evaluation import validate_task_scope
@@ -508,7 +509,8 @@ def _materialize(
     lora_path = asset_root / read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]["lora_contract"]
     conditions, reused = _compile_bank_conditions(planned=planned, tasks=tasks, output=output,
         checkpoint=checkpoint, run=run, checkpoint_record=checkpoint_record, workers=workers,
-        reusable=reusable, lora_path=lora_path, no_video=selection["arm"] == "no_video")
+        reusable=reusable, lora_path=lora_path, no_video=selection["arm"] == "no_video",
+        native_transfer=native_transfer)
     no_video = selection["arm"] == "no_video"
     conditional = run.get("config", {}).get("schema_version") in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA}
     parameterization = run["config"].get("experiment", {}).get("parameterization", "video_writer")
@@ -568,6 +570,9 @@ def _materialize(
     elif not conditional:
         manifest["information_wall"]["deployment_inputs"] = ["exact language", "ordered RGB videos", "original frame indices"]
     _attach_stage1_panel_identity(manifest, registered_stage1_panel)
+    from ember.writer.native_reader_transfer import attach_manifest
+
+    attach_manifest(manifest, native_transfer)
     path = output / "manifest.json"
     write_json_atomic(path, manifest)
     return path
@@ -658,8 +663,10 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     if len(set(outputs)) != len(outputs) or any(path.exists() for path in outputs):
         raise ValueError("materialization outputs must be distinct new directories")
     inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
-    registered_panels = [_registered_request_panel(request, run, record)
-                         for request, (run, record) in zip(requests, inspected, strict=True)]
+    from ember.writer.native_reader_transfer import registered_panels, registered_transfers
+
+    transfers = registered_transfers(requests, inspected)
+    panels = registered_panels(requests, inspected, transfers)
     first = inspected[0][0]
     expected = (first["source"], first["model_config"], first["config"]["observer"])
     for run, _ in inspected:
@@ -671,7 +678,7 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     reusable = [_reusable_conditions(request.get("reuse_manifest"), asset_root=asset_root,
         run=run, checkpoint=record, selection=request["selection"])
         for request, (run, record) in zip(requests, inspected, strict=True)]
-    for request, panel, diagnostic, reused in zip(requests, registered_panels, diagnostics, reusable, strict=True):
+    for request, panel, diagnostic, reused in zip(requests, panels, diagnostics, reusable, strict=True):
         _require_stage1_goal_other_reuse(request, panel, diagnostic, reused)
     selected_devices = execution_devices(device, devices)
     # One asset root fixes LoRA/tokenizer/normalization authorities. Workers may
@@ -682,13 +689,14 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         runtime_config["observer"]["frame_chunk"] = native_frame_chunk
     results, workers = [], None
     with ExitStack() as stack:
-        for request, (run, record), reused, diagnostic, panel in zip(
-                requests, inspected, reusable, diagnostics, registered_panels, strict=True):
+        for request, (run, record), reused, diagnostic, panel, transfer in zip(
+                requests, inspected, reusable, diagnostics, panels, transfers, strict=True):
             if request["selection"]["arm"] != "no_video" and workers is None:
                 workers = stack.enter_context(MaterializationWorkers(asset_root=asset_root, config=runtime_config,
                                                devices=selected_devices, cpu_threads=cpu_threads))
             normalized = {**request, "diagnostic_contract": diagnostic,
-                          "registered_stage1_panel": panel}
+                          "registered_stage1_panel": panel, "native_transfer": transfer}
+            normalized.pop("native_transfer_cell", None)
             results.append(_materialize(asset_root=asset_root, workers=workers, run=run, reusable=reused,
                            checkpoint_record=record, repository=repository, **normalized))
     return results
@@ -711,7 +719,8 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
     if not isinstance(requests, (list, tuple)):
         raise ValueError("batch requests must be a JSON list")
     fields = {"checkpoint", "output", "role", "task_ids", "k", "arm", "selection_mode",
-              "video_pool", "state_count", "init_state_ids", "seed", "fixed_videos", "reuse_manifest", "diagnostic_contract"}
+              "video_pool", "state_count", "init_state_ids", "seed", "fixed_videos", "reuse_manifest", "diagnostic_contract",
+              "native_transfer_cell"}
     normalized = []
     for request in requests:
         if not isinstance(request, Mapping) or set(request) - fields:
@@ -735,6 +744,7 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
         normalized.append({"checkpoint": Path(request["checkpoint"]).resolve(),
                            "output": Path(request["output"]).resolve(), "selection": selection,
                            "diagnostic_contract": request.get("diagnostic_contract"),
+                           "native_transfer_cell": request.get("native_transfer_cell"),
                            "reuse_manifest": Path(request["reuse_manifest"]).resolve() if request.get("reuse_manifest") else None})
     return _materialize_batch(asset_root=asset_root.resolve(), requests=normalized, device=device,
                               devices=devices, cpu_threads=cpu_threads,

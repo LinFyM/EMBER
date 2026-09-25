@@ -112,6 +112,7 @@ def inspect_static_task_lora_adapter(
     tasks: Sequence[Any],
     evaluation_role: str,
     require_formal: bool,
+    native_reader_transfer_cell: str | None = None,
 ) -> dict[str, Any]:
     from ember.pi05_source_checkpoint import read_json
     from ember.writer.materialization import BANK_SCHEMA
@@ -126,6 +127,7 @@ def inspect_static_task_lora_adapter(
             task_init_state_ids={(task.suite, int(task.task_id)): task.init_state_ids
                                  for task in tasks if getattr(task, "init_state_ids", None) is not None},
             evaluation_role=evaluation_role, require_formal=require_formal,
+            native_reader_transfer_cell=native_reader_transfer_cell,
         )
     from ember.static_task_lora import inspect_static_task_lora_bank
 

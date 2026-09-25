@@ -214,6 +214,7 @@ def _inspect_adapter(
             tasks=tasks,
             evaluation_role=args.role,
             require_formal=args.mode != "smoke",
+            native_reader_transfer_cell=getattr(args, "native_reader_transfer_cell", None),
         )
     if adapter_kind != "task_expert":
         return None
@@ -516,6 +517,28 @@ def _registered_intervention_payload(
     )
 
 
+def _selected_tasks_and_capture(
+    args: Any, *, installed_tasks: Sequence[Any], adapter_kind: str | None,
+    source_sft_requested: bool, output_dir: Path, repo_root: Path,
+) -> tuple[tuple[Any, ...], dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
+    native_cell = getattr(args, "native_reader_transfer_cell", None)
+    if native_cell is not None:
+        from ember.pi05_eval.native_reader_transfer import select_tasks
+
+        if adapter_kind != "static_task_lora" or source_sft_requested:
+            raise Pi05EvaluationError("native transfer requires exactly one complete frozen Writer bank")
+        tasks, capture, stage = select_tasks(args, installed_tasks, repo_root)
+        return tasks, None, capture, stage
+    installed_tasks = _select_init_states(args, installed_tasks)
+    subset_tasks, subset = _task_subset_tasks(args, installed_tasks, adapter_kind=adapter_kind)
+    tasks, capture = _occupancy_capture_tasks(args, subset_tasks, output_dir=output_dir,
+                                              adapter_kind=adapter_kind)
+    stage = _stage_predicate_capture(args, capture)
+    if getattr(args, "trajectory_capture_selection", None) is not None:
+        capture, stage = _registered_trajectory_capture(args, tasks, output_dir, subset, repo_root)
+    return tasks, subset, capture, stage
+
+
 def _prepared_payload(
     args: Any,
     *,
@@ -551,21 +574,11 @@ def _prepared_payload(
         state_count=args.state_count,
         libero_config_dir=staging / "libero_config",
     )
-    installed_tasks = _select_init_states(args, installed_tasks)
-    subset_tasks, task_subset = _task_subset_tasks(
-        args, installed_tasks, adapter_kind=adapter_kind
+    native_cell = getattr(args, "native_reader_transfer_cell", None)
+    tasks, task_subset, occupancy_capture, stage_predicates = _selected_tasks_and_capture(
+        args, installed_tasks=installed_tasks, adapter_kind=adapter_kind,
+        source_sft_requested=source_sft_requested, output_dir=output_dir, repo_root=repo_root,
     )
-    tasks, occupancy_capture = _occupancy_capture_tasks(
-        args,
-        subset_tasks,
-        output_dir=output_dir,
-        adapter_kind=adapter_kind,
-    )
-    stage_predicates = _stage_predicate_capture(args, occupancy_capture)
-    if getattr(args, "trajectory_capture_selection", None) is not None:
-        occupancy_capture, stage_predicates = _registered_trajectory_capture(
-            args, tasks, output_dir, task_subset, repo_root
-        )
     model = inspect_source_checkpoint(
         authorities,
         args.source_run,
@@ -621,7 +634,12 @@ def _prepared_payload(
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicates
     contract["diagnostic_task_subset"] = task_subset
-    attach_requested_capture(args, contract, repo_root, output_dir)
+    if native_cell is not None:
+        from ember.pi05_eval.native_reader_transfer import attach
+
+        attach(contract, cell=native_cell, repo_root=repo_root)
+    else:
+        attach_requested_capture(args, contract, repo_root, output_dir)
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

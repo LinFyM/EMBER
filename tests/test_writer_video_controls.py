@@ -1,7 +1,7 @@
 """Real-frame control wiring, frozen pairing, and source-identity execution."""
 
 import copy
-from dataclasses import replace
+from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -21,6 +21,11 @@ from ember.writer.materialization import condition_id, file_record, planned_epis
 from ember.writer.runtime import MODEL_DEFAULTS
 from ember.writer.video_controls import (CONTROL_ARMS, DIAGNOSTIC_DECLARATION, METHOD_FREEZE_DECLARATION,
     SEALED_TEST_DECLARATION, control_provenance, controlled_frames, inspect_diagnostic_contract, video_task_id)
+from ember.pi05_eval.native_reader_transfer import select_tasks, validate_bank
+from ember.pi05_source_checkpoint import read_json
+from ember.writer.native_reader_transfer import (
+    authority as native_authority, composed_state, expected_bank, parent_checkpoint, validate_materialization,
+)
 from test_horizon_evaluation import GIT, ROOT, SOURCE
 
 
@@ -196,6 +201,57 @@ def test_controls_require_explicit_selected_checkpoint_authority_and_the_same_co
         inspect_diagnostic_contract(declaration, selection=selected, checkpoint=checkpoint, run=run, asset_root=root)
 
 
+@dataclass(frozen=True)
+class _NativeTask:
+    suite: str
+    task_id: int
+    init_state_ids: tuple[int, ...]
+
+
+def test_native_reader_exact_parent_partition_and_mix_request():
+    spec = native_authority()
+    n, w = parent_checkpoint("1"), parent_checkpoint("0")
+    state, roles = composed_state(n, w)
+    assert len(state) == 622
+    assert (len(roles["N_keys"]), len(roles["W_keys"]), len(roles["fixed_keys"])) == (432, 113, 77)
+    run, _ = materialization.inspect_writer_checkpoint(w)
+    selected = selection_contract(role="development_train", task_ids=[14, 21], cardinality=1,
+        arm="correct", mode="per_init_ordinal", seed=20260911,
+        init_state_ids=tuple(range(50)), video_pool=tuple(range(50)))
+    output = Path(spec["resources"]["study_root"]) / "materialization" / "N1_W0"
+    checked = validate_materialization(cell="N1_W0", checkpoint=w, output=output,
+                                       selection=selected, run=run)
+    assert checked["partition"] == roles
+    with pytest.raises(ValueError):
+        validate_materialization(cell="N1_W0", checkpoint=w, output=output,
+                                 selection=selected | {"seed": 5}, run=run)
+    with pytest.raises(ValueError):
+        validate_materialization(cell="N0_W0", checkpoint=w, output=output,
+                                 selection=selected, run=run)
+
+
+def test_native_reader_endpoint_bank_and_pilot_remaining_cases():
+    cell = "N0_W0"
+    bank = expected_bank(cell)
+    manifest = read_json(bank)
+    validate_bank(manifest, bank, cell, "unused-current-commit")
+    with pytest.raises(ValueError):
+        validate_bank(manifest, bank, "N1_W1", "unused-current-commit")
+    tasks = [_NativeTask("libero_object", 4, tuple(range(50))),
+             _NativeTask("libero_goal", 1, tuple(range(50))),
+             _NativeTask("libero_goal", 2, tuple(range(50)))]
+    for stage, expected_states in (("pilot", (0,)), ("remaining", tuple(range(1, 50)))):
+        output = Path(native_authority()["resources"]["study_root"]) / "evaluation" / stage / cell
+        args = SimpleNamespace(native_reader_transfer_cell=cell, output_dir=output,
+            config=ROOT / "configs/relational_support_causality_v1/evaluation.json",
+            role="development_train", mode="formal", state_count=50,
+            static_task_lora_manifest=bank)
+        selected, capture, predicates = select_tasks(args, tasks, ROOT)
+        assert len(selected) == 2 and all(task.init_state_ids == expected_states for task in selected)
+        assert len(capture["full_conditions"]) == 2
+        assert predicates["full_conditions_only"] is False
+
+
 def test_no_video_materializes_without_runtime_or_pixels_and_executes_source_identity(frozen_control_assets, tmp_path, monkeypatch):
     root, _, checkpoint, declaration, rows, _ = frozen_control_assets
 
@@ -367,7 +423,8 @@ def test_cpu_compiler(frozen_test_assets, monkeypatch):
             pass
 
         def compile(self, request, jobs):
-            _, _, record, selected_tasks, output = request
+            _, _, record, selected_tasks, output, transfer = request
+            assert transfer is None
             worker = object.__new__(materialization_workers.ResidentCompiler)
             worker.runtime, worker.store, worker.tasks = current, SimpleNamespace(load=load), selected_tasks
             worker.output, worker.record = output, record

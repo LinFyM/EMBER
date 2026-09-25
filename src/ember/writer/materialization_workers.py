@@ -7,6 +7,7 @@ import json
 import multiprocessing as mp
 from multiprocessing.util import Finalize
 import os
+from pathlib import Path
 
 import torch
 from safetensors.torch import load_file
@@ -54,15 +55,24 @@ class ResidentCompiler:
     def prepare(self, request):
         from ember.writer import materialization as bank
 
-        checkpoint, run, record, tasks, output = request
+        checkpoint, run, record, tasks, output, transfer = request
         if self.request == output:
             return
         self.close()
         runtime = self.runtime
         if not bank.source_matches(runtime.source, run["source"]):
             raise ValueError("Writer runtime uses a different frozen source checkpoint")
-        if self.checkpoint != checkpoint:
-            runtime.state.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device=str(self.device)), strict=True)
+        identity = (checkpoint, transfer["N_checkpoint"]["path"] if transfer else None)
+        if self.checkpoint != identity:
+            if transfer:
+                from ember.writer.native_reader_transfer import composed_state
+
+                state, roles = composed_state(Path(transfer["N_checkpoint"]["path"]), checkpoint)
+                if roles != transfer["partition"]:
+                    raise ValueError("resident native transfer parameter provenance changed")
+            else:
+                state = load_file(str(checkpoint / "ecp.safetensors"), device="cpu")
+            runtime.state.load_state_dict(state, strict=True)
             runtime.state.requires_grad_(False).eval()
             runtime.policy.eval()
             if runtime.state.probe is not None:
@@ -73,7 +83,7 @@ class ResidentCompiler:
             if runtime.lora.rank != 16 or len(runtime.lora.targets) != 38:
                 raise ValueError("materialization must produce one complete 38-target rank16 LoRA")
             self.nonvideo_cache.clear()
-            self.checkpoint = checkpoint
+            self.checkpoint = identity
         # Only model weights persist. Adapted Z/KV/H and source coordinates are
         # local to bank._compile_condition and never retained across conditions.
         self.store = (bank.RawTeacherVideoStore(tuple(task.authority for task in tasks.values()), frame_stride=5,

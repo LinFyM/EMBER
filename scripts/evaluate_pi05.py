@@ -119,6 +119,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
                         help="Registered two-task saved-action channel intervention panel.")
     parser.add_argument("--readout-realization-panel", type=Path,
                         help="Registered two-task frozen 37/1 LoRA intervention panel.")
+    parser.add_argument("--native-reader-transfer-cell", choices=("N0_W0", "N1_W0", "N0_W1", "N1_W1"),
+                        help="Registered frozen native-reader/Writer transfer cell.")
 
 
 def parse_args() -> argparse.Namespace:

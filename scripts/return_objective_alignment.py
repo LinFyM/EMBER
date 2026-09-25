@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import copy
 from dataclasses import asdict
+from functools import lru_cache
 import json
 import multiprocessing
 import os
@@ -35,6 +37,45 @@ ASSET_ROOT = REPO_ROOT.parent / "EMBER"
 SPEC_PATH = REPO_ROOT / "configs/return_objective_alignment_v1/experiment_spec.json"
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 CELLS = ("P_J0", "P_JS", "RB_J0", "RB_JS")
+ORIGINAL_COMMIT = "29634cc9f75143cdd6d70863e6d24ef1a8d3770d"
+
+
+@lru_cache(maxsize=1)
+def _verified_stage_exception():
+    spec = read_json(SPEC_PATH)
+    exception = spec["execution_stage_exception"]
+    pilot = [[cell, 2, 34, 0] for cell in CELLS]
+    old_path = Path(exception["bank_spec_path"])
+    old = read_json(old_path)
+    restored = copy.deepcopy(spec)
+    restored.pop("execution_stage_exception")
+    restored["materialization"].pop("commit_contract")
+    restored["materialization"]["all_new_banks_and_rollouts_one_clean_pushed_detached_commit"] = True
+    if (exception["decision"] != "B_repair_canonical_entrypoint_preserve_original_bank_and_pilot"
+            or exception["bank_commit"] != ORIGINAL_COMMIT
+            or exception["pilot_commit"] != ORIGINAL_COMMIT
+            or exception["banks_preserved"] != 16
+            or exception["pilot_keys"] != pilot
+            or exception["remaining_episodes"] != 124
+            or exception["rematerialize_banks"] is not False
+            or exception["rerun_pilot"] is not False
+            or old_path != Path("/data1/user/ymdai/projects/EMBER-return-objective-alignment-formal/configs/return_objective_alignment_v1/experiment_spec.json")
+            or git_state(old_path.parents[2])["commit"] != ORIGINAL_COMMIT
+            or restored != old):
+        raise ValueError("objective-alignment E/E2 stage exception or original scientific spec changed")
+    return exception
+
+
+def stage_exception(spec):
+    exception = _verified_stage_exception()
+    if spec.get("execution_stage_exception") != exception:
+        raise ValueError("objective-alignment E/E2 stage scope changed")
+    return exception
+
+
+def episode_source_commit(spec, key, current_commit):
+    pilot = {tuple(row) for row in stage_exception(spec)["pilot_keys"]}
+    return ORIGINAL_COMMIT if key in pilot else current_commit
 
 
 def authority(*, formal: bool):
@@ -57,6 +98,7 @@ def authority(*, formal: bool):
             or spec["capture"]["full_cases"] != {"tasks": [2, 12, 22, 34],
                 "state": 0, "cells": list(CELLS), "count": 16}):
         raise ValueError("objective-alignment registered matrix changed")
+    stage_exception(spec)
     root = Path(spec["resources"]["study_root"])
     config = read_json(ASSET_ROOT / spec["models"]["config"])
     parent = Path(spec["models"]["P"]["parent_checkpoint"])
@@ -144,9 +186,10 @@ def bank_record(spec, root, commit, key):
     model, task, teacher = key
     record = read_json(_bank_path(root, *key) / "bank_record.json")
     adapter = record["condition"]["adapter"]
+    exception = stage_exception(spec)
     if (record["schema_version"] != "ember_return_objective_alignment_bank_v1"
-            or record["implementation_commit"] != commit
-            or record["study_spec"] != str(SPEC_PATH)
+            or record["implementation_commit"] != exception["bank_commit"]
+            or record["study_spec"] != exception["bank_spec_path"]
             or (record["model"], record["task"], record["teacher"]) != key
             or record["writer"] != model_source(spec, model)
             or record["condition"]["global_task_id"] != task
@@ -296,7 +339,7 @@ def check_pilot(spec, root, commit):
     rows = []
     for key in keys:
         payload = read_json(_episode_path(root, key) / "completion.json")
-        if payload["implementation_commit"] != commit or tuple(payload["key"]) != key:
+        if payload["implementation_commit"] != stage_exception(spec)["pilot_commit"] or tuple(payload["key"]) != key:
             raise ValueError("objective-alignment pilot identity changed")
         rows.append(payload["row"])
     if (any(not same_common_seed_prefix(row["policy_noise_seeds"], rows[0]["policy_noise_seeds"])
@@ -321,20 +364,17 @@ def check_pilot(spec, root, commit):
         check_action_injection(spec, row, _episode_path(root, key))
     write_json_atomic(root / "launch" / "pilot_acceptance.json", {
         "schema_version": "ember_return_objective_alignment_pilot_v1",
-        "implementation_commit": commit, "keys": [list(key) for key in keys],
+        "validation_commit": commit, "pilot_commit": ORIGINAL_COMMIT,
+        "bank_commit": ORIGINAL_COMMIT, "keys": [list(key) for key in keys],
         "bank_rng_initial_action_trace_valid": True, "score_used_for_acceptance": False})
 
 
 def _scheduled_jobs(stage, spec, root, commit):
     pilot = tuple((cell, 2, 34, 0) for cell in CELLS)
     if stage == "materialize":
-        jobs = bank_keys(spec)
-        if any(_bank_path(root, *key).exists() for key in jobs):
-            raise ValueError("objective-alignment bank attempt already exists")
+        raise ValueError("objective-alignment original E banks are sealed; no E2 materialization")
     elif stage == "pilot":
-        if any(_episode_path(root, key).exists() for key in pilot):
-            raise ValueError("objective-alignment pilot attempt already exists")
-        jobs = pilot
+        raise ValueError("objective-alignment original E pilot is sealed; no E2 pilot rerun")
     elif stage == "evaluate":
         check_pilot(spec, root, commit)
         jobs = tuple(key for key in episode_keys(spec) if key not in pilot)

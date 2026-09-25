@@ -17,7 +17,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.materialization import file_record
 from scripts.return_objective_alignment import (CELLS, SPEC_PATH, _bank_path, _episode_path,
     _metadata, authority, bank_keys, bank_record, episode_contract, episode_keys,
-    same_common_seed_prefix)
+    episode_source_commit, same_common_seed_prefix, stage_exception)
 
 
 CONTRASTS = {
@@ -81,14 +81,15 @@ def _read_checked_episode(spec, root, commit, evaluation, tasks, paths, key):
     cell, task_id, teacher, state = key
     output = _episode_path(root, key)
     payload = read_json(output / "completion.json")
-    row = payload["row"]
+    row = dict(payload["row"])
     task = tasks[task_id]
     full = task_id in spec["capture"]["full_cases"]["tasks"] and state == 0
     contract = episode_contract(spec, evaluation, paths, task, output, key)
     expected_seeds = [policy_noise_seed(7, task.suite, task.task_id, state, index)
                       for index in range((row["steps"] + 4) // 5)]
+    source_commit = episode_source_commit(spec, key, commit)
     if (payload["schema_version"] != "ember_return_objective_alignment_episode_v1"
-            or payload["implementation_commit"] != commit or tuple(payload["key"]) != key
+            or payload["implementation_commit"] != source_commit or tuple(payload["key"]) != key
             or (row["cell"], row["global_task_id"], row["teacher_demo"], row["init_state_id"]) != key
             or (row["suite"], row["task_id"], row["language"]) !=
                (task.suite, task.task_id, task.language)
@@ -101,6 +102,8 @@ def _read_checked_episode(spec, root, commit, evaluation, tasks, paths, key):
             or not validate_episode_exploration(contract, row, replans=len(expected_seeds))):
         raise ValueError(f"objective-alignment episode provenance incomplete: {key}")
     validate_passive_trace_row(row, contract, asdict(task))
+    row["evaluation_commit"] = source_commit
+    row["materialization_commit"] = stage_exception(spec)["bank_commit"]
     return row, check_action_injection(spec, row, output), full
 
 
@@ -242,20 +245,25 @@ def _function_readout(spec, first):
     return records
 
 
-def _receipts(root, commit):
+def _receipts(spec, root, commit):
     results = []
+    exception = stage_exception(spec)
     for stage, count in (("materialize", 16), ("pilot", 4), ("evaluate", 124)):
         paths = sorted((root / "launch").glob(f"{stage}_exit_*.json"))
         if len(paths) != 1:
             raise ValueError(f"objective-alignment {stage} needs one exit receipt")
         receipt = read_json(paths[0])
-        if (receipt["implementation_commit"] != commit or receipt["jobs"] != count
+        expected_commit = commit if stage == "evaluate" else exception["bank_commit"]
+        if (receipt["implementation_commit"] != expected_commit or receipt["jobs"] != count
                 or receipt["budget_exhausted"] or any(worker["exit_code"] != 0
                                                     for worker in receipt["workers"])):
             raise ValueError(f"objective-alignment {stage} worker exit or scope failed")
-        results.append({"stage": stage, "receipt": file_record(paths[0]),
+        results.append({"stage": stage, "implementation_commit": expected_commit,
+                        "receipt": file_record(paths[0]),
                         "gpu_hours_conservative": receipt["gpu_hours_conservative"]})
-    if not (root / "launch" / "pilot_acceptance.json").is_file():
+    acceptance = root / "launch" / "pilot_acceptance.json"
+    if (not acceptance.is_file() or read_json(acceptance).get("validation_commit") != commit
+            or read_json(acceptance).get("pilot_commit") != exception["pilot_commit"]):
         raise ValueError("objective-alignment score-blind pilot acceptance missing")
     return results
 
@@ -263,7 +271,7 @@ def _receipts(root, commit):
 def main():
     spec, root, config, git = authority(formal=True)
     commit = git["commit"]
-    receipts = _receipts(root, commit)
+    receipts = _receipts(spec, root, commit)
     rows, first, success, cases, audits = _collect(spec, root, config, commit)
     analysis = root / "analysis"
     analysis.mkdir(exist_ok=True)
@@ -286,8 +294,13 @@ def main():
         "breadth": breadth, "summaries": summaries, "bootstrap": _bootstrap(spec, success)})
     write_json_atomic(analysis / "completion.json", {
         "schema_version": "ember_return_objective_alignment_completion_v1",
-        "implementation_commit": commit, "study_spec": str(SPEC_PATH),
+        "analysis_commit": commit, "remaining_commit": commit,
+        "bank_commit": stage_exception(spec)["bank_commit"],
+        "pilot_commit": stage_exception(spec)["pilot_commit"],
+        "bank_spec": stage_exception(spec)["bank_spec_path"],
+        "study_spec": str(SPEC_PATH),
         "banks": 16, "unique_episodes": 128, "continuous_traces": 128,
+        "pilot_episodes": 4, "remaining_episodes": 124,
         "full_cases": 16, "first_replan_comparisons": 128,
         "raw_rows": file_record(analysis / "raw_rows.jsonl"),
         "noise_action_audit": file_record(analysis / "noise_action_audit.jsonl"),

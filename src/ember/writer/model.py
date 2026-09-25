@@ -197,6 +197,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         activation_checkpointing: bool,
         camera_view: str = "agentview",
         horizon_read: str = "repeated_full",
+        language_content_path: bool = False,
     ) -> None:
         super().__init__()
         if (
@@ -249,6 +250,7 @@ class CompleteLoRAWriter(torch.nn.Module):
             heads=semantic_core_heads,
             blocks=semantic_core_blocks,
             frame_attention_initial_lambda=frame_attention_initial_lambda,
+            language_content_path=language_content_path,
         )
         self.procedure = RecurrentProcedureEncoder(
             width=program_width,

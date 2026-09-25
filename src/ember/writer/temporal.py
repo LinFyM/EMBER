@@ -219,6 +219,7 @@ class LanguageSemanticCore(torch.nn.Module):
         heads: int,
         blocks: int,
         frame_attention_initial_lambda: float,
+        language_content_path: bool = False,
     ) -> None:
         super().__init__()
         if blocks <= 0:
@@ -231,6 +232,10 @@ class LanguageSemanticCore(torch.nn.Module):
         self.blocks = torch.nn.ModuleList(
             RoPEContentBlock(width=width, heads=heads, causal=False)
             for _ in range(blocks)
+        )
+        self.register_parameter(
+            "language_content_scale",
+            torch.nn.Parameter(torch.zeros(())) if language_content_path else None,
         )
 
     def _compose_language(self, content: torch.Tensor, valid_task_tokens: torch.Tensor) -> torch.Tensor:
@@ -264,6 +269,8 @@ class LanguageSemanticCore(torch.nn.Module):
             valid_frames,
             valid_task_tokens,
         )
+        if self.language_content_scale is not None:
+            content = content + self.language_content_scale * text_queries
         return self._compose_language(content, valid_task_tokens), weights
 
 

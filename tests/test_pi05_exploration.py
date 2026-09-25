@@ -16,10 +16,11 @@ from ember.pi05_eval import return_credit as capture
 from ember.writer.return_credit import loo_advantages, score_cotangent
 from ember.writer.score_conditioning import correlated_sign_score
 from ember.pi05_eval.exploration import (
-    DIAGNOSTIC_STATES, add_exploration_noise, build_exploration_contract,
+    DIAGNOSTIC_STATES, add_exploration_noise, alignment_metadata, build_exploration_contract,
     episode_exploration_fields, exploration_covariance, exploration_metadata, exploration_noise_seed,
     validate_exploration_comparison, validate_exploration_contract,
 )
+from ember.pi05_eval.trajectory_capture import initialize_capture
 from ember.pi05_eval.preparation import _explicit_diagnostic_states
 from ember.pi05_eval_contract import RUN_CONTRACT_SCHEMA, load_run_contract, policy_noise_seed
 from ember.pi05_eval_queue import EvaluationShard
@@ -30,6 +31,7 @@ from scripts.return_credit_analysis import _paired_native_noise
 from scripts.return_score_update import SPEC_PATH as SCORE_UPDATE_SPEC, bank_keys, episode_keys
 from scripts.return_score_update_analysis import _bootstrap as score_update_bootstrap, _compare as score_update_compare
 from ember.pi05_source_checkpoint import read_json
+from scripts.return_objective_alignment import SPEC_PATH as ALIGNMENT_SPEC, bank_keys as alignment_banks, episode_keys as alignment_episodes
 
 
 def _contract(enabled=False):
@@ -46,6 +48,93 @@ def _contract(enabled=False):
 
 def _slots(states=(32, 33)):
     return [{"init_state_id": state, "replan_index": 2} for state in states]
+
+
+def _alignment_contract(cell="P_JS"):
+    spec = read_json(ALIGNMENT_SPEC)
+    output = spec["resources"]["study_root"] + f"/evaluation/{cell}/task_002_teacher_34/state_00"
+    task = {"suite": "libero_spatial", "task_id": 2, "split_role": "train", "language": "move bowl",
+            "horizon": 220}
+    return {"role": "development_train", "mode": "formal", "adapter": None,
+        "rng": {"inference_seed": 7},
+        "policy": {"replan_steps": 5, "action_dim": 7, "chunk_size": 50, "num_inference_steps": 10},
+        "diagnostic_exploration": alignment_metadata(enabled=cell.endswith("JS")),
+        "diagnostic_occupancy_capture": {"mode": "compact", "trajectory_root": output + "/trajectories",
+            "passive_trace": {"trace_root": output + "/continuous_traces"}},
+        "diagnostic_stage_predicates": {"full_conditions_only": False},
+        "frozen_objective_alignment": {"spec_path": str(ALIGNMENT_SPEC), "cell": cell,
+            "model": cell.split("_")[0], "global_task": 2, "teacher_demo": 34,
+            "init_state_id": 0, "replica": 4, "output": output}}, task
+
+
+def test_objective_alignment_registered_scope_and_replica4_action_injection():
+    spec = read_json(ALIGNMENT_SPEC)
+    assert len(alignment_banks(spec)) == 16
+    assert len(alignment_episodes(spec)) == 128
+    for cell in ("P_J0", "P_JS", "RB_J0", "RB_JS"):
+        contract, task = _alignment_contract(cell)
+        validate_exploration_contract(contract, task=task, state_ids=(0,))
+    j0, task = _alignment_contract("P_J0")
+    js, _ = _alignment_contract("P_JS")
+    chunks = torch.full((1, 50, 7), 2.)
+    before = torch.random.get_rng_state()
+    zero, noisy = [{"init_state_id": 0, "replan_index": 3}], [{"init_state_id": 0, "replan_index": 3}]
+    initialize_capture(zero[0], "compact")
+    initialize_capture(noisy[0], "compact")
+    assert add_exploration_noise(chunks, zero, task=task, contract=j0) is chunks
+    actual = add_exploration_noise(chunks, noisy, task=task, contract=js)
+    assert zero[0]["exploration_noise_seeds"] == noisy[0]["exploration_noise_seeds"]
+    from ember.pi05_eval.return_credit import exploration_seed
+    seed = exploration_seed(2, 0, 4, 3)
+    assert noisy[0]["exploration_noise_seeds"] == [seed]
+    eta = torch.randn(35, generator=torch.Generator(device="cpu").manual_seed(seed)) @ torch.linalg.cholesky(exploration_covariance()).T
+    torch.testing.assert_close(actual[0, :5], 2 + eta.reshape(5, 7))
+    torch.testing.assert_close(actual[0, 5:], chunks[0, 5:])
+    assert torch.equal(torch.random.get_rng_state(), before)
+
+
+@pytest.mark.parametrize("change", ["teacher", "state", "replica", "model", "output", "flow", "capture", "task"])
+def test_objective_alignment_rejects_scope_drift_before_rollout(change):
+    contract, task = _alignment_contract()
+    scope = contract["frozen_objective_alignment"]
+    if change == "teacher":
+        scope["teacher_demo"] = 46
+    elif change == "state":
+        scope["init_state_id"] = 32
+    elif change == "replica":
+        scope["replica"] = 0
+    elif change == "model":
+        scope["model"] = "RB"
+    elif change == "output":
+        scope["output"] += "_extra"
+    elif change == "flow":
+        contract["policy"]["num_inference_steps"] = 9
+    elif change == "capture":
+        contract["diagnostic_occupancy_capture"]["passive_trace"] = None
+    else:
+        task["task_id"] = 5
+    with pytest.raises(Pi05EvaluationError, match="objective-alignment"):
+        validate_exploration_contract(contract, task=task, state_ids=(0,))
+
+
+def test_objective_alignment_planner_copies_one_pre_noise_mean_without_extra_forward():
+    contract, task = _alignment_contract()
+    policy = _Policy()
+    slot = {"init_state_id": 0, "replan_index": 0, "obs": _observation(),
+            "action_plan": deque(), "policy_noise_seeds": [], "steps": 0}
+    initialize_capture(slot, "compact")
+    _plan_action_chunks([slot], task=task, contract=contract, policy=policy,
+        preprocess=_preprocess, postprocess=lambda chunks: 3 * chunks + 1,
+        task_adapter=None, root_seed=7, replan_steps=5)
+    assert len(policy.noise) == 1
+    assert len(slot["pre_exploration_normalized_means"]) == 1
+    torch.testing.assert_close(slot["pre_exploration_normalized_means"][0], torch.full((5, 7), 2.))
+    assert len(slot["replay_action_chunks"]) == 1
+    expected_slot = {"init_state_id": 0, "replan_index": 0}
+    initialize_capture(expected_slot, "compact")
+    expected = add_exploration_noise(torch.full((1, 50, 7), 2.),
+        [expected_slot], task=task, contract=contract)
+    torch.testing.assert_close(slot["replay_action_chunks"][0], expected)
 
 
 def test_score_update_registered_96_scope_and_joint_teacher_state_bootstrap():

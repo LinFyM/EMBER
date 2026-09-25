@@ -199,7 +199,7 @@ def rollout_shard(
     postprocess: Any,
     task_adapter: Any | None = None,
 ) -> list[dict[str, Any]]:
-    validate_exploration_contract(contract)
+    validate_exploration_contract(contract, task=task, state_ids=state_ids)
     if contract.get("return_credit_collection") is not None:
         from ember.pi05_eval.return_credit import validate_collection
 

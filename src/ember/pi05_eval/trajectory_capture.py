@@ -41,6 +41,20 @@ def initialize_capture(slot: dict[str, Any], level: str | None) -> None:
         slot["replay_replan_predicates"] = []
 
 
+def record_pre_exploration_means(slots: Any, chunks: Any) -> None:
+    """Copy the existing policy output before the registered frozen perturbation."""
+    import torch
+
+    if chunks.ndim != 3 or chunks.shape[0] != len(slots) or chunks.shape[1:] != (50, 7):
+        raise Pi05EvaluationError("objective-alignment normalized policy chunk shape changed")
+    for index, slot in enumerate(slots):
+        if "replay_action_chunks" not in slot:
+            raise Pi05EvaluationError("objective-alignment requires trajectory capture on every row")
+        slot.setdefault("pre_exploration_normalized_means", []).append(
+            chunks[index, :5, :7].detach().to(device="cpu", dtype=torch.float32).contiguous()
+        )
+
+
 def record_replan(
     slot: dict[str, Any], raw_input: Mapping[str, Any], processed: Mapping[str, Any],
     chunk: Any | None, executed_prefix: Any | None = None,
@@ -104,6 +118,11 @@ def save_capture(
         "executed_action_prefixes": tuple(slot["replay_executed_prefixes"]),
         "replan_steps": tuple(slot["replay_replan_steps"]),
     }
+    if "pre_exploration_normalized_means" in slot:
+        if len(slot["pre_exploration_normalized_means"]) != len(slot["replay_action_chunks"]):
+            raise Pi05EvaluationError("objective-alignment pre-exploration means are incomplete")
+        common["pre_exploration_normalized_means"] = tuple(slot["pre_exploration_normalized_means"])
+        common["exploration_noise_seeds"] = tuple(slot.get("exploration_noise_seeds", ()))
     if "mode" not in capture:
         payload = {
             "schema_version": "ember_pi05_occupancy_trajectory_v1",

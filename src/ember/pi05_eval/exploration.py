@@ -11,6 +11,8 @@ from ember.pi05_assets import Pi05EvaluationError
 EXPLORATION_SCHEMA = "ember_horizon_train_exploration_v1"
 EXPLORATION_SUBSTREAM = 0x5349474D41
 DIAGNOSTIC_STATES = tuple(range(32, 37))
+ALIGNMENT_SCHEMA = "ember_return_objective_alignment_exploration_v1"
+ALIGNMENT_SPEC = "configs/return_objective_alignment_v1/experiment_spec.json"
 
 
 def exploration_metadata(*, enabled: bool, flow_seed: int) -> dict[str, Any]:
@@ -31,6 +33,92 @@ def exploration_metadata(*, enabled: bool, flow_seed: int) -> dict[str, Any]:
     }
 
 
+def alignment_metadata(*, enabled: bool) -> dict[str, Any]:
+    """The registered replica-4 substream; separate from the old screen scope."""
+    return {
+        "schema_version": ALIGNMENT_SCHEMA, "condition": "J_Sigma" if enabled else "J0",
+        "enabled": enabled, "replica": 4,
+        "action_space": "normalized_chunk_before_canonical_source_postprocess",
+        "executed_steps": 5, "action_dim": 7, "flatten_order": "time_major",
+        "covariance": {"shape": [35, 35], "formula": "C_rho_kron_diag_std_squared",
+                       "temporal_rho": 0.8, "action_std": [0.05] * 6 + [0.10]},
+        "sampling": "standard_normal35_times_cholesky_transpose",
+        "seed_schedule": "exploration_seed(global_task,init_state_id,4,replan_index)",
+        "generator": "independent_cpu_torch_generator_per_decision",
+        "flow_noise_preserved": True, "additional_clipping": False,
+        "gripper_override": False, "training_gradient_use": False,
+        "checkpoint_qualification_use": False,
+    }
+
+
+def _alignment_registration(scope: Mapping[str, Any]):
+    from pathlib import Path
+
+    from ember.pi05_source_checkpoint import read_json
+
+    spec_path = Path(__file__).resolve().parents[3] / ALIGNMENT_SPEC
+    spec = read_json(spec_path)
+    cells = {row["name"]: row for row in spec["evaluation"]["cells"]}
+    conditions = {row["task"]: row for row in spec["evaluation"]["conditions"]}
+    cell = cells.get(scope.get("cell"))
+    registered = conditions.get(scope.get("global_task"))
+    indices = (scope.get("global_task"), scope.get("teacher_demo"), scope.get("init_state_id"))
+    if (spec.get("schema_version") != "ember_return_objective_alignment_v1"
+            or cell is None or registered is None
+            or any(type(value) is not int for value in indices)
+            or cell["model"] != scope.get("model")
+            or registered["teacher_demo"] != scope.get("teacher_demo")
+            or scope.get("init_state_id") not in registered["init_state_ids"]
+            or scope.get("replica") != spec["exploration"]["replica"] == 4
+            or scope.get("spec_path") != str(spec_path)):
+        raise Pi05EvaluationError("frozen objective-alignment registered condition changed")
+    output = Path(str(scope.get("output", ""))).resolve()
+    root = Path(spec["resources"]["study_root"]).resolve()
+    expected = (root / "evaluation" / scope["cell"] /
+                f"task_{indices[0]:03d}_teacher_{indices[1]:02d}" / f"state_{indices[2]:02d}")
+    if output != expected:
+        raise Pi05EvaluationError("frozen objective-alignment output root changed")
+    return cell, output
+
+
+def _alignment_capture(contract: Mapping[str, Any], output) -> None:
+    from pathlib import Path
+
+    capture = contract.get("diagnostic_occupancy_capture")
+    stage = contract.get("diagnostic_stage_predicates")
+    if (not isinstance(capture, Mapping) or capture.get("mode") != "compact"
+            or Path(str(capture.get("trajectory_root", ""))).resolve() != output / "trajectories"
+            or not isinstance(capture.get("passive_trace"), Mapping)
+            or Path(str(capture["passive_trace"].get("trace_root", ""))).resolve() != output / "continuous_traces"
+            or not isinstance(stage, Mapping) or stage.get("full_conditions_only") is not False):
+        raise Pi05EvaluationError("frozen objective-alignment passive capture scope changed")
+
+
+def _validate_alignment_scope(contract: Mapping[str, Any], *, task=None, state_ids=None) -> None:
+    scope = contract.get("frozen_objective_alignment")
+    if not isinstance(scope, Mapping):
+        raise Pi05EvaluationError("frozen objective-alignment scope missing")
+    cell, output = _alignment_registration(scope)
+    current = contract.get("diagnostic_exploration")
+    if (contract.get("role") != "development_train"
+            or contract.get("mode") != "formal" or contract.get("adapter") is not None
+            or contract.get("return_credit_collection") is not None
+            or contract["rng"]["inference_seed"] != 7
+            or any(contract["policy"].get(key) != value for key, value in {
+                "replan_steps": 5, "action_dim": 7, "chunk_size": 50,
+                "num_inference_steps": 10}.items())
+            or current != alignment_metadata(enabled=cell["exploration"])):
+        raise Pi05EvaluationError("frozen objective-alignment policy or RNG scope changed")
+    _alignment_capture(contract, output)
+    if task is not None and state_ids is not None:
+        task_id = int(scope["global_task"])
+        suite = ("libero_spatial", "libero_object", "libero_goal", "libero_10")[task_id // 10]
+        if ((task["suite"], int(task["task_id"])) != (suite, task_id % 10)
+                or tuple(state_ids) != (scope["init_state_id"],)
+                or task.get("split_role") != "train"):
+            raise Pi05EvaluationError("frozen objective-alignment rollout task or state changed")
+
+
 def _diagnostic_scope(contract: Mapping[str, Any]) -> bool:
     return (contract.get("role") == "development_train" and contract.get("mode") == "screen"
             and bool(contract.get("tasks")) and all(
@@ -48,8 +136,11 @@ def build_exploration_contract(contract: Mapping[str, Any], *, enabled: bool) ->
     return exploration_metadata(enabled=enabled, flow_seed=int(contract["rng"]["inference_seed"]))
 
 
-def validate_exploration_contract(contract: Mapping[str, Any]) -> None:
+def validate_exploration_contract(contract: Mapping[str, Any], *, task=None, state_ids=None) -> None:
     metadata = contract.get("diagnostic_exploration")
+    if contract.get("frozen_objective_alignment") is not None:
+        _validate_alignment_scope(contract, task=task, state_ids=state_ids)
+        return
     if metadata is None:
         return
     policy = contract["policy"]
@@ -63,6 +154,11 @@ def validate_exploration_contract(contract: Mapping[str, Any]) -> None:
 
 
 def exploration_noise_seed(metadata, *, suite: str, task_id: int, state_id: int, replan: int) -> int:
+    if metadata["schema_version"] == ALIGNMENT_SCHEMA:
+        from ember.pi05_eval.return_credit import exploration_seed
+
+        global_task = ("libero_spatial", "libero_object", "libero_goal", "libero_10").index(suite) * 10 + task_id
+        return exploration_seed(global_task, state_id, 4, replan)
     from ember.pi05_eval_contract import policy_noise_seed
 
     return policy_noise_seed(int(metadata["seed_root"]), suite, task_id, state_id, replan)
@@ -93,6 +189,10 @@ def add_exploration_noise(chunks, slots: Sequence[dict[str, Any]], *, task, cont
     metadata = contract.get("diagnostic_exploration")
     if metadata is None:
         return chunks
+    if metadata["schema_version"] == ALIGNMENT_SCHEMA:
+        from ember.pi05_eval.trajectory_capture import record_pre_exploration_means
+
+        record_pre_exploration_means(slots, chunks)
     seeds = [exploration_noise_seed(metadata, suite=str(task["suite"]), task_id=int(task["task_id"]),
              state_id=int(slot["init_state_id"]), replan=int(slot["replan_index"])) for slot in slots]
     for slot, seed in zip(slots, seeds, strict=True):
@@ -106,7 +206,12 @@ def add_exploration_noise(chunks, slots: Sequence[dict[str, Any]], *, task, cont
                             for seed in seeds])
     noise = (standard @ _cpu_cholesky().T).reshape(len(slots), 5, 7)
     result = chunks.clone()
-    result[:, :5, :7] += noise.to(device=chunks.device, dtype=chunks.dtype)
+    if metadata["schema_version"] == ALIGNMENT_SCHEMA:
+        # Match the collection intervention: add in float32 before casting back.
+        for index in range(len(slots)):
+            result[index, :5, :7] = (chunks[index, :5, :7].float().cpu() + noise[index]).to(result)
+    else:
+        result[:, :5, :7] += noise.to(device=chunks.device, dtype=chunks.dtype)
     return result
 
 

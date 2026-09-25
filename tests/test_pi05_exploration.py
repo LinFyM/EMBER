@@ -9,10 +9,12 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 import torch
+from scipy.stats import norm
 
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval import return_credit as capture
 from ember.writer.return_credit import loo_advantages, score_cotangent
+from ember.writer.score_conditioning import correlated_sign_score
 from ember.pi05_eval.exploration import (
     DIAGNOSTIC_STATES, add_exploration_noise, build_exploration_contract,
     episode_exploration_fields, exploration_covariance, exploration_metadata, exploration_noise_seed,
@@ -41,6 +43,23 @@ def _contract(enabled=False):
 
 def _slots(states=(32, 33)):
     return [{"init_state_id": state, "replan_index": 2} for state in states]
+
+
+def test_return_score_conditioning_independent_limit_and_temporal_correlation():
+    threshold = -1. + 2. / (2. + 1e-6)
+    signs = np.array([1., -1., 1., -1., 1.])
+    x = np.array([.2, -.4, .8, 1.2, -.1])
+    means = threshold + signs * .1 * x
+    probability, score, _, _ = correlated_sign_score(means, signs, rho=0.)
+    np.testing.assert_allclose(probability, np.prod(norm.cdf(x)), rtol=2e-4)
+    np.testing.assert_allclose(score, signs/.1 * norm.pdf(x)/norm.cdf(x), rtol=2e-4)
+    same_signs = np.ones(5)
+    near_threshold = np.full(5, threshold + .02)
+    correlated, revised, _, _ = correlated_sign_score(near_threshold, same_signs)
+    independent, original, _, _ = correlated_sign_score(near_threshold, same_signs, rho=0.)
+    assert correlated > independent
+    assert not np.allclose(revised, original, atol=.01)
+    assert np.isfinite(revised).all()
 
 
 def test_correlated_noise_matches_canonical_covariance_and_only_changes_execution_block():

@@ -126,5 +126,9 @@ def finish_episode_row(
     passive = save_passive_trace(contract.get("diagnostic_occupancy_capture"), task, slot)
     if passive is not None:
         row["continuous_control_trace"] = passive
+    if contract.get("return_credit_collection") is not None:
+        from ember.pi05_eval.return_credit import save_decisions
+
+        row["return_credit_collection"] = save_decisions(contract, task, slot)
     row.update(episode_adapter_fields(contract, task_adapter, slot.get("episode_adapter")))
     return row

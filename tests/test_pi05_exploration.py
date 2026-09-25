@@ -11,6 +11,8 @@ import pytest
 import torch
 
 from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval import return_credit as capture
+from ember.writer.return_credit import loo_advantages, score_cotangent
 from ember.pi05_eval.exploration import (
     DIAGNOSTIC_STATES, add_exploration_noise, build_exploration_contract,
     episode_exploration_fields, exploration_covariance, exploration_metadata, exploration_noise_seed,
@@ -292,3 +294,68 @@ def test_comparison_pipeline_requires_same_adapter_and_explicit_flag(tmp_path):
     right["adapter"] = {"checkpoint": "different"}
     with pytest.raises(Pi05EvaluationError, match="one adapter"):
         validate_exploration_comparison(left, right, allow_exploration_pair=True)
+
+
+def test_loo_and_full_sigma_score_have_registered_sign_and_weight():
+    advantages = loo_advantages([1, 0, 0, 0])
+    torch.testing.assert_close(advantages, torch.tensor([1., -1/3, -1/3, -1/3]))
+    old = torch.zeros(35)
+    latent = torch.arange(35, dtype=torch.float32) / 1000
+    precision = torch.eye(35)
+    expected = latent * (1.5 * 20 / 4 / 128)
+    torch.testing.assert_close(score_cotangent(latent, old, 1.5, Q=20, M=4,
+                                               precision=precision), expected)
+    with pytest.raises(ValueError):
+        score_cotangent(latent, old, 1, Q=0, M=0)
+
+
+def test_stateless_replica_noise_and_reward_independent_reservoir(tmp_path, monkeypatch):
+    spec = capture.authority()
+    spec["resources"]["study_root"] = str(tmp_path)
+    monkeypatch.setattr(capture, "authority", lambda: spec)
+    output = tmp_path / "collection" / "groups" / "task_002_state_00"
+    task = {"suite": "libero_spatial", "task_id": 2}
+    contract = {"return_credit_collection": {
+        "global_task": 2, "init_state_id": 0, "replica": 0,
+        "teacher_demo": 34, "output": str(output)},
+        "rng": {"inference_seed": 7},
+        "policy": {"num_inference_steps": 10, "replan_steps": 5}}
+    slot = {"init_state_id": 0, "steps": 0, "replan_index": 0,
+            "policy_noise_seeds": [], "obs": None}
+    raw = {"observation.state": torch.zeros(8), "task": "pick"}
+    processed = {"tokens": torch.zeros(1, 3)}
+    for replan in range(6):
+        slot["replan_index"], slot["steps"] = replan, replan * 5
+        result = capture.explore_and_retain(torch.zeros(1, 50, 7), [slot],
+            raw_inputs=[raw], processed=[processed], noise=torch.zeros(1, 50, 32),
+            task=task, contract=contract)
+        assert torch.isfinite(result).all()
+        slot["policy_noise_seeds"].append(
+            capture.policy_noise_seed(7, "libero_spatial", 2, 0, replan))
+    assert slot["return_credit_reservoir"]["seen"] == 6
+    assert len(slot["return_credit_reservoir"]["items"]) == 4
+    assert capture.exploration_seed(2, 0, 0, 0) != capture.exploration_seed(2, 0, 1, 0)
+    slot["steps"] = 27
+    saved = capture.save_decisions(contract, task, slot)
+    payload = torch.load(saved["path"], weights_only=True)
+    assert (payload["Q"], payload["M"]) == (6, 4)
+    assert all(len(row["executed_mask"]) == 5 for row in payload["decisions"])
+
+
+def test_return_credit_scope_rejects_unregistered_task_state_and_teacher(tmp_path, monkeypatch):
+    spec = capture.authority()
+    spec["resources"]["study_root"] = str(tmp_path)
+    monkeypatch.setattr(capture, "authority", lambda: spec)
+    task = {"suite": "libero_spatial", "task_id": 2}
+    scope = {"global_task": 2, "init_state_id": 0, "replica": 0,
+             "teacher_demo": 34,
+             "output": str(tmp_path / "collection/groups/task_002_state_00")}
+    contract = {"return_credit_collection": scope, "rng": {"inference_seed": 7},
+                "policy": {"num_inference_steps": 10, "replan_steps": 5}}
+    assert capture.validate_collection(contract, task) == scope
+    for field, invalid in (("global_task", 14), ("init_state_id", 32),
+                           ("teacher_demo", 46), ("replica", 4)):
+        changed = copy.deepcopy(contract)
+        changed["return_credit_collection"][field] = invalid
+        with pytest.raises(Pi05EvaluationError):
+            capture.validate_collection(changed, task)

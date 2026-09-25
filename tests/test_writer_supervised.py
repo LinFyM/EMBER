@@ -4,6 +4,7 @@ import pytest
 import torch
 
 from ember.writer.function_credit import mean_velocity_loss
+from ember.writer.return_credit import candidate_step
 
 
 def test_velocity_loss_uses_all_horizon_only_real_action_dimensions():
@@ -317,3 +318,18 @@ def test_joint_losses_replay_one_writer_and_all_meta_once():
     for parameter in parameters.values():
         assert parameter.grad == pytest.approx(1/12 * 2 * 9 + 1/36 * 2 * 8)
     assert result['queries'] == 7 and result['teaching_queries'] == 2
+
+
+def test_fresh_sgd_candidates_are_independent_parent_directions():
+    module = torch.nn.Linear(2, 1, bias=True)
+    parameters = tuple(module.named_parameters())
+    parent = {name: value.detach().clone() for name, value in parameters}
+    direction = {name: torch.ones_like(value) for name, value in parameters}
+    plus, plus_optimizer = candidate_step(parameters, parent, direction, sign=1, radius=.17)
+    plus_values = {name: value.detach().clone() for name, value in parameters}
+    minus, minus_optimizer = candidate_step(parameters, parent, direction, sign=-1, radius=.17)
+    for name, value in parameters:
+        torch.testing.assert_close(plus_values[name] - parent[name], parent[name] - value.detach())
+    assert abs(plus["actual_parameter_step_norm"] - .17) < 1e-6
+    assert abs(minus["actual_parameter_step_norm"] - .17) < 1e-6
+    assert plus_optimizer["state"] == minus_optimizer["state"] == {}

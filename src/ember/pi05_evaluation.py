@@ -169,7 +169,13 @@ def _plan_action_chunks(
                 noise=noise,
                 num_steps=int(contract["policy"]["num_inference_steps"]),
             )
-            chunks = add_exploration_noise(chunks, group, task=task, contract=contract)
+            if contract.get("return_credit_collection") is not None:
+                from ember.pi05_eval.return_credit import explore_and_retain
+
+                chunks = explore_and_retain(chunks, group, raw_inputs=raw_inputs,
+                    processed=processed, noise=noise, task=task, contract=contract)
+            else:
+                chunks = add_exploration_noise(chunks, group, task=task, contract=contract)
             actions = postprocess(chunks).detach().cpu().numpy()
         for row, (slot, plan, seed) in enumerate(
             zip(group, actions, seeds, strict=True)
@@ -194,6 +200,10 @@ def rollout_shard(
     task_adapter: Any | None = None,
 ) -> list[dict[str, Any]]:
     validate_exploration_contract(contract)
+    if contract.get("return_credit_collection") is not None:
+        from ember.pi05_eval.return_credit import validate_collection
+
+        validate_collection(contract, task)
     if not state_ids or len(set(state_ids)) != len(state_ids):
         raise Pi05EvaluationError("evaluation shard state IDs are empty or duplicated")
     dummy = np.asarray(contract["environment"]["dummy_action"], dtype=np.float32)

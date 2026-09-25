@@ -4,6 +4,17 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-25：夹爪条件化信用分解完成，方向作用明显但两半一致性未改善
+
+实现d6348660，study `/data0/user/ymdai/ember_runs/return_score_conditioning_20260925`。
+512保存decision、96非零输入、192真实十步flow、五个非零组/11零组、16梯度文件及回执齐全。
+主讨论从原latent与全部向量独立重算score、分组和方向，`coordination/main_recheck.{py,json}`；完整裁决findings§148。
+RAW→RB相对改变量.587716、cos .837657，旧RAW重算差.001609；改变不是低位重算可以解释的量级。
+偶/奇cos仍−.02686/−.02450，task37份额.68625→.71362；没有验证总体方差、闭环收益或统一根因。
+实际.144898 GPU-hours/740MiB，未更新模型或新增环境步。
+登记[96条配对闭环](designs/return_score_update_design.md)：同父与封存方向、同SGD系数，P/RAW/RB、八task、两state与两teacher，
+检验修正是否有实际行为价值；只登记这一阶段，不自动扩大评测或连续训练。派发与active以progress为准。
+
 ## 2026-09-25：成功信用方向完成，未兑现独立闭环收益；接续有限冻结分解
 
 Study `/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925`；采集dd2e00bc、后续统一4e3ade36。

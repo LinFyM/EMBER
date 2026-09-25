@@ -1,0 +1,217 @@
+{
+  "schema_version": "ember_return_score_update_v1",
+  "study_id": "return_score_update_causality_20260925",
+  "phase": "stage1_96_closed_loop",
+  "coordinator": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+  "executor": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+  "parent": {
+    "arm": "C_S00",
+    "macro": 1155,
+    "checkpoint": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/checkpoints/macro_00001155",
+    "training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+    "config": "configs/relational_support_causality_v1/train_C_S00.json",
+    "restore": "full Writer weights and fixed buffers; no parent Adam/scheduler/sampler continuation",
+    "mutable": false
+  },
+  "gradient_source": {
+    "study_root": "/data0/user/ymdai/ember_runs/return_score_conditioning_20260925",
+    "implementation_commit": "d6348660399d0a24841af30ed9a98ff64b5078e3",
+    "RAW": "gradient/RAW_total.safetensors",
+    "RB": "gradient/RB_total.safetensors",
+    "recompute": false,
+    "new_gradient_queries": 0,
+    "raw_norm_reference": 286.5846646671991,
+    "rb_norm_reference": 302.2425361651718
+  },
+  "intervention": {
+    "arms": [
+      "P",
+      "RAW",
+      "RB"
+    ],
+    "base_radius": 0.17076466164261486,
+    "alpha_formula": "base_radius / norm(saved RAW_total)",
+    "alpha_reference": 0.0005958611283018859,
+    "shared_SGD_alpha": true,
+    "steps_per_candidate": 1,
+    "candidates_independent_parent": true,
+    "momentum": 0,
+    "weight_decay": 0,
+    "clipping": false,
+    "source_frozen": true,
+    "new_FM": false,
+    "new_reward_collection": false,
+    "formula": {
+      "P": "parent",
+      "RAW": "parent + alpha * RAW_total",
+      "RB": "parent + alpha * RB_total"
+    },
+    "radius_reference": {
+      "RAW": 0.17076466164261486,
+      "RB": 0.18009457862020278
+    },
+    "RB_separate_normalization": false
+  },
+  "evaluation": {
+    "task_ids": [
+      2,
+      5,
+      12,
+      17,
+      22,
+      25,
+      34,
+      37
+    ],
+    "task_role": "legal fit/train only",
+    "init_state_ids": [
+      32,
+      33
+    ],
+    "teacher_demo_ids": [
+      46,
+      47
+    ],
+    "arms": [
+      "P",
+      "RAW",
+      "RB"
+    ],
+    "episodes_per_arm": 32,
+    "total_episodes": 96,
+    "teacher_reuse": "two fixed correct teachers crossed with two states per task; explicitly not 50-video no-replacement",
+    "environment_seed": 7,
+    "policy_seed_root": 7,
+    "same_state_RNG_across_teachers": true,
+    "num_inference_steps": 10,
+    "replan_steps": 5,
+    "dummy_settling_steps": 10,
+    "action_shape": [
+      50,
+      7
+    ],
+    "state_dim": 8,
+    "render_resolution": 256,
+    "model_resolution": 224,
+    "suite_horizons": {
+      "libero_spatial": 220,
+      "libero_object": 280,
+      "libero_goal": 300,
+      "libero_10": 520
+    },
+    "exploration": false,
+    "pilot": {
+      "task": 2,
+      "state": 32,
+      "teacher": 46,
+      "arms": [
+        "P",
+        "RAW",
+        "RB"
+      ],
+      "episodes": 3,
+      "included_in_96": true,
+      "score_based_gate": false
+    },
+    "additional_engineering_episodes_max": 0,
+    "additional_environment_probes_max": 0,
+    "held_inputs": false,
+    "official_validation_test": false
+  },
+  "materialization": {
+    "banks_total": 48,
+    "conditions_per_arm": 16,
+    "all_new_same_commit": true,
+    "parent_recompiled": true,
+    "targets": 38,
+    "rank": 16,
+    "writer_invocations_per_task_teacher_arm": 1,
+    "no_old_scores_in_primary_comparisons": true,
+    "teacher_actions_states_rewards_ids_as_condition": false
+  },
+  "capture": {
+    "all_rows_compact": true,
+    "continuous_object_eef_gripper": "all96 t0 and every executed control step T+1",
+    "stage_predicates": "all96 T+1",
+    "full_cases": {
+      "tasks": [
+        2,
+        12,
+        22,
+        34
+      ],
+      "state": 32,
+      "teacher": 46,
+      "arms": [
+        "P",
+        "RAW",
+        "RB"
+      ],
+      "count": 12
+    },
+    "first_replan_function_readout": "reuse all96 trajectory full50x7 and executed first5; no extra query/forward",
+    "extra_frozen_predictions_max": 0
+  },
+  "analysis": {
+    "comparisons": [
+      [
+        "RB",
+        "RAW"
+      ],
+      [
+        "RB",
+        "P"
+      ],
+      [
+        "RAW",
+        "P"
+      ]
+    ],
+    "teacher_summary": [
+      "46",
+      "47",
+      "equal_two_teachers"
+    ],
+    "per_task_suite": true,
+    "retained_gained_lost_churn_jaccard": true,
+    "bootstrap": {
+      "draws": 20000,
+      "seed": 20260925,
+      "confidence": 0.95,
+      "rng": "numpy.default_rng",
+      "sampling": "per draw sample8 tasks with replacement then2 states within each; keep teachers/arms jointly paired"
+    },
+    "old_E2_self_differences": "separate descriptive historical subset only, not primary paired controls",
+    "no_model_selection": true,
+    "no_deployment_claim": true,
+    "no_video_necessity_claim": true
+  },
+  "resources": {
+    "study_root": "/data0/user/ymdai/ember_runs/return_score_update_causality_20260925",
+    "new_data0_gib_max": 3,
+    "new_data1_code_mib_max": 768,
+    "gpu_hours_expected": [
+      0.8,
+      1.2
+    ],
+    "gpu_hours_hard_max": 1.5,
+    "simultaneous_gpu_max": 2,
+    "project_physical_gpu_max": 6,
+    "include_initialization_materialization_engineering_failures": true,
+    "live_both_nodes_and_strg01_quota": true,
+    "normal_monitoring": "one continuous exit-event wait; no progress cache polling"
+  },
+  "execution": {
+    "new_implementation": "single clean pushed detached commit for candidates, all48 banks and all96 valid episodes",
+    "no_old_runtime_or_artifact_mutation": true,
+    "no_parallel_trainer_or_evaluator": true,
+    "resume": "only not-started registered panels; no automatic rerun of failed episodes",
+    "completion": "Queue main with original artifacts, commit, exact commands/env, resources and missing items; stop new work",
+    "automatic_stage2": false,
+    "deferred_states": [
+      34,
+      35
+    ],
+    "deferred_requires_new_scientific_decision": true
+  }
+}

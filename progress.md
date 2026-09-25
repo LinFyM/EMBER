@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：成功信用方向批次已复核，接续一次冻结信用分解（2026-09-25）
+## 当前状态：冻结信用分解已复核，登记96条闭环补验（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,9 +9,30 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近成功信用批次已完成。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近冻结信用分解已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[夹爪条件化信用分解](docs/designs/return_score_conditioning_design.md)**，
+**当前active design为[96条闭环补验](docs/designs/return_score_update_design.md)**，
+机器合同`configs/return_score_update_v1/experiment_spec.json`。固定父C_S00@1155与d634封存RAW/RB梯度，
+两候选各从父独立一次fresh SGD、相同系数.0005958611283，不继承父Adam或新增梯度。
+P/RAW/RB均以新统一冻结提交物化/评测：48个bank、八合法task×states32/33×teacher46/47×三臂，共96闭环、12full。
+首个task2/state32/teacher46三格pilot计入96；没有额外工程episode、预测矩阵、新采集/held/官方Val/Test。
+新study `/data0/user/ymdai/ember_runs/return_score_update_causality_20260925`；新data0≤3GiB、代码≤768MiB，
+预计.8–1.2 GPU-hours，含初始化/物化/工程/失败/评测硬限1.5小时，同时最多两卡、项目≤6。
+实际实现/资源准入由Sol负责，派发回执另记；登记不等于已开跑。本批完成主动Queue原件，停止新增实验。
+
+### 最近完成：冻结信用分解与主讨论裁决（2026-09-25）
+
+实现d6348660399d0a24841af30ed9a98ff64b5078e3，根`/data0/user/ymdai/ember_runs/return_score_conditioning_20260925`。
+512decision/96非零输入、192真实十步flow、五活动task×parity/11零组、16梯度文件齐全，无参数更新/新环境步。
+主讨论审阅条件score、实际bank与完整Writer反传，从所有原latent及向量独立复算身份/score/分组和方向；
+`coordination/main_recheck.{py,json}`保存证据，findings§148为完整裁决。
+RAW→RB相对改变量.587716、cos .837657（33.106度），RAW对旧E2重算差.001609；这不是无关紧要的数值变化。
+偶/奇cos −.026864→−.024499、task37份额.68625→.71362，未验证信用一致性改善，更无闭环收益。
+两者范数286.5847/302.2425：后继固定同一SGD系数，RB步长约高5.46%，不声称等函数/参数步幅。
+两卡260.816秒=.144898 GPU-hours，CPU阶段未计时；data0 740MiB、代码约505MiB，在限内。
+
+### 前批冻结分解的启动记录（已完成，不再恢复）
+
 机器合同`configs/return_score_conditioning_v1/experiment_spec.json`。复用前批512保存decision/128条采集与父C_S00@1155，
 仅对96个非零信用decision计算RAW与按实际夹爪sign条件化的RB两种完整梯度，最多192次真实十步forward。
 不更新参数、不建候选或bank、不读新标签、不新增环境初始化/闭环；完成后主动Queue，停止新增实验。
@@ -20,7 +41,7 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 科学合同及§147裁决在`91d63a18`集成推送。使用Queue派给上述原Sol任务，回执
 `01a0d8ae-cc20-73e1-9a39-42dfd0182333`；13:09:29 UTC核对完整正文进入inProgress turn
 `01a0d8ae-cc23-7563-b17a-c304e58c3516`，并读到Sol明确接手本批、核对合同/只读来源及隔离实现的回应。
-当前证据是已接手实现，未称GPU已启动。正文及逐字送达/回应在旧return-credit study的
+上述是当时接手记录；本批现已完成，裁决见上。正文及逐字送达/回应在旧return-credit study的
 `coordination/score_conditioning_{dispatch.txt,delivery.json}`；未重复发送。
 
 ### 最近完成：成功信用方向及主讨论裁决（2026-09-25）

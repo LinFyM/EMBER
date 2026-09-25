@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：CPU构造完成且主讨论复核；登记两臂匹配学习，待派发（2026-09-26）
+## 当前状态：两臂匹配学习已Queue，Sol明确接手实现；正式GPU尚未启动（2026-09-26）
 
 Active design：[language_content_path_causality](docs/designs/language_content_path_causality_design.md)，
 机器规格`configs/language_content_path_causality_v1/experiment_spec.json`。
@@ -12,7 +12,12 @@ CPU回执在`/data1/user/ymdai/projects/EMBER-language-content-path-cpu-dev/.cod
 新范围为C0/Cplus各fresh630，仅一个内容路径开关不同；只评固定末点630的736条，448新条件bank，
 144个B630旧bank引用，28full，全行T+1；Source/B均重新闭环。预算18 GPU-hours/12GiB data0/768MiB代码。
 重点检验额外能力损失能否减少且原C新增能否保住，正确及另一正确视频是否超过语言基准。
-新合同待提交/推送后Queue；尚未把计划写成已执行，不从旧GPU合同自行恢复。
+新合同在1bd4e2a7推送；2026-09-25 18:32:14 UTC（北京时间9月26日02:32）以Queue派给实际Sol，
+回执01a0d9d6-e3b0-7c82-af73-2d7f5862a122。18:33:36核对完整正文进入新turn
+01a0d9d6-e3b2-7922-91bb-10f21d29d2fc及Sol明确接手实现/验收后冻结启动。
+正文/回执/送达保存在本仓`.codex/tmp/language_content_path_causality_20260926/`；
+已授权其技术/资源验收通过后直接按同一合同接续，不等待Owner醒来重复确认。
+CPU完成回报已消费，后续收到同一Queue信号不重复派发；新学习完成后仍由主讨论独立复核原件再裁决。
 
 ### 已完成CPU批次的派发与授权记录
 

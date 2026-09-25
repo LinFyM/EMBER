@@ -263,13 +263,16 @@
     "extra_scalar_lr": false,
     "extra_scalar_regularizer": false,
     "aggregate_detached_in_existing_forward": [
-      "content_scale",
-      "content_scale_gradient",
       "valid_token_scaled_text_l2",
       "valid_token_frame_read_l2",
       "valid_token_inner_product"
     ],
-    "additional_monitoring_forward": false
+    "additional_monitoring_forward": false,
+    "scalar_update_records": [
+      "scale_before_update",
+      "scale_after_update",
+      "reduced_scale_gradient_before_clip"
+    ]
   },
   "frozen_references": {
     "B630": {

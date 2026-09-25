@@ -20,7 +20,11 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 新data0≤3GiB、代码≤768MiB，预计.8–1.2、硬限1.5 GPU-hours，含全部GPU初始化/工程/失败/物化/评测。
 最多同时两卡、项目≤6，由Sol做实际live资源准入；所有新bank/闭环统一一个clean pushed detached提交，旧权重只读。
 不自动补seed/step/state、改变Sigma或接续RL，128完成主动Queue主讨论并停止新增实验。
-当前设计/spec已写入，尚未派发；送达回执随后按实际情况登记，不称GPU已启动。
+设计/spec及§149裁决在`273e23c1`集成推送；以Queue派给原Sol，回执
+`01a0d926-13ce-7252-a9e1-1605a10e52d4`。15:19:57 UTC核对完整正文进入inProgress turn
+`01a0d926-13d1-76a3-8027-5257bc9422b6`，并读到Sol明确接手、审阅探索接口、验证后执行128矩阵的回应。
+当前为已接手实现，不称GPU已启动。正文/入队/逐字送达及回应在score-update study的
+`coordination/objective_alignment_{dispatch.txt,dispatch_receipt.json,delivery.json}`；没有重复派发。
 
 ### 最近完成：score-update stage1及主讨论裁决（2026-09-25）
 

@@ -24,6 +24,7 @@ from ember.pi05_eval_queue import EvaluationShard
 from ember.pi05_eval_results import AGGREGATE_SCHEMA, paired_success_comparison
 from ember.pi05_evaluation import SHARD_RESULT_SCHEMA, _plan_action_chunks, rollout_shard, validate_shard_result
 from scripts.compare_pi05_results import compare
+from scripts.return_credit_analysis import _paired_native_noise
 
 
 def _contract(enabled=False):
@@ -359,3 +360,14 @@ def test_return_credit_scope_rejects_unregistered_task_state_and_teacher(tmp_pat
         changed["return_credit_collection"][field] = invalid
         with pytest.raises(Pi05EvaluationError):
             capture.validate_collection(changed, task)
+
+
+def test_return_credit_common_noise_allows_different_terminal_replan_counts():
+    seeds = [policy_noise_seed(7, "libero_spatial", 2, 0, replan)
+             for replan in range(3)]
+    rows = [{"policy_noise_seeds": seeds[:2]},
+            {"policy_noise_seeds": seeds}]
+    _paired_native_noise(rows, 2, 0)
+    rows[1]["policy_noise_seeds"][1] += 1
+    with pytest.raises(ValueError, match="stateless"):
+        _paired_native_noise(rows, 2, 0)

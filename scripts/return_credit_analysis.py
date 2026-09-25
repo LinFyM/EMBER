@@ -10,6 +10,7 @@ import numpy as np
 from safetensors.torch import load_file
 
 from ember.pi05_eval.return_credit import authority
+from ember.pi05_eval_contract import policy_noise_seed
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
@@ -59,6 +60,16 @@ def _trace(row):
                 "control_step_only": True}
 
 
+def _paired_native_noise(rows, task, state):
+    suite, local_task = SUITES[task // 10], task % 10
+    for row in rows:
+        saved = row["policy_noise_seeds"]
+        expected = [policy_noise_seed(7, suite, local_task, state, replan)
+                    for replan in range(len(saved))]
+        if saved != expected:
+            raise ValueError("return-credit native policy RNG differs from registered stateless stream")
+
+
 def _collection_rows(spec, root):
     collected, geometry = [], []
     for condition in spec["collection"]["conditions"]:
@@ -69,9 +80,7 @@ def _collection_rows(spec, root):
             if ((group["task"], group["state"], group["teacher_demo"]) !=
                     (task, state, condition["teacher_demo"]) or len(group["rows"]) != 4):
                 raise ValueError("return-credit collection group completion changed")
-            seeds = [row["policy_noise_seeds"] for row in group["rows"]]
-            if any(value != seeds[0] for value in seeds):
-                raise ValueError("return-credit replicas lost common native policy noise")
+            _paired_native_noise(group["rows"], task, state)
             for replica, row in enumerate(group["rows"]):
                 if (row["global_task_id"], row["init_state_id"], row["replica"]) != (task, state, replica):
                     raise ValueError("return-credit collection row identity changed")
@@ -122,8 +131,9 @@ def _evaluation_rows(spec, root):
         key = row["global_task_id"], row["init_state_id"]
         grouped.setdefault(key, []).append(row)
     for key, rows in grouped.items():
-        if len(rows) != 8 or len({tuple(row["policy_noise_seeds"]) for row in rows}) != 1:
+        if len(rows) != 8:
             raise ValueError(f"return-credit cross-arm/teacher policy RNG pairing changed: {key}")
+        _paired_native_noise(rows, *key)
     return evaluated, cases, geometry
 
 

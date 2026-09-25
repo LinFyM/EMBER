@@ -12,6 +12,7 @@ from safetensors.torch import load_file
 from ember.pi05_eval.return_credit import authority
 from ember.pi05_eval_contract import policy_noise_seed
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.writer.materialization import file_record
 
 
 ARMS = ("P", "R", "NEG", "FM")
@@ -77,13 +78,19 @@ def _collection_rows(spec, root):
         for state in condition["init_state_ids"]:
             path = root / "collection" / "groups" / f"task_{task:03d}_state_{state:02d}" / "completion.json"
             group = read_json(path)
+            bank_path = (root / "banks" / "collection" / "P" /
+                         f"task_{task:03d}_teacher_{condition['teacher_demo']:02d}" / "bank_record.json")
             if ((group["task"], group["state"], group["teacher_demo"]) !=
-                    (task, state, condition["teacher_demo"]) or len(group["rows"]) != 4):
+                    (task, state, condition["teacher_demo"]) or len(group["rows"]) != 4
+                    or group["implementation_commit"] !=
+                    spec["implementation"]["collection_commit_exception"]):
                 raise ValueError("return-credit collection group completion changed")
             _paired_native_noise(group["rows"], task, state)
             for replica, row in enumerate(group["rows"]):
                 if (row["global_task_id"], row["init_state_id"], row["replica"]) != (task, state, replica):
                     raise ValueError("return-credit collection row identity changed")
+                if row["bank_record"] != file_record(bank_path):
+                    raise ValueError("return-credit row lost its original collection bank")
                 decision = row.get("return_credit_collection") or {}
                 if (decision.get("Q") != len(row["policy_noise_seeds"])
                         or decision.get("M") != min(4, decision["Q"])):
@@ -97,7 +104,7 @@ def _collection_rows(spec, root):
     return collected, geometry
 
 
-def _evaluation_rows(spec, root):
+def _evaluation_rows(spec, root, implementation_commit):
     evaluated, cases, geometry = [], [], []
     for arm in ARMS:
         for task in spec["evaluation"]["task_ids"]:
@@ -105,11 +112,19 @@ def _evaluation_rows(spec, root):
                 path = root / "evaluation" / arm / f"task_{task:03d}_teacher_{teacher:02d}" / "completion.json"
                 panel = read_json(path)
                 if ((panel["arm"], panel["task"], panel["teacher_demo"]) !=
-                        (arm, task, teacher) or len(panel["rows"]) != 4):
+                        (arm, task, teacher) or len(panel["rows"]) != 4
+                        or panel["implementation_commit"] != implementation_commit):
                     raise ValueError("return-credit evaluation panel changed")
+                bank_path = (root / "banks" / "evaluation" / arm /
+                             f"task_{task:03d}_teacher_{teacher:02d}" / "bank_record.json")
+                bank = read_json(bank_path)
+                if bank["implementation_commit"] != implementation_commit:
+                    raise ValueError("return-credit evaluation bank differs from E2")
                 for row in panel["rows"]:
                     if (row["arm"], row["global_task_id"], row["teacher_demo"]) != (arm, task, teacher):
                         raise ValueError("return-credit evaluation row identity changed")
+                    if row["bank_record"] != file_record(bank_path):
+                        raise ValueError("return-credit evaluation row bank changed")
                     geometry.append({"phase": "evaluation", "arm": arm, "task": task,
                                      "teacher": teacher, "state": row["init_state_id"], **_trace(row)})
                     capture = row["occupancy_trajectory"]
@@ -137,11 +152,11 @@ def _evaluation_rows(spec, root):
     return evaluated, cases, geometry
 
 
-def _rows(spec, root, *, include_eval=True):
+def _rows(spec, root, *, include_eval=True, implementation_commit=None):
     collected, geometry = _collection_rows(spec, root)
     if not include_eval:
         return collected, [], [], geometry
-    evaluated, cases, evaluation_geometry = _evaluation_rows(spec, root)
+    evaluated, cases, evaluation_geometry = _evaluation_rows(spec, root, implementation_commit)
     return collected, evaluated, cases, geometry + evaluation_geometry
 
 
@@ -196,12 +211,14 @@ def _success_and_pairs(spec, evaluated):
             "single_parent_and_collection_seed": True}
 
 
-def _replay(spec, root, collected):
+def _replay(spec, root, collected, implementation_commit):
     expected = sum(row["return_credit_collection"]["M"] for row in collected)
     rows = []
     for arm in ("R", "NEG", "FM"):
         for task in spec["evaluation"]["task_ids"]:
             completion = read_json(root / "replay" / arm / f"task_{task:03d}" / "completion.json")
+            if completion["implementation_commit"] != implementation_commit:
+                raise ValueError("return-credit candidate replay differs from E2")
             record = completion["arrays"]
             path = Path(record["path"])
             if not path.is_file() or path.stat().st_size != record["bytes"]:
@@ -232,8 +249,13 @@ def main():
     if output.exists():
         raise ValueError("return-credit analysis already exists or has partial preserved output")
     gradient = read_json(root / "gradient" / "completion.json")
+    implementation_commit = gradient["implementation_commit"]
+    if (implementation_commit == spec["implementation"]["collection_commit_exception"]
+            or gradient["rank_allow_tf32"] != [True, True]):
+        raise ValueError("return-credit gradient does not satisfy the E2 stage exception")
     stopped = gradient["all_advantages_zero"]
-    collected, evaluated, cases, geometry = _rows(spec, root, include_eval=not stopped)
+    collected, evaluated, cases, geometry = _rows(spec, root, include_eval=not stopped,
+                                                  implementation_commit=implementation_commit)
     if gradient["all_advantages_zero"]:
         output.mkdir(parents=True)
         _jsonl(output / "collection_rows.jsonl", collected)
@@ -241,12 +263,14 @@ def main():
         write_json_atomic(output / "completion.json", {
             "schema_version": "ember_return_credit_completion_v1",
             "study_id": spec["study_id"], "status": "reward_credit_unidentified",
+            "collection_commit": spec["implementation"]["collection_commit_exception"],
+            "gradient_evaluation_commit": implementation_commit,
             "collection_rows": len(collected), "evaluation_rows": 0,
             "continuous_traces": len(geometry), "gradient": str(root / "gradient" / "completion.json"),
             "stop_reason": "all registered LOO advantages are zero"})
         return
     summary = _success_and_pairs(spec, evaluated)
-    replay = _replay(spec, root, collected)
+    replay = _replay(spec, root, collected, implementation_commit)
     output.mkdir(parents=True)
     _jsonl(output / "collection_rows.jsonl", collected)
     _jsonl(output / "evaluation_rows.jsonl", evaluated)
@@ -257,6 +281,8 @@ def main():
     write_json_atomic(output / "completion.json", {
         "schema_version": "ember_return_credit_completion_v1",
         "study_id": spec["study_id"], "collection_rows": len(collected),
+        "collection_commit": spec["implementation"]["collection_commit_exception"],
+        "gradient_evaluation_commit": implementation_commit,
         "evaluation_rows": len(evaluated), "full_cases": len(cases),
         "continuous_traces": len(geometry), "replay_predictions": replay["candidate_predictions"],
         "gradient": str(root / "gradient" / "completion.json"),

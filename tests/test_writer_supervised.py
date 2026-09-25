@@ -340,8 +340,21 @@ def test_fresh_sgd_candidates_are_independent_parent_directions():
     assert plus_optimizer["state"] == minus_optimizer["state"] == {}
 
 
-def test_return_credit_score_replays_exact_registered_collection_bank(tmp_path):
+def test_return_credit_score_replays_exact_registered_collection_bank(tmp_path, monkeypatch):
     from types import SimpleNamespace
+    from scripts import return_credit_gradient
+
+    monkeypatch.setattr(return_credit_gradient, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(return_credit_gradient, "ASSET_ROOT", tmp_path / "assets")
+    write_json_atomic(tmp_path / "config.json", {"source": {"checkpoint": "source/checkpoint"}})
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    (parent / "ecp.safetensors").write_bytes(b"parent")
+    launch_dir = tmp_path / "launch"
+    launch_dir.mkdir()
+    write_json_atomic(launch_dir / "launch_contract.json", {
+        "implementation_commit": "collection-commit", "source_checkpoint": str(parent),
+        "science_spec": "frozen-collection-spec"})
 
     output = tmp_path / "banks/collection/P/task_022_teacher_05"
     output.mkdir(parents=True)
@@ -350,18 +363,34 @@ def test_return_credit_score_replays_exact_registered_collection_bank(tmp_path):
              "x.lora_B.default.weight": torch.ones(2, 1)}
     save_file(state, str(adapter))
     spec = {"implementation": {"collection_commit_exception": "collection-commit"},
-            "parent": {"checkpoint": str(tmp_path / "parent")}}
-    write_json_atomic(output / "bank_record.json", {
-        "implementation_commit": "collection-commit", "arm": "P",
-        "phase": "collection", "task": 22, "teacher": 5,
-        "writer": {"path": str(tmp_path / "parent/ecp.safetensors")},
+            "parent": {"checkpoint": str(parent), "config": "config.json"}}
+    bank = {
+        "schema_version": "ember_return_credit_bank_v1",
+        "implementation_commit": "collection-commit", "study_spec": "frozen-collection-spec",
+        "arm": "P", "phase": "collection", "task": 22, "teacher": 5,
+        "writer": {"arm": "P", "path": str(parent / "ecp.safetensors"),
+                   "bytes": (parent / "ecp.safetensors").stat().st_size,
+                   "parent_macro": 1155, "diagnostic_sgd_step": 0},
+        "training_teacher_actions_read": 0, "new_writer_forward": 1,
         "condition": {"adapter": file_record(adapter), "teacher_demo_indices": [5],
-                      "global_task_id": 22}})
+                      "global_task_id": 22, "suite": "libero_goal", "task_id": 2,
+                      "language": "put the object on the surface", "parameterization": "video_writer",
+                      "teacher_video_values_read": 1, "single_complete_rank16": True,
+                      "writer_invocations": 1, "condition_id": "task_22_demos_05",
+                      "teacher_videos": [{"demo_index": 5, "raw_frame_count": 10,
+                                          "sampled_frame_count": 3, "frame_indices": [0, 5, 9]}]}}
+    write_json_atomic(output / "bank_record.json", bank)
     runtime = SimpleNamespace(device=torch.device("cpu"),
+        source={"checkpoint": str(tmp_path / "assets/source/checkpoint")},
         lora=SimpleNamespace(targets=(LoRATarget("x", 2, 2),), rank=1))
-    actual, reference = _collection_lora(spec, tmp_path, 22, 5, runtime)
+    learning = SimpleNamespace(suite="libero_goal", suite_task_id=2,
+        authority=SimpleNamespace(language="put the object on the surface"),
+        episode_lengths=[10] * 6)
+    prepared = (None, torch.tensor([0, 5, 9]))
+    actual, reference = _collection_lora(spec, tmp_path, 22, 5, runtime, learning, prepared)
     assert reference == file_record(adapter)
     torch.testing.assert_close(actual["x.lora_B.default.weight"], state["x.lora_B.default.weight"])
-    spec["implementation"]["collection_commit_exception"] = "different-commit"
+    bank["condition"]["language"] = "wrong language"
+    write_json_atomic(output / "bank_record.json", bank)
     with pytest.raises(ValueError, match="actual collection condition"):
-        _collection_lora(spec, tmp_path, 22, 5, runtime)
+        _collection_lora(spec, tmp_path, 22, 5, runtime, learning, prepared)

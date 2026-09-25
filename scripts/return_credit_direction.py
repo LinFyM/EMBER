@@ -110,13 +110,21 @@ def _runtime(config):
     return runtime
 
 
-def _load_state(runtime, spec, root: Path, arm: str) -> dict:
+def _load_state(runtime, spec, root: Path, arm: str, *, implementation_commit: str | None = None) -> dict:
     if arm == "P":
         path = Path(spec["parent"]["checkpoint"]) / "ecp.safetensors"
     else:
         path = root / "candidates" / arm / "weights.safetensors"
-        if not (root / "candidates" / arm / "completion.json").is_file():
+        completion_path = root / "candidates" / arm / "completion.json"
+        if not completion_path.is_file():
             raise ValueError("return-credit candidate has no sealed one-step completion")
+        completion = read_json(completion_path)
+        if (implementation_commit is None or completion["implementation_commit"] != implementation_commit
+                or completion["parent_checkpoint"] != spec["parent"]["checkpoint"]
+                or completion["weights"] != file_record(path)
+                or completion["parent_adam_inherited"] is not False
+                or completion["sampler_continuation"] is not False):
+            raise ValueError("return-credit candidate differs from the registered E2 state")
     weights = load_file(str(path), device="cpu")
     runtime.state.load_state_dict(weights, strict=True)
     runtime.state.requires_grad_(False).eval()
@@ -350,7 +358,8 @@ def _evaluate(spec, root, config, state, gpu_index, arms, *, jobs=None):
                      ((arm, task_id) for arm in arms
                       for task_id in spec["evaluation"]["task_ids"]))
         for arm, task_id in scheduled:
-            source = _load_state(runtime, spec, root, arm)
+            source = _load_state(runtime, spec, root, arm,
+                                 implementation_commit=state["commit"])
             task = tasks[task_id]
             envs, init_states = pool.switch(asdict(task))
             for teacher in spec["evaluation"]["teacher_demos"]:
@@ -403,7 +412,8 @@ def _replay(spec, root, config, state, arms):
         for arm in arms:
             if arm not in ("R", "NEG", "FM"):
                 raise ValueError("only three registered candidates need saved-decision replay")
-            source = _load_state(runtime, spec, root, arm)
+            source = _load_state(runtime, spec, root, arm,
+                                 implementation_commit=state["commit"])
             for condition in spec["collection"]["conditions"]:
                 task_id, teacher = condition["task"], condition["teacher_demo"]
                 output = root / "replay" / arm / f"task_{task_id:03d}"

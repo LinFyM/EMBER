@@ -37,6 +37,8 @@ def _gradient_inputs(spec, *, formal: bool):
     if formal and (state["branch"] or state["dirty_paths"]
                    or not git_state_is_clean_pushed_or_frozen_authority(state)):
         raise ValueError("return-credit gradient requires one clean pushed detached commit")
+    if formal and state["commit"] == spec["implementation"]["collection_commit_exception"]:
+        raise ValueError("return-credit repair requires the separately registered E2 commit")
     root = Path(spec["resources"]["study_root"])
     config = read_json(REPO_ROOT / spec["parent"]["config"])
     run = read_json(Path(spec["parent"]["checkpoint"]).parent.parent / "run_contract.json")
@@ -54,12 +56,21 @@ def _collection(spec, root):
                 raise ValueError(f"return-credit collection group is incomplete: {path}")
             group = read_json(path)
             rows = group["rows"]
+            bank_path = (root / "banks" / "collection" / "P" /
+                         f"task_{row['task']:03d}_teacher_{row['teacher_demo']:02d}" / "bank_record.json")
+            bank = read_json(bank_path)
             if ((group["task"], group["state"], group["teacher_demo"]) !=
                     (row["task"], state_id, row["teacher_demo"])
+                    or group["implementation_commit"] != spec["implementation"]["collection_commit_exception"]
                     or len(rows) != 4 or [r["replica"] for r in rows] != [0, 1, 2, 3]
                     or any(r["global_task_id"] != row["task"] or
                            r["teacher_demo"] != row["teacher_demo"] or
-                           r["init_state_id"] != state_id for r in rows)):
+                           r["init_state_id"] != state_id or
+                           r["bank_record"] != file_record(bank_path) or
+                           r["language"] != bank["condition"]["language"] or
+                           (r["suite"], r["task_id"]) !=
+                           (bank["condition"]["suite"], bank["condition"]["task_id"])
+                           for r in rows)):
                 raise ValueError("return-credit collection identity or four replicas changed")
             rewards = [int(r["success"]) for r in rows]
             advantages = loo_advantages(rewards)
@@ -107,22 +118,47 @@ def _decision_payload(row):
     if (payload["schema_version"] != "ember_return_credit_decisions_v1"
             or payload["Q"] != record["Q"] or payload["M"] != record["M"]
             or payload["replica"] != row["replica"]
+            or (payload["global_task"], payload["teacher_demo"], payload["init_state_id"]) !=
+               (row["global_task_id"], row["teacher_demo"], row["init_state_id"])
             or len(payload["decisions"]) != min(4, payload["Q"])):
         raise ValueError("return-credit Q/M or selected decision identity changed")
     return payload
 
 
-def _collection_lora(spec, root, task_id, teacher, runtime):
-    record = read_json(root / "banks" / "collection" / "P" /
-                       f"task_{task_id:03d}_teacher_{teacher:02d}" / "bank_record.json")
-    condition = record["condition"]
-    adapter = condition["adapter"]
-    if (record["implementation_commit"] != spec["implementation"]["collection_commit_exception"]
+def _collection_lora(spec, root, task_id, teacher, runtime, learning_task, prepared):
+    bank_dir = root / "banks" / "collection" / "P" / f"task_{task_id:03d}_teacher_{teacher:02d}"
+    record = read_json(bank_dir / "bank_record.json")
+    launch = read_json(root / "launch" / "launch_contract.json")
+    sealed = record["condition"]
+    adapter = sealed["adapter"]
+    source_checkpoint = str(ASSET_ROOT / read_json(REPO_ROOT / spec["parent"]["config"])["source"]["checkpoint"])
+    if (launch["implementation_commit"] != spec["implementation"]["collection_commit_exception"]
+            or launch["source_checkpoint"] != str(Path(spec["parent"]["checkpoint"]))
+            or record["schema_version"] != "ember_return_credit_bank_v1"
+            or record["implementation_commit"] != launch["implementation_commit"]
+            or record["study_spec"] != launch["science_spec"]
             or record["arm"] != "P" or record["phase"] != "collection"
             or (record["task"], record["teacher"]) != (task_id, teacher)
-            or record["writer"]["path"] != str(Path(spec["parent"]["checkpoint"]) / "ecp.safetensors")
-            or condition["teacher_demo_indices"] != [teacher]
-            or condition["global_task_id"] != task_id
+            or record["writer"] != {"arm": "P", "path": str(Path(spec["parent"]["checkpoint"]) / "ecp.safetensors"),
+                                    "bytes": (Path(spec["parent"]["checkpoint"]) / "ecp.safetensors").stat().st_size,
+                                    "parent_macro": 1155, "diagnostic_sgd_step": 0}
+            or runtime.source["checkpoint"] != source_checkpoint
+            or record["training_teacher_actions_read"] != 0 or record["new_writer_forward"] != 1
+            or sealed["teacher_demo_indices"] != [teacher]
+            or sealed["global_task_id"] != task_id
+            or (sealed["suite"], sealed["task_id"], sealed["language"]) !=
+               (learning_task.suite, learning_task.suite_task_id, learning_task.authority.language)
+            or sealed["parameterization"] != "video_writer"
+            or sealed["teacher_video_values_read"] != 1
+            or sealed["single_complete_rank16"] is not True
+            or sealed["writer_invocations"] != 1
+            or len(sealed["teacher_videos"]) != 1
+            or sealed["teacher_videos"][0] != {
+                "demo_index": teacher,
+                "raw_frame_count": learning_task.episode_lengths[teacher],
+                "sampled_frame_count": len(prepared[1]),
+                "frame_indices": prepared[1].detach().cpu().tolist()}
+            or Path(adapter["path"]) != bank_dir / f"{sealed['condition_id']}.safetensors"
             or adapter != file_record(Path(adapter["path"]))):
         raise ValueError("return-credit gradient bank differs from actual collection condition")
     lora = load_file(adapter["path"], device=str(runtime.device))
@@ -136,20 +172,27 @@ def _relative_lora_difference(generated, reference):
                             for name in reference)
     square_reference = sum(float(value.float().square().sum())
                            for value in reference.values())
-    return math.sqrt(square_difference / square_reference)
+    maxabs = max(float((generated[name].detach().float() - reference[name].float()).abs().max())
+                 for name in reference)
+    return {"relative_l2": math.sqrt(square_difference / square_reference), "maxabs": maxabs}
 
 
-def _score_task(runtime, cache, data, parameters, spec, root, task_id, groups, *, pilot=False):
+def _score_task(runtime, cache, data, parameters, spec, root, task_id, groups, *,
+                save_gradients=True):
     runtime.state.train()
     teacher = next(row["teacher_demo"] for row in spec["collection"]["conditions"]
                    if row["task"] == task_id)
-    condition = cache.condition(task_id, (teacher,))
-    lora, adapter = _collection_lora(spec, root, task_id, teacher, runtime)
+    prepared = cache.condition(task_id, (teacher,))
+    lora, adapter = _collection_lora(spec, root, task_id, teacher, runtime,
+                                    data.tasks[task_id], prepared)
     parity_gradients = []
     audit = {"task": task_id, "teacher_demo": teacher, "decisions": 0,
              "nonzero_advantage_decisions": 0, "squared_replay_error": 0.,
              "replay_coordinates": 0, "replay_maxabs": 0., "collection_adapter": adapter,
-             "writer_recompile_relative_l2": [], "episodes": []}
+             "writer_recompile": [], "episodes": [],
+             "source_checkpoint": runtime.source["checkpoint"],
+             "source_training_commit": runtime.source["source_training_commit"],
+             "allow_tf32": torch.backends.cuda.matmul.allow_tf32}
     for parity in (0, 1):
         cotangent = {name: torch.zeros_like(value, dtype=torch.float32)
                      for name, value in lora.items()}
@@ -182,30 +225,54 @@ def _score_task(runtime, cache, data, parameters, spec, root, task_id, groups, *
                     audit["replay_coordinates"] += 35
                     audit["replay_maxabs"] = max(audit["replay_maxabs"], float(diff.abs().max()))
                     audit["decisions"] += 1
-                    if pilot:
-                        break
-                if pilot and audit["decisions"]:
-                    break
-            if pilot and audit["decisions"]:
-                break
         runtime.state.zero_grad(set_to_none=True)
         if any(torch.count_nonzero(value).item() for value in cotangent.values()):
             runtime.state.train()
-            generated = runtime.compile(condition)
-            audit["writer_recompile_relative_l2"].append(
-                _relative_lora_difference(generated, lora))
+            generated = runtime.compile(prepared)
+            audit["writer_recompile"].append({"parity": parity,
+                **_relative_lora_difference(generated, lora)})
             torch.autograd.backward(tuple(generated.values()),
                 tuple(cotangent[name].to(value) for name, value in generated.items()))
         gradient = _snapshot(parameters)
         parity_gradients.append(gradient)
-        if pilot:
-            break
-        _save(root / "gradient" / "tasks" / f"task_{task_id:03d}_{'even' if parity == 0 else 'odd'}.safetensors",
-              gradient)
+        if save_gradients:
+            _save(root / "gradient" / "tasks" /
+                  f"task_{task_id:03d}_{'even' if parity == 0 else 'odd'}.safetensors", gradient)
     audit["replay_rms"] = math.sqrt(audit["squared_replay_error"] / max(1, audit["replay_coordinates"]))
     if audit["replay_rms"] > spec["implementation"]["flow_parity_first5_normalized_rms_max"]:
         raise ValueError(f"return-credit real ten-flow replay RMS exceeded .01: {audit['replay_rms']}")
     return parity_gradients, audit
+
+
+def _repair_probe(spec, root, config, state):
+    """Reuse the original task22 decisions before the complete E2 gradient run."""
+    output = root / "audit" / "task22_repair_e2.json"
+    if output.exists() or (root / "gradient").exists():
+        raise ValueError("return-credit repair probe or full gradient has already started")
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.set_num_threads(4)
+    runtime = build_runtime(ASSET_ROOT, config, torch.device("cuda:0"))
+    runtime.policy.requires_grad_(False).eval()
+    runtime.state.load_state_dict(load_file(str(Path(spec["parent"]["checkpoint"]) /
+                                           "ecp.safetensors"), device="cpu"), strict=True)
+    runtime.state.train()
+    data = WriterTrainingData(ASSET_ROOT, config["data"],
+                              camera_view=config["observer"]["camera_view"])
+    try:
+        cache = VideoConditionCache(runtime, data, int(config["runtime"]["raw_video_cache_bytes"]))
+        groups, _ = _collection(spec, root)
+        _, audit = _score_task(runtime, cache, data, _parameters(runtime), spec, root, 22,
+                               groups, save_gradients=False)
+        if audit["decisions"] != spec["implementation"]["stage_commit_exception"][
+                "repair_validation_existing_decisions_max"]:
+            raise ValueError("return-credit repair probe did not cover the fixed task22 decisions")
+        write_json_atomic(output, {"schema_version": "ember_return_credit_repair_probe_v1",
+                                   "implementation_commit": state["commit"],
+                                   "original_collection_commit": spec["implementation"]["collection_commit_exception"],
+                                   "new_independent_queries": 0, "environment_steps": 0,
+                                   "audit": audit})
+    finally:
+        data.close()
 
 
 def _fm_task(engine, data, runtime, parameters, event, task_id):
@@ -296,6 +363,12 @@ def _finish_gradient(spec, root, state, context, runtime, parameters, parent,
                      totals, all_audits, nonzero):
     all_scores = [row for rank in all_audits for row in rank["audits"]]
     all_fm = [row for rank in all_audits for row in rank["fm"]]
+    flags = [rank["allow_tf32"] for rank in all_audits]
+    if (flags != [True, True] or len(all_scores) != 8
+            or {row["task"] for row in all_scores} != set(spec["data"]["gradient_tasks"])
+            or sum(row["decisions"] for row in all_scores) != 512
+            or any(row["decisions"] != 64 for row in all_scores)):
+        raise ValueError("return-credit E2 rank numerical context or full512 replay changed")
     rms = math.sqrt(sum(row["squared_replay_error"] for row in all_scores) /
                     max(1, sum(row["replay_coordinates"] for row in all_scores))) if all_scores else None
     if rms is not None and rms > spec["implementation"]["flow_parity_first5_normalized_rms_max"]:
@@ -324,6 +397,7 @@ def _finish_gradient(spec, root, state, context, runtime, parameters, parent,
         "all_advantages_zero": nonzero == 0,
         "fm_event_queries": 224, "return_episode_divisor": 128,
         "geometry": geometry, "replay_rms": rms,
+        "rank_allow_tf32": flags,
         "task_replay_audits": sorted(all_scores, key=lambda row: row["task"]),
         "task_fm_audits": sorted(all_fm, key=lambda row: row["task"]),
         "candidate_states": [] if nonzero == 0 else ["R", "NEG", "FM"],
@@ -332,6 +406,7 @@ def _finish_gradient(spec, root, state, context, runtime, parameters, parent,
 
 
 def _gradient(spec, root, config, state):
+    torch.backends.cuda.matmul.allow_tf32 = True
     groups, nonzero = _collection(spec, root)
     events = inspect_parent_events(spec)
     if (root / "gradient" / "completion.json").exists() or (root / "gradient").exists():
@@ -369,7 +444,8 @@ def _gradient(spec, root, config, state):
         for key, values in totals.items():
             _save(root / "gradient" / f"{key}.safetensors", values)
     all_audits = [None] * context.world_size
-    dist.all_gather_object(all_audits, {"audits": audits, "fm": fm_rows})
+    dist.all_gather_object(all_audits, {"audits": audits, "fm": fm_rows,
+                                        "allow_tf32": torch.backends.cuda.matmul.allow_tf32})
     if context.rank == 0:
         _finish_gradient(spec, root, state, context, runtime, parameters, parent,
                          totals, all_audits, nonzero)
@@ -379,6 +455,7 @@ def _gradient(spec, root, config, state):
 
 
 def _pilot_vjp(spec, root, config, state):
+    torch.backends.cuda.matmul.allow_tf32 = True
     path = root / "collection" / "groups" / "task_002_state_00" / "completion.json"
     group = read_json(path)
     runtime = build_runtime(ASSET_ROOT, config, torch.device("cuda:0"))
@@ -426,7 +503,7 @@ def _pilot_vjp(spec, root, config, state):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("stage", choices=("inspect", "pilot-vjp", "gradient"))
+    parser.add_argument("stage", choices=("inspect", "pilot-vjp", "repair-probe", "gradient"))
     args = parser.parse_args()
     spec = authority()
     root, config, state = _gradient_inputs(spec, formal=args.stage != "inspect")
@@ -434,6 +511,8 @@ def main():
         print({"tasks": [row["task"] for row in inspect_parent_events(spec)]})
     elif args.stage == "pilot-vjp":
         _pilot_vjp(spec, root, config, state)
+    elif args.stage == "repair-probe":
+        _repair_probe(spec, root, config, state)
     else:
         _gradient(spec, root, config, state)
 

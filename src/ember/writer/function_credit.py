@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import ExitStack
 from dataclasses import dataclass
+import math
 from typing import Any, Mapping
 
 import torch
@@ -95,7 +96,8 @@ def _add(destination: dict[str, Tensor], values: Mapping[str, Tensor], weight: f
 def paired_functional_credit(policy, state, contract, batch, *,
                              seed: int, device, random_batch: int, offset: int, microbatch: int,
                              condition_weight: float, backward: bool = True,
-                             noise_endpoint: bool = False, prefix_steps: int | None = None) -> dict[str, Any]:
+                             noise_endpoint: bool = False, prefix_steps: int | None = None,
+                             query_weights: Sequence[float] | None = None) -> dict[str, Any]:
     """Return a separately normalized loss and its weighted complete-LoRA cotangent."""
     validate_lora_state(state, contract)
     if any(parameter.requires_grad for parameter in policy.parameters()):
@@ -106,6 +108,9 @@ def paired_functional_credit(policy, state, contract, batch, *,
         flow_noise_sampling_scheme=INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
         policy_random_batch_size=random_batch, policy_batch_offset=offset,
     )
+    if query_weights is not None and (len(query_weights) != total or
+            any(not math.isfinite(float(weight)) or float(weight) < 0 for weight in query_weights)):
+        raise ValueError("functional query weights must cover the unchanged logical batch")
     owner, loss, gradient, calls = NativeFlowPrediction(policy), 0., {}, 0
     for start in range(0, total, chunk):
         stop = min(total, start + chunk)
@@ -119,7 +124,15 @@ def paired_functional_credit(policy, state, contract, batch, *,
             prediction = torch.func.functional_call(
                 owner, {"policy." + name: value for name, value in leaves.items()}, (sample,), strict=False)
             calls += 1
-            value = mean_velocity_loss(prediction, sample.target, sample.action_width, prefix_steps=prefix_steps)
+            if query_weights is None:
+                value = mean_velocity_loss(prediction, sample.target, sample.action_width,
+                                           prefix_steps=prefix_steps)
+            else:
+                residual = (prediction[:, :prefix_steps, :sample.action_width].float()
+                            - sample.target[:, :prefix_steps, :sample.action_width].float()).square()
+                weights = torch.as_tensor(query_weights[start:stop], device=residual.device,
+                                          dtype=residual.dtype)
+                value = (residual.mean(dim=(1, 2)) * weights).mean()
             if backward:
                 gradients = torch.autograd.grad(value, tuple(leaves.values()))
                 _add(gradient, dict(zip(leaves, gradients, strict=True)), weight * condition_weight)

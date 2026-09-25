@@ -22,7 +22,8 @@ class SupervisedEngine:
         timings[name] = time.perf_counter() - start
         return time.perf_counter()
 
-    def _credit(self, state, batch, trace, offset, *, backward, condition_weight=1., teaching=False):
+    def _credit(self, state, batch, trace, offset, *, backward, condition_weight=1., teaching=False,
+                query_weights=None):
         endpoint = teaching and bool(configured_endpoint(self.config))
         with autocast(self.device):
             return paired_functional_credit(
@@ -32,9 +33,10 @@ class SupervisedEngine:
                 microbatch=min(int(self.config["runtime"]["policy_microbatch"]), len(trace["action_demos"])),
                 condition_weight=condition_weight, backward=backward,
                 noise_endpoint=endpoint, prefix_steps=5 if endpoint else None,
+                query_weights=query_weights,
             )
 
-    def backward(self, draw) -> dict:
+    def backward(self, draw, *, query_weights=None) -> dict:
         runtime, timings = self.runtime, {}
         start = time.perf_counter()
         task, demos = draw["task"], draw["video_demos"]
@@ -51,7 +53,9 @@ class SupervisedEngine:
         )
         batch = runtime.processor.training_batch(raw)
         start = self._time(timings, "query_preparation_seconds", start)
-        credit = self._credit(state, batch, trace, draw["query_offset"], backward=True, condition_weight=weight)
+        credit = self._credit(state, batch, trace, draw["query_offset"], backward=True,
+                              condition_weight=weight,
+                              query_weights=None if query_weights is None else query_weights[:len(trace["action_demos"])])
         del batch, raw
         start = self._time(timings, "fm_vjp_seconds", start)
         cotangent = credit.pop("lora_cotangent")
@@ -63,7 +67,8 @@ class SupervisedEngine:
         batch = runtime.processor.training_batch(raw)
         teaching_weight = weight * float(self.config["optimization"]["teaching_weight"])
         teaching = self._credit(state, batch, teaching_trace, draw["teaching_offset"], backward=True,
-                                condition_weight=teaching_weight, teaching=True)
+                                condition_weight=teaching_weight, teaching=True,
+                                query_weights=None if query_weights is None else query_weights[len(trace["action_demos"]):])
         del batch, raw, state
         teaching_cotangent = teaching.pop("lora_cotangent")
         teaching_norm = float(torch.stack([value.norm() for value in teaching_cotangent.values()]).norm())
@@ -85,6 +90,32 @@ class SupervisedEngine:
                 **trace, **timings, "input_cache_hits": self.cache.hits - hits,
                 "input_cache_misses": self.cache.misses - misses, "input_cache_bytes": self.cache.bytes,
                 "policy_microbatch": int(self.config["runtime"]["policy_microbatch"])}
+
+    @torch.no_grad()
+    def event_loss(self, draw, *, query_weights) -> dict[str, float]:
+        """Read the registered event with its original logical noise and no Writer VJP."""
+        task, demos = draw["task"], draw["video_demos"]
+        condition = self.cache.condition(task, demos)
+        state = self.runtime.compile(condition, frame_parallel_group=self.frame_parallel_group)
+        losses = {}
+        for teaching, offset, count, weights, factor in (
+            (False, draw["query_offset"], draw["query_count"],
+             query_weights[:draw["query_count"]], 1.0),
+            (True, draw["teaching_offset"], draw["teaching_count"],
+             query_weights[draw["query_count"]:],
+             float(self.config["optimization"]["teaching_weight"])),
+        ):
+            raw, trace = self.data.action_batch(
+                task, draw["occurrence"], demos, query_seed=draw["query_seed"],
+                query_offset=offset, query_count=count, teaching=teaching)
+            batch = self.runtime.processor.training_batch(raw)
+            result = self._credit(state, batch, trace, offset, backward=False,
+                                  condition_weight=factor / self.tasks_per_update,
+                                  teaching=teaching, query_weights=weights)
+            losses["extra" if teaching else "main"] = result["flow_loss"] * factor / self.tasks_per_update
+            losses["compiled_forward_calls"] = (losses.get("compiled_forward_calls", 0)
+                                                  + result["compiled_forward_calls"])
+        return losses
 
     @torch.no_grad()
     def validate(self, task: int, demo: int, *, seed: int, queries: int) -> dict:

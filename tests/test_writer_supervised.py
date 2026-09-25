@@ -207,6 +207,46 @@ def test_query_rank_slices_preserve_full_fm_randomness_weight_and_cotangent(nati
     torch.testing.assert_close(aggregate, expected, rtol=4e-4, atol=2e-6)
 
 
+def test_lookahead_query_weights_partition_same_native_fm_samples(native_fm_policy):
+    from ember.writer.function_credit import paired_functional_credit
+    from ember.writer.functional import prepare_frozen_writer_policy
+
+    policy, contract = native_fm_policy
+    state = prepare_frozen_writer_policy(policy, contract)
+    batch = _fm_batch()
+    kwargs = dict(seed=37, device='cpu', random_batch=64, offset=13,
+                  microbatch=2, condition_weight=.25)
+    full = paired_functional_credit(policy, state, contract, batch, **kwargs)
+    a = paired_functional_credit(policy, state, contract, batch,
+                                  query_weights=(2., 0., 2., 0., 2.), **kwargs)
+    b = paired_functional_credit(policy, state, contract, batch,
+                                  query_weights=(0., 2., 0., 2., 0.), **kwargs)
+    assert (a['flow_loss'] + b['flow_loss']) / 2 == pytest.approx(full['flow_loss'], rel=2e-5)
+    for name in full['lora_cotangent']:
+        torch.testing.assert_close((a['lora_cotangent'][name] + b['lora_cotangent'][name]) / 2,
+                                   full['lora_cotangent'][name], rtol=4e-4, atol=2e-6)
+
+
+def test_lookahead_groups_and_virtual_length_zero_rule():
+    from ember.writer.metatask_lookahead import query_weights, virtual_alpha, weight_audit
+
+    assert weight_audit()['TASK']['A_selected'] == 56
+    assert [sum(query_weights('TASK', 'A', p)) for p in range(4)] == [56, 0, 56, 0]
+    assert [sum(query_weights('MIX', 'A', p)) for p in range(4)] == [28] * 4
+    for kind in ('TASK', 'MIX'):
+        for p in range(4):
+            assert all(a+b == 2 for a, b in zip(query_weights(kind, 'A', p),
+                                                query_weights(kind, 'B', p), strict=True))
+    displacement = (torch.tensor([3., 4.]),)
+    p = (torch.tensor([2., 2.]),)
+    ga, gb = (torch.tensor([1., 0.]),), (torch.tensor([0., 2.]),)
+    alpha, denominator, zero = virtual_alpha(displacement, p, ga, gb)
+    assert not zero and denominator == pytest.approx(10. ** .5)
+    assert alpha == pytest.approx(5 / denominator)
+    assert virtual_alpha((torch.zeros(2),), p, ga, gb)[0] == 0
+    assert virtual_alpha(displacement, p, (torch.zeros(2),), (torch.zeros(2),))[2]
+
+
 def test_endpoint_prediction_does_not_read_action_labels_and_matches_official_prefix_loss(native_fm_policy):
     from ember.writer.function_credit import flow_sample, NativeFlowPrediction, paired_functional_credit
     from ember.writer.functional import prepare_frozen_writer_policy
@@ -260,7 +300,8 @@ def test_joint_losses_replay_one_writer_and_all_meta_once():
     runtime = SimpleNamespace(compile=compile_video, processor=SimpleNamespace(training_batch=lambda value: value))
     cache = SimpleNamespace(hits=0, misses=0, bytes=0, condition=lambda *_: condition)
     engine = SupervisedEngine(runtime, SimpleNamespace(action_batch=action_batch), cache,
-        SimpleNamespace(device=torch.device('cpu')), {'runtime': {'policy_microbatch': 2}, 'optimization': {'teaching_weight': 1/3}})
+        SimpleNamespace(device=torch.device('cpu')), {'data': {'tasks_per_update': 12},
+            'runtime': {'policy_microbatch': 2}, 'optimization': {'teaching_weight': 1/3}})
     def credit(state, batch, trace, offset, *, condition_weight, teaching=False, **kwargs):
         state_ids.append(id(state))
         leaf = state['factor'].detach().requires_grad_()

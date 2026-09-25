@@ -19,7 +19,13 @@ KEEP77/SWAP76/DROP77各28个更新（1156..1183），固定另27任务；加未�
 父完整checkpoint已核对，原两training_events的108个共同事件完全相同、4个替换slot与有效query预算已CPU审计。
 新根`/data0/user/ymdai/ember_runs/support_slot_credit_causality_20260925`；data0≤8GiB、新代码≤768MiB，
 每训练臂world2、项目≤6物理GPU、正式合计≤8 GPU-hours。实际资源准入、实现验证、完整恢复与执行由Sol负责。
-新合同已具备；本段登记时尚未派发，也不代表正式学习已启动。派发和接手回执随后补在本段。
+设计/spec与§144裁决已在`22c762b90606e7e0047492c78f1ddf37893ddfbc`推送。
+04:55:07 UTC（北京时间12:55）以Queue派发给现有Sol，回执`01a0d6ea-ce93-7fc3-b4a8-450f346c70dc`；
+04:55:38核对完整正文进入inProgress turn `01a0d6ea-ce98-7402-84f9-85d05376a818`，
+并读到Sol明确接手fork/物化/passive接口审阅、验证后执行84宏步与登记冻结评测的回应。
+正文、入队回执、逐字投递及回应保存在native-reader study的
+`coordination/support_slot_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
+当前是已接手实现/工程审阅，不代表正式学习已开始；完成后按合同主动Queue原件，由主讨论继续裁决。
 
 ### 最近完成：原生读取与其余Writer交叉及科学裁决（2026-09-25）
 
@@ -29,7 +35,7 @@ KEEP77/SWAP76/DROP77各28个更新（1156..1183），固定另27任务；加未�
 主讨论检查实际N/W载入、self恢复，独立复算所有原始行、12组R/G/L、16对比及bootstrap、100首轮分解和连续几何，均一致；
 原件`analysis/`，复核`coordination/main_recheck.{py,json}`，后验plate方向`coordination/goal_bowl_plate_projection.json`。
 四格N0W0/N1W0/N0W1/N1W1：Object45/42/36/37，Goal39/38/19/28；N只含三Meta、W为其它全部可学习映射。
-Goal换W两背景均显著更差，N1在W1下恢复9条；不能据此冻结N、归罪单一head或把混合当修复，完整裁决见findings§144。
+Goal换W两背景的描述性区间均在零以下，N1在W1下净恢复9条；不能据此冻结N、归罪单一head或把混合当修复，完整裁决见findings§144。
 Goal先动非目标物主要是plate；W首轮沿黑碗→plate的命令偏移50/50同向。该后验方向将接受下一批事前检验。
 新self相对旧stage1有正常成功集合变化，主要对比只用新四格。实际保守1.091 GPU-hours、data0新增2.18GiB。
 本批关闭，Sol已停止新增实验；主讨论继续设计并派发，不将执行者的停止点当成主讨论停工理由。

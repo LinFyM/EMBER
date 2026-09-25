@@ -1,13 +1,26 @@
 # EMBER progress
 
-## 当前状态：两臂匹配学习已Queue，Sol明确接手实现；正式GPU尚未启动（2026-09-26）
+## 当前状态：两臂匹配学习实现F已冻结、工程就绪；Sol按实时准入接续启动（2026-09-26）
 
 Active design：[language_content_path_causality](docs/designs/language_content_path_causality_design.md)，
 机器规格`configs/language_content_path_causality_v1/experiment_spec.json`。
 Sol隔离CPU提交41a0f4f4已ff集成main：2项构造与10项旧回归通过，主讨论审阅非零head完整输出和9行源码、
 独立复跑2项通过；a0对C及构造对B maxabs0、视频扰动 .44040、a梯度/内积 .07022614。
 CPU回执在`/data1/user/ymdai/projects/EMBER-language-content-path-cpu-dev/.codex/tmp/language_content_path_cpu_result.json`。
-这些仅验证合成构造，不是原生读取、学习收益或根因证明；GPU实际启动仍为零。
+这些仅验证合成构造，不是原生读取、学习收益或根因证明；该CPU阶段GPU实际启动为零。
+
+正式实现F=`dca1b5500ac0f912d56cc1c76382004457e807a4`已推送，冻结树
+`/data1/user/ymdai/projects/EMBER-language-content-path-formal`为clean detached。
+Sol报告CPU32项、两臂world2各1..4宏步及2→4恢复、Cplus最长视频反传、两臂真实LoRA→10flow接口通过。
+主讨论已审阅F相对学习派发提交的改动、两臂配置、训练/物化/评测范围约束和被动采集接口；
+核对上述冻结树身份、已结束smoke的completion/checkpoint manifest、两臂50×7动作接口原件及启动脚本。
+源码中唯一学习机制改动仍为FrameRead后零初始化共享标量`a*q`；附加读数只汇总已有forward，
+标量梯度在完整跨rank归并后、clip前记录。两臂均从fresh初始化训练630更新，不从smoke恢复。
+启动合同与精确命令在study根`launch/launch_contract.json`、`formal_C0.sh`、`formal_Cplus.sh`。
+合同预算包含工程和正式计算；Sol估计并行训练2.1–3小时，物化/评测另计且总额仍限18 GPU-hours。
+本次ready是工程准入完成信号，不是训练完成或科学结果；实际启动/退出以各臂回执为准。
+Sol已获同一合同下实时双节点准入后直接启动、按退出事件接续的授权，不再追加审批或派发重复任务。
+主讨论未轮询正在执行的训练日志、checkpoint或缓存；完成信号到达后独立核验原件并裁决。
 
 新范围为C0/Cplus各fresh630，仅一个内容路径开关不同；只评固定末点630的736条，448新条件bank，
 144个B630旧bank引用，28full，全行T+1；Source/B均重新闭环。预算18 GPU-hours/12GiB data0/768MiB代码。
@@ -33,7 +46,8 @@ Owner再次强调以EMBER最终目标为中心、避免局部问题递归，以�
 回执01a0d9c3-3457-73f1-8f00-9381c414499b。主讨论核对完整正文进入新turn
 01a0d9c3-345a-7d32-9b99-95cc35a4ed79及Sol明确回复只做CPU、隔离分支、不集成/不启GPU。
 正文/接受/送达与接手回执暂存本仓`.codex/tmp/language_content_path_cpu_20260926/`；本段保留持久接续身份。
-Owner随后要求按上述原则持续推进，休息后希望看到能改变判断的进展；该授权不改变GPU尚未派发的事实。
+Owner随后要求按上述原则持续推进，休息后希望看到能改变判断的进展；该CPU批次本身未授权GPU，
+后续GPU范围由上面的独立学习合同登记并派发。
 
 ### 持续授权与已撤回flow分支
 

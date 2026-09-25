@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict
 import json
+import multiprocessing
+import os
 from pathlib import Path
 
 import numpy as np
@@ -192,6 +194,14 @@ def _collection_groups(spec, pilot):
     return rows[:1] if pilot else rows
 
 
+def _task_collection_groups(spec, task_ids):
+    by_task = {row["task"]: row for row in spec["collection"]["conditions"]}
+    for task_id in task_ids:
+        registration = by_task[task_id]
+        for state_id in registration["init_state_ids"]:
+            yield registration, state_id
+
+
 def _engineering_smoke(spec, root, config, state, gpu_index):
     output = root / "development_smoke" / "task_002_state_00"
     if output.exists():
@@ -266,7 +276,7 @@ def store_video(store, learning_task, demo):
     return ((torch.from_numpy(video.frames),), (torch.from_numpy(video.frame_indices),))
 
 
-def _collect(spec, root, config, state, gpu_index, *, pilot):
+def _collect(spec, root, config, state, gpu_index, *, pilot, groups=None):
     evaluation, tasks, paths = _task_authority(root, config, spec)
     learning = load_learning_tasks(ASSET_ROOT, spec["data"]["gradient_tasks"],
                                    protocol_path=config["data"]["protocol"])
@@ -278,7 +288,9 @@ def _collect(spec, root, config, state, gpu_index, *, pilot):
     pool = PersistentTaskEnvironmentPool(base, physical_gpu_id=gpu_index)
     infer = BatchedLoRAInference(runtime.policy, runtime.lora)
     try:
-        for registration, state_id in _collection_groups(spec, pilot):
+        for registration, state_id in (
+            _collection_groups(spec, pilot) if groups is None else groups
+        ):
             task_id = registration["task"]
             output = root / "collection" / "groups" / f"task_{task_id:03d}_state_{state_id:02d}"
             completion = output / "completion.json"
@@ -323,7 +335,7 @@ def _collect(spec, root, config, state, gpu_index, *, pilot):
         pool.close()
 
 
-def _evaluate(spec, root, config, state, gpu_index, arms):
+def _evaluate(spec, root, config, state, gpu_index, arms, *, jobs=None):
     evaluation, tasks, paths = _task_authority(root, config, spec)
     learning = load_learning_tasks(ASSET_ROOT, spec["data"]["gradient_tasks"],
                                    protocol_path=config["data"]["protocol"])
@@ -334,39 +346,41 @@ def _evaluate(spec, root, config, state, gpu_index, arms):
     pool = PersistentTaskEnvironmentPool(base, physical_gpu_id=gpu_index)
     infer = BatchedLoRAInference(runtime.policy, runtime.lora)
     try:
-        for arm in arms:
+        scheduled = (jobs if jobs is not None else
+                     ((arm, task_id) for arm in arms
+                      for task_id in spec["evaluation"]["task_ids"]))
+        for arm, task_id in scheduled:
             source = _load_state(runtime, spec, root, arm)
-            for task_id in spec["evaluation"]["task_ids"]:
-                task = tasks[task_id]
-                envs, init_states = pool.switch(asdict(task))
-                for teacher in spec["evaluation"]["teacher_demos"]:
-                    output = root / "evaluation" / arm / f"task_{task_id:03d}_teacher_{teacher:02d}"
-                    completion = output / "completion.json"
-                    if completion.exists():
-                        continue
-                    if output.exists():
-                        raise ValueError("return-credit panel has preserved partial output")
-                    output.mkdir(parents=True)
-                    bank = _bank(runtime, store, learning, root, source, arm, task_id,
-                                 teacher, phase="evaluation", state=state)
-                    lora = _bank_state(bank)
-                    full = task_id in spec["capture"]["full_cases"]["evaluation_tasks"] and teacher == 46
-                    contract = _base_contract(evaluation, paths, task, output, full=full)
-                    with infer.activate([lora]):
-                        rows = rollout_shard(envs=envs[:1], init_states=init_states,
-                            task=asdict(task), state_ids=tuple(spec["evaluation"]["init_state_ids"]),
-                            contract=contract, policy=runtime.policy,
-                            preprocess=runtime.processor,
-                            postprocess=runtime.processor.unnormalize_action)
-                    for row in rows:
-                        validate_passive_trace_row(row, contract, asdict(task))
-                        row.update(global_task_id=task_id, teacher_demo=teacher, arm=arm,
-                                   bank_record=file_record(root / "banks" / "evaluation" / arm /
-                                       f"task_{task_id:03d}_teacher_{teacher:02d}" / "bank_record.json"))
-                    write_json_atomic(completion, {"schema_version": "ember_return_credit_panel_v1",
-                        "implementation_commit": state["commit"], "arm": arm,
-                        "task": task_id, "teacher_demo": teacher, "rows": rows,
-                        "successes": sum(row["success"] for row in rows)})
+            task = tasks[task_id]
+            envs, init_states = pool.switch(asdict(task))
+            for teacher in spec["evaluation"]["teacher_demos"]:
+                output = root / "evaluation" / arm / f"task_{task_id:03d}_teacher_{teacher:02d}"
+                completion = output / "completion.json"
+                if completion.exists():
+                    continue
+                if output.exists():
+                    raise ValueError("return-credit panel has preserved partial output")
+                output.mkdir(parents=True)
+                bank = _bank(runtime, store, learning, root, source, arm, task_id,
+                             teacher, phase="evaluation", state=state)
+                lora = _bank_state(bank)
+                full = task_id in spec["capture"]["full_cases"]["evaluation_tasks"] and teacher == 46
+                contract = _base_contract(evaluation, paths, task, output, full=full)
+                with infer.activate([lora]):
+                    rows = rollout_shard(envs=envs[:1], init_states=init_states,
+                        task=asdict(task), state_ids=tuple(spec["evaluation"]["init_state_ids"]),
+                        contract=contract, policy=runtime.policy,
+                        preprocess=runtime.processor,
+                        postprocess=runtime.processor.unnormalize_action)
+                for row in rows:
+                    validate_passive_trace_row(row, contract, asdict(task))
+                    row.update(global_task_id=task_id, teacher_demo=teacher, arm=arm,
+                               bank_record=file_record(root / "banks" / "evaluation" / arm /
+                                   f"task_{task_id:03d}_teacher_{teacher:02d}" / "bank_record.json"))
+                write_json_atomic(completion, {"schema_version": "ember_return_credit_panel_v1",
+                    "implementation_commit": state["commit"], "arm": arm,
+                    "task": task_id, "teacher_demo": teacher, "rows": rows,
+                    "successes": sum(row["success"] for row in rows)})
     finally:
         infer.close()
         store.close()
@@ -450,10 +464,71 @@ def _replay(spec, root, config, state, arms):
         store.close()
 
 
+def _queue_worker(stage, spec, root, config, state, physical_gpu, jobs, stop):
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(physical_gpu)
+    os.environ["MUJOCO_EGL_DEVICE_ID"] = str(physical_gpu)
+    os.environ["OMP_NUM_THREADS"] = "4"
+
+    def claimed():
+        while not stop.is_set():
+            job = jobs.get()
+            if job is None:
+                return
+            yield job
+
+    try:
+        if stage == "collect":
+            _collect(spec, root, config, state, physical_gpu, pilot=False,
+                     groups=_task_collection_groups(spec, claimed()))
+        else:
+            _evaluate(spec, root, config, state, physical_gpu,
+                      spec["evaluation"]["states"], jobs=claimed())
+    except BaseException:
+        stop.set()
+        raise
+
+
+def _dispatch(stage, spec, root, config, state, gpu_indices, arms):
+    if len(gpu_indices) < 2 or len(gpu_indices) != len(set(gpu_indices)):
+        raise ValueError("return-credit dynamic queue requires distinct beneficial GPU workers")
+    evaluation = read_json(ASSET_ROOT / config["source"]["evaluation_config"])
+    horizons = evaluation["environment"]["horizons"]
+    task_ids = (spec["data"]["gradient_tasks"] if stage == "collect"
+                else spec["evaluation"]["task_ids"])
+    ordered = sorted(task_ids, key=lambda task: (-horizons[SUITES[task // 10]], task))
+    scheduled = (ordered if stage == "collect" else
+                 [(arm, task) for task in ordered for arm in arms])
+    context = multiprocessing.get_context("spawn")
+    jobs = context.Queue()
+    stop = context.Event()
+    for job in scheduled:
+        jobs.put(job)
+    for _ in gpu_indices:
+        jobs.put(None)
+    workers = [context.Process(target=_queue_worker,
+        args=(stage, spec, root, config, state, gpu, jobs, stop),
+        name=f"return-credit-{stage}-gpu{gpu}") for gpu in gpu_indices]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join()
+    records = [{"worker": worker.name, "pid": worker.pid, "exit_code": worker.exitcode,
+                "physical_gpu": gpu} for worker, gpu in zip(workers, gpu_indices, strict=True)]
+    import time
+    write_json_atomic(root / "launch" / f"{stage}_workers_exit_{time.time_ns()}.json", {
+        "schema_version": "ember_return_credit_dynamic_worker_exit_v1",
+        "implementation_commit": state["commit"], "stage": stage,
+        "long_first_horizon_cost": True, "persistent_workers": len(workers),
+        "registered_jobs": len(scheduled), "records": records})
+    if any(row["exit_code"] != 0 for row in records):
+        raise RuntimeError(f"return-credit {stage} worker failed; partial output preserved")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("stage", choices=("inspect", "registry-audit", "engineering-smoke", "pilot", "collect", "replay", "evaluate"))
     parser.add_argument("--gpu-index", type=int)
+    parser.add_argument("--gpu-indices", type=int, nargs="+")
     parser.add_argument("--arms", nargs="*", choices=("P", "R", "NEG", "FM"))
     args = parser.parse_args()
     spec = authority()
@@ -466,6 +541,14 @@ def main():
             "teachers": [row["teacher_demo"] for row in events],
             "collection_groups": spec["collection"]["groups"],
             "evaluation_rows": spec["evaluation"]["total_episodes"]}))
+        return
+    if args.stage in ("collect", "evaluate") and args.gpu_indices:
+        if args.stage == "evaluate" and (
+            not args.arms or len(set(args.arms)) != len(args.arms)
+            or set(args.arms) != set(spec["evaluation"]["states"])
+        ):
+            parser.error("dynamic evaluation requires exactly the four registered arms")
+        _dispatch(args.stage, spec, root, config, state, args.gpu_indices, args.arms)
         return
     if args.gpu_index is None:
         parser.error("GPU stages require --gpu-index for the physical EGL lock")

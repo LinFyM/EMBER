@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：冻结交叉400条已复核，登记单个任务当前信用的三臂短程干预（2026-09-25）
+## 当前状态：单项监督短程干预已复核，登记跨任务lookahead的单步计算诊断（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,9 +9,28 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近原生读取交叉批次已完成。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近单项监督短程批次已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[单个任务当前信用的有限学习干预](docs/designs/support_slot_credit_causality_design.md)**，
+**当前active design为[任务分组lookahead计算诊断](docs/designs/metatask_lookahead_credit_design.md)**，
+机器合同`configs/metatask_lookahead_credit_v1/experiment_spec.json`。这是七个独立case的单步学习计算，
+共同恢复C_S00@1155，各用原1156..1162的一组四task事件，合计恰好覆盖S00 fit28各一次。
+普通BASE、TASK跨task分组lookahead、MIX混合task分组参照；每case不接续上一case，不选择部署模型。
+固定3584条合法non-held独立episode FM、448次真实10-flow、224诊断bank，无新rollout、held输入或正式Val/Test读取。
+新data0≤6GiB/data1代码≤768MiB，正式≤4 GPU-hours、world2且项目≤6物理卡；Sol核对原件/准入后执行。
+完成七组立即主动Queue原件并停止新增实验；主讨论继续核验，只有计算前提支持才另登记短程共同学习及闭环。
+当前合同已形成，投递回执在下次状态更新登记；此时不表示Sol已接手或已启动正式计算。
+
+### 最近完成：单项监督的有限学习与裁决（2026-09-25）
+
+正式唯一实现/训练/物化/预测/闭环`e58e8169ed16b0a3aa65601d2a508184e447c126`，
+根`/data0/user/ymdai/ember_runs/support_slot_credit_causality_20260925`；三臂84宏步、400闭环、16full、400连续trace，22份退出回执均0。
+主讨论审阅真实fork/当前信用恢复实现，独立复算所有原始行、配对/谓词/动作、12对比bootstrap、首slot30预测及128供体FM配对，
+原件`analysis/`、核验`coordination/main_recheck.{py,json}`。P/KEEP/SWAP/DROP：Object46/41/43/39，Goal40/42/45/48。
+SWAP首步五个固定Goal初态均远离plate，反驳预定的局部有害新增方向；KEEP对DROP的Goal净−6例，未兑现保护预测。
+DROP虽保住KEEP全部Goal成功并新增6例，但Object丢3得1；没有联合修复或新视频增量，完整边界见findings§145。
+实测data0新增4.423GiB、保守正式1.954 GPU-hours。本批关闭，不自动补评或延长28步。
+
+前批[单个任务当前信用的有限学习干预](docs/designs/support_slot_credit_causality_design.md)的启动记录：
 机器合同`configs/support_slot_credit_causality_v1/experiment_spec.json`。同一C_S00@1155完整起点，
 KEEP77/SWAP76/DROP77各28个更新（1156..1183），固定另27任务；加未更新父参照，两任务共400闭环。
 首次被干预更新1160后30次真实10-flow、合法76/77共128条无梯度FM读出，16full及全400条连续trace。
@@ -25,7 +44,7 @@ KEEP77/SWAP76/DROP77各28个更新（1156..1183），固定另27任务；加未�
 并读到Sol明确接手fork/物化/passive接口审阅、验证后执行84宏步与登记冻结评测的回应。
 正文、入队回执、逐字投递及回应保存在native-reader study的
 `coordination/support_slot_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
-当前是已接手实现/工程审阅，不代表正式学习已开始；完成后按合同主动Queue原件，由主讨论继续裁决。
+上述是当时接手记录；本批现已完成，科学裁决见上文和findings§145。
 
 ### 最近完成：原生读取与其余Writer交叉及科学裁决（2026-09-25）
 

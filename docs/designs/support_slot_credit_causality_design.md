@@ -1,6 +1,7 @@
 # 一项任务替换为何改变另一任务：有害新增、保护丢失与共同学习的有限干预
 
 2026-09-25。是否active只看progress。机器合同`configs/support_slot_credit_causality_v1/experiment_spec.json`。
+本批已完成并关闭，独立原件复核与事前预测裁决见findings§145；下文保留原登记，不构成自动续训许可。
 主讨论01a0cd94-65da-7b22-8ca9-7ba35f454632负责判断；现有Sol 01a0cd90-ebb7-77a1-a20b-a858825d2f66执行并主动Queue完成。
 
 ## 1. 要改变哪项判断

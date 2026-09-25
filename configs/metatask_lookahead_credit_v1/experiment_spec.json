@@ -1,0 +1,536 @@
+{
+  "schema_version": "ember_metatask_lookahead_credit_v1",
+  "study_id": "metatask_lookahead_credit_20260925",
+  "status": "registered_phase0_only",
+  "design": "docs/designs/metatask_lookahead_credit_design.md",
+  "coordination": {
+    "main_thread": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+    "executor_thread": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+    "dispatch": "Queue",
+    "completion": "Queue original artifacts and stop; no automatic continuation"
+  },
+  "parent": {
+    "arm": "C_S00",
+    "macro": 1155,
+    "checkpoint": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/checkpoints/macro_00001155",
+    "training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+    "config": "configs/relational_support_causality_v1/train_C_S00.json",
+    "event_plan": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/training_events.json",
+    "world_size": 2,
+    "mutable": false,
+    "restore_each_case": [
+      "model",
+      "Adam_m_v_step",
+      "scheduler",
+      "rank0_rng",
+      "rank1_rng"
+    ],
+    "actual_optimizer_transition_per_candidate": [
+      1155,
+      1156
+    ],
+    "sequential_case_updates": false
+  },
+  "data": {
+    "protocol": "configs/relational_support_causality_v1/protocol.json",
+    "gradient_tasks": [
+      2,
+      4,
+      5,
+      7,
+      12,
+      13,
+      17,
+      19,
+      22,
+      25,
+      28,
+      29,
+      32,
+      34,
+      35,
+      37,
+      42,
+      51,
+      55,
+      58,
+      62,
+      64,
+      73,
+      77,
+      80,
+      83,
+      97,
+      101
+    ],
+    "forbidden_diagnostic_held_tasks": [
+      0,
+      1,
+      14,
+      15,
+      20,
+      21,
+      36,
+      38
+    ],
+    "new_official_validation_test_reads": false,
+    "new_diagnostic_held_inputs": false,
+    "gradient_episodes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45
+    ],
+    "unique_training_queries": 784,
+    "main_queries_per_task": 21,
+    "extra_queries_per_task": 7,
+    "both_objectives": "independent_random_tau_full_H50",
+    "per_original_query_loss_coefficient": "1/84",
+    "per_group_query_loss_coefficient": "1/42",
+    "source_normalization": "read only unchanged parent source1000 and normalization",
+    "teacher_input": "exact language and action-hidden ordered agentview RGB; stride5 plus true last frame"
+  },
+  "cases": [
+    {
+      "case_id": 1,
+      "source_macro": 1156,
+      "event_indices": [
+        4633,
+        4631,
+        4639,
+        4647
+      ],
+      "tasks": [
+        34,
+        29,
+        58,
+        101
+      ],
+      "teacher_demos": [
+        2,
+        15,
+        9,
+        12
+      ],
+      "occurrences": [
+        165,
+        165,
+        165,
+        165
+      ],
+      "TASK_A_positions": [
+        0,
+        2
+      ],
+      "TASK_B_positions": [
+        1,
+        3
+      ]
+    },
+    {
+      "case_id": 2,
+      "source_macro": 1157,
+      "event_indices": [
+        4640,
+        4644,
+        4627,
+        4641
+      ],
+      "tasks": [
+        62,
+        80,
+        19,
+        64
+      ],
+      "teacher_demos": [
+        17,
+        32,
+        39,
+        23
+      ],
+      "occurrences": [
+        165,
+        165,
+        165,
+        165
+      ],
+      "TASK_A_positions": [
+        0,
+        2
+      ],
+      "TASK_B_positions": [
+        1,
+        3
+      ]
+    },
+    {
+      "case_id": 3,
+      "source_macro": 1158,
+      "event_indices": [
+        4624,
+        4626,
+        4646,
+        4634
+      ],
+      "tasks": [
+        12,
+        17,
+        97,
+        35
+      ],
+      "teacher_demos": [
+        38,
+        8,
+        14,
+        35
+      ],
+      "occurrences": [
+        165,
+        165,
+        165,
+        165
+      ],
+      "TASK_A_positions": [
+        0,
+        2
+      ],
+      "TASK_B_positions": [
+        1,
+        3
+      ]
+    },
+    {
+      "case_id": 4,
+      "source_macro": 1159,
+      "event_indices": [
+        4628,
+        4638,
+        4635,
+        4623
+      ],
+      "tasks": [
+        22,
+        55,
+        37,
+        7
+      ],
+      "teacher_demos": [
+        5,
+        31,
+        45,
+        0
+      ],
+      "occurrences": [
+        165,
+        165,
+        165,
+        165
+      ],
+      "TASK_A_positions": [
+        0,
+        2
+      ],
+      "TASK_B_positions": [
+        1,
+        3
+      ]
+    },
+    {
+      "case_id": 5,
+      "source_macro": 1160,
+      "event_indices": [
+        4629,
+        4643,
+        4625,
+        4645
+      ],
+      "tasks": [
+        25,
+        77,
+        13,
+        83
+      ],
+      "teacher_demos": [
+        36,
+        28,
+        39,
+        38
+      ],
+      "occurrences": [
+        165,
+        165,
+        165,
+        165
+      ],
+      "TASK_A_positions": [
+        0,
+        2
+      ],
+      "TASK_B_positions": [
+        1,
+        3
+      ]
+    },
+    {
+      "case_id": 6,
+      "source_macro": 1161,
+      "event_indices": [
+        4637,
+        4620,
+        4642,
+        4636
+      ],
+      "tasks": [
+        51,
+        2,
+        73,
+        42
+      ],
+      "teacher_demos": [
+        7,
+        34,
+        8,
+        35
+      ],
+      "occurrences": [
+        165,
+        165,
+        165,
+        165
+      ],
+      "TASK_A_positions": [
+        0,
+        2
+      ],
+      "TASK_B_positions": [
+        1,
+        3
+      ]
+    },
+    {
+      "case_id": 7,
+      "source_macro": 1162,
+      "event_indices": [
+        4632,
+        4621,
+        4630,
+        4622
+      ],
+      "tasks": [
+        32,
+        4,
+        28,
+        5
+      ],
+      "teacher_demos": [
+        27,
+        44,
+        44,
+        13
+      ],
+      "occurrences": [
+        165,
+        165,
+        165,
+        165
+      ],
+      "TASK_A_positions": [
+        0,
+        2
+      ],
+      "TASK_B_positions": [
+        1,
+        3
+      ]
+    }
+  ],
+  "algorithm": {
+    "candidates": [
+      "BASE",
+      "TASK",
+      "MIX"
+    ],
+    "shared_g0": "original canonical four-task gradient",
+    "TASK_groups": "whole events at positions [0,2] versus [1,3]",
+    "MIX_groups": "A=(query_ordinal+condition_position)%2==0; B=complement; ordinal main0..20 then extra21..27",
+    "queries_per_group": 56,
+    "P": "1/(sqrt(parent_v/(1-parent_beta2**1155))+parent_eps), fixed stop-gradient diagonal for all cases",
+    "d0": "gradient component of actual parent AdamW(g0) step, excluding decoupled weight decay",
+    "alpha": "norm(d0)/sqrt((norm(P*gA)**2+norm(P*gB)**2)/2), separately for TASK/MIX; no outcome calibration",
+    "zero_norm_rule": "alpha=0 when denominator or norm(d0) is zero; mark unidentified; virtual states equal parent; no amplification",
+    "virtual_A": "phi-alpha*P*gA",
+    "virtual_B": "phi-alpha*P*gB",
+    "lookahead_gradient": "0.5*(grad L_B(virtual_A)+grad L_A(virtual_B))",
+    "actual_candidate_update": "original parent AdamW with original clipping, decay, scheduler and m/v; exactly one step",
+    "virtual_optimizer_steps": 0,
+    "virtual_rng_cursor_persistence": false,
+    "restore_virtual_parameters": "copy saved parent values, never inverse add/subtract",
+    "gradient_complement_reuse": "allowed 2*g0-gA; record strategy and numerical residual",
+    "read_original_group_losses": "LA/LB at parent and both corresponding virtual states; reuse forward losses where possible",
+    "new_source_gradients": false,
+    "held_gradients": false,
+    "actual_candidates_total": 21,
+    "retained_virtual_states_total": 28,
+    "full_training_resume_claim": false,
+    "repeated_gradient_query_evaluations": "record actual physical forward/VJP counts; reuse legal same-sample values; no extra unique labels; all counts within GPU-hour limit",
+    "original_training_loss_checks": "read both LA/LB at parent and corresponding virtual states using the same 784 original queries; record additional forward counts"
+  },
+  "readouts": {
+    "teacher_demo": 46,
+    "diagnostic_query_episodes": [
+      47,
+      48,
+      49
+    ],
+    "diagnostic_seed": 20260925,
+    "query_count_per_task": 16,
+    "query_selector": "canonical WriterTrainingData.diagnostic_batch(task,seed=20260925,count=16,teacher_demo=46)",
+    "parameter_states": [
+      "P",
+      "TASK_A",
+      "TASK_B",
+      "MIX_A",
+      "MIX_B",
+      "BASE",
+      "TASK",
+      "MIX"
+    ],
+    "full_lora_banks": 224,
+    "targets_per_lora": 38,
+    "rank": 16,
+    "random_tau_full_H_fm_rows": 3584,
+    "readout_gradients": false,
+    "true_flow_candidates": [
+      "P",
+      "BASE",
+      "TASK",
+      "MIX"
+    ],
+    "true_flow_query_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "true_flow_predictions": 448,
+    "true_flow_steps": 10,
+    "horizon": 50,
+    "real_action_width": 7,
+    "executed_prefix": 5,
+    "true_flow_seed": "task_logical_batch_policy_rng_seed(optimization_seed=20260925,task_id=task,task_visit=0,demo_indices=[actual_query_demo],frame_indices=[actual_query_frame])",
+    "true_flow_noise": "CPU torch.Generator.manual_seed(per-query seed); float32 randn(50,32); reused across candidates, independent of worker/batch",
+    "true_flow_inputs": "canonical actual query RGB/state/language only; no ground-truth action input",
+    "ground_truth_action_use": "post-output diagnostic only, never virtual/actual update or alpha",
+    "environment_steps": 0,
+    "new_closed_loop_rows": 0,
+    "new_engineering_environment_episodes": 0,
+    "outputs": [
+      "full50x7 normalized/environment",
+      "first5 scaled OSC",
+      "stateless initial noise",
+      "full FM query identity and tau/noise reference"
+    ]
+  },
+  "analysis": {
+    "comparisons": [
+      "TASK-BASE",
+      "MIX-BASE",
+      "TASK-MIX"
+    ],
+    "per_task_rows": 28,
+    "bootstrap": {
+      "replicates": 20000,
+      "seed": 20260925,
+      "cluster": "7 original cases",
+      "interval": 0.95,
+      "interpretation": "descriptive; one parent/training seed; no multiplicity correction"
+    },
+    "required": [
+      "finite cross-group original-loss transfer",
+      "independent-episode FM at all 8 states",
+      "gradient/step direction and magnitude",
+      "true10flow prefix error change decomposed into squared displacement and alignment with expert-minus-parent",
+      "whole-query pairing and 38-target condition provenance",
+      "all cases including negative/zero/unidentified effects"
+    ],
+    "performance_claim": false,
+    "video_benefit_claim": false,
+    "root_cause_claim": false
+  },
+  "execution": {
+    "pilot_case": 1,
+    "pilot_counts_in_seven": true,
+    "science_dependent_early_selection": false,
+    "one_new_clean_pushed_commit": true,
+    "runtime_detached": true,
+    "source_parent_frozen": true,
+    "case_completion_atomic": true,
+    "resume": "only missing cases or readouts; incomplete attempts preserved separately",
+    "no_active_feature_cache_between_virtual_states": true,
+    "normal_run_monitor": "one continuous exit-event wait, no log/cache polling"
+  },
+  "resources": {
+    "study_root": "/data0/user/ymdai/ember_runs/metatask_lookahead_credit_20260925",
+    "new_data0_gib_max": 6,
+    "new_data1_code_mib_max": 768,
+    "formal_gpu_hours_max": 4,
+    "estimated_formal_gpu_hours": [
+      1,
+      2
+    ],
+    "world_size": 2,
+    "same_node_gradient_workers": true,
+    "project_physical_gpu_cap": 6,
+    "quota": "strg01 independent data0/data1 plus shared capacity before new root and substantial output",
+    "launch_gpu_admission": "live gpu01 and gpu02 identity/owners/free capacity each launch"
+  },
+  "stop": {
+    "after_registered_seven": true,
+    "automatic_28_step_training": false,
+    "automatic_closed_loop": false,
+    "no_lr_alpha_scale_seed_parent_scan": true,
+    "on_contract_or_budget_failure": "preserve originals, report precise blocker, do not enlarge scope"
+  }
+}

@@ -4,6 +4,20 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-25：单项监督有限学习的方向预测未成立；先检验任务分组lookahead的计算前提
+
+正式唯一实现e58e8169，父C_S00@1155来源7dc95edb。Study为
+`/data0/user/ymdai/ember_runs/support_slot_credit_causality_20260925`；三臂各28宏步、400闭环、30首slot预测、128供体FM齐全。
+主讨论审阅实现并从原始训练事件、results、轨迹/trace和预测NPZ独立复算，`coordination/main_recheck.{py,json}`可追溯；完整裁决findings§145。
+P/KEEP77/SWAP76/DROP77的Object46/41/43/39、Goal40/42/45/48，KEEP→DROP的Goal保留42/新增6/丢失0，Object38/1/3。
+第一slot新增76在全部五个固定Goal初态都远离plate，末点SWAP−DROP也多为该方向，未兑现事前有害新增预测；
+77在本窗口的保护预测也未成立。删该项不是联合修复，方向代理不是整条轨迹成功的充分统计量。
+本批关闭，不把未识别的历史路径当已验证根因，不追逐更晚节点；资源1.954 GPU-hours/4.423GiB。
+
+下一份[任务分组lookahead计算诊断](designs/metatask_lookahead_credit_design.md)先检验一个新学习算子的计算前提。
+七个独立父起点case覆盖fit28，BASE/TASK/MIX单步、独立episode FM及真实10-flow；不新增环境步或启动长训练。
+它借鉴跨任务meta-learning但保留旧梯度隔离、缩头、任务batch及动作代理失效的反例；是否active/已送达只看progress。
+
 ## 2026-09-25：原生读取交叉400条完成；后续映射传递损害，进入单项监督增删分解
 
 正式实现edca1a35、父训练7dc95edb，两个endpoint bank沿用原E3，其余新物化和全部新闭环同一冻结提交。

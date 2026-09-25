@@ -15,6 +15,12 @@ P_J0/P_JS/RB_J0/RB_JS为18/19/15/14（各32）；更新差−3/−5，交互−2
 关闭这条有限回报更新分支，不自动补量或长RL；没有统一根因/修复声明。
 完整GPU计时.856029小时、data0约1.2GiB、两代码树约504MiB；旧pilot验收失败原件保留。
 
+随后完整复核[历史功能监督](analyses/flow_supervision_history_20260926.md)，保留SEOD/GOMQ、phase learner-state、
+Gtrue等正例及失败边界；登记[冻结flow指导位置干预](designs/flow_path_intervention_design.md)。
+32保存query＋64闭环，合法train2/12，S/E及仅首步/中步一次expert velocity对照；无训练或新Writer前向。
+旧expert必须保留旧base身份，不直接移植adapter。合同d7f500f0已推送并Queue给实际Sol，正文送达及接手见progress；
+这是验证纠正位置价值的小诊断，尚无新结果或修复声明。
+
 ## 2026-09-25：夹爪信用修正的96条闭环完成，新增成功没有恢复原能力损失
 
 实现/候选/48bank/96闭环统一34ea27bd，study `/data0/user/ymdai/ember_runs/return_score_update_causality_20260925`。

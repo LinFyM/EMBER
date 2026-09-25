@@ -21,7 +21,12 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 全部GPU加载/初始化/工程/失败/离线/闭环≤2 GPU-hours，data0≤3GiB、开发＋formal代码≤768MiB，最多同节点两卡、项目≤6。
 Sol负责实际strg01与两节点live准入；新GPU计算统一clean pushed detached实现F，旧来源只读。
 完成32/64后主动Queue本主讨论并停止新增实验，不追加time/scale/seed/tasks或自动训练。
-设计/spec已完成登记，尚待本轮commit/push和Queue派发；没有据此声明已经启动。实际回执及接手随后登记。
+设计/spec及§150裁决在d7f500f0ed69bfb7f88a0e27ef2abeb2e7c235be集成推送；
+2026-09-25 16:53:19 UTC（北京时间9月26日00:53）以Queue派给上述Sol，回执
+01a0d97c-56a3-7c22-a450-3eadbcc4ec7d。16:54:09 UTC核对完整正文进入inProgress turn
+01a0d97c-56c2-7291-ab9c-e5494c7b1141，并读到Sol明确接续固定诊断、审阅合同/隔离实现/验收的回应。
+当前为已接手实施，不据此声明GPU已启动。正文/入队/逐字送达及回应保存在上一objective-alignment study的
+`coordination/flow_path_{dispatch.txt,dispatch_receipt.json,delivery.json}`；没有重复派发。
 
 ### 最近完成：探索目标对齐及主讨论裁决（2026-09-26）
 

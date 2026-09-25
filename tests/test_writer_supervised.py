@@ -2,9 +2,14 @@
 
 import pytest
 import torch
+from safetensors.torch import save_file
 
+from ember.lora import LoRATarget
+from ember.pi05_source_checkpoint import write_json_atomic
 from ember.writer.function_credit import mean_velocity_loss
+from ember.writer.materialization import file_record
 from ember.writer.return_credit import candidate_step
+from scripts.return_credit_gradient import _collection_lora
 
 
 def test_velocity_loss_uses_all_horizon_only_real_action_dimensions():
@@ -333,3 +338,30 @@ def test_fresh_sgd_candidates_are_independent_parent_directions():
     assert abs(plus["actual_parameter_step_norm"] - .17) < 1e-6
     assert abs(minus["actual_parameter_step_norm"] - .17) < 1e-6
     assert plus_optimizer["state"] == minus_optimizer["state"] == {}
+
+
+def test_return_credit_score_replays_exact_registered_collection_bank(tmp_path):
+    from types import SimpleNamespace
+
+    output = tmp_path / "banks/collection/P/task_022_teacher_05"
+    output.mkdir(parents=True)
+    adapter = output / "task_22_demos_05.safetensors"
+    state = {"x.lora_A.default.weight": torch.ones(1, 2),
+             "x.lora_B.default.weight": torch.ones(2, 1)}
+    save_file(state, str(adapter))
+    spec = {"implementation": {"collection_commit_exception": "collection-commit"},
+            "parent": {"checkpoint": str(tmp_path / "parent")}}
+    write_json_atomic(output / "bank_record.json", {
+        "implementation_commit": "collection-commit", "arm": "P",
+        "phase": "collection", "task": 22, "teacher": 5,
+        "writer": {"path": str(tmp_path / "parent/ecp.safetensors")},
+        "condition": {"adapter": file_record(adapter), "teacher_demo_indices": [5],
+                      "global_task_id": 22}})
+    runtime = SimpleNamespace(device=torch.device("cpu"),
+        lora=SimpleNamespace(targets=(LoRATarget("x", 2, 2),), rank=1))
+    actual, reference = _collection_lora(spec, tmp_path, 22, 5, runtime)
+    assert reference == file_record(adapter)
+    torch.testing.assert_close(actual["x.lora_B.default.weight"], state["x.lora_B.default.weight"])
+    spec["implementation"]["collection_commit_exception"] = "different-commit"
+    with pytest.raises(ValueError, match="actual collection condition"):
+        _collection_lora(spec, tmp_path, 22, 5, runtime)

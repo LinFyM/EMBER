@@ -14,12 +14,14 @@ import torch
 import torch.distributed as dist
 from safetensors.torch import load_file, save_file
 
+from ember.lora import validate_lora_state
 from ember.pi05_eval.return_credit import authority
 from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority
 from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed
 from ember.writer.flow import flow_actions, flow_mean_lora_gradient
 from ember.writer.learning_data import WriterTrainingData
+from ember.writer.materialization import file_record
 from ember.writer.return_credit import (candidate_step, dot, inspect_parent_events,
                                         loo_advantages, norm, score_cotangent)
 from ember.writer.runtime import VideoConditionCache, build_runtime
@@ -110,17 +112,44 @@ def _decision_payload(row):
     return payload
 
 
+def _collection_lora(spec, root, task_id, teacher, runtime):
+    record = read_json(root / "banks" / "collection" / "P" /
+                       f"task_{task_id:03d}_teacher_{teacher:02d}" / "bank_record.json")
+    condition = record["condition"]
+    adapter = condition["adapter"]
+    if (record["implementation_commit"] != spec["implementation"]["collection_commit_exception"]
+            or record["arm"] != "P" or record["phase"] != "collection"
+            or (record["task"], record["teacher"]) != (task_id, teacher)
+            or record["writer"]["path"] != str(Path(spec["parent"]["checkpoint"]) / "ecp.safetensors")
+            or condition["teacher_demo_indices"] != [teacher]
+            or condition["global_task_id"] != task_id
+            or adapter != file_record(Path(adapter["path"]))):
+        raise ValueError("return-credit gradient bank differs from actual collection condition")
+    lora = load_file(adapter["path"], device=str(runtime.device))
+    validate_lora_state(lora, runtime.lora)
+    return lora, adapter
+
+
+def _relative_lora_difference(generated, reference):
+    square_difference = sum(float((generated[name].detach().float() -
+                                   reference[name].float()).square().sum())
+                            for name in reference)
+    square_reference = sum(float(value.float().square().sum())
+                           for value in reference.values())
+    return math.sqrt(square_difference / square_reference)
+
+
 def _score_task(runtime, cache, data, parameters, spec, root, task_id, groups, *, pilot=False):
     runtime.state.train()
     teacher = next(row["teacher_demo"] for row in spec["collection"]["conditions"]
                    if row["task"] == task_id)
     condition = cache.condition(task_id, (teacher,))
-    with torch.no_grad():
-        lora = {key: value.detach() for key, value in runtime.compile(condition).items()}
+    lora, adapter = _collection_lora(spec, root, task_id, teacher, runtime)
     parity_gradients = []
     audit = {"task": task_id, "teacher_demo": teacher, "decisions": 0,
              "nonzero_advantage_decisions": 0, "squared_replay_error": 0.,
-             "replay_coordinates": 0, "replay_maxabs": 0., "episodes": []}
+             "replay_coordinates": 0, "replay_maxabs": 0., "collection_adapter": adapter,
+             "writer_recompile_relative_l2": [], "episodes": []}
     for parity in (0, 1):
         cotangent = {name: torch.zeros_like(value, dtype=torch.float32)
                      for name, value in lora.items()}
@@ -163,6 +192,8 @@ def _score_task(runtime, cache, data, parameters, spec, root, task_id, groups, *
         if any(torch.count_nonzero(value).item() for value in cotangent.values()):
             runtime.state.train()
             generated = runtime.compile(condition)
+            audit["writer_recompile_relative_l2"].append(
+                _relative_lora_difference(generated, lora))
             torch.autograd.backward(tuple(generated.values()),
                 tuple(cotangent[name].to(value) for name, value in generated.items()))
         gradient = _snapshot(parameters)

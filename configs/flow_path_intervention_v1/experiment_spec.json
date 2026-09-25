@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_flow_path_intervention_v1",
   "study_id": "flow_path_intervention_causality_20260926",
-  "status": "registered_frozen_diagnostic",
+  "status": "withdrawn_by_scientific_owner",
   "design": "docs/designs/flow_path_intervention_design.md",
   "scientific_owner_thread": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
   "executor_thread": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
@@ -322,5 +322,14 @@
     ],
     "engineering_failures": "preserve originals and actual work; stop affected stage and report",
     "scientific_negative": "report as evidence; do not retry or choose new conditions"
+  },
+  "withdrawal": {
+    "date": "2026-09-26",
+    "reason": "Generic FM training/sampling difference lacks demonstrated EMBER-specific interaction; donor timing cannot identify the learning cause",
+    "new_implementation_authorized": false,
+    "new_gpu_compute_authorized": false,
+    "preserve_existing_work": true,
+    "not_a_scientific_negative_result": true,
+    "authority": "findings.md section 151; actual stop receipt in progress.md"
   }
 }

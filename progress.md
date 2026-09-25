@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：探索目标交叉已核验并关闭；登记32query/64闭环的flow指导位置诊断（2026-09-26）
+## 当前状态：去噪位置诊断已撤回实施；Sol停点已核对，GPU与正式计算均为零（2026-09-26）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -11,22 +11,28 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
 实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近128条探索目标交叉已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[冻结flow指导位置干预](docs/designs/flow_path_intervention_design.md)**，
-机器合同`configs/flow_path_intervention_v1/experiment_spec.json`。
-只用合法train global2/12；S复用dd2e00bc实际采集bank及aligned Source，E复用旧unaligned Source＋step2000 task expert。
-两个base独立、normalization/执行坐标相同；旧expert不得挂到新base。无新Writer前向、bank、梯度或参数更新。
-32个保存query包含S/E/H0/H5路径与两种直线场差；两task×states0..7×四格64闭环，16full及全T+1 trace。
-首步H0与中步H5各仅替换一次完整50×32 velocity，其余保持student；E是privileged诊断，不是部署方法。
-新study `/data0/user/ymdai/ember_runs/flow_path_intervention_causality_20260926`。
-全部GPU加载/初始化/工程/失败/离线/闭环≤2 GPU-hours，data0≤3GiB、开发＋formal代码≤768MiB，最多同节点两卡、项目≤6。
-Sol负责实际strg01与两节点live准入；新GPU计算统一clean pushed detached实现F，旧来源只读。
-完成32/64后主动Queue本主讨论并停止新增实验，不追加time/scale/seed/tasks或自动训练。
-设计/spec及§150裁决在d7f500f0ed69bfb7f88a0e27ef2abeb2e7c235be集成推送；
-2026-09-25 16:53:19 UTC（北京时间9月26日00:53）以Queue派给上述Sol，回执
-01a0d97c-56a3-7c22-a450-3eadbcc4ec7d。16:54:09 UTC核对完整正文进入inProgress turn
-01a0d97c-56c2-7291-ab9c-e5494c7b1141，并读到Sol明确接续固定诊断、审阅合同/隔离实现/验收的回应。
-当前为已接手实施，不据此声明GPU已启动。正文/入队/逐字送达及回应保存在上一objective-alignment study的
-`coordination/flow_path_{dispatch.txt,dispatch_receipt.json,delivery.json}`；没有重复派发。
+**当前无active GPU实验设计。** d7f500f0的flow_path_intervention已由主讨论撤回实施；
+Owner指出其没有解释通用VLA训练/采样性质为何是EMBER特有问题，复核与裁决见findings§151。
+撤回原32query/64闭环的新增实现及GPU计算，不把未测假设记成科学阴性；保留已有工作与原件。
+主讨论继续理论与历史证据综合，不从任何旧active恢复实验，不仓促派发替代矩阵。全项目长期研究授权仍有效。
+
+2026-09-25 17:18:33 UTC（北京时间9月26日01:18），主讨论以Steer修正原Sol当前turn
+01a0d97c-56c2-7291-ab9c-e5494c7b1141，接口已接受。要求停止新增GPU进程/query/episode，
+若已有工作则在最小原子query/episode结束后停止接续，保存私有工作树和原件，不影响其它任务。
+17:20:59 UTC核对完整正文已进入该turn及Sol明确停止回报，turn已结束；随后读取新study的
+`coordination/stop_point.json`：本批GPU进程/时长、正式query、闭环、full case均为0，无活动控制器。
+正文/接受/逐字送达与回应在objective-alignment study `coordination/flow_path_withdrawal_{dispatch.txt,receipt.json,delivery.json}`。
+已有CPU实现保存在`/data1/user/ymdai/projects/EMBER-flow-path-intervention-dev`，本地分支
+`codex/flow-path-intervention-20260926`，提交610c136de634ae8f7463cd8e1248a9a275324c66；未推送、未冻结、未集成。
+Sol记录30项针对性CPU测试通过，不构成GPU或科学验证；本批原件根
+`/data0/user/ymdai/ember_runs/flow_path_intervention_causality_20260926`只含CPU检查及少量配置。
+
+### 已撤回flow诊断的原派发记录
+
+原design/spec在d7f500f0ed69bfb7f88a0e27ef2abeb2e7c235be推送，拟定32保存query/64闭环、最多2 GPU-hours。
+2026-09-25 16:53:19 UTC以Queue派给实际Sol，回执01a0d97c-56a3-7c22-a450-3eadbcc4ec7d；
+16:54:09核对完整正文进入上述turn及其明确接手实现。原消息已由17:18:33的Steer覆盖，不再作为启动许可。
+原正文/接受/送达与回应在同一旧study `coordination/flow_path_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
 
 ### 最近完成：探索目标对齐及主讨论裁决（2026-09-26）
 

@@ -1,5 +1,9 @@
 # 冻结flow指导位置干预：首步与实际中间latent
 
+**2026-09-26主讨论已撤回实施。** 原因及边界见findings§151；本文件下文保留原设计，不再授权新实现或GPU计算。
+当前实验前提只说明通用FM可能的有限近似问题，尚未建立EMBER相对参照的特异机制；不能由H0/H5供体作用唯一归因训练覆盖。
+已向实际Sol发送Steer，要求保留已有工作并停止新增计算；实际停点以progress中的回执为准。撤回不是科学阴性结果。
+
 2026-09-26。是否active只看progress；机器合同`configs/flow_path_intervention_v1/experiment_spec.json`。
 主讨论01a0cd94-65da-7b22-8ca9-7ba35f454632；执行Sol 01a0cd90-ebb7-77a1-a20b-a858825d2f66。
 本批32个保存query的冻结计算＋64条诊断闭环，无训练、梯度、新Writer前向或新bank。

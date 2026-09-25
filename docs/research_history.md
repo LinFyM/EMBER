@@ -4,6 +4,14 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-26：撤回flow位置诊断，修正通用机制与EMBER研究对象的联系
+
+Owner追问细化到去噪步的出发点，并指出通用VLA动作监督问题与EMBER目标的区别。
+主讨论复核CFM/FM理论、d7f500f0设计及历史参照：原设计未建立Writer特有的误差放大，首步/中步的代表位置
+也非原证据定位。供体替换即使有效，仍不能唯一归因监督覆盖或解释有益视频缺失，见findings§151。
+撤回该批新增实现及GPU计算，原设计/spec标为withdrawn；保留代码/原件，未将其记录成科学阴性。
+17:18:33 UTC以Steer修正实际Sol当前turn，接口接受及后续实际停点见progress；未另派GPU矩阵。
+
 ## 2026-09-26：探索目标交叉完成，原条件与带探索执行均未恢复更新收益
 
 [合同](designs/return_objective_alignment_design.md)，study `/data0/user/ymdai/ember_runs/return_objective_alignment_causality_20260925`。

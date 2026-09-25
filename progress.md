@@ -17,7 +17,11 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 不更新参数、不建候选或bank、不读新标签、不新增环境初始化/闭环；完成后主动Queue，停止新增实验。
 新study `/data0/user/ymdai/ember_runs/return_score_conditioning_20260925`，data0≤2GiB、data1代码≤768MiB，
 全计算含初始化/工程/失败≤1 GPU-hour，最多同节点两卡、项目仍≤6卡；由Sol负责实际资源准入与统一冻结实现。
-是否完成派发与接手以本节后续回执为准；不能把登记当作运行中。
+科学合同及§147裁决在`91d63a18`集成推送。使用Queue派给上述原Sol任务，回执
+`01a0d8ae-cc20-73e1-9a39-42dfd0182333`；13:09:29 UTC核对完整正文进入inProgress turn
+`01a0d8ae-cc23-7563-b17a-c304e58c3516`，并读到Sol明确接手本批、核对合同/只读来源及隔离实现的回应。
+当前证据是已接手实现，未称GPU已启动。正文及逐字送达/回应在旧return-credit study的
+`coordination/score_conditioning_{dispatch.txt,delivery.json}`；未重复发送。
 
 ### 最近完成：成功信用方向及主讨论裁决（2026-09-25）
 

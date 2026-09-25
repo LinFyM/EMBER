@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：六臂训练完成，核心诊断1270/1500，最后230条已接续（2026-09-25）
+## 当前状态：关系支持1500条已复核，接续原生读取与其余Writer的冻结因果交叉（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,23 +9,39 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，五批已完成。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，六批已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[任务关系支持的学习干预](docs/designs/relational_support_causality_design.md)**，
-机器合同`configs/relational_support_causality_v1/experiment_spec.json`。主讨论已完成metadata/完整BDDL/可辨识关系审计，
-冻结四个fit28池、四C与两B、共同1260节点的因果对比及资源/停止合同；原六节点及9932方案已被下述1500条阶段合同替代。
-六臂训练均已1260/exit0；E3已冻结为`385ae992c3390bec764e358ed7fe080bc890a6d6`，保留登记的E2来源例外。
-当前15/18面板、1270/1500行、56/66 full cases已完成验收；最后C_S11三面板230行已启动，尚未进行完整矩阵的科学裁决。
+**当前active design为[原生读取Meta与其余Writer的冻结交叉](docs/designs/native_reader_transfer_causality_design.md)**，
+机器合同`configs/native_reader_transfer_causality_v1/experiment_spec.json`。只使用前批C_S00/C_S10固定1260父模型，
+两任务四格400新闭环、16full，无训练/新expert标签/官方Val或Test。具体实现和执行仍由同一Sol任务承担。
+关系支持第一阶段18面板1500行、66full、全行T+1连续trace已完成并经主讨论独立复算；六臂1260/exit0，
+保留E2 correct100与登记bank例外，其余1400来自E3=`385ae992`。29个预定对比、44组配对均复核一致。
+主预测未兑现：Goal C11 correct35/other33，对C00的36/40没有绝对改善；正交互区间均跨零。
+新批只追查C00→C10这一具体数据敏感性的传递位置，不声称原生读取一定有害或已找到统一根因，详见findings§143。
+
+### 当前冻结交叉的登记与派发（2026-09-25）
+
+三组N只含Text/VL/Action Meta，其余可学习参数为W；source、76模板和固定probe保持。四格N0W0/N1W0/N0W1/N1W1，
+0/1对应C_S00/C_S10，两个self参照在新批内评测。全部global14/21各50state、原correct视频映射与RNG，
+首次真实flow与闭环共同判断，不能仅据norm或混合模型排名归因。单训练seed、混合权重未共同训练的边界明确登记。
+新study预定`/data0/user/ymdai/ember_runs/native_reader_transfer_causality_20260925`；新data0≤8GiB、data1代码≤768MiB，
+项目合计≤6物理GPU；实际创建产物/launch前由Sol检查独立quota和双节点实时资源。工程smoke≤4，正式pilot8计入400。
+完成后主动Queue主讨论，停止新增实验；原关系支持deferred矩阵不自动恢复。当前合同已写入，派发回执待下方接续登记。
+
+### 最近完成的关系支持批次及历史启动记录
+
+前批[任务关系支持](docs/designs/relational_support_causality_design.md)及其机器合同保留；主讨论完成metadata/完整BDDL/可辨识关系审计，
+固定四个fit28池、四C与两B、1260因果对比；其1500第一阶段已关闭，不因旧六节点或9932记录恢复自动执行。
 设计已在`6972486e`集成推送。2026-09-24 09:19 UTC以Queue派发，message
 `01a0d2b6-24e5-7ae0-a1a9-30077bd8cc4e`；09:19:59 UTC从现有app-server核对**完整正文**进入Sol的
 inProgress turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`，当前cwd及实际标题亦已核对。
 正文/入队回执/逐字投递核验保存在前批readout study的
 `coordination/relational_support_dispatch_20260924.{txt,json}`与`relational_support_delivery_20260924.json`。
-上述Queue记录证明当时已接收任务；随后实现、正式启动及工程补验记录见下，尚无本批科学结果。
+上述Queue记录证明当时已接收任务；随后实现、正式启动及工程补验记录见下，现已完成的科学裁决见findings§143。
 Owner明确纠正“下一合同尚未定稿便结束主讨论推进”的错误。执行者完成一批等待派发不约束主讨论继续分析，
 主讨论已把下一项推进到可执行合同；已有授权内不重复索要许可，也不为让实验不停而仓促试改法。
 
-新study根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`，正式树
+前批study根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`，正式树
 `/data1/user/ymdai/projects/EMBER-relational-support-formal`。六臂各1260更新/141120query保持，当前阶段仅1500闭环、
 66固定full cases，不启动3300函数预测；data0峰值≤128GiB/data1新增代码≤1.25GiB（保留E2并另冻E3），同时最多6物理GPU。
 实现已集成推送`7dc95edbba00cf61439700d77fb321eb8df95c07`，正式树为该clean detached commit。
@@ -33,6 +49,16 @@ Sol完成CPU 91+9项、六臂4更新/2→4恢复、最长full-H50及新support�
 预计data0峰值新增120GiB低于128GiB，data1开发/正式树合计约503MiB。精确原合同为`launch/formal_launch_contract.json`。
 主讨论已调用canonical task authority验证新manifest58任务/Train42/Val8/Test8；每个optimizer的白名单仍只有登记fit28。
 Source71及官方24/8/8未改；无新增held expert或官方Val/Test读取。完整机制与竞争解释见task_plan第七阶段和findings§140。
+
+### 关系支持stage1完成及主讨论核验（2026-09-25）
+
+完成信号`analysis/stage1_completion.json`，18/18、1500/1500、66/66和所有worker/launcher exit0；
+没有额外函数预测或自动补评。C_S11三个剩余面板已正常完成，此前接续遗漏已经结束，不再等待其训练退出。
+主讨论独立读取所有results/连续NPZ、版本/噪声/teacher及原worker回执，重新计算全部29对比/44配对与bootstrap；
+原件和独立脚本/数值在`coordination/main_stage1_recheck.{py,json}`，连续几何行在`main_stage1_geometry_rows.jsonl`。
+已查看固定Goal state0/25的Source/B00/C00/C10/C11双相机图；这十例均成功，不把它们当失败分布的代表。
+新增支持操作多数已较好，但C11不优于C00或同池语言B；同一数据规模下C00→C10的Goal损失与更偏的早期接近相伴。
+本阶段关闭，不自动补其它held/seen/wrong/1050或3300预测；新冻结交叉只检验这项数据敏感性的学习传递路径。
 
 ### C_S11训练退出后的接续遗漏与恢复（2026-09-25，北京时间）
 

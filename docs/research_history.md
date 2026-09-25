@@ -4,6 +4,24 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-25：关系支持1500条完成，未兑现绝对收益；转入受控数据端点的原生读取交叉
+
+六臂固定1260来自7dc95edb；C01 correct100沿用E2=e9e518cd，其余17面板1400行来自E3=385ae992，
+原bank与other复用来源按事前工程例外保存。18面板、66full、全部连续T+1 trace齐全，source/数据/梯度信息墙未变。
+主讨论独立复算1500原始行、29预定对比、44组配对及20,000次bootstrap，并查看固定病例与全部连续几何。
+研究根`/data0/user/ymdai/ember_runs/relational_support_causality_20260924`，完成信号`analysis/stage1_completion.json`，
+独立审阅`coordination/main_stage1_recheck.{py,json}`；完整结论见findings§143。
+
+Goal C00/C01/C10/C11 correct36/37/26/35、other40/37/29/33，C11未超过C00；
+correct/other正交互+16/+14pp的区间均跨零。支持操作多数较好，但Source已有较高能力，不证明整条关系已被Writer学会。
+C00→C10的有害数据敏感性伴随Goal早期水平接近偏移与更多干扰物先动，Object仍保留38/50新能力。
+因此关闭本阶段的具体关系修复假说，不把阴性推广为数据无关、所有组合学习无效或模型容量已到上限。
+不自动补1050、held400、seen64、wrong或3300预测，也不无限续训。
+
+登记[原生读取适配交叉](designs/native_reader_transfer_causality_design.md)：C00/C10固定训练时长端点，
+三组Text/VL/Action Meta与其余Writer的四格冻结组合，两任务400闭环、无训练。它利用新受控数据效应检验传递接口，
+保留旧P/C/D混合的协同适应反例，不能把混合收益当部署checkpoint融合或统一根因修复。是否active与派发见progress。
+
 ## 2026-09-24：从冻结作用诊断转入任务关系支持的学习干预
 
 读出干预关闭后，Owner纠正主讨论在下一合同未定稿时停止推进；长期授权允许继续分析并派发具体下一步。

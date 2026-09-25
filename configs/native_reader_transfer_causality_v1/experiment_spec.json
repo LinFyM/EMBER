@@ -1,0 +1,335 @@
+{
+  "schema_version": "ember_native_reader_transfer_causality_spec_v1",
+  "study_id": "native_reader_transfer_causality_20260925",
+  "status": "registered_for_bounded_frozen_diagnostic",
+  "design": "docs/designs/native_reader_transfer_causality_design.md",
+  "coordinator_thread_id": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+  "executor_thread_id": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+  "planning_source_commit": "8afbfcf1",
+  "purpose": "Distinguish native-reader Meta changes from remaining Writer changes as transmitters of the fixed S00-to-S10 training-data effect; no training or deployment method selection.",
+  "parent_study_root": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924",
+  "parents": {
+    "0": {
+      "arm": "C_S00",
+      "checkpoint": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S00/checkpoints/macro_00001260",
+      "training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+      "stage1_correct_bank": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/materialization/C_S00_1260_core_correct/manifest.json",
+      "stage1_results": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/evaluation/C_S00_1260_core_correct/results.json",
+      "bank_commit": "385ae992c3390bec764e358ed7fe080bc890a6d6"
+    },
+    "1": {
+      "arm": "C_S10",
+      "checkpoint": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/training/C_S10/checkpoints/macro_00001260",
+      "training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+      "stage1_correct_bank": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/materialization/C_S10_1260_core_correct/manifest.json",
+      "stage1_results": "/data0/user/ymdai/ember_runs/relational_support_causality_20260924/evaluation/C_S10_1260_core_correct/results.json",
+      "bank_commit": "385ae992c3390bec764e358ed7fe080bc890a6d6"
+    }
+  },
+  "parameter_partition": {
+    "N_prefixes": [
+      "writer.semantic_encoder.text_meta_lora.",
+      "writer.semantic_encoder.vl_meta_lora.",
+      "writer.semantic_encoder.action_meta_lora."
+    ],
+    "N_tensors": 432,
+    "N_elements": 2469888,
+    "W": "All and only other learnable Writer parameters, including projections, patch grounding, Core, Procedure, Compiler, FactorHeads",
+    "W_tensors": 113,
+    "fixed_buffer_prefixes": [
+      "writer.template_"
+    ],
+    "fixed_buffer_names": [
+      "writer.semantic_encoder.fixed_suffix_noise"
+    ],
+    "fixed_buffer_tensors": 77,
+    "total_checkpoint_tensors": 622,
+    "source_frozen": true,
+    "native_coordinate_boundary": true,
+    "explicit_key_manifest_required": true
+  },
+  "cells": [
+    {
+      "id": "N0_W0",
+      "N_parent": "0",
+      "W_parent": "0",
+      "endpoint_bank_reuse": true
+    },
+    {
+      "id": "N1_W0",
+      "N_parent": "1",
+      "W_parent": "0",
+      "endpoint_bank_reuse": false
+    },
+    {
+      "id": "N0_W1",
+      "N_parent": "0",
+      "W_parent": "1",
+      "endpoint_bank_reuse": false
+    },
+    {
+      "id": "N1_W1",
+      "N_parent": "1",
+      "W_parent": "1",
+      "endpoint_bank_reuse": true
+    }
+  ],
+  "evaluation": {
+    "tasks": [
+      {
+        "global_task_id": 14,
+        "suite": "libero_object",
+        "task_id": 4,
+        "horizon": 280
+      },
+      {
+        "global_task_id": 21,
+        "suite": "libero_goal",
+        "task_id": 1,
+        "horizon": 300
+      }
+    ],
+    "init_state_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "condition": "correct",
+    "teacher_schedule": "Reuse exact parent stage1 state-video mapping, seed 20260911, 50 distinct teachers per task/cell",
+    "new_rollouts": 400,
+    "pilot_rollouts": 8,
+    "pilot_states": [
+      0
+    ],
+    "pilot_included": true,
+    "remaining_rollouts": 392,
+    "full_cases": 16,
+    "full_states": [
+      0,
+      25
+    ],
+    "capture": {
+      "compact_trajectory_all_rows": true,
+      "full50x7_initial_action_all_rows": true,
+      "continuous_T_plus_1_all_rows": true,
+      "object_eef_gripper_all_rows": true,
+      "stage_predicates_all_rows": true,
+      "actual_executed_actions_all_rows": true
+    },
+    "canonical": {
+      "render_size": 256,
+      "model_image_size": 224,
+      "rotate_cameras_180": true,
+      "state_dim": 8,
+      "action_dim": 7,
+      "flow_steps": 10,
+      "executed_prefix": 5,
+      "dummy_settling_steps": 10,
+      "stop_on_success": true,
+      "env_seed": 7,
+      "policy_seed_root": 7,
+      "frame_stride": 5
+    },
+    "bootstrap": {
+      "cluster": "initial_state",
+      "joint_within_task": true,
+      "resamples": 20000,
+      "seed": 20260925,
+      "training_seeds": 1,
+      "multiplicity_adjusted": false
+    },
+    "contrasts": [
+      {
+        "id": "N_at_W0",
+        "terms": {
+          "N1_W0": 1,
+          "N0_W0": -1
+        }
+      },
+      {
+        "id": "N_at_W1",
+        "terms": {
+          "N1_W1": 1,
+          "N0_W1": -1
+        }
+      },
+      {
+        "id": "W_at_N0",
+        "terms": {
+          "N0_W1": 1,
+          "N0_W0": -1
+        }
+      },
+      {
+        "id": "W_at_N1",
+        "terms": {
+          "N1_W1": 1,
+          "N1_W0": -1
+        }
+      },
+      {
+        "id": "interaction",
+        "terms": {
+          "N1_W1": 1,
+          "N1_W0": -1,
+          "N0_W1": -1,
+          "N0_W0": 1
+        }
+      },
+      {
+        "id": "endpoint",
+        "terms": {
+          "N1_W1": 1,
+          "N0_W0": -1
+        }
+      },
+      {
+        "id": "retract_N",
+        "terms": {
+          "N0_W1": 1,
+          "N1_W1": -1
+        }
+      },
+      {
+        "id": "retract_W",
+        "terms": {
+          "N1_W0": 1,
+          "N1_W1": -1
+        }
+      }
+    ],
+    "primary": "Goal21 N effects in both W contexts and retract_N success; report full competing W and joint predictions, Object14 acquisition preservation",
+    "historical_self_comparison": "Separate each new diagonal vs its stage1 raw rows, R/G/L and all state differences; never substitute old scores into main new comparisons"
+  },
+  "function_readout": {
+    "input": "Each actual rollout first replan, common q and noise across four cells",
+    "extra_policy_predictions": 0,
+    "primary": "actual first5 environment action xy",
+    "secondary": [
+      "full50x7 normalized",
+      "first5 full7",
+      "canonical OSC scaled xy"
+    ],
+    "D": "F11-F00",
+    "E_N": "((F10-F00)+(F11-F01))/2",
+    "E_W": "((F01-F00)+(F11-F10))/2",
+    "interaction": "F11-F10-F01+F00",
+    "projection": "sum dot(E,D)/sum squared_norm(D); zero denominator -> null; not failure percentage"
+  },
+  "geometry": {
+    "descriptive": true,
+    "eef_control_step": 25,
+    "displacement_threshold_cm": [
+      1,
+      2,
+      3
+    ],
+    "consecutive_control_samples": 5,
+    "not_grasp_or_semantic_labels": true
+  },
+  "information_wall": {
+    "new_training": false,
+    "gradients": false,
+    "new_expert_action_or_state_reads": false,
+    "official_validation_or_test": false,
+    "teacher_inputs": [
+      "exact target language",
+      "correct ordered action-hidden RGB video",
+      "original frame indices"
+    ],
+    "single_complete_38_target_rank16_lora": true,
+    "final_lora_averaging_or_splicing": false,
+    "second_adapter": false,
+    "task_local_optimization": false,
+    "deployed_checkpoint_fusion_method": false,
+    "mixed_writer_is_frozen_causal_intervention_only": true
+  },
+  "engineering": {
+    "max_extra_smoke_rollouts": 4,
+    "smoke_task": 58,
+    "smoke_init_state": 0,
+    "self_composition_check_tasks": [
+      14,
+      21
+    ],
+    "self_composition_check_states": [
+      0,
+      25
+    ],
+    "same_call_parent_comparison": true,
+    "normalized_action_maxabs_tolerance": 0.03,
+    "all_formal_rollouts_one_clean_pushed_detached_commit": true,
+    "endpoint_banks_readonly_E3": true,
+    "new_composite_bank_commit_explicit": true,
+    "no_fake_training_checkpoint": true
+  },
+  "resources": {
+    "study_root": "/data0/user/ymdai/ember_runs/native_reader_transfer_causality_20260925",
+    "max_new_data0_gib": 8,
+    "max_new_data1_gib": 0.75,
+    "max_global_physical_gpus": 6,
+    "max_formal_gpu_hours": 12,
+    "live_dual_node_admission_each_launch": true,
+    "strg01_independent_quotas_before_outputs": true,
+    "copy_parent_models_or_data": false,
+    "normal_wait": "one continuous process-exit event, no progress/cache polling; interrupted wait requires real continuation/handoff"
+  },
+  "completion": {
+    "path": "analysis/completion.json",
+    "require_unique_rollouts": 400,
+    "require_full_cases": 16,
+    "require_continuous_traces": 400,
+    "registered_contrasts": 16,
+    "queue_main_on_exit": true,
+    "stop_after_registered_batch": true,
+    "no_auto_fresh_training_or_layer_scan": true,
+    "no_auto_other_wrong_held400_or_deferred_stage2": true
+  }
+}

@@ -40,6 +40,8 @@ H_information/shortcut预测：q路径至多恢复语言方案，视频的有效
 B630不是与两新臂同一次物理训练；其Source/rank/数据/更新时钟匹配，但原world4与新world2不同。
 Cplus−C0是主要架构因果对照；相对B630是能力基准，不假称只移除视频的单变量实验。
 所有本批主配对使用新闭环行，旧结果只单列历史self差异；不拼旧Source成功集合。
+其中Source/B是同一冻结policy的重新评测，C0则是world2重新训练，须分开标注这两类历史比较。
+若新C0没有复现相对B的额外损失，不能把Cplus的分数命名为修复该旧缺口，也不通过更换C0节点制造缺口。
 不得将本诊断称为超过强MT-BC或最终方法资格。
 
 训练与生成必须复用canonical owner，不复制Writer、policy或evaluator。候选采用明确配置开关，

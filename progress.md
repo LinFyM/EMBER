@@ -18,6 +18,9 @@ CPU回执在`/data1/user/ymdai/projects/EMBER-language-content-path-cpu-dev/.cod
 正文/回执/送达保存在本仓`.codex/tmp/language_content_path_causality_20260926/`；
 已授权其技术/资源验收通过后直接按同一合同接续，不等待Owner醒来重复确认。
 CPU完成回报已消费，后续收到同一Queue信号不重复派发；新学习完成后仍由主讨论独立复核原件再裁决。
+033c19db只澄清日志时点：a在更新前后读值，完整归并后clip前读梯度；forward只汇总已有q/A读数。
+18:35:13 UTC以Steer送入同一新turn，18:36:19核对逐字送达与Sol明确确认接入；
+证据同目录`scalar_logging_{steer.txt,receipt.json,delivery.json}`，未改变科学变量、优化或总规模。
 
 ### 已完成CPU批次的派发与授权记录
 

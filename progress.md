@@ -1,12 +1,26 @@
 # EMBER progress
 
-## 当前状态：有界CPU构造验证已Queue且Sol确认接手；无active GPU实验（2026-09-26）
+## 当前状态：CPU构造完成且主讨论复核；登记两臂匹配学习，待派发（2026-09-26）
+
+Active design：[language_content_path_causality](docs/designs/language_content_path_causality_design.md)，
+机器规格`configs/language_content_path_causality_v1/experiment_spec.json`。
+Sol隔离CPU提交41a0f4f4已ff集成main：2项构造与10项旧回归通过，主讨论审阅非零head完整输出和9行源码、
+独立复跑2项通过；a0对C及构造对B maxabs0、视频扰动 .44040、a梯度/内积 .07022614。
+CPU回执在`/data1/user/ymdai/projects/EMBER-language-content-path-cpu-dev/.codex/tmp/language_content_path_cpu_result.json`。
+这些仅验证合成构造，不是原生读取、学习收益或根因证明；GPU实际启动仍为零。
+
+新范围为C0/Cplus各fresh630，仅一个内容路径开关不同；只评固定末点630的736条，448新条件bank，
+144个B630旧bank引用，28full，全行T+1；Source/B均重新闭环。预算18 GPU-hours/12GiB data0/768MiB代码。
+重点检验额外能力损失能否减少且原C新增能否保住，正确及另一正确视频是否超过语言基准。
+新合同待提交/推送后Queue；尚未把计划写成已执行，不从旧GPU合同自行恢复。
+
+### 已完成CPU批次的派发与授权记录
 
 Owner再次强调以EMBER最终目标为中心、避免局部问题递归，以及架构/训练的数学合理性与历史解释；
 已纳入稳定Owner要求。主讨论完成[语言内容路径审计](docs/analyses/language_content_path_audit_20260926.md)，
 结论与边界见findings§152。候选函数包含仅为可达性证明，不是已验证的原因或收益。
 接续范围仅该文§7 `language_content_path_cpu_20260926`：实际Sol隔离实现与CPU验证，无GPU、真实输入或闭环，
-不集成main、不改变canonical默认行为，完成主动回报后停止。本段是明确的CPU派发范围；没有新正式训练设计。
+当时不集成main、不改变canonical默认行为，完成主动回报后停止；该CPU阶段现已完成，由主讨论验收后集成。
 合同在248c566d推送；2026-09-25 18:10:43 UTC（北京时间9月26日02:10）以Queue送给上述实际Sol，
 回执01a0d9c3-3457-73f1-8f00-9381c414499b。主讨论核对完整正文进入新turn
 01a0d9c3-345a-7d32-9b99-95cc35a4ed79及Sol明确回复只做CPU、隔离分支、不集成/不启GPU。
@@ -24,7 +38,7 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
 实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近128条探索目标交叉已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前无active GPU实验设计。** d7f500f0的flow_path_intervention已由主讨论撤回实施；
+**下列为已撤回flow分支的历史停点。** d7f500f0的flow_path_intervention已由主讨论撤回实施；
 Owner指出其没有解释通用VLA训练/采样性质为何是EMBER特有问题，复核与裁决见findings§151。
 撤回原32query/64闭环的新增实现及GPU计算，不把未测假设记成科学阴性；保留已有工作与原件。
 主讨论继续理论与历史证据综合，不从任何旧active恢复实验，不仓促派发替代矩阵。全项目长期研究授权仍有效。

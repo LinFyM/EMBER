@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：保留六臂训练，先执行1500条核心诊断再裁决补测（2026-09-25）
+## 当前状态：六臂训练完成，核心诊断1270/1500，最后230条已接续（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -14,7 +14,8 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 **当前active design为[任务关系支持的学习干预](docs/designs/relational_support_causality_design.md)**，
 机器合同`configs/relational_support_causality_v1/experiment_spec.json`。主讨论已完成metadata/完整BDDL/可辨识关系审计，
 冻结四个fit28池、四C与两B、共同1260节点的因果对比及资源/停止合同；原六节点及9932方案已被下述1500条阶段合同替代。
-本批C_S01 correct100已完成；其余面板待E3被动区域修正后继续，尚未进行完整矩阵的科学裁决。
+六臂训练均已1260/exit0；E3已冻结为`385ae992c3390bec764e358ed7fe080bc890a6d6`，保留登记的E2来源例外。
+当前15/18面板、1270/1500行、56/66 full cases已完成验收；最后C_S11三面板230行已启动，尚未进行完整矩阵的科学裁决。
 设计已在`6972486e`集成推送。2026-09-24 09:19 UTC以Queue派发，message
 `01a0d2b6-24e5-7ae0-a1a9-30077bd8cc4e`；09:19:59 UTC从现有app-server核对**完整正文**进入Sol的
 inProgress turn `01a0d2b6-24ee-7401-bdb0-7ea22629e35b`，当前cwd及实际标题亦已核对。
@@ -32,6 +33,27 @@ Sol完成CPU 91+9项、六臂4更新/2→4恢复、最长full-H50及新support�
 预计data0峰值新增120GiB低于128GiB，data1开发/正式树合计约503MiB。精确原合同为`launch/formal_launch_contract.json`。
 主讨论已调用canonical task authority验证新manifest58任务/Train42/Val8/Test8；每个optimizer的白名单仍只有登记fit28。
 Source71及官方24/8/8未改；无新增held expert或官方Val/Test读取。完整机制与竞争解释见task_plan第七阶段和findings§140。
+
+### C_S11训练退出后的接续遗漏与恢复（2026-09-25，北京时间）
+
+Owner询问为何停下后，主讨论做一次针对性核查：六臂训练均正常退出，C_S11最后于05:27退出0，1260完整checkpoint
+及manifest所列文件齐全。15个已验收面板共1270行、56full，worker退出均为0；剩余仅C_S11 correct100、Goal other50、
+support80，整批`analysis/stage1_completion.json`尚未产生。E3被动采集修复已经完成，不再是当前阻塞。
+
+Sol上一轮的训练退出等待工具实际以`KeyboardInterrupt`/exit130结束，随后该任务于04:13结束，未接续05:27的训练完成事件；
+中断由谁或什么触发尚未核实。旧lane退出Queue helper只处理此前一个lane，不能视为仍在等待C_S11的通知器。
+截至本次10:50核查，Sol空闲，约五个半小时未接续；这是执行与主讨论的衔接遗漏，不是实验科学失败。
+
+10:53以Queue恢复既定最后230条，回执`01a0d67b-545c-7982-815e-78810c54f30c`，活跃turn
+`01a0d67b-545e-7d51-b02d-4f137f0a383b`；已核对完整正文与Sol明确回应。正文、接受与送达记录为
+`coordination/stage1_final230_resume_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
+Sol已核对唯一启动记录、checkpoint、双节点GPU与quota后启动三面板；主讨论核对三份实际启动回执与bank正常退出，
+correct用gpu01/1,4、other用gpu02/2,3、support用gpu02/0,1，共6物理卡。other从correct复用50条件，无新增Writer forward。
+精简核验见`coordination/stage1_final230_launch_confirmation.json`。不重评已有1270行、不改变E2/E3例外或科学合同。
+
+执行者接续现有进程到退出、完成1500行机械分析后主动Queue主讨论，停止额外评测；主讨论收到原件后作科学裁决。
+退出等待不能以中断后的任务结束代替完成交接；确需结束任务时，须保证已有退出通知能继续存活并送达。
+正常运行仍不轮询日志、分数或共享缓存。本次只恢复登记工作，不据工程完成宣称关系支持假说成立或根因已修复。
 
 ### 当前第一阶段合同（2026-09-24 16:39 UTC／北京时间9月25日00:39）
 

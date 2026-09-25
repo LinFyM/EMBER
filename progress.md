@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：探索目标交叉16bank/4pilot有效，修正验收后接续余124（2026-09-25）
+## 当前状态：探索目标交叉已核验并关闭；登记32query/64闭环的flow指导位置诊断（2026-09-26）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,36 +9,41 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近96条score-update闭环已完成。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近128条探索目标交叉已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[探索目标对齐交叉](docs/designs/return_objective_alignment_design.md)**，
-机器合同`configs/return_objective_alignment_v1/experiment_spec.json`。
-固定原C_S00@1155父P与34ea27bd已保存RB候选，不新训练/梯度/候选；
-原八个采集teacher、states0..3，P/RB×J0/J_Sigma四格128闭环，探索新replica4未参与旧梯度。
-16个新bank由两噪声格共享，16full及全128条T+1 trace；task2/state0四格pilot计入128。
-新study `/data0/user/ymdai/ember_runs/return_objective_alignment_causality_20260925`；
-新data0≤3GiB、代码≤768MiB，预计.8–1.2、硬限1.5 GPU-hours，含全部GPU初始化/工程/失败/物化/评测。
-最多同时两卡、项目≤6，由Sol做实际live资源准入；已完成E的16bank/4pilot原件保留；余124及分析按design§6唯一阶段例外由新E2完成，旧权重只读。
-不自动补seed/step/state、改变Sigma或接续RL，128完成主动Queue主讨论并停止新增实验。
-设计/spec及§149裁决在`273e23c1`集成推送；以Queue派给原Sol，回执
-`01a0d926-13ce-7252-a9e1-1605a10e52d4`。15:19:57 UTC核对完整正文进入inProgress turn
-`01a0d926-13d1-76a3-8027-5257bc9422b6`，并读到Sol明确接手、审阅探索接口、验证后执行128矩阵的回应。
-上述为初次接手记录；本批现已完成下述16bank/4pilot。正文/入队/逐字送达及回应在score-update study的
-`coordination/objective_alignment_{dispatch.txt,dispatch_receipt.json,delivery.json}`；没有重复派发。
+**当前active design为[冻结flow指导位置干预](docs/designs/flow_path_intervention_design.md)**，
+机器合同`configs/flow_path_intervention_v1/experiment_spec.json`。
+只用合法train global2/12；S复用dd2e00bc实际采集bank及aligned Source，E复用旧unaligned Source＋step2000 task expert。
+两个base独立、normalization/执行坐标相同；旧expert不得挂到新base。无新Writer前向、bank、梯度或参数更新。
+32个保存query包含S/E/H0/H5路径与两种直线场差；两task×states0..7×四格64闭环，16full及全T+1 trace。
+首步H0与中步H5各仅替换一次完整50×32 velocity，其余保持student；E是privileged诊断，不是部署方法。
+新study `/data0/user/ymdai/ember_runs/flow_path_intervention_causality_20260926`。
+全部GPU加载/初始化/工程/失败/离线/闭环≤2 GPU-hours，data0≤3GiB、开发＋formal代码≤768MiB，最多同节点两卡、项目≤6。
+Sol负责实际strg01与两节点live准入；新GPU计算统一clean pushed detached实现F，旧来源只读。
+完成32/64后主动Queue本主讨论并停止新增实验，不追加time/scale/seed/tasks或自动训练。
+设计/spec已完成登记，尚待本轮commit/push和Queue派发；没有据此声明已经启动。实际回执及接手随后登记。
 
-### 当前工程节点：pilot共同前缀验收修正
+### 最近完成：探索目标对齐及主讨论裁决（2026-09-26）
 
-E=`29634cc9f75143cdd6d70863e6d24ef1a8d3770d`已完成16新bank与4登记pilot，全部worker exit0。
-pilot验收误要求四格完整seed列表相等；成功即终止使实际replan数20/26/19/20，这是验收代码错误。
-主讨论只读复算每条完整policy/replica4 seed公式、共同前缀、初态、均值加噪及T+1/实际动作，均通过；
-证据`return_objective_alignment_causality_20260925/coordination/main_pilot_pairing_recheck.json`，没有以成功分数放行。
-按design§6/spec登记B：保留E全部bank/4pilot，修复验收及明确阶段来源绑定后，唯一clean pushed detached E2执行余124和分析。
-不改policy/Writer/探索/rollout，不重跑、不重物化、不加环境probe；原128行、1.5 GPU-hours及存储上限保持。
-已计GPU .03560779小时；每条较长seed尾部仍按原公式验收，最终产物明确区分E与E2。
-裁决在`59e7c1ad`推送；15:50:30 UTC以Steer送入Sol当前turn
-`01a0d926-13d1-76a3-8027-5257bc9422b6`，15:51:08逐字核对正文进入同轮，并读到其明确确认B、
-只修共同前缀与精确来源绑定的回应。当前为接续修复，余124尚未据此声明启动；实际E2由执行者记录。
-正文/接受/送达与回应在本study `coordination/pilot_seed_exception_{dispatch.txt,receipt.json,delivery.json}`。
+Study `/data0/user/ymdai/ember_runs/return_objective_alignment_causality_20260925`。
+E=29634cc9f75143cdd6d70863e6d24ef1a8d3770d保留16bank/4pilot；按59e7c1ad例外，
+E2=61974dee6047ecf86a2155ab63219367f7c1f51d完成余124及分析。只有CPU验收/精确来源绑定修正，GPU科学计算未改。
+128唯一行、16full、全T+1 trace/谓词、全部worker exit0；主讨论独立审阅diff并逐行重算五对比、联合bootstrap、
+6382次注入/完整seed/实际动作、首轮函数和资源，`coordination/main_recheck.{py,json}`保存原件。
+P_J0/P_JS/RB_J0/RB_JS为18/19/15/14，任务breadth8/8/6/6；RB−P为−3/−5，交互−2（均/32）。
+探索目标收益和原条件迁移预测没有兑现，区间宽，不是总体无效的证明；完整裁决findings§150。
+§147–150有限回报分支关闭，不补seed/scale或长RL；统一根因、可靠修复、有益视频必要增量仍未验证。
+完整GPU回执.856028747小时、data0约1.2GiB、两代码树约504MiB，缺项0。
+
+### 已完成探索目标交叉的协作与工程记录
+
+原设计/spec在273e23c1推送；Queue回执01a0d926-13ce-7252-a9e1-1605a10e52d4，
+15:19:57 UTC核对完整正文进入turn01a0d926-13d1-76a3-8027-5257bc9422b6及Sol明确接手。
+正文/回执/送达在score-update study `coordination/objective_alignment_*`。
+E的pilot误要求成功即停的完整seed列表等长；主讨论核对每条完整公式和共同前缀，未按成绩放行。
+59e7c1ad阶段例外于15:50:30 UTC以Steer送入同turn，15:51:08核对逐字送达和Sol明确确认，
+证据在本study `coordination/pilot_seed_exception_*`及`main_pilot_pairing_recheck.json`。
+E原16bank/4pilot未重做，错误回执保留；本批现已由E2完成，不恢复历史阻塞或自动追加。
 
 ### 最近完成：score-update stage1及主讨论裁决（2026-09-25）
 

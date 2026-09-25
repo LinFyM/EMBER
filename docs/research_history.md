@@ -4,6 +4,17 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-26：探索目标交叉完成，原条件与带探索执行均未恢复更新收益
+
+[合同](designs/return_objective_alignment_design.md)，study `/data0/user/ymdai/ember_runs/return_objective_alignment_causality_20260925`。
+E=29634cc9的16bank/4pilot保留，E2=61974dee完成余124及分析，阶段例外由59e7c1ad登记。
+128唯一行、128 T+1 trace、16full及全部worker exit0；主讨论逐行核对并重算6382次注入/种子、五个配对统计与资源，
+审计`coordination/main_recheck.{py,json}`，完整裁决findings§150。
+P_J0/P_JS/RB_J0/RB_JS为18/19/15/14（各32）；更新差−3/−5，交互−2，描述性区间均宽且跨零。
+任务breadth8/8/6/6，RB两种执行均失去task17/37的全部成功；原条件上的探索目标收益预测没有兑现。
+关闭这条有限回报更新分支，不自动补量或长RL；没有统一根因/修复声明。
+完整GPU计时.856029小时、data0约1.2GiB、两代码树约504MiB；旧pilot验收失败原件保留。
+
 ## 2026-09-25：夹爪信用修正的96条闭环完成，新增成功没有恢复原能力损失
 
 实现/候选/48bank/96闭环统一34ea27bd，study `/data0/user/ymdai/ember_runs/return_score_update_causality_20260925`。

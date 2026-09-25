@@ -1,0 +1,326 @@
+{
+  "schema_version": "ember_flow_path_intervention_v1",
+  "study_id": "flow_path_intervention_causality_20260926",
+  "status": "registered_frozen_diagnostic",
+  "design": "docs/designs/flow_path_intervention_design.md",
+  "scientific_owner_thread": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+  "executor_thread": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+  "source": {
+    "student_checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+    "expert_checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_base_v1_seed7_1k_e2cc238_20260722/checkpoints/step_00001000",
+    "normalization": "configs/pi05_source_corpus_v1/source_normalization.json",
+    "student_parent_training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+    "student_parent_macro": 1155,
+    "student_bank_query_commit": "dd2e00bc88a3976c9dcf9a3f14dad745b265e0da",
+    "source_weights_shared": false,
+    "prefix_KV_shared_between_sources": false,
+    "old_expert_training_action_offset": 0,
+    "student_training_action_offset": 1,
+    "mutable": false,
+    "new_writer_forwards": 0,
+    "new_banks": 0,
+    "new_gradients": 0,
+    "new_parameter_updates": 0
+  },
+  "tasks": [
+    {
+      "global_task_id": 2,
+      "suite": "libero_spatial",
+      "task_id": 2,
+      "teacher_demo": 34,
+      "student_bank_record": "/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925/banks/collection/P/task_002_teacher_34/bank_record.json",
+      "expert_adapter": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807/worker_1/task_01_global_02/checkpoints/step_00002000/adapter.safetensors",
+      "role": "existing_student_ability_reference"
+    },
+    {
+      "global_task_id": 12,
+      "suite": "libero_object",
+      "task_id": 2,
+      "teacher_demo": 38,
+      "student_bank_record": "/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925/banks/collection/P/task_012_teacher_38/bank_record.json",
+      "expert_adapter": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_task_expert_bank_formal_step1000_r6_81101fe_20260807/worker_0/task_06_global_12/checkpoints/step_00002000/adapter.safetensors",
+      "role": "potential_acquisition_reference"
+    }
+  ],
+  "information_wall": {
+    "official_validation_test": false,
+    "diagnostic_held8": false,
+    "new_dataset_teacher_action_state_reward_terminal_reads": false,
+    "new_nonheld_expert_velocity_queries": true,
+    "privileged_frozen_diagnostic_only": true,
+    "deployment_second_expert_authorized": false,
+    "teacher_selection_by_new_results": false
+  },
+  "interventions": {
+    "cells": [
+      "S",
+      "E",
+      "H0",
+      "H5"
+    ],
+    "denoise_steps": 10,
+    "h": 0.1,
+    "times": [
+      1.0,
+      0.9,
+      0.8,
+      0.7,
+      0.6,
+      0.5,
+      0.4,
+      0.3,
+      0.2,
+      0.1
+    ],
+    "expert_steps": {
+      "S": [],
+      "E": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "H0": [
+        0
+      ],
+      "H5": [
+        5
+      ]
+    },
+    "replace_full_velocity_shape": [
+      50,
+      32
+    ],
+    "expert_input": "current_cell_current_latent_and_observation",
+    "replace_latent": false,
+    "blend_velocity": false,
+    "expert_own_sample_in_hybrid": false,
+    "new_exploration": false
+  },
+  "offline": {
+    "collection_root": "/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925/collection/groups",
+    "tasks": [
+      2,
+      12
+    ],
+    "states": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "replica": 0,
+    "selection": "all four saved reservoir decisions per file",
+    "queries": 32,
+    "noise": "original saved full50x32 flow_noise; no additional seed",
+    "paths": [
+      "S",
+      "E",
+      "H0",
+      "H5"
+    ],
+    "cross_fields": [
+      "E_at_S",
+      "S_at_E",
+      "S_at_line_S",
+      "E_at_line_S",
+      "S_at_line_E",
+      "E_at_line_E"
+    ],
+    "line_anchors": "same-query full50x32 endpoints of S and E with same initial noise",
+    "max_denoise_calls_per_query": 100,
+    "matrix_denoise_calls_max": 3200,
+    "pilot_query": {
+      "global_task_id": 2,
+      "init_state_id": 0,
+      "replica": 0,
+      "replan": "smallest saved replan index"
+    },
+    "pilot_extra_denoise_calls_max": 40,
+    "total_denoise_calls_max": 3240,
+    "pilot_extra_only": [
+      "canonical_S",
+      "canonical_E",
+      "H0_donor_equals_S",
+      "H5_donor_equals_S"
+    ],
+    "weighting": "task, then initial state, then four queries equally; no Q reweighting",
+    "field_defect_primary": "mean squared real50x7 expert-student difference over k1..9",
+    "field_defect_secondary": [
+      "first5x7",
+      "first5_xyz",
+      "first5_rotation",
+      "first5_gripper",
+      "per_time"
+    ],
+    "path_decomposition": "exact Euler same-latent field defect plus expert path feedback",
+    "epsilon_random_variable_shared": true
+  },
+  "evaluation": {
+    "init_state_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "rows_per_cell": 16,
+    "total_rows": 64,
+    "pilot": {
+      "task": 2,
+      "state": 0,
+      "cells": [
+        "S",
+        "E",
+        "H0",
+        "H5"
+      ],
+      "rows": 4,
+      "included_in_total": true
+    },
+    "remaining_rows": 60,
+    "extra_engineering_episodes": 0,
+    "extra_environment_probes": 0,
+    "state_video_schedule": "one frozen student bank per task, reused across all eight states; diagnostic finite pool",
+    "expert_condition_label": "privileged expert, no video input claim",
+    "env_policy_seed": 7,
+    "render_resolution": 256,
+    "model_resolution": 224,
+    "camera_rotate_degrees": 180,
+    "state_dim": 8,
+    "action_dim": 7,
+    "chunk": 50,
+    "flow_steps": 10,
+    "replan_steps": 5,
+    "settling_steps": 10,
+    "horizons": {
+      "libero_spatial": 220,
+      "libero_object": 280
+    },
+    "terminate_on_success": true,
+    "continuous_trace": "all rows, t0 plus each actual control step",
+    "stage_predicates": "all rows",
+    "full_cases": {
+      "tasks": [
+        2,
+        12
+      ],
+      "states": [
+        0,
+        4
+      ],
+      "cells": [
+        "S",
+        "E",
+        "H0",
+        "H5"
+      ],
+      "total": 16
+    },
+    "flow_trace": "first replan full x/v; all replans donor identity/time/call count; no added forward",
+    "seed_pairing": "shared nonempty prefix plus each complete list independently checked against formula",
+    "historical_rows_in_primary_comparison": false
+  },
+  "analysis": {
+    "contrasts": [
+      [
+        "E",
+        "S"
+      ],
+      [
+        "H0",
+        "S"
+      ],
+      [
+        "H5",
+        "S"
+      ],
+      [
+        "H5",
+        "H0"
+      ],
+      [
+        "H0",
+        "E"
+      ],
+      [
+        "H5",
+        "E"
+      ]
+    ],
+    "closed_loop_metrics": [
+      "per_task",
+      "fixed_two_task_total",
+      "breadth",
+      "retained",
+      "gained",
+      "lost",
+      "churn",
+      "jaccard",
+      "success_sets"
+    ],
+    "bootstrap_repetitions": 20000,
+    "bootstrap_seed": 20260926,
+    "evaluation_bootstrap": "within each of two fixed tasks resample eight paired states; share indices across four cells",
+    "offline_bootstrap": "within each fixed task resample four paired initial-state clusters; keep four saved queries together",
+    "ci_level": 0.95,
+    "not_generalization_claim": true
+  },
+  "acceptance": {
+    "canonical_first5_normalized_rms_max": 0.01,
+    "euler_decomposition_maxabs": 0.0001,
+    "finite": true,
+    "bank_source_identity": true,
+    "frozen_source": true,
+    "success_score_not_pilot_gate": true,
+    "low_bit_differences_not_failure_without_functional_violation": true
+  },
+  "implementation": {
+    "new_gpu_compute": "one clean pushed detached commit F",
+    "reuse_old_banks_and_sources_read_only": true,
+    "frozen_tree_hot_patch": false,
+    "cpu_only_validation_scheduler_analysis_fix": "may use explicit separate clean pushed commit; retain GPU F origin and do not rerun valid products",
+    "gpu_behavior_change": "stop affected stage and report main; no silent version change",
+    "scope": "same canonical rollout engine and denoise owners; no separate simulator or restored historical trainer"
+  },
+  "resources": {
+    "study_root": "/data0/user/ymdai/ember_runs/flow_path_intervention_causality_20260926",
+    "expected_gpu_hours": [
+      0.7,
+      1.3
+    ],
+    "gpu_hours_max": 2.0,
+    "gpu_time_includes": "all process initialization/loading/engineering/failure/offline/evaluation",
+    "concurrent_gpu_max": 2,
+    "project_gpu_max": 6,
+    "new_data0_gib_max": 3,
+    "development_and_formal_code_mib_max": 768,
+    "storage_preflight": "strg01 independent filesystem quota plus shared capacity and peak estimate before root",
+    "gpu_preflight": "both nodes live identity ownership utilization memory before each launch",
+    "normal_monitoring": "single continuing wait for exit event; no log/cache polling"
+  },
+  "stop": {
+    "complete": "32 offline queries and 64 closed-loop rows; Queue main with raw artifacts and stop new experiments",
+    "no_automatic_extension": [
+      "time_position",
+      "strength",
+      "flow_step_count",
+      "seed",
+      "tasks",
+      "teacher",
+      "training",
+      "held_evaluation"
+    ],
+    "engineering_failures": "preserve originals and actual work; stop affected stage and report",
+    "scientific_negative": "report as evidence; do not retry or choose new conditions"
+  }
+}

@@ -1,20 +1,24 @@
 # EMBER task plan
 
-## 当前：幅度信用修正未恢复父能力，冻结检验探索目标是否错位（2026-09-25）
+## 当前：回报更新分支关闭，检验实际flow路径上的纠正是否有用（2026-09-26）
 
-成功信用方向与条件化分解已完成，见findings§147–148；方向改变本身不等于闭环修复。
-[96条闭环补验](docs/designs/return_score_update_design.md)已完成并独立核验，见findings§149：
-P/RAW/RB为15/13/15，RB保留RAW全部13条并新增2条，但新增只在teacher46，原三条父成功仍丢失。
-RB与父净分持平、任务breadth却从6降到5；强保持预测未兑现，不继续此修正的长训练或尺度试验。
+[探索目标对齐交叉](docs/designs/return_objective_alignment_design.md)已完成并独立核验，见findings§150：
+P_J0/P_JS/RB_J0/RB_JS为18/19/15/14（各32）。原条件下两种执行都没有更新净收益，
+且RB均失去task17/37的全部成功；没有支持“有效更新藏在带探索目标中”。
+§147–150有限回报方向、执行等价score和目标对齐分支关闭，不加尺度/seed或长RL追逐收益。
+宽区间、稀疏信用和有限步非线性仍限制总体解释；不据此宣布所有RL无效或FM就是根因。
 
-当前登记[探索目标对齐交叉](docs/designs/return_objective_alignment_design.md)：
-固定父P与已保存RB候选，在原八采集teacher×states0..3交叉J0/J_Sigma，共128条；
-探索只用一个未进入旧梯度的新replica4，无参数更新、新梯度、额外预测或held输入。
-16个新bank、16full、全部T+1 trace，最多1.5 GPU-hours/3GiB；实际派发与接手见progress。
-已有梯度针对J_Sigma，而旧评测同时换成独立state/video及J0；追加旧J0面板不能拆开该混杂。
-本批直接检验Delta_Sigma、Delta0与二者交互，区分探索目标未迁移与原采样条件下仍无收益。
-若无正证据，不延长这一回报更新分支；即使探索目标受益，也不把打开部署噪声当成EMBER修复。
-统一根因、可采纳改进及正确视频必要增量仍未验证。
+当前登记[冻结flow指导位置干预](docs/designs/flow_path_intervention_design.md)，机器合同
+`configs/flow_path_intervention_v1/experiment_spec.json`。
+[历史复核](docs/analyses/flow_supervision_history_20260926.md)确认，真实十步endpoint蒸馏与learner环境状态的expert velocity
+监督都已有有限正例和保持失败；不能重新包装为新想法。新问题只问：学生实际积分中间latent上的expert纠正是否有额外执行价值。
+
+固定合法train global2/12、C_S00@1155的两个实际采集bank与各自旧task expert；分别完整加载各自基础模型，禁止跨base挂旧adapter。
+32个保存query比较实际路径/两种直线插值场差；64条配对闭环比较S、E、仅首步expert的H0、仅中步expert的H5。
+两种混合均每次replan只换一次完整velocity调用，不学习、不新编译bank；这是privileged诊断，不能成为部署第二expert。
+最多2 GPU-hours/3GiB，16full、全行T+1 trace。不是预先铺满训练曲线或held矩阵。
+若expert无优势，或中途指导没有相对首步和student的收益，不自动投入路径蒸馏；有益也只能支持下一份学习分布对照，
+不能直接宣布训练根因或视频修复。执行者完成32/64即反馈；主讨论独立核验后再设计后继。
 
 Owner已指定本任务`01a0cd94-65da-7b22-8ca9-7ba35f454632`接管主讨论与科学判断，现有Sol任务
 `01a0cd90-ebb7-77a1-a20b-a858825d2f66`负责具体实现和实验。双方实际身份已核对并登记，旧暂停不阻断既定四臂。
@@ -62,7 +66,7 @@ Owner要求开放架构与训练方式，参考元学习/VLA，同时保留两�
 这些文献没有直接选定新架构。已结束lookahead借鉴MLDG/Fish，但未取得超过BASE的收益，不恢复该路线的长训练。
 成功信用正反方向干预未兑现收益；旧RL profile也只有工程依据，不启动长程RL。
 Gaussian score经执行等价类条件化已验证完整梯度作用，但96条闭环没有兑现父能力保持；
-现在用冻结探索开关区分目标差异，不追加学习算子。
+冻结探索开关也未兑现收益，这一有限回报分支关闭；当前先检验实际flow指导位置，不追加学习算子。
 继续区分条件信息是否可辨识、视频知识是否被提取、控制作用是否能编译、以及获取后的能力是否保持。
 保留的特色是可检验的教学编译与原生知识利用；读取器、表示、参数生成和训练组织均可据证据实质重构。
 

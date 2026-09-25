@@ -1,0 +1,170 @@
+{
+  "schema_version": "ember_return_score_conditioning_v1",
+  "study_id": "return_score_conditioning_20260925",
+  "phase": "frozen_gradient_only",
+  "coordinator": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+  "executor": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+  "source": {
+    "study_root": "/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925",
+    "spec": "configs/return_credit_direction_v1/experiment_spec.json",
+    "collection_commit": "dd2e00bc88a3976c9dcf9a3f14dad745b265e0da",
+    "gradient_commit": "4e3ade368301d855fed7b520a4170dfa9e1bc3d7",
+    "parent_macro": 1155,
+    "parent_training_commit": "7dc95edbba00cf61439700d77fb321eb8df95c07",
+    "bank_phase": "collection/P",
+    "read_only": true,
+    "existing_episodes": 128,
+    "groups": 32,
+    "unique_saved_decisions": 512,
+    "nonzero_advantage_decisions": 96,
+    "task_ids": [
+      2,
+      5,
+      12,
+      17,
+      22,
+      25,
+      34,
+      37
+    ],
+    "nonzero_task_ids": [
+      12,
+      17,
+      22,
+      37
+    ],
+    "main_cpu_audit": "coordination/main_gripper_score_audit.json"
+  },
+  "intervention": {
+    "arms": [
+      "RAW",
+      "RB"
+    ],
+    "normalized_action_shape": [
+      5,
+      7
+    ],
+    "gripper_index": 6,
+    "temporal_rho": 0.8,
+    "action_std": [
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.1
+    ],
+    "gripper_zero_threshold_formula": "-1+2/(2+1e-6)",
+    "RAW": "Sigma^-1*(u-mu_old)",
+    "RB": "RAW other 30 components; gripper block = gradient_mu log correlated_5D_sign_probability",
+    "weight": "A*(Q/M)/128",
+    "advantage": "R - mean(other three replicas in same group)",
+    "stop_gradient": [
+      "A",
+      "Q/M",
+      "mu_old",
+      "latent_u",
+      "states",
+      "sign",
+      "policy_noise"
+    ],
+    "preserve_early_terminal_joint_latent": true,
+    "policy_vjp_at": "actual dd2 collection bank",
+    "writer_vjp_at": "full recompiled parent with all three Meta, original anchored interpretation",
+    "update_steps": 0,
+    "optimizer": null
+  },
+  "numerics": {
+    "tf32": true,
+    "dtype": "same native mixed dtype as E2; no precision sweep",
+    "covariance": "full correlated time block, not product of marginal sign probabilities",
+    "nonzero_min_boundary_distance_sigma": 9.547884695889834,
+    "nonzero_joint_flip_probability_upper_bound": 3.3092840019275835e-21,
+    "nonzero_conditional_score_maxabs_upper_bound": 6.387208616157699e-20,
+    "cdf_seed": 20260925,
+    "independent_cpu_seed": 20260926,
+    "flow_replay_rms_max": 0.01,
+    "RAW_compare_saved_E2": true,
+    "small_direction_description": {
+      "relative_correction_below": 0.05,
+      "cosine_above": 0.99,
+      "automatic_acceptance": false
+    }
+  },
+  "compute": {
+    "gradient_unique_inputs": 96,
+    "real_ten_flow_forward_max": 192,
+    "pilot_included": true,
+    "pilot": "first registered nonzero-advantage decision",
+    "new_writer_conditions": "only original four nonzero tasks and their original teacher; no new condition",
+    "source_frozen": true,
+    "full_writer_gradient": true,
+    "gradient_grouping": [
+      "task",
+      "init_state_parity"
+    ],
+    "no_new_fm": true,
+    "no_new_training": true,
+    "no_candidate_weights": true,
+    "no_materialization": true,
+    "new_episode_max": 0,
+    "new_env_initialization_max": 0,
+    "held_inputs": false,
+    "official_validation_test": false,
+    "new_teacher_or_expert_labels": false
+  },
+  "artifacts": {
+    "decision_rows": 512,
+    "full_gradients": [
+      "RAW/RB total",
+      "RAW/RB even and odd",
+      "RAW/RB each nonzero task x nonzero parity"
+    ],
+    "zero_groups": "explicit zero records, no repeated large tensors required",
+    "summaries": [
+      "raw_replay_vs_saved_E2",
+      "score_formula_and_boundary_checks",
+      "direction_cosine_and_relative_correction",
+      "removed_component_dot_fraction",
+      "module_norms",
+      "task37_contribution",
+      "even_odd_cosines",
+      "replay_and_writer_numerical_limits"
+    ],
+    "required": [
+      "registration",
+      "launch_contract",
+      "exit_receipts",
+      "analysis_script",
+      "completion"
+    ],
+    "not_required": [
+      "banks",
+      "checkpoints",
+      "full_cases",
+      "geometry",
+      "closed_loop_results"
+    ]
+  },
+  "resources": {
+    "study_root": "/data0/user/ymdai/ember_runs/return_score_conditioning_20260925",
+    "new_data0_gib_max": 2,
+    "new_data1_code_mib_max": 768,
+    "gpu_hours_expected": [
+      0.2,
+      0.4
+    ],
+    "gpu_hours_hard_max": 1,
+    "same_node_gpu_max": 2,
+    "project_physical_gpu_max": 6,
+    "include_engineering_failures_init_load": true,
+    "live_both_nodes_and_strg01_quota": true
+  },
+  "completion": {
+    "new_implementation": "single clean pushed detached commit, actual SHA registered by executor",
+    "resume": "only complete missing predeclared groups; no extra scientific query",
+    "notify": "Queue main thread on completion or substantive blocker; stop new experiments",
+    "automatic_followup": false
+  }
+}

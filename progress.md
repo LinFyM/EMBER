@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：lookahead已复核关闭，登记成功信用的有限方向干预（2026-09-25）
+## 当前状态：成功信用方向批次已复核，接续一次冻结信用分解（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -9,9 +9,31 @@ Owner随后明确给予充足时间和持续优化的广泛分析/实验授权�
 当前已启动批次仍按冻结合同执行；科学信息墙、资源限制和结果可追溯要求继续适用。
 Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主讨论自行维护长期判断和记录，收到本批结果后再给出具体下一步。
 主讨论：`01a0cd94-65da-7b22-8ca9-7ba35f454632`（接管 EMBER 科学决策与实验）。
-实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近lookahead七组批次已完成。
+实际执行者：`01a0cd90-ebb7-77a1-a20b-a858825d2f66`（当前标题“接管 EMBER 实验”，Owner指定Sol）；已核对同仓库/主机，最近成功信用批次已完成。
 双方保持现有模型配置；旧Luna和旧主讨论仅作历史provenance，不再作为收件人。
-**当前active design为[成功信用方向干预](docs/designs/return_credit_direction_design.md)**，
+**当前active design为[夹爪条件化信用分解](docs/designs/return_score_conditioning_design.md)**，
+机器合同`configs/return_score_conditioning_v1/experiment_spec.json`。复用前批512保存decision/128条采集与父C_S00@1155，
+仅对96个非零信用decision计算RAW与按实际夹爪sign条件化的RB两种完整梯度，最多192次真实十步forward。
+不更新参数、不建候选或bank、不读新标签、不新增环境初始化/闭环；完成后主动Queue，停止新增实验。
+新study `/data0/user/ymdai/ember_runs/return_score_conditioning_20260925`，data0≤2GiB、data1代码≤768MiB，
+全计算含初始化/工程/失败≤1 GPU-hour，最多同节点两卡、项目仍≤6卡；由Sol负责实际资源准入与统一冻结实现。
+是否完成派发与接手以本节后续回执为准；不能把登记当作运行中。
+
+### 最近完成：成功信用方向及主讨论裁决（2026-09-25）
+
+原采集dd2e00bc、完整梯度/候选/新bank/评测4e3ade36；128采集、512保存decision、1536重放、256闭环、384trace/16full齐全。
+主讨论从原始面板/轨迹/trace和权重独立复核全部六个对比及bootstrap、参数步和函数分解，见findings§147。
+P/R/NEG/FM为35/26/26/29，R/NEG总分相同但各有6条独有成功；R未兑现收益预测，不启动长程RL或尺度扫描。
+仅6/32组非零信用，偶/奇初态梯度cosine−.02686；task17的R/NEG均0/8，首态已有较大的相反平移变化。
+仍未分开信用方差、状态异质性、有限步非线性、J_Sigma/J0及video/state迁移；没有统一根因/修复。
+独立CPU检查还发现96个非零decision的夹爪均值均距开合边界>9.5sigma；其随机幅度贡献3.7131%的动作端score平方和。
+该比例不代表Writer方向占比；下一项只检验它经完整Jacobian的影响，不直接接受架构/训练修改。
+原件根`/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925`，主讨论核验为
+`coordination/main_recheck.{py,json}`、`main_gripper_score_{audit.json,rows.jsonl}`、`resource_recheck.json`。
+有回执GPU时长3.339812h，另.05h为未精确计时诊断的预留而非验证上界；data0 5601MiB/代码504MiB在限内。
+
+### 前批成功信用方向的启动记录（已完成，不再恢复）
+
 机器合同`configs/return_credit_direction_v1/experiment_spec.json`。固定C_S00@1155、八个合法fit任务，
 一次128条探索采集产生共享回报方向；比较其正/反方向、同teacher原FM方向及未更新父。
 候选各自只做一次fresh SGD、固定参数步长，不继承父Adam、不做连续训练或部署适应。
@@ -21,10 +43,10 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 由Sol负责隔离实现、准入、执行和退出后主动Queue。合同及§146裁决已在`99a71271`集成推送。
 09:26:28 UTC（北京时间17:26）以Queue派给现有Sol，回执`01a0d7e3-3cae-7380-b13d-21d204fc5da1`；
 09:27:45核对完整正文进入inProgress turn `01a0d7e3-3cb1-7503-a115-5a14f19c10b5`，并读到Sol明确接手
-合同核对、隔离实现、工程验收及冻结执行的回应。当时为已接手实现；最新采集和梯度状态见下。
+合同核对、隔离实现、工程验收及冻结执行的回应。当时为已接手实现；本批已完成，最终核验及裁决见上。
 正文/回执/逐字送达与回应在metatask study的`coordination/return_credit_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
 
-### 成功信用批次：采集完整，梯度重放超限；一次阶段例外已裁决（2026-09-25）
+### 历史工程节点：梯度重放超限及一次阶段例外（已由E2完成）
 
 正式GPU实现dd2e00bc，128采集/32组/512保存decision已齐；主讨论独立核对组身份、八个bank引用、
 所有128条T+1与谓词。6组LOO非零，分布于task12/17/22/37；不根据这些结果改变任务或权重。

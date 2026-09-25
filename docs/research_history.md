@@ -4,6 +4,21 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-25：成功信用方向完成，未兑现独立闭环收益；接续有限冻结分解
+
+Study `/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925`；采集dd2e00bc、后续统一4e3ade36。
+128/256采集与评测、512保存decision、1536候选重放、384连续trace/16full及退出记录齐全；
+主讨论核验原始行/轨迹/权重并重算六个R/G/L与bootstrap，记录`coordination/main_recheck.{py,json}`，完整裁决findings§147。
+P/R/NEG/FM为35/26/26/29；R与NEG相同总数并非相同成功集合，本批没有可采纳的收益证据。
+六组非零LOO、偶/奇梯度cosine−.02686和task37方向集中仍不能唯一分开采样方差/状态异质性/非线性/分布迁移。
+实际bank重放RMS0解决了已验收工程合同，Writer重建低位差保留；不把工程修复冒充科学修复。
+有回执GPU计时3.339812h，另.05h预留不算验证上界；data0 5601MiB，代码504MiB。
+
+CPU读取全部512个已封存decision发现非零信用的夹爪均值均远离sign边界，幅度噪声进入score却未改开合指令；
+原件`coordination/main_gripper_score_*`。登记[夹爪条件化信用分解](designs/return_score_conditioning_design.md)，
+只用同一数据/父/实际bank比较两种完整VJP，不训练、不建候选、不追加闭环。
+它检验一个有明确条件期望解释的方差分量，不是统一根因结论；是否active及派发只看progress。
+
 ## 2026-09-25：成功信用采集完整，梯度重放超限与阶段来源修正
 
 正式采集来自dd2e00bc，128行/32组/512保存decision齐全；6组有LOO变化，无新候选或评测。

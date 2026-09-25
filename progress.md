@@ -18,7 +18,12 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 固定3584条合法non-held独立episode FM、448次真实10-flow、224诊断bank，无新rollout、held输入或正式Val/Test读取。
 新data0≤6GiB/data1代码≤768MiB，正式≤4 GPU-hours、world2且项目≤6物理卡；Sol核对原件/准入后执行。
 完成七组立即主动Queue原件并停止新增实验；主讨论继续核验，只有计算前提支持才另登记短程共同学习及闭环。
-当前合同已形成，投递回执在下次状态更新登记；此时不表示Sol已接手或已启动正式计算。
+合同和上一批裁决在`7cce1129`推送。07:34:59 UTC（北京时间15:34）以Queue发给现有Sol，
+回执`01a0d77d-2983-7970-b915-a2b5c93210bc`；07:35:30核对完整正文进入inProgress turn
+`01a0d77d-2988-7ef1-8a81-e13ad54bccca`，并读到Sol明确接手独立父状态/随机流审阅、隔离实现与七组执行的回应。
+正文、回执和逐字投递/回应保存在上一批study的
+`coordination/metatask_lookahead_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
+当前是已接手实现与工程核对，不据此称正式计算已经开始或计算前提已经通过。
 
 ### 最近完成：单项监督的有限学习与裁决（2026-09-25）
 

@@ -239,10 +239,11 @@
     "writer_invocations_per_model_task": 1,
     "same_bank_file_across_exploration_cells": true,
     "states_reuse_bank": true,
-    "all_new_banks_and_rollouts_one_clean_pushed_detached_commit": true,
+    "all_new_banks_and_rollouts_one_clean_pushed_detached_commit": false,
     "weights_reused_readonly_with_original_commits": true,
     "no_old_scores_in_primary_comparisons": true,
-    "teacher_actions_states_rewards_ids_as_condition": false
+    "teacher_actions_states_rewards_ids_as_condition": false,
+    "commit_contract": "sole explicit stage exception in design section6: all16 banks and4 pilot from E; remaining124 from one clean pushed detached E2; weights unchanged"
   },
   "capture": {
     "all_rows_compact": true,
@@ -341,5 +342,64 @@
     "failure": "preserve raw attempt and actual episode/control-step accounting; no automatic rerun",
     "automatic_followup": false,
     "long_running_monitoring": "one persistent exit-event wait; no routine log/cache polling"
+  },
+  "execution_stage_exception": {
+    "decision": "B_repair_canonical_entrypoint_preserve_original_bank_and_pilot",
+    "reason": "full seed-list equality conflicts with success-at-different-times; compare nonempty common prefixes and validate every own seed index",
+    "bank_commit": "29634cc9f75143cdd6d70863e6d24ef1a8d3770d",
+    "banks_preserved": 16,
+    "bank_spec_path": "/data1/user/ymdai/projects/EMBER-return-objective-alignment-formal/configs/return_objective_alignment_v1/experiment_spec.json",
+    "pilot_commit": "29634cc9f75143cdd6d70863e6d24ef1a8d3770d",
+    "pilot_keys": [
+      [
+        "P_J0",
+        2,
+        34,
+        0
+      ],
+      [
+        "P_JS",
+        2,
+        34,
+        0
+      ],
+      [
+        "RB_J0",
+        2,
+        34,
+        0
+      ],
+      [
+        "RB_JS",
+        2,
+        34,
+        0
+      ]
+    ],
+    "remaining_episodes": 124,
+    "remaining_commit": "single new clean pushed detached E2 bound by actual launch contract",
+    "analysis_commit": "same E2",
+    "allowed_changes": [
+      "pilot and analysis common-prefix validation",
+      "explicit original bank and four pilot versus remaining episode provenance binding"
+    ],
+    "unchanged": [
+      "policy",
+      "Writer",
+      "LoRA payloads",
+      "exploration distribution and RNG schedule",
+      "rollout and termination",
+      "dtype and kernels",
+      "scientific matrix and all data"
+    ],
+    "original_artifacts_read_only": true,
+    "rematerialize_banks": false,
+    "rerun_pilot": false,
+    "new_engineering_episode_limit": 0,
+    "new_environment_probe_limit": 0,
+    "completion_reports_actual_stage_commits": true,
+    "gpu_hours_already_used": 0.03560778887994173,
+    "all_original_budgets_still_apply": true,
+    "no_research_root_alternative_scheduler": true
   }
 }

@@ -80,7 +80,7 @@ teacher只输入RGB及exact language，action/state/reward/terminal/ID/路径/po
 旧dd2采集及bank仅作来源查证；旧128条不能代替本批P_JS，旧P分数不混入主四格。
 
 全部新物化/闭环统一一个clean pushed detached实现E；P训练与RB候选分别保留原7dc/34ea来源，
-这是显式冻结权重复用，不要求重做原候选，也不热改旧formal树。
+这是显式冻结权重复用，不要求重做原候选，也不热改旧formal树。pilot后的验收修正按§6唯一阶段例外执行。
 
 ## 4. RNG、干预接口与最小验收
 
@@ -135,3 +135,30 @@ Study `/data0/user/ymdai/ember_runs/return_objective_alignment_causality_2026092
 Sol开root前核对strg01独立quota与共享容量，每GPU launch同时核对两节点live身份/所有权/余量。
 记录精确命令/env/版本、两个权重及16bank来源、128原始行/退出回执、16case、五对比/函数检查和completion。
 计时覆盖整个GPU进程；正常长任务一次持续等待退出事件，不轮询日志/cache。
+
+## 6. pilot共同前缀验收修正的唯一阶段例外
+
+2026-09-25，E=`29634cc9f75143cdd6d70863e6d24ef1a8d3770d`已完成全部16bank与4条登记pilot，
+两个阶段全部worker exit0，尚未启动余124。`check_pilot`及分析配对错误要求四格**完整**seed列表相等；
+实际replan数20/26/19/20由成功即终止产生，列表长度本来不必相同。
+主讨论只读核对所有已执行index的policy及replica4 exploration seed公式、共同前缀、bank、初态、
+加噪前均值/实际动作与全T+1 trace，`coordination/main_pilot_pairing_recheck.json`保存证据；
+验收不依据四格成功分数，不把此工程错误称为科学阴性。
+
+裁决采用**B：保留E原件，修复正式入口后以唯一新E2完成余124及CPU分析**。
+这覆盖§3的单提交要求，仅允许验收/分析及明确阶段来源绑定的改变：
+
+- bank物化来源全部为E，四条task2/state0/teacher34的pilot来源也为E，原路径与内容不改、不重生成或重跑。
+- 其它124个事前登记key只允许一个新clean pushed detached E2；E2在实际launch合同中冻结，
+  不泛化为任意旧提交均可接受，不改16/4/124/128的数量或来源标签。
+- 仅改为非空共同replan前缀配对；每条完整seed列表仍按其实际replan数逐index校验原公式，
+  更长轨迹的尾部不能因为“共同前缀”而免检。bank复用、初态、动作注入、trace等验收均保留。
+- 可调整`authority`/bank及episode来源验证、pilot和最终分析入口，以分别验证上述阶段；
+  policy、Writer、LoRA载荷、探索采样/顺序、rollout、终止、dtype/kernel、数据及科学矩阵不改。
+  Sol核对相对E的实际diff并完成针对性CPU验证、真实四pilot只读验收后集成push；不新增GPU smoke或环境探针。
+- 最终completion明确记录16bank/4pilot的E、余124的E2及分析实现来源，逐row保留实际commit；
+  不把整批写成统一E2。保持canonical evaluator，不新增研究根调度器或monkeypatch旧运行树。
+
+已计GPU用量约.03560779小时，仍计入原1.5小时硬限；最多两卡、3GiB/768MiB及每次launch双节点live准入不变。
+修正本身是CPU工作，原有效4条继续计入128；正常退出后统一核验并主动Queue主讨论。
+本例外不允许其它行为修正、失败自动重跑或新增评测。

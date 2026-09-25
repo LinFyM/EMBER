@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：96条闭环已独立复核，登记128条冻结探索目标交叉（2026-09-25）
+## 当前状态：探索目标交叉16bank/4pilot有效，修正验收后接续余124（2026-09-25）
 
 Owner最新指令是由本任务接管主讨论与科学决策，以历史证据、竞争机制和可反驳干预推进；具体实验交由现有Sol执行，
 每批完成主动回报，待主讨论分析后再派发下一步。这取代旧全局暂停；不恢复旧deadline或GPU特例。
@@ -18,13 +18,24 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 16个新bank由两噪声格共享，16full及全128条T+1 trace；task2/state0四格pilot计入128。
 新study `/data0/user/ymdai/ember_runs/return_objective_alignment_causality_20260925`；
 新data0≤3GiB、代码≤768MiB，预计.8–1.2、硬限1.5 GPU-hours，含全部GPU初始化/工程/失败/物化/评测。
-最多同时两卡、项目≤6，由Sol做实际live资源准入；所有新bank/闭环统一一个clean pushed detached提交，旧权重只读。
+最多同时两卡、项目≤6，由Sol做实际live资源准入；已完成E的16bank/4pilot原件保留；余124及分析按design§6唯一阶段例外由新E2完成，旧权重只读。
 不自动补seed/step/state、改变Sigma或接续RL，128完成主动Queue主讨论并停止新增实验。
 设计/spec及§149裁决在`273e23c1`集成推送；以Queue派给原Sol，回执
 `01a0d926-13ce-7252-a9e1-1605a10e52d4`。15:19:57 UTC核对完整正文进入inProgress turn
 `01a0d926-13d1-76a3-8027-5257bc9422b6`，并读到Sol明确接手、审阅探索接口、验证后执行128矩阵的回应。
-当前为已接手实现，不称GPU已启动。正文/入队/逐字送达及回应在score-update study的
+上述为初次接手记录；本批现已完成下述16bank/4pilot。正文/入队/逐字送达及回应在score-update study的
 `coordination/objective_alignment_{dispatch.txt,dispatch_receipt.json,delivery.json}`；没有重复派发。
+
+### 当前工程节点：pilot共同前缀验收修正
+
+E=`29634cc9f75143cdd6d70863e6d24ef1a8d3770d`已完成16新bank与4登记pilot，全部worker exit0。
+pilot验收误要求四格完整seed列表相等；成功即终止使实际replan数20/26/19/20，这是验收代码错误。
+主讨论只读复算每条完整policy/replica4 seed公式、共同前缀、初态、均值加噪及T+1/实际动作，均通过；
+证据`return_objective_alignment_causality_20260925/coordination/main_pilot_pairing_recheck.json`，没有以成功分数放行。
+按design§6/spec登记B：保留E全部bank/4pilot，修复验收及明确阶段来源绑定后，唯一clean pushed detached E2执行余124和分析。
+不改policy/Writer/探索/rollout，不重跑、不重物化、不加环境probe；原128行、1.5 GPU-hours及存储上限保持。
+已计GPU .03560779小时；每条较长seed尾部仍按原公式验收，最终产物明确区分E与E2。
+本裁决待向Sol当前任务送达；实际接续与E2由执行者记录。
 
 ### 最近完成：score-update stage1及主讨论裁决（2026-09-25）
 

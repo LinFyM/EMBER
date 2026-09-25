@@ -215,6 +215,7 @@ def _inspect_adapter(
             evaluation_role=args.role,
             require_formal=args.mode != "smoke",
             native_reader_transfer_cell=getattr(args, "native_reader_transfer_cell", None),
+            support_slot_model=getattr(args, "support_slot_model", None),
         )
     if adapter_kind != "task_expert":
         return None
@@ -522,6 +523,14 @@ def _selected_tasks_and_capture(
     source_sft_requested: bool, output_dir: Path, repo_root: Path,
 ) -> tuple[tuple[Any, ...], dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
     native_cell = getattr(args, "native_reader_transfer_cell", None)
+    support_model = getattr(args, "support_slot_model", None)
+    if support_model is not None:
+        from ember.pi05_eval.support_slot_credit import select_tasks
+
+        if adapter_kind != "static_task_lora" or source_sft_requested or native_cell is not None:
+            raise Pi05EvaluationError("support-slot panel requires exactly its own complete Writer bank")
+        tasks, capture, stage = select_tasks(args, installed_tasks, repo_root)
+        return tasks, None, capture, stage
     if native_cell is not None:
         from ember.pi05_eval.native_reader_transfer import select_tasks
 
@@ -575,6 +584,7 @@ def _prepared_payload(
         libero_config_dir=staging / "libero_config",
     )
     native_cell = getattr(args, "native_reader_transfer_cell", None)
+    support_model = getattr(args, "support_slot_model", None)
     tasks, task_subset, occupancy_capture, stage_predicates = _selected_tasks_and_capture(
         args, installed_tasks=installed_tasks, adapter_kind=adapter_kind,
         source_sft_requested=source_sft_requested, output_dir=output_dir, repo_root=repo_root,
@@ -638,6 +648,10 @@ def _prepared_payload(
         from ember.pi05_eval.native_reader_transfer import attach
 
         attach(contract, cell=native_cell, repo_root=repo_root)
+    elif support_model is not None:
+        from ember.pi05_eval.support_slot_credit import attach
+
+        attach(contract, model=support_model, repo_root=repo_root)
     else:
         attach_requested_capture(args, contract, repo_root, output_dir)
     shards = shards_from_contract(contract)

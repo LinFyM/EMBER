@@ -43,6 +43,10 @@ from ember.writer.runtime import VideoConditionCache, build_runtime, require_arc
 from ember.writer.task_execution import (
     condition_assignment, condition_rank_groups, cost_balanced_task_assignment, merge_condition_rows,
 )
+from ember.writer.support_slot_credit import (
+    ForkTrainingData, attach_branch_completion, attach_branch_contract, execute_registered_event,
+    inspect_fork, restore_fork,
+)
 
 
 CONFIG_SCHEMA = "ember_video_teaching_writer_config_v1"
@@ -389,7 +393,8 @@ def _execute_step(engine, data, context, config, draws, step):
         draw = by_job[job]
         task = draw["task"]
         tick = time.perf_counter()
-        metric = engine.backward(draw)
+        gate = draw.get("credit_gate", 1)
+        metric = execute_registered_event(engine, data, draw, step)
         if int(metric["queries"]) != draw["query_count"] or int(metric["teaching_queries"]) != draw["teaching_count"]:
             raise RuntimeError("supervised engine did not execute the registered FM exposure")
         rows.append({**metric, "step": step, "job_id": job, "task": task,
@@ -400,7 +405,14 @@ def _execute_step(engine, data, context, config, draws, step):
                      "condition_ranks": [context.rank],
                      "video_demos": list(draw["video_demos"]), "frames": draw["frames"], "scheduling_frames": costs[job],
                      "query_seed": draw["query_seed"], "query_offset": draw["query_offset"],
-                     "queries": draw["query_count"], "seconds": time.perf_counter() - tick})
+                     "queries": draw["query_count"], "seconds": time.perf_counter() - tick,
+                     "credit_gate": gate,
+                     "effective_main_weight": gate * logical["condition_weight"],
+                     "effective_teaching_weight": gate * metric["teaching_weight"],
+                     **({"source_event_plan": draw["source_event_plan"],
+                         "source_event_index": draw["source_event_index"],
+                         "branch_cursor": draw["branch_cursor"]}
+                        if "source_event_plan" in draw else {})})
     return rows
 
 
@@ -529,10 +541,11 @@ def _record_iteration(args, context, config, rows, norms, updates, metrics_rows,
         metric = {
             "step": updates, "global_step": updates, "optimizer_updates": updates,
             "seconds": seconds,
-            "mean_flow_loss": sum(r["flow_loss"] * r["condition_weight"] for r in gathered),
-            "mean_teaching_loss": sum(r["teaching_loss"] * r["task_weight"] for r in gathered),
-            "mean_total_loss": sum(r["flow_loss"] * r["condition_weight"]
-                                   + r["teaching_loss"] * r["teaching_weight"] for r in gathered),
+            "mean_flow_loss": sum(r["flow_loss"] * r["effective_main_weight"] for r in gathered),
+            "mean_teaching_loss": sum(r["teaching_loss"] * r["task_weight"] * r["credit_gate"]
+                                      for r in gathered),
+            "mean_total_loss": sum(r["flow_loss"] * r["effective_main_weight"]
+                                   + r["teaching_loss"] * r["effective_teaching_weight"] for r in gathered),
             **norms, "lr_next": scheduler.get_last_lr()[0], "exposures": metrics_rows,
             "condition_exposures": metrics_rows,
             "task_exposures": updates * config["data"].get("tasks_per_update", TASKS_PER_UPDATE),
@@ -557,6 +570,11 @@ def _validate_checkpoint_nodes(nodes, *, allow_empty=False):
 
 def _checkpoint_nodes(args, config):
     supplied = getattr(args, "checkpoint_updates", None)
+    if getattr(args, "support_slot_arm", None) is not None:
+        nodes = (1160, 1183)
+        if supplied is not None and tuple(map(int, supplied.split(","))) != nodes:
+            raise ValueError("support-slot fork saves only its first-slot and terminal full checkpoints")
+        return nodes
     if config.get("training_control"):
         stop = args.stop_after_step
         if type(stop) is not int or stop <= 0:
@@ -574,6 +592,10 @@ def _checkpoint_nodes(args, config):
 def _segment_limit(args, config):
     nodes = _checkpoint_nodes(args, config)
     stop = args.stop_after_step if args.stop_after_step is not None else (nodes[-1] if nodes else None)
+    if getattr(args, "support_slot_arm", None) is not None:
+        if stop not in nodes:
+            raise ValueError("support-slot fork ends only at macro1160 or macro1183")
+        return stop
     if type(stop) is not int or stop <= 0:
         raise ValueError("smoke/profile without registered nodes needs an explicit positive --stop-after-step")
     if config.get("training_control"):
@@ -613,7 +635,8 @@ def _validate_actions(args, engine, data, context, config, step):
                           "held_action_fm": sum(row["flow_loss"] for row in gathered) / len(gathered)}), flush=True)
 
 
-def _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start):
+def _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start,
+                 *, support_slot_scope=None):
     updates, metrics_rows = cursors
     nodes = _checkpoint_nodes(args, config)
     # A resumed segment keeps its original registered nodes. The restored
@@ -639,11 +662,13 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
                 output_dir=args.output, macro=updates, stage=STAGE, context=context,
                 model=runtime.state, optimizer=optimizer, scheduler=scheduler,
                 run_contract_schema=RUN_SCHEMA, metrics_rows=metrics_rows,
-                sampler_state=data.sampler_state(), training_state=_training_state(config, updates),
+                sampler_state=data.sampler_state(),
+                training_state=(support_slot_scope.training_state(config, updates)
+                                if support_slot_scope is not None else _training_state(config, updates)),
             )
     barrier(context)
     if context.is_main:
-        write_json_atomic(args.output / "completion.json", {
+        completed = {
             "schema_version": RUN_SCHEMA, "status": "segment_complete", "mode": args.mode,
             "optimizer_updates": updates, "exposures": metrics_rows,
             "condition_exposures": metrics_rows,
@@ -653,15 +678,24 @@ def _run_segment(args, context, config, runtime, data, engine, optimizer, schedu
             "total_queries": updates * _logical_batch(config)["total_queries_per_update"],
             "seconds": time.perf_counter() - start,
             "scientific_qualification": False, "next": "registered held-action and paired closed-loop evidence",
-        })
+        }
+        if support_slot_scope is not None:
+            attach_branch_completion(completed, data, support_slot_scope)
+        write_json_atomic(args.output / "completion.json", completed)
 
 
 def run(args: argparse.Namespace) -> None:
     from ember.writer.supervised import SupervisedEngine
 
     config = _config(args.config)
+    support_slot_scope = None
+    if getattr(args, "support_slot_arm", None) is not None:
+        support_slot_scope = inspect_fork(args.support_slot_arm, config, args.output, mode=args.mode)
+        if (getattr(args, "extend_from", None) or getattr(args, "phase_from", None)
+                or getattr(args, "allow_topology_change", False)):
+            raise ValueError("registered support-slot fork preserves world2 and uses only its own branch resume")
     conditional = _bounded_conditional(config)
-    if conditional:
+    if conditional and support_slot_scope is None:
         if getattr(args, "extend_from", None) or getattr(args, "phase_from", None):
             raise ValueError("conditional compilation arms are fresh and cannot inherit a checkpoint")
         if getattr(args, "allow_topology_change", False):
@@ -673,9 +707,11 @@ def run(args: argparse.Namespace) -> None:
             raise ValueError("conditional arm smoke is limited to four consecutive macro updates")
         if args.mode == "profile" and (args.stop_after_step is None or args.stop_after_step > 1):
             raise ValueError("conditional full-video differentiable profile is limited to one disposable macro update")
-    else:
+    elif support_slot_scope is None:
         require_continuation_start(args, config)
         allow_topology_change = _require_topology_resume(args, config)
+    else:
+        allow_topology_change = False
     if args.mode == "formal" and not conditional and (
             config["status"] != "registered_video_teaching_learning"
             or config["evidence"]["profile_registration"]["status"] != "complete"):
@@ -686,6 +722,8 @@ def run(args: argparse.Namespace) -> None:
     stop = _segment_limit(args, config)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     condition_rank_groups(context.world_size)
+    if support_slot_scope is not None and context.world_size != 2:
+        raise ValueError("support-slot fork must keep the parent's two physical ranks")
     if (args.mode == "formal" and not allow_topology_change
             and context.world_size != config["evidence"]["profile_registration"]["world_size"]):
         raise ValueError("formal video-teaching training requires its registered profiled topology")
@@ -696,9 +734,12 @@ def run(args: argparse.Namespace) -> None:
     torch.set_num_threads(int(args.cpu_threads))
     seed_everything(int(config["optimization"]["seed"]) - context.rank, context)
     start = time.perf_counter()
-    data = WriterTrainingData(args.asset_root, config["data"],
-                              camera_view=config["observer"]["camera_view"], planned_updates=stop,
-                              use_videos=config.get("experiment", {}).get("parameterization", "video_writer") == "video_writer")
+    if support_slot_scope is not None:
+        data = ForkTrainingData(args.asset_root, config, support_slot_scope)
+    else:
+        data = WriterTrainingData(args.asset_root, config["data"],
+                                  camera_view=config["observer"]["camera_view"], planned_updates=stop,
+                                  use_videos=config.get("experiment", {}).get("parameterization", "video_writer") == "video_writer")
     if context.is_main:
         args.output.mkdir(parents=True, exist_ok=True)
         _publish_event_plan(args, data.event_plan())
@@ -708,13 +749,18 @@ def run(args: argparse.Namespace) -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     initialize_deferred_process_group(context, rendezvous_root=args.output)
     contract = _run_contract(args, context, config, runtime, state)
+    if support_slot_scope is not None:
+        attach_branch_contract(contract, support_slot_scope)
     if context.is_main:
         if getattr(args, "extend_from", None):
             prepare_continuation(args, contract)
         _publish_contract(args.output / "run_contract.json", contract, resume=args.resume is not None,
                           allow_topology_change=allow_topology_change)
     barrier(context)
-    cursors = _restore(args, context, runtime, data, optimizer, scheduler, config)
+    if support_slot_scope is not None:
+        cursors = restore_fork(args, context, runtime, data, optimizer, scheduler, config, support_slot_scope)
+    else:
+        cursors = _restore(args, context, runtime, data, optimizer, scheduler, config)
     updates, _ = cursors
     if updates >= stop:
         raise ValueError("supervised segment has no remaining registered updates")
@@ -722,7 +768,8 @@ def run(args: argparse.Namespace) -> None:
     engine = SupervisedEngine(runtime, data, cache, context, execution_config)
     barrier(context)
     try:
-        _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start)
+        _run_segment(args, context, config, runtime, data, engine, optimizer, scheduler, cursors, stop, start,
+                     support_slot_scope=support_slot_scope)
     finally:
         data.close()
         if context.world_size > 1:
@@ -743,5 +790,7 @@ def main() -> None:
     parser.add_argument("--allow-topology-change", action="store_true",
                         help="allow an ordinary dynamic resume to use a changed physical topology")
     parser.add_argument("--extend-from", type=Path, help="complete parent1500 state for the registered 2100 continuation")
+    parser.add_argument("--support-slot-arm", choices=("KEEP77", "SWAP76", "DROP77"),
+                        help="registered controlled fork from C_S00@1155")
     parser.add_argument("--cpu-threads", type=int, default=4)
     run(parser.parse_args())

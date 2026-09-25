@@ -152,6 +152,7 @@ def _reinspect_adapter(
             evaluation_role=str(contract["role"]),
             require_formal=require_formal,
             native_reader_transfer_cell=(contract.get("native_reader_transfer") or {}).get("cell"),
+            support_slot_model=(contract.get("support_slot_credit") or {}).get("model"),
         )
     raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
 
@@ -217,7 +218,9 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         and _reinspect_adapter(adapter, contract=contract, model=model) != adapter
     ):
         raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
-    if contract.get("native_reader_transfer") is not None:
+    if contract.get("support_slot_credit") is not None:
+        from ember.pi05_eval.support_slot_credit import validate_contract
+    elif contract.get("native_reader_transfer") is not None:
         from ember.pi05_eval.native_reader_transfer import validate_contract
     else:
         from ember.pi05_eval.registered_passive_capture import validate_contract

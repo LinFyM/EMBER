@@ -121,6 +121,8 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
                         help="Registered two-task frozen 37/1 LoRA intervention panel.")
     parser.add_argument("--native-reader-transfer-cell", choices=("N0_W0", "N1_W0", "N0_W1", "N1_W1"),
                         help="Registered frozen native-reader/Writer transfer cell.")
+    parser.add_argument("--support-slot-model", choices=("P1155", "KEEP77", "SWAP76", "DROP77"),
+                        help="Registered support-slot parent or terminal fork model.")
 
 
 def parse_args() -> argparse.Namespace:

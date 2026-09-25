@@ -32,7 +32,8 @@ EPISODE_SCHEMA = "ember_video_writer_episode_v1"
 
 
 def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root: Path,
-                        protocol_path: str | None = None) -> None:
+                        protocol_path: str | None = None,
+                        support_slot_credit: Mapping[str, Any] | None = None) -> None:
     if role not in {"development_train", "nonheld_meta", "validation", "test"}:
         raise ValueError("video Writer evaluation requires a registered target split")
     protocol, manifest = load_task_authorities(asset_root, protocol_path)
@@ -44,6 +45,15 @@ def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root
             raise ValueError("support bank requires the registered study protocol")
         spec = read_json(asset_root / authority)
         allowed_sets = {tuple(arm["support_eval_global_ids"]) for arm in spec["arms"]}
+        if support_slot_credit is not None:
+            from ember.writer.support_slot_credit import SPEC_PATH as SLOT_SPEC
+
+            if (support_slot_credit.get("schema_version") != "ember_support_slot_bank_v1"
+                    or support_slot_credit.get("phase") != "donor_fm"
+                    or support_slot_credit.get("study_spec") != str(Path(__file__).resolve().parents[3] / SLOT_SPEC)
+                    or tuple(row["global_task_id"] for row in rows) != (76, 77)):
+                raise ValueError("support-slot FM bank is outside its exact nonheld task pair")
+            allowed_sets.add((76, 77))
         if tuple(row["global_task_id"] for row in rows) not in allowed_sets:
             raise ValueError("support bank is outside the four-task registered arm subset")
         expected = {("libero_90", task - 40) for group in allowed_sets for task in group}
@@ -177,7 +187,7 @@ def _validate_round(selection, rows, require_formal) -> None:
 
 
 def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal,
-                   native_reader_transfer_cell=None) -> None:
+                   native_reader_transfer_cell=None, support_slot_model=None) -> None:
     role = manifest["evaluation_role"]
     selection = _selection(manifest["selection"])
     rows = manifest["tasks"]
@@ -191,7 +201,11 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
             or not frozen_authority(manifest["materialization_git"])
             or not source_matches(manifest["source"], source)):
         raise ValueError("video Writer bank scope/source/commit changed")
-    validate_task_scope(rows, role, Path(manifest["asset_root"]), manifest.get("task_protocol"))
+    scope_args = (rows, role, Path(manifest["asset_root"]), manifest.get("task_protocol"))
+    if manifest.get("support_slot_credit") is None:
+        validate_task_scope(*scope_args)
+    else:
+        validate_task_scope(*scope_args, support_slot_credit=manifest["support_slot_credit"])
     _validate_round(selection, rows, require_formal)
     for row in rows:
         if row["episodes"] != planned_episodes(selection, row["global_task_id"]):
@@ -199,7 +213,8 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
         if task_init_state_ids is not None:
             requested = tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ()))
             if (requested != tuple(selection["init_state_ids"])
-                    and not (native_reader_transfer_cell and requested in ((0,), tuple(range(1, 50))))):
+                    and not ((native_reader_transfer_cell or support_slot_model)
+                             and requested in ((0,), tuple(range(1, 50))))):
                 raise ValueError("bank and evaluator must use the same exact fixed init states")
 
 
@@ -246,7 +261,16 @@ def validate_information_wall(manifest) -> None:
         raise ValueError("video Writer information wall changed")
 
 
-def _validate_registered_bank_origin(manifest, path, run, checkpoint, native_reader_transfer_cell):
+def _validate_registered_bank_origin(manifest, path, run, checkpoint,
+                                     native_reader_transfer_cell, support_slot_model,
+                                     support_slot_phase="final"):
+    if support_slot_model is not None:
+        from ember.pi05_eval.support_slot_credit import validate_bank
+
+        current = git_state(Path(__file__).resolve().parents[3])
+        validate_bank(manifest, path, support_slot_model, current["commit"], run, checkpoint,
+                      phase=support_slot_phase)
+        return None
     if native_reader_transfer_cell is not None:
         from ember.pi05_eval.native_reader_transfer import validate_bank
 
@@ -274,16 +298,19 @@ def inspect_horizon_writer_bank(
     evaluation_role: str, require_formal: bool,
     task_init_state_ids: Mapping[tuple[str, int], Sequence[int]] | None = None,
     native_reader_transfer_cell: str | None = None,
+    support_slot_model: str | None = None,
+    support_slot_phase: str = "final",
 ) -> dict[str, Any]:
     """Validate condition provenance and paired row coverage before workers start."""
     try:
         path = manifest_path.resolve()
         manifest = read_json(path)
         _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal,
-                       native_reader_transfer_cell)
+                       native_reader_transfer_cell, support_slot_model)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
         panel = _validate_registered_bank_origin(manifest, path, run, checkpoint,
-                                                  native_reader_transfer_cell)
+                                                  native_reader_transfer_cell, support_slot_model,
+                                                  support_slot_phase)
         if manifest.get("task_protocol") != run["config"]["data"].get("protocol"):
             raise ValueError("bank task protocol differs from its trained Writer")
         if checkpoint != manifest["writer_checkpoint"] or manifest["method"] != method_metadata(run, manifest["arm"]) or not source_matches(run["source"], source):
@@ -292,7 +319,8 @@ def inspect_horizon_writer_bank(
                                                 checkpoint=checkpoint, run=run, asset_root=Path(manifest["asset_root"]))
         if manifest.get("diagnostic_contract") != diagnostic:
             raise ValueError("frozen diagnostic contract changed")
-        if (native_reader_transfer_cell is None and run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA
+        if (native_reader_transfer_cell is None and support_slot_model is None
+                and run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA
                 and panel["kind"] == "target_other"):
             expected_ids = {episode["condition_id"] for episode in planned_episodes(manifest["selection"], 21)}
             compilation = manifest.get("compilation", {})

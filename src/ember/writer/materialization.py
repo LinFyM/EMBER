@@ -115,9 +115,15 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     training = trainer.get("training_state", {})
     data_version = run.get("config", {}).get("data", {}).get("version")
     if (trainer.get("schema_version") != ECP_CHECKPOINT_SCHEMA or trainer.get("stage") != STAGE
-            or trainer.get("next_macro") != macro or not data_version
-            or training != {"schema_version": TRAINING_SCHEMA, "updates": macro,
-                            "update_version": config["update_version"], "data_version": data_version}):
+            or trainer.get("next_macro") != macro or not data_version):
+        raise ValueError("supervised Writer training state or optimizer-update cursor changed")
+    expected_training = {"schema_version": TRAINING_SCHEMA, "updates": macro,
+                         "update_version": config["update_version"], "data_version": data_version}
+    if run.get("support_slot_credit") is not None:
+        from ember.writer.support_slot_credit import validate_branch_checkpoint
+
+        validate_branch_checkpoint(run, trainer, checkpoint, macro, world_size)
+    elif training != expected_training:
         raise ValueError("supervised Writer training state or optimizer-update cursor changed")
     return run, {"path": str(checkpoint), "macro": macro,
                  "weights": file_record(checkpoint / "ecp.safetensors"),
@@ -485,6 +491,7 @@ def _materialize(
     reusable: Mapping[str, Any] | None = None, diagnostic_contract: Mapping[str, Any] | None = None,
     registered_stage1_panel: Mapping[str, Any] | None = None,
     native_transfer: Mapping[str, Any] | None = None,
+    support_slot_credit: Mapping[str, Any] | None = None,
 ) -> Path:
     from ember.writer.learning_data import load_learning_tasks
     from ember.writer.evaluation import validate_task_scope
@@ -496,7 +503,12 @@ def _materialize(
              "language": value.authority.language, "split_role": role,
              "teacher_source": file_record(value.authority.path), "episodes": planned_episodes(selection, task)}
             for task, value in tasks.items()]
-    validate_task_scope(rows, selection["evaluation_role"], asset_root, run["config"]["data"].get("protocol"))
+    scope_args = (rows, selection["evaluation_role"], asset_root,
+                  run["config"]["data"].get("protocol"))
+    if support_slot_credit is None:
+        validate_task_scope(*scope_args)
+    else:
+        validate_task_scope(*scope_args, support_slot_credit=support_slot_credit)
     task_rows = {row["global_task_id"]: row for row in rows}
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -573,6 +585,8 @@ def _materialize(
     from ember.writer.native_reader_transfer import attach_manifest
 
     attach_manifest(manifest, native_transfer)
+    if support_slot_credit is not None:
+        manifest["support_slot_credit"] = dict(support_slot_credit)
     path = output / "manifest.json"
     write_json_atomic(path, manifest)
     return path
@@ -663,10 +677,17 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
     if len(set(outputs)) != len(outputs) or any(path.exists() for path in outputs):
         raise ValueError("materialization outputs must be distinct new directories")
     inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
-    from ember.writer.native_reader_transfer import registered_panels, registered_transfers
+    from ember.writer.native_reader_transfer import registered_transfers
 
     transfers = registered_transfers(requests, inspected)
-    panels = registered_panels(requests, inspected, transfers)
+    panels = [None if transfer or request.get("support_slot_model") is not None
+              else _registered_request_panel(request, run, record)
+              for request, (run, record), transfer in zip(requests, inspected, transfers, strict=True)]
+    from ember.writer.support_slot_credit import registered_bank_request
+
+    support_slots = [registered_bank_request(request, run, record, repository)
+                     if request.get("support_slot_model") is not None else None
+                     for request, (run, record) in zip(requests, inspected, strict=True)]
     first = inspected[0][0]
     expected = (first["source"], first["model_config"], first["config"]["observer"])
     for run, _ in inspected:
@@ -689,14 +710,17 @@ def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]
         runtime_config["observer"]["frame_chunk"] = native_frame_chunk
     results, workers = [], None
     with ExitStack() as stack:
-        for request, (run, record), reused, diagnostic, panel, transfer in zip(
-                requests, inspected, reusable, diagnostics, panels, transfers, strict=True):
+        for request, (run, record), reused, diagnostic, panel, transfer, support_slot in zip(
+                requests, inspected, reusable, diagnostics, panels, transfers, support_slots, strict=True):
             if request["selection"]["arm"] != "no_video" and workers is None:
                 workers = stack.enter_context(MaterializationWorkers(asset_root=asset_root, config=runtime_config,
                                                devices=selected_devices, cpu_threads=cpu_threads))
             normalized = {**request, "diagnostic_contract": diagnostic,
-                          "registered_stage1_panel": panel, "native_transfer": transfer}
+                          "registered_stage1_panel": panel, "native_transfer": transfer,
+                          "support_slot_credit": support_slot}
             normalized.pop("native_transfer_cell", None)
+            normalized.pop("support_slot_model", None)
+            normalized.pop("support_slot_phase", None)
             results.append(_materialize(asset_root=asset_root, workers=workers, run=run, reusable=reused,
                            checkpoint_record=record, repository=repository, **normalized))
     return results
@@ -720,11 +744,14 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
         raise ValueError("batch requests must be a JSON list")
     fields = {"checkpoint", "output", "role", "task_ids", "k", "arm", "selection_mode",
               "video_pool", "state_count", "init_state_ids", "seed", "fixed_videos", "reuse_manifest", "diagnostic_contract",
-              "native_transfer_cell"}
+              "native_transfer_cell", "support_slot_model", "support_slot_phase"}
     normalized = []
     for request in requests:
         if not isinstance(request, Mapping) or set(request) - fields:
             raise ValueError("unknown request fields; asset root and device belong to the whole batch")
+        support_slot = request.get("support_slot_model") is not None
+        if support_slot != (request.get("support_slot_phase") is not None):
+            raise ValueError("support-slot bank model and phase must be declared together")
         stage1_20 = request.get("role") == "nonheld_meta" and request.get("state_count") == 20
         if stage1_20:
             spec = read_json(REPO_ROOT / "configs/relational_support_causality_v1/experiment_spec.json")
@@ -737,14 +764,17 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
                 raise ValueError("nonheld20 Writer request is outside stage1 support panels")
         selection = selection_contract(role=request["role"], task_ids=request["task_ids"], cardinality=request["k"],
             arm=request.get("arm", "correct"), mode=request.get("selection_mode", "per_init_ordinal"),
-            seed=request.get("seed", DEFAULT_SELECTION_SEED), init_state_ids=request_init_state_ids(
-                role=request["role"], init_state_ids=request.get("init_state_ids"),
-                state_count=request.get("state_count"), registered_stage1=stage1_20),
+            seed=request.get("seed", DEFAULT_SELECTION_SEED), init_state_ids=(
+                tuple(request["init_state_ids"]) if support_slot else request_init_state_ids(
+                    role=request["role"], init_state_ids=request.get("init_state_ids"),
+                    state_count=request.get("state_count"), registered_stage1=stage1_20)),
             video_pool=request.get("video_pool", tuple(range(50))), fixed_videos=request.get("fixed_videos"))
         normalized.append({"checkpoint": Path(request["checkpoint"]).resolve(),
                            "output": Path(request["output"]).resolve(), "selection": selection,
                            "diagnostic_contract": request.get("diagnostic_contract"),
                            "native_transfer_cell": request.get("native_transfer_cell"),
+                           "support_slot_model": request.get("support_slot_model"),
+                           "support_slot_phase": request.get("support_slot_phase"),
                            "reuse_manifest": Path(request["reuse_manifest"]).resolve() if request.get("reuse_manifest") else None})
     return _materialize_batch(asset_root=asset_root.resolve(), requests=normalized, device=device,
                               devices=devices, cpu_threads=cpu_threads,

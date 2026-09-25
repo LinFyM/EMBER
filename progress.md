@@ -18,7 +18,11 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 随后独立states32..35与teacher46/47最多256闭环、16full；总384正式episode，工程smoke最多4。
 没有held输入/梯度、官方Val/Test、strict400资格或新视频必要性声明。全组无reward变化则报告未识别并停止候选评测。
 新data0≤8GiB/data1代码≤768MiB，正式≤4 GPU-hours、项目≤6物理卡。先验收现有evaluator/真实10-flow VJP，
-由Sol负责隔离实现、准入、执行和退出后主动Queue；当前设计已登记，派发记录在核验送达后补入。
+由Sol负责隔离实现、准入、执行和退出后主动Queue。合同及§146裁决已在`99a71271`集成推送。
+09:26:28 UTC（北京时间17:26）以Queue派给现有Sol，回执`01a0d7e3-3cae-7380-b13d-21d204fc5da1`；
+09:27:45核对完整正文进入inProgress turn `01a0d7e3-3cb1-7503-a115-5a14f19c10b5`，并读到Sol明确接手
+合同核对、隔离实现、工程验收及冻结执行的回应。当前为已接手实现，不称正式采集或学习已经启动。
+正文/回执/逐字送达与回应在metatask study的`coordination/return_credit_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
 
 ### 最近完成：lookahead七组及主讨论裁决（2026-09-25）
 

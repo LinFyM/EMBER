@@ -4,6 +4,16 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-25：成功信用采集完整，梯度重放超限与阶段来源修正
+
+正式采集来自dd2e00bc，128行/32组/512保存decision齐全；6组有LOO变化，无新候选或评测。
+梯度task22 RMS=.022431超过原.01检查而退出。主讨论核对全部组/银行绑定/T+1/谓词及失败回执，
+单点原bank可微flow与canonical一致；重编译LoRA相对L2=.002797，仅为定位线索，不作根因或全局修复声明。
+代码发现采集显式开启TF32，梯度及两个诊断入口未设置相同上下文；待直接验证其作用。
+design§6登记一次例外，保留dd2采集，后续阶段由新冻结E2统一执行，实际bank上的策略VJP接完整重建Writer Jacobian。
+旧部分梯度不混入新方向，原误差阈值及4 GPU-hours预算不增加；数学边界/资源与验收见
+[成功信用方向设计](designs/return_credit_direction_design.md)，实际接续只看progress。
+
 ## 2026-09-25：lookahead七组完成，没有超越普通更新；登记实际成功信用方向试验
 
 唯一正式实现99c6491a，研究根`/data0/user/ymdai/ember_runs/metatask_lookahead_credit_20260925`。

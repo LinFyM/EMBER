@@ -613,7 +613,7 @@
     }
   },
   "implementation": {
-    "single_clean_pushed_detached_commit": true,
+    "single_clean_pushed_detached_commit": false,
     "parent_read_only": true,
     "historical_reference": "e1ea3596 writer/flow.py and rl_math.py; principles only, no old joint trainer or .1/16 factor or trust-halving revival",
     "reuse_current_canonical_evaluator_writer": true,
@@ -624,7 +624,40 @@
     "no_prefix_fake_or_teacher_privileged_input": true,
     "resume": "atomic completed groups/candidates/panels; no resampling completed rows or reusing partial trajectories as complete",
     "zero_action_environment_registry_probes_max": 8,
-    "registry_probe_scope": "one per registered task, environment initialization and passive identity read only, no env.step/policy forward/reward selection"
+    "registry_probe_scope": "one per registered task, environment initialization and passive identity read only, no env.step/policy forward/reward selection",
+    "single_clean_pushed_detached_commit_per_stage": true,
+    "collection_commit_exception": "dd2e00bc88a3976c9dcf9a3f14dad745b265e0da",
+    "stage_commit_exception": {
+      "authority": "docs/designs/return_credit_direction_design.md section6, main scientific decision 2026-09-25",
+      "preserved": "all128 completed collection episodes and eight original P collection banks only",
+      "new_stages": "one new clean pushed detached E2 for complete gradient, independent candidates, candidate replay/new banks and all evaluation",
+      "new_commit_registration": "executor records exact E2 SHA before launch; original dd2 tree and artifacts remain read-only",
+      "collection_rerun": false,
+      "old_partial_gradient_reuse": false,
+      "existing_bank_identity": "bind every collection row to the original bank_record, parent weights, task, teacher, language/frame and Source authority; no general cross-commit bank acceptance",
+      "evaluation_parent": "fresh P teacher46/47 banks and all candidate evaluation banks under the same E2 materialization path",
+      "flow_vjp_point": "actual stored collection LoRA b",
+      "writer_vjp": "complete reconstructed J_G_r(phi0), all trainable Writer and three Meta blocks; record relative_L2 and maxabs versus collection bank for conditions contributing cotangents",
+      "mathematical_object": "J_G_r(phi0)^T * sum J_F(b,q,xi)^T * [A*(Q/M)*Sigma^-1*(u-mu_old)/128]",
+      "local_anchor_interpretation": "b + G_r(phi) - stopgrad(G_r(phi0)); derivative explanation only, no anchor offset in candidate or deployment",
+      "score_residual": "original stored latent_u minus original stored mu_old; neither is replaced by replay output",
+      "numerical_context": "align gradient, pilot VJP, Writer VJP and FM with collection allow_tf32=True, record actual rank flags; no dtype/kernel sweep",
+      "repair_validation_task": 22,
+      "repair_validation_existing_decisions_max": 64,
+      "repair_validation_scope": "original task22 saved decisions only; reuse formal E2 task22 audit where possible; no new teacher/query or env.step",
+      "full_replay_gate": "original task-level and global first5 normalized RMS<=0.01 on all512 retained decisions; single-point pass is insufficient",
+      "failure_handling": "preserve dd2 exit1 and partial task gradients as failed attempt, recompute complete directions from unchanged parent; no automatic repeated repair attempts",
+      "accounting": "failed and repair replays counted separately as repeated computations, never additional independent inputs; all related GPU initialization and work inside unchanged4 GPU-hour budget",
+      "limits_unchanged": [
+        "128 collection episodes",
+        "256 evaluation episodes",
+        "512 unique parent decisions",
+        "1536 candidate replay predictions",
+        "8GiB data0",
+        "768MiB new code",
+        "4GPU-hours"
+      ]
+    }
   },
   "resources": {
     "study_root": "/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925",
@@ -658,6 +691,8 @@
     "matched Euclidean parameter length does not imply matched function change",
     "return gradient targets J_Sigma; independent canonical evaluation is J0, so a negative is also compatible with exploration mismatch",
     "one parent, one collection seed, eight seen gradient tasks, two held-out videos and four evaluation states per task; no new-task or video necessity claim",
-    "FM arm is a normalized fresh-SGD direction, not the original Adam training update"
+    "FM arm is a normalized fresh-SGD direction, not the original Adam training update",
+    "stored collection LoRA and reconstructed Writer Jacobian form an anchored local VJP; residual numerical recompile differences do not permit a strict floating-point unbiasedness or identical-Jacobian claim",
+    "candidate replay minus stored collection mean includes re-materialization differences; do not attribute all of that displacement to learning, and prioritize the same-E2 fresh-P paired closed-loop comparisons"
   ]
 }

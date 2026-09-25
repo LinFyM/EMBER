@@ -121,10 +121,50 @@ flow重放保持原生mixed dtype及真实prefix；记录原均值vs重放均值
 训练/物化时不跨参数状态缓存适配激活。父完整checkpoint只读；新三格完整checkpoint标明新SGD step1、
 fresh optimizer/scheduler/no sampler continuation，同时保留gradient/cotangent及必要分组证据，不能冒称父Adam exact-resume。
 
-Sol从最新main隔离开发，必要的结构检查与直接接口验证后集成推送，再冻唯一提交。采集/梯度/新bank/评测同一提交。
+Sol从最新main隔离开发，必要的结构检查与直接接口验证后集成推送，再冻唯一提交。
+原采集/梯度/新bank/评测同一提交要求，仅按下述§6登记一次阶段例外；不放宽其它来源检查。
 每阶段原子写completion，恢复只补未完成组或面板；partial轨迹/失败工程原件保留，不拼接成有效episode。
 study `/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925`，新data0≤8GiB，代码≤768MiB，
 正式计算预计2–3 GPU-hours，硬上限4 GPU-hours；pilot后用实际吞吐确认剩余预算一次，不按奖励判断是否扩量。
 梯度优先同节点world2，独立rollout/物化按cost-balanced queue用真实有益空卡，项目合计≤6物理GPU。
 新root前strg01独立quota/共享容量/峰值检查；每launch同时live检查gpu01/gpu02。正常任务一次持续等待退出，不轮询日志/cache。
 完成或真实阻塞后主动Queue主讨论原件、缺项、实际资源和结果，停止新增实验。
+
+## 6. 采集策略重放修正与一次阶段提交例外（2026-09-25）
+
+主讨论独立核对`dd2e00bc88a3976c9dcf9a3f14dad745b265e0da`的32组128条采集、
+512个保存decision、八个实际bank引用、T+1/谓词与退出记录。6组LOO非零；没有候选、完整梯度或新评测。
+梯度在task22全task前缀RMS=.022431时退出1，失败部分保留，不作为完整方向或科学阴性。
+固定task22/state0/replica0/replan11使用采集bank时，两种flow输出一致，对旧均值RMS=.001674；
+单teacher重编译LoRA相对L2=.002797（约0.28%），train/eval相同。这是单点定位证据，不证明全task修复。
+上述百分比是LoRA相对范数，不能当作动作或梯度误差的上界。
+
+代码还显示采集`_runtime`显式`allow_tf32=True`，gradient/pilot-VJP及两份诊断没有调用相同设置；
+分布式初始化本身不调用设置此开关的`seed_everything`。这是需验证的计算上下文差异，不先宣布它解释全部超限。
+修后梯度/Writer VJP/FM采用采集已用的TF32设置，实际记录两rank开关；dtype、kernel和科学参数不另做精度扫。
+
+允许保留dd2的八个collection bank及全部128行，后续完整梯度、三个独立候选、candidate replay新bank和
+全部256条评测统一使用另一个clean pushed detached提交E2，实际SHA由执行者在launch修订中冻结。
+旧runtime/原件不热改、不重采集、不重编译覆盖旧bank；`0bab7c5d`只读seed长度审计修正另列。
+读取旧bank仅限本study/八个P collection条件，逐row绑定其bank_record、teacher/task、父权重、语言、frame/Source及adapter来源；
+不得把例外变成任意commit/adapter接受。评测P/R/NEG/FM的teacher46/47全部按E2同一物化路径新生成，不拼旧分数。
+失败梯度/日志/exit1保留在隔离attempt，E2从同一父完整重算方向，不混入dd2的部分task梯度；失败计算单列资源。
+
+**数学边界。** 令实际采集LoRA为`b`，修后Writer重算为`G_r(phi)`。策略cotangent应在b处求：
+`g_hat = J_G_r(phi0)^T sum_j J_F(b,q_j,xi_j)^T c_j`，其中c_j仍是§2的
+`A*(Q/M)*Sigma^-1*(u-mu_old)/128`，不得把mu_old替换为重放均值，也不得改奖励/权重。
+这在计算上等价于局部锚定映射`b + G_r(phi) - stopgrad(G_r(phi0))`在phi0处的链式VJP。
+该式只解释为何保存bank和完整Writer Jacobian可以接合，不把锚定偏移加入候选/部署，不冻结Writer或三Meta。
+若G_r与原编译仍有正常数值差异，该估计使用重建Jacobian；不宣称浮点实现下严格无偏，
+也不由单个LoRA范数断言Jacobian一致。记录有实际cotangent条件的重编译相对L2/max差及完整活动梯度。
+
+先用原task22保存输入验证实际bank的flow重放与重建Writer上下文；允许最多64个原decision的修复验证，
+尽量复用E2正式task22梯度的读数。不得增加新query/环境步或重跑128采集。
+后续全部512个原decision仍执行原task级及全体RMS≤.01检查，原均值/噪声、真实十步、Source冻结不变。
+单点通过不替代task22完整检查；再次超限或发现真正条件身份/梯度语义差异即停，不追加精度矩阵或抬阈值。
+失败attempt与这次至多64个修复重放逐项计数；它们不是新独立样本，原512独立父decision上限和1536候选预测不变。
+原candidate−采集均值的动作读数包含重新物化差异，不能全归为学习位移；主要科学判据仍是E2四格独立闭环。
+
+formal≤4 GPU-hours、data0≤8GiB、新代码≤768MiB、384有效episode及其余限制不增加。
+累计GPU账包含失败梯度、上述修复验证及相关诊断的CUDA初始化/载入，不用核心计时替代占用时间。
+若原预算不足则如实回报；不因一次版本例外自动获得第二次重试或额外实验授权。

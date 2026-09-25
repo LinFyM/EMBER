@@ -24,6 +24,22 @@ Owner又明确本次授权**不向Sol转发**，让其专注具体实验；主�
 合同核对、隔离实现、工程验收及冻结执行的回应。当前为已接手实现，不称正式采集或学习已经启动。
 正文/回执/逐字送达与回应在metatask study的`coordination/return_credit_{dispatch.txt,dispatch_receipt.json,delivery.json}`。
 
+### 成功信用批次：采集完整，梯度重放超限；一次阶段例外已裁决（2026-09-25）
+
+正式GPU实现dd2e00bc，128采集/32组/512保存decision已齐；主讨论独立核对组身份、八个bank引用、
+所有128条T+1与谓词。6组LOO非零，分布于task12/17/22/37；不根据这些结果改变任务或权重。
+world2梯度在task22全task replay RMS=.022431>.01退出1，无候选、完整梯度或新评测；部分梯度封存。
+原件根`/data0/user/ymdai/ember_runs/return_credit_direction_causality_20260925`，
+`launch/gradient.exit.json`及`audit/gradient_{flow_parity_one_decision,writer_condition_one_teacher}.json`。
+单点实际bank的canonical/可微flow一致、对旧均值RMS=.001674；重编译LoRA相对L2约0.28%，尚未证明全task误差已解决。
+另发现采集显式TF32、梯度及诊断脚本未对齐该设置；需一次直接验证，不视为已验证唯一原因。
+
+按design§6/spec登记：保留全部dd2采集及bank；验证后由唯一新冻结E2完成完整梯度/候选/replay/评测，
+允许一次明确阶段来源例外，旧树不热改、不重采集、失败部分不混入新方向。
+策略VJP固定实际采集bank，Writer重算完整Jacobian并记录差异；原score的mu_old、.01阈值、步长及全部科学参数保持。
+至多64个原task22 decision用于修复验证，优先并入E2正式检查；原4 GPU-hours/8GiB/768MiB总预算包含失败及修复成本。
+当前是裁决与验收要求，不称修复成功或新增科学结果；实际E2与送达回执待执行者接续登记。
+
 ### 最近完成：lookahead七组及主讨论裁决（2026-09-25）
 
 唯一实现`99c6491a27f68d124bb4a13d5e23ed1c2632665b`，根

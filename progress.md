@@ -35,7 +35,10 @@ pilot验收误要求四格完整seed列表相等；成功即终止使实际repla
 按design§6/spec登记B：保留E全部bank/4pilot，修复验收及明确阶段来源绑定后，唯一clean pushed detached E2执行余124和分析。
 不改policy/Writer/探索/rollout，不重跑、不重物化、不加环境probe；原128行、1.5 GPU-hours及存储上限保持。
 已计GPU .03560779小时；每条较长seed尾部仍按原公式验收，最终产物明确区分E与E2。
-本裁决待向Sol当前任务送达；实际接续与E2由执行者记录。
+裁决在`59e7c1ad`推送；15:50:30 UTC以Steer送入Sol当前turn
+`01a0d926-13d1-76a3-8027-5257bc9422b6`，15:51:08逐字核对正文进入同轮，并读到其明确确认B、
+只修共同前缀与精确来源绑定的回应。当前为接续修复，余124尚未据此声明启动；实际E2由执行者记录。
+正文/接受/送达与回应在本study `coordination/pilot_seed_exception_{dispatch.txt,receipt.json,delivery.json}`。
 
 ### 最近完成：score-update stage1及主讨论裁决（2026-09-25）
 

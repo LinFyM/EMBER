@@ -144,7 +144,10 @@ L不运行VL/Action Meta或Procedure，未使用的模块不进optimizer；不�
 这不是严格参数量匹配的信息消融，故V/L差额与最终冻结controls共同解释，不能单独宣布动态视频根因。
 
 β、U和七行读出在两臂中有相同初始化身份，不允许因先构造视频模块而移动共享参数RNG。
-正式模型把共同β/读出/U初始化置于条件模块之前，并以同一seed7固定；共享Text/Core的初始化采用同一明确模块seed。
+正式模型把共同β/读出/U初始化置于条件模块之前。β的identity A沿canonical LoRA合同的identity_seed20260721，
+B为零；读出/U的全局module seed为7，共享Text/Core使用明确的module seed7。
+机器记录的common_seed7指共同模块RNG，不能覆盖identity_lora_state内部按canonical identity_seed建立的独立generator；
+此处明确§2既定的identity合同，不改变本批实际初始化或冻结代码。
 可以复用原生教学owner并冻结L未用模块；不能新增一份原生视频/文本读取器。正式fresh顺序与工程顺序的区别须登记，
 不把工程checkpoint称为兼容正式初始化。每rank初始化相同共享权重，训练RNG按原有rank合同保存。
 

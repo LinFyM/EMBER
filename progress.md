@@ -2,7 +2,7 @@
 
 ## 当前状态：条件速度算子完整V/L比较已集成；首批GPU按冻结合同派发（2026-09-27）
 
-### 当前：主讨论验收源码，首批270/400启动范围已核定
+### 当前：V/L各270训练完成，固定checkpoint的配对400进入评测
 
 唯一active design为`docs/designs/conditional_velocity_operator_design.md` §6–10；§4–5工程已完成。
 主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main集成；
@@ -35,7 +35,14 @@ L训练22:50:54–23:12:02 UTC正常exit0，完整1268.489秒×2卡=0.7047162 GP
 teacher/action query/帧/策略RNG及学习率时钟与V逐项匹配（不要求rank内任务排列一致）。
 L真实梯度仅公共/U/readout/Text/Core活动，VL/Action/Procedure均零；宏步均值4.579秒。
 独立原件`.codex/tmp/conditional_velocity_learning_20260927/L_completed_training_and_pair_review.json`。
-剩余完整预算5.7528832 GPUh；物化及两组400仍待完整执行回报，目前没有本方法闭环分数或科学收益判断。
+两臂bank均已sealed，V400个视频条件/L8个语言条件，各仅一份公共β/U；均编排400episode。
+23:28–23:34 UTC主讨论核完metadata/调度：validation8固定50初态，V每task全部50teacher各一次，
+stride5保留末帧，L只保留匹配ordinal且不读教学RGB；两臂均rank135/38target/76factor。
+独立原件`.codex/tmp/conditional_velocity_learning_20260927/sealed_bank_pair_review.json`。
+顺带核清β的identity seed20260721沿canonical合同，读出/U及Text/Core的module seed为7；
+文档已明确两者，不改代码、权重或学习事件，不误称全体初始张量由global seed7产生。
+执行者已选gpu02/4,6,7、每卡2 replica/每replica8环境，开始V270 correct400，随后L270 correct400。
+训练累计后剩余完整预算5.7528832 GPUh，物化/评测新增耗用待完整账单；目前没有本方法闭环分数或科学收益判断。
 主讨论直接等待这一批的完成/阻塞事件，不另排自通知，不按固定间隔读取训练日志或追加探针。
 
 ### 刚完成：正式CPU实现、独立审阅与两项合同修正

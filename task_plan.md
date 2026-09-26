@@ -1,6 +1,6 @@
 # EMBER task plan
 
-## 当前：完整V/L首批比较已集成，进入正式launch准入（2026-09-27）
+## 当前：V/L各270训练与LoRA生成完成，固定checkpoint配对400进入评测（2026-09-27）
 
 条件速度算子以共同rank128 LoRA学习自身反馈特征，合法教学生成R，经真实末端速度投影合成唯一rank135 LoRA。
 工程已验收；CPU正式入口及两项事前合同纠正已由主讨论独立审阅并集成18b7e4b7，22项相关检查通过。
@@ -9,7 +9,9 @@
 唯一active design为`docs/designs/conditional_velocity_operator_design.md` §6–10，首批V/L各270更新、各official400。
 同一coverage36、4×28纯跨episodeFM、匹配共同参数初始化/事件/RNG，直接复用MT-BC的150/1200学习时钟。
 每臂30,240query，不加载工程或MT-BC权重。完整9 GPUh、data1峰值8GiB，预计5.5–8.8 GPUh/约2–3h wall。
-实际launch须指定执行者从clean pushed main detached树完成live quota/GPU准入；回执和真实运行只看progress。
+指定执行者已从clean pushed frozen 0c4ea636完成两臂训练和bank封存；主讨论核完全部1080个配对训练事件及400行条件编排。
+训练完整计费3.2471 GPUh，先后使用同一world2；现在开展V/L各400评测，完整账单和真实运行只看progress。
+2–3h wall原为并行估计，当前串行调度会延长耗时；不缩减400或省略语言臂，9完整GPUh上限不变。
 
 第一点用于完整方法判断，预期450节点仍需主讨论看270全结果后裁决；不能由首点低于155断言理论不可能，
 也不因此改架构、aux、rank、seed、采样或无限续训。strong MT-BC155/Source51原件复用，C0 120/121不混协议相减。

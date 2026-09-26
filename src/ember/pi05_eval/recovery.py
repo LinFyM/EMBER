@@ -157,6 +157,16 @@ def _reinspect_adapter(
                 suite=row["suite"], task_id=row["task_id"],
                 init_state_ids=tuple(registered["init_state_ids"]))
                 for row in bank_manifest["tasks"])
+        if contract.get("learned_initial_content") is not None:
+            from ember.writer.learned_initial_content_contract import evaluation_panel
+
+            panel = evaluation_panel(Path(contract["output_dir"]))
+            if panel is None:
+                raise Pi05EvaluationError("S0/C0 recovery panel is unregistered")
+            bank = read_json(Path(adapter["manifest"]["path"]))
+            tasks = tuple(argparse.Namespace(
+                suite=row["suite"], task_id=row["task_id"],
+                init_state_ids=tuple(panel["state_ids"])) for row in bank["tasks"])
         from ember.writer.language_content_contract import evaluation_panel
 
         return inspect_static_task_lora_adapter(

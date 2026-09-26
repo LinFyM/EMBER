@@ -198,6 +198,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         camera_view: str = "agentview",
         horizon_read: str = "repeated_full",
         language_content_path: bool = False,
+        initial_content_only: bool = False,
     ) -> None:
         super().__init__()
         if (
@@ -227,6 +228,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         self.tensor_specs = tensor_specs
         self.program_width = int(program_width)
         self.camera_view = camera_view
+        self.initial_content_only = bool(initial_content_only)
         self.semantic_encoder = Pi05LanguageAxialEncoder(
             paligemma_model=paligemma_model,
             expert_model=expert_model,
@@ -431,6 +433,37 @@ class CompleteLoRAWriter(torch.nn.Module):
             valid_frames[row, :length] = True
         return packed_evidence, packed_interactions, packed_horizon, positions, valid_frames
 
+    def _read_native_condition(
+        self,
+        policy: torch.nn.Module,
+        frames: torch.Tensor,
+        offsets: tuple[int, ...],
+        lengths: torch.Tensor,
+        language_tokens: torch.Tensor,
+        language_mask: torch.Tensor,
+        task_span_mask: torch.Tensor,
+        frame_parallel_group,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        conditions = len(offsets) - 1
+        condition_ids = torch.repeat_interleave(
+            torch.arange(conditions, device=frames.device), lengths,
+        )
+        # Reading only the real first frame saves native work. Repetition after
+        # the read sums every temporal cotangent into that frame on backward.
+        native_frames = (frames.index_select(0, torch.tensor(offsets[:-1], device=frames.device))
+                         if self.initial_content_only else frames)
+        native_ids = (torch.arange(conditions, device=frames.device)
+                      if self.initial_content_only else condition_ids)
+        text, evidence, interactions, horizon, valid_tokens = self.semantic_encoder(
+            policy, native_frames, native_ids, language_tokens, language_mask,
+            task_span_mask, frame_parallel_group=frame_parallel_group,
+        )
+        if self.initial_content_only:
+            evidence = torch.repeat_interleave(evidence, lengths, dim=0)
+            horizon = torch.repeat_interleave(horizon, lengths, dim=0)
+            interactions = torch.repeat_interleave(interactions, lengths, dim=0)
+        return text, evidence, interactions, horizon, valid_tokens
+
     def encode_task(
         self,
         policy: torch.nn.Module,
@@ -473,24 +506,15 @@ class CompleteLoRAWriter(torch.nn.Module):
             dtype=torch.long,
             device=frames.device,
         )
-        condition_ids = torch.repeat_interleave(
-            torch.arange(conditions, device=frames.device),
-            lengths,
-        )
         (
             text_queries,
             frame_evidence,
             interactions,
             horizon,
             valid_task_tokens,
-        ) = self.semantic_encoder(
-            policy,
-            frames,
-            condition_ids,
-            language_tokens,
-            language_mask,
-            task_span_mask,
-            frame_parallel_group=frame_parallel_group,
+        ) = self._read_native_condition(
+            policy, frames, offsets, lengths, language_tokens, language_mask,
+            task_span_mask, frame_parallel_group,
         )
         (
             packed_evidence,
@@ -505,6 +529,10 @@ class CompleteLoRAWriter(torch.nn.Module):
             frame_indices,
             offsets,
         )
+        if self.initial_content_only:
+            packed_interactions = self.semantic_encoder.interaction_projection(
+                packed_horizon.float().mean(dim=-2).to(packed_horizon.dtype))
+            packed_interactions = packed_interactions.masked_fill(~valid_frames[..., None], 0)
         core_memory, frame_attention = self.semantic_core(
             text_queries,
             packed_evidence,
@@ -529,12 +557,18 @@ class CompleteLoRAWriter(torch.nn.Module):
         )
         if not return_trace:
             return encoded
-        return encoded, {
+        trace = {
             "text_queries": text_queries,
             "frame_evidence": frame_evidence,
             "interactions": interactions,
             "horizon": horizon,
         }
+        if self.initial_content_only:
+            trace.update(packed_evidence=packed_evidence,
+                         packed_interactions=packed_interactions,
+                         packed_horizon=packed_horizon,
+                         positions=positions, valid_frames=valid_frames)
+        return encoded, trace
 
     def compile_encoded_task(
         self,

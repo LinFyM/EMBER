@@ -153,6 +153,11 @@ def build_runtime(asset_root: Path, config: Mapping[str, Any], device: torch.dev
         model["language_content_path"] = (
             config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT
             and config["experiment"]["language_content_path"] is True)
+        from ember.writer.learned_initial_content_contract import STUDY as INITIAL_CONTENT_STUDY
+
+        model["initial_content_only"] = (
+            config.get("experiment", {}).get("kind") == INITIAL_CONTENT_STUDY
+            and config["experiment"].get("initial_content_only") is True)
         writer = CompleteLoRAWriter(
             build_lora_tensor_specs(template), template_state=template,
             paligemma_model=bridge.paligemma.model.language_model,

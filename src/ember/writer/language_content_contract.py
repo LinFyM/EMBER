@@ -176,6 +176,13 @@ def bank_panel(config: Mapping[str, Any], selection: Mapping[str, Any], *, check
 
 
 def evaluation_scope(output: Path) -> tuple[dict[str, Any], str, dict[str, Any]] | None:
+    from ember.writer.learned_initial_content_contract import (
+        SPEC_PATH as INITIAL_SPEC_PATH, evaluation_panel as initial_panel, spec as initial_spec,
+    )
+
+    initial = initial_panel(output)
+    if initial is not None:
+        return initial_spec(), INITIAL_SPEC_PATH, initial
     from ember.writer.native_feature_change import panel as native_panel, spec as native_spec
 
     native = native_spec()

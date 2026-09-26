@@ -33,6 +33,10 @@ from ember.writer.language_content_contract import (
     CONFIG_SCHEMA as LANGUAGE_CONTENT_CONFIG_SCHEMA, bank_panel as language_content_bank_panel,
     fixed400_spec, validate_config as _language_content_config,
 )
+from ember.writer.learned_initial_content_contract import (
+    CONFIG_SCHEMA as INITIAL_CONTENT_CONFIG_SCHEMA, bank_panel as initial_content_bank_panel,
+    validate_config as _initial_content_config,
+)
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
 
@@ -83,12 +87,14 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     config = run["config"]
     data = config.get("data", {})
     conditional = config.get("schema_version") in {
-        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA}
+        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA,
+        INITIAL_CONTENT_CONFIG_SCHEMA}
     if conditional:
         {RELATIONAL_CONFIG_SCHEMA: _relational_config,
          CONDITIONAL_CONFIG_SCHEMA: _conditional_config,
-         LANGUAGE_CONTENT_CONFIG_SCHEMA: _language_content_config}[config["schema_version"]](config)
-        if config["schema_version"] == LANGUAGE_CONTENT_CONFIG_SCHEMA and macro > 630:
+         LANGUAGE_CONTENT_CONFIG_SCHEMA: _language_content_config,
+         INITIAL_CONTENT_CONFIG_SCHEMA: _initial_content_config}[config["schema_version"]](config)
+        if config["schema_version"] in {LANGUAGE_CONTENT_CONFIG_SCHEMA, INITIAL_CONTENT_CONFIG_SCHEMA} and macro > 630:
             raise ValueError("language-content bank cannot use a checkpoint after macro630")
         parameterization = config["experiment"]["parameterization"]
         observer = {**observer, "route": parameterization}
@@ -274,7 +280,8 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
 def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, Any]:
     observer = observer_mode_contract(run["model_config"])
     conditional = run.get("config", {}).get("schema_version") in {
-        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA}
+        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA,
+        INITIAL_CONTENT_CONFIG_SCHEMA}
     if conditional:
         config = run["config"]
         parameterization = config["experiment"]["parameterization"]
@@ -314,6 +321,9 @@ def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, A
         if config["schema_version"] == LANGUAGE_CONTENT_CONFIG_SCHEMA:
             method["study_id"] = config["experiment"]["kind"]
             method["language_content_path"] = config["experiment"]["language_content_path"]
+        if config["schema_version"] == INITIAL_CONTENT_CONFIG_SCHEMA:
+            method["study_id"] = config["experiment"]["kind"]
+            method["initial_content_only"] = True
         if arm in CONTROL_ARMS:
             method["diagnostic_control"] = arm
             method["control_transform"] = ("identity_zero_delta_without_RGB_reads" if arm == "no_video" else
@@ -564,7 +574,8 @@ def _materialize(
         native_transfer=native_transfer, precompiled=precompiled)
     no_video = selection["arm"] == "no_video"
     conditional = run.get("config", {}).get("schema_version") in {
-        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA}
+        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA,
+        INITIAL_CONTENT_CONFIG_SCHEMA}
     parameterization = run["config"].get("experiment", {}).get("parameterization", "video_writer")
     uses_video = parameterization == "video_writer" and not no_video
     compiler_invocations = sum(int(row.get("writer_invocations", 0)) for row in conditions.values())
@@ -628,8 +639,8 @@ def _materialize(
     if support_slot_credit is not None:
         manifest["support_slot_credit"] = dict(support_slot_credit)
     if extra_manifest is not None:
-        if set(extra_manifest) != {"native_feature_change"}:
-            raise ValueError("only the registered native-feature identity may extend a bank manifest")
+        if set(extra_manifest) not in ({"native_feature_change"}, {"learned_initial_content"}):
+            raise ValueError("only registered same-forward feature identity may extend a bank manifest")
         manifest.update(extra_manifest)
     path = output / "manifest.json"
     write_json_atomic(path, manifest)
@@ -648,6 +659,8 @@ def _validate_conditional_selection(selection: Mapping[str, Any], config: Mappin
         return
     if config["schema_version"] == LANGUAGE_CONTENT_CONFIG_SCHEMA:
         # The exact output/checkpoint identity is checked by _registered_request_panel.
+        return
+    if config["schema_version"] == INITIAL_CONTENT_CONFIG_SCHEMA:
         return
     spec = read_json(REPO_ROOT / config["study_spec"])
     evaluation = spec["evaluation"]
@@ -673,8 +686,11 @@ def _validate_conditional_selection(selection: Mapping[str, Any], config: Mappin
 
 def _registered_request_panel(request, run, record):
     schema = run.get("config", {}).get("schema_version")
-    if schema not in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA}:
+    if schema not in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA,
+                      LANGUAGE_CONTENT_CONFIG_SCHEMA, INITIAL_CONTENT_CONFIG_SCHEMA}:
         return None
+    if schema == INITIAL_CONTENT_CONFIG_SCHEMA:
+        raise ValueError("S0 banks require registered same-forward feature capture")
     if schema == LANGUAGE_CONTENT_CONFIG_SCHEMA:
         language_content_bank_panel(run["config"], request["selection"],
                                     checkpoint=Path(record["path"]), output=Path(request["output"]))
@@ -858,6 +874,8 @@ def main() -> None:
     parser.add_argument("--requests-json", type=Path, help="Batch request list; shares asset root and devices.")
     parser.add_argument("--native-feature-change", action="store_true",
                         help="Registered frozen C0 shared-native four-cell materialization.")
+    parser.add_argument("--learned-initial-content", action="store_true",
+                        help="Registered S0 banks with same-forward compact native feature traces.")
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--reuse-manifest", type=Path, help="Reuse compatible condition LoRAs and compile only missing videos.")
@@ -880,6 +898,19 @@ def main() -> None:
     parser.add_argument("--native-frame-chunk", type=int,
                         help="Physical native frame batch; preserves every frame and the declared cameras.")
     args = parser.parse_args()
+    if args.learned_initial_content:
+        excluded = ("requests_json", "checkpoint", "output", "reuse_manifest", "diagnostic_contract_json",
+                    "role", "task_ids", "k", "arm", "selection_mode", "video_pool",
+                    "fixed_videos_json", "state_count", "init_state_ids", "seed", "devices")
+        if args.native_feature_change or any(getattr(args, name) is not None for name in excluded):
+            parser.error("S0 materialization uses only its frozen spec, one device, and a physical frame chunk")
+        from ember.writer.learned_initial_content_materialization import materialize_registered
+
+        for path in materialize_registered(asset_root=args.asset_root.resolve(),
+                device=torch.device(args.device), cpu_threads=args.cpu_threads,
+                native_frame_chunk=args.native_frame_chunk):
+            print(path, flush=True)
+        return
     if args.native_feature_change:
         excluded = ("requests_json", "checkpoint", "output", "reuse_manifest", "diagnostic_contract_json",
                     "role", "task_ids", "k", "arm", "selection_mode", "video_pool",

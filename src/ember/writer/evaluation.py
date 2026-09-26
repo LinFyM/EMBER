@@ -300,6 +300,16 @@ def _validate_registered_bank_origin(manifest, path, run, checkpoint,
     return panel
 
 
+def _validate_language_bank(panel, path, manifest, run):
+    current_commit = git_state(Path(__file__).resolve().parents[3])["commit"]
+    if panel.get("study_id") == "learned_initial_content_causality_20260926":
+        from ember.writer.learned_initial_content_contract import validate_evaluation_bank as validate_initial
+
+        validate_initial(panel, path, manifest, run, current_commit)
+    else:
+        validate_evaluation_bank(panel, path, manifest, run, current_commit)
+
+
 def inspect_horizon_writer_bank(
     *, manifest_path: Path, source: Mapping[str, Any], task_keys: Sequence[tuple[str, int]],
     evaluation_role: str, require_formal: bool,
@@ -317,8 +327,7 @@ def inspect_horizon_writer_bank(
                        native_reader_transfer_cell, support_slot_model, language_content_panel)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
         if language_content_panel is not None:
-            validate_evaluation_bank(language_content_panel, path, manifest, run,
-                                     git_state(Path(__file__).resolve().parents[3])["commit"])
+            _validate_language_bank(language_content_panel, path, manifest, run)
         panel = _validate_registered_bank_origin(manifest, path, run, checkpoint,
                                                   native_reader_transfer_cell, support_slot_model,
                                                   support_slot_phase)
@@ -348,7 +357,12 @@ def inspect_horizon_writer_bank(
             raise ValueError("evaluation requires one complete 38-target rank16 LoRA")
         validate_information_wall(manifest)
         _inspect_conditions(manifest, path.parent, lora)
-        return {**manifest, "schema_version": EVALUATION_SCHEMA, "manifest": file_record(path)}
+        result = {**manifest, "schema_version": EVALUATION_SCHEMA, "manifest": file_record(path)}
+        if language_content_panel is not None and language_content_panel.get("study_id") == "learned_initial_content_causality_20260926":
+            result["learned_initial_content"] = {
+                "study_id": language_content_panel["study_id"],
+                "panel": language_content_panel["id"], "stage": language_content_panel["stage"]}
+        return result
     except (KeyError, TypeError, ValueError, OSError) as error:
         raise Pi05EvaluationError(str(error)) from error
 
@@ -396,9 +410,13 @@ class FrozenHorizonWriterAdapter:
             adapter.get("native_feature_change", {}).get("study_id") ==
             "native_feature_change_causality_20260926" and bool(requested)
             and requested <= set(self.records))
+        initial_content_subset = (
+            adapter.get("learned_initial_content", {}).get("study_id") ==
+            "learned_initial_content_causality_20260926" and bool(requested)
+            and requested <= set(self.records))
         if (adapter.get("kind") != BANK_KIND or adapter.get("schema_version") != EVALUATION_SCHEMA
                 or not source_matches(adapter["source"], source)
-                or (set(self.records) != requested and not native_feature_subset)
+                or (set(self.records) != requested and not native_feature_subset and not initial_content_subset)
                 or adapter.get("single_complete_rank16") is not True):
             raise Pi05EvaluationError("video Writer runtime bank changed")
         self.adapter, self.policy = adapter, policy

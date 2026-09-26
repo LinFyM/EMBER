@@ -195,6 +195,13 @@ def _trace_and_stage_match(
 
 
 def validate_contract(contract: Mapping[str, Any], repo_root: Path) -> None:
+    from ember.writer.learned_initial_content_contract import evaluation_panel as initial_panel
+
+    if initial_panel(Path(contract['output_dir'])) is not None:
+        from ember.pi05_eval.learned_initial_content import validate_contract as validate_initial
+
+        validate_initial(contract, repo_root)
+        return
     from ember.pi05_eval.native_feature_change import scope as native_feature_scope, validate_contract as validate_feature
 
     if native_feature_scope(Path(contract['output_dir'])) is not None:
@@ -269,6 +276,13 @@ def prepare_from_manifest(
 def attach_requested_capture(
     args: Any, contract: dict[str, Any], repo_root: Path, output_dir: Path,
 ) -> None:
+    from ember.writer.learned_initial_content_contract import evaluation_panel as initial_panel
+
+    if initial_panel(output_dir) is not None:
+        from ember.pi05_eval.learned_initial_content import attach as attach_initial
+
+        attach_initial(contract, repo_root)
+        return
     from ember.pi05_eval.native_feature_change import scope as native_feature_scope, attach as attach_feature
 
     if native_feature_scope(output_dir) is not None:

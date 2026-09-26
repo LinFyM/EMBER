@@ -34,6 +34,9 @@ from ember.writer.language_content_contract import (
     EXPERIMENT as LANGUAGE_CONTENT_EXPERIMENT,
     validate_config as _language_content_config,
 )
+from ember.writer.learned_initial_content_contract import (
+    STUDY as INITIAL_CONTENT_STUDY, validate_config as _initial_content_config,
+)
 from ember.writer.learning_data import (
     CONDITIONAL_EVENT_SCHEMA, RELATIONAL_EVENT_SCHEMA, EVENT_SCHEMA, MAIN_EVENT_QUERIES, TEACHING_EVENT_QUERIES,
     TASKS_PER_UPDATE, WriterTrainingData, query_allocation,
@@ -68,7 +71,8 @@ TOPOLOGY_TRANSITION_SCHEMA = "ember_writer_topology_transition_v1"
 
 def _bounded_conditional(config):
     return config.get("experiment", {}).get("kind") in {
-        CONDITIONAL_EXPERIMENT, RELATIONAL_EXPERIMENT, LANGUAGE_CONTENT_EXPERIMENT}
+        CONDITIONAL_EXPERIMENT, RELATIONAL_EXPERIMENT, LANGUAGE_CONTENT_EXPERIMENT,
+        INITIAL_CONTENT_STUDY}
 
 
 def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
@@ -101,7 +105,7 @@ def _validate_dynamic_schedule(config):
 
 
 def _query_contract(config):
-    if config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT:
+    if config.get("experiment", {}).get("kind") in {LANGUAGE_CONTENT_EXPERIMENT, INITIAL_CONTENT_STUDY}:
         if config["data"].get("event_schema_version") != CONDITIONAL_EVENT_SCHEMA:
             raise ValueError("language-content-path event schema changed")
         return query_allocation(config["data"], 0)
@@ -124,7 +128,8 @@ def _config(path: Path) -> dict[str, Any]:
     config = read_json(path)
     validator = {RELATIONAL_EXPERIMENT: _relational_config,
                  CONDITIONAL_EXPERIMENT: _conditional_config,
-                 LANGUAGE_CONTENT_EXPERIMENT: _language_content_config}.get(config.get("experiment", {}).get("kind"))
+                 LANGUAGE_CONTENT_EXPERIMENT: _language_content_config,
+                 INITIAL_CONTENT_STUDY: _initial_content_config}.get(config.get("experiment", {}).get("kind"))
     if validator is not None:
         return validator(config)
     require_continuation_config(config)
@@ -606,7 +611,7 @@ def _checkpoint_nodes(args, config):
         return nodes
     nodes = tuple(config["evidence"]["checkpoint_updates"]) if supplied is None else tuple(map(int, supplied.split(",")))
     _validate_checkpoint_nodes(nodes, allow_empty=args.mode != "formal")
-    if config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT:
+    if config.get("experiment", {}).get("kind") in {LANGUAGE_CONTENT_EXPERIMENT, INITIAL_CONTENT_STUDY}:
         registered = tuple(config["evidence"]["checkpoint_updates"])
         if args.mode == "formal" and nodes != registered:
             raise ValueError("language-content formal checkpoints are exactly the six registered 630-prefix nodes")
@@ -624,7 +629,7 @@ def _segment_limit(args, config):
         return stop
     if type(stop) is not int or stop <= 0:
         raise ValueError("smoke/profile without registered nodes needs an explicit positive --stop-after-step")
-    if config.get("experiment", {}).get("kind") == LANGUAGE_CONTENT_EXPERIMENT and stop > 630:
+    if config.get("experiment", {}).get("kind") in {LANGUAGE_CONTENT_EXPERIMENT, INITIAL_CONTENT_STUDY} and stop > 630:
         raise ValueError("language-content training must stop at macro630")
     if config.get("training_control"):
         if args.mode == "formal" and stop % config["training_control"]["validation_interval"]:

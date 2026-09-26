@@ -210,6 +210,12 @@ def _inspect_adapter(
         from ember.writer.language_content_contract import evaluation_panel
 
         language_content_panel = evaluation_panel(output_dir) if output_dir is not None else None
+        from ember.writer.learned_initial_content_contract import STUDY as INITIAL_STUDY
+
+        if language_content_panel is not None and language_content_panel.get("study_id") == INITIAL_STUDY:
+            from ember.pi05_eval.learned_initial_content import bank_tasks
+
+            tasks = bank_tasks(tasks, language_content_panel)
         if getattr(args, "frozen_replay_registration", None) is not None:
             registration = _frozen_replay_registration(args)
             reference = load_run_contract(Path(registration["reference_output"]) / "run_contract.json")
@@ -545,6 +551,15 @@ def _selected_tasks_and_capture(
             raise Pi05EvaluationError("native-feature stage requires its complete frozen Writer bank")
         tasks, capture, stage = select_tasks(args, installed_tasks, repo_root)
         return tasks, None, capture, stage
+    from ember.writer.learned_initial_content_contract import evaluation_panel as initial_panel
+
+    if initial_panel(output_dir) is not None:
+        from ember.pi05_eval.learned_initial_content import select_tasks
+
+        if adapter_kind != "static_task_lora" or source_sft_requested:
+            raise Pi05EvaluationError("S0/C0 stage requires its frozen Writer bank")
+        tasks, capture, stage = select_tasks(args, installed_tasks, repo_root)
+        return tasks, None, capture, stage
     native_cell = getattr(args, "native_reader_transfer_cell", None)
     support_model = getattr(args, "support_slot_model", None)
     if support_model is not None:
@@ -569,6 +584,25 @@ def _selected_tasks_and_capture(
     if getattr(args, "trajectory_capture_selection", None) is not None:
         capture, stage = _registered_trajectory_capture(args, tasks, output_dir, subset, repo_root)
     return tasks, subset, capture, stage
+
+
+def _bank_inspection_tasks(installed_tasks, tasks, output_dir, diagnostic_subset, adapter_kind):
+    if diagnostic_subset and adapter_kind == "task_expert":
+        return installed_tasks
+    from ember.pi05_eval.native_feature_change import scope as native_feature_scope
+
+    if native_feature_scope(output_dir) is not None:
+        from ember.pi05_eval.native_feature_change import bank_tasks
+
+        return bank_tasks(installed_tasks)
+    from ember.writer.learned_initial_content_contract import evaluation_panel
+
+    panel = evaluation_panel(output_dir)
+    if panel is not None:
+        from ember.pi05_eval.learned_initial_content import bank_tasks
+
+        return bank_tasks(installed_tasks, panel)
+    return tasks
 
 
 def _prepared_payload(
@@ -631,17 +665,8 @@ def _prepared_payload(
     if intervention_payload is not None:
         return intervention_payload
     diagnostic_subset = _diagnostic_subset_name(occupancy_capture, task_subset)
-    inspection_tasks = (
-        installed_tasks
-        if diagnostic_subset and adapter_kind == "task_expert"
-        else tasks
-    )
-    from ember.pi05_eval.native_feature_change import scope as native_feature_scope
-
-    if native_feature_scope(output_dir) is not None:
-        from ember.pi05_eval.native_feature_change import bank_tasks
-
-        inspection_tasks = bank_tasks(installed_tasks)
+    inspection_tasks = _bank_inspection_tasks(
+        installed_tasks, tasks, output_dir, diagnostic_subset, adapter_kind)
     adapter = _inspect_adapter(
         args,
         adapter_kind=adapter_kind,

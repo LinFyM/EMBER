@@ -139,6 +139,7 @@ def configured_endpoint(config):
         return True
     if experiment.get("kind") not in {"conditional_compilation_diagnostics_20260923",
                                       "relational_support_causality_20260924",
-                                      "language_content_path_causality_20260926"}:
+                                      "language_content_path_causality_20260926",
+                                      "learned_initial_content_causality_20260926"}:
         raise ValueError("unrecognized conditional teaching objective")
     return experiment.get("extra_endpoint_prefix") is True

@@ -10,12 +10,15 @@ from safetensors.torch import load_file, save_file
 
 from ember.eval_adapters import validate_episode_adapter_fields
 from ember.pi05_eval_contract import git_state
+from ember.pi05_eval.registered_passive_capture import (
+    attach_requested_capture as attach_registered_capture,
+    validate_contract as validate_registered_capture,
+)
 from ember.lora import identity_lora_state, validate_lora_state
 from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 from ember.writer.conditional_velocity import ConditionalVelocityOperator, compile_velocity_state
 from ember.writer.conditional_velocity_bank import (_expected_episodes, canonical_selection,
-                                                    attach_capture_provenance, episode_evidence,
-                                                    registered_capture, validate_capture_contract,
+                                                    episode_evidence, registered_capture,
                                                     PASSIVE_TAG, BANK_KIND)
 from ember.writer.conditional_velocity_data import VelocityEvents
 from ember.writer.conditional_velocity_training import VelocityRuntime, _lr_multiplier, _resume_prefix
@@ -162,8 +165,8 @@ def test_official_pairing_and_clock(tmp_path):
                      "git": {"commit": git_state(ROOT)["commit"]},
                      "diagnostic_occupancy_capture": captured,
                      "diagnostic_stage_predicates": stage}
-    attach_capture_provenance(eval_contract, ROOT)
-    validate_capture_contract(eval_contract, ROOT)
+    attach_registered_capture(SimpleNamespace(), eval_contract, ROOT, output_dir)
+    validate_registered_capture(eval_contract, ROOT)
     for task in spec["validation_tasks"]:
         v = _expected_episodes(selection, task, "V")
         l = _expected_episodes(selection, task, "L")

@@ -1,0 +1,179 @@
+{
+  "schema_version": "ember_native_conditional_reader_engineering_v1",
+  "study_id": "native_conditional_reader_engineering_20260926",
+  "status": "registered_engineering_only",
+  "design": "docs/designs/native_conditional_reader_design.md#4-先完成的工程准备范围",
+  "coordinator_thread_id": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+  "executor_thread_id": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+  "run_root": "/data0/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926",
+  "reference_training_config": "configs/language_content_path_causality_v1/train_C0.json",
+  "assets": {
+    "source_checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+    "source_config": {
+      "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+      "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json"
+    },
+    "normalization": "existing frozen filtered Source71 normalization; resolve from configs/pi05_writer_data_v1.json",
+    "rank": 16,
+    "targets": 38,
+    "asset_root": "/data1/user/ymdai/projects/EMBER"
+  },
+  "fit_task_ids": [
+    2,
+    4,
+    5,
+    7,
+    12,
+    13,
+    17,
+    19,
+    22,
+    25,
+    28,
+    29,
+    32,
+    34,
+    35,
+    37,
+    42,
+    43,
+    51,
+    55,
+    56,
+    62,
+    64,
+    73,
+    95,
+    96,
+    97,
+    101
+  ],
+  "sampling_reference": "configs/learned_initial_content_causality_v1/experiment_spec.json:sampling",
+  "optimization_reference": "configs/learned_initial_content_causality_v1/experiment_spec.json:optimization (fresh parameters and optimizer; engineering updates only)",
+  "teaching_camera": "agentview",
+  "teaching_action_horizon": 50,
+  "modes": [
+    "R_V",
+    "R_L"
+  ],
+  "native_targets": [
+    "gemma_expert.model.layers.9.self_attn.q_proj",
+    "gemma_expert.model.layers.9.self_attn.v_proj"
+  ],
+  "input_width": 1024,
+  "target_output_widths": {
+    "q_proj": 2048,
+    "v_proj": 256
+  },
+  "reader_width": 256,
+  "reader_heads": 8,
+  "output_initialization": "zero output heads; other weights fresh; no inherited C0/S0 weights",
+  "source_frozen": true,
+  "definition": "design section2 exact feature/reader equations; no Compiler or FactorHeads, no second adapter",
+  "deployment_classification": "temporary precomputed-memory diagnostic reader, not final EMBER LoRA deployment",
+  "engineering": {
+    "world_size": 2,
+    "updates_per_mode": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "resume_per_mode": "checkpoint2 to4 same world2",
+    "max_actual_macro_updates": 12,
+    "queries_per_macro": 112,
+    "max_training_queries_including_resume": 1344,
+    "profile": "one longest legal fit28 video condition, at most28 fullH FM queries forward/backward, no extra updates",
+    "max_profile_queries": 28,
+    "cpu": "synthetic shape/mask/source identity/query dependence and direct graph versus memory-cotangent replay",
+    "gradient_acceptance": "nondegenerate full-video upstream teaching gradients after zero output heads start learning; record onset, not per-bit parity",
+    "smoke_episodes": [
+      {
+        "mode": "R_V",
+        "global_task_id": 2,
+        "init_state_id": 0,
+        "teacher_demo_index": 46,
+        "full": true
+      },
+      {
+        "mode": "R_V",
+        "global_task_id": 12,
+        "init_state_id": 0,
+        "teacher_demo_index": 46,
+        "full": false
+      },
+      {
+        "mode": "R_V",
+        "global_task_id": 22,
+        "init_state_id": 0,
+        "teacher_demo_index": 46,
+        "full": false
+      },
+      {
+        "mode": "R_L",
+        "global_task_id": 2,
+        "init_state_id": 0,
+        "teacher_demo_index": 46,
+        "full": true
+      },
+      {
+        "mode": "R_L",
+        "global_task_id": 12,
+        "init_state_id": 0,
+        "teacher_demo_index": 46,
+        "full": false
+      },
+      {
+        "mode": "R_L",
+        "global_task_id": 22,
+        "init_state_id": 0,
+        "teacher_demo_index": 46,
+        "full": false
+      }
+    ],
+    "total_smoke_episodes": 6,
+    "smoke_success_not_scientific_gate": true,
+    "capture": "all6 T+1 actions/body/EEF/gripper/BDDL; two fixed full double-camera cases",
+    "held_input_allowed": false,
+    "additional_policy_queries": 0,
+    "extra_environment_probes": 0,
+    "implementation": "isolated codex worktree, owner-focused temporary reader, reuse source/data/FM/evaluator; validated code integrate and push",
+    "formal_training_authorized": false,
+    "automatic_continuation": false
+  },
+  "resources": {
+    "complete_gpu_hours": 0.75,
+    "data0_peak_gib": 2,
+    "dev_plus_frozen_code_mib": 768,
+    "project_max_physical_gpus": 6,
+    "includes_failures_loading_smoke": true,
+    "quota_authority": "strg01 per-filesystem quota and shared capacity",
+    "gpu_admission": "both nodes live; bind actual host/index/UUID; world2 single node",
+    "wait": "one exit-event wait; no self-queue when direct waiter exists"
+  },
+  "required_outputs": [
+    "launch/launch_contract.json",
+    "engineering/completion.json",
+    "engineering/training_resume_checks.json",
+    "engineering/profile.json",
+    "engineering/interface_cases.json",
+    "launch/resource_accounting.json"
+  ],
+  "stop_conditions": [
+    "resource limit projected exceed",
+    "nonfinite/OOM",
+    "Source or information wall violated",
+    "native target/gradient/capture/resume contract failed",
+    "all registered engineering completed"
+  ],
+  "no_automatic": [
+    "630 formal training",
+    "held evaluations",
+    "R_L formal training",
+    "distillation",
+    "400 expansion",
+    "S0 repair/retraining",
+    "dtype/rank/layer sweeps"
+  ],
+  "completion": "Queue exact implementation, evidence, costs and missing items to coordinator; stop new GPU pending scientific adjudication"
+}

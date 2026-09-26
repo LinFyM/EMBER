@@ -4,6 +4,17 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-26：首帧学习完成；有限内容收益与初始化交互分开
+
+首帧S0固定630及448新闭环完成，主讨论独立复算原始行、配对、全T+1/24full、完整事件流与统计。
+C0/S0 correct27/22、other27/17、seen26/22；findings§159及
+[机制分析§11](analyses/feature_to_operator_mechanism_20260926.md#11-首帧学习结果与可证明的初始化交互)保留完整裁决。
+S0 Action Meta梯度到450才首次非零，C0从3开始；定向checkpoint和实际Compiler合成CPU核对了
+首帧重复、Procedure中心化及零调制共同形成的精确算术不动子空间。它限制学习反事实解释，不是完整视频C0根因。
+不追加修首帧、400或精度实验；只激活下一候选的[Reader工程准备](designs/native_conditional_reader_design.md)，
+预算0.75完整GPUh/2GiB/6条train-only接口episode，不自动接正式训练、held、语言第二臂或蒸馏。
+当时派发与实际接收状态见progress；旧S0的执行许可至此结束。
+
 ## 2026-09-26：特征到执行算子的计算审计与候选读出准备
 
 随后主讨论继续独立推导[机制分析§10](analyses/feature_to_operator_mechanism_20260926.md#10-独立推进的传递审查信用等价计算差别与下一裁决)，

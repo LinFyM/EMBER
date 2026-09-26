@@ -1,8 +1,9 @@
 # 原生执行查询读取教学内容：候选学习比较
 
-2026-09-26准备稿。**尚未激活/派发，不是新GPU启动许可。** 当前唯一执行合同仍为S0，见progress。
-本稿把[特征到算子的机制分析](../analyses/feature_to_operator_mechanism_20260926.md)落实到可审阅的下一比较；
-S0结果可能修订其优先级。不得从本文件自行恢复/启动实验，阶段转换由主讨论完成科学裁决，不增加Owner审批。
+2026-09-26。**仅§4工程准备已激活；§3/§5的正式学习和评测仍是准备稿，禁止自动接续。**
+当前机器合同为`configs/native_conditional_reader_v1/engineering_spec.json`，实际派发状态见progress。
+本稿把[特征到算子的机制分析](../analyses/feature_to_operator_mechanism_20260926.md)落实到分阶段比较；
+S0已完成、主讨论独立验收和解释见该分析§11/findings§159。阶段转换由主讨论裁决，不增加Owner审批。
 
 后续数学审查见同文§10：Reader不补充一条原LoRA缺失的query级梯度。线性K/V读出可以与BAh及其梯度完全等价；
 本稿检验的是按执行特征进行非线性内容选择的有限学习假设，且额外承担传回固定LoRA的困难。
@@ -89,18 +90,31 @@ Reader始终在实际query前向及其activation-checkpoint重算期间安装，
 
 ## 4. 先完成的工程准备范围
 
-本节是下一项可派任务的具体内容，仍未派发。工程不读科学分数择优；先准备两种模式的共享接口，
+本节是本次唯一激活范围。工程不读成功分数择优；先准备两种模式的共享接口，
 科学训练分阶段，只先投入R_V，不默认把第二臂及蒸馏全部排满：
 
 1. 独立`codex/` worktree从最新main实现上述唯一读出，复用现有特征、sampler、真实FM和canonical evaluator。
    实验owner集中管理reader/memory；不建立第二套source、loader或完整评测器。诊断路径有明确退役点：本候选否决后由Git保存。
 2. CPU检查shape/mask、source identity初值、query依赖、完整H、memory棱边与梯度消费者；不做与实现同义的庞大测试矩阵。
-3. 两臂各4宏步及2→4完整world2恢复；最长合法训练video一次真实forward/backward/profile；不把smoke权重用于formal。
+3. 两臂各4宏步及2→4完整world2恢复（总计最多12个实际宏步/1344 query）；
+   最长合法训练video再允许一个完整condition的28个真实FM query forward/backward/profile；不把smoke权重用于formal。
    验有效梯度、Source冻结、完整恢复和配对流即可，接受正常BF16/TF32及reduction差异。
+   非退化全视频输入下，零输出head开始更新后应有教学读取器梯度；记录最早活动步即可，
+   不要求合法identity首步全部非零，也不做全参数低位一致扫描。CPU合成输入核对直接图与memory-cotangent重放语义。
 4. 每臂在train任务global2/12/22、state0、teacher46各1条canonical闭环接口smoke，共6条。
    R_L没有teacher内容输入，保留配对metadata不建立task-ID条件通路。六条仅验实现，不按成功数决定是否开跑。
+   六条都保存T+1/实际动作/谓词；每模式global2为双相机full，其余compact。
+   除上述训练query、profile及6条接口episode，不再追加独立10-flow或环境探针。
 5. 计入全部加载/失败/profile时长，报告真实每宏步吞吐、最长峰值、推算完整630与拟定评测代价。
-   工程准备硬上限0.75 GPU-hours、data0新增2GiB；预算预计不足先回报，不改层数/参数/矩阵硬凑。
+   工程准备硬上限0.75 GPU-hours、data0新增2GiB、开发加冻结代码768MiB；预算预计不足先回报，不改层数/参数/矩阵硬凑。
+
+工程运行根`/data0/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926`；
+复用Source1000及C0原数据/normalization/事件流，禁止held/官方Validation/Test读取和梯度。
+world2单节点，全项目本批最多6物理卡；每launch双节点live准入并绑定真实host/index/UUID，建根前核对独立quota。
+实现、prepare/恢复和真实读出由同一owner负责，复用canonical evaluator的模型调用边界及被动采集。
+不能用零LoRA或假bank蒙混成普通Writer评测；本模式明确是预计算memory的临时诊断模型。
+工程通过后集成push、保存原件并Queue主讨论，停止新增GPU；不自启任何630、held面板、R_L正式训练、蒸馏或400。
+若尚未通过，可在原预算内修复明确实现错误；科学机制/输入/监督/作用点改变须先回报，不能借工程准备改方法。
 
 实施前按code-architecture-gate检查所有权与临时诊断路径；formal前满足clean pushed detached。
 允许纯调度/CPU验收修正有明确版本来源，不因此重跑已有效的科学计算；模型、memory或rollout计算改变须冻结新来源。

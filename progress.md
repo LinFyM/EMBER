@@ -1,64 +1,61 @@
 # EMBER progress
 
-## 当前状态：首帧学习对照继续；已形成特征到执行作用的首选候选与分阶段准备稿（2026-09-26）
+## 当前状态：S0已独立验收；仅原生条件Reader工程准备激活（2026-09-26）
 
-Owner指出主讨论不应停止后，继续完成了不依赖S0的数学审查，记录于机制分析§10及findings§158。
-精确线性读出与BAh的前向/梯度等价，当前LoRA本来就能给视频执行条件下的信用；候选真正改变的是非线性内容选择。
-局部softmax作用不保证能变成一个固定矩阵，同坐标L2也不是闭环传递保证。候选保留为有界假设，未激活；
-不据此新增教师/KD/去噪/Jacobian实验。只做了无真实资产的合成CPU等式/反例核对，没有新科学成绩。
-并行准备S0完成后的独立验收；不提前读取部分成功数、修改当前实验或向Sol追加任务。
-同时更正候选初稿的输入描述：C0/拟定Reader教学侧均为agentview单相机、256patch；执行及full采集双相机。
-已核对原C0配置/run_contract和encoder，候选未派发，所以没有按误写文字产生新计算或输入共变。
-后继投资线也在读取本批完整分数前改为同时考虑已有C0与S0，不因Reader只胜较弱C0就继续教师链；预算未扩大。
+Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前已完成S0整批原件核验、特征机制审查及后继裁决；
+长期目标仍为一次生成完整LoRA的绝对能力超过强MT-BC、有益视频贡献和能力保持，未发现统一根因或验证修复。
 
-Owner要求开始后，主讨论完成当前q/E/H、Core/Procedure、完整A/B及真实FM VJP的代码级计算审计，
-沿历史重新核对了最接近的Semantic-Path、统一Writer、固定native reader和纠正路线反例。
-新[机制分析](docs/analyses/feature_to_operator_mechanism_20260926.md)提出可失败的优先候选：
-先检验fresh联合学习的执行状态条件读出是否获得有益教学能力，再决定是否值得把同坐标作用传给完整LoRA。
-不是认定固定LoRA不能按状态工作，也不是恢复固定弱reader/KD；未产生新模型成绩或统一根因。
-
-[原生条件读出准备稿](docs/designs/native_conditional_reader_design.md)已明确两个真实q/v作用点、特征与梯度、
-语言参照、分阶段224/144面板和工程/总预算；尚未激活、实现或派发。先准备R_V，实质信号后才投入R_L，
-不默认启动两臂和后续蒸馏。S0仍为唯一active design，其完成核验将修订后继取舍；不改当前Sol工作。
-本轮合成CPU仅核对attention导数和固定查询低秩回归恒等式，未读取真实学习标签、运行policy或新增GPU。
-已核定coverage MT-BC155与当前diagnostic-held不是同一协议，不能直接用155−120计算当前差距；未用Test反哺。
-
-Owner在连续讨论后明确要求：持久记录过去几个月的错误及概念澄清，避免新会话遗忘，并详细解释后续推进。
-本轮已复核7月底以来的研究索引、相关原始评审、46组审计及代表性原件；findings§156集中保存十类错误和证据，
-current_owner_requirements新增跨会话决策约束，concept澄清MT-BC只作最终性能参照，README直接指向该回顾。
-task_plan已把当前主工作写成“完整特征→知识→LoRA→执行及其学习机制”，与S0独立并行；
-当时下一批方法干预尚未选定；本轮候选准备进展见上方，仍未派发，不把解释类别当成已有根因或自动GPU清单。
-Owner认可首帧对照的具体诊断用途；它未被本次讨论撤销，也不成为所有方法研究的前置门槛。
-本轮只更新科学记录与计划，没有向Sol追加指导、修改实验合同或重新启动历史路线。
-另按Owner明确要求写入Codex跨会话memory extension，作为仓库入口与稳定教训的补充；仓库仍是项目authority。
-
-Active design：[learned_initial_content_causality](docs/designs/learned_initial_content_causality_design.md)，
-机器规格`configs/learned_initial_content_causality_v1/experiment_spec.json`。已Queue并核对Sol接手；下文是最后核对的接手记录，
-本轮未查询实时进度，尚未收到本批正式完成信号，不能把这条记录当实时运行快照。
+**唯一active design**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **仅§4工程准备**；
+机器合同`configs/native_conditional_reader_v1/engineering_spec.json`，study `native_conditional_reader_engineering_20260926`。
 执行者Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`；主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
+范围：实现joint Reader R_V/R_L共享接口，各4宏步及2→4 world2恢复、一次最长视频condition反传/profile、
+6条train-only canonical接口episode；上限0.75完整GPUh/2GiB新data0/768MiB代码，本批最多6物理卡。
+新正式630训练、held、第二臂完整训练、蒸馏、400、S0修复或续训均未激活。工程完成主动Queue，主讨论验收后裁决。
+本轮以Queue派发具体工程任务；精确接受/接手回执将在下方记录，未核实前不称已经开工。
 
-Owner进一步重申：关键是找到如何利用视频，最终绝对闭环性能须超过强MT-BC；胜过语言/单帧不是终点。
-已纳入稳定要求、concept、计划和本批科学裁决。既定S0矩阵只提供学习反事实，训练/评测范围与执行授权不变；
-主讨论负责将结果接到有证据的特征提取/学习/LoRA编译方案，不自动围绕对照差额加实验。
+### S0完成与科学判断
 
-已完成study `/data0/user/ymdai/ember_runs/native_feature_change_causality_20260926`，E=eb9a373d，C0训练F=dca1b550。
-主讨论核对原8面板results/合同、全部320 trace/trajectory、80×4特征和共同seed/首态，重算六比较与20000次bootstrap；
-`coordination/main_recheck.{py,json}`通过。20/24/20/27，各80；完整相对首帧9得2失、净+7，区间[2.5,16.25]pp，findings§155。
-尚不能把冻结损伤当作超过learned参照或操作语义已经获得；不追加该四格400。
-FrameRead中心内容选择与BF16权重和项已分开；原环境动作误标OSC已CPU更正，`coordination/action_units_amendment.json`保存。
-原GPU数据不改；三remaining面板外层误记节点已以实际UUID/双节点快照核实，E1H1两次零行准入拒绝保留。
-总GPU1.561389小时，data0约4.594GiB、代码505.56MiB，在原限内；下批要求启动前实际host/node/UUID绑定。
+研究根`/data0/user/ymdai/ember_runs/learned_initial_content_causality_20260926`；完成标记之后才读取整批分数。
+主讨论核定448唯一行、224新S0银行/224原C0引用、24full、全部T+1动作/谓词/初态和配对seed；
+8阶段worker正常退出，14有向比较和20000次task-bootstrap独立复算一致。
+`coordination/main_recheck.{py,json}`、`main_training_recheck.{py,json}`保留检查与原始来源。
+完整事件plan、2520次exposure、70560查询和LR匹配；正式GPU4f6c75e4，两个held-other仅CPU校验窄修b9e15410。
+完整计量4.669167 GPUh≤9，study约4.48GiB≤10。原bank/有效行未重跑，无登记科学原件缺项。
 
-新合同只新增S0 fresh630，原C0@630及F下三份银行冻结复用。S0原生E/H只保留每视频首帧，I同步，原时钟与全部模块仍在，
-反传对广播位置求和。保持fit28/70560 queries、world2、optimizer/scheduler/事件流；不加a*q、辅助loss或公共底座课程。
-两模型各held correct80/other80/seen64，448新闭环、224新S0bank/224旧C0引用、24full/全T+1，pilot4计入总数。
-最多9完整GPU-hours、10GiB新data0、768MiB代码；所有工程/失败启动计入，预算预计越界则停新增阶段回报。
-实际实施、配额/双节点准入、精确命令由Sol登记；技术通过即可按固定合同启动，完成主动Queue，停止新增试验。
-不把固定630称充分收敛，不从screen选择方法，不自动续训/补400/加seed；主讨论继续解释和后续裁决。
-合同/裁决在e9e3cd30、特征/单位补充在d9a01caf推送；2026-09-26 06:25:54 UTC（北京时间14:25）
-以Queue派给上述实际Sol，回执`01a0dc64-4912-7f50-94c6-2931c611d716`。
-06:26:20核对完整正文进入新turn`01a0dc64-4915-7873-b02a-962c74083c00`，Sol明确接续同名批次、隔离实现和按真实节点准入。
-正文/接受/逐字送达与接手回执在本仓`.codex/tmp/learned_initial_content_causality_20260926/`；没有重发，也没有新增审批。
+C0/S0 held correct27/22、other27/17、seen26/22；主correct差+6.25pp，描述区间[-3.75,17.5]pp。
+正确面板R/G/L=18/9/4、other=14/13/3、seen=13/13/9。完整内容优势不均匀，correct主要来自Object14，
+Goal21反为-1。历史C0三面板24/30/27到27/27/26的变化另列，不混入主比较；详见findings§159。
+
+读分前的训练审查发现S0 Action Meta只在450..630共181步非零，C0从3开始共628步；
+105..420四个S0 checkpoint的过程读出/调制与Action Meta B仍为0，525/630已非零。
+[机制分析§11](docs/analyses/feature_to_operator_mechanism_20260926.md#11-首帧学习结果与可证明的初始化交互)
+证明首帧常量P、中心化和零调制在精确算术下构成双零不动子空间；实际Compiler合成CPU核对通过。
+这使S0不仅改变信息，还改变有效学习路径。它不是实施错误，不解释完整C0与语言近似持平，不触发精度/修首帧实验。
+S0有限对照至此结束；支持后续内容在现预算的有限净收益，尚未隔离操作关系、顺序或信息必要性。
+
+### Reader投入的理由与尚未验证的部分
+
+机制分析§10已经纠正：当前LoRA的BAh本来就有query级信用；线性K/V读出与其前向及梯度可以完全等价。
+新候选实际改变的是按执行h重新选择完整C/P并进行非线性调制，作用于原生index9的真实q/v投影。
+它是执行中消费预计算教学memory的诊断教师，不能冒充最终EMBER单LoRA部署；强教师及其可编译性均未建立。
+旧固定native reader、Semantic-Path、统一Writer与输出头反例继续约束这项有界投入，不用“原生/完整”保证成功。
+教学侧保持原C0 agentview/256patch，执行/full采集双相机；不增加视角共变。
+
+只先核定真实接口与成本。后续R_V固定630学习及224面板仍须主讨论在工程结果后正式登记；
+若登记，沿此前读S0分数前冻结的投资规则：correct至少35/80（max(C0=27,S0=22)+8），
+other至少27/80，correct相对C0至少两个suite净增，才默认值得投入R_L对照。
+这只是投资线，不是模型资格/显著性。无实质能力便下调该路线，不自动换层、增rank、KD或去噪探针。
+
+### 已完成S0的原登记与派发记录
+
+历史design：[learned_initial_content_causality](docs/designs/learned_initial_content_causality_design.md)，
+机器规格`configs/learned_initial_content_causality_v1/experiment_spec.json`，此批现在不再执行。
+只新增S0 fresh630，同模型/fit28/70560queries/world2/LR，广播每视频E0/H0/I0并沿时间求和反传；保留原时钟。
+原C0@630及F银行只读。两模型各held correct80/other80/seen64，共448新闭环、24full/全T+1。
+合同e9e3cd30及补充d9a01caf于06:25:54 UTC Queue给上述Sol，回执01a0dc64-4912-7f50-94c6-2931c611d716；
+06:26:20核对正文进入turn01a0dc64-4915-7873-b02a-962c74083c00并获明确接手。
+完成Queue回执01a0dd5b-5f04-7773-a8d4-68b79b074345已核对；本轮通过完成标记主动消费原件，不等待重复消息。
+正文/派发回执在本仓`.codex/tmp/learned_initial_content_causality_20260926/`，主讨论复核脚本也保存在study coordination。
 
 ### 已完成native-feature批次的原登记与派发记录（2026-09-26）
 

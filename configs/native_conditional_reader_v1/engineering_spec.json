@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_native_conditional_reader_engineering_v1",
   "study_id": "native_conditional_reader_engineering_20260926",
-  "status": "registered_engineering_executor_designated_not_dispatched",
+  "status": "authorized_engineering_pending_dispatch",
   "design": "docs/designs/native_conditional_reader_design.md#4-先完成的工程准备范围",
   "coordinator_thread_id": "01a0dd74-4c71-7c82-8629-8333ef74dfdd",
   "executor_thread_id": "01a0dd6c-f2e5-7971-821a-56766e1c0f22",
@@ -137,7 +137,7 @@
     "held_input_allowed": false,
     "additional_policy_queries": 0,
     "extra_environment_probes": 0,
-    "implementation": "isolated codex worktree, owner-focused temporary reader, reuse source/data/FM/evaluator; validated code integrate and push",
+    "implementation": "executor exclusively edits isolated codex worktree, reuses source/data/FM/evaluator, pushes reviewed branch; coordinator owns main integration and scientific state files",
     "formal_training_authorized": false,
     "automatic_continuation": false
   },
@@ -150,6 +150,13 @@
     "quota_authority": "strg01 per-filesystem quota and shared capacity",
     "gpu_admission": "both nodes live; bind actual host/index/UUID; world2 single node",
     "wait": "one exit-event wait; no self-queue when direct waiter exists"
+  },
+  "time_plan": {
+    "engineering_wall_minutes_estimate": [45, 90],
+    "coordinator_review_wall_minutes_estimate": [15, 30],
+    "estimate_basis": "bounded implementation plus 12 actual smoke/resume updates, one longest condition profile, and 6 interface episodes; not measured Reader throughput",
+    "revise_on": "material implementation blocker or projection beyond engineering scope or 90-minute estimate; report evidence and revised ETA, no silent scope growth",
+    "next_stage": "estimate training, memory materialization, and evaluation separately from actual throughput; no next-stage launch in this batch"
   },
   "required_outputs": [
     "launch/launch_contract.json",
@@ -176,6 +183,6 @@
     "dtype/rank/layer sweeps"
   ],
   "completion": "Queue exact implementation, evidence, costs and missing items to coordinator; stop new GPU pending scientific adjudication",
-  "executor_assignment": "Owner designated this successor; identity and repository verified by read-only thread lookup. Registration turn covers scientific understanding and overall planning, with no dispatch or implementation. Future work requires delivery of the bounded contract; retired sessions remain out of scope.",
+  "executor_assignment": "Owner authorizes autonomous progressive overnight work by the registered coordinator and executor; this dispatch activates engineering only, retired sessions remain out of scope.",
   "coordinator_assignment": "Owner-designated scientific coordinator registered from current CODEX_THREAD_ID/CODEX_SESSION_ID; previous coordinator UUID is provenance only; analysis and evidence review do not activate engineering or formal runs"
 }

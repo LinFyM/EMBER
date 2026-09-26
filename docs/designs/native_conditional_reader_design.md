@@ -1,6 +1,6 @@
 # 原生执行查询读取教学内容：候选学习比较
 
-2026-09-26。**仅§4工程范围已登记；新科学主讨论与Owner指定的新执行者身份已登记，尚未派发，目前未启动。**
+2026-09-26。**仅§4工程范围已登记；Owner已授权夜间自主渐进推进，先向指定新执行者派发本工程批次。实际启动看progress。**
 §3/§5的正式学习和评测仍是准备稿，禁止自动接续。
 当前机器合同为`configs/native_conditional_reader_v1/engineering_spec.json`，实际派发状态见progress。
 本稿把[特征到算子的机制分析](../analyses/feature_to_operator_mechanism_20260926.md)落实到分阶段比较；
@@ -115,6 +115,8 @@ world2单节点，全项目本批最多6物理卡；每launch双节点live准入
 实现、prepare/恢复和真实读出由同一owner负责，复用canonical evaluator的模型调用边界及被动采集。
 不能用零LoRA或假bank蒙混成普通Writer评测；本模式明确是预计算memory的临时诊断模型。
 工程通过后集成push、保存原件并Queue主讨论，停止新增GPU；不自启任何630、held面板、R_L正式训练、蒸馏或400。
+本夜实现与工程验收暂估45–90分钟，主讨论复核暂估15–30分钟；实际profile须给出后继训练/物化/评测的分项ETA。
+开发代码由执行者在隔离树独占写入并推送分支，主讨论负责审阅集成main和主状态文档，避免并发写main。
 若尚未通过，可在原预算内修复明确实现错误；科学机制/输入/监督/作用点改变须先回报，不能借工程准备改方法。
 
 实施前按code-architecture-gate检查所有权与临时诊断路径；formal前满足clean pushed detached。

@@ -34,6 +34,7 @@ from ember.writer.training import _learning_rate_multiplier
 
 SCHEMA = "ember_native_conditional_reader_engineering_run_v1"
 STAGE = "native_conditional_reader_engineering"
+PRE_COMPATIBILITY_COMMIT = "0011d2921d17fb01385bc07f9433c7220cfd711b"
 ROOT = Path(__file__).resolve().parents[3]
 SPEC = ROOT / "configs/native_conditional_reader_v1/engineering_spec.json"
 REFERENCE = ROOT / "configs/language_content_path_causality_v1/train_C0.json"
@@ -299,28 +300,56 @@ def _prepare_train(args: argparse.Namespace) -> TrainSession:
     return TrainSession(args, config, context, data, runtime, optimizer, scheduler, parameters, contract)
 
 
+def _resume_prefix(source_root: Path, rows: int) -> list[str]:
+    parent_rows = (source_root / "metrics.jsonl").read_text().splitlines()
+    prefix = parent_rows[:rows]
+    if (len(prefix) != rows
+            or [json.loads(row)["update"] for row in prefix] != list(range(1, rows + 1))):
+        raise ValueError("Reader resume exposure history prefix changed")
+    return prefix
+
+
 def _restore_train(session: TrainSession) -> tuple[int, int]:
     args = session.args
     if args.resume is None:
         return 0, 0
-    if read_json(args.resume.parent.parent / "run_contract.json") != session.contract:
-        raise ValueError("Reader resume source, mode or physical topology changed")
-    restored = {}
-    updates, rows = load_ecp_checkpoint(
-        checkpoint=args.resume, stage=STAGE, context=session.context,
-        model=session.runtime.state, optimizer=session.optimizer,
-        scheduler=session.scheduler, run_contract_schema=SCHEMA, restored_state=restored)
-    session.data.restore_sampler(restored["sampler_state"])
-    if (restored["training_state"] != {"mode": args.mode, "updates": updates}
-            or session.scheduler.last_epoch != updates
-            or session.data.sampler_state()["next_step"] != updates):
-        raise ValueError("Reader optimizer, schedule or sampler cursor changed")
-    if session.context.is_main:
-        prior = (args.resume.parent.parent / "metrics.jsonl").read_text().splitlines()
-        if len(prior) != rows or [json.loads(row)["update"] for row in prior] != list(range(1, rows + 1)):
-            raise ValueError("Reader resume exposure history changed")
-        (args.output / "metrics.jsonl").write_text("\n".join(prior) + "\n")
-    return updates, rows
+    result, error = None, None
+    try:
+        source_root = args.resume.parent.parent
+        source_contract = read_json(source_root / "run_contract.json")
+        current_contract = session.contract
+        # origin/main is a moving integration ref and is not a model input.
+        # 0011d292 is the completed fresh4 source; the later compatibility
+        # commit changes only recovery validation/provenance, not computation.
+        source_git, current_git = source_contract["git"], current_contract["git"]
+        same_science = ({key: value for key, value in source_contract.items() if key != "git"}
+                        == {key: value for key, value in current_contract.items() if key != "git"})
+        compatible_git = (source_git["commit"] == current_git["commit"]
+                          or source_git["commit"] == PRE_COMPATIBILITY_COMMIT)
+        if (not same_science or not compatible_git or source_git["branch"]
+                or source_git["dirty_paths"] or current_git["branch"]
+                or current_git["dirty_paths"]):
+            raise ValueError("Reader resume source, mode or physical topology changed")
+        restored = {}
+        updates, rows = load_ecp_checkpoint(
+            checkpoint=args.resume, stage=STAGE, context=session.context,
+            model=session.runtime.state, optimizer=session.optimizer,
+            scheduler=session.scheduler, run_contract_schema=SCHEMA, restored_state=restored)
+        session.data.restore_sampler(restored["sampler_state"])
+        if (restored["training_state"] != {"mode": args.mode, "updates": updates}
+                or session.scheduler.last_epoch != updates
+                or session.data.sampler_state()["next_step"] != updates):
+            raise ValueError("Reader optimizer, schedule or sampler cursor changed")
+        prefix = _resume_prefix(source_root, rows)
+        if session.context.is_main:
+            (args.output / "metrics.jsonl").write_text("\n".join(prefix) + "\n")
+        result = updates, rows
+    except Exception:
+        error = traceback.format_exc()
+    failures = [value for value in _gather(error, session.context.world_size) if value]
+    if failures:
+        raise RuntimeError(f"Reader exact resume failed on all ranks: {failures}")
+    return result
 
 
 def _local_jobs(session: TrainSession, draws: tuple) -> list[dict]:

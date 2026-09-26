@@ -1,9 +1,12 @@
 """Direct graph and cotangent replay for the bounded native reader."""
 
+import json
+
 import pytest
 import torch
 
 from ember.writer.native_conditional_reader import NativeConditionalReader, TeachingMemory
+from ember.writer.native_reader_engineering import _resume_prefix
 
 
 def _policy():
@@ -94,3 +97,14 @@ def test_language_memory_rejects_video_and_mask_errors():
                        torch.zeros(1, 1, 256))
     with pytest.raises(ValueError, match="invalid Core"):
         TeachingMemory("R_L", torch.zeros(1, 1, 256), torch.zeros(1, 1, dtype=torch.bool))
+
+
+def test_resume_uses_checkpoint_history_prefix_without_changing_parent(tmp_path):
+    path = tmp_path / "metrics.jsonl"
+    complete = "".join(json.dumps({"update": step}) + "\n" for step in range(1, 5))
+    path.write_text(complete)
+    assert [json.loads(row)["update"] for row in _resume_prefix(tmp_path, 2)] == [1, 2]
+    assert path.read_text() == complete
+    path.write_text(json.dumps({"update": 1}) + "\n")
+    with pytest.raises(ValueError, match="history prefix"):
+        _resume_prefix(tmp_path, 2)

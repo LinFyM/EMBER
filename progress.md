@@ -4,6 +4,9 @@
 
 Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前已完成S0整批原件核验、特征机制审查及后继裁决；
 长期目标仍为一次生成完整LoRA的绝对能力超过强MT-BC、有益视频贡献和能力保持，未发现统一根因或验证修复。
+Owner再次授权遵守现有规则自主推进，并明确明早不要求已经超越MT-BC，但要求实质进步；随后澄清实质进步必须体现为
+更清楚的视频/语言→有用运动过程特征→实际LoRA→配套训练与功能形成的数学原理，不能只以架构或方法取舍交差。
+Owner随即澄清，这是贯穿推进逐步建立的理解，不要求现在立刻完成推导；可先综合既有证据形成主讨论自己的初步认识。
 
 **唯一已激活后继设计（新执行者已接手，尚未独立验收）**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **仅§4工程准备**；
 机器合同`configs/native_conditional_reader_v1/engineering_spec.json`，study `native_conditional_reader_engineering_20260926`。
@@ -61,6 +64,13 @@ Owner随后纠正“不是本批，是之后都data1”。已将其写入Owner�
 确认execution state以原生prompt token进入h、教学prefix无state；真实FM复用denoise suffix，q/v经原生GQA、
 gate与完整flow执行。Reader之前的Source h与完整多层LoRA的h不天然同分布，局部作用匹配不能自动代表功能传递。
 没有新增forward、诊断或科学范围；原fixed400的C0−B为27得/28失，继续约束不能以近似总分推逐例能力等同。
+
+主讨论随后审阅执行分支的教学编码、实际q/v hook、FM memory-cotangent重放、任务等权SUM与完整恢复接口，
+工程完成后仍须按最终提交和原件独立验收。[机制分析§13](docs/analyses/feature_to_operator_mechanism_20260926.md#13-完整链的数学对象过程特征执行作用与实际学习必须相容)
+记录由既有证据与源码形成的初步认识：有用过程特征须形成教学与执行状态的联合作用，实际零初始化head使两种方法
+都先学习输出、再向上游提供信用；这不是缺梯度修复或已识别根因，也不是立即重构/新诊断依据。
+已把设计§3/§5原有候选落实为`configs/native_conditional_reader_v1/learning_spec.json`准备稿，尚未激活；
+等待完整工程原件及分项成本后才裁决630学习，未新增派发或GPU授权。
 
 ### Owner要求的两类循环回顾与决策承诺
 

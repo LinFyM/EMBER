@@ -77,6 +77,9 @@ RoPE和GQA重复仍按真实native实现，不将这个局部式当作整网线�
 
 ## 3. 学习合同准备
 
+对应机器准备稿为`configs/native_conditional_reader_v1/learning_spec.json`，状态`prepared_not_activated`。
+仅将本节及§5已定的条件、面板和投资规则落实为可执行字段；完整工程验收和分项实测ETA之前不得启动。
+
 两臂均fresh、source权重始终冻结。唯一目标是真实全H50随机tau的动作FM，不新增KD、RL、参数重建或保持loss。
 拟沿用C0/S0的fit28 allowlist、demo0..45、同teacher跨episode规则、4tasks/update、21主+7额外queries、
 原两组权重及同一事件流前630宏步（70560queries、2520教学事件）。教师行动只作为query输出后的损失标签。

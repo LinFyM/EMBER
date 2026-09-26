@@ -1,6 +1,6 @@
 # EMBER task plan
 
-## 当前：首帧学习已裁决；推进有界的执行条件读出工程准备（2026-09-26）
+## 当前：首帧学习已裁决；有界Reader工程合同等待新执行会话（2026-09-26）
 
 目标保持：合法视频/语言经原生知识读取，一次生成完整LoRA；绝对闭环能力超过强MT-BC，正确教学有益且保持已有能力。
 当前C0完整400为correct120/other132、语言121，没有稳定旧大缺口或已建立的视频增量。
@@ -8,7 +8,8 @@
 首帧、中心化及零调制的交互延迟了S0过程路径学习，故这不是信息必要性或顺序理解的证明；不为修参照另开循环。
 
 **唯一active**：[原生条件读出设计](docs/designs/native_conditional_reader_design.md)的§4工程准备，
-机器合同`configs/native_conditional_reader_v1/engineering_spec.json`。实际执行者和Queue接手见progress。
+机器合同`configs/native_conditional_reader_v1/engineering_spec.json`。Owner明确新session尚未创建，等待其指定；
+旧Sol收到Queue后明确未启动实现/GPU，不再使用该旧接收方。真实派发来源与后继身份见progress。
 各模式4宏步及2→4 world2恢复、一次最长condition profile、6条train-only接口episode；
 上限0.75完整GPUh、2GiB新data0、768MiB代码。完成后主讨论审阅，不自动接正式630/held/第二臂/KD/400。
 

@@ -1,17 +1,23 @@
 # EMBER progress
 
-## 当前状态：S0已独立验收；仅原生条件Reader工程准备激活（2026-09-26）
+## 当前状态：S0已独立验收；Reader工程合同已准备，按Owner指令等待新执行会话（2026-09-26）
 
 Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前已完成S0整批原件核验、特征机制审查及后继裁决；
 长期目标仍为一次生成完整LoRA的绝对能力超过强MT-BC、有益视频贡献和能力保持，未发现统一根因或验证修复。
 
 **唯一active design**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **仅§4工程准备**；
 机器合同`configs/native_conditional_reader_v1/engineering_spec.json`，study `native_conditional_reader_engineering_20260926`。
-执行者Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`；主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
+主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`；**新执行者尚未创建/指定，当前没有可启动本合同的接收方**。
+旧Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`已按Owner迁移安排停止接单，不再向其派发。
 范围：实现joint Reader R_V/R_L共享接口，各4宏步及2→4 world2恢复、一次最长视频condition反传/profile、
 6条train-only canonical接口episode；上限0.75完整GPUh/2GiB新data0/768MiB代码，本批最多6物理卡。
 新正式630训练、held、第二臂完整训练、蒸馏、400、S0修复或续训均未激活。工程完成主动Queue，主讨论验收后裁决。
-本轮以Queue派发具体工程任务；精确接受/接手回执将在下方记录，未核实前不称已经开工。
+11:11:11 UTC曾将合同2cd9a9bf以Queue送达旧Sol，回执01a0dd69-74ca-7500-ac9d-aa33641b94ed；
+11:11:46核对正文进入turn01a0dd69-74cb-77d1-b890-e442c1f85050。进一步核对时才发现迁移记录，
+11:12:58确认旧Sol明确拒绝在旧会话启动实现/GPU，turn已interrupted、会话idle；这不是已执行的工程批次。
+Owner随后在主讨论明确：“新session我还没创建，所以你等一下。”因此等待准确的新会话身份，不自动创建、重发或改投。
+正文、接受和未启动回复在`.codex/tmp/native_conditional_reader_engineering_20260926/`。
+新会话登记后再按同一有界合同准确派发；不重复S0，也不把旧Queue回执当新的执行授权。
 
 ### S0完成与科学判断
 

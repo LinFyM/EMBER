@@ -1,6 +1,6 @@
 # 原生执行查询读取教学内容：候选学习比较
 
-2026-09-26。**仅§4工程范围已登记；Owner要求等待尚未创建的新执行会话，目前未启动。**
+2026-09-26。**仅§4工程范围已登记；新科学主讨论已接管，等待Owner指定新执行会话，目前未启动。**
 §3/§5的正式学习和评测仍是准备稿，禁止自动接续。
 当前机器合同为`configs/native_conditional_reader_v1/engineering_spec.json`，实际派发状态见progress。
 本稿把[特征到算子的机制分析](../analyses/feature_to_operator_mechanism_20260926.md)落实到分阶段比较；

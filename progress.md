@@ -72,6 +72,14 @@ gate与完整flow执行。Reader之前的Source h与完整多层LoRA的h不天�
 已把设计§3/§5原有候选落实为`configs/native_conditional_reader_v1/learning_spec.json`准备稿，尚未激活；
 等待完整工程原件及分项成本后才裁决630学习，未新增派发或GPU授权。
 
+工程中R_V fresh4已产生448真实query；主讨论只读原始四行metrics核对每步112 query，reader从1、
+Text/VL/Action/Core/Procedure从2出现有限非零梯度，完整工程尚未验收。恢复段发生卡点后，主讨论核实
+`_restore_train`错误要求父日志行数恰好等于checkpoint记录：已完成4步的父run从checkpoint2恢复时必然拒绝合法前缀。
+已用Steer送至当前执行turn `01a0dd8a-42f1-7260-a167-32b51ccabfd9`，执行者在同轮确认此问题并准备修正前缀校验与跨rank一致退出。
+正文/接受回执在`.codex/tmp/native_conditional_reader_engineering_20260926/resume_review_steer*`。
+实际挂起位置尚未由完成的恢复验证确定，不把静态发现称唯一运行根因；有效fresh4保留，失败时间计入原0.75 GPUh，
+如余额不足由执行者回报具体缺项与最小补足成本后主讨论裁决。当前无630学习授权，完整结果或阻塞仍由原Queue回报接续。
+
 ### Owner要求的两类循环回顾与决策承诺
 
 本次沿7–9月研究索引、46组审计及相关完整论证，复核连续架构修订、G1/G2/G3及bank/PNBTT局部过关、

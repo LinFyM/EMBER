@@ -333,7 +333,9 @@
       17,
       22
     ],
-    "qualification_boundary": "fixed diagnostic-held8 is not official coverage validation; coverage MTBC155/400 is not a paired reference"
+    "qualification_boundary": "fixed diagnostic-held8 is not official coverage validation; coverage MTBC155/400 is not a paired reference",
+    "historical_Source_B": "language_content_path_fixed400_20260926; contextual frozen reference, not a new Reader-matched source or language run",
+    "Source_retention": "Only report descriptive success-set overlap after auditing source checkpoint, task/init, env/policy RNG and execution contract of existing rows; explicitly retain cross-run provenance. Do not claim fresh paired significance or substitute this for matched R_L. If a panel lacks an audited reference, state that gap; no extra source episodes are authorized here."
   },
   "decision": {
     "preexisting_investment_rule": "design section5 frozen before S0 scores; applied numerically below; not statistical qualification or checkpoint selection",

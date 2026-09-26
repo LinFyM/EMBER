@@ -19,7 +19,7 @@
   "first_stop_update": 270,
   "checkpoint_updates": [90,180,270],
   "lora": {"common_rank":128,"conditional_rank":7,"deploy_rank":135,"targets":38,"alpha":135,"conditional_target":"model.action_out_proj"},
-  "optimizer": {"name":"AdamW","lr":0.0003,"betas":[0.9,0.95],"eps":1e-8,"weight_decay":0.0001,"clip":1.0,"warmup_updates":150,"cosine_updates":1200,"floor_lr":0.00001},
+  "optimizer": {"name":"AdamW","lr":0.0003,"betas":[0.9,0.95],"eps":1e-8,"weight_decay":0.0001,"clip":1.0,"warmup_updates":150,"decay_updates":1200,"floor_lr":0.00001},
   "evaluation": {"role":"validation","arm":"correct","state_ids":[0,49],"video_schedule_seed":20260911,"episodes_per_mode":400,"full_state_id":0},
   "future_budget": {"gpu_hours":9,"data1_peak_gib":8}
 }

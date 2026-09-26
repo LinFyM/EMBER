@@ -16,7 +16,9 @@ from ember.pi05_eval.registered_passive_capture import (
 )
 from ember.lora import identity_lora_state, validate_lora_state
 from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
-from ember.writer.conditional_velocity import ConditionalVelocityOperator, compile_velocity_state
+from ember.source_sft.control import clamped_lr_multiplier
+from ember.writer.conditional_velocity import (ConditionalVelocityOperator,
+                                               VelocityTeachingEncoder, compile_velocity_state)
 from ember.writer.conditional_velocity_bank import (_expected_episodes, canonical_selection,
                                                     episode_evidence, registered_capture,
                                                     PASSIVE_TAG, BANK_KIND)
@@ -93,6 +95,23 @@ def test_fresh_modes_share_common_readout_u_text_core_and_exclude_l_unused_param
                                        None, None, {}, torch.device("cpu"), "L")
     condition, raw, sampled = language_runtime.condition(no_video, 3, 7, "exact language")
     assert condition == ("tokens", "mask", "span") and raw is None and sampled == 0
+
+
+def test_language_reads_same_core_memory_twice_with_native_token_positions():
+    text = torch.randn(1, 3, 256)
+    core = text + 1
+    valid = torch.tensor([[True, True, False]])
+    owner = SimpleNamespace(
+        mode="L", procedure=None,
+        semantic_encoder=SimpleNamespace(encode_text_only=lambda *_: (text, valid)),
+        semantic_core=SimpleNamespace(language_only=lambda values, mask: core),
+    )
+    first, first_mask, second, positions, second_mask = VelocityTeachingEncoder.encode_language(
+        owner, None, None, None, None,
+    )
+    assert first is second is core
+    assert first_mask is second_mask is valid
+    assert positions.tolist() == [[1, 2, 3]]
 
 
 def test_coverage36_events_teacher_query_and_resume_identity(tmp_path):
@@ -187,5 +206,11 @@ def test_official_pairing_and_clock(tmp_path):
                                            suite="libero_spatial", task_id=3,
                                            init_state_id=first["init_state_id"])
     setting = spec["optimizer"]
-    assert _lr_multiplier(149, setting) == 1.0
-    assert _lr_multiplier(1349, setting) == pytest.approx(1 / 30)
+    assert setting["decay_updates"] == 1200 and "cosine_updates" not in setting
+    for step in (0, 149, 150, 675, 1200, 1201, 1349):
+        assert _lr_multiplier(step, setting) == clamped_lr_multiplier(
+            step, warmup=150, decay=1200, peak=3e-4, floor=1e-5,
+        )
+    assert _lr_multiplier(149, setting) == pytest.approx(150 / 151)
+    assert _lr_multiplier(150, setting) == 1.0
+    assert _lr_multiplier(1200, setting) == pytest.approx(1 / 30)

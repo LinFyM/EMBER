@@ -114,7 +114,7 @@ class VelocityTeachingEncoder(torch.nn.Module):
                                  dtype=torch.long)[None]
         if positions.shape != valid.shape:
             raise ValueError("native task-token positions changed")
-        return core, valid, text, positions, valid
+        return core, valid, core, positions, valid
 
 
 class ActionRowReadout(torch.nn.Module):

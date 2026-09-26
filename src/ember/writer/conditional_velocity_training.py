@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import socket
 import subprocess
@@ -24,6 +23,7 @@ from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenize
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import (initialize_deferred_process_group, initialize_distributed,
                                       load_policy, seed_everything)
+from ember.source_sft.control import clamped_lr_multiplier
 from ember.writer.conditional_velocity import ConditionalVelocityOperator
 from ember.writer.conditional_velocity_data import COVERAGE_TASKS, VelocityTrainingData
 from ember.writer.function_credit import paired_functional_credit
@@ -58,7 +58,7 @@ def contract() -> tuple[dict, dict]:
                  "targets": 38, "alpha": 135, "conditional_target": "model.action_out_proj"},
         "optimizer": {"name": "AdamW", "lr": 0.0003, "betas": [0.9, 0.95],
                       "eps": 1e-8, "weight_decay": 0.0001, "clip": 1.0,
-                      "warmup_updates": 150, "cosine_updates": 1200, "floor_lr": 0.00001},
+                      "warmup_updates": 150, "decay_updates": 1200, "floor_lr": 0.00001},
         "evaluation": {"role": "validation", "arm": "correct", "state_ids": [0, 49],
                        "video_schedule_seed": 20260911, "episodes_per_mode": 400,
                        "full_state_id": 0},
@@ -208,12 +208,10 @@ def _job(runtime: VelocityRuntime, data: VelocityTrainingData, event: dict,
 
 
 def _lr_multiplier(step: int, setting: dict) -> float:
-    peak, floor = setting["lr"], setting["floor_lr"]
-    warmup, cosine = setting["warmup_updates"], setting["cosine_updates"]
-    if step < warmup:
-        return (step + 1) / warmup
-    progress = min(1.0, (step - warmup + 1) / cosine)
-    return (floor + (peak - floor) * 0.5 * (1.0 + math.cos(math.pi * progress))) / peak
+    return clamped_lr_multiplier(
+        step, warmup=setting["warmup_updates"], decay=setting["decay_updates"],
+        peak=setting["lr"], floor=setting["floor_lr"],
+    )
 
 
 def _optimizer(state, spec):

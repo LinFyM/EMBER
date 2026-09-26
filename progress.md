@@ -24,6 +24,13 @@ gpu01同节点配对卡承载他人持续高负载，先用gpu02/6,7 world2训�
 两臂当前按顺序推进，原2–3h wall为并行外推，当前不能作为完成承诺；9完整GPUh上限和两臂各400合同不变。
 launch_contract的`python`字段实际误填Torch版本2.11.0+cu128，最终原件验收须将Python/Torch版本分别纠正；
 这是轻量元数据问题，不改变运行环境、模型或冻结commit。
+V训练21:33:42–22:49:58 UTC正常exit0，完整4576.321秒×2卡=2.5424006 GPUh。
+22:51–22:54 UTC主讨论在进程退出后核完270行metrics：30,240query，36task各30次、30条不同teacher，
+每次28条不同且跨episode query、action offset1；source_trainable=0，90/180/270 ECP目录齐全。
+记录内梯度/损失均finite；公共/readout从第1步、U和教学路径从第2步活动，属于训练执行证据。
+实际宏步均值16.795/中位16.352/最大24.153秒，最长102 sampled frames已在本批真实训练出现。
+独立只读核验为`.codex/tmp/conditional_velocity_learning_20260927/V_completed_training_review.json`。
+剩余完整预算6.4575994 GPUh；L、物化及两组400仍待执行回报，目前没有本方法闭环分数或科学收益判断。
 主讨论直接等待这一批的完成/阻塞事件，不另排自通知，不按固定间隔读取训练日志或追加探针。
 
 ### 刚完成：正式CPU实现、独立审阅与两项合同修正

@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_native_conditional_reader_engineering_v1",
   "study_id": "native_conditional_reader_engineering_20260926",
-  "status": "authorized_engineering_pending_dispatch",
+  "status": "engineering_dispatched_and_accepted",
   "design": "docs/designs/native_conditional_reader_design.md#4-先完成的工程准备范围",
   "coordinator_thread_id": "01a0dd74-4c71-7c82-8629-8333ef74dfdd",
   "executor_thread_id": "01a0dd6c-f2e5-7971-821a-56766e1c0f22",

@@ -1,24 +1,24 @@
 # EMBER task plan
 
-## 当前：工程验收完成，冻结完整V/L学习的首批合同（2026-09-27）
+## 当前：完整V/L首批比较已集成，进入正式launch准入（2026-09-27）
 
-条件速度算子是一个可精确编译的完整候选：共同rank128 LoRA学习自身反馈特征，合法教学生成R，
-通过真实末端速度投影合成为唯一rank135 LoRA。β/U/R/教学模块共同FM；不是继承MT-BC或部署Reader。
-工程commit50559080的原件已经主讨论独立验收：6宏步/672query、恢复/长视频/两条接口，完整0.12696 GPUh。
-这没有提供能力、视频收益或稳定性证据。函数限制及近邻反例见机制分析§29–30。
+条件速度算子以共同rank128 LoRA学习自身反馈特征，合法教学生成R，经真实末端速度投影合成唯一rank135 LoRA。
+工程已验收；CPU正式入口及两项事前合同纠正已由主讨论独立审阅并集成18b7e4b7，22项相关检查通过。
+这仍未提供闭环能力、视频增量或稳定性证据；方法假设及容量限制见机制分析§29–30、findings§174–176。
 
-唯一active design是`docs/designs/conditional_velocity_operator_design.md`；当前执行边界仅§9的CPU实现/集成准备。
-预计45–75分钟、90分钟判断上限，唯一指定执行者，主讨论独立核对和main集成后再冻结GPU commit。
-正式计划已具体化：V/L各270更新、同一coverage36与纯28-query FM、共享参数匹配初始化、同一3e-4/150/1200时钟，
-各official400；完整9 GPUh硬限、data1峰值8GiB。每臂30,240query，不加载工程/MT-BC权重，不跑额外smoke或模块探针。
+唯一active design为`docs/designs/conditional_velocity_operator_design.md` §6–10，首批V/L各270更新、各official400。
+同一coverage36、4×28纯跨episodeFM、匹配共同参数初始化/事件/RNG，直接复用MT-BC的150/1200学习时钟。
+每臂30,240query，不加载工程或MT-BC权重。完整9 GPUh、data1峰值8GiB，预计5.5–8.8 GPUh/约2–3h wall。
+实际launch须指定执行者从clean pushed main detached树完成live quota/GPU准入；回执和真实运行只看progress。
 
-270是第一完整方法读出，下一预期450尚未授权；先看真实公共能力、V/L配对得失、与strong MT-BC155的差距及覆盖，
-再决定是否沿同一轨迹到450。不能把首点低于155当理论不可能，也不能以尚未充分学习为借口改架构/辅助/采样或无限续训。
-后继选择必须single-checkpoint paired400、相邻保持及same-task-other，最终顺序controls不进入训练或本轮设计。
-共同/条件常量项可互相转移，故不用训练后R置零判断视频；L是真正训练的语言路径，自己的执行观测/state仍完整。
+第一点用于完整方法判断，预期450节点仍需主讨论看270全结果后裁决；不能由首点低于155断言理论不可能，
+也不因此改架构、aux、rank、seed、采样或无限续训。strong MT-BC155/Source51原件复用，C0 120/121不混协议相减。
+后继最终资格需single-checkpoint paired400、相邻保持、same-task-other及冻结后controls；当前Test、RL和旧实验保持关闭。
+R置零不识别视频贡献，256维U也不排除训练task记忆；只凭内部梯度、loss或紧凑输出不予科学通过。
 
-主讨论现在将完整比较做成可执行合同并核验实现，不再自排旧同视频/坐标推导；派发与完成回执只看progress。
-所有新增data1，旧data0只读；Reader仍撤回，S0和旧实验不重跑，旧主讨论/旧Sol不联系。
+源码剩余旧native/helper内部依赖暂留，旧generic CLI和工程case/profile出口已退役；主讨论在首次完整裁决时
+随本候选保留/退役处理其生命周期，不为无关清理阻塞当前完整比较。旧Source-SFT authority测试的既有失败单独记录，
+不宣称全库通过。所有新增data1，指定执行者不变，不联系旧主讨论或旧Sol。
 
 **刚完成§28/findings§173，约31分钟，原估30–40分钟**：区分图像伺服、物理效果与参数到动作三个导数，
 明确腕部相机在接触前的作用联系，以及外部方法不满足EMBER的信息/部署合同。

@@ -4,6 +4,14 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-27：完整V/L实现集成，首批学习启动范围冻结
+
+CPU交付7f5374a7、事前合同修正18b7e4b7已由主讨论独立验收并集成main，相关22项检查通过。
+学习时钟直接复用强MT-BC的150warmup/绝对1200终点；L两次读取同一真实Core语言memory。
+旧generic训练/物化出口及工程case/profile CLI退役，共享native/helper内部依赖的生命周期由主讨论在首次完整裁决时处理。
+首批V/L各270更新和各official400、9完整GPUh硬限，尚无科学收益结论；真实启动/原件位置见progress。
+既有Source-SFT配置authority测试失败及本轮实现边界见findings§177，不宣称全库通过。
+
 ## 2026-09-27：条件速度算子工程独立验收，冻结首批完整学习比较
 
 工程commit `50559080`：6宏步/672query、一次长视频反传、两条train-only接口轨迹，四次启动均exit0，

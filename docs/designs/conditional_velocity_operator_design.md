@@ -2,7 +2,8 @@
 
 2026-09-27。科学依据与最近完整历史比较见[机制分析§29](../analyses/feature_to_operator_mechanism_20260926.md#29-共同学习状态反馈基直接编译条件速度场一个有明确代价的完整候选)。
 这是候选及其渐进合同，不是已验证修复。是否实际启动只看progress；§4–5工程已完成，
-§6–9冻结后继学习设计，但当前只授权CPU实现和集成准备，正式GPU启动还须主讨论核对交付commit并登记。
+§6–9冻结后继学习设计，CPU实现和主讨论独立核验已完成；§10登记首批启动范围。
+实际排队、冻结commit、资源准入和运行状态只看progress及launch原件。
 
 ## 1. 假设、输出与信息墙
 
@@ -171,7 +172,8 @@ official validation为`[3,6,11,16,23,26,31,39]`，Test继续封闭。C0 diagnost
   事件与GPU分配、物理microbatch和恢复顺序无关。保存sampler游标与逐rank RNG，不要求低位/逐bit一致。
 
 全部活动参数使用同一个AdamW：peak lr3e-4、betas(.9,.95)、eps1e-8、wd1e-4、clip1；
-沿强MT-BC已有scheduler owner采用150更新warmup、1200更新cosine到1e-5后保持floor。
+直接复用强MT-BC的`source_sft.control.clamped_lr_multiplier`：150更新warmup、绝对step1200到1e-5后保持floor。
+沿原函数step0计数，warmup乘数为(step+1)/151，step150达峰；不解释为warmup后再衰减1200步。
 V/L共用该优化时钟，不新增分支LR、尾部放大、公共底座课程或训练中配方切换。
 这沿用有实际成功记录的普通FM量级，不从四步loss选择。4-task与MT-BC的36-task宏步不同，
 相同update数不等于相同查询曝光或优化轨迹；旧Writer不同loss/时钟也不构成单因素架构对照。
@@ -235,7 +237,7 @@ L尚无本模型实测吞吐；预算先按不快于V的保守输入计，不把
 使用紧凑bank约两份40MiB公共项加R/manifest；完整训练checkpoint及16条full轨迹是主要增长，不能生成400份公共LoRA副本。
 不复制大source/数据、不写data0；工程原件保持原路径，不改写为正式结果。
 
-**当前先派CPU实现/集成准备，估45–75分钟、90分钟判断上限，无GPU许可**：
+**已完成的CPU实现/集成准备：原估45–75分钟、90分钟判断上限，当时无GPU许可**：
 从工程分支纳入最新main文档，保留单一参数合成owner，加入真实L路径、上述sampler/优化时钟、紧凑bank和官方评测接入。
 正式入口替换工程固定4task/4步入口，退役其专用case/profile CLI，工程历史由`50559080`与原件保存。
 不得把旧CompleteLoRAWriter/Compiler作为另一可选输出路径；共享native/C/P/FM/ECP/环境工具继续复用。
@@ -245,6 +247,40 @@ L尚无本模型实测吞吐；预算先按不快于V的保守输入计，不把
 CPU验证实际合成代数（含非零公共项）、V/L共享初始化与合法信息路径、36-task等权事件/跨episode/恢复、
 紧凑bank重建与官方episode配对。只核metadata/CPU合成，不跑新模型或环境probe。
 
-执行者完成CPU差异后一次回报；主讨论独立审阅并集成推送main，明确冻结commit后另发启动指令。
-CPU实现交付不等于允许GPU，文档中的后继规模也不代替launch记录。正式train/eval必须来自该clean pushed detached commit，
+CPU交付不自动允许GPU；主讨论已经独立审阅、集成并在§10登记后继启动。文档规模不代替launch记录。
+正式train/eval必须来自另行明确的clean pushed detached commit，
 并依formal-training-launch登记精确命令/环境/数据/配置/资源。整体Owner授权有效，无需再向Owner索取本范围内许可。
+
+## 10. 首批启动登记（2026-09-27）
+
+CPU交付`7f5374a7`已独立核对；随后修正学习率函数和L第二Value两处事前实现偏差，最终源码为`18b7e4b7`。
+L两次均读同一Core语言memory，位置仍为native真实task token位置；优化时钟直接复用强MT-BC owner。
+主讨论已经将隔离分支fast-forward集成main，相关22项CPU检查通过；正式冻结采用本登记随后的clean pushed main commit。
+没有使用工程权重，没有读取本模型验证结果来修改图/超参，尚无新的能力收益结论。
+
+准许唯一指定执行者按§6–9完成V/L各270更新、各correct400，随后一次完整回报并停止新增GPU；
+不自动进入450/other/最终controls/RL/新架构。启动前按formal-training-launch保存一个完整launch记录，
+包括精确命令/环境、source与数据路径、mode/事件/optimizer、冻结commit、实际GPU及storage预算。
+先查strg01 data1独立quota与共享容量，再建本批run root；每次launch同时live核gpu01/02和本项目总卡数。
+训练默认microbatch28、每臂同节点world2；source基础权重冻结，fresh初始化，无模型挑选。
+
+两臂可在不同的同节点world2组并行。已完成L可先物化/评测，同时V继续固定训练；
+评测结果不能影响尚在运行的固定事件或参数，主讨论统一验收完整批次。依实际余量选卡和共驻，
+不为固定util阈值或凑齐预定卡数无故等待，不干扰其它任务；硬件与全项目总卡数仍服从AGENTS。
+评测优先复用已证明有效的每GPU多replica、每replica8-env动态批量配置，在峰值余量/CPU吞吐许可时取2–3replica，
+不将命令模板里的单replica当吞吐最优。物理并行变化不改变canonical行/随机流/400数量。
+
+完整9 GPUh和8GiB硬限不变。按launch/退出事件记录实际卡时和失败，必要的超时守护按剩余完整预算设置，
+不靠频繁扫描共享metrics估计预算。正常运行持续等待退出；故障、资源变化或预算投影越界才做针对性检查。
+若不能在预算内完成，保留已有checkpoint/原件并明确回报，不少算加载/失败、不缩成80行、不以部分面板选模型。
+失败仅修复明确工程合同违例，不据负分改模型、seed、rank、学习率或辅助项。
+
+正式运行入口为`scripts/train_writer.py`和`scripts/materialize_writer.py`；工程case/profile入口已由Git保留并退役。
+图/合成、数据事件、ECP训练、bank/官方适配各有一个owner。旧generic CLI已经关闭，
+旧model的native packing方法与旧materialization的selection/file/source工具暂为共享依赖，主讨论负责在本候选首次完整裁决时
+随保留/退役决定处理剩余内部依赖；不新增其调用，不将旧Compiler恢复为fallback。当前不做无关全树清理。
+
+验证限制：扩展Source-SFT测试`test_formal_mtbc_resolves_four_cards_only_for_explicit_checkpoint_migration`
+在加载历史MT-BC配置时报告LoRA/source-base authority不一致。主讨论在集成前main `2a34b5dd`独立复现同一错误，
+相关旧配置/contract源码无本轮diff；新训练只复用纯scheduler函数，并不调用该旧配置loader。
+该既有问题留有记录，不因此改写历史MT-BC权威或重跑旧实验，也不宣称全库测试通过。

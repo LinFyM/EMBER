@@ -1,31 +1,44 @@
 # EMBER progress
 
-## 当前状态：条件速度算子工程已验收；完整V/L学习先做CPU集成准备（2026-09-27）
+## 当前状态：条件速度算子完整V/L比较已集成；首批GPU按冻结合同派发（2026-09-27）
 
-### 当前：学习设计冻结，尚未启动正式GPU
+### 当前：主讨论验收源码，首批270/400启动范围已核定
 
-唯一active design为`docs/designs/conditional_velocity_operator_design.md`：§4–5有界工程已完成，
-§6–9为新的完整学习合同，**当前只授权CPU实现和集成准备**，不由文档规模自动启动GPU。
+唯一active design为`docs/designs/conditional_velocity_operator_design.md` §6–10；§4–5工程已完成。
 主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main集成；
-唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责隔离实现与具体实验。Reader撤回，旧实验不恢复。
+唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责具体实验。Reader仍撤回，旧实验不恢复。
 
-已冻结首批：V/L fresh共同FM、同一coverage36、每宏步4×28纯跨episode查询、同一事件/RNG与3e-4学习时钟，
-各到270更新/30,240query，随后各official validation400；不读Test或held teacher标签。
-首批完整GPU硬限9h、预期5.5–8.8h用量/冻结后2–3h wall；data1新root峰值8GiB，代码768MiB。
-预计下一判断节点450尚未授权；首点不能证明稳定性或视频必要性，也不以低于155直接宣布理论失败。
-强MT-BC155/Source51原400复用，新候选与C0 diagnostic-held120/121不相减归因。
+首批V/L fresh共同FM，同一coverage36、每宏步4×28纯跨episodequery、匹配初始化/事件/随机流；
+每臂270更新/30,240query，随后各official validation400。strong MT-BC155/Source51原400只读复用，Test封闭。
+总硬限9完整GPUh、data1原件8GiB/代码768MiB；外推约5.5–8.8 GPUh、冻结后约2–3h wall，非完成保证。
+启动必须来自本次集成后的clean pushed detached commit，并重新核data1独立quota/两节点live卡数与余量。
+数据路径为`/data1/user/ymdai/ember_runs/conditional_velocity_operator_learning_20260927`。
+首批不自动450/other/最终controls，不混RL/蒸馏、不加模型探针；完整比较后回报并由主讨论裁决。
+本条记录尚不表示GPU已运行，实际派发/launch原件在冻结commit交付后补记。
 
-本次CPU准备预计45–75分钟、90分钟判断上限：真实语言路径、共享初始化、36-task sampler/时钟、
-精确紧凑bank及既有canonical evaluator接入；正式入口替换工程专用入口，旧Compiler不保留为fallback。
-主讨论独立核对CPU交付后集成推送main，登记clean detached commit，再另发首批GPU启动指令。
-合同已随main `c3757fc9`推送，20:29 UTC通过官方codex queue实际派发CPU任务；exit0，
-回执`01a0df68-b837-7803-8aa9-a54d18394164`，原文/回执在
-`.codex/tmp/conditional_learning_review_20260926/conditional_velocity_preparation_{request,queue_receipt}.txt`。
-单次compact快照核实对应新turn `01a0df68-b83a-75b2-bb05-9139d970c00e`已inProgress；GPU仍未授权。
-主讨论继续完成该完整学习程序的事件/资源与比较核验，不自排同类公式或历史审计任务。
-主讨论已用manifest和固定seed完成CPU事件核验：270每task30条不同teacher/840query，450为50条/1400query，
-全部跨episode；首次四任务/teacher为32/18、20/37、96/25、35/49。估计约2.433训练GPUh/视频臂仅作成本输入，
-不改9h上限。小型原件为`.codex/tmp/conditional_velocity_learning_20260927/event_cost_review.json`；没有读取模型/held标签或启动GPU。
+### 刚完成：正式CPU实现、独立审阅与两项合同修正
+
+执行者20:29–21:11 UTC约42分钟完成CPU准备（原估45–75分钟），隔离交付7f5374a7，未运行GPU/模型/环境。
+准备Queue `01a0df68-b837-7803-8aa9-a54d18394164`及完成Queue `01a0df8f-3fac-77d0-a12e-7b01d04d85df`已消费。
+主讨论读完图/合成、36-task采样、真实FM/VJP、紧凑bank、官方batch/capture/配对接线，发现两处事前合同偏差：
+自写scheduler把1200当warmup后的时长；L第二Value返回Core之前的text。
+21:15 UTC派发有界CPU纠正（Queue `01a0df92-b0f4-71c3-862e-3a2df21d613a`），约3.4分钟完成，源码18b7e4b7。
+纠正完成Queue `01a0df95-b730-7670-9f80-885fe2938d67`已核并消费；迟到消息不重跑。
+
+现在直接复用MT-BC的clamped_lr_multiplier，step150达峰、绝对step1200到floor；L两次读同一Core语言memory。
+22项针对性CPU检查通过，文档/代码diff检查通过，隔离分支已fast-forward集成main，待本条Git交付后冻结launch。
+一次扩展Source-SFT旧配置authority测试失败，主讨论在集成前2a34b5dd上独立复现；相关旧配置/loader无本轮diff，
+新路径不调用该loader。此限制已记设计§10，不宣称全库测试通过，不改写历史权威或重跑MT-BC。
+
+canonical训练/物化CLI已切换；工程case/profile CLI由50559080保留并退役，旧generic CLI关闭。
+现有native packing/selection/file/source共享内部依赖暂留，主讨论在本候选首次完整裁决时处理其后续生命周期，
+不得恢复旧Compiler fallback。新batch adapter复用BatchedLoRAInference，不复制环境/evaluator。
+
+主讨论已完成CPU事件核验：270每task30条不同teacher/840query，450为50条/1400query，全部跨episode；
+原件`.codex/tmp/conditional_velocity_learning_20260927/event_cost_review.json`。首批教学最长102帧，全训练池最长105，
+均超工程71帧，正式真实峰值尚未验证。16.8秒宏步与简单frame-cost外推仅供预算，不是收益证据。
+机制分析§30.5补清256维U可容纳36个任意固定7行末端矩阵，不能从紧凑表示推出可迁移控制规则。
+因此后继坚持完整held V/L/strong MT-BC比较，不做内部R置零、瓶颈/正则补丁或局部Gate。
 
 ### 刚完成：工程原件与科学边界独立验收
 

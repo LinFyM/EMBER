@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：736条已独立复核、关闭Cplus；固定C0完整覆盖合同已登记待Queue（2026-09-26）
+## 当前状态：736条已独立复核、关闭Cplus；固定C0完整覆盖已Queue，Sol确认接手（2026-09-26）
 
 Active design：[language_content_path_fixed400](docs/designs/language_content_path_fixed400_design.md)，
 机器规格`configs/language_content_path_fixed400_v1/experiment_spec.json`；它只授权1280条有限补评，不授权新训练。
@@ -17,7 +17,12 @@ C0/Cplus正确24/16、另一正确30/19（各80），seen均27/64；保持预测
 640新bank、320既有B引用、16新full、全行T+1，引用原四格320行组成各400。
 预算独立8 GPU-hours/6GiB新增data0/768MiB代码；CPU范围/来源/调度改动可用新E，科学GPU计算不变，
 事前允许原行F/新行E并逐行登记，不热改F或为单提交形式重跑有效行。完成主动Queue并停止新增计算。
-本段尚未记录Queue回执，不把登记当已接手；派发与送达随后在此登记。
+设计/spec及裁决已在ab2dd647推送。2026-09-26 01:28:40 UTC（北京时间09:28）以Queue派给上述实际Sol，
+回执`01a0db54-26dd-7203-a18e-a1ebf9716939`。01:29:51核对完整正文进入新turn
+`01a0db54-26df-71f3-ad41-4b4544a7f43e`，Sol明确回复按fixed400、隔离实现、只补states10..49和退出事件接续。
+正文/接受/送达保存在本仓`.codex/tmp/language_content_path_fixed400_20260926/`。
+原生即时状态查询未返回，复用已核实app-server作一次有界只读核验后通过官方CLI入队；未重发或创建任务。
+当前已接手实现，不把接手当正式GPU启动；工程/实时资源验收通过后同合同直接接续，完成后回主讨论独立裁决。
 
 ### 已完成两臂学习的ready与派发记录
 

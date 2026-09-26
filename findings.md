@@ -3683,6 +3683,7 @@ C0是重新训练，旧C→新C0为6得4失，不能把这种变化称同policy�
 但不证明超过公平语言参照或真实时序必要。私有完整Writer14/20对共享3/20有可学习性正例；
 当前更匹配private Writer16/32、freeAB14/32，以及保留原时钟的task-gradient隔离4/16对正常7/16，
 阻止直接归罪输出容量或“删其它task梯度就能修复”。这些结果未被本轮阴性覆盖。
+这些历史实验的Source、数据和任务范围不同，不拼成当前同一匹配矩阵，也不把旧私有拟合移植为当前视频增益。
 原始来源分别在`runs/analysis/v52_core_procedure_cross_20260918/`、
 `runs/analysis/pi05_ecp_prw_complete_single_task_20260906/`和
 `/data0/user/ymdai/ember_runs/overnight_root_cause_20260922/{capacity_route_20260923,task_interference_probe}/`。

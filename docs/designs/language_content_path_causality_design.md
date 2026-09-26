@@ -1,6 +1,7 @@
 # Language content path：匹配学习与能力保持干预
 
-2026-09-26。**CPU构造已由主讨论独立复核，登记有界实现及执行。**
+2026-09-26。**本批两臂及736条已完成、主讨论独立复核；Cplus未兑现保持预测，分支关闭，见findings§153。**
+下文保存事前合同；后续固定C0补评另见`language_content_path_fixed400_design.md`，不从本文件恢复学习。
 机器规格为`configs/language_content_path_causality_v1/experiment_spec.json`。
 是否active、实际派发与实现提交只看progress。上一批flow诊断保持撤回。
 

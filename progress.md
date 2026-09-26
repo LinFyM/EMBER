@@ -1,9 +1,30 @@
 # EMBER progress
 
-## 当前状态：fixed400已独立验收；登记冻结E/H逐帧变化的特征层诊断（2026-09-26）
+## 当前状态：原生特征批次独立验收完成；登记同预算首帧内容学习参照（2026-09-26）
+
+Active design：[learned_initial_content_causality](docs/designs/learned_initial_content_causality_design.md)，
+机器规格`configs/learned_initial_content_causality_v1/experiment_spec.json`。当前合同已定稿，尚未派发；下方派发记录更新后为准。
+执行者Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`；主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
+
+已完成study `/data0/user/ymdai/ember_runs/native_feature_change_causality_20260926`，E=eb9a373d，C0训练F=dca1b550。
+主讨论核对原8面板results/合同、全部320 trace/trajectory、80×4特征和共同seed/首态，重算六比较与20000次bootstrap；
+`coordination/main_recheck.{py,json}`通过。20/24/20/27，各80；完整相对首帧9得2失、净+7，区间[2.5,16.25]pp，findings§155。
+尚不能把冻结损伤当作超过learned参照或操作语义已经获得；不追加该四格400。
+FrameRead中心内容选择与BF16权重和项已分开；原环境动作误标OSC已CPU更正，`coordination/action_units_amendment.json`保存。
+原GPU数据不改；三remaining面板外层误记节点已以实际UUID/双节点快照核实，E1H1两次零行准入拒绝保留。
+总GPU1.561389小时，data0约4.594GiB、代码505.56MiB，在原限内；下批要求启动前实际host/node/UUID绑定。
+
+新合同只新增S0 fresh630，原C0@630及F下三份银行冻结复用。S0原生E/H只保留每视频首帧，I同步，原时钟与全部模块仍在，
+反传对广播位置求和。保持fit28/70560 queries、world2、optimizer/scheduler/事件流；不加a*q、辅助loss或公共底座课程。
+两模型各held correct80/other80/seen64，448新闭环、224新S0bank/224旧C0引用、24full/全T+1，pilot4计入总数。
+最多9完整GPU-hours、10GiB新data0、768MiB代码；所有工程/失败启动计入，预算预计越界则停新增阶段回报。
+实际实施、配额/双节点准入、精确命令由Sol登记；技术通过即可按固定合同启动，完成主动Queue，停止新增试验。
+不把固定630称充分收敛，不从screen选择方法，不自动续训/补400/加seed；主讨论继续解释和后续裁决。
+
+### 已完成native-feature批次的原登记与派发记录（2026-09-26）
 
 Active design：[native_feature_change_causality](docs/designs/native_feature_change_causality_design.md)，
-规格`configs/native_feature_change_causality_v1/experiment_spec.json`。已Queue并核对Sol接手；尚无本批正式GPU结果。
+规格`configs/native_feature_change_causality_v1/experiment_spec.json`。以下保留当时登记；本批现已完成，不再启动。
 实际执行者仍为Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`，主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
 
 fixed400新1280条及原320条已从原results/合同独立复核；全部新trace、视频50覆盖、配对种子前缀与全部统计通过。

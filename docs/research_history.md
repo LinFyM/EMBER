@@ -4,6 +4,20 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-26：E/H冻结干预有净执行收益，接续学习参照而非架构补丁
+
+`native_feature_change_causality_20260926`统一eb9a373d，C0训练dca1b550；80原条件、320bank/闭环、16full/全T+1完成。
+主讨论从原件独立核验并复算全部比较，20/24/20/27，各80；完整相对首帧9得2失、+7/80，区间[2.5,16.25]pp。
+findings§155记录特征路径、不能归单模块/操作语义的边界及历史对照；study的`coordination/main_recheck.{py,json}`保存核验。
+CPU进一步区分FrameRead内容选择与权重和余项；环境action误标OSC由`action_units_amendment.json`更正，闭环不变。
+三面板外层回执误记节点，worker UUID/live准入证实实际gpu02；E1H1两次准入拒绝零行、gpu01续跑，原件均保留。
+完整GPU1.561389小时。有效矩阵关闭，不补此冻结四格400。
+
+登记[同预算首帧内容学习参照](designs/learned_initial_content_causality_design.md)：
+只新学S0，投影E/H至各视频首帧、I同步且保留原时钟；fresh630/原fit28/FM与70560查询，完整C0冻结复用。
+六面板448条、224新bank、24full；最多9GPUh。它补足学习后的反事实，不把旧全帧frame-set/VJEPA static误称首帧对照，
+也不把冻结损伤升级成视频教学资格。实际派发及当前状态只看progress。
+
 ## 2026-09-26：固定C0完整覆盖结束，转向有界特征变化的功能辨识
 
 fixed400新增1280及原320组成四格各400，Source/B/C0 correct/other=57/121/120/132。

@@ -1,5 +1,7 @@
 # 冻结C0：逐帧视觉内容与原生动作计算特征的变化是否贡献执行能力
 
+状态：本批已完成并经主讨论独立验收，findings§155；以下保留当时合同，不再启动。
+
 2026-09-26登记。状态与实际派发只看progress；规格为
 `configs/native_feature_change_causality_v1/experiment_spec.json`。
 这是特征层冻结诊断，不是训练、候选修复、视频必要性资格或恢复旧static实验。

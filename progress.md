@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：Reader有界工程已由新执行者接手；正式学习尚未激活（2026-09-26）
+## 当前状态：Reader工程独立验收；正式学习启动前撤回，继续完整方法研究（2026-09-26）
 
 Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前已完成S0整批原件核验、特征机制审查及后继裁决；
 长期目标仍为一次生成完整LoRA的绝对能力超过强MT-BC、有益视频贡献和能力保持，未发现统一根因或验证修复。
@@ -9,23 +9,48 @@ Owner再次授权遵守现有规则自主推进，并明确明早不要求已经
 Owner随即澄清，这是贯穿推进逐步建立的理解，不要求现在立刻完成推导；可先综合既有证据形成主讨论自己的初步认识。
 Owner最后要求不得提出与过去失败架构/训练几乎一致的改进。主讨论已核对最近似完整历史与源码，
 确认旧Video Functional早已联合训练表示/执行reader，且有VL共同学习版本；因此下调当前Reader正式学习优先级。
-现有工程仍按原范围收尾，630准备稿保持未激活；重新投入须解释实际变化为何改变旧失败预测，工程通过或低成本均不足。
+工程现已按原范围完成并独立验收，630学习提案正式撤回、未执行；重新投入须解释实际变化为何改变旧失败预测，工程通过或低成本均不足。
 具体比较与修订见机制分析§6.1、findings§156，不重跑旧实验，也不凭此自动改投另一套架构。
 
-**唯一已激活后继设计（新执行者已接手，尚未独立验收）**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **仅§4工程准备**；
+**最近完成设计（当前无active GPU学习/评测设计）**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **§4工程已验收，§3/§5学习撤回**；
 机器合同`configs/native_conditional_reader_v1/engineering_spec.json`，study `native_conditional_reader_engineering_20260926`。
 **当前科学主讨论：`01a0dd74-4c71-7c82-8629-8333ef74dfdd`**，按Owner本轮明确指令接管理论分析、实验设计、
 原始证据核验与科学裁决；实际身份由本session的`CODEX_THREAD_ID`/`CODEX_SESSION_ID`核实。
 **当前实验执行者：`01a0dd6c-f2e5-7971-821a-56766e1c0f22`**，Owner本轮明确指定。
 通过只读thread查询核实其标题为“接管 EMBER 实验执行会话”、cwd为本仓；该会话也已按Owner通知记录当前主讨论UUID。
 Owner随后明确“开始工作，接下来全权交给你”，并要求每次实验事先规划耗时、渐进推进，明早检查进度。
-据此主讨论自主派发、验收和裁决有依据的后继批次；当前只激活原Reader工程范围，不预排正式学习或大矩阵。
+据此主讨论自主派发、验收和裁决有依据的后继批次；已完成Reader原工程，不预排正式学习或大矩阵。
 后续具体实验由该新执行者接收有界合同；不再联系旧主讨论或旧Sol。
 旧主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`仅为交接与历史证据来源，不是当前协调或回报地址。
 旧Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`已按Owner迁移安排停止接单，不再向其派发。
 范围：实现joint Reader R_V/R_L共享接口，各4宏步及2→4 world2恢复、一次最长视频condition反传/profile、
 6条train-only canonical接口episode；上限0.75完整GPUh/2GiB新data1输出/768MiB代码，本批最多6物理卡。
-新正式630训练、held、第二臂完整训练、蒸馏、400、S0修复或续训均未激活。工程完成主动Queue，主讨论验收后裁决。
+新正式630训练、held、第二臂完整训练、蒸馏、400、S0修复或续训均未执行。工程完成Queue已消费，验收与裁决如下。
+
+### 工程完成后的独立验收与科学裁决
+
+执行者于2026-09-26 13:09 UTC完成原有界工程，最终源码`2fbd4c7d`已推送且冻结树clean detached；
+R_V fresh4来源`0011d292`、恢复及R_L来源`4dde66be`，case资产配置窄修`2fbd4c7d`，有效原件未重跑。
+主讨论复读四个最终新增文件及修正diff，独立CPU 5/5；回到每段metrics、checkpoint trainer/rank状态、
+六条原JSON/npz/PT核定日志前缀、事件、optimizer/scheduler/sampler/RNG、真实梯度、T+1、动作和双相机full。
+两模式的初态、body位置和共同policy RNG前缀一致；提前成功时最后一个计划5-action前缀有2条未执行，
+原npz的168条实际动作与169状态正确，不能把计划前缀余量当多跑episode。
+独立验收原件：`/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926/engineering/main_acceptance.{py,json}`。
+
+实际12更新/1344训练query，加最长视频28query反传、6条train-only接口episode；没有新模型/环境复跑。
+从逐段账目复算完整0.5125833 GPUh，含失败等待，低于0.75；输出约680MiB、代码506MiB，均data1且在原上限内。
+13.38秒profile是包含memory生成及encoder重放的整condition计时，其中首次memory约2.81秒，不能相加当总耗时。
+R_V 630及224条screen的后继外推为8.2–11.1 GPUh；连同工程约8.7–11.6，超出原9 GPUh上沿，无自动加预算。
+
+**裁决：工程通过，结束当前Reader窗口；撤回未启动的630学习。** §6.1已核定的近似历史反例未被工程改变，
+独立q/v纠正和单reader目标尚不足以支持重投；成本外推进一步削弱投资理由，不因smoke分数选方案。
+这是投入裁决，不是Reader正式能力阴性。完整LoRA/视频增量/保持目标仍未完成，主讨论继续形成更有依据的完整方法。
+源码历史并入main，但四个临时源码/测试不留在active tree；Git `2fbd4c7d`与全部工程原件保留，未删除checkpoint或数据。
+当前执行者停止新增GPU；开发与冻结树暂保留作来源核验/后续复用，本次worktree附件查询未返回，未据此做shell删除。
+后续无新学习/评测派发，不能从封存设计或机器准备稿自行恢复。
+
+### 接管和首次派发历史（已结束）
+
 11:11:11 UTC曾将合同2cd9a9bf以Queue送达旧Sol，回执01a0dd69-74ca-7500-ac9d-aa33641b94ed；
 11:11:46核对正文进入turn01a0dd69-74cb-77d1-b890-e442c1f85050。进一步核对时才发现迁移记录，
 11:12:58确认旧Sol明确拒绝在旧会话启动实现/GPU，turn已interrupted、会话idle；这不是已执行的工程批次。

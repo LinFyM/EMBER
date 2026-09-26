@@ -1,11 +1,11 @@
 {
   "schema_version": "ember_native_conditional_reader_learning_v1",
   "study_id": "native_conditional_reader_learning_20260926",
-  "status": "prepared_not_activated",
+  "status": "withdrawn_before_learning",
   "design": "docs/designs/native_conditional_reader_design.md",
-  "activation": "Only coordinator adjudication with renewed scientific justification after the nearest-history downgrade, independent engineering acceptance, and measured cost review; no launch under prepared status",
+  "activation": "Withdrawn before any learning or evaluation. This sealed preparation is not a launch contract; no stage may resume automatically.",
   "historical_reassessment": {
-    "priority": "lowered_no_learning_authorized",
+    "priority": "withdrawn_before_learning",
     "record": "docs/analyses/feature_to_operator_mechanism_20260926.md section6.1",
     "reason": "Video Functional already jointly trained video representations and a query-conditioned reader, including a teacher VL variant; native continuation also has a prior negative. Joint learning, native execution, an untried combination, or completed engineering alone cannot justify reinvestment.",
     "requirement": "Explain why the actual feature/operator/gradient changes alter prior failure predictions and inform the complete LoRA method; no automatic additional probes or training."
@@ -344,14 +344,13 @@
     "Source_retention": "Only report descriptive success-set overlap after auditing source checkpoint, task/init, env/policy RNG and execution contract of existing rows; explicitly retain cross-run provenance. Do not claim fresh paired significance or substitute this for matched R_L. If a panel lacks an audited reference, state that gap; no extra source episodes are authorized here."
   },
   "decision": {
-    "preexisting_investment_rule": "design section5 frozen before S0 scores; applied numerically below; not statistical qualification or checkpoint selection",
-    "R_V_correct_at_least": 35,
-    "R_V_other_at_least": 27,
-    "correct_positive_suites_vs_C0_at_least": 2,
-    "always_report": "all task/suite scores, breadth, paired retained/gained/lost/churn/success-set overlap, seen acquisition, source retention, descriptive uncertainty",
-    "R_V_below_rule": "downgrade or close this candidate; no automatic R_L, KD, extra layers/rank/seed/continuation",
-    "R_V_passes_rule": "coordinator reviews video/init robustness, retention and full costs before separately activating matched R_L",
-    "teacher_vs_student": "R_V improvement without R_L improvement establishes no video teacher; useful Reader remains distinct from final LoRA transfer"
+    "reason": "Engineering acceptance does not change the nearest historical failures or supply evidence for the proposed feature/operator/objective differences. The proposed learning investment is withdrawn, not a scientific performance non-pass.",
+    "new_learning_updates": 0,
+    "new_held_evaluations": 0,
+    "engineering_accepted": true,
+    "no_budget_increase_or_weaker_controls": true,
+    "source_and_temporary_entrypoints": "2fbd4c7d retained in Git; temporary diagnostic source/tests retired from active main.",
+    "scientific_record": "findings.md section160; docs/analyses/feature_to_operator_mechanism_20260926.md section6.1"
   },
   "statistics": {
     "task_cluster_bootstrap_repeats": 20000,
@@ -373,12 +372,35 @@
     "wait": "one completion/exit event; do not poll ordinary logs/checkpoints or send duplicate self-wakeups"
   },
   "time_plan": {
-    "status": "pending complete engineering profile",
-    "training_wall_minutes": null,
-    "memory_wall_minutes": null,
-    "evaluation_wall_minutes": null,
-    "full_wall_minutes": null,
-    "decision": "record measured estimates and feasible remaining budget before activation"
+    "status": "measured_estimates_recorded_proposal_withdrawn",
+    "training_wall_minutes_range": [
+      162,
+      216
+    ],
+    "memory_wall_minutes_range": [
+      6,
+      12
+    ],
+    "evaluation_wall_minutes_range": [
+      40,
+      55
+    ],
+    "successor_sequential_wall_minutes_range": [
+      208,
+      283
+    ],
+    "successor_gpu_hours_range": [
+      8.2,
+      11.1
+    ],
+    "first_stage_including_engineering_gpu_hours_range": [
+      8.7,
+      11.6
+    ],
+    "evidence": "/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926/engineering/completion.json",
+    "limits": "Training estimated from four engineering updates; assumes world2 training and four persistent evaluator GPUs without queueing. No long-run or held measurements.",
+    "profile_timing_correction": "13.3806s is the total 28-query condition including memory creation and encoder replay; 2.8095s initial memory is already within that total.",
+    "decision": "Do not activate, increase the original 9 GPUh ceiling, or weaken controls to keep this candidate running."
   },
   "completion": "executor sends one complete result or material blocker with originals and exit/usage accounting, then stops new GPU; coordinator independently reviews and decides next batch",
   "exclusions": [
@@ -389,5 +411,15 @@
     "rank/layer/LR/scale/seed sweep",
     "checkpoint selection",
     "automatic stage continuation"
-  ]
+  ],
+  "prewithdrawal_screen_rule": {
+    "preexisting_investment_rule": "design section5 frozen before S0 scores; applied numerically below; not statistical qualification or checkpoint selection",
+    "R_V_correct_at_least": 35,
+    "R_V_other_at_least": 27,
+    "correct_positive_suites_vs_C0_at_least": 2,
+    "always_report": "all task/suite scores, breadth, paired retained/gained/lost/churn/success-set overlap, seen acquisition, source retention, descriptive uncertainty",
+    "R_V_below_rule": "downgrade or close this candidate; no automatic R_L, KD, extra layers/rank/seed/continuation",
+    "R_V_passes_rule": "coordinator reviews video/init robustness, retention and full costs before separately activating matched R_L",
+    "teacher_vs_student": "R_V improvement without R_L improvement establishes no video teacher; useful Reader remains distinct from final LoRA transfer"
+  }
 }

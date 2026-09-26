@@ -4016,3 +4016,37 @@ Compiler modulation、两层H读出、两层E读出及72个Action Meta B张量�
 
 S0正式GPU来源4f6c75e4，两个held-other使用仅CPU来源校验修正b9e15410；原F的224 C0银行只读，
 新S0银行224，科学模型与原件未重跑。完整计量4.669167 GPUh≤9，study约4.48GiB≤10；没有登记科学原件缺项。
+
+## 160. Reader工程成立，但不足以支持重访旧学习假设；正式学习启动前撤回（2026-09-26）
+
+本项完成的是工程合同，不是视频能力实验。执行者最终推送`2fbd4c7d`；主讨论核对最终四个新增文件及两项窄修，
+独立运行5个CPU检查并逐项读取已结束的原始metrics、checkpoint trainer/rank状态、六条JSON/npz/PT。
+研究根`/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926`；
+`engineering/main_acceptance.{py,json}`保存主讨论的独立核验，未运行新模型/环境、未重跑有效训练。
+
+- 两模式各fresh4及2→4恢复，实际12更新/1344训练query；前2行父日志保留，3/4步任务/视频/query事件一致，
+  optimizer步数、scheduler、sampler及world2 rank RNG资产完整。R_V原fresh4仍来自`0011d292`，恢复CPU窄修`4dde66be`不改变其模型。
+- Source可训练参数0。reader首步活动；R_V Text/VL/Action/Core/Procedure从第2步有有限非零梯度，
+  R_L只有Text/Core及reader活动。真实FM—memory cotangent—同版本教学encoder重放有实际路径，不证明语义或学习充分性。
+- 最长fit视频task29/demo0为347原帧、stride5保留71帧；一次28query反传无update，峰值allocated20.56/reserved22.61GiB。
+  13.38秒是整condition（含memory生成与重放），其中首次memory2.81秒，不能将两项相加当纯FM加memory总成本。
+- 六条train-only接口case初态/body位置、env seed及共同policy-noise前缀配对；全部真实动作与T+1状态/谓词齐全，
+  两条global2是双相机full。成功提前终止的一条有168实际动作/169状态；最后一个已计划5-action前缀剩2条未执行，
+  按实际终止截断后与npz动作相同，这是正常capture语义，不是原件缺失或多执行。smoke成功数不作科学收益。
+- 逐段完整GPU计费复算0.5125833小时≤0.75，包含加载和失败等待；等待段为保守上界。
+  输出约680MiB、开发及冻结代码合计506MiB，全部新增data1且低于2GiB/768MiB。没有新增held/Test、formal630或KD。
+
+**科学投入裁决。** §156及机制分析§6.1已确认，旧Video Functional共同学习过视频表示/执行读头，
+其VL版本及原生续算诊断均提供相关负证据。当前C/P、独立q/v纠正与单reader目标有实际图差异，
+但没有证据表明它们改变旧失败所涉及的共享获取问题；工程只验证可执行性，不能补足这个理由。
+根据四步工程外推，630训练约2.7–3.6小时wall（world2），224条件memory6–12分钟，224评测40–55分钟（4GPU），
+后继8.2–11.1 GPUh，加本工程约8.7–11.6，上沿超原第一阶段9 GPUh。这是有限样本估计，非长跑实测。
+
+因此结束本Reader窗口，撤回未激活的630正式学习准备；不自动加预算、删必要对照、做更小低信息量screen或接蒸馏。
+正式学习运行量为零，不能把它记成Reader性能阴性、普遍不可行证明或新方法实质成功。
+临时994行/三个源码owner及测试由Git `2fbd4c7d`和原件保留；源码历史合入main但active tree退役该独立诊断路径，
+不引入第二Writer/fallback。Source、S0/C0、checkpoint及原始六条case均保留。
+源commit兼容例外仅认可本次核定的`0011d292→4dde66be`恢复，不授权任意未来实现沿用旧checkpoint。
+
+完整目标继续推进。当前数学认识仍以真实联合特征、生成算子和跨episode学习如何形成执行作用为对象；
+既不把旧可辨识性/条件独立推导重新包装为统一根因，也不因撤回Reader就立即拼另一版近似架构。

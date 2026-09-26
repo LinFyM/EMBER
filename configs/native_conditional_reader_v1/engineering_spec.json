@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_native_conditional_reader_engineering_v1",
   "study_id": "native_conditional_reader_engineering_20260926",
-  "status": "engineering_dispatched_and_accepted",
+  "status": "completed_independently_accepted",
   "design": "docs/designs/native_conditional_reader_design.md#4-先完成的工程准备范围",
   "coordinator_thread_id": "01a0dd74-4c71-7c82-8629-8333ef74dfdd",
   "executor_thread_id": "01a0dd6c-f2e5-7971-821a-56766e1c0f22",
@@ -184,5 +184,17 @@
   ],
   "completion": "Queue exact implementation, evidence, costs and missing items to coordinator; stop new GPU pending scientific adjudication",
   "executor_assignment": "Owner authorizes autonomous progressive overnight work by the registered coordinator and executor; this dispatch activates engineering only, retired sessions remain out of scope.",
-  "coordinator_assignment": "Owner-designated scientific coordinator registered from current CODEX_THREAD_ID/CODEX_SESSION_ID; previous coordinator UUID is provenance only; analysis and evidence review do not activate engineering or formal runs"
+  "coordinator_assignment": "Owner-designated scientific coordinator registered from current CODEX_THREAD_ID/CODEX_SESSION_ID; previous coordinator UUID is provenance only; analysis and evidence review do not activate engineering or formal runs",
+  "acceptance": {
+    "implementation_commit": "2fbd4c7d9df3b680d23923842633721d49b06870",
+    "evidence": "/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926/engineering/main_acceptance.json",
+    "actual_updates": 12,
+    "actual_training_queries": 1344,
+    "profile_queries": 28,
+    "canonical_train_only_episodes": 6,
+    "complete_gpu_hours": 0.5125833333333333,
+    "scientific_qualification": false,
+    "successor_learning_authorized": false,
+    "code_lifecycle": "Retired from active main after engineering acceptance and withdrawal of successor learning; preserve pushed implementation and original evidence."
+  }
 }

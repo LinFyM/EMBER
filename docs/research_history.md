@@ -4,6 +4,18 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-26：Reader有界工程独立验收；正式学习在启动前撤回
+
+实现`2fbd4c7d`完成R_V/R_L各fresh4及2→4 world2恢复、一次最长71帧视频28query反传、六条train-only接口case。
+主讨论独立CPU5/5及原始metrics/checkpoint/JSON/npz/PT复核通过；12实际更新/1344训练query，完整计费0.5125833 GPUh。
+原件与主讨论验收位于`/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926/engineering/`；
+恢复窄修不重跑有效fresh4，profile13.38秒含首次memory2.81秒及encoder重放，不是两段可相加的独立耗时。
+
+旧联合Video Functional等最近反例未被工程改变；630及224条后继screen加工程外推约8.7–11.6 GPUh，超原9 GPUh上沿。
+主讨论据科学依据不足及成本撤回未激活的正式学习，未运行量不能记成性能阴性。完整理由与范围见findings§160。
+源码历史并入main，临时三个owner及测试退役，Git `2fbd4c7d`、checkpoint及原始证据保留；不自动进入语言臂、KD或400。
+这是工程窗口结束，完整视频到LoRA研究继续；当前无active GPU设计。
+
 ## 2026-09-26：接管主讨论复核连续换架构与分模块过关循环
 
 Owner要求将两次追问、主讨论回答与历史错误共同持久保存。复核覆盖7月底v5.2/后继、8月底原生分阶段路线、

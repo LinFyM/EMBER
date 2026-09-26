@@ -1,8 +1,9 @@
 # 原生执行查询读取教学内容：候选学习比较
 
-2026-09-26。**仅§4工程范围已登记；Owner已授权夜间自主渐进推进，先向指定新执行者派发本工程批次。实际启动看progress。**
-§3/§5的正式学习和评测仍是准备稿，禁止自动接续。
-当前机器合同为`configs/native_conditional_reader_v1/engineering_spec.json`，实际派发状态见progress。
+2026-09-26。**§4工程已完成并由主讨论独立验收；§3/§5正式学习在启动前撤回，GPU正式学习为零。**
+本稿封存已执行工程及未执行学习假设，不是active design，不得从正文恢复旧阶段。
+实现保留于Git `2fbd4c7d`，临时三个源码owner及对应测试在main退役；工程原件保留。
+机器记录为`configs/native_conditional_reader_v1/{engineering_spec,learning_spec}.json`，当前状态及§160裁决见progress/findings。
 本稿把[特征到算子的机制分析](../analyses/feature_to_operator_mechanism_20260926.md)落实到分阶段比较；
 S0已完成、主讨论独立验收和解释见该分析§11/findings§159。阶段转换由主讨论裁决，不增加Owner审批。
 
@@ -83,7 +84,8 @@ RoPE和GQA重复仍按真实native实现，不将这个局部式当作整网线�
 
 ## 3. 学习合同准备
 
-对应机器准备稿为`configs/native_conditional_reader_v1/learning_spec.json`，状态`prepared_not_activated`。
+对应机器准备稿为`configs/native_conditional_reader_v1/learning_spec.json`，最终状态`withdrawn_before_learning`。
+以下是撤回前的准备条件，未执行，不能恢复授权。
 仅将本节及§5已定的条件、面板和投资规则落实为可执行字段；完整工程验收和分项实测ETA之前不得启动。
 此外须先完成上述近似历史复核后的科学投入裁决，给出能改变旧失败预测的具体依据；当前尚未满足，非Owner审批事项。
 
@@ -101,7 +103,7 @@ Reader始终在实际query前向及其activation-checkpoint重算期间安装，
 
 ## 4. 先完成的工程准备范围
 
-本节是本次唯一激活范围。工程不读成功分数择优；先准备两种模式的共享接口，
+本节是本次实际执行并已验收的范围。工程不读成功分数择优；当时先准备两种模式的共享接口，
 科学训练分阶段，只先投入R_V，不默认把第二臂及蒸馏全部排满：
 
 1. 独立`codex/` worktree从最新main实现上述唯一读出，复用现有特征、sampler、真实FM和canonical evaluator。

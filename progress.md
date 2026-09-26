@@ -3,7 +3,7 @@
 ## 当前状态：原生特征批次独立验收完成；登记同预算首帧内容学习参照（2026-09-26）
 
 Active design：[learned_initial_content_causality](docs/designs/learned_initial_content_causality_design.md)，
-机器规格`configs/learned_initial_content_causality_v1/experiment_spec.json`。当前合同已定稿，尚未派发；下方派发记录更新后为准。
+机器规格`configs/learned_initial_content_causality_v1/experiment_spec.json`。已Queue并核对Sol接手，当前处于隔离实现/验收阶段，尚无新正式GPU结果。
 执行者Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`；主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
 
 已完成study `/data0/user/ymdai/ember_runs/native_feature_change_causality_20260926`，E=eb9a373d，C0训练F=dca1b550。
@@ -20,10 +20,14 @@ FrameRead中心内容选择与BF16权重和项已分开；原环境动作误标O
 最多9完整GPU-hours、10GiB新data0、768MiB代码；所有工程/失败启动计入，预算预计越界则停新增阶段回报。
 实际实施、配额/双节点准入、精确命令由Sol登记；技术通过即可按固定合同启动，完成主动Queue，停止新增试验。
 不把固定630称充分收敛，不从screen选择方法，不自动续训/补400/加seed；主讨论继续解释和后续裁决。
+合同/裁决在e9e3cd30、特征/单位补充在d9a01caf推送；2026-09-26 06:25:54 UTC（北京时间14:25）
+以Queue派给上述实际Sol，回执`01a0dc64-4912-7f50-94c6-2931c611d716`。
+06:26:20核对完整正文进入新turn`01a0dc64-4915-7873-b02a-962c74083c00`，Sol明确接续同名批次、隔离实现和按真实节点准入。
+正文/接受/逐字送达与接手回执在本仓`.codex/tmp/learned_initial_content_causality_20260926/`；没有重发，也没有新增审批。
 
 ### 已完成native-feature批次的原登记与派发记录（2026-09-26）
 
-Active design：[native_feature_change_causality](docs/designs/native_feature_change_causality_design.md)，
+当时设计：[native_feature_change_causality](docs/designs/native_feature_change_causality_design.md)，
 规格`configs/native_feature_change_causality_v1/experiment_spec.json`。以下保留当时登记；本批现已完成，不再启动。
 实际执行者仍为Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`，主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
 

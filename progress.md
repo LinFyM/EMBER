@@ -5,7 +5,7 @@
 Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前已完成S0整批原件核验、特征机制审查及后继裁决；
 长期目标仍为一次生成完整LoRA的绝对能力超过强MT-BC、有益视频贡献和能力保持，未发现统一根因或验证修复。
 
-**唯一已登记后继设计（未实施）**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **仅§4工程准备**；
+**唯一已激活后继设计（新执行者已接手，尚未独立验收）**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **仅§4工程准备**；
 机器合同`configs/native_conditional_reader_v1/engineering_spec.json`，study `native_conditional_reader_engineering_20260926`。
 **当前科学主讨论：`01a0dd74-4c71-7c82-8629-8333ef74dfdd`**，按Owner本轮明确指令接管理论分析、实验设计、
 原始证据核验与科学裁决；实际身份由本session的`CODEX_THREAD_ID`/`CODEX_SESSION_ID`核实。
@@ -61,6 +61,19 @@ Owner随后纠正“不是本批，是之后都data1”。已将其写入Owner�
 确认execution state以原生prompt token进入h、教学prefix无state；真实FM复用denoise suffix，q/v经原生GQA、
 gate与完整flow执行。Reader之前的Source h与完整多层LoRA的h不天然同分布，局部作用匹配不能自动代表功能传递。
 没有新增forward、诊断或科学范围；原fixed400的C0−B为27得/28失，继续约束不能以近似总分推逐例能力等同。
+
+### Owner要求的两类循环回顾与决策承诺
+
+本次沿7–9月研究索引、46组审计及相关完整论证，复核连续架构修订、G1/G2/G3及bank/PNBTT局部过关、
+Video Functional补救链、纠正oracle到共享Writer、近期信用到flow诊断等代表记录。
+直接读取匹配曝光、J2、EBSRI、PNBTT及Semantic Path/Local Field/Pullback的现存原始汇总与裁决；
+没有重算全部历史raw rows、运行模型或重做旧实验。事实、未执行范围及主讨论承诺补入findings§156。
+
+核心纠正是让停止决定约束共同假设，而不只结束一个实验名称；局部通过不能借条件变化自动拼成完整方法。
+v5.2基础可重审/撤换，新失败架构不自动作为下一底座；保留同协议强参照及完整特征/梯度/部署推导，
+用累计证据和有依据的替代原则裁决重构，不等待不可能性证明，也不以公式合理保证成功。
+稳定约束写入Owner要求§3，下一投入的具体执行约束写入task_plan；当前Reader同样受约束。
+本次仅更新既有科学记录及README的陈旧状态措辞，不改变工程合同、不新增派发、不联络旧会话。
 
 ### 本次接管恢复与原件核验
 

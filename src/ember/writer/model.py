@@ -530,6 +530,7 @@ class CompleteLoRAWriter(torch.nn.Module):
         if not return_trace:
             return encoded
         return encoded, {
+            "text_queries": text_queries,
             "frame_evidence": frame_evidence,
             "interactions": interactions,
             "horizon": horizon,
@@ -542,19 +543,26 @@ class CompleteLoRAWriter(torch.nn.Module):
         procedure_memory: torch.Tensor,
         positions: torch.Tensor,
         valid_frames: torch.Tensor,
+        *,
+        return_trace: bool = False,
     ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
         """Decode one explicitly paired Core/Procedure bundle through the canonical compiler."""
         if core_memory.shape[0] != procedure_memory.shape[0]:
             raise WriterModelError("Core and Procedure condition batches differ")
-        expert, action_in, action_out = self.compiler(
+        compiled = self.compiler(
             core_memory,
             valid_core,
             procedure_memory,
             positions,
             valid_frames,
+            return_trace=return_trace,
         )
+        expert, action_in, action_out = compiled[:3]
         result = self._decode_outputs(expert, action_in, action_out, core_memory.shape[0])
-        return result, {"expert": expert, "action_in": action_in, "action_out": action_out}
+        trace = {"expert": expert, "action_in": action_in, "action_out": action_out}
+        if return_trace:
+            trace.update(compiled[3])
+        return result, trace
 
     def _decode_outputs(
         self,

@@ -26,6 +26,7 @@ from ember.pi05_eval_queue import (
     publish_json_exclusive,
     validate_worker_layout,
 )
+from ember.pi05_source_checkpoint import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -145,6 +146,17 @@ def _reinspect_adapter(
                 raise Pi05EvaluationError("frozen replay registration changed after prepare")
             reference = load_run_contract(Path(capture["reference_output"]) / "run_contract.json")
             tasks = tuple(argparse.Namespace(**row) for row in reference["tasks"])
+        if contract.get("native_feature_change") is not None:
+            from ember.writer.native_feature_change import registered_selection, spec as native_feature_spec
+
+            bank_manifest = read_json(Path(adapter["manifest"]["path"]))
+            registered = registered_selection(native_feature_spec())
+            if bank_manifest["selection"] != registered:
+                raise Pi05EvaluationError("native-feature bank map changed after prepare")
+            tasks = tuple(argparse.Namespace(
+                suite=row["suite"], task_id=row["task_id"],
+                init_state_ids=tuple(registered["init_state_ids"]))
+                for row in bank_manifest["tasks"])
         from ember.writer.language_content_contract import evaluation_panel
 
         return inspect_static_task_lora_adapter(
@@ -155,7 +167,8 @@ def _reinspect_adapter(
             require_formal=require_formal,
             native_reader_transfer_cell=(contract.get("native_reader_transfer") or {}).get("cell"),
             support_slot_model=(contract.get("support_slot_credit") or {}).get("model"),
-            language_content_panel=evaluation_panel(Path(contract["output_dir"])),
+            language_content_panel=(evaluation_panel(Path(contract["output_dir"]))
+                                    if contract.get("output_dir") else None),
         )
     raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
 

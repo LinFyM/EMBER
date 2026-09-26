@@ -358,11 +358,33 @@ def adapter_metadata(condition: str, checkpoint: Mapping[str, Any]) -> dict[str,
             "writer_checkpoint": str(checkpoint["path"]), "macro": str(checkpoint["macro"])}
 
 
-def _compile_condition(runtime, store, task, demos, output, checkpoint, *, control=None, video_task=None):
+def _prepare_video_condition(runtime, store, task, demos, *, control=None, video_task=None):
     donor = video_task if video_task is not None else task
     if control is not None and (donor.authority.task_id != control["video_global_task_id"]
                                 or task.authority.task_id != control["language_global_task_id"]):
         raise ValueError("actual donor or target language identity differs from the registered video control")
+    if store is None:
+        raise ValueError("video Writer materialization requires its registered teacher-video store")
+    records = []
+    videos = tuple(store.load(donor.authority.task_id, demo) for demo in demos)
+    if any(video.raw_frame_count != donor.episode_lengths[demo] for demo, video in zip(demos, videos, strict=True)):
+        raise ValueError("actual teacher frame count differs from its data authority")
+    frames, indices = [], []
+    for demo, video in zip(demos, videos, strict=True):
+        frame, index = torch.from_numpy(video.frames), torch.from_numpy(video.frame_indices)
+        record = {"demo_index": demo, "raw_frame_count": video.raw_frame_count,
+                  "sampled_frame_count": len(index), "frame_indices": index.tolist()}
+        if control is not None:
+            content, index, evidence = controlled_frames(index, control=control, demo=demo)
+            frame = frame[content]
+            record.update(evidence)
+        frames.append(frame)
+        indices.append(index)
+        records.append(record)
+    return runtime.prepare(tuple(frames), tuple(indices), task.authority.language), records
+
+
+def _compile_condition(runtime, store, task, demos, output, checkpoint, *, control=None, video_task=None):
     records = []
     parameterization = getattr(runtime, "parameterization", "video_writer")
     if parameterization == "direct_lora":
@@ -376,24 +398,8 @@ def _compile_condition(runtime, store, task, demos, output, checkpoint, *, contr
         condition = runtime.prepare_language(task.authority.language)
         writer_invocations = 1
     elif parameterization == "video_writer":
-        if store is None:
-            raise ValueError("video Writer materialization requires its registered teacher-video store")
-        videos = tuple(store.load(donor.authority.task_id, demo) for demo in demos)
-        if any(video.raw_frame_count != donor.episode_lengths[demo] for demo, video in zip(demos, videos, strict=True)):
-            raise ValueError("actual teacher frame count differs from its data authority")
-        frames, indices = [], []
-        for demo, video in zip(demos, videos, strict=True):
-            frame, index = torch.from_numpy(video.frames), torch.from_numpy(video.frame_indices)
-            record = {"demo_index": demo, "raw_frame_count": video.raw_frame_count,
-                      "sampled_frame_count": len(index), "frame_indices": index.tolist()}
-            if control is not None:
-                content, index, evidence = controlled_frames(index, control=control, demo=demo)
-                frame = frame[content]
-                record.update(evidence)
-            frames.append(frame)
-            indices.append(index)
-            records.append(record)
-        condition = runtime.prepare(tuple(frames), tuple(indices), task.authority.language)
+        condition, records = _prepare_video_condition(
+            runtime, store, task, demos, control=control, video_task=video_task)
         writer_invocations = 1
     else:
         raise ValueError("unknown conditional Writer parameterization")
@@ -459,9 +465,24 @@ def _reusable_conditions(path, *, asset_root, run, checkpoint, selection):
 
 
 def _compile_bank_conditions(*, planned, tasks, output, checkpoint, run, checkpoint_record,
-                             workers, reusable, lora_path, no_video, native_transfer=None):
+                             workers, reusable, lora_path, no_video, native_transfer=None,
+                             precompiled=None):
     conditions = {}
     reused = []
+    if precompiled is not None:
+        if reusable or no_video or set(precompiled) != set(planned):
+            raise ValueError("shared-native precompiled bank must cover exactly its registered conditions")
+        for key, job in planned.items():
+            record = precompiled[key]
+            source = Path(record["adapter"]["path"])
+            if (record.get("condition_id") != key or record.get("global_task_id") != job["task"]
+                    or record.get("teacher_demo_indices") != job["demos"]
+                    or record.get("writer_invocations") != 1
+                    or record["adapter"] != file_record(source)):
+                raise ValueError("shared-native precompiled condition identity changed")
+            path = output / f"{key}.safetensors"
+            os.link(source, path)
+            conditions[key] = {**record, "adapter": file_record(path)}
     for key in (key for key in planned if key in (reusable or {})):
         record = reusable[key]
         path = output / f"{key}.safetensors"
@@ -508,6 +529,8 @@ def _materialize(
     registered_stage1_panel: Mapping[str, Any] | None = None,
     native_transfer: Mapping[str, Any] | None = None,
     support_slot_credit: Mapping[str, Any] | None = None,
+    precompiled: Mapping[str, Any] | None = None,
+    extra_manifest: Mapping[str, Any] | None = None,
 ) -> Path:
     from ember.writer.learning_data import load_learning_tasks
     from ember.writer.evaluation import validate_task_scope
@@ -538,7 +561,7 @@ def _materialize(
     conditions, reused = _compile_bank_conditions(planned=planned, tasks=tasks, output=output,
         checkpoint=checkpoint, run=run, checkpoint_record=checkpoint_record, workers=workers,
         reusable=reusable, lora_path=lora_path, no_video=selection["arm"] == "no_video",
-        native_transfer=native_transfer)
+        native_transfer=native_transfer, precompiled=precompiled)
     no_video = selection["arm"] == "no_video"
     conditional = run.get("config", {}).get("schema_version") in {
         CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA}
@@ -604,6 +627,10 @@ def _materialize(
     attach_manifest(manifest, native_transfer)
     if support_slot_credit is not None:
         manifest["support_slot_credit"] = dict(support_slot_credit)
+    if extra_manifest is not None:
+        if set(extra_manifest) != {"native_feature_change"}:
+            raise ValueError("only the registered native-feature identity may extend a bank manifest")
+        manifest.update(extra_manifest)
     path = output / "manifest.json"
     write_json_atomic(path, manifest)
     return path
@@ -829,6 +856,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--requests-json", type=Path, help="Batch request list; shares asset root and devices.")
+    parser.add_argument("--native-feature-change", action="store_true",
+                        help="Registered frozen C0 shared-native four-cell materialization.")
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--reuse-manifest", type=Path, help="Reuse compatible condition LoRAs and compile only missing videos.")
@@ -851,6 +880,19 @@ def main() -> None:
     parser.add_argument("--native-frame-chunk", type=int,
                         help="Physical native frame batch; preserves every frame and the declared cameras.")
     args = parser.parse_args()
+    if args.native_feature_change:
+        excluded = ("requests_json", "checkpoint", "output", "reuse_manifest", "diagnostic_contract_json",
+                    "role", "task_ids", "k", "arm", "selection_mode", "video_pool",
+                    "fixed_videos_json", "state_count", "init_state_ids", "seed", "devices")
+        if any(getattr(args, name) is not None for name in excluded):
+            parser.error("native feature change uses only the frozen spec, one device, and physical frame chunk")
+        from ember.writer.native_feature_change import materialize_registered_grid
+
+        for path in materialize_registered_grid(
+                asset_root=args.asset_root.resolve(), device=torch.device(args.device),
+                cpu_threads=args.cpu_threads, native_frame_chunk=args.native_frame_chunk):
+            print(path, flush=True)
+        return
     required = ("checkpoint", "output", "role", "task_ids", "k")
     if args.requests_json is None and any(getattr(args, key) is None for key in required):
         parser.error("single request requires --checkpoint, --output, --role, --task-ids and --k")

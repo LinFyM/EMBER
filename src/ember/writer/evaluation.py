@@ -391,8 +391,14 @@ class FrozenHorizonWriterAdapter:
         del device, require_formal
         adapter = evaluation_adapter
         self.records = {(row["suite"], row["task_id"]): row for row in adapter["tasks"]}
+        requested = set(task_keys)
+        native_feature_subset = (
+            adapter.get("native_feature_change", {}).get("study_id") ==
+            "native_feature_change_causality_20260926" and bool(requested)
+            and requested <= set(self.records))
         if (adapter.get("kind") != BANK_KIND or adapter.get("schema_version") != EVALUATION_SCHEMA
-                or not source_matches(adapter["source"], source) or set(self.records) != set(task_keys)
+                or not source_matches(adapter["source"], source)
+                or (set(self.records) != requested and not native_feature_subset)
                 or adapter.get("single_complete_rank16") is not True):
             raise Pi05EvaluationError("video Writer runtime bank changed")
         self.adapter, self.policy = adapter, policy

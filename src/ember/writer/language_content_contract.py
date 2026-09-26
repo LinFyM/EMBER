@@ -14,6 +14,8 @@ EXPERIMENT = "language_content_path_causality_20260926"
 SPEC_PATH = "configs/language_content_path_causality_v1/experiment_spec.json"
 FIXED400_SPEC_PATH = "configs/language_content_path_fixed400_v1/experiment_spec.json"
 FIXED400_STUDY = "language_content_path_fixed400_20260926"
+NATIVE_FEATURE_STUDY = "native_feature_change_causality_20260926"
+NATIVE_FEATURE_SPEC_PATH = "configs/native_feature_change_causality_v1/experiment_spec.json"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -174,6 +176,13 @@ def bank_panel(config: Mapping[str, Any], selection: Mapping[str, Any], *, check
 
 
 def evaluation_scope(output: Path) -> tuple[dict[str, Any], str, dict[str, Any]] | None:
+    from ember.writer.native_feature_change import panel as native_panel, spec as native_spec
+
+    native = native_spec()
+    native_root = Path(native["outputs"]["planned_run_root"]).resolve() / "evaluation"
+    output = output.resolve()
+    if output.parent.parent == native_root:
+        return native, NATIVE_FEATURE_SPEC_PATH, native_panel(output.name, output.parent.name)
     fixed = fixed400_spec()
     fixed_root = Path(fixed["outputs"]["planned_run_root"]).resolve() / "evaluation"
     output = output.resolve()
@@ -201,6 +210,34 @@ def validate_evaluation_bank(panel: Mapping[str, Any], manifest_path: Path,
                              manifest: Mapping[str, Any], run: Mapping[str, Any],
                              current_commit: str) -> bool:
     """Validate the registered panel's frozen Writer bank and subset provenance."""
+    if panel.get("study_id") == NATIVE_FEATURE_STUDY:
+        from ember.writer.native_feature_change import (
+            panel as native_panel, registered_selection, spec as native_spec,
+        )
+        study = native_spec()
+        cell = panel.get("id")
+        root = Path(study["outputs"]["planned_run_root"]).resolve()
+        if (dict(panel) != native_panel(cell, panel.get("stage"))
+                or manifest_path.resolve() != root / "materialization" / cell / "manifest.json"
+                or manifest.get("native_feature_change") != {
+                    "study_id": NATIVE_FEATURE_STUDY, "cell": cell,
+                    "spec_path": NATIVE_FEATURE_SPEC_PATH, "native_read_conditions": 80,
+                    "feature_index": str(root / "features" / "index.json"),
+                    "source_training_commit": study["frozen_input"]["training_commit"],
+                }
+                or manifest.get("selection") != registered_selection(study)
+                or run["git"]["commit"] != study["frozen_input"]["training_commit"]
+                or manifest["materialization_git"]["commit"] != current_commit
+                or Path(manifest["writer_checkpoint"]["path"]).resolve() !=
+                   Path(study["frozen_input"]["checkpoint"]).resolve()
+                or manifest["writer_checkpoint"]["macro"] != 630
+                or run["config"]["experiment"]["arm_id"] != "C0"
+                or manifest["arm"] != "correct"
+                or len(manifest["conditions"]) != 80
+                or Path(run["source"]["checkpoint"]).resolve() !=
+                   Path(study["frozen_input"]["source_checkpoint"]).resolve()):
+            raise ValueError("native-feature bank, source, schedule, or single-commit origin changed")
+        return False
     if panel.get("study_id") == FIXED400_STUDY:
         fixed = fixed400_spec()
         registered = next((fixed400_panel(row) for row in fixed["evaluation"]["panels"]

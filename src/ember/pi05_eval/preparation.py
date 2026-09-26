@@ -536,6 +536,15 @@ def _selected_tasks_and_capture(
     args: Any, *, installed_tasks: Sequence[Any], adapter_kind: str | None,
     source_sft_requested: bool, output_dir: Path, repo_root: Path,
 ) -> tuple[tuple[Any, ...], dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
+    from ember.pi05_eval.native_feature_change import scope as native_feature_scope
+
+    if native_feature_scope(output_dir) is not None:
+        from ember.pi05_eval.native_feature_change import select_tasks
+
+        if adapter_kind != "static_task_lora" or source_sft_requested:
+            raise Pi05EvaluationError("native-feature stage requires its complete frozen Writer bank")
+        tasks, capture, stage = select_tasks(args, installed_tasks, repo_root)
+        return tasks, None, capture, stage
     native_cell = getattr(args, "native_reader_transfer_cell", None)
     support_model = getattr(args, "support_slot_model", None)
     if support_model is not None:
@@ -627,6 +636,12 @@ def _prepared_payload(
         if diagnostic_subset and adapter_kind == "task_expert"
         else tasks
     )
+    from ember.pi05_eval.native_feature_change import scope as native_feature_scope
+
+    if native_feature_scope(output_dir) is not None:
+        from ember.pi05_eval.native_feature_change import bank_tasks
+
+        inspection_tasks = bank_tasks(installed_tasks)
     adapter = _inspect_adapter(
         args,
         adapter_kind=adapter_kind,

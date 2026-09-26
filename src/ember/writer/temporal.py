@@ -593,8 +593,10 @@ class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
         procedure: torch.Tensor,
         positions: torch.Tensor,
         valid_procedure: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        content, _ = self.fused_slots(
+        *,
+        return_trace: bool = False,
+    ) -> tuple[torch.Tensor, ...]:
+        content, trace = self.fused_slots(
             core,
             valid_core,
             procedure,
@@ -608,8 +610,9 @@ class SlotNormalizedCoreProcedureCompiler(torch.nn.Module):
             self.RANK,
             -1,
         )
-        return (
+        result = (
             expert,
             content[:, expert_stop : expert_stop + self.RANK],
             content[:, -self.RANK :],
         )
+        return (*result, {**trace, "output_slots": content}) if return_trace else result

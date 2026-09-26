@@ -5,7 +5,7 @@
   "design": "docs/designs/native_conditional_reader_design.md#4-先完成的工程准备范围",
   "coordinator_thread_id": "01a0dd74-4c71-7c82-8629-8333ef74dfdd",
   "executor_thread_id": "01a0dd6c-f2e5-7971-821a-56766e1c0f22",
-  "run_root": "/data0/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926",
+  "run_root": "/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926",
   "reference_training_config": "configs/language_content_path_causality_v1/train_C0.json",
   "assets": {
     "source_checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
@@ -143,11 +143,11 @@
   },
   "resources": {
     "complete_gpu_hours": 0.75,
-    "data0_peak_gib": 2,
+    "data1_peak_gib": 2,
     "dev_plus_frozen_code_mib": 768,
     "project_max_physical_gpus": 6,
     "includes_failures_loading_smoke": true,
-    "quota_authority": "strg01 per-filesystem quota and shared capacity",
+    "quota_authority": "strg01 data1 user quota and shared capacity; add output peak and dev/frozen code peak against the same filesystem budget",
     "gpu_admission": "both nodes live; bind actual host/index/UUID; world2 single node",
     "wait": "one exit-event wait; no self-queue when direct waiter exists"
   },

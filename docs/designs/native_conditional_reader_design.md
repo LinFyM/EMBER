@@ -107,11 +107,12 @@ Reader始终在实际query前向及其activation-checkpoint重算期间安装，
    六条都保存T+1/实际动作/谓词；每模式global2为双相机full，其余compact。
    除上述训练query、profile及6条接口episode，不再追加独立10-flow或环境探针。
 5. 计入全部加载/失败/profile时长，报告真实每宏步吞吐、最长峰值、推算完整630与拟定评测代价。
-   工程准备硬上限0.75 GPU-hours、data0新增2GiB、开发加冻结代码768MiB；预算预计不足先回报，不改层数/参数/矩阵硬凑。
+   工程准备硬上限0.75 GPU-hours、data1输出新增2GiB、开发加冻结代码768MiB；预算预计不足先回报，不改层数/参数/矩阵硬凑。
 
-工程运行根`/data0/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926`；
+工程运行根`/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926`；
 复用Source1000及C0原数据/normalization/事件流，禁止held/官方Validation/Test读取和梯度。
-world2单节点，全项目本批最多6物理卡；每launch双节点live准入并绑定真实host/index/UUID，建根前核对独立quota。
+world2单节点，全项目本批最多6物理卡；每launch双节点live准入并绑定真实host/index/UUID，建根前核对data1独立quota。
+新输出与开发/冻结代码均计入同一个data1配额，峰值合计至多2.75GiB；历史data0原件保留原路径，不复制迁移。
 实现、prepare/恢复和真实读出由同一owner负责，复用canonical evaluator的模型调用边界及被动采集。
 不能用零LoRA或假bank蒙混成普通Writer评测；本模式明确是预计算memory的临时诊断模型。
 工程通过后集成push、保存原件并Queue主讨论，停止新增GPU；不自启任何630、held面板、R_L正式训练、蒸馏或400。
@@ -136,8 +137,8 @@ world2单节点，全项目本批最多6物理卡；每launch双节点live准入
   R_L held8、seen4，共28；seen取登记seen列表前4task/state0。pilot计入总数。
 - 从真实rollout保留首轮full10动作，不额外生成函数query；本批不开展rank、局部回归或teacher特征蒸馏实验。
   有用功能教师尚未成立时，不为§5的数学分解先铺大量hidden capture。
-- 第一阶段含工程准备上限9完整GPU-hours、data0峰值8GiB、data1代码768MiB。
-  第二阶段若值得执行另限5 GPU-hours，两阶段总峰值data0上限10GiB。
+- 第一阶段含工程准备上限9完整GPU-hours、data1输出峰值8GiB、data1代码768MiB。
+  第二阶段若值得执行另限5 GPU-hours，两阶段总输出峰值data1上限10GiB；输出与代码共同核对data1配额。
   这是投资上限，不是已测ETA；必须由阶段4真实profile核定能完成，不能先跑满再报告预算不足。
 - 只用合格共享GPU，按项目双节点live准入和全局卡数；不占卡等待、不改他人进程。
 

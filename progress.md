@@ -17,7 +17,7 @@ Owner随后明确“开始工作，接下来全权交给你”，并要求每次
 旧主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`仅为交接与历史证据来源，不是当前协调或回报地址。
 旧Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`已按Owner迁移安排停止接单，不再向其派发。
 范围：实现joint Reader R_V/R_L共享接口，各4宏步及2→4 world2恢复、一次最长视频condition反传/profile、
-6条train-only canonical接口episode；上限0.75完整GPUh/2GiB新data0/768MiB代码，本批最多6物理卡。
+6条train-only canonical接口episode；上限0.75完整GPUh/2GiB新data1输出/768MiB代码，本批最多6物理卡。
 新正式630训练、held、第二臂完整训练、蒸馏、400、S0修复或续训均未激活。工程完成主动Queue，主讨论验收后裁决。
 11:11:11 UTC曾将合同2cd9a9bf以Queue送达旧Sol，回执01a0dd69-74ca-7500-ac9d-aa33641b94ed；
 11:11:46核对正文进入turn01a0dd69-74cb-77d1-b890-e442c1f85050。进一步核对时才发现迁移记录，
@@ -34,6 +34,11 @@ Owner随后在旧主讨论明确：“新session我还没创建，所以你等�
 正在核对设计与建立隔离实现；该回执不代表GPU验收已完成。正文保存在
 `.codex/tmp/native_conditional_reader_engineering_20260926/new_executor_dispatch.txt`。
 工程source分支由执行者独占写入并推送，主讨论负责main集成及科学状态；完成/实质阻塞后只回报一次，不自动续阶段。
+
+Owner询问为何沿用data0后，主讨论确认原路径仅继承旧工程合同，没有本批必须使用data0的技术依据。
+输出根尚未创建时将本批输出修订为`/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926`；
+后继新输出也优先data1，历史data0证据不迁移。启动前核验strg01的data1独立配额与共享容量，输出2GiB及代码768MiB合计核算；
+科学范围、GPU预算与时间预期保持。向正在实现的执行者使用Steer同步本轮修订，接受和处理状态随后登记。
 
 ### 本夜时间预期与阶段边界
 

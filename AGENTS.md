@@ -155,8 +155,10 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 
 ## 10. Storage, artifacts, Git and documentation
 
-- 大资产只放`/data0/user/ymdai`或`/data1/user/ymdai`。大copy/cache/training前在`strg01`检查对应filesystem的独立
-  user quota、测实际用量并估计峰值；`df -h`不是quota检查。
+- EMBER后续新增代码、数据、模型、checkpoint、缓存、实验输出及导出一律放`/data1/user/ymdai`，适用于所有后继任务和session，
+  不是单批例外或“优先”建议。历史`/data0`资产可按原路径只读复用；不得据旧合同在data0新增产物，也不因本规则迁移或删除历史原件。
+  大copy/cache/training前在`strg01`检查data1的独立user quota、测实际用量并合计代码/缓存/输出峰值；`df -h`不是quota检查。
+  data1预计不足时，先在既有授权内处理已核实可清理内容或回报具体缺口，不自行切回data0。
 - 复用canonical policy、dataset、tokenizer、assets和manifest，不复制大资产。
 - formal结果保留run contract、checkpoint manifest、metrics、raw rows、aggregate、completion和必要analysis；
   profile/smoke不得冒充formal。

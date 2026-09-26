@@ -37,10 +37,16 @@ Owner随后在旧主讨论明确：“新session我还没创建，所以你等�
 
 Owner询问为何沿用data0后，主讨论确认原路径仅继承旧工程合同，没有本批必须使用data0的技术依据。
 输出根尚未创建时将本批输出修订为`/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926`；
-后继新输出也优先data1，历史data0证据不迁移。启动前核验strg01的data1独立配额与共享容量，输出2GiB及代码768MiB合计核算；
+后继新增资产与输出一律使用data1，历史data0证据不迁移。启动前核验strg01的data1独立配额与共享容量，输出2GiB及代码768MiB合计核算；
 科学范围、GPU预算与时间预期保持。修订提交`b01c48df`已推送；Steer由当前活跃turn
 `01a0dd8a-42f1-7260-a167-32b51ccabfd9`接受，执行者在同轮明确确认隔离分支已同步该提交与data1路径，旧data0工程根未创建。
 正文与回执保存在`.codex/tmp/native_conditional_reader_engineering_20260926/data1_storage_steer*`；迟到的同一确认不触发重新派发。
+
+Owner随后纠正“不是本批，是之后都data1”。已将其写入Owner要求§5及AGENTS§10，覆盖所有后继任务/session，
+明确新增资产/产物一律data1，配额不足不自动切回data0。追溯发现[研究历史2026-09-14清理记录](docs/research_history.md#2026-09-14按owner要求清理磁盘及活动仓库内容)
+已有“后续新方法继续使用data1，不以更换磁盘代替清理”；9月22–26合同却继续登记data0，Reader初稿`ee7d4efb`
+与工程合同`2cd9a9bf`继承该选择，没有查到本Reader必须使用data0的专门依据。已确认的是路径沿用及要求传递失效，
+不把历史配额数字推断为未记录的决策动机。新主讨论接手时未纠正该冲突；本次修正长期authority并同步当前执行者。
 
 ### 本夜时间预期与阶段边界
 

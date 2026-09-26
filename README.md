@@ -28,6 +28,9 @@ task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正�
 
 ## 目录职责
 
+后续所有新增资产和产物统一使用`/data1/user/ymdai`，跨实验和session生效；历史data0路径仅作既有资产/证据引用。
+完整存储要求见[Owner要求§5](docs/current_owner_requirements.md#5-工程效率与生命周期)及[AGENTS§10](AGENTS.md#10-storage-artifacts-git-and-documentation)。
+
 | 目录 | 内容与生命周期 |
 | --- | --- |
 | `src/ember/` | 唯一维护中的Writer、Source/MT-BC、数据及评测实现 |

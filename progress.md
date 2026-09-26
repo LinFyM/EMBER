@@ -19,12 +19,20 @@ Owner指出：工程结束后主讨论实际结束了回复，执行者也已停
 
 主讨论新增§15：在实际LoRA的局部功能二次模型中定义过程特征应预测的修正及执行适用性；区分局部cotangent标签、
 合法条件均值、功能最优位移与闭环收益，并推导相邻权重学习的三种detach梯度。没有从数学可能性宣布根因或新方案。
-同时向指定执行者派发`update_learning_primary_review_20260926`，预计20–30分钟、上限40分钟，
-只核对HyPoGen/HyperNet Fields原论文及官方实现与旧NativeCorrection/LocalField的完整差异。
+随后派发的`update_learning_primary_review_20260926`现已完成（原估20–30分钟、上限40分钟），
+只核对HyPoGen/HyperNet Fields原论文及官方实现与旧NativeCorrection/LocalField的完整差异；主讨论验收见§15.5/findings§162。
 正文与回执在同一tmp目录`update_learning_request.txt`/`update_learning_queue_receipt.txt`；Queue
 `01a0de07-de2a-7563-896d-e909b2ad26bc`，官方app-server已核实正文进入
-turn `01a0de07-de2d-7520-bad1-34c8f5070f9a`且inProgress。完成/实质阻塞只回报一次到当前主讨论UUID。
-范围仍为小型CPU/公开文献读取，无模型、forward/backward、环境、GPU、依赖安装或新run root；不自动扩大综述或恢复Reader。
+turn `01a0de07-de2d-7520-bad1-34c8f5070f9a`。完成回报已消费，执行者当前停止新增执行。
+范围为小型CPU/公开文献读取，无模型、forward/backward、环境、GPU、依赖安装或新run root；未扩大综述或恢复Reader。
+两篇不支持直接迁移或新的GPU合同。主讨论继续自身方法研究，§16已把过程规则落实到原生Q的读取赔率、
+suffix V的作用及真实功能信用，保留状态可区分/Value有用/有限共享学习尚未验证的前提。
+
+为落实Owner已授权的跨回合自主推进，已向本主讨论安排**一条**完整理论阶段接续，Queue回执
+`01a0de1d-ff3f-7002-8f9f-c843eee7fb8a`；正文`main_theory_continuation.txt`和回执`main_theory_queue_receipt.txt`
+保存在同一tmp目录。此时仅已入队，不把尚未开始的下一turn记作运行中。
+下一段由主讨论自己构造合法过程特征→状态反馈规则→完整LoRA→学习信用的具体解释模型，预期30–45分钟，
+不继续扩大文献/历史审计，不新增GPU或把局部谓词读出排成课程。完成后依据新增认识裁决完整候选及实际后继。
 
 ### 最近批次的科学状态
 

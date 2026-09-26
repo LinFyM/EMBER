@@ -848,3 +848,85 @@ E[||G_hat(z)-G||^2]
 Adam矩状态与可预测性都需要单独解释。实际部署仍不得读取task actions或运行task-local优化。
 旧LocalField已在收缩前监督真实cotangent并让预测本身组成LoRA；仅说“直接监督更新”不构成新的核心机制。
 当前只核对这两类完整学习合同的真实差异，不为公式安排新GPU、曲率/梯度扫描或逐模块课程。
+
+### 15.5 原始方法核对后的裁决
+
+指定执行者已完成限定核对。主讨论复读HyPoGen固定源码的输入、伪反向、初始权重与外层optimizer，
+并核对LocalField实际`autograd.grad`及同一U/r构成BA的代码，接受以下区别：
+
+- [HyPoGen固定源码](https://github.com/ReNginx/HyPoGen/tree/2208af9531f059b1e1f41fbd4df42edd7b70568d)以显式reward/dynamics/物理参数为条件，
+  学到的伪前向/导数/误差信号产生多步小MLP权重；真实动作MSE及配置可选value/TD给外层信用。
+  `target_net`初值也随外层Adam学习。它没有真实内部梯度匹配，也不是从教学视频生成冻结source LoRA。
+  论文PDF未核读，以上仅限官方实现，不能把模型条件直接换成视频而继承其结论。
+- HyperNet Fields原文确实在当前生成权重处取真任务梯度，与旧冻结source处的标签不同；
+  但限定检索未找到官方实现，§15.4的三种反传实现仍是分支分析，不能任选一种称为论文实做。
+  其公式没有Adam moments；任务损失标签仍需提供，端点生成不代表已经证明EMBER的合法视频获取或保持。
+- `50dafb05:src/ember/writer/correction.py:fields`先求真实动作loss对原生输出的cotangent，再detach并乘`-eta`；
+  同版`factor.py`用预测U/r同时形成局部field及最终BA，`supervised.py`与跨episode FM共同回放。
+  因此“在收缩前监督真实纠正，并让预测组成LoRA”已由旧完整实验检验，不能重提为新的核心差异。
+
+**本轮不激活上述训练形式。** 生成器Jacobians会改变跨条件信用，这点在concept中已有精确局部式；
+不能因此默认改成梯度匹配、白化或自然梯度就有益。§129的private Writer/freeAB为16/14（各32），
+头部缩步H54没有超越原更新；§146的任务lookahead也没有超越BASE。上述反例不证明所有优化方法无效，
+但要求一个新学习机制解释它为何改变这些失败预测，不能只复述条件耦合或局部曲率。
+本次报告暂存`.codex/tmp/conditional_learning_review_20260926/update_learning_primary_review.md`；关键来源与裁决以本节持久保存。
+
+## 16. 将过程知识解释到原生注意力：状态条件规则，不是教师时间表
+
+本节继续§12.4已核定的真实算子，给出一个具体的功能解释模型，不新建架构或实验。
+38个目标包括18层action-expert的Q/V及action-in/out；部署LoRA不修改prefix图像/语言/state的KV权重。
+所以“视频写入Value”不能误说成重写了执行画面的视觉Value：这里的V-LoRA作用于action suffix，
+Q-LoRA则改变action位置对prefix及suffix的读取。
+
+### 16.1 一套固定LoRA怎样根据新初态选择不同操作
+
+先固定一层的实际输入h和所有K/V，只干预该层一个query head的Q。令i为action query位置，
+j/k为两个未被mask的key位置，R为该位置的原生RoPE旋转，tilde-k为已经旋转的key，则精确有
+
+```text
+log(alpha_ij / alpha_ik) = q_tilde_i^T (k_tilde_j-k_tilde_k) / sqrt(d),
+delta log(alpha_ij / alpha_ik)
+  = [R_i s B_Q(z) A_Q(z) h_i]^T (k_tilde_j-k_tilde_k) / sqrt(d).
+```
+
+式中B_Q取该head对应输出行，d=256，h是实际input-layernorm后的投影输入。复读本环境固定
+`lerobot/policies/pi05/modeling_pi05.py:compute_layer_complete`及`transformers/models/gemma/modeling_gemma.py:eager_attention_forward`，
+确认Q/K投影后施加RoPE、scaled dot product及softmax；没有另加Q/K归一化或logit softcap后仍套用此式。
+这里z来自教学，但h和key来自机器人自己的当前观测、state与动作latent。固定B/A不固定这个相对读取偏置。
+实际完整LoRA还会通过前层改变h及suffix K/V，不能将这一单层固定输入恒等式当成整网有限更新的分解。
+八个query heads共享一个KV head，跨头/位置效应继续按真实GQA与后续层传播。
+
+一个仅说明机制的构造：对于“放入抽屉并关上”，若执行h已包含可区分的“未开/已开/已持物”等状态特征，
+并且原生keys/values保留相关对象和作用，则同一A可在这些状态激活不同系数，同一B把它们变成不同查询偏置。
+新初态中抽屉已开时，生成参数无需重新观看教学，也无需按教师第几帧执行；机器人自己的特征可以触发抓持而非重复开抽屉。
+这是带两个关键前提的功能可达性例子，不是当前h已解码这些谓词、prefix已充分或网络学会此规则的实测证明。
+旧操作语义标签审计已发现接触不等于抓持，不能把这些说明用语直接变成未经审计的训练标签。
+
+因此，所需教学特征应帮助确定“哪个对象/关系、什么适用条件、什么期望变化”在控制计算中的连接。
+仅编码教师手向右移动、视频时间或抽屉最后关闭，不足以指定另一初态的上述规则。
+同时，不要求显式阶段token或形式规划器；可用规则也可能分布在多个target和source非线性里。
+
+### 16.2 功能监督何时会训练这种选择
+
+对一个head令`o_i=sum_j alpha_ij v_j`，`b_i=partial loss/partial o_i`，则固定其它输入时
+
+```text
+partial loss / partial logit_ij = alpha_ij b_i^T (v_j-o_i),
+partial loss / partial q_tilde_i
+  = sum_j alpha_ij [b_i^T(v_j-o_i)] k_tilde_j / sqrt(d).
+```
+
+b包含output projection、gate、后续层与最终真实FM的信用；它不是对象标签。
+损失只在相关Value对最终误差有不同作用时，才沿这个通路奖励改变读取比例。
+两块区域外观可分、注意力落在正确物体、或Q梯度非零，都不独立证明学成了操作规则。
+若所有可见Value在b方向上的投影相同，该head此次query的Q信用为零。若只是j/k两者投影相同，
+只能说保持二者总注意力质量的相互重分配没有一阶收益，不能说两个raw logit梯度各自为零。
+这些是局部计算条件，尚未测定它们是否限制EMBER。
+
+对suffix Value，梯度还从允许读取它的其它action位置汇聚；共享KV时须累加query heads。
+V-LoRA可以改变计划中多个动作位置交换的内容，action-in/out改变latent表示与速度读出；
+不能把Q专称“找物”、V专称“运动”并由名称分配唯一职责。旧BBQ路径干预中Q有作用、删除Q却未恢复，也反对这种简单分工。
+
+跨episode FM提供的训练压力应使教学特征预测上述**在不同自身状态下仍有用的选择与写入**；
+是否学成取决于特征、Value/下游计算及共享条件映射一起变化。Reader、真实梯度标签或额外局部语义loss均不能跳过这条联系。
+下一项方法研究将围绕这个完整解释构造可失败假设；不把“先证明每个状态谓词可读出”排成新的诊断课程。

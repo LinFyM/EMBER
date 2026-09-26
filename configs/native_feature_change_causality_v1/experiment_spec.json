@@ -1,0 +1,73 @@
+{
+  "schema_version": "ember_native_feature_change_causality_v1",
+  "study_id": "native_feature_change_causality_20260926",
+  "frozen_input": {
+    "checkpoint": "/data0/user/ymdai/ember_runs/language_content_path_causality_20260926/training/C0/checkpoints/macro_00000630",
+    "training_commit": "dca1b5500ac0f912d56cc1c76382004457e807a4",
+    "prior_full_correct_results": "/data0/user/ymdai/ember_runs/language_content_path_causality_20260926/evaluation/C0_630_held_correct/results.json",
+    "source_checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000"
+  },
+  "intervention": {
+    "stage": "after actual native q/E/fullH reading, before Core and Procedure",
+    "arms": [
+      {"id": "E0_H0", "E_changes": false, "H_changes": false},
+      {"id": "E1_H0", "E_changes": true, "H_changes": false},
+      {"id": "E0_H1", "E_changes": false, "H_changes": true},
+      {"id": "E1_H1", "E_changes": true, "H_changes": true}
+    ],
+    "zero_level": "broadcast each video's own real first-frame features to its original valid positions",
+    "one_level": "reuse original tensors directly without subtract-add roundtrip",
+    "recompute_initial_interactions_from_intervened_H": true,
+    "preserve_q_masks_positions_lengths_boundary_public_noise": true,
+    "native_H_shape_per_frame": [50, 1024],
+    "average_raw_features_or_loras": false,
+    "canonical_compiler_heads_only": true
+  },
+  "evaluation": {
+    "classification": "frozen_feature_intervention_diagnostic_not_method_qualification",
+    "task_ids": [0, 1, 14, 15, 20, 21, 36, 38],
+    "state_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "native_conditions": 80,
+    "banks": 320,
+    "new_rollouts": 320,
+    "pilot_cases_per_arm": [[0, 0], [36, 0]],
+    "pilot_included_in_total": true,
+    "separate_smoke_rollouts": 0,
+    "maximum_extra_writer_engineering_calls": 2,
+    "maximum_extra_policy_queries": 0,
+    "teacher_selection": "original correct mapping; 10 distinct of 50 videos per task, shared by all four arms",
+    "video_schedule_seed": 20260911,
+    "environment_policy_seed": 7,
+    "capture": {
+      "all_compact_and_T_plus_1_and_predicates": true,
+      "full_task_ids": [0, 14, 21, 38],
+      "full_state_ids": [0],
+      "full_cases": 16,
+      "both_cameras": true,
+      "features": ["q", "E", "H", "frame_attention", "Core", "P", "core_slots", "centered_P", "procedure_slots", "gamma", "beta", "fused_slots", "output_slots"]
+    },
+    "contrasts": ["11-00", "10-00", "11-01", "01-00", "11-10", "11-10-01+00"],
+    "bootstrap": {"cluster": "task", "resamples": 20000, "seed": 20260926, "joint_draws": true},
+    "training": false,
+    "new_teacher_action_state_reward_reads": false,
+    "official_validation_test": false,
+    "wrong_shuffle_reverse": false,
+    "checkpoint_selection": false
+  },
+  "resources": {
+    "maximum_gpu_hours_all_processes": 2.5,
+    "maximum_new_data0_gib": 6,
+    "maximum_new_code_mib": 768,
+    "maximum_physical_gpus": 6,
+    "live_two_node_admission": true,
+    "record_complete_process_time": true,
+    "wait_for_exit_events": true
+  },
+  "outputs": {"planned_run_root": "/data0/user/ymdai/ember_runs/native_feature_change_causality_20260926"},
+  "coordination": {
+    "main_thread": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+    "executor_thread": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+    "dispatch": "Queue",
+    "stop_after_completion": true
+  }
+}

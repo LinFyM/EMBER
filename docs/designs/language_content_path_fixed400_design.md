@@ -1,7 +1,8 @@
 # 内容路径阴性后：固定C0的完整条件覆盖
 
 2026-09-26。原736条已结束，独立复核见findings§153及原study的`coordination/main_recheck.json`。
-这是新登记的有限补评，不是恢复Cplus、训练新架构或按80条筛选checkpoint。执行状态只看progress。
+本批已完成并由主讨论独立验收，见findings§154；不再恢复新增计算。
+下文保留事前有限补评合同，不是恢复Cplus、训练新架构或按80条筛选checkpoint。当前执行状态只看progress。
 机器合同：`configs/language_content_path_fixed400_v1/experiment_spec.json`。
 
 ## 1. 为什么先补这个，而不再改架构

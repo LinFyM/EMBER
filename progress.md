@@ -1,8 +1,28 @@
 # EMBER progress
 
-## 当前状态：736条已独立复核、关闭Cplus；固定C0完整覆盖已Queue，Sol确认接手（2026-09-26）
+## 当前状态：fixed400已独立验收；登记冻结E/H逐帧变化的特征层诊断（2026-09-26）
 
-Active design：[language_content_path_fixed400](docs/designs/language_content_path_fixed400_design.md)，
+Active design：[native_feature_change_causality](docs/designs/native_feature_change_causality_design.md)，
+规格`configs/native_feature_change_causality_v1/experiment_spec.json`。尚未派发/启动，不能把登记当作完成。
+实际执行者仍为Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`，主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
+
+fixed400新1280条及原320条已从原results/合同独立复核；全部新trace、视频50覆盖、配对种子前缀与全部统计通过。
+原件及主讨论检查：`/data0/user/ymdai/ember_runs/language_content_path_fixed400_20260926/coordination/main_recheck.{py,json}`。
+Source/B/C0 correct/other完整400为57/121/120/132，新增320为41/100/96/102。
+相对语言的两个task-cluster区间均包含0，Goal21旧大幅缺口未复现；视频有益增量仍未识别，findings§154。
+新GPU统一d18a8a0e，原行/训练dca1b550，B银行43d801b1；五个GPU进程完整计时5.904167小时，低于8，科学矩阵无缺项。
+只读CPU字段名修正均保留，不改变任何模型或原行。Cplus学习分支继续关闭。
+
+接续固定C0@630，80原正确条件只编码一次；分别保留E/H逐帧变化或广播各自首帧，H初始化投影同步重算。
+四格320完整LoRA/320闭环，pilot8计入总数，全T+1/16full；保存原生输入至Compiler的特征与正式首轮动作。
+不新增训练、独立function query、teacher action/state/reward、节点、wrong/shuffle/reverse或官方Validation/Test。
+预算2.5完整GPU-hours/6GiB新data0/768MiB代码，本批最多6卡；00不是learned static baseline，混合格分布偏移边界写入合同。
+本批用于确定逐帧特征是否有净执行价值，不把特征差异或对照退化当作根因、方法资格或视频必要性证明。
+工程/资源准入通过后按同一合同接续，完成主动Queue主讨论、停止新增实验；派发回执随后登记。
+
+### 已完成fixed400的原派发记录
+
+当时设计：[language_content_path_fixed400](docs/designs/language_content_path_fixed400_design.md)，
 机器规格`configs/language_content_path_fixed400_v1/experiment_spec.json`；它只授权1280条有限补评，不授权新训练。
 执行者仍为Owner指定Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`，主讨论身份保持。
 
@@ -22,7 +42,7 @@ C0/Cplus正确24/16、另一正确30/19（各80），seen均27/64；保持预测
 `01a0db54-26df-71f3-ad41-4b4544a7f43e`，Sol明确回复按fixed400、隔离实现、只补states10..49和退出事件接续。
 正文/接受/送达保存在本仓`.codex/tmp/language_content_path_fixed400_20260926/`。
 原生即时状态查询未返回，复用已核实app-server作一次有界只读核验后通过官方CLI入队；未重发或创建任务。
-当前已接手实现，不把接手当正式GPU启动；工程/实时资源验收通过后同合同直接接续，完成后回主讨论独立裁决。
+以上是当时接手记录；本批现已完成且独立验收，不从该历史记录继续补评。
 
 ### 已完成两臂学习的ready与派发记录
 

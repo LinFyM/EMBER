@@ -4,6 +4,17 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-26：固定C0完整覆盖结束，转向有界特征变化的功能辨识
+
+fixed400新增1280及原320组成四格各400，Source/B/C0 correct/other=57/121/120/132。
+主讨论从原件独立核验行、来源、全部新trace、视频覆盖、配对前缀与全部统计；findings§154及study
+`/data0/user/ymdai/ember_runs/language_content_path_fixed400_20260926/coordination/main_recheck.{py,json}`保留核验。
+新GPU实现d18a8a0e、原训练/80行dca1b550、B bank43d801b1；完整计时5.904167 GPU-hours。
+旧Goal21巨大差距未在这次C0训练复现，但两种正确条件相对语言的区间均含0，尚无视频有益增量或修复结论。
+关闭本批补评；登记[原生特征变化诊断](designs/native_feature_change_causality_design.md)，
+只冻结C0，交叉逐帧E/H与各自首帧广播，四格320新闭环、全链特征与首轮函数记录，无训练。
+初始场景/原时钟参照不是充分学习的static baseline，混合特征有分布偏移；具体边界、派发及状态以设计和progress为准。
+
 ## 2026-09-26：内容路径学习没有改善保持，固定原C0补完整覆盖
 
 F=dca1b550的C0/Cplus各630更新及736条闭环完成，主讨论独立核验原始行、全T+1 trace、实际查询/随机流和全部配对区间。

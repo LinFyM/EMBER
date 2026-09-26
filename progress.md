@@ -14,7 +14,12 @@
 启动必须来自本次集成后的clean pushed detached commit，并重新核data1独立quota/两节点live卡数与余量。
 数据路径为`/data1/user/ymdai/ember_runs/conditional_velocity_operator_learning_20260927`。
 首批不自动450/other/最终controls，不混RL/蒸馏、不加模型探针；完整比较后回报并由主讨论裁决。
-本条记录尚不表示GPU已运行，实际派发/launch原件在冻结commit交付后补记。
+唯一formal冻结commit为`0c4ea63643d9fd977013603ca610bf6ba7effff8`，已推送；main无未提交变更后派发。
+2026-09-26 21:27 UTC正式请求Queue `01a0df9d-58ed-7401-bb7a-7073546536c6`已接受，
+21:31 UTC原生状态确认执行turn `01a0df9d-58f0-7d90-b2e1-22c7a83147d8`正在做启动准备。
+请求/真实回执见`.codex/tmp/conditional_velocity_learning_20260927/stage1_launch_{request,queue_receipt}.txt`。
+这只确认实际派发与执行者活动，不把preflight写成GPU已运行；GPU事实由launch原件及完整执行回报确认。
+主讨论直接等待这一批的完成/阻塞事件，不另排自通知，不按固定间隔读取训练日志或追加探针。
 
 ### 刚完成：正式CPU实现、独立审阅与两项合同修正
 
@@ -26,7 +31,7 @@
 纠正完成Queue `01a0df95-b730-7670-9f80-885fe2938d67`已核并消费；迟到消息不重跑。
 
 现在直接复用MT-BC的clamped_lr_multiplier，step150达峰、绝对step1200到floor；L两次读同一Core语言memory。
-22项针对性CPU检查通过，文档/代码diff检查通过，隔离分支已fast-forward集成main，待本条Git交付后冻结launch。
+22项针对性CPU检查通过，文档/代码diff检查通过，隔离分支已fast-forward集成main并完成上述冻结交付。
 一次扩展Source-SFT旧配置authority测试失败，主讨论在集成前2a34b5dd上独立复现；相关旧配置/loader无本轮diff，
 新路径不调用该loader。此限制已记设计§10，不宣称全库测试通过，不改写历史权威或重跑MT-BC。
 

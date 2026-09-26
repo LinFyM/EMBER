@@ -18,8 +18,14 @@
 本次CPU准备预计45–75分钟、90分钟判断上限：真实语言路径、共享初始化、36-task sampler/时钟、
 精确紧凑bank及既有canonical evaluator接入；正式入口替换工程专用入口，旧Compiler不保留为fallback。
 主讨论独立核对CPU交付后集成推送main，登记clean detached commit，再另发首批GPU启动指令。
-当前派发回执待本次文档Git交付后登记；不把这段计划文字称为执行者已开工。
+合同已随main `c3757fc9`推送，20:29 UTC通过官方codex queue实际派发CPU任务；exit0，
+回执`01a0df68-b837-7803-8aa9-a54d18394164`，原文/回执在
+`.codex/tmp/conditional_learning_review_20260926/conditional_velocity_preparation_{request,queue_receipt}.txt`。
+单次compact快照核实对应新turn `01a0df68-b83a-75b2-bb05-9139d970c00e`已inProgress；GPU仍未授权。
 主讨论继续完成该完整学习程序的事件/资源与比较核验，不自排同类公式或历史审计任务。
+主讨论已用manifest和固定seed完成CPU事件核验：270每task30条不同teacher/840query，450为50条/1400query，
+全部跨episode；首次四任务/teacher为32/18、20/37、96/25、35/49。估计约2.433训练GPUh/视频臂仅作成本输入，
+不改9h上限。小型原件为`.codex/tmp/conditional_velocity_learning_20260927/event_cost_review.json`；没有读取模型/held标签或启动GPU。
 
 ### 刚完成：工程原件与科学边界独立验收
 

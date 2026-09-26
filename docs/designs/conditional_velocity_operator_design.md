@@ -217,6 +217,10 @@ L每个exact language生成一次R并复用50个状态，逻辑仍是一套完�
 工程实测world2平均16.822秒/112query；270更新的V update-only约1.262h wall/2.523 GPUh。
 36-task元数据中完整stride5视频P50/P90/P99/max为29/51/87/105帧，最大raw517（global38/demo36），
 高于工程profile的71帧。需要将实际分布/负载和加载保存计入，不能称71已覆盖新协议最长视频。
+主讨论CPU核完冻结事件：270时各task恰30个不同teacher/840query，450时恰50个不同teacher/1400query，
+均严格跨episode；270实际教学最大102采样帧。用工程第2–4步12个condition的时长作简单frame-cost外推，
+270的world2训练约1.216h/2.433 GPUh，最大宏步约24.6秒；只有4条不同教学的校准，故不据此缩减下方预算。
+计算原件为`.codex/tmp/conditional_velocity_learning_20260927/event_cost_review.json`，不是模型运行或实际formal吞吐。
 L尚无本模型实测吞吐；预算先按不快于V的保守输入计，不把旧Reader-L速度当新证据。
 历史官方400约1 GPUh/面板仅是调度参照；本模型800评测另留约2–3 GPUh，物化/加载/失败留余量。
 

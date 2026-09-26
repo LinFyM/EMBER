@@ -3728,6 +3728,7 @@ C0相对Source有63/75净增，但语言B也有64净增；这不建立视频贡�
 E含语言与逐帧视觉内容，H是native动作计算响应，当前成绩仍兼容初始场景/语言足够、变化特征未被有益读取、
 以及已有局部视频贡献被其它损失抵消。对已冻结checkpoint的CPU参数读取显示C0各head帧汇聚lambda=.04994–.05062，
 Cplus=.04955–.05046；这是均匀/选择混合比例，不是信息损失率或已验证根因。
+读取记录在原language-content study的`coordination/main_frame_gate_check.json`，无模型前向或新GPU计算。
 后继[原生特征变化干预](docs/designs/native_feature_change_causality_design.md)固定q与完整Writer，
 交叉保留/首帧广播E、H，同步重算H初始化路径，并记录特征→LoRA→首轮动作→闭环。
 00仍保留初始内容和原时钟，不是learned static baseline；混合格有联合分布偏移，正差不能自动称视频必要性或修复。

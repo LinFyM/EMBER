@@ -3,7 +3,7 @@
 ## 当前状态：fixed400已独立验收；登记冻结E/H逐帧变化的特征层诊断（2026-09-26）
 
 Active design：[native_feature_change_causality](docs/designs/native_feature_change_causality_design.md)，
-规格`configs/native_feature_change_causality_v1/experiment_spec.json`。尚未派发/启动，不能把登记当作完成。
+规格`configs/native_feature_change_causality_v1/experiment_spec.json`。已Queue并核对Sol接手；尚无本批正式GPU结果。
 实际执行者仍为Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`，主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
 
 fixed400新1280条及原320条已从原results/合同独立复核；全部新trace、视频50覆盖、配对种子前缀与全部统计通过。
@@ -18,7 +18,11 @@ Source/B/C0 correct/other完整400为57/121/120/132，新增320为41/100/96/102�
 不新增训练、独立function query、teacher action/state/reward、节点、wrong/shuffle/reverse或官方Validation/Test。
 预算2.5完整GPU-hours/6GiB新data0/768MiB代码，本批最多6卡；00不是learned static baseline，混合格分布偏移边界写入合同。
 本批用于确定逐帧特征是否有净执行价值，不把特征差异或对照退化当作根因、方法资格或视频必要性证明。
-工程/资源准入通过后按同一合同接续，完成主动Queue主讨论、停止新增实验；派发回执随后登记。
+工程/资源准入通过后按同一合同接续，完成主动Queue主讨论、停止新增实验。
+合同/裁决在1edffbf3推送；2026-09-26 04:11:45 UTC（北京时间12:11）以Queue派给上述实际Sol，
+回执`01a0dbe9-7661-7b92-99e6-b2cc23344882`。04:12:29核对完整正文进入新turn
+`01a0dbe9-7662-77f0-95b1-8a6e7a3e1b32`，Sol明确接续同名批次、核对合同并实施有界改动；没有重发。
+正文/入队/逐字送达和接手回执位于本仓`.codex/tmp/native_feature_change_causality_20260926/`。
 
 ### 已完成fixed400的原派发记录
 

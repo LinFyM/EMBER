@@ -6,6 +6,10 @@
 
 ## 2026-09-26：特征到执行算子的计算审计与候选读出准备
 
+随后主讨论继续独立推导[机制分析§10](analyses/feature_to_operator_mechanism_20260926.md#10-独立推进的传递审查信用等价计算差别与下一裁决)，
+修正“直接读出即补充query级信用”的不成立理由，证明线性K/V与LoRA的前向/梯度等价，并给出非线性局部传递反例。
+findings§158保留推导、合成CPU核验与候选解释的修订；没有真实数据/GPU或新实验派发，S0不变。
+
 Owner要求开始后，主讨论逐接口核对q/E/H、Core/P、完整因子及FM cotangent重放，重访Semantic-Path、
 统一原生Writer、旧固定native reader及真纠正获取的完整反例。形成
 [机制分析](analyses/feature_to_operator_mechanism_20260926.md)和

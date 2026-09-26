@@ -4,6 +4,10 @@
 本稿把[特征到算子的机制分析](../analyses/feature_to_operator_mechanism_20260926.md)落实到可审阅的下一比较；
 S0结果可能修订其优先级。不得从本文件自行恢复/启动实验，阶段转换由主讨论完成科学裁决，不增加Owner审批。
 
+后续数学审查见同文§10：Reader不补充一条原LoRA缺失的query级梯度。线性K/V读出可以与BAh及其梯度完全等价；
+本稿检验的是按执行特征进行非线性内容选择的有限学习假设，且额外承担传回固定LoRA的困难。
+不能将它称为已经定位到Compiler或已经完成最终架构设计。此澄清不扩充任何预算、面板或后继阶段。
+
 ## 1. 要裁决的一个问题
 
 给定相同合法教学输入和动作监督，**让执行特征直接查询教学内容、并共同学习读取表示**，能否获得当前视频Writer
@@ -21,7 +25,9 @@ R_V取得正确及另一正确视频收益，才给后续编译提供值得传�
 
 ### 教学侧
 
-复用C0的真实text-only q、双相机图文E、完整50位置H、LanguageSemanticCore和RecurrentProcedureEncoder。
+复用C0的真实text-only q、agentview单相机图文E（256个真实patch）、完整50位置H、LanguageSemanticCore和RecurrentProcedureEncoder。
+教学侧明确固定`camera_view=agentview`；执行policy及full-case采集仍双相机。初稿将两者混称双相机，
+已按原C0配置和run_contract更正；不得由旧措辞新增教学视角。
 R_V memory为`C[L,256]`及`P[T,256]`，保留各自mask及P的真实frame positions；不新增外部视觉模型、对象标签、
 动作中间量、低阶路径统计或新的联合token编码器。H只在真实learned read后收缩。
 R_L memory为同一个LanguageSemanticCore的language-only `C=T(q)`，不输入假图像、fake action或零视频。
@@ -62,6 +68,10 @@ RoPE和GQA重复仍按真实native实现，不将这个局部式当作整网线�
 
 旧native reader使用固定E/Meta、仅训读头并只验离线FM；本候选让上述教学读取器和reader在真实原生续算下共同学习，
 并以闭环和匹配language读出裁决。旧失败仍是风险证据，不能因名称不同忽略它。
+
+同样，现有全38-target LoRA与本稿双target Reader不存在已经证明的函数类包含关系。
+若本候选无益，降低这一具体联合读出路线的优先级；若有益，也不能唯一归因于softmax、某一个head或原编码表示。
+其主要可失败预测是在同预算下取得跨正确视频/初始化的额外控制能力，后继编译是另一项须兑现的命题。
 
 ## 3. 学习合同准备
 
@@ -128,6 +138,8 @@ Reader始终在实际query前向及其activation-checkpoint重算期间安装，
 Sol收到未来正式派发后只完成该批，主动向主讨论Queue原件/退出/缺项，停止新增实验。
 主讨论独立核验后依机制分析§7作判断：Reader无益则下调该假设；只改善语言能力不作为视频教师；
 有正确教学闭环增量才准备传给唯一LoRA。Teacher成功仍不是最终方法成功，更不取消强MT-BC、保持和完整配对评测。
+同坐标BAh匹配只是后继候选学习偏置，尚未选定为训练目标；局部L2减少不足以证明完整policy功能传递。
+当前不为这个可能阶段额外采集Jacobian、hidden回归query、局部投影或去噪位置干预。
 
 本稿不授权利用Test、held actions、wrong处罚或最终shuffle/reverse来修正架构。
 它也不锁死未来只能采用功能教师路线；新反例应实际改变方法优先级，不能把“尚未普遍证伪”当作继续投入的理由。

@@ -38,7 +38,9 @@ Owner随后在旧主讨论明确：“新session我还没创建，所以你等�
 Owner询问为何沿用data0后，主讨论确认原路径仅继承旧工程合同，没有本批必须使用data0的技术依据。
 输出根尚未创建时将本批输出修订为`/data1/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926`；
 后继新输出也优先data1，历史data0证据不迁移。启动前核验strg01的data1独立配额与共享容量，输出2GiB及代码768MiB合计核算；
-科学范围、GPU预算与时间预期保持。向正在实现的执行者使用Steer同步本轮修订，接受和处理状态随后登记。
+科学范围、GPU预算与时间预期保持。修订提交`b01c48df`已推送；Steer由当前活跃turn
+`01a0dd8a-42f1-7260-a167-32b51ccabfd9`接受，执行者在同轮明确确认隔离分支已同步该提交与data1路径，旧data0工程根未创建。
+正文与回执保存在`.codex/tmp/native_conditional_reader_engineering_20260926/data1_storage_steer*`；迟到的同一确认不触发重新派发。
 
 ### 本夜时间预期与阶段边界
 

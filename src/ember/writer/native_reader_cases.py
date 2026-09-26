@@ -11,6 +11,7 @@ from pathlib import Path
 import torch
 from safetensors.torch import load_file
 
+from ember.pi05_assets import prepare_libero_config
 from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
 from ember.pi05_evaluation import rollout_shard
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
@@ -122,10 +123,13 @@ def cases(args) -> None:
         raise ValueError("Reader and canonical evaluator source checkpoints differ")
     data = WriterTrainingData(args.asset_root, config["data"], camera_view="agentview",
                               planned_updates=4, use_videos=args.mode == "R_V")
+    os.environ["EMBER_LIBERO_ASSETS_ROOT"] = reference["libero_paths"]["assets"]
+    config_path = args.output / "engineering/libero_config"
+    installed_paths = prepare_libero_config(config_path)
+    if installed_paths != reference["libero_paths"]:
+        raise ValueError("Reader canonical LIBERO assets differ from sealed seen reference")
     os.environ.update(MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl",
-                      MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu),
-                      LIBERO_CONFIG_PATH=str((args.output / "engineering/libero_config").resolve()))
-    Path(os.environ["LIBERO_CONFIG_PATH"]).mkdir(parents=True, exist_ok=True)
+                      MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu))
     first_contract, _ = _case_contract(reference, args, mode=args.mode, global_task=2)
     pool = PersistentTaskEnvironmentPool(first_contract, physical_gpu_id=args.physical_gpu)
     try:

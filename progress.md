@@ -18,7 +18,12 @@
 2026-09-26 21:27 UTC正式请求Queue `01a0df9d-58ed-7401-bb7a-7073546536c6`已接受，
 21:31 UTC原生状态确认执行turn `01a0df9d-58f0-7d90-b2e1-22c7a83147d8`正在做启动准备。
 请求/真实回执见`.codex/tmp/conditional_velocity_learning_20260927/stage1_launch_{request,queue_receipt}.txt`。
-这只确认实际派发与执行者活动，不把preflight写成GPU已运行；GPU事实由launch原件及完整执行回报确认。
+22:30–22:34 UTC主讨论首次核对实际launch原件与执行者最新阶段回报：冻结0c4ea636，data1配额与共享容量已核，
+V的run_contract及训练metrics已经产生；尚无本批完整退出/结果回报，没有读取中途loss作选择。
+gpu01同节点配对卡承载他人持续高负载，先用gpu02/6,7 world2训练V；L尚未启动。
+两臂当前按顺序推进，原2–3h wall为并行外推，当前不能作为完成承诺；9完整GPUh上限和两臂各400合同不变。
+launch_contract的`python`字段实际误填Torch版本2.11.0+cu128，最终原件验收须将Python/Torch版本分别纠正；
+这是轻量元数据问题，不改变运行环境、模型或冻结commit。
 主讨论直接等待这一批的完成/阻塞事件，不另排自通知，不按固定间隔读取训练日志或追加探针。
 
 ### 刚完成：正式CPU实现、独立审阅与两项合同修正

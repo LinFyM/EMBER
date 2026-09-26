@@ -1,20 +1,25 @@
 """CPU contract for the fresh first-content arm and its staged bank scope."""
 
 from copy import deepcopy
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 import torch
 
+from ember.pi05_assets import Pi05EvaluationError
 from ember.lora import identity_lora_state
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json
 from ember.pi05_eval.learned_initial_content import cases, full_cases
+from ember.pi05_eval import learned_initial_content as initial_eval
+from ember.pi05_target_data import SUITE_ORDER
 from ember.writer import model as writer_model
 from ember.writer.learned_initial_content_contract import (
     bank_panel, evaluation_panel, selection_for, spec, validate_config,
 )
+from ember.writer.learned_initial_content_contract import FROZEN_GPU_COMMIT, _allowed_s0_bank_commit
 from ember.writer.native_feature_change import intervene_packed
 from ember.writer.training import _checkpoint_nodes, _segment_limit
 
@@ -141,3 +146,59 @@ def test_training_bank_and_exact_stage_partition():
     with pytest.raises(ValueError, match="video map"):
         bank_panel(config, invalid, checkpoint=run / "training/S0/checkpoints/macro_00000630",
                    output=run / "materialization/S0_630_held_correct")
+
+
+def test_registered_other_arm_and_exact_cpu_stage_source(tmp_path, monkeypatch):
+    study = spec()
+    root = Path(study["outputs"]["planned_run_root"])
+    output = root / "evaluation/complete/C0_630_held_other"
+    row = evaluation_panel(output)
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text("{}\n")
+    monkeypatch.setattr(initial_eval, "bank_manifest", lambda _row: manifest)
+    spec_path = ROOT / initial_eval.SPEC_PATH
+    full = [{"suite": suite, "task_id": task, "init_state_id": state}
+            for suite, task, state in sorted(full_cases(row))]
+    contract = {
+        "output_dir": str(output), "role": "development_train", "mode": "screen",
+        "arm": "same_task_other",
+        "tasks": [{"suite": SUITE_ORDER[task // 10], "task_id": task % 10,
+                   "init_state_ids": row["state_ids"]} for task in row["task_ids"]],
+        "diagnostic_occupancy_capture": {
+            "schema_version": "ember_pi05_registered_trajectory_capture_v1", "mode": "compact",
+            "full_conditions": full, "trajectory_root": str(output / "trajectories"),
+            "passive_trace": {"schema_version": initial_eval.TAG,
+                              "spec_path": str(spec_path), "spec_bytes": spec_path.stat().st_size,
+                              "trace_root": str(output / "continuous_traces")},
+            "training_gradient_use": False, "checkpoint_selection_use": False,
+            "validation_use": False, "test_use": False},
+        "diagnostic_stage_predicates": {
+            "full_conditions_only": False,
+            "capture": "all_rows_post_settling_then_every_executed_control_step"},
+        "adapter": {"manifest": {"path": str(manifest), "bytes": manifest.stat().st_size},
+                    "writer_checkpoint": {"training_commit": FROZEN_GPU_COMMIT},
+                    "materialization_git": {"commit": FROZEN_GPU_COMMIT}},
+        "model": {"checkpoint": study["assets"]["source_checkpoint"]},
+        "git": {"commit": FROZEN_GPU_COMMIT},
+    }
+    initial_eval.attach(contract, ROOT)
+    assert contract["learned_initial_content"]["panel"] == row["id"]
+    contract["arm"] = "correct"
+    with pytest.raises(Pi05EvaluationError, match="cases"):
+        initial_eval.attach(contract, ROOT)
+
+    e2 = "cpu-only-evaluation-commit"
+    record = {"schema_version": "ember_initial_content_held_other_cpu_stage_exception_v1",
+              "study_id": initial_eval.STUDY,
+              "frozen_training_and_bank_commit": FROZEN_GPU_COMMIT,
+              "evaluation_commit": e2,
+              "panels": ["C0_630_held_other", "S0_630_held_other"],
+              "scope": "registered_arm_and_exact_source_validation_only_no_model_or_rollout_change"}
+    stage_file = tmp_path / "launch/held_other_cpu_stage_exception.json"
+    stage_file.parent.mkdir()
+    stage_file.write_text(json.dumps(record))
+    assert _allowed_s0_bank_commit("S0_630_held_other", tmp_path, FROZEN_GPU_COMMIT, e2)
+    assert not _allowed_s0_bank_commit("S0_630_held_correct", tmp_path, FROZEN_GPU_COMMIT, e2)
+    record["panels"].append("C0_630_held_correct")
+    stage_file.write_text(json.dumps(record))
+    assert not _allowed_s0_bank_commit("S0_630_held_other", tmp_path, FROZEN_GPU_COMMIT, e2)

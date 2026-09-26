@@ -133,7 +133,7 @@ def attach(contract: dict[str, Any], repo_root: Path) -> None:
         "validation_use": False, "test_use": False,
     }
     if (contract["role"] != "development_train" or contract["mode"] != "screen"
-            or contract["arm"] != "correct" or actual != cases(row)
+            or contract["arm"] != row["condition"] or actual != cases(row)
             or full != full_cases(row) or capture != expected_capture
             or contract.get("diagnostic_stage_predicates", {}).get("full_conditions_only") is not False
             or contract.get("diagnostic_stage_predicates", {}).get("capture") !=

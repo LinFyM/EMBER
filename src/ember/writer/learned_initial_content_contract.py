@@ -13,6 +13,25 @@ STUDY = "learned_initial_content_causality_20260926"
 CONFIG_SCHEMA = "ember_learned_initial_content_causality_config_v1"
 SPEC_PATH = "configs/learned_initial_content_causality_v1/experiment_spec.json"
 ROOT = Path(__file__).resolve().parents[3]
+FROZEN_GPU_COMMIT = "4f6c75e419eeb785a7ee38941df19ba958ab5c21"
+
+
+def _allowed_s0_bank_commit(panel_id: str, root: Path, bank_commit: str,
+                            evaluation_commit: str) -> bool:
+    if bank_commit == evaluation_commit:
+        return True
+    if panel_id != "S0_630_held_other" or bank_commit != FROZEN_GPU_COMMIT:
+        return False
+    record_path = root / "launch" / "held_other_cpu_stage_exception.json"
+    if not record_path.is_file():
+        return False
+    return read_json(record_path) == {
+        "schema_version": "ember_initial_content_held_other_cpu_stage_exception_v1",
+        "study_id": STUDY, "frozen_training_and_bank_commit": FROZEN_GPU_COMMIT,
+        "evaluation_commit": evaluation_commit,
+        "panels": ["C0_630_held_other", "S0_630_held_other"],
+        "scope": "registered_arm_and_exact_source_validation_only_no_model_or_rollout_change",
+    }
 
 
 def spec() -> dict[str, Any]:
@@ -146,9 +165,11 @@ def validate_evaluation_bank(panel_row: Mapping[str, Any], path: Path,
         return
     root = Path(study["outputs"]["planned_run_root"]).resolve()
     trace = root / "features" / row["id"] / "index.json"
+    bank_commit = manifest["materialization_git"]["commit"]
     if (path.resolve() != root / "materialization" / row["id"] / "manifest.json"
-            or run["git"]["commit"] != commit
-            or manifest["materialization_git"]["commit"] != commit
+            or run["git"]["commit"] != FROZEN_GPU_COMMIT
+            or bank_commit != FROZEN_GPU_COMMIT
+            or not _allowed_s0_bank_commit(row["id"], root, bank_commit, commit)
             or manifest.get("learned_initial_content") != {
                 "study_id": STUDY, "panel": row["id"], "spec_path": SPEC_PATH,
                 "feature_index": str(trace)}

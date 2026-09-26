@@ -4,6 +4,18 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-27：当前C0/B八对得失行为只读复核
+
+在既有fixed400索引上，四suite各取一得一失，优先双臂full再按task/state字典序：
+得(0,3)/(14,4)/(21,8)/(36,7)，失(0,11)/(14,10)/(20,43)/(38,5)。不是新增评测或类别比例估计。
+执行者12.3分钟完成16条原results/NPZ/PT核对，主讨论复算Object与Long关键记录；没有模型、环境、GPU或新run。
+多个失败臂也移动目标对象而未完成关系；Long涉及第二子目标及已有子目标短暂false后恢复，抽屉例因缺joint/把手证据不细分。
+主讨论补读同C0/state10 Object14已保存的other：demo20/37分别F280/成功173，首个输入与noise相同，
+ketchup高于初始body原点30mm的描述性代理首次为263/104步。证明有限条件作用，不等于有益语义理解或总体收益。
+原始索引仍在`/data0/user/ymdai/ember_runs/language_content_path_fixed400_20260926/analysis/combined_row_index.json`；
+派生报告/精确路径/保存图像仅在data1 `.codex/tmp/current_pair_behavior_20260927/`。
+范围、8对行为及不启动局部补丁的解释见findings§168和机制分析§23；总体120/121、27得28失沿用已验收结果。
+
 ## 2026-09-26：Reader有界工程独立验收；正式学习在启动前撤回
 
 实现`2fbd4c7d`完成R_V/R_L各fresh4及2→4 world2恢复、一次最长71帧视频28query反传、六条train-only接口case。

@@ -7,6 +7,10 @@ Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前
 Owner再次授权遵守现有规则自主推进，并明确明早不要求已经超越MT-BC，但要求实质进步；随后澄清实质进步必须体现为
 更清楚的视频/语言→有用运动过程特征→实际LoRA→配套训练与功能形成的数学原理，不能只以架构或方法取舍交差。
 Owner随即澄清，这是贯穿推进逐步建立的理解，不要求现在立刻完成推导；可先综合既有证据形成主讨论自己的初步认识。
+Owner最后要求不得提出与过去失败架构/训练几乎一致的改进。主讨论已核对最近似完整历史与源码，
+确认旧Video Functional早已联合训练表示/执行reader，且有VL共同学习版本；因此下调当前Reader正式学习优先级。
+现有工程仍按原范围收尾，630准备稿保持未激活；重新投入须解释实际变化为何改变旧失败预测，工程通过或低成本均不足。
+具体比较与修订见机制分析§6.1、findings§156，不重跑旧实验，也不凭此自动改投另一套架构。
 
 **唯一已激活后继设计（新执行者已接手，尚未独立验收）**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **仅§4工程准备**；
 机器合同`configs/native_conditional_reader_v1/engineering_spec.json`，study `native_conditional_reader_engineering_20260926`。

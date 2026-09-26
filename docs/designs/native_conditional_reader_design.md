@@ -68,8 +68,14 @@ q纠正改变当前位置怎样读取原生prefix/suffix Key，v纠正改变atte
 RoPE和GQA重复仍按真实native实现，不将这个局部式当作整网线性化精确值。
 它把“教学内容帮助关注什么/传递什么”落实到实际算子，但不预先给某个head赋予物体或阶段含义。
 
-旧native reader使用固定E/Meta、仅训读头并只验离线FM；本候选让上述教学读取器和reader在真实原生续算下共同学习，
-并以闭环和匹配language读出裁决。旧失败仍是风险证据，不能因名称不同忽略它。
+旧native reader使用固定E/Meta、仅训读头并只验离线FM，但这不是完整的最近历史。
+旧Video Functional已用执行query读E、query/content乘积和零输出head，联合训练encoder/Action Meta/reader，
+其VL版本还共同训练教学prefix。首版及后继未建立强教师或可信迁移，不能将“联合训练”写成这次的新依据。
+完整原合同、代码和原件比较见[机制分析§6.1](../analyses/feature_to_operator_mechanism_20260926.md#61-最近似历史的完整比较与本次降级)。
+
+当前实质差异是C0的C/P表示、层9独立q/v输出纠正及只用reader自身原生FM的梯度目标；
+它们改变计算图，却尚无证据证明旧失败来自末端输出、hidden纠正耦合或共同目标冲突。
+据此下调本稿正式学习的优先级。仅§4原工程继续；§3/§5准备保留但未激活，不能凭工程完成或组合未试过继续投入。
 
 同样，现有全38-target LoRA与本稿双target Reader不存在已经证明的函数类包含关系。
 若本候选无益，降低这一具体联合读出路线的优先级；若有益，也不能唯一归因于softmax、某一个head或原编码表示。
@@ -79,6 +85,7 @@ RoPE和GQA重复仍按真实native实现，不将这个局部式当作整网线�
 
 对应机器准备稿为`configs/native_conditional_reader_v1/learning_spec.json`，状态`prepared_not_activated`。
 仅将本节及§5已定的条件、面板和投资规则落实为可执行字段；完整工程验收和分项实测ETA之前不得启动。
+此外须先完成上述近似历史复核后的科学投入裁决，给出能改变旧失败预测的具体依据；当前尚未满足，非Owner审批事项。
 
 两臂均fresh、source权重始终冻结。唯一目标是真实全H50随机tau的动作FM，不新增KD、RL、参数重建或保持loss。
 拟沿用C0/S0的fit28 allowlist、demo0..45、同teacher跨episode规则、4tasks/update、21主+7额外queries、

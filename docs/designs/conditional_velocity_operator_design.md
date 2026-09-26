@@ -1,7 +1,8 @@
 # 条件速度算子：共同状态基与单LoRA编译候选
 
 2026-09-27。科学依据与最近完整历史比较见[机制分析§29](../analyses/feature_to_operator_mechanism_20260926.md#29-共同学习状态反馈基直接编译条件速度场一个有明确代价的完整候选)。
-这是候选及其有界工程合同，不是已验证修复。是否实际启动只看progress；本文没有正式学习或held评测许可。
+这是候选及其渐进合同，不是已验证修复。是否实际启动只看progress；§4–5工程已完成，
+§6–9冻结后继学习设计，但当前只授权CPU实现和集成准备，正式GPU启动还须主讨论核对交付commit并登记。
 
 ## 1. 假设、输出与信息墙
 
@@ -120,8 +121,126 @@ GPU允许范围固定为：
 科学否决时由Git保留并退役其活动入口；若进入正式学习，须先完成canonical替换/旧输出路径退役及main集成，不留下平行fallback。
 源码超过500新增行或3新文件须按skill完成代理自审，报告主要所有权/增长与退役触发；不机械拆文件。
 
-正式学习尚未授权：工程回报提供真实秒/宏步、query吞吐、最长峰值、物化和两类case墙钟。
+工程完成时不自动授权正式学习：工程回报提供真实秒/宏步、query吞吐、最长峰值、物化和两类case墙钟。
 主讨论据此在学习前冻结数据/采样/学习时标、首段最多两个节点及完整比较预算；不从4步loss选checkpoint或决定配方。
 正式选择仍须single-checkpoint strict paired400、相邻保持及same-task-other；小screen只作有界早期读出，不能选模型。
 当前coverage强MT-BC与C0 diagnostic-held属于不同合同，不能拿155−120解释本候选，也不重跑旧实验补排列组合。
 测试集和最终shuffled/reversed保持关闭；本合同不允许自动蒸馏、第二架构、长训或其它实验。
+
+## 6. 工程验收后的完整学习比较
+
+主讨论已独立核对实现`50559080`、逐宏步原metrics、恢复查询前后缀和两条NPZ。实际6宏步/672query，
+source物理参数冻结；完整因子FM cotangent通过同一次合成VJP到达β/U/R/教学路径，各task权重1/4后跨rank求和。
+四次GPU启动均exit0，总0.1269607541 GPUh；两条接口失败不作科学阴性。原件根为§4的data1路径。
+
+首轮比较完整视频方法V与真正训练的语言方法L；不设独立Reader、冻结β、R置零或几何辅助臂。
+二者均由fresh source identity开始，β/U/读出/实际使用的教学模块共同接受相同的普通跨episode FM。
+不继承工程checkpoint或MT-BC权重。V保持§2的函数；L的执行policy仍使用自己的双相机/state与exact language。
+
+L的条件路径使用已有`encode_text_only`和`LanguageSemanticCore.language_only`读取真实语言token，
+第一、第二次attention都读取该真实语言memory；第二次使用真实token位置和mask，不把第二Value置零，也不造RGB/动作H。
+L不运行VL/Action Meta或Procedure，未使用的模块不进optimizer；不得用空视频运行V来冒充L。
+这不是严格参数量匹配的信息消融，故V/L差额与最终冻结controls共同解释，不能单独宣布动态视频根因。
+
+β、U和七行读出在两臂中有相同初始化身份，不允许因先构造视频模块而移动共享参数RNG。
+正式模型把共同β/读出/U初始化置于条件模块之前，并以同一seed7固定；共享Text/Core的初始化采用同一明确模块seed。
+可以复用原生教学owner并冻结L未用模块；不能新增一份原生视频/文本读取器。正式fresh顺序与工程顺序的区别须登记，
+不把工程checkpoint称为兼容正式初始化。每rank初始化相同共享权重，训练RNG按原有rank合同保存。
+
+数据使用唯一coverage协议`configs/libero_24_8_8_coverage_v1/protocol.json`及其审计manifest：
+24 target train加既有12个合法non-held source meta tasks，共36；不扩大任务支持。
+显式训练ID为`[0,1,2,4,5,7,12,13,14,15,17,19,20,21,22,25,28,29,32,34,35,36,37,38,42,43,51,55,56,62,64,73,95,96,97,101]`。
+official validation为`[3,6,11,16,23,26,31,39]`，Test继续封闭。C0 diagnostic-held8不作为本轮评测协议，
+其120/121不与本轮强MT-BC155作因果差。两臂训练demo0–49均合法，teacher与query严格不同episode；不沿用旧46/4诊断池。
+
+## 7. 唯一事件流、优化时钟与逐段判断
+
+每宏步4个不同task、每task一条教学与28个query，总112，loss为四个任务完整50×7普通FM均值的平均。
+无21+7两组、无4/3尺度、无端点/前5步项；噪声/时间仍由既有FM owner产生，query使用自己的真实state与offset1动作chunk。
+两个模式共用只含编排身份的确定事件流，task/demo/帧索引均不得进入条件网络。
+
+事件seed为20260927，零基update u对应round=u//9、slot=u%9：
+
+- 每round用NumPy SeedSequence `[20260927, round, 0x5441534B]`打乱排序后的36任务，连续每4个组成一宏步。
+  完成9步时各task恰好一次，不按长度更改抽样或权重；只按实际frame cost分配rank。
+- task的visit等于round；teacher在每50次visit的周期中，按
+  `[20260927, task, visit//50, 0x564944]`生成demo0–49排列，取visit%50项。
+- query用`[20260927, task, visit, 0x515259]`从其它49个demo无放回选28个，再各均匀取frame∈[0,T−2]；
+  action起点为frame+1。L只复用这些query事件，不读教学RGB。
+- FM seed复用`task_logical_batch_policy_rng_seed`，optimization_seed7、task/visit及实际query demo/frame相同；
+  事件与GPU分配、物理microbatch和恢复顺序无关。保存sampler游标与逐rank RNG，不要求低位/逐bit一致。
+
+全部活动参数使用同一个AdamW：peak lr3e-4、betas(.9,.95)、eps1e-8、wd1e-4、clip1；
+沿强MT-BC已有scheduler owner采用150更新warmup、1200更新cosine到1e-5后保持floor。
+V/L共用该优化时钟，不新增分支LR、尾部放大、公共底座课程或训练中配方切换。
+这沿用有实际成功记录的普通FM量级，不从四步loss选择。4-task与MT-BC的36-task宏步不同，
+相同update数不等于相同查询曝光或优化轨迹；旧Writer不同loss/时钟也不构成单因素架构对照。
+
+**第一批仅到270更新/臂**：30个完整task rounds，每task840 query；每臂30,240 query、两臂60,480。
+保存90/180/270完整checkpoint，但只对270做本批正式评测，不用90/180的loss选点或补评最高点。
+第二个预期判断节点为450更新/臂（每task完整50个不同teacher均已出现），尚未授权自动续到450。
+270回报后由主讨论决定是否沿完全同一轨迹推进该节点；不能用第一点尚低于155宣布理论不可能，也不因此换结构/重启种子。
+
+270裁决关注整个学习程序：V/L与strong MT-BC/Source的绝对能力、配对得失、suite/task覆盖。
+V共同能力和L都未形成时，不用内部非零梯度或小loss称方法有效；V明显毁掉L已有能力时，也不靠局部辅助补洞。
+如果需要450来判断视频条件获取及保持，只续这一预注册轨迹，不增加层出口、rank、冻结臂、loss或新采样。
+第二点后仍无正面视频能力证据且完整能力持续较弱时，应关闭实际检验的组合，不循环宣布“只是某模块未过关”。
+若完整策略确在持续取得并保持新能力，后继也必须另有明确节点/预算；450不是优化充分性的数学保证。
+
+## 8. 首批完整评测、证据和产物
+
+V270 correct400与L270 correct400，共800条新episode；无80-row模型选择screen。
+两臂及旧强MT-BC使用同一official validation8、state0–49、env/policy seed7及canonical keyed noise，
+render256/model224、双相机180度rotate、state8/action7、10 flow、前5动作replan、settling10与原suite horizon不变。
+V使用既有`video_schedule.py`，映射seed20260911、K1、全50teacher各一次；L保留配对ordinal元数据但不读teacher。
+source/normalization/tokenizer与已核MT-BC300一致；旧MT-BC155与Source51原400行只读复用，不重跑。
+
+同时报告8个task、4个suite、非零任务广度、与L/MT-BC/Source的retained/gained/lost及churn；
+保存逐行key和success-set，后继450须报告相邻重合与得失。配对不确定性可以描述，不能把小样本差额说成确定机制。
+第一批只有一个节点，不能宣称稳定性、最终模型选择或视频必要性。后继单checkpoint选择必须接受相邻保持及
+same-task-other400；本批不跑wrong/no-video/shuffled/reversed，最终controls只在模型选定并冻结后另行登记。
+不能用R置零代替learned L：公共action_out与R常量项可互相转移，分支消融不识别视频增量，见机制分析§30。
+
+各episode保存compact真实T动作及T+1 body/EEF/gripper/BDDL；固定每task state0、两臂均保存full双相机RGB，
+共16条full，选择与结果无关。无额外episode、环境分支或held teacher action/state标签读取。
+沿用cost-balanced long-first/persistent evaluator与已有BatchedLoRAInference；不重写环境/随机流/批量LoRA后端。
+多replica/物理microbatch只按显存与吞吐选择，不改变单行配对；任何故障重做仅补缺失row并留失败计费。
+
+bank采用本方法精确共享项存储：每checkpoint的β/U只存一次，每合法condition存FP32 R及实际输入provenance。
+由唯一`compile_velocity_state`在该episode首次执行前重建完整76因子，随后整条episode固定；不在线读视频/优化/重生成。
+L每个exact language生成一次R并复用50个状态，逻辑仍是一套完整LoRA。无最终LoRA平均或第二adapter。
+保存schema/rank135/source/checkpoint/condition身份，保留必要共同权重依赖；不能把R文件单独称完整可部署权重。
+这是对相同完整算子的无损存储，不更改模型函数；不建立支持旧/新实验的一般插件或fallback平台。
+
+## 9. 分段资源、canonical集成与当前派发边界
+
+工程实测world2平均16.822秒/112query；270更新的V update-only约1.262h wall/2.523 GPUh。
+36-task元数据中完整stride5视频P50/P90/P99/max为29/51/87/105帧，最大raw517（global38/demo36），
+高于工程profile的71帧。需要将实际分布/负载和加载保存计入，不能称71已覆盖新协议最长视频。
+L尚无本模型实测吞吐；预算先按不快于V的保守输入计，不把旧Reader-L速度当新证据。
+历史官方400约1 GPUh/面板仅是调度参照；本模型800评测另留约2–3 GPUh，物化/加载/失败留余量。
+
+**首批270两臂及800完整评测总硬限9 GPUh**，包括全部加载、训练、物化、评测、故障重试与等待占卡。
+合理预期为约5.5–8.8 GPUh，冻结后约2–3h wall（两臂各同节点world2可并行，评测使用实际空闲卡）；
+这仍为外推，不是保证。若实测投影越过硬限，保留完整checkpoint/已有原件并回报，不悄然取消L、缩成小面板或超预算。
+执行者报告必须区分训练实际进度与完整面板；未完成面板不能选模型。无GPU空闲时不占卡等待。
+两节点项目总卡数仍服从AGENTS动态6/8上限，每臂单节点world2锁拓扑；首批不授权训练拓扑切换。
+
+新增root为`/data1/user/ymdai/ember_runs/conditional_velocity_operator_learning_20260927`，
+首批产物峰值8GiB，开发+冻结代码768MiB；须在strg01重新核data1独立quota/共享容量与真实峰值才建大root。
+使用紧凑bank约两份40MiB公共项加R/manifest；完整训练checkpoint及16条full轨迹是主要增长，不能生成400份公共LoRA副本。
+不复制大source/数据、不写data0；工程原件保持原路径，不改写为正式结果。
+
+**当前先派CPU实现/集成准备，估45–75分钟、90分钟判断上限，无GPU许可**：
+从工程分支纳入最新main文档，保留单一参数合成owner，加入真实L路径、上述sampler/优化时钟、紧凑bank和官方评测接入。
+正式入口替换工程固定4task/4步入口，退役其专用case/profile CLI，工程历史由`50559080`与原件保存。
+不得把旧CompleteLoRAWriter/Compiler作为另一可选输出路径；共享native/C/P/FM/ECP/环境工具继续复用。
+优先关闭旧默认训练/物化出口与实验flags；若某个共享文件仍是历史路径的依赖，明确最小暂留范围、owner和本次集成时的移除触发，
+不能为全树无关历史清理拖住本合同，也不能留下可静默回退的旧Writer。无需复制通用trainer或第二batch evaluator。
+源码结构按code-architecture-gate自审，超过规模信号报告实际owner/复用/退役理由，不额外请求Owner仪式批准。
+CPU验证实际合成代数（含非零公共项）、V/L共享初始化与合法信息路径、36-task等权事件/跨episode/恢复、
+紧凑bank重建与官方episode配对。只核metadata/CPU合成，不跑新模型或环境probe。
+
+执行者完成CPU差异后一次回报；主讨论独立审阅并集成推送main，明确冻结commit后另发启动指令。
+CPU实现交付不等于允许GPU，文档中的后继规模也不代替launch记录。正式train/eval必须来自该clean pushed detached commit，
+并依formal-training-launch登记精确命令/环境/数据/配置/资源。整体Owner授权有效，无需再向Owner索取本范围内许可。

@@ -4,6 +4,14 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-27：条件速度算子工程独立验收，冻结首批完整学习比较
+
+工程commit `50559080`：6宏步/672query、一次长视频反传、两条train-only接口轨迹，四次启动均exit0，
+完整计费0.1269607541 GPUh；主讨论核对源码、逐步query/resume原日志与NPZ。工程不支持科学收益或阴性结论。
+原件：`/data1/user/ymdai/ember_runs/conditional_velocity_operator_engineering_20260927`，细节见findings§176。
+设计§6–9冻结V/L各270更新及各official400的首批比较、9完整GPUh硬限；当前先实现CPU canonical入口，
+未启动正式训练。预期450为后继判断节点，不构成自动续训许可。当前精确授权/派发只看progress。
+
 ## 2026-09-27：共同执行状态基与条件速度场候选，仅进入有界工程
 
 机制分析§29/findings§174核对原生末端真实线性投影，提出β/U/R共同接受同一完整跨episode FM、

@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：新科学主讨论已接管；S0已验收，Reader未实施，等待Owner指定执行会话（2026-09-26）
+## 当前状态：科学主讨论与新执行者均已登记；S0已验收，Reader未实施、未向新执行者派发（2026-09-26）
 
 Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前已完成S0整批原件核验、特征机制审查及后继裁决；
 长期目标仍为一次生成完整LoRA的绝对能力超过强MT-BC、有益视频贡献和能力保持，未发现统一根因或验证修复。
@@ -9,7 +9,10 @@ Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前
 机器合同`configs/native_conditional_reader_v1/engineering_spec.json`，study `native_conditional_reader_engineering_20260926`。
 **当前科学主讨论：`01a0dd74-4c71-7c82-8629-8333ef74dfdd`**，按Owner本轮明确指令接管理论分析、实验设计、
 原始证据核验与科学裁决；实际身份由本session的`CODEX_THREAD_ID`/`CODEX_SESSION_ID`核实。
-**新执行者UUID仍待Owner指定；在此之前不派发、不联系旧主讨论或旧Sol、不催问创建时间。**
+**当前实验执行者：`01a0dd6c-f2e5-7971-821a-56766e1c0f22`**，Owner本轮明确指定。
+通过只读thread查询核实其标题为“接管 EMBER 实验执行会话”、cwd为本仓；该会话也已按Owner通知记录当前主讨论UUID。
+本轮Owner先要求了解主讨论的项目理解与整体规划，故只登记身份、开展科学讨论，没有发送消息或派发工程合同。
+后续具体实验由该新执行者接收有界合同；不再联系旧主讨论或旧Sol。
 旧主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`仅为交接与历史证据来源，不是当前协调或回报地址。
 旧Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`已按Owner迁移安排停止接单，不再向其派发。
 范围：实现joint Reader R_V/R_L共享接口，各4宏步及2→4 world2恢复、一次最长视频condition反传/profile、
@@ -18,9 +21,9 @@ Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前
 11:11:11 UTC曾将合同2cd9a9bf以Queue送达旧Sol，回执01a0dd69-74ca-7500-ac9d-aa33641b94ed；
 11:11:46核对正文进入turn01a0dd69-74cb-77d1-b890-e442c1f85050。进一步核对时才发现迁移记录，
 11:12:58确认旧Sol明确拒绝在旧会话启动实现/GPU，turn已interrupted、会话idle；这不是已执行的工程批次。
-Owner随后在主讨论明确：“新session我还没创建，所以你等一下。”因此等待准确的新会话身份，不自动创建、重发或改投。
+Owner随后在旧主讨论明确：“新session我还没创建，所以你等一下。”当时因而等待准确的新会话身份，没有自动创建、重发或改投。
 正文、接受和未启动回复在`.codex/tmp/native_conditional_reader_engineering_20260926/`。
-新会话登记后再按同一有界合同准确派发；不重复S0，也不把旧Queue回执当新的执行授权。
+新执行者现已登记，但尚未派发；Reader仍只保留同一有界工程范围，不重复S0，不把旧Queue回执当成新执行记录。
 
 ### 本次接管恢复与原件核验
 
@@ -29,7 +32,7 @@ Owner随后在主讨论明确：“新session我还没创建，所以你等一�
 该延迟回报不触发重跑、重新派发或开启下一阶段。工程study根尚未创建，旧Sol已明确未启动实现/GPU。
 
 新主讨论已从README按交接顺序恢复Owner要求、当前状态、concept、findings§156–159、特征机制分析、
-Reader设计/spec与相关历史论证；已登记自己的实际UUID，执行者仍为空。临时交接页
+Reader设计/spec与相关历史论证；接管时登记了自己的实际UUID，执行者当时为空，随后由Owner指定为上述新会话。临时交接页
 `.codex/plans/ember_scientific_handoff_20260926/state.md`已消费并按其生命周期删除，持久结论仍以跟踪文档为准。
 
 本session直接读取S0的8个原始`evaluation/*/*/results.json`，对照448条汇总行，核对语言/seed共同前缀、

@@ -1,10 +1,10 @@
 {
   "schema_version": "ember_native_conditional_reader_engineering_v1",
   "study_id": "native_conditional_reader_engineering_20260926",
-  "status": "registered_engineering_awaiting_owner_designated_executor",
+  "status": "registered_engineering_executor_designated_not_dispatched",
   "design": "docs/designs/native_conditional_reader_design.md#4-先完成的工程准备范围",
   "coordinator_thread_id": "01a0dd74-4c71-7c82-8629-8333ef74dfdd",
-  "executor_thread_id": null,
+  "executor_thread_id": "01a0dd6c-f2e5-7971-821a-56766e1c0f22",
   "run_root": "/data0/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926",
   "reference_training_config": "configs/language_content_path_causality_v1/train_C0.json",
   "assets": {
@@ -176,6 +176,6 @@
     "dtype/rank/layer sweeps"
   ],
   "completion": "Queue exact implementation, evidence, costs and missing items to coordinator; stop new GPU pending scientific adjudication",
-  "executor_assignment": "Await Owner-designated successor UUID; no dispatch, contact with retired sessions, or reminders about session creation before designation",
+  "executor_assignment": "Owner designated this successor; identity and repository verified by read-only thread lookup. Registration turn covers scientific understanding and overall planning, with no dispatch or implementation. Future work requires delivery of the bounded contract; retired sessions remain out of scope.",
   "coordinator_assignment": "Owner-designated scientific coordinator registered from current CODEX_THREAD_ID/CODEX_SESSION_ID; previous coordinator UUID is provenance only; analysis and evidence review do not activate engineering or formal runs"
 }

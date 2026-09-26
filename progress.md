@@ -1,9 +1,28 @@
 # EMBER progress
 
-## 当前状态：两臂匹配学习实现F已冻结、工程就绪；Sol按实时准入接续启动（2026-09-26）
+## 当前状态：736条已独立复核、关闭Cplus；固定C0完整覆盖合同已登记待Queue（2026-09-26）
 
-Active design：[language_content_path_causality](docs/designs/language_content_path_causality_design.md)，
-机器规格`configs/language_content_path_causality_v1/experiment_spec.json`。
+Active design：[language_content_path_fixed400](docs/designs/language_content_path_fixed400_design.md)，
+机器规格`configs/language_content_path_fixed400_v1/experiment_spec.json`；它只授权1280条有限补评，不授权新训练。
+执行者仍为Owner指定Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`，主讨论身份保持。
+
+上一批F=dca1b550两臂630宏步/70560查询、448新bank、10面板736条/28full/全T+1已完成。
+主讨论直接核验原results/run contracts/trace/训练事件与查询，复算全部配对和bootstrap，
+证据在`/data0/user/ymdai/ember_runs/language_content_path_causality_20260926/coordination/main_recheck.{py,json}`。
+C0/Cplus正确24/16、另一正确30/19（各80），seen均27/64；保持预测未兑现，findings§153登记关闭此参数化。
+原C0与B均丢Source成功5条，原相对缺口未在本screen复现；C0对B的小优势区间仍宽，不能直接称视频修复。
+原批已计时15.35 GPU-hours，工程端到端时长未知；不能把16.35当实际总上界。科学矩阵无缺项，计量缺口保留。
+
+接续只固定C0@630/B630/Source，held8×states10..49，C0 correct/other+B+Source共1280新增，
+640新bank、320既有B引用、16新full、全行T+1，引用原四格320行组成各400。
+预算独立8 GPU-hours/6GiB新增data0/768MiB代码；CPU范围/来源/调度改动可用新E，科学GPU计算不变，
+事前允许原行F/新行E并逐行登记，不热改F或为单提交形式重跑有效行。完成主动Queue并停止新增计算。
+本段尚未记录Queue回执，不把登记当已接手；派发与送达随后在此登记。
+
+### 已完成两臂学习的ready与派发记录
+
+当时设计：[language_content_path_causality](docs/designs/language_content_path_causality_design.md)，
+机器规格`configs/language_content_path_causality_v1/experiment_spec.json`；该矩阵现已完成，不重复执行。
 Sol隔离CPU提交41a0f4f4已ff集成main：2项构造与10项旧回归通过，主讨论审阅非零head完整输出和9行源码、
 独立复跑2项通过；a0对C及构造对B maxabs0、视频扰动 .44040、a梯度/内积 .07022614。
 CPU回执在`/data1/user/ymdai/projects/EMBER-language-content-path-cpu-dev/.codex/tmp/language_content_path_cpu_result.json`。

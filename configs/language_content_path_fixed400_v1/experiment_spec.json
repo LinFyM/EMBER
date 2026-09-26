@@ -1,0 +1,80 @@
+{
+  "schema_version": "ember_language_content_fixed400_v1",
+  "study_id": "language_content_path_fixed400_20260926",
+  "purpose": "complete the fixed C0 reference comparison after a failed Cplus intervention; no new training or checkpoint selection",
+  "parent_study": "/data0/user/ymdai/ember_runs/language_content_path_causality_20260926",
+  "frozen_inputs": {
+    "C0_checkpoint": "/data0/user/ymdai/ember_runs/language_content_path_causality_20260926/training/C0/checkpoints/macro_00000630",
+    "C0_training_commit": "dca1b5500ac0f912d56cc1c76382004457e807a4",
+    "B630_bank_root": "/data0/user/ymdai/ember_runs/conditional_compilation_diagnostics_20260923/materialization/B_language_630_held",
+    "B630_bank_commit": "43d801b16ee3ed0bc80f963c89ad003b7cc40732",
+    "Source_checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+    "prior_rows_commit": "dca1b5500ac0f912d56cc1c76382004457e807a4",
+    "prior_panels": ["Source_held_correct", "B630_held_correct", "C0_630_held_correct", "C0_630_held_other"]
+  },
+  "evaluation": {
+    "classification": "post_screen_fixed_checkpoint_diagnostic_completion_not_official_method_qualification",
+    "checkpoint_selection": false,
+    "task_ids": [0, 1, 14, 15, 20, 21, 36, 38],
+    "new_state_ids": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
+    "prior_state_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "panels": [
+      {"id": "Source_held_correct", "model": "Source", "condition": "correct", "rows": 320},
+      {"id": "B630_held_correct", "model": "B630", "condition": "correct", "rows": 320},
+      {"id": "C0_630_held_correct", "model": "C0", "condition": "correct", "rows": 320},
+      {"id": "C0_630_held_other", "model": "C0", "condition": "same_task_other", "rows": 320}
+    ],
+    "environment_seed": 7,
+    "policy_seed": 7,
+    "video_schedule_seed": 20260911,
+    "video_pool": "all 50 original teacher videos; canonical permutation reused unchanged",
+    "other_demo_offset": 17,
+    "prior_rows": 320,
+    "new_rows": 1280,
+    "combined_rows": 1600,
+    "separate_pilot_rows": 0,
+    "validation": "existing real GPU interface already passed; validate each normal panel after exit, without success-based continuation",
+    "new_bank_conditions": 640,
+    "reused_B_bank_conditions": 320,
+    "capture": {
+      "compact_all_rows": true,
+      "continuous_T_plus_1": true,
+      "stage_predicates_all_rows": true,
+      "new_full_task_ids": [0, 14, 21, 38],
+      "new_full_state_ids": [10],
+      "new_full_cases": 16,
+      "full_cameras": ["agentview", "robot0_eye_in_hand"]
+    },
+    "bootstrap": {"cluster": "task", "resamples": 20000, "seed": 20260926, "joint_draws": true, "report_new_and_combined_separately": true},
+    "training": false,
+    "Cplus": false,
+    "new_held_expert_actions": false,
+    "official_validation": false,
+    "test": false,
+    "extra_function_queries": false,
+    "wrong_shuffled_reversed": false
+  },
+  "implementation": {
+    "new_GPU_stages": "one clean pushed detached E",
+    "allowed_change_from_F": "CPU scope registration, frozen provenance validation, scheduling and read-only analysis only; identical Writer/policy/rollout computation",
+    "preserve_original_artifacts": true,
+    "hotpatch_frozen_trees": false,
+    "new_GPU_engineering_smokes": 0
+  },
+  "resources": {
+    "maximum_gpu_hours_all_processes": 8,
+    "maximum_new_data0_gib": 6,
+    "maximum_new_data1_mib": 768,
+    "maximum_physical_gpus": 6,
+    "record_full_process_start_end_and_physical_count": true,
+    "live_two_node_admission": true,
+    "wait_for_exit_events_no_progress_polling": true
+  },
+  "outputs": {"planned_run_root": "/data0/user/ymdai/ember_runs/language_content_path_fixed400_20260926"},
+  "coordination": {
+    "main_thread": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+    "executor_thread": "01a0cd90-ebb7-77a1-a20b-a858825d2f66",
+    "dispatch": "Queue",
+    "stop_after_completion": true
+  }
+}

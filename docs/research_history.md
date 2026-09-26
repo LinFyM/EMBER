@@ -4,6 +4,20 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-26：内容路径学习没有改善保持，固定原C0补完整覆盖
+
+F=dca1b550的C0/Cplus各630更新及736条闭环完成，主讨论独立核验原始行、全T+1 trace、实际查询/随机流和全部配对区间。
+held正确C0/Cplus=24/16、另一正确=30/19（各80），seen均27/64；Source成功损失5→10，C0新增13仅保住8。
+a参与学习但内容norm相对FrameRead中位约.20%，构造性包含没有兑现本窗口学习收益。
+按事前分支关闭Cplus，不扫描尺度、节点或seed；不把它推成所有直接内容通路无效。完整裁决findings§153。
+原件根`/data0/user/ymdai/ember_runs/language_content_path_causality_20260926`，主讨论复核在`coordination/main_recheck.{py,json}`。
+原80行中C0与语言B均损失Source成功5条；C0正确/other对B点值+3/+9，区间宽。
+旧同子集B/C为24/22，新为21/24，不能把旧保持缺口当成已复现，也不能据小screen宣布C0更强。
+新登记[固定C0完整覆盖](designs/language_content_path_fixed400_design.md)：冻结已有模型，四格各补320、共1280条，
+不训练/选点/改变GPU计算；原F320行、C0训练F、新阶段E、B bank43d均明确保留来源。
+补评只确认实际相对缺口及有无扩大机制研究的依据，不是根因或视频因果证明。实际派发看progress。
+原批已计时15.35 GPU-hours，工程计时不完整，实际总额未知；不能将1小时规划预留当实测上界。
+
 ## 2026-09-26：重申最终目标与数学要求，审计语言内容路径及可反驳边界
 
 Owner要求推进始终服务EMBER特有不足与最终能力，架构/训练均须数学合理、能解释历史正负证据。

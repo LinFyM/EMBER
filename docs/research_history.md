@@ -4,6 +4,22 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-27：共同执行状态基与条件速度场候选，仅进入有界工程
+
+机制分析§29/findings§174核对原生末端真实线性投影，提出β/U/R共同接受同一完整跨episode FM、
+将条件速度场精确编译为完整单LoRA的受限模型。旧Reader冻结query、LocalField同参数监督、
+冻结公共prior及原完整Writer/private正例全部保留；差异不等于已定位根因或已证收益。
+候选合同`designs/conditional_velocity_operator_design.md`仅开放6宏步、长视频反传和两条训练接口轨迹，
+上限0.75完整GPUh/2卡，data1峰值4GiB；无正式学习或held许可。实际派发、完成和实测成本只看progress。
+
+## 2026-09-27：视觉控制作用映射与旧实际A监督的完整审查
+
+机制分析§28/findings§173将图像Jacobian、物理动作后果和policy对LoRA的导数分开，
+核对RoboTAP/Track2Act的真实控制及信息条件，不将点对应直接视为可部署控制规则。
+旧可识别性§7已有运动特征审查；旧操作语义分析已提出query实际A响应监督及零B/共享A反例。
+本轮U M(C) S分解未消除这些反例，不作为新工程；没有模型/GPU/环境/标签构建。
+主讨论继续另一个完整的末端速度投影学习判断，研究问题不构成active design，状态见progress。
+
 ## 2026-09-27：同视频功能信用的完整学习原理判断
 
 机制分析§27/findings§172区分同视频的联合标签/功能二次矩，以及视频未来信息对端点动作回归的作用；

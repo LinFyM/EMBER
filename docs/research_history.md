@@ -4,6 +4,18 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-26：特征到执行算子的计算审计与候选读出准备
+
+Owner要求开始后，主讨论逐接口核对q/E/H、Core/P、完整因子及FM cotangent重放，重访Semantic-Path、
+统一原生Writer、旧固定native reader及真纠正获取的完整反例。形成
+[机制分析](analyses/feature_to_operator_mechanism_20260926.md)和
+[原生条件读出准备稿](designs/native_conditional_reader_design.md)，摘要见findings§157。
+候选将真实执行query读取教学内容的作用放在第10层q/v target，先检验功能教师自身的能力，
+有有益视频闭环证据后才考虑传给唯一完整LoRA。该教师不符合最终部署合同，不计EMBER成绩。
+准备稿分首阶段R_V及有实质信号后的R_L参照，不默认启动全部训练/蒸馏。尚未激活、实现、派发，S0合同不变。
+本轮合成CPU检查两项数学恒等式，没有真实数据/policy/GPU；核定coverage MT-BC155与diagnostic-held8的比较边界，
+未利用Test形成方法。未宣称找到统一根因或已获得修复。
+
 ## 2026-09-26：Owner要求持久保存长期错误回顾，并重申方法推进的判断责任
 
 Owner在首帧对照、MT-BC角色与过去几个月的回顾讨论后，要求把教训记录为跨会话可恢复的约束，并解释后续规划。

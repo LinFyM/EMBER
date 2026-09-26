@@ -717,3 +717,134 @@ source权重冻结没有把`h`或`D`冻结：自身观测、latent、flow time�
 以及`runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/mechanism/deep_causal_20260910/`
 下`bounded_updates/factorial_analysis.json`和`bbq_endpoint/factorial_analysis.json`。
 完整原始行与视觉核验的既有独立结论分别见findings§44–46、§119；本次没有重复整批机械复算或新回放。
+
+### 14.5 最近似共同路径历史已核清，不能混为一个实验
+
+执行者的只读逐项核对已完成。主讨论独立复读关键源码、两份prior配置、七份250行面板的原始summary和DJNFR配对裁决，
+接受以下边界；不是只依据路线名称判断，也未重复模型或环境运行。
+
+| 完整旧方法 | 实际公共路径、视频路径与学习 | 原始闭环边界 |
+| --- | --- | --- |
+| stable shared prior / phase residual，`e948fca` | 固定零code的decoder从identity学rank12，特权专家/learner occupancy功能蒸馏152更新后冻结；另学phase-code rank4残差，按rank拼接。未实施合法RGB Writer | held5：prior43/250，残差37/33；R/G/L分别29/8/14、29/4/14 |
+| Unified v3 / v4，`f214fefa` / `f02f9148` | 同一冻结rank12 carrier；合法RGB/语言经可学习encoder/blocks，以真实跨episode FM生成rank4 native signed-pooling残差。`common-base`是视频查询`b(C)`，不是自由公共LoRA；v4只把policy evidence分源softmax | held5：v3 m100/200为35/31，v4 m25/50为45/40，均对prior43；没有validation400或最终controls |
+| LPCP / DJNFR，`515f91e` / `49a4129` | 冻结整个LPCP；视频动态M与语言L构造payload，只学8个零初始化direct A/B head，按同rank因子相加，有交叉项；标签是成功轨迹信用，非普通跨episode FM | validation400：143→136，R/G/L120/16/23；只做cycle1，未做cycle2/controls |
+
+由此，所核对近邻没有精确实施“fresh自由公共完整LoRA与合法视频完整残差共同接受同一跨episode FM”的组合。
+这个缺项不能变成推荐理由：三者已经削弱“有公共能力、接上条件更新并给功能梯度，就会自动保持”的共同解释。
+旧v5.2也已证明没有独立公共分支仍能获取能力。应改变的是有依据的学习联系，而不是补齐排列组合。
+
+可复查代码：`f02f9148:src/ember/ecp/policy_response_writer/composer.py`的`_signed_queries`及`model.py:materialize`；
+`bbfa3779:src/ember/writer/model.py`的`_direct_factor_residual_state`调用；
+`e948fca:src/ember/functional_adaptation/decoder.py`及`configs/pi05_train24_{stable_shared_prior,shared_prior_residual_decoder}_v1.json`。
+原件均在`runs/outputs/`：`pi05_train24_stable_shared_prior_held5_e948fca_gpu01p45_r3_20260821/run_summary.json`；
+`pi05_train24_shared_prior_residual_held5_{earliest_e948fca_gpu02p37,latest_e948fca_gpu02p12}_r3_20260821/run_summary.json`；
+`pi05_ecp_policy_response_writer_common_base_{m100_held5_correct_k1_strict250_f214fefa_gpu01p3_r2,m200_held5_correct_k1_strict250_f214fefa_gpu02p46}_20260905/run_summary.json`；
+`pi05_ecp_policy_response_writer_source_separated_{m25_held5_correct_k1_strict250_f02f9148_gpu01p036,m50_held5_correct_k1_strict250_f02f9148_gpu02p236}_20260905/run_summary.json`；
+`pi05_v6_lpcp_direct_joint_native_factor_residual_cycle1_k4_correct400_noreplacement_seed7_trainr4_evalr6_49a4129_gpu01_20260816/djnfr_cycle1_strict_adjudication.json`。
+花括号仅压缩列举独立路径，不是文件名。完整核对暂存在`.codex/tmp/conditional_learning_review_20260926/executor_history_review.md`；
+持久判断以上述源码、原件与本节为准，不依赖临时报告永久存在。
+
+## 15. 可预测的过程知识与有用的更新：补足学习对象的定义
+
+这是在§13–14及旧[可识别性分析§3](video_information_identifiability.md#3-为什么跨episode-fm允许视频无关解却不证明视频无用)
+之上的局部数学分析，不重新提出“FM允许静态解”作为根因，也不登记新架构、辅助loss或曲率探针。
+核心区别是：**真实动作产生的逐位置纠正、合法视频能预测的纠正，以及在新执行状态上值得实施的纠正，不是同一个对象。**
+
+### 15.1 给过程特征一个与实际动作相连的局部标准
+
+在明确参考LoRA坐标`u0`处，令`q`为合法跨episode训练查询，`e_q=v_(u0)(q)-Y_q`，
+`J_q=partial v_u(q)/partial u|_(u0)`。u是实际LoRA因子或其允许方向的坐标，不是任意全矩阵参数。
+它允许冻结source，但不能把source续算和执行激活从J里删去。对小位移d，线性化FM风险为
+
+```text
+R_z^lin(d) = R_z(0) + g_z^T d + 1/2 d^T F_z d,
+g_z = E_(q|z)[J_q^T e_q],       F_z = E_(q|z)[J_q^T J_q].
+```
+
+z只表示合法语言/视频条件；上式的期望标签来自授权训练查询，不是部署输入。
+这是当前点的Gauss–Newton二次模型，不是非线性FM或成功率的精确表达，也不是现行AdamW更新公式。
+
+若Writer只保留中间特征m，记`g_bar_m=E[g_z|m]`、`F_bar_m=E[F_z|m]`。
+在有限二阶矩、可测选择与可达坐标的条件下，一个最小范数最优局部位移是
+
+```text
+d*(m) = - F_bar_m^dagger g_bar_m.
+```
+
+dagger为伪逆；由平方误差的J构造，g_bar位于F_bar的值域。零空间方向对这一查询分布的一阶动作没有影响，
+不能据此认为它们对其它执行状态也安全。这里的最优只针对允许的线性化坐标，没有越过rank/参数化限制。
+无约束二次模型的d*还可能超出小扰动适用范围；若限制步长，最优解和下节等式须按该约束重写，不能直接部署此d*。
+不计划显式估计大F或在部署求逆；公式用来定义“应该从视频获得什么”，不是求解器提案。
+
+因此，好的过程特征无须还原教师每一步的动作或每个梯度坐标；它须保留足以预测**有用修正方向及其执行适用性**的信息。
+g关联“应改变什么”，F关联这些参数方向在自己的执行状态上会改变哪些动作、改变多大。
+F汇总登记查询分布上的敏感度，不是显式的阶段/状态门；具体状态下的作用仍由`J_q d`及实际policy续算实现。
+两者由对象/关系、接触前提、状态变化与source的控制知识共同决定。只读出“发生过抓取”而不能判断适用状态，
+或能定位状态却写不出有益动作，均不足以满足这个功能标准。
+
+### 15.2 视频增量的精确定义，及为什么它没有证明实际增益
+
+令m0是语言表示，m1=(m0,视频特征)，并假设两者都允许实现上述最优局部位移。条件期望与配平方给出
+
+```text
+E[R_z^lin(d*(m0)) - R_z^lin(d*(m1))]
+  = 1/2 E[(d*(m0)-d*(m1))^T F_bar_(m1) (d*(m0)-d*(m1))] >= 0.
+```
+
+视频的潜在作用在于改变与执行有关的最优修正；仅让embedding/LoRA不同而落在无用方向上，右端仍为零。
+但这只是嵌套信息、充分函数类和理想优化下的风险关系。实际encoder不一定保留m0，有限学习不一定得到d*，
+新任务分布也不一定匹配训练条件；不能把右端当已测量的EMBER收益，更不能故意削弱语言参照制造差值。
+
+如果把有限benchmark的exact language当作已知task的完整查表键，理想g/F可已由语言确定，视频增量可以为零。
+这与旧可识别性结论一致。EMBER追求的是有限共享模型在未见task上借助教学获得执行知识，
+不是从`I(task;video|language)`推出一个虚假的信息下界。所需归纳偏置和有限学习优势仍需具体依据。
+
+### 15.3 真实cotangent标签不自动等于最适合RGB学习的目标
+
+旧Native Correction/LocalField的真标签并非错误量：若同次forward的输出cotangent为C、原生输入为X，
+其矩阵梯度就是`G=C X^T`（将采样权重/scale吸收进C）。但其噪声、坐标与部署任务需分开。
+给定完整合法条件z，X若确定且可用，则
+
+```text
+E[G|z] = E[C|z] X^T.
+```
+
+所以不能因actions未输入就断言此目标不可学习，也不能因局部标签随机就说先收缩必然更好。
+无限容量下，精确局部条件均值可以给出同一平均矩阵梯度；有限共享网络的局部/矩阵/功能误差权重却不同。
+例如`(C_hat-C)X^T=0`允许很大的局部C误差，但不改变该矩阵更新；反过来，X和后续J会放大某些小误差。
+视频自身的teacher状态与query/learner实际到达状态不同，也会改变哪些方向值得学习。
+
+把梯度当标签的平方回归还有精确分解
+
+```text
+E[||G_hat(z)-G||^2]
+  = E[||G_hat(z)-E[G|z]||^2] + E[||G-E[G|z]||^2].
+```
+
+第二项是相对于该输入的信息残差；目前没有测定它占旧失败的多少，不能据公式宣布RGB信息不足。
+而即便第一项为零，也只得平均梯度，不自动得到15.1的功能最优位移，更不保证闭环保持。
+这使旧LocalField失败的含义更准确：它否定了那套标签/坐标/共享模型/预算足以获取能力的预测；
+没有否定所有可预测过程知识，也没有支持“再换一种梯度回归就会成功”。
+
+### 15.4 “学习优化过程”必须检查实际梯度，而非名称
+
+[HyperNet Fields原文§3](https://arxiv.org/html/2412.17040v2)给出条件/优化时刻到权重的映射H，
+以当前预测权重的一步任务梯度作为相邻时刻目标，并固定初始锚点；推理取末端权重。
+它提供一种训练路径约束，不能由外部图像实验推导EMBER的过程获取已被解决。
+以下是主讨论对这类目标的链式法则分析；论文文字没有消除所有detach实现歧义，官方实现细节另行核对。
+
+记`w_t=H_theta(z,t)`、`g_t=grad_w L(w_t)`、`J_t=partial w_t/partial theta`，
+`r=w_(t+1)-w_t+eta*g_t`。三种实现有不同梯度：
+
+```text
+整个目标stop(w_t-eta*g_t)：  grad_theta (1/2||r||²) = J_(t+1)^T r;
+只stop(g_t)：               grad_theta (1/2||r||²) = (J_(t+1)-J_t)^T r;
+两者都不断图：              grad_theta (1/2||r||²) =
+                            (J_(t+1)-J_t+eta Hessian(L)_t J_t)^T r.
+```
+
+第一种在两端输出与Jacobian相同的特例下只是主任务梯度的eta倍，不凭“梯度监督”得到新的知识。
+多时刻约束可能改变训练路径，但不增加合法输入中原本没有的信息；跨episode条件化、坐标尺度、初始锚点、
+Adam矩状态与可预测性都需要单独解释。实际部署仍不得读取task actions或运行task-local优化。
+旧LocalField已在收缩前监督真实cotangent并让预测本身组成LoRA；仅说“直接监督更新”不构成新的核心机制。
+当前只核对这两类完整学习合同的真实差异，不为公式安排新GPU、曲率/梯度扫描或逐模块课程。

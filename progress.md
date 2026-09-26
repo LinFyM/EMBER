@@ -2,7 +2,7 @@
 
 ## 当前状态：Reader工程独立验收；正式学习启动前撤回，继续完整方法研究（2026-09-26）
 
-### 当前接续：条件学习原理与最近似历史只读复核
+### 当前接续：历史核对已验收，推进可预测功能更新的学习原理
 
 Owner指出：工程结束后主讨论实际结束了回复，执行者也已停止，既无后继工作也无唤醒，
 会静默等待Owner明早再次催促。主讨论确认这是执行失误；已有自主推进授权未撤销，不能以批次关闭作为停工理由。
@@ -11,14 +11,20 @@ Owner指出：工程结束后主讨论实际结束了回复，执行者也已停
 主讨论推导常量可达性与当前可用更新方向的区别，把现有联合特征phi进一步接到实际原生控制Jacobian，
 明确跨层共享项、算子相加与因子相加及“公共权重不变不等于能力保持”的边界；见机制分析§14。
 这不是共同底座新设计，未作模型计算或GPU派发，也没有从公式宣称已定位根因。
-当前执行者承担独立只读任务`conditional_learning_history_review_20260926`：
-预计20–35分钟，核对旧shared-prior、Unified common-base/source-separated、DJNFR的完整图/初始化/标签/梯度/组合及原始行为。
-仅小型CPU文本/JSON读取，无forward/backward、环境episode、训练或大copy；新增材料在本仓data1的`.codex/tmp/conditional_learning_review_20260926/`。
-结果用于检验最近似历史边界，不以“尚未试过fresh组合”自动启动下一架构。
+`conditional_learning_history_review_20260926`已完成并回报；主讨论独立复读关键源码、prior配置、七份原始250面板summary
+及DJNFR配对结果后接受，见机制分析§14.5、findings§161。报告位于本仓data1的
+`.codex/tmp/conditional_learning_review_20260926/executor_history_review.md`。旧公共prior与真实common-base查询不能混同，
+所核对近邻没有精确fresh自由常量完整LoRA联合方案，但未试组合不足以启动。原Queue
+`01a0ddf3-03a9-7f60-945c-7d39e7d192c2`与turn `01a0ddf3-03ab-7182-9140-fdfdf1f3797b`已消费，不重复派发。
 
-Queue回执`01a0ddf3-03a9-7f60-945c-7d39e7d192c2`；只读官方app-server已核实完整正文进入
-执行turn `01a0ddf3-03ab-7182-9140-fdfdf1f3797b`，状态inProgress。接收方完成/实质阻塞后回报一次到当前主讨论UUID；
-当前登记的是已投递并开始的核对任务，不是已完成结果。主讨论继续自身推导及原件判断，不等Owner追加指令。
+主讨论新增§15：在实际LoRA的局部功能二次模型中定义过程特征应预测的修正及执行适用性；区分局部cotangent标签、
+合法条件均值、功能最优位移与闭环收益，并推导相邻权重学习的三种detach梯度。没有从数学可能性宣布根因或新方案。
+同时向指定执行者派发`update_learning_primary_review_20260926`，预计20–30分钟、上限40分钟，
+只核对HyPoGen/HyperNet Fields原论文及官方实现与旧NativeCorrection/LocalField的完整差异。
+正文与回执在同一tmp目录`update_learning_request.txt`/`update_learning_queue_receipt.txt`；Queue
+`01a0de07-de2a-7563-896d-e909b2ad26bc`，官方app-server已核实正文进入
+turn `01a0de07-de2d-7520-bad1-34c8f5070f9a`且inProgress。完成/实质阻塞只回报一次到当前主讨论UUID。
+范围仍为小型CPU/公开文献读取，无模型、forward/backward、环境、GPU、依赖安装或新run root；不自动扩大综述或恢复Reader。
 
 ### 最近批次的科学状态
 

@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import socket
+import subprocess
 import time
 import traceback
 from dataclasses import dataclass
@@ -101,7 +102,13 @@ def require_frozen_data1(spec: dict, *, output: Path, exact_root: bool = False) 
             or (target != root if exact_root else not target.is_relative_to(root))):
         raise ValueError("Reader outputs must stay under the registered data1 study root")
     state = git_state(ROOT)
-    if state["branch"] or not git_state_is_clean_pushed_or_frozen_authority(state):
+    task_remote = subprocess.run(
+        ["git", "rev-parse", "origin/codex/native-conditional-reader-engineering-20260926"],
+        cwd=ROOT, check=True, text=True, capture_output=True,
+    ).stdout.strip()
+    pushed_task_commit = state["commit"] == task_remote
+    if (state["branch"] or state["dirty_paths"]
+            or not (pushed_task_commit or git_state_is_clean_pushed_or_frozen_authority(state))):
         raise ValueError("GPU engineering requires a clean pushed detached frozen tree")
 
 

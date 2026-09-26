@@ -810,20 +810,4 @@ def run(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path,
-                        default=REPO_ROOT / "configs/libero_24_8_8_coverage_v1/writer_task_diversity.json")
-    parser.add_argument("--asset-root", type=Path, default=REPO_ROOT)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--mode", choices=("smoke", "profile", "formal"), required=True)
-    parser.add_argument("--stop-after-step", type=int)
-    parser.add_argument("--checkpoint-updates", help="this segment's registered global optimizer-update nodes")
-    parser.add_argument("--policy-microbatches", help="physical FM query chunks by rank, e.g. 8,4,8,8")
-    parser.add_argument("--resume", type=Path)
-    parser.add_argument("--allow-topology-change", action="store_true",
-                        help="allow an ordinary dynamic resume to use a changed physical topology")
-    parser.add_argument("--extend-from", type=Path, help="complete parent1500 state for the registered 2100 continuation")
-    parser.add_argument("--support-slot-arm", choices=("KEEP77", "SWAP76", "DROP77"),
-                        help="registered controlled fork from C_S00@1155")
-    parser.add_argument("--cpu-threads", type=int, default=4)
-    run(parser.parse_args())
+    raise RuntimeError("Historical Writer CLI retired; use scripts/train_writer.py or scripts/materialize_writer.py")

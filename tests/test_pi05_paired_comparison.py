@@ -56,6 +56,21 @@ def test_horizon_pairing_rejects_changed_video_authority(field):
         paired_success_comparison(before, after)
 
 
+def test_conditional_velocity_pairing_preserves_scheduled_ordinal_across_v_l():
+    before, after = panels()
+    evidence = {"video_ordinal": 0, "selection_seed": 20260911,
+                "selection_mode": "per_init_ordinal", "K": 1,
+                "paired_correct_demos": [4], "paired_other_demos": [17]}
+    for row in before["rows"]:
+        row["conditional_velocity_lora"] = {**evidence, "mode": "L"}
+    for row in after["rows"]:
+        row["conditional_velocity_lora"] = {**evidence, "mode": "V"}
+    assert paired_success_comparison(before, after)["churn_count"] == 2
+    after["rows"][0]["conditional_velocity_lora"]["paired_correct_demos"] = [5]
+    with pytest.raises(Pi05EvaluationError, match="video ordinal or schedule"):
+        paired_success_comparison(before, after)
+
+
 @pytest.mark.parametrize("baseline", [None, "policy_adapter_sha256", "static_task_lora", "task_expert"])
 def test_horizon_rows_can_be_compared_with_historical_baselines(baseline):
     before, after = panels()

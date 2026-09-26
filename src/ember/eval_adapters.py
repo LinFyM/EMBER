@@ -12,6 +12,7 @@ STATIC_SOURCE_SFT_KIND = "shared_source_sft_lora"
 STATIC_TASK_EXPERT_KIND = "task_local_expert_bank"
 STATIC_TASK_LORA_KIND = "static_task_lora_bank"
 HORIZON_WRITER_KIND = "horizon_writer_lora_bank"
+CONDITIONAL_VELOCITY_KIND = "conditional_velocity_lora_bank"
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -120,6 +121,19 @@ def inspect_static_task_lora_adapter(
     from ember.writer.materialization import BANK_SCHEMA
 
     manifest = read_json(manifest_path)
+    if manifest.get("kind") == CONDITIONAL_VELOCITY_KIND:
+        from ember.writer.conditional_velocity_bank import inspect_velocity_bank
+
+        if any(value is not None for value in (native_reader_transfer_cell, support_slot_model,
+                                                language_content_panel)):
+            raise Pi05EvaluationError("velocity formal bank cannot enter a historical diagnostic")
+        return inspect_velocity_bank(
+            manifest_path=manifest_path, source=source,
+            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
+            task_init_state_ids={(task.suite, int(task.task_id)): task.init_state_ids
+                                 for task in tasks if getattr(task, "init_state_ids", None) is not None},
+            evaluation_role=evaluation_role, require_formal=require_formal,
+        )
     if manifest.get("kind") == HORIZON_WRITER_KIND or manifest.get("schema_version") == BANK_SCHEMA:
         from ember.writer.evaluation import inspect_horizon_writer_bank
 
@@ -206,6 +220,10 @@ def load_evaluation_adapter(
 
         common["readout_intervention"] = contract.get("readout_realization_intervention")
         return FrozenHorizonWriterAdapter(**common)
+    if adapter.get("kind") == CONDITIONAL_VELOCITY_KIND:
+        from ember.writer.conditional_velocity_bank import FrozenVelocityAdapter
+
+        return FrozenVelocityAdapter(**common)
     raise Pi05EvaluationError("unsupported evaluation adapter kind")
 
 
@@ -213,6 +231,8 @@ def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
+        if contract.get("adapter", {}).get("kind") == CONDITIONAL_VELOCITY_KIND:
+            return {"conditional_velocity_lora": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == HORIZON_WRITER_KIND:
             return {"horizon_writer_lora": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == STATIC_TASK_LORA_KIND:
@@ -232,6 +252,13 @@ def validate_episode_adapter_fields(
     task_id: int,
     init_state_id: int,
 ) -> bool:
+    if adapter is not None and adapter.get("kind") == CONDITIONAL_VELOCITY_KIND:
+        from ember.writer.conditional_velocity_bank import validate_velocity_adapter_fields
+
+        return validate_velocity_adapter_fields(adapter, row, suite=suite, task_id=task_id,
+                                                init_state_id=init_state_id)
+    if row.get("conditional_velocity_lora") is not None:
+        return False
     if adapter is not None and adapter.get("kind") == HORIZON_WRITER_KIND:
         from ember.writer.evaluation import validate_horizon_writer_episode
 

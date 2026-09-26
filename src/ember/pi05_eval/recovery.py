@@ -117,7 +117,8 @@ def _reinspect_adapter(
                 diagnostic_subset=str(subset),
             )
         return inspected
-    if adapter.get("kind") in {"static_task_lora_bank", "horizon_writer_lora_bank"}:
+    if adapter.get("kind") in {"static_task_lora_bank", "horizon_writer_lora_bank",
+                               "conditional_velocity_lora_bank"}:
         if contract.get("readout_realization_intervention") is not None:
             from ember.pi05_eval.readout_panel import reinspect_adapter
 

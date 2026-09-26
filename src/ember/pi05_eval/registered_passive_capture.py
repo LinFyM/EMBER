@@ -12,6 +12,7 @@ from ember.pi05_source_checkpoint import read_json
 SPEC_RELATIVE = Path('configs/relational_support_causality_v1/experiment_spec.json')
 EVALUATION_RELATIVE = Path('configs/relational_support_causality_v1/evaluation.json')
 TAG = 'ember_relational_support_passive_capture_v1'
+VELOCITY_TAG = 'ember_conditional_velocity_passive_capture_v1'
 SUITES = ('libero_spatial', 'libero_object', 'libero_goal', 'libero_10')
 
 
@@ -195,6 +196,12 @@ def _trace_and_stage_match(
 
 
 def validate_contract(contract: Mapping[str, Any], repo_root: Path) -> None:
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == VELOCITY_TAG):
+        from ember.writer.conditional_velocity_bank import validate_capture_contract
+
+        validate_capture_contract(contract, repo_root)
+        return
     from ember.writer.learned_initial_content_contract import evaluation_panel as initial_panel
 
     if initial_panel(Path(contract['output_dir'])) is not None:
@@ -276,6 +283,12 @@ def prepare_from_manifest(
 def attach_requested_capture(
     args: Any, contract: dict[str, Any], repo_root: Path, output_dir: Path,
 ) -> None:
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == VELOCITY_TAG):
+        from ember.writer.conditional_velocity_bank import attach_capture_provenance
+
+        attach_capture_provenance(contract, repo_root)
+        return
     from ember.writer.learned_initial_content_contract import evaluation_panel as initial_panel
 
     if initial_panel(output_dir) is not None:

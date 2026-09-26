@@ -57,8 +57,10 @@ class VelocityTeachingEncoder(torch.nn.Module):
     _read_native_condition = CompleteLoRAWriter._read_native_condition
     encode_task = CompleteLoRAWriter.encode_task
 
-    def __init__(self, policy: torch.nn.Module, model: Mapping[str, object]) -> None:
+    def __init__(self, policy: torch.nn.Module, model: Mapping[str, object], mode: str) -> None:
         super().__init__()
+        if mode not in {"V", "L"}:
+            raise ValueError("velocity condition mode must be V or L")
         if (model["camera_view"] != "agentview" or model["program_width"] != 256
                 or model["procedure_blocks"] != 2):
             raise ValueError("conditional velocity teaching topology changed")
@@ -66,29 +68,53 @@ class VelocityTeachingEncoder(torch.nn.Module):
         self.program_width = 256
         self.camera_view = "agentview"
         self.initial_content_only = False
-        self.semantic_encoder = Pi05LanguageAxialEncoder(
-            paligemma_model=bridge.paligemma.model.language_model,
-            expert_model=bridge.gemma_expert.model,
-            image_width=model["image_width"], expert_width=model["expert_width"],
-            program_width=256, text_meta_lora_rank=model["text_meta_lora_rank"],
-            vl_meta_lora_rank=model["vl_meta_lora_rank"],
-            action_meta_lora_rank=model["action_meta_lora_rank"],
-            patch_grounding_heads=model["patch_grounding_heads"],
-            max_frames_per_encoder_call=model["max_frames_per_encoder_call"],
-            action_horizon=50, padded_action_dim=32,
-            initialization_seed=model["initialization_seed"],
-            activation_checkpointing=model["activation_checkpointing"],
-            camera_view="agentview", horizon_read=model["horizon_read"],
-        )
-        self.semantic_core = LanguageSemanticCore(
-            width=256, heads=model["semantic_core_heads"], blocks=2,
-            frame_attention_initial_lambda=model["frame_attention_initial_lambda"],
-            language_content_path=False,
-        )
-        self.procedure = RecurrentProcedureEncoder(
+        self.mode = mode
+        # The same explicit module seed gives V and L identical Text/Core weights.
+        # It also isolates these draws from their different active module sets.
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(7)
+            self.semantic_encoder = Pi05LanguageAxialEncoder(
+                paligemma_model=bridge.paligemma.model.language_model,
+                expert_model=bridge.gemma_expert.model,
+                image_width=model["image_width"], expert_width=model["expert_width"],
+                program_width=256, text_meta_lora_rank=model["text_meta_lora_rank"],
+                vl_meta_lora_rank=model["vl_meta_lora_rank"],
+                action_meta_lora_rank=model["action_meta_lora_rank"],
+                patch_grounding_heads=model["patch_grounding_heads"],
+                max_frames_per_encoder_call=model["max_frames_per_encoder_call"],
+                action_horizon=50, padded_action_dim=32,
+                initialization_seed=model["initialization_seed"],
+                activation_checkpointing=model["activation_checkpointing"],
+                camera_view="agentview", horizon_read=model["horizon_read"],
+            )
+            self.semantic_core = LanguageSemanticCore(
+                width=256, heads=model["semantic_core_heads"], blocks=2,
+                frame_attention_initial_lambda=model["frame_attention_initial_lambda"],
+                language_content_path=False,
+            )
+        self.procedure = (RecurrentProcedureEncoder(
             width=256, expert_width=1024, heads=model["procedure_heads"],
             blocks=2, action_horizon=50,
-        )
+        ) if mode == "V" else None)
+        if mode == "L":
+            self.semantic_encoder.requires_grad_(False)
+            self.semantic_encoder.language_projection.requires_grad_(True)
+            self.semantic_encoder.text_meta_lora.requires_grad_(True)
+            self.semantic_core.frame_attention.requires_grad_(False)
+
+    def encode_language(self, policy: torch.nn.Module, tokens: torch.Tensor,
+                        mask: torch.Tensor, span: torch.Tensor):
+        if self.mode != "L" or self.procedure is not None:
+            raise ValueError("language path cannot read video Procedure")
+        text, valid = self.semantic_encoder.encode_text_only(policy, tokens, mask, span)
+        core = self.semantic_core.language_only(text, valid)
+        # encode_text_only repacks the real selected task tokens after BOS;
+        # these are its actual native text position_ids, excluding BOS itself.
+        positions = torch.arange(1, text.shape[1] + 1, device=text.device,
+                                 dtype=torch.long)[None]
+        if positions.shape != valid.shape:
+            raise ValueError("native task-token positions changed")
+        return core, valid, text, positions, valid
 
 
 class ActionRowReadout(torch.nn.Module):
@@ -125,17 +151,23 @@ class ActionRowReadout(torch.nn.Module):
 class ConditionalVelocityOperator(torch.nn.Module):
     """Fresh beta, native teaching path, action-row readout and common U."""
 
-    def __init__(self, policy, model, common_template) -> None:
+    def __init__(self, policy, model, common_template, *, mode: str) -> None:
         super().__init__()
-        # This order is part of the checkpointed initialization contract.
+        # Common draws precede condition-specific modules in both fresh arms.
         self.common = DirectLoRAParameters(common_template)
-        self.teaching = VelocityTeachingEncoder(policy, model)
         self.readout = ActionRowReadout()
         self.U = torch.nn.Linear(1024, 256, bias=False)
+        self.teaching = VelocityTeachingEncoder(policy, model, mode)
+        self.mode = mode
 
     def forward(self, policy, condition: tuple, *, frame_parallel_group=None):
-        core, core_mask, procedure, positions, frame_mask, _ = self.teaching.encode_task(
-            policy, *condition, frame_parallel_group=frame_parallel_group,
-        )
+        if self.mode == "V":
+            core, core_mask, procedure, positions, frame_mask, _ = self.teaching.encode_task(
+                policy, *condition, frame_parallel_group=frame_parallel_group,
+            )
+        else:
+            core, core_mask, procedure, positions, frame_mask = self.teaching.encode_language(
+                policy, *condition,
+            )
         coefficient = self.readout(core, core_mask, procedure, positions, frame_mask)
         return compile_velocity_state(self.common(), coefficient, self.U.weight), coefficient

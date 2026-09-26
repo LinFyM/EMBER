@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Materialize paired episode conditions with the canonical Writer."""
+"""Materialize the canonical compact conditional velocity bank."""
 
-from ember.writer.materialization import main
+from ember.writer.conditional_velocity_bank import main
 
 
 if __name__ == "__main__":

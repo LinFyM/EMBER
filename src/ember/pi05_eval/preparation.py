@@ -450,12 +450,17 @@ def _registered_trajectory_capture(
     path = getattr(args, "trajectory_capture_selection", None)
     if path is None:
         return None, None
+    path = path.resolve()
+    manifest = read_json(path)
+    if manifest.get("study_id") == "conditional_velocity_operator_learning_20260927":
+        from ember.writer.conditional_velocity_bank import registered_capture
+
+        return registered_capture(args, tasks, output_dir, path, manifest, task_subset,
+                                  repo_root, TRAJECTORY_CAPTURE_SELECTION_SCHEMA)
     if (task_subset is None or args.role not in {"development_train", "nonheld_meta"}
             or getattr(args, "occupancy_capture_selection", None) is not None
             or bool(getattr(args, "capture_stage_predicates", False))):
         raise Pi05EvaluationError("registered trajectory capture requires a train subset")
-    path = path.resolve()
-    manifest = read_json(path)
     full = tuple((str(row["suite"]), int(row["task_id"]), int(row["init_state_id"]))
                  for row in manifest.get("full_conditions", ()))
     if manifest.get("passive_control_trace") is not None:

@@ -491,7 +491,14 @@
       "environment_command",
       "six_dimensional_controller_clipped_scaled_OSC"
     ],
-    "gripper": "separate from six-dimensional OSC"
+    "gripper": "separate from six-dimensional OSC",
+    "materialization_trace": {
+      "S0": "same forward q/E0/H0/I0/positions/masks/Core/P/compiler slots and modulation",
+      "extra_forward": false,
+      "avoid_repeated_E_H_storage": true,
+      "C0": "no new forward; old feature provenance kept separate from F banks"
+    },
+    "controller_units_source": "actual controller ranges read from existing pilot environment; zero extra episodes"
   },
   "statistics": {
     "primary": "held_correct C0 minus S0",

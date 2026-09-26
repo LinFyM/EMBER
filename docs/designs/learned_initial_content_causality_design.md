@@ -87,12 +87,16 @@ held8=0,1,14,15,20,21,36,38；seen16及teacher46/47/48/49映射继承原language
 held使用原50视频池seed20260911前10映射，other offset17，不能另建10视频池或挑视频。
 六面板全部新闭环、同一E；C0银行F只读引用224条件，S0新物化224条件，不新增C0 Writer forward。
 Source/B只引用已验收fixed400历史参照，不能放进本批新的配对差或称方法超过语言。
+S0物化的同一次forward保留q、首帧E/H/I、真实位置/mask、Core/P及compiler slots/调制的只读trace，
+不为记录额外forward；E/H只保存首帧及广播定义，无需存重复T份。C0旧特征只能按原来源作结构参照，
+不得把不同物化的特征悄悄绑定到复用的F银行，或用跨模型特征范数差直接归因。
 
 固定pilot为两模型×task0/state0、task36/state0共4，计入held correct。
 全部448条保存实际执行T条action及T+1 body/EEF/夹爪/BDDL谓词；
 full固定两模型×两种held视频×task0/14/21/38/state0=16，另seen task2/17/22/32/state0×两模型=8，共24双相机。
 首轮真实10-flow的full50×7和前5从原rollout提取，无新增独立function query。
 报告normalized action、环境命令和controller clip/scale后的6维OSC（夹爪另列），不能把环境命令误标为OSC。
+在原pilot已创建的环境读取实际controller输入/输出范围并记录，不新增环境probe或episode。
 跨分支只在相同首态比较函数；后续轨迹不称同观测函数差。
 
 主比较是held correct的C0−S0；other同方向和能力保持作必要佐证，seen反映学习窗口是否出现明显拟合差异。

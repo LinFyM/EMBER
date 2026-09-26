@@ -8,7 +8,9 @@ from typing import Any, Mapping, Sequence
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_source_checkpoint import read_json
 from ember.pi05_target_data import SUITE_ORDER
-from ember.writer.language_content_contract import SPEC_PATH, evaluation_panel, spec
+from ember.writer.language_content_contract import (
+    FIXED400_STUDY, evaluation_panel, evaluation_scope, fixed400_spec, spec,
+)
 
 
 TAG = "ember_language_content_path_passive_capture_v1"
@@ -17,9 +19,13 @@ TAG = "ember_language_content_path_passive_capture_v1"
 def _cases(panel: Mapping[str, Any]) -> tuple[set[tuple[str, int, int]], set[tuple[str, int, int]]]:
     suite_key = lambda task: (SUITE_ORDER[task // 10], task % 10)
     cases = {(*suite_key(task), state) for task in panel["task_ids"] for state in panel["state_ids"]}
-    capture = spec()["evaluation"]["capture"]
-    full_tasks = capture["held_full_task_ids"] if panel["kind"].startswith("held") else capture["seen_full_task_ids"]
-    full_states = capture["held_full_state_ids"] if panel["kind"].startswith("held") else capture["seen_full_state_ids"]
+    if panel.get("study_id") == FIXED400_STUDY:
+        capture = fixed400_spec()["evaluation"]["capture"]
+        full_tasks, full_states = capture["new_full_task_ids"], capture["new_full_state_ids"]
+    else:
+        capture = spec()["evaluation"]["capture"]
+        full_tasks = capture["held_full_task_ids"] if panel["kind"].startswith("held") else capture["seen_full_task_ids"]
+        full_states = capture["held_full_state_ids"] if panel["kind"].startswith("held") else capture["seen_full_state_ids"]
     full = {(*suite_key(task), state) for task in full_tasks for state in full_states}
     if len(cases) != panel["rows"] or not full <= cases:
         raise Pi05EvaluationError("language-content cases or fixed capture changed")
@@ -31,10 +37,11 @@ def prepare_from_manifest(
     tasks: Sequence[Any], manifest: Mapping[str, Any], selection_path: Path,
     full: tuple[tuple[str, int, int], ...],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    panel = evaluation_panel(output_dir)
-    if panel is None:
+    scope = evaluation_scope(output_dir)
+    if scope is None:
         raise Pi05EvaluationError("language-content passive capture requires one registered panel")
-    study = Path(spec()["outputs"]["planned_run_root"]).resolve()
+    study_spec, spec_relative, panel = scope
+    study = Path(study_spec["outputs"]["planned_run_root"]).resolve()
     expected, expected_full = _cases(panel)
     actual = {(str(task.suite), int(task.task_id), int(state))
               for task in tasks for state in task.init_state_ids}
@@ -42,9 +49,9 @@ def prepare_from_manifest(
     subset_manifest = read_json(Path(task_subset["selection_path"]))
     if (manifest.get("schema_version") != "ember_pi05_registered_trajectory_capture_v1"
             or manifest.get("passive_control_trace") != TAG
-            or manifest.get("study_spec") != SPEC_PATH
+            or manifest.get("study_spec") != spec_relative
             or manifest.get("panel_id") != panel["id"]
-            or subset_manifest.get("study_spec") != SPEC_PATH
+            or subset_manifest.get("study_spec") != spec_relative
             or subset_manifest.get("panel_id") != panel["id"]
             or task_subset.get("diagnostic_subset") != "registered_train_subset"
             or manifest.get("task_subset_selection") != task_subset["selection_path"]
@@ -58,7 +65,7 @@ def prepare_from_manifest(
             or not selection_path.resolve().is_relative_to(selectors)
             or not Path(task_subset["selection_path"]).resolve().is_relative_to(selectors)):
         raise Pi05EvaluationError("language-content panel, selector, or passive capture changed")
-    spec_path = (repo_root / SPEC_PATH).resolve()
+    spec_path = (repo_root / spec_relative).resolve()
     capture = {
         "schema_version": "ember_pi05_registered_trajectory_capture_v1",
         "selection_path": str(selection_path.resolve()), "selection_bytes": selection_path.stat().st_size,
@@ -86,9 +93,10 @@ def prepare_from_manifest(
 
 def attach_requested_capture(args: Any, contract: dict[str, Any], repo_root: Path,
                              output_dir: Path) -> None:
-    panel = evaluation_panel(output_dir)
-    if panel is None:
+    scope = evaluation_scope(output_dir)
+    if scope is None:
         return
+    study, spec_relative, panel = scope
     capture = contract.get("diagnostic_occupancy_capture") or {}
     adapter = contract.get("adapter")
     if ((panel["model"] == "Source") != (adapter is None)
@@ -102,8 +110,12 @@ def attach_requested_capture(args: Any, contract: dict[str, Any], repo_root: Pat
         path = Path(adapter["manifest"]["path"])
         run, _ = inspect_writer_checkpoint(Path(adapter["writer_checkpoint"]["path"]))
         validate_evaluation_bank(panel, path, adapter, run, git_state(repo_root)["commit"])
+    if (panel.get("study_id") == FIXED400_STUDY
+            and Path(contract["model"]["checkpoint"]).resolve()
+            != Path(study["frozen_inputs"]["Source_checkpoint"]).resolve()):
+        raise Pi05EvaluationError("fixed400 Source checkpoint changed")
     contract["language_content_provenance"] = {
-        "panel": panel["id"], "study_spec": SPEC_PATH,
+        "panel": panel["id"], "study_spec": spec_relative,
         "evaluation_commit": contract["git"]["commit"],
         "bank_manifest": adapter["manifest"] if adapter is not None else None,
         "bank_training_commit": adapter["writer_checkpoint"]["training_commit"] if adapter else None,
@@ -113,21 +125,22 @@ def attach_requested_capture(args: Any, contract: dict[str, Any], repo_root: Pat
 
 def validate_contract(contract: Mapping[str, Any], repo_root: Path) -> None:
     output = Path(contract["output_dir"]).resolve()
-    panel = evaluation_panel(output)
-    if panel is None:
+    scope = evaluation_scope(output)
+    if scope is None:
         return
+    _, spec_relative, panel = scope
     capture = contract.get("diagnostic_occupancy_capture") or {}
     path = Path(str(capture.get("selection_path", "")))
     if (not path.is_file() or path.stat().st_size != capture.get("selection_bytes")
             or capture.get("passive_trace", {}).get("schema_version") != TAG
-            or capture["passive_trace"].get("spec_path") != str((repo_root / SPEC_PATH).resolve())
-            or capture["passive_trace"].get("spec_bytes") != (repo_root / SPEC_PATH).stat().st_size
+            or capture["passive_trace"].get("spec_path") != str((repo_root / spec_relative).resolve())
+            or capture["passive_trace"].get("spec_bytes") != (repo_root / spec_relative).stat().st_size
             or capture["passive_trace"].get("trace_root") != str(output / "continuous_traces")
             or contract.get("diagnostic_stage_predicates", {}).get("full_conditions_only") is not False):
         raise Pi05EvaluationError("language-content passive trace or spec changed after prepare")
     manifest = read_json(path)
     if (manifest.get("passive_control_trace") != TAG
-            or manifest.get("study_spec") != SPEC_PATH
+            or manifest.get("study_spec") != spec_relative
             or manifest.get("panel_id") != panel["id"]
             or manifest.get("mode") != "compact" or manifest.get("stage_predicates") is not True
             or manifest.get("task_subset_selection") !=

@@ -12,6 +12,8 @@ from ember.writer.conditional_contract import validate_config as validate_parent
 CONFIG_SCHEMA = "ember_language_content_path_causality_config_v1"
 EXPERIMENT = "language_content_path_causality_20260926"
 SPEC_PATH = "configs/language_content_path_causality_v1/experiment_spec.json"
+FIXED400_SPEC_PATH = "configs/language_content_path_fixed400_v1/experiment_spec.json"
+FIXED400_STUDY = "language_content_path_fixed400_20260926"
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -26,6 +28,63 @@ def spec() -> dict[str, Any]:
             or sum(row["rows"] for row in value["evaluation"]["panels"]) != 736):
         raise ValueError("language-content-path scientific registration changed")
     return value
+
+
+def fixed400_spec() -> dict[str, Any]:
+    value = read_json(REPO_ROOT / FIXED400_SPEC_PATH)
+    evaluation = value["evaluation"]
+    if (value.get("schema_version") != "ember_language_content_fixed400_v1"
+            or value.get("study_id") != FIXED400_STUDY
+            or evaluation["task_ids"] != [0, 1, 14, 15, 20, 21, 36, 38]
+            or evaluation["new_state_ids"] != list(range(10, 50))
+            or evaluation["prior_state_ids"] != list(range(10))
+            or [(row["id"], row["model"], row["condition"], row["rows"])
+                for row in evaluation["panels"]] != [
+                    ("Source_held_correct", "Source", "correct", 320),
+                    ("B630_held_correct", "B630", "correct", 320),
+                    ("C0_630_held_correct", "C0", "correct", 320),
+                    ("C0_630_held_other", "C0", "same_task_other", 320),
+                ]
+            or evaluation["video_schedule_seed"] != 20260911
+            or evaluation["other_demo_offset"] != 17
+            or value["frozen_inputs"]["C0_training_commit"] !=
+               "dca1b5500ac0f912d56cc1c76382004457e807a4"):
+        raise ValueError("fixed400 scientific registration changed")
+    return value
+
+
+def fixed400_panel(panel: Mapping[str, Any]) -> dict[str, Any]:
+    study = fixed400_spec()
+    if dict(panel) not in study["evaluation"]["panels"]:
+        raise ValueError("fixed400 panel is outside its registration")
+    return {**panel, "kind": ("held_other" if panel["condition"] == "same_task_other"
+                               else "held_correct"),
+            "task_ids": study["evaluation"]["task_ids"],
+            "state_ids": study["evaluation"]["new_state_ids"],
+            "study_id": FIXED400_STUDY}
+
+
+def fixed400_explicit_states(args: Any) -> bool:
+    """Admit only this registered output-root selector pair before task selection."""
+    study = fixed400_spec()
+    root = Path(study["outputs"]["planned_run_root"]).resolve() / "launch" / "selectors"
+    subset = getattr(args, "task_subset_selection", None)
+    capture = getattr(args, "trajectory_capture_selection", None)
+    if subset is None or capture is None:
+        return False
+    subset, capture = Path(subset).resolve(), Path(capture).resolve()
+    panels = {row["id"] for row in study["evaluation"]["panels"]}
+    return (getattr(args, "role", None) == "development_train"
+            and getattr(args, "mode", None) == "screen"
+            and getattr(args, "state_count", None) == 40
+            and tuple(getattr(args, "init_state_ids", ()) or ()) == tuple(range(10, 50))
+            and not getattr(args, "exploration_sigma", False)
+            and not getattr(args, "capture_stage_predicates", False)
+            and getattr(args, "occupancy_capture_selection", None) is None
+            and getattr(args, "frozen_replay_registration", None) is None
+            and subset.parent == capture.parent == root
+            and any(subset.name == f"{name}_subset.json"
+                    and capture.name == f"{name}_capture.json" for name in panels))
 
 
 def validate_config(config: dict[str, Any]) -> dict[str, Any]:
@@ -67,12 +126,30 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
 def bank_panel(config: Mapping[str, Any], selection: Mapping[str, Any], *, checkpoint: Path,
                output: Path) -> dict[str, Any]:
     validate_config(dict(config))
-    study = spec()
     arm_id = config["experiment"]["arm_id"]
     if checkpoint.name != "macro_00000630" or checkpoint.parent.parent.name != arm_id:
         raise ValueError("language-content-path bank requires this arm's complete 630 checkpoint")
-    root = Path(study["outputs"]["planned_run_root"]).resolve() / "materialization"
+    fixed = fixed400_spec()
+    fixed_root = Path(fixed["outputs"]["planned_run_root"]).resolve() / "materialization"
     output = output.resolve()
+    if output.parent == fixed_root:
+        panel = next((row for row in fixed["evaluation"]["panels"]
+                      if row["id"] == output.name and row["model"] == "C0"), None)
+        if (panel is None or arm_id != "C0"
+                or checkpoint.resolve() != Path(fixed["frozen_inputs"]["C0_checkpoint"]).resolve()):
+            raise ValueError("fixed400 bank requires the one frozen C0 checkpoint and registered panel")
+        from ember.writer.materialization import selection_contract
+
+        expected = selection_contract(
+            role="development_train", task_ids=fixed["evaluation"]["task_ids"], cardinality=1,
+            arm=panel["condition"], mode="per_init_ordinal",
+            seed=fixed["evaluation"]["video_schedule_seed"],
+            init_state_ids=fixed["evaluation"]["new_state_ids"], video_pool=range(50))
+        if dict(selection) != expected:
+            raise ValueError("fixed400 bank task, state, video, or control map changed")
+        return fixed400_panel(panel)
+    study = spec()
+    root = Path(study["outputs"]["planned_run_root"]).resolve() / "materialization"
     panel = next((row for row in study["evaluation"]["panels"]
                   if row["id"] == output.name and row["model"] == arm_id), None)
     if panel is None or output.parent != root:
@@ -96,22 +173,64 @@ def bank_panel(config: Mapping[str, Any], selection: Mapping[str, Any], *, check
     return panel
 
 
-def evaluation_panel(output: Path) -> dict[str, Any] | None:
+def evaluation_scope(output: Path) -> tuple[dict[str, Any], str, dict[str, Any]] | None:
+    fixed = fixed400_spec()
+    fixed_root = Path(fixed["outputs"]["planned_run_root"]).resolve() / "evaluation"
+    output = output.resolve()
+    if output.parent == fixed_root:
+        panel = next((row for row in fixed["evaluation"]["panels"] if row["id"] == output.name), None)
+        if panel is None:
+            raise ValueError("fixed400 evaluation is outside four registered panels")
+        return fixed, FIXED400_SPEC_PATH, fixed400_panel(panel)
     study = spec()
     root = Path(study["outputs"]["planned_run_root"]).resolve() / "evaluation"
-    output = output.resolve()
     if output.parent != root:
         return None
     panel = next((row for row in study["evaluation"]["panels"] if row["id"] == output.name), None)
     if panel is None:
         raise ValueError("language-content-path evaluation is outside ten registered panels")
-    return panel
+    return study, SPEC_PATH, panel
+
+
+def evaluation_panel(output: Path) -> dict[str, Any] | None:
+    scope = evaluation_scope(output)
+    return scope[2] if scope is not None else None
 
 
 def validate_evaluation_bank(panel: Mapping[str, Any], manifest_path: Path,
                              manifest: Mapping[str, Any], run: Mapping[str, Any],
                              current_commit: str) -> bool:
-    """Return whether the one registered B630 held bank may be evaluated on states0..9."""
+    """Validate the registered panel's frozen Writer bank and subset provenance."""
+    if panel.get("study_id") == FIXED400_STUDY:
+        fixed = fixed400_spec()
+        registered = next((fixed400_panel(row) for row in fixed["evaluation"]["panels"]
+                           if row["id"] == panel.get("id")), None)
+        if registered != dict(panel) or manifest["selection"]["task_ids"] != panel["task_ids"]:
+            raise ValueError("fixed400 evaluation panel identity changed")
+        frozen = fixed["frozen_inputs"]
+        manifest_path = manifest_path.resolve()
+        if panel["model"] == "B630":
+            if (manifest_path != Path(frozen["B630_bank_root"]).resolve() / "manifest.json"
+                    or run["git"]["commit"] != frozen["B630_bank_commit"]
+                    or manifest["materialization_git"]["commit"] != frozen["B630_bank_commit"]
+                    or run["config"]["experiment"]["arm_id"] != "B_language"
+                    or manifest["writer_checkpoint"]["macro"] != 630
+                    or manifest["arm"] != "correct"
+                    or manifest["selection"]["init_state_ids"] != list(range(50))):
+                raise ValueError("fixed400 B630 reference bank or checkpoint changed")
+            return True
+        if panel["model"] != "C0":
+            raise ValueError("only frozen C0 and B630 have fixed400 banks")
+        expected = Path(fixed["outputs"]["planned_run_root"]).resolve() / "materialization" / panel["id"] / "manifest.json"
+        if (manifest_path != expected
+                or run["git"]["commit"] != frozen["C0_training_commit"]
+                or manifest["materialization_git"]["commit"] != current_commit
+                or run["config"]["experiment"]["arm_id"] != "C0"
+                or manifest["writer_checkpoint"]["macro"] != 630):
+            raise ValueError("fixed400 C0 training, materialization, or bank identity changed")
+        bank_panel(run["config"], manifest["selection"],
+                   checkpoint=Path(manifest["writer_checkpoint"]["path"]), output=manifest_path.parent)
+        return False
     study = spec()
     registered = next((row for row in study["evaluation"]["panels"]
                        if row["id"] == panel.get("id")), None)

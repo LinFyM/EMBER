@@ -31,7 +31,7 @@ from ember.writer.relational_contract import (CONFIG_SCHEMA as RELATIONAL_CONFIG
     registered_stage1_bank_panel)
 from ember.writer.language_content_contract import (
     CONFIG_SCHEMA as LANGUAGE_CONTENT_CONFIG_SCHEMA, bank_panel as language_content_bank_panel,
-    validate_config as _language_content_config,
+    fixed400_spec, validate_config as _language_content_config,
 )
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
     inspect_diagnostic_contract, require_control_selection, video_task_id)
@@ -190,7 +190,7 @@ def selection_contract(
 
 def request_init_state_ids(
     *, role: str, init_state_ids: Sequence[int] | None = None, state_count: int | None = None,
-    registered_stage1: bool = False,
+    registered_stage1: bool = False, registered_fixed400: bool = False,
 ) -> tuple[int, ...]:
     """Resolve the existing count API or the registered train diagnostic panel."""
     if role == "test":
@@ -204,6 +204,9 @@ def request_init_state_ids(
             raise ValueError("count-only Writer requests require 10 or 50 initial states, or registered nonheld20")
         return tuple(range(count))
     states = tuple(init_state_ids)
+    if (registered_fixed400 and role == "development_train"
+            and states == tuple(range(10, 50)) and state_count == 40):
+        return states
     if (role != "development_train" or states not in (TRAIN_DIAGNOSTIC_INIT_STATE_IDS, tuple(range(4)))
             or state_count not in (None, len(states))):
         raise ValueError("explicit Writer init states require development_train states32..35 and count4, "
@@ -648,6 +651,11 @@ def _registered_request_panel(request, run, record):
     if schema == LANGUAGE_CONTENT_CONFIG_SCHEMA:
         language_content_bank_panel(run["config"], request["selection"],
                                     checkpoint=Path(record["path"]), output=Path(request["output"]))
+        fixed = fixed400_spec()
+        fixed_root = Path(fixed["outputs"]["planned_run_root"]).resolve() / "materialization"
+        if (Path(request["output"]).resolve().parent == fixed_root
+                and run["git"]["commit"] != fixed["frozen_inputs"]["C0_training_commit"]):
+            raise ValueError("fixed400 bank must use the frozen C0 training commit")
         if request.get("reuse_manifest") is not None or request.get("diagnostic_contract") is not None:
             raise ValueError("language-content banks require fresh complete correct/other video forward")
         return None
@@ -771,6 +779,9 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
               "video_pool", "state_count", "init_state_ids", "seed", "fixed_videos", "reuse_manifest", "diagnostic_contract",
               "native_transfer_cell", "support_slot_model", "support_slot_phase"}
     normalized = []
+    fixed = fixed400_spec()
+    fixed_root = Path(fixed["outputs"]["planned_run_root"]).resolve() / "materialization"
+    fixed_panels = {row["id"] for row in fixed["evaluation"]["panels"] if row["model"] == "C0"}
     for request in requests:
         if not isinstance(request, Mapping) or set(request) - fields:
             raise ValueError("unknown request fields; asset root and device belong to the whole batch")
@@ -787,12 +798,16 @@ def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, An
             if (spec["evaluation"].get("active_stage") != "mechanism_core_v1"
                     or output.parent != root or output.name not in support):
                 raise ValueError("nonheld20 Writer request is outside stage1 support panels")
+        output = Path(request["output"]).resolve()
+        fixed400 = (output.parent == fixed_root and output.name in fixed_panels
+                    and request.get("role") == "development_train")
         selection = selection_contract(role=request["role"], task_ids=request["task_ids"], cardinality=request["k"],
             arm=request.get("arm", "correct"), mode=request.get("selection_mode", "per_init_ordinal"),
             seed=request.get("seed", DEFAULT_SELECTION_SEED), init_state_ids=(
                 tuple(request["init_state_ids"]) if support_slot else request_init_state_ids(
                     role=request["role"], init_state_ids=request.get("init_state_ids"),
-                    state_count=request.get("state_count"), registered_stage1=stage1_20)),
+                    state_count=request.get("state_count"), registered_stage1=stage1_20,
+                    registered_fixed400=fixed400)),
             video_pool=request.get("video_pool", tuple(range(50))), fixed_videos=request.get("fixed_videos"))
         normalized.append({"checkpoint": Path(request["checkpoint"]).resolve(),
                            "output": Path(request["output"]).resolve(), "selection": selection,

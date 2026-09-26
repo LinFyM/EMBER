@@ -220,7 +220,8 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
                     and not (language_content_panel is not None
                              and language_content_panel["model"] == "B630"
                              and language_content_panel["kind"] == "held_correct"
-                             and requested == tuple(range(10)))):
+                             and requested == tuple(language_content_panel["state_ids"])
+                             and tuple(selection["init_state_ids"]) == tuple(range(50)))):
                 raise ValueError("bank and evaluator must use the same exact fixed init states")
 
 

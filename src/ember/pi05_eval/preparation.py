@@ -96,6 +96,11 @@ def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
             raise Pi05EvaluationError("exploration Sigma requires explicit development-train states32..36")
         return None
     states = tuple(values)
+    if states == tuple(range(10, 50)):
+        from ember.writer.language_content_contract import fixed400_explicit_states
+
+        if fixed400_explicit_states(args):
+            return states
     if (args.role != "development_train" or args.mode != "screen"
             or states not in (tuple(range(32, 36)), tuple(range(32, 37))) or args.state_count != len(states)
             or (getattr(args, "exploration_sigma", False) and states != tuple(range(32, 37)))
@@ -294,6 +299,10 @@ def _registered_subset_mode_allowed(args: Any) -> bool:
     mode = str(args.mode), int(args.state_count)
     if mode in ordinary:
         return True
+    if mode == ("screen", 40):
+        from ember.writer.language_content_contract import fixed400_explicit_states
+
+        return fixed400_explicit_states(args)
     return (mode == ("screen", 20) and args.role == "nonheld_meta"
             and getattr(args, "trajectory_capture_selection", None) is not None)
 

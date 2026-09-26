@@ -4347,3 +4347,46 @@ LocalField的同参数监督、旧冻结公共prior/Unified/DJNFR负例及原完
 最多2GPU/0.75完整GPUh，data1原件峰值4GiB/代码768MiB；预计60–90分钟、120分钟工程判断上限。
 没有正式学习、held、语言第二臂或旧实验恢复许可；实测成本返回后主讨论另冻完整比较。
 若完整有信息量学习窗口无能力/视频收益，关闭该条件速度场组合，不逐层/逐rank/辅助配方扩展同一提案。
+
+## 175. 新候选的分支消融有公共分解歧义，完整比较须用训练语言参照（2026-09-27）
+
+[机制分析§30](docs/analyses/feature_to_operator_mechanism_20260926.md#30-怎样识别这个候选的视频收益公共分解的歧义与完整比较)
+说明`W+E7 R(C) U`在算子层可把一个常量`E7 D U`移入W而从R扣除，完整policy不变，
+但“令R=0后的policy”改变。这个算子分解不声称固定超网络可简单平移到任意D；
+它与可逆R/U坐标自由度共同限制解释：非零R、其norm和去R掉分不能单独认证视频贡献或公共能力保持。
+不为本候选添加内部置零/几何诊断；后继以完整正确/另一正确视频、独立训练语言参照与强MT-BC裁决。
+旧FactorHeads也已有可学A侧投影，U不是首次学习状态地址；新假设是整个条件速度场及共同执行特征的分解。
+
+本次定向读取强MT-BC selection及原run_contract/results，确认coverage协议step300=155/400、raw source1000、rank128、
+Validation IDs `[3,6,11,16,23,26,31,39]`、每task50初态、seed7及官方flow/预处理。
+这与C0 fit28/diagnostic-held8的120/132/语言121不同，不能相减定位原因。旧C600154/other160只作其真实完整合同下的参照。
+新V/L须明确相同纯FM事件流/尺度，不能继承旧21+7辅助的隐藏4/3或端点分支；正式节点和预算尚未冻结。
+
+原evaluator已经支持不同LoRA的批量执行，不新增batch backend。rank135的完整FP32 bank每条件约41.43MiB、
+400份约16.18GiB；正式物化须单独计容量，可用共同β/U与每条件R精确存储，rollout前仍构造一套完整LoRA。
+这是后继实现/成本边界，未扩大当前4GiB工程或启动物化。历史约一GPUh的400-panel调度仅作成本锚点，不冒充新profile。
+
+## 176. 条件速度算子工程接通，下一证据必须来自完整V/L学习（2026-09-27）
+
+执行者隔离commit `505590808f744f3b5d30da0e80c0e645841d282c`已完成工程；主讨论独立读合成、
+实际FM与VJP、采样/恢复源码，并核原metrics、查询前后缀与两条NPZ。38目标/76因子以128+7拼接，
+实际action_out为公共算子加E7 R U，其余37目标附加零算子；临时完整LoRA的cotangent正常回到共同β和条件路径。
+四task等权后跨rank SUM，没有将共享β重复计权；source物理trainable0，读取教学时不装公共β。
+首步公共β及零head有信用、第2步U/Text/VL/Action/Core/P有信用符合identity初始化，不能据此证明学会视频操作规则。
+
+真实6宏步/672query，恢复checkpoint2→4只新增两步；父日志4行保留，子前2行与父对应前缀相同，后2步query trace对应。
+global29/demo0的347raw→71帧28query反传无update；global2/32各一条train-only接口失败220/520步，真实T动作/T+1状态齐全。
+四次启动exit0，完整0.1269607541 GPUh、峰值2卡；study0.737GiB、代码493MiB。原件根为
+`/data1/user/ymdai/ember_runs/conditional_velocity_operator_engineering_20260927`，成本和GPU原件未写data0。
+工程19:40–20:16 UTC约36分钟，原估60–90分钟。消息Queue `01a0df5c-5fee-7361-8c9a-534997a96404`已由主讨论消费，迟到不重跑。
+
+实测宏步16.822秒/112query，最长profile14.07秒/21.46GiB reserved。新36-task全50教学的manifest长度
+P50/P90/P99/max为29/51/87/105采样帧，最大raw517，故71帧工程profile不覆盖新协议最长视频；这是已识别的成本边界，
+没有补开模型probe。强MT-BC完整validation曲线50..500为82/112/99/133/136/155/131/130/138/119，
+说明早期小幅波动不能被改名成架构故障；也不保证本候选同update/不同query曝光会重复该曲线。
+
+设计§6–9冻结完整V/L比较：同一coverage36、纯28-query跨episodeFM、相同3e-4/150warmup/1200cosine时钟、
+共同参数匹配初始化；首批各270更新/30,240query，再各official400，下一预期450节点不自动启动。
+首批总硬限9完整GPUh、data1峰值8GiB，紧凑bank只改变存储。当前只派CPU实现/集成，GPU仍需明确冻结commit启动。
+直接完整比较是为检验共同状态反馈基与视频系数能否学到有益作用，不增加模块Gate，不用R置零或loss替代视频收益。
+当前没有能力、稳定性或视频必要增量的新结论，Reader不恢复。

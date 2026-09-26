@@ -1,24 +1,42 @@
 # EMBER progress
 
-## 当前状态：条件速度算子候选进入有界工程准备；正式学习未授权（2026-09-27）
+## 当前状态：条件速度算子工程已验收；完整V/L学习先做CPU集成准备（2026-09-27）
 
-### 当前：有界工程合同已冻结，尚待真实派发回执
+### 当前：学习设计冻结，尚未启动正式GPU
 
-主讨论19:24 UTC开始审查完整条件速度场，19:38 UTC形成§29/findings§174及候选合同，约14分钟，
-原估25–35分钟、最长40分钟。已核真实原生末端32维/有效7维/50-horizon/十步flow与旧Reader无梯度query合同。
-新候选为共同学习的rank128完整LoRA状态基＋合法视频条件最终速度投影，代数合成唯一rank135/38-target LoRA。
-条件输出的全局线性与精确合成已说明，有限学习、视频收益和能力保持尚无实证，不是已验证根因或修复。
+唯一active design为`docs/designs/conditional_velocity_operator_design.md`：§4–5有界工程已完成，
+§6–9为新的完整学习合同，**当前只授权CPU实现和集成准备**，不由文档规模自动启动GPU。
+主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main集成；
+唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责隔离实现与具体实验。Reader撤回，旧实验不恢复。
 
-**唯一active design仅限工程**：`docs/designs/conditional_velocity_operator_design.md` §4–5。
-指定执行者仍为`01a0dd6c-f2e5-7971-821a-56766e1c0f22`，主讨论只改main文档，执行者隔离实现。
-6宏步/672query、一次长视频28-query反传无更新、2条train-only canonical episode；无held或正式学习。
-预计60–90分钟，120分钟为工程判断上限；GPU硬限0.75完整GPUh/最多同节点2卡，data1原件峰值4GiB/代码768MiB。
-该估计不是实际吞吐；后继学习须等真实profile与主讨论另行冻结的完整比较，不能沿用旧Reader630估计。
-旧Reader仍撤回、S0等旧实验不恢复。当前没有待消费的主讨论自通知；下方真实派发回执到达前不称执行已经开始。
+已冻结首批：V/L fresh共同FM、同一coverage36、每宏步4×28纯跨episode查询、同一事件/RNG与3e-4学习时钟，
+各到270更新/30,240query，随后各official validation400；不读Test或held teacher标签。
+首批完整GPU硬限9h、预期5.5–8.8h用量/冻结后2–3h wall；data1新root峰值8GiB，代码768MiB。
+预计下一判断节点450尚未授权；首点不能证明稳定性或视频必要性，也不以低于155直接宣布理论失败。
+强MT-BC155/Source51原400复用，新候选与C0 diagnostic-held120/121不相减归因。
 
-主讨论下一工作为与该完整模型紧密相关的正式比较方案：核对可复用的强MT-BC及旧完整视频参照的精确合同、
-确定哪组完整比较能否证“仅学公共能力”，并在真实profile回来后给出分段时间/成本上限。
-不为候选先开对象/局部动作/几何门，不派另一项历史审计，不读取held标签或Test来选设计。
+本次CPU准备预计45–75分钟、90分钟判断上限：真实语言路径、共享初始化、36-task sampler/时钟、
+精确紧凑bank及既有canonical evaluator接入；正式入口替换工程专用入口，旧Compiler不保留为fallback。
+主讨论独立核对CPU交付后集成推送main，登记clean detached commit，再另发首批GPU启动指令。
+当前派发回执待本次文档Git交付后登记；不把这段计划文字称为执行者已开工。
+主讨论继续完成该完整学习程序的事件/资源与比较核验，不自排同类公式或历史审计任务。
+
+### 刚完成：工程原件与科学边界独立验收
+
+执行者19:40–20:16 UTC约36分钟完成工程，原估60–90分钟；commit `50559080`，隔离分支
+`codex/conditional-velocity-operator`，main未混入工程源码。完成事件已由主讨论持续等待获得。
+完成Queue `01a0df5c-5fee-7361-8c9a-534997a96404`已从执行原回执核实并消费；迟到消息按本记录判重，不再执行。
+主讨论读合成/真实FM/VJP/恢复源码并核原metrics：6实际宏步/672query，四任务等权、严格跨episode，
+checkpoint2→4的连续前缀/后继query均对齐，父4行保留。两条NPZ均有实际T动作与T+1状态/谓词。
+source物理参数冻结，β/U/R/教学路径按identity预期取得信用；部署是一套rank135/38-target LoRA。
+两条训练接口220/520步失败，只作接口原始行，不能宣布方法负例。
+
+四次启动exit0、完整0.1269607541 GPUh、峰值2卡；study0.737GiB/代码493MiB。原件根为
+`/data1/user/ymdai/ember_runs/conditional_velocity_operator_engineering_20260927`。
+宏步16.822秒，71帧反传14.07秒/21.46GiB reserved；新训练36任务全50教学的元数据max105帧，
+不得称旧71帧profile已覆盖新最长视频。没有补开模型或环境probe。
+科学认识见机制分析§29–30/findings§174–176：直接完整速度场及共同执行特征是待检验的函数分解，
+非零梯度、精确合成和R分支变化都不是视频收益；尚无已验证统一根因、修复、强MT-BC之外的稳定增量。
 
 ### 已完成：视觉对应到控制的机制判断
 

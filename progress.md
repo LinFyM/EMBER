@@ -1,9 +1,19 @@
 # EMBER progress
 
-## 当前状态：原生特征批次独立验收完成；登记同预算首帧内容学习参照（2026-09-26）
+## 当前状态：首帧学习对照已派发；长期教训落盘，主讨论并行形成完整方法机制（2026-09-26）
+
+Owner在连续讨论后明确要求：持久记录过去几个月的错误及概念澄清，避免新会话遗忘，并详细解释后续推进。
+本轮已复核7月底以来的研究索引、相关原始评审、46组审计及代表性原件；findings§156集中保存十类错误和证据，
+current_owner_requirements新增跨会话决策约束，concept澄清MT-BC只作最终性能参照，README直接指向该回顾。
+task_plan已把当前主工作写成“完整特征→知识→LoRA→执行及其学习机制”，与S0独立并行；
+下一批方法干预尚未选定/派发，不把计划中的解释类别当成已有根因或自动GPU清单。
+Owner认可首帧对照的具体诊断用途；它未被本次讨论撤销，也不成为所有方法研究的前置门槛。
+本轮只更新科学记录与计划，没有向Sol追加指导、修改实验合同或重新启动历史路线。
+另按Owner明确要求写入Codex跨会话memory extension，作为仓库入口与稳定教训的补充；仓库仍是项目authority。
 
 Active design：[learned_initial_content_causality](docs/designs/learned_initial_content_causality_design.md)，
-机器规格`configs/learned_initial_content_causality_v1/experiment_spec.json`。已Queue并核对Sol接手，当前处于隔离实现/验收阶段，尚无新正式GPU结果。
+机器规格`configs/learned_initial_content_causality_v1/experiment_spec.json`。已Queue并核对Sol接手；下文是最后核对的接手记录，
+本轮未查询实时进度，尚未收到本批正式完成信号，不能把这条记录当实时运行快照。
 执行者Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`；主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
 
 Owner进一步重申：关键是找到如何利用视频，最终绝对闭环性能须超过强MT-BC；胜过语言/单帧不是终点。

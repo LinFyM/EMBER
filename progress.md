@@ -44,6 +44,11 @@ Owner随后在旧主讨论明确：“新session我还没创建，所以你等�
 若工程与成本支持后续投入，再分别登记训练、物化和最小学习面板的wall-clock预期与预算，按实测吞吐决定范围。
 主讨论同期继续完整方法的特征/梯度/部署作用分析，维护原件与判断变化；明早回报事实、科学结论、限制及剩余工作。
 
+主讨论并行完成实际执行query路径的只读核对，见[机制分析§12.4](docs/analyses/feature_to_operator_mechanism_20260926.md#124-执行query究竟包含什么修正如何进入真实动作)。
+确认execution state以原生prompt token进入h、教学prefix无state；真实FM复用denoise suffix，q/v经原生GQA、
+gate与完整flow执行。Reader之前的Source h与完整多层LoRA的h不天然同分布，局部作用匹配不能自动代表功能传递。
+没有新增forward、诊断或科学范围；原fixed400的C0−B为27得/28失，继续约束不能以近似总分推逐例能力等同。
+
 ### 本次接管恢复与原件核验
 
 旧主讨论交接前已消费Owner转入的Sol S0完成信号，并核对

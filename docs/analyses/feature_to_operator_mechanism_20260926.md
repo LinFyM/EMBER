@@ -450,3 +450,30 @@ R_L的同接口参照有助于区分一般执行参数化收益与视频条件�
 
 这一分析收紧解释，不改变工程科学范围。实际协调身份与派发状态只看progress；
 不恢复S0、Cplus、有限回报或flow位置分支，不联系旧会话。
+
+### 12.4 执行query究竟包含什么，修正如何进入真实动作
+
+接管后进一步只读核对`pi05_processing.py`、`writer/function_credit.py`及当前固定LeRobot实现的
+`embed_suffix`、`denoise_step`、原生attention与mask；没有增加模型forward或实验。
+执行端8维state按冻结Source统计归一化并离散为`Task: ..., State: ...; Action:`中的token；
+图像与这些token形成真实prefix。教学prefix则明确没有state，H仍来自公开noise/tau1。
+因此教学H与执行h具有不同输入语义，不能把前者解释为教师真实动作，也不能要求两者逐位置直接对应。
+执行中使用机器人自己的state是原policy合法输入，不是向部署Writer泄漏教师state。
+
+真实FM调用`NativeFlowPrediction`：缓存冻结prefix KV，再以随机tau和带噪动作调用原生`denoise_step`。
+Reader的层9输入h已消费当前视觉、任务/state token及动作/flow条件；它不是裸图像或只有噪声的query。
+本候选在此之前没有执行adapter，因此给定同一个FM输入，进入层9前的h由Source决定。
+闭环采样的后续flow步则会间接依赖Reader，因为前一步修正已改变下一步的动作latent。
+完整38-target Writer还能改变更早层和action输入，所以它与Reader的局部h并不天然同分布；
+这给§5中“学生h上查询教师仍可能超出支持”的限制提供了实际执行依据。
+
+原生attention为8个query head共享1个KV head、head width256。q残差经过原生RoPE后改变该动作位置
+读取prefix和suffix的权重；v残差修改动作suffix的Value，经GQA重复后可影响其它动作位置。
+prefix不能读取action suffix，而50个action位置在同一attention块中可相互读取，不能将其误写成
+只看先前action的自回归序列。第10层的残差仍经过原生输出投影、AdaRMS gate、后续层和动作输出头，
+再经10步flow、前5个实际动作及环境状态变化形成闭环效果。
+因此某个reader输出或某条梯度的非零既不是独立控制通道，也不能直接解释为抓取／放置语义。
+
+这次核对确认的是既定作用链和解释边界：教师时间地址、50个预测动作位置、flow时间与环境执行时间
+是不同的轴；“当前状态读取教学”不意味着按教师进度播放轨迹。它不引入新的层位、去噪或梯度探针，
+也不改变已冻结的工程接口与后继投资规则。

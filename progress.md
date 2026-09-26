@@ -30,7 +30,12 @@ V训练21:33:42–22:49:58 UTC正常exit0，完整4576.321秒×2卡=2.5424006 GP
 记录内梯度/损失均finite；公共/readout从第1步、U和教学路径从第2步活动，属于训练执行证据。
 实际宏步均值16.795/中位16.352/最大24.153秒，最长102 sampled frames已在本批真实训练出现。
 独立只读核验为`.codex/tmp/conditional_velocity_learning_20260927/V_completed_training_review.json`。
-剩余完整预算6.4575994 GPUh；L、物化及两组400仍待执行回报，目前没有本方法闭环分数或科学收益判断。
+L训练22:50:54–23:12:02 UTC正常exit0，完整1268.489秒×2卡=0.7047162 GPUh；两臂累计3.2471168 GPUh。
+23:13 UTC主讨论独立核完L的270更新/30,240query、三份ECP和source冻结记录；全部1080个task事件的
+teacher/action query/帧/策略RNG及学习率时钟与V逐项匹配（不要求rank内任务排列一致）。
+L真实梯度仅公共/U/readout/Text/Core活动，VL/Action/Procedure均零；宏步均值4.579秒。
+独立原件`.codex/tmp/conditional_velocity_learning_20260927/L_completed_training_and_pair_review.json`。
+剩余完整预算5.7528832 GPUh；物化及两组400仍待完整执行回报，目前没有本方法闭环分数或科学收益判断。
 主讨论直接等待这一批的完成/阻塞事件，不另排自通知，不按固定间隔读取训练日志或追加探针。
 
 ### 刚完成：正式CPU实现、独立审阅与两项合同修正

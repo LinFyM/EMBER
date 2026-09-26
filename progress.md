@@ -5,9 +5,10 @@
 Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前已完成S0整批原件核验、特征机制审查及后继裁决；
 长期目标仍为一次生成完整LoRA的绝对能力超过强MT-BC、有益视频贡献和能力保持，未发现统一根因或验证修复。
 
-**唯一active design**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **仅§4工程准备**；
+**唯一已登记后继设计（未实施）**：[native_conditional_reader_design](docs/designs/native_conditional_reader_design.md) **仅§4工程准备**；
 机器合同`configs/native_conditional_reader_v1/engineering_spec.json`，study `native_conditional_reader_engineering_20260926`。
-主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`；**新执行者尚未创建/指定，当前没有可启动本合同的接收方**。
+本交接作者/旧主讨论为 `01a0cd94-65da-7b22-8ca9-7ba35f454632`；Owner已要求交给新的主讨论会话。
+**新主讨论及新执行者UUID均待登记，当前没有可启动本合同的接收方；旧UUID只保留为历史来源。**
 旧Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`已按Owner迁移安排停止接单，不再向其派发。
 范围：实现joint Reader R_V/R_L共享接口，各4宏步及2→4 world2恢复、一次最长视频condition反传/profile、
 6条train-only canonical接口episode；上限0.75完整GPUh/2GiB新data0/768MiB代码，本批最多6物理卡。
@@ -18,6 +19,18 @@ Owner要求主讨论不因执行者仍在实验或等待派发就停止。当前
 Owner随后在主讨论明确：“新session我还没创建，所以你等一下。”因此等待准确的新会话身份，不自动创建、重发或改投。
 正文、接受和未启动回复在`.codex/tmp/native_conditional_reader_engineering_20260926/`。
 新会话登记后再按同一有界合同准确派发；不重复S0，也不把旧Queue回执当新的执行授权。
+
+### 本次主讨论交接入口
+
+Owner转入Sol的S0完成信号已消费，与此前已完成的独立验收一致；本轮还核对了
+`analysis/video_mapping_audit.json`的448行、固定池映射和空mismatches，与现有配对检查一致。
+该延迟回报不触发重跑、重新派发或开启下一阶段。工程study根尚未创建，旧Sol已明确未启动实现/GPU。
+
+临时交接页：[主讨论接续状态](.codex/plans/ember_scientific_handoff_20260926/state.md)。
+它包含完整目标、当前结论/未知、数学推导边界、历史反例索引、原件与下一合同范围，不另建一套科研authority。
+新主讨论先恢复上述判断，再登记自己的身份；等Owner给出新执行会话后才派发，不再催问创建时间。
+此交接页是同一共享文件系统内的ignored临时文件；持久结论与计划已写入本仓跟踪文件。
+接续者消费并把新身份写回本文件/spec后删除临时页，避免成为过期的第二份状态。
 
 ### S0完成与科学判断
 

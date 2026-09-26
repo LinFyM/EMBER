@@ -1,9 +1,9 @@
 {
   "schema_version": "ember_native_conditional_reader_engineering_v1",
   "study_id": "native_conditional_reader_engineering_20260926",
-  "status": "registered_engineering_awaiting_owner_designated_executor",
+  "status": "registered_engineering_awaiting_owner_designated_sessions",
   "design": "docs/designs/native_conditional_reader_design.md#4-先完成的工程准备范围",
-  "coordinator_thread_id": "01a0cd94-65da-7b22-8ca9-7ba35f454632",
+  "coordinator_thread_id": null,
   "executor_thread_id": null,
   "run_root": "/data0/user/ymdai/ember_runs/native_conditional_reader_engineering_20260926",
   "reference_training_config": "configs/language_content_path_causality_v1/train_C0.json",
@@ -176,5 +176,6 @@
     "dtype/rank/layer sweeps"
   ],
   "completion": "Queue exact implementation, evidence, costs and missing items to coordinator; stop new GPU pending scientific adjudication",
-  "executor_assignment": "Owner says successor session not created yet; wait for exact new identity, do not dispatch to retired executor"
+  "executor_assignment": "Owner says successor session not created yet; wait for exact new identity, do not dispatch to retired executor",
+  "coordinator_assignment": "New scientific coordinator must register its actual UUID; previous coordinator UUID is provenance, not a reply address"
 }

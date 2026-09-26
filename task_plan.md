@@ -7,9 +7,10 @@
 首帧学习结果C0/S0 correct27/22、other27/17、seen26/22已独立核验，详见findings§159。
 首帧、中心化及零调制的交互延迟了S0过程路径学习，故这不是信息必要性或顺序理解的证明；不为修参照另开循环。
 
-**唯一active**：[原生条件读出设计](docs/designs/native_conditional_reader_design.md)的§4工程准备，
+**唯一已登记后继范围（未实施）**：[原生条件读出设计](docs/designs/native_conditional_reader_design.md)的§4工程准备，
 机器合同`configs/native_conditional_reader_v1/engineering_spec.json`。Owner明确新session尚未创建，等待其指定；
 旧Sol收到Queue后明确未启动实现/GPU，不再使用该旧接收方。真实派发来源与后继身份见progress。
+Owner同时要求将科学主讨论交给新session；接续者须恢复现有判断并登记新的协调/执行身份，不能把旧UUID当回报地址。
 各模式4宏步及2→4 world2恢复、一次最长condition profile、6条train-only接口episode；
 上限0.75完整GPUh、2GiB新data0、768MiB代码。完成后主讨论审阅，不自动接正式630/held/第二臂/KD/400。
 

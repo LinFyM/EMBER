@@ -6,6 +6,10 @@ Active design：[learned_initial_content_causality](docs/designs/learned_initial
 机器规格`configs/learned_initial_content_causality_v1/experiment_spec.json`。已Queue并核对Sol接手，当前处于隔离实现/验收阶段，尚无新正式GPU结果。
 执行者Sol `01a0cd90-ebb7-77a1-a20b-a858825d2f66`；主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632`。
 
+Owner进一步重申：关键是找到如何利用视频，最终绝对闭环性能须超过强MT-BC；胜过语言/单帧不是终点。
+已纳入稳定要求、concept、计划和本批科学裁决。既定S0矩阵只提供学习反事实，训练/评测范围与执行授权不变；
+主讨论负责将结果接到有证据的特征提取/学习/LoRA编译方案，不自动围绕对照差额加实验。
+
 已完成study `/data0/user/ymdai/ember_runs/native_feature_change_causality_20260926`，E=eb9a373d，C0训练F=dca1b550。
 主讨论核对原8面板results/合同、全部320 trace/trajectory、80×4特征和共同seed/首态，重算六比较与20000次bootstrap；
 `coordination/main_recheck.{py,json}`通过。20/24/20/27，各80；完整相对首帧9得2失、净+7，区间[2.5,16.25]pp，findings§155。

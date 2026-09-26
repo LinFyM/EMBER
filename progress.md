@@ -9,6 +9,7 @@ Owner指出主讨论不应停止后，继续完成了不依赖S0的数学审查�
 并行准备S0完成后的独立验收；不提前读取部分成功数、修改当前实验或向Sol追加任务。
 同时更正候选初稿的输入描述：C0/拟定Reader教学侧均为agentview单相机、256patch；执行及full采集双相机。
 已核对原C0配置/run_contract和encoder，候选未派发，所以没有按误写文字产生新计算或输入共变。
+后继投资线也在读取本批完整分数前改为同时考虑已有C0与S0，不因Reader只胜较弱C0就继续教师链；预算未扩大。
 
 Owner要求开始后，主讨论完成当前q/E/H、Core/Procedure、完整A/B及真实FM VJP的代码级计算审计，
 沿历史重新核对了最接近的Semantic-Path、统一Writer、固定native reader和纠正路线反例。

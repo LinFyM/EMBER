@@ -4238,3 +4238,40 @@ LocalActionGrounded、NativeCorrection/LocalField、24,480动作的真实物理J
 当前组合仍未给出足以修订共享纠正获取负例的依据，且新增因果预测前提，因此不进入工程。
 不先训练效果模型、采新干预或拆局部Gate；不把旧.29736/.25的non-pass改判，也不外推所有世界模型无效。
 这关闭一个完整投入方向，不构成统一根因、修复证明或整体研究完成。
+
+## 170. 原生attention信用给出有效参数方向，但换坐标不等于学到操作知识（2026-09-27）
+
+[机制分析§25](docs/analyses/feature_to_operator_mechanism_20260926.md#25-把教学特征写到真实attention方向坐标成立还缺什么学习联系)
+核清旧Semantic-Address的Writer query、Unified的native X/Y与PNBTT的learned candidate keys，都不同于实际source attention的prefix K。
+当前源码的真实Q/K投影、RoPE、GQA及prefix有效长度位置合同已复读；没有模型或环境执行。
+
+实际logit信用`c_ij=α_ij b_iᵀ(v_j−o_i)`，Q矩阵梯度为`Σ c_ij(R_iᵀk̃_j/√d)h_iᵀ`。
+这比同shape多给出了一条真实特征到参数方向的关系；但c包含最终动作误差及下游计算，并非对象或阶段标签。
+在合法native量固定的条件下，梯度是`M_z c`，其条件期望仍为`M_z E[c|z]`；换坐标没有新部署信息。
+裸系数MSE还改变功能加权、约束无效零空间。单相机256patch的8-head系数已有2048项/query，不能声称天然降维。
+
+低秩系数并不在有query位置RoPE时自动成为同rank参数；分别pool两端又会产生跨位置项。
+复制teacher key到B也须证明它在自己观察的目标/干扰key之间形成正确margin，并由自身状态激活。
+两维反例说明同维或同一对象称呼不足以保证这一点，不声称真实source已经出现该反例。
+
+因此不实施“原生key池＋attention信用＋旧Compiler”，也不派发方向/语义head探针。
+潜在归纳偏置优势保留为假设，不能把旧LocalField误记为独立辅助头，或只因参数方向更直观就重开相似路线。
+
+## 171. 当前固定教学对含不同再接近过程，但不能解释成坏视频或自身episode复制（2026-09-27）
+
+主讨论只读既定Object(14,10)两条教学demo20/37的完整stride5及末帧agentview RGB，49/33张，
+没有teacher动作/state/reward、模型或环境；[机制分析§26](docs/analyses/feature_to_operator_mechanism_20260926.md#26-当前两条教学真正显示了什么成功示范也可包含再接近)
+保留精确来源、可见帧及判断边界。
+
+demo20可见瓶升起后与夹爪分开，再接近/带动后运入basket；demo37在采样帧中呈较连续的一次携物转移。
+RGB不能分辨滑脱原因或主动调整；首帧也不同，不能把已有C0换视频成败单独归因于动态过程或顺序。
+同一demo20条件在已有state34成功136，state10失败280；demo37在state10/12成功173/213。
+四行仅按这两个固定condition查既存索引，不扩评、不挑视频，也不宣称完整crossed实验或视频质量统计。
+
+frozen `dca1b550`配置及实际分支确认C0两组21+7 queries均跨episode、均完整horizon普通FM；
+第二组`extra_endpoint_prefix=false`，保留的tau1/前5步字段并未生效。
+所以不能从教学的可见调整倒推“同视频辅助使C0复制自身轨迹”；旧同视频165/147有限正增与后续158/159也继续保留。
+
+这使教学中的可复用知识更具体：对象/关系及动作适用条件，应使策略在自身情形下使用接近、带动、运输或恢复，
+不能复制固定次数/时长，也不能将恢复片段一概删作噪声。尚未证明source hidden或当前Writer已学成这些功能。
+不由此开启阶段head、时间不变loss、视频过滤或旧辅助目标重测。

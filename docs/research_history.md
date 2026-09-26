@@ -16,6 +16,13 @@ ketchup高于初始body原点30mm的描述性代理首次为263/104步。证明�
 派生报告/精确路径/保存图像仅在data1 `.codex/tmp/current_pair_behavior_20260927/`。
 范围、8对行为及不启动局部补丁的解释见findings§168和机制分析§23；总体120/121、27得28失沿用已验收结果。
 
+主讨论随后仅在已固定Object14这对条件内补读demo20/37的完整stride5及末帧agentview RGB，共49/33张。
+demo20可见瓶与夹爪分离后再接近/带动，demo37在采样帧中较连续；没有teacher动作/state/reward、模型或环境读取/执行。
+两首帧不同，不能由这对成败单独归因时序；同demo20还在已存state34成功136，不能称普遍坏条件。
+精确RGB来源和全部四条现存condition结果记于data1同目录`teaching_rgb_pair.json`，见findings§171/机制分析§26。
+同时核对frozen dca1b550实际分支：C0的21+7 query都跨episode、完整horizon普通FM，未启用tau1/前5步；
+不从可见再接近倒推同视频监督复制，也不据单例恢复阶段/时间/视频过滤路线。
+
 ## 2026-09-26：Reader有界工程独立验收；正式学习在启动前撤回
 
 实现`2fbd4c7d`完成R_V/R_L各fresh4及2→4 world2恢复、一次最长71帧视频28query反传、六条train-only接口case。

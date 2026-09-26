@@ -4,6 +4,10 @@
 新方法成绩或GPU运行合同。最初形成于S0执行期间；其完成裁决已补入§11，Reader工程已验收、正式学习已撤回，
 执行状态以[progress](../../progress.md)为准。
 
+9月27日接续入口：§24–25分别审查可见效果纠正与真实attention方向，均未取得工程投入依据；
+§26核对当前固定两条教学的实际RGB与C0真实训练分支。§23/26的行为和图像是既存证据分析，
+没有新的闭环分数。数学构造、原始观察和已验证模型功能在各节分别限定，不能把任一未实施图恢复为active design。
+
 ## 1. 本轮作出的判断
 
 不能继续把问题概括成“没读到视频”“缺时序模块”或“只差LoRA出口”。当前C0完整400的正确/另一正确/语言
@@ -1911,3 +1915,181 @@ source始终冻结，Writer及新增共享参数若实施仍须fresh联合学习
 本段对完整原理的实际澄清是：视频的**观测变化、局部动作约束、真实反事实后果和跨初态反馈规则**是四个不同对象。
 普通FM可以共同学成它们之间有用的联系，但额外可见残差本身并不使这个联系已经成立。
 因此当前方法研究不能再用“给回读加一个可见误差”绕过合法控制知识的获取与功能保持问题。
+
+## 25. 把教学特征写到真实attention方向：坐标成立，还缺什么学习联系
+
+本节审查一个更具体的完整思路：从合法教学选择真实prefix keys，将其作为Q-LoRA的作用方向；
+由机器人自己的action hidden决定使用系数，其它target仍生成完整参数；以真实attention信用和跨episode FM共同学习。
+不是新增对象识别head，也不是先验认定当前8对失败发生在对象识别。以下未运行模型、环境或GPU。
+
+### 25.1 先区分旧源码里三种不同的key
+
+主讨论复读实际源码后确认，不能按变量名混为同一历史实验：
+
+- `9e70b81:writer/memory_program.py`的Semantic-Address进入Writer自己的temporal attention query；
+  动态Value仍来自相邻变化。它不是将source实际图像key写入执行Q-LoRA。
+- Unified `f02f9148:ecp/policy_response_writer/{capture,composer}.py`捕获38个线性层的真实X/Y，
+  以signed pooling写A/B；Q target的Y是线性Q输出，不是prefix图像K。
+- PNBTT `e65c6388:ecp/bank_conditioning/native_bank_runtime.py:_projected_candidate_keys`将X/Y和metadata
+  经scorer的key投影，作为候选的匹配坐标；其`key_value_replay.py`用这些key算权重、以真实X/Y作Value。
+  这些也是learned candidate keys，不是原生attention的K。既有负结果与未实施Natural Program边界保持。
+
+当前环境的`modeling_pi05.py:compute_layer_complete`则先对prefix/suffix各自归一化和Q/K/V投影，
+拼接后应用真实position_ids的RoPE、GQA及softmax。suffix query读图像时使用的是prefix一侧的K。
+`denoise_step`按实际prefix有效长度加suffix位置生成position_ids；不能拿teacher的索引代替执行索引。
+同维向量可以做乘积，但“同属256维”并不等于同一个对象跨视角/状态有相同的匹配关系。
+
+### 25.2 原生图像key怎样精确进入参数纠正
+
+沿用§16的单层局部计算，固定某head。i为action query，j为所有未mask的prefix或suffix key，
+`s_ij=(R_i q_i)ᵀ k̃_j/√d`，`o_i=Σ_j α_ij v_j`，`b_i=∂ℓ/∂o_i`。
+真实logit信用为
+
+\[
+ c_{ij}=\frac{\partial\ell}{\partial s_{ij}}
+       =\alpha_{ij}b_i^\top(v_j-o_i),\qquad
+ \sum_j c_{ij}=0.
+\]
+
+令`d_ij=R_iᵀ k̃_j/√d`，则该head的Q输出cotangent及参数梯度为
+
+\[
+ C_i=\sum_j c_{ij}d_{ij},\qquad
+ G_Q=\sum_{i,j}c_{ij}d_{ij}h_i^\top.
+\]
+
+对视频帧和8个query heads按真实计算求和/堆叠，即得该Q target的完整梯度；frame和损失权重不能重复累计。
+这是实际链式关系，不是“注意力看哪里就意味着动作是什么”。b已经包含output projection、gate、后续层及真实FM误差。
+同一对象区域在不同自身状态、动作latent与flow time下可以有不同符号的c；需要关注手、参照或已经完成子目标时也一样。
+只保留图像子集，Σ_j c_ij一般不再为零；不能把全key恒等式套到物体mask。
+
+这给“使用原生特征生成参数”一个比同shape更强的依据：真实Q纠正确在这些反旋转key与实际h形成的方向里。
+但它没有提供新动作标签，未证明哪个c可由教学预测，也未把Q指定为唯一控制通路。
+Value和action-in/out的真实梯度有自己的消费者，不能把Q式复制过去就声称完整38-target问题已经解决。
+
+### 25.3 换成每个位置一个标量，是否真的比LocalField更可学
+
+在同一裸source、公用noise、t=1的教学读取中，上式的K/R/h都由合法输入决定，真实动作只产生训练侧c。
+把所有c排成向量，存在可由这些合法native量确定的线性映射`M_z`，使`vec(G_Q)=M_z c`。
+因此在同条件、相同标签及同参考点下，
+
+\[
+ \mathbb E[G_Q\mid z]=M_z\,\mathbb E[c\mid z].
+\]
+
+预测c再收缩，可以改变有限网络的归纳偏置；它没有增加部署信息，也不绕开旧真cotangent获取问题。
+若loss只比较最终矩阵，两种写法相差的是参数化：
+`||M_z(ĉ−c)||²=(ĉ−c)ᵀM_zᵀM_z(ĉ−c)`。
+若改为普通`||ĉ−c||²`，则额外约束M_z零空间内对这次参数纠正没有作用的分量，并改变功能方向的权重。
+这可能有利或有害，不能仅因为标签叫“视觉位置的信用”就称其更接近操作语义。
+
+“标量更少”也不能直接成立：当前agentview有256个patch，每query的8-head视觉c共有8×256=2048项，
+已经等于完整Q输出cotangent的2048维；纳入语言/suffix会更多，双相机又不同。
+真正可利用的潜在优势是**已知的输入依赖方向与共享的相对utility规律**，而非数字上从向量换成了一个标量。
+若确有可迁移的utility规律，该结构可以减少网络自行合成native方向的负担；这是假设，不是本次获得的正例。
+
+旧`50dafb05:writer/correction.py`已在裸source、相同public probe/t=1上用真实未来动作产生未收缩cotangent；
+`supervised.py`的`decode_with_fields`让同一个U/r参与完整LoRA和局部标签，主FM也共同重放。
+所以不能把旧方法贬成“独立辅助头”或“没有实际参数消费者”，再用换成c作为第一次建立真实信用的理由。
+
+### 25.4 低秩编译与跨初态读取还各有一项不能省略的关系
+
+即使预测了完整c，直接求和得到的G_Q一般不是rank16。把c写成低秩的query/key权重也不自动解决：
+`d_ij=R_iᵀ k̃_j/√d`随i变化，不能忽略R_i后把两端分别求和。
+一个确实可计算的rank-r构造是分别生成
+
+\[
+ B_{hr}=\sum_{p,i,j}\sigma_{hrpij}(z)d_{hpij},\qquad
+ A_r=\sum_{p,i}\rho_{rpi}(z)h_{pi}^{\top}.
+\]
+
+合成BA会产生来自不同(p,i)的交叉项；它是新的有限参数化，不等于逐位置真信用的精确收缩。
+若先构造完整矩阵再低秩分解，又引入另一套实际计算、可微性和成本要求，不能口头省略或借旧profile承诺可行。
+其它20个target（18个V及action-in/out）沿用自由生成也只使这张图形式完整，不能据此推断其能力已被保留。
+这些分支本次均未实施，不用一个Q正面恒等式授权整版工程。
+
+跨初态的实际作用仍是
+
+\[
+ \delta\log\frac{\alpha_{ij_*}}{\alpha_{ij}}
+ =\big[R_iB_Q(z)A_Q(z)h_i(s)\big]^\top
+   \frac{\widetilde k_{j_*}(s)-\widetilde k_j(s)}{\sqrt d}.
+\]
+
+teacher端方向对自己的target有利，需要这条**教学方向—当前target/干扰key差—自身状态系数**的联合关系成立。
+raw key不是已校准的对象身份坐标；观测、上下文、camera和RoPE位置均可能改变该关系。
+最简单的反例取R=I、正使用系数：teacher目标方向(1,0)，自己目标key(0,1)、干扰key(1,0)，
+直接复制该方向反而提高干扰相对目标的logit。这只是说明缺失前提，不是测定当前source确实如此。
+加一个learned alignment可扩大函数类，但又回到必须由真实跨episode功能信用学成的联系，不能当成已完成的修复。
+
+### 25.5 裁决与获得的原理
+
+这个思路不同于旧Writer内部的Semantic-Address，也不同于X/Y候选key；差别已经核清。
+然而当前能严格支持的是**原生key构成Q梯度方向及其功能加权关系**；
+尚无证据说明改在c坐标学习能取得旧C/矩阵目标没有获得的可迁移utility，低秩消费者也不能从标量命名中自动得到。
+因此不实施“原生key池＋attention信用＋旧完整Compiler”的候选，不为它派发方向匹配或attention合格探针。
+这不否定以后有独立依据的输入依赖参数构造，而是不把坐标换写误当新的控制知识。
+
+本次把特征→参数→作用的联系再具体了一步：图像特征只有与**使用时的状态、竞争特征及下游动作后果**结合，
+才形成可用写入方向；仅复制对象向量、监督读取位置或回归一个更细的梯度坐标，都还没有说明这三个条件怎样共同学成。
+§14.3/17.5已有共同路径与跨视频功能方差推导，本轮复核后直接沿用，没有再包装为新的共享底座方案。
+
+## 26. 当前两条教学真正显示了什么：成功示范也可包含再接近
+
+主讨论于17:43:30 UTC开始，在已固定Object(14,10)案例内读取demo20/37的**合法agentview RGB**。
+来源为canonical target manifest所指HDF5的`data/demo_{20,37}/obs/agentview_rgb`，未读取teacher动作、state、reward或terminal。
+exact language为`pick up the ketchup and place it in the basket`。239/159原帧分别取完整stride5及末帧，得到49/33张；
+180°旋转与既有输入合同一致。首次查看全部联系图，再对已见变化放大部分原帧；没有生成、补帧或环境重放。
+来源、帧号及联系图在data1 `.codex/tmp/current_pair_behavior_20260927/teaching_rgb_pair.json`及`teacher_14_demo_*`。
+
+### 26.1 视觉观察与物理判断分开
+
+- 两条都展示右侧目标瓶向左侧basket的操作，最终画面目标在basket内；不是一条教搬另一个瓶子。
+- demo20的110帧可见瓶在夹爪下方升起；115/120/130帧可见夹爪与瓶分开、瓶回到较低位置。
+  150–175帧手又接近瓶，180/190及之后再带向basket。
+  这支持一次可见的**分离后再接近/带动**，不能只凭RGB判定滑脱原因、主动调整、力或精确接触时刻。
+- demo37在所读完整stride5帧中，70–85附近瓶随手升起，随后较连续地移向basket，140–150附近放下后手离开。
+  没有在这些采样帧中看到同样的中途分离再接近；不证明未采样的每一瞬间都保持接触。
+- 首帧RGB并不相同。现有同模型换视频结果因而**不能单独归因于时间顺序、重试过程或运动差分**，
+  更不能说本次证明模型将teacher的调整学成了迟滞。不同视频同时改变了其它合法视觉证据。
+
+这是一个已经按执行结果选出的描述性例子，不估计成功教学中这种现象的比例，也不以其选教学视频。
+没有使用新的shuffled/reversed控制来反哺方法设计。
+
+### 26.2 同一个“较复杂示范”条件，在另一个已测初态上也成功
+
+为防止把demo20称为普遍坏条件，只在已验收的`combined_row_index.json`中按这两个固定condition ID查出全部既存C0行，
+没有查看其它teacher、追加轨迹解释或重算400结果：
+
+| C0条件 | 已存init state | 已存结果 |
+|---|---|---|
+| demo20 | 10 | 失败280 |
+| demo20 | 34 | 成功136 |
+| demo37 | 10 | 成功173 |
+| demo37 | 12 | 成功213 |
+
+这足以排除“demo20生成的条件在所有已测初态都不可用”或“必定照搬239帧时长”的强版本。
+不同init也使用各自登记的随机流，不能用这四行估计纯初态效应、普遍视频质量或某个视频的成功率。
+demo37没有state34这一格，不能补成完整交叉实验；更不能拼接条件/挑视频形成新policy分数。
+
+### 26.3 不能从可见再接近，倒推出当前训练在复制自身episode
+
+已核 frozen训练commit `dca1b550` 的`train_C0.json`及实际`supervised.py`：
+C0的主21 query与第二组7 query都来自同task其它episode，`teaching_episode=cross_episode`；
+`extra_endpoint_prefix=false`，所以两组都是完整horizon的普通FM，而不是第二组tau1/前5步。
+配置仍保留`teaching_prefix_steps=5`和`teaching_flow_time=1`字段，但实际分支不消费它们。
+两组均值权重1和1/3、四task等权，使每个query权重1/84，总尺度4/3。不能按`teaching`变量名误判实际目标。
+
+因此，“C0受同视频辅助监督驱动，复制了demo20的调整”在当前合同上不成立。
+旧同视频教学也不能简单记为有害：findings§121的匹配1500为165对147、后续2100为158对159；
+早期能力增量与后续未保持都是真事实，不由本例重判、恢复或重跑。
+
+本次进一步明确了需要从教学提取的对象：**可在自己的状态下重新使用的动作适用条件**，
+例如未能保持对象时重新接近、已经带动时运输；不是将一次示范中出现的次数和时间直接写成执行课程。
+这类判断可依赖图像中对象相对手/容器的位置与变化，但不能假称source当前hidden已含可靠抓持状态，
+也不能把示范的再接近片段一律删作噪声——它可能包含有效恢复知识。
+此前§22的状态反馈解释在这里得到一个真实教学例示，尚未得到“模型已学会这一联系”的证据。
+
+**方法约束：**不由本例加入阶段head、强时间重参数化不变性、坏视频过滤或同视频loss删改。
+当前纯跨episode FM已经存在，静态LoRA也已经在同一教学条件下随自身执行情形产生不同结果；
+缺的不是再证明这两条原则，而是使任务可复用知识与实例中的合法变化，经有限共享学习形成可靠的作用。

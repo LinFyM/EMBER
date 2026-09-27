@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：576续训CPU已验收，准备精确冻结与正式派发（2026-09-28）
+## 当前状态：576完整后继已准入，精确代码冻结（2026-09-28）
 
 Owner持续自主授权有效，目标为合法RGB/L一次完整LoRA、绝对能力超过强MT、视频有益并保持能力。
 科学主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责main/理论裁决；唯一实验执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`。
@@ -13,7 +13,9 @@ CPU任务`demonstration_transfer_stage2_transition_20260928`已完成，Queue `0
 360前父恢复固定28/8，遇OOM须报告，不虚构缩小批量的恢复能力；其它边界见设计§16.5。
 独立验收`stage2_transition_acceptance.json`位于同tmp目录，旧源码/结果不改；没有新增模型/环境/GPU smoke。
 
-当前准备唯一正式任务`demonstration_transfer_learning_stage2_20260928`，精确freeze与实际派发回执在本段补记。
+当前唯一正式任务`demonstration_transfer_learning_stage2_20260928`，精确formal冻结commit **`bc729e869c5b37f807e386ab11aa5b0b508ed86f`**。
+该提交属于已推送main；指定执行者从独立clean detached树按§16 live准入后执行，后续main文档更新不改变冻结身份。
+实际派发/承接回执在本段补记；这条登记本身不表示GPU已启动。
 各臂从本次正式288完整状态续至576、每臂仅最后bank400/official400、复用原scene；不是fresh、换模型或另采数据。
 启动前由执行者做现场quota/GPU/拓扑准入；主讨论不陪跑轮询，整批完成或实质阻塞一次Queue。
 

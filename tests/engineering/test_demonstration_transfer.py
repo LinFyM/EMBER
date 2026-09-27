@@ -10,7 +10,7 @@ from ember.demonstration_transfer import (_authorities, _extract_one, _interpola
 
 
 def test_fixed_sources_restore_without_source_steps():
-    repo = Path(__file__).resolve().parents[1]
+    repo = Path(__file__).resolve().parents[2]
     rows, _, paths = _authorities(repo)
     expected = {(34, 0): (59, 116, 194), (34, 1): (64, 129, 217),
                 (38, 0): (130, 184, 369), (38, 1): (134, 191, 363)}

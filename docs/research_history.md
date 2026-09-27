@@ -4,6 +4,14 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-28：对应学习私有运行面退役
+
+3bad97e6以3c364a4a合入main；13文件+294/−3434，活动源码净−2175。移除训练/采集/物化及无消费者配置/测试，
+不保留fallback。唯一bank owner只读取封存P/I×288/576、拼接rank144及验证官方capture，scene只保留恢复/行校验。
+主讨论独立4项CPU测试、四份真实official capture合同与共享evaluator导入通过；guard REVIEW无hard。
+未加载模型或checkpoint tensor、未运行环境/GPU/重评测。全部正式原件、冻结树与数据保留，方法不恢复。
+细节见封存设计§17.4/findings§197，当前研究状态仍以progress为准。
+
 ## 2026-09-28：教学参考对应学习576完整窗口关闭
 
 冻结bc729e86，P/I各由正式288续至576，共64,512 query/臂。最新P108/I107；相邻P124→108丢50、I91→107丢25。

@@ -17,11 +17,12 @@ Owner持续自主授权有效，EMBER最终目标未完成。科学主讨论`01a
 验收`.codex/tmp/demonstration_transfer_main_review_20260927/formal_stage2_acceptance.json`；原件root为
 `/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage2`。全边界见设计§17/findings§195。
 
-**唯一独立执行**：设计§17.3的`demonstration_transfer_retirement_20260928`仅CPU，已按main `6fe94b1d`派发；
-Queue `01a0e508-3ae3-7570-82ed-bb448fcda866`获接受，一次app-server只读快照核新轮
-`01a0e508-3ae6-71f3-8265-9bf80192b832`为inProgress且含对应请求。该证据表示任务承接，未提前宣称退役完成。
-预计35–60分钟、90分钟复核，无模型/环境/GPU/新run。退役训练/采集/物化，保留官方仍消费的封存bank与scene读取，
-不删除任何原件、数据或冻结树。请求/回执/快照在上述tmp目录`retirement_*`；整批完成或实质阻塞一次回报。
+**CPU退役已完成并独立验收**：3bad97e6以3c364a4a合入main，设计§17.3结束；
+Queue `01a0e508-3ae3-7570-82ed-bb448fcda866`及本次完成回报已消费。指定执行者当前没有新任务。
+13文件+294/−3434，活动源码净−2175；删除训练/采集/物化入口，无fallback。封存P/I×288/576 bank和scene读取保留。
+主讨论独立4项CPU测试通过（11.49秒）、四份真实official capture合同和共享导入通过，guard REVIEW无hard。
+没有加载政策/checkpoint tensor、扫描400份权重、运行模型/环境/GPU或重评测；全部原件、数据与冻结树保留。
+README职责与动态状态已同步；请求/回执/验收在上述tmp目录`retirement_*`。主讨论继续本回合科学工作，不自Queue或空等。
 主讨论同回合已完成机制§39/findings§196：将真实迁移的相对目标/自身误差/参考时钟展开，
 只读旧train34/38各demo0/1四源的16个分段首末目标，发现参考body坐标下位置差17.30–49.23mm，
 但未据此声称有益或补齐原B对A→B的实际轨迹比较。原B比较还含规则自身重放和query/FM插值输入差异，

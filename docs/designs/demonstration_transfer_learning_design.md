@@ -1153,3 +1153,18 @@ CPU selector初次缺资产环境变量无输出，补齐后成功；未采offic
 - 按code-architecture-gate报告删除/保留owner与净变化。比例适当的CPU导入/封存元数据/纯拼接与scene检查即可；
   不加载政策、不跑环境、不为已验收科学结果重复测试。共享evaluator的imports和错误边界须可用。
   完成后仅一次Queue带精确pushed commit/diff/验证/未测范围；不触碰main，主讨论审阅集成。
+
+### 17.4 CPU退役完成与读取边界
+
+执行者以6fe94b1d为基线提交3bad97e6，主讨论独立审阅后以3c364a4a合入main。13文件+294/−3434，
+活动源码净−2175；§17.3要求的私有执行面已删除，没有平行fallback或代码archive。
+保留bank425行、scene124行；前者仅接受四套真实P/I×288/576封存来源，使用原冻结spec/checkpoint/Git，
+不再依赖main中的训练spec或runtime。shared128与conditional16沿A行/B列拼接，唯一rank144无交叉项。
+后者只保留官方恢复/行核验及内聚body lookup/pose纯函数。Source/MT-BC、共享FM/native/ECP与官方队列未改。
+
+主讨论在执行者clean提交独立运行定向pytest4/4（11.49秒），读回四份真实official capture run_contract并通过现接口，
+验证共享evaluator相关导入及退役模块无活动代码消费者。guard REVIEW无hard：正式来源核验67行/复杂度17、
+既有集中capture复杂度20和既有pi05_eval目录31 peers保留为内聚owner，不为规避计数机械拆分。
+源码diff check通过；README与main科研状态由主讨论同步。
+验收只读元数据与纯张量拼接，不加载policy/checkpoint tensor、不扫描400权重、不运行模型/环境/GPU或重评测。
+所有bank、checkpoint、scene、原始结果、数据与冻结树保留；这不构成任何旧运行重启授权。指定执行者当前无后继任务。

@@ -10,7 +10,7 @@ V相邻400行保存初位一致，退化与关闭裁决保留；证据范围见f
 四源共同初态支持20任务/296交叉。这不是Writer收益；完整144 LoRA工程的真实新查询反传、source隔离和恢复已核。
 两正式节点均已独立验收：对应P124→108、独立I91→107；相邻丢50/25，最新都低于历史强MT155。
 按事前停止线关闭本完整组合，288对应正例保留；没有稳定视频收益或能力保持，不再接864、强M或controls。
-完整裁决见设计§17，当前只做必要CPU退役，保留所有历史原件与冻结树。
+完整裁决见设计§17；私有训练/采集/物化入口已退役，只保留封存bank与scene读取，所有历史原件与冻结树保留。
 具体派发、时间和资源上限见progress；不扩大数据或按物理失败修补控制器。
 固定C0完整400为正确120、另一正确132、语言121、Source57，旧巨大缺口未复现，有益视频增量仍未识别。
 冻结E/H干预显示后续内容有有限作用；新学习比较C0/S0正确27/22、另一正确27/17（各80）、seen26/22（各64）。
@@ -48,7 +48,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 
 | 目录 | 内容与生命周期 |
 | --- | --- |
-| `src/ember/` | 当前对应学习候选、Writer共享组件与历史bank读取、Source/MT-BC、数据及评测实现 |
+| `src/ember/` | Writer共享组件与封存bank读取、Source/MT-BC、数据及评测实现；当前无活动Writer训练候选 |
 | `scripts/` | 薄CLI、环境构建、数据封存和结果比较入口；已结束的专用诊断脚本由Git保存 |
 | `tests/` | 对当前实现及稳定科学/恢复/配对合同的CPU检查 |
 | `configs/` | 显式数据协议、方法配置和审计；不同协议分别保留，不能覆盖旧结果 |
@@ -65,8 +65,8 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 
 | 职责 | `src/ember/`中的owner |
 | --- | --- |
-| 当前对应学习候选的数据、唯一LoRA和有界运行 | `demonstration_learning/data.py`、`model.py`、`run.py`；范围只按active design，关闭候选时退役私有入口 |
-| 当前紧凑bank与共同物理起点 | `demonstration_learning/bank.py`、`pi05_eval/scene.py`；复用official队列，场景owner同时服务既有collector |
+| 封存对应学习bank的rank144重建与正式来源核验 | `demonstration_learning/bank.py`；只读P/I的288/576正式资产，不生成新bank |
+| 封存共同物理起点的官方恢复与行校验 | `pi05_eval/scene.py`；保留official消费者，采集/freeze入口已退役 |
 | 历史Writer仍使用的原生图文／完整H、Meta组件 | `writer/video_program.py`、`writer/meta_lora.py` |
 | 历史Writer的Core、Procedure共享组件 | `writer/temporal.py`、`writer/procedure.py`；不保留已关闭条件速度编码器 |
 | 封存rank135 bank的唯一LoRA重建与官方接入 | `writer/conditional_velocity_bank.py`、`pi05_lora.py`、`batched_lora.py`；不生成新bank |
@@ -75,7 +75,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 | Source与共享LoRA监督 | `pi05_source_training.py`、`source_sft/` |
 | 配对闭环、队列、协议与结果 | `pi05_eval/`、`pi05_eval_queue.py`、`pi05_eval_contract.py`、`pi05_eval_results.py` |
 
-对应学习已科学关闭，`demonstration_learning`私有训练/采集/物化入口正在按设计§17.3退役；没有新运行授权。已结束的通用
+对应学习已科学关闭，`demonstration_learning`私有训练/采集/物化入口已按设计§17.3退役；没有新运行授权。已结束的通用
 `scripts/train_writer.py`、`scripts/materialize_writer.py`不恢复。正式来源由各bank记录的冻结spec/checkpoint保留，不恢复M3/P6/I6工程CLI。
 通用评测入口`scripts/evaluate_pi05.py`保留，读取已封存bank的规格与checkpoint，不把历史读取能力当作新运行授权。
 Source/MT-BC入口为`scripts/train_source_base.py`和`scripts/train_source_sft.py`；复用同一评测合同。

@@ -1,26 +1,50 @@
 """CPU contracts for the fixed train-only demonstration transfer."""
 
-from pathlib import Path
-
 import numpy as np
+import pytest
 from scipy.spatial.transform import Rotation
 
-from ember.demonstration_transfer import (_authorities, _extract_one, _interpolate,
-                                          _inverse_osc, _restore_scene, _target)
+from ember.demonstration_transfer import _interpolate, _inverse_osc, _restore_scene, _target
+from ember.demonstration_transfer_source import (SourceStructureUnsupported,
+                                                 movement_goals, segment_boundaries)
 
 
-def test_fixed_sources_restore_without_source_steps():
-    repo = Path(__file__).resolve().parents[2]
-    rows, _, paths = _authorities(repo)
-    expected = {(34, 0): (59, 116, 194), (34, 1): (64, 129, 217),
-                (38, 0): (130, 184, 369), (38, 1): (134, 191, 363)}
-    for task, demo in expected:
-        metadata, arrays = _extract_one(repo, rows[task], paths, demo)
-        assert tuple(metadata["source_boundaries"].values()) == expected[task, demo]
-        assert metadata["source_steps_executed"] == 0
-        assert arrays["goal_pos"].shape == (metadata["steps"], 3)
-        assert np.isfinite(arrays["goal_rot"]).all()
-        assert sum(s["stop"] - s["start"] for s in metadata["segments"]) == metadata["steps"]
+def test_uniform_movement_roles_and_boundaries():
+    class Model:
+        def body_name2id(self, name):
+            if name == "main_table":
+                return 3
+            raise ValueError(name)
+
+    class Sim:
+        model = Model()
+
+    class Owner:
+        sim = Sim()
+        obj_body_id = {"bowl": 0, "mug": 1, "plate": 2}
+        objects_dict = {"bowl": object(), "mug": object()}
+        parsed_problem = {"regions": {"main_table_zone": {"target": "main_table"}}}
+
+    goals = [["on", "bowl", "plate"], ["in", "mug", "main_table_zone"],
+             ["turnon", "fixture"]]
+    movements = movement_goals(Owner(), goals, np.array([False, False, True]))
+    assert [item["reference_root"] for item in movements] == ["plate", "main_table"]
+    names = ["bowl", "mug", "plate", "main_table"]
+    positions = np.zeros((8, len(names), 3))
+    positions[2:, 0, 2] = .04
+    positions[5:, 1, 2] = .04
+    predicates = np.zeros((8, len(goals)), dtype=bool)
+    predicates[3:, 0] = True
+    actions = np.ones((8, 7))
+    actions[3:, 6] = -1
+    ordered, segments = segment_boundaries(movements, names, positions, predicates, actions)
+    assert [(item["object"], item["lift"], item["release"]) for item in ordered] == [
+        ("bowl", 2, 3), ("mug", 5, None)]
+    assert [(item["start"], item["stop"], item["reference_body"]) for item in segments] == [
+        (0, 2, "bowl"), (2, 4, "plate"), (4, 5, "mug"), (5, 8, "main_table")]
+    predicates[3:, 0] = False
+    with pytest.raises(SourceStructureUnsupported, match="release"):
+        segment_boundaries(movements, names, positions, predicates, actions)
 
 
 def test_reference_transform_and_inverse_osc_use_left_rotation():

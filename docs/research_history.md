@@ -4,6 +4,16 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-27：对应学习的完整比较工程准入
+
+最终38303429集成481beb22；P6/I6源399e2610、M3训练源485856c0。M仅fresh3与1→3恢复共5更新/2,880query，
+三臂train2/38×state0–3的official24行共8,665动作；P/I各1/8、M0/8仅工程。八个共同canonical scene首动作前恢复，
+主讨论24份NPZ/PT与事件/ECP独立复核、八项CPU测试通过。完整.41625GPUh，study1058MiB，约73分钟含实现。
+原件`/data1/user/ymdai/ember_runs/demonstration_transfer_comparison_admission_20260927`。
+shared A/B范数为整组口径；guard两处复杂度hard按内聚分派窄例外接受，不能沿用报告“无hard”。
+工程配置envs8实际singleton分片，不推断batch8性能；PT末段计划与实际T动作区分。完整边界见设计§13.5/findings§190。
+尚未获得正式闭环收益；后继正式节点与当前授权见progress，旧工程入口不重跑。
+
 ## 2026-09-27：固定教学参考迁移支持完成，20任务/296共同交叉
 
 原27任务/demo0–3/init44–47一次固定构造，首冻结1988c7eb、最终f8dd3770。108源中100新兼容、4旧只读复用，

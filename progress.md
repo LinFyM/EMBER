@@ -1,44 +1,33 @@
 # EMBER progress
 
-## 当前状态：完整学习工程已验收，进入完整比较的成本与official接口准入（2026-09-27）
+## 当前状态：完整比较工程验收，首个正式P/I288合同已冻结（2026-09-27）
 
-### 当前科学裁决与授权
+Owner授权持续自主推进，今晚检查；目标仍是合法RGB/L一次生成完整LoRA、超过强MT、视频有益并保持能力。
+主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main；唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责执行。
+所有新内容data1，不联系旧主讨论/旧Sol、不恢复旧实验。不自Queue、不轮询陪跑，无真实后继时在本回合继续有意义工作。
 
-Owner授权持续自主推进，今晚检查。主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main，
-唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责实验。不联系旧主讨论/旧Sol，所有新增data1。
-没有独立工作且仍有可继续研究时直接在本回合工作，不结束再自Queue，不陪跑等待或重复查询执行者。
+**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`§15。
+首个正式批次固定P/I各fresh288、各32,256query及一次correct400；§14预留576/强MT的裁决框架不变，不自动运行后继。
+当前具体任务为§15.5 `demonstration_transfer_formal_transition_20260927`：只将已验收工程运行面转为正式步数/恢复/validation bank/capture范围，
+CPU交付预计45–75分钟，90分钟检查剩余工作。原learning_engineering_spec由代码交付一并替换为唯一learning_spec。
+正式evaluator要求commit属于origin/main，因此主讨论须先集成其CPU提交，再登记精确冻结commit并派发GPU；不绕过已有Git authority。
+此刻尚无active GPU；CPU实际派发与承接回执随后记录，不把已经完成的§13或本段计划称为后台工作。
 
-**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前登记§13
-`demonstration_transfer_comparison_admission_20260927`，同一路径机器规格升v3。已从clean pushed main `db58373f`派发。
-10:34 UTC唯一Queue `01a0e26d-de46-7922-b381-39c841980aeb`获接受；一次app-server即时快照确认目标会话active且队列已消费。
-这里只确认承接状态，不称GPU已启动或任务完成。请求、回执、快照在同tmp目录`comparison_admission_*`；不自Queue或轮询陪跑。
+正式GPU阶段预计13–16、硬限18GPUh，4卡4–6小时/2卡7–9小时；训练8、scene .5、bank1.5、official8的完整分配。
+共享400个canonical scene仅在policy前冻结一次，P/I都恢复该物理起点，正确K1/每task50教学无放回；各8 full+392 compact。
+首批新输出峰值12GiB，新增冻结代码512MiB、相关代码3GiB，正式创建前由执行者核data1独立quota/共享容量及双节点live GPU。
+不启动576、M长训练、其它视频/时间controls、Test、RL、数据扩建或重复profile；所有工程权重不可作正式初值。
+P/I两臂的对应干预仅占5/18查询，正负结果按完整机制与闭环判断，不能单独证明视频动态必要或能力保持。
 
-§11闭环工程完成Queue已消费；主讨论独立核完四文件修正、288事件、全部真实metrics、五套ECP元数据与唯一case的NPZ/PT，
-四项CPU检查通过，guard REVIEW无hard。源码399e2610已以c9e25e95合入main。
-16实际宏步/1,792query中有新252/旧1540；第6步P/I task97真实新query/flow相同、teacher0/3不同，完整144 FM/VJP实际更新成立。
-每9步10新/26旧，36task各32visit、20task全部4×4格与P/I边际成立；不把近似相同loss当作科学结果。
-source每次compile前物理identity恢复成立：前一输出偏离1.234047、再compile后0.0。唯一global38接口520动作/521状态、
-104次双RGB重规划已核，失败只作工程原行，不归因或修补模型。P2→6恢复前缀/事件/LR/游标完整，不追逐低位一致。
-四GPU段exit0，新增完整.236187GPUh/上限.40；与原.206436累计.442623。closure1.141GiB、全study2.544GiB、代码1774MiB。
-派发至完成约23分钟，低于40–75分钟预期；旧原件和冻结树未动，不重复有效原global2或105帧profile。
-独立复核：`.codex/tmp/demonstration_transfer_main_review_20260927/learning_closure_acceptance.json`；详细边界见设计§11.3/findings§189。
-工程缺口关闭，**尚未产生正式闭环能力或视频收益证据**。旧§11 Queue `01a0e246-6d95-7fc3-85cc-ff8d18020e45`不再是后台任务。
-
-§13将完整比较所缺的三项一次补齐：
-- 同数据强MT保持36×16、支持task8旧/8新、shared128；仅fresh3与自己的1→3，5实际更新/2,880query。
-  沿同一真实FM/执行loop/ECP，无视频假读取，不缩task覆盖。测完整576-query成本；P/I不新增更新，CPU定义到两个288块。
-- 只读新P6/I6与本批M3，各物化train global2/38、state0–3的小bank；公共128只存一次，条件16载入拼成唯一144。
-  接入现有官方evaluator、persistent queue/capture/recovery，不复制旧velocity或评测平台，不用手写rollout调用冒充official接入。
-- 任一policy行为前冻结8个完整canonical scene，各臂恢复同一物理起点。P6/I6/M3各8条，共24条train-only接口，最多8,880动作；
-  每臂2 full+6 compact，成功数不选方法，失败不重试。数据采集旧原件不动。
-预计90–150分钟、180分钟复核；完整GPU预计.45–.75、硬限1.0GPUh/最多2卡。新run峰值4GiB、新增冻结代码<=512MiB，相关代码2.25GiB。
-执行者创建/启动前核data1独立quota、共享容量及双节点GPU。所有旧study只读，不加Source/旧MT/其它case。
-正式P/I288/576、MT长训练、400 bank/held、controls、Test及RL仍未授权；所有工程权重不得作正式初值。
-主讨论已写设计§14事前裁决框架：P/I首个完整288、唯一预留576；明确早停负证据、最新点选择及丢失/净降界限。
-只有出现超过历史强参照且保持的候选，才投入同数据强MT的正式多节点比较，不一开始铺开三条长训练和全部controls。
-I若更强也保留，不能为P假设选弱点；P/I因果差按同节点解释，不能拿各自峰值相减。新MT最佳点不因其相邻退化而删去。
-这只是事前科学框架，GPU正式预算与完整执行合同待本次真实MT/bank/official吞吐补全；不增加当前§13或启动正式学习。
-已有强MT155保留，不能用新MT更低结果降低目标；P/I只检验配对学习干预，不能单独证明部署动态视频必要。
+**刚完成独立验收**：38303429以481beb22合入main；八项针对性CPU测试通过，24份NPZ/PT、8个scene、576事件和M三套ECP已核。
+M实际5更新/2,880query（旧2080/新800），36task×16的两源分段权重正确，source0，恢复前缀及游标成立；P/I本批零更新。
+三臂共8,665控制步，保存起点/双RGB与T/T+1通过；P/I各1/8、M0/8仅工程原行。完整.41625GPUh/2卡，study1058MiB。
+约73分钟含实现，低于90–150分钟预期。PT前5计划的末段未执行尾部与实际T动作区分，未发现动作原件不符。
+主讨论更正报告的shared A/B整组梯度措辞及guard两处hard信号，后者按集中式分派窄例外验收；详见设计§13.5/findings§190。
+旧Queue `01a0e26d-de46-7922-b381-39c841980aeb`已消费且任务结束，不再表示有工作运行。
+原件root `/data1/user/ymdai/ember_runs/demonstration_transfer_comparison_admission_20260927`；主讨论验收
+`.codex/tmp/demonstration_transfer_main_review_20260927/comparison_admission_acceptance.json`，成本外推同目录`formal_stage1_budget_basis.json`。
+尚无正式Writer新收益或统一根因；旧有效工程/原件/冻结树不重跑、不覆写。
 
 以下为已经完成的时点记录，不恢复其中旧授权：
 

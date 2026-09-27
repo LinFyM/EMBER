@@ -8,7 +8,8 @@ task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正�
 V相邻400行保存初位一致，退化与关闭裁决保留；证据范围见findings§186。
 [教学参考对应学习](docs/designs/demonstration_transfer_learning_design.md)固定支持构造已核：416次行为367成功，
 四源共同初态支持20任务/296交叉。这不是Writer收益；完整144 LoRA工程的真实新查询反传、source隔离和恢复已核。
-当前仅登记同数据强MT成本、紧凑bank及共同scene的官方接口准入，正式学习未启动。
+紧凑bank、同数据强MT成本及共同scene的官方接口已验收；已冻结P/I各288与各correct400的首个正式合同，
+当前进行CPU运行面转换，正式学习尚未启动。
 具体派发、时间和资源上限见progress；不扩大数据或按物理失败修补控制器。
 固定C0完整400为正确120、另一正确132、语言121、Source57，旧巨大缺口未复现，有益视频增量仍未识别。
 冻结E/H干预显示后续内容有有限作用；新学习比较C0/S0正确27/22、另一正确27/17（各80）、seen26/22（各64）。
@@ -64,6 +65,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 | 职责 | `src/ember/`中的owner |
 | --- | --- |
 | 当前对应学习候选的数据、唯一LoRA和有界运行 | `demonstration_learning/data.py`、`model.py`、`run.py`；范围只按active design，关闭候选时退役私有入口 |
+| 当前紧凑bank与共同物理起点 | `demonstration_learning/bank.py`、`pi05_eval/scene.py`；复用official队列，场景owner同时服务既有collector |
 | 历史Writer仍使用的原生图文／完整H、Meta组件 | `writer/video_program.py`、`writer/meta_lora.py` |
 | 历史Writer的Core、Procedure共享组件 | `writer/temporal.py`、`writer/procedure.py`；不保留已关闭条件速度编码器 |
 | 封存rank135 bank的唯一LoRA重建与官方接入 | `writer/conditional_velocity_bank.py`、`pi05_lora.py`、`batched_lora.py`；不生成新bank |
@@ -73,7 +75,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 | 配对闭环、队列、协议与结果 | `pi05_eval/`、`pi05_eval_queue.py`、`pi05_eval_contract.py`、`pi05_eval_results.py` |
 
 当前对应学习通过`python -m ember.demonstration_learning.run`进入，沿用公共FM/native/ECP；已结束的通用
-`scripts/train_writer.py`、`scripts/materialize_writer.py`不恢复。新的比较准入规格须由执行者实现后才能运行，不能拿旧工程CLI直接启动。
+`scripts/train_writer.py`、`scripts/materialize_writer.py`不恢复。正式范围须由执行者转换、主讨论集成后才能运行，不能拿已结束的M3/P6/I6工程CLI直接启动。
 通用评测入口`scripts/evaluate_pi05.py`保留，读取已封存bank的规格与checkpoint，不把历史读取能力当作新运行授权。
 Source/MT-BC入口为`scripts/train_source_base.py`和`scripts/train_source_sft.py`；复用同一评测合同。
 已结束的stability/output-space/causal诊断与low-LR专用执行面已退役，原实现可从`7b18030c`及各run记录的commit恢复。

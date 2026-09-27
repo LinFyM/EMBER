@@ -1,9 +1,8 @@
-"""Bounded, train-only OSC demonstration transfer for the 2026-09-27 study.
+"""One bounded train-only OSC transfer data owner for the 2026-09-27 study.
 
-This module has one temporary data-construction entry. Source state/action/XML
-remain privileged construction inputs; they are never a Writer condition.
-Retire this entry when the fixed construction is closed or integrated into a
-single canonical data owner after a separate scientific decision.
+Source state/action/XML are privileged construction inputs, never Writer input.
+Retire this entry when the fixed construction is closed or integrated after a
+separate scientific decision. Old fixed engineering runs live in frozen Git.
 """
 
 from __future__ import annotations
@@ -15,158 +14,72 @@ import time
 from pathlib import Path
 from typing import Any
 
-import h5py
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
 
+from ember.demonstration_transfer_source import (ASSETS, CANONICAL_ASSET_REPO, DATA,
+                                                SCHEMA, SourceStructureUnsupported,
+                                                body_id, extract_one, pose, roles)
 from ember.pi05_assets import configure_libero_runtime_assets, prepare_libero_config, write_json_atomic
-from ember.pi05_eval.episode import stage_predicate_snapshot
 
 
-SCHEMA = "ember_demonstration_transfer_engineering_v1"
-ROOT = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_engineering_20260927")
-CANONICAL_ASSET_REPO = Path("/data1/user/ymdai/projects/EMBER")
-DATA = CANONICAL_ASSET_REPO / "data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a"
-AUTHORITY = Path("configs/pi05_target_data_v1/manifest.json")
+ROOT = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_training_support_20260927")
+OLD_SOURCES = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_engineering_20260927/sources")
+AUTHORITY = Path("configs/libero_24_8_8_coverage_v1/manifest.json")
 EVAL_CONFIG = Path("configs/pi05_target_evaluation_v1.json")
-TASKS = {
-    34: (("porcelain_mug_1", "plate_1", "plate_1"),
-         ("white_yellow_mug_1", "plate_2", "plate_2")),
-    38: (("moka_pot_2", "flat_stove_1", "flat_stove_1_cook_region"),
-         ("moka_pot_1", "flat_stove_1", "flat_stove_1_cook_region")),
-}
-STATES = (40, 41, 42, 43)
-DEMOS = (0, 1)
-ASSETS = CANONICAL_ASSET_REPO / "data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6"
-OLD_ROBOSUITE = "/home/yifengz/workspace/robosuite-master/robosuite/models/assets"
-OLD_LIBERO = "/home/yifengz/workspace/libero-dev/chiliocosm/assets"
+SPEC = Path("configs/demonstration_transfer_v1/training_support_spec.json")
+REUSED = {(34, 0), (34, 1), (38, 0), (38, 1)}
 
 
-def _authorities(repo: Path) -> tuple[dict[int, dict[str, Any]], dict[str, Any], dict[str, str]]:
-    manifest = json.loads((repo / AUTHORITY).read_text())
-    rows = {int(row["global_task_id"]): row for row in manifest["tasks"] if row["global_task_id"] in TASKS}
-    if set(rows) != set(TASKS) or any(row["split_role"] != "train" or row["suite"] != "libero_10"
-                                      for row in rows.values()):
-        raise ValueError("fixed sources are not coverage train34/38")
+def _checked_spec(repo: Path) -> dict[str, Any]:
+    spec = json.loads((repo / SPEC).read_text())
+    ids = tuple(spec["task_ids"])
+    group_ids = set().union(*map(set, spec["task_groups"].values()))
+    if (len(ids) != 27 or len(set(ids)) != 27 or set(ids) != group_ids
+            or spec["source_demo_ids"] != [0, 1, 2, 3]
+            or spec["query_init_state_ids"] != [44, 45, 46, 47]
+            or spec["source_cases_total"] != 108 or spec["query_cases_max"] != 432):
+        raise ValueError("training support spec changed")
+    return spec
+
+
+def _checked_recipe(repo: Path) -> dict[str, Any]:
     recipe = json.loads((repo / EVAL_CONFIG).read_text())
     environment = recipe["environment"]
     if (environment["dummy_settling_steps"] != 10 or environment["render_resolution"] != 256
-            or environment["horizons"]["libero_10"] != 520
             or environment["dummy_action"] != [0, 0, 0, 0, 0, 0, -1]
             or recipe["rng"]["inference_seed"] != 7):
         raise ValueError("official environment recipe changed")
+    horizons = (("libero_spatial", 220), ("libero_object", 280),
+                ("libero_goal", 300), ("libero_10", 520))
+    if any(environment["horizons"][suite] != horizon for suite, horizon in horizons):
+        raise ValueError("official suite horizons changed")
+    return recipe
+
+
+def _authorities(repo: Path) -> tuple[dict[int, dict[str, Any]], dict[str, Any], dict[str, Any]]:
+    spec = _checked_spec(repo)
+    manifest = json.loads((repo / AUTHORITY).read_text())
+    ids = tuple(spec["task_ids"])
+    rows = {int(row["global_task_id"]): dict(row) for row in manifest["tasks"]
+            if row["global_task_id"] in ids}
+    if set(rows) != set(ids) or any(row["split_role"] != "train" for row in rows.values()):
+        raise ValueError("selected sources are not coverage-v1 train")
+    recipe = _checked_recipe(repo)
     paths = prepare_libero_config(repo / ".codex/tmp/demonstration_transfer_libero_config")
     configure_libero_runtime_assets(ASSETS)
-    return rows, recipe, paths
+    from libero.libero import benchmark
 
-
-def _source_xml(xml: str, *, repo: Path) -> str:
-    import robosuite
-
-    current_robosuite = str(Path(robosuite.__file__).resolve().parent / "models/assets")
-    value = xml.replace(OLD_ROBOSUITE, current_robosuite).replace(OLD_LIBERO, str(ASSETS))
-    if value == xml or OLD_ROBOSUITE in value or OLD_LIBERO in value:
-        raise ValueError("source XML asset roots changed")
-    return value
-
-
-def _pose(sim: Any, body_id: int) -> tuple[np.ndarray, np.ndarray]:
-    return (np.asarray(sim.data.body_xpos[body_id], dtype=np.float64).copy(),
-            np.asarray(sim.data.body_xmat[body_id], dtype=np.float64).reshape(3, 3).copy())
-
-
-def _roles(owner: Any, task: int) -> tuple[list[str], list[list[str]]]:
-    names = sorted(owner.obj_body_id)
-    goals = [[str(x).lower() for x in row] for row in owner.parsed_problem["goal_state"]]
-    expected = [["on", obj, goal] for obj, _, goal in TASKS[task]]
-    if task == 34 and (set(names) != {"porcelain_mug_1", "red_coffee_mug_1",
-                                        "white_yellow_mug_1", "plate_1", "plate_2"}
-                       or goals != expected):
-        raise ValueError("task34 installed body/BDDL roles changed")
-    if task == 38 and (set(names) != {"moka_pot_1", "moka_pot_2", "flat_stove_1"}
-                       or goals != [expected[1], expected[0], ["turnon", "flat_stove_1"]]):
-        raise ValueError("task38 installed body/BDDL roles changed")
-    return names, goals
-
-
-def _extract_one(repo: Path, row: dict[str, Any], paths: dict[str, str], demo: int) -> tuple[dict[str, Any], dict[str, np.ndarray]]:
-    """Restore saved kinematics and OSC goals; never call source env.step."""
-    from libero.libero.envs.env_wrapper import ControlEnv
-
-    task = int(row["global_task_id"])
-    source = DATA / row["hdf5"]["relative_path"]
-    bddl = Path(paths["bddl_files"]) / row["problem_folder"] / row["bddl"]["filename"]
-    if source.stat().st_size != row["hdf5"]["bytes"] or not bddl.is_file():
-        raise ValueError(f"source file or BDDL missing: {task}")
-    with h5py.File(source) as handle:
-        group = handle[f"data/demo_{demo}"]
-        actions = np.asarray(group["actions"], dtype=np.float64)
-        states = np.asarray(group["states"], dtype=np.float64)
-        xml = _source_xml(str(group.attrs["model_file"]), repo=repo)
-    if actions.ndim != 2 or actions.shape[1] != 7 or states.shape[0] != len(actions):
-        raise ValueError("source action/state clock changed")
-    env = ControlEnv(bddl_file_name=str(bddl), use_camera_obs=False, has_offscreen_renderer=False)
-    try:
-        env.reset()
-        env.reset_from_xml_string(xml)
-        owner = env.env
-        names, goals = _roles(owner, task)
-        controller = owner.robots[0].controller
-        if (controller.eef_name != "gripper0_grip_site" or not controller.use_delta
-                or controller.impedance_mode != "fixed"
-                or not np.allclose(controller.output_max, [.05, .05, .05, .5, .5, .5])):
-            raise ValueError("installed OSC_POSE interface changed")
-        positions = np.empty((len(actions), len(names), 3), dtype=np.float64)
-        rotations = np.empty((len(actions), len(names), 3, 3), dtype=np.float64)
-        eef_goals_pos = np.empty((len(actions), 3), dtype=np.float64)
-        eef_goals_rot = np.empty((len(actions), 3, 3), dtype=np.float64)
-        predicates = np.empty((len(actions), len(goals)), dtype=np.bool_)
-        for step, (state, action) in enumerate(zip(states, actions, strict=True)):
-            env.set_state(state)
-            env.sim.forward()
-            controller.update(force=True)
-            for j, name in enumerate(names):
-                positions[step, j], rotations[step, j] = _pose(owner.sim, owner.obj_body_id[name])
-            predicates[step] = [bool(owner._eval_predicate(goal)) for goal in goals]
-            controller.set_goal(action[:6])
-            eef_goals_pos[step] = controller.goal_pos
-            eef_goals_rot[step] = controller.goal_ori
-        first, second = TASKS[task]
-        first_id, second_id = names.index(first[0]), names.index(second[0])
-        l1 = next((i for i in range(1, len(actions))
-                   if positions[i, first_id, 2] - positions[0, first_id, 2] >= .03), None)
-        l2 = next((i for i in range(1, len(actions))
-                   if positions[i, second_id, 2] - positions[0, second_id, 2] >= .03), None)
-        first_goal = goals.index(["on", first[0], first[2]])
-        r1 = (next((i for i in range(l1, len(actions))
-                    if predicates[i, first_goal] and actions[i, 6] < 0), None)
-              if l1 is not None else None)
-        second_goal = goals.index(["on", second[0], second[2]])
-        if (predicates[0, first_goal] or predicates[0, second_goal]
-                or l1 is None or l2 is None or r1 is None
-                or not (0 < l1 <= r1 < l2 < len(actions))):
-            raise ValueError(f"fixed source boundaries unavailable: task{task}/demo{demo}, {l1=}, {r1=}, {l2=}")
-        segments = ((0, l1, first[0]), (l1, r1 + 1, first[1]),
-                    (r1 + 1, l2, second[0]), (l2, len(actions), second[1]))
-        if any(start >= stop for start, stop, _ in segments):
-            raise ValueError("empty fixed source segment")
-        metadata = {
-            "schema_version": SCHEMA, "task": task, "demo": demo, "hdf5": str(source),
-            "bddl": str(bddl), "steps": len(actions), "body_names": names,
-            "goals": goals, "source_boundaries": {"l1": l1, "r1": r1, "l2": l2},
-            "segments": [{"start": start, "stop": stop, "reference_body": ref}
-                         for start, stop, ref in segments],
-            "source_initial_object_positions": {name: positions[0, names.index(name)].tolist()
-                                                for name in (first[0], second[0])},
-            "source_xml": "demo model_file with only installed asset-root remap",
-            "source_state_clock": "states[k] pre-action[k]; obs[k] post-action[k]",
-            "source_steps_executed": 0,
-        }
-        arrays = {"actions": actions, "goal_pos": eef_goals_pos, "goal_rot": eef_goals_rot,
-                  "body_pos": positions, "body_rot": rotations, "predicates": predicates}
-        return metadata, arrays
-    finally:
-        env.close()
+    suites = {name: cls() for name, cls in benchmark.get_benchmark_dict().items()
+              if name in {row["suite"] for row in rows.values()}}
+    for row in rows.values():
+        suite = suites[row["suite"]]
+        task = suite.get_task(int(row["task_id"]))
+        if (task.name != row["task_name"] or task.language != row["language"]
+                or suite.get_task_demonstration(int(row["task_id"])) != row["hdf5"]["relative_path"]):
+            raise ValueError(f"official task/source identity changed: {row['global_task_id']}")
+        row["bddl_path"] = str(Path(paths["bddl_files"]) / task.problem_folder / task.bddl_file)
+    return rows, recipe, spec
 
 
 def _target(source_pos: np.ndarray, source_rot: np.ndarray, new_pos: np.ndarray,
@@ -195,29 +108,85 @@ def _interpolate(start_pos: np.ndarray, start_rot: np.ndarray, end_pos: np.ndarr
             for alpha in np.arange(1, steps + 1, dtype=np.float64) / steps]
 
 
-def _source_phase(repo: Path, output: Path) -> None:
-    rows, recipe, paths = _authorities(repo)
-    sources = output / "sources"
-    sources.mkdir(parents=True, exist_ok=False)
-    summary = []
-    for task in sorted(TASKS):
-        for demo in DEMOS:
-            metadata, arrays = _extract_one(repo, rows[task], paths, demo)
-            stem = f"task_{task}_demo_{demo}"
-            np.savez_compressed(sources / f"{stem}.npz", **arrays)
-            write_json_atomic(sources / f"{stem}.json", metadata)
-            summary.append({"task": task, "demo": demo, "boundaries": metadata["source_boundaries"],
-                            "steps": metadata["steps"]})
+def _source_record(row: dict[str, Any], demo: int, sources: Path) -> dict[str, Any]:
+    task = int(row["global_task_id"])
+    stem = f"task_{task}_demo_{demo}"
+    if (task, demo) in REUSED:
+        metadata = json.loads((OLD_SOURCES / f"{stem}.json").read_text())
+        if (metadata["task"] != task or metadata["demo"] != demo
+                or metadata["hdf5"] != str(DATA / row["hdf5"]["relative_path"])
+                or not (OLD_SOURCES / f"{stem}.npz").is_file()):
+            raise ValueError("original source identity changed")
+        return {"task": task, "demo": demo, "status": "compatible_reused",
+                "metadata": str(OLD_SOURCES / f"{stem}.json"),
+                "arrays": str(OLD_SOURCES / f"{stem}.npz"),
+                "steps": metadata["steps"], "source_env_steps": 0}
+    try:
+        metadata, arrays = extract_one(row, Path(row["bddl_path"]), demo)
+    except SourceStructureUnsupported as exc:
+        return {"task": task, "demo": demo, "status": "structure_unsupported",
+                "reason": str(exc), "source_env_steps": 0}
+    np.savez_compressed(sources / f"{stem}.npz", **arrays)
+    write_json_atomic(sources / f"{stem}.json", metadata)
+    return {"task": task, "demo": demo, "status": "compatible",
+            "metadata": str(sources / f"{stem}.json"),
+            "arrays": str(sources / f"{stem}.npz"),
+            "steps": metadata["steps"], "source_env_steps": 0}
+
+
+def _source_plan(repo: Path, output: Path, seen: dict[tuple[int, int], dict[str, Any]],
+                 spec: dict[str, Any], recipe: dict[str, Any]) -> None:
+    if len(seen) != 108:
+        raise ValueError("incomplete fixed source registry")
+    compatible_tasks = [task for task in spec["task_ids"] if all(
+        seen[task, demo]["status"] in {"compatible", "compatible_reused"}
+        for demo in spec["source_demo_ids"])]
+    groups = {name: [task for task in ids if task in compatible_tasks]
+              for name, ids in spec["task_groups"].items()}
+    gate = len(compatible_tasks) >= 20 and all(len(ids) >= 2 for ids in groups.values())
+    with (output / "case_plan.jsonl").open("w", encoding="utf-8") as handle:
+        for task in spec["task_ids"]:
+            bad = [seen[task, demo] for demo in spec["source_demo_ids"]
+                   if seen[task, demo]["status"] == "structure_unsupported"]
+            for state in spec["query_init_state_ids"]:
+                for demo in spec["source_demo_ids"]:
+                    entry = {"task": task, "state": state, "demo": demo,
+                             "status": ("ready" if gate and not bad else
+                                        "skipped_source_structure" if bad else "skipped_source_gate"),
+                             "reasons": [f"demo{x['demo']}: {x['reason']}" for x in bad]}
+                    handle.write(json.dumps(entry, sort_keys=True) + "\n")
     write_json_atomic(output / "source_completion.json", {
-        "schema_version": SCHEMA, "sources": summary, "source_steps_executed": 0,
-        "canonical_recipe": str(repo / EVAL_CONFIG), "seed": recipe["rng"]["inference_seed"]})
+        "schema_version": SCHEMA, "sources": list(seen.values()), "source_cases": len(seen),
+        "new_sources": sum(v["status"] != "compatible_reused" for v in seen.values()),
+        "source_env_steps": 0, "compatible_tasks": compatible_tasks, "compatible_groups": groups,
+        "source_gate_pass": gate, "canonical_recipe": str(repo / EVAL_CONFIG),
+        "seed": recipe["rng"]["inference_seed"], "spec": str(repo / SPEC)})
+
+
+def _source_phase(repo: Path, output: Path) -> None:
+    rows, recipe, spec = _authorities(repo)
+    sources = output / "sources"
+    sources.mkdir(parents=True, exist_ok=True)
+    results = output / "source_results.jsonl"
+    prior = [json.loads(line) for line in results.read_text().splitlines()] if results.exists() else []
+    seen = {(r["task"], r["demo"]): r for r in prior}
+    if len(seen) != len(prior):
+        raise ValueError("duplicate source result; do not silently rerun")
+    for task in spec["task_ids"]:
+        for demo in spec["source_demo_ids"]:
+            if (task, demo) in seen:
+                continue
+            result = _source_record(rows[task], demo, sources)
+            _append_jsonl(results, result)
+            seen[task, demo] = result
+    _source_plan(repo, output, seen, spec, recipe)
 
 
 def _query_sample(env: Any, observation: dict[str, Any], names: list[str], goals: list[list[str]]) -> dict[str, np.ndarray]:
     owner = env.env
     return {
-        "body_pos": np.stack([_pose(owner.sim, owner.obj_body_id[name])[0] for name in names]),
-        "body_rot": np.stack([_pose(owner.sim, owner.obj_body_id[name])[1] for name in names]),
+        "body_pos": np.stack([pose(owner.sim, body_id(owner, name))[0] for name in names]),
+        "body_rot": np.stack([pose(owner.sim, body_id(owner, name))[1] for name in names]),
         "eef_pos": np.asarray(observation["robot0_eef_pos"], dtype=np.float64).copy(),
         "eef_quat": np.asarray(observation["robot0_eef_quat"], dtype=np.float64).copy(),
         "gripper_qpos": np.asarray(observation["robot0_gripper_qpos"], dtype=np.float64).copy(),
@@ -269,10 +238,10 @@ def _restore_scene(env: Any, snapshot: dict[str, np.ndarray]) -> dict[str, Any]:
     model = env.env.sim.model
     actual_names = np.asarray([model.body_id2name(i) for i in range(model.nbody)])
     if not np.array_equal(actual_names, snapshot["model_body_names"]):
-        raise ValueError("task38 full-scene body registry changed between references")
+        raise ValueError("full-scene body registry changed between references")
     if (model.body_pos.shape != snapshot["model_body_pos"].shape
             or model.body_quat.shape != snapshot["model_body_quat"].shape):
-        raise ValueError("task38 full-scene model layout changed")
+        raise ValueError("full-scene model layout changed")
     model.body_pos[:] = snapshot["model_body_pos"]
     model.body_quat[:] = snapshot["model_body_quat"]
     return env.regenerate_obs_from_state(snapshot["sim_state"])
@@ -288,25 +257,24 @@ def _assert_scene_pair(env: Any, observation: dict[str, Any], names: list[str],
         else:
             equal = observed.shape == expected.shape and np.allclose(observed, expected, rtol=0, atol=1e-8)
         if not equal:
-            raise ValueError(f"task38 restored full-scene start differs: {key}")
+            raise ValueError(f"restored full-scene start differs: {key}")
 
 
-def _run_one(env: Any, init_states: Any, row: dict[str, Any], demo: int, state: int,
-             metadata: dict[str, Any], source: dict[str, np.ndarray], recipe: dict[str, Any],
-             output: Path, *, initialized_observation: dict[str, Any] | None = None) -> dict[str, Any]:
+def _run_one(env: Any, row: dict[str, Any], demo: int, state: int,
+             metadata: dict[str, Any], source: dict[str, np.ndarray],
+             output: Path, horizon: int, *, initialized_observation: dict[str, Any]) -> dict[str, Any]:
     started = time.monotonic()
-    observation = (initialized_observation if initialized_observation is not None
-                   else _initialize_query(env, init_states, state, recipe))
+    observation = initialized_observation
     owner = env.env
-    names, goals = _roles(owner, int(row["global_task_id"]))
+    references = tuple(item["reference_body"] for item in metadata["segments"])
+    names, goals = roles(owner, references)
     if names != metadata["body_names"] or goals != metadata["goals"]:
         raise ValueError("query body/BDDL roles differ from source")
     initial = _query_sample(env, observation, names, goals)
     if all(initial["predicates"]):
         raise ValueError("query initial target already complete")
-    differences = {name: float(np.linalg.norm(initial["body_pos"][names.index(name)]
-                                              - metadata["source_initial_object_positions"][name]))
-                   for name, _, _ in TASKS[int(row["global_task_id"])]}
+    differences = {name: float(np.linalg.norm(initial["body_pos"][names.index(name)] - value))
+                   for name, value in metadata["source_initial_object_positions"].items()}
     if not any(value > 1e-4 for value in differences.values()):
         raise ValueError("query physical initial objects do not differ from source")
     samples = {key: [value] for key, value in initial.items()}
@@ -341,18 +309,18 @@ def _run_one(env: Any, init_states: Any, row: dict[str, Any], demo: int, state: 
         success = bool(env.check_success())
         if success:
             stop_reason = "official_success"
-        elif step >= 520:
+        elif step >= horizon:
             stop_reason = "horizon"
 
     for segment, declaration in enumerate(metadata["segments"]):
-        if success or len(actions) >= 520:
+        if success or len(actions) >= horizon:
             break
         start, stop = int(declaration["start"]), int(declaration["stop"])
         ref = str(declaration["reference_body"])
         ref_id = names.index(ref)
         source_pos = source["body_pos"][start, ref_id]
         source_rot = source["body_rot"][start, ref_id]
-        new_pos, new_rot = _pose(owner.sim, owner.obj_body_id[ref])
+        new_pos, new_rot = pose(owner.sim, body_id(owner, ref))
         segment_transforms.append({"segment": segment, "query_step": len(actions),
                                    "reference_body": ref, "source_pos": source_pos.tolist(),
                                    "source_rot": source_rot.tolist(), "query_pos": new_pos.tolist(),
@@ -364,16 +332,16 @@ def _run_one(env: Any, init_states: Any, row: dict[str, Any], demo: int, state: 
         gripper = float(source["actions"][0, 6] if segment == 0 else source["actions"][start - 1, 6])
         for target_pos, target_rot in _interpolate(initial_pos, initial_rot, first_pos, first_rot):
             execute(target_pos, target_rot, gripper, segment, 0)
-            if success or len(actions) >= 520:
+            if success or len(actions) >= horizon:
                 break
-        if success or len(actions) >= 520:
+        if success or len(actions) >= horizon:
             break
         for source_step in range(start, stop):
             target_pos, target_rot = _target(source_pos, source_rot, new_pos, new_rot,
                                             source["goal_pos"][source_step],
                                             source["goal_rot"][source_step])
             execute(target_pos, target_rot, float(source["actions"][source_step, 6]), segment, 1)
-            if success or len(actions) >= 520:
+            if success or len(actions) >= horizon:
                 break
     if rgb_steps[-1] != len(actions):
         rgb_steps.append(len(actions))
@@ -406,110 +374,150 @@ def _run_one(env: Any, init_states: Any, row: dict[str, Any], demo: int, state: 
             "source_privileged_fields_excluded_from_future_writer_input": True}
 
 
-def _episode_phase(repo: Path, output: Path, gpu_index: int) -> None:
-    rows, recipe, paths = _authorities(repo)
+def _append_jsonl(path: Path, row: dict[str, Any]) -> None:
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(row, sort_keys=True) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _freeze_task_scenes(env: Any, init_states: Any, task: int, states: list[int],
+                        recipe: dict[str, Any], names: list[str], goals: list[list[str]],
+                        output: Path) -> None:
+    """Complete four physical starts before running any reference behavior."""
+    for state in states:
+        path = output / "scenes" / f"task_{task}_state_{state}.npz"
+        if path.exists():
+            continue
+        observation = _initialize_query(env, init_states, state, recipe)
+        actual_names, actual_goals = roles(env.env, tuple(names))
+        if actual_names != names or actual_goals != goals:
+            raise ValueError(f"task{task} source/query roles changed")
+        settled = _scene_snapshot(env, observation, names, goals, image=False)
+        observation = _restore_scene(env, settled)
+        np.savez_compressed(path, **_scene_snapshot(env, observation, names, goals, image=True))
+
+
+def _collect_case(env: Any, init_states: Any, row: dict[str, Any], demo: int, state: int,
+                  metadata: dict[str, Any], source_item: dict[str, Any], recipe: dict[str, Any],
+                  spec: dict[str, Any], output: Path, scene_path: Path,
+                  snapshot: dict[str, np.ndarray]) -> dict[str, Any]:
+    task = int(row["global_task_id"])
+    observation = _initialize_query(env, init_states, state, recipe)
+    observation = _restore_scene(env, snapshot)
+    _assert_scene_pair(env, observation, metadata["body_names"], metadata["goals"], snapshot, image=True)
+    with np.load(source_item["arrays"]) as source_file:
+        source = {key: source_file[key] for key in source_file.files}
+    identity = {"task": task, "state": state, "demo": demo}
+    _append_jsonl(output / "attempts.jsonl", {**identity, "status": "started"})
+    try:
+        result = _run_one(env, row, demo, state, metadata, source, output,
+                          int(spec["construction"]["horizons"][row["suite"]]),
+                          initialized_observation=observation)
+    except Exception as exc:
+        _append_jsonl(output / "attempts.jsonl", {**identity, "status": "engineering_error",
+                                                    "error": f"{type(exc).__name__}: {exc}"})
+        raise
+    result["initial_scene_snapshot"] = str(scene_path)
+    result["initial_scene_restoration"] = "all model body poses and post-dummy sim state"
+    _append_jsonl(output / "rows.jsonl", result)
+    _append_jsonl(output / "attempts.jsonl", {**identity, "status": "completed"})
+    return result
+
+
+def _collect_task(env: Any, init_states: Any, row: dict[str, Any], source_rows: dict,
+                  recipe: dict[str, Any], spec: dict[str, Any], output: Path,
+                  completed: set[tuple[int, int, int]], process_started: float,
+                  existing_bytes: int) -> int:
+    task = int(row["global_task_id"])
+    source_meta = {demo: json.loads(Path(source_rows[task, demo]["metadata"]).read_text())
+                   for demo in spec["source_demo_ids"]}
+    if len({tuple(meta["body_names"]) for meta in source_meta.values()}) != 1 or len(
+            {json.dumps(meta["goals"]) for meta in source_meta.values()}) != 1:
+        raise ValueError(f"four source roles differ for task{task}")
+    names, goals = source_meta[0]["body_names"], source_meta[0]["goals"]
+    _freeze_task_scenes(env, init_states, task, spec["query_init_state_ids"],
+                        recipe, names, goals, output)
+    budget = float(spec["runtime"]["full_gpu_hours_limit"]) * 3600
+    output_limit = int(spec["runtime"]["new_output_peak_gib"] * 1024**3)
+    for state in spec["query_init_state_ids"]:
+        scene_path = output / "scenes" / f"task_{task}_state_{state}.npz"
+        with np.load(scene_path) as scene_file:
+            snapshot = {key: scene_file[key] for key in scene_file.files}
+        for demo in spec["source_demo_ids"]:
+            if (task, state, demo) in completed:
+                continue
+            if time.monotonic() - process_started >= budget - 60:
+                raise RuntimeError("full GPU time guard reached before next attempt")
+            if existing_bytes + 50 * 1024**2 > output_limit:
+                raise RuntimeError("data1 output guard reached before next attempt")
+            result = _collect_case(env, init_states, row, demo, state, source_meta[demo],
+                                   source_rows[task, demo], recipe, spec, output, scene_path, snapshot)
+            completed.add((task, state, demo))
+            existing_bytes += result["trace_bytes"]
+    return existing_bytes
+
+
+def _collect_phase(repo: Path, output: Path, gpu_index: int, process_started: float) -> None:
+    rows, recipe, spec = _authorities(repo)
     from libero.libero import benchmark
     from libero.libero.envs import OffScreenRenderEnv
-    if not (output / "source_completion.json").is_file():
-        raise ValueError("CPU source phase missing")
-    (output / "episodes").mkdir(exist_ok=False)
+    source_status = json.loads((output / "source_completion.json").read_text())
+    if not source_status["source_gate_pass"] or source_status["source_cases"] != 108:
+        raise ValueError("complete compatible CPU source phase required")
+    source_rows = {(item["task"], item["demo"]): item for item in source_status["sources"]}
+    (output / "episodes").mkdir(exist_ok=True)
+    (output / "scenes").mkdir(exist_ok=True)
     results = output / "rows.jsonl"
-    for task in sorted(TASKS):
+    prior = [json.loads(line) for line in results.read_text().splitlines()] if results.exists() else []
+    completed = {(item["task"], item["state"], item["demo"]) for item in prior}
+    if len(completed) != len(prior):
+        raise ValueError("duplicate behavior row; never retry a physical attempt")
+    attempts = output / "attempts.jsonl"
+    if attempts.exists():
+        attempted = [json.loads(line) for line in attempts.read_text().splitlines()]
+        if any(item["status"] == "started" and not any(
+                later["status"] in {"completed", "engineering_error"}
+                and all(later[key] == item[key] for key in ("task", "state", "demo"))
+                for later in attempted[index + 1:]) for index, item in enumerate(attempted)):
+            raise ValueError("unfinished physical attempt; do not silently retry")
+    existing_bytes = sum(path.stat().st_size for path in output.rglob("*") if path.is_file())
+    suites: dict[str, Any] = {}
+    for task in spec["task_ids"]:
+        if task not in source_status["compatible_tasks"]:
+            continue
+        if all((task, state, demo) in completed for state in spec["query_init_state_ids"]
+               for demo in spec["source_demo_ids"]):
+            continue
         row = rows[task]
-        suite = benchmark.get_benchmark_dict()[row["suite"]]()
-        if suite.get_task(row["task_id"]).language != row["language"]:
-            raise ValueError("benchmark language changed")
+        if row["suite"] not in suites:
+            suites[row["suite"]] = benchmark.get_benchmark_dict()[row["suite"]]()
+        suite = suites[row["suite"]]
         init_states = suite.get_task_init_states(row["task_id"])
-        bddl = Path(paths["bddl_files"]) / row["problem_folder"] / row["bddl"]["filename"]
-        env = OffScreenRenderEnv(bddl_file_name=str(bddl), camera_heights=256,
+        env = OffScreenRenderEnv(bddl_file_name=row["bddl_path"], camera_heights=256,
                                  camera_widths=256, render_gpu_device_id=gpu_index)
         try:
-            for state in STATES:
-                for demo in DEMOS:
-                    stem = f"task_{task}_demo_{demo}"
-                    metadata = json.loads((output / "sources" / f"{stem}.json").read_text())
-                    with np.load(output / "sources" / f"{stem}.npz") as source_file:
-                        source = {name: source_file[name] for name in source_file.files}
-                    result = _run_one(env, init_states, row, demo, state, metadata, source, recipe, output)
-                    with results.open("a", encoding="utf-8") as handle:
-                        handle.write(json.dumps(result, sort_keys=True) + "\n")
-                        handle.flush()
-                        os.fsync(handle.fileno())
+            existing_bytes = _collect_task(env, init_states, row, source_rows, recipe, spec,
+                                           output, completed, process_started, existing_bytes)
         finally:
             env.close()
 
 
-def _paired_phase(repo: Path, output: Path, gpu_index: int) -> None:
-    """Replace only task38's eight rows while reading the four old sources."""
-    rows, recipe, paths = _authorities(repo)
-    from libero.libero import benchmark
-    from libero.libero.envs import OffScreenRenderEnv
-
-    old_sources = ROOT / "sources"
-    if not (ROOT / "source_completion.json").is_file() or not (ROOT / "rows.jsonl").is_file():
-        raise ValueError("original source and episode evidence missing")
-    row = rows[38]
-    suite = benchmark.get_benchmark_dict()[row["suite"]]()
-    if suite.get_task(row["task_id"]).language != row["language"]:
-        raise ValueError("task38 benchmark language changed")
-    init_states = suite.get_task_init_states(row["task_id"])
-    bddl = Path(paths["bddl_files"]) / row["problem_folder"] / row["bddl"]["filename"]
-    (output / "episodes").mkdir(parents=True, exist_ok=False)
-    (output / "scenes").mkdir(exist_ok=False)
-    results = output / "rows.jsonl"
-    env = OffScreenRenderEnv(bddl_file_name=str(bddl), camera_heights=256,
-                             camera_widths=256, render_gpu_device_id=gpu_index)
-    try:
-        for state in STATES:
-            # Freeze the scene before loading or selecting either reference.
-            observation = _initialize_query(env, init_states, state, recipe)
-            names, goals = _roles(env.env, 38)
-            # Regenerate both references' step-zero sensors by the same path.
-            # A direct post-step sample and a regenerated sample differed in
-            # the bounded CPU check despite the restored sim/model state.
-            settled = _scene_snapshot(env, observation, names, goals, image=False)
-            observation = _restore_scene(env, settled)
-            snapshot = _scene_snapshot(env, observation, names, goals, image=True)
-            scene_path = output / "scenes" / f"state_{state}.npz"
-            np.savez_compressed(scene_path, **snapshot)
-            for demo in DEMOS:
-                if demo == 1:
-                    _initialize_query(env, init_states, state, recipe)
-                    observation = _restore_scene(env, snapshot)
-                _assert_scene_pair(env, observation, names, goals, snapshot, image=True)
-                stem = f"task_38_demo_{demo}"
-                metadata = json.loads((old_sources / f"{stem}.json").read_text())
-                with np.load(old_sources / f"{stem}.npz") as source_file:
-                    source = {name: source_file[name] for name in source_file.files}
-                result = _run_one(env, init_states, row, demo, state, metadata, source, recipe,
-                                  output, initialized_observation=observation)
-                result["initial_scene_snapshot"] = str(scene_path)
-                result["initial_scene_restoration"] = "all model body poses and post-dummy sim state"
-                with results.open("a", encoding="utf-8") as handle:
-                    handle.write(json.dumps(result, sort_keys=True) + "\n")
-                    handle.flush()
-                    os.fsync(handle.fileno())
-    finally:
-        env.close()
-
-
 def main() -> None:
+    process_started = time.monotonic()
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", required=True, choices=("source", "episodes", "paired"))
+    parser.add_argument("--phase", required=True, choices=("source", "collect"))
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=ROOT)
     parser.add_argument("--gpu-index", type=int)
     args = parser.parse_args()
     repo, output = args.repo.resolve(), args.output.resolve()
-    expected = ROOT / "paired_initialization_repair" if args.phase == "paired" else ROOT
-    if output != expected or (args.phase in {"episodes", "paired"} and args.gpu_index is None):
+    if output != ROOT or (args.phase == "collect" and args.gpu_index is None):
         raise ValueError("fixed study root or rendering GPU missing")
     if args.phase == "source":
         _source_phase(repo, output)
-    elif args.phase == "episodes":
-        _episode_phase(repo, output, args.gpu_index)
     else:
-        _paired_phase(repo, output, args.gpu_index)
+        _collect_phase(repo, output, args.gpu_index, process_started)
 
 
 if __name__ == "__main__":

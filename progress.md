@@ -30,7 +30,11 @@ canonical控制/恢复合同扩展已经完成，实际约12.3分钟，原估CPU
 模型/实际FM/VJP/采样/optimizer/LR数值程序无diff；270跨版本仅允许登记的Git/spec路径/续训记录变化，
 其余合同逐字段相等；360仍完整合同相等。实际GPU恢复尚未发生，不能由CPU检查宣称续训已完成。
 源码已由a38d2822合入main；§12授权在本登记之后的clean pushed冻结commit完成V/L各270→450及各correct400。
-主讨论随后直接向指定执行者派发并等待真实完成；GPU前仍须live准入，不用自通知或已消费回报接续。
+唯一新冻结commit为`cfd378b6f0845745160d0d0b39a8e46ad16ec24f`，已clean pushed。
+2026-09-27 00:45 UTC正式Queue `01a0e052-aeb7-77a1-b2b9-6b60b754568a`已接受，原生状态确认
+执行turn `01a0e052-aeb9-7c82-8a05-bc0b5ffd7661`已开始；当前是执行准备，尚无GPU启动/恢复证据。
+请求/回执位于`.codex/tmp/conditional_velocity_learning_20260927/stage2_launch_{request,queue_receipt}.txt`。
+主讨论直接等待真实完成；GPU前仍须live准入，不用自通知或已消费回报接续，不跟随后续main文档更换冻结commit。
 后继预计4.5–5.6完整GPUh、硬限6，GPU阶段约2–3h；新增原件≤4GiB、study合计≤8GiB，新增冻结代码≤320MiB、三树合计≤1GiB。
 旧0c4ea636冻结树保留，因为270 bank的spec仍引用它；新节点另冻，不能重写270原件或静默跨commit exact-resume。
 旧内部helper暂留到450保留/关闭裁决，旧generic CLI/Compiler不恢复；不为维持工作追加局部probe或同类理论循环。

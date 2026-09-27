@@ -3,17 +3,17 @@
 ## 当前：执行一次完整对应学习比较的首个节点（2026-09-27）
 
 最终目标与Owner持续自主授权保持；数据支持20task/296交叉、完整144工程和official比较准入均已独立验收。
-38303429由481beb22集成，当前唯一设计`docs/designs/demonstration_transfer_learning_design.md`§15。
+当前唯一设计`docs/designs/demonstration_transfer_learning_design.md`§15，精确formal代码`f4a80cd5`已clean pushed。
 
-1. 指定执行者完成CPU正式运行面转换：一个run/bank/scene owner，P/I288与登记恢复节点，合法held视频物化及400 capture；
-   预计45–75分钟，无模型/环境/GPU。主讨论负责验收并合入main，不为此另跑工程smoke或另开新平台。
-2. 精确formal commit登记后启动P/I各fresh288及各correct400，完整GPU硬限18、峰值4卡、输出12GiB，4卡预计4–6小时。
+1. CPU正式运行面转换已验收/集成；独立8项检查加终点恢复收尾1项回归通过，数值学习程序不变。
+   无新模型/环境/GPU smoke，原engineering入口已退出。
+2. 指定执行者从登记精确commit开展P/I各fresh288及各correct400，完整GPU硬限18、峰值4卡、输出12GiB，4卡预计4–6小时。
    保存72/144/216/288完整ECP仅为恢复，只有288评测；同一400 canonical scene、固定视频/RNG、8full+392compact每臂。
 3. 用事前§14裁决对应干预与整套方法是否值得唯一预留576；仍须相邻保持、强MT和视频增量才能宣称达到目标。
    I也为视频模型，P−I不等于video−language；M仍保留强36×16/128合同及已有155，不降低参照。
 
 数学作用位置与未证实联系见机制§37.9；不将工程/梯度接通作收益，不围绕负分数改rank/LR/aux或重开已关闭路线。
-未来576与同数据M的估计独立登记，均非当前运行授权。主讨论不陪跑轮询，CPU完成有唯一真实回报后立即集成推进。
+未来576与同数据M的估计独立登记，均非当前运行授权。主讨论不陪跑轮询，整批完成/实质阻塞有唯一回报后立即核验裁决。
 实际派发/承接/GPU状态只看progress；没有真实独立工作时不自Queue或等待Owner催促。
 
 以下为既往推进记录，不构成当前执行授权：

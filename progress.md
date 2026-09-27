@@ -1,25 +1,33 @@
 # EMBER progress
 
-## 当前状态：完整比较工程验收，首个正式P/I288合同已冻结（2026-09-27）
+## 当前状态：首个正式P/I288批次已准入，精确代码冻结（2026-09-27）
 
-Owner授权持续自主推进，今晚检查；目标仍是合法RGB/L一次生成完整LoRA、超过强MT、视频有益并保持能力。
-主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main；唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责执行。
-所有新内容data1，不联系旧主讨论/旧Sol、不恢复旧实验。不自Queue、不轮询陪跑，无真实后继时在本回合继续有意义工作。
+Owner授权持续自主推进；目标仍是合法RGB/L一次生成完整LoRA、超过强MT、视频有益并保持能力。
+主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main；唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责实验。
+所有新内容data1，不联系旧主讨论/旧Sol，不恢复旧实验，不自Queue或轮询陪跑。
 
-**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`§15。
-首个正式批次固定P/I各fresh288、各32,256query及一次correct400；§14预留576/强MT的裁决框架不变，不自动运行后继。
-当前具体任务为§15.5 `demonstration_transfer_formal_transition_20260927`：只将已验收工程运行面转为正式步数/恢复/validation bank/capture范围，
-CPU交付预计45–75分钟，90分钟检查剩余工作。原learning_engineering_spec由代码交付一并替换为唯一learning_spec。
-正式evaluator要求commit属于origin/main，因此主讨论须先集成其CPU提交，再登记精确冻结commit并派发GPU；不绕过已有Git authority。
-12:15 UTC已从clean pushed main `6b6260e2`派发CPU转换；唯一Queue `01a0e2ca-a384-72c1-b44d-b66dc9700f82`获接受。
-一次app-server即时快照确认指定执行者active且队列已消费；这里只确认CPU任务已承接，尚无active GPU。
-请求、回执、快照在同tmp目录`formal_transition_*`；完成后唯一回报由主讨论接续集成/正式启动，不自Queue或轮询。
+**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`§15，当前执行任务
+`demonstration_transfer_learning_stage1_20260927`。现授权指定执行者在live quota/GPU准入后执行完整首批，
+不是另一次工程smoke：P/I各fresh288×112=32,256query、各自唯一macro288 bank与一次official correct400。
+精确formal冻结commit **`f4a80cd564843bb487bef55e3196d0597ed6cdd5`**，已clean pushed并属于origin/main；
+用独立clean detached树，实际路径/设备/命令/现场预算登记launch_contract。之后main文档推进不改变该冻结身份。
+study `/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927`，训练/两bank/两评测在`stage1`，共享scene在study级`scenes`。
+派发/承接回执随后记录；本段不是GPU进程已经启动的证明。执行者仍须现场核两节点与data1的strg01独立quota及共享容量。
 
-正式GPU阶段预计13–16、硬限18GPUh，4卡4–6小时/2卡7–9小时；训练8、scene .5、bank1.5、official8的完整分配。
-共享400个canonical scene仅在policy前冻结一次，P/I都恢复该物理起点，正确K1/每task50教学无放回；各8 full+392 compact。
-首批新输出峰值12GiB，新增冻结代码512MiB、相关代码3GiB，正式创建前由执行者核data1独立quota/共享容量及双节点live GPU。
-不启动576、M长训练、其它视频/时间controls、Test、RL、数据扩建或重复profile；所有工程权重不可作正式初值。
-P/I两臂的对应干预仅占5/18查询，正负结果按完整机制与闭环判断，不能单独证明视频动态必要或能力保持。
+完整GPU预计13–16、硬限18GPUh；训练8、scene .5、bank1.5、official8分别计加载/保存/失败/重算/等待。
+最多4张物理卡，两臂各同节点world2可并行；只有2–3张适用卡时顺序，禁止等凑卡或dummy占卡。
+GPU阶段4卡预计4–6小时、2卡7–9小时。首批输出峰值12GiB含共享scene；新冻代码512MiB、相关代码3GiB。
+400个canonical scene在任何policy行为前一次冻结，P/I逐条恢复相同完整场景；video/state/RNG固定，K1每task50教学无放回。
+每臂8 full+392 compact，全部真实T动作/T+1状态。只有288评测；72/144/216中间ECP仅恢复用途。
+576、M长训练、其它视频/时间controls、Test、RL、数据扩建、旧实验及重复profile均不在本批授权内，工程权重禁止作初值。
+结果按§14完整方法/对应干预/强参照与保持分别裁决；P−I不能单独证明动态视频必要，288不证明相邻稳定。
+
+**CPU正式转换已验收**：3bee0a1b由9b480d2d集成；源码净增125行，独立8项CPU检查通过，六个原数值字典一致，guard REVIEW无本轮新hard。
+主讨论又修正macro288恢复的终点发布：零剩余更新仍在新attempt保存完整ECP再写pointer，新增1项纯CPU控制流回归通过。
+没有实际重跑world2终点恢复/模型/GPU；首72以前无可恢复ECP的故障仍报告，不擅自删除fresh原件重启。
+最终数值保持，spec仅补当前状态/已有代码额度并清掉过时CPU-only描述。详细范围见设计§15.6/findings§191。
+CPU Queue `01a0e2ca-a384-72c1-b44d-b66dc9700f82`已消费且任务完成，不能再作为后台任务。
+主讨论验收`.codex/tmp/demonstration_transfer_main_review_20260927/formal_transition_acceptance.json`。
 
 **刚完成独立验收**：38303429以481beb22合入main；八项针对性CPU测试通过，24份NPZ/PT、8个scene、576事件和M三套ECP已核。
 M实际5更新/2,880query（旧2080/新800），36task×16的两源分段权重正确，source0，恢复前缀及游标成立；P/I本批零更新。

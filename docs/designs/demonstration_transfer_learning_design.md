@@ -837,10 +837,9 @@ P/I对M还改变条件参数化、rank与每步task/query布局，不能由该�
 
 ## 15. 首个正式节点：P/I各288与共同物理场景的correct400
 
-本节冻结下一完整科学批次，§14的后继/选点/停止线保持。任务分为必要的CPU运行面转换与随后正式执行，
-不是再设一轮GPU工程准入：当前先派`demonstration_transfer_formal_transition_20260927`，只改代码/CPU检查。
-正式evaluator要求冻结commit属于origin/main；故CPU实现先交主讨论集成推送，再以精确commit登记并派发
-`demonstration_transfer_learning_stage1_20260927`。不得修改Git authority绕过这一已有合同，不需Owner重复许可。
+本节冻结下一完整科学批次，§14的后继/选点/停止线保持。CPU运行面转换已按§15.6验收，
+正式evaluator要求的origin/main准入已成立，精确formal代码为`f4a80cd564843bb487bef55e3196d0597ed6cdd5`。
+当前派发`demonstration_transfer_learning_stage1_20260927`，现场资源合规后即可执行，不再开GPU工程smoke或请求Owner重复许可。
 
 ### 15.1 唯一学习干预、真实单位及事前解释
 

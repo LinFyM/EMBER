@@ -8,6 +8,14 @@
 主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main集成；
 唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责具体实验。Reader仍撤回，旧实验不恢复。
 
+**2026-09-27 03:05 UTC收件方式勘误**：Owner指出UI积压五条执行者Queue。主讨论已通过原生等待/原件验收其内容，
+但又要求执行者追加Queue，故此前“已消费”没有准确区分内容已处理与UI实际出队。已逐项核对工程完成、正式CPU准备、
+CPU合同修正、270完整实验、450 CPU准备的五条原文，保存至`.codex/tmp/queue_inspection_20260927/queue_snapshot.json`，
+仅移除这五条已处理的重复通知，五次delete均返回true，随后queue/list为0条且无下一页；正式原件及验收记录保留。
+已向执行者当前turn发送一次Steer，撤销“直接等待之外另发完成Queue”的要求，接口接受同一turn；
+回执`.codex/tmp/conditional_velocity_learning_20260927/completion_channel_steer_receipt.json`。当前L450照原合同继续。
+已有直接等待者时，以执行者本turn最终交付和原生完成事件为唯一收件方式，不另发确认/进度/完成Queue，也不自排消息。
+
 V151/L147/MT155/Source51，V对L R/G/L=124/27/23；V对MT113/38/42，L对MT105/42/50。
 V/L四suite为59/44/26/22与58/42/28/19，广度均6/8。Goal26和Object16两臂均有明显损失。
 主讨论独立核全部1080个训练事件、bank调度、两面板及基准400行key/noise，并读16份full的实际T/T+1与初始状态。

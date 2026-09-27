@@ -275,8 +275,7 @@ def _run_one(env: Any, row: dict[str, Any], demo: int, state: int,
         raise ValueError("query initial target already complete")
     differences = {name: float(np.linalg.norm(initial["body_pos"][names.index(name)] - value))
                    for name, value in metadata["source_initial_object_positions"].items()}
-    if not any(value > 1e-4 for value in differences.values()):
-        raise ValueError("query physical initial objects do not differ from source")
+    source_body_difference = float(np.max(np.abs(initial["body_pos"] - source["body_pos"][0])))
     samples = {key: [value] for key, value in initial.items()}
     actions: list[np.ndarray] = []
     targets_pos: list[np.ndarray] = []
@@ -367,6 +366,7 @@ def _run_one(env: Any, row: dict[str, Any], demo: int, state: int,
             "trace_bytes": path.stat().st_size, "source": metadata["hdf5"],
             "source_boundaries": metadata["source_boundaries"],
             "query_initial_object_distance_from_source_m": differences,
+            "source_query_initial_body_max_abs_difference_m": source_body_difference,
             "segment_transforms": segment_transforms,
             "body_names": names, "goals": goals,
             "image_orientation": "raw LIBERO OpenGL rotated 180 degrees by both axis reversals",
@@ -438,7 +438,10 @@ def _collect_task(env: Any, init_states: Any, row: dict[str, Any], source_rows: 
     names, goals = source_meta[0]["body_names"], source_meta[0]["goals"]
     _freeze_task_scenes(env, init_states, task, spec["query_init_state_ids"],
                         recipe, names, goals, output)
-    budget = float(spec["runtime"]["full_gpu_hours_limit"]) * 3600
+    full_budget = float(spec["runtime"]["full_gpu_hours_limit"]) * 3600
+    budget = min(full_budget, float(os.environ.get("EMBER_TRANSFER_REMAINING_GPU_SECONDS", full_budget)))
+    if not 60 < budget <= full_budget:
+        raise ValueError("remaining GPU account invalid")
     output_limit = int(spec["runtime"]["new_output_peak_gib"] * 1024**3)
     for state in spec["query_init_state_ids"]:
         scene_path = output / "scenes" / f"task_{task}_state_{state}.npz"

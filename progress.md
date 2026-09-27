@@ -35,6 +35,12 @@ canonical控制/恢复合同扩展已经完成，实际约12.3分钟，原估CPU
 执行turn `01a0e052-aeb9-7c82-8a05-bc0b5ffd7661`已开始；当前是执行准备，尚无GPU启动/恢复证据。
 请求/回执位于`.codex/tmp/conditional_velocity_learning_20260927/stage2_launch_{request,queue_receipt}.txt`。
 主讨论直接等待真实完成；GPU前仍须live准入，不用自通知或已消费回报接续，不跟随后续main文档更换冻结commit。
+00:57 UTC主讨论核到实际launch及V run_contract，新冻结树为
+`/data1/user/ymdai/projects/EMBER-conditional-velocity-450-formal`，commit保持cfd378b6；V已启动，尚未完成该段。
+V与父270的全部非迁移合同字段相等，gpu02/6,7原UUID/NUMA1/world2、source_trainable0。
+launch原件为study的`continuation_450/launch/launch_contract.json`；data1配额初值521,468,892KiB/1TiB，
+共享余83TiB，新冻结代码257,901,287bytes、三树合计776,559,632bytes，均在登记上限内。
+主讨论未读取运行中metrics或据中途loss选择；退出后核实际新增180事件/恢复与完整评测。
 后继预计4.5–5.6完整GPUh、硬限6，GPU阶段约2–3h；新增原件≤4GiB、study合计≤8GiB，新增冻结代码≤320MiB、三树合计≤1GiB。
 旧0c4ea636冻结树保留，因为270 bank的spec仍引用它；新节点另冻，不能重写270原件或静默跨commit exact-resume。
 旧内部helper暂留到450保留/关闭裁决，旧generic CLI/Compiler不恢复；不为维持工作追加局部probe或同类理论循环。

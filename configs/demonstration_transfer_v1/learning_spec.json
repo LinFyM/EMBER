@@ -1,8 +1,8 @@
 {
-  "schema_version": "ember_demonstration_transfer_learning_engineering_spec_v3",
-  "task": "demonstration_transfer_comparison_admission_20260927",
-  "status": "registered_bounded_comparison_admission_only",
-  "design": "docs/designs/demonstration_transfer_learning_design.md#13",
+  "schema_version": "ember_demonstration_transfer_learning_spec_v1",
+  "task": "demonstration_transfer_learning_stage1_20260927",
+  "status": "formal_stage1_frozen_pending_main_integration",
+  "design": "docs/designs/demonstration_transfer_learning_design.md#15",
   "source": {
     "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
     "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json"
@@ -321,111 +321,85 @@
   },
   "execution": {
     "training_arms": [
-      "M"
+      "P",
+      "I"
     ],
-    "fresh_macro_updates_per_arm": 3,
+    "fresh_macro_updates_per_arm": 288,
     "checkpoint_macros": [
-      1,
-      3
+      72,
+      144,
+      216,
+      288
     ],
     "resume_arms": [
-      "M"
+      "P",
+      "I"
     ],
-    "resume_from_macro": 1,
-    "resume_stop_macro": 3,
-    "actual_macro_updates_total": 5,
-    "actual_training_queries_total": 2880,
-    "actual_new_queries_total": 800,
-    "actual_old_queries_total": 2080,
+    "resume_stop_macro": 288,
+    "actual_macro_updates_total": 576,
+    "actual_training_queries_total": 64512,
+    "actual_new_queries_total": 17920,
+    "actual_old_queries_total": 46592,
     "preferred_world_size": 2,
     "allowed_world_sizes": [
-      1,
       2
     ],
     "world_size_fixed_per_arm_resume": true,
     "same_node_only": true,
-    "initial_policy_microbatch": 16,
+    "initial_policy_microbatch": 28,
     "oom_only_policy_microbatches": [
-      8,
-      4
+      14,
+      7
     ],
     "logical_batch_unchanged": true,
     "initial_frame_chunk": 8,
     "oom_only_frame_chunk": 4,
     "frozen_clean_pushed_code": true,
-    "resume_comparison": "logical event/LR/checkpoint state; no bitwise tensor chase",
+    "resume_comparison": "same frozen commit, source/model/LoRA/optimizer/events/world topology and full ECP cursor; physical microbatch/frame chunk may decrease only after OOM",
     "formal_training_from_engineering_checkpoint": false,
     "require_source_identity_before_every_compile": true,
-    "new_P_or_I_updates_allowed": 0
-  },
-  "profile": {
-    "scope": "all 5 actual M macro updates including data/FM/backward/optimizer/ECP and process loading; no extra M or P/I updates",
-    "required": [
-      "full 576-query macro wall",
-      "data and FM and gradient and optimizer costs",
-      "checkpoint and model loading wall",
-      "finite effective LoRA gradients",
-      "source trainable zero",
-      "process allocated/reserved peak",
-      "full GPU hours including failures"
-    ],
-    "readonly_P_I_longest_profile": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927/profile_cases/profile.json"
+    "new_P_or_I_updates_allowed": 576,
+    "resume_from_macros": [
+      72,
+      144,
+      216,
+      288
+    ]
   },
   "runtime": {
-    "run_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_comparison_admission_20260927",
+    "run_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage1",
     "expected_implementation_cpu_minutes": [
-      60,
-      100
+      45,
+      75
     ],
-    "expected_all_gpu_wall_minutes": [
-      15,
-      30
-    ],
-    "expected_closeout_minutes": [
-      15,
-      20
-    ],
-    "expected_total_minutes": [
-      90,
-      150
-    ],
-    "hard_review_minutes": 180,
-    "expected_full_gpu_hours": [
-      0.45,
-      0.75
-    ],
-    "full_gpu_hours_limit": 1.0,
-    "physical_gpu_peak_limit": 2,
-    "run_peak_gib": 4,
+    "hard_review_minutes": 90,
+    "full_gpu_hours_limit": 18,
+    "physical_gpu_peak_limit": 4,
+    "run_peak_gib": 12,
     "new_frozen_each_mib": 256,
     "new_frozen_count_limit": 2,
     "new_code_total_mib": 512,
-    "related_code_before_mib": 1774,
-    "related_code_total_gib": 2.25,
     "raw_cache_resident_mib_per_rank": 1024,
     "adapted_feature_cache_across_updates": false,
-    "previous_engineering_study_readonly_gib": 2.544,
-    "preflight": "data1 independent strg01 quota and shared capacity; live both GPU nodes before each launch; no large asset duplication"
+    "preflight": "data1 independent strg01 quota and shared capacity; live both GPU nodes before each launch; no large asset duplication",
+    "study_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927",
+    "stage_gpu_hour_limits": {
+      "training": 8,
+      "scenes": 0.5,
+      "banks": 1.5,
+      "official": 8
+    }
   },
   "forbidden": [
-    "new demonstration/query data generation",
-    "new P or I training updates",
-    "formal long training or engineering weights as formal initialization",
-    "held evaluation or held labels",
-    "Test",
-    "other-video or temporal controls",
-    "RL",
-    "old run restart",
-    "rank/LR/seed/weight sweep",
-    "model changes based on interface success or failure",
-    "repeat longest-video profile",
-    "extra Source or historical MT interface episodes",
-    "physical failure retry",
-    "handwritten rollout_shard as substitute for official evaluator integration",
-    "new source/model/dataset copies",
-    "retained parallel trainer or obsolete v1/v2 CLI fallback"
+    "engineering P6/I6/M3 weights or resume source",
+    "M formal train, bank or evaluation in stage1",
+    "576 training without later contract",
+    "held teacher action/state/reward reads or gradients",
+    "Test, other-video, temporal controls, RL",
+    "new data or model/optimizer/loss changes",
+    "parallel engineering CLI fallback"
   ],
-  "delivery": "one complete or materially blocked Queue to scientific main; exact commits, all attempts including failures, M full-update/resume cost, bank and official 24-row raw evidence, full scene pairing, total resource accounting and gaps; no automatic successor",
+  "delivery": "CPU transition only; formal GPU launch separately dispatched after main integration and exact frozen commit",
   "mt": {
     "rank": 128,
     "alpha": 128,
@@ -464,25 +438,70 @@
   "bank": {
     "arms": [
       "P",
-      "I",
-      "M"
+      "I"
     ],
-    "interface_only": true,
-    "P_I_source_code": "399e2610a3f1d7eaf0af08e14f46057ae15a5e9c",
-    "M_source_code": "485856c08640e10221723db89a59606bdb6fc626",
-    "M_source_spec": "/data1/user/ymdai/projects/EMBER-demonstration-comparison-v2-formal/configs/demonstration_transfer_v1/learning_engineering_spec.json",
-    "P_checkpoint": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927/closure/P/fresh/checkpoints/macro_00000006",
-    "I_checkpoint": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927/closure/I/fresh/checkpoints/macro_00000006",
-    "M_checkpoint": "this batch fresh macro3; not resumed weights for qualification",
+    "source_macro": 288,
     "task_ids": [
-      2,
-      38
+      3,
+      6,
+      11,
+      16,
+      23,
+      26,
+      31,
+      39
     ],
     "init_state_ids": [
       0,
       1,
       2,
-      3
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
     ],
     "video_schedule": {
       "mode": "correct",
@@ -543,36 +562,74 @@
       "policy": "per_init_ordinal",
       "owner": "expert_manifold/video_schedule.py"
     },
-    "P_I_conditions_each": 8,
-    "P_I_storage": "one common128 plus complete conditional16 per condition; concatenate to one rank144 for inference",
-    "M_storage": "one shared128 plus 8 episode indices; same parameters for all tasks; no video value read or task-routed weights",
-    "checkpoint_compatibility": "explicit v2 engineering P6/I6 same source/model/operator; load weights only; never resume them as formal",
-    "reuse": [
-      "BatchedLoRAInference",
-      "official eval adapters",
-      "official persistent queue",
-      "official passive capture and recovery"
-    ],
-    "report_cost": [
-      "materialization wall and LoRA/s",
-      "source/Writer/checkpoint loading",
-      "bank bytes",
-      "process memory peak"
-    ],
-    "new_hashes_or_tensor_equality_sweeps": false
+    "conditions_each": 400,
+    "storage": "one common128 plus complete conditional16 per condition; concatenate one rank144 at inference",
+    "checkpoint_compatibility": "only this arm fresh formal stage1 macro288; engineering P6/I6/M3 forbidden"
   },
   "scene": {
     "task_ids": [
-      2,
-      38
+      3,
+      6,
+      11,
+      16,
+      23,
+      26,
+      31,
+      39
     ],
     "init_state_ids": [
       0,
       1,
       2,
-      3
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
     ],
-    "count": 8,
+    "count": 400,
     "seed": 7,
     "dummy_steps": 10,
     "freeze": "before any policy behavior, official init then dummy10; no outcome selection or teacher labels",
@@ -591,42 +648,89 @@
   "official_interface": {
     "entrypoint": "scripts/evaluate_pi05.py",
     "arms": [
-      "P6",
-      "I6",
-      "M3"
+      "P288",
+      "I288"
     ],
     "tasks": [
-      2,
-      38
+      3,
+      6,
+      11,
+      16,
+      23,
+      26,
+      31,
+      39
     ],
     "states": [
       0,
       1,
       2,
-      3
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
     ],
-    "episodes_per_arm": 8,
-    "episodes_total": 24,
-    "max_policy_control_steps": 8880,
+    "episodes_per_arm": 400,
+    "episodes_total": 800,
+    "max_policy_control_steps": 264000,
     "full_capture_states": [
       0
     ],
-    "full_episodes_per_arm": 2,
-    "compact_episodes_per_arm": 6,
+    "full_episodes_per_arm": 8,
+    "compact_episodes_per_arm": 392,
     "required_arrays": "T actions; T+1 body/EEF/gripper/BDDL; shared scene id; full dual RGB for state0 each task",
-    "horizons": {
-      "2": 220,
-      "38": 520
-    },
     "flow_steps": 10,
     "executed_prefix": 5,
     "queue": "cost-balanced dynamic queue long-first persistent workers",
-    "preferred_gpu_count": 2,
+    "preferred_gpu_count": 4,
     "preferred_replicas_per_gpu": 2,
-    "envs_per_replica": 1,
-    "fallback": "one replica per GPU or one GPU only for live capacity; no episode/RNG/schedule change",
+    "envs_per_replica": 8,
+    "fallback": "use fewer live eligible GPUs or one replica per GPU without changing scene/video/state mapping",
     "no_additional_baseline_or_episode": true,
     "retry_physical_failure": false,
-    "success_is": "raw engineering interface evidence only, not method selection or scientific benefit"
+    "success_is": "formal single-checkpoint correct400 evidence"
   }
 }

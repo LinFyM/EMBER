@@ -457,6 +457,9 @@ def _registered_trajectory_capture(
 
         return registered_capture(args, tasks, output_dir, path, manifest, task_subset,
                                   repo_root, TRAJECTORY_CAPTURE_SELECTION_SCHEMA)
+    if manifest.get("study_id") == "demonstration_transfer_learning_20260927":
+        from ember.demonstration_learning.bank import registered_capture
+        return registered_capture(args, tasks, output_dir, path, manifest, task_subset)
     if (task_subset is None or args.role not in {"development_train", "nonheld_meta"}
             or getattr(args, "occupancy_capture_selection", None) is not None
             or bool(getattr(args, "capture_stage_predicates", False))):

@@ -28,7 +28,7 @@ from ember.writer.materialization import file_record, source_matches
 from ember.writer.data import RawTeacherVideoStore
 from ember.writer.learning_data import load_learning_tasks
 from .model import concatenate_factors
-from .run import REPO, RUN_SCHEMA, STAGE, _frozen_git, build_runtime, specification
+from .run import REPO, RUN_SCHEMA, STAGE, _frozen_git, _stage1_checkpoint, build_runtime, specification
 
 
 BANK_SCHEMA = "ember_demonstration_comparison_compact_bank_v1"
@@ -42,7 +42,7 @@ def _source_checkpoint(arm: str, spec: Mapping) -> Path:
     train = Path(spec["runtime"]["run_root"]) / arm / "train"
     pointer = read_json(train / "final_checkpoint.json")
     checkpoint = Path(pointer["checkpoint"]).resolve()
-    if (pointer.get("arm") != arm or checkpoint.name != "macro_00000288"
+    if (pointer.get("arm") != arm or checkpoint.name != "macro_00000576"
             or checkpoint.parent.name != "checkpoints"
             or checkpoint.parent.parent.parent != (train / "attempts").resolve()
             or pointer.get("run_contract") != str(checkpoint.parent.parent / "run_contract.json")):
@@ -60,20 +60,22 @@ def _inspect_checkpoint(arm: str, spec: Mapping, source: Mapping) -> tuple[Path,
         (run.get("git", {}).get("dirty_paths"), []), (run.get("source_trainable"), 0),
         (run.get("model"), spec["model"]), (run.get("spec"), str(REPO / "configs/demonstration_transfer_v1/learning_spec.json")),
         (run.get("topology", {}).get("world_size"), 2),
-        (run.get("qualification"), "formal_stage1_macro288"),
+        (run.get("qualification"), "formal_stage2_macro576"),
+        (run.get("stage1_parent"), {"git": spec["execution"]["stage1_parent"]["git"],
+                                      "checkpoint": str(_stage1_checkpoint(spec, arm))}),
         (manifest.get("schema_version"), "ember_ecp_checkpoint_v1"),
         (manifest.get("stage"), STAGE),
         (manifest.get("run_contract_schema"), RUN_SCHEMA),
-        (manifest.get("next_macro"), 288),
+        (manifest.get("next_macro"), 576),
         (manifest.get("world_size"), 2),
     )
     if not all(actual == wanted for actual, wanted in required) or not source_matches(run["source"], source):
         raise ValueError("bank checkpoint/source/model identity changed")
     completion = read_json(path.parent.parent / "completion.json")
     if (run.get("optimizer") != spec["optimization"] or run.get("source_identity_before_every_compile") is not True
-            or completion.get("status") != "formal_training_complete" or completion.get("updates") != 288
+            or completion.get("status") != "formal_training_complete" or completion.get("updates") != 576
             or completion.get("checkpoint") != str(path)):
-        raise ValueError("bank requires completed fresh formal P/I optimization")
+        raise ValueError("bank requires completed stage2 formal P/I optimization")
     for name, row in manifest["files"].items():
         file = path / name
         if not file.is_file() or file.stat().st_size != int(row["bytes"]):
@@ -140,9 +142,10 @@ def materialize(arm: str, asset_root: Path, device: torch.device) -> dict:
     spec = specification()
     if arm not in ("P", "I"):
         raise ValueError("formal bank admits P/I only")
-    output = Path(spec["runtime"]["run_root"]) / arm / "banks" / "288"
+    output = Path(spec["runtime"]["run_root"]) / arm / "banks" / "576"
     if output.exists():
         raise ValueError("registered bank already exists")
+    _source_checkpoint(arm, spec)
     started = time.perf_counter()
     runtime = build_runtime(asset_root, spec, device, arm=arm)
     checkpoint, run = _inspect_checkpoint(arm, spec, runtime.source)
@@ -224,7 +227,7 @@ def _inspect_bank_scope(bank: Mapping, spec: Mapping, arm: str, path: Path,
     if states is not None and any(tuple(states.get((r["suite"], r["task_id"]), ())) != tuple(range(50))
                                   for r in tasks):
         raise ValueError("comparison bank official init states changed")
-    if path != Path(spec["runtime"]["run_root"]) / arm / "banks" / "288" / "manifest.json":
+    if path != Path(spec["runtime"]["run_root"]) / arm / "banks" / "576" / "manifest.json":
         raise ValueError("comparison bank is outside its registered root")
     authority = read_json(Path(bank["asset_root"]) / "configs/pi05_writer_data_v1.json")
     base = (Path(bank["asset_root"]) / authority["authorities"]["lora_contract"]).resolve()
@@ -394,6 +397,7 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
             or manifest.get("stage_predicates") is not True
             or args.role != "validation" or args.mode != "formal" or len(tasks) != 8
             or tuple(tuple(task.init_state_ids) for task in tasks) != (tuple(range(50)),) * 8
+            or bank_path.parent.name != "576"
             or output_dir.resolve() != bank_path.parent.parent.parent / "evaluation" / "correct400"
             or any(manifest.get(key) is not False for key in (
                 "training_gradient_use", "checkpoint_selection_use", "validation_use", "test_use"))):
@@ -477,29 +481,18 @@ def prepare_selectors(asset_root: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("materialize", "freeze-scenes", "selectors"))
+    parser.add_argument("phase", choices=("materialize", "selectors"))
     parser.add_argument("--arm", choices=("P", "I"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--physical-gpu-id", type=int)
     args = parser.parse_args()
     if args.phase == "materialize":
         if args.arm is None or torch.cuda.device_count() != 1:
             raise ValueError("materialization requires one specified arm and one visible GPU")
         print(json.dumps(materialize(args.arm, args.asset_root, torch.device("cuda:0")), sort_keys=True))
     elif args.phase == "selectors":
-        if args.arm is not None or args.physical_gpu_id is not None:
+        if args.arm is not None:
             raise ValueError("selectors are CPU-only and shared by all arms")
         print(json.dumps(prepare_selectors(args.asset_root), sort_keys=True))
-    else:
-        if args.arm is not None or args.physical_gpu_id is None:
-            raise ValueError("scene freezing requires one physical rendering GPU and no arm")
-        from ember.pi05_eval.scene import freeze_registered_scenes
-
-        _frozen_git()
-        spec = specification()
-        root = Path(spec["runtime"]["study_root"]) / "scenes"
-        print(json.dumps(freeze_registered_scenes(args.asset_root, root,
-                                                   physical_gpu_id=args.physical_gpu_id), sort_keys=True))
 
 
 if __name__ == "__main__":

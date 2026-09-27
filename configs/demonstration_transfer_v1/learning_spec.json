@@ -1,8 +1,8 @@
 {
   "schema_version": "ember_demonstration_transfer_learning_spec_v1",
-  "task": "demonstration_transfer_learning_stage1_20260927",
-  "status": "formal_stage1_registered_for_launch",
-  "design": "docs/designs/demonstration_transfer_learning_design.md#15",
+  "task": "demonstration_transfer_learning_stage2_20260928",
+  "status": "formal_stage2_cpu_prepared_no_gpu_launch",
+  "design": "docs/designs/demonstration_transfer_learning_design.md#16",
   "source": {
     "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
     "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json"
@@ -324,18 +324,17 @@
       "P",
       "I"
     ],
-    "fresh_macro_updates_per_arm": 288,
     "checkpoint_macros": [
-      72,
-      144,
-      216,
-      288
+      360,
+      432,
+      504,
+      576
     ],
     "resume_arms": [
       "P",
       "I"
     ],
-    "resume_stop_macro": 288,
+    "resume_stop_macro": 576,
     "actual_macro_updates_total": 576,
     "actual_training_queries_total": 64512,
     "actual_new_queries_total": 17920,
@@ -355,27 +354,38 @@
     "initial_frame_chunk": 8,
     "oom_only_frame_chunk": 4,
     "frozen_clean_pushed_code": true,
-    "resume_comparison": "same frozen commit, source/model/LoRA/optimizer/events/world topology and full ECP cursor; physical microbatch/frame chunk may decrease only after OOM",
+    "resume_comparison": "registered stage1 parent288 permits only Git/spec/stage/schema/qualification/output lineage metadata migration; same-stage resume strict same frozen Git and latest ECP; physical chunks shrink only after actual OOM",
     "formal_training_from_engineering_checkpoint": false,
     "require_source_identity_before_every_compile": true,
-    "new_P_or_I_updates_allowed": 576,
+    "new_P_or_I_updates_allowed": 288,
     "resume_from_macros": [
-      72,
-      144,
-      216,
-      288
-    ]
+      288,
+      360,
+      432,
+      504,
+      576
+    ],
+    "continuation_from_macro": 288,
+    "continuation_updates_per_arm": 288,
+    "stage1_parent": {
+      "git": "f4a80cd564843bb487bef55e3196d0597ed6cdd5",
+      "run_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage1",
+      "frozen_tree": "/data1/user/ymdai/projects/EMBER-demonstration-stage1-formal",
+      "macro": 288,
+      "stage": "demonstration_transfer_learning_stage1",
+      "run_contract_schema": "ember_demonstration_transfer_formal_stage1_run_v1"
+    }
   },
   "runtime": {
-    "run_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage1",
+    "run_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage2",
     "expected_implementation_cpu_minutes": [
-      45,
-      75
+      30,
+      45
     ],
-    "hard_review_minutes": 90,
-    "full_gpu_hours_limit": 18,
-    "physical_gpu_peak_limit": 4,
-    "run_peak_gib": 12,
+    "hard_review_minutes": 60,
+    "full_gpu_hours_limit": 11,
+    "physical_gpu_peak_limit": 2,
+    "run_peak_gib": 10,
     "new_frozen_each_mib": 256,
     "new_frozen_count_limit": 2,
     "new_code_total_mib": 512,
@@ -384,23 +394,24 @@
     "preflight": "data1 independent strg01 quota and shared capacity; live both GPU nodes before each launch; no large asset duplication",
     "study_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927",
     "stage_gpu_hour_limits": {
-      "training": 8,
-      "scenes": 0.5,
-      "banks": 1.5,
-      "official": 8
+      "training": 7,
+      "banks": 0.75,
+      "official": 3.25
     },
-    "related_code_total_gib": 3
+    "related_code_total_gib": 3,
+    "study_peak_gib": 18
   },
   "forbidden": [
-    "engineering P6/I6/M3 weights or resume source",
-    "M formal train, bank or evaluation in stage1",
-    "576 training without later contract",
+    "fresh P/I or M formal training, bank or evaluation in stage2",
+    "engineering or any nonregistered parent weights",
+    "new or re-frozen validation scenes",
     "held teacher action/state/reward reads or gradients",
     "Test, other-video, temporal controls, RL",
+    "864 training without later contract",
     "new data or model/optimizer/loss changes",
     "parallel engineering CLI fallback"
   ],
-  "delivery": "CPU transition only; formal GPU launch separately dispatched after main integration and exact frozen commit",
+  "delivery": "CPU transition only; formal stage2 GPU launch separately dispatched after main integration and exact frozen commit",
   "mt": {
     "rank": 128,
     "alpha": 128,
@@ -441,7 +452,7 @@
       "P",
       "I"
     ],
-    "source_macro": 288,
+    "source_macro": 576,
     "task_ids": [
       3,
       6,
@@ -565,7 +576,7 @@
     },
     "conditions_each": 400,
     "storage": "one common128 plus complete conditional16 per condition; concatenate one rank144 at inference",
-    "checkpoint_compatibility": "only this arm fresh formal stage1 macro288; engineering P6/I6/M3 forbidden"
+    "checkpoint_compatibility": "only completed same-arm formal stage2 macro576 from registered stage1 parent288; engineering and stage1 banks forbidden as stage2 initializers"
   },
   "scene": {
     "task_ids": [
@@ -649,8 +660,8 @@
   "official_interface": {
     "entrypoint": "scripts/evaluate_pi05.py",
     "arms": [
-      "P288",
-      "I288"
+      "P576",
+      "I576"
     ],
     "tasks": [
       3,
@@ -726,7 +737,7 @@
     "flow_steps": 10,
     "executed_prefix": 5,
     "queue": "cost-balanced dynamic queue long-first persistent workers",
-    "preferred_gpu_count": 4,
+    "preferred_gpu_count": 2,
     "preferred_replicas_per_gpu": 2,
     "envs_per_replica": 8,
     "fallback": "use fewer live eligible GPUs or one replica per GPU without changing scene/video/state mapping",

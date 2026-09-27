@@ -1,5 +1,30 @@
 # EMBER progress
 
+## 当前状态：对应学习576已验收，完整组合关闭（2026-09-28）
+
+Owner持续自主授权有效，EMBER最终目标未完成。科学主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责裁决/main，
+唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`。所有新增data1，不联系旧主讨论/旧Sol，不自Queue、不陪跑轮询。
+
+**当前无active GPU design。** `demonstration_transfer_learning_stage2_20260928`整批完成回报已消费并独立验收；
+原派发Queue `01a0e410-a086-76e0-aa64-6aa7b601f5d8`不再表示后台运行。
+冻结bc729e86；P576108/I576107，P相邻R/G/L74/34/50、净−16；I66/41/25、净+16。
+同点R/G/L70/38/37、churn75、Jaccard .48276，breadth6/5，任务bootstrap95%[-10.25,+12.5]pp。
+两臂最新≤155且均丢失>20，按事前§14关闭长训练/强M/controls。不摘288峰值，不转864或补保持/架构/超参。
+288的124/91正例保留，原B与迁移A比较、动态语义和当前下降原因均未被这轮唯一识别。
+
+主讨论CPU读回800 NPZ/PT、400scene，核8完整ECP及各自父288前缀、事件/flow seed/LR和bank/official合同，
+238,519正式控制步、16full/784compact成立。新完整7.724252GPUh<11，两批15.631728，wall3h56m49秒/峰2卡。
+验收`.codex/tmp/demonstration_transfer_main_review_20260927/formal_stage2_acceptance.json`；原件root为
+`/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage2`。全边界见设计§17/findings§195。
+
+**必要后继已登记**：设计§17.3的`demonstration_transfer_retirement_20260928`仅CPU，待按此提交向指定执行者派发；
+预计35–60分钟、90分钟复核，无模型/环境/GPU/新run。退役训练/采集/物化，保留官方仍消费的封存bank与scene读取，
+不删除任何原件、数据或冻结树。派发后在此追加真实回执，不以本段计划冒充运行。
+主讨论同回合继续：把这次失败与§38的实际特征信用联系起来，澄清对应处理究竟强调哪类参考差异、
+原B比较会改变哪项完整方法判断。沿用已核历史，不重写协方差恒等式、不自动补实验或恢复旧路线。
+
+### 以下为已完成576批次的历史启动记录，不构成新授权
+
 ## 当前状态：576完整后继已准入，精确代码冻结（2026-09-28）
 
 Owner持续自主授权有效，目标为合法RGB/L一次完整LoRA、绝对能力超过强MT、视频有益并保持能力。

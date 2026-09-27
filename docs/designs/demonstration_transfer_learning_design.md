@@ -1,11 +1,10 @@
 # 教学参考与跨初态功能查询：对应学习候选
 
-2026-09-28更新。§5/7/8数据构造、§10/11/13完整工程和§15首个正式P/I288均已完成并独立核验。
-P124/I91支持本窗口的对应干预正效应，仍弱于历史强MT155，未证明动态视频必要或相邻保持。
-§16唯一预留576节点的CPU转换已验收集成；精确冻结bc729e86，正式批次已由指定执行者承接，
-不重复工程GPU，不启动MT长训练、controls、Test、RL或数据扩建。旧stage1已完成，不重新执行。
-实际执行状态只看[progress](../../progress.md)。科学依据见[机制分析§36–37](../analyses/feature_to_operator_mechanism_20260926.md)。
-Reader、条件速度270/450及其它已关闭运行不恢复；本设计不宣称已找到它们的统一根因。
+2026-09-28更新。数据构造、工程、正式288与576均已完成并独立核验。
+P124→108、I91→107；相邻P丢50、I丢25，最新均低于历史强MT155，按事前§14关闭此完整组合。
+288有限对应正例保留，未形成稳定视频收益或能力保持。没有864、强M、controls、Test、RL或新数据授权。
+当前只做§17.3必要CPU退役；实际派发与主讨论后继工作见[progress](../../progress.md)。
+旧合同只记录当时时点，不恢复Reader、条件速度或本候选的旧实验。
 
 ## 1. 改变的学习关系与完整竞争解释
 
@@ -1086,3 +1085,71 @@ CPU任务Queue `01a0e3f5-fc2e-7a01-b76c-ab5e97ad55ed`已消费且完成，不表
 各自288→576、各唯一576 bank400与official400，复用旧scene；精确freeze/派发回执登记progress。
 任何新launch仍由指定执行者live核data1独立quota/共享容量、双节点GPU和原world2 UUID/NUMA；预算11GPUh、峰值2卡、GPU约4–5.5小时。
 只一次整批完成/实质阻塞Queue，不以本次准入自动开启MT、controls、其它checkpoint或补丁。
+
+## 17. 576完整结果、关闭裁决与CPU退役（2026-09-28）
+
+### 17.1 独立原件验收
+
+唯一冻结`bc729e869c5b37f807e386ab11aa5b0b508ed86f`，树
+`/data1/user/ymdai/projects/EMBER-demonstration-stage2-formal`仍clean detached。
+P/I各由自己的正式288完整ECP续至576，新增288更新/32,256 query，其中新8,960、旧23,296；累计576/64,512。
+主讨论逐项核父数值/拓扑合同、288行原metrics前缀、两臂相同事件/flow seed/LR、第二完整4×4格，以及
+360/432/504/576八套ECP的optimizer/scheduler/sampler和两rank RNG；source trainable=0。
+没有阶段内故障续训、OOM、额外更新或模型数值变更。各宏步的梯度组活动只能证明实际学习，不证明其语义正确。
+
+读取了800份引用NPZ/PT、400个共同scene及两bank/official合同：T动作/T+1状态/谓词、真实执行前缀、
+800行起点、16full首帧双RGB和跨臂/跨节点video/RNG配对通过；正式238,519个控制步，16full/784compact。
+完整model/sim/controller恢复沿已审冻结代码的行为前assert，未冒称额外存有逐臂全sim快照。
+两臂各400条件，共享128一次+每条件16，部署唯一rank144；新读取范围不含held teacher action/state/reward。
+独立CPU原件：`.codex/tmp/demonstration_transfer_main_review_20260927/formal_stage2_acceptance.json`，
+同目录`review_formal_stage2.py`可重放；首次主讨论汇总脚本在已核完两臂后因计费字段单/复数差异退出，
+修为原件共同的physical indices计数后通过，不是训练/评测失败或科学数据修改。
+
+| 比较 | 成功数 | retained/gained/lost | churn | Jaccard | breadth |
+| --- | --- | --- | --- | --- | --- |
+| P576−I576 | 108−107 | 70/38/37 | 75 | .48276 | 6/5 |
+| P576−P288 | 108−124 | 74/34/50 | 84 | .46835 | 6/5 |
+| I576−I288 | 107−91 | 66/41/25 | 66 | .50000 | 5/5 |
+
+Spatial/Object/Goal/Long分别为P35/29/26/18、I18/34/36/19。
+global3/6/11/16/23/26/31/39分别P29/6/25/4/0/26/18/0、I10/8/34/0/0/36/19/0。
+按预注册官方顺序复算任务bootstrap 95%[-10.25,+12.5]pp；八任务单seed描述，不是等效性证明。
+旧MT155仍仅历史绝对参照，没有与本批共同scene的严格R/G/L。
+
+### 17.2 事前规则实际执行
+
+P丢50且净降16；I虽净增16仍丢25，两者都超过lost20。最新108/107也都≤155。
+因此§14.2两项关闭条件均成立：本完整组合的长训练、强M比较及视频controls不再投入；
+不转864，不挑288峰值，不扫rank/LR/seed/权重，不冻结公共分支或追加辅助项挽救本组合。
+这是有效科学阴性，未发现使本轮比较失效的工程违约；不能据性能差自动启动debug。
+
+288的+33对应正例保留，但后继+1且大规模成功交换削弱“这套对应构造能在当前完整学习中形成稳定能力”的主假设。
+不能说所有对应学习不可能，不能说P/I学成了相同策略，也不能说动态已经学好而只被公共参数破坏。
+原始B轨迹对迁移A标签的额外价值、实际视频语义和共享保持仍未知；没有用P/I替代缺失的原数据比较。
+这些未知不能保护同一模型/标签组合继续投入，下一方法须改变实际功能联系而非换名重投。
+
+六段GPU均exit0，按真实段seconds×物理卡数独立复算：train5.124533、bank.334991、official2.264728，
+合计7.724252 GPUh<11；加stage1共15.631728 GPUh。首至末3h56m49秒，峰值2卡。
+stage2约7.03GiB/study14.12GiB均低于10/18；新冻树264,450,048B<256MiB。
+CPU selector初次缺资产环境变量无输出，补齐后成功；未采official连续CUDA高水位，不追加profile。
+原件在`/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage2`，全部历史批次保留。
+
+### 17.3 唯一后继工程范围：CPU退役
+
+科学GPU design已关闭。本节只登记必要的活动源码退役，不授权模型/环境运行、数据构造或新实验。
+指定原执行者在自己的既有dev/分支从主讨论最新指定main集成后实施，主讨论独立推进学习原理判断。
+预计实现/CPU核验35–60分钟，90分钟复核；不等待资源、不建run root/冻结树、不新增GPU。
+
+- 删除私有`demonstration_learning/{data,model,run}.py`及无消费者的训练/采集配置和专用测试；
+  删除`demonstration_transfer.py`采集入口和`demonstration_transfer_source.py`的已结束source分段/提取。
+  不把训练代码搬到archive、通用runtime或新的fallback。
+- `demonstration_learning/bank.py`只保留被official evaluator实际消费的封存bank检查、rank144拼接、episode/capture接口。
+  去掉物化/selectors/CLI和训练依赖；读取bank自己记录的旧冻结spec/checkpoint/Git，保留288/576的正确来源边界。
+  这属于历史读取能力，不授权重跑旧评测；无需让已结束engineering M3/P6/I6在最新main仍可运行。
+- `pi05_eval/scene.py`保留official仍使用的恢复/行校验和必要pure helpers。候选专用freeze入口移除；
+  将仅剩的body_id/pose依赖归入这个现有owner，避免为两个纯函数保留整套source提取或新增模块。
+- Source/MT-BC、通用evaluator、FM/native/ECP及其它实际历史消费者不删。四套正式P/I×288/576 bank、
+  全部冻结树、数据/scene/metrics/checkpoint/原始结果只读，不做磁盘清理。
+- 按code-architecture-gate报告删除/保留owner与净变化。比例适当的CPU导入/封存元数据/纯拼接与scene检查即可；
+  不加载政策、不跑环境、不为已验收科学结果重复测试。共享evaluator的imports和错误边界须可用。
+  完成后仅一次Queue带精确pushed commit/diff/验证/未测范围；不触碰main，主讨论审阅集成。

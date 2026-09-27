@@ -8,9 +8,9 @@ task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正�
 V相邻400行保存初位一致，退化与关闭裁决保留；证据范围见findings§186。
 [教学参考对应学习](docs/designs/demonstration_transfer_learning_design.md)固定支持构造已核：416次行为367成功，
 四源共同初态支持20任务/296交叉。这不是Writer收益；完整144 LoRA工程的真实新查询反传、source隔离和恢复已核。
-首批P/I各288与各correct400已独立验收：对应P124、独立I91，净增33，仍弱于历史强MT155、breadth同为5/8。
-这支持有限学习的对应干预，不证明动态视频必要或能力保持。原预留576的CPU续训入口已审阅集成、9项检查通过，
-正式批次从另行登记的精确冻结执行；不改变模型/数据/学习程序，不自动投入MT或controls。完整裁决见设计§16。
+两正式节点均已独立验收：对应P124→108、独立I91→107；相邻丢50/25，最新都低于历史强MT155。
+按事前停止线关闭本完整组合，288对应正例保留；没有稳定视频收益或能力保持，不再接864、强M或controls。
+完整裁决见设计§17，当前只做必要CPU退役，保留所有历史原件与冻结树。
 具体派发、时间和资源上限见progress；不扩大数据或按物理失败修补控制器。
 固定C0完整400为正确120、另一正确132、语言121、Source57，旧巨大缺口未复现，有益视频增量仍未识别。
 冻结E/H干预显示后续内容有有限作用；新学习比较C0/S0正确27/22、另一正确27/17（各80）、seen26/22（各64）。
@@ -75,8 +75,8 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 | Source与共享LoRA监督 | `pi05_source_training.py`、`source_sft/` |
 | 配对闭环、队列、协议与结果 | `pi05_eval/`、`pi05_eval_queue.py`、`pi05_eval_contract.py`、`pi05_eval_results.py` |
 
-当前对应学习通过`python -m ember.demonstration_learning.run`进入，沿用公共FM/native/ECP；已结束的通用
-`scripts/train_writer.py`、`scripts/materialize_writer.py`不恢复。当前正式范围已集成，唯一规格为`configs/demonstration_transfer_v1/learning_spec.json`，不恢复已结束的M3/P6/I6工程CLI。
+对应学习已科学关闭，`demonstration_learning`私有训练/采集/物化入口正在按设计§17.3退役；没有新运行授权。已结束的通用
+`scripts/train_writer.py`、`scripts/materialize_writer.py`不恢复。正式来源由各bank记录的冻结spec/checkpoint保留，不恢复M3/P6/I6工程CLI。
 通用评测入口`scripts/evaluate_pi05.py`保留，读取已封存bank的规格与checkpoint，不把历史读取能力当作新运行授权。
 Source/MT-BC入口为`scripts/train_source_base.py`和`scripts/train_source_sft.py`；复用同一评测合同。
 已结束的stability/output-space/causal诊断与low-LR专用执行面已退役，原实现可从`7b18030c`及各run记录的commit恢复。

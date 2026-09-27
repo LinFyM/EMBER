@@ -56,6 +56,13 @@ V/L累计1800个task事件（新增720个）及学习率时钟逐项匹配，L�
 全部task/episode/合法教学来源与270相同，source/LoRA/selection一致，L实际video读取0、每mode公共项只保存一份。
 复核原件`sealed450_bank_pair_review.json`；四个已完成段均exit0，累计2.301659/6完整GPUh。
 执行者以gpu02/4,6,7、每卡2 persistent replica、每replica8环境推进V450 correct400，之后固定L450 correct400。
+V450 correct400于02:35 UTC exit0，6 workers均0，完整1350.880秒×3卡=1.125733GPUh；本批已完成段累计3.427392GPUh。
+02:38 UTC主讨论独立核400行：V450=102，较V270151为R/G/L=79/23/72、churn95、Jaccard.4540；
+四suite Spatial/Object/Goal/Long为20/49/23/10，相对270为−39/+5/−3/−12。对MT为80/22/75。
+所有400行task/init/language/seed/noise前缀与270/MT/Source一致，教学映射同270，8full/392compact及T/T+1元数据齐全。
+原件复核`V450_400_structure_and_reference_review.json`；这是明确闭环退化，不按工程bug补救或追加学习节点。
+L450面板仍按原合同完成以限定解释；启动前gpu02/7新增他人高负载，合法改用gpu02/4,6、每卡2 replica，
+400行与随机流不变，按两卡实际占用计费。训练拓扑未变，不混淆评测物理并行调整与训练恢复。
 后继预计4.5–5.6完整GPUh、硬限6，GPU阶段约2–3h；新增原件≤4GiB、study合计≤8GiB，新增冻结代码≤320MiB、三树合计≤1GiB。
 旧0c4ea636冻结树保留，因为270 bank的spec仍引用它；新节点另冻，不能重写270原件或静默跨commit exact-resume。
 旧内部helper暂留到450保留/关闭裁决，旧generic CLI/Compiler不恢复；不为维持工作追加局部probe或同类理论循环。

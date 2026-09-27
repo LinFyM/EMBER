@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：条件速度关闭；教学参考对应学习的有界数据工程已登记（2026-09-27）
+## 当前状态：迁移首批原件发现task38初态配对缺口；有界纠正已登记（2026-09-27）
 
 ### 当前科学裁决与授权
 
@@ -12,8 +12,15 @@ Owner在晨间进展讨论后已明确继续自主推进，今晚睡前检查。
 不因30–45分钟阶段到点、交完一份文档或关闭候选而主动结束，再给自己Queue启动。
 主讨论已承认此前属于不必要的主动切回合；下述旧“可自发接续”记录只保留当时事实，不构成继续自排的许可。
 
-**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前只授权§5的
-`demonstration_transfer_engineering_20260927`，完整方法解释与比较原则在§1–4，尚不授权模型训练或数据扩建。
+**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前只授权§7的
+`demonstration_transfer_pairing_repair_20260927`，尚未派发。原§5首批已完成，完整方法解释在§1–4，仍不授权模型训练或数据扩建。
+主讨论已读commit29c35f26及全部16份NPZ：14条真实成功、6,079控制步与实际字段成立；
+task34四对全场景起点一致，但task38同state双臂stove初位相差7.7–21.5mm，初始双RGB不同。
+故撤回执行者“共同物理初态覆盖达标”的结论；不是控制失败后的调参，也不推翻14/16逐条事实。
+复核原件`.codex/tmp/demonstration_transfer_main_review_20260927/raw_review.json`，详细裁决见设计§7。
+拟只修数据构造起点恢复并执行受影响task38全部8行，原task34/四源不重跑，最多0.15GPUh/45分钟；
+不动通用evaluator/第三方安装或旧实验，不改分段/控制器、不只重试两个失败，不自动进入Writer。
+以下§5派发与预算为首批事实，不构成继续原批的授权。
 固定train34/38各demo0/1与官方init40–43，最多16次新轨迹；允许这4条train的pose/action/BDDL仅在数据构造侧使用。
 四参考与交叉初态覆盖不足则关闭固定构造，不调分段/阈值、换源/初态或追加重试。无held、神经模型或旧实验重跑。
 预期实现/CPU45–75分钟、运行/核验10–25分钟，总60–100分钟、硬复核120分钟；最多1渲染GPU、完整0.5GPUh。

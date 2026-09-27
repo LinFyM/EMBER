@@ -1,12 +1,35 @@
 # EMBER progress
 
-## 当前状态：条件速度算子完整V/L比较已集成；首批GPU按冻结合同派发（2026-09-27）
+## 当前状态：270完整V/L已验收未通过最终资格；原定450仅CPU续训登记（2026-09-27）
 
-### 当前：V/L各270训练完成，固定checkpoint的配对400进入评测
+### 当前科学裁决与授权
 
-唯一active design为`docs/designs/conditional_velocity_operator_design.md` §6–10；§4–5工程已完成。
+唯一active design为`docs/designs/conditional_velocity_operator_design.md` §11；§4–10工程和270首批已完成。
 主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main集成；
 唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责具体实验。Reader仍撤回，旧实验不恢复。
+
+V151/L147/MT155/Source51，V对L R/G/L=124/27/23；V对MT113/38/42，L对MT105/42/50。
+V/L四suite为59/44/26/22与58/42/28/19，广度均6/8。Goal26和Object16两臂均有明显损失。
+主讨论独立核全部1080个训练事件、bank调度、两面板及基准400行key/noise，并读16份full的实际T/T+1与初始状态。
+完整原理判断见机制分析§31/findings§178：能力形成已有证据，稳定视频增益/保持尚未成立，不以公共/条件分支norm归因。
+
+首批共5.703205/9 GPUh，首至末2.670h（实测仍在原2–3h范围内），study2.674GiB、代码506.78MiB、峰值3卡。
+唯一失败为V evaluator prepare漏设资产环境变量，2.36秒、无episode，计费后仅修环境重启。
+未记录连续CUDA显存高水位，不冒称精确峰值；最终双节点无执行者GPU进程。
+完整执行报告`/data1/user/ymdai/ember_runs/conditional_velocity_operator_learning_20260927/analysis/stage1_mechanical_report.md`，
+机器统计同目录`stage1_mechanical.json`、账目同root的`launch/resource_accounting.json`。
+原生完成turn为`01a0df9d-58f0-7d90-b2e1-22c7a83147d8`，完成Queue `01a0e03d-5a82-7bb3-b916-edc365ff2e16`已消费，迟到不重跑。
+
+主讨论选择原预留450节点，仅增加180更新/臂、达到每task50/50教学覆盖；不改模型/训练配方，不自动更长续训。
+当前只准备canonical控制/恢复合同扩展，预计CPU20–35分钟、45分钟判断上限；具体派发回执在Git交付后登记。
+新GPU尚未授权：须先CPU交付、主讨论审阅/集成、新clean pushed frozen commit及live准入。
+后继预计4.5–5.6完整GPUh、硬限6，GPU阶段约2–3h；新增原件≤4GiB、study合计≤8GiB，新增冻结代码≤320MiB、三树合计≤1GiB。
+旧0c4ea636冻结树保留，因为270 bank的spec仍引用它；新节点另冻，不能重写270原件或静默跨commit exact-resume。
+旧内部helper暂留到450保留/关闭裁决，旧generic CLI/Compiler不恢复；不为维持工作追加局部probe或同类理论循环。
+
+### 已完成：270首批派发、执行与逐阶段核验记录
+
+以下是已完成§6–10的时点记录，不能从其中的launch用语重新启动GPU；新授权只看上方§11。
 
 首批V/L fresh共同FM，同一coverage36、每宏步4×28纯跨episodequery、匹配初始化/事件/随机流；
 每臂270更新/30,240query，随后各official validation400。strong MT-BC155/Source51原400只读复用，Test封闭。
@@ -22,8 +45,8 @@
 V的run_contract及训练metrics已经产生；尚无本批完整退出/结果回报，没有读取中途loss作选择。
 gpu01同节点配对卡承载他人持续高负载，先用gpu02/6,7 world2训练V；L尚未启动。
 两臂当前按顺序推进，原2–3h wall为并行外推，当前不能作为完成承诺；9完整GPUh上限和两臂各400合同不变。
-launch_contract的`python`字段实际误填Torch版本2.11.0+cu128，最终原件验收须将Python/Torch版本分别纠正；
-这是轻量元数据问题，不改变运行环境、模型或冻结commit。
+launch_contract的`python`字段实际误填Torch版本2.11.0+cu128。完成后已由两份evaluator preflight核明
+实际Python3.12.3、Torch2.11.0+cu128；保留原记录并在验收勘误，不改变环境/模型/冻结commit或重写历史原件。
 V训练21:33:42–22:49:58 UTC正常exit0，完整4576.321秒×2卡=2.5424006 GPUh。
 22:51–22:54 UTC主讨论在进程退出后核完270行metrics：30,240query，36task各30次、30条不同teacher，
 每次28条不同且跨episode query、action offset1；source_trainable=0，90/180/270 ECP目录齐全。

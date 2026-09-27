@@ -4,6 +4,17 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-27：条件速度算子270完整比较151/147，未通过最终视频资格
+
+冻结0c4ea636，V/L各270更新/30,240query、各official400；强基准原件只读，不重跑。
+V151/L147/MT155/Source51；V对L 124保留/27得/23失，V对MT113/38/42。
+V/L四suite轮廓相近、广度同为6/8，两臂都有Goal26与Object16损失；能力形成不等于稳定视频增益或保持。
+主讨论核全部匹配训练事件、400行key/RNG和16份full实际T/T+1；详见机制分析§31与findings§178。
+原件`/data1/user/ymdai/ember_runs/conditional_velocity_operator_learning_20260927`，
+完整机械统计`analysis/stage1_mechanical.json`、执行报告同目录md、账目`launch/resource_accounting.json`。
+完整5.703205 GPUh、首末wall2.670h、终值2.674GiB；唯一失败是评测prepare缺资产环境变量，2.36秒、无episode，已计费。
+GPU已释放；真实显存高水位未记录。主讨论选择原定450覆盖节点，仅先做CPU续训登记；新launch授权仍只看progress。
+
 ## 2026-09-27：完整V/L实现集成，首批学习启动范围冻结
 
 CPU交付7f5374a7、事前合同修正18b7e4b7已由主讨论独立验收并集成main，相关22项检查通过。

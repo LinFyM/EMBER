@@ -2,7 +2,7 @@
 
 2026-09-27。科学依据与最近完整历史比较见[机制分析§29](../analyses/feature_to_operator_mechanism_20260926.md#29-共同学习状态反馈基直接编译条件速度场一个有明确代价的完整候选)。
 这是候选及其渐进合同，不是已验证修复。是否实际启动只看progress；§4–5工程已完成，
-§6–9冻结后继学习设计，CPU实现和主讨论独立核验已完成；§10登记首批启动范围。
+§6–10的270首批已完成；§11登记原定450后继及当前仅CPU准备范围。
 实际排队、冻结commit、资源准入和运行状态只看progress及launch原件。
 
 ## 1. 假设、输出与信息墙
@@ -287,3 +287,53 @@ L两次均读同一Core语言memory，位置仍为native真实task token位置�
 在加载历史MT-BC配置时报告LoRA/source-base authority不一致。主讨论在集成前main `2a34b5dd`独立复现同一错误，
 相关旧配置/contract源码无本轮diff；新训练只复用纯scheduler函数，并不调用该旧配置loader。
 该既有问题留有记录，不因此改写历史MT-BC权威或重跑旧实验，也不宣称全库测试通过。
+
+## 11. 270科学裁决后的450续训登记（2026-09-27，当前仅CPU准备）
+
+270原件已由主讨论独立验收，V151/L147/MT155/Source51；V对L的R/G/L=124/27/23，
+V对MT=113/38/42，两臂都损失Goal26和Object16能力。首点不通过最终视频方法资格，
+但已有较强完整能力，每task仅覆盖30/50条教学，故执行§7预留的450完整覆盖节点有判断价值。
+原理解释和停止边界见机制分析§31；不是根据局部失败换架构、增加辅助或重启。
+
+**唯一学习变化是原轨迹增加180更新/臂**，每臂新增20,160query、累计450更新/50,400query；
+每task累计50条不同teacher/1400query。模型、合成、数据/采样、FM/noise、loss尺度、优化器/学习率与部署均不改。
+从各自270完整ECP承接所有权重、AdamW状态、scheduler、sampler及rank RNG，既不fresh重训也不重置warmup。
+world2及gpu02原6/7顺序、UUID、NUMA、microbatch28保持；两节点live准入和全部资源规则照常。
+可保存360作恢复点，450为唯一新增正式读出；不评360，不自动630/other/controls/Test/RL或新probe。
+
+**完整比较**：V450/L450各official correct400，同270的task/state/video ordinal/environment/policy RNG，
+每臂仍固定8条state0 full、392条compact及实际T/T+1数组；不重跑任何270或旧基准。
+报告V450对L450、各自对270、两臂对MT/Source的每task/suite、breadth、R/G/L、churn及成功集合重合。
+弱视频差额不因共同能力高就变成视频通过；第二点仍主要V≈L且没有改变判断的完整正面证据时不自动延长。
+正面结果也只允许另行裁定相邻资格/换正确视频，不能从450单点直接声称稳定或选最终checkpoint。
+
+**当前派发仅CPU：预计20–35分钟、45分钟判断上限。** 复用执行者隔离开发树，从最新main接入本节，
+仅扩展canonical训练/物化的登记节点和兼容续训检查。现有程序有意锁270，不能用runtime monkeypatch、
+绕过CLI、跳过合同校验或未推送脚本直接调用私有训练函数到450。禁止模型/环境/GPU运行及新增工程smoke。
+图与张量计算owner `conditional_velocity.py`、实际FM/VJP、data events/采样、通用ECP、source/评测后端均不改。
+在现有training/bank owner与learning_spec内完成，不另建trainer、版本分支或一般迁移平台；相关CPU检查比例适当。
+
+**显式兼容续训，不能冒称跨代码版本逐bit exact。** 旧270父commit固定0c4ea636；新代码差异必须仅为控制/记录。
+同版本恢复仍使用完整合同相等。唯一270→450跨版本入口须显式核定父270节点、旧commit及合法父目录，
+比较source/mode/model/LoRA/optimizer/initialization/sampler/trainable参数名/physical microbatch/topology等全部非迁移字段。
+只允许已登记的Git身份、spec所在冻结目录及本续训登记信息变化；读旧/新spec核实所有数值学习字段不变。
+不得简单删掉git/spec检查或放宽任意schema。270模型/optimizer/scheduler/cursor/rank RNG语义承接和270行metrics前缀均保留；
+360同版本恢复也必须可用。保留明确父checkpoint与迁移记录，拒绝不相干父checkpoint、模式或其它数值变化。
+
+新输出固定在原study根下`continuation_450/{V,L}`；bank各在该mode的`banks/450`，评测在`evaluation/correct400`。
+旧首批目录不覆盖、不搬走。旧270 bank的spec引用旧冻结树，所以保留
+`/data1/user/ymdai/projects/EMBER-conditional-velocity-formal`在0c4ea636；不能checkout新commit使旧证据依赖改变。
+CPU交付后主讨论先独立审阅/集成并给出新clean pushed commit，再由指定执行者用另一个detached frozen树运行。
+当前仅准备，不因本节已说明GPU后继而提前launch。
+
+实测外推追加训练约2.14 GPUh，物化约0.196，两400约2.258；加加载/保存/失败余量预计4.5–5.6，
+本后继硬限6完整GPUh，现场条件近似时GPU阶段约2–3h wall。原首批已用5.7032另行如实累计，不从后继账目隐藏它。
+后继新增原件峰值4GiB，整个study根仍不超过8GiB（旧首批终值2.674GiB）；不复制大资产。
+新冻结代码预计约253MiB、上限320MiB；开发+旧/新冻结三树预计约760MiB、总硬限1GiB。
+建立新冻结树/运行目录及GPU前重新核data1独立quota和共享容量，原有无dummy、live两节点、全项目卡数上限保持。
+原first-batch launch把Torch版本误记在python字段；已由evaluator preflight核明Python3.12.3、Torch2.11.0+cu128。
+验收记录保留此勘误，后继正确分列环境；不为纠正文字重跑或改写历史原件。
+
+本轮仍保留最小native packing/identity/selection内部共享依赖；旧generic CLI与旧Compiler不恢复。
+因本次裁决选择继续既定学习程序，依赖退休触发明确顺延到450完整保留/关闭决定；不在学习途中混入无关源码重构。
+只有指定执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22承接具体实现/实验，主讨论负责审阅与科学裁决。

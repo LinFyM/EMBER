@@ -3,7 +3,7 @@
 EMBER研究把exact task language与action-hidden教学视频，在rollout前一次编译为冻结π0.5 source的一套完整
 task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正确视频中的操作内容应贡献真实执行价值。
 
-**首帧学习、Reader及条件速度算子的有界工程已独立验收；Reader正式学习撤回。条件速度算子完整V/L比较已集成，首批启动范围已冻结。**
+**条件速度算子首批完整V/L比较已验收：151/147，强MT-BC155；尚无稳定视频增益或能力保持资格。Reader正式学习仍撤回。**
 固定C0完整400为正确120、另一正确132、语言121、Source57，旧巨大缺口未复现，有益视频增量仍未识别。
 冻结E/H干预显示后续内容有有限作用；新学习比较C0/S0正确27/22、另一正确27/17（各80）、seen26/22（各64）。
 但首帧广播、过程Value中心化与零调制存在初始化交互，延迟S0的过程路径学习，不能将差额直接归因于操作顺序。
@@ -12,9 +12,9 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 旧Reader临时实现由Git `2fbd4c7d`及原件保留，main不保留该闲置诊断运行面。
 新[候选合同](docs/designs/conditional_velocity_operator_design.md)共同学习执行状态特征和可精确编译的条件速度场。
 工程完成6宏步/672query、一次长视频反传及2条训练接口轨迹，计费0.12696 GPUh；不是收益证据。
-后继冻结为视频V/真实语言L的共同FM比较，首批各270更新和各400评测，硬限9完整GPUh；CPU实现/独立审阅已完成。
-当前派发、资源准入和是否实际启动GPU均以progress及launch原件为准，450节点不自动启动。
-其函数假设及公共/条件分解边界见机制分析§29–30，实际派发/运行只看progress。
+视频V/真实语言L首批各270更新及各400完成，完整5.7032 GPUh；V对L27得23失，V对MT38得42失。
+原预留450节点现仅做CPU续训登记；派发、冻结commit和新GPU授权以progress及候选设计§11为准。
+其函数假设、分解歧义和首点裁决见机制分析§29–31，实际派发/运行只看progress。
 尚无经过验证的统一根因、修复或正确视频必要增量；语言内容路径、有限回报更新及去噪位置分支不恢复。
 实际状态及证据位置见[progress](progress.md)，科学解释和下一步计划见[task_plan](task_plan.md)。仓库收尾已完成，无需重做。
 
@@ -57,10 +57,11 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 | 职责 | `src/ember/`中的owner |
 | --- | --- |
 | 原生图文／完整H读取、三组Meta | `writer/video_program.py`、`writer/meta_lora.py` |
-| Core、Procedure与条件化参数slots | `writer/temporal.py`、`writer/procedure.py` |
-| 唯一38-target完整A/B生成 | `writer/model.py`、`pi05_lora.py` |
-| 主/辅助功能监督、采样、训练与恢复 | `writer/{supervised,function_credit,learning_data,training,continuation}.py`、`ecp/checkpoint.py` |
-| Writer运行时与物化 | `writer/runtime.py`、`writer/materialization.py`、`writer/evaluation.py` |
+| Core、Procedure及动作行读取 | `writer/temporal.py`、`writer/procedure.py`、`writer/conditional_velocity.py` |
+| 唯一38-target完整A/B合成 | `writer/conditional_velocity.py`、`pi05_lora.py` |
+| 真实FM、事件、训练与恢复 | `writer/conditional_velocity_{data,training}.py`、`writer/function_credit.py`、`ecp/checkpoint.py` |
+| 紧凑bank及官方部署接入 | `writer/conditional_velocity_bank.py`、`batched_lora.py` |
+| 暂留的native/identity/selection内部共享依赖 | `writer/model.py`、`writer/materialization.py`、`writer/runtime.py`；旧generic出口已关闭 |
 | Source与共享LoRA监督 | `pi05_source_training.py`、`source_sft/` |
 | 配对闭环、队列、协议与结果 | `pi05_eval/`、`pi05_eval_queue.py`、`pi05_eval_contract.py`、`pi05_eval_results.py` |
 

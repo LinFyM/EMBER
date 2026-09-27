@@ -4410,3 +4410,29 @@ GPU许可仅限设计§6–10首批两臂各270更新/各correct400，完整9 GP
 扩展Source-SFT旧authority测试失败在集成前main2a34b5dd被独立复现，相关旧配置/loader无本轮变化；
 新训练仅借用纯scheduler函数，不调用该旧MT-BC配置loader。这是未解决的既有维护问题，不能说全库测试通过，
 也不由此改写历史基准、重跑旧实验或宣布新路径科学失败。当前仍无新闭环能力/稳定性/视频增量结论。
+
+## 178. 条件速度算子首点具备较强能力，尚无稳定视频增益或保持（2026-09-27）
+
+冻结0c4ea636，V/L各270更新/30,240query和各official400已完成；主讨论独立核全部1080个匹配训练事件、
+800行配对、bank编排及16份full PT/NPZ的实际T/T+1与初始状态。V151、L147、强MT155、Source51。
+按Spatial/Object/Goal/Long，V为59/44/26/22，L为58/42/28/19，MT为52/47/36/20；三者广度6/8。
+V对L R/G/L=124/27/23、churn50；V对MT=113/38/42、churn80；L对MT=105/42/50。
+两臂对Source都只保留30/51，分别新增121/117、丢失21。Goal26与Object16的损失在V/L同时存在。
+
+这是共同学习自身状态基与可精确编译条件场的有限完整能力正例，不能推出旧Writer不可学习或已定位统一根因。
+同时削弱“固定query线性+共同特征+精确编译自然足以学好视频”的强解释：首点视频净增只有4，四suite差额均小。
+不能把L147归给beta单支，也不以R非零/置零或内部norm认证视频；两完整模型不是纯信息干预。
+30,240对历史172,800query的比较也不证明架构样本效率，因为宏步组成和warmup进度不同。
+具体公式、每task表与边界见[机制分析§31](docs/analyses/feature_to_operator_mechanism_20260926.md#31-第一份完整vl证据能力形成视频增量与保持尚未成立)。
+
+首点不通过最终资格。主讨论选择只完成原预留450节点、全50/50教学覆盖，不改图/配方；
+若第二点仍主要V≈L且没有改变判断的完整正面视频证据，不以共同能力高维持视频路线或继续局部修补。
+现仅开放设计§11的20–35分钟CPU续训登记，新GPU须主讨论核源码后给新冻结commit；不运行旧实验/controls/RL。
+内部共享依赖继续仅为当前候选服务，450保留/关闭时裁决退休；旧generic CLI/Compiler不恢复。
+
+七次launch含一次漏设LIBERO资产路径的2.36秒prepare失败，未产生episode；补环境后同冻结代码完成。
+完整5.703205/9 GPUh、峰值3卡、首末wall2.670h；study终值2.674GiB、代码506.78MiB，最终双节点无本执行者GPU进程。
+没有连续CUDA显存高水位记录，不拿工程profile或no-OOM冒充本轮实测峰值。
+原件根`/data1/user/ymdai/ember_runs/conditional_velocity_operator_learning_20260927`，
+完整账目/机械报告在`launch/resource_accounting.json`与`analysis/stage1_mechanical_report.md`，主讨论复核见机制§31。
+完成Queue `01a0e03d-5a82-7bb3-b916-edc365ff2e16`已从原生完成事件核定并消费；迟到消息不重执行。

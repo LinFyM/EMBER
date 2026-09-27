@@ -156,7 +156,14 @@ def extract_one(row: dict[str, Any], bddl: Path, demo: int
     env = ControlEnv(bddl_file_name=str(bddl), use_camera_obs=False, has_offscreen_renderer=False)
     try:
         env.reset()
-        env.reset_from_xml_string(xml)
+        try:
+            env.reset_from_xml_string(xml)
+        except ValueError as exc:
+            # A sealed source XML may describe a different object registry
+            # from the official BDDL. Keep that source unavailable; do not
+            # rename objects or modify the installed simulator to make it fit.
+            reason = str(exc).split(" Available ", 1)[0][:180]
+            raise SourceStructureUnsupported(f"source XML/BDDL registry mismatch: {reason}") from exc
         owner = env.env
         _, goals = roles(owner)
         controller = owner.robots[0].controller

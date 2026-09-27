@@ -810,4 +810,4 @@ def run(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    raise RuntimeError("Historical Writer CLI retired; use scripts/train_writer.py or scripts/materialize_writer.py")
+    raise RuntimeError("Historical Writer CLI retired; no active Writer training entrypoint")

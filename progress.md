@@ -8,7 +8,11 @@ Owner持续自主授权有效，目标为合法RGB/L一次完整LoRA、绝对能
 
 **唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`§16。
 当前任务`demonstration_transfer_stage2_transition_20260928`仅授权指定执行者有界CPU续训转换，预计30–45分钟、60分钟复核。
-实际派发/接受另记本段；当前尚无新的GPU启动。集成代码后登记精确freeze，再派正式288→576。
+17:41 UTC已从clean pushed main `d975caa258bcccea04d0e3c46792748587bd76f2`派发唯一Queue
+`01a0e3f5-fc2e-7a01-b76c-ab5e97ad55ed`；17:42一次即时快照核定消息进入新turn
+`01a0e3f5-fc30-78d2-9f12-44e87e8abec3`、状态inProgress，队列已消费。只证明CPU任务已承接，不称其完成或GPU已启动。
+请求/回执/快照保存在同tmp目录`stage2_transition_*`；整项完成/实质阻塞仅一次Queue回主讨论，不轮询等待。
+集成代码后登记精确freeze，再派正式288→576。
 
 **首批已完成且独立验收**：f4a80cd5，P124/I91，差+33/400=8.25pp，R/G/L71/53/20，churn73、Jaccard .49306；
 Spatial/Object/Goal/Long分别38/42/32/12对18/31/33/9，breadth均5/8；global16/23/39均0。

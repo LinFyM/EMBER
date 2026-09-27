@@ -420,6 +420,9 @@ def _validate_episode_row(
 
         validate_row(row, contract)
     validate_passive_trace_row(row, contract, task)
+    from ember.pi05_eval.scene import validate_scene_row
+
+    validate_scene_row(row, task, contract)
 
 
 def _complete_published_shard(

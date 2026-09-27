@@ -21,6 +21,10 @@ from ember.demonstration_transfer_source import (ASSETS, CANONICAL_ASSET_REPO, D
                                                 SCHEMA, SourceStructureUnsupported,
                                                 body_id, extract_one, pose, roles)
 from ember.pi05_assets import configure_libero_runtime_assets, prepare_libero_config, write_json_atomic
+from ember.pi05_eval.scene import (
+    _query_sample, _capture_image, _initialize_query,
+    _scene_snapshot, _restore_scene, _assert_scene_pair,
+)
 
 
 ROOT = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_training_support_20260927")
@@ -180,84 +184,6 @@ def _source_phase(repo: Path, output: Path) -> None:
             _append_jsonl(results, result)
             seen[task, demo] = result
     _source_plan(repo, output, seen, spec, recipe)
-
-
-def _query_sample(env: Any, observation: dict[str, Any], names: list[str], goals: list[list[str]]) -> dict[str, np.ndarray]:
-    owner = env.env
-    return {
-        "body_pos": np.stack([pose(owner.sim, body_id(owner, name))[0] for name in names]),
-        "body_rot": np.stack([pose(owner.sim, body_id(owner, name))[1] for name in names]),
-        "eef_pos": np.asarray(observation["robot0_eef_pos"], dtype=np.float64).copy(),
-        "eef_quat": np.asarray(observation["robot0_eef_quat"], dtype=np.float64).copy(),
-        "gripper_qpos": np.asarray(observation["robot0_gripper_qpos"], dtype=np.float64).copy(),
-        "predicates": np.asarray([owner._eval_predicate(goal) for goal in goals], dtype=np.bool_),
-    }
-
-
-def _capture_image(observation: dict[str, Any]) -> np.ndarray:
-    image = np.stack([np.asarray(observation[name])[::-1, ::-1].copy()
-                      for name in ("agentview_image", "robot0_eye_in_hand_image")])
-    if image.shape != (2, 256, 256, 3) or image.dtype != np.uint8:
-        raise ValueError("canonical dual-camera RGB changed")
-    return image
-
-
-def _initialize_query(env: Any, init_states: Any, state: int, recipe: dict[str, Any]) -> dict[str, Any]:
-    """Use the unchanged official fixed-state and ten-dummy initialization."""
-    env.seed(int(recipe["rng"]["inference_seed"]))
-    env.reset()
-    observation = env.set_init_state(init_states[state])
-    for _ in range(10):
-        observation, _, _, _ = env.step(np.asarray(recipe["environment"]["dummy_action"], dtype=np.float64))
-    return observation
-
-
-def _scene_snapshot(env: Any, observation: dict[str, Any], names: list[str],
-                    goals: list[list[str]], *, image: bool) -> dict[str, np.ndarray]:
-    """All mutable scene positions plus the settled robot/controller state."""
-    owner = env.env
-    model = owner.sim.model
-    controller = owner.robots[0].controller
-    sample = _query_sample(env, observation, names, goals)
-    snapshot = {
-        "model_body_names": np.asarray([model.body_id2name(i) for i in range(model.nbody)]),
-        "model_body_pos": np.asarray(model.body_pos, dtype=np.float64).copy(),
-        "model_body_quat": np.asarray(model.body_quat, dtype=np.float64).copy(),
-        "sim_state": np.asarray(env.get_sim_state(), dtype=np.float64).copy(),
-        "controller_goal_pos": np.asarray(controller.goal_pos, dtype=np.float64).copy(),
-        "controller_goal_ori": np.asarray(controller.goal_ori, dtype=np.float64).copy(),
-        **{f"initial_{key}": value for key, value in sample.items()},
-    }
-    if image:
-        snapshot["initial_rgb_canonical180"] = _capture_image(observation)
-    return snapshot
-
-
-def _restore_scene(env: Any, snapshot: dict[str, np.ndarray]) -> dict[str, Any]:
-    """Rebuild the first reference's post-dummy physical state after a fresh reset."""
-    model = env.env.sim.model
-    actual_names = np.asarray([model.body_id2name(i) for i in range(model.nbody)])
-    if not np.array_equal(actual_names, snapshot["model_body_names"]):
-        raise ValueError("full-scene body registry changed between references")
-    if (model.body_pos.shape != snapshot["model_body_pos"].shape
-            or model.body_quat.shape != snapshot["model_body_quat"].shape):
-        raise ValueError("full-scene model layout changed")
-    model.body_pos[:] = snapshot["model_body_pos"]
-    model.body_quat[:] = snapshot["model_body_quat"]
-    return env.regenerate_obs_from_state(snapshot["sim_state"])
-
-
-def _assert_scene_pair(env: Any, observation: dict[str, Any], names: list[str],
-                       goals: list[list[str]], snapshot: dict[str, np.ndarray], *, image: bool) -> None:
-    actual = _scene_snapshot(env, observation, names, goals, image=image)
-    for key, expected in snapshot.items():
-        observed = actual[key]
-        if key == "model_body_names" or key == "initial_rgb_canonical180" or key == "initial_predicates":
-            equal = np.array_equal(observed, expected)
-        else:
-            equal = observed.shape == expected.shape and np.allclose(observed, expected, rtol=0, atol=1e-8)
-        if not equal:
-            raise ValueError(f"restored full-scene start differs: {key}")
 
 
 def _run_one(env: Any, row: dict[str, Any], demo: int, state: int,

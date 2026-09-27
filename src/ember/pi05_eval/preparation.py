@@ -704,6 +704,9 @@ def _prepared_payload(
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicates
     contract["diagnostic_task_subset"] = task_subset
+    if adapter is not None and adapter.get("kind") == "demonstration_comparison_lora_bank":
+        contract["demonstration_comparison_scene"] = {
+            "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
     if native_cell is not None:
         from ember.pi05_eval.native_reader_transfer import attach
 

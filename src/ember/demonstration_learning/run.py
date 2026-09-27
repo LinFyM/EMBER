@@ -1,4 +1,4 @@
-"""Bounded P/I closure: phased events, 6+P2-to-6 and one sequential case."""
+"""One bounded complete-LoRA FM/ECP loop for paired Writer and direct MT."""
 
 from __future__ import annotations
 
@@ -28,40 +28,47 @@ from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import autocast, require_architecture_identity
 from ember.writer.task_execution import condition_assignment
+from ember.source_sft.control import clamped_lr_multiplier
+from ember.writer.model import DirectLoRAParameters
 
-from .data import TASKS, SUPPORTED, TransferData, audit_full_cycle
+from .data import TASKS, SUPPORTED, TransferData, audit_two_cycles
 from .model import CorrespondenceLoRA
 
 
 REPO = Path(__file__).resolve().parents[3]
 SPEC_PATH = REPO / "configs/demonstration_transfer_v1/learning_engineering_spec.json"
-RUN_SCHEMA = "ember_demonstration_transfer_learning_closure_run_v2"
-STAGE = "demonstration_transfer_learning_closure"
+RUN_SCHEMA = "ember_demonstration_transfer_comparison_admission_run_v3"
+STAGE = "demonstration_transfer_comparison_admission"
 
 
 def specification() -> dict:
     spec = read_json(SPEC_PATH)
-    if (spec.get("schema_version") != "ember_demonstration_transfer_learning_engineering_spec_v2"
-            or spec.get("task") != "demonstration_transfer_learning_closure_20260927"
-            or tuple(spec["data"]["task_ids"]) != TASKS
-            or tuple(spec["data"]["new_query_task_ids"]) != SUPPORTED
-            or spec["data"]["new_crossing_rows"] != 296
-            or spec["data"]["original_teacher_demos"] != list(range(46))
-            or spec["data"]["original_action_demos"] != list(range(46))
-            or spec["data"]["new_teacher_demos"] != [0, 1, 2, 3]
-            or spec["data"]["frame_stride"] != 5
-            or spec["execution"]["actual_macro_updates_total"] != 16
-            or spec["execution"]["actual_training_queries_total"] != 1792
-            or spec["execution"]["fresh_macro_updates_per_arm"] != 6
-            or spec["execution"]["resume_arms"] != ["P"]
-            or spec["execution"]["checkpoint_macros"] != [2, 6]
-            or spec["profile"]["enabled"] is not False
-            or spec["operator"]["complete_rank"] != 144
-            or spec["operator"]["target_count"] != 38
-            or spec["operator"]["alpha"] != 144
-            or spec["operator"]["template_identity_seed"] != 20260721
-            or spec["optimization"]["extra_auxiliary_loss"] is not False
-            or spec["runtime"]["run_root"] != "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927/closure"):
+    expected = (
+        (spec.get("schema_version"), "ember_demonstration_transfer_learning_engineering_spec_v3"),
+        (spec.get("task"), "demonstration_transfer_comparison_admission_20260927"),
+        (tuple(spec["data"]["task_ids"]), TASKS),
+        (tuple(spec["data"]["new_query_task_ids"]), SUPPORTED),
+        (spec["data"]["new_crossing_rows"], 296),
+        (spec["data"]["original_teacher_demos"], list(range(46))),
+        (spec["data"]["original_action_demos"], list(range(46))),
+        (spec["data"]["new_teacher_demos"], [0, 1, 2, 3]),
+        (spec["data"]["frame_stride"], 5),
+        (spec["execution"]["actual_macro_updates_total"], 5),
+        (spec["execution"]["actual_training_queries_total"], 2880),
+        (spec["execution"]["training_arms"], ["M"]),
+        (spec["execution"]["fresh_macro_updates_per_arm"], 3),
+        (spec["execution"]["resume_arms"], ["M"]),
+        (spec["execution"]["checkpoint_macros"], [1, 3]),
+        (spec["operator"]["complete_rank"], 144),
+        (spec["operator"]["target_count"], 38),
+        (spec["operator"]["alpha"], 144),
+        (spec["operator"]["template_identity_seed"], 20260721),
+        (spec["mt"]["rank"], 128), (spec["mt"]["queries_per_update"], 576),
+        (spec["runtime"]["run_root"],
+         "/data1/user/ymdai/ember_runs/demonstration_transfer_comparison_admission_20260927"),
+    )
+    if (not all(actual == wanted for actual, wanted in expected)
+            or spec["optimization"]["extra_auxiliary_loss"] is not False):
         raise ValueError("bounded complete-LoRA engineering specification changed")
     require_architecture_identity(spec["model"])
     if spec["model"]["camera_view"] != "agentview" or spec["model"]["max_frames_per_encoder_call"] != 8:
@@ -92,14 +99,15 @@ def _gather(value, world_size: int):
 @dataclass
 class Runtime:
     policy: torch.nn.Module
-    state: CorrespondenceLoRA
-    tokenizer: Pi05TeacherPrefixTokenizer
+    state: torch.nn.Module
+    tokenizer: Pi05TeacherPrefixTokenizer | None
     processor: Pi05LiberoProcessor
     lora: object
     source: dict
     device: torch.device
     source_identity: dict[str, torch.Tensor]
     source_identity_restores: int = 0
+    arm: str = "P"
 
     def condition(self, data: TransferData, task: int, demo: int) -> tuple[tuple, int, int]:
         video = data.videos.load(task, demo)
@@ -109,10 +117,10 @@ class Runtime:
         tokens, mask, span = self.tokenizer([data.tasks[task].authority.language])
         return (pixels, positions, offsets, tokens, mask, span), video.raw_frame_count, len(pixels)
 
-    def compile(self, condition: tuple) -> dict[str, torch.Tensor]:
+    def compile(self, condition: tuple | None) -> dict[str, torch.Tensor]:
         self.restore_source_identity()
         with autocast(self.device):
-            return self.state(self.policy, condition)
+            return self.state() if self.arm == "M" else self.state(self.policy, condition)
 
     def restore_source_identity(self) -> None:
         copy_task_lora_state_(self.policy, self.source_identity, self.lora)
@@ -126,7 +134,8 @@ class Runtime:
         return float(torch.stack(values).norm())
 
 
-def build_runtime(asset_root: Path, spec: dict, device: torch.device, *, evaluation: bool = False) -> Runtime:
+def build_runtime(asset_root: Path, spec: dict, device: torch.device, *, arm: str = "P",
+                  evaluation: bool = False) -> Runtime:
     source_config = spec["source"]
     authorities = load_evaluation_authorities(asset_root / source_config["evaluation_config"], asset_root)
     checkpoint = asset_root / source_config["checkpoint"]
@@ -145,31 +154,30 @@ def build_runtime(asset_root: Path, spec: dict, device: torch.device, *, evaluat
         policy = load_policy(Path(source["model_path"]), authorities.source_base_config, device)
         processor = Pi05LiberoProcessor(stats, tokenizer_path, 200, str(device))
     base = load_pi05_lora_contract(asset_root / reuse["lora_contract"])
-    lora = derive_pi05_lora_rank(base, rank=144)
+    lora = derive_pi05_lora_rank(base, rank=128 if arm == "M" else 144)
     full_template = prepare_frozen_writer_policy(policy, lora)
     policy.model.gradient_checkpointing_disable()
     torch.manual_seed(int(spec["model"]["initialization_seed"]))
     if device.type == "cuda":
         torch.cuda.manual_seed_all(int(spec["model"]["initialization_seed"]))
-    state = CorrespondenceLoRA(policy, spec["model"], full_template).to(device)
+    state = (DirectLoRAParameters(full_template) if arm == "M" else
+             CorrespondenceLoRA(policy, spec["model"], full_template)).to(device)
     if any(p.requires_grad for p in policy.parameters()):
         raise ValueError("physical source retained a trainable parameter")
-    return Runtime(policy, state, Pi05TeacherPrefixTokenizer(tokenizer_path, 200, str(device)),
-                   processor, lora, source, device, full_template)
+    tokenizer = None if arm == "M" else Pi05TeacherPrefixTokenizer(tokenizer_path, 200, str(device))
+    return Runtime(policy, state, tokenizer, processor, lora, source, device, full_template, arm=arm)
 
 
-def _optimizer(state: CorrespondenceLoRA, spec: dict):
+def _optimizer(state: torch.nn.Module, spec: dict):
     opt = spec["optimization"]
     parameters = tuple(p for p in state.parameters() if p.requires_grad)
     optimizer = torch.optim.AdamW(parameters, lr=opt["lr"], betas=tuple(opt["betas"]),
                                   eps=opt["eps"], weight_decay=opt["weight_decay"])
 
-    def warmup(step: int) -> float:
-        if step >= opt["warmup_updates"]:
-            raise ValueError("post-warmup learning is outside this engineering batch")
-        return (step + 1) / (opt["warmup_updates"] + 1)
-
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, warmup)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimizer, lambda step: clamped_lr_multiplier(
+            step, warmup=opt["warmup_updates"], decay=1200,
+            peak=opt["lr"], floor=1e-5))
     return optimizer, scheduler, parameters
 
 
@@ -178,7 +186,9 @@ def _norm(module: torch.nn.Module) -> float:
     return float(torch.stack(values).norm()) if values else 0.0
 
 
-def _gradient_groups(state: CorrespondenceLoRA) -> dict[str, float]:
+def _gradient_groups(state: torch.nn.Module) -> dict[str, float]:
+    if isinstance(state, DirectLoRAParameters):
+        return {"shared_complete_lora": _norm(state)}
     encoder = state.writer.semantic_encoder
     return {"common": _norm(state.common), "factor_heads": _norm(state.writer.factor_heads),
             "text_meta": _norm(encoder.text_meta_lora), "vl_meta": _norm(encoder.vl_meta_lora),
@@ -189,34 +199,45 @@ def _gradient_groups(state: CorrespondenceLoRA) -> dict[str, float]:
 
 def _one_job(runtime: Runtime, data: TransferData, event: dict, microbatch: int) -> dict:
     tick = time.perf_counter()
-    condition, raw_frames, sampled_frames = runtime.condition(data, event["task"], event["teacher_demo"])
+    if runtime.arm == "M":
+        condition, raw_frames, sampled_frames = None, 0, 0
+    else:
+        condition, raw_frames, sampled_frames = runtime.condition(data, event["task"], event["teacher_demo"])
     with torch.no_grad():
         state = runtime.compile(condition)
     torch.cuda.synchronize(runtime.device)
     compile_seconds = time.perf_counter() - tick
-    raw = data.batch(event)
-    batch = runtime.processor.training_batch(raw)
-    with autocast(runtime.device):
-        credit = paired_functional_credit(
-            runtime.policy, state, runtime.lora, batch,
-            seed=event["flow_seed"], device=runtime.device, random_batch=28,
-            offset=0, microbatch=microbatch, condition_weight=0.25)
+    segments = data.physical_segments(event) if runtime.arm == "M" else ((0, data.batch(event)),)
+    cotangent, loss, calls = {}, 0.0, 0
+    for offset, raw in segments:
+        batch = runtime.processor.training_batch(raw)
+        count = int(batch["action"].shape[0])
+        with autocast(runtime.device):
+            credit = paired_functional_credit(
+                runtime.policy, state, runtime.lora, batch,
+                seed=event["flow_seed"], device=runtime.device,
+                random_batch=16 if runtime.arm == "M" else 28,
+                offset=offset, microbatch=microbatch,
+                condition_weight=(count / 16 / 36 if runtime.arm == "M" else 0.25))
+        for name, value in credit["lora_cotangent"].items():
+            cotangent[name] = cotangent.get(name, 0) + value
+        loss += credit["flow_loss"] * (count / 16 if runtime.arm == "M" else 1)
+        calls += credit["compiled_forward_calls"]
     torch.cuda.synchronize(runtime.device)
     credit_seconds = time.perf_counter() - tick - compile_seconds
-    cotangent = credit["lora_cotangent"]
     with autocast(runtime.device):
         replay = runtime.compile(condition)
     if set(cotangent) != set(replay) or any(not torch.isfinite(v).all() for v in cotangent.values()):
-        raise ValueError("final rank144 FM cotangent is missing or nonfinite")
+        raise ValueError("final complete-LoRA FM cotangent is missing or nonfinite")
     torch.autograd.backward(tuple(replay.values()),
                             tuple(cotangent[name].to(replay[name]) for name in replay))
     torch.cuda.synchronize(runtime.device)
-    return {"task": event["task"], "visit": event["visit"], "kind": event["kind"],
+    return {"task": event["task"], "visit": event.get("visit"), "kind": event["kind"],
             "source": event.get("source"), "independent_reference": event.get("independent_reference"),
-            "teacher_demo": event["teacher_demo"], "raw_frames": raw_frames,
+            "teacher_demo": event.get("teacher_demo"), "raw_frames": raw_frames,
             "sampled_frames": sampled_frames, "queries": len(event["queries"]),
-            "flow_seed": event["flow_seed"], "flow_loss": credit["flow_loss"],
-            "compiled_forward_calls": credit["compiled_forward_calls"],
+            "flow_seed": event["flow_seed"], "flow_loss": loss,
+            "compiled_forward_calls": calls,
             "compile_seconds": compile_seconds, "fm_seconds": credit_seconds,
             "replay_seconds": time.perf_counter() - tick - compile_seconds - credit_seconds,
             "total_seconds": time.perf_counter() - tick,
@@ -245,8 +266,8 @@ def _prepare_train(spec: dict, args) -> Session:
         raise ValueError("engineering training requires one or two same-node A40 ranks")
     torch.set_num_threads(args.cpu_threads)
     seed_everything(int(spec["optimization"]["seed"]), context)
-    data = TransferData(args.asset_root, spec)
-    runtime = build_runtime(args.asset_root, spec, context.device)
+    data = TransferData(args.asset_root, spec, arm=args.arm)
+    runtime = build_runtime(args.asset_root, spec, context.device, arm=args.arm)
     runtime.state.train()
     seed_everything(int(spec["optimization"]["seed"]), context)
     optimizer, scheduler, parameters = _optimizer(runtime.state, spec)
@@ -275,9 +296,9 @@ def _prepare_train(spec: dict, args) -> Session:
         if context.is_main:
             if args.resume:
                 parent = args.resume.parent.parent
-                if args.arm != "P" or args.resume != (Path(spec["runtime"]["run_root"]) / args.arm /
-                                   "fresh" / "checkpoints" / "macro_00000002"):
-                    raise ValueError("resume is not this arm's registered fresh macro2")
+                if args.arm != "M" or args.resume != (Path(spec["runtime"]["run_root"]) / args.arm /
+                                   "fresh" / "checkpoints" / "macro_00000001"):
+                    raise ValueError("resume is not this arm's registered fresh macro1")
                 if read_json(parent / "run_contract.json") != contract:
                     raise ValueError("same-arm source, parameter, sampler or physical topology changed")
             write_json_atomic(output / "run_contract.json", contract)
@@ -299,13 +320,13 @@ def _restore(session: Session, checkpoint: Path) -> tuple[int, int]:
             scheduler=session.scheduler, run_contract_schema=RUN_SCHEMA,
             restored_state=restored)
         session.data.events.restore(restored["sampler_state"])
-        if (session.arm != "P" or updates != 2 or rows != 2
-                or restored["training_state"] != {"updates": 2, "arm": session.arm}
-                or session.scheduler.last_epoch != 2 or session.data.events.next_step != 2):
+        if (session.arm != "M" or updates != 1 or rows != 1
+                or restored["training_state"] != {"updates": 1, "arm": session.arm}
+                or session.scheduler.last_epoch != 1 or session.data.events.next_step != 1):
             raise ValueError("ECP optimizer/scheduler/sampler/RNG cursor changed")
         parent_rows = (checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()
         prefix = parent_rows[:rows]
-        if len(prefix) != 2 or [json.loads(row)["update"] for row in prefix] != [1, 2]:
+        if len(prefix) != 1 or [json.loads(row)["update"] for row in prefix] != [1]:
             raise ValueError("checkpoint metrics prefix is not complete and continuous")
         if session.context.is_main:
             (session.output / "metrics.jsonl").write_text("\n".join(prefix) + "\n")
@@ -320,9 +341,10 @@ def _restore(session: Session, checkpoint: Path) -> tuple[int, int]:
 
 def _step(session: Session, update: int, rows: int) -> tuple[int, int]:
     tick = time.perf_counter()
-    jobs = session.data.events.event(update, session.arm)
-    costs = {index: session.data.videos.frame_counts(job["task"], job["teacher_demo"])[1]
-             for index, job in enumerate(jobs)}
+    jobs = session.data.events.event(update) if session.arm == "M" else session.data.events.event(update, session.arm)
+    costs = ({index: 16 for index, job in enumerate(jobs)} if session.arm == "M" else
+             {index: session.data.videos.frame_counts(job["task"], job["teacher_demo"])[1]
+              for index, job in enumerate(jobs)})
     assignment = condition_assignment(tuple(costs), costs, world_size=session.context.world_size)
     session.optimizer.zero_grad(set_to_none=True)
     local, error = [], None
@@ -351,12 +373,13 @@ def _step(session: Session, update: int, rows: int) -> tuple[int, int]:
                      session.context.world_size)
     if session.context.is_main:
         append_jsonl(session.output / "metrics.jsonl", {
-            "update": update, "arm": session.arm, "queries": 112, "jobs": [r for p in packets for r in p],
+            "update": update, "arm": session.arm, "queries": 576 if session.arm == "M" else 112,
+            "jobs": [r for p in packets for r in p],
             "lr_applied": lr, "lr_next": session.scheduler.get_last_lr()[0],
             "grad_norms_before_clip": gradients, "total_grad_norm": norm,
             "rank_memory": memory, "seconds": time.perf_counter() - tick})
     rows += 1
-    if update in (2, 6):
+    if update in (1, 3):
         save_ecp_checkpoint(
             output_dir=session.output, macro=update, stage=STAGE, context=session.context,
             model=session.runtime.state, optimizer=session.optimizer, scheduler=session.scheduler,
@@ -367,24 +390,24 @@ def _step(session: Session, update: int, rows: int) -> tuple[int, int]:
 
 
 def train(spec: dict, args) -> None:
-    if (args.arm not in ("P", "I") or args.stop_after != 6 or (args.resume and args.arm != "P")
+    if (args.arm != "M" or args.stop_after != 3
             or args.microbatch not in spec["execution"]["oom_only_policy_microbatches"]
             + [spec["execution"]["initial_policy_microbatch"]]):
-        raise ValueError("training requires a fixed arm, six updates and registered physical batch")
+        raise ValueError("training requires direct M, three updates and registered physical batch")
     session = _prepare_train(spec, args)
     try:
         updates, rows = _restore(session, args.resume) if args.resume else (0, 0)
         started = time.perf_counter()
-        while updates < 6:
+        while updates < 3:
             updates, rows = _step(session, updates, rows)
         if session.context.is_main:
             write_json_atomic(session.output / "completion.json", {
                 "schema_version": RUN_SCHEMA, "status": "engineering_complete", "arm": args.arm,
-                "updates": updates, "actual_segment_updates": updates - (2 if args.resume else 0),
-                "actual_segment_queries": (updates - (2 if args.resume else 0)) * 112,
+                "updates": updates, "actual_segment_updates": updates - (1 if args.resume else 0),
+                "actual_segment_queries": (updates - (1 if args.resume else 0)) * 576,
                 "seconds": time.perf_counter() - started,
                 "resumed_from": str(args.resume) if args.resume else None,
-                "checkpoint": str(session.output / "checkpoints" / "macro_00000006"),
+                "checkpoint": str(session.output / "checkpoints" / "macro_00000003"),
                 "scientific_qualification": False})
     finally:
         session.data.close()
@@ -395,7 +418,7 @@ def train(spec: dict, args) -> None:
 def audit(spec: dict, args) -> None:
     data = TransferData(args.asset_root, spec)
     try:
-        result = audit_full_cycle(data.events)
+        result = audit_two_cycles(data.events)
         output = Path(spec["runtime"]["run_root"])
         output.mkdir(parents=True, exist_ok=True)
         write_json_atomic(output / "event_audit.json", result)
@@ -403,7 +426,7 @@ def audit(spec: dict, args) -> None:
         if plan.exists():
             raise ValueError("bounded CPU event plan already exists")
         with plan.open("x", encoding="utf-8") as handle:
-            for update in range(288):
+            for update in range(576):
                 p = data.events.event(update, "P")
                 i = data.events.event(update, "I")
                 handle.write(json.dumps({"update": update + 1, "P": p, "I_teacher_demos":
@@ -414,12 +437,12 @@ def audit(spec: dict, args) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("audit", "train", "sequential-case"))
+    parser.add_argument("phase", choices=("audit", "train"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--arm", choices=("P", "I"))
+    parser.add_argument("--arm", choices=("M",))
     parser.add_argument("--stop-after", type=int)
     parser.add_argument("--resume", type=Path)
-    parser.add_argument("--microbatch", type=int, default=28)
+    parser.add_argument("--microbatch", type=int, default=16)
     parser.add_argument("--cpu-threads", type=int, default=6)
     args = parser.parse_args()
     spec = specification()
@@ -427,9 +450,6 @@ def main() -> None:
         audit(spec, args)
     elif args.phase == "train":
         train(spec, args)
-    else:
-        from .episode import sequential_case
-        sequential_case(spec, args, _frozen_git(), build_runtime)
 
 
 if __name__ == "__main__":

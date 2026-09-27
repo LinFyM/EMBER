@@ -7,7 +7,11 @@ Owner持续自主授权有效，EMBER最终目标未完成。科学主讨论`01a
 
 **唯一active design**为`docs/designs/reference_transfer_comparison_design.md`，仅固定四条train示范的原动作R/自身参考S/另一参考X比较，
 共12条controller episode、≤6240步，无Writer/模型训练。预计实现与CPU45–75分钟、渲染3–6分钟，完整硬限.20GPUh/1卡；
-输出≤1GiB/新增冻结≤300MiB、相关代码≤3GiB，全部data1。当前合同已登记，实际派发另记；不把登记称为开跑。
+输出≤1GiB/新增冻结≤300MiB、相关代码≤3GiB，全部data1。
+任务`reference_transfer_same_scene_20260928`已按推送main `aaea91b4`交给原指定执行者；
+Queue `01a0e528-b44d-78b2-8924-5c5000dc14a2`获接受，一次app-server快照核对新轮
+`01a0e528-b450-7550-bc9d-28484b9eb7f5`为inProgress且包含该请求。这证明任务已承接，不单独证明GPU已启动。
+请求/回执/快照在`.codex/tmp/demonstration_transfer_main_review_20260927/reference_comparison_*`；整批完成或实质阻塞一次回报。
 它补Owner提出的原B对A→B缺口，直接检验规则本身与参考变化，不为失败组合补训练矩阵或恢复采集平台。
 
 `demonstration_transfer_learning_stage2_20260928`整批完成回报已消费并独立验收；

@@ -1,10 +1,10 @@
 # EMBER progress
 
-## 当前状态：270完整V/L已验收未通过最终资格；原定450仅CPU续训登记（2026-09-27）
+## 当前状态：270未通过最终资格；450续训CPU已验收，进入有界正式后继（2026-09-27）
 
 ### 当前科学裁决与授权
 
-唯一active design为`docs/designs/conditional_velocity_operator_design.md` §11；§4–10工程和270首批已完成。
+唯一active design为`docs/designs/conditional_velocity_operator_design.md` §11–12；§4–10工程和270首批已完成。
 主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main集成；
 唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责具体实验。Reader仍撤回，旧实验不恢复。
 
@@ -21,12 +21,16 @@ V/L四suite为59/44/26/22与58/42/28/19，广度均6/8。Goal26和Object16两臂
 原生完成turn为`01a0df9d-58f0-7d90-b2e1-22c7a83147d8`，完成Queue `01a0e03d-5a82-7bb3-b916-edc365ff2e16`已消费，迟到不重跑。
 
 主讨论选择原预留450节点，仅增加180更新/臂、达到每task50/50教学覆盖；不改模型/训练配方，不自动更长续训。
-当前只准备canonical控制/恢复合同扩展，预计CPU20–35分钟、45分钟判断上限。
+canonical控制/恢复合同扩展已经完成，实际约12.3分钟，原估CPU20–35分钟、45分钟判断上限。
 2026-09-27 00:28 UTC以main b53c4c57派发，Queue `01a0e043-6d85-78a0-9bc1-0530c3c4e414`已接受；
 00:30 UTC原生状态确认CPU执行turn `01a0e043-6d87-7920-9ad3-4fafe959301f`已开始。
 请求/回执位于`.codex/tmp/conditional_velocity_learning_20260927/stage2_cpu_{request,queue_receipt}.txt`。
-主讨论直接等待这项完整CPU交付，不用自通知或已消费回报接续。
-新GPU尚未授权：须先CPU交付、主讨论审阅/集成、新clean pushed frozen commit及live准入。
+完成Queue `01a0e04e-7334-7cf1-afab-85825afa062d`已由原生完成turn核实并消费；迟到不重执行。
+源码79c36003为4文件+230/−34，生产净增80行，无新模块；主讨论独立核完整diff和ECP调用，相关CPU测试7/7通过。
+模型/实际FM/VJP/采样/optimizer/LR数值程序无diff；270跨版本仅允许登记的Git/spec路径/续训记录变化，
+其余合同逐字段相等；360仍完整合同相等。实际GPU恢复尚未发生，不能由CPU检查宣称续训已完成。
+源码已由a38d2822合入main；§12授权在本登记之后的clean pushed冻结commit完成V/L各270→450及各correct400。
+主讨论随后直接向指定执行者派发并等待真实完成；GPU前仍须live准入，不用自通知或已消费回报接续。
 后继预计4.5–5.6完整GPUh、硬限6，GPU阶段约2–3h；新增原件≤4GiB、study合计≤8GiB，新增冻结代码≤320MiB、三树合计≤1GiB。
 旧0c4ea636冻结树保留，因为270 bank的spec仍引用它；新节点另冻，不能重写270原件或静默跨commit exact-resume。
 旧内部helper暂留到450保留/关闭裁决，旧generic CLI/Compiler不恢复；不为维持工作追加局部probe或同类理论循环。
@@ -50,7 +54,8 @@ V的run_contract及训练metrics已经产生；尚无本批完整退出/结果�
 gpu01同节点配对卡承载他人持续高负载，先用gpu02/6,7 world2训练V；L尚未启动。
 两臂当前按顺序推进，原2–3h wall为并行外推，当前不能作为完成承诺；9完整GPUh上限和两臂各400合同不变。
 launch_contract的`python`字段实际误填Torch版本2.11.0+cu128。完成后已由两份evaluator preflight核明
-实际Python3.12.3、Torch2.11.0+cu128；保留原记录并在验收勘误，不改变环境/模型/冻结commit或重写历史原件。
+实际Python3.12.3、Torch2.11.0+cu128。执行者已于00:19 UTC在launch_contract加入明确record_annotation并分列版本，
+未改变运行环境/模型/冻结commit；本后继不再修改首批原件。不能将已做元数据勘误误写成原文件从未修改。
 V训练21:33:42–22:49:58 UTC正常exit0，完整4576.321秒×2卡=2.5424006 GPUh。
 22:51–22:54 UTC主讨论在进程退出后核完270行metrics：30,240query，36task各30次、30条不同teacher，
 每次28条不同且跨episode query、action offset1；source_trainable=0，90/180/270 ECP目录齐全。

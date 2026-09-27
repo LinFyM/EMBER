@@ -1,12 +1,13 @@
 # EMBER task plan
 
-## 当前：270首点不通过最终资格，沿原计划准备450覆盖节点（2026-09-27）
+## 当前：270首点不通过最终资格，450 CPU已验收并进入正式后继（2026-09-27）
 
 条件速度算子以共同rank128 LoRA学习自身反馈特征，合法教学生成R，经真实末端速度投影合成唯一rank135 LoRA。
 冻结0c4ea636的首批训练/各400已验收：V151、L147、强MT155、Source51，V对L27得23失，V对MT38得42失。
 较强完整能力已有证据，稳定视频增益/保持与新任务广度未成立；原理判断见机制分析§31/findings§178。
 
-唯一active design为`docs/designs/conditional_velocity_operator_design.md` §11；当前仅20–35分钟CPU续训登记，新GPU须另给审阅后的冻结commit。
+唯一active design为`docs/designs/conditional_velocity_operator_design.md` §11–12；CPU交付79c36003已独立审阅，7项测试通过并合入main。
+后继仅由指定执行者从另行登记的clean pushed冻结commit运行；实际派发/准入/执行状态见progress，不自动恢复旧任务。
 原预留450节点每臂追加180更新/20,160query，累计50,400、每task50/50教学；不改数值学习程序或重置优化状态。
 新节点各correct400保持同一state/video/RNG，比较V/L、各自对270的相邻保持以及对原MT/Source的完整得失。
 后继预计4.5–5.6完整GPUh、硬限6、GPU阶段约2–3h；原首批5.7032另行累计。

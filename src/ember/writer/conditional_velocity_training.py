@@ -62,6 +62,12 @@ def contract() -> tuple[dict, dict]:
         "evaluation": {"role": "validation", "arm": "correct", "state_ids": [0, 49],
                        "video_schedule_seed": 20260911, "episodes_per_mode": 400,
                        "full_state_id": 0},
+        "continuation_450": {
+            "parent_commit": "0c4ea63643d9fd977013603ca610bf6ba7effff8",
+            "parent_frozen_root": "/data1/user/ymdai/projects/EMBER-conditional-velocity-formal",
+            "parent_update": 270, "subdir": "continuation_450",
+            "checkpoint_updates": [360, 450], "qualification_update": 450,
+        },
     }
     if any(spec.get(key) != value for key, value in expected.items()):
         raise ValueError("conditional-velocity canonical specification changed")
@@ -74,10 +80,33 @@ def contract() -> tuple[dict, dict]:
     return spec, reference
 
 
+def continuation_root(spec: dict, mode: str) -> Path:
+    if mode not in ("V", "L"):
+        raise ValueError("unknown conditional-velocity arm")
+    return Path(spec["run_root"]) / spec["continuation_450"]["subdir"] / mode
+
+
+def parent_checkpoint(spec: dict, mode: str) -> Path:
+    if mode not in ("V", "L"):
+        raise ValueError("unknown conditional-velocity arm")
+    update = spec["continuation_450"]["parent_update"]
+    return Path(spec["run_root"]) / mode / "checkpoints" / f"macro_{update:08d}"
+
+
+def continuation_record(spec: dict, mode: str) -> dict:
+    return {**spec["continuation_450"], "parent_checkpoint": str(parent_checkpoint(spec, mode))}
+
+
+def continuation_checkpoint(spec: dict, mode: str, update: int) -> Path:
+    if update not in spec["continuation_450"]["checkpoint_updates"]:
+        raise ValueError("unregistered continuation checkpoint")
+    return continuation_root(spec, mode) / "checkpoints" / f"macro_{update:08d}"
+
+
 def require_frozen(output: Path, mode: str) -> dict:
     spec, _ = contract()
-    if mode not in ("V", "L") or output.resolve() != (Path(spec["run_root"]) / mode).resolve():
-        raise ValueError("formal V/L output must use the registered data1 mode root")
+    if output.resolve() != continuation_root(spec, mode).resolve():
+        raise ValueError("formal V/L450 output must use the registered data1 continuation root")
     state = git_state(ROOT)
     pushed = subprocess.run(["git", "merge-base", "--is-ancestor", state["commit"],
                              "origin/main"], cwd=ROOT, check=False)
@@ -272,7 +301,8 @@ def _prepare_train(args):
                                              if value.requires_grad],
                     "source_trainable": sum(p.numel() for p in runtime.policy.parameters()
                                             if p.requires_grad),
-                    "scientific_qualification": True}
+                    "scientific_qualification": True,
+                    "continuation": continuation_record(spec, args.mode)}
     error = None
     try:
         if context.is_main:
@@ -298,22 +328,63 @@ def _resume_prefix(root: Path, rows: int) -> list[str]:
     return prefix
 
 
+def validate_parent_270_migration(checkpoint: Path, parent: dict, current: dict,
+                                  spec: dict) -> None:
+    """Admit only the registered old ECP under an unchanged numerical learning contract."""
+    mode = current.get("mode")
+    old_root = Path(spec["continuation_450"]["parent_frozen_root"])
+    old_spec_path = old_root / "configs/conditional_velocity_operator_v1/learning_spec.json"
+    old_git = {"commit": spec["continuation_450"]["parent_commit"], "branch": "",
+               "dirty_paths": [], "pushed_ref": "origin/main"}
+    frozen = git_state(old_root)
+    if (checkpoint.resolve() != parent_checkpoint(spec, mode).resolve()
+            or parent.get("git") != old_git or parent.get("spec") != str(old_spec_path)
+            or current.get("spec") != str(SPEC)
+            or current.get("continuation") != continuation_record(spec, mode)
+            or frozen["commit"] != old_git["commit"]
+            or frozen["branch"] or frozen["dirty_paths"]):
+        raise ValueError("270 parent checkpoint, frozen source or continuation identity changed")
+    old_spec = read_json(old_spec_path)
+    if old_spec != {key: value for key, value in spec.items() if key != "continuation_450"}:
+        raise ValueError("270-to-450 numerical learning specification changed")
+    allowed = {"git", "spec", "continuation"}
+    if ({key: value for key, value in parent.items() if key not in allowed}
+            != {key: value for key, value in current.items() if key not in allowed}
+            or "continuation" in parent):
+        raise ValueError("270-to-450 source, mode, model, optimizer, sampler or topology changed")
+
+
+def validate_resume_contract(checkpoint: Path, previous: dict, current: dict,
+                             spec: dict, output: Path) -> None:
+    if checkpoint.resolve() == parent_checkpoint(spec, current["mode"]).resolve():
+        validate_parent_270_migration(checkpoint, previous, current, spec)
+    elif (checkpoint.resolve() == continuation_checkpoint(
+            spec, current["mode"], spec["continuation_450"]["checkpoint_updates"][0]).resolve()
+          and checkpoint.parent.parent.resolve() == output.resolve()):
+        if previous != current:
+            raise ValueError("same-version resume source, git or physical topology changed")
+    else:
+        raise ValueError("resume is outside the registered 270/360 continuation checkpoints")
+
+
 def _restore(session):
     if session.args.resume is None:
         return 0, 0
     result, error = None, None
     try:
         parent = session.args.resume.parent.parent
-        if read_json(parent / "run_contract.json") != session.run_contract:
-            raise ValueError("resume source, mode, git or physical topology changed")
+        previous = read_json(parent / "run_contract.json")
+        validate_resume_contract(session.args.resume, previous, session.run_contract,
+                                 session.spec, session.args.output)
         restored = {}
         updates, rows = load_ecp_checkpoint(
             checkpoint=session.args.resume, stage=STAGE, context=session.context,
             model=session.runtime.state, optimizer=session.optimizer,
             scheduler=session.scheduler, run_contract_schema=SCHEMA, restored_state=restored,
         )
-        session.data.events.restore(restored["sampler_state"])
-        if (restored["training_state"] != {"updates": updates}
+        session.data.events.restore(restored["sampler_state"], maximum=450)
+        if (updates not in (270, 360) or rows != updates
+                or restored["training_state"] != {"updates": updates}
                 or session.scheduler.last_epoch != updates or session.data.events.next_step != updates):
             raise ValueError("optimizer, schedule, sampler or training cursor changed")
         prefix = _resume_prefix(parent, rows)
@@ -364,7 +435,7 @@ def _one_update(session, updates, rows):
                                      "total_grad_norm": norm,
                                      "lr_after_step": session.scheduler.get_last_lr()[0]}) + "\n")
     session.data.events.next_step = updates
-    if updates in session.spec["checkpoint_updates"]:
+    if updates in session.spec["continuation_450"]["checkpoint_updates"]:
         save_ecp_checkpoint(output_dir=session.args.output, macro=updates, stage=STAGE,
                             context=session.context, model=session.runtime.state,
                             optimizer=session.optimizer, scheduler=session.scheduler,
@@ -375,8 +446,10 @@ def _one_update(session, updates, rows):
 
 
 def train(args):
-    if args.stop_after not in (90, 180, 270) or not 0 < args.microbatch <= 28:
-        raise ValueError("registered first batch stops only at 90/180/270 with microbatch1..28")
+    spec, _ = contract()
+    if (args.stop_after not in spec["continuation_450"]["checkpoint_updates"]
+            or args.resume is None or not 0 < args.microbatch <= 28):
+        raise ValueError("registered continuation stops only at 360/450 from ECP with microbatch1..28")
     session = _prepare_train(args)
     try:
         updates, rows = _restore(session)
@@ -393,7 +466,7 @@ def train(args):
                 "seconds": time.perf_counter() - started,
                 "resumed_from": str(args.resume) if args.resume else None,
                 "latest_checkpoint": str(args.output / "checkpoints" / f"macro_{updates:08d}"),
-                "scientific_qualification": updates == 270,
+                "scientific_qualification": updates == session.spec["continuation_450"]["qualification_update"],
             })
     finally:
         session.data.close()
@@ -406,7 +479,7 @@ def main():
     parser.add_argument("--mode", choices=("V", "L"), required=True)
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--stop-after", type=int, default=270)
+    parser.add_argument("--stop-after", type=int, default=450)
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--microbatch", type=int, default=28)
     parser.add_argument("--cpu-threads", type=int, default=4)

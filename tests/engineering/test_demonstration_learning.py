@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 import torch
 
-from ember.demonstration_learning.data import SUPPORTED, TransferData, audit_full_cycle
+from ember.demonstration_learning.data import SUPPORTED, TransferData, audit_full_cycle, audit_two_cycles
 from ember.demonstration_learning.model import concatenate_factors, split_identity_template
 from ember.demonstration_learning.run import Runtime
 from ember.lora import (LoRATarget, copy_task_lora_state_, identity_lora_state,
@@ -55,6 +55,8 @@ def test_full_events_and_actual_new_query_offset() -> None:
         assert (audit["queries_total"], audit["new_queries"], audit["old_queries"]) == (32256, 8960, 23296)
         assert set(audit["supported"]) == set(SUPPORTED)
         assert audit["new_events_per_round"] == [10] * 32
+        two = audit_two_cycles(data.events)
+        assert (two["queries_total"], two["new_queries"], two["old_queries"]) == (64512, 17920, 46592)
         assert {row["task"] for row in data.events.event(0, "P") if row["kind"] == "new"} == {29}
         assert {row["task"] for row in data.events.event(1, "P") if row["kind"] == "new"} == {4, 35}
         assert {row["task"] for row in data.events.event(5, "P") if row["kind"] == "new"} == {97}
@@ -70,6 +72,36 @@ def test_full_events_and_actual_new_query_offset() -> None:
         with np.load(first["path"], allow_pickle=False) as trace:
             assert torch.equal(raw["action"][0, 0], torch.from_numpy(trace["actions"][first["frame"]]))
             assert int(trace["rgb_steps"][first["rgb_ordinal"]]) == first["frame"]
+    finally:
+        data.close()
+
+
+def test_direct_mt_hierarchy_and_resume_cursor() -> None:
+    spec = json.loads((REPO / "configs/demonstration_transfer_v1/learning_engineering_spec.json").read_text())
+    data = TransferData(ASSETS, spec, arm="M")
+    try:
+        assert data.videos is None
+        for update in range(3):
+            jobs = data.events.event(update)
+            assert len(jobs) == 36 and sum(len(row["queries"]) for row in jobs) == 576
+            assert sum(query["kind"] == "new" for row in jobs for query in row["queries"]) == 160
+            assert sum(query["kind"] == "old" for row in jobs for query in row["queries"]) == 416
+            for row in jobs:
+                if row["task"] in SUPPORTED:
+                    assert {source: sum(q.get("source") == source for q in row["queries"])
+                            for source in range(4)} == {source: 2 for source in range(4)}
+        segments = data.physical_segments(jobs[0])
+        assert [offset for offset, _ in segments] == [0, 8]
+        assert [batch["action"].shape for _, batch in segments] == [(8, 50, 7)] * 2
+        state = data.events.sampler_state()
+        state["next_step"] = 1
+        state["old_cursor"] = {str(task): 8 if task in SUPPORTED else 16
+                               for task in data.events.lengths}
+        state["new_cursor"] = {str(task): 2 for task in SUPPORTED}
+        data.events.restore(state)
+        assert data.events.next_step == 1
+        with pytest.raises(ValueError):
+            data.events.restore({**state, "old_cursor": {**state["old_cursor"], "0": 7}})
     finally:
         data.close()
 

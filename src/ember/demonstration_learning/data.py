@@ -22,6 +22,7 @@ TASKS = (0, 1, 2, 4, 5, 7, 12, 13, 14, 15, 17, 19, 20, 21, 22, 25,
 SUPPORTED = (0, 1, 2, 4, 7, 13, 15, 17, 19, 21, 28, 29, 34, 35, 37,
              38, 55, 95, 96, 97)
 SCHEMA = "ember_demonstration_transfer_learning_events_v2"
+MT_SCHEMA = "ember_demonstration_transfer_mt_events_v1"
 
 
 def _rng(seed: int, *parts: int) -> np.random.Generator:
@@ -50,10 +51,12 @@ class PairedEvents:
             raise ValueError("fixed 36-task source/20-task support changed")
         self.next_step = 0
         self._cells = {}
-        for task in SUPPORTED:
-            cells = [(c, d) for c in range(4) for d in range(4)]
-            order = _rng(spec["data"]["event_seeds"]["new_pair_order"], task).permutation(16)
-            self._cells[task] = tuple(cells[int(i)] for i in order)
+        for block in range(2):
+            for task in SUPPORTED:
+                cells = [(c, d) for c in range(4) for d in range(4)]
+                parts = (task,) if block == 0 else (task, block)
+                order = _rng(spec["data"]["event_seeds"]["new_pair_order"], *parts).permutation(16)
+                self._cells[block, task] = tuple(cells[int(i)] for i in order)
 
     def _old(self, task: int, visit: int) -> dict:
         seeds = self.spec["data"]["event_seeds"]
@@ -67,8 +70,8 @@ class PairedEvents:
                 "queries": [{"demo": d, "frame": f} for d, f in zip(demos, frames, strict=True)]}
 
     def _new(self, task: int, visit: int) -> dict:
-        index = visit // 2
-        c, d = self._cells[task][index]
+        block, within = divmod(visit, 32)
+        c, d = self._cells[block, task][within // 2]
         states = self.support[task]["common_success_states"]
         rng = _rng(self.spec["data"]["event_seeds"]["query"], task, visit, c)
         queries = []
@@ -83,7 +86,7 @@ class PairedEvents:
                 "teacher_demo": c, "queries": queries}
 
     def event(self, update: int, arm: str) -> tuple[dict, ...]:
-        if arm not in ("P", "I") or not 0 <= update < 288:
+        if arm not in ("P", "I") or not 0 <= update < 576:
             raise ValueError("event is outside the bounded P/I plan")
         visit, slot = divmod(update, 9)
         seed = self.spec["data"]["event_seeds"]["task_order"]
@@ -147,6 +150,90 @@ def audit_full_cycle(events: PairedEvents) -> dict:
             "supported_task_phases": {str(k): v for k, v in events.phases.items()}}
 
 
+def audit_two_cycles(events: PairedEvents) -> dict:
+    first = audit_full_cycle(events)
+    new = old = 0
+    cells = {task: set() for task in SUPPORTED}
+    for update in range(288, 576):
+        p, i = events.event(update, "P"), events.event(update, "I")
+        for left, right in zip(p, i, strict=True):
+            _check_pair(left, right)
+            if left["kind"] == "new":
+                new += 28
+                cells[left["task"]].add((left["source"], left["independent_reference"]))
+            else:
+                old += 28
+    if (new, old) != (8960, 23296) or any(len(value) != 16 for value in cells.values()):
+        raise ValueError("second paired crossing block changed")
+    return {"first": first, "updates": 576, "queries_total": 64512,
+            "new_queries": 17920, "old_queries": 46592,
+            "second_block_crossing_cells": {str(k): len(v) for k, v in cells.items()}}
+
+
+class MixedMTEvents:
+    """Deterministic 36-task old/new hierarchy with explicit logical cursors."""
+
+    def __init__(self, spec: Mapping, lengths: Mapping[int, tuple[int, ...]],
+                 support: Mapping[int, Mapping]) -> None:
+        self.spec, self.lengths, self.support = spec, lengths, support
+        self.next_step = 0
+        self.seeds = spec["mt"]["sampler_seeds"]
+        if tuple(sorted(lengths)) != TASKS or tuple(sorted(support)) != SUPPORTED:
+            raise ValueError("MT task/support identity changed")
+
+    def _old(self, task: int, offset: int) -> dict:
+        cycle, index = divmod(offset, 46)
+        demo = int(_rng(self.seeds["old"], task, cycle, 0xE915).permutation(46)[index])
+        frames = _rng(self.seeds["old"], task, demo, 0xC84A).permutation(
+            self.lengths[task][demo] - 1)
+        return {"kind": "old", "demo": demo, "frame": int(frames[cycle % len(frames)])}
+
+    def _new(self, task: int, source: int, offset: int) -> dict:
+        states = self.support[task]["common_success_states"]
+        cycle, index = divmod(offset, len(states))
+        state = int(_rng(self.seeds["new"], task, source, cycle, 0x1A17)
+                    .permutation(states)[index])
+        path = self.support[task]["paths"][(source, state)]
+        steps = self.support[task]["rgb_steps"][(source, state)]
+        ordinal = int(_rng(self.seeds["new"], task, source, state, 0xF2A9)
+                      .permutation(len(steps))[cycle % len(steps)])
+        return {"kind": "new", "source": source, "state": state, "path": path,
+                "rgb_ordinal": ordinal, "frame": steps[ordinal]}
+
+    def event(self, update: int) -> tuple[dict, ...]:
+        if not 0 <= update < 3:
+            raise ValueError("MT event is outside the three-update engineering plan")
+        jobs = []
+        for task in TASKS:
+            if task in SUPPORTED:
+                queries = [self._old(task, update * 8 + offset) for offset in range(8)]
+                queries.extend(self._new(task, source, update * 2 + offset)
+                               for source in range(4) for offset in range(2))
+            else:
+                queries = [self._old(task, update * 16 + offset) for offset in range(16)]
+            flow_seed = int(np.random.SeedSequence([self.seeds["flow"], task, update])
+                            .generate_state(1, dtype=np.uint64)[0] & ((1 << 63) - 1))
+            jobs.append({"task": task, "update": update + 1, "queries": queries,
+                         "flow_seed": flow_seed, "kind": "mixed" if task in SUPPORTED else "old"})
+        return tuple(jobs)
+
+    def sampler_state(self) -> dict:
+        return {"schema_version": MT_SCHEMA, "next_step": self.next_step,
+                "seeds": self.seeds, "tasks": list(TASKS), "supported": list(SUPPORTED),
+                "old_cursor": {str(task): self.next_step * (8 if task in SUPPORTED else 16)
+                               for task in TASKS},
+                "new_cursor": {str(task): self.next_step * 2 for task in SUPPORTED},
+                "old_offset": 1, "new_offset": 0}
+
+    def restore(self, state: Mapping) -> None:
+        cursor = state.get("next_step")
+        if type(cursor) is not int or cursor != 1:
+            raise ValueError("MT resume cursor must be registered macro1")
+        self.next_step = cursor
+        if dict(state) != self.sampler_state():
+            raise ValueError("MT hierarchy or logical cursors changed")
+
+
 def _check_pair(left: Mapping, right: Mapping) -> None:
     if ({k: v for k, v in left.items() if k != "teacher_demo"}
             != {k: v for k, v in right.items() if k != "teacher_demo"}):
@@ -169,43 +256,55 @@ def _check_task_cycle(task: int, rows: list[dict], phase: int | None) -> None:
         raise ValueError("unsupported task received new query data")
 
 
+def _support_task(task_row: Mapping) -> tuple[int, dict]:
+    task, paths, steps = int(task_row["task"]), {}, {}
+    states = tuple(map(int, task_row["common_success_states"]))
+    for item in task_row["conditions"]:
+        if (int(item["task"]) != task or int(item["state"]) not in states
+                or int(item["demo"]) not in range(4)):
+            raise ValueError("support crossing identity changed")
+        key = (int(item["demo"]), int(item["state"]))
+        path = Path(item["query_trace"])
+        if key in paths or not path.is_file():
+            raise ValueError("support trace missing or duplicated")
+        with np.load(path, allow_pickle=False) as sample:
+            action_count = int(sample["actions"].shape[0])
+            saved = tuple(map(int, sample["rgb_steps"].tolist()))
+            indices = tuple(step for step in saved if step < action_count)
+            if (not indices or min(saved) < 0 or max(saved) > action_count
+                    or any(b <= a for a, b in zip(saved, saved[1:]))
+                    or saved[:len(indices)] != indices):
+                raise ValueError("new query RGB/action offset contract changed")
+        paths[key], steps[key] = str(path), indices
+    if set(paths) != {(c, s) for c in range(4) for s in states}:
+        raise ValueError("new task lacks a complete four-source common-init crossing")
+    return task, {"common_success_states": states, "paths": paths, "rgb_steps": steps}
+
+
+def _support_table(spec: Mapping) -> dict:
+    table = read_json(Path(spec["data"]["new_support_table"]))
+    if (table.get("schema_version") != "ember_demonstration_transfer_training_support_table_v1"
+            or len(table.get("tasks", [])) != 20
+            or sum(len(t["conditions"]) for t in table["tasks"]) != 296):
+        raise ValueError("sealed 296-row support table changed")
+    support = dict(_support_task(row) for row in table["tasks"])
+    if len(support) != 20:
+        raise ValueError("support task IDs repeat")
+    return support
+
+
 class TransferData:
     """Read source HDF5 via its owner and only sealed successful new NPZ traces."""
 
-    def __init__(self, asset_root: Path, spec: Mapping) -> None:
+    def __init__(self, asset_root: Path, spec: Mapping, *, arm: str = "P") -> None:
         self.tasks = load_learning_tasks(asset_root, spec["data"]["task_ids"], role="train",
                                          protocol_path=spec["data"]["protocol"])
-        table = read_json(Path(spec["data"]["new_support_table"]))
-        if (table.get("schema_version") != "ember_demonstration_transfer_training_support_table_v1"
-                or len(table.get("tasks", [])) != 20 or sum(len(t["conditions"]) for t in table["tasks"]) != 296):
-            raise ValueError("sealed 296-row support table changed")
-        support = {}
-        for task_row in table["tasks"]:
-            task, paths, steps = int(task_row["task"]), {}, {}
-            states = tuple(map(int, task_row["common_success_states"]))
-            for item in task_row["conditions"]:
-                if (int(item["task"]) != task or int(item["state"]) not in states
-                        or int(item["demo"]) not in range(4)):
-                    raise ValueError("support crossing identity changed")
-                key = (int(item["demo"]), int(item["state"]))
-                path = Path(item["query_trace"])
-                if key in paths or not path.is_file():
-                    raise ValueError("support trace missing or duplicated")
-                with np.load(path, allow_pickle=False) as sample:
-                    action_count = int(sample["actions"].shape[0])
-                    saved = tuple(map(int, sample["rgb_steps"].tolist()))
-                    indices = tuple(step for step in saved if step < action_count)
-                    if (not indices or min(saved) < 0 or max(saved) > action_count
-                            or any(b <= a for a, b in zip(saved, saved[1:]))
-                            or saved[:len(indices)] != indices):
-                        raise ValueError("new query RGB/action offset contract changed")
-                paths[key], steps[key] = str(path), indices
-            if set(paths) != {(c, s) for c in range(4) for s in states}:
-                raise ValueError("new task lacks a complete four-source common-init crossing")
-            support[task] = {"common_success_states": states, "paths": paths, "rgb_steps": steps}
-        self.events = PairedEvents(spec, {t: v.episode_lengths for t, v in self.tasks.items()}, support)
+        support = _support_table(spec)
+        event_type = MixedMTEvents if arm == "M" else PairedEvents
+        self.events = event_type(spec, {t: v.episode_lengths for t, v in self.tasks.items()}, support)
         authorities = tuple(row.authority for row in self.tasks.values())
-        self.videos = RawTeacherVideoStore(authorities, frame_stride=5, camera_view="agentview")
+        self.videos = (None if arm == "M" else
+                       RawTeacherVideoStore(authorities, frame_stride=5, camera_view="agentview"))
         self.old = FunctionalQueryDataset(authorities, demo_indices=tuple(range(46)),
                                           action_chunk_size=50, action_start_offset=1)
         self.old_rows = self.old.task_episode_rows
@@ -244,12 +343,27 @@ class TransferData:
         task = int(event["task"])
         if event["kind"] == "new":
             rows = [self._new_row(task, query) for query in event["queries"]]
-        else:
+        elif event["kind"] == "old":
             rows = [self.old[self.old_rows[task][q["demo"]][q["frame"]]]
                     for q in event["queries"]]
+        else:
+            raise ValueError("mixed 128/256 image queries require homogeneous physical segments")
         return default_collate(rows)
 
+    def physical_segments(self, event: Mapping) -> tuple[tuple[int, dict], ...]:
+        """Keep old/new image sizes separate while preserving one 16-query FM event."""
+        queries = event["queries"]
+        if event["kind"] != "mixed":
+            return ((0, self.batch(event)),)
+        old = tuple(row for row in queries if row["kind"] == "old")
+        new = tuple(row for row in queries if row["kind"] == "new")
+        if len(old) != 8 or len(new) != 8 or tuple(queries) != old + new:
+            raise ValueError("supported MT query halves changed")
+        return ((0, self.batch({**event, "kind": "old", "queries": old})),
+                (8, self.batch({**event, "kind": "new", "queries": new})))
+
     def close(self) -> None:
-        self.videos.close()
+        if self.videos is not None:
+            self.videos.close()
         self.old.close()
         self._new_cache.clear()

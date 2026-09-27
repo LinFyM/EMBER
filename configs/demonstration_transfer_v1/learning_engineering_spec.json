@@ -469,6 +469,8 @@
     ],
     "interface_only": true,
     "P_I_source_code": "399e2610a3f1d7eaf0af08e14f46057ae15a5e9c",
+    "M_source_code": "485856c08640e10221723db89a59606bdb6fc626",
+    "M_source_spec": "/data1/user/ymdai/projects/EMBER-demonstration-comparison-v2-formal/configs/demonstration_transfer_v1/learning_engineering_spec.json",
     "P_checkpoint": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927/closure/P/fresh/checkpoints/macro_00000006",
     "I_checkpoint": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927/closure/I/fresh/checkpoints/macro_00000006",
     "M_checkpoint": "this batch fresh macro3; not resumed weights for qualification",

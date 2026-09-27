@@ -9,8 +9,9 @@ Owner授权持续自主推进，今晚检查。主讨论`01a0dd74-4c71-7c82-8629
 没有独立工作且仍有可继续研究时直接在本回合工作，不结束再自Queue，不陪跑等待或重复查询执行者。
 
 **唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前登记§13
-`demonstration_transfer_comparison_admission_20260927`，同一路径机器规格升v3；本段登记时尚未派发。
-下一次派发只给指定执行者，须使用本轮clean pushed main承接，回执随后补于本段；计划文字不冒充正在执行。
+`demonstration_transfer_comparison_admission_20260927`，同一路径机器规格升v3。已从clean pushed main `db58373f`派发。
+10:34 UTC唯一Queue `01a0e26d-de46-7922-b381-39c841980aeb`获接受；一次app-server即时快照确认目标会话active且队列已消费。
+这里只确认承接状态，不称GPU已启动或任务完成。请求、回执、快照在同tmp目录`comparison_admission_*`；不自Queue或轮询陪跑。
 
 §11闭环工程完成Queue已消费；主讨论独立核完四文件修正、288事件、全部真实metrics、五套ECP元数据与唯一case的NPZ/PT，
 四项CPU检查通过，guard REVIEW无hard。源码399e2610已以c9e25e95合入main。
@@ -33,7 +34,10 @@ source每次compile前物理identity恢复成立：前一输出偏离1.234047、
 预计90–150分钟、180分钟复核；完整GPU预计.45–.75、硬限1.0GPUh/最多2卡。新run峰值4GiB、新增冻结代码<=512MiB，相关代码2.25GiB。
 执行者创建/启动前核data1独立quota、共享容量及双节点GPU。所有旧study只读，不加Source/旧MT/其它case。
 正式P/I288/576、MT长训练、400 bank/held、controls、Test及RL仍未授权；所有工程权重不得作正式初值。
-主讨论继续冻结完整方法的比较节点、继续/停止线与保持判断，GPU正式预算待本次真实MT/bank/official吞吐补全；不追加局部科学probe。
+主讨论已写设计§14事前裁决框架：P/I首个完整288、唯一预留576；明确早停负证据、最新点选择及丢失/净降界限。
+只有出现超过历史强参照且保持的候选，才投入同数据强MT的正式多节点比较，不一开始铺开三条长训练和全部controls。
+I若更强也保留，不能为P假设选弱点；P/I因果差按同节点解释，不能拿各自峰值相减。新MT最佳点不因其相邻退化而删去。
+这只是事前科学框架，GPU正式预算与完整执行合同待本次真实MT/bank/official吞吐补全；不增加当前§13或启动正式学习。
 已有强MT155保留，不能用新MT更低结果降低目标；P/I只检验配对学习干预，不能单独证明部署动态视频必要。
 
 以下为已经完成的时点记录，不恢复其中旧授权：

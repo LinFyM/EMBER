@@ -21,7 +21,11 @@ V/L四suite为59/44/26/22与58/42/28/19，广度均6/8。Goal26和Object16两臂
 原生完成turn为`01a0df9d-58f0-7d90-b2e1-22c7a83147d8`，完成Queue `01a0e03d-5a82-7bb3-b916-edc365ff2e16`已消费，迟到不重跑。
 
 主讨论选择原预留450节点，仅增加180更新/臂、达到每task50/50教学覆盖；不改模型/训练配方，不自动更长续训。
-当前只准备canonical控制/恢复合同扩展，预计CPU20–35分钟、45分钟判断上限；具体派发回执在Git交付后登记。
+当前只准备canonical控制/恢复合同扩展，预计CPU20–35分钟、45分钟判断上限。
+2026-09-27 00:28 UTC以main b53c4c57派发，Queue `01a0e043-6d85-78a0-9bc1-0530c3c4e414`已接受；
+00:30 UTC原生状态确认CPU执行turn `01a0e043-6d87-7920-9ad3-4fafe959301f`已开始。
+请求/回执位于`.codex/tmp/conditional_velocity_learning_20260927/stage2_cpu_{request,queue_receipt}.txt`。
+主讨论直接等待这项完整CPU交付，不用自通知或已消费回报接续。
 新GPU尚未授权：须先CPU交付、主讨论审阅/集成、新clean pushed frozen commit及live准入。
 后继预计4.5–5.6完整GPUh、硬限6，GPU阶段约2–3h；新增原件≤4GiB、study合计≤8GiB，新增冻结代码≤320MiB、三树合计≤1GiB。
 旧0c4ea636冻结树保留，因为270 bank的spec仍引用它；新节点另冻，不能重写270原件或静默跨commit exact-resume。

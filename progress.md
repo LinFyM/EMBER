@@ -1,18 +1,25 @@
 # EMBER progress
 
-## 当前状态：对应学习已退役；登记原B同场景参考比较（2026-09-28）
+## 当前状态：同场景参考比较已验收收束；主讨论继续完整方法研究（2026-09-28）
 
 Owner持续自主授权有效，EMBER最终目标未完成。科学主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责裁决/main，
 唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`。所有新增data1，不联系旧主讨论/旧Sol，不自Queue、不陪跑轮询。
 
-**唯一active design**为`docs/designs/reference_transfer_comparison_design.md`，仅固定四条train示范的原动作R/自身参考S/另一参考X比较，
-共12条controller episode、≤6240步，无Writer/模型训练。预计实现与CPU45–75分钟、渲染3–6分钟，完整硬限.20GPUh/1卡；
-输出≤1GiB/新增冻结≤300MiB、相关代码≤3GiB，全部data1。
-任务`reference_transfer_same_scene_20260928`已按推送main `aaea91b4`交给原指定执行者；
-Queue `01a0e528-b44d-78b2-8924-5c5000dc14a2`获接受，一次app-server快照核对新轮
-`01a0e528-b450-7550-bc9d-28484b9eb7f5`为inProgress且包含该请求。这证明任务已承接，不单独证明GPU已启动。
-请求/回执/快照在`.codex/tmp/demonstration_transfer_main_review_20260927/reference_comparison_*`；整批完成或实质阻塞一次回报。
-它补Owner提出的原B对A→B缺口，直接检验规则本身与参考变化，不为失败组合补训练矩阵或恢复采集平台。
+**当前没有active GPU design或执行者任务。** `reference_transfer_same_scene_20260928`完成消息已消费并独立验收；
+原Queue `01a0e528-b44d-78b2-8924-5c5000dc14a2`不再表示后台工作。固定12条/4548动作、R/S/X各2/4、2/4、3/4；
+113秒/.031389GPUh、峰1卡。b1541155以7bb1d558集成，完成裁决即删除唯一522行临时runner，无fallback，原件/冻树/Git保留。
+主讨论读回12NPZ、4scene/保存B、四源HDF5动作及目标变换/时钟，未运行模型/环境/GPU。
+
+机制§41/findings§199分开参考变化、构造时钟与历史重放误差。S均比R多40步；事后只按真实source_step对应，
+前三组动作后EEF中位差2.65/2.55/.96mm，第四组12.27mm且p95 86.03mm；不做DTW或A/B结果对齐。
+R对保存B不能称精确恢复，X也没有一致优势；进一步降低逐示范构造替换原B的投入优先级，不补数据矩阵、控制器修补或筛视频。
+保存observation EEF不是动作生成前refresh的controller pose，未假称逐步逆OSC动作精确重建，未据此判Writer工程故障。
+原件在`/data1/user/ymdai/ember_runs/reference_transfer_comparison_20260928`；
+独立验收/脚本在`.codex/tmp/demonstration_transfer_main_review_20260927/reference_comparison_acceptance.*`。
+
+主讨论在同一回合继续完整学习方法判断：有益关系如何与单条参考路径细节区别，并由同一完整LoRA在自身状态消费。
+先核最近完整几何/语义监督近邻的实际消费者，不把新名字、额外标签或当前个案差异当作新候选依据；
+这一主讨论研究没有隐含GPU/新数据许可。没有实际独立任务时不结束等待，也不自发接续消息。
 
 `demonstration_transfer_learning_stage2_20260928`整批完成回报已消费并独立验收；
 原派发Queue `01a0e410-a086-76e0-aa64-6aa7b601f5d8`不再表示后台运行。
@@ -41,7 +48,7 @@ README职责与动态状态已同步；请求/回执/验收在上述tmp目录`re
 机制§40/findings§198进一步区分阶段内反馈、条件目标与阶段选择：固定未限幅位置反馈的末端Jacobian为共同−D^-1，
 单独监督它消去了教学目标；参考旋转的响应才含xi，但需要对应可用坐标与目标。实际native Q/K/V的自身观测响应及
 十步flow/五步环境消费者已展开，不把导数小或收缩当相邻能力保持。拒绝原Writer追加状态导数/稳定性项及局部J探针。
-下一完整证据按新合同区分原动作重放与规则参考；源内部历史不可恢复的部分明确暴露，原B记录和当前R不能混称同一轨迹。
+该完整比较现已验收见§41：源内部历史不可恢复的部分明确暴露，原B记录和当前R不能混称同一轨迹。
 
 ### 以下为已完成576批次的历史启动记录，不构成新授权
 

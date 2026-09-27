@@ -2765,3 +2765,78 @@ FM本身学习带noise/time的条件速度；本节没有把它简化成逐状�
 本轮没有新增根因、经过验证的修复或足以启动的GPU候选。仍缺的具体联系是：合法教学中哪项可计算区别，
 能够通过所提学习机制选择有益的自身状态反馈，且这项机制与已结束的完整方法具有可失败的实质差别。
 不能把这项科学缺口拆成一串视觉/动作/编译局部关卡，也不继续扩大本次函数编码文献线。
+
+## 34. 一个外部参数生成正例的边界：DISC没有消除条件获取与共享学习问题
+
+本轮只核一项接近“生成一次、反复控制”的完整正例，不扩展文献列表、不运行外部模型。
+[DISC原文](https://arxiv.org/html/2605.20856)的94.3%对应LIBERO-90已训练任务的新初态；
+新任务部分使用带动作标签的目标策略微调。附录VII/VIII的未微调行在LIBERO-10/Goal分别为3.0%/1.5%。
+这些口径均不同于EMBER，不能直接比较分数。正面证据是普通BC能够学出有效的语言到策略参数映射，
+不是合法教学视频到新任务LoRA的零交互正例。
+
+### 34.1 公开代码中真正连接特征、权重和动作的计算
+
+核定官方公开commit `4979e1516246a2e5a2fc7c3cae7511c5f17e5f6d`，只读缓存位于
+`.codex/tmp/disc_primary_review_20260927/`；没有安装依赖、运行训练或复现论文分数。
+
+- [默认编码配置](https://github.com/ReNginx/DISC/blob/4979e1516246a2e5a2fc7c3cae7511c5f17e5f6d/config/model/defaults.yaml)
+  使用冻结T5骨干、可训练的ImageNet ResNet18及state线性层。机器人自己的双视图/state形成执行输入；语言形成权重条件，
+  没有教学视频输入。不能把共同视觉表示写成冻结source，也不能把T5骨干冻结扩大成整个语言投影都冻结。
+- [参数生成](https://github.com/ReNginx/DISC/blob/4979e1516246a2e5a2fc7c3cae7511c5f17e5f6d/model/hylap/hypogen2_impl/hypernetworks.py)
+  先用语言生成各层权重tokens，再解码和残差更新；最终每个生成张量还逐元素乘以`target_net`的同形参数。
+  因而实际为`theta(L)=s ⊙ q_phi(L)`，s本身参与外层学习，不是冻结的预训练actor。
+  [通用optimizer](https://github.com/ReNginx/DISC/blob/4979e1516246a2e5a2fc7c3cae7511c5f17e5f6d/trainer/generic_trainer.py)
+  消费`self.parameters()`；没有发现将target_net的这组参数排除或detach的分支。
+- [所谓伪前向/反向](https://github.com/ReNginx/DISC/blob/4979e1516246a2e5a2fc7c3cae7511c5f17e5f6d/model/hylap/hypogen2_impl/opt_blocks.py)
+  消费语言、权重tokens和learned tokens，由attention产生更新。它没有读取实际执行query、专家动作误差或真实任务Jacobian；
+  跨层依赖是生成网络的计算结构，不能当成真实优化方向或下降保证。
+- [真实训练消费者](https://github.com/ReNginx/DISC/blob/4979e1516246a2e5a2fc7c3cae7511c5f17e5f6d/trainer/hylap_trainer.py)
+  是以生成权重functional_call的五层MLP，其动作与真实标签作MSE。误差同时更新权重生成器、s与执行视觉/state表示。
+  [公开配置](https://github.com/ReNginx/DISC/blob/4979e1516246a2e5a2fc7c3cae7511c5f17e5f6d/config/model/hylap.yaml)
+  虽设`use_early_sup: true`，却设`num_layers: 1`；`generated_weights`只保存更新后的一个节点，未保存WIN初值。
+  所以此配置没有额外的中间策略监督。未核定论文全部运行命令，不能断言所有报告结果均只用一轮。
+
+这里确有完整的功能联系：语言条件改变每层真实权重，自己的状态通过这些权重产生动作，动作误差选择有用改变。
+它支持这类联系在特定数据/模型合同下可被学习；不支持“只要把生成网络画成优化器，学习就会成功”。
+
+### 34.2 生成全部权重不等于消除了共享更新或场景捷径
+
+以下是针对实际参数化的推导，**不是DISC的实测根因，也不拟合EMBER的450下降**。
+把所有目标参数展平，记`d_L=∇_theta ell_L`、`q_L=q_phi(L)`，则
+
+\[
+ \nabla_s\ell_L=q_L\odot d_L,\qquad
+ \nabla_\phi\ell_L=J_q(L)^\top\operatorname{diag}(s)d_L.
+\]
+
+只为看清跨条件联系，考虑s/phi两个不重叠参数组的普通SGD、固定执行特征、忽略二阶项。
+一次L'的更新对另一条件L的生成参数影响含有
+
+\[
+ \delta\theta_L=-\eta K(L,L')d_{L'}+O(\eta^2),\quad
+ K=\operatorname{diag}(q_L\odot q_{L'})+
+ \operatorname{diag}(s)J_q(L)J_q(L')^\top\operatorname{diag}(s).
+\]
+
+真实代码还共同学习执行视觉/state，且使用AdamW；上式不是其实际一步数值预测。
+它说明即使部署时每层权重都由条件生成，训练时各任务仍经共同s/phi及执行编码器相互影响。
+论文的结构分离不能被升级为“消除了任务间更新干扰”或能力保持定理；§16及concept中的共享生成几何仍适用。
+
+同样，令生成器对所有L输出相同q_0，就得到一个仅据执行图像/state行动的共同策略。
+若训练场景足以提示任务，这条捷径仍然存在；不同参数也可能实现同一动作函数。
+这是反驳“完整权重生成在结构上保证条件有用”的反例，不否定论文所报告的具体语言干预结果。
+对EMBER，必须分别证明信息实际改变了有益行为、这种作用跨初始化/任务成立、共享学习能保持它；
+仅去掉一个显式旁路不替代这些证据。
+
+### 34.3 对EMBER下一完整方法的取舍
+
+这项正例保留了纯功能监督的研究价值；不因450失败便声称普通FM无法训练参数生成，或必须改用RL。
+但“语言换视频、MLP权重换LoRA、增加伪梯度更新块”没有建立新的教学到控制联系：
+HyPoGen已经核过同类伪更新；旧Unified/SemanticPath已用条件生成完整参数并共同FM；
+NativeCorrection/LocalField还使用过真动作cotangent；本次条件速度也共同学习了执行特征。
+它们不是缺少`pseudo_backward`这一模块名，也不能由外部任务内高分抹去这些完整负例。
+
+因此不移植DISC、不另派工程/训练，不从它的消融分数推断EMBER应增加更新轮数或全层输出。
+尚缺的实质联系保持具体：教学中的哪项可计算观察，经怎样的可迁移关系约束机器人自己的反馈函数，
+且所提学习机制如何利用这项关系，而非仅识别已见任务或改变生成参数的坐标。
+这次核查完成了一个外部正例的适用性判断，没有形成新根因、已验证修复或active GPU设计；本条文献线收束。

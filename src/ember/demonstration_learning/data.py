@@ -114,7 +114,7 @@ class PairedEvents:
     def restore(self, state: Mapping) -> None:
         expected = self.sampler_state()
         cursor = state.get("next_step")
-        if (type(cursor) is not int or cursor not in self.spec["execution"]["checkpoint_macros"]
+        if (type(cursor) is not int or cursor not in self.spec["execution"]["resume_from_macros"]
                 or {k: v for k, v in state.items() if k != "next_step"}
                 != {k: v for k, v in expected.items() if k != "next_step"}):
             raise ValueError("paired event identity or resume cursor changed")

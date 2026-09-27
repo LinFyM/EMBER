@@ -37,15 +37,15 @@ from .model import CorrespondenceLoRA
 
 REPO = Path(__file__).resolve().parents[3]
 SPEC_PATH = REPO / "configs/demonstration_transfer_v1/learning_spec.json"
-RUN_SCHEMA = "ember_demonstration_transfer_formal_stage1_run_v1"
-STAGE = "demonstration_transfer_learning_stage1"
+RUN_SCHEMA = "ember_demonstration_transfer_formal_stage2_run_v1"
+STAGE = "demonstration_transfer_learning_stage2"
 
 
 def specification() -> dict:
     spec = read_json(SPEC_PATH)
     expected = (
         (spec.get("schema_version"), "ember_demonstration_transfer_learning_spec_v1"),
-        (spec.get("task"), "demonstration_transfer_learning_stage1_20260927"),
+        (spec.get("task"), "demonstration_transfer_learning_stage2_20260928"),
         (tuple(spec["data"]["task_ids"]), TASKS),
         (tuple(spec["data"]["new_query_task_ids"]), SUPPORTED),
         (spec["data"]["new_crossing_rows"], 296),
@@ -56,14 +56,23 @@ def specification() -> dict:
         (spec["execution"]["actual_macro_updates_total"], 576),
         (spec["execution"]["actual_training_queries_total"], 64512),
         (spec["execution"]["training_arms"], ["P", "I"]),
-        (spec["execution"]["fresh_macro_updates_per_arm"], 288),
+        (spec["execution"]["continuation_from_macro"], 288),
+        (spec["execution"]["continuation_updates_per_arm"], 288),
         (spec["execution"]["resume_arms"], ["P", "I"]),
-        (spec["execution"]["checkpoint_macros"], [72, 144, 216, 288]),
+        (spec["execution"]["checkpoint_macros"], [360, 432, 504, 576]),
+        (spec["execution"]["resume_from_macros"], [288, 360, 432, 504, 576]),
+        (spec["execution"]["resume_stop_macro"], 576),
+        (spec["execution"]["stage1_parent"], {
+            "git": "f4a80cd564843bb487bef55e3196d0597ed6cdd5",
+            "run_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage1",
+            "frozen_tree": "/data1/user/ymdai/projects/EMBER-demonstration-stage1-formal",
+            "macro": 288, "stage": "demonstration_transfer_learning_stage1",
+            "run_contract_schema": "ember_demonstration_transfer_formal_stage1_run_v1"}),
         (spec["execution"]["allowed_world_sizes"], [2]),
         (spec["execution"]["initial_policy_microbatch"], 28),
         (spec["execution"]["oom_only_policy_microbatches"], [14, 7]),
         (spec["bank"]["arms"], ["P", "I"]),
-        (spec["bank"]["source_macro"], 288),
+        (spec["bank"]["source_macro"], 576),
         (spec["bank"]["task_ids"], [3, 6, 11, 16, 23, 26, 31, 39]),
         (spec["bank"]["init_state_ids"], list(range(50))),
         (spec["bank"]["conditions_each"], 400),
@@ -74,7 +83,7 @@ def specification() -> dict:
         (spec["scene"]["count"], 400),
         (spec["scene"]["task_ids"], [3, 6, 11, 16, 23, 26, 31, 39]),
         (spec["scene"]["init_state_ids"], list(range(50))),
-        (spec["official_interface"]["arms"], ["P288", "I288"]),
+        (spec["official_interface"]["arms"], ["P576", "I576"]),
         (spec["official_interface"]["episodes_per_arm"], 400),
         (spec["official_interface"]["full_episodes_per_arm"], 8),
         (spec["official_interface"]["compact_episodes_per_arm"], 392),
@@ -84,7 +93,7 @@ def specification() -> dict:
         (spec["operator"]["template_identity_seed"], 20260721),
         (spec["mt"]["rank"], 128), (spec["mt"]["queries_per_update"], 576),
         (spec["runtime"]["run_root"],
-         "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage1"),
+         "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage2"),
     )
     if (not all(actual == wanted for actual, wanted in expected)
             or spec["optimization"]["extra_auxiliary_loss"] is not False):
@@ -279,39 +288,127 @@ class Session:
     microbatch: int
 
 
-def _registered_resume(checkpoint: Path, contract: dict, spec: dict) -> int:
-    """Admit only the latest complete same-arm ECP under this formal frozen run."""
-    attempts = Path(spec["runtime"]["run_root"]) / contract["arm"] / "train" / "attempts"
-    if (attempts.parent / "final_checkpoint.json").exists():
-        raise ValueError("completed formal arm cannot be resumed again")
-    checkpoint = checkpoint.resolve()
+def _stage1_checkpoint(spec: dict, arm: str) -> Path:
+    parent = spec["execution"]["stage1_parent"]
+    return (Path(parent["run_root"]) / arm / "train/attempts/fresh/checkpoints/macro_00000288").resolve()
+
+
+def _required_topology(topology: dict) -> None:
+    ranks = topology.get("ranks", ())
+    expected = (("c0c11da8-07ae-b68b-00dc-c3bda27d49ae", 0),
+                ("99beeb2b-ce8f-e51d-a718-68bd93deff8a", 1))
+    if (topology.get("host") != "gpu02" or topology.get("world_size") != 2
+            or topology.get("visible_devices") != "3,7"
+            or topology.get("nccl_p2p_disable") != "1" or len(ranks) != 2
+            or any((row.get("rank"), row.get("gpu_uuid"), row.get("numa_node"))
+                   != (rank, uuid, numa) for rank, (uuid, numa), row in
+                   zip(range(2), expected, ranks, strict=True))):
+        raise ValueError("stage2 requires the registered stage1 physical world2 topology")
+
+
+def _complete_manifest(checkpoint: Path, stage: str, schema: str, cursor: int) -> None:
+    manifest = read_json(checkpoint / "checkpoint_manifest.json")
+    files = manifest.get("files", {})
+    if (checkpoint.name != f"macro_{cursor:08d}" or manifest.get("schema_version") != "ember_ecp_checkpoint_v1"
+            or manifest.get("next_macro") != cursor or manifest.get("stage") != stage
+            or manifest.get("run_contract_schema") != schema or manifest.get("world_size") != 2
+            or set(files) != {"ecp.safetensors", "trainer_state.pt", "rank_00_state.pt", "rank_01_state.pt"}
+            or any(not (checkpoint / name).is_file() or (checkpoint / name).stat().st_size != row["bytes"]
+                   for name, row in files.items())):
+        raise ValueError("resume ECP stage, cursor or file inventory changed")
+
+
+def _physical_chunks(parent: dict, contract: dict) -> None:
+    allowed = [28, 14, 7]
+    if (parent["microbatch"] not in allowed or contract["microbatch"] not in allowed
+            or allowed.index(contract["microbatch"]) < allowed.index(parent["microbatch"])
+            or allowed.index(contract["microbatch"]) - allowed.index(parent["microbatch"]) > 1
+            or parent["frame_chunk"] not in (8, 4) or contract["frame_chunk"] not in (8, 4)
+            or contract["frame_chunk"] > parent["frame_chunk"]):
+        raise ValueError("physical FM chunks can only shrink after OOM")
+
+
+def _admit_stage1_parent(checkpoint: Path, contract: dict, spec: dict) -> None:
+    """Audit the one cross-freeze migration against its completed source run."""
+    stage1 = spec["execution"]["stage1_parent"]
+    _complete_manifest(checkpoint, stage1["stage"], stage1["run_contract_schema"], 288)
+    parent = read_json(checkpoint.parent.parent / "run_contract.json")
+    old_tree = Path(stage1["frozen_tree"])
+    old_git = git_state(old_tree)
+    if (old_git["commit"] != stage1["git"] or old_git["branch"] or old_git["dirty_paths"]):
+        raise ValueError("registered stage1 frozen tree changed")
+    old_spec_path = old_tree / "configs/demonstration_transfer_v1/learning_spec.json"
+    old_spec = read_json(old_spec_path)
+    if any(old_spec[key] != spec[key] for key in ("source", "model", "operator", "data", "optimization", "mt")):
+        raise ValueError("stage1 and stage2 numerical learning dictionaries differ")
+    pointer = read_json(checkpoint.parent.parent.parent.parent / "final_checkpoint.json")
+    completion = read_json(checkpoint.parent.parent / "completion.json")
+    required = (
+        (parent.get("schema_version"), stage1["run_contract_schema"]),
+        (parent.get("stage"), stage1["stage"]),
+        (parent.get("git"), {"commit": stage1["git"], "branch": "", "dirty_paths": [],
+                             "pushed_ref": "origin/main"}),
+        (parent.get("spec"), str(old_spec_path)),
+        (parent.get("qualification"), "formal_stage1_macro288"),
+        (parent.get("source_trainable"), 0),
+        (pointer, {"arm": contract["arm"], "checkpoint": str(checkpoint),
+                   "run_contract": str(checkpoint.parent.parent / "run_contract.json")}),
+        (completion.get("schema_version"), stage1["run_contract_schema"]),
+        (completion.get("status"), "formal_training_complete"),
+        (completion.get("arm"), contract["arm"]), (completion.get("updates"), 288),
+        (completion.get("actual_segment_updates"), 288),
+        (completion.get("actual_segment_queries"), 32256),
+        (completion.get("resumed_from"), None), (completion.get("checkpoint"), str(checkpoint)),
+    )
+    if not all(actual == expected for actual, expected in required):
+        raise ValueError("stage1 parent identity or completion changed")
+    allowed_migration = {"schema_version", "stage", "git", "spec", "qualification", "stage1_parent"}
+    if (set(parent) - allowed_migration != set(contract) - allowed_migration
+            or any(parent[key] != contract[key] for key in set(parent) - allowed_migration
+                   - {"microbatch", "frame_chunk"})):
+        raise ValueError("stage1 parent changed a nonmigration run contract field")
+    if (parent["microbatch"], parent["frame_chunk"]) != (contract["microbatch"], contract["frame_chunk"]):
+        raise ValueError("first stage2 attempt must keep the stage1 physical chunks")
+    if len((checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()) != 288:
+        raise ValueError("stage1 parent metrics are not a full 288-row prefix")
+
+
+def _admit_stage2_checkpoint(checkpoint: Path, contract: dict, spec: dict, latest: int,
+                             attempts: Path) -> int:
     if (checkpoint.parent.name != "checkpoints" or checkpoint.parent.parent.parent != attempts.resolve()
             or not (checkpoint / "checkpoint_manifest.json").is_file()):
-        raise ValueError("resume source is outside this arm's formal attempt ECPs")
-    manifest = read_json(checkpoint / "checkpoint_manifest.json")
-    cursor = manifest.get("next_macro")
-    if (cursor not in spec["execution"]["checkpoint_macros"]
-            or checkpoint.name != f"macro_{cursor:08d}"
-            or manifest.get("stage") != STAGE or manifest.get("run_contract_schema") != RUN_SCHEMA):
-        raise ValueError("resume ECP stage or registered cursor changed")
+        raise ValueError("resume source is outside registered stage2 attempts")
+    name = checkpoint.name.removeprefix("macro_")
+    cursor = int(name) if name.isdigit() else -1
+    if cursor not in spec["execution"]["checkpoint_macros"] or latest != cursor:
+        raise ValueError("resume must use this arm's latest registered stage2 ECP")
+    _complete_manifest(checkpoint, STAGE, RUN_SCHEMA, cursor)
+    parent = read_json(checkpoint.parent.parent / "run_contract.json")
+    if set(parent) != set(contract) or any(parent[key] != value for key, value in contract.items()
+                                           if key not in ("microbatch", "frame_chunk")):
+        raise ValueError("same-stage resume changed its frozen run contract")
+    _physical_chunks(parent, contract)
+    return cursor
+
+
+def _registered_resume(checkpoint: Path, contract: dict, spec: dict) -> int:
+    """Admit the exact stage1 parent or the latest same-freeze stage2 ECP."""
+    arm = contract["arm"]
+    attempts = Path(spec["runtime"]["run_root"]) / arm / "train/attempts"
+    if arm not in ("P", "I") or (attempts.parent / "final_checkpoint.json").exists():
+        raise ValueError("completed or unregistered formal arm cannot resume")
+    _required_topology(contract["topology"])
+    checkpoint = checkpoint.resolve()
     latest = max((int(row.name.removeprefix("macro_"))
                   for row in attempts.glob("*/checkpoints/macro_*")
                   if row.name.removeprefix("macro_").isdigit()
                   and (row / "checkpoint_manifest.json").is_file()), default=0)
-    if latest != cursor:
-        raise ValueError("resume must use this arm's latest registered complete ECP")
-    parent = read_json(checkpoint.parent.parent / "run_contract.json")
-    for field in contract:
-        if field not in ("microbatch", "frame_chunk") and parent.get(field) != contract[field]:
-            raise ValueError(f"formal resume changed {field}")
-    allowed_batch = [28, 14, 7]
-    if (parent["microbatch"] not in allowed_batch or contract["microbatch"] not in allowed_batch
-            or allowed_batch.index(contract["microbatch"]) < allowed_batch.index(parent["microbatch"])
-            or allowed_batch.index(contract["microbatch"]) - allowed_batch.index(parent["microbatch"]) > 1
-            or parent["frame_chunk"] not in (8, 4) or contract["frame_chunk"] not in (8, 4)
-            or contract["frame_chunk"] > parent["frame_chunk"]):
-        raise ValueError("physical FM chunks can only shrink after OOM")
-    return cursor
+    if checkpoint == _stage1_checkpoint(spec, arm):
+        if latest:
+            raise ValueError("stage1 parent is superseded by a stage2 ECP")
+        _admit_stage1_parent(checkpoint, contract, spec)
+        return 288
+    return _admit_stage2_checkpoint(checkpoint, contract, spec, latest, attempts)
 
 
 def _prepare_train(spec: dict, args) -> Session:
@@ -348,18 +445,17 @@ def _prepare_train(spec: dict, args) -> Session:
                 "source_trainable": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
                 "source_identity_before_every_compile": True,
                 "information_wall": "teacher exact language+agentview RGB/positions only; own query RGB/state/actions only to FM",
-                "qualification": "formal_stage1_macro288"}
+                "qualification": "formal_stage2_macro576",
+                "stage1_parent": {"git": spec["execution"]["stage1_parent"]["git"],
+                                  "checkpoint": str(_stage1_checkpoint(spec, args.arm))}}
     error = None
     try:
         if context.is_main:
             if (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists():
                 raise ValueError("formal attempt already has retained evidence")
             if (output.parent.parent / "final_checkpoint.json").exists():
-                raise ValueError("formal arm already completed macro288")
-            if args.resume:
-                _registered_resume(args.resume, contract, spec)
-            elif args.attempt != "fresh":
-                raise ValueError("fresh formal training must use the fresh attempt")
+                raise ValueError("formal arm already completed macro576")
+            _registered_resume(args.resume, contract, spec)
             write_json_atomic(output / "run_contract.json", contract)
     except Exception:
         error = traceback.format_exc()
@@ -373,13 +469,16 @@ def _prepare_train(spec: dict, args) -> Session:
 def _restore(session: Session, checkpoint: Path) -> tuple[int, int]:
     restored, result, error = {}, None, None
     try:
+        parent = session.spec["execution"]["stage1_parent"]
+        from_stage1 = checkpoint.resolve() == _stage1_checkpoint(session.spec, session.arm)
         updates, rows = load_ecp_checkpoint(
-            checkpoint=checkpoint, stage=STAGE, context=session.context,
+            checkpoint=checkpoint, stage=parent["stage"] if from_stage1 else STAGE, context=session.context,
             model=session.runtime.state, optimizer=session.optimizer,
-            scheduler=session.scheduler, run_contract_schema=RUN_SCHEMA,
+            scheduler=session.scheduler,
+            run_contract_schema=parent["run_contract_schema"] if from_stage1 else RUN_SCHEMA,
             restored_state=restored)
         session.data.events.restore(restored["sampler_state"])
-        if (updates not in session.spec["execution"]["checkpoint_macros"] or rows != updates
+        if (updates not in session.spec["execution"]["resume_from_macros"] or rows != updates
                 or restored["training_state"] != {"updates": updates, "arm": session.arm}
                 or session.scheduler.last_epoch != updates or session.data.events.next_step != updates):
             raise ValueError("ECP optimizer/scheduler/sampler/RNG cursor changed")
@@ -453,32 +552,31 @@ def _save_checkpoint(session: Session, update: int, rows: int) -> None:
 
 
 def train(spec: dict, args) -> None:
-    if (args.arm not in ("P", "I") or args.stop_after != 288
+    if (args.arm not in ("P", "I") or args.stop_after != 576 or args.resume is None
             or args.frame_chunk not in (8, 4)
             or args.microbatch not in spec["execution"]["oom_only_policy_microbatches"]
             + [spec["execution"]["initial_policy_microbatch"]]
-            or (args.resume is None and (args.microbatch, args.frame_chunk) != (28, 8))
-            or (args.resume is not None and args.attempt == "fresh")
+            or args.attempt == "fresh"
             or not args.attempt or "/" in args.attempt or args.attempt in (".", "..")):
-        raise ValueError("formal P/I requires macro288 and registered physical chunks")
+        raise ValueError("formal P/I requires registered macro288-to-576 continuation")
     session = _prepare_train(spec, args)
     try:
-        updates, rows = _restore(session, args.resume) if args.resume else (0, 0)
+        updates, rows = _restore(session, args.resume)
         restored_cursor = updates
         started = time.perf_counter()
-        if restored_cursor == 288:
+        if restored_cursor == 576:
             # Publish this attempt's complete ECP even when no update remains.
             _save_checkpoint(session, updates, rows)
-        while updates < 288:
+        while updates < 576:
             updates, rows = _step(session, updates, rows)
         if session.context.is_main:
-            checkpoint = session.output / "checkpoints" / "macro_00000288"
+            checkpoint = session.output / "checkpoints" / "macro_00000576"
             write_json_atomic(session.output / "completion.json", {
                 "schema_version": RUN_SCHEMA, "status": "formal_training_complete", "arm": args.arm,
                 "updates": updates, "actual_segment_updates": updates - restored_cursor,
                 "actual_segment_queries": (updates - restored_cursor) * 112,
                 "seconds": time.perf_counter() - started,
-                "resumed_from": str(args.resume) if args.resume else None,
+                "resumed_from": str(args.resume),
                 "checkpoint": str(checkpoint), "scientific_qualification": "pending_correct400"})
             write_json_atomic(Path(spec["runtime"]["run_root"]) / args.arm / "train" /
                               "final_checkpoint.json", {"arm": args.arm, "checkpoint": str(checkpoint),
@@ -503,9 +601,9 @@ def main() -> None:
     parser.add_argument("phase", choices=("audit", "train"))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--arm", choices=("P", "I"))
-    parser.add_argument("--stop-after", type=int, default=288)
+    parser.add_argument("--stop-after", type=int, default=576)
     parser.add_argument("--resume", type=Path)
-    parser.add_argument("--attempt", default="fresh")
+    parser.add_argument("--attempt")
     parser.add_argument("--microbatch", type=int, default=28)
     parser.add_argument("--frame-chunk", type=int, default=8)
     parser.add_argument("--cpu-threads", type=int, default=6)

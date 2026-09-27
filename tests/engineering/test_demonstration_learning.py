@@ -11,7 +11,8 @@ import pytest
 import torch
 
 from ember.demonstration_learning.data import SUPPORTED, TransferData, audit_full_cycle, audit_two_cycles
-from ember.demonstration_learning.bank import _held_condition_data, _task_rows, materialize, registered_capture
+from ember.demonstration_learning.bank import (_held_condition_data, _source_checkpoint, _task_rows,
+                                                materialize, registered_capture)
 from ember.demonstration_learning.model import concatenate_factors, split_identity_template
 from ember.demonstration_learning.run import Runtime, _registered_resume, train
 from ember.lora import (LoRATarget, copy_task_lora_state_, identity_lora_state,
@@ -96,15 +97,7 @@ def test_direct_mt_hierarchy_and_resume_cursor() -> None:
         segments = data.physical_segments(jobs[0])
         assert [offset for offset, _ in segments] == [0, 8]
         assert [batch["action"].shape for _, batch in segments] == [(8, 50, 7)] * 2
-        state = data.events.sampler_state()
-        state["next_step"] = 1
-        state["old_cursor"] = {str(task): 8 if task in SUPPORTED else 16
-                               for task in data.events.lengths}
-        state["new_cursor"] = {str(task): 2 for task in SUPPORTED}
-        data.events.restore(state)
-        assert data.events.next_step == 1
-        with pytest.raises(ValueError):
-            data.events.restore({**state, "old_cursor": {**state["old_cursor"], "0": 7}})
+        assert data.events.sampler_state()["next_step"] == 0
     finally:
         data.close()
 
@@ -114,9 +107,11 @@ def test_crossing_resume_identity_rejects_changed_cursor() -> None:
     data = TransferData(ASSETS, spec)
     try:
         state = data.events.sampler_state()
-        state["next_step"] = 72
+        state["next_step"] = 288
         data.events.restore(state)
-        assert data.events.next_step == 72
+        assert data.events.next_step == 288
+        data.events.restore({**state, "next_step": 360})
+        assert data.events.next_step == 360
         with pytest.raises(ValueError):
             data.events.restore({**state, "event_seeds": {**state["event_seeds"], "flow": 0}})
         with pytest.raises(ValueError):
@@ -130,31 +125,76 @@ def test_crossing_resume_identity_rejects_changed_cursor() -> None:
 
 
 def test_formal_resume_requires_latest_same_arm_and_exact_logical_contract(tmp_path: Path) -> None:
-    spec = {"runtime": {"run_root": str(tmp_path)},
-            "execution": {"checkpoint_macros": [72, 144, 216, 288]}}
-    contract = {"arm": "P", "git": {"commit": "frozen"}, "source": {"revision": 1},
-                "topology": {"world_size": 2, "ranks": ["gpu-a", "gpu-b"]},
-                "microbatch": 28, "frame_chunk": 8}
-    attempt = tmp_path / "P/train/attempts/fresh"
-    checkpoint = attempt / "checkpoints/macro_00000072"
-    checkpoint.mkdir(parents=True)
-    (attempt / "run_contract.json").write_text(json.dumps(contract))
-    (checkpoint / "checkpoint_manifest.json").write_text(json.dumps({
-        "stage": "demonstration_transfer_learning_stage1",
-        "run_contract_schema": "ember_demonstration_transfer_formal_stage1_run_v1", "next_macro": 72}))
-    assert _registered_resume(checkpoint, contract, spec) == 72
+    from ember.demonstration_learning import run
+
+    spec = json.loads((REPO / "configs/demonstration_transfer_v1/learning_spec.json").read_text())
+    spec["runtime"]["run_root"] = str(tmp_path)
+    parent = run._stage1_checkpoint(spec, "P")
+    old = json.loads((parent.parent.parent / "run_contract.json").read_text())
+    contract = {**old, "schema_version": run.RUN_SCHEMA, "stage": run.STAGE,
+                "git": {"commit": "new-frozen", "branch": "", "dirty_paths": [],
+                        "pushed_ref": "origin/main"},
+                "spec": str(run.SPEC_PATH), "qualification": "formal_stage2_macro576",
+                "stage1_parent": {"git": spec["execution"]["stage1_parent"]["git"],
+                                  "checkpoint": str(parent)}}
+    assert _registered_resume(parent, contract, spec) == 288
+    other_parent = run._stage1_checkpoint(spec, "I")
+    assert _registered_resume(other_parent, {**contract, "arm": "I",
+                                             "stage1_parent": {**contract["stage1_parent"],
+                                                               "checkpoint": str(other_parent)}}, spec) == 288
     physical = {**contract, "microbatch": 14, "frame_chunk": 4}
-    assert _registered_resume(checkpoint, physical, spec) == 72
+    with pytest.raises(ValueError, match="physical chunks"):
+        _registered_resume(parent, physical, spec)
     for changed in ({**contract, "arm": "I"}, {**contract, "source": {"revision": 2}},
-                    {**contract, "topology": {"world_size": 1}},
+                    {**contract, "topology": {**contract["topology"], "visible_devices": "3,6"}},
                     {**contract, "microbatch": 7, "frame_chunk": 8}):
         with pytest.raises(ValueError):
-            _registered_resume(checkpoint, changed, spec)
+            _registered_resume(parent, changed, spec)
     with pytest.raises(ValueError):
         _registered_resume(tmp_path / "old_engineering/P/fresh/checkpoints/macro_00000006", contract, spec)
-    newer = attempt / "checkpoints/macro_00000144"
+
+    actual_read = run.read_json
+    def wrong_parent_git(path):
+        result = actual_read(path)
+        if Path(path) == parent.parent.parent / "run_contract.json":
+            return {**result, "git": {**result["git"], "commit": "wrong-parent"}}
+        return result
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(run, "read_json", wrong_parent_git)
+        with pytest.raises(ValueError, match="parent identity"):
+            _registered_resume(parent, contract, spec)
+    changed_spec = json.loads(json.dumps(spec))
+    changed_spec["optimization"]["lr"] = 1e-4
+    with pytest.raises(ValueError, match="numerical learning dictionaries"):
+        _registered_resume(parent, contract, changed_spec)
+
+    attempt = tmp_path / "P/train/attempts/after288"
+    checkpoint = attempt / "checkpoints/macro_00000360"
+    checkpoint.mkdir(parents=True)
+    (attempt / "run_contract.json").write_text(json.dumps(contract))
+    files = {}
+    for name in ("ecp.safetensors", "trainer_state.pt", "rank_00_state.pt", "rank_01_state.pt"):
+        (checkpoint / name).write_bytes(b"x")
+        files[name] = {"bytes": 1}
+    (checkpoint / "checkpoint_manifest.json").write_text(json.dumps({
+        "schema_version": "ember_ecp_checkpoint_v1", "stage": run.STAGE,
+        "run_contract_schema": run.RUN_SCHEMA, "world_size": 2,
+        "next_macro": 360, "files": files}))
+    assert _registered_resume(checkpoint, contract, spec) == 360
+    with pytest.raises(ValueError, match="superseded"):
+        _registered_resume(parent, contract, spec)
+    with pytest.raises(ValueError, match="frozen run contract"):
+        _registered_resume(checkpoint, {**contract, "git": {"commit": "wrong"}}, spec)
+    with pytest.raises(ValueError):
+        _registered_resume(checkpoint, {**contract, "source": {"revision": 2}}, spec)
+    newer = attempt / "checkpoints/macro_00000432"
     newer.mkdir()
-    (newer / "checkpoint_manifest.json").write_text("{}")
+    for name in files:
+        (newer / name).write_bytes(b"x")
+    (newer / "checkpoint_manifest.json").write_text(json.dumps({
+        "schema_version": "ember_ecp_checkpoint_v1", "stage": run.STAGE,
+        "run_contract_schema": run.RUN_SCHEMA, "world_size": 2,
+        "next_macro": 432, "files": files}))
     with pytest.raises(ValueError, match="latest"):
         _registered_resume(checkpoint, contract, spec)
 
@@ -175,9 +215,21 @@ def test_validation_bank_metadata_and_capture_scope_without_held_query(monkeypat
     assert data.tasks is authority and isinstance(data.videos, VideoStub)
     assert seen[0][1] == {"frame_stride": 5, "camera_view": "agentview"}
 
-    bank_path = tmp_path / "P/banks/288/manifest.json"
+    bank_path = tmp_path / "P/banks/576/manifest.json"
     bank_path.parent.mkdir(parents=True)
     bank_path.write_text(json.dumps({"kind": "demonstration_comparison_lora_bank", "arm": "P"}))
+    train = tmp_path / "P/train"
+    train.mkdir(parents=True)
+    (train / "final_checkpoint.json").write_text(json.dumps({
+        "arm": "P", "checkpoint": str(tmp_path / "P/train/attempts/fresh/checkpoints/macro_00000288"),
+        "run_contract": str(tmp_path / "P/train/attempts/fresh/run_contract.json")}))
+    narrowed = {**spec, "runtime": {**spec["runtime"], "run_root": str(tmp_path)}}
+    with pytest.raises(ValueError, match="final checkpoint pointer"):
+        _source_checkpoint("P", narrowed)
+    (train / "final_checkpoint.json").write_text(json.dumps({
+        "arm": "P", "checkpoint": str(tmp_path / "P/train/attempts/from288/checkpoints/macro_00000576"),
+        "run_contract": str(tmp_path / "P/train/attempts/from288/run_contract.json")}))
+    assert _source_checkpoint("P", narrowed).name == "macro_00000576"
     capture_path = tmp_path / "P_capture.json"
     capture_path.write_text("{}")
     rows = [SimpleNamespace(suite=row["suite"], task_id=row["task_id"],
@@ -213,7 +265,7 @@ def test_final_cursor_resume_publishes_checkpoint_without_an_update(monkeypatch,
     session = SimpleNamespace(output=output, context=SimpleNamespace(is_main=True),
                               data=SimpleNamespace(close=lambda: None))
     monkeypatch.setattr(run, "_prepare_train", lambda *_: session)
-    monkeypatch.setattr(run, "_restore", lambda *_: (288, 288))
+    monkeypatch.setattr(run, "_restore", lambda *_: (576, 576))
     monkeypatch.setattr(run, "_step", lambda *_: pytest.fail("completed ECP must not train again"))
     saved = []
 
@@ -222,13 +274,13 @@ def test_final_cursor_resume_publishes_checkpoint_without_an_update(monkeypatch,
         (current.output / "checkpoints" / f"macro_{cursor:08d}").mkdir(parents=True)
 
     monkeypatch.setattr(run, "_save_checkpoint", save_fixture)
-    args = SimpleNamespace(arm="P", stop_after=288, frame_chunk=8, microbatch=28,
+    args = SimpleNamespace(arm="P", stop_after=576, frame_chunk=8, microbatch=28,
                            resume=tmp_path / "P/train/attempts/fresh/checkpoints/macro_00000288",
                            attempt="finish")
     run.train(spec, args)
     pointer = json.loads((tmp_path / "P/train/final_checkpoint.json").read_text())
     completion = json.loads((output / "completion.json").read_text())
-    assert Path(pointer["checkpoint"]).is_dir() and saved == [(288, 288)]
+    assert Path(pointer["checkpoint"]).is_dir() and saved == [(576, 576)]
     assert completion["checkpoint"] == pointer["checkpoint"]
     assert completion["actual_segment_updates"] == completion["actual_segment_queries"] == 0
 
@@ -236,7 +288,7 @@ def test_final_cursor_resume_publishes_checkpoint_without_an_update(monkeypatch,
 def test_formal_entrypoints_refuse_retired_m(monkeypatch) -> None:
     spec = json.loads((REPO / "configs/demonstration_transfer_v1/learning_spec.json").read_text())
     with pytest.raises(ValueError, match="formal P/I"):
-        train(spec, SimpleNamespace(arm="M", stop_after=288, frame_chunk=8, microbatch=28,
+        train(spec, SimpleNamespace(arm="M", stop_after=576, frame_chunk=8, microbatch=28,
                                     resume=None, attempt="fresh"))
     monkeypatch.setattr("ember.demonstration_learning.bank._frozen_git", lambda: {})
     with pytest.raises(ValueError, match="formal bank admits P/I"):

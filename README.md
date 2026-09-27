@@ -7,7 +7,8 @@ task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正�
 后续原始字段勘误：L450有24行fixture初位不一致，涉及它的相应严格配对范围为376；这些行均失败，总分/得失数不变。
 V相邻400行保存初位一致，退化与关闭裁决保留；证据范围见findings§186。
 [教学参考对应学习](docs/designs/demonstration_transfer_learning_design.md)固定支持构造已核：416次行为367成功，
-四源共同初态支持20任务/296交叉。这不是Writer收益；当前仅登记完整144 LoRA的有界工程/profile，正式学习未启动。
+四源共同初态支持20任务/296交叉。这不是Writer收益；完整144 LoRA工程的真实新查询反传、source隔离和恢复已核。
+当前仅登记同数据强MT成本、紧凑bank及共同scene的官方接口准入，正式学习未启动。
 具体派发、时间和资源上限见progress；不扩大数据或按物理失败修补控制器。
 固定C0完整400为正确120、另一正确132、语言121、Source57，旧巨大缺口未复现，有益视频增量仍未识别。
 冻结E/H干预显示后续内容有有限作用；新学习比较C0/S0正确27/22、另一正确27/17（各80）、seen26/22（各64）。
@@ -45,7 +46,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 
 | 目录 | 内容与生命周期 |
 | --- | --- |
-| `src/ember/` | Writer共享组件与历史bank读取、Source/MT-BC、数据及评测实现；当前无活动Writer训练入口 |
+| `src/ember/` | 当前对应学习候选、Writer共享组件与历史bank读取、Source/MT-BC、数据及评测实现 |
 | `scripts/` | 薄CLI、环境构建、数据封存和结果比较入口；已结束的专用诊断脚本由Git保存 |
 | `tests/` | 对当前实现及稳定科学/恢复/配对合同的CPU检查 |
 | `configs/` | 显式数据协议、方法配置和审计；不同协议分别保留，不能覆盖旧结果 |
@@ -62,6 +63,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 
 | 职责 | `src/ember/`中的owner |
 | --- | --- |
+| 当前对应学习候选的数据、唯一LoRA和有界运行 | `demonstration_learning/data.py`、`model.py`、`run.py`；范围只按active design，关闭候选时退役私有入口 |
 | 历史Writer仍使用的原生图文／完整H、Meta组件 | `writer/video_program.py`、`writer/meta_lora.py` |
 | 历史Writer的Core、Procedure共享组件 | `writer/temporal.py`、`writer/procedure.py`；不保留已关闭条件速度编码器 |
 | 封存rank135 bank的唯一LoRA重建与官方接入 | `writer/conditional_velocity_bank.py`、`pi05_lora.py`、`batched_lora.py`；不生成新bank |
@@ -70,7 +72,8 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 | Source与共享LoRA监督 | `pi05_source_training.py`、`source_sft/` |
 | 配对闭环、队列、协议与结果 | `pi05_eval/`、`pi05_eval_queue.py`、`pi05_eval_contract.py`、`pi05_eval_results.py` |
 
-当前无活动Writer训练/物化入口；`scripts/train_writer.py`、`scripts/materialize_writer.py`已删除。
+当前对应学习通过`python -m ember.demonstration_learning.run`进入，沿用公共FM/native/ECP；已结束的通用
+`scripts/train_writer.py`、`scripts/materialize_writer.py`不恢复。新的比较准入规格须由执行者实现后才能运行，不能拿旧工程CLI直接启动。
 通用评测入口`scripts/evaluate_pi05.py`保留，读取已封存bank的规格与checkpoint，不把历史读取能力当作新运行授权。
 Source/MT-BC入口为`scripts/train_source_base.py`和`scripts/train_source_sft.py`；复用同一评测合同。
 已结束的stability/output-space/causal诊断与low-LR专用执行面已退役，原实现可从`7b18030c`及各run记录的commit恢复。

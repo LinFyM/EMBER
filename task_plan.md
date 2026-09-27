@@ -1,21 +1,22 @@
 # EMBER task plan
 
-## 当前：补齐混合查询真实梯度和独立生成，再进入完整比较（2026-09-27）
+## 当前：完成有成本依据的完整方法比较准入（2026-09-27）
 
 目标仍是合法RGB/L一次生成完整LoRA，超过强MT-BC、视频有益且保持能力；Owner授权持续自主推进至今晚检查。
-固定数据支持已通过（20task/296交叉）；完整模型工程44cf63fa部分验收，详情见设计§10.6/progress。
-新查询尚未实际反传、整轮旧新同步切换、第二条case未恢复source identity，是明确工程缺口；不是P/I科学阴性。
-完整144组合/FM/恢复/最长105帧成本证据继续保留，不重跑有效旧工程或按接口失败改模型。
+固定数据支持已通过（20task/296交叉）；完整模型工程399e2610已独立验收并合入main。
+真实新query反传、固定相位混合、每次生成source identity、ECP恢复和唯一完整144均成立；工程不代表科学收益。
+16实际更新/1,792query中252条新query确实被消费，闭环接口失败不触发方法修改。详细原件见progress/设计§11.3。
 
-当前唯一active design为`docs/designs/demonstration_transfer_learning_design.md`§11、同一路径机器规格v2：
-固定支持task相位交错，P/I fresh6及仅P2→6恢复，16更新/1,792query；唯一受影响global38接口补全。
-预计40–75分钟，90分钟复核，新增.40GPUh/最多2卡，closure2GiB、全study4GiB；真实派发以progress回执为准。
-两零初始化层使Procedure/Action第3步才有梯度，已纠正过宽验收预期，不改变模型或另开初始化实验。
+当前唯一active design为`docs/designs/demonstration_transfer_learning_design.md`§13、同一路径机器规格v3：
+一次补齐同数据强MT完整更新成本、紧凑bank和共同canonical scene的官方评测链。
+MT仅fresh3及1→3恢复，共5更新/2,880query；只读P6/I6各8条件bank及M3共同bank，三臂各8条train-only接口。
+P/I不新增更新；不重复最长profile，不扩数据、架构或局部probe。预计90–150分钟、180分钟复核，硬限1GPUh/2卡。
+新run4GiB、新增冻结代码512MiB、相关代码2.25GiB，实际派发/承接以progress回执为准。
 
-主讨论同时完成后继完整方法合同：P/I保持同一真实query/噪声/时标；同数据MT保留强36×16更新配方，
-完整训练/物化/strict400与相邻保持均有实际成本依据，评测须共用完整物理scene。
-原强MT155继续作为参照；局部FM吞吐不能给MT完整预算。新工程权重不作正式初值，正式学习仍未启动。
-无新采集、旧实验恢复、held/Test梯度、controls或RL；不为“持续工作”制造报告/探针或自Queue。
+主讨论继续完成正式比较的节点和方法停止线，保留原强MT155及新同数据强MT，不能用每步112与576的成本混用或降低强参照。
+P/I改变对应联合关系，不能独自证明部署视频必要；正式single-checkpoint400、相邻保持和适时视频因果证据仍须满足。
+正式训练/400/held的预算待本批完整实测后冻结，工程权重不作正式初值。无旧实验恢复、held/Test梯度、controls或RL。
+执行者独立工作时不陪跑/轮询；主讨论无派发任务且有可推进工作时在本回合继续，不自Queue或等待Owner催促。
 
 以下为既往推进记录，不构成当前执行授权：
 1. 必要CPU入口/依赖退役已验收：5587c3df集成为71ab5db5，18项CPU检查及四套真实bank元数据/capture合同通过。

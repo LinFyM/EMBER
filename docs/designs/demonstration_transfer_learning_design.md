@@ -1,7 +1,8 @@
 # 教学参考与跨初态功能查询：对应学习候选
 
 2026-09-27。这是尚未验证的完整学习假设。§5/7/8数据构造及配对修正均已完成并独立核验；
-§10登记完整模型的有界工程/profile，是否已派发只看progress。没有正式学习、held评测或数据扩建授权。
+§10/11完整模型工程已验收，当前仅登记§13完整比较成本与official接口准入，是否已派发只看progress。
+没有正式学习、held评测或数据扩建授权。
 实际执行状态只看[progress](../../progress.md)。科学依据见[机制分析§36–37](../analyses/feature_to_operator_mechanism_20260926.md)。
 Reader、条件速度270/450及其它已关闭运行不恢复；本设计不宣称已找到它们的统一根因。
 
@@ -619,6 +620,21 @@ CPU回归/结构检查后clean pushed detached运行，一次完整完成/实质
 首批用28-query FM推得的“.85GPUh/288”只是局部计算下界，不能当MT的完整成本或公平训练预算。
 本批不顺带运行MT/profile、400 bank/held或扩建评测平台；这些需要形成完整合同和成本依据后再投入。
 
+### 11.3 补全已验收（2026-09-27）
+
+399e2610相对44cf63fa四文件+194/-137，当前完整候选六文件净+1057；主讨论读完差异、四项CPU测试通过，
+架构guard REVIEW无hard。新增职责仍为数据/唯一组合/训练/接口，Runtime统一在compile前恢复identity，旧profile-cases入口已移除。
+主讨论从全部288事件重算每轮10新、36task各32visit和全部4×4格；从真实metrics重算16宏步/1,792query，
+其中新252、旧1540。第6步P/I同task97/source0/query/flow seed，教学分别0/3，真实FM cotangent均约.00977；
+实际代码将其送回同一完整144的公共与条件参数并更新。不以相近loss或非零梯度裁决对应收益。
+P fresh2/6、I fresh2/6及P resume6五套ECP的optimizer/scheduler/sampler/rank RNG游标成立，前两日志行原样保留。
+顺序接口实际先装global2输出，物理source差范数1.234047；第二次普通compile后为0，两次identity恢复成立。
+唯一global38的520动作/521状态、104次双RGB重规划和T/T+1已独立核，失败仅为接口事实。未重复原global2环境或最长profile。
+四段exit0，新增完整.236187GPUh，累计.442623；closure约1.141GiB/全study2.544GiB，相关代码1774MiB，均在限额内。
+实际派发到完成约23分钟，低于40–75分钟预期；不把节省时间转成额外未登记模型工作。
+独立原件`.codex/tmp/demonstration_transfer_main_review_20260927/learning_closure_acceptance.json`。
+源码以merge合入main，冻结树/旧原件不变。§11工程缺口关闭，**未产生正式closed-loop或有益视频证据**；工程权重不作正式初值。
+
 ## 12. 完整比较的已确定口径与尚缺准入（主讨论准备，不增加§11执行范围）
 
 ### 12.1 同数据MT必须保持强训练程序
@@ -665,3 +681,78 @@ bank manifest须绑定单checkpoint、精确video映射、source与完整rank/ta
 实际还缺新数据MT完整更新成本，以及新bank/共享scene在官方调用链的有限工程证据；不把这些缺项写成已完成或据此启动GPU。
 最小后继工程只应验证该完整比较需要的实际接口与成本，并接入同一活动实现，不增加科学probe、数据支持或模型变体。
 算术原件：`.codex/tmp/demonstration_transfer_main_review_20260927/learning_comparison_budget_basis.json`。
+
+## 13. 唯一后继：完整比较的成本与official接口准入
+
+任务`demonstration_transfer_comparison_admission_20260927`，仍只派原指定执行者。
+本批一次补齐同数据MT实际成本、紧凑bank和共享canonical scene的官方调用链；不再分成局部科学Gate。
+同一机器规格`configs/demonstration_transfer_v1/learning_engineering_spec.json`升v3，取代已结束的v2活动入口。
+§2/9的完整模型、数据、目标保持。没有正式P/I训练、held/Test、controls、RL、新采集或旧实验重跑授权。
+
+### 13.1 忠实同数据MT的有限真实更新
+
+MT为同一Source1000上的一套fresh自由rank128/alpha128、38-target A/B；无Writer/Meta/视频读取，source始终冻结。
+每宏步36task×16query：支持20task各8旧/8新，其它16task各16旧，总576=416旧+160新。
+原动作池demo0–45，offset1；新296交叉、offset0、自己的双RGB/8state、50horizon末动作重复，复用当前数据owner。
+原查询沿强MT层次无放回：task内部old查询游标推进，按46 episode permutation取demo、再按各episode frame permutation取chunk；
+支持task游标每步增8，其它增16。新查询每task每步四源各2条，源内共同init无放回循环，再在该轨迹合法RGB时点无放回循环。
+各层permutation使用独立登记seed，不能平铺轨迹帧、按长度/成功率重加权或借query/source编号向policy输任务码。
+原层次抽样seed20260723；新init/frame层次seed2026092704并分离层次tag；flow seed2026092705，模型/优化器seed7。
+配置应保存这两类逻辑游标；query顺序/物理分片不改变每task16及两类权重。无需把MT query与Writer逐行强行相同。
+
+普通真实FM仅50×7；AdamW seed7、lr3e-4、betas(.9,.95)、eps1e-8、wd1e-4、clip1、150 warmup与既有clamped scheduler不变。
+允许复用已核`paired_functional_credit`到自由A/B的精确cotangent/VJP，其最后映射只是直接参数，等价于该真实FM的直接梯度；
+不得用回归更新标签、伪梯度、低rank或缩小task batch代替强MT。公共参数属于唯一生成/执行LoRA，物理source不另留可训练副本。
+复用当前学习loop、ECP、source/processor、FM及source_sft/control和层次抽样规则；可为实际第二消费者做内聚重构，
+不复制Source-SFT或新建第三套训练框架。无MT视频/native假读取；P/I的函数和数值学习程序保持。
+
+仅MT fresh3，存1/3 ECP，再从自己的1恢复至3：**5实际宏步/2,880query，新800/旧2,080**。
+同节点world2优先，world1允许；物理query microbatch16，逻辑576不变，恢复锁原拓扑。每rank按task平衡分片，不绑定固定task卡。
+测真实全宏步、数据/FM/反传/optimizer、checkpoint和完整占卡成本、进程峰值；完整source/LoRA trainable集合、finite、恢复游标须成立。
+工程M3不可成为正式初值，不以其loss/后续接口成功选方法。
+同时CPU将P/I事件流完整定义到两个288块：第一块与已核v2一致，第二块各task重排全部16源×条件格；
+新query/flow仍与独立d无关，P/I完全共用。核576总64,512query（新17,920/旧46,592），但**不运行P/I任何新更新**。
+不把扩展CPU事件表当作已授权576；正式节点/继续停止线由主讨论随后冻结。
+
+### 13.2 同一bank与official调用链
+
+只读新P6/I6工程ECP（399e2610）作bank接口权重；须显式核该兼容来源与同一模型/算子，不从它们续训。
+固定train global2/38、init0–3、K1 correct；按既有video_schedule、seed7、50视频池、per-init ordinal映射。
+P和I各8个合法视频条件、8个episode索引；M3仅一套shared128、同样8个episode索引，无视频值读取。
+P/I每bank公共128存一次+每条件完整16，载入拼成唯一144；M为唯一shared128，不输入task ID或按task选权重。
+复用同一新bank owner实现检查/物化/episode证据与BatchedLoRAInference，接入现有`scripts/evaluate_pi05.py`；
+不复制队列、rollout、资源/恢复平台或退休velocity实现，不用手写`rollout_shard`调用冒充official入口接入。
+bank须绑定精确checkpoint/source/scope/video映射、完整shape/finite及调用次数；只验证必需身份，不新增hash或逐tensor一致扫描。
+报告实际bank总时长/LoRA每秒、加载开销与峰值，由此估计400物化；不从8个工程条件推出held结果。
+
+### 13.3 真实配对起点与固定24条接口
+
+先于任一policy行为冻结8个train canonical scene：官方init0–3、seed7、dummy10，无模型选点。
+复用已核全model body pose、post-dummy sim state和controller/观测再生成语义，存自己的起点/双RGB。
+每臂每条仍作官方初始化/dummy10，再恢复同一冻结起点；第一真实动作前核完整登记scene、EEF/gripper/谓词和双RGB。
+不从teacher action/state生成起点，不额外settling，不使用held初始化/示范标签；配对失败作为工程错误停止，不能只靠state ID宣称配对。
+初始化公共逻辑若移入`pi05_eval`，由collector和official两处实际消费，删除原重复实现；不得让正式evaluator反向依赖候选采集CLI。
+原已冻结collector/数据不改、不重跑；本批新scene只服务这次训练侧接口及未来同实现的正式配对。
+
+**P6/I6/M3各一次8行，共24条**。完整official预处理/10 flow/前5action/成功停/220或520horizon，最多8,880真实policy控制步。
+每臂两条full（global2/38各state0），其余6条compact；全部保存T动作/T+1 body/EEF/gripper/BDDL和scene引用。
+cost-balanced long-first dynamic queue、persistent evaluator；优先2卡、每卡2 replicas、每replica1 env，显存不足可用1 replica或1卡，
+不为凑卡等待，不改变episode/video/RNG。只跑这24条，不加Source、旧MT、其它case或失败重试。
+成功数仅保留原行，不作为方法收益；同时测完整worker加载/退出成本，为正式400给实测依据与长尾余量。
+
+### 13.4 资源、所有权和一次交付
+
+预计CPU/实现60–100分钟，GPU全阶段15–30分钟，收尾15–20，总90–150分钟，180分钟复核。
+MT旧实测每576约149秒，5宏步约.207GPUh；既存接口每740控制步约60秒，8,880上界约.20GPUh；
+另计新bank、scene、worker加载/恢复/IO与失败，预计完整.45–.75GPUh，**硬限1.0GPUh、峰值2卡**。
+这些是投入估计，不冒称新MT或official队列实测；达到任一硬限停止新增执行，保留真实缺项。
+新root `/data1/user/ymdai/ember_runs/demonstration_transfer_comparison_admission_20260927`，峰值4GiB；
+原工程study2.544GiB只读。新冻树每份<=256MiB、最多两份，共新增代码<=512MiB；相关代码从1774MiB增至最多2286MiB，限2.25GiB。
+启动前核data1独立quota/共享容量和双节点live GPU，完整计费含加载/失败/等待；不复制source/HDF5/296查询、不建整库cache。
+
+原独占分支从指定main承接；当前私有学习owner扩展到确有第二用途的直接MT，bank为一个独立owner，scene为共同初始化owner。
+可把run中的共同macro/ECP循环提取为内聚学习执行职责，使条件准备与执行循环分离；不是机械拆大文件或保留两个trainer。
+替换手写engineering episode入口，由Git保留已完成case；旧v1/v2活动CLI及无消费者的临时实现退役。
+预期净增约700–1200行，超出须说明实际职责/替换/退役关系；结构guard的REVIEW由执行者和主讨论处理，不机械请求Owner确认。
+少量针对性的CPU检查后从clean pushed detached执行。完整源码/原件/成本/缺项以一次Queue交付，不逐阶段自通知。
+本批只测完整比较的可执行性与成本；正式长训练、400 held与后继方法裁决仍由主讨论另冻，不能顺带自动启动。

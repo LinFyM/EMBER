@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：完整学习工程部分验收，补齐两项实际接口（2026-09-27）
+## 当前状态：完整学习工程已验收，进入完整比较的成本与official接口准入（2026-09-27）
 
 ### 当前科学裁决与授权
 
@@ -8,28 +8,35 @@ Owner授权持续自主推进，今晚检查。主讨论`01a0dd74-4c71-7c82-8629
 唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责实验。不联系旧主讨论/旧Sol，所有新增data1。
 没有独立工作且仍有可继续研究时直接在本回合工作，不结束再自Queue，不陪跑等待或重复查询执行者。
 
-**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前仅登记§11
-`demonstration_transfer_learning_closure_20260927`，机器规格同路径升v2。已从clean pushed main `fef678f4`派发。
-唯一Queue `01a0e246-6d95-7fc3-85cc-ff8d18020e45`接受，09:51 UTC一次app-server快照确认执行者active、队列已消费；
-只证明回合承接，不称GPU已启动。请求/回执/快照在同tmp目录的`learning_closure_*`，无自Queue或持续轮询。
-44cf63fa工程回报已消费；主讨论读完新增六文件+1000行，三CPU测试通过，guard REVIEW无hard，源码待修正后一并集成。
-288事件边际及12实际旧数据更新/1,344query、ECP恢复、完整144 FM/VJP、最长105帧profile与原件成本有效；
-但首4步全旧，新增NPZ没有实际模型消费；每9步新事件0/20同步切换不合原交错意图。
-第二条global38在前一输出仍安装时读教学，撤回独立source生成资格；其520动作数组仍为真实事实，不拿失败改方法。
-原global2独立生成和最长profile继续有效。全部梯度组第3步起活动由head与Procedure调制两个零层解释，
-主讨论原第2步表述已纠正，不更改初始化。完整验收边界见设计§10.6/findings§188，独立原件
-`.codex/tmp/demonstration_transfer_main_review_20260927/learning_engineering_acceptance.json`。
-首批完整.206436GPUh、均exit0，约1.403GiB；没有科学收益面板，不把工程完成当作P/I方法通过。
+**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前登记§13
+`demonstration_transfer_comparison_admission_20260927`，同一路径机器规格升v3；本段登记时尚未派发。
+下一次派发只给指定执行者，须使用本轮clean pushed main承接，回执随后补于本段；计划文字不冒充正在执行。
 
-§11只修task固定相位和每次compile的source identity，P/I各fresh6、仅P新ECP2→6，共16实际更新/1,792query；
-第6步task97为上游通路打开后的真实新查询。新P6先生成安装global2（不跑环境），再独立生成global38并补唯一接口episode。
-原模型/标签/权重/LR/数据支持不变，不重做有效global2、最长profile、I恢复或采集。
-预计40–75分钟、90分钟复核；新增完整.40GPUh/最多2卡，closure峰值2GiB/全study4GiB，相关代码1.75GiB。
-工程权重不接正式训练。288/576、MT、held、controls、Test、RL均须后继完整合同，本批未启动。
-主讨论并行完成设计§12：强MT仍36×16，支持task每步8旧/8新，不能用Writer112-query预算；
-MT288计算量参考4.366GPUh与旧实际profile外推11.893均不当作新MT实测。bank公共128只存一次+条件16，
-400条件张量约2.101GB；新比较共用canonical完整起点。正式停止线/完整MT成本/官方bank与scene准入仍待冻结，未擅自启动。
-主讨论并行准备完整比较、MT预算与真实scene配对；不以28-query FM的局部下界代替36×16 MT成本。
+§11闭环工程完成Queue已消费；主讨论独立核完四文件修正、288事件、全部真实metrics、五套ECP元数据与唯一case的NPZ/PT，
+四项CPU检查通过，guard REVIEW无hard。源码399e2610已以c9e25e95合入main。
+16实际宏步/1,792query中有新252/旧1540；第6步P/I task97真实新query/flow相同、teacher0/3不同，完整144 FM/VJP实际更新成立。
+每9步10新/26旧，36task各32visit、20task全部4×4格与P/I边际成立；不把近似相同loss当作科学结果。
+source每次compile前物理identity恢复成立：前一输出偏离1.234047、再compile后0.0。唯一global38接口520动作/521状态、
+104次双RGB重规划已核，失败只作工程原行，不归因或修补模型。P2→6恢复前缀/事件/LR/游标完整，不追逐低位一致。
+四GPU段exit0，新增完整.236187GPUh/上限.40；与原.206436累计.442623。closure1.141GiB、全study2.544GiB、代码1774MiB。
+派发至完成约23分钟，低于40–75分钟预期；旧原件和冻结树未动，不重复有效原global2或105帧profile。
+独立复核：`.codex/tmp/demonstration_transfer_main_review_20260927/learning_closure_acceptance.json`；详细边界见设计§11.3/findings§189。
+工程缺口关闭，**尚未产生正式闭环能力或视频收益证据**。旧§11 Queue `01a0e246-6d95-7fc3-85cc-ff8d18020e45`不再是后台任务。
+
+§13将完整比较所缺的三项一次补齐：
+- 同数据强MT保持36×16、支持task8旧/8新、shared128；仅fresh3与自己的1→3，5实际更新/2,880query。
+  沿同一真实FM/执行loop/ECP，无视频假读取，不缩task覆盖。测完整576-query成本；P/I不新增更新，CPU定义到两个288块。
+- 只读新P6/I6与本批M3，各物化train global2/38、state0–3的小bank；公共128只存一次，条件16载入拼成唯一144。
+  接入现有官方evaluator、persistent queue/capture/recovery，不复制旧velocity或评测平台，不用手写rollout调用冒充official接入。
+- 任一policy行为前冻结8个完整canonical scene，各臂恢复同一物理起点。P6/I6/M3各8条，共24条train-only接口，最多8,880动作；
+  每臂2 full+6 compact，成功数不选方法，失败不重试。数据采集旧原件不动。
+预计90–150分钟、180分钟复核；完整GPU预计.45–.75、硬限1.0GPUh/最多2卡。新run峰值4GiB、新增冻结代码<=512MiB，相关代码2.25GiB。
+执行者创建/启动前核data1独立quota、共享容量及双节点GPU。所有旧study只读，不加Source/旧MT/其它case。
+正式P/I288/576、MT长训练、400 bank/held、controls、Test及RL仍未授权；所有工程权重不得作正式初值。
+主讨论继续冻结完整方法的比较节点、继续/停止线与保持判断，GPU正式预算待本次真实MT/bank/official吞吐补全；不追加局部科学probe。
+已有强MT155保留，不能用新MT更低结果降低目标；P/I只检验配对学习干预，不能单独证明部署动态视频必要。
+
+以下为已经完成的时点记录，不恢复其中旧授权：
 
 上一§10派发Queue `01a0e213-81a0-7132-9326-be2489f04401`已完成消费，不当作后台任务。
 旧源支持与语义边界继续沿用：20task/296交叉、四源同物体次序；新FM75.081%路点/8.580%连接/16.338%末动作重复，

@@ -1,4 +1,4 @@
-"""Bounded P/I complete-LoRA engineering: audit, 4+2-to-4, profile and two cases."""
+"""Bounded P/I closure: phased events, 6+P2-to-6 and one sequential case."""
 
 from __future__ import annotations
 
@@ -14,9 +14,8 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-from safetensors.torch import load_file
-
 from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
+from ember.lora import copy_task_lora_state_, task_lora_state_dict
 from ember.pi05_eval_contract import git_state, inspect_source_checkpoint, load_evaluation_authorities
 from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 from ember.pi05_processing import Pi05LiberoProcessor, Pi05TeacherPrefixTokenizer
@@ -36,14 +35,14 @@ from .model import CorrespondenceLoRA
 
 REPO = Path(__file__).resolve().parents[3]
 SPEC_PATH = REPO / "configs/demonstration_transfer_v1/learning_engineering_spec.json"
-RUN_SCHEMA = "ember_demonstration_transfer_learning_engineering_run_v1"
-STAGE = "demonstration_transfer_learning_engineering"
+RUN_SCHEMA = "ember_demonstration_transfer_learning_closure_run_v2"
+STAGE = "demonstration_transfer_learning_closure"
 
 
 def specification() -> dict:
     spec = read_json(SPEC_PATH)
-    if (spec.get("schema_version") != "ember_demonstration_transfer_learning_engineering_spec_v1"
-            or spec.get("task") != "demonstration_transfer_learning_engineering_20260927"
+    if (spec.get("schema_version") != "ember_demonstration_transfer_learning_engineering_spec_v2"
+            or spec.get("task") != "demonstration_transfer_learning_closure_20260927"
             or tuple(spec["data"]["task_ids"]) != TASKS
             or tuple(spec["data"]["new_query_task_ids"]) != SUPPORTED
             or spec["data"]["new_crossing_rows"] != 296
@@ -51,14 +50,18 @@ def specification() -> dict:
             or spec["data"]["original_action_demos"] != list(range(46))
             or spec["data"]["new_teacher_demos"] != [0, 1, 2, 3]
             or spec["data"]["frame_stride"] != 5
-            or spec["execution"]["actual_macro_updates_total"] != 12
-            or spec["execution"]["actual_training_queries_total"] != 1344
+            or spec["execution"]["actual_macro_updates_total"] != 16
+            or spec["execution"]["actual_training_queries_total"] != 1792
+            or spec["execution"]["fresh_macro_updates_per_arm"] != 6
+            or spec["execution"]["resume_arms"] != ["P"]
+            or spec["execution"]["checkpoint_macros"] != [2, 6]
+            or spec["profile"]["enabled"] is not False
             or spec["operator"]["complete_rank"] != 144
             or spec["operator"]["target_count"] != 38
             or spec["operator"]["alpha"] != 144
             or spec["operator"]["template_identity_seed"] != 20260721
             or spec["optimization"]["extra_auxiliary_loss"] is not False
-            or spec["runtime"]["run_root"] != "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927"):
+            or spec["runtime"]["run_root"] != "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927/closure"):
         raise ValueError("bounded complete-LoRA engineering specification changed")
     require_architecture_identity(spec["model"])
     if spec["model"]["camera_view"] != "agentview" or spec["model"]["max_frames_per_encoder_call"] != 8:
@@ -95,6 +98,8 @@ class Runtime:
     lora: object
     source: dict
     device: torch.device
+    source_identity: dict[str, torch.Tensor]
+    source_identity_restores: int = 0
 
     def condition(self, data: TransferData, task: int, demo: int) -> tuple[tuple, int, int]:
         video = data.videos.load(task, demo)
@@ -105,8 +110,20 @@ class Runtime:
         return (pixels, positions, offsets, tokens, mask, span), video.raw_frame_count, len(pixels)
 
     def compile(self, condition: tuple) -> dict[str, torch.Tensor]:
+        self.restore_source_identity()
         with autocast(self.device):
             return self.state(self.policy, condition)
+
+    def restore_source_identity(self) -> None:
+        copy_task_lora_state_(self.policy, self.source_identity, self.lora)
+        self.source_identity_restores += 1
+
+    def source_delta_norm(self) -> float:
+        """One bounded interface check of physical source identity between compiles."""
+        physical = task_lora_state_dict(self.policy)
+        values = [(physical[name].detach().float() - reference.float()).norm()
+                  for name, reference in self.source_identity.items()]
+        return float(torch.stack(values).norm())
 
 
 def build_runtime(asset_root: Path, spec: dict, device: torch.device, *, evaluation: bool = False) -> Runtime:
@@ -138,7 +155,7 @@ def build_runtime(asset_root: Path, spec: dict, device: torch.device, *, evaluat
     if any(p.requires_grad for p in policy.parameters()):
         raise ValueError("physical source retained a trainable parameter")
     return Runtime(policy, state, Pi05TeacherPrefixTokenizer(tokenizer_path, 200, str(device)),
-                   processor, lora, source, device)
+                   processor, lora, source, device, full_template)
 
 
 def _optimizer(state: CorrespondenceLoRA, spec: dict):
@@ -250,6 +267,7 @@ def _prepare_train(spec: dict, args) -> Session:
                 "sampler": {k: v for k, v in data.events.sampler_state().items() if k != "next_step"},
                 "trainable_names": [name for name, p in runtime.state.named_parameters() if p.requires_grad],
                 "source_trainable": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
+                "source_identity_before_every_compile": True,
                 "information_wall": "teacher exact language+agentview RGB/positions only; own query RGB/state/actions only to FM",
                 "qualification": False}
     error = None
@@ -257,7 +275,7 @@ def _prepare_train(spec: dict, args) -> Session:
         if context.is_main:
             if args.resume:
                 parent = args.resume.parent.parent
-                if args.resume != (Path(spec["runtime"]["run_root"]) / args.arm /
+                if args.arm != "P" or args.resume != (Path(spec["runtime"]["run_root"]) / args.arm /
                                    "fresh" / "checkpoints" / "macro_00000002"):
                     raise ValueError("resume is not this arm's registered fresh macro2")
                 if read_json(parent / "run_contract.json") != contract:
@@ -281,7 +299,8 @@ def _restore(session: Session, checkpoint: Path) -> tuple[int, int]:
             scheduler=session.scheduler, run_contract_schema=RUN_SCHEMA,
             restored_state=restored)
         session.data.events.restore(restored["sampler_state"])
-        if (updates != 2 or rows != 2 or restored["training_state"] != {"updates": 2, "arm": session.arm}
+        if (session.arm != "P" or updates != 2 or rows != 2
+                or restored["training_state"] != {"updates": 2, "arm": session.arm}
                 or session.scheduler.last_epoch != 2 or session.data.events.next_step != 2):
             raise ValueError("ECP optimizer/scheduler/sampler/RNG cursor changed")
         parent_rows = (checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()
@@ -337,7 +356,7 @@ def _step(session: Session, update: int, rows: int) -> tuple[int, int]:
             "grad_norms_before_clip": gradients, "total_grad_norm": norm,
             "rank_memory": memory, "seconds": time.perf_counter() - tick})
     rows += 1
-    if update in (2, 4):
+    if update in (2, 6):
         save_ecp_checkpoint(
             output_dir=session.output, macro=update, stage=STAGE, context=session.context,
             model=session.runtime.state, optimizer=session.optimizer, scheduler=session.scheduler,
@@ -348,15 +367,15 @@ def _step(session: Session, update: int, rows: int) -> tuple[int, int]:
 
 
 def train(spec: dict, args) -> None:
-    if (args.arm not in ("P", "I") or args.stop_after != 4
+    if (args.arm not in ("P", "I") or args.stop_after != 6 or (args.resume and args.arm != "P")
             or args.microbatch not in spec["execution"]["oom_only_policy_microbatches"]
             + [spec["execution"]["initial_policy_microbatch"]]):
-        raise ValueError("training requires a fixed arm, four updates and registered physical batch")
+        raise ValueError("training requires a fixed arm, six updates and registered physical batch")
     session = _prepare_train(spec, args)
     try:
         updates, rows = _restore(session, args.resume) if args.resume else (0, 0)
         started = time.perf_counter()
-        while updates < 4:
+        while updates < 6:
             updates, rows = _step(session, updates, rows)
         if session.context.is_main:
             write_json_atomic(session.output / "completion.json", {
@@ -365,7 +384,7 @@ def train(spec: dict, args) -> None:
                 "actual_segment_queries": (updates - (2 if args.resume else 0)) * 112,
                 "seconds": time.perf_counter() - started,
                 "resumed_from": str(args.resume) if args.resume else None,
-                "checkpoint": str(session.output / "checkpoints" / "macro_00000004"),
+                "checkpoint": str(session.output / "checkpoints" / "macro_00000006"),
                 "scientific_qualification": False})
     finally:
         session.data.close()
@@ -395,7 +414,7 @@ def audit(spec: dict, args) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("audit", "train", "profile-cases"))
+    parser.add_argument("phase", choices=("audit", "train", "sequential-case"))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--arm", choices=("P", "I"))
     parser.add_argument("--stop-after", type=int)
@@ -409,8 +428,8 @@ def main() -> None:
     elif args.phase == "train":
         train(spec, args)
     else:
-        from .episode import profile_and_cases
-        profile_and_cases(spec, args, _frozen_git(), build_runtime)
+        from .episode import sequential_case
+        sequential_case(spec, args, _frozen_git(), build_runtime)
 
 
 if __name__ == "__main__":

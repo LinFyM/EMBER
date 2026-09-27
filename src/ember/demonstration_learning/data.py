@@ -21,7 +21,7 @@ TASKS = (0, 1, 2, 4, 5, 7, 12, 13, 14, 15, 17, 19, 20, 21, 22, 25,
          73, 95, 96, 97, 101)
 SUPPORTED = (0, 1, 2, 4, 7, 13, 15, 17, 19, 21, 28, 29, 34, 35, 37,
              38, 55, 95, 96, 97)
-SCHEMA = "ember_demonstration_transfer_learning_events_v1"
+SCHEMA = "ember_demonstration_transfer_learning_events_v2"
 
 
 def _rng(seed: int, *parts: int) -> np.random.Generator:
@@ -42,6 +42,9 @@ class PairedEvents:
         self.spec = spec
         self.lengths = {int(k): tuple(map(int, v)) for k, v in lengths.items()}
         self.support = support
+        self.phases = {task: ordinal % 2 for ordinal, task in enumerate(SUPPORTED)}
+        if spec["data"].get("supported_task_phases") != {str(k): v for k, v in self.phases.items()}:
+            raise ValueError("fixed supported-task phase contract changed")
         if (tuple(sorted(self.lengths)) != TASKS or tuple(sorted(support)) != SUPPORTED
                 or any(len(row) != 50 or min(row) < 2 for row in self.lengths.values())):
             raise ValueError("fixed 36-task source/20-task support changed")
@@ -88,7 +91,9 @@ class PairedEvents:
         jobs = []
         for task_value in order[4 * slot:4 * (slot + 1)]:
             task = int(task_value)
-            row = self._new(task, visit) if task in SUPPORTED and visit % 2 else self._old(task, visit)
+            row = (self._new(task, visit)
+                   if task in SUPPORTED and (visit + self.phases[task]) % 2 == 1
+                   else self._old(task, visit))
             if row["kind"] == "new" and arm == "I":
                 row["teacher_demo"] = row["independent_reference"]
             jobs.append({"task": task, "visit": visit, "update": update + 1,
@@ -99,6 +104,7 @@ class PairedEvents:
         return {"schema_version": SCHEMA, "next_step": self.next_step,
                 "tasks": list(TASKS), "supported": list(SUPPORTED),
                 "event_seeds": self.spec["data"]["event_seeds"],
+                "supported_task_phases": {str(k): v for k, v in self.phases.items()},
                 "old_query_offset": 1, "new_query_offset": 0,
                 "queries_per_condition": 28, "tasks_per_update": 4}
 
@@ -116,6 +122,7 @@ def audit_full_cycle(events: PairedEvents) -> dict:
     """Check the complete precommitted support/marginal plan without model work."""
     visits = {task: [] for task in TASKS}
     new_queries = old_queries = 0
+    per_round_new = [0] * 32
     for update in range(288):
         p, i = events.event(update, "P"), events.event(update, "I")
         if len(p) != 4 or len({row["task"] for row in p}) != 4:
@@ -123,16 +130,21 @@ def audit_full_cycle(events: PairedEvents) -> dict:
         for left, right in zip(p, i, strict=True):
             _check_pair(left, right)
             visits[left["task"]].append(left)
+            per_round_new[left["visit"]] += left["kind"] == "new"
             new_queries += 28 * (left["kind"] == "new")
             old_queries += 28 * (left["kind"] == "old")
     for task, rows in visits.items():
-        _check_task_cycle(task, rows)
+        _check_task_cycle(task, rows, events.phases.get(task))
+    if per_round_new != [10] * 32:
+        raise ValueError("each nine-update round must have ten new events")
     if (new_queries, old_queries) != (8960, 23296):
         raise ValueError("full paired cycle query allocation changed")
     return {"updates": 288, "task_visits_each": 32,
             "new_queries": new_queries, "old_queries": old_queries,
             "queries_total": new_queries + old_queries,
-            "supported": list(SUPPORTED), "crossing_cells_per_supported_task": 16}
+            "supported": list(SUPPORTED), "crossing_cells_per_supported_task": 16,
+            "new_events_per_round": per_round_new,
+            "supported_task_phases": {str(k): v for k, v in events.phases.items()}}
 
 
 def _check_pair(left: Mapping, right: Mapping) -> None:
@@ -143,11 +155,13 @@ def _check_pair(left: Mapping, right: Mapping) -> None:
         raise ValueError("paired event lost its 28 true queries")
 
 
-def _check_task_cycle(task: int, rows: list[dict]) -> None:
+def _check_task_cycle(task: int, rows: list[dict], phase: int | None) -> None:
     if len(rows) != 32 or [row["visit"] for row in rows] != list(range(32)):
         raise ValueError("coverage task lost one visit per round")
     newer = [row for row in rows if row["kind"] == "new"]
     if task in SUPPORTED:
+        if any((row["kind"] == "new") != ((row["visit"] + phase) % 2 == 1) for row in rows):
+            raise ValueError("supported task phase changed")
         cells = {(row["source"], row["independent_reference"]) for row in newer}
         if len(newer) != 16 or cells != {(c, d) for c in range(4) for d in range(4)}:
             raise ValueError("supported task lost the full independent 4x4 crossing")

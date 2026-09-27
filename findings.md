@@ -4606,3 +4606,21 @@ P/I只改变新query的条件对应；四源×四视频16格避免固定互换�
 8.580%连接、16.338%末动作重复；query在共同初态的权重3.342%。这是目标采样权重，不能冒称梯度/收益比例。
 后续occupancy仍依赖参考，自己的状态/带噪动作可能已透露c；P/I同query与held闭环才能检验视频是否新增有益作用。
 原件`learning_support_semantics.json`及设计§9.3记录范围，不据此改loss/数据或追加局部探针；已派工程合同不变。
+
+## 188. 工程图接通不等于干预路径已执行；两项限定修正（2026-09-27）
+
+44cf63fa六文件+1000行实现公共128+完整视频16的唯一144 LoRA，source冻结、实际普通FM/cotangent/VJP和ECP恢复已核。
+P/I共12实际宏步/1,344query，CPU计划新8,960/旧23,296、36task等权及20task的4×4边际成立；三项CPU测试通过。
+最长105帧完整28-query为18.594秒，allocated20.746/reserved21.143GiB；全部五GPU段exit0、完整.206436GPUh。
+详细验收与原件见设计§10.6及`learning_engineering_acceptance.json`。没有新closed-loop收益结果。
+
+源码与事件流另揭示：所有支持task每轮同步取旧/新（每9宏步新数0/20交替），首4步和profile全部旧query。
+CPU NPZ读取证明不了新query已消费，P/I smoke还未真正干预新数据的对应；不能让工程报告的“完整”代替实际链检查。
+原机器规格没有写明task相位是主讨论合同不够具体，后继固定升序ordinal奇偶相位，边际和目标不变。
+第二条接口global38教学读取前未取消global2生成LoRA；Meta hook是加法，不会移除原投影适配。
+因此该case不具备独立冻结source生成资格，但其动作/状态原件仍真实，失败不定位任何科学根因；训练functional_call不受此顺序case问题污染。
+
+原始梯度显示第2步Core/Text/VL及调制活动、Procedure/Action为0，第3步后全活动。FactorHead末层和Procedure调制串联零初始化
+给出相符导数解释：先head、再调制、后Procedure。主讨论“第2步起全部组”要求过宽；只更正文义，不做模型/初始化修补。
+后继§11限固定相位、新query真实反传/更新和source隔离：P/I各fresh6、P2→6、一个受影响接口，.40GPUh封顶。
+不重复有效原工程、不按失败改loss/rank/权重，不把这两项工程修正升级为EMBER的统一根因或已证实修复。

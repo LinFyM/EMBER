@@ -1,30 +1,34 @@
 # EMBER progress
 
-## 当前状态：固定训练支持已验收，进入完整LoRA学习的有界工程（2026-09-27）
+## 当前状态：完整学习工程部分验收，补齐两项实际接口（2026-09-27）
 
 ### 当前科学裁决与授权
 
-Owner晨间授权继续自主推进，今晚睡前检查。主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main，
-唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责具体实验。不联系旧主讨论/旧Sol，所有新增data1。
-有可继续的研究工作且没有独立实验/实质阻塞时，直接在本回合继续，不主动结束再自Queue；旧相反记录仅为当时事实。
+Owner授权持续自主推进，今晚检查。主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main，
+唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责实验。不联系旧主讨论/旧Sol，所有新增data1。
+没有独立工作且仍有可继续研究时直接在本回合工作，不结束再自Queue，不陪跑等待或重复查询执行者。
 
-**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`；当前仅授权§10的
-`demonstration_transfer_learning_engineering_20260927`，已从clean pushed main0f38d17c派发。
-唯一Queue `01a0e213-81a0-7132-9326-be2489f04401`获接受；08:55 UTC一次现有app-server只读核定执行者active、队列已消费。
-这证明回合承接，不证明模型/GPU已启动；无自Queue或持续轮询。请求/回执/快照在
-`.codex/tmp/demonstration_transfer_main_review_20260927/learning_engineering_{request.txt,queue_receipt.txt,dispatch_snapshot.json}`。
-函数类与完整P/I比较沿§2/9；本批只有P/I各fresh4及2→4恢复，共12实际更新/1,344query，
-另一次最长global38/demo36（517→105帧）的28-query完整FM/VJP、两条P4 train-only canonical接口episode。
-固定原36任务和新支持20任务，公共128+条件16合并为唯一完整144 LoRA，fresh真实FM联合学习；source冻结。
-原视频/action训练池沿既有demo0–45；§9此前“50条”更正，46–49仍保留训练侧诊断；正式held50视频合同不变。
-CPU核288更新的完整事件表，不实际跑288模型更新；P/I共用query/noise/time，四源×四条件完整表，20支持task旧/新各半。
-两卡预计100–170分钟总wall，一卡110–190，210分钟复核上限；完整1.0GPUh，最多2卡同节点，data1新原件4GiB。
-新冻树每份256MiB、新增代码总512MiB、相关代码总1.75GiB；执行者启动前刷新live GPU和data1独立quota。
-无新采集、正式训练、held/Test、controls、MT运行或RL；工程权重不续为正式候选。通过后由主讨论按实测成本冻结完整学习。
+**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前仅登记§11
+`demonstration_transfer_learning_closure_20260927`，机器规格同路径升v2。**本段登记时尚未派发**，真实回执另记。
+44cf63fa工程回报已消费；主讨论读完新增六文件+1000行，三CPU测试通过，guard REVIEW无hard，源码待修正后一并集成。
+288事件边际及12实际旧数据更新/1,344query、ECP恢复、完整144 FM/VJP、最长105帧profile与原件成本有效；
+但首4步全旧，新增NPZ没有实际模型消费；每9步新事件0/20同步切换不合原交错意图。
+第二条global38在前一输出仍安装时读教学，撤回独立source生成资格；其520动作数组仍为真实事实，不拿失败改方法。
+原global2独立生成和最长profile继续有效。全部梯度组第3步起活动由head与Procedure调制两个零层解释，
+主讨论原第2步表述已纠正，不更改初始化。完整验收边界见设计§10.6/findings§188，独立原件
+`.codex/tmp/demonstration_transfer_main_review_20260927/learning_engineering_acceptance.json`。
+首批完整.206436GPUh、均exit0，约1.403GiB；没有科学收益面板，不把工程完成当作P/I方法通过。
 
-派发后主讨论完成对实际支持内容的独立判断（设计§9.3/findings§187）：20task/80源只有3task双物，四源物体次序均相同，
-不再用顺序冲突解释本候选。新FM目标时间格75.081%路点执行/8.580%连接/16.338%末动作重复；不等同梯度或收益比例。
-这些事实限定完整P/I解释，不改变已派工程、不扩数据/探针。执行者一次完成/实质阻塞Queue负责接续，主讨论没有自Queue或轮询。
+§11只修task固定相位和每次compile的source identity，P/I各fresh6、仅P新ECP2→6，共16实际更新/1,792query；
+第6步task97为上游通路打开后的真实新查询。新P6先生成安装global2（不跑环境），再独立生成global38并补唯一接口episode。
+原模型/标签/权重/LR/数据支持不变，不重做有效global2、最长profile、I恢复或采集。
+预计40–75分钟、90分钟复核；新增完整.40GPUh/最多2卡，closure峰值2GiB/全study4GiB，相关代码1.75GiB。
+工程权重不接正式训练。288/576、MT、held、controls、Test、RL均须后继完整合同，本批未启动。
+主讨论并行准备完整比较、MT预算与真实scene配对；不以28-query FM的局部下界代替36×16 MT成本。
+
+上一§10派发Queue `01a0e213-81a0-7132-9326-be2489f04401`已完成消费，不当作后台任务。
+旧源支持与语义边界继续沿用：20task/296交叉、四源同物体次序；新FM75.081%路点/8.580%连接/16.338%末动作重复，
+仅为目标采样比例，不是梯度/收益比例。没有按数据事实改loss或追加局部探针。
 
 **§8固定训练支持已独立验收**：108源=100新兼容+4旧复用+task101四源不兼容；其16行未执行，其余416次全部有原件。
 367成功/48路点耗尽/1 horizon，共71,520行为步。主讨论CPU读取416 NPZ/104 scene，T/T+1/动作/RGB/停止成立，

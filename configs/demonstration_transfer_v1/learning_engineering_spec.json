@@ -1,8 +1,8 @@
 {
-  "schema_version": "ember_demonstration_transfer_learning_engineering_spec_v1",
-  "task": "demonstration_transfer_learning_engineering_20260927",
-  "status": "registered_bounded_engineering_only",
-  "design": "docs/designs/demonstration_transfer_learning_design.md#10",
+  "schema_version": "ember_demonstration_transfer_learning_engineering_spec_v2",
+  "task": "demonstration_transfer_learning_closure_20260927",
+  "status": "registered_bounded_closure_only",
+  "design": "docs/designs/demonstration_transfer_learning_design.md#11",
   "source": {
     "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
     "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json"
@@ -258,7 +258,31 @@
       "queries_total": 32256,
       "new_queries": 8960,
       "old_queries": 23296
-    }
+    },
+    "supported_task_phases": {
+      "0": 0,
+      "1": 1,
+      "2": 0,
+      "4": 1,
+      "7": 0,
+      "13": 1,
+      "15": 0,
+      "17": 1,
+      "19": 0,
+      "21": 1,
+      "28": 0,
+      "29": 1,
+      "34": 0,
+      "35": 1,
+      "37": 0,
+      "38": 1,
+      "55": 0,
+      "95": 1,
+      "96": 0,
+      "97": 1
+    },
+    "new_event_rule": "task in supported and (visit + supported_task_phases[task]) % 2 == 1",
+    "new_events_per_nine_update_round": 10
   },
   "optimization": {
     "loss": "one final complete-LoRA ordinary FM only",
@@ -286,15 +310,15 @@
       "P",
       "I"
     ],
-    "fresh_macro_updates_per_arm": 4,
+    "fresh_macro_updates_per_arm": 6,
     "checkpoint_macros": [
       2,
-      4
+      6
     ],
     "resume_from_macro": 2,
-    "resume_stop_macro": 4,
-    "actual_macro_updates_total": 12,
-    "actual_training_queries_total": 1344,
+    "resume_stop_macro": 6,
+    "actual_macro_updates_total": 16,
+    "actual_training_queries_total": 1792,
     "preferred_world_size": 2,
     "allowed_world_sizes": [
       1,
@@ -311,75 +335,68 @@
     "oom_only_frame_chunk": 4,
     "frozen_clean_pushed_code": true,
     "resume_comparison": "logical event/LR/checkpoint state; no bitwise tensor chase",
-    "formal_training_from_engineering_checkpoint": false
+    "formal_training_from_engineering_checkpoint": false,
+    "resume_arms": [
+      "P"
+    ],
+    "require_source_identity_before_every_compile": true,
+    "gradient_group_expectation": "head/common from step1; Core/Text/VL/modulation from step2; Procedure/Action from step3; fixed new event at step6"
   },
   "profile": {
-    "arm": "P",
-    "checkpoint_macro": 4,
-    "task_id": 38,
-    "teacher_demo": 36,
-    "raw_frames": 517,
-    "sampled_frames": 105,
-    "queries": 28,
-    "query_type": "original cross-episode; teacher36 excluded from action episodes",
-    "optimizer_updates": 0,
-    "real_fm_and_complete_writer_vjp": true
+    "enabled": false,
+    "reuse_readonly": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927/profile_cases/profile.json"
   },
   "canonical_interface_cases": [
     {
       "arm": "P",
-      "checkpoint_macro": 4,
-      "task_id": 2,
-      "init_state": 0,
-      "teacher_demo": 46,
-      "capture": "full_dual_camera",
-      "purpose": "canonical complete LoRA interface only; no scientific benefit score"
-    },
-    {
-      "arm": "P",
-      "checkpoint_macro": 4,
+      "checkpoint_macro": 6,
+      "preceding_install_without_rollout": {
+        "task_id": 2,
+        "teacher_demo": 46
+      },
       "task_id": 38,
       "init_state": 0,
       "teacher_demo": 46,
       "capture": "full_dual_camera",
-      "purpose": "canonical complete LoRA interface only; no scientific benefit score"
+      "purpose": "correct sequential compile source identity; one affected canonical interface only"
     }
   ],
   "runtime": {
-    "run_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927",
+    "run_root": "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927/closure",
     "expected_implementation_cpu_minutes": [
-      75,
-      120
+      20,
+      40
     ],
     "expected_model_world2_wall_minutes": [
-      15,
-      30
-    ],
-    "expected_model_world1_wall_minutes": [
-      25,
-      50
-    ],
-    "expected_closeout_minutes": [
       10,
       20
     ],
+    "expected_model_world1_wall_minutes": [
+      15,
+      25
+    ],
+    "expected_closeout_minutes": [
+      10,
+      15
+    ],
     "expected_total_world2_minutes": [
-      100,
-      170
+      40,
+      75
     ],
     "expected_total_world1_minutes": [
-      110,
-      190
+      45,
+      80
     ],
-    "hard_review_minutes": 210,
-    "full_gpu_hours_limit": 1.0,
+    "hard_review_minutes": 90,
+    "full_gpu_hours_limit": 0.4,
     "physical_gpu_peak_limit": 2,
-    "run_peak_gib": 4,
+    "run_peak_gib": 2,
     "new_frozen_each_mib": 256,
-    "new_code_total_mib": 512,
+    "new_code_total_mib": 256,
     "related_code_total_gib": 1.75,
     "raw_cache_resident_mib_per_rank": 1024,
-    "adapted_feature_cache_across_updates": false
+    "adapted_feature_cache_across_updates": false,
+    "whole_study_peak_gib": 4
   },
   "forbidden": [
     "new data generation",
@@ -390,7 +407,12 @@
     "RL",
     "old run restart",
     "rank/LR/seed/weight sweep",
-    "model changes justified by interface episode success/failure"
+    "model changes justified by interface episode success/failure",
+    "repeat longest-video profile",
+    "rerun valid global2 environment case",
+    "I resume duplicate",
+    "resume v1 engineering checkpoints",
+    "MT profile or learning"
   ],
   "delivery": "one complete or materially blocked Queue to scientific main; exact commits, all successes and failures, ECP/resume, profile/interface evidence, full resource accounting; no automatic successor"
 }

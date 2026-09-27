@@ -5,7 +5,8 @@ from pathlib import Path
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from ember.demonstration_transfer import _authorities, _extract_one, _interpolate, _inverse_osc, _target
+from ember.demonstration_transfer import (_authorities, _extract_one, _interpolate,
+                                          _inverse_osc, _restore_scene, _target)
 
 
 def test_fixed_sources_restore_without_source_steps():
@@ -49,3 +50,36 @@ def test_reference_transform_and_inverse_osc_use_left_rotation():
     assert len(connection) == 10
     np.testing.assert_allclose(connection[-1][0], p)
     np.testing.assert_allclose(connection[-1][1], r)
+
+
+def test_scene_restore_copies_all_body_poses_and_settled_sim_state():
+    class Model:
+        nbody = 2
+        body_pos = np.array([[0., 0., 0.], [8., 9., 10.]])
+        body_quat = np.array([[1., 0., 0., 0.], [0., 1., 0., 0.]])
+
+        def body_id2name(self, index):
+            return ("world", "fixture")[index]
+
+    class Sim:
+        model = Model()
+
+    class Owner:
+        sim = Sim()
+
+    class Env:
+        env = Owner()
+
+        def regenerate_obs_from_state(self, state):
+            self.restored_state = state.copy()
+            return {"state": state.copy()}
+
+    snapshot = {"model_body_names": np.array(["world", "fixture"]),
+                "model_body_pos": np.array([[0., 0., 0.], [.2, .3, .4]]),
+                "model_body_quat": np.array([[1., 0., 0., 0.], [1., 0., 0., 0.]]),
+                "sim_state": np.array([1., 2., 3.])}
+    env = Env()
+    observation = _restore_scene(env, snapshot)
+    np.testing.assert_array_equal(env.env.sim.model.body_pos, snapshot["model_body_pos"])
+    np.testing.assert_array_equal(env.env.sim.model.body_quat, snapshot["model_body_quat"])
+    np.testing.assert_array_equal(observation["state"], snapshot["sim_state"])

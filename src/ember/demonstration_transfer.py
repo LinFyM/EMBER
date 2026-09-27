@@ -233,15 +233,70 @@ def _capture_image(observation: dict[str, Any]) -> np.ndarray:
     return image
 
 
-def _run_one(env: Any, init_states: Any, row: dict[str, Any], demo: int, state: int,
-             metadata: dict[str, Any], source: dict[str, np.ndarray], recipe: dict[str, Any],
-             output: Path) -> dict[str, Any]:
-    started = time.monotonic()
+def _initialize_query(env: Any, init_states: Any, state: int, recipe: dict[str, Any]) -> dict[str, Any]:
+    """Use the unchanged official fixed-state and ten-dummy initialization."""
     env.seed(int(recipe["rng"]["inference_seed"]))
     env.reset()
     observation = env.set_init_state(init_states[state])
     for _ in range(10):
         observation, _, _, _ = env.step(np.asarray(recipe["environment"]["dummy_action"], dtype=np.float64))
+    return observation
+
+
+def _scene_snapshot(env: Any, observation: dict[str, Any], names: list[str],
+                    goals: list[list[str]], *, image: bool) -> dict[str, np.ndarray]:
+    """All mutable scene positions plus the settled robot/controller state."""
+    owner = env.env
+    model = owner.sim.model
+    controller = owner.robots[0].controller
+    sample = _query_sample(env, observation, names, goals)
+    snapshot = {
+        "model_body_names": np.asarray([model.body_id2name(i) for i in range(model.nbody)]),
+        "model_body_pos": np.asarray(model.body_pos, dtype=np.float64).copy(),
+        "model_body_quat": np.asarray(model.body_quat, dtype=np.float64).copy(),
+        "sim_state": np.asarray(env.get_sim_state(), dtype=np.float64).copy(),
+        "controller_goal_pos": np.asarray(controller.goal_pos, dtype=np.float64).copy(),
+        "controller_goal_ori": np.asarray(controller.goal_ori, dtype=np.float64).copy(),
+        **{f"initial_{key}": value for key, value in sample.items()},
+    }
+    if image:
+        snapshot["initial_rgb_canonical180"] = _capture_image(observation)
+    return snapshot
+
+
+def _restore_scene(env: Any, snapshot: dict[str, np.ndarray]) -> dict[str, Any]:
+    """Rebuild the first reference's post-dummy physical state after a fresh reset."""
+    model = env.env.sim.model
+    actual_names = np.asarray([model.body_id2name(i) for i in range(model.nbody)])
+    if not np.array_equal(actual_names, snapshot["model_body_names"]):
+        raise ValueError("task38 full-scene body registry changed between references")
+    if (model.body_pos.shape != snapshot["model_body_pos"].shape
+            or model.body_quat.shape != snapshot["model_body_quat"].shape):
+        raise ValueError("task38 full-scene model layout changed")
+    model.body_pos[:] = snapshot["model_body_pos"]
+    model.body_quat[:] = snapshot["model_body_quat"]
+    return env.regenerate_obs_from_state(snapshot["sim_state"])
+
+
+def _assert_scene_pair(env: Any, observation: dict[str, Any], names: list[str],
+                       goals: list[list[str]], snapshot: dict[str, np.ndarray], *, image: bool) -> None:
+    actual = _scene_snapshot(env, observation, names, goals, image=image)
+    for key, expected in snapshot.items():
+        observed = actual[key]
+        if key == "model_body_names" or key == "initial_rgb_canonical180" or key == "initial_predicates":
+            equal = np.array_equal(observed, expected)
+        else:
+            equal = observed.shape == expected.shape and np.allclose(observed, expected, rtol=0, atol=1e-8)
+        if not equal:
+            raise ValueError(f"task38 restored full-scene start differs: {key}")
+
+
+def _run_one(env: Any, init_states: Any, row: dict[str, Any], demo: int, state: int,
+             metadata: dict[str, Any], source: dict[str, np.ndarray], recipe: dict[str, Any],
+             output: Path, *, initialized_observation: dict[str, Any] | None = None) -> dict[str, Any]:
+    started = time.monotonic()
+    observation = (initialized_observation if initialized_observation is not None
+                   else _initialize_query(env, init_states, state, recipe))
     owner = env.env
     names, goals = _roles(owner, int(row["global_task_id"]))
     if names != metadata["body_names"] or goals != metadata["goals"]:
@@ -384,20 +439,77 @@ def _episode_phase(repo: Path, output: Path, gpu_index: int) -> None:
             env.close()
 
 
+def _paired_phase(repo: Path, output: Path, gpu_index: int) -> None:
+    """Replace only task38's eight rows while reading the four old sources."""
+    rows, recipe, paths = _authorities(repo)
+    from libero.libero import benchmark
+    from libero.libero.envs import OffScreenRenderEnv
+
+    old_sources = ROOT / "sources"
+    if not (ROOT / "source_completion.json").is_file() or not (ROOT / "rows.jsonl").is_file():
+        raise ValueError("original source and episode evidence missing")
+    row = rows[38]
+    suite = benchmark.get_benchmark_dict()[row["suite"]]()
+    if suite.get_task(row["task_id"]).language != row["language"]:
+        raise ValueError("task38 benchmark language changed")
+    init_states = suite.get_task_init_states(row["task_id"])
+    bddl = Path(paths["bddl_files"]) / row["problem_folder"] / row["bddl"]["filename"]
+    (output / "episodes").mkdir(parents=True, exist_ok=False)
+    (output / "scenes").mkdir(exist_ok=False)
+    results = output / "rows.jsonl"
+    env = OffScreenRenderEnv(bddl_file_name=str(bddl), camera_heights=256,
+                             camera_widths=256, render_gpu_device_id=gpu_index)
+    try:
+        for state in STATES:
+            # Freeze the scene before loading or selecting either reference.
+            observation = _initialize_query(env, init_states, state, recipe)
+            names, goals = _roles(env.env, 38)
+            # Regenerate both references' step-zero sensors by the same path.
+            # A direct post-step sample and a regenerated sample differed in
+            # the bounded CPU check despite the restored sim/model state.
+            settled = _scene_snapshot(env, observation, names, goals, image=False)
+            observation = _restore_scene(env, settled)
+            snapshot = _scene_snapshot(env, observation, names, goals, image=True)
+            scene_path = output / "scenes" / f"state_{state}.npz"
+            np.savez_compressed(scene_path, **snapshot)
+            for demo in DEMOS:
+                if demo == 1:
+                    _initialize_query(env, init_states, state, recipe)
+                    observation = _restore_scene(env, snapshot)
+                _assert_scene_pair(env, observation, names, goals, snapshot, image=True)
+                stem = f"task_38_demo_{demo}"
+                metadata = json.loads((old_sources / f"{stem}.json").read_text())
+                with np.load(old_sources / f"{stem}.npz") as source_file:
+                    source = {name: source_file[name] for name in source_file.files}
+                result = _run_one(env, init_states, row, demo, state, metadata, source, recipe,
+                                  output, initialized_observation=observation)
+                result["initial_scene_snapshot"] = str(scene_path)
+                result["initial_scene_restoration"] = "all model body poses and post-dummy sim state"
+                with results.open("a", encoding="utf-8") as handle:
+                    handle.write(json.dumps(result, sort_keys=True) + "\n")
+                    handle.flush()
+                    os.fsync(handle.fileno())
+    finally:
+        env.close()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", required=True, choices=("source", "episodes"))
+    parser.add_argument("--phase", required=True, choices=("source", "episodes", "paired"))
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=ROOT)
     parser.add_argument("--gpu-index", type=int)
     args = parser.parse_args()
     repo, output = args.repo.resolve(), args.output.resolve()
-    if output != ROOT or (args.phase == "episodes" and args.gpu_index is None):
+    expected = ROOT / "paired_initialization_repair" if args.phase == "paired" else ROOT
+    if output != expected or (args.phase in {"episodes", "paired"} and args.gpu_index is None):
         raise ValueError("fixed study root or rendering GPU missing")
     if args.phase == "source":
         _source_phase(repo, output)
-    else:
+    elif args.phase == "episodes":
         _episode_phase(repo, output, args.gpu_index)
+    else:
+        _paired_phase(repo, output, args.gpu_index)
 
 
 if __name__ == "__main__":

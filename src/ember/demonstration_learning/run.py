@@ -439,13 +439,17 @@ def _step(session: Session, update: int, rows: int) -> tuple[int, int]:
             "rank_memory": memory, "seconds": time.perf_counter() - tick})
     rows += 1
     if update in session.spec["execution"]["checkpoint_macros"]:
-        save_ecp_checkpoint(
-            output_dir=session.output, macro=update, stage=STAGE, context=session.context,
-            model=session.runtime.state, optimizer=session.optimizer, scheduler=session.scheduler,
-            run_contract_schema=RUN_SCHEMA, metrics_rows=rows,
-            sampler_state=session.data.events.sampler_state(),
-            training_state={"updates": update, "arm": session.arm})
+        _save_checkpoint(session, update, rows)
     return update, rows
+
+
+def _save_checkpoint(session: Session, update: int, rows: int) -> None:
+    save_ecp_checkpoint(
+        output_dir=session.output, macro=update, stage=STAGE, context=session.context,
+        model=session.runtime.state, optimizer=session.optimizer, scheduler=session.scheduler,
+        run_contract_schema=RUN_SCHEMA, metrics_rows=rows,
+        sampler_state=session.data.events.sampler_state(),
+        training_state={"updates": update, "arm": session.arm})
 
 
 def train(spec: dict, args) -> None:
@@ -462,6 +466,9 @@ def train(spec: dict, args) -> None:
         updates, rows = _restore(session, args.resume) if args.resume else (0, 0)
         restored_cursor = updates
         started = time.perf_counter()
+        if restored_cursor == 288:
+            # Publish this attempt's complete ECP even when no update remains.
+            _save_checkpoint(session, updates, rows)
         while updates < 288:
             updates, rows = _step(session, updates, rows)
         if session.context.is_main:

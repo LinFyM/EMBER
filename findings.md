@@ -4677,3 +4677,15 @@ PT保存重规划前5计划，成功停止可留下末段未执行指令；实�
 对应干预首先改变共享FactorHead末层的“执行cotangent×216维教学feature”关联，q/v头还跨18层汇总。
 离开identity后公共参数和条件表示共同改变，故最终公共β差异不能被另判为视频已学好但底座破坏；
 链式导数说明干预位置，不保证有益参考可辨识、相关经求和保留或闭环提升，不触发新局部probe。
+
+## 191. 首个正式节点可执行；恢复收尾修正不改变科学干预（2026-09-27）
+
+CPU转换3bee0a1b已由9b480d2d集成，原source/model/operator/data/optimization/mt字典全部相同。
+P/I288、ECP72/144/216/288、validation8×50紧凑bank/共享scene和official capture已进入唯一运行面；
+held编译只构造authority/RGB store，不构造FunctionalQueryDataset，旧M3/P6/I6活动入口退出。
+独立八项CPU测试通过；guard REVIEW、无本轮新hard，原中央分派例外仍保留。
+
+主讨论限定修正macro288恢复的终点发布：零剩余更新时先经同一ECP owner在新attempt保存完整恢复状态，
+再写真实存在的final checkpoint指针；CPU控制流回归通过，不涉及新的模型训练、指标或模型结构选择。
+首72之前无ECP的故障仍须报告，不承诺任意失败自动恢复。完整证据与限制见设计§15.6。
+当前正式GPU尚待指定执行者现场quota/设备/preflight与启动，工程通过不能提前产生科学收益结论。

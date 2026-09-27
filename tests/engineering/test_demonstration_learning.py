@@ -203,6 +203,36 @@ def test_validation_bank_metadata_and_capture_scope_without_held_query(monkeypat
                            rows, output, capture_path, manifest, None)
 
 
+def test_final_cursor_resume_publishes_checkpoint_without_an_update(monkeypatch, tmp_path: Path) -> None:
+    from ember.demonstration_learning import run
+
+    spec = json.loads((REPO / "configs/demonstration_transfer_v1/learning_spec.json").read_text())
+    spec["runtime"]["run_root"] = str(tmp_path)
+    output = tmp_path / "P/train/attempts/finish"
+    output.mkdir(parents=True)
+    session = SimpleNamespace(output=output, context=SimpleNamespace(is_main=True),
+                              data=SimpleNamespace(close=lambda: None))
+    monkeypatch.setattr(run, "_prepare_train", lambda *_: session)
+    monkeypatch.setattr(run, "_restore", lambda *_: (288, 288))
+    monkeypatch.setattr(run, "_step", lambda *_: pytest.fail("completed ECP must not train again"))
+    saved = []
+
+    def save_fixture(current, cursor, rows):
+        saved.append((cursor, rows))
+        (current.output / "checkpoints" / f"macro_{cursor:08d}").mkdir(parents=True)
+
+    monkeypatch.setattr(run, "_save_checkpoint", save_fixture)
+    args = SimpleNamespace(arm="P", stop_after=288, frame_chunk=8, microbatch=28,
+                           resume=tmp_path / "P/train/attempts/fresh/checkpoints/macro_00000288",
+                           attempt="finish")
+    run.train(spec, args)
+    pointer = json.loads((tmp_path / "P/train/final_checkpoint.json").read_text())
+    completion = json.loads((output / "completion.json").read_text())
+    assert Path(pointer["checkpoint"]).is_dir() and saved == [(288, 288)]
+    assert completion["checkpoint"] == pointer["checkpoint"]
+    assert completion["actual_segment_updates"] == completion["actual_segment_queries"] == 0
+
+
 def test_formal_entrypoints_refuse_retired_m(monkeypatch) -> None:
     spec = json.loads((REPO / "configs/demonstration_transfer_v1/learning_spec.json").read_text())
     with pytest.raises(ValueError, match="formal P/I"):

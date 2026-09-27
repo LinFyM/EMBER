@@ -1,8 +1,8 @@
 # 教学参考与跨初态功能查询：对应学习候选
 
 2026-09-27。这是尚未验证的完整学习假设。§5/7/8数据构造及配对修正均已完成并独立核验；
-§10/11/13完整学习与官方比较工程已验收。§15冻结首个正式P/I288合同，当前先进行CPU运行面转换；
-主讨论集成正式实现、登记精确冻结commit后才启动该批GPU。没有576、MT长训练、controls或数据扩建授权。
+§10/11/13完整学习与官方比较工程已验收；§15正式运行面转换已审阅并集成，允许指定执行者按登记精确commit和现场preflight
+开展首个P/I288完整批次。实际承接/启动以progress及launch原件为准，没有576、MT长训练、controls或数据扩建授权。
 实际执行状态只看[progress](../../progress.md)。科学依据见[机制分析§36–37](../analyses/feature_to_operator_mechanism_20260926.md)。
 Reader、条件速度270/450及其它已关闭运行不恢复；本设计不宣称已找到它们的统一根因。
 
@@ -941,3 +941,24 @@ CPU验证真实事件前缀、登记游标恢复/拒绝工程来源、held视频
 主讨论检查并合入main后再登记准确formal commit和启动消息；当前CPU任务不自行开始288、bank400或scene/eval。
 正式批次随后亦仅一次整批完成/实质阻塞Queue，不逐训练/物化/评测自通知，不陪跑轮询。
 这两个交接由已有main authority合同所需；不是再次向Owner请示，也不是增加科学局部关卡。
+
+### 15.6 正式运行面独立验收与唯一集成修正
+
+3bee0a1b由9b480d2d合入main，7文件+584/-355、活动源码净增125，没有新source模块。
+主讨论逐项核对source/model/operator/data/optimization/mt六个字典与6b6260e2完全相同；
+仅活动范围、held只读bank、官方capture、ECP游标和冻结authority发生转换。机器status随后改为已登记可launch，
+runtime补齐已有3GiB代码上限，optimization.after_warmup仅删除已失效的“CPU definition only/no long training”文字；
+所有模型/采样/优化数值不变，当前授权由本节/progress确定。
+八项定向CPU测试在交付树独立运行通过（17.70秒），guard REVIEW无新hard；新增中央路由3行的preparation为800行，
+保留一个官方capture分派owner，旧两处复杂度的内聚例外不因此消失。没有模型/环境/GPU验证或held像素读取。
+旧工程活动spec已删除/改名，不把已完成P6/I6/M3兼容分支保留为fallback。
+
+主讨论集成时发现并修正一个确定的完成边界：从登记macro288 ECP恢复时没有剩余更新，原代码会将final pointer写向
+新attempt中不存在的checkpoint。现复用同一个ECP保存owner，在新attempt重存已恢复的完整288状态，再发布completion/pointer，
+实际新增更新/query均0，旧attempt/日志/ECP不覆盖。这只处理“已保存最终ECP但完成记录尚未发布”的中断，
+不执行新的模型前后传，不允许再训练或选择不同权重。新增一个纯CPU控制流fixture验证实际指向存在、零更新与零query，12.41秒通过；
+它模拟既有ECP保存入口，不冒称实际world2终点恢复已重跑。普通更新保存也复用该owner，数值操作未变。
+
+正式恢复的现存边界明确保留：尚未产生首个72 ECP时发生故障，现入口会保留失败原件并停止，不能自动抹掉fresh目录再来一遍；
+此时由主讨论根据真实失败和剩余预算决定处理。已登记的物理OOM缩小用于有合法ECP的恢复，不能把入口限制称为已验证任何故障可自动恢复。
+这不是要求增加一次smoke或新恢复平台；正式执行仍遵循18GPUh/800行/单一source与上述信息墙。

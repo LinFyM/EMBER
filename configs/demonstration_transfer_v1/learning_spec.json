@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_demonstration_transfer_learning_spec_v1",
   "task": "demonstration_transfer_learning_stage1_20260927",
-  "status": "formal_stage1_frozen_pending_main_integration",
+  "status": "formal_stage1_registered_for_launch",
   "design": "docs/designs/demonstration_transfer_learning_design.md#15",
   "source": {
     "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
@@ -309,7 +309,7 @@
     "weight_decay": 0.0001,
     "grad_clip": 1.0,
     "warmup_updates": 150,
-    "after_warmup": "existing source_sft.control.clamped_lr_multiplier: 1200 absolute update decay to 1e-5 then floor; CPU definition only, no long training authorized",
+    "after_warmup": "existing source_sft.control.clamped_lr_multiplier: 1200 absolute update decay to 1e-5 then floor",
     "fresh_optimizer_scheduler": true,
     "distributed_gradient_reduction": "SUM preweighted task gradients without extra world division",
     "extra_auxiliary_loss": false,
@@ -388,7 +388,8 @@
       "scenes": 0.5,
       "banks": 1.5,
       "official": 8
-    }
+    },
+    "related_code_total_gib": 3
   },
   "forbidden": [
     "engineering P6/I6/M3 weights or resume source",

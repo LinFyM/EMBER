@@ -52,6 +52,10 @@ L续训01:46:24–02:00:39 UTC exit0，855.635秒×2卡=0.4753526 GPUh；两臂�
 V/L累计1800个task事件（新增720个）及学习率时钟逐项匹配，L仅公共/U/readout/Text/Core活动，VL/Action/Procedure均零。
 两臂都完成36task各50/50教学覆盖，source冻结；独立复核为同tmp目录`L450_completed_training_and_pair_review.json`。
 执行者开始450 bank物化，随后各correct400；完整分数/相邻保持仍未出，不增加其它评测或训练。
+02:15 UTC主讨论独立核两份sealed450 bank：V400个视频条件、L8个语言条件，各400episode，
+全部task/episode/合法教学来源与270相同，source/LoRA/selection一致，L实际video读取0、每mode公共项只保存一份。
+复核原件`sealed450_bank_pair_review.json`；四个已完成段均exit0，累计2.301659/6完整GPUh。
+执行者以gpu02/4,6,7、每卡2 persistent replica、每replica8环境推进V450 correct400，之后固定L450 correct400。
 后继预计4.5–5.6完整GPUh、硬限6，GPU阶段约2–3h；新增原件≤4GiB、study合计≤8GiB，新增冻结代码≤320MiB、三树合计≤1GiB。
 旧0c4ea636冻结树保留，因为270 bank的spec仍引用它；新节点另冻，不能重写270原件或静默跨commit exact-resume。
 旧内部helper暂留到450保留/关闭裁决，旧generic CLI/Compiler不恢复；不为维持工作追加局部probe或同类理论循环。

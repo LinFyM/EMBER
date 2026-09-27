@@ -1,11 +1,16 @@
 # EMBER progress
 
-## 当前状态：对应学习576已验收，完整组合关闭（2026-09-28）
+## 当前状态：对应学习已退役；登记原B同场景参考比较（2026-09-28）
 
 Owner持续自主授权有效，EMBER最终目标未完成。科学主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责裁决/main，
 唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`。所有新增data1，不联系旧主讨论/旧Sol，不自Queue、不陪跑轮询。
 
-**当前无active GPU design。** `demonstration_transfer_learning_stage2_20260928`整批完成回报已消费并独立验收；
+**唯一active design**为`docs/designs/reference_transfer_comparison_design.md`，仅固定四条train示范的原动作R/自身参考S/另一参考X比较，
+共12条controller episode、≤6240步，无Writer/模型训练。预计实现与CPU45–75分钟、渲染3–6分钟，完整硬限.20GPUh/1卡；
+输出≤1GiB/新增冻结≤300MiB、相关代码≤3GiB，全部data1。当前合同已登记，实际派发另记；不把登记称为开跑。
+它补Owner提出的原B对A→B缺口，直接检验规则本身与参考变化，不为失败组合补训练矩阵或恢复采集平台。
+
+`demonstration_transfer_learning_stage2_20260928`整批完成回报已消费并独立验收；
 原派发Queue `01a0e410-a086-76e0-aa64-6aa7b601f5d8`不再表示后台运行。
 冻结bc729e86；P576108/I576107，P相邻R/G/L74/34/50、净−16；I66/41/25、净+16。
 同点R/G/L70/38/37、churn75、Jaccard .48276，breadth6/5，任务bootstrap95%[-10.25,+12.5]pp。
@@ -18,7 +23,7 @@ Owner持续自主授权有效，EMBER最终目标未完成。科学主讨论`01a
 `/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage2`。全边界见设计§17/findings§195。
 
 **CPU退役已完成并独立验收**：3bad97e6以3c364a4a合入main，设计§17.3结束；
-Queue `01a0e508-3ae3-7570-82ed-bb448fcda866`及本次完成回报已消费。指定执行者当前没有新任务。
+Queue `01a0e508-3ae3-7570-82ed-bb448fcda866`及本次完成回报已消费；不再表示有任务运行。
 13文件+294/−3434，活动源码净−2175；删除训练/采集/物化入口，无fallback。封存P/I×288/576 bank和scene读取保留。
 主讨论独立4项CPU测试通过（11.49秒）、四份真实official capture合同和共享导入通过，guard REVIEW无hard。
 没有加载政策/checkpoint tensor、扫描400份权重、运行模型/环境/GPU或重评测；全部原件、数据与冻结树保留。
@@ -28,6 +33,11 @@ README职责与动态状态已同步；请求/回执/验收在上述tmp目录`re
 但未据此声称有益或补齐原B对A→B的实际轨迹比较。原B比较还含规则自身重放和query/FM插值输入差异，
 不能用当前P/I替代。已降低“只强化动作对应即可解决当前问题”的投入优先级，没有新GPU候选或局部补丁授权。
 分析/数值脚本与JSON在上述tmp的`reference_operator_readback.*`；没有模型、环境、新数据或held teacher标签读取。
+
+机制§40/findings§198进一步区分阶段内反馈、条件目标与阶段选择：固定未限幅位置反馈的末端Jacobian为共同−D^-1，
+单独监督它消去了教学目标；参考旋转的响应才含xi，但需要对应可用坐标与目标。实际native Q/K/V的自身观测响应及
+十步flow/五步环境消费者已展开，不把导数小或收缩当相邻能力保持。拒绝原Writer追加状态导数/稳定性项及局部J探针。
+下一完整证据按新合同区分原动作重放与规则参考；源内部历史不可恢复的部分明确暴露，原B记录和当前R不能混称同一轨迹。
 
 ### 以下为已完成576批次的历史启动记录，不构成新授权
 

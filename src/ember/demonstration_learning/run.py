@@ -217,7 +217,7 @@ def _one_job(runtime: Runtime, data: TransferData, event: dict, microbatch: int)
                 runtime.policy, state, runtime.lora, batch,
                 seed=event["flow_seed"], device=runtime.device,
                 random_batch=16 if runtime.arm == "M" else 28,
-                offset=offset, microbatch=microbatch,
+                offset=offset, microbatch=min(microbatch, count),
                 condition_weight=(count / 16 / 36 if runtime.arm == "M" else 0.25))
         for name, value in credit["lora_cotangent"].items():
             cotangent[name] = cotangent.get(name, 0) + value

@@ -15,7 +15,9 @@ CPU任务`demonstration_transfer_stage2_transition_20260928`已完成，Queue `0
 
 当前唯一正式任务`demonstration_transfer_learning_stage2_20260928`，精确formal冻结commit **`bc729e869c5b37f807e386ab11aa5b0b508ed86f`**。
 该提交属于已推送main；指定执行者从独立clean detached树按§16 live准入后执行，后续main文档更新不改变冻结身份。
-实际派发/承接回执在本段补记；这条登记本身不表示GPU已启动。
+18:11 UTC已派发唯一Queue `01a0e410-a086-76e0-aa64-6aa7b601f5d8`；一次app-server只读快照确认本消息进入
+新active轮 `01a0e410-a088-7271-a291-34b9538ff4d9`。这证明批次已承接，不单独证明GPU已启动。
+请求/Queue回执/快照保留在同tmp目录`formal_stage2_*`；原生timeoutMs0查询未返回、原因未定，未重复发送。
 各臂从本次正式288完整状态续至576、每臂仅最后bank400/official400、复用原scene；不是fresh、换模型或另采数据。
 启动前由执行者做现场quota/GPU/拓扑准入；主讨论不陪跑轮询，整批完成或实质阻塞一次Queue。
 
@@ -38,7 +40,8 @@ P曾在新episode首动作前RGB断言退出；原23片348行保留，同冻结�
 预备正式stage2各新增288/32,256query、仅576各correct400，原400scene复用；停止线仍为lost>20或净降>8及强MT资格。
 预算预计8–10、硬11GPUh（训练7/bank.75/official3.25），峰值2卡，GPU阶段4–5.5小时；新增10GiB、study≤18GiB。
 训练须保持原gpu02 rank0物理3/NUMA0、rank1物理7/NUMA1精确UUID/拓扑，两个臂顺序。实际启动另行live核资源。
-新CPU任务不建run root/冻结树、不运行模型/环境/GPU、不读取held标签、不重复smoke。576完成后不自动864、MT、controls或修补。
+已完成CPU转换没有建run root/冻结树或运行模型/环境/GPU；现正式批次仅按上述合同执行，不重复smoke。
+576完成后不自动864、MT、controls或修补。
 
 ### 以下为已完成首批的历史启动记录，不重复执行
 

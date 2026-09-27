@@ -93,28 +93,33 @@ def scene_path(root: Path, task: dict, state: int) -> Path:
 
 
 def freeze_registered_scenes(asset_root: Path, output: Path, *, physical_gpu_id: int) -> dict:
-    """Freeze only the eight prespecified train scenes before any policy behavior."""
+    """Freeze all 400 prespecified validation scenes before policy behavior."""
     from dataclasses import asdict
     from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
     from ember.pi05_eval_contract import load_evaluation_authorities, inspect_installed_target_tasks
     from ember.pi05_assets import configure_libero_runtime_assets
     from ember.pi05_source_checkpoint import write_json_atomic
+    from ember.demonstration_learning.run import specification
+    from ember.writer.learning_data import load_learning_tasks
 
     if output.exists():
-        raise ValueError("eight-scene freeze output already exists")
+        raise ValueError("formal scene freeze output already exists")
+    spec = specification()
     authorities = load_evaluation_authorities(
         asset_root / "configs/libero_24_8_8_coverage_v1/evaluation.json", asset_root)
     installed, paths = inspect_installed_target_tasks(
-        authorities, role="development_train", state_count=4,
+        authorities, role="validation", state_count=50,
         libero_config_dir=output / "libero_config")
     configure_libero_runtime_assets(Path(paths["assets"]))
     contract = dict(authorities.config)
     contract["libero_paths"] = paths
     contract["parallel"] = {**contract["parallel"], "envs_per_replica": 1}
-    selected = {("libero_spatial", 2), ("libero_10", 8)}
-    tasks = [asdict(task) for task in installed if (task.suite, task.task_id) in selected]
-    if len(tasks) != 2:
-        raise ValueError("eight-scene freeze task scope changed")
+    metadata = load_learning_tasks(asset_root, spec["scene"]["task_ids"], role="validation",
+                                   protocol_path=spec["data"]["protocol"])
+    tasks = [asdict(task) for task in installed]
+    if [(task["suite"], task["task_id"]) for task in tasks] != [
+            (row.suite, row.suite_task_id) for row in metadata.values()]:
+        raise ValueError("formal scene task scope changed")
     output.mkdir(parents=True, exist_ok=True)
     pool = PersistentTaskEnvironmentPool(contract, physical_gpu_id=physical_gpu_id)
     records = []
@@ -122,7 +127,7 @@ def freeze_registered_scenes(asset_root: Path, output: Path, *, physical_gpu_id:
         for task in tasks:
             envs, initial = pool.switch(task)
             env = envs[0]
-            for state in range(4):
+            for state in spec["scene"]["init_state_ids"]:
                 obs = _initialize_query(env, initial, state, contract)
                 owner = env.env
                 names = sorted(owner.obj_body_id)
@@ -140,9 +145,9 @@ def freeze_registered_scenes(asset_root: Path, output: Path, *, physical_gpu_id:
                                 "state": state, "path": str(path), "bytes": path.stat().st_size})
     finally:
         pool.close()
-    if len(records) != 8:
+    if len(records) != 400:
         raise ValueError("canonical scene freeze incomplete")
-    write_json_atomic(output / "manifest.json", {"schema_version": "ember_demonstration_comparison_scenes_v1",
+    write_json_atomic(output / "manifest.json", {"schema_version": "ember_demonstration_formal_scenes_v1",
                                                   "seed": 7, "dummy_steps": 10, "scenes": records})
     return {"scenes": len(records), "manifest": str(output / "manifest.json")}
 

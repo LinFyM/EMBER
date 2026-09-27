@@ -36,16 +36,16 @@ from .model import CorrespondenceLoRA
 
 
 REPO = Path(__file__).resolve().parents[3]
-SPEC_PATH = REPO / "configs/demonstration_transfer_v1/learning_engineering_spec.json"
-RUN_SCHEMA = "ember_demonstration_transfer_comparison_admission_run_v3"
-STAGE = "demonstration_transfer_comparison_admission"
+SPEC_PATH = REPO / "configs/demonstration_transfer_v1/learning_spec.json"
+RUN_SCHEMA = "ember_demonstration_transfer_formal_stage1_run_v1"
+STAGE = "demonstration_transfer_learning_stage1"
 
 
 def specification() -> dict:
     spec = read_json(SPEC_PATH)
     expected = (
-        (spec.get("schema_version"), "ember_demonstration_transfer_learning_engineering_spec_v3"),
-        (spec.get("task"), "demonstration_transfer_comparison_admission_20260927"),
+        (spec.get("schema_version"), "ember_demonstration_transfer_learning_spec_v1"),
+        (spec.get("task"), "demonstration_transfer_learning_stage1_20260927"),
         (tuple(spec["data"]["task_ids"]), TASKS),
         (tuple(spec["data"]["new_query_task_ids"]), SUPPORTED),
         (spec["data"]["new_crossing_rows"], 296),
@@ -53,23 +53,42 @@ def specification() -> dict:
         (spec["data"]["original_action_demos"], list(range(46))),
         (spec["data"]["new_teacher_demos"], [0, 1, 2, 3]),
         (spec["data"]["frame_stride"], 5),
-        (spec["execution"]["actual_macro_updates_total"], 5),
-        (spec["execution"]["actual_training_queries_total"], 2880),
-        (spec["execution"]["training_arms"], ["M"]),
-        (spec["execution"]["fresh_macro_updates_per_arm"], 3),
-        (spec["execution"]["resume_arms"], ["M"]),
-        (spec["execution"]["checkpoint_macros"], [1, 3]),
+        (spec["execution"]["actual_macro_updates_total"], 576),
+        (spec["execution"]["actual_training_queries_total"], 64512),
+        (spec["execution"]["training_arms"], ["P", "I"]),
+        (spec["execution"]["fresh_macro_updates_per_arm"], 288),
+        (spec["execution"]["resume_arms"], ["P", "I"]),
+        (spec["execution"]["checkpoint_macros"], [72, 144, 216, 288]),
+        (spec["execution"]["allowed_world_sizes"], [2]),
+        (spec["execution"]["initial_policy_microbatch"], 28),
+        (spec["execution"]["oom_only_policy_microbatches"], [14, 7]),
+        (spec["bank"]["arms"], ["P", "I"]),
+        (spec["bank"]["source_macro"], 288),
+        (spec["bank"]["task_ids"], [3, 6, 11, 16, 23, 26, 31, 39]),
+        (spec["bank"]["init_state_ids"], list(range(50))),
+        (spec["bank"]["conditions_each"], 400),
+        (spec["bank"]["video_schedule"]["mode"], "correct"),
+        (spec["bank"]["video_schedule"]["seed"], 7),
+        (spec["bank"]["video_schedule"]["cardinality"], 1),
+        (spec["bank"]["video_schedule"]["demos"], list(range(50))),
+        (spec["scene"]["count"], 400),
+        (spec["scene"]["task_ids"], [3, 6, 11, 16, 23, 26, 31, 39]),
+        (spec["scene"]["init_state_ids"], list(range(50))),
+        (spec["official_interface"]["arms"], ["P288", "I288"]),
+        (spec["official_interface"]["episodes_per_arm"], 400),
+        (spec["official_interface"]["full_episodes_per_arm"], 8),
+        (spec["official_interface"]["compact_episodes_per_arm"], 392),
         (spec["operator"]["complete_rank"], 144),
         (spec["operator"]["target_count"], 38),
         (spec["operator"]["alpha"], 144),
         (spec["operator"]["template_identity_seed"], 20260721),
         (spec["mt"]["rank"], 128), (spec["mt"]["queries_per_update"], 576),
         (spec["runtime"]["run_root"],
-         "/data1/user/ymdai/ember_runs/demonstration_transfer_comparison_admission_20260927"),
+         "/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage1"),
     )
     if (not all(actual == wanted for actual, wanted in expected)
             or spec["optimization"]["extra_auxiliary_loss"] is not False):
-        raise ValueError("bounded complete-LoRA engineering specification changed")
+        raise ValueError("formal complete-LoRA learning specification changed")
     require_architecture_identity(spec["model"])
     if spec["model"]["camera_view"] != "agentview" or spec["model"]["max_frames_per_encoder_call"] != 8:
         raise ValueError("legal native teaching encoder topology changed")
@@ -79,13 +98,13 @@ def specification() -> dict:
 def _frozen_git() -> dict:
     state = git_state(REPO)
     if state["branch"] or state["dirty_paths"]:
-        raise ValueError("GPU engineering requires a clean detached frozen checkout")
+        raise ValueError("formal execution requires a clean detached frozen checkout")
     remote = subprocess.run(["git", "branch", "-r", "--contains", state["commit"]],
                             cwd=REPO, text=True, capture_output=True, check=True).stdout.splitlines()
-    if not any(line.strip() == "origin/codex/demonstration-transfer" for line in remote):
-        raise ValueError("frozen engineering commit is not pushed to its owner branch")
+    if not any(line.strip() == "origin/main" for line in remote):
+        raise ValueError("frozen formal commit is not contained in origin/main")
     return {"commit": state["commit"], "branch": "", "dirty_paths": [],
-            "pushed_ref": "origin/codex/demonstration-transfer"}
+            "pushed_ref": "origin/main"}
 
 
 def _gather(value, world_size: int):
@@ -109,7 +128,7 @@ class Runtime:
     source_identity_restores: int = 0
     arm: str = "P"
 
-    def condition(self, data: TransferData, task: int, demo: int) -> tuple[tuple, int, int]:
+    def condition(self, data, task: int, demo: int) -> tuple[tuple, int, int]:
         video = data.videos.load(task, demo)
         pixels = torch.from_numpy(video.frames).to(self.device, non_blocking=True)
         positions = torch.from_numpy(video.frame_indices).to(self.device, non_blocking=True)
@@ -135,7 +154,7 @@ class Runtime:
 
 
 def build_runtime(asset_root: Path, spec: dict, device: torch.device, *, arm: str = "P",
-                  evaluation: bool = False) -> Runtime:
+                  evaluation: bool = False, frame_chunk: int = 8) -> Runtime:
     source_config = spec["source"]
     authorities = load_evaluation_authorities(asset_root / source_config["evaluation_config"], asset_root)
     checkpoint = asset_root / source_config["checkpoint"]
@@ -161,7 +180,8 @@ def build_runtime(asset_root: Path, spec: dict, device: torch.device, *, arm: st
     if device.type == "cuda":
         torch.cuda.manual_seed_all(int(spec["model"]["initialization_seed"]))
     state = (DirectLoRAParameters(full_template) if arm == "M" else
-             CorrespondenceLoRA(policy, spec["model"], full_template)).to(device)
+             CorrespondenceLoRA(policy, {**spec["model"], "max_frames_per_encoder_call": frame_chunk},
+                                full_template)).to(device)
     if any(p.requires_grad for p in policy.parameters()):
         raise ValueError("physical source retained a trainable parameter")
     tokenizer = None if arm == "M" else Pi05TeacherPrefixTokenizer(tokenizer_path, 200, str(device))
@@ -259,19 +279,57 @@ class Session:
     microbatch: int
 
 
+def _registered_resume(checkpoint: Path, contract: dict, spec: dict) -> int:
+    """Admit only the latest complete same-arm ECP under this formal frozen run."""
+    attempts = Path(spec["runtime"]["run_root"]) / contract["arm"] / "train" / "attempts"
+    if (attempts.parent / "final_checkpoint.json").exists():
+        raise ValueError("completed formal arm cannot be resumed again")
+    checkpoint = checkpoint.resolve()
+    if (checkpoint.parent.name != "checkpoints" or checkpoint.parent.parent.parent != attempts.resolve()
+            or not (checkpoint / "checkpoint_manifest.json").is_file()):
+        raise ValueError("resume source is outside this arm's formal attempt ECPs")
+    manifest = read_json(checkpoint / "checkpoint_manifest.json")
+    cursor = manifest.get("next_macro")
+    if (cursor not in spec["execution"]["checkpoint_macros"]
+            or checkpoint.name != f"macro_{cursor:08d}"
+            or manifest.get("stage") != STAGE or manifest.get("run_contract_schema") != RUN_SCHEMA):
+        raise ValueError("resume ECP stage or registered cursor changed")
+    latest = max((int(row.name.removeprefix("macro_"))
+                  for row in attempts.glob("*/checkpoints/macro_*")
+                  if row.name.removeprefix("macro_").isdigit()
+                  and (row / "checkpoint_manifest.json").is_file()), default=0)
+    if latest != cursor:
+        raise ValueError("resume must use this arm's latest registered complete ECP")
+    parent = read_json(checkpoint.parent.parent / "run_contract.json")
+    for field in contract:
+        if field not in ("microbatch", "frame_chunk") and parent.get(field) != contract[field]:
+            raise ValueError(f"formal resume changed {field}")
+    allowed_batch = [28, 14, 7]
+    if (parent["microbatch"] not in allowed_batch or contract["microbatch"] not in allowed_batch
+            or allowed_batch.index(contract["microbatch"]) < allowed_batch.index(parent["microbatch"])
+            or allowed_batch.index(contract["microbatch"]) - allowed_batch.index(parent["microbatch"]) > 1
+            or parent["frame_chunk"] not in (8, 4) or contract["frame_chunk"] not in (8, 4)
+            or contract["frame_chunk"] > parent["frame_chunk"]):
+        raise ValueError("physical FM chunks can only shrink after OOM")
+    return cursor
+
+
 def _prepare_train(spec: dict, args) -> Session:
     git = _frozen_git()
     context = initialize_distributed(require_numa=True, defer_process_group=True)
-    if context.world_size not in (1, 2) or (context.world_size == 2 and os.environ.get("NCCL_P2P_DISABLE") != "1"):
-        raise ValueError("engineering training requires one or two same-node A40 ranks")
+    if context.world_size != 2 or os.environ.get("NCCL_P2P_DISABLE") != "1":
+        raise ValueError("formal training requires same-node world2 with NCCL P2P disabled")
     torch.set_num_threads(args.cpu_threads)
     seed_everything(int(spec["optimization"]["seed"]), context)
     data = TransferData(args.asset_root, spec, arm=args.arm)
-    runtime = build_runtime(args.asset_root, spec, context.device, arm=args.arm)
+    runtime = build_runtime(args.asset_root, spec, context.device, arm=args.arm,
+                            frame_chunk=args.frame_chunk)
     runtime.state.train()
     seed_everything(int(spec["optimization"]["seed"]), context)
     optimizer, scheduler, parameters = _optimizer(runtime.state, spec)
-    output = Path(spec["runtime"]["run_root"]) / args.arm / ("resume" if args.resume else "fresh")
+    output = Path(spec["runtime"]["run_root"]) / args.arm / "train" / "attempts" / args.attempt
+    if (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists():
+        raise ValueError("formal attempt already has retained evidence")
     output.mkdir(parents=True, exist_ok=True)
     initialize_deferred_process_group(context, rendezvous_root=output)
     local = {"rank": context.rank, "gpu_uuid": str(torch.cuda.get_device_properties(context.local_rank).uuid),
@@ -284,23 +342,24 @@ def _prepare_train(spec: dict, args) -> Session:
                 "spec": str(SPEC_PATH), "arm": args.arm, "source": runtime.source,
                 "model": spec["model"], "lora": runtime.lora.to_dict(),
                 "optimizer": spec["optimization"], "topology": topology,
-                "microbatch": args.microbatch, "frame_chunk": spec["execution"]["initial_frame_chunk"],
+                "microbatch": args.microbatch, "frame_chunk": args.frame_chunk,
                 "sampler": {k: v for k, v in data.events.sampler_state().items() if k != "next_step"},
                 "trainable_names": [name for name, p in runtime.state.named_parameters() if p.requires_grad],
                 "source_trainable": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
                 "source_identity_before_every_compile": True,
                 "information_wall": "teacher exact language+agentview RGB/positions only; own query RGB/state/actions only to FM",
-                "qualification": False}
+                "qualification": "formal_stage1_macro288"}
     error = None
     try:
         if context.is_main:
+            if (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists():
+                raise ValueError("formal attempt already has retained evidence")
+            if (output.parent.parent / "final_checkpoint.json").exists():
+                raise ValueError("formal arm already completed macro288")
             if args.resume:
-                parent = args.resume.parent.parent
-                if args.arm != "M" or args.resume != (Path(spec["runtime"]["run_root"]) / args.arm /
-                                   "fresh" / "checkpoints" / "macro_00000001"):
-                    raise ValueError("resume is not this arm's registered fresh macro1")
-                if read_json(parent / "run_contract.json") != contract:
-                    raise ValueError("same-arm source, parameter, sampler or physical topology changed")
+                _registered_resume(args.resume, contract, spec)
+            elif args.attempt != "fresh":
+                raise ValueError("fresh formal training must use the fresh attempt")
             write_json_atomic(output / "run_contract.json", contract)
     except Exception:
         error = traceback.format_exc()
@@ -320,13 +379,13 @@ def _restore(session: Session, checkpoint: Path) -> tuple[int, int]:
             scheduler=session.scheduler, run_contract_schema=RUN_SCHEMA,
             restored_state=restored)
         session.data.events.restore(restored["sampler_state"])
-        if (session.arm != "M" or updates != 1 or rows != 1
-                or restored["training_state"] != {"updates": 1, "arm": session.arm}
-                or session.scheduler.last_epoch != 1 or session.data.events.next_step != 1):
+        if (updates not in session.spec["execution"]["checkpoint_macros"] or rows != updates
+                or restored["training_state"] != {"updates": updates, "arm": session.arm}
+                or session.scheduler.last_epoch != updates or session.data.events.next_step != updates):
             raise ValueError("ECP optimizer/scheduler/sampler/RNG cursor changed")
         parent_rows = (checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()
         prefix = parent_rows[:rows]
-        if len(prefix) != 1 or [json.loads(row)["update"] for row in prefix] != [1]:
+        if len(prefix) != rows or [json.loads(row)["update"] for row in prefix] != list(range(1, rows + 1)):
             raise ValueError("checkpoint metrics prefix is not complete and continuous")
         if session.context.is_main:
             (session.output / "metrics.jsonl").write_text("\n".join(prefix) + "\n")
@@ -355,7 +414,7 @@ def _step(session: Session, update: int, rows: int) -> tuple[int, int]:
         error = traceback.format_exc()
     failures = [item for item in _gather(error, session.context.world_size) if item]
     if failures:
-        raise RuntimeError(f"paired engineering macro failed on a rank: {failures}")
+        raise RuntimeError(f"formal paired macro failed on a rank: {failures}")
     sum_writer_gradients(session.parameters, world_size=session.context.world_size)
     gradients = _gradient_groups(session.runtime.state)
     norm = float(torch.nn.utils.clip_grad_norm_(
@@ -379,7 +438,7 @@ def _step(session: Session, update: int, rows: int) -> tuple[int, int]:
             "grad_norms_before_clip": gradients, "total_grad_norm": norm,
             "rank_memory": memory, "seconds": time.perf_counter() - tick})
     rows += 1
-    if update in (1, 3):
+    if update in session.spec["execution"]["checkpoint_macros"]:
         save_ecp_checkpoint(
             output_dir=session.output, macro=update, stage=STAGE, context=session.context,
             model=session.runtime.state, optimizer=session.optimizer, scheduler=session.scheduler,
@@ -390,25 +449,33 @@ def _step(session: Session, update: int, rows: int) -> tuple[int, int]:
 
 
 def train(spec: dict, args) -> None:
-    if (args.arm != "M" or args.stop_after != 3
+    if (args.arm not in ("P", "I") or args.stop_after != 288
+            or args.frame_chunk not in (8, 4)
             or args.microbatch not in spec["execution"]["oom_only_policy_microbatches"]
-            + [spec["execution"]["initial_policy_microbatch"]]):
-        raise ValueError("training requires direct M, three updates and registered physical batch")
+            + [spec["execution"]["initial_policy_microbatch"]]
+            or (args.resume is None and (args.microbatch, args.frame_chunk) != (28, 8))
+            or (args.resume is not None and args.attempt == "fresh")
+            or not args.attempt or "/" in args.attempt or args.attempt in (".", "..")):
+        raise ValueError("formal P/I requires macro288 and registered physical chunks")
     session = _prepare_train(spec, args)
     try:
         updates, rows = _restore(session, args.resume) if args.resume else (0, 0)
+        restored_cursor = updates
         started = time.perf_counter()
-        while updates < 3:
+        while updates < 288:
             updates, rows = _step(session, updates, rows)
         if session.context.is_main:
+            checkpoint = session.output / "checkpoints" / "macro_00000288"
             write_json_atomic(session.output / "completion.json", {
-                "schema_version": RUN_SCHEMA, "status": "engineering_complete", "arm": args.arm,
-                "updates": updates, "actual_segment_updates": updates - (1 if args.resume else 0),
-                "actual_segment_queries": (updates - (1 if args.resume else 0)) * 576,
+                "schema_version": RUN_SCHEMA, "status": "formal_training_complete", "arm": args.arm,
+                "updates": updates, "actual_segment_updates": updates - restored_cursor,
+                "actual_segment_queries": (updates - restored_cursor) * 112,
                 "seconds": time.perf_counter() - started,
                 "resumed_from": str(args.resume) if args.resume else None,
-                "checkpoint": str(session.output / "checkpoints" / "macro_00000003"),
-                "scientific_qualification": False})
+                "checkpoint": str(checkpoint), "scientific_qualification": "pending_correct400"})
+            write_json_atomic(Path(spec["runtime"]["run_root"]) / args.arm / "train" /
+                              "final_checkpoint.json", {"arm": args.arm, "checkpoint": str(checkpoint),
+                                                        "run_contract": str(session.output / "run_contract.json")})
     finally:
         session.data.close()
         if dist.is_initialized():
@@ -419,18 +486,7 @@ def audit(spec: dict, args) -> None:
     data = TransferData(args.asset_root, spec)
     try:
         result = audit_two_cycles(data.events)
-        output = Path(spec["runtime"]["run_root"])
-        output.mkdir(parents=True, exist_ok=True)
-        write_json_atomic(output / "event_audit.json", result)
-        plan = output / "events.jsonl"
-        if plan.exists():
-            raise ValueError("bounded CPU event plan already exists")
-        with plan.open("x", encoding="utf-8") as handle:
-            for update in range(576):
-                p = data.events.event(update, "P")
-                i = data.events.event(update, "I")
-                handle.write(json.dumps({"update": update + 1, "P": p, "I_teacher_demos":
-                                         [row["teacher_demo"] for row in i]}, sort_keys=True) + "\n")
+        print(json.dumps(result, sort_keys=True))
     finally:
         data.close()
 
@@ -439,10 +495,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("audit", "train"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--arm", choices=("M",))
-    parser.add_argument("--stop-after", type=int)
+    parser.add_argument("--arm", choices=("P", "I"))
+    parser.add_argument("--stop-after", type=int, default=288)
     parser.add_argument("--resume", type=Path)
-    parser.add_argument("--microbatch", type=int, default=16)
+    parser.add_argument("--attempt", default="fresh")
+    parser.add_argument("--microbatch", type=int, default=28)
+    parser.add_argument("--frame-chunk", type=int, default=8)
     parser.add_argument("--cpu-threads", type=int, default=6)
     args = parser.parse_args()
     spec = specification()

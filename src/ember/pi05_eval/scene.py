@@ -100,6 +100,8 @@ def freeze_registered_scenes(asset_root: Path, output: Path, *, physical_gpu_id:
     from ember.pi05_assets import configure_libero_runtime_assets
     from ember.pi05_source_checkpoint import write_json_atomic
 
+    if output.exists():
+        raise ValueError("eight-scene freeze output already exists")
     authorities = load_evaluation_authorities(
         asset_root / "configs/libero_24_8_8_coverage_v1/evaluation.json", asset_root)
     installed, paths = inspect_installed_target_tasks(
@@ -111,9 +113,9 @@ def freeze_registered_scenes(asset_root: Path, output: Path, *, physical_gpu_id:
     contract["parallel"] = {**contract["parallel"], "envs_per_replica": 1}
     selected = {("libero_spatial", 2), ("libero_10", 8)}
     tasks = [asdict(task) for task in installed if (task.suite, task.task_id) in selected]
-    if len(tasks) != 2 or output.exists():
-        raise ValueError("eight-scene freeze scope changed or output already exists")
-    output.mkdir(parents=True)
+    if len(tasks) != 2:
+        raise ValueError("eight-scene freeze task scope changed")
+    output.mkdir(parents=True, exist_ok=True)
     pool = PersistentTaskEnvironmentPool(contract, physical_gpu_id=physical_gpu_id)
     records = []
     try:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import time
 from collections import OrderedDict
@@ -23,7 +24,6 @@ from ember.lora import (LORA_A_SUFFIX, LORA_B_SUFFIX, copy_task_lora_state_,
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from ember.pi05_eval_contract import git_state
 from ember.writer.materialization import file_record, source_matches
 
 from .data import TransferData
@@ -56,7 +56,7 @@ def _inspect_checkpoint(arm: str, spec: Mapping, source: Mapping) -> tuple[Path,
     expected_stage = OLD_STAGE if arm in ("P", "I") else STAGE
     expected_macro = 6 if arm in ("P", "I") else 3
     expected_commit = (spec["bank"]["P_I_source_code"] if arm in ("P", "I")
-                       else git_state(REPO)["commit"])
+                       else spec["bank"]["M_source_code"])
     required = (
         (run.get("schema_version"), expected_schema), (run.get("stage"), expected_stage),
         (run.get("arm"), arm), (run.get("git", {}).get("commit"), expected_commit),
@@ -75,8 +75,14 @@ def _inspect_checkpoint(arm: str, spec: Mapping, source: Mapping) -> tuple[Path,
                 or any(old_spec[key] != spec[key] for key in ("source", "operator", "model"))):
             raise ValueError("historical P/I engineering checkpoint is not compatible")
     else:
-        if run.get("spec") != str(REPO / "configs/demonstration_transfer_v1/learning_engineering_spec.json"):
+        if run.get("spec") != spec["bank"]["M_source_spec"]:
             raise ValueError("M3 checkpoint spec path changed")
+        earlier = read_json(Path(run["spec"]))
+        current_numeric = copy.deepcopy(spec)
+        current_numeric["bank"].pop("M_source_code")
+        current_numeric["bank"].pop("M_source_spec")
+        if earlier != current_numeric:
+            raise ValueError("M3 checkpoint numerical and evaluation contract changed")
     for name, row in manifest["files"].items():
         file = path / name
         if not file.is_file() or file.stat().st_size != int(row["bytes"]):

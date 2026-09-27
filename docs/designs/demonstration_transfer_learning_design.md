@@ -1,8 +1,9 @@
 # 教学参考与跨初态功能查询：对应学习候选
 
-2026-09-27。这是尚未验证的完整学习假设。§5/7/8数据构造及配对修正均已完成并独立核验；
-§10/11/13完整学习与官方比较工程已验收；§15正式运行面转换已审阅并集成，允许指定执行者按登记精确commit和现场preflight
-开展首个P/I288完整批次。实际承接/启动以progress及launch原件为准，没有576、MT长训练、controls或数据扩建授权。
+2026-09-28更新。§5/7/8数据构造、§10/11/13完整工程和§15首个正式P/I288均已完成并独立核验。
+P124/I91支持本窗口的对应干预正效应，仍弱于历史强MT155，未证明动态视频必要或相邻保持。
+§16选择唯一预留576节点，当前先由指定执行者完成CPU续训运行面转换；集成精确冻结后另发正式启动，
+不重复工程GPU，不启动MT长训练、controls、Test、RL或数据扩建。旧stage1已完成，不重新执行。
 实际执行状态只看[progress](../../progress.md)。科学依据见[机制分析§36–37](../analyses/feature_to_operator_mechanism_20260926.md)。
 Reader、条件速度270/450及其它已关闭运行不恢复；本设计不宣称已找到它们的统一根因。
 
@@ -961,3 +962,106 @@ runtime补齐已有3GiB代码上限，optimization.after_warmup仅删除已失�
 正式恢复的现存边界明确保留：尚未产生首个72 ECP时发生故障，现入口会保留失败原件并停止，不能自动抹掉fresh目录再来一遍；
 此时由主讨论根据真实失败和剩余预算决定处理。已登记的物理OOM缩小用于有合法ECP的恢复，不能把入口限制称为已验证任何故障可自动恢复。
 这不是要求增加一次smoke或新恢复平台；正式执行仍遵循18GPUh/800行/单一source与上述信息墙。
+
+## 16. 首节点科学裁决与唯一预留576节点（2026-09-28）
+
+### 16.1 原件验收、恢复边界与科学结果
+
+§15冻结`f4a80cd564843bb487bef55e3196d0597ed6cdd5`。P/I各fresh288、32,256真实FM query，
+新8,960/旧23,296；36task各32访问，20支持task的4×4联合格各一次。主讨论核实际事件/flow seed/LR，
+两臂日志内job顺序可因cost分配不同，按task匹配后合同相同。八套72/144/216/288 ECP的完整文件、optimizer、
+scheduler/sampler游标和rank RNG齐全，source可训练0，末步八个梯度消费者组活动；没有训练恢复或其它更新。
+800份正式NPZ/PT逐项读回，真实动作共240,147步，T/T+1、条件/scene/video/state/语言/随机前缀成立，16 full+784 compact。
+所有保存初始body/EEF/gripper/谓词与400 canonical scene一致；16 full首帧双RGB逐值一致。
+完整model/sim/controller与其余RGB依已审首动作前assert，不冒称另存了全部完整model快照。
+
+P最初348正式行后，一个新episode在首动作前的`initial_rgb_canonical180`断言失败；底层原因未确证。
+同代码/权重/scene/设备的官方队列恢复保留23已发布shard（348行、106成功），完成剩下5片；没有改变检查或按成败取舍。
+未发布片中的4份旧NPZ实际是已完成episode（Spatial6/state16–19，220/143/220/220步，1成功3失败），
+随后随分片重算，全部保存动作/body/EEF/gripper/谓词与最终对应行相同。故不能笼统称它们都是未执行完的episode，
+也不能声称没有行为重算：至少额外803个已保存控制步，另有被中断在途步未完整落盘；这些成本均在失败attempt GPU账内。
+原失败/孤立原件不改不删，最终800行可接受；原因未知不等于已修复，不触发另一次环境probe或放宽RGB断言。
+
+| 项目 | P288 | I288 |
+| --- | ---: | ---: |
+| correct400 | 124 | 91 |
+| Spatial / Object / Goal / Long | 38 / 42 / 32 / 12 | 18 / 31 / 33 / 9 |
+| global3 / 6 / 11 / 16 | 28 / 10 / 42 / 0 | 12 / 6 / 31 / 0 |
+| global23 / 26 / 31 / 39 | 0 / 32 / 12 / 0 | 0 / 33 / 9 / 0 |
+| breadth | 5/8 | 5/8 |
+
+P−I为+33/400（8.25pp），保留71/新增53/丢失20，churn73、Jaccard .49306。
+事前10,000次task-cluster bootstrap、seed2026092710，按官方task顺序`[31,39,23,26,11,16,3,6]`复算为[1.25,17.0]pp。
+该顺序沿原analysis实现，用于后续一致复算；按global排序重抽同有限样本得到[1.0,17.0]，仅是Monte Carlo排列差，
+不择有利区间、不追加抽样或据此称总体显著。两种口径均不覆盖重训seed不确定性。
+原件study根`/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927`，机器独立验收
+`.codex/tmp/demonstration_transfer_main_review_20260927/formal_stage1_acceptance.json`；原executor报告保持原样。
+
+对应干预在本有限训练程序下有正面闭环证据，区别于只降低FM或打开梯度；主要净增27/33来自global3/11，
+不能称全部操作知识已学成。P/I均为视频模型，不能由P−I断言视频超越语言、动态必要、逐层机制或公共/视频分支的独立贡献。
+P仍低于历史强MT155，且旧MT没有这批完整scene，不伪造严格配对得失。相邻保持尚无证据。
+§14.1提前关闭条件不成立；现选择一次事前预留576以检验第二完整周期及相邻保持，绝非因涨分而新增训练窗口。
+
+### 16.2 唯一续训语义与完整科学停止线
+
+两个输入ECP只能是本次stage1各臂`train/attempts/fresh/checkpoints/macro_00000288`，前缀路径同上述study的`stage1/P`或`stage1/I`。
+保留各自所有Writer/common、optimizer moments、scheduler、sampler、rank RNG，追加289–576共288真实更新/32,256query；
+累计各576/64,512，新累计17,920、旧46,592。复制原metrics完整288行到新attempt，不回写旧日志。
+第二4×4格沿已有`PairedEvents.event(288..575)`；不改变任务支持、数据、teacher池、权重、noise/time、数据offset或源文件。
+source/model/operator/data/optimization/mt数值字典逐项对照冻结stage1，不改LR时钟，不把新optimizer初始化当实际恢复。
+原`fresh_optimizer_scheduler`字段描述整个学习起点；本次执行必须从完整ECP恢复，不能据此重新fresh。
+
+唯一新运行根`/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/stage2`；旧stage1/scenes只读。
+新增ECP360/432/504/576仅恢复用途；首次承接允许登记的288，若故障发生在360前，从同一288重算并计费，
+之后只用同臂stage2最新完整ECP。每个attempt独立，保留失败、完整前缀及实际重算/新增query，不选中间点评测。
+到576已保存而收尾未发布的中断，沿同一ECP保存owner处理零剩余更新，最终pointer必须指向本attempt实际完整资产。
+
+跨freeze仅允许这一次明确的代码/运行面转换：核stage1精确commit、run schema/stage、同臂288终点/完成pointer，
+同时逐项核source/model/LoRA/optimizer/events/trainable names、信息墙和topology。只允许schema/stage、spec/Git路径、
+qualification/输出根等登记元信息变化；不得忽略整个run contract、绕过模型数值或另造通用宽松resume。
+stage2保存新的真实冻结身份和原288 lineage；后续同stage2恢复仍严格同冻结Git。
+复用公共ECP loader，只在已准入父身份下传相应父stage/schema；不重写通用ECP或第三方依赖。
+
+原world2拓扑继续固定gpu02、rank0物理3/UUID `GPU-c0c11da8-07ae-b68b-00dc-c3bda27d49ae`/NUMA0，
+rank1物理7/UUID `GPU-99beeb2b-ce8f-e51d-a718-68bd93deff8a`/NUMA1。两臂原拓扑相同，训练须顺序运行，
+不为提速静默换卡、换rank分工或重分片；现场不适用就报告资源阻碍，不占位、等凑卡或杀他人进程。
+NCCL_P2P_DISABLE=1；初始micro28/framechunk8，真实OOM恢复仅28→14→7和8→4。接受正常BF16/TF32微差，不追逐bitwise。
+
+每臂只物化本批完成的macro576：公共128一次、400条件16、唯一38-target rank144；仍只合法held RGB/L读取。
+只做各一次official correct400，共800行，复用原400scene、state-video/seed，8full+392compact每臂，原协议和物理配对检查不变。
+不再freeze场景；每条LoRA在rollout前生成，compile前source identity恢复保持。
+报告P576−I576、P576−P288、I576−I288的完整task/suite/breadth、R/G/L/churn/Jaccard，固定bootstrap顺序同§16.1。
+旧MT155仅历史能力参照，不报告其未经相同物理scene支持的严格R/G/L。
+§14.2保持线不变：lost>20或净降>8不具备“能力已保持”资格；两臂最新均≤155或均不满足保持，关闭本组合长训/controls。
+只有达到事前资格才另评同数据强M投入；当前不启动M、controls、Test、RL、864、数据扩建或保持/架构补丁。
+
+### 16.3 依据首批实测缩小预算与时间预期
+
+stage1完整scene .140735、两train5.143272、两bank .363877、official含失败/恢复2.259592，总7.907476 GPUh。
+首到末wall4.331h、峰值2卡，study7.083GiB；训练记录peak reserved21.520GiB，未测evaluator连续高水位。
+第二节点不再建scene，等量两段训练+bank+800条的基准为7.766741 GPUh；闭环时长、长视频和失败仍可能变化，
+不能把旧成功率/吞吐当确定值。预计8–10完整GPUh，硬限11：训练7、bank .75、official3.25，加载/失败/重算/等待均计。
+不自动调用旧18GPUh上限；阶段预计超额则报告实质阻碍，不挪其它阶段余额掩盖异常。
+训练两臂顺序world2；bank/official可用两卡分别承担两臂，每卡2 persistent replicas、原envs8，必要时原1 replica回退。
+本批峰值2物理卡；官方允许live合规的其它卡，训练拓扑不变。GPU阶段预计4–5.5小时，不含CPU转换/集成或资源阻碍。
+
+stage2新增峰值10GiB、study合计≤18GiB：4套ECP/臂约1.58GiB、两bank约3.91GiB，full/compact/NPZ/临时checkpoint/失败余量其余覆盖；
+旧scene只读复用，不复制dataset/source/296查询。新冻结代码每份≤256MiB，最多两份共512MiB，相关代码合计≤3GiB沿旧上限。
+正式创建root/冻结和launch前由执行者live核strg01 data1独立quota、相关目录实量、共享容量以及双节点GPU。
+本节预算不授权占用正在使用的GPU，当前CPU转换也不创建run root或冻结树。
+
+### 16.4 当前派发范围：只做有界CPU续训转换
+
+任务`demonstration_transfer_stage2_transition_20260928`，原指定执行者复用独占`codex/demonstration-transfer`与dev，
+从派发记录的最新main承接。预计30–45分钟，60分钟复核实质阻碍；GPU账0。
+修改仅已有run/bank/data的范围、父ECP准入与必要spec/CPU测试；model及FM/native/scene/evaluator算子保持，
+不新建模块、trainer/队列/恢复平台。预计活动源码净增≤200行，超过说明新增职责，不为指标机械拆分。
+learning_spec仍唯一，活动train只允许288→576及本批故障恢复，拒绝fresh/其它父权重/旧工程/新M；
+stage1执行权由旧冻结树保留，旧bank由自身封存spec/manifest只读解释，不保留第二训练CLI或广泛版本fallback。
+
+CPU检查真实两臂288 ECP元信息、288行前缀、第二格完整支持及LR绝对游标；拒绝错臂/错源/错Git/错拓扑，
+拒绝旧工程/fresh；核本批最新ECP规则及576零剩余完成边界。只读ECP优化状态允许，不实例化模型、不做forward/backward。
+确保bank只接本次576完成资产、旧288只读仍可用于科学比较，held读取不构造标签query。
+沿已验收focused checks；无环境、GPU、held像素扫描、额外恢复smoke或profile。候选关闭时仍退役私有运行面。
+交付clean pushed精确commit/diff/CPU结果/完整命令模板，一次Queue回主讨论。
+主讨论审阅集成后才登记新的精确formal冻结commit并派stage2实际执行；这一步不需要Owner重复授权。

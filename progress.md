@@ -1,6 +1,38 @@
 # EMBER progress
 
-## 当前状态：首个正式P/I288批次已准入，精确代码冻结（2026-09-27）
+## 当前状态：P288/I288正式验收；选择唯一预留576，当前CPU转换（2026-09-28）
+
+Owner持续自主授权有效，目标为合法RGB/L一次完整LoRA、绝对能力超过强MT、视频有益并保持能力。
+科学主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责main/理论裁决；唯一实验执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`。
+所有新增data1，不联系旧主讨论/旧Sol，不自Queue、不轮询陪跑，不恢复已关闭实验。
+
+**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`§16。
+当前任务`demonstration_transfer_stage2_transition_20260928`仅授权指定执行者有界CPU续训转换，预计30–45分钟、60分钟复核。
+实际派发/接受另记本段；当前尚无新的GPU启动。集成代码后登记精确freeze，再派正式288→576。
+
+**首批已完成且独立验收**：f4a80cd5，P124/I91，差+33/400=8.25pp，R/G/L71/53/20，churn73、Jaccard .49306；
+Spatial/Object/Goal/Long分别38/42/32/12对18/31/33/9，breadth均5/8；global16/23/39均0。
+按原官方task顺序复算bootstrap95%[1.25,17.0]pp，只描述8任务、本seed，不涵盖重训不确定性。
+两臂各288/32,256query，实际新8,960/旧23,296；8套完整ECP的optimizer/scheduler/sampler/rank RNG均核。
+主讨论读回800份NPZ/PT、400scene配对与bank/训练合同，240,147正式控制步、16full/784compact成立。
+
+P曾在新episode首动作前RGB断言退出；原23片348行保留，同冻结队列恢复其余5片。4份未发布片的完整轨迹重算，
+保存的动作/状态/谓词及成败与最终行相同，至少额外803已保存动作；其它在途中断步无完整原件，不编造精确总量。
+原因未确证、不声称修复；保留失败账、不放宽检查、不再派GPU probe。详见设计§16.1。
+完整7.907476GPUh（硬限18），wall4.331h、峰值2卡，study7.083GiB；旧首批估计13–16明显保守，新预算已用实测缩小。
+原件root `/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927`，独立复核
+`.codex/tmp/demonstration_transfer_main_review_20260927/formal_stage1_acceptance.json`。
+首批Queue `01a0e2ea-c130-7b32-9a4a-3735a1cda15d`已消费并完成，不当作后台工作。
+
+**科学选择**：对应关系有有限闭环正证据，不能由P−I宣称视频/动态必要；P仍低于旧强MT155，未有相邻保持。
+§14提前关闭条件不满足，选择原预留第二完整格而不改任何模型/训练数值。完整认识见机制§37.10/findings§192。
+预备正式stage2各新增288/32,256query、仅576各correct400，原400scene复用；停止线仍为lost>20或净降>8及强MT资格。
+预算预计8–10、硬11GPUh（训练7/bank.75/official3.25），峰值2卡，GPU阶段4–5.5小时；新增10GiB、study≤18GiB。
+训练须保持原gpu02 rank0物理3/NUMA0、rank1物理7/NUMA1精确UUID/拓扑，两个臂顺序。实际启动另行live核资源。
+新CPU任务不建run root/冻结树、不运行模型/环境/GPU、不读取held标签、不重复smoke。576完成后不自动864、MT、controls或修补。
+
+### 以下为已完成首批的历史启动记录，不重复执行
+
 
 Owner授权持续自主推进；目标仍是合法RGB/L一次生成完整LoRA、超过强MT、视频有益并保持能力。
 主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main；唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责实验。

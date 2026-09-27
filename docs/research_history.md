@@ -4,6 +4,18 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-28：首个对应学习正式节点P124/I91，选择事前预留576
+
+冻结f4a80cd5，P/I各fresh288/32,256真实FM query，20支持task的完整参考交叉；各macro288、各correct400。
+P124/I91，R/G/L71/53/20、churn73、Jaccard .49306；breadth均5/8。Spatial/Object/Goal/Long为38/42/32/12与18/31/33/9。
+主讨论读回800 NPZ/PT及8完整ECP，保存起点与共同400scene成立；bootstrap按官方task顺序[1.25,17.0]pp。
+P首轮348行后新episode首动作前RGB断言失败，同合同队列保留23片并恢复余5片；4条未发布片的已完成轨迹重算，
+其全部保存行为/成败与最终行相同、额外803保存动作，另有在途未落盘步，失败原因未确证。没有改模型/场景或择优取行。
+正式800行共240,147动作、16full/784compact；完整7.907476GPUh、wall4.331h、峰值2卡、study7.083GiB。
+原件`/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927`；独立核对与精确边界见设计§16.1/findings§192。
+正例支持有限学习的对应干预，未证明动态必要，绝对分数仍低于旧强MT155、相邻保持未知。
+按事前§14选择唯一预留576，保持模型/数据/学习程序，先有界CPU转换再精确冻结；本段不构成额外GPU授权。
+
 ## 2026-09-27：首个对应学习正式运行面通过CPU验收
 
 3bee0a1b由9b480d2d集成，原六个数值配置字典不变；独立八项CPU测试通过，活动源码净增125，无新增source模块。

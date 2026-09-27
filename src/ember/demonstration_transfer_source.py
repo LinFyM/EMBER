@@ -17,8 +17,7 @@ SCHEMA = "ember_demonstration_transfer_training_support_v1"
 CANONICAL_ASSET_REPO = Path("/data1/user/ymdai/projects/EMBER")
 DATA = CANONICAL_ASSET_REPO / "data/datasets/f13aa24a3da8c43c7225569f28c562979fa0e35a"
 ASSETS = CANONICAL_ASSET_REPO / "data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6"
-OLD_ROBOSUITE = "/home/yifengz/workspace/robosuite-master/robosuite/models/assets"
-OLD_LIBERO = "/home/yifengz/workspace/libero-dev/chiliocosm/assets"
+PRODUCER_ROOTS = ("/home/yifengz/workspace/", "/Users/yifengz/workspace/")
 
 
 class SourceStructureUnsupported(ValueError):
@@ -29,8 +28,11 @@ def source_xml(xml: str) -> str:
     import robosuite
 
     installed = str(Path(robosuite.__file__).resolve().parent / "models/assets")
-    value = xml.replace(OLD_ROBOSUITE, installed).replace(OLD_LIBERO, str(ASSETS))
-    if value == xml or OLD_ROBOSUITE in value or OLD_LIBERO in value:
+    value = xml
+    for prefix in PRODUCER_ROOTS:
+        value = value.replace(prefix + "robosuite-master/robosuite/models/assets", installed)
+        value = value.replace(prefix + "libero-dev/chiliocosm/assets", str(ASSETS))
+    if value == xml or any(prefix in value for prefix in PRODUCER_ROOTS):
         raise ValueError("source XML asset roots changed")
     return value
 

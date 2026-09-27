@@ -63,6 +63,12 @@ V450 correct400于02:35 UTC exit0，6 workers均0，完整1350.880秒×3卡=1.12
 原件复核`V450_400_structure_and_reference_review.json`；这是明确闭环退化，不按工程bug补救或追加学习节点。
 L450面板仍按原合同完成以限定解释；启动前gpu02/7新增他人高负载，合法改用gpu02/4,6、每卡2 replica，
 400行与随机流不变，按两卡实际占用计费。训练拓扑未变，不混淆评测物理并行调整与训练恢复。
+主讨论在L执行期间完成固定8个state0的V270/V450、16份full PT/NPZ核读：初始raw state、双相机、语言tokens与T0数组一致，
+真实T/T+1 finite；实际首5动作已变化。原件`V450_fixed_full_behavior_review.json`及两份Spatial保存画面联系图。
+已看双相机的Spatial(6,0)：V270第189步成功；V450将另一只白色ramekin搬向盘子，目标黑碗body全程不动，220步失败。
+Spatial(3,0)两点仍成功103/94，不能由单个state0代表该task37→19；Long(31,0)实际目标谓词由最终[true,false]变成[true,true]，
+450第478步成功，虽该task总数22→10。这是能力取得与丢失同时存在的原始行为证据，不是全部功能崩溃或唯一模块根因。
+后续轨迹同时含policy变化和访问状态变化，不能由这些原件分离R/U/beta/教学编码器信用；本次未新增模型、环境或teacher特权标签读取。
 后继预计4.5–5.6完整GPUh、硬限6，GPU阶段约2–3h；新增原件≤4GiB、study合计≤8GiB，新增冻结代码≤320MiB、三树合计≤1GiB。
 旧0c4ea636冻结树保留，因为270 bank的spec仍引用它；新节点另冻，不能重写270原件或静默跨commit exact-resume。
 旧内部helper暂留到450保留/关闭裁决，旧generic CLI/Compiler不恢复；不为维持工作追加局部probe或同类理论循环。

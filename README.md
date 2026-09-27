@@ -10,11 +10,11 @@ task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正�
 Reader完成12次工程更新/1344查询、最长视频反传及6条train-only接口episode，完整计费0.51258 GPUh。
 旧Video Functional已联合学习表示/执行读头，当前差异尚不足以支持重投；630学习为零，未以smoke分数裁决科学假设。
 旧Reader临时实现由Git `2fbd4c7d`及原件保留，main不保留该闲置诊断运行面。
-新[候选合同](docs/designs/conditional_velocity_operator_design.md)共同学习执行状态特征和可精确编译的条件速度场。
+[已关闭的候选合同](docs/designs/conditional_velocity_operator_design.md)共同学习执行状态特征和可精确编译的条件速度场。
 工程完成6宏步/672query、一次长视频反传及2条训练接口轨迹，计费0.12696 GPUh；不是收益证据。
 视频V/真实语言L首批各270更新及各400完成，完整5.7032 GPUh；V对L27得23失，V对MT38得42失。
 原预留450节点完成：两臂新增各180更新/20,160query及各400，4.5210 GPUh；V相邻新增23/丢72、L新增23/丢58。
-本组合不再续训或追加修补；候选设计§13记录关闭与CPU退役范围，当前无active GPU设计。
+本组合不再续训或追加修补；专用训练/物化入口及私有实现已退役，旧bank只读适配器保留，当前无active GPU设计。
 其函数假设、分解歧义和完整裁决见机制分析§29–32，实际授权及科学后继只看progress。
 尚无经过验证的统一根因、修复或正确视频必要增量；语言内容路径、有限回报更新及去噪位置分支不恢复。
 实际状态及证据位置见[progress](progress.md)，科学解释和下一步计划见[task_plan](task_plan.md)。仓库收尾已完成，无需重做。
@@ -40,7 +40,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 
 | 目录 | 内容与生命周期 |
 | --- | --- |
-| `src/ember/` | 唯一维护中的Writer、Source/MT-BC、数据及评测实现 |
+| `src/ember/` | Writer共享组件与历史bank读取、Source/MT-BC、数据及评测实现；当前无活动Writer训练入口 |
 | `scripts/` | 薄CLI、环境构建、数据封存和结果比较入口；已结束的专用诊断脚本由Git保存 |
 | `tests/` | 对当前实现及稳定科学/恢复/配对合同的CPU检查 |
 | `configs/` | 显式数据协议、方法配置和审计；不同协议分别保留，不能覆盖旧结果 |
@@ -57,19 +57,19 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 
 | 职责 | `src/ember/`中的owner |
 | --- | --- |
-| 原生图文／完整H读取、三组Meta | `writer/video_program.py`、`writer/meta_lora.py` |
-| Core、Procedure及动作行读取 | `writer/temporal.py`、`writer/procedure.py`、`writer/conditional_velocity.py` |
-| 唯一38-target完整A/B合成 | `writer/conditional_velocity.py`、`pi05_lora.py` |
-| 真实FM、事件、训练与恢复 | `writer/conditional_velocity_{data,training}.py`、`writer/function_credit.py`、`ecp/checkpoint.py` |
-| 紧凑bank及官方部署接入 | `writer/conditional_velocity_bank.py`、`batched_lora.py` |
-| 暂留的native/identity/selection内部共享依赖 | `writer/model.py`、`writer/materialization.py`、`writer/runtime.py`；旧generic出口已关闭 |
+| 历史Writer仍使用的原生图文／完整H、Meta组件 | `writer/video_program.py`、`writer/meta_lora.py` |
+| 历史Writer的Core、Procedure共享组件 | `writer/temporal.py`、`writer/procedure.py`；不保留已关闭条件速度编码器 |
+| 封存rank135 bank的唯一LoRA重建与官方接入 | `writer/conditional_velocity_bank.py`、`pi05_lora.py`、`batched_lora.py`；不生成新bank |
+| 共享真实FM与完整checkpoint工具 | `writer/function_credit.py`、`ecp/checkpoint.py`；条件速度训练/采样实现已退役 |
+| 历史bank/native/identity/selection实际依赖 | `writer/model.py`、`writer/materialization.py`、`writer/runtime.py`；旧generic出口已关闭 |
 | Source与共享LoRA监督 | `pi05_source_training.py`、`source_sft/` |
 | 配对闭环、队列、协议与结果 | `pi05_eval/`、`pi05_eval_queue.py`、`pi05_eval_contract.py`、`pi05_eval_results.py` |
 
-Writer入口为`scripts/train_writer.py`、`scripts/materialize_writer.py`、`scripts/evaluate_pi05.py`。
+当前无活动Writer训练/物化入口；`scripts/train_writer.py`、`scripts/materialize_writer.py`已删除。
+通用评测入口`scripts/evaluate_pi05.py`保留，读取已封存bank的规格与checkpoint，不把历史读取能力当作新运行授权。
 Source/MT-BC入口为`scripts/train_source_base.py`和`scripts/train_source_sft.py`；复用同一评测合同。
 已结束的stability/output-space/causal诊断与low-LR专用执行面已退役，原实现可从`7b18030c`及各run记录的commit恢复。
-常规完整恢复和已登记的1500→2100 continuation保留；旧low-LR phase配置不再接受，避免静默改变学习率。
+历史Writer恢复及1500→2100 continuation按各自冻结commit与原件解释，不恢复已关闭的CLI；旧low-LR phase配置不再接受。
 
 ## 数据与证据入口
 

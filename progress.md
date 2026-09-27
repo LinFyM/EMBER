@@ -23,14 +23,20 @@ V相邻R/G/L=79/23/72，L=89/23/58，V450对L450=84/18/28。当前无active GPU�
 候选设计§13登记科学关闭与必要CPU退役范围；冻结树、270/450依赖、checkpoint和正式原件保留。
 下一工作由主讨论完成完整学习原则判断，具体检验教学观察怎样约束执行反馈函数，而不重写普通FM链式法则、
 公共分解或同episode协方差。必须对照已结束的功能教师/LocalField/任务lookahead/关系支持近邻，
-没有实质差异就不派实验。执行入口退休交指定执行者后，主讨论并行研究，不陪跑等待。
+没有实质差异就不派实验。必要执行入口退役已验收集成，主讨论继续科学研究，不陪跑等待或自动加GPU。
 
 03:38 UTC已派必要CPU退役`conditional_velocity_retirement_20260927`，base main4304de01，
 复用执行者独占的native-conditional-reader-dev树；Queue `01a0e0f1-5f40-7452-9774-34502692c511`获接受，
 一次即时原生快照确认新turn `01a0e0f1-5f42-7843-937d-8418918ceb87`开始。没有持续等待/状态轮询。
 预期20–35分钟、45分钟复核范围；源码/私有入口退役，真实旧bank只读消费者保留最小owner，冻结树与原件不动。
 请求/回执为`.codex/tmp/conditional_velocity_learning_20260927/retirement_{request,queue_receipt}.txt`。
-完成后只收一次异步完整回报，主讨论审阅集成并同步README实际owner；本段不声称CPU任务已完成。
+本次唯一完成回报已收到：5587c3df（基于4304de01）由主讨论cherry-pick为71ab5db5，保留35f84b15文档。
+13文件+202/−1338，退役训练/物化CLI、私有operator/data/trainer/规格及专用旧测试；
+只读bank owner仍由官方evaluator/preparation/capture/recovery实际消费，保留单LoRA重建及历史证据合同。
+主讨论集成后18项CPU检查通过（13.12秒）；四套V/L×270/450真实bank的spec、checkpoint游标和capture合同均通过。
+复核原件`.codex/tmp/conditional_velocity_retirement_20260927/main_readonly_acceptance.json`。
+未加载完整旧bank权重/模型、运行GPU/环境或重做评测；两个冻结树仍clean且为0c4ea636/cfd378b6，原件不动。
+README已同步真实owner。执行者本批结束，无新任务或active GPU合同；主讨论仍承担后续科学推进。
 
 并行完整判断已形成机制分析§33/findings§180：函数编码要求实际函数样本，RGB转移到控制系数的自由回归没有自动
 补上核心联系；精确重建教师函数又强于任务成功，不能由未知反馈方向直接推出视频方法不可能。

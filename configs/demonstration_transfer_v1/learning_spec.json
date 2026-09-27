@@ -1,7 +1,7 @@
 {
   "schema_version": "ember_demonstration_transfer_learning_spec_v1",
   "task": "demonstration_transfer_learning_stage2_20260928",
-  "status": "formal_stage2_cpu_prepared_no_gpu_launch",
+  "status": "formal_stage2_registered_for_launch",
   "design": "docs/designs/demonstration_transfer_learning_design.md#16",
   "source": {
     "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
@@ -411,7 +411,7 @@
     "new data or model/optimizer/loss changes",
     "parallel engineering CLI fallback"
   ],
-  "delivery": "CPU transition only; formal stage2 GPU launch separately dispatched after main integration and exact frozen commit",
+  "delivery": "formal stage2 execution only after main records the exact pushed freeze and dispatches the bounded launch",
   "mt": {
     "rank": 128,
     "alpha": 128,

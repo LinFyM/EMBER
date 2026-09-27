@@ -4,6 +4,12 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-28：预留576的CPU续训转换集成
+
+2c7e66cf由e655bcfb集成，主讨论定向CPU9/9通过；固定父f4a80cd5两臂完整288，保留学习数值/优化状态/逻辑事件与原world2拓扑。
+当前唯一活动训练/物化面转为576，旧stage1由原冻结树保留；src净+91、全部Python含tests净+143，guard REVIEW无新hard。
+尚无新模型/环境/GPU运行；精确formal代码、launch与结果仍看progress，CPU准入不构成科学收益。
+
 ## 2026-09-28：首个对应学习正式节点P124/I91，选择事前预留576
 
 冻结f4a80cd5，P/I各fresh288/32,256真实FM query，20支持task的完整参考交叉；各macro288、各correct400。

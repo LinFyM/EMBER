@@ -1065,3 +1065,24 @@ CPU检查真实两臂288 ECP元信息、288行前缀、第二格完整支持及L
 沿已验收focused checks；无环境、GPU、held像素扫描、额外恢复smoke或profile。候选关闭时仍退役私有运行面。
 交付clean pushed精确commit/diff/CPU结果/完整命令模板，一次Queue回主讨论。
 主讨论审阅集成后才登记新的精确formal冻结commit并派stage2实际执行；这一步不需要Owner重复授权。
+
+### 16.5 CPU续训转换已验收，正式批次可派发
+
+2c7e66cf由e655bcfb合入main，保留f6dc49c1的主讨论记录。五文件+303/−149；精确src口径+168/−77、净+91，
+含tests的全部Python净+143，不沿用执行者“活动源码约+135”的估计。没有新模块/第二trainer，stage1 fresh与freeze-scenes活动CLI退出。
+run619行仍由同一内聚ECP/宏步owner承担父迁移，guard REVIEW无新hard；旧公共分派复杂度例外未改。
+主讨论在交付树独立运行完整定向文件9/9通过（18.66秒），实际父288身份、错误来源拒绝、第二周期、合法held读取与终点发布均覆盖。
+六个数值字典与旧f4a80cd5完全相同；新增固定父身份迁移后仍由原ECP loader恢复完整模型/optimizer/scheduler/rank RNG，
+sampler与原288连续前缀接续。源码审阅未见FM/模型/native/scene/evaluator算子变化；spec状态随后更新为可派正式批次。
+旧288的原件和重建能力由f4a80cd5冻结树保留；当前活动bank准入只接受576，不为了重放历史保留双版本训练面。
+
+准确恢复边界：从父288承接始终要求micro28/framechunk8，第一次stage2完整ECP为360；若360前发生OOM，
+不能宣称当前入口可以缩小物理batch从父288恢复，须保留失败并报告。360及以后同stage2 ECP已有允许的物理缩小；
+普通360前基础设施中断可按原288/28/8重算并计入本批预算。未额外运行真实world2恢复/GPU smoke。
+独立验收`.codex/tmp/demonstration_transfer_main_review_20260927/stage2_transition_acceptance.json`。
+CPU任务Queue `01a0e3f5-fc2e-7a01-b76c-ab5e97ad55ed`已消费且完成，不表示仍有后台工作。
+
+接下来的唯一执行任务`demonstration_transfer_learning_stage2_20260928`按§16.2–16.3完整范围：
+各自288→576、各唯一576 bank400与official400，复用旧scene；精确freeze/派发回执登记progress。
+任何新launch仍由指定执行者live核data1独立quota/共享容量、双节点GPU和原world2 UUID/NUMA；预算11GPUh、峰值2卡、GPU约4–5.5小时。
+只一次整批完成/实质阻塞Queue，不以本次准入自动开启MT、controls、其它checkpoint或补丁。

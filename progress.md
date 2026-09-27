@@ -1,18 +1,21 @@
 # EMBER progress
 
-## 当前状态：P288/I288正式验收；选择唯一预留576，当前CPU转换（2026-09-28）
+## 当前状态：576续训CPU已验收，准备精确冻结与正式派发（2026-09-28）
 
 Owner持续自主授权有效，目标为合法RGB/L一次完整LoRA、绝对能力超过强MT、视频有益并保持能力。
 科学主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责main/理论裁决；唯一实验执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`。
 所有新增data1，不联系旧主讨论/旧Sol，不自Queue、不轮询陪跑，不恢复已关闭实验。
 
 **唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`§16。
-当前任务`demonstration_transfer_stage2_transition_20260928`仅授权指定执行者有界CPU续训转换，预计30–45分钟、60分钟复核。
-17:41 UTC已从clean pushed main `d975caa258bcccea04d0e3c46792748587bd76f2`派发唯一Queue
-`01a0e3f5-fc2e-7a01-b76c-ab5e97ad55ed`；17:42一次即时快照核定消息进入新turn
-`01a0e3f5-fc30-78d2-9f12-44e87e8abec3`、状态inProgress，队列已消费。只证明CPU任务已承接，不称其完成或GPU已启动。
-请求/回执/快照保存在同tmp目录`stage2_transition_*`；整项完成/实质阻塞仅一次Queue回主讨论，不轮询等待。
-集成代码后登记精确freeze，再派正式288→576。
+CPU任务`demonstration_transfer_stage2_transition_20260928`已完成，Queue `01a0e3f5-fc2e-7a01-b76c-ab5e97ad55ed`已消费。
+2c7e66cf已由e655bcfb合入main；主讨论独立9项CPU检查通过（18.66秒），六个数值字典与父批相同，guard REVIEW无新hard。
+精确src净+91（全部Python含tests净+143），没有新的训练平台；父288迁移与本批latest ECP规则、终点576发布成立。
+360前父恢复固定28/8，遇OOM须报告，不虚构缩小批量的恢复能力；其它边界见设计§16.5。
+独立验收`stage2_transition_acceptance.json`位于同tmp目录，旧源码/结果不改；没有新增模型/环境/GPU smoke。
+
+当前准备唯一正式任务`demonstration_transfer_learning_stage2_20260928`，精确freeze与实际派发回执在本段补记。
+各臂从本次正式288完整状态续至576、每臂仅最后bank400/official400、复用原scene；不是fresh、换模型或另采数据。
+启动前由执行者做现场quota/GPU/拓扑准入；主讨论不陪跑轮询，整批完成或实质阻塞一次Queue。
 
 **首批已完成且独立验收**：f4a80cd5，P124/I91，差+33/400=8.25pp，R/G/L71/53/20，churn73、Jaccard .49306；
 Spatial/Object/Goal/Long分别38/42/32/12对18/31/33/9，breadth均5/8；global16/23/39均0。

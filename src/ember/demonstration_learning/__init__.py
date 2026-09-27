@@ -1,1 +1,1 @@
-"""Bounded paired-reference learning candidate; private until scientific selection."""
+"""Sealed paired-reference bank reader for canonical evaluation."""

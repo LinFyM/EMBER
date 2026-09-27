@@ -1,4 +1,4 @@
-"""Shared full-scene initialization for transfer collection and official evaluation."""
+"""Restore and validate sealed full-scene starts for official evaluation."""
 
 from __future__ import annotations
 
@@ -7,14 +7,29 @@ from pathlib import Path
 
 import numpy as np
 
-from ember.demonstration_transfer_source import body_id, pose
+
+def _body_id(owner: Any, name: str) -> int:
+    if name in owner.obj_body_id:
+        return int(owner.obj_body_id[name])
+    try:
+        result = int(owner.sim.model.body_name2id(name))
+        if result < 0:
+            raise ValueError(name)
+        return result
+    except (ValueError, KeyError) as error:
+        raise ValueError(f"registered scene body absent: {name}") from error
+
+
+def _pose(sim: Any, body: int) -> tuple[np.ndarray, np.ndarray]:
+    return (np.asarray(sim.data.body_xpos[body], dtype=np.float64).copy(),
+            np.asarray(sim.data.body_xmat[body], dtype=np.float64).reshape(3, 3).copy())
 
 
 def _query_sample(env: Any, observation: dict[str, Any], names: list[str], goals: list[list[str]]) -> dict[str, np.ndarray]:
     owner = env.env
     return {
-        "body_pos": np.stack([pose(owner.sim, body_id(owner, name))[0] for name in names]),
-        "body_rot": np.stack([pose(owner.sim, body_id(owner, name))[1] for name in names]),
+        "body_pos": np.stack([_pose(owner.sim, _body_id(owner, name))[0] for name in names]),
+        "body_rot": np.stack([_pose(owner.sim, _body_id(owner, name))[1] for name in names]),
         "eef_pos": np.asarray(observation["robot0_eef_pos"], dtype=np.float64).copy(),
         "eef_quat": np.asarray(observation["robot0_eef_quat"], dtype=np.float64).copy(),
         "gripper_qpos": np.asarray(observation["robot0_gripper_qpos"], dtype=np.float64).copy(),
@@ -28,16 +43,6 @@ def _capture_image(observation: dict[str, Any]) -> np.ndarray:
     if image.shape != (2, 256, 256, 3) or image.dtype != np.uint8:
         raise ValueError("canonical dual-camera RGB changed")
     return image
-
-
-def _initialize_query(env: Any, init_states: Any, state: int, recipe: dict[str, Any]) -> dict[str, Any]:
-    """Use the unchanged official fixed-state and ten-dummy initialization."""
-    env.seed(int(recipe["rng"]["inference_seed"]))
-    env.reset()
-    observation = env.set_init_state(init_states[state])
-    for _ in range(10):
-        observation, _, _, _ = env.step(np.asarray(recipe["environment"]["dummy_action"], dtype=np.float64))
-    return observation
 
 
 def _scene_snapshot(env: Any, observation: dict[str, Any], names: list[str],
@@ -90,66 +95,6 @@ def _assert_scene_pair(env: Any, observation: dict[str, Any], names: list[str],
 
 def scene_path(root: Path, task: dict, state: int) -> Path:
     return root / f"{task['suite']}_task_{int(task['task_id']):02d}_state_{state:03d}.npz"
-
-
-def freeze_registered_scenes(asset_root: Path, output: Path, *, physical_gpu_id: int) -> dict:
-    """Freeze all 400 prespecified validation scenes before policy behavior."""
-    from dataclasses import asdict
-    from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
-    from ember.pi05_eval_contract import load_evaluation_authorities, inspect_installed_target_tasks
-    from ember.pi05_assets import configure_libero_runtime_assets
-    from ember.pi05_source_checkpoint import write_json_atomic
-    from ember.demonstration_learning.run import specification
-    from ember.writer.learning_data import load_learning_tasks
-
-    if output.exists():
-        raise ValueError("formal scene freeze output already exists")
-    spec = specification()
-    authorities = load_evaluation_authorities(
-        asset_root / "configs/libero_24_8_8_coverage_v1/evaluation.json", asset_root)
-    installed, paths = inspect_installed_target_tasks(
-        authorities, role="validation", state_count=50,
-        libero_config_dir=output / "libero_config")
-    configure_libero_runtime_assets(Path(paths["assets"]))
-    contract = dict(authorities.config)
-    contract["libero_paths"] = paths
-    contract["parallel"] = {**contract["parallel"], "envs_per_replica": 1}
-    metadata = load_learning_tasks(asset_root, spec["scene"]["task_ids"], role="validation",
-                                   protocol_path=spec["data"]["protocol"])
-    tasks = [asdict(task) for task in installed]
-    if [(task["suite"], task["task_id"]) for task in tasks] != [
-            (row.suite, row.suite_task_id) for row in metadata.values()]:
-        raise ValueError("formal scene task scope changed")
-    output.mkdir(parents=True, exist_ok=True)
-    pool = PersistentTaskEnvironmentPool(contract, physical_gpu_id=physical_gpu_id)
-    records = []
-    try:
-        for task in tasks:
-            envs, initial = pool.switch(task)
-            env = envs[0]
-            for state in spec["scene"]["init_state_ids"]:
-                obs = _initialize_query(env, initial, state, contract)
-                owner = env.env
-                names = sorted(owner.obj_body_id)
-                goals = [list(row) for row in owner.parsed_problem["goal_state"]]
-                # Regeneration is already part of the accepted collector semantics.
-                snapshot = _scene_snapshot(env, obs, names, goals, image=False)
-                obs = _restore_scene(env, snapshot)
-                # The post-dummy observation may precede sim forward in regeneration;
-                # freeze the resulting state, as the accepted collector does.
-                full = _scene_snapshot(env, obs, names, goals, image=True)
-                path = scene_path(output, task, state)
-                np.savez_compressed(path, **full)
-                _assert_scene_pair(env, obs, names, goals, full, image=True)
-                records.append({"suite": task["suite"], "task_id": task["task_id"],
-                                "state": state, "path": str(path), "bytes": path.stat().st_size})
-    finally:
-        pool.close()
-    if len(records) != 400:
-        raise ValueError("canonical scene freeze incomplete")
-    write_json_atomic(output / "manifest.json", {"schema_version": "ember_demonstration_formal_scenes_v1",
-                                                  "seed": 7, "dummy_steps": 10, "scenes": records})
-    return {"scenes": len(records), "manifest": str(output / "manifest.json")}
 
 
 def restore_registered_scene(env: Any, observation: dict, task: dict, state: int,

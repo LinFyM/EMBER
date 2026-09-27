@@ -47,6 +47,11 @@ V续训00:55:28–01:45:27 UTC exit0，2998.873秒×2卡=1.6660406完整GPUh。
 360/450 ECP的optimizer/scheduler/sampler/metrics游标及双rank RNG记录齐全；原件复核为
 `.codex/tmp/conditional_velocity_learning_20260927/V450_completed_training_review.json`。
 L已从父270继续；本批仍无完整闭环结果，不把训练覆盖或completion资格字段当作科学通过。
+L续训01:46:24–02:00:39 UTC exit0，855.635秒×2卡=0.4753526 GPUh；两臂追加训练累计2.1413932/6 GPUh。
+02:03 UTC主讨论独立核完L450、父270前缀及360/450 ECP；新增180步/20,160query、宏步均值4.564秒。
+V/L累计1800个task事件（新增720个）及学习率时钟逐项匹配，L仅公共/U/readout/Text/Core活动，VL/Action/Procedure均零。
+两臂都完成36task各50/50教学覆盖，source冻结；独立复核为同tmp目录`L450_completed_training_and_pair_review.json`。
+执行者开始450 bank物化，随后各correct400；完整分数/相邻保持仍未出，不增加其它评测或训练。
 后继预计4.5–5.6完整GPUh、硬限6，GPU阶段约2–3h；新增原件≤4GiB、study合计≤8GiB，新增冻结代码≤320MiB、三树合计≤1GiB。
 旧0c4ea636冻结树保留，因为270 bank的spec仍引用它；新节点另冻，不能重写270原件或静默跨commit exact-resume。
 旧内部helper暂留到450保留/关闭裁决，旧generic CLI/Compiler不恢复；不为维持工作追加局部probe或同类理论循环。

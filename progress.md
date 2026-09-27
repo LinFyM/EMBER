@@ -13,12 +13,19 @@ Owner在晨间进展讨论后已明确继续自主推进，今晚睡前检查。
 主讨论已承认此前属于不必要的主动切回合；下述旧“可自发接续”记录只保留当时事实，不构成继续自排的许可。
 
 **唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前只授权§8的
-`demonstration_transfer_training_support_20260927`，已登记、尚未派发。完整方法解释在§1–4，本批不授权模型训练或held评测。
+`demonstration_transfer_training_support_20260927`，已派发。完整方法解释在§1–4，本批不授权模型训练或held评测。
 固定27个刚性搬运训练task、demo0–3、全新init44–47，最多432次；原四源提取只读复用，不重复旧case。
 统一分段/SE(3)/OSC，不加task专用控制器，不换失败源/初态；少于20个四源共同支持task或五组任一少于2项则关闭固定构造。
 实现/源提取45–75分钟、采集35–60、核验10–20，总90–155分钟、硬复核180分钟，最多1渲染GPU/完整1.5GPUh。
 上界80,360控制步/6.103GiB未压缩双RGB由原manifest长度计算；新原件8GiB/新冻结256MiB/相关代码1.25GiB，执行者先核data1。
-不自动进入Writer、不让两task的小模型拟合充当泛化、不削减原36训练任务或最终任务覆盖；实际派发回执后续补记。
+不自动进入Writer、不让两task的小模型拟合充当泛化、不削减原36训练任务或最终任务覆盖。
+派发基线main1d680a77已推送，唯一Queue `01a0e1c0-7cdf-7100-b08e-1d708bfa03a8`获接受；
+一次现有app-server只读核定队列已无待处理消息、执行者active。仅证明回合承接，不称GPU/采集已经启动。
+请求/回执/快照在`.codex/tmp/demonstration_transfer_main_review_20260927/training_support_{request.txt,queue_receipt.txt,dispatch_snapshot.json}`。
+没有自Queue、轮询或额外派发。主讨论随后完成设计§9的完整学习取舍：原36任务保留，新支持task的原始/新查询各半，
+全部仍为最终同一LoRA的普通FM；I按四源×四条件的完整16格调度，P/I实际query/noise/time相同、整块视频边际相同。
+该混合风险不等于§37.8纯新数据的最优风险差；按4task×28query的示例，完整平衡周期为288更新，而非继承270/450。
+尚无完整模型profile，§9不授权训练/正式节点；不把配对的有限样本平衡当作学会视频或保持的保证。
 
 **§7已验收**：81dc1e45的新8行7成功/3,829行为步，四对保存初态/双RGB一致；主讨论读取全部8份NPZ和4份scene。
 原34共同4init，新38共同40–42三init，最小构造覆盖通过；旧14/16与新7/8分别保留，实际共24次/9,908步。

@@ -12,7 +12,9 @@ Owner授权持续自主推进；目标仍是合法RGB/L一次生成完整LoRA、
 精确formal冻结commit **`f4a80cd564843bb487bef55e3196d0597ed6cdd5`**，已clean pushed并属于origin/main；
 用独立clean detached树，实际路径/设备/命令/现场预算登记launch_contract。之后main文档推进不改变该冻结身份。
 study `/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927`，训练/两bank/两评测在`stage1`，共享scene在study级`scenes`。
-派发/承接回执随后记录；本段不是GPU进程已经启动的证明。执行者仍须现场核两节点与data1的strg01独立quota及共享容量。
+12:50 UTC已派发唯一Queue `01a0e2ea-c130-7b32-9a4a-3735a1cda15d`，一次app-server即时快照确认执行者active且队列已消费。
+这是正式批次已承接的证据，不单独证明GPU已启动；设备/配额/进程以执行者的真实launch记录为准。
+请求、回执及快照保留在同tmp目录`formal_stage1_*`，后续整批完成或实质阻塞一次Queue回本主讨论，不陪跑/轮询。
 
 完整GPU预计13–16、硬限18GPUh；训练8、scene .5、bank1.5、official8分别计加载/保存/失败/重算/等待。
 最多4张物理卡，两臂各同节点world2可并行；只有2–3张适用卡时顺序，禁止等凑卡或dummy占卡。

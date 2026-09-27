@@ -26,7 +26,9 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.task_protocol import load_task_authorities
 from ember.writer.conditional_velocity import compile_velocity_state
 from ember.writer.conditional_velocity_training import (ROOT, SCHEMA as RUN_SCHEMA, SPEC, STAGE,
-                                                        build_runtime, contract, require_frozen)
+                                                        build_runtime, continuation_checkpoint,
+                                                        continuation_record, continuation_root,
+                                                        contract, require_frozen)
 from ember.writer.learning_data import load_learning_tasks
 from ember.writer.materialization import (file_record, planned_episodes, selection_contract,
                                           source_matches)
@@ -48,52 +50,56 @@ def canonical_selection(spec: Mapping) -> dict:
 
 def _checkpoint(checkpoint: Path, mode: str) -> tuple[dict, dict]:
     spec, _ = contract()
+    update = spec["continuation_450"]["qualification_update"]
     checkpoint = checkpoint.resolve()
-    if (mode not in ("V", "L") or checkpoint != (Path(spec["run_root"]) / mode /
-            "checkpoints/macro_00000270").resolve()):
-        raise ValueError("first bank requires the registered mode270 checkpoint")
+    if checkpoint != continuation_checkpoint(spec, mode, update).resolve():
+        raise ValueError("450 bank requires the registered mode450 checkpoint")
     run = read_json(checkpoint.parent.parent / "run_contract.json")
     record = read_json(checkpoint / "checkpoint_manifest.json")
     expected_files = {"ecp.safetensors", "trainer_state.pt", "rank_00_state.pt", "rank_01_state.pt"}
     if (run.get("schema_version") != RUN_SCHEMA or run.get("stage") != STAGE
             or run.get("mode") != mode or run.get("source_trainable") != 0
             or run.get("scientific_qualification") is not True
+            or run.get("spec") != str(SPEC)
+            or run.get("continuation") != continuation_record(spec, mode)
             or record.get("schema_version") != ECP_CHECKPOINT_SCHEMA
             or record.get("stage") != STAGE or record.get("run_contract_schema") != RUN_SCHEMA
-            or record.get("next_macro") != 270 or record.get("world_size") != 2
+            or record.get("next_macro") != update or record.get("world_size") != 2
             or set(record.get("files", {})) != expected_files):
         raise ValueError("velocity checkpoint or optimizer cursor is outside the formal batch")
     for name, item in record["files"].items():
         path = checkpoint / name
         if not path.is_file() or path.stat().st_size != int(item["bytes"]):
             raise ValueError(f"checkpoint file changed: {name}")
-    _inspect_training_cursor(checkpoint, run)
+    _inspect_training_cursor(checkpoint, run, update)
     return run, {"path": str(checkpoint), "manifest": file_record(checkpoint / "checkpoint_manifest.json"),
-                 "weights": file_record(checkpoint / "ecp.safetensors"), "macro": 270}
+                 "weights": file_record(checkpoint / "ecp.safetensors"), "macro": update}
 
 
-def _inspect_training_cursor(checkpoint: Path, run: Mapping) -> None:
+def _inspect_training_cursor(checkpoint: Path, run: Mapping, update: int) -> None:
     trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta",
                          mmap=True, weights_only=True)
     sampler = trainer.get("sampler_state", {})
     if (trainer.get("schema_version") != ECP_CHECKPOINT_SCHEMA
-            or trainer.get("stage") != STAGE or trainer.get("next_macro") != 270
-            or trainer.get("training_state") != {"updates": 270}
-            or trainer.get("metrics_rows") != 270
-            or sampler.get("next_step") != 270
+            or trainer.get("stage") != STAGE or trainer.get("next_macro") != update
+            or trainer.get("training_state") != {"updates": update}
+            or trainer.get("metrics_rows") != update
+            or sampler.get("next_step") != update
             or {key: value for key, value in sampler.items() if key != "next_step"} != run["sampler"]):
         raise ValueError("velocity trainer/sampler cursor changed")
-    metrics = (checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()[:270]
-    if len(metrics) != 270 or [json.loads(row)["update"] for row in metrics] != list(range(1, 271)):
+    metrics = (checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()[:update]
+    if len(metrics) != update or [json.loads(row)["update"] for row in metrics] != list(range(1, update + 1)):
         raise ValueError("velocity checkpoint metrics prefix changed")
 
 
 def materialize(*, asset_root: Path, checkpoint: Path, output: Path, mode: str,
                 device: torch.device) -> Path:
     spec, reference = contract()
-    require_frozen(Path(spec["run_root"]) / mode, mode)
+    root = continuation_root(spec, mode)
+    require_frozen(root, mode)
     run, checkpoint_record = _checkpoint(checkpoint, mode)
-    if (output.resolve() != (Path(spec["run_root"]) / mode / "banks/270").resolve()
+    update = spec["continuation_450"]["qualification_update"]
+    if (output.resolve() != (root / "banks" / str(update)).resolve()
             or device.type != "cuda" or run["git"]["commit"] != git_state(ROOT)["commit"]):
         raise ValueError("bank requires clean frozen GPU materialization of its exact checkpoint")
     tasks = load_learning_tasks(asset_root, spec["validation_tasks"], role="validation",
@@ -112,7 +118,7 @@ def materialize(*, asset_root: Path, checkpoint: Path, output: Path, mode: str,
     (output / "coefficients").mkdir()
     shared_path = output / "shared.safetensors"
     save_file({**common, "velocity_U": U}, str(shared_path),
-              metadata={"schema_version": BANK_SCHEMA, "mode": mode, "macro": "270"})
+              metadata={"schema_version": BANK_SCHEMA, "mode": mode, "macro": str(update)})
     store = None
     if mode == "V":
         from ember.writer.data import RawTeacherVideoStore
@@ -222,7 +228,8 @@ def _inspect_shared_file(bank, mode):
     with safe_open(bank["shared"]["path"], framework="pt", device="cpu") as handle:
         expected_common = expected_lora_state_shapes(
             derive_pi05_lora_rank(load_pi05_lora_contract(base), rank=128))
-        if (handle.metadata() != {"schema_version": BANK_SCHEMA, "mode": mode, "macro": "270"}
+        if (handle.metadata() != {"schema_version": BANK_SCHEMA, "mode": mode,
+                                  "macro": str(bank["checkpoint"]["macro"])}
                 or set(handle.keys()) != set(expected_common) | {"velocity_U"}
                 or tuple(handle.get_slice("velocity_U").get_shape()) != (256, 1024)
                 or handle.get_slice("velocity_U").get_dtype() != "F32"
@@ -423,7 +430,7 @@ def registered_capture(args, tasks, output_dir, path, manifest, task_subset, rep
     spec, _ = contract()
     if (path != (repo_root / "configs/conditional_velocity_operator_v1/official_capture.json").resolve()
             or mode not in ("V", "L")
-            or output_dir.resolve() != (Path(spec["run_root"]) / mode / "evaluation/correct400").resolve()
+            or output_dir.resolve() != (continuation_root(spec, mode) / "evaluation/correct400").resolve()
             or args.role != "validation" or task_subset is not None or len(tasks) != 8
             or getattr(args, "static_task_lora_manifest", None) is None
             or read_json(args.static_task_lora_manifest).get("kind") != BANK_KIND

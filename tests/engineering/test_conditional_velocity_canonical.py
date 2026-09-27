@@ -1,6 +1,7 @@
 """CPU contract checks only: no policy/model forward, data tensors or environment."""
 
 import json
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -21,9 +22,11 @@ from ember.writer.conditional_velocity import (ConditionalVelocityOperator,
                                                VelocityTeachingEncoder, compile_velocity_state)
 from ember.writer.conditional_velocity_bank import (_expected_episodes, canonical_selection,
                                                     episode_evidence, registered_capture,
-                                                    PASSIVE_TAG, BANK_KIND)
+                                                    PASSIVE_TAG, BANK_KIND, _checkpoint)
 from ember.writer.conditional_velocity_data import VelocityEvents
-from ember.writer.conditional_velocity_training import VelocityRuntime, _lr_multiplier, _resume_prefix
+from ember.writer.conditional_velocity_training import (SPEC, VelocityRuntime, _lr_multiplier,
+    _resume_prefix, continuation_checkpoint, continuation_record, continuation_root,
+    parent_checkpoint, train, validate_parent_270_migration, validate_resume_contract)
 from ember.writer.runtime import MODEL_DEFAULTS
 
 
@@ -138,6 +141,11 @@ def test_coverage36_events_teacher_query_and_resume_identity(tmp_path):
                                                       job["action_start_indices"], strict=True))
     assert all(len(demos) == 30 and len(set(demos)) == 30 for demos in seen.values())
     assert longest_selected == 102
+    for update in range(270, 450):
+        for job in events.event(update):
+            seen[job["task"]].append(job["teacher_demo"])
+            assert job["teacher_demo"] not in job["action_demos"]
+    assert all(len(demos) == 50 and len(set(demos)) == 50 for demos in seen.values())
     events.next_step = 180
     restored = VelocityEvents(lengths)
     restored.restore(events.sampler_state())
@@ -168,7 +176,7 @@ def test_official_pairing_and_clock(tmp_path):
     tasks = [SimpleNamespace(suite=row["suite"], task_id=row["task_id"],
                              init_state_ids=tuple(range(50))) for row in capture["full_conditions"]]
     selection_path = ROOT / "configs/conditional_velocity_operator_v1/official_capture.json"
-    output_dir = Path(spec["run_root"]) / "V/evaluation/correct400"
+    output_dir = continuation_root(spec, "V") / "evaluation/correct400"
     captured, stage = registered_capture(
         SimpleNamespace(role="validation", static_task_lora_manifest=bank_path),
         tasks, output_dir, selection_path,
@@ -214,3 +222,103 @@ def test_official_pairing_and_clock(tmp_path):
     assert _lr_multiplier(149, setting) == pytest.approx(150 / 151)
     assert _lr_multiplier(150, setting) == 1.0
     assert _lr_multiplier(1200, setting) == pytest.approx(1 / 30)
+
+
+def test_450_migration_contract_and_bank_node_rejections(monkeypatch):
+    from ember.writer import conditional_velocity_training as training
+
+    spec = json.loads(SPEC.read_text())
+    old_spec = {key: value for key, value in spec.items() if key != "continuation_450"}
+    old_root = Path(spec["continuation_450"]["parent_frozen_root"])
+    old_spec_path = old_root / "configs/conditional_velocity_operator_v1/learning_spec.json"
+    parent = {"schema_version": training.SCHEMA, "stage": training.STAGE,
+              "git": {"commit": spec["continuation_450"]["parent_commit"],
+                      "branch": "", "dirty_paths": [], "pushed_ref": "origin/main"},
+              "spec": str(old_spec_path), "mode": "V", "source": {"checkpoint": "source"},
+              "topology": {"host": "gpu02", "world_size": 2, "visible_devices": "6,7",
+                           "gpu_uuids": ["uuid6", "uuid7"], "numa_nodes": [1, 1]},
+              "model": {"identity": "pi05"}, "physical_microbatch": 28,
+              "lora": old_spec["lora"], "optimizer": old_spec["optimizer"],
+              "initialization": old_spec["initialization"],
+              "sampler": {"seed": 20260927, "tasks": old_spec["train_tasks"]},
+              "trainable_parameters": ["common.values.0"], "source_trainable": 0,
+              "scientific_qualification": True}
+    current = {**parent, "git": {**parent["git"], "commit": "new-frozen-commit"},
+               "spec": str(SPEC), "continuation": continuation_record(spec, "V")}
+    monkeypatch.setattr(training, "git_state", lambda _: {"commit": parent["git"]["commit"],
+                                                       "branch": "", "dirty_paths": []})
+    original_read_json = training.read_json
+    monkeypatch.setattr(training, "read_json", lambda path: old_spec if Path(path) == old_spec_path
+                        else original_read_json(path))
+    checkpoint = parent_checkpoint(spec, "V")
+    validate_parent_270_migration(checkpoint, parent, current, spec)
+    assert continuation_root(spec, "V") / "banks/450" == Path(spec["run_root"]) / (
+        "continuation_450/V/banks/450")
+    for key, value in (("mode", "L"), ("source", {"checkpoint": "other"}),
+                       ("topology", {**parent["topology"], "visible_devices": "7,6"}),
+                       ("optimizer", {**parent["optimizer"], "lr": 0.001}),
+                       ("trainable_parameters", [])):
+        changed = deepcopy(current)
+        changed[key] = value
+        with pytest.raises(ValueError):
+            validate_parent_270_migration(checkpoint, parent, changed, spec)
+    with pytest.raises(ValueError):
+        validate_parent_270_migration(checkpoint.parent / "macro_00000360", parent, current, spec)
+    changed_spec = deepcopy(spec)
+    changed_spec["optimizer"]["lr"] = 0.001
+    with pytest.raises(ValueError):
+        validate_parent_270_migration(checkpoint, parent, current, changed_spec)
+    new_root = continuation_root(spec, "V")
+    checkpoint360 = continuation_checkpoint(spec, "V", 360)
+    validate_resume_contract(checkpoint360, current, current, spec, new_root)
+    with pytest.raises(ValueError):
+        validate_resume_contract(checkpoint360, parent, current, spec, new_root)
+    with pytest.raises(ValueError):
+        validate_resume_contract(checkpoint360, current, current, spec, new_root.parent)
+    with pytest.raises(ValueError):
+        validate_resume_contract(continuation_checkpoint(spec, "V", 450), current,
+                                 current, spec, new_root)
+    with pytest.raises(ValueError, match="450 bank"):
+        _checkpoint(checkpoint, "V")
+    with pytest.raises(ValueError, match="360/450"):
+        train(SimpleNamespace(stop_after=270, resume=checkpoint, microbatch=28))
+    with pytest.raises(ValueError, match="360/450"):
+        train(SimpleNamespace(stop_after=450, resume=None, microbatch=28))
+
+
+def test_450_bank_accepts_only_registered_cursor(tmp_path, monkeypatch):
+    from ember.ecp.checkpoint import ECP_CHECKPOINT_SCHEMA
+    from ember.writer import conditional_velocity_bank as bank
+    from ember.writer import conditional_velocity_training as training
+
+    spec = json.loads(SPEC.read_text())
+    spec["run_root"] = str(tmp_path)
+    monkeypatch.setattr(bank, "contract", lambda: (spec, None))
+    checkpoint = continuation_checkpoint(spec, "V", 450)
+    checkpoint.mkdir(parents=True)
+    root = checkpoint.parent.parent
+    (root / "run_contract.json").write_text(json.dumps({
+        "schema_version": training.SCHEMA, "stage": training.STAGE, "mode": "V",
+        "source_trainable": 0, "scientific_qualification": True, "spec": str(SPEC),
+        "continuation": continuation_record(spec, "V"), "sampler": {"seed": 20260927},
+    }))
+    (root / "metrics.jsonl").write_text("".join(
+        json.dumps({"update": update}) + "\n" for update in range(1, 451)))
+    torch.save({"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": training.STAGE,
+                "next_macro": 450, "training_state": {"updates": 450},
+                "metrics_rows": 450, "sampler_state": {"seed": 20260927, "next_step": 450}},
+               checkpoint / "trainer_state.pt")
+    for name in ("ecp.safetensors", "rank_00_state.pt", "rank_01_state.pt"):
+        (checkpoint / name).write_bytes(b"fixture")
+    manifest = {"schema_version": ECP_CHECKPOINT_SCHEMA, "stage": training.STAGE,
+                "run_contract_schema": training.SCHEMA, "next_macro": 450, "world_size": 2,
+                "files": {path.name: {"bytes": path.stat().st_size}
+                          for path in checkpoint.iterdir() if path.is_file()}}
+    path = checkpoint / "checkpoint_manifest.json"
+    path.write_text(json.dumps(manifest))
+    _, record = bank._checkpoint(checkpoint, "V")
+    assert record["macro"] == 450
+    manifest["next_macro"] = 360
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="formal batch"):
+        bank._checkpoint(checkpoint, "V")

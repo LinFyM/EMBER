@@ -14,7 +14,10 @@ CPU合同修正、270完整实验、450 CPU准备的五条原文，保存至`.co
 仅移除这五条已处理的重复通知，五次delete均返回true，随后queue/list为0条且无下一页；正式原件及验收记录保留。
 已向执行者当前turn发送一次Steer，撤销“直接等待之外另发完成Queue”的要求，接口接受同一turn；
 回执`.codex/tmp/conditional_velocity_learning_20260927/completion_channel_steer_receipt.json`。当前L450照原合同继续。
-已有直接等待者时，以执行者本turn最终交付和原生完成事件为唯一收件方式，不另发确认/进度/完成Queue，也不自排消息。
+03:10 UTC Owner进一步明确主讨论不应陪跑等待数小时。上述临时收件安排已被覆盖：主讨论退出持续等待/重复状态查询，
+执行者独立执行，整批完成或实质阻塞仅一次异步Queue，不逐阶段/定时回报，不与原生持续等待叠加。
+修正已Steer送入同一执行turn并获接口接受，回执`async_completion_channel_steer_receipt.json`位于上述learning tmp目录。
+Owner当前要求先讨论，新的实验派发和新方案推进停止；既有L450已退出，执行者只按原合同核验/汇总收尾，不追加运行。
 
 V151/L147/MT155/Source51，V对L R/G/L=124/27/23；V对MT113/38/42，L对MT105/42/50。
 V/L四suite为59/44/26/22与58/42/28/19，广度均6/8。Goal26和Object16两臂均有明显损失。

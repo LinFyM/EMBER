@@ -618,3 +618,50 @@ CPU回归/结构检查后clean pushed detached运行，一次完整完成/实质
 主讨论同时准备完整P/I与忠实同数据MT的比较、预算和真实初态配对方案。MT的36task×16query宏步与Writer的4×28不同，
 首批用28-query FM推得的“.85GPUh/288”只是局部计算下界，不能当MT的完整成本或公平训练预算。
 本批不顺带运行MT/profile、400 bank/held或扩建评测平台；这些需要形成完整合同和成本依据后再投入。
+
+## 12. 完整比较的已确定口径与尚缺准入（主讨论准备，不增加§11执行范围）
+
+### 12.1 同数据MT必须保持强训练程序
+
+同数据是同任务、原动作池demo0–45、新296查询、source统计及目标分布，不是相同宏步的查询数。
+Writer288为32,256query、每task896；忠实MT仍每步36task×16=576query，288步165,888query、300步172,800query。
+拟定MT每支持task每步8旧/8新、其它task16旧，即每步旧416/新160；每task等权，20支持task中两类各半，
+与§9的期望风险一致，但梯度估计的batch相关性及有限样本不同。新源/共同init/保存时点各自等权，不能把296轨迹的
+所有帧平铺均匀而悄悄按轨迹长度加权；原episode/chunk抽样继续沿强MT的层次无放回原则。
+MT自己的RGB/state和动作只走执行loss，exact language为唯一任务条件；无teacher视频、源参考ID/几何/阶段或Writer输入。
+shared rank128、fresh identity/AdamW、150 warmup及1200绝对步衰减至1e-5的强配方保留，不为对齐4×28削弱任务覆盖。
+P/I正式长期scheduler沿同一已核clamped函数；它不使两种宏步的曝光或优化轨迹相同。
+
+已有旧MT用50原episode/选中300得到155，仍为强参照；新匹配池46是本候选已冻结数据边界，不能把新MT较低当作接受线下调。
+新MT按新数据和真实闭环判断有效训练范围，不能把旧300直接称为新数据的最优点，也不能只以查询数相同强制提前停止。
+最终需同时对照已有155和如实训练的新MT；P/I差异只识别这项训练对应干预，不单独证明部署视频必要或某模块已学好。
+后者仍需有益绝对能力、另一正确视频、learned language/static参照、相邻保持，最终时间controls不反哺设计。
+
+首批“.85GPUh/288”按112query宏步推得，不能用于576query MT。由同一2.653秒/28query线性折算为**4.366GPUh/288**；
+这仍只是该FM调用的计算量参考，既不是新MT实测，也不是严格性能下界。旧真实单卡36×16 profile稳态148.668秒/步，
+折算288为11.893GPUh，同样不担保新loader/packing/直接反传耗时。正式预算须测新数据上的完整576-query更新、保存与加载，
+不能用更多卡隐藏GPU-hour，亦不先承诺一口气跑三条长训练。这里只读旧三行profile，没有运行或恢复旧MT。
+
+### 12.2 唯一LoRA的物化与严格配对
+
+38-target FP32完整144因子每condition为46,338,048B，重复400份仅张量就18,535,219,200B。
+选择公共128仅存一次（41,189,376B）加每condition完整16因子（5,148,672B），400条件为2,100,658,176B；
+evaluator加载时沿已测因子拼接生成唯一144，仍是`BβAβ+BvAv`，不是平均/选择LoRA或部署第二adapter。
+bank manifest须绑定单checkpoint、精确video映射、source与完整rank/target合同；编译policy保持identity，执行policy只装完整结果。
+接入复用现有official队列、BatchedLoRAInference和捕获owner，不复制退休velocity训练平台；该旧bank读接口保持只读。
+上述只是精确tensor payload，实际预算另外计ECP、临时物化、轨迹、scene和代码，不能用它冒充全study峰值。
+
+新P/I/MT及相邻节点必须共享在任何policy行为前冻结的canonical起点：官方init、seed7、dummy10，
+保存全model body pose、post-dummy sim state、controller起点及首帧双RGB，并在各臂第一动作前恢复/核对。
+已有collector的恢复语义可复用到一个有明确调用方的初始化owner，不让official evaluator长期依赖退休采集入口。
+不从held示范的action/state生成scene，不按policy结果选择起点；raw t0字段和源scene引用保留。
+仅同state ID/seed不足以取代这些配对证据；旧MT/Source没有同类scene原件，只作原有历史参照，不称与新臂完整物理配对。
+
+### 12.3 下一完整投入的边界
+
+§11通过后一次冻结完整学习/物化/strict400，而不是再拆表示、LoRA范数或局部loss关卡。
+正式模型fresh，先按完整P/I交叉周期规划首节点288；这个数是有限对照覆盖，不是已证明充分学习的上限。
+后继完整块、同数据MT节点、first400后的继续/停止线及GPU硬预算须在正式学习前一起明确；不能结果后任意挑时点。
+实际还缺新数据MT完整更新成本，以及新bank/共享scene在官方调用链的有限工程证据；不把这些缺项写成已完成或据此启动GPU。
+最小后继工程只应验证该完整比较需要的实际接口与成本，并接入同一活动实现，不增加科学probe、数据支持或模型变体。
+算术原件：`.codex/tmp/demonstration_transfer_main_review_20260927/learning_comparison_budget_basis.json`。

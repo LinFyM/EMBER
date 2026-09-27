@@ -9,7 +9,9 @@ Owner授权持续自主推进，今晚检查。主讨论`01a0dd74-4c71-7c82-8629
 没有独立工作且仍有可继续研究时直接在本回合工作，不结束再自Queue，不陪跑等待或重复查询执行者。
 
 **唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前仅登记§11
-`demonstration_transfer_learning_closure_20260927`，机器规格同路径升v2。**本段登记时尚未派发**，真实回执另记。
+`demonstration_transfer_learning_closure_20260927`，机器规格同路径升v2。已从clean pushed main `fef678f4`派发。
+唯一Queue `01a0e246-6d95-7fc3-85cc-ff8d18020e45`接受，09:51 UTC一次app-server快照确认执行者active、队列已消费；
+只证明回合承接，不称GPU已启动。请求/回执/快照在同tmp目录的`learning_closure_*`，无自Queue或持续轮询。
 44cf63fa工程回报已消费；主讨论读完新增六文件+1000行，三CPU测试通过，guard REVIEW无hard，源码待修正后一并集成。
 288事件边际及12实际旧数据更新/1,344query、ECP恢复、完整144 FM/VJP、最长105帧profile与原件成本有效；
 但首4步全旧，新增NPZ没有实际模型消费；每9步新事件0/20同步切换不合原交错意图。
@@ -24,6 +26,9 @@ Owner授权持续自主推进，今晚检查。主讨论`01a0dd74-4c71-7c82-8629
 原模型/标签/权重/LR/数据支持不变，不重做有效global2、最长profile、I恢复或采集。
 预计40–75分钟、90分钟复核；新增完整.40GPUh/最多2卡，closure峰值2GiB/全study4GiB，相关代码1.75GiB。
 工程权重不接正式训练。288/576、MT、held、controls、Test、RL均须后继完整合同，本批未启动。
+主讨论并行完成设计§12：强MT仍36×16，支持task每步8旧/8新，不能用Writer112-query预算；
+MT288计算量参考4.366GPUh与旧实际profile外推11.893均不当作新MT实测。bank公共128只存一次+条件16，
+400条件张量约2.101GB；新比较共用canonical完整起点。正式停止线/完整MT成本/官方bank与scene准入仍待冻结，未擅自启动。
 主讨论并行准备完整比较、MT预算与真实scene配对；不以28-query FM的局部下界代替36×16 MT成本。
 
 上一§10派发Queue `01a0e213-81a0-7132-9326-be2489f04401`已完成消费，不当作后台任务。

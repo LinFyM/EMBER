@@ -1,10 +1,7 @@
-"""Compact formal P/I banks and their canonical evaluator adapter."""
+"""Read sealed formal P/I banks through the canonical evaluator."""
 
 from __future__ import annotations
 
-import argparse
-import json
-import time
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,7 +10,7 @@ from typing import Any, Mapping
 
 import torch
 from safetensors import safe_open
-from safetensors.torch import load_file, save_file
+from safetensors.torch import load_file
 
 from ember.batched_lora import BatchedLoRAInference
 from ember.expert_manifold.video_schedule import reference_demo_index
@@ -22,13 +19,8 @@ from ember.lora import (LORA_A_SUFFIX, LORA_B_SUFFIX, copy_task_lora_state_,
                         task_lora_state_dict, validate_lora_state)
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
-from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from ember.writer.materialization import file_record, source_matches
-
-from ember.writer.data import RawTeacherVideoStore
-from ember.writer.learning_data import load_learning_tasks
-from .model import concatenate_factors
-from .run import REPO, RUN_SCHEMA, STAGE, _frozen_git, _stage1_checkpoint, build_runtime, specification
+from ember.pi05_source_checkpoint import read_json
+from ember.task_protocol import load_task_authorities
 
 
 BANK_SCHEMA = "ember_demonstration_comparison_compact_bank_v1"
@@ -36,164 +28,149 @@ BANK_KIND = "demonstration_comparison_lora_bank"
 EVAL_SCHEMA = "ember_demonstration_comparison_eval_adapter_v1"
 EPISODE_SCHEMA = "ember_demonstration_comparison_episode_v1"
 PASSIVE_TAG = "ember_demonstration_comparison_passive_capture_v1"
-def _source_checkpoint(arm: str, spec: Mapping) -> Path:
+STUDY = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927")
+ASSET_ROOT = Path("/data1/user/ymdai/projects/EMBER")
+SPEC_RELATIVE = Path("configs/demonstration_transfer_v1/learning_spec.json")
+FORMAL_STAGES = {
+    "stage1": {"macro": 288, "attempt": "fresh", "git": "f4a80cd564843bb487bef55e3196d0597ed6cdd5",
+               "freeze": Path("/data1/user/ymdai/projects/EMBER-demonstration-stage1-formal")},
+    "stage2": {"macro": 576, "attempt": "from288", "git": "bc729e869c5b37f807e386ab11aa5b0b508ed86f",
+               "freeze": Path("/data1/user/ymdai/projects/EMBER-demonstration-stage2-formal")},
+}
+
+
+def file_record(path: Path) -> dict:
+    return {"path": str(path.resolve()), "bytes": path.stat().st_size}
+
+
+def source_matches(left: Mapping, right: Mapping) -> bool:
+    return all(left.get(key) and right.get(key) and
+               Path(left[key]).resolve() == Path(right[key]).resolve()
+               for key in ("source_run", "checkpoint", "model_path"))
+
+
+def _formal_origin(bank: Mapping, path: Path) -> tuple[str, Mapping]:
+    arm = bank.get("arm")
     if arm not in ("P", "I"):
-        raise ValueError("only formal P/I can be materialized")
-    train = Path(spec["runtime"]["run_root"]) / arm / "train"
-    pointer = read_json(train / "final_checkpoint.json")
-    checkpoint = Path(pointer["checkpoint"]).resolve()
-    if (pointer.get("arm") != arm or checkpoint.name != "macro_00000576"
-            or checkpoint.parent.name != "checkpoints"
-            or checkpoint.parent.parent.parent != (train / "attempts").resolve()
-            or pointer.get("run_contract") != str(checkpoint.parent.parent / "run_contract.json")):
-        raise ValueError("formal final checkpoint pointer changed")
-    return checkpoint
+        raise ValueError("only sealed formal P/I banks are readable")
+    for stage, origin in FORMAL_STAGES.items():
+        expected = STUDY / stage / arm / "banks" / str(origin["macro"]) / "manifest.json"
+        if path == expected:
+            return stage, origin
+    raise ValueError("bank is outside the four sealed formal P/I sources")
 
 
-def _inspect_checkpoint(arm: str, spec: Mapping, source: Mapping) -> tuple[Path, dict]:
-    path = _source_checkpoint(arm, spec).resolve()
-    run = read_json(path.parent.parent / "run_contract.json")
-    manifest = read_json(path / "checkpoint_manifest.json")
-    required = (
-        (run.get("schema_version"), RUN_SCHEMA), (run.get("stage"), STAGE),
-        (run.get("arm"), arm), (run.get("git", {}).get("commit"), _frozen_git()["commit"]),
-        (run.get("git", {}).get("dirty_paths"), []), (run.get("source_trainable"), 0),
-        (run.get("model"), spec["model"]), (run.get("spec"), str(REPO / "configs/demonstration_transfer_v1/learning_spec.json")),
+def inspect_formal_provenance(bank: Mapping, path: Path, source: Mapping) -> tuple[dict, Path, dict]:
+    """Read the bank's own frozen spec and completed ECP metadata, never current Git."""
+    path = path.resolve()
+    stage, origin = _formal_origin(bank, path)
+    arm, macro = bank["arm"], origin["macro"]
+    spec_path = origin["freeze"] / SPEC_RELATIVE
+    checkpoint = (STUDY / stage / arm / "train" / "attempts" / origin["attempt"]
+                  / "checkpoints" / f"macro_{macro:08d}")
+    if (bank.get("spec") != file_record(spec_path) or bank.get("training_git") != origin["git"]
+            or bank.get("checkpoint") != str(checkpoint)
+            or bank.get("checkpoint_manifest") != file_record(checkpoint / "checkpoint_manifest.json")
+            or not source_matches(bank["source"], source)):
+        raise ValueError("sealed bank spec/checkpoint/Git/source identity changed")
+    if (bank.get("shared", {}).get("path") != str(path.parent / "shared.safetensors")
+            or len(bank.get("conditions", ())) != 400
+            or any(row.get("factors", {}).get("path") != str(path.parent / f"{row['condition_id']}.safetensors")
+                   for row in bank["conditions"])):
+        raise ValueError("sealed bank factor paths or condition count changed")
+    spec = read_json(spec_path)
+    run = read_json(checkpoint.parent.parent / "run_contract.json")
+    manifest = read_json(checkpoint / "checkpoint_manifest.json")
+    completion = read_json(checkpoint.parent.parent / "completion.json")
+    parent = None if stage == "stage1" else {
+        "git": FORMAL_STAGES["stage1"]["git"],
+        "checkpoint": str(STUDY / "stage1" / arm / "train" / "attempts" / "fresh"
+                          / "checkpoints" / "macro_00000288"),
+    }
+    expected = (
+        (spec.get("schema_version"), "ember_demonstration_transfer_learning_spec_v1"),
+        (spec.get("runtime", {}).get("study_root"), str(STUDY)),
+        (spec.get("runtime", {}).get("run_root"), str(STUDY / stage)),
+        (spec.get("bank", {}).get("source_macro"), macro),
+        (spec.get("bank", {}).get("arms"), ["P", "I"]),
+        (spec.get("bank", {}).get("task_ids"), [3, 6, 11, 16, 23, 26, 31, 39]),
+        (spec.get("bank", {}).get("init_state_ids"), list(range(50))),
+        (spec.get("bank", {}).get("video_schedule", {}).get("mode"), "correct"),
+        (spec.get("bank", {}).get("video_schedule", {}).get("seed"), 7),
+        (spec.get("bank", {}).get("video_schedule", {}).get("cardinality"), 1),
+        (spec.get("bank", {}).get("video_schedule", {}).get("demos"), list(range(50))),
+        (run.get("schema_version"), f"ember_demonstration_transfer_formal_{stage}_run_v1"),
+        (run.get("stage"), f"demonstration_transfer_learning_{stage}"),
+        (run.get("arm"), arm), (run.get("git", {}).get("commit"), origin["git"]),
+        (run.get("git", {}).get("dirty_paths"), []),
+        (run.get("git", {}).get("pushed_ref"), "origin/main"),
+        (run.get("spec"), str(spec_path)), (run.get("source_trainable"), 0),
+        (run.get("source"), bank["source"]), (run.get("model"), spec["model"]),
+        (run.get("optimizer"), spec["optimization"]),
+        (run.get("source_identity_before_every_compile"), True),
         (run.get("topology", {}).get("world_size"), 2),
-        (run.get("qualification"), "formal_stage2_macro576"),
-        (run.get("stage1_parent"), {"git": spec["execution"]["stage1_parent"]["git"],
-                                      "checkpoint": str(_stage1_checkpoint(spec, arm))}),
+        (run.get("qualification"), f"formal_{stage}_macro{macro}"),
+        (run.get("stage1_parent"), parent),
         (manifest.get("schema_version"), "ember_ecp_checkpoint_v1"),
-        (manifest.get("stage"), STAGE),
-        (manifest.get("run_contract_schema"), RUN_SCHEMA),
-        (manifest.get("next_macro"), 576),
-        (manifest.get("world_size"), 2),
+        (manifest.get("stage"), f"demonstration_transfer_learning_{stage}"),
+        (manifest.get("run_contract_schema"), run["schema_version"]),
+        (manifest.get("next_macro"), macro), (manifest.get("world_size"), 2),
+        (completion.get("status"), "formal_training_complete"),
+        (completion.get("updates"), macro), (completion.get("checkpoint"), str(checkpoint)),
     )
-    if not all(actual == wanted for actual, wanted in required) or not source_matches(run["source"], source):
-        raise ValueError("bank checkpoint/source/model identity changed")
-    completion = read_json(path.parent.parent / "completion.json")
-    if (run.get("optimizer") != spec["optimization"] or run.get("source_identity_before_every_compile") is not True
-            or completion.get("status") != "formal_training_complete" or completion.get("updates") != 576
-            or completion.get("checkpoint") != str(path)):
-        raise ValueError("bank requires completed stage2 formal P/I optimization")
-    for name, row in manifest["files"].items():
-        file = path / name
-        if not file.is_file() or file.stat().st_size != int(row["bytes"]):
-            raise ValueError("bank checkpoint file missing or truncated")
-    return path, run
+    if not all(actual == wanted for actual, wanted in expected):
+        raise ValueError("sealed bank formal training provenance changed")
+    if spec["source"]["checkpoint"] != str(Path(bank["source"]["checkpoint"]).relative_to(ASSET_ROOT)):
+        raise ValueError("sealed bank source checkpoint differs from frozen spec")
+    for name, record in manifest["files"].items():
+        file = checkpoint / name
+        if not file.is_file() or file.stat().st_size != int(record["bytes"]):
+            raise ValueError("sealed checkpoint file missing or truncated")
+    return spec, checkpoint, run
 
 
-def _split_complete(state: Mapping[str, torch.Tensor]) -> tuple[dict, dict]:
-    common, conditional = {}, {}
-    if len(state) != 76:
-        raise ValueError("bank full LoRA is not 38-target A/B")
-    for name, value in state.items():
+def concatenate_factors(common: Mapping[str, torch.Tensor],
+                        conditional: Mapping[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    """One rank144 factor set computes Bc Ac + Bv Av without cross terms."""
+    if len(common) != 76 or set(common) != set(conditional):
+        raise ValueError("complete 38-target shared/conditional factor set changed")
+    result = {}
+    for name, shared in common.items():
+        value = conditional[name]
         axis = 0 if name.endswith(LORA_A_SUFFIX) else 1 if name.endswith(LORA_B_SUFFIX) else -1
-        if axis < 0 or value.ndim != 2 or value.shape[axis] != 144:
-            raise ValueError("bank complete factor rank changed")
-        common[name] = value.narrow(axis, 0, 128).detach().float().cpu().contiguous()
-        conditional[name] = value.narrow(axis, 128, 16).detach().float().cpu().contiguous()
-    return common, conditional
-
-
-def _checked_cpu(state: Mapping[str, torch.Tensor], shapes: Mapping[str, tuple]) -> dict:
-    if set(state) != set(shapes):
-        raise ValueError("bank factor names differ from complete LoRA contract")
-    result = {name: value.detach().float().cpu().contiguous() for name, value in state.items()}
-    if any(tuple(result[name].shape) != tuple(shape) or not torch.isfinite(result[name]).all()
-           for name, shape in shapes.items()):
-        raise ValueError("bank factor shape or finite check failed")
+        if (axis < 0 or shared.ndim != 2 or value.ndim != 2
+                or shared.shape[axis] != 128 or value.shape[axis] != 16
+                or shared.shape[1 - axis] != value.shape[1 - axis]):
+            raise ValueError(f"sealed bank LoRA shapes differ: {name}")
+        result[name] = torch.cat((shared, value), dim=axis)
     return result
 
 
-def _task_rows(spec: Mapping, asset_root: Path) -> tuple[list, list, dict]:
-    authority = load_learning_tasks(asset_root, spec["bank"]["task_ids"], role="validation",
-                                    protocol_path=spec["data"]["protocol"])
+def _task_rows(spec: Mapping, asset_root: Path) -> tuple[list, list]:
+    """Use only official protocol and task metadata; no held episode labels."""
+    _, manifest = load_task_authorities(asset_root, spec["data"]["protocol"])
+    authorities = {int(row["global_task_id"]): row for row in manifest["tasks"]}
     tasks, conditions = [], {}
     for global_id in spec["bank"]["task_ids"]:
-        task = authority[global_id]
+        task = authorities[global_id]
+        if task["split_role"] != "validation":
+            raise ValueError("sealed bank task crosses validation authority")
+        suite, local, language = task["suite"], int(task["task_id"]), str(task["language"])
         episodes = []
         for state in spec["bank"]["init_state_ids"]:
             demo = reference_demo_index(spec["bank"]["video_schedule"]["seed"],
-                                        task.suite, task.suite_task_id, state,
+                                        suite, local, state,
                                         demo_count=50, sampling_mode="without_replacement")
             key = f"task_{global_id:03d}_demo_{demo:02d}"
             episodes.append({"init_state_id": state, "condition_id": key,
                              "teacher_demo": demo,
                              "video_ordinal": demo})
             conditions[key] = {"condition_id": key, "global_task_id": global_id,
-                               "teacher_demo": demo, "language": task.authority.language}
-        tasks.append({"global_task_id": global_id, "suite": task.suite,
-                      "task_id": task.suite_task_id, "language": task.authority.language,
+                               "teacher_demo": demo, "language": language}
+        tasks.append({"global_task_id": global_id, "suite": suite,
+                      "task_id": local, "language": language,
                       "split_role": "validation", "episodes": episodes})
-    return tasks, list(conditions.values()), authority
-
-
-def _held_condition_data(spec: Mapping, authorities: Mapping):
-    """Only validation authority metadata and teacher RGB enter bank compilation."""
-    videos = RawTeacherVideoStore(tuple(row.authority for row in authorities.values()),
-                                  frame_stride=spec["data"]["frame_stride"], camera_view="agentview")
-    return SimpleNamespace(tasks=authorities, videos=videos)
-
-
-@torch.no_grad()
-def materialize(arm: str, asset_root: Path, device: torch.device) -> dict:
-    _frozen_git()
-    spec = specification()
-    if arm not in ("P", "I"):
-        raise ValueError("formal bank admits P/I only")
-    output = Path(spec["runtime"]["run_root"]) / arm / "banks" / "576"
-    if output.exists():
-        raise ValueError("registered bank already exists")
-    _source_checkpoint(arm, spec)
-    started = time.perf_counter()
-    runtime = build_runtime(asset_root, spec, device, arm=arm)
-    checkpoint, run = _inspect_checkpoint(arm, spec, runtime.source)
-    runtime.state.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device=str(device)), strict=True)
-    runtime.state.eval()
-    tasks, conditions, authorities = _task_rows(spec, asset_root)
-    output.mkdir(parents=True)
-    shared_path = output / "shared.safetensors"
-    common_shapes = expected_lora_state_shapes(derive_pi05_lora_rank(runtime.lora, rank=128))
-    conditional_shapes = expected_lora_state_shapes(derive_pi05_lora_rank(runtime.lora, rank=16))
-    data = _held_condition_data(spec, authorities)
-    try:
-        for ordinal, row in enumerate(conditions):
-            condition, raw, sampled = runtime.condition(data, row["global_task_id"], row["teacher_demo"])
-            state = runtime.compile(condition)
-            validate_lora_state(state, runtime.lora)
-            common, conditional = _split_complete(state)
-            if ordinal == 0:
-                save_file(_checked_cpu(common, common_shapes), str(shared_path))
-            path = output / f"{row['condition_id']}.safetensors"
-            save_file(_checked_cpu(conditional, conditional_shapes), str(path))
-            row.update({"factors": file_record(path), "raw_frames": raw,
-                        "sampled_frames": sampled})
-    finally:
-        data.videos.close()
-    bank = {"schema_version": BANK_SCHEMA, "kind": BANK_KIND, "arm": arm,
-            "source": runtime.source, "checkpoint": str(checkpoint),
-            "checkpoint_manifest": file_record(checkpoint / "checkpoint_manifest.json"),
-            "training_git": run["git"]["commit"],
-            "spec": file_record(REPO / "configs/demonstration_transfer_v1/learning_spec.json"),
-            "asset_root": str(asset_root.resolve()), "lora": runtime.lora.to_dict(),
-            "base_lora_contract": str((asset_root / read_json(asset_root / "configs/pi05_writer_data_v1.json")
-                                       ["authorities"]["lora_contract"]).resolve()),
-            "shared": file_record(shared_path), "conditions": conditions, "tasks": tasks,
-            "scene_root": str(Path(spec["runtime"]["study_root"]) / "scenes"),
-            "information_wall": {"teacher_video_values_read": len(conditions),
-                                 "teacher_runtime_reads": 0, "deployment_adapters": 1,
-                                 "validation_test_gradients": False}}
-    write_json_atomic(output / "manifest.json", bank)
-    seconds = time.perf_counter() - started
-    result = {"arm": arm, "conditions": len(conditions), "seconds": seconds,
-              "lora_per_second": len(conditions) / seconds,
-              "bank_bytes": sum(path.stat().st_size for path in output.iterdir() if path.is_file()),
-              "manifest": str(output / "manifest.json"),
-              "peak_allocated_gib": torch.cuda.max_memory_allocated(device) / 2**30,
-              "peak_reserved_gib": torch.cuda.max_memory_reserved(device) / 2**30}
-    write_json_atomic(output / "completion.json", result)
-    return result
+    return tasks, list(conditions.values())
 
 
 def _tensor_file(record: Mapping, shapes: Mapping) -> None:
@@ -209,26 +186,24 @@ def _tensor_file(record: Mapping, shapes: Mapping) -> None:
             raise ValueError("compact factor is nonfinite")
 
 
-def _inspect_bank_scope(bank: Mapping, spec: Mapping, arm: str, path: Path,
-                        source: Mapping, task_keys: tuple, states: Mapping | None,
-                        role: str, checkpoint: Path, run: Mapping, tasks: list) -> None:
+def _inspect_bank_scope(bank: Mapping, source: Mapping,
+                        task_keys: tuple, states: Mapping | None, role: str,
+                        checkpoint: Path, run: Mapping, tasks: list) -> None:
     required = (
         (bank.get("schema_version"), BANK_SCHEMA), (bank.get("kind"), BANK_KIND),
         (role, "validation"),
-        (bank["spec"], file_record(REPO / "configs/demonstration_transfer_v1/learning_spec.json")),
+        (bank["spec"], file_record(Path(run["spec"]))),
         (bank["checkpoint"], str(checkpoint)), (bank["training_git"], run["git"]["commit"]),
         (bank["checkpoint_manifest"], file_record(checkpoint / "checkpoint_manifest.json")),
         (bank["tasks"], tasks), (set(task_keys), {(r["suite"], r["task_id"]) for r in tasks}),
-        (bank["asset_root"], "/data1/user/ymdai/projects/EMBER"),
-        (bank["scene_root"], str(Path(spec["runtime"]["study_root"]) / "scenes")),
+        (bank["asset_root"], str(ASSET_ROOT)),
+        (bank["scene_root"], str(STUDY / "scenes")),
     )
     if not all(actual == wanted for actual, wanted in required) or not source_matches(bank["source"], source):
         raise ValueError("comparison bank task/source/checkpoint/scene scope changed")
     if states is not None and any(tuple(states.get((r["suite"], r["task_id"]), ())) != tuple(range(50))
                                   for r in tasks):
         raise ValueError("comparison bank official init states changed")
-    if path != Path(spec["runtime"]["run_root"]) / arm / "banks" / "576" / "manifest.json":
-        raise ValueError("comparison bank is outside its registered root")
     authority = read_json(Path(bank["asset_root"]) / "configs/pi05_writer_data_v1.json")
     base = (Path(bank["asset_root"]) / authority["authorities"]["lora_contract"]).resolve()
     if bank["base_lora_contract"] != str(base):
@@ -240,7 +215,7 @@ def _inspect_bank_scope(bank: Mapping, spec: Mapping, arm: str, path: Path,
         raise ValueError("comparison bank information wall changed")
 
 
-def _inspect_bank_factors(bank: Mapping, base: Any, arm: str, conditions: list) -> None:
+def _inspect_bank_factors(bank: Mapping, base: Any, conditions: list) -> None:
     if bank["lora"] != derive_pi05_lora_rank(base, rank=144).to_dict():
         raise ValueError("comparison bank LoRA topology changed")
     _tensor_file(bank["shared"], expected_lora_state_shapes(derive_pi05_lora_rank(base, rank=128)))
@@ -276,16 +251,14 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
-        spec = specification()
-        arm = bank["arm"]
-        if arm not in ("P", "I") or not require_formal:
+        if not require_formal:
             raise ValueError("formal correct400 admits only P/I banks")
-        tasks, conditions, _ = _task_rows(spec, Path(bank["asset_root"]))
-        checkpoint, run = _inspect_checkpoint(arm, spec, source)
-        _inspect_bank_scope(bank, spec, arm, path, source, task_keys, task_init_state_ids,
+        spec, checkpoint, run = inspect_formal_provenance(bank, path, source)
+        tasks, conditions = _task_rows(spec, Path(bank["asset_root"]))
+        _inspect_bank_scope(bank, source, task_keys, task_init_state_ids,
                             evaluation_role, checkpoint, run, tasks)
         base = load_pi05_lora_contract(Path(bank["base_lora_contract"]))
-        _inspect_bank_factors(bank, base, arm, conditions)
+        _inspect_bank_factors(bank, base, conditions)
         scene = Path(bank["scene_root"])
         _inspect_scenes(scene, tasks)
         return {**bank, "schema_version": EVAL_SCHEMA, "manifest": file_record(path),
@@ -388,6 +361,10 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
                        task_subset: Mapping | None) -> tuple[dict, dict]:
     bank_path = Path(args.static_task_lora_manifest).resolve()
     bank = read_json(bank_path)
+    try:
+        _formal_origin(bank, bank_path)
+    except ValueError as error:
+        raise Pi05EvaluationError(str(error)) from error
     full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0} for task in tasks]
     if (bank.get("kind") != BANK_KIND or manifest.get("schema_version") != "ember_pi05_registered_trajectory_capture_v1"
             or manifest.get("study_id") != "demonstration_transfer_learning_20260927"
@@ -397,7 +374,6 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
             or manifest.get("stage_predicates") is not True
             or args.role != "validation" or args.mode != "formal" or len(tasks) != 8
             or tuple(tuple(task.init_state_ids) for task in tasks) != (tuple(range(50)),) * 8
-            or bank_path.parent.name != "576"
             or output_dir.resolve() != bank_path.parent.parent.parent / "evaluation" / "correct400"
             or any(manifest.get(key) is not False for key in (
                 "training_gradient_use", "checkpoint_selection_use", "validation_use", "test_use"))):
@@ -447,53 +423,3 @@ def validate_capture_contract(contract: Mapping, repo_root: Path) -> None:
     if (capture != expected or contract.get("diagnostic_stage_predicates") != stage
             or contract.get("passive_capture_provenance") != regenerated["passive_capture_provenance"]):
         raise Pi05EvaluationError("comparison passive capture or scene provenance changed")
-
-
-def prepare_selectors(asset_root: Path) -> dict:
-    """Seal eight validation state0 full captures for both formal arms."""
-    from ember.pi05_eval_contract import inspect_installed_target_tasks, load_evaluation_authorities
-
-    spec = specification()
-    output = Path(spec["runtime"]["run_root"]) / "selectors"
-    if output.exists():
-        raise ValueError("formal capture selectors already exist")
-    authorities = load_evaluation_authorities(
-        asset_root / spec["source"]["evaluation_config"], asset_root)
-    installed, _ = inspect_installed_target_tasks(
-        authorities, role="validation", state_count=50,
-        libero_config_dir=output / "libero_config")
-    tasks, _, _ = _task_rows(spec, asset_root)
-    if [(task.suite, task.task_id) for task in installed] != [(row["suite"], row["task_id"]) for row in tasks]:
-        raise ValueError("registered official validation task order changed")
-    output.mkdir(parents=True, exist_ok=True)
-    for arm in ("P", "I"):
-        capture = {"schema_version": "ember_pi05_registered_trajectory_capture_v1",
-                   "study_id": "demonstration_transfer_learning_20260927",
-                   "task_subset_selection": None, "mode": "compact",
-                   "full_conditions": [{"suite": task.suite, "task_id": task.task_id,
-                                        "init_state_id": 0} for task in installed],
-                   "passive_control_trace": PASSIVE_TAG, "stage_predicates": True,
-                   "training_gradient_use": False, "checkpoint_selection_use": False,
-                   "validation_use": False, "test_use": False}
-        write_json_atomic(output / f"{arm}_capture.json", capture)
-    return {"captures": [str(output / f"{arm}_capture.json") for arm in ("P", "I")]}
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("materialize", "selectors"))
-    parser.add_argument("--arm", choices=("P", "I"))
-    parser.add_argument("--asset-root", type=Path, required=True)
-    args = parser.parse_args()
-    if args.phase == "materialize":
-        if args.arm is None or torch.cuda.device_count() != 1:
-            raise ValueError("materialization requires one specified arm and one visible GPU")
-        print(json.dumps(materialize(args.arm, args.asset_root, torch.device("cuda:0")), sort_keys=True))
-    elif args.phase == "selectors":
-        if args.arm is not None:
-            raise ValueError("selectors are CPU-only and shared by all arms")
-        print(json.dumps(prepare_selectors(args.asset_root), sort_keys=True))
-
-
-if __name__ == "__main__":
-    main()

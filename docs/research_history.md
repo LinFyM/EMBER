@@ -4,6 +4,17 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-27：条件速度算子450两臂退化，完整组合关闭
+
+冻结cfd378b6，从原270各续180更新/20,160query，36task各50/50教学；两臂各official400完成，独立原件验收通过。
+V151→102、L147→112，强MT155/Source51；相邻V保留79/得23/失72、L89/23/58，V450对L450为84/18/28。
+四suite共同轮廓为Spatial/Goal/Long下降、Object上升，广度均6/8；没有形成稳定视频收益或能力保持。
+精确编译和梯度事实仍成立，不能由共同退化唯一归因encoder/Adam/干扰，也不推出已学好视频知识只缺保持。
+机制分析§32/findings§179登记关闭，不继续630、分支补丁或追峰值补controls；候选设计§13仅授权必要CPU退役。
+原件根`/data1/user/ymdai/ember_runs/conditional_velocity_operator_learning_20260927/continuation_450`，
+完整6段exit0，4.521025GPUh、2.238h；两正式批累计10.224230GPUh。两冻结树、bank依赖与checkpoint保持。
+Owner晨间确认继续自主研究；采用整批一次异步回报，不再主讨论持续等待与Queue重复收件。
+
 ## 2026-09-27：条件速度算子270完整比较151/147，未通过最终视频资格
 
 冻结0c4ea636，V/L各270更新/30,240query、各official400；强基准原件只读，不重跑。

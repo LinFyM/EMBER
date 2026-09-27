@@ -450,6 +450,25 @@ P相对I的完整闭环优势才能支持“新对应关系帮助合法条件编
 该完整混合方法关闭，不自动扫描二分权重、扩到更多参考/初态、冻结β或增加辅助头。
 这段明确完整方法决策，不将数据构造通过当作模型收益。当前有界工程权限另见§10；没有正式训练授权。
 
+### 9.3 真实支持内容怎样限定解释
+
+主讨论在工程派发后仅从既存source分段和296查询的`step_kind/rgb_steps`核定监督内容；没有新数据/模型/环境。
+20支持task的80固定示范中，只有34/37/38涉及两个尚需搬运的物体，另外17task为一个；
+**每task四源的物体搬运次序均相同**。这不说明视频动作完全一致或所有历史没有顺序分歧，但本批不提供这种分歧的正例。
+因此P胜过I不能被归因为修复“示范之间顺序切换”；候选依据是具体几何/接近/运送参考与新初态功能查询的对应。
+分段只是特权构造元数据，不能由它断言这些参考已在合法RGB特征中可识别。
+
+按任务/源/共同init等权、每轨迹动作前RGB时点均匀的预定口径，新query当前处于连接段的比例为14.261%，
+恰在共同初态k=0的比例为3.342%。50-horizon标签时间格中，8.580%为真实连接动作，75.081%为变换后路点的真实执行，
+16.338%为末动作重复。这里只计算loss中目标时间格的采样权重，**不是loss值、梯度大小或行为贡献**；
+不能据此断言连接信用可忽略，亦不能把大部分目标说成仅由人工连接构成。
+同一init交叉也不等于后续query状态仍相同：参考改变occupancy，而自己的状态/带噪动作可能已经包含参考信息。
+P/I共用实际query才能保留这一事实；新对应未必带来额外可用条件信息，更未保证其能迁移到未见task。
+
+这收紧后继解释，不改变已派§10、删连接步、扫描padding/权重或另开局部探针。
+正式闭环若P/I/同数据MT都提高而P没有额外收益，保留数据解释；若仅P训练拟合好而held/保持没有改善，不能接受为EMBER方法。
+原件`.codex/tmp/demonstration_transfer_main_review_20260927/learning_support_semantics.json`。
+
 ## 10. 完整LoRA对应学习的有界工程与真实profile
 
 任务`demonstration_transfer_learning_engineering_20260927`，唯一执行者仍为原实验session。
@@ -535,3 +554,67 @@ shape/finite/信息墙/合法视频/实际source冻结/恢复错误须停止并�
 本方法关闭时退役私有模型/事件/运行入口；必要旧结果读取与原件保留。collector不再获采集权限。
 先少量真正验证因子拼接/数据时点/对应事件/恢复的CPU检查；clean pushed detached后执行模型，保留完整预算和失败账。
 一次完成/实质阻塞Queue交付精确commit/diff、执行项、训练与恢复原件、profile/case、成本/资源退出与缺项；不逐阶段自通知。
+
+### 10.6 主讨论独立验收：部分工程成立，两项接口尚未完成
+
+执行commit44cf63fa（基于0f38d17c，六文件+1000）保留在执行分支/原冻结树；尚未合入main。
+主讨论读完全部新增实现，三项CPU测试通过，结构guard REVIEW、无hard。数据/组合/运行/接口为四个明确owner，
+复用原生编码、FM、ECP与official rollout；没有复制旧813行trainer。源码集成待下节修正一并完成。
+已核288事件全表及P/I fresh/resume记录、六个ECP的optimizer/scheduler/sampler/rank RNG游标与两条NPZ/PT。
+新8,960/旧23,296计划query、12实际宏步/1,344query、恢复前缀及source_trainable=0成立。
+517→105帧的28-query完整旧数据FM/VJP为18.594秒、峰值allocated20.746/reserved21.143GiB；
+五段完整计费.206436GPUh、均exit0，原件约1.403GiB。两条行为的220/520动作、T/T+1和双RGB成立，均失败只作接口事实。
+独立记录为`.codex/tmp/demonstration_transfer_main_review_20260927/learning_engineering_acceptance.json`。
+
+**未通过完整工程准入，理由为实际合同缺口，而非科学负结果：**
+
+1. `PairedEvents.event`使所有支持task在偶数visit全旧、奇数visit全新，连续9宏步的新事件数为0/20交替，
+   没有落实§9.1避免整轮同步切换的交错安排。首4步与最长profile全部旧查询，故新增NPZ虽通过CPU时点核对，
+   尚未在实际模型中消费。主讨论的原机器规格只写“交替”，未将task相位写清，应补成确定规则；不能由CPU表冒称新路径已运行。
+2. `episode._run_cases`在第一条装入生成LoRA后，第二次compile前没有恢复物理source的identity。
+   原生Action读取直接消费该expert投影，Meta hook不取消已安装LoRA。因此global38的教学读取不满足§10.1，
+   撤回其独立冻结source生成的资格；不声称已量出影响大小或解释520步失败。训练FM的functional_call恢复原参数，
+   不把这项顺序case问题泛化为训练污染；第一条global2、最长profile和恢复证据继续有效。
+
+另作规格解释纠正：全部组从第3步活动，不是所有组第2步都应非零。FactorHead末层和Compiler Procedure调制都零初始化：
+第1步先动head，第2步Core/调制得到信用，第3步Procedure/Action路径才打开。这由实际串联导数和原始梯度共同支持，
+原§10.1“第2步起”过宽；不改初始化、不为提前非零重跑旧实验，也不由非零梯度宣称能力已获得。
+这些裁决不改变§9完整科学方法；288/576、held、MT、controls和RL仍未获本批启动许可。
+
+## 11. 唯一后继有界工程：混合查询实际学习及生成源隔离
+
+任务`demonstration_transfer_learning_closure_20260927`，只派原指定执行者。沿用同一机器规格路径并升v2；
+旧v1、44cf63fa冻结树和所有原件只读保留，不留两个可重新启动的活动工程CLI。
+本批只补足§10.6的具体缺口，模型/目标/数据池/二分权重/优化超参全部不变；无新采集/正式训练/MT/held/RL。
+
+### 11.1 固定修正及允许的模型工作
+
+- 支持task按已冻结升序集合的零基ordinal定义`phase=ordinal%2`；当`(visit+phase)%2==1`取新事件。
+  每9宏步恰10新/26旧，每task两visit仍一旧一新；16次新事件继续取全部4×4格，288总query及P/I配对保持。
+  相位只用于训练调度，不进入任何模型输入；sampler schema保存相位并拒绝旧v1恢复。
+  种子/任务顺序不因smoke结果改动。固定前缀的新事件为第1步task29、第2步35/4、第6步97；
+  第3/4/5步没有新事件，因此只跑旧4步会错过上游全开后的新查询信用。
+- **P/I各fresh6，另仅P从自己的新ECP2恢复到6**。保存各fresh2/6及P恢复6；合计16实际宏步/1,792query。
+  不加载旧P/I工程权重、不另做I重复恢复。CPU全288事件核对相位、边际、合法时点；实际第6步新query必须经过
+  自身RGB/state预处理→完整144普通FM→cotangent→同参数VJP→optimizer。记录实际事件/有限FM与梯度，不新增机制probe。
+  核真实source_trainable=0、恢复前2行及3–6事件/LR/游标；低位差异接受，不扫描逐tensor一致。
+- 每次教学compile前由同一运行owner保证物理source为完整identity；部署输出不得遗留到下一教学读取。
+  用小型CPU回归覆盖“装入前一输出后再compile”的顺序，不改共享native算子或创建第二policy副本。
+  GPU只用新P6顺序生成global2/demo46并安装（**不运行其环境**），随后按修正的正常入口从identity source生成
+  global38/demo46，执行唯一global38/init0 train-only full双RGB canonical episode，horizon520。
+  这是受影响接口的补全，不为成功重试，不重复第一条有效global2或最长profile；结果好坏不改方法。
+
+### 11.2 预算、交付及主讨论并行工作
+
+按首批12更新/恢复/长profile/两case总.206436GPUh，追加16更新/一次case预计.20–.30完整GPUh，
+硬限**.40GPUh**、最多2卡同节点；GPU时含加载、失败、等待，原批成本另计。CPU/实现20–40分钟、模型10–20、
+收尾10–15，总40–75分钟、90分钟复核上限。新数据FM代价仍有不确定性，硬限不因此放宽。
+新root为原study下`closure`，新增峰值2GiB、全study峰值4GiB；只增一份<=256MiB冻结代码，
+当前相关代码约1520MiB，预计峰值1776MiB<1.75GiB。执行者创建前核data1独立quota、容量及双节点live GPU。
+若必要额外冻结会越界，先报告而非覆盖旧树；源资产/旧工程/原采集数据不复制、不删除。
+分支复用codex/demonstration-transfer，先合入指定新main文档/规格，保留44cf历史；同一实现替换当前有界运行面。
+CPU回归/结构检查后clean pushed detached运行，一次完整完成/实质阻塞Queue回主讨论，注明新增与累计成本和缺项。
+
+主讨论同时准备完整P/I与忠实同数据MT的比较、预算和真实初态配对方案。MT的36task×16query宏步与Writer的4×28不同，
+首批用28-query FM推得的“.85GPUh/288”只是局部计算下界，不能当MT的完整成本或公平训练预算。
+本批不顺带运行MT/profile、400 bank/held或扩建评测平台；这些需要形成完整合同和成本依据后再投入。

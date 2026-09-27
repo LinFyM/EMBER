@@ -11,7 +11,9 @@ Owner授权持续自主推进，今晚检查；目标仍是合法RGB/L一次生�
 当前具体任务为§15.5 `demonstration_transfer_formal_transition_20260927`：只将已验收工程运行面转为正式步数/恢复/validation bank/capture范围，
 CPU交付预计45–75分钟，90分钟检查剩余工作。原learning_engineering_spec由代码交付一并替换为唯一learning_spec。
 正式evaluator要求commit属于origin/main，因此主讨论须先集成其CPU提交，再登记精确冻结commit并派发GPU；不绕过已有Git authority。
-此刻尚无active GPU；CPU实际派发与承接回执随后记录，不把已经完成的§13或本段计划称为后台工作。
+12:15 UTC已从clean pushed main `6b6260e2`派发CPU转换；唯一Queue `01a0e2ca-a384-72c1-b44d-b66dc9700f82`获接受。
+一次app-server即时快照确认指定执行者active且队列已消费；这里只确认CPU任务已承接，尚无active GPU。
+请求、回执、快照在同tmp目录`formal_transition_*`；完成后唯一回报由主讨论接续集成/正式启动，不自Queue或轮询。
 
 正式GPU阶段预计13–16、硬限18GPUh，4卡4–6小时/2卡7–9小时；训练8、scene .5、bank1.5、official8的完整分配。
 共享400个canonical scene仅在policy前冻结一次，P/I都恢复该物理起点，正确K1/每task50教学无放回；各8 full+392 compact。

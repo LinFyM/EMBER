@@ -9,7 +9,10 @@ Owner晨间授权继续自主推进，今晚睡前检查。主讨论`01a0dd74-4c
 有可继续的研究工作且没有独立实验/实质阻塞时，直接在本回合继续，不主动结束再自Queue；旧相反记录仅为当时事实。
 
 **唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`；当前仅授权§10的
-`demonstration_transfer_learning_engineering_20260927`，合同已冻结，派发回执待本段补记。
+`demonstration_transfer_learning_engineering_20260927`，已从clean pushed main0f38d17c派发。
+唯一Queue `01a0e213-81a0-7132-9326-be2489f04401`获接受；08:55 UTC一次现有app-server只读核定执行者active、队列已消费。
+这证明回合承接，不证明模型/GPU已启动；无自Queue或持续轮询。请求/回执/快照在
+`.codex/tmp/demonstration_transfer_main_review_20260927/learning_engineering_{request.txt,queue_receipt.txt,dispatch_snapshot.json}`。
 函数类与完整P/I比较沿§2/9；本批只有P/I各fresh4及2→4恢复，共12实际更新/1,344query，
 另一次最长global38/demo36（517→105帧）的28-query完整FM/VJP、两条P4 train-only canonical接口episode。
 固定原36任务和新支持20任务，公共128+条件16合并为唯一完整144 LoRA，fresh真实FM联合学习；source冻结。
@@ -18,6 +21,10 @@ CPU核288更新的完整事件表，不实际跑288模型更新；P/I共用query
 两卡预计100–170分钟总wall，一卡110–190，210分钟复核上限；完整1.0GPUh，最多2卡同节点，data1新原件4GiB。
 新冻树每份256MiB、新增代码总512MiB、相关代码总1.75GiB；执行者启动前刷新live GPU和data1独立quota。
 无新采集、正式训练、held/Test、controls、MT运行或RL；工程权重不续为正式候选。通过后由主讨论按实测成本冻结完整学习。
+
+派发后主讨论完成对实际支持内容的独立判断（设计§9.3/findings§187）：20task/80源只有3task双物，四源物体次序均相同，
+不再用顺序冲突解释本候选。新FM目标时间格75.081%路点执行/8.580%连接/16.338%末动作重复；不等同梯度或收益比例。
+这些事实限定完整P/I解释，不改变已派工程、不扩数据/探针。执行者一次完成/实质阻塞Queue负责接续，主讨论没有自Queue或轮询。
 
 **§8固定训练支持已独立验收**：108源=100新兼容+4旧复用+task101四源不兼容；其16行未执行，其余416次全部有原件。
 367成功/48路点耗尽/1 horizon，共71,520行为步。主讨论CPU读取416 NPZ/104 scene，T/T+1/动作/RGB/停止成立，

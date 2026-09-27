@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前状态：迁移首批原件发现task38初态配对缺口；有界纠正已登记（2026-09-27）
+## 当前状态：迁移首批原件发现task38初态配对缺口；有界纠正已派发（2026-09-27）
 
 ### 当前科学裁决与授权
 
@@ -13,13 +13,22 @@ Owner在晨间进展讨论后已明确继续自主推进，今晚睡前检查。
 主讨论已承认此前属于不必要的主动切回合；下述旧“可自发接续”记录只保留当时事实，不构成继续自排的许可。
 
 **唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前只授权§7的
-`demonstration_transfer_pairing_repair_20260927`，尚未派发。原§5首批已完成，完整方法解释在§1–4，仍不授权模型训练或数据扩建。
+`demonstration_transfer_pairing_repair_20260927`，已派发。原§5首批已完成，完整方法解释在§1–4，仍不授权模型训练或数据扩建。
 主讨论已读commit29c35f26及全部16份NPZ：14条真实成功、6,079控制步与实际字段成立；
 task34四对全场景起点一致，但task38同state双臂stove初位相差7.7–21.5mm，初始双RGB不同。
 故撤回执行者“共同物理初态覆盖达标”的结论；不是控制失败后的调参，也不推翻14/16逐条事实。
 复核原件`.codex/tmp/demonstration_transfer_main_review_20260927/raw_review.json`，详细裁决见设计§7。
 拟只修数据构造起点恢复并执行受影响task38全部8行，原task34/四源不重跑，最多0.15GPUh/45分钟；
 不动通用evaluator/第三方安装或旧实验，不改分段/控制器、不只重试两个失败，不自动进入Writer。
+纠正基线main862a682c已推送，唯一Queue `01a0e19e-7495-76b0-aa77-be946e572d31`获接受；
+原生即时快照读取未返回后停止该调用，改用现有app-server一次只读thread/read确认执行者active，未重复投递。
+派发与状态回执在`.codex/tmp/demonstration_transfer_main_review_20260927/repair_{request.txt,queue_receipt.txt,thread_snapshot.json}`。
+
+**当前正式证据的定向勘误**：主讨论只读V/L270/450共1,600份既存轨迹的t0字段。
+V270/L270与V270/V450各400行初始body位置/EEF/夹爪一致；L450在global39的24行microwave初位与三者不同，
+最大21.47mm。V450/L450与L270/L450严格已存初位配对范围应为376行，24行四臂全失败，原总分及R/G/L数量不变。
+强MT/Source旧面板没有同类body原件，本次不称独立补核通过，不降低已有强参照分数，也不由此恢复旧评测。
+详见findings§186及`formal_initial_position_scope.json`。不以此撤销V151→102真实配对退化、重开条件速度或归因其唯一根因。
 以下§5派发与预算为首批事实，不构成继续原批的授权。
 固定train34/38各demo0/1与官方init40–43，最多16次新轨迹；允许这4条train的pose/action/BDDL仅在数据构造侧使用。
 四参考与交叉初态覆盖不足则关闭固定构造，不调分段/阈值、换源/初态或追加重试。无held、神经模型或旧实验重跑。

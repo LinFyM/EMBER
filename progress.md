@@ -1,31 +1,37 @@
 # EMBER progress
 
-## 当前状态：配对纠正已独立验收；登记一轮完整训练数据支持构造（2026-09-27）
+## 当前状态：固定训练支持已验收，进入完整LoRA学习的有界工程（2026-09-27）
 
 ### 当前科学裁决与授权
 
-Owner在晨间进展讨论后已明确继续自主推进，今晚睡前检查。此前“先讨论、停止新方案推进”的临时要求已解除。
-主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main集成；唯一执行者仍为
-`01a0dd6c-f2e5-7971-821a-56766e1c0f22`。不联系旧主讨论/旧Sol，全部新内容data1。
+Owner晨间授权继续自主推进，今晚睡前检查。主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`负责科学判断/main，
+唯一执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`负责具体实验。不联系旧主讨论/旧Sol，所有新增data1。
+有可继续的研究工作且没有独立实验/实质阻塞时，直接在本回合继续，不主动结束再自Queue；旧相反记录仅为当时事实。
 
-**Owner最新纠正（本回合）**：当前无独立实验、无需Owner处理的阻塞且还有研究工作时，直接在本回合继续；
-不因30–45分钟阶段到点、交完一份文档或关闭候选而主动结束，再给自己Queue启动。
-主讨论已承认此前属于不必要的主动切回合；下述旧“可自发接续”记录只保留当时事实，不构成继续自排的许可。
+**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`；当前仅授权§10的
+`demonstration_transfer_learning_engineering_20260927`，合同已冻结，派发回执待本段补记。
+函数类与完整P/I比较沿§2/9；本批只有P/I各fresh4及2→4恢复，共12实际更新/1,344query，
+另一次最长global38/demo36（517→105帧）的28-query完整FM/VJP、两条P4 train-only canonical接口episode。
+固定原36任务和新支持20任务，公共128+条件16合并为唯一完整144 LoRA，fresh真实FM联合学习；source冻结。
+原视频/action训练池沿既有demo0–45；§9此前“50条”更正，46–49仍保留训练侧诊断；正式held50视频合同不变。
+CPU核288更新的完整事件表，不实际跑288模型更新；P/I共用query/noise/time，四源×四条件完整表，20支持task旧/新各半。
+两卡预计100–170分钟总wall，一卡110–190，210分钟复核上限；完整1.0GPUh，最多2卡同节点，data1新原件4GiB。
+新冻树每份256MiB、新增代码总512MiB、相关代码总1.75GiB；执行者启动前刷新live GPU和data1独立quota。
+无新采集、正式训练、held/Test、controls、MT运行或RL；工程权重不续为正式候选。通过后由主讨论按实测成本冻结完整学习。
 
-**唯一active design**：`docs/designs/demonstration_transfer_learning_design.md`，当前只授权§8的
-`demonstration_transfer_training_support_20260927`，已派发。完整方法解释在§1–4，本批不授权模型训练或held评测。
-固定27个刚性搬运训练task、demo0–3、全新init44–47，最多432次；原四源提取只读复用，不重复旧case。
-统一分段/SE(3)/OSC，不加task专用控制器，不换失败源/初态；少于20个四源共同支持task或五组任一少于2项则关闭固定构造。
-实现/源提取45–75分钟、采集35–60、核验10–20，总90–155分钟、硬复核180分钟，最多1渲染GPU/完整1.5GPUh。
-上界80,360控制步/6.103GiB未压缩双RGB由原manifest长度计算；新原件8GiB/新冻结256MiB/相关代码1.25GiB，执行者先核data1。
-不自动进入Writer、不让两task的小模型拟合充当泛化、不削减原36训练任务或最终任务覆盖。
-派发基线main1d680a77已推送，唯一Queue `01a0e1c0-7cdf-7100-b08e-1d708bfa03a8`获接受；
-一次现有app-server只读核定队列已无待处理消息、执行者active。仅证明回合承接，不称GPU/采集已经启动。
-请求/回执/快照在`.codex/tmp/demonstration_transfer_main_review_20260927/training_support_{request.txt,queue_receipt.txt,dispatch_snapshot.json}`。
-没有自Queue、轮询或额外派发。主讨论随后完成设计§9的完整学习取舍：原36任务保留，新支持task的原始/新查询各半，
-全部仍为最终同一LoRA的普通FM；I按四源×四条件的完整16格调度，P/I实际query/noise/time相同、整块视频边际相同。
-该混合风险不等于§37.8纯新数据的最优风险差；按4task×28query的示例，完整平衡周期为288更新，而非继承270/450。
-尚无完整模型profile，§9不授权训练/正式节点；不把配对的有限样本平衡当作学会视频或保持的保证。
+**§8固定训练支持已独立验收**：108源=100新兼容+4旧复用+task101四源不兼容；其16行未执行，其余416次全部有原件。
+367成功/48路点耗尽/1 horizon，共71,520行为步。主讨论CPU读取416 NPZ/104 scene，T/T+1/动作/RGB/停止成立，
+104组保存初态及首帧双RGB一致；完整model/sim/controller依靠已审行为前assert，不冒称逐臂完整快照。
+四源共同至少2init的任务恰20个，组数5/4/3/4/4，296条交叉表复算相符；仅通过构造投入条件，不是Writer收益。
+1988c7eb完成144行后15/44/demo0行为前旧单物体门槛报错；f8dd3770删除§8未规定的门槛并记录全body差，完成余272。
+该次0动作，全部物理失败未重试；分段/控制器未改。原件显示场景不同但16个case-物体项位移<=0.1mm，不夸大几何变化。
+完整0.573611GPUh/最大1卡，观察窗口约07:25–08:36 UTC；数据2.470GB、相关代码1.292GB均低于各自GiB限额。
+代码f8dd3770集成为4aeaf5b5，+523/-277三文件，3项纯CPU检查通过；结构REVIEW无hard，单一source/collect CLI及source分段owner。
+独立复核`.codex/tmp/demonstration_transfer_main_review_20260927/training_support_acceptance.json`；
+原件`/data1/user/ymdai/ember_runs/demonstration_transfer_training_support_20260927`，所有旧批原件/冻结树只读。
+执行者上一批完成Queue已在本回合消费；不把该已完成工作记为仍在后台运行。
+
+**以下§5/7为已完成时点记录，不再执行。**
 
 **§7已验收**：81dc1e45的新8行7成功/3,829行为步，四对保存初态/双RGB一致；主讨论读取全部8份NPZ和4份scene。
 原34共同4init，新38共同40–42三init，最小构造覆盖通过；旧14/16与新7/8分别保留，实际共24次/9,908步。

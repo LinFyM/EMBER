@@ -1,7 +1,7 @@
 # 教学参考与跨初态功能查询：对应学习候选
 
-2026-09-27。这是尚未验证的完整学习假设。§5首批及§7配对纠正均已完成并独立核验；
-§8登记后继有界训练数据支持构造，是否已经派发只看progress。仍不授权Writer训练或held评测。
+2026-09-27。这是尚未验证的完整学习假设。§5/7/8数据构造及配对修正均已完成并独立核验；
+§10登记完整模型的有界工程/profile，是否已派发只看progress。没有正式学习、held评测或数据扩建授权。
 实际执行状态只看[progress](../../progress.md)。科学依据见[机制分析§36–37](../analyses/feature_to_operator_mechanism_20260926.md)。
 Reader、条件速度270/450及其它已关闭运行不恢复；本设计不宣称已找到它们的统一根因。
 
@@ -116,7 +116,8 @@ MimicGen仅为训练侧轨迹变换的实现依据，固定源码及边界见机
 P仅降低loss、仅训练task成功、或只胜弱化参照，都不支持最终方法；P≈I而新MT也提高，更支持数据解释。
 P有真实held正确/换正确视频增益且超过强MT、保持相邻能力，才支持所提完整学习联系。
 P有增益也不能唯一归因“模式混合是旧根因”。完整有信息量窗口失败时关闭组合，不以换rank、aux、seed、冻结β或无限续训挽救。
-目前没有该模型的真实profile或正式数据覆盖，因此**不编造正式训练GPU-hour，不授权任何Writer训练**。
+正式学习的GPU-hour须由本模型的真实profile计算，不能沿用Reader或条件速度的数字。§10另行限定工程更新，
+不授权正式学习、held评测或将工程权重续成候选模型。
 
 主讨论随后补足的投入边界见机制§37.8：额外功能信用必须超出查询自身状态/带噪动作/语言，
 不能由源身份、轨迹差异或连接段拟合认定；静态参考和视频动态的增量也须区分，不自动追加局部探针。
@@ -369,7 +370,28 @@ CPU完成后clean pushed detached冻结再采集；完整交付只发一次完�
 报告源码diff/结构、108源逐条情况、27task完整支持/未执行原因、所有432计划case及实际尝试数、共同覆盖、成本和资源退出。
 本批没有神经训练或正式性能分数。构造关闭则必要入口由Git保留并退役；构造支持完整方法时仍保留一个canonical数据owner。
 
-## 9. 数据执行期间的完整学习取舍（未授权模型运行）
+### 8.6 完成后独立验收（2026-09-27）
+
+108固定源中100新源兼容、4旧源只读复用；101的四条封存XML与官方BDDL对象注册不同，未改资产，16查询均未执行。
+416次实际行为共71,520步，367成功/48路点耗尽/1到horizon；不是正式policy分数。主讨论重新读取全部416份NPZ与104份scene，
+核定T/T+1、有限限幅动作、RGB时点和首次成功终止；104组保存body位姿/EEF/夹爪/谓词/双RGB初态严格一致。
+完整model/sim/controller每臂一致由已审实际行为前assert及运行退出支持，未声称逐臂另存了完整sim快照。
+
+共同四源至少2个成功init的任务恰20个：Spatial5/Object4/Goal3/Long4/meta90四项，共296条完整等权交叉。
+固定投入条件通过；5/12/14/22/36/56共同支持不足，101源结构不适用，不补采、不替换参考，不缩减原36任务学习。
+首冻结1988c7eb执行144条后，在15/44/demo0行为前触发旧的“被搬物初位必须不同”断言；f8dd3770删除这个§8未规定的门槛，
+保留全body差值，再完成272条。失败前0动作，全部物理失败未重试，分段/目标变换/OSC/连接/horizon未改。
+独立复算该case源/query保存body最大差17.5669mm，所有416行该差值至少4.8903mm；
+但有16个case-物体项的被搬物距离<=0.1mm。因此不把“新场景”夸大为每个目标物体都换位置或已学会相对控制。
+
+完整计费690+1375秒=.573611GPUh，最大1卡；观察窗口约07:25–08:36 UTC，低于预计90–155分钟。
+数据2,470,234,402B<8GiB，开发+四冻树1,292,068,469B<1.25GiB（十进制GB不可混当GiB）。
+主讨论3项纯CPU测试通过，结构guard REVIEW无hard；+523/-277、三个文件，单一CLI与纯source分段owner，旧固定入口退役。
+source提取和连续OSC执行保留为各自完整职责，非学习代码；本构造关闭时退役，历史冻结树/原件保留。
+源码f8dd3770由main合并4aeaf5b5；独立复核为`.codex/tmp/demonstration_transfer_main_review_20260927/training_support_acceptance.json`。
+原件根`/data1/user/ymdai/ember_runs/demonstration_transfer_training_support_20260927`。
+
+## 9. 完整学习取舍（正式学习仍须另冻）
 
 新增对应数据仅覆盖一种操作构造，不能因此把36任务缩成采集成功子集，也不能让失去源支持的任务从保持要求中消失。
 后继完整目标选择为：原36任务等权；有新支持的task由原始跨episode查询和新对应查询各占一半，
@@ -389,7 +411,9 @@ L_P/I = (1/36) sum_t [
 ```
 
 这是数据联合关系的干预，架构/β/初始化/训练时标在P/I保持一致。
-旧查询事件的合法教学仍可遍历原50条，且action episode与该教学不同；新查询事件的教学条件只取固定demo0–3。
+旧查询事件沿原36任务学习合同使用demo0–45的46条，且action episode与该教学不同；新查询事件的教学条件只取固定demo0–3。
+先前本段写“原50条”不准确：原配置的46–49用于训练侧诊断；在任何模型运行前更正，不扩大旧查询动作池。
+这不改变正式held评测的每task50条无放回视频要求，环境init44–47也不是teacher demo44–47。
 新query自己的RGB/state/action、源参考/共同init采样、padding、FM noise/time在P/I逐事件一致，仅改变教学视频与新query的对应。
 不把源数组、索引、段/时钟、生成成败或数据类型送入Writer；旧事件和新事件也不使用不同部署头。
 教学和query图像分别按已有预处理消费，自己的state仍按冻结source统计进执行prompt；不重算归一化。
@@ -424,4 +448,90 @@ P相对I的完整闭环优势才能支持“新对应关系帮助合法条件编
 仅比I好但仍弱于强MT、仅降低训练FM或只学会新查询轨迹，都不能接受为EMBER方法。
 若P/I/同数据MT共同改善而P无额外收益，更支持数据质量/覆盖解释；若两Writer共同弱或继续大量丢能力，
 该完整混合方法关闭，不自动扫描二分权重、扩到更多参考/初态、冻结β或增加辅助头。
-这段明确后继决策，而不是宣称数据采集或模型实验已通过；当前执行权限仍仅§8。
+这段明确完整方法决策，不将数据构造通过当作模型收益。当前有界工程权限另见§10；没有正式训练授权。
+
+## 10. 完整LoRA对应学习的有界工程与真实profile
+
+任务`demonstration_transfer_learning_engineering_20260927`，唯一执行者仍为原实验session。
+本批一次接通§2与§9的完整方法，并测明真实成本；不再追加局部表示/标签探针，不扩大数据，不选模型。
+机器规格`configs/demonstration_transfer_v1/learning_engineering_spec.json`；只有progress登记和真实派发后执行。
+
+### 10.1 固定函数类、信息墙与训练算子
+
+复用`CompleteLoRAWriter`、原生读取/Core/Procedure/FactorHeads、真实FM和ECP公共owner，不恢复Reader/条件速度或旧训练CLI。
+source仍为`pi05_source_aligned_seed7_1k_20260915/step_00001000`，归一化/分词器/图像处理按既有source authority。
+physical policy仅注入完整rank144/alpha144的38-target接口，所有source/physical参数冻结；教学读取时它保持identity，
+不将公共β或本次输出装回教学读取。公共rank128参数与完整生成rank16输出在因子维拼接，不能同rank相加。
+可由同一deterministic identity144模板分出公共128和条件16；Writer要求的rank16模板保留，完整FM只接144合同。
+初始所有B为零；公共与条件参数均fresh、同一AdamW联合更新。全局/Writer seed7，identity模板沿LoRA合同seed20260721；
+lr3e-4、betas(.9,.95)、eps1e-8、wd1e-4、clip1，
+前150次线性warmup；本批只到4，不据此预定正式长程scheduler。工程权重不得成为正式训练初值。
+
+每次宏更新4个不同task×28个真实query，任务预权重1/4；多卡SUM已加权梯度，不再除world size。
+28个query全部普通FM、50完整horizon、前7真实action维；不拆旧21+7辅助，不启用endpoint/前5步或额外loss。
+允许复用“生成→完整LoRA真实cotangent→同次参数重放VJP”的现有精确一阶链式求导以节省显存；
+cotangent必须来自本次最终144输出且回传公共与条件两边，不用teacher更新标签、跨更新缓存或替代梯度。
+两臂各参数组记录有限梯度/实际更新；初始零B造成首步上游梯度为零属预期，第2步起应有实际条件链信用。
+不以梯度非零、loss变化或工程episode成功宣称学习收益。
+
+### 10.2 同一查询分布及可核查的P/I事件
+
+原36任务等权，固定支持集合为§8.6的20项；其旧/新事件交替各半，其余16项全旧。
+事件按task轮次交错，使完整两轮每task旧/新数准确，不按耗时/轨迹数重加权。
+新查询只读296交叉：先等权源c及共同init，再均匀选该轨迹合法已保存的动作前RGB时点k<T；
+取自身EEF位置、`quat2axisangle`和夹爪qpos构成8维state，动作从k开始取50步，不足沿末动作重复。
+NPZ双RGB已经canonical180，不能再次翻转；原HDF5仍由既有owner按offset1处理。禁止把geometry/阶段/目标/成功/source编号
+送入Writer或policy；读取器只向Writer提供原教学RGB/L，向policy提供自身RGB/state及loss动作。
+
+每支持task的16次新事件枚举四源×四条件全部格，种子乱序；P用V_c、I用V_d。
+query/noise/time随机流不依赖d，P/I逐事件完全共用；新源、视频边际在完整块一致，源×条件为乘积表。
+CPU仅用manifest/封存查询检查完整288更新事件表：36task各32次，20支持task各16新/16旧；
+总32,256query，其中新8,960、旧23,296。原始和新查询事件分别保留时间偏移，不混用视频与环境init编号。
+不为了精确平衡强制一个独特连续query四次重复，不把有限表平衡当作所有x上的统计独立或收益保证。
+随机种子及物理分片与事件游标完整保存；CPU事件表不要求运行288模型更新。
+
+### 10.3 仅允许的模型计算与实际接口case
+
+1. P/I各fresh4；每臂保存2和4的完整ECP，再从各自2恢复到4，独立输出root。
+   合计12个实际宏更新、1,344训练query。核前两行历史及3/4事件、LR、optimizer/sampler/rank RNG恢复；不追逐逐bit。
+2. P fresh4后一次最长合法训练视频profile：manifest固定global38/demo36，517原帧、stride5加末帧105帧；
+   28条旧跨episode真实FM查询、一次完整VJP，无optimizer更新，不新增数据或挑更容易视频。
+   测读取/生成/FM/重放和总耗时、峰值allocated/reserved、稳态query/s，不能只报最短视频吞吐。
+3. P fresh4生成两套分别对应两个独立case的完整LoRA：train global2/init0/demo46和global38/init0/demo46。
+   每case rollout前一次生成、真实canonical双相机/8state/10flow/前5action/dummy10/官方horizon、成功即停。
+   复用现有official episode及被动捕获owner；两条均full双RGB、T动作/T+1几何/谓词与真实初态留存。
+   这两条只核最终38-target接口，不组成收益面板、不配对打分或据结果改方法；不跑Source/MT/额外对照episode。
+
+两臂在同节点world2任务分片，最多2张物理卡，物理卡选择按live资源；不跨节点拼训练或等待凑卡。
+若当前只能合理使用1张，工程可在world1运行全部fresh/resume并据实计成本；本批同一臂恢复不换拓扑。
+起始query microbatch28、frame chunk8；仅实际OOM时可降物理microbatch14/7或frame chunk4，事件/目标/噪声不变并记录失败。
+BF16/TF32与既有activation checkpoint可用；不扫描dtype、rank、LR/seed、损失权重或更新次数追效果。
+shape/finite/信息墙/合法视频/实际source冻结/恢复错误须停止并修正真正工程违约；物理case失败不构成bug。
+
+### 10.4 时间、资源、存储和正式投入边界
+
+预计实现/CPU75–120分钟，两卡模型计算15–30分钟wall，收尾10–20，总100–170分钟；
+若采用world1，模型预计25–50分钟、总110–190分钟，统一210分钟复核上限。
+完整GPU硬限1.0GPUh，含加载/失败/等待，峰值2卡；达到时间或资源限不加量，报告完成和缺项。
+预算依据仅为先前Reader12更新/恢复/profile/6case完整.5126GPUh的量级，以及本批两臂均完整视频、
+公共144执行与105帧最长输入的额外不确定性；不把旧15.53秒/宏步当本方法实测或正式训练预算。
+原36任务数据、296查询和所有源资产只读复用。新study
+`/data1/user/ymdai/ember_runs/demonstration_transfer_learning_engineering_20260927`峰值4GiB；
+新冻树每份<=256MiB，必要工程修正累计新增代码<=512MiB，开发+现存相关冻结总计<=1.75GiB。
+执行者创建前核strg01 data1独立quota及共享空间；不复制模型/HDF5、不建整库cache、所有新增data1。
+
+通过后只给出实测成本、完整恢复/接口证据及P/I学习和同数据MT的后继估计；不自动开288/576、bank400、held/Test、controls或RL。
+科学裁决依然要求完整closed-loop和相邻保持；工程非零梯度不能预定结果。无法在固定函数类/合法数据/合理预算内运行，
+回报具体限制，不私自替换成小模型、低rank或缓存改造后冒称本候选。
+
+### 10.5 一个活动学习owner与交付
+
+复用原独占开发树，从派发main合入后实施；不写main，不改已冻结树或sealed原件。
+现有`writer/training.py`已有813行和历史合同分支，本候选不继续往其中塞experiment/fallback。
+新增候选学习代码放一个内聚子目录：数据/事件、公共+条件完整模型、训练/有界工程三个职责；CLI仅薄转发。
+原生编码/FactorHeads、source/LoRA/FM、ECP、replay和official rollout复用当前owner，不复制旧训练框架或评测平台。
+预期净增约900–1500行；超过1000时交付明确实际所有权和退役关系，不以机械拆文件解决guard。
+不建立平行P/I模型，二者仅条件对应调度不同；同数据MT后继沿强训练配方，不在本批另造第三训练框架。
+本方法关闭时退役私有模型/事件/运行入口；必要旧结果读取与原件保留。collector不再获采集权限。
+先少量真正验证因子拼接/数据时点/对应事件/恢复的CPU检查；clean pushed detached后执行模型，保留完整预算和失败账。
+一次完成/实质阻塞Queue交付精确commit/diff、执行项、训练与恢复原件、profile/case、成本/资源退出与缺项；不逐阶段自通知。

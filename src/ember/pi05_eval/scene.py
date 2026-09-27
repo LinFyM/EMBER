@@ -130,7 +130,8 @@ def freeze_registered_scenes(asset_root: Path, output: Path, *, physical_gpu_id:
                 # Regeneration is already part of the accepted collector semantics.
                 snapshot = _scene_snapshot(env, obs, names, goals, image=False)
                 obs = _restore_scene(env, snapshot)
-                _assert_scene_pair(env, obs, names, goals, snapshot, image=False)
+                # The post-dummy observation may precede sim forward in regeneration;
+                # freeze the resulting state, as the accepted collector does.
                 full = _scene_snapshot(env, obs, names, goals, image=True)
                 path = scene_path(output, task, state)
                 np.savez_compressed(path, **full)

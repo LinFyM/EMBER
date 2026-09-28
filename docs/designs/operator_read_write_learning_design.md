@@ -1,8 +1,8 @@
 # 同一实际LoRA算子的教学写入与执行读取
 
 2026-09-28。候选，未验证；科学论证见机制分析§42。只有progress登记的阶段有执行许可。
-本文件§1–5定义完整方法，§6–10的T/U270和固定MT同scene比较已完成；当前执行范围为§11的270→900有界续训。
-§11覆盖旧节点/拓扑/预算/后继停止范围；其余模型、信息墙与评测约束继承，精确冻结与派发以progress为准。
+本文件§1–5定义完整方法，§6–13的工程/270及900续训和两短诊断均已完成；当前机制诊断授权见§14。
+§11的节点/预算不自动延续；模型、信息墙与评测约束继承，精确冻结与派发以progress为准。
 它替换旧Core/Procedure/FactorHeads生成图，不在已关闭P/I、条件速度或LocalField上追加补丁。
 
 ## 1. 为什么投入，以及不凭什么投入
@@ -641,3 +641,51 @@ Owner要求现在深入450的实际机制，尤其T/U差别，不将分析推迟
 
 执行与分析已完成：133.4325秒/.037064589GPUh、exit0、16条件/8回绑及小型原件完整；
 实际功能、局部路径信用和非线性反例见findings§209/机制§49。此处不追加后继实验许可。
+
+## 14. Owner授权的完整链路机制研究（2026-09-29）
+
+Owner明确允许选择分析/实验，以建立自己的视频→动作过程指导→LoRA→自身闭环理论；
+最终选择继续学习或已有合理修正后的正式重训时，停下解释证据与推理，不直接开训。
+本节不改已完成§11–13；正式checkpoint、旧分数和所有原件封存。诊断结果可支持当前方法判断，
+但训练面板不是held资格，不能挑teacher/拼checkpoint；Test与held action/reward梯度墙保持。
+尚无当前T/U视频特异性差的直接实验，先区分真实匹配贡献与此前其它架构的负证据。
+
+### 14A. 固定900的训练侧视频来源交叉与功能读取
+
+问题：已测完整LoRA优于公共β，究竟主要是视频通路提供通用有益修正，还是正确教学内容提供匹配目标的功能？
+二者对继续学习的理由不同。若已有匹配功能而迁移/保持不足，不能再把问题归为视频图没学到；
+若不同任务视频仍给出相近收益，则一般动态输入引起修正不等于获得了教学过程知识。
+这一比较保持target exact language，不能把换语言的task变化归给视频；所有干预是已冻结模型的诊断，非新训练样本。
+
+- 固定T/U900两个完整ECP，数值source沿81846ed3 clean detached树，模型/native/loss不改。
+  权重路径为`continuation900/{T,U}/train/attempts/continuation/checkpoints/macro_00000900/ecp.safetensors`。
+- 目标与视频来源均为原train0/12/20/32四task；每个来源仍用§12原排列前两teacher。
+  4 target × 4 donor task × 2 donor teacher × 2 mode = 64完整编译/功能条件。
+  条件使用donor真实同步双RGB/stride5/末帧/原顺序，tokens/mask明确来自target语言；不传donor语言、动作或state给Writer。
+  对角线16条件与原270/450面板同口径；其它48为固定语言下的视频来源干预。
+  每个target的28个query/demo/frame、flow seed与§12/13严格复用，排除该task两个正确teacher；不按结果选样本。
+- 每target另读本臂共同训练公共β（共8）及同源identity/source和原强MT300（各4，仅需跨臂复用，合计8）。
+  MT读取旧已审`stage1/MT/banks/300/manifest.json`引用的实际完整因子与原precision，不重训MT或创建新bank。
+  source/MT/β/完整条件的query与flow完全相同；不是匹配训练算法的因果消融，也不将β命名为独立语言baseline。
+- 使用现有`paired_functional_credit`/`flow_sample`实际普通FM消费者，保持50×7、offset1和原随机time/noise。
+  保存每query每horizon实际prediction与target（仅授权train标签）、flow time、全部标量FM；由此CPU可读前5/其余45但不改主loss。
+  只对16对角线正确条件求已有完整LoRA cotangent，保存76项G_A/G_B及3target Q8/V8/out的自身query输入。
+  64条件保存实际H、这3处native X、全部38最终M；每臂A/B0/共享Value权重只保存一次或引用900 ECP，避免重复大资产。
+  保存真实frame indices/teacher/target language来源/源码与权重路径，保留全部条件和数值，不以norm做资格。
+- 0 optimizer更新、0环境episode、无validation/Test action或label，无900后训练、无shuffle/reverse、无最终checkpoint选择。
+  不做无意义首帧重复矩阵：在本图完全静态H令ΔH=0，M必为0，精确退化公共β；这不等于独立训练的静态参照。
+  原生批处理的正常低位差异按既有数值规则处理，不能为它强制batch1或扩大dtype。
+
+初批输出`/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900`，
+预计新增4–6GiB、峰值硬限8GiB；创建实质输出前Sol核strg01/data1 quota及共享容量，source/data/env只读复用。
+从原16条件133秒估算新增80个功能前向（其中16需反传）加编译，GPU约5–15分钟量级；CPU实现/读回预计30–60分钟，
+初批外部全部占用/加载/失败合计硬限1GPUh，任一设备进程硬限30分钟，超出前报告具体阻碍，不自行扩量。
+T/U可各占一张合适A40并行，source/MT只算一次；microbatch按真实显存/吞吐，不能机械继承两workers或等凑卡。
+每次launch live查两节点，遵循常规总卡规则和Owner短时例外；完成立即释放。
+
+唯一Sol在已独占dev/任务临时目录实现诊断脚本，不改main；脚本随run原件保存，调用原clean frozen模型消费者，
+不为本诊断新增canonical trainer/模型分支。接口/记录/调度窄修可在本scope自主完成；科学变量、标签配对、预算变化向主讨论报告。
+完成或实质阻碍一次有内容回报主讨论，主讨论并行做理论与CPU分析；不按条件通知、自Queue或索取重复回执。
+结果分支由主讨论独立核原件后解释：正确是否优于错来源、两正确是否保持、相对β/MT是否有益、效果在什么query/horizon出现，
+以及它们与270/450已有学习趋势能否相容。错误视频损伤本身也可能来自分布偏移，不能单独称正确内容必要，
+更不能将4个训练task的差额冒充8个held任务闭环根因。下一因果实验依据实际缺口另登记，不自动续做矩阵。

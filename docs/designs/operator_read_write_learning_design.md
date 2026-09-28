@@ -756,3 +756,67 @@ Owner后续明确回报路由：Sol的源码交付、完整结果和实质阻碍
 可在14B bank/eval独立运行时使用适用卡并行，按现场显存/CPU/卡总量不干扰已就绪工作，结束立即释放。
 完成或具体阻碍直接Steer主讨论，不Queue、不为普通状态通知；不因这项变更打断正常14B。
 14A/B/C是当前明确诊断范围，全部0更新；无正式续训/重训/选点/其它旧点或自动追加对照。
+
+## 15. 夜间有界继续学习的工程准备（2026-09-29 01:10）
+
+Owner已恢复主讨论自主裁决/执行，不再要求分析后等其同意；此处先授权唯一Sol在14B独立运行期间完成CPU续训准备。
+目前仍没有本节GPU训练启动许可：主讨论消费已在进行的810整批结果后明确最终臂/规模并释放，
+这是一项真实科学依赖，不另向Owner设审批。不得为准备工作打断14B或读取中途分数，A/C不追加矩阵。
+
+### 15.1 判断问题与预备规模
+
+14A/C已证明当前训练分布上有内容匹配、方向相关、涉及上游hidden的有益功能；270→450→900固定query继续改善。
+T闭环后段改善，U完整train FM更好却held退化；没有经验证的架构/训练修正。故准备一次保留当前方法的有限学习窗口，
+检验“有用的条件函数继续学习能否形成超过强MT的闭环能力”，而非以图接通或未证明失败作为投入理由。
+810的最近90步方向用于决定是否两臂都投入；本节预备上界T/U各900→1350，不实施模型/loss/LR/seed/rank小扫。
+1350对应每task第三轮50视频刚好完成，是有限曝光单位，不是最优步数断言；不能据此保证收敛。
+
+预备节点为1080、1350两个完整correct400；保留每18宏步完整ECP（918…1350），不是逐点全评。
+新窗口450更新/50,400 query每臂，累计151,200 query/150访问每task；四task等权、每task28 query不变。
+后继无论留一臂或两臂，必须保存全部已发布成绩，不以旧点搜索、挑视频、union或checkpoint融合获取胜MT表述。
+1080/1350用于预定趋势及绝对比较；不自动形成最终论文checkpoint选择或controls/Test/RL授权。
+新结果若仍不超MT且所学功能不能扩大有效覆盖/保持，不自动续1800或把LR回升、seed/rank更换包装成同一次学习。
+主讨论届时结合实际结果重新裁决，Owner当前授权允许这种自主裁决但不免除新的依据和有界合同。
+
+### 15.2 唯一运行面与900完整恢复
+
+在现有`operator_writer/data.py/run.py/bank.py`所有权内替换active continuation入口；不复制trainer/bank/evaluator。
+保留旧270/450/810/900 sealed读取/audit/official消费者与历史冻结树，不让旧训练spec重新启动。
+正式新spec建议`configs/operator_read_write_v1/continuation1350_spec.json`，输出
+`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation1350`；旧root只读。
+新的唯一train默认/入口只接受本spec、指定臂的原81846ed3完整900 ECP，或本root最新完整ECP；不从810/270重放。
+明确区分新Git/spec与原训练818/spec身份，检查同臂source/operator/lora/optimizer/信息墙/完整cursor，
+继承全部900行metrics前缀、Adam状态、scheduler绝对时钟、rank RNG和拓扑，不声称bitwise exact。
+
+事件schema显式由v3迁移v4。visit仍取绝对macro//9；teacher round0的种子保持`[20260928,1,task]`，
+round r≥1保持/扩展为`[20260928,1,task,r]`，r=visit//50；query/flow和task排列的绝对visit规则不变。
+旧0–899事件严格继承，第三轮使用r=2新排列，仍50视频各一次；不可让现有v3的第二轮分支被无限重复。
+当前真实LR公式保持warmup150/decay1200/floor1e−5，不重新warmup、不重置Adam或重新拉长衰减。
+跨过1200后继续原floor是本窗口含义的一部分；1350是观察边界，不把低LR导致变化小称为已证明架构上限。
+
+每18步保存Writer/optimizer/scheduler/scaler/sampler/RNG/topology完整ECP。一次保存应原子发布后继续训练，
+可并行物化预定节点；不用同步等bank/eval。可在完整ECP边界实现窄范围受控结束能力，
+使预算/主讨论停止或更合适拓扑迁移不必丢未保存更新；不加热更新科学参数/通用调度平台。
+world2/3/4沿既有四条件各.25、SUM梯度后一次全局clip/Adam/绝对LR；按真实负载与可用卡选，不机械固定world2。
+T/U、bank/eval独立并行，资源调度以整批墙钟吞吐为依据，不等凑卡或为扩卡重复更新。
+
+### 15.3 证据、成本与交付边界
+
+沿旧strict paired400的50视频无放回、scene/state/video/env与policy RNG、official口径，MT153与旧各点原件直接复用。
+各新组保留8full+392compact PT、400 NPZ、原行/配对/成功集合/逐task/suite/breadth/退出及完整成本。
+主讨论独立复算新结果及关键来源，完整捕获继承经审实际消费者，避免为可能的假想变化防御性重扫旧原件。
+
+旧630更新两臂合计训练16.969787GPUh，按450/630线性外推12.121276；原900两bank/两official约2.52756GPUh，
+两个新节点约5.05512，总预计17.2GPUh；含加载/失败/所有外部占用硬限24GPUh，不用剩余预算自动增项。
+world2两臂并行旧实测外推训练约3小时，CPU窄实现/检查约30–60分钟，末节点bank/eval/读回约45–90分钟；
+整体约4–6小时，实际拓扑能改善时取更快方案，争取早晨08:00前完成；显著超期/预算风险及时给具体说明。
+原完整ECP实测T428MiB/U457MiB，新每臂25份约22GiB；一组新bank+official按原900实际约9GiB，四组约36GiB。
+加代码、原子写入、临时及失败余量，新增峰值硬限72GiB，须由Sol在strg01 live quota并合计14A/B/C原件后确认准入。
+所有新增data1，不复制源模型/dataset/旧bank，不因预算富余做profile、smoke GPU或重扫旧数据。
+
+Sol在独占dev实现、按`code-architecture-gate`检查本次旧大文件增长/唯一路径，不把共同逻辑复制为新版本分支；
+冻结旧入口与兼容读取是有实际原件消费者的边界，不是保留可随意开训的fallback。必要时内聚提取共享合同读取，
+不为行数切碎模块。做实际900 ECP迁移、第三轮排列/旧prefix、稠密ECP/新bank准入、错来源/mode拒绝及旧capture消费的
+定向CPU验证；push clean commit及新detached冻结，向主讨论Steer源码/CPU证据。主讨论并行审阅和集成。
+目前本节只允许CPU准备；14B完整回报后主讨论会在此登记最终科学执行范围并直接Steer释放，无需Owner再次确认。
+纯工程窄修仍由Sol按原scope自主处置；模型/标签/更新语义/评测/预算变化交主讨论，不能将科学阴性修成正结果。

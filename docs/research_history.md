@@ -19,6 +19,12 @@ Owner随后要求现在深入450的T/U机制。主讨论读取task31四组各50�
 完整分解见findings§208/机制§48；设计§13登记原固定训练面板的450功能/地址回绑短诊断，
 执行和结果状态以progress为准，不将该登记称为新诊断已完成或内部根因已确认。
 
+同日§13后实际完成：81846ed3/450 ECP、固定16个train条件，0更新/0环境，无held标签，
+133.4325秒/.037064589GPUh、exit0；原件`continuation900/analysis/teacher_to_query_450`及`launch/jobs/teacher_query_450_0.result.json`。
+主讨论直接分析16PT：T/U平均完整−共同β为−.017407/−.017309，全部条件有益；U冻结回绑8/8损伤、均值+.010440FM。
+局部一阶预测有反例，路径负内积多数不阻止两路合成的一阶改善；见findings§209/机制§49。
+不据此选点或新增训练/controls，900仍按原合同独立接续。
+
 ## 2026-09-28：T/U270与同scene MT完成，Owner授权有界更长学习
 
 训练784febb、评测窄修83946ae1（main集成3b24f9ea）。原件`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1`。

@@ -1,16 +1,151 @@
 # EMBER progress
 
-## 当前状态：同算子读写首批正式比较已派发并承接（2026-09-28）
+## Owner已授权推进：T/U从270续至900，450/900完整比较（2026-09-28）
+
+Owner与新主讨论完成结果、推进风格和后继规划交流后，明确“这次可以开始推进”，要求Sol提高实际训练/显卡利用效率，
+希望次日早晨获得尽可能好的性能。本条撤销下文历史的先交流暂停；不承诺性能改善，不恢复任何已退役路线。
+唯一active design为`docs/designs/operator_read_write_learning_design.md`§11，§1–5科学模型和信息墙不变。
+
+- Astra/max `01a0e6fd-5478-74f3-916e-9d9beb57da50`独占main/科学判断；新Sol/max `01a0e70e-48bc-7470-a725-c7420f96ee81`
+  独占已释放dev，承接唯一任务`operator_read_write_continuation_900_20260928`。当前合同已写，派发回执随后登记；不能把计划称GPU已启动。
+- 各自旧270完整ECP继续，新增各630更新/70,560 query，总900/100,800；450及900各T/U correct400，1600新行。
+  固定旧scene/video/RNG；复用MT153原行和270原件，不重训/重物化270，不新测MT。无新loss/架构/数据/controls/Test/RL。
+- 新root=`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900`。
+  预期新增22.1GPUh、硬限30；峰值新增56GiB（须现场quota支持）；CPU45–75分钟+GPU5–7小时，整批6–9小时为估计。
+  从本次北京时间17:40左右准备起，争取次日08:00前完整回报；实际现场资源/成本必须如实更新。
+- world2–4、T/U并行及bank/eval重叠按真实吞吐；4任务全局权重/梯度SUM/clip/Adam/LR不变。
+  450是观察节点，正常且预算成立继续900；900后停止新增GPU，不自动接1200或挑峰值。
+- 旧执行者已退休，原批唯一回报消费完成，不联系或派发。新Sol可自主窄修；科学语义、未知故障或预算变化交主讨论。
+
+### 已完成首批结果判断，不再停留在仅继承分数
+
+与Owner交流期间，新主讨论直接读1200 JSON原行、三套contracts/completion、完整训练metrics及配对/完整性消费者，
+复算T116/U128/MT153、breadth5/6/6、R/G/L/churn、逐task与bootstrap区间；scene/video/seed和noise前缀配对成立。
+完整NPZ/PT内容验收继承旧执行者已实施的`verify_official_raw.py`及原件报告，未由新主讨论再扫1200份；
+T/U actual270事件、ECP元数据、bank来源和839窄修/CPU验收直接继承。新主讨论没有运行模型/环境/GPU。
+详见findings§203。原140投入线未过，现为Owner明确授权的追加学习研究，不改写旧预注册结论。
+
+当前认识：绝对能力不足，T绑定优势未成立；两臂共同最大缺口集中task3，但其它任务仍有大量正负交换。
+270只有warmup后120次更新，在线FM继续下降但不是闭环趋势/收敛证据。没有相邻保持或视频必要性证据；
+后继检验更长学习能否形成较强且保留能力的完整policy，机制推导同时继续，不靠一次低分整版换架构。
+
+## 已完成接任与先交流阶段（历史快照，已由上文授权覆盖）
+
+原主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`在1154919f推送后已发布明确转交令，
+新主讨论`01a0e6fd-5478-74f3-916e-9d9beb57da50`已实际读回并接受，接任turn为`01a0e72a-f4eb-7613-9fd3-d8939241a5a4`。
+原主讨论已停止main主写和并行指挥，交接现已生效，不再是候任状态；EMBER最终目标仍未完成。
+
+**Owner随后明确要求先与新主讨论交流，不急开工。** 当前只完成必要交接状态、回报承接和已消费临时页清理；
+不启动后继自主研究、实验、profile，不派新Sol任务，不写新实验合同，也不因成绩到达自动追加。
+此要求覆盖此前持续自主推进节奏，不撤销已生效的身份交接；收尾后直接与Owner交流。
+
+- 科学主讨论：`01a0e6fd-5478-74f3-916e-9d9beb57da50`，创建及四轮实际请求均为`gpt-6-astra`/`max`，
+  现独占main、理论/实验设计、独立科学验收、裁决、集成与Owner沟通；模型设置未改。
+- 唯一后继执行者：`01a0e70e-48bc-7470-a725-c7420f96ee81`，`gpt-6-sol`/`max`，三轮理解/纠偏已验收。
+  旧执行者最终明确释放dev，报告两节点无本批进程/写入、dev在83946ae1 clean，只有已由3b24f9ea集成的窄修，无新增修复commit。
+  新主讨论只读核实`/data1/user/ymdai/projects/EMBER-native-conditional-reader-dev`实际为`codex/demonstration-transfer`、83946ae1且clean；
+  无进程及冻结树状态继承最终报告，未另查现场。依据该交付确认dev独占归新Sol；当前没有新开发/计算任务，不能抢接旧进程或双写main。
+- 旧执行者`01a0dd6c-f2e5-7971-821a-56766e1c0f22`本批已经完成，**不再向其派任何后继或索取第二份回报**。
+
+后继协作中，新Sol可在已授权具体任务内自主处理科学语义不变的接口/记录/调度窄修；科学变更、原因不明或越预算由主讨论裁决。
+当前没有该类新增任务，职责移交本身不授权开工。
+
+### 唯一回报已转交并消费
+
+任务`operator_read_write_official_repair_20260928`，root=`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1`。
+旧执行turn `01a0e6d0-3c2a-7581-a797-e5180497eed2`已completed；唯一完成Queue先达原主讨论，回执`01a0e728-1c41-7550-af63-dff42fde5cc5`。
+原主讨论已消费旧批回报，未完成独立科学验收；因旧轮已结束，没有重开旧session修改路由，而是一次转交本线程。
+新主讨论已接收，迟到同批长回报按task/root/attempt去重，不重跑、不重派、不重复索取或集成。当前没有仍待旧执行者完成的任务。
+
+原主讨论已验收接任主讨论四轮：恢复完整要求/历史/实际图与原件；具体target、二维反例及假设结果裁决；正式消费者/接续计划；
+跨角色接口最终校准。对应turn依次`01a0e6fd-5943-7590-95ae-18e8bc453cc5`、`01a0e70a-67d9-7621-ac18-96ca822c8030`、
+`01a0e71b-a482-7212-9759-76234c9735b3`、`01a0e724-41b5-7cf3-905f-10f888b5e620`。
+Sol三轮为`01a0e710-8c3b-7611-9a17-d5b9195acba4`、`01a0e71c-dcfa-7c12-9218-2f507e73b8b5`、`01a0e724-4163-7df2-b5fb-58845f649620`。
+明确纠正：失败可立即定位，只在恢复同队列前确认其旧worker退出，不等其它独立臂；科学不变的evaluation-only窄修按§10.5
+在原scope/预算内显式兼容旧产物/push新冻结后直接继续，main集成不是重复许可停点。数据/标签/配对/模型/选择变化、原因不明或越预算才交科学裁决。
+NPZ内容、PT内容、路径存在、跨臂scene/video配对与科学资格分开报告；继承已核内容，只补真正缺证，不重复防御性全扫。
+
+### 原批完成报告：继承报告值，尚未全面独立科学验收
+
+本轮仅直接读`completion.json`和`analysis/summary.json`以承接最终状态；未重验1200行、PT/NPZ或开展科学后继。
+此前已核T/U actual270训练事件、ECP元数据、三套bank来源和83946ae1窄修/6项CPU回归直接继承，不重训、重物化或防御性全扫。
+以下是执行者报告值，不因本次交接升级为主讨论独立科学结论：
+
+| 臂 | 完整行数 | 成功数 | breadth |
+| --- | ---: | ---: | ---: |
+| T270 | 400 | 116 | 5 |
+| U270 | 400 | 128 | 6 |
+| 同scene MT | 400 | 153 | 6 |
+
+报告的三组R/G/L/churn分别为T−U 87/29/41/70、T−MT 90/26/63/89、U−MT 95/33/58/91；
+对应task-bootstrap 95%区间（百分点）为[-11,5]、[-26.5,4]、[-18.5,2.75]，本轮未重算。
+历史MT155与当前同scene153分开；per-task/per-suite、success sets与配对口径见`analysis/summary.json`及其引用原件。
+完整验收入口还包括`training_metadata.json`、`raw_integrity.json`、`verify_official_raw.py`、`paired_bootstrap.json`、
+`success_sets.json`、`T_vs_U.json`/`T_vs_MT.json`/`U_vs_MT.json`、`T_orphan_trace_review.json`（均在root/analysis），
+以及三臂`evaluation/correct400/{results,run_contract,launcher_completion}.json`与逐attempt日志/退出账。
+
+训练/物化Git为784febb，evaluation-only Git为83946ae1（已由3b24f9ea集成），无新增修复commit。
+T首轮在某分片首动作前触发RGB scene一致性断言，保留332完成行按原队列恢复exit0；U/MT直接exit0。
+失败原件及12份未被最终行引用的trace/2368保存步保留；这不单独确证故障根因或科学性能。
+报告完整计费11.158278506615122GPUh：train 7.0628704834920875、bank 0.6236525976419862、official 3.471755425481048，
+包括MT初次prepare失败、T失败与续行；报告峰3张物理卡，终值22631660156 bytes，未测连续storage/CUDA高水位。
+原18GPUh/32GiB合同与失败成本保留，最终账已收到但本轮未作完整独立审计。
+
+每卡2 workers是沿用模板的调度决定，并非Owner限制或显存硬上限；当时约45.9GiB可用、3 workers约需38GiB只是内存可行估计，吞吐未测。
+后继应按实时显存、CPU和预期吞吐选择卡数/replicas，不继承固定2 workers；本次只保留教训，不开profile或新任务。
+
+唯一active design仍为`docs/designs/operator_read_write_learning_design.md`§10，效率/窄修/不机械放弃约束为§10.4–10.6。
+270来自36 tasks、每逻辑更新4条件、每task 30次访问，即9更新/完整任务轮×30，不代表特殊优化优势。
+相邻能力保持、视频必要性及完整科学取舍尚未裁决；无450、controls、Test、RL、额外episode或新训练/物化许可。
+先与Owner交流，再按其后续要求处理真正缺证和判断；所有新增产物仍须data1。
+
+### 已消费交接材料退役
+
+两目录`.codex/plans/ember_scientific_handoff_20260928/`与`.codex/plans/ember_execution_handoff_20260928/`的必要回复，
+包括最终校准、新Sol `clarification.md`及明确转交令均已读完；有效状态合入本页和task_plan后，按明确授权删除两目录，未另建平行档案。
+身份和验收轮次保留在本页；数学勘误保存在机制§42.1/42.3/42.7。§42.3二维反例仅为代数特例，不声称真实教学产生该X。
+科研原件、旧冻结树、Git及更早交接目录均保留。
+
+## 交接前历史执行记录：T/U270与bank完成、三臂评测启动及窄修（2026-09-28）
+
+以下身份、执行中状态与授权节奏是交接前快照；当前所有权、完成状态和Owner交流要求以上文为准。
 
 Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-4c71-7c82-8629-8333ef74dfdd，
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
-**唯一active design：`docs/designs/operator_read_write_learning_design.md`§10，资源调度已由§10.4按Owner效率优先要求修订。**
+**唯一active design：`docs/designs/operator_read_write_learning_design.md`§10，修复与续评测范围§10.5，资源调度按§10.4。**
+接口修复83946ae17346d9e27af2a3b84187cfabb8b5412d已由3b24f9ea集成main；2文件+53/−7，model/native/数值不变。
+主讨论审阅实际diff及三套真实bank的完整CPU `_prepared_payload` 证据，独立6项定向CPU回归通过（17.09秒）；未重跑模型/环境/GPU。
+新eval Git83946ae1与旧training Git784febb分别记录；三臂实际run_contract均correct/validation/formal、400固定scene和条件。
+执行者当前三臂原队列并行：T gpu02/3、U gpu02/7、MT gpu01/1，各2workers；这是本次启动事实，不是未来卡数/副本上限。
+Owner已在执行者侧再次强调吞吐，后续必须按现场余量/实测选择卡和replica；本次正常已发布队列不为新空闲卡中断重算。
+主讨论未读取中途success选点；待原批完整退出/1200原行回报统一验收。首次失败及7.746646567GPUh旧账保留，新成本由执行者累计。
+Owner最新要求按§10.6执行：充分结合实际学习与闭环证据判断，不凭270早期分数或T/U单项约束结果直接放弃整个架构。
+当前执行范围与预算不变、没有追加训练许可；原投入/资格线保留为历史预注册依据，进一步投入须有明确理由和有界合同。
+以下CPU修复派发与阻碍为本批历史记录，已由上文续行状态覆盖：
+首批完整阻碍回报已消费。T/U各270/30,240query与90/180/270 ECP、两套400条件bank及MT登记均完成；
+MT首个official prepare因adapter缺`arm`退出1，尚无三臂episode，不能作科学阴性。新评测checkout也会触发旧bank对当前Git/spec路径的误绑定，
+本次在同一来源/接口边界一起修复，旧训练/权重/bank/scene/失败原件不动，不重训或重新物化。
+主讨论已核原MT失败栈、两臂run/completion/270行metrics及bank来源；完整独立验收继续。
+唯一任务`operator_read_write_official_repair_20260928`，Queue `01a0e6d0-3c28-7351-94f5-6252bc0bda7f`，
+新active轮`01a0e6d0-3c2a-7581-a797-e5180497eed2`已明确承接。主讨论独占main/docs，指定执行者独占原dev源码/测试。
+Owner指出接口修复不应再次停等。§10.5已改为修复→三臂CPU入口核验→推送隔离commit→新evaluation-only冻结→直接继续原三臂400，
+主讨论并行审阅集成；CPU阶段GPU0，随后沿原GPU预算，无新训练/物化许可。预计CPU15–25分钟，4–6适用卡时official约1–1.5小时。
+已付7.746646567GPUh，原18总/5.5 official预算保持；§10.4确已执行，bank双臂并行且重叠MT失败尝试，实际峰3卡。
+消息/回执/快照见`.codex/tmp/operator_read_write_engineering_20260928/official_repair_*`。
+Owner修订75cc0af2已推送，取消CPU完成后的停等；同轮Steer接口已接受，回执为`official_repair_autonomy_steer_receipt.json`。
+允许已推送隔离commit的新评测冻结直接续行，主讨论集成不再构成许可停点；实际CPU/GPU完成仍以原件和唯一整批回报为准。
+主讨论完整只读核270×4条件，两臂1080项teacher/query/frame/flow seed逐项相同；36task各30不同teacher、28不同query且排除teacher。
+六个ECP文件/游标元数据及三套400 bank同scene/source/调度成立，旧official输出均不存在；未读优化器张量/held标签或运行模型。
+原件验收见同tmp的`formal_training_bank_main_acceptance.json`；online FM继续下降仍非收敛或闭环能力证据。
+
+### 以下为本批已完成训练与原派发记录
+
 06:32 UTC初始快照U到269；随后原件确认U在06:32:28正常退出，两臂均完成270/30,240query及90/180/270 ECP，退出码均0。
 T/U完整训练成本3.665571/3.397299，合计7.062870GPUh；没有发终止信号或重跑。MT bank已登记，后续bank/official由执行者按实际完成状态推进。
 撤销整批两卡额外上限，按仓库8/6总卡及单节点6卡现场准入，及时重叠MT评测、T/U bank与各臂official；两臂完成训练直接复用。
 科学冻结仍是下列784febb；18 GPUh及32GiB、270/三臂400范围保持。4–6适用卡下剩余规划约1–2小时，具体由首段实测修订。
-调度修订adf7aa34已推送；Steer接口接受目标同轮01a0e5eb-8e90-7142-b4d3-5c469e59ff8c，首次读回尚未显示新消息承接，不能冒称已执行新并行安排。
+调度修订adf7aa34已推送；Steer接口接受目标同轮01a0e5eb-8e90-7142-b4d3-5c469e59ff8c；其后完整阻碍回报已证明并行安排实际应用。
 消息/回执/只读快照位于`.codex/tmp/operator_read_write_engineering_20260928/efficiency_steer_{request.txt,receipt.json,ack_snapshot.json}`；已有接受回执，不重复发送。
 唯一正式任务`operator_read_write_learning_stage1_20260928`；精确formal冻结 **784febbff32d991e53b9e5c6ba9f74683890425e** 已推送main。
 该commit定义本批代码与数值，后续main状态更新不改变它。02:50 UTC唯一Queue `01a0e5eb-8e89-7432-a376-4e4a7589aa87`

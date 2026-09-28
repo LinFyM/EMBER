@@ -4,6 +4,16 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-28：T/U270与同scene MT完成，Owner授权有界更长学习
+
+训练784febb、评测窄修83946ae1（main集成3b24f9ea）。原件`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1`。
+T116/U128/MT153各400，breadth5/6/6；三组R/G/L/churn分别87/29/41/70、90/26/63/89、95/33/58/91。
+新主讨论直接核1200 JSON原行/配对、训练metrics并复算统计，完整PT/NPZ内容继承执行者实际检查，边界详见findings§203。
+T首轮scene断言失败保留332行恢复exit0，U/MT直接exit0；完整11.1582785066GPUh含两次失败，终值约21.1GiB。
+首点未达旧140投入线，不能据此声称绑定优势、视频必要性、能力保持或整体架构不可能。
+身份交接与Owner交流完成后，Owner授权按新设计§11继续T/U至900、450/900完整比较；不改写原资格，不恢复退休实验。
+具体执行/成本状态只看progress；本条不声称续训已经完成或改善性能。
+
 ## 2026-09-28：同算子读写CPU正式转换验收，首批完整比较准入
 
 01242f6c由1d336160集成；model/native及三个数值字典不变，run替换为36task T/U270事件/ECP，新增内聚data/bank owner。

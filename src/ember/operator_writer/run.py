@@ -34,6 +34,7 @@ from ember.writer.runtime import autocast
 from ember.writer.task_execution import condition_assignment
 
 from .data import (CHECKPOINTS, CONTINUATION_CHECKPOINTS, CONTINUATION_UPDATES,
+                   CONTINUATION1350_CHECKPOINTS, CONTINUATION1350_UPDATES,
                    TASKS, UPDATES, FormalData)
 from .model import OperatorReadWrite
 from .native import read_native_video
@@ -42,6 +43,9 @@ from .native import read_native_video
 REPO = Path(__file__).resolve().parents[3]
 SPEC_PATH = REPO / "configs/operator_read_write_v1/learning_spec.json"
 CONTINUATION_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation900_spec.json"
+CONTINUATION1350_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation1350_spec.json"
+CONTINUATION900_ROOT = Path(
+    "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900")
 SEALED_ROOT = Path("/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1")
 SEALED_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-operator-stage1-formal"
                         "/configs/operator_read_write_v1/learning_spec.json")
@@ -87,10 +91,34 @@ CONTINUATION_EXECUTION = {**EXECUTION_CONTRACT, "updates_per_mode": CONTINUATION
                           "only_selected_checkpoints": [450, 900]}
 CONTINUATION_EXECUTION.pop("world_size")
 CONTINUATION_EXECUTION.pop("only_selected_checkpoint")
+CONTINUATION1350_EVENTS = {**CONTINUATION_EVENTS,
+                           "schema_version": "ember_operator_read_write_events_v4",
+                           "teacher_round3_permutation_seed": [20260928, 1, "task", 2]}
+CONTINUATION1350_EXECUTION = {**CONTINUATION_EXECUTION,
+                              "updates_per_mode": CONTINUATION1350_UPDATES,
+                              "queries_per_mode": CONTINUATION1350_UPDATES * 112,
+                              "checkpoints": list(CONTINUATION1350_CHECKPOINTS),
+                              "only_selected_checkpoints": [1080, 1350]}
 
 
 def specification(path: Path = SPEC_PATH) -> dict:
     path = path.resolve()
+    if path == CONTINUATION1350_SPEC_PATH:
+        spec, base = read_json(path), specification(CONTINUATION_SPEC_PATH)
+        expected = {**base, "design": "docs/designs/operator_read_write_learning_design.md#15",
+                    "run_root": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation1350",
+                    "events": CONTINUATION1350_EVENTS, "execution": CONTINUATION1350_EXECUTION,
+                    "evaluation": {**base["evaluation"], "bank_macros": [1080, 1350]},
+                    "continuation": {
+                        "parent_run_root": str(CONTINUATION900_ROOT), "parent_macro": 900,
+                        "parent_training_git": "81846ed35933222b14ac693a0b760268ecff7f17",
+                        "parent_event_schema": CONTINUATION_EVENTS["schema_version"],
+                        "sampler_migration": "append_teacher_round_2_v3_to_v4_at_900"},
+                    "budget": {"new_gpu_hours_expected": 17.2, "new_gpu_hours_hard": 24,
+                               "peak_new_gib": 52}}
+        if spec != expected:
+            raise ValueError("operator 1350 continuation contract changed")
+        return spec
     if path == CONTINUATION_SPEC_PATH:
         spec, base = read_json(path), specification()
         expected = {**base, "design": "docs/designs/operator_read_write_learning_design.md#11",
@@ -173,7 +201,8 @@ def complete_checkpoint(path: Path) -> bool:
     macro = manifest.get("next_macro")
     world = manifest.get("world_size")
     allowed = ((macro in CHECKPOINTS and world == 2)
-               or (macro in CONTINUATION_CHECKPOINTS and world in (2, 3, 4)))
+               or (macro in (*CONTINUATION_CHECKPOINTS, *CONTINUATION1350_CHECKPOINTS)
+                   and world in (2, 3, 4)))
     expected_files = ({"ecp.safetensors", "trainer_state.pt"}
                       | {f"rank_{rank:02d}_state.pt" for rank in range(world)}) if allowed else set()
     return (manifest.get("stage") == STAGE and manifest.get("run_contract_schema") == SCHEMA
@@ -184,6 +213,9 @@ def complete_checkpoint(path: Path) -> bool:
 
 def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     root = Path(spec["run_root"])
+    if spec.get("events", {}).get("schema_version") == CONTINUATION1350_EVENTS["schema_version"]:
+        _validate_continuation1350_attempt(spec, args, contract, output)
+        return
     if spec.get("execution", {}).get("updates_per_mode") == CONTINUATION_UPDATES:
         _validate_continuation_attempt(spec, args, contract, output)
         return
@@ -248,6 +280,49 @@ def _validate_continuation_attempt(spec: dict, args, contract: dict, output: Pat
                 old.get("frame_chunk"), contract.get("frame_chunk")) not in {
                 (8, 8), (8, 4), (4, 4)}:
             raise ValueError("continuation packing changed outside registered OOM transitions")
+
+
+def _validate_continuation1350_attempt(spec: dict, args, contract: dict, output: Path) -> None:
+    if args.resume is None:
+        raise ValueError("1350 continuation requires a complete same-arm ECP")
+    checkpoint = args.resume.resolve()
+    macro = int(checkpoint.name.removeprefix("macro_")) if re.fullmatch(r"macro_[0-9]{8}", checkpoint.name) else -1
+    if macro not in (900, *CONTINUATION1350_CHECKPOINTS[:-1]) or not complete_checkpoint(checkpoint):
+        raise ValueError("1350 continuation requires a registered complete ECP900..1332")
+    parent = checkpoint.parent.parent
+    if output.resolve() == parent or (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists():
+        raise ValueError("continuation attempt output already exists")
+    attempts = Path(spec["run_root"]) / args.mode / "train/attempts"
+    latest = max((int(path.name.split("_")[-1]) for path in attempts.glob(
+        "*/checkpoints/macro_*") if complete_checkpoint(path)), default=-1)
+    if (macro == 900 and latest != -1) or (macro != 900 and macro != latest):
+        raise ValueError("resume requires the latest complete same-arm 1350 ECP")
+    if macro == 900:
+        expected = CONTINUATION900_ROOT / args.mode / "train/attempts/continuation/checkpoints/macro_00000900"
+        if checkpoint != expected:
+            raise ValueError("1350 parent is not the original same-arm 900 ECP")
+        from .bank import inspect_training_source
+
+        old = inspect_training_source(specification(CONTINUATION_SPEC_PATH), checkpoint, args.mode,
+                                      sealed_evaluation=True)
+        fixed = ("schema_version", "stage", "mode", "source", "lora", "operator", "optimizer",
+                 "trainable_names", "source_trainable", "information_wall")
+        if any(old.get(key) != contract.get(key) for key in fixed):
+            raise ValueError("sealed 900 scientific source or optimizer changed")
+    else:
+        if parent.parent.resolve() != attempts.resolve():
+            raise ValueError("1350 ECP is outside this arm's registered attempts")
+        old = read_json(parent / "run_contract.json")
+        fixed = ("schema_version", "stage", "git", "spec", "mode", "source", "lora", "operator",
+                 "events", "optimizer", "sampler", "trainable_names", "source_trainable",
+                 "information_wall", "continuation")
+        if any(old.get(key) != contract.get(key) for key in fixed):
+            raise ValueError("1350 continuation scientific source or frozen Git changed")
+        if (old.get("microbatch"), contract.get("microbatch")) not in {
+                (28, 28), (28, 14), (28, 7), (14, 14), (14, 7), (7, 7)} or (
+                old.get("frame_chunk"), contract.get("frame_chunk")) not in {
+                (8, 8), (8, 4), (4, 4)}:
+            raise ValueError("1350 packing changed outside registered OOM transitions")
 
 
 @dataclass
@@ -400,7 +475,8 @@ class Session:
 
 
 def prepare_train(spec: dict, args) -> Session:
-    continuation = spec["execution"]["updates_per_mode"] == CONTINUATION_UPDATES
+    continuation = spec["execution"]["updates_per_mode"] in (CONTINUATION_UPDATES,
+                                                                CONTINUATION1350_UPDATES)
     git = frozen_git(continuation=continuation)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     allowed_worlds = spec["execution"].get("world_sizes", [spec["execution"].get("world_size")])
@@ -424,7 +500,8 @@ def prepare_train(spec: dict, args) -> Session:
                 "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
                 "ranks": gather(local, context.world_size)}
     contract = {"schema_version": SCHEMA, "stage": STAGE, "git": git,
-                "spec": str(CONTINUATION_SPEC_PATH if continuation else SPEC_PATH),
+                "spec": str(CONTINUATION1350_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION1350_UPDATES
+                            else CONTINUATION_SPEC_PATH if continuation else SPEC_PATH),
                 "mode": args.mode, "source": runtime.source,
                 "lora": runtime.lora.to_dict(), "operator": spec["operator"],
                 "events": spec["events"], "optimizer": spec["optimization"],
@@ -436,6 +513,8 @@ def prepare_train(spec: dict, args) -> Session:
     if continuation:
         contract["continuation"] = spec["continuation"]
         contract["parent_checkpoint"] = str(args.resume.resolve())
+        if spec["execution"]["updates_per_mode"] == CONTINUATION1350_UPDATES:
+            contract["stop_after_macro"] = args.stop_after_macro
     error = None
     try:
         if context.is_main:
@@ -453,15 +532,19 @@ def prepare_train(spec: dict, args) -> Session:
 def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
     restored, result, error = {}, None, None
     try:
-        continuation = session.spec["execution"]["updates_per_mode"] == CONTINUATION_UPDATES
+        updates_target = session.spec["execution"]["updates_per_mode"]
+        continuation = updates_target in (CONTINUATION_UPDATES, CONTINUATION1350_UPDATES)
         updates, rows = load_ecp_checkpoint(
             checkpoint=checkpoint, stage=STAGE, context=session.context,
             model=session.runtime.writer, optimizer=session.optimizer,
             scheduler=session.scheduler, run_contract_schema=SCHEMA,
             restored_state=restored, allow_world_size_change=continuation)
         migration = session.data.restore(restored["sampler_state"],
-                                         migrate_sealed_270=continuation and updates == 270)
-        valid_checkpoints = ((270, *CONTINUATION_CHECKPOINTS) if continuation else CHECKPOINTS)
+                                         migrate_sealed_270=updates_target == CONTINUATION_UPDATES and updates == 270,
+                                         migrate_continuation_900=updates_target == CONTINUATION1350_UPDATES and updates == 900)
+        valid_checkpoints = ((900, *CONTINUATION1350_CHECKPOINTS)
+                             if updates_target == CONTINUATION1350_UPDATES else
+                             (270, *CONTINUATION_CHECKPOINTS) if continuation else CHECKPOINTS)
         if (updates not in valid_checkpoints or rows != updates or session.scheduler.last_epoch != updates
                 or restored["training_state"] != {"updates": updates, "mode": session.mode}):
             raise ValueError("formal ECP optimizer/scheduler/sampler cursor changed")
@@ -544,14 +627,15 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
 
 
 def train(spec: dict, args) -> None:
-    continuation = spec["execution"]["updates_per_mode"] == CONTINUATION_UPDATES
-    if not continuation:
-        raise ValueError("new formal operator training requires the continuation900 spec")
+    if spec["execution"]["updates_per_mode"] != CONTINUATION1350_UPDATES:
+        raise ValueError("new formal operator training requires the continuation1350 spec")
     if (args.mode not in ("T", "U") or not args.attempt
             or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
             or args.resume is None or args.attempt == "fresh"
             or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)):
         raise ValueError("operator train requires registered T/U attempt and ECP policy")
+    if args.stop_after_macro is not None and args.stop_after_macro not in CONTINUATION1350_CHECKPOINTS[:-1]:
+        raise ValueError("controlled stop must be a complete intermediate 1350 ECP boundary")
     session = prepare_train(spec, args)
     try:
         updates, rows = restore(session, args.resume) if args.resume else (0, 0)
@@ -560,8 +644,26 @@ def train(spec: dict, args) -> None:
         target = session.data.updates
         if updates >= target:
             raise ValueError("completed operator checkpoint cannot start a new training attempt")
+        if args.stop_after_macro is not None and args.stop_after_macro <= updates:
+            raise ValueError("controlled stop is not after the resumed ECP")
         while updates < target:
             updates, rows = update(session, updates, rows)
+            stop_at_ecp = False
+            if updates in CONTINUATION1350_CHECKPOINTS[:-1]:
+                requested = ((session.output / "stop_at_next_ecp.request").exists()
+                             if session.context.is_main else False)
+                stop_at_ecp = any(gather(requested or updates == args.stop_after_macro,
+                                         session.context.world_size))
+            if stop_at_ecp:
+                if session.context.is_main:
+                    write_json_atomic(session.output / "stopped_at_ecp.json", {
+                        "schema_version": SCHEMA, "mode": session.mode, "updates": updates,
+                        "metrics_rows": rows, "checkpoint": str(session.output / "checkpoints"
+                                                               / f"macro_{updates:08d}"),
+                        "reason": ("registered stop-after-macro" if updates == args.stop_after_macro
+                                   else "stop_at_next_ecp.request"),
+                        "next_resume_from_this_ecp": True})
+                return
         if session.context.is_main:
             write_json_atomic(session.output / "completion.json", {
                 "schema_version": SCHEMA, "mode": session.mode, "updates": updates,
@@ -597,12 +699,14 @@ def audit(spec: dict, asset_root: Path) -> dict:
                 visits[row["task"]].append(row["teacher_demo"])
                 query_total += 28
         count = data.updates // 9
-        expected = {task: list(np.random.default_rng(np.random.SeedSequence(
-            [20260928, 1, task])).permutation(50)[:min(count, 50)]) for task in TASKS}
-        if count > 50:
-            for task in TASKS:
-                expected[task] += list(np.random.default_rng(np.random.SeedSequence(
-                    [20260928, 1, task, 1])).permutation(50)[:count - 50])
+        expected = {task: [] for task in TASKS}
+        for task in TASKS:
+            for round_index in range((count + 49) // 50):
+                seed = ([20260928, 1, task] if round_index == 0 else
+                        [20260928, 1, task, round_index])
+                length = min(50, count - 50 * round_index)
+                expected[task] += list(np.random.default_rng(
+                    np.random.SeedSequence(seed)).permutation(50)[:length])
         if visits != expected or query_total != data.updates * 112:
             raise ValueError("36-task teacher rounds or cross-episode queries changed")
         return {"schema_version": spec["events"]["schema_version"],
@@ -624,7 +728,8 @@ def main() -> None:
     parser.add_argument("--microbatch", type=int, default=28)
     parser.add_argument("--frame-chunk", type=int, default=8)
     parser.add_argument("--cpu-threads", type=int, default=6)
-    parser.add_argument("--spec", type=Path, default=CONTINUATION_SPEC_PATH)
+    parser.add_argument("--stop-after-macro", type=int)
+    parser.add_argument("--spec", type=Path, default=CONTINUATION1350_SPEC_PATH)
     args = parser.parse_args()
     spec = specification(args.spec)
     if args.phase == "audit":

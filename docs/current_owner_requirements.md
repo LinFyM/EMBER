@@ -162,7 +162,9 @@ GPU-hour预算不等于wall-clock预计耗时；显著超出预期时说明原�
 
 按真实更新/秒、LoRA/秒、评测吞吐与最长视频峰值选择物理batch/设备；低占用卡按余量和干扰实测共驻。
 不等凑卡或dummy占卡，不改任务权重、逻辑查询流与评测规模；接受正常BF16/TF32和高效kernel低位差异。
-MT-BC在完整更新节点按已登记合同变更物理分片，可保留逻辑流及optimizer/scheduler，不称逐rank RNG/浮点轨迹bitwise exact。
+Writer和MT-BC均以效率为先，物理rank数/设备/分片不构成永久限制；在完整checkpoint边界正确迁移，保持逻辑查询、任务/loss权重、有效batch和optimizer/scheduler，记录拓扑与RNG承接，不称逐rank RNG/浮点轨迹bitwise exact。
+已完成结果直接复用，接近完成的训练不为扩卡而中断或重跑；可独立进行的物化/评测应在资源与预算允许时及时并行。
+渐进实验约束科学范围和总投入，不自动限制并发卡数；无具体依据不得另加低于仓库规则的整批硬上限。
 实时GPU、独立quota、完整恢复、clean pushed frozen runtime和Git交付按AGENTS；科学non-pass不自动变成工程bug。
 保持一个canonical运行面，退役专用实现由Git保存、正式原件与复现commit保留；把旧代码移入archive不算清理。
 历史checkpoint不因“唯一存在”或“formal”标签而永久保留。已结束路线按关键结论复现、比较参照、当前依赖和明确恢复用途择点保留；

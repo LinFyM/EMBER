@@ -103,7 +103,8 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
   标签不得进入视频表示／Compiler的条件输入，teacher视频仍action-hidden，部署不得做逐轨迹适配。
 - 多卡可按K、帧数和历史cost平衡负载，但不得改变task权重。
 - formal checkpoint保存Writer、optimizer、scheduler/scaler、sampler/cursor、rank RNG、world topology和schema。
-- incompatible架构必须fresh；同拓扑exact-resume锁原world size/topology。Owner授权的MT-BC完整更新节点可显式切换物理卡数与分片；逻辑查询流、optimizer、scheduler、checkpoint选择合同保持，逐rank RNG与浮点轨迹不称bitwise exact。
+- incompatible架构必须fresh。同拓扑exact-resume保留原world size/topology；Writer和MT-BC均可在完整checkpoint边界显式迁移物理卡数、设备与分片，保持逻辑查询流、任务/loss权重、有效batch、optimizer/scheduler及选择合同，记录新旧拓扑与RNG恢复/新增来源，不称bitwise exact。
+- 物理rank数是吞吐安排，不是科学超参数或永久上限。不得因一次smoke或旧恢复实现锁死卡数；迁移须由实际实现正确承接，不能直接绕过校验。已近完成的训练不为形式上的扩卡而中断、丢弃未保存更新或重复计算。
 - Writer（含内部读取模块Meta）采用fresh初始化、fresh optimizer/scheduler，以真实FM直接端到端共同训练，source基础权重始终冻结。active design可登记训练期辅助功能读出与显式分组蒸馏；辅助动作query不得进入部署Writer，蒸馏不得替代真实LoRA FM。
   监督不计算RL、不采集RL更新rollout、不做trust回滚；真实平台后从单个监督checkpoint接独立共享RL，使用fresh RL optimizer/scheduler，默认不混FM。
   G1--G3分段冻结属于历史机制验证，不构成当前训练课程，也不要求额外建立阶段初始化候选。
@@ -146,6 +147,7 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - 不新增SHA-256、MD5或大量防御性校验。只保留信息墙、shape、finite、OOM、asset、pairing、checkpoint和resume
   正确性所需检查。
 - profile以真实LoRA/s、samples/s、最长视频稳定性、GPU利用率和显存峰值选择batch，不以最低显存为目标。
+- 效率优先：在上述资源上限和实际预算内按吞吐选择训练rank数，及时并行独立训练、物化与评测，不让已就绪工作等待无关阶段。额外收紧整批并发上限须有具体资源/吞吐依据，不能由单个训练world size或渐进实验要求直接推出。
 - 正式长任务正常运行期间，等待进程退出事件或完成标记；不要按固定间隔反复读取训练进度、日志、checkpoint或缓存。
   使用一次持续的退出事件等待；不要把等待拆成每隔几十秒的空查询，也不要在没有变化时反复发送“仍在等待”的状态消息。
   进程结束后再统一核验退出码、完成记录和产物。仅在出现故障迹象、需要即时资源调度或Owner明确要求状态时，

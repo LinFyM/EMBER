@@ -4,6 +4,15 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-28：同算子读写CPU正式转换验收，首批完整比较准入
+
+01242f6c由1d336160集成；model/native及三个数值字典不变，run替换为36task T/U270事件/ECP，新增内聚data/bank owner。
+主讨论独立operator8/8及旧sealed4/4通过；实际event270/30,240query、held不构造query、MT来源/原因子精度/normalization已核。
+旧normalization临时路径已消失，原训练3ebb979b/原评测bee2d5e8 Git的5759-byte JSON与当前相同，未改旧authority。
+src净+592、run649→516；guard四个集中分派增长hard由主讨论按窄内聚例外接受，详见设计§9，不称全部无hard。
+设计§10准入唯一首批T/U各270、各400及固定MT同scene400一次；预计6–8小时/12–15GPUh，硬限18/峰2卡/root32GiB。
+只据预注册§8.1判后继，不自动接450/controls/Test/RL。实际精确冻结与派发看progress；此条不是正式性能结果。
+
 ## 2026-09-28：同算子读写工程独立验收并进入CPU正式转换
 
 9766cb8b由fc86031b集成。T/U各fresh4与T2→4，10更新/1120query；五ECP、恢复前缀/事件/LR、native/参数梯度及唯一train病例已核。

@@ -1,35 +1,32 @@
 # EMBER progress
 
-## 当前状态：同算子读写工程验收，完整T/U比较CPU转换已承接（2026-09-28）
+## 当前状态：同算子读写首批正式比较已准入，待本轮精确冻结/派发（2026-09-28）
 
 Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-4c71-7c82-8629-8333ef74dfdd，
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
-**唯一active design：`docs/designs/operator_read_write_learning_design.md`§8.4，仅CPU转换。**
-任务`operator_read_write_formal_transition_20260928`已派发，准确已推送main基线
-**1b435c53e8052f9c449e4e0395e7daaef9c2ca4a**。唯一Queue `01a0e5b4-c61d-7b71-a2d6-f2713b1ff17c`，
-一次app-server即时快照核实本消息进入新active轮`01a0e5b4-c620-7eb1-8a29-de87c04b1fcd`；只证明任务已承接，不称代码或GPU已完成。
-请求/回执/快照在`.codex/tmp/operator_read_write_engineering_20260928/formal_transition_*`；完成或实质阻碍一次回报。
-旧完成消息不再挂作后台任务，本次没有自Queue。
-预计60–90分钟、120分钟实质阻碍回报线；GPU0，不建formal root/冻结树，不运行policy或环境，不追加工程smoke。
-将单一运行面转换为36task正式270事件/ECP和T/U/固定MT同scene官方接入；model/native数值不改，工程CLI退役。
-正式GPU尚未授权；后续精确冻结、launch/预算另记。主讨论承担科学裁决/main集成。
+**唯一active design：`docs/designs/operator_read_write_learning_design.md`§10。**
+唯一正式任务`operator_read_write_learning_stage1_20260928`，已完成科学准入；精确40位冻结、Queue与实际承接在本段随后登记。
+当前这段计划不表示GPU已启动。执行者须从指定clean pushed detached稀疏树、按现场quota/双节点/UUID/NUMA准入后执行。
+root=`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1`，18GPUh硬限（train11/bank1.5/official5.5）、峰2卡、32GiB。
+预期完整12–15GPUh/6–8小时wall，全部失败/加载/保存/恢复计入；整批完成/实质阻碍一次Queue，不分阶段重复通知。
 
-工程完成Queue已消费，旧Queue `01a0e570-37f2-75a0-9030-ce674d268710`不再表示后台任务。
-实现9766cb8b由fc86031b合入main；独立CPU3/3和原件读回通过，guard REVIEW无hard。
-T/U fresh4、T2→4合计10更新/1120query；五ECP及连续前缀、事件/LR、rank RNG成立。
-首步O/B0、第二步起A/P/C/D/native X/H及U的S活动，source physical trainable0；未由aggregate梯度认定语义或路径贡献比例。
-最长517→105帧28query/0update31.065秒，峰reserved32.54GiB；唯一train38/init0为520步失败，只作接口证据。
-两次失败只修记录器且零更新；完整七尝试0.3334568577GPUh、峰2卡、root2.30GiB。
-原件`/data1/user/ymdai/ember_runs/operator_read_write_engineering_20260928`；
-主讨论验收/成本脚本与JSON在`.codex/tmp/operator_read_write_engineering_20260928/`，无新policy/环境/GPU。
+范围：T/U各fresh270/30,240 query，ECP90/180/270，只物化270各400条件；旧强MT step300原权重只读登记，
+三臂各validation/formal/correct400，共用封存400 scene，8full+392compact/臂；不新建scene、不恢复P/I模型。
+训练前先核固定MT引用与共同scene准入；MT无视频输入，新同scene分数与历史155分开。模型/native/普通FM/优化数值不改。
+达到§8.1接近强参照/breadth线后才能另准入唯一450；当下不授权450、controls、Test、RL、数据扩建或额外episode。
 
-已在§8事前冻结完整判断：T/U各fresh270/30,240 query、各correct400；既有强MT step300权重新增同scene400一次，
-不重训MT、不把旧155行冒称同scene。公共场景复用旧P/I400 scene且不改原件，T/U每task50视频无放回。
-只把接近强参照（max[历史155,本批MT]−15）且breadth≥6的首点送唯一预留450；届时须另登执行。
-450须超过强参照、相邻净降≤8、保留≥80%旧成功、breadth不降且≥6，才进入后续视频因果资格；不摘270峰值或补门控/rank等。
-预测首批12–15完整GPUh/6–8小时wall，拟硬限18/峰2卡、formal root32GiB；只是冻结规划，当前GPU许可仍0。
-完整36task metadata首270帧均值32.86、max105，训练T/U外推3.62/3.35GPUh；不能将其冒称完整分布实测。
+CPU任务完成回报已消费，旧Queue `01a0e5b4-c61d-7b71-a2d6-f2713b1ff17c`不再表示后台运行。
+实现01242f6c由1d336160合入main；model/native零改动，source/operator/optimization三个完整字典与9766一致。
+主讨论独立8项operator CPU与4项封存bank/scene回归全部通过；事件完整36task各30teacher/30,240query，官方task顺序/捕获名单成立。
+旧MT normalizer临时路径已删除，原训练3ebb979b及评测bee2d5e8 Git中的JSON与当前完全相同，未重建旧runtime或改authority。
+结构src净+592；guard有4个集中分派增长hard信号，主讨论接受记录在设计§9的窄内聚例外，不误报全部无hard，不另建evaluator。
+验收/guard原件位于`.codex/tmp/operator_read_write_engineering_20260928/formal_transition_main_*`。
+本轮CPU核验无policy前反传/环境/GPU，正式性能未知；主讨论负责随后原件验收/科学裁决/main。
+
+前批工程独立验收保留：9766cb8b，10更新/1120query/五完整ECP，完整0.3334568577GPUh、峰2卡，105帧28query31.065秒。
+它仅证明原图和资源，唯一520步失败不构成方法阴性。原件root=`/data1/user/ymdai/ember_runs/operator_read_write_engineering_20260928`。
+下一判断以完整T/U与强MT闭环为准，不以非零梯度或局部loss晋级；没有已证实的语义理解、视频必要性或能力保持。
 
 ### 以下同场景比较已完成，不再表示后台工作
 

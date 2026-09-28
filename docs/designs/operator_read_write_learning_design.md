@@ -1,7 +1,7 @@
 # 同一实际LoRA算子的教学写入与执行读取
 
 2026-09-28。候选，未验证；科学论证见机制分析§42。只有progress登记的阶段有执行许可。
-本文件§1–5定义完整方法，§6工程已完成、§7为独立验收；当前§8仅授权CPU正式运行面转换，**不授权正式学习或held评测**。
+本文件§1–5定义完整方法，§6–9工程/CPU转换已完成；当前§10准入T/U270和固定MT同scene正式比较，精确冻结与派发以progress为准。
 它替换旧Core/Procedure/FactorHeads生成图，不在已关闭P/I、条件速度或LocalField上追加补丁。
 
 ## 1. 为什么投入，以及不凭什么投入
@@ -199,11 +199,11 @@ run root约2.30GiB，data1 quota终值525.6GiB/1TiB、共享83TiB，按执行时
 主讨论CPU读回：`.codex/tmp/operator_read_write_engineering_20260928/main_acceptance.py`及同名JSON。
 尚无正式训练或held性能；本验收没有运行policy/环境/GPU或重跑工程。
 
-## 8. 完整比较的预注册与当前CPU转换合同
+## 8. 完整比较的预注册与已完成CPU转换合同
 
 ### 8.1 科学干预、节点和投入裁决
 
-本节固定首批的完整比较；**当前仅授权CPU转换，不授权GPU或新formal root**。CPU实现独立验收后，主讨论再登记
+本节固定首批的完整比较；登记当时仅授权CPU转换。该阶段现已由§9验收，正式执行以§10和progress为准。主讨论登记
 精确main冻结commit及整批GPU合同；不要求再做一轮smoke/接口病例。§2模型、§3普通FM和优化数值全部不变，
 T/U唯一区别仍是教学key共享A或独立S；两臂fresh，工程权重只作历史原件。
 
@@ -285,7 +285,7 @@ MT来源须核旧run/step300/source/目标shape/normalization及任务数据边�
 formal实际launch前由执行者重新核strg01 data1独立quota、共享容量及现场双节点/GPU/UUID/NUMA，不能把§7终值当live准入。
 450若达到投入线，额外训练仅已有外推T/U2.41/2.22 GPUh，届时按首批实测重新预算；本节不预支执行权。
 
-### 8.4 当前唯一可执行任务：CPU正式运行面转换
+### 8.4 CPU正式运行面转换合同（已完成）
 
 任务`operator_read_write_formal_transition_20260928`；唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22。
 基于派发时已推送main，在原独占dev/codex分支完成；主讨论独占main/docs。
@@ -306,3 +306,103 @@ held不构造query、MT来源和scene登记；复用工程通过的模型测试�
 按code-architecture-gate自审本次净增长、owners和生命周期；预计保留源码净增加≤500行，超过需解释实际职责，不机械拆碎。
 提交并推送隔离分支，完成或实质阻碍只给主讨论一条Queue；附精确commit、差异、CPU证据、预算边界及后继命令模板。
 这条完成消息触发主讨论审阅/集成和精确GPU合同；不要自启270/450、bank、held episode或另一次smoke。
+
+
+## 9. CPU转换独立验收（2026-09-28）
+
+01242f6c5a4cf5c95fd1edca7cc3853f4b98c0a9已独立审阅并集成。model/native零改动，source/operator/optimization三个完整字典
+与9766工程逐项相同；旧engineering_spec及四步/profile/case活动入口删除，没有第二trainer或GPU重验。
+完整事件270宏步/1080条件/30,240 query/臂、36task各30个不同teacher，实际teacher来自0–49的固定排列。
+`teacher_pool`元数据中的0–29表示访问序号，不能解释成只用原demo0–29；实际event和审计保存真实demo。
+恢复只接本臂latest完整90/180/270及固定Git/source/数值/world2 UUID/NUMA，完整前缀与ECP owner承接；零剩余节点可正确发布。
+
+主讨论独立新/原operator CPU 8/8（14.16秒）、封存P/I bank/scene回归4/4（11.28秒），diff检查通过。
+400 scene/teacher调度的metadata与官方实际任务顺序一致；held实例不创建query dataset。
+旧MT step300源路径、source1000、36train/offset1、76因子shape及原BF16/F32分布成立。
+旧临时normalization路径已不存在；主讨论按原训练3ebb979b与原评测bee2d5e8的Git快照读回JSON，与当前5759-byte文件完全相同，
+没有重建旧runtime、改旧authority或读取held动作。旧source-base-config SHA的历史差异仍明示保留，不称文件身份完全相同。
+
+实际src净+592（预算参考500以上92），来源为data事件96行、bank553行、run649→516及共享路由增量。
+guard原始结果为4个hard信号，**不是全部无hard**：episode adapter复杂度32、passive capture分派31、preparation800→807、
+_prepared_payload120→123。主讨论接受这四个窄增量的内聚例外：它们为已有集中分派接入当前bank/scene，拆出另一evaluator反而形成平行owner；
+新data/bank无hard，run缩小。关闭候选时移除训练/物化私有路径，只按实际消费者保留sealed读取；不把例外扩成通用框架。
+
+验收/guard原件：`.codex/tmp/operator_read_write_engineering_20260928/formal_transition_main_acceptance.*`与
+`formal_transition_main_guard.json`。主讨论未执行policy forward/backward、环境/GPU、400物化或formal root创建。
+CPU完成回报已消费；后继科学假设、唯一因果干预和§8.1停止线均不变。
+
+## 10. 首批正式执行合同
+
+任务`operator_read_write_learning_stage1_20260928`，唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22。
+本节是Owner持续授权下主讨论作出的整批执行裁决，**允许在下列固定范围内完成GPU工作**；不需要再次等待许可。
+主讨论先提交并推送本合同与机器预算，在progress和派发消息写精确40位commit；执行者只从该commit的clean pushed detached
+稀疏冻结树运行，建议路径`/data1/user/ymdai/projects/EMBER-operator-stage1-formal`，不改旧树/main/原件。
+后续main文档推进不改变这批冻结身份，origin/main只须包含该commit。CPU开发树不作计算源。
+
+### 10.1 完整范围与准入
+
+- T、U分别fresh270，各30,240真实FM query，90/180/270完整ECP；模型、普通跨episode FM、任务/视频/query随机流与优化数值按§2/3/8。
+  不读工程权重或MT作初值；两臂按顺序world2训练，不并行开四卡。只在最终270物化/评测，不看90/180选点。
+- T/U各一个400条件bank，从本臂完成的270生成。MT只在本批CPU登记旧step300原权重引用；在训练前先完成其只读来源/scene核验，
+  提前暴露接口阻碍，但不提前用MT结果改变训练合同。不得重算normalization、teacher调度或重新冻结scene。
+- 三臂T/U/MT各一次validation/formal/correct400，共1200行，共用已封存的400 scene、同env/policy RNG；
+  T/U共用K1 seed7每task50视频无放回。每臂8full+392compact，官方10flow/执行前5/重规划/dummy10/horizon均不变。
+  MT的行保留相同调度索引以配对，但其policy不读教学视频；不得把这个索引记为MT视频条件。
+- 完成统一机械验收和§8.1规定的配对统计后停止新增计算，一次完整Queue回主讨论；不自动进入450、其它video controls、Test、RL、新数据或额外episode。
+
+创建新root或任何实质输出前，执行者在strg01核data1独立user quota、共享容量，测旧study/代码占用并按新增32GiB峰值估算。
+新root唯一`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1`；旧MT data0与旧scene/data1均只读。
+新冻结≤32MiB、开发及相关代码合计≤3GiB；复用source/dataset/tokenizer/资产，不复制模型或形成第二数据缓存。
+现存规范缓存继续复用，新增缓存/临时产物全部data1且计入32GiB；冻结前按实际稀疏checkout内容核代码上限。
+
+每次GPU launch/resume先同时live核gpu01/gpu02，占卡总量包含训练/物化/评测，**本批峰值两张物理A40**。
+训练必须同一节点world2，按现场UUID/NUMA选择并保存两rank绑定；不从历史3/7推断可用，不等待凑卡或干扰其他用户。
+`NCCL_P2P_DISABLE=1`、deferred NCCL及GPU-local NUMA保持；物化可两臂各一单卡并行；官方每卡2 persistent replicas，long-first动态队列。
+实际设备、拓扑、命令、工作目录、完整环境及来源由执行者在首次计算前写一份launch_contract；不得填占位GPU冒称已冻结。
+
+**预期12–15完整GPUh、6–8小时wall；硬限18GPUh，train11/bank1.5/official5.5，含全部加载/保存/失败/重算/等待。**
+依据仍为§8.3实测外推，不是已完成耗时。超过8小时若仍正常但预计无法在总/分阶段硬限完成，作有意义阻碍回报；
+硬限前必须停止新增进程并保留能安全保存的状态，不以删评测行、改任务权重、额外调参或追加卡数凑结果。
+资源与成本累计由launcher/退出事件计算；主讨论不做固定间隔查询，执行者复用持续退出等待，不分阶段反复Queue。
+
+### 10.2 精确入口、恢复与失败处理
+
+实际命令必须以冻结树为cwd及PYTHONPATH，ASSET固定`/data1/user/ymdai/projects/EMBER`；
+`EMBER_STORAGE_ROOT=/data1/user/ymdai`、`EMBER_LIBERO_ASSETS_ROOT`沿已验收0b3ea86be5fe169d0fd036ae63d1070ec09e90f6资产、`MUJOCO_GL=egl`。
+使用ASSET/.venv/bin/python，不下载/更换依赖。命令模板由§9对应实现给出，以下是完整语义，不是现场launch记录：
+
+```
+python -m ember.operator_writer.bank register-mt --asset-root ASSET
+python -m torch.distributed.run --standalone --nproc_per_node=2 -m ember.operator_writer.run train --asset-root ASSET --mode T --attempt fresh
+python -m torch.distributed.run --standalone --nproc_per_node=2 -m ember.operator_writer.run train --asset-root ASSET --mode U --attempt fresh
+python -m ember.operator_writer.bank materialize --asset-root ASSET --mode T --checkpoint T_COMPLETED_MACRO270 --device cuda:0
+python -m ember.operator_writer.bank materialize --asset-root ASSET --mode U --checkpoint U_COMPLETED_MACRO270 --device cuda:0
+```
+
+world2启动须实际传CUDA_VISIBLE_DEVICES和已有rank-local NUMA绑定机制；源路径/资产变量展开后原文保存。
+官方入口为冻结树`scripts/evaluate_pi05.py run`：coverage_v1/evaluation.json、source aligned step1000、既有tokenizer；
+`--role validation --mode formal --state-count 50 --replicas-per-gpu 2`，三臂分别传本root的bank manifest、
+冻结`configs/operator_read_write_v1/official_capture.json`及`<T|U|MT>/evaluation/correct400`；设备列表现场核定。
+
+训练恢复只接同臂latest完整90/180/270的ECP，给新attempt名，复制至该checkpoint为止的metrics原文前缀，不覆盖父日志或重置Adam/LR/RNG。
+初始micro28/frame8；仅有OOM证据才按§8.2缩packing，并保持逻辑FM随机流。非OOM故障不得顺便调整数值。
+若首个90前故障且无完整ECP，只能在原seed/原事件/原冻结代码下重启fresh；保留失败attempt、明确其中已应用和未应用query、
+计入全部成本，不能将其记作exact-resume或只报最终270的计算账。有完整ECP时禁止fresh重来。
+若需保留失败fresh路径才能重启，先将这一明确task-owned未完成attempt登记为failed并记录原/新路径，禁止覆盖或删除；正式root之外不动。
+
+bank仅允许同一materialization_contract续作未完成条件，已发布manifest不重算；若写入中断留下不能读取的单文件，
+原文件和错误保留，先回报，不把来源校验改松或静默挑不同checkpoint。官方故障用现有队列resume，保留已完成shard及失败/partial原件；
+场景初态失败是工程合同问题，不能改scene后混合结果；普通episode失败则保留，不重试择优。
+冻结后的源码/科学字段不得边跑边改；如有可复现工程违约，带原件/成本一次回报，由主讨论界定修复和新冻结。
+
+### 10.3 完整交付和科学边界
+
+保存原launch/attempt/环境/退出码/完整GPU秒，三套bank来源、两臂metrics及完整ECP、1200 official JSON/NPZ/PT和共同scene引用。
+逐行核task/init/env-policy seeds、T/U condition/video ordinal、T动作/T+1 body/EEF/gripper/predicate；每臂400完整且8full/392compact。
+训练报告source trainable0、实际梯度消费者、任务曝光、恢复前缀和游标；不要求逐bit一致或新增tensor/hash扫查。
+报告actual applied updates/queries、失败尝试和重算分别计数；不把计划270当所有实际计算总量。
+
+按§8.1给T/U/MT三臂的任务/suite/breadth与全部成对R/G/L/churn/Jaccard、成功集合、bootstrap区间；
+旧MT155单列历史标量，不混成新严格配对行。任意正确episode得分仅说明本节点能力；当前无视频必要性、语义理解或相邻保持结论。
+正式T/U可能比强MT差，也可能U优于T；这些是合法科学结果，不触发工程修补或自动后继。
+主讨论完成原件验收后据预注册规则裁决；执行者在一次完成/实质阻碍Queue后停止新增GPU，主讨论负责接续。

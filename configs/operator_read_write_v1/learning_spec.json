@@ -164,10 +164,22 @@
     "only_selected_checkpoint": 270
   },
   "budget": {
-    "future_complete_gpu_hours_planned": 18,
-    "current_gpu_hours_authorized": 0,
-    "peak_physical_gpus_planned": 2,
-    "future_root_peak_gib": 32
+    "current_gpu_hours_authorized": 18,
+    "phase_gpu_hours_hard": {
+      "training": 11,
+      "bank": 1.5,
+      "official": 5.5
+    },
+    "peak_physical_gpus": 2,
+    "run_root_peak_gib": 32,
+    "estimated_complete_gpu_hours": [
+      12,
+      15
+    ],
+    "estimated_wall_hours": [
+      6,
+      8
+    ]
   },
   "evaluation": {
     "role": "validation",

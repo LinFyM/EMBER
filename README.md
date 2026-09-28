@@ -4,7 +4,7 @@ EMBER研究把exact task language与action-hidden教学视频，在rollout前一
 task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正确视频中的操作内容应贡献真实执行价值。
 
 当前唯一候选为[同一实际LoRA的教学写入与执行读取](docs/designs/operator_read_write_learning_design.md)，
-短程工程已独立验收，当前只准入正式运行面的CPU转换，尚无科学收益或正式长训。完整T/U与强MT比较见设计§8；实际派发状态见progress。
+短程工程和CPU正式转换已独立验收，首批T/U各270及强MT同scene比较已准入，尚无本候选正式结果。完整合同见设计§8–10；实际冻结/派发状态见progress。
 
 **条件速度算子V151→102、L147→112，强MT-BC155；本候选关闭，尚无稳定视频增益或能力保持。自主科学研究继续。**
 后续原始字段勘误：L450有24行fixture初位不一致，涉及它的相应严格配对范围为376；这些行均失败，总分/得失数不变。
@@ -70,7 +70,8 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 
 | 职责 | `src/ember/`中的owner |
 | --- | --- |
-| 候选同算子读写的原生读取/矩阵生成/运行调度 | `operator_writer/native.py`、`model.py`、`run.py`；工程已验收，正式转换中 |
+| 候选同算子读写的原生读取/矩阵生成/数据与训练 | `operator_writer/native.py`、`model.py`、`data.py`、`run.py`；唯一正式270入口 |
+| 候选T/U完整rank128与固定MT同scene正式接入 | `operator_writer/bank.py`；公共A/条件B及唯一MT原权重引用，共用official scene/capture |
 | 封存对应学习bank的rank144重建与正式来源核验 | `demonstration_learning/bank.py`；只读P/I的288/576正式资产，不生成新bank |
 | 封存共同物理起点的官方恢复与行校验 | `pi05_eval/scene.py`；保留official消费者，采集/freeze入口已退役 |
 | 历史Writer仍使用的原生图文／完整H、Meta组件 | `writer/video_program.py`、`writer/meta_lora.py` |

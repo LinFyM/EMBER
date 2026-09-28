@@ -13,6 +13,7 @@ SPEC_RELATIVE = Path('configs/relational_support_causality_v1/experiment_spec.js
 EVALUATION_RELATIVE = Path('configs/relational_support_causality_v1/evaluation.json')
 TAG = 'ember_relational_support_passive_capture_v1'
 VELOCITY_TAG = 'ember_conditional_velocity_passive_capture_v1'
+OPERATOR_TAG = 'ember_operator_read_write_passive_capture_v1'
 SUITES = ('libero_spatial', 'libero_object', 'libero_goal', 'libero_10')
 
 
@@ -197,6 +198,12 @@ def _trace_and_stage_match(
 
 def validate_contract(contract: Mapping[str, Any], repo_root: Path) -> None:
     if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == OPERATOR_TAG):
+        from ember.operator_writer.bank import validate_capture_contract
+
+        validate_capture_contract(contract, repo_root)
+        return
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
             .get('schema_version') == 'ember_demonstration_comparison_passive_capture_v1'):
         from ember.demonstration_learning.bank import validate_capture_contract
 
@@ -267,6 +274,10 @@ def prepare_from_manifest(
     tasks: Sequence[Any], manifest: Mapping[str, Any], selection_path: Path,
     full: tuple[tuple[str, int, int], ...],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    if manifest.get('passive_control_trace') == OPERATOR_TAG:
+        from ember.operator_writer.bank import registered_capture
+
+        return registered_capture(args, tasks, output_dir, selection_path, manifest, task_subset)
     if manifest.get('passive_control_trace') == 'ember_demonstration_comparison_passive_capture_v1':
         from ember.demonstration_learning.bank import registered_capture
 
@@ -293,6 +304,12 @@ def prepare_from_manifest(
 def attach_requested_capture(
     args: Any, contract: dict[str, Any], repo_root: Path, output_dir: Path,
 ) -> None:
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == OPERATOR_TAG):
+        from ember.operator_writer.bank import attach_capture_provenance
+
+        attach_capture_provenance(contract, repo_root)
+        return
     if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
             .get('schema_version') == 'ember_demonstration_comparison_passive_capture_v1'):
         from ember.demonstration_learning.bank import attach_capture_provenance

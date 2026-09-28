@@ -333,7 +333,8 @@ def validate_passive_trace_row(
                (task["suite"], int(task["task_id"]), int(row["init_state_id"]))
             or info.get("condition_id") != ((row.get("horizon_writer_lora") or
                                               row.get("conditional_velocity_lora") or
-                                              row.get("demonstration_comparison_lora") or {}).get("condition_id"))
+                                              row.get("demonstration_comparison_lora") or
+                                              row.get("operator_read_write_lora") or {}).get("condition_id"))
             or info.get("goal_predicates") != stage.get("predicates")
             or not isinstance(info.get("body_registry"), list)
             or not info["body_registry"] or not isinstance(info.get("goal_operands"), list)):

@@ -7,6 +7,8 @@ from pathlib import Path
 
 import numpy as np
 
+from ember.pi05_source_checkpoint import read_json
+
 
 def _body_id(owner: Any, name: str) -> int:
     if name in owner.obj_body_id:
@@ -97,6 +99,23 @@ def scene_path(root: Path, task: dict, state: int) -> Path:
     return root / f"{task['suite']}_task_{int(task['task_id']):02d}_state_{state:03d}.npz"
 
 
+def inspect_registered_scenes(root: Path, tasks: list[dict]) -> dict:
+    """Check the sealed 400-scene registry without loading saved simulator arrays."""
+    registered = read_json(root / "manifest.json")
+    rows = registered.get("scenes", ())
+    expected = {(task["suite"], int(task["task_id"]), state)
+                for task in tasks for state in range(50)}
+    actual = {(row["suite"], int(row["task_id"]), int(row["state"])) for row in rows}
+    if (registered.get("schema_version") != "ember_demonstration_formal_scenes_v1"
+            or len(rows) != 400 or actual != expected):
+        raise ValueError("sealed common scene task/state registry changed")
+    for row in rows:
+        path = scene_path(root, row, int(row["state"]))
+        if row["path"] != str(path) or path.stat().st_size != row["bytes"]:
+            raise ValueError("sealed common scene file/path changed")
+    return registered
+
+
 def restore_registered_scene(env: Any, observation: dict, task: dict, state: int,
                              root: Path) -> tuple[dict, dict]:
     path = scene_path(root, task, state)
@@ -112,7 +131,7 @@ def restore_registered_scene(env: Any, observation: dict, task: dict, state: int
 
 
 def validate_scene_row(row: dict, task: dict, contract: dict) -> None:
-    registered = contract.get("demonstration_comparison_scene")
+    registered = contract.get("demonstration_comparison_scene") or contract.get("operator_read_write_scene")
     if registered is None:
         if row.get("scene_reference") is not None:
             raise ValueError("unregistered evaluation row contains a transfer scene")

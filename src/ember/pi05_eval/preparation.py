@@ -452,6 +452,10 @@ def _registered_trajectory_capture(
         return None, None
     path = path.resolve()
     manifest = read_json(path)
+    if manifest.get("study_id") == "operator_read_write_learning_20260928":
+        from ember.operator_writer.bank import registered_capture
+
+        return registered_capture(args, tasks, output_dir, path, manifest, task_subset)
     if manifest.get("study_id") == "conditional_velocity_operator_learning_20260927":
         from ember.writer.conditional_velocity_bank import registered_capture
 
@@ -709,6 +713,9 @@ def _prepared_payload(
     contract["diagnostic_task_subset"] = task_subset
     if adapter is not None and adapter.get("kind") == "demonstration_comparison_lora_bank":
         contract["demonstration_comparison_scene"] = {
+            "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
+    if adapter is not None and adapter.get("kind") == "operator_read_write_lora_bank":
+        contract["operator_read_write_scene"] = {
             "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
     if native_cell is not None:
         from ember.pi05_eval.native_reader_transfer import attach

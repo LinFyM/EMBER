@@ -23,6 +23,10 @@ Owner与新主讨论完成结果、推进风格和后继规划交流后，明确
 
 ### 已完成首批结果判断，不再停留在仅继承分数
 
+并行机制工作已完成§43/findings§204：CPU读取旧T/U90/180/270的action_in A/S/probe，推导固定key的覆盖与传播，
+排除“固定probe便无视频路径”的推论，未见U270输入层严重子空间脱离；实际传播半衰期/尺度已量化但未声称有用信息遗忘。
+没有模型/环境/GPU、held标签或新增评测；不据局部谱改架构。源码交付到达后主讨论独立验收、并行集成，整批结果再裁决。
+
 与Owner交流期间，新主讨论直接读1200 JSON原行、三套contracts/completion、完整训练metrics及配对/完整性消费者，
 复算T116/U128/MT153、breadth5/6/6、R/G/L/churn、逐task与bootstrap区间；scene/video/seed和noise前缀配对成立。
 完整NPZ/PT内容验收继承旧执行者已实施的`verify_official_raw.py`及原件报告，未由新主讨论再扫1200份；

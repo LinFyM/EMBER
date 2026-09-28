@@ -4,6 +4,18 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-28：270→900有界续训整批完成，分析后先与Owner讨论
+
+原件`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900`，源码81846ed3。
+T/U各630新增更新、360/450/540/630/720/810/900完整ECP，原270前缀与科学合同继承；没有新270/MT、controls、Test、RL或900后训练。
+official900为T148/U132，各400，同scene MT153；450→900 T保留105/得43/失17，U111/21/32。
+主讨论直接核新800 JSON配对/来源/退出并复算全部12组统计；全PT/NPZ与训练ECP检查继承已审消费者，
+另读200新行为NPZ及完整训练metrics。T task3达43/50且保留全部450成功，U同项31/50却由目标不动转向更多移动后失败；
+task31 T32→14→21/U24→27→14，原共同成功16场景到900仅8/7保持。详见机制§50/findings§210。
+新增12次GPU attempt均exit0，22.169122590/30GPUh，历史11.158278507单列；执行者报告终态44GiB、GPU释放。
+Owner明确要求“别急着裁决，做完分析后先和我讨论”，本批数值/执行验收不构成最终checkpoint选择、路线通过或新任务许可。
+本次没有联系执行者、新增模型/环境计算或修改科学源码。
+
 ## 2026-09-28：有界续训450先行验收，绝对能力改善与保持不足并存
 
 原件`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900`，训练/450评测Git81846ed3。

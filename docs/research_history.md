@@ -2772,3 +2772,23 @@ Test配对Jaccard为.3067。Test−Validation的MT-BC增益差为−14.5pp；按
 Test各任务Source→MT-BC成功数及R/G/L如下：Long0 1→0 (0/0/1)，Long3 35→24 (15/9/20)；Goal4 36→42 (29/13/7)，Goal7 0→4 (0/4/0)；Object0 0→11 (0/11/0)，Object8 0→20 (0/20/0)；Spatial8 3→11 (2/9/1)，Spatial9 0→9 (0/9/0)。按suite：Long36→24、Goal36→46、Object0→31、Spatial3→20。完整Validation/Test per-task、per-suite行保存在study `analysis/per_task.csv`与`per_suite.csv`；summary、paired comparison、启动合同、worker/completion及raw results均位于`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923/`。
 
 该组结果确认固定协议下冻结baseline的实际分数与task交换，不触发训练资格、checkpoint改选、协议变更或后续路线调整。此次窄范围任务完成后，全局暂停继续约束其它所有实验。
+
+## 2026-09-29：原生读写T续至1350单点154，U1080未恢复并停止追加
+
+Owner恢复夜间自主推进后，沿既有模型/数据/优化时钟进行不对称有限学习：T900→1350、U900→1080受控停止，
+新Git14bac4cd（main集成b43eef90），父完整900 ECP来源81846ed3。T world4、U world2，逻辑四条件权重与SUM更新保持，
+T五个/U两个90步完整ECP；不称bitwise exact。三组strict paired400复用全部sealed scene/video/RNG，MT153复用旧行。
+
+| 节点 | 成功/400 | breadth | 相对自身前观察点R/G/L | 相对MT净差 |
+|---|---:|---:|---:|---:|
+| U1080 | 128 | 6 | U900→1080：110/18/22 | −25 |
+| T1080 | 147 | 6 | T900→1080：124/23/24 | −6 |
+| T1350 | 154 | 6 | T1080→1350：129/25/18 | +1 |
+
+T1350−MT为114/40/39，8-task bootstrap95%[−4.5,6.75]pp；只是一组配对面板微小领先，
+不称稳健超过/已选checkpoint/视频因果资格。T末段净+7分布于四task且保持87.8%，仍有task23/39零覆盖；
+U810/900/1080为132/132/128，按预先登记条件不释放余270步。更长窗口没有重置历史损失或掩盖旧高点。
+主讨论独立读1200新JSON、配对/来源/退出成本与原件消费者；完整新PT/NPZ读取继承可靠执行验收，无旧全扫。
+八次GPU全exit0，新增14.053326929GPUh；两次CPU-only预启动登记修正0GPUh留账，终值29.5536GiB，不称连续峰。
+正式原件：`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation1350/analysis/report_1350.md`；
+完整认识/边界见findings§213–215。后继另登记设计§16的T1350→1800，本条不预报其启动或成绩；U不追加。

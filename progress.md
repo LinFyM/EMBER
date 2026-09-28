@@ -11,11 +11,13 @@ MT首个official prepare因adapter缺`arm`退出1，尚无三臂episode，不能
 本次在同一来源/接口边界一起修复，旧训练/权重/bank/scene/失败原件不动，不重训或重新物化。
 主讨论已核原MT失败栈、两臂run/completion/270行metrics及bank来源；完整独立验收继续。
 唯一任务`operator_read_write_official_repair_20260928`，Queue `01a0e6d0-3c28-7351-94f5-6252bc0bda7f`，
-新active轮`01a0e6d0-3c2a-7581-a797-e5180497eed2`已明确承接。主讨论独占main/docs，指定执行者独占原dev源码/测试，GPU预算0。
+新active轮`01a0e6d0-3c2a-7581-a797-e5180497eed2`已明确承接。主讨论独占main/docs，指定执行者独占原dev源码/测试。
 Owner指出接口修复不应再次停等。§10.5已改为修复→三臂CPU入口核验→推送隔离commit→新evaluation-only冻结→直接继续原三臂400，
 主讨论并行审阅集成；CPU阶段GPU0，随后沿原GPU预算，无新训练/物化许可。预计CPU15–25分钟，4–6适用卡时official约1–1.5小时。
 已付7.746646567GPUh，原18总/5.5 official预算保持；§10.4确已执行，bank双臂并行且重叠MT失败尝试，实际峰3卡。
 消息/回执/快照见`.codex/tmp/operator_read_write_engineering_20260928/official_repair_*`。
+Owner修订75cc0af2已推送，取消CPU完成后的停等；同轮Steer接口已接受，回执为`official_repair_autonomy_steer_receipt.json`。
+允许已推送隔离commit的新评测冻结直接续行，主讨论集成不再构成许可停点；实际CPU/GPU完成仍以原件和唯一整批回报为准。
 主讨论完整只读核270×4条件，两臂1080项teacher/query/frame/flow seed逐项相同；36task各30不同teacher、28不同query且排除teacher。
 六个ECP文件/游标元数据及三套400 bank同scene/source/调度成立，旧official输出均不存在；未读优化器张量/held标签或运行模型。
 原件验收见同tmp的`formal_training_bank_main_acceptance.json`；online FM继续下降仍非收敛或闭环能力证据。

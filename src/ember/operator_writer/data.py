@@ -20,6 +20,8 @@ CONTINUATION_CHECKPOINTS = (360, 450, 540, 630, 720, 810, 900)
 CONTINUATION_UPDATES = 900
 CONTINUATION1350_CHECKPOINTS = tuple(range(990, 1351, 90))
 CONTINUATION1350_UPDATES = 1350
+CONTINUATION1800_CHECKPOINTS = tuple(range(1440, 1801, 90))
+CONTINUATION1800_UPDATES = 1800
 
 
 class FormalData:
@@ -57,7 +59,8 @@ class FormalData:
         teacher_round = visit // 50
         allowed_rounds = {"ember_operator_read_write_events_v2": 1,
                           "ember_operator_read_write_events_v3": 2,
-                          "ember_operator_read_write_events_v4": 3}
+                          "ember_operator_read_write_events_v4": 3,
+                          "ember_operator_read_write_events_v5": 4}
         if teacher_round >= allowed_rounds.get(self.event_schema, 0):
             raise ValueError("teacher round is outside the registered event contract")
         teacher_seed = ([self.seed, 1, task] if teacher_round == 0 else
@@ -83,19 +86,20 @@ class FormalData:
                   "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28}
         if self.event_schema == "ember_operator_read_write_events_v2":
             return {"schema_version": self.event_schema, **common, "teacher_pool": list(range(30))}
-        if self.event_schema == "ember_operator_read_write_events_v3":
+        rounds = {"ember_operator_read_write_events_v3": 2,
+                  "ember_operator_read_write_events_v4": 3,
+                  "ember_operator_read_write_events_v5": 4}.get(self.event_schema)
+        if rounds is not None:
             return {"schema_version": self.event_schema, **common,
-                    "teacher_rounds": [[self.seed, 1, "task"], [self.seed, 1, "task", 1]],
-                    "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
-        if self.event_schema == "ember_operator_read_write_events_v4":
-            return {"schema_version": self.event_schema, **common,
-                    "teacher_rounds": [[self.seed, 1, "task"], [self.seed, 1, "task", 1],
-                                       [self.seed, 1, "task", 2]],
+                    "teacher_rounds": [[self.seed, 1, "task"]] +
+                                      [[self.seed, 1, "task", round_index]
+                                       for round_index in range(1, rounds)],
                     "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
         raise ValueError("operator event schema changed")
 
     def restore(self, state: dict, *, migrate_sealed_270: bool = False,
-                migrate_continuation_900: bool = False) -> dict | None:
+                migrate_continuation_900: bool = False,
+                migrate_continuation_1350: bool = False) -> dict | None:
         expected = self.sampler_state()
         if migrate_sealed_270:
             legacy = {"schema_version": "ember_operator_read_write_events_v2", "next_step": 270,
@@ -106,14 +110,20 @@ class FormalData:
             self.next_step = 270
             return {"from_schema": legacy["schema_version"], "to_schema": self.event_schema,
                     "cursor": 270, "historical_teacher_pool_meaning": "visits_0_to_29_not_demo_ids"}
-        if migrate_continuation_900:
-            legacy = {**expected, "schema_version": "ember_operator_read_write_events_v3",
-                      "next_step": 900, "teacher_rounds": expected["teacher_rounds"][:2]}
-            if self.event_schema != "ember_operator_read_write_events_v4" or state != legacy:
-                raise ValueError("900 sampler migration source changed")
-            self.next_step = 900
+        if migrate_continuation_900 or migrate_continuation_1350:
+            parent = (900 if migrate_continuation_900 else 1350)
+            source_schema = f"ember_operator_read_write_events_v{3 if parent == 900 else 4}"
+            target_schema = f"ember_operator_read_write_events_v{4 if parent == 900 else 5}"
+            legacy = {**expected, "schema_version": source_schema,
+                      "next_step": parent,
+                      "teacher_rounds": expected["teacher_rounds"][:-1]}
+            if (migrate_continuation_900 and migrate_continuation_1350
+                    or self.event_schema != target_schema or state != legacy):
+                raise ValueError(f"{parent} sampler migration source changed")
+            self.next_step = parent
             return {"from_schema": legacy["schema_version"], "to_schema": self.event_schema,
-                    "cursor": 900, "appended_teacher_round": [self.seed, 1, "task", 2]}
+                    "cursor": parent,
+                    "appended_teacher_round": [self.seed, 1, "task", parent // 450]}
         if (type(state.get("next_step")) is not int or state["next_step"] not in (0, *self.checkpoints)
                 or {k: v for k, v in state.items() if k != "next_step"}
                 != {k: v for k, v in expected.items() if k != "next_step"}):

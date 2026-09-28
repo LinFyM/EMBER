@@ -925,3 +925,8 @@ Sol启动前须重新live核strg01 data1 quota、两节点GPU与实际峰值估�
 不重跑GPU smoke、全树检查或旧1200捕获。检查通过、push并冻结后可在本合同直接准入启动，不需第二条科学释放。
 源码/CPU、实际launch、1710完整结果、最后整批或实质阻碍直接Steer主讨论活跃轮，禁止Queue积压回报；
 纯工程窄修按既有§10.5隔离验证/push/newfreeze续行，任何模型/数据/标签/损失/更新/评测改变交主讨论。
+
+执行前源码验收：Sol提交fcc23cd15cc475530c385e354670efee6bacfa12，主讨论集成275a70a7，独立新1800/旧1350/formal
+共17项CPU通过（20.51秒）。新freeze核为该commit clean detached；原run/data/bank承接，没有模型/native/update差异。
+run788/bank698保持现存owner，新增config300行/目标测试167行占主要增长；后段resume、packing与sampler轮次内聚复用，
+architecture REVIEW无新增hard的范围接受，不为行数拆散。实际launch仍依live准入与原件，不由本段预报。

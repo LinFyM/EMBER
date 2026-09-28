@@ -15,7 +15,10 @@ T1350比MT单点高1，区间[−4.5,6.75]pp、breadth6，不能宣称稳健超�
 1800为本夜原样监督学习终点，不自动2250、不搜旧点/重启LR；U在1080结束。
 b8385d9a合同已送达唯一Sol：后继任务Queue回执`01a0e9a4-f9fe-7c32-98f0-5cd90e08a20e`，
 一次只读核对确认新活跃轮`01a0e9a4-fa01-70d2-b2fd-5d6ae58abb4f`收到准确正文；这不是Sol给主讨论的回报Queue，
-其源码/launch/结果仍要求直接Steer。正文/回执/单次snapshot在同名tmp的`continuation1800_*`；尚无新源码或launch回报。
+其源码/launch/结果仍要求直接Steer。正文/回执/单次snapshot在同名tmp的`continuation1800_*`。
+1800源码fcc23cd1已push并以275a70a7集成main；主讨论审完整改动、真实父来源与旧消费者，并独立17项CPU通过（20.51秒）。
+新冻结树`EMBER-operator-continuation1800-formal`核为同fcc23cd1、clean detached，模型/native/update未改；
+旧1350读取显式固定14bac4cd，sampler/后段resume复用原owner。当前尚无新GPU launch回报，不把源码验收写成已开训。
 主讨论并行完成1350行为定位：部分低分在目标物几乎未动时已搬其它物体，双物任务也仍有局部保持退化，
 机制§55/findings§216保留实际例子及H/M/Aq/β未能分离的边界；不据此改变已释放科学计算或自动追加探针。
 以下1080/1350接收过程为本批执行历史，不表示仍有旧GPU作业或尚未知T1350结果。

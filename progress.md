@@ -13,14 +13,17 @@ Owner随后指出主讨论不应结束回合等待续训；主讨论承认§43�
 固定面板CPU读取与随机非交换key的逐帧信用代数核对已完成；本机短暂RPC读等待已结束，未定位原因。
 机制§44已核教学/自身prefix、time和上游权重的差异，以及首层Q/V恒定输入、中间Q/V的真实attention消费者；
 不能由特征变化或投影幅度直接声称操作知识。实际270功能诊断结果仍未知。
-主讨论并行审阅dev，已将“有更晚完整ECP仍可退回270”的恢复缺口及旧270默认训练入口退役交Sol在定稿中收紧；
-不改科学语义或中断已就绪任务，尚未把WIP审阅称为最终集成验收。
+主讨论并行审阅发现的“有更晚完整ECP仍可退回270”恢复缺口及旧270默认训练入口，已由Sol在81846ed3定稿中修正。
+源码已集成为b64f85e1，主讨论独立10项CPU通过；新增MT300 capture目录回归另已复现，并在main集成时窄修，
+含旧MT/270/新450的capture定向检查通过。此修复仅保留旧MT路径，不改变本批T/U，不要求更换已冻结训练源码。
 
 - Astra/max `01a0e6fd-5478-74f3-916e-9d9beb57da50`独占main/科学判断；新Sol/max `01a0e70e-48bc-7470-a725-c7420f96ee81`
   独占已释放dev，承接唯一任务`operator_read_write_continuation_900_20260928`。科学合同20993911已push；
   Queue `01a0e764-f966-7470-b071-dbf659f92e99`进入新active轮`01a0e764-f968-74c0-8756-6fa5d3fabbe4`，
-  一次只读快照已核任务正文/inProgress；09:51 UTC为主讨论集成准备只读dev，已merge20993911并实际修改run/data/bank/定向测试和续训spec。
-  当前为实现/验证阶段，尚无GPU启动声明。正文/回执见同名`.codex/tmp`目录；CPU源码就绪交付后并行审阅集成，整批回报后主动验收。
+  一次只读快照已核任务正文/inProgress；源码81846ed3已push并交付CPU证据，clean detached新冻结树为
+  `/data1/user/ymdai/projects/EMBER-operator-continuation900-formal`。Sol报告strg01 data1用量546.7GiB/1TiB，新增56GiB可容纳；
+  正在按授权现场准入/启动，主讨论尚未接收GPU启动事实，不将源码交付当作GPU已经运行。
+  正文/回执见同名`.codex/tmp`目录；整批及短诊断实质回报后主动验收，不陪跑查询。
 - 各自旧270完整ECP继续，新增各630更新/70,560 query，总900/100,800；450及900各T/U correct400，1600新行。
   固定旧scene/video/RNG；复用MT153原行和270原件，不重训/重物化270，不新测MT。无新loss/架构/数据/controls/Test/RL。
 - 新root=`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900`。
@@ -38,6 +41,15 @@ Owner随后指出主讨论不应结束回合等待续训；主讨论承认§43�
 并行机制工作已完成§43/findings§204：CPU读取旧T/U90/180/270的action_in A/S/probe，推导固定key的覆盖与传播，
 排除“固定probe便无视频路径”的推论，未见U270输入层严重子空间脱离；实际传播半衰期/尺度已量化但未声称有用信息遗忘。
 没有模型/环境/GPU、held标签或新增评测；不据局部谱改架构。源码交付到达后主讨论独立验收、并行集成，整批结果再裁决。
+
+§44补齐实际首层/中间Q/V的消费者和精确逐帧Value偏导，固定8条训练teacher双RGB已直接观察；
+同112条query的补尾比例11.00%–19.36%仅作FM解释边界，不新增mask或宣称根因。GPU特征/功能结果仍待§12执行。
+
+81846ed3结构审阅：沿现有data/run/bank扩展，无第二trainer或新源模块；源/测试合计+440/−70，另一个声明式spec292行。
+run637、bank638行仍保持采样/训练/物化各自owner；旧spec/270/MT来源检查服务本批父资产与强参照读取，旧fresh训练CLI已禁用。
+architecture guard对`_validate_continuation_attempt`的复杂度28（阈25）报1项新信号；主讨论接受本次有界合同校验例外：
+该函数约50行，集中校验旧270与新完整ECP两种已登记来源，复杂度主要来自平铺的身份/路径/打包谓词，拆碎不会减少合同。
+不据此豁免科学/恢复检查；900裁决时随该有界运行面一并处理生命周期，不增通用兼容框架或其它旧实验入口。
 
 与Owner交流期间，新主讨论直接读1200 JSON原行、三套contracts/completion、完整训练metrics及配对/完整性消费者，
 复算T116/U128/MT153、breadth5/6/6、R/G/L/churn、逐task与bootstrap区间；scene/video/seed和noise前缀配对成立。

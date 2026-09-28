@@ -549,7 +549,7 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
     full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0} for task in tasks]
     macro = bank_path.parent.name
     eval_root = bank_path.parent.parent.parent / "evaluation"
-    expected_output = (eval_root / "correct400" if macro == "270"
+    expected_output = (eval_root / "correct400" if macro in ("270", "300")
                        else eval_root / macro / "correct400")
     if (path.resolve() != (SPEC_PATH.parent / "official_capture.json").resolve()
             or bank.get("kind") != KIND or manifest.get("schema_version") != "ember_pi05_registered_trajectory_capture_v1"

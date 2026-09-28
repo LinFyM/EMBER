@@ -160,6 +160,15 @@ def test_official_capture_and_scene_route_are_registered(tmp_path):
         SimpleNamespace(static_task_lora_manifest=bank_path, role="validation", mode="formal",
                         trajectory_capture_selection=capture_path), rows, output, None, ROOT)
     assert (prepared, prepared_stage) == (capture, stage)
+    mt_bank = tmp_path / "MT/banks/300/manifest.json"
+    mt_bank.parent.mkdir(parents=True)
+    write_json_atomic(mt_bank, {"kind": "operator_read_write_lora_bank"})
+    mt_output = tmp_path / "MT/evaluation/correct400"
+    mt_capture, mt_stage = registered_capture(
+        SimpleNamespace(static_task_lora_manifest=mt_bank, role="validation", mode="formal"),
+        rows, mt_output, capture_path, selector, None)
+    assert mt_capture["trajectory_root"] == str((mt_output / "trajectories").resolve())
+    assert mt_stage == stage
     continuation_bank = tmp_path / "T/banks/450/manifest.json"
     continuation_bank.parent.mkdir(parents=True)
     write_json_atomic(continuation_bank, {"kind": "operator_read_write_lora_bank"})

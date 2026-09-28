@@ -1,12 +1,16 @@
 # EMBER progress
 
-## 当前状态：同算子读写工程验收，准备完整T/U比较的CPU转换（2026-09-28）
+## 当前状态：同算子读写工程验收，完整T/U比较CPU转换已承接（2026-09-28）
 
 Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-4c71-7c82-8629-8333ef74dfdd，
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
 **唯一active design：`docs/designs/operator_read_write_learning_design.md`§8.4，仅CPU转换。**
-任务`operator_read_write_formal_transition_20260928`待本轮main交付后派发；此处计划文字不表示后台已启动。
+任务`operator_read_write_formal_transition_20260928`已派发，准确已推送main基线
+**1b435c53e8052f9c449e4e0395e7daaef9c2ca4a**。唯一Queue `01a0e5b4-c61d-7b71-a2d6-f2713b1ff17c`，
+一次app-server即时快照核实本消息进入新active轮`01a0e5b4-c620-7eb1-8a29-de87c04b1fcd`；只证明任务已承接，不称代码或GPU已完成。
+请求/回执/快照在`.codex/tmp/operator_read_write_engineering_20260928/formal_transition_*`；完成或实质阻碍一次回报。
+旧完成消息不再挂作后台任务，本次没有自Queue。
 预计60–90分钟、120分钟实质阻碍回报线；GPU0，不建formal root/冻结树，不运行policy或环境，不追加工程smoke。
 将单一运行面转换为36task正式270事件/ECP和T/U/固定MT同scene官方接入；model/native数值不改，工程CLI退役。
 正式GPU尚未授权；后续精确冻结、launch/预算另记。主讨论承担科学裁决/main集成。

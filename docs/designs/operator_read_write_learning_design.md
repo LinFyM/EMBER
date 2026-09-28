@@ -463,6 +463,12 @@ CPU检查通过后，执行者提交、推送原隔离分支，登记唯一clean
 bank和场景，现均无正式输出；保留首次失败，续行attempt采用新名。科学范围/数据/预算问题或原因不确定才回报阻碍；
 整批修复及评测完成一次完整Queue，不在CPU完成处分批停等。没有450、controls、Test或RL许可。
 
+执行与独立CPU验收补充：83946ae1仅bank/针对性测试2文件+53/−7；旧来源严格指784febb/spec、保留数值与scene/condition检查，
+materialize默认仍核本次冻结来源，official adapter从已核selection导出correct。预算调度字段不参与科学数值相等判断。
+三套实际旧bank经`_prepared_payload`产生400条件/28shards/8full且CPU阶段未发布正式输出；证据位于执行者dev的
+`.codex/tmp/operator_read_write_official_repair_20260928/cpu_preparation.json`及`check_prepare.py`。主讨论审阅并独立6项CPU通过，
+以3b24f9ea集成main；新eval83946ae1已启动三臂official，原训练784febb保留，不因集成再启动或重写已记录Git。
+
 ### 10.6 Owner要求认真检验架构，避免早期分数触发整版切换（2026-09-28）
 
 Owner本次明确：当前架构有机制上的合理性，应看实际性能，不随便放弃后直接换架构；主讨论尚未验收到本批三臂正式分数。

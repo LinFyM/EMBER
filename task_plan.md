@@ -5,8 +5,8 @@
 最终目标和自主授权不变。唯一active design为`docs/designs/operator_read_write_learning_design.md`§10；
 工程与CPU转换已验收，正式精确冻结/实际承接只看progress。尚无本候选正式分数。
 
-1. T/U各fresh270及bank400、MT登记已经完成。指定执行者按§10.5修复official缺arm及旧bank来源对当前评测checkout的误绑定，
-   三臂实际CPU prepare核验后自行推送、新冻evaluation-only代码，直接继续剩余三臂correct400；主讨论并行审阅集成，不再设第二次派发停点。
+1. T/U各fresh270及bank400、MT登记已经完成。§10.5接口修复83946ae1的三臂真实CPU prepare通过，已用新evaluation-only冻结并行运行三臂correct400；
+   主讨论独立6项CPU回归通过并由3b24f9ea集成main，旧训练/ECP/bank/scene完全复用，无第二次许可停点。
    不重训/重物化，不把阻碍当科学阴性。
    CPU预计15–25分钟，后续official原估3.4–4.5GPUh，4–6适用卡约1–1.5小时含启动/长尾，现场修订。
    按AGENTS的8/6总卡及单节点6卡准入，18GPUh/32GiB保持，已付7.746646567；不恢复额外峰2卡限制。

@@ -1,13 +1,31 @@
 # EMBER progress
 
-## 当前状态：T/U270及三套bank完成，official接口CPU修复已承接（2026-09-28）
+## 科学主讨论交接进行中：尚未转交所有权（2026-09-28）
+
+Owner明确要求创建Astra max接任session，随后要求多轮交互核验后再转交，不能只凭一次复述完成。
+已创建`01a0e6fd-5478-74f3-916e-9d9beb57da50`，标题“EMBER 科学主讨论接任 · Astra Max”，创建回执确认
+`gpt-6-astra`/`max`、cwd本仓库。第一轮只读恢复turn=`01a0e6fd-5943-7590-95ae-18e8bc453cc5`已启动。
+原主讨论`01a0dd74-4c71-7c82-8629-8333ef74dfdd`继续独占main和实验指挥；新session仅在交接目录写理解验收，不派发实验。
+至少完成恢复复述、历史反例/判断边界纠偏、当前原件/接续方案共同复核后，再明确转交并重定向唯一执行者回报。
+临时交接材料/创建回执/轮次证据：`.codex/plans/ember_scientific_handoff_20260928/`；消费后删除临时页，稳定状态合回本记录。
+交接专用一次快照已见执行者83946ae1修复后启动三臂official（旧训练仍784febb），均arm=correct，T/U/MT各2workers。
+当前评测原队列继续，不因交接重启/中断。此前“等待CPU修复”是历史快照，当前已进入实际正式评测；尚未验收完整分数。
+
+## 当前状态：T/U270及三套bank完成，修复后各400正式评测正在并行（2026-09-28）
 
 Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-4c71-7c82-8629-8333ef74dfdd，
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
-**唯一active design：`docs/designs/operator_read_write_learning_design.md`§10，当前修复范围§10.5，资源调度按§10.4。**
+**唯一active design：`docs/designs/operator_read_write_learning_design.md`§10，修复与续评测范围§10.5，资源调度按§10.4。**
+接口修复83946ae17346d9e27af2a3b84187cfabb8b5412d已由3b24f9ea集成main；2文件+53/−7，model/native/数值不变。
+主讨论审阅实际diff及三套真实bank的完整CPU `_prepared_payload` 证据，独立6项定向CPU回归通过（17.09秒）；未重跑模型/环境/GPU。
+新eval Git83946ae1与旧training Git784febb分别记录；三臂实际run_contract均correct/validation/formal、400固定scene和条件。
+执行者当前三臂原队列并行：T gpu02/3、U gpu02/7、MT gpu01/1，各2workers；这是本次启动事实，不是未来卡数/副本上限。
+Owner已在执行者侧再次强调吞吐，后续必须按现场余量/实测选择卡和replica；本次正常已发布队列不为新空闲卡中断重算。
+主讨论未读取中途success选点；待原批完整退出/1200原行回报统一验收。首次失败及7.746646567GPUh旧账保留，新成本由执行者累计。
 Owner最新要求按§10.6执行：充分结合实际学习与闭环证据判断，不凭270早期分数或T/U单项约束结果直接放弃整个架构。
 当前执行范围与预算不变、没有追加训练许可；原投入/资格线保留为历史预注册依据，进一步投入须有明确理由和有界合同。
+以下CPU修复派发与阻碍为本批历史记录，已由上文续行状态覆盖：
 首批完整阻碍回报已消费。T/U各270/30,240query与90/180/270 ECP、两套400条件bank及MT登记均完成；
 MT首个official prepare因adapter缺`arm`退出1，尚无三臂episode，不能作科学阴性。新评测checkout也会触发旧bank对当前Git/spec路径的误绑定，
 本次在同一来源/接口边界一起修复，旧训练/权重/bank/scene/失败原件不动，不重训或重新物化。

@@ -73,6 +73,7 @@ def test_T_U_share_exact_initial_public_function_but_U_has_independent_key():
     from pathlib import Path
 
     from ember.operator_writer.model import OperatorReadWrite
+    from ember.operator_writer.run import gradient_groups
 
     repo = Path(__file__).resolve().parents[2]
     contract = derive_pi05_lora_rank(
@@ -87,3 +88,9 @@ def test_T_U_share_exact_initial_public_function_but_U_has_independent_key():
     for i, name in enumerate(u.names):
         assert torch.equal(u.separate_keys[i], template[name + ".lora_A.default.weight"])
         assert u.separate_keys[i].data_ptr() != u.public_state()[name + ".lora_A.default.weight"].data_ptr()
+    for name in ("p", "c", "d", "o"):
+        weight = getattr(t.writes[0], name).weight
+        weight.grad = torch.ones_like(weight)
+    grouped = gradient_groups(t)
+    assert all(grouped[name] > 0 for name in ("p", "c", "d", "o"))
+    assert grouped["independent_S"] == 0

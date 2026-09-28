@@ -244,7 +244,8 @@ def gradient_groups(writer: OperatorReadWrite) -> dict[str, float]:
             "public_B0": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
                               if name.endswith(".lora_B.default.weight")),
             "independent_S": norm(writer.separate_keys or ()),
-            **{name: norm(getattr(unit, name).parameters() for unit in writer.writes)
+            **{name: norm(parameter for unit in writer.writes
+                          for parameter in getattr(unit, name).parameters())
                for name in ("p", "c", "d", "o")}}
 
 

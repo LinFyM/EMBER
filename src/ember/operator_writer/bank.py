@@ -36,6 +36,10 @@ BANK_SCHEMA = "ember_operator_read_write_bank_v1"
 EVAL_SCHEMA = "ember_operator_read_write_eval_v1"
 EPISODE_SCHEMA = "ember_operator_read_write_episode_v1"
 PASSIVE_TAG = "ember_operator_read_write_passive_capture_v1"
+PUBLIC_BETA_MODE = "public_beta"
+PUBLIC_BETA_SCHEMA = "ember_operator_public_beta_bank_v1"
+PUBLIC_BETA_STUDY = "operator_public_beta_diagnosis_20260929"
+PUBLIC_BETA_ROOT = Path("/data1/user/ymdai/ember_runs/operator_public_beta_diagnosis_20260929")
 SCENE_ROOT = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/scenes")
 SEALED_TRAINING_COMMIT = "784febbff32d991e53b9e5c6ba9f74683890425e"
 SEALED_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-operator-stage1-formal"
@@ -46,6 +50,10 @@ CONTINUATION_FROZEN_SPEC_PATH = Path(
 CONTINUATION1350_FROZEN_SPEC_PATH = Path(
     "/data1/user/ymdai/projects/EMBER-operator-continuation1350-formal"
     "/configs/operator_read_write_v1/continuation1350_spec.json")
+CONTINUATION1800_FROZEN_SPEC_PATH = Path(
+    "/data1/user/ymdai/projects/EMBER-operator-continuation1800-formal"
+    "/configs/operator_read_write_v1/continuation1800_spec.json")
+PUBLIC_BETA_CAPTURE_PATH = REPO / "configs/operator_read_write_v1/public_beta_capture.json"
 SEALED_TRAINING_GIT = {"commit": SEALED_TRAINING_COMMIT, "branch": "",
                        "dirty_paths": [], "pushed_ref": "origin/main"}
 CONTINUATION_TRAINING_GIT = {"commit": "81846ed35933222b14ac693a0b760268ecff7f17",
@@ -53,6 +61,10 @@ CONTINUATION_TRAINING_GIT = {"commit": "81846ed35933222b14ac693a0b760268ecff7f17
                              "pushed_ref": "origin/codex/demonstration-transfer"}
 CONTINUATION1350_TRAINING_GIT = {
     "commit": "14bac4cdd6c27eee06f5574317da8257834e3884",
+    "branch": "", "dirty_paths": [],
+    "pushed_ref": "origin/codex/demonstration-transfer"}
+CONTINUATION1800_TRAINING_GIT = {
+    "commit": "fcc23cd15cc475530c385e354670efee6bacfa12",
     "branch": "", "dirty_paths": [],
     "pushed_ref": "origin/codex/demonstration-transfer"}
 CONTINUATION_EVALUATION_MACROS = (450, 810, 900)
@@ -223,7 +235,7 @@ def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: 
     current_specs = (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
                      CONTINUATION1800_SPEC_PATH)
     source_specs = (CONTINUATION_FROZEN_SPEC_PATH, CONTINUATION1350_FROZEN_SPEC_PATH,
-                    CONTINUATION1800_SPEC_PATH)
+                    CONTINUATION1800_FROZEN_SPEC_PATH)
     wanted_spec_path = source_specs[window] if sealed_evaluation else current_specs[window]
     teacher_rounds = [[20260928, 1, "task"]] + [
         [20260928, 1, "task", index] for index in range(1, window + 2)]
@@ -235,8 +247,9 @@ def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: 
     allowed_parents = ((270, 360, 450, 540, 630, 720, 810),
                        (900, *CONTINUATION1350_CHECKPOINTS[:-1]),
                        (1350, *CONTINUATION1800_CHECKPOINTS[:-1]))[window]
-    sealed_git = (CONTINUATION_TRAINING_GIT, CONTINUATION1350_TRAINING_GIT, None)[window]
-    wanted_git = sealed_git if sealed_evaluation and sealed_git else frozen_git(continuation=True)
+    sealed_git = (CONTINUATION_TRAINING_GIT, CONTINUATION1350_TRAINING_GIT,
+                  CONTINUATION1800_TRAINING_GIT)[window]
+    wanted_git = sealed_git if sealed_evaluation else frozen_git(continuation=True)
     return window, wanted_spec_path, expected_sampler, allowed_parents, wanted_git
 
 
@@ -387,6 +400,12 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     return output / "manifest.json"
 
 
+def materialize_public_beta(checkpoint: Path, asset_root: Path) -> Path:
+    from .public_beta import materialize
+
+    return materialize(checkpoint, asset_root)
+
+
 def register_mt(asset_root: Path, source: Mapping) -> Path:
     spec = specification()
     checkpoint, run, _ = _mt_source(spec, source)
@@ -415,7 +434,7 @@ def _inspect_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping, ta
     continuation = macro in CONTINUATION_EVALUATION_MACROS
     window1350 = macro in CONTINUATION1350_EVALUATION_MACROS
     window1800 = macro in CONTINUATION1800_EVALUATION_MACROS
-    registered_spec = (CONTINUATION1800_SPEC_PATH if window1800 else
+    registered_spec = (CONTINUATION1800_FROZEN_SPEC_PATH if window1800 else
                        CONTINUATION1350_FROZEN_SPEC_PATH if window1350 else
                        CONTINUATION_FROZEN_SPEC_PATH if continuation else SEALED_SPEC_PATH)
     current_spec = specification(CONTINUATION1800_SPEC_PATH if window1800 else
@@ -500,6 +519,11 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
+        if bank.get("mode") == PUBLIC_BETA_MODE:
+            from .public_beta import inspect
+
+            return inspect(bank, path, source, task_keys, evaluation_role,
+                           require_formal, task_init_state_ids)
         spec = read_json(Path(bank["spec"]["path"]))
         _inspect_scope(bank, spec, path, source, task_keys, evaluation_role, require_formal,
                        task_init_state_ids)
@@ -548,7 +572,7 @@ class FrozenOperatorAdapter:
         self.states: OrderedDict[str, dict] = OrderedDict()
 
     def _state(self, key: str) -> dict:
-        if self.bank["mode"] == "MT":
+        if self.bank["mode"] in ("MT", PUBLIC_BETA_MODE):
             return self.common
         if key in self.states:
             self.states.move_to_end(key)
@@ -585,11 +609,15 @@ class FrozenOperatorAdapter:
 
 
 def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
-    return {"schema_version": EPISODE_SCHEMA, "mode": bank["mode"],
+    evidence = {"schema_version": EPISODE_SCHEMA, "mode": bank["mode"],
             "global_task_id": task["global_task_id"], "init_state_id": episode["init_state_id"],
             "condition_id": episode["condition_id"], "teacher_demo": episode["teacher_demo_indices"][0],
             "video_ordinal": episode["video_ordinal"], "shared": bank["shared"],
             "checkpoint": bank["checkpoint"], "scene_manifest": bank["scene_manifest"]}
+    if bank["mode"] == PUBLIC_BETA_MODE:
+        evidence.update(intervention="public_B0_A", teacher_video_values_read=0,
+                        video_id_role="paired_metadata_only")
+    return evidence
 
 
 def validate_episode(bank: Mapping, evidence, *, suite: str, task_id: int, init_state_id: int) -> bool:
@@ -611,9 +639,14 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
     eval_root = bank_path.parent.parent.parent / "evaluation"
     expected_output = (eval_root / "correct400" if macro in ("270", "300")
                        else eval_root / macro / "correct400")
-    if (path.resolve() != (SPEC_PATH.parent / "official_capture.json").resolve()
+    public_beta = bank.get("mode") == PUBLIC_BETA_MODE
+    expected_capture = (PUBLIC_BETA_CAPTURE_PATH if public_beta else
+                        SPEC_PATH.parent / "official_capture.json")
+    expected_study = PUBLIC_BETA_STUDY if public_beta else "operator_read_write_learning_20260928"
+    if (path.resolve() != expected_capture.resolve()
             or bank.get("kind") != KIND or manifest.get("schema_version") != "ember_pi05_registered_trajectory_capture_v1"
-            or manifest.get("study_id") != "operator_read_write_learning_20260928"
+            or manifest.get("study_id") != expected_study
+            or public_beta and bank_path != (PUBLIC_BETA_ROOT / PUBLIC_BETA_MODE / "banks/1800/manifest.json")
             or task_subset is not None or manifest.get("task_subset_selection") is not None
             or manifest.get("full_conditions") != full or manifest.get("mode") != "compact"
             or manifest.get("passive_control_trace") != PASSIVE_TAG or manifest.get("stage_predicates") is not True
@@ -672,16 +705,21 @@ def validate_capture_contract(contract: Mapping, repo_root: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("materialize", "register-mt"))
+    parser.add_argument("phase", choices=("materialize", "register-mt", "public-beta"))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--mode", choices=("T", "U"))
     parser.add_argument("--checkpoint", type=Path)
-    parser.add_argument("--device", default="cuda:0")
+    parser.add_argument("--device")
     args = parser.parse_args()
     if args.phase == "materialize":
         if args.mode is None or args.checkpoint is None:
             parser.error("materialize requires a T/U mode and completed selected ECP")
-        print(materialize(args.mode, args.checkpoint, args.asset_root, torch.device(args.device)))
+        print(materialize(args.mode, args.checkpoint, args.asset_root,
+                          torch.device(args.device or "cuda:0")))
+    elif args.phase == "public-beta":
+        if args.mode is not None or args.device is not None or args.checkpoint is None:
+            parser.error("public-beta takes only its fixed T1800 checkpoint and runs on CPU")
+        print(materialize_public_beta(args.checkpoint, args.asset_root))
     elif args.mode is not None or args.checkpoint is not None:
         parser.error("fixed MT registration accepts no writer mode or checkpoint override")
     else:

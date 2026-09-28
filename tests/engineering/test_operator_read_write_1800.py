@@ -134,7 +134,9 @@ def test_latest_ecp_and_selected_banks_reject_wrong_lineage(tmp_path, monkeypatc
             (first / "metrics.jsonl").write_text("\n".join(
                 prefix + [json.dumps({"update": step}) for step in range(1351, macro + 1)])
                 + "\n")
-            monkeypatch.setattr(bank, "frozen_git", lambda **_: GIT)
+            monkeypatch.setattr(bank, "CONTINUATION1800_TRAINING_GIT", GIT)
+            monkeypatch.setattr(bank, "CONTINUATION1800_FROZEN_SPEC_PATH",
+                                CONTINUATION1800_SPEC_PATH)
             assert bank.inspect_training_source(spec, checkpoint, "T",
                                                 sealed_evaluation=True) == contract
         with pytest.raises(ValueError, match="latest complete"):

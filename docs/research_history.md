@@ -4,6 +4,14 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-28：同算子读写工程独立验收并进入CPU正式转换
+
+9766cb8b由fc86031b集成。T/U各fresh4与T2→4，10更新/1120query；五ECP、恢复前缀/事件/LR、native/参数梯度及唯一train病例已核。
+主讨论CPU3/3通过，guard REVIEW无hard；完整0.3334568577GPUh，最长105帧28query约31.07秒，唯一520步失败不作性能结论。
+失败d566/c988仅修记录器且零更新，原件/冻结树保留。原件root`/data1/user/ymdai/ember_runs/operator_read_write_engineering_20260928`。
+设计§8事前登记完整T/U270、强MT原权重同scene400，以及唯一预留450的投入/保持规则；当前仅CPU转换，无正式GPU许可。
+元数据/实测外推完整首批12–15GPUh、6–8小时wall，未冒称全分布实测。详见findings§201/机制§42.6，实际授权看progress。
+
 ## 2026-09-28：形成同算子读写候选，仅准入有界工程
 
 在对应学习和同场景参考比较收束后，机制§42/findings§200选择新的完整读写约束：

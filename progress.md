@@ -1,26 +1,31 @@
 # EMBER progress
 
-## 当前状态：同算子读写候选仅准入有界工程（2026-09-28）
+## 当前状态：同算子读写工程验收，准备完整T/U比较的CPU转换（2026-09-28）
 
 Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-4c71-7c82-8629-8333ef74dfdd，
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
-**唯一active design：`docs/designs/operator_read_write_learning_design.md`§6。**
-任务`operator_read_write_engineering_20260928`仅授权完整候选短程工程/成本核验。
-准确基线已推送main **bf27bb77e8e786ec25a955fb8cb6a6d5574a5336**；00:35 UTC派发唯一Queue
-`01a0e570-37f2-75a0-9030-ce674d268710`。一次app-server即时快照核实该消息已进入执行者
-active轮`01a0e570-37f4-7d53-83b7-fb41cbb71040`；仅证明承接，不声称GPU已经启动。
-请求、Queue回执和快照在`.codex/tmp/operator_read_write_engineering_20260928/`；整批完成/实质阻塞一次回报。
-主讨论约30分钟形成机制§42/findings§200：公共完整rank128的实际A兼作教学key和执行read，
-公共β也在合法教学native读取中实际运行，变化Value逐帧写入M，最终唯一A/(B0+M)，无部署优化或在线更新。
-其额外学习联系是同一A接受真实动作读取和教学地址信用；不能由此宣称语义已取得、当前下降根因或能力保持。
-LocalField同消费者/逐位置绑定、ProcessPullback递归和条件速度/P/I完整反例均已比较，没有把这些旧功能当新发明。
+**唯一active design：`docs/designs/operator_read_write_learning_design.md`§8.4，仅CPU转换。**
+任务`operator_read_write_formal_transition_20260928`待本轮main交付后派发；此处计划文字不表示后台已启动。
+预计60–90分钟、120分钟实质阻碍回报线；GPU0，不建formal root/冻结树，不运行policy或环境，不追加工程smoke。
+将单一运行面转换为36task正式270事件/ECP和T/U/固定MT同scene官方接入；model/native数值不改，工程CLI退役。
+正式GPU尚未授权；后续精确冻结、launch/预算另记。主讨论承担科学裁决/main集成。
 
-工程T/U只区别教学key共用A或独立S；两臂fresh4+仅T2→4共10更新/1120query，
-一次最长视频28-query无更新和唯一train-only完整接口。预计75–120分钟、150分钟实质阻碍重审线；
-完整GPU硬限1.0h、峰2卡、原件6GiB、新冻结300MiB/相关代码3GiB，启动现场由执行者核quota/双节点/UUID/NUMA。
-没有正式长训、held/400、controls、RL、新数据或恢复旧实验许可；工程权重不作正式初值。
-主讨论负责独立审阅与后继完整比较的时间/强参照/相邻保持合同，工程通过不自动晋级。
+工程完成Queue已消费，旧Queue `01a0e570-37f2-75a0-9030-ce674d268710`不再表示后台任务。
+实现9766cb8b由fc86031b合入main；独立CPU3/3和原件读回通过，guard REVIEW无hard。
+T/U fresh4、T2→4合计10更新/1120query；五ECP及连续前缀、事件/LR、rank RNG成立。
+首步O/B0、第二步起A/P/C/D/native X/H及U的S活动，source physical trainable0；未由aggregate梯度认定语义或路径贡献比例。
+最长517→105帧28query/0update31.065秒，峰reserved32.54GiB；唯一train38/init0为520步失败，只作接口证据。
+两次失败只修记录器且零更新；完整七尝试0.3334568577GPUh、峰2卡、root2.30GiB。
+原件`/data1/user/ymdai/ember_runs/operator_read_write_engineering_20260928`；
+主讨论验收/成本脚本与JSON在`.codex/tmp/operator_read_write_engineering_20260928/`，无新policy/环境/GPU。
+
+已在§8事前冻结完整判断：T/U各fresh270/30,240 query、各correct400；既有强MT step300权重新增同scene400一次，
+不重训MT、不把旧155行冒称同scene。公共场景复用旧P/I400 scene且不改原件，T/U每task50视频无放回。
+只把接近强参照（max[历史155,本批MT]−15）且breadth≥6的首点送唯一预留450；届时须另登执行。
+450须超过强参照、相邻净降≤8、保留≥80%旧成功、breadth不降且≥6，才进入后续视频因果资格；不摘270峰值或补门控/rank等。
+预测首批12–15完整GPUh/6–8小时wall，拟硬限18/峰2卡、formal root32GiB；只是冻结规划，当前GPU许可仍0。
+完整36task metadata首270帧均值32.86、max105，训练T/U外推3.62/3.35GPUh；不能将其冒称完整分布实测。
 
 ### 以下同场景比较已完成，不再表示后台工作
 

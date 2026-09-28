@@ -1,7 +1,7 @@
 # 同一实际LoRA算子的教学写入与执行读取
 
 2026-09-28。候选，未验证；科学论证见机制分析§42。只有progress登记的阶段有执行许可。
-本文件§1–5定义完整方法与可失败判断，§6仅授权指定执行者完成有界工程，**不授权正式学习或held评测**。
+本文件§1–5定义完整方法，§6工程已完成、§7为独立验收；当前§8仅授权CPU正式运行面转换，**不授权正式学习或held评测**。
 它替换旧Core/Procedure/FactorHeads生成图，不在已关闭P/I、条件速度或LocalField上追加补丁。
 
 ## 1. 为什么投入，以及不凭什么投入
@@ -172,3 +172,137 @@ micro28/framechunk8，OOM时仅按14/7、4缩小且记账，不减查询/视频�
 工程严重违约可以在同一预算修正可复核实现并留失败原件；不得据smoke闭环好坏调模型或增加例子。
 
 完成或实质阻塞仅一次Queue回主讨论，附源码commit/原件绝对路径、实际计费与未验证边界；不自启后继。
+
+## 7. 工程独立验收（2026-09-28）
+
+执行实现`9766cb8bc624239abcc9a53ce11b6d5341dfc49f`，主讨论已审native/model/run完整相关图、两个失败修订、
+原始metrics/ECP/唯一病例和计费。六文件+1012行，其中源码839；三个内聚owner符合§5，guard REVIEW无hard。
+run649行和case94行为本次工程例外；正式转换须删除已完成工程CLI，不长期保留两套运行面。
+主讨论独立CPU 3/3通过；因成功冻结树为稀疏checkout，测试从同commit完整dev读取、模块从冻结src导入。
+一次初始测试路径不存在未执行测试；读回脚本对metrics_rows整数与state批维的两处假设已纠正，均非工程缺陷。
+
+T/U fresh4和T2→4合计10实际更新/1120query，五个完整ECP的优化器、scheduler、sampler和两rank RNG游标成立；
+T恢复原两行原文前缀、后两步事件/LR成立。两臂同任务/teacher/query/flow，28个query demo各异且均非teacher。
+首步O/B0活动、其它预定零；第二步起A/P/C/D及native X/H cotangent活动，U的独立S活动，source物理trainable0。
+**这里只证明实际图接通，aggregate梯度没有分离公共β教学路径的贡献，更未测得地址或Value的控制语义。**
+
+最长517→105帧、28query/0update整condition31.065秒（事件内30.984秒），compile7.439/FM2.472/replay21.073；
+峰allocated27.58/reserved32.54GiB。四步宏时长T33.33–35.73/U30.72–34.17秒/112query。
+顺序compile先安装2/demo46的非零LoRA（delta .02804），第二次38/demo46教学读取前恢复source identity，偏离精确0；
+公共β仍由函数式图装入，不能把物理identity误读为教学忽略公共β。唯一38/init0病例520步失败、104次重规划，
+NPZ 520动作/521状态及PT真实动作前缀/双RGB已核；只作接口事实，不触发性能补丁。
+
+d566cf83/c9887a2a两次失败均零已应用更新，只修retain_grad条件与梯度统计generator；约56/112次失败FM尝试单列。
+七次完整占卡合计**0.3334568577GPUh**，峰2卡；所有成功计算9766cb8b，五成功进程exit0，失败账保留。
+run root约2.30GiB，data1 quota终值525.6GiB/1TiB、共享83TiB，按执行时原件解释，不冒充未来live状态。
+原件root：`/data1/user/ymdai/ember_runs/operator_read_write_engineering_20260928`。
+主讨论CPU读回：`.codex/tmp/operator_read_write_engineering_20260928/main_acceptance.py`及同名JSON。
+尚无正式训练或held性能；本验收没有运行policy/环境/GPU或重跑工程。
+
+## 8. 完整比较的预注册与当前CPU转换合同
+
+### 8.1 科学干预、节点和投入裁决
+
+本节固定首批的完整比较；**当前仅授权CPU转换，不授权GPU或新formal root**。CPU实现独立验收后，主讨论再登记
+精确main冻结commit及整批GPU合同；不要求再做一轮smoke/接口病例。§2模型、§3普通FM和优化数值全部不变，
+T/U唯一区别仍是教学key共享A或独立S；两臂fresh，工程权重只作历史原件。
+
+首节点每臂270更新/30,240 query，每步4task×28，36task各30次访问。只在270各correct400一次；
+90/180/270保存ECP，90/180不物化、不评测、不选点。工程四任务刻意包含长视频，不能直接当完整任务池的平均成本。
+270越过150步warmup，已有条件速度同曝光节点曾有完整能力，是一个有信息量的有限窗口，非收敛或上限证明。
+唯一预留邻点450（新增各180步、累计50,400 query、各task50次访问）；本次CPU不开放450训练，不能自动续训。
+
+强参照B采用既有coverage36 MT-BC step300的原权重，**不重训、不换弱点、不改变因子/精度**，只新增一次同scene400：
+`/data0/user/ymdai/ember_runs/coverage_retraining_20260920/training/mtbc/checkpoints/step_00000300/lora.safetensors`。
+来源run_contract、checkpoint_manifest和既有official contract只读；source是同一aligned step1000、唯一共享38-target rank128，
+无teacher输入。旧155/400保留为历史标量，新同scene分数单独记；不把旧行伪称配对。此次改变的只有新比较的共同物理场景，
+不是恢复旧训练或重跑旧实验合同。MT原300步实际172,800 query，不称与T/U样本预算相同；它是强能力参照，因果干预只认T/U。
+
+在看本批结果前固定以下**本轮投入/选择规则**，不冒称统计定理或移植旧145硬门槛：
+
+- 记`B_ref=max(155,本次同scene MT成功数)`。若T/U270最佳达到`B_ref−15`且该臂breadth≥6/8，允许主讨论登记
+  唯一450节点并保持两臂共同续训；否则关闭本次完整学习窗口，不因T胜弱U、loss好看或工程已投入而续训。
+  15/400=3.75pp是为“接近强参照才值得检验相邻节点”预留的资源容差，非无效/等效置信界。
+- 450后可保留候选须：450严格超过B_ref；同臂从270到450净下降不超过8/400；保留至少80%的270成功集合；
+  breadth不下降且≥6/8。三项保持指标分别限制总量回退、能力交换和任务坍缩，不以总分增长遮蔽大面积丢失。
+  这些是本轮可证伪的能力保持选择，不代表所有正常随机交换的普遍上限。
+- 不摘270峰值、不接630、不扫seed/rank/η/LR、不加门控/aux/保持正则或冻结公共分支挽救本假设。
+  若两臂均合格，选450正确成功较高者，平手选T；只有一臂合格就选该臂。所有选择只用登记correct节点。
+- 两臂都强不证明共享A必要；U胜或T/U接近削弱绑定优势。T在两节点均较好也只支持本seed的共享约束收益，
+  要同时报告成对任务bootstrap及不确定性，不将其唯一归于语义对齐。若只U稳定强，应保留整体读写经验、否定强绑定解释。
+- 选定并冻结单checkpoint之后，才另登合法语言/static参照、same-task-other及最终视频controls，验证实际教学增量。
+  本批T/U都用视频，不能从T−U推断视频必要性；shuffled/reversed、Test、RL均不进入当前选择或设计。
+
+首批报告每臂400原行、逐task/suite/breadth、T−U/T−MT/U−MT的R/G/L/churn/Jaccard和完整成功集合；
+以8-task cluster bootstrap10000、seed2026092810报告差额区间，明确不含重新训练的不确定性。
+450若获得授权，用同一映射/scene计算所有同点和相邻比较；不择优重跑物理失败或不完整episode。
+
+### 8.2 实际训练/评测数据流
+
+训练唯一任务集合固定为
+`[0,1,2,4,5,7,12,13,14,15,17,19,20,21,22,25,28,29,32,34,35,36,37,38,42,43,51,55,56,62,64,73,95,96,97,101]`。
+全部由coverage_v1 authority核为train；沿既有24目标train+12明确meta授权，不引入迁移query/新标签。
+每9个宏步完整遍历36task：访问轮v的任务排列使用`SeedSequence([20260928,0,v])`；
+每task的50个teacher排列使用`SeedSequence([20260928,1,task])`，访问v取第v个；270只用前30，不能按结果换teacher。
+query使用`SeedSequence([20260928,2,task,v])`，从其它49demo无放回取28个，再各取合法frame `[0,length−2]`；
+HDF5 action offset1、own双RGB/8state/50动作，flow_seed仍用现有task_logical_batch_policy_rng_seed(seed7,task,v,queries)。
+完整事件T/U相同；按真实帧数平衡两rank只改变执行位置，不改逻辑权重、query和noise/time。一个condition权重1/4。
+
+唯一formal规格由engineering_spec改名为learning_spec；model/native的数值及源码计算保持，source/normalization/tokenizer不换。
+同节点world2、micro28/framechunk8、NCCL_P2P_DISABLE=1/GPU-local NUMA。正式初次物理GPU现场选择，无须沿用工程3/7；
+同臂故障恢复锁该臂原world2/UUID/NUMA，完整optimizer/scheduler/sampler/rank RNG与连续metrics前缀恢复到最新登记ECP。
+初始及同臂恢复都校验固定Git/source/model/数据/优化数值；之后main的文档前进不能使冻结身份失效。
+只有OOM可降framechunk8→4、micro28→14→7；必须保留每query实际FM随机流和完整112query/update语义，记录packing变更。
+若既有FM/恢复owner不能满足这些条件，应回报具体阻碍，不静默豁免校验或重置Adam。零剩余游标只完成ECP/pointer发布，不再更新。
+
+validation固定 `[3,6,11,16,23,26,31,39]×state0–49`，seed7/K1/correct，沿video_schedule的400个task-video条件，
+每task50条video无放回、T/U完全相同；held只读取authority和合法双RGB，绝不构造held FunctionalQueryDataset。
+使用已封存`/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/scenes`的400共同起点，
+不新建/修改scene，不恢复任何P/I模型。三臂首动作前均通过同一official full-scene restore和双RGB核验。
+每臂8 full（每task state0）、392 compact，保存真实T动作/T+1 body/EEF/gripper/BDDL、实际重规划双RGB；MT使用同等证据口径。
+复用canonical evaluator、long-first动态队列、persistent workers及BatchedLoRAInference，每卡2 replicas，协议不变。
+
+T/U bank每臂只存一次38个公共A、每condition保存最终38个B0+M，FP32不另降dtype，重建唯一rank128 LoRA。
+不存多套LoRA平均、不部署公共+条件两个adapter。MT引用旧单一完整rank128文件一次，无视频条件或重新物化其权重。
+bank/capture/episode准入在一个内聚owner；MT是固定外部参照的只读分支，不开放MT训练/任意外部checkpoint路由。
+MT来源须核旧run/step300/source/目标shape/normalization及任务数据边界，不靠修改旧authority或删除不匹配字段通过。
+既有hash身份合同按原owner保留，但不额外建立hash/sidecar或全模型扫描。
+
+### 8.3 成本与渐进限额
+
+成本脚本/结果：`.codex/tmp/operator_read_write_engineering_20260928/formal_cost_plan.*`，仅读authority长度和工程原timing。
+36task首270视频采样帧均值32.86、p95=58、max105；完整1800源池max105，held400长度均值36.32/max91。
+以每臂16个实测condition的compile/replay每帧中位数、28query FM中位数和真实双rank分配外推，T/U270训练分别
+3.62/3.35 GPUh；不是完整分布profile。训练保守规划7–9 GPUh，bank约0.53的线性估计规划0.6–1.0；
+三臂1200官方episode由最近P/I完整成本约1.13 GPUh/400外推3.4–4.5。首批完整预期**12–15 GPUh、6–8小时wall**，
+峰2物理卡（训练/物化/评测统一计数），加载/保存/失败/恢复计入；正式硬限拟为18 GPUh（train11、bank1.5、eval5.5）。
+若实际资源/吞吐不能在此范围完成，按完整批次有意义阻碍回报，不按时间心跳，不先加卡/加预算或抽少评测。
+
+每condition最终B为21,774,336 bytes、共享A为19,415,040 bytes，两臂800条件bank约16.26GiB；
+三点ECP两臂约2.7GiB、1200行捕获按既有产物规划8GiB及余量，首批formal root峰值32GiB。
+拟root=`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1`；当前不得创建。
+新冻结采用已验证稀疏代码树≤32MiB，开发及相关冻结代码总额≤3GiB；全部新写data1。
+formal实际launch前由执行者重新核strg01 data1独立quota、共享容量及现场双节点/GPU/UUID/NUMA，不能把§7终值当live准入。
+450若达到投入线，额外训练仅已有外推T/U2.41/2.22 GPUh，届时按首批实测重新预算；本节不预支执行权。
+
+### 8.4 当前唯一可执行任务：CPU正式运行面转换
+
+任务`operator_read_write_formal_transition_20260928`；唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22。
+基于派发时已推送main，在原独占dev/codex分支完成；主讨论独占main/docs。
+预计60–90分钟，120分钟为实质阻碍回报线；**GPU预算0，不创建formal root/新冻结树、不运行policy或环境**。
+
+工作：把run转换为上述唯一270训练入口、完整36task事件与ECP恢复，去掉工程四步/profile/case活动CLI；
+新增一个内聚bank/official接入owner，支持唯一T/U完整bank和严格封存MT只读引用、400 scene复用及配对捕获；
+仅在独立职责已形成时提取data/事件owner，不复制trainer/scene平台或通过碎片拆分躲guard。
+工程model/native文件原则上不改；若调用整理确需改动，逐项说明为什么不改变§2/3的计算，禁止混入科学修改。
+共享evaluator只作必要路由；旧P/I/条件速度sealed读取、Source/MT-BC既有能力不得破坏。
+
+CPU交付须核270完整事件36task各30访问/1080条件/30,240query，T/U同teacher/query/flow，合法offset与teacher排除；
+source/operator/optimization数值与9766cb8逐项相同。测试覆盖实际新合同的fresh/恢复/错臂或工程来源拒绝、唯一LoRA组合、
+held不构造query、MT来源和scene登记；复用工程通过的模型测试，不复制只测实现形状的新测试矩阵。
+允许读取小型旧MT因子/headers和ECP元数据核复用，禁止载入完整policy或扫描原400权重/held动作/state。
+对新增来源/边界不够确定就精确回报；不为避免一次CPU回报绕过原合同。
+
+按code-architecture-gate自审本次净增长、owners和生命周期；预计保留源码净增加≤500行，超过需解释实际职责，不机械拆碎。
+提交并推送隔离分支，完成或实质阻碍只给主讨论一条Queue；附精确commit、差异、CPU证据、预算边界及后继命令模板。
+这条完成消息触发主讨论审阅/集成和精确GPU合同；不要自启270/450、bank、held episode或另一次smoke。

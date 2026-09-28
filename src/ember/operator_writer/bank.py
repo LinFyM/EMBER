@@ -36,6 +36,11 @@ EVAL_SCHEMA = "ember_operator_read_write_eval_v1"
 EPISODE_SCHEMA = "ember_operator_read_write_episode_v1"
 PASSIVE_TAG = "ember_operator_read_write_passive_capture_v1"
 SCENE_ROOT = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/scenes")
+SEALED_TRAINING_COMMIT = "784febbff32d991e53b9e5c6ba9f74683890425e"
+SEALED_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-operator-stage1-formal"
+                        "/configs/operator_read_write_v1/learning_spec.json")
+SEALED_TRAINING_GIT = {"commit": SEALED_TRAINING_COMMIT, "branch": "",
+                       "dirty_paths": [], "pushed_ref": "origin/main"}
 
 
 def source_matches(left: Mapping, right: Mapping) -> bool:
@@ -146,7 +151,7 @@ def _mt_source(spec: Mapping, source: Mapping) -> tuple[Path, dict, dict]:
     return checkpoint, run, manifest
 
 
-def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str) -> dict:
+def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, sealed_evaluation: bool = False) -> dict:
     if mode not in ("T", "U") or checkpoint.name != "macro_00000270":
         raise ValueError("only formal T/U270 may materialize")
     output = checkpoint.parent.parent
@@ -161,8 +166,10 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str) -> dict:
     metrics = (output / "metrics.jsonl").read_text().splitlines()
     expected = (
         (run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE),
-        (run.get("mode"), mode), (run.get("git"), frozen_git()),
-        (run.get("spec"), str(SPEC_PATH)), (run.get("operator"), spec["operator"]),
+        (run.get("mode"), mode),
+        (run.get("git"), SEALED_TRAINING_GIT if sealed_evaluation else frozen_git()),
+        (run.get("spec"), str(SEALED_SPEC_PATH if sealed_evaluation else SPEC_PATH)),
+        (run.get("operator"), spec["operator"]),
         (run.get("events"), spec["events"]), (run.get("optimizer"), spec["optimization"]),
         (run.get("source_trainable"), 0),
         (complete.get("updates"), 270), (complete.get("metrics_rows"), 270),
@@ -289,9 +296,11 @@ def _inspect_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping, ta
     expected = (
         (path, expected_path.resolve()), (bank.get("schema_version"), BANK_SCHEMA),
         (bank.get("kind"), KIND), (bank["spec"], file_record(Path(bank["spec"]["path"]))),
-        (Path(bank["spec"]["path"]).resolve(), SPEC_PATH.resolve()),
-        (spec, specification()),
+        (Path(bank["spec"]["path"]).resolve(), SEALED_SPEC_PATH.resolve()),
+        ({key: value for key, value in spec.items() if key != "budget"},
+         {key: value for key, value in specification().items() if key != "budget"}),
         (spec.get("schema_version"), "ember_operator_read_write_learning_v1"),
+        ("arm" in bank, False),
         (bank["source"], source), (bank["scene_root"], str(SCENE_ROOT)),
         (evaluation_role, "validation"), (require_formal, True), (bank["tasks"], tasks),
         (set(task_keys), {(row["suite"], row["task_id"]) for row in tasks}),
@@ -328,7 +337,7 @@ def _inspect_mt_bank(bank: Mapping, spec: Mapping, source: Mapping) -> None:
 
 def _inspect_tu_bank(bank: Mapping, spec: Mapping, path: Path) -> None:
     mode, checkpoint = bank["mode"], Path(bank["checkpoint"])
-    run = inspect_training_source(spec, checkpoint, mode)
+    run = inspect_training_source(spec, checkpoint, mode, sealed_evaluation=True)
     base = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)
     shapes = expected_lora_state_shapes(base)
@@ -367,7 +376,8 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
             _inspect_mt_bank(bank, spec, source)
         else:
             _inspect_tu_bank(bank, spec, path)
-        return {**bank, "schema_version": EVAL_SCHEMA, "manifest": file_record(path),
+        return {**bank, "schema_version": EVAL_SCHEMA, "arm": selection(spec)["arm"],
+                "manifest": file_record(path),
                 "scene_manifest": file_record(SCENE_ROOT / "manifest.json")}
     except (KeyError, TypeError, ValueError, OSError, StopIteration) as error:
         raise Pi05EvaluationError(str(error)) from error

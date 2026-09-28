@@ -8,10 +8,13 @@ import pytest
 import torch
 
 from ember.lora import expected_lora_state_shapes
+from ember.eval_adapters import inspect_static_task_lora_adapter
+from ember.operator_writer import bank as operator_bank
 from ember.operator_writer.bank import (_mt_source, assemble_state, registered_capture,
                                         task_rows)
 from ember.operator_writer.run import (CHECKPOINTS, TASKS, FormalData, audit,
                                        resume_contract_compatible, specification, validate_attempt)
+from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.scene import inspect_registered_scenes, validate_scene_row
 from ember.pi05_eval.preparation import _registered_trajectory_capture
 from ember.pi05_eval_contract import inspect_source_checkpoint, load_evaluation_authorities
@@ -22,6 +25,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 ROOT = Path(__file__).resolve().parents[2]
 ASSET = Path("/data1/user/ymdai/projects/EMBER")
 SCENES = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/scenes")
+SEALED = Path("/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1")
 
 
 def test_full_270_event_stream_and_exact_resume_cursor():
@@ -163,3 +167,35 @@ def test_official_capture_and_scene_route_are_registered(tmp_path):
     validate_scene_row(row, tasks[0], contract)
     with pytest.raises(ValueError):
         validate_scene_row({**row, "scene_reference": None}, tasks[0], contract)
+
+
+def test_sealed_operator_banks_admit_only_their_original_training_source(monkeypatch):
+    for mode in ("MT", "T", "U"):
+        path = SEALED / mode / "banks" / ("300" if mode == "MT" else "270") / "manifest.json"
+        bank = read_json(path)
+        tasks = [SimpleNamespace(suite=row["suite"], task_id=row["task_id"],
+                                 init_state_ids=tuple(range(50))) for row in bank["tasks"]]
+        request = dict(manifest_path=path, source=bank["source"], tasks=tasks,
+                       evaluation_role="validation", require_formal=True)
+        adapter = inspect_static_task_lora_adapter(**request)
+        assert (adapter["arm"], adapter["mode"], len(adapter["conditions"])) == ("correct", mode, 400)
+        with pytest.raises(Pi05EvaluationError):
+            inspect_static_task_lora_adapter(**(request | {
+                "source": bank["source"] | {"checkpoint": "/wrong/source/checkpoint"}}))
+        with pytest.raises(ValueError, match="provenance/scope"):
+            operator_bank._inspect_scope(bank | {"arm": "wrong"}, read_json(Path(bank["spec"]["path"])),
+                                         path, bank["source"],
+                                         tuple((row.suite, row.task_id) for row in tasks),
+                                         "validation", True, None)
+
+    checkpoint = SEALED / "T/train/attempts/fresh/checkpoints/macro_00000270"
+    spec = read_json(operator_bank.SEALED_SPEC_PATH)
+    with pytest.raises(ValueError, match="outside this arm"):
+        operator_bank.inspect_training_source(spec, checkpoint, "U", sealed_evaluation=True)
+    run_path = checkpoint.parent.parent / "run_contract.json"
+    original_read = operator_bank.read_json
+    monkeypatch.setattr(operator_bank, "read_json", lambda path: (
+        original_read(path) | {"git": {"commit": "engineering"}}
+        if Path(path) == run_path else original_read(path)))
+    with pytest.raises(ValueError, match="numerical identity"):
+        operator_bank.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)

@@ -1,0 +1,553 @@
+"""Sealed T/U rank-128 banks and fixed MT step300 for official same-scene evaluation."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from collections import OrderedDict
+from dataclasses import dataclass
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Mapping
+
+import torch
+from safetensors import safe_open
+from safetensors.torch import load_file, save_file
+
+from ember.batched_lora import BatchedLoRAInference
+from ember.lora import (LORA_A_SUFFIX, LORA_B_SUFFIX, copy_task_lora_state_,
+                        expected_lora_state_shapes, identity_lora_state, inject_task_lora,
+                        task_lora_state_dict, validate_lora_state)
+from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval.scene import inspect_registered_scenes
+from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
+from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.task_protocol import load_task_authorities
+from ember.writer.materialization import file_record, planned_episodes, selection_contract
+
+from .data import FormalData
+from .run import (REPO, SCHEMA, SPEC_PATH, STAGE, build_runtime, complete_checkpoint,
+                  frozen_git, specification)
+
+
+KIND = "operator_read_write_lora_bank"
+BANK_SCHEMA = "ember_operator_read_write_bank_v1"
+EVAL_SCHEMA = "ember_operator_read_write_eval_v1"
+EPISODE_SCHEMA = "ember_operator_read_write_episode_v1"
+PASSIVE_TAG = "ember_operator_read_write_passive_capture_v1"
+SCENE_ROOT = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/scenes")
+
+
+def source_matches(left: Mapping, right: Mapping) -> bool:
+    return all(left.get(key) and right.get(key) and Path(left[key]).resolve() == Path(right[key]).resolve()
+               for key in ("source_run", "checkpoint", "model_path"))
+
+
+def selection(spec: Mapping) -> dict:
+    return selection_contract(role="validation", task_ids=spec["evaluation"]["task_ids"],
+                              cardinality=1, arm="correct", mode="per_init_ordinal",
+                              seed=spec["evaluation"]["video_schedule_seed"],
+                              init_state_ids=tuple(range(50)), video_pool=tuple(range(50)))
+
+
+def task_rows(spec: Mapping, asset_root: Path) -> tuple[list[dict], list[dict]]:
+    _, authority = load_task_authorities(asset_root, spec["source"]["data_protocol"])
+    entries = {int(row["global_task_id"]): row for row in authority["tasks"]}
+    selected, conditions = [], []
+    for task_id in spec["evaluation"]["task_ids"]:
+        original = entries[task_id]
+        if original["split_role"] != "validation":
+            raise ValueError("bank task crosses the validation information wall")
+        episodes = planned_episodes(selection(spec), task_id)
+        if len(episodes) != 50 or len({row["teacher_demo_indices"][0] for row in episodes}) != 50:
+            raise ValueError("official K1 schedule repeats a teacher video")
+        selected.append({"global_task_id": task_id, "suite": original["suite"],
+                         "task_id": original["task_id"], "language": original["language"],
+                         "split_role": "validation", "episodes": episodes})
+        for episode in episodes:
+            conditions.append({"condition_id": episode["condition_id"],
+                               "global_task_id": task_id,
+                               "teacher_demo": episode["teacher_demo_indices"][0]})
+    return selected, conditions
+
+
+def _factor_header(path: Path, shapes: Mapping[str, tuple], *, metadata: dict | None = None,
+                   dtype: str | None = "F32") -> None:
+    with safe_open(str(path), framework="pt", device="cpu") as reader:
+        if (set(reader.keys()) != set(shapes)
+                or metadata is not None and reader.metadata() != metadata
+                or any(tuple(reader.get_slice(name).get_shape()) != tuple(shape)
+                       or dtype is not None and reader.get_slice(name).get_dtype() != dtype
+                       for name, shape in shapes.items())):
+            raise ValueError("sealed operator factor header/shape/dtype changed")
+
+
+def assemble_state(shared: Mapping[str, torch.Tensor], conditional: Mapping[str, torch.Tensor],
+                   contract) -> dict[str, torch.Tensor]:
+    """Install one full adapter: public A and this condition's final B0+M."""
+    shapes = expected_lora_state_shapes(contract)
+    if (set(shared) != {name for name in shapes if name.endswith(LORA_A_SUFFIX)}
+            or set(conditional) != {name for name in shapes if name.endswith(LORA_B_SUFFIX)}
+            or any(value.dtype != torch.float32 for value in (*shared.values(), *conditional.values()))):
+        raise ValueError("operator bank must contain one complete FP32 A/B state")
+    result = {**shared, **conditional}
+    validate_lora_state(result, contract)
+    return result
+
+
+def _mt_source(spec: Mapping, source: Mapping) -> tuple[Path, dict, dict]:
+    checkpoint = Path(spec["evaluation"]["mt_checkpoint"]).resolve()
+    expected = Path("/data0/user/ymdai/ember_runs/coverage_retraining_20260920/training/mtbc"
+                    "/checkpoints/step_00000300/lora.safetensors")
+    if checkpoint != expected or not checkpoint.is_file():
+        raise ValueError("fixed historical coverage36 MT step300 source changed")
+    root = checkpoint.parent.parent.parent
+    run = read_json(root / "run_contract.json")
+    manifest = read_json(checkpoint.parent / "checkpoint_manifest.json")
+    wanted_tasks = specification()["events"]["task_ids"]
+    facts = (
+        (run.get("schema_version"), "ember_pi05_source_sft_launch_v3"),
+        (run.get("stage"), "development"),
+        (run["adapter"].get("kind"), "one_shared_multitask_pi05_lora"),
+        (run["adapter"].get("contract"), "configs/pi05_lora_rank128_aligned.json"),
+        (run["adapter"].get("per_task_adapter"), False),
+        (run["adapter"].get("stacked_shared_source_adapter"), False),
+        (run["optimization"].get("normalization"), "frozen filtered-LIBERO-90 source normalization"),
+        (run["optimization"].get("precision"), "bfloat16"),
+        # Preserve the old MT authority even though today's config file has a later identity.
+        (run["authorities"]["source_base_config"].get("sha256"),
+         "be2c885b4f76fef68bc0d5e2da1a8aa0a47640673ff77c18a1bc2d19566f8dda"),
+        (run["authorities"]["lora_contract"].get("sha256"),
+         "379ee28989f55ef571f82d9999a5a1c0c6e53906c8297dd216b79d88b814da6f"),
+        (run.get("source"), source),
+        ([row["global_task_id"] for row in run["tasks"]], wanted_tasks),
+        (run["stage_contract"].get("task_count"), 36),
+        (run["data"].get("action_start_offset"), 1),
+        (manifest.get("schema_version"), "ember_pi05_source_sft_checkpoint_v5"),
+        (manifest.get("consumed", {}).get("next_optimizer_step"), 300),
+        (manifest.get("files", {}).get("lora.safetensors", {}).get("bytes"), checkpoint.stat().st_size),
+    )
+    if any(actual != wanted for actual, wanted in facts) or any(
+            row["split_role"] != "train" for row in run["tasks"]):
+        raise ValueError("fixed MT run/step/source/normalization/task provenance changed")
+    base = load_pi05_lora_contract(REPO / run["adapter"]["contract"])
+    current = derive_pi05_lora_rank(load_pi05_lora_contract(
+        REPO / spec["source"]["lora_contract"]), rank=128)
+    if ((base.rank, base.alpha, len(base.targets)) != (128, 128, 38)
+            or expected_lora_state_shapes(base) != expected_lora_state_shapes(current)
+            or base.alpha != current.alpha):
+        raise ValueError("historical MT LoRA rank/alpha/targets changed")
+    _factor_header(checkpoint, expected_lora_state_shapes(base), dtype=None)
+    with safe_open(str(checkpoint), framework="pt", device="cpu") as reader:
+        if any(reader.get_slice(name).get_dtype() != (
+                "F32" if name.startswith(("model.action_in_proj.", "model.action_out_proj.")) else "BF16")
+               for name in reader.keys()):
+            raise ValueError("historical MT factor precision changed")
+    return checkpoint, run, manifest
+
+
+def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str) -> dict:
+    if mode not in ("T", "U") or checkpoint.name != "macro_00000270":
+        raise ValueError("only formal T/U270 may materialize")
+    output = checkpoint.parent.parent
+    expected_root = Path(spec["run_root"]) / mode / "train" / "attempts"
+    if output.parent.resolve() != expected_root.resolve():
+        raise ValueError("operator bank checkpoint is outside this arm's formal attempts")
+    run = read_json(output / "run_contract.json")
+    complete = read_json(output / "completion.json")
+    ecp = read_json(checkpoint / "checkpoint_manifest.json")
+    trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True,
+                         weights_only=True)
+    metrics = (output / "metrics.jsonl").read_text().splitlines()
+    expected = (
+        (run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE),
+        (run.get("mode"), mode), (run.get("git"), frozen_git()),
+        (run.get("spec"), str(SPEC_PATH)), (run.get("operator"), spec["operator"]),
+        (run.get("events"), spec["events"]), (run.get("optimizer"), spec["optimization"]),
+        (run.get("source_trainable"), 0),
+        (complete.get("updates"), 270), (complete.get("metrics_rows"), 270),
+        (complete.get("checkpoint"), str(checkpoint)),
+        (ecp.get("stage"), STAGE), (ecp.get("run_contract_schema"), SCHEMA),
+        (ecp.get("next_macro"), 270), (ecp.get("world_size"), 2),
+        (trainer.get("schema_version"), "ember_ecp_checkpoint_v1"),
+        (trainer.get("stage"), STAGE), (trainer.get("next_macro"), 270),
+        (trainer.get("metrics_rows"), 270),
+        (trainer.get("training_state"), {"updates": 270, "mode": mode}),
+        (trainer.get("sampler_state", {}).get("next_step"), 270),
+        ({k: v for k, v in trainer.get("sampler_state", {}).items() if k != "next_step"}, run["sampler"]),
+    )
+    if (not complete_checkpoint(checkpoint) or any(actual != wanted for actual, wanted in expected)
+            or len(metrics) != 270
+            or [row["update"] for row in map(json.loads, metrics)] != list(range(1, 271))):
+        raise ValueError("operator bank training run/ECP/source numerical identity changed")
+    return run
+
+
+def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device) -> Path:
+    spec = specification()
+    run = inspect_training_source(spec, checkpoint.resolve(), mode)
+    output = Path(spec["run_root"]) / mode / "banks" / "270"
+    lora = derive_pi05_lora_rank(load_pi05_lora_contract(
+        asset_root / spec["source"]["lora_contract"]), rank=128)
+    if run["lora"] != lora.to_dict():
+        raise ValueError("operator bank LoRA contract changed")
+    if (output / "manifest.json").exists() or (output.exists() and not
+                                              (output / "materialization_contract.json").is_file()):
+        raise ValueError("published or unregistered operator bank output exists")
+    runtime = build_runtime(asset_root, spec, device, mode)
+    if runtime.source != run["source"]:
+        raise ValueError("materialization source differs from the formal training run")
+    contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(SPEC_PATH),
+                "training_git": run["git"]["commit"], "source": run["source"],
+                "lora": lora.to_dict()}
+    output.mkdir(parents=True, exist_ok=True)
+    registration = output / "materialization_contract.json"
+    if registration.exists():
+        if read_json(registration) != contract:
+            raise ValueError("partial bank belongs to a different formal source")
+    else:
+        write_json_atomic(registration, contract)
+    runtime.writer.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device=str(device)), strict=True)
+    runtime.writer.eval()
+    shared = {name: value.detach().float().cpu().contiguous()
+              for name, value in runtime.writer.public_state().items() if name.endswith(LORA_A_SUFFIX)}
+    if len(shared) != 38:
+        raise ValueError("public A is not the complete 38-target shared factor")
+    shapes = expected_lora_state_shapes(lora)
+    a_shapes = {name: shape for name, shape in shapes.items() if name.endswith(LORA_A_SUFFIX)}
+    b_shapes = {name: shape for name, shape in shapes.items() if name.endswith(LORA_B_SUFFIX)}
+    shared_path = output / "shared.safetensors"
+    if shared_path.exists():
+        _factor_header(shared_path, a_shapes,
+                       metadata={"schema_version": BANK_SCHEMA, "mode": mode})
+    else:
+        save_file(shared, str(shared_path), metadata={"schema_version": BANK_SCHEMA, "mode": mode})
+    tasks, conditions = task_rows(spec, asset_root)
+    data = FormalData(asset_root, spec, query_labels=False,
+                      task_ids=tuple(spec["evaluation"]["task_ids"]), role="validation")
+    try:
+        for condition in conditions:
+            path = output / f"{condition['condition_id']}.safetensors"
+            raw, sampled = data.videos.frame_counts(condition["global_task_id"], condition["teacher_demo"])
+            if path.exists():
+                _factor_header(path, b_shapes,
+                               metadata={"schema_version": BANK_SCHEMA,
+                                         "condition_id": condition["condition_id"], "mode": mode})
+            else:
+                pixels, raw, sampled = data.condition(runtime, condition["global_task_id"], condition["teacher_demo"])
+                with torch.no_grad():
+                    state, _ = runtime.compile(pixels, frame_chunk=spec["operator"]["frame_chunk"])
+                factors = {name: value.detach().float().cpu().contiguous()
+                           for name, value in state.items() if name.endswith(LORA_B_SUFFIX)}
+                if len(factors) != 38:
+                    raise ValueError("video value did not produce a complete B0+M")
+                save_file(factors, str(path), metadata={"schema_version": BANK_SCHEMA,
+                                                       "condition_id": condition["condition_id"], "mode": mode})
+            condition.update(factors=file_record(path), raw_frames=raw, sampled_frames=sampled)
+    finally:
+        data.close()
+    bank = {"schema_version": BANK_SCHEMA, "kind": KIND, "mode": mode,
+            "spec": file_record(SPEC_PATH), "asset_root": str(asset_root),
+            "training_git": run["git"]["commit"], "checkpoint": str(checkpoint),
+            "checkpoint_manifest": file_record(checkpoint / "checkpoint_manifest.json"),
+            "source": run["source"], "lora": lora.to_dict(),
+            "shared": file_record(output / "shared.safetensors"), "conditions": conditions,
+            "tasks": tasks, "scene_root": str(SCENE_ROOT),
+            "information_wall": {"teacher_video_values_read": 400,
+                                 "teacher_runtime_reads": 0, "deployment_adapters": 1,
+                                 "validation_test_gradients": False}}
+    write_json_atomic(output / "manifest.json", bank)
+    return output / "manifest.json"
+
+
+def register_mt(asset_root: Path, source: Mapping) -> Path:
+    spec = specification()
+    checkpoint, run, _ = _mt_source(spec, source)
+    output = Path(spec["run_root"]) / "MT" / "banks" / "300"
+    output.mkdir(parents=True, exist_ok=False)
+    tasks, conditions = task_rows(spec, asset_root)
+    bank = {"schema_version": BANK_SCHEMA, "kind": KIND, "mode": "MT",
+            "spec": file_record(SPEC_PATH), "asset_root": str(asset_root),
+            "training_git": run["git"]["commit"], "checkpoint": str(checkpoint),
+            "checkpoint_manifest": file_record(checkpoint.parent / "checkpoint_manifest.json"),
+            "source": source, "lora": load_pi05_lora_contract(REPO / run["adapter"]["contract"]).to_dict(),
+            "shared": file_record(checkpoint), "conditions": conditions,
+            "tasks": tasks, "scene_root": str(SCENE_ROOT),
+            "information_wall": {"teacher_video_values_read": 0,
+                                 "teacher_runtime_reads": 0, "deployment_adapters": 1,
+                                 "validation_test_gradients": False}}
+    write_json_atomic(output / "manifest.json", bank)
+    return output / "manifest.json"
+
+
+def _inspect_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping, task_keys: tuple,
+                   evaluation_role: str, require_formal: bool,
+                   task_init_state_ids: Mapping | None) -> None:
+    mode = bank["mode"]
+    expected_path = Path(spec["run_root"]) / mode / "banks" / ("300" if mode == "MT" else "270") / "manifest.json"
+    tasks, conditions = task_rows(spec, Path(bank["asset_root"]))
+    expected = (
+        (path, expected_path.resolve()), (bank.get("schema_version"), BANK_SCHEMA),
+        (bank.get("kind"), KIND), (bank["spec"], file_record(Path(bank["spec"]["path"]))),
+        (Path(bank["spec"]["path"]).resolve(), SPEC_PATH.resolve()),
+        (spec, specification()),
+        (spec.get("schema_version"), "ember_operator_read_write_learning_v1"),
+        (bank["source"], source), (bank["scene_root"], str(SCENE_ROOT)),
+        (evaluation_role, "validation"), (require_formal, True), (bank["tasks"], tasks),
+        (set(task_keys), {(row["suite"], row["task_id"]) for row in tasks}),
+        (bank["information_wall"], {"teacher_video_values_read": 0 if mode == "MT" else 400,
+                                     "teacher_runtime_reads": 0, "deployment_adapters": 1,
+                                     "validation_test_gradients": False}),
+    )
+    if (mode not in ("T", "U", "MT") or not source_matches(bank["source"], source)
+            or any(actual != wanted for actual, wanted in expected)
+            or len(bank["conditions"]) != 400
+            or any({k: row[k] for k in ("condition_id", "global_task_id", "teacher_demo")} != condition
+                   for row, condition in zip(bank["conditions"], conditions, strict=True))):
+        raise ValueError("operator official bank provenance/scope changed")
+    if task_init_state_ids is not None and any(
+            tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ())) != tuple(range(50))
+            for row in tasks):
+        raise ValueError("operator official state scope changed")
+    inspect_registered_scenes(SCENE_ROOT, tasks)
+
+
+def _inspect_mt_bank(bank: Mapping, spec: Mapping, source: Mapping) -> None:
+    checkpoint, run, _ = _mt_source(spec, source)
+    expected = (
+        (bank["checkpoint"], str(checkpoint)), (bank["shared"], file_record(checkpoint)),
+        (bank["training_git"], run["git"]["commit"]),
+        (bank["checkpoint_manifest"], file_record(checkpoint.parent / "checkpoint_manifest.json")),
+        (bank["lora"], load_pi05_lora_contract(REPO / run["adapter"]["contract"]).to_dict()),
+    )
+    if (any(actual != wanted for actual, wanted in expected)
+            or any(set(row) != {"condition_id", "global_task_id", "teacher_demo"}
+                   for row in bank["conditions"])):
+        raise ValueError("fixed MT source/bank changed")
+
+
+def _inspect_tu_bank(bank: Mapping, spec: Mapping, path: Path) -> None:
+    mode, checkpoint = bank["mode"], Path(bank["checkpoint"])
+    run = inspect_training_source(spec, checkpoint, mode)
+    base = derive_pi05_lora_rank(load_pi05_lora_contract(
+        Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)
+    shapes = expected_lora_state_shapes(base)
+    expected = (
+        (bank["shared"], file_record(path.parent / "shared.safetensors")),
+        (bank["checkpoint_manifest"], file_record(checkpoint / "checkpoint_manifest.json")),
+        (bank["training_git"], run["git"]["commit"]), (bank["lora"], base.to_dict()),
+    )
+    if any(actual != wanted for actual, wanted in expected):
+        raise ValueError("T/U shared factor or formal checkpoint changed")
+    _factor_header(path.parent / "shared.safetensors",
+                   {name: shape for name, shape in shapes.items() if name.endswith(LORA_A_SUFFIX)},
+                   metadata={"schema_version": BANK_SCHEMA, "mode": mode})
+    b_shapes = {name: shape for name, shape in shapes.items() if name.endswith(LORA_B_SUFFIX)}
+    for row in bank["conditions"]:
+        factor = path.parent / f"{row['condition_id']}.safetensors"
+        if (set(row) != {"condition_id", "global_task_id", "teacher_demo", "factors",
+                        "raw_frames", "sampled_frames"}
+                or row["factors"] != file_record(factor)
+                or not 0 < row["sampled_frames"] <= row["raw_frames"]):
+            raise ValueError("operator B0+M file or video provenance changed")
+        _factor_header(factor, b_shapes, metadata={"schema_version": BANK_SCHEMA,
+                                                "condition_id": row["condition_id"], "mode": mode})
+
+
+def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
+                 evaluation_role: str, require_formal: bool,
+                 task_init_state_ids: Mapping | None = None) -> dict:
+    try:
+        path = manifest_path.resolve()
+        bank = read_json(path)
+        spec = read_json(Path(bank["spec"]["path"]))
+        _inspect_scope(bank, spec, path, source, task_keys, evaluation_role, require_formal,
+                       task_init_state_ids)
+        if bank["mode"] == "MT":
+            _inspect_mt_bank(bank, spec, source)
+        else:
+            _inspect_tu_bank(bank, spec, path)
+        return {**bank, "schema_version": EVAL_SCHEMA, "manifest": file_record(path),
+                "scene_manifest": file_record(SCENE_ROOT / "manifest.json")}
+    except (KeyError, TypeError, ValueError, OSError, StopIteration) as error:
+        raise Pi05EvaluationError(str(error)) from error
+
+
+@dataclass(frozen=True)
+class PreparedOperatorLoRA:
+    key: str
+    evidence: dict
+
+
+class FrozenOperatorAdapter:
+    """Batch a single FP32 rank128 adapter; T/U condition B, MT fixed complete state."""
+
+    def __init__(self, *, policy, source, evaluation_adapter, task_keys, device, require_formal):
+        del device, require_formal
+        bank = evaluation_adapter
+        if (bank.get("kind") != KIND or bank.get("schema_version") != EVAL_SCHEMA
+                or bank["source"] != source or not source_matches(bank["source"], source)):
+            raise Pi05EvaluationError("operator worker bank/source changed")
+        self.bank, self.policy = bank, policy
+        self.tasks = {(row["suite"], row["task_id"]): row for row in bank["tasks"]}
+        if set(self.tasks) != set(task_keys):
+            raise Pi05EvaluationError("operator worker task keys changed")
+        self.lora = load_pi05_lora_contract(REPO / "configs/pi05_lora_rank128_aligned.json") if bank["mode"] == "MT" else derive_pi05_lora_rank(
+            load_pi05_lora_contract(Path(bank["asset_root"]) / read_json(Path(bank["spec"]["path"]))["source"]["lora_contract"]), rank=128)
+        if self.lora.to_dict() != bank["lora"]:
+            raise Pi05EvaluationError("operator worker LoRA rank/source changed")
+        inject_task_lora(policy, self.lora)
+        for value in task_lora_state_dict(policy).values():
+            value.requires_grad_(False)
+        policy.eval()
+        self.batched = BatchedLoRAInference(policy, self.lora)
+        self.identity = identity_lora_state(self.lora)
+        self.common = load_file(bank["shared"]["path"], device="cpu")
+        self.conditions = {row["condition_id"]: row for row in bank["conditions"]}
+        self.states: OrderedDict[str, dict] = OrderedDict()
+
+    def _state(self, key: str) -> dict:
+        if self.bank["mode"] == "MT":
+            return self.common
+        if key in self.states:
+            self.states.move_to_end(key)
+            return self.states[key]
+        row = self.conditions[key]
+        if row["factors"] != file_record(Path(row["factors"]["path"])):
+            raise Pi05EvaluationError("operator condition changed during evaluation")
+        result = assemble_state(self.common, load_file(row["factors"]["path"], device="cpu"), self.lora)
+        self.states[key] = result
+        if len(self.states) > 8:
+            self.states.popitem(last=False)
+        return result
+
+    def prepare_episode(self, *, suite: str, task_id: int, init_state_id: int) -> PreparedOperatorLoRA:
+        task = self.tasks[(suite, task_id)]
+        episode = next(row for row in task["episodes"] if row["init_state_id"] == init_state_id)
+        return PreparedOperatorLoRA(episode["condition_id"], episode_evidence(self.bank, task, episode))
+
+    @torch.no_grad()
+    def install(self, prepared: PreparedOperatorLoRA) -> None:
+        copy_task_lora_state_(self.policy, self._state(prepared.key), self.lora)
+
+    @torch.no_grad()
+    def predict_action_chunk(self, prepared, batch, *, noise, num_steps):
+        if not prepared or len(prepared) != noise.shape[0]:
+            raise Pi05EvaluationError("operator LoRA batch lost paired conditions")
+        copy_task_lora_state_(self.policy, self.identity, self.lora)
+        with self.batched.activate([self._state(item.key) for item in prepared]):
+            return self.policy.predict_action_chunk(batch, noise=noise, num_steps=num_steps)
+
+    def close(self) -> None:
+        self.batched.close()
+        self.states.clear()
+
+
+def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
+    return {"schema_version": EPISODE_SCHEMA, "mode": bank["mode"],
+            "global_task_id": task["global_task_id"], "init_state_id": episode["init_state_id"],
+            "condition_id": episode["condition_id"], "teacher_demo": episode["teacher_demo_indices"][0],
+            "video_ordinal": episode["video_ordinal"], "shared": bank["shared"],
+            "checkpoint": bank["checkpoint"], "scene_manifest": bank["scene_manifest"]}
+
+
+def validate_episode(bank: Mapping, evidence, *, suite: str, task_id: int, init_state_id: int) -> bool:
+    if not isinstance(evidence, Mapping):
+        return False
+    task = next((row for row in bank["tasks"] if (row["suite"], row["task_id"]) == (suite, task_id)), None)
+    if task is None:
+        return False
+    episode = next((row for row in task["episodes"] if row["init_state_id"] == init_state_id), None)
+    return episode is not None and dict(evidence) == episode_evidence(bank, task, episode)
+
+
+def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapping,
+                       task_subset: Mapping | None) -> tuple[dict, dict]:
+    bank_path = Path(args.static_task_lora_manifest).resolve()
+    bank = read_json(bank_path)
+    full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0} for task in tasks]
+    if (path.resolve() != (SPEC_PATH.parent / "official_capture.json").resolve()
+            or bank.get("kind") != KIND or manifest.get("schema_version") != "ember_pi05_registered_trajectory_capture_v1"
+            or manifest.get("study_id") != "operator_read_write_learning_20260928"
+            or task_subset is not None or manifest.get("task_subset_selection") is not None
+            or manifest.get("full_conditions") != full or manifest.get("mode") != "compact"
+            or manifest.get("passive_control_trace") != PASSIVE_TAG or manifest.get("stage_predicates") is not True
+            or args.role != "validation" or args.mode != "formal" or len(tasks) != 8
+            or any(tuple(task.init_state_ids) != tuple(range(50)) for task in tasks)
+            or output_dir.resolve() != bank_path.parent.parent.parent / "evaluation" / "correct400"
+            or any(manifest.get(key) is not False for key in (
+                "training_gradient_use", "checkpoint_selection_use", "validation_use", "test_use"))):
+        raise Pi05EvaluationError("operator official full/compact capture scope changed")
+    capture = {"schema_version": "ember_pi05_registered_trajectory_capture_v1",
+               "selection_path": str(path), "selection_bytes": path.stat().st_size,
+               "mode": "compact", "full_conditions": full,
+               "trajectory_root": str((output_dir / "trajectories").resolve()),
+               "passive_trace": {"schema_version": PASSIVE_TAG,
+                                 "trace_root": str((output_dir / "continuous_traces").resolve())},
+               "training_gradient_use": False, "checkpoint_selection_use": False,
+               "validation_use": False, "test_use": False}
+    stage = {"schema_version": "ember_pi05_stage_predicate_capture_v1",
+             "capture": "all_rows_post_settling_then_every_executed_control_step",
+             "predicate_source": "installed_LIBERO_BDDL_goal_conjunction",
+             "full_conditions_only": False, "training_gradient_use": False,
+             "checkpoint_selection_use": False, "validation_action_reads": 0,
+             "validation_reward_reads": 0, "held_data_use": False,
+             "claim_boundary": "BDDL predicates are partial progress signals"}
+    return capture, stage
+
+
+def attach_capture_provenance(contract: dict, repo_root: Path) -> None:
+    del repo_root
+    adapter = contract.get("adapter") or {}
+    scene = contract.get("operator_read_write_scene") or {}
+    if adapter.get("kind") != KIND or scene.get("manifest") != adapter.get("scene_manifest"):
+        raise Pi05EvaluationError("operator scene and adapter are not paired")
+    contract["passive_capture_provenance"] = {
+        "schema_version": PASSIVE_TAG, "bank": adapter["manifest"],
+        "scene": adapter["scene_manifest"], "checkpoint": adapter["checkpoint"],
+        "evaluation_commit": contract["git"]["commit"]}
+
+
+def validate_capture_contract(contract: Mapping, repo_root: Path) -> None:
+    adapter = contract.get("adapter") or {}
+    capture = contract.get("diagnostic_occupancy_capture") or {}
+    path = Path(capture["selection_path"])
+    args = SimpleNamespace(static_task_lora_manifest=Path(adapter["manifest"]["path"]),
+                           role=contract["role"], mode=contract["mode"])
+    tasks = [SimpleNamespace(**row) for row in contract["tasks"]]
+    expected, stage = registered_capture(args, tasks, Path(contract["output_dir"]),
+                                         path, read_json(path), contract["diagnostic_task_subset"])
+    regenerated = dict(contract)
+    regenerated.pop("passive_capture_provenance", None)
+    attach_capture_provenance(regenerated, repo_root)
+    if (capture != expected or contract.get("diagnostic_stage_predicates") != stage
+            or contract.get("passive_capture_provenance") != regenerated["passive_capture_provenance"]):
+        raise Pi05EvaluationError("operator passive capture or scene provenance changed")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("phase", choices=("materialize", "register-mt"))
+    parser.add_argument("--asset-root", type=Path, required=True)
+    parser.add_argument("--mode", choices=("T", "U"))
+    parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--device", default="cuda:0")
+    args = parser.parse_args()
+    if args.phase == "materialize":
+        if args.mode is None or args.checkpoint is None:
+            parser.error("materialize requires a T/U mode and completed macro270 ECP")
+        print(materialize(args.mode, args.checkpoint, args.asset_root, torch.device(args.device)))
+    elif args.mode is not None or args.checkpoint is not None:
+        parser.error("fixed MT registration accepts no writer mode or checkpoint override")
+    else:
+        spec = specification()
+        from ember.pi05_eval_contract import inspect_source_checkpoint, load_evaluation_authorities
+        authorities = load_evaluation_authorities(args.asset_root / spec["source"]["evaluation_config"],
+                                                  args.asset_root)
+        ckpt = args.asset_root / spec["source"]["checkpoint"]
+        source = inspect_source_checkpoint(authorities, ckpt.parent.parent, ckpt, evaluation_mode="formal")
+        print(register_mt(args.asset_root, source))
+
+
+if __name__ == "__main__":
+    main()

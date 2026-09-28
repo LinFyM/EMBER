@@ -727,3 +727,28 @@ T/U物化独立、各bank发布后eval立即可开始，不等另一臂；现场
 Owner后续明确回报路由：Sol的源码交付、完整结果和实质阻碍直接Steer到主讨论当前活跃轮，不使用Queue。
 发送前一次只读核目标active turnId并用expectedTurnId准确投递；旧已送回报不重发，同task/root继续判重。
 这覆盖本批早先派发正文中的Queue方式，不改变科学范围、预算或独立工作分工。
+
+### 14C. 对14A匹配优势的近邻教学来源检验
+
+14A实际原件已显示四个train task中匹配视频一致优于跨suite来源，但这种干预同时大幅改变场景/对象集合。
+因此只补一个具体问题：所学功能是否也区分相似场景中的目标对象/关系，还是优势主要来自粗粒度场景匹配？
+这不是已选checkpoint的正式controls，仍为train-only冻结功能诊断；不测试shuffle/reverse或改变架构/训练。
+
+- 固定原T/U900、14A的target0/12语言及原28个query/flow/correct两teacher；原correct/β/source/MT结果直接复用。
+  新donor：target0仅用train1（ramekin旁黑碗）、train2（桌面中心黑碗）；target12仅用train13（BBQ sauce）、
+  train14（ketchup）。四donor均在已授权训练集，每donor仍取`SeedSequence([20260928,1,task])`原排列前两video。
+  2 target × 2 donor × 2 teacher × 2 mode = 16新增完整条件，全部固定后一次完成，不挑视频或再铺其它任务。
+- donor只供真实双RGB/stride5/末帧/原顺序；target exact language、query、flow及81846ed3数值消费者保持。
+  无需反传；保存prediction/实际train target/time、H/三处native X/38个M、真实video帧索引和全部scalar。
+  16项实际FM/配对CPU读回，与已有正确和远来源作功能分解；不重复14A正确/参照或读取held动作。
+- 若近邻也明显损伤，扩大对细粒度对象/关系匹配的支持，但仍不能排除静态目标/结果画面；
+  若近邻接近正确，则收窄14A“匹配”的语义层次，不宣称过程知识已建立；同suite视频本身仍含不同初态/手法。
+  两种结果均不直接支持改损失或重训，需与完整原件/历史和14B近期能力合并作选择。
+
+唯一Sol在任务临时脚本中复用14A读取，不改模型/native/正式训练或新建运行面；脚本和合同随原件保存。
+新root=`/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_nearfoil_900`。
+从14A实际80条件/.099074GPUh估算此项GPU约2–6分钟，CPU复用/读取约15–30分钟；含全部加载/失败硬限0.5GPUh，
+任一设备外部进程硬限15分钟。预计不到1GiB、峰值硬限2GiB，live quota与14A/B总新增量合计准入。
+可在14B bank/eval独立运行时使用适用卡并行，按现场显存/CPU/卡总量不干扰已就绪工作，结束立即释放。
+完成或具体阻碍直接Steer主讨论，不Queue、不为普通状态通知；不因这项变更打断正常14B。
+14A/B/C是当前明确诊断范围，全部0更新；无正式续训/重训/选点/其它旧点或自动追加对照。

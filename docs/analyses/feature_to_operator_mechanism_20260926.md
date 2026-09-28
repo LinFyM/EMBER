@@ -4066,3 +4066,48 @@ task0两条都可见碗移向盘，task12两条可见调味瓶移向篮，task20
 不能把50步全称为真实未来控制，也不能从这一小面板确诊补尾是闭环差额根因。
 CPU小型上下文在同名tmp的`teacher_visual_panel.json`、四张`teacher_panel_task*.png`及`query_sampling_context.json`；
 正式数据、模型、450/900合同与原件均未改变。
+
+## 45. 旧270主要缺口在什么实际行为上：task3目标对象的配对原件（2026-09-28）
+
+为把§44的功能问题联系实际闭环，主讨论只读旧stage1中差额最大的task3（Spatial task3，
+“pick up the black bowl on the cookie box and place it on the plate”）。这是看到完整分数后的定向描述，
+不是新的独立样本、预注册机制检验或checkpoint选择指标。没有模型forward、环境重跑、梯度或新GPU。
+
+先固定原capture的init0，直接读T/U/MT三份完整PT与其最终行引用的NPZ；这三行scene、teacher24及环境/策略RNG按原配对合同。
+随后仅观察同一合法teacher24的双RGB，未读取teacher action/state：画面确实从饼干盒上的碗移向盘。
+MT在103步成功，目标碗升高最多12.68cm；柜子上的另一只碗不动。T在220步失败，目标碗全程不动，
+却搬起柜子上的另一只碗：该碗第39步首次位移超过1cm，升高最多11.99cm，最后到盘附近。
+U同样220步失败，但两只碗均未移动，不能据此说U没有机械臂运动；它的eef轨迹在实际记录中持续变化。
+T/U与MT在第20步的eef y已分别相差约7.81/6.20cm，分歧早于目标碗被搬起，不只是成功判据或最终摆放的差异。
+
+为不以一例概括，进一步只消费此task三臂各50个scene的既有位置NPZ，共150份小型原件。
+目标由记录的BDDL `on(akita_black_bowl_1, plate_1)`确定，另一只碗是`akita_black_bowl_2`。
+以全程相对各自t0的最大三维位移描述“移动”，阈值1cm；另一只碗升高描述用相对t0的最大z增量≥3cm。
+这些是位置观测，不是抓取分类器或hidden语义标签，也不以阈值改写official success。
+
+| task3旧270/MT原件，各50行 | T | U | MT |
+| --- | ---: | ---: | ---: |
+| official成功 | 9 | 19 | 41 |
+| 目标碗全程位移<1cm | 39 | 28 | 2 |
+| 上项中另一只碗位移≥1cm | 27 | 15 | 1 |
+| 上项中另一只碗升高≥3cm | 18 | 8 | 0 |
+| 两碗位移均<1cm | 12 | 13 | 1 |
+| 失败但目标碗曾移动≥1cm | 2 | 3 | 7 |
+
+真正配对到MT成功而Writer失败的集合：T有33行，其中31行目标未移动、24行另一碗移动、16行另一碗升高≥3cm；
+U有23行，对应20/12/6。反向Writer成功而MT失败，两臂各1行。因此该task的主要差额确实发生在成功搬动目标之前；
+“只是末端摆放精度不够”不能解释这里绝大多数配对损失。init0还提供了T能搬运另一只碗的直接图像证据，
+但不能推广成T已学会所有抓放原语，亦不能把所有另一碗运动一概称为主动抓错。
+
+这更新了需要解释的实际不足：exact language及正确teacher所指定的**对象—支撑物关系**，没有可靠地落实到自身接近/操作行为。
+它仍未定位最早的内部失效层：公共β的目标关系响应不足、H/Value没有保留相关线索、M在自身输入上的作用不合适，
+以及有限训练/自身轨迹偏移均尚可能。这个被观察到的行为缺口不是为上述竞争解释择一的因果证据。
+强MT见过更多query，T/U同曝光比较公平，但不能由此处MT更好直接判定Writer结构容量不足。
+
+当前继续原450/900学习；届时除了完整成功/保持，已有capture可回答此目标未被搬动的缺口是否随学习收窄，
+无需新增episode或更改评测合同。训练侧§12能说明视频残差在实际自身query上怎样起作用，却不能与这份held行为观察
+拼成“已找到视频表示根因”；不据此追加对象标签、held梯度、关注图loss、选视频或更换架构。
+可复算入口为stage1三臂`evaluation/correct400/results.json`中task3的最终引用，消费者是
+`pi05_eval/trajectory_capture.py:record_passive_step/save_passive_trace/save_capture`。
+本次小型汇总及图像在同名tmp的`official_task3_motion_summary.json`、`official_task3_init0.{json,png}`、
+`official_task3_teacher24.{json,png}`；科研原始NPZ/PT保持原址。

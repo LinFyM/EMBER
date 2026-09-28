@@ -45,6 +45,11 @@ Owner随后指出主讨论不应结束回合等待续训；主讨论承认§43�
 §44补齐实际首层/中间Q/V的消费者和精确逐帧Value偏导，固定8条训练teacher双RGB已直接观察；
 同112条query的补尾比例11.00%–19.36%仅作FM解释边界，不新增mask或宣称根因。GPU特征/功能结果仍待§12执行。
 
+并行只读旧闭环原件已完成机制§45/findings§205：task3的MT成功而T/U失败集合分别33/23行，
+其中31/20行目标碗全程位移不足1cm；固定init0直接图像/位置显示T搬起另一只碗、目标不动，MT操作正确目标。
+这定位了主要行为缺口早于最终摆放，尚未因果定位公共β/视频写入/自身读取。只消费该task既有150份位置NPZ、
+init0三份full PT及对应合法teacher RGB，没有新episode/GPU、held梯度或改变450/900。
+
 81846ed3结构审阅：沿现有data/run/bank扩展，无第二trainer或新源模块；源/测试合计+440/−70，另一个声明式spec292行。
 run637、bank638行仍保持采样/训练/物化各自owner；旧spec/270/MT来源检查服务本批父资产与强参照读取，旧fresh训练CLI已禁用。
 architecture guard对`_validate_continuation_attempt`的复杂度28（阈25）报1项新信号；主讨论接受本次有界合同校验例外：

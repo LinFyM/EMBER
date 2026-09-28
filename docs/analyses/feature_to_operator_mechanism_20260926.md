@@ -3768,10 +3768,11 @@ P/I的标签可预测性与目标价值须分开：同一任务里，参考特�
 ### 42.1 历史真正缺少的比较不是“有没有局部信息/同消费者”
 
 重新核到`50dafb05:src/ember/writer/factor.py`的实际LocalField：对每个target，
-`B=U(code), A=mean_(t,h)(r_th X_th^T)`，所以`BA=mean_(t,h)(U r_th X_th^T)`。
+`B=U(code), A=(1/T) sum_(t,h)(r_th X_th^T)`，所以`BA=(1/T) sum_(t,h)(U r_th X_th^T)`；
+T是视频帧数，源码对50个horizon位置求和，不再除50。这里修正原记号`mean_(t,h)`的尺度歧义。
 U/r既接受局部真cotangent标签，也构成最终LoRA参加FM；其encoder有完整双向过程上下文。
 因此不能说它把局部知识丢给无关aux head，也不能把“逐帧作用和当前特征配对”当作本轮新发明。
-它在实际query上的直接读出为`sum(Ur_th)(X_th^T h_query)`：裸source X的原生内积是作用匹配的一部分。
+它在实际query上的直接读出为`(1/T) sum_(t,h)(Ur_th)(X_th^T h_query)`：裸source X的原生内积是作用匹配的一部分。
 其r可以学习选择/组合，U可以学习输出基；不能进一步说旧模型无法弥补这种内积或把它确诊为失败根因。
 
 ProcessPullback及后来的共享L/R已有差分Value、递归记忆、真实FM与可学习出口；条件速度已有共同执行状态基。
@@ -3867,3 +3868,18 @@ WIZARD已有findings§63审查，不重开专家权重回归路线；不继续�
 T/U只干预地址是否共用A，公共β→teacher native和最终普通FM均保留；U的S更多自由度不是更弱的信息输入。
 因此若T稳定强于U，首先支持该共享约束的学习收益；若U强，首先削弱绑定必要性；共同成败都不能单独识别公共β路径的作用。
 计划直接检验完整闭环和相邻保持，暂不追加分路径梯度/相似度探针。对照与投入线已在设计§8、看到正式结果前冻结。
+
+### 42.7 交接源码复核的三个精度边界
+
+接任session第一轮指出、原主讨论重新对照源码确认：§42.3的A三路信用是完整图的分解，不能说每个target三路均非零。
+`operator_writer/native.py`计算action_out投影以采集其真实输入，但丢弃投影输出，返回投影前H及各target输入X；
+因此action_out自身A/B0没有经自身公共β返回教学X/H的路径，A仍有教学key与最终执行信用，B0仍有最终执行信用。
+action_in教学X则是固定Gaussian probe，其key不能先验称为视频对象角色；对应Value仍依赖带合法RGB/L上下文的H。
+这些是实际图的不同位置，不需要用dummy依赖补齐“三路”，也不构成性能根因。
+
+`writer/data.py:FunctionalQueryDataset`尾段以末个动作重复补齐50，当前`writer/function_credit.py:mean_velocity_loss`
+对完整50×7求均值、不消费padding mask。因此“完整horizon动作监督”包含这部分标签约定，不能说每条query都含50个未填充的
+真实未来动作。此处仅澄清已执行目标；没有据此改mask、重训或推断与MT的差异，MT实际消费者另须有对应证据。
+
+`operator_writer/run.py`训练completion中的`scientific_qualification=true`在训练结束时写入，不能解释为闭环资格通过。
+正式能力仍由完整原行、强参照、相邻保持及后续视频因果证据裁决。上述记号和解释勘误不改变冻结源码、数值、原件或实验授权。

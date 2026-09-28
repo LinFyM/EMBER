@@ -3970,3 +3970,84 @@ V不直接读取M，所以想在重复地址处保持旧关联，不能一般性
 
 跨episode FM的统计学习前提沿§3/17.5及既有信息可识别性分析继承：teacher变化不等于有用操作知识，
 静态解存在也不证明有限模型无法借视频泛化。本次不重开配对数据或辅助loss，而在模型固定的有界学习中观察完整能力。
+
+## 44. 教学特征与自身特征并不相同：把写入信用接到真实Q/V消费者（2026-09-28）
+
+本节承接§43未回答的功能问题，与同一设计§11续训并行；§12已登记冻结270的最小训练侧诊断。
+本节先给出实际源码能确认的约束和可失败解释，尚无该诊断的GPU结果，不把推导称为实证根因。
+源码沿`operator_writer/native.py`、`pi05_processing.py`、`writer/function_credit.py`，并核当前安装的
+`lerobot/policies/pi05/modeling_pi05.py:embed_suffix/compute_layer_complete/denoise_step`；没有另换backbone实现。
+
+### 44.1 “同一原生target”保证坐标接口，不保证同一特征分布
+
+教学侧每帧合法双RGB与`Task: exact language;\nAction:`进入视觉/语言prefix，固定probe E与time=1进入suffix。
+`embed_suffix`先做公共action_in投影；时间MLP只生成各层AdaRMS条件。`compute_layer_complete`先对每个token做
+输入归一化，再算该层Q/K/V，随后才与视觉/语言prefix一起attention。因此不仅action_in的X恒定，
+**第0层Q/V的X在一条视频内也恒定**：它们来自公共action_in(E)和固定时间，尚未消费本帧图文。
+Q经过RoPE后的方向/其attention输出仍可依赖prefix位置和图文keys；最终H及Writer的Value仍依赖视频，
+不能由首层X固定推出该层视频残差无效。第8层Q/V与action_out的输入已经过此前的图文attention，情况不同。
+
+自身query侧由冻结source统计归一化8维state、量化为256档后写入
+`Task: language, State: <8 bins>;\nAction:`。带噪动作是`t*noise+(1−t)*action`，time随原FM采样变化；
+完整38-target的B0+M还改变了各层上游hidden。故教学与自身执行至少在观测、state prefix、噪声/time、上游条件权重上不同。
+实际RoPE的suffix位置还按有效prefix长度偏移。以上均是既有信息墙与消费者的事实，不是新发现的接口bug，
+更不能向教学偷偷补入state/action、fake query或dummy梯度来消除差异。
+
+共享A约束的是这两种实际输入经同一线性坐标变换后的读写关联。真实FM可以教公共β及Value把教学可见信息转成
+对自身状态有效的作用，但“同一A”没有消除上述分布差异，也未证明接触、对象角色或控制阶段已对齐。
+这使两种解释可区分：M可能在实际自身状态上几乎没有功能作用；也可能有显著作用，只是作用方向在不同状态/视频上有得有失。
+仅测教学H的变化幅度、A/S距离或M范数分不开它们。
+
+### 44.2 Q与V到底怎样把M读成动作变化
+
+在某层、某个实际suffix token的归一化输入r处，LoRA的alpha/rank=1，条件投影为`delta q=M_Q A_Q r`。
+对一个attention head，固定本次其余输入，经过对应位置的RoPE后，令
+
+```
+delta ell_j = <RoPE(delta q), k_j>/sqrt(d_head),
+delta alpha_j = alpha_j * (delta ell_j − sum_i alpha_i delta ell_i),
+delta attention = W_o sum_j alpha_j (v_j − vbar) delta ell_j,
+vbar = sum_j alpha_j v_j.
+```
+
+这是Q投影的小扰动如何改变真实内容选择的一阶表达式；随后还经过实际gate、残差、MLP和后续层。
+如果delta q对可见keys只造成相同logit平移，softmax一阶作用为零；如果所重分配位置的Value相同，也可能无输出作用。
+因此很大的Q条件投影不保证很大的动作改变，更不保证朝正确方向改变。这是attention消费者的具体限制，不是缺失梯度路径。
+
+V目标则在每个suffix位置j产生`delta v_j=M_V A_V r_j`，在固定本次权重时经
+`W_o sum_(j in suffix) alpha_j delta v_j`进入输出。它不直接重写冻结图像prefix的Value；
+中间suffix r_j已经包含此前读到的图文内容，因而仍可以调整视觉条件化的执行特征。
+这里的attention v_j与Writer逐帧写入V_t是不同对象，不能用一个“Value”名称掩盖两层消费者。
+多头共享/复制、后续非线性和其它LoRA造成的输入变化均由真实FM反传保留；这些局部式子不是整套policy的有限差分。
+
+在action_out，M_out A_out h直接进入50位置的速度预测，其中真实7维参与原FM；其余维度不受该末层FM直接监督。
+完整FM仍包含既有尾部repeat padding约定，部署只执行每次flow输出的前5步再观测。
+因此训练query上的有益速度修正与闭环成功之间仍有分布和多步执行差距，不能用本诊断替代400闭环。
+
+### 44.3 用真实FM信用判断写入，避免把特征变化当知识
+
+对冻结的本次教学K/V，记`R_t=I−K_t K_t^T/50`，`P_t=R_(t+1)…R_(n−1)`，
+实际记忆为`M_n=sum_t V_t K_t^T P_t/50`。令完整自身query的FM对该B的cotangent为G_B，
+则第t次Value独立乘以标量a_t时，在a_t=1处的偏导为
+
+```
+c_t = <G_B P_t^T K_t, V_t>/50,
+sum_t c_t = <G_B, M_n>.
+```
+
+反向只需从G_B起，依次计算`G_after K_t`和`G_before=G_after−(G_after K_t)K_t^T/50`，无需保存完整Jacobian。
+G_B已穿过§44.2的真实attention、所有下游层和动作FM，所以它排除了“投影很大但消费者不敏感”的一部分歧义。
+在固定K/native及其它写入时，c_t<0表示局部增强该次Value会降低当前FM，c_t>0表示反向；
+它不是删除真实视频帧的反事实，也不是该帧是否含有操作知识或能否使任务成功的标签。
+真实改变帧/公共参数还会改变相邻H、keys和其它Value，不能把这些独立缩放方向当作可单独训练的参数。
+不同帧/target的正负信用可能相抵；应保留全部贡献及总和，不能只选负信用帧讲故事。
+
+主讨论已用CPU随机非交换K序列核对上述分解，sum与直接内积相差1.39e-16；这仅验证代数实现，
+不证明实际模型的重建误差已通过。固定训练面板task0/12/20/32的两teacher与共用28条跨episode query也已CPU读取，
+teacher分别40/11、25/14、38/42、17/43，逐视频采样帧数20/27、37/26、27/27、51/49；没有held标签或GPU调用。
+
+§12的实际forward将比较完整生成LoRA与同一共同训练公共β，读取各自预测/FM，以及全38个M共同缩放的当前导数；
+同时对第8层Q/V、action_out保留真实教学/自身特征和逐帧信用。公共β不是独立训练language baseline，
+这份train面板也不能判断视频必要性、验证泛化或选择450/900。若M有功能而收益混合，应降低“完全没读到视频”的解释；
+若作用很弱，还须结合Value和自身读取，不能自动归罪于某个A；若train一致受益而400仍不足，迁移/闭环差距仍未定位。
+这些结果用来约束900后的完整方法判断，不启动新loss、寻址/保持补丁或按内部指标挑视频。

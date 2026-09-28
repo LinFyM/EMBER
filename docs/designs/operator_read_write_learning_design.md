@@ -577,3 +577,31 @@ parent/输出/拓扑写一次launch_contract；允许`origin/codex/demonstration
 
 主讨论同时推进实际特征—矩阵写入—自身动作—FM更新的可失败推导，继承既有原件验收并补真正缺证；
 不把已完成的消费者审阅再包装成研究，不以无限纸面推导阻挡有界学习，也不凭代数反例直接改架构。
+
+## 12. 与续训并行的原270训练侧功能读取诊断（2026-09-28）
+
+Owner指出主讨论不应在完成一项输入层局部分析后就等待续训。主讨论继续完整机制推导，并登记这一项最小实际证据：
+当前视频条件残差在自己的query上几乎无功能作用，还是已有实质作用却跨视频/状态得失相抵？
+§43的A/S/probe不能回答这个问题；普通hidden差异/gradnorm也不能代替。此项使用原270，不等待或选择续训节点。
+
+- 固定train四suite各首个登记代表task0/12/20/32；每task取原teacher排列第0、1条，T/U共8条件/臂。
+  每task为两teacher共用28个其它episode query，排除两teacher，`SeedSequence([20260928,44,task])`无放回选demo及合法frame；
+  flow seed沿现有函数、optimization seed7、独立diagnostic visit1000。两臂/两视频/参照共用实际queries、time/noise。
+- 只读784febb冻结数值和原T/U270完整Writer；不更新参数、不改训练采样、无环境episode，无validation/Test标签或选点。
+  Writer仅读合法teacher RGB/L；query state/action只进入原普通FM监督消费者。
+- 取得真实教学H和第8层Q/V输入、完整LoRA下自身query输入及FM完整cotangent；从实际K/V递归计算各帧写入对
+  `⟨G_B,M⟩`的有符号贡献，并核其求和等于该target的值缩放偏导。这是当前完整FM的局部信用，不是成功率归因。
+  给出native变化、实际写入/读取和功能信用的对应，不能由cosine/幅度直接命名物体或操作语义。
+- 同query读取完整生成LoRA的FM和当前公共β的FM，以及全38个M统一缩放的当前导数。
+  β是共同训练后去掉条件残差的冻结参照，**不是独立训练的language baseline，不识别视频必要性或泛化收益**。
+  该差额仅回答当前训练query上残差的功能作用；不据小面板挑视频/模型或改变450/900合同。V随key、其它层hidden与真实query梯度一起解释。
+- 每个condition保留可复算的小型feature/credit原件、样本/权重/源码来源，报告全部16条件；不能只挑较好视频或只报有利target。
+  stage1及续训正式结果不动；输出在`continuation900/analysis/teacher_to_query_270`，新增≤2GiB并计入原56GiB峰值。
+- 唯一新Sol执行；主讨论提供task-owned临时脚本并独立分析。优先完成续训实现/启动，诊断在独立适用卡与长任务并行，
+  不阻塞已就绪训练；现有长任务已满上限时按Owner短时例外准入。只需1张A40，预计5–12分钟、完整硬限0.5GPUh/30分钟，
+  全部加载/失败/占用计入续训总30GPUh。按现场显存/CPU选择打包，可窄修接口但不得扩任务/节点/干预。
+  诊断完立即释放；以一份有内容的分析交付回主讨论，后续formal整批回报保持原唯一渠道，不为各条件发通知。
+
+结果分支：若完整M几乎不改变实际FM prediction，降低“有强功能但只因保持失败”的解释；若作用显著但跨query/视频混合，
+不能称视频未被用，也不能将所有负信用当错误写入；若训练FM一致受益而formal仍不足，优先区分迁移与闭环分布，
+不以train面板通过当泛化资格。任一分支都不自动触发局部loss/保持/寻址补丁或新架构；与900的完整曲线共同裁决。

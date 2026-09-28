@@ -6,6 +6,11 @@ Owner与新主讨论完成结果、推进风格和后继规划交流后，明确
 希望次日早晨获得尽可能好的性能。本条撤销下文历史的先交流暂停；不承诺性能改善，不恢复任何已退役路线。
 唯一active design为`docs/designs/operator_read_write_learning_design.md`§11，§1–5科学模型和信息墙不变。
 
+Owner随后指出主讨论不应结束回合等待续训；主讨论承认§43局部分析后收尾过早，继续独立推进中间Q/V—输出—真实FM机制。
+同一active design追加§12的原270训练侧功能读取诊断：固定四task×两video×两臂、28共用跨episode query，
+不更新、不跑环境或held标签、不作checkpoint选择。小型原件≤2GiB、≤0.5GPUh计入原56GiB/30GPUh；
+优先续训启动，再由唯一Sol用独立适用卡并行，主讨论提供脚本并分析。当前在准备，未声称已运行。
+
 - Astra/max `01a0e6fd-5478-74f3-916e-9d9beb57da50`独占main/科学判断；新Sol/max `01a0e70e-48bc-7470-a725-c7420f96ee81`
   独占已释放dev，承接唯一任务`operator_read_write_continuation_900_20260928`。科学合同20993911已push；
   Queue `01a0e764-f966-7470-b071-dbf659f92e99`进入新active轮`01a0e764-f968-74c0-8756-6fa5d3fabbe4`，

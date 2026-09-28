@@ -3,6 +3,9 @@
 EMBER研究把exact task language与action-hidden教学视频，在rollout前一次编译为冻结π0.5 source的一套完整
 task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正确视频中的操作内容应贡献真实执行价值。
 
+当前唯一候选为[同一实际LoRA的教学写入与执行读取](docs/designs/operator_read_write_learning_design.md)，
+只准入短程完整工程与成本核验，尚无科学收益或正式长训。计算原理/历史区别/风险见机制分析§42，实际派发状态见progress。
+
 **条件速度算子V151→102、L147→112，强MT-BC155；本候选关闭，尚无稳定视频增益或能力保持。自主科学研究继续。**
 后续原始字段勘误：L450有24行fixture初位不一致，涉及它的相应严格配对范围为376；这些行均失败，总分/得失数不变。
 V相邻400行保存初位一致，退化与关闭裁决保留；证据范围见findings§186。
@@ -50,7 +53,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 
 | 目录 | 内容与生命周期 |
 | --- | --- |
-| `src/ember/` | Writer共享组件与封存bank读取、Source/MT-BC、数据及评测实现；当前无活动Writer训练候选 |
+| `src/ember/` | Writer共享组件与封存bank读取、Source/MT-BC、数据及评测；新读写候选仅按active工程合同实现 |
 | `scripts/` | 薄CLI、环境构建、数据封存和结果比较入口；已结束的专用诊断脚本由Git保存 |
 | `tests/` | 对当前实现及稳定科学/恢复/配对合同的CPU检查 |
 | `configs/` | 显式数据协议、方法配置和审计；不同协议分别保留，不能覆盖旧结果 |

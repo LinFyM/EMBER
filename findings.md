@@ -4828,3 +4828,19 @@ R对保存B的EEF p95差4.59/5.15/1.99/86.76mm，谓词不一致159/1/0/14状态
 P288正例和576阴性均保留，当前比较不解释576唯一根因，也不证明合法视频已经编码出所需关系。
 不补数据/P/I/M矩阵、扩构造、修控制器、筛视频或恢复已关闭方法；本数据比较线完成并收束。
 独立CPU脚本/验收JSON在`.codex/tmp/demonstration_transfer_main_review_20260927/reference_comparison_acceptance.*`。
+
+## 200. 同一实际A的教学写入/执行读取形成新候选，尚未验证（2026-09-28）
+
+机制§42重新核LocalField源码50dafb05：它已经有逐位置UrX^T和真标签/最终FM共同消费者，不能以缺少绑定或同一梯度为由重提。
+本候选的实质假设是公共完整rank128的A，同时作为教学key投影与实际执行读取；公共β还参与合法教学native读取，
+逐帧变化Value写入的矩阵M直接成为最终B0+M。Writer一次前向后固定唯一38-target LoRA，不运行部署优化器或在线视频记忆。
+具体图/梯度/对照/资源见`docs/designs/operator_read_write_learning_design.md`，不是已验证根因或修复。
+
+新增解释把第t个视频Value的真实信用写为`delta * <A h_query, P_t^T k_tj>/50`，P_t是后续矩阵写入的传播；
+A还同时接受执行读取和公共β改变teacher表示的信用。对照只将教学key改为独立S，保留相同β/V/M/真实FM与初值。
+公共A可能学得更合适的匹配，也可能受共同空间限制；LoRA坐标自由度、state-free/自身state差异、末帧覆盖和跨更新干扰均保留。
+递归非扩张界不证明动作/闭环/相邻保持，constant rank128可达也不保证学到；历史ProcessPullback、LocalField、条件速度与P/I失败继续约束投入。
+
+选择有界工程而非新长训：T/U fresh4和一次T2→4，1120真实query；长视频28-query无更新；唯一train-only canonical病例。
+预计75–120分钟、完整GPU硬限1h/峰2卡、原件6GiB，新内容全data1；具体派发以progress为准。
+不使用迁移数据，不补原B/P/I/M矩阵，不运行held/controls或恢复旧方法。正式预算和完整方法选择待工程成本及后续科学合同。

@@ -4,6 +4,14 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-28：形成同算子读写候选，仅准入有界工程
+
+在对应学习和同场景参考比较收束后，机制§42/findings§200选择新的完整读写约束：
+公共rank128 A同时作为教学key与最终policy的实际读取，公共β参与合法原生教学读取，M递归直接进入B0+M。
+这不是第一次动态Value、递归记忆或同参数监督；LocalField、ProcessPullback、PNBTT、条件速度及P/I实际边界均已比较。
+设计`operator_read_write_learning_design.md`定义T/U共享干预与真实FM，无迁移query或部署优化。
+当时仅授权1GPUh有界工程，尚无实现/模型收益；是否已经派发和完成看progress，不据此恢复任何后继长训。
+
 ## 2026-09-28：原B与参考迁移的固定同场景比较
 
 b1541155从aaea91b4实现，7bb1d558集成main；四个原B起点各R/S/X一次，共12条/4548动作，三臂成功2/4、2/4、3/4。

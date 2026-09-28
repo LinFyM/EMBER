@@ -178,6 +178,15 @@ def test_official_capture_and_scene_route_are_registered(tmp_path):
         rows, continuation_output, capture_path, selector, None)
     assert len(continuation_capture["full_conditions"]) == 8
     assert continuation_stage == stage
+    observed_bank = tmp_path / "T/banks/810/manifest.json"
+    observed_bank.parent.mkdir(parents=True)
+    write_json_atomic(observed_bank, {"kind": "operator_read_write_lora_bank"})
+    observed_output = tmp_path / "T/evaluation/810/correct400"
+    observed_capture, observed_stage = registered_capture(
+        SimpleNamespace(static_task_lora_manifest=observed_bank, role="validation", mode="formal"),
+        rows, observed_output, capture_path, selector, None)
+    assert observed_capture["trajectory_root"] == str((observed_output / "trajectories").resolve())
+    assert observed_stage == stage
     with pytest.raises(Pi05EvaluationError):
         registered_capture(
             SimpleNamespace(static_task_lora_manifest=continuation_bank, role="validation", mode="formal"),
@@ -346,8 +355,7 @@ def test_complete_450_ecp_can_feed_bank_before_train_completion(tmp_path):
            "source_trainable": 0, "operator": spec["operator"], "optimizer": spec["optimization"],
            "events": spec["events"], "continuation": spec["continuation"], "sampler": sampler,
            "parent_checkpoint": str(parent),
-           "git": {"commit": "new-frozen", "branch": "", "dirty_paths": [],
-                   "pushed_ref": "origin/codex/demonstration-transfer"}}
+           "git": operator_bank.CONTINUATION_TRAINING_GIT}
     write_json_atomic(attempt / "run_contract.json", run)
     write_json_atomic(attempt / "resume_provenance.json", {"checkpoint": str(parent)})
     (attempt / "metrics.jsonl").write_text("".join(f'{{"update": {step}}}\n' for step in range(1, 461)))
@@ -356,3 +364,43 @@ def test_complete_450_ecp_can_feed_bank_before_train_completion(tmp_path):
     write_json_atomic(attempt / "run_contract.json", run | {"events": {"seed": -1}})
     with pytest.raises(ValueError, match="source/ECP"):
         _inspect_continuation_source(spec, checkpoint, "T", sealed_evaluation=True)
+
+
+def test_real_810_evaluation_reads_only_old_complete_same_arm_ecp(monkeypatch):
+    spec = specification(CONTINUATION_SPEC_PATH)
+    root = Path(spec["run_root"])
+    for mode in ("T", "U"):
+        checkpoint = root / mode / "train/attempts/continuation/checkpoints/macro_00000810"
+        run_path = checkpoint.parent.parent / "run_contract.json"
+        run = read_json(run_path)
+        assert read_json(checkpoint / "checkpoint_manifest.json")["next_macro"] == 810
+        assert operator_bank.inspect_training_source(spec, checkpoint, mode, sealed_evaluation=True) == run
+        other = "U" if mode == "T" else "T"
+        with pytest.raises(ValueError, match="same-arm"):
+            operator_bank.inspect_training_source(spec, checkpoint, other, sealed_evaluation=True)
+        with monkeypatch.context() as patch:
+            original = operator_bank.read_json
+            patch.setattr(operator_bank, "read_json", lambda path: (
+                original(path) | {"source": {"model_path": "/wrong"}}
+                if Path(path) == run_path else original(path)))
+            with pytest.raises(ValueError, match="source/ECP"):
+                operator_bank.inspect_training_source(spec, checkpoint, mode, sealed_evaluation=True)
+        with monkeypatch.context() as patch:
+            original = operator_bank.read_json
+            patch.setattr(operator_bank, "read_json", lambda path: (
+                original(path) | {"git": {"commit": "wrong"}}
+                if Path(path) == run_path else original(path)))
+            with pytest.raises(ValueError, match="source/ECP"):
+                operator_bank.inspect_training_source(spec, checkpoint, mode, sealed_evaluation=True)
+
+
+def test_existing_900_bank_still_consumes_original_training_source():
+    spec = specification(CONTINUATION_SPEC_PATH)
+    path = Path(spec["run_root"]) / "T/banks/900/manifest.json"
+    bank = read_json(path)
+    tasks = [SimpleNamespace(suite=row["suite"], task_id=row["task_id"],
+                             init_state_ids=tuple(range(50))) for row in bank["tasks"]]
+    adapter = inspect_static_task_lora_adapter(
+        manifest_path=path, source=bank["source"], tasks=tasks,
+        evaluation_role="validation", require_formal=True)
+    assert adapter["mode"] == "T" and len(adapter["conditions"]) == 400

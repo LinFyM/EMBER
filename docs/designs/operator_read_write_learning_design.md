@@ -689,3 +689,37 @@ T/U可各占一张合适A40并行，source/MT只算一次；microbatch按真实�
 结果分支由主讨论独立核原件后解释：正确是否优于错来源、两正确是否保持、相对β/MT是否有益、效果在什么query/horizon出现，
 以及它们与270/450已有学习趋势能否相容。错误视频损伤本身也可能来自分布偏移，不能单独称正确内容必要，
 更不能将4个训练task的差额冒充8个held任务闭环根因。下一因果实验依据实际缺口另登记，不自动续做矩阵。
+
+### 14B. 只读既存810 ECP的相邻能力观察
+
+继续学习的一个实际未知是：450→900的长区间掩盖了什么近期趋势？T净进步、U净下降不说明最后90更新仍同向。
+现已有两臂完整810 ECP，无须更新模型即可缩小这个未知。此项与14A独立；不等待其loss决定选择哪个checkpoint，
+事先固定只看810，不按此分数再寻找720/630等峰值，不将追加观察自动纳入最终checkpoint选择。
+
+- T/U都读取原`continuation900/{T,U}/train/attempts/continuation/checkpoints/macro_00000810`，0 optimizer更新。
+  来源仍81846ed3、原teacher/query/flow/绝对LR，完整ECP身份及游标810如实保留；不得伪装成900、修改旧规格或重训。
+- 每臂物化完整400个correct条件并各跑一次official400，沿现有50视频无放回映射、原400 scene、env/policy RNG和官方执行口径。
+  8 full+392 compact PT、400 passive NPZ、失败/续行与全部成本按原消费者保留；不新算MT、270/450/900或任何controls/Test/RL。
+  与已有450/900/MT配对，报告per-task/suite/breadth、R/G/L/churn/Jaccard、固定8-task bootstrap及原件完整性。
+  原有已核证据继承，不重扫旧1200/1600 PT/NPZ；如发现具体配对问题则仅针对相关边界核验。
+- 工程复用`operator_writer/bank.py`及现有official owner，显式只增加登记的810 evaluation-only读取/物化准入。
+  不扩大train入口、不改变事件/优化/模型/native/loss/source，不新建平行bank或evaluator。
+  原818训练来源与新物化/评测Git分别记录，显式兼容旧clean frozen规格/来源；禁止放宽所有checkpoint或静默绕过检查。
+  旧450/900/MT消费者保持。针对真实810 ECP元数据、错mode/来源拒绝、capture与既有读取做必要CPU检查即可。
+  在独占dev完成窄扩展、push新clean detached冻结后执行，主讨论并行审阅集成；不等待main集成或额外许可。
+- 新bank与official可复用原canonical路径的空白810子目录：`continuation900/{T,U}/banks/810`、
+  `continuation900/{T,U}/evaluation/810/correct400`，不修改任何已发布270/450/900结果。
+  新合同、launch、成本与汇总放`/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/adjacent810`，
+  不将新成本回填成旧900批原成本，不复制旧权重、旧bank或训练状态。
+
+依据已完成900两bank .58805GPUh、两official1.93951GPUh，预计新增约2.6–3GPUh，硬限4GPUh，
+全部加载/失败/共驻外部占用计入新账；不因无失败而省略cost。新产物预计18–20GiB，含代码/失败/临时峰值硬限24GiB，
+须live strg01/data1 quota与14A峰值合计可容纳后才启动。CPU窄实现/验证预计30–60分钟；实际适用卡并行时
+bank/eval及CPU原件验收预计再45–90分钟，整体约1.5–2.5小时，非性能保证，明显超期/预算变化先说明具体原因。
+T/U物化独立、各bank发布后eval立即可开始，不等另一臂；现场按吞吐选择适用卡/replicas，遵守两节点总量与单节点规则。
+既有900用3 workers/卡不成为硬上限；不为追求形式扩卡重复计算或干扰他人。完成立即释放。
+
+唯一Sol保持14A原件/完整成本，不因本追加中断它；可将无需占GPU的14B窄实现与14A实际运行重叠。
+14A完成时原约定实质回报可正常送出供主讨论分析，14B最后一份完整回报；不按分片/节点自通知或反复发状态。
+两项均不授权900后训练、新架构训练、更多观察点或最终选点。若810与900仍无法判断更长学习，保留不确定性，
+不能自动以“再多看一个”无限补曲线；最终选择须连同机制证据向Owner解释后停下。

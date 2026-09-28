@@ -1,16 +1,32 @@
 # EMBER progress
 
-## 当前状态：同算子读写首批正式比较已派发并承接（2026-09-28）
+## 当前状态：T/U270及三套bank完成，official接口CPU修复已承接（2026-09-28）
 
 Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-4c71-7c82-8629-8333ef74dfdd，
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
-**唯一active design：`docs/designs/operator_read_write_learning_design.md`§10，资源调度已由§10.4按Owner效率优先要求修订。**
+**唯一active design：`docs/designs/operator_read_write_learning_design.md`§10，当前修复范围§10.5，资源调度按§10.4。**
+首批完整阻碍回报已消费。T/U各270/30,240query与90/180/270 ECP、两套400条件bank及MT登记均完成；
+MT首个official prepare因adapter缺`arm`退出1，尚无三臂episode，不能作科学阴性。新评测checkout也会触发旧bank对当前Git/spec路径的误绑定，
+本次在同一来源/接口边界一起修复，旧训练/权重/bank/scene/失败原件不动，不重训或重新物化。
+主讨论已核原MT失败栈、两臂run/completion/270行metrics及bank来源；完整独立验收继续。
+唯一任务`operator_read_write_official_repair_20260928`，Queue `01a0e6d0-3c28-7351-94f5-6252bc0bda7f`，
+新active轮`01a0e6d0-3c2a-7581-a797-e5180497eed2`已明确承接。主讨论独占main/docs，指定执行者独占原dev源码/测试，GPU预算0。
+Owner指出接口修复不应再次停等。§10.5已改为修复→三臂CPU入口核验→推送隔离commit→新evaluation-only冻结→直接继续原三臂400，
+主讨论并行审阅集成；CPU阶段GPU0，随后沿原GPU预算，无新训练/物化许可。预计CPU15–25分钟，4–6适用卡时official约1–1.5小时。
+已付7.746646567GPUh，原18总/5.5 official预算保持；§10.4确已执行，bank双臂并行且重叠MT失败尝试，实际峰3卡。
+消息/回执/快照见`.codex/tmp/operator_read_write_engineering_20260928/official_repair_*`。
+主讨论完整只读核270×4条件，两臂1080项teacher/query/frame/flow seed逐项相同；36task各30不同teacher、28不同query且排除teacher。
+六个ECP文件/游标元数据及三套400 bank同scene/source/调度成立，旧official输出均不存在；未读优化器张量/held标签或运行模型。
+原件验收见同tmp的`formal_training_bank_main_acceptance.json`；online FM继续下降仍非收敛或闭环能力证据。
+
+### 以下为本批已完成训练与原派发记录
+
 06:32 UTC初始快照U到269；随后原件确认U在06:32:28正常退出，两臂均完成270/30,240query及90/180/270 ECP，退出码均0。
 T/U完整训练成本3.665571/3.397299，合计7.062870GPUh；没有发终止信号或重跑。MT bank已登记，后续bank/official由执行者按实际完成状态推进。
 撤销整批两卡额外上限，按仓库8/6总卡及单节点6卡现场准入，及时重叠MT评测、T/U bank与各臂official；两臂完成训练直接复用。
 科学冻结仍是下列784febb；18 GPUh及32GiB、270/三臂400范围保持。4–6适用卡下剩余规划约1–2小时，具体由首段实测修订。
-调度修订adf7aa34已推送；Steer接口接受目标同轮01a0e5eb-8e90-7142-b4d3-5c469e59ff8c，首次读回尚未显示新消息承接，不能冒称已执行新并行安排。
+调度修订adf7aa34已推送；Steer接口接受目标同轮01a0e5eb-8e90-7142-b4d3-5c469e59ff8c；其后完整阻碍回报已证明并行安排实际应用。
 消息/回执/只读快照位于`.codex/tmp/operator_read_write_engineering_20260928/efficiency_steer_{request.txt,receipt.json,ack_snapshot.json}`；已有接受回执，不重复发送。
 唯一正式任务`operator_read_write_learning_stage1_20260928`；精确formal冻结 **784febbff32d991e53b9e5c6ba9f74683890425e** 已推送main。
 该commit定义本批代码与数值，后续main状态更新不改变它。02:50 UTC唯一Queue `01a0e5eb-8e89-7432-a376-4e4a7589aa87`

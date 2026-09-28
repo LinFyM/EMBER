@@ -3,12 +3,15 @@
 ## 当前：同算子读写首批完整正式比较（2026-09-28）
 
 最终目标和自主授权不变。唯一active design为`docs/designs/operator_read_write_learning_design.md`§10；
-工程与CPU转换已验收，正式精确冻结/实际承接只看progress。尚无本候选正式分数。
+工程与CPU转换已验收，正式精确冻结/实际承接只看progress。三臂GPU据原执行者回报已退出，完整1200行及成本仍待最终验收，尚无主讨论接受的正式分数。
 
-Owner授权真实双session交接正在进行：新Astra/max主讨论与新GPT-6 Sol/max执行者分别只读恢复、分轮核验；
-未明确转交前原主讨论独占main，旧执行者仅收尾原批。其回报后不再给旧执行者派新任务；身份/轮次/交接令以progress为准。
+Owner授权真实双session交接已通过多轮理解与纠偏验收：Astra/max主讨论`01a0e6fd-5478-74f3-916e-9d9beb57da50`，
+GPT-6 Sol/max执行者`01a0e70e-48bc-7470-a725-c7420f96ee81`；原主讨论本次推送后发送明确转交令。
+新主讨论接原批唯一最终回报并独占main/裁决；旧执行者仅收尾原批，回报后不再派新任务，旧dev明确释放后归新Sol。
+身份生效与回报判重以progress和实际交接令为准；交接不授予450或其它新计算范围。
 
-1. T/U各fresh270及bank400、MT登记已经完成。§10.5接口修复83946ae1的三臂真实CPU prepare通过，已用新evaluation-only冻结并行运行三臂correct400；
+1. T/U各fresh270及bank400、MT登记已经完成。§10.5接口修复83946ae1的三臂真实CPU prepare通过，已用新evaluation-only冻结运行三臂correct400；
+   原执行者最新报告三臂GPU均已退出，T保留332完成行后原队列恢复exit0、U/MT直接exit0，正在做整批原件/成本验收；不从此状态推科学分数。
    主讨论独立6项CPU回归通过并由3b24f9ea集成main，旧训练/ECP/bank/scene完全复用，无第二次许可停点。
    不重训/重物化，不把阻碍当科学阴性。
    CPU预计15–25分钟，后续official原估3.4–4.5GPUh，4–6适用卡约1–1.5小时含启动/长尾，现场修订。

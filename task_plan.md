@@ -5,6 +5,9 @@
 最终目标和自主授权不变。唯一active design为`docs/designs/operator_read_write_learning_design.md`§10；
 工程与CPU转换已验收，正式精确冻结/实际承接只看progress。尚无本候选正式分数。
 
+Owner授权真实双session交接正在进行：新Astra/max主讨论与新GPT-6 Sol/max执行者分别只读恢复、分轮核验；
+未明确转交前原主讨论独占main，旧执行者仅收尾原批。其回报后不再给旧执行者派新任务；身份/轮次/交接令以progress为准。
+
 1. T/U各fresh270及bank400、MT登记已经完成。§10.5接口修复83946ae1的三臂真实CPU prepare通过，已用新evaluation-only冻结并行运行三臂correct400；
    主讨论独立6项CPU回归通过并由3b24f9ea集成main，旧训练/ECP/bank/scene完全复用，无第二次许可停点。
    不重训/重物化，不把阻碍当科学阴性。

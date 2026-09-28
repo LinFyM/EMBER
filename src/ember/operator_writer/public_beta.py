@@ -46,12 +46,17 @@ def public_state(checkpoint: Path, lora) -> dict:
     return state
 
 
-def materialize(checkpoint: Path, asset_root: Path) -> Path:
-    spec = owner.specification(owner.CONTINUATION1800_SPEC_PATH)
+def _fixed_checkpoint(spec: Mapping, checkpoint: Path) -> Path:
     checkpoint = checkpoint.resolve()
     expected = Path(spec["run_root"]) / "T/train/attempts/continuation/checkpoints/macro_00001800"
     if checkpoint != expected.resolve():
         raise ValueError("public beta only reads the fixed complete T1800 ECP")
+    return checkpoint
+
+
+def materialize(checkpoint: Path, asset_root: Path) -> Path:
+    spec = owner.specification(owner.CONTINUATION1800_SPEC_PATH)
+    checkpoint = _fixed_checkpoint(spec, checkpoint)
     run = owner.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         asset_root / spec["source"]["lora_contract"]), rank=128)
@@ -85,7 +90,7 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
             evaluation_role: str, require_formal: bool,
             task_init_state_ids: Mapping | None) -> dict:
     spec = owner.specification(owner.CONTINUATION1800_SPEC_PATH)
-    checkpoint = Path(bank["checkpoint"])
+    checkpoint = _fixed_checkpoint(spec, Path(bank["checkpoint"]))
     run = owner.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)

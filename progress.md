@@ -14,7 +14,13 @@ Owner准备休息，明确撤销本轮“分析后必须停下等其讨论”的
 唯一Sol在独占dev窄扩现有共享adapter消费者，CPU实源/旧读取检查、push clean freeze及live准入后可直接执行，main并行审阅。
 合同6d5f3f10已派唯一Sol：新任务Queue回执`01a0ea43-e21d-7781-8986-716c63574a26`，一次只读核对确认新活跃轮
 `01a0ea43-e223-7bd2-b780-ad3376814531`收到准确正文；正文/回执/snapshot为同名tmp的`public_beta_*`。
-这是给Sol的下一任务，不是Sol向主讨论的回报Queue；其交付仍直接Steer。尚无源码/启动/结果回报，不预报已开GPU。
+这是给Sol的下一任务，不是Sol向主讨论的回报Queue；其交付仍直接Steer。
+源码faac46f8已交付并以e5c85485集成main；新冻结`EMBER-operator-public-beta-diagnostic-formal`核为同commit、clean detached。
+主讨论审全diff及DirectLoRAParameters实际排序、真实单份公共bank，独立7项CPU通过（10.89秒），包括76因子映射、实际adapter/capture和旧1800/1350/900/MT读取。
+另实际复现检查器可接受同窗口1710声明的窄边界缺口，main将导出/读取统一限定同一真实1800路径并补拒绝回归；
+实际正式bank从始至终是正确T1800，故不重物化/重跑、不改已冻结数值源。新增小模块只承接公共因子导出/检查，运行仍复用唯一bank/evaluator。
+Sol已完成CPU物化：400条配对元数据、一份41,201,920字节公共LoRA，0视频值读取；主讨论未读取本批中途分数。
+Sol可按既有§17完成live准入后直接评测，不等待main集成；当前尚无完整结果回报。
 
 §16全部800新行已完成并独立验收：T1350/1710/1800均154/400，强MT153；breadth均6，task23/39仍0。
 1800相对1710保留135/得19/失19，相对1350为133/21/21；相对MT只+1、区间[−5.5,6.5]pp，未取得稳健优势。

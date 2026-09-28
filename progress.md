@@ -1,6 +1,6 @@
 # EMBER progress
 
-## 当前：1350整批已验收，授权T单臂最后一个本夜原样学习窗口（2026-09-29 04:20）
+## 当前：1350整批已验收，T单臂1350→1800已实际启动（2026-09-29 04:30）
 
 Owner准备休息，明确撤销本轮“分析后必须停下等其讨论”的限制：主讨论自行决定修正或续训并执行，
 之后继续结合理论和实际结果更新判断、尽可能提高EMBER性能，次日早晨由Owner查看效果。
@@ -18,7 +18,14 @@ b8385d9a合同已送达唯一Sol：后继任务Queue回执`01a0e9a4-f9fe-7c32-98
 其源码/launch/结果仍要求直接Steer。正文/回执/单次snapshot在同名tmp的`continuation1800_*`。
 1800源码fcc23cd1已push并以275a70a7集成main；主讨论审完整改动、真实父来源与旧消费者，并独立17项CPU通过（20.51秒）。
 新冻结树`EMBER-operator-continuation1800-formal`核为同fcc23cd1、clean detached，模型/native/update未改；
-旧1350读取显式固定14bac4cd，sampler/后段resume复用原owner。当前尚无新GPU launch回报，不把源码验收写成已开训。
+旧1350读取显式固定14bac4cd，sampler/后段resume复用原owner。
+Sol已直接Steer实际launch；主讨论读取新root `continuation1800/launch/launch_contract.json`及`T_train.started.json`：
+T于04:26:53 CST在gpu02物理0/1/2/3、world4启动1350→1800，cwd/PYTHONPATH为上述fcc23cd1冻结树，
+读取同臂14bac4cd完整1350 ECP，microbatch28/frame_chunk8，外部timeout9000秒。
+实际双节点准入为常规上限6卡、当前用4卡，其余适用资源供1710就绪后bank/official与训练后段重叠；
+所选卡可用显存至少44.7GiB。strg01 data1启动用量673833796/1073741824KiB、共享余82TiB，新32GiB峰值预算可容纳。
+这些资源事实继承启动原件，不冒称主讨论另做live检查；本次仅确认外部进程启动，首更新、1710/1800与最终成本尚待完整回报。
+新增整批14GPUh硬限、1710/1800各400配对评测及1800停止边界保持；只接收完整节点/整批/实质阻碍Steer，不读半批成绩。
 主讨论并行完成1350行为定位：部分低分在目标物几乎未动时已搬其它物体，双物任务也仍有局部保持退化，
 机制§55/findings§216保留实际例子及H/M/Aq/β未能分离的边界；不据此改变已释放科学计算或自动追加探针。
 以下1080/1350接收过程为本批执行历史，不表示仍有旧GPU作业或尚未知T1350结果。

@@ -1,0 +1,112 @@
+"""Differentiable state-free PI05 teacher read under the same public LoRA."""
+
+from __future__ import annotations
+
+from contextlib import contextmanager
+from typing import Iterator
+
+import torch
+from torch import nn
+from torch.utils.checkpoint import checkpoint
+
+from ember.lora import LORA_A_SUFFIX
+
+
+@contextmanager
+def _capture_inputs(policy: nn.Module, names: tuple[str, ...]) -> Iterator[dict[str, torch.Tensor]]:
+    captured: dict[str, torch.Tensor] = {}
+    handles = []
+    try:
+        for name in names:
+            module = policy.get_submodule(name)
+
+            def hook(_module, arguments, *, selected=name):
+                if selected in captured or not arguments or not isinstance(arguments[0], torch.Tensor):
+                    raise ValueError("native target was absent, repeated or changed type")
+                captured[selected] = arguments[0]
+
+            handles.append(module.register_forward_pre_hook(hook))
+        yield captured
+    finally:
+        for handle in handles:
+            handle.remove()
+
+
+class _NativeFrameCall(nn.Module):
+    """Wrap the policy so torch.func substitutes β in suffix and all 38 hooks."""
+
+    def __init__(self, policy: nn.Module, names: tuple[str, ...], probe: torch.Tensor) -> None:
+        super().__init__()
+        self.policy = policy
+        self.names = names
+        self.probe = probe
+
+    def forward(self, frames: torch.Tensor, tokens: torch.Tensor, token_mask: torch.Tensor):
+        from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks, resize_with_pad_torch
+
+        if frames.ndim != 5 or frames.shape[1:3] != (2, 3) or frames.dtype != torch.uint8:
+            raise ValueError("teacher needs synchronized actual dual RGB")
+        core = self.policy.model
+        bridge = core.paligemma_with_expert
+        count = len(frames)
+        pixels = frames.flatten(0, 1).float().div(255).permute(0, 2, 3, 1)
+        images = (resize_with_pad_torch(pixels, 224, 224) * 2 - 1).permute(0, 3, 1, 2)
+        with torch.no_grad():
+            image_tokens = bridge.embed_image(images)
+            language_tokens = bridge.embed_language_tokens(tokens.expand(count, -1))
+        if image_tokens.shape[1:] != (256, 2048):
+            raise ValueError("native dual-camera patches changed")
+        prefix = torch.cat((image_tokens.reshape(count, 512, 2048), language_tokens), dim=1)
+        padding = torch.cat((torch.ones((count, 512), dtype=torch.bool, device=frames.device),
+                             token_mask.expand(count, -1)), dim=1)
+        attention = torch.zeros_like(padding)
+        noise = self.probe.to(frames.device)[None].expand(count, -1, -1)
+        time = torch.ones(count, dtype=torch.float32, device=frames.device)
+        with _capture_inputs(self.policy, self.names) as captured:
+            suffix, suffix_pad, suffix_attention, adarms = core.embed_suffix(noise, time)
+            full_padding = torch.cat((padding, suffix_pad), dim=1)
+            full_attention = torch.cat((attention, suffix_attention), dim=1)
+            mask = core._prepare_attention_masks_4d(make_att_2d_masks(full_padding, full_attention))
+            positions = torch.cumsum(full_padding, dim=1) - 1
+            dtype = bridge.paligemma.model.language_model.layers[0].self_attn.q_proj.weight.dtype
+            (_, hidden), _ = bridge.forward(
+                attention_mask=mask, position_ids=positions, past_key_values=None,
+                inputs_embeds=[prefix.to(dtype), suffix.to(dtype)], use_cache=False,
+                adarms_cond=[None, adarms],
+            )
+            # The actual action_out projection is part of the 38-target native read.
+            core.action_out_proj(hidden.float())
+        if set(captured) != set(self.names) or hidden.shape != (count, 50, 1024):
+            raise ValueError("native full suffix/target capture is incomplete")
+        return hidden, *(captured[name] for name in self.names)
+
+
+def read_native_video(policy: nn.Module, common: dict[str, torch.Tensor], probe: torch.Tensor,
+                      condition: tuple, names: tuple[str, ...], *, frame_chunk: int = 8,
+                      checkpoint_frames: bool = True) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+    """No cached/detached β features: every compile recomputes the legal video."""
+    frames, indices, tokens, token_mask = condition
+    if (len(frames) != len(indices) or len(frames) < 2 or int(indices[-1]) < int(indices[0])
+            or tokens.shape[0] != 1 or token_mask.shape != tokens.shape[:2]
+            or frame_chunk < 1 or set(common) != {name + suffix for name in names
+                                                   for suffix in (LORA_A_SUFFIX, ".lora_B.default.weight")}):
+        raise ValueError("native legal-video/complete-public-state contract changed")
+    wrapper = _NativeFrameCall(policy, names, probe)
+    keys, values = tuple(common), tuple(common.values())
+    outputs = []
+    for start in range(0, len(frames), frame_chunk):
+        subset = frames[start:start + frame_chunk]
+
+        def call(*weights, batch=subset):
+            state = {"policy." + name: value for name, value in zip(keys, weights, strict=True)}
+            return torch.func.functional_call(wrapper, state, (batch, tokens, token_mask), strict=False)
+
+        if checkpoint_frames and torch.is_grad_enabled():
+            output = checkpoint(call, *values, use_reentrant=False, preserve_rng_state=False)
+        else:
+            output = call(*values)
+        outputs.append(output)
+    h = torch.cat([item[0] for item in outputs], dim=0)
+    x = {name: torch.cat([item[index + 1] for item in outputs], dim=0)
+         for index, name in enumerate(names)}
+    return x, h

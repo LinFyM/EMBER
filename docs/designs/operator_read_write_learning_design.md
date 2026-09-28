@@ -1,7 +1,7 @@
 # 同一实际LoRA算子的教学写入与执行读取
 
 2026-09-28。候选，未验证；科学论证见机制分析§42。只有progress登记的阶段有执行许可。
-本文件§1–5定义完整方法，§6–16的工程、训练及诊断均已完成；当前一次冻结公共分支诊断授权见§17。
+本文件§1–5定义完整方法，§6–17的工程、训练及诊断均已完成；当前有界公共执行风险干预见§18。
 §11的节点/预算不自动延续；模型、信息墙与评测约束继承，精确冻结与派发以progress为准。
 它替换旧Core/Procedure/FactorHeads生成图，不在已关闭P/I、条件速度或LocalField上追加补丁。
 
@@ -992,3 +992,73 @@ CPU验收约5–10分钟；整体预计45–75分钟，依据实际公共adapter
 所有失败与外部占用计入预算。CPU语义检查、push新freeze与live准入完成后本条即允许唯一official，无第二条许可或等待main集成。
 纯工程窄修按§10.5自主处理；科学语义/来源不明或资源越界回主讨论。源码、完整400或实质阻碍直接Steer，不按分片/步数回报。
 完成后停止新增计算，等待主讨论具体后继合同；没有从本项自动恢复1800后监督学习。
+
+## 18. 同一父状态下的公共执行风险干预（2026-09-29）
+
+### 18.1 问题、依据与唯一变量
+
+§17已独立核得full154/β100/MT153。条件M修复大量真实目标获取，也在task26/31损害部分已有成功；
+当前不能靠删除M解决不足，也不能把共同训练β当独立语言baseline。机制§56给出两风险的实际梯度区别和可失败的学习分工假设。
+研究问题是：在保持全部视频功能监督时，直接约束同一公共参数的执行风险，能否使完整条件策略获得更有益的迁移？
+公共β还参与teacher H/X，附加风险可能损害这项作用；这是一项待验证修正，不是β分数低便已定位根因。
+旧prior/Unified/DJNFR、条件速度V/L和P/I的完整负例，以及D54小试到fresh不迁移的反例，全部继承。
+新变量是显式公共执行风险；不增加模块、重训一个独立MT、冻结β、变更视频地址/Value/递归或引入task门控。
+
+两臂均从唯一fcc23cd15同一完整T1800 ECP恢复，Writer mode均为T：
+- `control`：原`L_full`，作为相同更新/事件的完整参照。
+- `public_aux`：`L_full + L_beta`，额外项固定系数1，不扫权重、不将原完整项减半。
+
+两项都在同一task、同28个跨episode query、同真实action/随机tau/noise上算完整50×7普通FM，
+每task权1/4，宏步仍4task×28个独立query。public_aux多一次112-query功能读出，不冒称224个独立标签或更多meta任务。
+`L_beta`仅将自身公共76因子装入同一冻结source；不运行假视频/native读取、不读取teacher标签。
+其完整cotangent直接累加到公共A/B0，不能送进完整LoRA replay从而误传到M/teacher。
+原`L_full`仍以原完整cotangent对生成LoRA回放，保留A执行/key/native三路中实际存在的路径及全部P/C/D/O信用。
+全部source基础参数冻结。两个风险求和后做一次全局SUM、一次clip、一次AdamW；没有分步公共更新或交替课程。
+
+### 18.2 固定学习窗口、事件与完整恢复
+
+每臂仅90新增宏步，绝对1800→1890；原完整Adam、scheduler及floor LR=1e−5保持，不重启LR、不增fresh optimizer。
+原1800行metrics与事件前缀逐行保留，新目标/分支身份另列；不得改写旧T学习历史或将public_aux称原T无变化续训。
+延用每九步36task无放回覆盖一次、每task10次新条件；第五轮teacher排列固定`SeedSequence([20260928,1,task,4])`，
+各task取该轮前10项，query使用原绝对visit200..209与既有跨episode规则/flow RNG，不重放1800以前事件。
+教学仍原合法36任务/50视频池，明确是新的事件而非新的独立任务支持。
+每臂只保存终点1890完整ECP及必要故障恢复状态；90步间隔保持。完整ECP记录损失身份、旧/新拓扑、RNG与旧指标前缀。
+允许在完整父边界按既有world2/3/4逻辑权重实现选择设备，记录迁移不称bitwise exact；任务权重与Adam/LR时钟不随rank数变化。
+架构/初值/帧stride/双RGB/native probe/绑定/源资产/归一化均不改。旧T/U/MT原件只读复用。
+
+### 18.3 唯一读出和事前结果分支
+
+两个终点各新bank400及official correct400，复用sealed T1800/MT的完整scene/state/video/env/policy RNG，50视频/task。
+只比较1890 `public_aux−control`、各自相对父full1800及强MT；不搜中间点、不加U或新的公共β400。
+官方policy、capture和dynamic queue保持，各组8full+392compact；完整JSON/NPZ/PT消费者及配对、失败/孤儿/全部成本按现有合同。
+每task/suite/breadth、R/G/L/churn/Jaccard和固定8-task bootstrap完整报告；这是固定有界修正检验，尚无相邻节点资格或最终checkpoint选择。
+
+另在原§12–14固定train0/12/20/32×两teacher、同28query/flow面板上，读取父T1800及两个1890的full和自身β：
+总3×8×2=48功能前向，0更新/0环境/无held动作标签；保存实际prediction/target/time、条件/来源、标量FM及完整−β差额。
+复用原面板身份，既有900的数值不能代替未测父1800；不保存新H/X/梯度矩阵，不扩wrong/nearfoil或其它探针。
+该面板用于确认功能目标实际改变了什么，不替代两组完整闭环。
+
+- 若公共FM改善而完整闭环对匹配参照无实质收益、或收益依赖较大能力丢失，则本修正未通过，不以公共分数救场。
+- 若完整策略取得有覆盖的实际增益并保留原有能力，才支持下一次有界确认；仍不能由一次继承Adam的小试声称fresh或视频必要性已成立。
+- 若作用太小/任务方向混合，按未识别或有限局部收益记录；不自动延长、换父状态、改lambda/clip/LR或冻结β。
+无任何结果自动授权长训练、fresh重训、最终video controls/Test/RL。主讨论独立裁决，Sol本批完即停新增计算。
+
+### 18.4 实现、成本、所有权与实际释放
+
+task=`operator_public_function_pilot_20260929`，唯一root `/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260929`，
+下设`control`/`public_aux`身份。唯一Sol01a0e70e独占dev，main由主讨论独占审阅/集成；不创建第二训练器/策略/评测器。
+复用既有data/run/bank的完整父恢复、FM cotangent、native replay和共享梯度；新增目标分派应内聚，旧运行面不复制。
+run.py/bank.py已有大文件，按结构guard抽取内聚的实验合同或来源检查，不能机械拆文件或留下平行fallback。
+原§17公共bank消费者仍只读T1800，不为新任务静默放宽；新训练/物化来源、loss variant和parent lineage须显式验证。
+CPU核真实1800 ECP/Adam/scheduler、第五轮前10视频与旧事件前缀、分支损失身份、额外cotangent只进公共参数、旧sealed读取。
+只做有真实失败含义的针对性检查；首次正式宏步同时承接运行finite/真实梯度检查，不另开GPU smoke或profile。
+实现push、新clean detached freeze及CPU通过后，本条即释放上述完整范围；main并行审阅，不等待额外Owner许可或集成。
+
+实际依据：T1800末90步world4均14.62秒/macro，其中每条件FM均2.23秒；额外公共FM预计使public_aux约17秒/macro。
+两臂训练预计约3.2GPUh、两bank约.6、两official约2、48功能读出<.2；总预计约6GPUh，硬限8GPUh含加载/失败/恢复。
+CPU准备预计30–60分钟；训练、就绪bank/eval及读出按依赖重叠，GPU与读回预计约60–90分钟，整批约1.5–2.5小时。
+新增峰24GiB：两份400条件B约16.6GiB、两个完整ECP/临时写入、捕获与源码余量；父/source不复制，诊断预测远小于1GiB。
+Sol在新root/launch前live查strg01 data1独立quota及两节点GPU/CPU，按真实吞吐选择world/replicas；常规合计6/8、单节点6上限保持。
+两臂与就绪物化/评测独立衔接，不为并行形式等待凑卡；不丢未保存更新。记录完整argv/env/精确Git/设备/外部限时与账。
+只在科学语义/原因未明/预算越界时回报边界；纯工程窄修仍按§10.5隔离验证/push/newfreeze自主继续。
+源码/完整节点或整批/实质阻碍直接Steer主讨论，禁用Queue回报/逐step心跳；主讨论不轮询分数、进程或日志。

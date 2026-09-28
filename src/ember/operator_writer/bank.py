@@ -44,6 +44,10 @@ CONTINUATION_FROZEN_SPEC_PATH = Path(
     "/configs/operator_read_write_v1/continuation900_spec.json")
 SEALED_TRAINING_GIT = {"commit": SEALED_TRAINING_COMMIT, "branch": "",
                        "dirty_paths": [], "pushed_ref": "origin/main"}
+CONTINUATION_TRAINING_GIT = {"commit": "81846ed35933222b14ac693a0b760268ecff7f17",
+                             "branch": "", "dirty_paths": [],
+                             "pushed_ref": "origin/codex/demonstration-transfer"}
+CONTINUATION_EVALUATION_MACROS = (450, 810, 900)
 
 
 def source_matches(left: Mapping, right: Mapping) -> bool:
@@ -155,7 +159,7 @@ def _mt_source(spec: Mapping, source: Mapping) -> tuple[Path, dict, dict]:
 
 
 def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, sealed_evaluation: bool = False) -> dict:
-    if checkpoint.name in ("macro_00000450", "macro_00000900"):
+    if checkpoint.name in {f"macro_{macro:08d}" for macro in CONTINUATION_EVALUATION_MACROS}:
         return _inspect_continuation_source(spec, checkpoint, mode,
                                             sealed_evaluation=sealed_evaluation)
     if mode not in ("T", "U") or checkpoint.name != "macro_00000270":
@@ -201,10 +205,10 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
     macro = int(checkpoint.name.split("_")[-1])
     output = checkpoint.parent.parent
     expected_root = Path(spec["run_root"]) / mode / "train/attempts"
-    if (mode not in ("T", "U") or macro not in (450, 900)
+    if (mode not in ("T", "U") or macro not in CONTINUATION_EVALUATION_MACROS
             or output.parent.resolve() != expected_root.resolve()
             or not complete_checkpoint(checkpoint)):
-        raise ValueError("continuation bank requires complete same-arm ECP450/900")
+        raise ValueError("continuation bank requires complete same-arm registered ECP")
     run = read_json(output / "run_contract.json")
     ecp = read_json(checkpoint / "checkpoint_manifest.json")
     trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True,
@@ -222,13 +226,14 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
     parent_root = (Path(spec["continuation"]["parent_run_root"]) if parent_macro == 270
                    else Path(spec["run_root"]))
     expected_parent = parent_root / mode / "train/attempts"
+    parent_run = read_json(parent.parent.parent / "run_contract.json")
     expected = (
         (run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE), (run.get("mode"), mode),
         (run.get("spec"), str(wanted_spec_path)), (run.get("source_trainable"), 0),
+        (run.get("source"), parent_run.get("source")), (run.get("lora"), parent_run.get("lora")),
         (run.get("operator"), spec["operator"]), (run.get("optimizer"), spec["optimization"]),
         (run.get("events"), spec["events"]), (run.get("continuation"), spec["continuation"]),
-        (run.get("git", {}).get("branch"), ""), (run.get("git", {}).get("dirty_paths"), []),
-        (run.get("git", {}).get("pushed_ref") in ("origin/main", "origin/codex/demonstration-transfer"), True),
+        (run.get("git"), CONTINUATION_TRAINING_GIT if sealed_evaluation else frozen_git(continuation=True)),
         (ecp.get("stage"), STAGE), (ecp.get("run_contract_schema"), SCHEMA),
         (ecp.get("next_macro"), macro), (ecp.get("world_size") in (2, 3, 4), True),
         (trainer.get("schema_version"), "ember_ecp_checkpoint_v1"),
@@ -247,8 +252,7 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
         (resume.get("checkpoint"), str(parent)),
     )
     if (any(actual != wanted for actual, wanted in expected) or len(metrics) != macro
-            or [row["update"] for row in map(json.loads, metrics)] != list(range(1, macro + 1))
-            or (not sealed_evaluation and run.get("git") != frozen_git(continuation=True))):
+            or [row["update"] for row in map(json.loads, metrics)] != list(range(1, macro + 1))):
         raise ValueError("continuation bank source/ECP/optimizer/sampler provenance changed")
     return run
 
@@ -256,9 +260,14 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
 def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device) -> Path:
     checkpoint = checkpoint.resolve()
     macro = int(checkpoint.name.split("_")[-1]) if checkpoint.name.startswith("macro_") else -1
-    spec_path = CONTINUATION_SPEC_PATH if macro in (450, 900) else SPEC_PATH
+    spec_path = CONTINUATION_SPEC_PATH if macro in CONTINUATION_EVALUATION_MACROS else SPEC_PATH
     spec = specification(spec_path)
-    run = inspect_training_source(spec, checkpoint, mode)
+    # 810 is a read-only observation of the already trained 81846ed3 ECP.
+    # Keep its original specification identity while this evaluator has new Git.
+    source_spec_path = CONTINUATION_FROZEN_SPEC_PATH if macro == 810 else spec_path
+    if macro == 810 and read_json(source_spec_path) != spec:
+        raise ValueError("810 evaluation source specification changed")
+    run = inspect_training_source(spec, checkpoint, mode, sealed_evaluation=(macro == 810))
     output = Path(spec["run_root"]) / mode / "banks" / str(macro)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         asset_root / spec["source"]["lora_contract"]), rank=128)
@@ -270,7 +279,7 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     runtime = build_runtime(asset_root, spec, device, mode)
     if runtime.source != run["source"]:
         raise ValueError("materialization source differs from the formal training run")
-    contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(spec_path),
+    contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(source_spec_path),
                 "training_git": run["git"]["commit"], "source": run["source"],
                 "lora": lora.to_dict()}
     output.mkdir(parents=True, exist_ok=True)
@@ -320,7 +329,7 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     finally:
         data.close()
     bank = {"schema_version": BANK_SCHEMA, "kind": KIND, "mode": mode,
-            "spec": file_record(spec_path), "asset_root": str(asset_root),
+            "spec": file_record(source_spec_path), "asset_root": str(asset_root),
             "training_git": run["git"]["commit"], "checkpoint": str(checkpoint),
             "checkpoint_manifest": file_record(checkpoint / "checkpoint_manifest.json"),
             "source": run["source"], "lora": lora.to_dict(),
@@ -358,7 +367,7 @@ def _inspect_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping, ta
                    task_init_state_ids: Mapping | None) -> None:
     mode = bank["mode"]
     macro = 300 if mode == "MT" else int(Path(bank["checkpoint"]).name.split("_")[-1])
-    continuation = macro in (450, 900)
+    continuation = macro in CONTINUATION_EVALUATION_MACROS
     registered_spec = CONTINUATION_FROZEN_SPEC_PATH if continuation else SEALED_SPEC_PATH
     current_spec = specification(CONTINUATION_SPEC_PATH if continuation else SPEC_PATH)
     expected_path = Path(spec["run_root"]) / mode / "banks" / str(macro) / "manifest.json"
@@ -549,7 +558,7 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
     full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0} for task in tasks]
     macro = bank_path.parent.name
     eval_root = bank_path.parent.parent.parent / "evaluation"
-    expected_output = (eval_root / "correct400" if macro == "270"
+    expected_output = (eval_root / "correct400" if macro in ("270", "300")
                        else eval_root / macro / "correct400")
     if (path.resolve() != (SPEC_PATH.parent / "official_capture.json").resolve()
             or bank.get("kind") != KIND or manifest.get("schema_version") != "ember_pi05_registered_trajectory_capture_v1"

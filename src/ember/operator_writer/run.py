@@ -182,9 +182,11 @@ class Runtime:
             x, h = read_native_video(self.policy, self.writer.public_state(), self.writer.probe,
                                      condition, self.writer.names, frame_chunk=frame_chunk)
             if retain_native:
-                h.retain_grad()
+                if h.requires_grad:
+                    h.retain_grad()
                 for value in x.values():
-                    value.retain_grad()
+                    if value.requires_grad:
+                        value.retain_grad()
             state = self.writer(x, h)
         validate_lora_state(state, self.lora)
         return state, ({"x": x, "h": h} if retain_native else None)

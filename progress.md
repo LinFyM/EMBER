@@ -6,7 +6,11 @@ Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
 **唯一active design：`docs/designs/operator_read_write_learning_design.md`§6。**
-任务`operator_read_write_engineering_20260928`仅授权完整候选短程工程/成本核验；派发状态见本段后续准确回执。
+任务`operator_read_write_engineering_20260928`仅授权完整候选短程工程/成本核验。
+准确基线已推送main **bf27bb77e8e786ec25a955fb8cb6a6d5574a5336**；00:35 UTC派发唯一Queue
+`01a0e570-37f2-75a0-9030-ce674d268710`。一次app-server即时快照核实该消息已进入执行者
+active轮`01a0e570-37f4-7d53-83b7-fb41cbb71040`；仅证明承接，不声称GPU已经启动。
+请求、Queue回执和快照在`.codex/tmp/operator_read_write_engineering_20260928/`；整批完成/实质阻塞一次回报。
 主讨论约30分钟形成机制§42/findings§200：公共完整rank128的实际A兼作教学key和执行read，
 公共β也在合法教学native读取中实际运行，变化Value逐帧写入M，最终唯一A/(B0+M)，无部署优化或在线更新。
 其额外学习联系是同一A接受真实动作读取和教学地址信用；不能由此宣称语义已取得、当前下降根因或能力保持。

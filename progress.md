@@ -6,10 +6,12 @@ Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
 **唯一active design：`docs/designs/operator_read_write_learning_design.md`§10，资源调度已由§10.4按Owner效率优先要求修订。**
-06:32 UTC只读快照：T已完成270/exit0，U到269且未见完成记录；执行者同轮已确认没有发终止信号，MT bank已登记，T/U bank和评测尚未发布。
-撤销整批两卡额外上限，按仓库8/6总卡及单节点6卡现场准入，及时重叠MT评测、T/U bank与各臂official；U收尾不为扩卡中断/重跑。
+06:32 UTC初始快照U到269；随后原件确认U在06:32:28正常退出，两臂均完成270/30,240query及90/180/270 ECP，退出码均0。
+T/U完整训练成本3.665571/3.397299，合计7.062870GPUh；没有发终止信号或重跑。MT bank已登记，后续bank/official由执行者按实际完成状态推进。
+撤销整批两卡额外上限，按仓库8/6总卡及单节点6卡现场准入，及时重叠MT评测、T/U bank与各臂official；两臂完成训练直接复用。
 科学冻结仍是下列784febb；18 GPUh及32GiB、270/三臂400范围保持。4–6适用卡下剩余规划约1–2小时，具体由首段实测修订。
-本次修订待向同一执行轮Steer并登记回执，不能把计划文字称为已处理或已并行启动。
+调度修订adf7aa34已推送；Steer接口接受目标同轮01a0e5eb-8e90-7142-b4d3-5c469e59ff8c，首次读回尚未显示新消息承接，不能冒称已执行新并行安排。
+消息/回执/只读快照位于`.codex/tmp/operator_read_write_engineering_20260928/efficiency_steer_{request.txt,receipt.json,ack_snapshot.json}`；已有接受回执，不重复发送。
 唯一正式任务`operator_read_write_learning_stage1_20260928`；精确formal冻结 **784febbff32d991e53b9e5c6ba9f74683890425e** 已推送main。
 该commit定义本批代码与数值，后续main状态更新不改变它。02:50 UTC唯一Queue `01a0e5eb-8e89-7432-a376-4e4a7589aa87`
 已进入执行者新active轮 `01a0e5eb-8e90-7142-b4d3-5c469e59ff8c`，一次app-server只读快照核见本任务正文及inProgress。

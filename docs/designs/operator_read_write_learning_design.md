@@ -771,7 +771,8 @@ T闭环后段改善，U完整train FM更好却held退化；没有经验证的架
 810的最近90步方向用于决定是否两臂都投入；本节预备上界T/U各900→1350，不实施模型/loss/LR/seed/rank小扫。
 1350对应每task第三轮50视频刚好完成，是有限曝光单位，不是最优步数断言；不能据此保证收敛。
 
-预备节点为1080、1350两个完整correct400；保留每18宏步完整ECP（918…1350），不是逐点全评。
+Owner随后明确90步保存间隔可以，原先未意识到旧ECP已经每90步保存。因此沿用每90宏步完整ECP
+（990/1080/1170/1260/1350），撤回更密保存的准备；预备正式评测仍为1080、1350两个完整correct400，不是逐点全评。
 新窗口450更新/50,400 query每臂，累计151,200 query/150访问每task；四task等权、每task28 query不变。
 后继无论留一臂或两臂，必须保存全部已发布成绩，不以旧点搜索、挑视频、union或checkpoint融合获取胜MT表述。
 1080/1350用于预定趋势及绝对比较；不自动形成最终论文checkpoint选择或controls/Test/RL授权。
@@ -798,7 +799,7 @@ round r≥1保持/扩展为`[20260928,1,task,r]`，r=visit//50；query/flow和ta
 这不是Adam实际位移/有效梯度量，更不能线性外推成绩；本窗口检验已有解附近的继续拟合与保持，不能冒称充分大步搜索。
 不为获得更大变化擅自重启LR或改scheduler；若窗口无实质进步，需要重新论证投入，不能直接解释成“总步数还不够”。
 
-每18步保存Writer/optimizer/scheduler/scaler/sampler/RNG/topology完整ECP。一次保存应原子发布后继续训练，
+每90步保存Writer/optimizer/scheduler/scaler/sampler/RNG/topology完整ECP。一次保存应原子发布后继续训练，
 可并行物化预定节点；不用同步等bank/eval。可在完整ECP边界实现窄范围受控结束能力，
 使预算/主讨论停止或更合适拓扑迁移不必丢未保存更新；不加热更新科学参数/通用调度平台。
 world2/3/4沿既有四条件各.25、SUM梯度后一次全局clip/Adam/绝对LR；按真实负载与可用卡选，不机械固定world2。
@@ -814,13 +815,13 @@ T/U、bank/eval独立并行，资源调度以整批墙钟吞吐为依据，不�
 两个新节点约5.05512，总预计17.2GPUh；含加载/失败/所有外部占用硬限24GPUh，不用剩余预算自动增项。
 world2两臂并行旧实测外推训练约3小时，CPU窄实现/检查约30–60分钟，末节点bank/eval/读回约45–90分钟；
 整体约4–6小时，实际拓扑能改善时取更快方案，争取早晨08:00前完成；显著超期/预算风险及时给具体说明。
-原完整ECP实测T428MiB/U457MiB，新每臂25份约22GiB；一组新bank+official按原900实际约9GiB，四组约36GiB。
-加代码、原子写入、临时及失败余量，新增峰值硬限72GiB，须由Sol在strg01 live quota并合计14A/B/C原件后确认准入。
+原完整ECP实测T428MiB/U457MiB，新每臂5份约4.4GiB；一组新bank+official按原900实际约9GiB，四组约36GiB。
+加代码、原子写入、临时及失败余量，新增峰值硬限52GiB，须由Sol在strg01 live quota并合计14A/B/C原件后确认准入。
 所有新增data1，不复制源模型/dataset/旧bank，不因预算富余做profile、smoke GPU或重扫旧数据。
 
 Sol在独占dev实现、按`code-architecture-gate`检查本次旧大文件增长/唯一路径，不把共同逻辑复制为新版本分支；
 冻结旧入口与兼容读取是有实际原件消费者的边界，不是保留可随意开训的fallback。必要时内聚提取共享合同读取，
 不为行数切碎模块。做实际900 ECP迁移、第三轮排列/旧prefix、稠密ECP/新bank准入、错来源/mode拒绝及旧capture消费的
-定向CPU验证；push clean commit及新detached冻结，向主讨论Steer源码/CPU证据。主讨论并行审阅和集成。
+定向CPU验证（其中新ECP按Owner纠正后的90步口径）；push clean commit及新detached冻结，向主讨论Steer源码/CPU证据。主讨论并行审阅和集成。
 目前本节只允许CPU准备；14B完整回报后主讨论会在此登记最终科学执行范围并直接Steer释放，无需Owner再次确认。
 纯工程窄修仍由Sol按原scope自主处置；模型/标签/更新语义/评测/预算变化交主讨论，不能将科学阴性修成正结果。

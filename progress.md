@@ -1,13 +1,16 @@
 # EMBER progress
 
-## 当前状态：同算子读写首批正式比较已准入，待本轮精确冻结/派发（2026-09-28）
+## 当前状态：同算子读写首批正式比较已派发并承接（2026-09-28）
 
 Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-4c71-7c82-8629-8333ef74dfdd，
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
 **唯一active design：`docs/designs/operator_read_write_learning_design.md`§10。**
-唯一正式任务`operator_read_write_learning_stage1_20260928`，已完成科学准入；精确40位冻结、Queue与实际承接在本段随后登记。
-当前这段计划不表示GPU已启动。执行者须从指定clean pushed detached稀疏树、按现场quota/双节点/UUID/NUMA准入后执行。
+唯一正式任务`operator_read_write_learning_stage1_20260928`；精确formal冻结 **784febbff32d991e53b9e5c6ba9f74683890425e** 已推送main。
+该commit定义本批代码与数值，后续main状态更新不改变它。02:50 UTC唯一Queue `01a0e5eb-8e89-7432-a376-4e4a7589aa87`
+已进入执行者新active轮 `01a0e5eb-8e90-7142-b4d3-5c469e59ff8c`，一次app-server只读快照核见本任务正文及inProgress。
+这证明任务已承接，不单独证明GPU已启动。执行者须从指定clean pushed detached稀疏树、按现场quota/双节点/UUID/NUMA准入后执行。
+正文/回执/快照保存在`.codex/tmp/operator_read_write_engineering_20260928/formal_stage1_{request,queue_receipt,dispatch_snapshot}.*`。
 root=`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1`，18GPUh硬限（train11/bank1.5/official5.5）、峰2卡、32GiB。
 预期完整12–15GPUh/6–8小时wall，全部失败/加载/保存/恢复计入；整批完成/实质阻碍一次Queue，不分阶段重复通知。
 

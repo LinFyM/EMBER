@@ -10,6 +10,7 @@ from safetensors.torch import load_file
 
 from ember.eval_adapters import inspect_static_task_lora_adapter
 from ember.operator_writer import bank
+from ember.operator_writer.public_beta import inspect as inspect_public_beta
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.preparation import _registered_trajectory_capture
 from ember.pi05_source_checkpoint import read_json
@@ -64,6 +65,12 @@ def test_real_public_beta_and_registered_shared_consumer(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="same-arm"):
         bank.inspect_training_source(bank.specification(bank.CONTINUATION1800_SPEC_PATH),
                                      ECP, "U", sealed_evaluation=True)
+    # A valid ECP from this same training window is still outside this diagnostic.
+    with pytest.raises(ValueError, match="fixed complete T1800"):
+        inspect_public_beta(manifest | {"checkpoint": str(ECP.with_name("macro_00001710"))},
+                            path, manifest["source"],
+                            tuple((task.suite, task.task_id) for task in tasks),
+                            "validation", True, None)
 
 
 def test_old_full_t1800_and_mt_consumers_remain_sealed():

@@ -33,13 +33,18 @@ from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import autocast
 from ember.writer.task_execution import condition_assignment
 
-from .data import CHECKPOINTS, TASKS, UPDATES, FormalData
+from .data import (CHECKPOINTS, CONTINUATION_CHECKPOINTS, CONTINUATION_UPDATES,
+                   TASKS, UPDATES, FormalData)
 from .model import OperatorReadWrite
 from .native import read_native_video
 
 
 REPO = Path(__file__).resolve().parents[3]
 SPEC_PATH = REPO / "configs/operator_read_write_v1/learning_spec.json"
+CONTINUATION_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation900_spec.json"
+SEALED_ROOT = Path("/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1")
+SEALED_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-operator-stage1-formal"
+                        "/configs/operator_read_write_v1/learning_spec.json")
 SCHEMA = "ember_operator_read_write_formal_run_v1"
 STAGE = "operator_read_write_learning"
 OPERATOR_CONTRACT = {
@@ -71,10 +76,42 @@ EXECUTION_CONTRACT = {
     "oom_only_policy_microbatches": [14, 7], "oom_only_frame_chunk": 4,
     "checkpoints": list(CHECKPOINTS), "only_selected_checkpoint": 270,
 }
+CONTINUATION_EVENTS = {**EVENT_CONTRACT,
+                       "schema_version": "ember_operator_read_write_events_v3",
+                       "teacher_round2_permutation_seed": [20260928, 1, "task", 1],
+                       "teacher_round_visits": 50, "teacher_demo_pool": list(range(50))}
+CONTINUATION_EVENTS.pop("teacher_pool")
+CONTINUATION_EXECUTION = {**EXECUTION_CONTRACT, "updates_per_mode": CONTINUATION_UPDATES,
+                          "queries_per_mode": CONTINUATION_UPDATES * 112,
+                          "world_sizes": [2, 3, 4], "checkpoints": list(CONTINUATION_CHECKPOINTS),
+                          "only_selected_checkpoints": [450, 900]}
+CONTINUATION_EXECUTION.pop("world_size")
+CONTINUATION_EXECUTION.pop("only_selected_checkpoint")
 
 
-def specification() -> dict:
-    spec = read_json(SPEC_PATH)
+def specification(path: Path = SPEC_PATH) -> dict:
+    path = path.resolve()
+    if path == CONTINUATION_SPEC_PATH:
+        spec, base = read_json(path), specification()
+        expected = {**base, "design": "docs/designs/operator_read_write_learning_design.md#11",
+                    "run_root": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900",
+                    "events": CONTINUATION_EVENTS, "execution": CONTINUATION_EXECUTION,
+                    "evaluation": {**base["evaluation"], "bank_macros": [450, 900]},
+                    "continuation": {
+                        "parent_run_root": str(SEALED_ROOT), "parent_macro": 270,
+                        "parent_training_git": "784febbff32d991e53b9e5c6ba9f74683890425e",
+                        "parent_event_schema": EVENT_CONTRACT["schema_version"],
+                        "sampler_migration": "teacher_pool_0_29_is_visit_index_not_demo_pool"},
+                    "budget": {"new_gpu_hours_expected": 22.1, "new_gpu_hours_hard": 30,
+                               "peak_new_gib": 56, "throughput_profile_gpu_hours_max": 0.5}}
+        expected["evaluation"].pop("bank_macro")
+        if ({key: value for key, value in spec.items() if key != "budget"}
+                != {key: value for key, value in expected.items() if key != "budget"}):
+            raise ValueError("operator 900 continuation contract changed")
+        return spec
+    if path != SPEC_PATH:
+        raise ValueError("unregistered operator specification path")
+    spec = read_json(path)
     expected = (
         (spec.get("schema_version"), "ember_operator_read_write_learning_v1"),
         (spec.get("task"), "operator_read_write_learning_20260928"),
@@ -92,16 +129,19 @@ def specification() -> dict:
     return spec
 
 
-def frozen_git() -> dict:
+def frozen_git(*, continuation: bool = False) -> dict:
     state = git_state(REPO)
     if state["branch"] or state["dirty_paths"]:
         raise ValueError("GPU calculation requires clean detached frozen source")
     refs = subprocess.run(["git", "branch", "-r", "--contains", state["commit"]], cwd=REPO,
                           capture_output=True, text=True, check=True).stdout.splitlines()
-    if not any(row.strip() == "origin/main" for row in refs):
-        raise ValueError("formal frozen code commit must be pushed to origin/main")
+    allowed = (("origin/codex/demonstration-transfer", "origin/main")
+               if continuation else ("origin/main",))
+    pushed_ref = next((ref for ref in allowed if any(row.strip() == ref for row in refs)), None)
+    if pushed_ref is None:
+        raise ValueError("formal frozen code commit must be pushed to its registered source ref")
     return {"commit": state["commit"], "branch": "", "dirty_paths": [],
-            "pushed_ref": "origin/main"}
+            "pushed_ref": pushed_ref}
 
 
 def gather(value, world: int):
@@ -130,15 +170,23 @@ def complete_checkpoint(path: Path) -> bool:
         return False
     manifest = read_json(manifest_path)
     files = manifest.get("files", {})
+    macro = manifest.get("next_macro")
+    world = manifest.get("world_size")
+    allowed = ((macro in CHECKPOINTS and world == 2)
+               or (macro in CONTINUATION_CHECKPOINTS and world in (2, 3, 4)))
+    expected_files = ({"ecp.safetensors", "trainer_state.pt"}
+                      | {f"rank_{rank:02d}_state.pt" for rank in range(world)}) if allowed else set()
     return (manifest.get("stage") == STAGE and manifest.get("run_contract_schema") == SCHEMA
-            and manifest.get("next_macro") in CHECKPOINTS
-            and set(files) == {"ecp.safetensors", "trainer_state.pt", "rank_00_state.pt", "rank_01_state.pt"}
+            and allowed and set(files) == expected_files
             and all((path / name).is_file() and (path / name).stat().st_size == row.get("bytes")
                     for name, row in files.items()))
 
 
 def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     root = Path(spec["run_root"])
+    if spec.get("execution", {}).get("updates_per_mode") == CONTINUATION_UPDATES:
+        _validate_continuation_attempt(spec, args, contract, output)
+        return
     if args.resume:
         parent = args.resume.resolve().parent.parent
         attempts = (root / args.mode / "train" / "attempts").resolve()
@@ -155,6 +203,51 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
             raise ValueError("resume must use the latest complete same-arm ECP")
     if (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists():
         raise ValueError("formal attempt output already exists")
+
+
+def _validate_continuation_attempt(spec: dict, args, contract: dict, output: Path) -> None:
+    if args.resume is None:
+        raise ValueError("900 continuation requires a complete parent ECP")
+    checkpoint = args.resume.resolve()
+    macro = int(checkpoint.name.removeprefix("macro_")) if re.fullmatch(r"macro_[0-9]{8}", checkpoint.name) else -1
+    if macro not in (270, *CONTINUATION_CHECKPOINTS[:-1]) or not complete_checkpoint(checkpoint):
+        raise ValueError("900 continuation requires a registered complete ECP270..810")
+    parent = checkpoint.parent.parent
+    if output.resolve() == parent or (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists():
+        raise ValueError("continuation attempt output already exists")
+    attempts = Path(spec["run_root"]) / args.mode / "train/attempts"
+    latest = max((int(path.name.split("_")[-1]) for path in attempts.glob(
+        "*/checkpoints/macro_*") if complete_checkpoint(path)), default=-1)
+    if (macro == 270 and latest != -1) or (macro != 270 and macro != latest):
+        raise ValueError("resume requires the latest complete same-arm continuation ECP")
+    if macro == 270:
+        expected = SEALED_ROOT / args.mode / "train/attempts/fresh/checkpoints/macro_00000270"
+        if checkpoint != expected:
+            raise ValueError("continuation parent is not the sealed same-arm 270 ECP")
+        from .bank import inspect_training_source
+
+        old = inspect_training_source(read_json(SEALED_SPEC_PATH), checkpoint, args.mode,
+                                      sealed_evaluation=True)
+        if (old.get("events") != EVENT_CONTRACT or old.get("optimizer") != OPTIMIZATION_CONTRACT
+                or old.get("source") != contract["source"] or old.get("lora") != contract["lora"]
+                or old.get("operator") != contract["operator"]
+                or any(old.get(key) != contract.get(key) for key in (
+                    "trainable_names", "source_trainable", "information_wall"))):
+            raise ValueError("sealed 270 source, parameters or optimization changed")
+    else:
+        if parent.parent.resolve() != attempts.resolve():
+            raise ValueError("continuation ECP is outside this arm's registered attempts")
+        old = read_json(parent / "run_contract.json")
+        fixed = ("schema_version", "stage", "git", "spec", "mode", "source", "lora", "operator",
+                 "events", "optimizer", "sampler", "trainable_names", "source_trainable",
+                 "information_wall", "continuation")
+        if any(old.get(key) != contract.get(key) for key in fixed):
+            raise ValueError("continuation scientific source or frozen Git changed")
+        if (old.get("microbatch"), contract.get("microbatch")) not in {
+                (28, 28), (28, 14), (28, 7), (14, 14), (14, 7), (7, 7)} or (
+                old.get("frame_chunk"), contract.get("frame_chunk")) not in {
+                (8, 8), (8, 4), (4, 4)}:
+            raise ValueError("continuation packing changed outside registered OOM transitions")
 
 
 @dataclass
@@ -307,10 +400,12 @@ class Session:
 
 
 def prepare_train(spec: dict, args) -> Session:
-    git = frozen_git()
+    continuation = spec["execution"]["updates_per_mode"] == CONTINUATION_UPDATES
+    git = frozen_git(continuation=continuation)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
-    if context.world_size != 2 or os.environ.get("NCCL_P2P_DISABLE") != "1":
-        raise ValueError("operator formal train/resume requires same-node world2")
+    allowed_worlds = spec["execution"].get("world_sizes", [spec["execution"].get("world_size")])
+    if context.world_size not in allowed_worlds or os.environ.get("NCCL_P2P_DISABLE") != "1":
+        raise ValueError("operator formal train/resume topology or NCCL contract changed")
     torch.set_num_threads(args.cpu_threads)
     seed_everything(7, context)
     data = FormalData(args.asset_root, spec)
@@ -329,7 +424,8 @@ def prepare_train(spec: dict, args) -> Session:
                 "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
                 "ranks": gather(local, context.world_size)}
     contract = {"schema_version": SCHEMA, "stage": STAGE, "git": git,
-                "spec": str(SPEC_PATH), "mode": args.mode, "source": runtime.source,
+                "spec": str(CONTINUATION_SPEC_PATH if continuation else SPEC_PATH),
+                "mode": args.mode, "source": runtime.source,
                 "lora": runtime.lora.to_dict(), "operator": spec["operator"],
                 "events": spec["events"], "optimizer": spec["optimization"],
                 "topology": topology, "microbatch": args.microbatch, "frame_chunk": args.frame_chunk,
@@ -337,6 +433,9 @@ def prepare_train(spec: dict, args) -> Session:
                 "trainable_names": [name for name, p in runtime.writer.named_parameters() if p.requires_grad],
                 "source_trainable": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
                 "information_wall": "teacher exact language + dual RGB only; independent query own RGB/state/action FM"}
+    if continuation:
+        contract["continuation"] = spec["continuation"]
+        contract["parent_checkpoint"] = str(args.resume.resolve())
     error = None
     try:
         if context.is_main:
@@ -354,13 +453,16 @@ def prepare_train(spec: dict, args) -> Session:
 def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
     restored, result, error = {}, None, None
     try:
+        continuation = session.spec["execution"]["updates_per_mode"] == CONTINUATION_UPDATES
         updates, rows = load_ecp_checkpoint(
             checkpoint=checkpoint, stage=STAGE, context=session.context,
             model=session.runtime.writer, optimizer=session.optimizer,
             scheduler=session.scheduler, run_contract_schema=SCHEMA,
-            restored_state=restored)
-        session.data.restore(restored["sampler_state"])
-        if (updates not in CHECKPOINTS or rows != updates or session.scheduler.last_epoch != updates
+            restored_state=restored, allow_world_size_change=continuation)
+        migration = session.data.restore(restored["sampler_state"],
+                                         migrate_sealed_270=continuation and updates == 270)
+        valid_checkpoints = ((270, *CONTINUATION_CHECKPOINTS) if continuation else CHECKPOINTS)
+        if (updates not in valid_checkpoints or rows != updates or session.scheduler.last_epoch != updates
                 or restored["training_state"] != {"updates": updates, "mode": session.mode}):
             raise ValueError("formal ECP optimizer/scheduler/sampler cursor changed")
         rows_from_parent = (checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()
@@ -370,6 +472,18 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
             raise ValueError("ECP metrics history lacks a complete consecutive same-arm prefix")
         if session.context.is_main:
             (session.output / "metrics.jsonl").write_text("\n".join(prefix) + "\n")
+            if continuation:
+                parent_world = int(read_json(checkpoint / "checkpoint_manifest.json")["world_size"])
+                write_json_atomic(session.output / "resume_provenance.json", {
+                    "checkpoint": str(checkpoint), "parent_git": read_json(
+                        checkpoint.parent.parent / "run_contract.json")["git"],
+                    "old_world_size": parent_world, "new_world_size": session.context.world_size,
+                    "restored_rank_rng": list(range(min(parent_world, session.context.world_size))),
+                    "fresh_rank_rng": {str(rank): {"seed_function": "seed_everything(7, context)",
+                                                   "rank_seed": 7 + rank}
+                                       for rank in range(parent_world, session.context.world_size)},
+                    "sampler_migration": migration, "metrics_prefix_rows": rows,
+                    "topology": session.contract["topology"]})
         result = updates, rows
     except Exception:
         error = traceback.format_exc()
@@ -384,7 +498,8 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
     jobs = [session.data.event(updates, task) for task in session.data.tasks_for_step(updates)]
     costs = {index: session.data.videos.frame_counts(job["task"], job["teacher_demo"])[1]
              for index, job in enumerate(jobs)}
-    assigned = condition_assignment(tuple(costs), costs, world_size=2)
+    world = session.context.world_size
+    assigned = condition_assignment(tuple(costs), costs, world_size=world)
     session.optimizer.zero_grad(set_to_none=True)
     local, error = [], None
     try:
@@ -393,10 +508,10 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
                                  session.microbatch, session.frame_chunk))
     except Exception:
         error = traceback.format_exc()
-    failures = [value for value in gather(error, 2) if value]
+    failures = [value for value in gather(error, world) if value]
     if failures:
         raise RuntimeError(f"operator macro job failed on a rank: {failures}")
-    sum_writer_gradients(session.parameters, world_size=2)
+    sum_writer_gradients(session.parameters, world_size=world)
     gradients = gradient_groups(session.runtime.writer)
     norm = float(torch.nn.utils.clip_grad_norm_(
         session.parameters, session.spec["optimization"]["grad_clip"], error_if_nonfinite=True))
@@ -406,10 +521,10 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
     torch.cuda.synchronize(session.context.device)
     updates += 1
     session.data.next_step = updates
-    packets = gather(local, 2)
+    packets = gather(local, world)
     memory = gather({"rank": session.context.rank,
                      "peak_allocated_gib": torch.cuda.max_memory_allocated(session.context.device) / 2**30,
-                     "peak_reserved_gib": torch.cuda.max_memory_reserved(session.context.device) / 2**30}, 2)
+                     "peak_reserved_gib": torch.cuda.max_memory_reserved(session.context.device) / 2**30}, world)
     if session.context.is_main:
         append_jsonl(session.output / "metrics.jsonl", {
             "update": updates, "mode": session.mode, "queries": 112,
@@ -418,7 +533,7 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
             "grad_norms_before_clip": gradients, "total_grad_norm": norm,
             "rank_memory": memory, "seconds": time.perf_counter() - started})
     rows += 1
-    if updates in CHECKPOINTS:
+    if updates in session.data.checkpoints:
         save_ecp_checkpoint(
             output_dir=session.output, macro=updates, stage=STAGE, context=session.context,
             model=session.runtime.writer, optimizer=session.optimizer,
@@ -429,24 +544,23 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
 
 
 def train(spec: dict, args) -> None:
+    continuation = spec["execution"]["updates_per_mode"] == CONTINUATION_UPDATES
+    if not continuation:
+        raise ValueError("new formal operator training requires the continuation900 spec")
     if (args.mode not in ("T", "U") or not args.attempt
             or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
-            or (args.resume is None) != (args.attempt == "fresh")
+            or args.resume is None or args.attempt == "fresh"
             or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)):
-        raise ValueError("only registered fresh T/U270 or same-arm ECP resume is active")
+        raise ValueError("operator train requires registered T/U attempt and ECP policy")
     session = prepare_train(spec, args)
     try:
         updates, rows = restore(session, args.resume) if args.resume else (0, 0)
         start_updates = updates
         started = time.perf_counter()
-        if updates == UPDATES:
-            save_ecp_checkpoint(
-                output_dir=session.output, macro=UPDATES, stage=STAGE, context=session.context,
-                model=session.runtime.writer, optimizer=session.optimizer,
-                scheduler=session.scheduler, run_contract_schema=SCHEMA, metrics_rows=rows,
-                sampler_state=session.data.sampler_state(),
-                training_state={"updates": UPDATES, "mode": session.mode})
-        while updates < UPDATES:
+        target = session.data.updates
+        if updates >= target:
+            raise ValueError("completed operator checkpoint cannot start a new training attempt")
+        while updates < target:
             updates, rows = update(session, updates, rows)
         if session.context.is_main:
             write_json_atomic(session.output / "completion.json", {
@@ -455,8 +569,9 @@ def train(spec: dict, args) -> None:
                 "actual_segment_queries": (updates - start_updates) * 112,
                 "metrics_rows": rows, "seconds": time.perf_counter() - started,
                 "resumed_from": str(args.resume) if args.resume else None,
-                "checkpoint": str(session.output / "checkpoints" / "macro_00000270"),
-                "scientific_qualification": True})
+                "checkpoint": str(session.output / "checkpoints" / f"macro_{target:08d}"),
+                "formal_checkpoint_complete": True,
+                "scientific_qualification": False})
     finally:
         session.data.close()
         if dist.is_initialized():
@@ -468,7 +583,7 @@ def audit(spec: dict, asset_root: Path) -> dict:
     try:
         visits = {task: [] for task in TASKS}
         query_total = 0
-        for step in range(UPDATES):
+        for step in range(data.updates):
             jobs = [data.event(step, task) for task in data.tasks_for_step(step)]
             if len(jobs) != 4 or len({row["task"] for row in jobs}) != 4:
                 raise ValueError("macro lost equal four-task allocation")
@@ -481,14 +596,19 @@ def audit(spec: dict, asset_root: Path) -> dict:
                     raise ValueError("event lost cross-episode FM")
                 visits[row["task"]].append(row["teacher_demo"])
                 query_total += 28
+        count = data.updates // 9
         expected = {task: list(np.random.default_rng(np.random.SeedSequence(
-            [20260928, 1, task])).permutation(50)[:30]) for task in TASKS}
-        if visits != expected or query_total != 30240:
-            raise ValueError("36-task complete round or 30 distinct teacher visits changed")
+            [20260928, 1, task])).permutation(50)[:min(count, 50)]) for task in TASKS}
+        if count > 50:
+            for task in TASKS:
+                expected[task] += list(np.random.default_rng(np.random.SeedSequence(
+                    [20260928, 1, task, 1])).permutation(50)[:count - 50])
+        if visits != expected or query_total != data.updates * 112:
+            raise ValueError("36-task teacher rounds or cross-episode queries changed")
         return {"schema_version": spec["events"]["schema_version"],
-                "modes": ["T", "U"], "updates_per_mode": UPDATES,
+                "modes": ["T", "U"], "updates_per_mode": data.updates,
                 "conditions_per_mode": sum(len(rows) for rows in visits.values()),
-                "queries_per_mode": query_total, "visits_per_task": 30,
+                "queries_per_mode": query_total, "visits_per_task": count,
                 "teacher_order": visits, "query_offset": 1}
     finally:
         data.close()
@@ -504,8 +624,9 @@ def main() -> None:
     parser.add_argument("--microbatch", type=int, default=28)
     parser.add_argument("--frame-chunk", type=int, default=8)
     parser.add_argument("--cpu-threads", type=int, default=6)
+    parser.add_argument("--spec", type=Path, default=CONTINUATION_SPEC_PATH)
     args = parser.parse_args()
-    spec = specification()
+    spec = specification(args.spec)
     if args.phase == "audit":
         print(json.dumps(audit(spec, args.asset_root), sort_keys=True))
     else:

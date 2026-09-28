@@ -16,6 +16,10 @@ TASKS = (0, 1, 2, 4, 5, 7, 12, 13, 14, 15, 17, 19, 20, 21, 22, 25, 28, 29,
          32, 34, 35, 36, 37, 38, 42, 43, 51, 55, 56, 62, 64, 73, 95, 96, 97, 101)
 CHECKPOINTS = (90, 180, 270)
 UPDATES = 270
+CONTINUATION_CHECKPOINTS = (360, 450, 540, 630, 720, 810, 900)
+CONTINUATION_UPDATES = 900
+
+
 class FormalData:
     """Only action-hidden RGB is teaching; own HDF5 state/action is query label."""
 
@@ -32,11 +36,14 @@ class FormalData:
                         if query_labels else None)
         self.rows = self.queries.task_episode_rows if self.queries is not None else None
         self.seed = int(spec["events"]["seed"])
+        self.event_schema = spec["events"]["schema_version"]
+        self.updates = int(spec["execution"]["updates_per_mode"])
+        self.checkpoints = tuple(spec["execution"]["checkpoints"])
         self.next_step = 0
 
     def tasks_for_step(self, step: int) -> tuple[int, ...]:
-        if step not in range(UPDATES):
-            raise ValueError("formal macro step is outside 270 updates")
+        if step not in range(self.updates):
+            raise ValueError("formal macro step is outside registered updates")
         visit, slot = divmod(step, 9)
         order = np.random.default_rng(np.random.SeedSequence([self.seed, 0, visit])).permutation(TASKS)
         return tuple(int(task) for task in order[4 * slot:4 * (slot + 1)])
@@ -45,8 +52,11 @@ class FormalData:
         if task not in self.tasks_for_step(step):
             raise ValueError("task is outside this formal four-condition macro")
         visit = step // 9
-        teacher_order = np.random.default_rng(np.random.SeedSequence([self.seed, 1, task])).permutation(50)
-        teacher = int(teacher_order[visit])
+        teacher_seed = [self.seed, 1, task] if visit < 50 else [self.seed, 1, task, 1]
+        if visit >= 50 and self.event_schema != "ember_operator_read_write_events_v3":
+            raise ValueError("second teacher round requires continuation event contract")
+        teacher_order = np.random.default_rng(np.random.SeedSequence(teacher_seed)).permutation(50)
+        teacher = int(teacher_order[visit % 50])
         rng = np.random.default_rng(np.random.SeedSequence([self.seed, 2, task, visit]))
         demos = rng.choice(np.asarray([i for i in range(50) if i != teacher]),
                            size=28, replace=False)
@@ -62,17 +72,33 @@ class FormalData:
                 "flow_seed": flow_seed, "query_offset": 1}
 
     def sampler_state(self) -> dict:
-        return {"schema_version": "ember_operator_read_write_events_v2", "next_step": self.next_step,
-                "seed": self.seed, "tasks": list(TASKS), "teacher_pool": list(range(30)),
-                "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28}
+        common = {"next_step": self.next_step, "seed": self.seed, "tasks": list(TASKS),
+                  "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28}
+        if self.event_schema == "ember_operator_read_write_events_v2":
+            return {"schema_version": self.event_schema, **common, "teacher_pool": list(range(30))}
+        if self.event_schema == "ember_operator_read_write_events_v3":
+            return {"schema_version": self.event_schema, **common,
+                    "teacher_rounds": [[self.seed, 1, "task"], [self.seed, 1, "task", 1]],
+                    "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
+        raise ValueError("operator event schema changed")
 
-    def restore(self, state: dict) -> None:
+    def restore(self, state: dict, *, migrate_sealed_270: bool = False) -> dict | None:
         expected = self.sampler_state()
-        if (type(state.get("next_step")) is not int or state["next_step"] not in (0, *CHECKPOINTS)
+        if migrate_sealed_270:
+            legacy = {"schema_version": "ember_operator_read_write_events_v2", "next_step": 270,
+                      "seed": self.seed, "tasks": list(TASKS), "teacher_pool": list(range(30)),
+                      "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28}
+            if self.event_schema != "ember_operator_read_write_events_v3" or state != legacy:
+                raise ValueError("sealed 270 sampler migration source changed")
+            self.next_step = 270
+            return {"from_schema": legacy["schema_version"], "to_schema": self.event_schema,
+                    "cursor": 270, "historical_teacher_pool_meaning": "visits_0_to_29_not_demo_ids"}
+        if (type(state.get("next_step")) is not int or state["next_step"] not in (0, *self.checkpoints)
                 or {k: v for k, v in state.items() if k != "next_step"}
                 != {k: v for k, v in expected.items() if k != "next_step"}):
             raise ValueError("operator sampler identity or registered ECP cursor changed")
         self.next_step = state["next_step"]
+        return None
 
     def condition(self, runtime, task: int, demo: int) -> tuple[tuple, int, int]:
         video = self.videos.load(task, demo)

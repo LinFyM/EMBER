@@ -26,8 +26,8 @@ from ember.task_protocol import load_task_authorities
 from ember.writer.materialization import file_record, planned_episodes, selection_contract
 
 from .data import FormalData
-from .run import (REPO, SCHEMA, SPEC_PATH, STAGE, build_runtime, complete_checkpoint,
-                  frozen_git, specification)
+from .run import (CONTINUATION_SPEC_PATH, REPO, SCHEMA, SPEC_PATH, STAGE, build_runtime,
+                  complete_checkpoint, frozen_git, specification)
 
 
 KIND = "operator_read_write_lora_bank"
@@ -39,6 +39,9 @@ SCENE_ROOT = Path("/data1/user/ymdai/ember_runs/demonstration_transfer_learning_
 SEALED_TRAINING_COMMIT = "784febbff32d991e53b9e5c6ba9f74683890425e"
 SEALED_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-operator-stage1-formal"
                         "/configs/operator_read_write_v1/learning_spec.json")
+CONTINUATION_FROZEN_SPEC_PATH = Path(
+    "/data1/user/ymdai/projects/EMBER-operator-continuation900-formal"
+    "/configs/operator_read_write_v1/continuation900_spec.json")
 SEALED_TRAINING_GIT = {"commit": SEALED_TRAINING_COMMIT, "branch": "",
                        "dirty_paths": [], "pushed_ref": "origin/main"}
 
@@ -152,6 +155,9 @@ def _mt_source(spec: Mapping, source: Mapping) -> tuple[Path, dict, dict]:
 
 
 def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, sealed_evaluation: bool = False) -> dict:
+    if checkpoint.name in ("macro_00000450", "macro_00000900"):
+        return _inspect_continuation_source(spec, checkpoint, mode,
+                                            sealed_evaluation=sealed_evaluation)
     if mode not in ("T", "U") or checkpoint.name != "macro_00000270":
         raise ValueError("only formal T/U270 may materialize")
     output = checkpoint.parent.parent
@@ -190,10 +196,70 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, seale
     return run
 
 
+def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
+                                 sealed_evaluation: bool) -> dict:
+    macro = int(checkpoint.name.split("_")[-1])
+    output = checkpoint.parent.parent
+    expected_root = Path(spec["run_root"]) / mode / "train/attempts"
+    if (mode not in ("T", "U") or macro not in (450, 900)
+            or output.parent.resolve() != expected_root.resolve()
+            or not complete_checkpoint(checkpoint)):
+        raise ValueError("continuation bank requires complete same-arm ECP450/900")
+    run = read_json(output / "run_contract.json")
+    ecp = read_json(checkpoint / "checkpoint_manifest.json")
+    trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True,
+                         weights_only=True)
+    parent = Path(run.get("parent_checkpoint", ""))
+    resume = read_json(output / "resume_provenance.json")
+    metrics = (output / "metrics.jsonl").read_text().splitlines()[:macro]
+    wanted_spec_path = CONTINUATION_FROZEN_SPEC_PATH if sealed_evaluation else CONTINUATION_SPEC_PATH
+    expected_sampler = {"schema_version": "ember_operator_read_write_events_v3",
+                        "seed": spec["events"]["seed"], "tasks": spec["events"]["task_ids"],
+                        "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28,
+                        "teacher_rounds": [[20260928, 1, "task"], [20260928, 1, "task", 1]],
+                        "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
+    parent_macro = int(parent.name.split("_")[-1]) if parent.name.startswith("macro_") else -1
+    parent_root = (Path(spec["continuation"]["parent_run_root"]) if parent_macro == 270
+                   else Path(spec["run_root"]))
+    expected_parent = parent_root / mode / "train/attempts"
+    expected = (
+        (run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE), (run.get("mode"), mode),
+        (run.get("spec"), str(wanted_spec_path)), (run.get("source_trainable"), 0),
+        (run.get("operator"), spec["operator"]), (run.get("optimizer"), spec["optimization"]),
+        (run.get("events"), spec["events"]), (run.get("continuation"), spec["continuation"]),
+        (run.get("git", {}).get("branch"), ""), (run.get("git", {}).get("dirty_paths"), []),
+        (run.get("git", {}).get("pushed_ref") in ("origin/main", "origin/codex/demonstration-transfer"), True),
+        (ecp.get("stage"), STAGE), (ecp.get("run_contract_schema"), SCHEMA),
+        (ecp.get("next_macro"), macro), (ecp.get("world_size") in (2, 3, 4), True),
+        (trainer.get("schema_version"), "ember_ecp_checkpoint_v1"),
+        (trainer.get("stage"), STAGE), (trainer.get("next_macro"), macro),
+        (trainer.get("metrics_rows"), macro),
+        (bool(trainer.get("optimizer", {}).get("param_groups")), True),
+        (trainer.get("scheduler", {}).get("last_epoch"), macro),
+        (trainer.get("scaler"), None),
+        (trainer.get("training_state"), {"updates": macro, "mode": mode}),
+        (trainer.get("sampler_state", {}).get("next_step"), macro),
+        ({k: v for k, v in trainer.get("sampler_state", {}).items() if k != "next_step"}, run["sampler"]),
+        (run.get("sampler"), expected_sampler),
+        (parent_macro in (270, 360, 450, 540, 630, 720, 810) and parent_macro < macro, True),
+        (parent.parent.parent.parent.resolve(), expected_parent.resolve()),
+        (parent.is_dir() and complete_checkpoint(parent), True),
+        (resume.get("checkpoint"), str(parent)),
+    )
+    if (any(actual != wanted for actual, wanted in expected) or len(metrics) != macro
+            or [row["update"] for row in map(json.loads, metrics)] != list(range(1, macro + 1))
+            or (not sealed_evaluation and run.get("git") != frozen_git(continuation=True))):
+        raise ValueError("continuation bank source/ECP/optimizer/sampler provenance changed")
+    return run
+
+
 def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device) -> Path:
-    spec = specification()
-    run = inspect_training_source(spec, checkpoint.resolve(), mode)
-    output = Path(spec["run_root"]) / mode / "banks" / "270"
+    checkpoint = checkpoint.resolve()
+    macro = int(checkpoint.name.split("_")[-1]) if checkpoint.name.startswith("macro_") else -1
+    spec_path = CONTINUATION_SPEC_PATH if macro in (450, 900) else SPEC_PATH
+    spec = specification(spec_path)
+    run = inspect_training_source(spec, checkpoint, mode)
+    output = Path(spec["run_root"]) / mode / "banks" / str(macro)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         asset_root / spec["source"]["lora_contract"]), rank=128)
     if run["lora"] != lora.to_dict():
@@ -204,7 +270,7 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     runtime = build_runtime(asset_root, spec, device, mode)
     if runtime.source != run["source"]:
         raise ValueError("materialization source differs from the formal training run")
-    contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(SPEC_PATH),
+    contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(spec_path),
                 "training_git": run["git"]["commit"], "source": run["source"],
                 "lora": lora.to_dict()}
     output.mkdir(parents=True, exist_ok=True)
@@ -254,7 +320,7 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     finally:
         data.close()
     bank = {"schema_version": BANK_SCHEMA, "kind": KIND, "mode": mode,
-            "spec": file_record(SPEC_PATH), "asset_root": str(asset_root),
+            "spec": file_record(spec_path), "asset_root": str(asset_root),
             "training_git": run["git"]["commit"], "checkpoint": str(checkpoint),
             "checkpoint_manifest": file_record(checkpoint / "checkpoint_manifest.json"),
             "source": run["source"], "lora": lora.to_dict(),
@@ -291,14 +357,18 @@ def _inspect_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping, ta
                    evaluation_role: str, require_formal: bool,
                    task_init_state_ids: Mapping | None) -> None:
     mode = bank["mode"]
-    expected_path = Path(spec["run_root"]) / mode / "banks" / ("300" if mode == "MT" else "270") / "manifest.json"
+    macro = 300 if mode == "MT" else int(Path(bank["checkpoint"]).name.split("_")[-1])
+    continuation = macro in (450, 900)
+    registered_spec = CONTINUATION_FROZEN_SPEC_PATH if continuation else SEALED_SPEC_PATH
+    current_spec = specification(CONTINUATION_SPEC_PATH if continuation else SPEC_PATH)
+    expected_path = Path(spec["run_root"]) / mode / "banks" / str(macro) / "manifest.json"
     tasks, conditions = task_rows(spec, Path(bank["asset_root"]))
     expected = (
         (path, expected_path.resolve()), (bank.get("schema_version"), BANK_SCHEMA),
         (bank.get("kind"), KIND), (bank["spec"], file_record(Path(bank["spec"]["path"]))),
-        (Path(bank["spec"]["path"]).resolve(), SEALED_SPEC_PATH.resolve()),
+        (Path(bank["spec"]["path"]).resolve(), registered_spec.resolve()),
         ({key: value for key, value in spec.items() if key != "budget"},
-         {key: value for key, value in specification().items() if key != "budget"}),
+         {key: value for key, value in current_spec.items() if key != "budget"}),
         (spec.get("schema_version"), "ember_operator_read_write_learning_v1"),
         ("arm" in bank, False),
         (bank["source"], source), (bank["scene_root"], str(SCENE_ROOT)),
@@ -345,6 +415,7 @@ def _inspect_tu_bank(bank: Mapping, spec: Mapping, path: Path) -> None:
         (bank["shared"], file_record(path.parent / "shared.safetensors")),
         (bank["checkpoint_manifest"], file_record(checkpoint / "checkpoint_manifest.json")),
         (bank["training_git"], run["git"]["commit"]), (bank["lora"], base.to_dict()),
+        (run["lora"], base.to_dict()), (run["source"], bank["source"]),
     )
     if any(actual != wanted for actual, wanted in expected):
         raise ValueError("T/U shared factor or formal checkpoint changed")
@@ -476,6 +547,10 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
     bank_path = Path(args.static_task_lora_manifest).resolve()
     bank = read_json(bank_path)
     full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0} for task in tasks]
+    macro = bank_path.parent.name
+    eval_root = bank_path.parent.parent.parent / "evaluation"
+    expected_output = (eval_root / "correct400" if macro == "270"
+                       else eval_root / macro / "correct400")
     if (path.resolve() != (SPEC_PATH.parent / "official_capture.json").resolve()
             or bank.get("kind") != KIND or manifest.get("schema_version") != "ember_pi05_registered_trajectory_capture_v1"
             or manifest.get("study_id") != "operator_read_write_learning_20260928"
@@ -484,7 +559,7 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
             or manifest.get("passive_control_trace") != PASSIVE_TAG or manifest.get("stage_predicates") is not True
             or args.role != "validation" or args.mode != "formal" or len(tasks) != 8
             or any(tuple(task.init_state_ids) != tuple(range(50)) for task in tasks)
-            or output_dir.resolve() != bank_path.parent.parent.parent / "evaluation" / "correct400"
+            or output_dir.resolve() != expected_output.resolve()
             or any(manifest.get(key) is not False for key in (
                 "training_gradient_use", "checkpoint_selection_use", "validation_use", "test_use"))):
         raise Pi05EvaluationError("operator official full/compact capture scope changed")
@@ -545,7 +620,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.phase == "materialize":
         if args.mode is None or args.checkpoint is None:
-            parser.error("materialize requires a T/U mode and completed macro270 ECP")
+            parser.error("materialize requires a T/U mode and completed selected ECP")
         print(materialize(args.mode, args.checkpoint, args.asset_root, torch.device(args.device)))
     elif args.mode is not None or args.checkpoint is not None:
         parser.error("fixed MT registration accepts no writer mode or checkpoint override")

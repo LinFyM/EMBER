@@ -10,10 +10,11 @@ import torch
 from ember.lora import expected_lora_state_shapes
 from ember.eval_adapters import inspect_static_task_lora_adapter
 from ember.operator_writer import bank as operator_bank
-from ember.operator_writer.bank import (_mt_source, assemble_state, registered_capture,
-                                        task_rows)
-from ember.operator_writer.run import (CHECKPOINTS, TASKS, FormalData, audit,
-                                       resume_contract_compatible, specification, validate_attempt)
+from ember.operator_writer.bank import (_inspect_continuation_source, _mt_source, assemble_state,
+                                        registered_capture, task_rows)
+from ember.operator_writer.run import (CHECKPOINTS, CONTINUATION_SPEC_PATH, TASKS,
+                                       FormalData, audit, resume_contract_compatible,
+                                       specification, train, validate_attempt)
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.scene import inspect_registered_scenes, validate_scene_row
 from ember.pi05_eval.preparation import _registered_trajectory_capture
@@ -82,7 +83,7 @@ def test_resume_requires_latest_complete_same_arm_ecp(tmp_path):
         (checkpoint / name).write_bytes(b"x")
     write_json_atomic(checkpoint / "checkpoint_manifest.json", {
         "stage": "operator_read_write_learning", "run_contract_schema": "ember_operator_read_write_formal_run_v1",
-        "next_macro": 90, "files": files})
+        "next_macro": 90, "world_size": 2, "files": files})
     args = SimpleNamespace(mode="T", resume=checkpoint)
     output = tmp_path / "T/train/attempts/recover1"
     validate_attempt(spec, args, contract, output)
@@ -97,7 +98,7 @@ def test_resume_requires_latest_complete_same_arm_ecp(tmp_path):
         (later / name).write_bytes(b"x")
     write_json_atomic(later / "checkpoint_manifest.json", {
         "stage": "operator_read_write_learning", "run_contract_schema": "ember_operator_read_write_formal_run_v1",
-        "next_macro": 180, "files": files})
+        "next_macro": 180, "world_size": 2, "files": files})
     with pytest.raises(ValueError):
         validate_attempt(spec, args, contract, output)
 
@@ -159,6 +160,19 @@ def test_official_capture_and_scene_route_are_registered(tmp_path):
         SimpleNamespace(static_task_lora_manifest=bank_path, role="validation", mode="formal",
                         trajectory_capture_selection=capture_path), rows, output, None, ROOT)
     assert (prepared, prepared_stage) == (capture, stage)
+    continuation_bank = tmp_path / "T/banks/450/manifest.json"
+    continuation_bank.parent.mkdir(parents=True)
+    write_json_atomic(continuation_bank, {"kind": "operator_read_write_lora_bank"})
+    continuation_output = tmp_path / "T/evaluation/450/correct400"
+    continuation_capture, continuation_stage = registered_capture(
+        SimpleNamespace(static_task_lora_manifest=continuation_bank, role="validation", mode="formal"),
+        rows, continuation_output, capture_path, selector, None)
+    assert len(continuation_capture["full_conditions"]) == 8
+    assert continuation_stage == stage
+    with pytest.raises(Pi05EvaluationError):
+        registered_capture(
+            SimpleNamespace(static_task_lora_manifest=continuation_bank, role="validation", mode="formal"),
+            rows, output, capture_path, selector, None)
     scene_file = SCENES / "libero_spatial_task_03_state_000.npz"
     contract = {"operator_read_write_scene": {"root": str(SCENES)}}
     row = {"init_state_id": 0, "scene_reference": {
@@ -199,3 +213,137 @@ def test_sealed_operator_banks_admit_only_their_original_training_source(monkeyp
         if Path(path) == run_path else original_read(path)))
     with pytest.raises(ValueError, match="numerical identity"):
         operator_bank.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
+
+
+def test_900_event_stream_preserves_270_and_two_teacher_rounds():
+    old_spec, new_spec = specification(), specification(CONTINUATION_SPEC_PATH)
+    old = FormalData(ASSET, old_spec, query_labels=False)
+    new = FormalData(ASSET, new_spec, query_labels=False)
+    try:
+        for step in range(270):
+            assert old.tasks_for_step(step) == new.tasks_for_step(step)
+            for task in old.tasks_for_step(step):
+                assert old.event(step, task) == new.event(step, task)
+        summary = audit(new_spec, ASSET)
+        assert (summary["updates_per_mode"], summary["conditions_per_mode"],
+                summary["queries_per_mode"], summary["visits_per_task"]) == (900, 3600, 100800, 100)
+        for teachers in summary["teacher_order"].values():
+            assert len(teachers[:50]) == len(set(teachers[:50])) == 50
+            assert len(teachers[50:]) == len(set(teachers[50:])) == 50
+        sealed_state = old.sampler_state() | {"next_step": 270}
+        assert new.restore(sealed_state, migrate_sealed_270=True)["cursor"] == 270
+        assert new.sampler_state()["teacher_demo_pool"] == list(range(50))
+        with pytest.raises(ValueError, match="migration source"):
+            new.restore(sealed_state | {"teacher_pool": list(range(29))}, migrate_sealed_270=True)
+    finally:
+        old.close()
+        new.close()
+
+
+def test_real_sealed_270_is_only_compatible_start_of_continuation(tmp_path):
+    spec = specification(CONTINUATION_SPEC_PATH) | {"run_root": str(tmp_path)}
+    checkpoint = SEALED / "T/train/attempts/fresh/checkpoints/macro_00000270"
+    old = read_json(checkpoint.parent.parent / "run_contract.json")
+    data = FormalData(ASSET, spec, query_labels=False)
+    try:
+        sampler = {key: value for key, value in data.sampler_state().items() if key != "next_step"}
+        trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True,
+                             weights_only=True)
+        migrated = data.restore(trainer["sampler_state"], migrate_sealed_270=True)
+        assert migrated["cursor"] == 270
+        assert trainer["scheduler"]["last_epoch"] == 270
+        assert trainer["optimizer"]["param_groups"]
+    finally:
+        data.close()
+    contract = {**old, "spec": str(CONTINUATION_SPEC_PATH), "events": spec["events"],
+                "sampler": sampler, "continuation": spec["continuation"],
+                "parent_checkpoint": str(checkpoint),
+                "git": {"commit": "new-frozen", "branch": "", "dirty_paths": [],
+                        "pushed_ref": "origin/codex/demonstration-transfer"}}
+    args = SimpleNamespace(mode="T", resume=checkpoint)
+    output = tmp_path / "T/train/attempts/cpu-contract-only"
+    validate_attempt(spec, args, contract, output)
+    with pytest.raises(ValueError, match="source, parameters or optimization"):
+        validate_attempt(spec, args, contract | {"source": {"checkpoint": "wrong"}}, output)
+    with pytest.raises(ValueError, match="sealed same-arm"):
+        validate_attempt(spec, SimpleNamespace(mode="U", resume=checkpoint), contract, output)
+    later = tmp_path / "T/train/attempts/continuation/checkpoints/macro_00000360"
+    later.mkdir(parents=True)
+    files = {name: {"bytes": 1} for name in (
+        "ecp.safetensors", "trainer_state.pt", "rank_00_state.pt", "rank_01_state.pt")}
+    for name in files:
+        (later / name).write_bytes(b"x")
+    write_json_atomic(later / "checkpoint_manifest.json", {
+        "stage": "operator_read_write_learning", "run_contract_schema": "ember_operator_read_write_formal_run_v1",
+        "next_macro": 360, "world_size": 2, "files": files})
+    with pytest.raises(ValueError, match="latest complete same-arm"):
+        validate_attempt(spec, args, contract, output)
+    with pytest.raises(ValueError, match="requires the continuation900 spec"):
+        train(specification(), SimpleNamespace())
+
+
+def test_world3_assignment_retains_four_equal_global_condition_weights(monkeypatch):
+    from ember.writer.replay import sum_writer_gradients
+    from ember.writer.task_execution import condition_assignment
+    import torch.distributed as dist
+
+    assignment = condition_assignment(tuple(range(4)), {0: 5, 1: 4, 2: 3, 3: 2}, world_size=3)
+    assert sorted(map(len, assignment)) == [1, 1, 2]
+    gradients = [2.0, 4.0, 6.0, 8.0]
+    locals_ = [sum(gradients[index] / 4 for index in group) for group in assignment]
+    expected = sum(gradients) / 4
+    assert sum(locals_) == expected
+    calls = []
+    def reduce_sum(value, *, op):
+        calls.append(op)
+        value.fill_(expected)
+    monkeypatch.setattr(dist, "all_reduce", reduce_sum)
+    for local in locals_:
+        parameter = torch.nn.Parameter(torch.tensor(1.0))
+        parameter.grad = torch.tensor(local)
+        sum_writer_gradients((parameter,), world_size=3)
+        assert parameter.grad.item() == expected
+    assert calls == [dist.ReduceOp.SUM] * 3
+
+
+def test_complete_450_ecp_can_feed_bank_before_train_completion(tmp_path):
+    spec = specification(CONTINUATION_SPEC_PATH) | {"run_root": str(tmp_path)}
+    data = FormalData(ASSET, spec, query_labels=False)
+    try:
+        sampler = {key: value for key, value in data.sampler_state().items() if key != "next_step"}
+    finally:
+        data.close()
+    attempt = tmp_path / "T/train/attempts/continuation"
+    parent = attempt / "checkpoints/macro_00000360"
+    checkpoint = attempt / "checkpoints/macro_00000450"
+    for macro, path in ((360, parent), (450, checkpoint)):
+        path.mkdir(parents=True)
+        files = {name: {"bytes": 1} for name in (
+            "ecp.safetensors", "rank_00_state.pt", "rank_01_state.pt")}
+        for name in files:
+            (path / name).write_bytes(b"x")
+        torch.save({"schema_version": "ember_ecp_checkpoint_v1", "stage": "operator_read_write_learning",
+                    "next_macro": macro, "metrics_rows": macro,
+                    "optimizer": {"param_groups": [{"lr": 0.0003}]},
+                    "scheduler": {"last_epoch": macro}, "scaler": None,
+                    "training_state": {"updates": macro, "mode": "T"},
+                    "sampler_state": sampler | {"next_step": macro}}, path / "trainer_state.pt")
+        files["trainer_state.pt"] = {"bytes": (path / "trainer_state.pt").stat().st_size}
+        write_json_atomic(path / "checkpoint_manifest.json", {
+            "stage": "operator_read_write_learning", "run_contract_schema": "ember_operator_read_write_formal_run_v1",
+            "next_macro": macro, "world_size": 2, "files": files})
+    run = {"schema_version": "ember_operator_read_write_formal_run_v1", "stage": "operator_read_write_learning",
+           "mode": "T", "spec": str(operator_bank.CONTINUATION_FROZEN_SPEC_PATH),
+           "source_trainable": 0, "operator": spec["operator"], "optimizer": spec["optimization"],
+           "events": spec["events"], "continuation": spec["continuation"], "sampler": sampler,
+           "parent_checkpoint": str(parent),
+           "git": {"commit": "new-frozen", "branch": "", "dirty_paths": [],
+                   "pushed_ref": "origin/codex/demonstration-transfer"}}
+    write_json_atomic(attempt / "run_contract.json", run)
+    write_json_atomic(attempt / "resume_provenance.json", {"checkpoint": str(parent)})
+    (attempt / "metrics.jsonl").write_text("".join(f'{{"update": {step}}}\n' for step in range(1, 461)))
+    assert not (attempt / "completion.json").exists()
+    assert _inspect_continuation_source(spec, checkpoint, "T", sealed_evaluation=True) == run
+    write_json_atomic(attempt / "run_contract.json", run | {"events": {"seed": -1}})
+    with pytest.raises(ValueError, match="source/ECP"):
+        _inspect_continuation_source(spec, checkpoint, "T", sealed_evaluation=True)

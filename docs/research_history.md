@@ -4,6 +4,16 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-28：有界续训450先行验收，绝对能力改善与保持不足并存
+
+原件`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900`，训练/450评测Git81846ed3。
+主讨论按Owner要求先分析就绪450，直接复算800新JSON及配对/统计，完整PT/NPZ检查继承Sol实际消费者与readback。
+T122/U143各400，breadth7/6，对同scene MT153分别−31/−10；270→450 R/G/L为79/43/37、106/37/22。
+T旧成功丢31.90%、U丢17.19%；task3目标碗成功9→24/19→31，T的双物入篮task31却32→14。
+固定init0的旧非目标碗/未移动行为在450均转为正确成功，但公共β与视频作用仍未因果隔离。
+两个launcher各一次、3 workers/卡均exit0，报告无failure/orphan；900及整批成本未在本轮验收。
+完整不确定性、行为原件和科学边界见findings§207/机制§47。450不选最终模型，不改既定900或恢复其它路线。
+
 ## 2026-09-28：T/U270与同scene MT完成，Owner授权有界更长学习
 
 训练784febb、评测窄修83946ae1（main集成3b24f9ea）。原件`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1`。

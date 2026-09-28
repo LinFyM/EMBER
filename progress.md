@@ -6,6 +6,8 @@ Owner持续自主授权有效，最终目标未完成。科学主讨论01a0dd74-
 唯一执行者01a0dd6c-f2e5-7971-821a-56766e1c0f22；所有新增data1，不联系旧主讨论/旧Sol，不自Queue或陪跑轮询。
 
 **唯一active design：`docs/designs/operator_read_write_learning_design.md`§10，当前修复范围§10.5，资源调度按§10.4。**
+Owner最新要求按§10.6执行：充分结合实际学习与闭环证据判断，不凭270早期分数或T/U单项约束结果直接放弃整个架构。
+当前执行范围与预算不变、没有追加训练许可；原投入/资格线保留为历史预注册依据，进一步投入须有明确理由和有界合同。
 首批完整阻碍回报已消费。T/U各270/30,240query与90/180/270 ECP、两套400条件bank及MT登记均完成；
 MT首个official prepare因adapter缺`arm`退出1，尚无三臂episode，不能作科学阴性。新评测checkout也会触发旧bank对当前Git/spec路径的误绑定，
 本次在同一来源/接口边界一起修复，旧训练/权重/bank/scene/失败原件不动，不重训或重新物化。

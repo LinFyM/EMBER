@@ -98,11 +98,11 @@ def test_real_900_migration_preserves_prefix_and_third_teacher_round(tmp_path):
             with pytest.raises(ValueError):
                 validate_attempt(spec, args, contract | {'source': {'checkpoint': '/wrong'}},
                                  tmp_path / mode / 'train/attempts/rejected')
-        with pytest.raises(ValueError, match='continuation1350 spec'):
+        with pytest.raises(ValueError, match='continuation1800 spec'):
             train(old_spec, SimpleNamespace())
         invalid = SimpleNamespace(mode='T', attempt='first', resume=OLD / 'T/train/attempts/continuation/checkpoints/macro_00000900',
                                   microbatch=28, frame_chunk=8, stop_after_macro=910)
-        with pytest.raises(ValueError, match='complete intermediate'):
+        with pytest.raises(ValueError, match='continuation1800 spec'):
             train(new_spec, invalid)
     finally:
         old.close(); new.close()
@@ -134,21 +134,17 @@ def test_latest_new_ecp_and_selected_bank_source_reject_old_or_wrong_identity(tm
             validate_attempt(spec, SimpleNamespace(mode='U', resume=checkpoint), current,
                              tmp_path / 'U/train/attempts/wrong_arm')
         monkeypatch.setattr(operator_bank, 'frozen_git', lambda **_: GIT)
-        assert operator_bank.inspect_training_source(spec, checkpoint, 'T',
-                                                     sealed_evaluation=True) == contract
+        assert operator_bank.inspect_training_source(spec, checkpoint, 'T') == contract
         with pytest.raises(ValueError, match='same-arm'):
-            operator_bank.inspect_training_source(spec, checkpoint, 'U',
-                                                  sealed_evaluation=True)
+            operator_bank.inspect_training_source(spec, checkpoint, 'U')
         bad = deepcopy(contract); bad['git'] = {'commit': 'wrong'}
         write_json_atomic(first / 'run_contract.json', bad)
         with pytest.raises(ValueError, match='source/ECP'):
-            operator_bank.inspect_training_source(spec, checkpoint, 'T',
-                                                  sealed_evaluation=True)
+            operator_bank.inspect_training_source(spec, checkpoint, 'T')
         write_json_atomic(first / 'run_contract.json', contract)
         bad = deepcopy(contract); bad['source'] = {'checkpoint': '/wrong'}
         write_json_atomic(first / 'run_contract.json', bad)
         with pytest.raises(ValueError, match='source/ECP'):
-            operator_bank.inspect_training_source(spec, checkpoint, 'T',
-                                                  sealed_evaluation=True)
+            operator_bank.inspect_training_source(spec, checkpoint, 'T')
     finally:
         data.close()

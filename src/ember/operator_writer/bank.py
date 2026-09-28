@@ -25,8 +25,9 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.task_protocol import load_task_authorities
 from ember.writer.materialization import file_record, planned_episodes, selection_contract
 
-from .data import CONTINUATION1350_CHECKPOINTS, FormalData
-from .run import (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH, REPO, SCHEMA,
+from .data import CONTINUATION1350_CHECKPOINTS, CONTINUATION1800_CHECKPOINTS, FormalData
+from .run import (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
+                  CONTINUATION1800_SPEC_PATH, REPO, SCHEMA,
                   SPEC_PATH, STAGE, build_runtime, complete_checkpoint, frozen_git, specification)
 
 
@@ -42,16 +43,25 @@ SEALED_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-operator-stage1-formal
 CONTINUATION_FROZEN_SPEC_PATH = Path(
     "/data1/user/ymdai/projects/EMBER-operator-continuation900-formal"
     "/configs/operator_read_write_v1/continuation900_spec.json")
+CONTINUATION1350_FROZEN_SPEC_PATH = Path(
+    "/data1/user/ymdai/projects/EMBER-operator-continuation1350-formal"
+    "/configs/operator_read_write_v1/continuation1350_spec.json")
 SEALED_TRAINING_GIT = {"commit": SEALED_TRAINING_COMMIT, "branch": "",
                        "dirty_paths": [], "pushed_ref": "origin/main"}
 CONTINUATION_TRAINING_GIT = {"commit": "81846ed35933222b14ac693a0b760268ecff7f17",
                              "branch": "", "dirty_paths": [],
                              "pushed_ref": "origin/codex/demonstration-transfer"}
+CONTINUATION1350_TRAINING_GIT = {
+    "commit": "14bac4cdd6c27eee06f5574317da8257834e3884",
+    "branch": "", "dirty_paths": [],
+    "pushed_ref": "origin/codex/demonstration-transfer"}
 CONTINUATION_EVALUATION_MACROS = (450, 810, 900)
 CONTINUATION1350_EVALUATION_MACROS = (1080, 1350)
+CONTINUATION1800_EVALUATION_MACROS = (1710, 1800)
 EVALUATION_SPEC_PATHS = {
     **{macro: CONTINUATION_SPEC_PATH for macro in CONTINUATION_EVALUATION_MACROS},
     **{macro: CONTINUATION1350_SPEC_PATH for macro in CONTINUATION1350_EVALUATION_MACROS},
+    **{macro: CONTINUATION1800_SPEC_PATH for macro in CONTINUATION1800_EVALUATION_MACROS},
 }
 
 
@@ -165,7 +175,8 @@ def _mt_source(spec: Mapping, source: Mapping) -> tuple[Path, dict, dict]:
 
 def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, sealed_evaluation: bool = False) -> dict:
     if checkpoint.name in {f"macro_{macro:08d}" for macro in
-                           (*CONTINUATION_EVALUATION_MACROS, *CONTINUATION1350_EVALUATION_MACROS)}:
+                           (*CONTINUATION_EVALUATION_MACROS, *CONTINUATION1350_EVALUATION_MACROS,
+                            *CONTINUATION1800_EVALUATION_MACROS)}:
         return _inspect_continuation_source(spec, checkpoint, mode,
                                             sealed_evaluation=sealed_evaluation)
     if mode not in ("T", "U") or checkpoint.name != "macro_00000270":
@@ -207,33 +218,38 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, seale
 
 
 def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: bool) -> tuple:
-    new_window = macro in CONTINUATION1350_EVALUATION_MACROS
-    wanted_spec_path = (CONTINUATION1350_SPEC_PATH if new_window else
-                        CONTINUATION_FROZEN_SPEC_PATH if sealed_evaluation else CONTINUATION_SPEC_PATH)
-    teacher_rounds = [[20260928, 1, "task"], [20260928, 1, "task", 1]]
-    if new_window:
-        teacher_rounds.append([20260928, 1, "task", 2])
+    window = (2 if macro in CONTINUATION1800_EVALUATION_MACROS else
+              1 if macro in CONTINUATION1350_EVALUATION_MACROS else 0)
+    current_specs = (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
+                     CONTINUATION1800_SPEC_PATH)
+    source_specs = (CONTINUATION_FROZEN_SPEC_PATH, CONTINUATION1350_FROZEN_SPEC_PATH,
+                    CONTINUATION1800_SPEC_PATH)
+    wanted_spec_path = source_specs[window] if sealed_evaluation else current_specs[window]
+    teacher_rounds = [[20260928, 1, "task"]] + [
+        [20260928, 1, "task", index] for index in range(1, window + 2)]
     expected_sampler = {"schema_version": spec["events"]["schema_version"],
                         "seed": spec["events"]["seed"], "tasks": spec["events"]["task_ids"],
                         "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28,
                         "teacher_rounds": teacher_rounds,
                         "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
-    allowed_parents = ((900, *CONTINUATION1350_CHECKPOINTS[:-1]) if new_window else
-                       (270, 360, 450, 540, 630, 720, 810))
-    wanted_git = (frozen_git(continuation=True) if new_window else
-                  CONTINUATION_TRAINING_GIT if sealed_evaluation else frozen_git(continuation=True))
-    return new_window, wanted_spec_path, expected_sampler, allowed_parents, wanted_git
+    allowed_parents = ((270, 360, 450, 540, 630, 720, 810),
+                       (900, *CONTINUATION1350_CHECKPOINTS[:-1]),
+                       (1350, *CONTINUATION1800_CHECKPOINTS[:-1]))[window]
+    sealed_git = (CONTINUATION_TRAINING_GIT, CONTINUATION1350_TRAINING_GIT, None)[window]
+    wanted_git = sealed_git if sealed_evaluation and sealed_git else frozen_git(continuation=True)
+    return window, wanted_spec_path, expected_sampler, allowed_parents, wanted_git
 
 
 def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
                                  sealed_evaluation: bool) -> dict:
     macro = int(checkpoint.name.split("_")[-1])
-    new_window, wanted_spec_path, expected_sampler, allowed_parents, wanted_git = (
+    window, wanted_spec_path, expected_sampler, allowed_parents, wanted_git = (
         _continuation_source_identity(spec, macro, sealed_evaluation))
     output = checkpoint.parent.parent
     expected_root = Path(spec["run_root"]) / mode / "train/attempts"
-    if (mode not in ("T", "U") or macro not in (*CONTINUATION_EVALUATION_MACROS,
-                                             *CONTINUATION1350_EVALUATION_MACROS)
+    if (mode not in spec["execution"]["modes"] or macro not in (*CONTINUATION_EVALUATION_MACROS,
+                                             *CONTINUATION1350_EVALUATION_MACROS,
+                                             *CONTINUATION1800_EVALUATION_MACROS)
             or output.parent.resolve() != expected_root.resolve()
             or not complete_checkpoint(checkpoint)):
         raise ValueError("continuation bank requires complete same-arm registered ECP")
@@ -245,8 +261,9 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
     resume = read_json(output / "resume_provenance.json")
     metrics = (output / "metrics.jsonl").read_text().splitlines()[:macro]
     parent_macro = int(parent.name.split("_")[-1]) if parent.name.startswith("macro_") else -1
+    source_parent_macro = (270, 900, 1350)[window]
     parent_root = (Path(spec["continuation"]["parent_run_root"])
-                   if parent_macro == (900 if new_window else 270) else Path(spec["run_root"]))
+                   if parent_macro == source_parent_macro else Path(spec["run_root"]))
     expected_parent = parent_root / mode / "train/attempts"
     parent_run = read_json(parent.parent.parent / "run_contract.json")
     expected = (
@@ -276,27 +293,26 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
     if (any(actual != wanted for actual, wanted in expected) or len(metrics) != macro
             or [row["update"] for row in map(json.loads, metrics)] != list(range(1, macro + 1))):
         raise ValueError("continuation bank source/ECP/optimizer/sampler provenance changed")
-    if new_window and parent_macro == 900:
-        old = inspect_training_source(specification(CONTINUATION_SPEC_PATH), parent, mode,
+    if window and parent_macro == source_parent_macro:
+        old_spec_path = (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH)[window - 1]
+        old = inspect_training_source(specification(old_spec_path), parent, mode,
                                       sealed_evaluation=True)
         if any(old.get(key) != run.get(key) for key in ("source", "lora", "operator", "optimizer",
                                                      "trainable_names", "source_trainable",
                                                      "information_wall")):
-            raise ValueError("1350 bank parent 900 scientific source changed")
+            raise ValueError("continuation bank parent scientific source changed")
     return run
 
 
 def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device) -> Path:
     checkpoint = checkpoint.resolve()
     macro = int(checkpoint.name.split("_")[-1]) if checkpoint.name.startswith("macro_") else -1
+    if mode != "T" or macro not in CONTINUATION1800_EVALUATION_MACROS:
+        raise ValueError("new materialization requires the T1710/1800 continuation ECP")
     spec_path = EVALUATION_SPEC_PATHS.get(macro, SPEC_PATH)
     spec = specification(spec_path)
-    # 810 is a read-only observation of the already trained 81846ed3 ECP.
-    # Keep its original specification identity while this evaluator has new Git.
-    source_spec_path = CONTINUATION_FROZEN_SPEC_PATH if macro == 810 else spec_path
-    if macro == 810 and read_json(source_spec_path) != spec:
-        raise ValueError("810 evaluation source specification changed")
-    run = inspect_training_source(spec, checkpoint, mode, sealed_evaluation=(macro == 810))
+    source_spec_path = spec_path
+    run = inspect_training_source(spec, checkpoint, mode)
     output = Path(spec["run_root"]) / mode / "banks" / str(macro)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         asset_root / spec["source"]["lora_contract"]), rank=128)
@@ -397,10 +413,13 @@ def _inspect_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping, ta
     mode = bank["mode"]
     macro = 300 if mode == "MT" else int(Path(bank["checkpoint"]).name.split("_")[-1])
     continuation = macro in CONTINUATION_EVALUATION_MACROS
-    new_window = macro in CONTINUATION1350_EVALUATION_MACROS
-    registered_spec = (CONTINUATION1350_SPEC_PATH if new_window else
+    window1350 = macro in CONTINUATION1350_EVALUATION_MACROS
+    window1800 = macro in CONTINUATION1800_EVALUATION_MACROS
+    registered_spec = (CONTINUATION1800_SPEC_PATH if window1800 else
+                       CONTINUATION1350_FROZEN_SPEC_PATH if window1350 else
                        CONTINUATION_FROZEN_SPEC_PATH if continuation else SEALED_SPEC_PATH)
-    current_spec = specification(CONTINUATION1350_SPEC_PATH if new_window else
+    current_spec = specification(CONTINUATION1800_SPEC_PATH if window1800 else
+                                 CONTINUATION1350_SPEC_PATH if window1350 else
                                  CONTINUATION_SPEC_PATH if continuation else SPEC_PATH)
     expected_path = Path(spec["run_root"]) / mode / "banks" / str(macro) / "manifest.json"
     tasks, conditions = task_rows(spec, Path(bank["asset_root"]))

@@ -4,6 +4,55 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-29：冻结900链路诊断支持内容匹配功能，Owner恢复夜间自主推进
+
+设计§14A/C共80+24功能前向，使用原81846ed3冻结900、固定train0/12/20/32和同28 query/flow；
+0更新/0环境/无held标签，.099073932+.05182350GPUh。原件在`operator_chain_diagnosis_20260929`下对应两root。
+主讨论独立读取实际预测/target、脚本/配对/成本，结合CPU有限末层替换及幅度假设检验完成机制§51–53/findings§211。
+正确教学已有超出粗场景及单幅度的匹配功能；训练函数持续改善，但即时动作前缀/held迁移/保持仍未被该证据保证，
+不称时序必要性、独立语言对照收益或经验证的修正。视频诊断收束，唯一待回报为既存810的§14B相邻观察。
+Owner于约01:05明确恢复自主决定和执行，撤销分析后必须先讨论的暂停；要求结合理论/实际结果争取次晨超过强MT。
+这项授权不保证性能，也不自动许可无限小扫或取消信息墙/成本边界；具体后继执行以progress及新合同为准。
+
+同夜§14B完成：T810144/U810132，T810→900 R/G/L129/19/15、U108/24/24；主讨论独立复算800行/7组统计/来源/成本。
+四作业均exit0，2.392618928GPUh，终值17.798GiB；800 NPZ/PT消费者验收继承，训练818与评测d37分开。
+机制§54/findings§212更新近期趋势，不把810作为追峰选点。主讨论据此释放§15.4的T到1350、U先到1080观察，
+旧90步完整ECP间隔按Owner澄清保留；原Adam/LR和模型/监督不变。工程源14bac4cd集成b43eef90、独立14项CPU通过。
+实际launch/后继结果只看progress，不能将本条授权写成已执行或性能保证。
+
+## 2026-09-28：270→900有界续训整批完成，分析后先与Owner讨论
+
+原件`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900`，源码81846ed3。
+T/U各630新增更新、360/450/540/630/720/810/900完整ECP，原270前缀与科学合同继承；没有新270/MT、controls、Test、RL或900后训练。
+official900为T148/U132，各400，同scene MT153；450→900 T保留105/得43/失17，U111/21/32。
+主讨论直接核新800 JSON配对/来源/退出并复算全部12组统计；全PT/NPZ与训练ECP检查继承已审消费者，
+另读200新行为NPZ及完整训练metrics。T task3达43/50且保留全部450成功，U同项31/50却由目标不动转向更多移动后失败；
+task31 T32→14→21/U24→27→14，原共同成功16场景到900仅8/7保持。详见机制§50/findings§210。
+新增12次GPU attempt均exit0，22.169122590/30GPUh，历史11.158278507单列；执行者报告终态44GiB、GPU释放。
+Owner明确要求“别急着裁决，做完分析后先和我讨论”，本批数值/执行验收不构成最终checkpoint选择、路线通过或新任务许可。
+本次没有联系执行者、新增模型/环境计算或修改科学源码。
+
+## 2026-09-28：有界续训450先行验收，绝对能力改善与保持不足并存
+
+原件`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900`，训练/450评测Git81846ed3。
+主讨论按Owner要求先分析就绪450，直接复算800新JSON及配对/统计，完整PT/NPZ检查继承Sol实际消费者与readback。
+T122/U143各400，breadth7/6，对同scene MT153分别−31/−10；270→450 R/G/L为79/43/37、106/37/22。
+T旧成功丢31.90%、U丢17.19%；task3目标碗成功9→24/19→31，T的双物入篮task31却32→14。
+固定init0的旧非目标碗/未移动行为在450均转为正确成功，但公共β与视频作用仍未因果隔离。
+两个launcher各一次、3 workers/卡均exit0，报告无failure/orphan；900及整批成本未在本轮验收。
+完整不确定性、行为原件和科学边界见findings§207/机制§47。450不选最终模型，不改既定900或恢复其它路线。
+
+Owner随后要求现在深入450的T/U机制。主讨论读取task31四组各50个连续谓词原件，
+270共同成功16场景在450保持T10/U15；奶酪末态丢失T5→11/U3→1，但U两子目标均未达成7→12。
+完整分解见findings§208/机制§48；设计§13登记原固定训练面板的450功能/地址回绑短诊断，
+执行和结果状态以progress为准，不将该登记称为新诊断已完成或内部根因已确认。
+
+同日§13后实际完成：81846ed3/450 ECP、固定16个train条件，0更新/0环境，无held标签，
+133.4325秒/.037064589GPUh、exit0；原件`continuation900/analysis/teacher_to_query_450`及`launch/jobs/teacher_query_450_0.result.json`。
+主讨论直接分析16PT：T/U平均完整−共同β为−.017407/−.017309，全部条件有益；U冻结回绑8/8损伤、均值+.010440FM。
+局部一阶预测有反例，路径负内积多数不阻止两路合成的一阶改善；见findings§209/机制§49。
+不据此选点或新增训练/controls，900仍按原合同独立接续。
+
 ## 2026-09-28：T/U270与同scene MT完成，Owner授权有界更长学习
 
 训练784febb、评测窄修83946ae1（main集成3b24f9ea）。原件`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1`。
@@ -2723,3 +2772,23 @@ Test配对Jaccard为.3067。Test−Validation的MT-BC增益差为−14.5pp；按
 Test各任务Source→MT-BC成功数及R/G/L如下：Long0 1→0 (0/0/1)，Long3 35→24 (15/9/20)；Goal4 36→42 (29/13/7)，Goal7 0→4 (0/4/0)；Object0 0→11 (0/11/0)，Object8 0→20 (0/20/0)；Spatial8 3→11 (2/9/1)，Spatial9 0→9 (0/9/0)。按suite：Long36→24、Goal36→46、Object0→31、Spatial3→20。完整Validation/Test per-task、per-suite行保存在study `analysis/per_task.csv`与`per_suite.csv`；summary、paired comparison、启动合同、worker/completion及raw results均位于`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923/`。
 
 该组结果确认固定协议下冻结baseline的实际分数与task交换，不触发训练资格、checkpoint改选、协议变更或后续路线调整。此次窄范围任务完成后，全局暂停继续约束其它所有实验。
+
+## 2026-09-29：原生读写T续至1350单点154，U1080未恢复并停止追加
+
+Owner恢复夜间自主推进后，沿既有模型/数据/优化时钟进行不对称有限学习：T900→1350、U900→1080受控停止，
+新Git14bac4cd（main集成b43eef90），父完整900 ECP来源81846ed3。T world4、U world2，逻辑四条件权重与SUM更新保持，
+T五个/U两个90步完整ECP；不称bitwise exact。三组strict paired400复用全部sealed scene/video/RNG，MT153复用旧行。
+
+| 节点 | 成功/400 | breadth | 相对自身前观察点R/G/L | 相对MT净差 |
+|---|---:|---:|---:|---:|
+| U1080 | 128 | 6 | U900→1080：110/18/22 | −25 |
+| T1080 | 147 | 6 | T900→1080：124/23/24 | −6 |
+| T1350 | 154 | 6 | T1080→1350：129/25/18 | +1 |
+
+T1350−MT为114/40/39，8-task bootstrap95%[−4.5,6.75]pp；只是一组配对面板微小领先，
+不称稳健超过/已选checkpoint/视频因果资格。T末段净+7分布于四task且保持87.8%，仍有task23/39零覆盖；
+U810/900/1080为132/132/128，按预先登记条件不释放余270步。更长窗口没有重置历史损失或掩盖旧高点。
+主讨论独立读1200新JSON、配对/来源/退出成本与原件消费者；完整新PT/NPZ读取继承可靠执行验收，无旧全扫。
+八次GPU全exit0，新增14.053326929GPUh；两次CPU-only预启动登记修正0GPUh留账，终值29.5536GiB，不称连续峰。
+正式原件：`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation1350/analysis/report_1350.md`；
+完整认识/边界见findings§213–215。后继另登记设计§16的T1350→1800，本条不预报其启动或成绩；U不追加。

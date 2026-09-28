@@ -821,7 +821,7 @@ world2两臂并行旧实测外推训练约3小时，CPU窄实现/检查约30–6
 
 Sol在独占dev实现、按`code-architecture-gate`检查本次旧大文件增长/唯一路径，不把共同逻辑复制为新版本分支；
 冻结旧入口与兼容读取是有实际原件消费者的边界，不是保留可随意开训的fallback。必要时内聚提取共享合同读取，
-不为行数切碎模块。做实际900 ECP迁移、第三轮排列/旧prefix、稠密ECP/新bank准入、错来源/mode拒绝及旧capture消费的
+不为行数切碎模块。做实际900 ECP迁移、第三轮排列/旧prefix、90步完整ECP/新bank准入、错来源/mode拒绝及旧capture消费的
 定向CPU验证（其中新ECP按Owner纠正后的90步口径）；push clean commit及新detached冻结，向主讨论Steer源码/CPU证据。主讨论并行审阅和集成。
 本节初始只允许CPU准备；14B后的实际释放见§15.4，无需Owner再次确认。
 纯工程窄修仍由Sol按原scope自主处置；模型/标签/更新语义/评测/预算变化交主讨论，不能将科学阴性修成正结果。

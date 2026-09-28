@@ -1,7 +1,8 @@
 # 同一实际LoRA算子的教学写入与执行读取
 
 2026-09-28。候选，未验证；科学论证见机制分析§42。只有progress登记的阶段有执行许可。
-本文件§1–5定义完整方法，§6–9工程/CPU转换已完成；当前§10准入T/U270和固定MT同scene正式比较，精确冻结与派发以progress为准。
+本文件§1–5定义完整方法，§6–10的T/U270和固定MT同scene比较已完成；当前执行范围为§11的270→900有界续训。
+§11覆盖旧节点/拓扑/预算/后继停止范围；其余模型、信息墙与评测约束继承，精确冻结与派发以progress为准。
 它替换旧Core/Procedure/FactorHeads生成图，不在已关闭P/I、条件速度或LocalField上追加补丁。
 
 ## 1. 为什么投入，以及不凭什么投入
@@ -483,3 +484,94 @@ Owner本次明确：当前架构有机制上的合理性，应看实际性能，
 T/U只检验教学地址是否绑定实际A。U若更强，首先更新这项共享约束的判断，不等于应抛弃整个原生读取/矩阵写入路线；
 两臂共同不足也不唯一定位读取、表示、更新或容量。明确负证据仍须降低对应假设的支持度，不能用“还可能学会”无限续投。
 应保留有用机制与正例，只有更完整证据或有实质理由的替代原则才支持基础重构；不以局部工程故障或单次早期非通过代替。
+
+## 11. Owner授权的270→900学习趋势检验（2026-09-28）
+
+### 11.1 问题、依据与执行边界
+
+Owner在与新主讨论讨论后明确允许开始推进，要求新Sol提高真实吞吐，希望次日早晨看到尽可能好的完整性能。
+主讨论已说明并采用T/U从既有270继续至总900、450/900作正式行为节点的计划；本节据此覆盖先交流暂停及旧§8.1的自动后继限制。
+首批T116/U128/同scene MT153、breadth5/6/6未达原140投入线，不能改写为原资格通过。
+这是明确追加的有限学习检验：270每task仅30访问、warmup后120更新、在线FM继续下降；同时历史V/L和P/I已经证明
+loss下降不能保证闭环提高或能力保持。因此允许观察更长学习，但不保证最终收敛，不用追加替共享绑定假设免除负证据。
+
+唯一任务`operator_read_write_continuation_900_20260928`，唯一执行者新Sol `01a0e70e-48bc-7470-a725-c7420f96ee81`。
+旧执行者已交付并释放dev，不再派任何后继。主讨论独占main/docs/科学裁决；Sol独占
+`/data1/user/ymdai/projects/EMBER-native-conditional-reader-dev`的`codex/demonstration-transfer`源码/测试。
+先安全并入已push最新main；不得覆盖他人工作或改旧冻结树。当前模型/native、38-target/rank128、source、FM及优化数值不变。
+不增加loss、aux、门控、保持项、rank/LR/seed扫描、MT训练/评测、数据、scene、Test、RL或其它video controls。
+
+### 11.2 完整学习程序、恢复与曝光
+
+两臂分别从旧root `.../operator_read_write_learning_20260928/stage1/<T|U>/train/attempts/fresh/checkpoints/macro_00000270`
+的完整ECP继续，各新增630实际更新/70,560 query，累计900/100,800 query；不是fresh重来、权重热启或重置Adam。
+旧root绝对前缀为`/data1/user/ymdai/ember_runs`，旧训练Git为784febbff32d991e53b9e5c6ba9f74683890425e。
+新唯一root=`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900`，父产物只读引用。
+
+- 每宏步仍4个不同task、各28 query，单condition损失权重1/4；36 task每9步完整访问一次。450/900分别每task50/100访问。
+- 第0–49次task访问继续原`SeedSequence([20260928,1,task])`的50视频排列；第50–99次使用
+  `SeedSequence([20260928,1,task,1])`的新50视频排列。两轮各自无放回；不把重复50视频称为新增独立meta-task。
+  原前270的teacher/query/frame/flow事件保持；task排列与query RNG继续以绝对visit索引，不复位。
+  每condition从其它49 episodes无放回取28，frame范围及action offset1保持，flow seed继续原函数。
+  旧sampler的`teacher_pool=range(30)`是历史字段，不可解释成实际demo ID仅0–29；显式版本转换记录访问数/完整50池与循环规则，不能静默放宽。
+- 绝对LR时钟继续warmup150/decay1200/floor1e-5及原AdamW。保存360/450/540/630/720/810/900完整ECP，只有450/900物化/评测。
+  保存Writer/optimizer/scheduler/scaler语义/sampler/各rank RNG/拓扑，metrics继承270行原文前缀，新增行及实际重算单列。
+- 明确兼容旧训练schema/source/spec/事件前缀和本次新程序；运行记录父ECP、训练Git、续训Git和迁移原因。
+  同拓扑可恢复；完整ECP处允许改变设备及world2/3/4，不称bitwise exact。复用现有ECP的显式world迁移支持；
+  旧rank恢复其RNG，新rank保留并登记seed来源，逻辑flow噪声继续由task事件决定。不能删除来源检查来获得恢复。
+- rank按真实帧数/历史condition成本负载平衡。world3的任务数2/1/1不改变各任务1/4权重；
+  对全部rank的加权梯度作SUM，不作rank均值或按本地任务数重新归一化；全局clip一次、Adam一次、scheduler一次。
+  world4为1/1/1/1。不得跨节点拼单臂训练；多卡NCCL/NUMA约束继承。
+
+实现须用针对性的CPU消费者检查证明900事件/前缀、非均匀分配的全局更新、真实旧ECP来源/游标、迁移/拒绝不相容输入、
+以及450 ECP在训练继续期间的bank来源识别。已验收模型图与全部1200 capture不重复测试；不做逐tensor/逐bit或全树hash扫描。
+如需要实际吞吐核验，必须是本任务当前瓶颈且计入总账；不要另造强制smoke、无用GPUcase或反复2/3/4扫表。
+
+### 11.3 节点并行、正式评测和科学裁决
+
+450完整ECP原子发布后即可只读物化/评测，训练可继续；不能让bank消费者要求900整段退出才能读取已完整450。
+每臂每节点一个400条件bank；每个bank完整后接correct400，合计四组/1600新行。复用旧400 scene、seed7全50无放回teacher、
+task/init/env/policy RNG和官方执行/capture合同，每组8full+392compact；不新增MT或重跑270。
+旧MT153/400原行是同scene强参照，旧MT155是历史标量。bank/training/evaluation Git与显式兼容分别记录。
+旧270的sealed bank消费者继续可读；当前唯一运行面扩展节点，不复制一套trainer/evaluator或保留过时CLI。
+
+450是趋势观察点，不是分数低于140便机械放弃整个架构的开关。正常数值/合法训练且预算成立时完成预定900，
+不读取中途小样本改样本、挑视频/seed或改学习程序。900后停止新增GPU；没有1200/controls/RL自动许可。
+工程失败即时定位，恢复只等待同队列旧worker退出；其它独立臂/节点继续。科学语义不变的窄修按§10.5新push clean freeze续行，
+所有有效行、失败/partial、实际成本保留；原因不明、计算/标签/选择语义变化或预计越界交主讨论。
+
+报告完整每task/suite/breadth、全部成功集合、同点T−U与对MT的R/G/L/churn/Jaccard及8-task bootstrap；
+每臂270→450、450→900、270→900相邻/跨段保持，说明绝对数和占前节点成功集的比例，不混跨臂差异与时间遗忘。
+两臂都涨只支持更长学习改善此范围；U持续较强削弱绑定优势，不能抹掉整体读写；T较强只支持该干预，不识别视频或β必要性。
+若总分上升但丢失大量旧成功，仍无稳定能力结论。没有只摘最高点、checkpoint union或以loss弥补闭环缺口。
+本批目标为学习曲线和有限方法判断，不承诺选出最终模型；相邻稳定、视频因果与最终Test仍需各自证据/后继范围。
+
+### 11.4 吞吐、预算与时间预期
+
+两节点每次launch/resume同时live准入，仓库合计8/6张及单节点6张上限照常，包含所有训练/物化/评测共驻。
+优先T/U并行；每臂world2–4由当前设备和实际吞吐选，不继承旧两卡整批上限或固定每卡2 evaluators。
+4逻辑condition意味着超过4训练rank无本任务收益；6卡可按3+3或4+2等成本依据分配，8卡可4+4，
+也可留适用资源重叠bank/official，目标是整批最早有效完成，不为占卡空转或为扩卡中断未保存更新。
+评测replicas按实时显存、CPU、实际episode吞吐选择；旧3 workers约38GiB仅内存估计，不能代替吞吐依据。
+采用已有动态long-first队列/persistent workers；允许真实packing/CPU预取优化，但不改变逻辑batch、随机流或任务权重。
+
+成本依据：旧T/U训练7.0628704835GPUh×630/270≈16.48；两节点bank约1.25；四组official按旧T/U含失败成本外推约4.39。
+**新增预期约22.1GPUh；完整新增硬限30GPUh**，其中一切加载、保存、必要吞吐核验、失败、恢复和占用等待计入，
+旧stage1的11.1582785066GPUh另列累计，不能冲掉旧失败。30不是应花满的额度；一次实质吞吐核验最多0.5GPUh且并非必做。
+以旧world2宏步T中位23.41s/U21.58s估计、并行训练及节点重叠，GPU阶段约5–7小时；CPU实现/验证约45–75分钟，
+整批初估6–9小时。相对本次17:40左右北京时间启动准备，目标次日早晨08:00前形成完整可审阅结果；这不是性能或机器可用保证。
+若真实关键路径明显无法满足时间/30GPUh，尽早报告实质缺口和可保存节点，不等额度耗尽，不静默删行/改单臂或续超预算。
+
+旧两bank各8.732GB、两arm训练合计2.782GB、两组评测约1.634GB；四新bank约34.93GB、14个完整ECP约6.5GB、
+新capture约3.3GB，预期新增约42GiB。**新root及新增缓存/冻结代码/临时失败产物合计峰值≤56GiB**；
+旧root约21.1GiB保留，不复制source/data/tokenizer/父ECP。创建实质输出前在strg01核data1独立quota、共享容量、实际用量和峰值余量，
+不足先回报具体缺口，不改写data0或删除科研原件。新冻结稀疏代码沿现有方式，目标≤32MiB，不重复拷贝环境。
+
+新Sol完成上述同一任务工程后，可以从其已push的独占分支clean detached冻结直接执行，精确Git/ref/命令/环境/输入/
+parent/输出/拓扑写一次launch_contract；允许`origin/codex/demonstration-transfer`为此次明确来源，不能伪称origin/main。
+主讨论并行审阅和及时集成，不因科学不变的工程改动再要求Owner许可；主讨论发现实质契约问题可即时纠正。
+源码就绪时仅一次有内容的交付消息便于主讨论集成；整批完成或实质阻碍再回本主讨论，不能为每个checkpoint/bank自排通知。
+使用退出/完整产物事件衔接，不固定间隔反复扫日志/缓存；没有持续等待者才安排唯一可靠整批唤醒。
+
+主讨论同时推进实际特征—矩阵写入—自身动作—FM更新的可失败推导，继承既有原件验收并补真正缺证；
+不把已完成的消费者审阅再包装成研究，不以无限纸面推导阻挡有界学习，也不凭代数反例直接改架构。

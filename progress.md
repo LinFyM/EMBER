@@ -7,7 +7,9 @@ Owner与新主讨论完成结果、推进风格和后继规划交流后，明确
 唯一active design为`docs/designs/operator_read_write_learning_design.md`§11，§1–5科学模型和信息墙不变。
 
 - Astra/max `01a0e6fd-5478-74f3-916e-9d9beb57da50`独占main/科学判断；新Sol/max `01a0e70e-48bc-7470-a725-c7420f96ee81`
-  独占已释放dev，承接唯一任务`operator_read_write_continuation_900_20260928`。当前合同已写，派发回执随后登记；不能把计划称GPU已启动。
+  独占已释放dev，承接唯一任务`operator_read_write_continuation_900_20260928`。科学合同20993911已push；
+  Queue `01a0e764-f966-7470-b071-dbf659f92e99`进入新active轮`01a0e764-f968-74c0-8756-6fa5d3fabbe4`，
+  一次只读快照已核任务正文/inProgress；这是投递并进入执行轮证据，尚无GPU启动声明。正文/回执见同名`.codex/tmp`目录。
 - 各自旧270完整ECP继续，新增各630更新/70,560 query，总900/100,800；450及900各T/U correct400，1600新行。
   固定旧scene/video/RNG；复用MT153原行和270原件，不重训/重物化270，不新测MT。无新loss/架构/数据/controls/Test/RL。
 - 新root=`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900`。
@@ -16,6 +18,8 @@ Owner与新主讨论完成结果、推进风格和后继规划交流后，明确
 - world2–4、T/U并行及bank/eval重叠按真实吞吐；4任务全局权重/梯度SUM/clip/Adam/LR不变。
   450是观察节点，正常且预算成立继续900；900后停止新增GPU，不自动接1200或挑峰值。
 - 旧执行者已退休，原批唯一回报消费完成，不联系或派发。新Sol可自主窄修；科学语义、未知故障或预算变化交主讨论。
+- Owner新增资源要求已写入AGENTS§9：满常规上限时，短时小分析可临时超卡，完成即释放；
+  不扩科学范围/预算，不扩常规长训，保留现场准入/不干扰他人/完整计费。此纠正以Steer同步当前新Sol轮。
 
 ### 已完成首批结果判断，不再停留在仅继承分数
 

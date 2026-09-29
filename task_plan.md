@@ -13,7 +13,7 @@ Owner已明确恢复后续自主决定与执行，不再要求本轮分析后等
    不删除或普遍压小M、不按task拼接策略；β不是独立训练baseline，较弱β也不是已证训练根因。
    当前rank128、训练支持及task batch完整反例均已核；不直接扩rank/任务池/大batch，见findings§219。
 4. 新§18仅做匹配短窗：两臂同一T1800完整状态、同90更新/事件/原Adam与LR；一臂原完整FM，另一臂额外自身公共FM。
-   两个1890终点各correct400及固定train面板48读出；额外cotangent直接进入公共参数，原视频/native/执行信用全部保持。
+   两个1890终点各correct400及固定train面板48项比较/36独立读出；额外cotangent直接进入公共参数，原视频/native/执行信用全部保持。
    主要看完整策略对匹配参照的能力/覆盖/保持，不以公共FM改善替代；无益便关闭，不扫权重或自动延长。
 5. 唯一Sol在独占dev实现、检查、push clean freeze及live准入后按8GPUh/24GiB执行；预计1.5–2.5小时。
    main并行审阅集成、独立验收，回报直接Steer；一次短窗不自动成立fresh泛化、最终选点/视频controls/Test/RL。

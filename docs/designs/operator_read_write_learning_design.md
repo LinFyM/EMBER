@@ -1034,7 +1034,8 @@ CPU验收约5–10分钟；整体预计45–75分钟，依据实际公共adapter
 每task/suite/breadth、R/G/L/churn/Jaccard和固定8-task bootstrap完整报告；这是固定有界修正检验，尚无相邻节点资格或最终checkpoint选择。
 
 另在原§12–14固定train0/12/20/32×两teacher、同28query/flow面板上，读取父T1800及两个1890的full和自身β：
-总3×8×2=48功能前向，0更新/0环境/无held动作标签；保存实际prediction/target/time、条件/来源、标量FM及完整−β差额。
+同task两teacher沿原面板共用query/flow，公共β与teacher无关，因此只做24次full与12次β，共36独立功能前向；
+48项full/β比较引用这些原件，不重复算相同β。0更新/0环境/无held动作标签；保存实际prediction/target/time、条件/来源、标量FM及完整−β差额。
 复用原面板身份，既有900的数值不能代替未测父1800；不保存新H/X/梯度矩阵，不扩wrong/nearfoil或其它探针。
 该面板用于确认功能目标实际改变了什么，不替代两组完整闭环。
 
@@ -1055,7 +1056,7 @@ CPU核真实1800 ECP/Adam/scheduler、第五轮前10视频与旧事件前缀、�
 实现push、新clean detached freeze及CPU通过后，本条即释放上述完整范围；main并行审阅，不等待额外Owner许可或集成。
 
 实际依据：T1800末90步world4均14.62秒/macro，其中每条件FM均2.23秒；额外公共FM预计使public_aux约17秒/macro。
-两臂训练预计约3.2GPUh、两bank约.6、两official约2、48功能读出<.2；总预计约6GPUh，硬限8GPUh含加载/失败/恢复。
+两臂训练预计约3.2GPUh、两bank约.6、两official约2、36功能读出<.2；总预计约6GPUh，硬限8GPUh含加载/失败/恢复。
 CPU准备预计30–60分钟；训练、就绪bank/eval及读出按依赖重叠，GPU与读回预计约60–90分钟，整批约1.5–2.5小时。
 新增峰24GiB：两份400条件B约16.6GiB、两个完整ECP/临时写入、捕获与源码余量；父/source不复制，诊断预测远小于1GiB。
 Sol在新root/launch前live查strg01 data1独立quota及两节点GPU/CPU，按真实吞吐选择world/replicas；常规合计6/8、单节点6上限保持。

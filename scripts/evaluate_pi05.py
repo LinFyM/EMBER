@@ -85,6 +85,7 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
             "nonheld_meta",
             "nonheld_meta_train",
             "nonheld_meta_validation",
+            "operator_seen_training36",
         ),
         required=True,
     )

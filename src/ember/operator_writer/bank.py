@@ -29,6 +29,7 @@ from .data import CONTINUATION1350_CHECKPOINTS, CONTINUATION1800_CHECKPOINTS, PI
 from .run import (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
                   CONTINUATION1800_SPEC_PATH, PILOT_SPEC_PATH, PILOT_ROOT, PILOT_ARMS, REPO, SCHEMA,
                   SPEC_PATH, STAGE, build_runtime, complete_checkpoint, frozen_git, specification)
+from . import scope as seen_scope
 
 
 KIND = "operator_read_write_lora_bank"
@@ -340,18 +341,53 @@ def _require_pilot_source(mode: str, run: Mapping) -> None:
         raise ValueError("pilot bank arm or loss source changed")
 
 
-def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device) -> Path:
+def _write_condition_factors(runtime, data: FormalData, output: Path,
+                             conditions: list[dict], b_shapes: Mapping,
+                             *, mode: str, frame_chunk: int) -> None:
+    try:
+        for condition in conditions:
+            path = output / f"{condition['condition_id']}.safetensors"
+            raw, sampled = data.videos.frame_counts(condition["global_task_id"],
+                                                     condition["teacher_demo"])
+            if path.exists():
+                _factor_header(path, b_shapes,
+                               metadata={"schema_version": BANK_SCHEMA,
+                                         "condition_id": condition["condition_id"], "mode": mode})
+            else:
+                pixels, raw, sampled = data.condition(runtime, condition["global_task_id"],
+                                                      condition["teacher_demo"])
+                with torch.no_grad():
+                    state, _ = runtime.compile(pixels, frame_chunk=frame_chunk)
+                factors = {name: value.detach().float().cpu().contiguous()
+                           for name, value in state.items() if name.endswith(LORA_B_SUFFIX)}
+                if len(factors) != 38:
+                    raise ValueError("video value did not produce a complete B0+M")
+                save_file(factors, str(path), metadata={"schema_version": BANK_SCHEMA,
+                                                       "condition_id": condition["condition_id"],
+                                                       "mode": mode})
+            condition.update(factors=file_record(path), raw_frames=raw, sampled_frames=sampled)
+    finally:
+        data.close()
+
+
+def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device,
+                *, seen_task: bool = False) -> Path:
     checkpoint = checkpoint.resolve()
     macro = int(checkpoint.name.split("_")[-1]) if checkpoint.name.startswith("macro_") else -1
     pilot = mode in PILOT_ARMS and macro in PILOT_CHECKPOINTS
-    if not pilot and (mode != "T" or macro not in CONTINUATION1800_EVALUATION_MACROS):
+    if seen_task and (mode != "T" or checkpoint != Path(seen_scope.registration()["checkpoint_t"]).resolve()):
+        raise ValueError("seen-task materialization requires the fixed T1800 ECP")
+    if not seen_task and not pilot and (mode != "T" or macro not in CONTINUATION1800_EVALUATION_MACROS):
         raise ValueError("new materialization requires T1710/1800 or a registered pilot1890 ECP")
-    spec_path = EVALUATION_SPEC_PATHS.get(macro, SPEC_PATH)
-    spec = specification(spec_path)
+    spec_path = (CONTINUATION1800_FROZEN_SPEC_PATH if seen_task else
+                 EVALUATION_SPEC_PATHS.get(macro, SPEC_PATH))
+    spec = read_json(spec_path) if seen_task else specification(spec_path)
     source_spec_path = spec_path
-    run = inspect_training_source(spec, checkpoint, "T" if pilot else mode)
+    run = inspect_training_source(spec, checkpoint, "T" if pilot else mode,
+                                  sealed_evaluation=seen_task)
     _require_pilot_source(mode, run)
-    output = Path(spec["run_root"]) / mode / "banks" / str(macro)
+    output = (Path(seen_scope.registration()["run_root"]) if seen_task else
+              Path(spec["run_root"])) / mode / "banks" / str(macro)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         asset_root / spec["source"]["lora_contract"]), rank=128)
     if run["lora"] != lora.to_dict():
@@ -365,6 +401,8 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(source_spec_path),
                 "training_git": run["git"]["commit"], "source": run["source"],
                 "lora": lora.to_dict(),
+                **({"evaluation_scope": file_record(seen_scope.PATH),
+                    "materialization_git": frozen_git(continuation=True)} if seen_task else {}),
                 **({"loss_variant": PILOT_ARMS[mode]} if pilot else {})}
     output.mkdir(parents=True, exist_ok=True)
     registration = output / "materialization_contract.json"
@@ -388,40 +426,28 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
                        metadata={"schema_version": BANK_SCHEMA, "mode": mode})
     else:
         save_file(shared, str(shared_path), metadata={"schema_version": BANK_SCHEMA, "mode": mode})
-    tasks, conditions = task_rows(spec, asset_root)
+    tasks, conditions = (seen_scope.task_rows(asset_root, spec) if seen_task else
+                         task_rows(spec, asset_root))
     data = FormalData(asset_root, spec, query_labels=False,
-                      task_ids=tuple(spec["evaluation"]["task_ids"]), role="validation")
-    try:
-        for condition in conditions:
-            path = output / f"{condition['condition_id']}.safetensors"
-            raw, sampled = data.videos.frame_counts(condition["global_task_id"], condition["teacher_demo"])
-            if path.exists():
-                _factor_header(path, b_shapes,
-                               metadata={"schema_version": BANK_SCHEMA,
-                                         "condition_id": condition["condition_id"], "mode": mode})
-            else:
-                pixels, raw, sampled = data.condition(runtime, condition["global_task_id"], condition["teacher_demo"])
-                with torch.no_grad():
-                    state, _ = runtime.compile(pixels, frame_chunk=spec["operator"]["frame_chunk"])
-                factors = {name: value.detach().float().cpu().contiguous()
-                           for name, value in state.items() if name.endswith(LORA_B_SUFFIX)}
-                if len(factors) != 38:
-                    raise ValueError("video value did not produce a complete B0+M")
-                save_file(factors, str(path), metadata={"schema_version": BANK_SCHEMA,
-                                                       "condition_id": condition["condition_id"], "mode": mode})
-            condition.update(factors=file_record(path), raw_frames=raw, sampled_frames=sampled)
-    finally:
-        data.close()
+                      task_ids=tuple(seen_scope.registration()["global_task_ids"] if seen_task else
+                                     spec["evaluation"]["task_ids"]),
+                      role="train" if seen_task else "validation")
+    _write_condition_factors(runtime, data, output, conditions, b_shapes,
+                             mode=mode, frame_chunk=spec["operator"]["frame_chunk"])
     bank = {"schema_version": BANK_SCHEMA, "kind": KIND, "mode": mode,
             "spec": file_record(source_spec_path), "asset_root": str(asset_root),
             "training_git": run["git"]["commit"], "checkpoint": str(checkpoint),
             "checkpoint_manifest": file_record(checkpoint / "checkpoint_manifest.json"),
             "source": run["source"], "lora": lora.to_dict(),
             "shared": file_record(output / "shared.safetensors"), "conditions": conditions,
-            "tasks": tasks, "scene_root": str(SCENE_ROOT),
-            "information_wall": {"teacher_video_values_read": 400,
+            "tasks": tasks, "scene_root": str(Path(seen_scope.registration()["run_root"]) / "scenes")
+            if seen_task else str(SCENE_ROOT),
+            "information_wall": {"teacher_video_values_read": 144 if seen_task else 400,
                                  "teacher_runtime_reads": 0, "deployment_adapters": 1,
                                  "validation_test_gradients": False}}
+    if seen_task:
+        bank["evaluation_scope"] = file_record(seen_scope.PATH)
+        bank["materialization_git"] = contract["materialization_git"]
     if pilot:
         bank.update(loss_variant=PILOT_ARMS[mode], pilot=spec["pilot"],
                     parent_checkpoint=run["parent_checkpoint"])
@@ -435,22 +461,31 @@ def materialize_public_beta(checkpoint: Path, asset_root: Path) -> Path:
     return materialize(checkpoint, asset_root)
 
 
-def register_mt(asset_root: Path, source: Mapping) -> Path:
-    spec = specification()
+def register_mt(asset_root: Path, source: Mapping, *, seen_task: bool = False) -> Path:
+    spec = read_json(SEALED_SPEC_PATH) if seen_task else specification()
     checkpoint, run, _ = _mt_source(spec, source)
-    output = Path(spec["run_root"]) / "MT" / "banks" / "300"
+    if seen_task and checkpoint != Path(seen_scope.registration()["checkpoint_mt"]).resolve():
+        raise ValueError("seen-task MT source changed")
+    output = (Path(seen_scope.registration()["run_root"]) if seen_task else
+              Path(spec["run_root"])) / "MT" / "banks" / "300"
     output.mkdir(parents=True, exist_ok=False)
-    tasks, conditions = task_rows(spec, asset_root)
+    tasks, conditions = (seen_scope.task_rows(asset_root, spec) if seen_task else
+                         task_rows(spec, asset_root))
     bank = {"schema_version": BANK_SCHEMA, "kind": KIND, "mode": "MT",
-            "spec": file_record(SPEC_PATH), "asset_root": str(asset_root),
+            "spec": file_record(SEALED_SPEC_PATH if seen_task else SPEC_PATH),
+            "asset_root": str(asset_root),
             "training_git": run["git"]["commit"], "checkpoint": str(checkpoint),
             "checkpoint_manifest": file_record(checkpoint.parent / "checkpoint_manifest.json"),
             "source": source, "lora": load_pi05_lora_contract(REPO / run["adapter"]["contract"]).to_dict(),
             "shared": file_record(checkpoint), "conditions": conditions,
-            "tasks": tasks, "scene_root": str(SCENE_ROOT),
+            "tasks": tasks, "scene_root": str(Path(seen_scope.registration()["run_root"]) / "scenes")
+            if seen_task else str(SCENE_ROOT),
             "information_wall": {"teacher_video_values_read": 0,
                                  "teacher_runtime_reads": 0, "deployment_adapters": 1,
                                  "validation_test_gradients": False}}
+    if seen_task:
+        bank["evaluation_scope"] = file_record(seen_scope.PATH)
+        bank["materialization_git"] = frozen_git(continuation=True)
     write_json_atomic(output / "manifest.json", bank)
     return output / "manifest.json"
 
@@ -458,53 +493,9 @@ def register_mt(asset_root: Path, source: Mapping) -> Path:
 def _inspect_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping, task_keys: tuple,
                    evaluation_role: str, require_formal: bool,
                    task_init_state_ids: Mapping | None) -> None:
-    mode = bank["mode"]
-    macro = 300 if mode == "MT" else int(Path(bank["checkpoint"]).name.split("_")[-1])
-    continuation = macro in CONTINUATION_EVALUATION_MACROS
-    window1350 = macro in CONTINUATION1350_EVALUATION_MACROS
-    window1800 = macro in CONTINUATION1800_EVALUATION_MACROS
-    pilot = macro in PILOT_CHECKPOINTS and mode in PILOT_ARMS
-    registered_spec = (PILOT_SPEC_PATH if pilot else
-                       CONTINUATION1800_FROZEN_SPEC_PATH if window1800 else
-                       CONTINUATION1350_FROZEN_SPEC_PATH if window1350 else
-                       CONTINUATION_FROZEN_SPEC_PATH if continuation else SEALED_SPEC_PATH)
-    current_spec = specification(PILOT_SPEC_PATH if pilot else
-                                 CONTINUATION1800_SPEC_PATH if window1800 else
-                                 CONTINUATION1350_SPEC_PATH if window1350 else
-                                 CONTINUATION_SPEC_PATH if continuation else SPEC_PATH)
-    expected_path = Path(spec["run_root"]) / mode / "banks" / str(macro) / "manifest.json"
-    tasks, conditions = task_rows(spec, Path(bank["asset_root"]))
-    expected = (
-        (path, expected_path.resolve()), (bank.get("schema_version"), BANK_SCHEMA),
-        (bank.get("kind"), KIND), (bank["spec"], file_record(Path(bank["spec"]["path"]))),
-        (Path(bank["spec"]["path"]).resolve(), registered_spec.resolve()),
-        ({key: value for key, value in spec.items() if key != "budget"},
-         {key: value for key, value in current_spec.items() if key != "budget"}),
-        (spec.get("schema_version"), "ember_operator_read_write_learning_v1"),
-        ("arm" in bank, False),
-        (bank["source"], source), (bank["scene_root"], str(SCENE_ROOT)),
-        (bank.get("loss_variant") if pilot else None, PILOT_ARMS[mode] if pilot else None),
-        (bank.get("pilot") if pilot else None, spec["pilot"] if pilot else None),
-        (bank.get("parent_checkpoint") if pilot else None,
-         str(Path(spec["continuation"]["parent_run_root"]) /
-             "T/train/attempts/continuation/checkpoints/macro_00001800") if pilot else None),
-        (evaluation_role, "validation"), (require_formal, True), (bank["tasks"], tasks),
-        (set(task_keys), {(row["suite"], row["task_id"]) for row in tasks}),
-        (bank["information_wall"], {"teacher_video_values_read": 0 if mode == "MT" else 400,
-                                     "teacher_runtime_reads": 0, "deployment_adapters": 1,
-                                     "validation_test_gradients": False}),
-    )
-    if (mode not in ("T", "U", "MT", *PILOT_ARMS) or not source_matches(bank["source"], source)
-            or any(actual != wanted for actual, wanted in expected)
-            or len(bank["conditions"]) != 400
-            or any({k: row[k] for k in ("condition_id", "global_task_id", "teacher_demo")} != condition
-                   for row, condition in zip(bank["conditions"], conditions, strict=True))):
-        raise ValueError("operator official bank provenance/scope changed")
-    if task_init_state_ids is not None and any(
-            tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ())) != tuple(range(50))
-            for row in tasks):
-        raise ValueError("operator official state scope changed")
-    inspect_registered_scenes(SCENE_ROOT, tasks)
+    seen_scope.inspect_official_scope(bank, spec, path, source, task_keys,
+                                      evaluation_role, require_formal,
+                                      task_init_state_ids)
 
 
 def _inspect_mt_bank(bank: Mapping, spec: Mapping, source: Mapping) -> None:
@@ -564,15 +555,21 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
             return inspect(bank, path, source, task_keys, evaluation_role,
                            require_formal, task_init_state_ids)
         spec = read_json(Path(bank["spec"]["path"]))
-        _inspect_scope(bank, spec, path, source, task_keys, evaluation_role, require_formal,
-                       task_init_state_ids)
+        if bank.get("evaluation_scope") is not None:
+            scene_root = seen_scope.inspect_bank_scope(bank, spec, path, source, task_keys,
+                                                        evaluation_role, require_formal,
+                                                        task_init_state_ids)
+        else:
+            _inspect_scope(bank, spec, path, source, task_keys, evaluation_role, require_formal,
+                           task_init_state_ids)
+            scene_root = SCENE_ROOT
         if bank["mode"] == "MT":
             _inspect_mt_bank(bank, spec, source)
         else:
             _inspect_tu_bank(bank, spec, path)
-        return {**bank, "schema_version": EVAL_SCHEMA, "arm": selection(spec)["arm"],
+        return {**bank, "schema_version": EVAL_SCHEMA, "arm": "correct",
                 "manifest": file_record(path),
-                "scene_manifest": file_record(SCENE_ROOT / "manifest.json")}
+                "scene_manifest": file_record(scene_root / "manifest.json")}
     except (KeyError, TypeError, ValueError, OSError, StopIteration) as error:
         raise Pi05EvaluationError(str(error)) from error
 
@@ -673,36 +670,32 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
                        task_subset: Mapping | None) -> tuple[dict, dict]:
     bank_path = Path(args.static_task_lora_manifest).resolve()
     bank = read_json(bank_path)
-    full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0} for task in tasks]
-    macro = bank_path.parent.name
-    eval_root = bank_path.parent.parent.parent / "evaluation"
-    expected_output = (eval_root / "correct400" if macro in ("270", "300")
-                       else eval_root / macro / "correct400")
-    public_beta = bank.get("mode") == PUBLIC_BETA_MODE
-    pilot = bank.get("mode") in PILOT_ARMS
-    expected_capture = (PUBLIC_BETA_CAPTURE_PATH if public_beta else
-                        PILOT_CAPTURE_PATH if pilot else
-                        SPEC_PATH.parent / "official_capture.json")
-    expected_study = (PUBLIC_BETA_STUDY if public_beta else
-                      "operator_public_function_pilot_20260929" if pilot else
-                      "operator_read_write_learning_20260928")
-    if (path.resolve() != expected_capture.resolve()
-            or bank.get("kind") != KIND or manifest.get("schema_version") != "ember_pi05_registered_trajectory_capture_v1"
-            or manifest.get("study_id") != expected_study
-            or public_beta and bank_path != (PUBLIC_BETA_ROOT / PUBLIC_BETA_MODE / "banks/1800/manifest.json")
-            or pilot and bank_path != (PILOT_ROOT / bank["mode"] / "banks/1890/manifest.json")
-            or task_subset is not None or manifest.get("task_subset_selection") is not None
-            or manifest.get("full_conditions") != full or manifest.get("mode") != "compact"
-            or manifest.get("passive_control_trace") != PASSIVE_TAG or manifest.get("stage_predicates") is not True
-            or args.role != "validation" or args.mode != "formal" or len(tasks) != 8
-            or any(tuple(task.init_state_ids) != tuple(range(50)) for task in tasks)
-            or output_dir.resolve() != expected_output.resolve()
+    try:
+        expected = seen_scope.capture_expectations(bank, bank_path, tasks)
+    except ValueError as error:
+        raise Pi05EvaluationError(str(error)) from error
+    facts = ((path.resolve(), expected["capture"].resolve()),
+             (bank.get("kind"), KIND),
+             (manifest.get("schema_version"), "ember_pi05_registered_trajectory_capture_v1"),
+             (manifest.get("study_id"), expected["study"]),
+             (manifest.get("task_subset_selection"), None),
+             (manifest.get("full_conditions"), expected["full"]),
+             (manifest.get("mode"), "compact"),
+             (manifest.get("passive_control_trace"), PASSIVE_TAG),
+             (manifest.get("stage_predicates"), True),
+             (args.role, expected["role"]), (args.mode, "formal"),
+             (len(tasks), expected["task_count"]),
+             (output_dir.resolve(), expected["output"].resolve()))
+    if (any(actual != wanted for actual, wanted in facts)
+            or expected["expected_bank"] is not None and bank_path != expected["expected_bank"]
+            or task_subset is not None
+            or any(tuple(task.init_state_ids) != expected["states"] for task in tasks)
             or any(manifest.get(key) is not False for key in (
                 "training_gradient_use", "checkpoint_selection_use", "validation_use", "test_use"))):
         raise Pi05EvaluationError("operator official full/compact capture scope changed")
     capture = {"schema_version": "ember_pi05_registered_trajectory_capture_v1",
                "selection_path": str(path), "selection_bytes": path.stat().st_size,
-               "mode": "compact", "full_conditions": full,
+               "mode": "compact", "full_conditions": expected["full"],
                "trajectory_root": str((output_dir / "trajectories").resolve()),
                "passive_trace": {"schema_version": PASSIVE_TAG,
                                  "trace_root": str((output_dir / "continuous_traces").resolve())},
@@ -749,17 +742,19 @@ def validate_capture_contract(contract: Mapping, repo_root: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("materialize", "register-mt", "public-beta"))
+    parser.add_argument("phase", choices=("materialize", "register-mt", "public-beta",
+                                          "seen-materialize", "seen-mt"))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--mode", choices=("T", "U", *PILOT_ARMS))
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--device")
     args = parser.parse_args()
-    if args.phase == "materialize":
+    if args.phase in ("materialize", "seen-materialize"):
         if args.mode is None or args.checkpoint is None:
             parser.error("materialize requires a registered arm and completed selected ECP")
         print(materialize(args.mode, args.checkpoint, args.asset_root,
-                          torch.device(args.device or "cuda:0")))
+                          torch.device(args.device or "cuda:0"),
+                          seen_task=args.phase == "seen-materialize"))
     elif args.phase == "public-beta":
         if args.mode is not None or args.device is not None or args.checkpoint is None:
             parser.error("public-beta takes only its fixed T1800 checkpoint and runs on CPU")
@@ -773,7 +768,7 @@ def main() -> None:
                                                   args.asset_root)
         ckpt = args.asset_root / spec["source"]["checkpoint"]
         source = inspect_source_checkpoint(authorities, ckpt.parent.parent, ckpt, evaluation_mode="formal")
-        print(register_mt(args.asset_root, source))
+        print(register_mt(args.asset_root, source, seen_task=args.phase == "seen-mt"))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+{
+  "schema_version": "ember_operator_seen_task_scope_v1",
+  "study_id": "operator_seen_task_diagnosis_20260929",
+  "run_root": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929",
+  "evaluation_role": "operator_seen_training36",
+  "global_task_ids": [0, 1, 2, 4, 5, 7, 12, 13, 14, 15, 17, 19, 20, 21, 22, 25, 28, 29, 32, 34, 35, 36, 37, 38, 42, 43, 51, 55, 56, 62, 64, 73, 95, 96, 97, 101],
+  "init_state_ids": [32, 33, 34, 35],
+  "full_init_state_id": 32,
+  "video_schedule_seed": 20260928,
+  "video_pool": [0, 49],
+  "checkpoint_t": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation1800/T/train/attempts/continuation/checkpoints/macro_00001800",
+  "checkpoint_mt": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/training/mtbc/checkpoints/step_00000300/lora.safetensors",
+  "training_git_t": "fcc23cd15cc475530c385e354670efee6bacfa12",
+  "training_git_mt": "3ebb979b"
+}

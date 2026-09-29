@@ -96,6 +96,14 @@ def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
             raise Pi05EvaluationError("exploration Sigma requires explicit development-train states32..36")
         return None
     states = tuple(values)
+    if args.role == "operator_seen_training36":
+        from ember.operator_writer.scope import STATES
+
+        if (args.mode != "formal" or args.state_count != 4 or states != STATES
+                or any(getattr(args, key, None) for key in (
+                    "exploration_sigma", "occupancy_capture_selection", "task_subset_selection"))):
+            raise Pi05EvaluationError("seen-task formal scope requires exactly states32..35")
+        return states
     if states == tuple(range(10, 50)):
         from ember.writer.language_content_contract import fixed400_explicit_states
 
@@ -452,7 +460,7 @@ def _registered_trajectory_capture(
         return None, None
     path = path.resolve()
     manifest = read_json(path)
-    if manifest.get("study_id") in {"operator_read_write_learning_20260928", "operator_public_beta_diagnosis_20260929", "operator_public_function_pilot_20260929"}:
+    if manifest.get("study_id") in {"operator_read_write_learning_20260928", "operator_public_beta_diagnosis_20260929", "operator_public_function_pilot_20260929", "operator_seen_task_diagnosis_20260929"}:
         from ember.operator_writer.bank import registered_capture
 
         return registered_capture(args, tasks, output_dir, path, manifest, task_subset)
@@ -630,7 +638,7 @@ def _prepared_payload(
     authorities = load_evaluation_authorities(args.config, repo_root)
     _explicit_diagnostic_states(args)
     formal_count = int(authorities.config["environment"]["fixed_init_state_count"])
-    if args.mode == "formal" and args.state_count != formal_count:
+    if args.mode == "formal" and args.state_count != formal_count and args.role != "operator_seen_training36":
         raise Pi05EvaluationError("formal PI05 evaluation requires all fixed states")
     if (
         args.mode == "screen"

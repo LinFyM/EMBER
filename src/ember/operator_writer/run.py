@@ -762,7 +762,7 @@ def audit(spec: dict, asset_root: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("audit", "train"))
+    parser.add_argument("phase", choices=("audit",))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--mode", choices=("T", "U"))
     parser.add_argument("--pilot-arm", choices=tuple(PILOT_ARMS))
@@ -775,10 +775,7 @@ def main() -> None:
     parser.add_argument("--spec", type=Path, default=PILOT_SPEC_PATH)
     args = parser.parse_args()
     spec = specification(args.spec)
-    if args.phase == "audit":
-        print(json.dumps(audit(spec, args.asset_root), sort_keys=True))
-    else:
-        train(spec, args)
+    print(json.dumps(audit(spec, args.asset_root), sort_keys=True))
 
 
 if __name__ == "__main__":

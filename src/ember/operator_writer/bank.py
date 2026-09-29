@@ -564,19 +564,25 @@ def _inspect_tu_bank(bank: Mapping, spec: Mapping, path: Path) -> None:
     base = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)
     shapes = expected_lora_state_shapes(base)
+    selected = bank.get("selected_control")
     factor_root = (
+        Path(selected["correct_bank"]["path"]).parent
+        if selected is not None and selected["arm"] == "same_task_other" else path.parent
+    ) if selected is not None else (
         Path(bank["scene_repair"]["source_bank"]["path"]).parent
         if bank.get("scene_repair") is not None else path.parent
     )
+    shared_root = (Path(selected["correct_bank"]["path"]).parent
+                   if selected is not None else factor_root)
     expected = (
-        (bank["shared"], file_record(factor_root / "shared.safetensors")),
+        (bank["shared"], file_record(shared_root / "shared.safetensors")),
         (bank["checkpoint_manifest"], file_record(checkpoint / "checkpoint_manifest.json")),
         (bank["training_git"], run["git"]["commit"]), (bank["lora"], base.to_dict()),
         (run["lora"], base.to_dict()), (run["source"], bank["source"]),
     )
     if any(actual != wanted for actual, wanted in expected):
         raise ValueError("T/U shared factor or formal checkpoint changed")
-    _factor_header(factor_root / "shared.safetensors",
+    _factor_header(shared_root / "shared.safetensors",
                    {name: shape for name, shape in shapes.items() if name.endswith(LORA_A_SUFFIX)},
                    metadata={"schema_version": BANK_SCHEMA, "mode": mode})
     b_shapes = {name: shape for name, shape in shapes.items() if name.endswith(LORA_B_SUFFIX)}
@@ -597,6 +603,11 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
+        if bank.get("selected_control") is not None:
+            from . import selected_scope
+
+            return selected_scope.inspect(bank, path, source, task_keys, evaluation_role,
+                                          require_formal, task_init_state_ids)
         if bank.get("mode") == PUBLIC_BETA_MODE:
             from .public_beta import inspect
 
@@ -701,6 +712,10 @@ def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
     if bank["mode"] == PUBLIC_BETA_MODE:
         evidence.update(intervention="public_B0_A", teacher_video_values_read=0,
                         video_id_role="paired_metadata_only")
+    if bank.get("selected_control") is not None:
+        evidence["selected_control_arm"] = bank["selected_control"]["arm"]
+        if episode.get("video_global_task_id") is not None:
+            evidence["video_global_task_id"] = episode["video_global_task_id"]
     return evidence
 
 
@@ -791,12 +806,21 @@ def validate_capture_contract(contract: Mapping, repo_root: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("materialize", "register-mt", "public-beta",
-                                          "seen-materialize", "seen-mt", "seen-canonical-bank"))
+                                          "seen-materialize", "seen-mt", "seen-canonical-bank",
+                                          "selected-other", "selected-video", "selected-public-beta"))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--mode", choices=("T", "U", "MT", *PILOT_ARMS))
+    parser.add_argument("--arm", choices=("cross_suite_wrong", "shuffled"))
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--device")
     args = parser.parse_args()
+    if args.phase.startswith("selected-"):
+        from .selected_scope import dispatch
+
+        print(dispatch(args, parser))
+        return
+    if args.arm is not None:
+        parser.error("video-control arm belongs only to selected-video")
     if args.phase == "seen-canonical-bank":
         if args.mode not in ("T", "MT") or args.checkpoint is not None or args.device is not None:
             parser.error("canonical bank requires only the registered T/MT mode")

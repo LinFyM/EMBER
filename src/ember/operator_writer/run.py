@@ -37,6 +37,7 @@ from .data import (CHECKPOINTS, CONTINUATION_CHECKPOINTS, CONTINUATION_UPDATES,
                    CONTINUATION1350_CHECKPOINTS, CONTINUATION1350_UPDATES,
                    CONTINUATION1800_CHECKPOINTS, CONTINUATION1800_UPDATES,
                    PILOT_CHECKPOINTS, PILOT_UPDATES,
+                   CONTINUATION2340_CHECKPOINTS, CONTINUATION2340_UPDATES,
                    TASKS, UPDATES, FormalData)
 from .model import OperatorReadWrite
 from .native import read_native_video
@@ -48,7 +49,10 @@ CONTINUATION_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation900_
 CONTINUATION1350_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation1350_spec.json"
 CONTINUATION1800_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation1800_spec.json"
 PILOT_SPEC_PATH = REPO / "configs/operator_read_write_v1/public_function_pilot_spec.json"
+CONTINUATION2340_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation2340_spec.json"
 PILOT_ROOT = Path("/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260929")
+CONTINUATION2340_ROOT = Path(
+    "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340")
 CONTINUATION900_ROOT = Path(
     "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900")
 CONTINUATION1350_ROOT = Path(
@@ -120,6 +124,14 @@ PILOT_EVENTS = {**CONTINUATION1800_EVENTS,
 PILOT_EXECUTION = {**CONTINUATION1800_EXECUTION,
                    "updates_per_mode": PILOT_UPDATES, "queries_per_mode": PILOT_UPDATES * 112,
                    "checkpoints": list(PILOT_CHECKPOINTS), "only_selected_checkpoints": [1890]}
+CONTINUATION2340_EVENTS = {**PILOT_EVENTS,
+                           "schema_version": "ember_operator_read_write_events_v7",
+                           "teacher_round6_permutation_seed": [20260928, 1, "task", 5]}
+CONTINUATION2340_EXECUTION = {**PILOT_EXECUTION,
+                              "updates_per_mode": CONTINUATION2340_UPDATES,
+                              "queries_per_mode": CONTINUATION2340_UPDATES * 112,
+                              "checkpoints": list(CONTINUATION2340_CHECKPOINTS),
+                              "only_selected_checkpoints": list(CONTINUATION2340_CHECKPOINTS)}
 PILOT_ARMS = {"control": "full", "public_aux": "full_plus_public_beta"}
 PILOT_CONTRACT = {"arms": list(PILOT_ARMS), "loss_variants": PILOT_ARMS,
                   "public_loss_coefficient": 1.0,
@@ -129,6 +141,27 @@ PILOT_CONTRACT = {"arms": list(PILOT_ARMS), "loss_variants": PILOT_ARMS,
 
 def specification(path: Path = SPEC_PATH) -> dict:
     path = path.resolve()
+    if path == CONTINUATION2340_SPEC_PATH:
+        spec, base = read_json(path), specification(PILOT_SPEC_PATH)
+        expected = {**base, "task": "operator_read_write_continuation_2340_20260929",
+                    "design": "docs/designs/operator_read_write_learning_design.md#20",
+                    "run_root": str(CONTINUATION2340_ROOT),
+                    "events": CONTINUATION2340_EVENTS, "execution": CONTINUATION2340_EXECUTION,
+                    "evaluation": {**base["evaluation"],
+                                   "bank_macros": list(CONTINUATION2340_CHECKPOINTS)},
+                    "continuation": {
+                        "parent_run_root": str(PILOT_ROOT), "parent_arm": "control",
+                        "parent_macro": 1890,
+                        "parent_training_git": "9801641d0967e163d91474ff92e6fb6520be1084",
+                        "parent_event_schema": PILOT_EVENTS["schema_version"],
+                        "parent_loss_variant": "full",
+                        "sampler_migration": "append_teacher_round_5_v6_to_v7_at_1890"},
+                    "budget": {"new_gpu_hours_expected": 14, "new_gpu_hours_hard": 30,
+                               "peak_new_gib": 128}}
+        expected.pop("pilot")
+        if spec != expected:
+            raise ValueError("operator 2340 continuation contract changed")
+        return spec
     if path == PILOT_SPEC_PATH:
         spec, base = read_json(path), specification(CONTINUATION1800_SPEC_PATH)
         expected = {**base, "task": "operator_public_function_pilot_20260929",
@@ -263,7 +296,8 @@ def complete_checkpoint(path: Path) -> bool:
     world = manifest.get("world_size")
     allowed = ((macro in CHECKPOINTS and world == 2)
                or (macro in (*CONTINUATION_CHECKPOINTS, *CONTINUATION1350_CHECKPOINTS,
-                             *CONTINUATION1800_CHECKPOINTS, *PILOT_CHECKPOINTS)
+                             *CONTINUATION1800_CHECKPOINTS, *PILOT_CHECKPOINTS,
+                             *CONTINUATION2340_CHECKPOINTS)
                    and world in (2, 3, 4)))
     expected_files = ({"ecp.safetensors", "trainer_state.pt"}
                       | {f"rank_{rank:02d}_state.pt" for rank in range(world)}) if allowed else set()
@@ -278,7 +312,8 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     event_schema = spec.get("events", {}).get("schema_version")
     if event_schema in (CONTINUATION1350_EVENTS["schema_version"],
                         CONTINUATION1800_EVENTS["schema_version"],
-                        PILOT_EVENTS["schema_version"]):
+                        PILOT_EVENTS["schema_version"],
+                        CONTINUATION2340_EVENTS["schema_version"]):
         _validate_late_continuation_attempt(spec, args, contract, output)
         return
     if spec.get("execution", {}).get("updates_per_mode") == CONTINUATION_UPDATES:
@@ -350,10 +385,12 @@ def _validate_late_continuation_attempt(spec: dict, args, contract: dict, output
     checkpoints = tuple(spec["execution"]["checkpoints"])
     pilot = parent_macro == 1800
     arm = getattr(args, "pilot_arm", None) if pilot else args.mode
-    if (parent_macro not in (900, 1350, 1800)
+    if (parent_macro not in (900, 1350, 1800, 1890)
             or args.mode not in spec["execution"]["modes"]
             or pilot and (arm not in PILOT_ARMS or contract.get("pilot_arm") != arm
-                          or contract.get("loss_variant") != PILOT_ARMS[arm])):
+                          or contract.get("loss_variant") != PILOT_ARMS[arm])
+            or parent_macro == 1890 and (arm != "T" or contract.get("loss_variant") != "full"
+                                         or spec["continuation"].get("parent_arm") != "control")):
         raise ValueError("unregistered continuation parent or arm")
     if args.resume is None:
         raise ValueError("continuation requires a complete same-arm ECP")
@@ -372,7 +409,8 @@ def _validate_late_continuation_attempt(spec: dict, args, contract: dict, output
     if (macro == parent_macro and latest != -1) or (macro != parent_macro and macro != latest):
         raise ValueError("resume requires the latest complete same-arm continuation ECP")
     if macro == parent_macro:
-        expected = (Path(spec["continuation"]["parent_run_root"]) / args.mode
+        expected = (Path(spec["continuation"]["parent_run_root"])
+                    / spec["continuation"].get("parent_arm", args.mode)
                     / "train/attempts/continuation/checkpoints" / f"macro_{parent_macro:08d}")
         if checkpoint != expected:
             raise ValueError("continuation parent is not the original same-arm ECP")
@@ -380,13 +418,18 @@ def _validate_late_continuation_attempt(spec: dict, args, contract: dict, output
 
         old_spec = (CONTINUATION_SPEC_PATH if parent_macro == 900 else
                     CONTINUATION1350_SPEC_PATH if parent_macro == 1350 else
-                    CONTINUATION1800_SPEC_PATH)
+                    CONTINUATION1800_SPEC_PATH if parent_macro == 1800 else PILOT_SPEC_PATH)
         old = inspect_training_source(specification(old_spec), checkpoint, args.mode,
                                       sealed_evaluation=True)
         fixed = ("schema_version", "stage", "mode", "source", "lora", "operator", "optimizer",
                  "trainable_names", "source_trainable", "information_wall")
         if any(old.get(key) != contract.get(key) for key in fixed):
             raise ValueError("sealed parent scientific source or optimizer changed")
+        if parent_macro == 1890 and (old.get("pilot_arm") != "control"
+                                     or old.get("loss_variant") != "full"
+                                     or old.get("git", {}).get("commit")
+                                     != spec["continuation"]["parent_training_git"]):
+            raise ValueError("sealed 1890 parent arm, loss or Git changed")
     else:
         if parent.parent.resolve() != attempts.resolve():
             raise ValueError("continuation ECP is outside this arm's registered attempts")
@@ -396,6 +439,8 @@ def _validate_late_continuation_attempt(spec: dict, args, contract: dict, output
                  "information_wall", "continuation")
         if pilot:
             fixed += ("pilot_arm", "loss_variant", "pilot")
+        elif parent_macro == 1890:
+            fixed += ("loss_variant",)
         if any(old.get(key) != contract.get(key) for key in fixed):
             raise ValueError("continuation scientific source or frozen Git changed")
         if not packing_compatible(old, contract):
@@ -503,7 +548,8 @@ def prepare_train(spec: dict, args) -> Session:
     continuation = spec["execution"]["updates_per_mode"] in (CONTINUATION_UPDATES,
                                                                 CONTINUATION1350_UPDATES,
                                                                 CONTINUATION1800_UPDATES,
-                                                                PILOT_UPDATES)
+                                                                PILOT_UPDATES,
+                                                                CONTINUATION2340_UPDATES)
     git = frozen_git(continuation=continuation)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     allowed_worlds = spec["execution"].get("world_sizes", [spec["execution"].get("world_size")])
@@ -518,6 +564,7 @@ def prepare_train(spec: dict, args) -> Session:
     optimizer, scheduler, parameters = optimizer_for(runtime.writer, spec)
     root = Path(spec["run_root"])
     pilot = spec["execution"]["updates_per_mode"] == PILOT_UPDATES
+    next_window = spec["execution"]["updates_per_mode"] == CONTINUATION2340_UPDATES
     output = root / (args.pilot_arm if pilot else args.mode) / "train" / "attempts" / args.attempt
     output.mkdir(parents=True, exist_ok=True)
     initialize_deferred_process_group(context, rendezvous_root=output)
@@ -528,7 +575,8 @@ def prepare_train(spec: dict, args) -> Session:
                 "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
                 "ranks": gather(local, context.world_size)}
     contract = {"schema_version": SCHEMA, "stage": STAGE, "git": git,
-                "spec": str(PILOT_SPEC_PATH if pilot else
+                "spec": str(CONTINUATION2340_SPEC_PATH if next_window else
+                            PILOT_SPEC_PATH if pilot else
                             CONTINUATION1800_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION1800_UPDATES
                             else CONTINUATION1350_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION1350_UPDATES
                             else CONTINUATION_SPEC_PATH if continuation else SPEC_PATH),
@@ -546,8 +594,11 @@ def prepare_train(spec: dict, args) -> Session:
         if pilot:
             contract.update(pilot_arm=args.pilot_arm, loss_variant=PILOT_ARMS[args.pilot_arm],
                             pilot=spec["pilot"])
+        elif next_window:
+            contract["loss_variant"] = "full"
         if spec["execution"]["updates_per_mode"] in (CONTINUATION1350_UPDATES,
-                                                       CONTINUATION1800_UPDATES):
+                                                       CONTINUATION1800_UPDATES,
+                                                       CONTINUATION2340_UPDATES):
             contract["stop_after_macro"] = args.stop_after_macro
     error = None
     try:
@@ -568,7 +619,8 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
     try:
         updates_target = session.spec["execution"]["updates_per_mode"]
         continuation = updates_target in (CONTINUATION_UPDATES, CONTINUATION1350_UPDATES,
-                                          CONTINUATION1800_UPDATES, PILOT_UPDATES)
+                                          CONTINUATION1800_UPDATES, PILOT_UPDATES,
+                                          CONTINUATION2340_UPDATES)
         updates, rows = load_ecp_checkpoint(
             checkpoint=checkpoint, stage=STAGE, context=session.context,
             model=session.runtime.writer, optimizer=session.optimizer,
@@ -578,15 +630,24 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
                                          migrate_sealed_270=updates_target == CONTINUATION_UPDATES and updates == 270,
                                          migrate_continuation_900=updates_target == CONTINUATION1350_UPDATES and updates == 900,
                                          migrate_continuation_1350=updates_target == CONTINUATION1800_UPDATES and updates == 1350,
-                                         migrate_continuation_1800=updates_target == PILOT_UPDATES and updates == 1800)
-        valid_checkpoints = ((1800, *PILOT_CHECKPOINTS) if updates_target == PILOT_UPDATES else
+                                         migrate_continuation_1800=updates_target == PILOT_UPDATES and updates == 1800,
+                                         migrate_pilot_1890=updates_target == CONTINUATION2340_UPDATES and updates == 1890)
+        valid_checkpoints = ((1890, *CONTINUATION2340_CHECKPOINTS)
+                             if updates_target == CONTINUATION2340_UPDATES else
+                             (1800, *PILOT_CHECKPOINTS) if updates_target == PILOT_UPDATES else
                              (1350, *CONTINUATION1800_CHECKPOINTS)
                              if updates_target == CONTINUATION1800_UPDATES else
                              (900, *CONTINUATION1350_CHECKPOINTS)
                              if updates_target == CONTINUATION1350_UPDATES else
                              (270, *CONTINUATION_CHECKPOINTS) if continuation else CHECKPOINTS)
         if (updates not in valid_checkpoints or rows != updates or session.scheduler.last_epoch != updates
-                or restored["training_state"] != ({"updates": updates, "mode": session.mode}
+                or restored["training_state"] != (
+                    {"updates": updates, "mode": session.mode,
+                     "pilot_arm": "control", "loss_variant": "full"}
+                    if updates_target == CONTINUATION2340_UPDATES and updates == 1890 else
+                    {"updates": updates, "mode": session.mode, "loss_variant": "full"}
+                    if updates_target == CONTINUATION2340_UPDATES else
+                    {"updates": updates, "mode": session.mode}
                     if updates_target != PILOT_UPDATES or updates == 1800 else
                     {"updates": updates, "mode": session.mode,
                      "pilot_arm": session.contract["pilot_arm"],
@@ -656,6 +717,7 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
     if session.context.is_main:
         append_jsonl(session.output / "metrics.jsonl", {
             "update": updates, "mode": session.mode, "queries": 112,
+            **({"loss_variant": "full"} if session.data.updates == CONTINUATION2340_UPDATES else {}),
             **({"pilot_arm": session.contract["pilot_arm"],
                 "loss_variant": session.contract["loss_variant"]}
                if "pilot_arm" in session.contract else {}),
@@ -671,6 +733,7 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
             scheduler=session.scheduler, run_contract_schema=SCHEMA, metrics_rows=rows,
             sampler_state=session.data.sampler_state(),
             training_state={"updates": updates, "mode": session.mode,
+                            **({"loss_variant": "full"} if session.data.updates == CONTINUATION2340_UPDATES else {}),
                             **({"pilot_arm": session.contract["pilot_arm"],
                                 "loss_variant": session.contract["loss_variant"]}
                                if "pilot_arm" in session.contract else {})})
@@ -678,17 +741,20 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
 
 
 def validate_train_request(spec: dict, args) -> None:
-    if (spec["execution"]["updates_per_mode"] != PILOT_UPDATES
-            or spec["events"] != PILOT_EVENTS or spec.get("pilot") != PILOT_CONTRACT):
-        raise ValueError("new formal operator training requires the public function pilot spec")
+    if (spec["execution"]["updates_per_mode"] != CONTINUATION2340_UPDATES
+            or spec["events"] != CONTINUATION2340_EVENTS
+            or spec.get("continuation", {}).get("parent_arm") != "control"
+            or spec.get("pilot") is not None):
+        raise ValueError("new formal operator training requires the control2340 continuation spec")
     if (args.mode != "T" or not args.attempt
-            or getattr(args, "pilot_arm", None) not in PILOT_ARMS
+            or getattr(args, "pilot_arm", None) is not None
             or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
             or args.resume is None or args.attempt == "fresh"
             or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)):
         raise ValueError("operator train requires registered T attempt and ECP policy")
-    if args.stop_after_macro is not None:
-        raise ValueError("pilot has only its terminal 1890 ECP boundary")
+    if (args.stop_after_macro is not None
+            and args.stop_after_macro not in CONTINUATION2340_CHECKPOINTS[:-1]):
+        raise ValueError("controlled stop must be a complete intermediate 2340 ECP boundary")
 
 
 def train(spec: dict, args) -> None:
@@ -701,8 +767,26 @@ def train(spec: dict, args) -> None:
         target = session.data.updates
         if updates >= target:
             raise ValueError("completed operator checkpoint cannot start a new training attempt")
+        if args.stop_after_macro is not None and args.stop_after_macro <= updates:
+            raise ValueError("controlled stop is not after the resumed ECP")
         while updates < target:
             updates, rows = update(session, updates, rows)
+            if updates in CONTINUATION2340_CHECKPOINTS[:-1]:
+                requested = ((session.output / "stop_at_next_ecp.request").exists()
+                             if session.context.is_main else False)
+                stop_at_ecp = any(gather(requested or updates == args.stop_after_macro,
+                                         session.context.world_size))
+                if stop_at_ecp:
+                    if session.context.is_main:
+                        write_json_atomic(session.output / "stopped_at_ecp.json", {
+                            "schema_version": SCHEMA, "mode": session.mode, "updates": updates,
+                            "metrics_rows": rows,
+                            "checkpoint": str(session.output / "checkpoints"
+                                              / f"macro_{updates:08d}"),
+                            "reason": ("registered stop-after-macro" if updates == args.stop_after_macro
+                                       else "stop_at_next_ecp.request"),
+                            "next_resume_from_this_ecp": True})
+                    return
         if session.context.is_main:
             write_json_atomic(session.output / "completion.json", {
                 "schema_version": SCHEMA, "mode": session.mode, "updates": updates,
@@ -762,7 +846,7 @@ def audit(spec: dict, asset_root: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("audit",))
+    parser.add_argument("phase", choices=("audit", "train"))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--mode", choices=("T", "U"))
     parser.add_argument("--pilot-arm", choices=tuple(PILOT_ARMS))
@@ -772,10 +856,13 @@ def main() -> None:
     parser.add_argument("--frame-chunk", type=int, default=8)
     parser.add_argument("--cpu-threads", type=int, default=6)
     parser.add_argument("--stop-after-macro", type=int)
-    parser.add_argument("--spec", type=Path, default=PILOT_SPEC_PATH)
+    parser.add_argument("--spec", type=Path, default=CONTINUATION2340_SPEC_PATH)
     args = parser.parse_args()
     spec = specification(args.spec)
-    print(json.dumps(audit(spec, args.asset_root), sort_keys=True))
+    if args.phase == "train":
+        train(spec, args)
+    else:
+        print(json.dumps(audit(spec, args.asset_root), sort_keys=True))
 
 
 if __name__ == "__main__":

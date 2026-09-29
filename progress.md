@@ -2,7 +2,8 @@
 
 ## 当前最新：Owner夜间授权自主研究及确定方案后的训练（2026-09-30凌晨）
 
-**执行已启动：**Sol在GPU02:0以world1运行§31 fresh270，冻结源码`517bc8d4`、
+**执行中：**Sol在GPU02:0以world1运行§31从fresh初始化的270步检验；180完整保存后已同拓扑恢复，
+当前attempt为`resume180_gpu02_world1`，冻结源码`517bc8d4`、
 冻结树`/data1/user/ymdai/projects/EMBER-change-clock-learning-v2-formal`；launch记录2026-09-29 18:11:55 UTC。
 main收到启动回报后只读核launch/run contract和第1宏步原行：4任务×28=112查询、一次Adam、
 总梯度范数.01744735、52.04秒、峰值allocated26.93/reserved31.78GiB，source_trainable=0。
@@ -71,6 +72,17 @@ main审阅全部三文件差异与`launch/readout_cpu_check.py/json`八项原件
 实际读取Git为ecfda、训练Git/spec仍为517、两个spec内容及operator/events/optimizer一致；0模型forward。
 合并后的既有official capture/scene路由测试通过（1 passed）；没有重复GPU消费者或检查训练日志。
 517训练继续，实际270 bank/eval消费者仍待后段运行验证，读取修复不增加科学结论。
+
+ECP180已完整保存并同拓扑恢复：Sol曾因GPU01 0–3释放申请180安全停点，临启动复查这些卡已被他人占用，
+显存不足本rank峰值，未启动world4；继续GPU02:0/world1，前180步实际2.894069 GPUh计入原8 GPUh预算。
+main直接核`launch/resume180_decision.json`、fresh的`stopped_at_ecp.json`及新attempt的`resume_provenance.json`：
+旧/新world均1、rank0 RNG恢复、无新增rank RNG或sampler迁移；180行metrics前缀一致，首个新更新181，
+run contract的git/spec/operator/events/optimizer/source均保持原517身份。没有重初始化或更改科学变量。
+读取面板提交`360bcf6b`由main以`b82c5c70`集成：取消fresh目录硬编码，复用既有`inspect_training_source`
+确认同臂、完整270 ECP及来源合同；面板查询、标签和模型计算未改。后段读取树为
+`/data1/user/ymdai/projects/EMBER-change-clock-readout-v3-formal`（360、clean detached/pushed已核）。
+main通过真实脚本入口CPU确认180 ECP在加载模型/数据前被既有270来源合同拒绝；没有新增GPU计算。
+尚无完整270原件，未宣称恢复后的270物化或面板已通过；Sol继续原批后段，不等待集成批准。
 
 ## 当前最新：停止一批实验不等于停止主讨论研究（2026-09-30凌晨）
 

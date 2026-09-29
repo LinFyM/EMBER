@@ -15,7 +15,11 @@ main本轮已定向复核实际model/native、机制§42/51/58及旧关系/Local
 下一有界架构检验已在active design§27冻结：task=`operator_self_conditioned_readout_20260929`，
 真实T2340与原四train task/两teacher/§26 B20；比较生成LoRA参与同一教学回读后的joint、X链、H链及另一正确teacher参数回读。
 只产生32条新实际十步生成路径，0更新/0环境/0held，旧parent/β/MT直接复用；不是选择了双遍架构或已验证修正。
-1GPUh/6GiB，预计实现到读回45–90分钟；GPU02优先。具体投递状态随后按真实回执登记，不把合同存在写成后台执行。
+1GPUh/6GiB，预计实现到读回45–90分钟；GPU02优先。合同a3ad92a5已push。
+旧Sol轮已completed，本次以一次新任务Queue派发，回执`01a0ed43-7107-7f01-b88f-d159a5bf4af2`；
+一次核对确认新轮`01a0ed43-710b-7110-8de0-b6eeca5ae6fe` inProgress且含准确task正文，已有实际准备工具调用。
+正文/回执/投递证据在既有tmp `self_conditioned_readout_release*`及`self_conditioned_readout_delivery.json`。
+这是实际承接，不声称GPU已经启动或有功能结果；完整/阻碍回报直接Steer。无重复任务、主讨论陪跑或自Queue。
 
 Owner自主授权与“先验证机制/修正，再正式重训”继续有效。Test固定T115/MT121/Source75，
 没有明显胜MT，走机制修正分支；不改选Test、不启动task-local RL/one-shot或原样长续训。

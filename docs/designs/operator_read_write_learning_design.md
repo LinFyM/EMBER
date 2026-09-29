@@ -1143,3 +1143,81 @@ CPU扩scope和真实来源检查预计30–50分钟；就绪物化/两个模型�
 GPU前Sol live核双节点及strg01 data1独立quota/共享空间，沿当前常规6/8上限，按真正吞吐安排，不等待凑卡。
 最近4workers/card已有OOM，3workers有效；按本轮真实内存/CPU余量准入，不继承固定2workers，也不无依据重试4以制造效率。
 完成整组288或出现实质边界直接Steer主讨论，停止新增计算；无新训练、更多初态、视频controls、Test或RL自动许可。
+
+## 20. Owner授权1890后续训观察、冻结视频比较与有条件Test（2026-09-29约10:30）
+
+### 20.1 最新问题、授权与时间窗口
+
+Owner醒来交流后明确恢复执行，希望下午约15:00得到尽量完整结果。T1890原目标参照158高于1800的154，
+Owner要求继续观察可能的小幅增长与连续下降，不能将既往平台误当已确认最高能力。U450/810/900/1080为143/132/132/128，
+是整体回落而非每点严格下降；本轮U保持停止。公共辅助项148的阴性裁决保持，不续aux或改loss。
+本次是新的有界追加授权，覆盖§16/18停止线和10:20暂停；旧记录仍是当时有效判断，不改写历史。
+只检验原目标在更多更新下的实际学习轨迹，不重置LR/Adam、不换数据/seed/rank/模型、不据controls改变训练。
+已见任务诊断§19恢复原固定范围，与本项并行；不可将本次最高点替换其事前固定T1800。
+
+### 20.2 真实1890父、事件、卡数与唯一训练入口
+
+task=`operator_read_write_continuation_2340_20260929`，root=`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340`。
+唯一父是`/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260929/control/train/attempts/continuation/checkpoints/macro_00001890`，
+训练Git9801641d0967e163d91474ff92e6fb6520be1084，mode=T/pilot_arm=control/loss_variant=full。
+实际路径按原已核manifest消费，若attempt名与本段文字不同，以该唯一control1890完整原件纠正文档，绝不可接public_aux或静默放宽来源。
+承接Writer/Adam/scheduler、1890行metrics与全部旧事件、完整rank RNG；累计1890→2340最多450新宏步，仍四task各28query、权重各.25。
+第五teacher轮从每task第10访问继续至50，第六轮用`SeedSequence([20260928,1,task,5])`，到2340每task累计260访问。
+新schema显式承接v6，旧事件逐个不变；不把第五轮重新从0开始。全局SUM后一次clip/Adam，绝对floor LR1e−5保持。
+各90步1980/2070/2160/2250/2340保存完整ECP，恢复`stop_at_next_ecp.request`和预设完整边界stop；完成信息记录实际退出游标而非预定终点。
+同窗口只从最新完整同臂ECP恢复，源/损失/游标/旧前缀/optimizer时钟均须真实检查。只开放本轮T训练入口，旧pilot/旧续训不恢复为可随意开训的fallback。
+
+Owner特别要求卡数不锁死。优先GPU02四张有吞吐价值的可用A40，完整ECP边界允许world2/3/4迁移，旧rank恢复RNG、新增rank来源显式记录，
+不称bitwise exact；无四卡时不等待凑卡，可用2/3卡启动。当前四条件整项分片最多四rank有工作，额外卡用于就绪bank/eval，
+不让空rank占卡；本轮不为扩至六rank改逻辑batch或另造query分片器。不得为换卡丢弃/重放未保存更新。
+沿两节点总6/8及单节点6的实时资源合同，短诊断可用Owner已有临时超限授权，但不借此把长训练/大official永久超限。
+
+### 20.3 固定观察节点、停止与选择
+
+1890的sealed400直接继承；每个新完整节点各物化400并strict paired400，原固定scene/video/env/policy RNG、每task50不同teacher不改。
+节点就绪即物化/评测，与后段训练重叠；只报完整400，不读取/据分片分数改变节点。保留per-task/suite/breadth、R/G/L/churn/Jaccard与任务簇区间。
+全部预注册节点上限2340；若两个相邻完整节点连续下降且期间没有新高，主讨论可要求下一个完整ECP收束，已经生成/启动的预注册评测仍完整计入，
+不丢掉不利节点。若分数平台，不冒称已证持续下降；若到2340仍涨，也只说观测窗口内最高，不自动续2790。
+约13:30检查一次实际完成范围与剩余wall-clock，用完整节点确定可交付范围；不为凑15:00隐去未完节点或把不足400当正式结果。
+若新节点排期显著推迟，应在下一完整边界停训并保留所有已发布节点，给后段controls/Test留真实时间；不做中途分数轮询。
+
+候选范围只有原目标T1890及本轮实际完成的预注册correct400。按最高完整成功数选单checkpoint，同分选较早节点；
+同时如实报告相邻保持、覆盖和多次选点的乐观性，不声称单点独立确认。Owner本轮希望观察高点，不另强加旧资格线或要求先证明全局收敛。
+选点固定在任何新视频controls/Test结果读取之前，由main登记具体ECP/Git/选择表；后者不能反向改选。
+Test为条件授权：若候选相对MT只有既有1–5个成功量级优势，仍不算明显超越，不自动打开Test。
+更大改善须main结合差额、任务覆盖/得失与区间明确判断并发布固定候选；不从统计显著性不足推出两者等效，也不临时降低强MT。
+无明显优势时，完成视频诊断与已见任务比较，如实回报Test触发条件未满足，不以未运行冒充阴性结果。
+
+### 20.4 冻结候选的视频比较与Test范围
+
+新后段root=`/data1/user/ymdai/ember_runs/operator_selected_validation_20260929`；选点前可做CPU实现/实源检查，不启动依赖候选的模型工作。
+冻结后复用该候选correct400，新增same_task_other、cross_suite_wrong、shuffled各400；同task另一正确视频沿既有offset17，
+wrong沿原平衡cross-suite task mapping，均使用`expert_manifold/video_schedule.py`与原seed7，整轮视频不重复且逐行匹配scene/env/policy RNG。
+保持目标exact language，仅视频来源改变；shuffled用既有固定permutation对stride5选中的真实双RGB帧同序重排，重新完整native→Writer，不能只扰hidden或复用correct LoRA。
+本次先做shuffle，不为凑表自动补reverse。再导出该同checkpoint的公共β单份LoRA跑400，以区分内容敏感与相对共同静态分支的有益增量；
+β仍不是独立训练语言baseline。时序结果只作冻结方法的事后检验，不进入训练、选点或本轮架构修正。
+预算/排期不足时先完成wrong/shuffled整组，再完成other/β；未完成范围明示，不能只挑有利条件回报。
+
+若Test条件成立，另在同root/test生成唯一完整400 scene注册，固定coverage协议Test全局ID `[8,9,10,18,24,27,30,33]`、init0..49，
+使用同一选定T、原强MT300（旧训练Git3ebb979b）和本项目canonical frozen Source（三者同一基础source与norm）各400。
+Source是当前过滤Source71训练后的冻结源policy，不以generic未适配pi05_base替代；MT不重训、不换弱checkpoint。
+T每task50合法action-hidden teacher各一次、seed7；Source/MT保留配对video元数据但不读其值。完整scene/环境及policy RNG共享，官方动作口径/horizon保持。
+保存每task/suite/breadth及三组配对成功集/区间；Test不产生梯度、不挑teacher/后改checkpoint，不据Test继续本轮训练或架构反馈。
+协议本身标注historical_test_exposure=true，结果须保留这一历史限制，不称从未见过的全新Test。禁止读取Test action监督或运行RL。
+
+### 20.5 交付、成本与协作
+
+唯一Sol沿现有run/data/bank/scope/evaluator实现；不并行写main，不新增第二trainer/evaluator。e499f94c的§19准备先复用，
+main并行审阅；新控制范围应内聚进scope/来源规则，不继续逐window复制大validator。纯工程窄修仍按§10.5自主验证/push/newfreeze续行。
+CPU应核真实control1890与aux拒绝、旧metrics/第五轮余项/第六轮、world2/3/4任务权重与完整恢复、受控停止、旧sealed消费者和新scope/视频重排的实际调用方。
+训练代码、评测扩展可以分别push/freeze：CPU合格的训练先启动，后段实现不阻塞GPU；新evaluation-only Git与旧训练来源显式兼容。
+每次GPU前由Sol live核双节点及strg01 data1 quota/共享容量；所有新产物data1，旧资产复用，不复制大数据或擅删原件。
+
+本次新增总硬限30GPUh/128GiB，包含恢复§19的3GPUh/10GiB、最多五correct节点、四视频功能比较及条件成立时三Test组和全部失败；不与旧已结账批次混算。
+依据已测450更新world4约1.84–1.95小时/7.4–7.8GPUh、每400 bank约.27–.30及official约.9–1GPUh；
+预计训练/五节点约13–14GPUh，§19约1–1.5、四controls约4.5–5、三Test约3–3.5，加加载/失败余量，预计总22–25GPUh。
+新增LoRA banks约80–95GiB，ECP/capture/临时写入保留128GiB峰值上限，启动前须以实际quota核准。
+目标15:00是交付预期不是性能/完工保证；10:30至15:00约4.5小时，CPU准备尽快，训练优先，已就绪诊断/物化/评测独立重叠。
+明显超期风险及时说明实际缺口与优先顺序，不默默增加预算/缩正式行；选点若到后段才完成，Test可能无法在15:00前完整结束。
+源码/实际launch、每完整观察节点、§19整组与最终交付及时回报。main活跃时直接Steer，若main已结束回合则只投一条可唤醒的新消息，
+不得为了等待Steer保持main在线；不发重复Queue/心跳、自通知或半批分数。main收到完整交付后验收、裁决、接续。

@@ -1,14 +1,21 @@
 # EMBER progress
 
-## 当前最新：优先研究架构的迁移机制，既有有限更新诊断按原范围收束（2026-09-29）
+## 当前最新：§26已消费，优先检验条件参数参与教学读取的架构关系（2026-09-29）
 
 Owner最新判断是训练方式可能难再取得突破，应优先寻找架构上的改进空间。main据此调整研究重心：
 研究教学中的对象/操作关系怎样经实际特征和写入算子，形成能被不同自身状态正确调用的LoRA，
 不再把loss、优化器、精度或小幅训练变体作为默认后继主线。这不等于已证明所有训练修正无效。
-已实际派发的§26仍只完成原四次有限更新与CPU算术诊断，不扩大预算、不自动转为精度/前缀训练试验；
-其作用是帮助区分功能信用与编译参数化的责任，主讨论不等它结束才开展架构推理。
+§26现已全部完成并由main消费：四个独立临时更新、48条B路径、两作业exit0，.2341999299GPUh/10.397GiB。
+前5目标无一致独立B/另一teacher优势，BF16确有存储舍入但未证明丢失方向有益，不启动精度/前缀训练试验。
+main核科学消费者、完整聚合和四个代表父B预测；其余原件继承Sol完整读回，见findings§240/机制§64。
 main本轮已定向复核实际model/native、机制§42/51/58及旧关系/LocalField/Reader论证；
-优先问题与可失败边界补入机制§63.5。尚无已选定新架构、经验证修正或新GPU任务。
+并只用现有M/余切检验Q8/V8/out：固定O的小子空间不能直接升级为容量根因，计入原有B0/O后Q8宽松局部上界覆盖98.45%。
+共用A的限制也没有显示一致被挡住的有益完整FM方向，不据此扩宽/自由生成A。
+
+下一有界架构检验已在active design§27冻结：task=`operator_self_conditioned_readout_20260929`，
+真实T2340与原四train task/两teacher/§26 B20；比较生成LoRA参与同一教学回读后的joint、X链、H链及另一正确teacher参数回读。
+只产生32条新实际十步生成路径，0更新/0环境/0held，旧parent/β/MT直接复用；不是选择了双遍架构或已验证修正。
+1GPUh/6GiB，预计实现到读回45–90分钟；GPU02优先。具体投递状态随后按真实回执登记，不把合同存在写成后台执行。
 
 Owner自主授权与“先验证机制/修正，再正式重训”继续有效。Test固定T115/MT121/Source75，
 没有明显胜MT，走机制修正分支；不改选Test、不启动task-local RL/one-shot或原样长续训。
@@ -23,16 +30,16 @@ main额外只用已有T2340 train特征与权重，核Q8/V8/out实际写入衰�
 取消擦除使8/8完整FM更差，幅度匹配也未得到一致改善，降低简单memory保留补丁的投入理由，未改模型。
 这不是新证明所有记忆方案无效；不从层范数、乱序1分或局部夹爪变化跳到新架构。
 
-下一项具体范围已登记active design§26，task=`operator_functional_credit_transport_20260929`：
+以下为已完成§26的范围与派发历史，task=`operator_functional_credit_transport_20260929`：
 固定T2340与train0/12/20/32，A沿原28query，B使用排除teacher/A后的20个独立episode。
 检验完整FM/前5信用经真实native→Writer的VJP与Adam后怎样影响B的10步生成前缀，
 并从同父完整优化器独立做四次临时单宏步（两个teacher组×full/prefix），不是正式续训/新模型选择。
 预算2GPUh/12GiB，预计实现、执行、读回约1–2小时；GPU02优先，0环境/0held，四次临时更新如实计数。
 main负责科学推导/验收，Sol负责实际实现/消费者/执行。合同f2b74694及源集成561bddce已push。
 Sol旧轮completed，本次以一次独立新任务Queue派发，回执`01a0ed08-8c20-7c41-b8cf-573262c3824e`；
-一次投递核对确认新轮`01a0ed08-8c23-7822-9a05-0172d9043c8b` inProgress且含完整新task正文。
+派发时一次核对确认新轮`01a0ed08-8c23-7822-9a05-0172d9043c8b` inProgress且含完整新task正文，现整组回报已消费。
 正文/回执在既有tmp `functional_credit_transport_release*`与`functional_credit_transport_delivery.json`；
-这只确认真实任务承接，不声称GPU已启动、诊断有结果或修正有效；完整回报要求直接Steer。
+当时回执只确认真实任务承接；当前完成事实以顶部及真实两份exit0/原件为准。
 main进一步定向读封存ECP：Q8/V8公共A在2340→2790约94%元素相同，参数及m/v真实BF16，Value C/O为FP32。
 已把同梯度/同状态CPU算术影子纳入原四次更新读回，未新增GPU或改训练，细节见机制§63.4。
 补充Steer已被同一轮接受，回执`functional_credit_resolution_steer_receipt.json`；不再发送重复任务或普通回执。

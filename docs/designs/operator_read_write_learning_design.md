@@ -1662,3 +1662,85 @@ Sol负责一次性脚本、完整实际消费者/临时更新正确性、clean�
 launch前Sol实查strg01 data1 user quota及双节点；GPU02优先，仅无适用卡才GPU01。当前旧批GPU已全部释放，
 按实际吞吐使用1–2张适用卡即可，不为满卡占位；临时两个j组可独立，但同一父/分组权重和四次单步含义不能变。
 完整一批或实质阻碍直接Steer，不发源码完成/准入/心跳常规回报；结束后停止新增计算，由main主动解释与决定下一步。
+
+### 26.6 完成与取舍
+
+两独立teacher组均exit0，共四次临时更新、48条B生成路径，外部.2341999299GPUh、10.397GiB；
+真实原件和完整推理见findings§240/机制§64。前5目标无一致独立B/另一teacher收益，BF16舍入未证明丢失有益方向，
+不追加精度、loss、步数或正式训练。本项完整收束；后继优先研究架构，不从本条旧分支自动派发。
+
+## 27. 已生成LoRA参与同一次教学回读的冻结结构检验（2026-09-29）
+
+### 27.1 科学问题、历史和唯一范围
+
+Owner要求以架构改进为主线，先验证特征/算子机制再重训。§26已收束；main检查共享输出上界后，
+没有直接扩宽出口或自由生成A的充分理由。本条按机制§64.3–64.4，检验公共读取与条件参数读取的具体计算差别，
+不把它先命名为错位bug，也不把旧§20回读、Unified、Reader反例遗忘。
+
+唯一task=`operator_self_conditioned_readout_20260929`，新root：
+`/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/self_conditioned_readout`。
+仍使用真实e2afbfd7完整T2340的同一套冻结参数；可复用其clean pushed detached数值树。
+四train task0/12/20/32，原两teacher、§26原B20 query/noise/target/valid，绝不取held/Test标签。
+0参数更新、0环境episode；没有正式checkpoint、选点、训练CLI或新架构长期运行面。
+
+### 27.2 同一套参数的四种有限重编译
+
+对每个原正确teacher v，先计算原模型的`(X0,H0)=N_β(L,v)`、`M0=F_θ(A,X0,H0)`。
+同task两teacher的M0只各编译一次并共享给本task后续读取，不复制已存在的训练/数据大资产。
+原完整执行状态`w0=(A,B0+M0)`仍为单LoRA、同一真实source。
+然后在相同RGB/语言/probe/tau1下做`(X1,H1)=N_w0(L,v)`；另以同task另一teacher的w0读取**原视频v**，得到`(Xo,Ho)`。
+不得把另一teacher的RGB直接换进来，也不读取teacher action/state。
+
+固定四个新臂，不扫系数或选择迭代次数：
+
+| 臂 | Writer消费 | 要区分的计算 |
+| --- | --- | --- |
+| joint_self | `F_θ(A,X1,H1)` | 本视频完整条件参数参与读取之后的整体重编译 |
+| address_input_self | `F_θ(A,X1,H0)` | 实际X链变化，含key、Value中的key依赖及递归，不叫纯地址效应 |
+| value_context_self | `F_θ(A,X0,H1)` | 最终H/变化Value链；保留原X寻址 |
+| joint_other | `F_θ(A,Xo,Ho)` | 同task另一正确视频参数的读取，区分特定自反馈与一般任务适配 |
+
+所有臂最终只执行`(A,B0+M_new)`，**不加上M0**，不平均LoRA，不再回读第二轮。
+调用现有`read_native_video`与`OperatorReadWrite`；只替换native读取时实际传入的完整LoRA。
+F中的common A/B0/P/C/D/O始终为原T2340，不能因native传入w0而把Writer的公共B0也覆盖成B0+M0。
+source基础权重冻结；安装/functional_call必须沿现有实际消费者，任务结束不修改父文件或旧冻结树。
+action_out本身不反馈进返回H/X的原边界继续保持，不补假路径。
+
+这是冻结结构干预，混合X/H两臂只用于拆分依赖，不能直接称为可部署新方法或已验证修正。
+即使joint_self改善，也不由本项唯一归因于语义对齐、梯度相容或共同训练后的可学性。
+
+### 27.3 实际功能与必要原件
+
+八个teacher条件×四臂=**32条新B生成路径**，每条仍为20 query、完整50×32 latent、10步flow，
+仅最终前7维对真实动作计风险。沿§26消费者及同microbatch/噪声语义，不改solver/normalization/目标。
+原八个parent、四公共β、四MT300的B路径直接引用§26，不重复参照矩阵。
+新任务首个父条件用固定前两个B query与§26保存预测作一次必要消费者核对，成本计入；
+不是逐bit验收，也不因低位正常差异重跑整组。若差异与待解释效果同量级，应如实降低结论强度。
+
+报告每task、每teacher的前5/全50/valid-future、motion6/gripper1、逐query差额及同/另一teacher的交互；
+不只报总均值，不把单一专家动作MSE当唯一合法动作或闭环分数。
+保存实际32预测、原query/noise/target引用及必要38个新M；H/X仅保留既定Q8/V8/action_out与最终H、
+原始帧索引和教学读取参数来源，避免为所有层/帧复制全部中间量。
+重读r0/r1/ro需要的native前向如实计费；两种混合臂复用已有X/H，不重复native读。
+CPU按实际预测复算全部32风险、按实际script检查w0/公共参数边界、配对与finite；沿用已可靠的§26面板/旧预测验收。
+结果中X/H/M改变与功能变化分开，不用更大hidden距离认定收益。
+
+### 27.4 决策分支
+
+- 若joint_self或一个真实输入链在独立B及两teacher上有清晰、跨task的功能改善，同时没有被其它horizon/运动/任务损害抵消，
+  main才考虑同数据/预算原方法的有界学习及闭环验证；本项本身不放行fresh或正式续训。
+- 若joint_other同样或更好，应降低“必须是本视频自身参数一致”的解释；只支持更一般条件化读取，不用自反馈名称夸大。
+- 若收益只在一个task/teacher、量级很小、呈无方向交换或整体更差，不据此投入回读新架构，
+  不加轮数、blend/gate、LR/初始化/辅助目标延长该假设。没有唯一根因时保留未知而不拼成整体资格。
+
+### 27.5 执行、资源与停止
+
+唯一Sol负责脚本/实际消费者/准入/执行；main负责上述假设及独立解释，不重复工程测试。
+这是task-owned冻结诊断，无永久模块、平行trainer或evaluation400。
+新增硬限**1GPUh、6GiB峰值**，包括加载/所有失败/父两query核对/native重读/临时写入。
+依据§26两组完整反传和48路径仅.2342GPUh，以及§22原生读取成本，本项粗估.2–.5GPUh，
+实现、执行和CPU读回约45–90分钟；先按真实占用修订，不将估计写成已运行。
+launch前Sol核strg01 data1独立quota与双节点；GPU02优先，只有无适用卡才GPU01。
+可按task分两独立组(0,12)/(20,32)用1–2张适用卡，避免按teacher分组后重复编译父视频；
+不等待凑卡、不dummy占用，不因当前正式训练为空就填满卡数。
+整组完成或实质阻碍直接Steer，常规准备/心跳并入整批；完成后停止新增计算，无自动下一轮或新训练。

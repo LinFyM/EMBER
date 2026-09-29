@@ -1,4 +1,4 @@
-"""Read the registered A28 train panel from the fresh change-clock 270 Writer."""
+"""Read the registered A28 train panel from the completed change-clock 270 Writer."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from safetensors.torch import load_file
 
 from ember.lora import LORA_B_SUFFIX, validate_lora_state
 from ember.operator_writer.change_clock import MODE, ROOT, TASK
+from ember.operator_writer.bank import inspect_training_source
 from ember.operator_writer.data import FormalData
 from ember.operator_writer.native import read_native_video
 from ember.operator_writer.run import CHANGE_CLOCK_SPEC_PATH, build_runtime, specification
@@ -72,9 +73,10 @@ def main() -> None:
     parser.add_argument("--microbatch", type=int, choices=(7, 14, 28), default=14)
     args = parser.parse_args()
     checkpoint = args.checkpoint.resolve()
-    expected = ROOT / MODE / "train/attempts/fresh/checkpoints/macro_00000270/ecp.safetensors"
-    if checkpoint != expected or not checkpoint.is_file():
-        raise ValueError("diagnostic requires only this completed fresh 270 candidate")
+    if checkpoint.name != "ecp.safetensors" or not checkpoint.is_file():
+        raise ValueError("diagnostic requires a completed 270 ECP state")
+    spec = specification(CHANGE_CLOCK_SPEC_PATH)
+    inspect_training_source(spec, checkpoint.parent, MODE)
     output = ROOT / "analysis/teacher_to_query_270"
     if output.exists():
         raise ValueError("diagnostic output already exists")
@@ -83,7 +85,6 @@ def main() -> None:
     if len(old) != 8:
         raise ValueError("old T270 fixed panel is incomplete")
     torch.set_num_threads(4)
-    spec = specification(CHANGE_CLOCK_SPEC_PATH)
     data = FormalData(ASSET, spec, task_ids=TASKS)
     output.mkdir(parents=True)
     started = time.monotonic()

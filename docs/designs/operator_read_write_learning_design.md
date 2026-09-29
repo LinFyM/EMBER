@@ -1345,3 +1345,64 @@ Sol在原独占执行范围内准备一次性诊断脚本，复用clean frozen�
 优先GPU02的一张适用空闲卡，只有GPU02无适用卡才考虑GPU01；不挤占四卡训练、不停已有任务。
 现场live两节点及strg01 data1独立quota检查由Sol负责；就绪正式bank/official不因无依据串行等待此诊断。
 完成后只直接Steer整批结果或实质阻碍，无确认/心跳；停止新增诊断，主讨论结合已有历史和实际数据决定是否还有必要分析。
+
+## 23. 条件作用从训练读出到自身动作生成的传递（2026-09-29，续训并行分析）
+
+### 23.1 要改变的判断
+
+Owner指出仍有关键未知，不能把一项诊断收束等同于没有可并行研究。§22结果已消费，不重做读取替换。
+当前具体缺口是：T/U900的训练FM排序与held闭环相反，当前视频条件有训练功能收益，但该收益是否保留到
+同一真实观测下的官方10步动作生成尚未测量。先固定观测与任务，区分条件函数在生成过程中的调用，
+不把通用FM/采样差距本身当EMBER根因；必须比较完整视频策略、各自公共β与强MT的差异及T/U交互。
+本项独立于2790学习结果，不改变§21，不使用held动作、环境反馈或最终wrong/shuffled controls。
+
+唯一task=`operator_sampler_transport_diagnosis_20260929`；唯一新root为
+`/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport`。
+冻结T900/U900（81846ed3）及T2340（e2afbfd7），面板沿§14A/22的train0/12/20/32、两teacher、各28跨episode query。
+正确视频生成的38个M沿已存原件复用，并与各自真实ECP A/B0合成；不重读视频、不重新编译、不重选query。
+T/U900原件见train_functional_900，T2340正常M见native_reader_transport；若原件不含所需字段，先报具体缺口。
+
+### 23.2 有限实验与精确分解
+
+复用现有policy.predict_action_chunk/sample_actions的官方10步路径、query图像/state/语言预处理与冻结source normalization。
+每task复用原query的flow_seed产生一套28×50×32纯Gaussian noise；三模型、β与MT使用同一实际noise，
+沿现有logical-batch RNG消费者保证microbatch不改配对。部署采样从纯噪声开始，真实action只用于事后评分，
+不得作为采样状态、Writer条件或生成过程的插值输入。保留真实32维suffix，最终评分仅真实7维。
+MT沿原300 mixed-precision LoRA，共四task，只计算一次并供三模型引用；不新增source参照以填矩阵。
+
+24组full、12组公共β及4组MT，共40条批量生成路径，每条28query、10个真实flow step；不是40个环境episode。
+对24组full另在对应公共β的每步实际suffix状态上计算full速度，共240个额外速度批次；全部上限640个速度批次。
+不另开自定义solver，不改time/step/precision，不用预测均值替代每条实际生成路径。
+记录本模型full路径zF、公共路径zB、各自速度vF(zF)/vB(zB)，以及vF(zB)。对于dt=-0.1，精确有：
+
+```text
+delta_z_(k+1) = delta_z_k + dt * (direct_k + feedback_k)
+direct_k = vF(zB_k) - vB(zB_k)
+feedback_k = vF(zF_k) - vF(zB_k)
+delta_z_0 = 0
+```
+
+这是以公共轨迹为参照的有限函数分解，非对称、不是参数Taylor展开、梯度冲突或独立因果中介百分比。
+direct包括同一suffix输入下整套条件LoRA对hidden与速度的作用；feedback包括模型前面生成不同suffix后自身响应的变化。
+不把它叫环境闭环反馈。统计最终前5动作、完整50及真实未padding future的归一化动作MSE，按task/teacher/query报告；
+公共β与MT按task共用，不当作两个独立样本。single noise/有限训练面板不证明多模态动作的正确性或闭环排名。
+主讨论另从既有FM原件读flow_time分层、前5/后45差额，作为相关性背景，不把不同tau下不同query当同query因果干预。
+
+保存实际脚本、合同、LoRA/M来源引用、query身份、noise、真实action/有效future长度（仅训练评分）、40条生成路径的
+z/velocity/最终normalized动作，以及24条cross-velocity；full/β路径另保存Q8/V8/out的Aq，用于和已有教学key/M读出联系。
+无需复制ECP、所有M或原图像；不扫描旧official原件。CPU逐个实际读回新增预测、配对、步数及上述递推，正常浮点容差即可。
+报告完整−β、完整−MT及T/U的前缀/全长差额与反向条件，并给direct/feedback的合成量和误差方向，不靠范数宣布有益。
+
+### 23.3 结果分支与执行
+
+若完整视频的功能优势到真实生成前5仍保留，降低“视频功能仅在训练插值上有用”的解释，后继优先区分关系迁移与
+环境自身访问状态；若优势在生成前缀消失或反转，且T/U呈与既有功能不同的交互，优先解释条件算子沿自身生成状态
+的调用与训练信用错位。单纯全模型都同样改变、仅均值微小差或不一致结果，不作为EMBER特异根因或改loss理由。
+无论哪种结果，都不自动恢复旧endpoint/mean5辅助、扫采样器或开展fresh训练；必须结合历史反例和已有closed-loop证据裁决。
+
+Sol负责一次性脚本与执行，复用clean frozen数值代码/唯一policy消费者，不新增canonical trainer/evaluator或机械测试套件。
+主讨论负责科学解释，不承担重复工程审计。独立硬限1GPUh/4GiB含加载/失败/临时输出；不占§21预算但须合计quota准入。
+依据§14A 80组混合功能前后向约.099GPUh，本项更多速度前向但复用教学编译，GPU粗估15–40分钟、准备/读回共30–60分钟，
+资源等待另计；外部时限不得超过剩余GPU预算。若无法在限额内完成，保留已完成原件并报告，不删条件或追加预算。
+GPU02优先，只有无适用卡时考虑GPU01；沿Owner短分析临时超卡例外，不挤占在跑四卡训练或中断official。
+launch前由Sol现场核两节点资源和strg01 data1 quota。完成或实质阻碍直接Steer，禁止心跳/确认消息；完成后不自动开下一项。

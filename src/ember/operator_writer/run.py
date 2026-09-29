@@ -312,11 +312,12 @@ def gather(value, world: int):
     return result
 
 
-def resume_contract_compatible(parent: dict, current: dict) -> bool:
-    """Only registered OOM packing may change across an otherwise exact ECP resume."""
+def resume_contract_compatible(parent: dict, current: dict, *, allow_topology_change: bool = False) -> bool:
+    """Only registered packing and, for the clock arm, physical topology may change."""
+    mutable = ("microbatch", "frame_chunk", "topology") if allow_topology_change else ("microbatch", "frame_chunk")
     return (packing_compatible(parent, current)
-            and {k: v for k, v in parent.items() if k not in ("microbatch", "frame_chunk")}
-            == {k: v for k, v in current.items() if k not in ("microbatch", "frame_chunk")})
+            and {k: v for k, v in parent.items() if k not in mutable}
+            == {k: v for k, v in current.items() if k not in mutable})
 
 
 def packing_compatible(parent: dict, current: dict) -> bool:
@@ -334,7 +335,7 @@ def complete_checkpoint(path: Path) -> bool:
     files = manifest.get("files", {})
     macro = manifest.get("next_macro")
     world = manifest.get("world_size")
-    allowed = ((macro in CHECKPOINTS and world == 2)
+    allowed = ((macro in CHECKPOINTS and world in (1, 2, 3, 4))
                or (macro in (*CONTINUATION_CHECKPOINTS, *CONTINUATION1350_CHECKPOINTS,
                              *CONTINUATION1800_CHECKPOINTS, *PILOT_CHECKPOINTS,
                              *CONTINUATION2340_CHECKPOINTS, *CONTINUATION2790_CHECKPOINTS)
@@ -366,7 +367,8 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
         if (parent.parent != attempts or parent == output.resolve()
                 or args.resume.name not in {f"macro_{step:08d}" for step in CHECKPOINTS}):
             raise ValueError("resume requires this arm's registered ECP90/180/270")
-        if not resume_contract_compatible(read_json(parent / "run_contract.json"), contract):
+        if not resume_contract_compatible(read_json(parent / "run_contract.json"), contract,
+                                          allow_topology_change=spec["task"] == change_clock.TASK):
             raise ValueError("source, parameter, sampler, numerical or physical topology changed")
         if not complete_checkpoint(args.resume):
             raise ValueError("requested same-arm ECP is incomplete")
@@ -676,7 +678,7 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
             checkpoint=checkpoint, stage=STAGE, context=session.context,
             model=session.runtime.writer, optimizer=session.optimizer,
             scheduler=session.scheduler, run_contract_schema=SCHEMA,
-            restored_state=restored, allow_world_size_change=continuation)
+            restored_state=restored, allow_world_size_change=(continuation or session.mode == change_clock.MODE))
         migration = session.data.restore(restored["sampler_state"],
                                          migrate_sealed_270=updates_target == CONTINUATION_UPDATES and updates == 270,
                                          migrate_continuation_900=updates_target == CONTINUATION1350_UPDATES and updates == 900,
@@ -714,7 +716,7 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
             raise ValueError("ECP metrics history lacks a complete consecutive same-arm prefix")
         if session.context.is_main:
             (session.output / "metrics.jsonl").write_text("\n".join(prefix) + "\n")
-            if continuation:
+            if continuation or session.mode == change_clock.MODE:
                 parent_world = int(read_json(checkpoint / "checkpoint_manifest.json")["world_size"])
                 write_json_atomic(session.output / "resume_provenance.json", {
                     "checkpoint": str(checkpoint), "parent_git": read_json(

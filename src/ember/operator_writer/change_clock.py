@@ -14,12 +14,14 @@ ERASE_RULE = "erase=(memory@key)*(-expm1(-vector_norm(delta_hbar,dim=-1)/sqrt(10
 
 
 def expected_spec(base: dict) -> dict:
+    execution = {**base["execution"], "modes": [MODE], "world_sizes": [1, 2, 3, 4]}
+    execution.pop("world_size")
     return {
         **base,
         "task": TASK,
         "design": "docs/designs/operator_read_write_learning_design.md#31",
         "run_root": str(ROOT),
         "operator": {**base["operator"], "erase_rule": ERASE_RULE},
-        "execution": {**base["execution"], "modes": [MODE]},
+        "execution": execution,
         "budget": {"new_gpu_hours_hard": 8, "peak_new_gib": 24},
     }

@@ -42,10 +42,12 @@ from .data import (CHECKPOINTS, CONTINUATION_CHECKPOINTS, CONTINUATION_UPDATES,
                    TASKS, UPDATES, FormalData)
 from .model import OperatorReadWrite
 from .native import read_native_video
+from . import change_clock
 
 
 REPO = Path(__file__).resolve().parents[3]
 SPEC_PATH = REPO / "configs/operator_read_write_v1/learning_spec.json"
+CHANGE_CLOCK_SPEC_PATH = REPO / "configs/operator_read_write_v1" / change_clock.SPEC_NAME
 CONTINUATION_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation900_spec.json"
 CONTINUATION1350_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation1350_spec.json"
 CONTINUATION1800_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation1800_spec.json"
@@ -153,6 +155,11 @@ PILOT_CONTRACT = {"arms": list(PILOT_ARMS), "loss_variants": PILOT_ARMS,
 
 def specification(path: Path = SPEC_PATH) -> dict:
     path = path.resolve()
+    if path == CHANGE_CLOCK_SPEC_PATH:
+        spec = read_json(path)
+        if spec != change_clock.expected_spec(specification(SPEC_PATH)):
+            raise ValueError("change-clock fresh learning contract changed")
+        return spec
     if path == CONTINUATION2790_SPEC_PATH:
         spec, base = read_json(path), specification(CONTINUATION2340_SPEC_PATH)
         expected = {**base, "task": "operator_read_write_continuation_2790_20260929",
@@ -281,13 +288,14 @@ def specification(path: Path = SPEC_PATH) -> dict:
     return spec
 
 
-def frozen_git(*, continuation: bool = False) -> dict:
+def frozen_git(*, continuation: bool = False, change_clock_pilot: bool = False) -> dict:
     state = git_state(REPO)
     if state["branch"] or state["dirty_paths"]:
         raise ValueError("GPU calculation requires clean detached frozen source")
     refs = subprocess.run(["git", "branch", "-r", "--contains", state["commit"]], cwd=REPO,
                           capture_output=True, text=True, check=True).stdout.splitlines()
-    allowed = (("origin/codex/demonstration-transfer", "origin/main")
+    allowed = (("origin/codex/operator-change-clock", "origin/main") if change_clock_pilot else
+               ("origin/codex/demonstration-transfer", "origin/main")
                if continuation else ("origin/main",))
     pushed_ref = next((ref for ref in allowed if any(row.strip() == ref for row in refs)), None)
     if pushed_ref is None:
@@ -588,7 +596,8 @@ def prepare_train(spec: dict, args) -> Session:
                                                                 PILOT_UPDATES,
                                                                 CONTINUATION2340_UPDATES,
                                                                 CONTINUATION2790_UPDATES)
-    git = frozen_git(continuation=continuation)
+    clock_pilot = spec["task"] == "operator_change_clock_pilot_20260929"
+    git = frozen_git(continuation=continuation, change_clock_pilot=clock_pilot)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     allowed_worlds = spec["execution"].get("world_sizes", [spec["execution"].get("world_size")])
     if context.world_size not in allowed_worlds or os.environ.get("NCCL_P2P_DISABLE") != "1":
@@ -614,7 +623,8 @@ def prepare_train(spec: dict, args) -> Session:
                 "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
                 "ranks": gather(local, context.world_size)}
     contract = {"schema_version": SCHEMA, "stage": STAGE, "git": git,
-                "spec": str(CONTINUATION2790_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION2790_UPDATES else
+                "spec": str(CHANGE_CLOCK_SPEC_PATH if clock_pilot else
+                            CONTINUATION2790_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION2790_UPDATES else
                             CONTINUATION2340_SPEC_PATH if next_window else
                             PILOT_SPEC_PATH if pilot else
                             CONTINUATION1800_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION1800_UPDATES
@@ -787,6 +797,15 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
 
 
 def validate_train_request(spec: dict, args) -> None:
+    if spec["task"] == "operator_change_clock_pilot_20260929":
+        if (args.mode != change_clock.MODE or not args.attempt
+                or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
+                or getattr(args, "pilot_arm", None) is not None
+                or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)
+                or args.stop_after_macro is not None
+                or (args.resume is None) != (args.attempt == "fresh")):
+            raise ValueError("change-clock pilot requires fresh or same-arm ECP resume")
+        return
     if (spec["execution"]["updates_per_mode"] != CONTINUATION2790_UPDATES
             or spec["events"] != CONTINUATION2790_EVENTS
             or spec.get("continuation", {}).get("parent_arm") != "T"
@@ -894,7 +913,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("audit", "train"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--mode", choices=("T", "U"))
+    parser.add_argument("--mode", choices=("T", "U", change_clock.MODE))
     parser.add_argument("--pilot-arm", choices=tuple(PILOT_ARMS))
     parser.add_argument("--attempt", type=str)
     parser.add_argument("--resume", type=Path)

@@ -31,10 +31,12 @@ from .run import (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
                   CONTINUATION1800_SPEC_PATH, CONTINUATION2340_SPEC_PATH,
                   CONTINUATION2790_SPEC_PATH,
                   PILOT_SPEC_PATH, PILOT_ROOT, PILOT_ARMS, REPO, SCHEMA,
-                  SPEC_PATH, STAGE, build_runtime, complete_checkpoint, frozen_git, specification)
+                  SPEC_PATH, STAGE, CHANGE_CLOCK_SPEC_PATH, build_runtime, complete_checkpoint,
+                  frozen_git, specification)
 from . import scope as seen_scope
 from .capture import (PASSIVE_TAG, attach_capture_provenance, registered_capture,
                       validate_capture_contract)
+from . import change_clock
 
 
 KIND = "operator_read_write_lora_bank"
@@ -224,7 +226,7 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, seale
                             *CONTINUATION2790_EVALUATION_MACROS)}:
         return _inspect_continuation_source(spec, checkpoint, mode,
                                             sealed_evaluation=sealed_evaluation)
-    if mode not in ("T", "U") or checkpoint.name != "macro_00000270":
+    if mode not in ("T", "U", change_clock.MODE) or checkpoint.name != "macro_00000270":
         raise ValueError("only formal T/U270 may materialize")
     output = checkpoint.parent.parent
     expected_root = Path(spec["run_root"]) / mode / "train" / "attempts"
@@ -239,8 +241,10 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, seale
     expected = (
         (run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE),
         (run.get("mode"), mode),
-        (run.get("git"), SEALED_TRAINING_GIT if sealed_evaluation else frozen_git()),
-        (run.get("spec"), str(SEALED_SPEC_PATH if sealed_evaluation else SPEC_PATH)),
+        (run.get("git"), frozen_git(change_clock_pilot=True) if mode == change_clock.MODE else
+         SEALED_TRAINING_GIT if sealed_evaluation else frozen_git()),
+        (run.get("spec"), str(CHANGE_CLOCK_SPEC_PATH if mode == change_clock.MODE else
+                              SEALED_SPEC_PATH if sealed_evaluation else SPEC_PATH)),
         (run.get("operator"), spec["operator"]),
         (run.get("events"), spec["events"]), (run.get("optimizer"), spec["optimization"]),
         (run.get("source_trainable"), 0),
@@ -435,9 +439,10 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
         raise ValueError("seen-task materialization requires the fixed T1800 ECP")
     next_window = mode == "T" and macro in (
         *CONTINUATION2340_EVALUATION_MACROS, *CONTINUATION2790_EVALUATION_MACROS)
-    if not seen_task and not pilot and not next_window and (mode != "T" or macro not in CONTINUATION1800_EVALUATION_MACROS):
+    if not seen_task and not pilot and not next_window and mode != change_clock.MODE and (mode != "T" or macro not in CONTINUATION1800_EVALUATION_MACROS):
         raise ValueError("new materialization requires registered T ECP or pilot1890")
-    spec_path = (CONTINUATION1800_FROZEN_SPEC_PATH if seen_task else
+    spec_path = (CHANGE_CLOCK_SPEC_PATH if mode == change_clock.MODE else
+                 CONTINUATION1800_FROZEN_SPEC_PATH if seen_task else
                  CONTINUATION2790_FROZEN_SPEC_PATH if macro in CONTINUATION2790_EVALUATION_MACROS else
                  CONTINUATION2340_FROZEN_SPEC_PATH if next_window else
                  EVALUATION_SPEC_PATHS.get(macro, SPEC_PATH))

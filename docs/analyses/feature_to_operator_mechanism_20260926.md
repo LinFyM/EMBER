@@ -5356,3 +5356,30 @@ U较低训练FM、450回绑受损以及后来较差held结果，要求同时保�
 本轮降低了补语言入口、以裸特征差异宣布语义、以局部一阶信用选择大幅删改等做法的优先级。
 未证明全过程已完全解释，更未证明当前训练点是全局上限。原§21继续提供有限学习证据；新的2430回落已按§60.4修正保持判断，
 不为保护当前解释忽略它，也不凭这一点更换架构。分析的下一步须继续区分具体竞争解释，不能因为尚有未知就铺满模块探针。
+
+### 61.5 生成时的32维suffix不能误写成只有7维参与计算
+
+另定向读实际`function_credit.flow_sample/mean_velocity_loss`和官方`sample_actions/predict_action_chunk`：
+动作标签补到32维，FM仅监督真实前7维；官方每次Euler却更新全部32维，10步完成后才裁为7维。
+这和50步horizon末尾重复padding是两个不同维度的问题，不能混称“padding没处理”。
+主讨论仅从T/U900、T2340 ECP读取action_out的公共B及Writer O，并读MT300同处B：
+四者公共B的后25行均为0，三个Writer O的后25行也均为0，前7行非零。
+该窄读没有加载全部模型，也不是逐tensor完整性检查；脚本/数值为tmp `main_suffix_width.py/json`。
+一次临时分析先误用排序后的target索引读到256×256的其它O，已据真实保存的Writer target顺序修正并核为32×256，
+未将错误数值用于结论、修改训练或当作实现故障。
+
+这与计算图相容：当前单FM前向只有前7输出的直接信用；教学侧action_out投影结果也不进入X/H。
+所以零初始化的这些输出行没有该信用来源，但不能说后25维生成过程不受条件LoRA影响：
+
+```text
+v_latent(z) = W_source,out,latent * H_full(z) + b_source,out,latent
+H_full(z) 仍由上游38-target图中的条件参数决定
+z_next,latent = z_latent - .1 * v_latent(z)
+下一步action_in再次消费全部z
+```
+
+对full与β不同生成轨迹，输入层的读取地址差可精确拆为
+`A_in delta_z = A_in[:, :7] delta_z_real + A_in[:, 7:] delta_z_latent`。
+这只是实际线性消费者的分解，不说明哪部分误差有害，更不是后续网络的可加因果归因。
+MT和其它π0.5策略也有这类生成消费者；没有差异化实证时，不能把它改称EMBER特有根因或立即增加padding loss。
+§23原合同已保存全部32维轨迹，届时可利用同一批原件检查这一联系，无需现在另派裁维/钳位实验或改采样器。

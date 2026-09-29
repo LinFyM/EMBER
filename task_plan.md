@@ -1,12 +1,24 @@
 # EMBER task plan
 
-## 当前最新：已选定T2340直接Test，复用两baseline（2026-09-29）
+## 当前最新：Test判定后的自主研究与适应比较（2026-09-29）
+
+1. 完成已派发§24的T2340 Test400，复用MT121/Source75，不重跑基线、不重选T；完整结果到达后主讨论独立解释。
+2. 按§25准备并在Test结束后直接运行同一T2340的四组validation视频/公共β比较，各400，correct161复用。
+   6GPUh/32GiB，GPU02优先；同task另一视频、跨suite wrong、真实帧shuffle及自身β分别回答不同问题，不拼成单一语义证明。
+3. 若Test有实质且非单一局部交换的优势，结合视频证据恢复封存paper_experiments_design中单support FT/task-local RL目的，
+   按当前rank128、强MT300、source和信息墙重新写具体小规模Train资格及成本合同后自主执行；不是照搬旧rank16/旧预算或共享FM+RL。
+4. 若接近/不如MT，或优势含义仍不清楚，视频结果只作定位。继续检验输入证据、条件算子与自身状态调用、功能信用的竞争解释，
+   形成有实际干预证据的修正再重训；不把“视频有响应”“均值FM下降”或一个动作反例当修复已完成。
+5. 两分支均无需Owner再次逐项指示；每个新增执行仍由主讨论给Sol具体范围/预算/停止条件，保持zero-interaction与适应成绩独立。
+   Test只决定本次后续研究分支，不生成共享梯度、回改冻结选择或被重新称作盲测；shuffled不用于训练/选点/架构修正。
+
+## 此前§24选择记录：已选定T2340直接Test，复用两baseline（2026-09-29）
 
 Owner最新授权覆盖先明显胜MT才Test的旧条件，并明确MT/Source已有结果。只新增T Test400，见active design§24。
 main已核旧Source75/400、MT121/400原行与合同，复用不重测；不把旧缺失完整scene/capture作为新增基线任务的理由。
 2610最终160，五个新节点全收束且无超过161；main已选定T2340/e2afbfd7，Sol按main确切selection载荷落盘后直接执行，无二次放行等待。
 CPU实现/准备立即开始，T Test沿旧8task/50init/seed7/官方预处理，新增3GPUh/16GiB，GPU02优先；
-旧baseline仅task/init/RNG可配对，完整RGB/sim一致性不能追认。只评一次固定T，不从Test改选/学习或自动开controls/追加训练。
+旧baseline仅task/init/RNG可配对，完整RGB/sim一致性不能追认。只评一次固定T；后继权限现由顶部Owner新授权及§25覆盖。
 
 ## 当前：四卡续训已完成，消费剩余节点与已完成生成诊断（2026-09-29下午）
 

@@ -1471,3 +1471,82 @@ GPU02优先，只有该节点无满足作业需求的适用卡才可GPU01；live
 §21已全部收束，Test准备直接开始；候选已固定，及时利用空闲卡，bank就绪即official，不沿用无依据单卡/固定2worker限制。
 按既有bank/eval实测，从源码准备到完整读回预计约1–2小时，现场资源/必要修复另计；重大延期或硬限风险直接报告，不发定时心跳。
 完整Test或实质阻碍直接Steer；当前本条不包含新controls、更多Test seed、追加训练或基线GPU计算。
+
+## 25. Owner恢复自主后继：固定T2340的视频证据与Test后的研究分支（2026-09-29）
+
+### 25.1 权限、分支和固定对象
+
+Owner最新明确离开期间由主讨论自主推进：Test若T明显胜MT，补视频特异性后推进以前规划的RL与one-shot比较；
+若接近或不如MT，仍做视频分析，再以深入理论、实际特征/算子干预寻找改进并重训，不停在一个貌似合理的原因。
+本条覆盖§24的后继暂停与“Test不能影响任何设计反馈”旧句：Test整体结果允许决定上述研究分支。
+不改变已冻结T2340、不给本次Test换checkpoint/挑teacher，不让Test标签进入共享训练；后续研究保留历史Test曝光，不能再称全新盲测。
+独立task-local适应若进入执行，目标标签只作用于隔离的task-local参数，另列适应成绩，不能回流共享Writer/source。
+
+“明显胜MT”由完整差额、各task/suite得失与覆盖、区间及选择历史共同判断，不恢复旧+40/400硬线，
+也不把多一两条成功或一个suite的集中增长写成普遍优势。区间跨零不等于两者等效；尚不清楚时保持这一结论并优先机制研究，
+不为了打开下游而降低参照。当前尚无T Test结果，本条不预判分支。
+
+§24唯一T Test继续、基线MT121/Source75复用，原3GPUh/16GiB范围不变。两分支都需要以下视频证据，
+故当前即可准备；Test全部GPU退出后直接衔接本条GPU任务，无需再等main/Owner许可。必要工程修复由Sol按§10.5自主处理。
+主讨论后续科研裁决无需再次询问Owner，但每个新增执行仍须有明确的科学变量、规模、预算、停止条件和实际承接。
+
+### 25.2 本次唯一新增执行：冻结候选validation视频四对照
+
+task=`operator_selected_video_controls_20260929`，复用
+`/data1/user/ymdai/ember_runs/operator_selected_validation_20260929`及已经固定的selection；
+各臂沿现有`selected_scope`的canonical bank/evaluation路径，不另建平行运行面。训练源仍为§24的e2afbfd7完整T2340 ECP。
+原correct161/400及MT153/400只读复用；新增加以下四组各400，不再训练、选点或增加Test模型：
+
+- `same_task_other`：同task视频ordinal固定offset17，全50视频各一次；只重绑定现有正确视频因子，不能挑有利视频或重编相同LoRA。
+- `cross_suite_wrong`：目标exact language不变，沿§20已固定的平衡跨suite donor映射和seed7；给真实双RGB，完整native→Writer编译。
+- `shuffled`：同一正确视频stride5抽中的真实双RGB共同重排；使用既有固定frame_order_seed/permutation，完整重新前向，保留帧索引/变换原件。
+- `public_beta`：同一2340 ECP的公共A/B0，单份LoRA，无teacher RGB读取；video ID只作配对元数据，不复制400份公共权重。
+
+只有wrong/shuffled各新增一套400因子。正确视频50条/任务、原validation8/init0..49、exact language、scene、env/policy RNG、
+官方预处理及动作消费者保持；other逐行视频不同且全轮无放回。这里使用原validation strict full-scene，
+不能把§24的legacy Test初始化例外带入，也不能因为旧scene个别恢复失败而放宽断言或重封这一组scene。
+0 optimizer更新，validation/Test动作或reward不进入生成器；不补reverse、更多seed或其它checkpoint。
+
+解释对象事先分开：correct/other给同task视频更换的能力交换；correct/wrong给对目标内容来源的功能敏感性，
+但跨suite还改变视觉分布；correct/shuffled只给冻结方法的顺序依赖，分布外扰动损伤不等于正确动作过程理解；
+correct/β给共同训练静态分支之外的当前条件功能，不把β叫独立语言baseline。
+总分相同仍报告R/G/L，wrong更差也不替代correct相对β/强MT的有益增量；其它checkpoint旧诊断只作有边界的背景。
+本组是validation证据，不将其移植成Test视频必要性；若后续需要对Test优势作同分布归因，由main明确最小补证范围与成本。
+shuffled/reversed不进入训练、loss、checkpoint选择或架构修正；无论有无顺序差额，都不能直接反向增设时序模块。
+
+### 25.3 执行、预算与交付
+
+Sol独占dev完成现有selected接口的必要实现/针对性消费者验证、push clean detached evaluation-only freeze，然后执行。
+main不重复做工程测试或要求等待源码集成。旧源码、有效原件、失败与真实来源保留；不改变旧Test正在运行的冻结树。
+现在可CPU准备；Test全部GPU退出后，按当时适用卡及时并行两新bank与已就绪other/β评测，不等待无关臂。
+GPU02优先，仅其没有适用卡时考虑GPU01；实际worker/卡数由live显存、CPU、吞吐决定，沿正式并发上限，不占位或为占卡中断有效作业。
+
+新增独立硬限**6GPUh、峰值32GiB**，所有加载/失败/恢复计入；不借§20或§21未花完的预算隐形扩量。
+依据近期每bank .27–.30GPUh、每official .9–1.2GPUh，预计总4.2–5.4GPUh；两bank约16–18GiB、四组捕获/日志与原子临时余量纳入32GiB。
+Test新增资产继续存在，launch前须将两批尚需空间合并核strg01 data1独立quota及共享容量，不能只核本条孤立预算。
+从Test资源释放起，利用多卡和依赖重叠预计约1.5–2.5小时取得整组读回；源码修复或实际资源约束会改变预期，重大越界及时报告。
+硬限确有风险时先交具体剩余范围/成本，不缩400、不丢失败账、不只保有利臂。
+
+四组完成400行/退出后报告各task/suite、breadth及correct对四臂的R/G/L/churn/Jaccard、固定8task簇bootstrap和不利个例。
+新1600 JSON/引用NPZ由实际消费者验收；PT核动作前缀与每臂8full的完整初态RGB，区分compact/full与实际核验范围。
+旧correct/MT消费者沿可靠验收继承，不复扫；孤儿/失败单列，不计正式分母。保留selection、bank、来源、变换、run_contract、raw、completion和全部外部成本。
+Test完成仍及时直接Steer主讨论；本四臂一次整组完成或实质阻碍直接Steer，不发定时状态/半批分数/自通知。
+本次Sol具体执行到四对照交付止；RL/FT或修正训练由主讨论依结果另给具体合同，无需Owner重新逐项许可。
+
+### 25.4 已恢复的后继目的与不能机械继承的旧细节
+
+主讨论已完整复读封存`paper_experiments_design.md`§3–6及`coverage_retraining_design.md`，
+确认one-shot指单support示范适应比较，RL指生成后task-local A/B学习，不是把旧共享Writer FM+RL联合课程自动恢复。
+单support FT允许对照读取同一episode的action/state，而EMBER只读RGB/语言；旧方案另有独立选点episode动作，
+因此若保留它必须明确额外信息成本，不能声称FT总共只接触一条示范。不能用Test闭环调FT超参或选适应checkpoint。
+RL保持Writer/source冻结、fresh局部optimizer、无FM混合，主横轴真实环境控制步；训练与评测初态隔离、零步/适应成绩分列。
+旧rank16与当前T生成rank128不同，须采用当前真实38-target/缩放与可比局部自由度，不能静默压缩或重分解生成因子。
+旧task-local方案尚未执行，历史共享RL实现已退役，不能把它或可读文档当作本方案已有运行面；
+在train范围验证实际动作概率、完整10flow梯度、终止mask和恢复，再按实测成本定正式规模。
+这些是后继具体合同需要承接的科学工作，不新增一套机械逐模块审批，也不因历史未执行而认为路线必定有效。
+
+弱优势分支的研究要区分：视频证据本身不足、已编码内容经M与自身Ah调用不合适、以及跨episode功能信用没有教会关键选择。
+已有事实已排除“所有条件分支都没有作用”“所有视频都只是同样通用修正”等强说法；β较弱、平均FM改善、固定query夹爪缺口
+均不能单独区分上述解释。后继先找能改变完整方法选择的最小干预，保留原公共辅助FM阴性、旧LocalField/ProcessPullback功能消费者等近邻反例。
+修正须同时给出特征/算子如何改变、梯度怎样教会、部署怎样使用的可失败预测，以及同预算原方法对照的实际能力验证。
+中间指标改善而闭环无收益应收缩该假设；经验涨分而机制未区分就如实记录经验收益。不无限追求唯一根因，也不以尚有未知为由停止研究。

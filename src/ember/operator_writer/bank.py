@@ -349,7 +349,7 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
         (trainer.get("training_state"), {"updates": macro, "mode": mode,
                                          **({"pilot_arm": arm, "loss_variant": PILOT_ARMS[arm]}
                                             if pilot else
-                                            {"loss_variant": "full"} if window == 4 else {})}),
+                                            {"loss_variant": "full"} if window >= 4 else {})}),
         (trainer.get("sampler_state", {}).get("next_step"), macro),
         ({k: v for k, v in trainer.get("sampler_state", {}).items() if k != "next_step"}, run["sampler"]),
         (run.get("sampler"), expected_sampler),

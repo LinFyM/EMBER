@@ -106,3 +106,14 @@ def test_only_new_train_entry_and_parent_replay_rejection(tmp_path, monkeypatch)
                       contract | {"git": {**contract["git"], "commit": "wrong"}})
     with pytest.raises(ValueError, match="frozen Git changed"):
         run.validate_attempt(trial, args(later), contract, output)
+
+
+def test_actual_2430_bank_accepts_full_training_state_and_rejects_wrong_arm():
+    spec = run.specification(run.CONTINUATION2790_SPEC_PATH)
+    checkpoint = (run.CONTINUATION2790_ROOT
+                  / "T/train/attempts/continuation/checkpoints/macro_00002430")
+    source = bank.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
+    assert source["loss_variant"] == "full"
+    assert source["git"] == bank.CONTINUATION2790_TRAINING_GIT
+    with pytest.raises(ValueError, match="same-arm"):
+        bank.inspect_training_source(spec, checkpoint, "U", sealed_evaluation=True)

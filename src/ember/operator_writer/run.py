@@ -368,7 +368,7 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
                 or args.resume.name not in {f"macro_{step:08d}" for step in CHECKPOINTS}):
             raise ValueError("resume requires this arm's registered ECP90/180/270")
         if not resume_contract_compatible(read_json(parent / "run_contract.json"), contract,
-                                          allow_topology_change=spec["task"] == change_clock.TASK):
+                                          allow_topology_change=spec.get("task") == change_clock.TASK):
             raise ValueError("source, parameter, sampler, numerical or physical topology changed")
         if not complete_checkpoint(args.resume):
             raise ValueError("requested same-arm ECP is incomplete")

@@ -784,7 +784,7 @@ def main() -> None:
                                           "selected-other", "selected-video", "selected-public-beta",
                                           "selected-test"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--mode", choices=("T", "U", "MT", *PILOT_ARMS))
+    parser.add_argument("--mode", choices=("T", "U", "MT", change_clock.MODE, *PILOT_ARMS))
     parser.add_argument("--arm", choices=("cross_suite_wrong", "shuffled"))
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--device")

@@ -2,6 +2,13 @@
 
 ## 当前最新：Owner夜间授权自主研究及确定方案后的训练（2026-09-30凌晨）
 
+**执行已启动：**Sol在GPU02:0以world1运行§31 fresh270，冻结源码`517bc8d4`、
+冻结树`/data1/user/ymdai/projects/EMBER-change-clock-learning-v2-formal`；launch记录2026-09-29 18:11:55 UTC。
+main收到启动回报后只读核launch/run contract和第1宏步原行：4任务×28=112查询、一次Adam、
+总梯度范数.01744735、52.04秒、峰值allocated26.93/reserved31.78GiB，source_trainable=0。
+这确认了真实学习启动，不是性能结果；不反复读取后续训练日志或监看Sol。
+单卡若按首步速度约需3.9小时训练，另加bank/400/A28；视频长度与负载不同使此估计仅为粗略量级。
+
 Owner已睡前明确：继续深入研究，研究清楚并确定修正后可直接启动训练，无需再等Owner同意。
 这覆盖此前“正式重训前等Owner汇报/批准”的执行停止点，不取消证据要求、信息墙或预算与现场资源合同。
 GPU02的1–3卡有人占用；已告知指定Sol执行者在有实际工作时及时使用释放设备，持续占用时可在足够余量下共驻，
@@ -23,7 +30,7 @@ Sol随后交付`906b70d4`，main直接审阅完整分支差异及新task/root/sp
 以`0d4b1563`合并源码。候选仍复用唯一TargetWrite、原trainer/bank/official；仅新增25行身份模块及178行固定面板入口。
 现有较大的run.py只增加身份接线和既有停止流程的合同分支，没有复制训练器；为这次有限实验保持窄修改，
 由main在候选被采纳/否决、相关读取结束时裁决退役候选分支/面板入口，不保留无主的长期并行版本。
-main复核JSON，source/events/optimizer/evaluation与原stage1相同，execution只改mode（实际当前world2）；
+main复核JSON，source/events/optimizer/evaluation与原stage1相同，execution只改mode（当时配置world2）；
 三个现有CPU初始化/恢复合同检查通过。第一次pytest仅因漏设PYTHONPATH而收集失败，修正为src后通过，无模型/GPU重跑。
 
 真实工程消费者原件`operator_change_clock_learning_20260930/engineering_consumer/`已直接核对：
@@ -32,6 +39,14 @@ B0/O梯度范数 .0106752170/.0009279927，物理source恢复identity，0 optimi
 首次检查误要求identity起点公共A非零而失败；这是检查判据错误，修正后第二次通过，两次约101GPU秒计入8GPUh。
 公共A/P/C/D/native梯度为零符合机制§68.4的首步推导；这只核实真实首步消费者，不等于后续学习/性能通过。
 Sol继续冻结和训练执行，不等待main批准；此回报没有正式训练启动或性能结果，不额外轮询。
+
+后续物理拓扑适配`517bc8d4`已由main以`d9c4fe9f`集成：候选允许world1–4，完整ECP恢复公共optimizer/scheduler/
+逻辑sampler及已有rank RNG，新rank使用已登记种子并记录来源；旧T/U恢复仍默认禁止拓扑改变。
+main核每task .25权重、跨rank只SUM且不额外除world，一宏步仍只更新一次；本轮没有做实际多卡迁移或重跑训练。
+两个已有恢复合同测试及候选拓扑/源与optimizer身份/90和180停止边界的CPU检查通过。
+main另补两处窄兼容修复：旧最小spec使用get读取task，bank CLI注册候选mode（CPU分派检查通过）。
+不改训练中的517冻结树；Sol后续在该树直接调用已支持候选的materialize函数仍合法，不绕过checkpoint/scope校验。
+候选有实际恢复时，固定A28脚本的fresh路径限制按此前已告知Sol的读取端适配处理，不覆盖原件或伪造fresh路径。
 
 ## 当前最新：停止一批实验不等于停止主讨论研究（2026-09-30凌晨）
 

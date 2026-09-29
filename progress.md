@@ -1,9 +1,14 @@
 # EMBER progress
 
-## 当前：Owner明确要求优先四卡续训2340→2790，其它事项留待讨论（2026-09-29下午）
+## 当前：四卡续训2340→2790，Owner已授权并行机制分析（2026-09-29下午）
+
+Owner在充分讨论后明确允许派发分析实验，自由并行深化理解。当前追加active design§22的一项冻结train-only原生读取诊断，
+比较公共β参与教学读取与source identity读取，保留执行β/Writer；T/U900及T2340固定4task×2teacher，36新FM前向，0更新/0环境/无held。
+新增1GPUh/4GiB独立预算，GPU02优先且不占用正在训练的四卡。主讨论并行分析学习率/曝光量与成功集合，核对近邻架构实质变化；
+不把结构性质或局部功能差额冒充架构收益因果。正式wrong/shuffled/other400、Test和训练改动仍未释放。
 
 Owner在要求先分析讨论后，进一步明确“先让sol继续四卡续训，之后我们再讨论别的。这是我的判断”。
-当前只释放active design§21：唯一T/full从e2afbfd7真实完整2340 ECP续450更新到2790，优先GPU02四张适用A40，
+正式训练仍只释放active design§21：唯一T/full从e2afbfd7真实完整2340 ECP续450更新到2790，优先GPU02四张适用A40，
 保持模型/数据/损失/Adam与绝对LR；完整ECP与correct400仍每90步，五点2430/2520/2610/2700/2790。
 旧2340及MT400直接复用，U/aux不恢复，视频四对照/Test/RL暂不启动；未发布selected selection，不以此前§20许可越过本条。
 增量上限18GPUh/64GiB，实际live GPU/strg01 quota由Sol在launch前核定；旧§19/20已完成15.621703396GPUh封账单列。

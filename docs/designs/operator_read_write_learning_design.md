@@ -1295,3 +1295,53 @@ Owner后补充：后续暂不使用GPU01，除非GPU02没有满足真实作业�
 父ECP/source/dataset只读复用，不复制大资产。实际argv/env/cwd/source/GPU/时限登记在本root唯一launch合同中。
 报告限必要源码交付、实际正式启动、完整可裁决节点及需主讨论决定的实质阻碍；日常调度与已解决故障并入完整结果，
 不发确认、定时心跳或重复回执。main完成独立工作后结束回合，实际交付再接续；本项进行期间其它事项与Owner讨论。
+
+## 22. 续训期间的冻结原生读取诊断（2026-09-29，Owner已授权并行分析）
+
+### 22.1 问题、干预与可失败解释
+
+Owner明确“可以派发分析实验……现在开始趁正在续训，你自由进行并行的分析”。§21四卡续训保持优先；
+本项解释已学视频→LoRA函数，不改变正式学习、不提前选点、不开最终wrong/shuffled/other400或Test。
+最近条件速度方案的教学端不读公共β，且条件作用只在action_out；当前T/U在教学端用公共β产生X/H，
+在全部38target生成M，并由同一A（T）或独立S（U）写入地址。多个结构变量同时改变，不从跨方案分差唯一归因。
+
+先检验尚未被现有β执行消融回答的一项：已共同学习的公共β用于教学原生读取，是否给当前生成的LoRA带来功能收益？
+对每个冻结模型，正常Mβ=Fφ(A或S;Xβ,Hβ)；干预M0=Fφ(A或S;Xsource,Hsource)。
+只在read_native_video的公共因子参数替换为实际source identity，视频/语言/probe/帧序保持；
+writer的公共A/B0、独立S（若有）、P/C/D/O与最终执行公共β都保持原模型，最终仍是(A,B0+M0)。
+不能将整套writer.common清零、把执行β也去掉、重绑U、注入query信息或使用假视频。
+这识别冻结函数对适配后教学特征的依赖，不等价于“从头冻结读取”的训练反事实，也不单独识别T绑定的收益。
+
+事前分支：若source-native显著损伤多数条件，支持共同适配后的原生响应确有功能作用；
+若差额小或部分系统改善，降低“公共β教学读取是当前优势的主要机制”的支持度，并定位条件差异。
+T/U900的差额可作同学习阶段的交互观察，T2340反映当前较长学习状态；不能仅由交互差指定独立因果根因。
+即使正常读取胜出，也不证明关系/时序语义或held收益；不据此立即追加冻结训练、gate或新架构。
+
+### 22.2 固定面板、原件与分析
+
+唯一task=`operator_native_reader_diagnosis_20260929`；唯一新root=
+`/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/native_reader_transport`。
+冻结T900、U900来源81846ed3；T2340来源e2afbfd7。三者实际完整ECP读取，权重不更新、不重选点。
+沿§14A固定train0/12/20/32，每task原两teacher、同28跨episode query和flow；全部数据来自已授权训练任务。
+新执行24个source-native功能条件，另T2340正常full8条件及task公共β4条件，共36个新FM前向。
+T/U900正常full16和各自β共8沿§14A原件引用；旧source/MT参照也沿原件引用，不重算。
+source-native的同8个视频响应与冻结source/probe相同，可在三模型间复用，保持明确来源，不制造重复缓存资产。
+正常T2340与干预都沿已有native/Writer/paired_functional_credit消费，完整50×7 FM及前5另读；0 optimizer更新、0环境episode、0held标签。
+
+保存每条件prediction/target/flow time、实际视频/查询身份、全部38个M；保存正常T2340与source-native的H及Q8/V8/out三处X，
+source-native特征允许一份原件多处明确引用。完整teacher特征不必为三模型重复写三份。
+action_in的X为同一固定probe，读取干预不应改变它；action_out的公共投影输出被丢弃，不将38个公共target都称为有效原生作用路径。
+CPU读回实际新36个预测原件、对应特征/M及范围；不逐tensor复扫旧模型/80PT或旧official捕获。
+输出逐task/teacher和三模型差额、前5与其余45；对d=p_source-native−p_normal，核精确恒等式
+ΔFM=2 mean((p_normal−y)d)+mean(d²)，保留反向或接近零结果，不只报均值。
+特征/参数变化大小仅供定位，不把它称为语义或闭环性能。已见任务/旧held表现只作为已有背景，不产生新资格。
+
+### 22.3 执行边界
+
+Sol在原独占执行范围内准备一次性诊断脚本，复用clean frozen数值代码与canonical资产，保存实际脚本/命令/来源/退出/成本；
+不扩canonical trainer/evaluator，不为临时分析搭新测试体系，主讨论负责科学解释而不重复工程审核。
+新增独立上限1GPUh/4GiB，包含所有加载、失败、临时写入；与§21的18GPUh/64GiB分别计费并合计存储准入。
+依据§14A的80个功能前向/部分反向合计.099GPUh，此项GPU预期5–12分钟，连CPU准备预计20–35分钟；资源/文件系统等待另计。
+优先GPU02的一张适用空闲卡，只有GPU02无适用卡才考虑GPU01；不挤占四卡训练、不停已有任务。
+现场live两节点及strg01 data1独立quota检查由Sol负责；就绪正式bank/official不因无依据串行等待此诊断。
+完成后只直接Steer整批结果或实质阻碍，无确认/心跳；停止新增诊断，主讨论结合已有历史和实际数据决定是否还有必要分析。

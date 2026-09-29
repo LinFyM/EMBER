@@ -29,7 +29,7 @@ ROLE_NAMES = {
     "nonheld_meta_train",
     "nonheld_meta_validation",
 }
-DERIVED_ROLE_NAMES = {"seen_panel"}
+DERIVED_ROLE_NAMES = {"seen_panel", "operator_seen_training36"}
 SEEN_PANEL_RELATIVE_PATH = Path("configs/pi05_seen_panel_v1.json")
 FROZEN_SOURCE_POLICY_SUBDIR = "policy"
 RUNTIME_REPLICA_PROFILES = (1, 2, 3, 4, 5, 6)
@@ -324,6 +324,10 @@ def resolve_role_task_keys(
         raise Pi05EvaluationError(f"unsupported PI05 evaluation role: {role}")
     if role.startswith("nonheld_meta"):
         return _resolve_nonheld_meta_task_keys(meta_protocol, role)
+    if role == "operator_seen_training36":
+        from ember.operator_writer.scope import task_keys
+
+        return task_keys(protocol, meta_protocol)
     if role == "seen_panel":
         return _resolve_seen_panel_task_keys(protocol, seen_panel)
     keys: list[tuple[str, int]] = []
@@ -357,16 +361,20 @@ def inspect_installed_target_tasks(
     from libero.libero import benchmark, get_libero_path
 
     meta_role = role.startswith("nonheld_meta")
+    operator_seen = role == "operator_seen_training36"
     audit_rows = authorities.overlap_audit[
         "source_tasks" if meta_role else "target_tasks"
     ]
+    if operator_seen:
+        audit_rows = (*authorities.overlap_audit["target_tasks"],
+                      *authorities.overlap_audit["source_tasks"])
     audit_by_key = {(row["suite"], int(row["task_id"])): row for row in audit_rows}
     sealed_test_by_key = {
         (row["suite"], int(row["task_id"])): row
         for row in authorities.protocol["test_tasks"]
     }
     horizons = authorities.config["environment"]["horizons"]
-    suite_names = ("libero_90",) if meta_role else SUITE_ORDER
+    suite_names = ("libero_90",) if meta_role else (*SUITE_ORDER, "libero_90") if operator_seen else SUITE_ORDER
     suites = {
         suite_name: benchmark.get_benchmark_dict()[suite_name]()
         for suite_name in suite_names
@@ -387,7 +395,7 @@ def inspect_installed_target_tasks(
         authorities.protocol,
         role,
         authorities.seen_panel if role == "seen_panel" else None,
-        authorities.meta_protocol if meta_role else None,
+        authorities.meta_protocol if meta_role or operator_seen else None,
     ):
         suite = suites[suite_name]
         task = suite.get_task(task_id)
@@ -420,6 +428,7 @@ def inspect_installed_target_tasks(
                 f"installed fixed states incomplete: {suite_name}/{task_id}"
             )
         task_role = (
+            "train" if operator_seen else
             ("meta_validation_oracle" if task_id in held_meta_ids else "meta_train")
             if meta_role
             else split_role(authorities.protocol, suite_name, task_id)

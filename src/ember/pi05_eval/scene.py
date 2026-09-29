@@ -99,15 +99,18 @@ def scene_path(root: Path, task: dict, state: int) -> Path:
     return root / f"{task['suite']}_task_{int(task['task_id']):02d}_state_{state:03d}.npz"
 
 
-def inspect_registered_scenes(root: Path, tasks: list[dict]) -> dict:
-    """Check the sealed 400-scene registry without loading saved simulator arrays."""
+def inspect_registered_scenes(root: Path, tasks: list[dict], *,
+                              states: tuple[int, ...] = tuple(range(50)),
+                              schema: str = "ember_demonstration_formal_scenes_v1") -> dict:
+    """Check an exact sealed scene registry without loading simulator arrays."""
     registered = read_json(root / "manifest.json")
     rows = registered.get("scenes", ())
     expected = {(task["suite"], int(task["task_id"]), state)
-                for task in tasks for state in range(50)}
+                for task in tasks for state in states}
     actual = {(row["suite"], int(row["task_id"]), int(row["state"])) for row in rows}
-    if (registered.get("schema_version") != "ember_demonstration_formal_scenes_v1"
-            or len(rows) != 400 or actual != expected):
+    if (registered.get("schema_version") != schema
+            or registered.get("seed") != 7 or registered.get("dummy_steps") != 10
+            or len(rows) != len(expected) or actual != expected):
         raise ValueError("sealed common scene task/state registry changed")
     for row in rows:
         path = scene_path(root, row, int(row["state"]))

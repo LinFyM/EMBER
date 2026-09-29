@@ -186,6 +186,12 @@ def build_run_contract(
         "artifacts": authorities.config["artifacts"],
         "libero_paths": dict(libero_paths),
     }
+    if role == "operator_seen_training36":
+        from ember.operator_writer.scope import PATH, SCHEMA, registration
+
+        registration()
+        contract["role_authority"] = {"path": str(PATH), "bytes": PATH.stat().st_size,
+                                      "schema_version": SCHEMA}
     contract["diagnostic_exploration"] = build_exploration_contract(contract, enabled=exploration_sigma)
     validate_exploration_contract(contract)
     contract["contract_reference"] = f"{RUN_CONTRACT_SCHEMA}:{uuid.uuid4().hex}"

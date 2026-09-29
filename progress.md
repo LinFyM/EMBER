@@ -19,6 +19,15 @@ Sol已把9a161650同步dev并push95c0f8e3；本批无遗留GPU，0新增训练/T
 合同80116e06已派发：给空闲Sol的新任务Queue回执`01a0ea71-f56d-7e31-ab8b-79a0f773e4f0`；一次只读核对确认
 新活跃轮`01a0ea71-f570-75e1-beea-8b7f81eb8581`包含准确正文，尚不表示已启动GPU或完成实现。
 派发正文/回执/snapshot为既有tmp下`public_function_pilot_*`；Sol的源码/结果仍直接Steer，不以Queue回报。
+Sol源码9801641d已交付（源码提交308966f3，合入最新文档的merge为实际freeze），主讨论以8fb58def集成。
+新冻结`EMBER-operator-public-function-pilot-formal`核为9801641d、clean detached，dev亦clean；此回報仅确认CPU准备，GPU启动不在其证明范围。
+主讨论审全部源码差异、公共cotangent独立leaf/直接累加与原full replay、第五轮和父恢复、两臂bank/capture路径；独立12项CPU通过（16.30秒）。
+另用隔离读取边界实际复现：bank声称public_aux却引用control来源时，读取器未将二者关联；物化器本来已拒绝该错配。
+main把同一臂/损失来源谓词复用于物化和读取并补两方向拒绝测试；不改变训练/数值，不把此窄缺口称当前产物已错或要求重跑。
+结构review保留六处来源/物化/恢复谓词复杂度增长的本批有界例外：它们共同承担旧封存来源与唯一新pilot的显式身份，
+移除旧读取会破坏父恢复/强参照；复制验证器会产生双owner。run785行、bank780行，90行credit模块内聚实际FM信用，preparation807行仅一处路由增项。
+唯一训练入口已只准本pilot，旧训练入口拒绝；main负责在本批裁决后退役无后继用途的pilot执行面，或在再扩展前内聚来源规则，
+不继续向这些大函数堆下一窗口/版本分支。现存冻结与科研原件不因结构例外删除。
 
 以下是已完成§17的派发、源码集成与窄修过程；其结果以上述最终验收为准。
 

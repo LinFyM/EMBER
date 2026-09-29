@@ -158,3 +158,27 @@ def test_new_1890_source_rejects_cross_arm_and_changed_loss(tmp_path, monkeypatc
                 bank.inspect_training_source(spec,checkpoint,'T')
     finally:
         data.close()
+
+
+def test_pilot_bank_reader_links_its_arm_to_the_training_source(tmp_path, monkeypatch):
+    """Scope and factor I/O are separate; enforce the bank-to-run identity edge."""
+    spec = specification(PILOT_SPEC_PATH)
+    parent = read_json(PARENT.parent.parent/'run_contract.json')
+    record = {'unit_fixture': True}
+    monkeypatch.setattr(bank, 'file_record', lambda path: record)
+    inspected = []
+    monkeypatch.setattr(bank, '_factor_header', lambda *args, **kwargs: inspected.append(args))
+    for arm, variant in PILOT_ARMS.items():
+        source_run = parent | {'pilot_arm': arm, 'loss_variant': variant}
+        monkeypatch.setattr(bank, 'inspect_training_source', lambda *args, **kwargs: source_run)
+        value = {'mode': arm, 'checkpoint': str(tmp_path/'checkpoints/macro_00001890'),
+                 'asset_root': str(ASSET), 'shared': record, 'checkpoint_manifest': record,
+                 'training_git': parent['git']['commit'], 'lora': parent['lora'],
+                 'source': parent['source'], 'conditions': [], 'loss_variant': variant}
+        bank._inspect_tu_bank(value, spec, tmp_path/'banks/1890/manifest.json')
+        inspected.clear()
+        other = next(name for name in PILOT_ARMS if name != arm)
+        with pytest.raises(ValueError, match='pilot bank arm or loss source'):
+            bank._inspect_tu_bank(value | {'mode': other, 'loss_variant': PILOT_ARMS[other]},
+                                  spec, tmp_path/'banks/1890/manifest.json')
+        assert inspected == []

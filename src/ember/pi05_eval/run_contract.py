@@ -25,6 +25,25 @@ from ember.pi05_eval_contract import (
 )
 
 
+def registered_role_authority(role: str, authorities: EvaluationAuthorities) -> dict | None:
+    """Keep prepare and recovery on one registered role identity."""
+    if role == "seen_panel":
+        path = authorities.repo_root / SEEN_PANEL_RELATIVE_PATH
+        return {"path": str(path), "bytes": path.stat().st_size,
+                "schema_version": authorities.seen_panel.get("schema_version")}
+    if role.startswith("nonheld_meta"):
+        path = Path(authorities.paths["meta_protocol"])
+        return {"path": str(path), "bytes": path.stat().st_size,
+                "schema_version": authorities.meta_protocol.get("schema_version")}
+    if role == "operator_seen_training36":
+        from ember.operator_writer.scope import PATH, SCHEMA, registration
+
+        registration()
+        return {"path": str(PATH), "bytes": PATH.stat().st_size,
+                "schema_version": SCHEMA}
+    return None
+
+
 def _resolve_gpu_ids(
     authorities: EvaluationAuthorities,
     physical_gpu_ids: Sequence[int] | None,
@@ -139,25 +158,7 @@ def build_run_contract(
             "config_path": str(authorities.config_path),
             "paths": authorities.paths,
         },
-        "role_authority": (
-            {
-                "path": str(authorities.repo_root / SEEN_PANEL_RELATIVE_PATH),
-                "bytes": (authorities.repo_root / SEEN_PANEL_RELATIVE_PATH)
-                .stat()
-                .st_size,
-                "schema_version": authorities.seen_panel.get("schema_version"),
-            }
-            if role == "seen_panel"
-            else (
-                {
-                    "path": authorities.paths["meta_protocol"],
-                    "bytes": Path(authorities.paths["meta_protocol"]).stat().st_size,
-                    "schema_version": authorities.meta_protocol.get("schema_version"),
-                }
-                if role.startswith("nonheld_meta")
-                else None
-            )
-        ),
+        "role_authority": registered_role_authority(role, authorities),
         "model": dict(model),
         "tokenizer": dict(tokenizer),
         "normalization": {
@@ -186,12 +187,6 @@ def build_run_contract(
         "artifacts": authorities.config["artifacts"],
         "libero_paths": dict(libero_paths),
     }
-    if role == "operator_seen_training36":
-        from ember.operator_writer.scope import PATH, SCHEMA, registration
-
-        registration()
-        contract["role_authority"] = {"path": str(PATH), "bytes": PATH.stat().st_size,
-                                      "schema_version": SCHEMA}
     contract["diagnostic_exploration"] = build_exploration_contract(contract, enabled=exploration_sigma)
     validate_exploration_contract(contract)
     contract["contract_reference"] = f"{RUN_CONTRACT_SCHEMA}:{uuid.uuid4().hex}"

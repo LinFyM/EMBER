@@ -8,7 +8,10 @@ Owner最新明确恢复推进，目标下午约15:00取得结果：T原目标继
 T唯一父为9801641d的control1890完整ECP，不能误接public_aux。新上限2340，完整ECP与correct400均每90步，
 GPU02优先world4，按live资源可world2/3/4显式迁移；保持四条件权重/Adam/绝对LR/RNG来源，恢复受控ECP停止功能。
 主讨论负责源码审阅、完整节点验收与最终选点；不读取半批分数、不在线sleep陪跑、不自Queue。独立工作完成后结束回合，可靠交付再唤醒。
-唯一Sol独占dev，main仍由主讨论独占；本条登记不代表新GPU已启动。源代码/资源/实际启动与结果须据后续原件更新。
+唯一Sol独占dev，main仍由主讨论独占。§20现已实际启动：10:57:10 CST，gpu02物理0/1/2/3、world4，
+实际训练冻结e2afbfd7；main直接核launch job/started/run_contract/resume_provenance，唯一父control1890、T/full、v6→v7成立。
+恢复记录为world2→4，原rank0/1 RNG恢复、新rank2/3 seed9/10，1890行前缀与绝对Adam/LR身份承接；不称bitwise exact或已完成新节点。
+按先前同450更新四卡约1.84–1.95小时估计训练主体约12:50–13:00结束，加载/现场吞吐可影响时间，尾段bank/评测另计并尽量重叠。
 §20合同4cf82c4c已push，发给空闲Sol的新任务Queue回执`01a0eb07-5098-7f21-910c-2fe4b3aec173`；
 一次只读核对确认活跃轮`01a0eb07-509a-7893-922c-b00256f9b31c`收到完整准确正文，派发/回执/snapshot在既有tmp的`continuation2340_*`。
 §19源码e499f94c经主讨论全diff与实际bank/scene/role/capture消费者审阅后，以b352ba4b集成；独立6项CPU通过（17.55秒），diff检查通过。
@@ -26,8 +29,10 @@ installed-task的3处扩展只把已审计target/source任务合成固定36训�
 本轮训练结构guard为BLOCK（run869行、late-parent校验复杂度43、restore32），不称结构全过。main接受本次有时限的窄迁移例外：
 新增主要为唯一control1890身份/v6→v7声明与受控停止，训练update/梯度消费者未变；先让已核训练启动，避免临时重写所有封存恢复规则。
 此例外仅到§20收束，main在任何下一训练窗口前须内聚窗口/来源声明并降低run增长；后段只扩既有scope/bank读取，不再增加训练窗口分支。
-Sol报告§19沿e499冻结的144scene及T1800 bank均exit0，分别.063525/.146994GPUh；MT注册/两臂评测依赖仍在衔接。
-这是执行进度，尚无完整288结果或主讨论科学验收；不读半批分数。§20训练实际启动仍以独立启动回执为准。
+Sol报告§19沿e499冻结的144scene及T1800 bank均exit0，分别.063525/.146994GPUh；MT bank随后CPU注册exit0。
+T首次official在prepare后/worker前因recovery遗漏operator_seen_training36的role_authority拒绝，exit1、0正式行、.027883GPUh；
+main核当前消费者确只登记seen_panel/nonheld_meta，Sol按既有窄修许可处理共享role身份与新eval冻结，保留旧失败/场景/bank/完整成本。
+本项仍无完整288结果或科学验收，不读半批分数；独立§20训练继续，不因该评测接口故障重复训练或物化。
 
 ## 当前：Owner醒来，暂停自主推进并交流（2026-09-29）
 

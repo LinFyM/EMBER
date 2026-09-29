@@ -7,7 +7,11 @@
 main收到启动回报后只读核launch/run contract和第1宏步原行：4任务×28=112查询、一次Adam、
 总梯度范数.01744735、52.04秒、峰值allocated26.93/reserved31.78GiB，source_trainable=0。
 这确认了真实学习启动，不是性能结果；不反复读取后续训练日志或监看Sol。
-单卡若按首步速度约需3.9小时训练，另加bank/400/A28；视频长度与负载不同使此估计仅为粗略量级。
+Sol随后按前16宏步均值51.6秒回报：训练预计3.87 GPUh/约3.9小时，含bank/400/A28的整批wall预计5.3–6小时，
+高于原2–4小时估计；整批费用预计5.5–6.5 GPUh（含已有消费者.028），仍受8 GPUh硬限。
+main接受按Owner夜间自主授权继续当前批次，不为原wall估计中断训练；若费用预测将超过硬限仍须另行裁决。
+Sol该次双节点现场核查无适合扩卡的空闲设备：GPU02其余候选高负载且显存余量不足/临界，GPU01无足够余量；
+继续world1，资源有实质变化时在完整ECP边界判断迁移，不反复监看或占用忙卡凑数。
 
 Owner已睡前明确：继续深入研究，研究清楚并确定修正后可直接启动训练，无需再等Owner同意。
 这覆盖此前“正式重训前等Owner汇报/批准”的执行停止点，不取消证据要求、信息墙或预算与现场资源合同。
@@ -59,6 +63,14 @@ main在969读取树CPU导入并对照真实517 run_contract，确认仍有两个
 修复沿用当前预算，训练不中断，旧冻结树不原地修改，不改变公式、数据、loss、更新或评测语义；
 后续从新的clean detached读取树消费517原件。只要求真实训练记录的CPU身份校验及capture范围检查，
 没有270 bank前不声称实际eval消费者通过，也不额外启动GPU检查或重评旧T/MT。
+
+上述两项读取缺口已由Sol提交`ecfda855`修复，main以`00982313`集成。
+训练spec来源固定真实517路径，当前读取spec内容须与其一致；物化核验并记录当前clean/pushed Git，
+scope核验contract与manifest的读取身份一致。新读取树为`/data1/user/ymdai/projects/EMBER-change-clock-readout-v2-formal`。
+main审阅全部三文件差异与`launch/readout_cpu_check.py/json`八项原件检查，并在该读取树直接CPU核实
+实际读取Git为ecfda、训练Git/spec仍为517、两个spec内容及operator/events/optimizer一致；0模型forward。
+合并后的既有official capture/scene路由测试通过（1 passed）；没有重复GPU消费者或检查训练日志。
+517训练继续，实际270 bank/eval消费者仍待后段运行验证，读取修复不增加科学结论。
 
 ## 当前最新：停止一批实验不等于停止主讨论研究（2026-09-30凌晨）
 

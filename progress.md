@@ -16,6 +16,9 @@ main已定向复读封存paper_experiments_design§3–6：原后继是单suppor
 正式适应前由main依现T实际rank/输入信息/成本形成具体可执行合同，Sol负责工程与执行，不以main重复工程审核阻塞。
 更深修正不能止于合理故事：须把当前实际不足、最近似历史、特征/算子干预、可失败预测与完整能力对照连起来；
 局部FM或夹爪反例仍不等于held根因，阴性结果应改变假设投入，不无限追加同类探针。
+§25合同b26a19d7已push；一次Steer已被Sol当前Test轮`01a0ec8d-937f-76d3-b297-4ed9cf283cec`接受，
+正文与回执在既有tmp `selected_video_controls_release.txt`/`selected_video_controls_release_receipt.json`。
+该回执只证明指令投递，不宣称新四对照已启动或完成；Test正式400结束后可直接衔接，CPU验收可与就绪后继重叠。
 
 ## 此前§24启动记录：Owner授权最佳T直接Test，MT/Source只读复用（2026-09-29）
 

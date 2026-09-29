@@ -4,6 +4,18 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-29：T2340选点Test115，未超过复用强MT121
+
+Owner先要求观察T学习上限，原目标续训至2790。完整1890–2790每90步correct400为
+158/156/152/155/156/161/147/154/160/154/159；最高2340=161，后450步没有更高点，也不是连续下降。
+Owner随后直接授权最佳点Test并明确复用已有MT/Source；固定e2afbfd7完整T2340在evaluation-only6fb423b3下Test115/400，
+旧MT300=121、Source1000=75。T−MT R74/G41/L47、净−6、任务簇95%[−10.5,+8]pp；T−Source净+40，breadth6/7/4。
+main直接核三组JSON/合同/来源/配对及退出；旧baseline没有完整scene/capture，只确认task/init/语言/env及policy RNG前缀，
+不追加基线重测或冒称full-scene配对。新capture继承实际消费者，T物化/评测两作业exit0，1.423828591GPUh，18worker正常退出。
+原件`operator_selected_validation_20260929/test`及同root `analysis/selected_test_readback.json`；详细科学判断与范围见findings§238。
+Owner事前授权Test好则视频后适应比较，接近/不如则视频分析、机制定位、验证修正后重训；本结果进入后一分支。
+当时§25固定T2340四个validation视频/公共β对照已释放，尚未消费；没有新Test选点、RL/FT或修正重训结果。
+
 ## 2026-09-29：T到1800形成实际收益平台，冻结公共分支诊断保留条件通路
 
 其后§18完成同父T1800、同90更新的匹配公共风险短窗：control1890=158、public_aux1890=148，父154/强MT153。

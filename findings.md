@@ -5853,3 +5853,56 @@ main直接读旧Test两组各400原行：Source75、MT121，基于相同coverage
 旧合同无完整scene注册、无capture；本次复用这些基线，不为补完整RGB配对重评800行，也不冒称这种额外证据已存在。
 main按完整验证最高/同分早选规则最终冻结T2340/e2afbfd7，唯一新增T Test400；新授权/信息墙/来源/预算见active design§24。
 此选择是Owner授权的验证选峰，不能改写为稳健超MT、视频因果或旧资格通过；Test不反哺改选、梯度或设计。
+
+## 238. 固定T2340 Test115：未形成相对MT的整体优势，转入机制定位与修正验证（2026-09-29）
+
+Owner在Test完成前已授权按其总体结果自主选择后继分支，覆盖上节当时的设计反馈暂停；
+固定T不重选、Test不进入共享梯度、后续不再称盲测的边界保持。Owner随后再次强调正式重训前须先定位机制/特征原因并验证修正。
+
+main直接读T/MT/Source三组各400正式JSON、合同、T selection/bank/completion和两次外部退出，
+复算任务/初态/语言/env及policy RNG共同前缀、50不同teacher/task、所有成功集合及阶段谓词。
+实际脚本/结果在既有tmp `operator_chain_diagnosis_20260929/main_selected_test_analysis.py/json`。
+新400 NPZ/PT内容验收继承Sol实际消费者；main已读其verify_selected_test.py，不重复全扫capture。
+source模型记录、tokenizer、policy口径一致；旧norm临时路径已退休，本次从旧合同记录的clean c9844dfc Git读取同一文件并与新norm内容核同。
+旧基线无完整scene/RGB capture，只能确认登记task/init/RNG比较，不能追认为validation式full-scene严格配对或bitwise一致。
+
+| suite/task | T2340 | MT300 | Source1000 | T对MT R/G/L |
+|---|---:|---:|---:|---|
+| Spatial8，盘旁黑碗放盘 | 10 | 11 | 3 | 1/9/10 |
+| Spatial9，柜上黑碗放盘 | 0 | 9 | 0 | 0/0/9 |
+| Object0，字母汤入篮 | 1 | 11 | 0 | 0/1/11 |
+| Object8，布丁入篮 | 19 | 20 | 0 | 12/7/8 |
+| Goal4，碗放柜顶 | 50 | 42 | 36 | 42/8/0 |
+| Goal7，开炉灶 | 0 | 4 | 0 | 0/0/4 |
+| Long0，字母汤与番茄酱入篮 | 1 | 0 | 1 | 0/1/0 |
+| Long3，碗入底抽屉后关闭 | 34 | 24 | 35 | 19/15/5 |
+| 合计 | 115 | 121 | 75 | 74/41/47 |
+
+breadth依次6/7/4；四suite T为10/20/50/35，MT为20/31/46/24。
+T−MT净−6（−1.5pp）、churn88、Jaccard.45679；固定8task簇95%区间[−10.5,+8]pp。
+T−Source净+40（+10pp）、R60/G55/L15、churn70、Jaccard.46154，区间[+1,+20.75]pp。
+区间沿已核实际消费者继承，不含重新训练不确定性；总分接近不等于策略等效，也不能说已证明T显著更差。
+T在MT与Source均失败的22个案例成功，MT在另两者均失败的42个案例成功；这不是融合/union部署建议。
+
+**哪些解释得到收缩。** Validation161对MT153的优势没有在当前Test重现，说明尚无稳定超过强MT的广泛迁移证据。
+不能用115对161的跨任务差直接诊断过拟合、统一难度或整体失效；Test任务不同且Validation曾选峰。
+当前差额是Spatial/Object共−21与Goal/Long共+15抵消，不能由−6声称全任务几乎一致；
+Spatial8两者10/11却只共享1次成功尤其说明成功数相近掩盖交换，完整scene缺证的界限仍保留。
+T在Goal4取得50/50并保留MT42，Object8也比Source多19个成功；这些正例不能因Test未胜MT抹去，
+但Test未运行公共β或视频干预，不能单凭本表把这些增益归因于教学内容。
+
+**完整任务的不同缺口。** T的Long0番茄酱44/50曾入篮且最终保持，字母汤只有1/50；
+Object0的单物字母汤也只有1/50。因而不能把Long0的全部失败归于多阶段顺序、末段丢物或递归记忆遗忘。
+Long3则50/50碗已入抽屉，34/50关好；其16个失败属于已放入后的关抽屉未完成，而非都没学会搬碗。
+对应初态谓词均为false，以上不是把初始满足当后续获取；没有旧MT/Source轨迹，不能比较三者具体阶段的因果差异。
+这些是行为接口定位，不证明相同物体在不同场景里具有同一内部失败，更不把它们直接变成新loss或数据选择。
+
+科学决定：按Owner事前分支进入深入机制分析和有界修正验证，暂不运行one-shot/task-local RL或更多原样续训。
+Sol已收到§25，继续固定2340的四个validation视频/公共β对照，不需重复派发；它们不会反向改选或把shuffle损伤转成架构依据。
+主讨论须在non-held数据上连接真实H/X→K/Value→M→自身Ah→控制功能，检验具体竞争解释后再作修正训练；
+现有训练FM/实际采样正例排除了部分“完全无作用”说法，却没有确定当前性能缺口的唯一根因。
+
+T训练源e2afbfd7，evaluation-only6fb423b3 clean detached；bank400条件/401因子，18worker exit0，0 orphan沿实际验收继承。
+bank1133.4067秒/.314835193GPUh，official665.3960秒×6卡/1.108993398GPUh，总1.423828591/3GPUh。
+唯一原件root=`/data1/user/ymdai/ember_runs/operator_selected_validation_20260929`，报告`analysis/selected_test_readback.json`，
+新正式原行位于`test/T/evaluation/correct400`；MT/Source保持原data0基线，不新跑800行。

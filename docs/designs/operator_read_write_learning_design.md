@@ -1241,3 +1241,233 @@ CPU应核真实control1890与aux拒绝、旧metrics/第五轮余项/第六轮、
 明显超期风险及时说明实际缺口与优先顺序，不默默增加预算/缩正式行；选点若到后段才完成，Test可能无法在15:00前完整结束。
 源码/实际launch、每完整观察节点、§19整组与最终交付及时回报。main活跃时直接Steer，若main已结束回合则只投一条可唤醒的新消息，
 不得为了等待Steer保持main在线；不发重复Queue/心跳、自通知或半批分数。main收到完整交付后验收、裁决、接续。
+
+## 21. Owner明确指定的四卡2340→2790继续学习（2026-09-29下午）
+
+### 21.1 授权、问题与边界
+
+Owner在看过161最高点、要求先讨论后，又明确“先让sol继续四卡续训，之后我们再讨论别的。这是我的判断”。
+因此先执行同一T的下一有限学习窗口，检验末段小幅新高后能否继续获得净收益；不以主讨论此前不急追加的判断阻挡本次授权。
+§20曲线158/156/152/155/156/161全部保留，既不能写成持续单调下降，也不把末点新高当成无限续训依据。
+本次不改结构/目标/数据，不开展U、public_aux、视频controls、Test或RL；后段其它选择留待与Owner讨论。
+
+唯一task=`operator_read_write_continuation_2790_20260929`，唯一新root=
+`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2790`。
+唯一父为`continuation2340/T/train/attempts/continuation/checkpoints/macro_00002340`完整ECP，
+训练来源`e2afbfd7c997e3f792921600608efa2fa3c1b25a`、T/full、事件v7；不能用后续cb535c1e读取Git冒充训练来源或回接旧1890/aux。
+
+### 21.2 学习、恢复与观察
+
+从2340到2790共450新宏步/50400 query，36task等权、每宏步四条件各28跨episode query、每条件权重.25；
+保持原SUM全局梯度后一次clip/Adam、原optimizer/scheduler绝对时钟及floor1e−5，不重置LR、不加入辅助目标。
+完整2340行metrics字节前缀与旧采样事件保留；同world4恢复四rank RNG，物理设备变动如实记录，不称bitwise exact。
+事件v7→v8明确只追加第七teacher轮：绝对visit260起继续原第六轮`[20260928,1,task,5]`剩余排列，
+visit300起采用`SeedSequence([20260928,1,task,6])`。原task/query/flow及teacher第0–5轮事件不变。
+来源验证区别首接2340父与本窗口最新同臂完整ECP；有更新完整边界时拒绝旧父重开，旧冻结spec/原件保持只读可消费。
+
+完整ECP与correct400节点固定为2430/2520/2610/2700/2790。ECP包含Writer、Adam/scheduler、sampler/cursor、rank RNG、拓扑和schema；
+保留预设`stop_after_macro`及`stop_at_next_ecp.request`受控边界。除Owner新指令、数值/恢复故障或资源硬限，
+不因单个小幅下降自行缩掉已释放窗口；所有已启动节点完整计入。到2790收束，不自动再顺延450步。
+评测严格复用sealed validation400的scene/video/env/policy RNG，50不同teacher/task、8full+392compact和被动trace；
+旧2340与强MT153只读复用。报告每task/suite/breadth、相邻及对父/MT的R/G/L/churn/Jaccard/任务簇区间，
+不读中途分数、不融合checkpoint、不因本轮分数自动发布视频controls/Test选择文件。
+
+### 21.3 实现、资源与交付
+
+Sol独占现有dev，从最新main沿唯一run/data/bank运行面实现新窗口，旧CLI退役为只读来源，禁止平行trainer/evaluator。
+对本次实际触及的窗口/父来源声明作内聚复用，不能再逐window复制大校验分支；不把全面重构变成GPU启动前置。
+若仍有有界结构例外，保留真实guard/diff与后处理范围供main并行审阅，不能冒称全过或放宽科学/恢复合同。
+Owner随后纠正主讨论职责：常规工程实现、测试及恢复检查由Sol负责；main核科学语义和结果，保留Git管理但不重复工程审核或另做结构重构。
+针对性CPU核真实2340父/时钟/前缀、v7→v8、同窗口恢复和旧父重放拒绝、新旧bank/捕获消费者；不为既有可靠验收重扫旧1200/2000捕获。
+训练端检查通过并push新clean detached freeze后直接启动，评测读取接入与main合入可以并行，不需第二次执行许可。
+
+Owner本次明确四卡：优先GPU02同节点四张有实际吞吐价值的A40；launch前同时live核两节点、GPU UUID/显存/进程及NUMA。
+Owner后补充：后续暂不使用GPU01，除非GPU02没有满足真实作业需求和原并发上限的可用卡；训练、物化、评测及恢复均适用。
+四rank各一条件，`NCCL_P2P_DISABLE=1`、既有GPU-local NUMA/deferred NCCL不变。确实无适用四卡时报告具体限制，
+不抢占他人、不dummy占卡；未来Owner或现场必要迁移仍须完整ECP与原逻辑权重，不丢未保存更新。
+总量遵循AGENTS常规跨节点上限；四卡训练不等于整批仅四卡，独立物化/评测利用余量及时启动。
+后段就绪official按实时吞吐使用多卡/适当replicas，不再无依据沿用末点单卡；不为扩已近完成的队列丢弃有效行。
+
+本批增量硬限18GPUh/64GiB，所有失败、加载、训练、物化、五组official均计入；旧§19/20已完成15.621703396GPUh单列不清零。
+依据上批同450更新四卡7137秒/7.930GPUh、五bank合计约1.61GPUh、official含恢复约5.01GPUh，预计新增约14.5GPUh，留有限失败余量。
+训练预计约2小时，重叠bank/评测后整批约2.5–3小时，源码准备和实际资源另计；不是原15:00交付保证。
+五套新bank约40–45GiB，五ECP与捕获/临时写入按新增64GiB上界准入；Sol在strg01重查data1独立quota/实际用量与共享容量，
+父ECP/source/dataset只读复用，不复制大资产。实际argv/env/cwd/source/GPU/时限登记在本root唯一launch合同中。
+报告限必要源码交付、实际正式启动、完整可裁决节点及需主讨论决定的实质阻碍；日常调度与已解决故障并入完整结果，
+不发确认、定时心跳或重复回执。main完成独立工作后结束回合，实际交付再接续；本项进行期间其它事项与Owner讨论。
+
+## 22. 续训期间的冻结原生读取诊断（2026-09-29，Owner已授权并行分析）
+
+### 22.1 问题、干预与可失败解释
+
+Owner明确“可以派发分析实验……现在开始趁正在续训，你自由进行并行的分析”。§21四卡续训保持优先；
+本项解释已学视频→LoRA函数，不改变正式学习、不提前选点、不开最终wrong/shuffled/other400或Test。
+最近条件速度方案的教学端不读公共β，且条件作用只在action_out；当前T/U在教学端用公共β产生X/H，
+在全部38target生成M，并由同一A（T）或独立S（U）写入地址。多个结构变量同时改变，不从跨方案分差唯一归因。
+
+先检验尚未被现有β执行消融回答的一项：已共同学习的公共β用于教学原生读取，是否给当前生成的LoRA带来功能收益？
+对每个冻结模型，正常Mβ=Fφ(A或S;Xβ,Hβ)；干预M0=Fφ(A或S;Xsource,Hsource)。
+只在read_native_video的公共因子参数替换为实际source identity，视频/语言/probe/帧序保持；
+writer的公共A/B0、独立S（若有）、P/C/D/O与最终执行公共β都保持原模型，最终仍是(A,B0+M0)。
+不能将整套writer.common清零、把执行β也去掉、重绑U、注入query信息或使用假视频。
+这识别冻结函数对适配后教学特征的依赖，不等价于“从头冻结读取”的训练反事实，也不单独识别T绑定的收益。
+
+事前分支：若source-native显著损伤多数条件，支持共同适配后的原生响应确有功能作用；
+若差额小或部分系统改善，降低“公共β教学读取是当前优势的主要机制”的支持度，并定位条件差异。
+T/U900的差额可作同学习阶段的交互观察，T2340反映当前较长学习状态；不能仅由交互差指定独立因果根因。
+即使正常读取胜出，也不证明关系/时序语义或held收益；不据此立即追加冻结训练、gate或新架构。
+
+### 22.2 固定面板、原件与分析
+
+唯一task=`operator_native_reader_diagnosis_20260929`；唯一新root=
+`/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/native_reader_transport`。
+冻结T900、U900来源81846ed3；T2340来源e2afbfd7。三者实际完整ECP读取，权重不更新、不重选点。
+沿§14A固定train0/12/20/32，每task原两teacher、同28跨episode query和flow；全部数据来自已授权训练任务。
+新执行24个source-native功能条件，另T2340正常full8条件及task公共β4条件，共36个新FM前向。
+T/U900正常full16和各自β共8沿§14A原件引用；旧source/MT参照也沿原件引用，不重算。
+source-native的同8个视频响应与冻结source/probe相同，可在三模型间复用，保持明确来源，不制造重复缓存资产。
+正常T2340与干预都沿已有native/Writer/paired_functional_credit消费，完整50×7 FM及前5另读；0 optimizer更新、0环境episode、0held标签。
+
+保存每条件prediction/target/flow time、实际视频/查询身份、全部38个M；保存正常T2340与source-native的H及Q8/V8/out三处X，
+source-native特征允许一份原件多处明确引用。完整teacher特征不必为三模型重复写三份。
+action_in的X为同一固定probe，读取干预不应改变它；action_out的公共投影输出被丢弃，不将38个公共target都称为有效原生作用路径。
+CPU读回实际新36个预测原件、对应特征/M及范围；不逐tensor复扫旧模型/80PT或旧official捕获。
+输出逐task/teacher和三模型差额、前5与其余45；对d=p_source-native−p_normal，核精确恒等式
+ΔFM=2 mean((p_normal−y)d)+mean(d²)，保留反向或接近零结果，不只报均值。
+特征/参数变化大小仅供定位，不把它称为语义或闭环性能。已见任务/旧held表现只作为已有背景，不产生新资格。
+
+### 22.3 执行边界
+
+Sol在原独占执行范围内准备一次性诊断脚本，复用clean frozen数值代码与canonical资产，保存实际脚本/命令/来源/退出/成本；
+不扩canonical trainer/evaluator，不为临时分析搭新测试体系，主讨论负责科学解释而不重复工程审核。
+新增独立上限1GPUh/4GiB，包含所有加载、失败、临时写入；与§21的18GPUh/64GiB分别计费并合计存储准入。
+依据§14A的80个功能前向/部分反向合计.099GPUh，此项GPU预期5–12分钟，连CPU准备预计20–35分钟；资源/文件系统等待另计。
+优先GPU02的一张适用空闲卡，只有GPU02无适用卡才考虑GPU01；不挤占四卡训练、不停已有任务。
+现场live两节点及strg01 data1独立quota检查由Sol负责；就绪正式bank/official不因无依据串行等待此诊断。
+完成后只直接Steer整批结果或实质阻碍，无确认/心跳；停止新增诊断，主讨论结合已有历史和实际数据决定是否还有必要分析。
+
+## 23. 条件作用从训练读出到自身动作生成的传递（2026-09-29，续训并行分析）
+
+### 23.1 要改变的判断
+
+Owner指出仍有关键未知，不能把一项诊断收束等同于没有可并行研究。§22结果已消费，不重做读取替换。
+当前具体缺口是：T/U900的训练FM排序与held闭环相反，当前视频条件有训练功能收益，但该收益是否保留到
+同一真实观测下的官方10步动作生成尚未测量。先固定观测与任务，区分条件函数在生成过程中的调用，
+不把通用FM/采样差距本身当EMBER根因；必须比较完整视频策略、各自公共β与强MT的差异及T/U交互。
+本项独立于2790学习结果，不改变§21，不使用held动作、环境反馈或最终wrong/shuffled controls。
+
+唯一task=`operator_sampler_transport_diagnosis_20260929`；唯一新root为
+`/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport`。
+冻结T900/U900（81846ed3）及T2340（e2afbfd7），面板沿§14A/22的train0/12/20/32、两teacher、各28跨episode query。
+正确视频生成的38个M沿已存原件复用，并与各自真实ECP A/B0合成；不重读视频、不重新编译、不重选query。
+T/U900原件见train_functional_900，T2340正常M见native_reader_transport；若原件不含所需字段，先报具体缺口。
+
+### 23.2 有限实验与精确分解
+
+复用现有policy.predict_action_chunk/sample_actions的官方10步路径、query图像/state/语言预处理与冻结source normalization。
+每task复用原query的flow_seed产生一套28×50×32纯Gaussian noise；三模型、β与MT使用同一实际noise，
+沿现有logical-batch RNG消费者保证microbatch不改配对。部署采样从纯噪声开始，真实action只用于事后评分，
+不得作为采样状态、Writer条件或生成过程的插值输入。保留真实32维suffix，最终评分仅真实7维。
+MT沿原300 mixed-precision LoRA，共四task，只计算一次并供三模型引用；不新增source参照以填矩阵。
+
+24组full、12组公共β及4组MT，共40条批量生成路径，每条28query、10个真实flow step；不是40个环境episode。
+对24组full另在对应公共β的每步实际suffix状态上计算full速度，共240个额外速度批次；全部上限640个速度批次。
+不另开自定义solver，不改time/step/precision，不用预测均值替代每条实际生成路径。
+记录本模型full路径zF、公共路径zB、各自速度vF(zF)/vB(zB)，以及vF(zB)。对于dt=-0.1，精确有：
+
+```text
+delta_z_(k+1) = delta_z_k + dt * (direct_k + feedback_k)
+direct_k = vF(zB_k) - vB(zB_k)
+feedback_k = vF(zF_k) - vF(zB_k)
+delta_z_0 = 0
+```
+
+这是以公共轨迹为参照的有限函数分解，非对称、不是参数Taylor展开、梯度冲突或独立因果中介百分比。
+direct包括同一suffix输入下整套条件LoRA对hidden与速度的作用；feedback包括模型前面生成不同suffix后自身响应的变化。
+不把它叫环境闭环反馈。统计最终前5动作、完整50及真实未padding future的归一化动作MSE，按task/teacher/query报告；
+公共β与MT按task共用，不当作两个独立样本。single noise/有限训练面板不证明多模态动作的正确性或闭环排名。
+主讨论另从既有FM原件读flow_time分层、前5/后45差额，作为相关性背景，不把不同tau下不同query当同query因果干预。
+
+保存实际脚本、合同、LoRA/M来源引用、query身份、noise、真实action/有效future长度（仅训练评分）、40条生成路径的
+z/velocity/最终normalized动作，以及24条cross-velocity；full/β路径另保存Q8/V8/out的Aq，用于和已有教学key/M读出联系。
+无需复制ECP、所有M或原图像；不扫描旧official原件。CPU逐个实际读回新增预测、配对、步数及上述递推，正常浮点容差即可。
+报告完整−β、完整−MT及T/U的前缀/全长差额与反向条件，并给direct/feedback的合成量和误差方向，不靠范数宣布有益。
+
+### 23.3 结果分支与执行
+
+若完整视频的功能优势到真实生成前5仍保留，降低“视频功能仅在训练插值上有用”的解释，后继优先区分关系迁移与
+环境自身访问状态；若优势在生成前缀消失或反转，且T/U呈与既有功能不同的交互，优先解释条件算子沿自身生成状态
+的调用与训练信用错位。单纯全模型都同样改变、仅均值微小差或不一致结果，不作为EMBER特异根因或改loss理由。
+无论哪种结果，都不自动恢复旧endpoint/mean5辅助、扫采样器或开展fresh训练；必须结合历史反例和已有closed-loop证据裁决。
+
+Sol负责一次性脚本与执行，复用clean frozen数值代码/唯一policy消费者，不新增canonical trainer/evaluator或机械测试套件。
+主讨论负责科学解释，不承担重复工程审计。独立硬限1GPUh/4GiB含加载/失败/临时输出；不占§21预算但须合计quota准入。
+依据§14A 80组混合功能前后向约.099GPUh，本项更多速度前向但复用教学编译，GPU粗估15–40分钟、准备/读回共30–60分钟，
+资源等待另计；外部时限不得超过剩余GPU预算。若无法在限额内完成，保留已完成原件并报告，不删条件或追加预算。
+GPU02优先，只有无适用卡时考虑GPU01；沿Owner短分析临时超卡例外，不挤占在跑四卡训练或中断official。
+launch前由Sol现场核两节点资源和strg01 data1 quota。完成或实质阻碍直接Steer，禁止心跳/确认消息；完成后不自动开下一项。
+
+## 24. Owner直接授权最佳验证checkpoint的Test，复用已有MT/Source（2026-09-29）
+
+### 24.1 最新授权与唯一选择
+
+Owner判断短期可能难有更大突破，明确“可以直接看看最佳ckpt在test上的性能了”，随后纠正MT和Source已有结果。
+因此本条覆盖§20的“明显超过MT才触发Test”和§21暂不Test边界：只新增一个T checkpoint的400 Test，
+旧MT/Source Test直接复用，不新跑基线、视频controls、其它checkpoint、训练或RL。
+
+唯一task=`operator_selected_test_20260929`，沿已登记后段root
+`/data1/user/ymdai/ember_runs/operator_selected_validation_20260929/test`；selection仍是其父目录的`selection.json`。
+不得另建平行evaluator或为Test重新编译validation400。已有冻结ECP、源模型、数据与旧原件只读引用。
+
+选点只用T/full同一学习链的完整预登记validation400，成功数最高、同分取较早macro。
+已完成1890/1980/2070/2160/2250/2340/2430/2520/2610/2700/2790分别158/156/152/155/156/161/147/154/160/154/159；
+最后2610已收束且main直接核400行/配对/完成，所有预登记点均有完整结果。更早已验T点均低于161，U/public_aux不入候选。
+**main最终选择T2340（161/400）**，训练来源`e2afbfd7c997e3f792921600608efa2fa3c1b25a`，唯一完整ECP为
+`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340/T/train/attempts/continuation/checkpoints/macro_00002340`。
+对应correct bank为上述continuation2340根目录下`T/banks/2340/manifest.json`、完整结果为`T/evaluation/2340/correct400/results.json`，主讨论已核源及exit0。
+精确selection载荷保存于既有tmp `operator_chain_diagnosis_20260929/selected_test_selection.json`；Sol在本批存储准入后按该内容发布到
+上述唯一selection路径，直接执行，无需第二次GPU许可。selected_by=science_main，实际落盘者可在run contract说明。
+选点在任何新Test模型推理/成绩之前冻结，读Test后不得更换checkpoint或据此改本轮方法。
+
+### 24.2 复用基线与Test比较口径
+
+主讨论已直接读取旧两组各400原行和合同：
+`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923/evaluation/source_1000_test`为75/400，
+同根`mtbc_300_test`为121/400；Source1000是项目过滤Source71训练后的冻结源policy，MT为原强MT300。
+保持这些历史分数/合同，不重测、不重训、不换较弱基线。旧数据0新增写入，所有新产物data1。
+
+Test沿coverage固定8全局ID `[8,9,10,18,24,27,30,33]`、每task init0..49、inference seed7、exact language，
+原render256/model224/双RGB rotate180、8state/7action、10flow、前5replan、dummy10、成功即止、horizon220/280/300/520。
+与旧Test使用同一canonical source/normalization/tokenizer及同一policy-noise调度；不用generic pi05_base替代Source1000。
+T每task50个合法action-hidden teacher各用一次，沿既有video_schedule的固定seed7映射；不挑视频或改变query/teacher来源。
+仅读取Test教学双RGB/语言作一次LoRA编译，禁止Test action/proprio/reward/terminal进入Writer或任何梯度；执行自身state合法。
+模型/Writer/native/损失/权重不改，只增加有明确role/source的Test读取与评测范围。
+
+旧Test合同没有注册完整scene快照，也没有NPZ/PT capture，无法事后升级为严格完整RGB/sim-state配对。
+新T沿旧合同的`seed/reset/set_init_state/dummy10`初始化，不为补齐当前scene合同重跑两baseline或构造它们不存在的初态证据。
+若当前operator adapter强制registered-scene，沿唯一owner增加**显式legacy Test初始化scope**，复用已有普通Test episode消费者；
+这只适用于本条指定旧Test比较，不静默放宽validation400的strict-scene断言、不改变其恢复规则。
+报告可核的task/init/语言/env seed/policy noise共同前缀配对，另明确完整scene/RGB无法与旧基线核对；
+配对得失与任务簇区间仍可报告，但不能称当前validation式的strict full-scene paired400或bitwise一致。
+`historical_test_exposure=true`沿旧协议保留；Test仅评价这次固定方法，不参与梯度、视频选择或后续设计反馈。
+
+### 24.3 执行、证据、资源与收尾
+
+Sol独占dev，沿唯一bank/scope/adapter/evaluator增加必要Test读取；保留旧数值来源与新evaluation-only Git的显式对应。
+CPU检查实际选中ECP/role、400 task-video条件、旧Test源/norm/预处理/RNG、禁止错误checkpoint/标签来源；
+检查直接消费者，不添加整树/逐tensor扫描或重验旧训练。push clean detached freeze后按本条直接运行，不等main工程审核或集成。
+formal launcher登记精确argv/env/cwd/设备、输入与选择、输出、并发和预算；纯工程窄修按§10.5保留原件/失败账、自主验证新freeze续行。
+
+唯一新增T bank400条件及T Test400行，沿已有dynamic long-first persistent queue多卡并行。
+每task一条full、其余compact，共8full+392compact；保存新400 NPZ/PT及stage predicates，CPU实际读回必要动作/初态/谓词/RGB。
+旧baseline原行/可靠验收直接继承，无不存在的capture补扫。汇报三者per-task/suite/breadth、T对两baseline的R/G/L/churn/Jaccard与
+固定8task bootstrap区间、选择表、来源、退出、失败及全部成本；注明验证选峰乐观性与历史Test曝光。
+失效仅重领原队列缺失分片，不择优重跑；如果真实原因涉及模型数值/数据标签/评测改变或预算，先报告科学边界。
+
+新增独立**硬限3GPUh、峰值16GiB**，与§21的18GPUh/64GiB分别计账，全部失败/加载/物化/评测计入。
+依据最近400 bank约.27–.30GPUh、400 official约.9–1.2GPUh，预计约1.3–1.7GPUh；新增一套400权重约8–9GiB，
+其余场景记录/capture/冻结代码/原子临时余量纳入16GiB。launch前由Sol核strg01 data1独立quota、实占及共享容量，不能仅看df。
+GPU02优先，只有该节点无满足作业需求的适用卡才可GPU01；live核双节点，沿既有常规总量/单节点上限，不借短诊断例外扩本Test。
+§21已全部收束，Test准备直接开始；候选已固定，及时利用空闲卡，bank就绪即official，不沿用无依据单卡/固定2worker限制。
+按既有bank/eval实测，从源码准备到完整读回预计约1–2小时，现场资源/必要修复另计；重大延期或硬限风险直接报告，不发定时心跳。
+完整Test或实质阻碍直接Steer；当前本条不包含新controls、更多Test seed、追加训练或基线GPU计算。

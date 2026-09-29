@@ -9,6 +9,15 @@ T唯一父为9801641d的control1890完整ECP，不能误接public_aux。新上�
 GPU02优先world4，按live资源可world2/3/4显式迁移；保持四条件权重/Adam/绝对LR/RNG来源，恢复受控ECP停止功能。
 主讨论负责源码审阅、完整节点验收与最终选点；不读取半批分数、不在线sleep陪跑、不自Queue。独立工作完成后结束回合，可靠交付再唤醒。
 唯一Sol独占dev，main仍由主讨论独占；本条登记不代表新GPU已启动。源代码/资源/实际启动与结果须据后续原件更新。
+§20合同4cf82c4c已push，发给空闲Sol的新任务Queue回执`01a0eb07-5098-7f21-910c-2fe4b3aec173`；
+一次只读核对确认活跃轮`01a0eb07-509a-7893-922c-b00256f9b31c`收到完整准确正文，派发/回执/snapshot在既有tmp的`continuation2340_*`。
+§19源码e499f94c经主讨论全diff与实际bank/scene/role/capture消费者审阅后，以b352ba4b集成；独立6项CPU通过（17.55秒），diff检查通过。
+检查覆盖真实T1800/MT源、36训练allowlist/144条件、scene范围及旧1800/MT/公共β/pilot臂来源；不重复旧捕获或运行GPU。
+结构guard真实输出为BLOCK：bank.materialize复杂度39、scope.inspect_official_scope34、preparation815行、installed-task检查复杂度29。
+本次接受明确有界内聚例外：scope337行承接唯一36×4注册与原400范围/scene/capture共享规则，后者为搬迁旧严格验证，不建第二评测器；
+bank抽出共同写B循环后775行、run退役CLI后782行，新增分支只选择已登记源/任务范围；preparation新增的明确角色入口须在该实际消费者校验，
+installed-task的3处扩展只把已审计target/source任务合成固定36训练scope，旧role边界不变。测试文件114行，active-source净增470。
+新§20续训/controls扩展必须进一步内聚窗口/来源规则，不机械复制同类大validator；该例外不掩盖结构信号或改变科学信息墙。
 
 ## 当前：Owner醒来，暂停自主推进并交流（2026-09-29）
 

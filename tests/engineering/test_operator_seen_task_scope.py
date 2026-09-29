@@ -111,6 +111,10 @@ def test_registered_144_capture_routes_actual_cases_and_rejects_other_scope(tmp_
     repaired_capture, _ = bank.registered_capture(
         args, tasks, repaired, scope.CAPTURE_PATH, read_json(scope.CAPTURE_PATH), None)
     assert repaired_capture["full_conditions"] == full
+    admission_fix = tmp_path / "T/evaluation/attempts/gpu_admission_fix/correct144"
+    fixed_capture, _ = bank.registered_capture(
+        args, tasks, admission_fix, scope.CAPTURE_PATH, read_json(scope.CAPTURE_PATH), None)
+    assert fixed_capture["full_conditions"] == full
     with pytest.raises(Pi05EvaluationError, match="outside the registered attempts"):
         bank.registered_capture(args, tasks, tmp_path / "T/evaluation/correct400",
                                 scope.CAPTURE_PATH, read_json(scope.CAPTURE_PATH), None)

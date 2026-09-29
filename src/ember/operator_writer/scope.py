@@ -131,14 +131,15 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
             raise ValueError("seen-task capture arm changed")
         canonical = eval_root / "correct144"
         repair = eval_root / "attempts/role_authority_repair/correct144"
-        if output_dir is not None and output_dir.resolve() not in (canonical.resolve(),
-                                                                    repair.resolve()):
+        admission_fix = eval_root / "attempts/gpu_admission_fix/correct144"
+        if output_dir is not None and output_dir.resolve() not in (
+                canonical.resolve(), repair.resolve(), admission_fix.resolve()):
             raise ValueError("seen-task evaluation output is outside the registered attempts")
         if output_dir is not None and output_dir.resolve() == repair.resolve() and bank["mode"] != "T":
             raise ValueError("seen-task role-authority repair belongs only to the failed T queue")
         return dict(full=full, capture=capture, study=registration()["study_id"],
-                    output=repair if output_dir is not None and output_dir.resolve() == repair.resolve()
-                           else canonical, role=ROLE, states=STATES,
+                    output=output_dir if output_dir is not None else canonical,
+                    role=ROLE, states=STATES,
                     task_count=36, expected_bank=expected_bank)
     full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0}
             for task in tasks]

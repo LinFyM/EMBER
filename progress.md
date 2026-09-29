@@ -5,6 +5,9 @@
 **执行中：**Sol在GPU02:0以world1运行§31从fresh初始化的270步检验；180完整保存后已同拓扑恢复，
 当前attempt为`resume180_gpu02_world1`，冻结源码`517bc8d4`、
 冻结树`/data1/user/ymdai/projects/EMBER-change-clock-learning-v2-formal`；launch记录2026-09-29 18:11:55 UTC。
+**当前预算修订：**因恢复段异常长停顿，main已将本批总硬限从8提高为10 GPUh，仅完成原270/400/A28；
+训练相关费用达到7.5 GPUh仍未完成270须再次回报，后段预留约1.8 GPUh。具体裁决与原因见下方及design§31.3；
+旧8 GPUh为此前合同，冻结训练spec/run contract保持原件，不因运行预算修订改写。
 main收到启动回报后只读核launch/run contract和第1宏步原行：4任务×28=112查询、一次Adam、
 总梯度范数.01744735、52.04秒、峰值allocated26.93/reserved31.78GiB，source_trainable=0。
 这确认了真实学习启动，不是性能结果；不反复读取后续训练日志或监看Sol。
@@ -83,6 +86,16 @@ run contract的git/spec/operator/events/optimizer/source均保持原517身份。
 `/data1/user/ymdai/projects/EMBER-change-clock-readout-v3-formal`（360、clean detached/pushed已核）。
 main通过真实脚本入口CPU确认180 ECP在加载模型/数据前被既有270来源合同拒绝；没有新增GPU计算。
 尚无完整270原件，未宣称恢复后的270物化或面板已通过；Sol继续原批后段，不等待集成批准。
+
+预算风险回报已消费：至212，恢复段32新更新约2.321 GPUh，加前180的2.894及consumer .028约5.24 GPUh。
+main直接核191/195/206等异常行及`credit.one_job`/`run.update`：compile包含教学视频读取，FM包含查询数据读取，
+两者出现约700–760秒局部长停顿；同job resident-input replay仍在通常4–19秒范围。
+这支持优先检查I/O/调度，不能仅凭阶段计时确诊NFS或GPU原因，也不构成候选模型效果的负结果。
+最近完整ECP为180，下一保存点为270，现进程没有每宏步安全停止/保存接口；不会注入热补丁或丢弃更新重跑来解决费用估计。
+main按design§31.3将总硬限调整为10 GPUh、科学范围与24GiB存储不变：近期恢复到约60秒时，剩58步约.97 GPUh，
+加后段预留1.8合计约8.0 GPUh；新增2 GPUh为实质异常耗时留余量。7.5 GPUh训练费用阈值触发一次提前裁决，
+不是自动继续到更大预算。Sol只在再次长停顿时做一次不超过3分钟的只读现场定位，正常则跳过，不扩大成性能排查项目。
+修订已Steer送达原执行turn并获接口接受，正文/回执保存在main tmp的`budget_risk_212_steer.txt/json`；不要求常规回执。
 
 ## 当前最新：停止一批实验不等于停止主讨论研究（2026-09-30凌晨）
 

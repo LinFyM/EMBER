@@ -121,6 +121,11 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
     """One registered geometry for old400 and the new 36-by-4 panel."""
     from . import bank as owner
 
+    if bank.get("scene_repair") is not None:
+        from . import scene_repair
+
+        return scene_repair.capture_expectations(bank, bank_path, tasks, output_dir)
+
     seen = bank.get("evaluation_scope") is not None
     macro = bank_path.parent.name
     eval_root = bank_path.parent.parent.parent / "evaluation"
@@ -173,6 +178,13 @@ def inspect_bank_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping
     from ember.writer.materialization import file_record
 
     from . import bank as owner
+
+    if bank.get("scene_repair") is not None:
+        from . import scene_repair
+
+        return scene_repair.inspect_bank_scope(bank, spec, path, source, task_keys,
+                                               evaluation_role, require_formal,
+                                               task_init_state_ids)
 
     scope = registration()
     if read_json(FROZEN_SCOPE_PATH) != scope:
@@ -358,11 +370,16 @@ def create_scenes(asset_root: Path, gpu_index: int) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("scenes", choices=("scenes",))
+    parser.add_argument("scenes", choices=("scenes", "canonical-scenes"))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--gpu-index", type=int, required=True)
     args = parser.parse_args()
-    print(create_scenes(args.asset_root, args.gpu_index))
+    if args.scenes == "canonical-scenes":
+        from .scene_repair import create_scenes as create_canonical_scenes
+
+        print(create_canonical_scenes(args.asset_root, args.gpu_index))
+    else:
+        print(create_scenes(args.asset_root, args.gpu_index))
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ installed-task的3处扩展只把已审计target/source任务合成固定36训�
 新§20续训/controls扩展必须进一步内聚窗口/来源规则，不机械复制同类大validator；该例外不掩盖结构信号或改变科学信息墙。
 §20训练源码e2afbfd7已以8bf1042e集成；主讨论核新旧完整diff、真实control1890来源/事件/时钟，独立16项CPU通过（45.48秒），
 包括fixed-stop与request-stop在已发布1980边界退出的实际训练循环（数值update使用CPU替身，不冒称GPU停训实测）。
-新`EMBER-operator-continuation2340-formal`已直接核为e2afbfd7、clean detached；当前仅训练代码就绪，新2340 bank/后段eval仍由Sol另行实现。
+新`EMBER-operator-continuation2340-formal`已直接核为e2afbfd7、clean detached；训练保持此冻结，后段bank/评测使用独立evaluation-only冻结。
 另以实际旧control/aux1890 bank复现读取失败：scope仍把旧spec认成当前代码目录。main改为显式PILOT_FROZEN_SPEC_PATH，
 真实两臂读取及已有臂绑定3项CPU通过（37.51秒）；不改旧freeze/原件、不重算有效旧结果，不影响e2afbfd7的训练恢复。
 本轮训练结构guard为BLOCK（run869行、late-parent校验复杂度43、restore32），不称结构全过。main接受本次有时限的窄迁移例外：
@@ -47,6 +47,16 @@ main修正后续合同只在seen诊断写该字段；当前1980旧合同保留�
 另以CPU替身运行真实materialize到合同写出后停止，已核validation不再携带seen144字段且保留full/训练身份，0模型前向。
 此轮结构guard在main窄修前为BLOCK：bank815行、来源/物化/official范围复杂度40/49/49；main接受仅限固定五点读取与已定位窄修的内聚例外，
 未增加数值路径或独立evaluator。§20之后新增训练窗口前必须将累计窗口/来源声明内聚，不能继续按窗口堆分支；不称结构检查通过。
+§19.5源码050db4ba合入main44cfd8e3后为cb535c1e；main已直接核专属冻结树clean detached及全部源码diff。
+scene_repair按每个旧post-dummy sim/model/controller重生观测，逐个原严格restore通过后才发布144 manifest；
+新T/MT bank只改场景与lineage，原shared/condition权重直接引用；CPU synthetic场景注册不冒充真实环境恢复验证。
+main独立6项CPU通过（17.16秒）：真实旧T/MT因子在synthetic新场景注册下经bank/capture读取、原144范围/来源及真实1980新窗口回归；diff检查通过。
+新的场景生成11:52:21 CST启动，16.20秒后因MUJOCO_EGL_DEVICE_ID与CUDA_VISIBLE_DEVICES不匹配在环境import前exit1，
+main已读实际退出/日志，费用.004500155GPUh；尚无生成成功或288结果声明，Sol沿原许可修正启动映射，不改场景合同。
+另main读到1980物化首试1200.52秒timeout/exit124（.333477846GPUh），原3ba冻结续行117.87秒exit0（.032743053GPUh）；
+旧partial/失败/合同误记均保留，不重复379个已写因子；新节点official成绩仍待完整回报，不读取半批分数。
+本次结构guard仍BLOCK：bank830行（+11），新增187行scene_repair内聚本次一次性数据修复与明确来源复用，未建第二evaluator；
+接受已登记当轮例外，§19收束后生成入口不再追加用途，随§20运行面整理退役，已发布bank的读取保持可用。
 
 ## 当前：Owner醒来，暂停自主推进并交流（2026-09-29）
 

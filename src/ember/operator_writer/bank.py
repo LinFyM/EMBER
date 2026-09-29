@@ -334,6 +334,12 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
     return run
 
 
+def _require_pilot_source(mode: str, run: Mapping) -> None:
+    if mode in PILOT_ARMS and (run.get("pilot_arm") != mode
+                              or run.get("loss_variant") != PILOT_ARMS[mode]):
+        raise ValueError("pilot bank arm or loss source changed")
+
+
 def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device) -> Path:
     checkpoint = checkpoint.resolve()
     macro = int(checkpoint.name.split("_")[-1]) if checkpoint.name.startswith("macro_") else -1
@@ -344,8 +350,7 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     spec = specification(spec_path)
     source_spec_path = spec_path
     run = inspect_training_source(spec, checkpoint, "T" if pilot else mode)
-    if pilot and (run["pilot_arm"] != mode or run["loss_variant"] != PILOT_ARMS[mode]):
-        raise ValueError("pilot bank arm or loss source changed")
+    _require_pilot_source(mode, run)
     output = Path(spec["run_root"]) / mode / "banks" / str(macro)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         asset_root / spec["source"]["lora_contract"]), rank=128)
@@ -520,6 +525,7 @@ def _inspect_tu_bank(bank: Mapping, spec: Mapping, path: Path) -> None:
     mode, checkpoint = bank["mode"], Path(bank["checkpoint"])
     run = inspect_training_source(spec, checkpoint, "T" if mode in PILOT_ARMS else mode,
                                   sealed_evaluation=True)
+    _require_pilot_source(mode, run)
     base = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)
     shapes = expected_lora_state_shapes(base)

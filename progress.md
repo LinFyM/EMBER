@@ -19,6 +19,24 @@ Sol已把9a161650同步dev并push95c0f8e3；本批无遗留GPU，0新增训练/T
 合同80116e06已派发：给空闲Sol的新任务Queue回执`01a0ea71-f56d-7e31-ab8b-79a0f773e4f0`；一次只读核对确认
 新活跃轮`01a0ea71-f570-75e1-beea-8b7f81eb8581`包含准确正文，尚不表示已启动GPU或完成实现。
 派发正文/回执/snapshot为既有tmp下`public_function_pilot_*`；Sol的源码/结果仍直接Steer，不以Queue回报。
+Sol源码9801641d已交付（源码提交308966f3，合入最新文档的merge为实际freeze），主讨论以8fb58def集成。
+新冻结`EMBER-operator-public-function-pilot-formal`核为9801641d、clean detached，dev亦clean；此回報仅确认CPU准备，GPU启动不在其证明范围。
+主讨论审全部源码差异、公共cotangent独立leaf/直接累加与原full replay、第五轮和父恢复、两臂bank/capture路径；独立12项CPU通过（16.30秒）。
+另用隔离读取边界实际复现：bank声称public_aux却引用control来源时，读取器未将二者关联；物化器本来已拒绝该错配。
+main把同一臂/损失来源谓词复用于物化和读取并补两方向拒绝测试；不改变训练/数值，不把此窄缺口称当前产物已错或要求重跑。
+结构review保留六处来源/物化/恢复谓词复杂度增长的本批有界例外：它们共同承担旧封存来源与唯一新pilot的显式身份，
+移除旧读取会破坏父恢复/强参照；复制验证器会产生双owner。run785行、bank780行，90行credit模块内聚实际FM信用，preparation807行仅一处路由增项。
+唯一训练入口已只准本pilot，旧训练入口拒绝；main负责在本批裁决后退役无后继用途的pilot执行面，或在再扩展前内聚来源规则，
+不继续向这些大函数堆下一窗口/版本分支。现存冻结与科研原件不因结构例外删除。
+§18训练与固定面板现已完成：两臂08:13:53/54 CST启动，control world2于08:48:21、aux world4于08:41:58 exit0，各1890完整ECP已核。
+主讨论独立核新90行/360事件配对、实际Adam/scheduler/cursor与36预测PT，详见findings§221/机制§56.4；附加公共风险已产生小幅函数改善，未作闭环结论。
+两训练成本1.149129799/1.871410659GPUh；面板08:51:52 exit0、.041878113GPUh。该小计不含在跑物化/评测，整批终账仍待回报。
+public_aux1890完整official已完成并独立验收：148/400、breadth6；相对父154保留136/得12/失18、净−6，
+固定8-task区间[−4,1.25]pp；相对MT153净−5，详见findings§222。主讨论直接核新/旧400行配对、臂/损失来源和退出账，
+全量NPZ/PT继承已审消费者；未读取仍未完整回报的control，也未作辅助项对匹配参照的最终裁决。
+aux首次4workers/card启动OOM并有framebuffer错误，0行/0NPZ/PT，exit1及.071013475GPUh保留于failed_attempt0_4workers_gpu01；
+同固定bank/scene/video/RNG改3workers/card后于09:26:34 CST exit0，.941802990GPUh。aux bank .268650979GPUh亦已核，终账仍待整批。
+当前唯一待回报是control1890与整批验收；不据小train FM改善或aux单臂负差额增开后继，不陪跑查询。
 
 以下是已完成§17的派发、源码集成与窄修过程；其结果以上述最终验收为准。
 

@@ -93,7 +93,7 @@ def test_pilot_parent_scope_and_loss_identity(tmp_path):
             contract = base | {'pilot_arm':arm,'loss_variant':variant}
             args = SimpleNamespace(mode='T',pilot_arm=arm,resume=PARENT,attempt='continuation',
                                    microbatch=28,frame_chunk=8,stop_after_macro=None)
-            with pytest.raises(ValueError,match='control2340 continuation spec'):
+            with pytest.raises(ValueError,match='T2790 continuation spec'):
                 validate_train_request(spec,args)
             validate_attempt(spec,args,contract,tmp_path/arm/'train/attempts/continuation')
             with pytest.raises(ValueError,match='parent or arm'):
@@ -104,9 +104,9 @@ def test_pilot_parent_scope_and_loss_identity(tmp_path):
                                  tmp_path/arm/'train/attempts/badsource')
             with pytest.raises(ValueError,match='outside its registered arm'):
                 validate_attempt(spec,args,contract,tmp_path/'other/train/attempts/wrong')
-        with pytest.raises(ValueError,match='control2340 continuation spec'):
+        with pytest.raises(ValueError,match='T2790 continuation spec'):
             validate_train_request(specification(CONTINUATION1800_SPEC_PATH),args)
-        with pytest.raises(ValueError,match='T1710/1800/1980..2340 or pilot1890'):
+        with pytest.raises(ValueError,match='registered T ECP or pilot1890'):
             bank.materialize('control',PARENT,ASSET,torch.device('cpu'))
     finally:
         data.close()

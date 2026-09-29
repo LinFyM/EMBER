@@ -149,7 +149,12 @@
     ],
     "updates_per_mode": 270,
     "queries_per_mode": 30240,
-    "world_size": 2,
+    "world_sizes": [
+      1,
+      2,
+      3,
+      4
+    ],
     "initial_policy_microbatch": 28,
     "oom_only_policy_microbatches": [
       14,

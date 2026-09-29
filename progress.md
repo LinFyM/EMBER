@@ -48,6 +48,18 @@ main另补两处窄兼容修复：旧最小spec使用get读取task，bank CLI注
 不改训练中的517冻结树；Sol后续在该树直接调用已支持候选的materialize函数仍合法，不绕过checkpoint/scope校验。
 候选有实际恢复时，固定A28脚本的fresh路径限制按此前已告知Sol的读取端适配处理，不覆盖原件或伪造fresh路径。
 
+读取端提交`969d6a64`已由main以`1ccefe9c`集成：新study进入正式registered capture分派，
+训练来源Git固定为实际运行的517，bank CLI与main已有修复合并为一份。
+这只修复部分读取接线；训练树仍固定517，新读取树969尚不能称端到端可用。
+main在969读取树CPU导入并对照真实517 run_contract，确认仍有两个具体接口缺口：
+`run.spec`仍要求等于当前读取树的spec绝对路径，会拒绝合法的训练树路径；
+固定训练Git后还须恢复对当前物化代码clean/pushed身份的核验，并在contract/manifest显式保存该读取Git。
+这两项已交由Sol独占dev修复，Steer被原执行turn `01a0ee4f-45c1-75c3-84fd-39f6da15af71`接受；
+正文/回执为main tmp的`readout_lineage_correction_steer.txt/json`。
+修复沿用当前预算，训练不中断，旧冻结树不原地修改，不改变公式、数据、loss、更新或评测语义；
+后续从新的clean detached读取树消费517原件。只要求真实训练记录的CPU身份校验及capture范围检查，
+没有270 bank前不声称实际eval消费者通过，也不额外启动GPU检查或重评旧T/MT。
+
 ## 当前最新：停止一批实验不等于停止主讨论研究（2026-09-30凌晨）
 
 Owner追问“那为啥就停下来了？”。主讨论承认此前把撤回§30误解为整体研究可收束；

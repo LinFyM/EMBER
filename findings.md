@@ -5365,3 +5365,26 @@ Sol报告新产物约818MiB、GPU已释放，未量连续存储峰值。原件`o
 但task20两teacher前5步FM均比control高，平均+.00047293；公共改善伴随条件函数共同调整，不能据代理值宣布修正成功。
 精确预测分解与反例见机制§56.4；尚无两组新official完整分数/资格、held视频必要性或独立语言baseline结论。
 已结束训练成本1.149129799+1.871410659GPUh，36功能前向.041878113GPUh；这是已完成部分，物化/official与最终总账另待完整回报。
+
+## 222. 辅助臂1890单节点略低于父状态，匹配参照尚待回报（2026-09-29）
+
+主讨论直接读public_aux新400及sealed父1800/MT JSON，核全部scene_reference、语言、teacher/ordinal、env/policy RNG，
+逐task50视频、8full+392compact、实际bank到自身public_aux/loss/1890训练来源及外部完成账。训练/评测均9801641d，
+父fcc23cd15；实际freeze不包含后加的main臂身份窄修，但本bank/train身份直接核为正确，无需重算。
+全量新NPZ/PT验收继承已审实际消费者，未逐tensor重扫或读取未完成control；CPU计算在既有tmp的`main_public_function_official.py/json`。
+
+aux148/400、breadth6；task3/6/11/16/23/26/31/39为43/5/43/3/0/36/18/0。
+相对父154为136/12/18，churn30、Jaccard.819277、保持88.3%，净−6，8-task bootstrap95%[−4,1.25]pp；
+相对强MT153为111/37/42、净−5、区间[−7,4.5]pp。小幅净退步不等于全面遗忘，也未改善绝对能力或覆盖。
+task26得6失3，但task31得4失8；31两谓词各自曾成立的episode由父24降19，最终同时成立22降18。
+task39有1例仅关上微波炉、杯入从未成立，完整成功仍0；不能隐去这个局部变化，也不能称解决了组合任务。
+
+固定四train任务的β/full FM改善尚未转为本节点的净closed-loop收益，主要aux−control比较仍未知。
+另保留不利范围：90步相同事件的在线完整FM均值control .09276470、aux .09277431，并非全训练流均改善；
+这跨越模型更新，不能替代固定终点面板或反向声称终点训练总体变差。四task正例不推广成全36task结论。
+只有完整control回报后才裁决额外公共风险的作用，不用尚未完成的分数、不按这次负差额改目标或加预算。
+
+aux bank exit0 .268650979GPUh；首次official 4workers/card启动OOM及一项framebuffer错，exit1、0有效行/0NPZ/PT，
+失败原件保留于`public_aux/evaluation/1890/failed_attempt0_4workers_gpu01`，搬移记录与.071013475GPUh已直接核。
+同固定400条件恢复3workers/card，9workers全0，09:26:34 CST退出、.941802990GPUh。不是按结果选重跑，成本不清零。
+训练/公共面板沿§221；control及整批总账尚待回报，未把成功canonical树的0失败写成整个批次无失败。

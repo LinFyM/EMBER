@@ -31,7 +31,12 @@ main把同一臂/损失来源谓词复用于物化和读取并补两方向拒绝
 §18训练与固定面板现已完成：两臂08:13:53/54 CST启动，control world2于08:48:21、aux world4于08:41:58 exit0，各1890完整ECP已核。
 主讨论独立核新90行/360事件配对、实际Adam/scheduler/cursor与36预测PT，详见findings§221/机制§56.4；附加公共风险已产生小幅函数改善，未作闭环结论。
 两训练成本1.149129799/1.871410659GPUh；面板08:51:52 exit0、.041878113GPUh。该小计不含在跑物化/评测，整批终账仍待回报。
-Sol本次报告两bank独立运行、official尚无完整结果；主讨论未查中途分数，不据训练FM增开后继。
+public_aux1890完整official已完成并独立验收：148/400、breadth6；相对父154保留136/得12/失18、净−6，
+固定8-task区间[−4,1.25]pp；相对MT153净−5，详见findings§222。主讨论直接核新/旧400行配对、臂/损失来源和退出账，
+全量NPZ/PT继承已审消费者；未读取仍未完整回报的control，也未作辅助项对匹配参照的最终裁决。
+aux首次4workers/card启动OOM并有framebuffer错误，0行/0NPZ/PT，exit1及.071013475GPUh保留于failed_attempt0_4workers_gpu01；
+同固定bank/scene/video/RNG改3workers/card后于09:26:34 CST exit0，.941802990GPUh。aux bank .268650979GPUh亦已核，终账仍待整批。
+当前唯一待回报是control1890与整批验收；不据小train FM改善或aux单臂负差额增开后继，不陪跑查询。
 
 以下是已完成§17的派发、源码集成与窄修过程；其结果以上述最终验收为准。
 

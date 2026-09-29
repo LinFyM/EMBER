@@ -39,7 +39,7 @@ Sol交3ba62976：共享role身份修复、operator已物化LoRA按实测每worke
 原sim_state/model_body/controller一致；该案例重新prime后的重复恢复/canonical重放一致，不推广为全面bitwise保证。
 按design§19.5批准原预算内隔离scene_canonical144，保留相同物理状态/视频映射/旧原件，并复用已物化权重；
 两臂共用新场景，逐个生成时严格恢复检查，不影响旧验证400与§20。已直接Steer至Sol活跃轮01a0eb07，接口接受，尚非完成回执；
-正文/回执在既有tmp的seen_scene_canonical_release文件。Sol最新仅报告1980完整ECP已验、bank在跑；主讨论未将其写成完整节点成绩。
+正文/回执在既有tmp的seen_scene_canonical_release文件。主讨论未读取新节点半批分数，不把物化完成写成完整闭环节点成绩。
 main独立17项CPU通过（17.70秒）：真实1980新来源、metadata-only模拟1980→2070恢复及错误父Git拒绝、真实seen144 bank/role、
 旧pilot/public读取与operator准入传参。修正新窗口内部恢复时错误仍要求1890父Git的读取边界；不改训练、原冻结或既有有效产物。
 另发现新2340物化合同多写了seen144的evaluation_scope；真正tasks/conditions/scene由正常400分支生成，bank生成代码未带此字段。
@@ -52,11 +52,25 @@ scene_repair按每个旧post-dummy sim/model/controller重生观测，逐个原�
 新T/MT bank只改场景与lineage，原shared/condition权重直接引用；CPU synthetic场景注册不冒充真实环境恢复验证。
 main独立6项CPU通过（17.16秒）：真实旧T/MT因子在synthetic新场景注册下经bank/capture读取、原144范围/来源及真实1980新窗口回归；diff检查通过。
 新的场景生成11:52:21 CST启动，16.20秒后因MUJOCO_EGL_DEVICE_ID与CUDA_VISIBLE_DEVICES不匹配在环境import前exit1，
-main已读实际退出/日志，费用.004500155GPUh；尚无生成成功或288结果声明，Sol沿原许可修正启动映射，不改场景合同。
+main已读实际退出/日志，费用.004500155GPUh；该首试未执行到场景恢复，Sol沿原许可修正启动映射，不改场景合同。
 另main读到1980物化首试1200.52秒timeout/exit124（.333477846GPUh），原3ba冻结续行117.87秒exit0（.032743053GPUh）；
 旧partial/失败/合同误记均保留，不重复379个已写因子；新节点official成绩仍待完整回报，不读取半批分数。
 本次结构guard仍BLOCK：bank830行（+11），新增187行scene_repair内聚本次一次性数据修复与明确来源复用，未建第二evaluator；
 接受已登记当轮例外，§19收束后生成入口不再追加用途，随§20运行面整理退役，已发布bank的读取保持可用。
+随后scene_canonical144_1于11:58:59 CST exit0，258.39秒/.071774308GPUh；main直接读退出、144 manifest与两份新bank的旧因子引用，
+确认准备完成，真实逐scene严格恢复沿已审源码执行继承，不另重跑环境。§19完整288闭环仍待执行/整批验收。
+main另核2070物化12:19:15 exit0，1089.08秒/.302521797GPUh；Sol报告2160物化及1980 official在跑，训练world4独立继续；未读分片成绩。
+12:25已Steer释放§19短诊断临时第7卡：仅在双节点live复核余量/无干扰后使用额外1卡、两组144完成即退出，不扩原预算或长任务上限。
+最近2160准入快照gpu02/6为41318MiB可用/util0且有小共驻，是需刷新验证的调度依据，不当作当前固定保留卡。
+§20后段源码d4433890已直接核clean detached freeze与全部diff：selected_scope统一拥有main选点读取、四臂映射/来源与编译，
+bank只接CLI/adapter/capture和shared/condition引用，原400/公共β1800/seen读取保留；wrong/shuffle必须以目标语言重算真实双RGB到Writer。
+main修正1890的实验臂名control误传T/U模型构造器，实际计算固定为已验证T，因子metadata仍保留原control身份；未改任何在跑冻结。
+独立5项CPU通过（20.17秒）：真实1890的other/β读取、seen因子引用、真实1980来源；两个编译边界替身验证wrong donor/目标exact语言、
+双相机像素张量同序重排（合成帧）、原时间槽/末帧保留及query_labels=False，不冒充真实GPU前向或闭环机制证据。
+另补实际preparation→registered_capture调用方检查通过（1项/16.04秒），核新study进入8full+392compact与逐步被动采集注册，非仅检查scope helper。
+selection.json尚未发布，未启动后段候选模型/环境计算或Test。结构guard仍BLOCK：bank854行、新selected_scope452行，active-source净增约630行含测试。
+main自审接受§20有界来源/调度接入：选择与四臂共有一个owner、原evaluator/adapter复用，未新建trainer/evaluator；公共β1800旧消费者不可泛化冒充新候选。
+该固定选择/四臂scope在本批后不继续叠加训练窗口，按已登记运行面整理收敛来源声明；不称结构检查通过。
 
 ## 当前：Owner醒来，暂停自主推进并交流（2026-09-29）
 

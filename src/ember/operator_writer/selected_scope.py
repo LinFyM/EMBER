@@ -187,7 +187,7 @@ def materialize_video(arm: str, asset_root: Path, device: torch.device) -> Path:
             raise ValueError("partial selected video bank has another source")
     else:
         write_json_atomic(contract_path, contract)
-    runtime = build_runtime(asset_root, spec, device, source["mode"])
+    runtime = build_runtime(asset_root, spec, device, "T")
     if runtime.source != source["source"]:
         raise ValueError("selected video native/source identity changed")
     runtime.writer.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"),

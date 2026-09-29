@@ -1,27 +1,31 @@
 # EMBER progress
 
-## 当前最新：§26已消费，优先检验条件参数参与教学读取的架构关系（2026-09-29）
+## 当前最新：Owner停止新实验；回读及必要配对补项全部完成（2026-09-29）
 
-Owner最新判断是训练方式可能难再取得突破，应优先寻找架构上的改进空间。main据此调整研究重心：
-研究教学中的对象/操作关系怎样经实际特征和写入算子，形成能被不同自身状态正确调用的LoRA，
-不再把loss、优化器、精度或小幅训练变体作为默认后继主线。这不等于已证明所有训练修正无效。
-§26现已全部完成并由main消费：四个独立临时更新、48条B路径、两作业exit0，.2341999299GPUh/10.397GiB。
-前5目标无一致独立B/另一teacher优势，BF16确有存储舍入但未证明丢失方向有益，不启动精度/前缀训练试验。
-main核科学消费者、完整聚合和四个代表父B预测；其余原件继承Sol完整读回，见findings§240/机制§64。
-main本轮已定向复核实际model/native、机制§42/51/58及旧关系/LocalField/Reader论证；
-并只用现有M/余切检验Q8/V8/out：固定O的小子空间不能直接升级为容量根因，计入原有B0/O后Q8宽松局部上界覆盖98.45%。
-共用A的限制也没有显示一致被挡住的有益完整FM方向，不据此扩宽/自由生成A。
+Owner最新明确“别派发新实验了”。main接受，不再派发任何新实验、训练或GPU诊断；
+Sol已完成§27.6并停止新增计算，没有待启动或未收尾的本批实验。旧自主推进不覆盖这条要求。
+当前只完成Owner要求的历史对照、完整架构解释和必要文档/Git交付，不通过回报恢复下一批。
 
-下一有界架构检验已在active design§27冻结：task=`operator_self_conditioned_readout_20260929`，
-真实T2340与原四train task/两teacher/§26 B20；比较生成LoRA参与同一教学回读后的joint、X链、H链及另一正确teacher参数回读。
-只产生32条新实际十步生成路径，0更新/0环境/0held，旧parent/β/MT直接复用；不是选择了双遍架构或已验证修正。
-1GPUh/6GiB，预计实现到读回45–90分钟；GPU02优先。合同a3ad92a5已push。
-旧Sol轮已completed，本次以一次新任务Queue派发，回执`01a0ed43-7107-7f01-b88f-d159a5bf4af2`；
-一次核对确认新轮`01a0ed43-710b-7110-8de0-b6eeca5ae6fe` inProgress且含准确task正文，已有实际准备工具调用。
-正文/回执/投递证据在既有tmp `self_conditioned_readout_release*`及`self_conditioned_readout_delivery.json`。
-这是实际承接，不声称GPU已经启动或有功能结果；完整/阻碍回报直接Steer。无重复任务、主讨论陪跑或自Queue。
+§27原四臂32条B路径及同消费者8父参照均已完成并由main消费。固定T2340、四train task/两teacher，
+0更新/环境/held，所有退出/失败保留，累计.1406927840GPUh、约1.3GiB，小于1GPUh/6GiB。
+main核实际脚本/消费者/完整聚合，直接读四个候选及两个匹配父预测；其它原件内容继承Sol完整验收。
+最初旧父microbatch5/新臂10的差额已配齐，原件保留；8父10对旧5平均前5漂移−.0000691。
+同batch10的joint/X/H/other前5差分别+.00521058/+.00238276/+.00201408/+.00531835，
+八条件改善数1/1/1/2；self/other无明确自身参数匹配优势。H链全50有小收益，关键前5仍更差，不能隐藏。
+结果只限冻结train B生成，不是闭环或全部回读可学性结论；不采纳直接增加替换式回读，不开启其学习。
+完整结果见findings§241/机制§65.5；原件self_conditioned_readout/matched_parent10/matched_parent_readback.json。
 
-Owner自主授权与“先验证机制/修正，再正式重训”继续有效。Test固定T115/MT121/Source75，
+main已复核Horizon外部过程视觉回读、Unified原生中层写回、旧§20参数回读提案及当前完整源码。
+旧§20未实施；20260926 NativeConditionalReader正式学习也在启动前撤回，已纠正将其混称完整阴性的表述。
+原T已有整视频递归；新增回读仅改变整视频参数进入逐帧native的位置，不自动给参数一致、策略纠正或风险下降。
+整个输入→特征→Writer→唯一LoRA→自身10步生成→真实训练信用见机制§65，现有单遍T保持。
+
+§27.6曾以一次Queue派给已completed Sol轮，回执01a0ed54-5bbd-7481-a9d5-487205defe2b；
+现以真实两exit0及整组Steer确认完成，不再以发送回执冒充运行或写成仍等待。
+正文/回执在既有tmp self_conditioned_matched_parent_release.txt/receipt.json，无重复任务或自Queue。
+
+以下自主授权描述保留为先前范围；其新增实验执行部分当前被Owner停止令覆盖。
+此前自主授权受顶部停止令覆盖；“先验证机制/修正，再正式重训”的科学前提继续保留。Test固定T115/MT121/Source75，
 没有明显胜MT，走机制修正分支；不改选Test、不启动task-local RL/one-shot或原样长续训。
 §25四对照已整组完成，**不再等待旧批**：correct161继承，other150/wrong65/shuffle1/公共β103。
 main直接核1600新JSON及原correct/MT、配对、bank来源、真实变换消费者和退出账；全NPZ/PT内容验收继承Sol可靠消费者。

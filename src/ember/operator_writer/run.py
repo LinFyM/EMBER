@@ -27,15 +27,16 @@ from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import (initialize_deferred_process_group, initialize_distributed,
                                       load_policy, seed_everything)
 from ember.source_sft.control import clamped_lr_multiplier
-from ember.writer.function_credit import paired_functional_credit
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.replay import sum_writer_gradients
 from ember.writer.runtime import autocast
 from ember.writer.task_execution import condition_assignment
 
+from .credit import gradient_groups, one_job
 from .data import (CHECKPOINTS, CONTINUATION_CHECKPOINTS, CONTINUATION_UPDATES,
                    CONTINUATION1350_CHECKPOINTS, CONTINUATION1350_UPDATES,
                    CONTINUATION1800_CHECKPOINTS, CONTINUATION1800_UPDATES,
+                   PILOT_CHECKPOINTS, PILOT_UPDATES,
                    TASKS, UPDATES, FormalData)
 from .model import OperatorReadWrite
 from .native import read_native_video
@@ -46,6 +47,8 @@ SPEC_PATH = REPO / "configs/operator_read_write_v1/learning_spec.json"
 CONTINUATION_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation900_spec.json"
 CONTINUATION1350_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation1350_spec.json"
 CONTINUATION1800_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation1800_spec.json"
+PILOT_SPEC_PATH = REPO / "configs/operator_read_write_v1/public_function_pilot_spec.json"
+PILOT_ROOT = Path("/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260929")
 CONTINUATION900_ROOT = Path(
     "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900")
 CONTINUATION1350_ROOT = Path(
@@ -111,10 +114,38 @@ CONTINUATION1800_EXECUTION = {**CONTINUATION1350_EXECUTION,
                               "queries_per_mode": CONTINUATION1800_UPDATES * 112,
                               "checkpoints": list(CONTINUATION1800_CHECKPOINTS),
                               "only_selected_checkpoints": [1710, 1800]}
+PILOT_EVENTS = {**CONTINUATION1800_EVENTS,
+                "schema_version": "ember_operator_read_write_events_v6",
+                "teacher_round5_permutation_seed": [20260928, 1, "task", 4]}
+PILOT_EXECUTION = {**CONTINUATION1800_EXECUTION,
+                   "updates_per_mode": PILOT_UPDATES, "queries_per_mode": PILOT_UPDATES * 112,
+                   "checkpoints": list(PILOT_CHECKPOINTS), "only_selected_checkpoints": [1890]}
+PILOT_ARMS = {"control": "full", "public_aux": "full_plus_public_beta"}
+PILOT_CONTRACT = {"arms": list(PILOT_ARMS), "loss_variants": PILOT_ARMS,
+                  "public_loss_coefficient": 1.0,
+                  "query_reuse": "same_112_query_action_tau_noise",
+                  "public_credit": "direct_A_B0_only"}
 
 
 def specification(path: Path = SPEC_PATH) -> dict:
     path = path.resolve()
+    if path == PILOT_SPEC_PATH:
+        spec, base = read_json(path), specification(CONTINUATION1800_SPEC_PATH)
+        expected = {**base, "task": "operator_public_function_pilot_20260929",
+                    "design": "docs/designs/operator_read_write_learning_design.md#18",
+                    "run_root": str(PILOT_ROOT), "events": PILOT_EVENTS,
+                    "execution": PILOT_EXECUTION, "pilot": PILOT_CONTRACT,
+                    "evaluation": {**base["evaluation"], "bank_macros": [1890]},
+                    "continuation": {
+                        "parent_run_root": base["run_root"], "parent_macro": 1800,
+                        "parent_training_git": "fcc23cd15cc475530c385e354670efee6bacfa12",
+                        "parent_event_schema": CONTINUATION1800_EVENTS["schema_version"],
+                        "sampler_migration": "append_teacher_round_4_v5_to_v6_at_1800"},
+                    "budget": {"new_gpu_hours_expected": 6, "new_gpu_hours_hard": 8,
+                               "peak_new_gib": 24}}
+        if spec != expected:
+            raise ValueError("operator public function pilot contract changed")
+        return spec
     if path == CONTINUATION1800_SPEC_PATH:
         spec, base = read_json(path), specification(CONTINUATION1350_SPEC_PATH)
         expected = {**base, "design": "docs/designs/operator_read_write_learning_design.md#16",
@@ -232,7 +263,7 @@ def complete_checkpoint(path: Path) -> bool:
     world = manifest.get("world_size")
     allowed = ((macro in CHECKPOINTS and world == 2)
                or (macro in (*CONTINUATION_CHECKPOINTS, *CONTINUATION1350_CHECKPOINTS,
-                             *CONTINUATION1800_CHECKPOINTS)
+                             *CONTINUATION1800_CHECKPOINTS, *PILOT_CHECKPOINTS)
                    and world in (2, 3, 4)))
     expected_files = ({"ecp.safetensors", "trainer_state.pt"}
                       | {f"rank_{rank:02d}_state.pt" for rank in range(world)}) if allowed else set()
@@ -246,7 +277,8 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     root = Path(spec["run_root"])
     event_schema = spec.get("events", {}).get("schema_version")
     if event_schema in (CONTINUATION1350_EVENTS["schema_version"],
-                        CONTINUATION1800_EVENTS["schema_version"]):
+                        CONTINUATION1800_EVENTS["schema_version"],
+                        PILOT_EVENTS["schema_version"]):
         _validate_late_continuation_attempt(spec, args, contract, output)
         return
     if spec.get("execution", {}).get("updates_per_mode") == CONTINUATION_UPDATES:
@@ -313,10 +345,15 @@ def _validate_continuation_attempt(spec: dict, args, contract: dict, output: Pat
 
 
 def _validate_late_continuation_attempt(spec: dict, args, contract: dict, output: Path) -> None:
-    """One 900/1350-parent migration and same-window ECP resume owner."""
+    """One registered parent migration and same-window ECP resume owner."""
     parent_macro = int(spec["continuation"]["parent_macro"])
     checkpoints = tuple(spec["execution"]["checkpoints"])
-    if parent_macro not in (900, 1350) or args.mode not in spec["execution"]["modes"]:
+    pilot = parent_macro == 1800
+    arm = getattr(args, "pilot_arm", None) if pilot else args.mode
+    if (parent_macro not in (900, 1350, 1800)
+            or args.mode not in spec["execution"]["modes"]
+            or pilot and (arm not in PILOT_ARMS or contract.get("pilot_arm") != arm
+                          or contract.get("loss_variant") != PILOT_ARMS[arm])):
         raise ValueError("unregistered continuation parent or arm")
     if args.resume is None:
         raise ValueError("continuation requires a complete same-arm ECP")
@@ -327,7 +364,9 @@ def _validate_late_continuation_attempt(spec: dict, args, contract: dict, output
     parent = checkpoint.parent.parent
     if output.resolve() == parent or (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists():
         raise ValueError("continuation attempt output already exists")
-    attempts = Path(spec["run_root"]) / args.mode / "train/attempts"
+    attempts = Path(spec["run_root"]) / arm / "train/attempts"
+    if output.parent.resolve() != attempts.resolve():
+        raise ValueError("continuation attempt is outside its registered arm")
     latest = max((int(path.name.split("_")[-1]) for path in attempts.glob(
         "*/checkpoints/macro_*") if complete_checkpoint(path)), default=-1)
     if (macro == parent_macro and latest != -1) or (macro != parent_macro and macro != latest):
@@ -339,7 +378,9 @@ def _validate_late_continuation_attempt(spec: dict, args, contract: dict, output
             raise ValueError("continuation parent is not the original same-arm ECP")
         from .bank import inspect_training_source
 
-        old_spec = CONTINUATION_SPEC_PATH if parent_macro == 900 else CONTINUATION1350_SPEC_PATH
+        old_spec = (CONTINUATION_SPEC_PATH if parent_macro == 900 else
+                    CONTINUATION1350_SPEC_PATH if parent_macro == 1350 else
+                    CONTINUATION1800_SPEC_PATH)
         old = inspect_training_source(specification(old_spec), checkpoint, args.mode,
                                       sealed_evaluation=True)
         fixed = ("schema_version", "stage", "mode", "source", "lora", "operator", "optimizer",
@@ -353,6 +394,8 @@ def _validate_late_continuation_attempt(spec: dict, args, contract: dict, output
         fixed = ("schema_version", "stage", "git", "spec", "mode", "source", "lora", "operator",
                  "events", "optimizer", "sampler", "trainable_names", "source_trainable",
                  "information_wall", "continuation")
+        if pilot:
+            fixed += ("pilot_arm", "loss_variant", "pilot")
         if any(old.get(key) != contract.get(key) for key in fixed):
             raise ValueError("continuation scientific source or frozen Git changed")
         if not packing_compatible(old, contract):
@@ -438,58 +481,6 @@ def optimizer_for(writer: OperatorReadWrite, spec: dict):
     return optimizer, scheduler, parameters
 
 
-def gradient_groups(writer: OperatorReadWrite) -> dict[str, float]:
-    def norm(parameters):
-        values = [p.grad.detach().float().norm() for p in parameters if p.grad is not None]
-        return float(torch.stack(values).norm()) if values else 0.0
-
-    common = writer.public_state()
-    return {"public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
-                             if name.endswith(".lora_A.default.weight")),
-            "public_B0": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
-                              if name.endswith(".lora_B.default.weight")),
-            "independent_S": norm(writer.separate_keys or ()),
-            **{name: norm(parameter for unit in writer.writes
-                          for parameter in getattr(unit, name).parameters())
-               for name in ("p", "c", "d", "o")}}
-
-
-def one_job(runtime: Runtime, data: FormalData, event: dict, microbatch: int,
-            frame_chunk: int) -> dict:
-    started = time.perf_counter()
-    condition, raw, sampled = data.condition(runtime, event["task"], event["teacher_demo"])
-    with torch.no_grad():
-        state, _ = runtime.compile(condition, frame_chunk=frame_chunk)
-    torch.cuda.synchronize(runtime.device)
-    compilation = time.perf_counter() - started
-    batch = runtime.processor.training_batch(data.batch(event))
-    with autocast(runtime.device):
-        credit = paired_functional_credit(
-            runtime.policy, state, runtime.lora, batch, seed=event["flow_seed"],
-            device=runtime.device, random_batch=28, offset=0, microbatch=microbatch,
-            condition_weight=0.25)
-    torch.cuda.synchronize(runtime.device)
-    fm = time.perf_counter() - started - compilation
-    cotangent = credit["lora_cotangent"]
-    with torch.enable_grad():
-        replay, native = runtime.compile(condition, frame_chunk=frame_chunk, retain_native=True)
-        if set(replay) != set(cotangent) or any(not torch.isfinite(v).all() for v in cotangent.values()):
-            raise ValueError("full-rank FM cotangent incomplete or nonfinite")
-        torch.autograd.backward(tuple(replay.values()),
-                                tuple(cotangent[name].to(replay[name]) for name in replay))
-    torch.cuda.synchronize(runtime.device)
-    x_norms = [value.grad.float().norm() for value in native["x"].values() if value.grad is not None]
-    native_norm = {"h": float(native["h"].grad.float().norm()) if native["h"].grad is not None else 0.0,
-                   "x": float(torch.stack(x_norms).norm()) if x_norms else 0.0}
-    return {"task": event["task"], "teacher_demo": event["teacher_demo"],
-            "queries": len(event["queries"]), "query_demos": [row["demo"] for row in event["queries"]],
-            "query_frames": [row["frame"] for row in event["queries"]], "flow_seed": event["flow_seed"],
-            "raw_frames": raw, "sampled_frames": sampled, "flow_loss": credit["flow_loss"],
-            "fm_cotangent_norm": float(torch.stack([v.norm() for v in cotangent.values()]).norm()),
-            "native_cotangent_norm": native_norm,
-            "compile_seconds": compilation, "fm_seconds": fm,
-            "replay_seconds": time.perf_counter() - started - compilation - fm,
-            "total_seconds": time.perf_counter() - started}
 
 
 @dataclass
@@ -511,7 +502,8 @@ class Session:
 def prepare_train(spec: dict, args) -> Session:
     continuation = spec["execution"]["updates_per_mode"] in (CONTINUATION_UPDATES,
                                                                 CONTINUATION1350_UPDATES,
-                                                                CONTINUATION1800_UPDATES)
+                                                                CONTINUATION1800_UPDATES,
+                                                                PILOT_UPDATES)
     git = frozen_git(continuation=continuation)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     allowed_worlds = spec["execution"].get("world_sizes", [spec["execution"].get("world_size")])
@@ -525,7 +517,8 @@ def prepare_train(spec: dict, args) -> Session:
     seed_everything(7, context)
     optimizer, scheduler, parameters = optimizer_for(runtime.writer, spec)
     root = Path(spec["run_root"])
-    output = root / args.mode / "train" / "attempts" / args.attempt
+    pilot = spec["execution"]["updates_per_mode"] == PILOT_UPDATES
+    output = root / (args.pilot_arm if pilot else args.mode) / "train" / "attempts" / args.attempt
     output.mkdir(parents=True, exist_ok=True)
     initialize_deferred_process_group(context, rendezvous_root=output)
     local = {"rank": context.rank, "gpu_uuid": str(torch.cuda.get_device_properties(context.local_rank).uuid),
@@ -535,7 +528,8 @@ def prepare_train(spec: dict, args) -> Session:
                 "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
                 "ranks": gather(local, context.world_size)}
     contract = {"schema_version": SCHEMA, "stage": STAGE, "git": git,
-                "spec": str(CONTINUATION1800_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION1800_UPDATES
+                "spec": str(PILOT_SPEC_PATH if pilot else
+                            CONTINUATION1800_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION1800_UPDATES
                             else CONTINUATION1350_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION1350_UPDATES
                             else CONTINUATION_SPEC_PATH if continuation else SPEC_PATH),
                 "mode": args.mode, "source": runtime.source,
@@ -549,6 +543,9 @@ def prepare_train(spec: dict, args) -> Session:
     if continuation:
         contract["continuation"] = spec["continuation"]
         contract["parent_checkpoint"] = str(args.resume.resolve())
+        if pilot:
+            contract.update(pilot_arm=args.pilot_arm, loss_variant=PILOT_ARMS[args.pilot_arm],
+                            pilot=spec["pilot"])
         if spec["execution"]["updates_per_mode"] in (CONTINUATION1350_UPDATES,
                                                        CONTINUATION1800_UPDATES):
             contract["stop_after_macro"] = args.stop_after_macro
@@ -571,7 +568,7 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
     try:
         updates_target = session.spec["execution"]["updates_per_mode"]
         continuation = updates_target in (CONTINUATION_UPDATES, CONTINUATION1350_UPDATES,
-                                          CONTINUATION1800_UPDATES)
+                                          CONTINUATION1800_UPDATES, PILOT_UPDATES)
         updates, rows = load_ecp_checkpoint(
             checkpoint=checkpoint, stage=STAGE, context=session.context,
             model=session.runtime.writer, optimizer=session.optimizer,
@@ -580,14 +577,20 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
         migration = session.data.restore(restored["sampler_state"],
                                          migrate_sealed_270=updates_target == CONTINUATION_UPDATES and updates == 270,
                                          migrate_continuation_900=updates_target == CONTINUATION1350_UPDATES and updates == 900,
-                                         migrate_continuation_1350=updates_target == CONTINUATION1800_UPDATES and updates == 1350)
-        valid_checkpoints = ((1350, *CONTINUATION1800_CHECKPOINTS)
+                                         migrate_continuation_1350=updates_target == CONTINUATION1800_UPDATES and updates == 1350,
+                                         migrate_continuation_1800=updates_target == PILOT_UPDATES and updates == 1800)
+        valid_checkpoints = ((1800, *PILOT_CHECKPOINTS) if updates_target == PILOT_UPDATES else
+                             (1350, *CONTINUATION1800_CHECKPOINTS)
                              if updates_target == CONTINUATION1800_UPDATES else
                              (900, *CONTINUATION1350_CHECKPOINTS)
                              if updates_target == CONTINUATION1350_UPDATES else
                              (270, *CONTINUATION_CHECKPOINTS) if continuation else CHECKPOINTS)
         if (updates not in valid_checkpoints or rows != updates or session.scheduler.last_epoch != updates
-                or restored["training_state"] != {"updates": updates, "mode": session.mode}):
+                or restored["training_state"] != ({"updates": updates, "mode": session.mode}
+                    if updates_target != PILOT_UPDATES or updates == 1800 else
+                    {"updates": updates, "mode": session.mode,
+                     "pilot_arm": session.contract["pilot_arm"],
+                     "loss_variant": session.contract["loss_variant"]})):
             raise ValueError("formal ECP optimizer/scheduler/sampler cursor changed")
         rows_from_parent = (checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()
         prefix = rows_from_parent[:rows]
@@ -629,7 +632,8 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
     try:
         for index in assigned[session.context.rank]:
             local.append(one_job(session.runtime, session.data, jobs[index],
-                                 session.microbatch, session.frame_chunk))
+                                 session.microbatch, session.frame_chunk,
+                                 session.contract.get("loss_variant", "full")))
     except Exception:
         error = traceback.format_exc()
     failures = [value for value in gather(error, world) if value]
@@ -652,6 +656,9 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
     if session.context.is_main:
         append_jsonl(session.output / "metrics.jsonl", {
             "update": updates, "mode": session.mode, "queries": 112,
+            **({"pilot_arm": session.contract["pilot_arm"],
+                "loss_variant": session.contract["loss_variant"]}
+               if "pilot_arm" in session.contract else {}),
             "jobs": [row for packet in packets for row in packet],
             "lr_applied": lr, "lr_next": session.scheduler.get_last_lr()[0],
             "grad_norms_before_clip": gradients, "total_grad_norm": norm,
@@ -663,21 +670,25 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
             model=session.runtime.writer, optimizer=session.optimizer,
             scheduler=session.scheduler, run_contract_schema=SCHEMA, metrics_rows=rows,
             sampler_state=session.data.sampler_state(),
-            training_state={"updates": updates, "mode": session.mode})
+            training_state={"updates": updates, "mode": session.mode,
+                            **({"pilot_arm": session.contract["pilot_arm"],
+                                "loss_variant": session.contract["loss_variant"]}
+                               if "pilot_arm" in session.contract else {})})
     return updates, rows
 
 
 def validate_train_request(spec: dict, args) -> None:
-    if (spec["execution"]["updates_per_mode"] != CONTINUATION1800_UPDATES
-            or spec["events"] != CONTINUATION1800_EVENTS):
-        raise ValueError("new formal operator training requires the continuation1800 spec")
+    if (spec["execution"]["updates_per_mode"] != PILOT_UPDATES
+            or spec["events"] != PILOT_EVENTS or spec.get("pilot") != PILOT_CONTRACT):
+        raise ValueError("new formal operator training requires the public function pilot spec")
     if (args.mode != "T" or not args.attempt
+            or getattr(args, "pilot_arm", None) not in PILOT_ARMS
             or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
             or args.resume is None or args.attempt == "fresh"
             or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)):
         raise ValueError("operator train requires registered T attempt and ECP policy")
-    if args.stop_after_macro is not None and args.stop_after_macro not in CONTINUATION1800_CHECKPOINTS[:-1]:
-        raise ValueError("controlled stop must be a complete intermediate 1800 ECP boundary")
+    if args.stop_after_macro is not None:
+        raise ValueError("pilot has only its terminal 1890 ECP boundary")
 
 
 def train(spec: dict, args) -> None:
@@ -690,29 +701,14 @@ def train(spec: dict, args) -> None:
         target = session.data.updates
         if updates >= target:
             raise ValueError("completed operator checkpoint cannot start a new training attempt")
-        if args.stop_after_macro is not None and args.stop_after_macro <= updates:
-            raise ValueError("controlled stop is not after the resumed ECP")
         while updates < target:
             updates, rows = update(session, updates, rows)
-            stop_at_ecp = False
-            if updates in CONTINUATION1800_CHECKPOINTS[:-1]:
-                requested = ((session.output / "stop_at_next_ecp.request").exists()
-                             if session.context.is_main else False)
-                stop_at_ecp = any(gather(requested or updates == args.stop_after_macro,
-                                         session.context.world_size))
-            if stop_at_ecp:
-                if session.context.is_main:
-                    write_json_atomic(session.output / "stopped_at_ecp.json", {
-                        "schema_version": SCHEMA, "mode": session.mode, "updates": updates,
-                        "metrics_rows": rows, "checkpoint": str(session.output / "checkpoints"
-                                                               / f"macro_{updates:08d}"),
-                        "reason": ("registered stop-after-macro" if updates == args.stop_after_macro
-                                   else "stop_at_next_ecp.request"),
-                        "next_resume_from_this_ecp": True})
-                return
         if session.context.is_main:
             write_json_atomic(session.output / "completion.json", {
                 "schema_version": SCHEMA, "mode": session.mode, "updates": updates,
+                **({"pilot_arm": session.contract["pilot_arm"],
+                    "loss_variant": session.contract["loss_variant"]}
+                   if "pilot_arm" in session.contract else {}),
                 "actual_segment_updates": updates - start_updates,
                 "actual_segment_queries": (updates - start_updates) * 112,
                 "metrics_rows": rows, "seconds": time.perf_counter() - started,
@@ -769,13 +765,14 @@ def main() -> None:
     parser.add_argument("phase", choices=("audit", "train"))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--mode", choices=("T", "U"))
+    parser.add_argument("--pilot-arm", choices=tuple(PILOT_ARMS))
     parser.add_argument("--attempt", type=str)
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--microbatch", type=int, default=28)
     parser.add_argument("--frame-chunk", type=int, default=8)
     parser.add_argument("--cpu-threads", type=int, default=6)
     parser.add_argument("--stop-after-macro", type=int)
-    parser.add_argument("--spec", type=Path, default=CONTINUATION1800_SPEC_PATH)
+    parser.add_argument("--spec", type=Path, default=PILOT_SPEC_PATH)
     args = parser.parse_args()
     spec = specification(args.spec)
     if args.phase == "audit":

@@ -33,6 +33,13 @@ Sol报告§19沿e499冻结的144scene及T1800 bank均exit0，分别.063525/.1469
 T首次official在prepare后/worker前因recovery遗漏operator_seen_training36的role_authority拒绝，exit1、0正式行、.027883GPUh；
 main核当前消费者确只登记seen_panel/nonheld_meta，Sol按既有窄修许可处理共享role身份与新eval冻结，保留旧失败/场景/bank/完整成本。
 本项仍无完整288结果或科学验收，不读半批分数；独立§20训练继续，不因该评测接口故障重复训练或物化。
+随后T两次准入拒绝、MT首worker在libero_10/task2/init32首动作前scene校验失败，两臂均无有效正式行；失败/费用全部留存。
+Sol交3ba62976：共享role身份修复、operator已物化LoRA按实测12GiB+2GiB余量准入及2340评测读取，main正在审阅，尚未称集成通过。
+主讨论直接读两份scene复现JSON/脚本及保存恢复消费者：旧post-dummy观测与保存sim_state重生观测不一致，
+原sim_state/model_body/controller一致；该案例重新prime后的重复恢复/canonical重放一致，不推广为全面bitwise保证。
+按design§19.5批准原预算内隔离scene_canonical144，保留相同物理状态/视频映射/旧原件，并复用已物化权重；
+两臂共用新场景，逐个生成时严格恢复检查，不影响旧验证400与§20。已直接Steer至Sol活跃轮01a0eb07，接口接受，尚非完成回执；
+正文/回执在既有tmp的seen_scene_canonical_release文件。Sol最新仅报告1980完整ECP已验、bank在跑；主讨论未将其写成完整节点成绩。
 
 ## 当前：Owner醒来，暂停自主推进并交流（2026-09-29）
 

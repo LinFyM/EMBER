@@ -1144,6 +1144,23 @@ GPU前Sol live核双节点及strg01 data1独立quota/共享空间，沿当前常
 最近4workers/card已有OOM，3workers有效；按本轮真实内存/CPU余量准入，不继承固定2workers，也不无依据重试4以制造效率。
 完成整组288或出现实质边界直接Steer主讨论，停止新增计算；无新训练、更多初态、视频controls、Test或RL自动许可。
 
+### 19.5 首次评测前的场景观测一致性修复（2026-09-29约11:40）
+
+两臂尚无有效正式行。真实libero_10/task2/init32复现中，旧post-dummy观测与从其保存sim_state恢复的观测不同，
+而sim_state/model_body/controller保持一致；eef位置最大差6.757e-6，RGB有4084个通道元素不同、最大差58。
+同一环境池重新prime后的两次恢复及canonical快照重放在该案例一致。主讨论直接核两份JSON及实际probe脚本，
+据此认定旧场景的观测/保存状态一致性合同未满足；不将具体缓存或物理积分原因、跨硬件bitwise一致或模型失效称为已证实。
+证据为本root的`analysis/scene_restore_first_failure.json`、`scene_canonicalization_probe.json`及对应launch脚本/退出记录。
+
+主讨论批准在原3GPUh/10GiB、并计§20总30GPUh/128GiB内修复首次诊断：从旧封存144场景的相同post-dummy
+sim_state/model_body/controller来源重生一致观测，隔离写`scene_canonical`；不额外推进physics或更换seed/task/init/video/horizon。
+144场景统一处理，逐个实际restore并通过原严格scene断言后发布；T/MT共用新scene与显式绑定它的新评测attempt。
+新资产记录旧来源和实际evaluation-only Git，旧scene/bank/失败队列/费用全部保留，不覆盖原件或放宽RGB/状态检查。
+旧已物化LoRA不依赖评测初始scene，应以显式lineage复用权重及必要metadata，不因场景路径变化重跑Writer或复制整套权重。
+若物理状态/controller发生实质变动或新恢复仍不一致，须报告具体边界；不借修复追加episode、选模型或改科学计算。
+实现仍沿唯一scene/scope/bank消费者、定向CPU验证和push后的新clean freeze，main并行审阅；该许可不涉及旧sealed
+validation400或§20节点，不重封这些资产、不重训。失败、两次短诊断和新生成均计入原预算。
+
 ## 20. Owner授权1890后续训观察、冻结视频比较与有条件Test（2026-09-29约10:30）
 
 ### 20.1 最新问题、授权与时间窗口

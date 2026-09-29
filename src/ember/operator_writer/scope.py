@@ -158,13 +158,18 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
                     task_count=36, expected_bank=expected_bank)
     full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0}
             for task in tasks]
+    from . import change_clock
+
+    clock_pilot = bank.get("mode") == change_clock.MODE
     public_beta = bank.get("mode") == owner.PUBLIC_BETA_MODE
     pilot = bank.get("mode") in owner.PILOT_ARMS
     return dict(full=full,
-                capture=(owner.PUBLIC_BETA_CAPTURE_PATH if public_beta else
+                capture=(owner.REPO / "configs/operator_read_write_v1" / change_clock.CAPTURE_NAME
+                         if clock_pilot else owner.PUBLIC_BETA_CAPTURE_PATH if public_beta else
                          owner.PILOT_CAPTURE_PATH if pilot else
                          owner.SPEC_PATH.parent / "official_capture.json"),
-                study=(owner.PUBLIC_BETA_STUDY if public_beta else
+                study=(change_clock.TASK if clock_pilot else
+                       owner.PUBLIC_BETA_STUDY if public_beta else
                        "operator_public_function_pilot_20260929" if pilot else
                        "operator_read_write_learning_20260928"),
                 output=(eval_root / "correct400" if macro in ("270", "300") else
@@ -252,8 +257,10 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
     from ember.writer.materialization import file_record
 
     from . import bank as owner
+    from . import change_clock
 
     mode = bank["mode"]
+    clock_pilot = mode == change_clock.MODE
     macro = 300 if mode == "MT" else int(Path(bank["checkpoint"]).name.split("_")[-1])
     continuation = macro in owner.CONTINUATION_EVALUATION_MACROS
     window1350 = macro in owner.CONTINUATION1350_EVALUATION_MACROS
@@ -261,13 +268,15 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
     window2790 = macro in owner.CONTINUATION2790_EVALUATION_MACROS
     late_window = window2790 or macro in owner.CONTINUATION2340_EVALUATION_MACROS
     pilot = macro in owner.PILOT_CHECKPOINTS and mode in owner.PILOT_ARMS
-    registered_spec = (owner.CONTINUATION2790_FROZEN_SPEC_PATH if window2790 else
+    registered_spec = (owner.CHANGE_CLOCK_SPEC_PATH if clock_pilot else
+                       owner.CONTINUATION2790_FROZEN_SPEC_PATH if window2790 else
                        owner.CONTINUATION2340_FROZEN_SPEC_PATH if late_window else
                        owner.PILOT_FROZEN_SPEC_PATH if pilot else
                        owner.CONTINUATION1800_FROZEN_SPEC_PATH if window1800 else
                        owner.CONTINUATION1350_FROZEN_SPEC_PATH if window1350 else
                        owner.CONTINUATION_FROZEN_SPEC_PATH if continuation else owner.SEALED_SPEC_PATH)
-    current_spec = owner.specification(owner.CONTINUATION2790_SPEC_PATH if window2790 else
+    current_spec = owner.specification(owner.CHANGE_CLOCK_SPEC_PATH if clock_pilot else
+                                       owner.CONTINUATION2790_SPEC_PATH if window2790 else
                                        owner.CONTINUATION2340_SPEC_PATH if late_window else
                                        owner.PILOT_SPEC_PATH if pilot else
                                        owner.CONTINUATION1800_SPEC_PATH if window1800 else
@@ -300,7 +309,7 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
                                      "teacher_runtime_reads": 0, "deployment_adapters": 1,
                                      "validation_test_gradients": False}),
     )
-    if (mode not in ("T", "U", "MT", *owner.PILOT_ARMS)
+    if (mode not in ("T", "U", "MT", change_clock.MODE, *owner.PILOT_ARMS)
             or not owner.source_matches(bank["source"], source)
             or late_window and (mode != "T" or not bank.get("materialization_git", {}).get("commit")
                                or bank["materialization_git"].get("pushed_ref") not in

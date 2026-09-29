@@ -121,6 +121,11 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
     """One registered geometry for old400 and the new 36-by-4 panel."""
     from . import bank as owner
 
+    if bank.get("selected_control") is not None:
+        from . import selected_scope
+
+        return selected_scope.capture_expectations(bank, bank_path, tasks, output_dir)
+
     if bank.get("scene_repair") is not None:
         from . import scene_repair
 

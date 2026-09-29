@@ -11,7 +11,7 @@ import torch
 from ember.operator_writer import bank
 from ember.operator_writer.data import FormalData, TASKS
 from ember.operator_writer.run import (
-    CONTINUATION2340_SPEC_PATH, PILOT_SPEC_PATH, specification,
+    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, PILOT_SPEC_PATH, specification,
     validate_attempt, validate_train_request,
 )
 
@@ -115,7 +115,8 @@ def test_actual_parent_events_and_explicit_control_lineage(tmp_path):
         args = SimpleNamespace(mode="T", pilot_arm=None, resume=PARENT,
                                attempt="continuation", microbatch=28, frame_chunk=8,
                                stop_after_macro=None)
-        validate_train_request(spec, args)
+        with pytest.raises(ValueError, match="T2790 continuation spec"):
+            validate_train_request(spec, args)
         contract = {**old_run,
                     "git": {"commit": "new-pushed-freeze", "branch": "",
                             "dirty_paths": [], "pushed_ref": "origin/codex/demonstration-transfer"},
@@ -130,9 +131,9 @@ def test_actual_parent_events_and_explicit_control_lineage(tmp_path):
         with pytest.raises(ValueError, match="unregistered continuation parent or arm"):
             validate_attempt(spec | {"run_root": str(tmp_path)}, args,
                              contract | {"loss_variant": "full_plus_public_beta"}, output)
-        with pytest.raises(ValueError, match="control2340"):
+        with pytest.raises(ValueError, match="T2790"):
             validate_train_request(old_spec, args)
-        with pytest.raises(ValueError, match="complete intermediate"):
+        with pytest.raises(ValueError, match="T2790"):
             validate_train_request(spec, SimpleNamespace(**{**vars(args),
                                                             "stop_after_macro": 1900}))
     finally:
@@ -144,25 +145,27 @@ def test_actual_parent_events_and_explicit_control_lineage(tmp_path):
 def test_controlled_exit_occurs_after_published_complete_boundary(tmp_path, monkeypatch, request_kind):
     from ember.operator_writer import run
 
-    spec = specification(CONTINUATION2340_SPEC_PATH)
+    spec = specification(CONTINUATION2790_SPEC_PATH)
+    parent = (Path(spec["continuation"]["parent_run_root"])
+              / "T/train/attempts/continuation/checkpoints/macro_00002340")
     closed, visited, published = [], [], []
-    data = SimpleNamespace(updates=2340, close=lambda: closed.append(True))
+    data = SimpleNamespace(updates=2790, close=lambda: closed.append(True))
     session = SimpleNamespace(
         data=data, output=tmp_path, mode="T",
         context=SimpleNamespace(is_main=True, world_size=3),
     )
     args = SimpleNamespace(
-        mode="T", pilot_arm=None, resume=PARENT, attempt="continuation",
+        mode="T", pilot_arm=None, resume=parent, attempt="continuation",
         microbatch=28, frame_chunk=8,
-        stop_after_macro=1980 if request_kind == "fixed" else None,
+        stop_after_macro=2430 if request_kind == "fixed" else None,
     )
 
     def update_stub(current, updates, rows):
         visited.append(updates + 1)
-        if request_kind == "file" and updates + 1 == 1970:
+        if request_kind == "file" and updates + 1 == 2420:
             (tmp_path / "stop_at_next_ecp.request").write_text("stop")
-        if updates + 1 == 1980:
-            checkpoint = tmp_path / "checkpoints/macro_00001980"
+        if updates + 1 == 2430:
+            checkpoint = tmp_path / "checkpoints/macro_00002430"
             checkpoint.mkdir(parents=True)
             published.append(checkpoint)
         return updates + 1, rows + 1
@@ -171,16 +174,16 @@ def test_controlled_exit_occurs_after_published_complete_boundary(tmp_path, monk
 
     def verify_publication_before_stop(path, payload):
         assert len(published) == 1 and Path(payload["checkpoint"]) == published[0]
-        assert payload["updates"] == payload["metrics_rows"] == 1980
+        assert payload["updates"] == payload["metrics_rows"] == 2430
         real_write(path, payload)
 
     monkeypatch.setattr(run, "prepare_train", lambda *_: session)
-    monkeypatch.setattr(run, "restore", lambda *_: (1890, 1890))
+    monkeypatch.setattr(run, "restore", lambda *_: (2340, 2340))
     monkeypatch.setattr(run, "update", update_stub)
     monkeypatch.setattr(run, "gather", lambda value, world: [value, False, False])
     monkeypatch.setattr(run, "write_json_atomic", verify_publication_before_stop)
     run.train(spec, args)
-    assert visited == list(range(1891, 1981))
+    assert visited == list(range(2341, 2431))
     assert closed == [True]
     assert json.loads((tmp_path / "stopped_at_ecp.json").read_text())["next_resume_from_this_ecp"]
     assert not (tmp_path / "completion.json").exists()

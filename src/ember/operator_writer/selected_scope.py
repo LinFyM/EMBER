@@ -24,6 +24,9 @@ SELECTION = ROOT / "selection.json"
 SCHEMA = "ember_operator_selected_validation_v1"
 STUDY = "operator_selected_validation_20260929"
 CAPTURE = Path(__file__).resolve().parents[3] / "configs/operator_read_write_v1/selected_capture.json"
+TEST_CAPTURE = Path(__file__).resolve().parents[3] / "configs/operator_read_write_v1/selected_test_capture.json"
+TEST_IDS = (8, 9, 10, 18, 24, 27, 30, 33)
+TEST_INITIALIZATION = "legacy_test_seed_reset_set_init_dummy10"
 MACROS = (1890, 1980, 2070, 2160, 2250, 2340)
 VIDEO_ARMS = ("same_task_other", "cross_suite_wrong", "shuffled")
 
@@ -44,6 +47,13 @@ def dispatch(args, parser) -> Path:
         if args.arm is None or args.device is None:
             parser.error("selected-video requires wrong/shuffled arm and GPU device")
         return materialize_video(args.arm, args.asset_root, torch.device(args.device))
+    if args.phase == "selected-test":
+        if args.mode is not None or args.checkpoint is not None or args.arm is not None or args.device is None:
+            parser.error("selected-test takes only the frozen selection and a GPU device")
+        from .bank import materialize
+
+        return materialize("T", test_checkpoint(), args.asset_root,
+                           torch.device(args.device), selected_test=True)
     raise ValueError("unregistered selected bank phase")
 
 
@@ -82,6 +92,60 @@ def registration() -> tuple[dict, dict]:
             or len(source.get("conditions", ())) != 400):
         raise ValueError("selected control does not inherit the fixed T checkpoint")
     return value, source
+
+
+def test_checkpoint() -> Path:
+    selected, source = registration()
+    checkpoint = Path(source["checkpoint"])
+    if (selected["macro"] != 2340 or source.get("training_git") !=
+            "e2afbfd7c997e3f792921600608efa2fa3c1b25a"
+            or checkpoint != Path("/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928"
+                                  "/continuation2340/T/train/attempts/continuation/checkpoints/macro_00002340")):
+        raise ValueError("selected Test requires the fixed T2340 full ECP")
+    return checkpoint
+
+
+def test_bank_path() -> Path:
+    return ROOT / "test/T/banks/2340/manifest.json"
+
+
+def test_output_path() -> Path:
+    return ROOT / "test/T/evaluation/correct400"
+
+
+def test_lineage() -> dict:
+    test_checkpoint()
+    return {"schema_version": SCHEMA, "selection": file_record(SELECTION),
+            "evaluation_role": "test", "initialization": TEST_INITIALIZATION,
+            "historical_test_exposure": True}
+
+
+def test_task_rows(asset_root: Path, spec: Mapping) -> tuple[list[dict], list[dict]]:
+    from ember.task_protocol import load_task_authorities
+
+    _, authority = load_task_authorities(asset_root, spec["source"]["data_protocol"])
+    entries = {int(row["global_task_id"]): row for row in authority["tasks"]}
+    chosen = selection_contract(role="test", task_ids=TEST_IDS, cardinality=1,
+                                arm="correct", mode="per_init_ordinal", seed=7,
+                                init_state_ids=tuple(range(50)), video_pool=tuple(range(50)))
+    tasks, conditions = [], []
+    for global_id in TEST_IDS:
+        original = entries[global_id]
+        if original["split_role"] != "test":
+            raise ValueError("selected Test teacher crosses the fixed Test role")
+        episodes = planned_episodes(chosen, global_id)
+        if len(episodes) != 50 or len({row["teacher_demo_indices"][0] for row in episodes}) != 50:
+            raise ValueError("selected Test must use each of 50 teachers once per task")
+        tasks.append({"global_task_id": global_id, "suite": original["suite"],
+                      "task_id": original["task_id"], "language": original["language"],
+                      "split_role": "test", "episodes": episodes})
+        conditions.extend({"condition_id": episode["condition_id"],
+                           "global_task_id": global_id,
+                           "teacher_demo": episode["teacher_demo_indices"][0]}
+                          for episode in episodes)
+    if len(tasks) != 8 or len(conditions) != 400 or len({row["condition_id"] for row in conditions}) != 400:
+        raise ValueError("selected Test fixed 8-by-50 panel changed")
+    return tasks, conditions
 
 
 def bank_path(arm: str, macro: int) -> Path:
@@ -450,3 +514,70 @@ def capture_expectations(bank: Mapping, bank_path_value: Path, tasks: list,
     return {"full": full, "capture": CAPTURE, "study": STUDY, "output": output,
             "role": "validation", "states": tuple(range(50)), "task_count": 8,
             "expected_bank": bank_path(arm, macro).resolve()}
+
+
+def inspect_test(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
+                 evaluation_role: str, require_formal: bool,
+                 task_init_state_ids: Mapping | None) -> dict:
+    """One selected T2340 Test bank; historical baselines have no sealed scene."""
+    from . import bank as owner
+
+    checkpoint = test_checkpoint()
+    spec_path = owner.CONTINUATION2340_FROZEN_SPEC_PATH
+    spec = read_json(spec_path)
+    tasks, conditions = test_task_rows(Path(bank["asset_root"]), spec)
+    git = bank.get("materialization_git") or {}
+    expected = ((path, test_bank_path().resolve()),
+                (bank.get("schema_version"), owner.BANK_SCHEMA),
+                (bank.get("kind"), owner.KIND), (bank.get("mode"), "T"),
+                (bank.get("checkpoint"), str(checkpoint)),
+                (bank.get("spec"), file_record(spec_path)),
+                (bank.get("selected_test"), test_lineage()),
+                (bank.get("training_git"), owner.CONTINUATION2340_TRAINING_GIT["commit"]),
+                (bank.get("source"), source), (bank.get("loss_variant"), "full"),
+                (bank.get("tasks"), tasks),
+                (bank.get("information_wall"),
+                 {"teacher_video_values_read": 400, "teacher_runtime_reads": 0,
+                  "deployment_adapters": 1, "validation_test_gradients": False}),
+                (evaluation_role, "test"), (require_formal, True),
+                (set(task_keys), {(row["suite"], row["task_id"]) for row in tasks}))
+    if (any(actual != wanted for actual, wanted in expected)
+            or bank.get("scene_root") is not None or bank.get("scene_manifest") is not None
+            or git.get("branch") != "" or git.get("dirty_paths") != []
+            or not git.get("commit") or git.get("pushed_ref") not in
+            ("origin/main", "origin/codex/demonstration-transfer")
+            or not owner.source_matches(bank["source"], source)
+            or len(bank.get("conditions", ())) != 400
+            or any({key: row[key] for key in ("condition_id", "global_task_id", "teacher_demo")}
+                   != condition for row, condition in zip(bank["conditions"], conditions, strict=True))
+            or task_init_state_ids is not None and any(
+                tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ()))
+                != tuple(range(50)) for row in tasks)):
+        raise ValueError("selected Test bank/task/source or legacy scene scope changed")
+    materialization = read_json(path.parent / "materialization_contract.json")
+    if any(materialization.get(key) != bank.get(key) for key in
+           ("checkpoint", "spec", "training_git", "source", "lora",
+            "materialization_git", "selected_test", "loss_variant")):
+        raise ValueError("selected Test materialization lineage changed")
+    owner._inspect_tu_bank(bank, spec, path)
+    return {**bank, "schema_version": owner.EVAL_SCHEMA, "arm": "correct",
+            "manifest": file_record(path), "legacy_test_initialization": TEST_INITIALIZATION}
+
+
+def test_capture_expectations(bank: Mapping, bank_path_value: Path, tasks: list,
+                              output_dir: Path | None) -> dict:
+    if bank.get("selected_test") != test_lineage():
+        raise ValueError("selected Test capture selection changed")
+    output = test_output_path()
+    if (bank_path_value != test_bank_path().resolve()
+            or output_dir is not None and output_dir.resolve() != output.resolve()):
+        raise ValueError("selected Test capture path changed")
+    full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0}
+            for task in tasks]
+    expected = [{"suite": row["suite"], "task_id": row["task_id"], "init_state_id": 0}
+                for row in bank["tasks"]]
+    if full != expected:
+        raise ValueError("selected Test eight full-capture cases changed")
+    return {"full": full, "capture": TEST_CAPTURE, "study": STUDY,
+            "output": output, "role": "test", "states": tuple(range(50)),
+            "task_count": 8, "expected_bank": test_bank_path().resolve()}

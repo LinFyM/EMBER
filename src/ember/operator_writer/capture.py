@@ -68,12 +68,24 @@ def attach_capture_provenance(contract: dict, repo_root: Path) -> None:
     del repo_root
     adapter = contract.get("adapter") or {}
     scene = contract.get("operator_read_write_scene") or {}
-    if adapter.get("kind") != KIND or scene.get("manifest") != adapter.get("scene_manifest"):
-        raise Pi05EvaluationError("operator scene and adapter are not paired")
+    legacy_test = contract.get("operator_read_write_legacy_test")
+    if adapter.get("kind") != KIND:
+        raise Pi05EvaluationError("operator capture adapter kind changed")
+    if legacy_test is None:
+        if scene.get("manifest") != adapter.get("scene_manifest") or not scene:
+            raise Pi05EvaluationError("operator scene and adapter are not paired")
+    elif (contract.get("role") != "test" or scene or adapter.get("scene_manifest") is not None
+          or legacy_test != {"initialization": adapter.get("legacy_test_initialization"),
+                             "selection": (adapter.get("selected_test") or {}).get("selection"),
+                             "historical_test_exposure": True}):
+        raise Pi05EvaluationError("operator selected Test legacy initialization changed")
     contract["passive_capture_provenance"] = {
         "schema_version": PASSIVE_TAG, "bank": adapter["manifest"],
-        "scene": adapter["scene_manifest"], "checkpoint": adapter["checkpoint"],
+        "scene": None if legacy_test is not None else adapter["scene_manifest"],
+        "checkpoint": adapter["checkpoint"],
         "evaluation_commit": contract["git"]["commit"]}
+    if legacy_test is not None:
+        contract["passive_capture_provenance"]["legacy_test_initialization"] = legacy_test
 
 
 def validate_capture_contract(contract: Mapping, repo_root: Path) -> None:

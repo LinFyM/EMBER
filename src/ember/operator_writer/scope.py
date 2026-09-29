@@ -121,6 +121,11 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
     """One registered geometry for old400 and the new 36-by-4 panel."""
     from . import bank as owner
 
+    if bank.get("selected_test") is not None:
+        from . import selected_scope
+
+        return selected_scope.test_capture_expectations(bank, bank_path, tasks, output_dir)
+
     if bank.get("selected_control") is not None:
         from . import selected_scope
 
@@ -253,14 +258,17 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
     continuation = macro in owner.CONTINUATION_EVALUATION_MACROS
     window1350 = macro in owner.CONTINUATION1350_EVALUATION_MACROS
     window1800 = macro in owner.CONTINUATION1800_EVALUATION_MACROS
-    window2340 = macro in owner.CONTINUATION2340_EVALUATION_MACROS
+    window2790 = macro in owner.CONTINUATION2790_EVALUATION_MACROS
+    late_window = window2790 or macro in owner.CONTINUATION2340_EVALUATION_MACROS
     pilot = macro in owner.PILOT_CHECKPOINTS and mode in owner.PILOT_ARMS
-    registered_spec = (owner.CONTINUATION2340_FROZEN_SPEC_PATH if window2340 else
+    registered_spec = (owner.CONTINUATION2790_FROZEN_SPEC_PATH if window2790 else
+                       owner.CONTINUATION2340_FROZEN_SPEC_PATH if late_window else
                        owner.PILOT_FROZEN_SPEC_PATH if pilot else
                        owner.CONTINUATION1800_FROZEN_SPEC_PATH if window1800 else
                        owner.CONTINUATION1350_FROZEN_SPEC_PATH if window1350 else
                        owner.CONTINUATION_FROZEN_SPEC_PATH if continuation else owner.SEALED_SPEC_PATH)
-    current_spec = owner.specification(owner.CONTINUATION2340_SPEC_PATH if window2340 else
+    current_spec = owner.specification(owner.CONTINUATION2790_SPEC_PATH if window2790 else
+                                       owner.CONTINUATION2340_SPEC_PATH if late_window else
                                        owner.PILOT_SPEC_PATH if pilot else
                                        owner.CONTINUATION1800_SPEC_PATH if window1800 else
                                        owner.CONTINUATION1350_SPEC_PATH if window1350 else
@@ -276,12 +284,12 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
         (spec.get("schema_version"), "ember_operator_read_write_learning_v1"),
         ("arm" in bank, False),
         (bank["source"], source), (bank["scene_root"], str(owner.SCENE_ROOT)),
-        (bank.get("loss_variant") if pilot or window2340 else None,
-         owner.PILOT_ARMS[mode] if pilot else "full" if window2340 else None),
-        (bank.get("materialization_git", {}).get("branch") if window2340 else None,
-         "" if window2340 else None),
-        (bank.get("materialization_git", {}).get("dirty_paths") if window2340 else None,
-         [] if window2340 else None),
+        (bank.get("loss_variant") if pilot or late_window else None,
+         owner.PILOT_ARMS[mode] if pilot else "full" if late_window else None),
+        (bank.get("materialization_git", {}).get("branch") if late_window else None,
+         "" if late_window else None),
+        (bank.get("materialization_git", {}).get("dirty_paths") if late_window else None,
+         [] if late_window else None),
         (bank.get("pilot") if pilot else None, spec["pilot"] if pilot else None),
         (bank.get("parent_checkpoint") if pilot else None,
          str(Path(spec["continuation"]["parent_run_root"]) /
@@ -294,7 +302,7 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
     )
     if (mode not in ("T", "U", "MT", *owner.PILOT_ARMS)
             or not owner.source_matches(bank["source"], source)
-            or window2340 and (mode != "T" or not bank.get("materialization_git", {}).get("commit")
+            or late_window and (mode != "T" or not bank.get("materialization_git", {}).get("commit")
                                or bank["materialization_git"].get("pushed_ref") not in
                                ("origin/codex/demonstration-transfer", "origin/main"))
             or any(actual != wanted for actual, wanted in expected)
@@ -302,12 +310,12 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
             or any({k: row[k] for k in ("condition_id", "global_task_id", "teacher_demo")} != condition
                    for row, condition in zip(bank["conditions"], conditions, strict=True))):
         raise ValueError("operator official bank provenance/scope changed")
-    if window2340:
+    if late_window:
         materialization = read_json(path.parent / "materialization_contract.json")
         if any(materialization.get(key) != bank.get(key) for key in
                ("checkpoint", "spec", "training_git", "source", "lora",
                 "materialization_git", "loss_variant")):
-            raise ValueError("2340 materialization lineage changed")
+            raise ValueError("continuation materialization lineage changed")
     if task_init_state_ids is not None and any(
             tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ())) != tuple(range(50))
             for row in tasks):

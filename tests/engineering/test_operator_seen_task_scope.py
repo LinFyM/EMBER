@@ -8,6 +8,7 @@ import pytest
 from ember.operator_writer import bank, scope
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.scene import inspect_registered_scenes, scene_path
+from ember.pi05_eval.run_contract import registered_role_authority
 from ember.pi05_eval_contract import (inspect_source_checkpoint, load_evaluation_authorities,
                                       inspect_installed_target_tasks, resolve_role_task_keys)
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
@@ -106,9 +107,39 @@ def test_registered_144_capture_routes_actual_cases_and_rejects_other_scope(tmp_
                                                read_json(scope.CAPTURE_PATH), None)
     assert len(capture["full_conditions"]) == 36
     assert capture["full_conditions"] == full and stage["full_conditions_only"] is False
-    with pytest.raises(Pi05EvaluationError, match="capture scope"):
+    repaired = tmp_path / "T/evaluation/attempts/role_authority_repair/correct144"
+    repaired_capture, _ = bank.registered_capture(
+        args, tasks, repaired, scope.CAPTURE_PATH, read_json(scope.CAPTURE_PATH), None)
+    assert repaired_capture["full_conditions"] == full
+    admission_fix = tmp_path / "T/evaluation/attempts/gpu_admission_fix/correct144"
+    fixed_capture, _ = bank.registered_capture(
+        args, tasks, admission_fix, scope.CAPTURE_PATH, read_json(scope.CAPTURE_PATH), None)
+    assert fixed_capture["full_conditions"] == full
+    with pytest.raises(Pi05EvaluationError, match="outside the registered attempts"):
         bank.registered_capture(args, tasks, tmp_path / "T/evaluation/correct400",
                                 scope.CAPTURE_PATH, read_json(scope.CAPTURE_PATH), None)
     with pytest.raises(Pi05EvaluationError, match="full capture"):
         bank.registered_capture(args, tasks[:35], output, scope.CAPTURE_PATH,
                                 read_json(scope.CAPTURE_PATH), None)
+
+
+def test_actual_frozen_seen_bank_and_role_authority_survive_evaluation_only_git(monkeypatch):
+    monkeypatch.setenv("EMBER_LIBERO_ASSETS_ROOT", str(
+        ASSET / "data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6"))
+    spec = read_json(bank.CONTINUATION1800_FROZEN_SPEC_PATH)
+    authorities = load_evaluation_authorities(
+        ASSET / spec["source"]["evaluation_config"], ASSET)
+    identity = registered_role_authority(scope.ROLE, authorities)
+    assert identity == {"path": str(scope.PATH), "bytes": scope.PATH.stat().st_size,
+                        "schema_version": scope.SCHEMA}
+    checkpoint = ASSET / spec["source"]["checkpoint"]
+    source = inspect_source_checkpoint(authorities, checkpoint.parent.parent,
+                                       checkpoint, evaluation_mode="formal")
+    keys = scope.task_keys(authorities.protocol, authorities.meta_protocol)
+    root = Path(scope.registration()["run_root"])
+    for mode, macro in (("T", 1800), ("MT", 300)):
+        inspected = bank.inspect_bank(
+            manifest_path=root / mode / "banks" / str(macro) / "manifest.json",
+            source=source, task_keys=keys, evaluation_role=scope.ROLE,
+            require_formal=True, task_init_state_ids={key: scope.STATES for key in keys})
+        assert inspected["mode"] == mode and len(inspected["conditions"]) == 144

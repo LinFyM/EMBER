@@ -19,6 +19,9 @@ from .data import TASKS
 REPO = Path(__file__).resolve().parents[3]
 PATH = REPO / "configs/operator_read_write_v1/seen_task_scope.json"
 CAPTURE_PATH = REPO / "configs/operator_read_write_v1/seen_task_capture.json"
+FROZEN_SCOPE_PATH = Path(
+    "/data1/user/ymdai/projects/EMBER-operator-seen-task-formal"
+    "/configs/operator_read_write_v1/seen_task_scope.json")
 ROLE = "operator_seen_training36"
 STATES = (32, 33, 34, 35)
 SCHEMA = "ember_operator_seen_task_scope_v1"
@@ -113,7 +116,8 @@ def capture_registration(tasks: list) -> tuple[list[dict], Path, Path]:
     return full, CAPTURE_PATH, Path(scope["run_root"])
 
 
-def capture_expectations(bank: Mapping, bank_path: Path, tasks: list) -> dict:
+def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
+                         output_dir: Path | None = None) -> dict:
     """One registered geometry for old400 and the new 36-by-4 panel."""
     from . import bank as owner
 
@@ -125,8 +129,17 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list) -> dict:
         expected_bank = root / bank["mode"] / "banks" / macro / "manifest.json"
         if bank["mode"] not in ("T", "MT"):
             raise ValueError("seen-task capture arm changed")
+        canonical = eval_root / "correct144"
+        repair = eval_root / "attempts/role_authority_repair/correct144"
+        admission_fix = eval_root / "attempts/gpu_admission_fix/correct144"
+        if output_dir is not None and output_dir.resolve() not in (
+                canonical.resolve(), repair.resolve(), admission_fix.resolve()):
+            raise ValueError("seen-task evaluation output is outside the registered attempts")
+        if output_dir is not None and output_dir.resolve() == repair.resolve() and bank["mode"] != "T":
+            raise ValueError("seen-task role-authority repair belongs only to the failed T queue")
         return dict(full=full, capture=capture, study=registration()["study_id"],
-                    output=eval_root / "correct144", role=ROLE, states=STATES,
+                    output=output_dir if output_dir is not None else canonical,
+                    role=ROLE, states=STATES,
                     task_count=36, expected_bank=expected_bank)
     full = [{"suite": task.suite, "task_id": task.task_id, "init_state_id": 0}
             for task in tasks]
@@ -162,6 +175,8 @@ def inspect_bank_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping
     from . import bank as owner
 
     scope = registration()
+    if read_json(FROZEN_SCOPE_PATH) != scope:
+        raise ValueError("seen-task evaluation-only scope differs from frozen bank source")
     mode = bank.get("mode")
     if mode not in ("T", "MT"):
         raise ValueError("seen-task bank arm changed")
@@ -171,7 +186,7 @@ def inspect_bank_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping
     expected = (
         (path, Path(scope["run_root"]) / mode / "banks" / str(macro) / "manifest.json"),
         (bank.get("schema_version"), owner.BANK_SCHEMA), (bank.get("kind"), owner.KIND),
-        (bank.get("evaluation_scope"), file_record(PATH)),
+        (bank.get("evaluation_scope"), file_record(FROZEN_SCOPE_PATH)),
         (bank.get("materialization_git", {}).get("branch"), ""),
         (bank.get("materialization_git", {}).get("dirty_paths"), []),
         (bank.get("spec"), file_record(owner.SEALED_SPEC_PATH if mode == "MT" else
@@ -221,12 +236,15 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
     continuation = macro in owner.CONTINUATION_EVALUATION_MACROS
     window1350 = macro in owner.CONTINUATION1350_EVALUATION_MACROS
     window1800 = macro in owner.CONTINUATION1800_EVALUATION_MACROS
+    window2340 = macro in owner.CONTINUATION2340_EVALUATION_MACROS
     pilot = macro in owner.PILOT_CHECKPOINTS and mode in owner.PILOT_ARMS
-    registered_spec = (owner.PILOT_FROZEN_SPEC_PATH if pilot else
+    registered_spec = (owner.CONTINUATION2340_FROZEN_SPEC_PATH if window2340 else
+                       owner.PILOT_FROZEN_SPEC_PATH if pilot else
                        owner.CONTINUATION1800_FROZEN_SPEC_PATH if window1800 else
                        owner.CONTINUATION1350_FROZEN_SPEC_PATH if window1350 else
                        owner.CONTINUATION_FROZEN_SPEC_PATH if continuation else owner.SEALED_SPEC_PATH)
-    current_spec = owner.specification(owner.PILOT_SPEC_PATH if pilot else
+    current_spec = owner.specification(owner.CONTINUATION2340_SPEC_PATH if window2340 else
+                                       owner.PILOT_SPEC_PATH if pilot else
                                        owner.CONTINUATION1800_SPEC_PATH if window1800 else
                                        owner.CONTINUATION1350_SPEC_PATH if window1350 else
                                        owner.CONTINUATION_SPEC_PATH if continuation else owner.SPEC_PATH)
@@ -241,7 +259,12 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
         (spec.get("schema_version"), "ember_operator_read_write_learning_v1"),
         ("arm" in bank, False),
         (bank["source"], source), (bank["scene_root"], str(owner.SCENE_ROOT)),
-        (bank.get("loss_variant") if pilot else None, owner.PILOT_ARMS[mode] if pilot else None),
+        (bank.get("loss_variant") if pilot or window2340 else None,
+         owner.PILOT_ARMS[mode] if pilot else "full" if window2340 else None),
+        (bank.get("materialization_git", {}).get("branch") if window2340 else None,
+         "" if window2340 else None),
+        (bank.get("materialization_git", {}).get("dirty_paths") if window2340 else None,
+         [] if window2340 else None),
         (bank.get("pilot") if pilot else None, spec["pilot"] if pilot else None),
         (bank.get("parent_checkpoint") if pilot else None,
          str(Path(spec["continuation"]["parent_run_root"]) /
@@ -254,11 +277,20 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
     )
     if (mode not in ("T", "U", "MT", *owner.PILOT_ARMS)
             or not owner.source_matches(bank["source"], source)
+            or window2340 and (mode != "T" or not bank.get("materialization_git", {}).get("commit")
+                               or bank["materialization_git"].get("pushed_ref") not in
+                               ("origin/codex/demonstration-transfer", "origin/main"))
             or any(actual != wanted for actual, wanted in expected)
             or len(bank["conditions"]) != 400
             or any({k: row[k] for k in ("condition_id", "global_task_id", "teacher_demo")} != condition
                    for row, condition in zip(bank["conditions"], conditions, strict=True))):
         raise ValueError("operator official bank provenance/scope changed")
+    if window2340:
+        materialization = read_json(path.parent / "materialization_contract.json")
+        if any(materialization.get(key) != bank.get(key) for key in
+               ("checkpoint", "spec", "training_git", "source", "lora",
+                "materialization_git", "loss_variant")):
+            raise ValueError("2340 materialization lineage changed")
     if task_init_state_ids is not None and any(
             tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ())) != tuple(range(50))
             for row in tasks):

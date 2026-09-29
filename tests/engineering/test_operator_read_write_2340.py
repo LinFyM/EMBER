@@ -20,6 +20,58 @@ PARENT = Path("/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260
               "/control/train/attempts/continuation/checkpoints/macro_00001890")
 
 
+def test_actual_1980_source_and_same_window_resume_git(tmp_path):
+    """Inspect the actual new ECP, then exercise a metadata-only 1980->2070 resume."""
+    from ember.pi05_source_checkpoint import read_json, write_json_atomic
+
+    spec = specification(CONTINUATION2340_SPEC_PATH)
+    checkpoint = Path(spec["run_root"]) / "T/train/attempts/continuation/checkpoints/macro_00001980"
+    actual = bank.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
+    assert actual["git"] == bank.CONTINUATION2340_TRAINING_GIT
+    assert actual["loss_variant"] == "full" and "pilot_arm" not in actual
+    with pytest.raises(ValueError, match="same-arm"):
+        bank.inspect_training_source(spec, checkpoint, "U", sealed_evaluation=True)
+
+    spec = spec | {"run_root": str(tmp_path)}
+    parent = tmp_path / "T/train/attempts/first/checkpoints/macro_00001980"
+    child = tmp_path / "T/train/attempts/resumed/checkpoints/macro_00002070"
+    contract = actual | {"parent_checkpoint": str(parent)}
+    trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True,
+                         weights_only=True)
+    write_json_atomic(parent.parent.parent / "run_contract.json", actual)
+    write_json_atomic(child.parent.parent / "run_contract.json", contract)
+    provenance = {"checkpoint": str(parent), "parent_git": actual["git"]}
+    write_json_atomic(child.parent.parent / "resume_provenance.json", provenance)
+    (child.parent.parent / "metrics.jsonl").write_text("".join(
+        json.dumps({"update": step, "loss_variant": "full"}) + "\n"
+        for step in range(1, 2071)))
+    for path, macro in ((parent, 1980), (child, 2070)):
+        path.mkdir(parents=True)
+        for name in ("ecp.safetensors", "rank_00_state.pt", "rank_01_state.pt"):
+            (path / name).write_bytes(b"metadata-only CPU fixture")
+        torch.save({key: value for key, value in trainer.items()
+                    if key in ("schema_version", "stage", "scaler")} | {
+            "next_macro": macro, "metrics_rows": macro,
+            "optimizer": {"param_groups": [{"lr": 1e-5}]},
+            "scheduler": {"last_epoch": macro},
+            "training_state": {"updates": macro, "mode": "T", "loss_variant": "full"},
+            "sampler_state": actual["sampler"] | {"next_step": macro}},
+            path / "trainer_state.pt")
+        manifest = read_json(checkpoint / "checkpoint_manifest.json") | {
+            "next_macro": macro, "world_size": 2,
+            "files": {file.name: {"bytes": file.stat().st_size} for file in path.iterdir()}}
+        write_json_atomic(path / "checkpoint_manifest.json", manifest)
+    assert bank.inspect_training_source(spec, child, "T", sealed_evaluation=True) == contract
+    write_json_atomic(child.parent.parent / "resume_provenance.json", provenance | {
+        "parent_git": {"commit": spec["continuation"]["parent_training_git"]}})
+    with pytest.raises(ValueError, match="source/ECP"):
+        bank.inspect_training_source(spec, child, "T", sealed_evaluation=True)
+    write_json_atomic(child.parent.parent / "resume_provenance.json", provenance)
+    write_json_atomic(parent.parent.parent / "run_contract.json", actual | {"git": {"commit": "wrong"}})
+    with pytest.raises(ValueError, match="source/ECP"):
+        bank.inspect_training_source(spec, child, "T", sealed_evaluation=True)
+
+
 def test_actual_parent_events_and_explicit_control_lineage(tmp_path):
     old_spec = specification(PILOT_SPEC_PATH)
     spec = specification(CONTINUATION2340_SPEC_PATH)

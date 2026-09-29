@@ -34,12 +34,19 @@ T首次official在prepare后/worker前因recovery遗漏operator_seen_training36�
 main核当前消费者确只登记seen_panel/nonheld_meta，Sol按既有窄修许可处理共享role身份与新eval冻结，保留旧失败/场景/bank/完整成本。
 本项仍无完整288结果或科学验收，不读半批分数；独立§20训练继续，不因该评测接口故障重复训练或物化。
 随后T两次准入拒绝、MT首worker在libero_10/task2/init32首动作前scene校验失败，两臂均无有效正式行；失败/费用全部留存。
-Sol交3ba62976：共享role身份修复、operator已物化LoRA按实测12GiB+2GiB余量准入及2340评测读取，main正在审阅，尚未称集成通过。
+Sol交3ba62976：共享role身份修复、operator已物化LoRA按实测每worker12GiB+每卡2GiB余量准入及2340评测读取，main已核完整diff。
 主讨论直接读两份scene复现JSON/脚本及保存恢复消费者：旧post-dummy观测与保存sim_state重生观测不一致，
 原sim_state/model_body/controller一致；该案例重新prime后的重复恢复/canonical重放一致，不推广为全面bitwise保证。
 按design§19.5批准原预算内隔离scene_canonical144，保留相同物理状态/视频映射/旧原件，并复用已物化权重；
 两臂共用新场景，逐个生成时严格恢复检查，不影响旧验证400与§20。已直接Steer至Sol活跃轮01a0eb07，接口接受，尚非完成回执；
 正文/回执在既有tmp的seen_scene_canonical_release文件。Sol最新仅报告1980完整ECP已验、bank在跑；主讨论未将其写成完整节点成绩。
+main独立17项CPU通过（17.70秒）：真实1980新来源、metadata-only模拟1980→2070恢复及错误父Git拒绝、真实seen144 bank/role、
+旧pilot/public读取与operator准入传参。修正新窗口内部恢复时错误仍要求1890父Git的读取边界；不改训练、原冻结或既有有效产物。
+另发现新2340物化合同多写了seen144的evaluation_scope；真正tasks/conditions/scene由正常400分支生成，bank生成代码未带此字段。
+main修正后续合同只在seen诊断写该字段；当前1980旧合同保留真实错记并在报告说明，不据此停止/重算合法400物化，实际数值路径未受它驱动。
+另以CPU替身运行真实materialize到合同写出后停止，已核validation不再携带seen144字段且保留full/训练身份，0模型前向。
+此轮结构guard在main窄修前为BLOCK：bank815行、来源/物化/official范围复杂度40/49/49；main接受仅限固定五点读取与已定位窄修的内聚例外，
+未增加数值路径或独立evaluator。§20之后新增训练窗口前必须将累计窗口/来源声明内聚，不能继续按窗口堆分支；不称结构检查通过。
 
 ## 当前：Owner醒来，暂停自主推进并交流（2026-09-29）
 

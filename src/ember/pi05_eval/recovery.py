@@ -15,12 +15,12 @@ from ember.eval_adapters import (
 )
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import (
-    SEEN_PANEL_RELATIVE_PATH,
     git_state,
     inspect_source_checkpoint,
     inspect_tokenizer,
     load_evaluation_authorities,
 )
+from ember.pi05_eval.run_contract import registered_role_authority
 from ember.pi05_eval_queue import (
     failed_jobs,
     publish_json_exclusive,
@@ -198,21 +198,8 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         raise Pi05EvaluationError(
             "evaluator checkout differs from the sealed run commit"
         )
-    expected_role_authority = None
-    if contract.get("role") == "seen_panel":
-        path = REPO_ROOT / SEEN_PANEL_RELATIVE_PATH
-        expected_role_authority = {
-            "path": str(path),
-            "bytes": path.stat().st_size,
-            "schema_version": authorities.seen_panel.get("schema_version"),
-        }
-    elif str(contract.get("role", "")).startswith("nonheld_meta"):
-        path = Path(authorities.paths["meta_protocol"])
-        expected_role_authority = {
-            "path": str(path),
-            "bytes": path.stat().st_size,
-            "schema_version": authorities.meta_protocol.get("schema_version"),
-        }
+    expected_role_authority = registered_role_authority(str(contract.get("role", "")),
+                                                        authorities)
     if contract.get("role_authority") != expected_role_authority:
         raise Pi05EvaluationError("evaluation role authority changed after prepare")
     model = inspect_source_checkpoint(

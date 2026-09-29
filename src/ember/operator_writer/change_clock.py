@@ -11,6 +11,8 @@ ROOT = Path("/data1/user/ymdai/ember_runs/operator_change_clock_learning_2026093
 SPEC_NAME = "change_clock_spec.json"
 CAPTURE_NAME = "change_clock_capture.json"
 ERASE_RULE = "erase=(memory@key)*(-expm1(-vector_norm(delta_hbar,dim=-1)/sqrt(1024)))[None,:]; value=ungated"
+TRAINING_GIT = {"commit": "517bc8d42780fabf8f3faa7d707651f99b8beed0", "branch": "",
+                "dirty_paths": [], "pushed_ref": "origin/codex/operator-change-clock"}
 
 
 def expected_spec(base: dict) -> dict:

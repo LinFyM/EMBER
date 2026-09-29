@@ -241,7 +241,7 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, seale
     expected = (
         (run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE),
         (run.get("mode"), mode),
-        (run.get("git"), frozen_git(change_clock_pilot=True) if mode == change_clock.MODE else
+        (run.get("git"), change_clock.TRAINING_GIT if mode == change_clock.MODE else
          SEALED_TRAINING_GIT if sealed_evaluation else frozen_git()),
         (run.get("spec"), str(CHANGE_CLOCK_SPEC_PATH if mode == change_clock.MODE else
                               SEALED_SPEC_PATH if sealed_evaluation else SPEC_PATH)),

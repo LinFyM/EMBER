@@ -1,5 +1,17 @@
 # EMBER research history
 
+
+## 2026-09-30：综合限制审查与未启动学习实验的撤回
+
+Owner澄清轻量允许GPU及有界学习、不限制参数与改动幅度；B0回读只是例子，需允许多个问题并存。
+main复核原模型、私有Writer/任务隔离历史，并完成既有§26余切的CPU跨task比较；具体见findings§245/机制§70。
+局部change_clock性质不足以指定整体性能主因；任务间原始梯度也非普遍强负冲突，A/B分布方向在部分task内部仍不同。
+
+main26dd0c9b登记§30：同T2340起点的共享P/C/D/O、task私有P/C/D/O、条件私有B修正，原拟16步及固定B20读回。
+执行者首消费者加载/NFS阻塞、9分钟超时，尚未GPU前向/更新，未生成native缓存。
+Owner随即撤回尚未开始的实验，main用Steer停止准备/重试，不等待原50分钟线；未运行部分不记作科学阴性。
+CPU证据保留于`docs/analyses/operator_learning_credit_evidence_20260930.json`。没有已验证修复或后继正式重训。
+
 本文记录各时点的事实和当时合同；历史“当前/下一步/授权”不持续生效。最新授权只看[progress](../progress.md)。
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。

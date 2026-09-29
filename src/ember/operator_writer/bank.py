@@ -56,6 +56,12 @@ CONTINUATION1800_FROZEN_SPEC_PATH = Path(
     "/configs/operator_read_write_v1/continuation1800_spec.json")
 PUBLIC_BETA_CAPTURE_PATH = REPO / "configs/operator_read_write_v1/public_beta_capture.json"
 PILOT_CAPTURE_PATH = REPO / "configs/operator_read_write_v1/public_function_pilot_capture.json"
+PILOT_FROZEN_SPEC_PATH = Path(
+    "/data1/user/ymdai/projects/EMBER-operator-public-function-pilot-formal"
+    "/configs/operator_read_write_v1/public_function_pilot_spec.json")
+PILOT_TRAINING_GIT = {"commit": "9801641d0967e163d91474ff92e6fb6520be1084",
+                      "branch": "", "dirty_paths": [],
+                      "pushed_ref": "origin/codex/demonstration-transfer"}
 SEALED_TRAINING_GIT = {"commit": SEALED_TRAINING_COMMIT, "branch": "",
                        "dirty_paths": [], "pushed_ref": "origin/main"}
 CONTINUATION_TRAINING_GIT = {"commit": "81846ed35933222b14ac693a0b760268ecff7f17",
@@ -239,7 +245,7 @@ def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: 
     current_specs = (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
                      CONTINUATION1800_SPEC_PATH, PILOT_SPEC_PATH)
     source_specs = (CONTINUATION_FROZEN_SPEC_PATH, CONTINUATION1350_FROZEN_SPEC_PATH,
-                    CONTINUATION1800_FROZEN_SPEC_PATH, PILOT_SPEC_PATH)
+                    CONTINUATION1800_FROZEN_SPEC_PATH, PILOT_FROZEN_SPEC_PATH)
     wanted_spec_path = source_specs[window] if sealed_evaluation else current_specs[window]
     teacher_rounds = [[20260928, 1, "task"]] + [
         [20260928, 1, "task", index] for index in range(1, window + 2)]
@@ -251,10 +257,9 @@ def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: 
     allowed_parents = ((270, 360, 450, 540, 630, 720, 810),
                        (900, *CONTINUATION1350_CHECKPOINTS[:-1]),
                        (1350, *CONTINUATION1800_CHECKPOINTS[:-1]), (1800,))[window]
-    sealed_git = ((CONTINUATION_TRAINING_GIT, CONTINUATION1350_TRAINING_GIT,
-                   CONTINUATION1800_TRAINING_GIT)[window] if window < 3 else None)
-    wanted_git = (frozen_git(continuation=True) if window == 3 or not sealed_evaluation
-                  else sealed_git)
+    sealed_git = (CONTINUATION_TRAINING_GIT, CONTINUATION1350_TRAINING_GIT,
+                  CONTINUATION1800_TRAINING_GIT, PILOT_TRAINING_GIT)[window]
+    wanted_git = sealed_git if sealed_evaluation else frozen_git(continuation=True)
     return window, wanted_spec_path, expected_sampler, allowed_parents, wanted_git
 
 

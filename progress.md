@@ -5,13 +5,17 @@
 Owner最新明确恢复推进，目标下午约15:00取得结果：T原目标继续学习、固定间隔观察高点与连续回落；U现有回落后保持停止；
 补错误/乱序及同task视频功能比较，完成已见训练任务T/MT闭环；若出现明显强于MT的候选，冻结选点后比较Test上的T/MT/Source。
 本条覆盖下面的暂停，不改模型/损失/数据；完整执行范围见active design§20，§19原288诊断恢复并行。
+最新已验收：T1890→2340训练12:56:07 CST exit0，450新增更新/50400 query、五个90步完整ECP均发布；
+首个完整T1980为156/400，旧1890为158、MT153，未形成明显超越或持续下降证据。2070/2160/2250/2340完整official尚待回报，
+不先选点、不启动依赖候选的controls/Test。§19两臂288已收束：T1800为105/144、MT300为93/144，见findings§224–225。
+主讨论已独立复算新688 JSON行与sealed参照的配对、来源和统计；NPZ/PT内容验收继承已读实际消费者，不重复全扫。
 T唯一父为9801641d的control1890完整ECP，不能误接public_aux。新上限2340，完整ECP与correct400均每90步，
 GPU02优先world4，按live资源可world2/3/4显式迁移；保持四条件权重/Adam/绝对LR/RNG来源，恢复受控ECP停止功能。
 主讨论负责源码审阅、完整节点验收与最终选点；不读取半批分数、不在线sleep陪跑、不自Queue。独立工作完成后结束回合，可靠交付再唤醒。
 唯一Sol独占dev，main仍由主讨论独占。§20现已实际启动：10:57:10 CST，gpu02物理0/1/2/3、world4，
 实际训练冻结e2afbfd7；main直接核launch job/started/run_contract/resume_provenance，唯一父control1890、T/full、v6→v7成立。
-恢复记录为world2→4，原rank0/1 RNG恢复、新rank2/3 seed9/10，1890行前缀与绝对Adam/LR身份承接；不称bitwise exact或已完成新节点。
-按先前同450更新四卡约1.84–1.95小时估计训练主体约12:50–13:00结束，加载/现场吞吐可影响时间，尾段bank/评测另计并尽量重叠。
+恢复记录为world2→4，原rank0/1 RNG恢复、新rank2/3 seed9/10，1890行前缀与绝对Adam/LR身份承接；不称bitwise exact。
+启动时估计训练主体约12:50–13:00结束，实际12:56:07结束；尾段bank/评测另计并尽量重叠，训练完成不代表全部节点已验收。
 §20合同4cf82c4c已push，发给空闲Sol的新任务Queue回执`01a0eb07-5098-7f21-910c-2fe4b3aec173`；
 一次只读核对确认活跃轮`01a0eb07-509a-7893-922c-b00256f9b31c`收到完整准确正文，派发/回执/snapshot在既有tmp的`continuation2340_*`。
 §19源码e499f94c经主讨论全diff与实际bank/scene/role/capture消费者审阅后，以b352ba4b集成；独立6项CPU通过（17.55秒），diff检查通过。
@@ -71,6 +75,15 @@ main修正1890的实验臂名control误传T/U模型构造器，实际计算固�
 selection.json尚未发布，未启动后段候选模型/环境计算或Test。结构guard仍BLOCK：bank854行、新selected_scope452行，active-source净增约630行含测试。
 main自审接受§20有界来源/调度接入：选择与四臂共有一个owner、原evaluator/adapter复用，未新建trainer/evaluator；公共β1800旧消费者不可泛化冒充新候选。
 该固定选择/四臂scope在本批后不继续叠加训练窗口，按已登记运行面整理收敛来源声明；不称结构检查通过。
+Sol后交8fa1c926的capture内聚抽取：三个原函数与PASSIVE_TAG移到唯一capture owner，bank保留既有导入接口；
+main核完整diff及函数AST除局部KIND导入外一致，独立5项CPU通过（22.90秒），覆盖selected/公共β/原full与MT/seen canonical实际消费者。
+本次增量guard为REVIEW、无hard，bank854→780；这是采集职责收敛，不代表旧run/来源分支的本批例外已全部消除。
+T1980 main直接读400行、sealed1890/MT与完整scene_reference/video/env/policy RNG，复算156与135/21/23、117/39/36；
+全capture继承已审verify_official_raw_group.py及其exit0日志，未读其它节点半批分数。旧1980物化合同错记/timeout沿此前账保留。
+训练外部7137.068秒×4=7.930075568GPUh；main直接核2340行连续、旧1890字节前缀、新450行full/112query/floor1e−5及五份ECP manifest/大小，
+不重复加载全部optimizer张量。§19新288行两臂同canonical scene/teacher/RNG，原24为T61/MT46，支持12为44/47；
+直接复核14份外部回执含全部失败合计1.070418068GPUh，旧scene/bank/失败队列保留，§19不新增计算，临时第7卡例外随收束结束。
+本轮独立复算脚本/JSON在既有tmp的main_1980_seen_acceptance；有效机制更新进入机制§57.1，不据该训练面板宣布视频必要性或唯一根因。
 
 ## 当前：Owner醒来，暂停自主推进并交流（2026-09-29）
 

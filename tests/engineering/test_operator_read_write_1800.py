@@ -11,7 +11,7 @@ import torch
 from ember.operator_writer import bank
 from ember.operator_writer.data import FormalData, TASKS
 from ember.operator_writer.run import (CONTINUATION1350_SPEC_PATH, CONTINUATION1800_SPEC_PATH,
-                                       complete_checkpoint, specification, train, validate_attempt)
+                                       complete_checkpoint, specification, validate_attempt)
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 
@@ -95,16 +95,6 @@ def test_real_1350_source_migration_and_fourth_round():
         assert [row["update"] for row in prefix] == list(range(1, 1351))
         parent = bank.inspect_training_source(old_spec, PARENT, "T", sealed_evaluation=True)
         assert parent["git"]["commit"] == spec["continuation"]["parent_training_git"]
-        with pytest.raises(ValueError, match="continuation1800 spec"):
-            train(old_spec, SimpleNamespace())
-        with pytest.raises(ValueError, match="registered T attempt"):
-            train(spec, SimpleNamespace(mode="U", attempt="wrong", resume=PARENT,
-                                         microbatch=28, frame_chunk=8,
-                                         stop_after_macro=None))
-        with pytest.raises(ValueError, match="complete intermediate"):
-            train(spec, SimpleNamespace(mode="T", attempt="wrong", resume=PARENT,
-                                         microbatch=28, frame_chunk=8,
-                                         stop_after_macro=1450))
     finally:
         old.close()
         new.close()

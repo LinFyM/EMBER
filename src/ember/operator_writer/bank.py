@@ -25,9 +25,9 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.task_protocol import load_task_authorities
 from ember.writer.materialization import file_record, planned_episodes, selection_contract
 
-from .data import CONTINUATION1350_CHECKPOINTS, CONTINUATION1800_CHECKPOINTS, FormalData
+from .data import CONTINUATION1350_CHECKPOINTS, CONTINUATION1800_CHECKPOINTS, PILOT_CHECKPOINTS, FormalData
 from .run import (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
-                  CONTINUATION1800_SPEC_PATH, REPO, SCHEMA,
+                  CONTINUATION1800_SPEC_PATH, PILOT_SPEC_PATH, PILOT_ROOT, PILOT_ARMS, REPO, SCHEMA,
                   SPEC_PATH, STAGE, build_runtime, complete_checkpoint, frozen_git, specification)
 
 
@@ -54,6 +54,7 @@ CONTINUATION1800_FROZEN_SPEC_PATH = Path(
     "/data1/user/ymdai/projects/EMBER-operator-continuation1800-formal"
     "/configs/operator_read_write_v1/continuation1800_spec.json")
 PUBLIC_BETA_CAPTURE_PATH = REPO / "configs/operator_read_write_v1/public_beta_capture.json"
+PILOT_CAPTURE_PATH = REPO / "configs/operator_read_write_v1/public_function_pilot_capture.json"
 SEALED_TRAINING_GIT = {"commit": SEALED_TRAINING_COMMIT, "branch": "",
                        "dirty_paths": [], "pushed_ref": "origin/main"}
 CONTINUATION_TRAINING_GIT = {"commit": "81846ed35933222b14ac693a0b760268ecff7f17",
@@ -74,6 +75,7 @@ EVALUATION_SPEC_PATHS = {
     **{macro: CONTINUATION_SPEC_PATH for macro in CONTINUATION_EVALUATION_MACROS},
     **{macro: CONTINUATION1350_SPEC_PATH for macro in CONTINUATION1350_EVALUATION_MACROS},
     **{macro: CONTINUATION1800_SPEC_PATH for macro in CONTINUATION1800_EVALUATION_MACROS},
+    **{macro: PILOT_SPEC_PATH for macro in PILOT_CHECKPOINTS},
 }
 
 
@@ -188,7 +190,7 @@ def _mt_source(spec: Mapping, source: Mapping) -> tuple[Path, dict, dict]:
 def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, sealed_evaluation: bool = False) -> dict:
     if checkpoint.name in {f"macro_{macro:08d}" for macro in
                            (*CONTINUATION_EVALUATION_MACROS, *CONTINUATION1350_EVALUATION_MACROS,
-                            *CONTINUATION1800_EVALUATION_MACROS)}:
+                            *CONTINUATION1800_EVALUATION_MACROS, *PILOT_CHECKPOINTS)}:
         return _inspect_continuation_source(spec, checkpoint, mode,
                                             sealed_evaluation=sealed_evaluation)
     if mode not in ("T", "U") or checkpoint.name != "macro_00000270":
@@ -230,12 +232,13 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, seale
 
 
 def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: bool) -> tuple:
-    window = (2 if macro in CONTINUATION1800_EVALUATION_MACROS else
+    window = (3 if macro in PILOT_CHECKPOINTS else
+              2 if macro in CONTINUATION1800_EVALUATION_MACROS else
               1 if macro in CONTINUATION1350_EVALUATION_MACROS else 0)
     current_specs = (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
-                     CONTINUATION1800_SPEC_PATH)
+                     CONTINUATION1800_SPEC_PATH, PILOT_SPEC_PATH)
     source_specs = (CONTINUATION_FROZEN_SPEC_PATH, CONTINUATION1350_FROZEN_SPEC_PATH,
-                    CONTINUATION1800_FROZEN_SPEC_PATH)
+                    CONTINUATION1800_FROZEN_SPEC_PATH, PILOT_SPEC_PATH)
     wanted_spec_path = source_specs[window] if sealed_evaluation else current_specs[window]
     teacher_rounds = [[20260928, 1, "task"]] + [
         [20260928, 1, "task", index] for index in range(1, window + 2)]
@@ -246,10 +249,11 @@ def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: 
                         "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
     allowed_parents = ((270, 360, 450, 540, 630, 720, 810),
                        (900, *CONTINUATION1350_CHECKPOINTS[:-1]),
-                       (1350, *CONTINUATION1800_CHECKPOINTS[:-1]))[window]
-    sealed_git = (CONTINUATION_TRAINING_GIT, CONTINUATION1350_TRAINING_GIT,
-                  CONTINUATION1800_TRAINING_GIT)[window]
-    wanted_git = sealed_git if sealed_evaluation else frozen_git(continuation=True)
+                       (1350, *CONTINUATION1800_CHECKPOINTS[:-1]), (1800,))[window]
+    sealed_git = ((CONTINUATION_TRAINING_GIT, CONTINUATION1350_TRAINING_GIT,
+                   CONTINUATION1800_TRAINING_GIT)[window] if window < 3 else None)
+    wanted_git = (frozen_git(continuation=True) if window == 3 or not sealed_evaluation
+                  else sealed_git)
     return window, wanted_spec_path, expected_sampler, allowed_parents, wanted_git
 
 
@@ -259,14 +263,19 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
     window, wanted_spec_path, expected_sampler, allowed_parents, wanted_git = (
         _continuation_source_identity(spec, macro, sealed_evaluation))
     output = checkpoint.parent.parent
-    expected_root = Path(spec["run_root"]) / mode / "train/attempts"
+    run = read_json(output / "run_contract.json")
+    pilot = window == 3
+    arm = run.get("pilot_arm") if pilot else mode
+    expected_root = Path(spec["run_root"]) / arm / "train/attempts"
     if (mode not in spec["execution"]["modes"] or macro not in (*CONTINUATION_EVALUATION_MACROS,
                                              *CONTINUATION1350_EVALUATION_MACROS,
-                                             *CONTINUATION1800_EVALUATION_MACROS)
+                                             *CONTINUATION1800_EVALUATION_MACROS,
+                                             *PILOT_CHECKPOINTS)
+            or pilot and (arm not in PILOT_ARMS or run.get("loss_variant") != PILOT_ARMS[arm]
+                          or run.get("pilot") != spec["pilot"])
             or output.parent.resolve() != expected_root.resolve()
             or not complete_checkpoint(checkpoint)):
         raise ValueError("continuation bank requires complete same-arm registered ECP")
-    run = read_json(output / "run_contract.json")
     ecp = read_json(checkpoint / "checkpoint_manifest.json")
     trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True,
                          weights_only=True)
@@ -274,10 +283,10 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
     resume = read_json(output / "resume_provenance.json")
     metrics = (output / "metrics.jsonl").read_text().splitlines()[:macro]
     parent_macro = int(parent.name.split("_")[-1]) if parent.name.startswith("macro_") else -1
-    source_parent_macro = (270, 900, 1350)[window]
+    source_parent_macro = (270, 900, 1350, 1800)[window]
     parent_root = (Path(spec["continuation"]["parent_run_root"])
                    if parent_macro == source_parent_macro else Path(spec["run_root"]))
-    expected_parent = parent_root / mode / "train/attempts"
+    expected_parent = parent_root / (mode if parent_macro == source_parent_macro else arm) / "train/attempts"
     parent_run = read_json(parent.parent.parent / "run_contract.json")
     expected = (
         (run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE), (run.get("mode"), mode),
@@ -294,7 +303,9 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
         (bool(trainer.get("optimizer", {}).get("param_groups")), True),
         (trainer.get("scheduler", {}).get("last_epoch"), macro),
         (trainer.get("scaler"), None),
-        (trainer.get("training_state"), {"updates": macro, "mode": mode}),
+        (trainer.get("training_state"), {"updates": macro, "mode": mode,
+                                         **({"pilot_arm": arm, "loss_variant": PILOT_ARMS[arm]}
+                                            if pilot else {})}),
         (trainer.get("sampler_state", {}).get("next_step"), macro),
         ({k: v for k, v in trainer.get("sampler_state", {}).items() if k != "next_step"}, run["sampler"]),
         (run.get("sampler"), expected_sampler),
@@ -302,12 +313,18 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
         (parent.parent.parent.parent.resolve(), expected_parent.resolve()),
         (parent.is_dir() and complete_checkpoint(parent), True),
         (resume.get("checkpoint"), str(parent)),
+        (resume.get("parent_git", {}).get("commit") if pilot else None,
+         spec["continuation"]["parent_training_git"] if pilot else None),
     )
+    parsed_metrics = list(map(json.loads, metrics))
     if (any(actual != wanted for actual, wanted in expected) or len(metrics) != macro
-            or [row["update"] for row in map(json.loads, metrics)] != list(range(1, macro + 1))):
+            or [row["update"] for row in parsed_metrics] != list(range(1, macro + 1))
+            or pilot and any(row.get("pilot_arm") != arm or row.get("loss_variant") != PILOT_ARMS[arm]
+                             for row in parsed_metrics[1800:])):
         raise ValueError("continuation bank source/ECP/optimizer/sampler provenance changed")
     if window and parent_macro == source_parent_macro:
-        old_spec_path = (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH)[window - 1]
+        old_spec_path = (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
+                         CONTINUATION1800_SPEC_PATH)[window - 1]
         old = inspect_training_source(specification(old_spec_path), parent, mode,
                                       sealed_evaluation=True)
         if any(old.get(key) != run.get(key) for key in ("source", "lora", "operator", "optimizer",
@@ -320,12 +337,15 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
 def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device) -> Path:
     checkpoint = checkpoint.resolve()
     macro = int(checkpoint.name.split("_")[-1]) if checkpoint.name.startswith("macro_") else -1
-    if mode != "T" or macro not in CONTINUATION1800_EVALUATION_MACROS:
-        raise ValueError("new materialization requires the T1710/1800 continuation ECP")
+    pilot = mode in PILOT_ARMS and macro in PILOT_CHECKPOINTS
+    if not pilot and (mode != "T" or macro not in CONTINUATION1800_EVALUATION_MACROS):
+        raise ValueError("new materialization requires T1710/1800 or a registered pilot1890 ECP")
     spec_path = EVALUATION_SPEC_PATHS.get(macro, SPEC_PATH)
     spec = specification(spec_path)
     source_spec_path = spec_path
-    run = inspect_training_source(spec, checkpoint, mode)
+    run = inspect_training_source(spec, checkpoint, "T" if pilot else mode)
+    if pilot and (run["pilot_arm"] != mode or run["loss_variant"] != PILOT_ARMS[mode]):
+        raise ValueError("pilot bank arm or loss source changed")
     output = Path(spec["run_root"]) / mode / "banks" / str(macro)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         asset_root / spec["source"]["lora_contract"]), rank=128)
@@ -334,12 +354,13 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     if (output / "manifest.json").exists() or (output.exists() and not
                                               (output / "materialization_contract.json").is_file()):
         raise ValueError("published or unregistered operator bank output exists")
-    runtime = build_runtime(asset_root, spec, device, mode)
+    runtime = build_runtime(asset_root, spec, device, "T" if pilot else mode)
     if runtime.source != run["source"]:
         raise ValueError("materialization source differs from the formal training run")
     contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(source_spec_path),
                 "training_git": run["git"]["commit"], "source": run["source"],
-                "lora": lora.to_dict()}
+                "lora": lora.to_dict(),
+                **({"loss_variant": PILOT_ARMS[mode]} if pilot else {})}
     output.mkdir(parents=True, exist_ok=True)
     registration = output / "materialization_contract.json"
     if registration.exists():
@@ -396,6 +417,9 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
             "information_wall": {"teacher_video_values_read": 400,
                                  "teacher_runtime_reads": 0, "deployment_adapters": 1,
                                  "validation_test_gradients": False}}
+    if pilot:
+        bank.update(loss_variant=PILOT_ARMS[mode], pilot=spec["pilot"],
+                    parent_checkpoint=run["parent_checkpoint"])
     write_json_atomic(output / "manifest.json", bank)
     return output / "manifest.json"
 
@@ -434,10 +458,13 @@ def _inspect_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping, ta
     continuation = macro in CONTINUATION_EVALUATION_MACROS
     window1350 = macro in CONTINUATION1350_EVALUATION_MACROS
     window1800 = macro in CONTINUATION1800_EVALUATION_MACROS
-    registered_spec = (CONTINUATION1800_FROZEN_SPEC_PATH if window1800 else
+    pilot = macro in PILOT_CHECKPOINTS and mode in PILOT_ARMS
+    registered_spec = (PILOT_SPEC_PATH if pilot else
+                       CONTINUATION1800_FROZEN_SPEC_PATH if window1800 else
                        CONTINUATION1350_FROZEN_SPEC_PATH if window1350 else
                        CONTINUATION_FROZEN_SPEC_PATH if continuation else SEALED_SPEC_PATH)
-    current_spec = specification(CONTINUATION1800_SPEC_PATH if window1800 else
+    current_spec = specification(PILOT_SPEC_PATH if pilot else
+                                 CONTINUATION1800_SPEC_PATH if window1800 else
                                  CONTINUATION1350_SPEC_PATH if window1350 else
                                  CONTINUATION_SPEC_PATH if continuation else SPEC_PATH)
     expected_path = Path(spec["run_root"]) / mode / "banks" / str(macro) / "manifest.json"
@@ -451,13 +478,18 @@ def _inspect_scope(bank: Mapping, spec: Mapping, path: Path, source: Mapping, ta
         (spec.get("schema_version"), "ember_operator_read_write_learning_v1"),
         ("arm" in bank, False),
         (bank["source"], source), (bank["scene_root"], str(SCENE_ROOT)),
+        (bank.get("loss_variant") if pilot else None, PILOT_ARMS[mode] if pilot else None),
+        (bank.get("pilot") if pilot else None, spec["pilot"] if pilot else None),
+        (bank.get("parent_checkpoint") if pilot else None,
+         str(Path(spec["continuation"]["parent_run_root"]) /
+             "T/train/attempts/continuation/checkpoints/macro_00001800") if pilot else None),
         (evaluation_role, "validation"), (require_formal, True), (bank["tasks"], tasks),
         (set(task_keys), {(row["suite"], row["task_id"]) for row in tasks}),
         (bank["information_wall"], {"teacher_video_values_read": 0 if mode == "MT" else 400,
                                      "teacher_runtime_reads": 0, "deployment_adapters": 1,
                                      "validation_test_gradients": False}),
     )
-    if (mode not in ("T", "U", "MT") or not source_matches(bank["source"], source)
+    if (mode not in ("T", "U", "MT", *PILOT_ARMS) or not source_matches(bank["source"], source)
             or any(actual != wanted for actual, wanted in expected)
             or len(bank["conditions"]) != 400
             or any({k: row[k] for k in ("condition_id", "global_task_id", "teacher_demo")} != condition
@@ -486,7 +518,8 @@ def _inspect_mt_bank(bank: Mapping, spec: Mapping, source: Mapping) -> None:
 
 def _inspect_tu_bank(bank: Mapping, spec: Mapping, path: Path) -> None:
     mode, checkpoint = bank["mode"], Path(bank["checkpoint"])
-    run = inspect_training_source(spec, checkpoint, mode, sealed_evaluation=True)
+    run = inspect_training_source(spec, checkpoint, "T" if mode in PILOT_ARMS else mode,
+                                  sealed_evaluation=True)
     base = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)
     shapes = expected_lora_state_shapes(base)
@@ -640,13 +673,18 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
     expected_output = (eval_root / "correct400" if macro in ("270", "300")
                        else eval_root / macro / "correct400")
     public_beta = bank.get("mode") == PUBLIC_BETA_MODE
+    pilot = bank.get("mode") in PILOT_ARMS
     expected_capture = (PUBLIC_BETA_CAPTURE_PATH if public_beta else
+                        PILOT_CAPTURE_PATH if pilot else
                         SPEC_PATH.parent / "official_capture.json")
-    expected_study = PUBLIC_BETA_STUDY if public_beta else "operator_read_write_learning_20260928"
+    expected_study = (PUBLIC_BETA_STUDY if public_beta else
+                      "operator_public_function_pilot_20260929" if pilot else
+                      "operator_read_write_learning_20260928")
     if (path.resolve() != expected_capture.resolve()
             or bank.get("kind") != KIND or manifest.get("schema_version") != "ember_pi05_registered_trajectory_capture_v1"
             or manifest.get("study_id") != expected_study
             or public_beta and bank_path != (PUBLIC_BETA_ROOT / PUBLIC_BETA_MODE / "banks/1800/manifest.json")
+            or pilot and bank_path != (PILOT_ROOT / bank["mode"] / "banks/1890/manifest.json")
             or task_subset is not None or manifest.get("task_subset_selection") is not None
             or manifest.get("full_conditions") != full or manifest.get("mode") != "compact"
             or manifest.get("passive_control_trace") != PASSIVE_TAG or manifest.get("stage_predicates") is not True
@@ -707,13 +745,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("materialize", "register-mt", "public-beta"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--mode", choices=("T", "U"))
+    parser.add_argument("--mode", choices=("T", "U", *PILOT_ARMS))
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--device")
     args = parser.parse_args()
     if args.phase == "materialize":
         if args.mode is None or args.checkpoint is None:
-            parser.error("materialize requires a T/U mode and completed selected ECP")
+            parser.error("materialize requires a registered arm and completed selected ECP")
         print(materialize(args.mode, args.checkpoint, args.asset_root,
                           torch.device(args.device or "cuda:0")))
     elif args.phase == "public-beta":

@@ -1,0 +1,90 @@
+"""One operator condition's full FM and optional direct public FM credit."""
+from __future__ import annotations
+
+import time
+
+import torch
+
+from ember.lora import validate_lora_state
+from ember.writer.function_credit import paired_functional_credit
+from ember.writer.runtime import autocast
+
+
+def gradient_groups(writer) -> dict[str, float]:
+    def norm(parameters):
+        values = [p.grad.detach().float().norm() for p in parameters if p.grad is not None]
+        return float(torch.stack(values).norm()) if values else 0.0
+
+    return {"public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
+                             if name.endswith(".lora_A.default.weight")),
+            "public_B0": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
+                              if name.endswith(".lora_B.default.weight")),
+            "independent_S": norm(writer.separate_keys or ()),
+            **{name: norm(parameter for unit in writer.writes
+                          for parameter in getattr(unit, name).parameters())
+               for name in ("p", "c", "d", "o")}}
+
+
+def apply_public_cotangent(writer, cotangent: dict[str, torch.Tensor]) -> None:
+    """Add beta execution risk only to the 76 public factor parameters."""
+    public = writer.public_state()
+    if (len(public) != 76 or set(public) != set(cotangent)
+            or any(not torch.isfinite(value).all() for value in cotangent.values())):
+        raise ValueError("public FM cotangent lost 76 complete finite A/B0 factors")
+    torch.autograd.backward(tuple(public.values()),
+                            tuple(cotangent[name].to(public[name]) for name in public))
+
+
+def one_job(runtime, data, event: dict, microbatch: int,
+            frame_chunk: int, loss_variant: str) -> dict:
+    if loss_variant not in ("full", "full_plus_public_beta"):
+        raise ValueError("operator pilot loss identity changed")
+    started = time.perf_counter()
+    condition, raw, sampled = data.condition(runtime, event["task"], event["teacher_demo"])
+    with torch.no_grad():
+        state, _ = runtime.compile(condition, frame_chunk=frame_chunk)
+    torch.cuda.synchronize(runtime.device)
+    compilation = time.perf_counter() - started
+    batch = runtime.processor.training_batch(data.batch(event))
+    with autocast(runtime.device):
+        credit = paired_functional_credit(
+            runtime.policy, state, runtime.lora, batch, seed=event["flow_seed"],
+            device=runtime.device, random_batch=28, offset=0, microbatch=microbatch,
+            condition_weight=0.25)
+        beta_credit = None
+        if loss_variant == "full_plus_public_beta":
+            public = runtime.writer.public_state()
+            validate_lora_state(public, runtime.lora)
+            beta_credit = paired_functional_credit(
+                runtime.policy, public, runtime.lora, batch, seed=event["flow_seed"],
+                device=runtime.device, random_batch=28, offset=0, microbatch=microbatch,
+                condition_weight=0.25)
+    torch.cuda.synchronize(runtime.device)
+    fm = time.perf_counter() - started - compilation
+    cotangent = credit["lora_cotangent"]
+    with torch.enable_grad():
+        if beta_credit is not None:
+            apply_public_cotangent(runtime.writer, beta_credit["lora_cotangent"])
+        replay, native = runtime.compile(condition, frame_chunk=frame_chunk, retain_native=True)
+        if set(replay) != set(cotangent) or any(not torch.isfinite(v).all() for v in cotangent.values()):
+            raise ValueError("full-rank FM cotangent incomplete or nonfinite")
+        torch.autograd.backward(tuple(replay.values()),
+                                tuple(cotangent[name].to(replay[name]) for name in replay))
+    torch.cuda.synchronize(runtime.device)
+    x_norms = [value.grad.float().norm() for value in native["x"].values() if value.grad is not None]
+    native_norm = {"h": float(native["h"].grad.float().norm()) if native["h"].grad is not None else 0.0,
+                   "x": float(torch.stack(x_norms).norm()) if x_norms else 0.0}
+    return {"task": event["task"], "teacher_demo": event["teacher_demo"],
+            "queries": len(event["queries"]), "query_demos": [row["demo"] for row in event["queries"]],
+            "query_frames": [row["frame"] for row in event["queries"]], "flow_seed": event["flow_seed"],
+            "raw_frames": raw, "sampled_frames": sampled, "flow_loss": credit["flow_loss"],
+            "public_flow_loss": beta_credit["flow_loss"] if beta_credit else None,
+            "loss_variant": loss_variant, "public_query_reuse": beta_credit is not None,
+            "fm_cotangent_norm": float(torch.stack([v.norm() for v in cotangent.values()]).norm()),
+            "public_cotangent_norm": (float(torch.stack([v.norm() for v in
+                                      beta_credit["lora_cotangent"].values()]).norm())
+                                      if beta_credit else None),
+            "native_cotangent_norm": native_norm,
+            "compile_seconds": compilation, "fm_seconds": fm,
+            "replay_seconds": time.perf_counter() - started - compilation - fm,
+            "total_seconds": time.perf_counter() - started}

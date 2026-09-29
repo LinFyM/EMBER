@@ -1,0 +1,3363 @@
+{
+  "date": "2026-09-30",
+  "scope": "Existing T2340 train0/12/20/32, two teachers each, Q8/V8/action_out. CPU feature replay/algebra and saved genuine cotangents only. No GPU, native/policy forward, parameter update, environment, new held labels or performance evaluation.",
+  "provenance": {
+    "address_readback": "/data1/user/ymdai/projects/EMBER-native-conditional-reader-dev/.codex/tmp/operator_address_learning_cpu_20260929/readback.json",
+    "credit_script": "/data1/user/ymdai/projects/EMBER/.codex/tmp/operator_architecture_cycle_20260929/clock_credit_probe.py",
+    "credit_full_rows": "/data1/user/ymdai/projects/EMBER/.codex/tmp/operator_architecture_cycle_20260929/clock_credit_probe.json",
+    "path_script": "/data1/user/ymdai/projects/EMBER/.codex/tmp/operator_architecture_cycle_20260929/path_refinement_probe.py",
+    "path_full_rows": "/data1/user/ymdai/projects/EMBER/.codex/tmp/operator_architecture_cycle_20260929/path_refinement_probe.json",
+    "data_root": "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929",
+    "checkpoint": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340/T/train/attempts/continuation/checkpoints/macro_00002340/ecp.safetensors"
+  },
+  "address": {
+    "initialization": "Per-tensor identity_lora_state seed20260721, physical Q8/V8 BF16 and action_out FP32.",
+    "MT_geometry_identity_and_source_match": true,
+    "MT_source_base_config_authority_hash_matches_T": false,
+    "matrix": {
+      "Q8": {
+        "T270": {
+          "relative_frobenius_change": 0.28813156895073744,
+          "median_row_angle_deg": 15.837693956330334,
+          "rowspace_projector_rms": 0.14885218748587759
+        },
+        "T2340": {
+          "relative_frobenius_change": 0.39920139150468165,
+          "median_row_angle_deg": 21.5585976295547,
+          "rowspace_projector_rms": 0.20869077038035563
+        },
+        "MT300": {
+          "relative_frobenius_change": 0.6177707800334272,
+          "median_row_angle_deg": 31.673514840999434,
+          "rowspace_projector_rms": 0.19510218643179938
+        }
+      },
+      "V8": {
+        "T270": {
+          "relative_frobenius_change": 0.21508104108355902,
+          "median_row_angle_deg": 12.036109530155237,
+          "rowspace_projector_rms": 0.15570690113796049
+        },
+        "T2340": {
+          "relative_frobenius_change": 0.28894300403477396,
+          "median_row_angle_deg": 15.96425657932276,
+          "rowspace_projector_rms": 0.20866366065136036
+        },
+        "MT300": {
+          "relative_frobenius_change": 0.289028985760302,
+          "median_row_angle_deg": 16.004579517383156,
+          "rowspace_projector_rms": 0.16689093217594062
+        }
+      },
+      "action_out": {
+        "T270": {
+          "relative_frobenius_change": 0.24117542224926497,
+          "median_row_angle_deg": 13.467621704407152,
+          "rowspace_projector_rms": 0.17193311559782098
+        },
+        "T2340": {
+          "relative_frobenius_change": 0.3979779301429518,
+          "median_row_angle_deg": 21.562460962277946,
+          "rowspace_projector_rms": 0.2541562802765914
+        },
+        "MT300": {
+          "relative_frobenius_change": 0.38198458661643664,
+          "median_row_angle_deg": 20.761740181133046,
+          "rowspace_projector_rms": 0.19836493453067405
+        }
+      }
+    },
+    "fixed_mature_X": {
+      "Q8": {
+        "median_key_angle_deg": 48.47055540998393,
+        "median_key_gram_relative_frobenius_change": 1.6828601073243685,
+        "first_write_later_R_rms_mean_initial": 0.9196167290210724,
+        "first_write_later_R_rms_mean_T2340": 0.9643696025013924
+      },
+      "V8": {
+        "median_key_angle_deg": 38.725841668803724,
+        "median_key_gram_relative_frobenius_change": 0.45571960134705286,
+        "first_write_later_R_rms_mean_initial": 0.9173528477549553,
+        "first_write_later_R_rms_mean_T2340": 0.9306050166487694
+      },
+      "action_out": {
+        "median_key_angle_deg": 29.30286766003693,
+        "median_key_gram_relative_frobenius_change": 0.3803686021217964,
+        "first_write_later_R_rms_mean_initial": 0.909349262714386,
+        "first_write_later_R_rms_mean_T2340": 0.9096950739622116
+      }
+    }
+  },
+  "path_scope": "Piecewise linear refinement of existing native raw H and projected A X, recomputing original RMS/key normalization/value at each intermediate feature point. Interpolated features are mathematical path points, not claimed obtainable RGB-native outputs. Same actual full-policy sampler Aq covariance frozen. No policy forward/update/GPU/labels/held. Values scaled only by actual refined Delta H.",
+  "path_rows": [
+    {
+      "task": 0,
+      "teacher": 40,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "original_transitions": 19,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999551,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6351026892662048,
+              "M_cosine": 0.9838104642958534,
+              "relative_actual_query_preactivation_change": 0.42465321729081057
+            },
+            "4": {
+              "M_norm_ratio": 0.4162774384021759,
+              "M_cosine": 0.9276483007692267,
+              "relative_actual_query_preactivation_change": 0.6860048970077418
+            },
+            "8": {
+              "M_norm_ratio": 0.23757195472717285,
+              "M_cosine": 0.8715987931864293,
+              "relative_actual_query_preactivation_change": 0.8389901243193797
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.5707058310508728,
+            "M_cosine": 0.971771535527768,
+            "relative_actual_query_preactivation_change": 0.48603745993403646
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999556,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6898815035820007,
+              "M_cosine": 0.9958324699790799,
+              "relative_actual_query_preactivation_change": 0.32080528636059696
+            },
+            "4": {
+              "M_norm_ratio": 0.554516613483429,
+              "M_cosine": 0.9865698043289415,
+              "relative_actual_query_preactivation_change": 0.46399578051883217
+            },
+            "8": {
+              "M_norm_ratio": 0.4919635057449341,
+              "M_cosine": 0.9775971841764302,
+              "relative_actual_query_preactivation_change": 0.5316057145231398
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.8871934413909912,
+            "M_cosine": 0.9988473415661747,
+            "relative_actual_query_preactivation_change": 0.12384898378807868
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999513,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.607371985912323,
+              "M_cosine": 0.99202452671964,
+              "relative_actual_query_preactivation_change": 0.4045566448857514
+            },
+            "4": {
+              "M_norm_ratio": 0.3331809341907501,
+              "M_cosine": 0.9659844026156933,
+              "relative_actual_query_preactivation_change": 0.6790550419462615
+            },
+            "8": {
+              "M_norm_ratio": 0.16783258318901062,
+              "M_cosine": 0.763998905948198,
+              "relative_actual_query_preactivation_change": 0.8682325910907787
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.5037280321121216,
+            "M_cosine": 0.8730735256120259,
+            "relative_actual_query_preactivation_change": 0.5937262387393809
+          }
+        }
+      },
+      "normal_reconstruction_rel": 6.060535611140949e-07
+    },
+    {
+      "task": 0,
+      "teacher": 40,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "original_transitions": 19,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999898,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.5875888466835022,
+              "M_cosine": 0.9433415854785137,
+              "relative_actual_query_preactivation_change": 0.5132707204287158
+            },
+            "4": {
+              "M_norm_ratio": 0.3570631444454193,
+              "M_cosine": 0.8126879410716247,
+              "relative_actual_query_preactivation_change": 0.7636924579948337
+            },
+            "8": {
+              "M_norm_ratio": 0.23140233755111694,
+              "M_cosine": 0.6840495898171872,
+              "relative_actual_query_preactivation_change": 0.873937648123988
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6480712294578552,
+            "M_cosine": 0.9379869514881345,
+            "relative_actual_query_preactivation_change": 0.47834963447826073
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999921,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.993492066860199,
+              "M_cosine": 0.9815968325277681,
+              "relative_actual_query_preactivation_change": 0.2143688352213178
+            },
+            "4": {
+              "M_norm_ratio": 1.0042080879211426,
+              "M_cosine": 0.9587951666319724,
+              "relative_actual_query_preactivation_change": 0.3227077884401527
+            },
+            "8": {
+              "M_norm_ratio": 1.0130116939544678,
+              "M_cosine": 0.944359825408258,
+              "relative_actual_query_preactivation_change": 0.3770831419285827
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.008766770362854,
+            "M_cosine": 0.9988905423317287,
+            "relative_actual_query_preactivation_change": 0.05378845975632905
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999892,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8857904672622681,
+              "M_cosine": 0.9693127018331107,
+              "relative_actual_query_preactivation_change": 0.28903087249918163
+            },
+            "4": {
+              "M_norm_ratio": 0.7352727055549622,
+              "M_cosine": 0.9128872520962268,
+              "relative_actual_query_preactivation_change": 0.4883081243142001
+            },
+            "8": {
+              "M_norm_ratio": 0.5233139395713806,
+              "M_cosine": 0.862356902863641,
+              "relative_actual_query_preactivation_change": 0.6479177756989809
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7117276787757874,
+            "M_cosine": 0.9857876861036111,
+            "relative_actual_query_preactivation_change": 0.33419973424297467
+          }
+        }
+      },
+      "normal_reconstruction_rel": 3.5694182543011266e-07
+    },
+    {
+      "task": 0,
+      "teacher": 40,
+      "site": "model.action_out_proj",
+      "original_transitions": 19,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000002,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8091049790382385,
+              "M_cosine": 0.9850264921926144,
+              "relative_actual_query_preactivation_change": 0.2613438687535328
+            },
+            "4": {
+              "M_norm_ratio": 0.6428539156913757,
+              "M_cosine": 0.967358987710741,
+              "relative_actual_query_preactivation_change": 0.45005656994321686
+            },
+            "8": {
+              "M_norm_ratio": 0.48812809586524963,
+              "M_cosine": 0.9420535691065153,
+              "relative_actual_query_preactivation_change": 0.6187057009712783
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7593141794204712,
+            "M_cosine": 0.9903366225234179,
+            "relative_actual_query_preactivation_change": 0.3182855840840217
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9393275380134583,
+              "M_cosine": 0.9703723368665856,
+              "relative_actual_query_preactivation_change": 0.2384863903044941
+            },
+            "4": {
+              "M_norm_ratio": 0.9246952533721924,
+              "M_cosine": 0.9345909311841772,
+              "relative_actual_query_preactivation_change": 0.3444475865369542
+            },
+            "8": {
+              "M_norm_ratio": 0.9206789135932922,
+              "M_cosine": 0.9122060111388185,
+              "relative_actual_query_preactivation_change": 0.39437025476628645
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9956566095352173,
+            "M_cosine": 0.9982716244474903,
+            "relative_actual_query_preactivation_change": 0.051112010749220775
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000002,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9155586361885071,
+              "M_cosine": 0.9730897823586719,
+              "relative_actual_query_preactivation_change": 0.23214494245717332
+            },
+            "4": {
+              "M_norm_ratio": 0.8547161817550659,
+              "M_cosine": 0.9461961360341761,
+              "relative_actual_query_preactivation_change": 0.32516223206284844
+            },
+            "8": {
+              "M_norm_ratio": 0.7758432626724243,
+              "M_cosine": 0.9365761896733958,
+              "relative_actual_query_preactivation_change": 0.3781678839683775
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9077203869819641,
+            "M_cosine": 0.9969779592696429,
+            "relative_actual_query_preactivation_change": 0.13057683494112823
+          }
+        }
+      },
+      "normal_reconstruction_rel": 3.2761445822870883e-07
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "original_transitions": 26,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999589,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.5956810712814331,
+              "M_cosine": 0.9679760984609638,
+              "relative_actual_query_preactivation_change": 0.569085260045619
+            },
+            "4": {
+              "M_norm_ratio": 0.37730422616004944,
+              "M_cosine": 0.9065880762662489,
+              "relative_actual_query_preactivation_change": 0.7973534556089128
+            },
+            "8": {
+              "M_norm_ratio": 0.2045096457004547,
+              "M_cosine": 0.779809780470293,
+              "relative_actual_query_preactivation_change": 0.9047392071490827
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.5420284867286682,
+            "M_cosine": 0.9077346669237127,
+            "relative_actual_query_preactivation_change": 0.5476560188006503
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999493,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.690979540348053,
+              "M_cosine": 0.9969782826722569,
+              "relative_actual_query_preactivation_change": 0.31518311729027626
+            },
+            "4": {
+              "M_norm_ratio": 0.5534785389900208,
+              "M_cosine": 0.990106153405816,
+              "relative_actual_query_preactivation_change": 0.45771640785490647
+            },
+            "8": {
+              "M_norm_ratio": 0.48921364545822144,
+              "M_cosine": 0.9833171005602644,
+              "relative_actual_query_preactivation_change": 0.525396812576319
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.8838890790939331,
+            "M_cosine": 0.9991117563989899,
+            "relative_actual_query_preactivation_change": 0.12307270927711177
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999492,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.5181000232696533,
+              "M_cosine": 0.991666571598443,
+              "relative_actual_query_preactivation_change": 0.48546704440268906
+            },
+            "4": {
+              "M_norm_ratio": 0.24207070469856262,
+              "M_cosine": 0.9147060796298183,
+              "relative_actual_query_preactivation_change": 0.7741791502023438
+            },
+            "8": {
+              "M_norm_ratio": 0.1296793669462204,
+              "M_cosine": 0.5345190095419661,
+              "relative_actual_query_preactivation_change": 0.9244986261408188
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.5357086658477783,
+            "M_cosine": 0.8098300031670428,
+            "relative_actual_query_preactivation_change": 0.641611755498742
+          }
+        }
+      },
+      "normal_reconstruction_rel": 8.784709848441707e-07
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "original_transitions": 26,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999919,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6067724227905273,
+              "M_cosine": 0.9263817715863333,
+              "relative_actual_query_preactivation_change": 0.51076223756562
+            },
+            "4": {
+              "M_norm_ratio": 0.3762619197368622,
+              "M_cosine": 0.7771329997179481,
+              "relative_actual_query_preactivation_change": 0.758662006051887
+            },
+            "8": {
+              "M_norm_ratio": 0.23472411930561066,
+              "M_cosine": 0.635996560240623,
+              "relative_actual_query_preactivation_change": 0.879960831406144
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6238317489624023,
+            "M_cosine": 0.9548343867253222,
+            "relative_actual_query_preactivation_change": 0.4619523076386238
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999915,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9536592364311218,
+              "M_cosine": 0.972207987266901,
+              "relative_actual_query_preactivation_change": 0.26908644323411735
+            },
+            "4": {
+              "M_norm_ratio": 0.9511599540710449,
+              "M_cosine": 0.9360497534013856,
+              "relative_actual_query_preactivation_change": 0.40367566671458577
+            },
+            "8": {
+              "M_norm_ratio": 0.9552165865898132,
+              "M_cosine": 0.9127303778901262,
+              "relative_actual_query_preactivation_change": 0.47088497391967366
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.0042649507522583,
+            "M_cosine": 0.9981196922343576,
+            "relative_actual_query_preactivation_change": 0.07117078760120885
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999938,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8254269957542419,
+              "M_cosine": 0.9617194267857863,
+              "relative_actual_query_preactivation_change": 0.3488490591791066
+            },
+            "4": {
+              "M_norm_ratio": 0.6492286324501038,
+              "M_cosine": 0.9064164643434124,
+              "relative_actual_query_preactivation_change": 0.5530849190937129
+            },
+            "8": {
+              "M_norm_ratio": 0.4433118999004364,
+              "M_cosine": 0.8758940828388738,
+              "relative_actual_query_preactivation_change": 0.6944939779442164
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6828286051750183,
+            "M_cosine": 0.9716380217670608,
+            "relative_actual_query_preactivation_change": 0.4029780736849569
+          }
+        }
+      },
+      "normal_reconstruction_rel": 4.4121173914390965e-07
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "site": "model.action_out_proj",
+      "original_transitions": 26,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000009,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.7716827392578125,
+              "M_cosine": 0.9701032933446084,
+              "relative_actual_query_preactivation_change": 0.3556018788070757
+            },
+            "4": {
+              "M_norm_ratio": 0.6089814901351929,
+              "M_cosine": 0.9327497006249095,
+              "relative_actual_query_preactivation_change": 0.5424792225779546
+            },
+            "8": {
+              "M_norm_ratio": 0.4621707499027252,
+              "M_cosine": 0.8900693799733023,
+              "relative_actual_query_preactivation_change": 0.6874753034012901
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7589241862297058,
+            "M_cosine": 0.9882341987470179,
+            "relative_actual_query_preactivation_change": 0.31990588726769487
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000007,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8616992831230164,
+              "M_cosine": 0.9541856567090099,
+              "relative_actual_query_preactivation_change": 0.3397575025318416
+            },
+            "4": {
+              "M_norm_ratio": 0.8233558535575867,
+              "M_cosine": 0.8884475057204166,
+              "relative_actual_query_preactivation_change": 0.5004300742389834
+            },
+            "8": {
+              "M_norm_ratio": 0.8125078082084656,
+              "M_cosine": 0.8440616336997631,
+              "relative_actual_query_preactivation_change": 0.5783567328449852
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9868245720863342,
+            "M_cosine": 0.9960167169182841,
+            "relative_actual_query_preactivation_change": 0.08699773710001592
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000007,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8374025821685791,
+              "M_cosine": 0.9551156224226545,
+              "relative_actual_query_preactivation_change": 0.34662608186588356
+            },
+            "4": {
+              "M_norm_ratio": 0.7583324909210205,
+              "M_cosine": 0.8964746925508369,
+              "relative_actual_query_preactivation_change": 0.5011990239894076
+            },
+            "8": {
+              "M_norm_ratio": 0.6839475631713867,
+              "M_cosine": 0.8641643034074427,
+              "relative_actual_query_preactivation_change": 0.576271426072907
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9019098877906799,
+            "M_cosine": 0.9941167975967784,
+            "relative_actual_query_preactivation_change": 0.1561282306099182
+          }
+        }
+      },
+      "normal_reconstruction_rel": 3.08727152287247e-07
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "original_transitions": 36,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999535,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6593244075775146,
+              "M_cosine": 0.9566879956789123,
+              "relative_actual_query_preactivation_change": 0.45408691325605177
+            },
+            "4": {
+              "M_norm_ratio": 0.42061010003089905,
+              "M_cosine": 0.9015157240894756,
+              "relative_actual_query_preactivation_change": 0.6862304474439919
+            },
+            "8": {
+              "M_norm_ratio": 0.23884429037570953,
+              "M_cosine": 0.8345536628283857,
+              "relative_actual_query_preactivation_change": 0.849136632440256
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.5678520202636719,
+            "M_cosine": 0.9249106085522528,
+            "relative_actual_query_preactivation_change": 0.555589941562591
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999567,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.7858085036277771,
+              "M_cosine": 0.9941078051430402,
+              "relative_actual_query_preactivation_change": 0.2360342249117259
+            },
+            "4": {
+              "M_norm_ratio": 0.6914674639701843,
+              "M_cosine": 0.9837473378337032,
+              "relative_actual_query_preactivation_change": 0.34471556067884696
+            },
+            "8": {
+              "M_norm_ratio": 0.6477227210998535,
+              "M_cosine": 0.9754013623161016,
+              "relative_actual_query_preactivation_change": 0.39681015764652666
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9367363452911377,
+            "M_cosine": 0.9991293923362992,
+            "relative_actual_query_preactivation_change": 0.07604808430408903
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999576,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.5884078145027161,
+              "M_cosine": 0.9830994010233773,
+              "relative_actual_query_preactivation_change": 0.440767022168879
+            },
+            "4": {
+              "M_norm_ratio": 0.2866590917110443,
+              "M_cosine": 0.895708397038689,
+              "relative_actual_query_preactivation_change": 0.761283523116673
+            },
+            "8": {
+              "M_norm_ratio": 0.14595554769039154,
+              "M_cosine": 0.5461120857567467,
+              "relative_actual_query_preactivation_change": 0.9323035308289086
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.5091607570648193,
+            "M_cosine": 0.825375211423991,
+            "relative_actual_query_preactivation_change": 0.7061413507127648
+          }
+        }
+      },
+      "normal_reconstruction_rel": 8.45055069476075e-07
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "original_transitions": 36,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999886,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.668182373046875,
+              "M_cosine": 0.9346313226671452,
+              "relative_actual_query_preactivation_change": 0.6095775552612607
+            },
+            "4": {
+              "M_norm_ratio": 0.4180314838886261,
+              "M_cosine": 0.8343989064271867,
+              "relative_actual_query_preactivation_change": 0.807845608673916
+            },
+            "8": {
+              "M_norm_ratio": 0.2638031244277954,
+              "M_cosine": 0.7237514803263744,
+              "relative_actual_query_preactivation_change": 0.9166374744838522
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6310604214668274,
+            "M_cosine": 0.9534373853570732,
+            "relative_actual_query_preactivation_change": 0.5560147415918905
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999907,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 1.0088444948196411,
+              "M_cosine": 0.9840467422522647,
+              "relative_actual_query_preactivation_change": 0.18998468392395484
+            },
+            "4": {
+              "M_norm_ratio": 1.0248360633850098,
+              "M_cosine": 0.964997885662185,
+              "relative_actual_query_preactivation_change": 0.28445725483781725
+            },
+            "8": {
+              "M_norm_ratio": 1.0355565547943115,
+              "M_cosine": 0.9531444329323637,
+              "relative_actual_query_preactivation_change": 0.33152557247942765
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.0104607343673706,
+            "M_cosine": 0.9991186487966817,
+            "relative_actual_query_preactivation_change": 0.04524894551301052
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999931,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8249632120132446,
+              "M_cosine": 0.9694780345019804,
+              "relative_actual_query_preactivation_change": 0.30981230189755166
+            },
+            "4": {
+              "M_norm_ratio": 0.605207085609436,
+              "M_cosine": 0.9072771857841376,
+              "relative_actual_query_preactivation_change": 0.5604911988292935
+            },
+            "8": {
+              "M_norm_ratio": 0.37467890977859497,
+              "M_cosine": 0.7939998212562485,
+              "relative_actual_query_preactivation_change": 0.7899858909817477
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6190921068191528,
+            "M_cosine": 0.9444857718077647,
+            "relative_actual_query_preactivation_change": 0.5340318673947365
+          }
+        }
+      },
+      "normal_reconstruction_rel": 5.150515107743558e-07
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "site": "model.action_out_proj",
+      "original_transitions": 36,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000002,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.7187069654464722,
+              "M_cosine": 0.9666067537617238,
+              "relative_actual_query_preactivation_change": 0.35079354170135724
+            },
+            "4": {
+              "M_norm_ratio": 0.5459449887275696,
+              "M_cosine": 0.8919298976066522,
+              "relative_actual_query_preactivation_change": 0.5756699815266189
+            },
+            "8": {
+              "M_norm_ratio": 0.42140769958496094,
+              "M_cosine": 0.8165712284378169,
+              "relative_actual_query_preactivation_change": 0.7220879781270164
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7718867659568787,
+            "M_cosine": 0.9818602700650819,
+            "relative_actual_query_preactivation_change": 0.3314350883714429
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000007,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9056985378265381,
+              "M_cosine": 0.953681875770511,
+              "relative_actual_query_preactivation_change": 0.2910198504917214
+            },
+            "4": {
+              "M_norm_ratio": 0.8960138559341431,
+              "M_cosine": 0.8912319488832914,
+              "relative_actual_query_preactivation_change": 0.43519542767788844
+            },
+            "8": {
+              "M_norm_ratio": 0.9007008671760559,
+              "M_cosine": 0.8511640353696321,
+              "relative_actual_query_preactivation_change": 0.5069126720724716
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.0052310228347778,
+            "M_cosine": 0.9966261759047532,
+            "relative_actual_query_preactivation_change": 0.0692860727536541
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000002,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.86689293384552,
+              "M_cosine": 0.9570028184259672,
+              "relative_actual_query_preactivation_change": 0.2893196550693479
+            },
+            "4": {
+              "M_norm_ratio": 0.7852133512496948,
+              "M_cosine": 0.9034574258529188,
+              "relative_actual_query_preactivation_change": 0.4200392482282295
+            },
+            "8": {
+              "M_norm_ratio": 0.6802893877029419,
+              "M_cosine": 0.8709801165405019,
+              "relative_actual_query_preactivation_change": 0.4982803214809628
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.866375207901001,
+            "M_cosine": 0.992133549156098,
+            "relative_actual_query_preactivation_change": 0.1709299394903045
+          }
+        }
+      },
+      "normal_reconstruction_rel": 3.4838811302506656e-07
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "original_transitions": 25,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999597,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.7088160514831543,
+              "M_cosine": 0.9656419179729975,
+              "relative_actual_query_preactivation_change": 0.4114048740169037
+            },
+            "4": {
+              "M_norm_ratio": 0.5197259187698364,
+              "M_cosine": 0.9007796083639078,
+              "relative_actual_query_preactivation_change": 0.6184921108431153
+            },
+            "8": {
+              "M_norm_ratio": 0.2920363247394562,
+              "M_cosine": 0.8239360220810662,
+              "relative_actual_query_preactivation_change": 0.7909002368713015
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.5619044303894043,
+            "M_cosine": 0.9655389320485602,
+            "relative_actual_query_preactivation_change": 0.45514106013610456
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999543,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.7459251880645752,
+              "M_cosine": 0.9900607311223607,
+              "relative_actual_query_preactivation_change": 0.28463510175120615
+            },
+            "4": {
+              "M_norm_ratio": 0.6377613544464111,
+              "M_cosine": 0.9711363141437657,
+              "relative_actual_query_preactivation_change": 0.4140840495553289
+            },
+            "8": {
+              "M_norm_ratio": 0.588961124420166,
+              "M_cosine": 0.9550932946469846,
+              "relative_actual_query_preactivation_change": 0.47577415551810354
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9234820008277893,
+            "M_cosine": 0.9982015286099826,
+            "relative_actual_query_preactivation_change": 0.09830421031359973
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999635,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.688316822052002,
+              "M_cosine": 0.9828994717036972,
+              "relative_actual_query_preactivation_change": 0.35013580050736565
+            },
+            "4": {
+              "M_norm_ratio": 0.40863871574401855,
+              "M_cosine": 0.9410180147102953,
+              "relative_actual_query_preactivation_change": 0.6311639212930351
+            },
+            "8": {
+              "M_norm_ratio": 0.1868007779121399,
+              "M_cosine": 0.7952154881292098,
+              "relative_actual_query_preactivation_change": 0.8532406543186708
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.45712941884994507,
+            "M_cosine": 0.939306648360436,
+            "relative_actual_query_preactivation_change": 0.5830500590804345
+          }
+        }
+      },
+      "normal_reconstruction_rel": 7.562657629023306e-07
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "original_transitions": 25,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999907,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.5604876279830933,
+              "M_cosine": 0.8807920196542572,
+              "relative_actual_query_preactivation_change": 0.6580758454755109
+            },
+            "4": {
+              "M_norm_ratio": 0.3376670479774475,
+              "M_cosine": 0.5896793268077151,
+              "relative_actual_query_preactivation_change": 0.9395351170210101
+            },
+            "8": {
+              "M_norm_ratio": 0.2294750213623047,
+              "M_cosine": 0.3728986185250819,
+              "relative_actual_query_preactivation_change": 1.0082768894707794
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6795896291732788,
+            "M_cosine": 0.908931717832457,
+            "relative_actual_query_preactivation_change": 0.6740948951912246
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999901,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 1.0669516324996948,
+              "M_cosine": 0.9913417641758984,
+              "relative_actual_query_preactivation_change": 0.15740247234042137
+            },
+            "4": {
+              "M_norm_ratio": 1.1072118282318115,
+              "M_cosine": 0.9816785581790494,
+              "relative_actual_query_preactivation_change": 0.2370238754714973
+            },
+            "8": {
+              "M_norm_ratio": 1.128849983215332,
+              "M_cosine": 0.9758548039643257,
+              "relative_actual_query_preactivation_change": 0.27699602731760825
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.019542932510376,
+            "M_cosine": 0.9995940973866185,
+            "relative_actual_query_preactivation_change": 0.03564490751495774
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999922,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9418376684188843,
+              "M_cosine": 0.9824836373699926,
+              "relative_actual_query_preactivation_change": 0.19975541673462083
+            },
+            "4": {
+              "M_norm_ratio": 0.7892310619354248,
+              "M_cosine": 0.9425443523738198,
+              "relative_actual_query_preactivation_change": 0.38360393300181017
+            },
+            "8": {
+              "M_norm_ratio": 0.5559273958206177,
+              "M_cosine": 0.8808202146077174,
+              "relative_actual_query_preactivation_change": 0.5918853369493624
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7043911814689636,
+            "M_cosine": 0.9832196262003141,
+            "relative_actual_query_preactivation_change": 0.34296110839825955
+          }
+        }
+      },
+      "normal_reconstruction_rel": 4.1933495253942965e-07
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "site": "model.action_out_proj",
+      "original_transitions": 25,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000007,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.788219690322876,
+              "M_cosine": 0.9793286757607332,
+              "relative_actual_query_preactivation_change": 0.29028956753471963
+            },
+            "4": {
+              "M_norm_ratio": 0.6123027801513672,
+              "M_cosine": 0.9271749803962789,
+              "relative_actual_query_preactivation_change": 0.5297297037040065
+            },
+            "8": {
+              "M_norm_ratio": 0.4711301922798157,
+              "M_cosine": 0.8543382567446461,
+              "relative_actual_query_preactivation_change": 0.7047684180463096
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7694398760795593,
+            "M_cosine": 0.9782537569394322,
+            "relative_actual_query_preactivation_change": 0.36882785126713125
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000007,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9624406695365906,
+              "M_cosine": 0.972713899902142,
+              "relative_actual_query_preactivation_change": 0.22257901763898086
+            },
+            "4": {
+              "M_norm_ratio": 0.9597113728523254,
+              "M_cosine": 0.9406263756907491,
+              "relative_actual_query_preactivation_change": 0.3228412804924521
+            },
+            "8": {
+              "M_norm_ratio": 0.9617200493812561,
+              "M_cosine": 0.9208805750887881,
+              "relative_actual_query_preactivation_change": 0.3705174339286724
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.0020930767059326,
+            "M_cosine": 0.998513245278077,
+            "relative_actual_query_preactivation_change": 0.04591189074889147
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000002,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.935994029045105,
+              "M_cosine": 0.9747710455918702,
+              "relative_actual_query_preactivation_change": 0.2180449558810893
+            },
+            "4": {
+              "M_norm_ratio": 0.8812179565429688,
+              "M_cosine": 0.9479720309030203,
+              "relative_actual_query_preactivation_change": 0.30969719095521425
+            },
+            "8": {
+              "M_norm_ratio": 0.7973133325576782,
+              "M_cosine": 0.9327354947034734,
+              "relative_actual_query_preactivation_change": 0.36800487593275083
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9047856330871582,
+            "M_cosine": 0.995663211383449,
+            "relative_actual_query_preactivation_change": 0.12625561793654566
+          }
+        }
+      },
+      "normal_reconstruction_rel": 3.4210145827273664e-07
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "original_transitions": 26,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999458,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.5714582800865173,
+              "M_cosine": 0.9704402739183323,
+              "relative_actual_query_preactivation_change": 0.5042809728171536
+            },
+            "4": {
+              "M_norm_ratio": 0.3106815814971924,
+              "M_cosine": 0.8970676434153887,
+              "relative_actual_query_preactivation_change": 0.752361182532402
+            },
+            "8": {
+              "M_norm_ratio": 0.16961373388767242,
+              "M_cosine": 0.7497859925043211,
+              "relative_actual_query_preactivation_change": 0.8767866009131511
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.5459406971931458,
+            "M_cosine": 0.91636000313631,
+            "relative_actual_query_preactivation_change": 0.5067870582900607
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999509,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9850220084190369,
+              "M_cosine": 0.9996399038100298,
+              "relative_actual_query_preactivation_change": 0.030340027934243972
+            },
+            "4": {
+              "M_norm_ratio": 0.9774465560913086,
+              "M_cosine": 0.999196137768651,
+              "relative_actual_query_preactivation_change": 0.04529742184877354
+            },
+            "8": {
+              "M_norm_ratio": 0.9736425876617432,
+              "M_cosine": 0.9989100085764313,
+              "relative_actual_query_preactivation_change": 0.05272341314868143
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9961082339286804,
+            "M_cosine": 0.9999782371561875,
+            "relative_actual_query_preactivation_change": 0.007611181303269507
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.999999999999953,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.5888331532478333,
+              "M_cosine": 0.9596530696582132,
+              "relative_actual_query_preactivation_change": 0.4637729935321651
+            },
+            "4": {
+              "M_norm_ratio": 0.3346453309059143,
+              "M_cosine": 0.46712560726352687,
+              "relative_actual_query_preactivation_change": 0.8913714306155586
+            },
+            "8": {
+              "M_norm_ratio": 0.3476446568965912,
+              "M_cosine": -0.19261758510031238,
+              "relative_actual_query_preactivation_change": 1.1178420709381582
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.0388450622558594,
+            "M_cosine": 0.7697420853004597,
+            "relative_actual_query_preactivation_change": 0.9925777799943712
+          }
+        }
+      },
+      "normal_reconstruction_rel": 6.980448006288498e-07
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "original_transitions": 26,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999897,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.567138671875,
+              "M_cosine": 0.6097151195484464,
+              "relative_actual_query_preactivation_change": 0.9338135072853891
+            },
+            "4": {
+              "M_norm_ratio": 0.5213581919670105,
+              "M_cosine": 0.09526123078939687,
+              "relative_actual_query_preactivation_change": 1.2233147403248714
+            },
+            "8": {
+              "M_norm_ratio": 0.37136152386665344,
+              "M_cosine": -0.030874977912183275,
+              "relative_actual_query_preactivation_change": 1.1457982015535975
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7122963666915894,
+            "M_cosine": 0.9549820336327205,
+            "relative_actual_query_preactivation_change": 0.3887164195547561
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999907,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9822948575019836,
+              "M_cosine": 0.9998440471842439,
+              "relative_actual_query_preactivation_change": 0.021349791766902455
+            },
+            "4": {
+              "M_norm_ratio": 0.9735103845596313,
+              "M_cosine": 0.9996449911007461,
+              "relative_actual_query_preactivation_change": 0.031963670251598776
+            },
+            "8": {
+              "M_norm_ratio": 0.9691359400749207,
+              "M_cosine": 0.9995139589982743,
+              "relative_actual_query_preactivation_change": 0.037254967472317546
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9955065250396729,
+            "M_cosine": 0.9999897176717105,
+            "relative_actual_query_preactivation_change": 0.005441923151551278
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999936,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.844031035900116,
+              "M_cosine": 0.9991956196320264,
+              "relative_actual_query_preactivation_change": 0.1606060660112517
+            },
+            "4": {
+              "M_norm_ratio": 0.630748987197876,
+              "M_cosine": 0.9939859471035508,
+              "relative_actual_query_preactivation_change": 0.3805959710787938
+            },
+            "8": {
+              "M_norm_ratio": 0.39606910943984985,
+              "M_cosine": 0.9704841229218711,
+              "relative_actual_query_preactivation_change": 0.6250176553563166
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6279346346855164,
+            "M_cosine": 0.9903575944847963,
+            "relative_actual_query_preactivation_change": 0.3934218847059647
+          }
+        }
+      },
+      "normal_reconstruction_rel": 6.422416731766134e-07
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "site": "model.action_out_proj",
+      "original_transitions": 26,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999998,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.7087488174438477,
+              "M_cosine": 0.9456302037270937,
+              "relative_actual_query_preactivation_change": 0.4777592969019897
+            },
+            "4": {
+              "M_norm_ratio": 0.5156548619270325,
+              "M_cosine": 0.8523543773861973,
+              "relative_actual_query_preactivation_change": 0.711662190895057
+            },
+            "8": {
+              "M_norm_ratio": 0.3562896251678467,
+              "M_cosine": 0.78264593424808,
+              "relative_actual_query_preactivation_change": 0.820238933644047
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6909459233283997,
+            "M_cosine": 0.9784649904572967,
+            "relative_actual_query_preactivation_change": 0.36841550453961674
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000004,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9647862911224365,
+              "M_cosine": 0.995384142692138,
+              "relative_actual_query_preactivation_change": 0.10030280228377891
+            },
+            "4": {
+              "M_norm_ratio": 0.9503986239433289,
+              "M_cosine": 0.9896054502572851,
+              "relative_actual_query_preactivation_change": 0.1481790641646715
+            },
+            "8": {
+              "M_norm_ratio": 0.943983256816864,
+              "M_cosine": 0.9858597894333999,
+              "relative_actual_query_preactivation_change": 0.17156187337795864
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9932498335838318,
+            "M_cosine": 0.9997097581067722,
+            "relative_actual_query_preactivation_change": 0.024582899176048004
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000002,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9138736724853516,
+              "M_cosine": 0.9965029005265064,
+              "relative_actual_query_preactivation_change": 0.11410893172222117
+            },
+            "4": {
+              "M_norm_ratio": 0.8089181184768677,
+              "M_cosine": 0.9898287620739017,
+              "relative_actual_query_preactivation_change": 0.22794982541336828
+            },
+            "8": {
+              "M_norm_ratio": 0.6679174900054932,
+              "M_cosine": 0.9691283693341515,
+              "relative_actual_query_preactivation_change": 0.3973263777715475
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.8256922960281372,
+            "M_cosine": 0.9901605896841255,
+            "relative_actual_query_preactivation_change": 0.22869333896942182
+          }
+        }
+      },
+      "normal_reconstruction_rel": 3.7226263316370023e-07
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "original_transitions": 26,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999564,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.5589286684989929,
+              "M_cosine": 0.9926351568662517,
+              "relative_actual_query_preactivation_change": 0.438805205433401
+            },
+            "4": {
+              "M_norm_ratio": 0.3026595711708069,
+              "M_cosine": 0.9142021131592281,
+              "relative_actual_query_preactivation_change": 0.7024434047740202
+            },
+            "8": {
+              "M_norm_ratio": 0.20609025657176971,
+              "M_cosine": 0.6388079745998232,
+              "relative_actual_query_preactivation_change": 0.8363779843536696
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6809309720993042,
+            "M_cosine": 0.8871157513981041,
+            "relative_actual_query_preactivation_change": 0.44971573779920193
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999492,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9907033443450928,
+              "M_cosine": 0.9976674611783719,
+              "relative_actual_query_preactivation_change": 0.06666856761636354
+            },
+            "4": {
+              "M_norm_ratio": 0.9863317608833313,
+              "M_cosine": 0.9948921998414719,
+              "relative_actual_query_preactivation_change": 0.09838195781653163
+            },
+            "8": {
+              "M_norm_ratio": 0.9842150211334229,
+              "M_cosine": 0.9931401329360605,
+              "relative_actual_query_preactivation_change": 0.11385895866709352
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9978538751602173,
+            "M_cosine": 0.9998701531587276,
+            "relative_actual_query_preactivation_change": 0.015746062940291912
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999556,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.5295978784561157,
+              "M_cosine": 0.8274561398158351,
+              "relative_actual_query_preactivation_change": 0.6368732220482836
+            },
+            "4": {
+              "M_norm_ratio": 0.5848656892776489,
+              "M_cosine": -0.12163650533345514,
+              "relative_actual_query_preactivation_change": 1.221369670519004
+            },
+            "8": {
+              "M_norm_ratio": 0.7771174907684326,
+              "M_cosine": -0.43693577526790106,
+              "relative_actual_query_preactivation_change": 1.516855254671302
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.3287110328674316,
+            "M_cosine": 0.941084797265652,
+            "relative_actual_query_preactivation_change": 0.5908773691863931
+          }
+        }
+      },
+      "normal_reconstruction_rel": 4.6276667831079976e-07
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "original_transitions": 26,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999918,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6952043771743774,
+              "M_cosine": 0.7575748697655061,
+              "relative_actual_query_preactivation_change": 0.7339781622636413
+            },
+            "4": {
+              "M_norm_ratio": 0.6100535988807678,
+              "M_cosine": 0.4255706409410581,
+              "relative_actual_query_preactivation_change": 1.008557880055253
+            },
+            "8": {
+              "M_norm_ratio": 0.46054044365882874,
+              "M_cosine": 0.2909908751046586,
+              "relative_actual_query_preactivation_change": 1.017957817353489
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7549179792404175,
+            "M_cosine": 0.9681243641800159,
+            "relative_actual_query_preactivation_change": 0.31000634225660834
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999944,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9685450792312622,
+              "M_cosine": 0.9997295181652673,
+              "relative_actual_query_preactivation_change": 0.038441157807668
+            },
+            "4": {
+              "M_norm_ratio": 0.9532043933868408,
+              "M_cosine": 0.9993841636390025,
+              "relative_actual_query_preactivation_change": 0.05728610769033749
+            },
+            "8": {
+              "M_norm_ratio": 0.9456300139427185,
+              "M_cosine": 0.9991568255579635,
+              "relative_actual_query_preactivation_change": 0.0666153718573253
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.992053747177124,
+            "M_cosine": 0.9999821234247058,
+            "relative_actual_query_preactivation_change": 0.00983042309576429
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.999999999999993,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8243677616119385,
+              "M_cosine": 0.9991707490995609,
+              "relative_actual_query_preactivation_change": 0.18040249185521998
+            },
+            "4": {
+              "M_norm_ratio": 0.6017042398452759,
+              "M_cosine": 0.9926494073978936,
+              "relative_actual_query_preactivation_change": 0.4095836387138343
+            },
+            "8": {
+              "M_norm_ratio": 0.3721822500228882,
+              "M_cosine": 0.9541523245073118,
+              "relative_actual_query_preactivation_change": 0.6528197713740239
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6185467839241028,
+            "M_cosine": 0.9820006801134383,
+            "relative_actual_query_preactivation_change": 0.4109143732542171
+          }
+        }
+      },
+      "normal_reconstruction_rel": 5.231726731835806e-07
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "site": "model.action_out_proj",
+      "original_transitions": 26,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000009,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6881865859031677,
+              "M_cosine": 0.9544808057316663,
+              "relative_actual_query_preactivation_change": 0.4716289616802316
+            },
+            "4": {
+              "M_norm_ratio": 0.514982283115387,
+              "M_cosine": 0.8578194451463685,
+              "relative_actual_query_preactivation_change": 0.7170434433603328
+            },
+            "8": {
+              "M_norm_ratio": 0.3788585662841797,
+              "M_cosine": 0.7926226146709681,
+              "relative_actual_query_preactivation_change": 0.819664269714769
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7356729507446289,
+            "M_cosine": 0.9811082119717728,
+            "relative_actual_query_preactivation_change": 0.3284083884594882
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000009,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8704880475997925,
+              "M_cosine": 0.9803816478842726,
+              "relative_actual_query_preactivation_change": 0.2366999255420983
+            },
+            "4": {
+              "M_norm_ratio": 0.8213036060333252,
+              "M_cosine": 0.9527347718417916,
+              "relative_actual_query_preactivation_change": 0.34607669353971476
+            },
+            "8": {
+              "M_norm_ratio": 0.800706148147583,
+              "M_cosine": 0.9336728426628885,
+              "relative_actual_query_preactivation_change": 0.3987427946521836
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9749210476875305,
+            "M_cosine": 0.9983293172998943,
+            "relative_actual_query_preactivation_change": 0.06588801189360866
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000002,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8344721794128418,
+              "M_cosine": 0.9844348218515919,
+              "relative_actual_query_preactivation_change": 0.2415845899765748
+            },
+            "4": {
+              "M_norm_ratio": 0.7230419516563416,
+              "M_cosine": 0.9662855415808161,
+              "relative_actual_query_preactivation_change": 0.3664010937832181
+            },
+            "8": {
+              "M_norm_ratio": 0.6079699993133545,
+              "M_cosine": 0.949186254288434,
+              "relative_actual_query_preactivation_change": 0.48012281862874673
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.8408502340316772,
+            "M_cosine": 0.9919553627737364,
+            "relative_actual_query_preactivation_change": 0.21248364077686976
+          }
+        }
+      },
+      "normal_reconstruction_rel": 3.1821906532059074e-07
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "original_transitions": 50,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999567,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6066933870315552,
+              "M_cosine": 0.9636213066210053,
+              "relative_actual_query_preactivation_change": 0.4464453819473628
+            },
+            "4": {
+              "M_norm_ratio": 0.41001462936401367,
+              "M_cosine": 0.8482835952380936,
+              "relative_actual_query_preactivation_change": 0.6859533159634488
+            },
+            "8": {
+              "M_norm_ratio": 0.28716742992401123,
+              "M_cosine": 0.7049004372286773,
+              "relative_actual_query_preactivation_change": 0.8113297287123269
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7003833651542664,
+            "M_cosine": 0.9638646097707995,
+            "relative_actual_query_preactivation_change": 0.3953490126381315
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.999999999999962,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.7519300580024719,
+              "M_cosine": 0.9800217025711648,
+              "relative_actual_query_preactivation_change": 0.32925884951336354
+            },
+            "4": {
+              "M_norm_ratio": 0.6555827856063843,
+              "M_cosine": 0.9445166720559383,
+              "relative_actual_query_preactivation_change": 0.4753912958652128
+            },
+            "8": {
+              "M_norm_ratio": 0.6149813532829285,
+              "M_cosine": 0.9164062742414303,
+              "relative_actual_query_preactivation_change": 0.5441735505732257
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.938068151473999,
+            "M_cosine": 0.9970270775979994,
+            "relative_actual_query_preactivation_change": 0.11259819169182576
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999566,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6090614795684814,
+              "M_cosine": 0.9393794592769139,
+              "relative_actual_query_preactivation_change": 0.5199338721925273
+            },
+            "4": {
+              "M_norm_ratio": 0.3558904826641083,
+              "M_cosine": 0.7530133235351392,
+              "relative_actual_query_preactivation_change": 0.8274122762925641
+            },
+            "8": {
+              "M_norm_ratio": 0.2239442765712738,
+              "M_cosine": 0.4818207917607801,
+              "relative_actual_query_preactivation_change": 0.9637636134566594
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6292505264282227,
+            "M_cosine": 0.9288504848011284,
+            "relative_actual_query_preactivation_change": 0.5495732437618621
+          }
+        }
+      },
+      "normal_reconstruction_rel": 1.2551618056022562e-06
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "original_transitions": 50,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999925,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6590575575828552,
+              "M_cosine": 0.9645891655070886,
+              "relative_actual_query_preactivation_change": 0.40646356253448496
+            },
+            "4": {
+              "M_norm_ratio": 0.43277421593666077,
+              "M_cosine": 0.868893450369782,
+              "relative_actual_query_preactivation_change": 0.6480703263385982
+            },
+            "8": {
+              "M_norm_ratio": 0.29061806201934814,
+              "M_cosine": 0.7596350987207476,
+              "relative_actual_query_preactivation_change": 0.7980382928203829
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6715235114097595,
+            "M_cosine": 0.9690995551376285,
+            "relative_actual_query_preactivation_change": 0.38890658391452076
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999946,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.9436699151992798,
+              "M_cosine": 0.968170769470836,
+              "relative_actual_query_preactivation_change": 0.4352393484282732
+            },
+            "4": {
+              "M_norm_ratio": 0.9400833249092102,
+              "M_cosine": 0.9277870387232444,
+              "relative_actual_query_preactivation_change": 0.6463068442929881
+            },
+            "8": {
+              "M_norm_ratio": 0.9441896677017212,
+              "M_cosine": 0.9022729149418981,
+              "relative_actual_query_preactivation_change": 0.7500942454578025
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.0043680667877197,
+            "M_cosine": 0.9979880303229696,
+            "relative_actual_query_preactivation_change": 0.10949587784921241
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999949,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.839216947555542,
+              "M_cosine": 0.908621847998832,
+              "relative_actual_query_preactivation_change": 0.7092108167011896
+            },
+            "4": {
+              "M_norm_ratio": 0.7638991475105286,
+              "M_cosine": 0.7542172341353839,
+              "relative_actual_query_preactivation_change": 1.0925034596461922
+            },
+            "8": {
+              "M_norm_ratio": 0.6469122171401978,
+              "M_cosine": 0.6551622201468107,
+              "relative_actual_query_preactivation_change": 1.2134414015304007
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.8468555808067322,
+            "M_cosine": 0.974148522021362,
+            "relative_actual_query_preactivation_change": 0.4430184886935461
+          }
+        }
+      },
+      "normal_reconstruction_rel": 4.941804263580707e-07
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "site": "model.action_out_proj",
+      "original_transitions": 50,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000007,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.7068299055099487,
+              "M_cosine": 0.9537240111275803,
+              "relative_actual_query_preactivation_change": 0.4965173788314291
+            },
+            "4": {
+              "M_norm_ratio": 0.5313924551010132,
+              "M_cosine": 0.8454922016423745,
+              "relative_actual_query_preactivation_change": 0.7664262479918321
+            },
+            "8": {
+              "M_norm_ratio": 0.40009069442749023,
+              "M_cosine": 0.730475903505047,
+              "relative_actual_query_preactivation_change": 0.8929403612308388
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7529100179672241,
+            "M_cosine": 0.9739561444735619,
+            "relative_actual_query_preactivation_change": 0.3992859402304712
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000002,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8697025775909424,
+              "M_cosine": 0.9530307385344854,
+              "relative_actual_query_preactivation_change": 0.35726676763107335
+            },
+            "4": {
+              "M_norm_ratio": 0.845132052898407,
+              "M_cosine": 0.8875920388461478,
+              "relative_actual_query_preactivation_change": 0.5258304500001817
+            },
+            "8": {
+              "M_norm_ratio": 0.8431571125984192,
+              "M_cosine": 0.8449414341816059,
+              "relative_actual_query_preactivation_change": 0.6078079963301508
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.997663140296936,
+            "M_cosine": 0.9962983273276467,
+            "relative_actual_query_preactivation_change": 0.09428383289466247
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000009,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8268738389015198,
+              "M_cosine": 0.9530333278511164,
+              "relative_actual_query_preactivation_change": 0.3707203024164561
+            },
+            "4": {
+              "M_norm_ratio": 0.7267917394638062,
+              "M_cosine": 0.8918665214019904,
+              "relative_actual_query_preactivation_change": 0.5385941663044913
+            },
+            "8": {
+              "M_norm_ratio": 0.6105536222457886,
+              "M_cosine": 0.848971007584106,
+              "relative_actual_query_preactivation_change": 0.642809399218048
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.8400667905807495,
+            "M_cosine": 0.9863187184121196,
+            "relative_actual_query_preactivation_change": 0.25713858612452806
+          }
+        }
+      },
+      "normal_reconstruction_rel": 3.8213778452700353e-07
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "original_transitions": 48,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999564,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6341421008110046,
+              "M_cosine": 0.9694338562377486,
+              "relative_actual_query_preactivation_change": 0.38944209238548555
+            },
+            "4": {
+              "M_norm_ratio": 0.4323526620864868,
+              "M_cosine": 0.8417619991994191,
+              "relative_actual_query_preactivation_change": 0.6464236675904176
+            },
+            "8": {
+              "M_norm_ratio": 0.3108018934726715,
+              "M_cosine": 0.6853633502115295,
+              "relative_actual_query_preactivation_change": 0.7911613054456093
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.718861997127533,
+            "M_cosine": 0.9636485523001171,
+            "relative_actual_query_preactivation_change": 0.4065910804125448
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999553,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8022669553756714,
+              "M_cosine": 0.9872665068384456,
+              "relative_actual_query_preactivation_change": 0.2618981521366907
+            },
+            "4": {
+              "M_norm_ratio": 0.7214165925979614,
+              "M_cosine": 0.9664966723610484,
+              "relative_actual_query_preactivation_change": 0.38062048304025503
+            },
+            "8": {
+              "M_norm_ratio": 0.6857588291168213,
+              "M_cosine": 0.9507920934635955,
+              "relative_actual_query_preactivation_change": 0.4370913975216073
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9505726099014282,
+            "M_cosine": 0.9984638644373428,
+            "relative_actual_query_preactivation_change": 0.08141939530472318
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999628,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6936213970184326,
+              "M_cosine": 0.9595291549205008,
+              "relative_actual_query_preactivation_change": 0.41993278533463546
+            },
+            "4": {
+              "M_norm_ratio": 0.45048788189888,
+              "M_cosine": 0.8592450530729142,
+              "relative_actual_query_preactivation_change": 0.6949042822282434
+            },
+            "8": {
+              "M_norm_ratio": 0.2711421251296997,
+              "M_cosine": 0.6593685590849933,
+              "relative_actual_query_preactivation_change": 0.8769348028269474
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.6018854975700378,
+            "M_cosine": 0.9428448577063231,
+            "relative_actual_query_preactivation_change": 0.48771753811967805
+          }
+        }
+      },
+      "normal_reconstruction_rel": 6.015305302753404e-07
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "original_transitions": 48,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999916,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.6837223768234253,
+              "M_cosine": 0.9637017487984904,
+              "relative_actual_query_preactivation_change": 0.35330623922245435
+            },
+            "4": {
+              "M_norm_ratio": 0.46936994791030884,
+              "M_cosine": 0.8622492387518478,
+              "relative_actual_query_preactivation_change": 0.5760596606353307
+            },
+            "8": {
+              "M_norm_ratio": 0.3341735601425171,
+              "M_cosine": 0.7411219097467688,
+              "relative_actual_query_preactivation_change": 0.7233458731747551
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7119620442390442,
+            "M_cosine": 0.967665697458549,
+            "relative_actual_query_preactivation_change": 0.33906955728198684
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999926,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.945921778678894,
+              "M_cosine": 0.9738057562742518,
+              "relative_actual_query_preactivation_change": 0.44634152932295323
+            },
+            "4": {
+              "M_norm_ratio": 0.9385592341423035,
+              "M_cosine": 0.9397813011244217,
+              "relative_actual_query_preactivation_change": 0.6661566743323982
+            },
+            "8": {
+              "M_norm_ratio": 0.9398293495178223,
+              "M_cosine": 0.9178131257681877,
+              "relative_actual_query_preactivation_change": 0.7751280031679338
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 1.0013532638549805,
+            "M_cosine": 0.9982321057659913,
+            "relative_actual_query_preactivation_change": 0.12365217575540771
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 0.9999999999999905,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8653498888015747,
+              "M_cosine": 0.9355358119161012,
+              "relative_actual_query_preactivation_change": 0.6729346380330454
+            },
+            "4": {
+              "M_norm_ratio": 0.7919252514839172,
+              "M_cosine": 0.8267138968763146,
+              "relative_actual_query_preactivation_change": 1.0411896856612026
+            },
+            "8": {
+              "M_norm_ratio": 0.6750035881996155,
+              "M_cosine": 0.7478061256059355,
+              "relative_actual_query_preactivation_change": 1.1635301292967666
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.8523576855659485,
+            "M_cosine": 0.9766016673139963,
+            "relative_actual_query_preactivation_change": 0.4167644282906269
+          }
+        }
+      },
+      "normal_reconstruction_rel": 4.168874170318304e-07
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "site": "model.action_out_proj",
+      "original_transitions": 48,
+      "variants": {
+        "T": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000009,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.7012448906898499,
+              "M_cosine": 0.9651223718007185,
+              "relative_actual_query_preactivation_change": 0.44439926673622476
+            },
+            "4": {
+              "M_norm_ratio": 0.5101719498634338,
+              "M_cosine": 0.8731651124566466,
+              "relative_actual_query_preactivation_change": 0.7126338478121352
+            },
+            "8": {
+              "M_norm_ratio": 0.36909598112106323,
+              "M_cosine": 0.7657591450600735,
+              "relative_actual_query_preactivation_change": 0.8568696075759847
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.7234737277030945,
+            "M_cosine": 0.974897793751703,
+            "relative_actual_query_preactivation_change": 0.41197774208624954
+          }
+        },
+        "change_clock": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000007,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8928002119064331,
+              "M_cosine": 0.9707003042483817,
+              "relative_actual_query_preactivation_change": 0.2739568553138943
+            },
+            "4": {
+              "M_norm_ratio": 0.8639602065086365,
+              "M_cosine": 0.9323404039065859,
+              "relative_actual_query_preactivation_change": 0.39807711132796403
+            },
+            "8": {
+              "M_norm_ratio": 0.8553487658500671,
+              "M_cosine": 0.907588130556725,
+              "relative_actual_query_preactivation_change": 0.4570820124584368
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.9900326132774353,
+            "M_cosine": 0.9979776379770161,
+            "relative_actual_query_preactivation_change": 0.06747097036186957
+          }
+        },
+        "weak_constant": {
+          "refinements": {
+            "1": {
+              "M_norm_ratio": 1.0,
+              "M_cosine": 1.0000000000000007,
+              "relative_actual_query_preactivation_change": 0.0
+            },
+            "2": {
+              "M_norm_ratio": 0.8535666465759277,
+              "M_cosine": 0.9720606125817582,
+              "relative_actual_query_preactivation_change": 0.28553939472742645
+            },
+            "4": {
+              "M_norm_ratio": 0.7557183504104614,
+              "M_cosine": 0.9380852012373171,
+              "relative_actual_query_preactivation_change": 0.4243577220747372
+            },
+            "8": {
+              "M_norm_ratio": 0.6429284811019897,
+              "M_cosine": 0.9117497960784322,
+              "relative_actual_query_preactivation_change": 0.5356086878636055
+            }
+          },
+          "r8_vs_r4": {
+            "M_norm_ratio": 0.8507513999938965,
+            "M_cosine": 0.9913999550169083,
+            "relative_actual_query_preactivation_change": 0.22561711098942097
+          }
+        }
+      },
+      "normal_reconstruction_rel": 3.2694845231162617e-07
+    }
+  ],
+  "credit_scope": "Fixed actual T2340 features and genuine saved full FM / prefix FM / independent B20 10-step prefix cotangents. Counterfactual recurrence Jacobians at these inputs, not new policy risks or learned-model comparisons. CPU only.",
+  "credit_rows": [
+    {
+      "task": 0,
+      "teacher": 40,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "transitions": 19,
+      "feature_change_mean": 0.11257058382034302,
+      "g_mean": 0.104608453810215,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.7603086233139038,
+        "old_M_norm_ratio": 0.47825542092323303,
+        "B_cotangent_transport_norm_ratio": 0.4867601692676544,
+        "last_key_top_eigenvalue": 0.735552966594696,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.026192631815221704,
+          "B_value_credit_last3_fraction": 0.9409028216800692,
+          "O_credit_A50_B_cosine": -0.0575731135904789,
+          "O_credit_A5_B_cosine": -0.3967224657535553
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.13877592079611828,
+          "B_value_credit_last3_fraction": 0.3889272012468379,
+          "O_credit_A50_B_cosine": -0.055940181016922,
+          "O_credit_A5_B_cosine": -0.44412899017333984
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.15875918394845479,
+          "B_value_credit_last3_fraction": 0.38804908585998854,
+          "O_credit_A50_B_cosine": -0.058019451797008514,
+          "O_credit_A5_B_cosine": -0.4431303143501282
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 40,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "transitions": 19,
+      "feature_change_mean": 0.11257058382034302,
+      "g_mean": 0.104608453810215,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.7721476554870605,
+        "old_M_norm_ratio": 0.5143507122993469,
+        "B_cotangent_transport_norm_ratio": 0.7165091633796692,
+        "last_key_top_eigenvalue": 0.2430666983127594,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.19491638122076324,
+          "B_value_credit_last3_fraction": 0.43929995701472213,
+          "O_credit_A50_B_cosine": -0.08022801578044891,
+          "O_credit_A5_B_cosine": -0.3224729597568512
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.39957701846681115,
+          "B_value_credit_last3_fraction": 0.20238414573664865,
+          "O_credit_A50_B_cosine": -0.13822896778583527,
+          "O_credit_A5_B_cosine": -0.37187492847442627
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4063349615671656,
+          "B_value_credit_last3_fraction": 0.20143615527698538,
+          "O_credit_A50_B_cosine": -0.1370009034872055,
+          "O_credit_A5_B_cosine": -0.3737587034702301
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 40,
+      "site": "model.action_out_proj",
+      "transitions": 19,
+      "feature_change_mean": 0.11257058382034302,
+      "g_mean": 0.104608453810215,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.27787110209465027,
+        "old_M_norm_ratio": 0.924676239490509,
+        "B_cotangent_transport_norm_ratio": 0.7904651165008545,
+        "last_key_top_eigenvalue": 0.12592226266860962,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.2535327784274831,
+          "B_value_credit_last3_fraction": 0.3358659861573191,
+          "O_credit_A50_B_cosine": -0.5037925243377686,
+          "O_credit_A5_B_cosine": -0.2551337778568268
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.44722362279005157,
+          "B_value_credit_last3_fraction": 0.17170694642532502,
+          "O_credit_A50_B_cosine": -0.6128917336463928,
+          "O_credit_A5_B_cosine": -0.29306888580322266
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4505641916445421,
+          "B_value_credit_last3_fraction": 0.17153093893316587,
+          "O_credit_A50_B_cosine": -0.6126152276992798,
+          "O_credit_A5_B_cosine": -0.29285019636154175
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "transitions": 26,
+      "feature_change_mean": 0.10933593660593033,
+      "g_mean": 0.10141689330339432,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.5945603251457214,
+        "old_M_norm_ratio": 0.6166521310806274,
+        "B_cotangent_transport_norm_ratio": 0.4874952435493469,
+        "last_key_top_eigenvalue": 0.7455856800079346,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.024735706444369152,
+          "B_value_credit_last3_fraction": 0.9354810304973544,
+          "O_credit_A50_B_cosine": -0.31984567642211914,
+          "O_credit_A5_B_cosine": -0.4968821704387665
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.08995667878205638,
+          "B_value_credit_last3_fraction": 0.35317205587777956,
+          "O_credit_A50_B_cosine": -0.35072827339172363,
+          "O_credit_A5_B_cosine": -0.5851925611495972
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.12089266413511357,
+          "B_value_credit_last3_fraction": 0.36417756427946074,
+          "O_credit_A50_B_cosine": -0.35339483618736267,
+          "O_credit_A5_B_cosine": -0.5840204358100891
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "transitions": 26,
+      "feature_change_mean": 0.10933593660593033,
+      "g_mean": 0.10141689330339432,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.728912353515625,
+        "old_M_norm_ratio": 0.5788785219192505,
+        "B_cotangent_transport_norm_ratio": 0.710444450378418,
+        "last_key_top_eigenvalue": 0.24320662021636963,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.1766855229006635,
+          "B_value_credit_last3_fraction": 0.41027948622806953,
+          "O_credit_A50_B_cosine": -0.11501297354698181,
+          "O_credit_A5_B_cosine": -0.3831574022769928
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.40866869858456667,
+          "B_value_credit_last3_fraction": 0.15424574960888698,
+          "O_credit_A50_B_cosine": -0.12592417001724243,
+          "O_credit_A5_B_cosine": -0.4269567131996155
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.421746042758389,
+          "B_value_credit_last3_fraction": 0.15298043382829773,
+          "O_credit_A50_B_cosine": -0.12322305887937546,
+          "O_credit_A5_B_cosine": -0.42849478125572205
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "site": "model.action_out_proj",
+      "transitions": 26,
+      "feature_change_mean": 0.10933593660593033,
+      "g_mean": 0.10141689330339432,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.3122977614402771,
+        "old_M_norm_ratio": 0.9037612080574036,
+        "B_cotangent_transport_norm_ratio": 0.7818703651428223,
+        "last_key_top_eigenvalue": 0.12463687360286713,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.2084795254653678,
+          "B_value_credit_last3_fraction": 0.31899744757441906,
+          "O_credit_A50_B_cosine": -0.5051470994949341,
+          "O_credit_A5_B_cosine": -0.333417147397995
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4416776733397097,
+          "B_value_credit_last3_fraction": 0.13767451243511114,
+          "O_credit_A50_B_cosine": -0.6024475693702698,
+          "O_credit_A5_B_cosine": -0.3304276764392853
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4476340026236378,
+          "B_value_credit_last3_fraction": 0.13740008262496872,
+          "O_credit_A50_B_cosine": -0.600986897945404,
+          "O_credit_A5_B_cosine": -0.33061152696609497
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "transitions": 36,
+      "feature_change_mean": 0.08881351351737976,
+      "g_mean": 0.08307959139347076,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.24112865328788757,
+        "old_M_norm_ratio": 0.8916466236114502,
+        "B_cotangent_transport_norm_ratio": 0.40395253896713257,
+        "last_key_top_eigenvalue": 0.720274031162262,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.014843703826399797,
+          "B_value_credit_last3_fraction": 0.9522240128597315,
+          "O_credit_A50_B_cosine": -0.041241053491830826,
+          "O_credit_A5_B_cosine": -0.012579916045069695
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.0791890947251866,
+          "B_value_credit_last3_fraction": 0.2660593957736766,
+          "O_credit_A50_B_cosine": -0.033852361142635345,
+          "O_credit_A5_B_cosine": 0.19206222891807556
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.09289557448334768,
+          "B_value_credit_last3_fraction": 0.2995188847193415,
+          "O_credit_A50_B_cosine": -0.032601095736026764,
+          "O_credit_A5_B_cosine": 0.19201181828975677
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "transitions": 36,
+      "feature_change_mean": 0.08881351351737976,
+      "g_mean": 0.08307959139347076,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.4028898775577545,
+        "old_M_norm_ratio": 0.8344702124595642,
+        "B_cotangent_transport_norm_ratio": 0.6693936586380005,
+        "last_key_top_eigenvalue": 0.2318466603755951,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.08720005456183014,
+          "B_value_credit_last3_fraction": 0.5177367938714963,
+          "O_credit_A50_B_cosine": 0.1258164495229721,
+          "O_credit_A5_B_cosine": -0.032675713300704956
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.3665059983122843,
+          "B_value_credit_last3_fraction": 0.11500409853868108,
+          "O_credit_A50_B_cosine": -0.1340073049068451,
+          "O_credit_A5_B_cosine": -0.1524812877178192
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.3800955621434515,
+          "B_value_credit_last3_fraction": 0.11796207757646265,
+          "O_credit_A50_B_cosine": -0.13380677998065948,
+          "O_credit_A5_B_cosine": -0.1473844349384308
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "site": "model.action_out_proj",
+      "transitions": 36,
+      "feature_change_mean": 0.08881351351737976,
+      "g_mean": 0.08307959139347076,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.1923060417175293,
+        "old_M_norm_ratio": 0.9592474699020386,
+        "B_cotangent_transport_norm_ratio": 0.8394969701766968,
+        "last_key_top_eigenvalue": 0.12926188111305237,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.3166778043258601,
+          "B_value_credit_last3_fraction": 0.23019477385012121,
+          "O_credit_A50_B_cosine": -0.09144699573516846,
+          "O_credit_A5_B_cosine": -0.2964877784252167
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.5230158469713283,
+          "B_value_credit_last3_fraction": 0.10319258063074863,
+          "O_credit_A50_B_cosine": -0.20064972341060638,
+          "O_credit_A5_B_cosine": -0.42743146419525146
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.5269901967988669,
+          "B_value_credit_last3_fraction": 0.10355512270941433,
+          "O_credit_A50_B_cosine": -0.199929878115654,
+          "O_credit_A5_B_cosine": -0.42524197697639465
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "transitions": 25,
+      "feature_change_mean": 0.08514896035194397,
+      "g_mean": 0.080166757106781,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.5699875354766846,
+        "old_M_norm_ratio": 0.5968050956726074,
+        "B_cotangent_transport_norm_ratio": 0.45829543471336365,
+        "last_key_top_eigenvalue": 0.7240580320358276,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.022999324286579984,
+          "B_value_credit_last3_fraction": 0.9373696051932101,
+          "O_credit_A50_B_cosine": 0.0851162001490593,
+          "O_credit_A5_B_cosine": 0.22372891008853912
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.13960588375942196,
+          "B_value_credit_last3_fraction": 0.30774904547227405,
+          "O_credit_A50_B_cosine": -0.006289391312748194,
+          "O_credit_A5_B_cosine": 0.19826865196228027
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.16038301475137035,
+          "B_value_credit_last3_fraction": 0.3063684761533436,
+          "O_credit_A50_B_cosine": -0.0032162333372980356,
+          "O_credit_A5_B_cosine": 0.19960461556911469
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "transitions": 25,
+      "feature_change_mean": 0.08514896035194397,
+      "g_mean": 0.080166757106781,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.6651893258094788,
+        "old_M_norm_ratio": 0.6334315538406372,
+        "B_cotangent_transport_norm_ratio": 0.6927252411842346,
+        "last_key_top_eigenvalue": 0.2444899082183838,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.10906720634544506,
+          "B_value_credit_last3_fraction": 0.5468676874842516,
+          "O_credit_A50_B_cosine": -0.043656833469867706,
+          "O_credit_A5_B_cosine": 0.05032118037343025
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.38295954185756687,
+          "B_value_credit_last3_fraction": 0.17036143020641442,
+          "O_credit_A50_B_cosine": -0.19857382774353027,
+          "O_credit_A5_B_cosine": 0.03421606123447418
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.3925861408738212,
+          "B_value_credit_last3_fraction": 0.16914058903476886,
+          "O_credit_A50_B_cosine": -0.196700781583786,
+          "O_credit_A5_B_cosine": 0.0380370207130909
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "site": "model.action_out_proj",
+      "transitions": 25,
+      "feature_change_mean": 0.08514896035194397,
+      "g_mean": 0.080166757106781,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.22466261684894562,
+        "old_M_norm_ratio": 0.95187908411026,
+        "B_cotangent_transport_norm_ratio": 0.8585828542709351,
+        "last_key_top_eigenvalue": 0.13283807039260864,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.43040713933895114,
+          "B_value_credit_last3_fraction": 0.24671788404256317,
+          "O_credit_A50_B_cosine": -0.20667554438114166,
+          "O_credit_A5_B_cosine": -0.2901819944381714
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.5579494472888257,
+          "B_value_credit_last3_fraction": 0.14573145604666587,
+          "O_credit_A50_B_cosine": -0.21883560717105865,
+          "O_credit_A5_B_cosine": -0.31432124972343445
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.5607594708464334,
+          "B_value_credit_last3_fraction": 0.1453392710474263,
+          "O_credit_A50_B_cosine": -0.21948395669460297,
+          "O_credit_A5_B_cosine": -0.3151940703392029
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "transitions": 26,
+      "feature_change_mean": 0.055555373430252075,
+      "g_mean": 0.05368850752711296,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.8686701059341431,
+        "old_M_norm_ratio": 0.3847285211086273,
+        "B_cotangent_transport_norm_ratio": 0.5162261128425598,
+        "last_key_top_eigenvalue": 0.7877669930458069,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.01914007428451321,
+          "B_value_credit_last3_fraction": 0.9547733342013455,
+          "O_credit_A50_B_cosine": -0.0370875746011734,
+          "O_credit_A5_B_cosine": 0.3189888596534729
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.23958851255495645,
+          "B_value_credit_last3_fraction": 0.27174556081152945,
+          "O_credit_A50_B_cosine": -0.035916395485401154,
+          "O_credit_A5_B_cosine": 0.32395631074905396
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.257641992545311,
+          "B_value_credit_last3_fraction": 0.2513622927263155,
+          "O_credit_A50_B_cosine": -0.035851214081048965,
+          "O_credit_A5_B_cosine": 0.32438063621520996
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "transitions": 26,
+      "feature_change_mean": 0.055555373430252075,
+      "g_mean": 0.05368850752711296,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.610088586807251,
+        "old_M_norm_ratio": 0.6638844609260559,
+        "B_cotangent_transport_norm_ratio": 0.6350178718566895,
+        "last_key_top_eigenvalue": 0.22181473672389984,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.09413863108273039,
+          "B_value_credit_last3_fraction": 0.575223180322487,
+          "O_credit_A50_B_cosine": -0.20361986756324768,
+          "O_credit_A5_B_cosine": -0.08459226042032242
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4011498092893096,
+          "B_value_credit_last3_fraction": 0.15230931406555034,
+          "O_credit_A50_B_cosine": -0.20064732432365417,
+          "O_credit_A5_B_cosine": -0.05855344235897064
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4084066202644042,
+          "B_value_credit_last3_fraction": 0.14708107173914603,
+          "O_credit_A50_B_cosine": -0.20039908587932587,
+          "O_credit_A5_B_cosine": -0.05886203423142433
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "site": "model.action_out_proj",
+      "transitions": 26,
+      "feature_change_mean": 0.055555373430252075,
+      "g_mean": 0.05368850752711296,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.29222553968429565,
+        "old_M_norm_ratio": 0.9200847744941711,
+        "B_cotangent_transport_norm_ratio": 0.830948531627655,
+        "last_key_top_eigenvalue": 0.2755429148674011,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.3319611911176497,
+          "B_value_credit_last3_fraction": 0.31395839388409663,
+          "O_credit_A50_B_cosine": -0.3277987241744995,
+          "O_credit_A5_B_cosine": -0.05435436964035034
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4729351469334846,
+          "B_value_credit_last3_fraction": 0.1349108833982146,
+          "O_credit_A50_B_cosine": -0.33214640617370605,
+          "O_credit_A5_B_cosine": 0.00726718595251441
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.47278555802156147,
+          "B_value_credit_last3_fraction": 0.1331619731451453,
+          "O_credit_A50_B_cosine": -0.33302751183509827,
+          "O_credit_A5_B_cosine": 0.0071976385079324245
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "transitions": 26,
+      "feature_change_mean": 0.06157873943448067,
+      "g_mean": 0.058879148215055466,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.9875789284706116,
+        "old_M_norm_ratio": 0.13921813666820526,
+        "B_cotangent_transport_norm_ratio": 0.5105884075164795,
+        "last_key_top_eigenvalue": 0.7894901037216187,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.01872042861116688,
+          "B_value_credit_last3_fraction": 0.9552822191088617,
+          "O_credit_A50_B_cosine": 0.07582586258649826,
+          "O_credit_A5_B_cosine": 0.33291319012641907
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.22620048174003904,
+          "B_value_credit_last3_fraction": 0.27496221660115583,
+          "O_credit_A50_B_cosine": 0.07545477151870728,
+          "O_credit_A5_B_cosine": 0.33326879143714905
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.2365518045320839,
+          "B_value_credit_last3_fraction": 0.2655850847237922,
+          "O_credit_A50_B_cosine": 0.07583644986152649,
+          "O_credit_A5_B_cosine": 0.3337564468383789
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "transitions": 26,
+      "feature_change_mean": 0.06157873943448067,
+      "g_mean": 0.058879148215055466,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.6617575287818909,
+        "old_M_norm_ratio": 0.6117885112762451,
+        "B_cotangent_transport_norm_ratio": 0.6434727907180786,
+        "last_key_top_eigenvalue": 0.21828490495681763,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.0923461447011112,
+          "B_value_credit_last3_fraction": 0.5750137317103223,
+          "O_credit_A50_B_cosine": -0.05366279557347298,
+          "O_credit_A5_B_cosine": 0.013051941059529781
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.39701561234373617,
+          "B_value_credit_last3_fraction": 0.1544821832343766,
+          "O_credit_A50_B_cosine": -0.05967673659324646,
+          "O_credit_A5_B_cosine": 0.044093336910009384
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.401833834548399,
+          "B_value_credit_last3_fraction": 0.15179311561956296,
+          "O_credit_A50_B_cosine": -0.059608012437820435,
+          "O_credit_A5_B_cosine": 0.04315183684229851
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "site": "model.action_out_proj",
+      "transitions": 26,
+      "feature_change_mean": 0.06157873943448067,
+      "g_mean": 0.058879148215055466,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.27247387170791626,
+        "old_M_norm_ratio": 0.9105311036109924,
+        "B_cotangent_transport_norm_ratio": 0.841641902923584,
+        "last_key_top_eigenvalue": 0.18338459730148315,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.25185770379741945,
+          "B_value_credit_last3_fraction": 0.28949423609995134,
+          "O_credit_A50_B_cosine": -0.006217440590262413,
+          "O_credit_A5_B_cosine": -0.21732640266418457
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4395763276662833,
+          "B_value_credit_last3_fraction": 0.10698541234611539,
+          "O_credit_A50_B_cosine": -0.07031124085187912,
+          "O_credit_A5_B_cosine": -0.1142411082983017
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4379759675228141,
+          "B_value_credit_last3_fraction": 0.10685028450519796,
+          "O_credit_A50_B_cosine": -0.07251302152872086,
+          "O_credit_A5_B_cosine": -0.11417067795991898
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "transitions": 50,
+      "feature_change_mean": 0.0898742750287056,
+      "g_mean": 0.08389368653297424,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.7039099335670471,
+        "old_M_norm_ratio": 0.6630885601043701,
+        "B_cotangent_transport_norm_ratio": 0.7071884274482727,
+        "last_key_top_eigenvalue": 0.7531419992446899,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.058899042017814665,
+          "B_value_credit_last3_fraction": 0.8325025750598773,
+          "O_credit_A50_B_cosine": 0.1147625595331192,
+          "O_credit_A5_B_cosine": 0.1826423555612564
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.05828116271319097,
+          "B_value_credit_last3_fraction": 0.3118081223578412,
+          "O_credit_A50_B_cosine": 0.11799860745668411,
+          "O_credit_A5_B_cosine": 0.20517706871032715
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.0624558166515603,
+          "B_value_credit_last3_fraction": 0.3105617225623939,
+          "O_credit_A50_B_cosine": 0.11913974583148956,
+          "O_credit_A5_B_cosine": 0.20439516007900238
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "transitions": 50,
+      "feature_change_mean": 0.0898742750287056,
+      "g_mean": 0.08389368653297424,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.2425374984741211,
+        "old_M_norm_ratio": 0.9499422311782837,
+        "B_cotangent_transport_norm_ratio": 0.7330535650253296,
+        "last_key_top_eigenvalue": 0.22786903381347656,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.09654908923264638,
+          "B_value_credit_last3_fraction": 0.480105636200888,
+          "O_credit_A50_B_cosine": 0.07303934544324875,
+          "O_credit_A5_B_cosine": 0.16125419735908508
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.31059258805336354,
+          "B_value_credit_last3_fraction": 0.11043419113030373,
+          "O_credit_A50_B_cosine": 0.012590670958161354,
+          "O_credit_A5_B_cosine": -0.026979826390743256
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.31217469884471494,
+          "B_value_credit_last3_fraction": 0.10858962045533192,
+          "O_credit_A50_B_cosine": 0.017738576978445053,
+          "O_credit_A5_B_cosine": -0.02689514122903347
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "site": "model.action_out_proj",
+      "transitions": 50,
+      "feature_change_mean": 0.0898742750287056,
+      "g_mean": 0.08389368653297424,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.18664605915546417,
+        "old_M_norm_ratio": 0.9460256695747375,
+        "B_cotangent_transport_norm_ratio": 0.8352332711219788,
+        "last_key_top_eigenvalue": 0.11067887395620346,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.2514913759160876,
+          "B_value_credit_last3_fraction": 0.1875460908074042,
+          "O_credit_A50_B_cosine": -0.08288702368736267,
+          "O_credit_A5_B_cosine": -0.15590861439704895
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.5203901106346629,
+          "B_value_credit_last3_fraction": 0.06413453219043684,
+          "O_credit_A50_B_cosine": -0.12373106926679611,
+          "O_credit_A5_B_cosine": -0.10500377416610718
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.5142425283481526,
+          "B_value_credit_last3_fraction": 0.06490168919263722,
+          "O_credit_A50_B_cosine": -0.12442098557949066,
+          "O_credit_A5_B_cosine": -0.10490847378969193
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "transitions": 48,
+      "feature_change_mean": 0.09326472133398056,
+      "g_mean": 0.08720266819000244,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.8583945035934448,
+        "old_M_norm_ratio": 0.48115867376327515,
+        "B_cotangent_transport_norm_ratio": 0.6748778223991394,
+        "last_key_top_eigenvalue": 0.752363920211792,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.052210422314848536,
+          "B_value_credit_last3_fraction": 0.8422748238437299,
+          "O_credit_A50_B_cosine": 0.10264983773231506,
+          "O_credit_A5_B_cosine": 0.23190724849700928
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.05307870081234724,
+          "B_value_credit_last3_fraction": 0.30213740643655096,
+          "O_credit_A50_B_cosine": 0.0963243693113327,
+          "O_credit_A5_B_cosine": 0.23152564465999603
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.06185067367878183,
+          "B_value_credit_last3_fraction": 0.32005815987550235,
+          "O_credit_A50_B_cosine": 0.09795252978801727,
+          "O_credit_A5_B_cosine": 0.23177312314510345
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "site": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "transitions": 48,
+      "feature_change_mean": 0.09326472133398056,
+      "g_mean": 0.08720266819000244,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.3410312831401825,
+        "old_M_norm_ratio": 0.9114958643913269,
+        "B_cotangent_transport_norm_ratio": 0.7543684244155884,
+        "last_key_top_eigenvalue": 0.23350068926811218,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.11180433498834516,
+          "B_value_credit_last3_fraction": 0.4601294344374479,
+          "O_credit_A50_B_cosine": 0.07200928032398224,
+          "O_credit_A5_B_cosine": 0.15007881820201874
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.3171657527609963,
+          "B_value_credit_last3_fraction": 0.11548869744262993,
+          "O_credit_A50_B_cosine": 0.03554459288716316,
+          "O_credit_A5_B_cosine": 0.04889831691980362
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.3281625561224028,
+          "B_value_credit_last3_fraction": 0.11400988380015123,
+          "O_credit_A50_B_cosine": 0.03493598848581314,
+          "O_credit_A5_B_cosine": 0.04212500527501106
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "site": "model.action_out_proj",
+      "transitions": 48,
+      "feature_change_mean": 0.09326472133398056,
+      "g_mean": 0.08720266819000244,
+      "static_repeat_algebra": {
+        "repeats": 10,
+        "old_M_relative_change": 0.23855793476104736,
+        "old_M_norm_ratio": 0.9114223718643188,
+        "B_cotangent_transport_norm_ratio": 0.8567021489143372,
+        "last_key_top_eigenvalue": 0.11398148536682129,
+        "change_clock_M_relative_change": 0.0
+      },
+      "variants": {
+        "T": {
+          "B_value_credit_firsthalf_fraction": 0.25109525218476336,
+          "B_value_credit_last3_fraction": 0.17976707274568068,
+          "O_credit_A50_B_cosine": -0.2638917863368988,
+          "O_credit_A5_B_cosine": -0.29224833846092224
+        },
+        "change_clock": {
+          "B_value_credit_firsthalf_fraction": 0.45091704767412694,
+          "B_value_credit_last3_fraction": 0.07274529800708326,
+          "O_credit_A50_B_cosine": -0.2600640654563904,
+          "O_credit_A5_B_cosine": -0.2583385705947876
+        },
+        "same_mean_clock": {
+          "B_value_credit_firsthalf_fraction": 0.4531633789949921,
+          "B_value_credit_last3_fraction": 0.07259709841221751,
+          "O_credit_A50_B_cosine": -0.25981900095939636,
+          "O_credit_A5_B_cosine": -0.26072534918785095
+        }
+      }
+    }
+  ],
+  "summary": {
+    "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj": {
+      "T": {
+        "r1_to_r8_query_change_median": 0.8376840543365247,
+        "r4_to_r8_query_change_median": 0.4705892600350705,
+        "r1_to_r8_M_norm_ratio_median": 0.2382081225514412
+      },
+      "change_clock": {
+        "r1_to_r8_query_change_median": 0.4564327765198554,
+        "r4_to_r8_query_change_median": 0.08986180280916145,
+        "r1_to_r8_M_norm_ratio_median": 0.631352037191391
+      },
+      "weak_constant": {
+        "r1_to_r8_query_change_median": 0.9284010784848638,
+        "r4_to_r8_query_change_median": 0.592301803962887,
+        "r1_to_r8_M_norm_ratio_median": 0.20537252724170685
+      },
+      "change_clock_less_r1_to_r8_query_change_than_T": 8,
+      "change_clock_less_r1_to_r8_query_change_than_weak_constant": 8,
+      "value_credit_B_firsthalf_median": {
+        "T": 0.023867515365474566,
+        "change_clock": 0.11436629978908733,
+        "same_mean_clock": 0.13982592404178418
+      },
+      "O_credit_A50_B_cosine_mean": {
+        "T": -0.009674119763076305,
+        "change_clock": -0.02411860675783828,
+        "same_mean_clock": -0.023769263207213953
+      }
+    },
+    "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj": {
+      "T": {
+        "r1_to_r8_query_change_median": 0.8982991529449982,
+        "r4_to_r8_query_change_median": 0.42542944577657227,
+        "r1_to_r8_M_norm_ratio_median": 0.2772105932235718
+      },
+      "change_clock": {
+        "r1_to_r8_query_change_median": 0.3543043572040052,
+        "r4_to_r8_query_change_median": 0.04951870263466979,
+        "r1_to_r8_M_norm_ratio_median": 0.9621762633323669
+      },
+      "weak_constant": {
+        "r1_to_r8_query_change_median": 0.6736568746591202,
+        "r4_to_r8_query_change_median": 0.406946223469587,
+        "r1_to_r8_M_norm_ratio_median": 0.4833129197359085
+      },
+      "change_clock_less_r1_to_r8_query_change_than_T": 7,
+      "change_clock_less_r1_to_r8_query_change_than_weak_constant": 8,
+      "value_credit_B_firsthalf_median": {
+        "T": 0.10280814778904572,
+        "change_clock": 0.3899875771006515,
+        "same_mean_clock": 0.3972099877111101
+      },
+      "O_credit_A50_B_cosine_mean": {
+        "T": -0.028164426330477,
+        "change_clock": -0.10111538344062865,
+        "same_mean_clock": -0.09975800709798932
+      }
+    },
+    "model.action_out_proj": {
+      "T": {
+        "r1_to_r8_query_change_median": 0.7708761239208928,
+        "r4_to_r8_query_change_median": 0.34992529645552983,
+        "r1_to_r8_M_norm_ratio_median": 0.4107491970062256
+      },
+      "change_clock": {
+        "r1_to_r8_query_change_median": 0.42791240355531024,
+        "r4_to_r8_query_change_median": 0.0666794911277391,
+        "r1_to_r8_M_norm_ratio_median": 0.8780248165130615
+      },
+      "weak_constant": {
+        "r1_to_r8_query_change_median": 0.48920157005485476,
+        "r4_to_r8_query_change_median": 0.19170679013358713,
+        "r1_to_r8_M_norm_ratio_median": 0.6741034388542175
+      },
+      "change_clock_less_r1_to_r8_query_change_than_T": 8,
+      "change_clock_less_r1_to_r8_query_change_than_weak_constant": 4,
+      "value_credit_B_firsthalf_median": {
+        "T": 0.2526952411124513,
+        "change_clock": 0.46192609730380574,
+        "same_mean_clock": 0.4629744685082768
+      },
+      "O_credit_A50_B_cosine_mean": {
+        "T": -0.24848214234225452,
+        "change_clock": -0.3026346769183874,
+        "same_mean_clock": -0.30284956004470587
+      }
+    }
+  },
+  "max_normal_M_reconstruction_relative_error": 1.2551618056022562e-06,
+  "interpretation_limits": [
+    "Feature interpolation is not a real RGB trajectory or native-image forward.",
+    "Query hidden and Aq are frozen from the original full-policy rollout; response stability is not full policy or success improvement.",
+    "Clock variants use their own r=1 baseline; their absolute output magnitudes differ.",
+    "Cotangents remain those of original T; altered recurrence Jacobians do not give gradients or risks of an executed candidate policy.",
+    "No semantic feature labels or unique performance-root-cause conclusion.",
+    "All 24 task-teacher-site rows retained, including task32 teacher43 V8 where refinement response change is worse than original T."
+  ]
+}

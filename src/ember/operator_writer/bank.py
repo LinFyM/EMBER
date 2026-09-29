@@ -7,7 +7,6 @@ import json
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Mapping
 
 import torch
@@ -32,13 +31,14 @@ from .run import (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
                   PILOT_SPEC_PATH, PILOT_ROOT, PILOT_ARMS, REPO, SCHEMA,
                   SPEC_PATH, STAGE, build_runtime, complete_checkpoint, frozen_git, specification)
 from . import scope as seen_scope
+from .capture import (PASSIVE_TAG, attach_capture_provenance, registered_capture,
+                      validate_capture_contract)
 
 
 KIND = "operator_read_write_lora_bank"
 BANK_SCHEMA = "ember_operator_read_write_bank_v1"
 EVAL_SCHEMA = "ember_operator_read_write_eval_v1"
 EPISODE_SCHEMA = "ember_operator_read_write_episode_v1"
-PASSIVE_TAG = "ember_operator_read_write_passive_capture_v1"
 PUBLIC_BETA_MODE = "public_beta"
 PUBLIC_BETA_SCHEMA = "ember_operator_public_beta_bank_v1"
 PUBLIC_BETA_STUDY = "operator_public_beta_diagnosis_20260929"
@@ -727,80 +727,6 @@ def validate_episode(bank: Mapping, evidence, *, suite: str, task_id: int, init_
         return False
     episode = next((row for row in task["episodes"] if row["init_state_id"] == init_state_id), None)
     return episode is not None and dict(evidence) == episode_evidence(bank, task, episode)
-
-
-def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapping,
-                       task_subset: Mapping | None) -> tuple[dict, dict]:
-    bank_path = Path(args.static_task_lora_manifest).resolve()
-    bank = read_json(bank_path)
-    try:
-        expected = seen_scope.capture_expectations(bank, bank_path, tasks, output_dir)
-    except ValueError as error:
-        raise Pi05EvaluationError(str(error)) from error
-    facts = ((path.resolve(), expected["capture"].resolve()),
-             (bank.get("kind"), KIND),
-             (manifest.get("schema_version"), "ember_pi05_registered_trajectory_capture_v1"),
-             (manifest.get("study_id"), expected["study"]),
-             (manifest.get("task_subset_selection"), None),
-             (manifest.get("full_conditions"), expected["full"]),
-             (manifest.get("mode"), "compact"),
-             (manifest.get("passive_control_trace"), PASSIVE_TAG),
-             (manifest.get("stage_predicates"), True),
-             (args.role, expected["role"]), (args.mode, "formal"),
-             (len(tasks), expected["task_count"]),
-             (output_dir.resolve(), expected["output"].resolve()))
-    if (any(actual != wanted for actual, wanted in facts)
-            or expected["expected_bank"] is not None and bank_path != expected["expected_bank"]
-            or task_subset is not None
-            or any(tuple(task.init_state_ids) != expected["states"] for task in tasks)
-            or any(manifest.get(key) is not False for key in (
-                "training_gradient_use", "checkpoint_selection_use", "validation_use", "test_use"))):
-        raise Pi05EvaluationError("operator official full/compact capture scope changed")
-    capture = {"schema_version": "ember_pi05_registered_trajectory_capture_v1",
-               "selection_path": str(path), "selection_bytes": path.stat().st_size,
-               "mode": "compact", "full_conditions": expected["full"],
-               "trajectory_root": str((output_dir / "trajectories").resolve()),
-               "passive_trace": {"schema_version": PASSIVE_TAG,
-                                 "trace_root": str((output_dir / "continuous_traces").resolve())},
-               "training_gradient_use": False, "checkpoint_selection_use": False,
-               "validation_use": False, "test_use": False}
-    stage = {"schema_version": "ember_pi05_stage_predicate_capture_v1",
-             "capture": "all_rows_post_settling_then_every_executed_control_step",
-             "predicate_source": "installed_LIBERO_BDDL_goal_conjunction",
-             "full_conditions_only": False, "training_gradient_use": False,
-             "checkpoint_selection_use": False, "validation_action_reads": 0,
-             "validation_reward_reads": 0, "held_data_use": False,
-             "claim_boundary": "BDDL predicates are partial progress signals"}
-    return capture, stage
-
-
-def attach_capture_provenance(contract: dict, repo_root: Path) -> None:
-    del repo_root
-    adapter = contract.get("adapter") or {}
-    scene = contract.get("operator_read_write_scene") or {}
-    if adapter.get("kind") != KIND or scene.get("manifest") != adapter.get("scene_manifest"):
-        raise Pi05EvaluationError("operator scene and adapter are not paired")
-    contract["passive_capture_provenance"] = {
-        "schema_version": PASSIVE_TAG, "bank": adapter["manifest"],
-        "scene": adapter["scene_manifest"], "checkpoint": adapter["checkpoint"],
-        "evaluation_commit": contract["git"]["commit"]}
-
-
-def validate_capture_contract(contract: Mapping, repo_root: Path) -> None:
-    adapter = contract.get("adapter") or {}
-    capture = contract.get("diagnostic_occupancy_capture") or {}
-    path = Path(capture["selection_path"])
-    args = SimpleNamespace(static_task_lora_manifest=Path(adapter["manifest"]["path"]),
-                           role=contract["role"], mode=contract["mode"])
-    tasks = [SimpleNamespace(**row) for row in contract["tasks"]]
-    expected, stage = registered_capture(args, tasks, Path(contract["output_dir"]),
-                                         path, read_json(path), contract["diagnostic_task_subset"])
-    regenerated = dict(contract)
-    regenerated.pop("passive_capture_provenance", None)
-    attach_capture_provenance(regenerated, repo_root)
-    if (capture != expected or contract.get("diagnostic_stage_predicates") != stage
-            or contract.get("passive_capture_provenance") != regenerated["passive_capture_provenance"]):
-        raise Pi05EvaluationError("operator passive capture or scene provenance changed")
 
 
 def main() -> None:

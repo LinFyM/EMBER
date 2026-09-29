@@ -1,7 +1,7 @@
 # 同一实际LoRA算子的教学写入与执行读取
 
 2026-09-28。候选，未验证；科学论证见机制分析§42。只有progress登记的阶段有执行许可。
-本文件§1–5定义完整方法，§6–17的工程、训练及诊断均已完成；当前有界公共执行风险干预见§18。
+本文件§1–5定义完整方法，§6–18的工程、训练及诊断均已完成；当前冻结训练任务闭环诊断见§19。
 §11的节点/预算不自动延续；模型、信息墙与评测约束继承，精确冻结与派发以progress为准。
 它替换旧Core/Procedure/FactorHeads生成图，不在已关闭P/I、条件速度或LocalField上追加补丁。
 
@@ -1063,3 +1063,83 @@ Sol在新root/launch前live查strg01 data1独立quota及两节点GPU/CPU，按�
 两臂与就绪物化/评测独立衔接，不为并行形式等待凑卡；不丢未保存更新。记录完整argv/env/精确Git/设备/外部限时与账。
 只在科学语义/原因未明/预算越界时回报边界；纯工程窄修仍按§10.5隔离验证/push/newfreeze自主继续。
 源码/完整节点或整批/实质阻碍直接Steer主讨论，禁用Queue回报/逐step心跳；主讨论不轮询分数、进程或日志。
+
+### 18.5 完成与裁决
+
+本批已完成并独立验收，control158、public_aux148、父T1800 154、强MT153，各400且breadth6。
+aux−control为136/12/22、净−10，任务簇区间[−6.75,.5]pp；control−父141/17/13、净+4。
+公共功能面板改善未带来匹配闭环收益，按§18.3结束该修正；不继续aux、扫系数、重启LR或直接fresh。
+control158保留为真实单点，不自动恢复原样长训练或称selected/稳健优势。完整理论更新及原件范围见findings§221–223/机制§56.4–57。
+9次外部尝试含两失败/恢复共5.630391058GPUh；control原300完成行保留、41孤儿NPZ不入正式统计，aux失败0行，均留原件。
+当前训练许可全部结束。后继§19只读冻结参数，不产生optimizer更新；本条不恢复其它旧run入口。
+
+## 19. 固定模型的已见任务闭环获取诊断（2026-09-29）
+
+### 19.1 要改变的问题与比较边界
+
+机制§57给出当前真实缺口：四个train任务的正确视频FM优势与八个held任务闭环平台之间，
+尚无本读写架构的已见任务闭环读出。不能先认定只差迁移，也不能仅看FM便认定已有足够任务内能力。
+旧版本train96的不同正负例不能替代当前T；本项不重跑旧Writer，不测试shuffled/reversed或把视频controls作前置门槛。
+
+唯一两个冻结模型为原预登记末点T1800、原强MT300。T1800锚在§16已决定，不因本轮control158改点；
+MT自身数据/时钟/权重如实复用，不弱化参照。0更新、0新FM、无held标签、无validation/Test新episode，
+不运行β、aux1890、control1890、U或额外checkpoint，不选择最终模型。
+
+覆盖当前实际全部36训练task、每task四个固定init32/33/34/35，两臂各144行、共288新episode。
+四task功能面板0/12/20/32只作为预先指明的子集解释，不另外挑视频/初态或占用独立评测配额。
+若T在多数已见任务获取相当/更好能力而held缺口仍在，降低全局未学会解释，优先研究新关系迁移；
+若T已见任务也明显更弱，不能把主要缺口直接归为新组合，先解释条件策略在自身状态的能力获取。
+方向混合或样本不足时保留未识别范围，不自动扩为每task50状态、补中间点或下一探针矩阵。
+无论哪种结果，都不单独定位H/M/Aq、证明增加任务有效或授权fresh/长训练；后继须主讨论具体理论裁决。
+
+### 19.2 冻结来源、合法条件与场景
+
+task=`operator_seen_task_diagnosis_20260929`，唯一新root `/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929`。
+T唯一完整ECP为fcc23cd15的`operator_read_write_learning_20260928/continuation1800/T/train/attempts/continuation/checkpoints/macro_00001800`；
+MT为`/data0/user/ymdai/ember_runs/coverage_retraining_20260920/training/mtbc/checkpoints/step_00000300/lora.safetensors`，
+训练Git3ebb979b，沿stage1/MT/banks/300原manifest核来源。历史data0仅只读，不复制source/model/dataset。
+新的evaluation-only源码须显式兼容这两个旧来源，不能伪造新训练Git或静默开放其它checkpoint。
+
+任务列表固定为当前coverage36协议及原训练事件中的
+`[0,1,2,4,5,7,12,13,14,15,17,19,20,21,22,25,28,29,32,34,35,36,37,38,42,43,51,55,56,62,64,73,95,96,97,101]`。
+前24来自coverage24训练划分，后12是已审计并实际使用的LIBERO90支持任务，global ID=40+其原task_id。
+只为这个显式注册的诊断范围使用完整36task authority；不得普遍放宽development_train/nonheld_meta角色或混入val/test/重复任务。
+Teacher仍原每task50条RGB/L池、stride5/真实末帧/完整双相机，按既有`video_schedule`、seed20260928为init32..35取配对4条件；
+每task四teacher不同且逐臂相同。视频已参与训练，不称held-video、不称整轮50无放回评测；MT仅保留teacher元数据、0视频值读取。
+一条teacher一次生成完整38-target LoRA，无选视频/平均/重新适配。source/normalization/语言/tokenizer/完整控制规则不变。
+
+复用`pi05_eval/scene.py`实际scene snapshot/restore消费者，新建唯一144场景注册，两模型复用同一完整model body pose、sim/controller与双RGB初始状态。
+可在独立无policy预生成中保存post-dummy10 scene；若随第一个模型捕获，第二个必须恢复同一封存scene，不能只复用init ID冒充完整配对。
+T/MT评测都使用官方render256/model224/rotate180、8state/7action、10flow、前5replan、成功即止；
+原4suite horizon220/280/300/520、LIBERO90为当前evaluation.json的400。policy/env RNG仍seed7的原固定调度。
+允许按原24与支持12拆成实际role子面板实现，全部144仍为一个预登记比较；报告不得把不同source或未配对scene拼在一起。
+
+### 19.3 唯一运行面、来源验收与有限工程
+
+仅新增这个明确evaluation scope，复用现有Writer物化、公共MT文件、FrozenOperatorAdapter、dynamic queue和被动采集；
+不写第二trainer/evaluator，不在原冻树写入、不改变模型/native/loss/参数。bank/scene/capture从历史400到新144的二次使用，
+应把task/scene/role/case注册内聚到明确scope owner，再由原消费者使用；不要再向大函数逐个堆study/窗口分支。
+现有400/公共β/1890消费者保留其原界限；§18已完成pilot训练入口退役，main不再开放任何新/恢复训练，读取和物化仍可复用。
+历史源码由Git/旧freeze保留，不删除ECP、已完成bank、scene或raw evidence。
+
+CPU直接核实际T1800/MT300来源、36task确属当前已训练allowlist、4state/4video映射、144scene注册、同一adapter/capture路由；
+拒绝val/test、错checkpoint/任务/teacher或未注册scope。旧400/public_beta/1890读取做有意义定向回归，
+不再扫描旧1200/800捕获、不做逐tensor全模型比较、GPU smoke/profile或新model前向诊断。
+新源码在Sol独占dev实现、针对检查通过、push clean detached freeze后即可按本合同live准入运行，main并行审阅集成。
+若实际接口需要改变科学信息、放宽完整scene一致性或超过已登记规模/预算，报告具体边界，不静默改口径。
+
+每新臂144正式诊断行，保存完整逐行condition/scene/RNG、success/步骤、全步被动NPZ及stage predicates；
+每task init32一条full，其余compact，即每臂36full+108compact。全部新引用NPZ/PT由实际消费者读回，
+报告两臂同task/state/video的R/G/L/churn/Jaccard、任务簇区间、全部per-task及原24/支持12/suite分项。
+不能把144训练任务诊断当strict400资格，不与153/400直接相减。保留所有失败、未引用trace/步骤/成本，不择优恢复。
+已有训练状态/旧结果的可靠验收直接继承，只新增本项相关身份与消费者证据。
+
+### 19.4 时间、资源与停止
+
+此项为冻结闭环诊断，预计新增约1–1.5GPUh，**硬限3GPUh、新增峰10GiB**，含scene渲染、模型加载、物化、失败和恢复。
+依据400条件物化约.27GPUh、400official约.94GPUh，144×2按执行步粗估约.8–1.1GPUh，另留meta horizon/加载与失败余量；
+不将该线性估计冒称实测。144份B约3GiB，full/compact捕获与新freeze/场景预留10GiB，不复制父/ECP/source资产。
+CPU扩scope和真实来源检查预计30–50分钟；就绪物化/两个模型评测及时并行、读回约30–50分钟，总约1–1.75小时，超期给具体原因。
+GPU前Sol live核双节点及strg01 data1独立quota/共享空间，沿当前常规6/8上限，按真正吞吐安排，不等待凑卡。
+最近4workers/card已有OOM，3workers有效；按本轮真实内存/CPU余量准入，不继承固定2workers，也不无依据重试4以制造效率。
+完成整组288或出现实质边界直接Steer主讨论，停止新增计算；无新训练、更多初态、视频controls、Test或RL自动许可。

@@ -10,6 +10,8 @@ main复核原模型、私有Writer/任务隔离历史，并完成既有§26余�
 main26dd0c9b登记§30：同T2340起点的共享P/C/D/O、task私有P/C/D/O、条件私有B修正，原拟16步及固定B20读回。
 执行者首消费者加载/NFS阻塞、9分钟超时，尚未GPU前向/更新，未生成native缓存。
 Owner随即撤回尚未开始的实验，main用Steer停止准备/重试，不等待原50分钟线；未运行部分不记作科学阴性。
+最终stop.json确认第二次prepare另有analysis_script导入路径冲突；总0 GPU前向/0更新/0 GPUh，无缓存、末点或残留进程。
+临时脚本未完成验证，不称可运行交付；停止后不再修复。
 CPU证据保留于`docs/analyses/operator_learning_credit_evidence_20260930.json`。没有已验证修复或后继正式重训。
 
 本文记录各时点的事实和当时合同；历史“当前/下一步/授权”不持续生效。最新授权只看[progress](../progress.md)。

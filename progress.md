@@ -5,7 +5,9 @@
 Owner最新：“实验session没做实验的话就别做了，等不起三十多分钟”。
 执行者当时回报首个消费者在加载/NFS调用中阻塞，9分钟超时退出，未进入GPU、无原生缓存、0 GPU费用。
 main立即向当前执行turn Steer撤回§30全部准备/重试/计算，要求收束其自有进程并回报；
-服务端已接受同turn `01a0ee06-ec88-71e2-81c5-9ed45ab24393`，确实停止情况等待执行者一次回执。
+执行者停止回执和`operator_local_learning_diagnosis_20260930/stop.json`已由main直接核实：
+0 GPU前向、0 optimizer更新、0 GPUh、0 native缓存、0 B20末点，本批进程无残留。
+两次prepare分别为540秒导入/NFS等待超时及analysis_script路径冲突ImportError；一次性脚本未完成验证，不是可运行交付。
 不等待原50分钟停止线、不修复环境来恢复本批、不自动开启后继实验。§29也仍撤回。
 main已完成的只有旧原件CPU信用矩阵及机制§70理论整理；没有新增学习结果、没有已验证的修复。
 

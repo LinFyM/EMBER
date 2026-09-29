@@ -5953,3 +5953,8 @@ task32两teacher的前5总体更差而夹爪分量略好，不能用局部夹爪
 原件仍在`operator_selected_validation_20260929/analysis/selected_controls_summary.json`及四个canonical臂；
 主讨论过程在既有tmp `main_selected_controls_analysis.py/json`、`main_write_survival.py/json`。
 尚无已验证修正、重新训练或RL/one-shot结果；后继只认当前progress与新具体合同。
+
+附加实际线索：公共Q8/V8 A在2340→2790仍有约94%元素相同，而它们与Adam m/v真实存为BF16，Value C/O为FP32。
+这不等于零梯度或卡死，也不能解释所有平台；输入/输出A仍在变，输出25/32无直接信用是合法缺路。
+§26在本就需要的四次临时单步内加同梯度/同状态的CPU算术影子，核实有益小位移是否被存储舍入抹掉，
+不据dtype直接切换训练或搞精度扫描。细节与近邻边界见机制§63.4。

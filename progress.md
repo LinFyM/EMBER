@@ -20,7 +20,14 @@ main额外只用已有T2340 train特征与权重，核Q8/V8/out实际写入衰�
 检验完整FM/前5信用经真实native→Writer的VJP与Adam后怎样影响B的10步生成前缀，
 并从同父完整优化器独立做四次临时单宏步（两个teacher组×full/prefix），不是正式续训/新模型选择。
 预算2GPUh/12GiB，预计实现、执行、读回约1–2小时；GPU02优先，0环境/0held，四次临时更新如实计数。
-main负责科学推导/验收，Sol负责实际实现/消费者/执行；暂未派发，投递回执取得后在本段登记。
+main负责科学推导/验收，Sol负责实际实现/消费者/执行。合同f2b74694及源集成561bddce已push。
+Sol旧轮completed，本次以一次独立新任务Queue派发，回执`01a0ed08-8c20-7c41-b8cf-573262c3824e`；
+一次投递核对确认新轮`01a0ed08-8c23-7822-9a05-0172d9043c8b` inProgress且含完整新task正文。
+正文/回执在既有tmp `functional_credit_transport_release*`与`functional_credit_transport_delivery.json`；
+这只确认真实任务承接，不声称GPU已启动、诊断有结果或修正有效；完整回报要求直接Steer。
+main进一步定向读封存ECP：Q8/V8公共A在2340→2790约94%元素相同，参数及m/v真实BF16，Value C/O为FP32。
+已把同梯度/同状态CPU算术影子纳入原四次更新读回，未新增GPU或改训练，细节见机制§63.4。
+补充Steer已被同一轮接受，回执`functional_credit_resolution_steer_receipt.json`；不再发送重复任务或普通回执。
 旧D2/D3、SEOD/GOMQ、public_aux阴性继续约束解释；本项不是首次发现loss horizon或梯度核，也不据余弦自动重训。
 若局部差额不足以区分，明确收缩假设，不提高LR/步数反复追逐有利读出。正式修正仍须匹配短学习和闭环验证。
 

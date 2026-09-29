@@ -314,6 +314,8 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
                   if parent_macro == source_parent_macro else arm)
     expected_parent = parent_root / parent_arm / "train/attempts"
     parent_run = read_json(parent.parent.parent / "run_contract.json")
+    parent_training_git = (spec["continuation"]["parent_training_git"]
+                           if parent_macro == source_parent_macro else wanted_git["commit"])
     expected = (
         (run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE), (run.get("mode"), mode),
         (run.get("spec"), str(wanted_spec_path)), (run.get("source_trainable"), 0),
@@ -341,7 +343,9 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
         (parent.is_dir() and complete_checkpoint(parent), True),
         (resume.get("checkpoint"), str(parent)),
         (resume.get("parent_git", {}).get("commit") if window >= 3 else None,
-         spec["continuation"]["parent_training_git"] if window >= 3 else None),
+         parent_training_git if window >= 3 else None),
+        (parent_run.get("git", {}).get("commit") if window >= 3 else None,
+         parent_training_git if window >= 3 else None),
         (run.get("loss_variant") if window == 4 else None,
          "full" if window == 4 else None),
         (run.get("pilot_arm") if window == 4 else None, None),
@@ -436,9 +440,9 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(source_spec_path),
                 "training_git": run["git"]["commit"], "source": run["source"],
                 "lora": lora.to_dict(),
-                **({"evaluation_scope": file_record(seen_scope.PATH),
-                    "materialization_git": frozen_git(continuation=True)}
+                **({"materialization_git": frozen_git(continuation=True)}
                    if seen_task or next_window else {}),
+                **({"evaluation_scope": file_record(seen_scope.PATH)} if seen_task else {}),
                 **({"loss_variant": "full"} if next_window else {}),
                 **({"loss_variant": PILOT_ARMS[mode]} if pilot else {})}
     output.mkdir(parents=True, exist_ok=True)

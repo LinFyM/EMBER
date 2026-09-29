@@ -1,12 +1,29 @@
 # EMBER progress
 
-## 当前最新：Owner授权最佳T直接Test，MT/Source只读复用（2026-09-29）
+## 当前最新：按Test和视频证据自主接续，Owner离开期间不等待逐项指示（2026-09-29）
+
+Owner最新授权：T若在Test明显优于强MT，完成视频特异性后自主推进原规划的one-shot FT/task-local RL等比较；
+若接近或不如MT，仍做视频分析，深入特征—算子—训练—执行的竞争解释，用可验证修正推进重训。
+这覆盖此前“只Test、后继未释放”的暂停边界，不改变已经冻结的T2340，也不把Test标签引入共享梯度。
+Test总体现象可用于决定上述研究分支；历史Test曝光及由此产生的后续非盲测限制必须公开，不能改选本次checkpoint。
+
+§24唯一T Test400已派发，MT121/Source75旧Test只读复用，尚无新Test完成回报。当前优先让它完整结束。
+新增具体执行范围见active design§25：同一T2340的validation other/wrong/shuffled/公共β四组400，correct161直接复用；
+先做CPU/必要来源准备，Test退出释放资源后直接运行，不等Owner或主讨论再次许可。新增6GPUh/32GiB单独计账，GPU02优先。
+两结果分支都需要这组证据，故无需等待Test分数才准备。shuffled只确认冻结方法的时序特异性，不能反向设计或选点。
+main已定向复读封存paper_experiments_design§3–6：原后继是单support动作FT与生成A/B上的task-local RL，
+不是恢复旧共享Writer FM+RL联合训练；旧rank16、旧模型/split/预算和暂停门槛不自动继承。
+正式适应前由main依现T实际rank/输入信息/成本形成具体可执行合同，Sol负责工程与执行，不以main重复工程审核阻塞。
+更深修正不能止于合理故事：须把当前实际不足、最近似历史、特征/算子干预、可失败预测与完整能力对照连起来；
+局部FM或夹爪反例仍不等于held根因，阴性结果应改变假设投入，不无限追加同类探针。
+
+## 此前§24启动记录：Owner授权最佳T直接Test，MT/Source只读复用（2026-09-29）
 
 Owner明确可直接看最佳checkpoint的Test，随后指出MT/Source已有结果；main已纠正最初扩大成三臂新评测的安排。
 按active design§24，只新增T一次400 Test；旧Source75/400、MT121/400已由main读原行/合同确认，直接引用不重跑。
 §21最后2610=160已收束且main核400行/配对/完成；五点147/154/160/154/159均低于原2340=161，整批14.594256020GPUh。
 main最终冻结T2340/e2afbfd7（完整ECP/原bank/results已核），精确selection载荷在既有tmp `selected_test_selection.json`。
-Sol在本批存储准入后按main载荷发布selection并直接实现/运行Test，无需第二次放行；Test不反哺选择/训练，视频controls、更多训练未释放。
+Sol在本批存储准入后按main载荷发布selection并直接实现/运行Test，无需第二次放行；当时只释放Test，后继权限现由顶部与§25覆盖。
 新Test沿旧任务/init/预处理/RNG比较；旧baseline没有完整scene/capture，因此不冒称与新T严格RGB/sim配对，不为此重跑基线。
 新增3GPUh/16GiB，GPU02优先；Sol负责实现/准入/执行，main聚焦选择与科学解释，具体合同及边界见§24。
 §24合同8e194585已push。Sol旧轮completed，已用一次新任务Queue派发，回执`01a0ec8d-937c-7280-98d8-5e030d9a0b65`；

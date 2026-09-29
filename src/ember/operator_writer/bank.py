@@ -422,10 +422,15 @@ def _write_condition_factors(runtime, data: FormalData, output: Path,
 
 
 def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device,
-                *, seen_task: bool = False) -> Path:
+                *, seen_task: bool = False, selected_test: bool = False) -> Path:
     checkpoint = checkpoint.resolve()
     macro = int(checkpoint.name.split("_")[-1]) if checkpoint.name.startswith("macro_") else -1
     pilot = mode in PILOT_ARMS and macro in PILOT_CHECKPOINTS
+    if selected_test:
+        from . import selected_scope
+
+        if seen_task or mode != "T" or checkpoint != selected_scope.test_checkpoint():
+            raise ValueError("selected Test requires only the main-selected T2340 ECP")
     if seen_task and (mode != "T" or checkpoint != Path(seen_scope.registration()["checkpoint_t"]).resolve()):
         raise ValueError("seen-task materialization requires the fixed T1800 ECP")
     next_window = mode == "T" and macro in (
@@ -443,8 +448,11 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     run = inspect_training_source(spec, checkpoint, "T" if pilot else mode,
                                   sealed_evaluation=seen_task or next_window)
     _require_pilot_source(mode, run)
-    output = (Path(seen_scope.registration()["run_root"]) if seen_task else
-              Path(spec["run_root"])) / mode / "banks" / str(macro)
+    if selected_test:
+        output = selected_scope.test_bank_path().parent
+    else:
+        output = (Path(seen_scope.registration()["run_root"]) if seen_task else
+                  Path(spec["run_root"])) / mode / "banks" / str(macro)
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         asset_root / spec["source"]["lora_contract"]), rank=128)
     if run["lora"] != lora.to_dict():
@@ -461,6 +469,7 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
                 **({"materialization_git": frozen_git(continuation=True)}
                    if seen_task or next_window else {}),
                 **({"evaluation_scope": file_record(seen_scope.PATH)} if seen_task else {}),
+                **({"selected_test": selected_scope.test_lineage()} if selected_test else {}),
                 **({"loss_variant": "full"} if next_window else {}),
                 **({"loss_variant": PILOT_ARMS[mode]} if pilot else {})}
     output.mkdir(parents=True, exist_ok=True)
@@ -485,12 +494,14 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
                        metadata={"schema_version": BANK_SCHEMA, "mode": mode})
     else:
         save_file(shared, str(shared_path), metadata={"schema_version": BANK_SCHEMA, "mode": mode})
-    tasks, conditions = (seen_scope.task_rows(asset_root, spec) if seen_task else
+    tasks, conditions = (selected_scope.test_task_rows(asset_root, spec) if selected_test else
+                         seen_scope.task_rows(asset_root, spec) if seen_task else
                          task_rows(spec, asset_root))
     data = FormalData(asset_root, spec, query_labels=False,
-                      task_ids=tuple(seen_scope.registration()["global_task_ids"] if seen_task else
+                      task_ids=tuple(selected_scope.TEST_IDS if selected_test else
+                                     seen_scope.registration()["global_task_ids"] if seen_task else
                                      spec["evaluation"]["task_ids"]),
-                      role="train" if seen_task else "validation")
+                      role="test" if selected_test else "train" if seen_task else "validation")
     _write_condition_factors(runtime, data, output, conditions, b_shapes,
                              mode=mode, frame_chunk=spec["operator"]["frame_chunk"])
     bank = {"schema_version": BANK_SCHEMA, "kind": KIND, "mode": mode,
@@ -499,14 +510,17 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
             "checkpoint_manifest": file_record(checkpoint / "checkpoint_manifest.json"),
             "source": run["source"], "lora": lora.to_dict(),
             "shared": file_record(output / "shared.safetensors"), "conditions": conditions,
-            "tasks": tasks, "scene_root": str(Path(seen_scope.registration()["run_root"]) / "scenes")
-            if seen_task else str(SCENE_ROOT),
+            "tasks": tasks,
+            **({} if selected_test else {"scene_root": str(Path(seen_scope.registration()["run_root"]) / "scenes")
+                                      if seen_task else str(SCENE_ROOT)}),
             "information_wall": {"teacher_video_values_read": 144 if seen_task else 400,
                                  "teacher_runtime_reads": 0, "deployment_adapters": 1,
                                  "validation_test_gradients": False}}
     if seen_task:
         bank["evaluation_scope"] = file_record(seen_scope.PATH)
         bank["materialization_git"] = contract["materialization_git"]
+    if selected_test:
+        bank["selected_test"] = contract["selected_test"]
     if next_window:
         bank["materialization_git"] = contract["materialization_git"]
         bank["loss_variant"] = "full"
@@ -621,6 +635,12 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
+        if bank.get("selected_test") is not None:
+            from . import selected_scope
+
+            return selected_scope.inspect_test(bank, path, source, task_keys,
+                                               evaluation_role, require_formal,
+                                               task_init_state_ids)
         if bank.get("selected_control") is not None:
             from . import selected_scope
 
@@ -726,7 +746,11 @@ def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
             "global_task_id": task["global_task_id"], "init_state_id": episode["init_state_id"],
             "condition_id": episode["condition_id"], "teacher_demo": episode["teacher_demo_indices"][0],
             "video_ordinal": episode["video_ordinal"], "shared": bank["shared"],
-            "checkpoint": bank["checkpoint"], "scene_manifest": bank["scene_manifest"]}
+            "checkpoint": bank["checkpoint"]}
+    if bank.get("selected_test") is not None:
+        evidence["legacy_test_initialization"] = bank["legacy_test_initialization"]
+    else:
+        evidence["scene_manifest"] = bank["scene_manifest"]
     if bank["mode"] == PUBLIC_BETA_MODE:
         evidence.update(intervention="public_B0_A", teacher_video_values_read=0,
                         video_id_role="paired_metadata_only")
@@ -751,7 +775,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("materialize", "register-mt", "public-beta",
                                           "seen-materialize", "seen-mt", "seen-canonical-bank",
-                                          "selected-other", "selected-video", "selected-public-beta"))
+                                          "selected-other", "selected-video", "selected-public-beta",
+                                          "selected-test"))
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--mode", choices=("T", "U", "MT", *PILOT_ARMS))
     parser.add_argument("--arm", choices=("cross_suite_wrong", "shuffled"))

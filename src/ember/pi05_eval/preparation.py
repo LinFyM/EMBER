@@ -723,8 +723,16 @@ def _prepared_payload(
         contract["demonstration_comparison_scene"] = {
             "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
     if adapter is not None and adapter.get("kind") == "operator_read_write_lora_bank":
-        contract["operator_read_write_scene"] = {
-            "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
+        if adapter.get("legacy_test_initialization") is not None:
+            if args.role != "test" or adapter.get("scene_manifest") is not None:
+                raise Pi05EvaluationError("operator legacy Test cannot register a sealed scene")
+            contract["operator_read_write_legacy_test"] = {
+                "initialization": adapter["legacy_test_initialization"],
+                "selection": adapter["selected_test"]["selection"],
+                "historical_test_exposure": True}
+        else:
+            contract["operator_read_write_scene"] = {
+                "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
     if native_cell is not None:
         from ember.pi05_eval.native_reader_transfer import attach
 

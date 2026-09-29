@@ -222,7 +222,7 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
     window1350 = macro in owner.CONTINUATION1350_EVALUATION_MACROS
     window1800 = macro in owner.CONTINUATION1800_EVALUATION_MACROS
     pilot = macro in owner.PILOT_CHECKPOINTS and mode in owner.PILOT_ARMS
-    registered_spec = (owner.PILOT_SPEC_PATH if pilot else
+    registered_spec = (owner.PILOT_FROZEN_SPEC_PATH if pilot else
                        owner.CONTINUATION1800_FROZEN_SPEC_PATH if window1800 else
                        owner.CONTINUATION1350_FROZEN_SPEC_PATH if window1350 else
                        owner.CONTINUATION_FROZEN_SPEC_PATH if continuation else owner.SEALED_SPEC_PATH)

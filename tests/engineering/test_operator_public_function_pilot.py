@@ -183,3 +183,17 @@ def test_pilot_bank_reader_links_its_arm_to_the_training_source(tmp_path, monkey
             bank._inspect_tu_bank(value | {'mode': other, 'loss_variant': PILOT_ARMS[other]},
                                   spec, tmp_path/'banks/1890/manifest.json')
         assert inspected == []
+
+
+@pytest.mark.parametrize("arm", ["control", "public_aux"])
+def test_sealed_1890_bank_remains_readable_after_source_code_advances(arm):
+    path = bank.PILOT_ROOT / arm / "banks/1890/manifest.json"
+    value = read_json(path)
+    result = bank.inspect_bank(
+        manifest_path=path, source=value["source"],
+        task_keys=tuple((row["suite"], row["task_id"]) for row in value["tasks"]),
+        evaluation_role="validation", require_formal=True,
+    )
+    assert result["mode"] == arm and len(result["conditions"]) == 400
+    assert Path(result["spec"]["path"]) == bank.PILOT_FROZEN_SPEC_PATH
+    assert result["training_git"] == bank.PILOT_TRAINING_GIT["commit"]

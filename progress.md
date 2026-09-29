@@ -18,6 +18,16 @@ GPU02优先world4，按live资源可world2/3/4显式迁移；保持四条件权�
 bank抽出共同写B循环后775行、run退役CLI后782行，新增分支只选择已登记源/任务范围；preparation新增的明确角色入口须在该实际消费者校验，
 installed-task的3处扩展只把已审计target/source任务合成固定36训练scope，旧role边界不变。测试文件114行，active-source净增470。
 新§20续训/controls扩展必须进一步内聚窗口/来源规则，不机械复制同类大validator；该例外不掩盖结构信号或改变科学信息墙。
+§20训练源码e2afbfd7已以8bf1042e集成；主讨论核新旧完整diff、真实control1890来源/事件/时钟，独立16项CPU通过（45.48秒），
+包括fixed-stop与request-stop在已发布1980边界退出的实际训练循环（数值update使用CPU替身，不冒称GPU停训实测）。
+新`EMBER-operator-continuation2340-formal`已直接核为e2afbfd7、clean detached；当前仅训练代码就绪，新2340 bank/后段eval仍由Sol另行实现。
+另以实际旧control/aux1890 bank复现读取失败：scope仍把旧spec认成当前代码目录。main改为显式PILOT_FROZEN_SPEC_PATH，
+真实两臂读取及已有臂绑定3项CPU通过（37.51秒）；不改旧freeze/原件、不重算有效旧结果，不影响e2afbfd7的训练恢复。
+本轮训练结构guard为BLOCK（run869行、late-parent校验复杂度43、restore32），不称结构全过。main接受本次有时限的窄迁移例外：
+新增主要为唯一control1890身份/v6→v7声明与受控停止，训练update/梯度消费者未变；先让已核训练启动，避免临时重写所有封存恢复规则。
+此例外仅到§20收束，main在任何下一训练窗口前须内聚窗口/来源声明并降低run增长；后段只扩既有scope/bank读取，不再增加训练窗口分支。
+Sol报告§19沿e499冻结的144scene及T1800 bank均exit0，分别.063525/.146994GPUh；MT注册/两臂评测依赖仍在衔接。
+这是执行进度，尚无完整288结果或主讨论科学验收；不读半批分数。§20训练实际启动仍以独立启动回执为准。
 
 ## 当前：Owner醒来，暂停自主推进并交流（2026-09-29）
 

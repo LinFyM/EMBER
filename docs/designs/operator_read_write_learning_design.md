@@ -1806,3 +1806,62 @@ Q删除显著损伤task12；V删除在task0的局部收益由少数query主导�
 原件为`operator_chain_diagnosis_20260929/operator_branch_intervention_20260929/{README.md,readback.json,group0,group1}`。
 本节不支持直接删减修复；不能将冻结共适配破坏外推为删减架构共同重学后的上限，见机制§67。
 两个专用入口通过Git e0ef50e4及冻结树保留，完成后不留在main活动运行面；无自动后继学习。
+
+## 29. 覆盖按原生特征变化推进：有界fresh学习比较（2026-09-29）
+
+Owner允许有界机制学习，要求在原因与有效修正验证后、正式重训之前停止。Owner最新指出冻结改动破坏共适配，
+本项据机制§67–68改为真正共同学习比较，不将T2340冻结改好作为前置。它是270宏步原型检验，
+不是新方法正式重训或部署资格；无自动后继900/2340、RL或Test。尚未证明覆盖是绝对性能主因。
+
+### 29.1 唯一模型干预与完整学习
+
+候选身份`T_change_clock`，保留T完整38-target rank128/alpha128、公共β、实际A地址、原P/C/D/O、stride5双RGB和单probe。
+仅将TargetWrite的`memory @ key`替换为`(memory @ key) * g[None,:]`，其中
+`d=vector_norm(hbar[t+1]-hbar[t],dim=-1)/sqrt(1024)`、`g=-expm1(-d)`，每个horizon位置一值。
+V不再乘g；不得使用detach、学得gate、手工系数、clamp阈值、范数匹配或新loss。其余递归和输出B0+M不变。
+全图真实FM梯度包括g→H→公共β，完全静态变化时M保持、零初值保持identity；norm零点反传应finite。
+
+候选fresh Writer/公共A/B0/P/C/D/O、fresh Adam/scheduler；合法初值/seed与旧stage1 T完全同源，
+不加载T2340、旧T270、MT或工程更新作初值。原始source冻结。所有公共与Writer模块共同学习，不设冻结课程。
+首270严格复用stage1 `learning_spec`的36任务、teacher/query/flow事件、112query/宏步、任务权重、普通full50 FM、
+normalization、优化参数及150步warmup；没有teacher同episode辅助或新数据。新增图不要求新参数形状，
+但checkpoint/run/bank必须明确记`T_change_clock`与其精确公式，禁止因shape相同被当成原T exact-resume。
+
+### 29.2 参照、评测及诊断原件
+
+主要学习参照为已完成stage1 T270（116/400），原冻结784febb及原事件/初值/更新语义；
+执行者先核旧真实合同和当前可复用owner，确认除覆盖外的模型/数据/目标/优化一致，物理拓扑与正常数值差异如实记录。
+可以复用历史共同学习参照，不为形式重训T。若实际发现影响比较的语义差别，先报告具体项，不能静默换对照或自动加一臂。
+强参照沿同scene MT300=153，成熟T2340=161仅作不同训练预算的完整能力背景；不把候选胜116写成完成最终目标。
+
+只在候选270完成后物化一个correct400 bank，并沿stage1完整scene、state/video/RNG映射和官方消费者跑一次strict paired400。
+每task全部50合法teacher各一次；8 full/392 compact及物体/EEF/谓词证据与原口径相同。
+复用原T270及MT原行，不重评基线。若原件无法按同scene/video/噪声配对，先报告，不以新随机面板补成“匹配”。
+90/180仅作完整恢复点，不物化/评测/挑点；270是本批唯一预定读出点。没有other/wrong/shuffle/reverse/Test。
+报告逐task/suite/breadth、对T270与MT的R/G/L/churn/success-set、task-cluster区间；候选单节点没有相邻稳定性证据。
+
+仅另用既有§12固定train0/12/20/32×两teacher/A28面板，对候选270做8完整FM及4公共β FM，
+沿原query/action/noise/time；保存prediction/target及Q8/V8/out的真实X/H/M/G_B、帧索引供main学习机制读回。
+不更新参数，不开启B20/新teacher/新环境诊断矩阵。旧T270同面板结果直接引用，消费者差异限制微小效应。
+训练日志保留原loss/clip/活动梯度与耗时；不把信用更均匀、M更大或梯度接通当成能力证据。
+
+### 29.3 工程、资源与停止
+
+唯一指定执行者负责独占分支实现/实际消费者/现场准入，main独占科学记录并并行审阅。
+从本节已push main创建或复用空闲dev，验证后用clean pushed detached冻结代码；旧冻结树和原件不改。
+复用现有model/native、训练更新/恢复、bank和官方队列owner，不复制一套长期trainer，不向超大run/bank追加一串历史版本常量。
+候选身份与合同明确、必要行为检查通过即可在本合同内继续，不另等main逐步批准。main及时集成经过验证的代码。
+CPU检查应覆盖旧T行为不变、候选静态中性/非零变化/真实梯度、模型身份和事件匹配；必要GPU首个真实消费者检查计费，
+不得把工程步权重当fresh初值或把通过它写成科学通过。保留失败和实际更新总数。
+
+新增root仅`/data1/user/ymdai/ember_runs/operator_change_clock_pilot_20260929`。
+硬限**8GPUh、24GiB新增峰值**，包括实现所需真实consumer、全部训练/物化/评测/诊断/加载/失败/恢复；不为花满追加计算。
+依据旧T270训练3.6656GPUh、单bank约.31、单400约1.1及固定train面板小于.1，预计总5–6GPUh。
+实现/CPU约45–75分钟，按实际2–4训练卡和后续并行队列预计整批2.5–4小时；超过4小时需说明实质原因与剩余预算。
+launch前核strg01 data1独立quota/实际用量/峰值及双节点GPU；GPU02优先，资源上限沿仓库，
+训练world2–4按有效吞吐，保持4task/112query与单Adam语义，不额外固定整批两卡。正常长任务等退出事件，不重复读进度。
+
+非finite/源权重变化/数据或LoRA身份失配须停止该计算并保留事实；工程修复沿既有权限，不能改科学规则补救。
+若预算不足以完成完整270/400，先报告缺口，不缩成80行选点或恢复不完整权重。完成整批后主动Steer主讨论并停止新增计算。
+无自动续训、gate/rate/LR/seed扫描、公共aux或其它架构。阴性只约束该有限学习窗口，不能宣判所有共同学习不可能；
+阳性须保留弱覆盖/幅度/优化的竞争解释，主讨论另作实际机制与相邻能力裁决，不能直接释放正式重训。

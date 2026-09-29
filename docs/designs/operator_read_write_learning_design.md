@@ -1241,3 +1241,55 @@ CPU应核真实control1890与aux拒绝、旧metrics/第五轮余项/第六轮、
 明显超期风险及时说明实际缺口与优先顺序，不默默增加预算/缩正式行；选点若到后段才完成，Test可能无法在15:00前完整结束。
 源码/实际launch、每完整观察节点、§19整组与最终交付及时回报。main活跃时直接Steer，若main已结束回合则只投一条可唤醒的新消息，
 不得为了等待Steer保持main在线；不发重复Queue/心跳、自通知或半批分数。main收到完整交付后验收、裁决、接续。
+
+## 21. Owner明确指定的四卡2340→2790继续学习（2026-09-29下午）
+
+### 21.1 授权、问题与边界
+
+Owner在看过161最高点、要求先讨论后，又明确“先让sol继续四卡续训，之后我们再讨论别的。这是我的判断”。
+因此先执行同一T的下一有限学习窗口，检验末段小幅新高后能否继续获得净收益；不以主讨论此前不急追加的判断阻挡本次授权。
+§20曲线158/156/152/155/156/161全部保留，既不能写成持续单调下降，也不把末点新高当成无限续训依据。
+本次不改结构/目标/数据，不开展U、public_aux、视频controls、Test或RL；后段其它选择留待与Owner讨论。
+
+唯一task=`operator_read_write_continuation_2790_20260929`，唯一新root=
+`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2790`。
+唯一父为`continuation2340/T/train/attempts/continuation/checkpoints/macro_00002340`完整ECP，
+训练来源`e2afbfd7c997e3f792921600608efa2fa3c1b25a`、T/full、事件v7；不能用后续cb535c1e读取Git冒充训练来源或回接旧1890/aux。
+
+### 21.2 学习、恢复与观察
+
+从2340到2790共450新宏步/50400 query，36task等权、每宏步四条件各28跨episode query、每条件权重.25；
+保持原SUM全局梯度后一次clip/Adam、原optimizer/scheduler绝对时钟及floor1e−5，不重置LR、不加入辅助目标。
+完整2340行metrics字节前缀与旧采样事件保留；同world4恢复四rank RNG，物理设备变动如实记录，不称bitwise exact。
+事件v7→v8明确只追加第七teacher轮：绝对visit260起继续原第六轮`[20260928,1,task,5]`剩余排列，
+visit300起采用`SeedSequence([20260928,1,task,6])`。原task/query/flow及teacher第0–5轮事件不变。
+来源验证区别首接2340父与本窗口最新同臂完整ECP；有更新完整边界时拒绝旧父重开，旧冻结spec/原件保持只读可消费。
+
+完整ECP与correct400节点固定为2430/2520/2610/2700/2790。ECP包含Writer、Adam/scheduler、sampler/cursor、rank RNG、拓扑和schema；
+保留预设`stop_after_macro`及`stop_at_next_ecp.request`受控边界。除Owner新指令、数值/恢复故障或资源硬限，
+不因单个小幅下降自行缩掉已释放窗口；所有已启动节点完整计入。到2790收束，不自动再顺延450步。
+评测严格复用sealed validation400的scene/video/env/policy RNG，50不同teacher/task、8full+392compact和被动trace；
+旧2340与强MT153只读复用。报告每task/suite/breadth、相邻及对父/MT的R/G/L/churn/Jaccard/任务簇区间，
+不读中途分数、不融合checkpoint、不因本轮分数自动发布视频controls/Test选择文件。
+
+### 21.3 实现、资源与交付
+
+Sol独占现有dev，从最新main沿唯一run/data/bank运行面实现新窗口，旧CLI退役为只读来源，禁止平行trainer/evaluator。
+对本次实际触及的窗口/父来源声明作内聚复用，不能再逐window复制大校验分支；不把全面重构变成GPU启动前置。
+若仍有有界结构例外，保留真实guard/diff与后处理范围供main并行审阅，不能冒称全过或放宽科学/恢复合同。
+针对性CPU核真实2340父/时钟/前缀、v7→v8、同窗口恢复和旧父重放拒绝、新旧bank/捕获消费者；不为既有可靠验收重扫旧1200/2000捕获。
+训练端检查通过并push新clean detached freeze后直接启动，评测读取接入与main合入可以并行，不需第二次执行许可。
+
+Owner本次明确四卡：优先GPU02同节点四张有实际吞吐价值的A40；launch前同时live核两节点、GPU UUID/显存/进程及NUMA。
+四rank各一条件，`NCCL_P2P_DISABLE=1`、既有GPU-local NUMA/deferred NCCL不变。确实无适用四卡时报告具体限制，
+不抢占他人、不dummy占卡；未来Owner或现场必要迁移仍须完整ECP与原逻辑权重，不丢未保存更新。
+总量遵循AGENTS常规跨节点上限；四卡训练不等于整批仅四卡，独立物化/评测利用余量及时启动。
+后段就绪official按实时吞吐使用多卡/适当replicas，不再无依据沿用末点单卡；不为扩已近完成的队列丢弃有效行。
+
+本批增量硬限18GPUh/64GiB，所有失败、加载、训练、物化、五组official均计入；旧§19/20已完成15.621703396GPUh单列不清零。
+依据上批同450更新四卡7137秒/7.930GPUh、五bank合计约1.61GPUh、official含恢复约5.01GPUh，预计新增约14.5GPUh，留有限失败余量。
+训练预计约2小时，重叠bank/评测后整批约2.5–3小时，源码准备和实际资源另计；不是原15:00交付保证。
+五套新bank约40–45GiB，五ECP与捕获/临时写入按新增64GiB上界准入；Sol在strg01重查data1独立quota/实际用量与共享容量，
+父ECP/source/dataset只读复用，不复制大资产。实际argv/env/cwd/source/GPU/时限登记在本root唯一launch合同中。
+报告限必要源码交付、实际正式启动、完整可裁决节点及需主讨论决定的实质阻碍；日常调度与已解决故障并入完整结果，
+不发确认、定时心跳或重复回执。main完成独立工作后结束回合，实际交付再接续；本项进行期间其它事项与Owner讨论。

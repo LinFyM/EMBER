@@ -5354,3 +5354,14 @@ task31得12失11、共同成功仅10，总分21→22掩盖明显交换；39在�
 一次4卡外部894.1536秒、0.993504002/2GPUh，exit0，07:39:19 CST结束；12workers全0，0失败/孤儿，8full+392compact。
 Sol报告新产物约818MiB、GPU已释放，未量连续存储峰值。原件`operator_public_beta_diagnosis_20260929`，
 主讨论CPU分析`main_public_beta_analysis.py/json`在既有同名tmp；无新增训练/Test/RL或额外GPU诊断。
+
+## 221. 匹配公共风险短窗已产生功能变化，正式闭环仍待整组验收（2026-09-29）
+
+§18两臂各90新更新已exit0：control world2、public_aux world4，真实1800父状态/原Adam/绝对LR保持，
+360个新task-teacher-query-flow事件跨臂逐项相同。主讨论直接核新90行、合同/退出/1890训练状态与首末Adam step；旧1800前缀继承已审消费者。
+所有更新grad finite、0次clip，公共与全部Writer分组均有信用；不能把本次作用归于全局clip更强或公共项未接通。
+主讨论实际读取36份PT，固定4train×2teacher/28query/flow的公共FM差aux−control平均−.00069308，完整FM−.00010567，
+分别4/4task、8/8条件更低。原件FM与行记录最大误差8.26e−9；小差额不来自该聚合读回容差。
+但task20两teacher前5步FM均比control高，平均+.00047293；公共改善伴随条件函数共同调整，不能据代理值宣布修正成功。
+精确预测分解与反例见机制§56.4；尚无两组新official完整分数/资格、held视频必要性或独立语言baseline结论。
+已结束训练成本1.149129799+1.871410659GPUh，36功能前向.041878113GPUh；这是已完成部分，物化/official与最终总账另待完整回报。

@@ -4,6 +4,17 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-29：T2340四视频对照完成，条件增益与损伤并存
+
+固定selection/e2完整2340，correct161/MT153继承；other150、wrong65、shuffled1、公共β103，各400。
+main独立核原JSON/配对/来源和退出，完整新capture消费者沿Sol实际验收继承；科学边界见findings§239、机制§63。
+两个正确视频共同超β64例、共同失去β成功14例；task31相同场景24/19成功仅共同9例，不能以总分相近抹去交换。
+wrong相对β净−38，correct相对β+58，两者共同组成correct−wrong96；shuffle只表明顺序/分布敏感性，不反哺设计。
+六次GPU作业共4.590690977GPUh，wrong外层exit124在400有效行/worker exit0之后，沿同f207冻结CPU聚合exit0，不重评。
+原件`operator_selected_validation_20260929`四臂及`analysis/selected_controls_summary.json`；Test旧账单列。
+另main从旧T2340训练特征复算3处M，末层无擦除反事实8/8完整FM更差，幅度匹配未统一改善；0新GPU/模型/环境。
+这降低简单擦除修补假设，未证明完整记忆机制无效。新信用研究只看当前progress与design§26，不从本历史自动启动。
+
 ## 2026-09-29：T2340选点Test115，未超过复用强MT121
 
 Owner先要求观察T学习上限，原目标续训至2790。完整1890–2790每90步correct400为

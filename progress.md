@@ -1,30 +1,28 @@
 # EMBER progress
 
-## 当前最新：按Test和视频证据自主接续，Owner离开期间不等待逐项指示（2026-09-29）
+## 当前最新：T2340视频对照已消费，转入真实信用与有限更新检验（2026-09-29）
 
-Owner最新授权：T若在Test明显优于强MT，完成视频特异性后自主推进原规划的one-shot FT/task-local RL等比较；
-若接近或不如MT，仍做视频分析，深入特征—算子—训练—执行的竞争解释，用可验证修正推进重训。
-这覆盖此前“只Test、后继未释放”的暂停边界，不改变已经冻结的T2340，也不把Test标签引入共享梯度。
-Test总体现象可用于决定上述研究分支；历史Test曝光及由此产生的后续非盲测限制必须公开，不能改选本次checkpoint。
+Owner自主授权与“先验证机制/修正，再正式重训”继续有效。Test固定T115/MT121/Source75，
+没有明显胜MT，走机制修正分支；不改选Test、不启动task-local RL/one-shot或原样长续训。
+§25四对照已整组完成，**不再等待旧批**：correct161继承，other150/wrong65/shuffle1/公共β103。
+main直接核1600新JSON及原correct/MT、配对、bank来源、真实变换消费者和退出账；全NPZ/PT内容验收继承Sol可靠消费者。
+完整科学结果见findings§239/机制§63：两个正确视频共同新增β外成功64例，同时损失β成功14例；
+task31两视频24/19却只共同9例，task3/11大部保持。没有把错误/乱序损伤等同已理解过程或用于反向设计。
+四对照4.590690977GPUh；wrong外层超时在400完整行/worker退出之后，CPU原队列聚合补足，无重评，费用和回执保留。
+Test旧1.423828591另列。Sol已报告所有GPU退出、新root总约29GiB；无需查进程/中途分数或重复回执。
 
-§24唯一T Test400已完成并由main独立读原行/配对/来源/退出：T115、MT121、Source75，breadth6/7/4。
-T−MT为R74/G41/L47、净−6，任务簇区间[−10.5,+8]pp；没有取得明显优势，按Owner授权进入机制诊断与修正分支，
-暂不进入task-local RL/one-shot比较，不另选Test checkpoint或继续原样长训。T−Source净+40的正例保留，不因此替代强MT目标。
-逐任务与原件界限见findings§238；main旧baseline norm从其记录的clean Git读取核对，旧临时树退休不引发重评。
-Test两次GPU作业全部exit0，合计1.423828591GPUh；18workers正常退出，新capture沿Sol实际消费者验收继承。
-新增具体执行范围见active design§25：同一T2340的validation other/wrong/shuffled/公共β四组400，correct161直接复用；
-Sol已确认收到并正在CPU准备，Test GPU已释放，沿原授权直接衔接，不重复派发或等待第二许可。新增6GPUh/32GiB单独计账，GPU02优先。
-两结果分支都需要这组证据，故无需等待Test分数才准备。shuffled只确认冻结方法的时序特异性，不能反向设计或选点。
-main已定向复读封存paper_experiments_design§3–6：原后继是单support动作FT与生成A/B上的task-local RL，
-不是恢复旧共享Writer FM+RL联合训练；旧rank16、旧模型/split/预算和暂停门槛不自动继承。
-正式适应前由main依现T实际rank/输入信息/成本形成具体可执行合同，Sol负责工程与执行，不以main重复工程审核阻塞。
-更深修正不能止于合理故事：须把当前实际不足、最近似历史、特征/算子干预、可失败预测与完整能力对照连起来；
-局部FM或夹爪反例仍不等于held根因，阴性结果应改变假设投入，不无限追加同类探针。
-Owner再次强调：正式重训之前，先找到具体机制/特征原因并尽可能验证修正有效；主讨论接受此约束，
-不得以梯度可达、内部指标变化或单个案例改善作为重训依据。下一修正须有针对具体机制的干预与同预算原方法能力对照。
-§25合同b26a19d7已push；一次Steer已被Sol当前Test轮`01a0ec8d-937f-76d3-b297-4ed9cf283cec`接受，
-正文与回执在既有tmp `selected_video_controls_release.txt`/`selected_video_controls_release_receipt.json`。
-该回执只证明指令投递，不宣称新四对照已启动或完成；Test正式400结束后可直接衔接，CPU验收可与就绪后继重叠。
+main额外只用已有T2340 train特征与权重，核Q8/V8/out实际写入衰减并做末层有限干预：
+取消擦除使8/8完整FM更差，幅度匹配也未得到一致改善，降低简单memory保留补丁的投入理由，未改模型。
+这不是新证明所有记忆方案无效；不从层范数、乱序1分或局部夹爪变化跳到新架构。
+
+下一项具体范围已登记active design§26，task=`operator_functional_credit_transport_20260929`：
+固定T2340与train0/12/20/32，A沿原28query，B使用排除teacher/A后的20个独立episode。
+检验完整FM/前5信用经真实native→Writer的VJP与Adam后怎样影响B的10步生成前缀，
+并从同父完整优化器独立做四次临时单宏步（两个teacher组×full/prefix），不是正式续训/新模型选择。
+预算2GPUh/12GiB，预计实现、执行、读回约1–2小时；GPU02优先，0环境/0held，四次临时更新如实计数。
+main负责科学推导/验收，Sol负责实际实现/消费者/执行；暂未派发，投递回执取得后在本段登记。
+旧D2/D3、SEOD/GOMQ、public_aux阴性继续约束解释；本项不是首次发现loss horizon或梯度核，也不据余弦自动重训。
+若局部差额不足以区分，明确收缩假设，不提高LR/步数反复追逐有利读出。正式修正仍须匹配短学习和闭环验证。
 
 ## 此前§24启动记录：Owner授权最佳T直接Test，MT/Source只读复用（2026-09-29）
 

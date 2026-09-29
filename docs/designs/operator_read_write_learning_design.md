@@ -1562,3 +1562,94 @@ Owner再次明确正式重训之前要找到机理、机制、特征层原因并
 Test行为用于如实解释本次完整结果；不读取其专家动作、不按Test逐个失败实例调模型或选择新点，修正证据须在合法训练/开发范围建立。
 若只看到内部变化而无预期功能效应，或短学习只改善代理而损害能力，应修订/关闭该假设；
 不通过不断换rank/scale/LR、扩大面板或改架构名称保护相同解释。机制未全部唯一识别时保留竞争解释，不将猜测写成根因。
+
+## 26. 完整功能信用经实际Writer更新后怎样传到独立query（2026-09-29）
+
+### 26.1 问题、历史与范围
+
+§24/25已完成，Test115不胜MT121，validation correct/other/wrong/shuffle/β=161/150/65/1/103。
+本条依Owner自主机制分析与“验证修正后才正式重训”的授权，只做训练侧信用与极小临时更新实验。
+**不是新正式续训、fresh模型、checkpoint选择或已经选定前5 loss。** shuffled不参与本项推理或数据选择。
+main用实际H/X/权重取消末层擦除的有限反事实未得到一致功能改善，见机制§63；不因此开启memory/scale搜索。
+
+待区分的完整问题是：训练的完整FM信用已偏离另一episode的实际短动作风险，还是实际Compiler的参数联系/更新
+破坏了原本相容的功能信用；若均未支持，则不得把FM horizon或Compiler梯度几何作为修正根据。
+旧D2/D3已测t1前5辅助、虚拟/短学习，SEOD/GOMQ也有真实端点学习及保持阴性；本次不把这些概念当首次提出。
+不同点仅是当前T2340真实J与Adam、随机time的完整FM/前5分解、独立episode及两条正确视频的实际有限传递。
+任何局部正例仍须后续匹配短学习和闭环收益才能放行正式修正重训，不能靠余弦或MSE越过此限制。
+
+唯一task=`operator_functional_credit_transport_20260929`，输出
+`/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/functional_credit_transport`。
+原e2afbfd7完整T2340及原Adam/scheduler为唯一父，数值读取可复用当前clean pushed f207a12e冻结树；
+旧权重、优化器、原件均只读，不重新打开原正式训练CLI或旧输出路径。
+只用固定train0/12/20/32，不加载任何Validation/Test标签或专家；Source冻结。
+
+### 26.2 固定输入与两个episode集合
+
+A沿§14/22/23的每task原两teacher、28个跨episode query/flow，不换难例，不重复旧正常预测作为新结果。
+需新反传时允许相同query前向，原正常FM/生成预测作为实际消费者校准依据。
+B为每task50条中排除原两teacher和A的28条query episode后，**全部剩余20个episode**，每episode一个query。
+按demo升序，独立`SeedSequence([20260929,26,task])`依次在`[0,episode_length−2]`选frame；
+flow/noise用既有seed函数，visit=2600、optimization_seed=7、实际B20的demo/frame列表，逻辑batch=20。
+B在任何新分数前写入合同；同task各模型/两个teacher/有限干预共用对应noise/time，不能复用A episode冒充独立query。
+保留真实valid-future/repeat-padding元数据，不修改原训练50×7损失。Teacher始终只进真实有序双RGB/语言。
+
+两组j=0/1分别取四task各自第j条teacher，task各.25，一组逻辑112个A query；
+它们各从同一父独立开始，不是两个依次训练宏步。B同时检查原teacher及同task另一teacher，明确同视频/跨视频信用。
+
+### 26.3 实际余切、完整重放与有限更新
+
+对八个父condition分别取得：
+
+- A的完整50 FM LoRA余切`a50`和前5 FM余切`a5`，保持原随机time、noise、真实七维与物理microbatch offset；
+  用`a45=(a50−.1 a5)/.9`表示同一次风险分解，不再为尾部独立跑一套相同模型。
+- B的**真实10步生成后前5×7归一化动作MSE**余切`b`。这只是训练动作风险，无环境/闭环资格含义。
+  使用真实完整50×32 latent、原noise、10步Euler和执行LoRA载荷精度；首5有目标，其它位置可通过真实采样图间接影响。
+  优先复用`writer/flow.py`等已有消费者；在固定小批与实际`predict_action_chunk`核数值语义，
+  若旧辅助函数的dtype/载荷处理不匹配，沿实际消费者作有界修正或报告，不能静默换成另一精度/采样器。
+- 每个余切经当前`runtime.compile(...retain_native=True)`的完整VJP传到真实θ，包含公共A/B0及P/C/D/O。
+  不detach β→native；同一A各路正确相加，不为action_in/out本来不存在的路径补依赖；Source参数无梯度。
+
+保存必要LoRA余切、实际θ分组/总梯度与科学读回；不要保存全Jacobian、全参数谱或重复全树审计。
+每组四task等权汇总后，分别报告原生LoRA余切联系、经过真实J的联系、公共/Value参数组及同/另一teacher的传递。
+Adam二阶量得到的正对角度量只能作为局部解释，与实际momentum/clip/weight decay区分；
+实际有限位移的`g_B·Δθ`预测与真实B风险差必须同时呈现，不能把正预条件SGD公式冒称原Adam精确更新。
+
+有限干预固定为每组j的两臂，**共四次相互独立的临时单宏步**：
+`F`使用原完整FM；`P`仅将本次风险改为前5 FM的独立均值。每一臂都从同一真实T2340完整Adam/scheduler、
+旧RNG/绝对2341时钟起，原四task×28query等权、global SUM后一次原clip/AdamW与绝对LR floor；
+不重置momentum、不扫LR、不调范数、不跨组接续。临时更新可在隔离内存/本诊断root中执行，绝不覆盖父ECP。
+生成因子、native、Key和Value均按更新后的真实参数重编，不能仅改末层M或把自由LoRA优化冒充Writer学习。
+
+对四个临时状态各计算B的八condition（四task×两teacher），及其各自A组的训练FM，核对实际变化。
+父B八condition、父自身β四task、强MT300四task只各计算一次，作为新B面板的共享参照；
+因此B共**48条实际生成路径**（父8、临时32、β4、MT4），不是48个独立task或环境episode。
+同时报告B full50/first5/valid-future及运动6维/夹爪维误差、实际符号与条件间得失；不把轨迹单一标签等同唯一正确控制。
+所有条件保存prediction/target/noise、query来源及临时参数位移/必要优化器统计，可复算实际风险和一阶剩余项。
+这些临时权重仅为诊断原件，不发布正式训练checkpoint，不作为resume/选择/official/Test候选。
+
+### 26.4 结果分支与边界
+
+1. 若功能信用在LoRA端已与独立B的实际生成风险冲突，且前5临时更新在B及另一teacher上有一致有限改善，
+   才提高“功能监督分配值得修正”的支持度；需保留全50/运动/其它task代价，后续仍须同预算原方法短学习与闭环对照。
+2. 若裸功能余切相容、实际Writer/Adam后的作用变坏，且有限干预支持，优先定位J中实际参数组与教学—执行特征联系；
+   不自动投影梯度、冻结β、解绑A或换optimizer，旧public_aux/回绑与共享学习反例继续有效。
+3. 若临时更新只改变A、不改善B/另一teacher，预测不稳定，或实际步幅导致差额无法可靠区分，明确记为不支持当前修正，
+   不自动扩大步数/提高LR/扫描参数/再做同类余弦图。下一选择由main结合本结果与整体能力作出。
+
+三个分支都不能凭一次局部梯度或MSE宣布held根因。测试只缩小目标分配与实际编译学习联系的竞争解释，
+没有新增环境、formal correct400、视频controls、Test、RL、长期续训或fresh重训许可。
+
+### 26.5 执行与资源
+
+Sol负责一次性脚本、完整实际消费者/临时更新正确性、clean数值来源与运行，main负责推理和科学验收，不重复常规工程测试。
+已有数值代码可直接复用；如确需保留窄代码改动，按原独占dev→针对性验证→push新clean freeze，不改旧冻结树。
+不新增平行trainer/sampler、永久损失入口或大框架；该task-owned脚本和必要原件在唯一诊断root保留。
+
+独立硬限**2GPUh、峰12GiB新增存储**，全部加载/失败/临时优化器/权重及反传计入；0环境episode，四次临时单步计数不能写成0更新。
+依据§23四十条生成与cross速度合计.1395GPUh及既有完整macro约一分钟GPU总占用，
+本次多次LoRA/native VJP粗估.4–1.2GPUh，含实现/CPU读回预计1–2小时，实际资源与反传成本另计。
+先用实际小批完成消费者核对并计费，按实际显存提高microbatch；超出上限风险时交具体剩余范围，不降低B独立性或静默扩规模。
+launch前Sol实查strg01 data1 user quota及双节点；GPU02优先，仅无适用卡才GPU01。当前旧批GPU已全部释放，
+按实际吞吐使用1–2张适用卡即可，不为满卡占位；临时两个j组可独立，但同一父/分组权重和四次单步含义不能变。
+完整一批或实质阻碍直接Steer，不发源码完成/准入/心跳常规回报；结束后停止新增计算，由main主动解释与决定下一步。

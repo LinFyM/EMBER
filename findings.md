@@ -5492,7 +5492,7 @@ canonical场景cb535c1e统一重生后严格恢复，保留原物理状态/teach
 bank .302521797、首official .506051816、恢复 .559228714，共1.367802328GPUh，失败不清零。
 原件`continuation2340/analysis/raw_integrity_T2070.json`及正式results/queue/退出账；独立计算保存在既有tmp `main_T2070_acceptance.json`。
 
-## 227. T2160回升到155，近期为成功集合交换中的平台波动而非持续单调下降（2026-09-29）
+## 227. T2160/2250回升到155/156，近期为成功集合交换中的平台波动而非持续单调下降（2026-09-29）
 
 主讨论独立读完整400及2070/1890/MT参照，全部scene_reference/语言/teacher/ordinal/env/policy RNG配对成立；
 各task50视频，训练来源e2afbfd7、物化/official cb535c1e。新400 NPZ/PT内容沿已审实际消费者继承，无新扫描。
@@ -5510,3 +5510,12 @@ bank .302521797、首official .506051816、恢复 .559228714，共1.367802328GPU
 本节点13:53:45 CST一次exit0，3326.870秒×1=.924130466GPUh；0失败、0未引用NPZ/PT。
 原件`continuation2340/analysis/raw_integrity_T2160.json`、official results/contract/completion及外部退出；
 主讨论独立CPU复算在既有tmp `main_T2160_acceptance.json`。
+
+后续T2250完整400已由主讨论独立读行/配对/来源/退出并复算：156、breadth6，task3/6/11/16/23/26/31/39为42/7/44/3/0/35/25/0。
+相对2160：R139/G17/L16、净+1、churn33、Jaccard .808140、保持89.7%，8-task簇95%[−1.75,2.75]pp；
+相对1890：140/16/18、净−2、区间[−2.25,1.75]pp；相对MT：116/40/37、净+3、区间[−4.75,6.25]pp。
+task31得9失5、净+4至25，两个目标各自曾完成25次、同时完成25次；其他任务合计−3，因此局部恢复未形成总体新高。
+完整观察序列158/156/152/155/156仍在窄范围波动，四个新增点均低于原158；不把连续两次回升转述为已证明长期增长。
+仅2340还未完成，其完整结果仍纳入事前选点，不提前选择或释放候选controls/Test，不扩训练窗口。
+本节点13:56:30 CST单次exit0，3333.369秒×1=.925935902GPUh，0失败/孤儿；训练e2afbfd7、eval cb535c1e保持。
+全400 NPZ/PT内容继承已审消费者；原件`raw_integrity_T2250.json`和对应official目录，独立复算在既有tmp `main_T2250_acceptance.json`。

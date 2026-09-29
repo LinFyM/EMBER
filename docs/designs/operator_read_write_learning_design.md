@@ -1277,10 +1277,12 @@ visit300起采用`SeedSequence([20260928,1,task,6])`。原task/query/flow及teac
 Sol独占现有dev，从最新main沿唯一run/data/bank运行面实现新窗口，旧CLI退役为只读来源，禁止平行trainer/evaluator。
 对本次实际触及的窗口/父来源声明作内聚复用，不能再逐window复制大校验分支；不把全面重构变成GPU启动前置。
 若仍有有界结构例外，保留真实guard/diff与后处理范围供main并行审阅，不能冒称全过或放宽科学/恢复合同。
+Owner随后纠正主讨论职责：常规工程实现、测试及恢复检查由Sol负责；main核科学语义和结果，保留Git管理但不重复工程审核或另做结构重构。
 针对性CPU核真实2340父/时钟/前缀、v7→v8、同窗口恢复和旧父重放拒绝、新旧bank/捕获消费者；不为既有可靠验收重扫旧1200/2000捕获。
 训练端检查通过并push新clean detached freeze后直接启动，评测读取接入与main合入可以并行，不需第二次执行许可。
 
 Owner本次明确四卡：优先GPU02同节点四张有实际吞吐价值的A40；launch前同时live核两节点、GPU UUID/显存/进程及NUMA。
+Owner后补充：后续暂不使用GPU01，除非GPU02没有满足真实作业需求和原并发上限的可用卡；训练、物化、评测及恢复均适用。
 四rank各一条件，`NCCL_P2P_DISABLE=1`、既有GPU-local NUMA/deferred NCCL不变。确实无适用四卡时报告具体限制，
 不抢占他人、不dummy占卡；未来Owner或现场必要迁移仍须完整ECP与原逻辑权重，不丢未保存更新。
 总量遵循AGENTS常规跨节点上限；四卡训练不等于整批仅四卡，独立物化/评测利用余量及时启动。

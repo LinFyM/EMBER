@@ -13,7 +13,19 @@ Owner要求学习T从无到有的推导过程，重视已有视频功能与保�
 
 主讨论已复核机制§39–42及当前完整实现：T的主要新联系是实际执行A、教学地址及公共β读取共同学习，
 并非首次递归/动态Value/真实cotangent。下一步先消费现存train特征及实际生成记录，避免再次以通用现象替代EMBER问题。
-首批尚未派发GPU或训练；具体任务与送达/完成证据将随实际事件更新。
+首批`operator_functional_address_evidence_20260929`已Queue派发并由新执行者当前轮明确承接；
+回执01a0ed89-f05f-7df1-8809-fbb3228ec598、实际turn01a0ed89-f067-7511-8b40-12bb29157974。
+范围仅T2340四train task/两teacher已有原件的实际生成寻址分解，0 GPU/更新/环境；预计20–30分钟、最长45分钟、输出<100MiB。
+正文/回执在`.codex/tmp/operator_architecture_cycle_20260929/functional_address_evidence_release.txt`及同前缀receipt。
+本批已完成，执行者真实turn completed且整批Steer已消费：0 GPU前向/更新/环境/新held，未改main。
+main直接读报告、逐时刻脚本及原件索引，确认实际十步Aq与FM query_x严格分开；结果见findings§242/机制§66。
+末层现存有用开爪项很小且被反向项抵消，不支持简单放大或保留写入；其它任务末层直接方向与完整方向还会相反。
+下一判断须涉及完整中间层作用及公共/条件的实际分工，不能由末层定值分解推出全38目标修复。
+main已用已有全38目标M、公共B0及A/B信用筛查公共输出空间与读图前目标，未找到足够支持；只有CPU计算。
+新批`operator_branch_intervention_20260929`已在active design§28登记，待下方具体派发回执：
+固定T2340/原四train任务/两teacher/独立B20，分别撤去Q、V、动作投影的条件M，公共β全部保留；
+24条完整十步生成，最多8个确有必要的匹配父补项，0更新/环境/新held。上限.75GPUh/3GiB，预计45–70分钟。
+主讨论检验真实条件寻址/内容冲突，不因局部梯度或task0单项收益删模块；不自动启动学习、official或正式重训。
 
 ## 当前最新：Owner停止新实验；回读及必要配对补项全部完成（2026-09-29）
 

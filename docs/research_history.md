@@ -4,6 +4,14 @@
 设计与分析分别位于`designs/`和`analyses/`，旧路径/执行入口按所记Git commit解释，不能默认在main运行。
 历史“checkpoint完整保留/可重建”描述也只对应当时状态；当前资产可用性以原目录的retirement记录和最新progress为准。
 
+## 2026-09-29：新主讨论消费真实教学调用分解，恢复有界架构研究
+
+Owner指定新主讨论/执行者并恢复研究，最终停在机制限制及修正已验证、正式重训尚未启动。
+首批固定T2340四train task/两teacher，CPU从真实sampler Aq精确展开教学时刻对action_out的七维直接作用；
+M重建最大相对误差4.88e−7，0 GPU前向/更新/环境/新held，原件`operator_chain_diagnosis_20260929/functional_address_evidence/`。
+task32两开爪反例的直接项很小且净向闭，其它任务直接方向还能与整个策略相反，不支持简单加强记忆或末层写入。
+事实及数学边界见findings§242/机制§66；新干预授权只看progress及design§28，不从历史描述自动启动。
+
 ## 2026-09-29：冻结回读原批结束，完整历史复核与数值配对边界
 
 §27在固定T2340/四train task/两teacher/独立B20上完成四臂32新生成路径，0更新/环境/held；

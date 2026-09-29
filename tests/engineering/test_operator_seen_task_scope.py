@@ -143,3 +143,59 @@ def test_actual_frozen_seen_bank_and_role_authority_survive_evaluation_only_git(
             source=source, task_keys=keys, evaluation_role=scope.ROLE,
             require_formal=True, task_init_state_ids={key: scope.STATES for key in keys})
         assert inspected["mode"] == mode and len(inspected["conditions"]) == 144
+
+
+def test_canonical_scene_repair_reuses_actual_T_MT_factor_files(tmp_path, monkeypatch):
+    from ember.operator_writer import scene_repair, run
+    from ember.writer.materialization import file_record
+
+    old_root = Path(scope.registration()["run_root"])
+    old_scenes = read_json(old_root / "scenes/manifest.json")
+    new_scenes = tmp_path / "attempt/scenes"
+    new_scenes.mkdir(parents=True)
+    rows = []
+    for row in old_scenes["scenes"]:
+        path = new_scenes / Path(row["path"]).name
+        path.symlink_to(row["path"])
+        rows.append({**row, "path": str(path)})
+    git = {"commit": "fixture-clean-pushed", "branch": "", "dirty_paths": [],
+           "pushed_ref": "origin/main"}
+    write_json_atomic(new_scenes / "manifest.json", {
+        **old_scenes, "canonicalization": scene_repair.SCHEMA,
+        "source_manifest": file_record(old_root / "scenes/manifest.json"),
+        "evaluation_git": git, "scenes": rows})
+    monkeypatch.setattr(scene_repair, "ATTEMPT", tmp_path / "attempt")
+    monkeypatch.setattr(scene_repair, "SCENES", new_scenes)
+    monkeypatch.setattr(run, "frozen_git", lambda *, continuation=False: git)
+    monkeypatch.setenv("EMBER_LIBERO_ASSETS_ROOT", str(
+        ASSET / "data/simulation/ember_assets/datasets/libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6"))
+    spec = read_json(bank.CONTINUATION1800_FROZEN_SPEC_PATH)
+    authorities = load_evaluation_authorities(
+        ASSET / spec["source"]["evaluation_config"], ASSET)
+    checkpoint = ASSET / spec["source"]["checkpoint"]
+    source = inspect_source_checkpoint(authorities, checkpoint.parent.parent,
+                                       checkpoint, evaluation_mode="formal")
+    keys = scope.task_keys(authorities.protocol, authorities.meta_protocol)
+    for mode in ("T", "MT"):
+        new_bank = scene_repair.register_bank(mode)
+        original = read_json(scene_repair.source_bank_path(mode))
+        copied = read_json(new_bank)
+        assert copied["shared"] == original["shared"]
+        assert copied["conditions"] == original["conditions"]
+        inspected = bank.inspect_bank(
+            manifest_path=new_bank, source=source, task_keys=keys,
+            evaluation_role=scope.ROLE, require_formal=True,
+            task_init_state_ids={key: scope.STATES for key in keys})
+        assert inspected["scene_manifest"] == file_record(new_scenes / "manifest.json")
+        output = scene_repair.ATTEMPT / mode / "evaluation/correct144"
+        panel_tasks = [SimpleNamespace(suite=k[0], task_id=k[1],
+                                       init_state_ids=scope.STATES) for k in keys]
+        capture = scope.capture_expectations(copied, new_bank,
+                                            panel_tasks, output)
+        assert capture["expected_bank"] == new_bank.resolve()
+        args = SimpleNamespace(static_task_lora_manifest=new_bank, role=scope.ROLE,
+                               mode="formal")
+        actual_capture, _ = bank.registered_capture(
+            args, panel_tasks, output, scope.CAPTURE_PATH,
+            read_json(scope.CAPTURE_PATH), None)
+        assert len(actual_capture["full_conditions"]) == 36

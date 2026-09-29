@@ -560,20 +560,24 @@ def _inspect_tu_bank(bank: Mapping, spec: Mapping, path: Path) -> None:
     base = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)
     shapes = expected_lora_state_shapes(base)
+    factor_root = (
+        Path(bank["scene_repair"]["source_bank"]["path"]).parent
+        if bank.get("scene_repair") is not None else path.parent
+    )
     expected = (
-        (bank["shared"], file_record(path.parent / "shared.safetensors")),
+        (bank["shared"], file_record(factor_root / "shared.safetensors")),
         (bank["checkpoint_manifest"], file_record(checkpoint / "checkpoint_manifest.json")),
         (bank["training_git"], run["git"]["commit"]), (bank["lora"], base.to_dict()),
         (run["lora"], base.to_dict()), (run["source"], bank["source"]),
     )
     if any(actual != wanted for actual, wanted in expected):
         raise ValueError("T/U shared factor or formal checkpoint changed")
-    _factor_header(path.parent / "shared.safetensors",
+    _factor_header(factor_root / "shared.safetensors",
                    {name: shape for name, shape in shapes.items() if name.endswith(LORA_A_SUFFIX)},
                    metadata={"schema_version": BANK_SCHEMA, "mode": mode})
     b_shapes = {name: shape for name, shape in shapes.items() if name.endswith(LORA_B_SUFFIX)}
     for row in bank["conditions"]:
-        factor = path.parent / f"{row['condition_id']}.safetensors"
+        factor = factor_root / f"{row['condition_id']}.safetensors"
         if (set(row) != {"condition_id", "global_task_id", "teacher_demo", "factors",
                         "raw_frames", "sampled_frames"}
                 or row["factors"] != file_record(factor)
@@ -783,12 +787,19 @@ def validate_capture_contract(contract: Mapping, repo_root: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("materialize", "register-mt", "public-beta",
-                                          "seen-materialize", "seen-mt"))
+                                          "seen-materialize", "seen-mt", "seen-canonical-bank"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--mode", choices=("T", "U", *PILOT_ARMS))
+    parser.add_argument("--mode", choices=("T", "U", "MT", *PILOT_ARMS))
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--device")
     args = parser.parse_args()
+    if args.phase == "seen-canonical-bank":
+        if args.mode not in ("T", "MT") or args.checkpoint is not None or args.device is not None:
+            parser.error("canonical bank requires only the registered T/MT mode")
+        from .scene_repair import register_bank
+
+        print(register_bank(args.mode))
+        return
     if args.phase in ("materialize", "seen-materialize"):
         if args.mode is None or args.checkpoint is None:
             parser.error("materialize requires a registered arm and completed selected ECP")

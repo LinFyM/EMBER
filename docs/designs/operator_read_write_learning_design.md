@@ -1406,3 +1406,68 @@ Sol负责一次性脚本与执行，复用clean frozen数值代码/唯一policy�
 资源等待另计；外部时限不得超过剩余GPU预算。若无法在限额内完成，保留已完成原件并报告，不删条件或追加预算。
 GPU02优先，只有无适用卡时考虑GPU01；沿Owner短分析临时超卡例外，不挤占在跑四卡训练或中断official。
 launch前由Sol现场核两节点资源和strg01 data1 quota。完成或实质阻碍直接Steer，禁止心跳/确认消息；完成后不自动开下一项。
+
+## 24. Owner直接授权最佳验证checkpoint的Test，复用已有MT/Source（2026-09-29）
+
+### 24.1 最新授权与唯一选择
+
+Owner判断短期可能难有更大突破，明确“可以直接看看最佳ckpt在test上的性能了”，随后纠正MT和Source已有结果。
+因此本条覆盖§20的“明显超过MT才触发Test”和§21暂不Test边界：只新增一个T checkpoint的400 Test，
+旧MT/Source Test直接复用，不新跑基线、视频controls、其它checkpoint、训练或RL。
+
+唯一task=`operator_selected_test_20260929`，沿已登记后段root
+`/data1/user/ymdai/ember_runs/operator_selected_validation_20260929/test`；selection仍是其父目录的`selection.json`。
+不得另建平行evaluator或为Test重新编译validation400。已有冻结ECP、源模型、数据与旧原件只读引用。
+
+选点只用T/full同一学习链的完整预登记validation400，成功数最高、同分取较早macro。
+已完成1890/1980/2070/2160/2250/2340/2430/2520/2610/2700/2790分别158/156/152/155/156/161/147/154/160/154/159；
+最后2610已收束且main直接核400行/配对/完成，所有预登记点均有完整结果。更早已验T点均低于161，U/public_aux不入候选。
+**main最终选择T2340（161/400）**，训练来源`e2afbfd7c997e3f792921600608efa2fa3c1b25a`，唯一完整ECP为
+`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340/T/train/attempts/continuation/checkpoints/macro_00002340`。
+对应correct bank为上述continuation2340根目录下`T/banks/2340/manifest.json`、完整结果为`T/evaluation/2340/correct400/results.json`，主讨论已核源及exit0。
+精确selection载荷保存于既有tmp `operator_chain_diagnosis_20260929/selected_test_selection.json`；Sol在本批存储准入后按该内容发布到
+上述唯一selection路径，直接执行，无需第二次GPU许可。selected_by=science_main，实际落盘者可在run contract说明。
+选点在任何新Test模型推理/成绩之前冻结，读Test后不得更换checkpoint或据此改本轮方法。
+
+### 24.2 复用基线与Test比较口径
+
+主讨论已直接读取旧两组各400原行和合同：
+`/data0/user/ymdai/ember_runs/coverage_baseline_test_20260923/evaluation/source_1000_test`为75/400，
+同根`mtbc_300_test`为121/400；Source1000是项目过滤Source71训练后的冻结源policy，MT为原强MT300。
+保持这些历史分数/合同，不重测、不重训、不换较弱基线。旧数据0新增写入，所有新产物data1。
+
+Test沿coverage固定8全局ID `[8,9,10,18,24,27,30,33]`、每task init0..49、inference seed7、exact language，
+原render256/model224/双RGB rotate180、8state/7action、10flow、前5replan、dummy10、成功即止、horizon220/280/300/520。
+与旧Test使用同一canonical source/normalization/tokenizer及同一policy-noise调度；不用generic pi05_base替代Source1000。
+T每task50个合法action-hidden teacher各用一次，沿既有video_schedule的固定seed7映射；不挑视频或改变query/teacher来源。
+仅读取Test教学双RGB/语言作一次LoRA编译，禁止Test action/proprio/reward/terminal进入Writer或任何梯度；执行自身state合法。
+模型/Writer/native/损失/权重不改，只增加有明确role/source的Test读取与评测范围。
+
+旧Test合同没有注册完整scene快照，也没有NPZ/PT capture，无法事后升级为严格完整RGB/sim-state配对。
+新T沿旧合同的`seed/reset/set_init_state/dummy10`初始化，不为补齐当前scene合同重跑两baseline或构造它们不存在的初态证据。
+若当前operator adapter强制registered-scene，沿唯一owner增加**显式legacy Test初始化scope**，复用已有普通Test episode消费者；
+这只适用于本条指定旧Test比较，不静默放宽validation400的strict-scene断言、不改变其恢复规则。
+报告可核的task/init/语言/env seed/policy noise共同前缀配对，另明确完整scene/RGB无法与旧基线核对；
+配对得失与任务簇区间仍可报告，但不能称当前validation式的strict full-scene paired400或bitwise一致。
+`historical_test_exposure=true`沿旧协议保留；Test仅评价这次固定方法，不参与梯度、视频选择或后续设计反馈。
+
+### 24.3 执行、证据、资源与收尾
+
+Sol独占dev，沿唯一bank/scope/adapter/evaluator增加必要Test读取；保留旧数值来源与新evaluation-only Git的显式对应。
+CPU检查实际选中ECP/role、400 task-video条件、旧Test源/norm/预处理/RNG、禁止错误checkpoint/标签来源；
+检查直接消费者，不添加整树/逐tensor扫描或重验旧训练。push clean detached freeze后按本条直接运行，不等main工程审核或集成。
+formal launcher登记精确argv/env/cwd/设备、输入与选择、输出、并发和预算；纯工程窄修按§10.5保留原件/失败账、自主验证新freeze续行。
+
+唯一新增T bank400条件及T Test400行，沿已有dynamic long-first persistent queue多卡并行。
+每task一条full、其余compact，共8full+392compact；保存新400 NPZ/PT及stage predicates，CPU实际读回必要动作/初态/谓词/RGB。
+旧baseline原行/可靠验收直接继承，无不存在的capture补扫。汇报三者per-task/suite/breadth、T对两baseline的R/G/L/churn/Jaccard与
+固定8task bootstrap区间、选择表、来源、退出、失败及全部成本；注明验证选峰乐观性与历史Test曝光。
+失效仅重领原队列缺失分片，不择优重跑；如果真实原因涉及模型数值/数据标签/评测改变或预算，先报告科学边界。
+
+新增独立**硬限3GPUh、峰值16GiB**，与§21的18GPUh/64GiB分别计账，全部失败/加载/物化/评测计入。
+依据最近400 bank约.27–.30GPUh、400 official约.9–1.2GPUh，预计约1.3–1.7GPUh；新增一套400权重约8–9GiB，
+其余场景记录/capture/冻结代码/原子临时余量纳入16GiB。launch前由Sol核strg01 data1独立quota、实占及共享容量，不能仅看df。
+GPU02优先，只有该节点无满足作业需求的适用卡才可GPU01；live核双节点，沿既有常规总量/单节点上限，不借短诊断例外扩本Test。
+§21已全部收束，Test准备直接开始；候选已固定，及时利用空闲卡，bank就绪即official，不沿用无依据单卡/固定2worker限制。
+按既有bank/eval实测，从源码准备到完整读回预计约1–2小时，现场资源/必要修复另计；重大延期或硬限风险直接报告，不发定时心跳。
+完整Test或实质阻碍直接Steer；当前本条不包含新controls、更多Test seed、追加训练或基线GPU计算。

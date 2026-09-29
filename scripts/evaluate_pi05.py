@@ -14,7 +14,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Mapping
 
-from ember.eval_adapters import HORIZON_WRITER_KIND, STATIC_TASK_LORA_KIND
+from ember.eval_adapters import HORIZON_WRITER_KIND, OPERATOR_READ_WRITE_KIND, STATIC_TASK_LORA_KIND
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.launcher import (
     MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
@@ -316,7 +316,7 @@ def _start_workers_locked(
         materialized_lora_replicas=(
             int(contract["parallel"]["replicas_per_gpu"])
             if contract.get("adapter") is None or (contract.get("adapter") or {}).get("kind")
-            in {HORIZON_WRITER_KIND, STATIC_TASK_LORA_KIND}
+            in {HORIZON_WRITER_KIND, STATIC_TASK_LORA_KIND, OPERATOR_READ_WRITE_KIND}
             else None
         ),
     )

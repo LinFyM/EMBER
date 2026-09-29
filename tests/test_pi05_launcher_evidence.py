@@ -79,6 +79,7 @@ def test_launcher_load_limit_cli(monkeypatch, command, limit):
 @pytest.mark.parametrize("adapter,expected_replicas", [
     ({"kind": "horizon_writer_lora_bank"}, 2),
     ({"kind": "static_task_lora_bank"}, 2),
+    ({"kind": "operator_read_write_lora_bank"}, 2),
     ({"kind": "task_local_expert_bank"}, None),
     (None, 2),
 ])

@@ -13,6 +13,8 @@ CAPTURE_NAME = "change_clock_capture.json"
 ERASE_RULE = "erase=(memory@key)*(-expm1(-vector_norm(delta_hbar,dim=-1)/sqrt(1024)))[None,:]; value=ungated"
 TRAINING_GIT = {"commit": "517bc8d42780fabf8f3faa7d707651f99b8beed0", "branch": "",
                 "dirty_paths": [], "pushed_ref": "origin/codex/operator-change-clock"}
+TRAINING_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-change-clock-learning-v2-formal"
+                          "/configs/operator_read_write_v1/change_clock_spec.json")
 
 
 def expected_spec(base: dict) -> dict:

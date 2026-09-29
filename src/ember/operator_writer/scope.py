@@ -295,10 +295,10 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
         (bank["source"], source), (bank["scene_root"], str(owner.SCENE_ROOT)),
         (bank.get("loss_variant") if pilot or late_window else None,
          owner.PILOT_ARMS[mode] if pilot else "full" if late_window else None),
-        (bank.get("materialization_git", {}).get("branch") if late_window else None,
-         "" if late_window else None),
-        (bank.get("materialization_git", {}).get("dirty_paths") if late_window else None,
-         [] if late_window else None),
+        (bank.get("materialization_git", {}).get("branch") if late_window or clock_pilot else None,
+         "" if late_window or clock_pilot else None),
+        (bank.get("materialization_git", {}).get("dirty_paths") if late_window or clock_pilot else None,
+         [] if late_window or clock_pilot else None),
         (bank.get("pilot") if pilot else None, spec["pilot"] if pilot else None),
         (bank.get("parent_checkpoint") if pilot else None,
          str(Path(spec["continuation"]["parent_run_root"]) /
@@ -314,17 +314,20 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
             or late_window and (mode != "T" or not bank.get("materialization_git", {}).get("commit")
                                or bank["materialization_git"].get("pushed_ref") not in
                                ("origin/codex/demonstration-transfer", "origin/main"))
+            or clock_pilot and (not bank.get("materialization_git", {}).get("commit")
+                                or bank["materialization_git"].get("pushed_ref") not in
+                                ("origin/codex/operator-change-clock", "origin/main"))
             or any(actual != wanted for actual, wanted in expected)
             or len(bank["conditions"]) != 400
             or any({k: row[k] for k in ("condition_id", "global_task_id", "teacher_demo")} != condition
                    for row, condition in zip(bank["conditions"], conditions, strict=True))):
         raise ValueError("operator official bank provenance/scope changed")
-    if late_window:
+    if late_window or clock_pilot:
         materialization = read_json(path.parent / "materialization_contract.json")
         if any(materialization.get(key) != bank.get(key) for key in
                ("checkpoint", "spec", "training_git", "source", "lora",
                 "materialization_git", "loss_variant")):
-            raise ValueError("continuation materialization lineage changed")
+            raise ValueError("operator materialization lineage changed")
     if task_init_state_ids is not None and any(
             tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ())) != tuple(range(50))
             for row in tasks):

@@ -232,6 +232,8 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, seale
     expected_root = Path(spec["run_root"]) / mode / "train" / "attempts"
     if output.parent.resolve() != expected_root.resolve():
         raise ValueError("operator bank checkpoint is outside this arm's formal attempts")
+    if mode == change_clock.MODE and read_json(change_clock.TRAINING_SPEC_PATH) != dict(spec):
+        raise ValueError("change-clock training and materialization specs differ")
     run = read_json(output / "run_contract.json")
     complete = read_json(output / "completion.json")
     ecp = read_json(checkpoint / "checkpoint_manifest.json")
@@ -243,7 +245,7 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, seale
         (run.get("mode"), mode),
         (run.get("git"), change_clock.TRAINING_GIT if mode == change_clock.MODE else
          SEALED_TRAINING_GIT if sealed_evaluation else frozen_git()),
-        (run.get("spec"), str(CHANGE_CLOCK_SPEC_PATH if mode == change_clock.MODE else
+        (run.get("spec"), str(change_clock.TRAINING_SPEC_PATH if mode == change_clock.MODE else
                               SEALED_SPEC_PATH if sealed_evaluation else SPEC_PATH)),
         (run.get("operator"), spec["operator"]),
         (run.get("events"), spec["events"]), (run.get("optimizer"), spec["optimization"]),
@@ -466,14 +468,15 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     if (output / "manifest.json").exists() or (output.exists() and not
                                               (output / "materialization_contract.json").is_file()):
         raise ValueError("published or unregistered operator bank output exists")
+    materialization_git = (frozen_git(change_clock_pilot=True) if mode == change_clock.MODE else
+                           frozen_git(continuation=True) if seen_task or next_window else None)
     runtime = build_runtime(asset_root, spec, device, "T" if pilot else mode)
     if runtime.source != run["source"]:
         raise ValueError("materialization source differs from the formal training run")
     contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(source_spec_path),
                 "training_git": run["git"]["commit"], "source": run["source"],
                 "lora": lora.to_dict(),
-                **({"materialization_git": frozen_git(continuation=True)}
-                   if seen_task or next_window else {}),
+                **({"materialization_git": materialization_git} if materialization_git is not None else {}),
                 **({"evaluation_scope": file_record(seen_scope.PATH)} if seen_task else {}),
                 **({"selected_test": selected_scope.test_lineage()} if selected_test else {}),
                 **({"loss_variant": "full"} if next_window else {}),
@@ -522,6 +525,8 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
             "information_wall": {"teacher_video_values_read": 144 if seen_task else 400,
                                  "teacher_runtime_reads": 0, "deployment_adapters": 1,
                                  "validation_test_gradients": False}}
+    if mode == change_clock.MODE:
+        bank["materialization_git"] = contract["materialization_git"]
     if seen_task:
         bank["evaluation_scope"] = file_record(seen_scope.PATH)
         bank["materialization_git"] = contract["materialization_git"]

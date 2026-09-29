@@ -19,6 +19,20 @@ main新增CPU检验了真实K及其后续传播组成的Value→M线性映射，
 此时只确认执行任务已开始，不称GPU前向/训练已启动。可靠整批Steer/idle Queue回报已纳入合同，
 main已完成本轮独立原件分析、最近历史比较及机制取舍；下一关键判断依赖共同学习结果，不监看Sol或自Queue。
 
+Sol随后交付`906b70d4`，main直接审阅完整分支差异及新task/root/spec、90/180安全ECP停止接口，
+以`0d4b1563`合并源码。候选仍复用唯一TargetWrite、原trainer/bank/official；仅新增25行身份模块及178行固定面板入口。
+现有较大的run.py只增加身份接线和既有停止流程的合同分支，没有复制训练器；为这次有限实验保持窄修改，
+由main在候选被采纳/否决、相关读取结束时裁决退役候选分支/面板入口，不保留无主的长期并行版本。
+main复核JSON，source/events/optimizer/evaluation与原stage1相同，execution只改mode（实际当前world2）；
+三个现有CPU初始化/恢复合同检查通过。第一次pytest仅因漏设PYTHONPATH而收集失败，修正为src后通过，无模型/GPU重跑。
+
+真实工程消费者原件`operator_change_clock_learning_20260930/engineering_consumer/`已直接核对：
+task7/teacher35、28query、完整native→38 Writer→full50 FM→真实反传，loss .1326448172，
+B0/O梯度范数 .0106752170/.0009279927，物理source恢复identity，0 optimizer更新。
+首次检查误要求identity起点公共A非零而失败；这是检查判据错误，修正后第二次通过，两次约101GPU秒计入8GPUh。
+公共A/P/C/D/native梯度为零符合机制§68.4的首步推导；这只核实真实首步消费者，不等于后续学习/性能通过。
+Sol继续冻结和训练执行，不等待main批准；此回报没有正式训练启动或性能结果，不额外轮询。
+
 ## 当前最新：停止一批实验不等于停止主讨论研究（2026-09-30凌晨）
 
 Owner追问“那为啥就停下来了？”。主讨论承认此前把撤回§30误解为整体研究可收束；

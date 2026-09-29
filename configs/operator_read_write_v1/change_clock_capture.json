@@ -1,6 +1,6 @@
 {
   "schema_version": "ember_pi05_registered_trajectory_capture_v1",
-  "study_id": "operator_change_clock_pilot_20260929",
+  "study_id": "operator_change_clock_learning_20260930",
   "task_subset_selection": null,
   "mode": "compact",
   "full_conditions": [

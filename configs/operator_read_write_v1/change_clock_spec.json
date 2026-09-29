@@ -1,8 +1,8 @@
 {
   "schema_version": "ember_operator_read_write_learning_v1",
-  "task": "operator_change_clock_pilot_20260929",
-  "design": "docs/designs/operator_read_write_learning_design.md#29",
-  "run_root": "/data1/user/ymdai/ember_runs/operator_change_clock_pilot_20260929",
+  "task": "operator_change_clock_learning_20260930",
+  "design": "docs/designs/operator_read_write_learning_design.md#31",
+  "run_root": "/data1/user/ymdai/ember_runs/operator_change_clock_learning_20260930",
   "source": {
     "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
     "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json",

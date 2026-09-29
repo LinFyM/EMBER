@@ -168,7 +168,7 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
                          if clock_pilot else owner.PUBLIC_BETA_CAPTURE_PATH if public_beta else
                          owner.PILOT_CAPTURE_PATH if pilot else
                          owner.SPEC_PATH.parent / "official_capture.json"),
-                study=("operator_change_clock_pilot_20260929" if clock_pilot else
+                study=(change_clock.TASK if clock_pilot else
                        owner.PUBLIC_BETA_STUDY if public_beta else
                        "operator_public_function_pilot_20260929" if pilot else
                        "operator_read_write_learning_20260928"),

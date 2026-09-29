@@ -596,7 +596,7 @@ def prepare_train(spec: dict, args) -> Session:
                                                                 PILOT_UPDATES,
                                                                 CONTINUATION2340_UPDATES,
                                                                 CONTINUATION2790_UPDATES)
-    clock_pilot = spec["task"] == "operator_change_clock_pilot_20260929"
+    clock_pilot = spec["task"] == change_clock.TASK
     git = frozen_git(continuation=continuation, change_clock_pilot=clock_pilot)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     allowed_worlds = spec["execution"].get("world_sizes", [spec["execution"].get("world_size")])
@@ -797,14 +797,14 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
 
 
 def validate_train_request(spec: dict, args) -> None:
-    if spec["task"] == "operator_change_clock_pilot_20260929":
+    if spec["task"] == change_clock.TASK:
         if (args.mode != change_clock.MODE or not args.attempt
                 or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
                 or getattr(args, "pilot_arm", None) is not None
                 or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)
-                or args.stop_after_macro is not None
+                or args.stop_after_macro not in (None, *CHECKPOINTS[:-1])
                 or (args.resume is None) != (args.attempt == "fresh")):
-            raise ValueError("change-clock pilot requires fresh or same-arm ECP resume")
+            raise ValueError("change-clock learning requires fresh or same-arm ECP resume")
         return
     if (spec["execution"]["updates_per_mode"] != CONTINUATION2790_UPDATES
             or spec["events"] != CONTINUATION2790_EVENTS
@@ -836,7 +836,7 @@ def train(spec: dict, args) -> None:
             raise ValueError("controlled stop is not after the resumed ECP")
         while updates < target:
             updates, rows = update(session, updates, rows)
-            if updates in CONTINUATION2790_CHECKPOINTS[:-1]:
+            if updates in spec["execution"]["checkpoints"][:-1]:
                 requested = ((session.output / "stop_at_next_ecp.request").exists()
                              if session.context.is_main else False)
                 stop_at_ecp = any(gather(requested or updates == args.stop_after_macro,

@@ -6,7 +6,8 @@ from pathlib import Path
 
 
 MODE = "T_change_clock"
-ROOT = Path("/data1/user/ymdai/ember_runs/operator_change_clock_pilot_20260929")
+TASK = "operator_change_clock_learning_20260930"
+ROOT = Path("/data1/user/ymdai/ember_runs/operator_change_clock_learning_20260930")
 SPEC_NAME = "change_clock_spec.json"
 CAPTURE_NAME = "change_clock_capture.json"
 ERASE_RULE = "erase=(memory@key)*(-expm1(-vector_norm(delta_hbar,dim=-1)/sqrt(1024)))[None,:]; value=ungated"
@@ -15,8 +16,8 @@ ERASE_RULE = "erase=(memory@key)*(-expm1(-vector_norm(delta_hbar,dim=-1)/sqrt(10
 def expected_spec(base: dict) -> dict:
     return {
         **base,
-        "task": "operator_change_clock_pilot_20260929",
-        "design": "docs/designs/operator_read_write_learning_design.md#29",
+        "task": TASK,
+        "design": "docs/designs/operator_read_write_learning_design.md#31",
         "run_root": str(ROOT),
         "operator": {**base["operator"], "erase_rule": ERASE_RULE},
         "execution": {**base["execution"], "modes": [MODE]},

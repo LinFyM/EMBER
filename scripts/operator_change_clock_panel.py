@@ -15,7 +15,7 @@ import torch
 from safetensors.torch import load_file
 
 from ember.lora import LORA_B_SUFFIX, validate_lora_state
-from ember.operator_writer.change_clock import MODE, ROOT
+from ember.operator_writer.change_clock import MODE, ROOT, TASK
 from ember.operator_writer.data import FormalData
 from ember.operator_writer.native import read_native_video
 from ember.operator_writer.run import CHANGE_CLOCK_SPEC_PATH, build_runtime, specification
@@ -89,7 +89,7 @@ def main() -> None:
     started = time.monotonic()
     rows = []
     (output / "run_contract.json").write_text(json.dumps({
-        "task": "operator_change_clock_pilot_20260929", "mode": MODE,
+        "task": TASK, "mode": MODE,
         "source_commit": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[1], text=True).strip(),
         "checkpoint": str(checkpoint), "old_panel": str(OLD_PANEL),

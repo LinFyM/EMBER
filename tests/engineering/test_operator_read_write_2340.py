@@ -86,3 +86,49 @@ def test_actual_parent_events_and_explicit_control_lineage(tmp_path):
     finally:
         old.close()
         new.close()
+
+
+@pytest.mark.parametrize("request_kind", ["fixed", "file"])
+def test_controlled_exit_occurs_after_published_complete_boundary(tmp_path, monkeypatch, request_kind):
+    from ember.operator_writer import run
+
+    spec = specification(CONTINUATION2340_SPEC_PATH)
+    closed, visited, published = [], [], []
+    data = SimpleNamespace(updates=2340, close=lambda: closed.append(True))
+    session = SimpleNamespace(
+        data=data, output=tmp_path, mode="T",
+        context=SimpleNamespace(is_main=True, world_size=3),
+    )
+    args = SimpleNamespace(
+        mode="T", pilot_arm=None, resume=PARENT, attempt="continuation",
+        microbatch=28, frame_chunk=8,
+        stop_after_macro=1980 if request_kind == "fixed" else None,
+    )
+
+    def update_stub(current, updates, rows):
+        visited.append(updates + 1)
+        if request_kind == "file" and updates + 1 == 1970:
+            (tmp_path / "stop_at_next_ecp.request").write_text("stop")
+        if updates + 1 == 1980:
+            checkpoint = tmp_path / "checkpoints/macro_00001980"
+            checkpoint.mkdir(parents=True)
+            published.append(checkpoint)
+        return updates + 1, rows + 1
+
+    real_write = run.write_json_atomic
+
+    def verify_publication_before_stop(path, payload):
+        assert len(published) == 1 and Path(payload["checkpoint"]) == published[0]
+        assert payload["updates"] == payload["metrics_rows"] == 1980
+        real_write(path, payload)
+
+    monkeypatch.setattr(run, "prepare_train", lambda *_: session)
+    monkeypatch.setattr(run, "restore", lambda *_: (1890, 1890))
+    monkeypatch.setattr(run, "update", update_stub)
+    monkeypatch.setattr(run, "gather", lambda value, world: [value, False, False])
+    monkeypatch.setattr(run, "write_json_atomic", verify_publication_before_stop)
+    run.train(spec, args)
+    assert visited == list(range(1891, 1981))
+    assert closed == [True]
+    assert json.loads((tmp_path / "stopped_at_ecp.json").read_text())["next_resume_from_this_ecp"]
+    assert not (tmp_path / "completion.json").exists()

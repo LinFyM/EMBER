@@ -20,7 +20,7 @@ ASSET = Path('/data1/user/ymdai/projects/EMBER')
 
 
 def test_actual_270_parent_migration_keeps_events_and_completes_50_teachers(tmp_path):
-    spec = specification(CHANGE_CLOCK_CONTINUATION_SPEC_PATH)
+    spec = specification(CHANGE_CLOCK_CONTINUATION_SPEC_PATH) | {'run_root': str(tmp_path)}
     old = FormalData(ASSET, specification(CHANGE_CLOCK_SPEC_PATH), query_labels=False)
     new = FormalData(ASSET, spec, query_labels=False)
     reference = FormalData(ASSET, specification(CONTINUATION_SPEC_PATH), query_labels=False)

@@ -59,3 +59,22 @@ def expected_continuation_spec(base: dict, events: dict) -> dict:
                              "sampler_migration": "teacher_pool_0_29_is_visit_index_not_demo_pool"},
             "budget": {"new_gpu_hours_expected": [4.1, 4.8],
                        "new_gpu_hours_hard": 6, "peak_new_gib": 24}}
+
+
+def validate_request(spec: dict, args) -> None:
+    """Packing and fresh/owned-resume admission for the sealed clock graph."""
+    import re
+
+    continuation = spec["task"] == CONTINUATION_TASK
+    stops = (None, 360) if continuation else (None, 90, 180)
+    if (args.mode != MODE or not args.attempt
+            or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
+            or getattr(args, "pilot_arm", None) is not None
+            or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)
+            or args.stop_after_macro not in stops):
+        raise ValueError("change-clock requires registered packing, mode and ECP boundary")
+    if continuation:
+        if args.resume is None or args.attempt == "fresh":
+            raise ValueError("change-clock 450 requires the registered complete same-arm ECP")
+    elif (args.resume is None) != (args.attempt == "fresh"):
+        raise ValueError("change-clock learning requires fresh or same-arm ECP resume")

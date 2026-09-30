@@ -647,6 +647,11 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
+        if bank.get("joint_public_study") is True:
+            from .joint_readout import inspect
+
+            return inspect(bank, path, source, task_keys, evaluation_role,
+                           require_formal, task_init_state_ids)
         if bank.get("learning_limit_panel") is not None:
             from .learning_limit import inspect
 
@@ -722,7 +727,7 @@ class FrozenOperatorAdapter:
         self.states: OrderedDict[str, dict] = OrderedDict()
 
     def _state(self, key: str) -> dict:
-        if self.bank["mode"] in ("MT", PUBLIC_BETA_MODE):
+        if self.bank["mode"] in ("MT", PUBLIC_BETA_MODE, "joint_public", "T450_public"):
             return self.common
         if key in self.states:
             self.states.move_to_end(key)

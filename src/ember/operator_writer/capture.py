@@ -26,7 +26,12 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
 
         return learning_capture(args, tasks, output_dir, path, manifest, task_subset, bank)
     try:
-        expected = seen_scope.capture_expectations(bank, bank_path, tasks, output_dir)
+        if bank.get("joint_public_study") is True:
+            from .joint_readout import capture_expectations
+
+            expected = capture_expectations(bank, bank_path, tasks, output_dir)
+        else:
+            expected = seen_scope.capture_expectations(bank, bank_path, tasks, output_dir)
     except ValueError as error:
         raise Pi05EvaluationError(str(error)) from error
     facts = ((path.resolve(), expected["capture"].resolve()),

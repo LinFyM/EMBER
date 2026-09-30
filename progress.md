@@ -15,7 +15,11 @@ Owner于2026-09-30 13:10 UTC明确授权自主推进，不限制思考范围；�
 在首轮每task全部50条teacher覆盖后读取一次候选correct400；另在旧36-task/144条train面板比较两者的公共策略，
 以及固定四train任务的功能面板。公共train读出用于检验实际分工，不将held视频因果controls提前用于设计。
 本批16GPUh/32GiB上限，预计整批3–5小时，具体设备/吞吐/配额由执行者launch前核定；没有自动900或M架构修改。
-当前处于合同与派发准备，尚未发送新批、没有运行中新训练；收到实际接受/启动证据后再更新事实。
+实验session已承接§35并完成fresh训练接线：继续复用唯一operator trainer和既有公共cotangent，保留原T计算图。
+截至工程准备记录，9项针对CPU检查通过，含原450事件/50teacher覆盖、公共76因子信用及旧T450公共实际消费者；
+新450训练与后段尚未执行，不把入口检查作为未来bank/eval通过。唯一root为
+`/data1/user/ymdai/ember_runs/operator_joint_public_fresh_20260930`，launch记录保存精确来源、成本与资源准入。
+strg01已核实data1 quota/limit为2T/2.0T、当前约858G；预计本批新增峰值14GiB，合同上限32GiB。
 main负责科学判断和记录；实验session 01a0f018-69af-7b00-b614-7e117540051b继续独立完成工程、Git集成、冻结与运行。
 main同时推导完整视频上下文怎样参与M的Value形成，保留LocalField等完整反例；尚未指定新模块或派发第二批。
 

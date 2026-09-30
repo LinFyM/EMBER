@@ -25,7 +25,12 @@ U=0包含原T，所有参数仍fresh真实FM共同学习。旧clock/LocalField�
 执行者已集成push **5f4f76e7179948f7945a7a98814f55c8a7f78610**；main现场确认HEAD==origin/main且clean，原科研记录保持。
 执行者报告canonical trainer/bank/public/A28/capture已接通、16项针对CPU检查通过，
 clean detached树为`/data1/user/ymdai/projects/EMBER-context-value-formal`；main不重复源码QA。
-当前进入唯一最长授权teacher/28query实际消费者检查，之后按合同直接fresh450；尚未收到训练实际启动或该检查完成的回执。
+唯一最长授权teacher（517原始帧/105采样帧）、28query双FM/native重放实际通过；零更新检查含加载/退出117.174秒，
+成本.03254834GPUh计入本批。main直接读该退出回执及首消费者记录，没有重复工程检查，也不把通路检查写成能力证据。
+fresh训练已于2026-09-30 18:24:40 UTC（10月1日02:24:40本地）在GPU01:3,5,4,0/world4实际启动，训练Git仍5f4f76e7。
+首宏步112full＋同query公共风险实际完成15.215秒，四rank最大已分配27.010GiB、预留31.627GiB；首步不是稳定吞吐估计。
+后段退出等待器首试误用缺torch的系统Python，在启动任何后段GPU前退出；执行者改用已有venv，原训练持续且未重启，
+失败回执保留、该故障新增GPU成本0。训练仍原事件/LR、唯一450末点读出，整批预计3–5小时尚未改变。
 544条新episode/12份A28及16GPUh/32GiB范围保持，工程接通不代表机制或能力已通过。
 canonical tracked写入窗口已明确释放回main；执行者从冻结树继续，不等待二次放行，整批完成或实质边界统一回报。
 

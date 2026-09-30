@@ -128,7 +128,19 @@ def restore_registered_scene(env: Any, observation: dict, task: dict, state: int
     names = sorted(owner.obj_body_id)
     goals = [list(row) for row in owner.parsed_problem["goal_state"]]
     observation = _restore_scene(env, snapshot)
-    _assert_scene_pair(env, observation, names, goals, snapshot, image=True)
+    try:
+        _assert_scene_pair(env, observation, names, goals, snapshot, image=True)
+    except ValueError as error:
+        if str(error) != "restored full-scene start differs: initial_rgb_canonical180":
+            raise
+        # Re-render a stale observation without advancing or resetting physics.
+        physical = {key: value for key, value in snapshot.items()
+                    if key != "initial_rgb_canonical180"}
+        _assert_scene_pair(env, observation, names, goals, physical, image=False)
+        observation = owner._get_observations(force_update=True)
+        _assert_scene_pair(env, observation, names, goals, snapshot, image=True)
+        print(f"registered_scene_render_refresh suite={task['suite']} task={task['task_id']} state={state}",
+              flush=True)
     return observation, {"path": str(path), "bytes": path.stat().st_size,
                          "restoration": "full_model_body_pose_post_dummy_sim_controller_and_dual_rgb_verified"}
 

@@ -2118,6 +2118,9 @@ FM沿canonical Gaussian/Beta(1.5,1)，visit=330000+s、optimization_seed=7，tas
 
 先在同一父β下为八条件捕获全部38-target X与完整H；因β/A固定，本批可RAM缓存并在全部更新复用。
 现有仅三site捕获不能冒充完整输入。不把native缓存跨越任何公共参数更新，teacher labels不进入缓存/生成器。
+为解释D若有收益时的具体生成限制，保存八条件、38-target的初始及S/P末点`Z[256,128]`，满足实数图`M=O Z`。
+Z由现有固定native及本次实际P/C/D/递归得到，不新增模型/query/label前向，不落盘整套大native缓存；三组约120MiB计入预算。
+main可据实际D修正比较共享/私有O的代数可表达性，区分部分输出限制与学习困难；不把矩阵拟合当闭环结果，也不据它自动部署新读出。
 
 - **S，shared Writer**：一份原T的P/C/D/O，八条件等权更新；最终仍为原完整Writer生成的B0+M。
 - **P，task-private Writer**：四份相同初值P/C/D/O，每份只由其task两teacher等权更新；其它计算、固定native和A不变。

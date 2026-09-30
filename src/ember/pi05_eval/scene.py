@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 from pathlib import Path
+import time
 
 import numpy as np
 
@@ -120,7 +121,7 @@ def inspect_registered_scenes(root: Path, tasks: list[dict], *,
 
 
 def restore_registered_scene(env: Any, observation: dict, task: dict, state: int,
-                             root: Path) -> tuple[dict, dict]:
+                             root: Path, *, diagnostic_output: Path | None = None) -> tuple[dict, dict]:
     path = scene_path(root, task, state)
     with np.load(path, allow_pickle=False) as sealed:
         snapshot = {name: sealed[name] for name in sealed.files}
@@ -137,8 +138,19 @@ def restore_registered_scene(env: Any, observation: dict, task: dict, state: int
         physical = {key: value for key, value in snapshot.items()
                     if key != "initial_rgb_canonical180"}
         _assert_scene_pair(env, observation, names, goals, physical, image=False)
+        before = _capture_image(observation) if diagnostic_output is not None else None
         observation = owner._get_observations(force_update=True)
-        _assert_scene_pair(env, observation, names, goals, snapshot, image=True)
+        try:
+            _assert_scene_pair(env, observation, names, goals, snapshot, image=True)
+        except ValueError:
+            if diagnostic_output is not None:
+                diagnostic_output.mkdir(parents=True, exist_ok=True)
+                artifact = diagnostic_output / (
+                    f"scene_restore_{task['suite']}_{task['task_id']}_{state}_{time.time_ns()}.npz")
+                np.savez_compressed(artifact, expected_rgb=snapshot["initial_rgb_canonical180"],
+                                    before_refresh_rgb=before, after_refresh_rgb=_capture_image(observation))
+                print(f"registered_scene_render_failure state={state} artifact={artifact}", flush=True)
+            raise
         print(f"registered_scene_render_refresh suite={task['suite']} task={task['task_id']} state={state}",
               flush=True)
     return observation, {"path": str(path), "bytes": path.stat().st_size,

@@ -62,7 +62,9 @@ def start_fixed_episode(
 
         observation, scene_reference = restore_registered_scene(
             env, observation, dict(task), init_state_id,
-            Path(paired_scene["root"]))
+            Path(paired_scene["root"]),
+            diagnostic_output=(Path(contract["output_dir"]) / "failures"
+                               if contract.get("output_dir") else None))
     prepared = None
     if task_adapter is not None:
         prepared = task_adapter.prepare_episode(

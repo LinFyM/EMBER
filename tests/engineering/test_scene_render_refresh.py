@@ -9,7 +9,7 @@ from ember.pi05_eval import scene
 def test_real_restore_entry_refreshes_only_rgb_and_preserves_strict_pairing(tmp_path,monkeypatch,failure):
     path=scene.scene_path(tmp_path,{'suite':'libero_spatial','task_id':6},24)
     np.savez(path, initial_rgb_canonical180=np.zeros((2,256,256,3),dtype=np.uint8))
-    calls=[];physics=object();stale={'rgb':'stale'};fresh={'rgb':'fresh'}
+    calls=[];physics=object();stale={'rgb':'stale','agentview_image':np.ones((256,256,3),dtype=np.uint8),'robot0_eye_in_hand_image':np.ones((256,256,3),dtype=np.uint8)};fresh=stale|{'rgb':'fresh'}
     owner=SimpleNamespace(obj_body_id={},parsed_problem={'goal_state':[]},sim=physics)
     def get_observations(*,force_update):
         assert force_update is True and owner.sim is physics
@@ -28,5 +28,6 @@ def test_real_restore_entry_refreshes_only_rgb_and_preserves_strict_pairing(tmp_
         ob,_=scene.restore_registered_scene(env,stale,{'suite':'libero_spatial','task_id':6},24,tmp_path)
         assert ob is fresh and calls.count('refresh')==1
     else:
-        with pytest.raises(ValueError):scene.restore_registered_scene(env,stale,{'suite':'libero_spatial','task_id':6},24,tmp_path)
+        with pytest.raises(ValueError):scene.restore_registered_scene(env,stale,{'suite':'libero_spatial','task_id':6},24,tmp_path,diagnostic_output=tmp_path/'failures')
+        assert len(list((tmp_path/'failures').glob('*.npz'))) == (0 if failure=='physics' else 1)
         assert calls.count('refresh')==(0 if failure=='physics' else 1)

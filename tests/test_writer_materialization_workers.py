@@ -27,7 +27,7 @@ class _State(torch.nn.Module):
         return super().load_state_dict(state, strict=strict)
 
 
-def _cpu_initialize_worker(queue, ready, asset_root, config, cpu_threads):
+def _cpu_initialize_worker(queue, ready, asset_root, config, cpu_threads, compiler_factory=None):
     """Keep the actual worker/runtime lifecycle; replace only GPU/model/compile cost."""
     from ember.writer import runtime
     from ember.pi05_lora import load_pi05_lora_contract

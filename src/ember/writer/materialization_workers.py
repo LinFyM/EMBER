@@ -130,9 +130,9 @@ class ResidentCompiler:
 _resident = None
 
 
-def _initialize_worker(device_queue, ready, asset_root, config, cpu_threads):
+def _initialize_worker(device_queue, ready, asset_root, config, cpu_threads, compiler_factory=ResidentCompiler):
     global _resident
-    _resident = ResidentCompiler(asset_root, config, device_queue.get(), cpu_threads)
+    _resident = compiler_factory(asset_root, config, device_queue.get(), cpu_threads)
     Finalize(None, _resident.close, exitpriority=1)
     ready.wait()
 
@@ -149,13 +149,14 @@ def _compile_job(request, job):
 class MaterializationWorkers:
     """Dynamic condition scheduling with one persistent spawn process per GPU."""
 
-    def __init__(self, *, asset_root, config, devices, cpu_threads):
+    def __init__(self, *, asset_root, config, devices, cpu_threads, compiler_factory=ResidentCompiler):
         self.asset_root, self.config, self.devices = asset_root, config, devices
         self.cpu_threads, self.local, self.executor, self.queue = cpu_threads, None, None, None
+        self.compiler_factory = compiler_factory
 
     def __enter__(self):
         if len(self.devices) == 1:
-            self.local = ResidentCompiler(self.asset_root, self.config, self.devices[0], self.cpu_threads)
+            self.local = self.compiler_factory(self.asset_root, self.config, self.devices[0], self.cpu_threads)
         else:
             context = mp.get_context("spawn")
             self.queue = context.Queue()
@@ -163,7 +164,8 @@ class MaterializationWorkers:
                 self.queue.put(device)
             self.executor = ProcessPoolExecutor(max_workers=len(self.devices), mp_context=context,
                 initializer=_initialize_worker,
-                initargs=(self.queue, context.Barrier(len(self.devices)), self.asset_root, self.config, self.cpu_threads))
+                initargs=(self.queue, context.Barrier(len(self.devices)), self.asset_root, self.config,
+                          self.cpu_threads, self.compiler_factory))
             try:
                 ready = [self.executor.submit(_worker_ready) for _ in self.devices]
                 for future in ready:

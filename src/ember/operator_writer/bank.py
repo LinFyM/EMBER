@@ -38,6 +38,9 @@ from . import scope as seen_scope
 from .capture import (PASSIVE_TAG, attach_capture_provenance, registered_capture,
                       validate_capture_contract)
 from . import change_clock
+from .model import OperatorReadWrite
+from .materialization import compile_conditions, register_partial
+from ember.writer.materialization_workers import execution_devices
 
 
 KIND = "operator_read_write_lora_bank"
@@ -424,37 +427,13 @@ def _require_pilot_source(mode: str, run: Mapping) -> None:
         raise ValueError("pilot bank arm or loss source changed")
 
 
-def _write_condition_factors(runtime, data: FormalData, output: Path,
-                             conditions: list[dict], b_shapes: Mapping,
-                             *, mode: str, frame_chunk: int) -> None:
-    try:
-        for condition in conditions:
-            path = output / f"{condition['condition_id']}.safetensors"
-            raw, sampled = data.videos.frame_counts(condition["global_task_id"],
-                                                     condition["teacher_demo"])
-            if path.exists():
-                _factor_header(path, b_shapes,
-                               metadata={"schema_version": BANK_SCHEMA,
-                                         "condition_id": condition["condition_id"], "mode": mode})
-            else:
-                pixels, raw, sampled = data.condition(runtime, condition["global_task_id"],
-                                                      condition["teacher_demo"])
-                with torch.no_grad():
-                    state, _ = runtime.compile(pixels, frame_chunk=frame_chunk)
-                factors = {name: value.detach().float().cpu().contiguous()
-                           for name, value in state.items() if name.endswith(LORA_B_SUFFIX)}
-                if len(factors) != 38:
-                    raise ValueError("video value did not produce a complete B0+M")
-                save_file(factors, str(path), metadata={"schema_version": BANK_SCHEMA,
-                                                       "condition_id": condition["condition_id"],
-                                                       "mode": mode})
-            condition.update(factors=file_record(path), raw_frames=raw, sampled_frames=sampled)
-    finally:
-        data.close()
-
-
-def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device,
-                *, seen_task: bool = False, selected_test: bool = False) -> Path:
+def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.device | None = None,
+                *, seen_task: bool = False, selected_test: bool = False, devices=None,
+                native_frame_chunk: int | None = None, cpu_threads: int = 6,
+                resume_materialization_git: str | None = None) -> Path:
+    devices = execution_devices(device, devices)
+    if native_frame_chunk is not None and native_frame_chunk < 1 or cpu_threads < 1:
+        raise ValueError("materialization batch and CPU thread counts must be positive")
     checkpoint = checkpoint.resolve()
     macro = int(checkpoint.name.split("_")[-1]) if checkpoint.name.startswith("macro_") else -1
     pilot = mode in PILOT_ARMS and macro in PILOT_CHECKPOINTS
@@ -497,9 +476,6 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
         raise ValueError("published or unregistered operator bank output exists")
     materialization_git = (frozen_git(change_clock_pilot=True) if mode == change_clock.MODE else
                            frozen_git(continuation=True) if seen_task or next_window else None)
-    runtime = build_runtime(asset_root, spec, device, "T" if pilot else mode)
-    if runtime.source != run["source"]:
-        raise ValueError("materialization source differs from the formal training run")
     contract = {"mode": mode, "checkpoint": str(checkpoint), "spec": file_record(source_spec_path),
                 "training_git": run["git"]["commit"], "source": run["source"],
                 "lora": lora.to_dict(),
@@ -509,16 +485,13 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
                 **({"loss_variant": "full"} if next_window else {}),
                 **({"loss_variant": PILOT_ARMS[mode]} if pilot else {})}
     output.mkdir(parents=True, exist_ok=True)
-    registration = output / "materialization_contract.json"
-    if registration.exists():
-        if read_json(registration) != contract:
-            raise ValueError("partial bank belongs to a different formal source")
-    else:
-        write_json_atomic(registration, contract)
-    runtime.writer.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device=str(device)), strict=True)
-    runtime.writer.eval()
+    register_partial(output, contract, resume_materialization_git)
+    # Shared public A needs only the checkpoint Writer, not a parent GPU policy.
+    writer = OperatorReadWrite(lora, identity_lora_state(lora), "T" if pilot else mode)
+    writer.load_state_dict(load_file(str(checkpoint / "ecp.safetensors"), device="cpu"), strict=True)
     shared = {name: value.detach().float().cpu().contiguous()
-              for name, value in runtime.writer.public_state().items() if name.endswith(LORA_A_SUFFIX)}
+              for name, value in writer.public_state().items() if name.endswith(LORA_A_SUFFIX)}
+    del writer
     if len(shared) != 38:
         raise ValueError("public A is not the complete 38-target shared factor")
     shapes = expected_lora_state_shapes(lora)
@@ -533,13 +506,14 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     tasks, conditions = (selected_scope.test_task_rows(asset_root, spec) if selected_test else
                          seen_scope.task_rows(asset_root, spec) if seen_task else
                          task_rows(spec, asset_root))
-    data = FormalData(asset_root, spec, query_labels=False,
-                      task_ids=tuple(selected_scope.TEST_IDS if selected_test else
-                                     seen_scope.registration()["global_task_ids"] if seen_task else
-                                     spec["evaluation"]["task_ids"]),
-                      role="test" if selected_test else "train" if seen_task else "validation")
-    _write_condition_factors(runtime, data, output, conditions, b_shapes,
-                             mode=mode, frame_chunk=spec["operator"]["frame_chunk"])
+    compile_conditions(asset_root, spec, mode, checkpoint, run["source"],
+                       output, conditions, b_shapes, devices=devices,
+                       frame_chunk=native_frame_chunk or spec["operator"]["frame_chunk"],
+                       task_ids=tuple(selected_scope.TEST_IDS if selected_test else
+                                      seen_scope.registration()["global_task_ids"] if seen_task else
+                                      spec["evaluation"]["task_ids"]),
+                       role="test" if selected_test else "train" if seen_task else "validation",
+                       cpu_threads=cpu_threads)
     bank = {"schema_version": BANK_SCHEMA, "kind": KIND, "mode": mode,
             "spec": file_record(source_spec_path), "asset_root": str(asset_root),
             "training_git": run["git"]["commit"], "checkpoint": str(checkpoint),
@@ -820,6 +794,10 @@ def main() -> None:
     parser.add_argument("--arm", choices=("cross_suite_wrong", "shuffled"))
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--device")
+    parser.add_argument("--devices", nargs="+")
+    parser.add_argument("--native-frame-chunk", type=int)
+    parser.add_argument("--cpu-threads", type=int, default=6)
+    parser.add_argument("--resume-materialization-git")
     args = parser.parse_args()
     if args.phase.startswith("selected-"):
         from .selected_scope import dispatch
@@ -839,8 +817,10 @@ def main() -> None:
         if args.mode is None or args.checkpoint is None:
             parser.error("materialize requires a registered arm and completed selected ECP")
         print(materialize(args.mode, args.checkpoint, args.asset_root,
-                          torch.device(args.device or "cuda:0"),
-                          seen_task=args.phase == "seen-materialize"))
+                          torch.device(args.device) if args.device else None,
+                          seen_task=args.phase == "seen-materialize", devices=args.devices,
+                          native_frame_chunk=args.native_frame_chunk, cpu_threads=args.cpu_threads,
+                          resume_materialization_git=args.resume_materialization_git))
     elif args.phase == "public-beta":
         if args.mode is not None or args.device is not None or args.checkpoint is None:
             parser.error("public-beta takes only its fixed T1800 checkpoint and runs on CPU")

@@ -48,6 +48,7 @@ from . import change_clock
 REPO = Path(__file__).resolve().parents[3]
 SPEC_PATH = REPO / "configs/operator_read_write_v1/learning_spec.json"
 CHANGE_CLOCK_SPEC_PATH = REPO / "configs/operator_read_write_v1" / change_clock.SPEC_NAME
+CHANGE_CLOCK_CONTINUATION_SPEC_PATH = CHANGE_CLOCK_SPEC_PATH.with_name(change_clock.CONTINUATION_SPEC_NAME)
 CONTINUATION_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation900_spec.json"
 CONTINUATION1350_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation1350_spec.json"
 CONTINUATION1800_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation1800_spec.json"
@@ -155,6 +156,12 @@ PILOT_CONTRACT = {"arms": list(PILOT_ARMS), "loss_variants": PILOT_ARMS,
 
 def specification(path: Path = SPEC_PATH) -> dict:
     path = path.resolve()
+    if path == CHANGE_CLOCK_CONTINUATION_SPEC_PATH:
+        spec = read_json(path)
+        if spec != change_clock.expected_continuation_spec(
+                specification(CHANGE_CLOCK_SPEC_PATH), CONTINUATION_EVENTS):
+            raise ValueError("change-clock 450 continuation contract changed")
+        return spec
     if path == CHANGE_CLOCK_SPEC_PATH:
         spec = read_json(path)
         if spec != change_clock.expected_spec(specification(SPEC_PATH)):
@@ -335,7 +342,7 @@ def complete_checkpoint(path: Path) -> bool:
     files = manifest.get("files", {})
     macro = manifest.get("next_macro")
     world = manifest.get("world_size")
-    allowed = ((macro in CHECKPOINTS and world in (1, 2, 3, 4))
+    allowed = ((macro in (*CHECKPOINTS, *change_clock.CONTINUATION_CHECKPOINTS) and world in (1, 2, 3, 4))
                or (macro in (*CONTINUATION_CHECKPOINTS, *CONTINUATION1350_CHECKPOINTS,
                              *CONTINUATION1800_CHECKPOINTS, *PILOT_CHECKPOINTS,
                              *CONTINUATION2340_CHECKPOINTS, *CONTINUATION2790_CHECKPOINTS)
@@ -358,7 +365,8 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
                         CONTINUATION2790_EVENTS["schema_version"]):
         _validate_late_continuation_attempt(spec, args, contract, output)
         return
-    if spec.get("execution", {}).get("updates_per_mode") == CONTINUATION_UPDATES:
+    if (spec.get("execution", {}).get("updates_per_mode") == CONTINUATION_UPDATES
+            or spec.get("task") == change_clock.CONTINUATION_TASK):
         _validate_continuation_attempt(spec, args, contract, output)
         return
     if args.resume:
@@ -381,12 +389,14 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
 
 
 def _validate_continuation_attempt(spec: dict, args, contract: dict, output: Path) -> None:
+    clock = spec.get("task") == change_clock.CONTINUATION_TASK
+    checkpoints = tuple(spec["execution"]["checkpoints"])
     if args.resume is None:
-        raise ValueError("900 continuation requires a complete parent ECP")
+        raise ValueError("continuation requires a complete parent ECP")
     checkpoint = args.resume.resolve()
     macro = int(checkpoint.name.removeprefix("macro_")) if re.fullmatch(r"macro_[0-9]{8}", checkpoint.name) else -1
-    if macro not in (270, *CONTINUATION_CHECKPOINTS[:-1]) or not complete_checkpoint(checkpoint):
-        raise ValueError("900 continuation requires a registered complete ECP270..810")
+    if macro not in (270, *checkpoints[:-1]) or not complete_checkpoint(checkpoint):
+        raise ValueError("continuation requires a registered complete parent/intermediate ECP")
     parent = checkpoint.parent.parent
     if output.resolve() == parent or (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists():
         raise ValueError("continuation attempt output already exists")
@@ -396,13 +406,14 @@ def _validate_continuation_attempt(spec: dict, args, contract: dict, output: Pat
     if (macro == 270 and latest != -1) or (macro != 270 and macro != latest):
         raise ValueError("resume requires the latest complete same-arm continuation ECP")
     if macro == 270:
-        expected = SEALED_ROOT / args.mode / "train/attempts/fresh/checkpoints/macro_00000270"
+        expected = (change_clock.PARENT_CHECKPOINT if clock else
+                    SEALED_ROOT / args.mode / "train/attempts/fresh/checkpoints/macro_00000270")
         if checkpoint != expected:
             raise ValueError("continuation parent is not the sealed same-arm 270 ECP")
         from .bank import inspect_training_source
 
-        old = inspect_training_source(read_json(SEALED_SPEC_PATH), checkpoint, args.mode,
-                                      sealed_evaluation=True)
+        old_spec = change_clock.TRAINING_SPEC_PATH if clock else SEALED_SPEC_PATH
+        old = inspect_training_source(read_json(old_spec), checkpoint, args.mode, sealed_evaluation=True)
         if (old.get("events") != EVENT_CONTRACT or old.get("optimizer") != OPTIMIZATION_CONTRACT
                 or old.get("source") != contract["source"] or old.get("lora") != contract["lora"]
                 or old.get("operator") != contract["operator"]
@@ -598,7 +609,8 @@ def prepare_train(spec: dict, args) -> Session:
                                                                 PILOT_UPDATES,
                                                                 CONTINUATION2340_UPDATES,
                                                                 CONTINUATION2790_UPDATES)
-    clock_pilot = spec["task"] == change_clock.TASK
+    clock_pilot = spec["task"] in (change_clock.TASK, change_clock.CONTINUATION_TASK)
+    continuation = continuation or spec["task"] == change_clock.CONTINUATION_TASK
     git = frozen_git(continuation=continuation, change_clock_pilot=clock_pilot)
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     allowed_worlds = spec["execution"].get("world_sizes", [spec["execution"].get("world_size")])
@@ -625,7 +637,8 @@ def prepare_train(spec: dict, args) -> Session:
                 "nccl_p2p_disable": os.environ.get("NCCL_P2P_DISABLE"),
                 "ranks": gather(local, context.world_size)}
     contract = {"schema_version": SCHEMA, "stage": STAGE, "git": git,
-                "spec": str(CHANGE_CLOCK_SPEC_PATH if clock_pilot else
+                "spec": str(CHANGE_CLOCK_CONTINUATION_SPEC_PATH if spec["task"] == change_clock.CONTINUATION_TASK else
+                            CHANGE_CLOCK_SPEC_PATH if clock_pilot else
                             CONTINUATION2790_SPEC_PATH if spec["execution"]["updates_per_mode"] == CONTINUATION2790_UPDATES else
                             CONTINUATION2340_SPEC_PATH if next_window else
                             PILOT_SPEC_PATH if pilot else
@@ -671,7 +684,8 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
     restored, result, error = {}, None, None
     try:
         updates_target = session.spec["execution"]["updates_per_mode"]
-        continuation = updates_target in (CONTINUATION_UPDATES, CONTINUATION1350_UPDATES,
+        clock_continuation = session.spec["task"] == change_clock.CONTINUATION_TASK
+        continuation = clock_continuation or updates_target in (CONTINUATION_UPDATES, CONTINUATION1350_UPDATES,
                                           CONTINUATION1800_UPDATES, PILOT_UPDATES,
                                           CONTINUATION2340_UPDATES, CONTINUATION2790_UPDATES)
         updates, rows = load_ecp_checkpoint(
@@ -680,13 +694,14 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
             scheduler=session.scheduler, run_contract_schema=SCHEMA,
             restored_state=restored, allow_world_size_change=(continuation or session.mode == change_clock.MODE))
         migration = session.data.restore(restored["sampler_state"],
-                                         migrate_sealed_270=updates_target == CONTINUATION_UPDATES and updates == 270,
+                                         migrate_sealed_270=(clock_continuation or updates_target == CONTINUATION_UPDATES) and updates == 270,
                                          migrate_continuation_900=updates_target == CONTINUATION1350_UPDATES and updates == 900,
                                          migrate_continuation_1350=updates_target == CONTINUATION1800_UPDATES and updates == 1350,
                                          migrate_continuation_1800=updates_target == PILOT_UPDATES and updates == 1800,
                                          migrate_pilot_1890=updates_target == CONTINUATION2340_UPDATES and updates == 1890,
                                          migrate_continuation_2340=updates_target == CONTINUATION2790_UPDATES and updates == 2340)
-        valid_checkpoints = ((2340, *CONTINUATION2790_CHECKPOINTS)
+        valid_checkpoints = ((270, *change_clock.CONTINUATION_CHECKPOINTS) if clock_continuation else
+                             (2340, *CONTINUATION2790_CHECKPOINTS)
                              if updates_target == CONTINUATION2790_UPDATES else
                              (1890, *CONTINUATION2340_CHECKPOINTS)
                              if updates_target == CONTINUATION2340_UPDATES else
@@ -799,6 +814,15 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
 
 
 def validate_train_request(spec: dict, args) -> None:
+    if spec["task"] == change_clock.CONTINUATION_TASK:
+        if (args.mode != change_clock.MODE or not args.attempt
+                or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
+                or getattr(args, "pilot_arm", None) is not None
+                or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)
+                or args.stop_after_macro not in (None, 360)
+                or args.resume is None or args.attempt == "fresh"):
+            raise ValueError("change-clock 450 requires the registered complete same-arm ECP")
+        return
     if spec["task"] == change_clock.TASK:
         if (args.mode != change_clock.MODE or not args.attempt
                 or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None

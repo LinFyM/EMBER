@@ -1,4 +1,4 @@
-"""Registered fresh full/public learning studies on the canonical operator trainer."""
+"""Registered full/public studies and their bounded continuation contracts."""
 from __future__ import annotations
 
 import json
@@ -24,6 +24,15 @@ JOINT = {"loss_variant": LOSS, "full_loss_coefficient": 1.0,
 CONTEXT_TASK = "operator_context_value_fresh_20261001"
 CONTEXT_ROOT = Path("/data1/user/ymdai/ember_runs") / CONTEXT_TASK
 CONTEXT_MODE = "context"
+CONTEXT_CONTINUATION_TASK = "operator_context_value_continuation900_20261001"
+CONTEXT_CONTINUATION_ROOT = ROOT.parent / CONTEXT_CONTINUATION_TASK
+CONTEXT_CONTINUATION_SPEC_NAME = "context_value_continuation900_spec.json"
+CONTEXT_CONTINUATION_CHECKPOINTS = (540, 630, 720, 810, 900)
+CONTEXT_PARENT_GIT = "5f4f76e7179948f7945a7a98814f55c8a7f78610"
+CONTEXT_PARENT_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-context-value-formal"
+                                "/configs/operator_read_write_v1/context_value_fresh_spec.json")
+CONTEXT_PARENT_CHECKPOINT = (CONTEXT_ROOT / "context/train/attempts/fresh/checkpoints"
+                             / "macro_00000450")
 CONTEXT_SPEC_NAME = "context_value_fresh_spec.json"
 MODES = (MODE, CONTEXT_MODE)
 CONTEXT = {
@@ -42,14 +51,15 @@ CONTEXT = {
 
 
 def registered(spec: dict) -> bool:
-    return spec.get("task") in (TASK, CONTEXT_TASK)
+    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK)
 
 
 def settings(spec: dict) -> tuple[Path, str, dict]:
     if spec.get("task") == TASK:
         return ROOT, MODE, JOINT
-    if spec.get("task") == CONTEXT_TASK:
-        return CONTEXT_ROOT, CONTEXT_MODE, {**JOINT, "internal_mode": CONTEXT_MODE}
+    if spec.get("task") in (CONTEXT_TASK, CONTEXT_CONTINUATION_TASK):
+        root = CONTEXT_ROOT if spec["task"] == CONTEXT_TASK else CONTEXT_CONTINUATION_ROOT
+        return root, CONTEXT_MODE, {**JOINT, "internal_mode": CONTEXT_MODE}
     raise ValueError("unregistered fresh full/public study")
 
 
@@ -61,6 +71,25 @@ def expected_context_spec(base: dict, events: dict) -> dict:
             "execution": {**spec["execution"], "modes": [CONTEXT_MODE]},
             "joint": {**JOINT, "internal_mode": CONTEXT_MODE},
             "operator": {**spec["operator"], "context_value": CONTEXT}}
+
+
+def expected_context_continuation_spec(parent: dict) -> dict:
+    return {**parent, "task": CONTEXT_CONTINUATION_TASK,
+            "design": "docs/designs/operator_read_write_learning_design.md#37",
+            "run_root": str(CONTEXT_CONTINUATION_ROOT),
+            "execution": {**parent["execution"], "updates_per_mode": 900,
+                          "queries_per_mode": 100800,
+                          "checkpoints": list(CONTEXT_CONTINUATION_CHECKPOINTS),
+                          "only_selected_checkpoint": 900},
+            "evaluation": {**parent["evaluation"], "bank_macro": 900,
+                           "conditional_adjacent_macro": 810,
+                           "adjacent_trigger": "complete_valid_900_correct400_successes_strictly_gt153"},
+            "continuation": {"parent_run_root": str(CONTEXT_ROOT), "parent_macro": 450,
+                             "parent_training_git": CONTEXT_PARENT_GIT,
+                             "parent_event_schema": parent["events"]["schema_version"],
+                             "sampler_migration": "none_keep_v3_cursor_and_second_teacher_round"},
+            "budget": {"new_gpu_hours_hard": 16, "peak_new_gib": 32,
+                       "expected_wall_hours": [3, 4], "report_gpu_hours": 12}}
 
 
 def expected_spec(base: dict, events: dict) -> dict:
@@ -78,18 +107,24 @@ def expected_spec(base: dict, events: dict) -> dict:
 
 def validate_request(spec: dict, args) -> None:
     _, mode, joint = settings(spec)
+    continuation = spec["task"] == CONTEXT_CONTINUATION_TASK
+    checkpoints = CONTEXT_CONTINUATION_CHECKPOINTS if continuation else CHECKPOINTS
+    bad_resume = (args.resume is None or args.attempt == "fresh") if continuation else (
+        (args.resume is None) != (args.attempt == "fresh"))
     if (args.mode != mode or spec.get("joint") != joint
             or not args.attempt or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
             or getattr(args, "pilot_arm", None) is not None
             or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)
-            or args.stop_after_macro not in (None, *CHECKPOINTS[:-1])
-            or (args.resume is None) != (args.attempt == "fresh")):
-        raise ValueError("joint450 requires fresh identity or its own complete ECP resume")
+            or args.stop_after_macro not in (None, *checkpoints[:-1]) or bad_resume):
+        raise ValueError("joint/context requires registered fresh identity or complete same-loss ECP continuation")
 
 
 def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     from .run import complete_checkpoint, resume_contract_compatible
 
+    if spec["task"] == CONTEXT_CONTINUATION_TASK:
+        _validate_context_continuation(spec, args, contract, output)
+        return
     root, mode, joint = settings(spec)
     attempts = root / mode / "train/attempts"
     if (output.parent.resolve() != attempts.resolve()
@@ -113,6 +148,64 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
         raise ValueError("joint450 resume requires latest complete owned same-loss ECP")
 
 
+def _validate_context_continuation(spec: dict, args, contract: dict, output: Path) -> None:
+    from .run import complete_checkpoint, packing_compatible
+
+    root, mode, joint = settings(spec)
+    attempts = root / mode / "train/attempts"
+    checkpoint = args.resume.resolve()
+    macro = int(checkpoint.name.removeprefix("macro_"))
+    if (output.parent.resolve() != attempts.resolve() or output.resolve() == checkpoint.parent.parent
+            or (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists()
+            or contract.get("loss_variant") != LOSS or contract.get("joint") != joint
+            or macro not in (450, *CONTEXT_CONTINUATION_CHECKPOINTS[:-1])
+            or not complete_checkpoint(checkpoint)):
+        raise ValueError("context continuation requires a new attempt and complete registered ECP")
+    latest = max((int(path.name.removeprefix("macro_")) for path in attempts.glob(
+        "*/checkpoints/macro_*") if complete_checkpoint(path)), default=-1)
+    if (macro == 450 and latest != -1) or (macro != 450 and macro != latest):
+        raise ValueError("context continuation must resume latest owned complete ECP")
+    if macro == 450:
+        if checkpoint != CONTEXT_PARENT_CHECKPOINT.resolve():
+            raise ValueError("context continuation parent must be the actual sealed fresh450 ECP")
+        old = inspect_source(read_json(CONTEXT_PARENT_SPEC_PATH), checkpoint)
+        fixed = ("schema_version", "stage", "mode", "source", "lora", "operator", "optimizer",
+                 "events", "sampler", "trainable_names", "source_trainable", "information_wall",
+                 "loss_variant", "joint")
+        if (old["git"]["commit"] != CONTEXT_PARENT_GIT
+                or any(old.get(key) != contract.get(key) for key in fixed)):
+            raise ValueError("context parent source, model, labels, loss or optimizer changed")
+    else:
+        if checkpoint.parent.parent.parent.resolve() != attempts.resolve():
+            raise ValueError("context continuation checkpoint is outside owned attempts")
+        old = read_json(checkpoint.parent.parent / "run_contract.json")
+        mutable = {"topology", "microbatch", "frame_chunk", "parent_checkpoint"}
+        if (not packing_compatible(old, contract)
+                or {key: value for key, value in old.items() if key not in mutable}
+                != {key: value for key, value in contract.items() if key not in mutable}):
+            raise ValueError("context same-window resume scientific/source contract changed")
+
+
+def _completed_metrics_source(root: Path, mode: str, checkpoint: Path, target: int) -> Path:
+    """Read an earlier boundary only from the actual completed resume lineage."""
+    attempts = root / mode / "train/attempts"
+    completed = [path.parent for path in attempts.glob("*/completion.json")
+                 if read_json(path).get("updates") == target]
+    if len(completed) != 1:
+        raise ValueError("readout requires one actually completed terminal training attempt")
+    output, cursor = completed[0], completed[0]
+    seen = set()
+    while cursor != checkpoint.parent.parent:
+        if cursor in seen or cursor.parent.resolve() != attempts.resolve():
+            raise ValueError("readout checkpoint is outside completed continuation lineage")
+        seen.add(cursor)
+        parent = Path(read_json(cursor / "run_contract.json")["parent_checkpoint"])
+        if parent.parent.parent == checkpoint.parent.parent and int(parent.name.removeprefix("macro_")) < int(checkpoint.name.removeprefix("macro_")):
+            raise ValueError("readout checkpoint was not retained by the actual resume boundary")
+        cursor = parent.parent.parent
+    return output
+
+
 def inspect_source(spec: dict, checkpoint: Path) -> dict:
     """Keep actual training Git/spec identity separate from the current reader."""
     from .run import SCHEMA, STAGE, complete_checkpoint, frozen_git
@@ -121,9 +214,13 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
     root, mode, joint = settings(spec)
     checkpoint = checkpoint.resolve()
     output = checkpoint.parent.parent
+    continuation = spec["task"] == CONTEXT_CONTINUATION_TASK
+    macro = int(checkpoint.name.removeprefix("macro_"))
+    target = 900 if continuation else 450
+    allowed = (810, 900) if continuation else (450,)
     if (output.parent.resolve() != (root / mode / "train/attempts").resolve()
-            or checkpoint.name != "macro_00000450" or not complete_checkpoint(checkpoint)):
-        raise ValueError("joint readout requires its complete owned 450 ECP")
+            or macro not in allowed or not complete_checkpoint(checkpoint)):
+        raise ValueError("joint/context readout requires its complete owned registered endpoint")
     run = read_json(output / "run_contract.json")
     training_spec = Path(run["spec"])
     training_repo = training_spec.parents[2]
@@ -149,23 +246,25 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
              (run.get("loss_variant"), LOSS), (run.get("operator"), spec["operator"]),
              (run.get("optimizer"), spec["optimization"]), (run.get("events"), spec["events"]),
              (run.get("source_trainable"), 0), (run.get("sampler"), expected_sampler),
-             (run.get("continuation"), None), (run.get("pilot_arm"), None),
-             (trainer.get("stage"), STAGE), (trainer.get("next_macro"), 450),
-             (trainer.get("metrics_rows"), 450), (trainer.get("scheduler", {}).get("last_epoch"), 450),
+             (run.get("continuation"), spec.get("continuation")), (run.get("pilot_arm"), None),
+             (trainer.get("stage"), STAGE), (trainer.get("next_macro"), macro),
+             (trainer.get("metrics_rows"), macro), (trainer.get("scheduler", {}).get("last_epoch"), macro),
              (bool(trainer.get("optimizer", {}).get("param_groups")), True),
              (trainer.get("scaler"), None),
-             (trainer.get("training_state"), {"updates": 450, "mode": mode, "loss_variant": LOSS}),
-             (trainer.get("sampler_state"), {**expected_sampler, "next_step": 450}))
-    metrics = [json.loads(line) for line in (output / "metrics.jsonl").read_text().splitlines()]
-    completion = read_json(output / "completion.json")
-    if (any(actual != wanted for actual, wanted in facts) or not valid_metrics(metrics, mode=mode)
-            or completion.get("updates") != 450 or completion.get("checkpoint") != str(checkpoint)):
+             (trainer.get("training_state"), {"updates": macro, "mode": mode, "loss_variant": LOSS}),
+             (trainer.get("sampler_state"), {**expected_sampler, "next_step": macro}))
+    terminal = _completed_metrics_source(root, mode, checkpoint, target) if continuation else output
+    metrics = [json.loads(line) for line in (terminal / "metrics.jsonl").read_text().splitlines()]
+    completion = read_json(terminal / "completion.json")
+    if (any(actual != wanted for actual, wanted in facts) or not valid_metrics(metrics, mode=mode, updates=target)
+            or completion.get("updates") != target
+            or completion.get("checkpoint") != str(terminal / "checkpoints" / f"macro_{target:08d}")):
         raise ValueError("joint source loss/ECP/optimizer/sampler/completion changed")
     return run
 
 
-def valid_metrics(metrics: list, *, mode: str = MODE) -> bool:
-    if len(metrics) != 450 or [row["update"] for row in metrics] != list(range(1, 451)):
+def valid_metrics(metrics: list, *, mode: str = MODE, updates: int = 450) -> bool:
+    if len(metrics) != updates or [row["update"] for row in metrics] != list(range(1, updates + 1)):
         return False
     for row in metrics:
         if (row.get("mode") != mode or row.get("loss_variant") != LOSS

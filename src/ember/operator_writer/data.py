@@ -49,6 +49,7 @@ class FormalData:
         self.event_schema = spec["events"]["schema_version"]
         self.updates = int(spec["execution"]["updates_per_mode"])
         self.checkpoints = tuple(spec["execution"]["checkpoints"])
+        self.parent_macro = spec.get("continuation", {}).get("parent_macro")
         self.next_step = 0
 
     def tasks_for_step(self, step: int) -> tuple[int, ...]:
@@ -153,7 +154,7 @@ class FormalData:
                     "appended_teacher_round": [self.seed, 1, "task", 6 if migrate_continuation_2340
                                                else 5 if migrate_pilot_1890
                                                else parent // 450]}
-        if (type(state.get("next_step")) is not int or state["next_step"] not in (0, *self.checkpoints)
+        if (type(state.get("next_step")) is not int or state["next_step"] not in (0, *self.checkpoints, getattr(self, "parent_macro", None))
                 or {k: v for k, v in state.items() if k != "next_step"}
                 != {k: v for k, v in expected.items() if k != "next_step"}):
             raise ValueError("operator sampler identity or registered ECP cursor changed")

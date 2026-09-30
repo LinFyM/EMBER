@@ -29,39 +29,69 @@ TRAIN_TASKS = (0, 12, 20, 32)
 TEACHERS = {0: (40, 11), 12: (25, 14), 20: (38, 42), 32: (17, 43)}
 
 
-def study_root(mode: str) -> Path:
-    from .joint_training import CONTEXT_ROOT
+def _continuation_checkpoint(mode: str, checkpoint: Path | None) -> bool:
+    from .joint_training import CONTEXT_CONTINUATION_ROOT
+
+    return (mode in ("context", "context_public") and checkpoint is not None
+            and checkpoint.resolve().is_relative_to(CONTEXT_CONTINUATION_ROOT / "context/train/attempts"))
+
+
+def study_root(mode: str, checkpoint: Path | None = None) -> Path:
+    from .joint_training import CONTEXT_ROOT, CONTEXT_CONTINUATION_ROOT
 
     if mode not in MODES:
-        raise ValueError("unregistered fresh study readout mode")
+        raise ValueError("unregistered full/public study readout mode")
+    if _continuation_checkpoint(mode, checkpoint):
+        return CONTEXT_CONTINUATION_ROOT
     return CONTEXT_ROOT if mode in ("context", "context_public") else ROOT
 
 
-def study_id(mode: str) -> str:
-    from .joint_training import CONTEXT_TASK
+def study_id(mode: str, checkpoint: Path | None = None) -> str:
+    from .joint_training import CONTEXT_TASK, CONTEXT_CONTINUATION_TASK
 
-    return CONTEXT_TASK if mode in ("context", "context_public") else TASK
+    return CONTEXT_CONTINUATION_TASK if _continuation_checkpoint(mode, checkpoint) else (
+        CONTEXT_TASK if mode in ("context", "context_public") else TASK)
 
 
-def capture_path(mode: str) -> Path:
-    prefix = "context" if mode in ("context", "context_public") else "joint"
+def capture_path(mode: str, checkpoint: Path | None = None) -> Path:
+    prefix = "context_continuation" if _continuation_checkpoint(mode, checkpoint) else (
+        "context" if mode in ("context", "context_public") else "joint")
     return REPO / "configs/operator_read_write_v1" / f"{prefix}_{'public' if mode in PUBLIC_MODES else 'official'}_capture.json"
 
 
-def bank_path(mode: str) -> Path:
-    if mode not in MODES:
-        raise ValueError("unregistered joint readout mode")
-    return study_root(mode) / mode / "banks/450/manifest.json"
+def bank_path(mode: str, checkpoint: Path | None = None) -> Path:
+    root = study_root(mode, checkpoint)
+    macro = int(checkpoint.name.removeprefix("macro_")) if checkpoint is not None else 450
+    allowed = (900,) if mode in PUBLIC_MODES else (810, 900)
+    if macro not in (allowed if _continuation_checkpoint(mode, checkpoint) else (450,)):
+        raise ValueError("readout checkpoint is outside registered main/conditional endpoint")
+    return root / mode / f"banks/{macro}/manifest.json"
+
+
+def evaluation_path(mode: str, checkpoint: Path) -> Path:
+    output = study_root(mode, checkpoint) / mode / "evaluation"
+    if _continuation_checkpoint(mode, checkpoint):
+        output /= checkpoint.name.removeprefix("macro_").lstrip("0")
+    return output / ("public144" if mode in PUBLIC_MODES else "correct400")
 
 
 def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
-    """Keep old training identity and new reading identity separate."""
+    """Keep original training identity, bounded resume and current reader separate."""
     from . import bank, joint_training, run
 
-    bank_path(mode)
     checkpoint = checkpoint.resolve()
-    if checkpoint.name != "macro_00000450":
-        raise ValueError("joint readouts use only the registered 450 endpoint")
+    bank_path(mode, checkpoint)
+    continuation = _continuation_checkpoint(mode, checkpoint)
+    if continuation and checkpoint.name == "macro_00000810":
+        trigger_path = joint_training.CONTEXT_CONTINUATION_ROOT / "launch/900_branch_trigger.json"
+        if not trigger_path.is_file():
+            raise ValueError("810 readout requires validated complete900 success strictly above153")
+        trigger = read_json(trigger_path)
+        expected = checkpoint.parent / "macro_00000900"
+        if (trigger.get("status") != "validated" or trigger.get("successes", 0) <= 153
+                or trigger.get("checkpoint") != str(expected)
+                or trigger.get("results") != str(evaluation_path("context", expected) / "results.json")):
+            raise ValueError("810 trigger is not the complete registered900 consumer")
     if mode == "T450_public":
         if checkpoint != OLD_CHECKPOINT.resolve():
             raise ValueError("T450 public readout changed its fixed old source")
@@ -69,7 +99,8 @@ def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
         spec = read_json(path)
         training = bank.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
     else:
-        path = run.CONTEXT_SPEC_PATH if mode in ("context", "context_public") else run.JOINT_SPEC_PATH
+        path = (run.CONTEXT_CONTINUATION_SPEC_PATH if continuation else
+                run.CONTEXT_SPEC_PATH if mode in ("context", "context_public") else run.JOINT_SPEC_PATH)
         spec = run.specification(path)
         training = joint_training.inspect_source(spec, checkpoint)
     return spec, training, path
@@ -108,7 +139,7 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
     from ember.pi05_eval.scene import inspect_registered_scenes
     from ember.writer.materialization_workers import execution_devices
 
-    path = bank_path(mode)
+    path = bank_path(mode, checkpoint)
     checkpoint, asset_root = checkpoint.resolve(), asset_root.resolve()
     spec, training, spec_path = source_record(mode, checkpoint)
     if cpu_threads < 1 or native_frame_chunk is not None and native_frame_chunk < 1:
@@ -174,7 +205,7 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)
     shared = path.parent / ("public_beta.safetensors" if mode in PUBLIC_MODES else "shared.safetensors")
-    expected = ((path, bank_path(mode).resolve()), (bank.get("joint_public_study"), True),
+    expected = ((path, bank_path(mode, Path(bank["checkpoint"])).resolve()), (bank.get("joint_public_study"), True),
                 (bank.get("schema_version"), owner.BANK_SCHEMA), (bank.get("kind"), owner.KIND),
                 (bank.get("status"), "sealed"),
                 (bank.get("spec"), file_record(spec_path)),
@@ -230,24 +261,25 @@ def _inspect_conditions(bank: Mapping, conditions: list, path: Path, shapes: Map
                             "condition_id": wanted["condition_id"], "mode": bank["mode"]})
 
 
-def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
+def capture_expectations(bank: Mapping, manifest_path: Path, tasks: list,
                          output_dir: Path | None = None) -> dict:
     mode = bank["mode"]
     if mode not in MODES:
         raise ValueError("unregistered joint capture mode")
-    expected_bank = study_root(mode) / mode / "banks/450/manifest.json"
+    checkpoint = Path(bank["checkpoint"])
+    expected_bank = bank_path(mode, checkpoint)
     public = mode in PUBLIC_MODES
-    expected_output = study_root(mode) / mode / "evaluation" / ("public144" if public else "correct400")
+    expected_output = evaluation_path(mode, checkpoint)
     states = scope.STATES if public else tuple(range(50))
     full_state = 32 if public else 0
-    capture = capture_path(mode)
+    capture = capture_path(mode, checkpoint)
     registered = read_json(capture)
     full = [{"suite": row.suite, "task_id": row.task_id, "init_state_id": full_state} for row in tasks]
-    if (bank.get("joint_public_study") is not True or bank_path.resolve() != expected_bank.resolve()
+    if (bank.get("joint_public_study") is not True or manifest_path.resolve() != expected_bank.resolve()
             or len(tasks) != (36 if public else 8) or full != registered["full_conditions"]
             or any(tuple(row.init_state_ids) != states for row in tasks)
             or output_dir is not None and output_dir.resolve() != expected_output.resolve()):
         raise ValueError("joint capture task/state/output scope changed")
-    return dict(full=full, capture=capture, study=study_id(mode), output=expected_output,
+    return dict(full=full, capture=capture, study=study_id(mode, checkpoint), output=expected_output,
                 role=scope.ROLE if public else "validation", states=states,
                 task_count=36 if public else 8, expected_bank=expected_bank)

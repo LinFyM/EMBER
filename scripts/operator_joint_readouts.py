@@ -82,7 +82,7 @@ def risk(prediction: torch.Tensor, target: torch.Tensor) -> dict:
 def a28(args) -> None:
     mode = {"joint": "joint", "context": "context", "T450": "T450_public"}[args.model]
     spec, training, spec_path = readout.source_record(mode, args.checkpoint)
-    output = readout.study_root(mode) / "analysis/A28" / args.model
+    output = readout.study_root(mode, args.checkpoint) / "analysis/A28" / args.model
     if output.exists():
         raise ValueError("published fixed A28 readout already exists")
     panels = read_json(readout.FIXED_PANEL / "fixed_panels.json")
@@ -92,7 +92,7 @@ def a28(args) -> None:
     output.mkdir(parents=True)
     started, rows = time.monotonic(), []
     write_json_atomic(output / "run_contract.json", {
-        "study": readout.study_id(mode), "model": args.model, "checkpoint": str(args.checkpoint.resolve()),
+        "study": readout.study_id(mode, args.checkpoint), "model": args.model, "checkpoint": str(args.checkpoint.resolve()),
         "training_git": training["git"]["commit"], "reading_git": reading_git,
         "training_spec": training["spec"], "reading_spec": file_record(spec_path),
         "fixed_panels": file_record(readout.FIXED_PANEL / "fixed_panels.json"),

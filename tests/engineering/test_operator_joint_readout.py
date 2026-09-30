@@ -62,7 +62,7 @@ def test_real_old450_public_bank_and_actual_registered_consumer(tmp_path, monkey
     with pytest.raises(Pi05EvaluationError):
         inspect_static_task_lora_adapter(manifest_path=path, source=manifest["source"], tasks=tasks,
                                         evaluation_role="validation", require_formal=True)
-    with pytest.raises(ValueError, match="450 endpoint"):
+    with pytest.raises(ValueError, match="registered main/conditional endpoint"):
         readout.source_record("T450_public", readout.OLD_CHECKPOINT.with_name("macro_00000900"))
 
 
@@ -70,12 +70,12 @@ def test_capture_rejects_wrong_scene_panel_and_frozen_A28_reuses_real_FM():
     capture = read_json(readout.REPO / "configs/operator_read_write_v1/joint_public_capture.json")
     tasks = [SimpleNamespace(suite=r["suite"], task_id=r["task_id"], init_state_ids=readout.scope.STATES)
              for r in capture["full_conditions"]]
-    expected = readout.capture_expectations({"mode": "joint_public", "joint_public_study": True},
+    expected = readout.capture_expectations({"mode": "joint_public", "joint_public_study": True, "checkpoint": str(readout.OLD_CHECKPOINT)},
                     readout.bank_path("joint_public"), tasks)
     assert expected["states"] == (32, 33, 34, 35) and expected["task_count"] == 36
     tasks[0].init_state_ids = (0, 1, 2, 3)
     with pytest.raises(ValueError, match="scope changed"):
-        readout.capture_expectations({"mode": "joint_public", "joint_public_study": True},
+        readout.capture_expectations({"mode": "joint_public", "joint_public_study": True, "checkpoint": str(readout.OLD_CHECKPOINT)},
                                       readout.bank_path("joint_public"), tasks)
     spec = importlib.util.spec_from_file_location("joint_fixed_FM_consumer",
                                                   readout.REPO / "scripts/operator_joint_readouts.py")
@@ -97,7 +97,7 @@ def test_full400_actual_capture_preparation_with_scope_fixture(tmp_path, monkeyp
              for r in prior["tasks"]]
     path = readout.bank_path("joint")
     path.parent.mkdir(parents=True)
-    write_json_atomic(path, {"kind": bank.KIND, "mode": "joint", "joint_public_study": True})
+    write_json_atomic(path, {"kind": bank.KIND, "mode": "joint", "joint_public_study": True, "checkpoint": str(readout.OLD_CHECKPOINT)})
     args = SimpleNamespace(role="validation", mode="formal", state_count=50, init_state_ids=None,
                            static_task_lora_manifest=path,
                            trajectory_capture_selection=readout.REPO /
@@ -126,7 +126,7 @@ def test_context_actual_capture_entry_scope(tmp_path, monkeypatch, mode):
              for r in registered["full_conditions"]]
     path = readout.bank_path(mode)
     path.parent.mkdir(parents=True)
-    write_json_atomic(path, {"kind": bank.KIND, "mode": mode, "joint_public_study": True})
+    write_json_atomic(path, {"kind": bank.KIND, "mode": mode, "joint_public_study": True, "checkpoint": str(readout.OLD_CHECKPOINT)})
     args = SimpleNamespace(role=readout.scope.ROLE if public else "validation", mode="formal",
                            state_count=4 if public else 50, init_state_ids=states if public else None,
                            static_task_lora_manifest=path, trajectory_capture_selection=capture_path)

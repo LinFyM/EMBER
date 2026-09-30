@@ -48,7 +48,7 @@ from . import change_clock, joint_training
 from .specification import (
     REPO, SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
     CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH, CONTINUATION1800_SPEC_PATH, PILOT_SPEC_PATH,
-    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, PILOT_ROOT,
+    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, CONTEXT_CONTINUATION_SPEC_PATH, PILOT_ROOT,
     CONTINUATION2340_ROOT, CONTINUATION2790_ROOT, CONTINUATION900_ROOT, CONTINUATION1350_ROOT,
     SEALED_ROOT, SEALED_SPEC_PATH, SCHEMA, STAGE,
     OPERATOR_CONTRACT, OPTIMIZATION_CONTRACT, EVENT_CONTRACT, EXECUTION_CONTRACT,
@@ -110,7 +110,7 @@ def complete_checkpoint(path: Path) -> bool:
                or (macro in (*CONTINUATION_CHECKPOINTS, *CONTINUATION1350_CHECKPOINTS,
                              *CONTINUATION1800_CHECKPOINTS, *PILOT_CHECKPOINTS,
                              *CONTINUATION2340_CHECKPOINTS, *CONTINUATION2790_CHECKPOINTS)
-                   and world in (2, 3, 4)))
+                   and world in (1, 2, 3, 4)))
     expected_files = ({"ecp.safetensors", "trainer_state.pt"}
                       | {f"rank_{rank:02d}_state.pt" for rank in range(world)}) if allowed else set()
     return (manifest.get("stage") == STAGE and manifest.get("run_contract_schema") == SCHEMA

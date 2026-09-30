@@ -2,7 +2,7 @@
 
 2026-09-28起建立；原始科学论证见机制分析§42。只有progress登记的阶段有执行许可。
 本文件§1–5定义原T/U完整方法；后续各节保留历次工程、学习与诊断合同。原T/U正式结果已完成，
-§31–32变化驱动覆盖及§33学习限制诊断均已结束；Owner现授权完整方法复核及适当分析，新增§34为唯一有限消费者检验。
+§31–34均已结束；Owner最新授权自主理论、架构与训练研究，§35为当前唯一fresh双目标学习检验。
 实际状态只看progress顶部，旧暂停或旧后继许可不覆盖最新明确范围。
 §11的节点/预算不自动延续；模型、信息墙与评测约束继承，精确冻结与派发以progress为准。
 它替换旧Core/Procedure/FactorHeads生成图，不在已关闭P/I、条件速度或LocalField上追加补丁。
@@ -2265,3 +2265,88 @@ BA覆盖95.863794%，前5动作修正与D平均cosine .991683、相对L2误差.1
 main重算原始行及八条件预测；完整分析见机制§77、findings§252及projected-repair evidence JSON。
 代码511791cb，成本.30101382/2GPUh、峰值新增.85770/8GiB，所有消费者exit0且已退出，无新optimizer或native teacher调用。
 原件root为本节登记位置；没有改变阈值、缩放或增加臂，未派后继。拟合结果不是新Writer或正式模型选择结果。
+
+## 35. 从初始化共同学习公共与完整函数：固定T图的450更新比较（2026-09-30）
+
+### 35.1 科学问题与唯一干预
+
+Owner最新授权自主理论、架构及训练研究，不需再次请求训练许可；主讨论据机制§78选择这一有限学习检验。
+旧§18的后期90步公共辅助不是本批fresh对照。它的148/control158保持为反例，不能据fresh不同承诺收益。
+本批问：在公共A/B0与视频M尚未共同分配功能时，持续要求公共策略独立正确，能否改善完整策略的能力获取？
+竞争解释是：主要缺口在视频关系形成/共享读取，公共目标只提高基础训练能力，完整未见任务能力不随之改善或受损。
+实际图严格为原T，不用change-clock、全局上下文、独立S、MT初始化、冻结阶段或新增标签。
+
+唯一训练目标：`L = Lfull + Lpublic_beta`，系数各1，不取均值、不改原full权重。
+两项用完全相同的28个跨episode query、相同Gaussian/tau/offset1、完整50×7动作和每task .25权重。
+Lpublic只经公共76因子；Lfull继续经完整76因子、真实native重放及全部A/B0/P/C/D/O；物理source始终冻结。
+不使用teacher自身动作作新aux，不加入teacher state、reward、task ID或held标签，也不改变合法部署输入。
+
+### 35.2 训练规模、来源与恢复
+
+study/root为`operator_joint_public_fresh_20260930` / `/data1/user/ymdai/ember_runs/operator_joint_public_fresh_20260930`。
+只训一个候选，记为`joint`、内部模型mode T。由原canonical identity fresh构造：identity seed20260721、
+module seed7、probe seed1729；A标准非零、B0/O零；不读取旧训练Writer作初始化。
+使用原36任务allowlist、50条teacher池和原T前450事件序列，seed20260928；
+450宏步×4task×28=50,400个full查询，同样50,400次公共风险计算复用这些查询，无新增数据或query抽样。
+每task50次teacher访问、完整覆盖50条各一次；用既有continuation events v3合法承接首轮，不能把旧v2的30条登记当池上限。
+架构/native/source/normalization/tokenizer、所有数据及FM定义继承§2/3；仅目标项改变。
+
+AdamW为原seed7、lr3e−4、betas(.9,.95)、eps1e−8、weight_decay1e−4、clip1；
+warmup150、decay1200、floor1e−5，fresh optimizer/scheduler，不因本批末点450缩短原日程。
+90/180/270/360/450保存完整ECP：Writer、Adam、scheduler、sampler、各rank RNG、拓扑和schema；本批只读450能力，不择中间点。
+故障从本臂最后完整边界恢复，不覆盖失败记录或清零成本；物理拓扑迁移沿现有正确实现，逻辑流/权重不变且不称bitwise exact。
+初始packing复用真实已可用的policy microbatch28/frame_chunk8；按实际显存/吞吐选择物理rank，训练不能跨两节点拼卡。
+正常数值差异接受；不为逐bit配对重跑已有T或增加全模型比较/散列。
+
+基线直接复用原T450（full-only）的Writer权重和correct400=122，位于
+`operator_read_write_learning_20260928/continuation900/T/train/attempts/continuation/checkpoints/macro_00000450`。
+训练身份从该原run/ECP或保留权重manifest读取并保留，不把后续读取代码写成训练代码。
+执行前先核其公共76因子确实可恢复、已有400行及场景可消费；若旧恢复状态已清理但Writer权重完备，可用于读取，不冒称可exact-resume。
+保留原T270/450/900及成熟2340/2790曲线、U早期高点和强MT153背景；本批不重训T、U或MT，不新增这些模型的correct400。
+
+### 35.3 三项固定读出
+
+**A. 完整策略能力。** 候选450生成唯一400条件bank并运行一次official validation/correct400。
+复用原T/U/MT已封存400 scene/state/env与policy RNG、seed7的K1 state–video映射；每task50条teacher各一次。
+完整38target、官方预处理/10flow/前5replan/dummy10/horizon及成功终止不变；每task init0 full，其余compact。
+报告相对原T450及强MT300的逐行R/G/L/churn、task/suite/breadth、任务簇区间；与成熟T的比较明确学习阶段差异。
+450是预先指定的有信息量节点，单点结果不是相邻稳定性或最终方法选择完成。
+
+**B. 独立公共能力。** 从候选450和原T450各导出自身公共76因子，分别做原§19全部36任务的144条训练诊断。
+严格复用`operator_seen_task_diagnosis_20260929`已封存的scene，init32/33/34/35、原env/policy RNG及官方执行；
+两个模型各只安装自己的单一公共LoRA，0 teacher native forward。teacher元数据仅为场景配对，不记为视频值输入。
+每task init32 full，其余compact；原24/支持12与各suite、逐task及相互R/G/L/churn全部报告。
+旧MT144=93及T1800 full144=105只读复用，后者不是同节点完整策略对照，不能混成新候选的full−public差。
+这288条只检验授权训练分布上的独立公共函数；不用于held checkpoint选择或充当最终video causal证据。
+本批没有held public/no-video、same-task-other、wrong、shuffled/reversed或Test/RL，最终controls仍在selected冻结后进行。
+
+**C. 固定训练功能面板。** 原T450与候选450各读同一四train任务0/12/20/32、每task两teacher的A28面板：
+task0:teacher40/11，task12:25/14，task20:38/42，task32:17/43，query/flow/tau/target直接复用此前固定A28原件。
+每模型8个full、4个public（相同task的公共结果复用）；保存逐query预测/目标引用和完整50、前5、motion6/grip风险。
+合计24个模型条件读回、不更新权重；不是新训练集或held动作诊断，不补额外teacher/seed/窗口。
+主讨论据实际函数差解释公共与完整风险是否一起改善，不以M范数或参数能量声称知识分工已成立。
+
+### 35.4 结果分支、资源与执行所有权
+
+公共训练闭环与完整correct400均有有覆盖改善，才支持本目标在所测学习阶段的联合收益；
+若仅公共变强而完整不改善/损害，降低公共目标为主要修复的支持，结合任务得失判断，不以内部FM下降翻案。
+若整体仍处于学习早期，结合原T450→900→2340实际曲线及本批真实变化裁决是否有信息量；
+不把450当理论上限，也不以“再久一点”自动续训。任何结果均不自动派900、系数/LR/rank小扫或新M架构。
+main收到整批原件后自主决定下一项有界工作，不需要Owner再授权；本批执行者完成后停止新增计算并回报。
+
+增量硬限**16GPUh / 32GiB峰值新增**，含实现检查中的GPU、加载/保存/失败/恢复/物化/评测及新冻结树。
+依据原T fresh270训练3.666GPUh、后期world4 full约14.62秒/宏步和public aux约17秒的历史实测/估计，
+训练约8–11GPUh，物化/688闭环及功能面板约1–2GPUh；整批含工程预计3–5小时（2–4张有效训练卡时）。
+不是当前吞吐实测；超过5小时或累计12GPUh仍未接近末点与读出时报告一次实质原因/剩余预测。
+不静默改变科学臂、事件、模型或预算；预算内已定位工程问题由执行者独立修复续行，main不重复工程验收。
+每次launch/resume live核双节点，按AGENTS总8/6、单节点6上限及有效吞吐使用可用卡；就绪的独立消费者及时并行。
+创建root/缓存/冻结树前核strg01 data1独立user quota、目录实占与共享容量，合计ECP/bank/cache/临时和代码峰值；新增全在data1。
+source、数据、模型、tokenizer、原scene和旧结果只读复用，不建立另一套资产或source。
+
+工程仍由session `01a0f018-69af-7b00-b614-7e117540051b`独占dev完成，main只负责科研合同/判断；
+新增合同/来源接入复用现有operator trainer、public cotangent、scope/bank/capture、ECP及官方队列，不复制trainer/evaluator。
+旧§18专用resume入口不恢复，本批只复用已存在的公共信用算子。必要结构调整由实际owner承担，避免向巨型分派不断堆并行路径。
+完成针对真实fresh/恢复/public导出/实际capture消费者的必要检查，自行集成push到main，再用clean pushed detached版本运行。
+只建立一份formal launch记录：精确commit/命令/环境、旧新来源、设备/拓扑、配额、输出、规模和选择/恢复合同。
+main的科研写入与执行者集成窗口串行；冻结树不得原地改。科学语义变化或成本越界才由main裁决，不再向Owner请求例行批准。
+长任务直接持续等待退出，不定时轮询共享缓存/日志；整批完成或实质阻碍一次Steer main，避免分阶段自Queue和心跳。

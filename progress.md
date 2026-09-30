@@ -11,12 +11,16 @@ clock-only主修复假设本轮停止，不追加900/2340或小扫；成熟T的�
 训练2001/物化c134/最终评测8ac身份分开；执行者随后自行集成7f工程取证改动，canonical main窗口已释放。
 main未接回代码审查、工程测试或运行复验；这里只消费科学原件及必要协作交接。
 
-**当前已登记、尚未派发：design§33。** 父T2340，共享Writer S、任务私有Writer P、直接B D，
+**当前已派发、尚无GPU启动回报：design§33。** 父T2340，共享Writer S、任务私有Writer P、直接B D，
 固定公共β/A，64次每条件相同曝光但逐步新抽frame，以独立于本次更新的B20及父/S/P/D各32条train闭环区分限制。
 原§30仍为撤回0更新的历史，§33有新的数据曝光与闭环消费者合同，不恢复旧run。
 root `operator_learning_limit_diagnosis_20260930`，4GPUh/16GiB，预计准备+计算1.5–2小时；执行者为既定新session。
 实现/测试/Git/冻结/资源/排障全部由实验session负责，main负责理论、结果解释和本批之后的暂停汇报。
 无新held/Test/controls/RL，没有选点或正式架构重训；完成该批后不自动派发后继。
+
+科学合同已随main `a7976d64`推送，执行者idle时通过官方Queue送达，回执`01a0f0f3-689d-75f1-a673-41e5acb853d4`。
+这是实际入队记录，不等于已训练；正文与回执保存在main tmp `learning_limit_diagnosis_release.txt/.queue_receipt.json`。
+当前记录提交后释放canonical main给实验session自行集成；main转入只读科学推理，待其释放再写科研文档。
 
 以下分工继续有效，旧运行进度只表示历史时点。
 

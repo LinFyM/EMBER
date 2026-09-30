@@ -4,7 +4,7 @@ from __future__ import annotations
 from contextlib import ExitStack
 from dataclasses import dataclass
 import math
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import torch
 from torch import Tensor, nn
@@ -65,7 +65,8 @@ class NativeFlowPrediction(nn.Module):
         super().__init__()
         self.policy = policy
 
-    def forward(self, sample: FlowSample) -> Tensor:
+    def prepare(self, sample: FlowSample) -> tuple[Tensor, Any, Tensor, Tensor]:
+        """Prepare one frozen query prefix and noisy action for both LoRA suffixes."""
         images, masks, tokens, token_masks, actions, noise, time = sample.arguments
         core = self.policy.model
         # Official prefix queries cannot attend to action tokens. All execution
@@ -79,7 +80,11 @@ class NativeFlowPrediction(nn.Module):
             )
         time_expanded = time[:, None, None]
         noisy_actions = time_expanded * noise + (1 - time_expanded) * actions
-        velocity = core.denoise_step(padding, cache, noisy_actions, time)
+        return padding, cache, noisy_actions, time
+
+    def forward(self, sample: FlowSample, prepared=None) -> Tensor:
+        padding, cache, noisy_actions, time = self.prepare(sample) if prepared is None else prepared
+        velocity = self.policy.model.denoise_step(padding, cache, noisy_actions, time)
         if velocity.shape != sample.target.shape:
             raise RuntimeError("native flow suffix changed its actual action horizon")
         return velocity
@@ -98,8 +103,35 @@ def paired_functional_credit(policy, state, contract, batch, *,
                              condition_weight: float, backward: bool = True,
                              noise_endpoint: bool = False, prefix_steps: int | None = None,
                              query_weights: Sequence[float] | None = None) -> dict[str, Any]:
-    """Return a separately normalized loss and its weighted complete-LoRA cotangent."""
-    validate_lora_state(state, contract)
+    """Return one separately normalized loss and weighted complete-LoRA cotangent."""
+    return _functional_credit(policy, state, contract, batch, seed=seed, device=device,
+                              random_batch=random_batch, offset=offset, microbatch=microbatch,
+                              condition_weight=condition_weight, backward=backward,
+                              noise_endpoint=noise_endpoint, prefix_steps=prefix_steps,
+                              query_weights=query_weights)
+
+
+def dual_functional_credit(policy, state, public_state, contract, batch, *,
+                           seed: int, device, random_batch: int, offset: int, microbatch: int,
+                           condition_weight: float, backward: bool = True) -> tuple[dict, dict]:
+    """Full/public cotangents share one FM sample and frozen prefix per microbatch."""
+    full = _functional_credit(policy, state, contract, batch, seed=seed, device=device,
+                              random_batch=random_batch, offset=offset, microbatch=microbatch,
+                              condition_weight=condition_weight, backward=backward,
+                              public_state=public_state)
+    return full, full.pop("public_credit")
+
+
+def _functional_credit(policy, state, contract, batch, *,
+                             seed: int, device, random_batch: int, offset: int, microbatch: int,
+                             condition_weight: float, backward: bool = True,
+                             noise_endpoint: bool = False, prefix_steps: int | None = None,
+                             query_weights: Sequence[float] | None = None,
+                             public_state: Mapping[str, Tensor] | None = None) -> dict[str, Any]:
+    """Return full credit, optionally public credit on the same sample/prefix KV."""
+    states = (state,) if public_state is None else (state, public_state)
+    for values in states:
+        validate_lora_state(values, contract)
     if any(parameter.requires_grad for parameter in policy.parameters()):
         raise ValueError("functional credit requires a frozen physical policy")
     total, chunk = functional_microbatch_contract(
@@ -111,31 +143,38 @@ def paired_functional_credit(policy, state, contract, batch, *,
     if query_weights is not None and (len(query_weights) != total or
             any(not math.isfinite(float(weight)) or float(weight) < 0 for weight in query_weights)):
         raise ValueError("functional query weights must cover the unchanged logical batch")
-    owner, loss, gradient, calls = NativeFlowPrediction(policy), 0., {}, 0
+    owner = NativeFlowPrediction(policy)
+    credits = [{"flow_loss": 0., "lora_cotangent": {}, "source_forward_calls": 0,
+                "compiled_forward_calls": 0} for _ in states]
     for start in range(0, total, chunk):
         stop = min(total, start + chunk)
         sliced = {name: value[start:stop] if isinstance(value, Tensor) and value.ndim and len(value) == total else value
                   for name, value in batch.items()}
         sample = flow_sample(policy, sliced, seed=seed, device=device, random_batch=random_batch,
                              offset=offset + start, noise_endpoint=noise_endpoint)
+        prepared = owner.prepare(sample)
         weight = (stop - start) / total
-        leaves = {name: value.detach().requires_grad_(backward) for name, value in state.items()}
-        with torch.set_grad_enabled(backward):
-            prediction = torch.func.functional_call(
-                owner, {"policy." + name: value for name, value in leaves.items()}, (sample,), strict=False)
-            calls += 1
-            if query_weights is None:
-                value = mean_velocity_loss(prediction, sample.target, sample.action_width,
-                                           prefix_steps=prefix_steps)
-            else:
-                residual = (prediction[:, :prefix_steps, :sample.action_width].float()
-                            - sample.target[:, :prefix_steps, :sample.action_width].float()).square()
-                weights = torch.as_tensor(query_weights[start:stop], device=residual.device,
-                                          dtype=residual.dtype)
-                value = (residual.mean(dim=(1, 2)) * weights).mean()
-            if backward:
-                gradients = torch.autograd.grad(value, tuple(leaves.values()))
-                _add(gradient, dict(zip(leaves, gradients, strict=True)), weight * condition_weight)
-        loss += float(value.detach()) * weight
-    return {"flow_loss": loss, "lora_cotangent": gradient,
-            "source_forward_calls": 0, "compiled_forward_calls": calls}
+        for values, credit in zip(states, credits, strict=True):
+            leaves = {name: value.detach().requires_grad_(backward) for name, value in values.items()}
+            with torch.set_grad_enabled(backward):
+                prediction = torch.func.functional_call(
+                    owner, {"policy." + name: value for name, value in leaves.items()},
+                    (sample, prepared), strict=False)
+                credit["compiled_forward_calls"] += 1
+                if query_weights is None:
+                    value = mean_velocity_loss(prediction, sample.target, sample.action_width,
+                                               prefix_steps=prefix_steps)
+                else:
+                    residual = (prediction[:, :prefix_steps, :sample.action_width].float()
+                                - sample.target[:, :prefix_steps, :sample.action_width].float()).square()
+                    weights = torch.as_tensor(query_weights[start:stop], device=residual.device,
+                                              dtype=residual.dtype)
+                    value = (residual.mean(dim=(1, 2)) * weights).mean()
+                if backward:
+                    gradients = torch.autograd.grad(value, tuple(leaves.values()))
+                    _add(credit["lora_cotangent"], dict(zip(leaves, gradients, strict=True)),
+                         weight * condition_weight)
+            credit["flow_loss"] += float(value.detach()) * weight
+    if public_state is not None:
+        credits[0]["public_credit"] = credits[1]
+    return credits[0]

@@ -190,6 +190,62 @@ def test_native_fm_prefix_stays_frozen_with_and_without_credit(native_fm_policy,
     assert all(parameter.grad is None and not parameter.requires_grad for parameter in policy.parameters())
 
 
+@pytest.mark.parametrize('microbatch', [1, 3, 5])
+@pytest.mark.parametrize('bf16', [False, True])
+def test_dual_credit_shares_native_prefix_and_flow_with_separate_cotangents(
+        native_fm_policy, microbatch, bf16, monkeypatch):
+    from ember.writer import function_credit as owner
+    from ember.writer.functional import prepare_frozen_writer_policy
+
+    policy, contract = native_fm_policy
+    if bf16:
+        policy.model.paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16')
+    template = prepare_frozen_writer_policy(policy, contract)
+    states = [{name: value.detach().clone() for name, value in template.items()} for _ in range(2)]
+    for index, state in enumerate(states):
+        for name, value in state.items():
+            if 'lora_B' in name:
+                value.normal_(std=.03 * (index + 1))
+    prefix_calls, samples = [], []
+    projection = policy.model.paligemma_with_expert.paligemma.model.language_model.layers[0].self_attn.q_proj
+    handle = projection.register_forward_pre_hook(lambda *args: prefix_calls.append(torch.is_grad_enabled()))
+    original_sample = owner.flow_sample
+
+    def sample(*args, **kwargs):
+        result = original_sample(*args, **kwargs)
+        samples.append(result)
+        return result
+
+    monkeypatch.setattr(owner, 'flow_sample', sample)
+    batch = _fm_batch()
+    arguments = dict(seed=37, device='cpu', random_batch=64, offset=13,
+                     microbatch=microbatch, condition_weight=.25)
+    chunks = (5 + microbatch - 1) // microbatch
+    try:
+        with torch.autocast('cpu', dtype=torch.bfloat16, enabled=bf16):
+            expected = [owner.paired_functional_credit(policy, state, contract, batch, **arguments)
+                        for state in states]
+            assert prefix_calls == [False] * (2 * chunks) and len(samples) == 2 * chunks
+            reference_samples = samples[:chunks]
+            prefix_calls.clear(); samples.clear()
+            actual = owner.dual_functional_credit(policy, *states, contract, batch, **arguments)
+    finally:
+        handle.remove()
+    assert prefix_calls == [False] * chunks and len(samples) == chunks
+    for observed, reference in zip(samples, reference_samples, strict=True):
+        torch.testing.assert_close(observed.arguments[-2], reference.arguments[-2], rtol=0, atol=0)
+        torch.testing.assert_close(observed.arguments[-1], reference.arguments[-1], rtol=0, atol=0)
+        torch.testing.assert_close(observed.target, reference.target, rtol=0, atol=0)
+    for result, reference in zip(actual, expected, strict=True):
+        assert result['flow_loss'] == pytest.approx(reference['flow_loss'], rel=2e-5)
+        assert result['compiled_forward_calls'] == chunks and result['source_forward_calls'] == 0
+        assert len(result['lora_cotangent']) == 76
+        observed = torch.cat([value.flatten() for value in result['lora_cotangent'].values()])
+        expected = torch.cat([value.flatten() for value in reference['lora_cotangent'].values()])
+        torch.testing.assert_close(observed, expected, rtol=2e-5, atol=2e-6)
+    assert all(parameter.grad is None and not parameter.requires_grad for parameter in policy.parameters())
+
+
 @pytest.mark.parametrize('teaching', [False, True])
 def test_query_rank_slices_preserve_full_fm_randomness_weight_and_cotangent(native_fm_policy, teaching):
     from ember.writer.function_credit import paired_functional_credit
@@ -303,7 +359,8 @@ def test_joint_losses_replay_one_writer_and_all_meta_once():
     def action_batch(*args, teaching=False, query_count, **kwargs):
         calls.append(('labels', teaching))
         return {'teaching': teaching}, {'action_demos': [3] * query_count, 'query_offset': 0}
-    runtime = SimpleNamespace(compile=compile_video, processor=SimpleNamespace(training_batch=lambda value: value))
+    runtime = SimpleNamespace(compile=compile_video, state=SimpleNamespace(writer=parameters),
+                              processor=SimpleNamespace(training_batch=lambda value: value))
     cache = SimpleNamespace(hits=0, misses=0, bytes=0, condition=lambda *_: condition)
     engine = SupervisedEngine(runtime, SimpleNamespace(action_batch=action_batch), cache,
         SimpleNamespace(device=torch.device('cpu')), {'data': {'tasks_per_update': 12},

@@ -5,8 +5,7 @@ import time
 
 import torch
 
-from ember.lora import validate_lora_state
-from ember.writer.function_credit import paired_functional_credit
+from ember.writer.function_credit import dual_functional_credit, paired_functional_credit
 from ember.writer.runtime import autocast
 
 
@@ -47,18 +46,14 @@ def one_job(runtime, data, event: dict, microbatch: int,
     compilation = time.perf_counter() - started
     batch = runtime.processor.training_batch(data.batch(event))
     with autocast(runtime.device):
-        credit = paired_functional_credit(
-            runtime.policy, state, runtime.lora, batch, seed=event["flow_seed"],
-            device=runtime.device, random_batch=28, offset=0, microbatch=microbatch,
-            condition_weight=0.25)
-        beta_credit = None
+        arguments = dict(seed=event["flow_seed"], device=runtime.device, random_batch=28,
+                         offset=0, microbatch=microbatch, condition_weight=0.25)
         if loss_variant == "full_plus_public_beta":
-            public = runtime.writer.public_state()
-            validate_lora_state(public, runtime.lora)
-            beta_credit = paired_functional_credit(
-                runtime.policy, public, runtime.lora, batch, seed=event["flow_seed"],
-                device=runtime.device, random_batch=28, offset=0, microbatch=microbatch,
-                condition_weight=0.25)
+            credit, beta_credit = dual_functional_credit(
+                runtime.policy, state, runtime.writer.public_state(), runtime.lora, batch, **arguments)
+        else:
+            credit = paired_functional_credit(runtime.policy, state, runtime.lora, batch, **arguments)
+            beta_credit = None
     torch.cuda.synchronize(runtime.device)
     fm = time.perf_counter() - started - compilation
     cotangent = credit["lora_cotangent"]

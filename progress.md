@@ -21,8 +21,13 @@ U=0包含原T，所有参数仍fresh真实FM共同学习。旧clock/LocalField�
 新root `/data1/user/ymdai/ember_runs/operator_context_value_fresh_20261001`；硬限16GPUh/32GiB，整批估计3–5小时，
 包含实现/加载/失败/保存/全部消费者；使用已交付c202共享prefix，实际开销由一次必要真实消费者检查确认。
 执行者仍是01a0f018-69af-7b00-b614-7e117540051b，独占工程、集成push、冻结、资源准入与运行；main负责科学。
-本段记录合同准备完成，尚未把新训练写成已启动；主讨论推送后立即派发，实际承接/启动以执行回执和后续更新为准。
-当前canonical tracked窗口由main持有，合同交付后释放给执行者；不增加主讨论源码复审或工程批准环节。
+科学合同a12bec4e已实际派发并承接，Queue回执01a0f36c-58d5-7ac0-a044-dbd5f2af0fda。
+执行者已集成push **5f4f76e7179948f7945a7a98814f55c8a7f78610**；main现场确认HEAD==origin/main且clean，原科研记录保持。
+执行者报告canonical trainer/bank/public/A28/capture已接通、16项针对CPU检查通过，
+clean detached树为`/data1/user/ymdai/projects/EMBER-context-value-formal`；main不重复源码QA。
+当前进入唯一最长授权teacher/28query实际消费者检查，之后按合同直接fresh450；尚未收到训练实际启动或该检查完成的回执。
+544条新episode/12份A28及16GPUh/32GiB范围保持，工程接通不代表机制或能力已通过。
+canonical tracked写入窗口已明确释放回main；执行者从冻结树继续，不等待二次放行，整批完成或实质边界统一回报。
 
 ## 历史：§35从初始化共同学习公共与完整策略的启动过程（2026-09-30）
 

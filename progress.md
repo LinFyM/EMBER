@@ -1,5 +1,16 @@
 # EMBER progress
 
+## 当前分工修正：工程工作由实验session自行闭环（2026-09-30）
+
+Owner明确主讨论只负责科学结果分析与讨论，代码等具体工作由实验session完成。
+main承认此前接回源码审查、CPU工程测试和Git集成偏离分工；后续实现、测试、恢复、排障、资源调度、
+代码集成与冻结交付统一由执行者`01a0f018-69af-7b00-b614-7e117540051b`负责，不再等待main重复工程验收。
+main负责科学原件解释、机制/假设/设计、结果裁决与科学范围及预算；为科学解释核对实现含义不等于接管工程。
+当前§32训练和已派读取修复继续，450/400与6GPUh/24GiB范围不变；仅工程分工变化，不新增计算或重复检查。
+本次科研规则更新提交推送后，main释放canonical写入窗口，由执行者独占完成当前修复的代码集成并回报释放；
+main期间仅作只读分析/讨论。后续科研文档写入和代码集成沿明确窗口串行，保护双方工作，不要求Owner再确认。
+本节覆盖历史“main独占main并负责源码集成”的协作记录；旧科学原件与执行事实保持。
+
 ## 当前最新：§31整批124/400已验收，登记一次450有限补点（2026-09-30）
 
 新执行者已交付§31全部原件，main直接复算400行及旧T270/MT/成熟T配对，详见机制§74/findings§249。
@@ -13,7 +24,26 @@ main结合原T/U学习阶段、候选仍变化的共同学习及每task目前30�
 复用旧T450122/U450143/MT153，不重评参照、不新增面板或controls/Test/RL，不自动续900/2340。
 新root `operator_change_clock_continuation450_20260930`、增量6GPUh/24GiB，预计2–4张合适卡时wall2–3小时。
 这次补点检验能力能否扩大并改善保持；若仍只是旧有交换，没有有意义的强MT以上能力，不以未到更晚节点自动救分。
-唯一执行者仍为`01a0f018-69af-7b00-b614-7e117540051b`；本条记录裁决，实际派发/启动另记回执，不能冒称已在训练。
+唯一执行者仍为`01a0f018-69af-7b00-b614-7e117540051b`。main以`7532aa72`推送完整合同后已Queue派发，
+回执`01a0f042-dc2c-74a0-a718-3e742a82250e`，新turn`01a0f042-dc2c-74a0-a718-3e9db78656de`已明确承接并检查恢复接口。
+派发时只确认实际任务开始准备，随后启动证据见下文。正文及回执在main tmp的`change_clock_continuation450_release.txt/.receipt.json`。
+完成/异常由执行者主动回报；main已完成本轮独立原件分析、历史复核与裁决，不再监看或自Queue。
+
+§32实现`2001e770`已由main以`0c8b2d81`集成：仅扩既有run/bank/scope与候选合同的270父来源/450接口，
+model/native/data/credit计算未改。main审完整差异，合并后3项实际父ECP/事件/capture来源CPU检查通过（18.70秒）。
+训练已于2026-09-30 03:24:29 UTC在GPU02:0/1/2、world3启动，冻结树`EMBER-change-clock-continuation450-formal`，
+attempt `resume270_gpu02_world3`。main直接核launch/恢复原件及已保存首个消费者：271更新、4task/112query、
+LR=.0002907540562、总梯度范数.0362046、31.0秒；各Writer参数组非零梯度，首步峰值reserved约31.58GiB。
+原270条前缀/Adam/scheduler与rank0 RNG恢复，新增rank1/2种子8/9，物理迁移不称bitwise exact。
+执行者按历史逐job耗时选3卡，当前预计增量4.8–5.4GPUh、wall2–3小时，仍受6GPUh硬限；首次耗时不冒充稳定吞吐。
+
+main在实际评测prepare入口发现并CPU复现新study未加入分派：`_registered_trajectory_capture`对450 capture JSON
+报`registered trajectory capture requires a train subset`，发生在bank读取前；既有3项检查未覆盖该入口。
+已Steer交执行者在独占dev补分派，并沿明确训练/读取分离方式消费固定2001训练Git/spec；
+否则当前`_continuation_source_identity`会把新读取Git/路径误当训练来源。训练不中断，不原地修改2001冻结树或重训。
+修复用实际CPU入口及2001来源检查、推送新冻结读取树后在原预算内继续，无新GPU smoke。
+Steer获当前turn接受，正文/回执在main tmp的`continuation450_readout_fix.txt/.receipt.json`；
+此时读取后段尚未修复/实际运行通过，不能把源码集成或训练首步称为整批完成。
 
 以下均为历史时点记录；270/correct400已完成，不再等待旧批或恢复旧回执。
 

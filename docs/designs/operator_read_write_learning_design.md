@@ -2069,7 +2069,8 @@ launch前核双节点与strg01 data1独立quota、现有用量和增量峰值，
 物理迁移仅在完整ECP边界，保持逻辑事件/有效batch/更新，记录旧新拓扑及RNG来源，不宣称bitwise exact。
 
 复用唯一`operator_writer`训练/恢复/物化/官方消费者；只扩本节必要scope/父来源/450读出，不复制trainer或建立平行fallback。
-独占原dev分支同步main后实现，按现有架构guardrails做窄增量；main独占科研文档和集成。
+独占原dev分支同步main后实现，按现有架构guardrails做窄增量；main负责科研文档，实验session自行完成工程验证与Git集成。
+集成main时与科研文档写入串行交接，不等待主讨论重复代码审查或测试。
 先用真实父run/manifest/sampler作CPU恢复及事件检查，push后从新的clean detached冻结树执行。
 保留517训练/360读取的旧原件身份，新训练与读取Git分别如实记录，不原地修改旧树或把旧270来源改写成新Git。
 新接口若工程失败，可在原科学范围/预算内修复、检查、推送、新冻结后继续；科学语义/未知原因/预算越界由main裁决。

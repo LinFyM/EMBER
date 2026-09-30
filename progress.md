@@ -25,8 +25,12 @@ main重算所有成功行、候选400份goal、36份实际FM预测与1,800个已
 若仍未缩小主要强参照差额，不自动1350/2340或增层/增宽/调loss；main按完整能力和保持继续自主裁决。
 唯一root `/data1/user/ymdai/ember_runs/operator_context_value_continuation900_20261001`，硬限16GPUh/32GiB，
 按前批实测预计整批3–4小时，条件邻点所需费用包含在上限内；设备/配额由执行者launch前实时核定。
-本段是已完成科学合同，推送后立即派既有执行session；尚未把新900训练记为已启动。
-canonical tracked窗口当前由main持有，交付合同后释放；执行者独占工程/Git/冻结/运行，无需重复工程放行。
+科学合同338e813d已实际派发，Queue回执01a0f42d-a98c-7b61-a68c-a376dceafab5，执行会话已承接。
+执行者已集成push **17ee3e387c778c189475898bcaf9f47e7bb79399**；main现场确认HEAD==origin/main且clean。
+新clean detached树为`/data1/user/ymdai/projects/EMBER-context-continuation900-formal`。
+执行者报告CPU针对检查及冻结读取入口已接受真实5f4f76e7完整450父，451绝对LR/第二轮teacher/query/flow合同通过，
+模型/loss/标签保持；main不重复工程QA。整批启动器已调用，现场选卡后直接续训；尚未收到实际451完成或bank/eval回执。
+canonical tracked窗口已明确释放回main，执行者从冻结树独立继续，无需再放行；整批完成或实质边界统一回报。
 
 ## 历史：§36全视频Value的450训练与启动过程（2026-10-01）
 

@@ -2350,3 +2350,110 @@ source、数据、模型、tokenizer、原scene和旧结果只读复用，不建
 只建立一份formal launch记录：精确commit/命令/环境、旧新来源、设备/拓扑、配额、输出、规模和选择/恢复合同。
 main的科研写入与执行者集成窗口串行；冻结树不得原地改。科学语义变化或成本越界才由main裁决，不再向Owner请求例行批准。
 长任务直接持续等待退出，不定时轮询共享缓存/日志；整批完成或实质阻碍一次Steer main，避免分阶段自Queue和心跳。
+
+### 35.5 完成结果与裁决
+
+本批2026-09-30 17:23 UTC完成，main于10月1日本地时间消费原件。候选完整114/400对旧T450122，
+R88/G26/L34、churn60；对MT153为R86/G28/L67。公共train144从68到80，原train24从26/96到36/96。
+main独立重算原始行、两臂全部goal trace与固定A28预测，完整解释见机制§80/findings§255及
+`docs/analyses/operator_joint_public_evidence_20261001.json`。
+公共风险和实际基础能力改善，完整held未改善；A28中公共输出变化与条件修正变化反向，合成函数变化小，
+符合功能重分配而非已证新的合成能力。不能由此诊断梯度冲突、held公共改善或最终上限。
+本次降低单纯公共目标为主要修复的投入优先级，不追加joint900或系数扫描；下一项另见§36，不自动由局部FM晋级。
+全部688 episode/24功能记录齐全、所有消费者exit0并释放。训练/读取5ddf883b；原T450训练81846ed3。
+普通阶段10.90634GPUh、含临时holder保守分量后记账上界11.30670/16GPUh；留存16.27780GiB，
+阶段观察加余量的峰值保守界16.77662/32GiB。共享prefix优化c202仅供后继，本批没有热改或重算。
+
+## 36. 原A寻址中的全视频Value内容：单一fresh450检验（2026-10-01）
+
+### 36.1 假设、对照与范围
+
+Owner自主研究/新训练授权持续有效；main依据§35与机制§79–81选择本项，不恢复旧clock或后期public aux。
+主要假设：原T局部Value内容不能直接依据其它时刻重新解释当前变化，限制可迁移的条件作用；
+保持共同训练的native/A地址并增加全视频内容依赖，可能在相同学习条件下改善完整策略。
+竞争解释：现有本地H/ΔH已足够，主要缺口在共享获取/执行分布或其它位置；新内容路径仅改内部表示、容量或训练拟合。
+这不是已测出的局部语义碰撞，也不因一次非正结果宣称所有上下文模型无效。clock与LocalField的原阴性继续约束。
+
+唯一新训练臂`context`，唯一root `/data1/user/ymdai/ember_runs/operator_context_value_fresh_20261001`。
+同条件主要对照为§35 fresh joint450=114；同时始终报告旧full-only T450=122与强MT300=153，旧原件直接复用。
+保持§35 full＋public各权重1、原T A/K/覆盖/38target/O、source及数据；只加下述Value时间上下文。
+双目标保留用于隔离一个架构变量，不把114这一较低对照重新定义为方法接受标准。
+本批是有限机制学习检验；450单点不是最终方法冻结或稳定性证明，没有自动900/2340、参量扫描或RL。
+
+### 36.2 完整算子与信息墙
+
+同一公共β读取原合法双RGB/exact L/native 50×32 probe/tau1，得到全部N帧的H[N,50,1024]与38处X。
+source冻结、teacher action/state/reward/terminal/task-ID/filename不进入条件。frame stride仍5。
+沿原模型使用`hbar=H*rsqrt(mean(H²,lastdim)+1e−6)`；原P/C/D/O及共同A/B0全部保持。
+
+唯一新增context模块跨38target共享，按每个horizon位置h单独处理全部N帧：
+
+1. 无bias `W_h:1024→256`，`r_th=W_h hbar_th`。
+2. 无bias `W_q/W_k/W_v:256→256`；分4头、每头64。
+3. Q和K采用标准成对二维旋转RoPE，base10000，位置为真实`frame_index_t/5`；V不加位置编码。
+   全部真实帧双向attention，softmax按时间s归一化，除sqrt(64)，dropout0；padding如有必须排除。
+4. concat四头、无bias `W_out:256→256`得到c[N,50,256]；不增加FFN、残差块、第二层或跨h聚合。
+5. 每target新增无bias `U_m:256→256`。仅将原Value改为
+   `E_mt=GELU(P_m K_mt+C_m hbar_t+U_m c_t) ⊙ D_m(hbar_(t+1)−hbar_t)`。
+
+K继续为原实际执行A_m乘X_mt后按128维单位化，memory仍
+`M_next=M+(O_m E_mt−M K_mt)K_mtᵀ/50`，固定memory_step1，无change-clock。
+t只遍历0..N−2，最后一帧参加context及最后真实ΔH，不虚构末步转移。
+生成唯一完整LoRA：A仍公共A，B=B0+M；执行时仍只装这一套38-target LoRA。
+部署Writer仍在rollout前一次运行；允许内部完整native读回/replay，没有在线环境交互或task-local优化。
+本批K=1，不因实现一条video上下文宣称已经支持Dynamic-K；不得平均frames/raw H/最终LoRAs。
+
+全部新增参数3,014,656。原公共及P/C/D/O严格沿旧初始化顺序/seed构造，新增模块不能消耗旧初始化RNG序列；
+context的非零Linear用独立CPU seed7及普通无bias Linear默认初始化，所有U_m为0。
+B0/O依旧为0，A沿identity seed20260721，probe1729；U=0包含任意原T函数，fresh完整输出仍是合法identity。
+原风险经完整LoRA对U/context、H/X、公共β端到端真实回传；公共风险仍只消费公共76因子。
+不detach c/H来省显存，不以context代理标签或单独预训练替代FM，不人为分阶段冻结。
+新增坐标不需要fake image/action forward；已有native前缀、probe与合法时间保留。
+
+### 36.3 训练、来源和固定读出
+
+与§35相同36task allowlist/50teacher池、原前450事件及flow query，450×4×28=50,400个full查询，
+同query同noise/tau再计算公共风险；task权重、28×50×7目标、offset1均不变。
+同一fresh AdamW3e−4、betas(.9,.95)、eps1e−8、wd1e−4、clip1，warmup150/decay1200/floor1e−5。
+不从joint450继承任何训练参数或optimizer；保留旧P/C/D/O初始值是初始化合同，不是读旧训练checkpoint。
+只评预定450；90/180/270/360/450保存完整ECP和拓扑/RNG/事件游标；恢复必须保持逻辑合同。
+默认policy microbatch28/frame_chunk8，物理rank/实际packing由显存和吞吐决定；不因旧world2锁卡。
+使用已经交付的c202共享prefix双FM路径，普通BF16/TF32/高效attention与数值差异接受。
+新计算须来自执行者集成push后clean detached冻结树，原joint/T frozen tree不修改；训练与后续读取身份分别记实。
+
+末点只新增三项，旧参照完全复用：
+
+- **完整correct400**：原scene/state–video/RNG与官方协议，同task50条teacher各一次；8份init0 full、392 compact，
+  全部continuous trace/goal、per-task/suite/breadth、相对joint450/T450/MT的R/G/L/churn/Jaccard与任务簇区间。
+- **公共train144**：仅候选自己的公共76因子，原§19 scene/init32..35/36task；36份init32 full、108 compact，
+  0 teacher native前向。与§35 joint公共80、旧T450公共68和MT93逐行比较，分原train24/support12。
+- **固定A28**：原四train任务0:40/11、12:25/14、20:38/42、32:17/43；8full+4public、原query/noise/tau/target，
+  保存逐query FM预测/引用、full50/first5/motion6/gripper；旧joint/T450的24份直接复用，不新增B面板或采样矩阵。
+
+合计544条新环境episode、12份A28读出，无新held公共/no-video/other/wrong/shuffle/reverse/Test或奖励梯度。
+公共144仅训练功能诊断；不以它选held checkpoint或计算不存在的候选full144−public144。
+本批不额外做冻结删context对照；新增容量与优化条件保留为经验收益的竞争解释，不能把涨分宣称为已证明操作语义。
+
+### 36.4 判据、成本和工程所有权
+
+主要判断始终来自同节点完整correct400及其实际能力得失，不因公共risk下降、context非零、attention形状或PZ覆盖而判成功。
+相对joint450的正效应只支持所测内容扩展；需同时检查对原T450及MT153的实际差额、覆盖与保持，不能只胜较弱对照。
+若完整能力有实质改善，main再评是否追加最小相邻学习节点；若主要差额/失败形态不变，降低局部内容为主要限制的优先级。
+450仍是有限早期节点，任何后继须说明新信息价值和预算，不自动延长、增层/增宽、减弱baseline或更换loss来保护假设。
+
+硬限**16GPUh / 32GiB峰值新增**，包含实现中的实际GPU检查、加载/保存/失败/恢复/物化/所有评测和新冻结树。
+§35实际训练8.65GPUh、bank/主要评测约1.84GPUh；共享prefix只测得双FM段约46%节省，不能直接乘到整批。
+新增context成本尚未实测，先在实际最长训练视频/28query上做一次必要机制与吞吐检查，并据实际成本安排物理rank。
+整批含实现预计3–5小时、约8–12GPUh，依据前批实测并保留上下文开销余量，不预报全程加速。
+超过5小时预期或累计12GPUh仍未接近完成时回报一次具体原因/剩余量；16GPUh硬限不能静默跨过。
+所有新增写data1；新root/冻结/cache前核strg01独立quota、个人用量、共享容量和含中间产物的峰值。
+每次launch/resume同时live核gpu01/gpu02，按全局8/6及单节点6上限、真正吞吐使用设备；不dummy占卡，不干扰他人。
+
+执行者仍为session `01a0f018-69af-7b00-b614-7e117540051b`，独占dev实现、针对消费者验证、Git集成/push及冻结运行。
+复用canonical operator/native/credit/runtime/ECP/bank与官方动态队列；新增模块保持一个清楚的Value内容owner，
+不复制trainer/evaluator，不把试验入口累加为平行fallback。旧实现及有效结果由冻结代码、合同与Git保存。
+必要检查保护U=0包含、native完整信用/真实部署读取、shape/finite/最长视频内存和恢复合同；不做逐bit/全tensor扫描。
+main负责科研原件、解释和取舍，不重复源码QA；执行者可在本科学范围与预算内自行修复已定位工程问题后继续。
+main科研写入与canonical集成按窗口串行；发布完成后由执行者明确释放窗口。
+仅一份launch合同记录精确环境/commit/命令/输入/输出/配额/拓扑/初始化/选择；长任务持续等待退出，
+整批完成或实质科学/预算阻碍才一次Steer main，不定时检查日志、心跳或阶段自Queue。

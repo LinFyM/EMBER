@@ -1,0 +1,6943 @@
+{
+  "sources": {
+    "clock450": "/data1/user/ymdai/ember_runs/operator_change_clock_continuation450_20260930/T_change_clock/evaluation/450/correct400/results.json",
+    "clock270": "/data1/user/ymdai/ember_runs/operator_change_clock_learning_20260930/T_change_clock/evaluation/correct400/results.json",
+    "T450": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900/T/evaluation/450/correct400/results.json",
+    "U450": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900/U/evaluation/450/correct400/results.json",
+    "MT300": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1/MT/evaluation/correct400/results.json",
+    "T2340_background": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340/T/evaluation/2340/correct400/results.json",
+    "T270": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1/T/evaluation/correct400/results.json",
+    "U270": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1/U/evaluation/correct400/results.json"
+  },
+  "arms": {
+    "clock450": {
+      "success": 123,
+      "by_task": {
+        "3": 17,
+        "6": 3,
+        "11": 46,
+        "16": 0,
+        "23": 0,
+        "26": 37,
+        "31": 20,
+        "39": 0
+      },
+      "breadth": 5
+    },
+    "clock270": {
+      "success": 124,
+      "by_task": {
+        "3": 21,
+        "6": 4,
+        "11": 42,
+        "16": 0,
+        "23": 0,
+        "26": 36,
+        "31": 21,
+        "39": 0
+      },
+      "breadth": 5
+    },
+    "T450": {
+      "success": 122,
+      "by_task": {
+        "3": 24,
+        "6": 2,
+        "11": 42,
+        "16": 1,
+        "23": 1,
+        "26": 38,
+        "31": 14,
+        "39": 0
+      },
+      "breadth": 7
+    },
+    "U450": {
+      "success": 143,
+      "by_task": {
+        "3": 31,
+        "6": 2,
+        "11": 40,
+        "16": 2,
+        "23": 0,
+        "26": 41,
+        "31": 27,
+        "39": 0
+      },
+      "breadth": 6
+    },
+    "MT300": {
+      "success": 153,
+      "by_task": {
+        "3": 41,
+        "6": 7,
+        "11": 36,
+        "16": 10,
+        "23": 0,
+        "26": 35,
+        "31": 24,
+        "39": 0
+      },
+      "breadth": 6
+    },
+    "T2340_background": {
+      "success": 161,
+      "by_task": {
+        "3": 45,
+        "6": 6,
+        "11": 45,
+        "16": 5,
+        "23": 0,
+        "26": 36,
+        "31": 24,
+        "39": 0
+      },
+      "breadth": 6
+    },
+    "T270": {
+      "success": 116,
+      "by_task": {
+        "3": 9,
+        "6": 9,
+        "11": 31,
+        "16": 0,
+        "23": 0,
+        "26": 35,
+        "31": 32,
+        "39": 0
+      },
+      "breadth": 5
+    },
+    "U270": {
+      "success": 128,
+      "by_task": {
+        "3": 19,
+        "6": 5,
+        "11": 41,
+        "16": 2,
+        "23": 0,
+        "26": 37,
+        "31": 24,
+        "39": 0
+      },
+      "breadth": 6
+    }
+  },
+  "pairs": {
+    "clock450__clock270": {
+      "counts": {
+        "N": 253,
+        "L": 24,
+        "R": 100,
+        "G": 23
+      },
+      "net": -1,
+      "churn": 47,
+      "retention_fraction": 0.8064516129032258,
+      "jaccard": 0.6802721088435374,
+      "task_cluster95": [
+        -12,
+        11
+      ],
+      "by_task": {
+        "3": {
+          "R": 14,
+          "N": 26,
+          "L": 7,
+          "G": 3
+        },
+        "6": {
+          "N": 45,
+          "R": 2,
+          "L": 2,
+          "G": 1
+        },
+        "11": {
+          "G": 6,
+          "R": 40,
+          "N": 2,
+          "L": 2
+        },
+        "16": {
+          "N": 50
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 33,
+          "L": 3,
+          "N": 10,
+          "G": 4
+        },
+        "31": {
+          "N": 20,
+          "L": 10,
+          "R": 11,
+          "G": 9
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    "clock450__T450": {
+      "counts": {
+        "N": 249,
+        "G": 29,
+        "R": 94,
+        "L": 28
+      },
+      "net": 1,
+      "churn": 57,
+      "retention_fraction": 0.7704918032786885,
+      "jaccard": 0.6225165562913907,
+      "task_cluster95": [
+        -19,
+        21
+      ],
+      "by_task": {
+        "3": {
+          "R": 12,
+          "N": 21,
+          "L": 12,
+          "G": 5
+        },
+        "6": {
+          "N": 46,
+          "G": 2,
+          "R": 1,
+          "L": 1
+        },
+        "11": {
+          "R": 41,
+          "G": 5,
+          "N": 3,
+          "L": 1
+        },
+        "16": {
+          "N": 49,
+          "L": 1
+        },
+        "23": {
+          "N": 49,
+          "L": 1
+        },
+        "26": {
+          "R": 32,
+          "N": 7,
+          "L": 6,
+          "G": 5
+        },
+        "31": {
+          "N": 24,
+          "G": 12,
+          "R": 8,
+          "L": 6
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    "clock450__U450": {
+      "counts": {
+        "N": 240,
+        "L": 37,
+        "R": 106,
+        "G": 17
+      },
+      "net": -20,
+      "churn": 54,
+      "retention_fraction": 0.7412587412587412,
+      "jaccard": 0.6625,
+      "task_cluster95": [
+        -53,
+        9
+      ],
+      "by_task": {
+        "3": {
+          "R": 16,
+          "N": 18,
+          "L": 15,
+          "G": 1
+        },
+        "6": {
+          "N": 46,
+          "R": 1,
+          "G": 2,
+          "L": 1
+        },
+        "11": {
+          "G": 7,
+          "R": 39,
+          "N": 3,
+          "L": 1
+        },
+        "16": {
+          "N": 48,
+          "L": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 36,
+          "G": 1,
+          "L": 5,
+          "N": 8
+        },
+        "31": {
+          "N": 17,
+          "L": 13,
+          "R": 14,
+          "G": 6
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    "clock450__MT300": {
+      "counts": {
+        "L": 63,
+        "N": 214,
+        "G": 33,
+        "R": 90
+      },
+      "net": -30,
+      "churn": 96,
+      "retention_fraction": 0.5882352941176471,
+      "jaccard": 0.4838709677419355,
+      "task_cluster95": [
+        -86,
+        18
+      ],
+      "by_task": {
+        "3": {
+          "R": 15,
+          "N": 7,
+          "L": 26,
+          "G": 2
+        },
+        "6": {
+          "N": 41,
+          "L": 6,
+          "G": 2,
+          "R": 1
+        },
+        "11": {
+          "R": 35,
+          "G": 11,
+          "L": 1,
+          "N": 3
+        },
+        "16": {
+          "N": 40,
+          "L": 10
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 29,
+          "N": 7,
+          "L": 6,
+          "G": 8
+        },
+        "31": {
+          "L": 14,
+          "N": 16,
+          "G": 10,
+          "R": 10
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    "clock450__T2340_background": {
+      "counts": {
+        "L": 59,
+        "N": 218,
+        "R": 102,
+        "G": 21
+      },
+      "net": -38,
+      "churn": 80,
+      "retention_fraction": 0.6335403726708074,
+      "jaccard": 0.5604395604395604,
+      "task_cluster95": [
+        -95,
+        -2
+      ],
+      "by_task": {
+        "3": {
+          "R": 15,
+          "L": 30,
+          "G": 2,
+          "N": 3
+        },
+        "6": {
+          "N": 43,
+          "L": 4,
+          "G": 1,
+          "R": 2
+        },
+        "11": {
+          "R": 43,
+          "N": 2,
+          "L": 2,
+          "G": 3
+        },
+        "16": {
+          "N": 45,
+          "L": 5
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 29,
+          "G": 8,
+          "N": 6,
+          "L": 7
+        },
+        "31": {
+          "L": 11,
+          "N": 19,
+          "R": 13,
+          "G": 7
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    "T450__T270": {
+      "counts": {
+        "N": 241,
+        "L": 37,
+        "R": 79,
+        "G": 43
+      },
+      "net": 6,
+      "churn": 80,
+      "retention_fraction": 0.6810344827586207,
+      "jaccard": 0.4968553459119497,
+      "task_cluster95": [
+        -48,
+        57
+      ],
+      "by_task": {
+        "3": {
+          "G": 18,
+          "N": 23,
+          "R": 6,
+          "L": 3
+        },
+        "6": {
+          "N": 41,
+          "L": 7,
+          "R": 2
+        },
+        "11": {
+          "R": 28,
+          "G": 14,
+          "N": 5,
+          "L": 3
+        },
+        "16": {
+          "N": 49,
+          "G": 1
+        },
+        "23": {
+          "N": 49,
+          "G": 1
+        },
+        "26": {
+          "R": 31,
+          "L": 4,
+          "N": 8,
+          "G": 7
+        },
+        "31": {
+          "N": 16,
+          "L": 20,
+          "R": 12,
+          "G": 2
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    "U450__U270": {
+      "counts": {
+        "L": 22,
+        "N": 235,
+        "R": 106,
+        "G": 37
+      },
+      "net": 15,
+      "churn": 59,
+      "retention_fraction": 0.828125,
+      "jaccard": 0.6424242424242425,
+      "task_cluster95": [
+        -6,
+        42
+      ],
+      "by_task": {
+        "3": {
+          "G": 15,
+          "N": 16,
+          "L": 3,
+          "R": 16
+        },
+        "6": {
+          "N": 44,
+          "G": 1,
+          "L": 4,
+          "R": 1
+        },
+        "11": {
+          "L": 6,
+          "G": 5,
+          "R": 35,
+          "N": 4
+        },
+        "16": {
+          "N": 48,
+          "R": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "G": 8,
+          "R": 33,
+          "L": 4,
+          "N": 5
+        },
+        "31": {
+          "L": 5,
+          "N": 18,
+          "R": 19,
+          "G": 8
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    }
+  },
+  "task31": {
+    "clock450": {
+      "counts": {
+        "success": 20,
+        "cheese_ever": 42,
+        "butter_ever": 23,
+        "cheese_lost_final": 4,
+        "butter_lost_final": 0,
+        "neither_ever": 6,
+        "both_ever_not_success": 1
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 1,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 2,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 3,
+          "success": false,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 4,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 5,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 6,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 7,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 8,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 9,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 10,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 11,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 12,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 13,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 14,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 15,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 16,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 17,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 18,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 19,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 20,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 21,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 22,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 23,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 24,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 25,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 26,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 27,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 28,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 29,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 30,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 31,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 32,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 33,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 34,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 35,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 36,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 37,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 38,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 39,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 40,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 41,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 42,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 43,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 44,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 45,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 46,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 47,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 48,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 49,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        }
+      ]
+    },
+    "clock270": {
+      "counts": {
+        "success": 21,
+        "cheese_ever": 44,
+        "butter_ever": 22,
+        "cheese_lost_final": 7,
+        "butter_lost_final": 0,
+        "neither_ever": 5,
+        "both_ever_not_success": 0
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 1,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 2,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 3,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 4,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 5,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 6,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 7,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 8,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 9,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 10,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 11,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 12,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 13,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 14,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 15,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 16,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 17,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 18,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 19,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 20,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 21,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 22,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 23,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 24,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 25,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 26,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 27,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 28,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 29,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 30,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 31,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 32,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 33,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 34,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 35,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 36,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 37,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 38,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 39,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 40,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 41,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 42,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 43,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 44,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 45,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 46,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 47,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 48,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 49,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        }
+      ]
+    },
+    "T450": {
+      "counts": {
+        "success": 14,
+        "cheese_ever": 39,
+        "butter_ever": 21,
+        "cheese_lost_final": 11,
+        "butter_lost_final": 0,
+        "neither_ever": 6,
+        "both_ever_not_success": 2
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 1,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 2,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 3,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 4,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 5,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 6,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 7,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 8,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 9,
+          "success": false,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 10,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 11,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 12,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 13,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 14,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 15,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 16,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 17,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 18,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 19,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 20,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 21,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 22,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 23,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 24,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 25,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 26,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 27,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 28,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 29,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 30,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 31,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 32,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 33,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 34,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 35,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 36,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 37,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 38,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 39,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 40,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 41,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 42,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 43,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 44,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 45,
+          "success": false,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 46,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 47,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 48,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 49,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        }
+      ]
+    },
+    "U450": {
+      "counts": {
+        "success": 27,
+        "cheese_ever": 34,
+        "butter_ever": 31,
+        "cheese_lost_final": 1,
+        "butter_lost_final": 0,
+        "neither_ever": 12,
+        "both_ever_not_success": 0
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 1,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 2,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 3,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 4,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 5,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 6,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 7,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 8,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 9,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 10,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 11,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 12,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 13,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 14,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 15,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 16,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 17,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 18,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 19,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 20,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 21,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 22,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 23,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 24,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 25,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 26,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 27,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 28,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 29,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 30,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 31,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 32,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 33,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 34,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 35,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 36,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 37,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 38,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 39,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 40,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 41,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 42,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 43,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 44,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 45,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 46,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 47,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 48,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 49,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        }
+      ]
+    },
+    "MT300": {
+      "counts": {
+        "success": 24,
+        "cheese_ever": 45,
+        "butter_ever": 25,
+        "cheese_lost_final": 3,
+        "butter_lost_final": 1,
+        "neither_ever": 4,
+        "both_ever_not_success": 0
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 1,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 2,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 3,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 4,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 5,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 6,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 7,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 8,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 9,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 10,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 11,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 12,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 13,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 14,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 15,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 16,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 17,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 18,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 19,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 20,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 21,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 22,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 23,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 24,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 25,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 26,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 27,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 28,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 29,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 30,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 31,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 32,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 33,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 34,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 35,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 36,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 37,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 38,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 39,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 40,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 41,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 42,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 43,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 44,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 45,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 46,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 47,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 48,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 49,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        }
+      ]
+    },
+    "T2340_background": {
+      "counts": {
+        "success": 24,
+        "cheese_ever": 38,
+        "butter_ever": 29,
+        "cheese_lost_final": 4,
+        "butter_lost_final": 0,
+        "neither_ever": 7,
+        "both_ever_not_success": 0
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 1,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 2,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 3,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 4,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 5,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 6,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 7,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 8,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 9,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 10,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 11,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 12,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 13,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 14,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 15,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 16,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 17,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 18,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 19,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 20,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 21,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 22,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 23,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 24,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 25,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 26,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 27,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 28,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 29,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 30,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 31,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 32,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 33,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 34,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 35,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 36,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 37,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 38,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 39,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 40,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 41,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 42,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 43,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 44,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 45,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 46,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 47,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 48,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 49,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        }
+      ]
+    },
+    "T270": {
+      "counts": {
+        "success": 32,
+        "cheese_ever": 47,
+        "butter_ever": 32,
+        "cheese_lost_final": 5,
+        "butter_lost_final": 0,
+        "neither_ever": 3,
+        "both_ever_not_success": 0
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 1,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 2,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 3,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 4,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 5,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 6,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 7,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 8,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 9,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 10,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 11,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 12,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 13,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 14,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 15,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 16,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 17,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 18,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 19,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 20,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 21,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 22,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 23,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 24,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 25,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 26,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 27,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 28,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 29,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 30,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 31,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 32,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 33,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 34,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 35,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 36,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 37,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 38,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 39,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 40,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 41,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 42,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 43,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 44,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 45,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 46,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 47,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 48,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 49,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        }
+      ]
+    },
+    "U270": {
+      "counts": {
+        "success": 24,
+        "cheese_ever": 39,
+        "butter_ever": 28,
+        "cheese_lost_final": 3,
+        "butter_lost_final": 0,
+        "neither_ever": 7,
+        "both_ever_not_success": 0
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 1,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 2,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 3,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 4,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 5,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 6,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 7,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 8,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 9,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 10,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 11,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 12,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 13,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 14,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 15,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 16,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 17,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 18,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 19,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 20,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 21,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 22,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 23,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 24,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 25,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 26,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 27,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 28,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 29,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 30,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 31,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 32,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 33,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 34,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 35,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 36,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 37,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 38,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 39,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 40,
+          "success": false,
+          "ever": [
+            false,
+            false
+          ],
+          "final": [
+            false,
+            false
+          ]
+        },
+        {
+          "state": 41,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 42,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 43,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 44,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 45,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 46,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        },
+        {
+          "state": 47,
+          "success": false,
+          "ever": [
+            false,
+            true
+          ],
+          "final": [
+            false,
+            true
+          ]
+        },
+        {
+          "state": 48,
+          "success": true,
+          "ever": [
+            true,
+            true
+          ],
+          "final": [
+            true,
+            true
+          ]
+        },
+        {
+          "state": 49,
+          "success": false,
+          "ever": [
+            true,
+            false
+          ],
+          "final": [
+            true,
+            false
+          ]
+        }
+      ]
+    },
+    "clock450_vs_clock270": {
+      "gained": {
+        "states": [
+          11,
+          21,
+          25,
+          27,
+          36,
+          42,
+          44,
+          48,
+          49
+        ],
+        "candidate_ever": {
+          "11": 9
+        },
+        "candidate_final": {
+          "11": 9
+        },
+        "reference_ever": {
+          "10": 9
+        }
+      },
+      "lost": {
+        "states": [
+          3,
+          18,
+          19,
+          22,
+          26,
+          31,
+          32,
+          38,
+          39,
+          47
+        ],
+        "candidate_ever": {
+          "11": 1,
+          "10": 7,
+          "00": 1,
+          "01": 1
+        },
+        "candidate_final": {
+          "01": 2,
+          "10": 4,
+          "00": 4
+        },
+        "reference_ever": {
+          "11": 10
+        }
+      }
+    }
+  },
+  "task3": {
+    "clock450": {
+      "counts": {
+        "success": 17,
+        "target_stationary": 32,
+        "stationary_other_raised": 4,
+        "target_raised": 18
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10778003931045532,
+          "other_rise": 0.00209808349609375,
+          "target_move": 0.16351616382598877
+        },
+        {
+          "state": 1,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 2,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.015291810035705566,
+          "target_move": 0.0
+        },
+        {
+          "state": 3,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 4,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 5,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.021997570991516113,
+          "target_move": 0.0
+        },
+        {
+          "state": 6,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 7,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0034333467483520508,
+          "target_move": 0.0
+        },
+        {
+          "state": 8,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.014246702194213867,
+          "target_move": 0.0
+        },
+        {
+          "state": 9,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13021284341812134,
+          "other_rise": 0.0,
+          "target_move": 0.17668278515338898
+        },
+        {
+          "state": 10,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13721853494644165,
+          "other_rise": 0.0,
+          "target_move": 0.20544029772281647
+        },
+        {
+          "state": 11,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13407093286514282,
+          "other_rise": 0.0,
+          "target_move": 0.19197869300842285
+        },
+        {
+          "state": 12,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0003077983856201172,
+          "target_move": 0.0
+        },
+        {
+          "state": 13,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.015384197235107422,
+          "target_move": 0.0
+        },
+        {
+          "state": 14,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.08994907140731812,
+          "other_rise": 0.0,
+          "target_move": 0.18696321547031403
+        },
+        {
+          "state": 15,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10187870264053345,
+          "other_rise": 0.0,
+          "target_move": 0.19530023634433746
+        },
+        {
+          "state": 16,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13074463605880737,
+          "other_rise": 0.0,
+          "target_move": 0.1925266981124878
+        },
+        {
+          "state": 17,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.1053728461265564,
+          "other_rise": 0.0,
+          "target_move": 0.18365931510925293
+        },
+        {
+          "state": 18,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.004937648773193359,
+          "target_move": 0.0
+        },
+        {
+          "state": 19,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.018790602684020996,
+          "target_move": 0.0
+        },
+        {
+          "state": 20,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.014311075210571289,
+          "target_move": 0.0
+        },
+        {
+          "state": 21,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.11946684122085571,
+          "other_rise": 0.0,
+          "target_move": 0.20570622384548187
+        },
+        {
+          "state": 22,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.030005812644958496,
+          "target_move": 0.0
+        },
+        {
+          "state": 23,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 24,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.1600697636604309,
+          "other_rise": 0.0,
+          "target_move": 0.22490648925304413
+        },
+        {
+          "state": 25,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.03829824924468994,
+          "target_move": 0.0
+        },
+        {
+          "state": 26,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.003338456153869629,
+          "target_move": 0.0
+        },
+        {
+          "state": 27,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.1246843934059143,
+          "other_rise": 0.0,
+          "target_move": 0.17196129262447357
+        },
+        {
+          "state": 28,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0065222978591918945,
+          "target_move": 0.0
+        },
+        {
+          "state": 29,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.009753108024597168,
+          "target_move": 0.0
+        },
+        {
+          "state": 30,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10455256700515747,
+          "other_rise": 0.0,
+          "target_move": 0.19045762717723846
+        },
+        {
+          "state": 31,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.09320181608200073,
+          "other_rise": 0.0,
+          "target_move": 0.16252025961875916
+        },
+        {
+          "state": 32,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.09237080812454224,
+          "other_rise": 0.0,
+          "target_move": 0.16085414588451385
+        },
+        {
+          "state": 33,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.01098334789276123,
+          "target_move": 0.0
+        },
+        {
+          "state": 34,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 35,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.009203076362609863,
+          "target_move": 0.0
+        },
+        {
+          "state": 36,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.007021307945251465,
+          "target_move": 0.0
+        },
+        {
+          "state": 37,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13068264722824097,
+          "other_rise": 0.0,
+          "target_move": 0.1856539398431778
+        },
+        {
+          "state": 38,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10596460103988647,
+          "other_rise": 0.0,
+          "target_move": 0.16132275760173798
+        },
+        {
+          "state": 39,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.026852130889892578,
+          "target_move": 0.0
+        },
+        {
+          "state": 40,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.040180206298828125,
+          "target_move": 0.0
+        },
+        {
+          "state": 41,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 42,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 43,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.08721989393234253,
+          "other_rise": 0.00198209285736084,
+          "target_move": 0.08928705751895905
+        },
+        {
+          "state": 44,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 45,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10920292139053345,
+          "other_rise": 0.0,
+          "target_move": 0.19022226333618164
+        },
+        {
+          "state": 46,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.02630305290222168,
+          "target_move": 0.0
+        },
+        {
+          "state": 47,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.004161477088928223,
+          "target_move": 0.0
+        },
+        {
+          "state": 48,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 49,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.0313873291015625,
+          "target_move": 0.0
+        }
+      ]
+    },
+    "clock270": {
+      "counts": {
+        "success": 21,
+        "target_stationary": 24,
+        "stationary_other_raised": 4,
+        "target_raised": 25
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.12220889329910278,
+          "other_rise": 0.0,
+          "target_move": 0.16892863810062408
+        },
+        {
+          "state": 1,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 2,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13301712274551392,
+          "other_rise": 0.0,
+          "target_move": 0.1807839423418045
+        },
+        {
+          "state": 3,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.12144273519515991,
+          "other_rise": 0.0,
+          "target_move": 0.24063847959041595
+        },
+        {
+          "state": 4,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 5,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0033971071243286133,
+          "target_move": 0.0
+        },
+        {
+          "state": 6,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.11011368036270142,
+          "other_rise": 0.0,
+          "target_move": 0.1727355569601059
+        },
+        {
+          "state": 7,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.1273217797279358,
+          "other_rise": 0.0,
+          "target_move": 0.1641072779893875
+        },
+        {
+          "state": 8,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0011446475982666016,
+          "target_move": 0.0
+        },
+        {
+          "state": 9,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.11694294214248657,
+          "other_rise": 0.0,
+          "target_move": 0.1744614541530609
+        },
+        {
+          "state": 10,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.11984390020370483,
+          "other_rise": 0.06045639514923096,
+          "target_move": 0.20374177396297455
+        },
+        {
+          "state": 11,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13937324285507202,
+          "other_rise": 0.0,
+          "target_move": 0.20208357274532318
+        },
+        {
+          "state": 12,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0010257959365844727,
+          "target_move": 0.0
+        },
+        {
+          "state": 13,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.08944809436798096,
+          "target_move": 0.0
+        },
+        {
+          "state": 14,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.095211923122406,
+          "other_rise": 0.0,
+          "target_move": 0.19029389321804047
+        },
+        {
+          "state": 15,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10161441564559937,
+          "other_rise": 0.0,
+          "target_move": 0.1998291015625
+        },
+        {
+          "state": 16,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.018411338329315186,
+          "other_rise": 0.0,
+          "target_move": 0.02966245450079441
+        },
+        {
+          "state": 17,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 1.862645149230957e-09
+        },
+        {
+          "state": 18,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.002721548080444336,
+          "target_move": 0.0
+        },
+        {
+          "state": 19,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.017972469329833984,
+          "target_move": 0.0
+        },
+        {
+          "state": 20,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13661891222000122,
+          "other_rise": 0.011935830116271973,
+          "target_move": 0.221900075674057
+        },
+        {
+          "state": 21,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.08042001724243164,
+          "other_rise": 0.0,
+          "target_move": 0.17775870859622955
+        },
+        {
+          "state": 22,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.12405902147293091,
+          "other_rise": 0.0,
+          "target_move": 0.1870371699333191
+        },
+        {
+          "state": 23,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 24,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.15832966566085815,
+          "other_rise": 0.0,
+          "target_move": 0.21948406100273132
+        },
+        {
+          "state": 25,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.10276341438293457,
+          "target_move": 0.0
+        },
+        {
+          "state": 26,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.15933269262313843,
+          "other_rise": 0.0,
+          "target_move": 0.19776779413223267
+        },
+        {
+          "state": 27,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.1317538619041443,
+          "other_rise": 0.0,
+          "target_move": 0.14724156260490417
+        },
+        {
+          "state": 28,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.027266383171081543,
+          "target_move": 0.0
+        },
+        {
+          "state": 29,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.12810474634170532,
+          "other_rise": 0.0,
+          "target_move": 0.18133842945098877
+        },
+        {
+          "state": 30,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.1108059287071228,
+          "other_rise": 0.0036505460739135742,
+          "target_move": 0.19911815226078033
+        },
+        {
+          "state": 31,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13217443227767944,
+          "other_rise": 0.0,
+          "target_move": 0.19590704143047333
+        },
+        {
+          "state": 32,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.0974155068397522,
+          "other_rise": 0.0,
+          "target_move": 0.16037970781326294
+        },
+        {
+          "state": 33,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.12114143371582031,
+          "target_move": 0.0
+        },
+        {
+          "state": 34,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 35,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.003522157669067383,
+          "target_move": 0.0
+        },
+        {
+          "state": 36,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.01340794563293457,
+          "target_move": 0.0
+        },
+        {
+          "state": 37,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.17080634832382202,
+          "other_rise": 0.0,
+          "target_move": 0.21547262370586395
+        },
+        {
+          "state": 38,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.0936242938041687,
+          "other_rise": 0.008934855461120605,
+          "target_move": 0.15095117688179016
+        },
+        {
+          "state": 39,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.12103301286697388,
+          "other_rise": 0.0,
+          "target_move": 0.15576356649398804
+        },
+        {
+          "state": 40,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.018310189247131348,
+          "target_move": 0.0
+        },
+        {
+          "state": 41,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 42,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 43,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 44,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 45,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.12463122606277466,
+          "other_rise": 0.0,
+          "target_move": 0.20483770966529846
+        },
+        {
+          "state": 46,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.028149724006652832,
+          "target_move": 0.0
+        },
+        {
+          "state": 47,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.1050713062286377,
+          "target_move": 0.0
+        },
+        {
+          "state": 48,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10357826948165894,
+          "other_rise": 0.0,
+          "target_move": 0.18848051130771637
+        },
+        {
+          "state": 49,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.004579782485961914,
+          "target_move": 0.0
+        }
+      ]
+    },
+    "T450": {
+      "counts": {
+        "success": 24,
+        "target_stationary": 22,
+        "stationary_other_raised": 6,
+        "target_raised": 28
+      },
+      "rows": [
+        {
+          "state": 0,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.16028696298599243,
+          "other_rise": 0.0,
+          "target_move": 0.2132842242717743
+        },
+        {
+          "state": 1,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 2,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.12088871002197266,
+          "target_move": 0.0
+        },
+        {
+          "state": 3,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.08621501922607422,
+          "target_move": 0.0
+        },
+        {
+          "state": 4,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 5,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.005863189697265625,
+          "target_move": 0.0
+        },
+        {
+          "state": 6,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.11335867643356323,
+          "other_rise": 0.0,
+          "target_move": 0.1575859785079956
+        },
+        {
+          "state": 7,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10575991868972778,
+          "other_rise": 0.0,
+          "target_move": 0.16703949868679047
+        },
+        {
+          "state": 8,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0027388334274291992,
+          "target_move": 0.0
+        },
+        {
+          "state": 9,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.12336498498916626,
+          "other_rise": 0.0,
+          "target_move": 0.17578007280826569
+        },
+        {
+          "state": 10,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.009328246116638184,
+          "target_move": 0.0
+        },
+        {
+          "state": 11,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.11870115995407104,
+          "other_rise": 0.0,
+          "target_move": 0.18538905680179596
+        },
+        {
+          "state": 12,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10883086919784546,
+          "other_rise": 0.0,
+          "target_move": 0.18675513565540314
+        },
+        {
+          "state": 13,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.036382436752319336,
+          "target_move": 0.0
+        },
+        {
+          "state": 14,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.09341937303543091,
+          "other_rise": 0.0,
+          "target_move": 0.19068995118141174
+        },
+        {
+          "state": 15,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.08915144205093384,
+          "other_rise": 0.0,
+          "target_move": 0.180524080991745
+        },
+        {
+          "state": 16,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.031567931175231934,
+          "other_rise": 0.0,
+          "target_move": 0.03381934389472008
+        },
+        {
+          "state": 17,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 1.862645149230957e-09
+        },
+        {
+          "state": 18,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 19,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.0914422869682312,
+          "other_rise": 0.0,
+          "target_move": 0.15112696588039398
+        },
+        {
+          "state": 20,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.12694799900054932,
+          "target_move": 0.0
+        },
+        {
+          "state": 21,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.14250630140304565,
+          "other_rise": 0.0,
+          "target_move": 0.19647783041000366
+        },
+        {
+          "state": 22,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10315698385238647,
+          "other_rise": 0.0,
+          "target_move": 0.17472539842128754
+        },
+        {
+          "state": 23,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 24,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.15300387144088745,
+          "other_rise": 0.0,
+          "target_move": 0.21808525919914246
+        },
+        {
+          "state": 25,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13309472799301147,
+          "other_rise": 0.0,
+          "target_move": 0.18402092158794403
+        },
+        {
+          "state": 26,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.13221043348312378,
+          "other_rise": 0.0,
+          "target_move": 0.18911123275756836
+        },
+        {
+          "state": 27,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.011720061302185059,
+          "target_move": 0.0
+        },
+        {
+          "state": 28,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.012064099311828613,
+          "target_move": 0.0
+        },
+        {
+          "state": 29,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.1112866997718811,
+          "other_rise": 0.0,
+          "target_move": 0.1515253335237503
+        },
+        {
+          "state": 30,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.051740407943725586,
+          "target_move": 0.0
+        },
+        {
+          "state": 31,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.15411466360092163,
+          "other_rise": 0.0,
+          "target_move": 0.18191955983638763
+        },
+        {
+          "state": 32,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.08812922239303589,
+          "other_rise": 0.0,
+          "target_move": 0.16130661964416504
+        },
+        {
+          "state": 33,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10855287313461304,
+          "other_rise": 0.0,
+          "target_move": 0.1634337157011032
+        },
+        {
+          "state": 34,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.08131980895996094,
+          "other_rise": 0.0,
+          "target_move": 0.1337835043668747
+        },
+        {
+          "state": 35,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.1314360499382019,
+          "other_rise": 0.0,
+          "target_move": 0.14930503070354462
+        },
+        {
+          "state": 36,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": true,
+          "target_rise": 0.0,
+          "other_rise": 0.12593913078308105,
+          "target_move": 0.0
+        },
+        {
+          "state": 37,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.14056438207626343,
+          "other_rise": 0.0,
+          "target_move": 0.19497552514076233
+        },
+        {
+          "state": 38,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10294383764266968,
+          "other_rise": 0.0,
+          "target_move": 0.16967733204364777
+        },
+        {
+          "state": 39,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.15503472089767456,
+          "other_rise": 0.0,
+          "target_move": 0.20121066272258759
+        },
+        {
+          "state": 40,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0057114362716674805,
+          "target_move": 0.0
+        },
+        {
+          "state": 41,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 42,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.11565178632736206,
+          "other_rise": 0.0,
+          "target_move": 0.19199205935001373
+        },
+        {
+          "state": 43,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.1676439642906189,
+          "other_rise": 0.0,
+          "target_move": 0.20738261938095093
+        },
+        {
+          "state": 44,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.0,
+          "target_move": 0.0
+        },
+        {
+          "state": 45,
+          "success": true,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.11682111024856567,
+          "other_rise": 0.0,
+          "target_move": 0.19279173016548157
+        },
+        {
+          "state": 46,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.010605216026306152,
+          "target_move": 0.0
+        },
+        {
+          "state": 47,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.006404995918273926,
+          "target_move": 0.0
+        },
+        {
+          "state": 48,
+          "success": false,
+          "target_stationary": false,
+          "stationary_other_raised": false,
+          "target_rise": 0.10920077562332153,
+          "other_rise": 0.0,
+          "target_move": 0.13482849299907684
+        },
+        {
+          "state": 49,
+          "success": false,
+          "target_stationary": true,
+          "stationary_other_raised": false,
+          "target_rise": 0.0,
+          "other_rise": 0.020703673362731934,
+          "target_move": 0.0
+        }
+      ]
+    },
+    "clock450_vs_clock270": {
+      "gained": {
+        "states": [
+          16,
+          17,
+          27
+        ],
+        "old_target_stationary": 1,
+        "new_target_stationary": 0,
+        "old_stationary_other_raised": 0,
+        "new_stationary_other_raised": 0
+      },
+      "lost": {
+        "states": [
+          2,
+          7,
+          20,
+          22,
+          26,
+          29,
+          48
+        ],
+        "old_target_stationary": 0,
+        "new_target_stationary": 7,
+        "old_stationary_other_raised": 0,
+        "new_stationary_other_raised": 1
+      }
+    }
+  },
+  "prior_gains_retained_at450": {
+    "all": {
+      "gained_at270": 35,
+      "retained_at450": 26
+    },
+    "by_task": {
+      "3": {
+        "gained_at270": 14,
+        "retained_at450": 9
+      },
+      "6": {
+        "gained_at270": 1,
+        "retained_at450": 0
+      },
+      "11": {
+        "gained_at270": 12,
+        "retained_at450": 11
+      },
+      "16": {
+        "gained_at270": 0,
+        "retained_at450": 0
+      },
+      "23": {
+        "gained_at270": 0,
+        "retained_at450": 0
+      },
+      "26": {
+        "gained_at270": 4,
+        "retained_at450": 4
+      },
+      "31": {
+        "gained_at270": 4,
+        "retained_at450": 2
+      },
+      "39": {
+        "gained_at270": 0,
+        "retained_at450": 0
+      }
+    }
+  },
+  "scope": "Scientific CPU re-analysis of completed raw rows and existing traces; no engineering revalidation, new model forward, training, environment or probe. Motion thresholds reuse historical 1cm displacement and 3cm rise. Exact eight-task bootstrap distribution; no independent training-seed uncertainty."
+}

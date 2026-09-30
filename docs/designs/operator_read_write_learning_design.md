@@ -2075,3 +2075,115 @@ launch前核双节点与strg01 data1独立quota、现有用量和增量峰值，
 保留517训练/360读取的旧原件身份，新训练与读取Git分别如实记录，不原地修改旧树或把旧270来源改写成新Git。
 新接口若工程失败，可在原科学范围/预算内修复、检查、推送、新冻结后继续；科学语义/未知原因/预算越界由main裁决。
 整批完成或实质阻碍时一次Steer主讨论，idle则Queue；不逐阶段自通知、不定时心跳，main不陪跑监看。
+
+## 33. 成熟T的有限学习限制：共享、私有映射与直接B的独立episode/闭环诊断（2026-09-30）
+
+Owner最新授权：继续全面分析并可做必要分析实验，目标是找到限制当前架构性能的主要原因及理论/实践修正；
+论证完成后暂停并讨论从昨夜到现在的推进。§32已结束123/400，clock-only不再续训；机制§75保存完整裁决。
+本节是新诊断合同，不恢复§30已撤回的16次固定查询批次；其0更新事实保留。完成本节后不自动开启新架构/正式重训。
+
+### 33.1 要改变的科学判断
+
+现有T2340确有视频条件能力和训练侧正例，不能将小闭式末层拟合外推失败当成完整Writer不可学。
+clock的真实信用改变没有修复绝对能力后，需区分：
+
+1. 同一合法特征/写入图能产生跨状态修正，但任务共享妨碍在有限学习中同时形成这些作用；
+2. 解除task共享后，当前视频到矩阵的参数化仍难以形成同A空间内直接B可取得的有效作用；
+3. 连直接B也主要拟合监督，缺少独立状态和闭环收益，此时不能先把主要原因归到条件生成器。
+
+三项可能并存。旧C600私有Writer16/32对自由AB14/32、任务隔离4/16对正常7/16反对预设私有化/扩参必胜；
+T的实际A绑定与β共同读取是新的已学对象，不使上述反例失效。本诊断不产生task-ID部署候选或task-local FT成绩。
+公共β/A固定，是隔离当前特征—Value映射的有意条件；本批阴性不否定允许公共坐标共同学习的完整新架构。
+
+### 33.2 父模型、信息墙与独立样本
+
+唯一父模型为原T2340（训练来源e2afbfd7，按§26已有父来源定位真实checkpoint）；不使用C270/C450或MT作初始化。
+只用已登记train0/12/20/32及原两teacher：0为40/11，12为25/14，20为38/42，32为17/43。
+source、公共A/B0、normalization、图文prefix及β-native读取全部冻结；部署条件仍只有exact语言和完整有序双RGB。
+无Validation/Test动作或reward，无teacher action/state/pose作为Writer输入。
+
+沿§26已固定的两个episode集合：每task28条A episode用于本次更新，剩余20条B episode只作末点评估，另两条为teacher。
+三集合互不相交。B没有参加本次新更新，但已训练父T本来使用过这些train数据；不能称原T从未见过或官方held。
+本批不再只反复用旧28个固定frame：每步s=0..63，每task按A demo升序，从每条A episode的[0,L−2]均匀取一个新frame，
+`numpy.random.default_rng(numpy.random.SeedSequence([20260930,33,task,s]))`，依demo顺序调用integers。
+各臂/同task两teacher共用这些28个query，仍严格跨teacher episode；保留原HDF5 offset1、full50与repeat-padding合同。
+在首个梯度前保存完整64步query manifest；不根据loss/成功重新抽样。frame允许偶然重复，不声称全部query独一无二。
+FM沿canonical Gaussian/Beta(1.5,1)，visit=330000+s、optimization_seed=7，task/demo/frame等既有seed参数保留；
+若已有seed API无法直接表达，执行者须给出精确定义并在运行前登记等价的固定共同流，不自行改变三臂配对。
+
+每条件64×28=1792次query；八条件每臂14336，总三臂43008。每task两teacher共用query，不当作两个独立task。
+旧A28/visit1000固定风险只做前后拟合读回；旧B20的demo/frame、noise/valid保持，末点不为挑选而改样本。
+
+### 33.3 三臂和相同曝光
+
+先在同一父β下为八条件捕获全部38-target X与完整H；因β/A固定，本批可RAM缓存并在全部更新复用。
+现有仅三site捕获不能冒充完整输入。不把native缓存跨越任何公共参数更新，teacher labels不进入缓存/生成器。
+
+- **S，shared Writer**：一份原T的P/C/D/O，八条件等权更新；最终仍为原完整Writer生成的B0+M。
+- **P，task-private Writer**：四份相同初值P/C/D/O，每份只由其task两teacher等权更新；其它计算、固定native和A不变。
+  task路由仅用于本诊断隔离，不能当成合法新任务部署方法。
+- **D，condition-private direct B**：每teacher条件一份38-target FP32 additive δB，初始全零；
+  `B_final=B_parent(video)+δB`，A仍为同一父A；各条件只用自身配对query更新。最终仍只装入一套38-target LoRA。
+  该臂同时解除生成器参数化及teacher共享，不能把P/D差值唯一归到某层宽度、特征缺失或梯度冲突。
+
+三臂初始完整策略相同；不先改递归、删分支、替换native或重置父Writer。每份参数均64次更新、相同每条件数据曝光。
+S为64次optimizer调用；P四份合计256；D八份合计512。分别记录，不能按调用数冒充曝光公平。
+统一fresh AdamW lr1e−4、betas(.9,.95)、eps1e−8、weight_decay1e−4、clip1，无warmup/scheduler及任何参数扫描。
+S每步均值八条件；P各副本均值两条件；D各副本一个条件，沿真实损失求导并记录范数/clip。
+相同Adam设置不等于相同函数步幅或隐式正则，δB权重衰减与φ衰减不同；D不是理论能力上界或优化充分性证明。
+只使用普通全50 FM，无新aux、前5权重、RL、蒸馏、保持正则或反事实视频标签。
+
+仅64为结果节点；16/32可存恢复状态，不评B、不跑环境、不选择点。日志记录实际训练loss/梯度/输出位移/资源。
+保存唯一末点必要权重、优化/RNG与样本来源；本诊断资产不登记为原T正式ECP，也不续接其旧optimizer/scheduler。
+非finite/源权重变化/信息墙或比较配对失效停止相关计算并回报；工程故障可在本预算修复，不能按科学结果改设置。
+
+### 33.4 实际消费者与128条有限面板
+
+末点每臂八条件在原B20做完整官方10步生成，保存逐query预测/target引用、first5/full50/valid-future、motion6/gripper1及符号。
+原matched_parent10的T2340 B20及原MT结果直接复用；正常batch/低位数值差异如实登记，不做逐tensor数值对齐。
+各臂旧固定A28/visit1000只做前后FM，用于区分未学动、训练拟合与B转移；不将训练FM代替能力。
+
+新增真实train闭环面板：原T2340父、S64、P64、D64四臂，每臂四task×两固定teacher×init0..3，共32条、合计128条。
+同一task/init在两个teacher条件重复，四臂共享完全相同scene、init、env/policy RNG；不把32条称作32独立初态。
+优先复用原seen-task scene资产中这些task/init的完整现场状态；若没有可用对应，则先一次冻结所需16个scene，四臂共同使用。
+保持official preprocessing、双RGB旋转、8state/7action、10flow/执行前5、dummy10及suite horizon/成功终止。
+每teacher复用四个init：这是显式两视频有限池诊断，不声称K1整轮无放回，不使用它选择official400模型。
+每条件独立生成一套完整LoRA；不平均teacher LoRA或挑视频。D的teacher标签仅作其原条件身份，不进入部署Writer。
+保存全部continuous control trace、goal谓词、compact消费者记录；每task固定第一teacher/init0可保存full，共每臂4条。
+scene/标量/样本来源足够复核即可，不新增图像大缓存或全树checksum。无需重评source/MT或读新held/Test/视频controls。
+
+分别报告每task、每teacher、每state及R/G/L/churn，相邻/不同teacher的一致和反例均保留。
+四task、每task四init的面板只作机制诊断；不能以少量成功差声称正式泛化、稳定性或架构资格。
+
+### 33.5 可失败预测及后续取舍
+
+- S与P都获得独立B及闭环收益：降低“必须换读取/写入才能有修正”的优先级，说明现有图至少在本范围可学；
+  仍可能来自四task特化，不能称已解决36task共同保持或未见task泛化。
+- P明显优于S，且改善跨两teacher、独立B和实际闭环：提高共享条件映射/容量分配限制的支持度；
+  不能仅由此称原梯度普遍冲突，也不直接部署私有字典或MoE。
+- D取得实际控制改善而P未取得：提高当前特征到生成矩阵的学习约束优先级；
+  保留优化步幅、teacher共享和映射自由度的竞争解释，不把一项局部差额自动定位为缺少某个模块。
+- 三臂A均拟合但B/闭环没有一致收益：不以“再加参数/回读/多保留几帧即可修复”继续投入；
+  需将监督状态分布、固定公共坐标与函数外推联系一起解释，不能把它冒称所有LoRA都无可行解。
+- A也没有有意义改善、或只有零散正例：本批分辨力不足，如实报告，不加步数/LR/seed救分。
+
+效果需在原成功保持和新增能力上共同解释；B动作MSE和真实闭环可以不一致，出现时以实际行为判断能力。
+不从负例机械整版换架构，也不把局部正例当作允许正式重训的自动Gate。完成后main整合理论和实际证据，
+按Owner要求停下来讨论昨夜以来的完整推进；没有自动后继实验。
+
+### 33.6 执行、预算和职责
+
+唯一执行者`01a0f018-69af-7b00-b614-7e117540051b`；root
+`/data1/user/ymdai/ember_runs/operator_learning_limit_diagnosis_20260930`。
+增量硬限**4GPUh、16GiB峰值新增存储**，包括原生读取、全部学习、物化、128闭环、B生成、加载/失败/恢复。
+根据原28-query FM约2.5秒与固定native可缓存，三臂FM主体约1.1GPUh，连Writer重放、读回、闭环和加载粗估2–3GPUh。
+实施及必要检查约45–60分钟，三臂并行计算约30–60分钟，整批预期1.5–2小时；是粗估而非实测承诺。
+出现预计超2小时或计算预算达3GPUh仍无法完成时，一次回报实质原因/剩余量；4GPUh为硬限，不静默删臂/减样本或超支。
+按仓库双节点live准入和全局资源上限选择吞吐，优先GPU02；三个独立臂可并行，物理卡数不是新的科学超参数或永久限制。
+创建root/冻结树/缓存前由执行者核strg01 data1 quota、共享容量及峰值，所有新增data1，旧资产只读复用。
+
+实验session自行完成实现、实际消费者检查、恢复/运行排障、代码Git集成/push及clean detached冻结交付。
+复用已有Runtime/native/FM/VJP/official动态队列和已定义诊断消费者，用一次性有明确生命周期的脚本承接；
+不扩展为平行正式trainer，不要求main源码复审/重复测试。科学语义/原件有效性/预算边界才交main裁决。
+源码集成与main科研文档写入按窗口串行；原T/C、旧§30停止记录与本批失败原件均保留，不热改旧冻结树。
+长任务直接等待退出事件，禁止定时心跳/自Queue/逐阶段回报；完成整批或实质科学/预算阻碍时一次Steer主讨论。

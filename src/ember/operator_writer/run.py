@@ -48,7 +48,7 @@ from . import change_clock, joint_training
 from .specification import (
     REPO, SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
     CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH, CONTINUATION1800_SPEC_PATH, PILOT_SPEC_PATH,
-    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, PILOT_ROOT,
+    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, PILOT_ROOT,
     CONTINUATION2340_ROOT, CONTINUATION2790_ROOT, CONTINUATION900_ROOT, CONTINUATION1350_ROOT,
     SEALED_ROOT, SEALED_SPEC_PATH, SCHEMA, STAGE,
     OPERATOR_CONTRACT, OPTIMIZATION_CONTRACT, EVENT_CONTRACT, EXECUTION_CONTRACT,
@@ -121,7 +121,7 @@ def complete_checkpoint(path: Path) -> bool:
 
 def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     root = Path(spec["run_root"])
-    if spec.get("task") == joint_training.TASK:
+    if joint_training.registered(spec):
         joint_training.validate_attempt(spec, args, contract, output)
         return
     event_schema = spec.get("events", {}).get("schema_version")
@@ -305,7 +305,7 @@ class Runtime:
                 for value in x.values():
                     if value.requires_grad:
                         value.retain_grad()
-            state = self.writer(x, h)
+            state = self.writer(x, h, frame_indices=condition[1])
         validate_lora_state(state, self.lora)
         return state, ({"x": x, "h": h} if retain_native else None)
 
@@ -407,7 +407,7 @@ def prepare_train(spec: dict, args) -> Session:
                 "trainable_names": [name for name, p in runtime.writer.named_parameters() if p.requires_grad],
                 "source_trainable": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
                 "information_wall": "teacher exact language + dual RGB only; independent query own RGB/state/action FM"}
-    if spec["task"] == joint_training.TASK:
+    if joint_training.registered(spec):
         contract.update(loss_variant=joint_training.LOSS, joint=spec["joint"])
     if continuation:
         contract["continuation"] = spec["continuation"]
@@ -448,7 +448,7 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
             checkpoint=checkpoint, stage=STAGE, context=session.context,
             model=session.runtime.writer, optimizer=session.optimizer,
             scheduler=session.scheduler, run_contract_schema=SCHEMA,
-            restored_state=restored, allow_world_size_change=(continuation or session.mode in (change_clock.MODE, joint_training.MODE)))
+            restored_state=restored, allow_world_size_change=(continuation or session.mode in (change_clock.MODE, *joint_training.MODES)))
         migration = session.data.restore(restored["sampler_state"],
                                          migrate_sealed_270=(clock_continuation or updates_target == CONTINUATION_UPDATES) and updates == 270,
                                          migrate_continuation_900=updates_target == CONTINUATION1350_UPDATES and updates == 900,
@@ -469,7 +469,7 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
             raise ValueError("ECP metrics history lacks a complete consecutive same-arm prefix")
         if session.context.is_main:
             (session.output / "metrics.jsonl").write_text("\n".join(prefix) + "\n")
-            if continuation or session.mode in (change_clock.MODE, joint_training.MODE):
+            if continuation or session.mode in (change_clock.MODE, *joint_training.MODES):
                 parent_world = int(read_json(checkpoint / "checkpoint_manifest.json")["world_size"])
                 write_json_atomic(session.output / "resume_provenance.json", {
                     "checkpoint": str(checkpoint), "parent_git": read_json(
@@ -492,7 +492,7 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
 
 def training_state(session: Session, updates: int) -> dict:
     state = {"updates": updates, "mode": session.mode}
-    if session.mode == joint_training.MODE:
+    if session.mode in joint_training.MODES:
         state["loss_variant"] = joint_training.LOSS
     elif session.data.updates in (CONTINUATION2340_UPDATES, CONTINUATION2790_UPDATES):
         state["loss_variant"] = "full"
@@ -566,7 +566,7 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
 
 
 def validate_train_request(spec: dict, args) -> None:
-    if spec["task"] == joint_training.TASK:
+    if joint_training.registered(spec):
         joint_training.validate_request(spec, args)
         return
     if spec["task"] in (change_clock.TASK, change_clock.CONTINUATION_TASK):
@@ -678,7 +678,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("audit", "train"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--mode", choices=("T", "U", change_clock.MODE, joint_training.MODE))
+    parser.add_argument("--mode", choices=("T", "U", change_clock.MODE, *joint_training.MODES))
     parser.add_argument("--pilot-arm", choices=tuple(PILOT_ARMS))
     parser.add_argument("--attempt", type=str)
     parser.add_argument("--resume", type=Path)

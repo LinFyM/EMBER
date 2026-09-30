@@ -21,6 +21,7 @@ PILOT_SPEC_PATH = REPO / "configs/operator_read_write_v1/public_function_pilot_s
 CONTINUATION2340_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation2340_spec.json"
 CONTINUATION2790_SPEC_PATH = REPO / "configs/operator_read_write_v1/continuation2790_spec.json"
 JOINT_SPEC_PATH = REPO / "configs/operator_read_write_v1" / joint_training.SPEC_NAME
+CONTEXT_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.CONTEXT_SPEC_NAME)
 PILOT_ROOT = Path("/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260929")
 CONTINUATION2340_ROOT = Path(
     "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340")
@@ -122,6 +123,11 @@ PILOT_CONTRACT = {"arms": list(PILOT_ARMS), "loss_variants": PILOT_ARMS,
 
 def specification(path: Path = SPEC_PATH) -> dict:
     path = path.resolve()
+    if path == CONTEXT_SPEC_PATH:
+        spec = read_json(path)
+        if spec != joint_training.expected_context_spec(specification(SPEC_PATH), CONTINUATION_EVENTS):
+            raise ValueError("context Value fresh450 contract changed")
+        return spec
     if path == JOINT_SPEC_PATH:
         spec = read_json(path)
         if spec != joint_training.expected_spec(specification(SPEC_PATH), CONTINUATION_EVENTS):
@@ -271,7 +277,7 @@ def specification_path(spec: dict) -> Path:
     """The current consumer spec path; actual training provenance stays in its run."""
     paths = (SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
              CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH, CONTINUATION1800_SPEC_PATH,
-             PILOT_SPEC_PATH, CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH)
+             PILOT_SPEC_PATH, CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH)
     for path in paths:
         if read_json(path)["run_root"] == spec["run_root"]:
             return path

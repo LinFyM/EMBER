@@ -110,3 +110,34 @@ def test_full400_actual_capture_preparation_with_scope_fixture(tmp_path, monkeyp
     assert stage["full_conditions_only"] is False and capture["passive_trace"]
     with pytest.raises(Pi05EvaluationError, match="scope changed"):
         _registered_trajectory_capture(args, tasks, output.with_name("correct80"), None, readout.REPO)
+
+
+@pytest.mark.parametrize("mode", ["context", "context_public"])
+def test_context_actual_capture_entry_scope(tmp_path, monkeypatch, mode):
+    """Real prepare dispatch; scope fixture is not an actual future candidate bank."""
+    from ember.operator_writer import joint_training
+
+    monkeypatch.setattr(joint_training, "CONTEXT_ROOT", tmp_path)
+    public = mode in readout.PUBLIC_MODES
+    capture_path = readout.capture_path(mode)
+    registered = read_json(capture_path)
+    states = readout.scope.STATES if public else tuple(range(50))
+    tasks = [SimpleNamespace(suite=r["suite"], task_id=r["task_id"], init_state_ids=states)
+             for r in registered["full_conditions"]]
+    path = readout.bank_path(mode)
+    path.parent.mkdir(parents=True)
+    write_json_atomic(path, {"kind": bank.KIND, "mode": mode, "joint_public_study": True})
+    args = SimpleNamespace(role=readout.scope.ROLE if public else "validation", mode="formal",
+                           state_count=4 if public else 50, init_state_ids=states if public else None,
+                           static_task_lora_manifest=path, trajectory_capture_selection=capture_path)
+    panel = "public144" if public else "correct400"
+    capture, stage = _registered_trajectory_capture(
+        args, tasks, tmp_path / mode / "evaluation" / panel, None, readout.REPO)
+    assert len(capture["full_conditions"]) == (36 if public else 8)
+    assert capture["passive_trace"] and not stage["full_conditions_only"]
+    assert registered["study_id"] == joint_training.CONTEXT_TASK
+    if public:
+        shared = object()
+        assert bank.FrozenOperatorAdapter._state(SimpleNamespace(bank={"mode": mode}, common=shared), "paired_metadata") is shared
+    with pytest.raises(Pi05EvaluationError, match="scope changed"):
+        _registered_trajectory_capture(args, tasks, tmp_path / mode / "evaluation/incorrect", None, readout.REPO)

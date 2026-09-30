@@ -1,4 +1,4 @@
-"""Bounded fresh full/public learning contract on the original T graph."""
+"""Registered fresh full/public learning studies on the canonical operator trainer."""
 from __future__ import annotations
 
 import json
@@ -21,6 +21,47 @@ JOINT = {"loss_variant": LOSS, "full_loss_coefficient": 1.0,
          "query_reuse": "same_112_query_action_tau_noise", "internal_mode": "T",
          "initialization": "fresh_original_identity_and_module_seeds"}
 
+CONTEXT_TASK = "operator_context_value_fresh_20261001"
+CONTEXT_ROOT = Path("/data1/user/ymdai/ember_runs") / CONTEXT_TASK
+CONTEXT_MODE = "context"
+CONTEXT_SPEC_NAME = "context_value_fresh_spec.json"
+MODES = (MODE, CONTEXT_MODE)
+CONTEXT = {
+    "normalization": "parameterless_RMS1024_eps1e-6",
+    "shared_projection": [1024, 256], "qkv_width": 256, "heads": 4, "head_width": 64,
+    "rope": {"base": 10000, "pairing": "adjacent_even_odd", "position": "real_frame_index/5",
+             "consumers": ["Q", "K"]},
+    "attention": "full_real_frames_bidirectional_per_horizon_softmax",
+    "output_projection": [256, 256], "target_U": [256, 256],
+    "gate": "GELU(PK+C_hbar+U_context)*D_delta_hbar",
+    "last_frame_context": True, "write_count": "N-1", "bias": False,
+    "dropout": 0.0, "ffn": False, "extra_block": False, "cross_horizon_average": False,
+    "initialization": "old_modules_first_then_independent_CPU_seed7_Linear_defaults_U_zero",
+    "added_trainable_parameters": 3014656, "native_credit_detached": False,
+}
+
+
+def registered(spec: dict) -> bool:
+    return spec.get("task") in (TASK, CONTEXT_TASK)
+
+
+def settings(spec: dict) -> tuple[Path, str, dict]:
+    if spec.get("task") == TASK:
+        return ROOT, MODE, JOINT
+    if spec.get("task") == CONTEXT_TASK:
+        return CONTEXT_ROOT, CONTEXT_MODE, {**JOINT, "internal_mode": CONTEXT_MODE}
+    raise ValueError("unregistered fresh full/public study")
+
+
+def expected_context_spec(base: dict, events: dict) -> dict:
+    spec = expected_spec(base, events)
+    return {**spec, "task": CONTEXT_TASK,
+            "design": "docs/designs/operator_read_write_learning_design.md#36",
+            "run_root": str(CONTEXT_ROOT),
+            "execution": {**spec["execution"], "modes": [CONTEXT_MODE]},
+            "joint": {**JOINT, "internal_mode": CONTEXT_MODE},
+            "operator": {**spec["operator"], "context_value": CONTEXT}}
+
 
 def expected_spec(base: dict, events: dict) -> dict:
     execution = {**base["execution"], "modes": [MODE], "world_sizes": [1, 2, 3, 4],
@@ -36,7 +77,8 @@ def expected_spec(base: dict, events: dict) -> dict:
 
 
 def validate_request(spec: dict, args) -> None:
-    if (args.mode != MODE or spec.get("joint") != JOINT
+    _, mode, joint = settings(spec)
+    if (args.mode != mode or spec.get("joint") != joint
             or not args.attempt or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
             or getattr(args, "pilot_arm", None) is not None
             or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)
@@ -48,9 +90,10 @@ def validate_request(spec: dict, args) -> None:
 def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     from .run import complete_checkpoint, resume_contract_compatible
 
-    attempts = ROOT / MODE / "train/attempts"
+    root, mode, joint = settings(spec)
+    attempts = root / mode / "train/attempts"
     if (output.parent.resolve() != attempts.resolve()
-            or contract.get("loss_variant") != LOSS or contract.get("joint") != JOINT
+            or contract.get("loss_variant") != LOSS or contract.get("joint") != joint
             or (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists()):
         raise ValueError("joint450 attempt output or loss identity changed")
     if args.resume is None:
@@ -75,9 +118,10 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
     from .run import SCHEMA, STAGE, complete_checkpoint, frozen_git
 
     frozen_git()
+    root, mode, joint = settings(spec)
     checkpoint = checkpoint.resolve()
     output = checkpoint.parent.parent
-    if (output.parent.resolve() != (ROOT / MODE / "train/attempts").resolve()
+    if (output.parent.resolve() != (root / mode / "train/attempts").resolve()
             or checkpoint.name != "macro_00000450" or not complete_checkpoint(checkpoint)):
         raise ValueError("joint readout requires its complete owned 450 ECP")
     run = read_json(output / "run_contract.json")
@@ -101,7 +145,7 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
                         "teacher_rounds": [[20260928, 1, "task"], [20260928, 1, "task", 1]],
                         "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
     facts = ((run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE),
-             (run.get("mode"), MODE), (run.get("joint"), JOINT),
+             (run.get("mode"), mode), (run.get("joint"), joint),
              (run.get("loss_variant"), LOSS), (run.get("operator"), spec["operator"]),
              (run.get("optimizer"), spec["optimization"]), (run.get("events"), spec["events"]),
              (run.get("source_trainable"), 0), (run.get("sampler"), expected_sampler),
@@ -110,21 +154,21 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
              (trainer.get("metrics_rows"), 450), (trainer.get("scheduler", {}).get("last_epoch"), 450),
              (bool(trainer.get("optimizer", {}).get("param_groups")), True),
              (trainer.get("scaler"), None),
-             (trainer.get("training_state"), {"updates": 450, "mode": MODE, "loss_variant": LOSS}),
+             (trainer.get("training_state"), {"updates": 450, "mode": mode, "loss_variant": LOSS}),
              (trainer.get("sampler_state"), {**expected_sampler, "next_step": 450}))
     metrics = [json.loads(line) for line in (output / "metrics.jsonl").read_text().splitlines()]
     completion = read_json(output / "completion.json")
-    if (any(actual != wanted for actual, wanted in facts) or not valid_metrics(metrics)
+    if (any(actual != wanted for actual, wanted in facts) or not valid_metrics(metrics, mode=mode)
             or completion.get("updates") != 450 or completion.get("checkpoint") != str(checkpoint)):
         raise ValueError("joint source loss/ECP/optimizer/sampler/completion changed")
     return run
 
 
-def valid_metrics(metrics: list) -> bool:
+def valid_metrics(metrics: list, *, mode: str = MODE) -> bool:
     if len(metrics) != 450 or [row["update"] for row in metrics] != list(range(1, 451)):
         return False
     for row in metrics:
-        if (row.get("mode") != MODE or row.get("loss_variant") != LOSS
+        if (row.get("mode") != mode or row.get("loss_variant") != LOSS
                 or row.get("queries") != 112 or len(row.get("jobs", ())) != 4):
             return False
         if any(job.get("loss_variant") != LOSS or not job.get("public_query_reuse")

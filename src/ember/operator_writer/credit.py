@@ -14,7 +14,10 @@ def gradient_groups(writer) -> dict[str, float]:
         values = [p.grad.detach().float().norm() for p in parameters if p.grad is not None]
         return float(torch.stack(values).norm()) if values else 0.0
 
-    return {"public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
+    context = ({"value_context": norm(writer.value_context.parameters()),
+                "u": norm(write.u.weight for write in writer.writes)}
+               if writer.value_context is not None else {})
+    return {**context, "public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
                              if name.endswith(".lora_A.default.weight")),
             "public_B0": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
                               if name.endswith(".lora_B.default.weight")),

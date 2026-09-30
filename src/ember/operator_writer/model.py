@@ -10,6 +10,7 @@ from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, validate_lora_state
 from ember.pi05_lora import Pi05LoRAContract
 from ember.writer.model import DirectLoRAParameters
 from . import change_clock as clock_contract
+from .value_context import ValueContext
 
 
 class TargetWrite(nn.Module):
@@ -23,10 +24,14 @@ class TargetWrite(nn.Module):
         self.d = nn.Linear(1024, 256, bias=False)
         self.o = nn.Linear(256, out_width, bias=False)
         nn.init.zeros_(self.o.weight)
+        self.u: nn.Linear | None = None
 
-    def forward(self, address: torch.Tensor, x: torch.Tensor, h: torch.Tensor) -> torch.Tensor:
+    def forward(self, address: torch.Tensor, x: torch.Tensor, h: torch.Tensor,
+                context: torch.Tensor | None = None) -> torch.Tensor:
         if x.ndim != 3 or h.shape != (x.shape[0], 50, 1024) or x.shape[-1] != address.shape[1]:
             raise ValueError("native target input or full suffix changed")
+        if (self.u is None) != (context is None) or context is not None and context.shape != (len(x), 50, 256):
+            raise ValueError("target Value context or its projection is incomplete")
         with torch.autocast(device_type=x.device.type, enabled=False):
             x, h, address = x.float(), h.float(), address.float()
             normalized = h * torch.rsqrt(h.square().mean(dim=-1, keepdim=True) + 1e-6)
@@ -34,7 +39,10 @@ class TargetWrite(nn.Module):
             for t in range(len(x) - 1):
                 key = F.normalize(F.linear(x[t], address), dim=-1, eps=1e-6).T
                 change = normalized[t + 1] - normalized[t]
-                value = self.o(F.gelu(self.p(key.T) + self.c(normalized[t])) * self.d(change)).T
+                gate = self.p(key.T) + self.c(normalized[t])
+                if context is not None:
+                    gate = gate + self.u(context[t].float())
+                value = self.o(F.gelu(gate) * self.d(change)).T
                 erase = memory @ key
                 if self.change_clock:
                     d = torch.linalg.vector_norm(change, dim=-1) / (1024 ** 0.5)
@@ -48,7 +56,7 @@ class OperatorReadWrite(nn.Module):
 
     def __init__(self, contract: Pi05LoRAContract, template: dict[str, torch.Tensor], mode: str) -> None:
         super().__init__()
-        if mode not in {"T", "U", clock_contract.MODE} or len(contract.targets) != 38 or contract.rank != 128:
+        if mode not in {"T", "U", "context", clock_contract.MODE} or len(contract.targets) != 38 or contract.rank != 128:
             raise ValueError("bounded operator mode or complete rank changed")
         validate_lora_state(template, contract)
         self.mode = mode
@@ -65,20 +73,31 @@ class OperatorReadWrite(nn.Module):
             for target in contract.targets:
                 self.writes.append(TargetWrite(target.in_features, target.out_features,
                                                change_clock=mode == clock_contract.MODE))
+        self.value_context: ValueContext | None = None
+        if mode == "context":
+            # Complete the old P/C/D/O sequence before an independent new RNG scope.
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(7)
+                self.value_context = ValueContext()
+                for write in self.writes:
+                    write.u = nn.Linear(256, 256, bias=False, device="cpu")
+                    nn.init.zeros_(write.u.weight)
         self.register_buffer("probe", torch.randn(50, 32, generator=torch.Generator(device="cpu").manual_seed(1729)),
                              persistent=True)
 
     def public_state(self) -> dict[str, torch.Tensor]:
         return self.common()
 
-    def forward(self, native_inputs: dict[str, torch.Tensor], h: torch.Tensor) -> dict[str, torch.Tensor]:
+    def forward(self, native_inputs: dict[str, torch.Tensor], h: torch.Tensor,
+                frame_indices=None) -> dict[str, torch.Tensor]:
         common = self.public_state()
         if set(native_inputs) != set(self.names):
             raise ValueError("native teaching lost a complete LoRA target")
+        context = self.value_context(h, frame_indices) if self.value_context is not None else None
         result = dict(common)
         for index, name in enumerate(self.names):
             key = (self.separate_keys[index] if self.separate_keys is not None
                    else common[name + LORA_A_SUFFIX])
-            written = self.writes[index](key, native_inputs[name], h)
+            written = self.writes[index](key, native_inputs[name], h, context)
             result[name + LORA_B_SUFFIX] = common[name + LORA_B_SUFFIX] + written
         return result

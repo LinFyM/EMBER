@@ -1,4 +1,4 @@
-"""Design §35 readouts on the canonical materializer and PI05 evaluator."""
+"""Registered fresh full/public study readouts on the canonical materializer and PI05 evaluator."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,8 +18,8 @@ from .public_beta import factor_map, public_state
 REPO = Path(__file__).resolve().parents[3]
 TASK = "operator_joint_public_fresh_20260930"
 ROOT = Path("/data1/user/ymdai/ember_runs") / TASK
-MODES = ("joint", "joint_public", "T450_public")
-PUBLIC_MODES = MODES[1:]
+MODES = ("joint", "joint_public", "T450_public", "context", "context_public")
+PUBLIC_MODES = ("joint_public", "T450_public", "context_public")
 OLD_CHECKPOINT = Path("/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928"
                       "/continuation900/T/train/attempts/continuation/checkpoints/macro_00000450")
 PUBLIC_SCENES = Path(scope.registration()["run_root"]) / "attempts/scene_canonical144/scenes"
@@ -29,10 +29,29 @@ TRAIN_TASKS = (0, 12, 20, 32)
 TEACHERS = {0: (40, 11), 12: (25, 14), 20: (38, 42), 32: (17, 43)}
 
 
+def study_root(mode: str) -> Path:
+    from .joint_training import CONTEXT_ROOT
+
+    if mode not in MODES:
+        raise ValueError("unregistered fresh study readout mode")
+    return CONTEXT_ROOT if mode in ("context", "context_public") else ROOT
+
+
+def study_id(mode: str) -> str:
+    from .joint_training import CONTEXT_TASK
+
+    return CONTEXT_TASK if mode in ("context", "context_public") else TASK
+
+
+def capture_path(mode: str) -> Path:
+    prefix = "context" if mode in ("context", "context_public") else "joint"
+    return REPO / "configs/operator_read_write_v1" / f"{prefix}_{'public' if mode in PUBLIC_MODES else 'official'}_capture.json"
+
+
 def bank_path(mode: str) -> Path:
     if mode not in MODES:
         raise ValueError("unregistered joint readout mode")
-    return ROOT / mode / "banks/450/manifest.json"
+    return study_root(mode) / mode / "banks/450/manifest.json"
 
 
 def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
@@ -50,7 +69,7 @@ def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
         spec = read_json(path)
         training = bank.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
     else:
-        path = run.JOINT_SPEC_PATH
+        path = run.CONTEXT_SPEC_PATH if mode in ("context", "context_public") else run.JOINT_SPEC_PATH
         spec = run.specification(path)
         training = joint_training.inspect_source(spec, checkpoint)
     return spec, training, path
@@ -123,7 +142,7 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
         bank._factor_header(shared_path, selected_shapes, metadata=metadata)
     else:
         save_file(state, str(shared_path), metadata=metadata)
-    if mode == "joint":
+    if mode not in PUBLIC_MODES:
         compile_conditions(asset_root, spec, mode, checkpoint, training["source"], path.parent,
                            conditions, {key: shape for key, shape in shapes.items()
                                         if not key.endswith(LORA_A_SUFFIX)},
@@ -208,7 +227,7 @@ def _inspect_conditions(bank: Mapping, conditions: list, path: Path, shapes: Map
                 or not 0 < row["sampled_frames"] <= row["raw_frames"]):
             raise ValueError("joint full teacher factor provenance changed")
         owner._factor_header(factor, b_shapes, metadata={"schema_version": owner.BANK_SCHEMA,
-                            "condition_id": wanted["condition_id"], "mode": "joint"})
+                            "condition_id": wanted["condition_id"], "mode": bank["mode"]})
 
 
 def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
@@ -216,12 +235,12 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
     mode = bank["mode"]
     if mode not in MODES:
         raise ValueError("unregistered joint capture mode")
-    expected_bank = ROOT / mode / "banks/450/manifest.json"
+    expected_bank = study_root(mode) / mode / "banks/450/manifest.json"
     public = mode in PUBLIC_MODES
-    expected_output = ROOT / mode / "evaluation" / ("public144" if public else "correct400")
+    expected_output = study_root(mode) / mode / "evaluation" / ("public144" if public else "correct400")
     states = scope.STATES if public else tuple(range(50))
     full_state = 32 if public else 0
-    capture = REPO / "configs/operator_read_write_v1" / f"joint_{'public' if public else 'official'}_capture.json"
+    capture = capture_path(mode)
     registered = read_json(capture)
     full = [{"suite": row.suite, "task_id": row.task_id, "init_state_id": full_state} for row in tasks]
     if (bank.get("joint_public_study") is not True or bank_path.resolve() != expected_bank.resolve()
@@ -229,6 +248,6 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
             or any(tuple(row.init_state_ids) != states for row in tasks)
             or output_dir is not None and output_dir.resolve() != expected_output.resolve()):
         raise ValueError("joint capture task/state/output scope changed")
-    return dict(full=full, capture=capture, study=TASK, output=expected_output,
+    return dict(full=full, capture=capture, study=study_id(mode), output=expected_output,
                 role=scope.ROLE if public else "validation", states=states,
                 task_count=36 if public else 8, expected_bank=expected_bank)

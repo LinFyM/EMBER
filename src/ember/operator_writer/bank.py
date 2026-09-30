@@ -727,7 +727,7 @@ class FrozenOperatorAdapter:
         self.states: OrderedDict[str, dict] = OrderedDict()
 
     def _state(self, key: str) -> dict:
-        if self.bank["mode"] in ("MT", PUBLIC_BETA_MODE, "joint_public", "T450_public"):
+        if self.bank["mode"] in ("MT", PUBLIC_BETA_MODE, "joint_public", "T450_public", "context_public"):
             return self.common
         if key in self.states:
             self.states.move_to_end(key)

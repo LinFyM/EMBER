@@ -1,4 +1,4 @@
-"""Design §35 consumers; materialization and fixed FM, no trainer or evaluator."""
+"""Registered fresh study consumers; materialization and fixed FM, no trainer or evaluator."""
 from __future__ import annotations
 
 import argparse
@@ -80,9 +80,9 @@ def risk(prediction: torch.Tensor, target: torch.Tensor) -> dict:
 
 
 def a28(args) -> None:
-    mode = "joint" if args.model == "joint" else "T450_public"
+    mode = {"joint": "joint", "context": "context", "T450": "T450_public"}[args.model]
     spec, training, spec_path = readout.source_record(mode, args.checkpoint)
-    output = readout.ROOT / "analysis/A28" / args.model
+    output = readout.study_root(mode) / "analysis/A28" / args.model
     if output.exists():
         raise ValueError("published fixed A28 readout already exists")
     panels = read_json(readout.FIXED_PANEL / "fixed_panels.json")
@@ -92,7 +92,7 @@ def a28(args) -> None:
     output.mkdir(parents=True)
     started, rows = time.monotonic(), []
     write_json_atomic(output / "run_contract.json", {
-        "study": readout.TASK, "model": args.model, "checkpoint": str(args.checkpoint.resolve()),
+        "study": readout.study_id(mode), "model": args.model, "checkpoint": str(args.checkpoint.resolve()),
         "training_git": training["git"]["commit"], "reading_git": reading_git,
         "training_spec": training["spec"], "reading_spec": file_record(spec_path),
         "fixed_panels": file_record(readout.FIXED_PANEL / "fixed_panels.json"),
@@ -104,7 +104,7 @@ def a28(args) -> None:
         from ember.writer.materialization_workers import _configure_device
 
         _configure_device(torch.device(args.device), args.cpu_threads)
-        runtime = build_runtime(args.asset_root, spec, torch.device(args.device), "T")
+        runtime = build_runtime(args.asset_root, spec, torch.device(args.device), "context" if mode == "context" else "T")
         runtime.writer.load_state_dict(load_file(str(args.checkpoint / "ecp.safetensors"),
                                                  device=args.device), strict=True)
         runtime.writer.requires_grad_(False).eval()
@@ -154,7 +154,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("materialize", "a28"))
     parser.add_argument("--mode", choices=readout.MODES)
-    parser.add_argument("--model", choices=("joint", "T450"))
+    parser.add_argument("--model", choices=("joint", "T450", "context"))
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--asset-root", type=Path, default=ASSET)
     parser.add_argument("--device", default="cuda:0")

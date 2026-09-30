@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -19,6 +20,7 @@ from ember.pi05_eval_contract import (
     inspect_source_checkpoint,
     inspect_tokenizer,
     load_evaluation_authorities,
+    RUNTIME_REPLICA_PROFILES,
 )
 from ember.pi05_eval.run_contract import registered_role_authority
 from ember.pi05_eval_queue import (
@@ -37,6 +39,25 @@ TASK_EXPERT_DIAGNOSTIC_SUBSETS = {
     "train24_fold0_profile1",
     "registered_train_subset",
 }
+
+
+def migrated_worker_contract(contract: dict, replicas: int, reading_git: dict) -> dict:
+    """Change physical execution only; keep completed rows and all queue identities."""
+    if (replicas not in RUNTIME_REPLICA_PROFILES or reading_git.get('branch')
+            or reading_git.get('dirty_paths') or not reading_git.get('commit')):
+        raise Pi05EvaluationError('worker migration requires an eligible clean frozen reader')
+    result = deepcopy(contract)
+    parallel = result['parallel']
+    parallel.setdefault('prior_worker_topologies', []).append({
+        'worker_ids': list(worker_ids(parallel['replicas_per_gpu'], parallel['physical_gpu_ids'])),
+        'reading_git': deepcopy(contract['git'])})
+    if 'queue_sharding' not in parallel:
+        parallel['queue_sharding'] = {key: parallel[key] for key in (
+            'envs_per_replica', 'shard_target_cost', 'physical_gpu_count', 'replicas_per_gpu')}
+    parallel['replicas_per_gpu'] = replicas
+    parallel['worker_count'] = parallel['physical_gpu_count'] * replicas
+    result['git'] = reading_git
+    return result
 
 
 def worker_command_matches(command: bytes, output_dir: Path) -> bool:

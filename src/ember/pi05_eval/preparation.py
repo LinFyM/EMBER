@@ -56,6 +56,8 @@ TRAIN24_FOLD0_PROFILE = ((1, 2, "libero_spatial", 2),)
 
 
 def shards_from_contract(contract: Mapping[str, Any]) -> tuple[Any, ...]:
+    # A physical worker migration retains the original queue's row partitions.
+    layout = contract["parallel"].get("queue_sharding", contract["parallel"])
     tasks = tuple(
         EvaluationTask(
             suite=row["suite"],
@@ -67,10 +69,10 @@ def shards_from_contract(contract: Mapping[str, Any]) -> tuple[Any, ...]:
     )
     return build_cost_balanced_shards(
         tasks,
-        env_batch_size=int(contract["parallel"]["envs_per_replica"]),
-        target_cost=int(contract["parallel"]["shard_target_cost"]),
-        physical_gpu_count=int(contract["parallel"]["physical_gpu_count"]),
-        replicas_per_gpu=int(contract["parallel"]["replicas_per_gpu"]),
+        env_batch_size=int(layout["envs_per_replica"]),
+        target_cost=int(layout["shard_target_cost"]),
+        physical_gpu_count=int(layout["physical_gpu_count"]),
+        replicas_per_gpu=int(layout["replicas_per_gpu"]),
     )
 
 

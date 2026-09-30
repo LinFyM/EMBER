@@ -30,10 +30,12 @@ def _validate_start(
     contract: Mapping[str, Any],
     launcher: Mapping[str, Any],
 ) -> None:
+    layouts = {tuple(launcher.get("worker_ids", ()))}
+    layouts.update(tuple(row["worker_ids"]) for row in
+                   contract.get("parallel", {}).get("prior_worker_topologies", ()))
     if (
         row.get("contract_reference") != contract["contract_reference"]
-        or tuple(row.get("worker_ids", ()))
-        != tuple(launcher.get("worker_ids", ()))
+        or tuple(row.get("worker_ids", ())) not in layouts
     ):
         raise Pi05EvaluationError("launcher invocation start evidence changed")
 

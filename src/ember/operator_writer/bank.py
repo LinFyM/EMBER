@@ -31,7 +31,8 @@ from .run import (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
                   CONTINUATION1800_SPEC_PATH, CONTINUATION2340_SPEC_PATH,
                   CONTINUATION2790_SPEC_PATH,
                   PILOT_SPEC_PATH, PILOT_ROOT, PILOT_ARMS, REPO, SCHEMA,
-                  SPEC_PATH, STAGE, CHANGE_CLOCK_SPEC_PATH, build_runtime, complete_checkpoint,
+                  SPEC_PATH, STAGE, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
+                  build_runtime, complete_checkpoint,
                   frozen_git, specification)
 from . import scope as seen_scope
 from .capture import (PASSIVE_TAG, attach_capture_provenance, registered_capture,
@@ -270,6 +271,15 @@ def inspect_training_source(spec: Mapping, checkpoint: Path, mode: str, *, seale
 
 
 def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: bool) -> tuple:
+    if spec.get("task") == change_clock.CONTINUATION_TASK:
+        if macro != 450:
+            raise ValueError("change-clock continuation only reads its new 450 ECP")
+        sampler = {"schema_version": spec["events"]["schema_version"],
+                   "seed": 20260928, "tasks": spec["events"]["task_ids"],
+                   "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28,
+                   "teacher_rounds": [[20260928, 1, "task"], [20260928, 1, "task", 1]],
+                   "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
+        return 0, CHANGE_CLOCK_CONTINUATION_SPEC_PATH, sampler, (270, 360), frozen_git(change_clock_pilot=True)
     window = (5 if macro in CONTINUATION2790_EVALUATION_MACROS else
               4 if macro in CONTINUATION2340_EVALUATION_MACROS else
               3 if macro in PILOT_CHECKPOINTS else
@@ -304,6 +314,7 @@ def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: 
 def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
                                  sealed_evaluation: bool) -> dict:
     macro = int(checkpoint.name.split("_")[-1])
+    clock = spec.get("task") == change_clock.CONTINUATION_TASK
     window, wanted_spec_path, expected_sampler, allowed_parents, wanted_git = (
         _continuation_source_identity(spec, macro, sealed_evaluation))
     output = checkpoint.parent.parent
@@ -346,7 +357,7 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
         (run.get("events"), spec["events"]), (run.get("continuation"), spec["continuation"]),
         (run.get("git"), wanted_git),
         (ecp.get("stage"), STAGE), (ecp.get("run_contract_schema"), SCHEMA),
-        (ecp.get("next_macro"), macro), (ecp.get("world_size") in (2, 3, 4), True),
+        (ecp.get("next_macro"), macro), (ecp.get("world_size") in ((1, 2, 3, 4) if clock else (2, 3, 4)), True),
         (trainer.get("schema_version"), "ember_ecp_checkpoint_v1"),
         (trainer.get("stage"), STAGE), (trainer.get("next_macro"), macro),
         (trainer.get("metrics_rows"), macro),
@@ -364,10 +375,10 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
         (parent.parent.parent.parent.resolve(), expected_parent.resolve()),
         (parent.is_dir() and complete_checkpoint(parent), True),
         (resume.get("checkpoint"), str(parent)),
-        (resume.get("parent_git", {}).get("commit") if window >= 3 else None,
-         parent_training_git if window >= 3 else None),
-        (parent_run.get("git", {}).get("commit") if window >= 3 else None,
-         parent_training_git if window >= 3 else None),
+        (resume.get("parent_git", {}).get("commit") if window >= 3 or clock else None,
+         parent_training_git if window >= 3 or clock else None),
+        (parent_run.get("git", {}).get("commit") if window >= 3 or clock else None,
+         parent_training_git if window >= 3 or clock else None),
         (run.get("loss_variant") if window >= 4 else None,
          "full" if window >= 4 else None),
         (run.get("pilot_arm") if window >= 4 else None, None),
@@ -380,6 +391,17 @@ def _inspect_continuation_source(spec: Mapping, checkpoint: Path, mode: str, *,
             or window >= 4 and any(row.get("loss_variant") != "full"
                                    for row in parsed_metrics[1890:])):
         raise ValueError("continuation bank source/ECP/optimizer/sampler provenance changed")
+    if clock:
+        complete = read_json(output / "completion.json")
+        if complete.get("updates") != 450 or complete.get("checkpoint") != str(checkpoint):
+            raise ValueError("change-clock continuation must finish its complete 450 ECP")
+        if parent_macro == 270 and parent != change_clock.PARENT_CHECKPOINT:
+            raise ValueError("change-clock continuation parent is not the actual sealed 270 ECP")
+        old = inspect_training_source(specification(CHANGE_CLOCK_SPEC_PATH),
+                                     change_clock.PARENT_CHECKPOINT, mode, sealed_evaluation=True)
+        if any(old.get(key) != run.get(key) for key in ("source", "lora", "operator", "optimizer",
+                                                     "trainable_names", "source_trainable", "information_wall")):
+            raise ValueError("change-clock continuation changed its parent scientific source")
     if window and parent_macro == source_parent_macro:
         old_spec_path = (CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH,
                          CONTINUATION1800_SPEC_PATH, PILOT_SPEC_PATH,
@@ -444,7 +466,8 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
         *CONTINUATION2340_EVALUATION_MACROS, *CONTINUATION2790_EVALUATION_MACROS)
     if not seen_task and not pilot and not next_window and mode != change_clock.MODE and (mode != "T" or macro not in CONTINUATION1800_EVALUATION_MACROS):
         raise ValueError("new materialization requires registered T ECP or pilot1890")
-    spec_path = (CHANGE_CLOCK_SPEC_PATH if mode == change_clock.MODE else
+    spec_path = (CHANGE_CLOCK_CONTINUATION_SPEC_PATH if mode == change_clock.MODE and macro == 450 else
+                 CHANGE_CLOCK_SPEC_PATH if mode == change_clock.MODE else
                  CONTINUATION1800_FROZEN_SPEC_PATH if seen_task else
                  CONTINUATION2790_FROZEN_SPEC_PATH if macro in CONTINUATION2790_EVALUATION_MACROS else
                  CONTINUATION2340_FROZEN_SPEC_PATH if next_window else

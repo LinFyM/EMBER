@@ -161,14 +161,17 @@ def capture_expectations(bank: Mapping, bank_path: Path, tasks: list,
     from . import change_clock
 
     clock_pilot = bank.get("mode") == change_clock.MODE
+    clock_continuation = clock_pilot and macro == "450"
     public_beta = bank.get("mode") == owner.PUBLIC_BETA_MODE
     pilot = bank.get("mode") in owner.PILOT_ARMS
     return dict(full=full,
-                capture=(owner.REPO / "configs/operator_read_write_v1" / change_clock.CAPTURE_NAME
+                capture=(owner.REPO / "configs/operator_read_write_v1" / change_clock.CONTINUATION_CAPTURE_NAME
+                         if clock_continuation else
+                         owner.REPO / "configs/operator_read_write_v1" / change_clock.CAPTURE_NAME
                          if clock_pilot else owner.PUBLIC_BETA_CAPTURE_PATH if public_beta else
                          owner.PILOT_CAPTURE_PATH if pilot else
                          owner.SPEC_PATH.parent / "official_capture.json"),
-                study=(change_clock.TASK if clock_pilot else
+                study=(change_clock.CONTINUATION_TASK if clock_continuation else change_clock.TASK if clock_pilot else
                        owner.PUBLIC_BETA_STUDY if public_beta else
                        "operator_public_function_pilot_20260929" if pilot else
                        "operator_read_write_learning_20260928"),
@@ -268,14 +271,15 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
     window2790 = macro in owner.CONTINUATION2790_EVALUATION_MACROS
     late_window = window2790 or macro in owner.CONTINUATION2340_EVALUATION_MACROS
     pilot = macro in owner.PILOT_CHECKPOINTS and mode in owner.PILOT_ARMS
-    registered_spec = (owner.CHANGE_CLOCK_SPEC_PATH if clock_pilot else
+    clock_spec = (owner.CHANGE_CLOCK_CONTINUATION_SPEC_PATH if macro == 450 else owner.CHANGE_CLOCK_SPEC_PATH)
+    registered_spec = (clock_spec if clock_pilot else
                        owner.CONTINUATION2790_FROZEN_SPEC_PATH if window2790 else
                        owner.CONTINUATION2340_FROZEN_SPEC_PATH if late_window else
                        owner.PILOT_FROZEN_SPEC_PATH if pilot else
                        owner.CONTINUATION1800_FROZEN_SPEC_PATH if window1800 else
                        owner.CONTINUATION1350_FROZEN_SPEC_PATH if window1350 else
                        owner.CONTINUATION_FROZEN_SPEC_PATH if continuation else owner.SEALED_SPEC_PATH)
-    current_spec = owner.specification(owner.CHANGE_CLOCK_SPEC_PATH if clock_pilot else
+    current_spec = owner.specification(clock_spec if clock_pilot else
                                        owner.CONTINUATION2790_SPEC_PATH if window2790 else
                                        owner.CONTINUATION2340_SPEC_PATH if late_window else
                                        owner.PILOT_SPEC_PATH if pilot else

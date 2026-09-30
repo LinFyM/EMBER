@@ -3014,3 +3014,21 @@ Owner午前已另明确授权§20的T1890→2340有限曲线与有条件后段�
 Owner随后要求直接看最佳点Test，并明确MT/Source已有结果。main冻结T2340/e2afbfd7，依active design§24只新增T Test400，
 旧Test Source75/400与MT121/400原行直接复用；旧无完整scene/capture的比较限制保留，不为补此证据重跑baseline。
 本段只登记Test授权和选点，不预报Test启动或结果，也不恢复更多训练/controls。
+
+
+## 2026-09-30：公共基座/视频适配复核与唯一投影消费者完成
+
+Owner在A/B₀与M功能分工讨论后授权完整思考及适当分析实验。本轮保留T/U、公共辅助和近似历史的完整正反证据，
+核对实际FM/VJP、β-native、共享A及动态Value，详见机制分析§77和findings§252。
+
+预登记design§34仅将§33实际D修正投影到父Z的八条件共享δO，并消费原B20/32条train场景；
+BA覆盖95.863794%，PZ21/32（父17、S/P20、D23），对父R16/G5/L1、对D R19/G2/L4。
+只有16个不同物理初态；参数覆盖及接近的前5动作修正保留部分闭环作用，仍有具体成败交换，不是正式方法资格。
+无新optimizer/native teacher前向/held/Test/controls；代码511791cb，.30101382GPUh、峰值新增.85770GiB，全部消费者退出。
+原件root `operator_projected_repair_consumers_20260930`，readback/completion及原始预测/rows/trace完整保留。
+main直接重算全部五臂原行和八条件预测；小型科学证据在docs/analyses/operator_projected_repair_evidence_20260930.json。
+
+只读补充分析保留B20与A28排序相反的范围；共享δO的teacher互换/留一train task预测失败，不能从全条件可拟合性推出可学和可迁移。
+同样不能把小样本无正则插值失败当唯一根因。公共功能原则合理，主FM已学误差修正但未独立保证公共能力；
+旧λ=1公共aux的负例仍约束配方。保留β-native/同A/38处条件作用/主FM，完整上下文Value只列为有条件候选，
+未成为active方法或新训练合同；本轮结束时没有后继派发，尚无经过验证的主因或完整修复。

@@ -13,6 +13,12 @@ design §33 学习限制诊断已完成：有限train面板父17/32、S20、P20�
 
 ## 先读哪些材料
 
+后续补充（2026-09-30）：公共基座/训练目标完整复核和§34固定Z投影消费者已完成，见
+[机制§77](../../analyses/feature_to_operator_mechanism_20260926.md#77-公共基座与视频定向适配完整架构和训练目标的再判断2026-09-30)、
+[PZ原行与动作摘要](../../analyses/operator_projected_repair_evidence_20260930.json)及
+[CPU留出读出分析](../../analyses/operator_projection_transfer_evidence_20260930.json)。
+PZ21/32对父17、D23，只有16个不同初态；全条件可表达部分修正不等于共享获取或新任务迁移。未启动新架构训练。
+
 1. [Owner 要求](../../current_owner_requirements.md)及 [Concept](../../concept.md)：目标、合法信息、理论与证据的关系。
 2. 本页的完整计算图，再读 [设计 §1–4](../../designs/operator_read_write_learning_design.md)和实际源码：
    [model.py](../../../src/ember/operator_writer/model.py)、[native.py](../../../src/ember/operator_writer/native.py)、

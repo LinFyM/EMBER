@@ -1,0 +1,2551 @@
+{
+  "scope": "One fixed projection of actual D repairs, eight train conditions and 32 paired rows with 16 unique physical initial states; not a learned Writer or held task evaluation.",
+  "source_root": "operator_projected_repair_consumers_20260930",
+  "reference_root": "operator_learning_limit_diagnosis_20260930",
+  "main_readback": "Direct recount of all five arms original results.json and recomputation of all eight saved PZ/D/parent predictions in FP64; no new model/environment call.",
+  "summary": {
+    "parent": {
+      "success": 17,
+      "by_task": {
+        "0": 8,
+        "32": 3,
+        "20": 3,
+        "12": 3
+      },
+      "PZ_retained": 16,
+      "PZ_gained": 5,
+      "PZ_lost": 1,
+      "gained_keys": [
+        [
+          20,
+          38,
+          1
+        ],
+        [
+          20,
+          42,
+          1
+        ],
+        [
+          32,
+          17,
+          0
+        ],
+        [
+          32,
+          17,
+          2
+        ],
+        [
+          32,
+          43,
+          3
+        ]
+      ],
+      "lost_keys": [
+        [
+          20,
+          38,
+          2
+        ]
+      ]
+    },
+    "S": {
+      "success": 20,
+      "by_task": {
+        "0": 8,
+        "32": 5,
+        "12": 4,
+        "20": 3
+      },
+      "PZ_retained": 17,
+      "PZ_gained": 4,
+      "PZ_lost": 3,
+      "gained_keys": [
+        [
+          20,
+          38,
+          1
+        ],
+        [
+          20,
+          42,
+          0
+        ],
+        [
+          20,
+          42,
+          1
+        ],
+        [
+          32,
+          17,
+          0
+        ]
+      ],
+      "lost_keys": [
+        [
+          12,
+          25,
+          0
+        ],
+        [
+          20,
+          38,
+          0
+        ],
+        [
+          20,
+          38,
+          2
+        ]
+      ]
+    },
+    "P": {
+      "success": 20,
+      "by_task": {
+        "0": 8,
+        "32": 4,
+        "12": 4,
+        "20": 4
+      },
+      "PZ_retained": 17,
+      "PZ_gained": 4,
+      "PZ_lost": 3,
+      "gained_keys": [
+        [
+          20,
+          42,
+          1
+        ],
+        [
+          32,
+          17,
+          0
+        ],
+        [
+          32,
+          17,
+          2
+        ],
+        [
+          32,
+          43,
+          0
+        ]
+      ],
+      "lost_keys": [
+        [
+          12,
+          25,
+          0
+        ],
+        [
+          20,
+          38,
+          3
+        ],
+        [
+          32,
+          17,
+          3
+        ]
+      ]
+    },
+    "D": {
+      "success": 23,
+      "by_task": {
+        "0": 8,
+        "32": 6,
+        "12": 4,
+        "20": 5
+      },
+      "PZ_retained": 19,
+      "PZ_gained": 2,
+      "PZ_lost": 4,
+      "gained_keys": [
+        [
+          20,
+          42,
+          3
+        ],
+        [
+          32,
+          43,
+          3
+        ]
+      ],
+      "lost_keys": [
+        [
+          12,
+          25,
+          0
+        ],
+        [
+          20,
+          38,
+          0
+        ],
+        [
+          20,
+          38,
+          2
+        ],
+        [
+          32,
+          17,
+          3
+        ]
+      ]
+    },
+    "PZ": {
+      "success": 21,
+      "by_task": {
+        "0": 8,
+        "32": 6,
+        "12": 3,
+        "20": 4
+      },
+      "PZ_retained": 21,
+      "PZ_gained": 0,
+      "PZ_lost": 0,
+      "gained_keys": [],
+      "lost_keys": []
+    }
+  },
+  "rows": [
+    {
+      "task": 0,
+      "teacher": 11,
+      "state": 0,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "on",
+          "akita_black_bowl_1",
+          "plate_1"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "state": 1,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "on",
+          "akita_black_bowl_1",
+          "plate_1"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "state": 2,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "on",
+          "akita_black_bowl_1",
+          "plate_1"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "state": 3,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "on",
+          "akita_black_bowl_1",
+          "plate_1"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 40,
+      "state": 0,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "on",
+          "akita_black_bowl_1",
+          "plate_1"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 40,
+      "state": 1,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "on",
+          "akita_black_bowl_1",
+          "plate_1"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 40,
+      "state": 2,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "on",
+          "akita_black_bowl_1",
+          "plate_1"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 40,
+      "state": 3,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "on",
+          "akita_black_bowl_1",
+          "plate_1"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "state": 0,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "in",
+          "salad_dressing_1",
+          "basket_1_contain_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "state": 1,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": false,
+        "D": false,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "in",
+          "salad_dressing_1",
+          "basket_1_contain_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "state": 2,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "in",
+          "salad_dressing_1",
+          "basket_1_contain_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "state": 3,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": false,
+        "D": false,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "in",
+          "salad_dressing_1",
+          "basket_1_contain_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "state": 0,
+      "success": {
+        "parent": false,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "in",
+          "salad_dressing_1",
+          "basket_1_contain_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "state": 1,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": false,
+        "D": false,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "in",
+          "salad_dressing_1",
+          "basket_1_contain_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "state": 2,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "in",
+          "salad_dressing_1",
+          "basket_1_contain_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "state": 3,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": false,
+        "D": false,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "in",
+          "salad_dressing_1",
+          "basket_1_contain_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "state": 0,
+      "success": {
+        "parent": false,
+        "S": true,
+        "P": false,
+        "D": true,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "open",
+          "wooden_cabinet_1_middle_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "state": 1,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "open",
+          "wooden_cabinet_1_middle_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "state": 2,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": false,
+        "D": true,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "open",
+          "wooden_cabinet_1_middle_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "state": 3,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": true,
+        "D": false,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "open",
+          "wooden_cabinet_1_middle_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "state": 0,
+      "success": {
+        "parent": true,
+        "S": false,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "open",
+          "wooden_cabinet_1_middle_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "state": 1,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": false,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "open",
+          "wooden_cabinet_1_middle_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "state": 2,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": false,
+        "D": false,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "open",
+          "wooden_cabinet_1_middle_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "state": 3,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": false,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "open",
+          "wooden_cabinet_1_middle_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            false
+          ],
+          "final_satisfied": [
+            false
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true
+          ],
+          "final_satisfied": [
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "state": 0,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": false,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "turnon",
+          "flat_stove_1"
+        ],
+        [
+          "on",
+          "moka_pot_1",
+          "flat_stove_1_cook_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "state": 1,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "turnon",
+          "flat_stove_1"
+        ],
+        [
+          "on",
+          "moka_pot_1",
+          "flat_stove_1_cook_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "state": 2,
+      "success": {
+        "parent": false,
+        "S": true,
+        "P": false,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "turnon",
+          "flat_stove_1"
+        ],
+        [
+          "on",
+          "moka_pot_1",
+          "flat_stove_1_cook_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "state": 3,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": true,
+        "D": true,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "turnon",
+          "flat_stove_1"
+        ],
+        [
+          "on",
+          "moka_pot_1",
+          "flat_stove_1_cook_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "state": 0,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": false,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "turnon",
+          "flat_stove_1"
+        ],
+        [
+          "on",
+          "moka_pot_1",
+          "flat_stove_1_cook_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "state": 1,
+      "success": {
+        "parent": true,
+        "S": true,
+        "P": true,
+        "D": true,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "turnon",
+          "flat_stove_1"
+        ],
+        [
+          "on",
+          "moka_pot_1",
+          "flat_stove_1_cook_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "state": 2,
+      "success": {
+        "parent": false,
+        "S": false,
+        "P": false,
+        "D": false,
+        "PZ": false
+      },
+      "predicates": [
+        [
+          "turnon",
+          "flat_stove_1"
+        ],
+        [
+          "on",
+          "moka_pot_1",
+          "flat_stove_1_cook_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            false,
+            true
+          ],
+          "final_satisfied": [
+            false,
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "state": 3,
+      "success": {
+        "parent": false,
+        "S": true,
+        "P": true,
+        "D": false,
+        "PZ": true
+      },
+      "predicates": [
+        [
+          "turnon",
+          "flat_stove_1"
+        ],
+        [
+          "on",
+          "moka_pot_1",
+          "flat_stove_1_cook_region"
+        ]
+      ],
+      "goal_status": {
+        "parent": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "S": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "P": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        },
+        "D": {
+          "ever_satisfied": [
+            true,
+            false
+          ],
+          "final_satisfied": [
+            true,
+            false
+          ]
+        },
+        "PZ": {
+          "ever_satisfied": [
+            true,
+            true
+          ],
+          "final_satisfied": [
+            true,
+            true
+          ]
+        }
+      }
+    }
+  ],
+  "action_aggregates": {
+    "first5": {
+      "PZ_risk": 0.11096267968988258,
+      "D_risk": 0.11043152349362689,
+      "parent_risk": 0.11785355640151213,
+      "PZ_minus_D_prediction_MSE": 0.00012649949509821684,
+      "repair_cosine": 0.9916829702995136,
+      "relative_repair_L2_error": 0.14327377830410037
+    },
+    "full50": {
+      "PZ_risk": 0.13340279981575984,
+      "D_risk": 0.13376489721066911,
+      "parent_risk": 0.12627881280961561,
+      "PZ_minus_D_prediction_MSE": 0.0005091110680567736,
+      "repair_cosine": 0.9843118956985883,
+      "relative_repair_L2_error": 0.16748287181538407
+    },
+    "valid_future": {
+      "PZ_risk": 0.13795399579537646,
+      "D_risk": 0.13766929655966384,
+      "parent_risk": 0.13157110825173995,
+      "PZ_minus_D_prediction_MSE": 0.00033853819418738806,
+      "repair_cosine": 0.9879534950415243,
+      "relative_repair_L2_error": 0.1437105844617111
+    }
+  },
+  "action_rows": [
+    {
+      "task": 0,
+      "teacher": 40,
+      "metrics": {
+        "first5": {
+          "PZ_risk": 0.17645788056052428,
+          "D_risk": 0.17660844803806905,
+          "parent_risk": 0.18428089627786026,
+          "PZ_minus_D_prediction_MSE": 5.656891055129582e-05,
+          "repair_cosine": 0.9966387342077866,
+          "relative_repair_L2_error": 0.10467846501706995
+        },
+        "full50": {
+          "PZ_risk": 0.19950179743234922,
+          "D_risk": 0.20226795668807193,
+          "parent_risk": 0.18512944500855813,
+          "PZ_minus_D_prediction_MSE": 0.0008075074784186437,
+          "repair_cosine": 0.9837257008344577,
+          "relative_repair_L2_error": 0.18634359079808424
+        },
+        "valid_future": {
+          "PZ_risk": 0.2242010281519936,
+          "D_risk": 0.2244108907705717,
+          "parent_risk": 0.21229617915492663,
+          "PZ_minus_D_prediction_MSE": 0.00016032194520454327,
+          "repair_cosine": 0.996658787327614,
+          "relative_repair_L2_error": 0.0819868986775722
+        }
+      }
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "metrics": {
+        "first5": {
+          "PZ_risk": 0.17663937770369526,
+          "D_risk": 0.17800580458573026,
+          "parent_risk": 0.17912146059863493,
+          "PZ_minus_D_prediction_MSE": 3.6915251678284816e-05,
+          "repair_cosine": 0.9975242237048152,
+          "relative_repair_L2_error": 0.08555467906203741
+        },
+        "full50": {
+          "PZ_risk": 0.19824627291515035,
+          "D_risk": 0.20165257946412726,
+          "parent_risk": 0.17939080790249254,
+          "PZ_minus_D_prediction_MSE": 0.001191341651866079,
+          "repair_cosine": 0.9686540803951526,
+          "relative_repair_L2_error": 0.2543651426543018
+        },
+        "valid_future": {
+          "PZ_risk": 0.22423563821057688,
+          "D_risk": 0.2254727961799453,
+          "parent_risk": 0.20666391904075881,
+          "PZ_minus_D_prediction_MSE": 0.00027871329873618725,
+          "repair_cosine": 0.9926373036651517,
+          "relative_repair_L2_error": 0.12284382079016433
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "metrics": {
+        "first5": {
+          "PZ_risk": 0.06509121534458145,
+          "D_risk": 0.0649183207415616,
+          "parent_risk": 0.06892505344122866,
+          "PZ_minus_D_prediction_MSE": 1.5830143451328916e-05,
+          "repair_cosine": 0.9959378062642326,
+          "relative_repair_L2_error": 0.10007646694467805
+        },
+        "full50": {
+          "PZ_risk": 0.09958323073835608,
+          "D_risk": 0.09954238750765207,
+          "parent_risk": 0.09505670432569295,
+          "PZ_minus_D_prediction_MSE": 2.1064741884783773e-05,
+          "repair_cosine": 0.9994057405330132,
+          "relative_repair_L2_error": 0.034810893970447544
+        },
+        "valid_future": {
+          "PZ_risk": 0.1090230805951615,
+          "D_risk": 0.10894196827412621,
+          "parent_risk": 0.10120884091380924,
+          "PZ_minus_D_prediction_MSE": 2.2224770280972042e-05,
+          "repair_cosine": 0.999348984817739,
+          "relative_repair_L2_error": 0.03639671613535932
+        }
+      }
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "metrics": {
+        "first5": {
+          "PZ_risk": 0.06497980767500036,
+          "D_risk": 0.06463973710824478,
+          "parent_risk": 0.06931980342344835,
+          "PZ_minus_D_prediction_MSE": 1.7498216660428216e-05,
+          "repair_cosine": 0.9951223248844299,
+          "relative_repair_L2_error": 0.10441957029841545
+        },
+        "full50": {
+          "PZ_risk": 0.09840555072568292,
+          "D_risk": 0.09899303788522479,
+          "parent_risk": 0.08797797638382034,
+          "PZ_minus_D_prediction_MSE": 0.0005426030366219315,
+          "repair_cosine": 0.9898109154388739,
+          "relative_repair_L2_error": 0.14274613732528546
+        },
+        "valid_future": {
+          "PZ_risk": 0.10758121299272967,
+          "D_risk": 0.10825993830729345,
+          "parent_risk": 0.09278008560657822,
+          "PZ_minus_D_prediction_MSE": 0.0006146675372841066,
+          "repair_cosine": 0.98873475077308,
+          "relative_repair_L2_error": 0.1500598772261296
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "metrics": {
+        "first5": {
+          "PZ_risk": 0.12288261341071309,
+          "D_risk": 0.12243863045415213,
+          "parent_risk": 0.12140434744327545,
+          "PZ_minus_D_prediction_MSE": 4.697576654707621e-05,
+          "repair_cosine": 0.9844911300289211,
+          "relative_repair_L2_error": 0.17549348243734203
+        },
+        "full50": {
+          "PZ_risk": 0.09505172057665567,
+          "D_risk": 0.09540955244944475,
+          "parent_risk": 0.09318009118980007,
+          "PZ_minus_D_prediction_MSE": 4.6861107149232796e-05,
+          "repair_cosine": 0.9897468705793323,
+          "relative_repair_L2_error": 0.14922798149460337
+        },
+        "valid_future": {
+          "PZ_risk": 0.08999579191318823,
+          "D_risk": 0.09028643665753737,
+          "parent_risk": 0.08878487136188304,
+          "PZ_minus_D_prediction_MSE": 4.952236408509945e-05,
+          "repair_cosine": 0.989152412841747,
+          "relative_repair_L2_error": 0.15292708993591697
+        }
+      }
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "metrics": {
+        "first5": {
+          "PZ_risk": 0.1215451172612971,
+          "D_risk": 0.1210891733567481,
+          "parent_risk": 0.12098896721292346,
+          "PZ_minus_D_prediction_MSE": 6.007700220603324e-05,
+          "repair_cosine": 0.9712271586852973,
+          "relative_repair_L2_error": 0.24111545303126974
+        },
+        "full50": {
+          "PZ_risk": 0.09441132657144921,
+          "D_risk": 0.09446772874733744,
+          "parent_risk": 0.09578497588978639,
+          "PZ_minus_D_prediction_MSE": 7.273672667804608e-05,
+          "repair_cosine": 0.986042709051137,
+          "relative_repair_L2_error": 0.18735257894973903
+        },
+        "valid_future": {
+          "PZ_risk": 0.0891362248426864,
+          "D_risk": 0.08915665611712335,
+          "parent_risk": 0.0912670145144079,
+          "PZ_minus_D_prediction_MSE": 7.757280289153709e-05,
+          "repair_cosine": 0.9856458862398788,
+          "relative_repair_L2_error": 0.19061137590559696
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "metrics": {
+        "first5": {
+          "PZ_risk": 0.08161051464064845,
+          "D_risk": 0.07867490254851406,
+          "parent_risk": 0.10174555750356185,
+          "PZ_minus_D_prediction_MSE": 0.0005706137428969639,
+          "repair_cosine": 0.9959497557414566,
+          "relative_repair_L2_error": 0.21052324392762292
+        },
+        "full50": {
+          "PZ_risk": 0.14112435359833603,
+          "D_risk": 0.13964886694281195,
+          "parent_risk": 0.13550840349690962,
+          "PZ_minus_D_prediction_MSE": 0.00030697722759284675,
+          "repair_cosine": 0.992947319553501,
+          "relative_repair_L2_error": 0.11952409816573753
+        },
+        "valid_future": {
+          "PZ_risk": 0.1298401598632181,
+          "D_risk": 0.12822077709469756,
+          "parent_risk": 0.12948020479772843,
+          "PZ_minus_D_prediction_MSE": 0.00033045809161928307,
+          "repair_cosine": 0.9907755398567534,
+          "relative_repair_L2_error": 0.13697411626061634
+        }
+      }
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "metrics": {
+        "first5": {
+          "PZ_risk": 0.07849491092260062,
+          "D_risk": 0.07707717111599516,
+          "parent_risk": 0.09704236531116407,
+          "PZ_minus_D_prediction_MSE": 0.00020751692679432375,
+          "repair_cosine": 0.9965726288791695,
+          "relative_repair_L2_error": 0.12432886571436748
+        },
+        "full50": {
+          "PZ_risk": 0.14089814596809916,
+          "D_risk": 0.1381370680006828,
+          "parent_risk": 0.13820209827986493,
+          "PZ_minus_D_prediction_MSE": 0.0010837965742426245,
+          "repair_cosine": 0.9641618292032396,
+          "relative_repair_L2_error": 0.26549255116487364
+        },
+        "valid_future": {
+          "PZ_risk": 0.12961882979345735,
+          "D_risk": 0.12660490907601582,
+          "parent_risk": 0.13008775062382733,
+          "PZ_minus_D_prediction_MSE": 0.0011748247433973757,
+          "repair_cosine": 0.9606742948102306,
+          "relative_repair_L2_error": 0.2778847807623331
+        }
+      }
+    }
+  ],
+  "completion": {
+    "status": "complete",
+    "code_git": "511791cb461a49270d1df2721fe4bbb766e0324c",
+    "GPU_hours": 0.30101382189326814,
+    "observed_retained_peak_GiB": 0.8577041625976562,
+    "all_GPU_consumers_exited": true,
+    "new_optimizer_updates": 0,
+    "new_native_teacher_forwards": 0
+  }
+}

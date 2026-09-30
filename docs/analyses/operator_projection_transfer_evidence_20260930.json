@@ -1,0 +1,950 @@
+{
+  "study": "actual_D_repair_shared_readout_split_fit",
+  "source_root": "operator_learning_limit_diagnosis_20260930",
+  "scope": "Eight previously trained conditions, four train tasks, 38 targets. Fixed parent A/Z, no GPU, model, environment, fresh action label, held-validation or Test access.",
+  "method": "FP64 min sum_fit ||(Y_i-deltaO Z_i) A||_F^2; Y_i=B_D_i-B_parent_i; Gram/eigh and fixed relative singular cutoff 1e-6. Apply fitted deltaO to saved Z of excluded conditions.",
+  "splits": [
+    {
+      "scheme": "opposite_teacher",
+      "fold": "0",
+      "fit": [
+        [
+          0,
+          11
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          20,
+          42
+        ],
+        [
+          32,
+          43
+        ]
+      ],
+      "held": [
+        [
+          0,
+          40
+        ],
+        [
+          12,
+          25
+        ],
+        [
+          20,
+          38
+        ],
+        [
+          32,
+          17
+        ]
+      ]
+    },
+    {
+      "scheme": "opposite_teacher",
+      "fold": "1",
+      "fit": [
+        [
+          0,
+          40
+        ],
+        [
+          12,
+          25
+        ],
+        [
+          20,
+          38
+        ],
+        [
+          32,
+          17
+        ]
+      ],
+      "held": [
+        [
+          0,
+          11
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          20,
+          42
+        ],
+        [
+          32,
+          43
+        ]
+      ]
+    },
+    {
+      "scheme": "leave_one_task",
+      "fold": "0",
+      "fit": [
+        [
+          12,
+          25
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          20,
+          38
+        ],
+        [
+          20,
+          42
+        ],
+        [
+          32,
+          17
+        ],
+        [
+          32,
+          43
+        ]
+      ],
+      "held": [
+        [
+          0,
+          40
+        ],
+        [
+          0,
+          11
+        ]
+      ]
+    },
+    {
+      "scheme": "leave_one_task",
+      "fold": "12",
+      "fit": [
+        [
+          0,
+          40
+        ],
+        [
+          0,
+          11
+        ],
+        [
+          20,
+          38
+        ],
+        [
+          20,
+          42
+        ],
+        [
+          32,
+          17
+        ],
+        [
+          32,
+          43
+        ]
+      ],
+      "held": [
+        [
+          12,
+          25
+        ],
+        [
+          12,
+          14
+        ]
+      ]
+    },
+    {
+      "scheme": "leave_one_task",
+      "fold": "20",
+      "fit": [
+        [
+          0,
+          40
+        ],
+        [
+          0,
+          11
+        ],
+        [
+          12,
+          25
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          32,
+          17
+        ],
+        [
+          32,
+          43
+        ]
+      ],
+      "held": [
+        [
+          20,
+          38
+        ],
+        [
+          20,
+          42
+        ]
+      ]
+    },
+    {
+      "scheme": "leave_one_task",
+      "fold": "32",
+      "fit": [
+        [
+          0,
+          40
+        ],
+        [
+          0,
+          11
+        ],
+        [
+          12,
+          25
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          20,
+          38
+        ],
+        [
+          20,
+          42
+        ]
+      ],
+      "held": [
+        [
+          32,
+          17
+        ],
+        [
+          32,
+          43
+        ]
+      ]
+    }
+  ],
+  "limitations": [
+    "Only least-squares readout is cross-fitted; parent Writer and native features have seen all four tasks.",
+    "D is condition-private finite FM learning, not a unique parameter target or deployable task inference.",
+    "BA error is not action-function or behavior error; poor transfer cannot uniquely identify missing video semantics.",
+    "No regularization/cutoff search and no additional adapter or consumer produced.",
+    "Fit aggregate repeats each condition according to folds; held aggregate visits each condition once per scheme."
+  ],
+  "seconds": 3.993996706791222,
+  "summary": [
+    {
+      "scheme": "opposite_teacher",
+      "group": "fit",
+      "target_energy": 63.61592262999059,
+      "residual_energy": 1.4942041472420997,
+      "explained_fraction": 0.9765121044312626
+    },
+    {
+      "scheme": "opposite_teacher",
+      "group": "held",
+      "target_energy": 63.61592262999059,
+      "residual_energy": 1961484.036995673,
+      "explained_fraction": -30832.22470074444
+    },
+    {
+      "scheme": "leave_one_task",
+      "group": "fit",
+      "target_energy": 190.84776788997178,
+      "residual_energy": 5.870764256215846,
+      "explained_fraction": 0.9692384966241759
+    },
+    {
+      "scheme": "leave_one_task",
+      "group": "held",
+      "target_energy": 63.61592262999059,
+      "residual_energy": 200146.01777649083,
+      "explained_fraction": -3145.1623050034264
+    }
+  ],
+  "per_condition": [
+    {
+      "scheme": "opposite_teacher",
+      "task": 0,
+      "teacher": 40,
+      "target_energy": 7.900705456317477,
+      "residual_energy": 1550029.1556965192,
+      "explained_fraction": -196187.70292868617
+    },
+    {
+      "scheme": "opposite_teacher",
+      "task": 0,
+      "teacher": 11,
+      "target_energy": 8.182640235226595,
+      "residual_energy": 32864.289386397046,
+      "explained_fraction": -4015.3429457542275
+    },
+    {
+      "scheme": "opposite_teacher",
+      "task": 12,
+      "teacher": 25,
+      "target_energy": 8.423161001541184,
+      "residual_energy": 16276.262287392834,
+      "explained_fraction": -1931.3223531421008
+    },
+    {
+      "scheme": "opposite_teacher",
+      "task": 12,
+      "teacher": 14,
+      "target_energy": 8.06801585905596,
+      "residual_energy": 44463.71110755556,
+      "explained_fraction": -5510.108540725931
+    },
+    {
+      "scheme": "opposite_teacher",
+      "task": 20,
+      "teacher": 38,
+      "target_energy": 8.688418733762889,
+      "residual_energy": 91081.45722206037,
+      "explained_fraction": -10482.087891254716
+    },
+    {
+      "scheme": "opposite_teacher",
+      "task": 20,
+      "teacher": 42,
+      "target_energy": 8.111808917030427,
+      "residual_energy": 124884.71370122489,
+      "explained_fraction": -15394.421043391974
+    },
+    {
+      "scheme": "opposite_teacher",
+      "task": 32,
+      "teacher": 17,
+      "target_energy": 7.391843211715269,
+      "residual_energy": 60690.87450924609,
+      "explained_fraction": -8209.519727076684
+    },
+    {
+      "scheme": "opposite_teacher",
+      "task": 32,
+      "teacher": 43,
+      "target_energy": 6.8493292153407905,
+      "residual_energy": 41193.57308527703,
+      "explained_fraction": -6013.249248380949
+    },
+    {
+      "scheme": "leave_one_task",
+      "task": 0,
+      "teacher": 40,
+      "target_energy": 7.900705456317477,
+      "residual_energy": 15583.02104665672,
+      "explained_fraction": -1971.3581815338266
+    },
+    {
+      "scheme": "leave_one_task",
+      "task": 0,
+      "teacher": 11,
+      "target_energy": 8.182640235226595,
+      "residual_energy": 4169.009550365409,
+      "explained_fraction": -508.4944211793225
+    },
+    {
+      "scheme": "leave_one_task",
+      "task": 12,
+      "teacher": 25,
+      "target_energy": 8.423161001541184,
+      "residual_energy": 1539.5836388405764,
+      "explained_fraction": -181.77979473013508
+    },
+    {
+      "scheme": "leave_one_task",
+      "task": 12,
+      "teacher": 14,
+      "target_energy": 8.06801585905596,
+      "residual_energy": 8417.153371666745,
+      "explained_fraction": -1042.2742719783942
+    },
+    {
+      "scheme": "leave_one_task",
+      "task": 20,
+      "teacher": 38,
+      "target_energy": 8.688418733762889,
+      "residual_energy": 5171.648551816074,
+      "explained_fraction": -594.2347268576307
+    },
+    {
+      "scheme": "leave_one_task",
+      "task": 20,
+      "teacher": 42,
+      "target_energy": 8.111808917030427,
+      "residual_energy": 43835.034090006404,
+      "explained_fraction": -5402.854373095064
+    },
+    {
+      "scheme": "leave_one_task",
+      "task": 32,
+      "teacher": 17,
+      "target_energy": 7.391843211715269,
+      "residual_energy": 44771.61533638855,
+      "explained_fraction": -6055.894613975362
+    },
+    {
+      "scheme": "leave_one_task",
+      "task": 32,
+      "teacher": 43,
+      "target_energy": 6.8493292153407905,
+      "residual_energy": 76658.95219075035,
+      "explained_fraction": -11191.183903067968
+    }
+  ],
+  "per_target": [
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj",
+      "target_energy": 1.4170284239903665,
+      "residual_energy": 1930108.1502955724,
+      "explained_fraction": -1362080.4640121106
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj",
+      "target_energy": 0.06141784354302671,
+      "residual_energy": 28311.27198728774,
+      "explained_fraction": -460960.67423159484
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.q_proj",
+      "target_energy": 1.098659584736364,
+      "residual_energy": 138.135423182453,
+      "explained_fraction": -124.73086796088906
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.v_proj",
+      "target_energy": 0.09465674385538299,
+      "residual_energy": 17.807125116843675,
+      "explained_fraction": -187.12315310623282
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.q_proj",
+      "target_energy": 2.072296849353813,
+      "residual_energy": 619.095303760595,
+      "explained_fraction": -297.7483689673332
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.v_proj",
+      "target_energy": 0.12258143903979428,
+      "residual_energy": 41.43133886405358,
+      "explained_fraction": -336.99031230660864
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.q_proj",
+      "target_energy": 1.0895387656986641,
+      "residual_energy": 70.0194389076879,
+      "explained_fraction": -63.26521121787539
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.v_proj",
+      "target_energy": 0.38396816097909375,
+      "residual_energy": 66.07301681740579,
+      "explained_fraction": -171.07941577479733
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.q_proj",
+      "target_energy": 1.0348805633354816,
+      "residual_energy": 74.31614656854751,
+      "explained_fraction": -70.81132702794432
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.v_proj",
+      "target_energy": 0.12352507862707236,
+      "residual_energy": 20.77552641325693,
+      "explained_fraction": -167.1887325567236
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.q_proj",
+      "target_energy": 13.341316302312077,
+      "residual_energy": 1313.3760988038953,
+      "explained_fraction": -97.44426659581443
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.v_proj",
+      "target_energy": 0.2033045463238573,
+      "residual_energy": 7.374649376332773,
+      "explained_fraction": -35.27390291895
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.q_proj",
+      "target_energy": 3.6917008999356025,
+      "residual_energy": 223.41728040064243,
+      "explained_fraction": -59.518792409357886
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.v_proj",
+      "target_energy": 0.20858780455029238,
+      "residual_energy": 5.716001171974103,
+      "explained_fraction": -26.40333349927907
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.q_proj",
+      "target_energy": 1.27640676751761,
+      "residual_energy": 22.577851860543692,
+      "explained_fraction": -16.68860243858915
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.v_proj",
+      "target_energy": 0.2251209298404692,
+      "residual_energy": 2.9366070581715253,
+      "explained_fraction": -12.044575909723441
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "target_energy": 5.757701449771789,
+      "residual_energy": 180.94633634994284,
+      "explained_fraction": -30.42683550518494
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "target_energy": 0.18258016034009528,
+      "residual_energy": 6.364868572223947,
+      "explained_fraction": -33.860680154776915
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.q_proj",
+      "target_energy": 2.3182906745511103,
+      "residual_energy": 27.189315827733697,
+      "explained_fraction": -10.728173747236573
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.v_proj",
+      "target_energy": 0.36814717427927846,
+      "residual_energy": 2.148400111883737,
+      "explained_fraction": -4.8357099062071
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.q_proj",
+      "target_energy": 4.620692725718315,
+      "residual_energy": 27.97101705829885,
+      "explained_fraction": -5.053425042226885
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.v_proj",
+      "target_energy": 0.31373585477960175,
+      "residual_energy": 3.5323260639940037,
+      "explained_fraction": -10.258917366889575
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.q_proj",
+      "target_energy": 2.366311492005681,
+      "residual_energy": 25.46913612791863,
+      "explained_fraction": -9.763222092257617
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.v_proj",
+      "target_energy": 0.1187259830772102,
+      "residual_energy": 2.5035535795600743,
+      "explained_fraction": -20.08682122203997
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.q_proj",
+      "target_energy": 3.26731697321851,
+      "residual_energy": 38.16747089388197,
+      "explained_fraction": -10.681594166324379
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.v_proj",
+      "target_energy": 0.5541993657067633,
+      "residual_energy": 5.346177841421585,
+      "explained_fraction": -8.64666900079121
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.q_proj",
+      "target_energy": 4.135822647700849,
+      "residual_energy": 30.484581973678974,
+      "explained_fraction": -6.370862962565792
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.v_proj",
+      "target_energy": 0.4319185489399043,
+      "residual_energy": 1.968589139575713,
+      "explained_fraction": -3.5577786469402497
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.q_proj",
+      "target_energy": 4.652625542940926,
+      "residual_energy": 38.61873636619987,
+      "explained_fraction": -7.300417905926931
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.v_proj",
+      "target_energy": 0.5653521153529066,
+      "residual_energy": 2.728145722404763,
+      "explained_fraction": -3.8255691423420037
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.q_proj",
+      "target_energy": 1.775156749822036,
+      "residual_energy": 15.753394816821737,
+      "explained_fraction": -7.874368316150704
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.v_proj",
+      "target_energy": 0.3708378828794076,
+      "residual_energy": 2.248181020498275,
+      "explained_fraction": -5.06243624044569
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.q_proj",
+      "target_energy": 2.543967874753081,
+      "residual_energy": 14.77241113143302,
+      "explained_fraction": -4.806838709732857
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.v_proj",
+      "target_energy": 0.3428493195253444,
+      "residual_energy": 1.9193027395666133,
+      "explained_fraction": -4.598094061332191
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.q_proj",
+      "target_energy": 1.535721353544021,
+      "residual_energy": 10.215772788643234,
+      "explained_fraction": -5.6521005031726945
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.v_proj",
+      "target_energy": 0.3209563988776739,
+      "residual_energy": 1.7222316464179928,
+      "explained_fraction": -4.3659364712475695
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.action_in_proj",
+      "target_energy": 0.6175409710698067,
+      "residual_energy": 1.4027916270848768,
+      "explained_fraction": -1.2715766124063461
+    },
+    {
+      "scheme": "opposite_teacher",
+      "target": "model.action_out_proj",
+      "target_energy": 0.010480667497311897,
+      "residual_energy": 0.09016311141900187,
+      "explained_fraction": -7.602802392321584
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj",
+      "target_energy": 1.4170284239903665,
+      "residual_energy": 194773.7680927626,
+      "explained_fraction": -137451.26616151966
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj",
+      "target_energy": 0.06141784354302671,
+      "residual_energy": 2437.8304949119847,
+      "explained_fraction": -39691.5446137513
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.q_proj",
+      "target_energy": 1.098659584736364,
+      "residual_energy": 35.551258377737284,
+      "explained_fraction": -31.358756863044356
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.v_proj",
+      "target_energy": 0.09465674385538299,
+      "residual_energy": 5.277793688050246,
+      "explained_fraction": -54.757186155839925
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.q_proj",
+      "target_energy": 2.072296849353813,
+      "residual_energy": 350.85029502115407,
+      "explained_fraction": -168.305037128516
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.v_proj",
+      "target_energy": 0.12258143903979428,
+      "residual_energy": 14.06057258103104,
+      "explained_fraction": -113.70392818986633
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.q_proj",
+      "target_energy": 1.0895387656986641,
+      "residual_energy": 47.1237303772266,
+      "explained_fraction": -42.251081889691754
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.v_proj",
+      "target_energy": 0.38396816097909375,
+      "residual_energy": 50.98400077250158,
+      "explained_fraction": -131.78184483446677
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.q_proj",
+      "target_energy": 1.0348805633354816,
+      "residual_energy": 51.11803236127604,
+      "explained_fraction": -48.39510333107386
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.v_proj",
+      "target_energy": 0.12352507862707236,
+      "residual_energy": 14.058194376435328,
+      "explained_fraction": -112.80842281329473
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.q_proj",
+      "target_energy": 13.341316302312077,
+      "residual_energy": 740.7440305901457,
+      "explained_fraction": -54.52255967889565
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.v_proj",
+      "target_energy": 0.2033045463238573,
+      "residual_energy": 5.952903936609606,
+      "explained_fraction": -28.28072216903025
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.q_proj",
+      "target_energy": 3.6917008999356025,
+      "residual_energy": 243.40179990343108,
+      "explained_fraction": -64.93215607138622
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.v_proj",
+      "target_energy": 0.20858780455029238,
+      "residual_energy": 8.320315480068748,
+      "explained_fraction": -38.88879166740856
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.q_proj",
+      "target_energy": 1.27640676751761,
+      "residual_energy": 35.83178902215504,
+      "explained_fraction": -27.07239034923143
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.v_proj",
+      "target_energy": 0.2251209298404692,
+      "residual_energy": 5.505287344031078,
+      "explained_fraction": -23.45480012867916
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "target_energy": 5.757701449771789,
+      "residual_energy": 205.01182976380332,
+      "explained_fraction": -34.60654048360377
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "target_energy": 0.18258016034009528,
+      "residual_energy": 5.79704077885183,
+      "explained_fraction": -30.75066101406407
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.q_proj",
+      "target_energy": 2.3182906745511103,
+      "residual_energy": 49.31167082797444,
+      "explained_fraction": -20.270702319295072
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.v_proj",
+      "target_energy": 0.36814717427927846,
+      "residual_energy": 5.713502250929846,
+      "explained_fraction": -14.519614572935854
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.q_proj",
+      "target_energy": 4.620692725718315,
+      "residual_energy": 129.64218783811654,
+      "explained_fraction": -27.056872753416616
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.v_proj",
+      "target_energy": 0.31373585477960175,
+      "residual_energy": 7.198958546053093,
+      "explained_fraction": -21.94592229858565
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.q_proj",
+      "target_energy": 2.366311492005681,
+      "residual_energy": 70.86598726363009,
+      "explained_fraction": -28.947869290684217
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.v_proj",
+      "target_energy": 0.1187259830772102,
+      "residual_energy": 2.4069301607795315,
+      "explained_fraction": -19.272985730631937
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.q_proj",
+      "target_energy": 3.26731697321851,
+      "residual_energy": 137.5981444780269,
+      "explained_fraction": -41.11349728412919
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.v_proj",
+      "target_energy": 0.5541993657067633,
+      "residual_energy": 19.00544036604515,
+      "explained_fraction": -33.29350797218571
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.q_proj",
+      "target_energy": 4.135822647700849,
+      "residual_energy": 170.37161923901408,
+      "explained_fraction": -40.19413082998751
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.v_proj",
+      "target_energy": 0.4319185489399043,
+      "residual_energy": 15.36274224745019,
+      "explained_fraction": -34.56860960279738
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.q_proj",
+      "target_energy": 4.652625542940926,
+      "residual_energy": 278.9904365005665,
+      "explained_fraction": -58.96408563845363
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.v_proj",
+      "target_energy": 0.5653521153529066,
+      "residual_energy": 14.66191549868247,
+      "explained_fraction": -24.934130430431207
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.q_proj",
+      "target_energy": 1.775156749822036,
+      "residual_energy": 78.8440296342393,
+      "explained_fraction": -43.41524932496447
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.v_proj",
+      "target_energy": 0.3708378828794076,
+      "residual_energy": 7.9630802615859855,
+      "explained_fraction": -20.47321141992252
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.q_proj",
+      "target_energy": 2.543967874753081,
+      "residual_energy": 73.97009165454347,
+      "explained_fraction": -28.076661065039215
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.v_proj",
+      "target_energy": 0.3428493195253444,
+      "residual_energy": 7.832625050458226,
+      "explained_fraction": -21.84567769101031
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.q_proj",
+      "target_energy": 1.535721353544021,
+      "residual_energy": 31.509074460223903,
+      "explained_fraction": -19.517442430236226
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.v_proj",
+      "target_energy": 0.3209563988776739,
+      "residual_energy": 6.111642383253184,
+      "explained_fraction": -18.041970824150834
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.action_in_proj",
+      "target_energy": 0.6175409710698067,
+      "residual_energy": 7.211026270928873,
+      "explained_fraction": -10.677000569592556
+    },
+    {
+      "scheme": "leave_one_task",
+      "target": "model.action_out_proj",
+      "target_energy": 0.010480667497311897,
+      "residual_energy": 0.25920950925696423,
+      "explained_fraction": -23.732156546655716
+    }
+  ]
+}

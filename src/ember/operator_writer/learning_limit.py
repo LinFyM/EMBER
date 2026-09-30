@@ -1,4 +1,4 @@
-"""Design §33's registered finite train panel on the existing operator evaluator."""
+"""Design §33/34 registered finite train panels on the existing evaluator."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -12,15 +12,48 @@ ROOT = Path('/data1/user/ymdai/ember_runs') / STUDY
 TASKS = (0,12,20,32)
 TEACHERS = {0:(40,11),12:(25,14),20:(38,42),32:(17,43)}
 ARMS = ('parent','S','P','D')
+PROJECTED_ROOT = ROOT.parent / 'operator_projected_repair_consumers_20260930'
 STATES = (0,1,2,3)
 PARENT = Path('/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340/T/train/attempts/continuation/checkpoints/macro_00002340')
 BASE_BANK = PARENT.parents[4] / 'banks/2340/manifest.json'
 
 
+def panel_root(arm):
+    if arm == 'PZ':
+        return PROJECTED_ROOT
+    if arm not in ARMS:
+        raise ValueError('unregistered learning-limit arm')
+    return ROOT
+
+
+def endpoint(arm):
+    if arm == 'PZ':
+        complete = read_json(PROJECTED_ROOT/'projection/projection.json')
+        if (complete.get('status')!='complete' or complete.get('source_root')!=str(ROOT)
+            or complete.get('singular_relative_cutoff')!=1e-6):
+            raise ValueError('projected repair source/definition changed')
+        return PROJECTED_ROOT/'projection/delta_O.safetensors'
+    if arm == 'parent':
+        return PARENT
+    complete = read_json(panel_root(arm)/arm/'completion.json')
+    if complete.get('status')!='complete' or complete.get('updates_per_copy')!=64:
+        raise ValueError('only complete64 endpoint may enter the learning-limit panel')
+    return ROOT/arm/'recovery_64.pt'
+
+
+def panel_identity(arm, slot):
+    result = {'study':panel_root(arm).name,'teacher_slot':slot,'parent_checkpoint':str(PARENT),
+        'parent_training_git':'e2afbfd7c997e3f792921600608efa2fa3c1b25a',
+        'query_manifest':file_record(ROOT/'query_manifest.json')}
+    if arm == 'PZ':
+        result['projection'] = file_record(PROJECTED_ROOT/'projection/projection.json')
+    return result
+
+
 def bank_path(arm, slot):
-    if arm not in ARMS or slot not in (0,1):
+    if slot not in (0,1):
         raise ValueError('unregistered learning-limit arm/teacher slot')
-    return ROOT / arm / 'bank' / f'panel_teacher{slot}.json'
+    return panel_root(arm) / arm / 'bank' / f'panel_teacher{slot}.json'
 
 
 def tasks_for_panel():
@@ -37,49 +70,45 @@ def tasks_for_panel():
     return result
 
 
-def register_inputs():
+def register_inputs(arm='parent'):
+    root = panel_root(arm)
     rows = tasks_for_panel()
     subset = {'schema_version':'ember_pi05_task_subset_selection_v1',
         'role':'development_train','mode':'screen','state_count':4,'init_state_ids':list(STATES),
         'task_ordinals':[0,6,12,18],'global_task_ids':list(TASKS),
         'tasks':[{k:r[k] for k in ('global_task_id','suite','task_id')} for r in rows],
         'outcome_dependence':False,'validation_use':False,'test_use':False}
-    write_json_atomic(ROOT/'launch/train4_subset.json',subset)
+    write_json_atomic(root/'launch/train4_subset.json',subset)
     for slot in (0,1):
         full = [{'suite':r['suite'],'task_id':r['task_id'],'init_state_id':0} for r in rows] if slot==0 else []
         capture = {'schema_version':'ember_pi05_registered_trajectory_capture_v1',
-            'study_id':STUDY,'task_subset_selection':str(ROOT/'launch/train4_subset.json'),
+            'study_id':root.name,'task_subset_selection':str(root/'launch/train4_subset.json'),
             'full_conditions':full,'mode':'compact',
             'passive_control_trace':'ember_operator_read_write_passive_capture_v1',
             'stage_predicates':True,'training_gradient_use':False,'checkpoint_selection_use':False,
             'validation_use':False,'test_use':False}
-        write_json_atomic(ROOT/f'launch/capture_teacher{slot}.json',capture)
+        write_json_atomic(root/f'launch/capture_teacher{slot}.json',capture)
 
 
 def register_bank(arm, slot):
     from .bank import BANK_SCHEMA,KIND
     base = read_json(BASE_BANK)
+    root = panel_root(arm)
     rows, conditions = tasks_for_panel(), []
     for row in rows:
         task = row['global_task_id']
         teacher = TEACHERS[task][slot]
         key = f'task{task:03d}_teacher{teacher:02d}'
-        factors = ROOT/arm/'bank'/f'{key}.safetensors'
+        factors = root/arm/'bank'/f'{key}.safetensors'
         conditions.append({'condition_id':key,'global_task_id':task,'teacher_demo':teacher,
                            'factors':file_record(factors)})
         row['episodes'] = [{'init_state_id':state,'condition_id':key,
                             'teacher_demo_indices':[teacher],'video_ordinal':slot} for state in STATES]
-    if arm != 'parent':
-        complete = read_json(ROOT/arm/'completion.json')
-        if complete.get('status')!='complete' or complete.get('updates_per_copy')!=64:
-            raise ValueError('only complete64 endpoint may enter the learning-limit panel')
     result = {'schema_version':BANK_SCHEMA,'kind':KIND,'status':'sealed','mode':arm,
-        'condition_layout':'complete38','learning_limit_panel':{'study':STUDY,'teacher_slot':slot,
-            'parent_checkpoint':str(PARENT),'parent_training_git':'e2afbfd7c997e3f792921600608efa2fa3c1b25a',
-            'query_manifest':file_record(ROOT/'query_manifest.json')},
+        'condition_layout':'complete38','learning_limit_panel':panel_identity(arm,slot),
         'asset_root':base['asset_root'],'spec':base['spec'],'source':base['source'],
         'shared':base['shared'],'lora':base['lora'],
-        'checkpoint':str(PARENT if arm=='parent' else ROOT/arm/'recovery_64.pt'),
+        'checkpoint':str(endpoint(arm)),
         'scene_root':str(ROOT/'scenes'),'tasks':rows,'conditions':conditions}
     path = bank_path(arm,slot)
     write_json_atomic(path,result)
@@ -94,24 +123,20 @@ def inspect(bank,path,source,task_keys,role,require_formal,task_states):
     from safetensors import safe_open
     panel = bank['learning_limit_panel']
     arm,slot = bank['mode'],panel['teacher_slot']
+    root = panel_root(arm)
     base = read_json(BASE_BANK)
     expected = tasks_for_panel()
     if (path!=bank_path(arm,slot).resolve() or bank['kind']!=KIND or bank['status']!='sealed'
         or bank['condition_layout']!='complete38' or role!='development_train' or not require_formal
-        or panel!={'study':STUDY,'teacher_slot':slot,'parent_checkpoint':str(PARENT),
-            'parent_training_git':'e2afbfd7c997e3f792921600608efa2fa3c1b25a',
-            'query_manifest':file_record(ROOT/'query_manifest.json')}
+        or panel!=panel_identity(arm,slot)
         or bank['source']!=source or not source_matches(source,base['source'])
         or any(bank[k]!=base[k] for k in ('asset_root','spec','shared','lora'))
         or bank['scene_root']!=str(ROOT/'scenes')
         or set(task_keys)!={(r['suite'],r['task_id']) for r in expected}
         or task_states is None or any(tuple(v)!=STATES for v in task_states.values())):
         raise ValueError('learning-limit registered scope/source changed')
-    if arm!='parent' and (read_json(ROOT/arm/'completion.json').get('updates_per_copy')!=64
-                          or bank['checkpoint']!=str(ROOT/arm/'recovery_64.pt')):
+    if bank['checkpoint']!=str(endpoint(arm)):
         raise ValueError('learning-limit endpoint identity changed')
-    if arm=='parent' and bank['checkpoint']!=str(PARENT):
-        raise ValueError('learning-limit parent checkpoint changed')
     spec=read_json(Path(base['spec']['path']))
     lora=derive_pi05_lora_rank(load_pi05_lora_contract(Path(base['asset_root'])/spec['source']['lora_contract']),rank=128)
     shapes=expected_lora_state_shapes(lora)
@@ -120,7 +145,7 @@ def inspect(bank,path,source,task_keys,role,require_formal,task_states):
     for row,wanted,condition in zip(bank['tasks'],expected,bank['conditions'],strict=True):
         task=wanted['global_task_id'];teacher=TEACHERS[task][slot];key=f'task{task:03d}_teacher{teacher:02d}'
         episodes=[{'init_state_id':s,'condition_id':key,'teacher_demo_indices':[teacher],'video_ordinal':slot} for s in STATES]
-        factors=ROOT/arm/'bank'/f'{key}.safetensors'
+        factors=root/arm/'bank'/f'{key}.safetensors'
         if row!={**wanted,'episodes':episodes} or condition!={'condition_id':key,'global_task_id':task,
                 'teacher_demo':teacher,'factors':file_record(factors)}:
             raise ValueError('learning-limit teacher/state/file pairing changed')
@@ -136,14 +161,15 @@ def registered_capture(args,tasks,output,path,manifest,subset,bank):
     from .capture import PASSIVE_TAG
     from ember.pi05_assets import Pi05EvaluationError
     slot=bank['learning_limit_panel']['teacher_slot'];arm=bank['mode']
+    root=panel_root(arm)
     full=[{'suite':t.suite,'task_id':t.task_id,'init_state_id':0} for t in tasks] if slot==0 else []
-    wanted=read_json(ROOT/f'launch/capture_teacher{slot}.json')
-    if (manifest!=wanted or path.resolve()!=ROOT/f'launch/capture_teacher{slot}.json'
+    wanted=read_json(root/f'launch/capture_teacher{slot}.json')
+    if (manifest!=wanted or path.resolve()!=root/f'launch/capture_teacher{slot}.json'
         or Path(args.static_task_lora_manifest).resolve()!=bank_path(arm,slot)
-        or output.resolve()!=ROOT/arm/'evaluation'/f'teacher{slot}'
+        or output.resolve()!=root/arm/'evaluation'/f'teacher{slot}'
         or args.role!='development_train' or args.mode!='screen' or len(tasks)!=4
         or manifest['full_conditions']!=full or subset is None
-        or subset.get('selection_path')!=str(ROOT/'launch/train4_subset.json')
+        or subset.get('selection_path')!=str(root/'launch/train4_subset.json')
         or any(tuple(t.init_state_ids)!=STATES for t in tasks)):
         raise Pi05EvaluationError('learning-limit capture scope changed')
     capture={'schema_version':'ember_pi05_registered_trajectory_capture_v1',

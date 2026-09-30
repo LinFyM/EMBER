@@ -2457,3 +2457,98 @@ main负责科研原件、解释和取舍，不重复源码QA；执行者可在�
 main科研写入与canonical集成按窗口串行；发布完成后由执行者明确释放窗口。
 仅一份launch合同记录精确环境/commit/命令/输入/输出/配额/拓扑/初始化/选择；长任务持续等待退出，
 整批完成或实质科学/预算阻碍才一次Steer main，不定时检查日志、心跳或阶段自Queue。
+
+### 36.5 完成结果与学习判断
+
+本批完成126/400：对Joint450114为R96/G30/L18，对原T450122为R92/G34/L30，对MT153为R94/G32/L59。
+公共train144同Joint为80，R73/G7/L7；A28公共函数变化小，完整减公共的作用变化更大，平均风险几乎未改善。
+task31同为9/50但得6失6，没有支持多阶段组合已稳定改善；对MT的−27主要由task3/31两项合计−28构成。
+main重算原始行、候选400份goal trace、36份FM预测与1,800个已存匹配训练条件，并核实际Value调用，见机制§82/findings§256。
+新增U/attention已在第2/3步得到信用，不能用零初始化启动慢或工程未接通解释当前能力不足。
+同时，原T450→900恰在task3/31有24→43、14→21的明显获取，故以独立§37检验一个后续学习窗口，非自动晋级或新架构。
+原T900原件为148，810为144；机制§80误写900=147已纠正，147是1080，旧结果不改。
+
+训练/读取5f4f76e7，完整450 ECP，实际50,400 full＋同query公共50,400；
+36task各50不同teacher。全部544新环境episode/12新A28完成退出，旧24A28复用；无controls/Test/RL或900。
+记账10.17446808/16GPUh、整批2.969小时；留存观察高水13.93244553GiB、保守峰值界14.43243790/32GiB。
+原CPUowner环境错误及venv修复保留，0GPU且未重启训练，后段与训练均exit0；不把旧bootstrap exit1当训练失败。
+
+## 37. 固定Context图的450→900学习检验与有条件邻点读取（2026-10-01）
+
+### 37.1 要区分的解释
+
+Owner自主研究/训练授权持续有效。§36只支持同目标下有限经验收益，未证明主要机制修复或稳定超过强参照。
+本批检验：Context在已有正效应基础上，能否在原T已知发生相关能力获取的后续窗口，缩小主要绝对性能缺口并保留能力。
+竞争解释是本轮仅修补早期双目标代价/改变成功集合，原A中的全视频Value仍不能形成足够有用的未见task作用。
+不以训练FM继续下降、非零梯度或“尚未证明不可能”作为延长理由。依据和原T逐task历史见机制§82。
+
+唯一候选仍为§36的context，无架构、loss、标签、任务权重、数据或rank变化；不新训Joint900或重新训练参照。
+主节点预先固定为900，参照为原T900 **148/400**、MT300 **153/400**以及自身450 **126/400**。
+两者训练目标不同且没有Joint900，900比较用于完整方法/学习阶段判断，不能单独再次识别context的因果作用。
+若900完整400的成功数严格大于153，才执行事前固定的810邻点correct400；它用于保持判断，不能取810/900最大值代替主点。
+这个触发是资源分配条件，不是方法最终接受的充分标准；task分布、得失/保持及后续必要视频证据仍须由main判断。
+900≤153时本批不补810能力，不因末点偏低改读720/其它点。无自动1350/2340、参数扫描、controls、Test或RL。
+
+### 37.2 父checkpoint、更新与精确来源
+
+唯一root `/data1/user/ymdai/ember_runs/operator_context_value_continuation900_20261001`。
+父为完整ECP `/data1/user/ymdai/ember_runs/operator_context_value_fresh_20261001/context/train/attempts/fresh/checkpoints/macro_00000450`，
+原训练/读取5f4f76e7179948f7945a7a98814f55c8a7f78610。保留真实父身份；后续新代码/读取身份分别记录，不改原冻结树。
+加载全部Writer/Adam/scheduler/scaler/sampler/各rank RNG和schema；不是fresh optimizer、warm restart、只加载权重或重算前450。
+继续原绝对macro451..900、原full＋public各1与共享prefix路径；新增50,400 full查询及同query公共风险。
+原36task/teacher50池按原v3第二轮teacher序列覆盖各50条一次，沿原seed和query/flow流；不是重放第一轮事件。
+总累计900/100,800 full及相同数量公共计算、每task100访问/50不同teacher；梯度消费者和信息墙完整继承§35/36。
+原AdamW/warmup150/decay1200/floor不变，resume451应消费原绝对LR；不得把本批450更新视为新450日程。
+在540/630/720/810/900保存完整ECP；只有900及上述有条件810可进入本批能力读取，其余为恢复资产。
+
+父物理world4，默认按实际吞吐继续同world；设备可重新分配。若需改变物理rank，沿已验证完整边界迁移合同保留逻辑流/权重，
+记录旧/新拓扑与RNG来源，不直接绕过校验，也不称跨拓扑bitwise exact；不跨节点拼训练碎片。
+默认policy microbatch28/frame_chunk8，正常BF16/TF32/attention/reduction差异接受。
+本图已完成实际最长视频/28query检查，不再重复一轮最长GPU检查或新profile；实际451消费者记录恢复、事件和绝对LR即可。
+复用canonical operator trainer及已有continuation/ECP机制；必要来源或scope接入由执行者独立实现/验证后集成push并冻结。
+
+### 37.3 读出与已有证据
+
+训练至900后，先执行固定主节点三项读出，旧结果全部只读复用：
+
+- **Context900 correct400**：与450完全相同的scene/state–video/env及policy RNG；K1每task50teacher各一次，
+  官方预处理/10flow/前5执行/horizon/成功终止，8个init0 full、392 compact，400份continuous trace/goal均保留。
+  报与自身450、T900、MT的R/G/L/churn/Jaccard、逐task/suite/breadth及任务簇区间；关注task3/31的具体阶段得失，
+  不只看总分，也不将两项得分改善自动解释为context语义被识别。
+- **Context900 public144**：同§36旧36task/init32..35面板，0 teacher native，只装自身公共76因子，36full/108compact。
+  与自身450public80及旧Joint450public80/T450public68/MT93比较，明确不同训练节点；分原train24/support12。
+  没有原T900 public，也不新增它或把旧T1800 full144拼成视频增量。
+- **Context900 A28**：同原四train tasks/两teacher、原28query/noise/tau/target，8full+4public FM速度预测，
+  保存逐query/first5/full50/motion6/gripper；与自身450及已有Joint/T450配对作功能描述，明确学习阶段差异。
+  不新增B面板、十步采样、teacher变体或额外梯度。
+
+主点全部400行完成且验证配对后，如successes>153，再物化已存**Context810**唯一bank并读其correct400；
+相同scene/全50teacher与8full/392compact、全部trace，比较900↔810保持以及旧T810144/MT153。
+不为810增加公共144或A28，也不在看到900分数后修改810、loss或视频集合；900仍为唯一主判点。
+因此新增规模为544条环境episode/12A28，触发邻点分支时为944条环境episode/12A28。
+不混用checkpoint、不做union选模；本批无held公共/no-video/other/wrong/shuffle/reverse/Test、奖励梯度或task-local优化。
+
+旧T900原件：`operator_read_write_learning_20260928/continuation900/T/evaluation/900/correct400/results.json`；
+旧T810同root下`evaluation/810/correct400/results.json`，main已直接确认400行分别148/144。
+其余参照及scene继承§36 readback中的显式路径，原视频映射与source/normalization/tokenizer只读复用。
+
+### 37.4 预算、调度与停止
+
+硬限**16GPUh / 32GiB峰值新增**，包含必要实现检查、加载/保存、失败/恢复、全部bank/readout及新冻结树。
+依据§36实际450训练8.41876GPUh、单bank.38769、correct400 .98068、public144 .33790、A28 .01688，
+常规预计约10–11GPUh；触发810约再1.4GPUh，整批含工程预计3–4小时（4张有效训练卡），这些是实测外推而非保证。
+超过4小时预期或累计12GPUh仍未接近完成时，一次回报具体原因/剩余量；16GPUh硬限不得静默跨越。
+若资源变化，应先按实际吞吐重排而不改逻辑更新或删面板；超过科学/预算边界才交main裁决，无例行Owner批准。
+
+创建root/冻结/cache前live核strg01 data1独立quota、个人用量、共享容量，峰值须含可能的两个400 bank与全部ECP/临时保存；
+全部新增data1，旧资产只读。每次launch/resume双节点live准入，沿总8/6、单节点6上限，不dummy或抢占他人。
+按§36整批实测bank≈349秒/4卡校准排程，不再用最长视频冷compile粗估969秒主导资源分配。
+已就绪的bank、公共144、A28及correct400按真实设备余量独立并行，保留资源给吞吐更高的后续400；
+调度预期收益只是待实践的安排，不计为本批已节约成本，不重启有效评测来追求形式一致。
+
+执行者仍为session `01a0f018-69af-7b00-b614-7e117540051b`，独占工程/针对实际消费者验证/Git集成push/clean detached冻结及运行。
+main负责科学原件与解释，不重复工程QA。复用现有canonical trainer/continuation/scope/ECP及官方动态队列，不复制另一套执行面。
+已有venv用于长任务owner，保留本批所有失败与恢复账；不要恢复已修正的system-Python等待器路径。
+写入窗口串行，集成后明确释放main；运行用冻结树。单份launch合同记录精确来源/命令/环境/资源/输出/恢复与条件读出规则。
+长任务持续等待退出，完成整批（包括已触发的810分支）或实质边界时一次Steer main；不按阶段自Queue、心跳或轮询日志。
+结束停止本批新增计算，main基于绝对能力与保持自主决定后续；本合同没有自动延长到900以后。

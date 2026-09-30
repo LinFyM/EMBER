@@ -25,6 +25,13 @@ main直接读取单份launch_contract及train_process/command确认上述启动�
 启动回报尚无稳定实测吞吐，原3–5小时仍为估计；新450 checkpoint/bank/correct400与候选公共读出尚待整批完成。
 现场data1 quota/limit2T/2.0T、实占约858.031GiB，共享空余82TiB；预计新增峰值14GiB≤32GiB。
 canonical tracked写入窗口已由执行者明确释放给main，训练从冻结树继续；完成/实质阻碍主动整批回报，不监看训练进度。
+后续训练已由执行者迁移至GPU02/world4，原5dd冻结计算与科学合同保持；吞吐优化交付时回报已到381，完整360已保存。
+Owner授权的双FM吞吐优化由执行者自行集成push `c2021f5752fd56edcc7f07103f9fe165a8b39299`，main直接读交付/profile原件。
+该实现共享同query的冻结prefix/KV与flow抽样，两个动作suffix、独立LoRA cotangent及full native回传保持。
+固定270 checkpoint、task12/teacher25/28query的实际短检查中，双FM段中位4.04275→2.18807秒，节省45.88%；
+这不是整宏步/整批加速，也不以profile中的风险数值判断模型性能。新增.01570286GPUh计入本批16GPUh，0优化更新。
+为保留已完成更新，当前§35训练和全部读取继续使用5dd至450；新优化仅供后继使用，没有中途换源码或重算。
+吞吐工程集成完成后canonical tracked窗口已再次释放给main；原结果仍待整批科学回报，没有新实验臂。
 main负责科学判断和记录；实验session 01a0f018-69af-7b00-b614-7e117540051b继续独立完成工程、Git集成、冻结与运行。
 main完成机制§79的M内容候选推导：由原H作时间attention进入局部Value gate，保留实际A及递推，U=0精确恢复原T。
 它新增其它时刻证据到Value内容的直接信用，不只是改变旧写入保留；LocalField、clock等负例继续约束，尚无已证收益或第二批实现/训练。

@@ -647,6 +647,11 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
+        if bank.get("learning_limit_panel") is not None:
+            from .learning_limit import inspect
+
+            return inspect(bank, path, source, task_keys, evaluation_role,
+                           require_formal, task_init_state_ids)
         if bank.get("selected_test") is not None:
             from . import selected_scope
 
@@ -725,7 +730,12 @@ class FrozenOperatorAdapter:
         row = self.conditions[key]
         if row["factors"] != file_record(Path(row["factors"]["path"])):
             raise Pi05EvaluationError("operator condition changed during evaluation")
-        result = assemble_state(self.common, load_file(row["factors"]["path"], device="cpu"), self.lora)
+        factors = load_file(row["factors"]["path"], device="cpu")
+        if self.bank.get("learning_limit_panel") is not None:
+            result = factors
+            validate_lora_state(result, self.lora)
+        else:
+            result = assemble_state(self.common, factors, self.lora)
         self.states[key] = result
         if len(self.states) > 8:
             self.states.popitem(last=False)

@@ -49,3 +49,23 @@ def test_z_readback_through_actual_targetwrite():
     z = module.latent_z(writer, ({'site':x}, h))['site']
     assert z.shape == (256,128)
     assert torch.allclose(write.o.weight @ z, write(address,x,h), atol=2e-5, rtol=2e-4)
+
+
+def test_actual_capture_entry_routes_both_teacher_slots(monkeypatch):
+    from ember.operator_writer import capture,learning_limit as owner
+    from ember.pi05_eval.preparation import _registered_trajectory_capture
+    original=capture.read_json
+    tasks=[SimpleNamespace(suite=r['suite'],task_id=r['task_id'],init_state_ids=(0,1,2,3))
+           for r in owner.tasks_for_panel()]
+    for slot in (0,1):
+        bank=owner.bank_path('parent',slot)
+        monkeypatch.setattr(capture,'read_json',lambda p: {'mode':'parent',
+            'learning_limit_panel':{'teacher_slot':slot}} if p==bank else original(p))
+        args=SimpleNamespace(static_task_lora_manifest=bank,role='development_train',mode='screen',
+            trajectory_capture_selection=owner.ROOT/f'launch/capture_teacher{slot}.json',
+            occupancy_capture_selection=None,capture_stage_predicates=False)
+        output=owner.ROOT/'parent/evaluation'/f'teacher{slot}'
+        result,stage=_registered_trajectory_capture(args,tasks,output,{'selection_path':str(owner.ROOT/'launch/train4_subset.json')},Path(__file__).resolve().parents[2])
+        assert len(result['full_conditions'])==(4 if slot==0 else 0)
+        assert result['passive_trace']['schema_version']==capture.PASSIVE_TAG
+        assert stage['full_conditions_only'] is False

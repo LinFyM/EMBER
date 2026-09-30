@@ -21,6 +21,10 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
 
     bank_path = Path(args.static_task_lora_manifest).resolve()
     bank = read_json(bank_path)
+    if bank.get("learning_limit_panel") is not None:
+        from .learning_limit import registered_capture as learning_capture
+
+        return learning_capture(args, tasks, output_dir, path, manifest, task_subset, bank)
     try:
         expected = seen_scope.capture_expectations(bank, bank_path, tasks, output_dir)
     except ValueError as error:

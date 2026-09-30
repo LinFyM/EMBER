@@ -15,13 +15,19 @@ Owner于2026-09-30 13:10 UTC明确授权自主推进，不限制思考范围；�
 在首轮每task全部50条teacher覆盖后读取一次候选correct400；另在旧36-task/144条train面板比较两者的公共策略，
 以及固定四train任务的功能面板。公共train读出用于检验实际分工，不将held视频因果controls提前用于设计。
 本批16GPUh/32GiB上限，预计整批3–5小时，具体设备/吞吐/配额由执行者launch前核定；没有自动900或M架构修改。
-实验session已承接§35并完成fresh训练接线：继续复用唯一operator trainer和既有公共cotangent，保留原T计算图。
-截至工程准备记录，9项针对CPU检查通过，含原450事件/50teacher覆盖、公共76因子信用及旧T450公共实际消费者；
-新450训练与后段尚未执行，不把入口检查作为未来bank/eval通过。唯一root为
-`/data1/user/ymdai/ember_runs/operator_joint_public_fresh_20260930`，launch记录保存精确来源、成本与资源准入。
-strg01已核实data1 quota/limit为2T/2.0T、当前约858G；预计本批新增峰值14GiB，合同上限32GiB。
+合同cce75b31已Queue派发并由实验session明确承接，回执01a0f278-d2fd-7050-8839-f9d7dc48d283；
+执行者完成工程集成push **5ddf883bc6bc14e6d912375fb3e92ae6ae6218ea**，自行通过9项针对CPU检查（17.23秒）。
+实际fresh450训练于13:58:58 UTC在GPU01:0,2/world2启动，microbatch28/frame_chunk8；
+clean detached树为`/data1/user/ymdai/projects/EMBER-joint-public-formal`。
+main直接读取单份launch_contract及train_process/command确认上述启动身份，没有重复工程审查。
+唯一root `/data1/user/ymdai/ember_runs/operator_joint_public_fresh_20260930` 保存来源、命令、准入与成本原件。
+旧T450的A28读取已在GPU02:3并行执行，公共bank已CPU导出，144公共train消费者按现场余量准备；这些不改变新训练科学范围。
+启动回报尚无稳定实测吞吐，原3–5小时仍为估计；新450 checkpoint/bank/correct400与候选公共读出尚待整批完成。
+现场data1 quota/limit2T/2.0T、实占约858.031GiB，共享空余82TiB；预计新增峰值14GiB≤32GiB。
+canonical tracked写入窗口已由执行者明确释放给main，训练从冻结树继续；完成/实质阻碍主动整批回报，不监看训练进度。
 main负责科学判断和记录；实验session 01a0f018-69af-7b00-b614-7e117540051b继续独立完成工程、Git集成、冻结与运行。
-main同时推导完整视频上下文怎样参与M的Value形成，保留LocalField等完整反例；尚未指定新模块或派发第二批。
+main完成机制§79的M内容候选推导：由原H作时间attention进入局部Value gate，保留实际A及递推，U=0精确恢复原T。
+它新增其它时刻证据到Value内容的直接信用，不只是改变旧写入保留；LocalField、clock等负例继续约束，尚无已证收益或第二批实现/训练。
 
 以下为此前复核的完成事实；其“没有后继”只描述当时时点，不覆盖以上新授权。
 

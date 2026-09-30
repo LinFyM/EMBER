@@ -2,7 +2,8 @@
 
 2026-09-28起建立；原始科学论证见机制分析§42。只有progress登记的阶段有执行许可。
 本文件§1–5定义原T/U完整方法；后续各节保留历次工程、学习与诊断合同。原T/U正式结果已完成，
-§31–32变化驱动覆盖及§33学习限制诊断均已结束；当前按Owner要求暂停新增实验，实际状态只看progress顶部。
+§31–32变化驱动覆盖及§33学习限制诊断均已结束；Owner现授权完整方法复核及适当分析，新增§34为唯一有限消费者检验。
+实际状态只看progress顶部，旧暂停或旧后继许可不覆盖最新明确范围。
 §11的节点/预算不自动延续；模型、信息墙与评测约束继承，精确冻结与派发以progress为准。
 它替换旧Core/Procedure/FactorHeads生成图，不在已关闭P/I、条件速度或LocalField上追加补丁。
 
@@ -2199,3 +2200,59 @@ S/P均有真实修正，task私有化没有总分优势；D多出的局部能力
 main直接重算全部原行、goal谓词与末点预测，并完成预登记的保存Z/实际D修正代数分析，详见机制§76/findings§251。
 完整费用2.100774/4GPUh、峰值留存9.57/16GiB，全部计算退出；训练092a0ae8、读取5313257c，父训练e2afbfd7身份保持。
 该结果不是官方400资格、选点或新架构许可。按Owner要求暂停新增实验，进入完整推进说明与远程数学审阅材料准备。
+
+## 34. 共享O投影的真实消费者：参数覆盖是否保留已观察修正（2026-09-30）
+
+### 34.1 问题、范围与预期
+
+Owner授权完整思考公共A/B₀、视频理解/生成M与训练目标，并允许适当分析实验。
+本批只补一个会改变架构判断的缺口：§33的实际D修正，在固定parent Z下可由共享δO解释95.86%的诱导BA能量；
+这不能说明剩余4.14%是否携带关键动作作用，也不能证明当前Writer能通过真实监督学到该δO。
+若投影保留D的动作变化及其实际修正，降低“现有Z/输出通道排除了主要有益修正”的支持；
+若不保留，则否定以参数能量覆盖率代替功能可达性的推断，仍不能唯一归因地址、上下文或容量。
+无新优化、采样搜参、公共分支训练、正式模型选择或新held/控制条件；不据结果自动启动后继。
+
+### 34.2 固定输入与唯一投影
+
+只读§33 root `operator_learning_limit_diagnosis_20260930` 中parent/D八条件完整bank、parent全部38-target Z和原scene。
+条件仍为task0:teacher40/11、12:25/14、20:38/42、32:17/43；父是T2340，公共A/B₀/source/native全部不变。
+这些D是此前合法train查询学习出的私有诊断目标，不是held expert、可部署字典或新方法。
+
+对每target置 `Y_i=B_D_i-B_parent_i`、`H=A Aᵀ`，用八条件共同求
+`δO=argmin_O Σ_i ||(Y_i-O Z_i) A||_F²`。
+沿已完成CPU脚本的FP64 Gram/eigh求解，相对奇异值cutoff固定为1e−6；不根据消费者结果改阈值、缩放或择点。
+参考脚本为main `.codex/tmp/operator_architecture_cycle_20260929/learning_limit_output_geometry.py`；
+数学定义与结果已在远程review的learning_limit_geometry.json留存。已有1e−3敏感性结果只作解释，不增加评测臂。
+
+生成唯一PZ臂：`A_PZ=A_parent`，`B_PZ_i=B_parent_i+δO Z_i`，全部38个target齐全。
+保存各target共享δO、投影残差、范数、condition provenance及完整bank；不覆盖原parent/D或原Z。
+这是固定Z的参数投影诊断，不冒称真实FM学出的O、重新读取视频的结果或可迁移新Writer。
+特别记录较弱方向可能需要大δO（先前action_in约1.07e4），不把可拟合误写成有限优化可学。
+普通FP32落bank和实际推理数值即可，检查finite/shape及投影定义；不新增checksum或逐bit验证。
+
+### 34.3 真实动作与32条有限闭环
+
+在§33原固定B20查询、原policy RNG与十步flow下读取PZ的全部50步动作，保存逐query预测与标签引用。
+parent/S/P/D/MT全部直接复用已有匹配读回，不为低位差异重复其前向。
+同时报告PZ对D的动作差、PZ相对parent的修正与D修正之间的差，以及first5/full50/valid-future、motion6/gripper1风险。
+将D相对parent的改善与PZ是否保留该改善分开；不以范数/余弦替代实际风险。
+
+仅新增PZ同一32行train面板：四task×两teacher×init0..3，共16个不同物理初态。
+完全复用§33 scene、env/policy RNG和官方预处理/10flow/执行前5/horizon/成功终止。
+保持两teacher各四init的有限池登记，不称正式K1无放回或400 qualification。
+保存continuous trace、goal谓词、必要compact记录，固定每task第一teacher/init0 full，其它compact。
+按task/teacher/state报告相对parent、D及S的R/G/L/churn；保留task32两teacher的不利对照与任务20损失。
+诊断D的23/32高于S20/32本来样本很小；PZ若同分不等于行为等价，也不构成最终新任务泛化证据。
+
+### 34.4 执行与停止
+
+执行者沿既有session 01a0f018-69af-7b00-b614-7e117540051b自主完成实现、必要实际消费者检查、Git/冻结及运行。
+root `/data1/user/ymdai/ember_runs/operator_projected_repair_consumers_20260930`；复用canonical数据、模型、原scene及旧结果。
+增量硬限2GPUh、8GiB峰值新增存储，含加载/失败/恢复/冻结树；按既有调用成本预计计算20–40分钟、整批45–75分钟。
+超过75分钟预期或1.5GPUh仍未接近完成时，回报一次实质原因与剩余量；不能静默扩大预算或改科学臂。
+GPU按双节点live准入/全局上限选择实际吞吐，不因这是一臂而限制独立消费者只能一张卡；CPU物化不占GPU。
+创建root/缓存/冻结树前核strg01 data1 quota、目录用量、共享容量及峰值；全部新增data1，旧资产只读。
+诊断过程不改原冻结树；如需新增消费者接口，执行者在独占dev修复并通过实际调用、集成push、使用clean detached新代码。
+主讨论不重复工程审查，只处理科学语义/预算边界；main科研文档与代码集成写入窗口串行。
+直接等待进程退出，不定时心跳或阶段性自Queue；完成整批或实质阻碍时一次Steer主讨论。
+结束后停止本批计算。结果进入本轮完整方法判断，不直接升级为正式训练许可。

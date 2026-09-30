@@ -272,7 +272,8 @@ def inspect_official_scope(bank: Mapping, spec: Mapping, path: Path, source: Map
     late_window = window2790 or macro in owner.CONTINUATION2340_EVALUATION_MACROS
     pilot = macro in owner.PILOT_CHECKPOINTS and mode in owner.PILOT_ARMS
     clock_spec = (owner.CHANGE_CLOCK_CONTINUATION_SPEC_PATH if macro == 450 else owner.CHANGE_CLOCK_SPEC_PATH)
-    registered_spec = (clock_spec if clock_pilot else
+    registered_spec = (change_clock.CONTINUATION_TRAINING_SPEC_PATH if clock_pilot and macro == 450 else
+                       clock_spec if clock_pilot else
                        owner.CONTINUATION2790_FROZEN_SPEC_PATH if window2790 else
                        owner.CONTINUATION2340_FROZEN_SPEC_PATH if late_window else
                        owner.PILOT_FROZEN_SPEC_PATH if pilot else

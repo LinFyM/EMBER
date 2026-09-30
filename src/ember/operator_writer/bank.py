@@ -274,12 +274,15 @@ def _continuation_source_identity(spec: Mapping, macro: int, sealed_evaluation: 
     if spec.get("task") == change_clock.CONTINUATION_TASK:
         if macro != 450:
             raise ValueError("change-clock continuation only reads its new 450 ECP")
+        if read_json(change_clock.CONTINUATION_TRAINING_SPEC_PATH) != dict(spec):
+            raise ValueError("change-clock continuation reading and actual training specs differ")
         sampler = {"schema_version": spec["events"]["schema_version"],
                    "seed": 20260928, "tasks": spec["events"]["task_ids"],
                    "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28,
                    "teacher_rounds": [[20260928, 1, "task"], [20260928, 1, "task", 1]],
                    "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
-        return 0, CHANGE_CLOCK_CONTINUATION_SPEC_PATH, sampler, (270, 360), frozen_git(change_clock_pilot=True)
+        return (0, change_clock.CONTINUATION_TRAINING_SPEC_PATH, sampler, (270, 360),
+                change_clock.CONTINUATION_TRAINING_GIT)
     window = (5 if macro in CONTINUATION2790_EVALUATION_MACROS else
               4 if macro in CONTINUATION2340_EVALUATION_MACROS else
               3 if macro in PILOT_CHECKPOINTS else
@@ -475,7 +478,8 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, device: torch.dev
     spec = read_json(spec_path) if seen_task or next_window else specification(spec_path)
     if next_window and spec != specification(EVALUATION_SPEC_PATHS[macro]):
         raise ValueError("materialization differs from its frozen training spec")
-    source_spec_path = spec_path
+    source_spec_path = (change_clock.CONTINUATION_TRAINING_SPEC_PATH
+                        if mode == change_clock.MODE and macro == 450 else spec_path)
     run = inspect_training_source(spec, checkpoint, "T" if pilot else mode,
                                   sealed_evaluation=seen_task or next_window)
     _require_pilot_source(mode, run)

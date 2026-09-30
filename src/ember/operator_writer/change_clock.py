@@ -20,6 +20,11 @@ CONTINUATION_ROOT = ROOT.with_name(CONTINUATION_TASK)
 CONTINUATION_SPEC_NAME = "change_clock_continuation450_spec.json"
 CONTINUATION_CAPTURE_NAME = "change_clock_continuation450_capture.json"
 CONTINUATION_CHECKPOINTS = (360, 450)
+CONTINUATION_TRAINING_GIT = {"commit": "2001e77006f571c362476396bf018eae2d4bf221", "branch": "",
+                             "dirty_paths": [], "pushed_ref": "origin/codex/operator-change-clock"}
+CONTINUATION_TRAINING_SPEC_PATH = Path(
+    "/data1/user/ymdai/projects/EMBER-change-clock-continuation450-formal"
+    "/configs/operator_read_write_v1/change_clock_continuation450_spec.json")
 PARENT_CHECKPOINT = (ROOT / MODE / "train/attempts/resume180_gpu02_world1"
                      / "checkpoints/macro_00000270")
 

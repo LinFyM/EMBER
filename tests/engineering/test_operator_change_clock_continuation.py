@@ -14,6 +14,7 @@ from ember.operator_writer.run import (CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONT
                                        validate_attempt, validate_train_request)
 from ember.operator_writer.scope import capture_expectations
 from ember.pi05_source_checkpoint import read_json
+from ember.pi05_eval.preparation import _registered_trajectory_capture
 
 ASSET = Path('/data1/user/ymdai/projects/EMBER')
 
@@ -84,7 +85,32 @@ def test_official_reader_and_materializer_share_450_source_identity(monkeypatch)
     identities = [operator_bank._continuation_source_identity(spec, 450, sealed)
                   for sealed in (False, True)]
     assert identities[0] == identities[1]
-    assert identities[0][1] == CHANGE_CLOCK_CONTINUATION_SPEC_PATH
-    assert identities[0][-1] == git
+    assert identities[0][1] == change_clock.CONTINUATION_TRAINING_SPEC_PATH
+    assert identities[0][-1] == change_clock.CONTINUATION_TRAINING_GIT
+    assert identities[0][-1] != git
     with pytest.raises(ValueError):
         operator_bank._continuation_source_identity(spec, 360, True)
+    changed = deepcopy(spec)
+    changed['operator']['erase_rule'] = 'constant'
+    with pytest.raises(ValueError, match='actual training specs differ'):
+        operator_bank._continuation_source_identity(changed, 450, True)
+
+
+def test_real_evaluator_capture_entry_routes_450_without_train_subset(tmp_path):
+    spec = specification(CHANGE_CLOCK_CONTINUATION_SPEC_PATH)
+    tasks = [SimpleNamespace(suite=('libero_spatial', 'libero_object', 'libero_goal', 'libero_10')[i // 10],
+                             task_id=i % 10, init_state_ids=tuple(range(50)))
+             for i in spec['evaluation']['task_ids']]
+    bank_path = tmp_path / 'T_change_clock/banks/450/manifest.json'
+    bank_path.parent.mkdir(parents=True)
+    import json
+    bank_path.write_text(json.dumps({'kind': operator_bank.KIND, 'mode': change_clock.MODE}))
+    capture_path = CHANGE_CLOCK_SPEC_PATH.with_name(change_clock.CONTINUATION_CAPTURE_NAME)
+    output = tmp_path / 'T_change_clock/evaluation/450/correct400'
+    args = SimpleNamespace(trajectory_capture_selection=capture_path,
+                           static_task_lora_manifest=bank_path, role='validation', mode='formal')
+    capture, stage = _registered_trajectory_capture(args, tasks, output, None, ASSET)
+    assert capture['selection_path'] == str(capture_path)
+    assert len(capture['full_conditions']) == 8
+    assert capture['passive_trace']['trace_root'] == str(output / 'continuous_traces')
+    assert stage['validation_action_reads'] == stage['validation_reward_reads'] == 0

@@ -1,0 +1,129 @@
+arm,global_task_id,teacher,init_state_id,suite,success,steps,env_seed,policy_seed_root,ever_satisfied,final_satisfied,source_relative_path
+D,0,11,0,libero_spatial,1,75,7,7,[true],[true],D/evaluation/teacher1/results.json
+D,0,11,1,libero_spatial,1,75,7,7,[true],[true],D/evaluation/teacher1/results.json
+D,0,11,2,libero_spatial,1,183,7,7,[true],[true],D/evaluation/teacher1/results.json
+D,0,11,3,libero_spatial,1,79,7,7,[true],[true],D/evaluation/teacher1/results.json
+D,0,40,0,libero_spatial,1,75,7,7,[true],[true],D/evaluation/teacher0/results.json
+D,0,40,1,libero_spatial,1,74,7,7,[true],[true],D/evaluation/teacher0/results.json
+D,0,40,2,libero_spatial,1,190,7,7,[true],[true],D/evaluation/teacher0/results.json
+D,0,40,3,libero_spatial,1,80,7,7,[true],[true],D/evaluation/teacher0/results.json
+D,12,14,0,libero_object,1,156,7,7,[true],[true],D/evaluation/teacher1/results.json
+D,12,14,1,libero_object,0,280,7,7,[false],[false],D/evaluation/teacher1/results.json
+D,12,14,2,libero_object,1,110,7,7,[true],[true],D/evaluation/teacher1/results.json
+D,12,14,3,libero_object,0,280,7,7,[false],[false],D/evaluation/teacher1/results.json
+D,12,25,0,libero_object,1,107,7,7,[true],[true],D/evaluation/teacher0/results.json
+D,12,25,1,libero_object,0,280,7,7,[false],[false],D/evaluation/teacher0/results.json
+D,12,25,2,libero_object,1,112,7,7,[true],[true],D/evaluation/teacher0/results.json
+D,12,25,3,libero_object,0,280,7,7,[false],[false],D/evaluation/teacher0/results.json
+D,20,38,0,libero_goal,1,209,7,7,[true],[true],D/evaluation/teacher0/results.json
+D,20,38,1,libero_goal,1,127,7,7,[true],[true],D/evaluation/teacher0/results.json
+D,20,38,2,libero_goal,1,162,7,7,[true],[true],D/evaluation/teacher0/results.json
+D,20,38,3,libero_goal,0,300,7,7,[false],[false],D/evaluation/teacher0/results.json
+D,20,42,0,libero_goal,1,129,7,7,[true],[true],D/evaluation/teacher1/results.json
+D,20,42,1,libero_goal,1,125,7,7,[true],[true],D/evaluation/teacher1/results.json
+D,20,42,2,libero_goal,0,300,7,7,[false],[false],D/evaluation/teacher1/results.json
+D,20,42,3,libero_goal,0,300,7,7,[false],[false],D/evaluation/teacher1/results.json
+D,32,17,0,libero_10,1,199,7,7,"[true, true]","[true, true]",D/evaluation/teacher0/results.json
+D,32,17,1,libero_10,1,241,7,7,"[true, true]","[true, true]",D/evaluation/teacher0/results.json
+D,32,17,2,libero_10,1,382,7,7,"[true, true]","[true, true]",D/evaluation/teacher0/results.json
+D,32,17,3,libero_10,1,321,7,7,"[true, true]","[true, true]",D/evaluation/teacher0/results.json
+D,32,43,0,libero_10,1,350,7,7,"[true, true]","[true, true]",D/evaluation/teacher1/results.json
+D,32,43,1,libero_10,1,288,7,7,"[true, true]","[true, true]",D/evaluation/teacher1/results.json
+D,32,43,2,libero_10,0,520,7,7,"[true, false]","[true, false]",D/evaluation/teacher1/results.json
+D,32,43,3,libero_10,0,520,7,7,"[true, false]","[true, false]",D/evaluation/teacher1/results.json
+P,0,11,0,libero_spatial,1,74,7,7,[true],[true],P/evaluation/teacher1/results.json
+P,0,11,1,libero_spatial,1,74,7,7,[true],[true],P/evaluation/teacher1/results.json
+P,0,11,2,libero_spatial,1,122,7,7,[true],[true],P/evaluation/teacher1/results.json
+P,0,11,3,libero_spatial,1,76,7,7,[true],[true],P/evaluation/teacher1/results.json
+P,0,40,0,libero_spatial,1,76,7,7,[true],[true],P/evaluation/teacher0/results.json
+P,0,40,1,libero_spatial,1,74,7,7,[true],[true],P/evaluation/teacher0/results.json
+P,0,40,2,libero_spatial,1,213,7,7,[true],[true],P/evaluation/teacher0/results.json
+P,0,40,3,libero_spatial,1,77,7,7,[true],[true],P/evaluation/teacher0/results.json
+P,12,14,0,libero_object,1,150,7,7,[true],[true],P/evaluation/teacher1/results.json
+P,12,14,1,libero_object,0,280,7,7,[false],[false],P/evaluation/teacher1/results.json
+P,12,14,2,libero_object,1,110,7,7,[true],[true],P/evaluation/teacher1/results.json
+P,12,14,3,libero_object,0,280,7,7,[false],[false],P/evaluation/teacher1/results.json
+P,12,25,0,libero_object,1,107,7,7,[true],[true],P/evaluation/teacher0/results.json
+P,12,25,1,libero_object,0,280,7,7,[false],[false],P/evaluation/teacher0/results.json
+P,12,25,2,libero_object,1,111,7,7,[true],[true],P/evaluation/teacher0/results.json
+P,12,25,3,libero_object,0,280,7,7,[false],[false],P/evaluation/teacher0/results.json
+P,20,38,0,libero_goal,0,300,7,7,[false],[false],P/evaluation/teacher0/results.json
+P,20,38,1,libero_goal,1,133,7,7,[true],[true],P/evaluation/teacher0/results.json
+P,20,38,2,libero_goal,0,300,7,7,[false],[false],P/evaluation/teacher0/results.json
+P,20,38,3,libero_goal,1,158,7,7,[true],[true],P/evaluation/teacher0/results.json
+P,20,42,0,libero_goal,1,130,7,7,[true],[true],P/evaluation/teacher1/results.json
+P,20,42,1,libero_goal,0,300,7,7,[false],[false],P/evaluation/teacher1/results.json
+P,20,42,2,libero_goal,0,300,7,7,[false],[false],P/evaluation/teacher1/results.json
+P,20,42,3,libero_goal,1,130,7,7,[true],[true],P/evaluation/teacher1/results.json
+P,32,17,0,libero_10,0,520,7,7,"[true, false]","[true, false]",P/evaluation/teacher0/results.json
+P,32,17,1,libero_10,1,240,7,7,"[true, true]","[true, true]",P/evaluation/teacher0/results.json
+P,32,17,2,libero_10,0,520,7,7,"[true, false]","[true, false]",P/evaluation/teacher0/results.json
+P,32,17,3,libero_10,1,254,7,7,"[true, true]","[true, true]",P/evaluation/teacher0/results.json
+P,32,43,0,libero_10,0,520,7,7,"[true, false]","[true, false]",P/evaluation/teacher1/results.json
+P,32,43,1,libero_10,1,240,7,7,"[true, true]","[true, true]",P/evaluation/teacher1/results.json
+P,32,43,2,libero_10,0,520,7,7,"[true, false]","[true, false]",P/evaluation/teacher1/results.json
+P,32,43,3,libero_10,1,257,7,7,"[true, true]","[true, true]",P/evaluation/teacher1/results.json
+S,0,11,0,libero_spatial,1,68,7,7,[true],[true],S/evaluation/teacher1/results.json
+S,0,11,1,libero_spatial,1,74,7,7,[true],[true],S/evaluation/teacher1/results.json
+S,0,11,2,libero_spatial,1,69,7,7,[true],[true],S/evaluation/teacher1/results.json
+S,0,11,3,libero_spatial,1,76,7,7,[true],[true],S/evaluation/teacher1/results.json
+S,0,40,0,libero_spatial,1,75,7,7,[true],[true],S/evaluation/teacher0/results.json
+S,0,40,1,libero_spatial,1,75,7,7,[true],[true],S/evaluation/teacher0/results.json
+S,0,40,2,libero_spatial,1,181,7,7,[true],[true],S/evaluation/teacher0/results.json
+S,0,40,3,libero_spatial,1,78,7,7,[true],[true],S/evaluation/teacher0/results.json
+S,12,14,0,libero_object,1,155,7,7,[true],[true],S/evaluation/teacher1/results.json
+S,12,14,1,libero_object,0,280,7,7,[false],[false],S/evaluation/teacher1/results.json
+S,12,14,2,libero_object,1,109,7,7,[true],[true],S/evaluation/teacher1/results.json
+S,12,14,3,libero_object,0,280,7,7,[false],[false],S/evaluation/teacher1/results.json
+S,12,25,0,libero_object,1,157,7,7,[true],[true],S/evaluation/teacher0/results.json
+S,12,25,1,libero_object,0,280,7,7,[false],[false],S/evaluation/teacher0/results.json
+S,12,25,2,libero_object,1,111,7,7,[true],[true],S/evaluation/teacher0/results.json
+S,12,25,3,libero_object,0,280,7,7,[false],[false],S/evaluation/teacher0/results.json
+S,20,38,0,libero_goal,1,192,7,7,[true],[true],S/evaluation/teacher0/results.json
+S,20,38,1,libero_goal,0,300,7,7,[false],[false],S/evaluation/teacher0/results.json
+S,20,38,2,libero_goal,1,167,7,7,[true],[true],S/evaluation/teacher0/results.json
+S,20,38,3,libero_goal,0,300,7,7,[false],[false],S/evaluation/teacher0/results.json
+S,20,42,0,libero_goal,0,300,7,7,[false],[false],S/evaluation/teacher1/results.json
+S,20,42,1,libero_goal,0,300,7,7,[false],[false],S/evaluation/teacher1/results.json
+S,20,42,2,libero_goal,0,300,7,7,[false],[false],S/evaluation/teacher1/results.json
+S,20,42,3,libero_goal,1,146,7,7,[true],[true],S/evaluation/teacher1/results.json
+S,32,17,0,libero_10,0,520,7,7,"[true, false]","[true, false]",S/evaluation/teacher0/results.json
+S,32,17,1,libero_10,1,345,7,7,"[true, true]","[true, true]",S/evaluation/teacher0/results.json
+S,32,17,2,libero_10,1,397,7,7,"[true, true]","[true, true]",S/evaluation/teacher0/results.json
+S,32,17,3,libero_10,0,520,7,7,"[true, false]","[true, false]",S/evaluation/teacher0/results.json
+S,32,43,0,libero_10,1,482,7,7,"[true, true]","[true, true]",S/evaluation/teacher1/results.json
+S,32,43,1,libero_10,1,266,7,7,"[true, true]","[true, true]",S/evaluation/teacher1/results.json
+S,32,43,2,libero_10,0,520,7,7,"[false, true]","[false, true]",S/evaluation/teacher1/results.json
+S,32,43,3,libero_10,1,317,7,7,"[true, true]","[true, true]",S/evaluation/teacher1/results.json
+parent,0,11,0,libero_spatial,1,73,7,7,[true],[true],parent/evaluation/teacher1/results.json
+parent,0,11,1,libero_spatial,1,68,7,7,[true],[true],parent/evaluation/teacher1/results.json
+parent,0,11,2,libero_spatial,1,69,7,7,[true],[true],parent/evaluation/teacher1/results.json
+parent,0,11,3,libero_spatial,1,77,7,7,[true],[true],parent/evaluation/teacher1/results.json
+parent,0,40,0,libero_spatial,1,77,7,7,[true],[true],parent/evaluation/teacher0/results.json
+parent,0,40,1,libero_spatial,1,74,7,7,[true],[true],parent/evaluation/teacher0/results.json
+parent,0,40,2,libero_spatial,1,206,7,7,[true],[true],parent/evaluation/teacher0/results.json
+parent,0,40,3,libero_spatial,1,78,7,7,[true],[true],parent/evaluation/teacher0/results.json
+parent,12,14,0,libero_object,1,133,7,7,[true],[true],parent/evaluation/teacher1/results.json
+parent,12,14,1,libero_object,0,280,7,7,[false],[false],parent/evaluation/teacher1/results.json
+parent,12,14,2,libero_object,1,112,7,7,[true],[true],parent/evaluation/teacher1/results.json
+parent,12,14,3,libero_object,0,280,7,7,[false],[false],parent/evaluation/teacher1/results.json
+parent,12,25,0,libero_object,0,280,7,7,[false],[false],parent/evaluation/teacher0/results.json
+parent,12,25,1,libero_object,0,280,7,7,[false],[false],parent/evaluation/teacher0/results.json
+parent,12,25,2,libero_object,1,112,7,7,[true],[true],parent/evaluation/teacher0/results.json
+parent,12,25,3,libero_object,0,280,7,7,[false],[false],parent/evaluation/teacher0/results.json
+parent,20,38,0,libero_goal,0,300,7,7,[false],[false],parent/evaluation/teacher0/results.json
+parent,20,38,1,libero_goal,0,300,7,7,[false],[false],parent/evaluation/teacher0/results.json
+parent,20,38,2,libero_goal,1,174,7,7,[true],[true],parent/evaluation/teacher0/results.json
+parent,20,38,3,libero_goal,0,300,7,7,[false],[false],parent/evaluation/teacher0/results.json
+parent,20,42,0,libero_goal,1,136,7,7,[true],[true],parent/evaluation/teacher1/results.json
+parent,20,42,1,libero_goal,0,300,7,7,[false],[false],parent/evaluation/teacher1/results.json
+parent,20,42,2,libero_goal,0,300,7,7,[false],[false],parent/evaluation/teacher1/results.json
+parent,20,42,3,libero_goal,1,129,7,7,[true],[true],parent/evaluation/teacher1/results.json
+parent,32,17,0,libero_10,0,520,7,7,"[true, false]","[true, false]",parent/evaluation/teacher0/results.json
+parent,32,17,1,libero_10,1,341,7,7,"[true, true]","[true, true]",parent/evaluation/teacher0/results.json
+parent,32,17,2,libero_10,0,520,7,7,"[true, false]","[true, false]",parent/evaluation/teacher0/results.json
+parent,32,17,3,libero_10,0,520,7,7,"[true, false]","[true, false]",parent/evaluation/teacher0/results.json
+parent,32,43,0,libero_10,1,422,7,7,"[true, true]","[true, true]",parent/evaluation/teacher1/results.json
+parent,32,43,1,libero_10,1,214,7,7,"[true, true]","[true, true]",parent/evaluation/teacher1/results.json
+parent,32,43,2,libero_10,0,520,7,7,"[true, false]","[true, false]",parent/evaluation/teacher1/results.json
+parent,32,43,3,libero_10,0,520,7,7,"[true, false]","[true, false]",parent/evaluation/teacher1/results.json

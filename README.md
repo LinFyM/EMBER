@@ -4,7 +4,16 @@ EMBER研究把exact task language与action-hidden教学视频，在rollout前一
 task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正确视频中的操作内容应贡献真实执行价值。
 
 当前唯一候选为[同一实际LoRA的教学写入与执行读取](docs/designs/operator_read_write_learning_design.md)，
-短程工程和CPU正式转换已独立验收，首批T/U各270及强MT同scene比较已准入，尚无本候选正式结果。完整合同见设计§8–10；实际冻结/派发状态见progress。
+原T/U的正式学习比较及成熟T到2790的曲线已经完成，原T选定点2340为161/400，同scene强MT为153/400；
+变化驱动覆盖候选270/450为124/123，尚未得到已验证的主要性能修复。
+有限学习诊断已完成，当前暂停新增实验并讨论；最新授权与状态只看[progress](progress.md)顶部。
+
+只能读取远程仓库的专家，请从[2026-09-30 T架构数学审阅入口](docs/review_materials/20260930_t_architecture/README.md)开始：
+其中有完整计算图、源码入口、完整曲线与逐行小型证据、历史反例、信息可见范围及可转发提示词。
+
+## 历史路线摘要
+
+以下是各旧路线结束时的记录，不代表当前T没有正式结果或恢复旧执行授权。
 
 **条件速度算子V151→102、L147→112，强MT-BC155；本候选关闭，尚无稳定视频增益或能力保持。自主科学研究继续。**
 后续原始字段勘误：L450有24行fixture初位不一致，涉及它的相应严格配对范围为376；这些行均失败，总分/得失数不变。
@@ -40,7 +49,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 | [当前进度](progress.md)／[当前计划](task_plan.md) | 当前授权、运行快照与科学计划；历史许可不在此持续生效 |
 | [Concept](docs/concept.md) | 完整信息流、模块因果职责、数学解释框架与待验证假设 |
 | [AGENTS](AGENTS.md) | 科学、数据、评测、资源、工程与Git合同 |
-| [Findings](findings.md) | 编号的跨轮发现；先读§156长期错误约束、§157–159机制与首帧裁决、§160 Reader工程验收及学习撤回，再按问题追溯历史 |
+| [Findings](findings.md) | 编号的跨轮发现；先读§156长期错误约束，再按当前审阅入口和研究历史索引追溯相关发现 |
 | [研究历史](docs/research_history.md) | 按时点追溯设计、专家讨论、原始证据和复现commit |
 
 新任务先读Owner要求和当前状态，按问题沿历史索引追溯；不把所有旧设计的“下一步”合并成待办。
@@ -70,7 +79,7 @@ Reader完成12次工程更新/1344查询、最长视频反传及6条train-only�
 
 | 职责 | `src/ember/`中的owner |
 | --- | --- |
-| 候选同算子读写的原生读取/矩阵生成/数据与训练 | `operator_writer/native.py`、`model.py`、`data.py`、`run.py`；唯一正式270入口 |
+| 同算子读写的原生读取/矩阵生成/数据与训练 | `operator_writer/native.py`、`model.py`、`data.py`、`run.py`；共享训练与恢复入口 |
 | 候选T/U完整rank128与固定MT同scene正式接入 | `operator_writer/bank.py`；公共A/条件B及唯一MT原权重引用，共用official scene/capture |
 | 封存对应学习bank的rank144重建与正式来源核验 | `demonstration_learning/bank.py`；只读P/I的288/576正式资产，不生成新bank |
 | 封存共同物理起点的官方恢复与行校验 | `pi05_eval/scene.py`；保留official消费者，采集/freeze入口已退役 |

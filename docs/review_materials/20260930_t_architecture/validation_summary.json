@@ -1,0 +1,2841 @@
+{
+  "scope": "Completed validation correct400 only. T/U full saved learning curves, strong MT, change_clock, beta-only and public-risk comparison. No Test/shuffled/reversed/control-video outcomes, no pending section33 outcomes.",
+  "schema": "ember_remote_theory_review_rows_v1",
+  "source_code_snapshot": "5313257c8070a792bbec0c6345c98376ed5cd1ea",
+  "source_code_snapshot_note": "Review reference only; not the training/evaluation Git identity of all historical runs. Those remain in the corresponding design/history sections.",
+  "raw_sources_relative_to_private_run_root": {
+    "T1350": "operator_read_write_learning_20260928/continuation1350/T/evaluation/1350/correct400/results.json",
+    "T2790": "operator_read_write_learning_20260928/continuation2790/T/evaluation/2790/correct400/results.json",
+    "U1080": "operator_read_write_learning_20260928/continuation1350/U/evaluation/1080/correct400/results.json",
+    "U270": "operator_read_write_learning_20260928/stage1/U/evaluation/correct400/results.json",
+    "T1800": "operator_read_write_learning_20260928/continuation1800/T/evaluation/1800/correct400/results.json",
+    "T2340": "operator_read_write_learning_20260928/continuation2340/T/evaluation/2340/correct400/results.json",
+    "T1080": "operator_read_write_learning_20260928/continuation1350/T/evaluation/1080/correct400/results.json",
+    "U810": "operator_read_write_learning_20260928/continuation900/U/evaluation/810/correct400/results.json",
+    "T2700": "operator_read_write_learning_20260928/continuation2790/T/evaluation/2700/correct400/results.json",
+    "T1710": "operator_read_write_learning_20260928/continuation1800/T/evaluation/1710/correct400/results.json",
+    "MT300": "operator_read_write_learning_20260928/stage1/MT/evaluation/correct400/results.json",
+    "T270": "operator_read_write_learning_20260928/stage1/T/evaluation/correct400/results.json",
+    "T810": "operator_read_write_learning_20260928/continuation900/T/evaluation/810/correct400/results.json",
+    "T2070": "operator_read_write_learning_20260928/continuation2340/T/evaluation/2070/correct400/results.json",
+    "U900": "operator_read_write_learning_20260928/continuation900/U/evaluation/900/correct400/results.json",
+    "T2610": "operator_read_write_learning_20260928/continuation2790/T/evaluation/2610/correct400/results.json",
+    "T900": "operator_read_write_learning_20260928/continuation900/T/evaluation/900/correct400/results.json",
+    "T1980": "operator_read_write_learning_20260928/continuation2340/T/evaluation/1980/correct400/results.json",
+    "T450": "operator_read_write_learning_20260928/continuation900/T/evaluation/450/correct400/results.json",
+    "T2160": "operator_read_write_learning_20260928/continuation2340/T/evaluation/2160/correct400/results.json",
+    "T2520": "operator_read_write_learning_20260928/continuation2790/T/evaluation/2520/correct400/results.json",
+    "T2430": "operator_read_write_learning_20260928/continuation2790/T/evaluation/2430/correct400/results.json",
+    "T2250": "operator_read_write_learning_20260928/continuation2340/T/evaluation/2250/correct400/results.json",
+    "U450": "operator_read_write_learning_20260928/continuation900/U/evaluation/450/correct400/results.json",
+    "clock270": "operator_change_clock_learning_20260930/T_change_clock/evaluation/correct400/results.json",
+    "clock450": "operator_change_clock_continuation450_20260930/T_change_clock/evaluation/450/correct400/results.json",
+    "beta1800": "operator_public_beta_diagnosis_20260929/public_beta/evaluation/1800/correct400/results.json",
+    "control1890": "operator_public_function_pilot_20260929/control/evaluation/1890/correct400/results.json",
+    "public_aux1890": "operator_public_function_pilot_20260929/public_aux/evaluation/1890/correct400/results.json"
+  },
+  "remote_access_limit": "Original model weights, H/X/cotangents, RGB and continuous traces are not in this package. These source paths identify provenance and are not remote-readable files. CSV contains selected raw result fields, not complete rollout records. Matching names/seeds alone does not re-verify the full scene contents; prior formal pairing evidence is cited in the review.",
+  "arms": {
+    "MT300": {
+      "family": "MT",
+      "update": 300,
+      "rows": 400,
+      "success": 153,
+      "breadth": 6,
+      "by_task": {
+        "3": 41,
+        "6": 7,
+        "11": 36,
+        "16": 10,
+        "23": 0,
+        "26": 35,
+        "31": 24,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 48,
+        "libero_object": 46,
+        "libero_goal": 35,
+        "libero_10": 24
+      },
+      "vs_MT300": {
+        "R": 153,
+        "N": 247
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T270": {
+      "family": "T",
+      "update": 270,
+      "rows": 400,
+      "success": 116,
+      "breadth": 5,
+      "by_task": {
+        "3": 9,
+        "6": 9,
+        "11": 31,
+        "16": 0,
+        "23": 0,
+        "26": 35,
+        "31": 32,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 18,
+        "libero_object": 31,
+        "libero_goal": 35,
+        "libero_10": 32
+      },
+      "vs_MT300": {
+        "L": 63,
+        "N": 221,
+        "R": 90,
+        "G": 26
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T450": {
+      "family": "T",
+      "update": 450,
+      "rows": 400,
+      "success": 122,
+      "breadth": 7,
+      "by_task": {
+        "3": 24,
+        "6": 2,
+        "11": 42,
+        "16": 1,
+        "23": 1,
+        "26": 38,
+        "31": 14,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 26,
+        "libero_object": 43,
+        "libero_goal": 39,
+        "libero_10": 14
+      },
+      "vs_MT300": {
+        "R": 99,
+        "N": 224,
+        "L": 54,
+        "G": 23
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T810": {
+      "family": "T",
+      "update": 810,
+      "rows": 400,
+      "success": 144,
+      "breadth": 6,
+      "by_task": {
+        "3": 44,
+        "6": 7,
+        "11": 41,
+        "16": 3,
+        "23": 0,
+        "26": 34,
+        "31": 15,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 51,
+        "libero_object": 44,
+        "libero_goal": 34,
+        "libero_10": 15
+      },
+      "vs_MT300": {
+        "R": 110,
+        "G": 34,
+        "L": 43,
+        "N": 213
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T900": {
+      "family": "T",
+      "update": 900,
+      "rows": 400,
+      "success": 148,
+      "breadth": 6,
+      "by_task": {
+        "3": 43,
+        "6": 5,
+        "11": 41,
+        "16": 4,
+        "23": 0,
+        "26": 34,
+        "31": 21,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 48,
+        "libero_object": 45,
+        "libero_goal": 34,
+        "libero_10": 21
+      },
+      "vs_MT300": {
+        "R": 115,
+        "G": 33,
+        "L": 38,
+        "N": 214
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T1080": {
+      "family": "T",
+      "update": 1080,
+      "rows": 400,
+      "success": 147,
+      "breadth": 6,
+      "by_task": {
+        "3": 42,
+        "6": 5,
+        "11": 43,
+        "16": 3,
+        "23": 0,
+        "26": 35,
+        "31": 19,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 47,
+        "libero_object": 46,
+        "libero_goal": 35,
+        "libero_10": 19
+      },
+      "vs_MT300": {
+        "R": 112,
+        "G": 35,
+        "L": 41,
+        "N": 212
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T1350": {
+      "family": "T",
+      "update": 1350,
+      "rows": 400,
+      "success": 154,
+      "breadth": 6,
+      "by_task": {
+        "3": 41,
+        "6": 6,
+        "11": 46,
+        "16": 5,
+        "23": 0,
+        "26": 34,
+        "31": 22,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 47,
+        "libero_object": 51,
+        "libero_goal": 34,
+        "libero_10": 22
+      },
+      "vs_MT300": {
+        "R": 114,
+        "G": 40,
+        "L": 39,
+        "N": 207
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T1710": {
+      "family": "T",
+      "update": 1710,
+      "rows": 400,
+      "success": 154,
+      "breadth": 6,
+      "by_task": {
+        "3": 46,
+        "6": 6,
+        "11": 43,
+        "16": 3,
+        "23": 0,
+        "26": 35,
+        "31": 21,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 52,
+        "libero_object": 46,
+        "libero_goal": 35,
+        "libero_10": 21
+      },
+      "vs_MT300": {
+        "R": 114,
+        "G": 40,
+        "L": 39,
+        "N": 207
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T1800": {
+      "family": "T",
+      "update": 1800,
+      "rows": 400,
+      "success": 154,
+      "breadth": 6,
+      "by_task": {
+        "3": 44,
+        "6": 7,
+        "11": 45,
+        "16": 3,
+        "23": 0,
+        "26": 33,
+        "31": 22,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 51,
+        "libero_object": 48,
+        "libero_goal": 33,
+        "libero_10": 22
+      },
+      "vs_MT300": {
+        "L": 41,
+        "G": 42,
+        "R": 112,
+        "N": 205
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T1980": {
+      "family": "T",
+      "update": 1980,
+      "rows": 400,
+      "success": 156,
+      "breadth": 6,
+      "by_task": {
+        "3": 46,
+        "6": 5,
+        "11": 40,
+        "16": 4,
+        "23": 0,
+        "26": 38,
+        "31": 23,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 51,
+        "libero_object": 44,
+        "libero_goal": 38,
+        "libero_10": 23
+      },
+      "vs_MT300": {
+        "L": 36,
+        "G": 39,
+        "R": 117,
+        "N": 208
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T2070": {
+      "family": "T",
+      "update": 2070,
+      "rows": 400,
+      "success": 152,
+      "breadth": 6,
+      "by_task": {
+        "3": 45,
+        "6": 5,
+        "11": 42,
+        "16": 5,
+        "23": 0,
+        "26": 37,
+        "31": 18,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 50,
+        "libero_object": 47,
+        "libero_goal": 37,
+        "libero_10": 18
+      },
+      "vs_MT300": {
+        "R": 114,
+        "G": 38,
+        "L": 39,
+        "N": 209
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T2160": {
+      "family": "T",
+      "update": 2160,
+      "rows": 400,
+      "success": 155,
+      "breadth": 6,
+      "by_task": {
+        "3": 44,
+        "6": 8,
+        "11": 43,
+        "16": 3,
+        "23": 0,
+        "26": 36,
+        "31": 21,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 52,
+        "libero_object": 46,
+        "libero_goal": 36,
+        "libero_10": 21
+      },
+      "vs_MT300": {
+        "R": 113,
+        "G": 42,
+        "L": 40,
+        "N": 205
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T2250": {
+      "family": "T",
+      "update": 2250,
+      "rows": 400,
+      "success": 156,
+      "breadth": 6,
+      "by_task": {
+        "3": 42,
+        "6": 7,
+        "11": 44,
+        "16": 3,
+        "23": 0,
+        "26": 35,
+        "31": 25,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 49,
+        "libero_object": 47,
+        "libero_goal": 35,
+        "libero_10": 25
+      },
+      "vs_MT300": {
+        "R": 116,
+        "G": 40,
+        "L": 37,
+        "N": 207
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T2340": {
+      "family": "T",
+      "update": 2340,
+      "rows": 400,
+      "success": 161,
+      "breadth": 6,
+      "by_task": {
+        "3": 45,
+        "6": 6,
+        "11": 45,
+        "16": 5,
+        "23": 0,
+        "26": 36,
+        "31": 24,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 51,
+        "libero_object": 50,
+        "libero_goal": 36,
+        "libero_10": 24
+      },
+      "vs_MT300": {
+        "R": 117,
+        "G": 44,
+        "L": 36,
+        "N": 203
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T2430": {
+      "family": "T",
+      "update": 2430,
+      "rows": 400,
+      "success": 147,
+      "breadth": 6,
+      "by_task": {
+        "3": 45,
+        "6": 6,
+        "11": 43,
+        "16": 5,
+        "23": 0,
+        "26": 31,
+        "31": 17,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 51,
+        "libero_object": 48,
+        "libero_goal": 31,
+        "libero_10": 17
+      },
+      "vs_MT300": {
+        "L": 45,
+        "G": 39,
+        "R": 108,
+        "N": 208
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T2520": {
+      "family": "T",
+      "update": 2520,
+      "rows": 400,
+      "success": 154,
+      "breadth": 6,
+      "by_task": {
+        "3": 43,
+        "6": 6,
+        "11": 45,
+        "16": 4,
+        "23": 0,
+        "26": 34,
+        "31": 22,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 49,
+        "libero_object": 49,
+        "libero_goal": 34,
+        "libero_10": 22
+      },
+      "vs_MT300": {
+        "R": 115,
+        "G": 39,
+        "L": 38,
+        "N": 208
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T2610": {
+      "family": "T",
+      "update": 2610,
+      "rows": 400,
+      "success": 160,
+      "breadth": 6,
+      "by_task": {
+        "3": 47,
+        "6": 5,
+        "11": 43,
+        "16": 5,
+        "23": 0,
+        "26": 37,
+        "31": 23,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 52,
+        "libero_object": 48,
+        "libero_goal": 37,
+        "libero_10": 23
+      },
+      "vs_MT300": {
+        "L": 33,
+        "G": 40,
+        "R": 120,
+        "N": 207
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T2700": {
+      "family": "T",
+      "update": 2700,
+      "rows": 400,
+      "success": 154,
+      "breadth": 6,
+      "by_task": {
+        "3": 43,
+        "6": 5,
+        "11": 45,
+        "16": 4,
+        "23": 0,
+        "26": 34,
+        "31": 23,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 48,
+        "libero_object": 49,
+        "libero_goal": 34,
+        "libero_10": 23
+      },
+      "vs_MT300": {
+        "L": 41,
+        "G": 42,
+        "R": 112,
+        "N": 205
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "T2790": {
+      "family": "T",
+      "update": 2790,
+      "rows": 400,
+      "success": 159,
+      "breadth": 6,
+      "by_task": {
+        "3": 46,
+        "6": 7,
+        "11": 47,
+        "16": 7,
+        "23": 0,
+        "26": 33,
+        "31": 19,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 53,
+        "libero_object": 54,
+        "libero_goal": 33,
+        "libero_10": 19
+      },
+      "vs_MT300": {
+        "L": 38,
+        "G": 44,
+        "R": 115,
+        "N": 203
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "U270": {
+      "family": "U",
+      "update": 270,
+      "rows": 400,
+      "success": 128,
+      "breadth": 6,
+      "by_task": {
+        "3": 19,
+        "6": 5,
+        "11": 41,
+        "16": 2,
+        "23": 0,
+        "26": 37,
+        "31": 24,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 24,
+        "libero_object": 43,
+        "libero_goal": 37,
+        "libero_10": 24
+      },
+      "vs_MT300": {
+        "L": 58,
+        "N": 214,
+        "R": 95,
+        "G": 33
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "U450": {
+      "family": "U",
+      "update": 450,
+      "rows": 400,
+      "success": 143,
+      "breadth": 6,
+      "by_task": {
+        "3": 31,
+        "6": 2,
+        "11": 40,
+        "16": 2,
+        "23": 0,
+        "26": 41,
+        "31": 27,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 33,
+        "libero_object": 42,
+        "libero_goal": 41,
+        "libero_10": 27
+      },
+      "vs_MT300": {
+        "R": 107,
+        "N": 211,
+        "L": 46,
+        "G": 36
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "U810": {
+      "family": "U",
+      "update": 810,
+      "rows": 400,
+      "success": 132,
+      "breadth": 6,
+      "by_task": {
+        "3": 34,
+        "6": 1,
+        "11": 42,
+        "16": 1,
+        "23": 0,
+        "26": 36,
+        "31": 18,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 35,
+        "libero_object": 43,
+        "libero_goal": 36,
+        "libero_10": 18
+      },
+      "vs_MT300": {
+        "L": 50,
+        "N": 218,
+        "R": 103,
+        "G": 29
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "U900": {
+      "family": "U",
+      "update": 900,
+      "rows": 400,
+      "success": 132,
+      "breadth": 6,
+      "by_task": {
+        "3": 31,
+        "6": 2,
+        "11": 45,
+        "16": 2,
+        "23": 0,
+        "26": 38,
+        "31": 14,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 33,
+        "libero_object": 47,
+        "libero_goal": 38,
+        "libero_10": 14
+      },
+      "vs_MT300": {
+        "L": 53,
+        "N": 215,
+        "R": 100,
+        "G": 32
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "U1080": {
+      "family": "U",
+      "update": 1080,
+      "rows": 400,
+      "success": 128,
+      "breadth": 6,
+      "by_task": {
+        "3": 26,
+        "6": 1,
+        "11": 44,
+        "16": 3,
+        "23": 0,
+        "26": 38,
+        "31": 16,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 27,
+        "libero_object": 47,
+        "libero_goal": 38,
+        "libero_10": 16
+      },
+      "vs_MT300": {
+        "L": 58,
+        "N": 214,
+        "R": 95,
+        "G": 33
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "clock270": {
+      "family": "clock",
+      "update": 270,
+      "rows": 400,
+      "success": 124,
+      "breadth": 5,
+      "by_task": {
+        "3": 21,
+        "6": 4,
+        "11": 42,
+        "16": 0,
+        "23": 0,
+        "26": 36,
+        "31": 21,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 25,
+        "libero_object": 42,
+        "libero_goal": 36,
+        "libero_10": 21
+      },
+      "vs_MT300": {
+        "R": 96,
+        "N": 219,
+        "L": 57,
+        "G": 28
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "clock450": {
+      "family": "clock",
+      "update": 450,
+      "rows": 400,
+      "success": 123,
+      "breadth": 5,
+      "by_task": {
+        "3": 17,
+        "6": 3,
+        "11": 46,
+        "16": 0,
+        "23": 0,
+        "26": 37,
+        "31": 20,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 20,
+        "libero_object": 46,
+        "libero_goal": 37,
+        "libero_10": 20
+      },
+      "vs_MT300": {
+        "R": 90,
+        "N": 214,
+        "L": 63,
+        "G": 33
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "beta1800": {
+      "family": "beta",
+      "update": 1800,
+      "rows": 400,
+      "success": 100,
+      "breadth": 5,
+      "by_task": {
+        "3": 6,
+        "6": 3,
+        "11": 29,
+        "16": 0,
+        "23": 0,
+        "26": 41,
+        "31": 21,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 9,
+        "libero_object": 29,
+        "libero_goal": 41,
+        "libero_10": 21
+      },
+      "vs_MT300": {
+        "L": 78,
+        "N": 222,
+        "R": 75,
+        "G": 25
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "control1890": {
+      "family": "control",
+      "update": 1890,
+      "rows": 400,
+      "success": 158,
+      "breadth": 6,
+      "by_task": {
+        "3": 42,
+        "6": 4,
+        "11": 45,
+        "16": 5,
+        "23": 0,
+        "26": 36,
+        "31": 26,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 46,
+        "libero_object": 50,
+        "libero_goal": 36,
+        "libero_10": 26
+      },
+      "vs_MT300": {
+        "L": 36,
+        "G": 41,
+        "R": 117,
+        "N": 206
+      },
+      "scene_basename_matches_MT": 400
+    },
+    "public_aux1890": {
+      "family": "public_aux",
+      "update": 1890,
+      "rows": 400,
+      "success": 148,
+      "breadth": 6,
+      "by_task": {
+        "3": 43,
+        "6": 5,
+        "11": 43,
+        "16": 3,
+        "23": 0,
+        "26": 36,
+        "31": 18,
+        "39": 0
+      },
+      "by_suite": {
+        "libero_spatial": 48,
+        "libero_object": 46,
+        "libero_goal": 36,
+        "libero_10": 18
+      },
+      "vs_MT300": {
+        "L": 42,
+        "G": 37,
+        "R": 111,
+        "N": 210
+      },
+      "scene_basename_matches_MT": 400
+    }
+  },
+  "pairs": [
+    {
+      "candidate": "T450",
+      "reference": "T270",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 79,
+      "gained": 43,
+      "lost": 37,
+      "neither": 241,
+      "net": 6,
+      "churn": 80,
+      "jaccard": 0.4968553459119497,
+      "by_task": {
+        "3": {
+          "G": 18,
+          "N": 23,
+          "R": 6,
+          "L": 3
+        },
+        "6": {
+          "N": 41,
+          "L": 7,
+          "R": 2
+        },
+        "11": {
+          "R": 28,
+          "G": 14,
+          "N": 5,
+          "L": 3
+        },
+        "16": {
+          "N": 49,
+          "G": 1
+        },
+        "23": {
+          "N": 49,
+          "G": 1
+        },
+        "26": {
+          "R": 31,
+          "L": 4,
+          "N": 8,
+          "G": 7
+        },
+        "31": {
+          "N": 16,
+          "L": 20,
+          "R": 12,
+          "G": 2
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T810",
+      "reference": "T450",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 98,
+      "gained": 46,
+      "lost": 24,
+      "neither": 232,
+      "net": 22,
+      "churn": 70,
+      "jaccard": 0.5833333333333334,
+      "by_task": {
+        "3": {
+          "R": 23,
+          "G": 21,
+          "N": 5,
+          "L": 1
+        },
+        "6": {
+          "N": 43,
+          "G": 5,
+          "R": 2
+        },
+        "11": {
+          "L": 6,
+          "R": 36,
+          "G": 5,
+          "N": 3
+        },
+        "16": {
+          "N": 46,
+          "L": 1,
+          "G": 3
+        },
+        "23": {
+          "N": 49,
+          "L": 1
+        },
+        "26": {
+          "R": 32,
+          "N": 10,
+          "L": 6,
+          "G": 2
+        },
+        "31": {
+          "N": 26,
+          "G": 10,
+          "R": 5,
+          "L": 9
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T900",
+      "reference": "T810",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 129,
+      "gained": 19,
+      "lost": 15,
+      "neither": 237,
+      "net": 4,
+      "churn": 34,
+      "jaccard": 0.7914110429447853,
+      "by_task": {
+        "3": {
+          "R": 42,
+          "L": 2,
+          "N": 5,
+          "G": 1
+        },
+        "6": {
+          "N": 43,
+          "R": 5,
+          "L": 2
+        },
+        "11": {
+          "G": 3,
+          "R": 38,
+          "L": 3,
+          "N": 6
+        },
+        "16": {
+          "N": 45,
+          "G": 2,
+          "R": 2,
+          "L": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 30,
+          "N": 12,
+          "G": 4,
+          "L": 4
+        },
+        "31": {
+          "N": 26,
+          "L": 3,
+          "R": 12,
+          "G": 9
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T1080",
+      "reference": "T900",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 124,
+      "gained": 23,
+      "lost": 24,
+      "neither": 229,
+      "net": -1,
+      "churn": 47,
+      "jaccard": 0.7251461988304093,
+      "by_task": {
+        "3": {
+          "R": 38,
+          "L": 5,
+          "G": 4,
+          "N": 3
+        },
+        "6": {
+          "N": 44,
+          "G": 1,
+          "L": 1,
+          "R": 4
+        },
+        "11": {
+          "R": 37,
+          "L": 4,
+          "G": 6,
+          "N": 3
+        },
+        "16": {
+          "N": 45,
+          "R": 2,
+          "L": 2,
+          "G": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 31,
+          "N": 12,
+          "L": 3,
+          "G": 4
+        },
+        "31": {
+          "N": 22,
+          "G": 7,
+          "R": 12,
+          "L": 9
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T1350",
+      "reference": "T1080",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 129,
+      "gained": 25,
+      "lost": 18,
+      "neither": 228,
+      "net": 7,
+      "churn": 43,
+      "jaccard": 0.75,
+      "by_task": {
+        "3": {
+          "R": 37,
+          "G": 4,
+          "N": 4,
+          "L": 5
+        },
+        "6": {
+          "N": 44,
+          "R": 5,
+          "G": 1
+        },
+        "11": {
+          "R": 41,
+          "G": 5,
+          "L": 2,
+          "N": 2
+        },
+        "16": {
+          "N": 44,
+          "R": 2,
+          "G": 3,
+          "L": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 32,
+          "N": 13,
+          "G": 2,
+          "L": 3
+        },
+        "31": {
+          "G": 10,
+          "N": 21,
+          "L": 7,
+          "R": 12
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T1710",
+      "reference": "T1350",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 135,
+      "gained": 19,
+      "lost": 19,
+      "neither": 227,
+      "net": 0,
+      "churn": 38,
+      "jaccard": 0.7803468208092486,
+      "by_task": {
+        "3": {
+          "R": 40,
+          "N": 3,
+          "G": 6,
+          "L": 1
+        },
+        "6": {
+          "N": 43,
+          "L": 1,
+          "R": 5,
+          "G": 1
+        },
+        "11": {
+          "R": 42,
+          "N": 3,
+          "L": 4,
+          "G": 1
+        },
+        "16": {
+          "N": 44,
+          "R": 2,
+          "L": 3,
+          "G": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 32,
+          "L": 2,
+          "N": 13,
+          "G": 3
+        },
+        "31": {
+          "R": 14,
+          "N": 21,
+          "G": 7,
+          "L": 8
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T1800",
+      "reference": "T1710",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 135,
+      "gained": 19,
+      "lost": 19,
+      "neither": 227,
+      "net": 0,
+      "churn": 38,
+      "jaccard": 0.7803468208092486,
+      "by_task": {
+        "3": {
+          "L": 4,
+          "R": 42,
+          "G": 2,
+          "N": 2
+        },
+        "6": {
+          "N": 42,
+          "G": 2,
+          "R": 5,
+          "L": 1
+        },
+        "11": {
+          "R": 42,
+          "L": 1,
+          "G": 3,
+          "N": 4
+        },
+        "16": {
+          "N": 46,
+          "L": 1,
+          "G": 1,
+          "R": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 31,
+          "N": 13,
+          "L": 4,
+          "G": 2
+        },
+        "31": {
+          "L": 8,
+          "N": 20,
+          "R": 13,
+          "G": 9
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2070",
+      "reference": "T1980",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 141,
+      "gained": 11,
+      "lost": 15,
+      "neither": 233,
+      "net": -4,
+      "churn": 26,
+      "jaccard": 0.844311377245509,
+      "by_task": {
+        "3": {
+          "G": 2,
+          "R": 43,
+          "L": 3,
+          "N": 2
+        },
+        "6": {
+          "N": 44,
+          "G": 1,
+          "L": 1,
+          "R": 4
+        },
+        "11": {
+          "L": 1,
+          "R": 39,
+          "N": 7,
+          "G": 3
+        },
+        "16": {
+          "N": 45,
+          "R": 4,
+          "G": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 36,
+          "N": 11,
+          "L": 2,
+          "G": 1
+        },
+        "31": {
+          "G": 3,
+          "N": 24,
+          "R": 15,
+          "L": 8
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2160",
+      "reference": "T2070",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 137,
+      "gained": 18,
+      "lost": 15,
+      "neither": 230,
+      "net": 3,
+      "churn": 33,
+      "jaccard": 0.8058823529411765,
+      "by_task": {
+        "3": {
+          "R": 42,
+          "L": 3,
+          "N": 3,
+          "G": 2
+        },
+        "6": {
+          "N": 41,
+          "L": 1,
+          "G": 4,
+          "R": 4
+        },
+        "11": {
+          "G": 4,
+          "R": 39,
+          "L": 3,
+          "N": 4
+        },
+        "16": {
+          "N": 45,
+          "L": 2,
+          "R": 3
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "L": 2,
+          "R": 35,
+          "N": 12,
+          "G": 1
+        },
+        "31": {
+          "R": 14,
+          "N": 25,
+          "G": 7,
+          "L": 4
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2250",
+      "reference": "T2160",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 139,
+      "gained": 17,
+      "lost": 16,
+      "neither": 228,
+      "net": 1,
+      "churn": 33,
+      "jaccard": 0.8081395348837209,
+      "by_task": {
+        "3": {
+          "R": 40,
+          "G": 2,
+          "N": 4,
+          "L": 4
+        },
+        "6": {
+          "N": 42,
+          "R": 7,
+          "L": 1
+        },
+        "11": {
+          "R": 41,
+          "L": 2,
+          "N": 4,
+          "G": 3
+        },
+        "16": {
+          "N": 46,
+          "R": 2,
+          "L": 1,
+          "G": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "G": 2,
+          "R": 33,
+          "N": 12,
+          "L": 3
+        },
+        "31": {
+          "R": 16,
+          "N": 20,
+          "L": 5,
+          "G": 9
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2340",
+      "reference": "T2250",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 141,
+      "gained": 20,
+      "lost": 15,
+      "neither": 224,
+      "net": 5,
+      "churn": 35,
+      "jaccard": 0.8011363636363636,
+      "by_task": {
+        "3": {
+          "R": 40,
+          "G": 5,
+          "L": 2,
+          "N": 3
+        },
+        "6": {
+          "N": 42,
+          "G": 1,
+          "L": 2,
+          "R": 5
+        },
+        "11": {
+          "R": 42,
+          "G": 3,
+          "N": 3,
+          "L": 2
+        },
+        "16": {
+          "N": 45,
+          "G": 2,
+          "R": 3
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 33,
+          "L": 2,
+          "N": 12,
+          "G": 3
+        },
+        "31": {
+          "R": 18,
+          "N": 19,
+          "G": 6,
+          "L": 7
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2430",
+      "reference": "T2340",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 135,
+      "gained": 12,
+      "lost": 26,
+      "neither": 227,
+      "net": -14,
+      "churn": 38,
+      "jaccard": 0.7803468208092486,
+      "by_task": {
+        "3": {
+          "L": 2,
+          "R": 43,
+          "G": 2,
+          "N": 3
+        },
+        "6": {
+          "N": 43,
+          "L": 1,
+          "G": 1,
+          "R": 5
+        },
+        "11": {
+          "R": 43,
+          "L": 2,
+          "N": 5
+        },
+        "16": {
+          "N": 43,
+          "R": 3,
+          "L": 2,
+          "G": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 29,
+          "N": 12,
+          "L": 7,
+          "G": 2
+        },
+        "31": {
+          "R": 12,
+          "N": 21,
+          "L": 12,
+          "G": 5
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2520",
+      "reference": "T2430",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 132,
+      "gained": 22,
+      "lost": 15,
+      "neither": 231,
+      "net": 7,
+      "churn": 37,
+      "jaccard": 0.7810650887573964,
+      "by_task": {
+        "3": {
+          "G": 2,
+          "R": 41,
+          "L": 4,
+          "N": 3
+        },
+        "6": {
+          "N": 42,
+          "G": 2,
+          "L": 2,
+          "R": 4
+        },
+        "11": {
+          "R": 42,
+          "L": 1,
+          "G": 3,
+          "N": 4
+        },
+        "16": {
+          "N": 44,
+          "R": 3,
+          "G": 1,
+          "L": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 30,
+          "N": 15,
+          "G": 4,
+          "L": 1
+        },
+        "31": {
+          "R": 12,
+          "N": 23,
+          "G": 10,
+          "L": 5
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2610",
+      "reference": "T2520",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 140,
+      "gained": 20,
+      "lost": 14,
+      "neither": 226,
+      "net": 6,
+      "churn": 34,
+      "jaccard": 0.8045977011494253,
+      "by_task": {
+        "3": {
+          "L": 1,
+          "R": 42,
+          "G": 5,
+          "N": 2
+        },
+        "6": {
+          "N": 43,
+          "L": 2,
+          "R": 4,
+          "G": 1
+        },
+        "11": {
+          "R": 43,
+          "N": 5,
+          "L": 2
+        },
+        "16": {
+          "N": 45,
+          "R": 4,
+          "G": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 33,
+          "G": 4,
+          "N": 12,
+          "L": 1
+        },
+        "31": {
+          "R": 14,
+          "N": 19,
+          "G": 9,
+          "L": 8
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2700",
+      "reference": "T2610",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 141,
+      "gained": 13,
+      "lost": 19,
+      "neither": 227,
+      "net": -6,
+      "churn": 32,
+      "jaccard": 0.815028901734104,
+      "by_task": {
+        "3": {
+          "N": 3,
+          "R": 43,
+          "L": 4
+        },
+        "6": {
+          "N": 44,
+          "G": 1,
+          "R": 4,
+          "L": 1
+        },
+        "11": {
+          "R": 42,
+          "G": 3,
+          "N": 4,
+          "L": 1
+        },
+        "16": {
+          "N": 45,
+          "R": 4,
+          "L": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 31,
+          "L": 6,
+          "N": 10,
+          "G": 3
+        },
+        "31": {
+          "R": 17,
+          "N": 21,
+          "G": 6,
+          "L": 6
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2790",
+      "reference": "T2700",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 140,
+      "gained": 19,
+      "lost": 14,
+      "neither": 227,
+      "net": 5,
+      "churn": 33,
+      "jaccard": 0.8092485549132948,
+      "by_task": {
+        "3": {
+          "N": 4,
+          "R": 43,
+          "G": 3
+        },
+        "6": {
+          "N": 43,
+          "R": 5,
+          "G": 2
+        },
+        "11": {
+          "R": 44,
+          "L": 1,
+          "N": 2,
+          "G": 3
+        },
+        "16": {
+          "N": 43,
+          "R": 4,
+          "G": 3
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 30,
+          "N": 13,
+          "G": 3,
+          "L": 4
+        },
+        "31": {
+          "L": 9,
+          "N": 22,
+          "R": 14,
+          "G": 5
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "U450",
+      "reference": "U270",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 106,
+      "gained": 37,
+      "lost": 22,
+      "neither": 235,
+      "net": 15,
+      "churn": 59,
+      "jaccard": 0.6424242424242425,
+      "by_task": {
+        "3": {
+          "G": 15,
+          "N": 16,
+          "L": 3,
+          "R": 16
+        },
+        "6": {
+          "N": 44,
+          "G": 1,
+          "L": 4,
+          "R": 1
+        },
+        "11": {
+          "L": 6,
+          "G": 5,
+          "R": 35,
+          "N": 4
+        },
+        "16": {
+          "N": 48,
+          "R": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "G": 8,
+          "R": 33,
+          "L": 4,
+          "N": 5
+        },
+        "31": {
+          "L": 5,
+          "N": 18,
+          "R": 19,
+          "G": 8
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "U810",
+      "reference": "U450",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 112,
+      "gained": 20,
+      "lost": 31,
+      "neither": 237,
+      "net": -11,
+      "churn": 51,
+      "jaccard": 0.6871165644171779,
+      "by_task": {
+        "3": {
+          "L": 4,
+          "N": 12,
+          "G": 7,
+          "R": 27
+        },
+        "6": {
+          "N": 48,
+          "R": 1,
+          "L": 1
+        },
+        "11": {
+          "N": 5,
+          "L": 3,
+          "R": 37,
+          "G": 5
+        },
+        "16": {
+          "N": 48,
+          "R": 1,
+          "L": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 33,
+          "G": 3,
+          "N": 6,
+          "L": 8
+        },
+        "31": {
+          "N": 18,
+          "G": 5,
+          "L": 14,
+          "R": 13
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "U900",
+      "reference": "U810",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 108,
+      "gained": 24,
+      "lost": 24,
+      "neither": 244,
+      "net": 0,
+      "churn": 48,
+      "jaccard": 0.6923076923076923,
+      "by_task": {
+        "3": {
+          "N": 10,
+          "R": 25,
+          "G": 6,
+          "L": 9
+        },
+        "6": {
+          "N": 48,
+          "R": 1,
+          "G": 1
+        },
+        "11": {
+          "G": 6,
+          "R": 39,
+          "L": 3,
+          "N": 2
+        },
+        "16": {
+          "N": 48,
+          "R": 1,
+          "G": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 33,
+          "G": 5,
+          "N": 9,
+          "L": 3
+        },
+        "31": {
+          "N": 27,
+          "L": 9,
+          "R": 9,
+          "G": 5
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "U1080",
+      "reference": "U900",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 110,
+      "gained": 18,
+      "lost": 22,
+      "neither": 250,
+      "net": -4,
+      "churn": 40,
+      "jaccard": 0.7333333333333333,
+      "by_task": {
+        "3": {
+          "N": 16,
+          "R": 23,
+          "L": 8,
+          "G": 3
+        },
+        "6": {
+          "N": 48,
+          "R": 1,
+          "L": 1
+        },
+        "11": {
+          "R": 42,
+          "N": 3,
+          "L": 3,
+          "G": 2
+        },
+        "16": {
+          "N": 47,
+          "R": 2,
+          "G": 1
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 33,
+          "L": 5,
+          "N": 7,
+          "G": 5
+        },
+        "31": {
+          "N": 29,
+          "G": 7,
+          "L": 5,
+          "R": 9
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "clock450",
+      "reference": "clock270",
+      "kind": "adjacent_saved_evaluation",
+      "retained": 100,
+      "gained": 23,
+      "lost": 24,
+      "neither": 253,
+      "net": -1,
+      "churn": 47,
+      "jaccard": 0.6802721088435374,
+      "by_task": {
+        "3": {
+          "R": 14,
+          "N": 26,
+          "L": 7,
+          "G": 3
+        },
+        "6": {
+          "N": 45,
+          "R": 2,
+          "L": 2,
+          "G": 1
+        },
+        "11": {
+          "G": 6,
+          "R": 40,
+          "N": 2,
+          "L": 2
+        },
+        "16": {
+          "N": 50
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 33,
+          "L": 3,
+          "N": 10,
+          "G": 4
+        },
+        "31": {
+          "N": 20,
+          "L": 10,
+          "R": 11,
+          "G": 9
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T270",
+      "reference": "U270",
+      "kind": "registered_reference",
+      "retained": 87,
+      "gained": 29,
+      "lost": 41,
+      "neither": 243,
+      "net": -12,
+      "churn": 70,
+      "jaccard": 0.554140127388535,
+      "by_task": {
+        "3": {
+          "N": 29,
+          "L": 12,
+          "R": 7,
+          "G": 2
+        },
+        "6": {
+          "N": 41,
+          "G": 4,
+          "R": 5
+        },
+        "11": {
+          "R": 29,
+          "N": 7,
+          "L": 12,
+          "G": 2
+        },
+        "16": {
+          "N": 48,
+          "L": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "G": 5,
+          "R": 30,
+          "L": 7,
+          "N": 8
+        },
+        "31": {
+          "L": 8,
+          "G": 16,
+          "N": 10,
+          "R": 16
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T450",
+      "reference": "U450",
+      "kind": "registered_reference",
+      "retained": 106,
+      "gained": 16,
+      "lost": 37,
+      "neither": 241,
+      "net": -21,
+      "churn": 53,
+      "jaccard": 0.6666666666666666,
+      "by_task": {
+        "3": {
+          "R": 22,
+          "N": 17,
+          "G": 2,
+          "L": 9
+        },
+        "6": {
+          "N": 47,
+          "L": 1,
+          "G": 1,
+          "R": 1
+        },
+        "11": {
+          "G": 5,
+          "R": 37,
+          "N": 5,
+          "L": 3
+        },
+        "16": {
+          "N": 48,
+          "R": 1,
+          "L": 1
+        },
+        "23": {
+          "N": 49,
+          "G": 1
+        },
+        "26": {
+          "R": 34,
+          "G": 4,
+          "L": 7,
+          "N": 5
+        },
+        "31": {
+          "N": 20,
+          "L": 16,
+          "G": 3,
+          "R": 11
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T810",
+      "reference": "U810",
+      "kind": "registered_reference",
+      "retained": 107,
+      "gained": 37,
+      "lost": 25,
+      "neither": 231,
+      "net": 12,
+      "churn": 62,
+      "jaccard": 0.6331360946745562,
+      "by_task": {
+        "3": {
+          "G": 11,
+          "R": 33,
+          "N": 5,
+          "L": 1
+        },
+        "6": {
+          "N": 42,
+          "L": 1,
+          "G": 7
+        },
+        "11": {
+          "N": 3,
+          "G": 5,
+          "R": 36,
+          "L": 6
+        },
+        "16": {
+          "N": 46,
+          "L": 1,
+          "G": 3
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 30,
+          "L": 6,
+          "N": 10,
+          "G": 4
+        },
+        "31": {
+          "N": 25,
+          "R": 8,
+          "L": 10,
+          "G": 7
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T900",
+      "reference": "U900",
+      "kind": "registered_reference",
+      "retained": 111,
+      "gained": 37,
+      "lost": 21,
+      "neither": 231,
+      "net": 16,
+      "churn": 58,
+      "jaccard": 0.6568047337278107,
+      "by_task": {
+        "3": {
+          "G": 14,
+          "R": 29,
+          "N": 5,
+          "L": 2
+        },
+        "6": {
+          "N": 44,
+          "L": 1,
+          "G": 4,
+          "R": 1
+        },
+        "11": {
+          "R": 40,
+          "L": 5,
+          "G": 1,
+          "N": 4
+        },
+        "16": {
+          "N": 46,
+          "R": 2,
+          "G": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 29,
+          "L": 9,
+          "N": 7,
+          "G": 5
+        },
+        "31": {
+          "N": 25,
+          "L": 4,
+          "R": 10,
+          "G": 11
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T1080",
+      "reference": "U1080",
+      "kind": "registered_reference",
+      "retained": 106,
+      "gained": 41,
+      "lost": 22,
+      "neither": 231,
+      "net": 19,
+      "churn": 63,
+      "jaccard": 0.6272189349112426,
+      "by_task": {
+        "3": {
+          "G": 18,
+          "R": 24,
+          "N": 6,
+          "L": 2
+        },
+        "6": {
+          "N": 44,
+          "G": 5,
+          "L": 1
+        },
+        "11": {
+          "R": 39,
+          "L": 5,
+          "G": 4,
+          "N": 2
+        },
+        "16": {
+          "N": 45,
+          "R": 1,
+          "L": 2,
+          "G": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 31,
+          "L": 7,
+          "G": 4,
+          "N": 8
+        },
+        "31": {
+          "N": 26,
+          "R": 11,
+          "G": 8,
+          "L": 5
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "clock270",
+      "reference": "T270",
+      "kind": "registered_reference",
+      "retained": 89,
+      "gained": 35,
+      "lost": 27,
+      "neither": 249,
+      "net": 8,
+      "churn": 62,
+      "jaccard": 0.5894039735099338,
+      "by_task": {
+        "3": {
+          "G": 14,
+          "N": 27,
+          "L": 2,
+          "R": 7
+        },
+        "6": {
+          "N": 40,
+          "L": 6,
+          "R": 3,
+          "G": 1
+        },
+        "11": {
+          "L": 1,
+          "G": 12,
+          "N": 7,
+          "R": 30
+        },
+        "16": {
+          "N": 50
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 32,
+          "N": 11,
+          "G": 4,
+          "L": 3
+        },
+        "31": {
+          "N": 14,
+          "L": 15,
+          "R": 17,
+          "G": 4
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "clock450",
+      "reference": "T450",
+      "kind": "registered_reference",
+      "retained": 94,
+      "gained": 29,
+      "lost": 28,
+      "neither": 249,
+      "net": 1,
+      "churn": 57,
+      "jaccard": 0.6225165562913907,
+      "by_task": {
+        "3": {
+          "R": 12,
+          "N": 21,
+          "L": 12,
+          "G": 5
+        },
+        "6": {
+          "N": 46,
+          "G": 2,
+          "R": 1,
+          "L": 1
+        },
+        "11": {
+          "R": 41,
+          "G": 5,
+          "N": 3,
+          "L": 1
+        },
+        "16": {
+          "N": 49,
+          "L": 1
+        },
+        "23": {
+          "N": 49,
+          "L": 1
+        },
+        "26": {
+          "R": 32,
+          "N": 7,
+          "L": 6,
+          "G": 5
+        },
+        "31": {
+          "N": 24,
+          "G": 12,
+          "R": 8,
+          "L": 6
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "clock450",
+      "reference": "U450",
+      "kind": "registered_reference",
+      "retained": 106,
+      "gained": 17,
+      "lost": 37,
+      "neither": 240,
+      "net": -20,
+      "churn": 54,
+      "jaccard": 0.6625,
+      "by_task": {
+        "3": {
+          "R": 16,
+          "N": 18,
+          "L": 15,
+          "G": 1
+        },
+        "6": {
+          "N": 46,
+          "R": 1,
+          "G": 2,
+          "L": 1
+        },
+        "11": {
+          "G": 7,
+          "R": 39,
+          "N": 3,
+          "L": 1
+        },
+        "16": {
+          "N": 48,
+          "L": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 36,
+          "G": 1,
+          "L": 5,
+          "N": 8
+        },
+        "31": {
+          "N": 17,
+          "L": 13,
+          "R": 14,
+          "G": 6
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "clock450",
+      "reference": "MT300",
+      "kind": "registered_reference",
+      "retained": 90,
+      "gained": 33,
+      "lost": 63,
+      "neither": 214,
+      "net": -30,
+      "churn": 96,
+      "jaccard": 0.4838709677419355,
+      "by_task": {
+        "3": {
+          "R": 15,
+          "N": 7,
+          "L": 26,
+          "G": 2
+        },
+        "6": {
+          "N": 41,
+          "L": 6,
+          "G": 2,
+          "R": 1
+        },
+        "11": {
+          "R": 35,
+          "G": 11,
+          "L": 1,
+          "N": 3
+        },
+        "16": {
+          "N": 40,
+          "L": 10
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 29,
+          "N": 7,
+          "L": 6,
+          "G": 8
+        },
+        "31": {
+          "L": 14,
+          "N": 16,
+          "G": 10,
+          "R": 10
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T2340",
+      "reference": "MT300",
+      "kind": "registered_reference",
+      "retained": 117,
+      "gained": 44,
+      "lost": 36,
+      "neither": 203,
+      "net": 8,
+      "churn": 80,
+      "jaccard": 0.5939086294416244,
+      "by_task": {
+        "3": {
+          "R": 38,
+          "G": 7,
+          "L": 3,
+          "N": 2
+        },
+        "6": {
+          "N": 40,
+          "R": 3,
+          "L": 4,
+          "G": 3
+        },
+        "11": {
+          "R": 33,
+          "G": 12,
+          "L": 3,
+          "N": 2
+        },
+        "16": {
+          "N": 37,
+          "R": 2,
+          "L": 8,
+          "G": 3
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 28,
+          "L": 7,
+          "N": 7,
+          "G": 8
+        },
+        "31": {
+          "R": 13,
+          "N": 15,
+          "L": 11,
+          "G": 11
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T1800",
+      "reference": "beta1800",
+      "kind": "registered_reference",
+      "retained": 75,
+      "gained": 79,
+      "lost": 25,
+      "neither": 221,
+      "net": 54,
+      "churn": 104,
+      "jaccard": 0.41899441340782123,
+      "by_task": {
+        "3": {
+          "N": 6,
+          "G": 38,
+          "R": 6
+        },
+        "6": {
+          "N": 43,
+          "G": 4,
+          "R": 3
+        },
+        "11": {
+          "G": 19,
+          "L": 3,
+          "R": 26,
+          "N": 2
+        },
+        "16": {
+          "N": 47,
+          "G": 3
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 30,
+          "L": 11,
+          "N": 6,
+          "G": 3
+        },
+        "31": {
+          "L": 11,
+          "N": 17,
+          "G": 12,
+          "R": 10
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "public_aux1890",
+      "reference": "control1890",
+      "kind": "registered_reference",
+      "retained": 136,
+      "gained": 12,
+      "lost": 22,
+      "neither": 230,
+      "net": -10,
+      "churn": 34,
+      "jaccard": 0.8,
+      "by_task": {
+        "3": {
+          "N": 6,
+          "R": 41,
+          "L": 1,
+          "G": 2
+        },
+        "6": {
+          "N": 44,
+          "G": 2,
+          "R": 3,
+          "L": 1
+        },
+        "11": {
+          "R": 41,
+          "N": 3,
+          "L": 4,
+          "G": 2
+        },
+        "16": {
+          "N": 45,
+          "R": 3,
+          "L": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 34,
+          "N": 12,
+          "G": 2,
+          "L": 2
+        },
+        "31": {
+          "L": 12,
+          "N": 20,
+          "R": 14,
+          "G": 4
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "control1890",
+      "reference": "T1800",
+      "kind": "adjacent_canonical_T_evaluation",
+      "retained": 141,
+      "gained": 17,
+      "lost": 13,
+      "neither": 229,
+      "net": 4,
+      "churn": 30,
+      "jaccard": 0.8245614035087719,
+      "by_task": {
+        "3": {
+          "N": 5,
+          "R": 41,
+          "L": 3,
+          "G": 1
+        },
+        "6": {
+          "N": 43,
+          "L": 3,
+          "R": 4
+        },
+        "11": {
+          "R": 43,
+          "G": 2,
+          "N": 3,
+          "L": 2
+        },
+        "16": {
+          "N": 45,
+          "R": 3,
+          "G": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 31,
+          "G": 5,
+          "N": 12,
+          "L": 2
+        },
+        "31": {
+          "G": 7,
+          "N": 21,
+          "R": 19,
+          "L": 3
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    },
+    {
+      "candidate": "T1980",
+      "reference": "control1890",
+      "kind": "adjacent_canonical_T_evaluation",
+      "retained": 135,
+      "gained": 21,
+      "lost": 23,
+      "neither": 221,
+      "net": -2,
+      "churn": 44,
+      "jaccard": 0.7541899441340782,
+      "by_task": {
+        "3": {
+          "N": 3,
+          "R": 41,
+          "G": 5,
+          "L": 1
+        },
+        "6": {
+          "N": 45,
+          "G": 1,
+          "R": 4
+        },
+        "11": {
+          "R": 38,
+          "L": 7,
+          "N": 3,
+          "G": 2
+        },
+        "16": {
+          "N": 44,
+          "G": 1,
+          "R": 3,
+          "L": 2
+        },
+        "23": {
+          "N": 50
+        },
+        "26": {
+          "R": 34,
+          "N": 10,
+          "G": 4,
+          "L": 2
+        },
+        "31": {
+          "L": 11,
+          "N": 16,
+          "R": 15,
+          "G": 8
+        },
+        "39": {
+          "N": 50
+        }
+      }
+    }
+  ],
+  "canonical_T_learning_sequence": [
+    "T270",
+    "T450",
+    "T810",
+    "T900",
+    "T1080",
+    "T1350",
+    "T1710",
+    "T1800",
+    "control1890",
+    "T1980",
+    "T2070",
+    "T2160",
+    "T2250",
+    "T2340",
+    "T2430",
+    "T2520",
+    "T2610",
+    "T2700",
+    "T2790"
+  ],
+  "control1890_note": "Unmodified full-FM branch in public-risk comparison; it is the actual parent of continuation1980 onward (design section20.2). public_aux1890 is a separate diagnostic branch."
+}

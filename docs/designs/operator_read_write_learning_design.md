@@ -2021,3 +2021,56 @@ Owner已告知GPU02的1–3卡他人占用：释放后及时用于已就绪工�
 非finite、源权重变化、数据/LoRA身份违约必须停止有关计算并保存事实；已定位工程问题按既有权限自主修复。
 完成整批或遇实质阻碍时向main Steer一次（idle则Queue），不定时心跳，不逐分片自通知。
 main完成独立有价值工作后可结束回合等待此回报，无需监看Sol。Sol不自续未登记后段；main在回报后主动验收和裁决。
+
+## 32. 变化驱动覆盖的首轮教师覆盖补点：仅续到450（2026-09-30）
+
+§31已完成124/400、8.443905GPUh，正式原件保留。main的完整裁决见机制§74/findings§249。
+更早信用和部分目标操作改善已实测，但任务交换明显、强MT差距未补齐；不把候选列为已有效修复。
+Owner夜间自主研究/训练授权继续有效，本节由main主动登记并交唯一新执行者`01a0f018-69af-7b00-b614-7e117540051b`执行。
+它不恢复§29/30，不自动开启900、2340或其它候选。
+
+### 32.1 问题、主要变量和必要范围
+
+待区分：270的作用主要是提前移动到旧有能力交换点，还是覆盖规则改变后的共同学习尚能进一步形成并保持有用控制。
+选择450是首次完成36task各50条不同teacher的节点，只新增180更新；不以未到收敛保护无限续训。
+旧T/U270→450→900的阶段反转、当前真实目标操作收益与仍变化的学习共同支持这个最小补点。
+新模型公式、参数、source、数据allowlist、主跨episode full50 FM、任务权重、初始化历史全部不变。
+只延长相同事件流；不增加learned gate/常量覆盖对照、loss、teacher数据、rank、seed或额外读取。
+
+唯一父checkpoint为
+`/data1/user/ymdai/ember_runs/operator_change_clock_learning_20260930/T_change_clock/train/attempts/resume180_gpu02_world1/checkpoints/macro_00000270`。
+保留Writer、Adam、scheduler/scaler、sampler/cursor及已有rank RNG，从271开始，原270条metrics只读继承。
+绝对LR仍是原warmup150/cos1200/floor合同，不重置；4task×28=112query、每task .25、一次Adam语义保持。
+新271–450的task/teacher/query/flow/LR与旧T/U同宏步事件对照；完成时各task累计50次访问、50条不同teacher。
+沿现有v2→v3 sampler迁移明确说明`teacher_pool=range(30)`的历史含义是visit，不是改teacher pool或补造20条数据。
+360只保存完整安全恢复点，450是本批唯一新增读出点；非finite/信息墙/源权重/身份违约停止，保留异常原件。
+
+### 32.2 读出、比较和停止线
+
+仅新增候选450完整400条件bank及一次correct400，沿原scene、50 init、teacher ordinal、env/policy RNG及官方口径。
+保留原8full/392compact、400条continuous trace；用已存在原件比较候选270及旧T450122、U450143、同scene MT153，
+成熟T2340161仅作不等预算背景。报告per-task/suite、breadth、R/G/L/churn与任务聚类不确定性。
+不重训/重评参照，不新增A28/B20/native面板、Test、RL、视频controls或只用80行选点。
+无需另做GPU工程smoke；实际续训首个消费者兼作执行确认，既有graph和270原件不重复测试。
+
+若450仍主要是旧3/11收益与6/31损失的交换，没有有意义的强MT以上完整能力，
+本轮clock-only主要修复假设证据不足，不以“还没到900/2340”自动增加节点或扫参数。
+正结果也不自动获得后段：main需结合实际能力、保持、历史及尚缺证据作新裁决，不能唯一归因随变化分配覆盖。
+两点仍不足以证明长期稳定；不把事后最高点包装成预注册选择。执行者完成450整批后停止新计算并回报main。
+
+### 32.3 资源、实现和来源
+
+新root `/data1/user/ymdai/ember_runs/operator_change_clock_continuation450_20260930`，增量硬限**6GPUh/24GiB峰值**，
+含准备加载、失败、训练、物化与评测；§31的8.443905费用单列且不重写原10GPUh合同。
+按正常约52秒/宏步，180更新约2.6GPUh，加物化约.4–.9及400约1.1，预计4.1–4.8GPUh。
+可用2–4张合适GPU时预计wall2–3小时加少量接口准备；只有单卡时约4–5小时，须如实报告，不等待凑卡或挤占他人。
+训练累计4GPUh还未到450或预计总量将越6GPUh时，报告完成量、剩余估计及最近安全ECP供main裁决，不静默删读出或丢更新重跑。
+launch前核双节点与strg01 data1独立quota、现有用量和增量峰值，GPU02优先；按实际吞吐选world1–4和评测队列。
+物理迁移仅在完整ECP边界，保持逻辑事件/有效batch/更新，记录旧新拓扑及RNG来源，不宣称bitwise exact。
+
+复用唯一`operator_writer`训练/恢复/物化/官方消费者；只扩本节必要scope/父来源/450读出，不复制trainer或建立平行fallback。
+独占原dev分支同步main后实现，按现有架构guardrails做窄增量；main独占科研文档和集成。
+先用真实父run/manifest/sampler作CPU恢复及事件检查，push后从新的clean detached冻结树执行。
+保留517训练/360读取的旧原件身份，新训练与读取Git分别如实记录，不原地修改旧树或把旧270来源改写成新Git。
+新接口若工程失败，可在原科学范围/预算内修复、检查、推送、新冻结后继续；科学语义/未知原因/预算越界由main裁决。
+整批完成或实质阻碍时一次Steer主讨论，idle则Queue；不逐阶段自通知、不定时心跳，main不陪跑监看。

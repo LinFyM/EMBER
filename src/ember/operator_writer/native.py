@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from contextvars import ContextVar
+from threading import RLock
 from typing import Iterator
 
 import torch
@@ -10,6 +12,76 @@ from torch import nn
 from torch.utils.checkpoint import checkpoint
 
 from ember.lora import LORA_A_SUFFIX
+
+
+_TEACHER_ATTENTION = ContextVar("ember_teacher_attention", default=False)
+_TEACHER_PADDING = ContextVar("ember_teacher_padding_queries", default=None)
+_TEACHER_EAGER = ContextVar("ember_teacher_original_attention", default=None)
+_ATTENTION_SCOPE_LOCK = RLock()
+
+
+def _padding_query_rows(mask):
+    if mask is None:
+        return None
+    # All frames of this teacher have the same token mask. Finite all-masked
+    # rows need eager backward: fused SDPA's saved logsumexp loses log(T) there.
+    padded = (mask[0, 0] < 0).all(-1)
+    return (~padded).nonzero().flatten(), padded.nonzero().flatten()
+
+
+def _teacher_sdpa(module, query, key, value, attention_mask, scaling, dropout=0.0,
+                  *, _eager=None, _query_rows=None, **kwargs):
+    """SDPA for visible queries; installed eager preserves finite padding-row VJP."""
+    from transformers.models.gemma import modeling_gemma
+
+    repeat = modeling_gemma.repeat_kv
+    keys, values = repeat(key, module.num_key_value_groups), repeat(value, module.num_key_value_groups)
+    rows = _query_rows if _query_rows is not None else _padding_query_rows(attention_mask)
+
+    def sdpa(q, mask):
+        return torch.nn.functional.scaled_dot_product_attention(
+            q, keys, values, attn_mask=mask,
+            dropout_p=dropout if module.training else 0.0, is_causal=False, scale=scaling)
+
+    if rows is None or rows[1].numel() == 0:
+        output = sdpa(query, attention_mask)
+    else:
+        visible, padded = rows
+        output = query.new_zeros((*query.shape[:-1], value.shape[-1]))
+        if visible.numel():
+            output = output.index_copy(2, visible, sdpa(
+                query.index_select(2, visible), attention_mask.index_select(-2, visible)))
+        eager = _eager or modeling_gemma.eager_attention_forward
+        padded_output, _ = eager(module, query.index_select(2, padded), key, value,
+                                 attention_mask.index_select(-2, padded), scaling, dropout=dropout, **kwargs)
+        output = output.index_copy(2, padded, padded_output.transpose(1, 2))
+    return output.transpose(1, 2).contiguous(), None
+
+
+@contextmanager
+def _teacher_attention_kernel(attention_mask=None):
+    """Only this native bridge call uses SDPA, including outer-frame replay."""
+    from transformers.models.gemma import modeling_gemma
+
+    # Native callers cannot race the binding; unrelated threads retain eager.
+    with _ATTENTION_SCOPE_LOCK:
+        original = modeling_gemma.eager_attention_forward
+        eager = _TEACHER_EAGER.get() or original
+        rows = _padding_query_rows(attention_mask)
+        tokens = (_TEACHER_ATTENTION.set(True), _TEACHER_PADDING.set(rows), _TEACHER_EAGER.set(eager))
+
+        def dispatch(*args, **kwargs):
+            if not _TEACHER_ATTENTION.get():
+                return eager(*args, **kwargs)
+            return _teacher_sdpa(*args, _eager=eager, _query_rows=_TEACHER_PADDING.get(), **kwargs)
+
+        modeling_gemma.eager_attention_forward = dispatch
+        try:
+            yield
+        finally:
+            modeling_gemma.eager_attention_forward = original
+            for variable, token in zip((_TEACHER_ATTENTION, _TEACHER_PADDING, _TEACHER_EAGER), tokens):
+                variable.reset(token)
 
 
 @contextmanager
@@ -69,11 +141,12 @@ class _NativeFrameCall(nn.Module):
             mask = core._prepare_attention_masks_4d(make_att_2d_masks(full_padding, full_attention))
             positions = torch.cumsum(full_padding, dim=1) - 1
             dtype = bridge.paligemma.model.language_model.layers[0].self_attn.q_proj.weight.dtype
-            (_, hidden), _ = bridge.forward(
-                attention_mask=mask, position_ids=positions, past_key_values=None,
-                inputs_embeds=[prefix.to(dtype), suffix.to(dtype)], use_cache=False,
-                adarms_cond=[None, adarms],
-            )
+            with _teacher_attention_kernel(mask):
+                (_, hidden), _ = bridge.forward(
+                    attention_mask=mask, position_ids=positions, past_key_values=None,
+                    inputs_embeds=[prefix.to(dtype), suffix.to(dtype)], use_cache=False,
+                    adarms_cond=[None, adarms],
+                )
             # The actual action_out projection is part of the 38-target native read.
             core.action_out_proj(hidden.float())
         if set(captured) != set(self.names) or hidden.shape != (count, 50, 1024):

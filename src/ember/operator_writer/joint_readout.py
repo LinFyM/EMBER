@@ -18,8 +18,9 @@ from .public_beta import factor_map, public_state
 REPO = Path(__file__).resolve().parents[3]
 TASK = "operator_joint_public_fresh_20260930"
 ROOT = Path("/data1/user/ymdai/ember_runs") / TASK
-MODES = ("joint", "joint_public", "T450_public", "context", "context_public", "context_seen")
-PUBLIC_MODES = ("joint_public", "T450_public", "context_public")
+PUBLIC_VALIDATION_MODE = "context_public_validation"
+MODES = ("joint", "joint_public", "T450_public", "context", "context_public", "context_seen", PUBLIC_VALIDATION_MODE)
+PUBLIC_MODES = ("joint_public", "T450_public", "context_public", PUBLIC_VALIDATION_MODE)
 OLD_CHECKPOINT = Path("/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928"
                       "/continuation900/T/train/attempts/continuation/checkpoints/macro_00000450")
 PUBLIC_SCENES = Path(scope.registration()["run_root"]) / "attempts/scene_canonical144/scenes"
@@ -31,6 +32,10 @@ SEEN_ROOT = ROOT.parent / SEEN_TASK
 SEEN_TRAINING_GIT = "17ee3e387c778c189475898bcaf9f47e7bb79399"
 SEEN_CHECKPOINT = (ROOT.parent / "operator_context_value_continuation900_20261001"
                    / "context/train/attempts/continuation/checkpoints/macro_00000900")
+PUBLIC_VALIDATION_TASK = "operator_context900_public_validation_20261001"
+PUBLIC_VALIDATION_ROOT = ROOT.parent / PUBLIC_VALIDATION_TASK
+PUBLIC_FACTOR_MANIFEST = (ROOT.parent / "operator_context_value_continuation900_20261001"
+                          / "context_public/banks/900/manifest.json")
 TRAIN_TASKS = (0, 12, 20, 32)
 TEACHERS = {0: (40, 11), 12: (25, 14), 20: (38, 42), 32: (17, 43)}
 
@@ -38,7 +43,7 @@ TEACHERS = {0: (40, 11), 12: (25, 14), 20: (38, 42), 32: (17, 43)}
 def _continuation_checkpoint(mode: str, checkpoint: Path | None) -> bool:
     from .joint_training import CONTEXT_CONTINUATION_ROOT
 
-    return (mode in ("context", "context_public", SEEN_MODE) and checkpoint is not None
+    return (mode in ("context", "context_public", SEEN_MODE, PUBLIC_VALIDATION_MODE) and checkpoint is not None
             and checkpoint.resolve().is_relative_to(CONTEXT_CONTINUATION_ROOT / "context/train/attempts"))
 
 
@@ -49,6 +54,8 @@ def study_root(mode: str, checkpoint: Path | None = None) -> Path:
         raise ValueError("unregistered full/public study readout mode")
     if mode == SEEN_MODE:
         return SEEN_ROOT
+    if mode == PUBLIC_VALIDATION_MODE:
+        return PUBLIC_VALIDATION_ROOT
     if _continuation_checkpoint(mode, checkpoint):
         return CONTEXT_CONTINUATION_ROOT
     return CONTEXT_ROOT if mode in ("context", "context_public") else ROOT
@@ -59,6 +66,8 @@ def study_id(mode: str, checkpoint: Path | None = None) -> str:
 
     if mode == SEEN_MODE:
         return SEEN_TASK
+    if mode == PUBLIC_VALIDATION_MODE:
+        return PUBLIC_VALIDATION_TASK
     return CONTEXT_CONTINUATION_TASK if _continuation_checkpoint(mode, checkpoint) else (
         CONTEXT_TASK if mode in ("context", "context_public") else TASK)
 
@@ -66,6 +75,8 @@ def study_id(mode: str, checkpoint: Path | None = None) -> str:
 def capture_path(mode: str, checkpoint: Path | None = None) -> Path:
     if mode == SEEN_MODE:
         return REPO / "configs/operator_read_write_v1/context900_seen_capture.json"
+    if mode == PUBLIC_VALIDATION_MODE:
+        return REPO / "configs/operator_read_write_v1/context900_public_validation_capture.json"
     prefix = "context_continuation" if _continuation_checkpoint(mode, checkpoint) else (
         "context" if mode in ("context", "context_public") else "joint")
     return REPO / "configs/operator_read_write_v1" / f"{prefix}_{'public' if mode in PUBLIC_MODES else 'official'}_capture.json"
@@ -74,10 +85,10 @@ def capture_path(mode: str, checkpoint: Path | None = None) -> Path:
 def bank_path(mode: str, checkpoint: Path | None = None) -> Path:
     root = study_root(mode, checkpoint)
     macro = int(checkpoint.name.removeprefix("macro_")) if checkpoint is not None else 450
-    if mode == SEEN_MODE:
+    if mode in (SEEN_MODE, PUBLIC_VALIDATION_MODE):
         if checkpoint is None or checkpoint.resolve() != SEEN_CHECKPOINT.resolve():
             raise ValueError("context seen144 requires the fixed actual Context900 checkpoint")
-        return root / "context/banks/900/manifest.json"
+        return root / ("context" if mode == SEEN_MODE else "context_public") / "banks/900/manifest.json"
     allowed = (900,) if mode in PUBLIC_MODES else (810, 900)
     if macro not in (allowed if _continuation_checkpoint(mode, checkpoint) else (450,)):
         raise ValueError("readout checkpoint is outside registered main/conditional endpoint")
@@ -88,6 +99,9 @@ def evaluation_path(mode: str, checkpoint: Path) -> Path:
     if mode == SEEN_MODE:
         bank_path(mode, checkpoint)
         return SEEN_ROOT / "context/evaluation/correct144"
+    if mode == PUBLIC_VALIDATION_MODE:
+        bank_path(mode, checkpoint)
+        return PUBLIC_VALIDATION_ROOT / "context_public/evaluation/public400"
     output = study_root(mode, checkpoint) / mode / "evaluation"
     if _continuation_checkpoint(mode, checkpoint):
         output /= checkpoint.name.removeprefix("macro_").lstrip("0")
@@ -122,13 +136,13 @@ def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
                 run.CONTEXT_SPEC_PATH if mode in ("context", "context_public") else run.JOINT_SPEC_PATH)
         spec = run.specification(path)
         training = joint_training.inspect_source(spec, checkpoint)
-        if mode == SEEN_MODE and training["git"]["commit"] != SEEN_TRAINING_GIT:
-            raise ValueError("context seen144 actual training identity changed")
+        if mode in (SEEN_MODE, PUBLIC_VALIDATION_MODE) and training["git"]["commit"] != SEEN_TRAINING_GIT:
+            raise ValueError("context900 diagnostic actual training identity changed")
     return spec, training, path
 
 
 def _seen_geometry(mode: str) -> bool:
-    return mode in PUBLIC_MODES or mode == SEEN_MODE
+    return (mode in PUBLIC_MODES and mode != PUBLIC_VALIDATION_MODE) or mode == SEEN_MODE
 
 
 def _geometry(mode: str, spec: Mapping, asset_root: Path) -> tuple[list, list, Path, tuple]:
@@ -153,6 +167,28 @@ def _wall(mode: str) -> dict:
 def _public_intervention(lora) -> dict:
     return {"formula": "B0 A", "removed_term": "M(V,L) A",
             "factor_map": factor_map(lora)}
+
+
+def _reused_public_factors(training: Mapping, lora) -> tuple[Path, dict]:
+    """Reference the sealed76 factors without copying/exporting weights or videos."""
+    from . import bank
+
+    old = read_json(PUBLIC_FACTOR_MANIFEST)
+    path = PUBLIC_FACTOR_MANIFEST.parent / "public_beta.safetensors"
+    expected = ((old.get("status"), "sealed"), (old.get("mode"), "context_public"),
+                (old.get("checkpoint"), str(SEEN_CHECKPOINT)),
+                (old.get("training_git"), SEEN_TRAINING_GIT),
+                (old.get("checkpoint_manifest"), file_record(SEEN_CHECKPOINT / "checkpoint_manifest.json")),
+                (old.get("source"), training["source"]), (old.get("lora"), lora.to_dict()),
+                (old.get("shared"), file_record(path)),
+                (old.get("public_intervention"), _public_intervention(lora)),
+                (old.get("information_wall"), _wall("context_public")))
+    if any(actual != wanted for actual, wanted in expected):
+        raise ValueError("fixed Context900 public factor source changed")
+    bank._factor_header(path, expected_lora_state_shapes(lora),
+                       metadata={"schema_version": bank.BANK_SCHEMA, "mode": "context_public"})
+    return path, {"manifest": file_record(PUBLIC_FACTOR_MANIFEST),
+                  "shared": file_record(path), "factor_mode": "context_public"}
 
 
 def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
@@ -184,19 +220,22 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
                 "training_run": file_record(checkpoint.parent.parent / "run_contract.json"),
                 "source": training["source"], "lora": lora.to_dict(),
                 "materialization_git": run.frozen_git()}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    register_partial(path.parent, contract, resume_materialization_git)
-    state = public_state(checkpoint, lora)
-    if mode not in PUBLIC_MODES:
-        state = {key: value for key, value in state.items() if key.endswith(LORA_A_SUFFIX)}
     shared_path = path.parent / ("public_beta.safetensors" if mode in PUBLIC_MODES else "shared.safetensors")
     metadata = {"schema_version": bank.BANK_SCHEMA, "mode": mode}
     shapes = expected_lora_state_shapes(lora)
     selected_shapes = {key: shape for key, shape in shapes.items()
                        if mode in PUBLIC_MODES or key.endswith(LORA_A_SUFFIX)}
+    if mode == PUBLIC_VALIDATION_MODE:
+        shared_path, contract["public_factor_source"] = _reused_public_factors(training, lora)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    register_partial(path.parent, contract, resume_materialization_git)
     if shared_path.exists():
-        bank._factor_header(shared_path, selected_shapes, metadata=metadata)
+        bank._factor_header(shared_path, selected_shapes, metadata={**metadata, "mode":
+                           "context_public" if mode == PUBLIC_VALIDATION_MODE else mode})
     else:
+        state = public_state(checkpoint, lora)
+        if mode not in PUBLIC_MODES:
+            state = {key: value for key, value in state.items() if key.endswith(LORA_A_SUFFIX)}
         save_file(state, str(shared_path), metadata=metadata)
     if mode not in PUBLIC_MODES:
         compile_conditions(asset_root, spec, mode, checkpoint, training["source"], path.parent,
@@ -231,6 +270,10 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)
     shared = path.parent / ("public_beta.safetensors" if mode in PUBLIC_MODES else "shared.safetensors")
+    if mode == PUBLIC_VALIDATION_MODE:
+        shared, provenance = _reused_public_factors(training, lora)
+        if bank.get("public_factor_source") != provenance:
+            raise ValueError("public validation reused factor provenance changed")
     expected = ((path, bank_path(mode, Path(bank["checkpoint"])).resolve()), (bank.get("joint_public_study"), True),
                 (bank.get("schema_version"), owner.BANK_SCHEMA), (bank.get("kind"), owner.KIND),
                 (bank.get("status"), "sealed"),
@@ -257,7 +300,8 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
     shapes = expected_lora_state_shapes(lora)
     owner._factor_header(shared, {key: shape for key, shape in shapes.items()
                                  if mode in PUBLIC_MODES or key.endswith(LORA_A_SUFFIX)},
-                         metadata={"schema_version": owner.BANK_SCHEMA, "mode": mode})
+                         metadata={"schema_version": owner.BANK_SCHEMA,
+                                   "mode": "context_public" if mode == PUBLIC_VALIDATION_MODE else mode})
     if mode in PUBLIC_MODES:
         if bank.get("conditions") != conditions or bank.get("public_intervention") != _public_intervention(lora):
             raise ValueError("joint public teacher metadata or factor map changed")

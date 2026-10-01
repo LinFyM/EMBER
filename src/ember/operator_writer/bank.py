@@ -727,7 +727,7 @@ class FrozenOperatorAdapter:
         self.states: OrderedDict[str, dict] = OrderedDict()
 
     def _state(self, key: str) -> dict:
-        if self.bank["mode"] in ("MT", PUBLIC_BETA_MODE, "joint_public", "T450_public", "context_public"):
+        if self.bank["mode"] in ("MT", PUBLIC_BETA_MODE, "joint_public", "T450_public", "context_public", "context_public_validation"):
             return self.common
         if key in self.states:
             self.states.move_to_end(key)
@@ -778,7 +778,7 @@ def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
         evidence["legacy_test_initialization"] = bank["legacy_test_initialization"]
     else:
         evidence["scene_manifest"] = bank["scene_manifest"]
-    if bank["mode"] == PUBLIC_BETA_MODE:
+    if bank["mode"] in (PUBLIC_BETA_MODE, "context_public_validation"):
         evidence.update(intervention="public_B0_A", teacher_video_values_read=0,
                         video_id_role="paired_metadata_only")
     if bank.get("selected_control") is not None:

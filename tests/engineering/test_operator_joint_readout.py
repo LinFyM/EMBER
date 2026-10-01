@@ -66,6 +66,54 @@ def test_real_old450_public_bank_and_actual_registered_consumer(tmp_path, monkey
         readout.source_record("T450_public", readout.OLD_CHECKPOINT.with_name("macro_00000900"))
 
 
+def test_context900_public_validation_reuses76_and_real400_consumers(tmp_path, monkeypatch):
+    from ember.operator_writer import materialization
+
+    monkeypatch.setattr(readout, "PUBLIC_VALIDATION_ROOT", tmp_path)
+    monkeypatch.setattr(run, "frozen_git", lambda: {"commit": "cpu-caller-only", "branch": "",
+                        "dirty_paths": [], "pushed_ref": "origin/main"})
+    def forbidden(*args, **kwargs):
+        pytest.fail("public validation must reuse weights without export or teacher/native compile")
+    monkeypatch.setattr(readout, "public_state", forbidden)
+    monkeypatch.setattr(materialization, "compile_conditions", forbidden)
+    mode, checkpoint = readout.PUBLIC_VALIDATION_MODE, readout.SEEN_CHECKPOINT
+    path = readout.materialize(mode, checkpoint, ASSET, device="cpu")
+    manifest = read_json(path)
+    assert manifest["training_git"] == readout.SEEN_TRAINING_GIT
+    assert manifest["shared"] == read_json(readout.PUBLIC_FACTOR_MANIFEST)["shared"]
+    assert not list(path.parent.glob("*.safetensors"))
+    with safe_open(manifest["shared"]["path"], framework="pt", device="cpu") as reader:
+        assert len(reader.keys()) == 76 and reader.metadata()["mode"] == "context_public"
+    full = read_json(checkpoint.parents[5] / "context/banks/900/manifest.json")
+    assert manifest["tasks"] == full["tasks"]
+    assert manifest["conditions"] == [{key: row[key] for key in
+            ("condition_id", "global_task_id", "teacher_demo")} for row in full["conditions"]]
+    tasks = tuple(SimpleNamespace(suite=row["suite"], task_id=row["task_id"], init_state_ids=tuple(range(50)))
+                  for row in manifest["tasks"])
+    adapter = inspect_static_task_lora_adapter(manifest_path=path, source=manifest["source"], tasks=tasks,
+                    evaluation_role="validation", require_formal=True)
+    assert len(adapter["conditions"]) == 400
+    assert adapter["information_wall"]["teacher_video_values_read"] == 0
+    common = object()
+    consumer = SimpleNamespace(bank=adapter, common=common)
+    assert bank.FrozenOperatorAdapter._state(consumer, manifest["conditions"][0]["condition_id"]) is common
+    task = adapter["tasks"][0]
+    assert bank.episode_evidence(adapter, task, task["episodes"][0])["teacher_video_values_read"] == 0
+    args = SimpleNamespace(role="validation", mode="formal", state_count=50, init_state_ids=None,
+                           static_task_lora_manifest=path,
+                           trajectory_capture_selection=readout.capture_path(mode, checkpoint))
+    output = readout.evaluation_path(mode, checkpoint)
+    capture, stage = _registered_trajectory_capture(args, tasks, output, None, readout.REPO)
+    assert len(capture["full_conditions"]) == 8
+    assert all(row["init_state_id"] == 0 for row in capture["full_conditions"])
+    assert capture["passive_trace"] and not stage["full_conditions_only"]
+    with pytest.raises(ValueError, match="fixed actual Context900"):
+        readout.source_record(mode, checkpoint.with_name("macro_00000810"))
+    args.role = readout.scope.ROLE
+    with pytest.raises(Pi05EvaluationError, match="capture scope changed"):
+        _registered_trajectory_capture(args, tasks, output, None, readout.REPO)
+
+
 def test_capture_rejects_wrong_scene_panel_and_frozen_A28_reuses_real_FM():
     capture = read_json(readout.REPO / "configs/operator_read_write_v1/joint_public_capture.json")
     tasks = [SimpleNamespace(suite=r["suite"], task_id=r["task_id"], init_state_ids=readout.scope.STATES)

@@ -45,19 +45,24 @@ TEACHERS = {0: (40, 11), 12: (25, 14), 20: (38, 42), 32: (17, 43)}
 
 
 def _continuation_checkpoint(mode: str, checkpoint: Path | None) -> bool:
-    from .joint_training import CONTEXT_CONTINUATION_ROOT
+    from .joint_training import CONTEXT_CONTINUATION_ROOT, CONDITIONAL_CONTINUATION_ROOT
 
-    return (mode in ("context", "context_public", SEEN_MODE, PUBLIC_VALIDATION_MODE) and checkpoint is not None
+    if checkpoint is None:
+        return False
+    if mode in CONDITIONAL_MODES:
+        return checkpoint.resolve().is_relative_to(
+            CONDITIONAL_CONTINUATION_ROOT / CONDITIONAL_MODE / "train/attempts")
+    return (mode in ("context", "context_public", SEEN_MODE, PUBLIC_VALIDATION_MODE)
             and checkpoint.resolve().is_relative_to(CONTEXT_CONTINUATION_ROOT / "context/train/attempts"))
 
 
 def study_root(mode: str, checkpoint: Path | None = None) -> Path:
-    from .joint_training import CONTEXT_ROOT, CONTEXT_CONTINUATION_ROOT
+    from .joint_training import CONTEXT_ROOT, CONTEXT_CONTINUATION_ROOT, CONDITIONAL_CONTINUATION_ROOT
 
     if mode not in MODES:
         raise ValueError("unregistered full/public study readout mode")
     if mode in CONDITIONAL_MODES:
-        return CONDITIONAL_ROOT
+        return CONDITIONAL_CONTINUATION_ROOT if _continuation_checkpoint(mode, checkpoint) else CONDITIONAL_ROOT
     if mode in SELF_READ_MODES:
         from .joint_training import SELF_READ_ROOT
 
@@ -72,10 +77,10 @@ def study_root(mode: str, checkpoint: Path | None = None) -> Path:
 
 
 def study_id(mode: str, checkpoint: Path | None = None) -> str:
-    from .joint_training import CONTEXT_TASK, CONTEXT_CONTINUATION_TASK
+    from .joint_training import CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK
 
     if mode in CONDITIONAL_MODES:
-        return CONDITIONAL_TASK
+        return CONDITIONAL_CONTINUATION_TASK if _continuation_checkpoint(mode, checkpoint) else CONDITIONAL_TASK
     if mode in SELF_READ_MODES:
         from .joint_training import SELF_READ_TASK
 
@@ -91,7 +96,8 @@ def study_id(mode: str, checkpoint: Path | None = None) -> str:
 def capture_path(mode: str, checkpoint: Path | None = None) -> Path:
     if mode in CONDITIONAL_MODES:
         suffix = "seen" if mode == CONDITIONAL_SEEN_MODE else "official"
-        return REPO / "configs/operator_read_write_v1" / f"conditional_read_write_{suffix}_capture.json"
+        prefix = "conditional_read_write_continuation" if _continuation_checkpoint(mode, checkpoint) else "conditional_read_write"
+        return REPO / "configs/operator_read_write_v1" / f"{prefix}_{suffix}_capture.json"
     if mode == SEEN_MODE:
         return REPO / "configs/operator_read_write_v1/context900_seen_capture.json"
     if mode == PUBLIC_VALIDATION_MODE:
@@ -105,6 +111,10 @@ def bank_path(mode: str, checkpoint: Path | None = None) -> Path:
     root = study_root(mode, checkpoint)
     macro = int(checkpoint.name.removeprefix("macro_")) if checkpoint is not None else 450
     if mode in CONDITIONAL_MODES:
+        if _continuation_checkpoint(mode, checkpoint):
+            if macro not in ((900,) if mode == CONDITIONAL_SEEN_MODE else (810, 900)):
+                raise ValueError("conditional continuation requires complete900 or triggered full810 endpoint")
+            return root / mode / f"banks/{macro}/manifest.json"
         if checkpoint is None or not checkpoint.resolve().is_relative_to(
                 CONDITIONAL_ROOT / CONDITIONAL_MODE / "train/attempts") or macro != 450:
             raise ValueError("conditional read/write requires its owned complete450 endpoint")
@@ -122,8 +132,10 @@ def bank_path(mode: str, checkpoint: Path | None = None) -> Path:
 def evaluation_path(mode: str, checkpoint: Path) -> Path:
     if mode in CONDITIONAL_MODES:
         bank_path(mode, checkpoint)
-        return CONDITIONAL_ROOT / mode / "evaluation" / (
-            "correct144" if mode == CONDITIONAL_SEEN_MODE else "correct400")
+        output = study_root(mode, checkpoint) / mode / "evaluation"
+        if _continuation_checkpoint(mode, checkpoint):
+            output /= str(int(checkpoint.name.removeprefix("macro_")))
+        return output / ("correct144" if mode == CONDITIONAL_SEEN_MODE else "correct400")
     if mode == SEEN_MODE:
         bank_path(mode, checkpoint)
         return SEEN_ROOT / "context/evaluation/correct144"
@@ -144,15 +156,10 @@ def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
     bank_path(mode, checkpoint)
     continuation = _continuation_checkpoint(mode, checkpoint)
     if continuation and checkpoint.name == "macro_00000810":
-        trigger_path = joint_training.CONTEXT_CONTINUATION_ROOT / "launch/900_branch_trigger.json"
-        if not trigger_path.is_file():
-            raise ValueError("810 readout requires validated complete900 success strictly above153")
-        trigger = read_json(trigger_path)
-        expected = checkpoint.parent / "macro_00000900"
-        if (trigger.get("status") != "validated" or trigger.get("successes", 0) <= 153
-                or trigger.get("checkpoint") != str(expected)
-                or trigger.get("results") != str(evaluation_path("context", expected) / "results.json")):
-            raise ValueError("810 trigger is not the complete registered900 consumer")
+        if mode in CONDITIONAL_MODES:
+            _conditional_adjacent_trigger(checkpoint)
+        else:
+            _context_adjacent_trigger(checkpoint)
     if mode == "T450_public":
         if checkpoint != OLD_CHECKPOINT.resolve():
             raise ValueError("T450 public readout changed its fixed old source")
@@ -160,15 +167,76 @@ def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
         spec = read_json(path)
         training = bank.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
     else:
-        from .specification import CONDITIONAL_SPEC_PATH
+        from .specification import CONDITIONAL_SPEC_PATH, CONDITIONAL_CONTINUATION_SPEC_PATH
 
-        path = (CONDITIONAL_SPEC_PATH if mode in CONDITIONAL_MODES else run.SELF_READ_SPEC_PATH if mode in SELF_READ_MODES else run.CONTEXT_CONTINUATION_SPEC_PATH if continuation else
+        conditional_path = CONDITIONAL_CONTINUATION_SPEC_PATH if continuation else CONDITIONAL_SPEC_PATH
+        path = (conditional_path if mode in CONDITIONAL_MODES else run.SELF_READ_SPEC_PATH if mode in SELF_READ_MODES else run.CONTEXT_CONTINUATION_SPEC_PATH if continuation else
                 run.CONTEXT_SPEC_PATH if mode in ("context", "context_public") else run.JOINT_SPEC_PATH)
         spec = run.specification(path)
         training = joint_training.inspect_source(spec, checkpoint)
         if mode in (SEEN_MODE, PUBLIC_VALIDATION_MODE) and training["git"]["commit"] != SEEN_TRAINING_GIT:
             raise ValueError("context900 diagnostic actual training identity changed")
     return spec, training, path
+
+
+def _context_adjacent_trigger(checkpoint: Path) -> None:
+    from . import joint_training
+
+    trigger_path = joint_training.CONTEXT_CONTINUATION_ROOT / "launch/900_branch_trigger.json"
+    if not trigger_path.is_file():
+        raise ValueError("810 readout requires validated complete900 success strictly above153")
+    trigger = read_json(trigger_path)
+    expected = checkpoint.parent / "macro_00000900"
+    if (trigger.get("status") != "validated" or trigger.get("successes", 0) <= 153
+            or trigger.get("checkpoint") != str(expected)
+            or trigger.get("results") != str(evaluation_path("context", expected) / "results.json")):
+        raise ValueError("810 trigger is not the complete registered900 consumer")
+
+
+def _conditional_adjacent_trigger(checkpoint: Path) -> None:
+    """810 follows the actual complete900 consumer, including resumed attempts."""
+    from .joint_training import CONDITIONAL_CONTINUATION_ROOT
+    from .run import complete_checkpoint
+
+    message = "810 readout requires validated complete900 correct400 success strictly above153"
+    path = CONDITIONAL_CONTINUATION_ROOT / "launch/900_branch_trigger.json"
+    if not path.is_file():
+        raise ValueError(message)
+    trigger = read_json(path)
+    main = Path(trigger.get("checkpoint", "")).resolve()
+    successes = trigger.get("successes")
+    if (trigger.get("status") != "validated" or type(successes) is not int or successes <= 153
+            or main.name != "macro_00000900" or not _continuation_checkpoint(CONDITIONAL_MODE, main)
+            or not complete_checkpoint(main)):
+        raise ValueError(message)
+    results_path = evaluation_path(CONDITIONAL_MODE, main) / "results.json"
+    if trigger.get("results") != str(results_path) or not results_path.is_file():
+        raise ValueError(message)
+    result = read_json(results_path)
+    rows = result.get("rows", [])
+    full = read_json(capture_path(CONDITIONAL_MODE, main))["full_conditions"]
+    expected = {(row["suite"], row["task_id"], state) for row in full for state in range(50)}
+    launcher = result.get("launcher", {})
+    exits = launcher.get("return_codes", {})
+    if (result.get("mode") != "formal" or result.get("role") != "validation" or result.get("arm") != "correct"
+            or result.get("adapter", {}).get("checkpoint") != str(main)
+            or result.get("adapter", {}).get("mode") != CONDITIONAL_MODE
+            or len(rows) != 400 or {(row.get("suite"), row.get("task_id"), row.get("init_state_id"))
+                                   for row in rows} != expected
+            or any(type(row.get("success")) is not bool for row in rows)
+            or sum(row["success"] for row in rows) != successes
+            or result.get("overall", {}).get("episodes") != 400
+            or result.get("overall", {}).get("successes") != successes
+            or not exits or any(code != 0 for code in exits.values())
+            or launcher.get("queue", {}).get("completed_rows") != 400):
+        raise ValueError(message)
+
+
+def a28_source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
+    if mode in CONDITIONAL_MODES and _continuation_checkpoint(mode, checkpoint) and (
+            mode != CONDITIONAL_MODE or checkpoint.name != "macro_00000900"):
+        raise ValueError("conditional continuation A28 requires the unique full900 endpoint")
+    return source_record(mode, checkpoint)
 
 
 def _seen_geometry(mode: str) -> bool:

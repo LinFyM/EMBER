@@ -163,13 +163,17 @@ def test_training_and_reading_identity_remain_separate_full450_fixture(tmp_path,
         study.inspect_source(spec, checkpoint)
 
 
-def test_A28_twelve_predictions_eight_passive_compiles(tmp_path, monkeypatch):
+@pytest.mark.parametrize('macro', [450, 900])
+def test_A28_twelve_predictions_eight_passive_compiles(tmp_path, monkeypatch, macro):
     module = consumer()
     monkeypatch.setattr(readout, "CONDITIONAL_ROOT", tmp_path)
-    checkpoint = tmp_path / study.CONDITIONAL_MODE / "train/attempts/fresh/checkpoints/macro_00000450"
+    if macro == 900:
+        monkeypatch.setattr(study, 'CONDITIONAL_CONTINUATION_ROOT', tmp_path)
+    checkpoint = tmp_path / study.CONDITIONAL_MODE / f"train/attempts/fixture/checkpoints/macro_{macro:08d}"
+    reading_spec = specs.CONDITIONAL_CONTINUATION_SPEC_PATH if macro == 900 else specs.CONDITIONAL_SPEC_PATH
     reader = {"commit": "fixture-reader", "branch": "", "dirty_paths": [], "pushed_ref": "origin/main"}
     monkeypatch.setattr(readout, "source_record", lambda *a: ({}, {"git": {"commit": "fixture-trainer"},
-                                                              "spec": "/data1/fixture-training-spec"}, specs.CONDITIONAL_SPEC_PATH))
+                                                              "spec": "/data1/fixture-training-spec"}, reading_spec))
     monkeypatch.setattr(module, "frozen_git", lambda: reader)
     monkeypatch.setattr(module, "load_file", lambda *a, **k: {})
     from ember.writer import materialization_workers
@@ -218,6 +222,7 @@ def test_A28_twelve_predictions_eight_passive_compiles(tmp_path, monkeypatch):
     assert all(saved[key].shape == (3, 50, 1024) for key in ("H", "c", "d"))
     assert all({"X", "A0", "S", "B0", "M"} <= fields.keys() for fields in saved["targets"].values())
     assert saved["training_spec"] == "/data1/fixture-training-spec"
+    assert saved['reading_spec']['path'] == str(reading_spec)
 
 
 def test_actual_original_scene_teacher_geometry_and_seen_runtime_route(monkeypatch):

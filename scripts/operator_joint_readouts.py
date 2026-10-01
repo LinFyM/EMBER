@@ -84,7 +84,7 @@ def risk(prediction: torch.Tensor, target: torch.Tensor) -> dict:
 
 def a28(args) -> None:
     mode = {"joint": "joint", "context": "context", "self_read": "self_read", "T450": "T450_public", "conditional_read_write": readout.CONDITIONAL_MODE}[args.model]
-    spec, training, spec_path = readout.source_record(mode, args.checkpoint)
+    spec, training, spec_path = readout.a28_source_record(mode, args.checkpoint)
     output = readout.study_root(mode, args.checkpoint) / "analysis/A28" / args.model
     if output.exists():
         raise ValueError("published fixed A28 readout already exists")

@@ -38,7 +38,41 @@ SELF_READ_TASK = "operator_self_conditioned_native_fresh_20261001"
 SELF_READ_ROOT = ROOT.parent / SELF_READ_TASK
 SELF_READ_MODE = "self_read"
 SELF_READ_SPEC_NAME = "self_conditioned_native_fresh_spec.json"
-MODES = (MODE, CONTEXT_MODE, SELF_READ_MODE)
+CONDITIONAL_TASK = "conditional_read_write_fresh_20261001"
+CONDITIONAL_ROOT = ROOT.parent / CONDITIONAL_TASK
+CONDITIONAL_MODE = "conditional_read_write"
+CONDITIONAL_SPEC_NAME = "conditional_read_write_fresh_spec.json"
+CONDITIONAL = {"loss_variant": "full", "full_loss_coefficient": 1.0,
+               "public_loss_coefficient": 0.0, "public_credit": "none_no_public_objective",
+               "query_reuse": "112_cross_episode_query_action_tau_noise",
+               "internal_mode": CONDITIONAL_MODE,
+               "initialization": "fresh_legal_identity_and_seed7_modules"}
+CONDITIONAL_OPERATOR = {
+    "rank": 128, "alpha": 128, "targets": 38, "identity_seed": 20260721,
+    "module_seed": 7, "probe_seed": 1729, "probe_shape": [50, 32],
+    "teaching_camera": "dual", "frame_stride": 5, "frame_chunk": 8,
+    "source_frozen": True, "value_width": 256, "memory_dtype": "float32",
+    "memory_step": 1.0, "additional_loss": False,
+    "conditional_read_write": {
+        "native_reads": 1, "teacher_state": "State_prompt_segment_omitted",
+        "native_base": "public_A0_B0", "hidden_shape": ["N", 50, 1024],
+        "hidden_normalization": "parameterless_token_RMS_eps1e-6",
+        "layers": 4, "layer_parameter_sharing": False, "width": 1024,
+        "heads": 16, "head_width": 64, "ffn_width": 4096, "dropout": 0.0,
+        "position": "fixed_sinusoidal_real_frame_index_and_horizon_0_49_disjoint512_halves",
+        "context_normalization": "pre_LayerNorm",
+        "attention": "same_frame_all_visible_prior_frames_visible_future_frames_masked",
+        "dynamic_initialization": "zero_first_frame_then_backward_hidden_difference",
+        "dynamic_stream": "zero_preserving_biasfree_attention_and_gated_FFN",
+        "head_context": "concat_final_c_and_real_H", "head_dynamic": "final_d",
+        "transition": "X_t_minus_1_with_c_t_d_t",
+        "S": "zero_initial_true_X_association_with_A0_X",
+        "M": "zero_initial_compiled_after_final_A0_plus_S_using_K_and_S_X",
+        "output": "unique_A0_plus_S_B0_plus_M", "rank_scale": 1.0,
+        "credit": "complete_full_FM_same_version_cotangent_replay_no_detach",
+    },
+}
+MODES = (MODE, CONTEXT_MODE, SELF_READ_MODE, CONDITIONAL_MODE)
 SELF_READ = {"native_reads": 2, "writer_parameter_sharing": "same_Context_module",
              "memory_initialization": "zero_each_read", "native_installation": "beta_then_beta_plus_M0",
              "writer_public_base": "original_beta_both_reads", "output": "beta_plus_M1_only",
@@ -60,7 +94,7 @@ CONTEXT = {
 
 
 def registered(spec: dict) -> bool:
-    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK)
+    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK, CONDITIONAL_TASK)
 
 
 def settings(spec: dict) -> tuple[Path, str, dict]:
@@ -71,6 +105,8 @@ def settings(spec: dict) -> tuple[Path, str, dict]:
         return root, CONTEXT_MODE, {**JOINT, "internal_mode": CONTEXT_MODE}
     if spec.get("task") == SELF_READ_TASK:
         return SELF_READ_ROOT, SELF_READ_MODE, {**JOINT, "internal_mode": SELF_READ_MODE}
+    if spec.get("task") == CONDITIONAL_TASK:
+        return CONDITIONAL_ROOT, CONDITIONAL_MODE, CONDITIONAL
     raise ValueError("unregistered fresh full/public study")
 
 
@@ -94,6 +130,17 @@ def expected_self_read_spec(context: dict) -> dict:
             "operator": {**context["operator"], "self_conditioned_native": SELF_READ},
             "budget": {"new_gpu_hours_hard": 24, "peak_new_gib": 36,
                        "expected_wall_hours": [4, 6], "report_gpu_hours": 18}}
+
+
+def expected_conditional_spec(events_source: dict) -> dict:
+    """Reuse only sealed data/events and optimization; replace the old model/objective."""
+    return {**events_source, "task": CONDITIONAL_TASK,
+            "design": "docs/designs/conditional_read_write_architecture.md#13",
+            "run_root": str(CONDITIONAL_ROOT), "operator": CONDITIONAL_OPERATOR,
+            "execution": {**events_source["execution"], "modes": [CONDITIONAL_MODE],
+                          "world_sizes": list(range(1, 7))}, "joint": CONDITIONAL,
+            "budget": {"new_gpu_hours_hard": 40, "peak_new_gib": 80,
+                       "expected_wall_hours": [6, 12], "report_gpu_hours": 30}}
 
 
 def expected_context_continuation_spec(parent: dict) -> dict:
@@ -151,7 +198,7 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     root, mode, joint = settings(spec)
     attempts = root / mode / "train/attempts"
     if (output.parent.resolve() != attempts.resolve()
-            or contract.get("loss_variant") != LOSS or contract.get("joint") != joint
+            or contract.get("loss_variant") != joint["loss_variant"] or contract.get("joint") != joint
             or (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists()):
         raise ValueError("joint450 attempt output or loss identity changed")
     if args.resume is None:
@@ -180,7 +227,7 @@ def _validate_context_continuation(spec: dict, args, contract: dict, output: Pat
     macro = int(checkpoint.name.removeprefix("macro_"))
     if (output.parent.resolve() != attempts.resolve() or output.resolve() == checkpoint.parent.parent
             or (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists()
-            or contract.get("loss_variant") != LOSS or contract.get("joint") != joint
+            or contract.get("loss_variant") != joint["loss_variant"] or contract.get("joint") != joint
             or macro not in (450, *CONTEXT_CONTINUATION_CHECKPOINTS[:-1])
             or not complete_checkpoint(checkpoint)):
         raise ValueError("context continuation requires a new attempt and complete registered ECP")
@@ -266,7 +313,7 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
                         "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
     facts = ((run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE),
              (run.get("mode"), mode), (run.get("joint"), joint),
-             (run.get("loss_variant"), LOSS), (run.get("operator"), spec["operator"]),
+             (run.get("loss_variant"), joint["loss_variant"]), (run.get("operator"), spec["operator"]),
              (run.get("optimizer"), spec["optimization"]), (run.get("events"), spec["events"]),
              (run.get("source_trainable"), 0), (run.get("sampler"), expected_sampler),
              (run.get("continuation"), spec.get("continuation")), (run.get("pilot_arm"), None),
@@ -274,7 +321,7 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
              (trainer.get("metrics_rows"), macro), (trainer.get("scheduler", {}).get("last_epoch"), macro),
              (bool(trainer.get("optimizer", {}).get("param_groups")), True),
              (trainer.get("scaler"), None),
-             (trainer.get("training_state"), {"updates": macro, "mode": mode, "loss_variant": LOSS}),
+             (trainer.get("training_state"), {"updates": macro, "mode": mode, "loss_variant": joint["loss_variant"]}),
              (trainer.get("sampler_state"), {**expected_sampler, "next_step": macro}))
     terminal = _completed_metrics_source(root, mode, checkpoint, target) if continuation else output
     metrics = [json.loads(line) for line in (terminal / "metrics.jsonl").read_text().splitlines()]
@@ -289,11 +336,13 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
 def valid_metrics(metrics: list, *, mode: str = MODE, updates: int = 450) -> bool:
     if len(metrics) != updates or [row["update"] for row in metrics] != list(range(1, updates + 1)):
         return False
+    loss = CONDITIONAL["loss_variant"] if mode == CONDITIONAL_MODE else LOSS
     for row in metrics:
-        if (row.get("mode") != mode or row.get("loss_variant") != LOSS
+        if (row.get("mode") != mode or row.get("loss_variant") != loss
                 or row.get("queries") != 112 or len(row.get("jobs", ())) != 4):
             return False
-        if any(job.get("loss_variant") != LOSS or not job.get("public_query_reuse")
+        if any(job.get("loss_variant") != loss
+               or (bool(job.get("public_query_reuse")) != (loss == LOSS))
                for job in row["jobs"]):
             return False
     return True

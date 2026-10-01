@@ -736,7 +736,8 @@ class FrozenOperatorAdapter:
         if row["factors"] != file_record(Path(row["factors"]["path"])):
             raise Pi05EvaluationError("operator condition changed during evaluation")
         factors = load_file(row["factors"]["path"], device="cpu")
-        if self.bank.get("learning_limit_panel") is not None:
+        if (self.bank.get("learning_limit_panel") is not None
+                or self.bank.get("condition_factors") == "complete_A0_plus_S_B0_plus_M"):
             result = factors
             validate_lora_state(result, self.lora)
         else:
@@ -778,7 +779,7 @@ def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
         evidence["legacy_test_initialization"] = bank["legacy_test_initialization"]
     else:
         evidence["scene_manifest"] = bank["scene_manifest"]
-    if bank["mode"] in ("self_read", "self_read_public"):
+    if bank["mode"] in ("self_read", "self_read_public", "conditional_read_write", "conditional_read_write_seen"):
         evidence["native_reading"] = bank["native_reading"]
     if bank["mode"] in (PUBLIC_BETA_MODE, "context_public_validation", "self_read_public"):
         evidence.update(intervention="public_B0_A", teacher_video_values_read=0,

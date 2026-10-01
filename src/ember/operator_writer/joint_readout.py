@@ -13,6 +13,7 @@ from ember.writer.materialization import file_record
 
 from . import scope
 from .public_beta import factor_map, public_state
+from .joint_training import CONDITIONAL_TASK, CONDITIONAL_ROOT, CONDITIONAL_MODE
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -20,7 +21,9 @@ TASK = "operator_joint_public_fresh_20260930"
 ROOT = Path("/data1/user/ymdai/ember_runs") / TASK
 PUBLIC_VALIDATION_MODE = "context_public_validation"
 SELF_READ_MODES = ("self_read", "self_read_public")
-MODES = ("joint", "joint_public", "T450_public", "context", "context_public", "context_seen", PUBLIC_VALIDATION_MODE, *SELF_READ_MODES)
+CONDITIONAL_SEEN_MODE = "conditional_read_write_seen"
+CONDITIONAL_MODES = (CONDITIONAL_MODE, CONDITIONAL_SEEN_MODE)
+MODES = ("joint", "joint_public", "T450_public", "context", "context_public", "context_seen", PUBLIC_VALIDATION_MODE, *SELF_READ_MODES, *CONDITIONAL_MODES)
 PUBLIC_MODES = ("joint_public", "T450_public", "context_public", PUBLIC_VALIDATION_MODE, "self_read_public")
 OLD_CHECKPOINT = Path("/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928"
                       "/continuation900/T/train/attempts/continuation/checkpoints/macro_00000450")
@@ -53,6 +56,8 @@ def study_root(mode: str, checkpoint: Path | None = None) -> Path:
 
     if mode not in MODES:
         raise ValueError("unregistered full/public study readout mode")
+    if mode in CONDITIONAL_MODES:
+        return CONDITIONAL_ROOT
     if mode in SELF_READ_MODES:
         from .joint_training import SELF_READ_ROOT
 
@@ -69,6 +74,8 @@ def study_root(mode: str, checkpoint: Path | None = None) -> Path:
 def study_id(mode: str, checkpoint: Path | None = None) -> str:
     from .joint_training import CONTEXT_TASK, CONTEXT_CONTINUATION_TASK
 
+    if mode in CONDITIONAL_MODES:
+        return CONDITIONAL_TASK
     if mode in SELF_READ_MODES:
         from .joint_training import SELF_READ_TASK
 
@@ -82,6 +89,9 @@ def study_id(mode: str, checkpoint: Path | None = None) -> str:
 
 
 def capture_path(mode: str, checkpoint: Path | None = None) -> Path:
+    if mode in CONDITIONAL_MODES:
+        suffix = "seen" if mode == CONDITIONAL_SEEN_MODE else "official"
+        return REPO / "configs/operator_read_write_v1" / f"conditional_read_write_{suffix}_capture.json"
     if mode == SEEN_MODE:
         return REPO / "configs/operator_read_write_v1/context900_seen_capture.json"
     if mode == PUBLIC_VALIDATION_MODE:
@@ -94,6 +104,11 @@ def capture_path(mode: str, checkpoint: Path | None = None) -> Path:
 def bank_path(mode: str, checkpoint: Path | None = None) -> Path:
     root = study_root(mode, checkpoint)
     macro = int(checkpoint.name.removeprefix("macro_")) if checkpoint is not None else 450
+    if mode in CONDITIONAL_MODES:
+        if checkpoint is None or not checkpoint.resolve().is_relative_to(
+                CONDITIONAL_ROOT / CONDITIONAL_MODE / "train/attempts") or macro != 450:
+            raise ValueError("conditional read/write requires its owned complete450 endpoint")
+        return root / mode / "banks/450/manifest.json"
     if mode in (SEEN_MODE, PUBLIC_VALIDATION_MODE):
         if checkpoint is None or checkpoint.resolve() != SEEN_CHECKPOINT.resolve():
             raise ValueError("context seen144 requires the fixed actual Context900 checkpoint")
@@ -105,6 +120,10 @@ def bank_path(mode: str, checkpoint: Path | None = None) -> Path:
 
 
 def evaluation_path(mode: str, checkpoint: Path) -> Path:
+    if mode in CONDITIONAL_MODES:
+        bank_path(mode, checkpoint)
+        return CONDITIONAL_ROOT / mode / "evaluation" / (
+            "correct144" if mode == CONDITIONAL_SEEN_MODE else "correct400")
     if mode == SEEN_MODE:
         bank_path(mode, checkpoint)
         return SEEN_ROOT / "context/evaluation/correct144"
@@ -141,7 +160,9 @@ def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
         spec = read_json(path)
         training = bank.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
     else:
-        path = (run.SELF_READ_SPEC_PATH if mode in SELF_READ_MODES else run.CONTEXT_CONTINUATION_SPEC_PATH if continuation else
+        from .specification import CONDITIONAL_SPEC_PATH
+
+        path = (CONDITIONAL_SPEC_PATH if mode in CONDITIONAL_MODES else run.SELF_READ_SPEC_PATH if mode in SELF_READ_MODES else run.CONTEXT_CONTINUATION_SPEC_PATH if continuation else
                 run.CONTEXT_SPEC_PATH if mode in ("context", "context_public") else run.JOINT_SPEC_PATH)
         spec = run.specification(path)
         training = joint_training.inspect_source(spec, checkpoint)
@@ -151,7 +172,7 @@ def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
 
 
 def _seen_geometry(mode: str) -> bool:
-    return (mode in PUBLIC_MODES and mode != PUBLIC_VALIDATION_MODE) or mode == SEEN_MODE
+    return (mode in PUBLIC_MODES and mode != PUBLIC_VALIDATION_MODE) or mode in (SEEN_MODE, CONDITIONAL_SEEN_MODE)
 
 
 def _geometry(mode: str, spec: Mapping, asset_root: Path) -> tuple[list, list, Path, tuple]:
@@ -165,7 +186,7 @@ def _geometry(mode: str, spec: Mapping, asset_root: Path) -> tuple[list, list, P
 
 
 def _wall(mode: str) -> dict:
-    wall = {"teacher_video_values_read": 0 if mode in PUBLIC_MODES else 144 if mode == SEEN_MODE else 400,
+    wall = {"teacher_video_values_read": 0 if mode in PUBLIC_MODES else 144 if mode in (SEEN_MODE, CONDITIONAL_SEEN_MODE) else 400,
             "teacher_runtime_reads": 0, "deployment_adapters": 1,
             "validation_test_gradients": False}
     if mode in PUBLIC_MODES:
@@ -179,6 +200,10 @@ def _public_intervention(lora) -> dict:
 
 
 def _self_read_evidence(mode: str) -> dict | None:
+    if mode in CONDITIONAL_MODES:
+        return {"training_graph": CONDITIONAL_MODE, "training_native_passes": 1,
+                "deployment_native_passes": 1, "output": "A0+S,B0+M",
+                "intermediate_deployment": False}
     if mode not in SELF_READ_MODES:
         return None
     return {"training_graph": "self_read", "training_native_passes": 2,
@@ -238,8 +263,11 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
                 "training_run": file_record(checkpoint.parent.parent / "run_contract.json"),
                 "source": training["source"], "lora": lora.to_dict(),
                 "materialization_git": run.frozen_git()}
-    if mode in SELF_READ_MODES:
+    if mode in (*SELF_READ_MODES, *CONDITIONAL_MODES):
         contract["native_reading"] = _self_read_evidence(mode)
+    if mode in CONDITIONAL_MODES:
+        contract["condition_factors"] = "complete_A0_plus_S_B0_plus_M"
+        contract["shared_role"] = "public_A0_provenance_only_not_execution"
     shared_path = path.parent / ("public_beta.safetensors" if mode in PUBLIC_MODES else "shared.safetensors")
     metadata = {"schema_version": bank.BANK_SCHEMA, "mode": mode}
     shapes = expected_lora_state_shapes(lora)
@@ -259,12 +287,13 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
         save_file(state, str(shared_path), metadata=metadata)
     if mode not in PUBLIC_MODES:
         compile_conditions(asset_root, spec, mode, checkpoint, training["source"], path.parent,
-                           conditions, {key: shape for key, shape in shapes.items()
-                                        if not key.endswith(LORA_A_SUFFIX)},
+                           conditions, shapes if mode in CONDITIONAL_MODES else
+                           {key: shape for key, shape in shapes.items()
+                            if not key.endswith(LORA_A_SUFFIX)},
                            devices=execution_devices(device, devices),
                            frame_chunk=native_frame_chunk or spec["operator"]["frame_chunk"],
                            task_ids=tuple(row["global_task_id"] for row in tasks),
-                           role="train" if mode == SEEN_MODE else "validation",
+                           role="train" if mode in (SEEN_MODE, CONDITIONAL_SEEN_MODE) else "validation",
                            cpu_threads=cpu_threads)
     result = {**contract, "schema_version": bank.BANK_SCHEMA, "kind": bank.KIND, "status": "sealed",
               "asset_root": str(asset_root), "checkpoint_manifest": file_record(
@@ -308,6 +337,9 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
                 (bank.get("tasks"), tasks), (bank.get("information_wall"), _wall(mode)),
                 (evaluation_role, scope.ROLE if _seen_geometry(mode) else "validation"),
                 (require_formal, True), (set(task_keys), {(row["suite"], row["task_id"]) for row in tasks}))
+    if mode in CONDITIONAL_MODES:
+        expected += ((bank.get("condition_factors"), "complete_A0_plus_S_B0_plus_M"),
+                     (bank.get("shared_role"), "public_A0_provenance_only_not_execution"))
     git = bank.get("materialization_git", {})
     if (any(actual != wanted for actual, wanted in expected) or not git.get("commit")
             or git.get("branch") != "" or git.get("dirty_paths") != []
@@ -340,7 +372,8 @@ def _inspect_conditions(bank: Mapping, conditions: list, path: Path, shapes: Map
 
     if len(bank.get("conditions", ())) != len(conditions):
         raise ValueError("joint full bank lost its registered video conditions")
-    b_shapes = {key: shape for key, shape in shapes.items() if not key.endswith(LORA_A_SUFFIX)}
+    b_shapes = shapes if bank["mode"] in CONDITIONAL_MODES else {
+        key: shape for key, shape in shapes.items() if not key.endswith(LORA_A_SUFFIX)}
     for row, wanted in zip(bank["conditions"], conditions, strict=True):
         factor = path.parent / f"{wanted['condition_id']}.safetensors"
         if (set(row) != set(wanted) | {"factors", "raw_frames", "sampled_frames"}

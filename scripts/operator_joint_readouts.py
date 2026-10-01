@@ -83,7 +83,7 @@ def risk(prediction: torch.Tensor, target: torch.Tensor) -> dict:
 
 
 def a28(args) -> None:
-    mode = {"joint": "joint", "context": "context", "self_read": "self_read", "T450": "T450_public"}[args.model]
+    mode = {"joint": "joint", "context": "context", "self_read": "self_read", "T450": "T450_public", "conditional_read_write": readout.CONDITIONAL_MODE}[args.model]
     spec, training, spec_path = readout.source_record(mode, args.checkpoint)
     output = readout.study_root(mode, args.checkpoint) / "analysis/A28" / args.model
     if output.exists():
@@ -110,7 +110,7 @@ def a28(args) -> None:
 
         _configure_device(torch.device(args.device), args.cpu_threads)
         runtime = build_runtime(args.asset_root, spec, torch.device(args.device),
-                                mode if mode in ("context", "self_read") else "T")
+                                mode if mode in ("context", "self_read", readout.CONDITIONAL_MODE) else "T")
         runtime.writer.load_state_dict(load_file(str(args.checkpoint / "ecp.safetensors"),
                                                  device=args.device), strict=True)
         runtime.writer.requires_grad_(False).eval()
@@ -128,8 +128,9 @@ def a28(args) -> None:
             for teacher in panel["teachers"]:
                 condition, _, _ = data.condition(runtime, task, teacher)
                 with torch.no_grad():
-                    state, native = runtime.compile(condition, frame_chunk=args.native_frame_chunk,
-                                                    retain_native=mode == "self_read")
+                    capture = ({"capture_mechanism": True} if mode == readout.CONDITIONAL_MODE
+                               else {"retain_native": mode == "self_read"})
+                    state, native = runtime.compile(condition, frame_chunk=args.native_frame_chunk, **capture)
                 native_ref = None
                 if mode == "self_read":
                     native_ref = _save_native_evidence(output, task, teacher, condition[1], native, common, provenance)
@@ -138,15 +139,22 @@ def a28(args) -> None:
                     _save_readout(output, "intermediate", task, teacher,
                                   fm_prediction(runtime, native["passes"][0]["state"], batch, flow, args.microbatch),
                                   target, reference, flow, rows, native_ref=native_ref)
+                if mode == readout.CONDITIONAL_MODE:
+                    native_ref = _save_conditional_evidence(output, task, teacher, condition[1], native, provenance)
+                    native_records.append({"task": task, "teacher": teacher,
+                                           "schema_version": "ember_conditional_read_write_evidence_v1",
+                                           "raw": native_ref})
                 _save_readout(output, "full", task, teacher,
                               fm_prediction(runtime, state, batch, flow, args.microbatch), target,
                               reference, flow, rows, native_ref=native_ref)
         write_json_atomic(output / "rows.json", rows)
         complete = {"status": "complete", "rows": len(rows), "public": 4, "full": 8,
                     "updates": 0, "environment_episodes": 0, "seconds": time.monotonic() - started}
-        if mode == "self_read":
+        if mode in ("self_read", readout.CONDITIONAL_MODE):
             write_json_atomic(output / "native_records.json", native_records)
-            complete.update(intermediate=8, native_records=len(native_records))
+            complete["native_records"] = len(native_records)
+            if mode == "self_read":
+                complete["intermediate"] = 8
         write_json_atomic(output / "completion.json", complete)
     except Exception:
         write_json_atomic(output / "failure.json", {"rows": len(rows),
@@ -185,6 +193,37 @@ def _save_native_evidence(output, task, teacher, frame_indices, native, common, 
     return file_record(path)
 
 
+def _save_conditional_evidence(output, task, teacher, frame_indices, native, provenance):
+    """Save the preregistered fields from this one already completed compilation."""
+    indices = torch.as_tensor(frame_indices, dtype=torch.int64).cpu()
+    mechanism = native["mechanism"]
+    if (len(native["passes"]) != 1 or native["h"].shape != (len(indices), 50, 1024)
+            or any(mechanism[key].shape != native["h"].shape for key in ("c", "d"))):
+        raise ValueError("conditional A28 lost its actual full-grid single native compile")
+    targets = {}
+    for label, name in SELF_READ_SITES.items():
+        fields = mechanism["targets"][name]
+        x = native["x"][name]
+        if (x.shape != (len(indices), 50, fields["A0"].shape[1])
+                or fields["A0"].shape != fields["S"].shape
+                or fields["B0"].shape != fields["M"].shape):
+            raise ValueError("conditional passive site factor/input shape changed")
+        targets[label] = {"name": name, "X": x.detach().float().cpu(),
+                          **{key: fields[key].detach().float().cpu()
+                             for key in ("A0", "S", "B0", "M")}}
+    path = output / f"native_task{task:03d}_teacher{teacher:02d}.pt"
+    torch.save({"schema_version": "ember_conditional_read_write_evidence_v1", **provenance,
+                "task": task, "teacher": teacher, "frame_indices": indices,
+                "H": native["h"].detach().float().cpu(),
+                "c": mechanism["c"].detach().float().cpu(),
+                "d": mechanism["d"].detach().float().cpu(), "targets": targets,
+                "probe_seed": 1729, "tau": 1.0, "frame_stride": 5,
+                "native_passes": 1, "teacher_state": "State_prompt_segment_omitted",
+                "transition": "X[t-1] addressed with c[t],d[t]",
+                "state_formula": "A=A0+S; B=B0+M; M_initial=0"}, path)
+    return file_record(path)
+
+
 def _save_readout(output, kind, task, teacher, prediction, target, reference, flow, rows, *, native_ref=None):
     path = output / (f"public_task{task:03d}.pt" if teacher is None
                      else f"{kind}_task{task:03d}_teacher{teacher:02d}.pt")
@@ -202,7 +241,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("materialize", "a28"))
     parser.add_argument("--mode", choices=readout.MODES)
-    parser.add_argument("--model", choices=("joint", "T450", "context", "self_read"))
+    parser.add_argument("--model", choices=("joint", "T450", "context", "self_read", "conditional_read_write"))
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--asset-root", type=Path, default=ASSET)
     parser.add_argument("--device", default="cuda:0")

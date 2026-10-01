@@ -36,6 +36,7 @@ def register_partial(output, contract, previous_git):
 
 def write_condition(runtime, data, output, condition, shapes, *, mode, frame_chunk):
     from .bank import BANK_SCHEMA, _factor_header
+    from .joint_readout import CONDITIONAL_MODES
 
     condition = dict(condition)
     path = output / f"{condition['condition_id']}.safetensors"
@@ -58,9 +59,10 @@ def write_condition(runtime, data, output, condition, shapes, *, mode, frame_chu
                 frame_chunk = max(8, frame_chunk // 2)
                 torch.cuda.empty_cache()
         factors = {name: value.detach().float().cpu().contiguous()
-                   for name, value in state.items() if name.endswith(LORA_B_SUFFIX)}
-        if len(factors) != 38:
-            raise ValueError('video value did not produce a complete B0+M')
+                   for name, value in state.items()
+                   if mode in CONDITIONAL_MODES or name.endswith(LORA_B_SUFFIX)}
+        if set(factors) != set(shapes):
+            raise ValueError("video compiler did not produce its registered complete factors")
         temporary = path.with_suffix('.safetensors.tmp')
         save_file(factors, str(temporary), metadata=metadata)
         temporary.replace(path)
@@ -76,10 +78,13 @@ class OperatorCompiler:
     """One complete source/Writer and video-only reader per physical device."""
     def __init__(self, asset_root, config, device, cpu_threads):
         from .run import PILOT_ARMS, build_runtime
+        from .joint_readout import CONDITIONAL_SEEN_MODE
+        from .joint_training import CONDITIONAL_MODE
 
         _configure_device(device, cpu_threads)
         runtime_mode = ('T' if config['mode'] in PILOT_ARMS else
-                        'context' if config['mode'] == 'context_seen' else config['mode'])
+                        'context' if config['mode'] == 'context_seen' else
+                        CONDITIONAL_MODE if config['mode'] == CONDITIONAL_SEEN_MODE else config['mode'])
         self.runtime = build_runtime(asset_root, config['spec'], device, runtime_mode)
         self.asset_root, self.config, self.data, self.request = asset_root, config, None, None
 

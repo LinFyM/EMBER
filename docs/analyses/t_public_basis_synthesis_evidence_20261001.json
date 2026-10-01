@@ -3019,5 +3019,152 @@
       "Learning native/A can avoid this fixed-feature configuration.",
       "No conclusion that this configuration is the observed performance bottleneck."
     ]
+  },
+  "task_adaptive_A_followup": {
+    "date": "2026-10-01",
+    "purpose": "Derive and verify a coherent A0+S -> M(A0+S) proposal, not test policy performance.",
+    "candidate_status": "not implemented or trained; no formal active design",
+    "algebra": {
+      "scope": "Synthetic finite-dimensional algebra, not an EMBER policy experiment",
+      "seed": 20261001,
+      "dtype": "float64",
+      "device": "cpu",
+      "pi05_forwards": 0,
+      "dataset_reads": 0,
+      "environment_episodes": 0,
+      "scientific_model_updates": 0,
+      "input_direction_witness": {
+        "A0": [
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "B0": [
+          [
+            1.0
+          ]
+        ],
+        "teacher_input_columns": [
+          0.0,
+          1.0
+        ],
+        "independent_query_inputs": [
+          [
+            1.0,
+            2.0
+          ],
+          [
+            1.0,
+            -2.0
+          ],
+          [
+            0.0,
+            3.0
+          ],
+          [
+            2.0,
+            -1.0
+          ]
+        ],
+        "conditions": [
+          {
+            "dynamic_condition": -1.0,
+            "S": [
+              [
+                0.0,
+                -1.0
+              ]
+            ],
+            "A": [
+              [
+                1.0,
+                -1.0
+              ]
+            ],
+            "new_query_max_error": 0.0,
+            "best_unrestricted_B_fixed_A_query_mse": 4.333333333333333
+          },
+          {
+            "dynamic_condition": 1.0,
+            "S": [
+              [
+                0.0,
+                1.0
+              ]
+            ],
+            "A": [
+              [
+                1.0,
+                1.0
+              ]
+            ],
+            "new_query_max_error": 0.0,
+            "best_unrestricted_B_fixed_A_query_mse": 4.333333333333333
+          }
+        ],
+        "assumption": "The interpreted video dynamic sign already distinguishes the two rules; this does not prove RGB can infer it."
+      },
+      "left_basis_change": {
+        "factor_product_max_error": 1.6653345369377348e-16,
+        "scope": "Execution products only; a nonorthogonal basis change need not preserve normalized Writer keys or its full forward."
+      },
+      "A_credit_decomposition": {
+        "formula": "G_A = B(V)^T G_W + J_M(A)^*[G_W A(V)^T]",
+        "max_absolute_error": 8.239936510889834e-18,
+        "direct_norm": 0.2512429841001154,
+        "compiler_route_norm": 0.009623393535543817,
+        "omitting_compiler_route_error_norm": 0.009623393535543819,
+        "scope": "Local factor A with fixed synthetic X/context; full beta also has native-read and S-generation paths."
+      },
+      "zero_dynamic_identity": {
+        "S_norm": 0.0,
+        "M_norm": 0.0,
+        "public_product_max_error": 0.0
+      },
+      "identity_initialization": {
+        "first_gradient_norms_A_output_B_output_public_B": [
+          0.0,
+          0.05770903431589414,
+          0.38247251834722956
+        ],
+        "after_one_synthetic_displacement_gradient_norms": [
+          0.00538554625303816,
+          0.0549989970701783,
+          0.36475607421835565
+        ],
+        "scope": "One deterministic toy graph; not a guarantee of useful or stable PI05 training."
+      }
+    },
+    "reproduction_code": "\"\"\"CPU algebra witnesses; no PI05, dataset, policy learning, or environment.\"\"\"\nimport json\nfrom pathlib import Path\n\nimport torch\nfrom torch.nn import functional as F\n\ntorch.set_num_threads(1)\ntorch.set_default_dtype(torch.float64)\ntorch.manual_seed(20261001)\n\n\ndef memory(keys, values):\n    # frames x width x 50; same 50-column delta-rule as the retained Writer.\n    m = keys.new_zeros(values.shape[1], keys.shape[1])\n    for k, v in zip(keys, values, strict=True):\n        m = m + (v - m @ k) @ k.T / 50\n    return m\n\n\nresult = {\n    \"scope\": \"Synthetic finite-dimensional algebra, not an EMBER policy experiment\",\n    \"seed\": 20261001,\n    \"dtype\": \"float64\",\n    \"device\": \"cpu\",\n    \"pi05_forwards\": 0,\n    \"dataset_reads\": 0,\n    \"environment_episodes\": 0,\n    \"scientific_model_updates\": 0,\n}\n\n# 1. Two task conditions require an input direction absent from the public A.\na0 = torch.tensor([[1., 0.]])\nb0 = torch.ones(1, 1)\nx = torch.tensor([[0.], [1.]]).repeat(1, 50)[None]\nqueries = torch.tensor([[1., 2.], [1., -2.], [0., 3.], [2., -1.]])\nrows = []\nfor sign in (-1., 1.):\n    s = memory(x, torch.full((1, 1, 50), sign))\n    av = a0 + s\n    target_w = torch.tensor([[1., sign]])\n    target = queries @ target_w.T\n    prediction = queries @ av.T @ b0.T\n    public_coords = queries @ a0.T\n    best_b = torch.linalg.lstsq(public_coords, target).solution\n    fixed_prediction = public_coords @ best_b\n    assert torch.allclose(prediction, target, atol=1e-12, rtol=0)\n    rows.append({\n        \"dynamic_condition\": sign,\n        \"S\": s.tolist(), \"A\": av.tolist(),\n        \"new_query_max_error\": (prediction - target).abs().max().item(),\n        \"best_unrestricted_B_fixed_A_query_mse\": (fixed_prediction-target).square().mean().item(),\n    })\nresult[\"input_direction_witness\"] = {\n    \"A0\": a0.tolist(), \"B0\": b0.tolist(),\n    \"teacher_input_columns\": [0., 1.],\n    \"independent_query_inputs\": queries.tolist(), \"conditions\": rows,\n    \"assumption\": \"The interpreted video dynamic sign already distinguishes the two rules; this does not prove RGB can infer it.\",\n}\n\n# 2. A left basis change is absorbable in B at the execution factor level.\nar = torch.randn(2, 4)\nbr = torch.randn(3, 2)\nr = torch.tensor([[1.3, .2], [-.1, .8]])\nerr = ((br @ r) @ ar - br @ (r @ ar)).abs().max().item()\nassert err < 1e-12\nresult[\"left_basis_change\"] = {\n    \"factor_product_max_error\": err,\n    \"scope\": \"Execution products only; a nonorthogonal basis change need not preserve normalized Writer keys or its full forward.\",\n}\n\n# 3. Exact A gradient includes direct execution plus the M(A) compiler route.\nn, d, rank, out, hidden = 3, 4, 2, 3, 5\nraw_x = torch.randn(n, d, 50)\nnative_x = F.normalize(raw_x, dim=1)\ncontext = torch.randn(n, hidden, 50)\ndynamic = torch.randn(n, hidden, 50)\np = torch.randn(hidden, rank) * .2\nc = torch.randn(hidden, hidden) * .2\ndz_map = torch.randn(hidden, rank) * .2\ndyn_map = torch.randn(hidden, hidden) * .2\no = torch.randn(out, hidden) * .2\npublic_a = torch.randn(rank, d) * .3\npublic_b = torch.randn(out, rank) * .2\nav = (public_a + torch.randn(rank, d) * .15).requires_grad_()\n\n\ndef compile_b(a):\n    unnormalized = a[None] @ raw_x\n    keys = F.normalize(unnormalized, dim=1)\n    delta_read = (a - public_a)[None] @ raw_x\n    value = o[None] @ (F.gelu(p[None] @ keys + c[None] @ context\n                             + dz_map[None] @ delta_read) * (dyn_map[None] @ dynamic))\n    return memory(keys, value)\n\n\nm = compile_b(av)\nbv = public_b + m\nw = bv @ av\nquery = torch.randn(7, d)\ntarget = torch.randn(7, out)\nloss = (query @ w.T - target).square().mean()\ng_a, g_w = torch.autograd.grad(loss, (av, w), retain_graph=True)\ng_b = g_w.detach() @ av.detach().T\ndirect = bv.detach().T @ g_w.detach()\nindirect = torch.autograd.grad(m, av, grad_outputs=g_b, retain_graph=True)[0]\ngradient_error = (g_a - direct - indirect).abs().max().item()\nassert gradient_error < 1e-12\nresult[\"A_credit_decomposition\"] = {\n    \"formula\": \"G_A = B(V)^T G_W + J_M(A)^*[G_W A(V)^T]\",\n    \"max_absolute_error\": gradient_error,\n    \"direct_norm\": direct.norm().item(),\n    \"compiler_route_norm\": indirect.norm().item(),\n    \"omitting_compiler_route_error_norm\": (g_a-direct).norm().item(),\n    \"scope\": \"Local factor A with fixed synthetic X/context; full beta also has native-read and S-generation paths.\",\n}\n\n# 4. All-zero dynamic values preserve the public function for both memories.\nzero_s = memory(native_x, torch.zeros(n, rank, 50))\nzero_a = public_a + zero_s\nzero_m = memory(F.normalize(zero_a[None] @ raw_x, dim=1), torch.zeros(n, out, 50))\npublic_error = ((public_b+zero_m) @ zero_a - public_b @ public_a).abs().max().item()\nassert public_error == 0\nresult[\"zero_dynamic_identity\"] = {\"S_norm\": zero_s.norm().item(), \"M_norm\": zero_m.norm().item(),\n                                    \"public_product_max_error\": public_error}\n\n# 5. One zero output per branch gives legal identity without a permanent dead A path.\noa = torch.zeros(rank, hidden, requires_grad=True)\nob = torch.zeros(out, hidden, requires_grad=True)\nbb = torch.zeros(out, rank, requires_grad=True)\n\n\ndef initial_graph(oa, ob, bb):\n    values_a = oa[None] @ dynamic\n    s = memory(native_x, values_a)\n    a = public_a + s\n    z = a[None] @ raw_x\n    k = F.normalize(z, dim=1)\n    values_b = ob[None] @ (F.gelu(p[None] @ k + context) * dynamic)\n    m = memory(k, values_b)\n    return (query @ ((bb+m) @ a).T - target).square().mean()\n\n\nparams = (oa, ob, bb)\ng0 = torch.autograd.grad(initial_graph(*params), params)\n# One explicit arithmetic displacement in the synthetic graph; no optimizer/checkpoint.\nnext_params = tuple((p-.1*g).detach().requires_grad_() for p,g in zip(params,g0,strict=True))\ng1 = torch.autograd.grad(initial_graph(*next_params), next_params)\nassert g0[0].norm().item() == 0 and g1[0].norm().item() > 0\nresult[\"identity_initialization\"] = {\n    \"first_gradient_norms_A_output_B_output_public_B\": [g.norm().item() for g in g0],\n    \"after_one_synthetic_displacement_gradient_norms\": [g.norm().item() for g in g1],\n    \"scope\": \"One deterministic toy graph; not a guarantee of useful or stable PI05 training.\",\n}\n\ndestination = Path(__file__).with_name('algebra_results.json')\ndestination.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\\n')\nprint(json.dumps(result, ensure_ascii=False, indent=2))\n",
+    "inspected_historical_code": [
+      {
+        "commit": "50dafb05",
+        "path": "src/ember/writer/factor.py",
+        "relevance": "LocalField forms condition A from actual high-dimensional native X."
+      },
+      {
+        "commit": "85ecfd18",
+        "path": "src/ember/writer/correction.py",
+        "relevance": "Video PCA A already defines native addresses used to accumulate B."
+      },
+      {
+        "commit": "85ecfd18",
+        "path": "src/ember/writer/factor.py",
+        "relevance": "Same per-video A deployed; later shared right transform was not returned to B construction."
+      },
+      {
+        "commit": "bc729e86",
+        "path": "src/ember/demonstration_learning/model.py",
+        "relevance": "P/I public128 plus conditional A/B16 concatenated as one rank144 adapter."
+      }
+    ],
+    "interpretation_limits": [
+      "Synthetic target-direction example assumes meaningful video dynamics have already been decoded.",
+      "Left basis changes may alter the full normalized-key Writer even without enlarging the execution input row space.",
+      "A0+S teacher addresses use beta-native X, not a second native read under adapted A.",
+      "B0S changes the conditional policy even when M is zero; public loss alone does not guarantee conditional retention.",
+      "No real evidence yet that task-dependent input subspaces are the dominant limitation or that this proposal improves performance."
+    ]
   }
 }

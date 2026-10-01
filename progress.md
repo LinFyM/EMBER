@@ -22,8 +22,11 @@ GPU9.97469956/16GPUh、首次完整验收约2.928小时，全部GPU消费者退�
 用于区分当前完整策略在已见任务自身状态中的获取，和新task关系迁移；不以四task FM或公共能力拼出完整获取结论。
 不训练、不新增FM/A28、held/controls/Test/RL或其它checkpoint；仅144新episode，保留36full/108compact和全部goal/continuous trace。
 唯一root `/data1/user/ymdai/ember_runs/operator_context900_seen_task_diagnosis_20261001`，硬限2GPUh/8GiB，预计20–40分钟。
-本科学合同提交推送后立即派既有执行session，尚未记为已启动；canonical tracked窗口当前由main持有，派发时释放。
-执行者独占必要工程/真实消费者检查/Git冻结和运行，main不重复QA，整批回报后自主裁决，不将诊断变成自动新训练门槛。
+科学合同e599903b已实际派发，Queue回执01a0f4ef-20db-7461-97f9-74157efaadd8，既有执行session已承接。
+§38窄接线已集成push **e4c332538f07595f057ba76975ee6d46c1d3a27c**；main现场确认HEAD==origin/main且clean。
+执行者报告12项CPU消费者检查通过，原checkpoint训练Git仍17ee3e38，新的读取Git独立登记；main不重复工程QA。
+执行者已从冻结版本自主运行，尚未收到完整144结果；canonical tracked写入窗口已明确释放回main，无需再放行。
+整批回报后main直接消费科学原件并自主裁决，不将诊断变成自动新训练门槛。
 
 ## 历史：Context450之后的固定900学习窗口与工程交付（2026-10-01）
 

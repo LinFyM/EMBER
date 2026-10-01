@@ -18,6 +18,10 @@ main误设goal并准备接管实现的偏离已由Owner指出；goal已由Owner�
 核对唯一新root尚不存在、无同名运行进程；沿既有独占dev开展实现。canonical tracked写入窗口由执行者独占，
 源码集成后明确释放；profile与formal fresh状态隔离，不重启§40或等待main工程复审。
 
+实验实现已集成并push main@`ad79887e`，冻结树 `/data1/user/ymdai/projects/EMBER-conditional-read-write-formal` clean detached。
+针对新图/正式读取入口CPU检查通过；真实最长105帧/28query三次fresh full-FM检查正在单独启动，未转用profile权重或声称formal450完成。
+源码交付后canonical tracked窗口已释放，后续冻结运行独立继续；全仓库整理仅在其独占树推进，原件与当前依赖保留。
+
 ## 此前：完整条件读写架构已整理，仍未实施或训练（2026-10-01）
 
 Owner提供专家回复并完成公共能力/元学习分工讨论，要求把意见具化成完整架构及可视化。

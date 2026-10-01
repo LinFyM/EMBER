@@ -1,5 +1,14 @@
 # EMBER research history
 
+## 2026-10-01：公共基座专家回复与条件读写架构具体化
+
+Owner转交[专家原文](review_materials/20260930_t_architecture/EXPERT_RESPONSE.md)，审阅快照3bb3ad1a；
+专家建议保留公共参数化、撤销知识必须集中于公共因子的前提，并以完整FM共同训练条件读取与写入。
+Owner澄清具体操控由执行策略承担、Writer负责元学习，讨论后不再把独立公共能力设为当前额外训练目标。
+主讨论形成[完整设计](designs/conditional_read_write_architecture.md)：因果动态解释、A₀感知S、新A→M及唯一LoRA，
+同时保留Owner的编码因果要求；专家的双向读取建议未自动覆盖该要求。
+这次交付为设计和可视化；没有新模型结果、实现或formal launch。旧T/Joint/Context/self_read及历史近邻证据保持原适用范围。
+
 ## 2026-09-30：有限真实学习有局部修正，整合证据并暂停讨论
 
 design§33以T2340为父，固定A/B₀/native，共享Writer S、task私有Writer P、condition私有直接B D各64步/每条件1792查询。

@@ -1,17 +1,25 @@
 # EMBER task plan
 
-已准备[公共基座与共同学习机制的专家审阅材料](docs/review_materials/20260930_t_architecture/README.md)，
-用于独立检查完整特征—算子—学习—执行机制；§40最终分析见机制§87，完整综合见§88，条件A后继推导见§89，
-因果编码与随机单分支共同训练讨论见§90。
+当前完整方案见[条件读写架构](docs/designs/conditional_read_write_architecture.md)，
+专家输入与原始证据见[审阅入口](docs/review_materials/20260930_t_architecture/README.md)。
+§40最终分析见机制§87，条件A和训练取舍的历史推导见§88–93；不从旧段落恢复执行。
 
-## 当前：整理并转交公共基座假说的专家审阅材料（2026-10-01）
+## 当前：专家意见已具化为完整架构设计与可视化（2026-10-01）
+
+Owner已提供专家回复，澄清具体操控能力属于source与最终A/B执行策略，Writer承担元学习；随后要求完整设计和详细数据流。
+首选[条件读写架构](docs/designs/conditional_read_write_architecture.md)：公共native一次读取 → 因果c/d解释 →
+感知A₀响应的S → 最终A → 按新A重新编译M → 唯一38-target LoRA；完整FM共同学习，不增加public FM。
+已明确转移到达/起点寻址、头部形状、合法identity、直接/间接梯度、query信息墙及自身10步flow闭环。
+当前交付仅设计与图；无科研实现、新模型结果或formal active design，不自动恢复任何训练。
+
+## 此前：整理并转交公共基座假说的专家审阅材料（2026-10-01）
 
 Owner仍担心直接public FM在强行规定底座职责，要求专家整体评估A₀/B₀作为共通基座的合理性和更自然的学习机制。
 沿用现有远程入口，新增PUBLIC_BASE_REVIEW整合§88–93，更新README、EVIDENCE和EXPERT_PROMPT；允许专家质疑分解前提。
 资料区分已执行的T/Joint/Context/self_read与未实施的条件A、深解释器、因果编码及query分配，并给出tracked证据入口。
 当前交付是可转交的审阅材料和prompt，科研执行仍停在讨论状态，没有新formal active design。
 
-最新机制§93/findings§267：Owner未采纳§92条件作用软收缩，接受每批部分query直接优化A0/B0，要求判断其学习依据。
+当时机制§93/findings§267：Owner未采纳§92条件作用软收缩，接受每批部分query直接优化A0/B0，要求判断其学习依据。
 公共目标能补充被条件代偿遮蔽的行为误差、约束部分共同适配自由度，并可能改善共用控制/读取基础；
 随机划分本身不增加信息，须保持任务覆盖与目标权重，并承认完整分支样本减少和梯度估计方差。
 保留历史公共提升但完整未改善的反例；这是合理训练约束，尚无当前新候选性能保证，不据此启动实施或训练。

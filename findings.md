@@ -6598,3 +6598,19 @@ fresh Joint公共train68→80/144、完整held122→114/400；Context公共134/f
 维持L_full+lambda L_public时，public抽样概率p以1/(1-p)、lambda/p加权；p分配算力/估计精度，lambda决定目标权重。
 固定query数会减少完整Writer监督，不固定某些task或episode永久归公共分支。新条件A须同时关S/M，完整分支继续更新公共参数。
 CPU仅核平方风险恒等式、抽样期望与线性小模型曲率；无真实模型验证。当前采纳的是讨论方向，不是已启动的训练合同。
+
+## 268. 执行能力与元学习分工不要求独立公共监督，条件读写已形成完整设计（2026-10-01）
+
+Owner提供公共基座专家回复，强调具体操控能力应落实到source与最终A/B策略，Writer承担元学习。
+长期共享生成规则与执行时承载能力是不同层次；Writer退出rollout不保证其参数没有记忆技能模板，仍须用迁移证据区分。
+讨论后不将A₀/B₀独立无视频能力设为当前额外目标，采用完整FM共同训练；公共分数作为诊断。
+原T已有公共与条件正例，公共辅助/Joint没有支持功能重分配自动提高完整能力；这不证明公共FM永远无效。
+
+完整候选见docs/designs/conditional_read_write_architecture.md，专家原文在现有review目录的EXPERT_RESPONSE.md。
+图具体到逐帧公共native、N×50因果c/d、感知A₀Ξ的S、最终A重算key与δz、M递推及唯一38-target LoRA。
+转移(t−1,t)在t到达，采用X[t−1]起点寻址；最终A/M允许依赖整段教学，不把编码因果误称整个Writer在线因果。
+实际target为Q1024→2048、V1024→256、action_in32→1024、action_out1024→32；scale1，head宽256。
+teacher省略State而非填零；query有自身state，FM为50×32接口、仅50×7真实动作维监督。
+source冻结不切断对LoRA的导数；action_out公共参数不经被丢弃的native velocity影响X/H，各target间接路径并不相同。
+S/M生成与A→M信用不能detach；合法identity允许首步部分A侧信用为零，但不叠加双零门。
+本轮只整理设计、源码事实和图，没有科研实现、真实模型验证、性能结果或新formal执行授权。

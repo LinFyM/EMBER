@@ -1,6 +1,15 @@
 # EMBER progress
 
-## 当前：公共基座专家审阅材料已整理，科研仍在讨论状态（2026-10-01）
+## 当前：完整条件读写架构已整理，仍未实施或训练（2026-10-01）
+
+Owner提供专家回复并完成公共能力/元学习分工讨论，要求把意见具化成完整架构及可视化。
+完整方案见[设计](docs/designs/conditional_read_write_architecture.md)，专家原文存于现有review目录的EXPERT_RESPONSE。
+采用K1、4个独立因果解释层、A₀感知S、新A重编译M、唯一38-target LoRA，以及单一完整FM共同训练。
+公共能力保留为诊断，不采用此前public/full query分配或条件作用收缩；因果编码保留Owner先前要求，片尾编译可看全视频。
+已按真实源码核对native、target形状、teacher省略state和query的50×7 FM，未把新图或旧分数称作新性能证据。
+本轮只有文档、交互图与比例适当的检查；无科研代码改动、模型/环境/GPU计算或新的formal active design。
+
+## 此前：公共基座专家审阅材料已整理，科研仍在讨论状态（2026-10-01）
 
 Owner要求整理推送最近讨论并提供专家prompt，重点评估公共A₀/B₀设想是否合理及更自然的训练机制。
 现有review入口已更新，新增PUBLIC_BASE_REVIEW整合完整候选与§88–93讨论；EVIDENCE补齐公共/完整正反结果、面板与远程可核范围。

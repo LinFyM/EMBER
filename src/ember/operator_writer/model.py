@@ -1,4 +1,4 @@
-"""One public rank-128 LoRA and a video-written B residual in its actual A space."""
+"""Canonical public/native Writer and its registered conditional A/B compiler."""
 
 from __future__ import annotations
 
@@ -11,6 +11,8 @@ from ember.pi05_lora import Pi05LoRAContract
 from ember.writer.model import DirectLoRAParameters
 from . import change_clock as clock_contract
 from .value_context import ValueContext
+from .conditional_read_write import CausalInterpreter, ConditionalTarget
+from torch.utils.checkpoint import checkpoint
 
 
 class TargetWrite(nn.Module):
@@ -52,11 +54,11 @@ class TargetWrite(nn.Module):
 
 
 class OperatorReadWrite(nn.Module):
-    """T uses execution A for teacher keys; U has an independent cloned key S."""
+    """Own one complete LoRA, preserving sealed historical checkpoint layouts."""
 
     def __init__(self, contract: Pi05LoRAContract, template: dict[str, torch.Tensor], mode: str) -> None:
         super().__init__()
-        if mode not in {"T", "U", "context", "self_read", clock_contract.MODE} or len(contract.targets) != 38 or contract.rank != 128:
+        if mode not in {"T", "U", "context", "self_read", "conditional_read_write", clock_contract.MODE} or len(contract.targets) != 38 or contract.rank != 128:
             raise ValueError("bounded operator mode or complete rank changed")
         validate_lora_state(template, contract)
         self.mode = mode
@@ -68,9 +70,11 @@ class OperatorReadWrite(nn.Module):
             nn.Parameter(common[name + LORA_A_SUFFIX].detach().clone()) for name in self.names
         ]) if mode == "U" else None)
         self.writes = nn.ModuleList()
+        self.interpreter: CausalInterpreter | None = None
+        self.conditional_targets = nn.ModuleList()
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(7)
-            for target in contract.targets:
+            for target in (() if mode == "conditional_read_write" else contract.targets):
                 self.writes.append(TargetWrite(target.in_features, target.out_features,
                                                change_clock=mode == clock_contract.MODE))
         self.value_context: ValueContext | None = None
@@ -82,6 +86,12 @@ class OperatorReadWrite(nn.Module):
                 for write in self.writes:
                     write.u = nn.Linear(256, 256, bias=False, device="cpu")
                     nn.init.zeros_(write.u.weight)
+        if mode == "conditional_read_write":
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(7)
+                self.interpreter = CausalInterpreter()
+                self.conditional_targets.extend(
+                    ConditionalTarget(target.in_features, target.out_features) for target in contract.targets)
         self.register_buffer("probe", torch.randn(50, 32, generator=torch.Generator(device="cpu").manual_seed(1729)),
                              persistent=True)
 
@@ -89,10 +99,24 @@ class OperatorReadWrite(nn.Module):
         return self.common()
 
     def forward(self, native_inputs: dict[str, torch.Tensor], h: torch.Tensor,
-                frame_indices=None) -> dict[str, torch.Tensor]:
+                frame_indices=None, *, capture_mechanism: bool = False) -> dict[str, torch.Tensor]:
         common = self.public_state()
         if set(native_inputs) != set(self.names):
             raise ValueError("native teaching lost a complete LoRA target")
+        if self.interpreter is not None:
+            c, d = self.interpreter(h, frame_indices)
+            result, targets = {}, {}
+            for name, unit in zip(self.names, self.conditional_targets, strict=True):
+                a0, b0 = common[name + LORA_A_SUFFIX], common[name + LORA_B_SUFFIX]
+                inputs = (a0, b0, native_inputs[name], h, c, d)
+                a, b, s, m = (checkpoint(unit, *inputs, use_reentrant=False, preserve_rng_state=False)
+                              if torch.is_grad_enabled() else unit(*inputs))
+                result[name + LORA_A_SUFFIX], result[name + LORA_B_SUFFIX] = a, b
+                if capture_mechanism:
+                    targets[name] = {"A0": a0, "B0": b0, "S": s, "M": m}
+            if capture_mechanism:
+                self.last_mechanism = {"c": c, "d": d, "targets": targets}
+            return result
         context = self.value_context(h, frame_indices) if self.value_context is not None else None
         result = dict(common)
         for index, name in enumerate(self.names):

@@ -48,7 +48,7 @@ from . import change_clock, joint_training
 from .specification import (
     REPO, SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
     CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH, CONTINUATION1800_SPEC_PATH, PILOT_SPEC_PATH,
-    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, CONTEXT_CONTINUATION_SPEC_PATH, SELF_READ_SPEC_PATH, PILOT_ROOT,
+    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, CONTEXT_CONTINUATION_SPEC_PATH, SELF_READ_SPEC_PATH, CONDITIONAL_SPEC_PATH, PILOT_ROOT,
     CONTINUATION2340_ROOT, CONTINUATION2790_ROOT, CONTINUATION900_ROOT, CONTINUATION1350_ROOT,
     SEALED_ROOT, SEALED_SPEC_PATH, SCHEMA, STAGE,
     OPERATOR_CONTRACT, OPTIMIZATION_CONTRACT, EVENT_CONTRACT, EXECUTION_CONTRACT,
@@ -106,11 +106,11 @@ def complete_checkpoint(path: Path) -> bool:
     files = manifest.get("files", {})
     macro = manifest.get("next_macro")
     world = manifest.get("world_size")
-    allowed = ((macro in (*CHECKPOINTS, *change_clock.CONTINUATION_CHECKPOINTS) and world in (1, 2, 3, 4))
+    allowed = ((macro in (*CHECKPOINTS, *change_clock.CONTINUATION_CHECKPOINTS) and world in range(1, 7))
                or (macro in (*CONTINUATION_CHECKPOINTS, *CONTINUATION1350_CHECKPOINTS,
                              *CONTINUATION1800_CHECKPOINTS, *PILOT_CHECKPOINTS,
                              *CONTINUATION2340_CHECKPOINTS, *CONTINUATION2790_CHECKPOINTS)
-                   and world in (1, 2, 3, 4)))
+                   and world in range(1, 7)))
     expected_files = ({"ecp.safetensors", "trainer_state.pt"}
                       | {f"rank_{rank:02d}_state.pt" for rank in range(world)}) if allowed else set()
     return (manifest.get("stage") == STAGE and manifest.get("run_contract_schema") == SCHEMA
@@ -294,7 +294,7 @@ class Runtime:
                                   for name, expected in self.identity.items()]).norm())
 
     def compile(self, condition: tuple, *, frame_chunk: int = 8,
-                retain_native: bool = False) -> tuple[dict, dict | None]:
+                retain_native: bool = False, capture_mechanism: bool = False) -> tuple[dict, dict | None]:
         """Compose native/Writer reads without replacing the shared public base."""
         self.restore_identity()
         passes = []
@@ -303,8 +303,9 @@ class Runtime:
             for _ in range(2 if self.writer.mode == "self_read" else 1):
                 x, h = read_native_video(self.policy, native_state, self.writer.probe,
                                          condition, self.writer.names, frame_chunk=frame_chunk)
-                state = self.writer(x, h, frame_indices=condition[1])
-                if retain_native:
+                state = self.writer(x, h, frame_indices=condition[1],
+                                    **({"capture_mechanism": True} if capture_mechanism else {}))
+                if retain_native or capture_mechanism:
                     for value in (h, *x.values(), *state.values()):
                         if value.requires_grad:
                             value.retain_grad()
@@ -312,7 +313,10 @@ class Runtime:
                 # Only the next native read uses B0+M0; Writer keeps its original β.
                 native_state = state
         validate_lora_state(state, self.lora)
-        return state, ({"x": x, "h": h, "passes": passes} if retain_native else None)
+        native = ({"x": x, "h": h, "passes": passes} if retain_native or capture_mechanism else None)
+        if capture_mechanism:
+            native["mechanism"] = self.writer.last_mechanism
+        return state, native
 
 
 def build_runtime(asset_root: Path, spec: dict, device: torch.device, mode: str, *,
@@ -413,7 +417,7 @@ def prepare_train(spec: dict, args) -> Session:
                 "source_trainable": sum(p.numel() for p in runtime.policy.parameters() if p.requires_grad),
                 "information_wall": "teacher exact language + dual RGB only; independent query own RGB/state/action FM"}
     if joint_training.registered(spec):
-        contract.update(loss_variant=joint_training.LOSS, joint=spec["joint"])
+        contract.update(loss_variant=joint_training.settings(spec)[2]["loss_variant"], joint=spec["joint"])
     if continuation:
         contract["continuation"] = spec["continuation"]
         contract["parent_checkpoint"] = str(args.resume.resolve())
@@ -498,7 +502,7 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
 def training_state(session: Session, updates: int) -> dict:
     state = {"updates": updates, "mode": session.mode}
     if session.mode in joint_training.MODES:
-        state["loss_variant"] = joint_training.LOSS
+        state["loss_variant"] = session.contract["loss_variant"]
     elif session.data.updates in (CONTINUATION2340_UPDATES, CONTINUATION2790_UPDATES):
         state["loss_variant"] = "full"
     elif "pilot_arm" in session.contract:
@@ -691,7 +695,7 @@ def main() -> None:
     parser.add_argument("--frame-chunk", type=int, default=8)
     parser.add_argument("--cpu-threads", type=int, default=6)
     parser.add_argument("--stop-after-macro", type=int)
-    parser.add_argument("--spec", type=Path, default=JOINT_SPEC_PATH)
+    parser.add_argument("--spec", type=Path, default=CONDITIONAL_SPEC_PATH)
     args = parser.parse_args()
     spec = specification(args.spec)
     if args.phase == "train":

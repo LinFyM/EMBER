@@ -17,7 +17,13 @@ def gradient_groups(writer) -> dict[str, float]:
     context = ({"value_context": norm(writer.value_context.parameters()),
                 "u": norm(write.u.weight for write in writer.writes)}
                if writer.value_context is not None else {})
-    return {**context, "public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
+    conditional = ({"interpreter": norm(writer.interpreter.parameters()),
+                    **{group: norm(parameter for unit in writer.conditional_targets
+                                   for parameter in getattr(unit, group).parameters())
+                       for group in ("a_x", "a_z", "a_context", "a_dynamic", "a_out",
+                                     "b_key", "b_delta", "b_context", "b_dynamic", "b_out")}}
+                   if writer.interpreter is not None else {})
+    return {**context, **conditional, "public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
                              if name.endswith(".lora_A.default.weight")),
             "public_B0": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
                               if name.endswith(".lora_B.default.weight")),

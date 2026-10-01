@@ -296,7 +296,7 @@ def test_real_sealed_270_is_only_compatible_start_of_continuation(tmp_path):
         "next_macro": 360, "world_size": 2, "files": files})
     with pytest.raises(ValueError, match="latest complete same-arm"):
         validate_attempt(spec, args, contract, output)
-    with pytest.raises(ValueError, match="requires the T2790 continuation spec"):
+    with pytest.raises(ValueError, match="retired operator training"):
         train(specification(), SimpleNamespace())
 
 

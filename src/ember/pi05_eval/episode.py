@@ -114,17 +114,6 @@ def finish_episode_row(
     row.update(episode_exploration_fields(contract, slot))
     if "scene_reference" in slot:
         row["scene_reference"] = dict(slot["scene_reference"])
-    if (contract.get("frozen_prefix_intervention") is not None
-            or contract.get("approach_channel_intervention") is not None):
-        from ember.pi05_eval.prefix_replay import finish_trace
-
-        name = ("approach_channel_intervention" if contract.get("approach_channel_intervention")
-                else "frozen_prefix_intervention")
-        row[name] = finish_trace(slot, task, contract)
-    if contract.get("readout_realization_intervention") is not None:
-        from ember.pi05_eval.readout_trace import finish_trace
-
-        row["readout_realization_intervention"] = finish_trace(slot, task, contract)
     if "stage_predicate_states" in slot:
         row["stage_predicates"] = {
             "schema_version": "ember_pi05_stage_predicate_episode_v1",
@@ -141,9 +130,5 @@ def finish_episode_row(
     passive = save_passive_trace(contract.get("diagnostic_occupancy_capture"), task, slot)
     if passive is not None:
         row["continuous_control_trace"] = passive
-    if contract.get("return_credit_collection") is not None:
-        from ember.pi05_eval.return_credit import save_decisions
-
-        row["return_credit_collection"] = save_decisions(contract, task, slot)
     row.update(episode_adapter_fields(contract, task_adapter, slot.get("episode_adapter")))
     return row

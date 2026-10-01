@@ -3,14 +3,11 @@
 from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
-import json
 import multiprocessing as mp
 from multiprocessing.util import Finalize
 import os
-from pathlib import Path
 
 import torch
-from safetensors.torch import load_file
 
 
 def execution_devices(device=None, devices=None) -> tuple[torch.device, ...]:
@@ -39,98 +36,10 @@ def _configure_device(device, cpu_threads):
     return list(affinity)
 
 
-class ResidentCompiler:
-    """One frozen source and Writer per device, with request-local video state."""
-
-    def __init__(self, asset_root, config, device, cpu_threads):
-        from ember.writer.runtime import build_runtime
-
-        affinity = _configure_device(device, cpu_threads)
-        self.runtime = build_runtime(asset_root, config, device)
-        self.device, self.request, self.checkpoint, self.store = device, None, None, None
-        self.nonvideo_cache = {}
-        print(json.dumps({"materialization_worker": {"pid": os.getpid(), "device": str(device),
-                                                     "cpu_affinity": affinity}}), flush=True)
-
-    def prepare(self, request):
-        from ember.writer import materialization as bank
-
-        checkpoint, run, record, tasks, output, transfer = request
-        if self.request == output:
-            return
-        self.close()
-        runtime = self.runtime
-        if not bank.source_matches(runtime.source, run["source"]):
-            raise ValueError("Writer runtime uses a different frozen source checkpoint")
-        identity = (checkpoint, transfer["N_checkpoint"]["path"] if transfer else None)
-        if self.checkpoint != identity:
-            if transfer:
-                from ember.writer.native_reader_transfer import composed_state
-
-                state, roles = composed_state(Path(transfer["N_checkpoint"]["path"]), checkpoint)
-                if roles != transfer["partition"]:
-                    raise ValueError("resident native transfer parameter provenance changed")
-            else:
-                state = load_file(str(checkpoint / "ecp.safetensors"), device="cpu")
-            runtime.state.load_state_dict(state, strict=True)
-            runtime.state.requires_grad_(False).eval()
-            runtime.policy.eval()
-            if runtime.state.probe is not None:
-                expected = torch.randn(50, 32, generator=torch.Generator().manual_seed(
-                    int(run["config"]["observer"]["probe_seed"])))
-                if not torch.equal(runtime.state.probe.cpu(), expected):
-                    raise ValueError("checkpoint public probe differs from its declared seed")
-            if runtime.lora.rank != 16 or len(runtime.lora.targets) != 38:
-                raise ValueError("materialization must produce one complete 38-target rank16 LoRA")
-            self.nonvideo_cache.clear()
-            self.checkpoint = identity
-        # Only model weights persist. Adapted Z/KV/H and source coordinates are
-        # local to bank._compile_condition and never retained across conditions.
-        self.store = (bank.RawTeacherVideoStore(tuple(task.authority for task in tasks.values()), frame_stride=5,
-                                               camera_view=run["config"]["observer"].get("camera_view", "agentview"))
-                      if getattr(runtime, "uses_video", True) else None)
-        self.tasks, self.output, self.record, self.request = tasks, output, record, output
-
-    def compile(self, job):
-        from ember.writer.materialization import _compile_condition, _save_condition
-
-        if not getattr(self.runtime, "uses_video", True):
-            task = self.tasks[job["task"]]
-            if self.runtime.parameterization == "direct_lora":
-                cache_key, condition, invocations = ("direct",), None, 0
-            else:
-                cache_key = ("language", job["task"])
-                invocations = 1
-            if cache_key not in self.nonvideo_cache:
-                if self.runtime.parameterization == "language_writer":
-                    condition = self.runtime.prepare_language(task.authority.language)
-                with torch.no_grad():
-                    generated = self.runtime.compile(condition)
-                self.nonvideo_cache[cache_key] = {
-                    name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
-                    for name, value in generated.items()
-                }
-            else:
-                invocations = 0
-            return _save_condition(self.nonvideo_cache[cache_key], self.runtime.lora, task, job["demos"], [],
-                                   self.output, self.record, parameterization=self.runtime.parameterization,
-                                   writer_invocations=invocations)
-        control = job.get("control")
-        extras = {"control": control, "video_task": self.tasks[control["video_global_task_id"]]} if control else {}
-        return _compile_condition(self.runtime, self.store, self.tasks[job["task"]], job["demos"],
-                                  self.output, self.record, **extras)
-
-    def close(self):
-        if self.store is not None:
-            self.store.close()
-            self.store = None
-        self.request = None
-
-
 _resident = None
 
 
-def _initialize_worker(device_queue, ready, asset_root, config, cpu_threads, compiler_factory=ResidentCompiler):
+def _initialize_worker(device_queue, ready, asset_root, config, cpu_threads, compiler_factory):
     global _resident
     _resident = compiler_factory(asset_root, config, device_queue.get(), cpu_threads)
     Finalize(None, _resident.close, exitpriority=1)
@@ -149,7 +58,7 @@ def _compile_job(request, job):
 class MaterializationWorkers:
     """Dynamic condition scheduling with one persistent spawn process per GPU."""
 
-    def __init__(self, *, asset_root, config, devices, cpu_threads, compiler_factory=ResidentCompiler):
+    def __init__(self, *, asset_root, config, devices, cpu_threads, compiler_factory):
         self.asset_root, self.config, self.devices = asset_root, config, devices
         self.cpu_threads, self.local, self.executor, self.queue = cpu_threads, None, None, None
         self.compiler_factory = compiler_factory

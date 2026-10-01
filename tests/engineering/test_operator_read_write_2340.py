@@ -10,10 +10,7 @@ import torch
 
 from ember.operator_writer import bank
 from ember.operator_writer.data import FormalData, TASKS
-from ember.operator_writer.run import (
-    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, PILOT_SPEC_PATH, specification,
-    validate_attempt, validate_train_request,
-)
+from ember.operator_writer.run import (CONTINUATION2340_SPEC_PATH, PILOT_SPEC_PATH, specification, validate_attempt, validate_train_request)
 
 ASSET = Path("/data1/user/ymdai/projects/EMBER")
 PARENT = Path("/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260929"
@@ -145,27 +142,26 @@ def test_actual_parent_events_and_explicit_control_lineage(tmp_path):
 def test_controlled_exit_occurs_after_published_complete_boundary(tmp_path, monkeypatch, request_kind):
     from ember.operator_writer import run
 
-    spec = specification(CONTINUATION2790_SPEC_PATH)
-    parent = (Path(spec["continuation"]["parent_run_root"])
-              / "T/train/attempts/continuation/checkpoints/macro_00002340")
+    spec = specification(run.CONDITIONAL_SPEC_PATH)
+    parent = tmp_path / "train/checkpoints/macro_00000090"
     closed, visited, published = [], [], []
-    data = SimpleNamespace(updates=2790, close=lambda: closed.append(True))
+    data = SimpleNamespace(updates=450, close=lambda: closed.append(True))
     session = SimpleNamespace(
-        data=data, output=tmp_path, mode="T",
+        data=data, output=tmp_path, mode=run.joint_training.CONDITIONAL_MODE,
         context=SimpleNamespace(is_main=True, world_size=3),
     )
     args = SimpleNamespace(
-        mode="T", pilot_arm=None, resume=parent, attempt="continuation",
+        mode=run.joint_training.CONDITIONAL_MODE, pilot_arm=None, resume=parent, attempt="resume",
         microbatch=28, frame_chunk=8,
-        stop_after_macro=2430 if request_kind == "fixed" else None,
+        stop_after_macro=180 if request_kind == "fixed" else None,
     )
 
     def update_stub(current, updates, rows):
         visited.append(updates + 1)
-        if request_kind == "file" and updates + 1 == 2420:
+        if request_kind == "file" and updates + 1 == 170:
             (tmp_path / "stop_at_next_ecp.request").write_text("stop")
-        if updates + 1 == 2430:
-            checkpoint = tmp_path / "checkpoints/macro_00002430"
+        if updates + 1 == 180:
+            checkpoint = tmp_path / "checkpoints/macro_00000180"
             checkpoint.mkdir(parents=True)
             published.append(checkpoint)
         return updates + 1, rows + 1
@@ -174,16 +170,16 @@ def test_controlled_exit_occurs_after_published_complete_boundary(tmp_path, monk
 
     def verify_publication_before_stop(path, payload):
         assert len(published) == 1 and Path(payload["checkpoint"]) == published[0]
-        assert payload["updates"] == payload["metrics_rows"] == 2430
+        assert payload["updates"] == payload["metrics_rows"] == 180
         real_write(path, payload)
 
     monkeypatch.setattr(run, "prepare_train", lambda *_: session)
-    monkeypatch.setattr(run, "restore", lambda *_: (2340, 2340))
+    monkeypatch.setattr(run, "restore", lambda *_: (90, 90))
     monkeypatch.setattr(run, "update", update_stub)
     monkeypatch.setattr(run, "gather", lambda value, world: [value, False, False])
     monkeypatch.setattr(run, "write_json_atomic", verify_publication_before_stop)
     run.train(spec, args)
-    assert visited == list(range(2341, 2431))
+    assert visited == list(range(91, 181))
     assert closed == [True]
     assert json.loads((tmp_path / "stopped_at_ecp.json").read_text())["next_resume_from_this_ecp"]
     assert not (tmp_path / "completion.json").exists()

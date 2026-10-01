@@ -1,1 +1,1 @@
-"""Bounded shared LoRA read/write engineering candidate."""
+"""Canonical conditional read/write Writer and sealed operator bank consumers."""

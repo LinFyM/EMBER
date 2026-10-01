@@ -142,7 +142,7 @@ def test_latest_ecp_and_selected_banks_reject_wrong_lineage(tmp_path, monkeypatc
                                          sealed_evaluation=True)
         assert bank.EVALUATION_SPEC_PATHS[1710] == bank.EVALUATION_SPEC_PATHS[1800]
         assert bank.EVALUATION_SPEC_PATHS[1800] == CONTINUATION1800_SPEC_PATH
-        with pytest.raises(ValueError, match="T1710/1800"):
+        with pytest.raises(ValueError, match="registered T ECP"):
             bank.materialize("T", PARENT, ASSET, torch.device("cpu"))
     finally:
         data.close()

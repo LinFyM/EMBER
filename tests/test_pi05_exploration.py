@@ -9,30 +9,15 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 import torch
-from scipy.stats import norm
 
 from ember.pi05_assets import Pi05EvaluationError
-from ember.pi05_eval import return_credit as capture
-from ember.writer.return_credit import loo_advantages, score_cotangent
-from ember.writer.score_conditioning import correlated_sign_score
-from ember.pi05_eval.exploration import (
-    DIAGNOSTIC_STATES, add_exploration_noise, alignment_metadata, build_exploration_contract,
-    episode_exploration_fields, exploration_covariance, exploration_metadata, exploration_noise_seed,
-    validate_exploration_comparison, validate_exploration_contract,
-)
-from ember.pi05_eval.trajectory_capture import initialize_capture
+from ember.pi05_eval.exploration import (DIAGNOSTIC_STATES, add_exploration_noise, build_exploration_contract, episode_exploration_fields, exploration_covariance, exploration_noise_seed, validate_exploration_comparison, validate_exploration_contract)
 from ember.pi05_eval.preparation import _explicit_diagnostic_states
 from ember.pi05_eval_contract import RUN_CONTRACT_SCHEMA, load_run_contract, policy_noise_seed
 from ember.pi05_eval_queue import EvaluationShard
 from ember.pi05_eval_results import AGGREGATE_SCHEMA, paired_success_comparison
 from ember.pi05_evaluation import SHARD_RESULT_SCHEMA, _plan_action_chunks, rollout_shard, validate_shard_result
 from scripts.compare_pi05_results import compare
-from scripts.return_credit_analysis import _paired_native_noise
-from scripts.return_score_update import SPEC_PATH as SCORE_UPDATE_SPEC, bank_keys, episode_keys
-from scripts.return_score_update_analysis import _bootstrap as score_update_bootstrap, _compare as score_update_compare
-from ember.pi05_source_checkpoint import read_json
-from scripts.return_objective_alignment import (SPEC_PATH as ALIGNMENT_SPEC, bank_keys as alignment_banks,
-    episode_keys as alignment_episodes, same_common_seed_prefix)
 
 
 def _contract(enabled=False):
@@ -49,140 +34,6 @@ def _contract(enabled=False):
 
 def _slots(states=(32, 33)):
     return [{"init_state_id": state, "replan_index": 2} for state in states]
-
-
-def _alignment_contract(cell="P_JS"):
-    spec = read_json(ALIGNMENT_SPEC)
-    output = spec["resources"]["study_root"] + f"/evaluation/{cell}/task_002_teacher_34/state_00"
-    task = {"suite": "libero_spatial", "task_id": 2, "split_role": "train", "language": "move bowl",
-            "horizon": 220}
-    return {"role": "development_train", "mode": "formal", "adapter": None,
-        "rng": {"inference_seed": 7},
-        "policy": {"replan_steps": 5, "action_dim": 7, "chunk_size": 50, "num_inference_steps": 10},
-        "diagnostic_exploration": alignment_metadata(enabled=cell.endswith("JS")),
-        "diagnostic_occupancy_capture": {"mode": "compact", "trajectory_root": output + "/trajectories",
-            "passive_trace": {"trace_root": output + "/continuous_traces"}},
-        "diagnostic_stage_predicates": {"full_conditions_only": False},
-        "frozen_objective_alignment": {"spec_path": str(ALIGNMENT_SPEC), "cell": cell,
-            "model": cell.split("_")[0], "global_task": 2, "teacher_demo": 34,
-            "init_state_id": 0, "replica": 4, "output": output}}, task
-
-
-def test_objective_alignment_registered_scope_and_replica4_action_injection():
-    spec = read_json(ALIGNMENT_SPEC)
-    assert len(alignment_banks(spec)) == 16
-    assert len(alignment_episodes(spec)) == 128
-    for cell in ("P_J0", "P_JS", "RB_J0", "RB_JS"):
-        contract, task = _alignment_contract(cell)
-        validate_exploration_contract(contract, task=task, state_ids=(0,))
-    j0, task = _alignment_contract("P_J0")
-    js, _ = _alignment_contract("P_JS")
-    chunks = torch.full((1, 50, 7), 2.)
-    before = torch.random.get_rng_state()
-    zero, noisy = [{"init_state_id": 0, "replan_index": 3}], [{"init_state_id": 0, "replan_index": 3}]
-    initialize_capture(zero[0], "compact")
-    initialize_capture(noisy[0], "compact")
-    assert add_exploration_noise(chunks, zero, task=task, contract=j0) is chunks
-    actual = add_exploration_noise(chunks, noisy, task=task, contract=js)
-    assert zero[0]["exploration_noise_seeds"] == noisy[0]["exploration_noise_seeds"]
-    from ember.pi05_eval.return_credit import exploration_seed
-    seed = exploration_seed(2, 0, 4, 3)
-    assert noisy[0]["exploration_noise_seeds"] == [seed]
-    eta = torch.randn(35, generator=torch.Generator(device="cpu").manual_seed(seed)) @ torch.linalg.cholesky(exploration_covariance()).T
-    torch.testing.assert_close(actual[0, :5], 2 + eta.reshape(5, 7))
-    torch.testing.assert_close(actual[0, 5:], chunks[0, 5:])
-    assert torch.equal(torch.random.get_rng_state(), before)
-
-
-@pytest.mark.parametrize("change", ["teacher", "state", "replica", "model", "output", "flow", "capture", "task"])
-def test_objective_alignment_rejects_scope_drift_before_rollout(change):
-    contract, task = _alignment_contract()
-    scope = contract["frozen_objective_alignment"]
-    if change == "teacher":
-        scope["teacher_demo"] = 46
-    elif change == "state":
-        scope["init_state_id"] = 32
-    elif change == "replica":
-        scope["replica"] = 0
-    elif change == "model":
-        scope["model"] = "RB"
-    elif change == "output":
-        scope["output"] += "_extra"
-    elif change == "flow":
-        contract["policy"]["num_inference_steps"] = 9
-    elif change == "capture":
-        contract["diagnostic_occupancy_capture"]["passive_trace"] = None
-    else:
-        task["task_id"] = 5
-    with pytest.raises(Pi05EvaluationError, match="objective-alignment"):
-        validate_exploration_contract(contract, task=task, state_ids=(0,))
-
-
-def test_objective_alignment_planner_copies_one_pre_noise_mean_without_extra_forward():
-    contract, task = _alignment_contract()
-    policy = _Policy()
-    slot = {"init_state_id": 0, "replan_index": 0, "obs": _observation(),
-            "action_plan": deque(), "policy_noise_seeds": [], "steps": 0}
-    initialize_capture(slot, "compact")
-    _plan_action_chunks([slot], task=task, contract=contract, policy=policy,
-        preprocess=_preprocess, postprocess=lambda chunks: 3 * chunks + 1,
-        task_adapter=None, root_seed=7, replan_steps=5)
-    assert len(policy.noise) == 1
-    assert len(slot["pre_exploration_normalized_means"]) == 1
-    torch.testing.assert_close(slot["pre_exploration_normalized_means"][0], torch.full((5, 7), 2.))
-    assert len(slot["replay_action_chunks"]) == 1
-    expected_slot = {"init_state_id": 0, "replan_index": 0}
-    initialize_capture(expected_slot, "compact")
-    expected = add_exploration_noise(torch.full((1, 50, 7), 2.),
-        [expected_slot], task=task, contract=contract)
-    torch.testing.assert_close(slot["replay_action_chunks"][0], expected)
-
-
-def test_objective_alignment_pairs_only_replans_both_episodes_actually_reached():
-    assert same_common_seed_prefix([11, 12], [11, 12, 13])
-    assert same_common_seed_prefix([11, 12, 13], [11, 12])
-    assert not same_common_seed_prefix([11, 12], [11, 99, 13])
-    assert not same_common_seed_prefix([], [11])
-
-
-def test_score_update_registered_96_scope_and_joint_teacher_state_bootstrap():
-    spec = read_json(SCORE_UPDATE_SPEC)
-    banks, episodes = bank_keys(spec), episode_keys(spec)
-    assert len(banks) == len(set(banks)) == 48
-    assert len(episodes) == len(set(episodes)) == 96
-    assert len([key for key in episodes if key[1] in (2, 12, 22, 34)
-                and key[2:] == (46, 32)]) == 12
-    success = {}
-    for task in spec["evaluation"]["task_ids"]:
-        for state in (32, 33):
-            for teacher in (46, 47):
-                for arm, value in {"P": 0, "RAW": teacher == 46, "RB": 1}.items():
-                    success[(task, state, teacher), arm] = int(value)
-    bootstrap = score_update_bootstrap(spec, success)["comparisons"]["RB-RAW"]
-    assert bootstrap["46"]["ci95"] == [0, 0]
-    assert bootstrap["47"]["ci95"] == [1, 1]
-    assert bootstrap["equal_two_teachers"]["ci95"] == [.5, .5]
-    comparison = score_update_compare(success, spec["evaluation"]["task_ids"],
-                                      (46, 47), "RB", "RAW")
-    assert len(comparison["retained"]) == len(comparison["gained"]) == 16
-    assert comparison["lost"] == []
-
-
-def test_return_score_conditioning_independent_limit_and_temporal_correlation():
-    threshold = -1. + 2. / (2. + 1e-6)
-    signs = np.array([1., -1., 1., -1., 1.])
-    x = np.array([.2, -.4, .8, 1.2, -.1])
-    means = threshold + signs * .1 * x
-    probability, score, _, _ = correlated_sign_score(means, signs, rho=0.)
-    np.testing.assert_allclose(probability, np.prod(norm.cdf(x)), rtol=2e-4)
-    np.testing.assert_allclose(score, signs/.1 * norm.pdf(x)/norm.cdf(x), rtol=2e-4)
-    same_signs = np.ones(5)
-    near_threshold = np.full(5, threshold + .02)
-    correlated, revised, _, _ = correlated_sign_score(near_threshold, same_signs)
-    independent, original, _, _ = correlated_sign_score(near_threshold, same_signs, rho=0.)
-    assert correlated > independent
-    assert not np.allclose(revised, original, atol=.01)
-    assert np.isfinite(revised).all()
 
 
 def test_correlated_noise_matches_canonical_covariance_and_only_changes_execution_block():
@@ -437,79 +288,3 @@ def test_comparison_pipeline_requires_same_adapter_and_explicit_flag(tmp_path):
     right["adapter"] = {"checkpoint": "different"}
     with pytest.raises(Pi05EvaluationError, match="one adapter"):
         validate_exploration_comparison(left, right, allow_exploration_pair=True)
-
-
-def test_loo_and_full_sigma_score_have_registered_sign_and_weight():
-    advantages = loo_advantages([1, 0, 0, 0])
-    torch.testing.assert_close(advantages, torch.tensor([1., -1/3, -1/3, -1/3]))
-    old = torch.zeros(35)
-    latent = torch.arange(35, dtype=torch.float32) / 1000
-    precision = torch.eye(35)
-    expected = latent * (1.5 * 20 / 4 / 128)
-    torch.testing.assert_close(score_cotangent(latent, old, 1.5, Q=20, M=4,
-                                               precision=precision), expected)
-    with pytest.raises(ValueError):
-        score_cotangent(latent, old, 1, Q=0, M=0)
-
-
-def test_stateless_replica_noise_and_reward_independent_reservoir(tmp_path, monkeypatch):
-    spec = capture.authority()
-    spec["resources"]["study_root"] = str(tmp_path)
-    monkeypatch.setattr(capture, "authority", lambda: spec)
-    output = tmp_path / "collection" / "groups" / "task_002_state_00"
-    task = {"suite": "libero_spatial", "task_id": 2}
-    contract = {"return_credit_collection": {
-        "global_task": 2, "init_state_id": 0, "replica": 0,
-        "teacher_demo": 34, "output": str(output)},
-        "rng": {"inference_seed": 7},
-        "policy": {"num_inference_steps": 10, "replan_steps": 5}}
-    slot = {"init_state_id": 0, "steps": 0, "replan_index": 0,
-            "policy_noise_seeds": [], "obs": None}
-    raw = {"observation.state": torch.zeros(8), "task": "pick"}
-    processed = {"tokens": torch.zeros(1, 3)}
-    for replan in range(6):
-        slot["replan_index"], slot["steps"] = replan, replan * 5
-        result = capture.explore_and_retain(torch.zeros(1, 50, 7), [slot],
-            raw_inputs=[raw], processed=[processed], noise=torch.zeros(1, 50, 32),
-            task=task, contract=contract)
-        assert torch.isfinite(result).all()
-        slot["policy_noise_seeds"].append(
-            capture.policy_noise_seed(7, "libero_spatial", 2, 0, replan))
-    assert slot["return_credit_reservoir"]["seen"] == 6
-    assert len(slot["return_credit_reservoir"]["items"]) == 4
-    assert capture.exploration_seed(2, 0, 0, 0) != capture.exploration_seed(2, 0, 1, 0)
-    slot["steps"] = 27
-    saved = capture.save_decisions(contract, task, slot)
-    payload = torch.load(saved["path"], weights_only=True)
-    assert (payload["Q"], payload["M"]) == (6, 4)
-    assert all(len(row["executed_mask"]) == 5 for row in payload["decisions"])
-
-
-def test_return_credit_scope_rejects_unregistered_task_state_and_teacher(tmp_path, monkeypatch):
-    spec = capture.authority()
-    spec["resources"]["study_root"] = str(tmp_path)
-    monkeypatch.setattr(capture, "authority", lambda: spec)
-    task = {"suite": "libero_spatial", "task_id": 2}
-    scope = {"global_task": 2, "init_state_id": 0, "replica": 0,
-             "teacher_demo": 34,
-             "output": str(tmp_path / "collection/groups/task_002_state_00")}
-    contract = {"return_credit_collection": scope, "rng": {"inference_seed": 7},
-                "policy": {"num_inference_steps": 10, "replan_steps": 5}}
-    assert capture.validate_collection(contract, task) == scope
-    for field, invalid in (("global_task", 14), ("init_state_id", 32),
-                           ("teacher_demo", 46), ("replica", 4)):
-        changed = copy.deepcopy(contract)
-        changed["return_credit_collection"][field] = invalid
-        with pytest.raises(Pi05EvaluationError):
-            capture.validate_collection(changed, task)
-
-
-def test_return_credit_common_noise_allows_different_terminal_replan_counts():
-    seeds = [policy_noise_seed(7, "libero_spatial", 2, 0, replan)
-             for replan in range(3)]
-    rows = [{"policy_noise_seeds": seeds[:2]},
-            {"policy_noise_seeds": seeds}]
-    _paired_native_noise(rows, 2, 0)
-    rows[1]["policy_noise_seeds"][1] += 1
-    with pytest.raises(ValueError, match="stateless"):
-        _paired_native_noise(rows, 2, 0)

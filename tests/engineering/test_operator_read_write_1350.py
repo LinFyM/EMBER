@@ -98,11 +98,11 @@ def test_real_900_migration_preserves_prefix_and_third_teacher_round(tmp_path):
             with pytest.raises(ValueError):
                 validate_attempt(spec, args, contract | {'source': {'checkpoint': '/wrong'}},
                                  tmp_path / mode / 'train/attempts/rejected')
-        with pytest.raises(ValueError, match='T2790 continuation spec'):
+        with pytest.raises(ValueError, match='retired operator training'):
             train(old_spec, SimpleNamespace())
         invalid = SimpleNamespace(mode='T', attempt='first', resume=OLD / 'T/train/attempts/continuation/checkpoints/macro_00000900',
                                   microbatch=28, frame_chunk=8, stop_after_macro=910)
-        with pytest.raises(ValueError, match='T2790 continuation spec'):
+        with pytest.raises(ValueError, match='retired operator training'):
             train(new_spec, invalid)
     finally:
         old.close(); new.close()

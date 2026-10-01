@@ -24,15 +24,7 @@ from ember.pi05_eval.occupancy_selection import (
     g3_verified_member_occupancy_tasks,
     successful_expert_occupancy_tasks,
 )
-from ember.pi05_eval_contract import (
-    SUITE_ORDER,
-    build_run_contract,
-    inspect_installed_target_tasks,
-    inspect_source_checkpoint,
-    inspect_tokenizer,
-    load_run_contract,
-    load_evaluation_authorities,
-)
+from ember.pi05_eval_contract import (SUITE_ORDER, build_run_contract, inspect_installed_target_tasks, inspect_source_checkpoint, inspect_tokenizer, load_evaluation_authorities)
 from ember.pi05_eval_queue import (
     EvaluationTask,
     build_cost_balanced_shards,
@@ -89,9 +81,6 @@ def parse_gpu_indices(value: str | None) -> tuple[int, ...] | None:
 
 
 def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
-    if getattr(args, "frozen_replay_registration", None) is not None:
-        registration = _frozen_replay_registration(args)
-        return tuple(registration["init_state_ids"])
     values = getattr(args, "init_state_ids", None)
     if values is None:
         if getattr(args, "exploration_sigma", False):
@@ -106,11 +95,6 @@ def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
                     "exploration_sigma", "occupancy_capture_selection", "task_subset_selection"))):
             raise Pi05EvaluationError("seen-task formal scope requires exactly states32..35")
         return states
-    if states == tuple(range(10, 50)):
-        from ember.writer.language_content_contract import fixed400_explicit_states
-
-        if fixed400_explicit_states(args):
-            return states
     if (args.role != "development_train" or args.mode != "screen"
             or states not in (tuple(range(32, 36)), tuple(range(32, 37))) or args.state_count != len(states)
             or (getattr(args, "exploration_sigma", False) and states != tuple(range(32, 37)))
@@ -119,74 +103,6 @@ def _explicit_diagnostic_states(args: Any) -> tuple[int, ...] | None:
             "explicit init states require development_train screen states32..35/count4 or states32..36/count5"
         )
     return states
-
-
-def _frozen_replay_registration(args: Any) -> dict[str, Any]:
-    registration = read_json(args.frozen_replay_registration.resolve())
-    states = tuple(registration.get("init_state_ids", ()))
-    if (registration.get("schema_version") != "ember_pi05_frozen_replay_registration_v1"
-            or args.role not in {"development_train", "validation"}
-            or args.mode != "screen" or registration.get("role") != args.role
-            or not states or tuple(sorted(set(states))) != states
-            or any(type(state) is not int or not 0 <= state < 50 for state in states)
-            or args.state_count != len(states) or tuple(args.init_state_ids or ()) != states
-            or any(registration.get(key) is not False for key in (
-                "training_gradient_use", "checkpoint_selection_use", "test_use", "outcome_dependent_selection"))
-            or any(getattr(args, key, None) for key in (
-                "exploration_sigma", "occupancy_capture_selection", "task_subset_selection", "capture_stage_predicates"))
-            or getattr(args, "static_task_lora_manifest", None) is None):
-        raise Pi05EvaluationError("frozen replay requires a registered non-selecting correct-video panel")
-    return registration
-
-
-def _frozen_replay_capture(
-    args: Any, contract: Mapping[str, Any], output_dir: Path,
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    registration = _frozen_replay_registration(args)
-    reference_root = Path(registration["reference_output"]).resolve()
-    reference = load_run_contract(reference_root / "run_contract.json")
-    results = read_json(reference_root / "results.json")
-    completion = read_json(reference_root / "launcher_completion.json")
-    requested = {(task["suite"], int(task["task_id"]), state)
-                 for task in contract["tasks"] for state in task["init_state_ids"]}
-    prior = {(row["suite"], int(row["task_id"]), int(row["init_state_id"]))
-             for row in results["rows"]}
-    if (reference["role"] != args.role or reference["arm"] != "correct"
-            or contract["arm"] != "correct" or not requested <= prior
-            or any(tuple(task["init_state_ids"]) != tuple(registration["init_state_ids"])
-                   for task in contract["tasks"])
-            or not completion.get("return_codes") or any(completion["return_codes"].values())
-            or results["contract_reference"] != reference["contract_reference"]
-            or any(contract[key] != reference[key] for key in (
-                "model", "environment", "policy", "rng"))
-            or read_json(Path(contract["normalization"]["path"]))
-               != read_json(Path(reference["normalization"]["path"]))
-            or any(contract["tokenizer"][key] != reference["tokenizer"][key] for key in ("path", "bytes"))
-            or contract["adapter"]["manifest"] != reference["adapter"]["manifest"]
-            or {(task["suite"], int(task["task_id"])) for task in contract["tasks"]}
-               != {(task["suite"], int(task["task_id"])) for task in reference["tasks"]}):
-        raise Pi05EvaluationError("frozen replay changed the completed reference policy or paired cases")
-    scope = {
-        "registration_path": str(args.frozen_replay_registration.resolve()),
-        "reference_output": str(reference_root),
-        "reference_contract": reference["contract_reference"],
-        "training_gradient_use": False,
-        "checkpoint_selection_use": False,
-        "test_use": False,
-        "validation_use": args.role == "validation",
-        "diagnostic_subset": "registered_frozen_policy_replay",
-    }
-    return ({
-        **scope,
-        "schema_version": "ember_pi05_frozen_replay_capture_v1",
-        "trajectory_root": str(output_dir / "trajectories"),
-        "capture": "executed_policy_inputs_and_predicted_chunks_at_each_replan",
-    }, {
-        **scope,
-        "schema_version": "ember_pi05_stage_predicate_capture_v1",
-        "capture": "post_settling_then_every_executed_action_change_points",
-        "predicate_source": "installed_LIBERO_BDDL_goal_conjunction",
-    })
 
 
 def _select_init_states(args: Any, tasks: Sequence[Any]) -> tuple[Any, ...]:
@@ -199,61 +115,23 @@ def _select_init_states(args: Any, tasks: Sequence[Any]) -> tuple[Any, ...]:
 
 
 def _inspect_adapter(
-    args: Any,
-    *,
-    adapter_kind: str | None,
-    source_sft_requested: bool,
-    model: Mapping[str, Any],
-    tasks: Sequence[Any],
-    output_dir: Path | None = None,
+    args: Any, *, adapter_kind: str | None, source_sft_requested: bool,
+    model: Mapping[str, Any], tasks: Sequence[Any], output_dir: Path | None = None,
 ) -> Mapping[str, Any] | None:
     if source_sft_requested:
         return inspect_source_sft_adapter(
-            config_path=args.source_sft_config.resolve(),
-            checkpoint=args.source_sft_checkpoint.resolve(),
-            source=model,
-            tasks=tasks,
-            evaluation_role=args.role,
-            require_formal=args.mode != "smoke",
-        )
+            config_path=args.source_sft_config.resolve(), checkpoint=args.source_sft_checkpoint.resolve(),
+            source=model, tasks=tasks, evaluation_role=args.role, require_formal=args.mode != "smoke")
     if adapter_kind == "static_task_lora":
-        from ember.writer.language_content_contract import evaluation_panel
-
-        language_content_panel = evaluation_panel(output_dir) if output_dir is not None else None
-        from ember.writer.learned_initial_content_contract import STUDY as INITIAL_STUDY
-
-        if language_content_panel is not None and language_content_panel.get("study_id") == INITIAL_STUDY:
-            from ember.pi05_eval.learned_initial_content import bank_tasks
-
-            tasks = bank_tasks(tasks, language_content_panel)
-        if getattr(args, "frozen_replay_registration", None) is not None:
-            registration = _frozen_replay_registration(args)
-            reference = load_run_contract(Path(registration["reference_output"]) / "run_contract.json")
-            prior = {(row["suite"], row["task_id"]): row for row in reference["tasks"]}
-            # Validate the entire original bank; the run still executes only registered cases.
-            tasks = tuple(replace(task, init_state_ids=tuple(prior[(task.suite, task.task_id)]["init_state_ids"]))
-                          for task in tasks)
         return inspect_static_task_lora_adapter(
-            manifest_path=args.static_task_lora_manifest.resolve(),
-            source=model,
-            tasks=tasks,
-            evaluation_role=args.role,
-            require_formal=args.mode != "smoke",
-            native_reader_transfer_cell=getattr(args, "native_reader_transfer_cell", None),
-            support_slot_model=getattr(args, "support_slot_model", None),
-            language_content_panel=language_content_panel,
-        )
-    if adapter_kind != "task_expert":
-        return None
-    return inspect_task_expert_adapter(
-        config_path=args.task_expert_config.resolve(),
-        bank_root=args.task_expert_bank_root.resolve(),
-        step=int(args.task_expert_step),
-        source=model,
-        tasks=tasks,
-        evaluation_role=args.role,
-        require_formal=args.mode != "smoke",
-    )
+            manifest_path=args.static_task_lora_manifest.resolve(), source=model, tasks=tasks,
+            evaluation_role=args.role, require_formal=args.mode != "smoke")
+    if adapter_kind == "task_expert":
+        return inspect_task_expert_adapter(
+            config_path=args.task_expert_config.resolve(), bank_root=args.task_expert_bank_root.resolve(),
+            step=int(args.task_expert_step), source=model, tasks=tasks,
+            evaluation_role=args.role, require_formal=args.mode != "smoke")
+    return None
 
 
 def _registered_subset_valid(
@@ -315,10 +193,6 @@ def _registered_subset_mode_allowed(args: Any) -> bool:
     mode = str(args.mode), int(args.state_count)
     if mode in ordinary:
         return True
-    if mode == ("screen", 40):
-        from ember.writer.language_content_contract import fixed400_explicit_states
-
-        return fixed400_explicit_states(args)
     return (mode == ("screen", 20) and args.role == "nonheld_meta"
             and getattr(args, "trajectory_capture_selection", None) is not None)
 
@@ -533,75 +407,14 @@ def _diagnostic_subset_name(
     return str(task_subset["diagnostic_subset"]) if task_subset is not None else None
 
 
-def _registered_intervention_payload(
-    args: Any, *, task_subset: Any, occupancy_capture: Any,
-    source_sft_requested: bool, adapter_kind: str | None,
-    authorities: Any, installed_tasks: Sequence[Any], model: Mapping[str, Any],
-    tokenizer: Mapping[str, Any], libero_paths: Mapping[str, str],
-    output_dir: Path, repo_root: Path, command: Sequence[str],
-) -> tuple[dict[str, Any], tuple[Any, ...], dict[str, Any]] | None:
-    frozen = getattr(args, "frozen_prefix_panel", None) is not None
-    channel = getattr(args, "approach_channel_panel", None) is not None
-    readout = getattr(args, "readout_realization_panel", None) is not None
-    if not (frozen or channel or readout):
-        return None
-    if (sum((frozen, channel, readout)) != 1
-            or task_subset is not None or occupancy_capture is not None
-            or source_sft_requested or adapter_kind != "static_task_lora"):
-        raise Pi05EvaluationError("registered intervention cannot combine with another diagnostic")
-    from ember.pi05_eval import approach_channel, frozen_prefix, readout_panel
-
-    prepare = (frozen_prefix.prepare_payload if frozen else
-               approach_channel.prepare_payload if channel else readout_panel.prepare_payload)
-    return prepare(
-        args, authorities=authorities, installed_tasks=installed_tasks,
-        model=model, tokenizer=tokenizer, libero_paths=libero_paths,
-        output_dir=output_dir, repo_root=repo_root, command=command,
-    )
-
-
 def _selected_tasks_and_capture(
     args: Any, *, installed_tasks: Sequence[Any], adapter_kind: str | None,
     source_sft_requested: bool, output_dir: Path, repo_root: Path,
 ) -> tuple[tuple[Any, ...], dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
-    from ember.pi05_eval.native_feature_change import scope as native_feature_scope
-
-    if native_feature_scope(output_dir) is not None:
-        from ember.pi05_eval.native_feature_change import select_tasks
-
-        if adapter_kind != "static_task_lora" or source_sft_requested:
-            raise Pi05EvaluationError("native-feature stage requires its complete frozen Writer bank")
-        tasks, capture, stage = select_tasks(args, installed_tasks, repo_root)
-        return tasks, None, capture, stage
-    from ember.writer.learned_initial_content_contract import evaluation_panel as initial_panel
-
-    if initial_panel(output_dir) is not None:
-        from ember.pi05_eval.learned_initial_content import select_tasks
-
-        if adapter_kind != "static_task_lora" or source_sft_requested:
-            raise Pi05EvaluationError("S0/C0 stage requires its frozen Writer bank")
-        tasks, capture, stage = select_tasks(args, installed_tasks, repo_root)
-        return tasks, None, capture, stage
-    native_cell = getattr(args, "native_reader_transfer_cell", None)
-    support_model = getattr(args, "support_slot_model", None)
-    if support_model is not None:
-        from ember.pi05_eval.support_slot_credit import select_tasks
-
-        if adapter_kind != "static_task_lora" or source_sft_requested or native_cell is not None:
-            raise Pi05EvaluationError("support-slot panel requires exactly its own complete Writer bank")
-        tasks, capture, stage = select_tasks(args, installed_tasks, repo_root)
-        return tasks, None, capture, stage
-    if native_cell is not None:
-        from ember.pi05_eval.native_reader_transfer import select_tasks
-
-        if adapter_kind != "static_task_lora" or source_sft_requested:
-            raise Pi05EvaluationError("native transfer requires exactly one complete frozen Writer bank")
-        tasks, capture, stage = select_tasks(args, installed_tasks, repo_root)
-        return tasks, None, capture, stage
     installed_tasks = _select_init_states(args, installed_tasks)
     subset_tasks, subset = _task_subset_tasks(args, installed_tasks, adapter_kind=adapter_kind)
     tasks, capture = _occupancy_capture_tasks(args, subset_tasks, output_dir=output_dir,
-                                              adapter_kind=adapter_kind)
+                                             adapter_kind=adapter_kind)
     stage = _stage_predicate_capture(args, capture)
     if getattr(args, "trajectory_capture_selection", None) is not None:
         capture, stage = _registered_trajectory_capture(args, tasks, output_dir, subset, repo_root)
@@ -609,22 +422,7 @@ def _selected_tasks_and_capture(
 
 
 def _bank_inspection_tasks(installed_tasks, tasks, output_dir, diagnostic_subset, adapter_kind):
-    if diagnostic_subset and adapter_kind == "task_expert":
-        return installed_tasks
-    from ember.pi05_eval.native_feature_change import scope as native_feature_scope
-
-    if native_feature_scope(output_dir) is not None:
-        from ember.pi05_eval.native_feature_change import bank_tasks
-
-        return bank_tasks(installed_tasks)
-    from ember.writer.learned_initial_content_contract import evaluation_panel
-
-    panel = evaluation_panel(output_dir)
-    if panel is not None:
-        from ember.pi05_eval.learned_initial_content import bank_tasks
-
-        return bank_tasks(installed_tasks, panel)
-    return tasks
+    return installed_tasks if diagnostic_subset and adapter_kind == "task_expert" else tasks
 
 
 def _prepared_payload(
@@ -662,8 +460,6 @@ def _prepared_payload(
         state_count=args.state_count,
         libero_config_dir=staging / "libero_config",
     )
-    native_cell = getattr(args, "native_reader_transfer_cell", None)
-    support_model = getattr(args, "support_slot_model", None)
     tasks, task_subset, occupancy_capture, stage_predicates = _selected_tasks_and_capture(
         args, installed_tasks=installed_tasks, adapter_kind=adapter_kind,
         source_sft_requested=source_sft_requested, output_dir=output_dir, repo_root=repo_root,
@@ -672,20 +468,9 @@ def _prepared_payload(
         authorities,
         args.source_run,
         args.checkpoint,
-        evaluation_mode=("formal" if (getattr(args, "frozen_prefix_panel", None)
-                                      or getattr(args, "approach_channel_panel", None)
-                                      or getattr(args, "readout_realization_panel", None)) else args.mode),
+        evaluation_mode=args.mode,
     )
     tokenizer = inspect_tokenizer(authorities, args.tokenizer_path)
-    intervention_payload = _registered_intervention_payload(
-        args, task_subset=task_subset, occupancy_capture=occupancy_capture,
-        source_sft_requested=source_sft_requested, adapter_kind=adapter_kind,
-        authorities=authorities, installed_tasks=installed_tasks,
-        model=model, tokenizer=tokenizer, libero_paths=libero_paths,
-        output_dir=output_dir, repo_root=repo_root, command=command,
-    )
-    if intervention_payload is not None:
-        return intervention_payload
     diagnostic_subset = _diagnostic_subset_name(occupancy_capture, task_subset)
     inspection_tasks = _bank_inspection_tasks(
         installed_tasks, tasks, output_dir, diagnostic_subset, adapter_kind)
@@ -716,8 +501,6 @@ def _prepared_payload(
         adapter=adapter,
         exploration_sigma=bool(getattr(args, "exploration_sigma", False)),
     )
-    if getattr(args, "frozen_replay_registration", None) is not None:
-        occupancy_capture, stage_predicates = _frozen_replay_capture(args, contract, output_dir)
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicates
     contract["diagnostic_task_subset"] = task_subset
@@ -735,16 +518,7 @@ def _prepared_payload(
         else:
             contract["operator_read_write_scene"] = {
                 "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
-    if native_cell is not None:
-        from ember.pi05_eval.native_reader_transfer import attach
-
-        attach(contract, cell=native_cell, repo_root=repo_root)
-    elif support_model is not None:
-        from ember.pi05_eval.support_slot_credit import attach
-
-        attach(contract, model=support_model, repo_root=repo_root)
-    else:
-        attach_requested_capture(args, contract, repo_root, output_dir)
+    attach_requested_capture(args, contract, repo_root, output_dir)
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

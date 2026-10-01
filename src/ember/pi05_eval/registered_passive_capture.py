@@ -215,30 +215,6 @@ def validate_contract(contract: Mapping[str, Any], repo_root: Path) -> None:
 
         validate_capture_contract(contract, repo_root)
         return
-    from ember.writer.learned_initial_content_contract import evaluation_panel as initial_panel
-
-    if initial_panel(Path(contract['output_dir'])) is not None:
-        from ember.pi05_eval.learned_initial_content import validate_contract as validate_initial
-
-        validate_initial(contract, repo_root)
-        return
-    from ember.pi05_eval.native_feature_change import scope as native_feature_scope, validate_contract as validate_feature
-
-    if native_feature_scope(Path(contract['output_dir'])) is not None:
-        validate_feature(contract, repo_root)
-        return
-    from ember.pi05_eval.language_content_capture import (
-        TAG as LANGUAGE_TAG, validate_contract as validate_language, evaluation_panel,
-    )
-
-    language_tag = (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
-                    .get('schema_version'))
-    panel = evaluation_panel(Path(contract['output_dir']))
-    if panel is not None or language_tag == LANGUAGE_TAG:
-        if panel is None:
-            raise Pi05EvaluationError('language-content passive capture is outside its registered study')
-        validate_language(contract, repo_root)
-        return
     output_dir = Path(contract['output_dir']).resolve()
     _, spec = _spec(repo_root)
     formal_panel = _formal_panel_scope(spec, output_dir)
@@ -282,12 +258,6 @@ def prepare_from_manifest(
         from ember.demonstration_learning.bank import registered_capture
 
         return registered_capture(args, tasks, output_dir, selection_path, manifest, task_subset)
-    from ember.pi05_eval.language_content_capture import TAG as LANGUAGE_TAG, prepare_from_manifest as prepare_language
-
-    if manifest.get('passive_control_trace') == LANGUAGE_TAG:
-        return prepare_language(args, repo_root=repo_root, output_dir=output_dir,
-                                task_subset=task_subset, tasks=tasks, manifest=manifest,
-                                selection_path=selection_path, full=full)
     if (manifest.get('schema_version') != 'ember_pi05_registered_trajectory_capture_v1'
             or manifest.get('task_subset_selection') != task_subset['selection_path']
             or manifest.get('mode') != 'compact'
@@ -321,23 +291,6 @@ def attach_requested_capture(
         from ember.writer.conditional_velocity_bank import attach_capture_provenance
 
         attach_capture_provenance(contract, repo_root)
-        return
-    from ember.writer.learned_initial_content_contract import evaluation_panel as initial_panel
-
-    if initial_panel(output_dir) is not None:
-        from ember.pi05_eval.learned_initial_content import attach as attach_initial
-
-        attach_initial(contract, repo_root)
-        return
-    from ember.pi05_eval.native_feature_change import scope as native_feature_scope, attach as attach_feature
-
-    if native_feature_scope(output_dir) is not None:
-        attach_feature(contract, repo_root)
-        return
-    from ember.pi05_eval.language_content_capture import evaluation_panel, attach_requested_capture as attach_language
-
-    if evaluation_panel(output_dir) is not None:
-        attach_language(args, contract, repo_root, output_dir)
         return
     capture = contract.get('diagnostic_occupancy_capture') or {}
     _, spec = _spec(repo_root)

@@ -25,6 +25,23 @@ from ember.pi05_eval_contract import (
 )
 
 
+def require_supported_runtime(contract: Mapping[str, Any]) -> None:
+    """Archive inspection remains supported; retired interventions need their frozen code."""
+    keys = ("frozen_prefix_intervention", "approach_channel_intervention",
+            "readout_realization_intervention", "return_credit_collection",
+            "native_reader_transfer", "support_slot_credit", "native_feature_change",
+            "learned_initial_content")
+    adapter = contract.get("adapter") or {}
+    retired = [key for key in keys if contract.get(key) is not None or adapter.get(key) is not None]
+    capture = contract.get("diagnostic_occupancy_capture") or {}
+    if capture.get("schema_version") == "ember_pi05_frozen_replay_capture_v1":
+        retired.append("frozen_replay")
+    if retired:
+        raise Pi05EvaluationError(
+            f"retired diagnostic execution requires its recorded frozen runtime: {', '.join(retired)}"
+        )
+
+
 def registered_role_authority(role: str, authorities: EvaluationAuthorities) -> dict | None:
     """Keep prepare and recovery on one registered role identity."""
     if role == "seen_panel":

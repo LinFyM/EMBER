@@ -14,7 +14,6 @@ from ember.eval_adapters import (episode_adapter_fields, inspect_static_task_lor
                                  validate_episode_adapter_fields)
 from ember.lora import LORA_B_SUFFIX, LoRATarget, identity_lora_state
 from ember.pi05_assets import Pi05EvaluationError
-from ember.pi05_source_checkpoint import Pi05SourceTrainingError
 from ember.pi05_eval.recovery import _reinspect_adapter
 from ember.pi05_lora import load_pi05_lora_contract
 from ember.writer import evaluation, materialization
@@ -25,7 +24,7 @@ from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, CONFIG_SCHEMA,
     planned_episodes, selection_contract)
 from ember.writer.runtime import MODEL_DEFAULTS
 from ember.writer.learning_data import EVENT_SCHEMA
-from ember.writer.training import observer_mode_contract
+from ember.writer.materialization import observer_mode_contract
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -253,248 +252,6 @@ def test_batched_execution_applies_independent_row_adapters_and_restores_identit
     runtime.close()
 
 
-@pytest.fixture
-def resident_materialization(tmp_path, monkeypatch):
-    from ember.writer import learning_data, runtime
-
-    class State(torch.nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.writer = torch.nn.Linear(1, 1, bias=False)
-            self.meta = torch.nn.Linear(1, 1, bias=False)
-            self.vl_meta = torch.nn.Linear(1, 1, bias=False)
-            self.register_buffer("probe", torch.randn(50, 32, generator=torch.Generator().manual_seed(1729)))
-            self.loads = 0
-
-        def load_state_dict(self, state, strict=True):
-            assert strict is True
-            self.loads += 1
-            return super().load_state_dict(state, strict=strict)
-
-    state = State()
-    instance = SimpleNamespace(state=state, policy=torch.nn.Linear(1, 1), source=SOURCE,
-        lora=load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json"), observer=SimpleNamespace(probe=state.probe))
-    source = tmp_path / "teacher.hdf5"
-    source.write_bytes(b"CPU orchestration fixture")
-    task = SimpleNamespace(suite="libero_spatial", suite_task_id=0,
-                           authority=SimpleNamespace(task_id=0, path=source, language="exact task language"),
-                           episode_lengths=(100,) * 50)
-    runs, requests, builds = {}, [], []
-    for step, value, arm in ((16, 1., "correct"), (48, 2., "same_task_other")):
-        checkpoint = tmp_path / f"run/checkpoints/macro_{step:08d}"
-        checkpoint.mkdir(parents=True)
-        tensors = {name: tensor.detach().clone() for name, tensor in state.state_dict().items()}
-        tensors["writer.weight"].fill_(value)
-        tensors["meta.weight"].fill_(value * 10)
-        tensors["vl_meta.weight"].fill_(value * 100)
-        save_file(tensors, str(checkpoint / "ecp.safetensors"))
-        runs[checkpoint] = {"source": copy.deepcopy(SOURCE), "model_config": dict(MODEL_DEFAULTS),
-            "config": {"data": {}, "update_version": UPDATE_VERSION, "execution_precision": "native_bf16_writer_fm_fp32_lora",
-                "model": dict(MODEL_DEFAULTS), "observer": {"probe_seed": 1729, "meta_rank": 4, "frame_chunk": 4,
-                                                            **observer_mode_contract(MODEL_DEFAULTS)}}}
-        requests.append({"checkpoint": str(checkpoint), "output": str(tmp_path / f"output_{step}"),
-            "role": "development_train", "task_ids": [0], "k": 1, "arm": arm,
-            "selection_mode": "fixed_per_task", "video_pool": [0, 1, 2, 3], "state_count": 10, "seed": 7})
-    monkeypatch.setattr(materialization, "git_state", lambda _root: GIT)
-    monkeypatch.setattr(materialization, "inspect_writer_checkpoint", lambda path: (runs[path], {"path": str(path)}))
-    monkeypatch.setattr(learning_data, "load_learning_tasks", lambda *_args, **_kwargs: {0: task})
-    monkeypatch.setattr(evaluation, "validate_task_scope", lambda *_args: None)
-    monkeypatch.setattr(materialization, "RawTeacherVideoStore", lambda *_args, **_kwargs: SimpleNamespace(close=lambda: None))
-
-    def build(asset_root, config, device):
-        builds.append((asset_root, config, device))
-        instance.observer.frame_chunk = config["observer"]["frame_chunk"]
-        return instance
-
-    def compile_condition(current, _store, _task, demos, _output, _checkpoint):
-        assert current is instance and current.observer.probe is current.state.probe
-        path = _output / f"{condition_id(0, demos)}.safetensors"
-        save_file({"value": state.writer.weight.detach()}, str(path))
-        return {"condition_id": condition_id(0, demos), "global_task_id": 0, "teacher_demo_indices": list(demos),
-                "adapter": file_record(path), "teacher_videos": [{"sampled_frame_count": 1}],
-                "writer_value": float(state.writer.weight), "meta_value": float(state.meta.weight),
-                "vl_meta_value": float(state.vl_meta.weight)}
-
-    monkeypatch.setattr(runtime, "build_runtime", build)
-    monkeypatch.setattr(materialization, "_compile_condition", compile_condition)
-    return requests, runs, builds, state
-
-
-@pytest.mark.parametrize("native_frame_chunk", [None, 16])
-def test_resident_batch_loads_once_and_reloads_entire_checkpoint_per_manifest(resident_materialization, tmp_path,
-                                                                           native_frame_chunk):
-    requests, _, builds, state = resident_materialization
-    paths = materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"),
-                                                 native_frame_chunk=native_frame_chunk)
-    assert len(builds) == 1 and builds[0][1]["model"] == MODEL_DEFAULTS
-    assert state.loads == 2
-    for index, path in enumerate(paths):
-        manifest = json.loads(path.read_text())
-        assert manifest["schema_version"] == BANK_SCHEMA
-        assert manifest["writer_checkpoint"]["path"] == requests[index]["checkpoint"]
-        assert manifest["arm"] == requests[index]["arm"]
-        assert manifest["conditions"][0]["writer_value"] == index + 1
-        assert manifest["conditions"][0]["meta_value"] == (index + 1) * 10
-        assert manifest["conditions"][0]["vl_meta_value"] == (index + 1) * 100
-        assert manifest["method"]["training_objective"] == "main_fm_plus_video_teaching"
-        assert manifest["materialization_execution"]["native_frame_chunk"] == (native_frame_chunk or 4)
-        assert manifest["method"]["observer"]["frame_chunk"] == 4
-        assert manifest["information_wall"]["total_writer_invocations"] == 1
-        assert len(manifest["tasks"][0]["episodes"]) == 10
-    materialization.materialize(asset_root=ROOT, checkpoint=Path(requests[0]["checkpoint"]),
-        output=tmp_path / "single", selection=_selection(mode="fixed_per_task"), device=torch.device("cpu"))
-    assert len(builds) == 2 and state.loads == 3 and float(state.meta.weight) == 10
-
-
-@pytest.mark.parametrize("cardinality", [2, 4])
-def test_pullback_materialization_rejects_untrained_cardinality_before_runtime_build(resident_materialization,
-                                                                                  cardinality):
-    requests, _, builds, _ = resident_materialization
-    requests[0]["k"] = cardinality
-    with pytest.raises(ValueError, match="trained K=1"):
-        materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"))
-    assert not builds
-
-
-@pytest.mark.parametrize("field", ["source", "model_config", "observer", "camera_view"])
-def test_resident_batch_rejects_cross_contract_reuse_before_loading(resident_materialization, field):
-    requests, runs, builds, _ = resident_materialization
-    changed = runs[Path(requests[1]["checkpoint"])]
-    if field == "camera_view":
-        changed["config"]["observer"]["camera_view"] = "dual"
-    elif field == "observer":
-        changed["config"][field]["probe_seed"] += 1
-    else:
-        changed[field]["different_contract"] = True
-    with pytest.raises(ValueError, match="identical source, model, and observer"):
-        materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"))
-    assert not builds and not any(Path(request["output"]).exists() for request in requests)
-
-
-def test_resident_batch_rejects_output_collision_and_per_request_asset_roots(resident_materialization):
-    requests, _, builds, _ = resident_materialization
-    with pytest.raises(ValueError, match="distinct new directories"):
-        materialization.materialize_requests(asset_root=ROOT, requests=[requests[0], requests[0]], device=torch.device("cpu"))
-    with pytest.raises(ValueError, match="asset root and device"):
-        materialization.materialize_requests(asset_root=ROOT, requests=[requests[0] | {"asset_root": "/different"}], device=torch.device("cpu"))
-    assert not builds
-
-
-def test_checkpoint_change_preserves_episode_mapping(resident_materialization):
-    requests, _, _, _ = resident_materialization
-    requests[1]["arm"] = "correct"
-    paths = materialization.materialize_requests(asset_root=ROOT, requests=requests, device=torch.device("cpu"))
-    left, right = (json.loads(path.read_text()) for path in paths)
-    assert left["tasks"] == right["tasks"]
-    assert left["writer_checkpoint"] != right["writer_checkpoint"]
-    assert left["conditions"][0]["writer_value"] != right["conditions"][0]["writer_value"]
-
-
-@pytest.mark.parametrize("damage", ["checkpoint", "source", "method", "video", "frames"])
-def test_condition_reuse_rejects_identity_and_generation_mismatch(bank, damage):
-    path, manifest = bank
-    run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
-    if damage == "checkpoint":
-        manifest["writer_checkpoint"]["macro"] += 1
-    elif damage == "source":
-        manifest["source"]["checkpoint"] = "/different/source"
-    elif damage == "method":
-        manifest["method"]["frame_stride"] = 10
-    elif damage == "video":
-        manifest["conditions"][0]["teacher_demo_indices"] = [49]
-    else:
-        manifest["conditions"][0]["teacher_videos"][0]["frame_indices"][0] = 1
-    path.write_text(json.dumps(manifest))
-    with pytest.raises(ValueError):
-        materialization._reusable_conditions(path, asset_root=ROOT, run=run,
-            checkpoint=checkpoint, selection=_selection())
-
-
-def test_materialization_reuses_valid_loras_and_compiles_only_missing_video(bank, tmp_path, monkeypatch):
-    from ember.writer import learning_data, runtime
-
-    path, old = bank
-    checkpoint = Path(old["writer_checkpoint"]["path"])
-    probe = torch.randn(50, 32, generator=torch.Generator().manual_seed(1729))
-    save_file({"probe": probe}, str(checkpoint / "ecp.safetensors"))
-    state = torch.nn.Module()
-    state.register_buffer("probe", probe.clone())
-    lora = load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json")
-    instance = SimpleNamespace(state=state, policy=torch.nn.Linear(1, 1), lora=lora, source=SOURCE,
-                               observer=SimpleNamespace(frame_chunk=4))
-    row = old["tasks"][0]
-    target = json.loads((ROOT / "configs/pi05_target_data_v1/manifest.json").read_text())
-    native = next(task for task in target["tasks"] if task["global_task_id"] == 0)
-    task = SimpleNamespace(suite=row["suite"], suite_task_id=row["task_id"],
-        authority=SimpleNamespace(task_id=0, language=row["language"], path=Path(row["teacher_source"]["path"])),
-        episode_lengths=tuple(native["demonstrations"]["episode_lengths"]))
-    # This orchestration test uses the sealed fixture provenance, without needing the real dataset.
-    monkeypatch.setattr(materialization, "file_record", lambda path: dict(row["teacher_source"])
-        if Path(path) == task.authority.path else file_record(path))
-    monkeypatch.setattr(materialization, "git_state", lambda _: GIT)
-    monkeypatch.setattr(runtime, "build_runtime", lambda *args: instance)
-    monkeypatch.setattr(learning_data, "load_learning_tasks", lambda *args, **kwargs: {0: task})
-    monkeypatch.setattr(materialization, "RawTeacherVideoStore", lambda *args, **kwargs: SimpleNamespace(close=lambda: None))
-    compiled = []
-
-    def compile_condition(_runtime, _store, _task, demos, output, authority):
-        compiled.append(tuple(demos))
-        key = condition_id(0, demos)
-        destination = output / f"{key}.safetensors"
-        save_file(identity_lora_state(lora), str(destination), metadata=adapter_metadata(key, authority))
-        raw = native["demonstrations"]["episode_lengths"][demos[0]]
-        indices = list(range(0, raw, 5))
-        if indices[-1] != raw - 1:
-            indices.append(raw - 1)
-        return {key_: row[key_] for key_ in ("global_task_id", "suite", "task_id", "language")} | {
-            "condition_id": key, "teacher_demo_indices": list(demos),
-            "teacher_videos": [{"demo_index": demos[0], "raw_frame_count": raw,
-                                "sampled_frame_count": len(indices), "frame_indices": indices}],
-            "adapter": file_record(destination), "writer_invocations": 1, "single_complete_rank16": True}
-
-    monkeypatch.setattr(materialization, "_compile_condition", compile_condition)
-    # An obsolete selection declaration does not invalidate individually proved
-    # task/video LoRAs; it must never become the new episode mapping.
-    old["selection"].pop("schedule")
-    path.write_text(json.dumps(old))
-    selected = _selection(init_state_ids=(0, 1, 2))
-    output = materialization.materialize(asset_root=ROOT, checkpoint=checkpoint,
-        output=tmp_path / "repaired", selection=selected, device=torch.device("cpu"), reuse_manifest=path)
-    repaired = json.loads(output.read_text())
-    assert len(compiled) == 1
-    assert repaired["compilation"]["reused_conditions"] == 2
-    assert repaired["compilation"]["new_conditions"] == 1
-    assert repaired["tasks"][0]["episodes"] == planned_episodes(selected, 0)
-    for condition in old["conditions"]:
-        reused = output.parent / Path(condition["adapter"]["path"]).name
-        assert reused.stat().st_ino == Path(condition["adapter"]["path"]).stat().st_ino
-    verified = inspect_horizon_writer_bank(manifest_path=output, source=SOURCE,
-        task_keys=(("libero_spatial", 0),), evaluation_role="development_train", require_formal=True,
-        task_init_state_ids={("libero_spatial", 0): (0, 1, 2)})
-    assert len(verified["conditions"]) == 3
-
-
-def test_batch_cli_reads_list_and_rejects_mixed_single_request_flags(tmp_path, monkeypatch, capsys):
-    requests = [{"checkpoint": "/checkpoint", "output": "/output", "role": "development_train", "task_ids": [0], "k": 1}]
-    path = tmp_path / "requests.json"
-    path.write_text(json.dumps(requests))
-    calls = []
-    monkeypatch.setattr(materialization, "materialize_requests", lambda **kwargs: calls.append(kwargs) or [Path("/output/manifest.json")])
-    monkeypatch.setattr(torch, "set_num_threads", lambda _threads: None)
-    argv = ["materialize_writer.py", "--requests-json", str(path), "--asset-root", str(ROOT),
-            "--device", "cpu", "--native-frame-chunk", "16"]
-    monkeypatch.setattr("sys.argv", argv)
-    materialization.main()
-    assert calls == [{"asset_root": ROOT, "requests": requests, "device": torch.device("cpu"),
-                      "native_frame_chunk": 16, "cpu_threads": 4}]
-    assert "/output/manifest.json" in capsys.readouterr().out
-    for option in (("--arm", "same_task_other"), ("--seed", "7")):
-        monkeypatch.setattr("sys.argv", [*argv, *option])
-        with pytest.raises(SystemExit) as error:
-            materialization.main()
-        assert error.value.code == 2 and len(calls) == 1
-
-
 def test_method_metadata_binds_repeated_full_reads_and_single_full_lora():
     model = dict(MODEL_DEFAULTS)
     run = {"model_config": model, "config": {"update_version": UPDATE_VERSION,
@@ -659,16 +416,6 @@ def test_train_diagnostic_bank_requires_exact_evaluator_state_subset(bank):
             inspect_horizon_writer_bank(**arguments, task_init_state_ids={("libero_spatial", 0): states})
 
 
-def test_explicit_train_diagnostic_request_and_count_compatibility(resident_materialization):
-    requests, _, _, _ = resident_materialization
-    request = requests[0] | {"init_state_ids": list(range(32, 36)), "state_count": 4}
-    paths = materialization.materialize_requests(asset_root=ROOT, requests=[request], device=torch.device("cpu"))
-    selected = json.loads(paths[0].read_text())["selection"]
-    assert selected["init_state_ids"] == list(range(32, 36))
-    assert materialization.request_init_state_ids(role="validation") == tuple(range(50))
-    assert materialization.request_init_state_ids(role="validation", state_count=10) == tuple(range(10))
-
-
 @pytest.mark.parametrize("overrides", [
     {"role": "validation"}, {"state_count": 10}, {"init_state_ids": [0, 1, 2, 3, 4]},
     {"init_state_ids": [32, 33, 34, 35, 35]}, {"init_state_ids": [36, 35, 34, 33, 32]},
@@ -682,42 +429,6 @@ def test_explicit_train_diagnostic_request_rejects_wrong_scope(overrides):
 def test_validation_selection_rejects_offsets_even_for_direct_api():
     with pytest.raises(ValueError, match="canonical zero-based prefix"):
         _selection(role="validation", init_state_ids=(32, 33, 34, 35, 36))
-
-
-def test_single_cli_preserves_explicit_init_state_ids(monkeypatch):
-    calls = []
-    monkeypatch.setattr(materialization, "materialize", lambda **kwargs: calls.append(kwargs) or Path("/manifest.json"))
-    monkeypatch.setattr(torch, "set_num_threads", lambda _: None)
-    monkeypatch.setattr("sys.argv", ["materialize_writer.py", "--checkpoint", "/checkpoint",
-        "--output", "/output", "--role", "development_train", "--task-ids", "0", "--k", "1",
-        "--device", "cpu", "--state-count", "4", "--init-state-ids", "32,33,34,35"])
-    materialization.main()
-    assert calls[0]["selection"]["init_state_ids"] == list(range(32, 36))
-    assert calls[0]["selection"]["seed"] == 20260907
-
-
-def test_compile_uses_complete_dual_video_and_exact_language_once(tmp_path, monkeypatch):
-    import numpy as np
-    lora = replace(load_pi05_lora_contract(ROOT / "configs/pi05_lora_v1.json"),
-                   targets=(LoRATarget("linear", 3, 4),), rank=2, alpha=2)
-    calls = []
-    def prepare(frames, indices, language):
-        assert frames[0].shape == (2, 2, 3, 4, 4)
-        assert indices[0].tolist() == [0, 5] and language == "exact task"
-        calls.append("prepare")
-        return object()
-    def compile(condition):
-        assert not torch.is_grad_enabled()
-        calls.append("complete_writer")
-        return identity_lora_state(lora)
-    runtime = SimpleNamespace(prepare=prepare, compile=compile, lora=lora)
-    task = SimpleNamespace(authority=SimpleNamespace(task_id=0, language="exact task"),
-        episode_lengths=(6,), suite="libero_spatial", suite_task_id=0)
-    video = SimpleNamespace(frames=np.zeros((2, 2, 3, 4, 4), dtype=np.uint8),
-        frame_indices=np.array([0, 5]), raw_frame_count=6)
-    record = materialization._compile_condition(runtime, SimpleNamespace(load=lambda *args: video),
-        task, (0,), tmp_path, {"path": "/checkpoint", "macro": 16})
-    assert calls == ["prepare", "complete_writer"] and record["writer_invocations"] == 1
 
 
 def _diagnostic_args(**overrides):

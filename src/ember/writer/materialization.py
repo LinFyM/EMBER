@@ -1,69 +1,76 @@
-"""Compile sealed supervised Writer checkpoints into per-episode complete LoRAs."""
+"""Read-only contracts, pairing and provenance for sealed video Writer banks.
 
+Historical training and compilation are retired from main. Use each run's
+frozen commit, and check checkpoint_retirement.json / payload_retirement.json
+before attempting replay; a weights-only archive is not an exact-resume state.
+"""
 from __future__ import annotations
-
-import argparse
-from contextlib import ExitStack
-import json
-import os
 from pathlib import Path
 from typing import Any, Mapping, Sequence
-
 import torch
-from safetensors.torch import save_file
-
 from ember.ecp.checkpoint import ECP_CHECKPOINT_SCHEMA, checkpoint_macro
 from ember.expert_manifold.video_schedule import (
     SAME_TASK_OTHER_OFFSET, paired_condition_demo_indices, reference_demo_indices,
 )
-from ember.lora import expected_lora_state_shapes, validate_lora_state
-from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority
-from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.pi05_eval_contract import git_state_is_clean_pushed_or_frozen_authority
+from ember.pi05_source_checkpoint import read_json
 from ember.pi05_target_data import SUITE_ORDER
-from ember.writer.data import RawTeacherVideoStore, teacher_camera_names
+from ember.writer.data import teacher_camera_names
 from ember.writer.learning_data import EVENT_SCHEMA
-from ember.writer.materialization_workers import MaterializationWorkers, execution_devices
-from ember.writer.training import (CONDITIONAL_CONFIG_SCHEMA, CONDITIONAL_EXPERIMENT, CONFIG_SCHEMA,
-                                   CONDITIONAL_UPDATE_VERSION, RUN_SCHEMA, STAGE, TRAINING_SCHEMA, UPDATE_VERSION,
-                                   _conditional_config, observer_mode_contract)
-from ember.writer.relational_contract import (CONFIG_SCHEMA as RELATIONAL_CONFIG_SCHEMA,
-    UPDATE_VERSION as RELATIONAL_UPDATE_VERSION, validate_config as _relational_config,
-    registered_stage1_bank_panel)
+from ember.writer.conditional_contract import (
+    CONFIG_SCHEMA as CONDITIONAL_CONFIG_SCHEMA, validate_config as _conditional_config,
+)
+from ember.writer.relational_contract import (
+    CONFIG_SCHEMA as RELATIONAL_CONFIG_SCHEMA, validate_config as _relational_config,
+)
 from ember.writer.language_content_contract import (
-    CONFIG_SCHEMA as LANGUAGE_CONTENT_CONFIG_SCHEMA, bank_panel as language_content_bank_panel,
-    fixed400_spec, validate_config as _language_content_config,
+    CONFIG_SCHEMA as LANGUAGE_CONTENT_CONFIG_SCHEMA, validate_config as _language_content_config,
 )
 from ember.writer.learned_initial_content_contract import (
-    CONFIG_SCHEMA as INITIAL_CONTENT_CONFIG_SCHEMA, bank_panel as initial_content_bank_panel,
-    validate_config as _initial_content_config,
+    CONFIG_SCHEMA as INITIAL_CONTENT_CONFIG_SCHEMA, validate_config as _initial_content_config,
 )
-from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
-    inspect_diagnostic_contract, require_control_selection, video_task_id)
+from ember.writer.video_controls import CONTROL_ARMS, require_control_selection, video_task_id
+from ember.writer.runtime import require_architecture_identity
 
+CONFIG_SCHEMA = "ember_video_teaching_writer_config_v1"
+RUN_SCHEMA = "ember_video_teaching_writer_run_v1"
+STAGE = "video_teaching_writer_fresh"
+TRAINING_SCHEMA = "ember_video_teaching_training_state_v1"
+UPDATE_VERSION = "video_teaching_twelve_condition_joint_meta_v2"
+
+def observer_mode_contract(model: dict[str, Any]) -> dict[str, str]:
+    """Bind the ordered full-horizon and adjacent-content native reads."""
+    require_architecture_identity(model)
+    patches = 512 if model["camera_view"] == "dual" else 256
+    return {"camera_view": model["camera_view"],
+            "native_inputs": f"full{patches}_patch_content_and_repeated_full50_H_adjacent_E_reads",
+            "horizon_read": "repeated_content_position_attention_over_all_50_raw_H_values",
+            "video_order": "causal_RoPE_with_real_frame_positions_and_ordered_adjacent_roles"}
 
 BANK_SCHEMA = "ember_video_writer_lora_bank_v1"
-# This existing execution-protocol kind is also consumed by generic pi05 evaluators.
-BANK_KIND = "horizon_writer_lora_bank"
-ADAPTER_SCHEMA = "ember_video_writer_materialized_adapter_v1"
-TRAIN_DIAGNOSTIC_INIT_STATE_IDS = tuple(range(32, 36))
-VIDEO_SCHEDULE = "expert_manifold_canonical_permutation_v1"
-DEFAULT_SELECTION_SEED = 20260907
-REPO_ROOT = Path(__file__).resolve().parents[3]
 
+BANK_KIND = "horizon_writer_lora_bank"
+
+ADAPTER_SCHEMA = "ember_video_writer_materialized_adapter_v1"
+
+TRAIN_DIAGNOSTIC_INIT_STATE_IDS = tuple(range(32, 36))
+
+VIDEO_SCHEDULE = "expert_manifold_canonical_permutation_v1"
+
+DEFAULT_SELECTION_SEED = 20260907
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 def frozen_authority(state: Mapping[str, Any]) -> bool:
     return state.get("branch") == "" and git_state_is_clean_pushed_or_frozen_authority(state)
 
-
 def file_record(path: Path) -> dict[str, Any]:
     return {"path": str(path.resolve()), "bytes": path.stat().st_size}
-
 
 def source_matches(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
     keys = ("source_run", "checkpoint", "model_path")
     return all(left.get(key) and right.get(key) and
                Path(left[key]).resolve() == Path(right[key]).resolve() for key in keys)
-
 
 def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     """Check formal supervised authority with metadata-only trainer tensor loading."""
@@ -135,16 +142,13 @@ def inspect_writer_checkpoint(checkpoint: Path) -> tuple[dict[str, Any], dict[st
     expected_training = {"schema_version": TRAINING_SCHEMA, "updates": macro,
                          "update_version": config["update_version"], "data_version": data_version}
     if run.get("support_slot_credit") is not None:
-        from ember.writer.support_slot_credit import validate_branch_checkpoint
-
-        validate_branch_checkpoint(run, trainer, checkpoint, macro, world_size)
-    elif training != expected_training:
+        raise ValueError("retired support-slot diagnostic requires its recorded frozen runtime")
+    if training != expected_training:
         raise ValueError("supervised Writer training state or optimizer-update cursor changed")
     return run, {"path": str(checkpoint), "macro": macro,
                  "weights": file_record(checkpoint / "ecp.safetensors"),
                  "manifest": file_record(checkpoint / "checkpoint_manifest.json"),
                  "run_contract": file_record(run_path), "training_commit": run["git"]["commit"]}
-
 
 def _fixed_video_selection(fixed_videos, *, mode, tasks, cardinality, pool):
     fixed = {str(key): sorted(map(int, value)) for key, value in (fixed_videos or {}).items()}
@@ -153,7 +157,6 @@ def _fixed_video_selection(fixed_videos, *, mode, tasks, cardinality, pool):
                       for value in fixed.values())):
         raise ValueError("fixed diagnostic videos must provide one distinct K-set for every task")
     return fixed
-
 
 def selection_contract(
     *, role: str, task_ids: Sequence[int], cardinality: int, arm: str, mode: str,
@@ -193,7 +196,6 @@ def selection_contract(
     require_control_selection(selection)
     return selection
 
-
 def request_init_state_ids(
     *, role: str, init_state_ids: Sequence[int] | None = None, state_count: int | None = None,
     registered_stage1: bool = False, registered_fixed400: bool = False,
@@ -218,7 +220,6 @@ def request_init_state_ids(
         raise ValueError("explicit Writer init states require development_train states32..35 and count4, "
                          "or registered seen states0..3 and count4")
     return states
-
 
 def paired_video_sets(selection: Mapping[str, Any], task: int, ordinal: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
     """Use the shared task permutation, independent of worker/checkpoint/cursor."""
@@ -252,7 +253,6 @@ def paired_video_sets(selection: Mapping[str, Any], task: int, ordinal: int) -> 
         raise ValueError("same-task-other requires at least K additional disjoint videos")
     return correct, other
 
-
 def condition_id(task: int, demos: Sequence[int], *, arm: str = "correct", video_task: int | None = None) -> str:
     prefix = f"task_{task:02d}"
     if arm == "no_video":
@@ -260,7 +260,6 @@ def condition_id(task: int, demos: Sequence[int], *, arm: str = "correct", video
     if arm in CONTROL_ARMS:
         prefix += f"_control_{arm}_video_{video_task:02d}"
     return prefix + "_demos_" + "_".join(f"{demo:02d}" for demo in sorted(demos))
-
 
 def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, Any]]:
     rows = []
@@ -275,7 +274,6 @@ def planned_episodes(selection: Mapping[str, Any], task: int) -> list[dict[str, 
         if arm in CONTROL_ARMS:
             rows[-1]["video_global_task_id"] = donor
     return rows
-
 
 def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, Any]:
     observer = observer_mode_contract(run["model_config"])
@@ -362,511 +360,6 @@ def method_metadata(run: Mapping[str, Any], arm: str = "correct") -> dict[str, A
                         deployment_grad_context="no_autograd_or_model_forward")
     return metadata
 
-
 def adapter_metadata(condition: str, checkpoint: Mapping[str, Any]) -> dict[str, str]:
     return {"schema_version": ADAPTER_SCHEMA, "condition_id": condition,
             "writer_checkpoint": str(checkpoint["path"]), "macro": str(checkpoint["macro"])}
-
-
-def _prepare_video_condition(runtime, store, task, demos, *, control=None, video_task=None):
-    donor = video_task if video_task is not None else task
-    if control is not None and (donor.authority.task_id != control["video_global_task_id"]
-                                or task.authority.task_id != control["language_global_task_id"]):
-        raise ValueError("actual donor or target language identity differs from the registered video control")
-    if store is None:
-        raise ValueError("video Writer materialization requires its registered teacher-video store")
-    records = []
-    videos = tuple(store.load(donor.authority.task_id, demo) for demo in demos)
-    if any(video.raw_frame_count != donor.episode_lengths[demo] for demo, video in zip(demos, videos, strict=True)):
-        raise ValueError("actual teacher frame count differs from its data authority")
-    frames, indices = [], []
-    for demo, video in zip(demos, videos, strict=True):
-        frame, index = torch.from_numpy(video.frames), torch.from_numpy(video.frame_indices)
-        record = {"demo_index": demo, "raw_frame_count": video.raw_frame_count,
-                  "sampled_frame_count": len(index), "frame_indices": index.tolist()}
-        if control is not None:
-            content, index, evidence = controlled_frames(index, control=control, demo=demo)
-            frame = frame[content]
-            record.update(evidence)
-        frames.append(frame)
-        indices.append(index)
-        records.append(record)
-    return runtime.prepare(tuple(frames), tuple(indices), task.authority.language), records
-
-
-def _compile_condition(runtime, store, task, demos, output, checkpoint, *, control=None, video_task=None):
-    records = []
-    parameterization = getattr(runtime, "parameterization", "video_writer")
-    if parameterization == "direct_lora":
-        if control is not None:
-            raise ValueError("direct shared LoRA has no video control input")
-        condition = None
-        writer_invocations = 0
-    elif parameterization == "language_writer":
-        if control is not None:
-            raise ValueError("language-only Writer has no video control input")
-        condition = runtime.prepare_language(task.authority.language)
-        writer_invocations = 1
-    elif parameterization == "video_writer":
-        condition, records = _prepare_video_condition(
-            runtime, store, task, demos, control=control, video_task=video_task)
-        writer_invocations = 1
-    else:
-        raise ValueError("unknown conditional Writer parameterization")
-    with torch.no_grad():
-        generated = runtime.compile(condition)
-    return _save_condition(generated, runtime.lora, task, demos, records, output, checkpoint,
-                           control=control, parameterization=parameterization,
-                           writer_invocations=writer_invocations)
-
-
-def _save_condition(generated, lora, task, demos, videos, output, checkpoint, *, control=None,
-                    parameterization="video_writer", writer_invocations=1):
-    state = {name: value.detach().to(device="cpu", dtype=torch.float32).contiguous()
-             for name, value in generated.items()}
-    validate_lora_state(state, lora)
-    if not all(torch.isfinite(value).all() for value in state.values()):
-        raise ValueError("Writer generated nonfinite LoRA parameters")
-    identifier = condition_id(task.authority.task_id, demos, arm=control["arm"] if control else "correct",
-                              video_task=control["video_global_task_id"] if control else None)
-    path = output / f"{identifier}.safetensors"
-    save_file(state, str(path), metadata=adapter_metadata(identifier, checkpoint))
-    record = {"condition_id": identifier, "global_task_id": task.authority.task_id,
-            "suite": task.suite, "task_id": task.suite_task_id, "language": task.authority.language,
-            "teacher_demo_indices": list(demos), "teacher_videos": videos,
-            "teacher_video_values_read": len(videos), "parameterization": parameterization,
-            "adapter": file_record(path),
-            "writer_invocations": 0 if control and control["arm"] == "no_video" else writer_invocations,
-            "single_complete_rank16": True}
-    if control is not None:
-        record["video_control"] = control
-    return record
-
-
-def _reusable_conditions(path, *, asset_root, run, checkpoint, selection):
-    """Reuse individually valid adapters without accepting their old episode schedule."""
-    if path is None:
-        return {}
-    if selection["arm"] in CONTROL_ARMS:
-        raise ValueError("post-hoc controls cannot reuse an untransformed correct/other LoRA")
-    from ember.pi05_lora import load_pi05_lora_contract
-    from ember.writer.evaluation import _inspect_conditions, validate_information_wall, validate_task_scope
-
-    path = Path(path).resolve()
-    manifest = read_json(path)
-    lora_path = asset_root / read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]["lora_contract"]
-    if (manifest.get("schema_version") != BANK_SCHEMA or manifest.get("kind") != BANK_KIND
-            or manifest.get("status") != "sealed" or manifest.get("single_complete_rank16") is not True
-            or manifest.get("writer_checkpoint") != checkpoint or manifest.get("source") != run["source"]
-            or manifest.get("task_protocol") != run["config"]["data"].get("protocol")
-            or manifest.get("method") != method_metadata(run)
-            or manifest.get("lora_contract") != file_record(lora_path)
-            or Path(manifest.get("asset_root", "")).resolve() != asset_root.resolve()
-            or manifest.get("evaluation_role") != selection["evaluation_role"]
-            or manifest.get("selection", {}).get("K") != selection["K"]
-            or manifest.get("arm") not in {"correct", "same_task_other"}
-            or not frozen_authority(manifest.get("materialization_git", {}))):
-        raise ValueError("reused LoRAs require identical checkpoint/source/preprocessing/generation contracts")
-    validate_task_scope(manifest["tasks"], manifest["evaluation_role"], asset_root,
-                        run["config"]["data"].get("protocol"))
-    validate_information_wall(manifest)
-    _inspect_conditions(manifest, path.parent, load_pi05_lora_contract(lora_path))
-    return {row["condition_id"]: row for row in manifest["conditions"]}
-
-
-def _compile_bank_conditions(*, planned, tasks, output, checkpoint, run, checkpoint_record,
-                             workers, reusable, lora_path, no_video, native_transfer=None,
-                             precompiled=None):
-    conditions = {}
-    reused = []
-    if precompiled is not None:
-        if reusable or no_video or set(precompiled) != set(planned):
-            raise ValueError("shared-native precompiled bank must cover exactly its registered conditions")
-        for key, job in planned.items():
-            record = precompiled[key]
-            source = Path(record["adapter"]["path"])
-            if (record.get("condition_id") != key or record.get("global_task_id") != job["task"]
-                    or record.get("teacher_demo_indices") != job["demos"]
-                    or record.get("writer_invocations") != 1
-                    or record["adapter"] != file_record(source)):
-                raise ValueError("shared-native precompiled condition identity changed")
-            path = output / f"{key}.safetensors"
-            os.link(source, path)
-            conditions[key] = {**record, "adapter": file_record(path)}
-    for key in (key for key in planned if key in (reusable or {})):
-        record = reusable[key]
-        path = output / f"{key}.safetensors"
-        os.link(record["adapter"]["path"], path)
-        conditions[key] = {**record, "adapter": file_record(path)}
-        reused.append(key)
-    if no_video:
-        from ember.pi05_lora import load_pi05_lora_contract
-
-        lora = load_pi05_lora_contract(lora_path)
-        if lora.rank != lora.alpha or lora.rank != 16 or len(lora.targets) != 38 or lora.dropout != 0:
-            raise ValueError("no-video identity requires the complete native rank16 LoRA contract")
-        zeros = {name: torch.zeros(shape) for name, shape in expected_lora_state_shapes(lora).items()}
-        for key, job in planned.items():
-            conditions[key] = _save_condition(zeros, lora, tasks[job["task"]], (), [], output,
-                                               checkpoint_record, control=job["control"])
-    jobs = sorted((job for key, job in planned.items() if key not in conditions),
-                  key=lambda job: -sum(tasks[job.get("control", {}).get("video_global_task_id", job["task"])].episode_lengths[demo]
-                                       for demo in job["demos"]))
-    request = (checkpoint, run, checkpoint_record, tasks, output, native_transfer)
-    for job, record in workers.compile(request, jobs) if jobs else ():
-        key = job["condition_id"]
-        path = output / f"{key}.safetensors"
-        if (key not in planned or key in conditions or record.get("condition_id") != key
-                or record.get("global_task_id") != job["task"] or record.get("teacher_demo_indices") != job["demos"]
-                or ("control" in job and record.get("video_control") != job["control"])
-                or record.get("adapter") != file_record(path)):
-            raise ValueError("materialization worker returned a duplicate, mismatched, or missing condition file")
-        conditions[key] = record
-        print(json.dumps({"condition": key, "conditions_ready": len(conditions),
-            "newly_compiled": len(conditions) - len(reused), "reused": len(reused),
-            "frames": sum(video["sampled_frame_count"] for video in record["teacher_videos"])}), flush=True)
-    if set(conditions) != set(planned):
-        raise ValueError("materialization cannot seal an incomplete condition bank")
-    return conditions, reused
-
-
-def _materialize(
-    *, asset_root: Path, checkpoint: Path, output: Path,
-    selection: Mapping[str, Any], workers: MaterializationWorkers,
-    run: Mapping[str, Any], checkpoint_record: Mapping[str, Any],
-    repository: Mapping[str, Any], reuse_manifest: Path | None = None,
-    reusable: Mapping[str, Any] | None = None, diagnostic_contract: Mapping[str, Any] | None = None,
-    registered_stage1_panel: Mapping[str, Any] | None = None,
-    native_transfer: Mapping[str, Any] | None = None,
-    support_slot_credit: Mapping[str, Any] | None = None,
-    precompiled: Mapping[str, Any] | None = None,
-    extra_manifest: Mapping[str, Any] | None = None,
-) -> Path:
-    from ember.writer.learning_data import load_learning_tasks
-    from ember.writer.evaluation import validate_task_scope
-
-    role = "train" if selection["evaluation_role"] in {"development_train", "nonheld_meta"} else selection["evaluation_role"]
-    tasks = load_learning_tasks(asset_root, selection["task_ids"], role=role,
-                                protocol_path=run["config"]["data"].get("protocol"))
-    rows = [{"global_task_id": task, "suite": value.suite, "task_id": value.suite_task_id,
-             "language": value.authority.language, "split_role": role,
-             "teacher_source": file_record(value.authority.path), "episodes": planned_episodes(selection, task)}
-            for task, value in tasks.items()]
-    scope_args = (rows, selection["evaluation_role"], asset_root,
-                  run["config"]["data"].get("protocol"))
-    if support_slot_credit is None:
-        validate_task_scope(*scope_args)
-    else:
-        validate_task_scope(*scope_args, support_slot_credit=support_slot_credit)
-    task_rows = {row["global_task_id"]: row for row in rows}
-    output = output.resolve()
-    output.mkdir(parents=True, exist_ok=False)
-    planned = {episode["condition_id"]: {"condition_id": episode["condition_id"],
-               "task": row["global_task_id"], "demos": episode["teacher_demo_indices"]}
-               for row in rows for episode in row["episodes"]}
-    if selection["arm"] in CONTROL_ARMS:
-        for job in planned.values():
-            job["control"] = control_provenance(selection, job["task"], task_rows)
-    lora_path = asset_root / read_json(asset_root / "configs/pi05_writer_data_v1.json")["authorities"]["lora_contract"]
-    conditions, reused = _compile_bank_conditions(planned=planned, tasks=tasks, output=output,
-        checkpoint=checkpoint, run=run, checkpoint_record=checkpoint_record, workers=workers,
-        reusable=reusable, lora_path=lora_path, no_video=selection["arm"] == "no_video",
-        native_transfer=native_transfer, precompiled=precompiled)
-    no_video = selection["arm"] == "no_video"
-    conditional = run.get("config", {}).get("schema_version") in {
-        CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA, LANGUAGE_CONTENT_CONFIG_SCHEMA,
-        INITIAL_CONTENT_CONFIG_SCHEMA}
-    parameterization = run["config"].get("experiment", {}).get("parameterization", "video_writer")
-    uses_video = parameterization == "video_writer" and not no_video
-    compiler_invocations = sum(int(row.get("writer_invocations", 0)) for row in conditions.values())
-    if conditional:
-        deployment_inputs = ([] if no_video or parameterization == "direct_lora" else
-                             ["exact task language"] if parameterization == "language_writer" else
-                             ["exact task language", "ordered RGB videos", "original frame indices"])
-        information_wall = {
-            "parameterization": parameterization,
-            "deployment_inputs": deployment_inputs,
-            "teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
-            "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
-            "materialization_rgb_video_reads": len(conditions) if uses_video else 0,
-            "teacher_video_values_read": sum(int(row.get("teacher_video_values_read", 0))
-                                               for row in conditions.values()),
-            "parameterization_invocations": compiler_invocations,
-            "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
-            "writer_execution_per_unique_condition": ("none" if parameterization == "direct_lora" else
-                                                      "cached_native_text_compile" if parameterization == "language_writer" else
-                                                      "one_complete_video_compile_per_condition"),
-            "outcome_dependent_video_selection": False,
-            "shuffled_reversed_wrong_no_video": selection["arm"] in CONTROL_ARMS,
-        }
-    else:
-        information_wall = {
-            "deployment_inputs": [] if no_video else ["exact language", "RGB videos", "displayed frame indices"],
-            "teacher_action_state_reward_terminal_reads": 0, "validation_test_gradients": False,
-            "execution_adapters": 1, "action_meta_installed": False, "teacher_video_runtime_reads": 0,
-            "writer_invocations_per_unique_condition": 0 if no_video else 1,
-            "total_writer_invocations": 0 if no_video else len(conditions),
-            "deployment_frozen_source_vjp": False, "deployment_loss_or_optimizer": False,
-            "outcome_dependent_video_selection": False,
-            "shuffled_reversed_wrong_no_video": selection["arm"] in CONTROL_ARMS,
-        }
-    manifest = {"schema_version": BANK_SCHEMA, "kind": BANK_KIND, "status": "sealed",
-                "arm": selection["arm"], "evaluation_role": selection["evaluation_role"], "selection": dict(selection),
-                "task_protocol": run["config"]["data"].get("protocol"),
-                "asset_root": str(asset_root.resolve()), "source": run["source"],
-                "writer_checkpoint": checkpoint_record, "materialization_git": repository,
-                "lora_contract": file_record(lora_path), "method": method_metadata(run, selection["arm"]),
-                "materialization_execution": {"native_frame_chunk": workers.config["observer"].get("frame_chunk") if uses_video else None,
-                    "devices": list(map(str, workers.devices)) if not no_video else [],
-                    "workers": len(workers.devices) if not no_video else 0,
-                    "dispatch": "source_identity_cpu" if no_video else
-                        "longest_video_first_dynamic_conditions" if uses_video else "task_parameterization_dynamic_conditions"},
-                "tasks": rows, "conditions": [conditions[key] for key in planned], "single_complete_rank16": True,
-                "compilation": {"new_conditions": len(conditions) - len(reused), "reused_conditions": len(reused),
-                    "reuse_manifest": file_record(reuse_manifest) if reuse_manifest is not None else None,
-                    "reused_condition_ids": reused},
-                "information_wall": information_wall}
-    if diagnostic_contract is not None:
-        manifest["diagnostic_contract"] = dict(diagnostic_contract)
-        if not conditional:
-            manifest["information_wall"]["materialization_rgb_video_reads"] = 0 if no_video else len(conditions)
-    elif not conditional:
-        manifest["information_wall"]["deployment_inputs"] = ["exact language", "ordered RGB videos", "original frame indices"]
-    _attach_stage1_panel_identity(manifest, registered_stage1_panel)
-    from ember.writer.native_reader_transfer import attach_manifest
-
-    attach_manifest(manifest, native_transfer)
-    if support_slot_credit is not None:
-        manifest["support_slot_credit"] = dict(support_slot_credit)
-    if extra_manifest is not None:
-        if set(extra_manifest) not in ({"native_feature_change"}, {"learned_initial_content"}):
-            raise ValueError("only registered same-forward feature identity may extend a bank manifest")
-        manifest.update(extra_manifest)
-    path = output / "manifest.json"
-    write_json_atomic(path, manifest)
-    return path
-
-
-def _attach_stage1_panel_identity(manifest, panel) -> None:
-    if panel is not None:
-        manifest["registered_stage1_panel_id"] = panel["id"]
-
-
-def _validate_conditional_selection(selection: Mapping[str, Any], config: Mapping[str, Any]) -> None:
-    """Bind this study's banks to its two registered training-role panels."""
-    if config["schema_version"] == RELATIONAL_CONFIG_SCHEMA:
-        registered_stage1_bank_panel(config, selection)
-        return
-    if config["schema_version"] == LANGUAGE_CONTENT_CONFIG_SCHEMA:
-        # The exact output/checkpoint identity is checked by _registered_request_panel.
-        return
-    if config["schema_version"] == INITIAL_CONTENT_CONFIG_SCHEMA:
-        return
-    spec = read_json(REPO_ROOT / config["study_spec"])
-    evaluation = spec["evaluation"]
-    held, seen = evaluation["diagnostic_held"], evaluation["seen"]
-    tasks = selection["task_ids"]
-    if tasks == held["task_ids"]:
-        states, pool, schedule = held["state_ids"], held["teacher_demos"], VIDEO_SCHEDULE
-        permitted_arms = {"correct", "same_task_other", "cross_suite_wrong"}
-        role = "development_train"
-    elif tasks == seen["task_ids"]:
-        states, pool, schedule = seen["state_ids"], list(range(46, 50)), "conditional_compilation_reserved_seen_v1"
-        permitted_arms = {"correct"}
-        role = "development_train"
-    else:
-        raise ValueError("conditional bank tasks are outside registered held400 and seen64 panels")
-    if (selection["evaluation_role"] != role or selection["K"] != 1
-            or selection["mode"] != "per_init_ordinal"
-            or selection["seed"] != evaluation["video_schedule_seed"]
-            or selection["init_state_ids"] != states or selection["video_pool"] != pool
-            or selection["schedule"] != schedule or selection["arm"] not in permitted_arms):
-        raise ValueError("conditional bank pairing differs from its registered panel")
-
-
-def _registered_request_panel(request, run, record):
-    schema = run.get("config", {}).get("schema_version")
-    if schema not in {CONDITIONAL_CONFIG_SCHEMA, RELATIONAL_CONFIG_SCHEMA,
-                      LANGUAGE_CONTENT_CONFIG_SCHEMA, INITIAL_CONTENT_CONFIG_SCHEMA}:
-        return None
-    if schema == INITIAL_CONTENT_CONFIG_SCHEMA:
-        raise ValueError("S0 banks require registered same-forward feature capture")
-    if schema == LANGUAGE_CONTENT_CONFIG_SCHEMA:
-        language_content_bank_panel(run["config"], request["selection"],
-                                    checkpoint=Path(record["path"]), output=Path(request["output"]))
-        fixed = fixed400_spec()
-        fixed_root = Path(fixed["outputs"]["planned_run_root"]).resolve() / "materialization"
-        if (Path(request["output"]).resolve().parent == fixed_root
-                and run["git"]["commit"] != fixed["frozen_inputs"]["C0_training_commit"]):
-            raise ValueError("fixed400 bank must use the frozen C0 training commit")
-        if request.get("reuse_manifest") is not None or request.get("diagnostic_contract") is not None:
-            raise ValueError("language-content banks require fresh complete correct/other video forward")
-        return None
-    _validate_conditional_selection(request["selection"], run["config"])
-    panel = None
-    if schema == RELATIONAL_CONFIG_SCHEMA:
-        if run["git"]["commit"] != "7dc95edbba00cf61439700d77fb321eb8df95c07":
-            raise ValueError("stage1 bank must use the frozen 7dc training checkpoint")
-        panel = registered_stage1_bank_panel(run["config"], request["selection"],
-            checkpoint=Path(record["path"]), output=Path(request["output"]))
-    arm_id = run["config"]["experiment"]["arm_id"]
-    selected_arm = request["selection"]["arm"]
-    if arm_id in {"A_direct16", "B_language", "B_S00", "B_S11"} and selected_arm != "correct":
-        raise ValueError("direct and language arms reuse their correct result; no video control reruns are registered")
-    if arm_id in {"C_video_fm", "D_video_aux", "C_S00", "C_S01", "C_S10", "C_S11"} and selected_arm not in {
-            "correct", "same_task_other", "cross_suite_wrong"}:
-        raise ValueError("conditional study permits only correct, selected same-task-other, and cross-suite-wrong banks")
-    if arm_id in {"C_video_fm", "D_video_aux", "C_S00", "C_S01", "C_S10", "C_S11"} and selected_arm in {
-            "same_task_other", "cross_suite_wrong"} and request.get("diagnostic_contract") is None:
-        raise ValueError("video controls require the sealed selected-checkpoint diagnostic declaration")
-    return panel
-
-
-def _require_stage1_goal_other_reuse(request, panel, diagnostic, reused) -> None:
-    if panel is None or panel["kind"] != "target_other":
-        return
-    expected = {episode["condition_id"] for episode in planned_episodes(request["selection"], 21)}
-    if (request.get("reuse_manifest") is None or diagnostic is None
-            or Path(request["reuse_manifest"]).resolve()
-            != Path(diagnostic["paired_correct_manifest"]["path"]).resolve()
-            or len(expected) != 50 or not expected <= set(reused)):
-        raise ValueError("stage1 Goal21 other requires all 50 paired correct LoRAs before GPU launch")
-
-
-def _materialize_batch(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device | None = None,
-                       devices: Sequence[torch.device] | None = None, cpu_threads: int = 4,
-                       native_frame_chunk: int | None = None) -> list[Path]:
-    if type(cpu_threads) is not int or cpu_threads <= 0:
-        raise ValueError("materialization CPU threads must be positive")
-    repository = git_state(REPO_ROOT)
-    if not frozen_authority(repository):
-        raise ValueError("materialization requires a clean pushed detached checkout")
-    if not requests:
-        raise ValueError("materialization batch must contain at least one request")
-    if any(request["selection"]["K"] != 1 for request in requests):
-        raise ValueError("canonical unified native Writer materialization requires the trained K=1 condition")
-    if native_frame_chunk is not None and (type(native_frame_chunk) is not int or native_frame_chunk <= 0):
-        raise ValueError("native frame chunk must be a positive physical batch size")
-    outputs = [Path(request["output"]).resolve() for request in requests]
-    if len(set(outputs)) != len(outputs) or any(path.exists() for path in outputs):
-        raise ValueError("materialization outputs must be distinct new directories")
-    inspected = [inspect_writer_checkpoint(Path(request["checkpoint"])) for request in requests]
-    from ember.writer.native_reader_transfer import registered_transfers
-
-    transfers = registered_transfers(requests, inspected)
-    panels = [None if transfer or request.get("support_slot_model") is not None
-              else _registered_request_panel(request, run, record)
-              for request, (run, record), transfer in zip(requests, inspected, transfers, strict=True)]
-    from ember.writer.support_slot_credit import registered_bank_request
-
-    support_slots = [registered_bank_request(request, run, record, repository)
-                     if request.get("support_slot_model") is not None else None
-                     for request, (run, record) in zip(requests, inspected, strict=True)]
-    first = inspected[0][0]
-    expected = (first["source"], first["model_config"], first["config"]["observer"])
-    for run, _ in inspected:
-        if ((run["source"], run["model_config"], run["config"]["observer"]) != expected
-                or run["config"].get("experiment", {}).get("language_content_path")
-                   != first["config"].get("experiment", {}).get("language_content_path")):
-            raise ValueError("resident batch requires identical source, model, and observer contracts")
-    diagnostics = [inspect_diagnostic_contract(request.get("diagnostic_contract"), selection=request["selection"],
-                   checkpoint=record, run=run, asset_root=asset_root)
-                   for request, (run, record) in zip(requests, inspected, strict=True)]
-    reusable = [_reusable_conditions(request.get("reuse_manifest"), asset_root=asset_root,
-        run=run, checkpoint=record, selection=request["selection"])
-        for request, (run, record) in zip(requests, inspected, strict=True)]
-    for request, panel, diagnostic, reused in zip(requests, panels, diagnostics, reusable, strict=True):
-        _require_stage1_goal_other_reuse(request, panel, diagnostic, reused)
-    selected_devices = execution_devices(device, devices)
-    # One asset root fixes LoRA/tokenizer/normalization authorities. Workers may
-    # reuse weights for the same checkpoint, never adapted Z/KV/H or generated LoRAs.
-    runtime_config = {**first["config"], "model": first["model_config"],
-                      "observer": dict(first["config"]["observer"])}
-    if native_frame_chunk is not None:
-        runtime_config["observer"]["frame_chunk"] = native_frame_chunk
-    results, workers = [], None
-    with ExitStack() as stack:
-        for request, (run, record), reused, diagnostic, panel, transfer, support_slot in zip(
-                requests, inspected, reusable, diagnostics, panels, transfers, support_slots, strict=True):
-            if request["selection"]["arm"] != "no_video" and workers is None:
-                workers = stack.enter_context(MaterializationWorkers(asset_root=asset_root, config=runtime_config,
-                                               devices=selected_devices, cpu_threads=cpu_threads))
-            normalized = {**request, "diagnostic_contract": diagnostic,
-                          "registered_stage1_panel": panel, "native_transfer": transfer,
-                          "support_slot_credit": support_slot}
-            normalized.pop("native_transfer_cell", None)
-            normalized.pop("support_slot_model", None)
-            normalized.pop("support_slot_phase", None)
-            results.append(_materialize(asset_root=asset_root, workers=workers, run=run, reusable=reused,
-                           checkpoint_record=record, repository=repository, **normalized))
-    return results
-
-
-def materialize(*, asset_root: Path, checkpoint: Path, output: Path,
-                selection: Mapping[str, Any], device: torch.device | None = None, reuse_manifest: Path | None = None,
-                devices: Sequence[torch.device] | None = None, cpu_threads: int = 4,
-                native_frame_chunk: int | None = None, diagnostic_contract: Mapping[str, Any] | None = None) -> Path:
-    return _materialize_batch(asset_root=asset_root, device=device, devices=devices, cpu_threads=cpu_threads,
-        native_frame_chunk=native_frame_chunk,
-        requests=[{"checkpoint": checkpoint, "output": output, "selection": selection, "reuse_manifest": reuse_manifest,
-                   "diagnostic_contract": diagnostic_contract}])[0]
-
-
-def materialize_requests(*, asset_root: Path, requests: Sequence[Mapping[str, Any]], device: torch.device | None = None,
-                         devices: Sequence[torch.device] | None = None, cpu_threads: int = 4,
-                         native_frame_chunk: int | None = None) -> list[Path]:
-    """Compile complete JSON-request banks with one compatible runtime per GPU."""
-    if not isinstance(requests, (list, tuple)):
-        raise ValueError("batch requests must be a JSON list")
-    fields = {"checkpoint", "output", "role", "task_ids", "k", "arm", "selection_mode",
-              "video_pool", "state_count", "init_state_ids", "seed", "fixed_videos", "reuse_manifest", "diagnostic_contract",
-              "native_transfer_cell", "support_slot_model", "support_slot_phase"}
-    normalized = []
-    fixed = fixed400_spec()
-    fixed_root = Path(fixed["outputs"]["planned_run_root"]).resolve() / "materialization"
-    fixed_panels = {row["id"] for row in fixed["evaluation"]["panels"] if row["model"] == "C0"}
-    for request in requests:
-        if not isinstance(request, Mapping) or set(request) - fields:
-            raise ValueError("unknown request fields; asset root and device belong to the whole batch")
-        support_slot = request.get("support_slot_model") is not None
-        if support_slot != (request.get("support_slot_phase") is not None):
-            raise ValueError("support-slot bank model and phase must be declared together")
-        stage1_20 = request.get("role") == "nonheld_meta" and request.get("state_count") == 20
-        if stage1_20:
-            spec = read_json(REPO_ROOT / "configs/relational_support_causality_v1/experiment_spec.json")
-            root = Path(spec["outputs"]["planned_run_root"]).resolve() / "materialization"
-            support = {row["id"] for row in spec["evaluation"]["stage1"]["panels"]
-                       if row["kind"] == "support_correct"}
-            output = Path(request["output"]).resolve()
-            if (spec["evaluation"].get("active_stage") != "mechanism_core_v1"
-                    or output.parent != root or output.name not in support):
-                raise ValueError("nonheld20 Writer request is outside stage1 support panels")
-        output = Path(request["output"]).resolve()
-        fixed400 = (output.parent == fixed_root and output.name in fixed_panels
-                    and request.get("role") == "development_train")
-        selection = selection_contract(role=request["role"], task_ids=request["task_ids"], cardinality=request["k"],
-            arm=request.get("arm", "correct"), mode=request.get("selection_mode", "per_init_ordinal"),
-            seed=request.get("seed", DEFAULT_SELECTION_SEED), init_state_ids=(
-                tuple(request["init_state_ids"]) if support_slot else request_init_state_ids(
-                    role=request["role"], init_state_ids=request.get("init_state_ids"),
-                    state_count=request.get("state_count"), registered_stage1=stage1_20,
-                    registered_fixed400=fixed400)),
-            video_pool=request.get("video_pool", tuple(range(50))), fixed_videos=request.get("fixed_videos"))
-        normalized.append({"checkpoint": Path(request["checkpoint"]).resolve(),
-                           "output": Path(request["output"]).resolve(), "selection": selection,
-                           "diagnostic_contract": request.get("diagnostic_contract"),
-                           "native_transfer_cell": request.get("native_transfer_cell"),
-                           "support_slot_model": request.get("support_slot_model"),
-                           "support_slot_phase": request.get("support_slot_phase"),
-                           "reuse_manifest": Path(request["reuse_manifest"]).resolve() if request.get("reuse_manifest") else None})
-    return _materialize_batch(asset_root=asset_root.resolve(), requests=normalized, device=device,
-                              devices=devices, cpu_threads=cpu_threads,
-                              native_frame_chunk=native_frame_chunk)
-
-
-def _integers(value: str) -> tuple[int, ...]:
-    return tuple(int(part) for part in value.split(","))
-
-
-def main() -> None:
-    raise RuntimeError("Historical Writer CLI retired; no active Writer materialization entrypoint")

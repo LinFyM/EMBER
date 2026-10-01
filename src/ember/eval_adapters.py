@@ -115,9 +115,6 @@ def inspect_static_task_lora_adapter(
     tasks: Sequence[Any],
     evaluation_role: str,
     require_formal: bool,
-    native_reader_transfer_cell: str | None = None,
-    support_slot_model: str | None = None,
-    language_content_panel: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ember.pi05_source_checkpoint import read_json
     from ember.writer.materialization import BANK_SCHEMA
@@ -126,9 +123,6 @@ def inspect_static_task_lora_adapter(
     if manifest.get("kind") == OPERATOR_READ_WRITE_KIND:
         from ember.operator_writer.bank import inspect_bank
 
-        if any(value is not None for value in (native_reader_transfer_cell, support_slot_model,
-                                                language_content_panel)):
-            raise Pi05EvaluationError("operator formal bank cannot enter a historical diagnostic")
 
         return inspect_bank(
             manifest_path=manifest_path, source=source,
@@ -148,9 +142,6 @@ def inspect_static_task_lora_adapter(
     if manifest.get("kind") == CONDITIONAL_VELOCITY_KIND:
         from ember.writer.conditional_velocity_bank import inspect_velocity_bank
 
-        if any(value is not None for value in (native_reader_transfer_cell, support_slot_model,
-                                                language_content_panel)):
-            raise Pi05EvaluationError("velocity formal bank cannot enter a historical diagnostic")
         return inspect_velocity_bank(
             manifest_path=manifest_path, source=source,
             task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
@@ -167,9 +158,6 @@ def inspect_static_task_lora_adapter(
             task_init_state_ids={(task.suite, int(task.task_id)): task.init_state_ids
                                  for task in tasks if getattr(task, "init_state_ids", None) is not None},
             evaluation_role=evaluation_role, require_formal=require_formal,
-            native_reader_transfer_cell=native_reader_transfer_cell,
-            support_slot_model=support_slot_model,
-            language_content_panel=language_content_panel,
         )
     from ember.static_task_lora import inspect_static_task_lora_bank
 
@@ -242,7 +230,6 @@ def load_evaluation_adapter(
     if adapter.get("kind") == HORIZON_WRITER_KIND:
         from ember.writer.evaluation import FrozenHorizonWriterAdapter
 
-        common["readout_intervention"] = contract.get("readout_realization_intervention")
         return FrozenHorizonWriterAdapter(**common)
     if adapter.get("kind") == CONDITIONAL_VELOCITY_KIND:
         from ember.writer.conditional_velocity_bank import FrozenVelocityAdapter

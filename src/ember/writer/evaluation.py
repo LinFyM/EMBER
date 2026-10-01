@@ -25,7 +25,6 @@ from ember.writer.materialization import (BANK_KIND, BANK_SCHEMA, adapter_metada
 from ember.writer.video_controls import (CONTROL_ARMS, control_provenance, controlled_frames,
                                          inspect_diagnostic_contract)
 from ember.writer.relational_contract import CONFIG_SCHEMA as RELATIONAL_CONFIG_SCHEMA, registered_stage1_bank_panel
-from ember.writer.language_content_contract import validate_evaluation_bank
 
 
 EVALUATION_SCHEMA = "ember_video_writer_eval_adapter_v1"
@@ -33,8 +32,7 @@ EPISODE_SCHEMA = "ember_video_writer_episode_v1"
 
 
 def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root: Path,
-                        protocol_path: str | None = None,
-                        support_slot_credit: Mapping[str, Any] | None = None) -> None:
+                        protocol_path: str | None = None) -> None:
     if role not in {"development_train", "nonheld_meta", "validation", "test"}:
         raise ValueError("video Writer evaluation requires a registered target split")
     protocol, manifest = load_task_authorities(asset_root, protocol_path)
@@ -46,15 +44,6 @@ def validate_task_scope(rows: Sequence[Mapping[str, Any]], role: str, asset_root
             raise ValueError("support bank requires the registered study protocol")
         spec = read_json(asset_root / authority)
         allowed_sets = {tuple(arm["support_eval_global_ids"]) for arm in spec["arms"]}
-        if support_slot_credit is not None:
-            from ember.writer.support_slot_credit import SPEC_PATH as SLOT_SPEC
-
-            if (support_slot_credit.get("schema_version") != "ember_support_slot_bank_v1"
-                    or support_slot_credit.get("phase") != "donor_fm"
-                    or support_slot_credit.get("study_spec") != str(Path(__file__).resolve().parents[3] / SLOT_SPEC)
-                    or tuple(row["global_task_id"] for row in rows) != (76, 77)):
-                raise ValueError("support-slot FM bank is outside its exact nonheld task pair")
-            allowed_sets.add((76, 77))
         if tuple(row["global_task_id"] for row in rows) not in allowed_sets:
             raise ValueError("support bank is outside the four-task registered arm subset")
         expected = {("libero_90", task - 40) for group in allowed_sets for task in group}
@@ -188,8 +177,7 @@ def _validate_round(selection, rows, require_formal) -> None:
 
 
 def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal,
-                   native_reader_transfer_cell=None, support_slot_model=None,
-                   language_content_panel=None) -> None:
+) -> None:
     role = manifest["evaluation_role"]
     selection = _selection(manifest["selection"])
     rows = manifest["tasks"]
@@ -204,24 +192,14 @@ def _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state
             or not source_matches(manifest["source"], source)):
         raise ValueError("video Writer bank scope/source/commit changed")
     scope_args = (rows, role, Path(manifest["asset_root"]), manifest.get("task_protocol"))
-    if manifest.get("support_slot_credit") is None:
-        validate_task_scope(*scope_args)
-    else:
-        validate_task_scope(*scope_args, support_slot_credit=manifest["support_slot_credit"])
+    validate_task_scope(*scope_args)
     _validate_round(selection, rows, require_formal)
     for row in rows:
         if row["episodes"] != planned_episodes(selection, row["global_task_id"]):
             raise ValueError("episode video ordinal or deterministic pairing changed")
         if task_init_state_ids is not None:
             requested = tuple(task_init_state_ids.get((row["suite"], row["task_id"]), ()))
-            if (requested != tuple(selection["init_state_ids"])
-                    and not ((native_reader_transfer_cell or support_slot_model)
-                             and requested in ((0,), tuple(range(1, 50))))
-                    and not (language_content_panel is not None
-                             and language_content_panel["model"] == "B630"
-                             and language_content_panel["kind"] == "held_correct"
-                             and requested == tuple(language_content_panel["state_ids"])
-                             and tuple(selection["init_state_ids"]) == tuple(range(50)))):
+            if requested != tuple(selection["init_state_ids"]):
                 raise ValueError("bank and evaluator must use the same exact fixed init states")
 
 
@@ -268,22 +246,7 @@ def validate_information_wall(manifest) -> None:
         raise ValueError("video Writer information wall changed")
 
 
-def _validate_registered_bank_origin(manifest, path, run, checkpoint,
-                                     native_reader_transfer_cell, support_slot_model,
-                                     support_slot_phase="final"):
-    if support_slot_model is not None:
-        from ember.pi05_eval.support_slot_credit import validate_bank
-
-        current = git_state(Path(__file__).resolve().parents[3])
-        validate_bank(manifest, path, support_slot_model, current["commit"], run, checkpoint,
-                      phase=support_slot_phase)
-        return None
-    if native_reader_transfer_cell is not None:
-        from ember.pi05_eval.native_reader_transfer import validate_bank
-
-        current = git_state(Path(__file__).resolve().parents[3])
-        validate_bank(manifest, path, native_reader_transfer_cell, current["commit"])
-        return None
+def _validate_registered_bank_origin(manifest, path, run, checkpoint):
     if run["config"].get("schema_version") != RELATIONAL_CONFIG_SCHEMA:
         return None
     from ember.writer.relational_contract import stage1_bank_materialization_commit
@@ -300,37 +263,19 @@ def _validate_registered_bank_origin(manifest, path, run, checkpoint,
     return panel
 
 
-def _validate_language_bank(panel, path, manifest, run):
-    current_commit = git_state(Path(__file__).resolve().parents[3])["commit"]
-    if panel.get("study_id") == "learned_initial_content_causality_20260926":
-        from ember.writer.learned_initial_content_contract import validate_evaluation_bank as validate_initial
-
-        validate_initial(panel, path, manifest, run, current_commit)
-    else:
-        validate_evaluation_bank(panel, path, manifest, run, current_commit)
-
-
 def inspect_horizon_writer_bank(
     *, manifest_path: Path, source: Mapping[str, Any], task_keys: Sequence[tuple[str, int]],
     evaluation_role: str, require_formal: bool,
     task_init_state_ids: Mapping[tuple[str, int], Sequence[int]] | None = None,
-    native_reader_transfer_cell: str | None = None,
-    support_slot_model: str | None = None,
-    support_slot_phase: str = "final",
-    language_content_panel: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Validate condition provenance and paired row coverage before workers start."""
     try:
         path = manifest_path.resolve()
         manifest = read_json(path)
         _inspect_scope(manifest, source, task_keys, evaluation_role, task_init_state_ids, require_formal,
-                       native_reader_transfer_cell, support_slot_model, language_content_panel)
+)
         run, checkpoint = inspect_writer_checkpoint(Path(manifest["writer_checkpoint"]["path"]))
-        if language_content_panel is not None:
-            _validate_language_bank(language_content_panel, path, manifest, run)
-        panel = _validate_registered_bank_origin(manifest, path, run, checkpoint,
-                                                  native_reader_transfer_cell, support_slot_model,
-                                                  support_slot_phase)
+        panel = _validate_registered_bank_origin(manifest, path, run, checkpoint)
         if manifest.get("task_protocol") != run["config"]["data"].get("protocol"):
             raise ValueError("bank task protocol differs from its trained Writer")
         if checkpoint != manifest["writer_checkpoint"] or manifest["method"] != method_metadata(run, manifest["arm"]) or not source_matches(run["source"], source):
@@ -339,8 +284,7 @@ def inspect_horizon_writer_bank(
                                                 checkpoint=checkpoint, run=run, asset_root=Path(manifest["asset_root"]))
         if manifest.get("diagnostic_contract") != diagnostic:
             raise ValueError("frozen diagnostic contract changed")
-        if (native_reader_transfer_cell is None and support_slot_model is None
-                and run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA
+        if (run["config"].get("schema_version") == RELATIONAL_CONFIG_SCHEMA
                 and panel["kind"] == "target_other"):
             expected_ids = {episode["condition_id"] for episode in planned_episodes(manifest["selection"], 21)}
             compilation = manifest.get("compilation", {})
@@ -358,10 +302,6 @@ def inspect_horizon_writer_bank(
         validate_information_wall(manifest)
         _inspect_conditions(manifest, path.parent, lora)
         result = {**manifest, "schema_version": EVALUATION_SCHEMA, "manifest": file_record(path)}
-        if language_content_panel is not None and language_content_panel.get("study_id") == "learned_initial_content_causality_20260926":
-            result["learned_initial_content"] = {
-                "study_id": language_content_panel["study_id"],
-                "panel": language_content_panel["id"], "stage": language_content_panel["stage"]}
         return result
     except (KeyError, TypeError, ValueError, OSError) as error:
         raise Pi05EvaluationError(str(error)) from error
@@ -401,22 +341,14 @@ class FrozenHorizonWriterAdapter:
     """Execution only: no observer, video, Meta, or learned Writer is loaded."""
 
     def __init__(self, *, policy, source, evaluation_adapter, task_keys, device, require_formal,
-                 readout_intervention=None) -> None:
+) -> None:
         del device, require_formal
         adapter = evaluation_adapter
         self.records = {(row["suite"], row["task_id"]): row for row in adapter["tasks"]}
         requested = set(task_keys)
-        native_feature_subset = (
-            adapter.get("native_feature_change", {}).get("study_id") ==
-            "native_feature_change_causality_20260926" and bool(requested)
-            and requested <= set(self.records))
-        initial_content_subset = (
-            adapter.get("learned_initial_content", {}).get("study_id") ==
-            "learned_initial_content_causality_20260926" and bool(requested)
-            and requested <= set(self.records))
         if (adapter.get("kind") != BANK_KIND or adapter.get("schema_version") != EVALUATION_SCHEMA
                 or not source_matches(adapter["source"], source)
-                or (set(self.records) != requested and not native_feature_subset and not initial_content_subset)
+                or set(self.records) != requested
                 or adapter.get("single_complete_rank16") is not True):
             raise Pi05EvaluationError("video Writer runtime bank changed")
         self.adapter, self.policy = adapter, policy
@@ -428,40 +360,16 @@ class FrozenHorizonWriterAdapter:
         policy.eval()
         self.batched = BatchedLoRAInference(policy, self.lora)
         self.identity = identity_lora_state(self.lora)
-        self.readout_intervention = readout_intervention
-        self.masked_manifest = None
-        if readout_intervention is not None:
-            from ember.pi05_eval.readout_state import SCHEMA
-
-            path = Path(readout_intervention["derived_manifest"]["path"])
-            if not path.is_file() or path.stat().st_size != int(readout_intervention["derived_manifest"]["bytes"]):
-                raise Pi05EvaluationError("readout derived manifest changed")
-            self.masked_manifest = read_json(path)
-            if self.masked_manifest.get("schema_version") != SCHEMA:
-                raise Pi05EvaluationError("readout derived manifest schema changed")
         self._states: OrderedDict[str, dict[str, torch.Tensor]] = OrderedDict()
         self._installed: str | None = None
 
     def _state(self, key: str) -> dict[str, torch.Tensor]:
-        group = (self.readout_intervention or {}).get("group", "11")
         if key in self._states:
             self._states.move_to_end(key)
             return self._states[key]
         condition = self.conditions[key]
         _inspect_adapter_file(condition, self.adapter["writer_checkpoint"], self.lora)
-        if group in ("01", "10"):
-            from ember.pi05_eval.readout_state import load_masked_state
-
-            if self.masked_manifest["conditions"][key]["original"] != condition["adapter"]:
-                raise Pi05EvaluationError("readout derived state original provenance changed")
-            state = load_masked_state(self.masked_manifest, condition_id=key,
-                                      group=group, lora=self.lora)
-        else:
-            state = load_file(condition["adapter"]["path"], device="cpu")
-            if group == "00":
-                from ember.pi05_eval.readout_state import mask_state
-
-                state = mask_state(state, self.lora, "00")
+        state = load_file(condition["adapter"]["path"], device="cpu")
         validate_lora_state(state, self.lora)
         if any(value.dtype != torch.float32 or not torch.isfinite(value).all() for value in state.values()):
             raise Pi05EvaluationError("runtime adapter has nonfinite or non-FP32 values")

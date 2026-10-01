@@ -598,6 +598,8 @@ def validate_train_request(spec: dict, args) -> None:
 
 
 def train(spec: dict, args) -> None:
+    if spec.get("task") != joint_training.CONDITIONAL_TASK:
+        raise ValueError("retired operator training requires its recorded frozen runtime")
     validate_train_request(spec, args)
     session = prepare_train(spec, args)
     try:
@@ -687,8 +689,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("audit", "train"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--mode", choices=("T", "U", change_clock.MODE, *joint_training.MODES))
-    parser.add_argument("--pilot-arm", choices=tuple(PILOT_ARMS))
+    parser.add_argument("--mode", choices=(joint_training.CONDITIONAL_MODE,))
+    parser.set_defaults(pilot_arm=None)
     parser.add_argument("--attempt", type=str)
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--microbatch", type=int, default=28)

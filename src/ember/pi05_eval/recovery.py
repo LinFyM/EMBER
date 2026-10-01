@@ -22,7 +22,7 @@ from ember.pi05_eval_contract import (
     load_evaluation_authorities,
     RUNTIME_REPLICA_PROFILES,
 )
-from ember.pi05_eval.run_contract import registered_role_authority
+from ember.pi05_eval.run_contract import registered_role_authority, require_supported_runtime
 from ember.pi05_eval_queue import (
     failed_jobs,
     publish_json_exclusive,
@@ -141,72 +141,18 @@ def _reinspect_adapter(
     if adapter.get("kind") in {"static_task_lora_bank", "horizon_writer_lora_bank",
                                "conditional_velocity_lora_bank", "demonstration_comparison_lora_bank",
                                "operator_read_write_lora_bank"}:
-        if contract.get("readout_realization_intervention") is not None:
-            from ember.pi05_eval.readout_panel import reinspect_adapter
-
-            return reinspect_adapter(contract, model)
-        if contract.get("approach_channel_intervention") is not None:
-            from ember.pi05_eval.approach_channel import reinspect_adapter
-
-            return reinspect_adapter(contract, model)
-        if contract.get("frozen_prefix_intervention") is not None:
-            from ember.pi05_eval.frozen_prefix import reinspect_adapter
-
-            return reinspect_adapter(contract, model)
-        capture = contract.get("diagnostic_occupancy_capture") or {}
-        if capture.get("schema_version") == "ember_pi05_frozen_replay_capture_v1":
-            from ember.pi05_eval.preparation import _frozen_replay_capture
-            from ember.pi05_eval_contract import load_run_contract
-
-            states = tuple(contract["tasks"][0]["init_state_ids"])
-            args = argparse.Namespace(
-                frozen_replay_registration=Path(capture["registration_path"]),
-                role=contract["role"], mode=contract["mode"], state_count=len(states),
-                init_state_ids=states, static_task_lora_manifest=Path(adapter["manifest"]["path"]),
-            )
-            checked, stage = _frozen_replay_capture(args, contract, Path(contract["output_dir"]))
-            if checked != capture or stage != contract.get("diagnostic_stage_predicates"):
-                raise Pi05EvaluationError("frozen replay registration changed after prepare")
-            reference = load_run_contract(Path(capture["reference_output"]) / "run_contract.json")
-            tasks = tuple(argparse.Namespace(**row) for row in reference["tasks"])
-        if contract.get("native_feature_change") is not None:
-            from ember.writer.native_feature_change import registered_selection, spec as native_feature_spec
-
-            bank_manifest = read_json(Path(adapter["manifest"]["path"]))
-            registered = registered_selection(native_feature_spec())
-            if bank_manifest["selection"] != registered:
-                raise Pi05EvaluationError("native-feature bank map changed after prepare")
-            tasks = tuple(argparse.Namespace(
-                suite=row["suite"], task_id=row["task_id"],
-                init_state_ids=tuple(registered["init_state_ids"]))
-                for row in bank_manifest["tasks"])
-        if contract.get("learned_initial_content") is not None:
-            from ember.writer.learned_initial_content_contract import evaluation_panel
-
-            panel = evaluation_panel(Path(contract["output_dir"]))
-            if panel is None:
-                raise Pi05EvaluationError("S0/C0 recovery panel is unregistered")
-            bank = read_json(Path(adapter["manifest"]["path"]))
-            tasks = tuple(argparse.Namespace(
-                suite=row["suite"], task_id=row["task_id"],
-                init_state_ids=tuple(panel["state_ids"])) for row in bank["tasks"])
-        from ember.writer.language_content_contract import evaluation_panel
-
         return inspect_static_task_lora_adapter(
             manifest_path=Path(adapter["manifest"]["path"]),
             source=model,
             tasks=tasks,
             evaluation_role=str(contract["role"]),
             require_formal=require_formal,
-            native_reader_transfer_cell=(contract.get("native_reader_transfer") or {}).get("cell"),
-            support_slot_model=(contract.get("support_slot_credit") or {}).get("model"),
-            language_content_panel=(evaluation_panel(Path(contract["output_dir"]))
-                                    if contract.get("output_dir") else None),
         )
     raise Pi05EvaluationError("evaluation adapter kind changed after prepare")
 
 
 def validate_resume_inputs(contract: dict[str, Any]) -> None:
+    require_supported_runtime(contract)
     authorities = load_evaluation_authorities(
         Path(contract["authorities"]["config_path"]), REPO_ROOT
     )
@@ -227,9 +173,7 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         authorities,
         Path(contract["model"]["source_run"]),
         Path(contract["model"]["checkpoint"]),
-        evaluation_mode=("formal" if (contract.get("frozen_prefix_intervention")
-                                      or contract.get("approach_channel_intervention")
-                                      or contract.get("readout_realization_intervention")) else contract["mode"]),
+        evaluation_mode=contract["mode"],
     )
     tokenizer = inspect_tokenizer(authorities, Path(contract["tokenizer"]["path"]))
     if model != contract["model"] or tokenizer != contract["tokenizer"]:
@@ -254,12 +198,7 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         and _reinspect_adapter(adapter, contract=contract, model=model) != adapter
     ):
         raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
-    if contract.get("support_slot_credit") is not None:
-        from ember.pi05_eval.support_slot_credit import validate_contract
-    elif contract.get("native_reader_transfer") is not None:
-        from ember.pi05_eval.native_reader_transfer import validate_contract
-    else:
-        from ember.pi05_eval.registered_passive_capture import validate_contract
+    from ember.pi05_eval.registered_passive_capture import validate_contract
 
     validate_contract(contract, REPO_ROOT)
 

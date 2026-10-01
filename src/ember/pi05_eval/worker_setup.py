@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from ember.pi05_assets import Pi05EvaluationError
+from ember.pi05_eval.run_contract import require_supported_runtime
 from ember.pi05_processing import Pi05LiberoProcessor
 from ember.pi05_source_setup import load_pretrained_policy
 
@@ -51,6 +52,7 @@ def load_policy(
 def validate_worker_assets(
     contract: Mapping[str, Any],
 ) -> tuple[Path, dict[str, Any], Path]:
+    require_supported_runtime(contract)
     normalization_path = Path(contract["normalization"]["path"])
     if (
         not normalization_path.is_file()

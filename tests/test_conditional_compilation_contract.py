@@ -13,29 +13,14 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.preparation import _registered_trajectory_capture
 from ember.pi05_eval.preparation import _task_subset_tasks
 from ember.pi05_eval_contract import resolve_role_task_keys
-from ember.writer import learning_data, materialization, video_controls
-from ember.writer.learning_data import WriterTrainingData
-from ember.writer.materialization import planned_episodes, selection_contract
+from ember.writer import (materialization, video_controls)
+from ember.writer.materialization import (selection_contract)
 from ember.writer.relational_contract import registered_stage1_bank_panel, stage1_bank_materialization_commit
-from ember.writer.training import _config
 from ember.writer.video_controls import video_task_id
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = json.loads((ROOT / "configs/relational_support_causality_v1/experiment_spec.json").read_text())
-
-
-def test_seen_panel_uses_reserved_videos_in_registered_state_order():
-    config = json.loads((ROOT / "configs/conditional_compilation_diagnostics_v1/train_C_video_fm.json").read_text())
-    seen = selection_contract(role="development_train", task_ids=(2, 4, 5, 7, 12, 13, 17, 19,
-        22, 25, 28, 29, 32, 34, 35, 37), cardinality=1, arm="correct", mode="per_init_ordinal",
-        seed=20260911, init_state_ids=(0, 1, 2, 3), video_pool=(46, 47, 48, 49))
-    materialization._validate_conditional_selection(seen, config)
-    assert materialization.request_init_state_ids(role="development_train", init_state_ids=(0, 1, 2, 3),
-                                                   state_count=4) == (0, 1, 2, 3)
-    assert [row["teacher_demo_indices"] for row in planned_episodes(seen, 2)] == [[46], [47], [48], [49]]
-    with pytest.raises(ValueError, match="registered panel"):
-        materialization._validate_conditional_selection(seen | {"seed": 7}, config)
 
 
 def test_held_video_controls_keep_registered_train_scope(monkeypatch):
@@ -123,65 +108,7 @@ def test_full_registered_eval_subsets_keep_train_role(tmp_path, panel, mode, cou
 
 # Frozen relation-support task pools reuse the conditional Writer execution owner.
 def _arm_config(arm):
-    return _config(ROOT / f"configs/relational_support_causality_v1/train_{arm}.json")
-
-
-def test_six_fresh_configs_only_admit_their_registered_fit28(tmp_path):
-    held = set(SPEC["protocol"]["diagnostic_held8"])
-    for arm in SPEC["arms"]:
-        config = _arm_config(arm["id"])
-        assert config["data"]["task_ids"] == arm["fit28"]
-        assert len(config["data"]["task_ids"]) == 28
-        assert not held.intersection(config["data"]["task_ids"])
-        changed = deepcopy(config)
-        changed["data"]["task_ids"][0] = SPEC["protocol"]["diagnostic_held8"][0]
-        path = tmp_path / "invalid.json"
-        path.write_text(json.dumps(changed))
-        with pytest.raises(ValueError, match="recipe"):
-            _config(path)
-
-
-def test_common26_events_and_same_pool_language_video_are_identical(monkeypatch):
-    ids = set(task for arm in SPEC["arms"] for task in arm["fit28"])
-    tasks = {task: SimpleNamespace(suite="libero_90" if task >= 40 else "target",
-                                  authority=object(), episode_lengths=(51,) * 50) for task in ids}
-    monkeypatch.setattr(learning_data, "load_learning_tasks", lambda *_a, **_kw: tasks_for(_a[1], tasks))
-    monkeypatch.setattr(learning_data, "RawTeacherVideoStore", lambda *_a, **_kw:
-                        SimpleNamespace(close=lambda: None))
-    monkeypatch.setattr(learning_data, "FunctionalQueryDataset", lambda authorities, **_kw:
-                        SimpleNamespace(task_episode_rows={task: {demo: range(50) for demo in range(46)}
-                                                              for task in ids}, close=lambda: None))
-    plans = {}
-    for arm in SPEC["arms"]:
-        config = _arm_config(arm["id"])
-        data = WriterTrainingData(ROOT, config["data"], camera_view="agentview",
-                                  use_videos=arm["parameterization"] == "video_writer")
-        plans[arm["id"]] = data.event_plan()
-        assert len(plans[arm["id"]]["groups"]) == 1260
-        assert len(plans[arm["id"]]["events"]) == 5040
-        data.close()
-    common = set(SPEC["protocol"]["common26"])
-    baseline = plans["C_S00"]
-    assert plans["B_S11"] == plans["C_S11"]
-    for arm in SPEC["arms"]:
-        plan = plans[arm["id"]]
-        if arm["pool"] == "S00":
-            assert plan == baseline
-        for group, reference in zip(plan["groups"], baseline["groups"], strict=True):
-            tasks_now = [plan["events"][index]["task"] for index in group]
-            tasks_before = [baseline["events"][index]["task"] for index in reference]
-            assert [task for task in tasks_now if task in common] == [task for task in tasks_before if task in common]
-        now = {event["task"]: [] for event in plan["events"]}
-        before = {event["task"]: [] for event in baseline["events"]}
-        for event in plan["events"]:
-            now[event["task"]].append(event)
-        for event in baseline["events"]:
-            before[event["task"]].append(event)
-        assert all(now[task] == before[task] for task in common)
-
-
-def tasks_for(task_ids, tasks):
-    return {task: tasks[task] for task in task_ids}
+    return json.loads((ROOT / f"configs/relational_support_causality_v1/train_{arm}.json").read_text())
 
 
 def test_support_stage1_uses_original_50_video_schedule_prefix():
@@ -191,7 +118,6 @@ def test_support_stage1_uses_original_50_video_schedule_prefix():
         role="nonheld_meta", task_ids=arm["support_eval_global_ids"], cardinality=1,
         arm="correct", mode="per_init_ordinal", seed=SPEC["evaluation"]["video_schedule_seed"],
         init_state_ids=support["states"], video_pool=support["teacher_demos"])
-    materialization._validate_conditional_selection(selection, _arm_config(arm["id"]))
     episodes = materialization.planned_episodes(selection, 58)
     assert len(episodes) == 20
     from ember.expert_manifold.video_schedule import reference_demo_index
@@ -243,7 +169,7 @@ def _selection(panel):
 
 
 def _config_for(panel):
-    return _config(ROOT/'configs/relational_support_causality_v1'/f"train_{panel['arm']}.json")
+    return json.loads((ROOT/'configs/relational_support_causality_v1'/f"train_{panel['arm']}.json").read_text())
 
 
 def _panel(arm, kind):
@@ -259,7 +185,6 @@ def test_exact_sixteen_stage1_bank_requests_and_outputs():
         config = _config_for(panel)
         checkpoint = STAGE_RUN/'training'/panel['arm']/'checkpoints/macro_00001260'
         output = STAGE_RUN/'materialization'/panel['id']
-        materialization._validate_conditional_selection(selection, config)
         assert registered_stage1_bank_panel(config, selection,
             checkpoint=checkpoint, output=output)['id'] == panel['id']
         assert sum(len(materialization.planned_episodes(selection,gid))
@@ -303,7 +228,7 @@ def test_stage1_bank_scope_rejects_deferred_and_wrong_identity(change):
     elif change == 'wrong_control':
         selection['arm'] = 'cross_suite_wrong'
     elif change == 'wrong_arm':
-        config = _config(ROOT/'configs/relational_support_causality_v1/train_C_S11.json')
+        config = json.loads((ROOT/'configs/relational_support_causality_v1/train_C_S11.json').read_text())
     elif change == 'wrong_seed':
         selection['seed'] += 1
     elif change == 'wrong_pool':
@@ -314,26 +239,6 @@ def test_stage1_bank_scope_rejects_deferred_and_wrong_identity(change):
         output = STAGE_RUN/'materialization'/f"{panel['id']}_extra"
     with pytest.raises(ValueError, match='stage1|registered'):
         registered_stage1_bank_panel(config, selection, checkpoint=checkpoint, output=output)
-
-
-def test_json_request_admits_registered_nonheld20_only_before_gpu(monkeypatch):
-    panel = _panel('C_S00','support_correct')
-    request = {'checkpoint':str(STAGE_RUN/'training/C_S00/checkpoints/macro_00001260'),
-               'output':str(STAGE_RUN/'materialization'/panel['id']),
-               'role':'nonheld_meta','task_ids':panel['task_ids'],'k':1,
-               'arm':'correct','selection_mode':'per_init_ordinal',
-               'video_pool':list(range(50)),'state_count':20,
-               'seed':SPEC['evaluation']['video_schedule_seed']}
-    monkeypatch.setattr(materialization,'_materialize_batch',
-                        lambda **kwargs: kwargs['requests'])
-    normalized = materialization.materialize_requests(asset_root=ROOT,requests=[request],device=None)
-    assert normalized[0]['selection']['init_state_ids'] == list(range(20))
-    assert normalized[0]['selection']['video_pool'] == list(range(50))
-    with pytest.raises(ValueError,match='stage1 support'):
-        materialization.materialize_requests(asset_root=ROOT,
-            requests=[request|{'output':str(STAGE_RUN/'materialization/deferred_support')}],device=None)
-    with pytest.raises(ValueError,match='registered nonheld20'):
-        materialization.request_init_state_ids(role='nonheld_meta',state_count=20)
 
 
 def test_goal21_other_requires_same_arm1260_reference_declaration(monkeypatch):

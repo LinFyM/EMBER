@@ -169,13 +169,7 @@ def _plan_action_chunks(
                 noise=noise,
                 num_steps=int(contract["policy"]["num_inference_steps"]),
             )
-            if contract.get("return_credit_collection") is not None:
-                from ember.pi05_eval.return_credit import explore_and_retain
-
-                chunks = explore_and_retain(chunks, group, raw_inputs=raw_inputs,
-                    processed=processed, noise=noise, task=task, contract=contract)
-            else:
-                chunks = add_exploration_noise(chunks, group, task=task, contract=contract)
+            chunks = add_exploration_noise(chunks, group, task=task, contract=contract)
             actions = postprocess(chunks).detach().cpu().numpy()
         for row, (slot, plan, seed) in enumerate(
             zip(group, actions, seeds, strict=True)
@@ -199,11 +193,10 @@ def rollout_shard(
     postprocess: Any,
     task_adapter: Any | None = None,
 ) -> list[dict[str, Any]]:
-    validate_exploration_contract(contract, task=task, state_ids=state_ids)
-    if contract.get("return_credit_collection") is not None:
-        from ember.pi05_eval.return_credit import validate_collection
+    from ember.pi05_eval.run_contract import require_supported_runtime
 
-        validate_collection(contract, task)
+    require_supported_runtime(contract)
+    validate_exploration_contract(contract, task=task, state_ids=state_ids)
     if not state_ids or len(set(state_ids)) != len(state_ids):
         raise Pi05EvaluationError("evaluation shard state IDs are empty or duplicated")
     dummy = np.asarray(contract["environment"]["dummy_action"], dtype=np.float32)
@@ -213,8 +206,6 @@ def rollout_shard(
     worker_started = time.monotonic()
     rows: list[dict[str, Any]] = []
     occupancy_capture = contract.get("diagnostic_occupancy_capture")
-    prefix_intervention = (contract.get("frozen_prefix_intervention")
-                           or contract.get("approach_channel_intervention"))
 
     def start_slot(env: Any, state_id: int) -> dict[str, Any]:
         slot = start_fixed_episode(
@@ -223,15 +214,6 @@ def rollout_shard(
             task_adapter=task_adapter,
             capture_level=capture_level(occupancy_capture, task, int(state_id)),
         )
-        if prefix_intervention is not None:
-            from ember.pi05_eval.prefix_replay import replay_prefix
-
-            replay_prefix(env=env, slot=slot, task=task,
-                          contract=contract, preprocess=preprocess)
-        if contract.get("readout_realization_intervention") is not None:
-            from ember.pi05_eval.readout_trace import start_trace
-
-            start_trace(env, slot, task)
         return slot
 
     active_count = min(len(envs), len(state_ids))
@@ -268,14 +250,6 @@ def rollout_shard(
                 if "stage_predicate_states" in slot:
                     update_stage_predicates(env, slot)
                 record_passive_step(env, slot, action, occupancy_capture)
-                if prefix_intervention is not None:
-                    from ember.pi05_eval.prefix_replay import record_tail_step
-
-                    record_tail_step(env, slot, action)
-                if contract.get("readout_realization_intervention") is not None:
-                    from ember.pi05_eval.readout_trace import record_step
-
-                    record_step(env, slot, action)
             if not bool(done) and slot["steps"] < max_steps:
                 continue
             slot["episode_done"] = bool(done)

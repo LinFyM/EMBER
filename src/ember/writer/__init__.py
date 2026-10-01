@@ -1,5 +1,4 @@
-"""Canonical video-conditioned Writer and its training and deployment runtime."""
+"""Shared Writer data, credit and runtime utilities; sealed legacy bank readers."""
 
-from ember.writer.errors import WriterModelError
 
 __all__ = ["WriterModelError"]

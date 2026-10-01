@@ -2,14 +2,9 @@
 
 import pytest
 import torch
-from safetensors.torch import save_file
 
 from ember.lora import LoRATarget
-from ember.pi05_source_checkpoint import write_json_atomic
 from ember.writer.function_credit import mean_velocity_loss
-from ember.writer.materialization import file_record
-from ember.writer.return_credit import candidate_step
-from scripts.return_credit_gradient import _collection_lora
 
 
 def test_velocity_loss_uses_all_horizon_only_real_action_dimensions():
@@ -269,46 +264,6 @@ def test_query_rank_slices_preserve_full_fm_randomness_weight_and_cotangent(nati
     torch.testing.assert_close(aggregate, expected, rtol=4e-4, atol=2e-6)
 
 
-def test_lookahead_query_weights_partition_same_native_fm_samples(native_fm_policy):
-    from ember.writer.function_credit import paired_functional_credit
-    from ember.writer.functional import prepare_frozen_writer_policy
-
-    policy, contract = native_fm_policy
-    state = prepare_frozen_writer_policy(policy, contract)
-    batch = _fm_batch()
-    kwargs = dict(seed=37, device='cpu', random_batch=64, offset=13,
-                  microbatch=2, condition_weight=.25)
-    full = paired_functional_credit(policy, state, contract, batch, **kwargs)
-    a = paired_functional_credit(policy, state, contract, batch,
-                                  query_weights=(2., 0., 2., 0., 2.), **kwargs)
-    b = paired_functional_credit(policy, state, contract, batch,
-                                  query_weights=(0., 2., 0., 2., 0.), **kwargs)
-    assert (a['flow_loss'] + b['flow_loss']) / 2 == pytest.approx(full['flow_loss'], rel=2e-5)
-    for name in full['lora_cotangent']:
-        torch.testing.assert_close((a['lora_cotangent'][name] + b['lora_cotangent'][name]) / 2,
-                                   full['lora_cotangent'][name], rtol=4e-4, atol=2e-6)
-
-
-def test_lookahead_groups_and_virtual_length_zero_rule():
-    from ember.writer.metatask_lookahead import query_weights, virtual_alpha, weight_audit
-
-    assert weight_audit()['TASK']['A_selected'] == 56
-    assert [sum(query_weights('TASK', 'A', p)) for p in range(4)] == [56, 0, 56, 0]
-    assert [sum(query_weights('MIX', 'A', p)) for p in range(4)] == [28] * 4
-    for kind in ('TASK', 'MIX'):
-        for p in range(4):
-            assert all(a+b == 2 for a, b in zip(query_weights(kind, 'A', p),
-                                                query_weights(kind, 'B', p), strict=True))
-    displacement = (torch.tensor([3., 4.]),)
-    p = (torch.tensor([2., 2.]),)
-    ga, gb = (torch.tensor([1., 0.]),), (torch.tensor([0., 2.]),)
-    alpha, denominator, zero = virtual_alpha(displacement, p, ga, gb)
-    assert not zero and denominator == pytest.approx(10. ** .5)
-    assert alpha == pytest.approx(5 / denominator)
-    assert virtual_alpha((torch.zeros(2),), p, ga, gb)[0] == 0
-    assert virtual_alpha(displacement, p, (torch.zeros(2),), (torch.zeros(2),))[2]
-
-
 def test_endpoint_prediction_does_not_read_action_labels_and_matches_official_prefix_loss(native_fm_policy):
     from ember.writer.function_credit import flow_sample, NativeFlowPrediction, paired_functional_credit
     from ember.writer.functional import prepare_frozen_writer_policy
@@ -343,111 +298,3 @@ def test_endpoint_prediction_does_not_read_action_labels_and_matches_official_pr
     assert credit['flow_loss'] == pytest.approx(float(expected_loss.detach()), rel=2e-5)
     torch.testing.assert_close(torch.cat([value.flatten() for value in credit['lora_cotangent'].values()]),
                                torch.cat([value.flatten() for value in expected]), rtol=4e-4, atol=2e-6)
-
-
-def test_joint_losses_replay_one_writer_and_all_meta_once():
-    from types import SimpleNamespace
-    from ember.writer.supervised import SupervisedEngine
-
-    parameters = torch.nn.ParameterDict({name: torch.nn.Parameter(torch.tensor(value))
-                                        for name, value in zip(('writer', 'meta', 'vl_meta', 'text_meta'), (1., 2., 3., 4.))})
-    calls, condition, state_ids = [], object(), []
-    def compile_video(value, **kwargs):
-        assert value is condition
-        calls.append(('compile', torch.is_grad_enabled()))
-        return {'factor': sum(parameters.values()).reshape(1)}
-    def action_batch(*args, teaching=False, query_count, **kwargs):
-        calls.append(('labels', teaching))
-        return {'teaching': teaching}, {'action_demos': [3] * query_count, 'query_offset': 0}
-    runtime = SimpleNamespace(compile=compile_video, state=SimpleNamespace(writer=parameters),
-                              processor=SimpleNamespace(training_batch=lambda value: value))
-    cache = SimpleNamespace(hits=0, misses=0, bytes=0, condition=lambda *_: condition)
-    engine = SupervisedEngine(runtime, SimpleNamespace(action_batch=action_batch), cache,
-        SimpleNamespace(device=torch.device('cpu')), {'data': {'tasks_per_update': 12},
-            'runtime': {'policy_microbatch': 2}, 'optimization': {'teaching_weight': 1/3}})
-    def credit(state, batch, trace, offset, *, condition_weight, teaching=False, **kwargs):
-        state_ids.append(id(state))
-        leaf = state['factor'].detach().requires_grad_()
-        loss = (leaf - (2 if teaching else 1)).square().mean()
-        grad, = torch.autograd.grad(loss * condition_weight, leaf)
-        return {'flow_loss': float(loss.detach()), 'lora_cotangent': {'factor': grad},
-                'compiled_forward_calls': 1, 'source_forward_calls': 0}
-    engine._credit = credit
-    result = engine.backward({'task': 0, 'video_demos': (3,), 'occurrence': 0, 'query_seed': 1,
-        'query_offset': 0, 'query_count': 7, 'teaching_offset': 0, 'teaching_count': 2})
-    assert calls == [('compile', False), ('labels', False), ('labels', True), ('compile', True)]
-    assert state_ids[0] == state_ids[1]
-    for parameter in parameters.values():
-        assert parameter.grad == pytest.approx(1/12 * 2 * 9 + 1/36 * 2 * 8)
-    assert result['queries'] == 7 and result['teaching_queries'] == 2
-
-
-def test_fresh_sgd_candidates_are_independent_parent_directions():
-    module = torch.nn.Linear(2, 1, bias=True)
-    parameters = tuple(module.named_parameters())
-    parent = {name: value.detach().clone() for name, value in parameters}
-    direction = {name: torch.ones_like(value) for name, value in parameters}
-    plus, plus_optimizer = candidate_step(parameters, parent, direction, sign=1, radius=.17)
-    plus_values = {name: value.detach().clone() for name, value in parameters}
-    minus, minus_optimizer = candidate_step(parameters, parent, direction, sign=-1, radius=.17)
-    for name, value in parameters:
-        torch.testing.assert_close(plus_values[name] - parent[name], parent[name] - value.detach())
-    assert abs(plus["actual_parameter_step_norm"] - .17) < 1e-6
-    assert abs(minus["actual_parameter_step_norm"] - .17) < 1e-6
-    assert plus_optimizer["state"] == minus_optimizer["state"] == {}
-
-
-def test_return_credit_score_replays_exact_registered_collection_bank(tmp_path, monkeypatch):
-    from types import SimpleNamespace
-    from scripts import return_credit_gradient
-
-    monkeypatch.setattr(return_credit_gradient, "REPO_ROOT", tmp_path)
-    monkeypatch.setattr(return_credit_gradient, "ASSET_ROOT", tmp_path / "assets")
-    write_json_atomic(tmp_path / "config.json", {"source": {"checkpoint": "source/checkpoint"}})
-    parent = tmp_path / "parent"
-    parent.mkdir()
-    (parent / "ecp.safetensors").write_bytes(b"parent")
-    launch_dir = tmp_path / "launch"
-    launch_dir.mkdir()
-    write_json_atomic(launch_dir / "launch_contract.json", {
-        "implementation_commit": "collection-commit", "source_checkpoint": str(parent),
-        "science_spec": "frozen-collection-spec"})
-
-    output = tmp_path / "banks/collection/P/task_022_teacher_05"
-    output.mkdir(parents=True)
-    adapter = output / "task_22_demos_05.safetensors"
-    state = {"x.lora_A.default.weight": torch.ones(1, 2),
-             "x.lora_B.default.weight": torch.ones(2, 1)}
-    save_file(state, str(adapter))
-    spec = {"implementation": {"collection_commit_exception": "collection-commit"},
-            "parent": {"checkpoint": str(parent), "config": "config.json"}}
-    bank = {
-        "schema_version": "ember_return_credit_bank_v1",
-        "implementation_commit": "collection-commit", "study_spec": "frozen-collection-spec",
-        "arm": "P", "phase": "collection", "task": 22, "teacher": 5,
-        "writer": {"arm": "P", "path": str(parent / "ecp.safetensors"),
-                   "bytes": (parent / "ecp.safetensors").stat().st_size,
-                   "parent_macro": 1155, "diagnostic_sgd_step": 0},
-        "training_teacher_actions_read": 0, "new_writer_forward": 1,
-        "condition": {"adapter": file_record(adapter), "teacher_demo_indices": [5],
-                      "global_task_id": 22, "suite": "libero_goal", "task_id": 2,
-                      "language": "put the object on the surface", "parameterization": "video_writer",
-                      "teacher_video_values_read": 1, "single_complete_rank16": True,
-                      "writer_invocations": 1, "condition_id": "task_22_demos_05",
-                      "teacher_videos": [{"demo_index": 5, "raw_frame_count": 10,
-                                          "sampled_frame_count": 3, "frame_indices": [0, 5, 9]}]}}
-    write_json_atomic(output / "bank_record.json", bank)
-    runtime = SimpleNamespace(device=torch.device("cpu"),
-        source={"checkpoint": str(tmp_path / "assets/source/checkpoint")},
-        lora=SimpleNamespace(targets=(LoRATarget("x", 2, 2),), rank=1))
-    learning = SimpleNamespace(suite="libero_goal", suite_task_id=2,
-        authority=SimpleNamespace(language="put the object on the surface"),
-        episode_lengths=[10] * 6)
-    prepared = (None, torch.tensor([0, 5, 9]))
-    actual, reference = _collection_lora(spec, tmp_path, 22, 5, runtime, learning, prepared)
-    assert reference == file_record(adapter)
-    torch.testing.assert_close(actual["x.lora_B.default.weight"], state["x.lora_B.default.weight"])
-    bank["condition"]["language"] = "wrong language"
-    write_json_atomic(output / "bank_record.json", bank)
-    with pytest.raises(ValueError, match="actual collection condition"):
-        _collection_lora(spec, tmp_path, 22, 5, runtime, learning, prepared)

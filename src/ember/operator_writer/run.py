@@ -48,7 +48,7 @@ from . import change_clock, joint_training
 from .specification import (
     REPO, SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
     CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH, CONTINUATION1800_SPEC_PATH, PILOT_SPEC_PATH,
-    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, CONTEXT_CONTINUATION_SPEC_PATH, PILOT_ROOT,
+    CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, CONTEXT_CONTINUATION_SPEC_PATH, SELF_READ_SPEC_PATH, PILOT_ROOT,
     CONTINUATION2340_ROOT, CONTINUATION2790_ROOT, CONTINUATION900_ROOT, CONTINUATION1350_ROOT,
     SEALED_ROOT, SEALED_SPEC_PATH, SCHEMA, STAGE,
     OPERATOR_CONTRACT, OPTIMIZATION_CONTRACT, EVENT_CONTRACT, EXECUTION_CONTRACT,
@@ -295,19 +295,24 @@ class Runtime:
 
     def compile(self, condition: tuple, *, frame_chunk: int = 8,
                 retain_native: bool = False) -> tuple[dict, dict | None]:
+        """Compose native/Writer reads without replacing the shared public base."""
         self.restore_identity()
+        passes = []
+        native_state = self.writer.public_state()
         with autocast(self.device):
-            x, h = read_native_video(self.policy, self.writer.public_state(), self.writer.probe,
-                                     condition, self.writer.names, frame_chunk=frame_chunk)
-            if retain_native:
-                if h.requires_grad:
-                    h.retain_grad()
-                for value in x.values():
-                    if value.requires_grad:
-                        value.retain_grad()
-            state = self.writer(x, h, frame_indices=condition[1])
+            for _ in range(2 if self.writer.mode == "self_read" else 1):
+                x, h = read_native_video(self.policy, native_state, self.writer.probe,
+                                         condition, self.writer.names, frame_chunk=frame_chunk)
+                state = self.writer(x, h, frame_indices=condition[1])
+                if retain_native:
+                    for value in (h, *x.values(), *state.values()):
+                        if value.requires_grad:
+                            value.retain_grad()
+                    passes.append({"x": x, "h": h, "state": state})
+                # Only the next native read uses B0+M0; Writer keeps its original β.
+                native_state = state
         validate_lora_state(state, self.lora)
-        return state, ({"x": x, "h": h} if retain_native else None)
+        return state, ({"x": x, "h": h, "passes": passes} if retain_native else None)
 
 
 def build_runtime(asset_root: Path, spec: dict, device: torch.device, mode: str, *,

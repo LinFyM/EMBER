@@ -37,6 +37,17 @@ def apply_public_cotangent(writer, cotangent: dict[str, torch.Tensor]) -> None:
                             tuple(cotangent[name].to(public[name]) for name in public))
 
 
+def native_credit(native: dict) -> dict:
+    def norm(values):
+        terms = [value.grad.float().norm() for value in values if value.grad is not None]
+        return float(torch.stack(terms).norm()) if terms else 0.0
+    passes = [{"h": norm((item["h"],)), "x": norm(item["x"].values()),
+               "B": norm(value for name, value in item["state"].items()
+                         if name.endswith(".lora_B.default.weight"))}
+              for item in native["passes"]]
+    return {"h": passes[-1]["h"], "x": passes[-1]["x"], "passes": passes}
+
+
 def one_job(runtime, data, event: dict, microbatch: int,
             frame_chunk: int, loss_variant: str) -> dict:
     if loss_variant not in ("full", "full_plus_public_beta"):
@@ -69,9 +80,7 @@ def one_job(runtime, data, event: dict, microbatch: int,
         torch.autograd.backward(tuple(replay.values()),
                                 tuple(cotangent[name].to(replay[name]) for name in replay))
     torch.cuda.synchronize(runtime.device)
-    x_norms = [value.grad.float().norm() for value in native["x"].values() if value.grad is not None]
-    native_norm = {"h": float(native["h"].grad.float().norm()) if native["h"].grad is not None else 0.0,
-                   "x": float(torch.stack(x_norms).norm()) if x_norms else 0.0}
+    native_norm = native_credit(native)
     return {"task": event["task"], "teacher_demo": event["teacher_demo"],
             "queries": len(event["queries"]), "query_demos": [row["demo"] for row in event["queries"]],
             "query_frames": [row["frame"] for row in event["queries"]], "flow_seed": event["flow_seed"],

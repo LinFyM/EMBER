@@ -34,7 +34,16 @@ CONTEXT_PARENT_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-context-value-
 CONTEXT_PARENT_CHECKPOINT = (CONTEXT_ROOT / "context/train/attempts/fresh/checkpoints"
                              / "macro_00000450")
 CONTEXT_SPEC_NAME = "context_value_fresh_spec.json"
-MODES = (MODE, CONTEXT_MODE)
+SELF_READ_TASK = "operator_self_conditioned_native_fresh_20261001"
+SELF_READ_ROOT = ROOT.parent / SELF_READ_TASK
+SELF_READ_MODE = "self_read"
+SELF_READ_SPEC_NAME = "self_conditioned_native_fresh_spec.json"
+MODES = (MODE, CONTEXT_MODE, SELF_READ_MODE)
+SELF_READ = {"native_reads": 2, "writer_parameter_sharing": "same_Context_module",
+             "memory_initialization": "zero_each_read", "native_installation": "beta_then_beta_plus_M0",
+             "writer_public_base": "original_beta_both_reads", "output": "beta_plus_M1_only",
+             "credit": "complete_composite_no_detach", "intermediate_loss": False,
+             "added_trainable_parameters": 0, "action_out_feedback": False}
 CONTEXT = {
     "normalization": "parameterless_RMS1024_eps1e-6",
     "shared_projection": [1024, 256], "qkv_width": 256, "heads": 4, "head_width": 64,
@@ -51,7 +60,7 @@ CONTEXT = {
 
 
 def registered(spec: dict) -> bool:
-    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK)
+    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK)
 
 
 def settings(spec: dict) -> tuple[Path, str, dict]:
@@ -60,6 +69,8 @@ def settings(spec: dict) -> tuple[Path, str, dict]:
     if spec.get("task") in (CONTEXT_TASK, CONTEXT_CONTINUATION_TASK):
         root = CONTEXT_ROOT if spec["task"] == CONTEXT_TASK else CONTEXT_CONTINUATION_ROOT
         return root, CONTEXT_MODE, {**JOINT, "internal_mode": CONTEXT_MODE}
+    if spec.get("task") == SELF_READ_TASK:
+        return SELF_READ_ROOT, SELF_READ_MODE, {**JOINT, "internal_mode": SELF_READ_MODE}
     raise ValueError("unregistered fresh full/public study")
 
 
@@ -71,6 +82,18 @@ def expected_context_spec(base: dict, events: dict) -> dict:
             "execution": {**spec["execution"], "modes": [CONTEXT_MODE]},
             "joint": {**JOINT, "internal_mode": CONTEXT_MODE},
             "operator": {**spec["operator"], "context_value": CONTEXT}}
+
+
+def expected_self_read_spec(context: dict) -> dict:
+    return {**context, "task": SELF_READ_TASK,
+            "design": "docs/designs/operator_read_write_learning_design.md#40",
+            "run_root": str(SELF_READ_ROOT),
+            "execution": {**context["execution"], "modes": [SELF_READ_MODE],
+                          "world_sizes": list(range(1, 7))},
+            "joint": {**JOINT, "internal_mode": SELF_READ_MODE},
+            "operator": {**context["operator"], "self_conditioned_native": SELF_READ},
+            "budget": {"new_gpu_hours_hard": 24, "peak_new_gib": 36,
+                       "expected_wall_hours": [4, 6], "report_gpu_hours": 18}}
 
 
 def expected_context_continuation_spec(parent: dict) -> dict:

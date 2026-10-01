@@ -56,7 +56,7 @@ class OperatorReadWrite(nn.Module):
 
     def __init__(self, contract: Pi05LoRAContract, template: dict[str, torch.Tensor], mode: str) -> None:
         super().__init__()
-        if mode not in {"T", "U", "context", clock_contract.MODE} or len(contract.targets) != 38 or contract.rank != 128:
+        if mode not in {"T", "U", "context", "self_read", clock_contract.MODE} or len(contract.targets) != 38 or contract.rank != 128:
             raise ValueError("bounded operator mode or complete rank changed")
         validate_lora_state(template, contract)
         self.mode = mode
@@ -74,7 +74,7 @@ class OperatorReadWrite(nn.Module):
                 self.writes.append(TargetWrite(target.in_features, target.out_features,
                                                change_clock=mode == clock_contract.MODE))
         self.value_context: ValueContext | None = None
-        if mode == "context":
+        if mode in ("context", "self_read"):
             # Complete the old P/C/D/O sequence before an independent new RNG scope.
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(7)

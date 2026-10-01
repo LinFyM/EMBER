@@ -55,13 +55,14 @@ def native_credit(native: dict) -> dict:
 
 
 def one_job(runtime, data, event: dict, microbatch: int,
-            frame_chunk: int, loss_variant: str) -> dict:
+            frame_chunk: int, loss_variant: str, *, target_executor=None) -> dict:
     if loss_variant not in ("full", "full_plus_public_beta"):
         raise ValueError("operator pilot loss identity changed")
     started = time.perf_counter()
     condition, raw, sampled = data.condition(runtime, event["task"], event["teacher_demo"])
     with torch.no_grad():
-        state, _ = runtime.compile(condition, frame_chunk=frame_chunk)
+        state, _ = runtime.compile(condition, frame_chunk=frame_chunk,
+                                   **({"target_executor": target_executor} if target_executor else {}))
     torch.cuda.synchronize(runtime.device)
     compilation = time.perf_counter() - started
     batch = runtime.processor.training_batch(data.batch(event))
@@ -80,7 +81,8 @@ def one_job(runtime, data, event: dict, microbatch: int,
     with torch.enable_grad():
         if beta_credit is not None:
             apply_public_cotangent(runtime.writer, beta_credit["lora_cotangent"])
-        replay, native = runtime.compile(condition, frame_chunk=frame_chunk, retain_native=True)
+        replay, native = runtime.compile(condition, frame_chunk=frame_chunk, retain_native=True,
+                                        **({"target_executor": target_executor} if target_executor else {}))
         if set(replay) != set(cotangent) or any(not torch.isfinite(v).all() for v in cotangent.values()):
             raise ValueError("full-rank FM cotangent incomplete or nonfinite")
         torch.autograd.backward(tuple(replay.values()),
@@ -93,6 +95,7 @@ def one_job(runtime, data, event: dict, microbatch: int,
             "raw_frames": raw, "sampled_frames": sampled, "flow_loss": credit["flow_loss"],
             "public_flow_loss": beta_credit["flow_loss"] if beta_credit else None,
             "loss_variant": loss_variant, "public_query_reuse": beta_credit is not None,
+            **({"target_execution": target_executor.record()} if target_executor else {}),
             "fm_cotangent_norm": float(torch.stack([v.norm() for v in cotangent.values()]).norm()),
             "public_cotangent_norm": (float(torch.stack([v.norm() for v in
                                       beta_credit["lora_cotangent"].values()]).norm())

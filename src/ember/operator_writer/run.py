@@ -294,7 +294,8 @@ class Runtime:
                                   for name, expected in self.identity.items()]).norm())
 
     def compile(self, condition: tuple, *, frame_chunk: int = 8,
-                retain_native: bool = False, capture_mechanism: bool = False) -> tuple[dict, dict | None]:
+                retain_native: bool = False, capture_mechanism: bool = False,
+                target_executor=None) -> tuple[dict, dict | None]:
         """Compose native/Writer reads without replacing the shared public base."""
         self.restore_identity()
         passes = []
@@ -304,7 +305,8 @@ class Runtime:
                 x, h = read_native_video(self.policy, native_state, self.writer.probe,
                                          condition, self.writer.names, frame_chunk=frame_chunk)
                 state = self.writer(x, h, frame_indices=condition[1],
-                                    **({"capture_mechanism": True} if capture_mechanism else {}))
+                                    **({"capture_mechanism": True} if capture_mechanism else {}),
+                                    **({"target_executor": target_executor} if target_executor else {}))
                 if retain_native or capture_mechanism:
                     for value in (h, *x.values(), *state.values()):
                         if value.requires_grad:
@@ -431,6 +433,7 @@ def prepare_train(spec: dict, args) -> Session:
                                                        CONTINUATION2340_UPDATES,
                                                        CONTINUATION2790_UPDATES):
             contract["stop_after_macro"] = args.stop_after_macro
+    joint_training.register_conditional_resume(spec, args, contract)
     error = None
     try:
         if context.is_main:
@@ -483,6 +486,9 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
                 write_json_atomic(session.output / "resume_provenance.json", {
                     "checkpoint": str(checkpoint), "parent_git": read_json(
                         checkpoint.parent.parent / "run_contract.json")["git"],
+                    "parent_spec": read_json(checkpoint.parent.parent / "run_contract.json")["spec"],
+                    "current_git": session.contract["git"], "current_spec": session.contract["spec"],
+                    "source_resume": session.contract.get("source_resume"),
                     "old_world_size": parent_world, "new_world_size": session.context.world_size,
                     "restored_rank_rng": list(range(min(parent_world, session.context.world_size))),
                     "fresh_rank_rng": {str(rank): {"seed_function": "seed_everything(7, context)",
@@ -527,20 +533,30 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
     costs = {index: session.data.videos.frame_counts(job["task"], job["teacher_demo"])[1]
              for index, job in enumerate(jobs)}
     world = session.context.world_size
-    assigned = condition_assignment(tuple(costs), costs, world_size=world)
+    owners = min(len(jobs), world)
+    shared_targets = session.mode == joint_training.CONDITIONAL_MODE and world > owners
+    assigned = condition_assignment(tuple(costs), costs, world_size=owners if shared_targets else world)
     session.optimizer.zero_grad(set_to_none=True)
     local, error = [], None
     try:
-        for index in assigned[session.context.rank]:
+        if shared_targets and session.context.rank >= owners:
+            from .target_execution import serve_target_shards
+            serve_target_shards(session.runtime, owners=owners, world=world)
+        for index in (() if shared_targets and session.context.rank >= owners else assigned[session.context.rank]):
+            executor = None
+            if shared_targets:
+                from .target_execution import TargetShardClient
+                executor = TargetShardClient(session.runtime.writer, owners=owners, world=world)
             local.append(one_job(session.runtime, session.data, jobs[index],
                                  session.microbatch, session.frame_chunk,
-                                 session.contract.get("loss_variant", "full")))
+                                 session.contract.get("loss_variant", "full"), target_executor=executor))
     except Exception:
         error = traceback.format_exc()
     failures = [value for value in gather(error, world) if value]
     if failures:
         raise RuntimeError(f"operator macro job failed on a rank: {failures}")
-    sum_writer_gradients(session.parameters, world_size=world)
+    sum_writer_gradients(session.parameters, world_size=world,
+                         bucket_bytes=64 * 2**20 if session.mode == joint_training.CONDITIONAL_MODE else None)
     gradients = gradient_groups(session.runtime.writer)
     norm = float(torch.nn.utils.clip_grad_norm_(
         session.parameters, session.spec["optimization"]["grad_clip"], error_if_nonfinite=True))

@@ -99,12 +99,17 @@ class OperatorReadWrite(nn.Module):
         return self.common()
 
     def forward(self, native_inputs: dict[str, torch.Tensor], h: torch.Tensor,
-                frame_indices=None, *, capture_mechanism: bool = False) -> dict[str, torch.Tensor]:
+                frame_indices=None, *, capture_mechanism: bool = False,
+                target_executor=None) -> dict[str, torch.Tensor]:
         common = self.public_state()
         if set(native_inputs) != set(self.names):
             raise ValueError("native teaching lost a complete LoRA target")
         if self.interpreter is not None:
             c, d = self.interpreter(h, frame_indices)
+            if target_executor is not None:
+                if capture_mechanism:
+                    raise ValueError("mechanism readout uses the complete local compiler")
+                return target_executor(self, native_inputs, h, c, d)
             result, targets = {}, {}
             for name, unit in zip(self.names, self.conditional_targets, strict=True):
                 a0, b0 = common[name + LORA_A_SUFFIX], common[name + LORA_B_SUFFIX]

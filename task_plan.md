@@ -13,6 +13,9 @@
 4. 所有科研要求及角色边界以current_owner_requirements全文和progress当前段为准。
    Owner已删除误设goal，不再设置；没有独立工作时正常结束回合，依可靠整批回报接续，不自Queue或陪跑轮询。
 
+当前执行承接实际90完整ECP，通用物理rank/target分片与更大帧块保持112有效query和原完整梯度。
+Owner要求按可用卡数自动高效训练，工程阶段不向主讨论发通知；原失败/占用/恢复成本随整批原件交付。
+
 当前完整方案见[条件读写架构](docs/designs/conditional_read_write_architecture.md)，
 专家输入与原始证据见[审阅入口](docs/review_materials/20260930_t_architecture/README.md)。
 §40最终分析见机制§87，条件A和训练取舍的历史推导见§88–93；不从旧段落恢复执行。

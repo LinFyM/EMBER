@@ -6,7 +6,8 @@ Owner已明确授权按最终方案开始，并在原科学要求下自主进行
 唯一active design为[条件读写架构§13](docs/designs/conditional_read_write_architecture.md#13-首批实施与完整学习检验2026-10-01授权)。
 保留A₀感知S、新A编译M及完整FM；不采用B₀初始化后覆盖完整B的讨论候选。最终接口输出唯一A_V/B_V。
 首批fresh450/50,400 full query；450完整validation400＋完整train144＋固定A28，40GPUh/80GiB上限，
-先验含工程6–12小时，实际最长视频检查后校准。尚未实现、启动或获得新分数，不把派发记录当运行完成。
+先验含工程6–12小时，最长105帧/28query的三次真实fresh full-FM检查已通过，原四卡formal已完成90步完整ECP。
+未获得450或新闭环分数；旧失败profile及全部保留占用均计费，不把派发/工程检查当科学结果。
 
 唯一执行者仍为`01a0f018-69af-7b00-b614-7e117540051b`（接管并继续实验）：工程实现、测试、排障、
 资源调度、Git集成与冻结运行均由其闭环；主讨论负责科学设计、原件分析、机制解释及后继裁决，沿owner_requirements§6。
@@ -21,6 +22,12 @@ main误设goal并准备接管实现的偏离已由Owner指出；goal已由Owner�
 实验实现已集成并push main@`ad79887e`，冻结树 `/data1/user/ymdai/projects/EMBER-conditional-read-write-formal` clean detached。
 针对新图/正式读取入口CPU检查通过；真实最长105帧/28query三次fresh full-FM检查正在单独启动，未转用profile权重或声称formal450完成。
 源码交付后canonical tracked窗口已释放，后续冻结运行独立继续；全仓库整理仅在其独占树推进，原件与当前依赖保留。
+
+Owner追加要求实际空闲卡充分训练并按任意物理卡数自动适配。原训练`797ae01f`于完整90ECP安全停止（训练exit0，1.754886554GPUh），
+新增通用target分片及完整X/H/c/d cotangent返传、bucket SUM、frame16/32准入，CPU真实分布式复合信用与恢复检查11项通过。
+新代码将从实际90承接91..450原事件流，Adam/scheduler/sampler及已有rank RNG保留；新增rank RNG单列，父797与新训练来源分别记录。
+唯一root仍`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001`，不fresh重训，不改4×28/完整FM/最终A-B公式。
+实际启动/首消费者/分段资源账写入该root的launch记录，整批完成或实质科学预算边界才联系主讨论；工程窗口直接与整理会话串行协调。
 
 ## 此前：完整条件读写架构已整理，仍未实施或训练（2026-10-01）
 

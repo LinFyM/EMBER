@@ -577,14 +577,23 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
                      "peak_allocated_gib": torch.cuda.max_memory_allocated(session.context.device) / 2**30,
                      "peak_reserved_gib": torch.cuda.max_memory_reserved(session.context.device) / 2**30}, world)
     if session.context.is_main:
-        append_jsonl(session.output / "metrics.jsonl", {
+        record = {
             "update": updates, "mode": session.mode, "queries": 112,
             **{key: value for key, value in training_state(session, updates).items()
                if key not in ("updates", "mode")},
             "jobs": [row for packet in packets for row in packet],
             "lr_applied": lr, "lr_next": session.scheduler.get_last_lr()[0],
             "grad_norms_before_clip": gradients, "total_grad_norm": norm,
-            "rank_memory": memory, "seconds": time.perf_counter() - started})
+            "rank_memory": memory, "seconds": time.perf_counter() - started}
+        append_jsonl(session.output / "metrics.jsonl", record)
+        if not getattr(session, "first_consumer_recorded", False):
+            write_json_atomic(session.output / "first_consumer.json", {
+                "git": session.contract["git"], "spec": session.contract["spec"],
+                "source_resume": session.contract.get("source_resume"), "row": record})
+            print(json.dumps({"event": "first_actual_consumer", "update": updates,
+                              "seconds": record["seconds"], "world_size": world,
+                              "lr_applied": lr, "rank_memory": memory}), flush=True)
+            session.first_consumer_recorded = True
     rows += 1
     if updates in session.data.checkpoints:
         save_ecp_checkpoint(

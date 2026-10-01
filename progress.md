@@ -30,11 +30,17 @@ task31得10失9，新增10条公共均曾完成奶酪但从未完成黄油，丢
 若实际完整能力/主要缺口未改善，本批收束，不用无限迭代或改名保护当前两次读取假设。
 
 唯一root `/data1/user/ymdai/ember_runs/operator_self_conditioned_native_fresh_20261001`；硬限24GPUh/36GiB，预计含实现4–6小时。
-预期成本依据单遍训练8.419GPUh加第二次native/Writer，尚无本候选吞吐实测；最长train38/demo36三次真实profile后校准一次。
-合同已登记，实际派发/启动须以会话回执和launch原件为准。执行session01a0f018-69af-7b00-b614-7e117540051b继续独占工程、
-必要实际消费者验证、Git集成push、clean detached、资源准入和整批运行；main只负责科学并直接消费最终原件。
-交付后canonical tracked窗口释放给执行者，集成后由其明确释放回main；冻结版本无需二次启动许可。
-整批完成或实质边界统一回报，正常运行持续等待退出、不轮询日志/缓存或发心跳。
+科学合同270d6c20已实际派发，Queue回执01a0f567-b6e1-7f33-af2e-f3f7be90a0c8；两条Owner最新要求亦已纳入。
+工程已集成push **da758e6b4d0325ec06c8f3708322649053bd0e19**，main现场确认HEAD==origin/main且clean。
+训练/读取均来自新clean detached `EMBER-self-read-formal`；执行者报告先前13项与冻结版9项实际CPU检查通过，main不重复工程QA。
+独立profile使用fca3b257，最长train38/demo36三次更新已退出，成本.05527328GPUh，状态未作正式初值。
+最长105帧稳态57.011秒/条件，旧单遍35.241秒，倍率1.618；峰值预留41.617GiB。
+据此估计整批15.5–18GPUh、从正式launch约3.6–4.7小时，仍是单最长视频外推，非完整异质训练实测。
+正式fresh训练于2026-10-01 03:40:56 UTC（11:40:56本地）在GPU01:3/5/4/0、world4实际启动，policy28/frame8。
+main直接读first_consumer与校准原件：宏步1完成原四task/112query、LR1.98675497e−6，约24.922秒；首步不代表稳态吞吐或能力。
+正式450、bank、544条新episode及20份A28尚未完成；范围与24GPUh/36GiB硬限保持。
+canonical tracked窗口已明确释放回main。执行会话独立继续冻结版整批，不等待工程复审或第二次启动批准；
+唯一owner持续等待实际退出，就绪后段按资源允许并行，整批完成或实质边界统一回报，不轮询日志/缓存或发心跳。
 
 ## 历史：已见任务获取成立，分清公共验证不足与条件作用损害（2026-10-01）
 

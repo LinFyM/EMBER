@@ -1,12 +1,13 @@
 # EMBER progress
 
-## 当前授权与实验
+## 当前授权与最近完成批次
 
 Owner已授权按[条件读写设计§13](docs/designs/conditional_read_write_architecture.md#13-首批实施与完整学习检验2026-10-01授权)
 实施并自主推进首批fresh450：因果c/d、A₀感知S、最终A编译M、唯一38-target A_V/B_V及完整FM。
 固定36task allowlist、source1000、normalization、信息墙、跨episode query与选择合同不变。
 50,400 full query；450完整validation400、完整train144及固定A28；总上限40GPUh/80GiB。
-先验整批含工程6–12小时，实际profile后的耗时与启动合同记录在运行根，不以先验充当实测。
+本批已完成并停止新增计算；后继科学范围尚未登记。先验整批含工程6–12小时，
+实际profile、命令、失败、恢复与成本保存在同一运行根，不以先验充当实测。
 
 唯一实验执行者`01a0f018-69af-7b00-b614-7e117540051b`负责代码、测试、排障、资源调度、Git及冻结运行。
 主讨论`01a0ed66-cda4-7a23-90f0-e0d3a06a1d36`负责科学合同、原件解释、机制及后继/预算裁决。
@@ -14,43 +15,45 @@ Owner已授权按[条件读写设计§13](docs/designs/conditional_read_write_ar
 沟通边界按[Owner要求§6](docs/current_owner_requirements.md#6-沟通与交接)：整批科学结果或确需裁决的实质边界只回报一次；
 工程阶段、可自行修复的故障和普通调度记入已有记录。写入/Git窗口与实际冲突方直接串行协调。
 
-## 最新已登记工程身份
+## §13整批交付（2026-10-02）
 
-源码`ad79887e`、状态`b27cf26c`已集成推送；最长视频profile的activation-checkpoint重放修复为`797ae01f`。
-原冻结树`/data1/user/ymdai/projects/EMBER-conditional-read-write-formal`保持不变；
-修复后版本在`/data1/user/ymdai/projects/EMBER-conditional-read-write-r2-formal`完成最长视频检查及原四卡训练。
-运行根为`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001`，恢复原件为`launch/replay_repair.json`。
-旧profile首个更新失败：0完整更新、exit1、0.027361GPUh；原件保留并计入预算，不作科学负结果。
-最长105帧/28query的三次fresh完整FM检查已通过，profile权重没有转入正式初值。
-原四卡formal已完成90步完整ECP并安全停止，exit0、1.754886554GPUh；不是450科学节点完成。
+唯一运行根为`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001`。
+`completion.json`及`analysis/readback.json`已验收为complete，missing/invalid均为空；整批owner exit0。
+450宏步、1,800条件、50,400完整FM query、36task各50不同teacher，以及90/180/270/360/450完整ECP全部核实。
+公共训练FM为0，profile权重未进入正式训练。4×28有效query、事件流、绝对LR、Adam/scheduler及恢复边界保持。
 
-Owner要求按实际可用卡数自动高效训练。通用target分片、完整cotangent返传、bucket SUM与来源承接已集成为
-`7df6d43e`、`ddf17e9c`、`96b07612`，冻结树为
-`/data1/user/ymdai/projects/EMBER-conditional-read-write-adaptive-formal`。
-首次五卡承接已恢复90状态，但首更新在batched-send/unbatched-recv的lazy NCCL communicator接口处阻塞；
-watchdog结束该attempt自有进程，新增0更新、失败0.835550625GPUh及原失败树保留。
-纯通信修复`0e2d6c79`已推送，冻结树为`/data1/user/ymdai/projects/EMBER-conditional-read-write-adaptive-r2-formal`；
-两端匹配batched header/payload，不能将CPU检查当作GPU通信或实际91消费者完成。
-实际NCCL双向通信检查已通过；frame16在旧native eager replay下OOM，新增0更新、失败0.134629906GPUh。
-同一`0e2d6c79`冻结版本以frame8、GPU02的0/1/2/3/7五卡承接90，attempt为`resume90_adaptive_r3`。
-第91个实际更新已完成：112queries、12.5462秒、原绝对LR及完整finite梯度；第五卡真实承担target分片及cotangent返传。
-四个任务rank峰值allocated约29.6GiB，第五rank约12.5GiB；不把瞬时显存或利用率当吞吐证明。
-针对native attention的等价kernel已在`52fe96bb`接入：可见query用SDPA，有限全遮蔽padding query保留原eager信用。
-真实已安装PI05/Gemma的forward、完整q/k/v VJP、functional公共因子checkpoint重放及作用域恢复等8项CPU检查通过；
-五卡`resume90_adaptive_r3`已完成完整180ECP并安全停止，exit0、2.239782250GPUh。
-读取优化冻结Git为`ebbb5e78`，`resume180_native_sdpa`以frame16完成181..185后native MLP replay OOM；
-新增5个未保存更新不作有效checkpoint，失败0.197883347GPUh已保留，恢复父仍是原完整180。
-同一冻结版本的新attempt `resume180_native_sdpa_r2`以frame8继续；同一181更新19.6016秒、峰值allocated27.71GiB，
-对应frame16为22.0935秒/42.94GiB，原事件、112query及绝对LR保持；不把首步通过当全程稳定。
-OOM已定位到source冻结GemmaMLP的gate/up/product，当前38个LoRA targets均不含MLP。
-窄优化`35528499`仅在既有teacher作用域对该冻结MLP做nonreentrant checkpoint，完整输入VJP、outer functional β和FM保持；
-针对已安装MLP与native的12项CPU检查通过，尚未验证新版本GPU吞吐/峰值或frame16稳定性。
-当前有效训练已请求在下一完整ECP（预定270）安全切换，工程优化不新增profile或科学面板。
-执行者继续承接原事件流，保留Adam/scheduler/sampler及已有rank RNG，新增rank RNG单列；
-父训练与接续来源分别登记。不fresh重训、不丢更新，4×28有效query、完整FM及最终A/B公式保持不变。
-实际启动、首消费者与分段成本在同一root的launch记录；物理卡数仍服从现有资源上限与整批预算。
-尚未登记本架构formal450的完整科学结果；源码完成、CPU检查或profile均不表示学习资格或闭环阳性。
-后继源码已承接整理后的`16241717`，冻结实验不依赖canonical后续整理；新写入仍须与实际冲突方协调。
+完整validation400为137/400，breadth5/8；Spatial43、Object34、Goal36、Long24（各100行）。
+对Context450126为R91/G46/L35、净+11；对T450122为R97/G40/L25、净+15；
+对self_read450116为R87/G50/L29、净+21；对强MT153为R110/G27/L43、净−16。
+对MT的whole-task-cluster95%差额为[-37,-1]，对Context为[-28,52]；不是seed不确定性。
+Task31为24/50，但task16与23均0/50，保留全部有利及不利原行，不据单点或内部量宣布机制成立。
+
+完整seen144为91/144，breadth29/36；train24为45/96，support12为46/48。
+对同场景MT93为R78/G13/L15、净−2、churn28、Jaccard0.73585，whole-task-cluster95%差额[-13,9]。
+Seen各task只有四个初态、来自已训练teacher池，不能冒称held-video或正式400资格。
+全部544条环境原行、goal、连续trace、实际动作和RNG，以及固定A28的8full+4public速度预测、8条被动机制记录齐备。
+原行入口为`conditional_read_write/evaluation/correct400/results.json`、
+`conditional_read_write_seen/evaluation/correct144/results.json`；A28与机制入口为`analysis/A28/conditional_read_write/`。
+分布、success sets、配对、簇区间和全部原件引用统一在`analysis/readback.json`，未重评参照或增开其它面板。
+
+首段训练来源`797ae01f`（1..90），后续`0e2d6c79`（91..180）、`ebbb5e78`（181..270）、
+`a0e0248d`（271..450及全部读取）；后续工程交付已承接整理后的`16241717`，旧冻结树与失败原件保持不变。
+最终冻结树为`/data1/user/ymdai/projects/EMBER-conditional-read-write-mlp-formal`；
+完整450在`conditional_read_write/train/attempts/resume360_native_packing/checkpoints/macro_00000450`。
+真实来源、spec、topology/RNG与恢复链在`launch/code_identity.json`，不把今天文档提交改写成训练来源。
+
+已交付按实际卡数自动target分片和完整cotangent返传，以及teacher作用域SDPA/冻结MLP checkpoint优化；
+91..450由GPU02五卡真实训练，第五rank承担target与信用计算。最后段按实测峰值自动选择frame上限32、policy microbatch28。
+实际361耗时12.93秒、当步最大帧批28，任务rank峰值约30–35GiB；这些是该事件的实测值，非最长视频或全程吞吐测量。
+400 bank五卡耗时307.97秒，A28在GPU01独立并行，正式评测使用动态persistent queue。
+已知NCCL、native OOM及profile replay工程失败均已独立修复并计费；失败attempt的181..185未保存更新从完整180重算。
+针对实际源模块的8项attention及12项MLP CPU检查、实际通信/恢复/完整训练与读取消费者均有原件；未重复最长GPU profile。
+
+整批成本19.273293GPUh，其中有效训练段10.876456GPUh、显式占卡5.085877GPUh，全部失败/加载/后段成本均包括。
+最早登记占用到completion约4小时29分钟；不是不含工程的训练时长。
+阶段边界观察新增最高37.058697GiB、保守峰值界64GiB，分别低于40GPUh/80GiB；不声称连续精确峰值。
+strg01 data1独立quota2T现场准入及双节点launch检查在已有合同内，所有新增产物均data1，data0只读复用。
+本批计算已停止，无自动900、其它checkpoint、controls/Test/RL；科学解释与后继由主讨论消费完整原件后独立裁决。
 
 ## 整仓整理交付
 

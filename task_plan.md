@@ -8,9 +8,11 @@
 
 当前唯一active design为[条件读写§13](docs/designs/conditional_read_write_architecture.md#13-首批实施与完整学习检验2026-10-01授权)：
 
-1. 实验执行者已完成最长视频成本检查与90完整ECP；按实际可用卡数自动分配，从完整边界承接91..450，
-   保持112有效query及完整FM梯度。全部失败、占用与恢复计入40GPUh/80GiB，不fresh重做已完成更新。
-2. 唯一450科学节点完成validation400、train144和固定A28，保存完整原行、分布、paired R/G/L、churn及成本。
+1. 已完成fresh450、50,400完整FM query、36task各50不同teacher与五个完整ECP；按实际卡数自动分配并在完整边界恢复，
+   保持112有效query、完整FM及原optimizer/sampler/RNG语义，全部失败、占用和恢复已计费。
+2. 唯一450节点validation137/400、完整train91/144、固定A28十二预测与八条被动记录全部验收；
+   completion/readback及544原行/goal/连续trace齐备。整批19.273293GPUh、观察高水位37.058697GiB、保守峰值64GiB。
+   本批新增计算已停止，工程状态和原件入口见progress。
 3. 主讨论解释训练获取、held迁移、能力得失与机制预测，结合最近似完整历史决定最小后继；
    不自动900、参数小扫、controls/Test/RL，不把单点增益写成稳定性或因果确证。
 

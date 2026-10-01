@@ -1,0 +1,3023 @@
+{
+  "schema": "ember_public_basis_operator_synthesis_v1",
+  "date": "2026-10-01",
+  "purpose": "Constrain one complete candidate using current T, exact native semantics and original stored train-side derivatives.",
+  "new_compute": {
+    "model_forwards": 0,
+    "optimizer_updates": 0,
+    "environment_episodes": 0,
+    "gpu_hours": 0
+  },
+  "interpretation_limits": [
+    "No unique performance root cause identified.",
+    "No candidate implementation or trained performance result.",
+    "A gradient energy is not missing information or necessity of task-conditional A.",
+    "Horizon geometry does not identify meaningful action semantics.",
+    "No new Test or shuffled/reversed evidence used for design."
+  ],
+  "selected_T2340": {
+    "source": "docs/review_materials/20260930_t_architecture/selected_condition_rows.csv",
+    "arms": {
+      "correct": {
+        "total": 161,
+        "by_task": {
+          "3": 45,
+          "6": 6,
+          "11": 45,
+          "16": 5,
+          "23": 0,
+          "26": 36,
+          "31": 24,
+          "39": 0
+        }
+      },
+      "same_task_other": {
+        "total": 150,
+        "by_task": {
+          "3": 44,
+          "6": 6,
+          "11": 43,
+          "16": 5,
+          "23": 0,
+          "26": 33,
+          "31": 19,
+          "39": 0
+        }
+      },
+      "public_beta": {
+        "total": 103,
+        "by_task": {
+          "3": 6,
+          "6": 3,
+          "11": 30,
+          "16": 0,
+          "23": 0,
+          "26": 41,
+          "31": 23,
+          "39": 0
+        }
+      }
+    },
+    "pairs": {
+      "correct_vs_public_beta": {
+        "3": {
+          "R": 5,
+          "G": 40,
+          "L": 1
+        },
+        "6": {
+          "R": 3,
+          "G": 3,
+          "L": 0
+        },
+        "11": {
+          "R": 28,
+          "G": 17,
+          "L": 2
+        },
+        "16": {
+          "R": 0,
+          "G": 5,
+          "L": 0
+        },
+        "23": {
+          "R": 0,
+          "G": 0,
+          "L": 0
+        },
+        "26": {
+          "R": 30,
+          "G": 6,
+          "L": 11
+        },
+        "31": {
+          "R": 13,
+          "G": 11,
+          "L": 10
+        },
+        "39": {
+          "R": 0,
+          "G": 0,
+          "L": 0
+        }
+      },
+      "correct_vs_same_task_other": {
+        "3": {
+          "R": 42,
+          "G": 3,
+          "L": 2
+        },
+        "6": {
+          "R": 4,
+          "G": 2,
+          "L": 2
+        },
+        "11": {
+          "R": 43,
+          "G": 2,
+          "L": 0
+        },
+        "16": {
+          "R": 3,
+          "G": 2,
+          "L": 2
+        },
+        "23": {
+          "R": 0,
+          "G": 0,
+          "L": 0
+        },
+        "26": {
+          "R": 30,
+          "G": 6,
+          "L": 3
+        },
+        "31": {
+          "R": 9,
+          "G": 15,
+          "L": 10
+        },
+        "39": {
+          "R": 0,
+          "G": 0,
+          "L": 0
+        }
+      }
+    }
+  },
+  "native_horizon_geometry": {
+    "scope": "Eight existing train-only self_read450 captures, H0/H1 and three saved AX sites only",
+    "formula": "common fraction = 50 * ||mean_horizon(x)||_F^2 / ||x||_F^2; exact orthogonal constant-slot projection",
+    "limitations": [
+      "Descriptive feature geometry only; no semantic or control-risk attribution",
+      "Fixed probe, tau and slot positions cannot be causally separated using this single-probe capture",
+      "No shifted-slot comparison: it would change fixed probe/position as well as relative horizon",
+      "Results concern self_read450, not old T2340 weights",
+      "Horizon-specific effects can be arbitrarily small or large in downstream learned readout"
+    ],
+    "summary": {
+      "pass0_dHbar_common_slot_energy_fraction_range": [
+        0.22127227652408987,
+        0.5692643717727768
+      ],
+      "pass0_Q8_key_residual_slot_energy_fraction_range": [
+        0.07421061416806396,
+        0.08146265848300183
+      ],
+      "pass0_V8_key_residual_slot_energy_fraction_range": [
+        0.6970384703112763,
+        0.7224912956927645
+      ],
+      "pass0_action_out_key_residual_slot_energy_fraction_range": [
+        0.7899179578314888,
+        0.9431105649525852
+      ],
+      "pass1_dHbar_common_slot_energy_fraction_range": [
+        0.17088971863826868,
+        0.5761215203768695
+      ],
+      "pass1_Q8_key_residual_slot_energy_fraction_range": [
+        0.07476772203949478,
+        0.0859026772244289
+      ],
+      "pass1_V8_key_residual_slot_energy_fraction_range": [
+        0.6996222301147907,
+        0.7377516131263054
+      ],
+      "pass1_action_out_key_residual_slot_energy_fraction_range": [
+        0.7914270245142956,
+        0.9499638072545409
+      ]
+    },
+    "records": [
+      {
+        "task": 0,
+        "teacher": 40,
+        "source": {
+          "run": "operator_self_conditioned_native_fresh_20261001",
+          "path": "analysis/A28/self_read/native_task000_teacher40.pt"
+        },
+        "source_git": "da758e6b4d0325ec06c8f3708322649053bd0e19",
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          94
+        ],
+        "passes": [
+          {
+            "pass": 0,
+            "Hbar_common_slot_energy_fraction": 0.07023906926378312,
+            "dHbar_common_slot_energy_fraction": 0.22127227652408987,
+            "dHbar_residual_slot_energy_fraction": 0.7787277234759101,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9185373415169982,
+                "unit_key_residual_slot_energy_fraction": 0.08146265848300183
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.27750870430723545,
+                "unit_key_residual_slot_energy_fraction": 0.7224912956927645
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.05756804210699955,
+                "unit_key_residual_slot_energy_fraction": 0.9424319578930005
+              }
+            }
+          },
+          {
+            "pass": 1,
+            "Hbar_common_slot_energy_fraction": 0.07028049973252477,
+            "dHbar_common_slot_energy_fraction": 0.17088971863826868,
+            "dHbar_residual_slot_energy_fraction": 0.8291102813617313,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9140973227755711,
+                "unit_key_residual_slot_energy_fraction": 0.0859026772244289
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.26224838687369456,
+                "unit_key_residual_slot_energy_fraction": 0.7377516131263054
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.05003619274545912,
+                "unit_key_residual_slot_energy_fraction": 0.9499638072545409
+              }
+            }
+          }
+        ]
+      },
+      {
+        "task": 0,
+        "teacher": 11,
+        "source": {
+          "run": "operator_self_conditioned_native_fresh_20261001",
+          "path": "analysis/A28/self_read/native_task000_teacher11.pt"
+        },
+        "source_git": "da758e6b4d0325ec06c8f3708322649053bd0e19",
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120,
+          125,
+          127
+        ],
+        "passes": [
+          {
+            "pass": 0,
+            "Hbar_common_slot_energy_fraction": 0.07030283628293373,
+            "dHbar_common_slot_energy_fraction": 0.25961080604416403,
+            "dHbar_residual_slot_energy_fraction": 0.740389193955836,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9198399569061176,
+                "unit_key_residual_slot_energy_fraction": 0.08016004309388236
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2866344053280151,
+                "unit_key_residual_slot_energy_fraction": 0.7133655946719849
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.06346978462965307,
+                "unit_key_residual_slot_energy_fraction": 0.936530215370347
+              }
+            }
+          },
+          {
+            "pass": 1,
+            "Hbar_common_slot_energy_fraction": 0.07133962120552184,
+            "dHbar_common_slot_energy_fraction": 0.19271364734111607,
+            "dHbar_residual_slot_energy_fraction": 0.8072863526588839,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.917683937118051,
+                "unit_key_residual_slot_energy_fraction": 0.08231606288194904
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.27636567769871295,
+                "unit_key_residual_slot_energy_fraction": 0.7236343223012871
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.05545779254610516,
+                "unit_key_residual_slot_energy_fraction": 0.9445422074538948
+              }
+            }
+          }
+        ]
+      },
+      {
+        "task": 12,
+        "teacher": 25,
+        "source": {
+          "run": "operator_self_conditioned_native_fresh_20261001",
+          "path": "analysis/A28/self_read/native_task012_teacher25.pt"
+        },
+        "source_git": "da758e6b4d0325ec06c8f3708322649053bd0e19",
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120,
+          125,
+          130,
+          135,
+          140,
+          145,
+          150,
+          155,
+          160,
+          165,
+          170,
+          175,
+          176
+        ],
+        "passes": [
+          {
+            "pass": 0,
+            "Hbar_common_slot_energy_fraction": 0.07759939060237142,
+            "dHbar_common_slot_energy_fraction": 0.3053852631940398,
+            "dHbar_residual_slot_energy_fraction": 0.6946147368059602,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.921466360939479,
+                "unit_key_residual_slot_energy_fraction": 0.07853363906052102
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2958558136585423,
+                "unit_key_residual_slot_energy_fraction": 0.7041441863414577
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.056889435047414796,
+                "unit_key_residual_slot_energy_fraction": 0.9431105649525852
+              }
+            }
+          },
+          {
+            "pass": 1,
+            "Hbar_common_slot_energy_fraction": 0.07743338212409843,
+            "dHbar_common_slot_energy_fraction": 0.28390169110026886,
+            "dHbar_residual_slot_energy_fraction": 0.7160983088997311,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9203512729525438,
+                "unit_key_residual_slot_energy_fraction": 0.07964872704745618
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2914947260311252,
+                "unit_key_residual_slot_energy_fraction": 0.7085052739688749
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.05675360606175723,
+                "unit_key_residual_slot_energy_fraction": 0.9432463939382427
+              }
+            }
+          }
+        ]
+      },
+      {
+        "task": 12,
+        "teacher": 14,
+        "source": {
+          "run": "operator_self_conditioned_native_fresh_20261001",
+          "path": "analysis/A28/self_read/native_task012_teacher14.pt"
+        },
+        "source_git": "da758e6b4d0325ec06c8f3708322649053bd0e19",
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120,
+          123
+        ],
+        "passes": [
+          {
+            "pass": 0,
+            "Hbar_common_slot_energy_fraction": 0.07797716952071629,
+            "dHbar_common_slot_energy_fraction": 0.31116550724967734,
+            "dHbar_residual_slot_energy_fraction": 0.6888344927503227,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9227585032557146,
+                "unit_key_residual_slot_energy_fraction": 0.07724149674428538
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2970216563388156,
+                "unit_key_residual_slot_energy_fraction": 0.7029783436611844
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.057429426289591856,
+                "unit_key_residual_slot_energy_fraction": 0.9425705737104082
+              }
+            }
+          },
+          {
+            "pass": 1,
+            "Hbar_common_slot_energy_fraction": 0.07753195925272212,
+            "dHbar_common_slot_energy_fraction": 0.2716606805404825,
+            "dHbar_residual_slot_energy_fraction": 0.7283393194595176,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9198569480433261,
+                "unit_key_residual_slot_energy_fraction": 0.08014305195667393
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2855058432340189,
+                "unit_key_residual_slot_energy_fraction": 0.714494156765981
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.05544948551902366,
+                "unit_key_residual_slot_energy_fraction": 0.9445505144809764
+              }
+            }
+          }
+        ]
+      },
+      {
+        "task": 20,
+        "teacher": 38,
+        "source": {
+          "run": "operator_self_conditioned_native_fresh_20261001",
+          "path": "analysis/A28/self_read/native_task020_teacher38.pt"
+        },
+        "source_git": "da758e6b4d0325ec06c8f3708322649053bd0e19",
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120,
+          125,
+          127
+        ],
+        "passes": [
+          {
+            "pass": 0,
+            "Hbar_common_slot_energy_fraction": 0.12726624603640865,
+            "dHbar_common_slot_energy_fraction": 0.5692643717727768,
+            "dHbar_residual_slot_energy_fraction": 0.4307356282272232,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.925789385831936,
+                "unit_key_residual_slot_energy_fraction": 0.07421061416806396
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.3029615296887237,
+                "unit_key_residual_slot_energy_fraction": 0.6970384703112763
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.21008204216851123,
+                "unit_key_residual_slot_energy_fraction": 0.7899179578314888
+              }
+            }
+          },
+          {
+            "pass": 1,
+            "Hbar_common_slot_energy_fraction": 0.12628276443130398,
+            "dHbar_common_slot_energy_fraction": 0.5761215203768695,
+            "dHbar_residual_slot_energy_fraction": 0.4238784796231305,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9252322779605052,
+                "unit_key_residual_slot_energy_fraction": 0.07476772203949478
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.3003777698852092,
+                "unit_key_residual_slot_energy_fraction": 0.6996222301147907
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.20857297548570436,
+                "unit_key_residual_slot_energy_fraction": 0.7914270245142956
+              }
+            }
+          }
+        ]
+      },
+      {
+        "task": 20,
+        "teacher": 42,
+        "source": {
+          "run": "operator_self_conditioned_native_fresh_20261001",
+          "path": "analysis/A28/self_read/native_task020_teacher42.pt"
+        },
+        "source_git": "da758e6b4d0325ec06c8f3708322649053bd0e19",
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120,
+          125,
+          130
+        ],
+        "passes": [
+          {
+            "pass": 0,
+            "Hbar_common_slot_energy_fraction": 0.12007991567489525,
+            "dHbar_common_slot_energy_fraction": 0.4777044327854412,
+            "dHbar_residual_slot_energy_fraction": 0.5222955672145588,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9255657894388822,
+                "unit_key_residual_slot_energy_fraction": 0.07443421056111776
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.30140835935345717,
+                "unit_key_residual_slot_energy_fraction": 0.6985916406465429
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.18358003791386066,
+                "unit_key_residual_slot_energy_fraction": 0.8164199620861393
+              }
+            }
+          },
+          {
+            "pass": 1,
+            "Hbar_common_slot_energy_fraction": 0.11877587955356833,
+            "dHbar_common_slot_energy_fraction": 0.5087576429428938,
+            "dHbar_residual_slot_energy_fraction": 0.49124235705710617,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9230517555478663,
+                "unit_key_residual_slot_energy_fraction": 0.07694824445213366
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2889423354446413,
+                "unit_key_residual_slot_energy_fraction": 0.7110576645553587
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.16747606303256563,
+                "unit_key_residual_slot_energy_fraction": 0.8325239369674344
+              }
+            }
+          }
+        ]
+      },
+      {
+        "task": 32,
+        "teacher": 17,
+        "source": {
+          "run": "operator_self_conditioned_native_fresh_20261001",
+          "path": "analysis/A28/self_read/native_task032_teacher17.pt"
+        },
+        "source_git": "da758e6b4d0325ec06c8f3708322649053bd0e19",
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120,
+          125,
+          130,
+          135,
+          140,
+          145,
+          150,
+          155,
+          160,
+          165,
+          170,
+          175,
+          180,
+          185,
+          190,
+          195,
+          200,
+          205,
+          210,
+          215,
+          220,
+          225,
+          230,
+          235,
+          240,
+          245,
+          249
+        ],
+        "passes": [
+          {
+            "pass": 0,
+            "Hbar_common_slot_energy_fraction": 0.08540669851762969,
+            "dHbar_common_slot_energy_fraction": 0.43458537895150706,
+            "dHbar_residual_slot_energy_fraction": 0.5654146210484929,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9237761093704253,
+                "unit_key_residual_slot_energy_fraction": 0.07622389062957469
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2954796238911951,
+                "unit_key_residual_slot_energy_fraction": 0.7045203761088049
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.08377585851240618,
+                "unit_key_residual_slot_energy_fraction": 0.9162241414875938
+              }
+            }
+          },
+          {
+            "pass": 1,
+            "Hbar_common_slot_energy_fraction": 0.081670006159473,
+            "dHbar_common_slot_energy_fraction": 0.3904325241130166,
+            "dHbar_residual_slot_energy_fraction": 0.6095674758869833,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.921168444418816,
+                "unit_key_residual_slot_energy_fraction": 0.07883155558118404
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2831227650275939,
+                "unit_key_residual_slot_energy_fraction": 0.7168772349724061
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.07714847283974173,
+                "unit_key_residual_slot_energy_fraction": 0.9228515271602583
+              }
+            }
+          }
+        ]
+      },
+      {
+        "task": 32,
+        "teacher": 43,
+        "source": {
+          "run": "operator_self_conditioned_native_fresh_20261001",
+          "path": "analysis/A28/self_read/native_task032_teacher43.pt"
+        },
+        "source_git": "da758e6b4d0325ec06c8f3708322649053bd0e19",
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120,
+          125,
+          130,
+          135,
+          140,
+          145,
+          150,
+          155,
+          160,
+          165,
+          170,
+          175,
+          180,
+          185,
+          190,
+          195,
+          200,
+          205,
+          210,
+          215,
+          220,
+          225,
+          230,
+          235,
+          239
+        ],
+        "passes": [
+          {
+            "pass": 0,
+            "Hbar_common_slot_energy_fraction": 0.08791905766762424,
+            "dHbar_common_slot_energy_fraction": 0.3845263815403219,
+            "dHbar_residual_slot_energy_fraction": 0.6154736184596781,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9221031766909411,
+                "unit_key_residual_slot_energy_fraction": 0.0778968233090589
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2879010786981066,
+                "unit_key_residual_slot_energy_fraction": 0.7120989213018933
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.0886708051848846,
+                "unit_key_residual_slot_energy_fraction": 0.9113291948151154
+              }
+            }
+          },
+          {
+            "pass": 1,
+            "Hbar_common_slot_energy_fraction": 0.08414002422719546,
+            "dHbar_common_slot_energy_fraction": 0.3274421080285273,
+            "dHbar_residual_slot_energy_fraction": 0.6725578919714728,
+            "sites": {
+              "Q8": {
+                "unit_key_common_slot_energy_fraction": 0.9165099899791381,
+                "unit_key_residual_slot_energy_fraction": 0.08349001002086187
+              },
+              "V8": {
+                "unit_key_common_slot_energy_fraction": 0.2660994877478676,
+                "unit_key_residual_slot_energy_fraction": 0.7339005122521324
+              },
+              "action_out": {
+                "unit_key_common_slot_energy_fraction": 0.08271230075218819,
+                "unit_key_residual_slot_energy_fraction": 0.9172876992478118
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "execution_A_subspace_credit": {
+    "schema": "ember_stored_A_subspace_credit_analysis_v1",
+    "parent_training_git": "e2afbfd7c997e3f792921600608efa2fa3c1b25a",
+    "sources": {
+      "run": "operator_chain_diagnosis_20260929",
+      "subpath": "functional_credit_transport/group{0,1}/task*_teacher*_credit.pt",
+      "parent_run": "operator_read_write_learning_20260928",
+      "parent_subpath": "continuation2340/T/train/attempts/continuation/checkpoints/macro_00002340/ecp.safetensors"
+    },
+    "contract": {
+      "scope": "four train tasks, two teachers, A28 single FM and B20 ten-step generated first-five risk",
+      "parameter": "execution LoRA A with compiled B held fixed; not full Writer derivative",
+      "projection": "right-project A cotangent onto row(A) and its orthogonal complement by QR",
+      "metric": "Euclidean Frobenius in the saved factor coordinates; not gauge invariant and not a capacity fraction",
+      "disjointness": "A28/B20/teacher episodes mutually disjoint within the diagnostic; all are original training tasks/data",
+      "scope_limits": "first-order train-side transfer only; no finite update, closed-loop result, legal conditional-A inference or necessity conclusion",
+      "updates": 0,
+      "model_forwards": 0,
+      "gpu_hours": 0,
+      "environment_episodes": 0
+    },
+    "conditions": [
+      {
+        "task": 0,
+        "teacher": 40,
+        "group": 0,
+        "a50_outside_energy_fraction": 0.8935679302202193,
+        "a5_outside_energy_fraction": 0.84991296295659,
+        "b_outside_energy_fraction": 0.8586207978905108
+      },
+      {
+        "task": 0,
+        "teacher": 11,
+        "group": 1,
+        "a50_outside_energy_fraction": 0.8973880391589125,
+        "a5_outside_energy_fraction": 0.8603334741979887,
+        "b_outside_energy_fraction": 0.8628482950750086
+      },
+      {
+        "task": 12,
+        "teacher": 25,
+        "group": 0,
+        "a50_outside_energy_fraction": 0.8822743036129418,
+        "a5_outside_energy_fraction": 0.8670399068249003,
+        "b_outside_energy_fraction": 0.8516726428910543
+      },
+      {
+        "task": 12,
+        "teacher": 14,
+        "group": 1,
+        "a50_outside_energy_fraction": 0.897788222399595,
+        "a5_outside_energy_fraction": 0.864565078940374,
+        "b_outside_energy_fraction": 0.8678461523225501
+      },
+      {
+        "task": 20,
+        "teacher": 38,
+        "group": 0,
+        "a50_outside_energy_fraction": 0.8616784037491084,
+        "a5_outside_energy_fraction": 0.8337800033952862,
+        "b_outside_energy_fraction": 0.8791248881060977
+      },
+      {
+        "task": 20,
+        "teacher": 42,
+        "group": 1,
+        "a50_outside_energy_fraction": 0.864215507077162,
+        "a5_outside_energy_fraction": 0.8576461231265402,
+        "b_outside_energy_fraction": 0.9025586271030216
+      },
+      {
+        "task": 32,
+        "teacher": 17,
+        "group": 0,
+        "a50_outside_energy_fraction": 0.8702980297025862,
+        "a5_outside_energy_fraction": 0.8756350572102218,
+        "b_outside_energy_fraction": 0.8617076765084191
+      },
+      {
+        "task": 32,
+        "teacher": 43,
+        "group": 1,
+        "a50_outside_energy_fraction": 0.8740462502187043,
+        "a5_outside_energy_fraction": 0.8736075373429601,
+        "b_outside_energy_fraction": 0.8440602456453048
+      }
+    ],
+    "transport": {
+      "a50_inside": {
+        "same_condition": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            -0.004643438741303803,
+            -0.00610943877166065,
+            -0.006456796868156499,
+            -0.003914984303367232,
+            -0.00047944287741668364,
+            -0.000687527306191512,
+            0.0021065106910843068,
+            0.0071449481132300745
+          ],
+          "mean_minus_directional_derivative_B": -0.0016300212579727497,
+          "cosine_with_B_gradient": [
+            -0.1077073533242692,
+            -0.16189131866252127,
+            -0.32315359055472226,
+            -0.24109130621630986,
+            -0.02857654965018821,
+            -0.03619991170398541,
+            0.08493896255546081,
+            0.09454416906843785
+          ]
+        },
+        "same_task_other_teacher": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            -0.00466156698147536,
+            -0.005522856521890488,
+            -0.004772844418147822,
+            -0.004873224130854121,
+            -0.001690496613893878,
+            -0.0008555574297608288,
+            0.0014438613338114217,
+            0.009353504104131317
+          ],
+          "mean_minus_directional_derivative_B": -0.0014473975822599698,
+          "cosine_with_B_gradient": [
+            -0.10812784875407579,
+            -0.14634773479687802,
+            -0.23887414183495878,
+            -0.3001013235690244,
+            -0.10075978327326048,
+            -0.04504708850997061,
+            0.05821954015564868,
+            0.12376846680885653
+          ]
+        },
+        "all_conditions_shared": {
+          "negative_step_improves_B_first5": 1,
+          "minus_directional_derivative_B": [
+            -0.0033776145475382744,
+            -0.0041539632616521705,
+            -0.0028790100444039462,
+            -0.002517606110913182,
+            -0.0013105560211382635,
+            -0.0010843170329612741,
+            0.00037337091967827335,
+            -0.0006284866909406755
+          ],
+          "mean_minus_directional_derivative_B": -0.0019472728487336891,
+          "cosine_with_B_gradient": [
+            -0.07834580011337654,
+            -0.11007403711515441,
+            -0.14409039839561757,
+            -0.1550384110853708,
+            -0.07811393384171997,
+            -0.05709181366156793,
+            0.015055104491079736,
+            -0.008316330786997967
+          ]
+        },
+        "other_three_tasks_shared": {
+          "negative_step_improves_B_first5": 0,
+          "minus_directional_derivative_B": [
+            -0.0004937821595484781,
+            -0.0005279244071600958,
+            -0.0005766197315904133,
+            -0.0007442984091498574,
+            -0.0008126201965762787,
+            -0.0007836998424626848,
+            -0.0006515459394169394,
+            -0.005703866388472249
+          ],
+          "mean_minus_directional_derivative_B": -0.0012867946342971245,
+          "cosine_with_B_gradient": [
+            -0.011453574061531689,
+            -0.013989235611251816,
+            -0.0288590055491933,
+            -0.045835145628125004,
+            -0.04843513688081259,
+            -0.04126361941422874,
+            -0.02627170912805164,
+            -0.07547532880987004
+          ]
+        }
+      },
+      "a50_outside": {
+        "same_condition": {
+          "negative_step_improves_B_first5": 3,
+          "minus_directional_derivative_B": [
+            0.0008529772518916109,
+            -0.005088942654476226,
+            -0.019719919322867183,
+            -0.015554216745484005,
+            -0.00868128488444406,
+            -0.01454016117072224,
+            0.007838636138722332,
+            0.01639592620255859
+          ],
+          "mean_minus_directional_derivative_B": -0.004812123148102648,
+          "cosine_with_B_gradient": [
+            0.008028513537083724,
+            -0.053762961497648275,
+            -0.4118805429678197,
+            -0.3737818474346127,
+            -0.19186691149130505,
+            -0.2515479408004933,
+            0.1266201564447501,
+            0.09325311006741058
+          ]
+        },
+        "same_task_other_teacher": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            -0.0007108178907744751,
+            -0.0038078994098629504,
+            -0.015152648881773622,
+            -0.017984809455546643,
+            -0.011260915134945221,
+            -0.008689130222180715,
+            0.005302663387307895,
+            0.021038533313812117
+          ],
+          "mean_minus_directional_derivative_B": -0.003908128036745452,
+          "cosine_with_B_gradient": [
+            -0.006690461024404093,
+            -0.040229172002813715,
+            -0.31648614513288087,
+            -0.43219118095454645,
+            -0.24887986470518816,
+            -0.15032383679061534,
+            0.08565572579112132,
+            0.11965830039315797
+          ]
+        },
+        "all_conditions_shared": {
+          "negative_step_improves_B_first5": 3,
+          "minus_directional_derivative_B": [
+            0.0008231340250555354,
+            -0.0019012157969931051,
+            -0.012949066598509324,
+            -0.01238233405104314,
+            -0.006274344504149562,
+            -0.0064698102634238395,
+            0.004072479788577779,
+            0.0021567628167620525
+          ],
+          "mean_minus_directional_derivative_B": -0.004115549322965451,
+          "cosine_with_B_gradient": [
+            0.007747618882375901,
+            -0.02008570318680106,
+            -0.27046097370874134,
+            -0.29755864746421185,
+            -0.13867061358633354,
+            -0.11192912031891358,
+            0.06578415158224851,
+            0.012266756867289676
+          ]
+        },
+        "other_three_tasks_shared": {
+          "negative_step_improves_B_first5": 3,
+          "minus_directional_derivative_B": [
+            0.001077060729838912,
+            0.0013425777382130876,
+            -0.006481688872516082,
+            -0.006178939173478004,
+            -0.0019740852060087175,
+            -0.0012893696503463031,
+            0.0010391265044677085,
+            -0.007758565582907136
+          ],
+          "mean_minus_directional_derivative_B": -0.002527985439092067,
+          "cosine_with_B_gradient": [
+            0.010137663848123094,
+            0.014183880650268207,
+            -0.13537994189786778,
+            -0.14848547742651627,
+            -0.04362967424053436,
+            -0.022306374507618618,
+            0.01678536396295002,
+            -0.04412744735062045
+          ]
+        }
+      },
+      "a50_full": {
+        "same_condition": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            -0.0007085636296379291,
+            -0.006777826987740039,
+            -0.020738216384764287,
+            -0.01598952585482664,
+            -0.008236857105281383,
+            -0.013770344525192938,
+            0.008071287376775182,
+            0.01786436312952206
+          ],
+          "mean_minus_directional_derivative_B": -0.005035710497643247,
+          "cosine_with_B_gradient": [
+            -0.006179840315196013,
+            -0.0665140401034692,
+            -0.3997365804711842,
+            -0.35795383237756867,
+            -0.17068796313229548,
+            -0.2263257994198078,
+            0.1210277980333262,
+            0.09334727208031479
+          ]
+        },
+        "same_task_other_teacher": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            -0.002166606315617458,
+            -0.00540133140294239,
+            -0.015883296354949256,
+            -0.0185650946276086,
+            -0.011091436369384245,
+            -0.008384022731180588,
+            0.005469909227642723,
+            0.022995384247595972
+          ],
+          "mean_minus_directional_derivative_B": -0.004128311790805481,
+          "cosine_with_B_gradient": [
+            -0.018896370765252003,
+            -0.05300583419985303,
+            -0.3061562505540425,
+            -0.4156124972522996,
+            -0.22984187511129428,
+            -0.13779761599404863,
+            0.08202050532467499,
+            0.12015857349005615
+          ]
+        },
+        "all_conditions_shared": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            -0.00032165329271631644,
+            -0.0031503178967499878,
+            -0.013180768328600889,
+            -0.012527237031827272,
+            -0.006359115365956006,
+            -0.006470251762652942,
+            0.003972079185999865,
+            0.0018345324154566938
+          ],
+          "mean_minus_directional_derivative_B": -0.004525341509630857,
+          "cosine_with_B_gradient": [
+            -0.0028053457765812185,
+            -0.03091556796922215,
+            -0.2540640507314145,
+            -0.2804443699805623,
+            -0.13177653020620575,
+            -0.10634337433974476,
+            0.05956075840873394,
+            0.009586045429338216
+          ]
+        },
+        "other_three_tasks_shared": {
+          "negative_step_improves_B_first5": 3,
+          "minus_directional_derivative_B": [
+            0.0008349760244370622,
+            0.0010715800060355583,
+            -0.006305364080661283,
+            -0.006075474698493379,
+            -0.0021302387776800744,
+            -0.0014721587246278958,
+            0.0007697112169018367,
+            -0.009194903897783106
+          ],
+          "mean_minus_directional_derivative_B": -0.00281273411648391,
+          "cosine_with_B_gradient": [
+            0.007282364324393786,
+            0.010515924296157116,
+            -0.12153816073021087,
+            -0.1360102526856471,
+            -0.04414379335468896,
+            -0.024196017725967876,
+            0.011541709439219732,
+            -0.04804644809756898
+          ]
+        }
+      },
+      "a5_inside": {
+        "same_condition": {
+          "negative_step_improves_B_first5": 4,
+          "minus_directional_derivative_B": [
+            -0.007683244317086458,
+            -0.009470066439783561,
+            -0.0044128670629313,
+            -0.001888775966751151,
+            0.0026291660579620614,
+            0.0008961473294098591,
+            0.0005994317970366229,
+            0.0007920598994826863
+          ],
+          "mean_minus_directional_derivative_B": -0.0023172685878326553,
+          "cosine_with_B_gradient": [
+            -0.17821747124088344,
+            -0.2509431064060767,
+            -0.2208577821395941,
+            -0.11631399507332693,
+            0.1567079164858357,
+            0.04718424112941759,
+            0.024170356779361142,
+            0.010480782206151975
+          ]
+        },
+        "same_task_other_teacher": {
+          "negative_step_improves_B_first5": 4,
+          "minus_directional_derivative_B": [
+            -0.0076149153105593845,
+            -0.009136649254660581,
+            -0.0033635088258986085,
+            -0.002785792792052382,
+            0.0013298163583590563,
+            0.0009215256965999909,
+            0.00048805746732287313,
+            0.0004552753991173521
+          ],
+          "mean_minus_directional_derivative_B": -0.0024632739077214603,
+          "cosine_with_B_gradient": [
+            -0.17663253885384794,
+            -0.24210803173200257,
+            -0.16833888012059556,
+            -0.1715537971649665,
+            0.07926192040861813,
+            0.04852047118631978,
+            0.01967950844840571,
+            0.006024345261115178
+          ]
+        },
+        "all_conditions_shared": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            -0.0036953171616149953,
+            -0.004970476708841404,
+            -0.0022988610092145546,
+            -0.0012377340610905839,
+            0.00020692169555458444,
+            -0.0004573773551796343,
+            0.00020155047943688198,
+            -0.005108559177913464
+          ],
+          "mean_minus_directional_derivative_B": -0.002169981662357896,
+          "cosine_with_B_gradient": [
+            -0.0857151032554693,
+            -0.13171046619016338,
+            -0.11505475617138927,
+            -0.07622174149717292,
+            0.012333290127444371,
+            -0.024081981506481647,
+            0.008126941248568928,
+            -0.06759803919617605
+          ]
+        },
+        "other_three_tasks_shared": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            0.0016520450831415954,
+            0.001388585170309365,
+            -0.0008127560534813864,
+            -0.00032699666991789874,
+            -0.0007255996347912646,
+            -0.0009464371893411804,
+            -0.0001354047482142057,
+            -0.0060226133721208094
+          ],
+          "mean_minus_directional_derivative_B": -0.0007411471768019731,
+          "cosine_with_B_gradient": [
+            0.03832017894298558,
+            0.036795504906173296,
+            -0.04067729592406778,
+            -0.020137003923894094,
+            -0.043248393012938854,
+            -0.04983211921764081,
+            -0.005459805586117351,
+            -0.07969308774031247
+          ]
+        }
+      },
+      "a5_outside": {
+        "same_condition": {
+          "negative_step_improves_B_first5": 1,
+          "minus_directional_derivative_B": [
+            -0.012540440711084597,
+            -0.016986988612671252,
+            -0.010154775225958848,
+            -0.0037566855398615978,
+            -0.005542384478765015,
+            -0.01694745168964249,
+            0.0045346704608266505,
+            -0.002075731328755421
+          ],
+          "mean_minus_directional_derivative_B": -0.007933723390739071,
+          "cosine_with_B_gradient": [
+            -0.1180349156869802,
+            -0.1794618011544545,
+            -0.21209794347048933,
+            -0.09027653942960846,
+            -0.12249341041019055,
+            -0.2931945887181422,
+            0.07325007475966944,
+            -0.011805883954307823
+          ]
+        },
+        "same_task_other_teacher": {
+          "negative_step_improves_B_first5": 1,
+          "minus_directional_derivative_B": [
+            -0.01200367119874813,
+            -0.01705053271349495,
+            -0.007062094124593524,
+            -0.006496184000214121,
+            -0.009432464895328152,
+            -0.008754585513385605,
+            0.0024391671912783,
+            -0.000742474385033968
+          ],
+          "mean_minus_directional_derivative_B": -0.007387854954940019,
+          "cosine_with_B_gradient": [
+            -0.11298265750948452,
+            -0.18013312313191526,
+            -0.1475025893820195,
+            -0.15610915654625904,
+            -0.20846889962794543,
+            -0.15145622752024776,
+            0.03940069750512762,
+            -0.004222881019005855
+          ]
+        },
+        "all_conditions_shared": {
+          "negative_step_improves_B_first5": 1,
+          "minus_directional_derivative_B": [
+            -0.0048117019329844985,
+            -0.007827345945760115,
+            -0.007189019258424897,
+            -0.00468926643263962,
+            -0.004333433944163994,
+            -0.0059597324993208595,
+            0.001469702169594205,
+            -0.01072241343196029
+          ],
+          "mean_minus_directional_derivative_B": -0.005507901409457509,
+          "cosine_with_B_gradient": [
+            -0.045289383766926976,
+            -0.08269326798967183,
+            -0.15015361407349012,
+            -0.11268729881972667,
+            -0.09577413920699536,
+            -0.10310466440665139,
+            0.023740599174123616,
+            -0.0609845633364
+          ]
+        },
+        "other_three_tasks_shared": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            0.0036593457674025756,
+            0.0036227378892838696,
+            -0.004048888259741015,
+            -0.0028412770483616503,
+            -0.0013142251813788276,
+            -0.0006372786484646984,
+            -0.0008062386609552157,
+            -0.011237472446710976
+          ],
+          "mean_minus_directional_derivative_B": -0.0017004120736157423,
+          "cosine_with_B_gradient": [
+            0.03444301353325517,
+            0.0382730030345934,
+            -0.08456719662662848,
+            -0.06827844831971536,
+            -0.029045968415008845,
+            -0.011025058790971681,
+            -0.01302344739254537,
+            -0.06391400168592504
+          ]
+        }
+      },
+      "a5_full": {
+        "same_condition": {
+          "negative_step_improves_B_first5": 1,
+          "minus_directional_derivative_B": [
+            -0.014537694036100533,
+            -0.01929529089899623,
+            -0.011064710998235179,
+            -0.004188138620273756,
+            -0.003988924158524782,
+            -0.015356782256548782,
+            0.004454726937118107,
+            -0.0016585323784880047
+          ],
+          "mean_minus_directional_derivative_B": -0.008204418301256145,
+          "cosine_with_B_gradient": [
+            -0.12679260398982978,
+            -0.18935386739517115,
+            -0.21327628453071065,
+            -0.09375889462056522,
+            -0.08266033160527211,
+            -0.25240007716369195,
+            0.06679799229928542,
+            -0.008666386373040189
+          ]
+        },
+        "same_task_other_teacher": {
+          "negative_step_improves_B_first5": 1,
+          "minus_directional_derivative_B": [
+            -0.01397974974471727,
+            -0.01925864511451978,
+            -0.007804296932158739,
+            -0.007064723222506397,
+            -0.008233591686533166,
+            -0.007618241320599395,
+            0.002453328596034629,
+            -0.0005342184262273374
+          ],
+          "mean_minus_directional_derivative_B": -0.007755017231403432,
+          "cosine_with_B_gradient": [
+            -0.12192641204700363,
+            -0.18899424488153974,
+            -0.15043063061753018,
+            -0.15815633153497216,
+            -0.1706202956144811,
+            -0.12521143199454646,
+            0.03678731086748829,
+            -0.002791469946160625
+          ]
+        },
+        "all_conditions_shared": {
+          "negative_step_improves_B_first5": 1,
+          "minus_directional_derivative_B": [
+            -0.005837981547485617,
+            -0.00911143992620053,
+            -0.007529249812653716,
+            -0.004814265129036556,
+            -0.003948803561701557,
+            -0.00570548171067568,
+            0.001439867768807491,
+            -0.011851860073045988
+          ],
+          "mean_minus_directional_derivative_B": -0.005919901748999019,
+          "cosine_with_B_gradient": [
+            -0.05091680156510059,
+            -0.0894148938513591,
+            -0.14512899845305138,
+            -0.10777584455389777,
+            -0.08182893403895801,
+            -0.09377381276709003,
+            0.021590610937651297,
+            -0.06192993273116713
+          ]
+        },
+        "other_three_tasks_shared": {
+          "negative_step_improves_B_first5": 2,
+          "minus_directional_derivative_B": [
+            0.004008867754179294,
+            0.003879726257917092,
+            -0.00406002838481626,
+            -0.002758380706911255,
+            -0.0014879594809279696,
+            -0.0009373204810010111,
+            -0.0007963931779595725,
+            -0.012688809772403765
+          ],
+          "mean_minus_directional_derivative_B": -0.0018550372489904308,
+          "cosine_with_B_gradient": [
+            0.03496392071129281,
+            0.038073599160374096,
+            -0.07825850753272692,
+            -0.061751233536245204,
+            -0.030834184662513545,
+            -0.01540555552455506,
+            -0.011941801623190385,
+            -0.06630327482777836
+          ]
+        }
+      }
+    },
+    "sites": [
+      {
+        "target": "model.action_in_proj",
+        "shape": [
+          128,
+          32
+        ],
+        "a50_outside_energy_fraction": [
+          3.5318261415457783e-31,
+          3.8159591125965973e-31,
+          3.4570496385129457e-31,
+          3.6161026758310627e-31,
+          3.6247992875990886e-31,
+          3.4280359999083014e-31,
+          3.4205881117979907e-31,
+          3.641884883554365e-31
+        ],
+        "a5_outside_energy_fraction": [
+          3.312825012724146e-31,
+          3.0821349363454314e-31,
+          3.5076340465393706e-31,
+          3.3794378827640665e-31,
+          3.49114244597788e-31,
+          3.7596759192343274e-31,
+          3.4805750258997686e-31,
+          3.6270882586622603e-31
+        ],
+        "b_outside_energy_fraction": [
+          4.492412346648244e-31,
+          4.463814066438181e-31,
+          3.3384377326310444e-31,
+          3.3858409696825916e-31,
+          3.0899489830030147e-31,
+          3.3128881221906358e-31,
+          3.280631484748608e-31,
+          3.0569871974277335e-31
+        ]
+      },
+      {
+        "target": "model.action_out_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.9082037595130804,
+          0.904857136800269,
+          0.91765955981721,
+          0.919541146824381,
+          0.9026204016443592,
+          0.9056965797714462,
+          0.8996707257732471,
+          0.9042287486468232
+        ],
+        "a5_outside_energy_fraction": [
+          0.9111141333566624,
+          0.910395335111473,
+          0.9191734457383726,
+          0.9202614448697245,
+          0.8807450120222806,
+          0.8847716517825225,
+          0.9167906349174829,
+          0.917726696315399
+        ],
+        "b_outside_energy_fraction": [
+          0.9064011139646121,
+          0.9070953628028006,
+          0.9030638882730782,
+          0.9049957259185041,
+          0.8902295362083716,
+          0.8821474380980232,
+          0.9056118275245381,
+          0.9053441753489437
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8715836030540157,
+          0.8525763756631239,
+          0.8560518135271824,
+          0.8596413010053999,
+          0.8553435093822804,
+          0.8519014312727503,
+          0.8430032549940917,
+          0.8376304407860006
+        ],
+        "a5_outside_energy_fraction": [
+          0.8680952007528113,
+          0.8253956884594381,
+          0.8152259091919223,
+          0.8215457253597787,
+          0.8184569481841792,
+          0.8079478985837828,
+          0.808009395382275,
+          0.8046839784180227
+        ],
+        "b_outside_energy_fraction": [
+          0.883168919968219,
+          0.8757483477623439,
+          0.8542790600874256,
+          0.8598210401188089,
+          0.8404310227194863,
+          0.8432875131794566,
+          0.8602120309979473,
+          0.8569697594944826
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.9393844497128577,
+          0.9338714977152294,
+          0.9345549119327203,
+          0.9385507646489839,
+          0.9189726290349286,
+          0.9168619856837938,
+          0.9275363092445446,
+          0.9215188257892047
+        ],
+        "a5_outside_energy_fraction": [
+          0.941959014339471,
+          0.9385024017144045,
+          0.9432472561350499,
+          0.9399033570828369,
+          0.9169947528718655,
+          0.919297768018341,
+          0.9398039326255127,
+          0.9404122679142117
+        ],
+        "b_outside_energy_fraction": [
+          0.9362177715387827,
+          0.9381674127704624,
+          0.9597891070211187,
+          0.959799528273391,
+          0.9014094067903363,
+          0.8924484652665019,
+          0.9338435814853776,
+          0.9365489195686353
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8668290876358535,
+          0.8785673963675101,
+          0.8877775522486372,
+          0.8867518275153399,
+          0.8732026008866597,
+          0.8719294485238703,
+          0.9039346845757146,
+          0.9033774414069659
+        ],
+        "a5_outside_energy_fraction": [
+          0.8843642197173434,
+          0.8859741801620363,
+          0.8950671839805137,
+          0.8896369507222219,
+          0.8747219640224846,
+          0.8869203511468138,
+          0.836379890870381,
+          0.837182927273408
+        ],
+        "b_outside_energy_fraction": [
+          0.8652435240510129,
+          0.8822573077302874,
+          0.8731237912449356,
+          0.8791913474943923,
+          0.8914331186953655,
+          0.8732526905531888,
+          0.8860269599952174,
+          0.8592841132825194
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.9191264600662666,
+          0.9187536804074501,
+          0.9691350103671668,
+          0.9685063626595389,
+          0.9333887264833363,
+          0.9284404543752828,
+          0.955049478497268,
+          0.9513308550443126
+        ],
+        "a5_outside_energy_fraction": [
+          0.9055090624336504,
+          0.9009738993233535,
+          0.9517984235443631,
+          0.9495381408195667,
+          0.935782612958484,
+          0.9324399552221977,
+          0.9166190436721957,
+          0.9258466448042207
+        ],
+        "b_outside_energy_fraction": [
+          0.9204333337341308,
+          0.9223881613675576,
+          0.9348456770849393,
+          0.9491361176615282,
+          0.9366101007577989,
+          0.9315657337799104,
+          0.9376834925870949,
+          0.9036231174212634
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.7391987194448528,
+          0.7803923283076943,
+          0.7945595535128809,
+          0.8011630399706379,
+          0.7634928457166604,
+          0.7728784551162351,
+          0.7724840376647095,
+          0.7717391696789404
+        ],
+        "a5_outside_energy_fraction": [
+          0.8291828974784661,
+          0.8261346883921155,
+          0.7975993599823517,
+          0.8078368036111767,
+          0.7712811163866192,
+          0.7735356202603036,
+          0.7420279822732399,
+          0.7567491331788968
+        ],
+        "b_outside_energy_fraction": [
+          0.7664771597923693,
+          0.7728236235455116,
+          0.7773502355708208,
+          0.7553725589251807,
+          0.7201049448587676,
+          0.7080544145832479,
+          0.7647464799432419,
+          0.7744155177611467
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8319840563399978,
+          0.8356739904658518,
+          0.8608239726673922,
+          0.8524191782118746,
+          0.8115617336302223,
+          0.8245276655762477,
+          0.8459465045623056,
+          0.8447441178877535
+        ],
+        "a5_outside_energy_fraction": [
+          0.8575681065620777,
+          0.8660478405674857,
+          0.8613339801117582,
+          0.8677529813692001,
+          0.8218046661892273,
+          0.8368207797170599,
+          0.8441977827855313,
+          0.8427864863213412
+        ],
+        "b_outside_energy_fraction": [
+          0.8241849507759081,
+          0.823518580831404,
+          0.8725570327026918,
+          0.8730074668603802,
+          0.8401765650130948,
+          0.8487680462809088,
+          0.8412388914131202,
+          0.8008750705699123
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8676550390098012,
+          0.8579922141164137,
+          0.8547481935660801,
+          0.8578576179933608,
+          0.8247508214512355,
+          0.8280441661746745,
+          0.8540849148955713,
+          0.8476670462433581
+        ],
+        "a5_outside_energy_fraction": [
+          0.8604106191489671,
+          0.8666028474137494,
+          0.862812844733676,
+          0.8643418948279417,
+          0.8607181983483553,
+          0.860593224482663,
+          0.8545978000999027,
+          0.8569778780197304
+        ],
+        "b_outside_energy_fraction": [
+          0.8572620115595161,
+          0.8553799515534557,
+          0.8483253109034297,
+          0.8581714226180984,
+          0.8342705708764774,
+          0.836385514546333,
+          0.8993408759438892,
+          0.9029415431359918
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.914250367114034,
+          0.9124421141144956,
+          0.931690209715717,
+          0.9258250060795651,
+          0.9437844564877779,
+          0.9500217078487574,
+          0.9236246182303748,
+          0.9246042089753591
+        ],
+        "a5_outside_energy_fraction": [
+          0.9236604024651399,
+          0.9239649254573717,
+          0.9367808866443347,
+          0.937899611829609,
+          0.9232982256657556,
+          0.9196014618664228,
+          0.8955511627146753,
+          0.8987727706436546
+        ],
+        "b_outside_energy_fraction": [
+          0.9136861163558005,
+          0.918797511521577,
+          0.9288256575722194,
+          0.9445415787581578,
+          0.9271121083421263,
+          0.9157683060415942,
+          0.9217939519689566,
+          0.9114130687719431
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8096488298282293,
+          0.808596709592124,
+          0.8173663579052695,
+          0.8166296852760484,
+          0.7502787862141572,
+          0.7807429037304926,
+          0.8379602294443343,
+          0.8346980559568381
+        ],
+        "a5_outside_energy_fraction": [
+          0.8084889371843128,
+          0.8102857562386975,
+          0.7675864081562912,
+          0.7652478965529811,
+          0.7249931568388773,
+          0.7571982293538506,
+          0.776356553293917,
+          0.7807438169414962
+        ],
+        "b_outside_energy_fraction": [
+          0.806998594158137,
+          0.805110259013997,
+          0.7817084655657577,
+          0.7769742468941098,
+          0.7715278201719132,
+          0.7781996641514701,
+          0.8239815719261739,
+          0.8165097263221122
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8159354236130828,
+          0.7937272543975652,
+          0.8062498244329508,
+          0.8106501443874886,
+          0.7668812008303971,
+          0.7931872174182935,
+          0.7628168784457723,
+          0.763839974070442
+        ],
+        "a5_outside_energy_fraction": [
+          0.8123688699763804,
+          0.8094446287734555,
+          0.8000389375748557,
+          0.8020057491475184,
+          0.7477050126943154,
+          0.7486426305864132,
+          0.7330110998451783,
+          0.7315407309661228
+        ],
+        "b_outside_energy_fraction": [
+          0.7818402332467739,
+          0.7951192423399728,
+          0.7880204128976969,
+          0.7954927175201795,
+          0.7495694952170489,
+          0.742838449596543,
+          0.7904186476692565,
+          0.7703817042128938
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.7717879057565138,
+          0.7534704515025391,
+          0.7795139621682682,
+          0.7876234744597967,
+          0.7246027784168879,
+          0.7329119724249148,
+          0.7256206586940267,
+          0.729466463406301
+        ],
+        "a5_outside_energy_fraction": [
+          0.7768582096053875,
+          0.7660872623589604,
+          0.7571607583711388,
+          0.7346423285417512,
+          0.6958190173816686,
+          0.705912688870384,
+          0.7160650712935189,
+          0.7230066372787279
+        ],
+        "b_outside_energy_fraction": [
+          0.7498657666159411,
+          0.7490439991871287,
+          0.730994887224851,
+          0.7284777990186888,
+          0.7121457692609772,
+          0.7170437934973621,
+          0.727337791149406,
+          0.7420255042899812
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8629468097912064,
+          0.8671878841646703,
+          0.8428891425255958,
+          0.8512590039435155,
+          0.8259334203181466,
+          0.7981158982544099,
+          0.808703928154751,
+          0.8050458874995606
+        ],
+        "a5_outside_energy_fraction": [
+          0.8485451096242022,
+          0.8485216772922605,
+          0.8584263165888788,
+          0.8501306467468394,
+          0.8227314066669047,
+          0.8269138508459833,
+          0.8517394176918639,
+          0.8498834441316133
+        ],
+        "b_outside_energy_fraction": [
+          0.8328165936418573,
+          0.8367632394526652,
+          0.8418730232050715,
+          0.8686374456917934,
+          0.8018142874625238,
+          0.7987308106579893,
+          0.8333276029398735,
+          0.8408462642086603
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8042778071923838,
+          0.7808490193515607,
+          0.7533362975310752,
+          0.7715183285582483,
+          0.6970278285375353,
+          0.6949396843000001,
+          0.7348428070812265,
+          0.7437358134112428
+        ],
+        "a5_outside_energy_fraction": [
+          0.7522348703877854,
+          0.7689119721539139,
+          0.7499681158563439,
+          0.7574745148785701,
+          0.6952273445309145,
+          0.7041995257953854,
+          0.7457974781412695,
+          0.7420297516546159
+        ],
+        "b_outside_energy_fraction": [
+          0.7653604684923793,
+          0.7624845188232248,
+          0.7190247365843104,
+          0.7103942586993359,
+          0.7161113461928128,
+          0.7352720712462405,
+          0.7726515405874668,
+          0.7851245169038009
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8169196671788282,
+          0.7946996501659331,
+          0.7858214591497821,
+          0.7962266859692583,
+          0.8040916306001715,
+          0.8216431825295202,
+          0.810115865961628,
+          0.810820999724835
+        ],
+        "a5_outside_energy_fraction": [
+          0.8017237465140779,
+          0.8036363967001053,
+          0.7996792223033428,
+          0.8039601010639241,
+          0.786815757110254,
+          0.7978317211972571,
+          0.7793440279070812,
+          0.7829068548426058
+        ],
+        "b_outside_energy_fraction": [
+          0.7884973330344993,
+          0.7867579137338577,
+          0.8114245939231414,
+          0.8185101308819692,
+          0.8150905351225672,
+          0.7925149892604357,
+          0.7862772822961115,
+          0.7856209453304052
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8933487962283514,
+          0.88776453387844,
+          0.8412423820163519,
+          0.8353884869251966,
+          0.811414596512667,
+          0.8060511470496425,
+          0.8581259437428569,
+          0.8670650308278535
+        ],
+        "a5_outside_energy_fraction": [
+          0.8636723166284679,
+          0.8700081422456778,
+          0.8788642718790841,
+          0.8696853899025857,
+          0.7995317459023447,
+          0.7914752392325767,
+          0.8639088268184291,
+          0.8579924362193825
+        ],
+        "b_outside_energy_fraction": [
+          0.8545065185391448,
+          0.8657993549598779,
+          0.8360897796932153,
+          0.8298827490447982,
+          0.8247783232864182,
+          0.8184951415903736,
+          0.8457678961026183,
+          0.8493179191632321
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.9013201336711474,
+          0.907003627169931,
+          0.8436332498561966,
+          0.8336866635747249,
+          0.8171409091857748,
+          0.7966563704560247,
+          0.8514009813635325,
+          0.8577309400904513
+        ],
+        "a5_outside_energy_fraction": [
+          0.8534451520277568,
+          0.8590894697565846,
+          0.8451438290826438,
+          0.8298519692644947,
+          0.8394980529547242,
+          0.849217296809709,
+          0.8053080174221677,
+          0.8128400906090422
+        ],
+        "b_outside_energy_fraction": [
+          0.9025840063991598,
+          0.9074894523581974,
+          0.8874469353342882,
+          0.8748840580358707,
+          0.8397858659028116,
+          0.8428086789687801,
+          0.784249094929579,
+          0.7809583026047743
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.9379974495316272,
+          0.9360948564726645,
+          0.886440549195932,
+          0.9046052452188463,
+          0.827136312966364,
+          0.8129200542576601,
+          0.8612252401921058,
+          0.8546612102111856
+        ],
+        "a5_outside_energy_fraction": [
+          0.8782372420087683,
+          0.8716351023034836,
+          0.8986325865845072,
+          0.9018640405389721,
+          0.8250239892835921,
+          0.8144672008539767,
+          0.8811837086894496,
+          0.8850299225954309
+        ],
+        "b_outside_energy_fraction": [
+          0.8949333483577633,
+          0.874173949722102,
+          0.8271293231734774,
+          0.8245937199463381,
+          0.8033584540156277,
+          0.7983970607564842,
+          0.8917694727811669,
+          0.8831841414508874
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.9267740263419679,
+          0.928163931340915,
+          0.9353785536223592,
+          0.9142470570428789,
+          0.9248299587919531,
+          0.9075036111689079,
+          0.9154965146042779,
+          0.9088537476065726
+        ],
+        "a5_outside_energy_fraction": [
+          0.9117572613518183,
+          0.9082613079021751,
+          0.9176012988510097,
+          0.906206178352304,
+          0.9172680935211697,
+          0.9265670936894097,
+          0.833144102789339,
+          0.8364748223616112
+        ],
+        "b_outside_energy_fraction": [
+          0.895612655661354,
+          0.8963157563357043,
+          0.8959609915865745,
+          0.9084017839335372,
+          0.9498858487547952,
+          0.9536543612849068,
+          0.9062854884890973,
+          0.9323380188899124
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.9085331016274488,
+          0.9155575896537964,
+          0.898030930803225,
+          0.8980677585102045,
+          0.8780365427660077,
+          0.8820190286335593,
+          0.900574819593941,
+          0.919032430500393
+        ],
+        "a5_outside_energy_fraction": [
+          0.9049726634748726,
+          0.904915959662415,
+          0.9047219120313787,
+          0.8916023772652266,
+          0.8535115480598865,
+          0.863018170313963,
+          0.9255341440112203,
+          0.9267860019522138
+        ],
+        "b_outside_energy_fraction": [
+          0.8856645562701687,
+          0.8824285990221807,
+          0.8737598887465379,
+          0.8839813466720905,
+          0.839614096933945,
+          0.846584543603159,
+          0.8932573203318439,
+          0.9265108678332992
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.9455551275722474,
+          0.9465764555413061,
+          0.955150616501511,
+          0.9597507468158603,
+          0.9491116085703682,
+          0.9438104689594156,
+          0.9284998513555939,
+          0.9272058645808978
+        ],
+        "a5_outside_energy_fraction": [
+          0.8806640123597839,
+          0.8851194332720774,
+          0.9185975207897114,
+          0.9173020788099069,
+          0.9063439562355781,
+          0.9072420551761163,
+          0.9077065904541562,
+          0.9002154536867666
+        ],
+        "b_outside_energy_fraction": [
+          0.8930381685824836,
+          0.8989516232999238,
+          0.9522982111674376,
+          0.9501748044439604,
+          0.9221436951140828,
+          0.9121251457756394,
+          0.9296463304328121,
+          0.9329316295601716
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8413546619712666,
+          0.8187259829645926,
+          0.8713856316605151,
+          0.8738939221790069,
+          0.8680920973718866,
+          0.8735653546360751,
+          0.8735625112458054,
+          0.8700401604244637
+        ],
+        "a5_outside_energy_fraction": [
+          0.8764662679244342,
+          0.877137574535088,
+          0.8456953907773412,
+          0.8463644273762116,
+          0.894064791270022,
+          0.9009234873822,
+          0.8876473163400628,
+          0.8856604803066926
+        ],
+        "b_outside_energy_fraction": [
+          0.8863594800080041,
+          0.8577010459976886,
+          0.826621921599396,
+          0.8550186108705049,
+          0.8450706935699988,
+          0.8494677270173877,
+          0.7990320689410356,
+          0.7981410539970835
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8951027261921503,
+          0.908468498700658,
+          0.9344353099321658,
+          0.9366456666543528,
+          0.8717928321162868,
+          0.8655491735104316,
+          0.921743612694667,
+          0.9279675655038773
+        ],
+        "a5_outside_energy_fraction": [
+          0.8961109691819461,
+          0.8962195697970948,
+          0.8992670646161445,
+          0.903714291453621,
+          0.8686464181887402,
+          0.8678571285677387,
+          0.8645359242964843,
+          0.8640631635718925
+        ],
+        "b_outside_energy_fraction": [
+          0.8963665266596974,
+          0.9080994986948997,
+          0.9342315208163113,
+          0.9254972863894184,
+          0.8589090130013461,
+          0.8401044037057738,
+          0.8940449207320617,
+          0.9193930786142901
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8799403159675618,
+          0.8775202360219331,
+          0.8808552615041532,
+          0.8725089978684252,
+          0.8784608393823161,
+          0.8730683704917193,
+          0.8523430811608789,
+          0.8660180092710718
+        ],
+        "a5_outside_energy_fraction": [
+          0.8643704416906609,
+          0.8643193768127324,
+          0.8758604027404068,
+          0.8763558620642848,
+          0.9080131897909784,
+          0.9031493061473979,
+          0.8719063832057999,
+          0.8816703466509492
+        ],
+        "b_outside_energy_fraction": [
+          0.8664443164065536,
+          0.8705711039367127,
+          0.8914391879226399,
+          0.8907092777692911,
+          0.8758945898346827,
+          0.8780476539929664,
+          0.8872867742237041,
+          0.899247740723476
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.858680743358711,
+          0.8716810437182296,
+          0.8765748113791919,
+          0.8803917835433228,
+          0.9189736196066599,
+          0.9155510106332498,
+          0.8792559213009956,
+          0.8585347207714051
+        ],
+        "a5_outside_energy_fraction": [
+          0.8953278180525942,
+          0.9018869637337771,
+          0.8240292323752788,
+          0.8391300263718853,
+          0.9191290927474612,
+          0.913470517659221,
+          0.8840989942413897,
+          0.9062284622641593
+        ],
+        "b_outside_energy_fraction": [
+          0.9402779013350909,
+          0.9424769408777508,
+          0.8628294323141709,
+          0.8747936413309352,
+          0.9222236155851327,
+          0.9192311263184797,
+          0.917407099777039,
+          0.789450753895114
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8746278406791874,
+          0.8887986884387651,
+          0.9000184007484933,
+          0.9013841580229962,
+          0.8833237878084449,
+          0.87202682526716,
+          0.8979278160775198,
+          0.8951302641033266
+        ],
+        "a5_outside_energy_fraction": [
+          0.889009549572996,
+          0.8892558492154575,
+          0.8854914518364232,
+          0.8860392149310894,
+          0.8766857066617161,
+          0.873426092956947,
+          0.88559632119214,
+          0.8831867858818968
+        ],
+        "b_outside_energy_fraction": [
+          0.895002687091255,
+          0.8968624309959978,
+          0.8942771737209186,
+          0.9029691858889441,
+          0.8948614404603339,
+          0.8952774169890912,
+          0.8670865937401093,
+          0.8671473877627769
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.9162121527297865,
+          0.9043848304653813,
+          0.9075237216433581,
+          0.9089225738564353,
+          0.905607119057409,
+          0.9054897304015848,
+          0.8883641262406328,
+          0.8880881689603599
+        ],
+        "a5_outside_energy_fraction": [
+          0.8882777450512496,
+          0.8874426508479122,
+          0.8952225639273135,
+          0.8952952721112102,
+          0.9053128322520501,
+          0.9026543667358597,
+          0.8618020535775737,
+          0.8751342331787404
+        ],
+        "b_outside_energy_fraction": [
+          0.8838444574952727,
+          0.8965214233956149,
+          0.9239262971220535,
+          0.9142133374742362,
+          0.8957068315283471,
+          0.8966237207929085,
+          0.8984990298961516,
+          0.902278255309543
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8211973784517043,
+          0.8096535078922306,
+          0.8139669739697112,
+          0.826339537491895,
+          0.8352533722714505,
+          0.8306226459177658,
+          0.823832474427907,
+          0.8123403542825345
+        ],
+        "a5_outside_energy_fraction": [
+          0.7991496204141127,
+          0.7894521336687036,
+          0.8219144484795395,
+          0.811226824143645,
+          0.7944128332642711,
+          0.7602746873937017,
+          0.7557282494909869,
+          0.8028934312030264
+        ],
+        "b_outside_energy_fraction": [
+          0.8073764555799725,
+          0.8367528189746907,
+          0.8170956622519742,
+          0.7495832528960003,
+          0.7303769210920865,
+          0.7250983681981071,
+          0.8328280504621082,
+          0.8151404534496043
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.840359413998026,
+          0.8474466139017094,
+          0.8482850466769493,
+          0.8530794390547733,
+          0.8591991332799901,
+          0.8591432610882818,
+          0.8806102456578586,
+          0.8763544911760256
+        ],
+        "a5_outside_energy_fraction": [
+          0.8624936647914481,
+          0.865632225199131,
+          0.8679634474723881,
+          0.86536819933317,
+          0.8564445506770768,
+          0.8590256184552542,
+          0.8721705964409172,
+          0.876881732316853
+        ],
+        "b_outside_energy_fraction": [
+          0.8681435551206514,
+          0.8549483708345301,
+          0.8757300128510732,
+          0.8572087013654649,
+          0.8368780895253095,
+          0.8321569832405716,
+          0.8717969611973307,
+          0.8633525180004682
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.7214539805573046,
+          0.6633783529506748,
+          0.7483367182204343,
+          0.7578345463943321,
+          0.7325989952836182,
+          0.741999176540072,
+          0.7563102196701161,
+          0.7640868725868023
+        ],
+        "a5_outside_energy_fraction": [
+          0.7453576947940398,
+          0.7500739284514663,
+          0.6816059243485169,
+          0.6869631574228007,
+          0.7755794711256186,
+          0.7761705401207484,
+          0.7118331465454568,
+          0.7214200291430947
+        ],
+        "b_outside_energy_fraction": [
+          0.7662067252591929,
+          0.7670539613668284,
+          0.7594485963873886,
+          0.7802668438929643,
+          0.7178763552119494,
+          0.7104874937849133,
+          0.759586514369379,
+          0.7742348699304281
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8552497450622742,
+          0.8557804639206973,
+          0.9203929309194188,
+          0.9178070743474186,
+          0.8686447412570374,
+          0.8686493409565277,
+          0.8330642146338634,
+          0.8357044722004384
+        ],
+        "a5_outside_energy_fraction": [
+          0.8330247055768631,
+          0.8426179020047866,
+          0.8327464856324659,
+          0.833864276632573,
+          0.859008359268672,
+          0.8578529884475473,
+          0.7731497166383355,
+          0.7896867585346644
+        ],
+        "b_outside_energy_fraction": [
+          0.8550997465259356,
+          0.8600070889736107,
+          0.9105249540299734,
+          0.8814391318058172,
+          0.8604826507535207,
+          0.8538878670200888,
+          0.8515071113007391,
+          0.8453454172258121
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8621937251489136,
+          0.8419069911665161,
+          0.8619481395792982,
+          0.8578492989448301,
+          0.8711281663997583,
+          0.8672041156357798,
+          0.9058838012004711,
+          0.9071650977925795
+        ],
+        "a5_outside_energy_fraction": [
+          0.8558239825921098,
+          0.8507211422763827,
+          0.8795225641942186,
+          0.8797152585405492,
+          0.8685773777991005,
+          0.8654655295554768,
+          0.907385199681077,
+          0.9123355010152426
+        ],
+        "b_outside_energy_fraction": [
+          0.878099792683756,
+          0.8549659014999942,
+          0.8755992564894696,
+          0.8739101452217681,
+          0.8410298303744931,
+          0.8389630153095581,
+          0.9000877575966887,
+          0.892377607733861
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8718277558779847,
+          0.8746227895956747,
+          0.8773314905849137,
+          0.87104828035854,
+          0.8623907089760969,
+          0.8722771481641773,
+          0.849334654511286,
+          0.8474095587105479
+        ],
+        "a5_outside_energy_fraction": [
+          0.8518304798397589,
+          0.855466716183592,
+          0.8338063681590646,
+          0.850290593898792,
+          0.8377208162829518,
+          0.8491492488487284,
+          0.8225834351285835,
+          0.8120291292793742
+        ],
+        "b_outside_energy_fraction": [
+          0.8682805828607654,
+          0.8728673364636863,
+          0.871193397577001,
+          0.870984166909572,
+          0.8699295078322242,
+          0.871432616962595,
+          0.8716637224862342,
+          0.8715094902743211
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.750820208548824,
+          0.7680152204849713,
+          0.7360614015406518,
+          0.7424597976604224,
+          0.7435040622318231,
+          0.7484049633330213,
+          0.7431606994869955,
+          0.7474039270550393
+        ],
+        "a5_outside_energy_fraction": [
+          0.805549876084296,
+          0.7955563400969484,
+          0.764522353563933,
+          0.7858508968433987,
+          0.797108596507917,
+          0.7917285439144833,
+          0.7586166974135784,
+          0.7458845052858745
+        ],
+        "b_outside_energy_fraction": [
+          0.7787392801502706,
+          0.783820996519232,
+          0.770828292622199,
+          0.7818071827887915,
+          0.7829340025833365,
+          0.7842825099712377,
+          0.814370705432473,
+          0.8086467439709808
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8362460873386375,
+          0.8617101881908392,
+          0.8499613659946168,
+          0.8403826615414451,
+          0.8835966221822787,
+          0.8841116629129212,
+          0.8605754706852857,
+          0.8647752999504842
+        ],
+        "a5_outside_energy_fraction": [
+          0.8995826767008596,
+          0.9011836494792524,
+          0.9069269992815898,
+          0.9088382770057931,
+          0.8612704290795695,
+          0.8607208043660679,
+          0.881931476182267,
+          0.8816452171928834
+        ],
+        "b_outside_energy_fraction": [
+          0.8955252852049146,
+          0.9042569454578822,
+          0.9139565124269817,
+          0.9249909428808647,
+          0.8684252085820323,
+          0.8752733107944007,
+          0.8912354409093238,
+          0.899414801397167
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.q_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.7769337750386912,
+          0.7744584564095626,
+          0.7961568770901645,
+          0.793199450722076,
+          0.8030204683238017,
+          0.7993433402530135,
+          0.7979692718995518,
+          0.8068556707357082
+        ],
+        "a5_outside_energy_fraction": [
+          0.807981414146995,
+          0.8085455068746032,
+          0.7930896958564495,
+          0.7989121178360596,
+          0.7662839676679711,
+          0.7758149909438932,
+          0.7560572137763694,
+          0.7485042660744546
+        ],
+        "b_outside_energy_fraction": [
+          0.7860705853351923,
+          0.7782025082059494,
+          0.8037374102051862,
+          0.8080882158808959,
+          0.7418141483499773,
+          0.7539467634831846,
+          0.7897185326588709,
+          0.7808560954189238
+        ]
+      },
+      {
+        "target": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.v_proj",
+        "shape": [
+          128,
+          1024
+        ],
+        "a50_outside_energy_fraction": [
+          0.8236260902390063,
+          0.8265870755266185,
+          0.8442310675018408,
+          0.8262294593117964,
+          0.8205346031478121,
+          0.8143384493473117,
+          0.8259783668036753,
+          0.8203822439015277
+        ],
+        "a5_outside_energy_fraction": [
+          0.8438392770616974,
+          0.8407435619206624,
+          0.8314006843227092,
+          0.8192417460932732,
+          0.8087382104460318,
+          0.8128851450162926,
+          0.8239169229018016,
+          0.8224428060020705
+        ],
+        "b_outside_energy_fraction": [
+          0.8317672911718267,
+          0.8239454256335382,
+          0.8215274473028408,
+          0.8224769811076753,
+          0.8013066359819919,
+          0.7935762637679712,
+          0.8240851491701022,
+          0.8210107152943875
+        ]
+      }
+    ],
+    "elapsed_seconds": 21.44331272598356
+  },
+  "dynamic_content_destination_witness": {
+    "scope": "Algebraic fixed-native/address witness, not a LIBERO measurement or full-network impossibility proof",
+    "address_rank": 2,
+    "queries": {
+      "previous_state": [
+        0.0,
+        1.0
+      ],
+      "new_state": [
+        1.0,
+        0.0
+      ]
+    },
+    "write_addresses": [
+      "e2",
+      "e2",
+      "e1"
+    ],
+    "last_local_difference_is_zero": true,
+    "local_Value_and_gate_context": {
+      "M": [
+        [
+          0.0,
+          3.0
+        ]
+      ],
+      "new_state_effect": 0.0
+    },
+    "change_clock_with_local_Value": {
+      "M": [
+        [
+          0.0,
+          3.799999999999998
+        ]
+      ],
+      "new_state_effect": 0.0
+    },
+    "global_dynamic_Value_at_last_state": {
+      "M": [
+        [
+          0.75,
+          3.0
+        ]
+      ],
+      "new_state_effect": 0.75
+    },
+    "interpretation": "Any earlier Value at e2 can be arbitrary; a zero last Value at e1 leaves the e1 conditional action zero. Transported earlier dynamic evidence can be written to e1 without changing A or repeating native.",
+    "limits": [
+      "Real native features need not realize these exact orthogonal addresses.",
+      "Learning native/A can avoid this fixed-feature configuration.",
+      "No conclusion that this configuration is the observed performance bottleneck."
+    ]
+  }
+}

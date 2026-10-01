@@ -3131,3 +3131,22 @@ task31有对Context新增7个补齐黄油的实际正例，也丢失5个完整�
 新增存储阶段观察高水14.766659GiB，保守界32/36GiB，非连续精确峰值；原件、完整checkpoint与失败记录保留。
 文件事件接续及末端CPU来源字段类型恢复没有重启训练、修改模型计算或重跑GPU。
 Owner随后明确“分析完后别急着自主推进，我们可能还要再继续讨论下”；完成分析后停在讨论，无active后继design，未续900或开新臂。
+
+## 2026-10-01：公共任务表达、完整H与动态内容写入的综合判断
+
+Owner重新授权深入分析及必要分析实验，要求一个有机制与证据依据的完整方案，不限制参数，也不要求循环节省参数。
+main完成机制§88/findings§262；两项只读子任务分别核native语义和最近似完整历史，main核关键源码/设计及新数值。
+本轮没有模型前向、optimizer更新、环境episode或GPU；没有读取Test或时序controls来设计后继。
+
+每帧50H是fixed probe/tau1下的公共动作响应，Delta H不是公共预测误差。
+8份self_read450原件排除了50槽变化已完全相同的说法；描述性几何不证明语义或更深模型收益。
+T2340保存的执行A余切外部行空间能量虽大，与维数参照相近，且A28→B20一阶方向不普遍有益；
+因此不把条件A视为已获支持的主修复，也不由其阴性推定Transformer正确。
+相关原件范围和精确数值在`analyses/t_public_basis_synthesis_evidence_20261001.json`，公开来源采用run ID与相对路径。
+
+主讨论将首选收紧到一个具体区别：让全视频动态内容本身到达各写入地址，解除最后Value必须乘本地Delta H的限制。
+候选保留公共beta/native、教学与自身执行同A及原delta-rule；由独立层深Transformer联合处理时间×horizon的上下文/动态两流，
+最终使用全局动态Value、仍生成一套38-target LoRA，fresh真实full＋public共同学习。
+已有Horizon/Unified/LocalField/P-I及最近Context/回读阴性完整继承，不用旧部件改名或更大参数当收益证据。
+该候选尚未实现或训练，未找到唯一性能主因，也未建立新的formal active design。
+Owner关于公共能力逐步吸收快适配并merge的想法保存为长期动机，本轮没有执行巩固、RL或merge。

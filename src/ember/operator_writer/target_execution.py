@@ -54,7 +54,10 @@ def send_tensors(tensors, peer):
                             *value.shape, *([0] * (4 - value.ndim))] for value in tensors],
                           dtype=torch.int64, device=tensors[0].device)
     values = [header, *tensors]
-    pending = dist.batch_isend_irecv([dist.P2POp(dist.isend, value, peer) for value in values])
+    # Match header and payload batches on both peers. Mixing batched sends with
+    # unbatched NCCL receives creates different lazy communicators and hangs.
+    pending = dist.batch_isend_irecv([dist.P2POp(dist.isend, header, peer)])
+    pending += dist.batch_isend_irecv([dist.P2POp(dist.isend, value, peer) for value in tensors])
     return values, pending  # Retain storage until every transfer finishes.
 
 
@@ -65,15 +68,17 @@ def finish_sends(pending):
 
 def receive_tensors(count, peer, device):
     header = torch.empty((count, 6), dtype=torch.int64, device=device)
-    dist.recv(header, src=peer)
+    for work in dist.batch_isend_irecv([dist.P2POp(dist.irecv, header, peer)]):
+        work.wait()
     tensors = []
     for row in header.cpu().tolist():
         ndim, dtype, *shape = row
         if not 1 <= ndim <= 4 or not 0 <= dtype < len(_DTYPES) or min(shape[:ndim]) <= 0:
             raise ValueError("target transfer shape or dtype changed")
         value = torch.empty(shape[:ndim], dtype=_DTYPES[dtype], device=device)
-        dist.recv(value, src=peer)
         tensors.append(value)
+    for work in dist.batch_isend_irecv([dist.P2POp(dist.irecv, value, peer) for value in tensors]):
+        work.wait()
     return tensors
 
 
@@ -81,7 +86,7 @@ class _RemoteTargets(torch.autograd.Function):
     @staticmethod
     def forward(ctx, call, *inputs):
         ctx.call = call
-        finish_sends(call["pending"])
+        finish_sends(call.pop("pending"))
         values = receive_tensors(len(call["names"]), call["peer"], inputs[0].device)
         call["seconds"] += time.perf_counter() - call["wait_started"]
         return tuple(values)

@@ -28,6 +28,9 @@ Owner追加要求实际空闲卡充分训练并按任意物理卡数自动适配
 新代码将从实际90承接91..450原事件流，Adam/scheduler/sampler及已有rank RNG保留；新增rank RNG单列，父797与新训练来源分别记录。
 唯一root仍`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001`，不fresh重训，不改4×28/完整FM/最终A-B公式。
 实际启动/首消费者/分段资源账写入该root的launch记录，整批完成或实质科学预算边界才联系主讨论；工程窗口直接与整理会话串行协调。
+首次五卡承接已实际恢复90状态，但首更新在NCCL批量发送/单次接收的lazy communicator接口不匹配处阻塞；
+600秒启动watchdog结束其自有进程，新增0更新，失败0.835550625GPUh保留。两端统一匹配的batched header/payload，CPU复合信用检查2项通过；
+纯tensor NCCL确认及实际91消费者分别验收，不能把CPU通过冒充GPU或训练完成，继续从有效90完整父承接。
 
 ## 此前：完整条件读写架构已整理，仍未实施或训练（2026-10-01）
 

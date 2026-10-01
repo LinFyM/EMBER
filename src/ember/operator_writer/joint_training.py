@@ -8,7 +8,7 @@ from pathlib import Path
 import torch
 
 from ember.pi05_eval_contract import git_state
-from ember.pi05_source_checkpoint import read_json
+from ember.pi05_source_checkpoint import Pi05SourceTrainingError, read_json
 
 TASK = "operator_joint_public_fresh_20260930"
 ROOT = Path("/data1/user/ymdai/ember_runs") / TASK
@@ -42,6 +42,9 @@ CONDITIONAL_TASK = "conditional_read_write_fresh_20261001"
 CONDITIONAL_ROOT = ROOT.parent / CONDITIONAL_TASK
 CONDITIONAL_MODE = "conditional_read_write"
 CONDITIONAL_SPEC_NAME = "conditional_read_write_fresh_spec.json"
+CONDITIONAL_ORIGIN_GIT = "797ae01f3d35d4740a636b15f020c4ef55477845"
+CONDITIONAL_ORIGIN_SPEC = Path("/data1/user/ymdai/projects/EMBER-conditional-read-write-r2-formal"
+                               "/configs/operator_read_write_v1/conditional_read_write_fresh_spec.json")
 CONDITIONAL = {"loss_variant": "full", "full_loss_coefficient": 1.0,
                "public_loss_coefficient": 0.0, "public_credit": "none_no_public_objective",
                "query_reuse": "112_cross_episode_query_action_tau_noise",
@@ -178,15 +181,79 @@ def expected_spec(base: dict, events: dict) -> dict:
 def validate_request(spec: dict, args) -> None:
     _, mode, joint = settings(spec)
     continuation = spec["task"] == CONTEXT_CONTINUATION_TASK
+    frames = (4, 8, 16, 32) if spec["task"] == CONDITIONAL_TASK else (8, 4)
     checkpoints = CONTEXT_CONTINUATION_CHECKPOINTS if continuation else CHECKPOINTS
     bad_resume = (args.resume is None or args.attempt == "fresh") if continuation else (
         (args.resume is None) != (args.attempt == "fresh"))
     if (args.mode != mode or spec.get("joint") != joint
             or not args.attempt or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
             or getattr(args, "pilot_arm", None) is not None
-            or args.microbatch not in (28, 14, 7) or args.frame_chunk not in (8, 4)
+            or args.microbatch not in (28, 14, 7) or args.frame_chunk not in frames
             or args.stop_after_macro not in (None, *checkpoints[:-1]) or bad_resume):
         raise ValueError("joint/context requires registered fresh identity or complete same-loss ECP continuation")
+
+
+def conditional_contract(contract: dict) -> bool:
+    return (contract.get("mode") == CONDITIONAL_MODE
+            and contract.get("operator") == CONDITIONAL_OPERATOR
+            and contract.get("joint") == CONDITIONAL
+            and contract.get("loss_variant") == "full")
+
+
+def _inspect_frozen_source(run: dict, spec: dict) -> None:
+    import subprocess
+
+    training_spec = Path(run["spec"])
+    training_repo = training_spec.parents[2]
+    code = git_state(training_repo)
+    if (read_json(training_spec) != spec or code["branch"] or code["dirty_paths"]
+            or code["commit"] != run["git"]["commit"]):
+        raise ValueError("joint training frozen code/spec identity changed")
+    refs = subprocess.run(["git", "branch", "-r", "--contains", code["commit"]],
+                          cwd=training_repo, check=True, capture_output=True, text=True).stdout
+    if run["git"].get("pushed_ref") not in {row.strip() for row in refs.splitlines()}:
+        raise ValueError("joint training source was not pushed")
+
+
+def _conditional_resume_record(parent: dict, current: dict) -> dict:
+    if not conditional_contract(parent) or not conditional_contract(current):
+        raise ValueError("conditional source migration cannot change the scientific contract")
+    old = parent.get("source_resume")
+    if old is None:
+        if (parent["git"]["commit"] != CONDITIONAL_ORIGIN_GIT
+                or parent["spec"] != str(CONDITIONAL_ORIGIN_SPEC)):
+            raise ValueError("conditional source migration requires its actual797 origin")
+    elif (old.get("origin_training_git") != CONDITIONAL_ORIGIN_GIT
+          or old.get("origin_training_spec") != str(CONDITIONAL_ORIGIN_SPEC)
+          or old.get("current_training_git") != parent["git"]
+          or old.get("current_training_spec") != parent["spec"]):
+        raise ValueError("conditional source migration lost its actual origin lineage")
+    spec = read_json(CONDITIONAL_ORIGIN_SPEC)
+    _inspect_frozen_source(parent, spec)
+    if read_json(Path(current["spec"])) != spec:
+        raise ValueError("conditional resumed training spec changed scientific content")
+    return {"origin_training_git": CONDITIONAL_ORIGIN_GIT,
+            "origin_training_spec": str(CONDITIONAL_ORIGIN_SPEC),
+            "parent_checkpoint": current["parent_checkpoint"],
+            "parent_training_git": parent["git"], "parent_training_spec": parent["spec"],
+            "current_training_git": current["git"], "current_training_spec": current["spec"],
+            "migration": "engineering_same_science_complete_ECP",
+            "execution": "automatic_target_execution"}
+
+
+def register_conditional_resume(spec: dict, args, contract: dict) -> None:
+    if spec["task"] != CONDITIONAL_TASK or args.resume is None:
+        return
+    contract["parent_checkpoint"] = str(args.resume.resolve())
+    parent = read_json(args.resume.resolve().parent.parent / "run_contract.json")
+    contract["source_resume"] = _conditional_resume_record(parent, contract)
+
+
+def conditional_resume_compatible(parent: dict, current: dict) -> bool:
+    try:
+        return current.get("source_resume") == _conditional_resume_record(parent, current)
+    except (KeyError, OSError, ValueError, Pi05SourceTrainingError):
+        return False
 
 
 def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
@@ -292,18 +359,7 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
             or macro not in allowed or not complete_checkpoint(checkpoint)):
         raise ValueError("joint/context readout requires its complete owned registered endpoint")
     run = read_json(output / "run_contract.json")
-    training_spec = Path(run["spec"])
-    training_repo = training_spec.parents[2]
-    code = git_state(training_repo)
-    if (read_json(training_spec) != spec or code["branch"] or code["dirty_paths"]
-            or code["commit"] != run["git"]["commit"]):
-        raise ValueError("joint training frozen code/spec identity changed")
-    import subprocess
-
-    refs = subprocess.run(["git", "branch", "-r", "--contains", code["commit"]],
-                          cwd=training_repo, check=True, capture_output=True, text=True).stdout
-    if run["git"].get("pushed_ref") not in {row.strip() for row in refs.splitlines()}:
-        raise ValueError("joint training source was not pushed")
+    _inspect_frozen_source(run, spec)
     trainer = torch.load(checkpoint / "trainer_state.pt", map_location="meta", mmap=True,
                          weights_only=True)
     expected_sampler = {"schema_version": spec["events"]["schema_version"],
@@ -326,6 +382,18 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
     terminal = _completed_metrics_source(root, mode, checkpoint, target) if continuation else output
     metrics = [json.loads(line) for line in (terminal / "metrics.jsonl").read_text().splitlines()]
     completion = read_json(terminal / "completion.json")
+    if spec["task"] == CONDITIONAL_TASK and run.get("source_resume") is not None:
+        parent_checkpoint = Path(run["parent_checkpoint"])
+        parent_run = read_json(parent_checkpoint.parent.parent / "run_contract.json")
+        parent_macro = int(parent_checkpoint.name.removeprefix("macro_"))
+        parent_metrics = (parent_checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()
+        current_metrics = (output / "metrics.jsonl").read_text().splitlines()
+        if (parent_checkpoint.parent.parent.parent.resolve() != (root / mode / "train/attempts").resolve()
+                or not complete_checkpoint(parent_checkpoint) or parent_macro >= macro
+                or not conditional_resume_compatible(parent_run, run)
+                or len(parent_metrics) < parent_macro
+                or current_metrics[:parent_macro] != parent_metrics[:parent_macro]):
+            raise ValueError("conditional readout lost its complete actual parent or copied event history")
     if (any(actual != wanted for actual, wanted in facts) or not valid_metrics(metrics, mode=mode, updates=target)
             or completion.get("updates") != target
             or completion.get("checkpoint") != str(terminal / "checkpoints" / f"macro_{target:08d}")):

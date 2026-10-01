@@ -86,16 +86,22 @@ def gather(value, world: int):
 def resume_contract_compatible(parent: dict, current: dict, *, allow_topology_change: bool = False) -> bool:
     """Only registered packing and explicit physical topology may change."""
     mutable = ("microbatch", "frame_chunk", "topology") if allow_topology_change else ("microbatch", "frame_chunk")
+    if current.get("source_resume") is not None:
+        if not joint_training.conditional_resume_compatible(parent, current):
+            return False
+        mutable += ("git", "spec", "parent_checkpoint", "source_resume")
     return (packing_compatible(parent, current)
             and {k: v for k, v in parent.items() if k not in mutable}
             == {k: v for k, v in current.items() if k not in mutable})
 
 
 def packing_compatible(parent: dict, current: dict) -> bool:
+    frames = {(8, 8), (8, 4), (4, 4)}
+    if joint_training.conditional_contract(parent) and joint_training.conditional_contract(current):
+        frames = {(old, new) for old in (4, 8, 16, 32) for new in (4, 8, 16, 32)}
     return ((parent.get("microbatch"), current.get("microbatch")) in {
             (28, 28), (28, 14), (28, 7), (14, 14), (14, 7), (7, 7)}
-            and (parent.get("frame_chunk"), current.get("frame_chunk")) in {
-                (8, 8), (8, 4), (4, 4)})
+            and (parent.get("frame_chunk"), current.get("frame_chunk")) in frames)
 
 
 def complete_checkpoint(path: Path) -> bool:

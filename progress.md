@@ -1,6 +1,31 @@
 # EMBER progress
 
-## 当前：Context450有限收益，继续一个固定学习窗口（2026-10-01）
+## 当前：Context900完成，补完整已见任务能力的一个缺失读数（2026-10-01）
+
+Owner自主理论/实验/新训练授权持续；§37整批已完成，main已直接消费原件，当前active design为**§38**。
+完整判断见机制§83/findings§257与`docs/analyses/operator_context900_evidence_20261001.json`。
+Context900151/400，对自身450126为R100/G51/L26，对原T900148为R122/G29/L26，对MT153为R116/G35/L37。
+相对MT差额缩至−2，但Object+8抵消Long−10；候选450→900+25与旧T同窗+26相近，同龄净优势未扩大。
+task3 28→45且只失1；task31 9→14却只保留3、得11失6。151未超过153，810未启动/读取，不能称稳定已证。
+公共train144为85，train24 41/96、support44/48；实际完整train144尚未测，旧T1800的105不能代替。
+固定A28公共与条件风险共同改善，但task32的前5条件作用从有益变轻微有害、全50仍改善；不能据此直接改loss。
+main重算完整/公共原行、候选400 goal、参照task3/31、48份预测及四模型task31 body/eef记录，无新forward或工程复审。
+task31失败有未接近/接近未搬运/搬运未完成的混合行为，不能统称遗忘下一步；完整解释保留历史正反例。
+
+§37训练/读取17ee3e38、父5f4f76e7；新增450更新/50400 full及同query公共、第二轮36task各50teacher完整。
+544新episode/12新A28全部完成，36旧A28复用，540/630/720/810/900完整ECP保留；没有900之后训练。
+GPU9.97469956/16GPUh、首次完整验收约2.928小时，全部GPU消费者退出并释放；最终completion存储高水14.02899GiB、
+保守峰值界14.52284/32GiB。CPU来源字段补齐失败/恢复原件保留，未热改计算源码或重跑GPU、额外GPU成本0。
+
+当前降低全视频Value作为主要充分修复的支持，不追加1350/2340或立即换架构。
+§38固定Context900，只补原36task/init32..35的完整train144，复用同场景公共90085与MT93，旧T1800105仅作年龄不同背景。
+用于区分当前完整策略在已见任务自身状态中的获取，和新task关系迁移；不以四task FM或公共能力拼出完整获取结论。
+不训练、不新增FM/A28、held/controls/Test/RL或其它checkpoint；仅144新episode，保留36full/108compact和全部goal/continuous trace。
+唯一root `/data1/user/ymdai/ember_runs/operator_context900_seen_task_diagnosis_20261001`，硬限2GPUh/8GiB，预计20–40分钟。
+本科学合同提交推送后立即派既有执行session，尚未记为已启动；canonical tracked窗口当前由main持有，派发时释放。
+执行者独占必要工程/真实消费者检查/Git冻结和运行，main不重复QA，整批回报后自主裁决，不将诊断变成自动新训练门槛。
+
+## 历史：Context450之后的固定900学习窗口与工程交付（2026-10-01）
 
 Owner自主理论/实验/新训练授权保持；§36已完成，main直接消费原件，当前active design为**§37**。
 完整解释见机制§82/findings§256及`docs/analyses/operator_context_value_evidence_20261001.json`。

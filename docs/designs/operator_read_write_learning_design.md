@@ -2552,3 +2552,79 @@ main负责科学原件与解释，不重复工程QA。复用现有canonical trai
 写入窗口串行，集成后明确释放main；运行用冻结树。单份launch合同记录精确来源/命令/环境/资源/输出/恢复与条件读出规则。
 长任务持续等待退出，完成整批（包括已触发的810分支）或实质边界时一次Steer main；不按阶段自Queue、心跳或轮询日志。
 结束停止本批新增计算，main基于绝对能力与保持自主决定后续；本合同没有自动延长到900以后。
+
+### 37.5 完成结果与后续取舍
+
+900完整151/400，对自身450126为R100/G51/L26，对T900148为R122/G29/L26，对MT153为R116/G35/L37。
+未严格超过153，未启动810 bank/400；不替换其它点，不把未测邻点写成已证稳定。全部540/630/720/810/900完整ECP保留。
+公共train85/144，对自身45080为R73/G12/L7；原train24为41/96、support44/48，MT分别46/96、47/48。
+task3由28→45且只失1，task31由9→14但只保留3、得11失6；同窗原T净+26与候选+25接近，没有扩大同龄方法优势。
+main直接重算原始成功行、目标/连续轨迹及48份FM预测，解释见机制§83/findings§257。
+前5公共/条件风险共同改善，不再是大幅反向抵消；task32的条件作用却从前5有益变为轻微有害，完整全50仍改善。
+这一实际反例不足以确诊loss主因或重开旧前缀辅助；后继仅补当前完整策略在已见任务上的闭环缺口。
+
+训练/读取17ee3e38，父450来源5f4f76e7；新增50400 full＋同query公共，原Adam/绝对LR/事件/RNG完整恢复。
+全部544新环境episode/12新A28、36旧A28复用；成本9.97469956/16GPUh，首次完整验收约2.928小时。
+最终存储观察高水14.02899GiB、保守界14.52284/32GiB；一次CPU code_identity字段补齐不改源、不重跑GPU、成本0，失败原件保留。
+所有实际GPU消费者退出并释放，原件在`operator_context_value_continuation900_20261001`的completion/readback/execution_confirmation。
+
+## 38. 固定Context900的已见任务完整能力读出（2026-10-01）
+
+### 38.1 科学问题及唯一新增范围
+
+Owner自主研究授权保持。§37得到151/400及公共train85/144，当前完整策略的已见任务能力仍未知。
+原T1800 full105/144是不同目标、图与年龄，四task FM也不回答完整策略在自己访问状态中的能力，不能代为填值。
+本批只补这个缺口，以改变“获取仍不足”与“已学关系迁移受限”的解释优先级；理由及局部反例见机制§83。
+不是为了达到预定分数，不是新选点或证明video必要性的资格门槛。
+
+唯一候选固定Context900；**0训练更新、0新FM/A28、144条新环境episode**。
+旧公共Context90085、强MT30093的同一144场景结果直接复用，不重评；原T1800105仅作明确不同学习阶段的历史背景。
+不补Context450/T900 full144，不读取810/其它checkpoint，不新增held400、held公共、other/wrong/shuffle/reverse、Test或RL。
+不借本批追加loss、标签、架构或新功能探针。
+
+若完整在多数已见任务已获得超过自身公共、接近或超过强MT的能力，降低“整体未学会获取”解释，后继研究重点转向条件关系迁移；
+若完整仍明显较弱，尤其训练Long相对公共也无益，则先解释当前M获取/调用，不用增加任务数掩盖它。
+混合结果或小差额保留范围和不确定性，不自动加状态、teacher或检查点。两分支均不自动授权某个新架构/训练，须main结合完整历史裁决。
+
+### 38.2 固定来源、条件与实际消费者
+
+唯一root `/data1/user/ymdai/ember_runs/operator_context900_seen_task_diagnosis_20261001`。
+唯一父ECP `/data1/user/ymdai/ember_runs/operator_context_value_continuation900_20261001/context/train/attempts/continuation/checkpoints/macro_00000900`，
+训练来源17ee3e387c778c189475898bcaf9f47e7bb79399，父450仍5f4f76e7。只读加载，无optimizer step或重建训练状态。
+复用canonical Context compile/38-target完整LoRA及唯一官方动态队列，eval-only范围/来源接入由执行者独立完成、验证、push、新冻结。
+新读取Git与训练身份分别记载，不改旧冻结树、旧结果或已封存900。
+
+全部36个已授权训练task、init32/33/34/35、teacher schedule和场景精确继承§19及目前public900：
+`[0,1,2,4,5,7,12,13,14,15,17,19,20,21,22,25,28,29,32,34,35,36,37,38,42,43,51,55,56,62,64,73,95,96,97,101]`。
+复用已封存`operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/scenes/manifest.json`，
+不重新创建场景；相同sim/controller/model body pose、post-settling状态、双RGB、env/policy RNG及video ordinal。
+每task原50视频池中预定四teacher各一次，stride5/末帧/双相机/exact language，视频已参与训练，不称held-video或整轮50无放回。
+一条件只生成一次完整LoRA，无public-only替代、选择teacher/平均/多adapter或task-local适配。
+官方render256/model224/rotate180、8state/7action、10flow/前5replan、成功即止及suite horizon（支持LIBERO90=400）全部保持。
+36个init32 full、108 compact，全部144保存goal与逐控制步连续trace；source、normalization、tokenizer、assets只读复用。
+
+参照原件：
+
+- 公共900：`operator_context_value_continuation900_20261001/context_public/evaluation/900/public144/results.json`；
+- MT：`operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/results.json`；
+- 历史T1800：同scene_canonical144下`T/evaluation/correct144/results.json`，仅背景，不混称匹配年龄比较。
+
+保存逐行success/teacher/scene/RNG配对，报告候选对公共/MT的R/G/L、churn、Jaccard、per-task/suite/breadth、
+train24与support12拆分、任务簇区间。四状态/task不承担正式400资格或微小差额的强结论。
+直接整理已有goal/continuous trace的入口及任务分布，尤其train Long与既定0/12/20/32子集；不另外挑选或重跑场景。
+没有held action/reward梯度、privileged teacher状态输入或部署中视频重复调用。
+
+### 38.3 资源与执行
+
+硬限**2GPUh / 8GiB峰值新增**，包含加载、bank、全部消费者、失败/恢复、新冻结树/临时；无新checkpoint写入。
+依据§37 400 bank约.289GPUh、144 public约.329GPUh及400完整约1.040GPUh，预计本批约.5–.8GPUh，
+具备2–4张合适卡时整批含工程约20–40分钟；完整条件编译与public的差别、工程时间使该估计不保证。
+预期超过40分钟或累计1.5GPUh仍未接近完成时，回报具体原因/剩余量；不得静默超过2GPUh。
+新root/冻结/bank前现场检查strg01 data1独立quota、个人用量、共享容量与完整144 bank峰值；全部新增data1。
+每次launch双节点live，执行总8/6、单节点6与真实共驻合同；按实际吞吐安排bank和动态队列，不dummy或等待凑卡。
+无需重复最长视频检查、额外GPUprofile或全树身份扫描；实际消费者的必要范围/来源/配对检查即可。
+
+执行者仍session01a0f018-69af-7b00-b614-7e117540051b，独占必要工程/Git集成/clean pushed detached冻结及整批运行，
+main负责科学解释、不重复工程QA；窗口串行并在工程集成后明确释放。保持真实训练与读取身份，不复用错误字段接口。
+持续等进程退出，整批完整回报completion/readback/成本/退出与释放；不轮询日志或阶段自Queue。
+完成停止新增计算，由main消费结果后继续自主理论与方法裁决，本合同没有自动后继。

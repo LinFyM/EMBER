@@ -4,6 +4,7 @@ from pathlib import Path
 
 import torch
 from torch.nn import functional as F
+from torch.utils.checkpoint import checkpoint
 
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, LoRATarget, identity_lora_state
 from ember.operator_writer.conditional_read_write import CausalInterpreter, ConditionalTarget, delta_memory
@@ -46,7 +47,8 @@ def test_target_origin_address_final_A_and_complete_composite_credit():
         h = rawh + .1 * native
         c, d = h * .7, torch.cat((torch.zeros_like(h[:1]), h[1:] - h[:-1]))
         # Production computation permits BF16/FP32. Exercise its FP32 memory directly.
-        return unit(a0.float(), b0.float(), x.float(), h.float(), c.float(), d.float())
+        return checkpoint(unit, a0.float(), b0.float(), x.float(), h.float(), c.float(), d.float(),
+                          use_reentrant=False, preserve_rng_state=False)
     unit = unit.float()
     a, b, s, m = compile_state()
     outputs = (a, b)

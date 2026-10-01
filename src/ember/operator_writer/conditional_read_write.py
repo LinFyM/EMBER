@@ -87,7 +87,6 @@ class CausalInterpreter(nn.Module):
         return c, d
 
 
-@torch.jit.script
 def delta_memory(values: torch.Tensor, keys: torch.Tensor, out_width: int) -> torch.Tensor:
     """FP32 ordered writes: keys/values are transition×50×channel."""
     memory = torch.zeros((out_width, keys.shape[-1]), device=keys.device, dtype=torch.float32)

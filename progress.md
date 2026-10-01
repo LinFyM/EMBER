@@ -37,7 +37,15 @@ watchdog结束该attempt自有进程，新增0更新、失败0.835550625GPUh及�
 四个任务rank峰值allocated约29.6GiB，第五rank约12.5GiB；不把瞬时显存或利用率当吞吐证明。
 针对native attention的等价kernel已在`52fe96bb`接入：可见query用SDPA，有限全遮蔽padding query保留原eager信用。
 真实已安装PI05/Gemma的forward、完整q/k/v VJP、functional公共因子checkpoint重放及作用域恢复等8项CPU检查通过；
-尚未实际验证该kernel的GPU峰值、吞吐或更大frame packing。当前训练已请求在完整180ECP安全停止后切换新冻结版本。
+五卡`resume90_adaptive_r3`已完成完整180ECP并安全停止，exit0、2.239782250GPUh。
+读取优化冻结Git为`ebbb5e78`，`resume180_native_sdpa`以frame16完成181..185后native MLP replay OOM；
+新增5个未保存更新不作有效checkpoint，失败0.197883347GPUh已保留，恢复父仍是原完整180。
+同一冻结版本的新attempt `resume180_native_sdpa_r2`以frame8继续；同一181更新19.6016秒、峰值allocated27.71GiB，
+对应frame16为22.0935秒/42.94GiB，原事件、112query及绝对LR保持；不把首步通过当全程稳定。
+OOM已定位到source冻结GemmaMLP的gate/up/product，当前38个LoRA targets均不含MLP。
+窄优化`35528499`仅在既有teacher作用域对该冻结MLP做nonreentrant checkpoint，完整输入VJP、outer functional β和FM保持；
+针对已安装MLP与native的12项CPU检查通过，尚未验证新版本GPU吞吐/峰值或frame16稳定性。
+当前有效训练已请求在下一完整ECP（预定270）安全切换，工程优化不新增profile或科学面板。
 执行者继续承接原事件流，保留Adam/scheduler/sampler及已有rank RNG，新增rank RNG单列；
 父训练与接续来源分别登记。不fresh重训、不丢更新，4×28有效query、完整FM及最终A/B公式保持不变。
 实际启动、首消费者与分段成本在同一root的launch记录；物理卡数仍服从现有资源上限与整批预算。

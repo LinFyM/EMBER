@@ -1,6 +1,6 @@
 # 条件读写 Writer：完整架构设计
 
-状态：Owner于2026-10-01授权按最终版本实施并自主推进；本稿现为active design，首批范围见§13。
+状态：Owner于2026-10-01授权按最终版本实施并自主推进；本稿为active design，已完成首批见§13，当前有限后继见§14。
 对应实现已进入canonical源码；实际运行、冻结版本与结果只看[progress](../../progress.md)，不把实现完成写成科学阳性。
 本文承接[专家原文](../review_materials/20260930_t_architecture/EXPERT_RESPONSE.md)、
 [讨论整合](../review_materials/20260930_t_architecture/PUBLIC_BASE_REVIEW.md)及Owner随后对执行能力和元学习的澄清。
@@ -380,3 +380,92 @@ canonical tracked写入及Git集成由实际冲突方直接串行协调；窗口
 整批结果在main活跃时Steer、idle时Queue，只发一次；main没有独立有价值工作时可以结束回合，回报后主动验收与接续。
 Owner对主讨论在无独立工作、已派发实验后的不设goal要求仅适用于该场景；不扩展为独立任务的禁止。
 仓库整理session按Owner最新明确要求使用goal；不另起实验session，不使用自Queue维持主讨论运行。
+
+## 14. 固定图的第二轮教学覆盖与相邻保持（2026-10-02）
+
+### 14.1 科学判断与唯一干预
+
+主讨论在既有自主授权内，基于[完整450分析](../analyses/feature_to_operator_mechanism_20260926.md#94-条件读写450实际读取已改变局部操作获取尚未成为稳定的跨场景增益2026-10-02)
+登记一次450→900继续学习。450为137/400、seen91/144；task3/31有实际目标获取和后续操作改善，
+但仍低于强MT153，task16错误对象操作、Object能力损失与训练侧获取缺口都保留。
+历史T/Context在450→900确有获取，也明确没有普遍修复黄油目标绑定/抽屉组合；不能把新图接通或loss下降当作继续依据。
+本批仅检验：第一轮教学覆盖出现的局部能力，能否在同图后续共同学习中变成超过强MT且邻近保持的完整能力。
+没有认定S、动态解释器、特征尺度、公共目标或训练年龄是唯一根因。
+
+唯一主要干预为继续450次共享更新。完整c/d、S/M、38-target rank128、source1000、数据allowlist、
+同task跨episode完整FM、task权重、信息墙、官方评测与固定state–video/RNG映射全部继承§13。
+不添加public FM、同视频辅助、native动作监督、正则或新的读取；不改rank/seed/LR及动态解释深度。
+
+### 14.2 恢复、曝光和原件身份
+
+父为真实完整450：
+`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/conditional_read_write/train/attempts/resume360_native_packing/checkpoints/macro_00000450`。
+450末段训练及其读取为`a0e0248d96568e42b24a3d1c4102e2ca6e35a40c`；更早三段来源沿原code_identity，不以新文档/配置提交改写。
+新批唯一root为`/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002`；
+原450 completion、raw rows、metrics、五个完整ECP和失败记录保持不变，引用父而不复制模型/数据或假称fresh。
+
+从事件451接续至900，保持完整Adam、scheduler/scaler、sampler/cursor和已有rank RNG。
+原world5可按实测吞吐及live可用卡显式迁移；保存新旧物理拓扑和新增RNG来源，不把迁移称bitwise exact。
+每宏步仍4task×28query=112有效query；本批新增1,800条件、50,400完整FM query。
+每task在同50条合法teacher池完成第二轮50次访问，900累计100次/task、100,800完整query；
+复用原绝对事件/query/flow流，不把第二轮称为50条新视频或更多独立meta tasks。
+沿warmup150/decay1200/floor1e-5及现有绝对LR继续，不重启warmup/optimizer、不加载任何profile初值。
+
+新增540/630/720/810/900完整ECP；前四点仅供恢复和预登记810分支，其它点不能按loss或内部量选择。
+formal执行来自clean pushed detached树，实际训练与读取代码身份分别记录；纯接口/恢复工程由原执行者闭环，
+不得借恢复改模型、标签、loss、selection或评测语义。无新的最长GPU profile要求；只做实际恢复所需检查。
+
+### 14.3 900读出及810的唯一条件分支
+
+1. **900 correct validation400**为唯一主判点，完整复用§13的validation8、每task50无重复teacher、
+   init0..49、scene/seed、10flow/前5执行、动态persistent queue，保存8full/392compact和全体goal/continuous/action/RNG。
+   与自身450、同龄T900148和Context900151、强MT153逐行配对；成熟T2340161仍作不同年龄的强点背景，不隐去、不重评。
+   报告per-task/suite、breadth、R/G/L、churn、Jaccard、整task簇不确定性及任务分布。
+2. **900完整seen144**复用§13的36task×init32..35及固定teacher，保存36full/108compact和全体goal/continuous/action/RNG。
+   与自身45091、MT93逐行比较，明确train24/support12；Context900103是同龄完整参照，但目标不同。
+   该有限池面板只能判训练侧获取，不参与checkpoint选择，不冒称held-video或完整400资格。
+3. **900固定train-only A28**复用§13四task、八teacher、原28query/noise/tau/target，8full+4public预测。
+   同8条编译被动保存H/c/d及Q8/V8/action_out的X/A0/S/B0/M/frame indices，供450→900的既定算子解释；
+   不额外做层扫描、训练更新、模型消融或新增query/teacher。A28不参与选点，前5仍是FM切片。
+4. **仅当900完整correct严格超过153/400时**，物化已保存810并读取完整correct validation400，
+   pairing、50视频、8full/392compact与trace合同完全相同。810是预登记邻近qualification点，
+   不能替代900成为更高分selected，也不能据它补读720/其它checkpoint或续训。
+
+最少544、至多944条新环境episode，12份固定FM预测及8条被动native；不重新运行任何历史参照。
+就绪且资源允许的训练/物化/评测独立推进，不让readout等待无关工作，也不为了凑卡或逐步人工确认制造空等。
+无other/wrong/shuffled/reversed、Test、公共held400、公共seen144、S消融或RL；这些边界不因900高分自动解除。
+
+### 14.4 预注册裁决和停止线
+
+900是固定候选，810只判相邻保持；900严格超过强MT153是启动810读取的数值条件，不能把它单独叫稳定优势。
+必须同时解释对MT及两点之间的完整成功集合、suite/任务覆盖、正常交换和实质性能力丢失；
+不把相邻点的一两例正常波动等同失效，也不能仅因两个总分接近便声称保持。
+不以A28、seen、S幅度或两个checkpoint的success union选模型，不给810另加机械的逐项胜出门槛。
+主讨论须根据预登记correct/相邻证据作保留判断并冻结900身份，
+再另行登记视频因果读出。尚未满足上述条件时，不宣称已有selected或继续controls/Test。
+
+若900未超过153，810不触发，不从历史中追选峰值；若810不保持优势或能力交换说明不稳定，本批也停止新增计算。
+完整seen改善而held仍弱，支持获取与迁移的区分；仅FM/内部量改善而闭环不改善，不能保护同一主假设。
+task3/11/16/31共同构成收益与主要损失解释，23/39及seen零分任务全部保留，不能靠删任务或换评测面板获得通过。
+900结束后没有自动1350/2340、rank/scale/seed/LR小扫、重复native或辅助loss实验。
+阴性降低“当前native动态＋关联读写＋同池full-FM足以产生所需迁移”的支持，不能只关掉本批名称又近似重做；
+也不把有界阴性扩大为所有条件A、动态解释或元学习方法不可能。后继须由主讨论消费本批证据形成新科学判断。
+
+### 14.5 时间、资源和接续
+
+本批独立硬限为**20GPUh / 64GiB新增峰值**，包含恢复/加载保存、全部失败和重算、训练、物化、544至944评测、A28及临时产物；
+不把上一批40GPUh的余额视为自动授权。本设计登记的是这20GPUh新增预算，旧批19.273293GPUh单独保留并合计路线投入。
+最近90个实际更新共1658.26秒，均值18.43秒、median17.64秒（五物理rank），按同速外推450更新约2.30小时、11.52GPUh；
+这不是新批实测，视频/query组合及物理拓扑会变。原400物化307.97秒、评测747.41秒；144评测306.80秒，
+连同A28、可选810、恢复保存，先验整批约**3–5小时**，有用计算预计14–17GPUh，其余为失败/调度余量。
+实际可用卡少或吞吐改变时由执行者据真实消费者更新ETA；预计超过5小时或累计16GPUh仍明显无法在20内完成时，
+按真实预算/资源边界一次回报main裁决，不静默缩视频/query/面板，不例行播报工程阶段。
+
+新增五个完整ECP按父每个约2.23GiB估计约11.2GiB；完整900/144及可能810 LoRA banks、trace与临时产物共同纳入64GiB峰值。
+所有新增data1；启动前核strg01独立quota、相关实占、共享容量和保守剩余量，复用canonical大资产，不写data0。
+每次launch/resume同时live核gpu01/gpu02，沿AGENTS合计8/6、单节点6上限和实际吞吐选卡，不把world5当永久限制，不保留dummy占卡。
+
+仍由唯一实验session `01a0f018-69af-7b00-b614-7e117540051b`完成代码/配置、实际恢复、工程、Git及冻结运行，
+main只维护科学记录、解释和范围/预算裁决。本批在progress登记并派发后执行，不创建新executor或main goal。
+整批完成或实质科学/权限/预算/原件有效性边界才发送一次来源标识回报，main active用Steer、idle用Queue；
+其它工程、profile、普通调度和窗口事项存入已有记录，与实际冲突方协调，不向main广播，不要求main工程复审。

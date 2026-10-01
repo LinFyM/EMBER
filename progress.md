@@ -2,12 +2,16 @@
 
 ## 当前授权与最近完成批次
 
-Owner已授权按[条件读写设计§13](docs/designs/conditional_read_write_architecture.md#13-首批实施与完整学习检验2026-10-01授权)
-实施并自主推进首批fresh450：因果c/d、A₀感知S、最终A编译M、唯一38-target A_V/B_V及完整FM。
-固定36task allowlist、source1000、normalization、信息墙、跨episode query与选择合同不变。
-50,400 full query；450完整validation400、完整train144及固定A28；总上限40GPUh/80GiB。
-本批已完成并停止新增计算；后继科学范围尚未登记。先验整批含工程6–12小时，
-实际profile、命令、失败、恢复与成本保存在同一运行根，不以先验充当实测。
+Owner原有自主推进授权持续。主讨论已核完整450原件、行为/算子和相关监督历史，
+登记唯一active [条件读写设计§14](docs/designs/conditional_read_write_architecture.md#14-固定图的第二轮教学覆盖与相邻保持2026-10-02)。
+从完整450固定图接续到900，不改c/d、S/M、完整FM、36task、source1000、normalization或信息墙。
+新增50,400 full query；900完整validation400、seen144和固定A28；仅900超过MT153才补810相邻paired400，不能倒选峰值。
+新批硬限20GPUh/64GiB、先验3–5小时；root为`/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002`。
+本批科学合同已登记；原实验session按下方职责承接并更新实际实施状态，不把登记当作已运行。
+若没有完整优势/相邻保持，停止同池续训路径，无自动1350/2340、小扫、controls/Test/RL。
+详细解释与原件在机制§94、findings§269和`docs/analyses/conditional_read_write450_evidence_20261002.json`。
+
+已完成§13为fresh450、完整137/400、seen91/144及A28，19.273293GPUh；全部计算已结束，原40GPUh合同及完成记录不改写。
 
 唯一实验执行者`01a0f018-69af-7b00-b614-7e117540051b`负责代码、测试、排障、资源调度、Git及冻结运行。
 主讨论`01a0ed66-cda4-7a23-90f0-e0d3a06a1d36`负责科学合同、原件解释、机制及后继/预算裁决。
@@ -53,7 +57,8 @@ Seen各task只有四个初态、来自已训练teacher池，不能冒称held-vid
 最早登记占用到completion约4小时29分钟；不是不含工程的训练时长。
 阶段边界观察新增最高37.058697GiB、保守峰值界64GiB，分别低于40GPUh/80GiB；不声称连续精确峰值。
 strg01 data1独立quota2T现场准入及双节点launch检查在已有合同内，所有新增产物均data1，data0只读复用。
-本批计算已停止，无自动900、其它checkpoint、controls/Test/RL；科学解释与后继由主讨论消费完整原件后独立裁决。
+§13计算已停止，原合同不自动续900或其它checkpoint。主讨论消费完整原件后的独立后继已登记为上方§14；
+原批完整科学分析、数据和成本保留，不因新合同覆盖其当时停止边界。
 
 ## 整仓整理交付
 

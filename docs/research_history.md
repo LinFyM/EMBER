@@ -3,6 +3,30 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：条件读写450整批、原件机制分析及固定图后继
+
+[条件读写§13](designs/conditional_read_write_architecture.md#13-首批实施与完整学习检验2026-10-01授权)
+完成450宏步、36task各50teacher、50,400完整FM query，五个90间隔完整ECP及全部544环境原行/goal/continuous/action/RNG。
+validation137/400，task3/6/11/16/23/26/31/39为37/6/34/0/0/36/24/0，breadth5/8；seen91/144，train24为45/96、support46/48。
+对T450、Context450、self_read450净+15/+11/+21；对强MT153为R110/G27/L43、净−16。
+不是相邻稳定、视频因果或最终目标通过。固定A28十二预测及八条被动native齐备。
+
+主讨论核实际模型、原始结果、预测/native和关键连续轨迹，两个只读分工补齐配对行为与历史证据。
+[机制§94](analyses/feature_to_operator_mechanism_20260926.md#94-条件读写450实际读取已改变局部操作获取尚未成为稳定的跨场景增益2026-10-02)
+及[派生证据](analyses/conditional_read_write450_evidence_20261002.json)保留正负分布与算子推导：
+task31真实双目标获取改善，但对MT仍是6增6失；task16全50未接近butter而主要操作orange juice/ketchup。
+task11损失发生在正确目标获取速度和后续运送，不能用一个错误目标故事覆盖所有失例。
+S确已改变真实读取与局部作用，A28也有相对公共功能纠正；它们不证明held失败已定位或新图有普遍迁移优势。
+旧学习曲线、同视频/公共FM/native监督的不同消费者和所有近邻反例一并继承，详见findings§269。
+
+最终训练及读取为a0e0248d，首三段797ae01f/0e2d6c79/ebbb5e78分别覆盖1..90/91..180/181..270，
+五卡恢复及全部失败/重算/显式占用记录保留；原四卡90后的新增rank RNG单列，不称bitwise exact。
+root为`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001`，completion/readback完整；
+总19.273293GPUh，其中有效训练10.876456、显式占卡5.085877；观察高水37.058697GiB、保守64GiB，非连续精确峰值。
+计算结束后主讨论登记[§14](designs/conditional_read_write_architecture.md#14-固定图的第二轮教学覆盖与相邻保持2026-10-02)：
+从完整450固定图继续到唯一900，只有900超过MT153才读810相邻400；新增20GPUh/64GiB、先验3–5小时。
+这是有边界的后续学习检验，不是自动续训或已确认根因修复；实际派发/运行看progress，不从本段推定已完成。
+
 ## 2026-10-02：整仓整理与历史状态入口
 
 Owner授权独立整理整个仓库和实际维护相关skill；并明确纠正：主讨论派出实验后无需goal的限定不适用于独立整理。

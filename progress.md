@@ -11,7 +11,12 @@ Owner原有自主推进授权持续。主讨论已核完整450原件、行为/�
 现场确认同root无已运行批次，data1独立quota960.7G/2T、个人du1,031,493,120,000字节和共享82T余量已准入。
 实际完整450来源的CPU消费者及原恢复6项检查通过；900/条件810的bank、真实capture分派和A28已接通，
 读取端27项及集成后20项针对性CPU检查通过。旧450及历史读取回归保留，无新增GPU profile；
-正式训练尚未启动，接下来使用clean pushed detached版本独立运行及整批验收。
+正式训练已从clean pushed detached `85919994aef11c17b49b7d0e70a2c110158bff61`启动，
+GPU02:0/1/2/3/7、world5、policy microbatch28/native frame32。实际451为112个full query，
+18.409秒、绝对LR0.00024540602126951636；450行原事件前缀及原五rank RNG完整恢复，无fresh RNG/warmup。
+首消费者owner显存峰值33.04–38.01GiB，额外target-shard rank12.53GiB；卡数/packing按现场自动选择，非永久world5。
+一次实际451校准与先验一致，整批仍预计3–5小时；真实恢复证据在新root `launch/actual_resume451.json`。
+训练/后段由同一venv owner持续等待实际退出，未另设自Queue或GPU占位；主讨论无普通阶段通知。
 若没有完整优势/相邻保持，停止同池续训路径，无自动1350/2340、小扫、controls/Test/RL。
 详细解释与原件在机制§94、findings§269和`docs/analyses/conditional_read_write450_evidence_20261002.json`。
 

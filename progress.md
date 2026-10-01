@@ -7,16 +7,13 @@ Owner原有自主推进授权持续。主讨论已核完整450原件、行为/�
 从完整450固定图接续到900，不改c/d、S/M、完整FM、36task、source1000、normalization或信息墙。
 新增50,400 full query；900完整validation400、seen144和固定A28；仅900超过MT153才补810相邻paired400，不能倒选峰值。
 新批硬限20GPUh/64GiB、先验3–5小时；root为`/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002`。
-原实验session已实际承接，独占dev接入450合法父来源、原事件恢复及900/条件810读取；
-现场确认同root无已运行批次，data1独立quota960.7G/2T、个人du1,031,493,120,000字节和共享82T余量已准入。
-实际完整450来源的CPU消费者及原恢复6项检查通过；900/条件810的bank、真实capture分派和A28已接通，
-读取端27项及集成后20项针对性CPU检查通过。旧450及历史读取回归保留，无新增GPU profile；
-正式训练已从clean pushed detached `85919994aef11c17b49b7d0e70a2c110158bff61`启动，
-GPU02:0/1/2/3/7、world5、policy microbatch28/native frame32。实际451为112个full query，
-18.409秒、绝对LR0.00024540602126951636；450行原事件前缀及原五rank RNG完整恢复，无fresh RNG/warmup。
-首消费者owner显存峰值33.04–38.01GiB，额外target-shard rank12.53GiB；卡数/packing按现场自动选择，非永久world5。
-一次实际451校准与先验一致，整批仍预计3–5小时；真实恢复证据在新root `launch/actual_resume451.json`。
-训练/后段由同一venv owner持续等待实际退出，未另设自Queue或GPU占位；主讨论无普通阶段通知。
+原实验session已完成§14实施和整批验收：900完整validation140/400、seen115/144；
+相比自身450137仅净增3，仍低于T900148、Context900151、MT153，810分支未触发，bank/eval/marker均未创建。
+完整544条环境原行/goal/连续trace/action/RNG、固定A28十二预测和八条被动native记录齐备，missing/invalid均为空。
+真实新增12.464600929159463GPUh/20；存储观察高水位35.598759GiB，阶段du保守上界60/64GiB，非连续精确峰值。
+原件为新root `completion.json`、`analysis/readback.json`及`analysis/final_report.txt`。
+本批新增计算已停止，两节点现场确认无项目GPU context；canonical tracked/Git写入窗口释放。
+科学后继由主讨论消费完整原件裁决，没有源码QA或再次启动许可的等待。
 若没有完整优势/相邻保持，停止同池续训路径，无自动1350/2340、小扫、controls/Test/RL。
 详细解释与原件在机制§94、findings§269和`docs/analyses/conditional_read_write450_evidence_20261002.json`。
 
@@ -27,6 +24,42 @@ GPU02:0/1/2/3/7、world5、policy microbatch28/native frame32。实际451为112�
 既有自主授权持续生效，不恢复旧暂停段落，不等待主讨论工程复审。
 沟通边界按[Owner要求§6](docs/current_owner_requirements.md#6-沟通与交接)：整批科学结果或确需裁决的实质边界只回报一次；
 工程阶段、可自行修复的故障和普通调度记入已有记录。写入/Git窗口与实际冲突方直接串行协调。
+
+## §14整批交付（2026-10-02）
+
+唯一root为`/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002`。`completion.json`及`analysis/readback.json`验收complete，
+整批readout owner exit0，全部有效训练/bank/evaluator/A28 exit0，原工程失败及计费保留。
+仅从实际450完整ECP恢复451..900；新增450更新、1,800条件、50,400 full query，累计100,800，public训练FM为0。
+36task每条原50teacher完成第二轮，累计100访次/50不同teacher；不是50条新视频。
+Adam/scheduler/scaler/sampler/原五rank RNG和450 metrics前缀恢复，绝对LR不重启；540/630/720/810/900完整ECP齐备。
+训练/读取实际身份均`85919994aef11c17b49b7d0e70a2c110158bff61`，来自clean pushed detached
+`/data1/user/ymdai/projects/EMBER-conditional-read-write-continuation900-formal`；父450的a0及更早797/0e2/ebbb来源不改。
+
+900完整validation为140/400，breadth7/8；task3/6/11/16/23/26/31/39依次32/7/45/1/1/41/13/0，
+Spatial39、Object46、Goal42、Long13。对自身450137为R107/G33/L30、净+3、churn63、Jaccard0.629412，
+整task簇95%差额[-30,36]；对T900148为R114/G26/L34、净−8；对Context900151为R117/G23/L34、净−11；
+对MT153为R102/G38/L51、净−13、churn89、Jaccard0.534031、簇区间[-50,25]。
+Task11净+11、26净+5，但3净−5、31净−11（原24只留8，得5失16）；16/23各仅1、39仍0，全部反例保留。
+140≤153，按预登记不生成或读取810，不倒选其它checkpoint；没有相邻资格或selected声明。
+
+900完整seen为115/144，breadth35/36；train24为70/96、support12为45/48。
+对45091为R87/G28/L4、净+24、簇区间[12,37]；train净+25、support净−1。
+对MT93为R87/G28/L6、净+22、簇区间[9,36]；train净+24、support净−2。
+对Context900103为R95/G20/L8、净+12、簇区间[2,23]。四初态/task、已训练50池不能冒称held-video或正式400资格。
+全部12份A28仍为固定query/noise/tau的FM速度预测；八条H/c/d、Q8/V8/action_out被动字段不增加forward或标签。
+原行入口为`conditional_read_write/evaluation/900/correct400/results.json`、
+`conditional_read_write_seen/evaluation/900/correct144/results.json`；A28/native为`analysis/A28/conditional_read_write/`。
+
+训练GPU02:0/1/2/3/7、world5、µ28/frame32是现场选择，执行面仍支持1–6实际rank；
+新增450步mean16.7869s/median15.7107s，训练含恢复/保存10.586330523091GPUh。
+400 bank五卡与seen bank GPU01:2并行；400/144均五卡×每卡3 persistent replicas/dynamic long-first queue；
+A28在GPU01:2与400独立并行。无dummy/hold/profile、无历史重评、无新增科学面板。
+一次备用卡调度漏排除已派发但context尚未显存可见的卡，被launch准入拒绝；原bank无产物即退出−15，
+0.007435357122GPUh全计费。已在独立读出owner窄修排除running receipts，通过原现场CPU复现，
+未改冻结科学代码或重训，真实后段全exit0。细节保留`launch/scheduling_repair.json`和原/新owner记录。
+全部真实新增12.464600929159463GPUh，旧19.273293210686425单列，两批31.737894139846GPUh。
+阶段du高水位35.598759GiB、保守上界60/64GiB，未称连续精确峰值；全部新增data1，data0只读。
+新增计算已停止，最终现场两节点无项目GPU context；完整科学交付只发主讨论一次，普通过程无广播。
 
 ## §13整批交付（2026-10-02）
 

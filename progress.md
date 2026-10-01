@@ -31,11 +31,18 @@ Owner要求按实际可用卡数自动高效训练。通用target分片、完整
 watchdog结束该attempt自有进程，新增0更新、失败0.835550625GPUh及原失败树保留。
 纯通信修复`0e2d6c79`已推送，冻结树为`/data1/user/ymdai/projects/EMBER-conditional-read-write-adaptive-r2-formal`；
 两端匹配batched header/payload，不能将CPU检查当作GPU通信或实际91消费者完成。
-执行者继续从有效90ECP承接91..450原事件流，保留Adam/scheduler/sampler及已有rank RNG，新增rank RNG单列；
+实际NCCL双向通信检查已通过；frame16在旧native eager replay下OOM，新增0更新、失败0.134629906GPUh。
+同一`0e2d6c79`冻结版本以frame8、GPU02的0/1/2/3/7五卡承接90，attempt为`resume90_adaptive_r3`。
+第91个实际更新已完成：112queries、12.5462秒、原绝对LR及完整finite梯度；第五卡真实承担target分片及cotangent返传。
+四个任务rank峰值allocated约29.6GiB，第五rank约12.5GiB；不把瞬时显存或利用率当吞吐证明。
+针对native attention的等价kernel已在`52fe96bb`接入：可见query用SDPA，有限全遮蔽padding query保留原eager信用。
+真实已安装PI05/Gemma的forward、完整q/k/v VJP、functional公共因子checkpoint重放及作用域恢复等8项CPU检查通过；
+尚未实际验证该kernel的GPU峰值、吞吐或更大frame packing。当前训练已请求在完整180ECP安全停止后切换新冻结版本。
+执行者继续承接原事件流，保留Adam/scheduler/sampler及已有rank RNG，新增rank RNG单列；
 父训练与接续来源分别登记。不fresh重训、不丢更新，4×28有效query、完整FM及最终A/B公式保持不变。
 实际启动、首消费者与分段成本在同一root的launch记录；物理卡数仍服从现有资源上限与整批预算。
 尚未登记本架构formal450的完整科学结果；源码完成、CPU检查或profile均不表示学习资格或闭环阳性。
-canonical tracked窗口已释放，冻结实验不依赖canonical后续整理；新写入仍须与实际冲突方协调。
+后继源码已承接整理后的`16241717`，冻结实验不依赖canonical后续整理；新写入仍须与实际冲突方协调。
 
 ## 整仓整理交付
 

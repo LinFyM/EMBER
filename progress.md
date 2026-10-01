@@ -15,8 +15,11 @@ Long10对公共5/MT8，task32开炉后放壶3对1。条件作用能在已见任�
 每task init0 full，共8full/392compact，全部保存goal/continuous trace；不重评参照、不换checkpoint、不自动其它controls/Test/RL。
 结果用于区分公共不足与条件迁移损害，先按逐task得失和目标阶段判断，不从总分直接加权/缩放/换架构。
 唯一root `/data1/user/ymdai/ember_runs/operator_context900_public_validation_20261001`，上限2GPUh/4GiB，预计含工程20–45分钟。
-科学合同提交推送后立即派既有执行session，当前尚未记为启动；canonical tracked窗口由main持有，派发时明确释放。
-执行者负责必要接入/真实消费者检查/Git冻结/运行，main不重复QA；整批回报后继续自主科学裁决。
+科学合同07390922已实际派发并承接，Queue回执01a0f51e-2289-77a3-b226-970a12b51476。
+§39接线已集成push **96d6ce67ac99f5a2fffafbd0aea272039f9f6417**；main现场确认HEAD==origin/main且clean。
+执行者报告13项实际CPU消费者检查通过，直接引用现存76公共因子，未复制/导出或消费teacher/native；新400范围与捕获已接入。
+训练来源仍17ee3e38，读取身份独立登记；冻结版本自主继续整批，完整400结果尚未返回，main不重复工程QA。
+canonical tracked写入窗口已明确释放回main，无需再放行；整批回报后main直接消费科学原件并继续裁决。
 
 ## 历史：Context900完成后的完整已见任务读数与工程交付（2026-10-01）
 

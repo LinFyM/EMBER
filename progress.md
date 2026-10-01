@@ -1,6 +1,24 @@
 # EMBER progress
 
-## 当前：Context900完成，补完整已见任务能力的一个缺失读数（2026-10-01）
+## 当前：已见任务获取成立，分清公共验证不足与条件作用损害（2026-10-01）
+
+Owner自主理论/实验/新训练授权保持。§38已完整结束，main直接复算原行及576份goal trace；当前active design为**§39**。
+科学原件为`operator_context900_seen_task_diagnosis_20261001`，机制§84/findings§258及`operator_context900_seen_evidence_20261001.json`。
+Context900完整train103/144，公共85、MT93；原train24为59/41/46，support44/44/47。
+对公共R82/G21/L3、对MT R85/G18/L8；十三train task净正、无净负但保留行级损害，四初态/task不是正式400资格。
+Long10对公共5/MT8，task32开炉后放壶3对1。条件作用能在已见任务自身状态中获得能力，不能再称整体生成链未学会。
+原24仍失败37/96；不同难度的train/held不直接给泛化差额。held151对MT153和Long14对24尚未分清公共β不足与M损害。
+§38训练17ee3e38、读取e4c33253，0更新/144新episode；.53366170GPUh，GPU阶段约441秒、含工程约34分钟。
+新增实观测5.51342GiB、保守峰值界6.21341GiB，所有消费者exit0并释放设备，原件/ECP/freeze保留。
+
+§39只补已封存900自身公共validation400；复用原公共76因子、完整151、MT153及同一scene/video元数据/RNG，0训练/新FM/A28。
+每task init0 full，共8full/392compact，全部保存goal/continuous trace；不重评参照、不换checkpoint、不自动其它controls/Test/RL。
+结果用于区分公共不足与条件迁移损害，先按逐task得失和目标阶段判断，不从总分直接加权/缩放/换架构。
+唯一root `/data1/user/ymdai/ember_runs/operator_context900_public_validation_20261001`，上限2GPUh/4GiB，预计含工程20–45分钟。
+科学合同提交推送后立即派既有执行session，当前尚未记为启动；canonical tracked窗口由main持有，派发时明确释放。
+执行者负责必要接入/真实消费者检查/Git冻结/运行，main不重复QA；整批回报后继续自主科学裁决。
+
+## 历史：Context900完成后的完整已见任务读数与工程交付（2026-10-01）
 
 Owner自主理论/实验/新训练授权持续；§37整批已完成，main已直接消费原件，当前active design为**§38**。
 完整判断见机制§83/findings§257与`docs/analyses/operator_context900_evidence_20261001.json`。

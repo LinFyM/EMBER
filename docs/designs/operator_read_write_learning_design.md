@@ -2628,3 +2628,82 @@ train24与support12拆分、任务簇区间。四状态/task不承担正式400�
 main负责科学解释、不重复工程QA；窗口串行并在工程集成后明确释放。保持真实训练与读取身份，不复用错误字段接口。
 持续等进程退出，整批完整回报completion/readback/成本/退出与释放；不轮询日志或阶段自Queue。
 完成停止新增计算，由main消费结果后继续自主理论与方法裁决，本合同没有自动后继。
+
+### 38.4 完整结果与科学收束
+
+整批144完成，0更新/0新FM或A28；readback/completion complete、missing/invalid为空，所有消费者exit0并释放设备。
+完整103/144（train24 59/96、support44/48），公共85（41/44）、MT93（46/47）；对公共R82/G21/L3、对MT R85/G18/L8。
+全36task簇95%净成功区间分别[9,27]/[0,21]，不是训练seed不确定性。breadth35/36；四suite17/18/14/10、support44。
+train24对公共13task净正、0净负；净增18全在原24。Long10对公共5，task32开炉后放壶3对1，后续操作能力确有获取。
+完整分析见机制§84/findings§258及`operator_context900_seen_evidence_20261001.json`；不能由已见任务较强直接把held差额全归因迁移。
+训练身份17ee3e38、读取e4c33253；成本.53366170GPUh，观察高水5.51342GiB、保守峰值界6.21341GiB，全部在原上限内。
+本批结束，没有新训练或其它面板随分数自动启动；后继§39由main根据公共held功能仍未知的具体缺口独立登记。
+
+## 39. 固定Context900的公共验证能力与条件得失分解（2026-10-01）
+
+### 39.1 唯一问题、竞争解释及读数用途
+
+Owner自主理论/实验授权保持。§38已确认完整策略在已见任务自身状态中的获取，当前held151对MT153的−2仍不能区分
+公共基础不足与M在新关系上的损害；Long14对MT24尤其如此。两个解释需要不同方法取舍，机制§84给出完整推导。
+旧T公共103是不同图/目标/年龄，当前train公共85又是不同任务，均不能填入当前held公共格子。
+本批只测固定900自身公共`B0 A`，其余参照复用；不是视频内容必要性证明或方法选点。
+
+若主要缺口任务公共较强而完整更弱，优先研究条件作用迁移/保持；若公共较弱、完整新增有益能力，
+保留已学条件作用并解释实际未完成操作，不能再把总体不足笼统命名为M破坏/没有迁移。
+混合结果按task/原行/goal限定，不自动加全局缩放、公共权重、回读、任务数或任何新训练。
+无论结果均不补其它节点、同视频其它controls或新函数矩阵。
+
+900是§37事前固定的唯一主能力点，权重已封存；151未触发810的原结论保持。
+本次公共结果不用于改选900/810/其它checkpoint，不把任意分支解释为通过正式方法资格或稳定性标准。
+
+### 39.2 固定权重、场景及公共部署
+
+唯一root `/data1/user/ymdai/ember_runs/operator_context900_public_validation_20261001`。
+唯一checkpoint仍为`operator_context_value_continuation900_20261001/context/train/attempts/continuation/checkpoints/macro_00000900`，
+实际训练Git17ee3e387c778c189475898bcaf9f47e7bb79399、父450 5f4f76e7；全部只读，**0更新/0新FM/A28**。
+复用§37已导出的完整公共76因子文件
+`operator_context_value_continuation900_20261001/context_public/banks/900/public_beta.safetensors`，
+或确因现有读取接口需要从同ECP一次CPU导出相同公共因子；不得引用该旧manifest的train144 scope冒充validation400。
+保存新范围manifest并准确引用同一公共权重来源；不重复做400次bank，不读取teacher RGB/native，不把full因子中的B0+M当公共。
+每个条件只有一套38-target rank128/alpha128公共LoRA，安装自身A/B0、M=0；不是MT权重、零image、独立专家或第二adapter。
+执行policy仍正常读取exact task language、自己的双RGB/8state和native flow noise；task ID/video只作评测调度元数据。
+
+唯一新增400条为validation8 `[3,6,11,16,23,26,31,39]` 各init0..49，完整继承§37的scene/state/env/policy RNG。
+场景复用`/data1/user/ymdai/ember_runs/demonstration_transfer_learning_20260927/scenes/manifest.json`，不重造。
+video ordinal/teacher调度元数据与900完整correct逐行匹配；本臂不消费视频内容，不声称400次教学读取或动态证据。
+官方render256/model224、rotate180、8state/7action、10flow、前5replan、dummy10、成功即停及220/280/300/520 horizon保持。
+固定每task init0 full共8条，其余392 compact，全部400保留goal与逐控制步continuous trace、实际动作与随机种子。
+
+两个主参照直接复用：
+
+- Context900完整151：`operator_context_value_continuation900_20261001/context/evaluation/900/correct400/results.json`；
+- MT300153：沿§37 readback `raw_references.MT300`的原件路径（需实际消费者读该来源，不猜路径或重评）。
+
+旧T900148、旧公共T2340/1800只作明确不同图/目标/年龄背景，不新增读取器前向或结果；§38 train144原件可CPU交叉解释。
+不新增correct/other/wrong/shuffled/reversed、810/其它checkpoint、train144、Test、RL或held actions/reward梯度。
+新reading Git独立于训练身份登记；不热改原freeze、旧manifest或已有有效结果。
+
+### 39.3 科学与工程交付
+
+报告公共400总数、per-task/suite、breadth；完整900对自身公共、公共对MT以及已有完整对MT的R/G/L、churn、Jaccard。
+以完整与公共的同场景原行计算八task whole-cluster95%差额；仅描述任务重采样，不当训练seed或全体任务置信度。
+保留全部成功集合，尤其完整新增和损害公共成功，不以接近总分掩盖交换。
+直接使用已捕获goal/continuous trace给出各task目标ever/final和原行入口，特别是task31的两项目标与已登记Long差额；
+不挑有利病例、不新增stage classifier/contacts、模型中介探针或额外环境尝试。几何统计只是描述，不称操作语义或同状态因果。
+模型整体成功数的分解不是“公共知识/视频知识比例”；本批不独立识别动态视频因果，不据分数自动后继。
+
+执行者session01a0f018-69af-7b00-b614-7e117540051b继续独占必要scope/来源/捕获接入、真实消费者检查、集成push、clean detached与运行。
+复用canonical公共因子/官方动态队列，无新模型/训练器/评测器；CPU测试限真实source/scope/配对合同，main不重复工程QA。
+已定位且科学计算不变的工程修复按既有授权自行处理、保留失败、push后新冻结继续；科学语义/不确定原因/预算越界回main。
+工程集成后明确释放canonical窗口，冻结树独立运行不等待二次放行。完成统一readback/completion/成本/退出与释放，停止新增计算。
+
+### 39.4 预算及时间
+
+硬限**2GPUh / 4GiB峰值新增**，含准备/加载/CPU导出若必要、所有评测、失败、冻结树及临时；不写训练checkpoint。
+依据§37完整400约1.040GPUh与§38完整144约.395GPUh，公共没有视频compile，预计约1.0–1.3GPUh，
+3–5张有效卡时含必要工程约20–45分钟；公共失败更多时horizon和调度会增加成本，此估计不是保证。
+预期超过45分钟或达到1.5GPUh仍未接近完成时，回报具体剩余量/原因；不静默超过2GPUh。
+新root/冻结前实查strg01 data1独立quota、个人用量、共享容量及整批峰值。预计主要是8full/392compact轨迹，复用公共权重无大bank复制。
+全部新增data1，历史data0只读；每次GPU launch同时live gpu01/gpu02，遵守总8/6、单节点6及不干扰他人的共驻规则。
+采用long-first/persistent动态队列、真实吞吐选卡，不dummy或等凑卡；没有额外GPUprofile/最长视频检查/防御性全树扫描。
+持续等待真实进程退出，只在整批完成或实质边界回报，不轮询日志、不逐阶段Queue或给已有持续等待者重复自通知。

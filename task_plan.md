@@ -1,10 +1,23 @@
 # EMBER task plan
 
+## 当前目标与执行分工（2026-10-01重新授权）
+
+按最终[条件读写架构及首批合同](docs/designs/conditional_read_write_architecture.md#13-首批实施与完整学习检验2026-10-01授权)
+推进完整方法学习。当前active为该设计§13，旧operator设计各批次不自动恢复。
+
+1. 既有实验session `01a0f018-69af-7b00-b614-7e117540051b`独立完成实现、实际消费者检查、
+   live资源准入、Git集成/冻结和fresh450整批；不等待主讨论工程复审。
+2. 首批唯一450节点做完整validation400、完整train144和固定A28；完整原件、成本与异常交主讨论。
+3. 主讨论检验训练获取、held迁移、能力得失及机制预测，保留不利证据，按真实缺口自主决定后继；
+   不用loss/图接通代替性能，不自动续训、小扫、补矩阵或换架构。
+4. 所有科研要求及角色边界以current_owner_requirements全文和progress当前段为准。
+   Owner已删除误设goal，不再设置；没有独立工作时正常结束回合，依可靠整批回报接续，不自Queue或陪跑轮询。
+
 当前完整方案见[条件读写架构](docs/designs/conditional_read_write_architecture.md)，
 专家输入与原始证据见[审阅入口](docs/review_materials/20260930_t_architecture/README.md)。
 §40最终分析见机制§87，条件A和训练取舍的历史推导见§88–93；不从旧段落恢复执行。
 
-## 当前：专家意见已具化为完整架构设计与可视化（2026-10-01）
+## 此前：专家意见已具化为完整架构设计与可视化（2026-10-01）
 
 Owner已提供专家回复，澄清具体操控能力属于source与最终A/B执行策略，Writer承担元学习；随后要求完整设计和详细数据流。
 首选[条件读写架构](docs/designs/conditional_read_write_architecture.md)：公共native一次读取 → 因果c/d解释 →

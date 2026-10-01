@@ -1,6 +1,7 @@
 # 条件读写 Writer：完整架构设计
 
-状态：2026-10-01的可审阅设计，尚未实现或训练，不是formal active design或启动许可。
+状态：Owner于2026-10-01授权按最终版本实施并自主推进；本稿现为active design，首批范围见§13。
+实现与训练尚待实验session执行，不把设计授权写成已完成结果。
 本文承接[专家原文](../review_materials/20260930_t_architecture/EXPERT_RESPONSE.md)、
 [讨论整合](../review_materials/20260930_t_architecture/PUBLIC_BASE_REVIEW.md)及Owner随后对执行能力和元学习的澄清。
 现有源码仍是已执行的operator Writer；下文明确给出后继计算，不把旧实验成绩当作本设计结果。
@@ -262,7 +263,7 @@ LocalField已有X关联生成A，Pullback已有条件A与执行绑定，P/I已�
 视频causal controls在selected checkpoint冻结后补充；Test、shuffled/reversed封存结果不反哺设计。
 若同解释器和监督下重新训练的S=0取得相当或更好能力，应去掉S；成熟模型临时关S不是该对照。
 若完整新机制不能保持匹配T能力，不以S非零、attention变化、FM下降或增加rank/深度维护它。
-本稿不指定实验步数、GPU、预算或选点，因当前交付是完整设计和可视化，尚无新formal运行授权。
+上述架构讨论本身没有产生实验结果；Owner随后授权的首批实施、科学读出与投入边界见§13。
 
 ## 12. 可核对来源
 
@@ -273,3 +274,107 @@ LocalField已有X关联生成A，Pullback已有条件A与执行绑定，P/I已�
 - [prompt与state处理](../../src/ember/pi05_processing.py)：teacher省略State、自身policy读取state的实际区别。
 - [FM消费者](../../src/ember/writer/function_credit.py)：真实query功能监督及cotangent。
 - [Owner要求](../current_owner_requirements.md)、[研究历史](../research_history.md)：当前边界与最近似反例。
+
+## 13. 首批实施与完整学习检验（2026-10-01授权）
+
+### 13.1 最终选择、问题与竞争解释
+
+Owner要求按最终确定版本开始并由主讨论持续自主推进，次日检查；不需再次请示启动或正常接续。
+最终保留本稿的S/M残差编译，接口直接输出A_V/B_V；不采用随后讨论的以B₀为初值、覆盖完整B的替代递推。
+直接写B_V或B₀+M只是出口表达；本批始终从零编译M，再与B₀相加。唯一目标为完整FM，无public项。
+
+所要解释的实际不足是：原T已有有益教学作用，但成熟完整161/400尚未形成相对强MT153的可靠广泛优势，
+Context/Joint/self_read未解决主要能力缺口。当前候选检验完整动态内容传播与条件读取共同学习能否产生更有效的执行修正。
+已有局部结构见证只证明原局部差分门控的限制和条件A的可表示方向，不证明它们是实际主要根因。
+
+竞争解释至少保留：
+
+- 动态证据必须在发生位置之外写入，且读取方向需要按教学改变；新图应改善完整能力及需要多阶段调用的任务。
+- native特征中关键关系不足，或有限meta-task支持未教会可迁移编译；新增结构可以接通甚至拟合训练，而held仍不改善。
+- 新容量/训练参数化改变了学习速度或已见任务拟合；早期分数差不能自动归因动态传播或S。
+
+本批是Owner选定完整方法的一次联合检验，包含解释器、条件A和full-only取舍；与原T/Context的差额不能隔离任一模块因果效应。
+保留LocalField/Pullback/P-I及原T/Joint/Context/self_read的完整正反证据，不把部件重组视为首次解决旧问题。
+
+### 13.2 训练范围与事件
+
+唯一运行根为`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001`，代码仍由canonical `operator_writer`拥有。
+source1000、normalization、tokenizer、固定24/8/8协议及已审36task支持复用原合同，不扩充数据或改变task等权。
+明确训练allowlist为
+`[0,1,2,4,5,7,12,13,14,15,17,19,20,21,22,25,28,29,32,34,35,36,37,38,42,43,51,55,56,62,64,73,95,96,97,101]`；
+前24项为target train24，后12项为既有经审non-held support。
+事件复用`configs/operator_read_write_v1/self_conditioned_native_fresh_spec.json`中的events定义，
+只继承数据/事件身份，不继承其self_read、双目标、旧模式或初始化权重。
+
+首窗fresh450宏步，每步4个task、各28跨episode query，共50,400个完整FM query，
+每task首轮50条teacher各访问一次；query action offset1、同task跨episode、全部50×7监督及flow随机流保持。
+新解释器与两侧头全部fresh、公共LoRA合法identity、fresh optimizer/scheduler，不加载旧T/MT/Context/profile权重。
+初始沿用AdamW lr3e-4、betas(.9,.95)、eps1e-8、weight decay1e-4、clip1、warmup150、decay1200、floor1e-5。
+这固定比较所需的初始优化条件，不授权后续LR/seed/rank扫描，也不把旧训练时长当新架构上限。
+
+90/180/270/360/450保留完整ECP；450是本批唯一科学评测节点，中间点只供恢复，不按loss/内部量挑选。
+ECP保存新架构/schema、全部共享参数、optimizer/scheduler/scaler、sampler/cursor、rank RNG与拓扑。
+旧checkpoint与新图不兼容，必须fresh；完整边界可按AGENTS显式迁移物理卡数，保持逻辑事件、有效batch和权重。
+物理并发由真实吞吐决定，不把四个task或一次smoke的world size变成永久设备上限；无收益的rank不占卡。
+
+### 13.3 实际图与成本检查
+
+执行者在现有消费者内验证：真实38-target输出、信息墙、帧块因果、整段零动态时S=M=0、
+转移(t−1,t)以X[t−1]寻址、先得到最终A再编译M、合法identity及同参数版本完整cotangent/replay。
+实际梯度须包含A的执行、M的key/δz和native依赖；source基础参数冻结不等于切断其算子导数。
+只做与新计算有明确关系的针对性检查，不为工程形式扩展通用测试平台或逐tensor低位一致检查。
+
+在最长已授权train38/demo36的105采样帧、28跨episode query上完成最多3次fresh完整FM更新，
+记录编译/FM/replay耗时、峰值、finite和必要的分组信用；第一步上游为零按identity解释，后续验证路径打开。
+profile更新不进入正式初值或正式曝光。训练内存/吞吐可用正常BF16/TF32、高效attention、checkpoint与同版本重放优化，
+须保持4层独立参数、完整50槽与真实视频长度、同帧全可见/跨帧因果mask及零保持动态内容；不能静默换成均值或局部门控。
+GPU工程检查预算包含在本批总额中，预计不超过1GPUh；若计算定义无法按现有硬件执行，报告具体科学/成本取舍给main。
+检查通过且总预算可执行后，实验session直接启动fresh450，不等待main代码复审、重复测试或二次放行。
+
+### 13.4 450节点的最小科学读出
+
+1. **完整correct validation400**：固定validation `[3,6,11,16,23,26,31,39]`、init0..49；
+   复用`demonstration_transfer_learning_20260927/scenes/manifest.json`及原state–video/env/policy RNG，
+   每task50条teacher各一次，固定schedule seed7，继承官方预处理/10flow/前5执行和long-first persistent动态队列。
+   保存8个init0 full、392compact及全部success、goal/continuous/action/RNG。报告per-task/suite、breadth、
+   对T450122、Context450126、self_read450116和强MT153的paired R/G/L、churn、Jaccard及whole-task不确定性。
+   Joint450114、Context900151、成熟T2340161作为学习年龄/目标不同的完整背景；不隐去强点，不重评参照。
+2. **完整train144**：36task×init32..35，使用同一450完整视频条件策略，复用既有训练诊断场景与teacher调度，
+   明确有限池/训练重用范围，不能冒称held或整轮50视频无放回。36个init32 full、108compact、完整原行与goal保存。
+   与同场景MT93原件配对，分别报告train24/support12；Context900完整103仅作不同年龄背景。
+   本批不另做公共train144或held公共400。它检验训练侧获取，不能由该读数直接推断跨任务泛化。
+3. **固定train-only A28功能读出**：沿用task0:40/11、12:25/14、20:38/42、32:17/43的8条teacher与
+   原28query/noise/tau/target；保存8份完整和4份公共FM预测，报告full50/first5/motion6/gripper及逐query原件。
+   公共只作冻结诊断，不产生梯度或选点。仅在这8条实际编译中被动保留H、最终c/d及
+   Q8/V8/action_out的真实X、A₀/S/B₀/M和frame indices，供核对传播、读取变化与功能作用；
+   不额外做层扫描、反向探针、teacher标签输入或新增query面板。
+
+合计544条新环境episode、12份固定FM预测；工程profile单列。所有新GPU消费者含物化/诊断/评测共同计卡、计费。
+本批不跑other/wrong/shuffled/reversed、Test、RL、task-local优化或S消融；视频controls待正式selected checkpoint冻结后登记。
+不由一个新点宣布稳定性或视频机制确证；相邻checkpoint能力保持仍需后继明确合同。
+
+### 13.5 结果分支、投入及职责
+
+450是有信息量的首轮教学覆盖节点，不是预设的最终模型或普遍训练上限。
+若完整训练获取与held能力、任务分布共同支持继续学习，main结合实测曲线与成本登记最小后继和相邻保持证据。
+若仅内部量改变、训练/held能力均弱，先核实际干预及学习阶段，再依据竞争解释裁决；不自动900、无限续训或参数小扫。
+若train获取明确而held仍弱，降低“结构接通就能迁移”的支持，不能只通过加深/加rank延长同一假设。
+若出现已定位工程违约，执行者自行修复并保留有效原件；科学non-pass按科学证据处理，不修成预期答案。
+停止本批不等于停止研究；main仍须按Owner长期授权形成并执行有依据的下一判断，不能等Owner催促。
+
+首批硬限**40GPUh / 80GiB新增峰值**，包括profile、加载/保存、训练、物化、读出、失败/恢复及临时输出。
+先验预计训练12–24GPUh、物化与544episode/功能读出4–8GPUh，整批含工程约6–12小时；
+依据原Context450训练8.419GPUh、self_read整批约18GPUh及新增4层网格解释/S编译的成本不确定性，
+不是新模型实测。profile后由执行者修订一次ETA；预计超12小时或累计30GPUh仍距收尾较远时向main报告具体剩余量。
+超过40GPUh/80GiB前须由main作科学/预算裁决，不擅自缩短视频、减少query或修改评测口径。
+所有新增data1；启动前由执行者live核strg01独立quota、目录实占、共享容量及完整峰值，复用canonical source/data/env。
+每次launch/resume同时核gpu01/gpu02，按AGENTS总8/6、单节点6及NUMA/NCCL合同选择真实吞吐；不另加整批4卡硬上限。
+
+唯一实验执行session仍为`01a0f018-69af-7b00-b614-7e117540051b`（接管并继续实验）。
+它负责实现、针对性工程检查、资源准入/调度、运行排障、Git集成push和clean detached冻结、整批原件与计费交付；
+main负责科学合同、原件解释、机制判断、后续实验及预算裁决，不默认接管工程或重复QA。
+本稿与当前状态推送后，canonical tracked写入窗口交给执行者，源码集成后由其明确释放；main不重叠写入。
+代码保持一个canonical实现；历史执行面由Git/冻结版本/正式原件保留，不另起长期并行Writer或fallback。
+正常长任务由执行者持续等待退出；只有源码集成释放窗口、整批结果或实质边界需要回报，不发心跳/分片自通知。
+整批结果在main活跃时Steer、idle时Queue，只发一次；main没有独立有价值工作时可以结束回合，回报后主动验收与接续。
+Owner明确不需要goal，已删除误设goal；不重建goal、不另起实验session，也不使用自Queue维持主讨论运行。

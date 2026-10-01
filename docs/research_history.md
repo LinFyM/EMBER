@@ -1,5 +1,15 @@
 # EMBER research history
 
+## 2026-10-01：确定残差编译并授权首批实施，恢复既定实验分工
+
+Owner追问B₀作用后，讨论了以B₀初始化完整B并根据目标响应覆盖的候选；最终仍选择S/M残差编译。
+直接输出B_V与写成B₀+M的记法等价，但完整B递推会使公共直接路径经过覆盖乘积，原残差形式保留加法通路；
+这不保证能力保持或性能优势，新完整B递推没有实际结果，未采用。部署始终只有最终一套A/B。
+Owner授权开始并自主推进；[条件读写设计§13](designs/conditional_read_write_architecture.md#13-首批实施与完整学习检验2026-10-01授权)
+登记fresh450、完整validation400/train144及固定A28首批，未把架构接通或历史分数写成新方法阳性。
+Owner同时纠正主讨论误设goal、准备接管工程而漏继承分工的问题：既有实验session负责工程/运行/Git，
+主讨论负责科学合同与完整结果解释；goal已删除，不另起执行者、空等或自Queue。启动授权和资源范围见当前progress。
+
 ## 2026-10-01：公共基座专家回复与条件读写架构具体化
 
 Owner转交[专家原文](review_materials/20260930_t_architecture/EXPERT_RESPONSE.md)，审阅快照3bb3ad1a；

@@ -1,5 +1,43 @@
 # EMBER research history
 
+本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
+今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
+
+## 2026-10-02：整仓整理与历史状态入口
+
+Owner授权独立整理整个仓库和实际维护相关skill；并明确纠正：主讨论派出实验后无需goal的限定不适用于独立整理。
+整理会话使用goal，在独占树承接源码ad79887e、重放修复797ae01f及自动多卡执行96b07612，不修改实验冻结树或科学合同。
+清理前累积的完整状态和操作过程可读`git show 797ae01f:progress.md`及`git show 797ae01f:task_plan.md`；
+当前入口收束到现行授权，原负结果、失败/计费、formal rows、关键权重及必要配置继续保留。
+退役实现按各run记录的实际冻结commit解释；797ae01f仅是本次清理前源码快照，不保证旧资产仍完整。
+
+源码整理提交`540fb773`退役57个文件：旧Writer训练/生成、关闭的专用诊断脚本与干预执行面及其独占测试。
+当前operator运行面、共享native/FM/data/credit/replay/调度、实际bank与历史原行读取保留；
+旧spec因当前metadata递归继承及封存provenance而保留，不把配置存在当作旧实验运行授权。
+历史干预原行可读取；main拒绝直接恢复已退役运行面，重放须采用所记冻结commit与实际仍可用的资产。
+Source协议仍校验封存来源身份与实际模型合同；修正了仅移动design链接导致整份当前配置hash变化、
+进而错误拒绝MT-BC消费者的问题，不为导航重绑历史来源。失效临时worktree链接改为当时实际训练/读取commit。
+
+合并自动多卡实现前，保留代码的全体CPU检查536项通过；十个实际CLI help、配置语法、import和文档引用检查通过。
+未启动GPU实验，也未删除source/dataset、原始formal rows/metrics、关键权重或固定400/144/A28依赖。
+原manifest的“完整”按当时时点解释，资产当前可用性仍须结合retirement记录，weights_only不等于exact resume。
+已安装skill实际修改为`/data0/user/ymdai/.codex/skills/workspace-cleanup/SKILL.md`与`scripts/inventory.py`：
+从真实依赖、状态堆叠、并发验证与symlink误跟随问题改进规则和metadata-only inventory；取消默认内容hash与新审批门槛。
+两文件原件、精确补丁和恢复说明在
+`/data1/user/ymdai/skill-maintenance/ember-cleanup-20261001/workspace-cleanup/`，实际helper边界/CLI及逆补丁验证通过。
+
+## 2026-10-01：条件读写实现、重放修复及完整90ECP的多卡承接
+
+源码ad79887e、状态b27cf26c进入main。旧最长profile因TorchScript包装activation-checkpoint内部重放停止异常，
+在首个完整更新前exit1，0.027361GPUh与失败原件保留；797ae01f移除装饰器，保持同FP32递推及科学计算。
+最长105帧/28query的三次fresh完整FM检查通过，profile权重未用于正式初值。
+原四卡formal在完整90ECP安全停止，exit0、1.754886554GPUh；尚无450或闭环新分数。
+Owner要求按实际可用卡数自动高效训练，7df6d43e/ddf17e9c/96b07612实现通用target分片、完整余切返传与恢复来源登记。
+新冻结`EMBER-conditional-read-write-adaptive-formal`从真实90边界承接91..450，保留逻辑流、有效batch、完整FM、
+Adam/scheduler/sampler与已有rank RNG，新增rank RNG明确记录，不宣称跨拓扑bitwise exact。
+工程阶段事实及全部成本保存在同一运行根，最终整批统一交付；按Owner纠正不向主讨论广播源码、profile或普通调度。
+原件root为`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001`；当时完整状态可读`git show 96b07612:progress.md`。
+
 ## 2026-10-01：确定残差编译并授权首批实施，恢复既定实验分工
 
 Owner追问B₀作用后，讨论了以B₀初始化完整B并根据目标响应覆盖的候选；最终仍选择S/M残差编译。

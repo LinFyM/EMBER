@@ -1,5 +1,8 @@
 # 数据干预造成的控制变化：原生读取 Meta 与其余 Writer 的冻结交叉
 
+> 历史合同：本文保留当时的设计、授权及结果；现行状态只看[progress](../../progress.md)。
+> 已退役的源码/命令按run登记的冻结commit读取，不据旧“active/下一步”恢复执行。
+
 2026-09-25。是否 active 只看 `progress.md`。机器合同为
 `configs/native_reader_transfer_causality_v1/experiment_spec.json`。
 主讨论 `01a0cd94-65da-7b22-8ca9-7ba35f454632` 负责判断，现有 Sol

@@ -18,7 +18,7 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 Writer承担学习如何从教学生成适配的元学习，具体控制在冻结source与唯一完整LoRA中执行；编译后Writer退出。
 当前选择完整FM共同训练，不额外约束A₀/B₀的独立无视频能力，也不预设因子间知识互斥；公共分数作为诊断。
 这个取舍不证明公共目标永远无效；增加它仍须有独立部署需求或完整能力收益依据。具体读取、编译、信用与边界见
-[条件读写完整架构](designs/conditional_read_write_architecture.md)，该设计尚未实现或训练。
+[条件读写完整架构](designs/conditional_read_write_architecture.md)；实施与运行状态由progress登记。
 
 性能是正确条件下的闭环能力；特异性用于解释教学内容的有益作用；稳定性描述能力如何在训练和条件变化中保持。
 最终性能目标是利用教学视频获得可迁移执行知识，使EMBER超过如实训练、如实选点的强MT-BC。

@@ -1,5 +1,8 @@
 # 冻结回报更新的目标对齐：原采集条件上的探索开关交叉
 
+> 历史合同：本文保留当时的设计、授权及结果；现行状态只看[progress](../../progress.md)。
+> 已退役的源码/命令按run登记的冻结commit读取，不据旧“active/下一步”恢复执行。
+
 2026-09-25。是否active只看progress；机器合同`configs/return_objective_alignment_v1/experiment_spec.json`。
 主讨论01a0cd94-65da-7b22-8ca9-7ba35f454632；执行Sol 01a0cd90-ebb7-77a1-a20b-a858825d2f66。
 本批是固定两模型×探索开关的128条冻结诊断，无新训练、梯度或候选。

@@ -1,5 +1,8 @@
 # 任务关系支持的学习干预
 
+> 历史合同：本文保留当时的设计、授权及结果；现行状态只看[progress](../../progress.md)。
+> 已退役的源码/命令按run登记的冻结commit读取，不据旧“active/下一步”恢复执行。
+
 2026-09-24，主讨论登记的下一批有界训练；是否active以`progress.md`为准。
 机器合同：`configs/relational_support_causality_v1/experiment_spec.json`；完整任务审计、protocol、manifest及evaluation在同目录。
 

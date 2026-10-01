@@ -1,10 +1,10 @@
 # 条件读写 Writer：完整架构设计
 
 状态：Owner于2026-10-01授权按最终版本实施并自主推进；本稿现为active design，首批范围见§13。
-实现与训练尚待实验session执行，不把设计授权写成已完成结果。
+对应实现已进入canonical源码；实际运行、冻结版本与结果只看[progress](../../progress.md)，不把实现完成写成科学阳性。
 本文承接[专家原文](../review_materials/20260930_t_architecture/EXPERT_RESPONSE.md)、
 [讨论整合](../review_materials/20260930_t_architecture/PUBLIC_BASE_REVIEW.md)及Owner随后对执行能力和元学习的澄清。
-现有源码仍是已执行的operator Writer；下文明确给出后继计算，不把旧实验成绩当作本设计结果。
+下文规定当前条件读写计算；旧operator实验成绩保持原适用范围，不作为本设计结果。
 
 ## 1. 这次定下什么
 
@@ -270,7 +270,7 @@ LocalField已有X关联生成A，Pullback已有条件A与执行绑定，P/I已�
 - [专家原文](../review_materials/20260930_t_architecture/EXPERT_RESPONSE.md)：Owner提供；审阅身份为3bb3ad1a。
 - [原件证据与面板边界](../review_materials/20260930_t_architecture/EVIDENCE.md)：原T、Joint、Context、self_read。
 - [机制分析§88–93](../analyses/feature_to_operator_mechanism_20260926.md)：条件A、因果索引、信用、公共目标的既有推导。
-- [native](../../src/ember/operator_writer/native.py)、[model](../../src/ember/operator_writer/model.py)、[target registry](../../src/ember/pi05_lora.py)：当前真实读取/形状/原T算子；新解释器和S头尚不存在。
+- [native](../../src/ember/operator_writer/native.py)、[model](../../src/ember/operator_writer/model.py)、[target registry](../../src/ember/pi05_lora.py)：共享真实读取/形状与历史原T算子；[新解释器及S/M编译](../../src/ember/operator_writer/conditional_read_write.py)由canonical model调用。
 - [prompt与state处理](../../src/ember/pi05_processing.py)：teacher省略State、自身policy读取state的实际区别。
 - [FM消费者](../../src/ember/writer/function_credit.py)：真实query功能监督及cotangent。
 - [Owner要求](../current_owner_requirements.md)、[研究历史](../research_history.md)：当前边界与最近似反例。
@@ -373,8 +373,10 @@ GPU工程检查预算包含在本批总额中，预计不超过1GPUh；若计算
 唯一实验执行session仍为`01a0f018-69af-7b00-b614-7e117540051b`（接管并继续实验）。
 它负责实现、针对性工程检查、资源准入/调度、运行排障、Git集成push和clean detached冻结、整批原件与计费交付；
 main负责科学合同、原件解释、机制判断、后续实验及预算裁决，不默认接管工程或重复QA。
-本稿与当前状态推送后，canonical tracked写入窗口交给执行者，源码集成后由其明确释放；main不重叠写入。
+canonical tracked写入及Git集成由实际冲突方直接串行协调；窗口当前归属见progress，不向main例行广播。
 代码保持一个canonical实现；历史执行面由Git/冻结版本/正式原件保留，不另起长期并行Writer或fallback。
-正常长任务由执行者持续等待退出；只有源码集成释放窗口、整批结果或实质边界需要回报，不发心跳/分片自通知。
+正常长任务由执行者持续等待退出；工程交付、冻结、profile修复/重启、窗口释放及普通调度记入已有记录。
+只在整批科学结果完成或实质权限/科学合同/预算边界、原件有效性未明且需裁决时回报main；自行可修复事项不暂停、不通知。
 整批结果在main活跃时Steer、idle时Queue，只发一次；main没有独立有价值工作时可以结束回合，回报后主动验收与接续。
-Owner明确不需要goal，已删除误设goal；不重建goal、不另起实验session，也不使用自Queue维持主讨论运行。
+Owner对主讨论在无独立工作、已派发实验后的不设goal要求仅适用于该场景；不扩展为独立任务的禁止。
+仓库整理session按Owner最新明确要求使用goal；不另起实验session，不使用自Queue维持主讨论运行。

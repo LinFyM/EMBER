@@ -1,5 +1,8 @@
 # 去除执行无关幅度信用后，一次更新是否真正改善闭环
 
+> 历史合同：本文保留当时的设计、授权及结果；现行状态只看[progress](../../progress.md)。
+> 已退役的源码/命令按run登记的冻结commit读取，不据旧“active/下一步”恢复执行。
+
 2026-09-25。是否active只看progress；机器合同`configs/return_score_update_v1/experiment_spec.json`。
 主讨论01a0cd94-65da-7b22-8ca9-7ba35f454632；具体执行仍为Sol 01a0cd90-ebb7-77a1-a20b-a858825d2f66。
 固定两个独立单步候选，第一阶段只有96条配对闭环；不自动接续训练或补评。

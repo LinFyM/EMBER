@@ -1,120 +1,62 @@
 # EMBER
 
-EMBER研究把exact task language与action-hidden教学视频，在rollout前一次编译为冻结π0.5 source的一套完整
-task-conditioned LoRA，使机器人从未见初始化闭环完成任务。正确视频中的操作内容应贡献真实执行价值。
+EMBER把exact task language与action-hidden教学视频，在rollout前一次编译为冻结π0.5 source的一套完整
+38-target task-conditioned LoRA，研究它能否从未见初始化闭环完成任务，并取得有益视频增量与能力保持。
 
-当前唯一候选为[同一实际LoRA的教学写入与执行读取](docs/designs/operator_read_write_learning_design.md)，
-原T/U的正式学习比较及成熟T到2790的曲线已经完成，原T选定点2340为161/400，同scene强MT为153/400；
-变化驱动覆盖候选270/450为124/123，尚未得到已验证的主要性能修复。
-有限学习诊断已完成，当前暂停新增实验并讨论；最新授权与状态只看[progress](progress.md)顶部。
+当前唯一Writer运行入口是`python -m ember.operator_writer.run`，计算由
+[conditional_read_write.py](src/ember/operator_writer/conditional_read_write.py)和
+[model.py](src/ember/operator_writer/model.py)拥有：因果c/d解释、A₀感知S、最终A再编译M、完整FM共同学习。
+科学合同见[条件读写设计§13](docs/designs/conditional_read_write_architecture.md#13-首批实施与完整学习检验2026-10-01授权)；
+当前授权、运行、写入分工和结果只看[progress](progress.md)，架构接通不等于方法有效。
 
-只能读取远程仓库的专家，请从[2026-09-30 T架构数学审阅入口](docs/review_materials/20260930_t_architecture/README.md)开始：
-其中有完整计算图、源码入口、完整曲线与逐行小型证据、历史反例、信息可见范围及可转发提示词。
-
-## 历史路线摘要
-
-以下是各旧路线结束时的记录，不代表当前T没有正式结果或恢复旧执行授权。
-
-**条件速度算子V151→102、L147→112，强MT-BC155；本候选关闭，尚无稳定视频增益或能力保持。自主科学研究继续。**
-后续原始字段勘误：L450有24行fixture初位不一致，涉及它的相应严格配对范围为376；这些行均失败，总分/得失数不变。
-V相邻400行保存初位一致，退化与关闭裁决保留；证据范围见findings§186。
-[教学参考对应学习](docs/designs/demonstration_transfer_learning_design.md)固定支持构造已核：416次行为367成功，
-四源共同初态支持20任务/296交叉。这不是Writer收益；完整144 LoRA工程的真实新查询反传、source隔离和恢复已核。
-两正式节点均已独立验收：对应P124→108、独立I91→107；相邻丢50/25，最新都低于历史强MT155。
-按事前停止线关闭本完整组合，288对应正例保留；没有稳定视频收益或能力保持，不再接864、强M或controls。
-完整裁决见设计§17；私有训练/采集/物化入口已退役，只保留封存bank与scene读取，所有历史原件与冻结树保留。
-具体派发、时间和资源上限见progress；不扩大数据或按物理失败修补控制器。
-固定原B同场景比较已完成：原动作R/自身参考S/另一参考X为2/4、2/4、3/4，仅训练侧控制器个案。
-源时钟读回揭示连接造成的进度差，未证明迁移标签优于原数据；比较入口已退役，详见比较设计§7/findings§199。
-固定C0完整400为正确120、另一正确132、语言121、Source57，旧巨大缺口未复现，有益视频增量仍未识别。
-冻结E/H干预显示后续内容有有限作用；新学习比较C0/S0正确27/22、另一正确27/17（各80）、seen26/22（各64）。
-但首帧广播、过程Value中心化与零调制存在初始化交互，延迟S0的过程路径学习，不能将差额直接归因于操作顺序。
-Reader完成12次工程更新/1344查询、最长视频反传及6条train-only接口episode，完整计费0.51258 GPUh。
-旧Video Functional已联合学习表示/执行读头，当前差异尚不足以支持重投；630学习为零，未以smoke分数裁决科学假设。
-旧Reader临时实现由Git `2fbd4c7d`及原件保留，main不保留该闲置诊断运行面。
-[已关闭的候选合同](docs/designs/conditional_velocity_operator_design.md)共同学习执行状态特征和可精确编译的条件速度场。
-工程完成6宏步/672query、一次长视频反传及2条训练接口轨迹，计费0.12696 GPUh；不是收益证据。
-视频V/真实语言L首批各270更新及各400完成，完整5.7032 GPUh；V对L27得23失，V对MT38得42失。
-原预留450节点完成：两臂新增各180更新/20,160query及各400，4.5210 GPUh；V相邻新增23/丢72、L新增23/丢58。
-本组合不再续训或追加修补；专用训练/物化入口及私有实现已退役，旧bank只读适配器保留，不再授权其训练。
-其函数假设、分解歧义和完整裁决见机制分析§29–32，实际授权及科学后继只看progress。
-尚无经过验证的统一根因、修复或正确视频必要增量；语言内容路径、有限回报更新及去噪位置分支不恢复。
-实际状态及证据位置见[progress](progress.md)，科学解释和下一步计划见[task_plan](task_plan.md)。仓库收尾已完成，无需重做。
-
-## 阅读顺序与唯一职责
+## 阅读与目录
 
 | 入口 | 职责 |
 | --- | --- |
-| [Owner要求](docs/current_owner_requirements.md) | 理论下界、研究目标、解释深度、方法与协作边界 |
-| [当前进度](progress.md)／[当前计划](task_plan.md) | 当前授权、运行快照与科学计划；历史许可不在此持续生效 |
-| [Concept](docs/concept.md) | 完整信息流、模块因果职责、数学解释框架与待验证假设 |
-| [AGENTS](AGENTS.md) | 科学、数据、评测、资源、工程与Git合同 |
-| [Findings](findings.md) | 编号的跨轮发现；先读§156长期错误约束，再按当前审阅入口和研究历史索引追溯相关发现 |
-| [研究历史](docs/research_history.md) | 按时点追溯设计、专家讨论、原始证据和复现commit |
+| [Owner要求](docs/current_owner_requirements.md)／[AGENTS](AGENTS.md) | 稳定目标、科学与执行边界、协作职责 |
+| [progress](progress.md)／[task_plan](task_plan.md) | 当前状态与计划；不从历史许可恢复执行 |
+| [concept](docs/concept.md) | 科学对象、信息流与证据标准 |
+| [findings](findings.md)／[research_history](docs/research_history.md) | 跨轮发现、正负历史、专家意见和原件索引 |
+| `src/ember/operator_writer/` | 唯一活跃Writer；共享native/data/credit/runtime及封存operator读取 |
+| `src/ember/writer/` | 共享视频、FM、重放、拓扑与物化调度；旧视频Writer仅保留bank/配置读取 |
+| `src/ember/source_sft/`、`pi05_source_*`、`expert_manifold/` | Source、共享MT-BC与授权task expert组件 |
+| `src/ember/pi05_eval/`、`pi05_eval_*.py` | 官方配对闭环、scene、persistent动态队列与原行校验 |
+| `scripts/` | 环境构建、数据封存、Source/MT/expert CLI、官方评测、比较与固定A28读出 |
+| [configs](configs/README.md) | 数据authority、当前spec及必要封存配置；不是实验许可 |
+| `tests/` | 当前实际入口与稳定科学、数据、配对及恢复合同的CPU检查 |
+| `docs/designs/`、`docs/analyses/`、`docs/review_materials/` | 原设计、机制论证、专家材料和小型原始证据；历史文字按时点解释 |
+| `data/`、`models/`、`runs/`、`.venv/` | ignored本地资产与环境；大资产不入Git |
 
-新任务先读Owner要求和当前状态，按问题沿历史索引追溯；不把所有旧设计的“下一步”合并成待办。
-完整相关历史需要综合，但不要求每次重读全部文件。理论下界不等于优化保证，也不指定公共底座课程。
+## 环境与命令
 
-## 目录职责
+Python 3.12及依赖由[pyproject.toml](pyproject.toml)和`uv.lock`固定，首次构建使用
+[scripts/bootstrap_env.sh](scripts/bootstrap_env.sh)，其中`scripts/zig-cxx`服务既有本地编译。
+既有环境与Source/data/tokenizer直接复用。以下help可核对接口，运行仍需满足当前合同：
 
-后续所有新增资产和产物统一使用`/data1/user/ymdai`，跨实验和session生效；历史data0路径仅作既有资产/证据引用。
-完整存储要求见[Owner要求§5](docs/current_owner_requirements.md#5-工程效率与生命周期)及[AGENTS§10](AGENTS.md#10-storage-artifacts-git-and-documentation)。
+```bash
+export PYTHONPATH="$PWD/src"
+python -m ember.operator_writer.run --help
+python scripts/operator_joint_readouts.py --help
+python scripts/evaluate_pi05.py --help
+python scripts/compare_pi05_results.py --help
+python scripts/train_source_base.py --help
+python scripts/train_source_sft.py --help
+python scripts/train_task_experts.py --help
+python -m pytest -q
+```
 
-| 目录 | 内容与生命周期 |
-| --- | --- |
-| `src/ember/` | Writer共享组件与封存bank读取、Source/MT-BC、数据及评测；新读写候选仅按active阶段合同执行 |
-| `scripts/` | 薄CLI、环境构建、数据封存和结果比较入口；已结束的专用诊断脚本由Git保存 |
-| `tests/` | 对当前实现及稳定科学/恢复/配对合同的CPU检查 |
-| `configs/` | 显式数据协议、方法配置和审计；不同协议分别保留，不能覆盖旧结果 |
-| `docs/designs/` | 有独立科学合同价值的设计/计划，文件头说明当前/历史状态；是否active只看progress |
-| `docs/analyses/` | 有独立论证价值的机制分析和审计；不是运行授权 |
-| `docs/review_materials/` | 按日期/研究组织的小型专家材料、原始行、图表与证据包；各README解释当时范围 |
-| `evidence/` | Git跟踪的资产manifest与迁移provenance，不存模型权重 |
-| `data/`、`models/`、`runs/`、`.venv/` | ignored本地资产与环境，远程仓库不包含这些大文件 |
+正式train/eval使用clean pushed commit的detached frozen worktree；并发开发隔离，集成回main串行协调。
+所有新增EMBER资产和产物放data1，存储与GPU准入按AGENTS；历史data0资产只读，不随整理迁移。
 
-文档职责分开：稳定规则不记录动态分数，进度不复制整段历史，历史设计不伪装成当前方法。
-封存材料中的旧源码路径按其记录的Git commit解释；已退役入口不在main维持兼容副本。
+## 历史读取与资产可用性
 
-## 当前代码所有权
+`operator_writer/bank.py`、`writer/evaluation.py`、`writer/conditional_velocity_bank.py`及
+`demonstration_learning/bank.py`保留实际封存bank消费者。旧Writer训练器、已关闭的专用诊断脚本与干预执行入口
+由Git及各run登记的冻结commit保存；读取历史原行不恢复旧训练或干预。
+旧spec因当前消费者的metadata继承和封存provenance而保留，不能仅凭目录年龄删除。
 
-| 职责 | `src/ember/`中的owner |
-| --- | --- |
-| 同算子读写的原生读取/矩阵生成/数据与训练 | `operator_writer/native.py`、`model.py`、`data.py`、`run.py`；共享训练与恢复入口 |
-| 候选T/U完整rank128与固定MT同scene正式接入 | `operator_writer/bank.py`；公共A/条件B及唯一MT原权重引用，共用official scene/capture |
-| 封存对应学习bank的rank144重建与正式来源核验 | `demonstration_learning/bank.py`；只读P/I的288/576正式资产，不生成新bank |
-| 封存共同物理起点的官方恢复与行校验 | `pi05_eval/scene.py`；保留official消费者，采集/freeze入口已退役 |
-| 历史Writer仍使用的原生图文／完整H、Meta组件 | `writer/video_program.py`、`writer/meta_lora.py` |
-| 历史Writer的Core、Procedure共享组件 | `writer/temporal.py`、`writer/procedure.py`；不保留已关闭条件速度编码器 |
-| 封存rank135 bank的唯一LoRA重建与官方接入 | `writer/conditional_velocity_bank.py`、`pi05_lora.py`、`batched_lora.py`；不生成新bank |
-| 共享真实FM与完整checkpoint工具 | `writer/function_credit.py`、`ecp/checkpoint.py`；条件速度训练/采样实现已退役 |
-| 历史bank/native/identity/selection实际依赖 | `writer/model.py`、`writer/materialization.py`、`writer/runtime.py`；旧generic出口已关闭 |
-| Source与共享LoRA监督 | `pi05_source_training.py`、`source_sft/` |
-| 配对闭环、队列、协议与结果 | `pi05_eval/`、`pi05_eval_queue.py`、`pi05_eval_contract.py`、`pi05_eval_results.py` |
-
-对应学习已科学关闭，`demonstration_learning`私有训练/采集/物化入口已按设计§17.3退役；没有新运行授权。已结束的通用
-`scripts/train_writer.py`、`scripts/materialize_writer.py`不恢复。正式来源由各bank记录的冻结spec/checkpoint保留，不恢复M3/P6/I6工程CLI。
-通用评测入口`scripts/evaluate_pi05.py`保留，读取已封存bank的规格与checkpoint，不把历史读取能力当作新运行授权。
-Source/MT-BC入口为`scripts/train_source_base.py`和`scripts/train_source_sft.py`；复用同一评测合同。
-已结束的stability/output-space/causal诊断与low-LR专用执行面已退役，原实现可从`7b18030c`及各run记录的commit恢复。
-历史Writer恢复及1500→2100 continuation按各自冻结commit与原件解释，不恢复已关闭的CLI；旧low-LR phase配置不再接受。
-
-## 数据与证据入口
-
-当前coverage协议在[configs/libero_24_8_8_coverage_v1](configs/libero_24_8_8_coverage_v1/coverage.md)，
-旧`libero_24_8_8_v1`仅按封存合同解释；source71审计位于`configs/pi05_source_corpus_v1/`。
-新的fit28/diagnostic-held8诊断合同在[接续设计](docs/designs/conditional_compilation_diagnostics_design.md)，官方24/8/8未改。
-后继[任务关系支持干预](docs/designs/relational_support_causality_design.md)保持held8、每臂fit28与学习预算，单独登记四个任务池；
-其metadata authority在`configs/relational_support_causality_v1/`，不覆盖原协议或已完成结果。
-
-历史重点可从[46组证据审计](docs/analyses/v52_evidence_audit_20260917.md)、
-[旧教学候选总报告](docs/review_materials/20260919/final_report.md)、
-[旧划分Test](docs/review_materials/20260920/test_capacity/report.md)、
-[因果诊断](docs/review_materials/20260922/writer_causal_diagnostics/README.md)和
-[夜间结果包](docs/review_materials/20260923/overnight_results/README.md)进入。
-这些材料服务不同历史问题，不合并成一条未经匹配的性能曲线。
-
-数据集、实际使用的Source、当前比较/诊断依赖和正式原始证据保留。历史checkpoint按用途择点保存关键权重，
-已结束路线的续训状态及非关键中间权重不永久保留；本次裁剪范围和回收量见[progress](progress.md)。
-各checkpoint中的`checkpoint_retirement.json`记录当前可用性，原manifest记录的是历史完整状态。
-`weights_only`存档不能精确续训，部分历史CLI仍要求完整trainer，重放前须显式适配权重加载；`metadata_only`不再含模型权重。
-已退役物化载荷的manifest、条件映射和复现commit保留，重建前同时检查`payload_retirement.json`及其上游checkpoint状态。
+历史实现的最后完整清理前快照为`797ae01f`，更早运行须采用其实际训练/读取commit。
+代码存在不保证资产可重放：原manifest记录历史完整状态，现状还要看资产旁的
+`checkpoint_retirement.json`与`payload_retirement.json`。`weights_only`不能exact resume，
+`metadata_only`没有模型权重；旧CLI可能仍要求完整trainer，不能把剩余权重称为完整恢复资产。
+source/dataset、关键权重、formal原始rows/metrics及当前依赖保留；科学负结果不会被整理抹去。

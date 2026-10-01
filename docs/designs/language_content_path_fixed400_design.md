@@ -1,5 +1,8 @@
 # 内容路径阴性后：固定C0的完整条件覆盖
 
+> 历史合同：本文保留当时的设计、授权及结果；现行状态只看[progress](../../progress.md)。
+> 已退役的源码/命令按run登记的冻结commit读取，不据旧“active/下一步”恢复执行。
+
 2026-09-26。原736条已结束，独立复核见findings§153及原study的`coordination/main_recheck.json`。
 本批已完成并由主讨论独立验收，见findings§154；不再恢复新增计算。
 下文保留事前有限补评合同，不是恢复Cplus、训练新架构或按80条筛选checkpoint。当前执行状态只看progress。

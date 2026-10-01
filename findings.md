@@ -1,5 +1,8 @@
 # EMBER findings
 
+本文件按编号与时点保留跨轮发现、正负证据和适用边界；历史“当前/主监督/下一步”不代表现行方法。
+当前授权、active design及运行状态只看[progress](progress.md)，历史入口见[research_history](docs/research_history.md)。
+
 本文保存跨轮发现及其适用边界，不记录执行授权。最新结果见§241；当前授权和接手位置见[progress](progress.md)。
 前部的专题复核与后部编号结论按各自日期解释，历史待办不构成自动实验计划。
 

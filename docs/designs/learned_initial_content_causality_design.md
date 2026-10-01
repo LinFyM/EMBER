@@ -1,5 +1,8 @@
 # 学习后的首帧内容参照：逐帧证据是否提供额外能力
 
+> 历史合同：本文保留当时的设计、授权及结果；现行状态只看[progress](../../progress.md)。
+> 已退役的源码/命令按run登记的冻结commit读取，不据旧“active/下一步”恢复执行。
+
 状态：2026-09-26登记实施与有界执行；是否active以progress为准。
 机器范围：`configs/learned_initial_content_causality_v1/experiment_spec.json`。
 主讨论`01a0cd94-65da-7b22-8ca9-7ba35f454632`；执行者为现有Sol

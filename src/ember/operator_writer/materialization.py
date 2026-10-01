@@ -78,7 +78,8 @@ class OperatorCompiler:
         from .run import PILOT_ARMS, build_runtime
 
         _configure_device(device, cpu_threads)
-        runtime_mode = 'T' if config['mode'] in PILOT_ARMS else config['mode']
+        runtime_mode = ('T' if config['mode'] in PILOT_ARMS else
+                        'context' if config['mode'] == 'context_seen' else config['mode'])
         self.runtime = build_runtime(asset_root, config['spec'], device, runtime_mode)
         self.asset_root, self.config, self.data, self.request = asset_root, config, None, None
 

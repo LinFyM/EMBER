@@ -462,7 +462,7 @@ def _registered_trajectory_capture(
         return None, None
     path = path.resolve()
     manifest = read_json(path)
-    if manifest.get("study_id") in {"operator_read_write_learning_20260928", "operator_public_beta_diagnosis_20260929", "operator_public_function_pilot_20260929", "operator_seen_task_diagnosis_20260929", "operator_selected_validation_20260929", "operator_change_clock_learning_20260930", "operator_change_clock_continuation450_20260930", "operator_joint_public_fresh_20260930", "operator_context_value_fresh_20261001", "operator_context_value_continuation900_20261001"}:
+    if manifest.get("study_id") in {"operator_read_write_learning_20260928", "operator_public_beta_diagnosis_20260929", "operator_public_function_pilot_20260929", "operator_seen_task_diagnosis_20260929", "operator_selected_validation_20260929", "operator_change_clock_learning_20260930", "operator_change_clock_continuation450_20260930", "operator_joint_public_fresh_20260930", "operator_context_value_fresh_20261001", "operator_context_value_continuation900_20261001", "operator_context900_seen_task_diagnosis_20261001"}:
         from ember.operator_writer.bank import registered_capture
 
         return registered_capture(args, tasks, output_dir, path, manifest, task_subset)

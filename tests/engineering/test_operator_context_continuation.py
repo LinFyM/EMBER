@@ -46,7 +46,7 @@ def test_real_parent_sampler_absolute_lr_and_original_second_teacher_cycle():
         candidate.close(); original.close()
 
 
-def test_real_parent_source_consumer_and_resume_contract(monkeypatch):
+def test_real_parent_source_consumer_and_resume_contract(tmp_path, monkeypatch):
     # Caller Git bookkeeping is the only fixture; actual sealed parent code,
     # run/ECP/optimizer/sampler headers and completion are all read directly.
     monkeypatch.setattr(run, 'frozen_git', lambda **kw: {'commit': 'cpu-caller-only'})
@@ -55,10 +55,13 @@ def test_real_parent_source_consumer_and_resume_contract(monkeypatch):
     assert old['git']['commit'] == study.CONTEXT_PARENT_GIT
     contract = {**old, 'continuation': spec['continuation'], 'spec': str(run.CONTEXT_CONTINUATION_SPEC_PATH),
                 'parent_checkpoint': str(study.CONTEXT_PARENT_CHECKPOINT)}
-    args = SimpleNamespace(mode='context', attempt='continuation', resume=study.CONTEXT_PARENT_CHECKPOINT,
+    args = SimpleNamespace(mode='context', attempt='cpu_contract_unused', resume=study.CONTEXT_PARENT_CHECKPOINT,
                            pilot_arm=None, microbatch=28, frame_chunk=8, stop_after_macro=None)
     run.validate_train_request(spec, args)
-    output = study.CONTEXT_CONTINUATION_ROOT / 'context/train/attempts/continuation'
+    # The real batch is now completed. Isolate the hypothetical new attempt;
+    # source450 remains real and no historical attempt/checkpoint is modified.
+    monkeypatch.setattr(study, 'CONTEXT_CONTINUATION_ROOT', tmp_path)
+    output = study.CONTEXT_CONTINUATION_ROOT / 'context/train/attempts/cpu_contract_unused'
     run.validate_attempt(spec, args, contract, output)
     bad = deepcopy(contract); bad['optimizer']['lr'] *= 2
     with pytest.raises(ValueError, match='optimizer changed'):
@@ -111,3 +114,44 @@ def test_saved810_source_follows_completed900_resume_lineage(tmp_path):
     write_json_atomic(terminal/'run_contract.json', {'parent_checkpoint':str(checkpoint.with_name('macro_00000720'))})
     with pytest.raises(ValueError,match='actual resume boundary'):
         study._completed_metrics_source(tmp_path,'context',checkpoint,900)
+
+
+def test_seen144_actual900_source_teacher_scope_and_capture_consumer(tmp_path, monkeypatch):
+    from ember.operator_writer import bank
+    from ember.pi05_eval.scene import inspect_registered_scenes
+
+    # Only current dirty CPU caller identity is substituted. Parent source,
+    # complete ECP, original spec and the registered task/video/scene rows are real.
+    monkeypatch.setattr(run, 'frozen_git', lambda **kw: {'commit': 'cpu-caller-only'})
+    spec, training, spec_path = readout.source_record(readout.SEEN_MODE, readout.SEEN_CHECKPOINT)
+    assert training['git']['commit'] == readout.SEEN_TRAINING_GIT
+    assert spec_path == run.CONTEXT_CONTINUATION_SPEC_PATH
+    rows, conditions, scenes, states = readout._geometry(readout.SEEN_MODE, spec, ASSET)
+    assert tuple(row['global_task_id'] for row in rows) == TASKS
+    assert len(conditions) == 144 and states == (32, 33, 34, 35)
+    assert conditions == readout._geometry('context_public', spec, ASSET)[1]
+    inspect_registered_scenes(scenes, rows, states=states,
+                              schema='ember_operator_seen_task_scenes_v1')
+    data = FormalData(ASSET, spec, query_labels=False, task_ids=TASKS, role='train')
+    data.close()
+    with pytest.raises(ValueError, match='fixed actual Context900'):
+        readout.source_record(readout.SEEN_MODE, readout.SEEN_CHECKPOINT.with_name('macro_00000810'))
+
+    monkeypatch.setattr(readout, 'SEEN_ROOT', tmp_path)
+    path = readout.bank_path(readout.SEEN_MODE, readout.SEEN_CHECKPOINT)
+    path.parent.mkdir(parents=True)
+    write_json_atomic(path, {'kind': bank.KIND, 'mode': readout.SEEN_MODE,
+                            'joint_public_study': True, 'checkpoint': str(readout.SEEN_CHECKPOINT)})
+    tasks = [SimpleNamespace(suite=row['suite'], task_id=row['task_id'], init_state_ids=states)
+             for row in rows]
+    args = SimpleNamespace(role=readout.scope.ROLE, mode='formal', static_task_lora_manifest=path,
+                           trajectory_capture_selection=readout.capture_path(readout.SEEN_MODE))
+    output = readout.evaluation_path(readout.SEEN_MODE, readout.SEEN_CHECKPOINT)
+    capture, stage = _registered_trajectory_capture(args, tasks, output, None, readout.REPO)
+    assert read_json(readout.capture_path(readout.SEEN_MODE))['study_id'] == readout.SEEN_TASK
+    assert len(capture['full_conditions']) == 36
+    assert all(row['init_state_id'] == 32 for row in capture['full_conditions'])
+    assert capture['passive_trace'] and not stage['full_conditions_only']
+    args.role = 'validation'
+    with pytest.raises(RuntimeError, match='capture scope changed'):
+        _registered_trajectory_capture(args, tasks, output, None, readout.REPO)

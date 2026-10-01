@@ -40,6 +40,10 @@ canonical已消费的`sol_executor_handoff_20260926/state.md`及空交接目录�
 Owner要求按实际可用卡数自动高效训练，7df6d43e/ddf17e9c/96b07612实现通用target分片、完整余切返传与恢复来源登记。
 新冻结`EMBER-conditional-read-write-adaptive-formal`从真实90边界承接91..450，保留逻辑流、有效batch、完整FM、
 Adam/scheduler/sampler与已有rank RNG，新增rank RNG明确记录，不宣称跨拓扑bitwise exact。
+首次五卡承接恢复90后因lazy NCCL communicator的发送/接收批次接口不匹配，watchdog停止自有进程，
+新增0更新、失败0.835550625GPUh原件保留。2026-10-02通信窄修`0e2d6c79`匹配两端batched header/payload，
+新冻结`EMBER-conditional-read-write-adaptive-r2-formal`继续从有效90父承接；CPU通过不代表GPU或91消费者已完成。
+整理分支承接并完整保留该修复，未重复执行它的CPU/GPU QA。
 工程阶段事实及全部成本保存在同一运行根，最终整批统一交付；按Owner纠正不向主讨论广播源码、profile或普通调度。
 原件root为`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001`；当时完整状态可读`git show 96b07612:progress.md`。
 

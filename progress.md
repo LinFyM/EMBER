@@ -27,19 +27,22 @@ Owner已授权按[条件读写设计§13](docs/designs/conditional_read_write_ar
 Owner要求按实际可用卡数自动高效训练。通用target分片、完整cotangent返传、bucket SUM与来源承接已集成为
 `7df6d43e`、`ddf17e9c`、`96b07612`，冻结树为
 `/data1/user/ymdai/projects/EMBER-conditional-read-write-adaptive-formal`。
-执行者从实际90ECP承接91..450原事件流，保留Adam/scheduler/sampler及已有rank RNG，新增rank RNG单列；
+首次五卡承接已恢复90状态，但首更新在batched-send/unbatched-recv的lazy NCCL communicator接口处阻塞；
+watchdog结束该attempt自有进程，新增0更新、失败0.835550625GPUh及原失败树保留。
+纯通信修复`0e2d6c79`已推送，冻结树为`/data1/user/ymdai/projects/EMBER-conditional-read-write-adaptive-r2-formal`；
+两端匹配batched header/payload，不能将CPU检查当作GPU通信或实际91消费者完成。
+执行者继续从有效90ECP承接91..450原事件流，保留Adam/scheduler/sampler及已有rank RNG，新增rank RNG单列；
 父训练与接续来源分别登记。不fresh重训、不丢更新，4×28有效query、完整FM及最终A/B公式保持不变。
 实际启动、首消费者与分段成本在同一root的launch记录；物理卡数仍服从现有资源上限与整批预算。
 尚未登记本架构formal450的完整科学结果；源码完成、CPU检查或profile均不表示学习资格或闭环阳性。
 canonical tracked窗口已释放，冻结实验不依赖canonical后续整理；新写入仍须与实际冲突方协调。
 
-## 独立整仓整理
+## 整仓整理交付
 
-整理会话`01a0f7fa-63b3-7a42-a196-4c0fd145b10c`，独占
-`/data1/user/ymdai/projects/EMBER-cleanup-20261001`、`codex/ember-cleanup-20261001`。
-从main `927b1498`建立，承接最新main `96b07612`的集成正在收尾；实验dev/frozen树未被本整理修改。
-Owner已撤销对本独立任务的no-goal限制，本会话使用无token budget的goal持续完成整仓整理与实际skill维护；
-主讨论在派发实验后无需goal的旧限定不扩大到本任务。不开新session或子代理，不做GPU实验。
+整理会话`01a0f7fa-63b3-7a42-a196-4c0fd145b10c`在独占`codex/ember-cleanup-20261001`完成源代码、
+测试、脚本、配置、入口、文档及已核实临时内容整理；从`927b1498`建立，承接到`0e2d6c79`。
+Owner纠正后的无token budget goal用于这项独立任务；没有新增session、子代理或GPU实验。
+实验dev/frozen树未被修改，科学合同及必要原件保留。
 
 已在本树退役旧Writer训练/生成与已关闭的专用诊断执行面，保留当前共享组件、sealed配置、实际bank/原行读取及科学原件；
 统一README、稳定规则、当前状态和历史索引，修正Source配置导航变化导致的误拒绝。
@@ -48,8 +51,9 @@ Owner已撤销对本独立任务的no-goal限制，本会话使用无token budge
 已实际修改个人workspace-cleanup skill及其inventory helper，symlink/边界/CLI验证通过；回滚在
 `/data1/user/ymdai/skill-maintenance/ember-cleanup-20261001/workspace-cleanup/`。
 已删除已消费的旧交接文件、canonical废弃pytest夹具及整理自产的大型临时检查内容。
-最初预估2–4小时；当前剩下承接执行者通信修复与串行集成推送，写入窗口暂由实验执行者使用。
-整理分支承担自己的工程检查与交付，不把实验执行者的新增实现重复转给主讨论审查。
+交付以main包含本整理提交、与origin一致为准；task-owned临时树在交付后清除。
+详细实改、验证、skill回滚及生命周期未明的保留范围见[research_history](docs/research_history.md#2026-10-02整仓整理与历史状态入口)。
+实验后继窗口仍与实际冲突方串行协调；不将整理的工程检查转给主讨论。
 
 ## 已完成研究与原件可用性
 

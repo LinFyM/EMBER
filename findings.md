@@ -6563,6 +6563,10 @@ beta改变还影响native与Writer后续输入，不是给同一固定生成器�
 
 实际native.py已经调用公共action_out_proj并丢弃结果。复用其固定probe/tau1预测、以授权teacher episode动作作训练标签，
 可给公共beta直接辅助信用而不为此新增完整policy前向；动作不能进入Writer条件，完整跨episodeFM保留。
-但teacher无state、执行有state，固定端点/噪声不覆盖真实flow分布；该辅助不等于原公共执行FM，也不保证闭环能力。
+当前teacher无state、执行有state；固定端点/噪声仅为实现选择，不是方法边界，Owner已明确纠正。
+可以从随机noise沿公共策略逐步去噪，合法读取各tau的hidden，此时缺少state是主要输入差异；
+但需多个suffix前向，并明确生成链的监督/梯度，不能沿用“一次native现成输出等价公共FM”的说法。
+标准FM的x_tau=tau*noise+(1-tau)*a在tau<1时含真实动作，其hidden不能进入Writer；训练专用FM分支可用，须与读取条件分开。
+因此该辅助尚不等于原公共执行FM，也未证明闭环能力；推理式读取与标准FM训练应分别论证，详见机制§91.3补充。
 既有公共FM、同视频完整LoRA辅助、冻结source纠正及功能蒸馏是不同近邻；未在定向范围找到该公共native消费者的正式结果。
 当前不采纳直接因子吸收；native辅助只列有依据的低成本候选，公共执行功能仍须真实证据，未定新formal配方或启动实验。

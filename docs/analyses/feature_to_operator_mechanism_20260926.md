@@ -8657,10 +8657,20 @@ teacher动作只在训练label侧读取，不进入native/Compiler条件；held/
 
 它的机制依据是让公共读取本身面对正确动作，而不只由“是否帮Writer生成有用残差”间接定义；
 但原生H内部语义、动态解释和新任务迁移仍未被该辅助保证。
-main核对`src/ember/pi05_processing.py:81-103,216-218`：执行query的prompt包含其真实state，teacher prompt不含state；
-native还固定tau=1及单一noise，真实执行/当前public FM则覆盖带state的随机flow输入。
-无state时正确动作可能不可唯一推断；固定端点风险小也不能约束其它tau或闭环。因此L_native不是现有L_public的无损复用。
-不能为消除差别把teacher state偷偷放回native，也不能仅因省前向就改成固定端点Writer并声称已覆盖完整执行。
+main核对`src/ember/pi05_processing.py:81-103,216-218`：执行query的prompt包含其真实state，teacher prompt不含state。
+当前native固定tau=1及单一noise，但Owner随后指出，这两项都不是方法的必要条件；此前将实现现状与真实限制并列得不够准确。
+初始noise可以随机，也可以像真实推理一样，从noise沿公共策略的速度场逐步得到各tau的x_tau和hidden。
+这条生成链只依赖RGB、语言、公共参数及内部随机量，不需要teacher action；就输入信息而言，缺少state是主要差异。
+无state时正确动作可能不可唯一推断，视频是否足以补足相关信息尚未证实。
+
+需要另行明确的是计算与监督：推理式读取需要多个action-expert suffix前向，可复用同一帧的视觉/语言prefix；
+若用最终预测动作作监督，需要处理这段生成链的梯度，不能继续声称只是保留一次native前向的现成输出。
+也不能把真实推理的中间x_tau直接当作标准FM训练的线性插值点。
+源码`src/ember/writer/function_credit.py:81-82`中的标准FM输入为x_tau=tau*noise+(1-tau)*a，目标为noise-a；
+当tau<1时，该输入含真实teacher action，若其hidden再供Writer读取，标签就进入了条件路径，detach不能消除这种依赖。
+随机noise/time的常规FM可以放在训练专用的公共分支中，但含标签的hidden不能复用为Writer输入，须承担相应分支计算。
+因此应区分合法的推理式读取、标准FM训练和当前单端点辅助，不把固定noise/tau当成架构原则，
+也不把多步生成监督冒称为无需额外计算的原公共FM；本轮仅澄清候选，没有实施新读取或监督配方。
 
 ### 91.4 历史约束与当前取舍
 

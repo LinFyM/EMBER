@@ -43,10 +43,12 @@ Owner已撤销对本独立任务的no-goal限制，本会话使用无token budge
 
 已在本树退役旧Writer训练/生成与已关闭的专用诊断执行面，保留当前共享组件、sealed配置、实际bank/原行读取及科学原件；
 统一README、稳定规则、当前状态和历史索引，修正Source配置导航变化导致的误拒绝。
-源码提交`540fb773`；536项保留CPU测试及十个实际CLI help通过，配置、import与文档引用已检查。
+源码提交`540fb773`；536项保留CPU测试及十个实际CLI help通过，承接96b07612后的实际消费者38项通过；
+配置、import与文档引用已检查。57个退役文件及具体保留理由见research_history。
 已实际修改个人workspace-cleanup skill及其inventory helper，symlink/边界/CLI验证通过；回滚在
 `/data1/user/ymdai/skill-maintenance/ember-cleanup-20261001/workspace-cleanup/`。
-最初预估2–4小时；当前剩下最新main冲突处理、合并后消费者检查、已核实临时内容删除与串行集成推送。
+已删除已消费的旧交接文件、canonical废弃pytest夹具及整理自产的大型临时检查内容。
+最初预估2–4小时；当前剩下承接执行者通信修复与串行集成推送，写入窗口暂由实验执行者使用。
 整理分支承担自己的工程检查与交付，不把实验执行者的新增实现重复转给主讨论审查。
 
 ## 已完成研究与原件可用性

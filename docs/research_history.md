@@ -11,7 +11,7 @@ Owner授权独立整理整个仓库和实际维护相关skill；并明确纠正�
 当前入口收束到现行授权，原负结果、失败/计费、formal rows、关键权重及必要配置继续保留。
 退役实现按各run记录的实际冻结commit解释；797ae01f仅是本次清理前源码快照，不保证旧资产仍完整。
 
-源码整理提交`540fb773`退役57个文件：旧Writer训练/生成、关闭的专用诊断脚本与干预执行面及其独占测试。
+源码整理提交`540fb773`退役57个文件（17脚本、28源码、12独占测试）：旧Writer训练/生成、关闭的专用诊断脚本与干预执行面。
 当前operator运行面、共享native/FM/data/credit/replay/调度、实际bank与历史原行读取保留；
 旧spec因当前metadata递归继承及封存provenance而保留，不把配置存在当作旧实验运行授权。
 历史干预原行可读取；main拒绝直接恢复已退役运行面，重放须采用所记冻结commit与实际仍可用的资产。
@@ -19,12 +19,17 @@ Source协议仍校验封存来源身份与实际模型合同；修正了仅移�
 进而错误拒绝MT-BC消费者的问题，不为导航重绑历史来源。失效临时worktree链接改为当时实际训练/读取commit。
 
 合并自动多卡实现前，保留代码的全体CPU检查536项通过；十个实际CLI help、配置语法、import和文档引用检查通过。
+承接96b07612后的现有bank、物化、conditional 400/144/A28、完整边界退出、FM/data及官方恢复消费者38项通过；
+没有重复承担实验执行者的新增多卡算法QA。文档冲突按最新科学状态与精确沟通边界合并，没有恢复旧暂停/未实施文字。
 未启动GPU实验，也未删除source/dataset、原始formal rows/metrics、关键权重或固定400/144/A28依赖。
 原manifest的“完整”按当时时点解释，资产当前可用性仍须结合retirement记录，weights_only不等于exact resume。
 已安装skill实际修改为`/data0/user/ymdai/.codex/skills/workspace-cleanup/SKILL.md`与`scripts/inventory.py`：
 从真实依赖、状态堆叠、并发验证与symlink误跟随问题改进规则和metadata-only inventory；取消默认内容hash与新审批门槛。
 两文件原件、精确补丁和恢复说明在
 `/data1/user/ymdai/skill-maintenance/ember-cleanup-20261001/workspace-cleanup/`，实际helper边界/CLI及逆补丁验证通过。
+canonical已消费的`sol_executor_handoff_20260926/state.md`及空交接目录删除；旧`pytest-of-ymdai`的16项夹具/链接
+约40.3MiB经无消费者核对后删除，未跟随symlink。整理自产约4.1GiB测试夹具/cache/error files已清除。
+其它ignored分析与历史运行内容因唯一证据或生命周期仍未充分明确而保留；不因文件名或年龄删除，不宣称全体历史产物均已证明可重放。
 
 ## 2026-10-01：条件读写实现、重放修复及完整90ECP的多卡承接
 

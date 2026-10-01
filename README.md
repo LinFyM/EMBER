@@ -58,5 +58,5 @@ python -m pytest -q
 历史实现的最后完整清理前快照为`797ae01f`，更早运行须采用其实际训练/读取commit。
 代码存在不保证资产可重放：原manifest记录历史完整状态，现状还要看资产旁的
 `checkpoint_retirement.json`与`payload_retirement.json`。`weights_only`不能exact resume，
-`metadata_only`没有模型权重；旧CLI可能仍要求完整trainer，不能把剩余权重称为完整恢复资产。
+`metadata_only`没有模型权重；冻结版本中的旧CLI可能要求完整trainer，不能把剩余权重称为完整恢复资产。
 source/dataset、关键权重、formal原始rows/metrics及当前依赖保留；科学负结果不会被整理抹去。

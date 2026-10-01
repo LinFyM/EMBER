@@ -1,51 +1,53 @@
-# EMBER T 架构数学审阅入口
+# EMBER 公共基座与共同学习机制：专家审阅入口
 
-本材料供只能读取远程 EMBER 仓库的专家，从实际计算图和已有正反证据独立分析 T 的主要限制及改进原理。
-研究目标是让语言和 action-hidden 教学视频在 rollout 前一次生成有效的任务 LoRA；不是证明当前架构正确，
-也不预先指定 Transformer、删除 B₀、增加回读或扩大 rank。数学上可表示、有限训练中可学、跨初态和任务可迁移须分别判断。
+本次重点是：**A₀/B₀作为跨任务公共基座的设想是否合理，以及是否有比直接规定公共能力更自然的训练机制。**
+Owner担心，独立public FM只是在强行赋予底座职责，未必解释了共通能力怎样从多任务经验中形成。
+请独立审视这一前提，允许否定、修改或有条件保留，不要求证明现有分工正确，也不预设删除公共基座或改用某个模块。
+最终目标仍是语言与action-hidden视频在rollout前生成立即有效的一套LoRA，完整闭环能力优先。
 
-材料日期为 2026-09-30；计算图核对至源码 `5313257c8070a792bbec0c6345c98376ed5cd1ea`。
-这只是审阅源码快照，不是全部历史实验的训练或评测 Git 身份。当前授权与进度以 [progress](../../../progress.md) 顶部为准。
-成熟原 T 的完整训练曲线已到 2790，选定点为 2340；change_clock 候选只到 450。
-design §33 学习限制诊断已完成：有限train面板父17/32、S20、P20、D23；结果与范围已纳入材料，当前暂停新增实验。
+2026-10-01更新，沿用原目录作为唯一审阅入口。本次整合依据研究记录提交
+`22357080f0c71706cf154670e43eaca04c8b1793`，更新本身仅为文档，没有新实验。
+这不是所有实验的训练代码身份；各实验须看自己的来源字段。请报告实际审阅的仓库commit。
+T、Joint、Context和self_read有已完成结果；深Transformer、条件A₀+S、因果编码和随机query分支仍是讨论候选。
+当前没有新formal active design。状态以 [progress](../../../progress.md) 顶部为准，不恢复历史运行。
 
-可直接转交 [专家提示词](EXPERT_PROMPT.md)。统计与证据范围见 [EVIDENCE](EVIDENCE.md)。
+可直接转交 [完整专家提示词](EXPERT_PROMPT.md)。
+先读 [最新讨论整合与待审问题](PUBLIC_BASE_REVIEW.md)，再读 [证据及其边界](EVIDENCE.md)。
 
 ## 先读哪些材料
 
-后续补充（2026-09-30）：公共基座/训练目标完整复核和§34固定Z投影消费者已完成，见
-[机制§77](../../analyses/feature_to_operator_mechanism_20260926.md#77-公共基座与视频定向适配完整架构和训练目标的再判断2026-09-30)、
-[PZ原行与动作摘要](../../analyses/operator_projected_repair_evidence_20260930.json)及
-[CPU留出读出分析](../../analyses/operator_projection_transfer_evidence_20260930.json)。
-PZ21/32对父17、D23，只有16个不同初态；全条件可表达部分修正不等于共享获取或新任务迁移。未启动新架构训练。
-
-1. [Owner 要求](../../current_owner_requirements.md)及 [Concept](../../concept.md)：目标、合法信息、理论与证据的关系。
-2. 本页的完整计算图，再读 [设计 §1–4](../../designs/operator_read_write_learning_design.md)和实际源码：
+1. [最新讨论整合](PUBLIC_BASE_REVIEW.md)：当前疑问、方案状态、条件A/B完整链路及已讨论的训练办法。
+2. [Owner 要求](../../current_owner_requirements.md)及 [Concept](../../concept.md)：最终目标与合法信息；公共分工本身是本次待审假说。
+3. 本页下方的原T计算图，再读 [设计](../../designs/operator_read_write_learning_design.md)的相关部分和实际源码：
    [model.py](../../../src/ember/operator_writer/model.py)、[native.py](../../../src/ember/operator_writer/native.py)、
    [credit.py](../../../src/ember/operator_writer/credit.py)、[data.py](../../../src/ember/operator_writer/data.py)。
-3. [EVIDENCE](EVIDENCE.md)：先看完整学习阶段、强参照和机制正反例，再形成主要解释。
-4. 按问题读 [机制分析](../../analyses/feature_to_operator_mechanism_20260926.md)的 §42–44、§50–56、§63–76，
-   以及 [研究历史](../../research_history.md)索引到的最近似方案。旧论证是可批评的解释，不是审阅结论。
+4. [EVIDENCE](EVIDENCE.md)：先看公共/完整对照，再按需核对原行、完整学习阶段和历史反例。
+5. [机制分析](../../analyses/feature_to_operator_mechanism_20260926.md)：§77–85为公共目标及实际结果，§87为self_read，
+   §88–93为最近讨论。无需先读完整长文件；具体索引见整合材料。旧论证是可批评的解释，不是专家应复述的结论。
 
 不要求读完所有历史。若建议与 LocalField、ProcessPullback、条件速度、公共 prior 或回读相近，应完整核对那一段原论证和反例。
 旧文件中的“当前”“下一步”和执行许可只对应当时，不构成新实验授权。
 
-## 实际输入和完整计算图
+## 已执行原T的输入和完整计算图
+
+本节描述原T，不把Joint/Context/self_read或尚未实现的S/Transformer候选混入同一计算图。
 
 source 是从 generic `lerobot/pi05_base` 建立的冻结 π0.5-LIBERO policy；没有使用读过目标 40 tasks actions 的 `pi05_libero`。
-当前方法 K=1，输入是 exact task language 和完整、有序、同步双 RGB，stride=5。教学输入没有 action、state、reward、terminal、
+所述T实验为 K=1，输入是 exact task language 和完整、有序、同步双 RGB，stride=5。教学输入没有 action、state、reward、terminal、
 task ID、文件名、物体 pose 或 policy outcome。自身执行仍使用合法的当前图像、语言与 8 维 state。
 
 每个 target ℓ 有跨任务共享的 `Aℓ[128,d_in]`、`B0ℓ[d_out,128]`。38 个 target 为 18 层 action-expert Q/V 投影及 action_in/out；
 各 target 有自己的参数，不是全网络共用一对矩阵。rank=alpha=128，source 基础权重始终冻结。
 
 公共策略 `βℓ=B0ℓ Aℓ` 参与教学读取和最终执行。A、B₀及 Writer fresh 共同学习；B₀从零初始化，未先训练一套 MT 底座。
-M=0 时模型类能表示自由公共 rank128 LoRA，但实际训练不单独优化其独立策略风险，不能据可表示性推断公共分支已学到强 MT。
+M=0时能表示自由公共rank128 LoRA；原T是full-only，后继Joint/Context另加public FM。二者不可混为同一训练方案。
+可表示性不保证得到强公共策略；rank128和固定A也不是专家必须保留的永久约束。
 
 教学读取对每个采样帧使用真实双相机 patch 和语言 prefix，以及固定 Gaussian probe `[50,32]`（seed1729）、flow time=1。
 通过包含公共 β 的真实动作网络取得各层输入 `Xℓ,t[d_in,50]` 和最终投影前 `H_t[1024,50]`。
 不同帧在 native reader 中独立处理；每帧内部的原生 attention 已有跨位置作用，不能把 50 列称为相互独立的图像 patch。
 公共 β→X/H 在正常训练中有梯度，不能跨 β 更新缓存。图文 embedding 冻结。
+固定probe及tau=1是该实现的选择，不是方法硬约束。推理式多步读取合法，但其计算/监督与标准FM输入须分开说明。
 
 令 `h̄_t=RMSNorm(H_t)`、`Δh̄_t=h̄_(t+1)−h̄_t`，每个 target 的原 T 为：
 

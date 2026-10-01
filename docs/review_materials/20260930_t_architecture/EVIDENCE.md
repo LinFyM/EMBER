@@ -1,7 +1,37 @@
-# T 架构审阅的证据与解释边界
+# 公共基座与T架构审阅：证据及解释边界
 
 本页区分仓库中可直接复算的结果、由本地大原件读回后保存的小型统计，以及尚未确诊的解释。
-2026-09-30 整理，没有新增实验。模型和数学符号先读 [README](README.md)。
+2026-10-01更新公共/完整对照与远程入口，没有新增实验。模型与讨论状态先读
+[README](README.md)及[最新讨论整合](PUBLIC_BASE_REVIEW.md)。下方原始学习曲线和历史诊断保留其各自日期与范围。
+
+## 本次最相关的公共与完整结果
+
+所有分数均来自既有完成记录；不能跨行相减、跨学习年龄归因或把已见任务面板当held。
+
+| 比较 | 同一口径结果 | 可远程核对的字段/原行 | 解释边界 |
+| --- | --- | --- | --- |
+| 原T2340公共/完整 | Validation400：公共103、完整161；full对public保留79/新增82/丢失24 | [selected summary](selected_condition_summary.json)的arms.public_beta、arms.correct、pairs；[逐行CSV](selected_condition_rows.csv) | 同一冻结checkpoint删除M，不是独立训练的public模型；差58不能全部称为新操作知识 |
+| 成熟T追加public FM | Validation400：aux1890为148、control1890为158；保留136/新增12/丢失22 | [validation summary](validation_summary.json)的arms.public_aux1890、arms.control1890、pairs；[CSV](validation_rows.csv) | 同一1800父点各续90步，继承optimizer；只凭该结果不能否定fresh共同学习 |
+| fresh Joint完整能力 | Validation400：Joint450为114、原T450为122、MT300为153；Joint对T保留88/新增26/丢失34 | [Joint evidence](../../analyses/operator_joint_public_evidence_20261001.json)的closed_loop.joint、closed_loop.T450、comparisons.full_joint_vs_T450 | 双目标从初始化开始，不能仅以晚加解释；分数不能直接诊断梯度冲突 |
+| fresh Joint公共能力 | 已见144：Joint80、T68；保留60/新增20/丢失8 | 同一[Joint evidence](../../analyses/operator_joint_public_evidence_20261001.json)的closed_loop.joint_public、closed_loop.T450_public、comparisons.public_joint_vs_T450 | train24＋support12，每task4个固定初态；没有Joint held-public，不能计算114−80 |
+| Context900公共/完整 | Validation400：公共134、完整151、MT153；full对public保留112/新增39/丢失22 | [Context public evidence](../../analyses/operator_context900_public_evidence_20261001.json)的summaries.public900、summaries.full900、comparisons.full900_vs_public900、method | 同一checkpoint消融；Long为13/14/24，不支持关M即可修复。相对T的架构与年龄改变，不能归因于public FM |
+| self_read450 | Validation400完整116，对Context450126/T450122/MT153；已见144公共83 | [self_read evidence](../../analyses/operator_self_read_evidence_20261001.json)的closed_loop.summaries、closed_loop.official_comparisons、closed_loop.public_comparisons、decision.scope_limit | 公共83=目标train24的38/96＋support12的45/48；无held-public、M0闭环或相邻稳定性，116与83不可相减 |
+
+原T的same-task-other为150/400，仍见[selected summary](selected_condition_summary.json)。
+这支持有效条件作用与视频依赖，但不能把所有条件收益认定为新知识，或把所有条件损失归给共同适配。
+fresh Joint的held差额也有任务/seed不确定性；本材料将其表述为未观察到完整提升，而非已证明普遍有害。
+
+关于裸Source：Owner指出T已有公共基础能力，但本次当前T的strict配对导出中未找到相应裸Source臂。
+历史coverage协议的Source51/400及其它旧数值不能移入当前strict MT153这张比较表；
+本材料不补一个无法按当前配对口径独立复算的Source数字，也不把“公共103”直接等同相对Source提升103。
+
+以上JSON/CSV是Git跟踪的轻量证据，可核分数、task/suite分布和success-set得失；
+其中sources/source_paths是原件provenance，不表示远程专家能打开服务器文件。
+没有weights、H/X/cotangent、完整RGB或continuous轨迹时，不能声称重新核验其全部内容或重跑模型。
+路径/seed字段本身也不独立证明全部scene内容匹配。Test与shuffled/reversed不进入本次方法论据。
+
+补充机制统计可读[整体综合](../../analyses/t_public_basis_synthesis_evidence_20261001.json)，
+以及[Context900已见面板](../../analyses/operator_context900_seen_evidence_20261001.json)。这些是派生证据，不是新候选的训练结果。
 
 ## 完整能力曲线
 

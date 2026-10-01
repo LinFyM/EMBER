@@ -1,10 +1,15 @@
 # EMBER task plan
 
-已准备[仅远程仓库可读的专家数学审阅材料](docs/review_materials/20260930_t_architecture/README.md)，
+已准备[公共基座与共同学习机制的专家审阅材料](docs/review_materials/20260930_t_architecture/README.md)，
 用于独立检查完整特征—算子—学习—执行机制；§40最终分析见机制§87，完整综合见§88，条件A后继推导见§89，
 因果编码与随机单分支共同训练讨论见§90。
 
-## 当前：接受查询分配方案，分析直接公共监督的学习依据，未启动实施（2026-10-01）
+## 当前：整理并转交公共基座假说的专家审阅材料（2026-10-01）
+
+Owner仍担心直接public FM在强行规定底座职责，要求专家整体评估A₀/B₀作为共通基座的合理性和更自然的学习机制。
+沿用现有远程入口，新增PUBLIC_BASE_REVIEW整合§88–93，更新README、EVIDENCE和EXPERT_PROMPT；允许专家质疑分解前提。
+资料区分已执行的T/Joint/Context/self_read与未实施的条件A、深解释器、因果编码及query分配，并给出tracked证据入口。
+当前交付是可转交的审阅材料和prompt，科研执行仍停在讨论状态，没有新formal active design。
 
 最新机制§93/findings§267：Owner未采纳§92条件作用软收缩，接受每批部分query直接优化A0/B0，要求判断其学习依据。
 公共目标能补充被条件代偿遮蔽的行为误差、约束部分共同适配自由度，并可能改善共用控制/读取基础；

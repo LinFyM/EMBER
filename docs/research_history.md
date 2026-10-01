@@ -3111,3 +3111,23 @@ GPU1.25055551/2h，含首attempt .88370523与恢复.36685028；GPU累计约15分
 main据完整历史另登记§40的共享参数两次native读取fresh450假设，详细数学与负例见机制§86/findings§260。
 它改变全视频条件参与特征形成的依赖，保持参数/事件/目标；未宣称旧回读已翻案或当前根因已确诊。
 登记不等于已训练，实际派发/启动/结果以progress和正式原件为准。
+
+## 2026-10-01：共享参数两次native的fresh450完整阴性与分析后讨论
+
+design§40唯一root ID为`operator_self_conditioned_native_fresh_20261001`，训练/读取da758e6b；独立profile fca3b257三次更新未进入初值。
+完整450/50,400跨episode full及同query公共FM、36task各50teacher、90..450完整ECP；最终只部署β⊕M1，不叠M0。
+correct400为116，对同龄Context126 R96/G20/L30、T122 R95/G21/L27、MT153 R92/G24/L61，suite25/43/37/11、breadth7。
+task3/31对MT合计−31，未缩小原Context的−28。公共train14483，train24/support为38/45；没有完整train/held公共补评。
+
+main直接复算2,176条成功/goal记录、300continuous和8native，A28子任务读44份实际预测/4target，main另核16原预测；
+完整解释在机制§87/findings§261，公开聚合证据`analyses/operator_self_read_evidence_20261001.json`以run ID/相对路径记录原件来源。
+两遍ΔHbar相对变化17.18%–50.67%，M确实改变，但M0→M1全50 FM只改善.0262%、前5恶化.1596%。
+task31有对Context新增7个补齐黄油的实际正例，也丢失5个完整成功；task3仍有目标未移动、另一个碗被移动的行为。
+这削弱当前两次条件native作为充分修复的支持，不抹去条件功能，不把特征变化当语义理解或泛化能力。
+旧冻结替换/缓存拟合与本次fresh共同学习的区别及负证据共同保留，不能再只以尚未共同训练保护当前假设。
+
+544新episode、20新FM预测、8被动native均完成，GPU消费者全exit0、最终CPU验收complete。
+总17.092523GPUh，训练15.022237；正式启动至末GPU消费者约4小时10分钟，含登记工程准入约4小时47分钟。
+新增存储阶段观察高水14.766659GiB，保守界32/36GiB，非连续精确峰值；原件、完整checkpoint与失败记录保留。
+文件事件接续及末端CPU来源字段类型恢复没有重启训练、修改模型计算或重跑GPU。
+Owner随后明确“分析完后别急着自主推进，我们可能还要再继续讨论下”；完成分析后停在讨论，无active后继design，未续900或开新臂。

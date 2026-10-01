@@ -1,6 +1,34 @@
 # EMBER progress
 
-## 当前：公共消融完成，检验条件参数参与原生特征形成（2026-10-01）
+## 当前：§40分析完成，按Owner要求先继续讨论（2026-10-01）
+
+Owner最新明确“分析完后别急着自主推进，我们可能还要再继续讨论下”。
+§40整批完成且main已直接分析原件；**当前无active后继design**，停止新增计算，停在讨论状态。
+不启动续训、补评、新臂或架构改动；此前自主推进授权不覆盖这一最新边界。
+下方启动段落均为历史时点，不恢复其“尚未完成”或active状态。
+
+fresh450最终β⊕M1为116/400，同龄Context126、T122、强MT153；suite25/43/37/11、breadth7/8。
+对Context R96/G20/L30、对T R95/G21/L27、对MT R92/G24/L61；task3/31对MT合−31，未缩小原Context合−28。
+task31对Context新增7个真实补齐黄油的场景，也失去5个完整成功；单物体task3仍有目标未动、另一碗被移动的行为。
+完整科学解释见机制§87/findings§261，聚合证据`docs/analyses/operator_self_read_evidence_20261001.json`。
+main复算2,176条原始成功/goal、300份既有continuous、8份native；A28共核44预测/4target，main另直接核16原预测。
+本轮分析没有新模型forward、GPU、梯度或环境。
+
+两遍Hbar相对变化2.07%–9.10%，实际ΔHbar变化17.18%–50.67%，不是读取未生效；
+但M0→M1全50 FM只改善.0262%，前5恶化.1596%，不足以支持更稳定纠错或更好迁移。
+自身公共train14483，train24/support为38/45；没有完整train144与held公共，不将其推成完整获取/功能分工结论。
+本批削弱当前两次条件native的充分修复假设，不否定全部回读，也没有证实深Transformer或条件A。
+共享A的行空间限制、teacher/执行同A与跨task共用A的区别及公共LoRA可达性在机制§87保留，等待讨论。
+
+唯一run ID `operator_self_conditioned_native_fresh_20261001`；训练/读取da758e6b，profile独立fca3b257三次更新未作正式初值。
+450更新、50,400 full及同query公共FM、36task各50不同teacher；90/180/270/360/450完整ECP保留。
+544新episode、20新A28、8被动native均完成，所有本批GPU消费者exit0，最终CPU验收complete、missing/invalid为空。
+实际17.092523/24GPUh，训练15.022237；正式启动至末GPU消费者约4小时10分钟，登记工程准入至末约4小时47分钟。
+存储阶段观察14.766659GiB、保守32/36GiB，非连续实测峰值；事件接续与CPU字段解析恢复保留原件，未重启训练/改计算/重跑GPU。
+本轮没有中间M0闭环、其它checkpoint选择、邻点稳定性或视频controls/Test/RL；实验执行会话也已整批停止。
+canonical tracked写入窗口此前已释放给main；本轮只更新科学记录，不再派发后继工作。
+
+## 历史：§40共享参数两次native的登记与启动（2026-10-01）
 
 Owner自主深入推导、架构/实验和新训练授权保持。§39完整结束；当前active design为**§40**。
 

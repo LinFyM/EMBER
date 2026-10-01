@@ -42,6 +42,14 @@ CONDITIONAL_TASK = "conditional_read_write_fresh_20261001"
 CONDITIONAL_ROOT = ROOT.parent / CONDITIONAL_TASK
 CONDITIONAL_MODE = "conditional_read_write"
 CONDITIONAL_SPEC_NAME = "conditional_read_write_fresh_spec.json"
+CONDITIONAL_CONTINUATION_TASK = "conditional_read_write_continuation900_20261002"
+CONDITIONAL_CONTINUATION_ROOT = ROOT.parent / CONDITIONAL_CONTINUATION_TASK
+CONDITIONAL_CONTINUATION_SPEC_NAME = "conditional_read_write_continuation900_spec.json"
+CONDITIONAL_PARENT_GIT = "a0e0248d96568e42b24a3d1c4102e2ca6e35a40c"
+CONDITIONAL_PARENT_SPEC_PATH = Path("/data1/user/ymdai/projects/EMBER-conditional-read-write-mlp-formal"
+                                   "/configs/operator_read_write_v1/conditional_read_write_fresh_spec.json")
+CONDITIONAL_PARENT_CHECKPOINT = (CONDITIONAL_ROOT / CONDITIONAL_MODE
+    / "train/attempts/resume360_native_packing/checkpoints/macro_00000450")
 CONDITIONAL_ORIGIN_GIT = "797ae01f3d35d4740a636b15f020c4ef55477845"
 CONDITIONAL_ORIGIN_SPEC = Path("/data1/user/ymdai/projects/EMBER-conditional-read-write-r2-formal"
                                "/configs/operator_read_write_v1/conditional_read_write_fresh_spec.json")
@@ -97,7 +105,7 @@ CONTEXT = {
 
 
 def registered(spec: dict) -> bool:
-    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK, CONDITIONAL_TASK)
+    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK, CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK)
 
 
 def settings(spec: dict) -> tuple[Path, str, dict]:
@@ -108,8 +116,9 @@ def settings(spec: dict) -> tuple[Path, str, dict]:
         return root, CONTEXT_MODE, {**JOINT, "internal_mode": CONTEXT_MODE}
     if spec.get("task") == SELF_READ_TASK:
         return SELF_READ_ROOT, SELF_READ_MODE, {**JOINT, "internal_mode": SELF_READ_MODE}
-    if spec.get("task") == CONDITIONAL_TASK:
-        return CONDITIONAL_ROOT, CONDITIONAL_MODE, CONDITIONAL
+    if spec.get("task") in (CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK):
+        root = CONDITIONAL_ROOT if spec["task"] == CONDITIONAL_TASK else CONDITIONAL_CONTINUATION_ROOT
+        return root, CONDITIONAL_MODE, CONDITIONAL
     raise ValueError("unregistered fresh full/public study")
 
 
@@ -146,6 +155,25 @@ def expected_conditional_spec(events_source: dict) -> dict:
                        "expected_wall_hours": [6, 12], "report_gpu_hours": 30}}
 
 
+def expected_conditional_continuation_spec(parent: dict) -> dict:
+    """Extend the fixed graph and absolute v3 stream to its second teacher round."""
+    return {**parent, "task": CONDITIONAL_CONTINUATION_TASK,
+            "design": "docs/designs/conditional_read_write_architecture.md#14",
+            "run_root": str(CONDITIONAL_CONTINUATION_ROOT),
+            "execution": {**parent["execution"], "updates_per_mode": 900,
+                          "queries_per_mode": 100800,
+                          "checkpoints": list(CONTEXT_CONTINUATION_CHECKPOINTS),
+                          "only_selected_checkpoint": 900},
+            "evaluation": {**parent["evaluation"], "bank_macro": 900,
+                           "conditional_adjacent_macro": 810,
+                           "adjacent_trigger": "complete_valid_900_correct400_successes_strictly_gt153"},
+            "continuation": {"parent_run_root": str(CONDITIONAL_ROOT), "parent_macro": 450,
+                             "parent_training_git": CONDITIONAL_PARENT_GIT,
+                             "parent_event_schema": parent["events"]["schema_version"],
+                             "sampler_migration": "none_keep_v3_cursor_and_second_teacher_round"},
+            "budget": {"new_gpu_hours_hard": 20, "peak_new_gib": 64,
+                       "expected_wall_hours": [3, 5], "report_gpu_hours": 16}}
+
 def expected_context_continuation_spec(parent: dict) -> dict:
     return {**parent, "task": CONTEXT_CONTINUATION_TASK,
             "design": "docs/designs/operator_read_write_learning_design.md#37",
@@ -180,8 +208,8 @@ def expected_spec(base: dict, events: dict) -> dict:
 
 def validate_request(spec: dict, args) -> None:
     _, mode, joint = settings(spec)
-    continuation = spec["task"] == CONTEXT_CONTINUATION_TASK
-    frames = (4, 8, 16, 32) if spec["task"] == CONDITIONAL_TASK else (8, 4)
+    continuation = spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK)
+    frames = (4, 8, 16, 32) if mode == CONDITIONAL_MODE else (8, 4)
     checkpoints = CONTEXT_CONTINUATION_CHECKPOINTS if continuation else CHECKPOINTS
     bad_resume = (args.resume is None or args.attempt == "fresh") if continuation else (
         (args.resume is None) != (args.attempt == "fresh"))
@@ -228,10 +256,22 @@ def _conditional_resume_record(parent: dict, current: dict) -> dict:
           or old.get("current_training_git") != parent["git"]
           or old.get("current_training_spec") != parent["spec"]):
         raise ValueError("conditional source migration lost its actual origin lineage")
-    spec = read_json(CONDITIONAL_ORIGIN_SPEC)
-    _inspect_frozen_source(parent, spec)
-    if read_json(Path(current["spec"])) != spec:
-        raise ValueError("conditional resumed training spec changed scientific content")
+    origin = read_json(CONDITIONAL_ORIGIN_SPEC)
+    registered_specs = {CONDITIONAL_TASK: origin,
+                        CONDITIONAL_CONTINUATION_TASK: expected_conditional_continuation_spec(origin)}
+    parent_spec, current_spec = (read_json(Path(run["spec"])) for run in (parent, current))
+    for run, spec in ((parent, parent_spec), (current, current_spec)):
+        if (spec != registered_specs.get(spec.get("task"))
+                or run.get("continuation") != spec.get("continuation")):
+            raise ValueError("conditional resumed training spec changed scientific content")
+    _inspect_frozen_source(parent, parent_spec)
+    if parent_spec["task"] != current_spec["task"]:
+        if (parent_spec["task"] != CONDITIONAL_TASK
+                or current_spec["task"] != CONDITIONAL_CONTINUATION_TASK
+                or parent["git"]["commit"] != CONDITIONAL_PARENT_GIT
+                or parent["spec"] != str(CONDITIONAL_PARENT_SPEC_PATH)
+                or Path(current["parent_checkpoint"]).resolve() != CONDITIONAL_PARENT_CHECKPOINT.resolve()):
+            raise ValueError("conditional second-round continuation requires its actual450 parent")
     return {"origin_training_git": CONDITIONAL_ORIGIN_GIT,
             "origin_training_spec": str(CONDITIONAL_ORIGIN_SPEC),
             "parent_checkpoint": current["parent_checkpoint"],
@@ -242,7 +282,7 @@ def _conditional_resume_record(parent: dict, current: dict) -> dict:
 
 
 def register_conditional_resume(spec: dict, args, contract: dict) -> None:
-    if spec["task"] != CONDITIONAL_TASK or args.resume is None:
+    if spec.get("task") not in (CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK) or args.resume is None:
         return
     contract["parent_checkpoint"] = str(args.resume.resolve())
     parent = read_json(args.resume.resolve().parent.parent / "run_contract.json")
@@ -259,8 +299,8 @@ def conditional_resume_compatible(parent: dict, current: dict) -> bool:
 def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     from .run import complete_checkpoint, resume_contract_compatible
 
-    if spec["task"] == CONTEXT_CONTINUATION_TASK:
-        _validate_context_continuation(spec, args, contract, output)
+    if spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK):
+        _validate_joint_continuation(spec, args, contract, output)
         return
     root, mode, joint = settings(spec)
     attempts = root / mode / "train/attempts"
@@ -285,7 +325,7 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
         raise ValueError("joint450 resume requires latest complete owned same-loss ECP")
 
 
-def _validate_context_continuation(spec: dict, args, contract: dict, output: Path) -> None:
+def _validate_joint_continuation(spec: dict, args, contract: dict, output: Path) -> None:
     from .run import complete_checkpoint, packing_compatible
 
     root, mode, joint = settings(spec)
@@ -303,19 +343,30 @@ def _validate_context_continuation(spec: dict, args, contract: dict, output: Pat
     if (macro == 450 and latest != -1) or (macro != 450 and macro != latest):
         raise ValueError("context continuation must resume latest owned complete ECP")
     if macro == 450:
-        if checkpoint != CONTEXT_PARENT_CHECKPOINT.resolve():
-            raise ValueError("context continuation parent must be the actual sealed fresh450 ECP")
-        old = inspect_source(read_json(CONTEXT_PARENT_SPEC_PATH), checkpoint)
+        conditional = mode == CONDITIONAL_MODE
+        parent_checkpoint = CONDITIONAL_PARENT_CHECKPOINT if conditional else CONTEXT_PARENT_CHECKPOINT
+        parent_spec = CONDITIONAL_PARENT_SPEC_PATH if conditional else CONTEXT_PARENT_SPEC_PATH
+        parent_git = CONDITIONAL_PARENT_GIT if conditional else CONTEXT_PARENT_GIT
+        if checkpoint != parent_checkpoint.resolve():
+            raise ValueError("joint continuation parent must be the actual sealed fresh450 ECP")
+        old = inspect_source(read_json(parent_spec), checkpoint)
         fixed = ("schema_version", "stage", "mode", "source", "lora", "operator", "optimizer",
                  "events", "sampler", "trainable_names", "source_trainable", "information_wall",
                  "loss_variant", "joint")
-        if (old["git"]["commit"] != CONTEXT_PARENT_GIT
+        if (old["git"]["commit"] != parent_git
                 or any(old.get(key) != contract.get(key) for key in fixed)):
             raise ValueError("context parent source, model, labels, loss or optimizer changed")
+        if conditional and not conditional_resume_compatible(old, contract):
+            raise ValueError("conditional continuation lost the actual450 source lineage")
     else:
         if checkpoint.parent.parent.parent.resolve() != attempts.resolve():
             raise ValueError("context continuation checkpoint is outside owned attempts")
         old = read_json(checkpoint.parent.parent / "run_contract.json")
+        if mode == CONDITIONAL_MODE:
+            from .run import resume_contract_compatible
+            if not resume_contract_compatible(old, contract, allow_topology_change=True):
+                raise ValueError("conditional continuation source or scientific contract changed")
+            return
         mutable = {"topology", "microbatch", "frame_chunk", "parent_checkpoint"}
         if (not packing_compatible(old, contract)
                 or {key: value for key, value in old.items() if key not in mutable}
@@ -351,7 +402,7 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
     root, mode, joint = settings(spec)
     checkpoint = checkpoint.resolve()
     output = checkpoint.parent.parent
-    continuation = spec["task"] == CONTEXT_CONTINUATION_TASK
+    continuation = spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK)
     macro = int(checkpoint.name.removeprefix("macro_"))
     target = 900 if continuation else 450
     allowed = (810, 900) if continuation else (450,)
@@ -382,13 +433,16 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
     terminal = _completed_metrics_source(root, mode, checkpoint, target) if continuation else output
     metrics = [json.loads(line) for line in (terminal / "metrics.jsonl").read_text().splitlines()]
     completion = read_json(terminal / "completion.json")
-    if spec["task"] == CONDITIONAL_TASK and run.get("source_resume") is not None:
+    if mode == CONDITIONAL_MODE and run.get("source_resume") is not None:
         parent_checkpoint = Path(run["parent_checkpoint"])
         parent_run = read_json(parent_checkpoint.parent.parent / "run_contract.json")
         parent_macro = int(parent_checkpoint.name.removeprefix("macro_"))
         parent_metrics = (parent_checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()
         current_metrics = (output / "metrics.jsonl").read_text().splitlines()
-        if (parent_checkpoint.parent.parent.parent.resolve() != (root / mode / "train/attempts").resolve()
+        owned_parent = (parent_checkpoint.parent.parent.parent.resolve()
+                        == (root / mode / "train/attempts").resolve())
+        fixed450 = continuation and parent_checkpoint.resolve() == CONDITIONAL_PARENT_CHECKPOINT.resolve()
+        if (not (owned_parent or fixed450)
                 or not complete_checkpoint(parent_checkpoint) or parent_macro >= macro
                 or not conditional_resume_compatible(parent_run, run)
                 or len(parent_metrics) < parent_macro

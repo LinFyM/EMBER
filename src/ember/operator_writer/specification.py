@@ -25,6 +25,7 @@ CONTEXT_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.CONTEXT_SPEC_NAME)
 CONTEXT_CONTINUATION_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.CONTEXT_CONTINUATION_SPEC_NAME)
 SELF_READ_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.SELF_READ_SPEC_NAME)
 CONDITIONAL_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.CONDITIONAL_SPEC_NAME)
+CONDITIONAL_CONTINUATION_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.CONDITIONAL_CONTINUATION_SPEC_NAME)
 PILOT_ROOT = Path("/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260929")
 CONTINUATION2340_ROOT = Path(
     "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340")
@@ -126,6 +127,11 @@ PILOT_CONTRACT = {"arms": list(PILOT_ARMS), "loss_variants": PILOT_ARMS,
 
 def specification(path: Path = SPEC_PATH) -> dict:
     path = path.resolve()
+    if path == CONDITIONAL_CONTINUATION_SPEC_PATH:
+        spec = read_json(path)
+        if spec != joint_training.expected_conditional_continuation_spec(specification(CONDITIONAL_SPEC_PATH)):
+            raise ValueError("conditional read/write continuation900 contract changed")
+        return spec
     if path == CONDITIONAL_SPEC_PATH:
         spec = read_json(path)
         if spec != joint_training.expected_conditional_spec(specification(SELF_READ_SPEC_PATH)):
@@ -295,7 +301,7 @@ def specification_path(spec: dict) -> Path:
     """The current consumer spec path; actual training provenance stays in its run."""
     paths = (SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
              CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH, CONTINUATION1800_SPEC_PATH,
-             PILOT_SPEC_PATH, CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, CONTEXT_CONTINUATION_SPEC_PATH, SELF_READ_SPEC_PATH, CONDITIONAL_SPEC_PATH)
+             PILOT_SPEC_PATH, CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, CONTEXT_CONTINUATION_SPEC_PATH, SELF_READ_SPEC_PATH, CONDITIONAL_SPEC_PATH, CONDITIONAL_CONTINUATION_SPEC_PATH)
     for path in paths:
         if read_json(path)["run_root"] == spec["run_root"]:
             return path

@@ -7,7 +7,9 @@ Owner原有自主推进授权持续。主讨论已核完整450原件、行为/�
 从完整450固定图接续到900，不改c/d、S/M、完整FM、36task、source1000、normalization或信息墙。
 新增50,400 full query；900完整validation400、seen144和固定A28；仅900超过MT153才补810相邻paired400，不能倒选峰值。
 新批硬限20GPUh/64GiB、先验3–5小时；root为`/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002`。
-本批科学合同已登记；原实验session按下方职责承接并更新实际实施状态，不把登记当作已运行。
+原实验session已实际承接，独占dev接入450合法父来源、原事件恢复及900/条件810读取；
+现场确认同root无已运行批次，data1独立quota960.7G/2T、个人du1,031,493,120,000字节和共享82T余量已准入。
+实际完整450来源的CPU消费者及原恢复6项检查通过；训练尚未启动，读取接口在独立树并行实施。
 若没有完整优势/相邻保持，停止同池续训路径，无自动1350/2340、小扫、controls/Test/RL。
 详细解释与原件在机制§94、findings§269和`docs/analyses/conditional_read_write450_evidence_20261002.json`。
 

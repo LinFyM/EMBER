@@ -90,6 +90,8 @@ def resume_contract_compatible(parent: dict, current: dict, *, allow_topology_ch
         if not joint_training.conditional_resume_compatible(parent, current):
             return False
         mutable += ("git", "spec", "parent_checkpoint", "source_resume")
+        if parent.get("continuation") is None and current.get("continuation") is not None:
+            mutable += ("continuation",)
     return (packing_compatible(parent, current)
             and {k: v for k, v in parent.items() if k not in mutable}
             == {k: v for k, v in current.items() if k not in mutable})
@@ -629,7 +631,7 @@ def validate_train_request(spec: dict, args) -> None:
 
 
 def train(spec: dict, args) -> None:
-    if spec.get("task") != joint_training.CONDITIONAL_TASK:
+    if spec.get("task") not in (joint_training.CONDITIONAL_TASK, joint_training.CONDITIONAL_CONTINUATION_TASK):
         raise ValueError("retired operator training requires its recorded frozen runtime")
     validate_train_request(spec, args)
     session = prepare_train(spec, args)

@@ -17,6 +17,7 @@ from ember.lora import LORA_A_SUFFIX
 _TEACHER_ATTENTION = ContextVar("ember_teacher_attention", default=False)
 _TEACHER_PADDING = ContextVar("ember_teacher_padding_queries", default=None)
 _TEACHER_EAGER = ContextVar("ember_teacher_original_attention", default=None)
+_TEACHER_MLP = ContextVar("ember_teacher_original_mlp", default=None)
 _ATTENTION_SCOPE_LOCK = RLock()
 
 
@@ -60,27 +61,44 @@ def _teacher_sdpa(module, query, key, value, attention_mask, scaling, dropout=0.
 
 @contextmanager
 def _teacher_attention_kernel(attention_mask=None):
-    """Only this native bridge call uses SDPA, including outer-frame replay."""
+    """Teacher-only SDPA and frozen-MLP replay inside the full frame call."""
     from transformers.models.gemma import modeling_gemma
 
     # Native callers cannot race the binding; unrelated threads retain eager.
     with _ATTENTION_SCOPE_LOCK:
         original = modeling_gemma.eager_attention_forward
         eager = _TEACHER_EAGER.get() or original
+        original_mlp = modeling_gemma.GemmaMLP.forward
+        mlp = _TEACHER_MLP.get() or original_mlp
         rows = _padding_query_rows(attention_mask)
-        tokens = (_TEACHER_ATTENTION.set(True), _TEACHER_PADDING.set(rows), _TEACHER_EAGER.set(eager))
+        variables = (_TEACHER_ATTENTION, _TEACHER_PADDING, _TEACHER_EAGER, _TEACHER_MLP)
+        tokens = tuple(variable.set(value) for variable, value in
+                       zip(variables, (True, rows, eager, mlp), strict=True))
 
         def dispatch(*args, **kwargs):
             if not _TEACHER_ATTENTION.get():
                 return eager(*args, **kwargs)
             return _teacher_sdpa(*args, _eager=eager, _query_rows=_TEACHER_PADDING.get(), **kwargs)
 
+        def mlp_dispatch(module, hidden):
+            if not _TEACHER_ATTENTION.get() or not torch.is_grad_enabled() or not hidden.requires_grad:
+                return mlp(module, hidden)
+            # Only this source-frozen, non-LoRA submodule can safely replay after
+            # functional_call has restored physical β. Its input VJP stays live.
+            if any(value.requires_grad or ".lora_" in name
+                   for name, value in module.named_parameters()):
+                raise ValueError("teacher MLP replay requires frozen non-LoRA parameters")
+            return checkpoint(lambda x: mlp(module, x), hidden,
+                              use_reentrant=False, preserve_rng_state=False)
+
         modeling_gemma.eager_attention_forward = dispatch
+        modeling_gemma.GemmaMLP.forward = mlp_dispatch
         try:
             yield
         finally:
             modeling_gemma.eager_attention_forward = original
-            for variable, token in zip((_TEACHER_ATTENTION, _TEACHER_PADDING, _TEACHER_EAGER), tokens):
+            modeling_gemma.GemmaMLP.forward = original_mlp
+            for variable, token in zip(variables, tokens, strict=True):
                 variable.reset(token)
 
 

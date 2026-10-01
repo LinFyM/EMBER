@@ -19,8 +19,9 @@ REPO = Path(__file__).resolve().parents[3]
 TASK = "operator_joint_public_fresh_20260930"
 ROOT = Path("/data1/user/ymdai/ember_runs") / TASK
 PUBLIC_VALIDATION_MODE = "context_public_validation"
-MODES = ("joint", "joint_public", "T450_public", "context", "context_public", "context_seen", PUBLIC_VALIDATION_MODE)
-PUBLIC_MODES = ("joint_public", "T450_public", "context_public", PUBLIC_VALIDATION_MODE)
+SELF_READ_MODES = ("self_read", "self_read_public")
+MODES = ("joint", "joint_public", "T450_public", "context", "context_public", "context_seen", PUBLIC_VALIDATION_MODE, *SELF_READ_MODES)
+PUBLIC_MODES = ("joint_public", "T450_public", "context_public", PUBLIC_VALIDATION_MODE, "self_read_public")
 OLD_CHECKPOINT = Path("/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928"
                       "/continuation900/T/train/attempts/continuation/checkpoints/macro_00000450")
 PUBLIC_SCENES = Path(scope.registration()["run_root"]) / "attempts/scene_canonical144/scenes"
@@ -52,6 +53,10 @@ def study_root(mode: str, checkpoint: Path | None = None) -> Path:
 
     if mode not in MODES:
         raise ValueError("unregistered full/public study readout mode")
+    if mode in SELF_READ_MODES:
+        from .joint_training import SELF_READ_ROOT
+
+        return SELF_READ_ROOT
     if mode == SEEN_MODE:
         return SEEN_ROOT
     if mode == PUBLIC_VALIDATION_MODE:
@@ -64,6 +69,10 @@ def study_root(mode: str, checkpoint: Path | None = None) -> Path:
 def study_id(mode: str, checkpoint: Path | None = None) -> str:
     from .joint_training import CONTEXT_TASK, CONTEXT_CONTINUATION_TASK
 
+    if mode in SELF_READ_MODES:
+        from .joint_training import SELF_READ_TASK
+
+        return SELF_READ_TASK
     if mode == SEEN_MODE:
         return SEEN_TASK
     if mode == PUBLIC_VALIDATION_MODE:
@@ -78,7 +87,7 @@ def capture_path(mode: str, checkpoint: Path | None = None) -> Path:
     if mode == PUBLIC_VALIDATION_MODE:
         return REPO / "configs/operator_read_write_v1/context900_public_validation_capture.json"
     prefix = "context_continuation" if _continuation_checkpoint(mode, checkpoint) else (
-        "context" if mode in ("context", "context_public") else "joint")
+        "self_read" if mode in SELF_READ_MODES else "context" if mode in ("context", "context_public") else "joint")
     return REPO / "configs/operator_read_write_v1" / f"{prefix}_{'public' if mode in PUBLIC_MODES else 'official'}_capture.json"
 
 
@@ -132,7 +141,7 @@ def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
         spec = read_json(path)
         training = bank.inspect_training_source(spec, checkpoint, "T", sealed_evaluation=True)
     else:
-        path = (run.CONTEXT_CONTINUATION_SPEC_PATH if continuation else
+        path = (run.SELF_READ_SPEC_PATH if mode in SELF_READ_MODES else run.CONTEXT_CONTINUATION_SPEC_PATH if continuation else
                 run.CONTEXT_SPEC_PATH if mode in ("context", "context_public") else run.JOINT_SPEC_PATH)
         spec = run.specification(path)
         training = joint_training.inspect_source(spec, checkpoint)
@@ -167,6 +176,15 @@ def _wall(mode: str) -> dict:
 def _public_intervention(lora) -> dict:
     return {"formula": "B0 A", "removed_term": "M(V,L) A",
             "factor_map": factor_map(lora)}
+
+
+def _self_read_evidence(mode: str) -> dict | None:
+    if mode not in SELF_READ_MODES:
+        return None
+    return {"training_graph": "self_read", "training_native_passes": 2,
+            "deployment_native_passes": 0 if mode in PUBLIC_MODES else 2,
+            "output": "beta" if mode in PUBLIC_MODES else "beta+M1",
+            "intermediate_deployment": False}
 
 
 def _reused_public_factors(training: Mapping, lora) -> tuple[Path, dict]:
@@ -220,6 +238,8 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
                 "training_run": file_record(checkpoint.parent.parent / "run_contract.json"),
                 "source": training["source"], "lora": lora.to_dict(),
                 "materialization_git": run.frozen_git()}
+    if mode in SELF_READ_MODES:
+        contract["native_reading"] = _self_read_evidence(mode)
     shared_path = path.parent / ("public_beta.safetensors" if mode in PUBLIC_MODES else "shared.safetensors")
     metadata = {"schema_version": bank.BANK_SCHEMA, "mode": mode}
     shapes = expected_lora_state_shapes(lora)
@@ -282,6 +302,7 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
                 (bank.get("training_run"), file_record(Path(bank["checkpoint"]).parent.parent / "run_contract.json")),
                 (bank.get("checkpoint_manifest"), file_record(Path(bank["checkpoint"]) / "checkpoint_manifest.json")),
                 (bank.get("source"), source), (source, training["source"]),
+                (bank.get("native_reading"), _self_read_evidence(mode)),
                 (bank.get("lora"), lora.to_dict()), (training["lora"], lora.to_dict()),
                 (bank.get("shared"), file_record(shared)), (bank.get("scene_root"), str(scenes)),
                 (bank.get("tasks"), tasks), (bank.get("information_wall"), _wall(mode)),

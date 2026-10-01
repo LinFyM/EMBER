@@ -9,7 +9,7 @@ import traceback
 import torch
 from safetensors.torch import load_file
 
-from ember.lora import validate_lora_state
+from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, validate_lora_state
 from ember.operator_writer import joint_readout as readout
 from ember.operator_writer.data import FormalData
 from ember.operator_writer.run import build_runtime, frozen_git
@@ -20,6 +20,9 @@ from ember.writer.runtime import autocast
 
 
 ASSET = Path("/data1/user/ymdai/projects/EMBER")
+SELF_READ_SITES = {"Q8": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+                   "V8": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+                   "action_out": "model.action_out_proj"}
 
 
 def fixed_flow(task: int, panel: dict) -> tuple[dict, Path]:
@@ -80,7 +83,7 @@ def risk(prediction: torch.Tensor, target: torch.Tensor) -> dict:
 
 
 def a28(args) -> None:
-    mode = {"joint": "joint", "context": "context", "T450": "T450_public"}[args.model]
+    mode = {"joint": "joint", "context": "context", "self_read": "self_read", "T450": "T450_public"}[args.model]
     spec, training, spec_path = readout.source_record(mode, args.checkpoint)
     output = readout.study_root(mode, args.checkpoint) / "analysis/A28" / args.model
     if output.exists():
@@ -90,7 +93,9 @@ def a28(args) -> None:
     samples = {task: fixed_flow(task, panels[str(task)]) for task in readout.TRAIN_TASKS}
     reading_git = frozen_git()
     output.mkdir(parents=True)
-    started, rows = time.monotonic(), []
+    started, rows, native_records = time.monotonic(), [], []
+    provenance = {"checkpoint": str(args.checkpoint.resolve()), "training_git": training["git"]["commit"],
+                  "reading_git": reading_git, "training_spec": training["spec"], "reading_spec": file_record(spec_path)}
     write_json_atomic(output / "run_contract.json", {
         "study": readout.study_id(mode, args.checkpoint), "model": args.model, "checkpoint": str(args.checkpoint.resolve()),
         "training_git": training["git"]["commit"], "reading_git": reading_git,
@@ -104,7 +109,8 @@ def a28(args) -> None:
         from ember.writer.materialization_workers import _configure_device
 
         _configure_device(torch.device(args.device), args.cpu_threads)
-        runtime = build_runtime(args.asset_root, spec, torch.device(args.device), "context" if mode == "context" else "T")
+        runtime = build_runtime(args.asset_root, spec, torch.device(args.device),
+                                mode if mode in ("context", "self_read") else "T")
         runtime.writer.load_state_dict(load_file(str(args.checkpoint / "ecp.safetensors"),
                                                  device=args.device), strict=True)
         runtime.writer.requires_grad_(False).eval()
@@ -122,14 +128,26 @@ def a28(args) -> None:
             for teacher in panel["teachers"]:
                 condition, _, _ = data.condition(runtime, task, teacher)
                 with torch.no_grad():
-                    state, _ = runtime.compile(condition, frame_chunk=args.native_frame_chunk)
+                    state, native = runtime.compile(condition, frame_chunk=args.native_frame_chunk,
+                                                    retain_native=mode == "self_read")
+                native_ref = None
+                if mode == "self_read":
+                    native_ref = _save_native_evidence(output, task, teacher, condition[1], native, common, provenance)
+                    native_records.append({"task": task, "teacher": teacher,
+                                           "schema_version": "ember_self_read_native_evidence_v1", "raw": native_ref})
+                    _save_readout(output, "intermediate", task, teacher,
+                                  fm_prediction(runtime, native["passes"][0]["state"], batch, flow, args.microbatch),
+                                  target, reference, flow, rows, native_ref=native_ref)
                 _save_readout(output, "full", task, teacher,
                               fm_prediction(runtime, state, batch, flow, args.microbatch), target,
-                              reference, flow, rows)
+                              reference, flow, rows, native_ref=native_ref)
         write_json_atomic(output / "rows.json", rows)
-        write_json_atomic(output / "completion.json", {"status": "complete", "rows": len(rows),
-                          "public": 4, "full": 8, "updates": 0, "environment_episodes": 0,
-                          "seconds": time.monotonic() - started})
+        complete = {"status": "complete", "rows": len(rows), "public": 4, "full": 8,
+                    "updates": 0, "environment_episodes": 0, "seconds": time.monotonic() - started}
+        if mode == "self_read":
+            write_json_atomic(output / "native_records.json", native_records)
+            complete.update(intermediate=8, native_records=len(native_records))
+        write_json_atomic(output / "completion.json", complete)
     except Exception:
         write_json_atomic(output / "failure.json", {"rows": len(rows),
                           "seconds": time.monotonic() - started, "traceback": traceback.format_exc()})
@@ -139,13 +157,43 @@ def a28(args) -> None:
             data.close()
 
 
-def _save_readout(output, kind, task, teacher, prediction, target, reference, flow, rows):
+def _save_native_evidence(output, task, teacher, frame_indices, native, common, provenance):
+    """Observe two already computed passes at the three preregistered sites."""
+    passes = native["passes"]
+    indices = torch.as_tensor(frame_indices, dtype=torch.int64).cpu()
+    if len(passes) != 2 or any(item["h"].shape != (len(indices), 50, 1024) for item in passes):
+        raise ValueError("self-read A28 lost its two actual native passes")
+    targets = {}
+    for label, name in SELF_READ_SITES.items():
+        address = common[name + LORA_A_SUFFIX].detach().float().cpu()
+        targets[label] = {"name": name}
+        for index, item in enumerate(passes):
+            inputs = item["x"][name].detach().float().cpu()
+            if inputs.shape != (len(indices), 50, address.shape[1]):
+                raise ValueError("self-read passive native site input shape changed")
+            targets[label][f"AX{index}"] = torch.nn.functional.linear(inputs, address)
+            targets[label][f"M{index}"] = (item["state"][name + LORA_B_SUFFIX].detach().float().cpu()
+                                          - common[name + LORA_B_SUFFIX].detach().float().cpu())
+    path = output / f"native_task{task:03d}_teacher{teacher:02d}.pt"
+    torch.save({"schema_version": "ember_self_read_native_evidence_v1", **provenance,
+                "task": task, "teacher": teacher, "frame_indices": indices,
+                "H0": passes[0]["h"].detach().cpu(), "H1": passes[1]["h"].detach().cpu(),
+                "targets": targets, "probe_seed": 1729, "tau": 1.0, "frame_stride": 5,
+                "AX_definition": "unnormalized A X, FP32 from retained actual native inputs",
+                "M_definition": "actual pass B minus the unchanged public B0",
+                "state_formula": {"pass0": "beta+M0", "pass1": "beta+M1", "deployed": "beta+M1"}}, path)
+    return file_record(path)
+
+
+def _save_readout(output, kind, task, teacher, prediction, target, reference, flow, rows, *, native_ref=None):
     path = output / (f"public_task{task:03d}.pt" if teacher is None
-                     else f"full_task{task:03d}_teacher{teacher:02d}.pt")
+                     else f"{kind}_task{task:03d}_teacher{teacher:02d}.pt")
     record = {"kind": kind, "task": task, "teacher": teacher, "risk": risk(prediction, target),
               "queries": flow["queries"], "flow_seed": flow["flow_seed"],
               "target_ref": file_record(reference), "target_field": "FM_target[..., :7]",
               "time_field": "time", "noise_field": "noise"}
+    if native_ref is not None:
+        record["native_ref"] = native_ref
     torch.save({**record, "prediction": prediction}, path)
     rows.append({**record, "raw": file_record(path)})
 
@@ -154,7 +202,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("materialize", "a28"))
     parser.add_argument("--mode", choices=readout.MODES)
-    parser.add_argument("--model", choices=("joint", "T450", "context"))
+    parser.add_argument("--model", choices=("joint", "T450", "context", "self_read"))
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--asset-root", type=Path, default=ASSET)
     parser.add_argument("--device", default="cuda:0")

@@ -32,11 +32,14 @@ strg01 data1个人实占约1.135TB/2TiB quota，共享89.098TB，预计新增峰
 2026-10-02正式64已实际启动，live gpu02:7 PID160306、stop gpu02:1 PID161725；八条件每步224 query、各1/8保持。
 两臂实测选择micro28（单condition全部query），约21.93/21.78秒每完整更新，reserved峰17.70/17.55GiB；
 原micro14为26.15/22.39秒含首轮启动差，不宣称稳定19%提速。两臂独立并行，native最大完整视频37帧、framechunk64，无新样本填显存。
-读取接入预查确认PreparedOperatorLoRA里冗余consumer字段会触发原严格adapter身份校验；模型、训练、场景/噪声没有改变。
-正在独占分支修复字段归属与固定面板断点读取，旧训练795e86a0继续至完整64；新clean detached读取不创建optimizer/native或新case。
-旧合法已完成行/functional/bank只读复用，冗余元数据在派生aggregate中纠正，原row/contract/capture和所有费用保留。
-新增readback-only入口仅属此批完整64恢复点的普通兼容收束，临时较长编排函数沿单一owner，完成后同全部诊断代码退役。
-profile总费用含失败/加载/等待和128行读取1800GPU秒余量预计1.348GPUh，硬限3；直接等待同一batch owner退出，无自Queue/固定空读。
+两臂均已完成正式64、full checkpoint和全部A28/B20 student/Reader功能预测，实际训练代码795e86a0。
+第一次闭环读取在任何case启动前因canonical environment tasks不含global_task_id而退出1；Prepared证据中冗余consumer字段同时修正。
+原训练/预测/银行/日志保留，非科学阴性；独占分支针对128注册case映射、adapter身份与24 full/104 compact CPU核验通过。
+修复集成push为1449c908，新clean detached frozen_readback仅读取完整64，不创建optimizer、不训练、不再native或重复已存功能预测。
+2026-10-02固定闭环读取实际启动：live PID389135 gpu02:7、stop PID389136 gpu02:1，同原封存scene/root7及绝对噪声时钟。
+读取前累计含首等待器失败、加载、两臂profile/64训练与工程退出0.945344620016GPUh；3GPUh硬限保持。
+root读取前实占2.530GiB、预计新增峰6/8GiB；双节点本用户0→2卡、上限6，strg01独立data1个人2TiB quota及共享容量足够。
+保留原795e86a0冻结代码与全部有效原件；当前直接等待readback owner退出，不自Queue、不固定间隔空读。
 
 主讨论完成上一批原件与机制§100后，登记唯一后继冻结分析：
 [task32已学修正的视频来源](docs/designs/task32_learned_video_segment_diagnostic.md)。

@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：自身功能信用原件消费，关闭新增query信用的当前修复理由
+
+主讨论完成机制§103/findings§282，直接读128条continuous、24真实双RGB、32功能PT与实际科学源码，0新增GPU。
+live/stop学生20/24、Reader19/23；live相对stop保留18/增加2/丢失6，收益仅32/17两个初态，损失跨抽屉与搬壶条件。
+stop24对历史父17成功全部保持且新增7，但历史native重构差限制其相对旧S20的辅助因果归因，不能忽略正例也不能据此选新方法。
+实际R只极小降低A28训练误差，在B20 FM与十步生成上略差，两个Reader闭环均少一成功；没有强教师等待蒸馏的前提。
+主真实FM已具自身执行信用，新增项教hidden适合另一attention读出，不保证其原动作出口更好；未实测为梯度冲突或某个唯一根因。
+旧Reader共同学习/额外拟合/中层读出负证据结合本批，降低此辅助构造优先级，关闭延长、扩头/换层/调权、蒸馏与fresh理由。
+main新增原件`analysis/main_behavior_readback.json`、`analysis/main_functional_readback.json`；全部不利行及历史正例保留。
+本项科学消费完成，无active计算或自动后继，main持canonical记录/Git窗口；完整目标仍未有经验证的主要原因与修复。
+
 ## 2026-10-02：自身执行特征功能信用，两臂64与固定128行执行交付
 
 [原合同](designs/state_coupled_functional_credit_diagnostic.md)全部固定终点已执行。父为旧T2340，公共A/B0/probe/native固定；

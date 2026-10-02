@@ -7022,3 +7022,28 @@ task20两teacher的全7维及task32/17的运动6维仍不利；该oracle不可�
 旧T2340四任务八teacher、原A28逻辑流，各64共享更新，固定64的student/Reader各32行，共128新增/24 full。
 只有student是合法一次LoRA部署；Reader若更强却未传给student，不自动扩头、蒸馏或部署第二控制器。
 没有held/Test/controls、正式fresh或自动后继；3GPUh/8GiB、预计75–135分钟，执行状态由progress记录。
+
+## 282. 自身hidden辅助信用未改善净控制，Reader也没有形成强功能教师（2026-10-02）
+
+main直接读全部128条continuous、24份真实双RGB、32份功能PT及实际科学计算；完整解释见机制§103。
+live/stop学生20/24、Reader19/23；每组32行只来自四train任务、八teacher、16不同task/init，不是paired400或held结论。
+live学生对stop R18/G2/L6/churn8，新增只32/17/init2、3，丢失20/42/init0、1、2，32/17/init1及32/43/init0、3。
+task20/42 stop四个init均打开中层抽屉，live仅init3；task32既有未抬壶失败，也有抬高10.556cm仍未放置的失败。
+全部32新task32最终开炉；原S43/init2的place-only在两个新学生都变成完整成功，两Reader反而该行未放置。
+Reader亦有个别新增完整控制，但未获净收益；所有42条不利原行保留，3cm和中心/命令不证明抓持。
+
+stop相对历史父R17/G7/L0、对S18/6/2、对D20/4/3，其24是值得保留的合法单LoRA正例。
+但历史父B与新native重建有0.49%–3.52%差异，旧S不是本批匹配无辅助臂，不能把净增4归于辅助Z信用。
+两新臂同输入/起点/流的query live/stop才是本批主要干预；不为低位数值一致重跑S，不据局部24直接选正式fresh。
+
+同次FM的实际R只把A28全50平均风险从.108991030降到.108983678（stop .108977070→.108969321）；
+B20则.101828082→.101915676（stop .101825569→.101913877）。已有强Reader等待蒸馏的前提没有建立。
+两学生B20十步前5风险只差约5.17e-6但发生八项闭环交换；task20/42 live离线略低却丢三项成功，
+不从专家query平均误差推断自身控制根因。R小也不等于其Jacobian小，没有测定梯度冲突或出口零空间是主因。
+
+实际新增项J_h^T R_h^T e_R教当前hidden适合另一attention动作读出，原FM此前已教整条自身执行链。
+两者并不天然同向；本批不支持靠这条新增query信用改善学生的预测，亦削弱了当前state-coupled Reader的功能机会。
+结合旧Reader联合监督、额外拟合和中层读取负例，关闭本构造延长、换层/扩头/调权、蒸馏和fresh的继续理由。
+完整原件及main两个CPU读回在`state_coupled_functional_credit_20261002/analysis/`，无新forward/标签/held。
+本项科学消费完成，canonical记录/Git回main、实验停止且入口退役；累计1.377359781265GPUh。
+自主科研目标仍是解释并改善可由教学决定的完整控制学习，不能由关闭分支或局部高点声称整体修复已完成。

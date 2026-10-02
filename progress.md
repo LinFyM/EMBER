@@ -5,10 +5,10 @@
 Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，不对分析设置时间限制；本项覆盖当日上午分析后暂停的要求。
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。
-当前处于完整学习机制的统合分析，没有active训练；新登记的冻结分析为
+当前处于完整学习机制的统合分析，没有active训练；本批已完成的冻结分析为
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。
 仅旧D17/S43的Q/非Q学习增量、两teacher×两臂×四init共16新行，复用原parent/完整学习行。
-预算1完整GPUh/4GiB，预计含工程30–60分钟；尚不预报运行结果，实际派发与运行由下方记录接续。
+预算1完整GPUh/4GiB；16/16新增行、4 full/12 compact及全行continuous/goal/actions已齐，GPU消费者与CPU读回均exit0。
 实验session（01a0fabb-f7a0-7100-93d8-6a0f66055553）已实际接手canonical tracked/Git窗口，
 从clean pushed c17d4c80创建独占codex/task32-learned-operator-groups worktree；main只读。
 9项针对性CPU检查通过；实现/构造/读取clean pushed detached 22faa1966f43b14555088af61dc445f67f95ca5b。
@@ -16,7 +16,23 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 消费者PID3624517，含加载/退出预算1GPUh；四full/十二compact与全行continuous/goal/actions由同一canonical consumer捕获。
 现场本用户既有GPU为0，新增1，总卡数准入上限6；gpu7低占用148MiB/util0可共驻，未改变他人进程。
 data1现场XFS个人实占1.0T、quota2T/limit2.0T，共享82T；新增峰值预计2.5GiB、硬限4GiB。
-本批专用入口/重复init案例接入将在原件交付后退役，Git与实际冻结源码保留。
+整批实际完成：旧T2340、teacher17/D64的Q/R各2/4，成功init为[1,2]/[0,1]；teacher43/S64的Q/R为3/4、2/4，成功init为[0,1,2]/[0,1]。
+对父分别R/G/L=1/1/0、1/1/0、2/1/0、2/0/0；对完整学习臂为2/0/2、2/0/2、2/1/1、2/0/1。
+两组均未保留D17/init3及S43/init3的新增完整成功；D17/init0只R保留、init2只Q保留，不能净分选全局赢家。
+S43/init2原完整S“放置但没开炉”，新Q开炉141/放置281并成功，新R开炉121但没有放置；原件正反均保留。
+全部16条最终开炉为真，7条完整失败均未放置；Q17/init3、R17/init2/3、R43/init3有描述性>3cm抬高却未放置。
+四条真实双RGB已读回，3cm/中心/闭合命令仍不证明抓持或接触；不据组名宣布感知/运动根因。
+封存scene/body/EEF/夹爪/谓词初始误差均0、root7逻辑噪声全行匹配；实际消费者50×7/十步/前5/成功停合同通过。
+GPU消费者18:55:21–19:00:05(gpu02:7) exit0，含加载与退出累计0.078771065871GPUh，无GPU加载/运行失败。
+一次source加载、最大batch16、1,312个完整50×7生成chunk；实际forward约9.2093 chunk/s，rollout249.751s；
+峰allocated11.4464755/reserved12.7695313GiB，一次NVML实际util100%。全部授权case已打包，无额外case可放大；未测试第二卡，不作其速度优劣声明。
+root阶段观察约1.193GiB，保守新增峰值2.5/4GiB；CPU fixture/准入/读取脚本的失败均0GPUh并留回执。
+双节点退出快照本用户GPU进程0，消费者PID3624517已消失，未修改他人进程；没有新训练、Writer/native编译、离线FM或held/controls读取。
+9项实现CPU检查和实际16行验证完成；专用入口/测试及重复init hook已从active tree退役，canonical rollout接口恢复，原件与22faa196 frozen代码保留。
+退役后旧owner两项检查及active运行拒绝已归档新合同的检查通过；只增加退役guard，不建立长期并行consumer。
+completion/readback/全16行/四full/RGL/费用/释放/失败与实际冻结身份统一在
+`/data1/user/ymdai/ember_runs/task32_learned_operator_groups_20261002/`。
+本批工程、运行与读回结束；一次整批消息发给主讨论后释放canonical tracked/Git窗口并停止，不自动追加任何计算。
 Owner最新明确：MT只是参照，EMBER应大幅超过MT；不能用MT同样失败降低EMBER自身失败案例的研究优先级。
 主讨论此前据错误筛选标准提出的两条MT补测，在派发前撤销，0新增GPU/环境、无新run root或实现。
 保留已有MT比较作为能力证据，继续从EMBER自身的绝对不足及已知可学改进解释教学—算子—自身控制，不要求参照先成功。
@@ -31,7 +47,8 @@ main另对已有四train任务、同query两teacher预测作CPU风险分解：�
 四task A28两消费者完整配对，Current/T/MT前5FM=.128471/.128661/.131079；十步all7=.124717/.124228/.119610，
 当前motion6更低、gripper更高；任务/逐query不利项及masked两种权重见机制§98.6与findings§277，不把离线通道差直接当闭环根因。
 审计原件已归档至四格root `analysis/conditional900_reference_audit_20261002/`，原tmp路径仅保留别名，单一实体。
-canonical科研记录/Git窗口仍由main独占，实验session已完成CPU审计且没有新GPU任务；未发生新的窗口交接。
+上述CPU参照审计结束时，canonical科研记录/Git窗口由main独占，实验session没有新GPU任务；
+随后新16行合同另行移交，当前状态见本节顶部。
 **原四行及CPU参照审计均已结束；两条MT补测未派发，不恢复任何历史训练。**
 
 旧T2340父/S共享/P任务私有/D条件私有的task32全部32条既存轨迹CPU读回已完成并停止，0GPUh、约1.11MiB。

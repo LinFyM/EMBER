@@ -3,6 +3,28 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：task32已学执行算子分组，16行冻结工程交付
+
+[合同](designs/task32_learned_operator_groups_diagnostic.md)的旧T2340 D17/S43两来源×Q/R×init0–3共16新行齐备；
+直接选择原有完整B，A固定父，Q18/R20全38-target rank128；没有Writer/native编译、学习、离线FM或held读取。
+父及对应完整D17/S43共16既存行复用，原父e2afbfd7、学习092a0ae8、原读取5313257c与新读取22faa196单列。
+17 Q/R各2/4、成功集合[1,2]/[0,1]；43 Q/R为3/4、2/4，集合[0,1,2]/[0,1]。
+对父各R/G/L为1/1/0、1/1/0、2/1/0、2/0/0；对完整学习臂为2/0/2、2/0/2、2/1/1、2/0/1。
+D17/init3及S43/init3的完整学习新增成功，两组分别拆开均未保留；17的init0/2分别仅R/Q保留新增成功。
+S43/init2原完整S放置但从未开炉，新Q在141开炉、281放置成功，新R121开炉但未放置；没有隐藏这个能力交换。
+新16行最终均开炉，7个失败均未放置，部分失败仍抬高>3cm；四条full真实双RGB已读，阈值/命令/中心不证明抓持。
+该有限结果不构成全局分组赢家、视频语义根因、架构删除或新的训练资格；完整科学解释由main消费原件后登记。
+
+复用canonical FrozenOperatorAdapter/BatchedLoRAInference/rollout/scene/capture，一次source加载、batch16、1,312个50×7 chunk。
+9项CPU检查、实际16行协议验证和CPU读回通过，退出均0；初始scene状态误差0、root7逻辑噪声匹配，全行goal/continuous/action及4 full/12 compact。
+GPU预算累计0.078771065871h含加载退出，rollout249.751s，forward约9.2093 chunk/s；峰reserved12.7695313GiB、util一次实测100%。
+全部16合法case已打包，不能增加工作填显存；未额外跑卡数/物理batch比较。Owner显存余量要求另已加强写入current_owner_requirements§5。
+CPU fixture/准入和direct internal import错误均0GPUh并保存，无GPU运行失败；本用户GPU已归零，消费者PID3624517消失，未动他人进程。
+root阶段观察约1.193GiB，保守峰值2.5/4GiB。专用runner/tests/重复init hook交付后退役，原canonical运行面恢复并添加归档合同退出guard；
+旧owner两项针对检查及退役检查通过，实际clean pushed detached22faa196代码和全部原件保留。
+原件统一在 `/data1/user/ymdai/ember_runs/task32_learned_operator_groups_20261002/`，completion索引analysis/readback/逐行/RGL及费用释放回执。
+整批一次回报main后释放tracked/Git窗口并停止本项，不自动触发其它计算。
+
 ## 2026-10-02：旧T task32学习原件读回，实际能力获取与条件起始函数分开
 
 只读旧`operator_learning_limit_diagnosis_20260930`父/S/P/D全部32条task32轨迹，0GPUh、约1.11MiB，整批已结束。

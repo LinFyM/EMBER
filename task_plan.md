@@ -7,9 +7,11 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析设置时间限制；此前上午暂停已解除。
-当前主任务是统合整个EMBER的学习解释，没有active训练；唯一新登记冻结分析为
+当前主任务是统合整个EMBER的学习解释，没有active训练；最近完成的唯一冻结分析为
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。
-只比较旧D17/S43各自的Q/非Q学习增量在原四初态的作用，共16新增行；1完整GPUh/4GiB，预计30–60分钟含工程。
+只比较旧D17/S43各自的Q/非Q学习增量在原四初态的作用；16新增行、4 full/12 compact与完整行为读回已交付，0.078771GPUh。
+17 Q/R成功2/4、2/4但集合不同，43 Q/R成功3/4、2/4；本有限面板的父成功行全部保留、完整学习的部分新增收益未保持。
+专用入口/hooks已退役、原件与clean pushed detached22faa196保留；main消费完整结果后解释，实验session停止，不自动追加训练或探针。
 最近[task32状态/冻结LoRA交叉续行诊断](docs/designs/task32_state_policy_crossover_diagnostic.md)已完成，
 主讨论直接消费原件并完成机制§98/findings§277，把具体行为、实际native/S/M读写、自身调用和真实FM信用联系起来。
 同query两teacher风险分解表明离线共同误差占主导，四格则显示局部后段控制可用与到达/及时纠正不足可以同时存在。

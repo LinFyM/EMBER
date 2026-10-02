@@ -11,7 +11,10 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 预算1完整GPUh/4GiB，预计含工程30–60分钟；尚不预报运行结果，实际派发与运行由下方记录接续。
 实验session（01a0fabb-f7a0-7100-93d8-6a0f66055553）已实际接手canonical tracked/Git窗口，
 从clean pushed c17d4c80创建独占codex/task32-learned-operator-groups worktree；main只读。
-当前实现完整B直接选择与canonical异构LoRA批量消费者接入，尚未启动GPU；拟一次source加载、16合法case最大packing。
+9项针对性CPU检查通过；实现/构造/读取clean pushed detached 22faa1966f43b14555088af61dc445f67f95ca5b。
+四份完整38-target银行已构造；2026-10-02T18:55:21.952181+08:00实际在gpu02:7启动16合法case最大packing、一次source加载，
+消费者PID3624517，含加载/退出预算1GPUh；四full/十二compact与全行continuous/goal/actions由同一canonical consumer捕获。
+现场本用户既有GPU为0，新增1，总卡数准入上限6；gpu7低占用148MiB/util0可共驻，未改变他人进程。
 data1现场XFS个人实占1.0T、quota2T/limit2.0T，共享82T；新增峰值预计2.5GiB、硬限4GiB。
 本批专用入口/重复init案例接入将在原件交付后退役，Git与实际冻结源码保留。
 Owner最新明确：MT只是参照，EMBER应大幅超过MT；不能用MT同样失败降低EMBER自身失败案例的研究优先级。

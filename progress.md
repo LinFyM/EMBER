@@ -16,8 +16,10 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 原件、原冻结版本及所有CPU失败保留，没有重编译LoRA或改变科学干预。
 2026-10-02 16:52起在gpu02:7启动唯一四行消费者，实际读取为clean pushed detached `19489bb1`，
 完整batch4、一次source加载；双节点准入确认本批启动后1卡、适用上限6卡，data1 quota与峰值预算已核实。
+首消费者在LIBERO初始化前因新root缺少运行配置退出1；模型已加载但环境/闭环0行，费用0.004474GPUh。
+现复用原prepare_libero_config初始化全部原注册路径，CPU核对通过；失败source/日志/费用保留在root的failures/attempt1。
 实际启动/退出/GPU费用及原件在`/data1/user/ymdai/ember_runs/task32_state_policy_crossover_20261002/launch/`；
-退出事件由整批owner持续等待，结果及对角再现尚未裁决，无额外smoke/后继。
+窄运行修正e84712d8已push，准备新clean detached读取，不修改旧冻结树；对角再现尚未裁决，无额外smoke/后继。
 Owner要求的决策错误已写入current_owner_requirements§3、findings§276和research_history，394b5f79已推送。
 
 ## 最近撤回批次及保留事实

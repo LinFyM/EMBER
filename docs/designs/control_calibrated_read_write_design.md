@@ -117,7 +117,7 @@ fresh450、每步4task×28跨episode query、共50,400完整50×7 FM query；每
   state/video/env/policy RNG。每task50teacher各一次；8个init0 full/392 compact及全部continuous/actions/goal/raw rows。
   配对报告CRW450137、CRW900140、T450122/T900148/T2340161、Context900151、强MT300153；保留不同学习年龄和监督条件的差别。
   per-task/suite、breadth、R/G/L、churn/Jaccard与whole-task不确定性齐备；不能以checkpoint union或旧坏点作接受标准。
-- **Seen144。** 同36task×init32..35、原teacher46–49/场景/RNG，36个init32 full/108 compact。
+- **Seen144。** 同36task×init32..35、原scope seed20260928、0–49池的固定四teacher映射及scene_canonical144/场景/RNG，36个init32 full/108 compact。
   对旧CRW45091、CRW900115、MT93配对，单列train24/support12；只称训练有限池诊断，不称held资格。
 - **原train-only A28。** 原task0:40/11、12:25/14、20:38/42、32:17/43及固定query/noise/tau，
   保存8 full/4 public FM预测，口径与旧CRW读回相同，不增加query面板。

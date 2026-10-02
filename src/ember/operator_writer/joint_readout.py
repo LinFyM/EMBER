@@ -154,10 +154,7 @@ def bank_path(mode: str, checkpoint: Path | None = None, *, arm: str | None = No
         return root / mode / "banks/630/manifest.json"
     macro = int(checkpoint.name.removeprefix("macro_")) if checkpoint is not None else 450
     if mode in control_calibration.MODES:
-        if checkpoint is None or macro != 450 or not checkpoint.resolve().is_relative_to(
-                control_calibration.ROOT / control_calibration.MODE / "train/attempts"):
-            raise ValueError("calibrated Writer readers require the unique owned complete450 endpoint")
-        return root / mode / "banks/450/manifest.json"
+        return control_calibration.bank_path(mode, checkpoint)
     if mode in prefix_change.MODES:
         allowed = (450,) if mode == prefix_change.SEEN_MODE else (270, 450)
         if checkpoint is None or macro not in allowed or not checkpoint.resolve().is_relative_to(

@@ -44,6 +44,13 @@ def expected_spec(parent):
                        "expected_wall_hours": [6, 10]}}
 
 
+def bank_path(mode, checkpoint):
+    if (checkpoint is None or checkpoint.name != "macro_00000450"
+            or not checkpoint.resolve().is_relative_to(ROOT / MODE / "train/attempts")):
+        raise ValueError("calibrated Writer readers require the unique owned complete450 endpoint")
+    return ROOT / mode / "banks/450/manifest.json"
+
+
 class ControlCalibration(nn.Module):
     """Same mathematical P residual function, with fresh parameters."""
     def __init__(self):

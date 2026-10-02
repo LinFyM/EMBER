@@ -11,7 +11,7 @@ main已在机制§106/findings§285登记唯一后继[控制内容调制读写](
 工程独占树`/data1/user/ymdai/projects/EMBER-control-calibrated-rw`已接入canonical Gamma/38组Ua/Ub与q余切；纯F0缓存和训练labels分离。
 元数据1800 train/400 validation共73642帧，预计新增峰72.06GiB<80；strg01 quota2TiB、个人实际runs593542635520B/projects539566137344B、共享89.078TB，资源可准入。
 针对输入墙/短gap/唯一辅助计数/本地及remote复合信用和400/144实际捕获路由检查通过；50,400 query/1800 teacher事件CPU审计通过。
-seen“teacher46–49”与原scope seed20260928实际映射矛盾已交main裁决，未启动seen消费者。
+main已核对原C450/C900/MT300全144行与当前scope，确认原scene/RNG/固定teacher映射完全一致；design中teacher46–49为文字误记，已勘误为scope seed20260928、0–49池固定四teacher及scene_canonical144，sealed原件未改。seen继续按原144行配对。
 当前没有本批GPU launch；仅执行本fresh450和固定544环境行/A28，不恢复旧500、独立读出或蒸馏，新增canonical实现交付后保留待裁决。
 下方§105“没有新训练”属于其科学消费完成时点，不覆盖这个新登记；旧获取批次仍已完成，不恢复其运行。
 

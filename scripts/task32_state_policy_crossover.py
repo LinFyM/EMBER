@@ -17,6 +17,7 @@ from ember.operator_writer.bank import (
 )
 from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
 from ember.pi05_eval.worker_setup import load_policy, validate_worker_assets
+from ember.pi05_assets import prepare_libero_config
 from ember.pi05_eval_contract import git_state, git_state_is_clean_pushed_or_frozen_authority, policy_noise_seed
 from ember.pi05_evaluation import rollout_shard
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
@@ -122,6 +123,9 @@ def build_cases(banks, original, rows, traces, compact, noise):
 def run():
     banks, old, rows, traces, compact, noise = load_inputs()
     contract, task, cases = build_cases(banks, old, rows, traces, compact, noise)
+    os.environ['EMBER_LIBERO_ASSETS_ROOT'] = contract['libero_paths']['assets']
+    if prepare_libero_config(ROOT/'libero_config') != contract['libero_paths']:
+        raise ValueError('registered LIBERO runtime paths changed')
     torch.cuda.set_device(0)
     affinity = bind_current_process_to_cuda_numa(0)
     torch.manual_seed(7)

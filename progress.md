@@ -6,7 +6,9 @@ main已在机制§106/findings§285登记唯一后继[控制内容调制读写](
 完整fresh450：同一Gamma q既受合法5步动作监督，又直接调制实际A/B Value，公共native/c/d及跨episode真实FM保持。
 原36task/50teacher/50,400主query流，不加载诊断P权重；固定450的correct400、seen144、原A28，强MT及成熟T高点完整保留。
 预计含工程6–10小时、硬限32完整GPUh/80GiB；无自动续训、扫描、Reader蒸馏、Test/RL或controls。
-当前main持canonical tracked/Git窗口，科学登记待交付，尚无本后继实际接手或launch；实际状态后补，不把合同当后台计算。
+2026-10-03实验session01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手canonical tracked/Git窗口，main从此只读科学分析。
+完整新合同、机制§106/findings§285及当前科学/资源规则已读；开始从最新main隔离工程实施，先核完整缓存/标签/ECP/物化metadata峰值。
+当前没有本批GPU launch；仅执行本fresh450和固定544环境行/A28，不恢复旧500、独立读出或蒸馏，新增canonical实现交付后保留待裁决。
 下方§105“没有新训练”属于其科学消费完成时点，不覆盖这个新登记；旧获取批次仍已完成，不恢复其运行。
 
 main已完成本批源码与全部176份实际预测的科学消费，见机制§105/findings§284。

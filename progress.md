@@ -12,8 +12,12 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 实验session已在独占worktree实现：沿用canonical PI05 rollout/planner、原FrozenOperatorAdapter批量LoRA、
 初始scene恢复及full/continuous捕获，只增加显式四行上下文和保存动作前缀的窄接入。
 31项针对CPU检查通过；将四行作为最大合法物理batch、共用一次source加载，不增加闭环smoke或profile。
-源码集成push后从clean detached冻结读取，实际启动/退出/GPU费用及原件在
-`/data1/user/ymdai/ember_runs/task32_state_policy_crossover_20261002/launch/`；当前尚未启动GPU消费者。
+原封存spec路径在读取树搬迁后被旧检查器误认，已通过窄修正与10项针对检查保留原路径身份并拒绝内容变化；
+原件、原冻结版本及所有CPU失败保留，没有重编译LoRA或改变科学干预。
+2026-10-02 16:52起在gpu02:7启动唯一四行消费者，实际读取为clean pushed detached `19489bb1`，
+完整batch4、一次source加载；双节点准入确认本批启动后1卡、适用上限6卡，data1 quota与峰值预算已核实。
+实际启动/退出/GPU费用及原件在`/data1/user/ymdai/ember_runs/task32_state_policy_crossover_20261002/launch/`；
+退出事件由整批owner持续等待，结果及对角再现尚未裁决，无额外smoke/后继。
 Owner要求的决策错误已写入current_owner_requirements§3、findings§276和research_history，394b5f79已推送。
 
 ## 最近撤回批次及保留事实

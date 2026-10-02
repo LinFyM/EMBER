@@ -163,16 +163,22 @@ def test_training_and_reading_identity_remain_separate_full450_fixture(tmp_path,
         study.inspect_source(spec, checkpoint)
 
 
-@pytest.mark.parametrize('macro', [450, 900])
-def test_A28_twelve_predictions_eight_passive_compiles(tmp_path, monkeypatch, macro):
+@pytest.mark.parametrize('macro,arm', [(450, None), (900, None), (630, 'C12'), (630, 'D71')])
+def test_A28_twelve_predictions_eight_passive_compiles(tmp_path, monkeypatch, macro, arm):
     module = consumer()
     monkeypatch.setattr(readout, "CONDITIONAL_ROOT", tmp_path)
     if macro == 900:
         monkeypatch.setattr(study, 'CONDITIONAL_CONTINUATION_ROOT', tmp_path)
     checkpoint = tmp_path / study.CONDITIONAL_MODE / f"train/attempts/fixture/checkpoints/macro_{macro:08d}"
-    reading_spec = specs.CONDITIONAL_CONTINUATION_SPEC_PATH if macro == 900 else specs.CONDITIONAL_SPEC_PATH
+    if arm is not None:
+        from ember.operator_writer import support_diversity
+        monkeypatch.setattr(support_diversity, 'ROOT', tmp_path)
+        if arm == 'C12':
+            monkeypatch.setattr(support_diversity, 'C12_CHECKPOINT', checkpoint)
+    reading_spec = (specs.SUPPORT_DIVERSITY_SPEC_PATH if arm is not None else
+                    specs.CONDITIONAL_CONTINUATION_SPEC_PATH if macro == 900 else specs.CONDITIONAL_SPEC_PATH)
     reader = {"commit": "fixture-reader", "branch": "", "dirty_paths": [], "pushed_ref": "origin/main"}
-    monkeypatch.setattr(readout, "source_record", lambda *a: ({}, {"git": {"commit": "fixture-trainer"},
+    monkeypatch.setattr(readout, "source_record", lambda *a, **k: ({}, {"git": {"commit": "fixture-trainer"},
                                                               "spec": "/data1/fixture-training-spec"}, reading_spec))
     monkeypatch.setattr(module, "frozen_git", lambda: reader)
     monkeypatch.setattr(module, "load_file", lambda *a, **k: {})
@@ -210,8 +216,8 @@ def test_A28_twelve_predictions_eight_passive_compiles(tmp_path, monkeypatch, ma
     monkeypatch.setattr(module, "FormalData", Data)
     monkeypatch.setattr(module, "fm_prediction", lambda runtime, state, batch, flow, micro: flow["FM_target"][..., :7])
     module.a28(SimpleNamespace(model=study.CONDITIONAL_MODE, checkpoint=checkpoint, asset_root=readout.REPO,
-                              device="cpu", cpu_threads=1, microbatch=28, native_frame_chunk=8))
-    output = tmp_path / "analysis/A28" / study.CONDITIONAL_MODE
+                              device="cpu", cpu_threads=1, microbatch=28, native_frame_chunk=8, arm=arm))
+    output = (tmp_path / arm if arm is not None else tmp_path) / "analysis/A28" / study.CONDITIONAL_MODE
     complete = read_json(output / "completion.json")
     assert (complete["rows"], complete["full"], complete["public"], complete["native_records"]) == (12, 8, 4, 8)
     assert "intermediate" not in complete and len(calls) == 8
@@ -223,6 +229,9 @@ def test_A28_twelve_predictions_eight_passive_compiles(tmp_path, monkeypatch, ma
     assert all({"X", "A0", "S", "B0", "M"} <= fields.keys() for fields in saved["targets"].values())
     assert saved["training_spec"] == "/data1/fixture-training-spec"
     assert saved['reading_spec']['path'] == str(reading_spec)
+    if arm is not None:
+        assert complete['support_diversity_arm'] == saved['support_diversity_arm'] == arm
+        assert all(row['support_diversity_arm'] == arm for row in json.loads((output / 'rows.json').read_text()))
 
 
 def test_actual_original_scene_teacher_geometry_and_seen_runtime_route(monkeypatch):

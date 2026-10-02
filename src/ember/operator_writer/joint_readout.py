@@ -44,6 +44,22 @@ TRAIN_TASKS = (0, 12, 20, 32)
 TEACHERS = {0: (40, 11), 12: (25, 14), 20: (38, 42), 32: (17, 43)}
 
 
+def _support_arm(mode: str, checkpoint: Path | None, arm: str | None) -> bool:
+    if arm is None:
+        return False
+    from . import support_diversity
+
+    if (mode not in CONDITIONAL_MODES or arm not in ("C12", "D71") or checkpoint is None
+            or checkpoint.name != "macro_00000630"):
+        raise ValueError("support-diversity readers require fixed630 C12 or D71 conditional arm")
+    checkpoint = checkpoint.resolve()
+    if (arm == "C12" and checkpoint != support_diversity.C12_CHECKPOINT.resolve()
+            or arm == "D71" and not checkpoint.is_relative_to(
+                support_diversity.ROOT / CONDITIONAL_MODE / "train/attempts")):
+        raise ValueError("support-diversity arm changed its registered actual630 source")
+    return True
+
+
 def _continuation_checkpoint(mode: str, checkpoint: Path | None) -> bool:
     from .joint_training import CONTEXT_CONTINUATION_ROOT, CONDITIONAL_CONTINUATION_ROOT
 
@@ -56,11 +72,15 @@ def _continuation_checkpoint(mode: str, checkpoint: Path | None) -> bool:
             and checkpoint.resolve().is_relative_to(CONTEXT_CONTINUATION_ROOT / "context/train/attempts"))
 
 
-def study_root(mode: str, checkpoint: Path | None = None) -> Path:
+def study_root(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> Path:
     from .joint_training import CONTEXT_ROOT, CONTEXT_CONTINUATION_ROOT, CONDITIONAL_CONTINUATION_ROOT
 
     if mode not in MODES:
         raise ValueError("unregistered full/public study readout mode")
+    if _support_arm(mode, checkpoint, arm):
+        from .support_diversity import ROOT as SUPPORT_ROOT
+
+        return SUPPORT_ROOT / arm
     if mode in CONDITIONAL_MODES:
         return CONDITIONAL_CONTINUATION_ROOT if _continuation_checkpoint(mode, checkpoint) else CONDITIONAL_ROOT
     if mode in SELF_READ_MODES:
@@ -76,9 +96,13 @@ def study_root(mode: str, checkpoint: Path | None = None) -> Path:
     return CONTEXT_ROOT if mode in ("context", "context_public") else ROOT
 
 
-def study_id(mode: str, checkpoint: Path | None = None) -> str:
+def study_id(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> str:
     from .joint_training import CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK
 
+    if _support_arm(mode, checkpoint, arm):
+        from .support_diversity import TASK as SUPPORT_TASK
+
+        return SUPPORT_TASK
     if mode in CONDITIONAL_MODES:
         return CONDITIONAL_CONTINUATION_TASK if _continuation_checkpoint(mode, checkpoint) else CONDITIONAL_TASK
     if mode in SELF_READ_MODES:
@@ -93,7 +117,10 @@ def study_id(mode: str, checkpoint: Path | None = None) -> str:
         CONTEXT_TASK if mode in ("context", "context_public") else TASK)
 
 
-def capture_path(mode: str, checkpoint: Path | None = None) -> Path:
+def capture_path(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> Path:
+    if _support_arm(mode, checkpoint, arm):
+        suffix = "seen" if mode == CONDITIONAL_SEEN_MODE else "official"
+        return REPO / "configs/operator_read_write_v1" / f"conditional_support_diversity_{suffix}_capture.json"
     if mode in CONDITIONAL_MODES:
         suffix = "seen" if mode == CONDITIONAL_SEEN_MODE else "official"
         prefix = "conditional_read_write_continuation" if _continuation_checkpoint(mode, checkpoint) else "conditional_read_write"
@@ -107,8 +134,10 @@ def capture_path(mode: str, checkpoint: Path | None = None) -> Path:
     return REPO / "configs/operator_read_write_v1" / f"{prefix}_{'public' if mode in PUBLIC_MODES else 'official'}_capture.json"
 
 
-def bank_path(mode: str, checkpoint: Path | None = None) -> Path:
-    root = study_root(mode, checkpoint)
+def bank_path(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> Path:
+    root = study_root(mode, checkpoint, arm=arm)
+    if arm is not None:
+        return root / mode / "banks/630/manifest.json"
     macro = int(checkpoint.name.removeprefix("macro_")) if checkpoint is not None else 450
     if mode in CONDITIONAL_MODES:
         if _continuation_checkpoint(mode, checkpoint):
@@ -129,7 +158,10 @@ def bank_path(mode: str, checkpoint: Path | None = None) -> Path:
     return root / mode / f"banks/{macro}/manifest.json"
 
 
-def evaluation_path(mode: str, checkpoint: Path) -> Path:
+def evaluation_path(mode: str, checkpoint: Path, *, arm: str | None = None) -> Path:
+    if _support_arm(mode, checkpoint, arm):
+        return study_root(mode, checkpoint, arm=arm) / mode / "evaluation/630" / (
+            "correct144" if mode == CONDITIONAL_SEEN_MODE else "correct400")
     if mode in CONDITIONAL_MODES:
         bank_path(mode, checkpoint)
         output = study_root(mode, checkpoint) / mode / "evaluation"
@@ -148,12 +180,17 @@ def evaluation_path(mode: str, checkpoint: Path) -> Path:
     return output / ("public144" if mode in PUBLIC_MODES else "correct400")
 
 
-def source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
+def source_record(mode: str, checkpoint: Path, *, arm: str | None = None) -> tuple[dict, dict, Path]:
     """Keep original training identity, bounded resume and current reader separate."""
     from . import bank, joint_training, run
 
     checkpoint = checkpoint.resolve()
-    bank_path(mode, checkpoint)
+    bank_path(mode, checkpoint, arm=arm)
+    if arm is not None:
+        from .specification import SUPPORT_DIVERSITY_SPEC_PATH
+
+        spec = run.specification(SUPPORT_DIVERSITY_SPEC_PATH)
+        return spec, joint_training.inspect_source(spec, checkpoint), SUPPORT_DIVERSITY_SPEC_PATH
     continuation = _continuation_checkpoint(mode, checkpoint)
     if continuation and checkpoint.name == "macro_00000810":
         if mode in CONDITIONAL_MODES:
@@ -232,7 +269,11 @@ def _conditional_adjacent_trigger(checkpoint: Path) -> None:
         raise ValueError(message)
 
 
-def a28_source_record(mode: str, checkpoint: Path) -> tuple[dict, dict, Path]:
+def a28_source_record(mode: str, checkpoint: Path, *, arm: str | None = None) -> tuple[dict, dict, Path]:
+    if _support_arm(mode, checkpoint, arm):
+        if mode != CONDITIONAL_MODE:
+            raise ValueError("support-diversity A28 requires full C12 or D71 fixed630")
+        return source_record(mode, checkpoint, arm=arm)
     if mode in CONDITIONAL_MODES and _continuation_checkpoint(mode, checkpoint) and (
             mode != CONDITIONAL_MODE or checkpoint.name != "macro_00000900"):
         raise ValueError("conditional continuation A28 requires the unique full900 endpoint")
@@ -304,16 +345,18 @@ def _reused_public_factors(training: Mapping, lora) -> tuple[Path, dict]:
 
 def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
                 native_frame_chunk: int | None = None, cpu_threads: int = 6,
-                *, device=None, resume_materialization_git: str | None = None) -> Path:
+                *, device=None, resume_materialization_git: str | None = None,
+                arm: str | None = None) -> Path:
     """Public export is CPU-only; full export uses the existing condition queue."""
     from . import bank, run
     from .materialization import compile_conditions, register_partial
     from ember.pi05_eval.scene import inspect_registered_scenes
     from ember.writer.materialization_workers import execution_devices
 
-    path = bank_path(mode, checkpoint)
+    path = bank_path(mode, checkpoint, arm=arm)
     checkpoint, asset_root = checkpoint.resolve(), asset_root.resolve()
-    spec, training, spec_path = source_record(mode, checkpoint)
+    spec, training, spec_path = (source_record(mode, checkpoint, arm=arm) if arm is not None
+                                 else source_record(mode, checkpoint))
     if cpu_threads < 1 or native_frame_chunk is not None and native_frame_chunk < 1:
         raise ValueError("joint readout packing must be positive")
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
@@ -331,6 +374,8 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
                 "training_run": file_record(checkpoint.parent.parent / "run_contract.json"),
                 "source": training["source"], "lora": lora.to_dict(),
                 "materialization_git": run.frozen_git()}
+    if arm is not None:
+        contract.update(support_diversity_arm=arm, training_spec=training["spec"])
     if mode in (*SELF_READ_MODES, *CONDITIONAL_MODES):
         contract["native_reading"] = _self_read_evidence(mode)
     if mode in CONDITIONAL_MODES:
@@ -382,7 +427,9 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
 
     mode = bank["mode"]
     path = path.resolve()
-    spec, training, spec_path = source_record(mode, Path(bank["checkpoint"]))
+    arm = bank.get("support_diversity_arm")
+    spec, training, spec_path = (source_record(mode, Path(bank["checkpoint"]), arm=arm) if arm is not None
+                                 else source_record(mode, Path(bank["checkpoint"])))
     tasks, conditions, scenes, states = _geometry(mode, spec, Path(bank["asset_root"]))
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank["asset_root"]) / spec["source"]["lora_contract"]), rank=128)
@@ -391,7 +438,7 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
         shared, provenance = _reused_public_factors(training, lora)
         if bank.get("public_factor_source") != provenance:
             raise ValueError("public validation reused factor provenance changed")
-    expected = ((path, bank_path(mode, Path(bank["checkpoint"])).resolve()), (bank.get("joint_public_study"), True),
+    expected = ((path, bank_path(mode, Path(bank["checkpoint"]), arm=arm).resolve()), (bank.get("joint_public_study"), True),
                 (bank.get("schema_version"), owner.BANK_SCHEMA), (bank.get("kind"), owner.KIND),
                 (bank.get("status"), "sealed"),
                 (bank.get("spec"), file_record(spec_path)),
@@ -405,6 +452,8 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
                 (bank.get("tasks"), tasks), (bank.get("information_wall"), _wall(mode)),
                 (evaluation_role, scope.ROLE if _seen_geometry(mode) else "validation"),
                 (require_formal, True), (set(task_keys), {(row["suite"], row["task_id"]) for row in tasks}))
+    if arm is not None:
+        expected += ((bank.get("training_spec"), training["spec"]),)
     if mode in CONDITIONAL_MODES:
         expected += ((bank.get("condition_factors"), "complete_A0_plus_S_B0_plus_M"),
                      (bank.get("shared_role"), "public_A0_provenance_only_not_execution"))
@@ -459,12 +508,13 @@ def capture_expectations(bank: Mapping, manifest_path: Path, tasks: list,
     if mode not in MODES:
         raise ValueError("unregistered joint capture mode")
     checkpoint = Path(bank["checkpoint"])
-    expected_bank = bank_path(mode, checkpoint)
-    expected_output = evaluation_path(mode, checkpoint)
+    arm = bank.get("support_diversity_arm")
+    expected_bank = bank_path(mode, checkpoint, arm=arm)
+    expected_output = evaluation_path(mode, checkpoint, arm=arm)
     seen = _seen_geometry(mode)
     states = scope.STATES if seen else tuple(range(50))
     full_state = 32 if seen else 0
-    capture = capture_path(mode, checkpoint)
+    capture = capture_path(mode, checkpoint, arm=arm)
     registered = read_json(capture)
     full = [{"suite": row.suite, "task_id": row.task_id, "init_state_id": full_state} for row in tasks]
     if (bank.get("joint_public_study") is not True or manifest_path.resolve() != expected_bank.resolve()
@@ -472,6 +522,6 @@ def capture_expectations(bank: Mapping, manifest_path: Path, tasks: list,
             or any(tuple(row.init_state_ids) != states for row in tasks)
             or output_dir is not None and output_dir.resolve() != expected_output.resolve()):
         raise ValueError("joint capture task/state/output scope changed")
-    return dict(full=full, capture=capture, study=study_id(mode, checkpoint), output=expected_output,
+    return dict(full=full, capture=capture, study=study_id(mode, checkpoint, arm=arm), output=expected_output,
                 role=scope.ROLE if seen else "validation", states=states,
                 task_count=36 if seen else 8, expected_bank=expected_bank)

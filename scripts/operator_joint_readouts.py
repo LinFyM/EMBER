@@ -84,8 +84,10 @@ def risk(prediction: torch.Tensor, target: torch.Tensor) -> dict:
 
 def a28(args) -> None:
     mode = {"joint": "joint", "context": "context", "self_read": "self_read", "T450": "T450_public", "conditional_read_write": readout.CONDITIONAL_MODE}[args.model]
-    spec, training, spec_path = readout.a28_source_record(mode, args.checkpoint)
-    output = readout.study_root(mode, args.checkpoint) / "analysis/A28" / args.model
+    arm = getattr(args, "arm", None)
+    arm_options = {"arm": arm} if arm is not None else {}
+    spec, training, spec_path = readout.a28_source_record(mode, args.checkpoint, **arm_options)
+    output = readout.study_root(mode, args.checkpoint, **arm_options) / "analysis/A28" / args.model
     if output.exists():
         raise ValueError("published fixed A28 readout already exists")
     panels = read_json(readout.FIXED_PANEL / "fixed_panels.json")
@@ -96,10 +98,10 @@ def a28(args) -> None:
     started, rows, native_records = time.monotonic(), [], []
     provenance = {"checkpoint": str(args.checkpoint.resolve()), "training_git": training["git"]["commit"],
                   "reading_git": reading_git, "training_spec": training["spec"], "reading_spec": file_record(spec_path)}
+    if arm is not None:
+        provenance["support_diversity_arm"] = arm
     write_json_atomic(output / "run_contract.json", {
-        "study": readout.study_id(mode, args.checkpoint), "model": args.model, "checkpoint": str(args.checkpoint.resolve()),
-        "training_git": training["git"]["commit"], "reading_git": reading_git,
-        "training_spec": training["spec"], "reading_spec": file_record(spec_path),
+        "study": readout.study_id(mode, args.checkpoint, **arm_options), "model": args.model, **provenance,
         "fixed_panels": file_record(readout.FIXED_PANEL / "fixed_panels.json"),
         "flow_reuse": "saved Gaussian/tau/FM_target; single FM velocity forward",
         "query_offset": 1, "flow_batch_offset": 0, "updates": 0, "environment_episodes": 0,
@@ -124,7 +126,7 @@ def a28(args) -> None:
             common = runtime.writer.public_state()
             _save_readout(output, "public", task, None,
                           fm_prediction(runtime, common, batch, flow, args.microbatch), target,
-                          reference, flow, rows)
+                          reference, flow, rows, arm=arm)
             for teacher in panel["teachers"]:
                 condition, _, _ = data.condition(runtime, task, teacher)
                 with torch.no_grad():
@@ -146,10 +148,12 @@ def a28(args) -> None:
                                            "raw": native_ref})
                 _save_readout(output, "full", task, teacher,
                               fm_prediction(runtime, state, batch, flow, args.microbatch), target,
-                              reference, flow, rows, native_ref=native_ref)
+                              reference, flow, rows, native_ref=native_ref, arm=arm)
         write_json_atomic(output / "rows.json", rows)
         complete = {"status": "complete", "rows": len(rows), "public": 4, "full": 8,
                     "updates": 0, "environment_episodes": 0, "seconds": time.monotonic() - started}
+        if arm is not None:
+            complete["support_diversity_arm"] = arm
         if mode in ("self_read", readout.CONDITIONAL_MODE):
             write_json_atomic(output / "native_records.json", native_records)
             complete["native_records"] = len(native_records)
@@ -224,13 +228,15 @@ def _save_conditional_evidence(output, task, teacher, frame_indices, native, pro
     return file_record(path)
 
 
-def _save_readout(output, kind, task, teacher, prediction, target, reference, flow, rows, *, native_ref=None):
+def _save_readout(output, kind, task, teacher, prediction, target, reference, flow, rows, *, native_ref=None, arm=None):
     path = output / (f"public_task{task:03d}.pt" if teacher is None
                      else f"{kind}_task{task:03d}_teacher{teacher:02d}.pt")
     record = {"kind": kind, "task": task, "teacher": teacher, "risk": risk(prediction, target),
               "queries": flow["queries"], "flow_seed": flow["flow_seed"],
               "target_ref": file_record(reference), "target_field": "FM_target[..., :7]",
               "time_field": "time", "noise_field": "noise"}
+    if arm is not None:
+        record["support_diversity_arm"] = arm
     if native_ref is not None:
         record["native_ref"] = native_ref
     torch.save({**record, "prediction": prediction}, path)
@@ -242,6 +248,7 @@ def main() -> None:
     parser.add_argument("phase", choices=("materialize", "a28"))
     parser.add_argument("--mode", choices=readout.MODES)
     parser.add_argument("--model", choices=("joint", "T450", "context", "self_read", "conditional_read_write"))
+    parser.add_argument("--arm", choices=("C12", "D71"))
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--asset-root", type=Path, default=ASSET)
     parser.add_argument("--device", default="cuda:0")
@@ -263,7 +270,7 @@ def main() -> None:
         print(readout.materialize(args.mode, args.checkpoint, args.asset_root,
                                  devices=args.devices or [args.device],
                                  native_frame_chunk=args.native_frame_chunk, cpu_threads=args.cpu_threads,
-                                 resume_materialization_git=args.resume_materialization_git))
+                                 resume_materialization_git=args.resume_materialization_git, arm=args.arm))
 
 
 if __name__ == "__main__":

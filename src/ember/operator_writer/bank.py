@@ -781,6 +781,10 @@ def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
         evidence["scene_manifest"] = bank["scene_manifest"]
     if bank["mode"] in ("self_read", "self_read_public", "conditional_read_write", "conditional_read_write_seen"):
         evidence["native_reading"] = bank["native_reading"]
+    if bank.get("support_diversity_arm") is not None:
+        evidence.update(support_diversity_arm=bank["support_diversity_arm"],
+                        training_git=bank["training_git"], training_spec=bank["training_spec"],
+                        materialization_git=bank["materialization_git"])
     if bank["mode"] in (PUBLIC_BETA_MODE, "context_public_validation", "self_read_public"):
         evidence.update(intervention="public_B0_A", teacher_video_values_read=0,
                         video_id_role="paired_metadata_only")

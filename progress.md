@@ -6,7 +6,7 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。
 当前唯一active design为[原生prefix变化Value的共同学习](docs/designs/native_prefix_change_value_design.md)，
-主讨论已完成数学/历史判断并派发；实验session已在独占worktree完成同一native最后attention字段与零E接入、full-only机器合同及现有消费者注册。29项针对CPU检查通过；当前尚未启动GPU，下一步为clean pushed detached上的一次最长视频两步profile及fresh450。实际费用、启动/完成和原件由执行者据实登记。
+主讨论已完成数学/历史判断并派发；实验session已在独占worktree完成同一native最后attention字段与零E接入、full-only机器合同及现有消费者注册。29项针对CPU检查通过。实际最长视频517原帧/105采样帧两步profile完成，micro28/frame8、38.93/33.34秒、峰reserved22.805GiB，profile与早期导入失败合计0.044224GPUh；不继承任何profile权重。fresh正式训练已从clean pushed detached ab8d2c7e在gpu02的0/1/2/3四卡启动，唯一完整ECP270边界后保持原优化器、sampler/RNG和绝对时钟继续450；270读取与后段训练依赖允许时并行。全部实际启动/退出/费用在新root/launch，source冻结。
 保留T的实际A/公共beta与原动态Value；新增同一动作query替换相邻真实prefix得到的attention响应差，经E进入同一完整LoRA。
 唯一fresh450、原36task/50视频池及50,400跨episode query保持；270/450各correct400，450另seen144，共944新行/52 full。
 硬限14GPUh/48GiB，预计9–11GPUh、含工程3–5小时；无自动900、Test、视频controls、RL或小扫。完整推导/裁决见设计与findings§275。

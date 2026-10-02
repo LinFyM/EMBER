@@ -3,6 +3,21 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：旧T task32学习原件读回，实际能力获取与条件起始函数分开
+
+只读旧`operator_learning_limit_diagnosis_20260930`父/S/P/D全部32条task32轨迹，0GPUh、约1.11MiB，整批已结束。
+main直接读16条关键continuous、查看teacher17/init0四臂双RGB并核对冻结学习消费者，见机制§99/findings§278。
+D17将父1/4补至4/4，新增三行保留开炉并完成搬壶；D43仍2/4，S/P在其init3反而成功。
+S17两行抬壶未放置、S43/init2放置却不曾开炉、P43/init0失去已有放置，终局成败不能隐藏实际目标交换。
+父另有最高抬2.0700cm却成功的反例，3cm不是能力门槛；无contact/force，不作具体抓握根因声明。
+
+两D的动作query/flow/目标/优化设置相同，区别来自视频生成的起始完整B和相应优化轨迹；
+不能把未学成归成teacher43没有后段动作知识，也不能把私有DeltaB当唯一视频知识标签。
+继承§34已完成PZ投影及跨条件外推失败，分开输出可表达、共享获取和新条件推断，不重开同类投影或正式训练。
+原件、全32行/24比较、学习合同、配对与失败记录在旧root `analysis/task32_absolute_learning_readback_20261002/`。
+首CPU断言错误源于prepared前5可能含未执行尾部，改用continuous实际命令后exit0；原件/源码未改，无GPU费用。
+此处旧T父不同于当前条件900，科学结果不混合；本次结束时没有新GPU/训练合同，主讨论继续完整方法分析。
+
 ## 2026-10-02：task32自身状态/冻结LoRA四行交叉续行完成
 
 [冻结案例合同](designs/task32_state_policy_crossover_diagnostic.md)的四行(i,j)=17/17、17/43、43/17、43/43齐备，

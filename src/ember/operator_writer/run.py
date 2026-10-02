@@ -42,7 +42,7 @@ from .data import (CHECKPOINTS, CONTINUATION_CHECKPOINTS, CONTINUATION_UPDATES,
                    TASKS, UPDATES, FormalData)
 from .model import OperatorReadWrite
 from .native import read_native_video
-from . import change_clock, joint_training, prefix_change
+from . import change_clock, joint_training, prefix_change, control_calibration
 
 
 from .specification import (
@@ -89,7 +89,9 @@ def resume_contract_compatible(parent: dict, current: dict, *, allow_topology_ch
     if parent.get("mode") == current.get("mode") == prefix_change.MODE:
         mutable += ("parent_checkpoint",)
     if current.get("source_resume") is not None:
-        if not joint_training.conditional_resume_compatible(parent, current):
+        if not (joint_training.calibrated_resume_compatible(parent, current)
+                if current.get("mode") == control_calibration.MODE
+                else joint_training.conditional_resume_compatible(parent, current)):
             return False
         mutable += ("git", "spec", "parent_checkpoint", "source_resume")
         if parent.get("continuation") is None and current.get("continuation") is not None:
@@ -105,6 +107,8 @@ def packing_compatible(parent: dict, current: dict) -> bool:
     frames = {(8, 8), (8, 4), (4, 4)}
     if joint_training.conditional_contract(parent) and joint_training.conditional_contract(current):
         frames = {(old, new) for old in (4, 8, 16, 32) for new in (4, 8, 16, 32)}
+    if parent.get("mode") == current.get("mode") == control_calibration.MODE:
+        frames = {(old, new) for old in (4, 8, 16, 32, 64, 128) for new in (4, 8, 16, 32, 64, 128)}
     if parent.get("mode") == current.get("mode") == prefix_change.MODE:
         frames = {(old, new) for old in (4, 8, 16, 32) for new in (4, 8, 16, 32)}
     return ((parent.get("microbatch"), current.get("microbatch")) in {
@@ -120,7 +124,7 @@ def complete_checkpoint(path: Path) -> bool:
     files = manifest.get("files", {})
     macro = manifest.get("next_macro")
     world = manifest.get("world_size")
-    allowed = ((macro in (*CHECKPOINTS, *change_clock.CONTINUATION_CHECKPOINTS) and world in range(1, 7))
+    allowed = ((macro in (0, *CHECKPOINTS, *change_clock.CONTINUATION_CHECKPOINTS) and world in range(1, 7))
                or (macro in (*CONTINUATION_CHECKPOINTS, *CONTINUATION1350_CHECKPOINTS,
                              *CONTINUATION1800_CHECKPOINTS, *PILOT_CHECKPOINTS,
                              *CONTINUATION2340_CHECKPOINTS, *CONTINUATION2790_CHECKPOINTS)
@@ -318,11 +322,12 @@ class Runtime:
             for _ in range(2 if self.writer.mode == "self_read" else 1):
                 prefix = self.writer.mode == prefix_change.MODE
                 fields = read_native_video(self.policy, native_state, self.writer.probe,
-                    condition, self.writer.names, frame_chunk=frame_chunk,
+                    condition[:4], self.writer.names, frame_chunk=frame_chunk,
                     **({"prefix_change": True} if prefix else {}))
                 x, h = fields[:2]
                 dP = fields[2] if prefix else None
                 state = self.writer(x, h, frame_indices=condition[1],
+                                    **({"bare": condition[4]} if self.writer.mode == control_calibration.MODE else {}),
                                     **({"capture_mechanism": True} if capture_mechanism else {}),
                                     **({"target_executor": target_executor} if target_executor else {}),
                                     **({"prefix_change": dP, "capture_prefix_stats": capture_prefix_stats} if prefix else {}))
@@ -335,6 +340,9 @@ class Runtime:
                 native_state = state
         validate_lora_state(state, self.lora)
         native = ({"x": x, "h": h, "passes": passes} if retain_native or capture_mechanism else None)
+        if self.writer.mode == control_calibration.MODE:
+            native = native or {}
+            native["control"] = self.writer.last_control
         if capture_mechanism:
             native["mechanism"] = self.writer.last_mechanism
         if capture_prefix_stats:
@@ -420,7 +428,8 @@ def prepare_train(spec: dict, args) -> Session:
     pilot = spec["execution"]["updates_per_mode"] == PILOT_UPDATES
     next_window = spec["execution"]["updates_per_mode"] in (
         CONTINUATION2340_UPDATES, CONTINUATION2790_UPDATES)
-    output = root / (args.pilot_arm if pilot else args.mode) / "train" / "attempts" / args.attempt
+    output = (root / "profile" / args.attempt if getattr(args, "phase", "train") == "profile" else
+              root / (args.pilot_arm if pilot else args.mode) / "train" / "attempts" / args.attempt)
     output.mkdir(parents=True, exist_ok=True)
     initialize_deferred_process_group(context, rendezvous_root=output)
     local = {"rank": context.rank, "gpu_uuid": str(torch.cuda.get_device_properties(context.local_rank).uuid),
@@ -460,7 +469,11 @@ def prepare_train(spec: dict, args) -> Session:
     error = None
     try:
         if context.is_main:
-            validate_attempt(spec, args, contract, output)
+            if getattr(args, "phase", "train") == "profile":
+                from .control_calibration_profile import validate
+                validate(spec, args, output)
+            else:
+                validate_attempt(spec, args, contract, output)
             write_json_atomic(output / "run_contract.json", contract)
     except Exception:
         error = traceback.format_exc()
@@ -497,13 +510,13 @@ def restore(session: Session, checkpoint: Path) -> tuple[int, int]:
         if (updates not in valid_checkpoints or rows != updates or session.scheduler.last_epoch != updates
                 or restored["training_state"] != restored_training_identity(session, updates)):
             raise ValueError("formal ECP optimizer/scheduler/sampler cursor changed")
-        rows_from_parent = (checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines()
+        rows_from_parent = (checkpoint.parent.parent / "metrics.jsonl").read_text().splitlines() if rows else []
         prefix = rows_from_parent[:rows]
         if (len(prefix) != rows or [json.loads(row)["update"] for row in prefix] != list(range(1, rows + 1))
                 or any(json.loads(row)["mode"] != session.mode for row in prefix)):
             raise ValueError("ECP metrics history lacks a complete consecutive same-arm prefix")
         if session.context.is_main:
-            (session.output / "metrics.jsonl").write_text("\n".join(prefix) + "\n")
+            (session.output / "metrics.jsonl").write_text("\n".join(prefix) + ("\n" if prefix else ""))
             if continuation or session.mode in (change_clock.MODE, *joint_training.MODES):
                 parent_world = int(read_json(checkpoint / "checkpoint_manifest.json")["world_size"])
                 write_json_atomic(session.output / "resume_provenance.json", {
@@ -557,7 +570,7 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
              for index, job in enumerate(jobs)}
     world = session.context.world_size
     owners = min(len(jobs), world)
-    shared_targets = session.mode == joint_training.CONDITIONAL_MODE and world > owners
+    shared_targets = session.mode in (joint_training.CONDITIONAL_MODE, control_calibration.MODE) and world > owners
     assigned = condition_assignment(tuple(costs), costs, world_size=owners if shared_targets else world)
     session.optimizer.zero_grad(set_to_none=True)
     local, error = [], None
@@ -579,7 +592,7 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
     if failures:
         raise RuntimeError(f"operator macro job failed on a rank: {failures}")
     sum_writer_gradients(session.parameters, world_size=world,
-                         bucket_bytes=64 * 2**20 if session.mode == joint_training.CONDITIONAL_MODE else None)
+                         bucket_bytes=64 * 2**20 if session.mode in (joint_training.CONDITIONAL_MODE, control_calibration.MODE) else None)
     gradients = gradient_groups(session.runtime.writer)
     norm = float(torch.nn.utils.clip_grad_norm_(
         session.parameters, session.spec["optimization"]["grad_clip"], error_if_nonfinite=True))
@@ -652,12 +665,17 @@ def validate_train_request(spec: dict, args) -> None:
 
 
 def train(spec: dict, args) -> None:
-    if spec.get("task") not in (joint_training.CONDITIONAL_TASK, joint_training.CONDITIONAL_CONTINUATION_TASK, joint_training.support_diversity.TASK, prefix_change.TASK):
+    if spec.get("task") not in (joint_training.CONDITIONAL_TASK, joint_training.CONDITIONAL_CONTINUATION_TASK, joint_training.support_diversity.TASK, prefix_change.TASK, control_calibration.TASK):
         raise ValueError("retired operator training requires its recorded frozen runtime")
     validate_train_request(spec, args)
     session = prepare_train(spec, args)
     try:
         updates, rows = restore(session, args.resume) if args.resume else (0, 0)
+        if not args.resume and session.mode == control_calibration.MODE:
+            save_ecp_checkpoint(output_dir=session.output, macro=0, stage=STAGE, context=session.context,
+                model=session.runtime.writer, optimizer=session.optimizer, scheduler=session.scheduler,
+                run_contract_schema=SCHEMA, metrics_rows=0, sampler_state=session.data.sampler_state(),
+                training_state=training_state(session, 0))
         start_updates = updates
         started = time.perf_counter()
         target = session.data.updates
@@ -741,9 +759,9 @@ def audit(spec: dict, asset_root: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("audit", "train"))
+    parser.add_argument("phase", choices=("audit", "train", "bare-cache", "profile"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--mode", choices=(joint_training.CONDITIONAL_MODE, prefix_change.MODE))
+    parser.add_argument("--mode", choices=(joint_training.CONDITIONAL_MODE, prefix_change.MODE, control_calibration.MODE))
     parser.set_defaults(pilot_arm=None)
     parser.add_argument("--attempt", type=str)
     parser.add_argument("--resume", type=Path)
@@ -752,9 +770,19 @@ def main() -> None:
     parser.add_argument("--cpu-threads", type=int, default=6)
     parser.add_argument("--stop-after-macro", type=int)
     parser.add_argument("--spec", type=Path, default=CONDITIONAL_SPEC_PATH)
+    parser.add_argument("--cache-shard", type=int, default=0)
+    parser.add_argument("--cache-shards", type=int, default=1)
     args = parser.parse_args()
     spec = specification(args.spec)
-    if args.phase == "train":
+    if args.phase == "bare-cache":
+        from .bare_native import cache
+        if spec["task"] != control_calibration.TASK or not 0 <= args.cache_shard < args.cache_shards:
+            raise ValueError("bare-cache requires the registered calibrated Writer feature scope")
+        cache(spec, args)
+    elif getattr(args, "phase", "train") == "profile":
+        from .control_calibration_profile import profile
+        profile(spec, args)
+    elif args.phase == "train":
         train(spec, args)
     else:
         print(json.dumps(audit(spec, args.asset_root), sort_keys=True))

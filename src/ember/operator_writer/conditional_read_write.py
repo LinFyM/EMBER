@@ -115,15 +115,17 @@ class ConditionalTarget(nn.Module):
         nn.init.zeros_(self.b_out.weight)
 
     def forward(self, a0: torch.Tensor, b0: torch.Tensor, x: torch.Tensor,
-                h: torch.Tensor, c: torch.Tensor, d: torch.Tensor):
+                h: torch.Tensor, c: torch.Tensor, d: torch.Tensor, q=None):
         # Origin address X[t-1], arrival context/dynamic c[t],d[t], real last transition.
         origin = x[:-1].float()
         xi = F.normalize(origin, dim=-1, eps=1e-6)
         context = torch.cat((c[1:], h[1:].float()), -1)
         dynamic = d[1:]
         z0 = F.linear(xi, a0)
+        ga = (1 + self.ua(q.float())[:, None, :]) if q is not None else 1
+        gb = (1 + self.ub(q.float())[:, None, :]) if q is not None else 1
         va = self.a_out(F.gelu(self.a_x(xi) + self.a_z(z0) + self.a_context(context))
-                        * self.a_dynamic(dynamic))
+                        * self.a_dynamic(dynamic) * ga)
         s = delta_memory(va, xi, 128)
         a = a0 + s
         # These dependencies remain differentiable, including raw delta-z amplitude.
@@ -131,6 +133,6 @@ class ConditionalTarget(nn.Module):
         key = F.normalize(z.float(), dim=-1, eps=1e-6)
         delta_z = F.linear(origin, s)
         vb = self.b_out(F.gelu(self.b_key(key) + self.b_delta(delta_z) + self.b_context(context))
-                        * self.b_dynamic(dynamic))
+                        * self.b_dynamic(dynamic) * gb)
         m = delta_memory(vb, key, self.b_out.out_features)
         return a, b0 + m, s, m

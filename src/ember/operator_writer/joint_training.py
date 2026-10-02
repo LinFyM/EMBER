@@ -9,7 +9,7 @@ import torch
 
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import Pi05SourceTrainingError, read_json
-from . import support_diversity, prefix_change
+from . import support_diversity, prefix_change, control_calibration
 
 TASK = "operator_joint_public_fresh_20260930"
 ROOT = Path("/data1/user/ymdai/ember_runs") / TASK
@@ -84,7 +84,7 @@ CONDITIONAL_OPERATOR = {
         "credit": "complete_full_FM_same_version_cotangent_replay_no_detach",
     },
 }
-MODES = (MODE, CONTEXT_MODE, SELF_READ_MODE, CONDITIONAL_MODE, prefix_change.MODE)
+MODES = (MODE, CONTEXT_MODE, SELF_READ_MODE, CONDITIONAL_MODE, prefix_change.MODE, control_calibration.MODE)
 SELF_READ = {"native_reads": 2, "writer_parameter_sharing": "same_Context_module",
              "memory_initialization": "zero_each_read", "native_installation": "beta_then_beta_plus_M0",
              "writer_public_base": "original_beta_both_reads", "output": "beta_plus_M1_only",
@@ -106,10 +106,12 @@ CONTEXT = {
 
 
 def registered(spec: dict) -> bool:
-    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK, CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK, prefix_change.TASK)
+    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK, CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK, prefix_change.TASK, control_calibration.TASK)
 
 
 def settings(spec: dict) -> tuple[Path, str, dict]:
+    if spec.get("task") == control_calibration.TASK:
+        return control_calibration.ROOT, control_calibration.MODE, spec["joint"]
     if spec.get("task") == prefix_change.TASK:
         return prefix_change.ROOT, prefix_change.MODE, prefix_change.JOINT
     if spec.get("task") == support_diversity.TASK:
@@ -213,6 +215,14 @@ def expected_spec(base: dict, events: dict) -> dict:
 
 def validate_request(spec: dict, args) -> None:
     _, mode, joint = settings(spec)
+    if mode == control_calibration.MODE:
+        if (args.mode != mode or args.microbatch not in (7, 14, 28)
+                or args.frame_chunk not in (4, 8, 16, 32, 64, 128)
+                or not args.attempt or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
+                or args.stop_after_macro not in (None, 90, 180, 270, 360)
+                or (args.resume is None) != (args.attempt == "fresh")):
+            raise ValueError("calibrated Writer requires its fresh450 or full-ECP contract")
+        return
     continuation = spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK)
     frames = (4, 8, 16, 32) if mode in (CONDITIONAL_MODE, prefix_change.MODE) else (8, 4)
     checkpoints = (support_diversity.CHECKPOINTS if spec["task"] == support_diversity.TASK else
@@ -296,11 +306,33 @@ def _conditional_resume_record(parent: dict, current: dict) -> dict:
 
 
 def register_conditional_resume(spec: dict, args, contract: dict) -> None:
+    if spec.get("task") == control_calibration.TASK and args.resume is not None:
+        contract["parent_checkpoint"] = str(args.resume.resolve())
+        parent = read_json(args.resume.resolve().parent.parent / "run_contract.json")
+        _inspect_frozen_source(parent, read_json(Path(parent["spec"])))
+        contract["source_resume"] = {"origin_training_git": parent.get("source_resume", {}).get(
+            "origin_training_git", parent["git"]["commit"]),
+            "parent_checkpoint": contract["parent_checkpoint"], "parent_training_git": parent["git"],
+            "parent_training_spec": parent["spec"], "current_training_git": contract["git"],
+            "current_training_spec": contract["spec"], "migration": "engineering_same_science_complete_ECP"}
+        return
     if spec.get("task") not in (CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK) or args.resume is None:
         return
     contract["parent_checkpoint"] = str(args.resume.resolve())
     parent = read_json(args.resume.resolve().parent.parent / "run_contract.json")
     contract["source_resume"] = _conditional_resume_record(parent, contract)
+
+
+def calibrated_resume_compatible(parent: dict, current: dict) -> bool:
+    mutable = {"git", "spec", "topology", "microbatch", "frame_chunk", "parent_checkpoint", "source_resume"}
+    record = current.get("source_resume", {})
+    return (parent.get("mode") == current.get("mode") == control_calibration.MODE
+            and {k: v for k, v in parent.items() if k not in mutable}
+            == {k: v for k, v in current.items() if k not in mutable}
+            and read_json(Path(parent["spec"])) == read_json(Path(current["spec"]))
+            and record.get("parent_training_git") == parent["git"]
+            and record.get("current_training_git") == current["git"]
+            and record.get("parent_checkpoint") == current.get("parent_checkpoint"))
 
 
 def conditional_resume_compatible(parent: dict, current: dict) -> bool:
@@ -331,7 +363,7 @@ def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     complete = [path for path in attempts.glob("*/checkpoints/macro_*")
                 if complete_checkpoint(path)]
     if (parent.parent.resolve() != attempts.resolve() or parent == output.resolve()
-            or checkpoint.name not in {f"macro_{step:08d}" for step in CHECKPOINTS[:-1]}
+            or checkpoint.name not in {f"macro_{step:08d}" for step in spec["execution"]["checkpoints"][:-1]}
             or checkpoint not in complete
             or checkpoint.name != max(path.name for path in complete)
             or not resume_contract_compatible(read_json(parent / "run_contract.json"), contract,
@@ -491,7 +523,7 @@ def inspect_source(spec: dict, checkpoint: Path, *, _fixed_c12_630: bool = False
 def valid_metrics(metrics: list, *, mode: str = MODE, updates: int = 450) -> bool:
     if len(metrics) != updates or [row["update"] for row in metrics] != list(range(1, updates + 1)):
         return False
-    loss = "full" if mode in (CONDITIONAL_MODE, prefix_change.MODE) else LOSS
+    loss = "full" if mode in (CONDITIONAL_MODE, prefix_change.MODE, control_calibration.MODE) else LOSS
     for row in metrics:
         if (row.get("mode") != mode or row.get("loss_variant") != loss
                 or row.get("queries") != 112 or len(row.get("jobs", ())) != 4):
@@ -499,5 +531,11 @@ def valid_metrics(metrics: list, *, mode: str = MODE, updates: int = 450) -> boo
         if any(job.get("loss_variant") != loss
                or (bool(job.get("public_query_reuse")) != (loss == LOSS))
                for job in row["jobs"]):
+            return False
+        if mode == control_calibration.MODE and any(
+                job.get("control_auxiliary_copies") != 1 or job.get("control_intervals", 0) <= 0
+                or job.get("control_action_positions") != 5 * job["control_intervals"]
+                or job.get("control_auxiliary_credit") != "Gamma_only"
+                or job.get("same_version_q_main_and_auxiliary") is not True for job in row["jobs"]):
             return False
     return True

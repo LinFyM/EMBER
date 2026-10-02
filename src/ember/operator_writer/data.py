@@ -41,6 +41,7 @@ class FormalData:
         self.support_plan = (support_diversity.schedule() if spec["task"] == support_diversity.TASK else None)
         if self.support_plan is not None and query_labels and task_ids == TASKS:
             task_ids = TASKS[:24] + support_diversity.SOURCE_TASKS
+        self.spec, self.role = spec, role
         self.tasks = load_learning_tasks(asset_root, task_ids, role=role,
                                          protocol_path=spec["source"]["data_protocol"])
         authorities = tuple(row.authority for row in self.tasks.values())
@@ -189,7 +190,13 @@ class FormalData:
         pixels = torch.from_numpy(video.frames).to(runtime.device, non_blocking=True)
         indices = torch.from_numpy(video.frame_indices).to(runtime.device, non_blocking=True)
         tokens, mask, _ = runtime.tokenizer([self.tasks[task].authority.language])
-        return (pixels, indices, tokens, mask), video.raw_frame_count, len(pixels)
+        condition = (pixels, indices, tokens, mask)
+        from . import control_calibration
+        if runtime.writer.mode == control_calibration.MODE:
+            from .bare_native import load_features
+            bare = load_features(self.spec, task, demo, indices, runtime.device, runtime.source)
+            condition = (*condition, bare)
+        return condition, video.raw_frame_count, len(pixels)
 
     def batch(self, event: dict) -> dict:
         if self.queries is None or self.rows is None:

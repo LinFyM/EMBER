@@ -13,6 +13,7 @@ from . import change_clock as clock_contract
 from .value_context import ValueContext
 from .conditional_read_write import CausalInterpreter, ConditionalTarget
 from . import prefix_change as prefix_contract
+from . import control_calibration as calibration
 from torch.utils.checkpoint import checkpoint
 
 
@@ -76,7 +77,7 @@ class OperatorReadWrite(nn.Module):
 
     def __init__(self, contract: Pi05LoRAContract, template: dict[str, torch.Tensor], mode: str) -> None:
         super().__init__()
-        if mode not in {"T", "U", "context", "self_read", "conditional_read_write", clock_contract.MODE, prefix_contract.MODE} or len(contract.targets) != 38 or contract.rank != 128:
+        if mode not in {"T", "U", "context", "self_read", "conditional_read_write", calibration.MODE, clock_contract.MODE, prefix_contract.MODE} or len(contract.targets) != 38 or contract.rank != 128:
             raise ValueError("bounded operator mode or complete rank changed")
         validate_lora_state(template, contract)
         self.mode = mode
@@ -92,7 +93,7 @@ class OperatorReadWrite(nn.Module):
         self.conditional_targets = nn.ModuleList()
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(7)
-            for target in (() if mode == "conditional_read_write" else contract.targets):
+            for target in (() if mode in ("conditional_read_write", calibration.MODE) else contract.targets):
                 self.writes.append(TargetWrite(target.in_features, target.out_features,
                                                change_clock=mode == clock_contract.MODE))
         self.value_context: ValueContext | None = None
@@ -110,7 +111,7 @@ class OperatorReadWrite(nn.Module):
                 for write in self.writes:
                     write.u = nn.Linear(256, 256, bias=False, device="cpu")
                     nn.init.zeros_(write.u.weight)
-        if mode == "conditional_read_write":
+        if mode in ("conditional_read_write", calibration.MODE):
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(7)
                 self.interpreter = CausalInterpreter()
@@ -119,25 +120,36 @@ class OperatorReadWrite(nn.Module):
         self.register_buffer("probe", torch.randn(50, 32, generator=torch.Generator(device="cpu").manual_seed(1729)),
                              persistent=True)
 
+        self.gamma = None
+        if mode == calibration.MODE:
+            calibration.append_modules(self)
+
     def public_state(self) -> dict[str, torch.Tensor]:
         return self.common()
 
     def forward(self, native_inputs: dict[str, torch.Tensor], h: torch.Tensor,
                 frame_indices=None, *, capture_mechanism: bool = False,
-                target_executor=None, prefix_change=None, capture_prefix_stats=False) -> dict[str, torch.Tensor]:
+                target_executor=None, prefix_change=None, capture_prefix_stats=False, bare=None) -> dict[str, torch.Tensor]:
         common = self.public_state()
         if set(native_inputs) != set(self.names):
             raise ValueError("native teaching lost a complete LoRA target")
         if self.interpreter is not None:
             c, d = self.interpreter(h, frame_indices)
+            q = None
+            if self.gamma is not None:
+                if bare is None:
+                    raise ValueError("calibrated Writer requires genuine action-free F0 features")
+                q, valid = self.gamma.controls(bare, frame_indices)
+                self.last_control = {"q": q, "valid": valid, "bare": bare}
+                q = q.reshape(-1, 35)
             if target_executor is not None:
                 if capture_mechanism:
                     raise ValueError("mechanism readout uses the complete local compiler")
-                return target_executor(self, native_inputs, h, c, d)
+                return target_executor(self, native_inputs, h, c, d, q=q)
             result, targets = {}, {}
             for name, unit in zip(self.names, self.conditional_targets, strict=True):
                 a0, b0 = common[name + LORA_A_SUFFIX], common[name + LORA_B_SUFFIX]
-                inputs = (a0, b0, native_inputs[name], h, c, d)
+                inputs = (a0, b0, native_inputs[name], h, c, d, q) if q is not None else (a0, b0, native_inputs[name], h, c, d)
                 a, b, s, m = (checkpoint(unit, *inputs, use_reentrant=False, preserve_rng_state=False)
                               if torch.is_grad_enabled() else unit(*inputs))
                 result[name + LORA_A_SUFFIX], result[name + LORA_B_SUFFIX] = a, b

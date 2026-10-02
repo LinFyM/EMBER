@@ -57,11 +57,16 @@ def test_registered_full_only_identity_events_and_fresh_scope(tmp_path, monkeypa
 
 @pytest.mark.parametrize("mode", readout.CONDITIONAL_MODES)
 def test_actual_prepare_routes_full400_and_full144(tmp_path, monkeypatch, mode):
-    monkeypatch.setattr(readout, "CONDITIONAL_ROOT", tmp_path)
-    checkpoint = tmp_path / study.CONDITIONAL_MODE / "train/attempts/fresh/checkpoints/macro_00000450"
+    calibrated = mode in readout.control_calibration.MODES
+    if calibrated:
+        monkeypatch.setattr(readout.control_calibration, "ROOT", tmp_path)
+    else:
+        monkeypatch.setattr(readout, "CONDITIONAL_ROOT", tmp_path)
+    runtime_mode = readout.control_calibration.MODE if calibrated else study.CONDITIONAL_MODE
+    checkpoint = tmp_path / runtime_mode / "train/attempts/fresh/checkpoints/macro_00000450"
     capture_path = readout.capture_path(mode)
     capture = read_json(capture_path)
-    seen = mode == readout.CONDITIONAL_SEEN_MODE
+    seen = readout._seen_geometry(mode)
     states = readout.scope.STATES if seen else tuple(range(50))
     tasks = [SimpleNamespace(suite=r["suite"], task_id=r["task_id"], init_state_ids=states)
              for r in capture["full_conditions"]]
@@ -73,7 +78,7 @@ def test_actual_prepare_routes_full400_and_full144(tmp_path, monkeypatch, mode):
                            static_task_lora_manifest=path, trajectory_capture_selection=capture_path)
     output = readout.evaluation_path(mode, checkpoint)
     prepared, stage = _registered_trajectory_capture(args, tasks, output, None, readout.REPO)
-    assert capture["study_id"] == study.CONDITIONAL_TASK
+    assert capture["study_id"] == (readout.control_calibration.TASK if calibrated else study.CONDITIONAL_TASK)
     assert len(prepared["full_conditions"]) == (36 if seen else 8)
     assert all(r["init_state_id"] == (32 if seen else 0) for r in prepared["full_conditions"])
     assert prepared["passive_trace"] and not stage["full_conditions_only"]

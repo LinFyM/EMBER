@@ -785,7 +785,7 @@ def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
         evidence["legacy_test_initialization"] = bank["legacy_test_initialization"]
     else:
         evidence["scene_manifest"] = bank["scene_manifest"]
-    if bank["mode"] in ("self_read", "self_read_public", "conditional_read_write", "conditional_read_write_seen"):
+    if bank["mode"] in ("self_read", "self_read_public", "conditional_read_write", "conditional_read_write_seen", "control_calibrated_read_write", "control_calibrated_read_write_seen"):
         evidence["native_reading"] = bank["native_reading"]
     if bank.get("support_diversity_arm") is not None:
         evidence.update(support_diversity_arm=bank["support_diversity_arm"],

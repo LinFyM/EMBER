@@ -8,7 +8,7 @@ from .data import (CHECKPOINTS, CONTINUATION_CHECKPOINTS, CONTINUATION_UPDATES,
                    PILOT_CHECKPOINTS, PILOT_UPDATES,
                    CONTINUATION2340_CHECKPOINTS, CONTINUATION2340_UPDATES,
                    CONTINUATION2790_CHECKPOINTS, CONTINUATION2790_UPDATES, TASKS, UPDATES)
-from . import change_clock, joint_training, support_diversity, prefix_change
+from . import change_clock, joint_training, support_diversity, prefix_change, control_calibration
 
 REPO = Path(__file__).resolve().parents[3]
 SPEC_PATH = REPO / "configs/operator_read_write_v1/learning_spec.json"
@@ -28,6 +28,7 @@ CONDITIONAL_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.CONDITIONAL_SPE
 CONDITIONAL_CONTINUATION_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.CONDITIONAL_CONTINUATION_SPEC_NAME)
 SUPPORT_DIVERSITY_SPEC_PATH = JOINT_SPEC_PATH.with_name(support_diversity.SPEC_NAME)
 PREFIX_CHANGE_SPEC_PATH = JOINT_SPEC_PATH.with_name(prefix_change.SPEC_NAME)
+CALIBRATION_SPEC_PATH = JOINT_SPEC_PATH.with_name(control_calibration.SPEC_NAME)
 PILOT_ROOT = Path("/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260929")
 CONTINUATION2340_ROOT = Path(
     "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340")
@@ -143,6 +144,11 @@ def specification(path: Path = SPEC_PATH) -> dict:
         spec = read_json(path)
         if spec != joint_training.expected_conditional_continuation_spec(specification(CONDITIONAL_SPEC_PATH)):
             raise ValueError("conditional read/write continuation900 contract changed")
+        return spec
+    if path == CALIBRATION_SPEC_PATH:
+        spec = read_json(path)
+        if spec != control_calibration.expected_spec(specification(CONDITIONAL_SPEC_PATH)):
+            raise ValueError("control calibrated read/write scientific contract changed")
         return spec
     if path == CONDITIONAL_SPEC_PATH:
         spec = read_json(path)
@@ -311,7 +317,7 @@ def specification(path: Path = SPEC_PATH) -> dict:
 
 def specification_path(spec: dict) -> Path:
     """The current consumer spec path; actual training provenance stays in its run."""
-    paths = (PREFIX_CHANGE_SPEC_PATH, SUPPORT_DIVERSITY_SPEC_PATH, SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
+    paths = (CALIBRATION_SPEC_PATH, PREFIX_CHANGE_SPEC_PATH, SUPPORT_DIVERSITY_SPEC_PATH, SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
              CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH, CONTINUATION1800_SPEC_PATH,
              PILOT_SPEC_PATH, CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, CONTEXT_CONTINUATION_SPEC_PATH, SELF_READ_SPEC_PATH, CONDITIONAL_SPEC_PATH, CONDITIONAL_CONTINUATION_SPEC_PATH)
     for path in paths:

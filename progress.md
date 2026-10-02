@@ -8,6 +8,10 @@ main已在机制§106/findings§285登记唯一后继[控制内容调制读写](
 预计含工程6–10小时、硬限32完整GPUh/80GiB；无自动续训、扫描、Reader蒸馏、Test/RL或controls。
 2026-10-03实验session01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手canonical tracked/Git窗口，main从此只读科学分析。
 完整新合同、机制§106/findings§285及当前科学/资源规则已读；开始从最新main隔离工程实施，先核完整缓存/标签/ECP/物化metadata峰值。
+工程独占树`/data1/user/ymdai/projects/EMBER-control-calibrated-rw`已接入canonical Gamma/38组Ua/Ub与q余切；纯F0缓存和训练labels分离。
+元数据1800 train/400 validation共73642帧，预计新增峰72.06GiB<80；strg01 quota2TiB、个人实际runs593542635520B/projects539566137344B、共享89.078TB，资源可准入。
+针对输入墙/短gap/唯一辅助计数/本地及remote复合信用和400/144实际捕获路由检查通过；50,400 query/1800 teacher事件CPU审计通过。
+seen“teacher46–49”与原scope seed20260928实际映射矛盾已交main裁决，未启动seen消费者。
 当前没有本批GPU launch；仅执行本fresh450和固定544环境行/A28，不恢复旧500、独立读出或蒸馏，新增canonical实现交付后保留待裁决。
 下方§105“没有新训练”属于其科学消费完成时点，不覆盖这个新登记；旧获取批次仍已完成，不恢复其运行。
 

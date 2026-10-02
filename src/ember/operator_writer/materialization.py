@@ -94,7 +94,8 @@ class OperatorCompiler:
         runtime_mode = ('T' if config['mode'] in PILOT_ARMS else
                         'context' if config['mode'] == 'context_seen' else
                         PREFIX_MODE if config['mode'] == PREFIX_SEEN_MODE else
-                        CONDITIONAL_MODE if config['mode'] == CONDITIONAL_SEEN_MODE else config['mode'])
+                        CONDITIONAL_MODE if config['mode'] == CONDITIONAL_SEEN_MODE else
+                        "control_calibrated_read_write" if config['mode'] == "control_calibrated_read_write_seen" else config['mode'])
         self.runtime = build_runtime(asset_root, config['spec'], device, runtime_mode)
         self.asset_root, self.config, self.data, self.request = asset_root, config, None, None
 

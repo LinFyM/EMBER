@@ -27,7 +27,7 @@ from ember.operator_writer.functional_readout import fixed_flow, fm_prediction, 
 
 
 def a28(args) -> None:
-    mode = {"joint": "joint", "context": "context", "self_read": "self_read", "T450": "T450_public", "conditional_read_write": readout.CONDITIONAL_MODE}[args.model]
+    mode = {"joint": "joint", "context": "context", "self_read": "self_read", "T450": "T450_public", "conditional_read_write": readout.CONDITIONAL_MODE, "control_calibrated_read_write": "control_calibrated_read_write"}[args.model]
     arm = getattr(args, "arm", None)
     arm_options = {"arm": arm} if arm is not None else {}
     spec, training, spec_path = readout.a28_source_record(mode, args.checkpoint, **arm_options)
@@ -56,7 +56,7 @@ def a28(args) -> None:
 
         _configure_device(torch.device(args.device), args.cpu_threads)
         runtime = build_runtime(args.asset_root, spec, torch.device(args.device),
-                                mode if mode in ("context", "self_read", readout.CONDITIONAL_MODE) else "T")
+                                mode if mode in ("context", "self_read", *readout.CONDITIONAL_MODES) else "T")
         runtime.writer.load_state_dict(load_file(str(args.checkpoint / "ecp.safetensors"),
                                                  device=args.device), strict=True)
         runtime.writer.requires_grad_(False).eval()
@@ -74,7 +74,7 @@ def a28(args) -> None:
             for teacher in panel["teachers"]:
                 condition, _, _ = data.condition(runtime, task, teacher)
                 with torch.no_grad():
-                    capture = ({"capture_mechanism": True} if mode == readout.CONDITIONAL_MODE
+                    capture = ({"capture_mechanism": True} if mode in readout.CONDITIONAL_MODES
                                else {"retain_native": mode == "self_read"})
                     state, native = runtime.compile(condition, frame_chunk=args.native_frame_chunk, **capture)
                 native_ref = None
@@ -85,7 +85,10 @@ def a28(args) -> None:
                     _save_readout(output, "intermediate", task, teacher,
                                   fm_prediction(runtime, native["passes"][0]["state"], batch, flow, args.microbatch),
                                   target, reference, flow, rows, native_ref=native_ref)
-                if mode == readout.CONDITIONAL_MODE:
+                if mode == "control_calibrated_read_write":
+                    from ember.operator_writer.control_calibration import training_labels
+                    training_labels(data, runtime, {"task": task, "teacher_demo": teacher}, condition[1])
+                if mode in readout.CONDITIONAL_MODES:
                     native_ref = _save_conditional_evidence(output, task, teacher, condition[1], native, provenance)
                     native_records.append({"task": task, "teacher": teacher,
                                            "schema_version": "ember_conditional_read_write_evidence_v1",
@@ -98,7 +101,7 @@ def a28(args) -> None:
                     "updates": 0, "environment_episodes": 0, "seconds": time.monotonic() - started}
         if arm is not None:
             complete["support_diversity_arm"] = arm
-        if mode in ("self_read", readout.CONDITIONAL_MODE):
+        if mode in ("self_read", *readout.CONDITIONAL_MODES):
             write_json_atomic(output / "native_records.json", native_records)
             complete["native_records"] = len(native_records)
             if mode == "self_read":
@@ -168,7 +171,12 @@ def _save_conditional_evidence(output, task, teacher, frame_indices, native, pro
                 "probe_seed": 1729, "tau": 1.0, "frame_stride": 5,
                 "native_passes": 1, "teacher_state": "State_prompt_segment_omitted",
                 "transition": "X[t-1] addressed with c[t],d[t]",
-                "state_formula": "A=A0+S; B=B0+M; M_initial=0"}, path)
+                "state_formula": "A=A0+S; B=B0+M; M_initial=0",
+                **({"H0": native["control"]["bare"]["H0"].cpu(),
+                    "mu0": native["control"]["bare"]["mu0"].cpu(),
+                    "q": native["control"]["q"].cpu(),
+                    "control_valid": native["control"]["valid"].cpu(),
+                    "bare_features_action_free": True} if "control" in native else {})}, path)
     return file_record(path)
 
 
@@ -191,7 +199,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("materialize", "a28"))
     parser.add_argument("--mode", choices=readout.MODES)
-    parser.add_argument("--model", choices=("joint", "T450", "context", "self_read", "conditional_read_write"))
+    parser.add_argument("--model", choices=("joint", "T450", "context", "self_read", "conditional_read_write", "control_calibrated_read_write"))
     parser.add_argument("--arm", choices=("C12", "D71"))
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--asset-root", type=Path, default=ASSET)

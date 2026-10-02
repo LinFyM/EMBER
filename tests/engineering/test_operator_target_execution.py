@@ -3,6 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import torch
+import pytest
 import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch import nn
@@ -15,12 +16,16 @@ from ember.writer.replay import sum_writer_gradients
 
 
 class TinyWriter(nn.Module):
-    def __init__(self):
+    def __init__(self, calibrated=False):
         super().__init__()
         self.names = tuple(f"target{i}" for i in range(4))
         self.factors = nn.ParameterList([nn.Parameter(torch.randn(shape) * .1)
                                         for _ in self.names for shape in ((128, 4), (3, 128))])
         self.conditional_targets = nn.ModuleList(ConditionalTarget(4, 3) for _ in self.names)
+        self.gamma = nn.Linear(35, 35, bias=False) if calibrated else None
+        if calibrated:
+            for unit in self.conditional_targets:
+                unit.ua, unit.ub = nn.Linear(35, 256, bias=False), nn.Linear(35, 256, bias=False)
         self.context_gain = nn.Parameter(torch.tensor(.7))
         with torch.no_grad():
             for unit in self.conditional_targets:
@@ -41,7 +46,8 @@ def features(writer, owner):
     x = {name: torch.randn((3, 50, 4), generator=generator) + .1 * native for name in writer.names}
     c = h * writer.context_gain
     d = torch.cat((torch.zeros_like(h[:1]), h[1:] - h[:-1]))
-    return x, h, c, d
+    q = writer.gamma(torch.randn((2, 35), generator=generator)) if writer.gamma is not None else None
+    return (x, h, c, d, q) if q is not None else (x, h, c, d)
 
 
 def cotangents(state, owner):
@@ -49,10 +55,10 @@ def cotangents(state, owner):
     return tuple(torch.randn(value.shape, generator=generator) * .5 for value in state.values())
 
 
-def distributed_worker(rank, rendezvous, result):
+def distributed_worker(rank, rendezvous, result, calibrated):
     torch.set_num_threads(1)
     torch.manual_seed(17)
-    writer = TinyWriter()
+    writer = TinyWriter(calibrated)
     dist.init_process_group("gloo", init_method="file://" + rendezvous, rank=rank, world_size=3)
     try:
         if rank == 2:
@@ -72,7 +78,7 @@ def distributed_worker(rank, rendezvous, result):
         sum_writer_gradients(parameters, world_size=3, bucket_bytes=512 * 1024)
         if rank == 0:
             torch.manual_seed(17)
-            reference = TinyWriter()
+            reference = TinyWriter(calibrated)
             for owner in range(2):
                 state = compile_targets(reference, range(4), *features(reference, owner))
                 torch.autograd.backward(tuple(state.values()), cotangents(state, owner))
@@ -85,9 +91,10 @@ def distributed_worker(rank, rendezvous, result):
         dist.destroy_process_group()
 
 
-def test_actual_distributed_composite_credit_and_bucketed_sum(tmp_path):
+@pytest.mark.parametrize("calibrated", (False, True))
+def test_actual_distributed_composite_credit_and_bucketed_sum(tmp_path, calibrated):
     result = tmp_path / "result.txt"
-    mp.spawn(distributed_worker, args=(str(tmp_path / "rendezvous"), str(result)), nprocs=3, join=True)
+    mp.spawn(distributed_worker, args=(str(tmp_path / "rendezvous"), str(result), calibrated), nprocs=3, join=True)
     assert result.read_text().startswith("complete remote/local/native/public VJP")
 
 

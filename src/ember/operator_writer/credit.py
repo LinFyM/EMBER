@@ -23,8 +23,12 @@ def gradient_groups(writer) -> dict[str, float]:
                        for group in ("a_x", "a_z", "a_context", "a_dynamic", "a_out",
                                      "b_key", "b_delta", "b_context", "b_dynamic", "b_out")}}
                    if writer.interpreter is not None else {})
+    calibration = ({"Gamma": norm(writer.gamma.parameters()),
+                    "Ua": norm(unit.ua.weight for unit in writer.conditional_targets),
+                    "Ub": norm(unit.ub.weight for unit in writer.conditional_targets)}
+                   if writer.gamma is not None else {})
     prefix = {"e": norm(write.e.weight for write in writer.writes)} if writer.mode == "native_prefix_change" else {}
-    return {**context, **conditional, **prefix, "public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
+    return {**context, **conditional, **prefix, **calibration, "public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
                              if name.endswith(".lora_A.default.weight")),
             "public_B0": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
                               if name.endswith(".lora_B.default.weight")),
@@ -87,8 +91,20 @@ def one_job(runtime, data, event: dict, microbatch: int,
                                         **({"target_executor": target_executor} if target_executor else {}))
         if set(replay) != set(cotangent) or any(not torch.isfinite(v).all() for v in cotangent.values()):
             raise ValueError("full-rank FM cotangent incomplete or nonfinite")
-        torch.autograd.backward(tuple(replay.values()),
-                                tuple(cotangent[name].to(replay[name]) for name in replay))
+        outputs = tuple(replay.values())
+        gradients = tuple(cotangent[name].to(replay[name]) for name in replay)
+        aux_record = {}
+        if runtime.writer.gamma is not None:
+            from .control_calibration import auxiliary_loss, training_labels
+            q, valid = native["control"]["q"], native["control"]["valid"]
+            target = training_labels(data, runtime, event, condition[1])
+            loss = auxiliary_loss(q, valid, target, condition_weight=.25 * event.get("weight", 1.))
+            outputs, gradients = (*outputs, loss), (*gradients, torch.ones_like(loss))
+            aux_record = {"control_auxiliary_loss": float(loss.detach()) / (.25 * event.get("weight", 1.)),
+                          "control_intervals": int(valid.sum()), "control_action_positions": int(valid.sum()) * 5,
+                          "control_auxiliary_copies": 1, "control_auxiliary_credit": "Gamma_only",
+                          "same_version_q_main_and_auxiliary": True}
+        torch.autograd.backward(outputs, gradients)
     torch.cuda.synchronize(runtime.device)
     native_norm = native_credit(native)
     return {"task": event["task"], "teacher_demo": event["teacher_demo"],
@@ -96,7 +112,7 @@ def one_job(runtime, data, event: dict, microbatch: int,
             **({key: event[key] for key in ("group", "original_task")} if "group" in event else {}),
             "queries": len(event["queries"]), "query_demos": [row["demo"] for row in event["queries"]],
             "query_frames": [row["frame"] for row in event["queries"]], "flow_seed": event["flow_seed"],
-            "raw_frames": raw, "sampled_frames": sampled, "flow_loss": credit["flow_loss"],
+            "raw_frames": raw, "sampled_frames": sampled, **aux_record, "flow_loss": credit["flow_loss"],
             "public_flow_loss": beta_credit["flow_loss"] if beta_credit else None,
             "loss_variant": loss_variant, "public_query_reuse": beta_credit is not None,
             **({"target_execution": target_executor.record()} if target_executor else {}),

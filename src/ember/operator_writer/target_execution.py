@@ -32,12 +32,14 @@ def target_partition(writer, *, owners: int, world: int) -> tuple[tuple[int, ...
             {owners + i: tuple(sorted(group)) for i, group in enumerate(bins[1:])})
 
 
-def compile_targets(writer, indices, x, h, c, d):
+def compile_targets(writer, indices, x, h, c, d, q=None):
     """Use the canonical target computation and its existing activation replay."""
     common, result = writer.public_state(), {}
     for index in indices:
         name, unit = writer.names[index], writer.conditional_targets[index]
         inputs = (common[name + LORA_A_SUFFIX], common[name + LORA_B_SUFFIX], x[name], h, c, d)
+        if q is not None:
+            inputs = (*inputs, q)
         a, b, _, _ = (checkpoint(unit, *inputs, use_reentrant=False, preserve_rng_state=False)
                       if torch.is_grad_enabled() else unit(*inputs))
         result[name + LORA_A_SUFFIX], result[name + LORA_B_SUFFIX] = a, b
@@ -107,16 +109,16 @@ class TargetShardClient:
         self.local, self.remote = target_partition(writer, owners=owners, world=world)
         self.calls = []
 
-    def __call__(self, writer, x, h, c, d):
+    def __call__(self, writer, x, h, c, d, q=None):
         calls = []
         for peer, indices in self.remote.items():
-            inputs = (h, c, d, *(x[writer.names[i]] for i in indices))
+            inputs = (h, c, d, *((q,) if q is not None else ()), *(x[writer.names[i]] for i in indices))
             names = tuple(writer.names[i] + suffix for i in indices
                           for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX))
             call = {"peer": peer, "names": names, "inputs": len(inputs),
                     "pending": send_tensors(inputs, peer), "seconds": 0.}
             calls.append((call, inputs))
-        result = compile_targets(writer, self.local, x, h, c, d)
+        result = compile_targets(writer, self.local, x, h, c, d, q)
         for call, inputs in calls:
             call["wait_started"] = time.perf_counter()
             result.update(zip(call["names"], _RemoteTargets.apply(call, *inputs), strict=True))
@@ -127,7 +129,7 @@ class TargetShardClient:
         return {"strategy": "automatic_target_shards", "local_targets": len(self.local),
                 "helper_targets": {str(peer): len(indices) for peer, indices in self.remote.items()},
                 "remote_wait_seconds": sum(call["seconds"] for call in self.calls),
-                "credit": "same-version complete X/H/c/d and public/target parameter VJP"}
+                "credit": "same-version complete X/H/c/d/q and public/target parameter VJP"}
 
 
 def serve_target_shards(runtime, *, owners: int, world: int):
@@ -137,13 +139,14 @@ def serve_target_shards(runtime, *, owners: int, world: int):
     indices = shards[dist.get_rank()]
     for replay in (False, True):
         for owner in range(owners):
-            inputs = receive_tensors(3 + len(indices), owner, device)
+            inputs = receive_tensors(3 + int(getattr(writer, "gamma", None) is not None) + len(indices), owner, device)
             if replay:
                 inputs = [value.requires_grad_() for value in inputs]
             h, c, d, *xs = inputs
+            q = xs.pop(0) if getattr(writer, "gamma", None) is not None else None
             x = {writer.names[i]: value for i, value in zip(indices, xs, strict=True)}
             with torch.set_grad_enabled(replay), autocast(device):
-                state = compile_targets(writer, indices, x, h, c, d)
+                state = compile_targets(writer, indices, x, h, c, d, q)
             finish_sends(send_tensors(tuple(state.values()), owner))
             if replay:
                 cotangents = receive_tensors(len(state), owner, device)

@@ -39,7 +39,7 @@ class FormalData:
         from . import support_diversity
 
         self.support_plan = (support_diversity.schedule() if spec["task"] == support_diversity.TASK else None)
-        if self.support_plan is not None and task_ids == TASKS:
+        if self.support_plan is not None and query_labels and task_ids == TASKS:
             task_ids = TASKS[:24] + support_diversity.SOURCE_TASKS
         self.tasks = load_learning_tasks(asset_root, task_ids, role=role,
                                          protocol_path=spec["source"]["data_protocol"])

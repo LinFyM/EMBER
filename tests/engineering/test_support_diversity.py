@@ -19,7 +19,8 @@ REPO = Path(__file__).resolve().parents[2]
 
 def metadata_data(monkeypatch, spec):
     monkeypatch.setattr(data, 'RawTeacherVideoStore', lambda *a, **kw: SimpleNamespace(close=lambda: None))
-    return data.FormalData(REPO, spec, query_labels=False)
+    tasks = data.TASKS[:24] + fork.SOURCE_TASKS if spec['task'] == fork.TASK else data.TASKS
+    return data.FormalData(REPO, spec, query_labels=False, task_ids=tasks)
 
 
 def test_full_window_real_event_consumer_preserves_target_and_corrects_source(monkeypatch):

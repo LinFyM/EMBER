@@ -2,7 +2,7 @@
 
 ## 科学目标与当前批次
 
-实验session已实际接手唯一控制内容调制读写批次；工程已集成push e314d227并以clean detached冻结，pure F0缓存四worker实际运行。完整fresh450/固定544/A28待缓存与最多3个真实更新吞吐profile后启动；不恢复旧批。Seen采用原scope seed20260928实际四teacher映射，design文字勘误已完成。
+实验session已实际接手唯一控制内容调制读写批次；2200视频/73642帧pure F0缓存齐备，4个exit0/1.119620866GPUh。原macro85最长105帧的world4/micro28/frame32完整更新profile已完成，world6/frame32比较实际运行；最多3个丢弃更新后fresh450/固定544/A28，不恢复旧批。Seen采用原scope seed20260928实际四teacher映射，design文字勘误已完成。
 
 
 当前唯一新合同为[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)，机制§106/findings§285说明取舍。

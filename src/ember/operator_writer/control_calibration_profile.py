@@ -13,7 +13,7 @@ def validate(spec, args, output):
     if (spec["task"] != calibration.TASK or args.resume is not None
             or args.mode != calibration.MODE or output.exists() and (output / "run_contract.json").exists()
             or len(list((calibration.ROOT / "profile").glob("*/run_contract.json"))) >= 3
-            or args.microbatch not in (7, 14, 28) or args.frame_chunk not in (16, 32, 64, 128)):
+            or args.microbatch not in (7, 14, 28) or not 4 <= args.frame_chunk <= 128):
         raise ValueError("profile requires at most three registered real updates and fresh state")
 
 

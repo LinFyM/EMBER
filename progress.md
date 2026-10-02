@@ -13,6 +13,10 @@ main已在机制§106/findings§285登记唯一后继[控制内容调制读写](
 针对输入墙/短gap/唯一辅助计数/本地及remote复合信用和400/144实际捕获路由检查通过；50,400 query/1800 teacher事件CPU审计通过。
 main已核对原C450/C900/MT300全144行与当前scope，确认原scene/RNG/固定teacher映射完全一致；design中teacher46–49为文字误记，已勘误为scope seed20260928、0–49池固定四teacher及scene_canonical144，sealed原件未改。seen继续按原144行配对。
 本批已实际启动pure F0缓存：clean pushed detached e314d2271a8fe1e18533c84fac4af77e811f8518，gpu02:0/1/2/3四worker，精确command/环境/PGID/准入见root launch/bare_cache_shard*_consumer.json；一次持续等待退出，无自Queue。176既存train-native只提取H0/mu/indices到action-free store（6200帧），旧labels/原件未改，不加载P/F权重。实际费用自加载起累计，完整fresh450尚未启动。仅执行fresh450和固定544环境行/A28，新增canonical实现及完整450交付后保留待裁决。
+四cache实际exit0，2200视频/73642帧全部齐备（新增67442帧、复用6200），14.064GiB，含加载/写入/退出累计1.119620866GPUh。
+原初始packing记录部分尾块不足256，不能声称它证明256更快；实际两worker峰40.42/41.08GiB、另两24.39GiB。
+已窄修profile跨实际task帧组收齐完整候选、只计完整batch，CPU实际消费检查保持963帧各一次，无新Source forward、旧原件未改。
+第一个正式语义profile已完成：原macro85完整4task/105最长帧/28query，world4/micro28/frame32更新33.097秒、reserved峰39.289GiB、exit0，含加载等.071058727GPUh；丢弃全部profile状态。第二个world6/frame32实际已启动，仍比较同一注册完整更新；formal450尚未启动。
 下方§105“没有新训练”属于其科学消费完成时点，不覆盖这个新登记；旧获取批次仍已完成，不恢复其运行。
 
 main已完成本批源码与全部176份实际预测的科学消费，见机制§105/findings§284。

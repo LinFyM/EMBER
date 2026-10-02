@@ -61,10 +61,10 @@ def read_bare_frames(wrapper, pixels, tokens, mask, probe, chunk, profile=None):
     """H and mu use the actual velocity from the same native call, no second forward."""
     hs, mus = [], []
     start = 0
-    first = profile is not None and not profile
-    trials = [128, 128, chunk] if first else []
     while start < len(pixels):
-        physical = min(trials.pop(0) if trials else chunk, len(pixels) - start)
+        trial = (min(128, chunk), min(128, chunk), chunk)
+        requested = trial[len(profile)] if profile is not None and len(profile) < 3 else chunk
+        physical = min(requested, len(pixels) - start)
         began = time.monotonic()
         captured = []
         hook = wrapper.policy.model.action_out_proj.register_forward_hook(
@@ -79,12 +79,12 @@ def read_bare_frames(wrapper, pixels, tokens, mask, probe, chunk, profile=None):
         hs.append(h.detach().float().cpu())
         mus.append((probe[None] - captured[0].float())[:, :5, :7].detach().cpu())
         elapsed = time.monotonic() - began
-        if first and len(profile) < 3:
+        if profile is not None and len(profile) < 3 and physical == requested:
             profile.append({"frame_start": start, "frames": physical, "seconds": elapsed,
                             "frames_per_second": physical / elapsed,
                             "peak_reserved_GiB": torch.cuda.max_memory_reserved() / 2**30})
             if len(profile) == 3:
-                chunk = profile[2]["frames"] if profile[2]["frames_per_second"] > profile[1]["frames_per_second"] else 128
+                chunk = profile[2]["frames"] if profile[2]["frames_per_second"] > profile[1]["frames_per_second"] else profile[1]["frames"]
         start += physical
     return torch.cat(hs), torch.cat(mus)
 
@@ -130,7 +130,7 @@ def cache(spec, args):
     store = RawTeacherVideoStore(tuple({r[0]: r[3].authority for r in todo}.values()),
                                 frame_stride=5, camera_view="dual")
     started, frames, reused = time.monotonic(), 0, 0
-    chunks, records, profile = args.frame_chunk, [], []
+    chunks, records, profile, packing_failures = args.frame_chunk, [], [], []
     try:
         for task in sorted({r[0] for r in todo}):
             selected = [r for r in todo if r[0] == task]
@@ -151,9 +151,12 @@ def cache(spec, args):
                     h, mu = read_bare_frames(wrapper, pixels, tokens, mask, probe, chunks, profile)
                     break
                 except torch.cuda.OutOfMemoryError:
+                    packing_failures.append({"task": task, "frames": len(pixels), "frame_chunk": chunks,
+                                             "reason": "CUDA OOM; same authorized frames retried"})
                     if chunks <= 64:
                         raise
                     chunks //= 2
+                    profile.clear()
                     torch.cuda.empty_cache()
             offset = 0
             for t, demo, _row, video in missing:
@@ -162,7 +165,7 @@ def cache(spec, args):
                                video.frame_indices, source, reading_git)
                 offset = stop
             if len(profile) == 3:
-                chunks = profile[2]["frames"] if profile[2]["frames_per_second"] > profile[1]["frames_per_second"] else 128
+                chunks = profile[2]["frames"] if profile[2]["frames_per_second"] > profile[1]["frames_per_second"] else profile[1]["frames"]
             frames += len(h)
             records.append({"task": task, "frames": len(h), "videos": len(missing),
                             "frame_chunk": chunks, "seconds": time.monotonic() - beg})
@@ -172,6 +175,7 @@ def cache(spec, args):
     record = {"schema": SCHEMA, "complete": True, "source": source, "reading_git": reading_git,
               "shard": args.cache_shard, "shards": args.cache_shards, "videos": len(todo),
               "frames_new": frames, "reused": reused, "records": records, "packing_profile": profile,
+              "packing_failures": packing_failures,
               "seconds": time.monotonic() - started,
               "peak_reserved_GiB": torch.cuda.max_memory_reserved() / 2**30,
               "labels_read": 0, "state_reward_read": 0, "Source_loads": 1}

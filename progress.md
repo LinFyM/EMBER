@@ -28,7 +28,11 @@ main现已直接消费下述视频来源批的16份continuous、四份RGB及真�
 现场双节点核验本用户0→2卡、合计上限6；两卡原148MiB/util0 CUDA context可共驻，不动他人。
 strg01 data1个人实占约1.135TB/2TiB quota，共享89.098TB，预计新增峰6/8GiB。
 第一次等待器误用Python3.8无pidfd接口，退出后无自有消费者/native/更新；改用既有3.12，保守101GPU秒计入总3GPUh，失败回执保留。
-当前为真实native/profile阶段，尚未启动正式64；两臂profile总费用预测通过后按事件释放正式运行。
+六条新public native一次全帧打包、两份task32既存完整H/K复用已完成；两臂各两次真实profile更新后均恢复父Writer/gamma/optimizer/RNG。
+2026-10-02正式64已实际启动，live gpu02:7 PID160306、stop gpu02:1 PID161725；八条件每步224 query、各1/8保持。
+两臂实测选择micro28（单condition全部query），约21.93/21.78秒每完整更新，reserved峰17.70/17.55GiB；
+原micro14为26.15/22.39秒含首轮启动差，不宣称稳定19%提速。两臂独立并行，native最大完整视频37帧、framechunk64，无新样本填显存。
+profile总费用含失败/加载/等待和128行读取1800GPU秒余量预计1.348GPUh，硬限3；直接等待同一batch owner退出，无自Queue/固定空读。
 
 主讨论完成上一批原件与机制§100后，登记唯一后继冻结分析：
 [task32已学修正的视频来源](docs/designs/task32_learned_video_segment_diagnostic.md)。

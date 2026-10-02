@@ -14,6 +14,14 @@ P/F使用相同裸aligned Source1000、native点估计和残差读出，只改�
 2026-10-03实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手canonical tracked/Git窗口，main只读科学分析。
 完整新合同及机制§104/findings§283已读，正在核算176条既存video的metadata帧数/合法区间与缓存峰值；尚未launch。
 从clean pushed ed97fba3开始；只实施本500更新获取诊断，不恢复旧§103或任何Writer/环境计算。
+metadata实际为6,200个采样帧、5,882个完整offset1五步区间，142个不足5的真实末段不产生标签；FP32缓存约1.184GiB，预计新增峰2.284/8GiB。
+strg01已核data1个人约1.139TB/2TiB quota、共享约89.089TB；旧资产只读引用，无source/dataset复制。
+独占codex/native-transition-action-calibration worktree复用原native、source/data/tokenizer owner；临时入口/模型/四项检查约410行，未改共享运行面。
+CPU四项检查与实际入口导入通过，涵盖同seed7零残差、P包含F函数类、双臂打包梯度与500×160共同fit20事件流。
+首次实际入口导入缺少既有facade初始化，0GPUh失败及修复保留；没有创建source/CUDA/环境，科学计算不变。
+结构guard无新增hard违约；native分块/缓存接入复杂度和已有peer数为review信号，本任务有界使用并在500读回后退役全部三份临时源码。
+启动前再次live核两节点与data1；将用既有合法帧比较64/128、每臂全部160区间比较双臂打包/顺序，profile后恢复fresh初始化/RNG。
+当前实施/CPU验证已完成，待集成push及clean detached冻结；尚无本批GPU计算。
 下方§103的“停止/无active计算/下一判断”保留其收束时点，不恢复旧批次，也不覆盖上述新登记。
 最新主讨论已完成自身功能信用的原件消费及机制§103/findings§282：128条continuous、24真实双RGB和32功能PT直接读回。
 live/stop学生20/24、Reader19/23，live相对stop R18/G2/L6，新增query信用没有净控制收益；辅助头也未建立强功能教师。

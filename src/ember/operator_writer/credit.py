@@ -23,7 +23,8 @@ def gradient_groups(writer) -> dict[str, float]:
                        for group in ("a_x", "a_z", "a_context", "a_dynamic", "a_out",
                                      "b_key", "b_delta", "b_context", "b_dynamic", "b_out")}}
                    if writer.interpreter is not None else {})
-    return {**context, **conditional, "public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
+    prefix = {"e": norm(write.e.weight for write in writer.writes)} if writer.mode == "native_prefix_change" else {}
+    return {**context, **conditional, **prefix, "public_A": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
                              if name.endswith(".lora_A.default.weight")),
             "public_B0": norm(writer.common.values[i] for i, name in enumerate(writer.common.names)
                               if name.endswith(".lora_B.default.weight")),
@@ -48,6 +49,7 @@ def native_credit(native: dict) -> dict:
         terms = [value.grad.float().norm() for value in values if value.grad is not None]
         return float(torch.stack(terms).norm()) if terms else 0.0
     passes = [{"h": norm((item["h"],)), "x": norm(item["x"].values()),
+               **({"dP": norm((item["dP"],))} if "dP" in item else {}),
                "B": norm(value for name, value in item["state"].items()
                          if name.endswith(".lora_B.default.weight"))}
               for item in native["passes"]]

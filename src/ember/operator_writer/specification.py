@@ -8,7 +8,7 @@ from .data import (CHECKPOINTS, CONTINUATION_CHECKPOINTS, CONTINUATION_UPDATES,
                    PILOT_CHECKPOINTS, PILOT_UPDATES,
                    CONTINUATION2340_CHECKPOINTS, CONTINUATION2340_UPDATES,
                    CONTINUATION2790_CHECKPOINTS, CONTINUATION2790_UPDATES, TASKS, UPDATES)
-from . import change_clock, joint_training, support_diversity
+from . import change_clock, joint_training, support_diversity, prefix_change
 
 REPO = Path(__file__).resolve().parents[3]
 SPEC_PATH = REPO / "configs/operator_read_write_v1/learning_spec.json"
@@ -27,6 +27,7 @@ SELF_READ_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.SELF_READ_SPEC_NA
 CONDITIONAL_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.CONDITIONAL_SPEC_NAME)
 CONDITIONAL_CONTINUATION_SPEC_PATH = JOINT_SPEC_PATH.with_name(joint_training.CONDITIONAL_CONTINUATION_SPEC_NAME)
 SUPPORT_DIVERSITY_SPEC_PATH = JOINT_SPEC_PATH.with_name(support_diversity.SPEC_NAME)
+PREFIX_CHANGE_SPEC_PATH = JOINT_SPEC_PATH.with_name(prefix_change.SPEC_NAME)
 PILOT_ROOT = Path("/data1/user/ymdai/ember_runs/operator_public_function_pilot_20260929")
 CONTINUATION2340_ROOT = Path(
     "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340")
@@ -128,6 +129,11 @@ PILOT_CONTRACT = {"arms": list(PILOT_ARMS), "loss_variants": PILOT_ARMS,
 
 def specification(path: Path = SPEC_PATH) -> dict:
     path = path.resolve()
+    if path == PREFIX_CHANGE_SPEC_PATH:
+        spec = read_json(path)
+        if spec != prefix_change.expected_spec(specification(JOINT_SPEC_PATH)):
+            raise ValueError("native prefix change fresh450 contract changed")
+        return spec
     if path == SUPPORT_DIVERSITY_SPEC_PATH:
         spec = read_json(path)
         if spec != support_diversity.expected_spec(specification(CONDITIONAL_SPEC_PATH)):
@@ -305,7 +311,7 @@ def specification(path: Path = SPEC_PATH) -> dict:
 
 def specification_path(spec: dict) -> Path:
     """The current consumer spec path; actual training provenance stays in its run."""
-    paths = (SUPPORT_DIVERSITY_SPEC_PATH, SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
+    paths = (PREFIX_CHANGE_SPEC_PATH, SUPPORT_DIVERSITY_SPEC_PATH, SPEC_PATH, CHANGE_CLOCK_SPEC_PATH, CHANGE_CLOCK_CONTINUATION_SPEC_PATH,
              CONTINUATION_SPEC_PATH, CONTINUATION1350_SPEC_PATH, CONTINUATION1800_SPEC_PATH,
              PILOT_SPEC_PATH, CONTINUATION2340_SPEC_PATH, CONTINUATION2790_SPEC_PATH, JOINT_SPEC_PATH, CONTEXT_SPEC_PATH, CONTEXT_CONTINUATION_SPEC_PATH, SELF_READ_SPEC_PATH, CONDITIONAL_SPEC_PATH, CONDITIONAL_CONTINUATION_SPEC_PATH)
     for path in paths:

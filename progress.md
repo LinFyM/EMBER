@@ -6,7 +6,7 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。
 当前唯一active design为[原生prefix变化Value的共同学习](docs/designs/native_prefix_change_value_design.md)，
-主讨论已完成数学/历史判断并登记，授权唯一实验session按正式派发闭环实施；登记时尚未启动GPU，实际launch由执行者记录。
+主讨论已完成数学/历史判断并派发；实验session已在独占worktree完成同一native最后attention字段与零E接入、full-only机器合同及现有消费者注册。29项针对CPU检查通过；当前尚未启动GPU，下一步为clean pushed detached上的一次最长视频两步profile及fresh450。实际费用、启动/完成和原件由执行者据实登记。
 保留T的实际A/公共beta与原动态Value；新增同一动作query替换相邻真实prefix得到的attention响应差，经E进入同一完整LoRA。
 唯一fresh450、原36task/50视频池及50,400跨episode query保持；270/450各correct400，450另seen144，共944新行/52 full。
 硬限14GPUh/48GiB，预计9–11GPUh、含工程3–5小时；无自动900、Test、视频controls、RL或小扫。完整推导/裁决见设计与findings§275。

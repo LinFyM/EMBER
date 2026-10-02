@@ -18,6 +18,7 @@ _TEACHER_ATTENTION = ContextVar("ember_teacher_attention", default=False)
 _TEACHER_PADDING = ContextVar("ember_teacher_padding_queries", default=None)
 _TEACHER_EAGER = ContextVar("ember_teacher_original_attention", default=None)
 _TEACHER_MLP = ContextVar("ember_teacher_original_mlp", default=None)
+_TEACHER_OBSERVER = ContextVar("ember_teacher_attention_observer", default=None)
 _ATTENTION_SCOPE_LOCK = RLock()
 
 
@@ -60,7 +61,7 @@ def _teacher_sdpa(module, query, key, value, attention_mask, scaling, dropout=0.
 
 
 @contextmanager
-def _teacher_attention_kernel(attention_mask=None):
+def _teacher_attention_kernel(attention_mask=None, observer=None):
     """Teacher-only SDPA and frozen-MLP replay inside the full frame call."""
     from transformers.models.gemma import modeling_gemma
 
@@ -71,13 +72,16 @@ def _teacher_attention_kernel(attention_mask=None):
         original_mlp = modeling_gemma.GemmaMLP.forward
         mlp = _TEACHER_MLP.get() or original_mlp
         rows = _padding_query_rows(attention_mask)
-        variables = (_TEACHER_ATTENTION, _TEACHER_PADDING, _TEACHER_EAGER, _TEACHER_MLP)
+        variables = (_TEACHER_ATTENTION, _TEACHER_PADDING, _TEACHER_EAGER, _TEACHER_MLP, _TEACHER_OBSERVER)
         tokens = tuple(variable.set(value) for variable, value in
-                       zip(variables, (True, rows, eager, mlp), strict=True))
+                       zip(variables, (True, rows, eager, mlp, observer), strict=True))
 
         def dispatch(*args, **kwargs):
             if not _TEACHER_ATTENTION.get():
                 return eager(*args, **kwargs)
+            observed = _TEACHER_OBSERVER.get()
+            if observed is not None:
+                observed(*args, **kwargs)
             return _teacher_sdpa(*args, _eager=eager, _query_rows=_TEACHER_PADDING.get(), **kwargs)
 
         def mlp_dispatch(module, hidden):
@@ -125,11 +129,13 @@ def _capture_inputs(policy: nn.Module, names: tuple[str, ...]) -> Iterator[dict[
 class _NativeFrameCall(nn.Module):
     """Wrap the policy so torch.func substitutes β in suffix and all 38 hooks."""
 
-    def __init__(self, policy: nn.Module, names: tuple[str, ...], probe: torch.Tensor) -> None:
+    def __init__(self, policy: nn.Module, names: tuple[str, ...], probe: torch.Tensor,
+                 prefix_change: bool = False) -> None:
         super().__init__()
         self.policy = policy
         self.names = names
         self.probe = probe
+        self.prefix_change = prefix_change
 
     def forward(self, frames: torch.Tensor, tokens: torch.Tensor, token_mask: torch.Tensor):
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks, resize_with_pad_torch
@@ -138,6 +144,10 @@ class _NativeFrameCall(nn.Module):
             raise ValueError("teacher needs synchronized actual dual RGB")
         core = self.policy.model
         bridge = core.paligemma_with_expert
+        observer = None
+        if self.prefix_change:
+            from .prefix_change import NativeAttentionCapture
+            observer = NativeAttentionCapture(bridge)
         count = len(frames)
         pixels = frames.flatten(0, 1).float().div(255).permute(0, 2, 3, 1)
         images = (resize_with_pad_torch(pixels, 224, 224) * 2 - 1).permute(0, 3, 1, 2)
@@ -159,22 +169,28 @@ class _NativeFrameCall(nn.Module):
             mask = core._prepare_attention_masks_4d(make_att_2d_masks(full_padding, full_attention))
             positions = torch.cumsum(full_padding, dim=1) - 1
             dtype = bridge.paligemma.model.language_model.layers[0].self_attn.q_proj.weight.dtype
-            with _teacher_attention_kernel(mask):
-                (_, hidden), _ = bridge.forward(
-                    attention_mask=mask, position_ids=positions, past_key_values=None,
-                    inputs_embeds=[prefix.to(dtype), suffix.to(dtype)], use_cache=False,
-                    adarms_cond=[None, adarms],
-                )
+            handle = observer.projection.register_forward_hook(observer.projection_call) if observer else None
+            try:
+                with _teacher_attention_kernel(mask, observer.attention_call if observer else None):
+                    (_, hidden), _ = bridge.forward(
+                        attention_mask=mask, position_ids=positions, past_key_values=None,
+                        inputs_embeds=[prefix.to(dtype), suffix.to(dtype)], use_cache=False,
+                        adarms_cond=[None, adarms],
+                    )
+            finally:
+                if handle is not None:
+                    handle.remove()
             # The actual action_out projection is part of the 38-target native read.
             core.action_out_proj(hidden.float())
         if set(captured) != set(self.names) or hidden.shape != (count, 50, 1024):
             raise ValueError("native full suffix/target capture is incomplete")
-        return hidden, *(captured[name] for name in self.names)
+        return (hidden, *(captured[name] for name in self.names),
+                *(observer.outputs() if observer else ()))
 
 
 def read_native_video(policy: nn.Module, common: dict[str, torch.Tensor], probe: torch.Tensor,
                       condition: tuple, names: tuple[str, ...], *, frame_chunk: int = 8,
-                      checkpoint_frames: bool = True) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+                      checkpoint_frames: bool = True, prefix_change: bool = False):
     """No cached/detached β features: every compile recomputes the legal video."""
     frames, indices, tokens, token_mask = condition
     if (len(frames) != len(indices) or len(frames) < 2 or int(indices[-1]) < int(indices[0])
@@ -182,7 +198,7 @@ def read_native_video(policy: nn.Module, common: dict[str, torch.Tensor], probe:
             or frame_chunk < 1 or set(common) != {name + suffix for name in names
                                                    for suffix in (LORA_A_SUFFIX, ".lora_B.default.weight")}):
         raise ValueError("native legal-video/complete-public-state contract changed")
-    wrapper = _NativeFrameCall(policy, names, probe)
+    wrapper = _NativeFrameCall(policy, names, probe, prefix_change)
     keys, values = tuple(common), tuple(common.values())
     outputs = []
     for start in range(0, len(frames), frame_chunk):
@@ -200,4 +216,11 @@ def read_native_video(policy: nn.Module, common: dict[str, torch.Tensor], probe:
     h = torch.cat([item[0] for item in outputs], dim=0)
     x = {name: torch.cat([item[index + 1] for item in outputs], dim=0)
          for index, name in enumerate(names)}
+    if prefix_change:
+        from .prefix_change import response_difference
+        bridge = policy.model.paligemma_with_expert
+        difference = response_difference([item[len(names) + 1:] for item in outputs],
+            bridge.paligemma.model.language_model.layers[17].self_attn,
+            bridge.gemma_expert.model.layers[17].self_attn.o_proj, frame_chunk=frame_chunk)
+        return x, h, difference
     return x, h

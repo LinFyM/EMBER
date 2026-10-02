@@ -11,7 +11,7 @@ from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.materialization import file_record
 
-from . import scope
+from . import scope, prefix_change
 from .public_beta import factor_map, public_state
 from .joint_training import CONDITIONAL_TASK, CONDITIONAL_ROOT, CONDITIONAL_MODE
 
@@ -23,7 +23,7 @@ PUBLIC_VALIDATION_MODE = "context_public_validation"
 SELF_READ_MODES = ("self_read", "self_read_public")
 CONDITIONAL_SEEN_MODE = "conditional_read_write_seen"
 CONDITIONAL_MODES = (CONDITIONAL_MODE, CONDITIONAL_SEEN_MODE)
-MODES = ("joint", "joint_public", "T450_public", "context", "context_public", "context_seen", PUBLIC_VALIDATION_MODE, *SELF_READ_MODES, *CONDITIONAL_MODES)
+MODES = ("joint", "joint_public", "T450_public", "context", "context_public", "context_seen", PUBLIC_VALIDATION_MODE, *SELF_READ_MODES, *CONDITIONAL_MODES, *prefix_change.MODES)
 PUBLIC_MODES = ("joint_public", "T450_public", "context_public", PUBLIC_VALIDATION_MODE, "self_read_public")
 OLD_CHECKPOINT = Path("/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928"
                       "/continuation900/T/train/attempts/continuation/checkpoints/macro_00000450")
@@ -77,6 +77,8 @@ def study_root(mode: str, checkpoint: Path | None = None, *, arm: str | None = N
 
     if mode not in MODES:
         raise ValueError("unregistered full/public study readout mode")
+    if mode in prefix_change.MODES:
+        return prefix_change.ROOT
     if _support_arm(mode, checkpoint, arm):
         from .support_diversity import ROOT as SUPPORT_ROOT
 
@@ -98,6 +100,8 @@ def study_root(mode: str, checkpoint: Path | None = None, *, arm: str | None = N
 
 def study_id(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> str:
     from .joint_training import CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK
+    if mode in prefix_change.MODES:
+        return prefix_change.TASK
 
     if _support_arm(mode, checkpoint, arm):
         from .support_diversity import TASK as SUPPORT_TASK
@@ -118,6 +122,9 @@ def study_id(mode: str, checkpoint: Path | None = None, *, arm: str | None = Non
 
 
 def capture_path(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> Path:
+    if mode in prefix_change.MODES:
+        suffix = "seen" if mode == prefix_change.SEEN_MODE else "official"
+        return REPO / "configs/operator_read_write_v1" / f"native_prefix_change_{suffix}_capture.json"
     if _support_arm(mode, checkpoint, arm):
         suffix = "seen" if mode == CONDITIONAL_SEEN_MODE else "official"
         return REPO / "configs/operator_read_write_v1" / f"conditional_support_diversity_{suffix}_capture.json"
@@ -139,6 +146,12 @@ def bank_path(mode: str, checkpoint: Path | None = None, *, arm: str | None = No
     if arm is not None:
         return root / mode / "banks/630/manifest.json"
     macro = int(checkpoint.name.removeprefix("macro_")) if checkpoint is not None else 450
+    if mode in prefix_change.MODES:
+        allowed = (450,) if mode == prefix_change.SEEN_MODE else (270, 450)
+        if checkpoint is None or macro not in allowed or not checkpoint.resolve().is_relative_to(
+                prefix_change.ROOT / prefix_change.MODE / "train/attempts"):
+            raise ValueError("native prefix readers require owned270/450 or seen450")
+        return root / mode / f"banks/{macro}/manifest.json"
     if mode in CONDITIONAL_MODES:
         if _continuation_checkpoint(mode, checkpoint):
             if macro not in ((900,) if mode == CONDITIONAL_SEEN_MODE else (810, 900)):
@@ -159,6 +172,11 @@ def bank_path(mode: str, checkpoint: Path | None = None, *, arm: str | None = No
 
 
 def evaluation_path(mode: str, checkpoint: Path, *, arm: str | None = None) -> Path:
+    if mode in prefix_change.MODES:
+        bank_path(mode, checkpoint, arm=arm)
+        macro = int(checkpoint.name.removeprefix("macro_"))
+        return prefix_change.ROOT / mode / f"evaluation/{macro}" / (
+            "correct144" if mode == prefix_change.SEEN_MODE else "correct400")
     if _support_arm(mode, checkpoint, arm):
         return study_root(mode, checkpoint, arm=arm) / mode / "evaluation/630" / (
             "correct144" if mode == CONDITIONAL_SEEN_MODE else "correct400")
@@ -186,6 +204,10 @@ def source_record(mode: str, checkpoint: Path, *, arm: str | None = None) -> tup
 
     checkpoint = checkpoint.resolve()
     bank_path(mode, checkpoint, arm=arm)
+    if mode in prefix_change.MODES:
+        from .specification import PREFIX_CHANGE_SPEC_PATH
+        spec = run.specification(PREFIX_CHANGE_SPEC_PATH)
+        return spec, joint_training.inspect_source(spec, checkpoint), PREFIX_CHANGE_SPEC_PATH
     if arm is not None:
         from .specification import SUPPORT_DIVERSITY_SPEC_PATH
 
@@ -281,7 +303,7 @@ def a28_source_record(mode: str, checkpoint: Path, *, arm: str | None = None) ->
 
 
 def _seen_geometry(mode: str) -> bool:
-    return (mode in PUBLIC_MODES and mode != PUBLIC_VALIDATION_MODE) or mode in (SEEN_MODE, CONDITIONAL_SEEN_MODE)
+    return (mode in PUBLIC_MODES and mode != PUBLIC_VALIDATION_MODE) or mode in (SEEN_MODE, CONDITIONAL_SEEN_MODE, prefix_change.SEEN_MODE)
 
 
 def _geometry(mode: str, spec: Mapping, asset_root: Path) -> tuple[list, list, Path, tuple]:
@@ -295,7 +317,7 @@ def _geometry(mode: str, spec: Mapping, asset_root: Path) -> tuple[list, list, P
 
 
 def _wall(mode: str) -> dict:
-    wall = {"teacher_video_values_read": 0 if mode in PUBLIC_MODES else 144 if mode in (SEEN_MODE, CONDITIONAL_SEEN_MODE) else 400,
+    wall = {"teacher_video_values_read": 0 if mode in PUBLIC_MODES else 144 if _seen_geometry(mode) else 400,
             "teacher_runtime_reads": 0, "deployment_adapters": 1,
             "validation_test_gradients": False}
     if mode in PUBLIC_MODES:
@@ -406,7 +428,7 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
                            devices=execution_devices(device, devices),
                            frame_chunk=native_frame_chunk or spec["operator"]["frame_chunk"],
                            task_ids=tuple(row["global_task_id"] for row in tasks),
-                           role="train" if mode in (SEEN_MODE, CONDITIONAL_SEEN_MODE) else "validation",
+                           role="train" if _seen_geometry(mode) else "validation",
                            cpu_threads=cpu_threads)
     result = {**contract, "schema_version": bank.BANK_SCHEMA, "kind": bank.KIND, "status": "sealed",
               "asset_root": str(asset_root), "checkpoint_manifest": file_record(

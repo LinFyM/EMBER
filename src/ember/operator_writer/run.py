@@ -42,7 +42,7 @@ from .data import (CHECKPOINTS, CONTINUATION_CHECKPOINTS, CONTINUATION_UPDATES,
                    TASKS, UPDATES, FormalData)
 from .model import OperatorReadWrite
 from .native import read_native_video
-from . import change_clock, joint_training
+from . import change_clock, joint_training, prefix_change
 
 
 from .specification import (
@@ -86,6 +86,8 @@ def gather(value, world: int):
 def resume_contract_compatible(parent: dict, current: dict, *, allow_topology_change: bool = False) -> bool:
     """Only registered packing and explicit physical topology may change."""
     mutable = ("microbatch", "frame_chunk", "topology") if allow_topology_change else ("microbatch", "frame_chunk")
+    if parent.get("mode") == current.get("mode") == prefix_change.MODE:
+        mutable += ("parent_checkpoint",)
     if current.get("source_resume") is not None:
         if not joint_training.conditional_resume_compatible(parent, current):
             return False
@@ -102,6 +104,8 @@ def resume_contract_compatible(parent: dict, current: dict, *, allow_topology_ch
 def packing_compatible(parent: dict, current: dict) -> bool:
     frames = {(8, 8), (8, 4), (4, 4)}
     if joint_training.conditional_contract(parent) and joint_training.conditional_contract(current):
+        frames = {(old, new) for old in (4, 8, 16, 32) for new in (4, 8, 16, 32)}
+    if parent.get("mode") == current.get("mode") == prefix_change.MODE:
         frames = {(old, new) for old in (4, 8, 16, 32) for new in (4, 8, 16, 32)}
     return ((parent.get("microbatch"), current.get("microbatch")) in {
             (28, 28), (28, 14), (28, 7), (14, 14), (14, 7), (7, 7)}
@@ -305,29 +309,36 @@ class Runtime:
 
     def compile(self, condition: tuple, *, frame_chunk: int = 8,
                 retain_native: bool = False, capture_mechanism: bool = False,
-                target_executor=None) -> tuple[dict, dict | None]:
+                target_executor=None, capture_prefix_stats=False) -> tuple[dict, dict | None]:
         """Compose native/Writer reads without replacing the shared public base."""
         self.restore_identity()
         passes = []
         native_state = self.writer.public_state()
         with autocast(self.device):
             for _ in range(2 if self.writer.mode == "self_read" else 1):
-                x, h = read_native_video(self.policy, native_state, self.writer.probe,
-                                         condition, self.writer.names, frame_chunk=frame_chunk)
+                prefix = self.writer.mode == prefix_change.MODE
+                fields = read_native_video(self.policy, native_state, self.writer.probe,
+                    condition, self.writer.names, frame_chunk=frame_chunk,
+                    **({"prefix_change": True} if prefix else {}))
+                x, h = fields[:2]
+                dP = fields[2] if prefix else None
                 state = self.writer(x, h, frame_indices=condition[1],
                                     **({"capture_mechanism": True} if capture_mechanism else {}),
-                                    **({"target_executor": target_executor} if target_executor else {}))
+                                    **({"target_executor": target_executor} if target_executor else {}),
+                                    **({"prefix_change": dP, "capture_prefix_stats": capture_prefix_stats} if prefix else {}))
                 if retain_native or capture_mechanism:
-                    for value in (h, *x.values(), *state.values()):
+                    for value in (h, *x.values(), *state.values(), *((dP,) if prefix else ())):
                         if value.requires_grad:
                             value.retain_grad()
-                    passes.append({"x": x, "h": h, "state": state})
+                    passes.append({"x": x, "h": h, "state": state, **({"dP": dP} if prefix else {})})
                 # Only the next native read uses B0+M0; Writer keeps its original β.
                 native_state = state
         validate_lora_state(state, self.lora)
         native = ({"x": x, "h": h, "passes": passes} if retain_native or capture_mechanism else None)
         if capture_mechanism:
             native["mechanism"] = self.writer.last_mechanism
+        if capture_prefix_stats:
+            native = {"prefix_statistics": self.writer.last_prefix_statistics}
         return state, native
 
 
@@ -444,6 +455,8 @@ def prepare_train(spec: dict, args) -> Session:
                                                        CONTINUATION2790_UPDATES):
             contract["stop_after_macro"] = args.stop_after_macro
     joint_training.register_conditional_resume(spec, args, contract)
+    if args.mode == prefix_change.MODE and args.resume is not None:
+        contract["parent_checkpoint"] = str(args.resume.resolve())
     error = None
     try:
         if context.is_main:
@@ -639,7 +652,7 @@ def validate_train_request(spec: dict, args) -> None:
 
 
 def train(spec: dict, args) -> None:
-    if spec.get("task") not in (joint_training.CONDITIONAL_TASK, joint_training.CONDITIONAL_CONTINUATION_TASK, joint_training.support_diversity.TASK):
+    if spec.get("task") not in (joint_training.CONDITIONAL_TASK, joint_training.CONDITIONAL_CONTINUATION_TASK, joint_training.support_diversity.TASK, prefix_change.TASK):
         raise ValueError("retired operator training requires its recorded frozen runtime")
     validate_train_request(spec, args)
     session = prepare_train(spec, args)
@@ -730,7 +743,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("audit", "train"))
     parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--mode", choices=(joint_training.CONDITIONAL_MODE,))
+    parser.add_argument("--mode", choices=(joint_training.CONDITIONAL_MODE, prefix_change.MODE))
     parser.set_defaults(pilot_arm=None)
     parser.add_argument("--attempt", type=str)
     parser.add_argument("--resume", type=Path)

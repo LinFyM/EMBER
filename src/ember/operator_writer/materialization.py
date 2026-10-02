@@ -37,6 +37,7 @@ def register_partial(output, contract, previous_git):
 def write_condition(runtime, data, output, condition, shapes, *, mode, frame_chunk):
     from .bank import BANK_SCHEMA, _factor_header
     from .joint_readout import CONDITIONAL_MODES
+    from .prefix_change import passive_condition
 
     condition = dict(condition)
     path = output / f"{condition['condition_id']}.safetensors"
@@ -51,7 +52,9 @@ def write_condition(runtime, data, output, condition, shapes, *, mode, frame_chu
         while True:
             try:
                 with torch.no_grad():
-                    state, _ = runtime.compile(pixels, frame_chunk=frame_chunk)
+                    passive = passive_condition(condition, mode)
+                    state, native = runtime.compile(pixels, frame_chunk=frame_chunk,
+                        **({"capture_prefix_stats": True} if passive else {}))
                 break
             except torch.cuda.OutOfMemoryError:
                 if frame_chunk <= 8:
@@ -66,6 +69,11 @@ def write_condition(runtime, data, output, condition, shapes, *, mode, frame_chu
         temporary = path.with_suffix('.safetensors.tmp')
         save_file(factors, str(temporary), metadata=metadata)
         temporary.replace(path)
+        if passive:
+            torch.save({"condition": condition, "frame_indices": torch.as_tensor(pixels[1]).cpu(),
+                        "statistics": native["prefix_statistics"],
+                        "native_reads": 1, "additional_policy_forwards": 0},
+                       output / f"{condition['condition_id']}_prefix_statistics.pt")
     condition.update(factors=file_record(path), raw_frames=raw, sampled_frames=sampled)
     return condition, {'condition_id': condition['condition_id'], 'reused': reused,
                        'device': str(runtime.device), 'pid': os.getpid(),
@@ -80,10 +88,12 @@ class OperatorCompiler:
         from .run import PILOT_ARMS, build_runtime
         from .joint_readout import CONDITIONAL_SEEN_MODE
         from .joint_training import CONDITIONAL_MODE
+        from .prefix_change import MODE as PREFIX_MODE, SEEN_MODE as PREFIX_SEEN_MODE
 
         _configure_device(device, cpu_threads)
         runtime_mode = ('T' if config['mode'] in PILOT_ARMS else
                         'context' if config['mode'] == 'context_seen' else
+                        PREFIX_MODE if config['mode'] == PREFIX_SEEN_MODE else
                         CONDITIONAL_MODE if config['mode'] == CONDITIONAL_SEEN_MODE else config['mode'])
         self.runtime = build_runtime(asset_root, config['spec'], device, runtime_mode)
         self.asset_root, self.config, self.data, self.request = asset_root, config, None, None

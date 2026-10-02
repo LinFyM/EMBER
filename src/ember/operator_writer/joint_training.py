@@ -9,7 +9,7 @@ import torch
 
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import Pi05SourceTrainingError, read_json
-from . import support_diversity
+from . import support_diversity, prefix_change
 
 TASK = "operator_joint_public_fresh_20260930"
 ROOT = Path("/data1/user/ymdai/ember_runs") / TASK
@@ -84,7 +84,7 @@ CONDITIONAL_OPERATOR = {
         "credit": "complete_full_FM_same_version_cotangent_replay_no_detach",
     },
 }
-MODES = (MODE, CONTEXT_MODE, SELF_READ_MODE, CONDITIONAL_MODE)
+MODES = (MODE, CONTEXT_MODE, SELF_READ_MODE, CONDITIONAL_MODE, prefix_change.MODE)
 SELF_READ = {"native_reads": 2, "writer_parameter_sharing": "same_Context_module",
              "memory_initialization": "zero_each_read", "native_installation": "beta_then_beta_plus_M0",
              "writer_public_base": "original_beta_both_reads", "output": "beta_plus_M1_only",
@@ -106,10 +106,12 @@ CONTEXT = {
 
 
 def registered(spec: dict) -> bool:
-    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK, CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK)
+    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK, CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK, prefix_change.TASK)
 
 
 def settings(spec: dict) -> tuple[Path, str, dict]:
+    if spec.get("task") == prefix_change.TASK:
+        return prefix_change.ROOT, prefix_change.MODE, prefix_change.JOINT
     if spec.get("task") == support_diversity.TASK:
         return support_diversity.ROOT, CONDITIONAL_MODE, CONDITIONAL
     if spec.get("task") == TASK:
@@ -212,7 +214,7 @@ def expected_spec(base: dict, events: dict) -> dict:
 def validate_request(spec: dict, args) -> None:
     _, mode, joint = settings(spec)
     continuation = spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK)
-    frames = (4, 8, 16, 32) if mode == CONDITIONAL_MODE else (8, 4)
+    frames = (4, 8, 16, 32) if mode in (CONDITIONAL_MODE, prefix_change.MODE) else (8, 4)
     checkpoints = (support_diversity.CHECKPOINTS if spec["task"] == support_diversity.TASK else
                    CONTEXT_CONTINUATION_CHECKPOINTS if continuation else CHECKPOINTS)
     bad_resume = (args.resume is None or args.attempt == "fresh") if continuation else (
@@ -429,6 +431,8 @@ def inspect_source(spec: dict, checkpoint: Path, *, _fixed_c12_630: bool = False
     macro = int(checkpoint.name.removeprefix("macro_"))
     target = 630 if diversity else 900 if continuation else 450
     allowed = (630,) if diversity else (630, 810, 900) if _fixed_c12_630 else (810, 900) if continuation else (450,)
+    if mode == prefix_change.MODE:
+        target, allowed = macro, (270, 450)
     if _fixed_c12_630 and checkpoint != support_diversity.C12_CHECKPOINT.resolve():
         raise ValueError("C12 diagnostic source must be its pre-fixed630")
     if (output.parent.resolve() != (root / mode / "train/attempts").resolve()
@@ -461,7 +465,7 @@ def inspect_source(spec: dict, checkpoint: Path, *, _fixed_c12_630: bool = False
              (trainer.get("sampler_state"), {**expected_sampler, "next_step": macro}))
     terminal = _completed_metrics_source(root, mode, checkpoint, target) if continuation else output
     metrics = [json.loads(line) for line in (terminal / "metrics.jsonl").read_text().splitlines()]
-    completion = read_json(terminal / "completion.json")
+    completion = read_json(terminal / ("stopped_at_ecp.json" if mode == prefix_change.MODE and macro == 270 else "completion.json"))
     if mode == CONDITIONAL_MODE and run.get("source_resume") is not None:
         parent_checkpoint = Path(run["parent_checkpoint"])
         parent_run = read_json(parent_checkpoint.parent.parent / "run_contract.json")
@@ -487,7 +491,7 @@ def inspect_source(spec: dict, checkpoint: Path, *, _fixed_c12_630: bool = False
 def valid_metrics(metrics: list, *, mode: str = MODE, updates: int = 450) -> bool:
     if len(metrics) != updates or [row["update"] for row in metrics] != list(range(1, updates + 1)):
         return False
-    loss = CONDITIONAL["loss_variant"] if mode == CONDITIONAL_MODE else LOSS
+    loss = "full" if mode in (CONDITIONAL_MODE, prefix_change.MODE) else LOSS
     for row in metrics:
         if (row.get("mode") != mode or row.get("loss_variant") != loss
                 or row.get("queries") != 112 or len(row.get("jobs", ())) != 4):

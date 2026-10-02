@@ -20,6 +20,9 @@ main已核对原C450/C900/MT300全144行与当前scope，确认原scene/RNG/固�
 正式fresh450已完成、PID/PGID1843944退出0：gpu02四卡/world4/micro28/frame32、clean pushed detached2c630fb3940c16365ac9a9a672b1f632e8d31e51（root/frozen_run）。全部状态fresh，无profile/P/F权重；0/90/180/270/360/450六完整ECP及Gamma/全部76 U权重、optimizer/scheduler/sampler/rank RNG已CPU实际读回。50400主query、55858合法aux区间/279290位置准确，辅助每condition一次、Gamma-only与same-version记录齐备。
 正式消费者含加载/保存/退出7465.552秒、8.295057918GPUh，平均完整更新16.408秒、reserved峰41.296875GiB；加载/profile/失败/cache等本批累计9.691814519GPUh。未读中间分数，无选择或自动续训。
 450读回实际已启动：400物化PID2356778用gpu02:0/1/2/3，144物化PID2358187用gpu02:6，A28 PID2359958用gpu02:7；三份准入/精确request在root launch，NoGrad真实native framechunk128、各resident一次source加载。双节点本用户0→6卡/总上限6与strg01 data1现场检查通过，root当前26.647GiB<80。seen使用原scope/scene/RNG，已就绪评测及时接续；全部消费者仍仅450，当前仍持写入窗口，main只读。
+三读出均已exit0：400/144完整38-target bank sealed，A28为8 full/4 public FM及8被动条件，实际源码均2c630fb3；累计10.104028164GPUh。CPU原件功能读回12/8完整、全部399个不利项保留，没有新增预测。
+首次correct400 CPU prepare因请求漏传既有LIBERO assets路径exit1（2.029秒、0GPUh），未启动模型/环境；只修启动环境引用原data1资产，不改源码、原件或科学范围。失败回执保留，重prepare与seen prepare均exit0。
+固定544行现已实际启动：correct400 PID2427254用gpu02:0/1/2/3，seen144 PID2430407用gpu02:6/7；各卡3 persistent replicas/cost-balanced long-first，双节点现场本用户0→6卡、data1 quota/shared准入通过。相对历史5+1约729/1534秒，按真实负载分4+2提高整批吞吐；无额外smoke，原task/state/video/scene/RNG准备配对检查通过。当前root47.933GiB、保守峰72.06<80；一次持续等待各消费者退出，无自Queue或中间选点，窗口仍由实验session独占。
 下方§105“没有新训练”属于其科学消费完成时点，不覆盖这个新登记；旧获取批次仍已完成，不恢复其运行。
 
 main已完成本批源码与全部176份实际预测的科学消费，见机制§105/findings§284。

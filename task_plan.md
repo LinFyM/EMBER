@@ -2,7 +2,7 @@
 
 ## 科学目标与当前批次
 
-唯一fresh450已完成、exit0/六完整ECP/50400主query/55858aux区间，实际2c630fb3；训练8.295057918GPUh、本批累计9.691814519GPUh。450 correct400/seen144物化及原A28已在gpu02六张卡并行启动，固定544环境读回待各bank就绪及时接续，无旧批恢复/中间选点。Seen仍为原scope/scene/RNG；main只读，窗口仍由实验session独占直到整批交付。
+唯一fresh450已完成、exit0/六完整ECP/50400主query/55858aux区间，实际2c630fb3；训练8.295057918GPUh、两完整bank/A28均exit0后累计10.104028164GPUh。correct400与seen144已按4+2卡/每卡3 persistent replicas启动，严格544行/44 full，原task/state/video/scene/RNG准备配对通过。首次CPU prepare的asset环境漏传失败已修正保留、0GPUh；没有新源码或科学变更。Seen仍为原scope/scene/RNG，完整闭环和费用读回待消费者退出；main只读，窗口仍由实验session独占直到整批交付。
 
 
 当前唯一新合同为[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)，机制§106/findings§285说明取舍。

@@ -217,7 +217,7 @@ def validate_request(spec: dict, args) -> None:
     _, mode, joint = settings(spec)
     if mode == control_calibration.MODE:
         if (args.mode != mode or args.microbatch not in (7, 14, 28)
-                or args.frame_chunk not in (4, 8, 16, 32, 64, 128)
+                or not 4 <= args.frame_chunk <= 128
                 or not args.attempt or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", args.attempt) is None
                 or args.stop_after_macro not in (None, 90, 180, 270, 360)
                 or (args.resume is None) != (args.attempt == "fresh")):

@@ -16,7 +16,9 @@ main已核对原C450/C900/MT300全144行与当前scope，确认原scene/RNG/固�
 四cache实际exit0，2200视频/73642帧全部齐备（新增67442帧、复用6200），14.064GiB，含加载/写入/退出累计1.119620866GPUh。
 原初始packing记录部分尾块不足256，不能声称它证明256更快；实际两worker峰40.42/41.08GiB、另两24.39GiB。
 已窄修profile跨实际task帧组收齐完整候选、只计完整batch，CPU实际消费检查保持963帧各一次，无新Source forward、旧原件未改。
-第一个正式语义profile已完成：原macro85完整4task/105最长帧/28query，world4/micro28/frame32更新33.097秒、reserved峰39.289GiB、exit0，含加载等.071058727GPUh；丢弃全部profile状态。第二个world6/frame32实际已启动，仍比较同一注册完整更新；formal450尚未启动。
+三个有界profile已结束：同macro85/105帧/28query，world4/frame32为33.097秒、峰39.289GiB；world6/frame32为32.652秒、只快1.36%，50%更多卡无充分持续吞吐收益。world4/frame40在native反传OOM（物理占用44.06GiB、余155MiB），exit1与.093356145GPUh保留，非科学阴性，无第4次profile。
+正式fresh450已实际启动：PID/PGID1843944、gpu02:0/1/2/3、world4/micro28/frame32，clean pushed detached2c630fb3940c16365ac9a9a672b1f632e8d31e51（root/frozen_run）。全部模块/optimizer/scheduler/RNG全fresh，不加载任何profile/P/F状态。加载前累计1.396756600GPUh；单消费者5小时硬界最多20GPUh，余10.603GPUh仍保留给固定读回/退出。双节点本用户0→4卡及strg01 quota/shared现场准入通过。
+训练持续等子进程退出、不定时读日志/节点分数、不自Queue；0/90/180/270/360/450完整ECP，仅450科学读回。当前仍持canonical tracked/Git窗口；main只读，等待唯一整批可靠回报。
 下方§105“没有新训练”属于其科学消费完成时点，不覆盖这个新登记；旧获取批次仍已完成，不恢复其运行。
 
 main已完成本批源码与全部176份实际预测的科学消费，见机制§105/findings§284。

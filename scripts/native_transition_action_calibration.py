@@ -232,7 +232,7 @@ def main(resume):
     if identity['branch'] or identity['dirty_paths'] or not git_state_is_clean_pushed_or_frozen_authority(identity):
         raise ValueError('calculation requires clean pushed detached source')
     if (ROOT/'GPU_completion.json').exists():raise ValueError('already completed; no automatic repeat')
-    bind_current_process_to_cuda_numa();torch.set_num_threads(6);torch.set_float32_matmul_precision('high')
+    bind_current_process_to_cuda_numa(0);torch.set_num_threads(6);torch.set_float32_matmul_precision('high')
     records=read_json(ROOT/'analysis/metadata.json')['records'];native=materialize(records)
     values,lookup,H,mu,y=cached(records);events=sample_events(records)
     if (ROOT/'events.npy').exists():

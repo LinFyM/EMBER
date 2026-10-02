@@ -26,6 +26,8 @@ CPU四项检查与实际入口导入通过，涵盖同seed7零残差、P包含F�
 启动前双节点现场本用户0→1卡、合计上限6；所选卡只有他人148MiB且util0的context，45908MiB余量可共驻，未改变他人进程。
 strg01 data1实占约1.140TB/2TiB quota、个人余量986.738GiB、共享89.086TB；当前root约.510GiB，预计新增峰2.284/8GiB。
 一次source加载后两臂共用H/mu；真实64/128帧与每臂160区间profile计费并恢复初值/RNG，正常执行只持续等退出，不自Queue。
+首21b4消费者在native/标签/更新前因NUMA绑定缺少device参数退出1，计15.510GPU秒（.004308GPUh）；失败frozen/log/ledger保留。
+已核原NUMA owner接口并修正为可见设备0，实际调用签名及source元数据消费者CPU检查后新push/freeze继续；非科学阴性，无新增数据/模型/矩阵。
 下方§103的“停止/无active计算/下一判断”保留其收束时点，不恢复旧批次，也不覆盖上述新登记。
 最新主讨论已完成自身功能信用的原件消费及机制§103/findings§282：128条continuous、24真实双RGB和32功能PT直接读回。
 live/stop学生20/24、Reader19/23，live相对stop R18/G2/L6，新增query信用没有净控制收益；辅助头也未建立强功能教师。

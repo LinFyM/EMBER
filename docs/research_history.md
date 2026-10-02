@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：撤回缺乏失败机制依据的prefix变化训练，记录不得重犯的决策错误
+
+Owner指出“具体task失败→方法缺陷证据→干预改变失败预测”的联系缺失，并要求理论不足时先做分析实验补证据。
+主讨论承认将计算/梯度可行性误作选型依据、把有界检验误解为可以跳过机制辨识；block17选取也仅有启发。
+[原设计](designs/native_prefix_change_value_design.md)保留并标记撤回；长期禁止事项写入[Owner要求](current_owner_requirements.md)，
+完整错误解释见findings§276。下方当时的“数学先行后登记”记录不代表其方法选择已经得到充分论证。
+
+正式训练止于已登记71步，无完整checkpoint，无新增物化/held native/闭环，原定944行及后继全部取消。
+累计1.452021841GPUh，设备释放，代码、profile、日志和停止/费用原件保留；这是科学投入决定的撤回，非性能阴性或工程失败。
+实现/训练ab8d2c7e、运行收束863eef2b；原件在`/data1/user/ymdai/ember_runs/native_prefix_change_value_20261002`，
+实际退出与授权状态见progress。本次纠错不恢复任何历史计算，也不把补证据变成必须先保证成功或逐项审批的新规则。
+
 ## 2026-10-02：数学先行后登记同一动作query读取prefix变化的Value学习
 
 主讨论在消费冻结重表达结果后完成[完整推导及新合同](designs/native_prefix_change_value_design.md)，见findings§275。

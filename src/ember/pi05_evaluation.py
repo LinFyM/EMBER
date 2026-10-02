@@ -192,12 +192,24 @@ def rollout_shard(
     preprocess: Any,
     postprocess: Any,
     task_adapter: Any | None = None,
+    episode_contexts: Sequence[Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     from ember.pi05_eval.run_contract import require_supported_runtime
 
     require_supported_runtime(contract)
     validate_exploration_contract(contract, task=task, state_ids=state_ids)
-    if not state_ids or len(set(state_ids)) != len(state_ids):
+    if episode_contexts is not None:
+        matrix = contract.get("frozen_lora_cases", {})
+        case_ids = [context["evidence"]["case_id"] for context in episode_contexts]
+        if (matrix.get("study") != "task32_learned_operator_groups_20261002"
+                or case_ids != matrix.get("case_ids") or len(set(case_ids)) != 16
+                or len(episode_contexts) != len(state_ids) or task_adapter is None
+                or any(context["evidence"]["init_state_id"] != state
+                       or any(context["contract"][key] != contract[key]
+                              for key in ("policy", "environment", "rng", "operator_read_write_scene"))
+                       for context, state in zip(episode_contexts, state_ids, strict=True))):
+            raise Pi05EvaluationError("frozen LoRA case pairing changed")
+    elif not state_ids or len(set(state_ids)) != len(state_ids):
         raise Pi05EvaluationError("evaluation shard state IDs are empty or duplicated")
     dummy = np.asarray(contract["environment"]["dummy_action"], dtype=np.float32)
     max_steps = int(task["horizon"])
@@ -207,21 +219,28 @@ def rollout_shard(
     rows: list[dict[str, Any]] = []
     occupancy_capture = contract.get("diagnostic_occupancy_capture")
 
-    def start_slot(env: Any, state_id: int) -> dict[str, Any]:
+    def start_slot(env: Any, case_index: int) -> dict[str, Any]:
+        state_id = int(state_ids[case_index])
+        context = episode_contexts[case_index] if episode_contexts is not None else None
+        episode_contract = context["contract"] if context else contract
         slot = start_fixed_episode(
             env=env, init_state_id=int(state_id), init_states=init_states,
-            task=task, contract=contract, root_seed=root_seed, dummy=dummy,
-            task_adapter=task_adapter,
-            capture_level=capture_level(occupancy_capture, task, int(state_id)),
+            task=task, contract=episode_contract, root_seed=root_seed, dummy=dummy,
+            task_adapter=None if context else task_adapter,
+            capture_level=capture_level(episode_contract.get("diagnostic_occupancy_capture"), task, state_id),
         )
+        if context:
+            slot["episode_adapter"] = context["prepared_adapter"]
+            slot["frozen_lora_case"] = dict(context["evidence"])
+            slot["episode_contract"] = episode_contract
         return slot
 
     active_count = min(len(envs), len(state_ids))
     active_envs = envs[:active_count]
     next_state = active_count
     slots: list[dict[str, Any] | None] = [
-        start_slot(env, int(state_id))
-        for env, state_id in zip(active_envs, state_ids[:active_count], strict=True)
+        start_slot(env, index)
+        for index, env in enumerate(active_envs)
     ]
     policy.reset()
     while any(slot is not None for slot in slots):
@@ -253,12 +272,18 @@ def rollout_shard(
             if not bool(done) and slot["steps"] < max_steps:
                 continue
             slot["episode_done"] = bool(done)
-            rows.append(finish_episode_row(
-                slot=slot, task=task, contract=contract,
+            row = finish_episode_row(
+                slot=slot, task=task, contract=slot.get("episode_contract", contract),
                 task_adapter=task_adapter, worker_started=worker_started,
-            ))
+            )
+            if episode_contexts is not None:
+                row["frozen_lora_case"] = slot["frozen_lora_case"]
+                from ember.pi05_source_checkpoint import write_json_atomic
+
+                write_json_atomic(Path(slot["episode_contract"]["output_dir"]) / "row.json", row)
+            rows.append(row)
             if next_state < len(state_ids):
-                slots[slot_index] = start_slot(env, int(state_ids[next_state]))
+                slots[slot_index] = start_slot(env, next_state)
                 next_state += 1
             else:
                 slots[slot_index] = None

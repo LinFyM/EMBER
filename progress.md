@@ -9,6 +9,11 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。
 仅旧D17/S43的Q/非Q学习增量、两teacher×两臂×四init共16新行，复用原parent/完整学习行。
 预算1完整GPUh/4GiB，预计含工程30–60分钟；尚不预报运行结果，实际派发与运行由下方记录接续。
+实验session（01a0fabb-f7a0-7100-93d8-6a0f66055553）已实际接手canonical tracked/Git窗口，
+从clean pushed c17d4c80创建独占codex/task32-learned-operator-groups worktree；main只读。
+当前实现完整B直接选择与canonical异构LoRA批量消费者接入，尚未启动GPU；拟一次source加载、16合法case最大packing。
+data1现场XFS个人实占1.0T、quota2T/limit2.0T，共享82T；新增峰值预计2.5GiB、硬限4GiB。
+本批专用入口/重复init案例接入将在原件交付后退役，Git与实际冻结源码保留。
 Owner最新明确：MT只是参照，EMBER应大幅超过MT；不能用MT同样失败降低EMBER自身失败案例的研究优先级。
 主讨论此前据错误筛选标准提出的两条MT补测，在派发前撤销，0新增GPU/环境、无新run root或实现。
 保留已有MT比较作为能力证据，继续从EMBER自身的绝对不足及已知可学改进解释教学—算子—自身控制，不要求参照先成功。

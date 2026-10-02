@@ -18,7 +18,7 @@ main现已完成机制§100/findings§279：全部16份continuous与四份RGB直
 已登记唯一后继[已学修正的视频来源诊断](docs/designs/task32_learned_video_segment_diagnostic.md)：
 同S64的两teacher、实际炉面变红边界80/95、全部38处共同分解E/L学习增量，共16新行/4 full、复用16参照。
 若后段来源保留放置同时损害开炉，支持该有限调用解释；若早段/联合或分布混合，按合同修订并关闭相应阶段局部化理由。
-无新学习/标签/held，35–75分钟、1GPUh/4GiB；不自动扫切点或重训，实际派发与写入窗口见progress。
+无新学习/标签/held，35–75分钟、1GPUh/4GiB；主讨论已派发，实验session独占工程/Git窗口并实施；不自动扫切点或重训，实际状态见progress。
 最近[task32状态/冻结LoRA交叉续行诊断](docs/designs/task32_state_policy_crossover_diagnostic.md)已完成，
 主讨论直接消费原件并完成机制§98/findings§277，把具体行为、实际native/S/M读写、自身调用和真实FM信用联系起来。
 同query两teacher风险分解表明离线共同误差占主导，四格则显示局部后段控制可用与到达/及时纠正不足可以同时存在。

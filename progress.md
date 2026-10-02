@@ -12,7 +12,9 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 它辨识S43放壶收益与开炉损害的实际视频来源；若不能按此事件定位，不继续切点/层位扫描或自动开训练。
 预计35–75分钟含工程，硬限1完整GPUh/4GiB，预计新增峰值3GiB；唯一root为
 `/data1/user/ymdai/ember_runs/task32_learned_video_segment_20261002/`。
-当前合同已登记待实际派发，canonical tracked/Git仍由main持有；派发成功后移交唯一实验session独占，main只读。
+主讨论已实际派发，实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553于2026-10-02接手canonical tracked/Git窗口；main只读。
+从clean pushed a2c39b5a创建独占codex/task32-learned-video-segment worktree，当前正在实现并针对性验证；尚未启动GPU。
+现场strg01 data1个人实占1,133,354,270,720 bytes、soft quota2TiB，共享余量89.10TB；预计新增峰3/4GiB，旧资产只读。
 
 当前处于完整学习机制的统合分析，没有active训练；最近完成的冻结分析为
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。

@@ -22,6 +22,10 @@ CPU四项检查与实际入口导入通过，涵盖同seed7零残差、P包含F�
 结构guard无新增hard违约；native分块/缓存接入复杂度和已有peer数为review信号，本任务有界使用并在500读回后退役全部三份临时源码。
 启动前再次live核两节点与data1；将用既有合法帧比较64/128、每臂全部160区间比较双臂打包/顺序，profile后恢复fresh初始化/RNG。
 当前实施/CPU验证已完成，待集成push及clean detached冻结；尚无本批GPU计算。
+实现现已集成push，实际消费者为clean detached21b4d22b，PID1217776在gpu02:7启动同一次native/cache/双臂500/固定读回。
+启动前双节点现场本用户0→1卡、合计上限6；所选卡只有他人148MiB且util0的context，45908MiB余量可共驻，未改变他人进程。
+strg01 data1实占约1.140TB/2TiB quota、个人余量986.738GiB、共享89.086TB；当前root约.510GiB，预计新增峰2.284/8GiB。
+一次source加载后两臂共用H/mu；真实64/128帧与每臂160区间profile计费并恢复初值/RNG，正常执行只持续等退出，不自Queue。
 下方§103的“停止/无active计算/下一判断”保留其收束时点，不恢复旧批次，也不覆盖上述新登记。
 最新主讨论已完成自身功能信用的原件消费及机制§103/findings§282：128条continuous、24真实双RGB和32功能PT直接读回。
 live/stop学生20/24、Reader19/23，live相对stop R18/G2/L6，新增query信用没有净控制收益；辅助头也未建立强功能教师。

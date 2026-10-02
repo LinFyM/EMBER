@@ -2,6 +2,25 @@
 
 ## 当前授权与活动批次
 
+2026-10-03唯一native_transition_action_calibration_20261003批次已完成：176/176视频、6,200真实采样帧、5,882合法offset1五步区间。
+P/F各fresh500及80,000区间曝光，0/250/500完整恢复点、全部mu/F/P预测/标签/索引/mask及CPU实际读回齐备；无Writer/LoRA/环境/官方Val/Test。
+内部留task[0,12,20,32]无gamma梯度；等task all7为mu .132368525、F .142491026、P .114196534，4/4 task相对F改善，预注册获取预测通过。
+fit20新episode为mu .119912357、F .072951705、P .060660000，20/20 task相对F改善；训练池为.122514996/.062229756/.049934530。
+不利项完整保留：task32全部demo42–45的P劣于mu；内部整体rotation3 P−F=+.003823469，task12 motion6/rotation3及task20 gripper劣于F。
+fit20新episode整体rotation3 P−F=+.000554396，4/80视频P劣于F；训练池2/80视频亦劣于F，未由task平均抹去。
+内部P−F任务cluster描述95%[-.042266626,-.019228437]，P−mu[-.036102539,+.007058999]跨0（20,000、seed20261003）；四task不建立广泛迁移或LoRA有效性结论。
+实际native/学习/固定预测clean pushed detached a4da650a4e1a00a2d4322569339fbf4bce4d5be4；裸aligned Source1000原训练b8ea00e9fbb86742ef076bac9dd35c5314cd5aed，只读复用。
+一次source加载、共同H/mu缓存；合法帧64/128实测后选128，约21frame/s，native reserved峰25.078GiB，未显示相对暖64的稳定显著提速。
+两gamma每臂全部160查询打包320，正式500平均.017647秒/更新、学习reserved峰1.918GiB；不增加逻辑样本或跨更新合批填显存。
+累计.134531061782/3完整GPUh，含首NUMA接口失败15.510秒、加载/profile/训练/物化/退出；最终GPU及CPUexit0，双节点本用户GPU进程0、两个consumer PID均消失。
+root阶段实占2.051GiB、保守新增峰2.3/8GiB；data1个人约1.141TB/2TiB quota、共享89.082TB；全部新增写data1，未复制大source/dataset。
+任务专用入口/模型/测试三份tracked源码已退役，未改共享运行面；原失败frozen21b4d22b及实际frozen a4da650a/Git/全部科学原件保留。
+primary root `/data1/user/ymdai/ember_runs/native_transition_action_calibration_20261003/`：completion.json、GPU_completion.json、analysis/readback.json/videos.json/intervals.jsonl/adverse_intervals.jsonl/task_scores.csv/task_cluster_intervals.json/checkpoint_readback.json、launch/gpu_ledger.json/gpu_release.json。
+本交付commit推送及唯一整批回报后canonical tracked/Git窗口交回main，实验session停止本项；没有自动后继、选点/延长、Writer/fresh/环境/held/controls/Test/RL许可。
+Owner持续自主推进；主讨论消费本获取原件后负责理论解释与下一科学取舍，完整EMBER目标尚未完成。
+
+### 本批登记及实际实施过程（以下“正在/尚未”仅指历史时点）
+
 Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，不对分析设置时间限制；本项覆盖当日上午分析后暂停的要求。
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。

@@ -3,6 +3,27 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：原生可见转移动作校准，固定500执行与完整读回交付
+
+[固定合同](designs/native_transition_action_calibration_diagnostic.md)已执行；只学习裸aligned Source1000之上的两份fresh gamma，同函数/初值/事件流只改变第二memory到达H或出发H。
+176条已有train视频/6,200真实采样帧/5,882完整offset1五步区间，142短真实末段不产生标签；H保留全50位置，mu来自同次固定probe1729/tau1的真实Source velocity。
+fit20 demo16–19各500/80,000曝光，四内部留task[0,12,20,32]无gamma梯度；统一demo42–45一次完整读回，动作仅作source-normalized输出标签。
+内部留task等权mu/F/P all7为.132368525/.142491026/.114196534，4/4 task与16/16视频P优于F；仅本获取判据通过，不说明一次LoRA控制有效。
+fit20新episode为.119912357/.072951705/.060660000，20/20 task P优于F但4/80视频恶化；训练池.122514996/.062229756/.049934530且2/80视频P劣于F。
+内部task32四demo42–45的P均劣于裸mu：task等权P .131320095、mu .111505513；全部不利视频及每个动作区间保留。
+内部motion6 mu/F/P=.127402235/.130944655/.114596144，gripper=.162166267/.211769252/.111798879，符号正确率.943583198/.936053900/.967269470。
+内部rotation3 P−F=+.003823469；task12 motion6与rotation3、task20 gripper不利，fit20新episode整体rotation3亦+.000554396。
+20,000次seed20261003任务cluster描述区间：内部P−F all7[-.042266626,-.019228437]、P−mu[-.036102539,+.007058999]跨0；四task不能作为确定广泛迁移结论。
+实际native/学习/预测clean pushed detached a4da650a4e1a00a2d4322569339fbf4bce4d5be4；原Source1000训练b8ea00e9fbb86742ef076bac9dd35c5314cd5aed及源checkpoint/normalization身份分列。
+一次source加载、共享缓存；真实frame64/128后选128约21frame/s，reserved峰25.078GiB；128与暖64接近，不冒称稳定显著加速。
+Gamma每臂全部160查询，两臂打包320，500更新平均.017647秒、学习reserved峰1.918GiB；顺序profile含冷启动，不声称21倍稳态提速，未增样本填显存。
+首21b4d22b消费者在native/标签/更新前因NUMA调用缺参数退出1，失败frozen/log/15.510GPU秒保留；按既有owner修复、source/NUMA CPU接口通过后重新push/freeze运行。
+最终GPU及CPUexit0，0/250/500完整gamma/optimizer/scheduler/sampler/RNG/topology/schema读回通过；500optimizer/scheduler/cursor均500。
+累计含失败/加载/profile/所有消费者退出.134531061782/3GPUh，root阶段实占2.051GiB、保守峰2.3/8GiB；双节点本用户GPU进程0、两consumer PID消失，data1个人/shared容量通过。
+三份专用tracked入口/模型/测试退役，零共享hook改变；Git/失败frozen/实际frozen/原件保留，canonical运行面未新增第二Writer。
+primary root `/data1/user/ymdai/ember_runs/native_transition_action_calibration_20261003/`：completion.json、GPU_completion.json、native/*.pt、predictions/*.pt、checkpoints/update000/250/500、analysis/readback.json/videos.json/intervals.jsonl/adverse_intervals.jsonl/task_scores.csv/task_cluster_intervals.json/checkpoint_readback.json/report.md、launch/gpu_ledger.json/gpu_release.json。
+以上为执行事实；主讨论消费原件后负责机制取舍。交付Git/push及唯一整批回报后交回canonical窗口并停止，没有自动LoRA/Writer、环境、蒸馏、选点/续训、held/Test或新数据计算。
+
 ## 2026-10-03：继续推导可见转移的控制含义，登记原生动作校准辨识
 
 机制§104/findings§283区分条件信息、有限学习与一次参数编译：到达画面可以降低动作条件均值的最优风险，

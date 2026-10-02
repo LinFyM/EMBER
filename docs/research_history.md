@@ -3,6 +3,28 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：条件读写900获取与迁移分离，登记固定目标曝光的支持分布检验
+
+[§14](designs/conditional_read_write_architecture.md#14-固定图的第二轮教学覆盖与相邻保持2026-10-02)已完成：
+900为140/400，task3/6/11/16/23/26/31/39依次32/7/45/1/1/41/13/0；相对450 R107/G33/L30，仅净+3。
+seen115/144，target45→70/96、support46→45/48；同池更多学习确有获取，却没有形成held优势，810未触发。
+task31旧24仅保留8，丢失16含实际milk替代cream、第一目标丢失、第二获取/放置失败；单子目标不能拼成双目标资格。
+新本批12.464601GPUh，旧19.273293单列，合计31.737894；训练/读取85919994、root
+`/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002`，completion/readback及完整原件保留。
+
+[机制§95](analyses/feature_to_operator_mechanism_20260926.md#95-条件读写900训练侧获取明显跨任务调用与保持没有随之建立2026-10-02)、
+[派生证据](analyses/conditional_read_write900_evidence_20261002.json)及findings§270保存完整分析。
+固定A28完整风险明显改善；八条TRAIN native CPU真实输出读回七条稍有改善，不支持它们整体失去动作响应，
+也不证明held语义充分或必要视频增量。未新增模型/环境前向、梯度或GPU分析。
+完整metadata纠正train37/held31是SCENE1/SCENE2；剩余source59有新selector/scene/relation映射，
+但全source71没有basket或In-microwave目标。旧meta扩展、同池混合、受控关系桥及监督消费者正负证据均继承；
+旧24→36同时换split和时钟，不能作为支持12的单独因果估计。
+
+据此登记[§15](designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)：
+同父450，仅新训支持71分支180更新；target24曝光/权重保持，复用已存原630同龄对照。
+两个固定630各correct400＋原seen144＋A28/native，12GPUh/64GiB、预计2–4小时；这是有界数据学习检验，
+不恢复原路线选点，不自动延长或开完整fresh。实际承接与运行只看progress。
+
 ## 2026-10-02：条件读写450整批、原件机制分析及固定图后继
 
 [条件读写§13](designs/conditional_read_write_architecture.md#13-首批实施与完整学习检验2026-10-01授权)

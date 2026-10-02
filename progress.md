@@ -2,28 +2,44 @@
 
 ## 当前授权与最近完成批次
 
-Owner原有自主推进授权持续。主讨论已核完整450原件、行为/算子和相关监督历史，
-登记唯一active [条件读写设计§14](docs/designs/conditional_read_write_architecture.md#14-固定图的第二轮教学覆盖与相邻保持2026-10-02)。
-从完整450固定图接续到900，不改c/d、S/M、完整FM、36task、source1000、normalization或信息墙。
-新增50,400 full query；900完整validation400、seen144和固定A28；仅900超过MT153才补810相邻paired400，不能倒选峰值。
-新批硬限20GPUh/64GiB、先验3–5小时；root为`/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002`。
-原实验session已完成§14实施和整批验收：900完整validation140/400、seen115/144；
-相比自身450137仅净增3，仍低于T900148、Context900151、MT153，810分支未触发，bank/eval/marker均未创建。
-完整544条环境原行/goal/连续trace/action/RNG、固定A28十二预测和八条被动native记录齐备，missing/invalid均为空。
-真实新增12.464600929159463GPUh/20；存储观察高水位35.598759GiB，阶段du保守上界60/64GiB，非连续精确峰值。
-原件为新root `completion.json`、`analysis/readback.json`及`analysis/final_report.txt`。
-本批新增计算已停止，两节点现场确认无项目GPU context；canonical tracked/Git写入窗口释放。
-科学后继由主讨论消费完整原件裁决，没有源码QA或再次启动许可的等待。
-若没有完整优势/相邻保持，停止同池续训路径，无自动1350/2340、小扫、controls/Test/RL。
-详细解释与原件在机制§94、findings§269和`docs/analyses/conditional_read_write450_evidence_20261002.json`。
+Owner原有自主推进授权持续。主讨论已完成900原件、行为、native实际动作读出及数据/历史分析，
+登记唯一active [条件读写设计§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)。
+当前问题是已见能力获取未转成跨任务调用与保持；数据支持不足仍为待检验解释，不是已经定位的唯一根因。
+完整解释见机制§95、findings§270和`docs/analyses/conditional_read_write900_evidence_20261002.json`。
 
-已完成§13为fresh450、完整137/400、seen91/144及A28，19.273293GPUh；全部计算已结束，原40GPUh合同及完成记录不改写。
+§15从真实450父点训练唯一D71分支180更新到630，保持target24的原事件/次数/权重，仅将support12分布替换为审计source71。
+复用既存C12_630为同父同龄对照，不重训control；两个固定630各读correct400、原seen144、A28及8条被动native。
+新增20,160个完整query中13,440个target query保持、6,720个support query改变分布；每source task只有3/4个teacher条件。
+这是有界学习诊断，不是95task fresh或selected资格，不恢复原同池路线选点。
+唯一新root为`/data1/user/ymdai/ember_runs/conditional_support_diversity_pilot_20261002`；新增硬限12GPUh/64GiB，预计2–4小时。
+科学合同已登记，具体派发后由原实验session实施、冻结和运行；本次文档提交不声称GPU已经启动。
+540只供新分支恢复，630读出完成即停；没有自动D71→900、完整fresh、其它checkpoint/controls/Test/RL或小扫。
+
+已完成§14为900 validation140/400、seen115/144（target70/96、support45/48），held相对450仅+3，task31丢失16条旧成功。
+810分支未触发；全部544环境原行及A28/native验收，新增12.464601GPUh。观察存储35.598759GiB、保守60/64GiB。
+已完成§13为fresh450、validation137/400、seen91/144，19.273293GPUh；两批合计31.737894GPUh，全部计算已结束。
+两个原合同、完成记录及训练/读取身份均保持；§14同池继续学习的科学预测未通过，不因§15读取C12_630而反选旧峰值。
 
 唯一实验执行者`01a0f018-69af-7b00-b614-7e117540051b`负责代码、测试、排障、资源调度、Git及冻结运行。
 主讨论`01a0ed66-cda4-7a23-90f0-e0d3a06a1d36`负责科学合同、原件解释、机制及后继/预算裁决。
 既有自主授权持续生效，不恢复旧暂停段落，不等待主讨论工程复审。
 沟通边界按[Owner要求§6](docs/current_owner_requirements.md#6-沟通与交接)：整批科学结果或确需裁决的实质边界只回报一次；
 工程阶段、可自行修复的故障和普通调度记入已有记录。写入/Git窗口与实际冲突方直接串行协调。
+
+## §15科学登记与交付范围（2026-10-02）
+
+同父450、模型/full-only/Adam/绝对LR保持；target24沿451…630全部480条件，support240个slot改为71task。
+固定permutation seed `[20260928,15,cycle]`，task次数3/4分别以80/71、60/71校正，使target/support总权重仍480/240。
+其余59source任务对当前Writer是新映射，对source policy不是；完整19个target40等价排除项不恢复。
+source71不存在任何basket或In-microwave目标，不能把扩分布写成直接补齐held16/39。
+metadata预算表在900分析JSON：teacher总帧24,188对原23,636，最大同95帧，每步4个不同task；无新模型执行。
+
+C12_630引用§14 root的`conditional_read_write/train/attempts/continuation/checkpoints/macro_00000630`，
+旧实际训练为85919994；D71从§13的完整450（a0末段）分叉。新读取/训练身份由执行者分别登记，不改旧冻结树。
+新分支540/630完整ECP；两个固定630共1,088环境行、24份A28及16条被动native，不能按部分结果取消对照或补读其它点。
+原36-task seen面板不扩分母，保留所有原能力和反例。正收益只提高当前数据解释支持；阴性不自动延期或开完整fresh。
+预计8–10GPUh有用计算、硬限12；额外产物估计约53GiB、峰值限64。实际GPU和strg01 quota准入由原执行者现场核验。
+canonical科研文档在本次登记后随具体派发一并交给执行者的tracked/Git窗口；不得与main重叠写入。
 
 ## §14整批交付（2026-10-02）
 

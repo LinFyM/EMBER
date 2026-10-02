@@ -469,3 +469,143 @@ task3/11/16/31共同构成收益与主要损失解释，23/39及seen零分任务
 main只维护科学记录、解释和范围/预算裁决。本批在progress登记并派发后执行，不创建新executor或main goal。
 整批完成或实质科学/权限/预算/原件有效性边界才发送一次来源标识回报，main active用Steer、idle用Queue；
 其它工程、profile、普通调度和窗口事项存入已有记录，与实际冲突方协调，不向main广播，不要求main工程复审。
+
+## 15. 固定目标曝光的辅助任务分布短窗检验（2026-10-02）
+
+### 15.1 问题、假设与配对方式
+
+§14已完整结束：900为140/400，相对450仅+3、task31丢失16个旧成功；seen train24却45→70/96。
+[机制§95](../analyses/feature_to_operator_mechanism_20260926.md#95-条件读写900训练侧获取明显跨任务调用与保持没有随之建立2026-10-02)
+及其分析JSON保存原件、任务分布、完整历史反例和实际特征/算子推理。原同36池续训路线停止，810没有触发。
+
+本批检验一个新的数据假设：c/d及S/M在有限场景、对象选择和关系组合上取得的作用，
+能否在增加不同教学—执行映射后，更稳定地迁移到held场景。具体新增是同场景换selector/目标、同目标跨场景及新的组合，
+通过同一真实完整FM改变native读取、动态内容和读写头的条件联系；不把“更多task”本身当机制。
+竞争解释是当前条件编译/共享优化的迁移限制占主导，新映射只增加拟合或干扰，不能带来完整held收益。
+已有受控关系桥阴性、meta73/target18混合效果及同池12条件采样阴性继续约束本预测；
+新数据没有任何basket或In-microwave目标，不能预期直接补齐held16/39，更不能放回其等价任务。
+
+只训练**一个新分支D71**，从真实完整450父点学习事件451…630，共180更新。
+**C12对照直接读取已经保存的原630**；它与D71共享真实450父点、原架构及本窗口target事件，禁止重训control。
+630在本批首次读取前固定，是450＋180的因果比较终点，不能按它的分数反选原路线checkpoint。
+原§14的选择失败不被撤销；两个630均为有界学习诊断，不是新的selected候选或fresh方法资格。
+
+共同父点：
+`/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/conditional_read_write/train/attempts/resume360_native_packing/checkpoints/macro_00000450`。
+实际父训练/读取`a0e0248d96568e42b24a3d1c4102e2ca6e35a40c`，更早三段沿原provenance。
+C12固定终点：
+`/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/conditional_read_write/train/attempts/continuation/checkpoints/macro_00000630`，
+该451…630实际训练身份为`85919994aef11c17b49b7d0e70a2c110158bff61`。不复制这些模型或改写旧root。
+新唯一root为`/data1/user/ymdai/ember_runs/conditional_support_diversity_pilot_20261002`。
+
+### 15.2 唯一主要干预：保持target层，替换support层分布
+
+target24、validation8、test8完全沿coverage_v1，不能重划。原source12为local
+`[2,3,11,15,16,22,24,33,55,56,57,61]`，global ID仍为40＋local。
+D71支持池采用`configs/pi05_source_corpus_v1/source_manifest.json`及其完整specification audit登记的全部71项，local为：
+
+```
+[0,1,2,3,4,5,6,7,11,12,13,14,15,16,17,18,19,21,22,23,24,26,28,29,32,33,34,35,36,37,
+ 38,39,40,41,42,43,45,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,
+ 76,78,79,80,81,82,83,84,85,86,87,88,89]
+```
+
+这增加59个当前Writer未训练的specification，不称71种独立语义技能；source基础policy早已训练这些任务。
+原因target40等价而排除的19项全部继续排除，包括其中与当前train等价的9项；不能把它们当额外独立task补入。
+执行者在首个新训练label读取前，用原完整语义/specification审计冻结显式allowlist及provenance，
+复核固定validation/test及重复项仍被排除。只扩展小型metadata/protocol，保留原40的身份和角色；不覆盖历史manifest。
+部署条件依旧只有exact language及action-hidden双RGB，task ID/filename/goal metadata仅用于调度、审计，不进入Writer。
+
+共同目标分层为`(2/3) mean_target24 L_full + (1/3) mean_support L_full`。
+不增加public/native/同视频辅助、正则、reward或新标签；query依旧同task跨episode、真实50×7 FM，源normalization冻结。
+
+固定事件如下，实际事件表须在训练前封存，不能据结果换任务或换seed：
+
+1. 复用原v3事件451…630的180个宏步、每步4个slot。原24个target的slot、teacher、28条query episode/frame、
+   flow RNG、绝对visit及损失系数保持；每target20次，共480条件/13,440query。
+2. 按原240个support slot的先后次序，依次填入sorted global source71的独立随机排列。
+   第cycle个排列用`numpy.random.default_rng(SeedSequence([20260928,15,cycle])).permutation(sorted_global_source71)`，
+   cycle从0开始，连接后取前240项。得到44项各3次、27项各4次；该固定表已经metadata复算，每宏步仍4个不同task。
+3. 新支持task自己的visit为：原12项从50开始，新增59项从0开始，按本task的实际出现递增。
+   复用原`[20260928,1,task]`/`[20260928,1,task,round]`的50teacher无放回顺序及
+   `[20260928,2,task,visit]`的跨episode query规则；每次28个不同query episode且排除teacher。
+   flow seed继续由真实global task、visit、实际query episode/frame派生，不借seed别名把异task伪装成相同数据。
+4. 为避免240不能整除71造成实际任务权重偏移，令task s的预定次数为n_s，其每次full loss系数
+   `w_s = 240/(71*n_s)`：n=3时80/71，n=4时60/71。target系数1，每宏步仍`sum_slot(w_s * mean28 L_full)/4`。
+   这是固定分层风险的有限抽样校正，没有可调lambda；不再按本宏步权重和重归一化，也不按物理rank重复除权重。
+   180步的target/support总权重分别480/240，每个source task累计240/71。112逻辑query/步、总20,160query；
+   不把每步实际权重和必然等于4作为事实。clip及optimizer公式保持。
+
+此比较改变的是这批具体支持映射的分布，不声称分离“task数”和“新语义内容”的贡献。
+每个新增source task只有3或4条不同teacher，不能称完成全部50视频覆盖或已证明完整95task可学充分。
+原target监督不稀释；输入样本、支持任务组成以及由此产生的梯度自然不同，不能称两臂逐梯度相同。
+
+### 15.3 共同学习、恢复及唯一实现
+
+模型、完整50H、四层因果c/d、rank128、38-target S/M、source1000、单次native和唯一最终LoRA保持§13。
+从完整450恢复Writer、Adam、scheduler/scaler及已有rank RNG；保持绝对LR warm150/decay1200/floor1e−5，
+不重启warmup、不从900继承参数、不引入MT底座课程或第二adapter。
+sampler是本节明示的科学分叉：保存原450状态、目标事件保持及新support游标，不能把改变数据后的过程叫原轨迹exact resume。
+物理world/device可在完整边界按实测吞吐安排1–6 ranks，保持逻辑数据及权重；拓扑/RNG迁移单列，不称bitwise exact。
+
+仅新增540、630完整checkpoint；540只供恢复，不读取它的闭环/内部面板。唯一新训练终点630，180次更新后停止。
+保存完整optimizer/scheduler/sampler/rank RNG/schema及每条件实际task/visit/teacher/query/weight、按target/source汇总的训练风险。
+训练风险只核干预与学习过程，不选点。延续真实公共native及完整余切回放，不能detach任何既有梯度路径。
+
+实现沿唯一`ember.operator_writer.run`及现有data/credit/readout owner扩展明确事件合同，不恢复退役运行面，
+不复制第二套训练器或模型。C12、D71都用新的clean pushed detached读取版本；记录C12旧训练身份和新读取身份，
+公共模型计算不因数据schema扩展改变。旧冻结树与有效产物保持不变；实际消费者的工程校验由原执行者完成。
+已知原图覆盖完整105帧profile；本表最大95帧、全部95task元数据最大仍105。无需例行再跑长profile；
+仅在实际消费者出现资源/恢复问题时做必要工程检查，不能因此改变视频、query或预算。
+
+### 15.4 固定读出、主要判断及停止线
+
+对C12_630、D71_630各执行以下同一读出，全部完成后统一回报；不能看候选部分结果后取消对照：
+
+- **correct validation400**：完全复用§13/§14的8task、init0…49、每task50teacher各一次、固定state–video/scene/policy RNG。
+  官方10-flow、执行前5、settling10、horizon与dynamic long-first persistent queue不变。
+  各8full＋392compact，全部400保留goal、逐控制步continuous、实际action及RNG。
+- **原36task seen144**：仍init32…35及原teacher/scene映射，明确是同一保留面板，不能扩为95task后拿分母变化报改善。
+  各36full＋108compact，全部goal/continuous/action/RNG；分别报告target24和原support12。
+- **固定A28**：各8full＋4public，同原query/noise/tau；各保留原8条TRAIN teacher的H/c/d与Q8/V8/action_out X/A0/S/B0/M，
+  只作原前向被动记录，不增加native调用或held标签。公共读出是诊断，public训练FM仍为0。
+
+总计1,088个新环境episode、24份A28预测和16条被动native。旧450/900/MT/T/Context只读已有结果，不重评。
+不做new-source额外环境面板、other/wrong/shuffle/reverse、Test、public held/seen、S消融、RL或其它checkpoint读取。
+本节仅授权既存C12_630这一新增历史点；没有810、720或其它峰值搜索。
+
+主比较为同龄D71−C12的全部400行，报告per-task/suite、breadth、R/G/L、churn、success-set重合与task-cluster区间，
+同时保留共同450和已知900背景；簇区间不当训练seed误差。检查held3/6/16/31目标选择/阶段调用是否改善，
+以及11/26等原能力有无实质损失；23/39和所有反例都保留。不能先挑一个任务胜出再重定义主问题。
+seen与A28用于区分获取、分布迁移和保持；它们不能替代correct绝对能力或给新模型选点。
+
+事前分支：
+
+1. D71获得有覆盖的完整held收益且没有大范围能力丢失，才提高“此种支持分布有用”的支持度。
+   即使超过MT153，也不直接称最终成功；fresh共同学习、相邻保持及视频必要性仍未验证。
+2. 只改善seen/训练风险，或收益被旧能力损失抵消，否定本次将更多支持映射作为主要修复的实际预测；
+   不因数据现在更多就自动开完整fresh或延长窗口。
+3. 新支持学习在此窗不充分时，如实记录3/4条件的局限，不称普遍数据不可能；但也不据“可能再训会好”自动获准追加。
+   单task小波动、内部量变好或原C12_630自身高于900，均不触发原同池路线复活或checkpoint选择。
+
+两点完成即停止新增计算，统一交主讨论解释。无自动D71→900、95task fresh、删选辅助任务、seed/LR/rank小扫或新辅助项。
+后继必须面对这次对照及旧关系支持阴性，不能仅换分布名称继续保护同一弱假设。
+
+### 15.5 资源、时间和交付
+
+本批新增硬限**12GPUh / 64GiB峰值**，包括实现所需GPU检查、所有失败/恢复/加载保存、180次训练、两个固定读出及临时产物。
+旧两批31.737894GPUh单列；本次不是使用上一批预算余额。预计**2–4小时**，包含实施/冻结和读出，不声称已经启动。
+上批450更新mean16.7869s，按五卡外推180次约.84小时/4.20GPUh；本表teacher总帧24,188对原23,636，增加2.34%，
+最大同95帧，故训练含恢复约4.3–5.3GPUh。上批一次544读出约1.87GPUh，两次约3.74，实用计算先验约8–10GPUh。
+这是metadata与旧实测外推，非新吞吐保证。就绪的C12读取可与D71训练在规则允许下并行；不要求整批固定五卡或互相空等。
+累计9GPUh且预计无法在12内完成、或预计超过4小时仍不能整批完成时，按真实预算/资源边界回报主讨论一次，不静默缩面板。
+
+上批训练后11.49GiB、全部产物35.60GiB，读出增量约24.11GiB；两份类似读出加两新完整ECP约53GiB，
+其余临时/代码/缓存纳入64GiB。复用原父/control checkpoint、canonical dataset/tokenizer/source及scene，禁止复制大资产。
+全部新增在data1，data0只读；执行前核strg01的data1独立quota、相关个人实占、共享容量及预计峰值。
+每次launch/resume同时live检查gpu01/gpu02，按AGENTS合计8/6、单节点6及实际吞吐安排，不dummy占卡、不干扰他人。
+
+唯一实验session `01a0f018-69af-7b00-b614-7e117540051b`负责实现、检查、资源、Git和冻结运行；
+main负责科学记录与解释，不创建新executor、main goal或自Queue。tracked/Git窗口在具体派发时交给执行者，
+工程自己闭环，科学语义/原件有效性/权限/预算边界才回报；整批科学交付只发一次，main active用Steer、idle用Queue。
+无ACK、profile/启动/可自行修复的失败/窗口等阶段广播，不要求main做工程复审。

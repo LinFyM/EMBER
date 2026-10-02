@@ -2,7 +2,7 @@
 
 ## 科学目标与当前批次
 
-实验session正在执行唯一fresh450：PID1843944、gpu02四卡/micro28/frame32、clean detached2c630fb3。pure F0缓存2200视频/73642帧齐备，三个profile（两个完整、frame40容量OOM）结束并全部丢弃；正式加载前累计1.396756600GPUh。固定544/A28仅450读回，无旧批恢复/中间选点。Seen采用原scope seed20260928实际四teacher映射，design勘误完成；main只读、写入窗口仍由实验session独占。
+唯一fresh450已完成、exit0/六完整ECP/50400主query/55858aux区间，实际2c630fb3；训练8.295057918GPUh、本批累计9.691814519GPUh。450 correct400/seen144物化及原A28已在gpu02六张卡并行启动，固定544环境读回待各bank就绪及时接续，无旧批恢复/中间选点。Seen仍为原scope/scene/RNG；main只读，窗口仍由实验session独占直到整批交付。
 
 
 当前唯一新合同为[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)，机制§106/findings§285说明取舍。

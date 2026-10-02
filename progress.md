@@ -17,8 +17,9 @@ main已核对原C450/C900/MT300全144行与当前scope，确认原scene/RNG/固�
 原初始packing记录部分尾块不足256，不能声称它证明256更快；实际两worker峰40.42/41.08GiB、另两24.39GiB。
 已窄修profile跨实际task帧组收齐完整候选、只计完整batch，CPU实际消费检查保持963帧各一次，无新Source forward、旧原件未改。
 三个有界profile已结束：同macro85/105帧/28query，world4/frame32为33.097秒、峰39.289GiB；world6/frame32为32.652秒、只快1.36%，50%更多卡无充分持续吞吐收益。world4/frame40在native反传OOM（物理占用44.06GiB、余155MiB），exit1与.093356145GPUh保留，非科学阴性，无第4次profile。
-正式fresh450已实际启动：PID/PGID1843944、gpu02:0/1/2/3、world4/micro28/frame32，clean pushed detached2c630fb3940c16365ac9a9a672b1f632e8d31e51（root/frozen_run）。全部模块/optimizer/scheduler/RNG全fresh，不加载任何profile/P/F状态。加载前累计1.396756600GPUh；单消费者5小时硬界最多20GPUh，余10.603GPUh仍保留给固定读回/退出。双节点本用户0→4卡及strg01 quota/shared现场准入通过。
-训练持续等子进程退出、不定时读日志/节点分数、不自Queue；0/90/180/270/360/450完整ECP，仅450科学读回。当前仍持canonical tracked/Git窗口；main只读，等待唯一整批可靠回报。
+正式fresh450已完成、PID/PGID1843944退出0：gpu02四卡/world4/micro28/frame32、clean pushed detached2c630fb3940c16365ac9a9a672b1f632e8d31e51（root/frozen_run）。全部状态fresh，无profile/P/F权重；0/90/180/270/360/450六完整ECP及Gamma/全部76 U权重、optimizer/scheduler/sampler/rank RNG已CPU实际读回。50400主query、55858合法aux区间/279290位置准确，辅助每condition一次、Gamma-only与same-version记录齐备。
+正式消费者含加载/保存/退出7465.552秒、8.295057918GPUh，平均完整更新16.408秒、reserved峰41.296875GiB；加载/profile/失败/cache等本批累计9.691814519GPUh。未读中间分数，无选择或自动续训。
+450读回实际已启动：400物化PID2356778用gpu02:0/1/2/3，144物化PID2358187用gpu02:6，A28 PID2359958用gpu02:7；三份准入/精确request在root launch，NoGrad真实native framechunk128、各resident一次source加载。双节点本用户0→6卡/总上限6与strg01 data1现场检查通过，root当前26.647GiB<80。seen使用原scope/scene/RNG，已就绪评测及时接续；全部消费者仍仅450，当前仍持写入窗口，main只读。
 下方§105“没有新训练”属于其科学消费完成时点，不覆盖这个新登记；旧获取批次仍已完成，不恢复其运行。
 
 main已完成本批源码与全部176份实际预测的科学消费，见机制§105/findings§284。

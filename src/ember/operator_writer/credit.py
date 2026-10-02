@@ -68,7 +68,7 @@ def one_job(runtime, data, event: dict, microbatch: int,
     batch = runtime.processor.training_batch(data.batch(event))
     with autocast(runtime.device):
         arguments = dict(seed=event["flow_seed"], device=runtime.device, random_batch=28,
-                         offset=0, microbatch=microbatch, condition_weight=0.25)
+                         offset=0, microbatch=microbatch, condition_weight=0.25 * event.get("weight", 1.))
         if loss_variant == "full_plus_public_beta":
             credit, beta_credit = dual_functional_credit(
                 runtime.policy, state, runtime.writer.public_state(), runtime.lora, batch, **arguments)
@@ -90,6 +90,8 @@ def one_job(runtime, data, event: dict, microbatch: int,
     torch.cuda.synchronize(runtime.device)
     native_norm = native_credit(native)
     return {"task": event["task"], "teacher_demo": event["teacher_demo"],
+            "visit": event["visit"], "weight": event.get("weight", 1.),
+            **({key: event[key] for key in ("group", "original_task")} if "group" in event else {}),
             "queries": len(event["queries"]), "query_demos": [row["demo"] for row in event["queries"]],
             "query_frames": [row["frame"] for row in event["queries"]], "flow_seed": event["flow_seed"],
             "raw_frames": raw, "sampled_frames": sampled, "flow_loss": credit["flow_loss"],

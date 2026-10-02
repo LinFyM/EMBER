@@ -92,6 +92,8 @@ def resume_contract_compatible(parent: dict, current: dict, *, allow_topology_ch
         mutable += ("git", "spec", "parent_checkpoint", "source_resume")
         if parent.get("continuation") is None and current.get("continuation") is not None:
             mutable += ("continuation",)
+        if current["source_resume"]["migration"] == "registered_support_distribution_fork":
+            mutable += ("events", "sampler")
     return (packing_compatible(parent, current)
             and {k: v for k, v in parent.items() if k not in mutable}
             == {k: v for k, v in current.items() if k not in mutable})
@@ -587,6 +589,12 @@ def update(session: Session, updates: int, rows: int) -> tuple[int, int]:
             "lr_applied": lr, "lr_next": session.scheduler.get_last_lr()[0],
             "grad_norms_before_clip": gradients, "total_grad_norm": norm,
             "rank_memory": memory, "seconds": time.perf_counter() - started}
+        if session.spec["task"] == joint_training.support_diversity.TASK:
+            record["stratified_risk"] = {group: {
+                "conditions": sum(job["group"] == group for job in record["jobs"]),
+                "weighted_macro_risk": sum(job["weight"] * job["flow_loss"] / 4
+                                           for job in record["jobs"] if job["group"] == group)}
+                for group in ("target", "source")}
         append_jsonl(session.output / "metrics.jsonl", record)
         if not getattr(session, "first_consumer_recorded", False):
             write_json_atomic(session.output / "first_consumer.json", {
@@ -631,7 +639,7 @@ def validate_train_request(spec: dict, args) -> None:
 
 
 def train(spec: dict, args) -> None:
-    if spec.get("task") not in (joint_training.CONDITIONAL_TASK, joint_training.CONDITIONAL_CONTINUATION_TASK):
+    if spec.get("task") not in (joint_training.CONDITIONAL_TASK, joint_training.CONDITIONAL_CONTINUATION_TASK, joint_training.support_diversity.TASK):
         raise ValueError("retired operator training requires its recorded frozen runtime")
     validate_train_request(spec, args)
     session = prepare_train(spec, args)

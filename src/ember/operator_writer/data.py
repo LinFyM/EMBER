@@ -36,7 +36,11 @@ class FormalData:
     def __init__(self, asset_root: Path, spec: dict, *, query_labels: bool = True,
                  task_ids: tuple[int, ...] = TASKS, role: str = "train") -> None:
         from ember.writer.learning_data import load_learning_tasks
+        from . import support_diversity
 
+        self.support_plan = (support_diversity.schedule() if spec["task"] == support_diversity.TASK else None)
+        if self.support_plan is not None and task_ids == TASKS:
+            task_ids = TASKS[:24] + support_diversity.SOURCE_TASKS
         self.tasks = load_learning_tasks(asset_root, task_ids, role=role,
                                          protocol_path=spec["source"]["data_protocol"])
         authorities = tuple(row.authority for row in self.tasks.values())
@@ -55,6 +59,8 @@ class FormalData:
     def tasks_for_step(self, step: int) -> tuple[int, ...]:
         if step not in range(self.updates):
             raise ValueError("formal macro step is outside registered updates")
+        if self.support_plan is not None and step >= 450:
+            return tuple(job["task"] for job in self.support_plan[step])
         visit, slot = divmod(step, 9)
         order = np.random.default_rng(np.random.SeedSequence([self.seed, 0, visit])).permutation(TASKS)
         return tuple(int(task) for task in order[4 * slot:4 * (slot + 1)])
@@ -62,9 +68,15 @@ class FormalData:
     def event(self, step: int, task: int) -> dict:
         if task not in self.tasks_for_step(step):
             raise ValueError("task is outside this formal four-condition macro")
-        visit = step // 9
+        planned = (next(job for job in self.support_plan[step] if job["task"] == task)
+                   if self.support_plan is not None and step >= 450 else None)
+        return {**self._event_for_visit(step, task, planned["visit"] if planned else step // 9),
+                **({key: planned[key] for key in ("weight", "group", "original_task")} if planned else {})}
+
+    def _event_for_visit(self, step: int, task: int, visit: int) -> dict:
         teacher_round = visit // 50
         allowed_rounds = {"ember_operator_read_write_events_v2": 1,
+                          "conditional_support_diversity_events_v1": 2,
                           "ember_operator_read_write_events_v3": 2,
                           "ember_operator_read_write_events_v4": 3,
                           "ember_operator_read_write_events_v5": 4,
@@ -96,18 +108,24 @@ class FormalData:
                   "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28}
         if self.event_schema == "ember_operator_read_write_events_v2":
             return {"schema_version": self.event_schema, **common, "teacher_pool": list(range(30))}
-        rounds = {"ember_operator_read_write_events_v3": 2,
+        rounds = {"conditional_support_diversity_events_v1": 2,
+                  "ember_operator_read_write_events_v3": 2,
                   "ember_operator_read_write_events_v4": 3,
                   "ember_operator_read_write_events_v5": 4,
                   "ember_operator_read_write_events_v6": 5,
                   "ember_operator_read_write_events_v7": 6,
                   "ember_operator_read_write_events_v8": 7}.get(self.event_schema)
         if rounds is not None:
-            return {"schema_version": self.event_schema, **common,
+            state = {"schema_version": self.event_schema, **common,
                     "teacher_rounds": [[self.seed, 1, "task"]] +
                                       [[self.seed, 1, "task", round_index]
                                        for round_index in range(1, rounds)],
                     "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
+            if self.support_plan is not None:
+                from . import support_diversity
+                parent = {**state, "schema_version": "ember_operator_read_write_events_v3", "next_step": 450}
+                return support_diversity.sampler_state(parent, self.next_step)
+            return state
         raise ValueError("operator event schema changed")
 
     def restore(self, state: dict, *, migrate_sealed_270: bool = False,
@@ -117,6 +135,11 @@ class FormalData:
                 migrate_pilot_1890: bool = False,
                 migrate_continuation_2340: bool = False) -> dict | None:
         expected = self.sampler_state()
+        if self.support_plan is not None and state == expected["parent_sampler"]:
+            self.next_step = 450
+            return {"from_schema": state["schema_version"], "to_schema": self.event_schema,
+                    "cursor": 450, "support_slot_cursor": 0, "parent_sampler": state,
+                    "migration": "registered_support_distribution_fork_not_exact_trajectory"}
         if migrate_sealed_270:
             legacy = {"schema_version": "ember_operator_read_write_events_v2", "next_step": 270,
                       "seed": self.seed, "tasks": list(TASKS), "teacher_pool": list(range(30)),

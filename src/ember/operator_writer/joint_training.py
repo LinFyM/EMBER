@@ -9,6 +9,7 @@ import torch
 
 from ember.pi05_eval_contract import git_state
 from ember.pi05_source_checkpoint import Pi05SourceTrainingError, read_json
+from . import support_diversity
 
 TASK = "operator_joint_public_fresh_20260930"
 ROOT = Path("/data1/user/ymdai/ember_runs") / TASK
@@ -105,10 +106,12 @@ CONTEXT = {
 
 
 def registered(spec: dict) -> bool:
-    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK, CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK)
+    return spec.get("task") in (TASK, CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, SELF_READ_TASK, CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK)
 
 
 def settings(spec: dict) -> tuple[Path, str, dict]:
+    if spec.get("task") == support_diversity.TASK:
+        return support_diversity.ROOT, CONDITIONAL_MODE, CONDITIONAL
     if spec.get("task") == TASK:
         return ROOT, MODE, JOINT
     if spec.get("task") in (CONTEXT_TASK, CONTEXT_CONTINUATION_TASK):
@@ -208,9 +211,10 @@ def expected_spec(base: dict, events: dict) -> dict:
 
 def validate_request(spec: dict, args) -> None:
     _, mode, joint = settings(spec)
-    continuation = spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK)
+    continuation = spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK)
     frames = (4, 8, 16, 32) if mode == CONDITIONAL_MODE else (8, 4)
-    checkpoints = CONTEXT_CONTINUATION_CHECKPOINTS if continuation else CHECKPOINTS
+    checkpoints = (support_diversity.CHECKPOINTS if spec["task"] == support_diversity.TASK else
+                   CONTEXT_CONTINUATION_CHECKPOINTS if continuation else CHECKPOINTS)
     bad_resume = (args.resume is None or args.attempt == "fresh") if continuation else (
         (args.resume is None) != (args.attempt == "fresh"))
     if (args.mode != mode or spec.get("joint") != joint
@@ -258,16 +262,23 @@ def _conditional_resume_record(parent: dict, current: dict) -> dict:
         raise ValueError("conditional source migration lost its actual origin lineage")
     origin = read_json(CONDITIONAL_ORIGIN_SPEC)
     registered_specs = {CONDITIONAL_TASK: origin,
-                        CONDITIONAL_CONTINUATION_TASK: expected_conditional_continuation_spec(origin)}
+                        CONDITIONAL_CONTINUATION_TASK: expected_conditional_continuation_spec(origin),
+                        support_diversity.TASK: support_diversity.expected_spec(origin)}
     parent_spec, current_spec = (read_json(Path(run["spec"])) for run in (parent, current))
     for run, spec in ((parent, parent_spec), (current, current_spec)):
         if (spec != registered_specs.get(spec.get("task"))
-                or run.get("continuation") != spec.get("continuation")):
+                or run.get("continuation") != spec.get("continuation")
+                or run.get("events") != spec["events"]):
             raise ValueError("conditional resumed training spec changed scientific content")
+    if current_spec["task"] == support_diversity.TASK:
+        parent_sampler = parent["sampler"].get("parent_sampler", {**parent["sampler"], "next_step": 450})
+        wanted = support_diversity.sampler_state(parent_sampler, 450)
+        if current["sampler"] != {key: value for key, value in wanted.items() if key != "next_step"}:
+            raise ValueError("support fork lost its parent or fixed event/weight sampler")
     _inspect_frozen_source(parent, parent_spec)
     if parent_spec["task"] != current_spec["task"]:
         if (parent_spec["task"] != CONDITIONAL_TASK
-                or current_spec["task"] != CONDITIONAL_CONTINUATION_TASK
+                or current_spec["task"] not in (CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK)
                 or parent["git"]["commit"] != CONDITIONAL_PARENT_GIT
                 or parent["spec"] != str(CONDITIONAL_PARENT_SPEC_PATH)
                 or Path(current["parent_checkpoint"]).resolve() != CONDITIONAL_PARENT_CHECKPOINT.resolve()):
@@ -277,12 +288,13 @@ def _conditional_resume_record(parent: dict, current: dict) -> dict:
             "parent_checkpoint": current["parent_checkpoint"],
             "parent_training_git": parent["git"], "parent_training_spec": parent["spec"],
             "current_training_git": current["git"], "current_training_spec": current["spec"],
-            "migration": "engineering_same_science_complete_ECP",
+            "migration": ("registered_support_distribution_fork" if current_spec["task"] == support_diversity.TASK
+                          and parent_spec["task"] != current_spec["task"] else "engineering_same_science_complete_ECP"),
             "execution": "automatic_target_execution"}
 
 
 def register_conditional_resume(spec: dict, args, contract: dict) -> None:
-    if spec.get("task") not in (CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK) or args.resume is None:
+    if spec.get("task") not in (CONDITIONAL_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK) or args.resume is None:
         return
     contract["parent_checkpoint"] = str(args.resume.resolve())
     parent = read_json(args.resume.resolve().parent.parent / "run_contract.json")
@@ -299,7 +311,7 @@ def conditional_resume_compatible(parent: dict, current: dict) -> bool:
 def validate_attempt(spec: dict, args, contract: dict, output: Path) -> None:
     from .run import complete_checkpoint, resume_contract_compatible
 
-    if spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK):
+    if spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK):
         _validate_joint_continuation(spec, args, contract, output)
         return
     root, mode, joint = settings(spec)
@@ -332,10 +344,11 @@ def _validate_joint_continuation(spec: dict, args, contract: dict, output: Path)
     attempts = root / mode / "train/attempts"
     checkpoint = args.resume.resolve()
     macro = int(checkpoint.name.removeprefix("macro_"))
+    checkpoints = tuple(spec["execution"]["checkpoints"])
     if (output.parent.resolve() != attempts.resolve() or output.resolve() == checkpoint.parent.parent
             or (output / "run_contract.json").exists() or (output / "metrics.jsonl").exists()
             or contract.get("loss_variant") != joint["loss_variant"] or contract.get("joint") != joint
-            or macro not in (450, *CONTEXT_CONTINUATION_CHECKPOINTS[:-1])
+            or macro not in (450, *checkpoints[:-1])
             or not complete_checkpoint(checkpoint)):
         raise ValueError("context continuation requires a new attempt and complete registered ECP")
     latest = max((int(path.name.removeprefix("macro_")) for path in attempts.glob(
@@ -353,6 +366,10 @@ def _validate_joint_continuation(spec: dict, args, contract: dict, output: Path)
         fixed = ("schema_version", "stage", "mode", "source", "lora", "operator", "optimizer",
                  "events", "sampler", "trainable_names", "source_trainable", "information_wall",
                  "loss_variant", "joint")
+        if spec["task"] == support_diversity.TASK:
+            fixed = tuple(key for key in fixed if key not in ("events", "sampler"))
+            if spec != support_diversity.expected_spec(read_json(CONDITIONAL_PARENT_SPEC_PATH)):
+                raise ValueError("support-distribution fork differs from registered §15")
         if (old["git"]["commit"] != parent_git
                 or any(old.get(key) != contract.get(key) for key in fixed)):
             raise ValueError("context parent source, model, labels, loss or optimizer changed")
@@ -394,18 +411,26 @@ def _completed_metrics_source(root: Path, mode: str, checkpoint: Path, target: i
     return output
 
 
-def inspect_source(spec: dict, checkpoint: Path) -> dict:
+def inspect_source(spec: dict, checkpoint: Path, *, _fixed_c12_630: bool = False) -> dict:
     """Keep actual training Git/spec identity separate from the current reader."""
     from .run import SCHEMA, STAGE, complete_checkpoint, frozen_git
 
     frozen_git()
+    if spec["task"] == support_diversity.TASK and checkpoint.resolve() == support_diversity.C12_CHECKPOINT.resolve():
+        run = inspect_source(read_json(support_diversity.C12_SPEC), checkpoint, _fixed_c12_630=True)
+        if run["git"]["commit"] != support_diversity.C12_GIT:
+            raise ValueError("fixed C12_630 actual training source changed")
+        return run
     root, mode, joint = settings(spec)
     checkpoint = checkpoint.resolve()
     output = checkpoint.parent.parent
-    continuation = spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK)
+    diversity = spec["task"] == support_diversity.TASK
+    continuation = spec["task"] in (CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK, support_diversity.TASK)
     macro = int(checkpoint.name.removeprefix("macro_"))
-    target = 900 if continuation else 450
-    allowed = (810, 900) if continuation else (450,)
+    target = 630 if diversity else 900 if continuation else 450
+    allowed = (630,) if diversity else (630, 810, 900) if _fixed_c12_630 else (810, 900) if continuation else (450,)
+    if _fixed_c12_630 and checkpoint != support_diversity.C12_CHECKPOINT.resolve():
+        raise ValueError("C12 diagnostic source must be its pre-fixed630")
     if (output.parent.resolve() != (root / mode / "train/attempts").resolve()
             or macro not in allowed or not complete_checkpoint(checkpoint)):
         raise ValueError("joint/context readout requires its complete owned registered endpoint")
@@ -418,6 +443,10 @@ def inspect_source(spec: dict, checkpoint: Path) -> dict:
                         "demo_pool": [0, 49], "query_offset": 1, "queries_per_task": 28,
                         "teacher_rounds": [[20260928, 1, "task"], [20260928, 1, "task", 1]],
                         "teacher_visits_per_round": 50, "teacher_demo_pool": list(range(50))}
+    if diversity:
+        from .data import TASKS
+        parent_sampler = {**expected_sampler, "schema_version": "ember_operator_read_write_events_v3", "tasks": list(TASKS)}
+        expected_sampler = {key: value for key, value in support_diversity.sampler_state(parent_sampler, macro).items() if key != "next_step"}
     facts = ((run.get("schema_version"), SCHEMA), (run.get("stage"), STAGE),
              (run.get("mode"), mode), (run.get("joint"), joint),
              (run.get("loss_variant"), joint["loss_variant"]), (run.get("operator"), spec["operator"]),

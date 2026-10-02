@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：控制内容获取没有转成完整控制，关闭本次Value调制配方
+
+main科学消费见机制§107/findings§286。实际代码、12份FM/8份被动原件、新旧1632份continuous及六份双RGB捕获直接读回；
+派生`control_calibrated_read_write_20261003/analysis/main_scientific_readback.json`，无新模型/标签/环境/GPU。
+correct400=122、seen144=77，相对同龄C450分别−15/−14；强MT153、成熟T161及全部正反参照保持。
+q八训练teacher等条件误差.139893→.083044，但98.977%改善来自五步平均项；新Gamma没有单独held动作获取证据。
+A28前5微小收益由夹爪抵消运动六维恶化，不足以解释完整控制。task6与seen4有真实获取正例，task3/11/31及seen13/56有选择、获取、第二目标/放置损失。
+task31相对C450丢失10条均保住cream目标、均未取得butter目标，不能统一归为第一物体识别退化；其它失败保留不同机制。
+实际`O diag(b) Uq`调制与主FM信用成立，辅助直接梯度只到Gamma；没有测定冲突、忽略q或某地址子模块是唯一根因。
+降低“校准动作坐标直接调制现有Value即可修复”的支持，关闭本构造900/小扫/Reader蒸馏及Pullback回退；不抹去§105的有限获取正例，不证明所有编译路线不可能。
+本批11.471727418GPUh、原件和完整450状态保留，无active计算；main持记录/Git继续既有数据内自主推导。
+
 ## 2026-10-03：控制内容调制读写fresh450完整执行与原件交付
 
 [完整合同](designs/control_calibrated_read_write_design.md)的唯一fresh450及固定544环境行/A28已经全部完成，暂无科学selection或后继计算。

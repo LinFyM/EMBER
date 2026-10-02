@@ -2,10 +2,16 @@
 
 ## 科学目标与当前批次
 
+main科学消费已完成（机制§107/findings§286）：控制内容调制读写在固定450的correct400=122、seen144=77，未支持完整方法预测，本配方关闭。
+下一判断回到教学状态/作用与自身调用之间的可学习联系；不以再提高q回归、调制小扫或延长该450替代它，不扩数据。
+当前没有active实验；main独占记录/Git，继续自主推导，保留本批原件及完整450状态等待后继明确接口与生命周期。
+
+### 已完成批次的登记与执行事实
+
 唯一fresh450与全部读回已完成：correct400=122/400，Seen144=77/144（train24=36/96、support12=41/48）；严格544行/44 full/500 compact、原A28的12 FM/8被动条件、六完整ECP与50400主query/55858aux区间均已实际读回。实际train/consumer2c630fb3、11.471727418GPUh、新增实占51.444GiB/保守峰72.06GiB，均在32/80硬限内，GPU与16个consumer PID全部释放。未胜强MT153或成熟T161；全参照与正反原件保留，无自动selected/续900/扫描/controls/Test/RL。唯一new canonical实现及450完整恢复保留待main裁决；整批Git/push及一次回报后交回canonical窗口，实验session停止本项。当前没有active计算，下方运行段落保留其历史时点。
 
 
-当前唯一新合同为[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)，机制§106/findings§285说明取舍。
+当时登记的合同为[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)，机制§106/findings§285说明事前取舍。
 fresh Gamma的完整控制估计直接调制同一LoRA A/B Value，真实跨episode FM学习自身调用；不以获取通过代替完整能力。
 单条fresh450、原36task/50teacher，固定correct400/seen144/原A28；预计6–10小时、32完整GPUh/80GiB，实际接手/运行看progress。
 无自动900、扫描、Reader/蒸馏、Test/RL/controls；旧§105未登记后继状态由本段更新。

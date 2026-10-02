@@ -2,6 +2,17 @@
 
 ## 当前授权与活动批次
 
+main已完成控制内容调制读写的科学消费与裁决，见机制§107/findings§286；本fresh450配方关闭，没有active实验或新GPU计算。
+直接核实际2c630fb3科学代码、12份FM/8份q与native原件、新旧1632份continuous及六份配对双RGB捕获；
+派生原件为本批`analysis/main_scientific_readback.json`，没有新forward、标签或环境运行。
+correct400=122、seen144=77；q八训练teacher均改善但98.977%的收益来自五步平均项，不能把旧独立P的内部留task正例移植成新Gamma的held获取资格。
+A28前5的.001379改善由夹爪+.001675抵消运动六维−.000296；真实得失仍跨对象选择、获取及后续调用。
+关闭本构造续900、辅助/门控小扫与Reader/Pullback回退；不能由一次阴性断言所有动作校准或视频编译不可能。
+canonical tracked/Git窗口回main，实验session已停止。唯一实现及完整450恢复资产暂保留至下一方法的接口/生命周期取舍，当前不运行。
+Owner自主推进与不扩数据约束持续；main继续推导视频中的状态—作用关系如何变成自身可调用的控制，不能以未形成后继为理由结束等待。
+
+### 本批执行事实（科学裁决以上段为准）
+
 2026-10-03控制内容调制读写整批执行与原件读回已完成：fresh450、六完整ECP、correct400=122/400、seen144=77/144（train24=36/96、support12=41/48），544行/44 full/500 compact及原A28的12 FM/8被动条件全部齐备、无缺项。
 相对C450 correct R98/G24/L39、seen R69/G8/L22；绝对性能低于强MT153及成熟T2340的161，全部高低参照/逐task/逐行得失保留，不能由q拟合或内部MSE宣布有效。
 训练/物化/A28/实际环境消费者均为clean pushed detached2c630fb3，均exit0；本批11.471727418/32完整GPUh，正式reserved峰41.296875GiB。三次真实profile含frame40容量OOM已计费，world6仅快1.36%且多50%卡；评测按4+2卡/每卡3 persistent replicas利用显存与吞吐，无额外案例。

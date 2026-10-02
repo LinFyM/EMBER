@@ -118,6 +118,9 @@ def save_capture(
         "executed_action_prefixes": tuple(slot["replay_executed_prefixes"]),
         "replan_steps": tuple(slot["replay_replan_steps"]),
     }
+    if "frozen_case" in slot:
+        common["frozen_case"] = dict(slot["frozen_case"])
+        common["archived_prefix_action_chunks"] = tuple(slot["archived_prefix_action_chunks"])
     if "pre_exploration_normalized_means" in slot:
         if len(slot["pre_exploration_normalized_means"]) != len(slot["replay_action_chunks"]):
             raise Pi05EvaluationError("objective-alignment pre-exploration means are incomplete")

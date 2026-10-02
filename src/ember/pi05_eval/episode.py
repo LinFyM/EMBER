@@ -112,6 +112,8 @@ def finish_episode_row(
         "finished_at": finished - worker_started,
     }
     row.update(episode_exploration_fields(contract, slot))
+    if "frozen_case" in slot:
+        row["frozen_case"] = dict(slot["frozen_case"])
     if "scene_reference" in slot:
         row["scene_reference"] = dict(slot["scene_reference"])
     if "stage_predicate_states" in slot:

@@ -9,7 +9,11 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 原条件900同初态、两teacher的一成一败均已开炉/接近壶，并在同一action index193闭合夹爪；
 在固定step180重放自身动作前缀，分别接两套既存完整LoRA，只做四条train诊断，区分当下控制作用与到达状态的影响。
 不新增训练、数据、held读取或架构；预计含工程45–75分钟，硬限1GPUh/4GiB，结果不自动触发正式重训。
-本合同已由主讨论登记，待唯一实验session实现与执行；运行事实以其交付更新。
+实验session已在独占worktree实现：沿用canonical PI05 rollout/planner、原FrozenOperatorAdapter批量LoRA、
+初始scene恢复及full/continuous捕获，只增加显式四行上下文和保存动作前缀的窄接入。
+31项针对CPU检查通过；将四行作为最大合法物理batch、共用一次source加载，不增加闭环smoke或profile。
+源码集成push后从clean detached冻结读取，实际启动/退出/GPU费用及原件在
+`/data1/user/ymdai/ember_runs/task32_state_policy_crossover_20261002/launch/`；当前尚未启动GPU消费者。
 Owner要求的决策错误已写入current_owner_requirements§3、findings§276和research_history，394b5f79已推送。
 
 ## 最近撤回批次及保留事实

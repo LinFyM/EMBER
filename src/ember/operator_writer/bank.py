@@ -647,6 +647,11 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
+        if bank.get("reexpression_panel") is not None:
+            from .reexpression import inspect
+
+            return inspect(bank, path, source, task_keys, evaluation_role,
+                           require_formal, task_init_state_ids)
         if bank.get("joint_public_study") is True:
             from .joint_readout import inspect
 
@@ -736,7 +741,8 @@ class FrozenOperatorAdapter:
         if row["factors"] != file_record(Path(row["factors"]["path"])):
             raise Pi05EvaluationError("operator condition changed during evaluation")
         factors = load_file(row["factors"]["path"], device="cpu")
-        if (self.bank.get("learning_limit_panel") is not None
+        if (self.bank.get("reexpression_panel") is not None
+                or self.bank.get("learning_limit_panel") is not None
                 or self.bank.get("condition_factors") == "complete_A0_plus_S_B0_plus_M"):
             result = factors
             validate_lora_state(result, self.lora)

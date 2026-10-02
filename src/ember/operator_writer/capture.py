@@ -21,6 +21,10 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
 
     bank_path = Path(args.static_task_lora_manifest).resolve()
     bank = read_json(bank_path)
+    if bank.get("reexpression_panel") is not None:
+        from .reexpression import registered_capture as reexpression_capture
+
+        return reexpression_capture(args, tasks, output_dir, path, manifest, task_subset, bank)
     if bank.get("learning_limit_panel") is not None:
         from .learning_limit import registered_capture as learning_capture
 

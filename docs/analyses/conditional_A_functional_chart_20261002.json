@@ -1,0 +1,1536 @@
+{
+  "schema": "ember_conditional_A_saved_native_chart_20261002",
+  "scope": "Four training tasks, two teachers each, three saved sites, 450 and 900. CPU algebra only.",
+  "fit": "For each condition solve C=argmin_C ||X A0.T C - X S.T||_F. Delta_B=B_total C.T.",
+  "counterfactual": "Hold original S and B_total fixed when evaluating the same or other teacher native X.",
+  "boundaries": [
+    "Teacher-native X is public, state-free, fixed-noise/tau1, not execution-query hidden.",
+    "Uses no action label, outcome, model forward, environment, GPU or optimizer.",
+    "A frozen per-condition algebraic re-expression is not evidence of learning a transferable compiler; no deployment method selected.",
+    "Does not recompile M, transform all 38 sites or evaluate closed-loop behavior.",
+    "Small residual is not a proof that S is redundant on deployment states or that fixed A is learnable.",
+    "Large rowspace-orthogonal factor energy is not by itself new useful task information."
+  ],
+  "summary": {
+    "450": {
+      "Q8": {
+        "same_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.003328273784764019,
+            "median": 0.00441887586532426,
+            "max": 0.008426997551897157
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.0023316902782825675,
+            "median": 0.004329432881211071,
+            "max": 0.010005193636054673
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.0001112307285030667,
+            "median": 0.0001614354884762647,
+            "max": 0.00022694797204133037
+          }
+        },
+        "other_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.0078756762740729,
+            "median": 0.012555106489364053,
+            "max": 0.030437325666179064
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.005561125276518291,
+            "median": 0.012918602037226258,
+            "max": 0.03273810374131348
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.00023083763780752567,
+            "median": 0.00040015548619389484,
+            "max": 0.0006902702177032523
+          }
+        }
+      },
+      "V8": {
+        "same_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.0036401842382830793,
+            "median": 0.005265315304837171,
+            "max": 0.009203696825797292
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.003762877605302588,
+            "median": 0.005083290383325717,
+            "max": 0.009055047295431686
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.0005884239423632173,
+            "median": 0.0007073833902366348,
+            "max": 0.002459506255033127
+          }
+        },
+        "other_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.01107752878451421,
+            "median": 0.01498926877954945,
+            "max": 0.02768764768533327
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.010283992049730538,
+            "median": 0.014872216692662726,
+            "max": 0.027787871667639033
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.001730800036648526,
+            "median": 0.0022666222764419937,
+            "max": 0.007628458879204666
+          }
+        }
+      },
+      "action_out": {
+        "same_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.009756068699692139,
+            "median": 0.01345930093212093,
+            "max": 0.0183733165670459
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.009097417104671348,
+            "median": 0.013615119988247285,
+            "max": 0.02069897367031366
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.001958317466861557,
+            "median": 0.003060941334163145,
+            "max": 0.005629729797426198
+          }
+        },
+        "other_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.023620958308375652,
+            "median": 0.02951316452780637,
+            "max": 0.03704638063856482
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.021912093430715505,
+            "median": 0.03137661655952065,
+            "max": 0.0395306576968858
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.0044216845448042325,
+            "median": 0.006730960463656885,
+            "max": 0.012528638820409796
+          }
+        }
+      }
+    },
+    "900": {
+      "Q8": {
+        "same_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.0032059707628135,
+            "median": 0.0038000820180000335,
+            "max": 0.009640630736231965
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.002967289685870697,
+            "median": 0.0037809585809696466,
+            "max": 0.013223386342924472
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.00013221177822810563,
+            "median": 0.0003640852930831681,
+            "max": 0.0009158909503733798
+          }
+        },
+        "other_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.007402543484941036,
+            "median": 0.011824518671960946,
+            "max": 0.022818150810840595
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.006708004529409062,
+            "median": 0.009672591513839288,
+            "max": 0.02896787931290393
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.00033449466439758503,
+            "median": 0.0007374719658545632,
+            "max": 0.003149839460288411
+          }
+        }
+      },
+      "V8": {
+        "same_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.0040890726578535035,
+            "median": 0.005714775612161518,
+            "max": 0.01079389730899754
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.003984242291083639,
+            "median": 0.005340451440153482,
+            "max": 0.01219030613547045
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.0005127513700408014,
+            "median": 0.0006816190055026915,
+            "max": 0.0009636749358369905
+          }
+        },
+        "other_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.011473456852325708,
+            "median": 0.013651085645414694,
+            "max": 0.029785815988847112
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.010516549114664077,
+            "median": 0.013996118927303416,
+            "max": 0.033886172307505374
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.0013791706404960016,
+            "median": 0.0017999336122312053,
+            "max": 0.002713487051345579
+          }
+        }
+      },
+      "action_out": {
+        "same_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.009705228043371305,
+            "median": 0.01837520625827366,
+            "max": 0.02631584146150795
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.008837773377413127,
+            "median": 0.01817382109509465,
+            "max": 0.027728659987659974
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.0012827684874501756,
+            "median": 0.0017337258088418318,
+            "max": 0.008433714874046795
+          }
+        },
+        "other_teacher": {
+          "S_read_response_relative_residual": {
+            "min": 0.023485800457143876,
+            "median": 0.036303296984701666,
+            "max": 0.04902971159332441
+          },
+          "S_direct_output_relative_residual": {
+            "min": 0.02096820550817179,
+            "median": 0.03695232334103464,
+            "max": 0.048565788884633386
+          },
+          "full_LoRA_output_relative_residual": {
+            "min": 0.0027600126371301885,
+            "median": 0.0040411307652251285,
+            "max": 0.015192839919238584
+          }
+        }
+      }
+    }
+  },
+  "records": [
+    {
+      "version": "450",
+      "task": 0,
+      "teacher": 40,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.020875867376839198,
+        "S_direct_output_relative_residual": 0.014948312723834185,
+        "full_LoRA_output_relative_residual": 0.0006902702177032523,
+        "S_direct_over_full_LoRA_output": 0.04617713252698133
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.00028042429259053105,
+      "equivalent_B_edit_norm": 3.0663057699231246,
+      "original_B_total_norm": 9.75965773285438,
+      "fit_matrix_norm": 0.7213277759827958,
+      "same_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.0037720788228078565,
+        "S_direct_output_relative_residual": 0.0028734151647913687,
+        "full_LoRA_output_relative_residual": 0.0001330272766467878,
+        "S_direct_over_full_LoRA_output": 0.046295877559498634
+      }
+    },
+    {
+      "version": "450",
+      "task": 0,
+      "teacher": 40,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.016250327841488964,
+        "S_direct_output_relative_residual": 0.016702962381932834,
+        "full_LoRA_output_relative_residual": 0.0023900869844889084,
+        "S_direct_over_full_LoRA_output": 0.1430935979999694
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0005116813218345246,
+      "equivalent_B_edit_norm": 0.30406227939223474,
+      "original_B_total_norm": 0.9693831654043062,
+      "fit_matrix_norm": 1.146996117636517,
+      "same_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.00506445168741746,
+        "S_direct_output_relative_residual": 0.00450834261029613,
+        "full_LoRA_output_relative_residual": 0.0006496525084831101,
+        "S_direct_over_full_LoRA_output": 0.14410007504741035
+      }
+    },
+    {
+      "version": "450",
+      "task": 0,
+      "teacher": 40,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.03704638063856482,
+        "S_direct_output_relative_residual": 0.03887897637498679,
+        "full_LoRA_output_relative_residual": 0.012528638820409796,
+        "S_direct_over_full_LoRA_output": 0.322247136847724
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0018913932347495257,
+      "equivalent_B_edit_norm": 0.062407679241744896,
+      "original_B_total_norm": 0.11237840524312728,
+      "fit_matrix_norm": 1.6204192859571072,
+      "same_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.011641636786255093,
+        "S_direct_output_relative_residual": 0.012499876153369449,
+        "full_LoRA_output_relative_residual": 0.004148825250436104,
+        "S_direct_over_full_LoRA_output": 0.3319093085028489
+      }
+    },
+    {
+      "version": "450",
+      "task": 0,
+      "teacher": 11,
+      "other_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.013919441679583887,
+        "S_direct_output_relative_residual": 0.010888891350618332,
+        "full_LoRA_output_relative_residual": 0.00039712602552381877,
+        "S_direct_over_full_LoRA_output": 0.03647074920086035
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0003089576232630797,
+      "equivalent_B_edit_norm": 1.6496329697118954,
+      "original_B_total_norm": 5.901013203840997,
+      "fit_matrix_norm": 0.7364529336129821,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.0056192478252603695,
+        "S_direct_output_relative_residual": 0.004500910156979323,
+        "full_LoRA_output_relative_residual": 0.0001635409824592905,
+        "S_direct_over_full_LoRA_output": 0.03633509151603397
+      }
+    },
+    {
+      "version": "450",
+      "task": 0,
+      "teacher": 11,
+      "other_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.014832037000822942,
+        "S_direct_output_relative_residual": 0.014393961188199956,
+        "full_LoRA_output_relative_residual": 0.001730800036648526,
+        "S_direct_over_full_LoRA_output": 0.12024487311160884
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0005906890305988568,
+      "equivalent_B_edit_norm": 0.2919739952142972,
+      "original_B_total_norm": 0.951886338211323,
+      "fit_matrix_norm": 1.1679906789054113,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.005947712160023491,
+        "S_direct_output_relative_residual": 0.0059317789253652865,
+        "full_LoRA_output_relative_residual": 0.0007170979408650773,
+        "S_direct_over_full_LoRA_output": 0.1208908743713704
+      }
+    },
+    {
+      "version": "450",
+      "task": 0,
+      "teacher": 11,
+      "other_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.02625006122529274,
+        "S_direct_output_relative_residual": 0.02767683169861253,
+        "full_LoRA_output_relative_residual": 0.007285183516435205,
+        "S_direct_over_full_LoRA_output": 0.2632231751006536
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.002050655778087462,
+      "equivalent_B_edit_norm": 0.0583858798418384,
+      "original_B_total_norm": 0.11650570173424574,
+      "fit_matrix_norm": 1.6135077842924976,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.013432596370040044,
+        "S_direct_output_relative_residual": 0.014124515889195059,
+        "full_LoRA_output_relative_residual": 0.003649687043017757,
+        "S_direct_over_full_LoRA_output": 0.258393779415101
+      }
+    },
+    {
+      "version": "450",
+      "task": 12,
+      "teacher": 25,
+      "other_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.01740795088763371,
+        "S_direct_output_relative_residual": 0.016469210770075834,
+        "full_LoRA_output_relative_residual": 0.00023083763780752567,
+        "S_direct_over_full_LoRA_output": 0.014016314505304177
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.000315347951366142,
+      "equivalent_B_edit_norm": 0.9979848730834857,
+      "original_B_total_norm": 5.055653265129411,
+      "fit_matrix_norm": 0.8614491902414322,
+      "same_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.008426997551897157,
+        "S_direct_output_relative_residual": 0.00864568290034327,
+        "full_LoRA_output_relative_residual": 0.0001254260899720537,
+        "S_direct_over_full_LoRA_output": 0.014507366441472628
+      }
+    },
+    {
+      "version": "450",
+      "task": 12,
+      "teacher": 25,
+      "other_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.02609497314717251,
+        "S_direct_output_relative_residual": 0.027787871667639033,
+        "full_LoRA_output_relative_residual": 0.0021431575683950785,
+        "S_direct_over_full_LoRA_output": 0.07712564654208258
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0006727159469079025,
+      "equivalent_B_edit_norm": 0.2521821963323064,
+      "original_B_total_norm": 0.9413205464404221,
+      "fit_matrix_norm": 1.0894339326016886,
+      "same_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.009203696825797292,
+        "S_direct_output_relative_residual": 0.009055047295431686,
+        "full_LoRA_output_relative_residual": 0.0006976688396081922,
+        "S_direct_over_full_LoRA_output": 0.07704750917868418
+      }
+    },
+    {
+      "version": "450",
+      "task": 12,
+      "teacher": 25,
+      "other_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.029573089438248264,
+        "S_direct_output_relative_residual": 0.03230213804347676,
+        "full_LoRA_output_relative_residual": 0.0044216845448042325,
+        "S_direct_over_full_LoRA_output": 0.1368851974706104
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0021271104866257434,
+      "equivalent_B_edit_norm": 0.03833587414360926,
+      "original_B_total_norm": 0.1228277146541809,
+      "fit_matrix_norm": 1.1148847660069308,
+      "same_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.01697645709678074,
+        "S_direct_output_relative_residual": 0.018134526551342067,
+        "full_LoRA_output_relative_residual": 0.0024721956253085328,
+        "S_direct_over_full_LoRA_output": 0.1363253470284602
+      }
+    },
+    {
+      "version": "450",
+      "task": 12,
+      "teacher": 14,
+      "other_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.030437325666179064,
+        "S_direct_output_relative_residual": 0.03273810374131348,
+        "full_LoRA_output_relative_residual": 0.00044874044807341517,
+        "S_direct_over_full_LoRA_output": 0.013706977399156207
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0002749593803371163,
+      "equivalent_B_edit_norm": 0.8489704113514268,
+      "original_B_total_norm": 4.743752622043616,
+      "fit_matrix_norm": 0.8819092168052083,
+      "same_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.00788621639428457,
+        "S_direct_output_relative_residual": 0.00814711930161524,
+        "full_LoRA_output_relative_residual": 0.0001112307285030667,
+        "S_direct_over_full_LoRA_output": 0.01365276785391055
+      }
+    },
+    {
+      "version": "450",
+      "task": 12,
+      "teacher": 14,
+      "other_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.02768764768533327,
+        "S_direct_output_relative_residual": 0.025244744857230928,
+        "full_LoRA_output_relative_residual": 0.0026650936588606794,
+        "S_direct_over_full_LoRA_output": 0.10557023546614729
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0005565814051117535,
+      "equivalent_B_edit_norm": 0.31890722347256434,
+      "original_B_total_norm": 0.957333413358722,
+      "fit_matrix_norm": 1.3097920252794575,
+      "same_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.007569242471195105,
+        "S_direct_output_relative_residual": 0.007063330643720115,
+        "full_LoRA_output_relative_residual": 0.0007418736534125238,
+        "S_direct_over_full_LoRA_output": 0.10503170399818544
+      }
+    },
+    {
+      "version": "450",
+      "task": 12,
+      "teacher": 14,
+      "other_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.03669846473857877,
+        "S_direct_output_relative_residual": 0.033997300359287025,
+        "full_LoRA_output_relative_residual": 0.006176737410878564,
+        "S_direct_over_full_LoRA_output": 0.18168317324029135
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.001963539032415275,
+      "equivalent_B_edit_norm": 0.04610323866323468,
+      "original_B_total_norm": 0.12859560582534105,
+      "fit_matrix_norm": 1.4901054280262096,
+      "same_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.013486005494201817,
+        "S_direct_output_relative_residual": 0.013105724087299509,
+        "full_LoRA_output_relative_residual": 0.002403083238715686,
+        "S_direct_over_full_LoRA_output": 0.18336134827105546
+      }
+    },
+    {
+      "version": "450",
+      "task": 20,
+      "teacher": 38,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.011190771299144218,
+        "S_direct_output_relative_residual": 0.00606508697151164,
+        "full_LoRA_output_relative_residual": 0.0004031849468639709,
+        "S_direct_over_full_LoRA_output": 0.06647636691077533
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.00024525636442436364,
+      "equivalent_B_edit_norm": 4.650514450474593,
+      "original_B_total_norm": 9.601548531906683,
+      "fit_matrix_norm": 1.1367311307766004,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.0036605503233494785,
+        "S_direct_output_relative_residual": 0.0025142908224605274,
+        "full_LoRA_output_relative_residual": 0.00016784718852385687,
+        "S_direct_over_full_LoRA_output": 0.06675726889843188
+      }
+    },
+    {
+      "version": "450",
+      "task": 20,
+      "teacher": 38,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.014387249758708708,
+        "S_direct_output_relative_residual": 0.014795049612081598,
+        "full_LoRA_output_relative_residual": 0.0020291071825220656,
+        "S_direct_over_full_LoRA_output": 0.13714771060078784
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0004597242239317008,
+      "equivalent_B_edit_norm": 0.3422510928631046,
+      "original_B_total_norm": 1.0058808593252924,
+      "fit_matrix_norm": 1.3822210020112753,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.004580421127052849,
+        "S_direct_output_relative_residual": 0.004635912151549918,
+        "full_LoRA_output_relative_residual": 0.0006359176569832436,
+        "S_direct_over_full_LoRA_output": 0.13717206801915738
+      }
+    },
+    {
+      "version": "450",
+      "task": 20,
+      "teacher": 38,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.02552810360202109,
+        "S_direct_output_relative_residual": 0.02349253646316059,
+        "full_LoRA_output_relative_residual": 0.005429675004631678,
+        "S_direct_over_full_LoRA_output": 0.23112340436913348
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0013451371343349786,
+      "equivalent_B_edit_norm": 0.06441844951905114,
+      "original_B_total_norm": 0.1271663708015169,
+      "fit_matrix_norm": 1.8542644055807342,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.010115261530797729,
+        "S_direct_output_relative_residual": 0.00917144277027654,
+        "full_LoRA_output_relative_residual": 0.002097692538978139,
+        "S_direct_over_full_LoRA_output": 0.22872001619815904
+      }
+    },
+    {
+      "version": "450",
+      "task": 20,
+      "teacher": 42,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.0078756762740729,
+        "S_direct_output_relative_residual": 0.005561125276518291,
+        "full_LoRA_output_relative_residual": 0.00038190575867901884,
+        "S_direct_over_full_LoRA_output": 0.06867418727134346
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0002508673700081948,
+      "equivalent_B_edit_norm": 3.932563918991935,
+      "original_B_total_norm": 8.989155183516473,
+      "fit_matrix_norm": 0.9809778190180442,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.003328273784764019,
+        "S_direct_output_relative_residual": 0.0023316902782825675,
+        "full_LoRA_output_relative_residual": 0.0001593299944932389,
+        "S_direct_over_full_LoRA_output": 0.06833240073831555
+      }
+    },
+    {
+      "version": "450",
+      "task": 20,
+      "teacher": 42,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.012340821014566385,
+        "S_direct_output_relative_residual": 0.01248480911956912,
+        "full_LoRA_output_relative_residual": 0.0019530813904034667,
+        "S_direct_over_full_LoRA_output": 0.15643662403633707
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0004319664904800623,
+      "equivalent_B_edit_norm": 0.31197495540515696,
+      "original_B_total_norm": 0.9783918515570109,
+      "fit_matrix_norm": 1.246142491615626,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.0036401842382830793,
+        "S_direct_output_relative_residual": 0.003762877605302588,
+        "full_LoRA_output_relative_residual": 0.0005884239423632173,
+        "S_direct_over_full_LoRA_output": 0.156376051544706
+      }
+    },
+    {
+      "version": "450",
+      "task": 20,
+      "teacher": 42,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.023620958308375652,
+        "S_direct_output_relative_residual": 0.021912093430715505,
+        "full_LoRA_output_relative_residual": 0.004671021163096191,
+        "S_direct_over_full_LoRA_output": 0.21317092216066122
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0013663123791996636,
+      "equivalent_B_edit_norm": 0.05478334135493318,
+      "original_B_total_norm": 0.12145758321859493,
+      "fit_matrix_norm": 1.6429115761343667,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.009756068699692139,
+        "S_direct_output_relative_residual": 0.009097417104671348,
+        "full_LoRA_output_relative_residual": 0.001958317466861557,
+        "S_direct_over_full_LoRA_output": 0.21526082011299658
+      }
+    },
+    {
+      "version": "450",
+      "task": 32,
+      "teacher": 17,
+      "other_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.010819342644827408,
+        "S_direct_output_relative_residual": 0.009988774455930768,
+        "full_LoRA_output_relative_residual": 0.0005494128968984119,
+        "S_direct_over_full_LoRA_output": 0.05500303358758908
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0003431438118794687,
+      "equivalent_B_edit_norm": 4.513247757665979,
+      "original_B_total_norm": 10.783448956424191,
+      "fit_matrix_norm": 1.9239494247244138,
+      "same_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.0042582702019889835,
+        "S_direct_output_relative_residual": 0.00415795560544282,
+        "full_LoRA_output_relative_residual": 0.00022694797204133037,
+        "S_direct_over_full_LoRA_output": 0.05458162461962134
+      }
+    },
+    {
+      "version": "450",
+      "task": 32,
+      "teacher": 17,
+      "other_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.015146500558275959,
+        "S_direct_output_relative_residual": 0.014949383773243854,
+        "full_LoRA_output_relative_residual": 0.007628458879204666,
+        "S_direct_over_full_LoRA_output": 0.510285841538027
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0006514339306118926,
+      "equivalent_B_edit_norm": 1.1971531857261337,
+      "original_B_total_norm": 1.0871414051499333,
+      "fit_matrix_norm": 3.606660020351763,
+      "same_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.004990122677550672,
+        "S_direct_output_relative_residual": 0.0048070406447726,
+        "full_LoRA_output_relative_residual": 0.002459506255033127,
+        "S_direct_over_full_LoRA_output": 0.511646652646407
+      }
+    },
+    {
+      "version": "450",
+      "task": 32,
+      "teacher": 17,
+      "other_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.03620780308705807,
+        "S_direct_output_relative_residual": 0.030451095075564535,
+        "full_LoRA_output_relative_residual": 0.00996422554417767,
+        "S_direct_over_full_LoRA_output": 0.3272205981246782
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.002269512234134821,
+      "equivalent_B_edit_norm": 0.11253396457535263,
+      "original_B_total_norm": 0.1537171926058558,
+      "fit_matrix_norm": 3.816694618077133,
+      "same_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.0183733165670459,
+        "S_direct_output_relative_residual": 0.016443827233534818,
+        "full_LoRA_output_relative_residual": 0.0053865421614032755,
+        "S_direct_over_full_LoRA_output": 0.32757229110375213
+      }
+    },
+    {
+      "version": "450",
+      "task": 32,
+      "teacher": 43,
+      "other_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.009851396137944283,
+        "S_direct_output_relative_residual": 0.01968511552445474,
+        "full_LoRA_output_relative_residual": 0.0003574673933785974,
+        "S_direct_over_full_LoRA_output": 0.01815927333189979
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.00034568133876251964,
+      "equivalent_B_edit_norm": 3.2266620492824516,
+      "original_B_total_norm": 10.500172430577255,
+      "fit_matrix_norm": 1.450798156149218,
+      "same_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.004579481528659537,
+        "S_direct_output_relative_residual": 0.010005193636054673,
+        "full_LoRA_output_relative_residual": 0.0001845268661506801,
+        "S_direct_over_full_LoRA_output": 0.018443107936034327
+      }
+    },
+    {
+      "version": "450",
+      "task": 32,
+      "teacher": 43,
+      "other_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.01107752878451421,
+        "S_direct_output_relative_residual": 0.010283992049730538,
+        "full_LoRA_output_relative_residual": 0.003470055850504695,
+        "S_direct_over_full_LoRA_output": 0.33742303900318726
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0006879665392724648,
+      "equivalent_B_edit_norm": 0.8401440888153918,
+      "original_B_total_norm": 1.0380364589963307,
+      "fit_matrix_norm": 2.70781467379938,
+      "same_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.0054661789222568815,
+        "S_direct_output_relative_residual": 0.005359540121878835,
+        "full_LoRA_output_relative_residual": 0.0018034361334162293,
+        "S_direct_over_full_LoRA_output": 0.3364908354831046
+      }
+    },
+    {
+      "version": "450",
+      "task": 32,
+      "teacher": 43,
+      "other_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.029453239617364478,
+        "S_direct_output_relative_residual": 0.0395306576968858,
+        "full_LoRA_output_relative_residual": 0.010323189841758394,
+        "S_direct_over_full_LoRA_output": 0.26114389294797
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.002558823932279425,
+      "equivalent_B_edit_norm": 0.09185035082729764,
+      "original_B_total_norm": 0.13294908777062628,
+      "fit_matrix_norm": 2.337847390048386,
+      "same_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.01774889482948649,
+        "S_direct_output_relative_residual": 0.02069897367031366,
+        "full_LoRA_output_relative_residual": 0.005629729797426198,
+        "S_direct_over_full_LoRA_output": 0.2719811081986312
+      }
+    },
+    {
+      "version": "900",
+      "task": 0,
+      "teacher": 40,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.01365135341514472,
+        "S_direct_output_relative_residual": 0.008284511448567664,
+        "full_LoRA_output_relative_residual": 0.0012709067364282411,
+        "S_direct_over_full_LoRA_output": 0.1534075659522412
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0002587143026926059,
+      "equivalent_B_edit_norm": 12.961418104302233,
+      "original_B_total_norm": 10.125294140429453,
+      "fit_matrix_norm": 1.7290340922937733,
+      "same_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.0032059707628135,
+        "S_direct_output_relative_residual": 0.002967289685870697,
+        "full_LoRA_output_relative_residual": 0.00045538459472496126,
+        "S_direct_over_full_LoRA_output": 0.15346819587361485
+      }
+    },
+    {
+      "version": "900",
+      "task": 0,
+      "teacher": 40,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.013680991064414994,
+        "S_direct_output_relative_residual": 0.014075124205876453,
+        "full_LoRA_output_relative_residual": 0.002173835029749161,
+        "S_direct_over_full_LoRA_output": 0.15444517561284263
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0004677933178555232,
+      "equivalent_B_edit_norm": 0.444516291637661,
+      "original_B_total_norm": 1.1750521449901712,
+      "fit_matrix_norm": 1.3261215441038772,
+      "same_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.004452054658296612,
+        "S_direct_output_relative_residual": 0.0045151667050235674,
+        "full_LoRA_output_relative_residual": 0.0006952718895260827,
+        "S_direct_over_full_LoRA_output": 0.15398587360075194
+      }
+    },
+    {
+      "version": "900",
+      "task": 0,
+      "teacher": 40,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.04578722060507361,
+        "S_direct_output_relative_residual": 0.04469731783895293,
+        "full_LoRA_output_relative_residual": 0.0038420453905711792,
+        "S_direct_over_full_LoRA_output": 0.08595695617384236
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0019402695998217026,
+      "equivalent_B_edit_norm": 0.021431800426669124,
+      "original_B_total_norm": 0.11131425781237982,
+      "fit_matrix_norm": 0.6693049105105738,
+      "same_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.01588735060049258,
+        "S_direct_output_relative_residual": 0.015030005513920903,
+        "full_LoRA_output_relative_residual": 0.0012827684874501756,
+        "S_direct_over_full_LoRA_output": 0.08534717344328754
+      }
+    },
+    {
+      "version": "900",
+      "task": 0,
+      "teacher": 11,
+      "other_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.010958162697705155,
+        "S_direct_output_relative_residual": 0.007509077818413195,
+        "full_LoRA_output_relative_residual": 0.000780118636806145,
+        "S_direct_over_full_LoRA_output": 0.10389007221275519
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.00027496444433302474,
+      "equivalent_B_edit_norm": 5.946098613228344,
+      "original_B_total_norm": 6.844169165527328,
+      "fit_matrix_norm": 1.4502410987311418,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.005051524736432459,
+        "S_direct_output_relative_residual": 0.004309428994243084,
+        "full_LoRA_output_relative_residual": 0.0004486383981663081,
+        "S_direct_over_full_LoRA_output": 0.10410622817214041
+      }
+    },
+    {
+      "version": "900",
+      "task": 0,
+      "teacher": 11,
+      "other_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.013621180226414396,
+        "S_direct_output_relative_residual": 0.013835158992892841,
+        "full_LoRA_output_relative_residual": 0.0014775217932891534,
+        "S_direct_over_full_LoRA_output": 0.10679471006066214
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0005118548950192479,
+      "equivalent_B_edit_norm": 0.3855436896655965,
+      "original_B_total_norm": 1.151207284455078,
+      "fit_matrix_norm": 1.214893954650087,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.006054634735678308,
+        "S_direct_output_relative_residual": 0.006178893264695595,
+        "full_LoRA_output_relative_residual": 0.0006679661214793002,
+        "S_direct_over_full_LoRA_output": 0.10810449264366889
+      }
+    },
+    {
+      "version": "900",
+      "task": 0,
+      "teacher": 11,
+      "other_teacher": {
+        "rows": 1000,
+        "S_read_response_relative_residual": 0.03400517788625988,
+        "S_direct_output_relative_residual": 0.031745371120647056,
+        "full_LoRA_output_relative_residual": 0.0027682452018857016,
+        "S_direct_over_full_LoRA_output": 0.08720153849722194
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher11.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task000_teacher40.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.002148611482435631,
+      "equivalent_B_edit_norm": 0.021867390221553814,
+      "original_B_total_norm": 0.11254643792952555,
+      "fit_matrix_norm": 0.8000900396720384,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.017438811941940694,
+        "S_direct_output_relative_residual": 0.016781405641497577,
+        "full_LoRA_output_relative_residual": 0.001467056991803967,
+        "S_direct_over_full_LoRA_output": 0.08742157976183969
+      }
+    },
+    {
+      "version": "900",
+      "task": 12,
+      "teacher": 25,
+      "other_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.022742166525052298,
+        "S_direct_output_relative_residual": 0.02896787931290393,
+        "full_LoRA_output_relative_residual": 0.0006021672416841728,
+        "S_direct_over_full_LoRA_output": 0.020787411987591837
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.00028921270271408143,
+      "equivalent_B_edit_norm": 2.8220279385136067,
+      "original_B_total_norm": 5.664944660381051,
+      "fit_matrix_norm": 0.998811421141101,
+      "same_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.009640630736231965,
+        "S_direct_output_relative_residual": 0.013223386342924472,
+        "full_LoRA_output_relative_residual": 0.00027953218800002807,
+        "S_direct_over_full_LoRA_output": 0.021139228693079763
+      }
+    },
+    {
+      "version": "900",
+      "task": 12,
+      "teacher": 25,
+      "other_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.02303263990491803,
+        "S_direct_output_relative_residual": 0.025620663467580775,
+        "full_LoRA_output_relative_residual": 0.0013791706404960016,
+        "S_direct_over_full_LoRA_output": 0.05383040303546946
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0005629066591971473,
+      "equivalent_B_edit_norm": 0.3373749157319384,
+      "original_B_total_norm": 1.2429106752974868,
+      "fit_matrix_norm": 1.1659291390515998,
+      "same_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.01079389730899754,
+        "S_direct_output_relative_residual": 0.01219030613547045,
+        "full_LoRA_output_relative_residual": 0.000663351416110404,
+        "S_direct_over_full_LoRA_output": 0.0544163049507209
+      }
+    },
+    {
+      "version": "900",
+      "task": 12,
+      "teacher": 25,
+      "other_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.04603287729636258,
+        "S_direct_output_relative_residual": 0.04688893902773262,
+        "full_LoRA_output_relative_residual": 0.0027600126371301885,
+        "S_direct_over_full_LoRA_output": 0.05886276581130935
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0019870687472967087,
+      "equivalent_B_edit_norm": 0.02095203057481087,
+      "original_B_total_norm": 0.11811939147256408,
+      "fit_matrix_norm": 0.6319379493636816,
+      "same_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.02631584146150795,
+        "S_direct_output_relative_residual": 0.027728659987659974,
+        "full_LoRA_output_relative_residual": 0.001651183944696115,
+        "S_direct_over_full_LoRA_output": 0.05954791704434827
+      }
+    },
+    {
+      "version": "900",
+      "task": 12,
+      "teacher": 14,
+      "other_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.022818150810840595,
+        "S_direct_output_relative_residual": 0.016875860122648603,
+        "full_LoRA_output_relative_residual": 0.0006030042496325114,
+        "S_direct_over_full_LoRA_output": 0.03573176390714669
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0002464988732695393,
+      "equivalent_B_edit_norm": 2.907740357611418,
+      "original_B_total_norm": 6.012481036181042,
+      "fit_matrix_norm": 1.0916107933189882,
+      "same_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.007451988209526402,
+        "S_direct_output_relative_residual": 0.007005198119928549,
+        "full_LoRA_output_relative_residual": 0.0002525192046844624,
+        "S_direct_over_full_LoRA_output": 0.03604740370812496
+      }
+    },
+    {
+      "version": "900",
+      "task": 12,
+      "teacher": 14,
+      "other_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.029785815988847112,
+        "S_direct_output_relative_residual": 0.033886172307505374,
+        "full_LoRA_output_relative_residual": 0.002713487051345579,
+        "S_direct_over_full_LoRA_output": 0.08007652875992058
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0004943212214756311,
+      "equivalent_B_edit_norm": 0.4400787656045818,
+      "original_B_total_norm": 1.3036438779943835,
+      "fit_matrix_norm": 1.4872866280177344,
+      "same_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.008407584025742256,
+        "S_direct_output_relative_residual": 0.008942835549397241,
+        "full_LoRA_output_relative_residual": 0.000711255750347633,
+        "S_direct_over_full_LoRA_output": 0.0795335826560707
+      }
+    },
+    {
+      "version": "900",
+      "task": 12,
+      "teacher": 14,
+      "other_teacher": {
+        "rows": 1850,
+        "S_read_response_relative_residual": 0.04902971159332441,
+        "S_direct_output_relative_residual": 0.048565788884633386,
+        "full_LoRA_output_relative_residual": 0.004240216139879078,
+        "S_direct_over_full_LoRA_output": 0.08730870510415445
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher14.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task012_teacher25.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0018841916143491322,
+      "equivalent_B_edit_norm": 0.02740753503893026,
+      "original_B_total_norm": 0.12141241749619104,
+      "fit_matrix_norm": 0.7770491521524371,
+      "same_teacher": {
+        "rows": 1300,
+        "S_read_response_relative_residual": 0.021294781507007938,
+        "S_direct_output_relative_residual": 0.021021590445588028,
+        "full_LoRA_output_relative_residual": 0.0018162676729875486,
+        "S_direct_over_full_LoRA_output": 0.08640010743662564
+      }
+    },
+    {
+      "version": "900",
+      "task": 20,
+      "teacher": 38,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.008768873882233325,
+        "S_direct_output_relative_residual": 0.008065812677167425,
+        "full_LoRA_output_relative_residual": 0.00033449466439758503,
+        "S_direct_over_full_LoRA_output": 0.04147067106386778
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0002215946016754512,
+      "equivalent_B_edit_norm": 2.7704269849862095,
+      "original_B_total_norm": 8.115306768805384,
+      "fit_matrix_norm": 1.2306054175199854,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.003406067353788739,
+        "S_direct_output_relative_residual": 0.0032031871632106886,
+        "full_LoRA_output_relative_residual": 0.00013221177822810563,
+        "S_direct_over_full_LoRA_output": 0.04127507119989337
+      }
+    },
+    {
+      "version": "900",
+      "task": 20,
+      "teacher": 38,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.013557010460457234,
+        "S_direct_output_relative_residual": 0.01391711364873038,
+        "full_LoRA_output_relative_residual": 0.0017203470980675594,
+        "S_direct_over_full_LoRA_output": 0.12361378526390793
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.00042333152157945285,
+      "equivalent_B_edit_norm": 0.46651364486946767,
+      "original_B_total_norm": 1.317917249718738,
+      "fit_matrix_norm": 1.5989685527096575,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.004304593998341624,
+        "S_direct_output_relative_residual": 0.0042004452097894815,
+        "full_LoRA_output_relative_residual": 0.0005205721100851032,
+        "S_direct_over_full_LoRA_output": 0.12393260335163218
+      }
+    },
+    {
+      "version": "900",
+      "task": 20,
+      "teacher": 38,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.023485800457143876,
+        "S_direct_output_relative_residual": 0.02096820550817179,
+        "full_LoRA_output_relative_residual": 0.0034131075334544094,
+        "S_direct_over_full_LoRA_output": 0.16277537589586497
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0013882563954095346,
+      "equivalent_B_edit_norm": 0.029066790308246545,
+      "original_B_total_norm": 0.11775764515855633,
+      "fit_matrix_norm": 0.7980279329581452,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.009919233384360054,
+        "S_direct_output_relative_residual": 0.008874259627895,
+        "full_LoRA_output_relative_residual": 0.0014606173884944046,
+        "S_direct_over_full_LoRA_output": 0.16459033764384773
+      }
+    },
+    {
+      "version": "900",
+      "task": 20,
+      "teacher": 42,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.011519451552220178,
+        "S_direct_output_relative_residual": 0.026927561457797154,
+        "full_LoRA_output_relative_residual": 0.0006948252949029812,
+        "S_direct_over_full_LoRA_output": 0.02580349861950783
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.00023266373599306896,
+      "equivalent_B_edit_norm": 3.750045920337507,
+      "original_B_total_norm": 7.620051144451043,
+      "fit_matrix_norm": 1.203966703446284,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.003949985140332686,
+        "S_direct_output_relative_residual": 0.007489605588264548,
+        "full_LoRA_output_relative_residual": 0.00019276556492670341,
+        "S_direct_over_full_LoRA_output": 0.025737745820520578
+      }
+    },
+    {
+      "version": "900",
+      "task": 20,
+      "teacher": 42,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.011473456852325708,
+        "S_direct_output_relative_residual": 0.011039920514808526,
+        "full_LoRA_output_relative_residual": 0.0014226650379329348,
+        "S_direct_over_full_LoRA_output": 0.12886551456820966
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.00040423279675919023,
+      "equivalent_B_edit_norm": 0.4069374744868396,
+      "original_B_total_norm": 1.2385161432942005,
+      "fit_matrix_norm": 1.3841108475381507,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.0040890726578535035,
+        "S_direct_output_relative_residual": 0.003984242291083639,
+        "full_LoRA_output_relative_residual": 0.0005127513700408014,
+        "S_direct_over_full_LoRA_output": 0.1286948264136172
+      }
+    },
+    {
+      "version": "900",
+      "task": 20,
+      "teacher": 42,
+      "other_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.02419264114791228,
+        "S_direct_output_relative_residual": 0.022417538621489964,
+        "full_LoRA_output_relative_residual": 0.004821013447382998,
+        "S_direct_over_full_LoRA_output": 0.21505543176633424
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher42.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task020_teacher38.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0015160827618980952,
+      "equivalent_B_edit_norm": 0.03183435105591955,
+      "original_B_total_norm": 0.1143900974807141,
+      "fit_matrix_norm": 0.9139333794599089,
+      "same_teacher": {
+        "rows": 1350,
+        "S_read_response_relative_residual": 0.009705228043371305,
+        "S_direct_output_relative_residual": 0.008837773377413127,
+        "full_LoRA_output_relative_residual": 0.001883379054819232,
+        "S_direct_over_full_LoRA_output": 0.21310560639998094
+      }
+    },
+    {
+      "version": "900",
+      "task": 32,
+      "teacher": 17,
+      "other_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.012129585791701715,
+        "S_direct_output_relative_residual": 0.011060671579110915,
+        "full_LoRA_output_relative_residual": 0.003149839460288411,
+        "S_direct_over_full_LoRA_output": 0.2847783190884331
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.000312201566074941,
+      "equivalent_B_edit_norm": 7.060598343478962,
+      "original_B_total_norm": 6.5012800426078545,
+      "fit_matrix_norm": 1.7710516075325409,
+      "same_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.003650178895667381,
+        "S_direct_output_relative_residual": 0.0032524881676962093,
+        "full_LoRA_output_relative_residual": 0.0009158909503733798,
+        "S_direct_over_full_LoRA_output": 0.28159701224128364
+      }
+    },
+    {
+      "version": "900",
+      "task": 32,
+      "teacher": 17,
+      "other_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.012231290248356527,
+        "S_direct_output_relative_residual": 0.010516549114664077,
+        "full_LoRA_output_relative_residual": 0.0018795201263948512,
+        "S_direct_over_full_LoRA_output": 0.1787202347368952
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0005652129927645389,
+      "equivalent_B_edit_norm": 0.4583799782015856,
+      "original_B_total_norm": 1.140501480850428,
+      "fit_matrix_norm": 1.5723209846911603,
+      "same_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.005727525366954402,
+        "S_direct_output_relative_residual": 0.005230810181737837,
+        "full_LoRA_output_relative_residual": 0.0009315397493665266,
+        "S_direct_over_full_LoRA_output": 0.17808708727737474
+      }
+    },
+    {
+      "version": "900",
+      "task": 32,
+      "teacher": 17,
+      "other_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.037544809890628965,
+        "S_direct_output_relative_residual": 0.038183206284601166,
+        "full_LoRA_output_relative_residual": 0.015192839919238584,
+        "S_direct_over_full_LoRA_output": 0.3978932467325479
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0022412646859023898,
+      "equivalent_B_edit_norm": 0.1292911842083001,
+      "original_B_total_norm": 0.12049553783056038,
+      "fit_matrix_norm": 3.205471632958374,
+      "same_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.02054217470079589,
+        "S_direct_output_relative_residual": 0.02083388964736305,
+        "full_LoRA_output_relative_residual": 0.008433714874046795,
+        "S_direct_over_full_LoRA_output": 0.404807504349734
+      }
+    },
+    {
+      "version": "900",
+      "task": 32,
+      "teacher": 43,
+      "other_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.007402543484941036,
+        "S_direct_output_relative_residual": 0.006708004529409062,
+        "full_LoRA_output_relative_residual": 0.0017607816965997448,
+        "S_direct_over_full_LoRA_output": 0.2624896403811552
+      },
+      "site": "Q8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0003293763352666031,
+      "equivalent_B_edit_norm": 7.37861986706376,
+      "original_B_total_norm": 6.6377858637123275,
+      "fit_matrix_norm": 1.7956530399266803,
+      "same_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.003374705608634339,
+        "S_direct_output_relative_residual": 0.003047545588551218,
+        "full_LoRA_output_relative_residual": 0.0008054033964629262,
+        "S_direct_over_full_LoRA_output": 0.26427935958976395
+      }
+    },
+    {
+      "version": "900",
+      "task": 32,
+      "teacher": 43,
+      "other_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.01455405233787405,
+        "S_direct_output_relative_residual": 0.014311033887930789,
+        "full_LoRA_output_relative_residual": 0.0025252119560206093,
+        "S_direct_over_full_LoRA_output": 0.17645209813598772
+      },
+      "site": "V8",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.0005650280384205963,
+      "equivalent_B_edit_norm": 0.45442404532298725,
+      "original_B_total_norm": 1.1269148673590499,
+      "fit_matrix_norm": 1.4319696489439515,
+      "same_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.005702025857368632,
+        "S_direct_output_relative_residual": 0.005450092698569126,
+        "full_LoRA_output_relative_residual": 0.0009636749358369905,
+        "S_direct_over_full_LoRA_output": 0.17681808166125226
+      }
+    },
+    {
+      "version": "900",
+      "task": 32,
+      "teacher": 43,
+      "other_teacher": {
+        "rows": 2550,
+        "S_read_response_relative_residual": 0.035061784078774375,
+        "S_direct_output_relative_residual": 0.03572144039746812,
+        "full_LoRA_output_relative_residual": 0.01159090239598795,
+        "S_direct_over_full_LoRA_output": 0.32448026359008453
+      },
+      "site": "action_out",
+      "fit_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher43.pt",
+      "other_source": "/data1/user/ymdai/ember_runs/conditional_read_write_continuation900_20261002/analysis/A28/conditional_read_write/native_task032_teacher17.pt",
+      "address_rank": 128,
+      "address_singular_ratio": 0.002513872400067926,
+      "equivalent_B_edit_norm": 0.08799737041640847,
+      "original_B_total_norm": 0.11681212575279828,
+      "fit_matrix_norm": 2.1953490011461594,
+      "same_teacher": {
+        "rows": 2450,
+        "S_read_response_relative_residual": 0.019311600574606628,
+        "S_direct_output_relative_residual": 0.019566236548691725,
+        "full_LoRA_output_relative_residual": 0.00624028532920919,
+        "S_direct_over_full_LoRA_output": 0.31893130360965816
+      }
+    }
+  ],
+  "analysis_source_code": "\"\"\"CPU algebra on saved training-native tensors; no model or new data read.\"\"\"\nimport json\nfrom pathlib import Path\nimport torch\n\ntorch.set_num_threads(4)\nrepo = Path('/data1/user/ymdai/projects/EMBER')\nevidence = json.loads((repo / 'docs/analyses/conditional_read_write900_evidence_20261002.json').read_text())\nrecords = evidence['native_train_action_readback']['records']\nout = []\n\ndef ratio(numerator, denominator):\n    return float(numerator.square().sum().sqrt() / denominator.square().sum().sqrt().clamp_min(1e-30))\n\nfor version in ('450', '900'):\n    saved = {}\n    for row in records:\n        path = row['versions'][version]['raw']\n        saved[(row['task'], row['teacher'])] = (path, torch.load(path, map_location='cpu', weights_only=True))\n    for (task, teacher), (path, data) in saved.items():\n        other_key, (other_path, other) = next((key, value) for key, value in saved.items()\n                                            if key[0] == task and key[1] != teacher)\n        for site, tensors in data['targets'].items():\n            a0, s, b = (tensors['A0'].double(), tensors['S'].double(),\n                        (tensors['B0'] + tensors['M']).double())\n            x = tensors['X'].reshape(-1, a0.shape[1]).double()\n            z, sx = x @ a0.T, x @ s.T\n            # The unregularized minimum-norm least-squares solution, default\n            # LAPACK numerical rank. Multiplication by B afterwards commutes\n            # with this orthogonal projection onto the columns of Z.\n            fit = torch.linalg.lstsq(z, sx, driver='gelsd')\n            c = fit.solution\n            entry = dict(version=version, task=task, teacher=teacher,\n                         other_teacher=other_key[1], site=site, fit_source=path,\n                         other_source=other_path, address_rank=int(fit.rank),\n                         address_singular_ratio=float(fit.singular_values[-1] / fit.singular_values[0]),\n                         equivalent_B_edit_norm=float((b @ c.T).norm()),\n                         original_B_total_norm=float(b.norm()),\n                         fit_matrix_norm=float(c.norm()))\n            for label, raw_x in (('same_teacher', tensors['X']),\n                                 ('other_teacher', other['targets'][site]['X'])):\n                x_eval = raw_x.reshape(-1, a0.shape[1]).double()\n                z_eval = x_eval @ a0.T\n                sx_eval = x_eval @ s.T\n                residual_sx = sx_eval - z_eval @ c\n                y_s = sx_eval @ b.T\n                residual_y = residual_sx @ b.T\n                full_y = (z_eval + sx_eval) @ b.T\n                entry[label] = dict(rows=len(x_eval),\n                    S_read_response_relative_residual=ratio(residual_sx, sx_eval),\n                    S_direct_output_relative_residual=ratio(residual_y, y_s),\n                    full_LoRA_output_relative_residual=ratio(residual_y, full_y),\n                    S_direct_over_full_LoRA_output=ratio(y_s, full_y))\n            out.append(entry)\n\nsummary = {}\nfor version in ('450', '900'):\n    summary[version] = {}\n    for site in ('Q8', 'V8', 'action_out'):\n        subset = [row for row in out if row['version'] == version and row['site'] == site]\n        summary[version][site] = {}\n        for label in ('same_teacher', 'other_teacher'):\n            summary[version][site][label] = {}\n            for metric in ('S_read_response_relative_residual', 'S_direct_output_relative_residual',\n                           'full_LoRA_output_relative_residual'):\n                values = torch.tensor([row[label][metric] for row in subset], dtype=torch.float64)\n                summary[version][site][label][metric] = dict(min=float(values.min()),\n                    median=float(values.quantile(.5)), max=float(values.max()))\n\nresult = dict(schema='ember_conditional_A_saved_native_chart_20261002',\n    scope='Four training tasks, two teachers each, three saved sites, 450 and 900. CPU algebra only.',\n    fit='For each condition solve C=argmin_C ||X A0.T C - X S.T||_F. Delta_B=B_total C.T.',\n    counterfactual='Hold original S and B_total fixed when evaluating the same or other teacher native X.',\n    boundaries=['Teacher-native X is public, state-free, fixed-noise/tau1, not execution-query hidden.',\n                'Uses no action label, outcome, model forward, environment, GPU or optimizer.',\n                'Per-condition privileged algebraic fit is not a deployable video compiler.',\n                'Does not recompile M, transform all 38 sites or evaluate closed-loop behavior.',\n                'Small residual is not a proof that S is redundant on deployment states or that fixed A is learnable.',\n                'Large rowspace-orthogonal factor energy is not by itself new useful task information.'],\n    summary=summary, records=out)\ndestination = Path(__file__).with_name('conditional_A_functional_chart.json')\ndestination.write_text(json.dumps(result, indent=2, ensure_ascii=False) + '\\n')\nprint(json.dumps(summary, indent=2))\nprint('saved', destination)\n",
+  "reproduction": "CPU: extract analysis_source_code to a temporary .py file under the repository .codex/tmp and run with .venv/bin/python. It reads the listed existing native artifacts and writes JSON next to the script."
+}

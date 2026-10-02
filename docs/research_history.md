@@ -3,6 +3,19 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：固定数据与数学先行，登记条件读取函数重表达诊断
+
+Owner在交接讨论后恢复自主推进，明确不扩数据、先有数学推导再下决定，主目标是在相对稳定下大幅超过强MT。
+只读[旧专家审计](analyses/fixed_data_expert_audit_20261002.json)纠正“同数据全任务强专家已学成”前提：
+允许36中只有32个旧专家，source/offset/rank/训练量不匹配，且困难target并未普遍学成。
+主讨论复用16份train native原件作[CPU函数重表达](analyses/conditional_A_functional_chart_20261002.json)，
+显示900的S在Q8/V8/out教学输入上大多可通过A0响应重表达；这不是自身执行或重新共同学习的结论。
+
+[前置推导与唯一诊断合同](designs/conditional_A_reexpression_diagnostic.md)分开Value内容与实际调用核、
+条件S对执行/编译的两条作用，以及教学协方差对自身输入误差的有限约束。额外图文Value未选定、未实现。
+登记900父点、四train×两teacher、完整38处解析重表达；固定A28功能读取及64有限配对闭环，3GPUh/12GiB。
+没有新训练、数据、held/controls或选点。尚无模型检验结果，不能把CPU拟合记作修复；科学发现见findings§272，执行状态见progress。
+
 ## 2026-10-02：匹配支持扩展未形成广泛迁移，夜间三批分析收束并暂停
 
 条件读写§15从450共同父点只新训D71至630，target24原事件/13,440query保持，支持分布12→审计71，

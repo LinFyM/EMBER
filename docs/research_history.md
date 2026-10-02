@@ -3,6 +3,33 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：自身执行特征功能信用，两臂64与固定128行执行交付
+
+[原合同](designs/state_coupled_functional_credit_diagnostic.md)全部固定终点已执行。父为旧T2340，公共A/B0/probe/native固定；
+两臂共享P/C/D/O及同seed7 fresh gamma，8condition等权、原64步A28、全50×7真实FM及相同视频Z信用，只切辅助hidden query live/stop。
+同次真实FM捕获action_out前hidden，LoRA叶子/Z余切联合回Writer；学生rollout先移除Writer/gamma/Z，Reader只作附加velocity控制器诊断。
+两臂各64、profile各2后恢复初值/RNG；完整64保存Writer/gamma/optimizer64/sampler/RNG/topology/schema，6新public native加2既存全38 H/K，未复制rawX或大source。
+严格128新增行/24 full/104 compact、16不同task/init；scene/root7/绝对policy噪声时钟与官方口径保持，初态误差全0。
+live学生20/Reader19，stop学生24/Reader23；task0/12/20/32学生为8/4/3/5与8/4/6/6，Reader为7/4/4/4与8/4/5/6。
+live学生对stop R18/G2/L6/churn8，新增32/17/init2、3，但丢失20/42/init0、1、2，32/17/init1，32/43/init0、3。
+学生对parent R/G/L为14/6/3与17/7/0，对S为16/4/4与18/6/2，P/D及全部42个不利行原件保留。
+全部32新task32行最终炉目标真；17学生成功live[0,2,3]/stop[0,1]，43为[1,2]/[0,1,2,3]；Reader17为[1]/[0,1,2]，43均[0,1,3]。
+原S43/init2仅放置无开炉，新两个学生均炉/放置成功，而两个Reader均没有放置；不能以Reader分数代替合法学生能力。
+live43/init3首次抬高253/最大10.556cm仍520未放置，live Reader17/init0首次343/最大3.568cm仍失败，3cm/中心/命令不证明抓持。
+全部24份真实双RGB读取；离散replan不能充当连续接触证据，最后保存RGB可比terminal早4步，旧S43/compact缺图不补造。
+原A28前5FM live学生/Reader=.127706/.127674，stop=.127755/.127724；B20官方十步前5=.109498/.109558与.109493/.109545。
+旧parent/S/P/D同B20前5=.117854/.109665/.109496/.110432，全50/有效future、motion6/gripper1、逐query及不利项保存；旧A28只剩aggregate，不称逐query齐备。
+历史父B重构relative0.49–3.52%、M=OZ closure约.008–.010%；两新臂同features/起点，历史S/P/D只作能力参照，普通BF16/TF32/reduction差保留。
+真实训练/预测/物化clean pushed detached795e86a0b011c12c078c807a431780a09c37a1e8；读取1449c9083890a39c129ccb97c77e318cb47111d7。
+旧父训练e2afbfd7c997e3f792921600608efa2fa3c1b25a、旧学习092a0ae83080f85ddff0e4129c92fb42aa527c0c、旧读取5313257c8070a792bbec0c6345c98376ed5cd1ea分列。
+首Python3.8 pidfd等待器失败保守100.862GPU秒，原两消费者元数据task映射退出1发生在0环境行；修复后只读64、不重复训练/native/已有预测。
+最终读取2026-10-02T22:43:46–22:57:05+08:00 gpu02:7/:1、PIDs389135/389136 exit0；所有费用含失败/加载/profile/更新/退出1.377359781265GPUh，3GPUh内。
+root阶段观察4.451GiB、保守新增峰6/8GiB；双节点GPU进程0、四消费者PID消失，data1独立quota及共享容量足够，未干扰他人。
+micro14/28实测后选28、224逻辑query约22秒、两臂并行；六native完整帧块64，读取8case打包共5959生成chunk，未增加样本填显存。
+4项实现CPU检查、128case消费者映射/adapter验证与128实际行读回通过；任务专用入口/模块/tests/hooks退役，原canonical两检查及真实归档contract拒绝通过。
+primary root `/data1/user/ymdai/ember_runs/state_coupled_functional_credit_20261002/` 保留completion.json、analysis/readback.json/rows.jsonl/pairing.json/functional_comparison.json/checkpoint_readback.json/RGB_contact_sheets.json、launch/gpu_ledger.json/gpu_release.json与两冻结代码。
+以上是完整执行事实；主讨论消费后负责科学解释。交付Git/push及唯一整批消息后交还canonical窗口，执行者停止，无自动后继/选点/部署Reader/held/Test/RL。
+
 ## 2026-10-02：完整学习链统合，登记自身执行特征的功能信用辨识
 
 机制§102/findings§281将最近S/P/D、Q/R、视频来源与旧Reader完整历史放回同一学习问题。

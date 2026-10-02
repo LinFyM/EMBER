@@ -36,10 +36,29 @@ strg01 data1个人实占约1.135TB/2TiB quota，共享89.098TB，预计新增峰
 第一次闭环读取在任何case启动前因canonical environment tasks不含global_task_id而退出1；Prepared证据中冗余consumer字段同时修正。
 原训练/预测/银行/日志保留，非科学阴性；独占分支针对128注册case映射、adapter身份与24 full/104 compact CPU核验通过。
 修复集成push为1449c908，新clean detached frozen_readback仅读取完整64，不创建optimizer、不训练、不再native或重复已存功能预测。
-2026-10-02固定闭环读取实际启动：live PID389135 gpu02:7、stop PID389136 gpu02:1，同原封存scene/root7及绝对噪声时钟。
-读取前累计含首等待器失败、加载、两臂profile/64训练与工程退出0.945344620016GPUh；3GPUh硬限保持。
-root读取前实占2.530GiB、预计新增峰6/8GiB；双节点本用户0→2卡、上限6，strg01独立data1个人2TiB quota及共享容量足够。
-保留原795e86a0冻结代码与全部有效原件；当前直接等待readback owner退出，不自Queue、不固定间隔空读。
+2026-10-02T22:43:46+08:00新固定读取已实际运行并完成，live PID389135 gpu02:7、stop PID389136 gpu02:1，最后22:57:05退出。
+两臂各student/Reader32行，共128/128；24 full/104 compact，continuous/goal/actual actions及全部功能PT齐备。
+CPU实际读回通过：原scene/root7与绝对噪声时钟匹配，初态body/EEF/夹爪/谓词误差全0，50×7/十步/前5/成功停与实际命令对应。
+成功live学生20/Reader19，stop学生24/Reader23；task0/12/20/32依次live学生8/4/3/5、stop学生8/4/6/6，Reader7/4/4/4与8/4/5/6。
+live学生对stop R18/G2/L6、churn8：新增32/17/init2、3；丢失20/42/init0、1、2，32/17/init1，32/43/init0、3。
+对历史父，live R14/G6/L3、stop R17/G7/L0；对S为16/4/4与18/6/2；完整逐task/teacher、P/D与不利行均保留。
+全部32个新task32行最终开炉；失败均没有最终placement。live17成功[0,2,3]、stop17[0,1]，live43[1,2]、stop43[0,1,2,3]。
+Reader17 live[1]/stop[0,1,2]，Reader43两臂均[0,1,3]；原S43/init2只place无stove，新两学生均完成炉/放置，但两Reader该行未放置。
+live学生43/init3在253抬高>3cm、最大10.556cm仍520失败；live Reader17/init0抬高343、最大3.568cm仍失败。3cm/中心/命令不证明抓持。
+全部24份真实双RGB已看四组contact sheet，图片仅来自保存的replan，末RGB可能比terminal早4步；不补造compact/旧S43图。
+A28前5FM live学生/Reader=.127706/.127674、stop=.127755/.127724；B20十步前5=.109498/.109558与.109493/.109545。
+旧parent/S/P/D同B20为.117854/.109665/.109496/.110432，全50/有效future、motion6/gripper1与逐query不利项均保存。
+旧A28只剩端点aggregate，未假称逐query完整匹配；离线MSE不用于归因具体失败。历史parent B重构relative0.49–3.52%，两新臂同起点；OZ closure约.008–.010%。
+两份完整64恢复点含Writer/gamma/optimizer64/sampler64/RNG/topology/schema，CPU读回确认；新读取无optimizer/native/新预测。
+累计含失败/加载/profile/正式更新/退出1.377359781265GPUh，硬限3；root阶段观察4.451GiB、保守新增峰6/8GiB。
+原795消费者metadata退出各1且0环境行，首Python3.8等待器失败保守100.862GPU秒，全部失败保留，非性能阴性；最终读取两臂及CPU均exit0。
+双节点退出现场本用户GPU进程0，四个消费者PID已消失；个人data1实占约1.139TB/2TiB quota、共享89.093TB，未改变他人进程。
+正式训练micro28约22秒/224逻辑query，native framechunk64全帧打包、两臂并行；读取最大batch8、5959完整生成chunk，合计forward约734.366s。
+原训练/预测/银行795e86a0与新读取1449c908分列；原父训练e2afbfd7、旧学习092a0ae8、旧读取5313257c保持。
+专用入口/两个诊断模块/测试及共享临时hooks已退役，归档guard拒绝本批合同；退役后两项原canonical CPU检查与真实contract拒绝检查通过。
+本批计算和原件读回已完成，以下交付提交push及一次整批回报后释放canonical tracked/Git窗口，主讨论接续科学裁决。
+无训练/环境active，无自动fresh/续训/扫描/额外teacher/init/held/controls/Test/RL。
+原件唯一root `/data1/user/ymdai/ember_runs/state_coupled_functional_credit_20261002/`：completion.json、analysis/readback.json、rows.jsonl、pairing.json、functional_comparison.json、checkpoint_readback.json、RGB_contact_sheets.json、launch/gpu_ledger.json、gpu_release.json。
 
 主讨论完成上一批原件与机制§100后，登记唯一后继冻结分析：
 [task32已学修正的视频来源](docs/designs/task32_learned_video_segment_diagnostic.md)。

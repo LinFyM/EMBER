@@ -15,8 +15,10 @@ Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析�
 固定终点各student/Reader读原32行，总128新增/24 full；主要判断合法单LoRA学生的实际控制，Reader单独收益不能替代。
 预计75–135分钟、3完整GPUh/8GiB，无新数据、held/Test、蒸馏、正式fresh、自动续训或超参数扫描；状态见progress。
 这是一项学习联系的辨识，未确认新架构或完整修复；历史Reader负例、原S/P/D全部正反与正常数值边界保持。
-实际两臂64更新/full checkpoint与功能预测已完成；原795e86a0读取元数据退出在0环境行，修复后1449c908冻结只读完整64运行128行。
-全部失败/加载/计算已计费，当前0.945345GPUh＋正在执行固定读回，3GPUh/8GiB不变；不恢复训练或追加面板。
+两臂完整64更新/恢复点及功能预测、128/128环境行与24真实full已完成，实际训练795e86a0、读取1449c908。
+live/stop学生20/24、Reader19/23；live学生对stop R18/G2/L6/churn8，没有本有限面板总成功改善，完整正反原件待主讨论裁决。
+全部费用1.377360/3GPUh，阶段观察4.451GiB、保守峰6/8GiB；进程/GPU已释放，入口/hooks已退役。
+Git交付与一次整批回报后canonical窗口交回main，实验session停止本项；不自动选部署Reader或续训/fresh/追加扫描。
 以下保留此前完成的冻结分析及接续依据，当前唯一合同与状态见上方及progress：
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。
 只比较旧D17/S43各自的Q/非Q学习增量在原四初态的作用；16新增行、4 full/12 compact与完整行为读回已交付，0.078771GPUh。

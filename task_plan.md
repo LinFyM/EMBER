@@ -7,7 +7,7 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析设置时间限制；此前上午暂停已解除。
-当前主任务是统合整个EMBER的学习解释，没有active训练；最近完成的唯一冻结分析为
+当前主任务是统合整个EMBER的学习解释，没有active训练；此前完成的冻结分析为
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。
 只比较旧D17/S43各自的Q/非Q学习增量在原四初态的作用；16新增行、4 full/12 compact与完整行为读回已交付，0.078771GPUh。
 17 Q/R成功2/4、2/4但集合不同，43 Q/R成功3/4、2/4；本有限面板的父成功行全部保留、完整学习的部分新增收益未保持。
@@ -18,7 +18,8 @@ main现已完成机制§100/findings§279：全部16份continuous与四份RGB直
 已登记唯一后继[已学修正的视频来源诊断](docs/designs/task32_learned_video_segment_diagnostic.md)：
 同S64的两teacher、实际炉面变红边界80/95、全部38处共同分解E/L学习增量，共16新行/4 full、复用16参照。
 若后段来源保留放置同时损害开炉，支持该有限调用解释；若早段/联合或分布混合，按合同修订并关闭相应阶段局部化理由。
-无新学习/标签/held，35–75分钟、1GPUh/4GiB；主讨论已派发，实验session独占工程/Git窗口并实施；不自动扫切点或重训，实际状态见progress。
+无新学习/标签/held，16/16行与完整读回已交付：17 E/L成功3/4、2/4，43为3/4、1/4；实际0.082022GPUh，4 full/12 compact及H/全38 K保留。
+专用入口/hook退役，本批完成回报后实验session停止并释放窗口；主讨论消费正反与数值差后裁决，不自动扫切点、重训或选择部署混合bank。
 最近[task32状态/冻结LoRA交叉续行诊断](docs/designs/task32_state_policy_crossover_diagnostic.md)已完成，
 主讨论直接消费原件并完成机制§98/findings§277，把具体行为、实际native/S/M读写、自身调用和真实FM信用联系起来。
 同query两teacher风险分解表明离线共同误差占主导，四格则显示局部后段控制可用与到达/及时纠正不足可以同时存在。

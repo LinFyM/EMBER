@@ -12,14 +12,26 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 它辨识S43放壶收益与开炉损害的实际视频来源；若不能按此事件定位，不继续切点/层位扫描或自动开训练。
 预计35–75分钟含工程，硬限1完整GPUh/4GiB，预计新增峰值3GiB；唯一root为
 `/data1/user/ymdai/ember_runs/task32_learned_video_segment_20261002/`。
-主讨论已实际派发，实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553于2026-10-02接手canonical tracked/Git窗口；main只读。
-从clean pushed a2c39b5a创建独占codex/task32-learned-video-segment worktree，四项针对性CPU检查通过；实现已集成并push。
-实际构造/消费者来自clean pushed detached 8b90f31cd3af60045b14ea73e6320529edd73d5b；
-2026-10-02T19:47:09.740844+08:00在gpu02:7启动PID3861322，一次source加载，native帧块51/49、全部16case packing。
-本用户当前0→1张卡、准入上限6，低占用148MiB/util0共驻，不干扰他人；预算1GPUh含加载/失败/退出，尚无结果。
-现场strg01 data1个人实占1,133,354,270,720 bytes、soft quota2TiB，共享余量89.10TB；预计新增峰3/4GiB，旧资产只读。
+本批已完成16/16新增行、4 full/12 compact与全行continuous/goal/actions；两条public native重读及四bank/H/全38 K齐备。
+实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553从clean pushed a2c39b5a接手窗口、独占分支实施；四项CPU检查通过。
+构造/实际消费者clean pushed detached 8b90f31cd3af60045b14ea73e6320529edd73d5b，原父训练e2afbfd7、学习092a0ae8、旧读取5313257c分别保留。
+2026-10-02T19:47:09.740844+08:00–2026-10-02T19:52:05.019625+08:00在gpu02:7运行PID3861322，消费者/CPU读回均exit0；GPU进程与占用已释放，无GPU失败。
+一次source加载、native全部51/49帧分别18.920/20.463 frame/s、闭环最大batch16；1296个完整50×7生成chunk、forward9.190 chunk/s。
+全部授权帧/case已打包，未为填显存增计算；未测试第二卡，不宣称其速度劣势。峰allocated13.983/reserved15.486GiB。
+含加载/退出累计0.082021883726GPUh；root阶段观察1.280GiB、保守新增峰3/4GiB。现场strg01 data1个人实占约1.134TB、quota2TiB、共享89.099TB；本用户0→1卡，上限6，148MiB/util0共驻未动他人。
+17 E/L成功[0,1,2]/[0,1]（3/4、2/4），43 E/L为[0,1,2]/[1]（3/4、1/4）。对父R/G/L依次1/2/0、1/1/0、2/1/0、1/0/1；对完整S为2/1/0、1/1/1、2/1/1、1/0/2。
+全部16行最终炉目标真，7个不利行均为placement未满足；保留17 E3、L2/3、43 E3、L0/2/3。
+原S43/init2仅放置无开炉，新E在133/296开炉/放置并成功，新L145开炉却未放置；43/init3完整S成功，E/L均未保留。
+四份实际双RGB读回；E43/init3在474才描述性>3cm、最大4.628cm，520仍未放置；3cm/中心/闭合命令不证明抓持，旧S43无RGB仍缺。
+封存初态body/EEF/夹爪/谓词误差全部0、scene/root7与绝对policy噪声时钟全行匹配；official256→224、十步、前5、成功停通过。
+同一重读特征上的E+L closure relativeL2为0.000224/0.000203；对旧parent/S整组重构为0.78–1.07%，与旧S-parent增量合计差1.229%/0.824%。
+正常BF16/TF32/batch/reduction差保留，不称逐bit原bank复现，也不重跑完整S或作dtype/batch小扫。
+任务专用入口/测试与canonical episode-context hook已退役，原运行树/Git/原件/0GPUh CPU fixture失败保留；current runtime拒绝已归档本批合同。
+此Git交付完成后仅一次整批回报主讨论并交回canonical tracked/Git窗口；实验session停止本项，无自动后继、训练、FM、held/controls/Test/RL。
+原件索引：上述root的completion.json、construction_readback.json、analysis/readback.json、analysis/rows.jsonl、analysis/pairing.json、launch/gpu_ledger.json。
 
-当前处于完整学习机制的统合分析，没有active训练；最近完成的冻结分析为
+
+当前处于完整学习机制的统合分析，没有active训练；以下为更早已完成的冻结分析：
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。
 仅旧D17/S43的Q/非Q学习增量、两teacher×两臂×四init共16新行，复用原parent/完整学习行。
 预算1完整GPUh/4GiB；16/16新增行、4 full/12 compact及全行continuous/goal/actions已齐，GPU消费者与CPU读回均exit0。

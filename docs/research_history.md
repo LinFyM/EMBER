@@ -3,6 +3,24 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：task32已学Value的视频来源，16行冻结执行交付
+
+[固定合同](designs/task32_learned_video_segment_diagnostic.md)已执行；两teacher均为旧T2340 parent→同一共享S64，只改变P/C/D/O的既有学习增量。
+真实RGB固定arrival<=80/95的E/L，全部38处原K覆盖与顺序保持；A固定父，B=已有完整父B+DeltaM，未再次加B0。
+两条native各重读一次、整段51/49帧；parent/S与两段复用同一特征，H/38处归一化K/frame indices保留；没有optimizer、新动作标签或held读取。
+两teacher×E/L×原init0–3共16新行，原parent/S16行复用；4 full为43/init2/3的E/L，其余12 compact，全行continuous/goal/actions。
+17 E/L成功集合[0,1,2]/[0,1]，43为[0,1,2]/[1]；对父R/G/L依次1/2/0、1/1/0、2/1/0、1/0/1，对完整S为2/1/0、1/1/1、2/1/1、1/0/2。
+全部新行最终开炉为真；七个失败行17 E3/L2/L3、43 E3/L0/L2/L3均未放置。43/init2原S只place无stove，新E炉133/放296成功、L炉145而无放置；43/init3完整S成功但E/L均失败。
+E43/init3描述性首次抬高>3cm为474、最大4.628cm，520未放置；实际RGB保留，未编造旧S43图，也未将抬高/中心/闭合命令当接触证明。
+封存初态body/EEF/夹爪/谓词误差0，scene/env/policy root7与绝对噪声时钟保持；官方双相机256→224/十步/前5/成功停。
+同特征E+L closure relative0.000224/0.000203，parent/S整组重构relative0.78–1.07%；合计增量对retained S-parent差1.229%/0.824%，接受正常BF16/TF32/batch/reduction差，不称逐bit复现。
+构造/消费者clean pushed detached8b90f31cd3af60045b14ea73e6320529edd73d5b；原父训练e2afbfd7、学习092a0ae8、旧读取5313257c分列。
+2026-10-02T19:47:09.740844+08:00–2026-10-02T19:52:05.019625+08:00 gpu02:7/PID3861322，含加载与退出0.082021883726GPUh，GPU/CPU读回exit0、已释放，无GPU失败。
+一次source加载、16case最大batch、1296生成chunk、forward9.190chunk/s；native18.920/20.463frame/s、峰allocated13.983/reserved15.486GiB。
+root阶段观察1.280GiB、保守新增峰3/4GiB；四项CPU检查通过，首次仅metadata fixture0GPUh失败保留。专用entry/tests/hooks退役，current runtime归档guard保留。
+原件`/data1/user/ymdai/ember_runs/task32_learned_video_segment_20261002/`：completion.json、construction_readback.json、analysis/readback.json、rows.jsonl、pairing.json、RGB_contact_sheets.json、retained_bank_closure.json、launch/gpu_ledger.json。
+这仅是执行事实；主讨论负责科学解释，不自动选架构、部署混合bank、追加切点或恢复训练。本批唯一回报后交还tracked/Git窗口并停止。
+
 ## 2026-10-02：从投影分组转回实际教学来源的有限辨识
 
 main完成机制§100后，登记[task32已学修正的视频来源](designs/task32_learned_video_segment_diagnostic.md)。

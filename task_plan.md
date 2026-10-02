@@ -7,17 +7,20 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析设置时间限制；此前上午暂停已解除。
-当前唯一active design为[task32状态/冻结LoRA交叉续行诊断](docs/designs/task32_state_policy_crossover_diagnostic.md)。
-用原条件900同初态两teacher的自身动作前缀重放到step180，接两套既存完整LoRA，共四条闭环，
-把抓取阶段控制作用与此前到达状态的影响分开；这是具体失败的机制分析，不是新架构或重新训练。
-预计含工程45–75分钟，硬限1GPUh/4GiB；执行者完成后主讨论核对原件及结果分支，再形成方法判断。
-数据规模固定；无新梯度、Val/Test/controls、选点或自动后继。Owner要求的决策错误已在394b5f79写入稳定要求及历史。
+当前主任务是统合整个EMBER的学习解释，没有active训练/GPU实验design。
+最近[task32状态/冻结LoRA交叉续行诊断](docs/designs/task32_state_policy_crossover_diagnostic.md)已完成，
+主讨论直接消费原件并完成机制§98/findings§277，把具体行为、实际native/S/M读写、自身调用和真实FM信用联系起来。
+同query两teacher风险分解表明离线共同误差占主导，四格则显示局部后段控制可用与到达/及时纠正不足可以同时存在。
+不从其中一项直接选择新Value、去S或一致性训练；数据规模保持固定，没有新梯度、Val/Test/controls或选点。
+唯一独立CPU工作是核对既存强MT/旧T是否有与当前900完全同输入的功能预测，缺项如实保留，不重新推理；
+预计10–20分钟、0GPUh/<20MiB。main写科研记录/Git，实验session只写指定审计临时目录，实际状态见progress。
+Owner要求的决策错误已在394b5f79写入稳定要求及历史。
 
 四行与完整读回已完成：success矩阵按前缀17/43、LoRA17/43为[[真,真],[假,假]]，两条对角重现且anchor配对误差0。
 抬壶与放置分开：s43/W17在509步才抬高3cm，520仍未放置；不能把该失败概括为完全没有抬壶。
 全部4 full、连续/goal/动作和首次F2×2有限差齐备；累计0.029409131GPUh含首加载失败，阶段观察1.489/4GiB。
 GPU已释放；有效冻结读取e84712d8，任务专用active入口/hooks已退役，原件和失败保留。
-执行者整批交付后停止本项并释放canonical/Git窗口；主讨论核对原件解释竞争预测，当前没有自动后继计算。
+执行者整批交付后停止本项并释放canonical/Git窗口；主讨论已核对原件，后继仅为上述既存证据分析。
 
 最近[原生prefix变化Value](docs/designs/native_prefix_change_value_design.md)在派发后由主讨论撤回：
 Owner指出“具体task失败→有证据的方法缺陷→干预改变失败预测”链条不足、block17仅启发；
@@ -27,7 +30,7 @@ Owner指出“具体task失败→有证据的方法缺陷→干预改变失败�
 SIGTERM收束，未到90，完整ECP为0，已登记1–71更新未保存；全部后继训练/bank/评测已取消。
 累计1.452021841GPUh、root观察约0.69GiB，本批GPU/进程已退出；source/spec/冻结代码、日志和退出费用保留。
 收束原件在`/data1/user/ymdai/ember_runs/native_prefix_change_value_20261002/`，实际身份及读取边界见progress。
-实验session已完成记录/Git交付并停止该批；后继仅为上方单独登记的四行冻结分析，不恢复被撤回的训练。
+实验session已完成记录/Git交付并停止该批；后继四行冻结分析也已完成，不恢复被撤回的训练。
 
 Owner最新GPU要求已加强为AGENTS§9长期规则：显存有明显余量必须主动验证更大物理批量/帧分块或合适并行的
 真实吞吐，不沿用保守默认值后只报低显存；配置及未放大依据须有记录，逻辑batch/任务权重/更新与科学合同保持。

@@ -14,7 +14,7 @@ success为真/真/假/假，结束步278/275/520/520；首次抬高3cm为210/210
 
 4 full/continuous/goal/physical齐备，144个prefix chunk明确外部重放、175个真实续行50×7 chunk；
 step180首消费者batch4/index36/共同noise/官方十步，normalized full50与physical前5的D=D_W+D_s残差均0。
-无新Writer/native编译、梯度、held/controls或额外闭环smoke；主讨论随后消费原件作科学解释。
+无新Writer/native编译、梯度、held/controls或额外闭环smoke；主讨论已直接消费原件，科学解释见机制§98/findings§277。
 有效clean pushed detached读取e84712d8，原900训练85919994/原读取923ff89b保持；31项针对CPU和10项来源/数值/case检查通过。
 CPU封存spec路径搬迁错误及首GPU LIBERO配置缺失exit1保留，后者0环境行、0.004473948GPUh；
 修正复用原config owner后有效consumer/CPU读回exit0，累计0.029409131GPUh，阶段观察1.489GiB、保守2.5/4GiB。
@@ -22,6 +22,15 @@ CPU封存spec路径搬迁错误及首GPU LIBERO配置缺失exit1保留，后者0
 实现通过Git/冻结保留，通用sealed source身份修正和回归检查保留，退役后35项针对检查通过。
 所有completion/readback/report/F2×2及费用释放原件在
 `/data1/user/ymdai/ember_runs/task32_state_policy_crossover_20261002/`；科学投入及后继由主讨论另行记录。
+
+主讨论随后将整个视频→native→S/M→自身控制→FM学习的解释统合：两套策略都在s17完成后段，
+降低“失败条件没有第二阶段Value”的支持；同初态前缀仍由视频生成的函数造成，不能说视频无关。
+实际delta-rule展开明确教学内容与自身状态的联合作用，真实factor cotangent经重放训练这条联系；
+共同可微、局部可用、任务内获取、跨任务迁移和保持不互相替代，旧§13–§17框架及相关阴性完整继承。
+新增CPU仅重读既存四train×两teacher的同A28预测/标签，teacher差异项占十步前5总风险.0961%–.7586%；
+离线共同残余与闭环前缀敏感并存，不由此指认公共B0、不可约误差或一致性目标。
+约1.9MB派生读回和所看RGB保存在同root `analysis/`，无新增GPU/环境/标签/held读取。
+另将既存同query强参照审计交实验session只读执行，不恢复训练；本节不预告审计结果或新方法资格。
 
 ## 2026-10-02：撤回缺乏失败机制依据的prefix变化训练，记录不得重犯的决策错误
 

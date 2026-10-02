@@ -5,12 +5,21 @@
 Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，不对分析设置时间限制；本项覆盖当日上午分析后暂停的要求。
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。
-当前处于完整学习机制的统合分析，没有active训练；本批已完成的冻结分析为
+主讨论完成上一批原件与机制§100后，登记唯一后继冻结分析：
+[task32已学修正的视频来源](docs/designs/task32_learned_video_segment_diagnostic.md)。
+同一共享S64在teacher17/43上，仅按真实教学炉面首次变红的固定采样帧80/95，分解早/后转移的完整38处学习增量。
+两teacher×E/L×原四init=16新行，父/S原16参照复用；四full/十二compact，只有两条旧父native重读，无学习/新标签/held。
+它辨识S43放壶收益与开炉损害的实际视频来源；若不能按此事件定位，不继续切点/层位扫描或自动开训练。
+预计35–75分钟含工程，硬限1完整GPUh/4GiB，预计新增峰值3GiB；唯一root为
+`/data1/user/ymdai/ember_runs/task32_learned_video_segment_20261002/`。
+当前合同已登记待实际派发，canonical tracked/Git仍由main持有；派发成功后移交唯一实验session独占，main只读。
+
+当前处于完整学习机制的统合分析，没有active训练；最近完成的冻结分析为
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。
 仅旧D17/S43的Q/非Q学习增量、两teacher×两臂×四init共16新行，复用原parent/完整学习行。
 预算1完整GPUh/4GiB；16/16新增行、4 full/12 compact及全行continuous/goal/actions已齐，GPU消费者与CPU读回均exit0。
-实验session（01a0fabb-f7a0-7100-93d8-6a0f66055553）已实际接手canonical tracked/Git窗口，
-从clean pushed c17d4c80创建独占codex/task32-learned-operator-groups worktree；main只读。
+实验session（01a0fabb-f7a0-7100-93d8-6a0f66055553）当时从clean pushed c17d4c80接手并创建独占工程worktree；
+整批已在8a6f8d6b交付并释放canonical tracked/Git窗口，现由main维护科研记录。
 9项针对性CPU检查通过；实现/构造/读取clean pushed detached 22faa1966f43b14555088af61dc445f67f95ca5b。
 四份完整38-target银行已构造；2026-10-02T18:55:21.952181+08:00实际在gpu02:7启动16合法case最大packing、一次source加载，
 消费者PID3624517，含加载/退出预算1GPUh；四full/十二compact与全行continuous/goal/actions由同一canonical consumer捕获。
@@ -33,6 +42,10 @@ root阶段观察约1.193GiB，保守新增峰值2.5/4GiB；CPU fixture/准入/�
 completion/readback/全16行/四full/RGL/费用/释放/失败与实际冻结身份统一在
 `/data1/user/ymdai/ember_runs/task32_learned_operator_groups_20261002/`。
 本批工程、运行与读回结束；一次整批消息发给主讨论后释放canonical tracked/Git窗口并停止，不自动追加任何计算。
+main已直接读取全部16份continuous及四份双RGB，完整解释见机制§100/findings§279。
+D17/init0只R保留新增成功、init2只Q保留；D17及S43的init3均只有完整更新成功，S43/init2却只Q成功。
+有限成功交互既有+1也有−1，不能把它等同神经Hessian或能力比例；关闭按Q/R分组选修复和继续拆投影的路线。
+下一判断仍须把实际视频特征的学习改变与自身状态调用联系起来，不能从本次互补直接选择新架构或正式训练。
 Owner最新明确：MT只是参照，EMBER应大幅超过MT；不能用MT同样失败降低EMBER自身失败案例的研究优先级。
 主讨论此前据错误筛选标准提出的两条MT补测，在派发前撤销，0新增GPU/环境、无新run root或实现。
 保留已有MT比较作为能力证据，继续从EMBER自身的绝对不足及已知可学改进解释教学—算子—自身控制，不要求参照先成功。
@@ -61,7 +74,7 @@ S17两行学会抬壶却未放置，S43/init2得到放置而丢失开炉；3cm�
 main另读已有S/P/D同B20预测作学习修正分解：task32修正差异能量仅.346%/.479%/.789%，两D修正余弦.9844，
 几乎全部平均改善来自两teacher共有部分；task20与task12的不利/高差异项保留，不能外推为所有任务一致。
 结果及执行Q/R的精确含义见机制§99.5。后继冻结分析不由共有分量直接宣称公共B0不足，也不重开一致性训练。
-该合同派发后canonical tracked/Git窗口交唯一实验session，main继续只读科学分析；没有新的架构/fresh训练资格。
+该合同已完成并由main消费，canonical窗口已经交回；没有新的架构/fresh训练资格。
 
 以下保留最近四格批次的完整执行事实：
 按(i,j)=(17,17)/(17,43)/(43,17)/(43,43)，success为真/真/假/假，结束步278/275/520/520；

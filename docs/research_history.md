@@ -3,7 +3,24 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：从投影分组转回实际教学来源的有限辨识
+
+main完成机制§100后，登记[task32已学修正的视频来源](designs/task32_learned_video_segment_diagnostic.md)。
+同一S64的两teacher共享父native/A/keys，因此DeltaM可按实际转移来源精确相加，同时保留完整38处及原覆盖。
+main只读真实RGB固定teacher17的75→80、43的90→95炉面灰/红边界；没有读teacher动作/state/terminal作分段。
+以早/后Value映射的学习增量构造有限归因bank，辨识S43放壶收益/开炉损害来自后段、早段还是联合调用。
+不是新的部署方法或checkpoint融合成绩，也不恢复变化时钟、分投影删除或逐层/切点扫描。
+合同仅16新冻结行、原parent/S16参照复用，两条native重读、4 full/12 compact；35–75分钟，1GPUh/4GiB。
+登记时没有新科学结果，实际派发、写入窗口和执行情况只看progress；新架构/正式训练未选择。
+
 ## 2026-10-02：task32已学执行算子分组，16行冻结工程交付
+
+main随后直接读取全部16份continuous、四份双RGB和配对参照，完成[机制§100](analyses/feature_to_operator_mechanism_20260926.md#100-同一次真实学习的收益与损害怎样共同进入执行函数2026-10-02)/findings§279。
+同一完整更新的新增成功随初态分别由Q、R或二者联合保留；S43/init2又出现仅Q成功、完整更新丢失开炉的反例。
+成功位的四角有限差在两组init3为+1、43/init2为−1，其余为0；不等同某神经交叉项或能力百分比。
+结合原同目标学习、B20共有修正和实际attention/余切解释，关闭按Q/R组名指定全局修复和继续细分投影的路线。
+main的CPU派生为同root `analysis/main_behavior_readback.json`，无新模型/环境；本批完成不构成新架构或正式训练资格。
+canonical tracked/Git窗口已由执行者释放，主讨论继续教学特征—学习—自身控制的完整解释。
 
 [合同](designs/task32_learned_operator_groups_diagnostic.md)的旧T2340 D17/S43两来源×Q/R×init0–3共16新行齐备；
 直接选择原有完整B，A固定父，Q18/R20全38-target rank128；没有Writer/native编译、学习、离线FM或held读取。

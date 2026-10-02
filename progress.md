@@ -2,7 +2,7 @@
 
 ## 当前授权与最近完成批次
 
-实验session已于2026-10-02T00:37:10.793592+00:00实际承接§15；独占dev与canonical集成窗口。新root已判重，正在接通固定D71事件分叉和C12/D71的630实际消费者；尚未启动新训练。data1现场quota 996.3G/2T、个人实占1069732286464B、共享82T余量，64GiB新增峰值可准入。全部新增data1，旧资产只读；工程阶段不通知主讨论。
+实验session已实际承接§15，完成唯一canonical data/credit/trainer/scope接线与固定630两臂消费者。metadata/protocol先于新label读取封存；真实C12训练事件对照确认480个target条件/13,440query及flow完全保持，71项支持240条件按80/71或60/71直接进入原四条件损失。核心11项CPU、消费者37项CPU及集成后19项针对检查通过，GPU尚未启动。工程集成后新clean pushed detached冻结自主运行；canonical tracked窗口进入只读运行期，不设主讨论工程放行。新root/data1现场quota 996.3G/2T、个人实占1069732286464B、共享82T余量，64GiB新增峰值可准入。旧资产只读，工程事实只入本批launch记录。新增support_diversity模块只拥有固定事件/权重合同，复用同一模型/训练器/余切/官方队列；未新增平行训练执行面。
 
 Owner原有自主推进授权持续。主讨论已完成900原件、行为、native实际动作读出及数据/历史分析，
 登记唯一active [条件读写设计§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)。

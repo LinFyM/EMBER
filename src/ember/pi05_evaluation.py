@@ -139,10 +139,6 @@ def _plan_action_chunks(
             libero_policy_input(slot["obs"], str(task["language"])) for slot in group
         ]
         processed = [preprocess(value) for value in raw_inputs]
-        from ember.pi05_eval.prefix_replay import plan_saved_prefix, record_case_prediction
-
-        if plan_saved_prefix(group, raw_inputs, processed, task=task, contract=contract):
-            continue
         batch = {
             key: torch.cat([item[key] for item in processed], dim=0)
             for key in processed[0]
@@ -157,7 +153,6 @@ def _plan_action_chunks(
             max_action_dim=int(policy.config.max_action_dim),
             device=batch[next(iter(batch))].device,
         )
-        prediction_started = time.monotonic()
         with torch.inference_mode():
             predict = (
                 policy.predict_action_chunk
@@ -176,7 +171,6 @@ def _plan_action_chunks(
             )
             chunks = add_exploration_noise(chunks, group, task=task, contract=contract)
             actions = postprocess(chunks).detach().cpu().numpy()
-        record_case_prediction(group, chunks, seeds, contract, time.monotonic() - prediction_started)
         for row, (slot, plan, seed) in enumerate(
             zip(group, actions, seeds, strict=True)
         ):
@@ -198,17 +192,12 @@ def rollout_shard(
     preprocess: Any,
     postprocess: Any,
     task_adapter: Any | None = None,
-    episode_contexts: Sequence[Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     from ember.pi05_eval.run_contract import require_supported_runtime
 
     require_supported_runtime(contract)
     validate_exploration_contract(contract, task=task, state_ids=state_ids)
-    if episode_contexts is not None:
-        from ember.pi05_eval.prefix_replay import validate_cases
-
-        validate_cases(episode_contexts, state_ids, task, contract)
-    elif not state_ids or len(set(state_ids)) != len(state_ids):
+    if not state_ids or len(set(state_ids)) != len(state_ids):
         raise Pi05EvaluationError("evaluation shard state IDs are empty or duplicated")
     dummy = np.asarray(contract["environment"]["dummy_action"], dtype=np.float32)
     max_steps = int(task["horizon"])
@@ -218,25 +207,21 @@ def rollout_shard(
     rows: list[dict[str, Any]] = []
     occupancy_capture = contract.get("diagnostic_occupancy_capture")
 
-    def start_slot(env: Any, state_id: int, ordinal: int) -> dict[str, Any]:
+    def start_slot(env: Any, state_id: int) -> dict[str, Any]:
         slot = start_fixed_episode(
             env=env, init_state_id=int(state_id), init_states=init_states,
             task=task, contract=contract, root_seed=root_seed, dummy=dummy,
             task_adapter=task_adapter,
             capture_level=capture_level(occupancy_capture, task, int(state_id)),
         )
-        if episode_contexts is not None:
-            from ember.pi05_eval.prefix_replay import bind_case
-
-            bind_case(slot, episode_contexts[ordinal])
         return slot
 
     active_count = min(len(envs), len(state_ids))
     active_envs = envs[:active_count]
     next_state = active_count
     slots: list[dict[str, Any] | None] = [
-        start_slot(env, int(state_id), ordinal)
-        for ordinal, (env, state_id) in enumerate(zip(active_envs, state_ids[:active_count], strict=True))
+        start_slot(env, int(state_id))
+        for env, state_id in zip(active_envs, state_ids[:active_count], strict=True)
     ]
     policy.reset()
     while any(slot is not None for slot in slots):
@@ -269,11 +254,11 @@ def rollout_shard(
                 continue
             slot["episode_done"] = bool(done)
             rows.append(finish_episode_row(
-                slot=slot, task=task, contract=slot.get("episode_contract", contract),
+                slot=slot, task=task, contract=contract,
                 task_adapter=task_adapter, worker_started=worker_started,
             ))
             if next_state < len(state_ids):
-                slots[slot_index] = start_slot(env, int(state_ids[next_state]), next_state)
+                slots[slot_index] = start_slot(env, int(state_ids[next_state]))
                 next_state += 1
             else:
                 slots[slot_index] = None

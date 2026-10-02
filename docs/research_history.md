@@ -3,6 +3,26 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：task32自身状态/冻结LoRA四行交叉续行完成
+
+[冻结案例合同](designs/task32_state_policy_crossover_diagnostic.md)的四行(i,j)=17/17、17/43、43/17、43/43齐备，
+复用原条件900完整Original bank，从同一封存初态重放自身physical action[0:180]，再接对应完整LoRA及原共同未来噪声。
+success为真/真/假/假，结束步278/275/520/520；首次抬高3cm为210/210/509/无，放置为278/275/无/无。
+对角重现原一成一败，同i两行的anchor状态/新RGB及相对原state/continuous最大误差均0；旧state2 compact没有RGB。
+原17为277步、本次278步，保留正常数值差；W17在s43有晚抬壶、最大7.299cm却未放置的不利细节保留。
+四行终局成功随前缀保留，只交付这一案例事实及首次动作有限差，不由此确诊具体几何根因、held缺陷或追加Value资格。
+
+4 full/continuous/goal/physical齐备，144个prefix chunk明确外部重放、175个真实续行50×7 chunk；
+step180首消费者batch4/index36/共同noise/官方十步，normalized full50与physical前5的D=D_W+D_s残差均0。
+无新Writer/native编译、梯度、held/controls或额外闭环smoke；主讨论随后消费原件作科学解释。
+有效clean pushed detached读取e84712d8，原900训练85919994/原读取923ff89b保持；31项针对CPU和10项来源/数值/case检查通过。
+CPU封存spec路径搬迁错误及首GPU LIBERO配置缺失exit1保留，后者0环境行、0.004473948GPUh；
+修正复用原config owner后有效consumer/CPU读回exit0，累计0.029409131GPUh，阶段观察1.489GiB、保守2.5/4GiB。
+峰reserved9.968750GiB，四行全部合法batch4共用source，GPU已释放；无自动后继。任务专用入口/hooks退役于active tree，
+实现通过Git/冻结保留，通用sealed source身份修正和回归检查保留，退役后35项针对检查通过。
+所有completion/readback/report/F2×2及费用释放原件在
+`/data1/user/ymdai/ember_runs/task32_state_policy_crossover_20261002/`；科学投入及后继由主讨论另行记录。
+
 ## 2026-10-02：撤回缺乏失败机制依据的prefix变化训练，记录不得重犯的决策错误
 
 Owner指出“具体task失败→方法缺陷证据→干预改变失败预测”的联系缺失，并要求理论不足时先做分析实验补证据。

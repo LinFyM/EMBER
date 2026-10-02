@@ -9,18 +9,27 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 原条件900同初态、两teacher的一成一败均已开炉/接近壶，并在同一action index193闭合夹爪；
 在固定step180重放自身动作前缀，分别接两套既存完整LoRA，只做四条train诊断，区分当下控制作用与到达状态的影响。
 不新增训练、数据、held读取或架构；预计含工程45–75分钟，硬限1GPUh/4GiB，结果不自动触发正式重训。
-实验session已在独占worktree实现：沿用canonical PI05 rollout/planner、原FrozenOperatorAdapter批量LoRA、
-初始scene恢复及full/continuous捕获，只增加显式四行上下文和保存动作前缀的窄接入。
-31项针对CPU检查通过；将四行作为最大合法物理batch、共用一次source加载，不增加闭环smoke或profile。
-原封存spec路径在读取树搬迁后被旧检查器误认，已通过窄修正与10项针对检查保留原路径身份并拒绝内容变化；
-原件、原冻结版本及所有CPU失败保留，没有重编译LoRA或改变科学干预。
-2026-10-02 16:52起在gpu02:7启动唯一四行消费者，实际读取为clean pushed detached `19489bb1`，
-完整batch4、一次source加载；双节点准入确认本批启动后1卡、适用上限6卡，data1 quota与峰值预算已核实。
-首消费者在LIBERO初始化前因新root缺少运行配置退出1；模型已加载但环境/闭环0行，费用0.004474GPUh。
-现复用原prepare_libero_config初始化全部原注册路径，CPU核对通过；失败source/日志/费用保留在root的failures/attempt1。
-实际启动/退出/GPU费用及原件在`/data1/user/ymdai/ember_runs/task32_state_policy_crossover_20261002/launch/`；
-窄运行修正e84712d8已push，16:56:08实际从新clean detached读取启动四行batch4，PID3112479；
-未修改旧冻结树，owner持续等待退出事件，对角再现尚未裁决，无额外smoke/后继。
+**四行执行与读回已完成，新增计算已停止；下一科学判断由主讨论消费原件后负责，不自动续训或追加探针。**
+按(i,j)=(17,17)/(17,43)/(43,17)/(43,43)，success为真/真/假/假，结束步278/275/520/520；
+首次抬壶3cm为210/210/509/无，放置谓词为278/275/无/无，最大抬高14.771/15.362/7.299/0.668cm。
+两条对角重现原一成一败；原17为277步、本次278步，不追微小数值一致。同i两行anchor状态与新双RGB误差均0，
+相对原continuous/compact的EEF、夹爪、物体、谓词、raw state8误差均0；原state2没有RGB，未编造历史RGB。
+完整4 full/continuous/goal/physical action齐备：144个重放prefix chunk明确无新policy forward，
+175个合法续行50×7 chunk，first consumer为batch4、index36、共同seed、官方十步；有限差D=D_W+D_s误差0。
+W17在s43到509才抬壶且未放置的不利例保留；最终成功随前缀的事实不能直接宣称具体几何根因或新架构资格。
+
+沿用canonical rollout、原FrozenOperatorAdapter和初始scene/full捕获；31项针对CPU及10项封存来源/数值/case检查通过。
+实际有效读取为clean pushed detached `e84712d8b6f3641968d820a45500670a58196c66`，原900训练85919994与原读取923ff89b单列。
+16:52首次加载因LIBERO新root缺配置退出1、0环境行，费用0.004473948GPUh；封存spec搬迁的CPU来源错误也保留。
+复用原runtime配置owner修正后16:56:08–16:57:38在gpu02:7执行四行batch4、一次source加载，
+有效consumer/CPU readback均exit0，0.024935183GPUh；累计**0.029409131GPUh**含失败/加载/退出，硬限1GPUh。
+峰allocated9.424913/reserved9.968750GiB；四行已经是本科学范围最大packing，没有额外工作可加入。
+data1 quota现场2T/limit2.0T、报告使用1.0T、个人实占1131008344064B、共享82T；
+root阶段观察约1.489GiB、保守峰值2.5/4GiB。双节点核实本批owned GPU为0、两个consumer PID已消失，未动他人进程。
+原source/spec/frozen与失败保留；任务专用入口/新case hooks在交付后从active tree退役，Git及实际冻结源码保留，
+封存spec身份的通用读取修正与回归检查保留；退役后35项针对检查通过，canonical rollout/capture恢复为原单一路径。
+completion/readback/report、原F2×2和分解、费用/退出/释放回执均在
+`/data1/user/ymdai/ember_runs/task32_state_policy_crossover_20261002/`。整批报告一次交给主讨论并释放canonical写入/Git窗口。
 Owner要求的决策错误已写入current_owner_requirements§3、findings§276和research_history，394b5f79已推送。
 
 ## 最近撤回批次及保留事实

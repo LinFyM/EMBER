@@ -11,7 +11,9 @@ P/F使用相同裸aligned Source1000、native点估计和残差读出，只改�
 现有train24中fit20×demo16–19，内部留task[0,12,20,32]无本次读出梯度，全部24×demo42–45一次读回；共176条已有视频。
 两臂fresh500/各80,000区间曝光；仅gamma学习，无LoRA/Writer训练、环境、官方Val/Test或新数据来源。
 预计70–140分钟含工程，3完整GPUh/8GiB硬限；原生动作信息获取不等于一次LoRA控制，后继没有自动许可。
-当前为main完成科学登记、持canonical tracked/Git窗口，尚未记录执行者接手或实际launch；后续实际事实另行补记。
+2026-10-03实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手canonical tracked/Git窗口，main只读科学分析。
+完整新合同及机制§104/findings§283已读，正在核算176条既存video的metadata帧数/合法区间与缓存峰值；尚未launch。
+从clean pushed ed97fba3开始；只实施本500更新获取诊断，不恢复旧§103或任何Writer/环境计算。
 下方§103的“停止/无active计算/下一判断”保留其收束时点，不恢复旧批次，也不覆盖上述新登记。
 最新主讨论已完成自身功能信用的原件消费及机制§103/findings§282：128条continuous、24真实双RGB和32功能PT直接读回。
 live/stop学生20/24、Reader19/23，live相对stop R18/G2/L6，新增query信用没有净控制收益；辅助头也未建立强功能教师。

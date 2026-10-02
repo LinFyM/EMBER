@@ -8,8 +8,15 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 main现已直接消费下述视频来源批的16份continuous、四份RGB及真实构造代码，完成机制§101/findings§280。
 后段单独造成“得到放壶、失去开炉”的预测未获支持；早段增量也能补出完整操作，但仍依赖完整父LoRA与后段地址。
 关闭依此事件分区选择阶段门控、部署E或继续扫切点/层位/scale；历史完整S与新增量约.82%–1.23%重构差限制精确归因。
-本批及其原件消费已完成，canonical tracked/Git窗口回main；当前无active训练、GPU分析或排队后继。
-主讨论继续统合共享视频到完整控制函数的学习条件与最近似完整历史；尚未选定新修正，不恢复旧训练或以局部高分自动推进。
+本批及其原件消费已完成，canonical tracked/Git窗口回main；该批无自动后继。
+主讨论进一步完成机制§102/findings§281，登记唯一有界学习辨识
+[自身执行特征的功能信用](docs/designs/state_coupled_functional_credit_diagnostic.md)。
+旧T2340/固定公共native/A/B0/原四train任务八teacher与A28逻辑流，两臂各64次共享学习；
+辅助头读同一Z和当前生成LoRA的执行hidden，仅live/stop其query反传，主真实FM和其它信用完全相同，无蒸馏。
+固定64各student/Reader诊断32行，共128新增、24 full/104 compact；只有student计为一次LoRA形式，原parent/S/P/D复用。
+预计75–135分钟含工程，硬限3完整GPUh/8GiB，所有输出data1；无held、Test、正式fresh或自动续训/扫描。
+本次检验新增自身hidden信用是否改善完整学生，不把Reader拟合或非零梯度当作成功，也不声称主要根因已经确定。
+当前为合同已登记、等待实际派发；派发后canonical tracked/Git窗口交唯一实验session，main只作科学分析。
 
 主讨论完成上一批原件与机制§100后，登记唯一后继冻结分析：
 [task32已学修正的视频来源](docs/designs/task32_learned_video_segment_diagnostic.md)。
@@ -37,7 +44,7 @@ main现已直接消费下述视频来源批的16份continuous、四份RGB及真�
 原件索引：上述root的completion.json、construction_readback.json、analysis/readback.json、analysis/rows.jsonl、analysis/pairing.json、launch/gpu_ledger.json。
 
 
-当前处于完整学习机制的统合分析，没有active训练；以下为更早已完成的冻结分析：
+以下为更早已完成的冻结分析，当前合同与派发状态只看本节顶部：
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。
 仅旧D17/S43的Q/非Q学习增量、两teacher×两臂×四init共16新行，复用原parent/完整学习行。
 预算1完整GPUh/4GiB；16/16新增行、4 full/12 compact及全行continuous/goal/actions已齐，GPU消费者与CPU读回均exit0。

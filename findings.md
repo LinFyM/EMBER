@@ -7000,3 +7000,25 @@ omega=K_t^T P_t A h/50，没有执行时间与视频分段的硬绑定；真实F
 
 原件root `task32_learned_video_segment_20261002`，main派生表为`analysis/main_behavior_readback.json`；
 实际读取8b90f31c、.082021884GPUh、留存约1.025GiB，设备释放，专用运行面退役，本批结束，main已接回记录窗口。
+
+## 281. native有部分时变动作信息，下一辨识聚焦当前执行hidden的功能信用（2026-10-02）
+
+完整解释与历史边界见机制§102。main沿用八条已存TRAIN native及原标签做CPU代数分解，无新forward/梯度/拟合。
+以逐video/逐horizon标签均值作时间恒定oracle，当前900首5native全7/运动6/夹爪风险为.143146/.123824/.259078，
+oracle为.232836/.149879/.730577；更好condition分别6/8、5/8、6/8。
+夹爪准确率.9038对多数类oracle.6679，balanced accuracy.8670，不能把全部响应解释成常量命令。
+task20两teacher的全7维及task32/17的运动6维仍不利；该oracle不可部署，也不等于learned language/static参照。
+原件`conditional_read_write_continuation900_20261002/analysis/native_motion_information_20261002.json`，
+不据这些当前C证据冒称旧T已提取充分语义或已定位主要神经根因。
+
+旧S/P/D的真实控制获取、近似共有的离线修正、Q/R与视频来源的混合联合作用共同要求解释完整函数的学习，
+不能继续通过事件/层位拆分选择修复。历史Video Functional Writer已经联合辅助训练，但使用冻结裸source query；
+额外拟合/中层Reader仍弱于学生，去蒸馏/VL/去辅助未建立完整迁移优势，不能把普通联合学习包装成新原理。
+
+登记[自身执行特征功能信用辨识](docs/designs/state_coupled_functional_credit_diagnostic.md)：
+辅助头读正在生成LoRA的38个O前Z及当前LoRA执行hidden，直接学习同跨episode FM的残差；主真实FM完整保留。
+两臂输入/函数/标签/初值相同，仅辅助query允许/停止反传；视频表示及gamma梯度均保留，没有蒸馏。
+新增项J_h^T R_h^T e_R可能改善自身响应，也可能学到原动作出口不用的信息，必须比较真实student，不能由公式担保。
+旧T2340四任务八teacher、原A28逻辑流，各64共享更新，固定64的student/Reader各32行，共128新增/24 full。
+只有student是合法一次LoRA部署；Reader若更强却未传给student，不自动扩头、蒸馏或部署第二控制器。
+没有held/Test/controls、正式fresh或自动后继；3GPUh/8GiB、预计75–135分钟，执行状态由progress记录。

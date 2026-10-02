@@ -3,6 +3,19 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：完整学习链统合，登记自身执行特征的功能信用辨识
+
+机制§102/findings§281将最近S/P/D、Q/R、视频来源与旧Reader完整历史放回同一学习问题。
+对已存八条TRAIN native的CPU代数分析显示当前900首5全7/运动6/夹爪风险.143146/.123824/.259078，
+逐video/horizon恒定oracle为.232836/.149879/.730577；task20和task32/17运动不利项保留。
+native有部分时变动作信息不等于可迁移语义，当前C与旧T控制证据也不能拼成充分性证明。
+旧Reader用冻结裸source query，联合表示监督/额外拟合/中层读取等未建立强教师与迁移资格；不以改名清零负证据。
+新[有界合同](designs/state_coupled_functional_credit_diagnostic.md)只比较辅助query在当前LoRA执行hidden处live/stop，
+同一真实Z、相同残差目标、完整LoRA FM与视频表示信用保留；附加信用可能有用也可能绕过原动作出口，结果尚未知。
+旧T2340四任务八teacher、原A28逻辑流，两臂各64，固定student/Reader各32行，总128新增/24 full；
+原parent/S/P/D复用，只有student满足一次LoRA部署。3GPUh/8GiB、75–135分钟，无held/Test/正式fresh或自动后继。
+本条是科学登记，不表示已经运行或有效；实际启动、身份、成本与退出按progress及原件记录。
+
 ## 2026-10-02：视频来源原件消费，关闭按事件拆分技能的修复依据
 
 main直接读取最近16份continuous、四份双RGB与冻结构造源码，完成机制§101/findings§280。

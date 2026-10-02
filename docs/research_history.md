@@ -3,6 +3,26 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：控制内容调制读写fresh450完整执行与原件交付
+
+[完整合同](designs/control_calibrated_read_write_design.md)的唯一fresh450及固定544环境行/A28已经全部完成，暂无科学selection或后继计算。
+原36task×50teacher/450更新/50400跨episode主FM query；同版本q的辅助每condition一次、Gamma-only，55858合法gap5区间/279290动作位置，Source基础参数冻结。
+0/90/180/270/360/450六完整恢复点含Gamma/全部76 Ua/Ub、optimizer/scheduler/sampler/cursor/四rank RNG/拓扑/schema；未加载旧P/F或profile权重。
+裸F0纯特征2200视频/73642帧，1800 train/400 validation，cache无action/state/reward；176旧train原件仅提取H0/mu/indices复用，旧证据未改，无held动作读取。
+correct400=122/400；tasks[3,6,11,16,23,26,31,39]为[30,11,26,0,0,36,19,0]，Spatial/Object/Goal/Long为41/26/36/19，breadth5/8。
+对C450137的R98/G24/L39/churn63，C900140为95/27/45/72，T450122为86/36/36/72，T900148为94/28/54/82，T2340161为94/28/67/95，Context900151为90/32/61/93，强MT153为92/30/61/91。不同年龄/监督保留为能力参照，不伪装成单因素因果比较。
+Seen144=77/144，train24为36/96、support12为41/48；原scope seed20260928、0–49池固定四teacher与scene_canonical144/RNG全部配对，不改为demo46–49。
+Seen对C45091 R69/G8/L22，C900115 R73/G4/L42，MT93 R69/G8/L24；train24对C450 R28/G8/L17，support12 R41/G0/L5，有限训练池不冒称held。
+544实际环境行的44 full/500 compact及完整continuous/goal/physical actions齐备，所有scene/state/video/env/noise-prefix配对通过；原高点、451次lost与225次gained参照比较及全部both-failed/retained逐行保留，不把跨参照重复计为独立案例。
+8训练teacher q等条件MSE由裸mu .139892626降至.083043769，8/8 all7改善；task0/teacher11旋转及task20/teacher38夹爪通道仍不利，43个q区间较mu差保留。
+A28 full8的前5/all50 FM MSE=.136346801/.116417003，C450=.137726274/.119757478、C900=.128483122/.110893875；前5motion6较C450略差，task20两teacher较C450差，task0/12/20两teacher较C900差。356个FM逐query/参照不利比较保留；无新增10步生成预测，内部拟合不构成闭环有效性或根因证明。
+实际train/bank/A28/evaluator为clean pushed detached2c630fb3940c16365ac9a9a672b1f632e8d31e51，cache/profile1–2为e314d227，Source1000原训练b8ea00e9；正式450消费者7465.552秒/8.295057918GPUh，完整平均更新16.408秒、reserved峰41.296875GiB。
+三次合法最长105帧/全部28query profile：world4/frame32 33.097秒；world6/frame32 32.652秒，仅快1.36%且多50%卡；frame40 native反传容量OOM，exit1/.093356145GPUh保留，无第4次。400/144评测4+2卡/每卡3 persistent replicas，889.231/683.397秒，启动util89–100%、device use约34–38.6GB，不增案例填显存。
+CPU prepare首漏asset环境引用，按原data1资产修复、0GPUh；CPU读回首误把planning-time front5全当已执行，依原success-stop实际步数及独立continuous修正。161行末段418个planned命令未执行，全部544行realized prefix与continuous一致；原frozen/分数/原件未改、未重跑模型或环境。
+全批含加载/cache/profile/失败/物化/环境/I/O/退出11.471727418171/32完整GPUh；新增实占含工程树51.444GiB，临时/缓存/冻结树保守峰72.06/80GiB，data1 quota/shared准入与最终核验通过。16个consumer PID全部退出、双节点本用户GPU进程0，他人未受干扰。
+primary root `/data1/user/ymdai/ember_runs/control_calibrated_read_write_20261003/`：completion.json、readback.json、analysis/closed_loop_readback.json/functional_readback.json/checkpoint_readback.json/report.md/comparison_table.csv/per_task_scores.csv/ability_changes.json，launch/gpu_ledger.json/final_release.json及两sealed banks/raw results/全部trajectories/continuous。
+以上为执行与描述读回事实；main负责科学消费与机制取舍。唯一新canonical实现和完整450恢复能力保留，整批Git/push及一次回报后释放窗口并停止，无自动900/选点/扫描/蒸馏/controls/Test/RL。
+
 ## 2026-10-03：登记控制内容参与实际Value的完整学习检验
 
 机制§106/findings§285据新获取正反证据选择[控制内容调制读写](designs/control_calibrated_read_write_design.md)。

@@ -2,7 +2,7 @@
 
 ## 科学目标与当前批次
 
-唯一fresh450已完成、exit0/六完整ECP/50400主query/55858aux区间，实际2c630fb3；训练8.295057918GPUh、两完整bank/A28均exit0后累计10.104028164GPUh。correct400与seen144已按4+2卡/每卡3 persistent replicas启动，严格544行/44 full，原task/state/video/scene/RNG准备配对通过。首次CPU prepare的asset环境漏传失败已修正保留、0GPUh；没有新源码或科学变更。Seen仍为原scope/scene/RNG，完整闭环和费用读回待消费者退出；main只读，窗口仍由实验session独占直到整批交付。
+唯一fresh450与全部读回已完成：correct400=122/400，Seen144=77/144（train24=36/96、support12=41/48）；严格544行/44 full/500 compact、原A28的12 FM/8被动条件、六完整ECP与50400主query/55858aux区间均已实际读回。实际train/consumer2c630fb3、11.471727418GPUh、新增实占51.444GiB/保守峰72.06GiB，均在32/80硬限内，GPU与16个consumer PID全部释放。未胜强MT153或成熟T161；全参照与正反原件保留，无自动selected/续900/扫描/controls/Test/RL。唯一new canonical实现及450完整恢复保留待main裁决；整批Git/push及一次回报后交回canonical窗口，实验session停止本项。当前没有active计算，下方运行段落保留其历史时点。
 
 
 当前唯一新合同为[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)，机制§106/findings§285说明取舍。

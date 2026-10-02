@@ -2,6 +2,16 @@
 
 ## 当前授权与活动批次
 
+2026-10-03控制内容调制读写整批执行与原件读回已完成：fresh450、六完整ECP、correct400=122/400、seen144=77/144（train24=36/96、support12=41/48），544行/44 full/500 compact及原A28的12 FM/8被动条件全部齐备、无缺项。
+相对C450 correct R98/G24/L39、seen R69/G8/L22；绝对性能低于强MT153及成熟T2340的161，全部高低参照/逐task/逐行得失保留，不能由q拟合或内部MSE宣布有效。
+训练/物化/A28/实际环境消费者均为clean pushed detached2c630fb3，均exit0；本批11.471727418/32完整GPUh，正式reserved峰41.296875GiB。三次真实profile含frame40容量OOM已计费，world6仅快1.36%且多50%卡；评测按4+2卡/每卡3 persistent replicas利用显存与吞吐，无额外案例。
+新增实占含工程树51.444GiB，临时/缓存/冻结树保守准入峰72.06/80GiB；strg01 data1独立quota及shared核验齐备。16个实际consumer PID全部退出、双节点本用户GPU进程0，没有影响他人。
+首次CPU prepare漏传既有asset环境路径、CPU读回误把成功停止后未执行的末尾planned前5全当physical，都已在原语义内修复并保留失败；原frozen/分数/产物未改、0新模型或环境补跑。所有544行实际prefix与独立continuous actions一致。
+primary `/data1/user/ymdai/ember_runs/control_calibrated_read_write_20261003/`：completion.json、readback.json、analysis/closed_loop_readback.json/functional_readback.json/checkpoint_readback.json/report.md/comparison_table.csv/per_task_scores.csv/ability_changes.json及launch/gpu_ledger.json/final_release.json。
+当前无active计算，保留唯一新canonical实现与完整450恢复能力，等待main科学消费；不自动selected/续900/扫描/Reader蒸馏/controls/Test/RL。本次整批Git推送与一次来源明确的回报完成时，canonical tracked/Git窗口交回main，实验session停止本批、不再写tracked或新增计算。
+
+### 本批登记及执行过程（以下“正在/尚未/已接手”仅指历史时点）
+
 main已在机制§106/findings§285登记唯一后继[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)。
 完整fresh450：同一Gamma q既受合法5步动作监督，又直接调制实际A/B Value，公共native/c/d及跨episode真实FM保持。
 原36task/50teacher/50,400主query流，不加载诊断P权重；固定450的correct400、seen144、原A28，强MT及成熟T高点完整保留。

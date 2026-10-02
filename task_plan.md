@@ -7,7 +7,13 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析设置时间限制；此前上午暂停已解除。
-当前没有active计算设计。[原生prefix变化Value](docs/designs/native_prefix_change_value_design.md)在派发后由主讨论撤回：
+当前唯一active design为[task32状态/冻结LoRA交叉续行诊断](docs/designs/task32_state_policy_crossover_diagnostic.md)。
+用原条件900同初态两teacher的自身动作前缀重放到step180，接两套既存完整LoRA，共四条闭环，
+把抓取阶段控制作用与此前到达状态的影响分开；这是具体失败的机制分析，不是新架构或重新训练。
+预计含工程45–75分钟，硬限1GPUh/4GiB；执行者完成后主讨论核对原件及结果分支，再形成方法判断。
+数据规模固定；无新梯度、Val/Test/controls、选点或自动后继。Owner要求的决策错误已在394b5f79写入稳定要求及历史。
+
+最近[原生prefix变化Value](docs/designs/native_prefix_change_value_design.md)在派发后由主讨论撤回：
 Owner指出“具体task失败→有证据的方法缺陷→干预改变失败预测”链条不足、block17仅启发；
 主讨论承担方法选择错误。允许有界检验不能跳过机制辨识，也不能让正式训练替方法选择寻找理由。
 本批因方法选择依据不足撤回，非工程失败或性能阴性；设计与findings§275只保留当时判断，不恢复执行授权。
@@ -15,7 +21,7 @@ Owner指出“具体task失败→有证据的方法缺陷→干预改变失败�
 SIGTERM收束，未到90，完整ECP为0，已登记1–71更新未保存；全部后继训练/bank/评测已取消。
 累计1.452021841GPUh、root观察约0.69GiB，本批GPU/进程已退出；source/spec/冻结代码、日志和退出费用保留。
 收束原件在`/data1/user/ymdai/ember_runs/native_prefix_change_value_20261002/`，实际身份及读取边界见progress。
-实验session完成记录/Git交付后释放写入窗口并停止本批；主讨论负责科学纠正及后继判断，无新计算待办。
+实验session已完成记录/Git交付并停止该批；后继仅为上方单独登记的四行冻结分析，不恢复被撤回的训练。
 
 Owner最新GPU要求已加强为AGENTS§9长期规则：显存有明显余量必须主动验证更大物理批量/帧分块或合适并行的
 真实吞吐，不沿用保守默认值后只报低显存；配置及未放大依据须有记录，逻辑batch/任务权重/更新与科学合同保持。

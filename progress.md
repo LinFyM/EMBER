@@ -5,7 +5,16 @@
 Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，不对分析设置时间限制；本项覆盖当日上午分析后暂停的要求。
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。
-当前无active计算设计。[原生prefix变化Value的共同学习](docs/designs/native_prefix_change_value_design.md)曾获派发，
+当前唯一active design为[task32自身状态与冻结LoRA交叉续行](docs/designs/task32_state_policy_crossover_diagnostic.md)：
+原条件900同初态、两teacher的一成一败均已开炉/接近壶，并在同一action index193闭合夹爪；
+在固定step180重放自身动作前缀，分别接两套既存完整LoRA，只做四条train诊断，区分当下控制作用与到达状态的影响。
+不新增训练、数据、held读取或架构；预计含工程45–75分钟，硬限1GPUh/4GiB，结果不自动触发正式重训。
+本合同已由主讨论登记，待唯一实验session实现与执行；运行事实以其交付更新。
+Owner要求的决策错误已写入current_owner_requirements§3、findings§276和research_history，394b5f79已推送。
+
+## 最近撤回批次及保留事实
+
+[原生prefix变化Value的共同学习](docs/designs/native_prefix_change_value_design.md)曾获派发，
 但Owner指出没有建立“具体task失败→有证据的方法缺陷→干预改变失败预测”的决定性链条，block17选择也仅有启发；
 主讨论承担方法选择错误，立即撤回该批剩余训练、物化与评测。允许有界检验不等于可以跳过机制辨识、
 让正式训练替方法选择寻找理由。**本批因方法选择依据不足撤回，非工程失败或性能阴性。**
@@ -30,8 +39,8 @@ clean pushed detached训练/读取身份为`ab8d2c7ee22447da133cde59b975133b5988
 Owner同时纠正GPU利用：实测22.805GiB仍有余量，实验session沿用frame8却未验证更大物理分块，
 未落实已有吞吐要求。Owner要求已加强为AGENTS§9长期规则：必须主动验证显存余量的吞吐用途，
 以实测选择物理配置并记录未放大的依据，保持逻辑batch/权重/更新及科学范围；本批撤回后没有追加profile。
-主讨论保留`docs/current_owner_requirements.md`的科学纠正写入窗口，该文件本次未修改；
-运行事实/撤回状态只写本文件、task_plan及root收束原件，Git交付后释放canonical tracked/Git窗口。
+实验session的运行收束已在863eef2b推送并释放canonical窗口；主讨论随后在394b5f79完成稳定要求的科学纠正。
+当前写入分工随顶部新分析合同串行交接，不沿用已经结束的窗口。
 
 最近完成[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)：Original13/32、Reexpressed14/32，
 R13/G1/L0；448 FM＋448十步query、64配对闭环和16 full齐备，费用0.281819GPUh、阶段观察3.113960GiB。

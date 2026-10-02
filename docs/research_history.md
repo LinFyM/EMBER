@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：登记控制内容参与实际Value的完整学习检验
+
+机制§106/findings§285据新获取正反证据选择[控制内容调制读写](designs/control_calibrated_read_write_design.md)。
+fresh Gamma读固定裸source前后H0、由mu加残差得到完整5×7 q；`1+U vec(q)`调制原A/B Value，原公共native/c/d及自由读写保持。
+同一q接受合法同teacher动作辅助和完整LoRA FM信用，辅助只更新Gamma；全Writer fresh，不复用诊断权重。
+旧forecast、LocalActionGrounded、LocalField及Pullback限制保持，不称已定位根因或以q替代反馈policy。
+原36task及主事件流，单条fresh450/50,400query、固定correct400/seen144/原A28；新增aux标签使用另计，不扩数据。
+完整绝对能力对强MT153、成熟T161与CRW等参照裁决，不以辅助拟合或只胜137作为资格；无自动selected/续900/扫描。
+预计含工程6–10小时、硬限32完整GPUh/80GiB；此条为科学登记，尚无结果，实际来源和接手/运行以progress及原件为准。
+
 ## 2026-10-03：原生转移校准科学消费，取得平均控制内容而非完整控制规律
 
 机制§105/findings§284直接核实际科学源码、CPU重算176份完整预测，派生main_action_content_readback.json，无新GPU/forward。

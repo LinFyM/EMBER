@@ -2,6 +2,11 @@
 
 ## 科学目标与当前批次
 
+当前唯一新合同为[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)，机制§106/findings§285说明取舍。
+fresh Gamma的完整控制估计直接调制同一LoRA A/B Value，真实跨episode FM学习自身调用；不以获取通过代替完整能力。
+单条fresh450、原36task/50teacher，固定correct400/seen144/原A28；预计6–10小时、32完整GPUh/80GiB，实际接手/运行看progress。
+无自动900、扫描、Reader/蒸馏、Test/RL/controls；旧§105未登记后继状态由本段更新。
+
 2026-10-03main完成原生转移校准科学消费（机制§105/findings§284），直接读实际源码及176份预测。
 P在四内部task相对F均改善，但task32全四视频仍差于裸mu；主要取得五步区间平均控制，非精细时序或完整反馈规律。
 继续推导状态、实际变化与控制内容如何经同一LoRA和跨episode真实FM形成自身作用；旧辅助头、LocalField及Pullback负证据保持。

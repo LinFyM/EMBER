@@ -7087,3 +7087,17 @@ task12对F总增益几乎全来自夹爪；task20改善F的平移偏差但仍差
 本结果加强合法native动态中存在可学控制信息的解释，未唯一归因旧反演失败，也没有得到通用强教师或完整Writer。
 下一判断须将状态、真实变化和控制内容送入同一LoRA消费者，经真实跨episode FM学习自身调用；不恢复独立Reader、固定Pullback或夹爪补丁。
 科学消费完成，main持canonical记录/Git窗口；本项.134531062GPUh、无active计算，无自动后继。自主推导继续，整体目标未完成。
+
+## 285. 选择将校准控制内容直接用于完整LoRA的Value（2026-10-03）
+
+机制§106及[唯一新合同](docs/designs/control_calibrated_read_write_design.md)选择一次完整学习检验，非动作头精度续训。
+固定裸source H0/mu供fresh Gamma读取真实转移，完整q[5,7]通过`1+U vec(q)`调制原A/B Value；
+公共β-native/c/d、状态地址、完整动态通路和自由两侧读写保持，最终一套38-target LoRA在自身hidden上执行。
+同一q接受训练侧5步动作辅助及实际LoRA主FM信用；标签不进入条件输入，辅助只更新Gamma，主项更新整个Writer。
+全部fresh，不加载诊断权重、不部署第二Reader、不使用J^T q固定出口；q误差或非零梯度不能证明效果。
+
+旧forecast/共享表示辅助/同场监督/Pullback的完整正负约束保持；新机制包含校准学习和实际消费，不能分别作纯单因素归因。
+task32及四task不确定性禁止把q当通用强教师；条件调制能否避免其坏作用仍需完整策略结果。
+只做一条fresh450，原36task/50teacher和50,400主query流保持，新增aux标签曝光另报；不扩大数据。
+固定correct400/seen144/原A28，对强MT153、成熟T161及CRW等高低点完整比较，不以仅胜137选模型。
+预计6–10小时、32完整GPUh/80GiB；仅本批许可，450不自动selected或续900，无小扫、Test/RL/controls。

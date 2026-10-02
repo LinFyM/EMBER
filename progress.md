@@ -2,6 +2,13 @@
 
 ## 当前授权与活动批次
 
+main已在机制§106/findings§285登记唯一后继[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)。
+完整fresh450：同一Gamma q既受合法5步动作监督，又直接调制实际A/B Value，公共native/c/d及跨episode真实FM保持。
+原36task/50teacher/50,400主query流，不加载诊断P权重；固定450的correct400、seen144、原A28，强MT及成熟T高点完整保留。
+预计含工程6–10小时、硬限32完整GPUh/80GiB；无自动续训、扫描、Reader蒸馏、Test/RL或controls。
+当前main持canonical tracked/Git窗口，科学登记待交付，尚无本后继实际接手或launch；实际状态后补，不把合同当后台计算。
+下方§105“没有新训练”属于其科学消费完成时点，不覆盖这个新登记；旧获取批次仍已完成，不恢复其运行。
+
 main已完成本批源码与全部176份实际预测的科学消费，见机制§105/findings§284。
 内部P对F风险降19.857%、对裸mu降13.728%；P−mu四task簇区间跨0，task32全部四视频较mu差。
 精确五步误差分解表明内部P对F改善99.001%来自区间平均指令；取得部分可迁移控制内容，未建立精细时序或自身控制规律。

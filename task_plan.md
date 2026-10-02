@@ -6,7 +6,8 @@
 由严格配对闭环证明绝对能力、相邻保持和有益教学增量。稳定边界见
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
-当前唯一active design为[条件读写§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)：
+Owner于2026-10-02上午要求分析后暂停并汇报昨晚至今的推进。当前没有active执行批次；不自动接续新实验。
+最近完成合同为[条件读写§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)：
 
 1. 已完成§13 fresh450及§14固定图900。validation137→140/400、seen91→115/144；
    训练侧确有对象选择和多阶段获取，held主要损失仍在3/31，完整优势及相邻资格未形成。原同池续训停止。
@@ -21,7 +22,8 @@
 4. 预算12GPUh/64GiB内完成：实际8.477763GPUh，观察53.338696GiB、保守60GiB；全部进程exit0，新增计算已停止。
    唯一root`/data1/user/ymdai/ember_runs/conditional_support_diversity_pilot_20261002`的completion/readback验收complete。
    训练/读取796d7a9e、C12旧训练85919994及450父身份分别保留；首GPU启动至整批退出约1小时33分，不含启动前工程。
-   整批科学交付后主讨论依据完整原件判断该支持分布是否带来实际迁移；不由总分或局部拟合自动开fresh或扩大数据。
+   主讨论完整分析已收束为机制§96/findings§271及支持分布证据JSON：广泛迁移预测没有通过，未定位唯一神经主因。
+   本回合向Owner汇报后暂停；不由总分或局部拟合自动开fresh或扩大数据。
 
 工程/运行/Git由实验session闭环；主讨论负责科学判断。整批科学结果或确需裁决的实质边界按Owner要求§6回报；
 其它工程阶段事实保存在已有记录。实际代码、冻结、运行与窗口状态只看[progress](progress.md)。
@@ -30,7 +32,7 @@
 
 本轮独立整理的实际改动、保留依赖、536项CPU检查、合并后38项消费者检查、已安装skill维护与回滚位置见
 [研究历史](docs/research_history.md#2026-10-02整仓整理与历史状态入口)。整理承接最新实验修复，交付身份见progress与Git。
-没有改动当前实验模型、数据/标签、FM、信息墙、选择合同或预算；科学下一步仍按上面的唯一批次推进。
+没有改动当前实验模型、数据/标签、FM、信息墙、选择合同或预算；科学接续按上方Owner最新暂停要求处理。
 
 ## 历史
 

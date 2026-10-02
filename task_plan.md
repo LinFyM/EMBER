@@ -2,6 +2,11 @@
 
 ## 科学目标与当前批次
 
+2026-10-03main完成原生转移校准科学消费（机制§105/findings§284），直接读实际源码及176份预测。
+P在四内部task相对F均改善，但task32全四视频仍差于裸mu；主要取得五步区间平均控制，非精细时序或完整反馈规律。
+继续推导状态、实际变化与控制内容如何经同一LoRA和跨episode真实FM形成自身作用；旧辅助头、LocalField及Pullback负证据保持。
+当前main持canonical记录/Git窗口，无active计算或已登记后继；不能由获取通过自动启动fresh/蒸馏，也不能以尚未选定消费者结束自主推进。
+
 从冻结π0.5 source出发，利用exact language及action-hidden教学视频生成初次即有效的一套完整task LoRA，
 由严格配对闭环证明绝对能力、相邻保持和有益教学增量。稳定边界见
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。

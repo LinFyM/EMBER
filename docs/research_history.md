@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：原生转移校准科学消费，取得平均控制内容而非完整控制规律
+
+机制§105/findings§284直接核实际科学源码、CPU重算176份完整预测，派生main_action_content_readback.json，无新GPU/forward。
+内部mu/F/P all7=.132369/.142491/.114197，P对F四task/16视频均改善，对mu则task32四视频全差；P−mu簇区间跨0。
+P对F降低19.857%，其中F自身劣于mu占差额35.776%；裸source参照及全部通道不利项保持。
+五步均值/中心化误差精确分解显示，内部P−F改善99.001%、新episode96.462%来自区间平均项。
+主要支持可由合法native转移学习部分粗粒度控制信息，未证明精细时序、对象/目标关系、强教师或一次LoRA有效。
+任务12改善主要在夹爪；20平移仍较mu差、净收益来自旋转；32运动恶化超过夹爪收益，不能以总均值抹去。
+动作摘要不增加原视频Bayes信息，替代视频可丢掉状态关联；native Jacobian传递不是自动正确的编译器，旧相关负例不撤销。
+main继续形成具体的同一LoRA消费者及学习解释；未选择部署P、Reader蒸馏、固定Pullback或新训练。
+本项科学消费完成、.134531062GPUh、设备与窗口释放，无active计算；整体目标及自主推导持续。
+
 ## 2026-10-03：原生可见转移动作校准，固定500执行与完整读回交付
 
 [固定合同](designs/native_transition_action_calibration_diagnostic.md)已执行；只学习裸aligned Source1000之上的两份fresh gamma，同函数/初值/事件流只改变第二memory到达H或出发H。

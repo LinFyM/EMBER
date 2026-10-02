@@ -2,6 +2,14 @@
 
 ## 当前授权与活动批次
 
+main已完成本批源码与全部176份实际预测的科学消费，见机制§105/findings§284。
+内部P对F风险降19.857%、对裸mu降13.728%；P−mu四task簇区间跨0，task32全部四视频较mu差。
+精确五步误差分解表明内部P对F改善99.001%来自区间平均指令；取得部分可迁移控制内容，未建立精细时序或自身控制规律。
+原件补充`analysis/main_action_content_readback.json`，无新forward/标签/环境/GPU。
+canonical tracked/Git窗口已实际回main，实验session本项停止、无active计算；main继续推导同一LoRA如何消费这些内容。
+没有选择部署P、Reader蒸馏、固定Pullback或新训练；本项通过不自动生成后继合同，也不结束自主推进。
+下方为已完成获取批次的执行事实，原“待消费”状态以本段为准。
+
 2026-10-03唯一native_transition_action_calibration_20261003批次已完成：176/176视频、6,200真实采样帧、5,882合法offset1五步区间。
 P/F各fresh500及80,000区间曝光，0/250/500完整恢复点、全部mu/F/P预测/标签/索引/mask及CPU实际读回齐备；无Writer/LoRA/环境/官方Val/Test。
 内部留task[0,12,20,32]无gamma梯度；等task all7为mu .132368525、F .142491026、P .114196534，4/4 task相对F改善，预注册获取预测通过。

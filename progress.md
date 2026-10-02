@@ -2,7 +2,9 @@
 
 ## 当前授权与最近完成批次
 
-实验session已实际承接§15，完成唯一canonical data/credit/trainer/scope接线与固定630两臂消费者。metadata/protocol先于新label读取封存；真实C12训练事件对照确认480个target条件/13,440query及flow完全保持，71项支持240条件按80/71或60/71直接进入原四条件损失。核心11项CPU、消费者37项CPU及集成后19项针对检查通过，GPU尚未启动。工程集成后新clean pushed detached冻结自主运行；canonical tracked窗口进入只读运行期，不设主讨论工程放行。新root/data1现场quota 996.3G/2T、个人实占1069732286464B、共享82T余量，64GiB新增峰值可准入。旧资产只读，工程事实只入本批launch记录。新增support_diversity模块只拥有固定事件/权重合同，复用同一模型/训练器/余切/官方队列；未新增平行训练执行面。
+§15整批已完成并停止新增计算：同父同龄固定630的D71为156/400、C12为154/400；配对R129/G27/L25、净+2、churn52、Jaccard0.712707，八task簇95%差额[-9,15]。原36task seen为D71 98/144、C12 99/144；target24为53/55，原support12为45/44。1,088环境原行、24份A28及16条被动native全部验收，missing/invalid为空，整批owner与全部消费者exit0。新增8.477763GPUh，阶段观察53.338696GiB、保守60/64GiB，旧31.737894GPUh单列。completion/readback与完整训练/读取身份见下方交付段；两个630仍为有界诊断，没有selected或后继训练资格声明。主讨论据整批原件作科学判断。
+
+metadata/protocol先于新label读取封存；实际事件确认480个target条件/13,440query及flow完全保持，71项支持240条件按80/71或60/71直接进入原四条件损失。核心11项CPU、消费者37项CPU及集成后19项针对检查通过。唯一data/credit/trainer/scope与官方队列复用，新增support_diversity只拥有固定事件/权重；源码训练/读取796d7a9e来自clean pushed detached冻结，旧原件保持。新root/data1启动现场quota 996.3G/2T、个人实占1069732286464B、共享82T余量，全部新增data1，data0只读。普通工程事实只入launch记录，整批科学结果一次交付。
 
 Owner原有自主推进授权持续。主讨论已完成900原件、行为、native实际动作读出及数据/历史分析，
 登记唯一active [条件读写设计§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)。
@@ -14,8 +16,8 @@ Owner原有自主推进授权持续。主讨论已完成900原件、行为、nat
 新增20,160个完整query中13,440个target query保持、6,720个support query改变分布；每source task只有3/4个teacher条件。
 这是有界学习诊断，不是95task fresh或selected资格，不恢复原同池路线选点。
 唯一新root为`/data1/user/ymdai/ember_runs/conditional_support_diversity_pilot_20261002`；新增硬限12GPUh/64GiB，预计2–4小时。
-科学合同已登记，具体派发后由原实验session实施、冻结和运行；本次文档提交不声称GPU已经启动。
-540只供新分支恢复，630读出完成即停；没有自动D71→900、完整fresh、其它checkpoint/controls/Test/RL或小扫。
+科学合同及实际执行均已完成；新540/630完整ECP保留，540仅供恢复，两个630读出齐备后已停止。
+没有自动D71→900、完整fresh、其它checkpoint/controls/Test/RL或小扫；后继由主讨论消费原件后裁决。
 
 已完成§14为900 validation140/400、seen115/144（target70/96、support45/48），held相对450仅+3，task31丢失16条旧成功。
 810分支未触发；全部544环境原行及A28/native验收，新增12.464601GPUh。观察存储35.598759GiB、保守60/64GiB。
@@ -42,6 +44,55 @@ C12_630引用§14 root的`conditional_read_write/train/attempts/continuation/che
 原36-task seen面板不扩分母，保留所有原能力和反例。正收益只提高当前数据解释支持；阴性不自动延期或开完整fresh。
 预计8–10GPUh有用计算、硬限12；额外产物估计约53GiB、峰值限64。实际GPU和strg01 quota准入由原执行者现场核验。
 canonical科研文档在本次登记后随具体派发一并交给执行者的tracked/Git窗口；不得与main重叠写入。
+
+## §15整批交付（2026-10-02）
+
+唯一root为`/data1/user/ymdai/ember_runs/conditional_support_diversity_pilot_20261002`。
+`completion.json`与`analysis/readback.json`均为complete，全部44项读取/配对/来源/费用检查validated，missing/invalid为空；
+`launch/batch_owner_exit.json`确认exit0。两个固定630各400＋144、8full＋4public A28及8条被动native，
+共1,088条环境原行、24份速度预测、16条合法teacher机制字段，所有goal/continuous/action/RNG原件齐备。
+每个400为8full/392compact、每个144为36full/108compact；参照无新GPU消费者。
+
+Held task3/6/11/16/23/26/31/39的C12→D71为30→28、7→5、44→44、2→4、0→0、43→48、28→27、0→0。
+对应R/G/L为24/4/6、4/1/3、39/5/5、1/3/1、0/0/0、41/7/2、20/7/8、0/0/0。
+两臂breadth均6/8；Spatial37→33、Object46→48、Goal43→48、Long28→27。
+主比较D71−C12为净+2，R129/G27/L25、churn52、Jaccard0.712707，whole-task簇95%差额[-9,15]，不是训练seed不确定性。
+D71对共同450137为R110/G46/L27、净+19；对既有900140为R114/G42/L26、净+16；
+对MT153为R109/G47/L44、净+3，对T900148为R113/G43/L35、净+8，对Context900151为R115/G41/L36、净+5。
+C12对共同450为R110/G44/L27、净+17，对MT为R112/G42/L41、净+1；全部成功集合和其它配对保留readback。
+630事先固定，两个诊断点均未selected；没有根据这次分数恢复§14选点或读810，成熟T2340仍是不同年龄背景。
+
+原seen144为C12 99、D71 98，R86/G12/L13、净−1、churn25、Jaccard0.774775，36task簇95%差额[-10,8]。
+Target24为55→53（R42/G11/L13），原support12为44→45（R44/G1/L0）；breadth34→31/36。
+D71对45091为R80/G18/L11、净+7，对900115为R91/G7/L24、净−17；
+对MT93为R84/G14/L9、净+5，对Context900103为R88/G10/L15、净−5。
+四初态/task、原50teacher池及有限面板边界保持，seen分母没有扩为95task。
+
+A28仍为原query/noise/tau的FM速度预测，无额外十步采样。两臂8full/4public及全部逐query、first5/full50、motion6/gripper记录已验收；
+八full的D71−C12平均risk差first5 −0.00184794、full50 +0.00032395，四public为−0.00037572/+0.00029511。
+这些是固定训练面板的功能读回，不构成闭环或视频因果结论。各臂8份真实H/c/d与Q8/V8/action_out的X/A0/S/B0/M保留，未增加native forward。
+原件入口为`C12|D71/conditional_read_write/evaluation/630/correct400/results.json`、
+`C12|D71/conditional_read_write_seen/evaluation/630/correct144/results.json`和`C12|D71/analysis/A28/conditional_read_write/`。
+完整逐task/suite、原行得失、goal阶段和连续动作引用在`analysis/readback.json`，全部有利和不利样本保持。
+
+仅新训D71的451..630共180更新、720条件、20,160完整query，full-only，public训练FM为0。
+Actual target条件/visit/teacher/query episode/frame/flow与C12原事件完全相同；支持240slot按固定71task permutation和3/4次权重执行。
+窗口target/support权重480/240，每source累计240/71，实际损失为sum(weight×mean28fullFM)/4，不按宏步权重和或物理rank归一化。
+新增59项是Writer的新映射；每source只读3/4不同teacher，不声明数据普遍可行或不可能。
+完整450的Writer/Adam/scheduler/scaler与五rank RNG恢复，绝对LR保持；sampler为登记科学分叉，不称原轨迹exact resume。
+首451恢复证据在`launch/actual_resume451.json`，完整新540/630和实际事件审计在readback.training.D71。
+旧父450为a0e0248d，C12_630真实训练85919994、新读取796d7a9e；D71训练/读取均796d7a9e。
+冻结树`/data1/user/ymdai/projects/EMBER-support-diversity-formal`及两个arm的spec身份独立登记，旧冻结树/原件未改。
+
+D71训练实际GPU02:7/1/2/3/0、world5、µ28/frame32，执行面支持1–6rank；180步mean17.4291s、median16.9755s。
+C12 bank/A28/seen在GPU01:2与D71训练并行，D71 bank400及两个400/末点seen144在GPU02五卡动态队列运行，
+官方评测每卡3 persistent replicas；D71 bank144/A28在GPU01:2与C12 400并行。全部有效进程exit0。
+训练加载/保存4.621526GPUh，C12 bank400/144 .372669/.132272、A28 .025758、seen144 .307342、400 1.016590；
+D71 bank400/144 .344510/.115134、A28 .020905、400 1.085736、seen144 .435324；总8.477763278407GPUh。
+启动到整批owner退出约1小时33分；此数不包含启动前工程实施时间。原两批31.737894GPUh单列，无预算结转或扩大。
+无GPU失败/hold/profile；一次首451 CPU包装读错键为record，已按真实row字段修正，0GPUh，原失败记录保留。
+阶段du高水位53.338696GiB、保守60/64GiB，非连续精确峰值；所有新增data1，原data0只读。
+新增计算已停止；整批科学交付一次发送主讨论，常规阶段无跨session广播。
 
 ## §14整批交付（2026-10-02）
 

@@ -28,6 +28,8 @@ strg01 data1实占约1.140TB/2TiB quota、个人余量986.738GiB、共享89.086T
 一次source加载后两臂共用H/mu；真实64/128帧与每臂160区间profile计费并恢复初值/RNG，正常执行只持续等退出，不自Queue。
 首21b4消费者在native/标签/更新前因NUMA绑定缺少device参数退出1，计15.510GPU秒（.004308GPUh）；失败frozen/log/ledger保留。
 已核原NUMA owner接口并修正为可见设备0，实际调用签名及source元数据消费者CPU检查后新push/freeze继续；非科学阴性，无新增数据/模型/矩阵。
+修复已集成push为a4da650a，新clean detached frozen_fixed的PID1251875已在gpu02:7启动；首失败15.510秒从同一3GPUh余额扣除。
+重新现场双节点本用户0→1卡、data1 quota/shared准入通过；信息墙和完整176条offset1 metadata读回齐备，只等实际消费者退出。
 下方§103的“停止/无active计算/下一判断”保留其收束时点，不恢复旧批次，也不覆盖上述新登记。
 最新主讨论已完成自身功能信用的原件消费及机制§103/findings§282：128条continuous、24真实双RGB和32功能PT直接读回。
 live/stop学生20/24、Reader19/23，live相对stop R18/G2/L6，新增query信用没有净控制收益；辅助头也未建立强功能教师。

@@ -5,18 +5,19 @@
 Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，不对分析设置时间限制；本项覆盖当日上午分析后暂停的要求。
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。
-当前active设计为[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)；
-数学推导/CPU原件回算、独占实现和37项CPU验证已完成；代码923ff89b已集成推送，2026-10-02 14:02:43启动冻结消费者，目前正在完成本批功能读取。§13–§15已结束，其续训或数据扩展不自动恢复。
+最近active设计[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)已完整执行并停止：
+Original13/32、Reexpressed14/32，R13/G1/L0；448 FM＋448十步query、64配对闭环和16 full齐备，
+费用0.281819GPUh、阶段观察新增峰值3.113960GiB。当前没有新计算合同；主讨论消费完整原件后裁决，§13–§15不自动恢复。
 
 同时维持Owner已明确的数据约束：现有数据规模固定，后继不增加训练任务、示范数量或引入额外数据来源扩量。
 稳定约束已登记于`docs/current_owner_requirements.md`§4；不以增加任务、示范或额外数据源解决当前性能瓶颈。
 分析不限人为时长不等于计算预算无限；每批仍须登记主要干预、完整参照、预计耗时、资源预算与停止线。
 
-最新判断见函数重表达设计、findings§272与两份20261002专家审计/条件A证据JSON。
+本批交付事实见findings§273；前置判断见函数重表达设计、findings§272与两份20261002专家审计/条件A证据JSON。
 固定数据审计未发现匹配当前source/标签/训练量的全36专家上界；不能以“同数据专家已经都学成”为前提恢复蒸馏路线。
 现有900的四train×两teacher原件中，S在Q8/V8/out的作用大多能用A0响应重表达，但只证实教学native分布上的局部事实。
-本批以完整38处重表达检验自身query/十步动作/64有限闭环，硬限3GPUh/12GiB，预计含工程1.5–2.5小时。
-无优化器、Val/Test/controls或选点；结果到齐即停止。新图文Value与fixed-A训练均未选定，不随诊断自动启动。
+本批已完成完整38处重表达、自身query/十步动作/64有限闭环，原硬限3GPUh/12GiB、预计含工程1.5–2.5小时。
+无优化器、Val/Test/controls或选点；结果已到齐并停止。新图文Value与fixed-A训练均未选定，不随诊断自动启动。
 
 最近训练结果完整判断见机制§96、findings§271与`docs/analyses/conditional_support_diversity_evidence_20261002.json`：
 扩支持只带来净+2、得27失25，未兑现广泛迁移/保持预测；原C12 137→154→140与seen91→99→115揭示获取和held保持分离。
@@ -53,21 +54,37 @@ Owner于2026-10-02指定新的唯一实验执行者`01a0fabb-f7a0-7100-93d8-6a0f
 沟通边界按[Owner要求§6](docs/current_owner_requirements.md#6-沟通与交接)：整批科学结果或确需裁决的实质边界只回报一次；
 工程阶段、可自行修复的故障和普通调度记入已有记录。写入/Git窗口与实际冲突方直接串行协调。
 
-## 条件A重表达诊断：实际执行（2026-10-02）
+## 条件A重表达诊断：整批交付（2026-10-02）
 
-本批唯一root为`/data1/user/ymdai/ember_runs/conditional_A_reexpression_diagnostic_20261002`。
-实现/读取commit `923ff89b60f4f8a269e5352d8d82189d72a9cd0a`已push main；实际GPU消费者来自root下clean detached `frozen`。
-原900训练身份仍为`85919994aef11c17b49b7d0e70a2c110158bff61`，source/aligned1000与原normalization保持。
-CPU针对检查37通过；38处默认float64 gelsd、原S/M、A28身份/mask、实际10step和被动记录入口已实现，尚无结果资格声明。
+唯一root为`/data1/user/ymdai/ember_runs/conditional_A_reexpression_diagnostic_20261002`，
+`completion.json`／`readback.json` complete，精炼结果在`report.md`与`delivery_summary.json`，实际原件读取在`verification.json`。
+8条件×38处默认float64 gelsd，原S/M保留，16份完整rank128两格LoRA；448 FM与448官方十步query记录，
+独立task-query只有112。64闭环为四train×两teacher×states0–3×两格，各格32、16不同物理初态；
+全部continuous／goal／实际action／compact齐备，state0全16行full双相机，未作新训练、held/controls或选点。
 
-启动前strg01核验data1 quota2T/limit2.0T、实占1,127,743,614,976B，共享82T余量；估计新增7GiB，硬限12GiB。
-双节点现场无本owner已占GPU；GPU02-2的gqma低占用上下文保留，45,906MiB空余、util0，按共驻合同启动单卡producer。
-闭环计划只使用GPU02两卡各3个persistent workers；每次launch再做双节点/总卡数准入，不预占第二卡。
+Original13、Reexpressed14，R13/G1/L0、churn1、Jaccard0.928571；唯一得例12/14/0。
+task0/12/20/32为8→8、2→3、2→2、1→1；每teacher成功集合及RGL完整在readback／report。
+固定task内四state成组bootstrap保留两teacher重复结构，净差95%区间[0,3]，不是大样本泛化区间。
+FM全50/前5 MSE .110917/.128471→.111018/.128774；十步全50/前5 .141694/.124717→.141308/.123937。
+有效future、有效前5、motion6/gripper分别保留；两格前5直接输出差/原输出范数等条件均值FM0.899%、十步2.249%。
 
-首个临时退出等待包装器误用系统Python（缺少`os.pidfd_open`），包装器exit1；已启动producer不重启，有效编译原件保留。
-已由仓库Python3.12按原PID接续连续退出事件等待。该孤儿消费者的OS退出状态不可直接回收，将明确记为不可观测、
-保留producer completion并验证全部消费者原件；不将其伪报为exit0。首启动/失败/恢复成本合计纳入3GPUh硬限。
-阶段事实与过程账目存root/launch，整批仅完成后一次回报；未读取held/controls、未新建优化器或增加任务/示范。
+教学E/完整LoRA中位数Q8/V8/out为0.0364%/0.0682%/0.1734%；Original十步自身hidden为5.547%/9.870%/7.415%。
+全38处最不利条件task0/teacher40/V7为FM69.032%、十步73.381%，不把焦点层位的小值概括成全部层近等价。
+194/224个条件query至少一项所列风险恶化（包含微小数值变化），Original19／新格18共37失败行均保留。
+教学拟合不能直接搬到自身hidden；本有限面板控制大体保留不证明S无用、fixed-A可重新学成或held能力修复。
+
+实现／实际读取`923ff89b60f4f8a269e5352d8d82189d72a9cd0a`已push main，消费者来自root下clean detached `frozen`。
+原900训练`85919994aef11c17b49b7d0e70a2c110158bff61`、aligned source1000和冻结normalization保持，原件只读。
+37项针对CPU验证通过；完成后读回全64小continuous原件的实际action/EEF/物体/夹爪/goal形状及finite，
+单条full的双256相机、normalized完整50×7与physical前5核实；policy仍官方256→224/10step/前5/settling10/成功终止。
+
+现场strg01 data1 quota2T/limit2.0T、个人实占1,127,743,614,976B，共享82T；全部新增data1。
+单producer后两卡×3persistent workers，总费用0.281818972GPUh，含加载／CPU解析期间占用／故障／恢复；
+root阶段观察峰值3.113960GiB，保守估计7GiB，低于3GPUh/12GiB。不声称连续精确峰值。
+首GPU14:02:43、末GPU约14:12:37，全部GPU释放，只保留原gqma低占用上下文，未中断其它用户。
+首临时等待包装器误用系统Python而exit1；其producer因重父化OS退出码不可观测、明确null。
+producer completion与全部原件已验证，未重启其有效工作；四闭环、CPU readback和恢复owner均exit0。
+完整退出／费用／释放回执见root/launch；不伪报全部exit0。工程／计算已闭环，整批一次回报后释放canonical窗口并停止本项。
 
 ## §15科学登记与交付范围（2026-10-02）
 

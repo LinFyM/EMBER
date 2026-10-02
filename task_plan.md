@@ -7,15 +7,17 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析设置时间限制；此前上午暂停已解除。
-当前active设计为[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)，
-仅授权冻结模型的小检验；数学推导及CPU原件回算已完成，实验session已完成独占实现和37项CPU验证，923ff89b已集成推送并于14:02启动冻结消费者，不自动恢复旧设计中的续训。
+最近active设计[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)已完成并停止：
+Original13/32、Reexpressed14/32，R13/G1/L0；448 FM＋448十步query、64行及16 full原件齐备，
+费用0.281819GPUh／阶段观察3.113960GiB。实验session已闭环工程、37项CPU验证、冻结与原件核验；
+没有新计算合同，完整结果交主讨论裁决，不自动恢复旧设计中的续训或其它候选。
 Owner已固定现有数据规模，禁止扩数据；后继方法与学习机制须在这一约束内研究，详见Owner要求§4。
 主目标是在相对稳定的情况下大幅提高绝对能力、超过强MT；T的有效证据是参照，不是不可改变的架构或保持率门槛。
-本批检验教学输入上的条件读取重表达能否到达自身执行消费者：900父点、原四train任务各两teacher，
+本批已检验教学输入上的条件读取重表达能否到达自身执行消费者：900父点、原四train任务各两teacher，
 完整38处原LoRA对解析重表达，固定A28功能读取及64条有限配对闭环，硬限3GPUh/12GiB、预计含工程1.5–2.5小时。
-没有训练、扩数据或held/controls读取；全部结果到齐即停止，不能把局部保留自动转换成新架构资格。
+没有训练、扩数据或held/controls读取；全部结果已到齐并停止，不能把局部保留自动转换成新架构资格。
 额外图文Value尚未选定；推导指出其单独增加内容依赖却不改变固定读取下的调用核。完整判断见设计及findings§272。
-最近完成合同为[条件读写§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)：
+此前完整训练合同为[条件读写§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)：
 
 1. 已完成§13 fresh450及§14固定图900。validation137→140/400、seen91→115/144；
    训练侧确有对象选择和多阶段获取，held主要损失仍在3/31，完整优势及相邻资格未形成。原同池续训停止。

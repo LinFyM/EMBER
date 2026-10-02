@@ -3,6 +3,26 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：完整38处条件A解析重表达，有限消费者13→14且无丢失
+
+[冻结诊断](designs/conditional_A_reexpression_diagnostic.md)由唯一实验session完成并停止。
+八条件一次公共native，保留原S/M，CPU float64 gelsd默认数值秩求C，全38-target rank128两格因子齐备。
+原A28/noise/time/offset1的448 FM＋448官方十步记录、64闭环、16 full与全64连续/goal/实际action齐备；没有新训练或held/controls。
+Original13/32、Reexpressed14/32，R13/G1/L0；task0/12/20/32为8→8、2→3、2→2、1→1，唯一得例12/14/0。
+仅16物理初态且teacher明确重复；不是400、选点、重新学习或held泛化证据。
+
+教学局部残差/完整LoRA中位数Q8/V8/out为0.0364%/0.0682%/0.1734%，十步自身hidden为5.547%/9.870%/7.415%；
+全38最不利条件V7可达73.381%。最终前5直接输出差/原输出范数等条件均值FM0.899%、十步2.249%；
+总FM略差、十步风险略好，不隐藏194条至少一项风险恶化的condition-query或37条闭环失败行。
+局部教学拟合没有迁移成hidden等价，但此有限面板完整消费者基本保持；不据此宣称S无用、fixed-A可学或自动选择后继。
+交付事实与边界见findings§273，完整取舍由主讨论消费后登记。
+
+root为`/data1/user/ymdai/ember_runs/conditional_A_reexpression_diagnostic_20261002`；completion/readback、report、
+delivery_summary、verification与launch费用/释放回执完整。实现/实际冻结读取923ff89b，原900训练85919994单列。
+37项CPU针对检查通过；0.281818972GPUh、阶段观察3.113960GiB、保守估计7GiB，设备已释放。
+首临时等待包装器exit1，其已运行producer OS退出码因重父化不可观测、保留null；有效原件不重算且完整验证。
+四闭环、CPU readback与恢复owner均exit0，全部故障/加载/恢复费用纳入，不伪报全部exit0。
+
 ## 2026-10-02：固定数据与数学先行，登记条件读取函数重表达诊断
 
 Owner在交接讨论后恢复自主推进，明确不扩数据、先有数学推导再下决定，主目标是在相对稳定下大幅超过强MT。
@@ -14,7 +34,7 @@ Owner在交接讨论后恢复自主推进，明确不扩数据、先有数学推
 [前置推导与唯一诊断合同](designs/conditional_A_reexpression_diagnostic.md)分开Value内容与实际调用核、
 条件S对执行/编译的两条作用，以及教学协方差对自身输入误差的有限约束。额外图文Value未选定、未实现。
 登记900父点、四train×两teacher、完整38处解析重表达；固定A28功能读取及64有限配对闭环，3GPUh/12GiB。
-没有新训练、数据、held/controls或选点。尚无模型检验结果，不能把CPU拟合记作修复；科学发现见findings§272，执行状态见progress。
+没有新训练、数据、held/controls或选点。登记时尚无模型检验结果，不能把CPU拟合记作修复；前置发现见findings§272，后来执行结果见上方完整诊断及findings§273。
 
 ## 2026-10-02：匹配支持扩展未形成广泛迁移，夜间三批分析收束并暂停
 

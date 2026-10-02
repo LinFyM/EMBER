@@ -6765,3 +6765,40 @@ Long仅83/250；当前1/13/17/32没有独立专家。旧source/offset0/rank16及
 
 完整推导、历史边界、原件入口与预注册见`docs/designs/conditional_A_reexpression_diagnostic.md`；
 证据为`docs/analyses/fixed_data_expert_audit_20261002.json`及`conditional_A_functional_chart_20261002.json`。
+
+## 273. 条件A冻结重表达到达完整消费者，教学局部等价并未变成执行hidden等价（2026-10-02，实验交付事实）
+
+按[唯一合同](docs/designs/conditional_A_reexpression_diagnostic.md)完成并停止。原900完整ECP一次合法公共native读八条件，
+全部38处使用CPU float64 gelsd/default-rcond的`C=SX(A0X)^+`，保留原编译S/M，部署A0与B(I+C)。
+无label/query/reward进入C；八份C均在标签读取前封存。两格仍完整rank128，没有优化器、训练、扩数据、held/controls或选点。
+
+四train×两teacher×states0–3×两格共64行、每格32，仅16物理初态。
+Original13→Reexpressed14，R13/G1/L0、churn1、Jaccard0.928571；唯一得例task12/teacher14/state0。
+task0/12/20/32依次8→8、2→3、2→2、1→1，各teacher成功集合及全部失败行已留原件。
+固定task内四state、两teacher成组bootstrap净成功数95%区间[0,3]；不能外推大样本泛化或解释为400 qualification。
+
+448 FM和448官方十步生成query复用原A28/noise/time/offset1；独立task-query只有112。
+FM source-normalized全50/前5 MSE .110917/.128471→.111018/.128774；十步 .141694/.124717→.141308/.123937。
+有效future、有效前5及motion6/gripper独立报告。两格前5直接预测差MSE为FM.000101399、生成.000376651，
+差范数/原输出范数的等条件均值为0.899%/2.249%；不是用风险均值接近代替预测差。
+194/224个条件query至少一项所列风险恶化（含微小变化）；生成前5最大恶化+.005422175在12/14/A26，demo13/frame120。
+全前5归一化动作符号差36、有效future motion6差271、gripper差1；Original19／Reexpressed18共37失败行均保留。
+
+Q8/V8/out同教学X上的E/完整LoRA范数比中位数为0.0364%/0.0682%/0.1734%，
+Original官方十步自身hidden上则为5.547%/9.870%/7.415%，最大分别16.215%/16.760%/21.241%。
+这些是局部作用的范数比，不是能量、最终动作或闭环误差。全38处更不利的V7（task0/teacher40）为FM69.032%、十步73.381%；
+FM单query最大约124.002%在32/43/V7。绝对平方范数、逐query及全部其它层均保存，没有用三处焦点掩盖其余层。
+304处默认数值秩为128×280、32×8（action_in）、50×14和51×2（layer0 Q/V），不按预期改截断。
+最大C范数5.728089在0/40/V7，无非finite或裁剪；原S/M、C、奇异值与16份完整因子保留。
+
+本批可直接确认教学上的小残差不保证自身hidden近等价，同时完整消费者在这有限面板仍大体保留原控制。
+大局部作用差为何没有变成大最终输出差，本次没有进一步隔离；不能直接归因某层抵消或S无用。
+也没有检验fixed-A共同学习、跨task编译可学性或held能力，不由净+1选择新架构／自动续训。
+主讨论依据合同§6及完整原件作后继判断。
+
+root `/data1/user/ymdai/ember_runs/conditional_A_reexpression_diagnostic_20261002` 的completion/readback完整，
+report／delivery_summary保留逐task/teacher/RGL/成功集合、功能差和全部不利例；verification读回全64连续原件，16 full齐备。
+实现/读取923ff89b60f4f8a269e5352d8d82189d72a9cd0a，clean pushed detached；旧900训练85919994单列，合法aligned source/normalization保持。
+37项CPU验证通过。总0.281818972GPUh，新增阶段观察3.113960GiB、保守估计7GiB，低于3GPUh/12GiB。
+首等待包装器exit1；其producer OS退出码因重父化不可观测、明确null，producer completion/原件完整而未重算。
+四闭环、readback、恢复owner均exit0；全部加载、故障/恢复期间的GPU费用计入，设备已释放，不伪报全体exit0。

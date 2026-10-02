@@ -6,7 +6,7 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。
 当前active设计为[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)；
-数学推导/CPU原件回算已完成；实验session已接收工程与运行授权，独占分支实现及37项CPU验证已完成，正在集成并冻结，尚未启动GPU。§13–§15已结束，其续训或数据扩展不自动恢复。
+数学推导/CPU原件回算、独占实现和37项CPU验证已完成；代码923ff89b已集成推送，2026-10-02 14:02:43启动冻结消费者，目前正在完成本批功能读取。§13–§15已结束，其续训或数据扩展不自动恢复。
 
 同时维持Owner已明确的数据约束：现有数据规模固定，后继不增加训练任务、示范数量或引入额外数据来源扩量。
 稳定约束已登记于`docs/current_owner_requirements.md`§4；不以增加任务、示范或额外数据源解决当前性能瓶颈。
@@ -52,6 +52,22 @@ Owner于2026-10-02指定新的唯一实验执行者`01a0fabb-f7a0-7100-93d8-6a0f
 不从历史暂停或设计中的“下一步”推断现行状态；工程检查仍由实验session闭环。
 沟通边界按[Owner要求§6](docs/current_owner_requirements.md#6-沟通与交接)：整批科学结果或确需裁决的实质边界只回报一次；
 工程阶段、可自行修复的故障和普通调度记入已有记录。写入/Git窗口与实际冲突方直接串行协调。
+
+## 条件A重表达诊断：实际执行（2026-10-02）
+
+本批唯一root为`/data1/user/ymdai/ember_runs/conditional_A_reexpression_diagnostic_20261002`。
+实现/读取commit `923ff89b60f4f8a269e5352d8d82189d72a9cd0a`已push main；实际GPU消费者来自root下clean detached `frozen`。
+原900训练身份仍为`85919994aef11c17b49b7d0e70a2c110158bff61`，source/aligned1000与原normalization保持。
+CPU针对检查37通过；38处默认float64 gelsd、原S/M、A28身份/mask、实际10step和被动记录入口已实现，尚无结果资格声明。
+
+启动前strg01核验data1 quota2T/limit2.0T、实占1,127,743,614,976B，共享82T余量；估计新增7GiB，硬限12GiB。
+双节点现场无本owner已占GPU；GPU02-2的gqma低占用上下文保留，45,906MiB空余、util0，按共驻合同启动单卡producer。
+闭环计划只使用GPU02两卡各3个persistent workers；每次launch再做双节点/总卡数准入，不预占第二卡。
+
+首个临时退出等待包装器误用系统Python（缺少`os.pidfd_open`），包装器exit1；已启动producer不重启，有效编译原件保留。
+已由仓库Python3.12按原PID接续连续退出事件等待。该孤儿消费者的OS退出状态不可直接回收，将明确记为不可观测、
+保留producer completion并验证全部消费者原件；不将其伪报为exit0。首启动/失败/恢复成本合计纳入3GPUh硬限。
+阶段事实与过程账目存root/launch，整批仅完成后一次回报；未读取held/controls、未新建优化器或增加任务/示范。
 
 ## §15科学登记与交付范围（2026-10-02）
 

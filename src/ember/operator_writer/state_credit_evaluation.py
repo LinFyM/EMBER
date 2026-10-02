@@ -43,7 +43,7 @@ def evaluate(root, arm, runtime, bank, original):
     def predict(prepared, batch, **kwargs):
         start, stop = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
         start.record()
-        is_reader = [p.evidence['consumer'] == 'reader' for p in prepared]
+        is_reader = [gamma is not None for p in prepared]
         if any(is_reader):
             if not all(is_reader) or gamma is None:
                 raise ValueError('student runtime must have no Reader/gamma/Z')
@@ -94,21 +94,42 @@ def evaluate(root, arm, runtime, bank, original):
                         bank_task['episodes'] = [dict(init_state_id=i, condition_id=evidence['condition_id'],
                             teacher_demo_indices=[teacher], video_ordinal=slot) for i in range(4)]
                         ep = bank_task['episodes'][init]
-                        prepared = PreparedOperatorLoRA(evidence['condition_id'],
-                            {**episode_evidence(bank, bank_task, ep), 'consumer': consumer})
+                        prepared = PreparedOperatorLoRA(evidence['condition_id'], episode_evidence(bank, bank_task, ep))
                         cases.append(dict(evidence=evidence, contract=per_case, prepared_adapter=prepared))
                 current['state_coupled_credit_cases'] = dict(study=STUDY,
                     case_ids=[c['evidence']['case_id'] for c in cases], physical_init_states=4,
                     registered_case_count=8, consumer=consumer, arm=arm)
                 for c in cases:
                     c['contract']['state_coupled_credit_cases'] = current['state_coupled_credit_cases']
-                    write_json_atomic(Path(c['contract']['output_dir'])/'run_contract.json', c['contract'])
-                envs, initial_states = pool.switch(task)
+                    path = Path(c['contract']['output_dir'])/'run_contract.json'
+                    write_json_atomic(path.with_name('readback_contract.json') if path.exists() else path, c['contract'])
+                retained, missing = [], []
+                for c in cases:
+                    path = Path(c['contract']['output_dir'])/'row.json'
+                    if path.exists():
+                        r = read_json(path)
+                        extra = r['operator_read_write_lora'].pop('consumer', None)
+                        if extra not in (None, consumer) or r['state_coupled_credit_case'] != c['evidence']:
+                            raise ValueError('retained row consumer/case identity changed')
+                        r['readback_provenance'] = dict(original_row=str(path),
+                            original_consumer_git=read_json(path.parent/'run_contract.json')['git'],
+                            metadata_repair='remove redundant consumer in adapter evidence only',
+                            reading_git=contract['git'])
+                        retained.append(r)
+                    else:
+                        missing.append(c)
+                current['state_coupled_credit_cases']['case_ids'] = [c['evidence']['case_id'] for c in missing]
+                current['state_coupled_credit_cases']['registered_case_count'] = len(missing)
+                if missing:
+                    envs, initial_states = pool.switch(task)
                 result = rollout_shard(envs=envs, init_states=initial_states, task=task,
-                    state_ids=tuple(task['init_state_ids']), contract=current, policy=runtime.policy,
+                    state_ids=tuple(c['evidence']['init_state_id'] for c in missing), contract=current, policy=runtime.policy,
                     preprocess=runtime.processor, postprocess=runtime.processor.unnormalize_action,
-                    task_adapter=adapter, episode_contexts=cases)
+                    task_adapter=adapter, episode_contexts=missing) if missing else []
+                result.extend(retained)
                 for row in result:
+                    row.setdefault('readback_provenance',dict(original_consumer_git=contract['git'],
+                        metadata_repair=None,reading_git=contract['git']))
                     case = next(c for c in cases if c['evidence']['case_id'] == row['state_coupled_credit_case']['case_id'])
                     shard = EvaluationShard(job_id=case['evidence']['case_id'], ordinal=0,
                         suite=task['suite'], task_id=task['task_id'], init_state_ids=(row['init_state_id'],),

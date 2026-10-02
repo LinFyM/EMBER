@@ -165,16 +165,28 @@ def functional_readback(runtime, gamma, cached, data, panel, out, micro):
         for task in TASKS:
             p = panel[str(task)]
             for teacher in TEACHERS[task]:
-                state,z = compile_content(runtime.writer,cached[(task,teacher)],checkpoint_targets=False)
-                validate_lora_state(state,runtime.lora)
                 ident = condition_id(task,teacher)
                 factorpath = out/'bank'/f'{ident}.safetensors'
-                factorpath.parent.mkdir(parents=True,exist_ok=True)
-                save_file({k:v.cpu().contiguous() for k,v in state.items()},str(factorpath))
                 zpath = out/'bank'/f'{ident}_Z.pt'
-                save_pt(zpath,z.cpu())
+                if factorpath.exists() and zpath.exists():
+                    state = load_file(str(factorpath),device='cuda:0')
+                    z = torch.load(zpath,map_location='cuda:0',weights_only=True)
+                else:
+                    state,z = compile_content(runtime.writer,cached[(task,teacher)],checkpoint_targets=False)
+                validate_lora_state(state,runtime.lora)
+                factorpath = out/'bank'/f'{ident}.safetensors'
+                factorpath.parent.mkdir(parents=True,exist_ok=True)
+                if not factorpath.exists():
+                    save_file({k:v.cpu().contiguous() for k,v in state.items()},str(factorpath))
+                zpath = out/'bank'/f'{ident}_Z.pt'
+                if not zpath.exists():
+                    save_pt(zpath,z.cpu())
                 functional = {}
                 for label in ('A','B'):
+                    existing = out/'functional'/f'{ident}_{label}.pt'
+                    if existing.exists():
+                        functional[label] = str(existing)
+                        continue
                     raw = raw_batch(data,task,p[label])
                     valid = (~raw['action_is_pad']).sum(1).to(torch.int64)
                     batch = runtime.processor.training_batch(raw)
@@ -209,7 +221,7 @@ def functional_readback(runtime, gamma, cached, data, panel, out, micro):
     return records
 
 
-def main(arm):
+def main(arm, readback_only=False):
     started = time.monotonic()
     out = ROOT/arm
     out.mkdir(parents=True,exist_ok=True)
@@ -232,6 +244,33 @@ def main(arm):
     panel = read_json(PRIOR/'fixed_panels.json')
     if len(manifest['steps'])!=64 or any(tuple(panel[str(t)]['teachers'])!=TEACHERS[t] for t in TASKS):
         raise ValueError('fixed learning stream/teacher mapping changed')
+    if readback_only:
+        checkpoint = out/'checkpoints/update64'
+        if not read_json(checkpoint/'checkpoint_manifest.json')['complete']:
+            raise ValueError('readback recovery requires complete fixed64 checkpoint')
+        runtime.writer.load_state_dict(load_file(str(checkpoint/'writer.safetensors'),device='cuda:0'),strict=True)
+        gamma.load_state_dict(load_file(str(out/'gamma.safetensors'),device='cuda:0'),strict=True)
+        runtime.writer.eval().requires_grad_(False); gamma.eval().requires_grad_(False)
+        with torch.no_grad():
+            cached = native_features(runtime,data,create=False)
+            records = functional_readback(runtime,gamma,cached,data,panel,out,28)
+        original = read_json(OLD/'parent/evaluation/teacher0/run_contract.json')
+        bank = copy.deepcopy(original['adapter'])
+        bank.pop('learning_limit_panel',None)
+        bank.update(mode='state_coupled_credit',condition_factors='complete_A0_plus_S_B0_plus_M',conditions=records,
+            state_coupled_credit=dict(study=ROOT.name,arm=arm,training_contract=file_record(out/'training_contract.json')))
+        write_json_atomic(out/'bank/manifest.json',bank)
+        bank['manifest'] = file_record(out/'bank/manifest.json')
+        data.close(); del gamma,cached
+        runtime.writer = None
+        gc.collect();torch.cuda.empty_cache()
+        with torch.no_grad(),autocast(runtime.device):
+            rows=evaluate(ROOT,arm,runtime,bank,original)
+        write_json_atomic(out/'completion.json',dict(complete=True,updates=64,rows=len(rows),full=12,compact=52,
+            seconds=time.monotonic()-started,git=identity,training_git=read_json(out/'training_contract.json')['git'],
+            loading_in_this_recovery=1,no_optimizer_or_training_in_recovery=True,
+            peak_allocated_GiB=torch.cuda.max_memory_allocated()/2**30,peak_reserved_GiB=torch.cuda.max_memory_reserved()/2**30))
+        return
     contract = dict(schema='ember_state_credit_v1',study=ROOT.name,arm=arm,git=identity,
         parent=file_record(ECP),parent_training_git='e2afbfd7c997e3f792921600608efa2fa3c1b25a',
         original_learning_git='092a0ae83080f85ddff0e4129c92fb42aa527c0c',
@@ -314,6 +353,7 @@ def main(arm):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--arm',choices=('live','stop'),required=True)
+    parser.add_argument('--readback-only',action='store_true')
     args=parser.parse_args()
     torch.set_num_threads(6)
-    main(args.arm)
+    main(args.arm,args.readback_only)

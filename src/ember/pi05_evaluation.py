@@ -203,7 +203,7 @@ def rollout_shard(
         case_ids = [context["evidence"]["case_id"] for context in episode_contexts]
         if (matrix.get("study") != "state_coupled_functional_credit_20261002"
                 or case_ids != matrix.get("case_ids") or len(set(case_ids)) != matrix.get("registered_case_count")
-                or matrix.get("registered_case_count") != 8
+                or matrix.get("registered_case_count") not in range(1, 9)
                 or len(episode_contexts) != len(state_ids) or task_adapter is None
                 or any(context["evidence"]["init_state_id"] != state
                        or any(context["contract"][key] != contract[key]

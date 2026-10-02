@@ -16,7 +16,14 @@ main现已直接消费下述视频来源批的16份continuous、四份RGB及真�
 固定64各student/Reader诊断32行，共128新增、24 full/104 compact；只有student计为一次LoRA形式，原parent/S/P/D复用。
 预计75–135分钟含工程，硬限3完整GPUh/8GiB，所有输出data1；无held、Test、正式fresh或自动续训/扫描。
 本次检验新增自身hidden信用是否改善完整学生，不把Reader拟合或非零梯度当作成功，也不声称主要根因已经确定。
-当前为合同已登记、等待实际派发；派发后canonical tracked/Git窗口交唯一实验session，main只作科学分析。
+2026-10-02实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手canonical tracked/Git窗口；main只读科学分析。
+从clean pushed af1a2c0f创建独占codex/state-coupled-functional-credit工程worktree，正在实施同次FM隐藏捕获、LoRA/Z联合VJP和固定读回。
+四项针对性CPU检查通过：原M/Z递推、gamma初始化/零Value、live/stop同forward与双余切对直接反传、7维诊断hook移除。
+首次CPU fixture误用了所有memory token相同的Value，使query梯度合法为零；已修正为异质固定memory，0GPUh失败保留。
+临时约770行增量由原T/FM/银行/环境owner承接；bank仅4行复用已注入LoRA以避免第二次source加载，
+原长rollout仅窄接8-case矩阵，新127行冻结读取保留同一canonical环境。结构guard的旧bank>800/矩阵复杂度26信号采用此批有界例外；
+整批交付移除入口、两个诊断模块、测试和两处临时接入，不建立长期平行trainer/evaluator。
+启动前将实测microbatch14/28（每臂最多两次丢弃更新并恢复初值/RNG），native帧块64优于旧32且不增样本；六次完整native加两份既存H/K。
 
 主讨论完成上一批原件与机制§100后，登记唯一后继冻结分析：
 [task32已学修正的视频来源](docs/designs/task32_learned_video_segment_diagnostic.md)。

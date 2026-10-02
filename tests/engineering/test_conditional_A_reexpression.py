@@ -8,6 +8,21 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.operator_writer.functional_readout import masked_risk
 
 
+def test_bank_reader_keeps_sealed_spec_identity_after_relocation(monkeypatch,tmp_path):
+    import json
+    spec={'source':{'checkpoint':'fixed-source'},'task_panel':[0,12,20,32]}
+    training={'checkpoint':'fixed-writer'}
+    monkeypatch.setattr(owner,'ROOT',tmp_path/'original-run')
+    monkeypatch.setattr(owner,'source_record',lambda:(spec,training,tmp_path/'new-reader/spec.json'))
+    sealed=owner.ROOT/'frozen/configs/operator_read_write_v1/conditional_read_write_continuation900_spec.json'
+    sealed.parent.mkdir(parents=True)
+    sealed.write_text(json.dumps(spec))
+    assert owner.sealed_source_record()==(spec,training,sealed)
+    sealed.write_text(json.dumps({**spec,'task_panel':[0,12,20]}))
+    with pytest.raises(ValueError,match='sealed spec differs'):
+        owner.sealed_source_record()
+
+
 def test_default_rank_deficient_projection_preserves_unexcited_B():
     a0=torch.tensor([[1.,0.,0.],[0.,1.,0.],[1.,0.,0.]])
     s=torch.tensor([[2.,0.,0.],[0.,3.,0.],[4.,0.,0.]])

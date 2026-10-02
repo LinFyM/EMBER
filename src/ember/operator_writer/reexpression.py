@@ -122,12 +122,20 @@ def register_bank(arm, slot, lora, training, spec_path, reading_git):
     return bank_path(arm, slot)
 
 
+def sealed_source_record():
+    spec, training, _ = source_record()
+    path = ROOT / 'frozen/configs/operator_read_write_v1/conditional_read_write_continuation900_spec.json'
+    if read_json(path) != spec:
+        raise ValueError('reexpression sealed spec differs from registered source')
+    return spec, training, path
+
+
 def inspect(bank, path, source, task_keys, role, require_formal, task_states):
     from .bank import EVAL_SCHEMA, KIND, _factor_header, source_matches
     from ember.pi05_eval.scene import inspect_registered_scenes
     from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
     arm, slot = bank['mode'], bank['reexpression_panel']['teacher_slot']
-    spec, training, spec_path = source_record()
+    spec, training, spec_path = sealed_source_record()
     expected = tasks_for_panel()
     lora = derive_pi05_lora_rank(load_pi05_lora_contract(
         Path(bank['asset_root'])/spec['source']['lora_contract']), rank=128)

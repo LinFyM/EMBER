@@ -6935,4 +6935,13 @@ D参数修正依赖起始B与优化路径、功能非唯一，不是唯一正确
 CPU读回0GPUh、约1.11MiB（main补充前），没有新模型、环境、动作标签或held读取；
 原件在`/data1/user/ymdai/ember_runs/operator_learning_limit_diagnosis_20260930/analysis/task32_absolute_learning_readback_20261002/`。
 旧T与当前900明确区分；后者四格的到达/续行结果不能和本次私有学习拼成一个已验证修复。
-整体自主研究继续，当前没有新实验在途，也没有已经确定的新方法。
+main随后对24份S/P/D同B20预测作CPU分解：task32修正差异能量S/P/D仅.3459%/.4789%/.7890%，
+两D修正余弦.98443；风险变化−.02406480/−.02432963/−.02151792几乎全部来自共有部分。
+task20差异能量高达19.59%/24.32%/33.46%、S/D风险略坏，task12的P也有21.40%，完整不利项保留。
+这不是公共B0贡献分解，不主张平均LoRA或一致性loss；主要共有修正仍可产生不同自身轨迹与完整能力。
+原件、逐query及数学定义在同analysis的`learning_function_decomposition.json`，详见机制§99.5。
+
+登记[已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)：旧D17/S43各Q/非Q两臂×四init，
+共16新冻结行、1GPUh/4GiB、预计30–60分钟含工程。保留父全部原条件能力，只拆已观察到正例的学习增量；
+不同于旧§28删除原M，不抵消该历史阴性。只判断哪些实际执行变化能保留已学收益，不能按Q/V名字直接定位语义或选架构。
+无训练/新数据集/held/controls/RL；结果还未产生，实际执行只看progress。

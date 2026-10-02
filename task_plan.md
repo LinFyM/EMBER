@@ -2,6 +2,9 @@
 
 ## 科学目标与当前批次
 
+实验session已实际接手唯一控制内容调制读写批次；工程已集成push e314d227并以clean detached冻结，pure F0缓存四worker实际运行。完整fresh450/固定544/A28待缓存与最多3个真实更新吞吐profile后启动；不恢复旧批。Seen采用原scope seed20260928实际四teacher映射，design文字勘误已完成。
+
+
 当前唯一新合同为[控制内容调制读写](docs/designs/control_calibrated_read_write_design.md)，机制§106/findings§285说明取舍。
 fresh Gamma的完整控制估计直接调制同一LoRA A/B Value，真实跨episode FM学习自身调用；不以获取通过代替完整能力。
 单条fresh450、原36task/50teacher，固定correct400/seen144/原A28；预计6–10小时、32完整GPUh/80GiB，实际接手/运行看progress。

@@ -25,6 +25,40 @@ def condition_id(task, teacher):
     return f'task{task:03d}_teacher{teacher:02d}'
 
 
+def case_bundle(root, arm, consumer, bank, contract, global_task):
+    out = root/arm
+    bank_task = next(t for t in bank['tasks'] if t['global_task_id'] == global_task)
+    task = copy.deepcopy(next(t for t in contract['tasks'] if (t['suite'],t['task_id']) == (bank_task['suite'],bank_task['task_id'])))
+    task['init_state_ids'] = [i for _ in range(2) for i in range(4)]
+    cases = []
+    current = copy.deepcopy(contract)
+    for slot, teacher in enumerate(TEACHERS[global_task]):
+        for init in range(4):
+            identifier = f'{arm}_{consumer}_{condition_id(global_task,teacher)}_init{init}'
+            full = (init == 0 and slot == 0) or (global_task == 32 and teacher == 43 and init in (2, 3))
+            evidence = dict(case_id=identifier, arm=arm, consumer=consumer, task=global_task,
+                teacher=teacher, init_state_id=init, condition_id=condition_id(global_task, teacher),
+                full_capture=full, deployment_form=consumer == 'student')
+            per_case = copy.deepcopy(current)
+            path = out/'cases'/identifier
+            per_case['output_dir'] = str(path)
+            capture = per_case['diagnostic_occupancy_capture']
+            capture.update(mode='compact', full_conditions=[dict(suite=task['suite'],
+                task_id=task['task_id'], init_state_id=init)] if full else [],
+                trajectory_root=str(path/'trajectories'))
+            capture['passive_trace']['trace_root'] = str(path/'continuous_traces')
+            bank_task = next(t for t in per_case['adapter']['tasks'] if t['global_task_id'] == global_task)
+            bank_task['episodes'] = [dict(init_state_id=i, condition_id=evidence['condition_id'],
+                teacher_demo_indices=[teacher], video_ordinal=slot) for i in range(4)]
+            ep = bank_task['episodes'][init]
+            prepared = PreparedOperatorLoRA(evidence['condition_id'], episode_evidence(bank, bank_task, ep))
+            cases.append(dict(evidence=evidence, contract=per_case, prepared_adapter=prepared))
+    current['state_coupled_credit_cases'] = dict(study=STUDY,
+        case_ids=[c['evidence']['case_id'] for c in cases], physical_init_states=4,
+        registered_case_count=8, consumer=consumer, arm=arm)
+    return task,current,cases
+
+
 def evaluate(root, arm, runtime, bank, original):
     out = root / arm
     contract = copy.deepcopy(original)
@@ -63,6 +97,7 @@ def evaluate(root, arm, runtime, bank, original):
 
     adapter.predict_action_chunk = predict
     pool = PersistentTaskEnvironmentPool(contract, physical_gpu_id=int(os.environ['CUDA_VISIBLE_DEVICES']))
+    pool.egl_lock_path = root/'tmp'/f'egl_uid_{os.getuid()}_gpu_{os.environ["CUDA_VISIBLE_DEVICES"]}.lock'
     try:
         for consumer in ('student', 'reader'):
             if consumer == 'reader':
@@ -71,34 +106,7 @@ def evaluate(root, arm, runtime, bank, original):
                 z_values = {r['condition_id']: torch.load(r['Z']['path'], map_location='cuda:0',
                     weights_only=True) for r in bank['conditions']}
             for global_task in TASKS:
-                task = copy.deepcopy(next(t for t in contract['tasks'] if t['global_task_id'] == global_task))
-                task['init_state_ids'] = [i for _ in range(2) for i in range(4)]
-                cases = []
-                current = copy.deepcopy(contract)
-                for slot, teacher in enumerate(TEACHERS[global_task]):
-                    for init in range(4):
-                        identifier = f'{arm}_{consumer}_{condition_id(global_task,teacher)}_init{init}'
-                        full = (init == 0 and slot == 0) or (global_task == 32 and teacher == 43 and init in (2, 3))
-                        evidence = dict(case_id=identifier, arm=arm, consumer=consumer, task=global_task,
-                            teacher=teacher, init_state_id=init, condition_id=condition_id(global_task, teacher),
-                            full_capture=full, deployment_form=consumer == 'student')
-                        per_case = copy.deepcopy(current)
-                        path = out/'cases'/identifier
-                        per_case['output_dir'] = str(path)
-                        capture = per_case['diagnostic_occupancy_capture']
-                        capture.update(mode='compact', full_conditions=[dict(suite=task['suite'],
-                            task_id=task['task_id'], init_state_id=init)] if full else [],
-                            trajectory_root=str(path/'trajectories'))
-                        capture['passive_trace']['trace_root'] = str(path/'continuous_traces')
-                        bank_task = next(t for t in per_case['adapter']['tasks'] if t['global_task_id'] == global_task)
-                        bank_task['episodes'] = [dict(init_state_id=i, condition_id=evidence['condition_id'],
-                            teacher_demo_indices=[teacher], video_ordinal=slot) for i in range(4)]
-                        ep = bank_task['episodes'][init]
-                        prepared = PreparedOperatorLoRA(evidence['condition_id'], episode_evidence(bank, bank_task, ep))
-                        cases.append(dict(evidence=evidence, contract=per_case, prepared_adapter=prepared))
-                current['state_coupled_credit_cases'] = dict(study=STUDY,
-                    case_ids=[c['evidence']['case_id'] for c in cases], physical_init_states=4,
-                    registered_case_count=8, consumer=consumer, arm=arm)
+                task,current,cases = case_bundle(root,arm,consumer,bank,contract,global_task)
                 for c in cases:
                     c['contract']['state_coupled_credit_cases'] = current['state_coupled_credit_cases']
                     path = Path(c['contract']['output_dir'])/'run_contract.json'

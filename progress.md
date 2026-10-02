@@ -5,16 +5,38 @@
 Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，不对分析设置时间限制；本项覆盖当日上午分析后暂停的要求。
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。
-当前唯一active design为[原生prefix变化Value的共同学习](docs/designs/native_prefix_change_value_design.md)，
-主讨论已完成数学/历史判断并派发；实验session已在独占worktree完成同一native最后attention字段与零E接入、full-only机器合同及现有消费者注册。29项针对CPU检查通过。实际最长视频517原帧/105采样帧两步profile完成，micro28/frame8、38.93/33.34秒、峰reserved22.805GiB，profile与早期导入失败合计0.044224GPUh；不继承任何profile权重。fresh正式训练已从clean pushed detached ab8d2c7e在gpu02的0/1/2/3四卡启动，唯一完整ECP270边界后保持原优化器、sampler/RNG和绝对时钟继续450；270读取与后段训练依赖允许时并行。全部实际启动/退出/费用在新root/launch，source冻结。
-保留T的实际A/公共beta与原动态Value；新增同一动作query替换相邻真实prefix得到的attention响应差，经E进入同一完整LoRA。
-唯一fresh450、原36task/50视频池及50,400跨episode query保持；270/450各correct400，450另seen144，共944新行/52 full。
-硬限14GPUh/48GiB，预计9–11GPUh、含工程3–5小时；无自动900、Test、视频controls、RL或小扫。完整推导/裁决见设计与findings§275。
+当前无active计算设计。[原生prefix变化Value的共同学习](docs/designs/native_prefix_change_value_design.md)曾获派发，
+但Owner指出没有建立“具体task失败→有证据的方法缺陷→干预改变失败预测”的决定性链条，block17选择也仅有启发；
+主讨论承担方法选择错误，立即撤回该批剩余训练、物化与评测。允许有界检验不等于可以跳过机制辨识、
+让正式训练替方法选择寻找理由。**本批因方法选择依据不足撤回，非工程失败或性能阴性。**
+Owner恢复自主推进的总体授权仍在；本实验session只完成撤回收束，不自行恢复本批或其它历史计算。
+
+实际工程在独占worktree完成原生attention字段、零E、full-only合同及原消费者接入，29项CPU检查通过；
+clean pushed detached训练/读取身份为`ab8d2c7ee22447da133cde59b975133b5988520f`，source aligned1000保持冻结。
+最长视频517原帧/105采样帧两步profile完成，micro28/frame8、38.93/33.34秒、峰reserved22.805GiB；
+导入失败exit1与有效profile exit0合计0.044224GPUh，profile权重只作一次性工程产物，未进入正式初始化。
+正式fresh在gpu02的0/1/2/3运行到已登记update71（284条件、7,952个query），主讨论于2026-10-02 15:46:56
+向已核实的本批PGID2709066发SIGTERM；实际torchrun exit1、四rank已退出。未到首个90 ECP，完整checkpoint为0，
+无本批可恢复checkpoint；已登记1–71更新均未保存，第72步可能在途，无额外完整更新的证据。
+270→450、全部bank/400/seen及后继未启动且已取消，三个task-owned启动器已加撤回退出保护，冻结源码未改。
+新闭环0/944、full0/52；没有本批held native读取/物化/评测，也没有读取Val/Test动作或产生held梯度。
+曾只读核对既存Val400结果元数据/成功原行及seen参照，不将其冒称完全没有接触held结果。
+累计1.452021841GPUh（含加载/profile/启动失败/训练退出），root阶段观察峰值约0.69GiB；
+双节点现场核实本批GPU占用为0，所有本批producer/rank PID消失；没有终止他人进程。
+原source/spec/frozen、profile、日志、失败及停止回执均保留；completion/readback和精炼closure见
+`/data1/user/ymdai/ember_runs/native_prefix_change_value_20261002/`，原停止回执见本树
+`.codex/tmp/native_prefix_change_main_stop.json`。原944行合同未完成，不能将收束完成写成科学实验完成。
+
+Owner同时纠正GPU利用：实测22.805GiB仍有余量，实验session沿用frame8却未验证更大物理分块，
+未落实已有吞吐要求。Owner要求已加强为AGENTS§9长期规则：必须主动验证显存余量的吞吐用途，
+以实测选择物理配置并记录未放大的依据，保持逻辑batch/权重/更新及科学范围；本批撤回后没有追加profile。
+主讨论保留`docs/current_owner_requirements.md`的科学纠正写入窗口，该文件本次未修改；
+运行事实/撤回状态只写本文件、task_plan及root收束原件，Git交付后释放canonical tracked/Git窗口。
 
 最近完成[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)：Original13/32、Reexpressed14/32，
 R13/G1/L0；448 FM＋448十步query、64配对闭环和16 full齐备，费用0.281819GPUh、阶段观察3.113960GiB。
 主讨论直接消费后完成机制§97/findings§274：不部署解析C、不自动去S训练或追加投影探针，主要能力缺口仍在。
-新批次是独立fresh的Value获取假设，不由该冻结保留结果自动推出；条件读写§13–§15仍不恢复。
+原生Value批次已撤回，不由该冻结保留结果自动推出后继；条件读写§13–§15仍不恢复。
 
 同时维持Owner已明确的数据约束：现有数据规模固定，后继不增加训练任务、示范数量或引入额外数据来源扩量。
 稳定约束已登记于`docs/current_owner_requirements.md`§4；不以增加任务、示范或额外数据源解决当前性能瓶颈。
@@ -24,7 +46,7 @@ R13/G1/L0；448 FM＋448十步query、64配对闭环和16 full齐备，费用0.2
 固定数据审计未发现匹配当前source/标签/训练量的全36专家上界；不能以“同数据专家已经都学成”为前提恢复蒸馏路线。
 现有900的四train×两teacher原件中，S在Q8/V8/out的作用大多能用A0响应重表达，但只证实教学native分布上的局部事实。
 该诊断已完成完整38处重表达、自身query/十步动作/64有限闭环，原硬限3GPUh/12GiB、预计含工程1.5–2.5小时。
-无优化器、Val/Test/controls或选点；结果已到齐并停止。通用图文支路/条件图去S仍未选择；新批只执行顶部单独推导的具体Value图。
+无优化器、Val/Test/controls或选点；结果已到齐并停止。通用图文支路/条件图去S仍未选择；没有自动恢复的Value图。
 
 最近训练结果完整判断见机制§96、findings§271与`docs/analyses/conditional_support_diversity_evidence_20261002.json`：
 扩支持只带来净+2、得27失25，未兑现广泛迁移/保持预测；原C12 137→154→140与seen91→99→115揭示获取和held保持分离。

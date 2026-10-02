@@ -7,11 +7,19 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析设置时间限制；此前上午暂停已解除。
-唯一active设计为[原生prefix变化Value](docs/designs/native_prefix_change_value_design.md)，科学登记完成，授权唯一实验session按正式派发闭环实施。
-保留T的实际读写坐标及原动态Value，用同一原生动作query读取相邻真实prefix的响应差补充Value内容；
-经新增E及原O/递推直接形成单套LoRA，fresh/full-only共同学习。数学、信用、竞争解释与历史边界见设计及findings§275。
-执行唯一fresh450：原36task/50视频池及50,400query；270/450各correct400，450另seen144，共944行/52 full。
-硬限14GPUh/48GiB，预计9–11GPUh、含工程3–5小时；到齐停止、不自动900/controls/Test/RL或小扫。
+当前没有active计算设计。[原生prefix变化Value](docs/designs/native_prefix_change_value_design.md)在派发后由主讨论撤回：
+Owner指出“具体task失败→有证据的方法缺陷→干预改变失败预测”链条不足、block17仅启发；
+主讨论承担方法选择错误。允许有界检验不能跳过机制辨识，也不能让正式训练替方法选择寻找理由。
+本批因方法选择依据不足撤回，非工程失败或性能阴性；设计与findings§275只保留当时判断，不恢复执行授权。
+原fresh450＋944行/52 full合同未完成：实际完成两步profile及已登记71次正式更新、284条件/7,952query，
+SIGTERM收束，未到90，完整ECP为0，已登记1–71更新未保存；全部后继训练/bank/评测已取消。
+累计1.452021841GPUh、root观察约0.69GiB，本批GPU/进程已退出；source/spec/冻结代码、日志和退出费用保留。
+收束原件在`/data1/user/ymdai/ember_runs/native_prefix_change_value_20261002/`，实际身份及读取边界见progress。
+实验session完成记录/Git交付后释放写入窗口并停止本批；主讨论负责科学纠正及后继判断，无新计算待办。
+
+Owner最新GPU要求已加强为AGENTS§9长期规则：显存有明显余量必须主动验证更大物理批量/帧分块或合适并行的
+真实吞吐，不沿用保守默认值后只报低显存；配置及未放大依据须有记录，逻辑batch/任务权重/更新与科学合同保持。
+本批沿用frame8却没有据22.805GiB峰值验证更大分块，作为未落实要求的执行事实保留，不追加已撤回计算。
 
 最近完成条件A冻结重表达：Original13/32→Reexpressed14/32、R13/G1/L0，0.281819GPUh，原件齐备。
 主讨论机制§97/findings§274保留其有限表达证据和主要未修复失败，不部署解析C、不自动去S训练或追加投影探针。
@@ -20,7 +28,7 @@ Owner已固定现有数据规模，禁止扩数据；后继方法与学习机制
 上一批已检验教学输入上的条件读取重表达能否到达自身执行消费者：900父点、原四train任务各两teacher，
 完整38处原LoRA对解析重表达，固定A28功能读取及64条有限配对闭环，硬限3GPUh/12GiB、预计含工程1.5–2.5小时。
 没有训练、扩数据或held/controls读取；全部结果已到齐并停止，不能把局部保留自动转换成新架构资格。
-原通用图文候选未实施；新的具体原生读取图仍不自动改变调用核，也不据新增输入宣称已修复迁移，完整判断见新设计。
+原通用图文候选未实施，原生读取图批次已撤回；不据新增输入或工程接通宣称已修复迁移。
 此前完整训练合同为[条件读写§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)：
 
 1. 已完成§13 fresh450及§14固定图900。validation137→140/400、seen91→115/144；

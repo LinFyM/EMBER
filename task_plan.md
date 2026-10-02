@@ -7,6 +7,7 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02上午要求分析后暂停并汇报昨晚至今的推进。当前没有active执行批次；不自动接续新实验。
+Owner随后固定现有数据规模，禁止扩数据；后继方法与学习机制须在这一约束内研究，详见Owner要求§4。
 最近完成合同为[条件读写§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)：
 
 1. 已完成§13 fresh450及§14固定图900。validation137→140/400、seen91→115/144；

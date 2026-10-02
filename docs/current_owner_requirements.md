@@ -198,6 +198,10 @@ Owner进一步要求同时防止“低分后连续换架构”和“逐模块过
 Teacher action、state/proprio、reward、terminal、task ID、filename、pose及policy outcome不成为部署Writer输入。
 合法训练监督、non-held meta任务、privileged诊断、Test信息墙和配对评测按AGENTS及当轮登记合同执行。
 
+Owner于2026-10-02明确要求：不许扩数据，现有数据规模固定。后继方案不得通过增加训练任务、示范数量或引入额外
+数据来源扩大规模；方法与学习机制须在现有数据规模内研究。旧合同中的扩数据许可不再构成后继执行授权，
+已完成实验及其原件仍作为历史证据保留。
+
 Writer在rollout前生成一套完整38-target LoRA；不挑视频、平均最终LoRA、融合checkpoint或并行部署第二expert adapter。
 Core/Procedure、rank、memory token和decoder是候选实现，可以实质重构，但须保留科学边界并给出完整可检验原理。
 Owner进一步明确：架构与训练方式不必守住现有方案，可以参考元学习、VLA等外部工作，同时必须保留这两个月推进形成的自身特色。

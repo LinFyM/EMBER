@@ -7,6 +7,9 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析设置时间限制；此前上午暂停已解除。
+主讨论已完成最近视频来源批的原件消费与机制§101/findings§280：不支持把早/后更新直接划为开炉/搬壶技能。
+早段增量的后段地址与完整父LoRA依赖已明确；关闭由这一分段推出门控或继续局部扫描的路线。
+当前无active计算批；继续研究实际共享教学映射与完整控制函数的学习联系，未选择新架构、正式训练或部署混合bank。
 当前主任务是统合整个EMBER的学习解释，没有active训练；此前完成的冻结分析为
 [task32已学修正的执行投影分组](docs/designs/task32_learned_operator_groups_diagnostic.md)。
 只比较旧D17/S43各自的Q/非Q学习增量在原四初态的作用；16新增行、4 full/12 compact与完整行为读回已交付，0.078771GPUh。

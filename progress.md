@@ -24,6 +24,11 @@ main现已直接消费下述视频来源批的16份continuous、四份RGB及真�
 原长rollout仅窄接8-case矩阵，新127行冻结读取保留同一canonical环境。结构guard的旧bank>800/矩阵复杂度26信号采用此批有界例外；
 整批交付移除入口、两个诊断模块、测试和两处临时接入，不建立长期平行trainer/evaluator。
 启动前将实测microbatch14/28（每臂最多两次丢弃更新并恢复初值/RNG），native帧块64优于旧32且不增样本；六次完整native加两份既存H/K。
+实现/实际消费者clean pushed detached 795e86a0；实际live PID160306在gpu02:7已启动native/profile，stop按native完成事件在gpu02:1接同一特征。
+现场双节点核验本用户0→2卡、合计上限6；两卡原148MiB/util0 CUDA context可共驻，不动他人。
+strg01 data1个人实占约1.135TB/2TiB quota，共享89.098TB，预计新增峰6/8GiB。
+第一次等待器误用Python3.8无pidfd接口，退出后无自有消费者/native/更新；改用既有3.12，保守101GPU秒计入总3GPUh，失败回执保留。
+当前为真实native/profile阶段，尚未启动正式64；两臂profile总费用预测通过后按事件释放正式运行。
 
 主讨论完成上一批原件与机制§100后，登记唯一后继冻结分析：
 [task32已学修正的视频来源](docs/designs/task32_learned_video_segment_diagnostic.md)。

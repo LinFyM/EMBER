@@ -19,7 +19,8 @@ Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，�
 首消费者在LIBERO初始化前因新root缺少运行配置退出1；模型已加载但环境/闭环0行，费用0.004474GPUh。
 现复用原prepare_libero_config初始化全部原注册路径，CPU核对通过；失败source/日志/费用保留在root的failures/attempt1。
 实际启动/退出/GPU费用及原件在`/data1/user/ymdai/ember_runs/task32_state_policy_crossover_20261002/launch/`；
-窄运行修正e84712d8已push，准备新clean detached读取，不修改旧冻结树；对角再现尚未裁决，无额外smoke/后继。
+窄运行修正e84712d8已push，16:56:08实际从新clean detached读取启动四行batch4，PID3112479；
+未修改旧冻结树，owner持续等待退出事件，对角再现尚未裁决，无额外smoke/后继。
 Owner要求的决策错误已写入current_owner_requirements§3、findings§276和research_history，394b5f79已推送。
 
 ## 最近撤回批次及保留事实

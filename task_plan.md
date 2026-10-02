@@ -7,6 +7,14 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析设置时间限制；此前上午暂停已解除。
+2026-10-03继续推导已形成机制§104/findings§283，登记唯一新
+[原生可见转移动作校准辨识](docs/designs/native_transition_action_calibration_diagnostic.md)。
+检验实际到达画面能否在固定原生动作估计之上提供跨任务可学的已发生控制信息：相同P/F读出仅替换第二memory。
+固定现有train24，fit20×demo16–19、内部留task[0,12,20,32]无读出梯度，统一demo42–45读回；176条已有视频。
+两臂fresh500、相同80,000区间曝光；无LoRA/Writer训练、官方Val/Test、环境、扩数据或自动后继。
+预计含工程70–140分钟、3完整GPUh/8GiB；主讨论登记完成，实际接手/launch状态以progress为准。
+这项只检验获取假设；完整编译还须保留状态—变化—控制的联合内容，不能把预测残差或局部动作拟合当作任务知识。
+以下此前“无active计算/下一判断”属于§103收束时点，不覆盖新合同。
 最近自身功能信用两臂已完成科学消费，机制§103/findings§282：live/stop学生20/24，Reader19/23；
 live对stop R18/G2/L6，没有新增query信用的净控制收益，辅助读出亦未建立强教师。
 保留stop24正例及历史比较的native重构边界；关闭该构造续训、扩头/换层/调权、蒸馏与正式fresh的当前理由。

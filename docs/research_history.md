@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：继续推导可见转移的控制含义，登记原生动作校准辨识
+
+机制§104/findings§283区分条件信息、有限学习与一次参数编译：到达画面可以降低动作条件均值的最优风险，
+但实际学习误差和迁移不足可以抵消收益；这不是动作后验或新Writer已经有效的证明。
+v4原生动作forecast、LocalActionGrounded实际转移反演、LocalField同场监督及ProcessPullback的源码关系已核实，旧负证据保持。
+唯一[有界合同](designs/native_transition_action_calibration_diagnostic.md)以裸aligned Source1000动作点估计为共同起点，
+P/F相同残差读出仅将第二memory设为真实到达H/出发H，完整当前信息及50个native位置均保留。
+现有train24中fit20×demo16–19、内部留task[0,12,20,32]无读出梯度，全部24×demo42–45一次读回，共176条既有视频。
+两臂fresh500、各80,000区间曝光，仅gamma学习；真实5步动作只作标签，无LoRA/Writer、环境、官方Val/Test或新数据来源。
+若内部留task无实质获取收益，停止本固定校准构造；即使通过，也不自动选择编译器、蒸馏或fresh训练。
+预计含工程70–140分钟、硬限3完整GPUh/8GiB。此条为科学登记，实际接手、代码身份、运行及结果由progress与原件记录。
+
 ## 2026-10-02：自身功能信用原件消费，关闭新增query信用的当前修复理由
 
 主讨论完成机制§103/findings§282，直接读128条continuous、24真实双RGB、32功能PT与实际科学源码，0新增GPU。

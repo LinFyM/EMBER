@@ -7,16 +7,20 @@
 [Owner要求](docs/current_owner_requirements.md)、[AGENTS](AGENTS.md)与[concept](docs/concept.md)。
 
 Owner于2026-10-02在交接与现状讨论后恢复自主推进，不对分析设置时间限制；此前上午暂停已解除。
-最近active设计[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)已完成并停止：
-Original13/32、Reexpressed14/32，R13/G1/L0；448 FM＋448十步query、64行及16 full原件齐备，
-费用0.281819GPUh／阶段观察3.113960GiB。实验session已闭环工程、37项CPU验证、冻结与原件核验；
-没有新计算合同，完整结果交主讨论裁决，不自动恢复旧设计中的续训或其它候选。
+唯一active设计为[原生prefix变化Value](docs/designs/native_prefix_change_value_design.md)，科学登记完成，授权唯一实验session按正式派发闭环实施。
+保留T的实际读写坐标及原动态Value，用同一原生动作query读取相邻真实prefix的响应差补充Value内容；
+经新增E及原O/递推直接形成单套LoRA，fresh/full-only共同学习。数学、信用、竞争解释与历史边界见设计及findings§275。
+执行唯一fresh450：原36task/50视频池及50,400query；270/450各correct400，450另seen144，共944行/52 full。
+硬限14GPUh/48GiB，预计9–11GPUh、含工程3–5小时；到齐停止、不自动900/controls/Test/RL或小扫。
+
+最近完成条件A冻结重表达：Original13/32→Reexpressed14/32、R13/G1/L0，0.281819GPUh，原件齐备。
+主讨论机制§97/findings§274保留其有限表达证据和主要未修复失败，不部署解析C、不自动去S训练或追加投影探针。
 Owner已固定现有数据规模，禁止扩数据；后继方法与学习机制须在这一约束内研究，详见Owner要求§4。
 主目标是在相对稳定的情况下大幅提高绝对能力、超过强MT；T的有效证据是参照，不是不可改变的架构或保持率门槛。
-本批已检验教学输入上的条件读取重表达能否到达自身执行消费者：900父点、原四train任务各两teacher，
+上一批已检验教学输入上的条件读取重表达能否到达自身执行消费者：900父点、原四train任务各两teacher，
 完整38处原LoRA对解析重表达，固定A28功能读取及64条有限配对闭环，硬限3GPUh/12GiB、预计含工程1.5–2.5小时。
 没有训练、扩数据或held/controls读取；全部结果已到齐并停止，不能把局部保留自动转换成新架构资格。
-额外图文Value尚未选定；推导指出其单独增加内容依赖却不改变固定读取下的调用核。完整判断见设计及findings§272。
+原通用图文候选未实施；新的具体原生读取图仍不自动改变调用核，也不据新增输入宣称已修复迁移，完整判断见新设计。
 此前完整训练合同为[条件读写§15](docs/designs/conditional_read_write_architecture.md#15-固定目标曝光的辅助任务分布短窗检验2026-10-02)：
 
 1. 已完成§13 fresh450及§14固定图900。validation137→140/400、seen91→115/144；

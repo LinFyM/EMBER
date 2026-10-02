@@ -1,23 +1,30 @@
 # EMBER progress
 
-## 当前授权与最近完成批次
+## 当前授权与活动批次
 
 Owner于2026-10-02在完成交接与现状讨论后明确恢复自主推进，不对分析设置时间限制；本项覆盖当日上午分析后暂停的要求。
 主讨论当前负责在既有数据内统合机制与历史证据、选择可失败的有界干预，再由唯一实验session完成工程与运行。
 目标是在相对稳定的情况下大幅超过强MT，不把严格保持T的架构、稳定性或逐例成功作为新门槛。
-最近active设计[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)已完整执行并停止：
-Original13/32、Reexpressed14/32，R13/G1/L0；448 FM＋448十步query、64配对闭环和16 full齐备，
-费用0.281819GPUh、阶段观察新增峰值3.113960GiB。当前没有新计算合同；主讨论消费完整原件后裁决，§13–§15不自动恢复。
+当前唯一active design为[原生prefix变化Value的共同学习](docs/designs/native_prefix_change_value_design.md)，
+主讨论已完成数学/历史判断并登记，授权唯一实验session按正式派发闭环实施；登记时尚未启动GPU，实际launch由执行者记录。
+保留T的实际A/公共beta与原动态Value；新增同一动作query替换相邻真实prefix得到的attention响应差，经E进入同一完整LoRA。
+唯一fresh450、原36task/50视频池及50,400跨episode query保持；270/450各correct400，450另seen144，共944新行/52 full。
+硬限14GPUh/48GiB，预计9–11GPUh、含工程3–5小时；无自动900、Test、视频controls、RL或小扫。完整推导/裁决见设计与findings§275。
+
+最近完成[条件A函数重表达诊断](docs/designs/conditional_A_reexpression_diagnostic.md)：Original13/32、Reexpressed14/32，
+R13/G1/L0；448 FM＋448十步query、64配对闭环和16 full齐备，费用0.281819GPUh、阶段观察3.113960GiB。
+主讨论直接消费后完成机制§97/findings§274：不部署解析C、不自动去S训练或追加投影探针，主要能力缺口仍在。
+新批次是独立fresh的Value获取假设，不由该冻结保留结果自动推出；条件读写§13–§15仍不恢复。
 
 同时维持Owner已明确的数据约束：现有数据规模固定，后继不增加训练任务、示范数量或引入额外数据来源扩量。
 稳定约束已登记于`docs/current_owner_requirements.md`§4；不以增加任务、示范或额外数据源解决当前性能瓶颈。
 分析不限人为时长不等于计算预算无限；每批仍须登记主要干预、完整参照、预计耗时、资源预算与停止线。
 
-本批交付事实见findings§273；前置判断见函数重表达设计、findings§272与两份20261002专家审计/条件A证据JSON。
+条件A诊断的交付事实见findings§273；前置判断见函数重表达设计、findings§272与两份20261002专家审计/条件A证据JSON。
 固定数据审计未发现匹配当前source/标签/训练量的全36专家上界；不能以“同数据专家已经都学成”为前提恢复蒸馏路线。
 现有900的四train×两teacher原件中，S在Q8/V8/out的作用大多能用A0响应重表达，但只证实教学native分布上的局部事实。
-本批已完成完整38处重表达、自身query/十步动作/64有限闭环，原硬限3GPUh/12GiB、预计含工程1.5–2.5小时。
-无优化器、Val/Test/controls或选点；结果已到齐并停止。新图文Value与fixed-A训练均未选定，不随诊断自动启动。
+该诊断已完成完整38处重表达、自身query/十步动作/64有限闭环，原硬限3GPUh/12GiB、预计含工程1.5–2.5小时。
+无优化器、Val/Test/controls或选点；结果已到齐并停止。通用图文支路/条件图去S仍未选择；新批只执行顶部单独推导的具体Value图。
 
 最近训练结果完整判断见机制§96、findings§271与`docs/analyses/conditional_support_diversity_evidence_20261002.json`：
 扩支持只带来净+2、得27失25，未兑现广泛迁移/保持预测；原C12 137→154→140与seen91→99→115揭示获取和held保持分离。

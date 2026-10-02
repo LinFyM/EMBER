@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-02：数学先行后登记同一动作query读取prefix变化的Value学习
+
+主讨论在消费冻结重表达结果后完成[完整推导及新合同](designs/native_prefix_change_value_design.md)，见findings§275。
+保留原T全部读写路径，新增末层原生attention中固定当前Q/suffix、替换下一真实图文prefix的响应差；
+经零初始化E进入原Value、同一递推和完整38-target LoRA。它补充内容获取，未扩大A/O空间或自动修复调用核。
+所有参数fresh、full-only；不从旧S、图文/动作辅助、真实十步反传或未实施提案中抹去已有正负边界。
+登记fresh450、270/450两次strict400及450 seen144，共944新行；14GPUh/48GiB，预计含工程3–5小时。
+此条记录的是选择和合同，登记时尚无新GPU结果；T/MT/Context/条件图的真实高点持续保留，不预告性能提升。
+
 ## 2026-10-02：完整38处条件A解析重表达，有限消费者13→14且无丢失
 
 [冻结诊断](designs/conditional_A_reexpression_diagnostic.md)由唯一实验session完成并停止。
@@ -15,7 +24,9 @@ Original13/32、Reexpressed14/32，R13/G1/L0；task0/12/20/32为8→8、2→3、
 全38最不利条件V7可达73.381%。最终前5直接输出差/原输出范数等条件均值FM0.899%、十步2.249%；
 总FM略差、十步风险略好，不隐藏194条至少一项风险恶化的condition-query或37条闭环失败行。
 局部教学拟合没有迁移成hidden等价，但此有限面板完整消费者基本保持；不据此宣称S无用、fixed-A可学或自动选择后继。
-交付事实与边界见findings§273，完整取舍由主讨论消费后登记。
+交付事实见findings§273；主讨论已直接消费原预测和轨迹，完整取舍见机制§97/findings§274。
+强task0占原13成功中的8，另三项5/24→6/24；唯一得例完成了salad dressing取得/入篮，开炉后未放锅的反例仍在。
+S仍参与原M/C编译，因此不自动启动去S共同学习；不部署解析C、不追加投影精度探针，后继回到固定数据内可迁移写入规则的获取。
 
 root为`/data1/user/ymdai/ember_runs/conditional_A_reexpression_diagnostic_20261002`；completion/readback、report、
 delivery_summary、verification与launch费用/释放回执完整。实现/实际冻结读取923ff89b，原900训练85919994单列。

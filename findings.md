@@ -6802,3 +6802,40 @@ report／delivery_summary保留逐task/teacher/RGL/成功集合、功能差和�
 37项CPU验证通过。总0.281818972GPUh，新增阶段观察3.113960GiB、保守估计7GiB，低于3GPUh/12GiB。
 首等待包装器exit1；其producer OS退出码因重父化不可观测、明确null，producer completion/原件完整而未重算。
 四闭环、readback、恢复owner均exit0；全部加载、故障/恢复期间的GPU费用计入，设备已释放，不伪报全体exit0。
+
+## 274. 重表达没有解决主要能力缺口，不能把参数冗余直接变成下一架构（2026-10-02）
+
+主讨论直接消费四份results、16份原功能预测及实际连续轨迹，完整判断见机制§97。
+本干预保留S对M/C的编译依赖，只改变最终部署读取；13→14、无丢失仅支持有限公共读取的可表达性，
+没有检验去S共同学习、跨checkpoint保持或held迁移。强task0占原13成功中的8，另三项仅5/24→6/24。
+唯一task12/teacher14/state0得例确实由未抬起变为完整入篮；task32/teacher43/state0两格开炉后均未放锅。
+教学残差小而自身h残差大符合前置协方差边界；局部比值没有通过后续网络导数加权，不能直接当动作误差。
+平均动作差较小仍含task0/teacher40/query25的真实夹爪翻转，不能宣称逐例等价或把它归因成另一task的闭环得例。
+
+不部署解析C，不自动fixed-A fresh，也不继续投影精度或rank/层位探针。S的学习作用仍未被本试验否定。
+后继聚焦固定数据内可迁移写入规则的获取，并须具体区分已测动作辅助、真cotangent、公共FM和lookahead的消费者；
+额外图文Value仍未选定。自主科研继续，当前没有新计算合同，不以关闭本项冒称EMBER目标完成。
+
+## 275. 选择一项具体的Value获取检验：同一原生动作query读取真实prefix变化（2026-10-02）
+
+§274之后，主讨论完成[完整推导与fresh合同](docs/designs/native_prefix_change_value_design.md)。
+这不是重新打开通用图文支路：保留原T实际A/公共beta/全部旧Value路径，只在Value的动态项加入末层原生attention读数。
+固定当前Q及suffix K/V，将同层图文prefix换为下一真实帧，使用原生RoPE、mask、GQA和冻结o_proj，
+取两次1024维输出RMS后的差dP；只需原native同次字段，不新增policy、数据、标签或独立动作头。
+每target新增零初始化E:1024→256，经同一O和递推写进完整LoRA；E=0包含原T，全部fresh/full-only共同学习。
+
+有限attention差精确包含内容变化与读取权重变化，固定query排除了该次差中的dq项；原H差本身同样来自合法视觉输入，
+不能把它贬为随机噪声。新读数可能使最终H压缩后不易获取的变化更容易成为写入系数，也可能突出背景或遗漏正确对象。
+实际FM信用为`dL/dE=sum_t(g*(O^T G K/50)) dP^T`，经两attention继续到公共beta；没有以可达性证明已学到操作语义。
+新增内容仍由原调用核omega使用，不扩大原A/O空间；预期改变的是内容获取，不是用新rank解释性能。
+
+旧SemanticPath、Task-Grounded Visual-Value、VisibleObject与真cotangent/局部动作消费者均保留负边界。
+它们没有检验本次实际query/竞争/Value/o_proj形成响应并接到T共用A的完整组合，但这个差别本身仍非收益证据。
+原SEOD/GOMQ早已具有十步端点反传，因此不再将该监督当作未试的新路线。
+T/Context/条件图的实际高点均作为参照，不以新法只胜同龄早期T就宣布超过强MT或选点。
+
+本批唯一`native_prefix_change` fresh450，原36task×50视频池、事件/50,400query/Adam与绝对LR保持；
+270及450各strict correct400，450另seen144，共944新环境行，52 full。五个完整ECP90/180/270/360/450；中间点仅恢复。
+预算硬限14GPUh/48GiB，预计9–11GPUh、含工程3–5小时；无held梯度、Test、视频controls、RL、自动续900或参数小扫。
+完整结果到齐后按分布、获取/丢失及相邻保持裁决；训练改善而held无收益降低本获取假设的支持，不自动追加同类局部修补。
+主讨论完成科学登记后交唯一实验session闭环实现/正式运行，实际派发及运行状态只看progress。

@@ -3,6 +3,23 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：冻结P500输入归因的96视频完整执行交付
+
+按[原合同追加§6](designs/native_transition_action_calibration_diagnostic.md#6-冻结读出输入归因追加2026-10-03)与机制§113，实际a4da650a Calibration/P500仅在原96缓存重算P1(H,H+)及P0(H,H)。
+CPU FP32、每视频全部合法区间×两输入同batch34–182、完整50位置参与小头；全部预测保存后才评分。无source/native/HDF/RGB/环境/梯度、新任务/示范/官方Val/Test读取。
+3199合法offset1区间、288不同episode有向pair、9597个成对query区间及all7/motion6/translation3/rotation3/gripper全部保留；raw d_input/d_network/d_total、episode5×7均值、逐pair/区间风险与所有不利项齐备。
+fit20 network→total=.074269888→.072928640，input增量−.001341249、18/20改善；网络项相对F恶化18/20，整体对F=.072951705仍近零。
+内部4 network→total=.133927320→.130969494，input增量−.002957826、4/4改善，描述95%[−.004289485,−.001630486]；仍只有四个项目train任务，非官方held资格。
+整体total对F的有符号收益87.449%来自task20，其中97.569%保留在P0−F网络项；input自身收益仅8.279%来自20。输入有有限作用与总体收益来源不同，不能把network命名纯静态知识。
+fit240/内部48pair的input all7分别50/2不利，内部两条是task20 demo42→43/44；12/32 motion6、20 rotation/gripper的total仍劣F，32 total=.153714720仍明显劣裸mu=.111505513。
+内部total对mu差−.001399031的区间跨0，四task gripper均劣mu；P0真实出发输入、动态训练权重及潜在分布改变限制保持。不从这项统计归因宣布反馈/LoRA/闭环有效或选择新方法。
+P1与原P全区间RMS=.000756863032仅记录正常执行精度差异；原§112和强mu/F/特权常量完整分列，最大float64风险恒等式残差4.16e−17，无低位门槛或重复模型forward。
+唯一小头/评分消费者13.165774秒含启动/加载/写入/退出，exit0；CPU后处理主计算1.005468秒不含启动、exit0；0GPUh/无GPU分配，CPU峰RSS902408KiB，消费者已退出。
+CPU预读取weights_only拒绝numpy RNG的失败保留，随后可信checkpoint只mmap消费P模型；未创建/恢复optimizer或加载Source。新增原件约18.4MiB，保守含代码/文档/Git峰100MiB<2GiB，strg01 data1 quota/shared核验通过。
+primary `/data1/user/ymdai/ember_runs/native_transition_action_calibration_20261003/analysis/input_attribution/`，含registration、两输入预测、components、episode/pair/interval原件、readback/report/comparison、身份与退出/核验。
+训练/native/原预测/冻结类=a4da650a，Source1000原训练=b8ea00e9；新一次性脚本仅作外部原件、读回仓库clean pushed2fbdf687分列，没有恢复或新建canonical运行面。
+整批Git/一次回报后窗口交main并停止本项；主讨论独立消费原件、负责科学解释和后继，原fresh500及关闭的控制校准路线不恢复。
+
 ## 2026-10-03：登记冻结P500输入归因，防止将网络差异直接解释为配对转移收益
 
 机制§113/findings§292及[原诊断追加§6](designs/native_transition_action_calibration_diagnostic.md#6-冻结读出输入归因追加2026-10-03)

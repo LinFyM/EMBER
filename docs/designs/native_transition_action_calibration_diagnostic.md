@@ -163,3 +163,7 @@ native/学习/读回均使用clean pushed detached代码。复用真实native、
   正常计算只等待实际退出，不轮询缓存或分阶段自Queue；结束释放资源并交回窗口。没有formal fresh或后继自动执行。
 
 状态以progress顶部为准。该分析只确定固定学习者的输入依赖与有限跨episode作用，不作为部署资格或最终视频因果证据。
+
+2026-10-03 本追加已实际完成并归档：96视频/3199区间、288有向pair/9597成对query区间，CPU消费者13.165774秒exit0、0GPUh。
+完整原件与全部正反在原root `analysis/input_attribution/` 的completion/readback/report；一次性脚本留原件，不恢复canonical训练入口。
+该完成事实不改上述事前科学范围，结果解释由main直接消费原件后负责；无自动后继。

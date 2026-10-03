@@ -1,5 +1,10 @@
 # EMBER task plan
 
+§113唯一冻结P500输入归因已完整完成：96视频/3199区间、288有向pair、全部五通道与强参照/不利项齐备，0GPUh，不恢复训练或新Source/环境读取。
+第二memory的跨episode常量项在内部4均改善，但整体收益仍集中task20且保留大部分network分量；不能将P0称无视频/纯静态或把本分析写成LoRA/闭环资格。
+原件与成本/退出/Git交付在progress顶部及原root analysis/input_attribution；一次整批回报后窗口交main，实验session停止新增计算，科学裁决与后继由main消费后负责。
+下述接手/尚未执行段落为本批历史时点，不恢复其旧状态。
+
 实验session已实际接手§113唯一冻结P500输入归因，canonical记录/Git独占窗口在实验session；main只读科学分析。
 仅原96视频/3199区间的小头CPU重算P1/P0，先存全部预测再按288不同episode pair/等episode等task口径读回。
 实现与完整正反读回后提交推送、一次整批回报并交回窗口；不恢复source/训练/环境，不追加输入或方法扫描。

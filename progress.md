@@ -1,5 +1,20 @@
 # EMBER progress
 
+2026-10-03 `native_calibration_input_attribution_20261003` 完整执行与CPU读回完成：96/96视频、3199合法offset1区间、288不同episode有向pair及9597个成对query区间齐备，缺项0。
+同一原P500/a4da650a冻结Calibration，在CPU FP32将每视频全部区间×P1/P0打包（实际batch34–182），完整50位置读出；全部预测保存后才读原标签评分，无Source/native/HDF/RGB/环境/梯度或新增数据。
+fit20的network→total风险.074269888→.072928640，input增量−.001341249、18/20改善（28/37不利）；F=.072951705，因此总体对F仍近零。内部4的network→total为.133927320→.130969494，input增量−.002957826、4/4改善。
+内部total相对F的有符号收益87.449%仍来自task20，该task收益97.569%保留在network项；input自身收益仅8.279%来自20，不能把全部P−F收益归于实际前后联系，也不能将P0−F称纯静态知识。
+全部不利项保留：fit240/内部48pair的input all7分别50/2不利；内部两条为task20 demo42→43/44。task12/32 total motion6仍劣F，20的rotation/gripper仍劣F；32 total=.153714720仍劣mu=.111505513，四task total gripper均劣mu。
+内部total对mu均值差−.001399031、描述95%[−.019071967,+.027847858]跨0；P0仍含真实出发视频及动态训练权重，重复memory可能偏离训练分布。本批不构成状态反馈、LoRA或闭环部署资格，不选择后继。
+P1相对原P的全区间RMS=.000756863032，获取风险差/原§112/强mu/F/特权常量全部分列，无低位精度门槛或重复forward；float64精确风险恒等式最大残差4.16e−17。
+实际小头/评分消费者PID178391含启动/加载/写入/退出13.165774秒exit0，forward3.964346秒；CPU后处理/原件核验exit0（主计算1.005468秒、不含启动），0/.25完整GPUh，CPU峰RSS902408KiB。本批无GPU分配，消费者已退出。
+预读取CPU weights_only拒绝历史numpy RNG的失败已保留，随后只从可信完整checkpoint mmap消费P权重，未创建/恢复optimizer。所有旧原件不改，一次性脚本仅作外部原件，无新增或恢复canonical入口。
+primary `/data1/user/ymdai/ember_runs/native_transition_action_calibration_20261003/analysis/input_attribution/`：completion/readback/verification、predictions、components.npz、episode_moments/episode_pairs、pair_interval_risks、comparison_table/per_task_channels、report及launch回执。
+P500训练/native/原预测/冻结类=a4da650a，Source1000原训练=b8ea00e9；新一次性脚本留原件、实际读回仓库clean pushed2fbdf687，来源分别登记。新增原件约18.4MiB，含代码/文档/Git保守准入峰100MiB<2GiB，strg01 data1独立quota/shared复核通过。
+整批科研记录Git推送与一次来源明确的回报后交回canonical tracked/Git窗口给main；实验session停止本项，无active计算/恢复或自动后继，main负责原件科学消费和下一取舍。
+
+### 本批实际接手与登记历史（下述状态只表示当时时点）
+
 2026-10-03 实验session01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手 `native_calibration_input_attribution_20261003` 的canonical tracked/Git独占窗口；main只读科学分析。
 完整机制§113、findings§292、原生校准合同§6及当前Owner要求已读；本次只在原root analysis/input_attribution保存一次性脚本/预测/读回，不恢复训练入口。
 P500/原native/预测实际来源均a4da650a；Source1000原训练b8ea00e9分列。96份demo42–45、3199合法offset1区间、288不同episode有向pair固定，尚未开始新小头forward。

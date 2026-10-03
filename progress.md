@@ -1,5 +1,10 @@
 # EMBER progress
 
+2026-10-04 Owner在核对最近24小时推进后明确恢复继续，并提醒必须围绕同一难题有逻辑推进，不能遇难后换成容易的小问题。
+该约束已进入current_owner_requirements；无新实验、训练或GPU。main继续承担教学关系到自身状态控制的机制推导。
+任务LoRA加减尚缺跨对象/场景/阶段的功能可迁移依据，未登记或派发；只读历史子项核对现有对象监督与实际执行Q的联系。
+canonical tracked/Git窗口仍由main独占。以下§119等记录为已完成历史，本次继续不重启其关闭分支。
+
 2026-10-03 main完成机制§119/findings§298科学消费：核冻结实际消费者、四模型原始400行、200份task16 continuous和全部8个新full/关键父点RGB。
 A64只143/400，有限获取没有成为广泛优势；Spatial净−8、task31得12失6，不能把净+3或局部成功当完整方法成立。
 task31八个新增从cream-only补成双目标；task16父/A仍48/50目标butter位移≤.01cm，orange juice抬高>3cm从39增至42。

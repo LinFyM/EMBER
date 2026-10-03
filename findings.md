@@ -7313,3 +7313,19 @@ task31有butter入篮正例而task16几乎不调用，削弱普遍缺运动能�
 本次没有定位某个键/表示混同，结合PZ、seen/held分离、图像读取交互和谓词不充分约束后继，不能由局部学习再开辅助补丁。
 独立CPU读回在`fixed_B_transfer_readback_20261003/analysis/main_scientific_readback.py/.json`，主计算.280秒、0新模型/环境/GPU。
 整批1.625827018GPUh及源/父/读取身份保持，main接回canonical窗口继续固定数据推导；无active实验、selected或已选后继。
+
+## 299. 有限B学习已取得查询相关作用，不能用缺少状态敏感性替代跨情境对应问题（2026-10-04）
+
+机制§120先登记再CPU读取父/A/J的24份既存B20十步输出，按实际mask、query/teacher/task等权精确分解共同与查询变化项。
+前5 all7父/A风险.126520/.119086，A的共同/变化贡献−.001143/−.006291；共同改变量只占总能量14.14%。
+变化项在task12/20/32的两teacher各有利，在task0两teacher各有损，已有有限修正不是近似固定动作偏移。
+task32夹爪的共同改变量能量仅5.09%；不由此认定抓持原因或多少条闭环成功来自该项。
+task20离线总风险变差而闭环2→6，J前5风险稍优于A但闭环22<24，禁止由分解选择loss或模型。
+有效全50父/A/J .134982/.134055/.144173；unmasked全50 .124536/.127331/.137598，两新臂均更差，完整不利口径保留。
+
+查询变化含RGB/state、Gaussian及十步交互，不是已隔离的物理状态导数；B20不是闭环中介或新task泛化面板。
+主FM原已学到部分输入相关的有效控制，当前更难的问题是教学对象/操作与新的自身情境的对应和迁移。
+不追加中心化/成对差分loss、公共noise/Jacobian/常量动作替代探针；原生key构造仍受§25的跨情境度量与使用系数限制，未采纳。
+只读历史核定VisibleObject监督教师Reader，NativeCorrection真Q梯度含原生K但不提供Q家族的独立功能证据；不抹去旧完整FM消费者。
+CPU原件在`joint_action_effect_credit_20261003/analysis/query_function_decomposition.py/.json`，.163282秒/0GPU，无新模型/环境/标签。
+main独占canonical窗口继续同一问题，未选新实验或正式重训；本次结论不使完整EMBER目标完成。

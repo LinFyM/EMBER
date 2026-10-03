@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：有限B学习的查询函数分解，排除固定偏移的主要解释
+
+机制§120/findings§299在结果前登记后，CPU读取父/A/J的24份既存B20十步预测；0新模型/环境/数据/GPU。
+A前5风险.126520→.119086，共同/查询变化项−.001143/−.006291，共同改变量占能量14.14%。
+变化项在12/20/32两teacher各有益、0两teacher有损，不能把有限学习说成只有固定偏移，也不等同纯state导数。
+J离线前5略优但闭环22<24；unmasked全50两新臂均更差。原件完整保留每condition、任务、horizon、mask及动作通道。
+按事前解释边界不追加中心化loss或状态导数探针，继续研究教学对象/操作到新情境的调用与迁移。
+原生key候选仍未越过§25的跨情境对应条件，未采纳；没有新canonical方法或正式重训。
+原root `joint_action_effect_credit_20261003/analysis/query_function_decomposition.py/.json`，主CPU.163282秒，JSON约804KiB；
+main独占canonical记录/Git，完整性能目标仍未完成。
+
 ## 2026-10-03：固定共享B完整迁移的科学消费与对象调用边界
 
 机制§119/findings§298直接核原编译算子、四模型原始400行和task16共200份continuous/8新full及关键父点双RGB。

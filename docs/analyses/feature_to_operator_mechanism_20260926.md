@@ -10977,3 +10977,65 @@ P0输入变化的分布限制也仍在，不能升级成完整时序特异性或
 读取记录2fbdf687与完成交付a95eec11分列。实际消费者13.1658秒exit0、小头3.9643秒、0GPU，约18.4MiB；
 main读回主CPU.604秒、0新forward，约544.4KiB新增JSON/脚本。预读取与投递依赖失败保留，未重跑科学计算。
 canonical窗口已回main，无active实验或已选后继；整体目标未完成，自主推导继续。
+
+## 115. 关系标签曾进入完整编译；同一目标阶段仍不足以指定可继续成功的自身控制（2026-10-03）
+
+本节只核对已执行历史与§98原件，不新增模型、数据、环境或GPU计算。它收紧关系监督和专家监督的解释，
+不是登记新Writer、重开旧路线或把尚未形成后继当作推进终点。
+
+### 115.1 不能把已有关系监督说成从未接到LoRA
+
+定向源码审计及主讨论直接核对支持以下三个完整近邻；它们没有共同证明某种统一的语义瓶颈。
+
+| 路线 | 标签与真实消费者 | 结果及必须保留的范围 |
+|---|---|---|
+| G2 Natural Program → G3 shared compiler | c1493a1恢复真实BDDL predicates、contact、progress/rising；RGB/L的Program随后由5140362实际读取，控制native bank并生成完整38-target rank12+4 LoRA，接受跨episode FM。G3冻结Program，更新compiler。 | G2 full/endpoints的action+progress为.28167/.36207；G3 held5 strict250的macro5/10为35/38，carrier43、language42。不能称为没有功能信用；也不能称它已经学会自身query的相对几何反馈。 |
+| VisibleObject | 05fe7ebe由OOI/XML/state生成可见patch与body运动质量；b304cde6直接监督teacher实际视觉读取attention，同一生成LoRA另受主FM。 | 100步grounded ordered/frame-set20/24，对纯FM64/56；200步71/70，对纯FM53/39。后段绝对收益真实，稳定有序收益未建立，原固定配方已关闭。 |
+| LocalActionGrounded | 5f4f440c用四帧真实RGB预测15步动作FM；共享observer/encoder也进入完整LoRA及跨episode主FM，局部辅助不更新Compiler。 | 100/200的ordered45→30、frame-set58→30。不能贬成没有同表示和真实执行消费者；动作标签也不是对象角色或相对pose标签。 |
+
+G2有一项具体区别：`natural_program_data.py:373`按另一episode的归一化时间选择query，并跨episode平均动作、progress、
+rising和predicate标签。它监督的是时间条件Program读出，不能据predicate名称便声称标签来自实际执行query的当前状态。
+`natural_program_labels.py:202–246`使用task目标列表中的predicate槽位，亦不是显式的物体—目标—容器角色及相对pose。
+G3在`shared_compiler_assets.py:265–300`实际加载macro20并冻结该Program；`shared_compiler_functional.py:81–140`
+保留真实FM和LoRA信用。因此“标签与LoRA从未相连”和“完整端到端状态关系学习已经检验完”都过强。
+
+VisibleObject监督实际空间读取，但没有恢复角色间相对pose；旧9f90a14d相对几何最近邻则是无Writer/梯度的诊断。
+这些区别是已核的历史边界，尚不是选择另一种标签的正证据。
+
+### 115.2 当前真实反例说明，目标谓词不能独自承担反馈状态
+
+§98的task32/init2交叉续行提供一个比抽象阶段名称更具体的限制。main重新读取原`readback.json`及
+`analysis/task32_crossover_main_readback.json`：prefix17与prefix43分别在89/91步开炉，至180步均为目标谓词`[true,false]`。
+此时两者都还没有完成放壶；两完整LoRA在s17后均成功，在s43后均未于总horizon520内成功。
+这是原四条冻结续行的再次解释，没有重跑它们。EEF位置相差1.321cm，完整状态同时还有其它差别，不能把此数值当单因素原因。
+
+令p(s)为这两个目标谓词，C_j为固定剩余噪声和时限下策略j的成功续行集合，则已测事实为
+
+`p(s17)=p(s43)=[1,0]，s17∈C17∩C43，s43∉C17∪C43`。
+
+所以在这两点上，任何只以p(s)为输入的判别器都不能区分该成功续行成员关系；
+“知道已经开炉、还需放壶”不足以描述两状态的控制差别。它没有证明两点需要相反的首动作，
+也没有证明不存在同一合适控制律同时完成两点，更没有证明当前policy只读取p(s)。
+原生自身hidden本就读取图像、机器人state和flow latent；当前问题仍是这些输入如何被条件参数用于有效控制。
+
+这项反例使单独增加progress/目标predicate监督缺少主修复依据，同时保留连续物体—手关系、姿态、接触与历史的可能作用。
+现有记录没有接触/力，尚未区分这些解释。物体中心距离、3cm抬高和夹爪命令不能补成抓持标签；
+§22的角色—坐标—模式构造、§40的状态导数边界以及operation_semantics旧零B/抵消反例继续适用。
+不能由“predicate不充分”直接跳成“相对几何一定充分”，也不能把更细标签的可解码性当作LoRA已经会调用它。
+
+### 115.3 有效教师也曾提供真实动作信用，新的联系必须另有具体依据
+
+此次定向复核还保留一个容易被历史简写抹去的正例：旧train24任务专家step2000有658/1200、23/24非零的实际闭环能力。
+离线B20中仅2/24优于baseline是另一查询分布上的结论，不能据此说这些教师没有行为价值。
+SEOD/GOMQ的8553b613实际从固定专家的成功新初态轨迹取状态，同观测/noise分别积分十步，
+以执行前缀端点误差反传合法视频学生的完整B；GOMQ进一步打开memory-query梯度。
+SEOD129→135→143→136、GOMQ151→135→131既有正增又未稳定保持，不是只有参数回归或只有普通单步FM。
+旧专家、旧source、K4与受限B出口的身份继续按[flow历史](flow_supervision_history_20260926.md)解释，不能与当前强MT153混算。
+
+另一方面，当前T2340的S/P/D64三臂均独立优化真实FM，没有D→S/P蒸馏；PZ又只是在八个已知条件上拟合共享输出，
+其21/32保留部分D23/32的控制，却未取得留一条件预测资格。它们不构成当前强教师蒸馏已经完整失败，也不构成应重启的依据。
+R2是完整成员的参数方向责任分配加真实FM，其功能恢复值不是集合端点蒸馏的闭环结果；§36的未实施边界保持。
+
+下一推导须同时解释教学所提供的任务关系、自身状态的区别，以及最终LoRA怎样把二者变成实际动作。
+标签更细、教师有成功、辅助接到同表示、或生成参数能够表达某项修正，都只能说明其中一部分。
+本节不继续小头归因、标签/GPU探针或旧蒸馏扫描；main仍持canonical记录/Git窗口，无active实验或已选后继，固定数据推导继续。

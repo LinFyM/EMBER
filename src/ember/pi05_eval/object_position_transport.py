@@ -46,7 +46,7 @@ def _reference(model):
 
 def prepare(model, layout, gpu):
     """Register a subset of an already validated bank, without materialization or a second evaluator."""
-    from ember.pi05_eval_contract import RUN_CONTRACT_SCHEMA, git_state
+    from ember.pi05_eval_contract import RUN_CONTRACT_SCHEMA, git_state, inspect_tokenizer, load_evaluation_authorities
     from ember.pi05_eval.preparation import shards_from_contract
     from ember.pi05_eval_queue import initialize_queue, publish_json_exclusive
 
@@ -63,6 +63,8 @@ def prepare(model, layout, gpu):
     contract.update(mode='screen', output_dir=str(output), tasks=[task], adapter=adapter,
                     git=git, prepared_unix=time.time(), command=list(sys.argv),
                     contract_reference=f'{RUN_CONTRACT_SCHEMA}:{uuid.uuid4().hex}')
+    authorities = load_evaluation_authorities(Path(original['authorities']['config_path']), repo)
+    contract['tokenizer'] = inspect_tokenizer(authorities, Path(original['tokenizer']['path']))
     contract['parallel'].update(physical_gpu_ids=[gpu], physical_gpu_count=1,
                                 replicas_per_gpu=1, worker_count=1, envs_per_replica=16)
     contract['parallel'].pop('queue_sharding', None)
@@ -92,8 +94,7 @@ def prepare(model, layout, gpu):
         'capture': 'all_rows_post_settling_then_every_executed_control_step',
         'full_conditions_only': False,
     }
-    contract['diagnostic_task_subset'] = {'diagnostic_subset': TAG, 'global_task_ids': [16],
-                                        'init_state_ids': list(STATES), 'validation_use': False}
+    contract['diagnostic_task_subset'] = None  # The fixed registered scope is checked by this diagnostic.
     contract.pop('passive_capture_provenance', None)
     validate_contract(contract, repo)
     publish_json_exclusive(output / 'run_contract.json', contract)
@@ -106,9 +107,13 @@ def prepare(model, layout, gpu):
 
 
 def validate_contract(contract, repo):
+    from ember.pi05_eval_contract import inspect_tokenizer, load_evaluation_authorities
+
     info = contract['object_position_transport']
     model, layout = info['model'], info['layout']
     original, task, adapter = _reference(model)
+    authorities = load_evaluation_authorities(Path(original['authorities']['config_path']), repo)
+    tokenizer = inspect_tokenizer(authorities, Path(original['tokenizer']['path']))
     expected_output = ROOT / 'evaluation' / model / layout
     capture = contract['diagnostic_occupancy_capture']
     if (layout not in ('original', 'swapped') or info['schema_version'] != TAG
@@ -120,12 +125,45 @@ def validate_contract(contract, repo):
             or any(info[key] is not False for key in ('training_gradient_use', 'checkpoint_selection_use',
                                                       'teacher_actions_read', 'new_native_or_writer'))
             or any(contract[key] != original[key] for key in
-                   ('model', 'normalization', 'tokenizer', 'environment', 'policy', 'rng', 'operator_read_write_scene'))
+                   ('model', 'normalization', 'environment', 'policy', 'rng', 'operator_read_write_scene'))
+            or contract['tokenizer'] != tokenizer
             or capture['passive_trace']['schema_version'] != TAG
             or capture['passive_trace']['trace_root'] != str(expected_output / 'continuous_traces')
             or capture['trajectory_root'] != str(expected_output / 'trajectories')
             or capture['full_conditions'] != [{'suite': 'libero_object', 'task_id': 6, 'init_state_id': 0}]):
         raise Pi05EvaluationError('object-position diagnostic provenance or scope changed')
+
+
+def reinspect_subset(contract, model):
+    """Recheck the pinned original bank and only the selected existing factor files."""
+    from safetensors import safe_open
+
+    original, _, expected = _reference(contract['object_position_transport']['model'])
+    if original['model'] != model:
+        raise Pi05EvaluationError('diagnostic subset source changed')
+    manifest = expected['manifest']
+    path = Path(manifest['path'])
+    if not path.is_file() or path.stat().st_size != manifest['bytes']:
+        raise Pi05EvaluationError('original bank manifest changed')
+    bank = read_json(path)
+    selected = {row['condition_id']: row for row in expected['conditions']}
+    actual = {row['condition_id']: row for row in bank['conditions'] if row['condition_id'] in selected}
+    task = next(row for row in bank['tasks'] if (row['suite'], row['task_id']) == ('libero_object', 6))
+    task = {**task, 'episodes': [row for row in task['episodes'] if row['init_state_id'] in STATES]}
+    if (actual != selected or expected['tasks'] != [task]
+            or any(bank[key] != expected[key] for key in ('shared', 'lora', 'source'))):
+        raise Pi05EvaluationError('selected original factors/source changed')
+    records = [expected['shared']] + [row['factors'] for row in selected.values() if 'factors' in row]
+    for record in records:
+        factor = Path(record['path'])
+        if not factor.is_file() or factor.stat().st_size != record['bytes']:
+            raise Pi05EvaluationError('selected factor file changed')
+        with safe_open(factor, framework='pt', device='cpu') as handle:
+            keys = handle.keys()
+            dtypes = {'F32', 'BF16'} if expected['mode'] == 'MT' else {'F32'}
+            if len(keys) not in (38, 76) or any(handle.get_slice(key).get_dtype() not in dtypes for key in keys):
+                raise Pi05EvaluationError('selected complete frozen LoRA structure changed')
+    return expected
 
 
 def passive_in(env):

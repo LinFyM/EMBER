@@ -1,5 +1,10 @@
 # EMBER progress
 
+2026-10-04 `object_position_transport_20261004` 首次六个launcher已退出exit1，均在模型/worker/环境加载之前被canonical恢复检查拒绝，0新增诊断行；六次费用合计.004921007279GPUh（含启动/I/O/退出），全部失败日志/contract/queue/回执保留。
+原因已CPU核实：Source模型身份无差异，只有tokenizer manifest_path历史冻结树与新消费树不同，真实tokenizer路径/字节/模型均相同。原prepare复用旧字段遗漏新消费者解析；同时需要把固定注册八行银行子集接入canonical恢复重查，而不能按原400全任务重查。
+修正在独占分支：按canonical inspect_tokenizer记录新manifest来源；task16范围由冻结专用合同校验，原bank的选中task/episode/factor/source/LoRA及19份header按实物重查，source/normalization/model和旧原件保持。三模型实际CPU恢复子集检查通过；通用Source/git/assets/噪声/行验证保留，无物理/模型/评分语义变化。
+另保留CPU MT缺少per-condition factors的元数据假定错误、progress编辑脚本语法错误，以及新header检查把旧MT的BF16/F32混合误要求为全F32；仅修正检查口径，原权重/dtype未改，均0GPU/环境。不把前启动工程失败写科学阴性。已有八物理初态验证仍有效，不重复模型或物理检查；新push/clean frozen继续唯一未执行48行。
+
 2026-10-04 `object_position_transport_20261004` 窄接入已集成push，实际clean detached frozen=8a2c8496。原三个银行仅选task16八行元数据，C完整A/B、T sharedA+完整条件B、MT完整共同因素由原canonical loader消费；19份既存header/八teacher/官方来源核实，0新物化或模型候选。
 同八授权初态的真实physics消费者已完成：全部registry/free joint/world XY、z/quat/qvel/robot-state8/controller/其它body/model/time不变检查通过；刷新双RGB已逐图核实，无明显穿透/悬空，最深接触−.020521mm。验证0 policy/native forward/0 rollout控制step，18.209944秒×1=.005058318 GPUh，exit0；初始前后完整状态/图像/contacts在root analysis/physical_consumer。
 六个各八行的原/交换正式诊断消费者CPU prepare正在完成；容量16会由现有env池限制为八个合法case并整批打包，六独立读取按空闲卡并行，不造额外例/环境填显存。尚未启动48行模型读取，后续启动前再核双节点/配额/卡数。一个CPU原件检查曾误假定MT有per-condition factors，已按既存共同银行语义修正；0模型/环境/GPU失败。

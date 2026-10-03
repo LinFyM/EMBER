@@ -99,6 +99,10 @@ def _reinspect_adapter(
     contract: Mapping[str, Any],
     model: Mapping[str, Any],
 ) -> Mapping[str, Any]:
+    if contract.get('object_position_transport') is not None:
+        from ember.pi05_eval.object_position_transport import reinspect_subset
+
+        return reinspect_subset(contract, model)
     tasks = tuple(
         argparse.Namespace(suite=row["suite"], task_id=int(row["task_id"]),
                            init_state_ids=row.get("init_state_ids"))

@@ -92,6 +92,18 @@ def main(arm,stage):
     original = read_json(PARENT_ROOT/'Original/evaluation/teacher0/run_contract.json')
     spec = read_json(Path(original['adapter']['spec']['path']))
     runtime = build_runtime(ASSET,spec,torch.device('cuda:0'),'conditional_read_write',evaluation=True)
+    if stage=='evaluation':
+        contract=read_json(out/'training_contract.json')
+        bank=read_json(out/'bank/manifest.json');bank['manifest']=file_record(out/'bank/manifest.json')
+        runtime.writer=None;gc.collect();torch.cuda.empty_cache()
+        with torch.no_grad(),autocast(runtime.device):rows=evaluate(runtime,arm,bank,original)
+        write_json_atomic(out/'completion.json',dict(complete=True,updates=64,rows=len(rows),full=6,compact=26,
+            seconds=time.monotonic()-started,training_git=contract['git'],functional_git=contract['git'],
+            reading_git=identity,source_loading_count_this_consumer=1,prior_failed_consumer_source_loads=1,
+            no_new_native_training_or_functional_forward=True,
+            peak_allocated_GiB=torch.cuda.max_memory_allocated()/2**30,peak_reserved_GiB=torch.cuda.max_memory_reserved()/2**30))
+        print(json.dumps(dict(event='arm_complete',arm=arm,rows=len(rows))),flush=True)
+        return
     runtime.writer.load_state_dict(load_file(str(ECP),device='cuda:0'),strict=True)
     runtime.policy.eval(); runtime.writer.train(); parameters = freeze_except_B(runtime.writer)
     data = FormalData(ASSET,spec,query_labels=True,task_ids=tuple(TEACHERS))
@@ -188,5 +200,5 @@ def main(arm,stage):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--arm',choices=('A','J'),required=True)
-    p.add_argument('--stage',choices=('all','readback'),default='all');args=p.parse_args()
+    p.add_argument('--stage',choices=('all','readback','evaluation'),default='all');args=p.parse_args()
     torch.set_num_threads(6);main(args.arm,args.stage)

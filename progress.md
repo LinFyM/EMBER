@@ -1,5 +1,10 @@
 # EMBER progress
 
+2026-10-03 §116两臂固定64训练、完整checkpoint64、父/A/J固定A28/B20全部功能原件和16份新完整LoRA bank已完成，训练/功能读取b0df34ee。
+首次环境消费在创建任何新环境step前因run contract无global_task_id而退出；全局ID本来在bank的suite/local任务表中，错误是工程元数据接入，不是科学阴性。
+两臂exit1、累计完整GPUh=.807849（含全部加载/native/profile/功能/I/O/退出），原失败日志/launch/恢复点/预测保持；当前GPU消费者已退出。
+仅修正canonical任务映射并以新clean pushed detached代码继续原定64环境行；复用已完成64恢复/LoRA/功能预测，0重训练、0新native、0重功能推理。原科学/样本/信息墙/预算不变。
+
 2026-10-03 §116已实际启动：clean pushed detached b0df34ee，GPU02物理2/3分别A/J（PID1546900/1547112）；launch前两节点现场准入、data1独立quota/shared和当前/启动后卡数已登记。
 A完成八teacher一次完整38-site public native并保存固定H/context/d/A/K/delta-z；J同期读取固定父B20功能面板，随后复用同一cache，未重复native或Teacher特权读取。
 两臂各两次已登记输入的可丢弃完整更新通过实际FM消费者/全部38处B五组梯度检查。micro14→28并vmap两个teacher，物理suffix batch28→56、同query prefix只读一次；逻辑查询/32维noise-time/condition1/8/完整余切不变。

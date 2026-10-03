@@ -32,6 +32,9 @@ def validate_cases(cases, task, state_ids, contract):
 def evaluate(runtime, arm, bank, original):
     out = ROOT / arm
     contract = copy.deepcopy(original)
+    global_ids = {(t['suite'],int(t['task_id'])):int(t['global_task_id']) for t in bank['tasks']}
+    for task in contract['tasks']:
+        task['global_task_id'] = global_ids[(task['suite'],int(task['task_id']))]
     contract.update(git=git_state(Path(__file__).resolve().parents[3]), output_dir=str(out),
                     role='development_train', mode='screen', analysis_only=True, adapter=bank)
     contract['parallel'].update(envs_per_replica=8, physical_gpu_count=1,

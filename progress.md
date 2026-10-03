@@ -1,5 +1,10 @@
 # EMBER progress
 
+2026-10-04 `object_position_transport_20261004` 固定48行第二次实际启动：C900_original_v2 PID4065331, C900_swapped_v2 PID4065330, MT300_original_v2 PID4065332, MT300_swapped_v2 PID4065329, T2340_original_v2 PID4065334, T2340_swapped_v2 PID4065333。
+新clean pushed detached读取dac0ad57；六份重新prepare均exit0/13.245543秒/0GPU，实际canonical validate_resume_inputs在GPU启动前六份全部通过。真实tokenizer未变，19份选中header/原视频/场景/完整A-B来源重查通过，旧混合BF16/F32 MT按原值保留。
+再次现场双节点/独立data1 quota/shared/相关实占准入，本用户0→6、cap6/单节点6；六独立persistent消费者各打包八合法case，Source常驻，无额外例/profile或新模型。已有全部费用.009979325187 GPUh，六读取最多1.8，含加载/渲染/I/O/退出仍在2硬限。
+此前六失败均0模型/新行，失败目录/冻结8a2c8496及工程回执保留；合法physics八初态也保留不重做。当前48行/6 full/完整读回仍待退出后确认，实验独占canonical窗口并在CPU侧准备读回，无阶段自Queue/日志轮询。
+
 2026-10-04 `object_position_transport_20261004` 首次六个launcher已退出exit1，均在模型/worker/环境加载之前被canonical恢复检查拒绝，0新增诊断行；六次费用合计.004921007279GPUh（含启动/I/O/退出），全部失败日志/contract/queue/回执保留。
 原因已CPU核实：Source模型身份无差异，只有tokenizer manifest_path历史冻结树与新消费树不同，真实tokenizer路径/字节/模型均相同。原prepare复用旧字段遗漏新消费者解析；同时需要把固定注册八行银行子集接入canonical恢复重查，而不能按原400全任务重查。
 修正在独占分支：按canonical inspect_tokenizer记录新manifest来源；task16范围由冻结专用合同校验，原bank的选中task/episode/factor/source/LoRA及19份header按实物重查，source/normalization/model和旧原件保持。三模型实际CPU恢复子集检查通过；通用Source/git/assets/噪声/行验证保留，无物理/模型/评分语义变化。

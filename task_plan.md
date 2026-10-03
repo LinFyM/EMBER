@@ -1,5 +1,8 @@
 # EMBER task plan
 
+2026-10-04 当前唯一 `object_position_transport_20261004` 已由实验session实际接手并独占canonical/Git；main只读。完成顺序为窄接口实现/真实物理消费者核验→clean pushed detached固定48行→完整物理/行为/历史配对读回→退役/Git/一次整批Queue/交回窗口。
+固定八原scene/teacher、三模型两布局/6 full/42 compact，硬限2 GPUh/12GiB。无新训练或Writer/native，不能为碰撞/结果调整布局、改z/settling/删case；科学语义或预算实际边界才报告裁决。
+
 机制§121/findings§300登记唯一[自身对象位置交换诊断](docs/designs/object_position_transport_diagnostic.md)：
 在task16原init0..7保持教学/LoRA/语言，仅交换butter与orange世界XY，C900/T2340/强MT300各原/换位，共48行。
 区分固定区域控制与错误实体跟踪，延续同一跨情境调用难题；不扩训练数据或训练，不以换位分数选模型。

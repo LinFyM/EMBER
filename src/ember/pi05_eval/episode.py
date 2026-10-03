@@ -65,6 +65,11 @@ def start_fixed_episode(
             Path(paired_scene["root"]),
             diagnostic_output=(Path(contract["output_dir"]) / "failures"
                                if contract.get("output_dir") else None))
+    position_transport = None
+    if contract.get('object_position_transport') is not None:
+        from ember.pi05_eval.object_position_transport import apply
+
+        observation, position_transport = apply(env, observation, contract, init_state_id)
     prepared = None
     if task_adapter is not None:
         prepared = task_adapter.prepare_episode(
@@ -80,6 +85,8 @@ def start_fixed_episode(
         slot["episode_adapter"] = prepared
     if scene_reference is not None:
         slot["scene_reference"] = scene_reference
+    if position_transport is not None:
+        slot['object_position_transport'] = position_transport
     initialize_capture(slot, capture_level)
     stage_contract = contract.get("diagnostic_stage_predicates")
     if stage_contract is not None and (
@@ -114,6 +121,8 @@ def finish_episode_row(
     row.update(episode_exploration_fields(contract, slot))
     if "scene_reference" in slot:
         row["scene_reference"] = dict(slot["scene_reference"])
+    if 'object_position_transport' in slot:
+        row['object_position_transport'] = slot['object_position_transport']
     if "stage_predicate_states" in slot:
         row["stage_predicates"] = {
             "schema_version": "ember_pi05_stage_predicate_episode_v1",

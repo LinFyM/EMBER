@@ -1,5 +1,10 @@
 # EMBER progress
 
+2026-10-04 实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553 已实际接手 `object_position_transport_20261004`，独占canonical tracked/Git窗口；main只读科学分析。
+从clean pushed 1ac14681建立codex/object-position-transport隔离树，完整读取Owner要求/机制§121/findings§300/合同。仅task16八个post-dummy初态，冻结C900/T2340/MT300×原/交换世界XY共48行；6 full/42 compact，官方butter成功终止和两对象被动In分离。
+预计2–3小时/2完整GPUh/12GiB，准入保守新增峰6GiB；strg01 data1实占1192509776KiB/quota2147483648KiB/shared86847001360KiB通过。只读源银行/Source/旧MT，不复制大资产，0训练/native/held动作。
+正在沿canonical scene/episode/trajectory及persistent evaluator接入有界物理变换；尚未启动任何模型或环境诊断。专用入口/hooks交付后退役，所有失败/费用保留，无自动后继。以下仅登记/历史状态被本实际接手覆盖。
+
 2026-10-04 main完成机制§121/findings§300，active design登记为[自身对象位置交换诊断](docs/designs/object_position_transport_diagnostic.md)。
 唯一task16/init0..7，C900/T2340/强MT300×原/交换butter-orange世界XY，共48行；固定原视频/LoRA/语言/噪声，不训练或扩训练数据。
 从真实错对象行为区分区域依赖与错误实体跟踪，保留混合/无诊断结果；不由此预选架构或把换位得分当官方资格。

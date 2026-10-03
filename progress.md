@@ -1,3 +1,7 @@
+## 2026-10-04 role_coordinate_credit：两臂64正式学习已启动
+
+八teacher完整38处公共native一次读回，两臂共用X/H/c/d。F/G各两次登记输入的完整丢弃更新均有效，随后恢复父全部可训练参数、fresh optimizer和seed7 RNG进入64。F选择micro28（26.384s对14的27.356s）；G实测micro14更快（25.193s对28的26.432s），已实际验证更大56-query suffix而非沿保守默认。profile reserved峰25.965GiB；最长51帧全块读取。现场实际GPU总量2张，cap6，helper owner字段的卡数记录已按保留snapshot更正，计费不变。code e7d81bc4、实际PID F671484/G675438；单一退出等待者运行，未轮询训练日志/节点或给自己Queue。预计训练两臂合计约.917GPUh，加加载/profile/固定B20/96读取仍有硬6GPUh余量。没有依据loss选择checkpoint或增加矩阵。
+
 ## 2026-10-04 role_coordinate_credit实际启动
 
 2026-10-03T22:27:50.407130+00:00，clean pushed detached e7d81bc4实际消费者PID 671484已在gpu02:0开始source加载/八teacher固定native；随后两个已登记profile，按实测预算准入64步。G将在共同cache就绪事件后独立并行，不重复native。现场两节点准入按global6/单节点6；无其它本sessionGPU任务，预计总2张有益设备。费用从加载开始计入6GPUh，所有写入data1。root/launch/run_arms.py为唯一退出等待者，没有selfQueue或日志定时轮询；后继仅本合同固定B20/96行。

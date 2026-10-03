@@ -89,3 +89,12 @@ launch前核两节点live GPU、当前/启动后物理卡数、适用8/6合计�
 正常运行等待实际子进程退出，不周期查日志或发送自通知；整批完成/异常只回报main一次，并标明来源。
 完成物理与科学读回、48原行/6 full/42 compact/比较、completion/完整费用/退出与释放证据、Git推送后停止并交回窗口。
 main不重复执行者工程审查或测试，负责原件消费、竞争解释和后继；无自动新批。
+
+## 6. 实际执行交付（2026-10-04）
+
+固定48行/6 full/42 compact与旧24同行已完整读回；C旧/本批原/换位0/0/2，T1/1/2，MT2/1/1。
+全部混合/负例、初态XY语义与官方butter终止检查保留；不存在一致分组或部署性能主张，科学解释由main直接消费。
+实际48读取clean pushed detached dac0ad57fb2e10b86ecfc9224f6bb2af208554c1；物理/首次前加载失败8a2c8496、模型来源保持。
+完整GPUh.259836593305/2、新root+工程阶段观察高水1.297657GiB/准入保守6/硬12（非连续精确峰）；全部进程exit、GPU释放。
+原件在唯一root的completion/readback及analysis/report/rows/per_case/RGB/行为/成本/资源、evaluation全48捕获与launch。
+专用入口/模块/五hooks完成退役，canonical拒绝该归档合同；Git和两frozen保存重现原件。整批Git/一次Queue交付后交回窗口并停止，无自动后继。

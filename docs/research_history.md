@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：自身对象位置交换48行完整交付与混合行为
+
+按机制§121/findings§300与原合同完成唯一task16八scene×C900/T2340/MT300×原/换位，共48行；0学习/Writer/native/新增LoRA/held动作或训练标签。
+旧历史/本批原/交换成功为C0/0/2、T1/1/2、MT2/1/1；交换C/T成功init3/4，MT3；原→交换R/G/L为0/2/0、0/2/1、0/1/1，完整模型间比较/全部72原行保留。
+C原butter全8静止，orange抬>3cm为0/1/4/5/6、In0/1/4/5；换位butter抬3/4/5、In3/4，orange抬/In6/7。init4/5由原orange区域转搬butter和init6跨位置继续搬orange并存；init0/1换位转第三物体、init2轻微移动/其它反例保留，不强行认定唯一解释。
+新原与旧C/T成功集合保持，MT丢init2（旧160成功，新仍抬butter29.73cm但280未In），普通数值分叉不重跑择优。六full真实双RGB已看：init0原C/T操作orange，交换C向ketchup小移、T搬ketchup，MT原butter附近未入篮/交换orange入篮；compact/旧orange谓词缺失直接标NA。
+八registry/free-joint/world XY消费者及48前后状态通过，z/quat/速度/robot-state/controller/其它scene/time保持，0额外step/settling；真实RGB刷新、无明显穿透/悬空。初始全对象/EEF/quat/gripper/goal对旧24误差0，teacher/scene/env7/policy噪声配对，全部50×7 chunk/实际前5/T+1/两个被动In齐备，只有butter官方goal终止。3cm/中心/命令不证明抓持或机制根因。
+实际读取clean pushed detached dac0ad57，物理/初六前加载失败8a2c8496；模型来源C90085919994/T e2afbfd7/MT3ebb979b保持，0大资产复制或data0写入。首六tokenizer manifest_path与固定银行子集恢复检查错误修复后新push/freeze，真实Source/tokenizer/权重/dtype/物理变换未变，失败与所有CPU检查修复与首次退役检查直接import叶模块造成的既有public回导入循环留档；按canonical public入口顺序核验通过，未改模型或扩大工程，不写性能阴性。
+总.259836593305/2完整GPUh（物理.005058317908、失败.004921007279、48读取.249857268118），六消费者/worker exit0；完整CPU读回4.180215秒exit0，双节点GPU和本批PID释放。六卡并行、每worker全部8合法case实测batch8/Source常驻，reserved10.785156GiB、151.752520秒/.316304行每秒；合法case已全打包且cap6已满，没有额外例/重复profile填显存或速度收益主张。
+新root+工程阶段观察高水1.297657GiB、准入保守6/硬12、非连续精确峰；strg01 data1独立quota/shared通过，全部新增data1。专用两文件/五hooks退役，canonical guard拒绝该归档诊断，Git/两frozen/48原件及失败留存。
+primary `object_position_transport_20261004/` completion/readback、analysis/report/rows/per_case/行为/RGB/全8轨迹图、evaluation和launch完整账本；整批集成push/一次Queue交回窗口后实验停止，无自动扫描/训练/controls/Test/RL，科学解释与后继由main消费。
+
 ## 2026-10-04：登记自身对象位置交换，辨识错误搬运的控制对应
 
 机制§121/findings§300由§117–120的有限获取/迁移不足继续：query相关并不区分固定场景区域与错误实体跟踪。

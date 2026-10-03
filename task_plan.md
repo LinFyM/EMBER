@@ -1,5 +1,8 @@
 # EMBER task plan
 
+2026-10-04 唯一`object_position_transport_20261004`固定48/48与6 full/42 compact、24旧参照完整读回已完成；C旧/原/换0/0/2，T1/1/2，MT2/1/1。位置依赖、跨位置错实体及第三对象反例并存，保留有限/未区分，不以布局分数选方法。
+.259836593305完整GPUh/2、阶段新增观察1.297657GiB/保守6/硬12；六消费者和workers全exit0、GPU/PID释放。专用模块/入口/五hooks退役、frozen和科学/失败原件保留；Git集成push/一次Queue交付后窗口回main，实验session停止本批，无自动后继。科学原件消费和取舍由main接续。下方实际接手/仅登记为历史时点。
+
 2026-10-04 当前唯一 `object_position_transport_20261004` 已由实验session实际接手并独占canonical/Git；main只读。完成顺序为窄接口实现/真实物理消费者核验→clean pushed detached固定48行→完整物理/行为/历史配对读回→退役/Git/一次整批Queue/交回窗口。
 固定八原scene/teacher、三模型两布局/6 full/42 compact，硬限2 GPUh/12GiB。无新训练或Writer/native，不能为碰撞/结果调整布局、改z/settling/删case；科学语义或预算实际边界才报告裁决。
 

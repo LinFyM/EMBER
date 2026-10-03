@@ -233,8 +233,6 @@ def start_passive_trace(env: Any, slot: dict[str, Any], capture: Mapping[str, An
         "actions": [], "body_positions": [], "eef_pos": [], "eef_quat": [],
         "gripper_qpos": [], "predicates": [],
     }
-    if capture.get('object_position_transport'):
-        slot['passive_trace']['diagnostic_in'] = []
     record_passive_step(env, slot, None, capture)
 
 
@@ -275,10 +273,6 @@ def record_passive_step(
         raise Pi05EvaluationError("passive trace simulator/robot/predicate sample invalid")
     for name, value in sample.items():
         trace[name].append(value)
-    if 'diagnostic_in' in trace:
-        from ember.pi05_eval.object_position_transport import passive_in
-
-        trace['diagnostic_in'].append(passive_in(env))
 
 
 def save_passive_trace(
@@ -294,10 +288,6 @@ def save_passive_trace(
     steps = int(slot["steps"])
     arrays = {name: np.stack(trace[name]) for name in (
         "actions", "body_positions", "eef_pos", "eef_quat", "gripper_qpos", "predicates")}
-    if 'diagnostic_in' in trace:
-        arrays['diagnostic_in'] = np.stack(trace['diagnostic_in'])
-        if arrays['diagnostic_in'].shape != (steps + 1, 2):
-            raise Pi05EvaluationError('two-object passive In trace changed')
     expected = {"actions": (steps, 7), "body_positions": (steps + 1, len(trace["body_registry"]), 3),
                 "eef_pos": (steps + 1, 3), "eef_quat": (steps + 1, 4),
                 "gripper_qpos": (steps + 1, 2),

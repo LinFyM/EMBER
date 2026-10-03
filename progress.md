@@ -1,5 +1,16 @@
 # EMBER progress
 
+2026-10-04 `object_position_transport_20261004` 唯一固定48行与完整读回已完成：三模型各原/交换八初态，6 full/42 compact，全50×7 chunks/实际physical actions/T+1全对象/EEF/gripper/官方goal及butter-orange被动In齐备，缺项0。
+C900旧/本批原/交换成功0/0/2（交换init3/4）；T2340 1/1/2（原2，交换3/4）；MT300 2/1/1（旧2/7、本批原7、交换3）。原→交换R/G/L分别0/2/0、0/2/1、0/1/1；旧→本批原C/T无churn，MT丢2，仍抬butter但280未入篮，未重跑择优。
+行为不是单一对应：C原orange抬>3cm为0/1/4/5/6、In0/1/4/5，butter全8静止；交换butter抬3/4/5、In3/4，orange抬并In6/7。init4/5改搬原orange区域的butter与位置依赖相容；init6跨位置仍搬orange与错误实体跟踪相容；0/1及其它第三物体/轻微移动反例全部保留，不强行归类或以换位得分选模型。
+八实际registry/free-joint/world XY物理检查和48前后状态通过；各自z/quat/qvel、机器人state8/controller、其它body/model/time保持，0额外step/settling，双RGB真实刷新、无明显穿透/悬空（最深contact−.020521mm）。新原布局对旧24初始body/EEF/quat/gripper/goal误差0，scene/teacher/env7/policy root7/共同绝对noise配对；实际前5与continuous逐行一致，只butter官方In终止。八物理初态重复，不冒称48独立/strict400。
+六full实际双RGB已看；init0原C/T搬orange，换位C向ketchup并小移、T搬ketchup，MT原butter附近操作未入篮/换位orange入篮。旧orange In不存在、42 compact无轨迹RGB，均不造图/重算。中心/1cm/3cm/命令不证明抓持或内部根因，main负责进一步科学解释。
+完整成本.259836593305/2GPUh：实际物理验证.005058317908、六首次preconsumer失败.004921007279、有效48读取.249857268118；加载/渲染/I-O/失败/退出全计。六读取消费者/六worker exit0，CPU完整读回4.180215秒exit0，两节点本用户GPU0及全部本批PID消失，不影响他人。
+六独立persistent消费者并行，各将全部八合法case打包（capacity16/实测maxbatch8），source常驻；完整48GPUstage151.752520秒/.316304行每秒，reserved10.785156GiB。八case已全部打包且总cap6已用尽，不新增样本或重复profile填显存，未实测配置比较、不声称速度收益。Owner显存/吞吐长期要求current_owner_requirements§5和AGENTS§9按此执行。
+新root+工程阶段观察高水1.297657GiB、准入保守峰6/硬12，非连续精确峰；strg01 data1独立quota2147483648KiB/实占1193873672KiB与shared86845632372KiB通过，旧source/MT/data0只读。所有新增data1。
+物理/首次失败freeze8a2c8496，实际48 clean pushed detached读取dac0ad57fb2e10b86ecfc9224f6bb2af208554c1；C900学习/原correct40085919994、T学习e2afbfd7/原读取cb535c1e、MT学习3ebb979b/原读取83946ae1分列，0新训练/Writer/native/held动作标签。首六launch只因新prepare遗漏tokenizer manifest_path及固定子集恢复入口而前加载拒绝，真实模型/tokenizer未变，按原语义修复新push/freeze；CPU检查假设与最终snapshot摘要KeyError均修并留失败；首次退役检查直接import叶模块触发既有public回导入循环，按canonical public入口顺序通过，未改科研计算，0新科学计算，不写成科学阴性。
+primary `/data1/user/ymdai/ember_runs/object_position_transport_20261004/` 的readback/completion、analysis/report/rows/per_case/行为/RGB/全8轨迹图、全部evaluation原件及launch预算/失败/退出/释放。专用两文件与五hooks已退役，canonical contract guard拒绝新执行，Git/两freeze/原件保留；交付集成push及一次有来源Queue后canonical/Git窗口回main，实验session停止新增计算，无自动其它位置/对象/层/强度/fresh/controls/Test/RL。下方启动/待退出仅为历史时点。
+
 2026-10-04 `object_position_transport_20261004` 固定48行第二次实际启动：C900_original_v2 PID4065331, C900_swapped_v2 PID4065330, MT300_original_v2 PID4065332, MT300_swapped_v2 PID4065329, T2340_original_v2 PID4065334, T2340_swapped_v2 PID4065333。
 新clean pushed detached读取dac0ad57；六份重新prepare均exit0/13.245543秒/0GPU，实际canonical validate_resume_inputs在GPU启动前六份全部通过。真实tokenizer未变，19份选中header/原视频/场景/完整A-B来源重查通过，旧混合BF16/F32 MT按原值保留。
 再次现场双节点/独立data1 quota/shared/相关实占准入，本用户0→6、cap6/单节点6；六独立persistent消费者各打包八合法case，Source常驻，无额外例/profile或新模型。已有全部费用.009979325187 GPUh，六读取最多1.8，含加载/渲染/I/O/退出仍在2硬限。

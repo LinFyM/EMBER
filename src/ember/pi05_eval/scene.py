@@ -168,7 +168,3 @@ def validate_scene_row(row: dict, task: dict, contract: dict) -> None:
                 "restoration": "full_model_body_pose_post_dummy_sim_controller_and_dual_rgb_verified"}
     if row.get("scene_reference") != expected:
         raise ValueError("paired canonical scene row is missing or changed")
-    if contract.get('object_position_transport') is not None:
-        from ember.pi05_eval.object_position_transport import validate_row
-
-        validate_row(row, task, contract)

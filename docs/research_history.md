@@ -3,6 +3,20 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：固定900表示的动作/位移联合信用两臂64完整执行交付
+
+按机制§116/findings§295与[合同](designs/joint_action_effect_credit_diagnostic.md)，固定当前900公共/native/解释器/A，只更新38处五组共享B参数。
+192个既存合法query episode/21122个物理时点CPU恢复，post-action对应及四个实名点成立；0新环境step/render/示范，teacher特权state/action不入表示或标签。
+两臂同原64步A28/28 query/八condition各1/8、fresh AdamW；A动作7维，J同动作加7:10合法位移FM，22维padding无新loss。完整恢复、38-target bank和固定A28/B20全50/前5/有效future/motion/gripper及逐query原件齐备。
+新增64有限闭环/12 full/52 compact，父900 Original32复用；父/A/J成功13/24/22，task0/12/20/32为父8/2/2/1、A7/4/6/7、J6/4/6/6。A对父R10/G14/L3、J对父R9/G13/L4；J对A R20/G2/L4/churn6，全部正反保留。
+J对A新增20/t38 init0/2，丢0/t40 init2、20/t38 init1、20/t42 init2、32/t43 init2；两新臂均丢父32/t17/init2。task32全部24行均开炉且最终保持，placement分别1/7/6；不是仅得放置却丢开炉的交换。
+J实际执行1..n≤5点位预测米制RMS为8.154/13.244/4.186/6.276mm，相对零位移风险1.029/2.256/1.069/1.847；离线示范位移误差另列，不把未执行50步或低FM当真实后果。body原点3cm/命令/图像不证明抓持/接触，全部静止和失败保留。
+原scene/seed7/root7/共同绝对policy噪声配对，新增64条初始body/EEF/quat/gripper/predicate误差0；实际physical actions与continuous匹配。三组task32双RGB取自六已有full，无新渲染；43/init3的A成功可有侧倾及<3cm body增高，不能拿该阈值替官方成功。
+标签来源06c49c53，训练/功能b0df34ee，环境读取a270fb01，父900/a0e0248d与Source1000/b8ea00e9分别登记。初次global_task_id接入KeyError发生在0新环境step处，exit1/合法64及原件保留；修suite/local→bank global映射后只续64环境行，两consumer exit0，无重训练/native/功能读取。
+含全部加载/profile/native/I/O/失败/退出共1.027844869627/4完整GPUh；reserved训练高水25.478516GiB。合法micro14→28/实际suffix28→56的实测吞吐、恢复同初值/RNG及双臂并行均留档；未新增工作填显存或扩profile矩阵。
+阶段新增root+工程树5.770306GiB、保守准入峰10/硬限12，非连续精确峰；strg01 data1独立quota/shared最终通过，四consumer PID与GPU已释放。本批代码/hooks退役、canonical导入/AST/合同guard通过；Git/frozen/恢复/科学/失败原件保存。
+primary `/data1/user/ymdai/ember_runs/joint_action_effect_credit_20261003/` 的completion/readback、analysis全量逐行/逐query/配对/核验/RGB、A/J checkpoint64/bank/results/cases和launch账本。整批push/一次回报后窗口交main，实验session停止；结果科学解释由main负责，无自动fresh/续训/扫描/held/Test/controls/RL。
+
 ## 2026-10-03：从自身状态差推导动作与物体位移联合信用，登记一次有限学习比较
 
 机制§116/findings§295与[合同](designs/joint_action_effect_credit_diagnostic.md)区分已知状态依赖、效果信用假说和完整性能。

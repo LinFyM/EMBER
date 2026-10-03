@@ -1,5 +1,17 @@
 # EMBER progress
 
+2026-10-03 `joint_action_effect_credit_20261003` 全部固定学习/读回完成：两臂各64有效更新/完整恢复点，16份完整38-target bank；64新增环境行/12 full双RGB/52 compact，父32行复用，48份A28/B20功能引用（40份新PT）齐备，缺项0。
+父/A/J成功13/24/22；task0/12/20/32分别父8/2/2/1、A7/4/6/7、J6/4/6/6。A对父R10/G14/L3，J对父R9/G13/L4；J对A R20/G2/L4/churn6，新增均在task20/t38 init0/2，丢task0/t40 init2、20/t38 init1、20/t42 init2、32/t43 init2。
+task32全部父/A/J均开炉并最终保持，放置1/7/6；两新臂均丢父t17/init2。J对A少t43/init2的放置；A成功327，J无placement/结束520。body高度、中心/命令仅描述，未宣称抓持/接触。
+J实际执行1..n≤5位移RMS按task为8.154/13.244/4.186/6.276mm，相对零位移风险1.029/2.256/1.069/1.847；四项均未胜零位移，保留所有成功/静止/失败。离线B20示范误差和实际自身效果分列，所有通道/有效mask/逐query/不利项保留。
+场景/seed7/root7/共同绝对噪声及64条新增初始body/EEF/quat/gripper/predicate与父配对通过，初始误差0；实际actions与独立continuous一致，全部50×7 chunks、J全50×3被动预测/T+1点位和12 full齐备。CPU读回exit0，针对性完整性核验exit0；三份task32 RGB对照来自既存full，无新render。
+物理标签06c49c53；训练/功能b0df34ee，环境读取a270fb01；父900/a0e0248d、Source1000/b8ea00e9分别登记。首次global_task_id接口失败为0新环境step、两臂exit1；合法64/银行/功能保持，新版本只续原环境面板，两消费者exit0，无重训练/native/功能推理。
+整批完整GPUh=1.027844869627/4（首次.807849274079 + 环境.219995595548），含全部加载/profile/native/I/O/失败/退出；训练实测reserved高水25.478516GiB，micro14→28/物理suffix28→56与两臂并行依据在profile/contract，不以低显存为目标。
+新增root+工程树阶段实占5.770306GiB、保守准入峰10/硬限12，非连续精确磁盘峰；strg01 data1独立quota/shared已最终核实。四消费者PID已退出，双节点本用户GPU卡数0，没有影响他人。
+primary `/data1/user/ymdai/ember_runs/joint_action_effect_credit_20261003/`：completion.json/readback.json，analysis/report.md/rows.jsonl/per_case.csv/verification.json/pairing_initial_readback.json/functional_readback.json/control_readback.json/rgb，以及A/J checkpoint64、bank、cases/results和launch两份账本/失败/释放证据。
+专用入口/四个诊断模块及临时owner hooks退役，canonical保持唯一运行面，旧合同执行需原frozen；Git/frozen/全部科学与失败原件保留。退役AST/实际canonical导入/两合同guard通过，未重跑全仓或额外模型。整批Git集成push及一次来源明确回报后交回窗口，实验session停止新增计算；main负责科学消费/后继，无自动续训/fresh/held/Test/controls/RL。
+以下接手、运行和工程修复段落仅为历史时点，不覆盖完成状态。
+
 2026-10-03 §116固定环境读回已实际启动：新clean pushed detached a270fb01，GPU02物理2/3分别A/J（PID1731130/1731326），每task八个已登记case打包、两臂并行，一份resident source/臂。
 此次只读既存64末点完整bank；不重新训练、编译native或读取功能面板。原训练/功能身份b0df34ee与新环境读取身份分列，首次失败及.807849GPUh保持。
 launch前双节点现场准入、本用户0→2卡/合计上限6、data1 quota2147483648KiB/实占1174468184KiB/shared余88994780536832B已核；阶段root+工程树4.682GiB，含全RGB仍在预计10/硬限12GiB内。

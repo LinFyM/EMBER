@@ -171,8 +171,6 @@ def _plan_action_chunks(
             )
             chunks = add_exploration_noise(chunks, group, task=task, contract=contract)
             actions = postprocess(chunks).detach().cpu().numpy()
-        if callable(getattr(task_adapter, 'record_effect_prediction', None)):
-            task_adapter.record_effect_prediction(group)
         for row, (slot, plan, seed) in enumerate(
             zip(group, actions, seeds, strict=True)
         ):
@@ -194,16 +192,12 @@ def rollout_shard(
     preprocess: Any,
     postprocess: Any,
     task_adapter: Any | None = None,
-    episode_contexts: Sequence[Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     from ember.pi05_eval.run_contract import require_supported_runtime
 
     require_supported_runtime(contract)
     validate_exploration_contract(contract, task=task, state_ids=state_ids)
-    if episode_contexts is not None:
-        from ember.operator_writer.effect_evaluation import validate_cases
-        validate_cases(episode_contexts, task, state_ids, contract)
-    if not state_ids or (episode_contexts is None and len(set(state_ids)) != len(state_ids)):
+    if not state_ids or len(set(state_ids)) != len(state_ids):
         raise Pi05EvaluationError("evaluation shard state IDs are empty or duplicated")
     dummy = np.asarray(contract["environment"]["dummy_action"], dtype=np.float32)
     max_steps = int(task["horizon"])
@@ -213,26 +207,21 @@ def rollout_shard(
     rows: list[dict[str, Any]] = []
     occupancy_capture = contract.get("diagnostic_occupancy_capture")
 
-    def start_slot(env: Any, state_id: int, case_index: int) -> dict[str, Any]:
-        case = episode_contexts[case_index] if episode_contexts is not None else None
-        current = case['contract'] if case is not None else contract
+    def start_slot(env: Any, state_id: int) -> dict[str, Any]:
         slot = start_fixed_episode(
             env=env, init_state_id=int(state_id), init_states=init_states,
-            task=task, contract=current, root_seed=root_seed, dummy=dummy,
+            task=task, contract=contract, root_seed=root_seed, dummy=dummy,
             task_adapter=task_adapter,
-            capture_level=capture_level(current.get('diagnostic_occupancy_capture'), task, int(state_id)),
+            capture_level=capture_level(occupancy_capture, task, int(state_id)),
         )
-        if case is not None:
-            slot['episode_adapter'] = case['prepared_adapter']
-            slot['joint_effect_case'] = case
         return slot
 
     active_count = min(len(envs), len(state_ids))
     active_envs = envs[:active_count]
     next_state = active_count
     slots: list[dict[str, Any] | None] = [
-        start_slot(env, int(state_id), index)
-        for index, (env, state_id) in enumerate(zip(active_envs, state_ids[:active_count], strict=True))
+        start_slot(env, int(state_id))
+        for env, state_id in zip(active_envs, state_ids[:active_count], strict=True)
     ]
     policy.reset()
     while any(slot is not None for slot in slots):
@@ -260,21 +249,16 @@ def rollout_shard(
                 slot["steps"] += 1
                 if "stage_predicate_states" in slot:
                     update_stage_predicates(env, slot)
-                current = slot.get('joint_effect_case', {}).get('contract', contract)
-                record_passive_step(env, slot, action, current.get('diagnostic_occupancy_capture'))
+                record_passive_step(env, slot, action, occupancy_capture)
             if not bool(done) and slot["steps"] < max_steps:
                 continue
             slot["episode_done"] = bool(done)
-            current = slot.get('joint_effect_case', {}).get('contract', contract)
-            row = finish_episode_row(
-                slot=slot, task=task, contract=current,
+            rows.append(finish_episode_row(
+                slot=slot, task=task, contract=contract,
                 task_adapter=task_adapter, worker_started=worker_started,
-            )
-            if 'joint_effect_case' in slot:
-                row['joint_action_effect_case'] = slot['joint_effect_case']['evidence']
-            rows.append(row)
+            ))
             if next_state < len(state_ids):
-                slots[slot_index] = start_slot(env, int(state_ids[next_state]), next_state)
+                slots[slot_index] = start_slot(env, int(state_ids[next_state]))
                 next_state += 1
             else:
                 slots[slot_index] = None

@@ -31,7 +31,8 @@ def require_supported_runtime(contract: Mapping[str, Any]) -> None:
             "readout_realization_intervention", "return_credit_collection",
             "native_reader_transfer", "support_slot_credit", "native_feature_change",
             "learned_initial_content", "frozen_lora_cases", "frozen_video_segment_cases",
-            "state_coupled_credit_cases", "state_coupled_credit", "self_image_attention_transfer")
+            "state_coupled_credit_cases", "state_coupled_credit", "self_image_attention_transfer",
+            "joint_action_effect_cases", "joint_action_effect_credit")
     adapter = contract.get("adapter") or {}
     retired = [key for key in keys if contract.get(key) is not None or adapter.get(key) is not None]
     capture = contract.get("diagnostic_occupancy_capture") or {}

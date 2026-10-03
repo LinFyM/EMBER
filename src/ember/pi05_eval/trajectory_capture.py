@@ -233,13 +233,6 @@ def start_passive_trace(env: Any, slot: dict[str, Any], capture: Mapping[str, An
         "actions": [], "body_positions": [], "eef_pos": [], "eef_quat": [],
         "gripper_qpos": [], "predicates": [],
     }
-    effect = capture.get('joint_effect')
-    if effect is not None:
-        model = getattr(env, 'env', env).sim.model
-        kind, name = effect['point_kind'], effect['point_name']
-        point_id = (model.body_name2id(name) if kind == 'body' else model.site_name2id(name))
-        slot['passive_trace'].update(effect_point={**effect, 'point_id': int(point_id)},
-            effect_positions=[], displacement_predictions=[], displacement_replan_steps=[])
     record_passive_step(env, slot, None, capture)
 
 
@@ -280,13 +273,6 @@ def record_passive_step(
         raise Pi05EvaluationError("passive trace simulator/robot/predicate sample invalid")
     for name, value in sample.items():
         trace[name].append(value)
-    if 'effect_point' in trace:
-        point = trace['effect_point']
-        positions = owner.sim.data.body_xpos if point['point_kind'] == 'body' else owner.sim.data.site_xpos
-        position = np.asarray(positions[point['point_id']], dtype=np.float64).copy()
-        if position.shape != (3,) or not np.isfinite(position).all():
-            raise Pi05EvaluationError('registered joint-effect physical point invalid')
-        trace['effect_positions'].append(position)
 
 
 def save_passive_trace(
@@ -310,14 +296,6 @@ def save_passive_trace(
             or not np.array_equal(arrays["predicates"][-1], np.asarray(slot["stage_predicate_last"]))):
         raise Pi05EvaluationError("passive trace actual steps or final BDDL predicates incomplete")
     root = Path(capture["passive_trace"]["trace_root"])
-    if 'effect_point' in trace:
-        arrays.update(effect_positions_m=np.stack(trace['effect_positions']),
-                      displacement_predictions=np.stack(trace['displacement_predictions']),
-                      displacement_replan_steps=np.asarray(trace['displacement_replan_steps'], dtype=np.int64))
-        if (arrays['effect_positions_m'].shape != (steps+1, 3)
-                or arrays['displacement_predictions'].shape[1:] != (50, 3)
-                or len(arrays['displacement_predictions']) != len(slot['policy_noise_seeds'])):
-            raise Pi05EvaluationError('joint-effect passive actual clock/predictions incomplete')
     root.mkdir(parents=True, exist_ok=True)
     stem = (f"{task['suite']}_task_{int(task['task_id']):02d}_"
             f"state_{int(slot['init_state_id']):03d}_{uuid.uuid4().hex}")
@@ -336,7 +314,6 @@ def save_passive_trace(
         "body_registry": trace["body_registry"], "goal_operands": trace["goal_operands"],
         "goal_predicates": [list(state) for state in slot["stage_predicate_states"]],
         "sampling": "post_settling_t0_and_after_each_executed_control_step_not_integrator_substeps",
-        **({'joint_effect': trace['effect_point']} if 'effect_point' in trace else {}),
         "trace": {"path": str(path), "bytes": path.stat().st_size,
                   "schema_version": PASSIVE_TRACE_SCHEMA,
                   "steps": steps, "samples": steps + 1},

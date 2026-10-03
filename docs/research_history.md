@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：登记既存共享B修正的跨任务400行完整读取
+
+机制§118/findings§297与[合同](designs/fixed_B_transfer_readback.md)只选原A64全冻结单点，0新训练或数据。
+原8val/400不同task-video、900 state–video/scene/RNG、8 full/392 compact，对比已有900140/T2340161/MT300153。
+由实际共享B修正的特征依赖推导可复用与条件拟合两种解释；旧PZ/seen-held反例降低直接扩训的支持，完整闭环才检验其目标价值。
+预计45–90分钟、3完整GPUh/24GiB，依据同架构旧400物化.2994与环境1.0253GPUh；不设自动训练/其它arm/相邻/controls/Test/RL。
+同时更正900身份：实际85919994，a0e0248d为450父，原32诊断bank读取923ff89b；900路径及A64/b0df34ee实际权重不变，sealed简称保持并附纠正。
+登记时尚未执行，接手/窗口以progress为准；不是已获得新结果、正式selected或完整方法结论。
+
 ## 2026-10-03：普通动作有限学习的正例与联合位移信用的负裁决
 
 机制§117/findings§296由main直接消费冻结算子、24份B20、全部96 continuous及task32三组双RGB。

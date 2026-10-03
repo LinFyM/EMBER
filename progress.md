@@ -1,5 +1,11 @@
 # EMBER progress
 
+2026-10-03 main完成机制§118/findings§297，登记唯一[既存A64共享B跨任务完整读回](docs/designs/fixed_B_transfer_readback.md)。
+冻结原A64全部权重，原8val/400不同task-video条件及900映射/scene/RNG；8 full/392 compact，对比既有900140/T161/MT153。
+无新训练/数据/held动作，完整读回用于判断已有有限控制修正的迁移价值；不自动追加模型、controls、相邻或正式selected声明。
+预计45–90分钟、3完整GPUh/24GiB。原900实际训练/读取85919994、450父a0e0248d、原32bank读取923ff89b的来源简称已纠正，模型路径/结果未变。
+当前仅登记，尚未派发/启动；main仍独占canonical tracked/Git，提交后交既有实验session独占实施。以下§117无后继为此前裁决时点。
+
 2026-10-03 main完成机制§117/findings§296科学消费：核实际算子、24份B20和全部96原continuous及三组task32双RGB对照。
 普通动作A在固定表示/A下13→24/32，J22/32没有额外收益；仅16物理init，不解释为冻结优于共同训练或新task迁移。
 J全50示范位移有学习，前5有限、实际执行四task均未胜零位移；原学到/未学到的区别及全部能力交换已保留。

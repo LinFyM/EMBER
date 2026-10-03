@@ -23,7 +23,7 @@ LocalAction和Video Functional已有同表示/自身hidden辅助信用及负结�
 ## 2. 父点、参数和固定数据
 
 - 父点为`conditional_read_write_continuation900_20261002/conditional_read_write/train/attempts/continuation/checkpoints/macro_00000900`，
-  根在`/data1/user/ymdai/ember_runs/`；训练/物化身份a0e0248d，Source1000原训练b8ea00e9。
+  根在`/data1/user/ymdai/ember_runs/`；900实际续训身份85919994，原450父训练a0e0248d，Source1000原训练b8ea00e9。
   原完整bank、normalization、source、teacher与scene身份从`conditional_A_reexpression_diagnostic_20261002/Original/bank/panel_teacher{0,1}.json`读取。
   选择它是为了直接检验上述失败实例；不把其140/400当作超过成熟T161或强MT153，也不据此选择后继完整训练底座。
 - 冻结source、公共A0/B0、native、四层解释器和全部A生成头。仅更新38处B生成器的
@@ -154,3 +154,11 @@ CPU标签约15–35分钟、工程约60–100分钟、并行学习/读回约30�
 profile只使用登记输入，最多两臂各两次可丢弃更新后恢复同一初值/RNG，不新增环境smoke矩阵。
 正常长任务一次等待退出，不轮询进度；整批一次完成或实质边界回报。
 结束后退役专用入口/hooks，保留Git/frozen/原件，推送并交回canonical窗口；不追加agent或自动自通知链。
+
+### 完成后的来源标注纠正
+
+main在§118登记前直接核对900的`launch/code_identity.json`和实际`run_contract.json`：
+900续训/原correct400读取为85919994，a0e0248d是450父训练；原32行诊断bank的`reading_git`为923ff89b、`training_git`亦为85919994。
+本合同及§117早先把900训练/物化都缩写成a0e0248d不准确，现作上述纠正。
+本批b0df34ee学习实际读取的900权重路径一直正确，不改变任何模型、样本、原分数或成本。
+已封存的运行合同/identities原件不覆盖；后续来源须明确列出这条纠正及原始完整链。

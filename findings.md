@@ -7278,3 +7278,19 @@ B20前5任务32 A的motion/gripper都改善，J总误差更低却motion更差且
 原件`joint_action_effect_credit_20261003/analysis/main_scientific_readback.py/.json`，主CPU.385秒、0新模型/环境/GPU；
 NPZ逻辑实体名的一次读回错误按原body registry修复，非实验标签故障。完整实验1.027844870GPUh及源/父/执行身份保持。
 main独占canonical窗口继续固定数据推导；当前无active实验或已选后继，完整性能目标未完成。
+
+## 297. 先验证既存共享B修正的完整跨任务效应，不由有限正例直接扩大训练（2026-10-03）
+
+机制§118从`DeltaW(V)=[B_phi64(V)-B_phi0(V)]A(V)`落实当前A的实际干预：固定公共/native/解释器/A，
+改变共享门控/写入方向；新视频仍以真实特征编译完整LoRA，不是八条件的参数查表。
+实际64步非线性Adam不能由固定核或相似特征保证迁移，自己的完整执行hidden亦会改变。
+旧PZ、T有限学习与900 seen强增/held弱增约束正例外推；不据24/32开新完整训练或再加局部辅助。
+
+登记唯一[固定B跨任务读回](docs/designs/fixed_B_transfer_readback.md)：冻结原A64，原8val任务/50teacher各一次/400行，
+复用900全部state–video/scene/env/policy RNG，8 full/392 compact；比较既有900140/T2340161/MT300153，无新训练/数据/held动作。
+完整收益和交换决定这项修正是否可复用，不把小胜弱父点当目标实现，也不把单点称稳定/selected或证明视频动态必要。
+预计45–90分钟，3完整GPUh/24GiB，依据原400物化.2994及环境1.0253GPUh；全部读回后停止，无自动分支。
+
+来源纠正：900实际续训/原correct400读取为85919994，a0e0248d是450父；原32行bank读取923ff89b。
+权重路径一直正确，本次A64训练b0df34ee。原sealed错误简称不覆盖、不因此重训，后续按完整来源链说明。
+此时仅完成登记，尚未派发/启动，实际接手与canonical窗口看progress。

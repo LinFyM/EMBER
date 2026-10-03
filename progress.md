@@ -1,5 +1,12 @@
 # EMBER progress
 
+2026-10-03 main完成机制§119/findings§298科学消费：核冻结实际消费者、四模型原始400行、200份task16 continuous和全部8个新full/关键父点RGB。
+A64只143/400，有限获取没有成为广泛优势；Spatial净−8、task31得12失6，不能把净+3或局部成功当完整方法成立。
+task31八个新增从cream-only补成双目标；task16父/A仍48/50目标butter位移≤.01cm，orange juice抬高>3cm从39增至42。
+main独立读回在原root analysis/main_scientific_readback.py/.json，主CPU.280秒、0新模型/环境/GPU；阈值不定义抓持或根因。
+本项不选A64、不续训/扫点或恢复冻结课程；main已接回canonical窗口，继续固定数据内推导，无active实验或已选后继。
+以下实验交付/接手段落为本次已消费历史，不能恢复执行。
+
 2026-10-03 `fixed_B_transfer_readback_20261003` 固定400新视频银行与paired400全部完成，8 full双RGB/state8、392 compact/全50×7 chunk/physical actions/goal/T+1 continuous齐备，缺项0。
 A64 143/400，父900140、成熟T2340161、强MT300153；task3/6/11/16/23/26/31/39分别A64 29/2/46/1/2/44/19/0、父32/7/45/1/1/41/13/0、T45/6/45/5/0/36/24/0、MT41/7/36/10/0/35/24/0。
 对父R121/G22/L19/churn41/Jaccard .746914；对T R115/G28/L46/churn74/Jaccard .608466；对MT R106/G37/L47/churn84/Jaccard .557895。8-task精确whole-task经验重采样净成功95%区间[-14,20]/[-56,16]/[-50,32]，无训练seed不确定性。总分小胜父3仍低于强参照，无稳定/selected/视频动态因果资格。

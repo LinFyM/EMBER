@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：固定共享B完整迁移的科学消费与对象调用边界
+
+机制§119/findings§298直接核原编译算子、四模型原始400行和task16共200份continuous/8新full及关键父点双RGB。
+A64/父/T/MT143/140/161/153，对父R121/G22/L19，Spatial净−8、11/26保持局部收益；有限迁移存在，主要可复用方法未成立。
+task31得12失6：8个新增由cream-only到双目标，4个由最终00到双目标；后者两父行曾完成后丢cream。
+相同butter入篮目标在task16仍1/50，父/A各48条butter位移≤.01cm，orange抬高>3cm为39/42；T/MT相应35/35、21/10。
+task31真实butter获取与task16错误对象并存，限制普遍缺运动能力或单一全局修正的解释；场景/语言/视频/状态不同，不称匹配因果定位。
+共享B门控经新视频K、c/d及有序写入改变自身控制，但未测到特定键混同，不能由公式追加局部修补。
+主CPU.280秒、0新模型/环境/GPU，原root新增analysis/main_scientific_readback.py/.json；整批1.625827018GPUh及原件身份保持。
+按事前停止线关闭有限B更新的扩训/扫点，不选A64或恢复冻结课程；main继续固定数据推导，无自动后继。
+
 ## 2026-10-03：既存共享B修正固定跨任务400完整交付
 
 冻结A64全545-key Writer，原8validation任务/每task50正确teacher各一次，全部新视频一次完整38-target/rank128编译；0optimizer/训练/held动作/新标签。

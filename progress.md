@@ -1,5 +1,10 @@
 # EMBER progress
 
+2026-10-03 §116固定环境读回已实际启动：新clean pushed detached a270fb01，GPU02物理2/3分别A/J（PID1731130/1731326），每task八个已登记case打包、两臂并行，一份resident source/臂。
+此次只读既存64末点完整bank；不重新训练、编译native或读取功能面板。原训练/功能身份b0df34ee与新环境读取身份分列，首次失败及.807849GPUh保持。
+launch前双节点现场准入、本用户0→2卡/合计上限6、data1 quota2147483648KiB/实占1174468184KiB/shared余88994780536832B已核；阶段root+工程树4.682GiB，含全RGB仍在预计10/硬限12GiB内。
+等待实际消费者退出后统一核64行/12 full/52 compact、配对场景/噪声、被动位移及正反读回；当前仍持canonical窗口，main只读，无自动后继。
+
 2026-10-03 §116两臂固定64训练、完整checkpoint64、父/A/J固定A28/B20全部功能原件和16份新完整LoRA bank已完成，训练/功能读取b0df34ee。
 首次环境消费在创建任何新环境step前因run contract无global_task_id而退出；全局ID本来在bank的suite/local任务表中，错误是工程元数据接入，不是科学阴性。
 两臂exit1、累计完整GPUh=.807849（含全部加载/native/profile/功能/I/O/退出），原失败日志/launch/恢复点/预测保持；当前GPU消费者已退出。

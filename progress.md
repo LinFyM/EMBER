@@ -1,5 +1,11 @@
 # EMBER progress
 
+2026-10-03 §116工程与语义准入：192个合法query episode、21122个原有物理时点的CPU恢复完成（69.089秒、0GPUh），EEF最大误差1.407e−15m。
+四个实名body/site与原7bd8a6f5 post-action缓存对应成立；task20 site挂在中抽屉body。仅固定A28训练/独立B20所需窗口，未读teacher特权状态作标签。
+标签恢复来自clean pushed detached06c49c53；无新环境step/render/数据。共享native只缓存固定H/context/d/A/K/delta-z，不缓存可训练B Value/M。
+工程复用ConditionalTarget B Value、原完整FM余切与canonical evaluator；专用有限面板/位移捕获/入口将在整批后退役。针对性CPU mask/零梯度/shape及导入检查通过。
+尚未启动GPU；即将集成并冻结实际消费者，按两臂独立并行及真实micro14/28完整更新profile选择执行配置，全部失败/加载/profile计费。
+
 2026-10-03 实验session01a0fabb-f7a0-7100-93d8-6a0f66055553实际接手 `joint_action_effect_credit_20261003`，独占canonical tracked/Git窗口；main只读科学分析。
 基线09ee68f2；完整合同、机制§116/findings§295及Owner科学/资源要求已读。隔离分支codex/joint-action-effect-credit，独立data1工程worktree。
 当前为实体/post-action时间对应的CPU语义准入及工程实施；尚无新GPU、模型forward、训练或环境执行。不恢复旧T/prefix/Gamma路线。

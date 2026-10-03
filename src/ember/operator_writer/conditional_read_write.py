@@ -132,7 +132,11 @@ class ConditionalTarget(nn.Module):
         z = F.linear(origin, a)
         key = F.normalize(z.float(), dim=-1, eps=1e-6)
         delta_z = F.linear(origin, s)
-        vb = self.b_out(F.gelu(self.b_key(key) + self.b_delta(delta_z) + self.b_context(context))
-                        * self.b_dynamic(dynamic) * gb)
+        vb = self.b_values(key, delta_z, context, dynamic, gb)
         m = delta_memory(vb, key, self.b_out.out_features)
         return a, b0 + m, s, m
+
+    def b_values(self, key, delta_z, context, dynamic, gate=1.):
+        """One B Value owner for full compilation and frozen-address learning."""
+        return self.b_out(F.gelu(self.b_key(key) + self.b_delta(delta_z) + self.b_context(context))
+                          * self.b_dynamic(dynamic) * gate)

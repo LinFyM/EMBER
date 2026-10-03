@@ -58,6 +58,12 @@ def mean_velocity_loss(prediction: Tensor, target: Tensor, width: int, *, prefix
             - target[:, :prefix_steps, :width].float()).square().mean()
 
 
+def effect_velocity_loss(prediction: Tensor, target: Tensor, valid: Tensor) -> Tensor:
+    """Registered query mean of valid displacement3; no padding coordinates."""
+    residual = (prediction[..., 7:10].float() - target[..., 7:10].float()).square()
+    return ((residual * valid[..., None]).sum((1, 2)) / (valid.sum(1) * 3).clamp_min(1)).mean()
+
+
 class NativeFlowPrediction(nn.Module):
     """Official FM velocity with frozen prefix KV and a differentiable action suffix."""
 
@@ -102,13 +108,16 @@ def paired_functional_credit(policy, state, contract, batch, *,
                              seed: int, device, random_batch: int, offset: int, microbatch: int,
                              condition_weight: float, backward: bool = True,
                              noise_endpoint: bool = False, prefix_steps: int | None = None,
-                             query_weights: Sequence[float] | None = None) -> dict[str, Any]:
+                             query_weights: Sequence[float] | None = None,
+                             effect_target: Tensor | None = None,
+                             effect_valid: Tensor | None = None) -> dict[str, Any]:
     """Return one separately normalized loss and weighted complete-LoRA cotangent."""
     return _functional_credit(policy, state, contract, batch, seed=seed, device=device,
                               random_batch=random_batch, offset=offset, microbatch=microbatch,
                               condition_weight=condition_weight, backward=backward,
                               noise_endpoint=noise_endpoint, prefix_steps=prefix_steps,
-                              query_weights=query_weights)
+                              query_weights=query_weights, effect_target=effect_target,
+                              effect_valid=effect_valid)
 
 
 def dual_functional_credit(policy, state, public_state, contract, batch, *,
@@ -127,7 +136,9 @@ def _functional_credit(policy, state, contract, batch, *,
                              condition_weight: float, backward: bool = True,
                              noise_endpoint: bool = False, prefix_steps: int | None = None,
                              query_weights: Sequence[float] | None = None,
-                             public_state: Mapping[str, Tensor] | None = None) -> dict[str, Any]:
+                             public_state: Mapping[str, Tensor] | None = None,
+                             effect_target: Tensor | None = None,
+                             effect_valid: Tensor | None = None) -> dict[str, Any]:
     """Return full credit, optionally public credit on the same sample/prefix KV."""
     states = (state,) if public_state is None else (state, public_state)
     for values in states:
@@ -144,6 +155,11 @@ def _functional_credit(policy, state, contract, batch, *,
             any(not math.isfinite(float(weight)) or float(weight) < 0 for weight in query_weights)):
         raise ValueError("functional query weights must cover the unchanged logical batch")
     owner = NativeFlowPrediction(policy)
+    if effect_target is not None and (effect_target.shape != (total, 50, 3)
+            or effect_valid is None or effect_valid.shape != (total, 50)
+            or public_state is not None or query_weights is not None or prefix_steps is not None
+            or not torch.isfinite(effect_target).all()):
+        raise ValueError('registered joint-effect target/mask consumer changed')
     credits = [{"flow_loss": 0., "lora_cotangent": {}, "source_forward_calls": 0,
                 "compiled_forward_calls": 0} for _ in states]
     for start in range(0, total, chunk):
@@ -152,6 +168,13 @@ def _functional_credit(policy, state, contract, batch, *,
                   for name, value in batch.items()}
         sample = flow_sample(policy, sliced, seed=seed, device=device, random_batch=random_batch,
                              offset=offset + start, noise_endpoint=noise_endpoint)
+        valid = None
+        if effect_target is not None:
+            actions = sample.arguments[4].clone()
+            actions[..., 7:10] = effect_target[start:stop].to(actions)
+            sample = FlowSample((*sample.arguments[:4], actions, *sample.arguments[5:]),
+                                sample.arguments[5] - actions, sample.action_width)
+            valid = effect_valid[start:stop].to(device=device, dtype=torch.bool)
         prepared = owner.prepare(sample)
         weight = (stop - start) / total
         for values, credit in zip(states, credits, strict=True):
@@ -170,11 +193,18 @@ def _functional_credit(policy, state, contract, batch, *,
                     weights = torch.as_tensor(query_weights[start:stop], device=residual.device,
                                               dtype=residual.dtype)
                     value = (residual.mean(dim=(1, 2)) * weights).mean()
+                action_value = value
+                effect_value = value.new_zeros(())
+                if valid is not None:
+                    effect_value = effect_velocity_loss(prediction, sample.target, valid)
+                    value = value + effect_value
                 if backward:
                     gradients = torch.autograd.grad(value, tuple(leaves.values()))
                     _add(credit["lora_cotangent"], dict(zip(leaves, gradients, strict=True)),
                          weight * condition_weight)
             credit["flow_loss"] += float(value.detach()) * weight
+            credit['action_flow_loss'] = credit.get('action_flow_loss', 0.) + float(action_value.detach()) * weight
+            credit['effect_flow_loss'] = credit.get('effect_flow_loss', 0.) + float(effect_value.detach()) * weight
     if public_state is not None:
         credits[0]["public_credit"] = credits[1]
     return credits[0]

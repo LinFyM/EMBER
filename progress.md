@@ -1,5 +1,11 @@
 # EMBER progress
 
+2026-10-03 main完成机制§114/findings§293科学消费，直接核实际算子及全部96份预测；无新模型/数据/环境/GPU。
+第二memory输入的常量作用在内部4各task均有益，新增风险−.002958；20的整体大收益97.57%仍保留在P0−F网络项。
+事后F+b_input参照内部亦4/4改善（−.002831），不能把输入作用全归为抵消P0坏项；total仍未明确胜裸mu、32和各通道损失保留。
+原件新增main_scientific_readback.py/.json；主CPU.604秒。停止小头/输入/比例扫描，不重开旧完整消费者，继续推导可调用控制关系。
+canonical tracked/Git窗口已回main，无active实验或已选后继；以下执行记录已科学消费，不重复派发。
+
 2026-10-03 `native_calibration_input_attribution_20261003` 完整执行与CPU读回完成：96/96视频、3199合法offset1区间、288不同episode有向pair及9597个成对query区间齐备，缺项0。
 同一原P500/a4da650a冻结Calibration，在CPU FP32将每视频全部区间×P1/P0打包（实际batch34–182），完整50位置读出；全部预测保存后才读原标签评分，无Source/native/HDF/RGB/环境/梯度或新增数据。
 fit20的network→total风险.074269888→.072928640，input增量−.001341249、18/20改善（28/37不利）；F=.072951705，因此总体对F仍近零。内部4的network→total为.133927320→.130969494，input增量−.002957826、4/4改善。

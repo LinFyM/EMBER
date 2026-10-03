@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：冻结输入归因的科学消费保留有限控制信息，分开大任务偏差与实际转移作用
+
+机制§114/findings§293：main核实际类/消费者与全部96预测，独立复算3199区间/288pair；无新forward/数据/环境。
+input相对network的风险fit20 −.001341（18/20）、内部4 −.002958（4/4）；其净收益仅8.28%来自20。
+total对F收益仍87.45%来自20，其中该task97.57%已保留在P0−F；原归一化x/z均值表明不能全部归于实际前后联系。
+主结果后补F+b_input代数参照，内部4 −.002831、4/4有益，故输入作用不只是修复新增network坏项；不选择均值部署。
+保留P0分布限制、弱F/强mu参照及全部运动/夹爪反例，获取正例不恢复完整Gamma/Reader/Pullback或正式训练。
+原件新增input_attribution/main_scientific_readback.py/.json，主CPU.604秒、0GPU/模型；main接回窗口继续固定数据推导，无active实验。
+
 ## 2026-10-03：冻结P500输入归因的96视频完整执行交付
 
 按[原合同追加§6](designs/native_transition_action_calibration_diagnostic.md#6-冻结读出输入归因追加2026-10-03)与机制§113，实际a4da650a Calibration/P500仅在原96缓存重算P1(H,H+)及P0(H,H)。

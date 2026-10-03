@@ -1,5 +1,9 @@
 # EMBER task plan
 
+main完成机制§114/findings§293：实际到达输入保留较广的有限跨episode作用，但最大总收益主要存在于P0−F网络差异。
+主原件与事后F参照均已消费，0新模型/GPU；获取证据加强，完整状态控制和LoRa联系尚未建立，不追加同一小头诊断。
+main独占canonical窗口，无active实验或已选后继；下一推导聚焦可复用控制关系与自身状态响应，不扩数据或自动恢复旧训练。
+
 §113唯一冻结P500输入归因已完整完成：96视频/3199区间、288有向pair、全部五通道与强参照/不利项齐备，0GPUh，不恢复训练或新Source/环境读取。
 第二memory的跨episode常量项在内部4均改善，但整体收益仍集中task20且保留大部分network分量；不能将P0称无视频/纯静态或把本分析写成LoRA/闭环资格。
 原件与成本/退出/Git交付在progress顶部及原root analysis/input_attribution；一次整批回报后窗口交main，实验session停止新增计算，科学裁决与后继由main消费后负责。

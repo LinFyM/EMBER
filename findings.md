@@ -7381,3 +7381,19 @@ T每task7280查询，MT4800；MT按episode帧排列循环而T跨visit有放回�
 不据此开始T90步/fresh或采样比例扫描，也不把旧2430对照存在当投入依据；保持强T/MT及既有控制正负证据。
 原root `analysis/query_sampling_readback/`保存main原data/contract及MT实现/逻辑重建口径，约431KiB，0GPU。
 主问题继续是教学关系到自身输入相关控制的正确对应；main持canonical/Git，未选择新实验或宣称完成目标。
+
+## 303. 双域实际A关系约束登记为有限辨识，尚无学习结果（2026-10-04）
+
+机制§124延续§117–123的有限获取/迁移不足与混合对象调用；没有将错对象唯一归因于识别、A或B。
+实际action_out两端均在最后AdaRMSNorm后，但teacher公共β/无State/probe1与self完整LoRA/变化flow不同。
+同一最终A确用于teacher raw X→K和self真实投影；共同矩阵不等于共同物理含义，亦不保证有益M使用。
+
+唯一[角色坐标信用辨识](docs/designs/role_coordinate_credit_diagnostic.md)：固定当前900的公共/native/解释器，
+F/G均学全部38处A/B头，原四task/八teacher/A28各64步；G仅多teacher和self实际A前三行的当前对象—EEF三坐标监督。
+两端使用各自当前物理量而非teacher抓持参考移植，标签只在loss；物体原点不称控制目标/接触/阶段。
+完整FM、K归一化、其余125坐标和38-LoRA保持，新增偏置可能被忽略/抵消；必须同时看真实部署投影与完整行为。
+旧actual-A提案未实施、VisibleObject/self-hidden/J的正负边界及§76可达正例都保留，不由新坐标命名宣称修复。
+
+每臂32原train闭环＋16原task16原/换位，共96新行；原C/T/MT完整对应复用，16 full/80 compact及固定B20。
+不扩数据/布局或读held teacher标签，无400、正式fresh、选点、controls/Test/RL。坐标变准但控制无益是失败分支，不追加扫描。
+预计2–4小时、6完整GPUh/20GiB；此时只登记，尚无新标签恢复/模型/环境/GPU。main提交后交既有实验session实施。

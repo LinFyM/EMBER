@@ -1,5 +1,11 @@
 # EMBER task plan
 
+机制§124/findings§303登记唯一[双域实际读取坐标诊断](docs/designs/role_coordinate_credit_diagnostic.md)。
+延续教学角色到自身控制的同一难题：固定900公共/native/解释器，两臂同学A/B，原四task/八teacher各64步；
+只比较普通FM与teacher/self真实A当前对象—EEF关系监督，96固定闭环及实际部署坐标读回，不扩数据或布局。
+预计2–4小时、6完整GPUh/20GiB，无formal fresh/400/自动后继。当前仅登记未派发，main提交后交既有实验session独占实施。
+下方§123未选实验等是此前状态，不恢复已关闭路线。
+
 机制§123/findings§302补清：视觉布局在首次规划已经改变动作；首帧比例T与强MT近同，不能把重采样选作条件迁移修复。
 无新训练、环境或GPU；不扩位置/比例扫描。主问题仍是教学关系如何在新情境的实际执行坐标中被正确调用。
 main独占canonical/Git，尚未选新实验；同A几何监督子项已核完，旧提案仍未实施，不能以辅助可解码性替代教学对应和动作使用。

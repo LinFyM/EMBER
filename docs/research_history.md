@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：登记双域实际读取坐标的有限学习辨识
+
+机制§124/findings§303与[合同](designs/role_coordinate_credit_diagnostic.md)延续同一对象角色调用问题。
+固定900公共/native/解释器，F/G同学全部A/B头，原四task/八teacher/A28各64步；G仅多最终action_out A前三行的
+teacher/self当前对象—EEF坐标监督。标签各属本场景、只在loss，非teacher轨迹搬运或固定几何控制器。
+原32训练行及task16八初态/原与同一XY换位共48行/臂，总96；完整能力/部署坐标/固定B20共同裁决，复用原C/T/MT。
+旧实际A提案未实施及现有语义/动作/效果信用负边界保留；坐标变准但控制无益、不迁移或普通FM已同样改善均不能自动晋级。
+预计2–4小时、6完整GPUh/20GiB；登记时0新恢复/模型/环境/GPU，不扩数据、无400/fresh/controls/Test/RL。
+
 ## 2026-10-04：首个规划已响应换位，强MT对照限制首帧重权解释
 
 机制§123/findings§302直接读48新+24旧首次50×7块：24对在replan0已有动作变化，未执行新动作就响应自身布局。

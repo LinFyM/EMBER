@@ -1,5 +1,13 @@
 # EMBER progress
 
+2026-10-04 main完成机制§124/findings§303推导，唯一active design登记为[双域实际读取坐标诊断](docs/designs/role_coordinate_credit_diagnostic.md)。
+当前900公共/native/解释器固定，两臂同学38处A/B头；原四task/八teacher/A28各64步，普通FM对双域实际A关系信用。
+每臂32原train＋task16同八初态/原与换位16行，共96新行，实际十步投影与固定B20读回；不扩数据/布局或使用held teacher特权标签。
+预计2–4小时，硬限6完整GPUh/20GiB；不是新canonical架构或formal fresh/400，不由标签拟合自动晋级。
+main持canonical/Git，当前仅登记、尚未派发/恢复新标签/模型/环境/GPU；提交后交既有实验session独占实施。
+实际接口/标签只读子项已完成：同一norm位置但条件不同，旧缓存缺EEF及本批teacher覆盖，不能假称现成完整标签。
+以下无active/未选后继等段落保持此前时点。
+
 2026-10-04 main完成机制§123/findings§302：全部24对首次规划在任何新环境动作前已响应对象换位，不能只归因后续物理反馈。
 首帧采样候选经真实强MT对照后不采用：T1943/262080=.741377%，MT1259/172800=.728588%；比例无Writer特异性，覆盖/预算差异保留。
 新增仅既存首块CPU读取1.484240秒及原train数据/采样统计，0新模型/环境/GPU/训练。原root analysis两个小目录保存全量原件。

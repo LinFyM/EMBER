@@ -1,5 +1,12 @@
 # EMBER progress
 
+2026-10-03 §116已实际启动：clean pushed detached b0df34ee，GPU02物理2/3分别A/J（PID1546900/1547112）；launch前两节点现场准入、data1独立quota/shared和当前/启动后卡数已登记。
+A完成八teacher一次完整38-site public native并保存固定H/context/d/A/K/delta-z；J同期读取固定父B20功能面板，随后复用同一cache，未重复native或Teacher特权读取。
+两臂各两次已登记输入的可丢弃完整更新通过实际FM消费者/全部38处B五组梯度检查。micro14→28并vmap两个teacher，物理suffix batch28→56、同query prefix只读一次；逻辑查询/32维noise-time/condition1/8/完整余切不变。
+A实测20.645→19.156秒/更新、reserved18.730→25.156GiB；J18.374→18.314秒、reserved19.527→25.129GiB，均选择micro28。最大组已覆盖该task全部两teacher×28固定queries，且每臂两次profile已用尽，不额外生成工作或扩profile。
+初始全部B参数/fresh optimizer/RNG已恢复，固定64正在运行；实测学习预计A1226秒/J1172秒。公共β/source/解释器/A冻结，J仅额外监督7:10合法位移、其余padding不加loss。
+直接进程退出事件由本批budget owner持续等待，无自Queue/周期日志读取；唯一root内保留launch/profile/标签来源/计费。整批功能/64环境行与退役交付未完成，不把此时profile或loss当科学结果。
+
 2026-10-03 §116工程与语义准入：192个合法query episode、21122个原有物理时点的CPU恢复完成（69.089秒、0GPUh），EEF最大误差1.407e−15m。
 四个实名body/site与原7bd8a6f5 post-action缓存对应成立；task20 site挂在中抽屉body。仅固定A28训练/独立B20所需窗口，未读teacher特权状态作标签。
 标签恢复来自clean pushed detached06c49c53；无新环境step/render/数据。共享native只缓存固定H/context/d/A/K/delta-z，不缓存可训练B Value/M。

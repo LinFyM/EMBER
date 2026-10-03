@@ -1,3 +1,9 @@
+## 2026-10-04 role_coordinate_credit唯一固定整批已完成
+
+两臂64完整恢复、96/96行/16 full/80 compact、固定B20/teacher/实际10flow投影及first tau1三模板读回全部齐备。父13、F21、G19/32；task16两臂原/换位0/3且同成功集合，G坐标更准未胜F控制。所有不利行、实际RGB和旧强参照保留，科学消费由main接续，不选择架构或追加计算。
+
+完整1.337958008933/6GPUh、新增阶段观察约6.9/20GiB，消费者全部exit0/双节点本用户GPU0。专用六文件/四hooks退役、canonical guard拒绝恢复，原件及e7d81bc4 frozen/完整64恢复保留。Git集成push/一次整批回报后交回canonical/Git窗口，实验session停止本项；无active新实验或自动400/fresh/扫描/controls/Test/RL。下方启动/登记状态均是历史时点。
+
 ## 2026-10-04 role_coordinate_credit实际启动
 
 2026-10-03T22:27:50.407130+00:00，clean pushed detached e7d81bc4实际消费者PID 671484已在gpu02:0开始source加载/八teacher固定native；随后两个已登记profile，按实测预算准入64步。G将在共同cache就绪事件后独立并行，不重复native。现场两节点准入按global6/单节点6；无其它本sessionGPU任务，预计总2张有益设备。费用从加载开始计入6GPUh，所有写入data1。root/launch/run_arms.py为唯一退出等待者，没有selfQueue或日志定时轮询；后继仅本合同固定B20/96行。

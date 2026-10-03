@@ -65,10 +65,6 @@ def start_fixed_episode(
             Path(paired_scene["root"]),
             diagnostic_output=(Path(contract["output_dir"]) / "failures"
                                if contract.get("output_dir") else None))
-    layout_receipt = None
-    if contract.get("role_coordinate_layout") is not None:
-        from ember.pi05_eval.role_coordinates import apply
-        observation, layout_receipt = apply(env, observation, contract, init_state_id)
     prepared = None
     if task_adapter is not None:
         prepared = task_adapter.prepare_episode(
@@ -80,8 +76,6 @@ def start_fixed_episode(
         "replan_index": 0, "policy_noise_seeds": [], "action_plan": deque(),
         "started": time.monotonic(),
     }
-    if layout_receipt is not None:
-        slot["role_coordinate_layout"] = layout_receipt
     if prepared is not None:
         slot["episode_adapter"] = prepared
     if scene_reference is not None:
@@ -117,8 +111,6 @@ def finish_episode_row(
         "wall_seconds": finished - float(slot["started"]),
         "finished_at": finished - worker_started,
     }
-    if "role_coordinate_layout" in slot:
-        row["role_coordinate_layout"] = slot["role_coordinate_layout"]
     row.update(episode_exploration_fields(contract, slot))
     if "scene_reference" in slot:
         row["scene_reference"] = dict(slot["scene_reference"])

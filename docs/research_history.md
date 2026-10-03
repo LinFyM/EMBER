@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：双域实际读取坐标固定整批交付，等待main科学消费
+
+[合同](designs/role_coordinate_credit_diagnostic.md)的F/G各64、96/96新行/16 full/80 compact与全部B20/teacher/部署投影读回完成。
+父Current90013/32，F21（6/3/5/7）、G19（6/4/4/5）；对父R/G/L为9/12/4、8/11/5，F→G17/2/4/churn6。
+task16两臂原0、换位3同{3,4,5}；G坐标误差明显降低却没有较F更好的控制或正确角色换位响应。
+task32开炉全保留、G丢三条placement，task0两臂丢两个init2；错误实体、第三物体与全部阴性均保存，不据坐标拟合自动晋级。
+实际e7d81bc4 clean pushed detached学习/读取，完整恢复含Writer/Adam/cursor/RNG/topology/schema；900来源85919994、450父a0e0248d、Source1000b8ea00e9、Original32读取923ff89b分列。
+实际1.337958008933完整GPUh、两消费者exit0/GPU释放、新增阶段观察约6.9GiB低于20；每臂两profile实测micro14/28后恢复初值，较大G配置无收益据实保留。
+256 teacher origins/5814 query点位CPU恢复标签只入loss，未读teacher动作/held几何；实际scene/demo/噪声配对，case本地ordinal与旧面板差异说明保留。
+六专用文件/四临时hooks退役，canonical guard拒绝恢复，Git/frozen/完整恢复与所有科学原件保留。主root `/data1/user/ymdai/ember_runs/role_coordinate_credit_20261004/` 的readback/completion、analysis/report/summary/rows/per_case、first_tau1/offline_B20/RGB及launch账本可直接消费。
+本条仅交付运行事实和完整正反，main接回窗口独立科学解释；没有自动续训、formal400或新方法选择。登记段落保留为执行前事实。
+
 ## 2026-10-04：登记双域实际读取坐标的有限学习辨识
 
 机制§124/findings§303与[合同](designs/role_coordinate_credit_diagnostic.md)延续同一对象角色调用问题。

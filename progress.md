@@ -1,3 +1,21 @@
+## 2026-10-04 role_coordinate_credit固定整批完成、专用运行面退役
+
+实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553完成唯一固定F/G各64有效更新及96/96新环境行，16 full双RGB/80 compact，固定B20两臂各160条件-query、teacher origin与实际十步全部50槽投影齐备，缺项0。父Current90013/32，F21/32（task0/12/20/32为6/3/5/7），G19/32（6/4/4/5），breadth均4；对父R/G/L为9/12/4及8/11/5。F→G R17/G2/L4/churn6/Jaccard17/23。G得12/t14/init2、32/t17/init1，丢20/t42/init2、32/t17/init2及t43/init2/3；task0两臂都丢原全成功中的两个init2，全不利行保留。
+
+task32两臂全8最终开炉，G相对F丢的是三条placement；G43/init3抬壶8.5277cm仍未place，另两条最大抬高.2601/.3332cm。16份真实双RGB均已查看，80 compact没有RGB不造图；body中心/抬高/命令不证明抓持或原因。task16两臂原0/8、换位3/8同{3,4,5}，原butter全8静止、错误orange和第三对象反例保留，旧C/T/MT及历史数值分叉原件只读复用。当前900父17/init2成功，旧T2340该行失败，二者分开。
+
+B20官方生成first5/full50 MSE F .119269/.126731、G .119858/.127513；坐标MSE F .043430/.044683、G .015668/.014257，teacher坐标.040252→.006899。有效future/motion/gripper/channel/逐query和全部不利项保留。首次replan/tau1八init真实换位三模板平均pair RMS(m，first5/full50)：F butter .170371/.173979、orange .178321/.175094、固定世界点 .007623/.010459；G .171552/.173393、.177108/.175655、.006709/.010302。没有拟合/阈值/挑例；坐标变准没有获得更好的正确角色换位响应，不由模板接近认定唯一内部原因或自动晋级，main接续科学解释。
+
+实际学习/读取e7d81bc4 clean pushed detached；科学base63f6dcd6。900训练/原40085919994、450父a0e0248d、Source1000b8ea00e9、Original32读取923ff89b、CPU2ms恢复参考7bd8a6f5分列。256 teacher origins和5814独立query标签只用于loss，未读teacher动作/held几何；八公共native只读一次共用X/H/c/d，A/S/K/Value/M逐更新重算，完整A与真实h前37处余切/主M(A)保留。完整64恢复点包含380个参数的Adam步64、sampler/cursor/RNG/topology/schema。24 base scenes/32布局变体在96行中重复，不冒称96独立样本。新case本地video_ordinal=0与旧面板ordinal不同，实际demo/condition/scene/env/policy-noise配对完整，不声称metadata逐字相同，原件未改。
+
+两个实际消费者F671484/G675438全部exit0，完整费用1.337958008933/6GPUh（.66726560+.67069241），包括加载/native/profile/64/B20/银行/96读取/渲染/I-O/退出；source各一次加载，最终双节点本用户GPU0与PID消失，不影响他人。无模型/环境失败；CPU host alias预检及卡数helper owner字段记录错误修正均留原回执、0额外GPU计算，非科学阴性。data1独立quota2147483648KiB、结束实占1200835780KiB/shared86838665620KiB；新增root/工程阶段观察约6.9GiB（非连续精确峰），低于20硬限，全部新写data1/旧资产只读。
+
+按Owner显存要求已实测扩大物理batch：F micro28 26.384s胜14 27.356s；G14 25.193s胜28 26.432s，较大实测无收益而保留14。两teacher打包、公共prefix共用、最大56 suffix query、framechunk128覆盖最长51帧，reserved总峰26.492GiB；实际两臂并行不是整批低卡数限制，没有造样本填显存或逐bit追查。正常长任务由唯一退出等待者结束，0日志定时轮询/阶段selfQueue。
+
+原件 `/data1/user/ymdai/ember_runs/role_coordinate_credit_20261004/`：readback/completion/costs/storage、analysis/report/summary/rows/per_case/first_tau1/offline_B20/RGB及所有F/G checkpoint64/bank/functional/cases。六专用文件和四临时hooks已退役，canonical guard拒绝新执行；Git/frozen/科学原件和完整恢复保留。完成Git集成push与一次来源整批回报后canonical tracked/Git窗口交回main；本批计算已停止，无active新计算、自动400/续训/扫描/controls/Test/RL。main独立消费原件，执行者不选择后继。
+
+以下接手、待启动和运行中的段落仅为历史时点，由本完成条目覆盖。
+
 ## 2026-10-04 role_coordinate_credit：两臂64正式学习已启动
 
 八teacher完整38处公共native一次读回，两臂共用X/H/c/d。F/G各两次登记输入的完整丢弃更新均有效，随后恢复父全部可训练参数、fresh optimizer和seed7 RNG进入64。F选择micro28（26.384s对14的27.356s）；G实测micro14更快（25.193s对28的26.432s），已实际验证更大56-query suffix而非沿保守默认。profile reserved峰25.965GiB；最长51帧全块读取。现场实际GPU总量2张，cap6，helper owner字段的卡数记录已按保留snapshot更正，计费不变。code e7d81bc4、实际PID F671484/G675438；单一退出等待者运行，未轮询训练日志/节点或给自己Queue。预计训练两臂合计约.917GPUh，加加载/profile/固定B20/96读取仍有硬6GPUh余量。没有依据loss选择checkpoint或增加矩阵。

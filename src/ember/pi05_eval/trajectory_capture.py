@@ -233,10 +233,6 @@ def start_passive_trace(env: Any, slot: dict[str, Any], capture: Mapping[str, An
         "actions": [], "body_positions": [], "eef_pos": [], "eef_quat": [],
         "gripper_qpos": [], "predicates": [],
     }
-    if capture.get("role_coordinates"):
-        slot["passive_trace"].update(role_point_positions=[],role_projections=[],role_replan_steps=[],role_taus=[])
-        if capture["role_coordinates"].get("passive_In"):
-            slot["passive_trace"]["role_passive_In"] = []
     record_passive_step(env, slot, None, capture)
 
 
@@ -277,18 +273,6 @@ def record_passive_step(
         raise Pi05EvaluationError("passive trace simulator/robot/predicate sample invalid")
     for name, value in sample.items():
         trace[name].append(value)
-    role = capture.get("role_coordinates")
-    if role:
-        if role["point_kind"] == "body":
-            point_id = owner.sim.model.body_name2id(role["point_name"])
-            point = owner.sim.data.body_xpos[point_id]
-        else:
-            point_id = owner.sim.model.site_name2id(role["point_name"])
-            point = owner.sim.data.site_xpos[point_id]
-        trace["role_point_positions"].append(np.asarray(point,dtype=np.float32).copy())
-        if role.get("passive_In"):
-            from ember.pi05_eval.role_coordinates import passive_in
-            trace["role_passive_In"].append(passive_in(env))
 
 
 def save_passive_trace(
@@ -321,19 +305,8 @@ def save_passive_trace(
                             body_names=np.asarray([row["name"] for row in trace["body_registry"]]),
                             body_ids=np.asarray([row["body_id"] for row in trace["body_registry"]]),
                             **arrays)
-    role_file = None
-    if capture.get("role_coordinates"):
-        role_path = path.with_name(path.stem + "_role.npz")
-        role_values = {name:np.stack(trace[name]) for name in ("role_point_positions","role_projections","role_taus")}
-        role_values["replan_steps"] = np.asarray(trace["role_replan_steps"],dtype=np.int64)
-        if "role_passive_In" in trace:role_values["passive_In"] = np.stack(trace["role_passive_In"])
-        if role_values["role_point_positions"].shape != (steps+1,3) or role_values["role_projections"].shape[1:] != (10,50,3):
-            raise Pi05EvaluationError("actual role projection/time/state capture incomplete")
-        np.savez_compressed(role_path,**role_values)
-        role_file = {"path":str(role_path),"bytes":role_path.stat().st_size,"point":capture["role_coordinates"],"actual_forward_only":True}
     adapter = slot.get("episode_adapter")
     return {
-        "role_projection": role_file,
         "schema_version": PASSIVE_ROW_SCHEMA,
         "suite": task["suite"], "task_id": int(task["task_id"]),
         "init_state_id": int(slot["init_state_id"]),

@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：既存共享B修正固定跨任务400完整交付
+
+冻结A64全545-key Writer，原8validation任务/每task50正确teacher各一次，全部新视频一次完整38-target/rank128编译；0optimizer/训练/held动作/新标签。
+原900 state-video/scene/env-policy RNG/官方口径和8 full/392 compact全部保持；父/T/MT source/normalization数值/物理case配对一致，T teacher映射相同。全部400初始body/EEF/quat/gripper/predicate与三参照误差0，实际前5与captured continuous/actions一致。
+A64/父900/T2340/MT300=143/140/161/153；逐task3/6/11/16/23/26/31/39为A64 29/2/46/1/2/44/19/0，对父净−3/−5/+1/0/+1/+3/+6/0。suite31/47/46/19，对父39/46/42/13；有成功task7/7/6/6。
+对父R121/G22/L19/churn41/Jaccard.746914，对T R115/G28/L46/churn74/.608466，对MT R106/G37/L47/churn84/.557895；8-task精确经验重采样净差95%[-14,20]/[-56,16]/[-50,32]，非训练seed不确定性。仅小胜父3仍低于强参照，不声明达目标/稳定/selected或视频动态因果。
+task31双目标增13→19但R7/G12/L6；init0父仅butter(step478)、A64仅cheese(393)，最终[0,1]→[1,0]且均520失败。task16父/A64同1/50；init0父实际RGB搬orange juice，A64目标butter仍未动/goalfalse。23只2/50、39全0/50，抬高/中心/命令不证明抓持或几何根因。所有不利行/逐goal及真实RGB来源保留，未渲染/造图补compact。
+来源纠正按原件：450/a0e0248d，900训练与原correct400/85919994，Original32 bank读取923ff89b，A64学习b0df34ee/旧环境a270fb01；本次物化/环境d56f6fa244200bcc70623893f6ef5695d30de883 clean pushed detached。sealed错误简称不覆盖，权重一直正确，不重评旧结果。
+完整GPUh1.625827017959/3（bank.375056499+环境1.250770519），含加载/native/I/O/退出；三个stage、12worker exit0，PID/双节点本用户GPU0。CPU元组捕获解析/只读schema两次exit1修复并留failed script/receipt；退役检查一次expected父目录索引错误已按实际绝对endpoint修正并通过，均0额外forward/env/GPU。完整400 CPU读回exit0/14.677秒。
+主动整91帧/nativechunk128、env8→16/两persistent replicas每卡/六卡，实测最大batch16，native reserved21.345703/worker12.96875GiB；实测.543901 rows/s未证明胜旧.548744，GPUh更贵，不隐藏效率阴性或新增重复profile。阶段实占新root+工程树16.612556GiB、准入保守峰20/硬24，非连续精确峰；strg01 data1独立quota/shared通过，旧大资产只读。
+原件root `fixed_B_transfer_readback_20261003/` 的completion/readback、analysis/report/rows/per_case/配对/RGB、banks/64、evaluation/correct400、launch预算/退出释放。专用归档接入与两配置交付退役，保留Git/frozen/全部原件；canonical仅保留按实际batch容量缓存和worker终态资源统计。整批Git集成push/一次来源标识回报后窗口回main，实验session停止；科学解释/后继由main消费，不自动续训/controls/Test/RL。
+
 ## 2026-10-03：登记既存共享B修正的跨任务400行完整读取
 
 机制§118/findings§297与[合同](designs/fixed_B_transfer_readback.md)只选原A64全冻结单点，0新训练或数据。

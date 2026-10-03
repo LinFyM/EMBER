@@ -31,9 +31,7 @@ def intervention(lora) -> dict:
 def public_state(checkpoint: Path, lora) -> dict:
     shapes = expected_lora_state_shapes(lora)
     mapping = factor_map(lora)
-    from .fixed_b_archive import weights_file
-
-    with safe_open(str(weights_file(checkpoint)), framework="pt", device="cpu") as reader:
+    with safe_open(str(checkpoint / "ecp.safetensors"), framework="pt", device="cpu") as reader:
         if {name for name in reader.keys() if name.startswith("common.values.")} != {
                 row["ecp_name"] for row in mapping}:
             raise ValueError("T1800 ECP public factor count changed")

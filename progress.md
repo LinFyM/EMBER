@@ -1,5 +1,17 @@
 # EMBER progress
 
+2026-10-03 `fixed_B_transfer_readback_20261003` 固定400新视频银行与paired400全部完成，8 full双RGB/state8、392 compact/全50×7 chunk/physical actions/goal/T+1 continuous齐备，缺项0。
+A64 143/400，父900140、成熟T2340161、强MT300153；task3/6/11/16/23/26/31/39分别A64 29/2/46/1/2/44/19/0、父32/7/45/1/1/41/13/0、T45/6/45/5/0/36/24/0、MT41/7/36/10/0/35/24/0。
+对父R121/G22/L19/churn41/Jaccard .746914；对T R115/G28/L46/churn74/Jaccard .608466；对MT R106/G37/L47/churn84/Jaccard .557895。8-task精确whole-task经验重采样净成功95%区间[-14,20]/[-56,16]/[-50,32]，无训练seed不确定性。总分小胜父3仍低于强参照，无稳定/selected/视频动态因果资格。
+Source/归一化数值/官方口径/400 scene/env-policy seed7/root7与共同绝对noise一致，T teacher映射亦一致；三参照对新行初始body/EEF/quat/gripper/predicate误差均0。所有generated前5与实际physical/continuous一致，正反400逐行保留，无参照重评或退为background。
+task31双目标13→19但R7/G12/L6；init0父仅butter=478/最终[0,1]，A64仅cheese=393/最终[1,0]，两者520失败，真实双RGB/goal/轨迹支持目标交换而非修复。task16父/A64均1/50同成功集合；init0父实际搬orange juice，A64仍向orange附近动作但目标butter未动、goalfalse。task23仍2/50、39全模型0/50；中心/3cm/命令不证明抓持/接触。
+读取身份clean pushed detached d56f6fa2；A64学习b0df34ee/旧32环境a270fb01、Source1000b8ea00e9、900实际训练/原correct40085919994、450父a0e0248d、Original32读取923ff89b分列；旧sealed简称及原模型/结果保持，0训练/optimizer/held teacher action/FM/新标签/额外case。
+物化225.033899秒×6=.375056499 GPUh；CPU prepare14.473874秒/0GPU；环境750.462311秒×6=1.250770519，合计1.625827017959/3完整GPUh，包含加载/编译/native/I/O/退出。三个stage及12worker均exit0，所有PID退出/双节点本用户GPU0；CPU legacy tuple解析/只读schema两次exit1按canonical捕获owner修复；退役检查另一次expected父目录索引写错、修正实际绝对endpoint后通过。三个CPU错误/回执保留，0额外model/env/GPU。
+原规定案例内主动chunk32→128（最长91帧完整打包、native reserved21.345703GiB）；env容量8→16/两persistent replicas每卡/六卡，真实最大adapter batch16，worker max reserved12.96875GiB（单worker，非整卡峰）。实测.543901 rows/s，对旧父.548744未证明更快，实际GPUh更贵，保留效率不利项；不追加重复400/profile找赢家。
+新增root+工程树阶段实占16.612556GiB，保守准入峰20/硬24，含冻结/临时/cache/所有输出，非连续精确磁盘峰；strg01 data1最终used1192765076KiB/quota2147483648KiB/shared余88950413602816B通过。所有新增data1，旧资产只读。
+primary `/data1/user/ymdai/ember_runs/fixed_B_transfer_readback_20261003/` 的completion/readback、analysis/report.md/rows.jsonl/per_case.csv/完整配对/CPU读取/RGB与来源、banks/64、evaluation/correct400及launch预算/实际stage/释放原件。专用archive接入与两配置退役；Git/frozen/失败/原件保留，canonical仅保留实际batch缓存及worker最终资源统计，未新增trainer/evaluator/runtime mode。
+退役针对性AST/实际导入/archived runtime guard核实后Git集成push/清理task-owned工程树/整批一次回报，窗口交回main；实验session停止新增计算。科学解释与下一判断由main消费原件负责，无自动续训/选点/controls/Test/RL或新方法。以下启动/接手段落为历史时点。
+
 2026-10-03 `fixed_B_transfer_readback_20261003` 的400新视频完整38-target银行已完成：exit0，225.034秒×6卡=.375056499完整GPUh，factor共16480787200 bytes。chunk128覆盖最长91帧，实测reserved21.345703GiB；更大chunk不能增加实际帧，未重复编译/profile。
 CPU canonical prepare通过（exit0/14.474秒/0GPU），400映射/原scene/RNG/official/归一化配对一致。correct400已实际启动，PID2367038，仍用clean pushed detached d56f6fa2。
 launch再次live双节点、本用户0→6卡、data1独立quota/shared与银行后实占核实；env容量16替代旧8、每卡2个persistent replicas，当前授权400内按实际大小打包，worker最终保留峰值/最大真实batch/吞吐。六卡reader无Writer/gamma/新训练，完整64权重来源及900纠正分列。

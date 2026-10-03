@@ -98,3 +98,11 @@ Compiler对同一视频只需一次完整编译；normal数值差异接受，不
 正常运行持续等退出事件，一次整批完成或异常回报；不周期日志轮询、不对主讨论自Queue或发多段完成心跳。
 保留run contract、bank manifest、raw rows、aggregate、配对/科学读回、来源纠正、completion及完整账本。
 交付前退役本项临时入口/hooks，保留Git/frozen/正式和失败原件；完成Git集成push后交回窗口，无自动后继。
+
+## 5. 实际执行交付（2026-10-03）
+
+固定400完成，A64 143/400；父140/T161/MT153配对通过，R/G/L为121/22/19、115/28/46、106/37/47。8 full/392 compact及全action/goal/continuous齐备，缺项0。
+冻结消费d56f6fa2、原学习b0df34ee，0optimizer/新训练/held teacher action或其它面板；900来源85919994纠正按§1完整保留。
+1.625827017959完整GPUh/3，阶段新root+工程树16.612556GiB/保守准入峰20/硬24；全部stage/worker exit0和GPU释放，三个CPU解析/检查错误留档修复，非模型/环境失败。
+原件 `/data1/user/ymdai/ember_runs/fixed_B_transfer_readback_20261003/` completion/readback、analysis全量与RGB、bank/evaluation及launch账本。
+专用接入/配置交付退役，原frozen/Git可复現；这里只登记执行事实，main承担科学消费。单点小胜弱父未达Owner目标，无自动后继。

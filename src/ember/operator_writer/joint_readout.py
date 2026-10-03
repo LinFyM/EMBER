@@ -11,7 +11,7 @@ from ember.pi05_lora import derive_pi05_lora_rank, load_pi05_lora_contract
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.materialization import file_record
 
-from . import scope, prefix_change, control_calibration, fixed_b_archive
+from . import scope, prefix_change, control_calibration
 from .public_beta import factor_map, public_state
 from .joint_training import CONDITIONAL_TASK, CONDITIONAL_ROOT, CONDITIONAL_MODE
 
@@ -73,8 +73,6 @@ def _continuation_checkpoint(mode: str, checkpoint: Path | None) -> bool:
 
 
 def study_root(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> Path:
-    if fixed_b_archive.registered(mode, checkpoint):
-        return fixed_b_archive.ROOT
     from .joint_training import CONTEXT_ROOT, CONTEXT_CONTINUATION_ROOT, CONDITIONAL_CONTINUATION_ROOT
 
     if mode not in MODES:
@@ -103,8 +101,6 @@ def study_root(mode: str, checkpoint: Path | None = None, *, arm: str | None = N
 
 
 def study_id(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> str:
-    if fixed_b_archive.registered(mode, checkpoint):
-        return fixed_b_archive.TASK
     from .joint_training import CONTEXT_TASK, CONTEXT_CONTINUATION_TASK, CONDITIONAL_CONTINUATION_TASK
     if mode in control_calibration.MODES:
         return control_calibration.TASK
@@ -130,8 +126,6 @@ def study_id(mode: str, checkpoint: Path | None = None, *, arm: str | None = Non
 
 
 def capture_path(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> Path:
-    if fixed_b_archive.registered(mode, checkpoint):
-        return fixed_b_archive.CAPTURE
     if mode in control_calibration.MODES:
         suffix = "seen" if mode == control_calibration.SEEN_MODE else "official"
         return REPO / "configs/operator_read_write_v1" / f"control_calibrated_read_write_{suffix}_capture.json"
@@ -155,8 +149,6 @@ def capture_path(mode: str, checkpoint: Path | None = None, *, arm: str | None =
 
 
 def bank_path(mode: str, checkpoint: Path | None = None, *, arm: str | None = None) -> Path:
-    if fixed_b_archive.registered(mode, checkpoint):
-        return fixed_b_archive.ROOT / "banks/64/manifest.json"
     root = study_root(mode, checkpoint, arm=arm)
     if arm is not None:
         return root / mode / "banks/630/manifest.json"
@@ -189,8 +181,6 @@ def bank_path(mode: str, checkpoint: Path | None = None, *, arm: str | None = No
 
 
 def evaluation_path(mode: str, checkpoint: Path, *, arm: str | None = None) -> Path:
-    if fixed_b_archive.registered(mode, checkpoint):
-        return fixed_b_archive.ROOT / "evaluation/correct400"
     if mode in control_calibration.MODES:
         bank_path(mode, checkpoint, arm=arm)
         return control_calibration.ROOT / mode / "evaluation" / (
@@ -226,8 +216,6 @@ def source_record(mode: str, checkpoint: Path, *, arm: str | None = None) -> tup
     from . import bank, joint_training, run
 
     checkpoint = checkpoint.resolve()
-    if fixed_b_archive.registered(mode, checkpoint):
-        return fixed_b_archive.source_record(Path("/data1/user/ymdai/projects/EMBER"))
     bank_path(mode, checkpoint, arm=arm)
     if mode in control_calibration.MODES:
         from .specification import CALIBRATION_SPEC_PATH
@@ -426,11 +414,9 @@ def materialize(mode: str, checkpoint: Path, asset_root: Path, devices=None,
         raise ValueError("published joint readout bank already exists")
     contract = {"mode": mode, "joint_public_study": True, "checkpoint": str(checkpoint),
                 "spec": file_record(spec_path), "training_git": training["git"]["commit"],
-                "training_run": file_record(fixed_b_archive.training_record(checkpoint)),
+                "training_run": file_record(checkpoint.parent.parent / "run_contract.json"),
                 "source": training["source"], "lora": lora.to_dict(),
                 "materialization_git": run.frozen_git()}
-    if "fixed_B_transfer_readback" in training:
-        contract["fixed_B_transfer_readback"] = training["fixed_B_transfer_readback"]
     if arm is not None:
         contract.update(support_diversity_arm=arm, training_spec=training["spec"])
     if mode in (*SELF_READ_MODES, *CONDITIONAL_MODES):
@@ -500,7 +486,7 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
                 (bank.get("status"), "sealed"),
                 (bank.get("spec"), file_record(spec_path)),
                 (bank.get("training_git"), training["git"]["commit"]),
-                (bank.get("training_run"), file_record(fixed_b_archive.training_record(Path(bank["checkpoint"])))),
+                (bank.get("training_run"), file_record(Path(bank["checkpoint"]).parent.parent / "run_contract.json")),
                 (bank.get("checkpoint_manifest"), file_record(Path(bank["checkpoint"]) / "checkpoint_manifest.json")),
                 (bank.get("source"), source), (source, training["source"]),
                 (bank.get("native_reading"), _self_read_evidence(mode)),
@@ -514,8 +500,6 @@ def inspect(bank: Mapping, path: Path, source: Mapping, task_keys: tuple,
     if mode in CONDITIONAL_MODES:
         expected += ((bank.get("condition_factors"), "complete_A0_plus_S_B0_plus_M"),
                      (bank.get("shared_role"), "public_A0_provenance_only_not_execution"))
-    if "fixed_B_transfer_readback" in training:
-        expected += ((bank.get("fixed_B_transfer_readback"), training["fixed_B_transfer_readback"]),)
     git = bank.get("materialization_git", {})
     if (any(actual != wanted for actual, wanted in expected) or not git.get("commit")
             or git.get("branch") != "" or git.get("dirty_paths") != []

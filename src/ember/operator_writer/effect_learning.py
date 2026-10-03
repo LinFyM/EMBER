@@ -12,7 +12,7 @@ from torch.utils.data import default_collate
 
 from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, validate_lora_state
 from ember.pi05_source_checkpoint import write_json_atomic
-from ember.writer.function_credit import paired_functional_credit
+from ember.writer.function_credit import paired_condition_credit
 from ember.writer.materialization import file_record
 from ember.writer.runtime import autocast
 from .conditional_read_write import delta_memory
@@ -129,14 +129,15 @@ def step(runtime, cached, data, positions, entry, arm, optimizer, parameters, mi
         event = entry[str(task)]
         batch = runtime.processor.training_batch(raw_batch(data, task, event['queries']))
         labels, valid = label_batch(positions, task, event['queries'])
-        for teacher in teachers:
-            state = compile_B(runtime, cached[(task, teacher)])
-            runtime.restore_identity()
+        states = [compile_B(runtime, cached[(task, teacher)]) for teacher in teachers]
+        runtime.restore_identity()
+        with autocast(runtime.device):
+            credits = paired_condition_credit(runtime.policy, *states, runtime.lora, batch,
+                seed=event['flow_seed'], device=runtime.device, random_batch=28, offset=0,
+                microbatch=micro, condition_weight=1/8,
+                **(dict(effect_target=labels, effect_valid=valid) if arm == 'J' else {}))
+        for teacher,credit in zip(teachers,credits,strict=True):
             with autocast(runtime.device):
-                credit = paired_functional_credit(runtime.policy, state, runtime.lora, batch,
-                    seed=event['flow_seed'], device=runtime.device, random_batch=28, offset=0,
-                    microbatch=micro, condition_weight=1/8,
-                    **(dict(effect_target=labels, effect_valid=valid) if arm == 'J' else {}))
                 # The same parameter version is replayed target by target; A stays frozen.
                 for name, unit in zip(runtime.writer.names, runtime.writer.conditional_targets, strict=True):
                     b = target_B(runtime.writer, unit, name, cached[(task, teacher)])

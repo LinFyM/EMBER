@@ -131,6 +131,12 @@ def dual_functional_credit(policy, state, public_state, contract, batch, *,
     return full, full.pop("public_credit")
 
 
+def paired_condition_credit(policy, first_state, second_state, contract, batch, **kwargs):
+    """Two registered teacher conditions share their identical frozen query prefix."""
+    first = _functional_credit(policy, first_state, contract, batch, public_state=second_state, **kwargs)
+    return first, first.pop('public_credit')
+
+
 def _functional_credit(policy, state, contract, batch, *,
                              seed: int, device, random_batch: int, offset: int, microbatch: int,
                              condition_weight: float, backward: bool = True,
@@ -157,7 +163,7 @@ def _functional_credit(policy, state, contract, batch, *,
     owner = NativeFlowPrediction(policy)
     if effect_target is not None and (effect_target.shape != (total, 50, 3)
             or effect_valid is None or effect_valid.shape != (total, 50)
-            or public_state is not None or query_weights is not None or prefix_steps is not None
+            or query_weights is not None or prefix_steps is not None
             or not torch.isfinite(effect_target).all()):
         raise ValueError('registered joint-effect target/mask consumer changed')
     credits = [{"flow_loss": 0., "lora_cotangent": {}, "source_forward_calls": 0,

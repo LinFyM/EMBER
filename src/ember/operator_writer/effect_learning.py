@@ -152,6 +152,7 @@ def step(runtime, cached, data, positions, entry, arm, optimizer, parameters, mi
         raise ValueError('fixed parent paths acquired gradients')
     optimizer.step(); torch.cuda.synchronize()
     return dict(rows=rows, seconds=time.monotonic()-started, microbatch=micro,
+        packed_teacher_conditions=2, physical_suffix_queries=2*micro, frozen_prefix_shared=True,
         unclipped_gradient_norm=float(norm), B_gradient_groups=group_norms,
         allocated_peak_GiB=torch.cuda.max_memory_allocated()/2**30,
         reserved_peak_GiB=torch.cuda.max_memory_reserved()/2**30)

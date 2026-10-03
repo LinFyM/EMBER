@@ -133,7 +133,8 @@ def dual_functional_credit(policy, state, public_state, contract, batch, *,
 
 def paired_condition_credit(policy, first_state, second_state, contract, batch, **kwargs):
     """Two registered teacher conditions share their identical frozen query prefix."""
-    first = _functional_credit(policy, first_state, contract, batch, public_state=second_state, **kwargs)
+    first = _functional_credit(policy, first_state, contract, batch, public_state=second_state,
+                               pack_conditions=True, **kwargs)
     return first, first.pop('public_credit')
 
 
@@ -144,7 +145,8 @@ def _functional_credit(policy, state, contract, batch, *,
                              query_weights: Sequence[float] | None = None,
                              public_state: Mapping[str, Tensor] | None = None,
                              effect_target: Tensor | None = None,
-                             effect_valid: Tensor | None = None) -> dict[str, Any]:
+                             effect_valid: Tensor | None = None,
+                             pack_conditions: bool = False) -> dict[str, Any]:
     """Return full credit, optionally public credit on the same sample/prefix KV."""
     states = (state,) if public_state is None else (state, public_state)
     for values in states:
@@ -183,6 +185,32 @@ def _functional_credit(policy, state, contract, batch, *,
             valid = effect_valid[start:stop].to(device=device, dtype=torch.bool)
         prepared = owner.prepare(sample)
         weight = (stop - start) / total
+        if pack_conditions:
+            if len(states) != 2 or query_weights is not None or prefix_steps is not None:
+                raise ValueError('packed credit requires the registered two-condition full FM')
+            leaves = {name: torch.stack([values[name] for values in states]).detach().requires_grad_(backward)
+                      for name in states[0]}
+            def call(values):
+                return torch.func.functional_call(owner, {'policy.'+n:v for n,v in values.items()},
+                                                  (sample,prepared),strict=False)
+            with torch.set_grad_enabled(backward):
+                prediction = torch.vmap(call)(leaves)
+                action_values = [mean_velocity_loss(p,sample.target,sample.action_width) for p in prediction]
+                effect_values = [effect_velocity_loss(p,sample.target,valid) if valid is not None
+                                 else p.new_zeros(()) for p in prediction]
+                losses = [a+r for a,r in zip(action_values,effect_values,strict=True)]
+                if backward:
+                    gradients = torch.autograd.grad(sum(losses),tuple(leaves.values()))
+                    for index,credit in enumerate(credits):
+                        _add(credit['lora_cotangent'],{n:g[index] for n,g in zip(leaves,gradients,strict=True)},
+                             weight*condition_weight)
+            for index,credit in enumerate(credits):
+                credit['flow_loss'] += float(losses[index].detach())*weight
+                credit['action_flow_loss'] = credit.get('action_flow_loss',0.)+float(action_values[index].detach())*weight
+                credit['effect_flow_loss'] = credit.get('effect_flow_loss',0.)+float(effect_values[index].detach())*weight
+                credit['compiled_forward_calls'] += 1
+                credit['physical_suffix_queries'] = 2*(stop-start)
+            continue
         for values, credit in zip(states, credits, strict=True):
             leaves = {name: value.detach().requires_grad_(backward) for name, value in values.items()}
             with torch.set_grad_enabled(backward):

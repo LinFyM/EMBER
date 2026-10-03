@@ -151,7 +151,7 @@ def main(arm,stage):
                     if n in initial:p.copy_(initial[n])
             restore_rng(initial_rng);opt=optimizer(parameters);del initial
             contract.update(microbatch=micro,profile=profiles,expected_training_seconds=64*min(p['seconds'] for p in usable),
-                packing_reason='measured faster full effective update; micro28 exhausts one condition logical query batch; two independent arms parallel')
+                packing_reason='measured faster full update; two teacher conditions vmapped at same query prefix; micro28 packs56 suffix queries and exhausts that task logical inputs; independent arms parallel')
             write_json_atomic(out/'training_contract.json',contract)
             print(json.dumps(dict(event='profile_complete',arm=arm,expected_training_seconds=contract['expected_training_seconds'],
                 profiles=[{k:v for k,v in p.items() if k!='rows'} for p in profiles])),flush=True)

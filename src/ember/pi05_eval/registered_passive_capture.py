@@ -197,6 +197,11 @@ def _trace_and_stage_match(
 
 
 def validate_contract(contract: Mapping[str, Any], repo_root: Path) -> None:
+    if contract.get('self_image_attention_transfer') is not None:
+        from ember.pi05_eval.image_attention_contract import validate_contract as validate_attention
+
+        validate_attention(contract, repo_root)
+        return
     if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
             .get('schema_version') == OPERATOR_TAG):
         from ember.operator_writer.bank import validate_capture_contract

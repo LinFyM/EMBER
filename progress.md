@@ -1,5 +1,9 @@
 # EMBER progress
 
+本批窄实现已接入canonical bank/evaluator：原sample_actions十步积分与18层原生RoPE/GQA保持，两bank因子每replan各打包一次，四panel由同一resident worker/source依次消费，动态队列仍由canonical owner执行。
+针对CPU语法、四route、极小donor图像质量稳定条件分布、非图像概率保留和Value恒等式检查已执行；原bank metadata inspector要求clean detached，首次在工程树读取被其guard拒绝（0GPUh），将按原规范在冻结树消费。
+结构自审：三份任务专用源码约600行和五处窄接入，复用官方积分、bank loader、run_worker、队列/launcher/aggregate；不构造第二policy/evaluator。旧validate_episode_adapter_fields复杂度32→33的单个诊断dispatch是有界局部例外，48行读回后连同专用hooks/入口和公共接入全部退役，Git/frozen原件保留。
+
 2026-10-03 实验session01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手 `self_image_attention_transfer_20261003` 的canonical tracked/Git独占窗口；main只读科学分析。
 完整合同、机制§108–109/findings§287–288及Owner资源/信息墙要求已读；独占工程树为`/data1/user/ymdai/projects/EMBER-self-image-attention-transfer`，基线d15cba34。
 当前在实现同输入、同prefix的18层/50slot/10flow图像内部条件分布传递；原四臂48行/12 full/36 compact及teacher/scene/RNG固定。尚未启动模型或环境。

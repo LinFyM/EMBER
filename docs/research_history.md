@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：跨episode动作增量包含有限未拟合任务修正，不能与局部细节混为一谈
+
+机制§112/findings§291在结果前登记后，读取固定500的96份已有预测、24task×12不同episode有向pair，无模型/环境/GPU。
+F_Q加单视频P−F均值在fit20 .072952→.072928近乎无收益，内部留task4 .142491→.130964、三益一损；87.43%净收益来自task20。
+task12/32运动项有损，20旋转/夹爪有损；对裸mu .132369的总体优势区间跨0，不能只选F弱参照或宣称闭环控制。
+条件期望推导说明局部动作解释与可迁移任务偏差不同；有限正例修订“全是不可迁移细节”的过强解释，不恢复均值部署或旧配方。
+同步核对CIRL原文与固定state-action/在线采集代码，不能直接继承到EMBER。原件在native_transition_action_calibration_20261003/analysis/main_episode_innovation。
+主CPU约.423秒不含启动、exit0、0GPU、约1.31MiB；main继续固定数据推导，无active实验或后继选择。
+
 ## 2026-10-03：源预测差转移有局部改善，未提供超过共享读出的教学收益
 
 机制§111/findings§290在原17fit任务/272pair/9528行、同对应与权重上检验`mu_Q+A_T-mu_T`。

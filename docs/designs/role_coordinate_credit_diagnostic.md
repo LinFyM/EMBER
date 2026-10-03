@@ -113,6 +113,17 @@ Source、原scene、root7/绝对policy noise、双256→224/rotate、state8、10
 报告坐标在真实部署10个tau/前5与全50的误差，不以含真实动作的FM拟合代替部署坐标质量。
 训练日志取实际已计算loss，记录几何信用确实进入完整因子；无额外A28矩阵、拟合探针或parent模型重算。
 
+### 5.1 首次规划tau=1的角色变化读回（2026-10-04训练前补清）
+
+不新增样本、标签来源、loss、forward、环境、模型或预算。复用本节已经被动保存的真实`P A h`。
+对task16原/交换全部init0..7与F/G，取first replan的第一个tau=1调用，保存所有50槽：
+`Delta_rhat[j]=(P A h_swapped)[j]-(P A h_original)[j]`。
+相同condition/LoRA、机器人state、language及初始Gaussian保持；比较发生在任何新动作之前。
+从两行真实initial continuous的butter、orange及EEF world位置构造三维`Delta_r_butter`、`Delta_r_orange`，
+固定世界点模板为`-Delta_p_EEF`（本物理合同机器人不变时应为0）。不以理想XY反向/零值替代实际数组。
+所有8 init/两臂/50槽全部保存；对三模板分别报告RMS误差，first5和full50并列，无拟合、阈值或选例。
+不能以更接近某模板认定内部唯一原因；与两臂完整闭环、独立B20/部署几何共同裁决，没有自动晋级/扫描。
+
 ## 6. 什么结果会改变判断
 
 主要行为比较为G对F：四train任务能力、task16原/换位各自官方成功、完整对象操作、R/G/L/churn及不利个例。

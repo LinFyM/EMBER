@@ -1,5 +1,7 @@
 # EMBER task plan
 
+2026-10-04 实验session已实际接手唯一role_coordinate_credit_20261004并独占canonical/Git；两臂同开A/B、64步与固定96行/16 full/80 compact，main只读。实际标签/完整A-h余切/缓存依赖核验→push冻结运行→全部动作/几何/闭环读回→专用入口退役/Git/一次整批回报/交回窗口。含同批first replan/tau1全部八init/50槽三模板事前读回，不扩计算。6GPUh/20GiB/预计2–4小时；尚未启动模型/环境。下方仅登记为历史时点。
+
 机制§124/findings§303登记唯一[双域实际读取坐标诊断](docs/designs/role_coordinate_credit_diagnostic.md)。
 延续教学角色到自身控制的同一难题：固定900公共/native/解释器，两臂同学A/B，原四task/八teacher各64步；
 只比较普通FM与teacher/self真实A当前对象—EEF关系监督，96固定闭环及实际部署坐标读回，不扩数据或布局。

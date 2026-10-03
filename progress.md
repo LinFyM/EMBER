@@ -1,4 +1,14 @@
+## 2026-10-04 role_coordinate_credit：实现与CPU检查完成，待实际profile
+
+实验session独占窗口。teacher256 origin标签及5814独立query当前坐标读回完成，原2ms EEF最大误差<1.1e-15m；没有teacher动作或held几何读取。只缓存X/H/c/d，所有A/S/K/delta-z/Value/M逐更新重算。CPU消费者检查确认直接A与真实h的前级余切，固定96面板及first tau1换位三模板已登记。六个任务专用文件按固定64/96+B20完成后退役，现有Compiler/FM/evaluator仍是唯一运行面。下一步clean pushed detached实际两个profile；本段不表示已启动训练。原件root/analysis、labels/manifest.json记录来源与检查。
+
 # EMBER progress
+
+2026-10-04 实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553 已实际接手唯一`role_coordinate_credit_20261004`，从clean pushed63f6dcd6建立codex/role-coordinate-credit隔离树，独占canonical tracked/Git窗口；main只读科学分析。
+完整合同/机制§124/findings§303已读；当前900公共/native/解释器固定，F/G都学全部38 A/B头，只G多teacher与self最终action_out A前三坐标信用。固定原八teacher/A28各64更新、96新行/16 full/80 compact和B20，无parent forward/额外矩阵/训练数据/布局。
+正在核真实标签时序、X/H/c/d缓存依赖和两条实际A余切，再实现/集成push/clean detached运行；此时尚无新模型/环境/GPU。strg01 data1实占1193611184KiB/quota2147483648KiB/shared86845892452KiB允许预计峰16/硬20GiB，6完整GPUh/2–4小时；实际帧数/缓存估计启动前补齐，所有新增data1。
+同批补清的first replan/tau1角色变化读回在训练/结果前登记：F/G、原task16全部八init/50槽，按真实初始butter/orange/EEF差比较正确角色、错误实体和固定区域三模板，first5/full50全部保留；0额外样本/标签/loss/forward/环境/预算，不由模板接近晋级。专用入口/hooks整批后退役，一次整批回报后交回窗口并停止。
+以下仅登记/尚未派发状态为历史时点。
 
 2026-10-04 main完成机制§124/findings§303推导，唯一active design登记为[双域实际读取坐标诊断](docs/designs/role_coordinate_credit_diagnostic.md)。
 当前900公共/native/解释器固定，两臂同学38处A/B头；原四task/八teacher/A28各64步，普通FM对双域实际A关系信用。

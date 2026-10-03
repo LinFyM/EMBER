@@ -1,5 +1,10 @@
 # EMBER task plan
 
+机制§116/findings§295登记唯一[动作—物体位移联合信用辨识](docs/designs/joint_action_effect_credit_diagnostic.md)。
+固定当前900的教学native/解释器/A，仅共享B生成器比较原动作FM与联合自身效果监督；原四task/八teacher/A28、64更新。
+每臂原32行、六full及固定功能读回，判断完整控制和保持，不把效果预测当资格；不扩数据、无完整fresh/held/Test或自动扫描。
+预计2–4小时、4完整GPUh/12GiB；main目前完成推导/登记，实际接手以progress为准。下方无active/未选方案属于此前时点。
+
 main完成机制§115/findings§294的历史与现有反例核对：关系监督确曾接完整LoRA/FM，有效任务专家也曾提供真实十步信用。
 task32两交叉前缀在180步有相同目标谓词而成功续行不同，不能只靠阶段标签解释控制，也未证明相对几何充分。
 无新模型/数据/环境/GPU或已选后继；main持canonical窗口，继续推导具体任务关系与自身控制的联系，不恢复旧辅助/蒸馏。

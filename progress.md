@@ -1,5 +1,11 @@
 # EMBER progress
 
+2026-10-03 main完成机制§116/findings§295，登记唯一[动作—物体位移联合信用](docs/designs/joint_action_effect_credit_diagnostic.md)。
+当前900固定教学读取/解释器/A；两臂只学习共享38处B生成器，比较原动作FM与query自身实际位移的原生联合输出信用。
+固定原四task/八teacher/64步A28、每臂32环境行/六full及原功能面板；预计2–4小时、4完整GPUh/12GiB，不扩数据。
+此时尚未派发/启动模型、标签恢复或GPU；main持canonical记录/Git窗口，提交后交既有实验session独占实施。
+阳性也不自动完整fresh，阴性不追加坐标/λ/层/时长扫描；下面无active/未选后继段落保留前一裁决时点。
+
 2026-10-03 main完成机制§115/findings§294，只读历史实现与原task32交叉续行，0新模型/环境/GPU。
 G2→G3确有谓词监督表示到完整LoRa/FM，G2时间平均与G3冻结边界保留；VisibleObject、LocalAction及SEOD/GOMQ的正负证据分列。
 task32两前缀在180步目标谓词同为[true,false]，两策略却仅从s17成功；仅阶段标签不能区分这些成功续行成员，不推定唯一几何/接触原因。

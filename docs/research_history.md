@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：从自身状态差推导动作与物体位移联合信用，登记一次有限学习比较
+
+机制§116/findings§295与[合同](designs/joint_action_effect_credit_diagnostic.md)区分已知状态依赖、效果信用假说和完整性能。
+当前900的native/解释器/A固定，共享B生成器在原四train task/八teacher上比较动作FM与原生7:10维的自身实际位移监督。
+相同64步A28、每臂32环境行及原功能面板；新增标签只恢复既有query state/XML，不扩数据或输入teacher特权信息。
+实际32维flow存在下一步消费者，但预测仍可无用/想象，不能用梯度或理想联合密度代替控制；旧语义/辅助/物理J正反证据保持。
+预计2–4小时、4完整GPUh/12GiB；此段登记时未执行，无新结果、正式fresh、held/Test或自动后继，实际状态看progress。
+
 ## 2026-10-03：冻结输入归因的科学消费保留有限控制信息，分开大任务偏差与实际转移作用
 
 机制§114/findings§293：main核实际类/消费者与全部96预测，独立复算3199区间/288pair；无新forward/数据/环境。

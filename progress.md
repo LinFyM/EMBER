@@ -1,5 +1,11 @@
 # EMBER progress
 
+2026-10-03 main完成机制§117/findings§296科学消费：核实际算子、24份B20和全部96原continuous及三组task32双RGB对照。
+普通动作A在固定表示/A下13→24/32，J22/32没有额外收益；仅16物理init，不解释为冻结优于共同训练或新task迁移。
+J全50示范位移有学习，前5有限、实际执行四task均未胜零位移；原学到/未学到的区别及全部能力交换已保留。
+main派生读回在原root analysis/main_scientific_readback.py/.json，主CPU.385秒、0模型/环境/GPU。按预登记关闭J续训/扫描理由。
+canonical tracked/Git由main独占，无active实验或已选后继；完整目标未完成，继续固定数据范围推导。以下本批执行段落为已消费历史。
+
 2026-10-03 `joint_action_effect_credit_20261003` 全部固定学习/读回完成：两臂各64有效更新/完整恢复点，16份完整38-target bank；64新增环境行/12 full双RGB/52 compact，父32行复用，48份A28/B20功能引用（40份新PT）齐备，缺项0。
 父/A/J成功13/24/22；task0/12/20/32分别父8/2/2/1、A7/4/6/7、J6/4/6/6。A对父R10/G14/L3，J对父R9/G13/L4；J对A R20/G2/L4/churn6，新增均在task20/t38 init0/2，丢task0/t40 init2、20/t38 init1、20/t42 init2、32/t43 init2。
 task32全部父/A/J均开炉并最终保持，放置1/7/6；两新臂均丢父t17/init2。J对A少t43/init2的放置；A成功327，J无placement/结束520。body高度、中心/命令仅描述，未宣称抓持/接触。

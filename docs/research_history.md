@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：对象换位科学消费，混合响应未支持单一修复
+
+机制§122/findings§301核实际变换和被动In、六份双RGB、全部48新+24旧continuous，main独立CPU.235226秒/0新模型环境GPU。
+C/init4/5转搬旧orange区域的butter，init6跨位置仍搬orange；T/init2原butter成功却换位后将同区域orange入篮。
+第三对象/未成功/小位移和旧新数值行为分叉完整保留；原成功不是角色绑定证明，混合响应不归成已分离模块。
+本轮降低纯区域与纯错误身份的统一解释，没有唯一定位Reader、编译或自身消费；不扩扫描/训练或自动恢复旧辅助。
+原root analysis/main_scientific_readback.py/.json保留独立全部72行与全对象量，原完整费用.259836593305GPUh/64.24分钟保持。
+main接回canonical窗口继续同一教学关系到自身控制问题，无active实验或已选新方法；执行交付及原件索引见下条。
+
 ## 2026-10-04：自身对象位置交换48行完整交付与混合行为
 
 按机制§121/findings§300与原合同完成唯一task16八scene×C900/T2340/MT300×原/换位，共48行；0学习/Writer/native/新增LoRA/held动作或训练标签。

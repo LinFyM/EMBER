@@ -1,5 +1,12 @@
 # EMBER progress
 
+2026-10-04 main完成机制§122/findings§301科学消费：直接核实际XY变换/被动In、六双RGB、全部48新+24旧continuous。
+C/init4/5转搬旧orange位置的butter与init6跨位置仍搬orange并存；T/init2原butter成功→换位同位置orange入篮，原成功不证明角色绑定。
+全部第三对象/未成功及旧新行为分叉保留；按混合结果裁决，不扩位置/对象扫描或恢复grounding/原生key/旧辅助。
+main CPU.235226秒、0新模型/环境/GPU，原root analysis/main_scientific_readback.py/.json；本批完整成本仍.259836593305GPUh。
+canonical tracked/Git窗口已由main接回，无active实验或已选新训练；继续教学关系到自身情境控制的同一难题。
+下方执行交付/接手/待退出均是已消费历史，不能恢复旧运行。
+
 2026-10-04 `object_position_transport_20261004` 唯一固定48行与完整读回已完成：三模型各原/交换八初态，6 full/42 compact，全50×7 chunks/实际physical actions/T+1全对象/EEF/gripper/官方goal及butter-orange被动In齐备，缺项0。
 C900旧/本批原/交换成功0/0/2（交换init3/4）；T2340 1/1/2（原2，交换3/4）；MT300 2/1/1（旧2/7、本批原7、交换3）。原→交换R/G/L分别0/2/0、0/2/1、0/1/1；旧→本批原C/T无churn，MT丢2，仍抬butter但280未入篮，未重跑择优。
 行为不是单一对应：C原orange抬>3cm为0/1/4/5/6、In0/1/4/5，butter全8静止；交换butter抬3/4/5、In3/4，orange抬并In6/7。init4/5改搬原orange区域的butter与位置依赖相容；init6跨位置仍搬orange与错误实体跟踪相容；0/1及其它第三物体/轻微移动反例全部保留，不强行归类或以换位得分选模型。

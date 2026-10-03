@@ -1,5 +1,10 @@
 # EMBER task plan
 
+main完成机制§113/findings§292，登记唯一冻结P500输入归因追加，合同为native_transition_action_calibration_diagnostic§6。
+同一小头P1(H,H+)与P0(H,H)分开实际第二memory作用和P/F网络差异；原96视频/3199区间，不训练、source forward或环境。
+预计30–60分钟、2GiB/至多.25完整GPUh；尚未派发/执行，main持canonical窗口，接手后实验session独占并回报一次整批。
+历史source残差Teacher已做过；任务排除公共beta尚无完整近邻不构成采用理由，未选择后继Writer或正式训练。
+
 main完成机制§112/findings§291：P−F的episode常量在内部留task有有限跨episode收益，不能把动态动作信息统称不可迁移。
 收益集中、动作通道有损且未明显胜裸mu；保留fit/内部任务区别，不据此部署均值或恢复旧训练/扫描。
 无active实验或已选后继，main持canonical记录/Git；下一推导解释共享预测器的任务偏差与自身状态响应怎样共同形成有用控制。

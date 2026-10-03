@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：登记冻结P500输入归因，防止将网络差异直接解释为配对转移收益
+
+机制§113/findings§292及[原诊断追加§6](designs/native_transition_action_calibration_diagnostic.md#6-冻结读出输入归因追加2026-10-03)
+登记同一P500的真实到达/重复出发两读出：已有96视频/3199区间，无训练/source forward/环境/扩数据。
+用精确风险恒等式区分第二memory实际效应与P0−F网络差异，保留P0输入分布改变、全部任务/通道及强参照限制。
+历史核对保留Video Functional的肯定近邻及负结果，不因尚未发现任务排除beta训练便选择新方法。
+预计30–60分钟、2GiB/至多.25完整GPUh；本项仅登记，接手/运行/结果看progress，不自动接正式训练。
+
 ## 2026-10-03：跨episode动作增量包含有限未拟合任务修正，不能与局部细节混为一谈
 
 机制§112/findings§291在结果前登记后，读取固定500的96份已有预测、24task×12不同episode有向pair，无模型/环境/GPU。

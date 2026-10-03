@@ -138,3 +138,28 @@ native/学习/读回均使用clean pushed detached代码。复用真实native、
 全部完成后统一核退出/原件/费用，退役本诊断专用训练入口/模型/测试及临时接入，由Git与frozen树保留可复现来源。
 向主讨论只回报一条整批结果（含全部正反/缺项、代码身份、成本、释放及canonical窗口），随后停止新增计算。
 主讨论负责消费原件、修订机制和下一科学取舍；整体EMBER目标没有因本项结束而完成。
+
+## 6. 冻结读出输入归因追加（2026-10-03）
+
+唯一任务名`native_calibration_input_attribution_20261003`。机制§113给出问题、算子、精确风险分解与结果分支；
+本节是另一次已登记的冻结分析，原fresh500及全部原结果保持封存，不恢复训练。
+
+- 只读取已有P500权重、原96份demo42–45的H/mu缓存及预测包。任务固定为§2 train24，内部留task仍[0,12,20,32]。
+  原全部3199合法offset1五步区间；不新读HDF/RGB、重算source/native、补episode、采环境或读取官方Val/Test。
+- 复用a4da650a冻结`Calibration`实际类；P1用原H/H+，P0用同一H/H。两者同设备/dtype/批处理，模型eval/no_grad。
+  先存预测再评分；已有target只供评分，不作条件、优化或样本选择。F与mu采用原预测包，不训练或重算F。
+- 同时重算P1是为了让输入比较使用同一执行方式；记录它相对原P的预测RMS和评分差异，原件不覆盖。
+  接受正常CPU/FP32、GPU/BF16及kernel差异；不建立逐bit阈值、不反复forward追求低位一致。
+- 按机制§113保存d_input/d_network、各episode均值、所有288有向pair、逐task及all7/motion6/translation/rotation/gripper结果。
+  核心比较固定为F+b_network+b_input与F+b_network；同时保留对F、mu及§112原结果的比较。
+  使用原等episode/等task口径及task-cluster描述区间；四task、已知task20集中和P0分布改变限制明确报告。
+  不以大量区间当独立样本，不挑动作通道、比例、任务、视频或checkpoint；无shuffled/reversed及追加控制矩阵。
+- 产物只进入原root的`analysis/input_attribution/`，包含本合同来源、实际脚本/命令/源码和权重身份、预测、读回及完成记录。
+  复用现有冻结类/缓存/环境，不恢复专用训练入口，不另建canonical模块、通用框架或永久fallback。
+  一次性分析脚本作为原件保留，记录consumer身份与原训练/缓存身份；不把读取代码身份写成训练身份。
+- 预计含实现/读回30–60分钟、新增峰2GiB；优先小头CPU直接消费，可按实际耗时使用GPU但须live双节点准入，
+  含失败/加载在内硬限.25完整GPUh。新增root/大临时内容前核data1独立quota及共享容量，禁止复制大source或缓存。
+- 实验session接手后独占canonical记录/Git并自行完成必要工程、针对性实际消费者检查、提交/推送和一次整批回报。
+  正常计算只等待实际退出，不轮询缓存或分阶段自Queue；结束释放资源并交回窗口。没有formal fresh或后继自动执行。
+
+状态以progress顶部为准。该分析只确定固定学习者的输入依赖与有限跨episode作用，不作为部署资格或最终视频因果证据。

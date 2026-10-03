@@ -10852,3 +10852,55 @@ fit20的均值分量能量为.001011、两倍跨episode误差对齐.001035，二
 原件根`/data1/user/ymdai/ember_runs/native_transition_action_calibration_20261003/analysis/main_episode_innovation/`保存登记、
 实际脚本、逐episode均值、逐pair/逐task分量、source参照比较及stdout。CPU主计算约.423秒（不含启动），exit0、0GPU、约1.31MiB。
 无新模型、数据、优化或active实验；main持canonical记录/Git，继续固定数据内推导，完整目标未完成。
+
+## 113. 区分实际转移输入与已学网络差异，再判断有限任务修正来自哪里（2026-10-03）
+
+§112保留了内部留task上的有限正例，但其中`P(H,H+)−F(H,H)`同时改变输入及网络权重。
+它不能独自证明跨episode常量收益由当前这对真实前后画面的联系产生。这个缺口直接影响是否继续把
+“可见转移解释→可复用纠正”作为学习目标；不据一个常量正例重开完整控制校准、Reader或Pullback。
+
+### 113.1 相同冻结权重下的精确分解及其限制
+
+复用§104/105的实际P500、固定source缓存H/mu及全部24task的demo42–45。记
+
+`P1=mu+P500(H,H+)[:5,:7]; P0=mu+P500(H,H)[:5,:7]`，
+`d_input=P1−P0; d_network=P0−F; P1−F=d_input+d_network`。
+
+H来自真实双RGB/L、无State段的裸Source1000完整50×1024 native hidden；mu、probe1729、tau1及offset1均不变。
+同一P的Q和出发分支c0不变，第二分支实际从`C(Q,H+)`变成`C(Q,H)`，后续原W1/GELU/W2保持。
+不是输入零图像或重算假native，也不对LoRA/Writer做新的干预。P0仍读取每个真实出发帧，不能称为无视频模型。
+
+逐episode求同§112的5×7均值`b_input/b_network`，对其它episode的`e_Q=Y_Q−F_Q`有
+
+`R(F_Q+b_network+b_input)−R(F_Q+b_network)`
+`=E||b_input||²+2E<b_input,b_network−mean_q e_Q>`。
+
+因此只看`||P1−P0||`不够；必须看该输入效应在另一episode上是否改善预测，以及是否来自极少task/动作通道。
+所有均值仍只是统计分解，不选择均值部署、缩放或拟合器。强参照裸mu和F、原P及特权常量结果全部保留。
+
+这不是两类知识的唯一因果划分：P0的网络权重仍由有到达输入的训练学成，不能把d_network命名为“纯静态知识”；
+重复出发输入也可能偏离P的训练分布，P0变差不等于动态信息普遍必要。它仅精确测量这个已学函数对第二memory的依赖。
+若原有常量收益主要保留在P0而真实配对输入无额外改善，降低“本正例来自实际转移联系”的支持；
+若真实配对输入带来跨episode改善，保留这个有限获取/转移前提，但仍不自动获得状态反馈、LoRA或闭环资格。
+混合、集中或微小效应照实保留，不追加输入替换、层位、任务或参数扫描追逐某一分支。
+
+### 113.2 历史已经提供了什么，尚未区分什么
+
+定向源码核对保留肯定近邻：Video Functional `a81a38ed`确实用排除target40的冻结source作基线，
+由合法RGB/L的E与source执行q0形成`T=u0+R(q0,E)`；真实辅助FM教E/Reader，`stop(T)`蒸馏只教Compiler，
+生成LoRA另接真实FM。实际`writer/function_credit.py:124–147`、`writer/supervised.py:14–39`与原合同相符。
+其主线correct69→72→74→32/400及后续Reader不足不能略去，不能再声称从未试过纠正未见任务的source。
+
+更窄的“每个当前meta task均排除在已学公共beta的拟合之外，再训练它的视频补偿器”，本次定向历史范围未找到完整实例。
+既有Video Functional全部train24共用同一个F0；prior19→phase residual19仍是同一fit19，held5仅诊断且合法Writer未实施；
+公共beta/条件Writer共同拟合同一任务池；lookahead从已见fit28父点只分一次虚拟更新，不能当完整任务排除。
+这些区别没有自动指定cross-fitting为修复：Writer仍可能凭语言记住训练任务，排除beta训练本身不证明新任务泛化，
+也没有证明它造成当前闭环不足。本轮只登记下述冻结输入归因，不以“未做过”作为正式训练的理由。
+
+### 113.3 唯一新增执行范围
+
+按[原诊断的冻结输入归因追加合同](../designs/native_transition_action_calibration_diagnostic.md#6-冻结读出输入归因追加2026-10-03)
+重算同一P500的P1/P0，96已有视频、3199合法区间、各task全部12不同episode有向pair。
+fit20及内部留task4分别等task报告，保留全部通道/反例/原件和正常计算精度差异；不训练、不新读数据、不运行source或环境。
+预计含实现/读回30–60分钟，新增峰2GiB，若CPU足够则0GPU；确有需要时仍须双节点准入且硬限.25完整GPUh。
+实际开始、成本和完成只看progress；本登记不代表已经执行或取得结果，也不指定后继Writer。

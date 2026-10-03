@@ -7329,3 +7329,19 @@ task20离线总风险变差而闭环2→6，J前5风险稍优于A但闭环22<24�
 只读历史核定VisibleObject监督教师Reader，NativeCorrection真Q梯度含原生K但不提供Q家族的独立功能证据；不抹去旧完整FM消费者。
 CPU原件在`joint_action_effect_credit_20261003/analysis/query_function_decomposition.py/.json`，.163282秒/0GPU，无新模型/环境/标签。
 main独占canonical窗口继续同一问题，未选新实验或正式重训；本次结论不使完整EMBER目标完成。
+
+## 300. 用固定LoRA的对象位置交换辨识控制跟随什么，尚未得到结果（2026-10-04）
+
+机制§121延续有限获取/迁移不足：输入相关动作不等于正确实体关系；固定区域接近与错误orange跟踪均可解释task16原失败。
+保持G(V,L)和所有权重，仅交换自身butter/orange世界XY，前者预测仍去旧orange区域/现butter，后者预测随orange去原butter位置。
+推导落实到真实layer0固定Q/变化图像K/V及后续完整38-LoRA/十步flow；不假定严格等变、线性PI05或单一内部根因。
+§110读取移植的有限作用、旧Reader/NativeCorrection负证据保留，不由错对象直接选择grounding辅助或新Q架构。
+
+唯一[对象位置交换诊断](docs/designs/object_position_transport_diagnostic.md)：task16原init0..7、八原teacher，C900/T2340/强MT300×原/换位，共48行。
+同一post-dummy场景仅两对象XY交换，z/朝向/其它物理状态不改、不推进；rollout正常完整执行，6 full/42 compact、全部行为和两对象被动In保存。
+不新增训练样本/任务/teacher，不读held动作、生成新LoRA或训练；反事实布局不是官方400或模型选择。
+持续旧区域/持续orange/混合或受损分别更新位置依赖、错误实体跟踪或未区分，全部保留，不自动扩对象/位置/层/训练扫描。
+预计含工程2–3小时、硬限2完整GPUh/12GiB；登记时未派发、未运行，main提交后交既有实验session独占实现。
+
+main另纠正自身错误：此前误把salad的target区域套给butter；实际task16 BDDL、官方pruned_init与canonical scene的butter XY一致。
+没有发现这里所怀疑的数据/恢复错位，未改原件或评测。此纠正不构成新科学结果，也不改变原低分。

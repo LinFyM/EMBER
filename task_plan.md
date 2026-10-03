@@ -1,5 +1,11 @@
 # EMBER task plan
 
+机制§121/findings§300登记唯一[自身对象位置交换诊断](docs/designs/object_position_transport_diagnostic.md)：
+在task16原init0..7保持教学/LoRA/语言，仅交换butter与orange世界XY，C900/T2340/强MT300各原/换位，共48行。
+区分固定区域控制与错误实体跟踪，延续同一跨情境调用难题；不扩训练数据或训练，不以换位分数选模型。
+预计含工程2–3小时、硬限2完整GPUh/12GiB，6 full/42 compact；全部结果只更新机制解释，无自动扫描/fresh/controls/Test/RL。
+当前仅登记、尚未派发，main独占canonical/Git；提交后交既有实验session独占实现。下方无后继段落为此前时点。
+
 机制§120/findings§299已消费一次CPU分解：已有B学习主要是query相关修改，不能以“缺少状态敏感性”绕开迁移难题。
 不追加中心化loss或局部导数探针；同一主问题收紧为教学对象/操作如何与新情境下的输入相关控制正确对应。
 main持canonical窗口，无active实验/已选后继；此前登记的CPU读取已完成。

@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：登记自身对象位置交换，辨识错误搬运的控制对应
+
+机制§121/findings§300由§117–120的有限获取/迁移不足继续：query相关并不区分固定场景区域与错误实体跟踪。
+只在task16原init0..7交换butter/orange的world XY，原完整LoRA/教学/语言/噪声保持；真实prefix K/V及后层正常响应自身RGB。
+C900/T2340/强MT300×两布局48行、6 full/42 compact，全部行为/两对象被动In与正反参照保存；不新增训练数据、动作标签或梯度。
+预测及未区分分支见[合同](designs/object_position_transport_diagnostic.md)，预计2–3小时/2完整GPUh/12GiB，当前仅登记未执行，无自动后继。
+main纠正误用salad区域产生的假疑点：task16 BDDL/官方pruned_init/canonical scene一致，不是数据或恢复故障；旧原件未变。
+
 ## 2026-10-04：有限B学习的查询函数分解，排除固定偏移的主要解释
 
 机制§120/findings§299在结果前登记后，CPU读取父/A/J的24份既存B20十步预测；0新模型/环境/数据/GPU。

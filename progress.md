@@ -1,5 +1,12 @@
 # EMBER progress
 
+2026-10-04 main完成机制§121/findings§300，active design登记为[自身对象位置交换诊断](docs/designs/object_position_transport_diagnostic.md)。
+唯一task16/init0..7，C900/T2340/强MT300×原/交换butter-orange世界XY，共48行；固定原视频/LoRA/语言/噪声，不训练或扩训练数据。
+从真实错对象行为区分区域依赖与错误实体跟踪，保留混合/无诊断结果；不由此预选架构或把换位得分当官方资格。
+预计2–3小时、2完整GPUh/12GiB，6 full/42 compact与两对象被动In；当前尚未派发/启动，main持canonical窗口，提交后交实验session。
+main此前误把salad区域用于butter所产生的疑点已纠正：task16 BDDL/官方初态/原scene一致，无该恢复错误、无原件改动。
+下方§120等均为已消费历史，不恢复其关闭分支。
+
 2026-10-04 main完成机制§120/findings§299：既存B20的A修正仅14.14%能量是跨query共同项，变化项在12/20/32有益、0有损。
 前5父/A风险.126520/.119086；J离线稍优却闭环更弱、两臂unmasked全50更差的反例完整保留。
 不把query变化等同纯state反馈，不追加中心化loss或相关探针；继续解释已有输入相关控制为何未跨对象/场景迁移。

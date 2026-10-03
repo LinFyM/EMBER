@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：自身图像选择交叉的科学消费与有限作用裁决
+
+机制§110/findings§289：main直接读取8e682f90干预算子、48份原continuous及全部12 full双RGB，独立CPU结果在本root analysis/main_scientific_readback.json。
+C/N/C←N/N←C总7/5/6/5；10个原策略成败不同的条件中，强donor救回弱recipient3条、反向丢强recipient4条，原C/N重放与历史相同。
+task13/init32的N←C改为操作BBQ却未完成入篮，C←N保留全部三条原成功；task4有限取碗转移，task56两混合均{32,35}且有丢失。
+图像选择有有限因果作用，未成为两策略能力差异的独立编码；pi_D依赖同输入donor完整suffix，图像V为上下文化prefix，不能等同物体语义标签。
+结合§103/108和旧Q/R、时间分段，降低直接自身attention监督的主修复优先级，不追加蒸馏/层位/质量/scale扫描，不把混合臂当部署成绩。
+全部正反/未知保留，.185489GPUh批次结束；完整目标未完成，main接回窗口并继续固定数据内推导，无active实验。
+
 ## 2026-10-03：自身图像选择双向交叉的48行完整执行交付
 
 按[原合同](designs/self_image_attention_transfer_diagnostic.md)固定task4/13/56×init32–35×四臂，48/48行、12 full双RGB/36 compact全部完成，无训练/扩数据/held/Test/controls。

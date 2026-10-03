@@ -1,5 +1,11 @@
 # EMBER progress
 
+2026-10-03 main完成本批科学消费（机制§110/findings§289），直接读取冻结干预算子、48份原continuous与全部12 full双RGB，0新增模型/环境/GPU。
+图像选择具有有限因果作用，但10个原策略成败不同的条件仅救回弱recipient3条、同时丢强recipient4条；task13双向目标选择预测未完整成立。
+actual pi_D依赖donor完整控制计算，图像V是上下文化prefix，不能把它当物体标签；读取与后续控制的共同作用仍须完整学习。
+降低直接自身attention监督的主修复优先级，不增加蒸馏/层/质量/scale扫描，不从混合面板宣称部署收益。
+新增原件为本root analysis/main_scientific_readback.json；canonical记录/Git窗口已回main，无active实验，继续固定数据内自主推导。
+
 2026-10-03 `self_image_attention_transfer_20261003` 全部执行与CPU读回完成：48/48行、12 full双RGB/36 compact、全部goal/continuous/physical actions和18层×10flow紧凑作用齐备，无缺项。
 task4/13/56按C、N、C←N、N←C成功数分别为[0,4,1,2]、[3,0,3,1]、[4,1,2,2]（各臂每task4行）；C←N总6/12、R5/G1/L2/churn3，N←C总5/12、R3/G2/L2/churn4。
 C/N同批重放7/5与历史成功集合完全一致、churn0；所有teacher/scene/初始body/EEF/quat/gripper/predicate及绝对共同噪声配对通过，实际动作与独立continuous一致，保留25条失败及全部正例。

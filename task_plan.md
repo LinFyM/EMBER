@@ -1,5 +1,9 @@
 # EMBER task plan
 
+main已完成机制§110/findings§289的原件科学消费：图像内部读取可改变目标操作，但只有有限能力转移和实际损失，双向完整预测未兑现。
+降低直接自身attention监督的主修复优先级，不追加蒸馏、层/质量/scale扫描；主FM原已有自身信用，后继须解释可复用任务关系的完整学习。
+当前无active实验，canonical记录/Git窗口已回main；继续在固定数据内自主推导，完整性能目标未完成。
+
 唯一 `self_image_attention_transfer_20261003` 已全部执行与读回：48行/12 full/36 compact，C、N、C←N、N←C为7/5/6/5；两方向R/G/L为5/1/2及3/2/2，原重放成功集合与历史一致。
 全部正反、RGB/目标/实际动作和配对证据保留于root completion/readback/analysis；.185489290357GPUh，新增阶段实占1.801430GiB/保守峰6.5，均在3/8硬限内，GPU/PID已释放。
 任务专用运行面已退役，Git/frozen/原件保留；整批push与一次有来源回报完成后canonical窗口回main，实验session停止。没有active计算或自动训练、grounding/蒸馏、层/质量/scale扫描；main消费原件后承担科学裁决。

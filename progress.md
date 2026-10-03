@@ -1,5 +1,9 @@
 # EMBER progress
 
+2026-10-04 `object_position_transport_20261004` 窄接入已集成push，实际clean detached frozen=8a2c8496。原三个银行仅选task16八行元数据，C完整A/B、T sharedA+完整条件B、MT完整共同因素由原canonical loader消费；19份既存header/八teacher/官方来源核实，0新物化或模型候选。
+同八授权初态的真实physics消费者已完成：全部registry/free joint/world XY、z/quat/qvel/robot-state8/controller/其它body/model/time不变检查通过；刷新双RGB已逐图核实，无明显穿透/悬空，最深接触−.020521mm。验证0 policy/native forward/0 rollout控制step，18.209944秒×1=.005058318 GPUh，exit0；初始前后完整状态/图像/contacts在root analysis/physical_consumer。
+六个各八行的原/交换正式诊断消费者CPU prepare正在完成；容量16会由现有env池限制为八个合法case并整批打包，六独立读取按空闲卡并行，不造额外例/环境填显存。尚未启动48行模型读取，后续启动前再核双节点/配额/卡数。一个CPU原件检查曾误假定MT有per-condition factors，已按既存共同银行语义修正；0模型/环境/GPU失败。
+
 2026-10-04 实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553 已实际接手 `object_position_transport_20261004`，独占canonical tracked/Git窗口；main只读科学分析。
 从clean pushed 1ac14681建立codex/object-position-transport隔离树，完整读取Owner要求/机制§121/findings§300/合同。仅task16八个post-dummy初态，冻结C900/T2340/MT300×原/交换世界XY共48行；6 full/42 compact，官方butter成功终止和两对象被动In分离。
 预计2–3小时/2完整GPUh/12GiB，准入保守新增峰6GiB；strg01 data1实占1192509776KiB/quota2147483648KiB/shared86847001360KiB通过。只读源银行/Source/旧MT，不复制大资产，0训练/native/held动作。

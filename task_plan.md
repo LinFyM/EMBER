@@ -1,5 +1,10 @@
 # EMBER task plan
 
+2026-10-03 实验session01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手 `self_image_attention_transfer_20261003` 的canonical tracked/Git独占窗口；main只读科学分析。
+完整合同、机制§108–109/findings§287–288及Owner资源/信息墙要求已读；独占工程树为`/data1/user/ymdai/projects/EMBER-self-image-attention-transfer`，基线d15cba34。
+当前在实现同输入、同prefix的18层/50slot/10flow图像内部条件分布传递；原四臂48行/12 full/36 compact及teacher/scene/RNG固定。尚未启动模型或环境。
+strg01 data1个人用量1167868424KiB、quota2147483648KiB、共享余89.023TB；本批预计新增峰6.5GiB<8GiB，硬限3完整GPUh。正式消费者将由clean pushed detached来源运行；完整交付后退役本次入口/hooks并交回窗口。
+
 ## 科学目标与当前批次
 
 机制§109/findings§288登记唯一[自身图像读取分布交叉诊断](docs/designs/self_image_attention_transfer_diagnostic.md)。

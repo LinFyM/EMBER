@@ -1,3 +1,7 @@
+## 2026-10-04 role_coordinate_credit实际启动
+
+2026-10-03T22:27:50.407130+00:00，clean pushed detached e7d81bc4实际消费者PID 671484已在gpu02:0开始source加载/八teacher固定native；随后两个已登记profile，按实测预算准入64步。G将在共同cache就绪事件后独立并行，不重复native。现场两节点准入按global6/单节点6；无其它本sessionGPU任务，预计总2张有益设备。费用从加载开始计入6GPUh，所有写入data1。root/launch/run_arms.py为唯一退出等待者，没有selfQueue或日志定时轮询；后继仅本合同固定B20/96行。
+
 # EMBER task plan
 
 2026-10-04 实验session已实际接手唯一role_coordinate_credit_20261004并独占canonical/Git；两臂同开A/B、64步与固定96行/16 full/80 compact，main只读。实际标签/完整A-h余切/缓存依赖核验→push冻结运行→全部动作/几何/闭环读回→专用入口退役/Git/一次整批回报/交回窗口。含同批first replan/tau1全部八init/50槽三模板事前读回，不扩计算。6GPUh/20GiB/预计2–4小时；尚未启动模型/环境。下方仅登记为历史时点。

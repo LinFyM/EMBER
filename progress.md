@@ -1,3 +1,7 @@
+## 2026-10-04 role_coordinate_credit实际启动
+
+2026-10-03T22:27:50.407130+00:00，clean pushed detached e7d81bc4实际消费者PID 671484已在gpu02:0开始source加载/八teacher固定native；随后两个已登记profile，按实测预算准入64步。G将在共同cache就绪事件后独立并行，不重复native。现场两节点准入按global6/单节点6；无其它本sessionGPU任务，预计总2张有益设备。费用从加载开始计入6GPUh，所有写入data1。root/launch/run_arms.py为唯一退出等待者，没有selfQueue或日志定时轮询；后继仅本合同固定B20/96行。
+
 ## 2026-10-04 role_coordinate_credit：实现与CPU检查完成，待实际profile
 
 实验session独占窗口。teacher256 origin标签及5814独立query当前坐标读回完成，原2ms EEF最大误差<1.1e-15m；没有teacher动作或held几何读取。只缓存X/H/c/d，所有A/S/K/delta-z/Value/M逐更新重算。CPU消费者检查确认直接A与真实h的前级余切，固定96面板及first tau1换位三模板已登记。六个任务专用文件按固定64/96+B20完成后退役，现有Compiler/FM/evaluator仍是唯一运行面。下一步clean pushed detached实际两个profile；本段不表示已启动训练。原件root/analysis、labels/manifest.json记录来源与检查。

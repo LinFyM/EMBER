@@ -38,14 +38,30 @@ def route(arm):
 @functools.lru_cache(maxsize=2)
 def inspected_bank(name):
     from ember.operator_writer.bank import inspect_bank
+    from ember.operator_writer import joint_readout
 
     path = BANKS[name]
     raw = read_json(path)
     tasks = raw['tasks']
-    bank = inspect_bank(manifest_path=path, source=raw['source'],
-                        task_keys=tuple((t['suite'], t['task_id']) for t in tasks),
-                        evaluation_role='operator_seen_training36', require_formal=True,
-                        task_init_state_ids={(t['suite'], t['task_id']): STATES for t in tasks})
+    original_record = joint_readout.source_record
+
+    def historical_record(*args, **kwargs):
+        spec, training, current = original_record(*args, **kwargs)
+        historical = Path(raw['spec']['path'])
+        if file_record(historical) != raw['spec'] or read_json(current) != read_json(historical):
+            raise Pi05EvaluationError('historical bank spec semantics differ from current inspector')
+        return spec, training, historical
+
+    # Restore the exact old provenance path, after comparing the small specs.
+    # The original inspector still checks every source, factor and scope field.
+    joint_readout.source_record = historical_record
+    try:
+        bank = inspect_bank(manifest_path=path, source=raw['source'],
+                            task_keys=tuple((t['suite'], t['task_id']) for t in tasks),
+                            evaluation_role='operator_seen_training36', require_formal=True,
+                            task_init_state_ids={(t['suite'], t['task_id']): STATES for t in tasks})
+    finally:
+        joint_readout.source_record = original_record
     selected = [t for t in tasks if t['global_task_id'] in TASKS]
     if len(selected) != 3 or raw.get('condition_factors') != 'complete_A0_plus_S_B0_plus_M':
         raise Pi05EvaluationError('original complete conditional bank changed')

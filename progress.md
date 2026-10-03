@@ -1,5 +1,7 @@
 # EMBER progress
 
+首次ad431240冻结CPU bank读取消费退出1、0GPUh，唯一差异为原bank spec绝对路径与新frozen路径（均6152B）；小JSON语义直接核对后只恢复历史provenance路径传给原inspector，其余source/factor/scope完整检查保持，旧原件不改。修复将重新push/freeze，不原地修改ad431240。
+
 本批窄实现已接入canonical bank/evaluator：原sample_actions十步积分与18层原生RoPE/GQA保持，两bank因子每replan各打包一次，四panel由同一resident worker/source依次消费，动态队列仍由canonical owner执行。
 针对CPU语法、四route、极小donor图像质量稳定条件分布、非图像概率保留和Value恒等式检查已执行；原bank metadata inspector要求clean detached，首次在工程树读取被其guard拒绝（0GPUh），将按原规范在冻结树消费。
 结构自审：三份任务专用源码约600行和五处窄接入，复用官方积分、bank loader、run_worker、队列/launcher/aggregate；不构造第二policy/evaluator。旧validate_episode_adapter_fields复杂度32→33的单个诊断dispatch是有界局部例外，48行读回后连同专用hooks/入口和公共接入全部退役，Git/frozen原件保留。

@@ -98,6 +98,14 @@ def main(arm,stage):
     manifest = read_json(OLD/'query_manifest.json'); panels = read_json(Path(manifest['panel_source']))
     positions = torch.load(ROOT/'labels/query_positions.pt',map_location='cpu',weights_only=False)
     try:
+        if arm=='J' and stage=='all':
+            # This fixed reader is independent of native preparation; do useful work on the second device.
+            parent_states={(t,d):load_file(str(PARENT_ROOT/'Original/bank'/f'task{t:03d}_teacher{d:02d}.safetensors'),device='cuda:0')
+                           for t,ds in TEACHERS.items() for d in ds}
+            functional(runtime,data,positions,panels,None,ROOT/'parent',28,arm='parent',states=parent_states)
+            del parent_states
+            print(json.dumps(dict(event='parent_functional_complete',arm=arm)),flush=True)
+            if input().strip()!='NATIVE_READY':raise RuntimeError('native preparation did not complete')
         cached = native_cache(runtime,data,create=arm=='A' and stage=='all',frame_chunk=128)
         print(json.dumps(dict(event='native_ready',arm=arm,cache_records=len(cached))),flush=True)
         if stage == 'all':
@@ -159,11 +167,6 @@ def main(arm,stage):
             runtime.writer.load_state_dict(load_file(str(out/'checkpoint64/writer.safetensors'),device='cuda:0'),strict=True)
         runtime.writer.eval().requires_grad_(False)
         records=functional(runtime,data,positions,panels,cached,out,micro,arm=arm)
-        if arm=='A':
-            parent_states={(t,d):load_file(str(PARENT_ROOT/'Original/bank'/f'task{t:03d}_teacher{d:02d}.safetensors'),device='cuda:0')
-                           for t,ds in TEACHERS.items() for d in ds}
-            functional(runtime,data,positions,panels,cached,ROOT/'parent',micro,arm='parent',states=parent_states)
-            del parent_states
         keys=tuple((t['suite'],t['task_id']) for t in original['tasks'])
         bank=inspect_bank(manifest_path=PARENT_ROOT/'Original/bank/panel_teacher0.json',source=original['adapter']['source'],
             task_keys=keys,evaluation_role='development_train',require_formal=True,

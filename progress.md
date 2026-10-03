@@ -1,5 +1,13 @@
 # EMBER progress
 
+2026-10-03 实验session01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手 `native_calibration_input_attribution_20261003` 的canonical tracked/Git独占窗口；main只读科学分析。
+完整机制§113、findings§292、原生校准合同§6及当前Owner要求已读；本次只在原root analysis/input_attribution保存一次性脚本/预测/读回，不恢复训练入口。
+P500/原native/预测实际来源均a4da650a；Source1000原训练b8ea00e9分列。96份demo42–45、3199合法offset1区间、288不同episode有向pair固定，尚未开始新小头forward。
+CPU优先：P1/P0同FP32/同batch、全部先保存后评分；不加载source、不重建native/读HDF/RGB/环境或优化。预计含实现30–60分钟，硬限2GiB/至多.25完整GPUh。
+strg01现场data1个人用量1169500940KiB、quota2147483648KiB、共享余89021464776704B；原root实占1896264KiB，新输出预计<100MiB，无大资产复制。整批Git/回报完成后交回窗口并停止本项。
+
+以下§113登记段落保留派发前历史时点，实际授权/接手以上段为准。
+
 2026-10-03 main登记机制§113/findings§292与原生校准设计§6的冻结输入归因；尚未派发/启动，main独占canonical记录/Git。
 仅P500在已有96视频/3199区间读P1(H,H+)与P0(H,H)，精确分解第二memory作用及跨episode常量收益，无训练/新source/环境/扩数据。
 预计含实现30–60分钟、2GiB、CPU可行则0GPU/硬限.25完整GPUh；P0分布改变与所有强参照/不利项均保留。

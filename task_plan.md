@@ -1,5 +1,10 @@
 # EMBER task plan
 
+实验session已实际接手§113唯一冻结P500输入归因，canonical记录/Git独占窗口在实验session；main只读科学分析。
+仅原96视频/3199区间的小头CPU重算P1/P0，先存全部预测再按288不同episode pair/等episode等task口径读回。
+实现与完整正反读回后提交推送、一次整批回报并交回窗口；不恢复source/训练/环境，不追加输入或方法扫描。
+下方“尚未派发/执行”仅指原登记时点，不能覆盖本次实际接手状态。
+
 main完成机制§113/findings§292，登记唯一冻结P500输入归因追加，合同为native_transition_action_calibration_diagnostic§6。
 同一小头P1(H,H+)与P0(H,H)分开实际第二memory作用和P/F网络差异；原96视频/3199区间，不训练、source forward或环境。
 预计30–60分钟、2GiB/至多.25完整GPUh；尚未派发/执行，main持canonical窗口，接手后实验session独占并回报一次整批。

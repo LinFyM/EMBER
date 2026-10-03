@@ -7126,7 +7126,7 @@ main派生原件在本批`analysis/main_scientific_readback.json`，无新forwar
 
 机制§108预先冻结17当前fit任务、teacher16–19/query42–45，复用旧绝对1NN索引及现有P/F全部预测。
 只读旧NPZ的ids，动作只来自合法当前任务预测；官方held及内部留task排除，0GPU、无新forward/优化/环境或数据。
-272pair/9528行，2382独立query帧，task等权；原件位于native_transition_action_calibration_20261003/analysis/main_correspondence_transfer。
+272pair/9528行，2382个不同query帧，task等权；原件位于native_transition_action_calibration_20261003/analysis/main_correspondence_transfer。
 跨episode all7：matched mu/F/P/实际动作=.145994/.097711/.105858/.127353，query自身mu=.122075。
 P−F=+.008146508，17task全不利，task簇95%[.005176991,.011587996]；各自匹配仍较整teacher均值17task全有益。
 P对query mu仅8task改善，差额区间跨0；teacher实际动作也不比平滑预测更易迁移，不能称它为迁移误差下界。
@@ -7136,3 +7136,16 @@ P对query mu仅8task改善，差额区间跨0；teacher实际动作也不比平�
 夹爪贡献约85.9%的all7恶化，运动6亦+.001339789；不唯一归因噪声、接触或对应错误，不由离线MSE宣称闭环因果。
 降低“更准局部指令加状态查找即可修复”的依据；保留动态获取与状态对应正例，不自动恢复Value/Pullback/F替换或新增辅助。
 后继须推导教学中的可迁移任务关系如何成为自身控制函数；没有active实验，main继续固定数据内自主推进。
+
+## 288. 先辨识自身图像读取的功能，再决定是否值得监督它（2026-10-03）
+
+机制§109从已读task4获取正例、13错对象、56放置损失出发，区分图像选择与后续控制的竞争解释。
+VisibleObject的空间KL在teacher Reader，G2是独立时间query decoder，未检验生成LoRA在自身图像上的直接QK监督；
+这是有限历史核对，不因未实施便采纳新辅助。主FM已有完整自身信用，旧空间边际、Reader及Q/R交互限制都保持。
+
+同RGB/L/state与x_tau/tau下，C450/N450共有冻结图像prefix K/V。recipient只移植donor的图像内部条件分布，保留自己的总图像质量及非图像概率，
+实际层增量精确为m_R sum_i(pi_D−pi_R)V_image；后续计算保持recipient权重但接收改变的hidden。
+选定唯一[诊断](docs/designs/self_image_attention_transfer_diagnostic.md)：task4/13/56×init32–35×C/N及双向混合，共48行/12 full/36 compact。
+全部旧teacher、scene和RNG配对，donor每步使用recipient当前同一输入，不移植动作或独立积分，不训练、不新增数据。
+混合策略仅用于因果辨识，不能算一次LoRA成绩；双向行为转移或其失败更新自身视觉关系学习优先级，不自动接grounding/蒸馏/fresh或局部扫描。
+预计3–5小时、硬限3完整GPUh/8GiB；本条是结果前登记，实际接手/launch见progress，不代表已运行或通过。

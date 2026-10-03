@@ -2,6 +2,12 @@
 
 ## 科学目标与当前批次
 
+机制§109/findings§288登记唯一[自身图像读取分布交叉诊断](docs/designs/self_image_attention_transfer_diagnostic.md)。
+同一自身输入下只交换C450/N450的图像内部attention分布，保留recipient的图像质量及其它计算权重；用真实闭环区分读取与后续控制。
+固定task4/13/56×init32–35×四臂48行，12 full；不训练、不扩数据、无官方held/Test，不把混合臂当部署候选。
+预计含工程3–5小时、3完整GPUh/8GiB；当前已登记、尚未接手/运行，main将交给唯一实验session，接手以progress为准。
+下方无active段落保留先前裁决时点，不覆盖本登记；没有自动grounding loss、蒸馏或formal fresh。
+
 main已补充机制§108/findings§287：复用旧对应和已有P/F预测，17训练task出现获取—迁移反转。
 同一选帧权重下P较F改善teacher风险，却在全部17task提高跨episode风险；特权状态匹配自身仍有正收益。
 该CPU读回0GPU、不扩数据，原件已保存；继续推导可重用任务关系怎样形成自身控制，不以更准局部指令或查表替代。

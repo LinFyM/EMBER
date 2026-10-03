@@ -3,10 +3,19 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：登记自身图像选择的双向交叉诊断
+
+机制§109/findings§288与[合同](designs/self_image_attention_transfer_diagnostic.md)从task4/13/56的实际得失区分自身图像读取与后续控制。
+同RGB/L/state、x_tau/tau下，两策略共有冻结prefix K/V；只交换可见图像token间的条件attention，保留recipient图像总质量/非图像概率与权重。
+固定12个原teacher/init条件，C/N及双向混合共48环境行、12 full/36 compact；所有自身输入配对，没有donor独立轨迹或动作移植。
+VisibleObject/G2及旧Q/R、Reader的实际监督与正反边界完整保留，不因未试过就采纳新loss。
+仅作因果辨识，不训练、不扩数据、不使用官方held/Test；混合臂不具单LoRA部署资格，无自动fresh/grounding/蒸馏或局部扫描。
+预计3–5小时、3完整GPUh/8GiB；此为结果前登记，实际接手/代码/资源状态见progress，不能当成已执行证据。
+
 ## 2026-10-03：已有状态对应下，教学动作获取与跨episode迁移发生反转
 
 机制§108/findings§287复用旧绝对1NN索引及当前合法17fit任务的既存P/F预测，0GPU、无新模型/优化/环境或数据。
-teacher16–19/query42–45，272pair/9528行/2382独立query帧；官方held和内部留task排除，旧动作数组未读。
+teacher16–19/query42–45，272pair/9528行/2382个不同query帧；官方held和内部留task排除，旧动作数组未读。
 matched P/F all7=.105858/.097711，全部17task P更差；但同选帧权重下P对teacher指令的误差全部17task更低。
 精确分解的teacher/query风险差为−.014253/+.008147，差.022400；夹爪贡献85.9%，运动亦不利。
 匹配相对各自整teacher均值仍17task全有益；其特权、离线和非完整状态限制保留，不从中推出唯一闭环根因。

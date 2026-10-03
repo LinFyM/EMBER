@@ -2,7 +2,14 @@
 
 ## 当前授权与活动批次
 
-main完成机制§108/findings§287的CPU对应读回，无新模型/梯度/环境/GPU：17当前fit任务、272pair、9528行/2382独立query帧。
+main已在机制§109/findings§288登记唯一[自身图像读取分布交叉诊断](docs/designs/self_image_attention_transfer_diagnostic.md)。
+只交换两冻结策略同一自身输入下的图像内部attention，保留recipient图像总质量/非图像分量及其执行权重；不由错物体现象直接添加grounding loss。
+固定task4/13/56×init32–35×四臂，共48行/12 full/36 compact，复用原C450/N450同teacher bank与scene/RNG。
+不训练、不扩数据、无官方held/Test；混合臂只作因果辨识，不能当作一次LoRA方法成绩，结果不自动接新训练或扫描。
+预计含工程3–5小时、硬限3完整GPUh/8GiB；本段为科学登记，尚未接手/launch，canonical tracked/Git目前仍由main持有。
+唯一实验session接手后独占工程/记录/Git并整批回报；main消费后负责科学裁决。下方无active段落保留各自历史时点。
+
+main完成机制§108/findings§287的CPU对应读回，无新模型/梯度/环境/GPU：17当前fit任务、272pair、9528行/2382个不同query帧。
 复用旧绝对1NN索引，动作只读合法任务现有P/F预测；当前held与内部留task均排除。
 相同选帧下P−F教师风险−.014253，跨episode+.008147，17task全部反转；夹爪贡献约85.9%，运动亦不利。
 匹配本身相对各自teacher均值全部17task有益；获取与可迁移控制不能互相代替，具体限制见机制§108。

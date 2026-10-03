@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：已有状态对应下，教学动作获取与跨episode迁移发生反转
+
+机制§108/findings§287复用旧绝对1NN索引及当前合法17fit任务的既存P/F预测，0GPU、无新模型/优化/环境或数据。
+teacher16–19/query42–45，272pair/9528行/2382独立query帧；官方held和内部留task排除，旧动作数组未读。
+matched P/F all7=.105858/.097711，全部17task P更差；但同选帧权重下P对teacher指令的误差全部17task更低。
+精确分解的teacher/query风险差为−.014253/+.008147，差.022400；夹爪贡献85.9%，运动亦不利。
+匹配相对各自整teacher均值仍17task全有益；其特权、离线和非完整状态限制保留，不从中推出唯一闭环根因。
+原件在native_transition_action_calibration_20261003/analysis/main_correspondence_transfer，包含登记、CPU重现、逐行/逐pair/逐task和全部不利项。
+此结果降低直接迁移局部teacher指令的优先级，不恢复旧Value/Pullback或启动新训练；主讨论继续固定数据内推导。
+
 ## 2026-10-03：控制内容获取没有转成完整控制，关闭本次Value调制配方
 
 main科学消费见机制§107/findings§286。实际代码、12份FM/8份被动原件、新旧1632份continuous及六份双RGB捕获直接读回；

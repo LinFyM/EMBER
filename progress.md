@@ -2,6 +2,12 @@
 
 ## 当前授权与活动批次
 
+main完成机制§108/findings§287的CPU对应读回，无新模型/梯度/环境/GPU：17当前fit任务、272pair、9528行/2382独立query帧。
+复用旧绝对1NN索引，动作只读合法任务现有P/F预测；当前held与内部留task均排除。
+相同选帧下P−F教师风险−.014253，跨episode+.008147，17task全部反转；夹爪贡献约85.9%，运动亦不利。
+匹配本身相对各自teacher均值全部17task有益；获取与可迁移控制不能互相代替，具体限制见机制§108。
+原件在native_transition_action_calibration_20261003/analysis/main_correspondence_transfer；main仍持窗口、无active实验，继续固定数据内推导。
+
 main已完成控制内容调制读写的科学消费与裁决，见机制§107/findings§286；本fresh450配方关闭，没有active实验或新GPU计算。
 直接核实际2c630fb3科学代码、12份FM/8份q与native原件、新旧1632份continuous及六份配对双RGB捕获；
 派生原件为本批`analysis/main_scientific_readback.json`，没有新forward、标签或环境运行。

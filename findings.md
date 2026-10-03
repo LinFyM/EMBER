@@ -7121,3 +7121,18 @@ A28 full8前5仅.137726→.136347，其中夹爪贡献+.001675、运动六维贡
 主FM原本已学习地址及自身hidden作用，不能又说缺少这条信用。未测的梯度冲突、q忽略、地址错配不得升级为唯一根因。
 本构造在固定学习年龄没有通过完整预测，关闭900/辅助或门控小扫、Reader蒸馏及固定Pullback复活；不是所有动作校准或一次编译不可能。
 main派生原件在本批`analysis/main_scientific_readback.json`，无新forward/GPU；11.471727418GPUh整批结束，main继续既有数据内自主推导。
+
+## 287. 更准的教学指令在同一状态对应下仍可损害跨episode预测（2026-10-03）
+
+机制§108预先冻结17当前fit任务、teacher16–19/query42–45，复用旧绝对1NN索引及现有P/F全部预测。
+只读旧NPZ的ids，动作只来自合法当前任务预测；官方held及内部留task排除，0GPU、无新forward/优化/环境或数据。
+272pair/9528行，2382独立query帧，task等权；原件位于native_transition_action_calibration_20261003/analysis/main_correspondence_transfer。
+跨episode all7：matched mu/F/P/实际动作=.145994/.097711/.105858/.127353，query自身mu=.122075。
+P−F=+.008146508，17task全不利，task簇95%[.005176991,.011587996]；各自匹配仍较整teacher均值17task全有益。
+P对query mu仅8task改善，差额区间跨0；teacher实际动作也不比平滑预测更易迁移，不能称它为迁移误差下界。
+
+令d=P_T−F_T，同选帧权重有ΔR_Q−ΔR_T=2E<d,Y_T−Y_Q>。
+实际能量.017493200、teacher/query两倍对齐.031746284/.009346692；teacher风险−.014253084，query+.008146508，17task逐个反转。
+夹爪贡献约85.9%的all7恶化，运动6亦+.001339789；不唯一归因噪声、接触或对应错误，不由离线MSE宣称闭环因果。
+降低“更准局部指令加状态查找即可修复”的依据；保留动态获取与状态对应正例，不自动恢复Value/Pullback/F替换或新增辅助。
+后继须推导教学中的可迁移任务关系如何成为自身控制函数；没有active实验，main继续固定数据内自主推进。

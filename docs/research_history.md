@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：源预测差转移有局部改善，未提供超过共享读出的教学收益
+
+机制§111/findings§290在原17fit任务/272pair/9528行、同对应与权重上检验`mu_Q+A_T-mu_T`。
+转移F/P=.083982/.095743，较原.097711/.105858改善；P仍17/17劣F，差额由+.0081465扩大为+.0117612。
+主分数后另登记并读取共享F_Q=.072443的强参照；两转移均17/17不利，不把胜裸mu解释为视频有益增量。
+保留源差补偿正例、全部不利任务/通道及seen-task/单步/特权对应限制，不恢复残差/Pullback/拟合扫描或正式训练。
+原件位于native_transition_action_calibration_20261003/analysis/main_residual_transfer，两次CPU约5.7秒、0GPU、约3.21MB；无active实验，main继续固定数据推导。
+
 ## 2026-10-03：自身图像选择交叉的科学消费与有限作用裁决
 
 机制§110/findings§289：main直接读取8e682f90干预算子、48份原continuous及全部12 full双RGB，独立CPU结果在本root analysis/main_scientific_readback.json。

@@ -1,5 +1,11 @@
 # EMBER progress
 
+2026-10-03 main完成固定17任务的源预测差转移CPU读回，机制§111/findings§290；没有模型/优化/环境或新增数据，0GPU。
+F/P转移all7=.083982/.095743，较原匹配估计改善，但P仍17/17劣F；后补直接共享F_Q=.072443，两种转移均17/17不利。
+事前登记、参照补项时点、逐行/逐task/分量及两次exit0原件在native_transition_action_calibration_20261003/analysis/main_residual_transfer。
+两进程含启动/序列化合计约5.7秒、新增约3.21MB；不恢复动作残差、Pullback、校准门控或扫描，完整目标未完成。
+main独占canonical记录/Git；无active实验。当前只读推导核一项goal-inference一致性原理及其数据/控制前提，不代表已采纳路线或训练许可。
+
 2026-10-03 main完成本批科学消费（机制§110/findings§289），直接读取冻结干预算子、48份原continuous与全部12 full双RGB，0新增模型/环境/GPU。
 图像选择具有有限因果作用，但10个原策略成败不同的条件仅救回弱recipient3条、同时丢强recipient4条；task13双向目标选择预测未完整成立。
 actual pi_D依赖donor完整控制计算，图像V是上下文化prefix，不能把它当物体标签；读取与后续控制的共同作用仍须完整学习。

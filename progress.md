@@ -1,5 +1,10 @@
 # EMBER progress
 
+2026-10-03 `fixed_B_transfer_readback_20261003` 的400新视频银行已实际启动：clean pushed detached d56f6fa2，GPU02物理0/1/2/3/7/6，bank owner PID2317299。
+现场双节点本用户0→6卡/总cap6/单节点6，六卡live低util且最少38.5GiB空余；strg01 data1独立quota/shared复核准入。native framechunk32→128，授权最长视频91帧可整段打包，无额外视频/profile forward。
+A64完整545-key Writer仅冻结读取；全部38-target A0+S/B0+M保持，0optimizer/训练/held动作。父/T/MT旧400原件的source、scene、policy/env RNG、官方口径及source normalization数值配对一致，T的完整teacher映射亦一致。
+银行结束后用canonical persistent/dynamic队列读取固定400环境行，8 full/392 compact；工程packing为env容量16/每卡2 replicas，实际吞吐/峰值/有效batch在消费者退出记录核实，不以最低显存为目标。主讨论只读，实验session继续独占窗口；无自动其它矩阵。
+
 2026-10-03 实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553 已实际接手 `fixed_B_transfer_readback_20261003`，独占canonical tracked/Git；main只读科学分析。
 从clean pushed e8134b5f建立codex/fixed-b-transfer-readback独占工程树，完整读取§117–118/findings§296–297及合同；仅接入原A64全Writer归档，复用canonical Compiler/bank/official evaluator。
 固定8 validation任务/400不同视频、父900原scene/RNG及8 full/392 compact，无optimizer/新训练/held动作/额外面板。预计45–90分钟、3完整GPUh/24GiB，预计新增18–20GiB；strg01 data1 quota2147483648KiB/实占1175344300KiB/shared余88968256987136B已核，峰值预算准入。

@@ -717,7 +717,15 @@ def run_worker(
     finally:
         if runtime is not None:
             runtime.pool.close()
+    import torch
+
     summary = {
+        "execution_packing": {
+            "env_capacity": int(contract["parallel"]["envs_per_replica"]),
+            "max_adapter_batch": getattr(runtime.task_adapter, "max_inference_batch", None),
+            "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
+            "peak_reserved_bytes": torch.cuda.max_memory_reserved(),
+        },
         "event": "finished",
         "unix": time.time(),
         "worker_id": worker_id,

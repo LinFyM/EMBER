@@ -100,13 +100,15 @@ class OperatorCompiler:
         self.asset_root, self.config, self.data, self.request = asset_root, config, None, None
 
     def prepare(self, request):
+        from .fixed_b_archive import weights_file
+
         if self.request == request:
             return
         self.close()
         checkpoint, source, _output, _shapes, _frame_chunk = request
         if self.runtime.source != source:
             raise ValueError('materialization source differs from the formal training run')
-        self.runtime.writer.load_state_dict(load_file(str(Path(checkpoint) / 'ecp.safetensors'),
+        self.runtime.writer.load_state_dict(load_file(str(weights_file(Path(checkpoint))),
                                                       device=str(self.runtime.device)), strict=True)
         self.runtime.writer.requires_grad_(False).eval()
         self.runtime.policy.eval()

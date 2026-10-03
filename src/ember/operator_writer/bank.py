@@ -730,6 +730,8 @@ class FrozenOperatorAdapter:
         self.common = load_file(bank["shared"]["path"], device="cpu")
         self.conditions = {row["condition_id"]: row for row in bank["conditions"]}
         self.states: OrderedDict[str, dict] = OrderedDict()
+        self.state_cache_capacity = 8
+        self.max_inference_batch = 0
 
     def _state(self, key: str) -> dict:
         if self.bank["mode"] in ("MT", PUBLIC_BETA_MODE, "joint_public", "T450_public", "context_public", "context_public_validation", "self_read_public"):
@@ -749,7 +751,7 @@ class FrozenOperatorAdapter:
         else:
             result = assemble_state(self.common, factors, self.lora)
         self.states[key] = result
-        if len(self.states) > 8:
+        if len(self.states) > self.state_cache_capacity:
             self.states.popitem(last=False)
         return result
 
@@ -766,6 +768,8 @@ class FrozenOperatorAdapter:
     def predict_action_chunk(self, prepared, batch, *, noise, num_steps):
         if not prepared or len(prepared) != noise.shape[0]:
             raise Pi05EvaluationError("operator LoRA batch lost paired conditions")
+        self.max_inference_batch = max(self.max_inference_batch, len(prepared))
+        self.state_cache_capacity = max(self.state_cache_capacity, len(prepared))
         copy_task_lora_state_(self.policy, self.identity, self.lora)
         with self.batched.activate([self._state(item.key) for item in prepared]):
             return self.policy.predict_action_chunk(batch, noise=noise, num_steps=num_steps)

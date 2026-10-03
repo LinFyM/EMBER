@@ -1,5 +1,10 @@
 # EMBER progress
 
+2026-10-03 实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553 已实际接手 `fixed_B_transfer_readback_20261003`，独占canonical tracked/Git；main只读科学分析。
+从clean pushed e8134b5f建立codex/fixed-b-transfer-readback独占工程树，完整读取§117–118/findings§296–297及合同；仅接入原A64全Writer归档，复用canonical Compiler/bank/official evaluator。
+固定8 validation任务/400不同视频、父900原scene/RNG及8 full/392 compact，无optimizer/新训练/held动作/额外面板。预计45–90分钟、3完整GPUh/24GiB，预计新增18–20GiB；strg01 data1 quota2147483648KiB/实占1175344300KiB/shared余88968256987136B已核，峰值预算准入。
+来源链900续训/原correct400=85919994、450父=a0e0248d、Original32读取=923ff89b、A64学习=b0df34ee、原环境=a270fb01分列；旧sealed简称保留。本批尚未GPU启动，实施/实际退出随后更新。
+
 2026-10-03 main完成机制§118/findings§297，登记唯一[既存A64共享B跨任务完整读回](docs/designs/fixed_B_transfer_readback.md)。
 冻结原A64全部权重，原8val/400不同task-video条件及900映射/scene/RNG；8 full/392 compact，对比既有900140/T161/MT153。
 无新训练/数据/held动作，完整读回用于判断已有有限控制修正的迁移价值；不自动追加模型、controls、相邻或正式selected声明。

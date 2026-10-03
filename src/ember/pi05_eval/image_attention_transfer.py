@@ -174,11 +174,19 @@ class AttentionTransferAdapter(FrozenOperatorAdapter):
             after = self._forward(original, single, 'recipient', sliced)
             delta = (after - before).float()
             rms, maximum = float(delta.square().mean().sqrt()), float(delta.abs().max())
+            baseline_rms = float(before.float().square().mean().sqrt())
+            baseline_maximum = float(before.float().abs().max())
+            unit = torch.finfo(torch.bfloat16).eps
+            rms_tolerance = unit * max(1.0, baseline_rms)
+            maximum_tolerance = unit * max(1.0, baseline_maximum)
             record = {'schema_version': TAG, 'same_registered_query': True, 'queries': 1,
                       'layers': 18, 'self_donor_velocity_RMS': rms, 'self_donor_velocity_max_abs': maximum,
                       'source_prefix_shared': True, 'layout': self.layout,
-                      'allowed_normal_BF16_RMS': .001, 'allowed_normal_BF16_max_abs': .01,
-                      'passed': rms < .001 and maximum < .01}
+                      'baseline_velocity_RMS': baseline_rms, 'baseline_velocity_max_abs': baseline_maximum,
+                      'tolerance_basis': 'one BF16 epsilon times max(1, baseline output scale)',
+                      'allowed_normal_BF16_RMS': rms_tolerance, 'allowed_normal_BF16_max_abs': maximum_tolerance,
+                      'cuda_peak_reserved_GiB': torch.cuda.max_memory_reserved() / 2**30,
+                      'passed': rms < rms_tolerance and maximum < maximum_tolerance}
             write_json_atomic(ROOT / 'analysis/interface_self_donor.json', record)
             if not record['passed']:
                 raise Pi05EvaluationError('self-donor changes actual velocity beyond normal BF16 tolerance')

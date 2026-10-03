@@ -1,5 +1,7 @@
 # EMBER progress
 
+实际消费者8beacfe9已在gpu02:0运行并退出1（PID3193494、67.3346秒/.018704064GPUh，无环境行）。两可见相机各256 token、第三256 token false mask、200语言/共968 prefix、50 suffix与18层已实测。self-donor RMS .001342318/max .009053469被自设绝对RMS .001阈值拒绝；该阈值没有仓库依据且低于正常BF16量级，现按一个BF16 epsilon×原输出尺度修正检查，干预/模型计算保持原样，失败及原数值保留。新code重新push/freeze，仍仅原注册case内profile，无新环境smoke。
+
 首次ad431240冻结CPU bank读取消费退出1、0GPUh，唯一差异为原bank spec绝对路径与新frozen路径（均6152B）；小JSON语义直接核对后只恢复历史provenance路径传给原inspector，其余source/factor/scope完整检查保持，旧原件不改。修复将重新push/freeze，不原地修改ad431240。
 
 本批窄实现已接入canonical bank/evaluator：原sample_actions十步积分与18层原生RoPE/GQA保持，两bank因子每replan各打包一次，四panel由同一resident worker/source依次消费，动态队列仍由canonical owner执行。

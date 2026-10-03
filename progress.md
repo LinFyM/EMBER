@@ -1,5 +1,12 @@
 # EMBER progress
 
+2026-10-03 实验session01a0fabb-f7a0-7100-93d8-6a0f66055553实际接手 `joint_action_effect_credit_20261003`，独占canonical tracked/Git窗口；main只读科学分析。
+基线09ee68f2；完整合同、机制§116/findings§295及Owner科学/资源要求已读。隔离分支codex/joint-action-effect-credit，独立data1工程worktree。
+当前为实体/post-action时间对应的CPU语义准入及工程实施；尚无新GPU、模型forward、训练或环境执行。不恢复旧T/prefix/Gamma路线。
+唯一root `/data1/user/ymdai/ember_runs/joint_action_effect_credit_20261003/`，固定64×两臂及64环境行；预计2–4小时，硬限4完整GPUh/12GiB。
+strg01现场data1个人实占1169523776KiB、quota2147483648KiB、shared余89017670901760B；含标签/cache/两臂恢复/banks/RGB/冻结工程树预计10GiB。
+只读旧源/原件；teacher state/action不作表示输入。后续按真实吞吐验证microbatch/frame chunk，正式消费来自clean pushed detached。
+
 2026-10-03 main完成机制§116/findings§295，登记唯一[动作—物体位移联合信用](docs/designs/joint_action_effect_credit_diagnostic.md)。
 当前900固定教学读取/解释器/A；两臂只学习共享38处B生成器，比较原动作FM与query自身实际位移的原生联合输出信用。
 固定原四task/八teacher/64步A28、每臂32环境行/六full及原功能面板；预计2–4小时、4完整GPUh/12GiB，不扩数据。

@@ -1,5 +1,10 @@
 # EMBER progress
 
+2026-10-03 `fixed_B_transfer_readback_20261003` 的400新视频完整38-target银行已完成：exit0，225.034秒×6卡=.375056499完整GPUh，factor共16480787200 bytes。chunk128覆盖最长91帧，实测reserved21.345703GiB；更大chunk不能增加实际帧，未重复编译/profile。
+CPU canonical prepare通过（exit0/14.474秒/0GPU），400映射/原scene/RNG/official/归一化配对一致。correct400已实际启动，PID2367038，仍用clean pushed detached d56f6fa2。
+launch再次live双节点、本用户0→6卡、data1独立quota/shared与银行后实占核实；env容量16替代旧8、每卡2个persistent replicas，当前授权400内按实际大小打包，worker最终保留峰值/最大真实batch/吞吐。六卡reader无Writer/gamma/新训练，完整64权重来源及900纠正分列。
+本批400环境行/8 full/392 compact及CPU行为读回未完成；实验session继续独占canonical/Git，main只读，无自Queue/周期日志读取或其它arm。
+
 2026-10-03 `fixed_B_transfer_readback_20261003` 的400新视频银行已实际启动：clean pushed detached d56f6fa2，GPU02物理0/1/2/3/7/6，bank owner PID2317299。
 现场双节点本用户0→6卡/总cap6/单节点6，六卡live低util且最少38.5GiB空余；strg01 data1独立quota/shared复核准入。native framechunk32→128，授权最长视频91帧可整段打包，无额外视频/profile forward。
 A64完整545-key Writer仅冻结读取；全部38-target A0+S/B0+M保持，0optimizer/训练/held动作。父/T/MT旧400原件的source、scene、policy/env RNG、官方口径及source normalization数值配对一致，T的完整teacher映射亦一致。

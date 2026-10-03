@@ -3,6 +3,21 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-03：自身图像选择双向交叉的48行完整执行交付
+
+按[原合同](designs/self_image_attention_transfer_diagnostic.md)固定task4/13/56×init32–35×四臂，48/48行、12 full双RGB/36 compact全部完成，无训练/扩数据/held/Test/controls。
+同一当前RGB/L/state、x_tau/tau及一次prefix K/V下，donor原完整suffix提供图像内部条件attention；recipient图像总质量/非图像概率与其余权重保持，全部18层/8heads/50slots/10flow介入，无donor独立积分或动作/hidden移植，后续hidden可改变。
+task4/13/56按C、N、C←N、N←C成功数分别为[0,4,1,2]、[3,0,3,1]、[4,1,2,2]，各臂每task4行；原C7/N5的同批成功集合与历史一致、churn0。
+C←N为6/12、R5/G1/L2/churn3：新增task4/init34，丢task56/init33/34；N←C为5/12、R3/G2/L2/churn4：新增task13/init35和task56/init32，丢task4/init32/35。全部25条失败与正例保留，不只报告救回。
+十二份init32实际RGB显示：task4 C←N晚段移出目标碗但未置盘，N←C未保住原置盘；task13 N←C由salad转为操作bbq但未入篮，C←N仍送入篮；task56 N←C恢复叠放，两混合成功集合均{32,35}。其余compact不补造RGB，3cm/中心/命令不当抓持证据。
+所有初始body/EEF/quat/gripper/predicates、teacher/scene/RNG及绝对共同噪声前缀配对通过；全部50×7 chunks、成功停止前实际physical前5与独立continuous一致，T+1状态/目标完整。24个混合条件的平均Value增量均非零，非图像FP32概率差0、图像/总质量误差<1e-6（保存为replan平均），不把范数当行为解释。
+实际GPU消费者clean pushed detached8e682f9045da22f8c6bad8fce92638f1821b3035；C训练/物化a0e0248d、N训练/物化2c630fb3、Source1000原训练b8ea00e9及旧读取另列。旧bank spec只恢复历史路径绑定交原完整inspector，其余来源/结构检查不变，sealed原件未改。
+GPU首次self-donor自设绝对RMS阈值.001拒绝正常BF16差.001342318，67.334632秒exit1/.018704064GPUh保留；只将验收改为一个BF16 epsilon×原输出尺度，科学计算未改，无dtype/bit扫描。重检29.513345秒exit0/.008198151GPUh，实际相机256/256/256、第三false、prefix968/suffix50通过。
+合法batch4实测比batch1 query/s提高39.47%，正式两卡×3 persistent worker，六worker每份只加载一次source，按EGL/CUDA余量准入、不增样本填显存。正式48行285.456734秒exit0/.158587075GPUh；总含加载/profile失败/I/O/退出.185489290357/3GPUh，已记录正式reserved峰10.0078125GiB/worker，失败profile峰未采集。
+新增root+工程树阶段实占1.801430GiB，临时/代码/失败冻结树保守峰6.5/8GiB；strg01 data1独立quota/shared最终核验通过，所有消费者/六worker PID退出、双节点本用户GPU进程0，他人未被终止/暂停/reset。
+primary `/data1/user/ymdai/ember_runs/self_image_attention_transfer_20261003/`：completion.json、readback.json、analysis/report.md/rows.jsonl/per_case.csv/effect_summary.json/identities.json/original_replay_rows.json/rgb，launch/gpu_ledger.json/final_release.json及四臂results/完整capture。
+三份专用源码与五处共享hooks接入完成后退役，当前runtime guard拒绝旧诊断直接执行；Git/frozen/失败/合法原件保留。以上为执行与描述读回事实，main消费后负责科学解释与取舍；混合不算部署分数，无自动训练或局部扫描。整批Git push与一次有来源回报后交回窗口、停止本项。
+
 ## 2026-10-03：登记自身图像选择的双向交叉诊断
 
 机制§109/findings§288与[合同](designs/self_image_attention_transfer_diagnostic.md)从task4/13/56的实际得失区分自身图像读取与后续控制。

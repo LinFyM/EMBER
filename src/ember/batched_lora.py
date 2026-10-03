@@ -101,8 +101,12 @@ class BatchedLoRAInference:
 
         return add_per_sample_delta
 
-    def pack_states(self, states: Sequence[Mapping[str, torch.Tensor]]) -> dict[str, torch.Tensor]:
-        """Pack registered per-sample factors once for repeated suffix reads."""
+    @contextmanager
+    def activate(
+        self, states: Sequence[Mapping[str, torch.Tensor]]
+    ) -> Iterator[None]:
+        """Activate one complete adapter per policy-batch sample."""
+
         if self._closed:
             raise LoRAContractError("batched LoRA inference hooks are closed")
         if self._active_state is not None:
@@ -129,23 +133,11 @@ class BatchedLoRAInference:
                     ],
                     dim=0,
                 )
-        return stacked
-
-    @contextmanager
-    def activate_packed(self, stacked: Mapping[str, torch.Tensor]) -> Iterator[None]:
-        if self._closed or self._active_state is not None:
-            raise LoRAContractError("packed LoRA activation is closed or reentrant")
         self._active_state = stacked
         try:
             yield
         finally:
             self._active_state = None
-
-    @contextmanager
-    def activate(self, states: Sequence[Mapping[str, torch.Tensor]]) -> Iterator[None]:
-        """Activate one complete adapter per policy-batch sample."""
-        with self.activate_packed(self.pack_states(states)):
-            yield
 
     def close(self) -> None:
         if self._closed:

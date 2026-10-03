@@ -240,10 +240,6 @@ def load_evaluation_adapter(
 
         return FrozenComparisonAdapter(**common)
     if adapter.get("kind") == OPERATOR_READ_WRITE_KIND:
-        if adapter.get("self_image_attention_transfer") is not None:
-            from ember.pi05_eval.image_attention_transfer import AttentionTransferAdapter
-
-            return AttentionTransferAdapter(**common)
         from ember.operator_writer.bank import FrozenOperatorAdapter
 
         return FrozenOperatorAdapter(**common)
@@ -255,8 +251,6 @@ def episode_adapter_fields(
 ) -> dict[str, Any]:
     if task_adapter is not None:
         if contract.get("adapter", {}).get("kind") == OPERATOR_READ_WRITE_KIND:
-            if contract["adapter"].get("self_image_attention_transfer") is not None:
-                return {"operator_read_write_lora": task_adapter.episode_evidence(prepared)}
             return {"operator_read_write_lora": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == DEMONSTRATION_COMPARISON_KIND:
             return {"demonstration_comparison_lora": dict(prepared.evidence)}
@@ -282,10 +276,6 @@ def validate_episode_adapter_fields(
     init_state_id: int,
 ) -> bool:
     if adapter is not None and adapter.get("kind") == OPERATOR_READ_WRITE_KIND:
-        if adapter.get("self_image_attention_transfer") is not None:
-            from ember.pi05_eval.image_attention_contract import validate_episode
-
-            return validate_episode(adapter, row, suite, task_id, init_state_id)
         from ember.operator_writer.bank import validate_episode
 
         return (all(row.get(name) is None for name in (

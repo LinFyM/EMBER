@@ -1,5 +1,23 @@
 # EMBER progress
 
+2026-10-03 `self_image_attention_transfer_20261003` 全部执行与CPU读回完成：48/48行、12 full双RGB/36 compact、全部goal/continuous/physical actions和18层×10flow紧凑作用齐备，无缺项。
+task4/13/56按C、N、C←N、N←C成功数分别为[0,4,1,2]、[3,0,3,1]、[4,1,2,2]（各臂每task4行）；C←N总6/12、R5/G1/L2/churn3，N←C总5/12、R3/G2/L2/churn4。
+C/N同批重放7/5与历史成功集合完全一致、churn0；所有teacher/scene/初始body/EEF/quat/gripper/predicate及绝对共同噪声配对通过，实际动作与独立continuous一致，保留25条失败及全部正例。
+十二份init32 RGB已读：task4的C←N有晚段移出碗但未置盘，N←C失去原成功；task13的N←C/init32改为操作bbq却未入篮，init35新增成功，C←N三条成功保持；task56两混合臂同为{32,35}，保留C←N在33/34的丢失。
+body中心/3cm/夹爪命令不当抓持证据；混合臂只有有限因果诊断身份，不能算部署分数。以上为执行/描述读回，科学解释与后继取舍由main消费全部原件后负责。
+实际消费者clean pushed detached8e682f9045da22f8c6bad8fce92638f1821b3035；C训练/物化a0e0248d、N训练/物化2c630fb3、Source1000原训练b8ea00e9分别登记。48行消费者285.456734秒exit0、六worker每份source只加载一次。
+本批含加载、失败profile、I/O与退出共.185489290357/3完整GPUh；正式已记录reserved峰10.0078125GiB/worker，失败profile峰未采集，不伪称全批VRAM峰已观测。合法batch4比batch1实测query/s快39.47%，正式两卡×3 persistent worker，按EGL/CUDA余量准入，遵守Owner显存吞吐要求。
+新增root+工程树阶段实占1.801430GiB、暂存/代码/失败冻结树保守准入峰6.5/8GiB；strg01 data1独立quota/shared最终复核通过，所有消费者及六worker PID已退出，双节点本用户GPU进程0，未终止/暂停/reset他人。
+primary `/data1/user/ymdai/ember_runs/self_image_attention_transfer_20261003/`：completion.json、readback.json、analysis/report.md/rows.jsonl/per_case.csv/effect_summary.json/identities.json/original_replay_rows.json/rgb，launch/gpu_ledger.json/final_release.json及四臂原results/captures。
+三份任务专用入口/hooks及五处共享接入已退役，当前runtime拒绝旧诊断直接执行；Git/frozen/失败和合法原件保留。Git推送与一次来源明确整批回报完成后交回canonical窗口，实验session停止本项；无active计算/训练或自动后继，不恢复450/900配方。
+
+### 本批此前工程过程（以下状态仅指其历史时点）
+
+2026-10-03四臂48行已实际启动：PID/PGID3305517，clean pushed detached8e682f90，gpu02:0/1两卡、各3 persistent worker、完整task四init batch4。
+启动前双节点/总卡数及strg01 data1独立quota/shared已现场核实；本用户0→2卡/上限6，个人用量1168940496KiB，新增root+工程树1.020GiB，保守峰6.5<8GiB。
+实际消费者profile exit0：batch1=.716868秒、batch4=2.055971秒，query/s提高39.47%，reserved峰9.980469GiB；按EGL/CUDA余量与canonical每worker12GiB+2GiB准入使用每卡3份，未把torch峰值直接当整卡预算。
+48行prepare exit0且固定teacher/scene/官方协议检查通过；所有阶段命令/环境/身份/失败回执在root launch，正式环境尚未读回。不训练、不重新物化，无自Queue或中间选点；当前窗口仍由实验session独占。
+
 实际消费者8beacfe9已在gpu02:0运行并退出1（PID3193494、67.3346秒/.018704064GPUh，无环境行）。两可见相机各256 token、第三256 token false mask、200语言/共968 prefix、50 suffix与18层已实测。self-donor RMS .001342318/max .009053469被自设绝对RMS .001阈值拒绝；该阈值没有仓库依据且低于正常BF16量级，现按一个BF16 epsilon×原输出尺度修正检查，干预/模型计算保持原样，失败及原数值保留。新code重新push/freeze，仍仅原注册case内profile，无新环境smoke。
 
 首次ad431240冻结CPU bank读取消费退出1、0GPUh，唯一差异为原bank spec绝对路径与新frozen路径（均6152B）；小JSON语义直接核对后只恢复历史provenance路径传给原inspector，其余source/factor/scope完整检查保持，旧原件不改。修复将重新push/freeze，不原地修改ad431240。
@@ -13,14 +31,14 @@
 当前在实现同输入、同prefix的18层/50slot/10flow图像内部条件分布传递；原四臂48行/12 full/36 compact及teacher/scene/RNG固定。尚未启动模型或环境。
 strg01 data1个人用量1167868424KiB、quota2147483648KiB、共享余89.023TB；本批预计新增峰6.5GiB<8GiB，硬限3完整GPUh。正式消费者将由clean pushed detached来源运行；完整交付后退役本次入口/hooks并交回窗口。
 
-## 当前授权与活动批次
+## 本批授权与登记（现已执行完成）
 
 main已在机制§109/findings§288登记唯一[自身图像读取分布交叉诊断](docs/designs/self_image_attention_transfer_diagnostic.md)。
 只交换两冻结策略同一自身输入下的图像内部attention，保留recipient图像总质量/非图像分量及其执行权重；不由错物体现象直接添加grounding loss。
 固定task4/13/56×init32–35×四臂，共48行/12 full/36 compact，复用原C450/N450同teacher bank与scene/RNG。
 不训练、不扩数据、无官方held/Test；混合臂只作因果辨识，不能当作一次LoRA方法成绩，结果不自动接新训练或扫描。
-预计含工程3–5小时、硬限3完整GPUh/8GiB；本段为科学登记，尚未接手/launch，canonical tracked/Git目前仍由main持有。
-唯一实验session接手后独占工程/记录/Git并整批回报；main消费后负责科学裁决。下方无active段落保留各自历史时点。
+预计含工程3–5小时、硬限3完整GPUh/8GiB；实际接手/launch/完成以上方执行记录为准，本面板不再active。
+整批Git回报后canonical窗口交回main，其消费并负责科学裁决。下方无active段落保留各自历史时点。
 
 main完成机制§108/findings§287的CPU对应读回，无新模型/梯度/环境/GPU：17当前fit任务、272pair、9528行/2382个不同query帧。
 复用旧绝对1NN索引，动作只读合法任务现有P/F预测；当前held与内部留task均排除。

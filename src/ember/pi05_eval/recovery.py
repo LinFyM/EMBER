@@ -99,10 +99,6 @@ def _reinspect_adapter(
     contract: Mapping[str, Any],
     model: Mapping[str, Any],
 ) -> Mapping[str, Any]:
-    if adapter.get("self_image_attention_transfer") is not None:
-        from ember.pi05_eval.image_attention_contract import inspect_adapter
-
-        return inspect_adapter(contract["self_image_attention_transfer"]["arm"], model)
     tasks = tuple(
         argparse.Namespace(suite=row["suite"], task_id=int(row["task_id"]),
                            init_state_ids=row.get("init_state_ids"))

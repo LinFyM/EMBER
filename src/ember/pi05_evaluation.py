@@ -654,8 +654,6 @@ def run_worker(
     *,
     output_dir: Path,
     worker_id: str,
-    runtime_provider: Any | None = None,
-    close_pool: bool = True,
 ) -> dict[str, Any]:
     output_dir = output_dir.resolve()
     invocation_id = os.environ.get("EMBER_PI05_EVAL_INVOCATION_ID", "")
@@ -681,7 +679,7 @@ def run_worker(
     completed = 0
     adopted = 0
     try:
-        runtime = (runtime_provider or _initialize_worker)(output_dir, worker_id)
+        runtime = _initialize_worker(output_dir, worker_id)
         ready_unix = time.time()
         _append_worker_event(
             event_path,
@@ -717,7 +715,7 @@ def run_worker(
         )
         raise
     finally:
-        if runtime is not None and close_pool:
+        if runtime is not None:
             runtime.pool.close()
     summary = {
         "event": "finished",

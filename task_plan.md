@@ -1,16 +1,25 @@
 # EMBER task plan
 
+唯一 `self_image_attention_transfer_20261003` 已全部执行与读回：48行/12 full/36 compact，C、N、C←N、N←C为7/5/6/5；两方向R/G/L为5/1/2及3/2/2，原重放成功集合与历史一致。
+全部正反、RGB/目标/实际动作和配对证据保留于root completion/readback/analysis；.185489290357GPUh，新增阶段实占1.801430GiB/保守峰6.5，均在3/8硬限内，GPU/PID已释放。
+任务专用运行面已退役，Git/frozen/原件保留；整批push与一次有来源回报完成后canonical窗口回main，实验session停止。没有active计算或自动训练、grounding/蒸馏、层/质量/scale扫描；main消费原件后承担科学裁决。
+
+### 本批此前接手与执行记录（仅表示历史时点）
+
+当前执行：四臂48行已从clean pushed detached8e682f90启动（PID3305517、gpu02:0/1×3 persistent worker、四init batch4），实际profile吞吐提高39.47%，峰9.980469GiB；按真实环境/CUDA余量准入，不新增case填显存。
+待全部退出后核48行/12 full/36 compact、两方向R/G/L/churn、旧原策略重放差异及紧凑作用，退役本次入口/hooks、推送交付并释放canonical窗口；无自动后继。此前工程状态仅表示历史时点。
+
 2026-10-03 实验session01a0fabb-f7a0-7100-93d8-6a0f66055553已实际接手 `self_image_attention_transfer_20261003` 的canonical tracked/Git独占窗口；main只读科学分析。
 完整合同、机制§108–109/findings§287–288及Owner资源/信息墙要求已读；独占工程树为`/data1/user/ymdai/projects/EMBER-self-image-attention-transfer`，基线d15cba34。
 当前在实现同输入、同prefix的18层/50slot/10flow图像内部条件分布传递；原四臂48行/12 full/36 compact及teacher/scene/RNG固定。尚未启动模型或环境。
 strg01 data1个人用量1167868424KiB、quota2147483648KiB、共享余89.023TB；本批预计新增峰6.5GiB<8GiB，硬限3完整GPUh。正式消费者将由clean pushed detached来源运行；完整交付后退役本次入口/hooks并交回窗口。
 
-## 科学目标与当前批次
+## 科学目标与本批登记（已执行完成）
 
 机制§109/findings§288登记唯一[自身图像读取分布交叉诊断](docs/designs/self_image_attention_transfer_diagnostic.md)。
 同一自身输入下只交换C450/N450的图像内部attention分布，保留recipient的图像质量及其它计算权重；用真实闭环区分读取与后续控制。
 固定task4/13/56×init32–35×四臂48行，12 full；不训练、不扩数据、无官方held/Test，不把混合臂当部署候选。
-预计含工程3–5小时、3完整GPUh/8GiB；当前已登记、尚未接手/运行，main将交给唯一实验session，接手以progress为准。
+预计含工程3–5小时、3完整GPUh/8GiB；本面板已完成，实际执行与交付状态以progress为准。
 下方无active段落保留先前裁决时点，不覆盖本登记；没有自动grounding loss、蒸馏或formal fresh。
 
 main已补充机制§108/findings§287：复用旧对应和已有P/F预测，17训练task出现获取—迁移反转。

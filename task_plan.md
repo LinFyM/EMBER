@@ -1,3 +1,10 @@
+## 2026-10-04 下一项只判断当前角色失败相对同checkpoint公共控制的方向
+
+按[四行固定合同](docs/designs/task16_public_role_reference.md)读取C900公共A0/B0在原两scene/两noise的full闭环，
+与已完成八格逐情境比较目标获取、错误实体和完成目标，保留初次完整动作差。机制§130/findings§309说明决策分支。
+原数据、source、scene和noise不变，旧八行不重跑；无公共FM/新训练或自动controls。硬.5GPUh/3GiB，预计30–60分钟。
+当前main登记，提交后交实验session独占工程/Git和冻结执行；整批返回后main独立分析，无需Owner再逐项指路。
+
 ## 2026-10-04 task16八格已科学消费，继续解释条件作用的跨情境调用
 
 机制§129/findings§308确认有限条件因果正例与三种迁移失败共存，未得到一套可直接搬用的正确角色LoRA。

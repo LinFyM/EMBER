@@ -7492,3 +7492,15 @@ W47在scene0/46×noise0/46四格均搬orange；W40在scene0两格仍搬orange，
 旧换位、几何/原生方向阴性和部分控制转移的正例均保留，T161/MT153完整目标不降低。
 八格结束，main持canonical/Git，无active新实验或已选训练；继续同一角色调用问题，不为补齐对照自动扩矩阵。
 原root analysis/main_scientific_readback.py/.json，CPU核心.498741秒；原完整费用.039754542396GPUh不变。
+
+## 309. 当前两条件之差尚不能判断是否破坏已有公共角色控制（2026-10-04）
+
+机制§130/[四行冻结合同](docs/designs/task16_public_role_reference.md)保留task16同一角色获取问题。
+两完整条件之差D=C40−C47不确定它们各自相对同checkpoint公共beta的行为；其它T/Context公共结果与A28风险不能代替。
+每层完整条件项为B0 S+M A0+M S，公共读取须恢复全部A0/B0；公共也消费真实自身图像/state/语言。
+它由完整目标共同学习，不是独立MT或无视频最优解，不从本项自动指定public FM/正则。
+
+只新增原scene0/46×noise0/46四个公共full，原八格只读复用；若公共正确而条件错物，优先解释实际条件损害已有响应，
+若公共也不能获取，降低“恢复现成公共控制”的依据；混合结果及取得未放置全保留，不以四行判总体能力或唯一神经根因。
+现有shared只有38个A0；公共76因子应从C900 ecp的common.values按原sorted映射读取，已有owner函数可复用。
+无新数据/编译/学习/held教学特权或正式400，预计30–60分钟、.5完整GPUh/3GiB；登记时尚未派发/运行。

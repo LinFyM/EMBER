@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：登记同一C900公共角色控制的四情境参照
+
+机制§130/findings§309/[固定合同](designs/task16_public_role_reference.md)接续task16同一获取失败，
+只新增原scene0/46×noise0/46的完整A0/B0四full，原八格只读；两条件之间的差不能确定各自相对公共行为的方向。
+结果区分破坏现成正确公共响应与尚未补上共同控制缺口，不把公共分数当独立训练目标或视频资格门槛。
+实际checkpoint含76公共因子；原shared仅38 A0，复用public_state原映射而非误用旧T1800合同。
+登记时0新模型/环境/GPU，预计30–60分钟、硬.5GPUh/3GiB；无自动训练、正则、缩放或其它controls。
+
 ## 2026-10-04：task16八格科学消费，条件作用未成为可搬用的正确角色规则
 
 机制§129/findings§308：main从八raw continuous/action chunks独立读回并看8 full RGB采样，

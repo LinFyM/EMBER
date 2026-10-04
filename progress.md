@@ -1,3 +1,12 @@
+## 2026-10-04 登记同一C900公共控制的四行角色参照
+
+唯一active design为[task16公共角色参照](docs/designs/task16_public_role_reference.md)，机制§130/findings§309。
+保留原scene0/46×noise0/46，只新增四个完整A0/B0 full，原八格只读复用；区分条件破坏已有正确角色控制与未补上共同控制缺口。
+公共与完整条件均为同C900参数点；shared文件只有A0，须从checkpoint按原map读取完整76公共因子。无新数据/Writer编译/训练。
+这不是已选公共FM、缩放、正则或新架构，四行结束不自动扩范围。预计30–60分钟、.5完整GPUh/3GiB。
+main当前持canonical/Git，已完成实际接口/原件header与科学登记，0新模型/环境/GPU；提交后交既有实验session独占执行与整批一次回报。
+下方无active或旧运行状态均为此前时点，原八格、坐标和native方向的结束边界保持。
+
 ## 2026-10-04 main已消费task16八格，正确条件作用仍依赖执行情境
 
 机制§129/findings§308：main独立核八continuous/全部chunk及真实RGB。W47四格搬orange，W40为两orange、一ketchup、

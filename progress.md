@@ -1,3 +1,8 @@
+## 2026-10-04 角色绑定第一阶段已冻结，完整CPU标签实际生成中
+
+fb19d72f已main集成push，clean detached frozen_labels正执行登记的train-only CPU OSMesa分割；首帧接口修复后保留旧日志/可见原件，完整label开始另有labels_started/exit。0新GPU/模型/环境。三臂编译/余切重放沿ConditionalTarget和NativeFlowPrediction，own辅助真实tau1重用同epsilon/prefix，alpha余切按同版本逐Q目标汇总后回放、L_T每condition一次；正在完成实际消费者入口。main保持只读。
+canonical FrozenOperatorAdapter增加窄reuse_injected选项，仍由原adapter校验完整38 shape和冻结source，避免再次加载/注入同resident policy；仅本诊断使用，整批完成与临时运行面一并退役。bank.py已有>800行，新增仅9行接口/验证，另造adapter或复制evaluator更分散所有权，此窄生命周期例外已登记。
+
 ## 2026-10-04 三臂角色绑定CPU标签/原件合同检查完成，待冻结
 
 八task实名BDDL/目标/完整goal与自由物体registry已核：43 butter_2且保留Close/butter_1干扰，96 butter_1；八张teacher0首帧双RGB红mask已实际查看，目标区域对应。既有post-action states[f+1]回退2ms的EEF误差最大6.481e-16m，0环境step/action标签读取/held特权。完整64×随机四task、两teacher共同query/独立flow seed和B20 manifest已固定；首帧CPU JSON接口失败及修复留日志，不补算GPU/环境。

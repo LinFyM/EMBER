@@ -122,9 +122,11 @@ def step(runtime, cached, data, labels, entry, arm, binding, optimizer, paramete
                                    for u in runtime.writer.conditional_targets]).norm()) for g in GROUPS}
     if any(p.grad is not None for p in runtime.writer.parameters() if not p.requires_grad):
         raise ValueError('frozen common/interpreter/native acquired gradients')
+    binding_gradients = ({n: float(p.grad.float().norm()) if p.grad is not None else 0.
+                          for n, p in binding.named_parameters()} if binding is not None else {})
     optimizer.step(); torch.cuda.synchronize()
     return dict(rows=rows, seconds=time.monotonic() - started, microbatch=micro, suffix_conditions_packed=2,
                 physical_suffix_queries=2 * micro, frozen_prefix_shared=True,
-                unclipped_gradient_norm=float(norm), gradient_groups=groups,
+                unclipped_gradient_norm=float(norm), gradient_groups=groups, binding_gradients=binding_gradients,
                 allocated_peak_GiB=torch.cuda.max_memory_allocated() / 2**30,
                 reserved_peak_GiB=torch.cuda.max_memory_reserved() / 2**30)

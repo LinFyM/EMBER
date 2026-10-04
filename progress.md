@@ -1,3 +1,13 @@
+## 2026-10-04 完整CPU角色标签与固定输入登记检查通过
+
+frozen_labels fb19d72f生成400 train episode的7098个授权帧visible labels，142.837191秒、exit0、0GPU/model/environment step。完整64 manifest八task每task32 visit、两teacher共享每次28跨episodequery/独立flow seed、每condition1/8与B20固定；标签origin索引、实体名、概率mass/finite与已验证EE时刻检查齐备。注册检查/全部npz/首帧原件均留root；未扩示范/label来源或读held特权。
+全25 native783帧实占6.656889GiB、最长51帧/一次合法framechunk128，reserved19.611328GiB；该阶段已经读完，不为填余量重复native。训练两profile将比较micro14/28（两teacher实际suffix28/56），多臂并行另核真实收益/资源；数值低位不是单卡/batch1限制。尚无64更新或环境启动。
+
+## 2026-10-04 角色绑定25条真实native固定读取完成
+
+clean pushed detached12cd293a在gpu02:7，2026-10-04T06:17:58.400243Z至06:19:22.898920Z，PID2942576 exit0/已消失；全部加载/写盘/退出84.498724秒、0.023471868完整GPUh。25条件/783 sampled帧、全38 X/H/c/d及18层512×256真实prefix RoPE前K齐备，训练16和held RGB-only9共用；source一次加载，无teacher action/state/reward进入native或held读取。实际framechunk128已覆盖最长视频所有合法帧，没有额外native profile填显存。alpha/最终A/S/key/delta-z/Value/M/R不缓存，后续每更新重算。
+启动前live双节点本用户0→1/cap6、node上限6，已知其它owner低显存/idle且充分余量共驻、0干扰操作；独立data1 quota/实占/shared及新增40GiB准入留原件。CPU完整labels独立进行，尚未启动64更新或环境。main只读。
+
 ## 2026-10-04 角色绑定第一阶段已冻结，完整CPU标签实际生成中
 
 fb19d72f已main集成push，clean detached frozen_labels正执行登记的train-only CPU OSMesa分割；首帧接口修复后保留旧日志/可见原件，完整label开始另有labels_started/exit。0新GPU/模型/环境。三臂编译/余切重放沿ConditionalTarget和NativeFlowPrediction，own辅助真实tau1重用同epsilon/prefix，alpha余切按同版本逐Q目标汇总后回放、L_T每condition一次；正在完成实际消费者入口。main保持只读。

@@ -1,3 +1,13 @@
+## 2026-10-04 main已消费原生角色方向，继续同一跨情境调用问题
+
+机制§127/findings§306从24份raw K/R独立核全部结果：原144配对层均值全正，换位full50为45正/99负；
+第2/3/4/7层仍全八正，不能删去正例或事后挑层。当前层RoPE前也多数反向，但它含视觉位置及前层上下文，
+不称位置已去除，不唯一归罪于RoPE。直接搬用原生方向缺少迁移前提；尚未测当前Writer的A h/Value或动作效应。
+本批科学消费完成，0新增模型/环境/GPU；不扩框/层/特征阶段/旋转/学习/400。
+canonical/Git已归main，实验session停止、无active实验或已选新训练。主讨论继续教学角色到自身控制的同一问题；
+只读历史子项也已完成：旧U已有独立teacher-key、早期收益及后期反转，共享A/PSD形式不构成已确认的当前角色瓶颈。
+下方登记/接手/执行状态均为此前时点，不能恢复旧运行。
+
 ## 2026-10-04 native_role_address固定24-prefix完成，专用运行面退役
 
 3221801e已push/clean detached实际读取24/24（teacher8＋自身原/换16），288配对/层行及完整8×2×18×50数组、双camera pre/post K与真实mask/position均齐，缺项0。source训练b8ea00e9，模型为原aligned1000；有效teacher prefix530、自身561，query位置530–579/561–610，第三masked相机只在官方自身路径保留而不计统计，KV1/Q heads8不重复计数。0 Writer/suffix/flow/LoRA构造/训练/环境或新行为。

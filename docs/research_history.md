@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：原生角色方向科学消费，多数换位反向限制直接搬用
+
+机制§127/findings§306及原root `analysis/main_scientific_readback.py/.json`记录main从24份raw K/R独立计算。
+原144配对层均值全正，换位full50为45正99负、平均m−.249631；原为.991081。
+第2/3/4/7层仍八init全正、第17层六正；全部逐层/逐init/槽及不利行保留，不选择高点或作独立样本计数。
+当前层RoPE前key差余弦原.932228、换−.194058，但实际视觉learned位置及前层上下文仍在，不能归为无位置的纯内容。
+这降低直接复制原生对象方向的支持，不测实际A h、Value/动作utility，也不能解释C/T/MT全部差异或宣称source不识别对象。
+与坐标辅助阴性共同约束“局部读出即角色调用”的推断，仍需解释同一教学到自身控制联系。
+固定范围关闭，不扩框/层/旋转/模型/学习/400。历史只读核对旧U独立key的早期收益/后期反转及回绑损伤，
+并区分单次A^T A与完整有序M/BA；没有由此确认共享A为当前角色瓶颈。main接回canonical/Git，无active新实验或训练选择。
+核心独立CPU读回.289552秒、0新模型/环境/GPU；原整批账本与工程失败保持。
+
 ## 2026-10-04：原生角色方向固定24-prefix完整交付事实
 
 [合同](designs/native_role_address_diagnostic.md)已由实验session完成24/24、288配对层行及全部8×2×18×50、双camera pre/post K/真实mask和位置；没有新行为结果、Writer/suffix/flow/训练/LoRA构造或环境。

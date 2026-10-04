@@ -1,3 +1,14 @@
+## 2026-10-04 登记task16实际条件控制的固定八格交叉
+
+唯一active design为[条件/scene/noise交叉](docs/designs/task16_condition_context_crossover.md)，机制§128/findings§307。
+原C900同task的init0/teacher47搬orange、init46/teacher40搬butter并入篮；原件同时改了参数、scene和采样流。
+固定两个原scene、两套完整LoRA、两条原noise stream的2×2×2，共8 full行，区分实际条件作用与自身执行情境。
+这是继续同一角色调用失败，不从§127候选方向阴性跳到新对齐/grounding；原native24与双域坐标配方保持结束。
+不新增数据/Writer编译/学习/held教学特权标签/400/Test/RL，不拼接因子或挑部署视频。
+预计含工程45–90分钟、1完整GPUh/新增峰4GiB；各case一次，原对角未复现不换seed/teacher追回。
+当前main持canonical/Git，只完成CPU原件读取、核图与登记，0新模型/环境/GPU；提交后交既有实验session独占执行并整批一次回报。
+下方无active/旧执行状态仅为此前时点。
+
 ## 2026-10-04 main已消费原生角色方向，继续同一跨情境调用问题
 
 机制§127/findings§306从24份raw K/R独立核全部结果：原144配对层均值全正，换位full50为45正/99负；

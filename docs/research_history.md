@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：登记task16条件控制、scene与原噪声流的八格交叉
+
+机制§128/findings§307/[合同](designs/task16_condition_context_crossover.md)延续同一错误实体调用。
+现有C900 init0/teacher47使orange抬23.848cm、butter静止；init46/teacher40使butter抬38.831cm并269步入篮、orange静止。
+main核两场景双RGB及完整continuous；两原案例同时改变LoRA、scene、采样流，不能由对角比较定位条件生成器。
+只交叉两个原scene、两完整LoRA及两条原noise，共8 full，区分真实条件作用、执行情境及交互；
+不新编译、拟合、拼因子、扩数据或训练。原对角未合法复现不追seed/dtype/case，八行后停止。
+预计45–90分钟、1完整GPUh/新增峰4GiB；此条只登记，尚无新模型/环境/GPU，实际执行只看progress。
+
 ## 2026-10-04：原生角色方向科学消费，多数换位反向限制直接搬用
 
 机制§127/findings§306及原root `analysis/main_scientific_readback.py/.json`记录main从24份raw K/R独立计算。

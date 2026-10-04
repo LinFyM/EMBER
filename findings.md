@@ -7457,3 +7457,18 @@ U450回绑S_key→A使8/8训练条件FM损伤。故独立投影不是新机制�
 main持canonical/Git，实验session和历史子项均已停止；主讨论继续同一问题，尚无新训练选择。
 原root `analysis/main_scientific_readback.py/.json`保存独立读回，核心CPU .289552秒、0新模型/环境/GPU；
 原整批.014046981723GPUh及失败原件保持，临时捕获入口已退役。
+
+## 307. 登记现有正确/错误角色控制的参数、scene与noise固定交叉（2026-10-04）
+
+机制§128不从原生候选方向的阴性归罪当前A；回到实际C900 task16生成函数。
+main原件确认init0/teacher47使butter全程静止、orange抬23.848cm；init46/teacher40使orange静止、
+butter抬38.831cm并在269步入篮。两原scene/完整continuous已读，成功过程原件仅compact；不冒称已有过程RGB。
+原case同时改了LoRA、scene与noise，因此唯一[固定2×2×2](docs/designs/task16_condition_context_crossover.md)
+交叉两个scene、两个完整condition和两个原采样流，共8 full闭环。两个原对角须如实检查，未复现不扫描追回。
+
+完整`B0 Delta S+Delta M A0+M40 S40-M47 S47`及非线性自身h均由真实十步消费者承接，不拼因子或先归因某层。
+同scene/noise的条件效应决定该已存正例能否支持可搬到失败情境的条件控制；若跟随scene/noise则降低这种推断。
+全部交互、错误实体、移动但未放置及初次动作保留，不以内部差或事后选例替代完整能力。
+两condition各复用4次，明确为固定案例诊断；原400一一视频映射不改、不挑部署视频/held字典。
+无新数据/Writer编译/训练/held教学动作标签/Test/RL，预计45–90分钟、1完整GPUh/4GiB。
+此时仅main登记与CPU原件准备，尚未派发；main提交后交既有实验session独占实施、冻结运行和退役，整批一次交回。

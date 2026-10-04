@@ -234,8 +234,8 @@ def main():
     contract = {key: original_contract[key] for key in ('model', 'normalization', 'tokenizer', 'policy')}
     contract['native_role_self_call'] = dict(study=ROOT.name, inputs=101, environment_steps=0)
     write_json_atomic(ROOT / 'launch/asset_contract.json', contract)
-    model, stats, tokenizer = validate_worker_assets(contract)
-    policy, _, _ = load_policy(model, stats, tokenizer, contract['policy'])
+    model, normalization, tokenizer = validate_worker_assets(contract)
+    policy, _, _ = load_policy(model, normalization['stats'], tokenizer, contract['policy'])
     lora = load_pi05_lora_contract(ASSET / 'configs/pi05_lora_rank128_aligned.json')
     if lora.alpha != lora.rank or lora.rank != 128 or len(lora.targets) != 38:
         raise ValueError('actual complete38/rank128/scale1 contract changed')

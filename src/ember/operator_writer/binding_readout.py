@@ -4,6 +4,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from copy import deepcopy
 import json
+import time
 from pathlib import Path
 
 import numpy as np
@@ -135,9 +136,10 @@ def materialize(runtime, spec, arm, identity):
 def readout(runtime, spec, arm, bank):
     data = FormalData(ASSET, spec, query_labels=True, task_ids=TASKS)
     labels = load_labels(); manifest = read_json(ROOT / 'query_manifest.json')
-    records = []
+    records, pair_timings = [], []
     runtime.restore_identity()
     batched = BatchedLoRAInference(runtime.policy, runtime.lora)
+    torch.cuda.reset_peak_memory_stats()
     label_records = {(r['task'], r['demo']): r for r in read_json(ROOT / 'labels/manifest.json')['records']}
     try:
         for task in TASKS:
@@ -164,9 +166,13 @@ def readout(runtime, spec, arm, bank):
             with autocast(runtime.device):
                 noise20 = samples(runtime, batch, queries).arguments[5]
                 noise = torch.cat((noise20, noise20))
+                torch.cuda.synchronize(); started = time.monotonic()
                 with batched.activate([factor_states[0]] * 20 + [factor_states[1]] * 20), \
                      q_readback(runtime.policy, q, local_a, local_r) as role:
                     generated = runtime.policy.predict_action_chunk(packed, noise=noise, num_steps=10)
+            torch.cuda.synchronize(); elapsed = time.monotonic() - started
+            pair_timings.append(dict(task=task, actual_queries=40, seconds=elapsed,
+                                     queries_per_second=40 / elapsed))
             if len(role) != 10 or len(generated) != 40:
                 raise ValueError('B20 paired packing must use40 queries and ten actual official calls')
             for teacher, condition in enumerate(conditions):
@@ -193,7 +199,9 @@ def readout(runtime, spec, arm, bank):
     finally:
         batched.close(); data.close(); runtime.restore_identity()
     write_json_atomic(ROOT / 'predictions' / arm / 'manifest.json', dict(records=records, queries=320, forward_steps=10,
-        additional_FM_forward=0, physical_query_batch=40, paired_teachers=2, no_extra_queries=True))
+        additional_FM_forward=0, physical_query_batch=40, paired_teachers=2, no_extra_queries=True,
+        actual_pair_timings=pair_timings, peak_reserved_GiB=torch.cuda.max_memory_reserved() / 2**30,
+        larger_same_task_batch_unavailable='all20 authorized queries ×both teachers already packed; no additional query/profile'))
 
 
 def main(arm):

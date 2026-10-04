@@ -1,3 +1,16 @@
+## 2026-10-04 main完成role_coordinate_credit科学消费
+
+机制§125/findings§304已核e7d81bc4实际loss/ConditionalTarget/同版本余切与标签合同，直接读取96原continuous/projection、
+16 B20并看全部16双RGB。F21/G19对父13，F→G R17/G2/L4；task16原/换均0/3，G未取得额外正确角色控制。
+G坐标MSE下降仍有约12cm逐分量RMSE；原件分解full50改善58.6%来自同query的tau/slot波动、26.3%来自均值偏差，
+15.2%来自query中心化误差，task12有限跟随及EEF共变边界保留。首次tau1换位未形成正确butter响应。
+沿实际Euler路径三个坐标直接动作项G仅为完整动作RMS的.14%–.33%，不是反事实或完整因果效应；其余坐标/前层仍在。
+按预登记关闭这条配方的续训/λ/rank/层/标签扫描，不以拟合选点、400或fresh。仍未完成EMBER整体目标，
+主问题不变：教学角色如何与自身现场正确实体建立可执行联系，继续推导而不移向更容易的辅助标签问题。
+main独占canonical/Git，无active新实验或已选架构。只读子项已完成停止；原root analysis/main_scientific_readback
+与readout_decomposition保留实际脚本/完整正反；main核心CPU .545146秒、子项约.104秒，0新模型/环境/GPU。
+原实验1.337958008933GPUh及全部来源/成本/退役记录不变。以下交付/运行段落均为已消费历史。
+
 ## 2026-10-04 role_coordinate_credit固定整批完成、专用运行面退役
 
 实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553完成唯一固定F/G各64有效更新及96/96新环境行，16 full双RGB/80 compact，固定B20两臂各160条件-query、teacher origin与实际十步全部50槽投影齐备，缺项0。父Current90013/32，F21/32（task0/12/20/32为6/3/5/7），G19/32（6/4/4/5），breadth均4；对父R/G/L为9/12/4及8/11/5。F→G R17/G2/L4/churn6/Jaccard17/23。G得12/t14/init2、32/t17/init1，丢20/t42/init2、32/t17/init2及t43/init2/3；task0两臂都丢原全成功中的两个init2，全不利行保留。

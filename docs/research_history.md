@@ -3,6 +3,21 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：双域坐标风险改善主要来自偏差与采样波动，角色控制预测未兑现
+
+机制§125/findings§304消费e7d81bc4完整实际计算、96 continuous/projection、16 B20及16双RGB。
+父/F/G原train13/21/19，F→G R17/G2/L4；task32开炉全部保持、G丢三条placement，task0两臂丢两个父成功。
+task16原/换两臂都0/3同集合，所有错实体/第三对象/搬起未完成、旧C/T/MT和数值分叉保留。
+坐标MSE从.043430/.044683降至.015668/.014257，G逐分量RMSE仍12.52/11.94cm；
+原件精确分解full50改善中均值偏差26.3%、query中心化误差15.2%、同query tau/slot波动58.6%。
+task12有有限位置变化跟随，但EEF共变和F已有跟随均保留；总体协方差未同步增强，不称已取得精确角色几何。
+首规划tau1的butter位移模板误差未改善；实际A/h及M(A)信用接通，G三坐标沿实际Euler路径的直接项仅为完整动作RMS
+的.14%–.33%（first5八条件范围），非删除后的因果效应，不排除其余125坐标与前层作用。
+据停止线不续训/扫λ/rank/层/标签，不做400/fresh，不恢复旧辅助配方；仍推进同一教学到自身角色调用问题。
+原root analysis/main_scientific_readback.py/.json及readout_decomposition/保存完整独立CPU读取，main .545146秒、
+子项核心约.104秒/进程2.35秒，0新模型/环境/GPU；原整批费用1.337958008933GPUh保持。
+main持canonical/Git，无active新实验或已选后继；下条交付事实现已消费。
+
 ## 2026-10-04：双域实际读取坐标固定整批交付，等待main科学消费
 
 [合同](designs/role_coordinate_credit_diagnostic.md)的F/G各64、96/96新行/16 full/80 compact与全部B20/teacher/部署投影读回完成。

@@ -198,9 +198,18 @@ def render_masks(env, row):
 def build():
     os.environ['MUJOCO_GL'] = 'osmesa'; os.environ['PYOPENGL_PLATFORM'] = 'osmesa'
     import mujoco
+    original_step1 = mujoco.mj_step1
+    def kinematics_only(model, data):
+        # LIBERO constructor uses step1 to prepare placement kinematics. It does
+        # not integrate; guard the actual clock and generalized positions.
+        clock, qpos, qvel = float(data.time), data.qpos.copy(), data.qvel.copy()
+        original_step1(model, data)
+        if float(data.time) != clock or not np.array_equal(data.qpos, qpos) or not np.array_equal(data.qvel, qvel):
+            raise RuntimeError('constructor step1 unexpectedly integrated physics')
+    mujoco.mj_step1 = kinematics_only
     def forbidden_step(*args, **kwargs):
         raise RuntimeError('§134 CPU label restoration permits zero physics steps')
-    for name in ('mj_step', 'mj_step1', 'mj_step2'):
+    for name in ('mj_step', 'mj_step2'):
         setattr(mujoco, name, forbidden_step)
     import ember.pi05_evaluation
     from ember.pi05_assets import prepare_libero_config, configure_libero_runtime_assets

@@ -16,6 +16,7 @@ import ember.pi05_evaluation as evaluation
 from ember.lora import LORA_A_SUFFIX, validate_lora_state
 from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
 from ember.pi05_eval.scene import validate_scene_row, _capture_image
+from ember.pi05_eval.episode import stage_predicate_snapshot
 from ember.pi05_eval.trajectory_capture import validate_passive_trace_row, start_passive_trace
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.materialization import file_record
@@ -64,6 +65,7 @@ def transform(env, observation, case, path):
                if isinstance(v, (np.ndarray, float, int)) and np.asarray(v).dtype.kind in 'biuf'}
     before = dict(qpos=data.qpos.copy(), qvel=data.qvel.copy(), act=data.act.copy(),
         body_pos=data.body_xpos.copy(), body_quat=data.body_xquat.copy(), objects=data.body_xpos[bodies].copy(),
+        model_body_pos=model.body_pos.copy(), model_body_quat=model.body_quat.copy(),
         eef_pos=np.asarray(observation['robot0_eef_pos']).copy(), eef_quat=np.asarray(observation['robot0_eef_quat']).copy(),
         gripper=np.asarray(observation['robot0_gripper_qpos']).copy(), rgb=_capture_image(observation))
     clock = float(data.time), int(owner.timestep)
@@ -77,6 +79,10 @@ def transform(env, observation, case, path):
     if case['layout'] == 'swapped':
         target[:, :2] = target[::-1, :2]
     invariants = dict(world_XY=np.allclose(data.body_xpos[bodies], target, rtol=0, atol=1e-9),
+        other_bodies=all(np.allclose(data.body_xpos[body], before['body_pos'][body], rtol=0, atol=1e-9)
+                         for name, body in owner.obj_body_id.items() if name not in names),
+        model_pose=np.array_equal(model.body_pos, before['model_body_pos']) and
+                   np.array_equal(model.body_quat, before['model_body_quat']),
         other_qpos=np.array_equal(data.qpos[~allowed], before['qpos'][~allowed]),
         qvel=np.array_equal(data.qvel, before['qvel']), act=np.array_equal(data.act, before['act']),
         quaternion=np.allclose(data.body_xquat, before['body_quat'], rtol=0, atol=1e-9),
@@ -137,6 +143,10 @@ def panel_context(adapter, base, selected, task, arm):
         if case['task'] == 16:
             slot['obs'], slot['layout_receipt'] = transform(kwargs['env'], slot['obs'], case,
                 Path(local['output_dir']) / 'initial_state.npz')
+            states, values = stage_predicate_snapshot(kwargs['env'])
+            slot.update(stage_predicate_states=states, stage_predicate_last=values,
+                        stage_predicate_ever=values, stage_predicate_peak=sum(values),
+                        stage_predicate_transitions=[dict(step=0, satisfied=list(values))])
             start_passive_trace(kwargs['env'], slot, local['diagnostic_occupancy_capture'])
             slot['passive_In'] = [passive_in(kwargs['env'])]
         return slot

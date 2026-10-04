@@ -1,3 +1,8 @@
+## 2026-10-04 父点32行已独立开始，末点读回保持同一消费者
+
+父C900新16条件/32 train行在gpu02:3、PID3091665由ef5eeb68完整冻结树实际启动；与三臂学习独立并行，总本用户4/cap6，source一次resident、每task四合法case批处理。新held读取前补齐原XY合同的其它body/model pose不变检查及变换后t0真实goal重新采样，0额外step/settling/case、无模型或loss改变；后续消费者另push/freeze，运行中的训练/父读取冻结树不修改。原environments/最终因子/absolute noise/完整goal owner不另建。
+CPU行为与B20分析只读脚本已准备，原实际continuous字段/官方与被动In已验，不新增预测/环境来补齐历史。当前64和父闭环仍在执行，尚无终点科学结论。main只读，窗口仍归实验session。
+
 ## 2026-10-04 三臂64更新已实际启动，物理吞吐配置有实测依据
 
 clean pushed detached ef5eeb68的完整检出frozen_training_ready实际运行F/G/R（PID3043148/3043837/3044811，gpu02物理7/1/2）。各两次已登记update1 profile后恢复全部初值/optimizer/RNG；F micro14→28耗时27.890702→26.221894秒，采用28/两teacher实际56 suffix、reserved29.650391GiB。G/R micro28实际OOM于reserved43.761719/43.882813GiB，失败完整计费，采用可行micro14/实际28 suffix，31.090902/31.050880秒、reserved32.068359/32.248047GiB。未因低位一致锁batch1或低卡数，也未扩科学输入/突破两profile额度继续扫batch。

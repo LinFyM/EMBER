@@ -1,3 +1,7 @@
+## 2026-10-04 native_role_binding三臂实际学习中
+
+完整标签400 episode/7098帧、native25条件/783 sampled帧已完成；F/G/R两profile后恢复初值，clean pushed detached ef5eeb68正式固定64正在运行。父C90032行独立读取已就绪，继续固定197环境/960 B20、完整正反行为/费用/退出、专用入口退役及整批一次交回；不以当前启动写成完成，不自动后继。main保持只读，canonical/Git仍由实验session独占。下方接手/待派发为此前时点。
+
 ## 2026-10-04 实验session接手角色绑定三臂有界学习
 
 canonical tracked/Git窗口由实验session独占；main只读。先冻结query manifest和实名origin/own可见标签，核真实Q/RoPE及外积编译/余切，再push/clean detached运行固定F/G/R64与197环境行/960 B20；完成原件、正反读回、完整费用/退出释放、临时运行面退役和Git交付后一次交回并停止。硬12GPUh/40GiB，无400/续训/controls/Test/RL。下方待派发记录为此前状态。

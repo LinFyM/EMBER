@@ -1,3 +1,13 @@
+## 2026-10-04 三臂64更新已实际启动，物理吞吐配置有实测依据
+
+clean pushed detached ef5eeb68的完整检出frozen_training_ready实际运行F/G/R（PID3043148/3043837/3044811，gpu02物理7/1/2）。各两次已登记update1 profile后恢复全部初值/optimizer/RNG；F micro14→28耗时27.890702→26.221894秒，采用28/两teacher实际56 suffix、reserved29.650391GiB。G/R micro28实际OOM于reserved43.761719/43.882813GiB，失败完整计费，采用可行micro14/实际28 suffix，31.090902/31.050880秒、reserved32.068359/32.248047GiB。未因低位一致锁batch1或低卡数，也未扩科学输入/突破两profile额度继续扫batch。
+完整38/76余切与全部10类A/B生成头实际梯度、真实own tau1/RoPE/同epsilon/prefix消费者已通过profile；R初始D=0时P梯度零为合同预期，D与Pq/Pk已非零，第二正式更新读回按合同核。64全部仍在执行，不能写成已完成或科学通过；启动预算基于实测约28/33/33分钟训练、另留3GPUh读回，硬12GPUh/40GiB不变。CPU标签/native有效原件继续只读复用，main只读。
+已就绪父C90032行读回独立启动准入，不等待三臂无关阶段；各真实消费者通过退出事件统一处理，无训练日志定时轮询/阶段selfQueue。首次稀疏检出失败及全部profile OOM原件保留，非科学阴性。
+
+## 2026-10-04 三臂启动前检出接口失败，未发生模型更新
+
+ef5eeb68第一稀疏no-checkout树未填充index/源码；三臂learn1均ModuleNotFoundError在任何policy forward/profile/optimizer/env之前退出1，PID均消失。F/G/R启动至退出分别6.437048/3.335746/.053769秒，0.002729601完整GPUh保守计入；旧空检出元数据、准确命令/日志/费用留原件，不算科学阴性或已跑64。换用新完成检出的同一clean pushed detached commit，launcher已把源码存在/Git clean/分支检查前移到GPU准入前。原25合法native/400 CPU标签不重读；两profile额度仍未消耗，main只读。
+
 ## 2026-10-04 完整CPU角色标签与固定输入登记检查通过
 
 frozen_labels fb19d72f生成400 train episode的7098个授权帧visible labels，142.837191秒、exit0、0GPU/model/environment step。完整64 manifest八task每task32 visit、两teacher共享每次28跨episodequery/独立flow seed、每condition1/8与B20固定；标签origin索引、实体名、概率mass/finite与已验证EE时刻检查齐备。注册检查/全部npz/首帧原件均留root；未扩示范/label来源或读held特权。

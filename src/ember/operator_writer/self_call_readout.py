@@ -64,8 +64,8 @@ class SelfCallObserver:
     def direct(self, layer, key, image, scores):
         from transformers.models.gemma import modeling_gemma
         ids = self.r_indices
-        h = self.inputs[layer][ids, :5].float()
-        factor = self.a_factors[self.names[layer]][ids].float()
+        h = self.inputs.pop(layer).float()
+        factor = self.a_factors[self.names[layer]].float()
         a = torch.bmm(h, factor.transpose(1, 2))
         r = self.residual[str(layer)].float().reshape(len(ids), 8, 256, 128)
         q = self.q[ids]
@@ -97,7 +97,7 @@ class SelfCallObserver:
         handles = []
         for layer, name in self.names.items():
             def capture_input(module, args, layer=layer):
-                self.inputs[layer] = args[0]
+                self.inputs[layer] = args[0][self.r_indices, :5]
             handles.append(policy.get_submodule(name).register_forward_pre_hook(capture_input))
         def rotated(query, key, cos, sin, unsqueeze_dim=1):
             if query.shape[-2] == 50 and query.shape[1] == 8:
@@ -149,11 +149,11 @@ def factors_for(rows, lora, device):
     for state in states.values():
         validate_lora_state(state, lora)
     ordered = [states[r['factors']] for r in rows]
-    a = {t.name: torch.stack([s[t.name + LORA_A_SUFFIX] for s in ordered]).to(device)
-         for t in lora.targets if q_layer(t.name) is not None}
     r_ids = torch.tensor([i for i, row in enumerate(rows) if row['arm'] == 'R'], device=device, dtype=torch.long)
-    residual = {}
+    residual, a = {}, {}
     if r_ids.numel():
+        a = {t.name: torch.stack([ordered[j][t.name + LORA_A_SUFFIX] for j in r_ids.tolist()]).to(device)
+             for t in lora.targets if q_layer(t.name) is not None}
         bindings = {p: torch.load(p, map_location='cpu', weights_only=True)['R']
                     for p in {row['binding'] for row in rows if row['arm'] == 'R'}}
         if any(set(v) != {str(i) for i in range(18)} for v in bindings.values()):

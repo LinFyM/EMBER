@@ -203,8 +203,9 @@ def build():
     for name in ('mj_step', 'mj_step1', 'mj_step2'):
         setattr(mujoco, name, forbidden_step)
     import ember.pi05_evaluation
-    from ember.pi05_assets import prepare_libero_config
-    prepare_libero_config(ROOT / 'cache/libero_config')
+    from ember.pi05_assets import prepare_libero_config, configure_libero_runtime_assets
+    paths = prepare_libero_config(ROOT / 'cache/libero_config')
+    configure_libero_runtime_assets(Path(paths['assets']))
     from libero.libero.envs import OffScreenRenderEnv
     manifest = read_json(ROOT / 'inputs.json'); records = []; env = None; task_id = None; started = time.monotonic()
     try:

@@ -1121,3 +1121,7 @@ weights_only不含完整训练恢复状态，metadata_only不含权重。不得�
 
 实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553从clean pushed 06c0ae5c创建codex/native-role-self-call独占工程树；canonical tracked/Git窗口由实验session持有，main只读。完整合同、机制§134/findings§313及当前Owner/AGENTS已读，同名root此前不存在，未重复启动。固定101首次规划/25自身初态，0新环境step/Writer/native/学习；原processed输入、Gaussian和完整sealed因子只读复用。
 strg01 data1现场独立quota2147483648KiB/实占1228858108KiB、共享余量88880812392448B准入通过。a只存每层/槽一次、w/m保留全head/实体/flow，估计新增峰1.5–2GiB/硬4，硬.5完整GPUh。两个临时CPU mask/被动读回模块沿canonical scene、BatchedLoRAInference和原真实Q/RoPE hook实现，不新增第二policy/evaluator；101读回与交付后退役。GPU常驻仅source、当前合法batch完整因子及实际消费的mask/R，不读取Writer/native或未使用缓存。实际冻结、启动、结束分别登记，尚无新模型/环境/GPU计算。
+## 2026-10-04 自身mask首启动资产路由失败，科学消费者尚未开始
+
+7e1f006d frozen_consumer的CPU labels PID4063221在第一次env构造前exit1，180.394425秒、0GPUh/模型前向/环境step/mask。prepare_libero_config未设置安装库实际_assets_path_cache；遗漏既有configure_libero_runtime_assets导致库尝试HF下载并因503/本地场景文件缺失退出。默认下载器忽略XDG并写入data0旧部分缓存，632个阶段mtime/ctime文件合计152468181B（含HF元数据；151 payload/481 cache文件），与“新增只写data1/不下载”合同不符；原source/checkpoint/规范assets及全部科学原件未消费或被修改。精确清单、异常原日志和退出保留root analysis/unintended_download_audit.json，旧缓存原状态未全记录，不能声称已恢复或删除其歧义文件。
+已用canonical配置接口核验实际资产指向原data1 snapshot，后继强制HF/transformers offline；只修路由，不改实体/场景/标签/科学范围。新读取还将只为R样本常驻额外A并即取即释放当前层前5 hidden，避免F/G的无消费者缓存。新push/freeze后继续同101/25范围；旧冻结树不修改，main保持只读。

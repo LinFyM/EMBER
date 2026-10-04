@@ -1,3 +1,14 @@
+## 2026-10-05 前缀key扩展推导与待确认稿完成，尚无active实验
+
+机制§139/findings§318：[候选稿](docs/designs/native_prefix_key_extension_diagnostic.md)将教学选中内容取在原生k_proj之前，
+以动态外积编译18个prefix-K因子，与原38目标合为同一套56-target LoRA；检验执行侧读出空间是否限制完整角色控制。
+有用信息是否被原投影丢失仍未知；前缀语言/state与递归也受影响，不能只凭投影核或key侧差额宣称根因。
+原55环境/320 B20、一臂64、拟8GPUh/24GiB、4–6小时；只改善rho/误差不够，无自动扫描或formal晋级。
+
+现行AGENTS§5及current_owner_requirements规定完整38-target，故本稿仅供确认38→56范围，不是active design或执行授权。
+main持canonical/Git；实验session仍停止，0新实现/模型/环境/训练，未建run root或派发。
+待Owner明确此范围后再登记执行；不通过“诊断”命名绕过目标合同。下方已消费/交付均为此前时点。
+
 ## 2026-10-05 main已消费内容匹配辨识，关闭角色内容规范化的主修复假设
 
 机制§138/findings§317直接归约110 raw continuous、62首规划、640 B20、25内容及128训练记录，核实际消费者和关键双RGB。

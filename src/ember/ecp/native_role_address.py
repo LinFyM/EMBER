@@ -147,7 +147,7 @@ def capture_batch(policy, processor, tokenizer, records):
         assert not native_mask[:, :length, length:].any()
         assert torch.equal(native_mask[:, :length, :length], mask2d)
         with capture_hooks(policy) as (pre, meta), _teacher_attention_kernel(mask4d):
-            features, cache = prepare_prefix_features_and_cache(policy, prefix, native_precision=True)
+            features, cache = prepare_prefix_features_and_cache(policy, prefix)
         assert len(pre) == 18 and torch.equal(meta['positions'], padding.cumsum(1)-1)
         assert torch.equal(meta['mask'] >= 0, mask2d[:, None])
         pre_keys = torch.stack([pre[i][:, :512] for i in range(18)], 1)
@@ -264,6 +264,7 @@ def main():
         registered_ROI=str(ROOT/'analysis/visible_input/roi_registration.json'),source_loading_count=1,
         teacher_fields='only first dual RGB',self_fields='saved after_rgb/eef_pos/quat/gripper_qpos',
         prefix_owner='ember.ecp.policy_effects.prepare_prefix_features_and_cache',suffix_calls=0,Writer_calls=0,
+        precision='canonical prefix owner default BF16 autocast; frozen source recipe BF16/TF32',
         hard_GPUh=.5,hard_GiB=4,teacher_batch=8,self_batch=16))
     policy, processor, _ = load_policy(Path(source['model_path']),stats,tokenizer_path,recipe)
     policy.requires_grad_(False)

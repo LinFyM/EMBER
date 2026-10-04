@@ -1,3 +1,8 @@
+## 2026-10-04 native_role_address首读取工程退出，按原合同修复
+
+486fb2b6已集成push并clean detached冻结，实际gpu02:7一次source加载/teacher8首batch在layer0 fused SDPA遇bias dtype接口退出1；无完整prefix/K原件，0 suffix/Writer/环境。完整费用23.107706秒/.006418807GPUh已计入.5硬限，原frozen/命令/日志/退出和run_contract保留于root failed_attempt1及launch。
+该任务错误关闭canonical prefix owner的默认BF16 autocast；改回现有默认context，不改mask/source/样本/数学/评分，独占工程树修复、重新push与新detached冻结后继续同24输入。CPU检查24输入、official mask/位置、ROI及R转置均已通过；teacher有效530/self561各自50槽，无privileged teacher读取。不是科学阴性，不扩scope；main保持只读。
+
 ## 2026-10-04 native_role_address实际接手，尚无模型计算
 
 实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553实际接手唯一24-prefix合同，从clean pushed aeecda6c建立codex/native-role-address隔离树，独占canonical tracked/Git窗口，main只读科学分析。

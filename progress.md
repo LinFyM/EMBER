@@ -1,3 +1,14 @@
+## 2026-10-04 角色绑定三臂64及197/960全部交付，停止新增计算
+
+F/G/R各64完整恢复、197新增闭环（101 full/96 compact）、960 B20官方十步查询完整exit0，缺项0。train32父C900/F/G/R为26/22/24/20；八task12/13/14/15/17/19/43/96各四行分别parent 2/3/4/3/2/4/4/4、F 2/1/4/1/2/4/4/4、G 4/2/2/4/2/2/4/4、R 2/1/4/3/1/3/2/4，breadth皆8。parent→F/G/R的R/G/L为22/0/4、21/3/5、19/1/7；G→R为16/4/8，全部teacher/init正反、churn/Jaccard保留，未取得总体控制修复。
+task16合并23（重合只执行一次）旧C9003、F3、G0、R2；crossover8为1/1/0/0，原布局8皆0，交换8为2/2/0/2。F保留原teacher40/scene46/noise46（251步）及swapped init4/teacher32（145），新增init5/teacher1（230）；R仅swapped init1/teacher33（141）和init3/teacher46（107），两新臂成功集合无交集。G丢失原三成功，R丢失原W40和init4交换；错误orange In、basket/其它对象运动、抬butter未In等全部不利例齐备。旧T/MT同layout16为3/2，仅只读配对，不冒称缺失八格强参照或正式400资格。
+B20真实tau1的正确角色面积归一密度相对概率等task/teacher均值F/G/R=.367572/.980253/.983341；318/320有效role query/臂，全18层/8head/前5槽/10flow原数组与无效项保留。first5/full50 unmasked action7 MSE为.077887/.091070、.078097/.093749、.093327/.109797；全部有效future/通道/逐query和同h/own-key局部R作用已存，辅助拟合不等于控制传递或动作根因。R43/teacher0/init32在367步In却从未Close，400失败；teacher1/init33两目标均未达成。101 full按四个固定保存时点查看双RGB，未声称审阅全部视频帧、证明contact/grasp或几何根因。
+完整2.316264251144 GPUh/硬12，包含六次profile、G/R micro28 OOM、三次空检出启动失败、R首汇总失败、加载/渲染/I-O/退出。所有实际GPU PID消失，现场双节点本用户GPU0。新增阶段观察约24.65GiB/硬40（非连续精确峰；此前保守上界35.419），quota/shared/相关实占原件齐备，全新写data1。F micro14→28实测27.891→26.222秒，选28；G/R28 OOM选14，正式更新均值25.954/27.936/28.078秒；B20两teacher40合法query、环境train4/held23最大授权batch，三臂和父点读取独立并行峰4卡。
+显存使用仍有明确工程不足：临时load_native将仅R消费的teacher K也常驻F/G，每臂2.201660GiB未使用缓存。实际代码/元数据证据在GPU_cache_ownership_readback；未測移除后吞吐，不称G14最优、不重跑已完成64。current_owner_requirements资源段已补明先核常驻缓存消费者再判增批不可行，避免用可避免占用导致的OOM代替吞吐依据；旧loader已随本批退役。
+CPUlabels fb19d72f、native12cd293a、学习与父读取ef5eeb68、三臂bank/F-G读取e628062c、R有效读取77f995dc分列；source b8ea00e9/C90085919994/450父a0e0248d保持。R首40预测后CPU BF16×FP32汇总错误、0持久B20/环境行，25合法bank保留并复用，费用.012349358GPUh计入；仅CPU cast与raw先保存修复后收齐，未重编译/改模型。继承模板的bank旧400计数/scene_root/training_run由bank_execution_provenance如实澄清，实际训练合同、25native及逐row scene/noise优先，消费原manifest未重写。
+六个任务专用模块及reuse_injected hook已退役；canonical guard拒绝本批bank新执行，原C900正式合同仍支持。Git/frozen/所有科学正反、失败及完整64恢复保留。原件 `/data1/user/ymdai/ember_runs/native_role_binding_compilation_20261004/` 的completion/readback、analysis/report/summary/rows/paired_comparisons/B20_per_query/all_behavior_changes/RGB_sources/cost_ledger/provenance及evaluation/predictions/banks齐备；最终Git清洁push、工程树清理与一次main回报回执以completion为准。
+本次提交集成push与整批一次回报后canonical tracked/Git窗口交回main，实验session停止本批。main独立科学消费尚待发生；无自动fresh/400/续训、层/rank/λ/seed扫描或controls/Test/RL。下方运行/待派发文字仅表示此前时点。
+
 ## 2026-10-04 末点R首批CPU汇总dtype接口修复，合法训练/bank保留
 
 F/G/R64均完整exit0；全部optimizer参数step64、Writer/RNG/cursor/topology/schema齐备，全部10类A/B梯度组有实际梯度，R第二正式更新Pq/Pk及18个P/18个D均非零。全加载/profile/失败/native/父点累计1.653288613GPUh，固定197/960读回已按live双节点本用户0→3/cap6启动，实际读取e628062c，main只读。

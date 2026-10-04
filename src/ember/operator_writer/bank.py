@@ -707,8 +707,7 @@ class PreparedOperatorLoRA:
 class FrozenOperatorAdapter:
     """Batch a single FP32 rank128 adapter; T/U condition B, MT fixed complete state."""
 
-    def __init__(self, *, policy, source, evaluation_adapter, task_keys, device, require_formal,
-                 reuse_injected=False):
+    def __init__(self, *, policy, source, evaluation_adapter, task_keys, device, require_formal):
         del device, require_formal
         bank = evaluation_adapter
         if (bank.get("kind") != KIND or bank.get("schema_version") != EVAL_SCHEMA
@@ -722,14 +721,7 @@ class FrozenOperatorAdapter:
             load_pi05_lora_contract(Path(bank["asset_root"]) / read_json(Path(bank["spec"]["path"]))["source"]["lora_contract"]), rank=128)
         if self.lora.to_dict() != bank["lora"]:
             raise Pi05EvaluationError("operator worker LoRA rank/source changed")
-        if reuse_injected:
-            # A bounded readback may reuse the resident frozen training source;
-            # the complete existing adapter must satisfy the same contract.
-            validate_lora_state(task_lora_state_dict(policy), self.lora)
-            if any(parameter.requires_grad for parameter in policy.parameters()):
-                raise Pi05EvaluationError('resident readback policy is not fully frozen')
-        else:
-            inject_task_lora(policy, self.lora)
+        inject_task_lora(policy, self.lora)
         for value in task_lora_state_dict(policy).values():
             value.requires_grad_(False)
         policy.eval()

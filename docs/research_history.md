@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：角色绑定三臂固定64及197/960完整执行交付
+
+[合同](designs/native_role_binding_compilation_diagnostic.md)全部固定范围完成：F/G/R各64，197新环境行（101 full/96 compact）、960 B20官方十步预测及全部正反原件齐备，0缺项。父32为26成功，F/G/R为22/24/20，parent→F/G/R的R/G/L=22/0/4、21/3/5、19/1/7；Object24为18/14/16/14、support8为8/8/8/6，breadth皆8。task16合并23旧C900/F/G/R=3/3/0/2，原布局皆0、交换2/2/0/2、八格1/1/0/0；原W40/scene46/noise46成功仅F保留，R两成功在交换init1/3，F交换init4/5，两新成功集合不重合。旧T/MT同layout16仅只读参照3/2，不重评或补八格。
+同次真实B20 tau1角色相对密度均值F/G/R=.367572/.980253/.983341，318/320有效query/臂；first5/full50 action7 unmasked MSE=.077887/.091070、.078097/.093749、.093327/.109797。角色拟合改善不等于总体控制修复；全部18层/8head/前5槽/10flow角色/总mass、逐通道/有效future、不利query及同h/key局部R作用保留，无去R策略forward。错误orange In、篮子/第三对象、正确butter抬起未In齐备；R43/t0/init32在367步In但从未Close，400失败。101 full按固定四个保存replan查看双RGB，contact/grasp及唯一几何原因仍未知。
+原400 train episodes CPU7098帧标签、25真实native/783 sampled帧；held teacher只读RGB/exact language。每臂14336主FM，G/R额外同epsilon tau1各14336，own有效14190；R teacher512 condition项按origin监督且不重复query/rank。所有10类生成头实际梯度、R第二正式更新Pq/Pk/18P/18D非零，64 optimizer/RNG/cursor/topology/schema完整。A相关编译量逐版本重算，最终完整38-target rank128单LoRA，Writer在rollout前退出。
+有效CPUlabel fb19d72f、native12cd293a、三臂学习及父读取ef5eeb68、三臂bank和F/G消费e628062c、R有效消费77f995dc；source b8ea00e9/C90085919994/450父a0e0248d分列。三次空检出启动错误均模型前退出；R首40十步query后CPU BF16×FP32汇总异常、0持久query/环境行，25有效bank保留复用，CPU cast/raw先落盘修复后原范围收齐；所有失败及费用保留，非科学阴性重试。
+合计2.316264251144完整GPUh/硬12，含加载/profile/OOM/失败/渲染/I-O/退出；新增阶段观察约24.65GiB/硬40，非连续精确峰，data1独立quota/shared及实占准入/退出原件保留。F14→28有实测吞吐收益；G/R28 OOM后14，B20两teacher×20=40、环境train4/held23全合法打包、独立三臂及父读取峰4卡。另如实登记F/G未消费的teacher K常驻GPU各2.201660GiB，是可避免占用，未測去除后增批能力，不称14最佳；稳定资源要求已补核缓存消费者，完成64不因此重训。
+六临时模块和reuse_injected窄hook退役，新canonical guard拒绝诊断、原900正式合同支持；所有Git/frozen/失败/科学原件及64恢复保留。root `/data1/user/ymdai/ember_runs/native_role_binding_compilation_20261004/` 下completion/readback、analysis/report/summary/rows/paired_comparisons/B20_per_query/全行为变化/RGB/cost/provenance为交付原件；bank模板旧计数/scene/training_run继承由明确sidecar说明，实际来源按新训练/25native/逐row配对分列，未重写消费manifest。Git整合push/工程树清理/一次回报后交回canonical窗口，本批停止；此条只记录执行事实，main独立科学消费尚待发生，没有自动后继。
+
 ## 2026-10-04：登记教学角色与自身实际Q方向共同学习的有限比较
 
 机制§132/findings§311/[合同](designs/native_role_binding_compilation_diagnostic.md)继承同一butter调用失败，

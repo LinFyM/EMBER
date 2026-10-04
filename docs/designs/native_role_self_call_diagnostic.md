@@ -1,6 +1,7 @@
 # 冻结角色编译器在真实自身初态上的调用读回
 
-2026-10-04，机制§134。当前仅登记一次冻结分析；实际接手、版本、开始与完成由progress记录。
+2026-10-04，机制§134。原批已资源异常关闭；main又核出额外autocast与原闭环消费者不匹配。
+本文件保留原科学合同，不再是active执行；后继仅按[同面板精度修复](native_role_self_call_precision_repair.md)，实际状态由progress记录。
 新root：`/data1/user/ymdai/ember_runs/native_role_self_call_20261004/`。
 
 ## 1. 待辨问题与方法取舍

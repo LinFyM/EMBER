@@ -12594,3 +12594,47 @@ R另保存实际a/w/m与同h的直接项读回，八个原/交换pair作上式�
 [IMOP§III](https://arxiv.org/html/2405.13178v2)则在自身3D场景中匹配支持区域，并用示范末端目标位姿解析计算新动作，
 还复制示范gripper状态、在线选择支持帧。它具有明确的几何消费者，但输入含示范动作/内部状态，部署方式亦不同。
 所以不能把它的区域对应视为action-hidden视频已获得控制的正控，或据此移植几何planner/原参考迁移配方。
+
+## 135. 自身初态原件的执行边界与同消费者修复（2026-10-04）
+
+### 135.1 原件齐备与合同满足是两项事实
+
+main读取原101 PT、25自身mask、31R操作数与八对分解，并直接查看全部25双相机叠图；
+实体身份、原/换位及承载容器的可见mask对应，未发现以框/坐标替代轮廓或held教学特权进入条件。
+另核实际被动hook、精度上下文、CPU归约、首次资产错误traceback与101份storage去重回执。
+原rho、实体mu及双线性数组均可重算，main CPU独立消费0.443秒、0新forward/环境；它们仍须有正确消费者来源。
+
+前批实际发生默认data0缓存写入与4GiB硬限超额；101逐row view保留全批storage，
+重复encoding从18.247GiB去到.882GiB，保留逻辑数组的clone/原子替换本身没有改变科学数值。
+观察总新增19.207GiB仍属违约，现存约1.592GiB不改变历史；未删除原状不明的data0缓存。
+本批不能称合规完成；科学原件齐备也不构成继续扩大测量/训练的许可。
+
+### 135.2 已定位整体autocast差异，不能用正常数值政策跳过
+
+`b546c76f:self_call_readout.consume`在完整predict外启用BF16 autocast。
+实际旧闭环链为`binding_readout.main → binding_evaluation.evaluate → pi05_evaluation._plan_action_chunks → bank.FrozenOperatorAdapter.predict_action_chunk`；
+只有inference/no-grad，没有整体autocast。旧B20中的autocast已在进入evaluate前退出。
+安装版π0.5的bridge转换明确把vision/projector和若干norm保留FP32；action/time投影处于该转换之外，
+最终动作出口还显式接FP32 hidden。外层autocast可改变其中符合条件的矩阵计算，即使权重和config.dtype未变。
+同理，`BatchedLoRAInference`两次bmm没有禁用autocast，但因子首先转换到物理adapter的destination dtype；
+因此既不能说“同BF16配置必然同执行”，也不能说“封存FP32意味着原全部38处都FP32”。
+
+first5 RMS中位.003442，最大R task16 init0 swapped为.243643，约占101行总平方差93.44%，
+主要是两个gripper槽出现符号变化；full50最大.135379来自G init7 swapped。其余小差不能遮住这个不利项。
+源码足以证明新增上下文，不足以证明这两大差异全由该处引起，更不能由首块差推断新闭环成败。
+本次恢复原生消费者上下文的理由是明确执行合同差异，并非不接受正常BF16/TF32、batch或kernel变化。
+
+### 135.3 科学取舍的当前边界与唯一接续
+
+额外autocast读取呈现明显原/换位差别：G初态rho约.0086/.8165，R约.0113/.5814；
+R八对区域平均margin变化主要落在key方向项。main独立归约同时保留实体质量、局部正反、所有单元与旧成功背景。
+但这些量目前属于该实际额外autocast实现，不能直接用作旧闭环初态机制的最终裁决。
+也不能把首计划量推广到整条轨迹，或从key项占优宣称某一位置编码/自身hidden是唯一根因。
+修复后需要核原先面板的完整事实；本段不新添待证头/帧/层或其它诊断。
+
+这不会撤销§133的F/G/R完整控制和B20自身条件下的事实，也不替角色监督/编译路线提供续训理由。
+旧B20与原闭环精度下初态的比较同时混有阶段、查询和精度上下文，不把一个差值当纯泛化证据。
+尚未选择新架构；已准备的[同消费者精度修复](../designs/native_role_self_call_precision_repair.md)只恢复旧上下文、
+同101输入读取一次并正确保存row storage，复用25mask/银行/原processed输入及噪声，旧raw和资源失败记录保留。
+修复期间当前总量硬4GiB、累计GPU硬.5h，预计30–60分钟；原19.207GiB超限不追溯合规，无自动第三次读取或新训练。
+相关实际代码证据与主讨论归约保存在原root的`analysis/main_consumer_contract_audit.json`及`main_scientific_readback.json`。

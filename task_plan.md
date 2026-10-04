@@ -1,3 +1,11 @@
+## 2026-10-04 恢复首次规划的原消费者精度合同
+
+机制§135/findings§314：旧101测量在完整生成外额外使用BF16 autocast，与原闭环上下文不匹配；暂缓据此作原策略架构裁决。
+唯一[修复合同](docs/designs/native_role_self_call_precision_repair.md)恢复原生混合精度/原TF32，保持全部输入、mask、因子、10flow和测量；同101修复读取一次，无新科学条件。
+旧资源违规与旧autocast数组保留，单row独立storage避免重犯19GiB重复序列化；原批与修复累计硬.5GPUh、修复期间当前总占用4GiB，预计30–60分钟。
+不追bitwise、固定batch1或扫描dtype，不把此工程问题当F/G/R旧科学阴性的解释；没有自动训练/400/新架构。
+main持有canonical/Git，push后交原实验session独占修复，整批回报后再作原目标的机制判断。下方为历史计划。
+
 ## 2026-10-04 自身初态冻结读回原件齐备，资源异常收束
 
 101首次规划/25自身mask/31R/八换位分解/117配对全齐，0新闭环/学习，完整.032267347224GPUh。逐行tensor view序列化重复全批storage使观察新增约19.207GiB/硬4，资源合同未满足；CPU去重保留所有逻辑原数组并恢复当前约1.847GiB，超限及首data0缓存违约不隐瞒。全部初态读取正反、实际attention质量、首块大差异和有限精度边界留原件，不作架构通过或新行为资格。两个专用模块/运行面退役、guard封闭，退出GPU0。完成必要Git push/唯一一次异常整批回报即交回canonical/Git并停止，main独立科学消费；无自动追加帧/forward/训练/400/controls/Test/RL。实际完成/预算/Git与回报回执以root completion/readback为准；下方计划均为此前时点。

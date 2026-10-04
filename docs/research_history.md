@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：main核出101读回的额外autocast，登记原消费者修复
+
+机制§135/findings§314。main直接核25双相机mask、101数组与原/新消费者，子任务独立定位重放边界：
+b546c76f完整predict外有BF16 autocast，旧77f995dc闭环链只用inference/no-grad；旧B20自己的autocast在闭环前已退出。
+原生vision/projector、action/time有FP32路径；LoRA按物理destination dtype运行，不能由封存FP32推断全部38处原先都FP32。
+first5最大.243643、约占总平方差93.44%，主要来自R swapped init0两gripper槽符号变化；full50最大另在G swapped init7。
+不把误差唯一归因autocast，不从此推断新闭环成败。原101是其实际额外autocast实现的测量，未达到对应原闭环消费者的读取目标；
+暂不据其选择架构，也不撤销原三臂控制负结论。CPU原件归约/main精度审计保存在原root analysis，0新模型/环境。
+[同面板修复](designs/native_role_self_call_precision_repair.md)只恢复原上下文并一次读完相同101/25，保留旧原件及两项I/O违约。
+累计GPU硬.5h不重开；修复期间当前总占用硬4GiB，旧19.207GiB超限不追溯改为合规，预计30–60分钟；无新训练/环境/面板或自动后继。
+
 ## 2026-10-04：101真实自身首计划读回及存储预算违约收束
 
 [合同](designs/native_role_self_call_diagnostic.md)固定101/25全部消费，parent8、F/G/R各31；全部10flow/18layer/8head/前5槽scores/实际实体与image mass、31R的a/w/m与局部密度、八原/换位代数分解、117同输入比较齐备，0新闭环/环境积分/学习/Writer-native。CPU自身mask逐25双相机叠图核对，43 butter_2/butter_1干扰/木柜、96与16 butter_1及目标承载容器均保持，所有101rho有效。首计划统计train父/F/G/R tau1→.1为.210986→.196454/.213747→.197487/.784937→.477446/.868433→.198336；held23 F/G/R为.151264→.137262/.297979→.234553/.214869→.016937。G原/换8为.008617→.048806/.816524→.548974，R为.011300→.006333/.581350→.028461；实际mass及全部不利teacher/init/noise分列，不把B20与初态当同分布干预、不从角色量声明操作已解决。

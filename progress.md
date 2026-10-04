@@ -1,3 +1,13 @@
+## 2026-10-04 main核出首次规划消费者精度上下文不匹配，登记同面板修复
+
+main已核101原数组/31R/八分解、全部25双相机mask、两项I/O故障源码与原始回执；旧数组无缺项。
+但b546c76f在完整predict_action_chunk外新增BF16 autocast，旧闭环调用链没有；原生vision/projector及action/time保留FP32，不能由同config.dtype称执行精度相同。
+first5最大.243643由R init0 swapped主导，约占总平方差93.44%，主要是两个gripper槽的符号变化；未证明全部由autocast造成。
+原101仅代表该额外autocast实现，暂不据其裁决原闭环读取；原F/G/R控制结果及既有负结论不被撤销。main CPU原件分析和精度审计在root analysis/main_scientific_readback、main_consumer_contract_audit。
+唯一active为[原消费者精度修复](docs/designs/native_role_self_call_precision_repair.md)，仅恢复原上下文后同101输入一次读回、复用25mask；无新环境/学习/Writer-native或面板扩大。
+原19.207GiB/硬4及data0写入仍为违约、原complete=false不改；保留旧原件，修复期间当前总占用硬4GiB、累计读取GPU硬.5h，预计30–60分钟。
+main当前独占canonical/Git，合同push后交既有实验session实施；此处未声称修复已启动。下方完成与科学数字属于其当时实际消费者。
+
 ## 2026-10-04 自身初态101/25原件收齐，发生存储硬限违约，关闭本批交回main
 
 固定101首次规划（parent8、F/G/R各31）、25自身可见mask、31套R操作数、八对换位分解与117同输入配对均已齐，消费者`b546c76f` exit0，0新环境积分/闭环/训练/Writer-native/额外forward。全部10tau×18层×8头×前5槽的scores、实际image/实体mass、R的a/w/m/局部密度及完整50×7原/新首chunk保留；25mask和101rho均有效，未挑层/head/正例或更改分母。train八task等权初态tau1→.1 rho父/F/G/R为.210986→.196454、.213747→.197487、.784937→.477446、.868433→.198336；G/R的held原布局8为.008617→.048806/.011300→.006333，交换8为.816524→.548974/.581350→.028461，合并23为.297979→.234553/.214869→.016937。旧B20约.98只作不同阶段范围参照，旧197行为不计新成绩，科学取舍留main独立消费。

@@ -7578,3 +7578,22 @@ G前5近乎不变、full50略差，后期rho保持仍未修复held16。完整角
 它将区分初态读取迁移缺失与初态已有读取但完整控制未获得；仍不定位唯一根因，不追加晚期帧/层/方向扫描或角色续训。
 预计1–2小时、硬0.5完整GPUh/4GiB。当前只完成源码/两PT结构与101/25计数、数学及合同登记，尚无新模型读回结果。
 外部Zero-WAM的持续视频条件/大量预训练和IMOP的示范位姿/在线对应均不满足当前完整合同，未据它们新增模型或数据。
+
+## 314. 自身初态读取的资源违约与消费者精度不匹配不能掩作数值边界（2026-10-04）
+
+原101/25/31R/八分解/117配对原件齐备，main已读raw、被动测量/标签/归约源码及全部25双相机叠图。
+但原批发生两项实际I/O违约：LIBERO默认data0缓存632受影响文件145.4MiB，以及逐row tensor view把全batch storage重复保存，
+观察新增19.207GiB超过4GiB。clone逻辑数组去重后当前保守约1.592GiB，不抹去旧峰值；原状不明data0不删、原complete=false保持。
+
+main及有界只读子任务进一步核出b546c76f新增整体BF16 autocast，旧闭环77f995dc真实调用链没有。
+原生明确保留vision/projector和action/time的FP32路径；同config.dtype不等于同执行上下文。
+LoRA运行因子先转物理destination dtype，两次bmm无autocast保护；不能从封存FP32称原来全部38处都是FP32。
+first5 RMS中位.003442、最大.243643；最大R init0 swapped占总平方差93.44%，主要来自两个gripper槽符号变化。
+full50最大.135379另在G init7 swapped。未将大差异唯一归因autocast或推出闭环成败，也未追加forward追一致性。
+
+原101科学量只代表实际额外autocast实现，暂不以其裁决旧闭环读取机制。旧B20有自身autocast且查询阶段不同，
+其与初态之间的差不能单归因跨任务/阶段；原F/G/R闭环仍是既有有效负证据，不借读回错误改写训练结论。
+main登记唯一同101/25修复：恢复原生混合精度/原TF32、正确单row storage，复用全部mask/银行/输入，旧原件不覆盖。
+这是已定位消费者违约的有限修复；不扩大FP32、固定batch1、扫dtype/kernel或追逐bitwise，不新增学习/环境/诊断问题。
+预计30–60分钟，累计读取GPU硬.5h不重开，修复期间当前总占用硬4GiB，旧19.207GiB资源违规持续登记。
+归约及审计见原root analysis/main_scientific_readback、main_consumer_contract_audit；后继实际状态以progress和修复合同为准。

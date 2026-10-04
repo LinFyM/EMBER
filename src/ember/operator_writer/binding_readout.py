@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from safetensors.torch import load_file, save_file
+from ember.batched_lora import BatchedLoRAInference
 
 from ember.lora import LORA_A_SUFFIX, copy_task_lora_state_
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
@@ -48,7 +49,7 @@ def q_readback(policy, q, factors, residual):
                 name = names[layer]; h = inputs[layer].float()
                 a = factors[name + LORA_A_SUFFIX].float()
                 r = residual[str(layer)].to(device=h.device, dtype=torch.float32)
-                delta = torch.nn.functional.linear(torch.nn.functional.linear(h, a), r)
+                delta = torch.bmm(torch.bmm(h, a.transpose(1, 2)), r.transpose(1, 2))
                 delta = delta.reshape(len(h), 50, 8, 256).transpose(1, 2)
                 cos, sin = positions['cos'][:, None], positions['sin'][:, None]
                 delta = delta * cos + modeling_gemma.rotate_half(delta) * sin
@@ -135,49 +136,64 @@ def readout(runtime, spec, arm, bank):
     data = FormalData(ASSET, spec, query_labels=True, task_ids=TASKS)
     labels = load_labels(); manifest = read_json(ROOT / 'query_manifest.json')
     records = []
+    runtime.restore_identity()
+    batched = BatchedLoRAInference(runtime.policy, runtime.lora)
     label_records = {(r['task'], r['demo']): r for r in read_json(ROOT / 'labels/manifest.json')['records']}
     try:
         for task in TASKS:
             queries = manifest['B20'][str(task)]
             raw = raw_batch(data, task, queries); batch = runtime.processor.training_batch(raw)
-            q = labels_for(labels, task, queries, runtime.device)
+            q = labels_for(labels, task, queries, runtime.device).repeat(2, 1, 1)
+            conditions, factor_states, residuals = [], [], []
             for teacher in (0, 1):
                 key = f'task{task:03d}_teacher{teacher:02d}'
                 condition = next(r for r in bank['conditions'] if r['condition_id'] == key)
                 factors = load_file(condition['factors']['path'], device='cuda:0')
                 residual = (torch.load(ROOT / 'banks' / arm / (key + '_binding.pt'), map_location='cpu',
                                        weights_only=True)['R'] if arm == 'R' else None)
-                copy_task_lora_state_(runtime.policy, factors, runtime.lora)
-                with autocast(runtime.device):
-                    sample = samples(runtime, batch, queries)
-                    noise = sample.arguments[5]
-                    with q_readback(runtime.policy, q, factors, residual) as role:
-                        generated = runtime.policy.predict_action_chunk({k: v for k, v in batch.items() if k != 'action'},
-                                                                       noise=noise, num_steps=10)
-                if len(role) != 10:
-                    raise ValueError('B20 must use exactly ten actual official calls')
+                conditions.append(condition); factor_states.append(factors); residuals.append(residual)
+            packed = {k: torch.cat((v, v)) if isinstance(v, torch.Tensor) and v.ndim and len(v) == 20
+                      else v * 2 if isinstance(v, (list, tuple)) and len(v) == 20 else v
+                      for k, v in batch.items() if k != 'action'}
+            # Exactly the existing two conditions × B20, ordered teacher0 then1;
+            # physical batching changes neither data, noise nor ten-flow scope.
+            local_a = {name: torch.cat([state[name][None].expand(20, *state[name].shape) for state in factor_states])
+                       for name in factor_states[0] if name.endswith(LORA_A_SUFFIX)}
+            local_r = ({layer: torch.cat([value[layer][None].expand(20, *value[layer].shape) for value in residuals])
+                        for layer in residuals[0]} if arm == 'R' else None)
+            with autocast(runtime.device):
+                noise20 = samples(runtime, batch, queries).arguments[5]
+                noise = torch.cat((noise20, noise20))
+                with batched.activate([factor_states[0]] * 20 + [factor_states[1]] * 20), \
+                     q_readback(runtime.policy, q, local_a, local_r) as role:
+                    generated = runtime.policy.predict_action_chunk(packed, noise=noise, num_steps=10)
+            if len(role) != 10 or len(generated) != 40:
+                raise ValueError('B20 paired packing must use40 queries and ten actual official calls')
+            for teacher, condition in enumerate(conditions):
+                key = condition['condition_id']; selected = slice(teacher * 20, (teacher + 1) * 20)
                 row = dict(schema='native_role_binding_B20_v1', arm=arm, task=task, teacher=teacher,
                     queries=queries, query_offset=1, official_flow_steps=10,
-                    action_generated_normalized=generated.float().cpu(), action_target=batch['action'].cpu(),
-                    valid_mask=~raw['action_is_pad'], noise=noise.cpu(), role_patch_weights=q.cpu(),
-                    role_scores=torch.stack([r['scores'] for r in role], 1),
-                    image_attention_mass=torch.stack([r['image_mass'] for r in role], 1),
+                    action_generated_normalized=generated[selected].float().cpu(), action_target=batch['action'].cpu(),
+                    valid_mask=~raw['action_is_pad'], noise=noise[selected].cpu(), role_patch_weights=q[selected].cpu(),
+                    role_scores=torch.stack([r['scores'][selected] for r in role], 1),
+                    image_attention_mass=torch.stack([r['image_mass'][selected] for r in role], 1),
                     target_entity_index=0, entities=label_records[task, queries[0]['demo']]['entities'],
-                    extra_forward=False, Writer_removed=True)
-                if residual is not None:
+                    extra_forward=False, Writer_removed=True, physical_query_batch=40)
+                if arm == 'R':
                     # Keep compact same-h effects; full logits reduce over image
                     # tokens only after recording each layer/head/slot contribution.
-                    effect = torch.stack([r['direct_R_image_logits'] for r in role], 1)
+                    effect = torch.stack([r['direct_R_image_logits'][selected] for r in role], 1)
                     row.update(direct_R_image_logit_mean=effect.mean(-1), direct_R_image_logit_RMS=effect.square().mean(-1).sqrt(),
-                        direct_R_entity_logit_mean=torch.einsum('btlhsp,bop->btlhso', effect, q.cpu()),
-                        direct_R_local_density_difference=torch.stack([r['direct_R_local_density'] for r in role], 1),
+                        direct_R_entity_logit_mean=torch.einsum('btlhsp,bop->btlhso', effect, q[selected].cpu()),
+                        direct_R_local_density_difference=torch.stack([r['direct_R_local_density'][selected] for r in role], 1),
                         direct_R_scope='same actual h/own K; local subtraction only, not a removed-R policy')
                 path = ROOT / 'predictions' / arm / (key + '_B20.pt'); path.parent.mkdir(exist_ok=True)
                 torch.save(row, path)
                 records.append(dict(task=task, teacher=teacher, predictions=file_record(path), queries=20))
     finally:
-        data.close(); runtime.restore_identity()
-    write_json_atomic(ROOT / 'predictions' / arm / 'manifest.json', dict(records=records, queries=320, forward_steps=10, additional_FM_forward=0))
+        batched.close(); data.close(); runtime.restore_identity()
+    write_json_atomic(ROOT / 'predictions' / arm / 'manifest.json', dict(records=records, queries=320, forward_steps=10,
+        additional_FM_forward=0, physical_query_batch=40, paired_teachers=2, no_extra_queries=True))
 
 
 def main(arm):

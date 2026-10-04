@@ -1,3 +1,9 @@
+## 2026-10-04 固定末点B20按两teacher40合法query打包
+
+父C900匹配面板32行完整exit0/26成功，8 full/24 compact，376.995832秒/.104721065GPUh；主项父点是强的有限训练参照，完整32原件及消费者核验保留，不借它替三臂结果。
+原标签实际有效own调用14190/14336（G/R各一份）、teacher有效origin比例等condition均值.990359262；无效frame/query保留原均值分母，0新增label/model/env。
+固定B20复用canonical BatchedLoRAInference将同task两teacher×20合法query一次batch40/十flow读取，真实Gaussian按teacher重复同20行，角色和直接R局部读回按相同行号拆回。未新增query/forward/标签或改科学口径；不是沿旧batch20保守值，未为填显存造样本。必要CPU结构检查后new push/freeze实际消费者，运行中的ef5eeb68训练不变。
+
 ## 2026-10-04 父点32行已独立开始，末点读回保持同一消费者
 
 父C900新16条件/32 train行在gpu02:3、PID3091665由ef5eeb68完整冻结树实际启动；与三臂学习独立并行，总本用户4/cap6，source一次resident、每task四合法case批处理。新held读取前补齐原XY合同的其它body/model pose不变检查及变换后t0真实goal重新采样，0额外step/settling/case、无模型或loss改变；后续消费者另push/freeze，运行中的训练/父读取冻结树不修改。原environments/最终因子/absolute noise/完整goal owner不另建。

@@ -1,3 +1,10 @@
+## 2026-10-04 自身初态读回已接手，25个CPU可见mask完成，101读取待实际启动
+
+实验session `01a0fabb-f7a0-7100-93d8-6a0f66055553`从clean pushed `06c0ae5c`建立独占`codex/native-role-self-call`隔离树，canonical tracked/Git窗口归实验session，main只读。固定前批全部101 full首次规划、25自身物理初态，原processed RGB/tokens/state provenance、CPU Gaussian和完整sealed A/B/R来源已登记，0新增训练/Writer/native/闭环/环境积分。
+25个真实CPU可见mask已完整exit0并逐双相机叠图核对；4个有效早期mask及其余有效原件复用，task43另补合同要求的木柜被动mask，旧candidate-only原件保留。正确butter_2、butter_1干扰、各task承载容器及256→224/16×16映射保留，容器不进入rho竞争。所有25均有目标及至少两候选可见，未按模型结果改mask或分母。
+五次CPU退出回执全部保留：首次遗漏canonical资产路由，第二次guard误禁不积分的mj_step1，第三次task16继承train任务表不含held项，第四次补齐25候选mask，第五次仅补43容器。已定位的接口错误在独占分支修复并new push/freeze，未原地改冻结码。首次LIBERO绕过XDG向data0默认资产缓存产生约145.4MiB受影响文件，0资产消费/模型/环境积分；精确清单在新root `analysis/unintended_download_audit.json`。已接canonical data1资产并强制离线，无法确认旧缓存原状的文件未删除；此为新增写入data1规则的实际违约，不隐瞒为全程合规。
+实际读取冻结`671e4ed0`已clean pushed detached；一resident source、先32合法train输入，再按实际峰值扩剩余69，不重算成功输入作profile。仅R保留实际Q的A、当前前5槽h及R矩阵，F/G不常驻无用teacher K/Writer/native；原SDPA/Value/mask/GQA/十flow不改。新root `/data1/user/ymdai/ember_runs/native_role_self_call_20261004/`，硬0.5完整GPUh/4GiB保持，GPU launch将另存实时双节点/strg01准入与真实开始/退出。下方待派发/main独占文字为此前登记时点，不覆盖本实际接手。
+
 ## 2026-10-04 登记已训练角色编译的自身初态调用读回
 
 唯一active design为[冻结自身初态读回](docs/designs/native_role_self_call_diagnostic.md)，机制§134/findings§313。

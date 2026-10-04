@@ -33,10 +33,10 @@ def q_readback(policy, q, factors, residual):
         def capture(module, args, layer=layer):
             inputs[layer] = args[0]
         handles.append(policy.get_submodule(name).register_forward_pre_hook(capture))
-    def rotated(query, key, cos, sin, position_ids=None, unsqueeze_dim=1):
+    def rotated(query, key, cos, sin, unsqueeze_dim=1):
         if query.shape[-2] == 50 and query.shape[1] == 8:
             positions['cos'], positions['sin'] = cos, sin
-        return rotate(query, key, cos, sin, position_ids=position_ids, unsqueeze_dim=unsqueeze_dim)
+        return rotate(query, key, cos, sin, unsqueeze_dim=unsqueeze_dim)
     def denoise(*args, **kwargs):
         observer = RoleObserver(policy, q)
         local_logits, local_density = {}, {}

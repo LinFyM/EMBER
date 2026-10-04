@@ -1,3 +1,7 @@
+## 2026-10-04 公共角色参照固定范围完成，交回科学判断
+
+四公共full均280失败/butter静止，旧八行只读比较完成、唯一旧W40/scene46/noise46正确butter成功保留。12行/8初次完整差/全七对象及目标/双RGB正反齐备；.026585672377/.5完整GPUh、阶段新增约.880/3GiB，exit0/PID与GPU释放。专用模块/入口退役、canonical新执行封闭，Git/frozen/原件保留；完成集成push/一次整批回报即交回canonical/Git窗口并停止。无自动公共FM/训练/正则/缩放/其它controls/400/Test/RL，main独立科学消费后决定同一问题接续。下方运行/待派发均为此前时点。
+
 ## 2026-10-04 实验session接手同C900公共控制四行参照
 
 独占canonical/Git由实验session持有，隔离分支codex/task16-public-role；main只读。先核76完整公共因子与官方scene/noise消费者，push/clean detached运行四full，统一与旧八行作12行行为及完整条件−公共首块差，退役/Git/整批一次交回并停止。硬.5完整GPUh/3GiB，0新训练/Writer-native编译/teacher文件读取或额外case；科学裁决仍由main独立消费。下方待交接为此前时点。

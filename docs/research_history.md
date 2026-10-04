@@ -3,6 +3,13 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：同C900公共角色参照四行完整交付事实
+
+[合同](designs/task16_public_role_reference.md)严格4 full完成，scene0/46×noise0/46均280失败、butter中心静止；三行orange最大抬26.342/31.009/28.900cm，scene46/noise0仅.411cm。ketchup/basket扰动、旧W40/scene46/noise0的第三对象失败及旧唯一W40正确butter269成功全保留。公共空、W47空、W40仅(46,46)；对公共R/G/L分别0/0/0与0/1/0，无总体或唯一根因结论。
+完整38-target/76公共因子按原900 common.values sorted map读取，旧shared只含A0未误用。原八行只读复用，12行scene/noise/初始state/RGB配对与8 complete-minus-public first5/full50及physical前5原数组/各通道均值RMS齐备。0 Writer/native/teacher文件/训练/新scene或环境smoke；所有新full、七body与EEF/grip/goal T+1、动作/正反见 `/data1/user/ymdai/ember_runs/task16_public_role_reference_20261004/`，CPU准备错误和修复0模型/环境留证。
+新consumer d583a75d clean pushed detached、source训练b8ea00e9/C900训练物化85919994/450父a0e0248d/旧八格4d3762a3分列；95.708421秒/.026585672377完整GPUh（硬.5），无GPU失败、exit0/PID与GPU均释放。实际一次source/batch4完成1120步，18.071084步/秒，reserved9.871094GiB；四合法case已全打包，无额外profile/工作填显存。新增阶段观察约.880GiB（硬3，非连续精确峰），quota/shared/实际用量原件保留，全新写data1。
+专用模块/入口已退役、scoped三绑定还原、guard封闭新执行且原C900正式合同支持不变。完成Git/一次整批回报后交回canonical窗口；本条只为执行事实，main独立消费机制，无自动公共FM/正则/训练或其它controls。
+
 ## 2026-10-04：登记同一C900公共角色控制的四情境参照
 
 机制§130/findings§309/[固定合同](designs/task16_public_role_reference.md)接续task16同一获取失败，

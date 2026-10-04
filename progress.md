@@ -1,3 +1,13 @@
+## 2026-10-04 C900公共角色四行参照完整交付，新增计算停止
+
+4/4 full双RGB、全部50×7 chunk/实际physical动作/T+1七body位置与EEF位置/quat/gripper/官方goal完成，全部280步失败；四行butter中心全程静止。scene0/noise0、scene0/noise46、scene46/noise46分别抬orange26.3423/31.0090/28.9004cm（>3cm首次94/145/232）；scene46/noise0只有orange最大抬高.4105cm/位移1.1717cm。scene0/noise0另有ketchup中心最大位移11.4370cm/basket2.1636cm，全部七对象扰动和不利例保留。旧八行只读复用：W47全失败，W40仅scene46/noise46成功269，另有ketchup第三对象失败；12行完整比较，不是总体部署分数。
+原checkpoint common.values sorted76完整公共因子/38 target实际消费，teacher空、condition public_beta900；原shared仅38 A0未误用，不补零B/再次加shared。官方source/normalization/scene/post-dummy完整控制器/双RGB及CPU50×32、56项noise stream时钟承接，同scene/noise配对与初始数组差自然为0，不设逐bit门槛。0 Writer/native/teacher文件/教学特权/训练/额外环境case或smoke；四full实际RGB采样已看。全部12初次50×7/physical前5与8 complete-minus-public first5/full50原数组、translation/rotation/grip均值/RMS/逐通道见root analysis，不把动作量级当因果比例或中心/3cm当抓持证明。
+公共success为空；对W47 R/G/L=0/0/0、churn0/Jaccard无定义，对W40为0/1/0、churn1/Jaccard0，唯一gain=(46,46)。这是同一联合学习公共参数的四解释情境，不选择公共部署/训练目标或定位唯一内部原因，科学解释由main独立消费。
+有效reading d583a75d clean pushed detached：04:03:28Z至04:05:04Z，PID2281278 exit0，95.708420559秒/0.026585672377完整GPUh（硬.5），无GPU失败；CPU准备/分析生成错误及修复留cpu_preparation_notes，0补算模型/环境。全部加载/渲染/I-O/退出计账，PID消失/双节点本用户GPU0。一次resident source实际batch4（全部合法case），61.977465秒完成1120步/18.071084步每秒；reserved9.871094GiB/allocated9.424913GiB，已无授权case/帧工作可增批，无额外profile填显存。
+阶段新增观察0.879951GiB（估计1.5/硬3，含工程/frozen/beta/full/分析，非连续精确峰），strg01 data1独立quota2147483648KiB/结束实占1203546156KiB与共享容量准入/退出原件保留，所有新写data1。source训练b8ea00e9、C900训练/物化85919994、450父a0e0248d、旧八格consumer4d3762a3与新读取身份分列；旧资产只读。
+Owner最新“更深入推理、允许更大胆修改架构”原文授权已按主讨论给定段落同步current_owner_requirements§4与concept；后续active design登记具体方法，当前四行范围/预算/停止点未改变，0据此新计算。
+原件 `/data1/user/ymdai/ember_runs/task16_public_role_reference_20261004/` 的results、consumer_completion、public_beta/provenance、analysis/report/summary/rows/first_chunks_and_complete_minus_public.npz/complete_minus_public_initial_actions.json及四双RGB/full均齐备，缺项0。两个专用源文件已退役/scoped三绑定实际退出还原，canonical guard拒绝新执行、原900正式合同仍支持；Git/frozen/原件保留。完成必要Git集成push/清理task-owned工程树与一次来源整批回报后canonical/Git窗口交回main；本四行已结束，无active新增计算、公共FM、训练、controls或自动后继。下方启动/待冻结状态均为此前时点。
+
 ## 2026-10-04 公共角色参照四行实际消费者启动
 
 2026-10-04T04:03:28.639853+00:00，clean pushed detached d583a75d在gpu02:1启动PID2281278；现场双节点本用户总卡0→1、cap6，data1独立quota/实占/shared与峰预算通过。一次resident source，全部四合法case最大batch4；原两scene/post-dummy控制器/双RGB和56项CPU stream时钟沿canonical owner。唯一退出等待者等待整批，不轮询日志或selfQueue。

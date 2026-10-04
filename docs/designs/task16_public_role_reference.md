@@ -72,3 +72,8 @@ launch前按AGENTS现场核双节点/GPU总量8或6上限、data1独立quota/相
 正常运行由唯一退出等待者等整批结束，不轮询日志或给直接等待者自Queue。
 四行完成后统一读取12行比较及全部正反、退役专用入口/hooks、封闭新执行并集成push；保留frozen/Git/原件/费用/退出。
 只发一次有来源的完整回报并交回canonical窗口；无自动训练、公共目标、缩放、因子拆分、更多controls或新模型。
+
+## 5. 固定整批执行事实（2026-10-04）
+
+四公共full全部280步失败，butter全程中心静止；三行明显搬orange、一行只小量扰动。旧八行只读承接，W47空、W40仍仅(scene46,noise46)成功269，12行原件与8条complete-minus-public初次动作数组/均值/RMS及全部不利例保留。结果不选公共部署、不自动训练；主讨论负责独立科学解释。
+实际新读取d583a75d clean pushed detached、一次source加载/batch4，95.708421秒/.026585672377完整GPUh，PID/GPU均已释放；新增阶段观察约.880GiB/硬3。完整76因子只读原900 common.values，0 Writer/native/teacher文件/新case或smoke。root completion/readback、analysis/report/rows/summary、public_beta/provenance与launch账本记录完整来源。专用两文件及scoped运行面已退役，canonical runtime guard封闭新执行、Git/frozen/原件保留；所有结果分支到此停止，无自动后继。

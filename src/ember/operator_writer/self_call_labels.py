@@ -19,6 +19,7 @@ TARGETS = {12: 'salad_dressing_1', 13: 'bbq_sauce_1', 14: 'ketchup_1',
            15: 'tomato_sauce_1', 17: 'milk_1', 19: 'orange_juice_1',
            43: 'butter_2', 96: 'butter_1', 16: 'butter_1'}
 IMAGE_KEYS = ('observation.images.base_0_rgb', 'observation.images.left_wrist_0_rgb')
+HELD_REFERENCE = ROOT.parent / 'conditional_read_write_continuation900_20261002/conditional_read_write/evaluation/900/correct400/run_contract.json'
 
 
 def initial(row):
@@ -195,6 +196,28 @@ def render_masks(env, row):
         own_state8=raw_state.reshape(-1).tolist(), renderer='CPU OSMesa visual-geoms, top-down horizontally flipped')
 
 
+def retained_mask(row):
+    """Keep the four valid CPU masks preceding the task-metadata failure."""
+    path = ROOT / 'labels' / (row['scene_key'] + '.npz')
+    image_path = ROOT / 'analysis' / (row['scene_key'] + '_mask.png')
+    if not path.is_file() or not image_path.is_file():
+        return None
+    data = np.load(path); names = data['entities'].tolist(); f = data['f']
+    if names[0] != TARGETS[row['task']] or f.shape != (len(names), 512):
+        raise ValueError('retained valid CPU mask identity changed')
+    image = cv2.cvtColor(cv2.imread(str(image_path)), cv2.COLOR_BGR2RGB)
+    rendered = np.stack([image[c * 256:(c + 1) * 256, 512:768] for c in range(2)])
+    obs, raw_state, _, _ = initial(row)
+    rgb = np.stack([(obs[k][0].permute(1, 2, 0).numpy() * 255).round().astype(np.uint8) for k in IMAGE_KEYS])
+    difference = rendered.astype(float) - rgb.astype(float); n = int(data['candidates'])
+    return dict(scene_key=row['scene_key'], path=str(path), entities=names, candidates=n,
+        visible=[bool(x.sum()) for x in f], valid_rho=bool(f[0].sum() and np.count_nonzero(f[:n].sum(-1)) > 1),
+        target_index=0, target=TARGETS[row['task']], scene=row['scene'], source_trajectory=row['trajectory'],
+        RGB_mean_abs_difference=float(np.abs(difference).mean()), RGB_RMS_difference=float(np.sqrt((difference ** 2).mean())),
+        CPU_state_restore=True, controller_restored=True, extra_environment_steps=0,
+        own_state8=raw_state.reshape(-1).tolist(), renderer='retained legal OSMesa mask from e34e4c28; no new render')
+
+
 def build():
     os.environ['MUJOCO_GL'] = 'osmesa'; os.environ['PYOPENGL_PLATFORM'] = 'osmesa'
     import mujoco
@@ -219,10 +242,13 @@ def build():
     manifest = read_json(ROOT / 'inputs.json'); records = []; env = None; task_id = None; started = time.monotonic()
     try:
         for row in sorted(manifest['scenes'], key=lambda r: (r['task'], r['physical_init'], r['layout'])):
+            retained = retained_mask(row)
+            if retained is not None:
+                records.append(retained); continue
             if row['task'] != task_id:
                 if env is not None:
-                    env.close()
-                contract = read_json(Path(row['contract']))
+                    env.close(); env = None
+                contract = read_json(HELD_REFERENCE if row['task'] == 16 else Path(row['contract']))
                 task = next(t for t in contract['tasks'] if (t['suite'], t['task_id']) == (row['suite'], row['local_task_id']))
                 bddl = Path(contract['libero_paths']['bddl_files']) / task['problem_folder'] / task['bddl_file']
                 env = OffScreenRenderEnv(bddl_file_name=bddl, camera_heights=256, camera_widths=256)

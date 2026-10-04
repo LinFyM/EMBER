@@ -1,3 +1,14 @@
+## 2026-10-04 三臂角色绑定CPU标签/原件合同检查完成，待冻结
+
+八task实名BDDL/目标/完整goal与自由物体registry已核：43 butter_2且保留Close/butter_1干扰，96 butter_1；八张teacher0首帧双RGB红mask已实际查看，目标区域对应。既有post-action states[f+1]回退2ms的EEF误差最大6.481e-16m，0环境step/action标签读取/held特权。完整64×随机四task、两teacher共同query/独立flow seed和B20 manifest已固定；首帧CPU JSON接口失败及修复留日志，不补算GPU/环境。
+R的20,381,696参数、D全零/单层2048×128和chance=1/不可见零loss数学检查通过；尚待真实native/own Q/余切消费者检查，未把CPU数学当控制通过。metadata估计783总teacher sampled帧，固定native全38 X/H/c/d/K上限9.420GiB，完整新增保守峰35.420/硬40GiB（原估计28–34已按实际缓存修订，未改资源合同）。
+结构owner保持canonical native、ConditionalTarget、NativeFlowPrediction和evaluator；新增label/role算子/余切、薄运行/有限面板/读回按本诊断职责分离。预计>1000行/6个临时模块+薄入口，仅实验session拥有，197行及B20交齐即全部退役，封闭新执行，Git/frozen原件留证；不建立第二长期trainer/policy/evaluator。GPU尚未启动，main只读。
+
+## 2026-10-04 native_role_binding_compilation由实验session实际接手
+
+实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553从clean pushed bbe73078创建codex/native-role-binding独占隔离树，canonical tracked/Git由本session独占，main只读。完整合同/机制§132/findings§311及当前Owner/AGENTS已读；固定F/G/R各64、197新闭环与960 B20，原数据规模/信息墙/停止点保持。尚无新GPU/model/environment/optimizer计算，实际冻结/启动/完成分别登记。
+strg01 data1独立quota2147483648KiB/实占1203280852KiB、共享余量86823261184KiB已查；新增峰估计28–34/硬40GiB、硬12完整GPUh。新root仅data1，source/原checkpoint/scene只读。最小临时label/operator/credit/orchestration沿canonical native、FM与evaluator owner，新增运行面整批后退役，Git/frozen/artifacts保留；不等待main工程验收，不自动后继。下方登记及旧批状态为当时时点。
+
 ## 2026-10-04 登记角色内容到实际Q方向的三臂有界辨识
 
 唯一active design为[角色绑定编译诊断](docs/designs/native_role_binding_compilation_diagnostic.md)，机制§132/findings§311。

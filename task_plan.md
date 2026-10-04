@@ -1,3 +1,7 @@
+## 2026-10-04 实验session接手角色绑定三臂有界学习
+
+canonical tracked/Git窗口由实验session独占；main只读。先冻结query manifest和实名origin/own可见标签，核真实Q/RoPE及外积编译/余切，再push/clean detached运行固定F/G/R64与197环境行/960 B20；完成原件、正反读回、完整费用/退出释放、临时运行面退役和Git交付后一次交回并停止。硬12GPUh/40GiB，无400/续训/controls/Test/RL。下方待派发记录为此前状态。
+
 ## 2026-10-04 下一项辨识角色信用与直接角色编译的不同作用
 
 按机制§132/findings§311/[唯一合同](docs/designs/native_role_binding_compilation_diagnostic.md)，完成F/G/R固定父点64步比较。

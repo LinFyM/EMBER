@@ -1,3 +1,14 @@
+## 2026-10-04 task16八格实现和CPU消费者核验完成，待冻结读取
+
+唯一193行任务模块与5行入口复用canonical rollout_shard/scene/episode/flow-noise及FrozenOperatorAdapter，不复制policy/evaluator或改formal guard。scoped三处只在固定panel内绑定真实physical state、原condition及原noise stream，退出恢复；每case独立capture目录防止同scene覆盖。CPU实际元数据/完整76因子shape/56项噪声/同流Gaussian/调度身份与hook还原检查通过，0模型/环境/GPU。
+8合法case全部共驻一次resident source，最大8-query真实batch，不继承旧world或保守batch1；完整8读取即退役模块/入口并封闭新执行，科学/失败由Git/frozen/原件保留。下一步集成push、新clean detached消费者；当前尚未启动模型/环境，原对角读取属于八行，无额外smoke/profile。
+
+## 2026-10-04 task16_condition_context_crossover实际接手
+
+实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553从clean pushed 7842b78c建立codex/task16-condition-context隔离树，独占canonical tracked/Git窗口；main只读科学分析。完整合同/机制§128/findings§307及Owner资源规则已读。唯一scene{0,46}×完整38-target LoRA{teacher47,40}×原noise stream{0,46}八行，全full；0 Writer/native编译/训练/held教学特权读取或新增科学样本。
+strg01 data1独立quota及共享容量准入通过，新增峰估计2/硬4GiB、完整GPUh硬1；原准备材料整体移入唯一root `/data1/user/ymdai/ember_runs/task16_condition_context_crossover_20261004/analysis/preparation/`。真实物理初态、condition与noise stream分列，原formal映射只读；两套完整A0+S/B0+M不再次叠加shared。沿canonical scene/episode/noise/BatchedLoRAInference做有界scoped接入；原对角计入八行，不增环境smoke。当前尚无模型/环境/GPU启动，实际push/freeze/运行/完成分别登记。
+首次CPU接手脚本在worktree checkout尚未退出时读取progress失败，准备材料/root准入已保存；等待checkout正常exit0后登记，不涉及模型/环境，0GPUh。
+
 ## 2026-10-04 登记task16实际条件控制的固定八格交叉
 
 唯一active design为[条件/scene/noise交叉](docs/designs/task16_condition_context_crossover.md)，机制§128/findings§307。

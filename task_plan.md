@@ -1,3 +1,7 @@
+## 2026-10-04 实验session已接手task16八格交叉
+
+独占canonical/Git由实验session持有，main只读；工程分支codex/task16-condition-context。严格8 full行与原两对角、初次动作的三轴配对差和全部对象行为读回，硬1GPUh/4GiB。实际消费者验证后集成push、clean detached冻结运行；完成退役入口/hooks、整批一次交回并停止。无新训练/编译/held教学特权/后继，主讨论负责科学裁决。下方待派发状态仅为历史时点。
+
 ## 2026-10-04 下一项只检验同task既存条件控制能否改变错误角色
 
 机制§128/findings§307/[固定八格合同](docs/designs/task16_condition_context_crossover.md)：C900两完整LoRA47/40，

@@ -1,3 +1,14 @@
+## 2026-10-04 main已消费角色绑定三臂，继续同一控制调用问题
+
+机制§133/findings§312独立核197 raw continuous、960原预测与真实角色/余切消费者，补读25实际alpha/R及合法RGB。
+G在train32相对F增6失4，却未胜父且held16全失败；R总体退步，旧成功损失与两条交换布局正例均保留。
+tau1角色rho约.98不是全部头正确；R后期均层作用明显减弱，但有较大image mass的单元仍保留正向作用，不能写成全失效。
+R full50风险八task/十六teacher条件均高于F；W47教学中后段确有butter选择却五情境全败，不能由teacher完全无信息解释。
+尚未取得held自身读取/Value因果分解，不从指标跳到唯一根因或补tau/mass辅助。按原停止线不续训、扫描、400或formal fresh。
+原root的analysis/main_scientific_readback、main_B20_independent及main_training_loss_readback保存完整独立消费，0新模型/环境/GPU。
+main独占canonical tracked/Git并继续教学内容到自身调用函数的整体参数化推导；允许实质替换原模块，未选定新结构、不扩数据。
+本批已结束，无active新实验设计或新增计算；下方登记、运行与待消费段落均为历史时点。
+
 ## 2026-10-04 角色绑定三臂64及197/960全部交付，停止新增计算
 
 F/G/R各64完整恢复、197新增闭环（101 full/96 compact）、960 B20官方十步查询完整exit0，缺项0。train32父C900/F/G/R为26/22/24/20；八task12/13/14/15/17/19/43/96各四行分别parent 2/3/4/3/2/4/4/4、F 2/1/4/1/2/4/4/4、G 4/2/2/4/2/2/4/4、R 2/1/4/3/1/3/2/4，breadth皆8。parent→F/G/R的R/G/L为22/0/4、21/3/5、19/1/7；G→R为16/4/8，全部teacher/init正反、churn/Jaccard保留，未取得总体控制修复。

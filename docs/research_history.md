@@ -3,6 +3,19 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：角色密度与完整控制分离的独立科学裁决
+
+机制§133/findings§312从197 raw continuous、960预测/原标签及实际科学消费者独立读回；main另核25实际alpha/R，
+只用held RGB查看两条关键视频全部origin、其余七条四固定时刻及六闭环采样。0新模型/环境/GPU/held特权或新标签。
+train32父/F/G/R26/22/24/20，G对F R/G/L18/6/4；held16合并23旧C/F/G/R3/3/0/2、F/R成功集无交集。
+R43 In后未Close与另一无两goal丢失区分；抬butter未完成、第三对象、错orange及全部强参照边界保留。
+tau1 rho G/R约.98，逐单元概率平均仅.672/.549；R后期均层效应衰减，但按原image mass加权的直接R作用十步仍正。
+R full50风险全部八task/十六teacher条件高于F，不能由padding或单个teacher解释；heldW47中后段目标选择与五执行失败并存。
+实际角色loss缺少FM的Value差/动作余切权重，解释目标可分离而非确诊唯一病因；不据后期分数安排tau/mass补丁。
+按预注册停止线降低角色信用加直接Q绑定足以修复的主假设支持，不续训/扫描或formal fresh/400，不清零局部正例。
+原root analysis/main_scientific_readback、main_B20_independent、main_training_loss_readback留完整证据，核心CPU3.503/8.656秒；
+原2.316264251144GPUh及冻结/失败身份不变。main持canonical/Git，继续同一控制调用的结构推导；无active新增计算或已选后继。
+
 ## 2026-10-04：角色绑定三臂固定64及197/960完整执行交付
 
 [合同](designs/native_role_binding_compilation_diagnostic.md)全部固定范围完成：F/G/R各64，197新环境行（101 full/96 compact）、960 B20官方十步预测及全部正反原件齐备，0缺项。父32为26成功，F/G/R为22/24/20，parent→F/G/R的R/G/L=22/0/4、21/3/5、19/1/7；Object24为18/14/16/14、support8为8/8/8/6，breadth皆8。task16合并23旧C900/F/G/R=3/3/0/2，原布局皆0、交换2/2/0/2、八格1/1/0/0；原W40/scene46/noise46成功仅F保留，R两成功在交换init1/3，F交换init4/5，两新成功集合不重合。旧T/MT同layout16仅只读参照3/2，不重评或补八格。

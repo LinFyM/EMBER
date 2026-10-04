@@ -1117,3 +1117,7 @@ weights_only不含完整训练恢复状态，metadata_only不含权重。不得�
 `git show 797ae01f:progress.md`、`git show 797ae01f:task_plan.md`。
 按日期/方案追溯的入口为[research_history](docs/research_history.md)，跨轮结论在[findings](findings.md)。
 这些历史快照记录当时授权、成本、失败与交接，不作为今天的执行authority；不新增平行状态或in-tree archive。
+## 2026-10-04 native_role_self_call由实验session实际接手
+
+实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553从clean pushed 06c0ae5c创建codex/native-role-self-call独占工程树；canonical tracked/Git窗口由实验session持有，main只读。完整合同、机制§134/findings§313及当前Owner/AGENTS已读，同名root此前不存在，未重复启动。固定101首次规划/25自身初态，0新环境step/Writer/native/学习；原processed输入、Gaussian和完整sealed因子只读复用。
+strg01 data1现场独立quota2147483648KiB/实占1228858108KiB、共享余量88880812392448B准入通过。a只存每层/槽一次、w/m保留全head/实体/flow，估计新增峰1.5–2GiB/硬4，硬.5完整GPUh。两个临时CPU mask/被动读回模块沿canonical scene、BatchedLoRAInference和原真实Q/RoPE hook实现，不新增第二policy/evaluator；101读回与交付后退役。GPU常驻仅source、当前合法batch完整因子及实际消费的mask/R，不读取Writer/native或未使用缓存。实际冻结、启动、结束分别登记，尚无新模型/环境/GPU计算。

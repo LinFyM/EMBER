@@ -1,3 +1,9 @@
+## 2026-10-05 内容匹配辨识已完成并停止，等待main直接科学消费
+
+两臂64完整恢复、50完整38-target bank、110闭环（62 full/48 compact）、640 B20及62真实首次规划读取全部exit0，原25 native/标签/scene复用，0新增native/label环境。原布局均0/8，train32 raw/centered21/20、held23各1；全部55的R/G/L16/5/6，错误对象、旧能力损失及两条有限正例都保留，不以B20改善或rho当修复。
+完整费用1.465238GPUh/8、新增保守峰14.906755GiB/24，GPU/PID全部退出；micro14/28已主动实测，两OOM计账，实际物理打包/两臂并行与可恢复状态有原件。临时package/入口/hooks退役、guard封闭、旧C900正式合同仍支持，Git/frozen/科学正反保留；本次Git push/工程树清理/一次整批回报后交回canonical/Git，实际最终身份看root completion/readback。
+本批没有后继授权或active新增计算。main将独立消费`native_role_centered_content_20261004`原件及其完整历史后裁决；不自动扫描crop/层/seed、新loss/head、续训/fresh/400、controls/Test/RL。下方为历史时点，不恢复其未派发或运行文字。
+
 ## 2026-10-04 下一项辨识教学角色内容的坐标处理是否改善完整控制
 
 原消费者修复已由main直接消费，机制§136/findings§315保留布局依赖、局部R正反及读取不能代替控制的结论。

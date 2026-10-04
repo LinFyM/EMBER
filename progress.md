@@ -1,3 +1,21 @@
+## 2026-10-05 角色内容两臂64及110/640已完整退出、读回和退役，交回main
+
+`native_role_centered_content_20261004`的raw_key/centered_rgb各64完整恢复、25套rank128/scale1/38-target完整76因子、55环境行及320 B20全部exit0；总110（62 full/48 compact）、640查询与62次真实首规划被动读取，缺少环境/预测/恢复原件0。原25视频/758 origin缓存一次完成，0重读native/新增label环境/held教学特权；原始动作、T+1全body/EEF/quat/gripper/goal、逐行条件/scene/noise和全部正反完整保留。当前不再有active新增计算；下方接手、运行、待派发均为此前时点。
+
+全部55成功raw/centered=22/21，R/G/L=16/5/6、churn11、Jaccard16/27；train32=21/20（旧父C90026），held23=1/1（旧C9003）。八训练task12/13/14/15/17/19/43/96各四行raw→centered为4→1、2→2、4→3、0→1、1→1、4→4、3→4、3→4，breadth皆8。原布局8均0，交换8为0/1，八格8为1/0。raw唯一held成功scene46/teacher40/noise0（222步）在centered丢失；centered swapped init3/teacher46/noise3（101步）是旧父已有正例，不是新增父点能力。完整teacher/init得失、目标交换、错误orange入篮、其它对象扰动与未完成例在逐行原件，43 In+Close未削弱；没有contact记录，不用3cm/中心/闭合命令宣称抓持或几何根因。
+
+原布局首tau目标rho raw/centered=.04472194/.01381996，赢家7 orange/1 ketchup与8 orange；交换=.75707520/.70542381，7 butter/1 ketchup与8 butter，仍未普遍完成控制。train八条teacher0/init32首次读取=.80113856/.77623011，不能称全部train32或B20同分布。B20前5/full50 unmasked action7 MSE=.105815288/.108796105→.089584367/.105385010，保留全有效future/各通道/320对的不利项（前5较差143、全50较差126）；有效role318/320，各臂约.98167/.98053，不把拟合当修复。旧400标签只存q、不含f，B20仅真实image总质量；首次规划有原f并保存实体实际质量，未补环境标签或冒称q加权均值为实体质量。实体mass−image质量最大.000239134的实际被动数值残余单列，原数组不裁剪、不额外forward追精度。
+
+两臂同冻结旧R64 Pq/Pk（327680参数）、同C900全部十组A/B头和fresh P identity/D zero/optimizer，新增P/D各20054016；没有继承旧R控制或optimizer。实际初值FM/LQ相同、初始18D余切非零/P零；随后64记录全部18P/18D及十类头有梯度，完整76因子同版本余切保留。每臂14336主FM+14336同epsilon tau1，14190实际角色有效、全部原均值分母保持；64 optimizer416参数step64/RNG/cursor/topology/schema齐备，无中间选点。25视频全部p/alpha/框/变换密度/双RGB/indices保留，双camera逐video平均面积约.268–.738，不筛帧或调框；原c/d及末gap保持，性质只针对内容p。旧F/G/R不同选择器学习条件、旧B20不同autocast均只作带边界背景。
+
+完整GPU1.465238190919h/硬8，含加载、四profile/两OOM、编码/学习/50bank/640生成/110环境/I-O及退出；crop .019433045121、两臂1.445805145799。全部GPU PID消失、退出双节点本用户GPU0。新增root+工程树观察13.896755GiB，另计1.01GiB checkpoint暂存的保守上界14.906755GiB/硬24（非连续精确峰）；strg01独立data1 quota/个人实占/shared/双节点准入完整留证，全新写data1且离线canonical资产。旧2.316264/.045252GPUh与19.207GiB违规单列，不冲销。
+
+显存主动实测：事件27最大实际native负载283帧，两臂micro14耗时29.628/28.658秒、reserved30.764GiB；micro28在43.908/43.914GiB OOM，失败全部保留。两次profile额度用完后恢复共同初值/opt/RNG，正式micro14、独立两卡并行，不把未试中间batch称最优；正式均更新26.709/28.072秒（8.387/7.979 FM query/s）。训练不常驻未消费teacher K；crop frame128覆盖单video合法帧，B20两teacher×20批40，环境train4/held23真实case打包，无dummy或重复成功输入profile，不按旧world1锁整批并发。
+
+实际crop冻结`3ae08bfe`、学习/物化/功能/闭环冻结`97ad0a3a`；source b8ea00e9/C90085919994/450父a0e0248d、旧native12cd293a/冻结locator学习ef5eeb68分列。Raw bank的父recipe training_run/400计数/scene_root继承字段由execution_provenance依实际64合同/25cache/逐row scene解释，原件未覆盖。首CPU checkout clean guard拒绝0GPU；CPU汇总的精确mass上界、supported字段含义及退役pyc namespace检查均已定点纠正，0新增模型/环境，无科学阴性重跑。
+
+临时10文件package及专用入口/hooks已退役，guard拒绝新本批/旧已关闭诊断执行，实际旧C900正式合同仍支持；Git/frozen/全部恢复与科学/失败原件保留。Primary `/data1/user/ymdai/ember_runs/native_role_centered_content_20261004/` 的completion/readback、analysis/report/rows/paired_comparisons/all_behavior_changes/first_plan_rows/B20_per_query/learning_readback/execution_provenance/cost_ledger、62 RGB来源/25 crop卡及launch准入/退出/释放齐备。完成本次Git集成push、task-owned工程树清理与一次整批回报后canonical tracked/Git窗口归main，最终交付身份/回执以completion为准；main独立科学消费待发生。实验session停止，无自动crop/层/rank/seed扫描、续训/fresh/400/controls/Test/RL。
+
 ## 2026-10-04 实验session实际接手角色内容两臂匹配学习
 
 实验session `01a0fabb-f7a0-7100-93d8-6a0f66055553`从clean pushed `fad8e1b019ad806cc2e0e001f0f0fa70f8906c76`建立独占`codex/native-role-centered-content`和`EMBER-centered-content`工程树；本次canonical tracked/Git窗口归实验session，main只读。完整152行设计、机制§136–137/findings§315–316及Owner/AGENTS边界已读。唯一root `/data1/user/ymdai/ember_runs/native_role_centered_content_20261004`，判重无既存运行；strg01独立quota/shared与相关旧用量已核。旧25 native总783 sampled帧/758 origin，双臂p预计1.301GiB、alpha变换.145GiB、局部FP32 RGB.850GiB，全新输出/完整64恢复/50bank/110环境/640B20/工程与暂存估计18.206GiB/硬24；GPU硬8h、预计工程执行2–4小时，旧费用及违规单列。
@@ -6,6 +24,8 @@
 实现 `3ae08bfe1bdcfc3ef394fe9efa05b15f81ea1732`已集成main并push；实际content消费者来自其clean detached `frozen_content`。首次CPU准入在checkout尚未退出时被clean guard拒绝，0GPU/无模型/无data读取，回执保留；checkout实际退出后已提交唯一25-video编码启动，live双节点/quota/shared/占用记录由launcher保存。下一阶段仍等待此实际消费者退出，不读缓存轮询；两臂训练/110行/640B20尚未启动。
 
 实际content25/758已在 `3ae08bfe` clean detached完成，source一次resident、无suffix/新native，退出0，69.959秒/.019433GPUh，峰reserved17.961GiB；缓存2.296GiB、首91,080,563B对逻辑91,075,496B，首产物更新总峰17.296GiB/24。camera质量误差均合法，逐camera平均框占全图约.268–.738，全25/全origin不筛选。两臂profile改用原64manifest中实际native帧负载最大的event27（283帧），仍只14/28两次并恢复初值/RNG；64后清除无消费者的grad/optimizer/cache再物化读取。未新增profile事件/样本。下一真实训练/读取身份分列。
+
+两臂实际于2026-10-04T14:37:12Z在 `97ad0a3aaa705333016fa4661ceeeff32e1f9a82` clean detached `frozen_learning`启动，PID1089055(raw_key)/1089060(centered_rgb)，gpu02物理7/1，总2/现场cap6、单节点2/6，别人148MiB低util共驻不干扰。launcher含双节点live与strg01独立quota/shared/实占/8GPUh deadline，两个真实退出等待者并行记各自实际费用，无阶段自通知；正式消费者已独立推进64→25bank→320B20→55环境。仅一次读取实际profile用于吞吐/预算预计，原件 `analysis/profile_projection_once.json`。未因单arm world1额外限制整批并行。
 
 ## 2026-10-04 main完成原消费者科学裁决，登记角色内容居中重编码的匹配辨识
 

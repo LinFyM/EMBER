@@ -3,6 +3,19 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-05：角色内容两臂匹配学习及110/640完整执行交付
+
+[冻结合同](designs/native_role_centered_content_diagnostic.md)的raw_key/centered_rgb各64、25 bank/55环境/320 B20完整exit0，共110（62 full/48 compact）、640及62同次真实首规划读取。只从旧R64继承冻结Pq/Pk，两臂同C900十组头与fresh P identity/D zero/optimizer（新增20054016），未继承R64控制或旧optimizer；公共/native/c/d冻结。原25视频758 origin/p/alpha/框/camera质量/局部model224 RGB及全indices保持，0新native/环境label/held教学特权。每臂14336 FM与同epsilon tau1消费者、14190角色有效且原均值分母保持，64 optimizer/RNG/cursor/topology/schema齐备。
+
+raw/centered全部55成功22/21，R/G/L16/5/6、churn11、Jaccard16/27；train32为21/20（旧父26），held23为1/1（旧父3）。task12/13/14/15/17/19/43/96各四行4/2/4/0/1/4/3/3→1/2/3/1/1/4/4/4。原布局8均0，交换8为0/1，八格8为1/0；raw scene46/W40/noise0成功222步在centered丢失，centered swapped init3/W46成功101步是父已有正例。所有teacher/init、In/Close/错误orange入篮/其它物体扰动与未完成均保留，没有contact记录，不用阈值或命令宣称抓持。
+原布局tau1 rho=.04472194/.01381996，赢家7 orange/1 ketchup与8 orange；交换=.75707520/.70542381，赢家7 butter/1 ketchup与8 butter，未普遍转为完成。train八条同阶段读取=.80113856/.77623011。B20前5/full50 unmasked action7=.105815288/.108796105→.089584367/.105385010，前5较差143/320、全50较差126/320；有效role318/320约.98167/.98053。所有通道/future/十flow/十八层/八头/前5槽与不利项保留，功能拟合不替代行为。旧B20不同autocast仅背景；原400标签没有f，B20不伪造实体总质量，62首规划使用原f保存实际实体/image mass。实际被动mass边界残余最大.000239134原样保留，0精度重跑。
+
+完整1.465238190919GPUh/硬8，crop.019433045121、双臂1.445805145799，含加载/profile两OOM/学习/物化/生成/环境/I-O及退出。两GPU消费者exit0/PID消失，现场双节点本用户GPU0。最长原事件27/283帧micro14实测29.628/28.658秒、reserved30.764GiB；micro28在43.908/43.914GiB OOM，恢复初值/opt/RNG后正式14，两个独立arm并行。正式均更新26.709/28.072秒，无未消费teacher K常驻；B20批40与授权环境case打包，未造工作填卡或称未试中间batch最优。新root+工程树13.896755GiB、含checkpoint暂存保守14.906755GiB/24，非连续精确峰；data1独立quota/shared/用量准入，全新data1/offline，旧2.316264/.045252与19.207GiB违规独立保持。
+
+Source b8ea00e9、C90085919994/450父a0e0248d、旧native12cd293a/locator学习ef5eeb68、crop3ae08bfe/学习及读取97ad0a3a分列，正式实际消费均clean pushed detached。新bank继承父recipe的training_run/400计数/scene_root不代表此次64/25/55，由execution_provenance明确解释，未重写原件。首checkout未结束的clean guard拒绝0GPU、CPU汇总精确mass上界与supported语义修正、退役pyc namespace清理均保留0模型/环境事实，非科学阴性重跑。
+临时10文件package/hooks退役，guard封闭本批与旧已结束入口；实际旧C900正式合同仍支持。全部Git/frozen/64完整恢复、110 raw/640预测/62角色读取/25 crop原件/全部失败与费用保留。根`/data1/user/ymdai/ember_runs/native_role_centered_content_20261004/`的completion/readback与analysis/report/rows/paired_comparisons/all_behavior_changes/B20_per_query/first_plan_rows/learning_readback/execution_provenance/cost_ledger、RGB_sources/crop_RGB_sources及launch为原件入口。
+本条是实验执行事实交付，main尚待独立科学消费，不宣布完整方法/架构通过。Git push/工程树清理/一次整批回报后交回canonical/Git并停止，无自动扫描/续训/fresh/400/controls/Test/RL，最终身份与回执见completion。
+
 ## 2026-10-04：原消费者科学消费与教学内容坐标的匹配辨识登记
 
 机制§136/findings§315。main直接核a019232a与精度实测并归约全部101/31R/八对操作数，核心CPU.416秒、0新模型/环境。

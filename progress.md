@@ -1,3 +1,8 @@
+## 2026-10-04 实验session接手同101原消费者精度修复
+
+实验session `01a0fabb-f7a0-7100-93d8-6a0f66055553`从clean pushed `4a54589a`建立独占`codex/self-call-precision`隔离树，canonical tracked/Git窗口归实验session，main只读。完整修复合同/原101测量合同/机制§135/findings§314和实际旧调用链已读；仅恢复原生BF16/FP32混合精度及inference/TF32，无整体autocast，复用原25mask/101 processed输入/Gaussian/银行，不重新环境/Writer/native/编译。
+输出唯一在原root `attempts/consumer_precision_repair/`；旧completion=false/closed=true、全部原件/19.207GiB违规峰和data0含糊旧cache只读保持。strg01独立data1 quota/shared及实际旧root已查，含旧保留/受影响data0/新约.89GiB预测/工程/frozen/tmp估计当前峰2.918GiB/硬4；累计GPU原.032267347224/硬.5不重开。仅一个临时修复模块沿旧被动hook/BatchedLoRAInference owner，逐row独立storage和首个合法落盘大小/全量峰预测前置检查；原两类guard不重开，整批后退役新入口。预计30–60分钟，尚无修复模型forward；实际来源/launch/完成另记，未把旧autocast数值当新修复结果。
+
 ## 2026-10-04 main核出首次规划消费者精度上下文不匹配，登记同面板修复
 
 main已核101原数组/31R/八分解、全部25双相机mask、两项I/O故障源码与原始回执；旧数组无缺项。

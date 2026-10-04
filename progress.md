@@ -1,3 +1,11 @@
+## 2026-10-04 main已消费公共参照，继续角色控制的结构推导
+
+机制§131/findings§310：公共四情境均未获取butter，最近EEF仍27.092–29.423cm；完整W40只在原一格形成正确角色和成功。
+实际完整公共因子、消费者、十二raw轨迹/首块动作与四新双RGB已核，不能以“恢复已有公共butter能力”支持收缩残差。
+坐标、原生方向、跨视频一致性及自身attention正负历史继续约束推导；Owner已允许实质重构，不能只保护当前读写模块。
+main核心CPU .542938秒、0新模型/环境/GPU；实验session停止，canonical/Git归main，无active新计算或已选正式训练。
+主讨论继续同一个角色调用问题；下方启动与交付状态均为各自历史时点。
+
 ## 2026-10-04 C900公共角色四行参照完整交付，新增计算停止
 
 4/4 full双RGB、全部50×7 chunk/实际physical动作/T+1七body位置与EEF位置/quat/gripper/官方goal完成，全部280步失败；四行butter中心全程静止。scene0/noise0、scene0/noise46、scene46/noise46分别抬orange26.3423/31.0090/28.9004cm（>3cm首次94/145/232）；scene46/noise0只有orange最大抬高.4105cm/位移1.1717cm。scene0/noise0另有ketchup中心最大位移11.4370cm/basket2.1636cm，全部七对象扰动和不利例保留。旧八行只读复用：W47全失败，W40仅scene46/noise46成功269，另有ketchup第三对象失败；12行完整比较，不是总体部署分数。

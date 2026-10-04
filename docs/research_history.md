@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：公共角色参照的独立科学裁决
+
+机制§131/findings§310从全部十二raw连续轨迹/首块动作读回并核实际d583a75d消费者：四公共butter静止、EEF最近27.092–29.423cm，
+三搬orange、一小扰动；公共未给出可恢复的正确butter控制。旧W40唯一scene46/noise46正确增益、第三对象失败及所有副效应均保留。
+本结果降低以收缩条件恢复公共能力的依据，不等同独立公共最优能力或视频完全无害；T161/MT153完整目标保持。
+main CPU .542938秒、0新增模型/环境/GPU；脚本/结果在原root analysis/main_scientific_readback.py/.json，原完整费用与冻结证据不变。
+更大胆架构授权已核入稳定文档；main继续同一角色控制的结构推导，未据本回报自动启动训练或另一辅助项。
+
 ## 2026-10-04：同C900公共角色参照四行完整交付事实
 
 [合同](designs/task16_public_role_reference.md)严格4 full完成，scene0/46×noise0/46均280失败、butter中心静止；三行orange最大抬26.342/31.009/28.900cm，scene46/noise0仅.411cm。ketchup/basket扰动、旧W40/scene46/noise0的第三对象失败及旧唯一W40正确butter269成功全保留。公共空、W47空、W40仅(46,46)；对公共R/G/L分别0/0/0与0/1/0，无总体或唯一根因结论。

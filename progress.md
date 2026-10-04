@@ -1,3 +1,13 @@
+## 2026-10-04 公共角色参照CPU实际消费者检查通过，待冻结运行
+
+原900 checkpoint只读取common.values.*的76因子（38 target、10,297,344参数），按既有public_state/factor_map映射完整/shape/finite通过；旧shared实际只有38 A0，未当完整公共使用。官方source/normalization/tokenizer/资产根目录与56项两stream时钟核验通过，实际CPU 4×50×32 Gaussian按stream配对，scoped三绑定退出恢复；0 source forward/环境/GPU。
+唯一228行有界模块＋5行入口复用canonical FrozenOperatorAdapter公共完整状态与rollout_shard，formal guard/原映射未改；所有四合法case同resident最大batch4，无额外profile/case。下一步集成push/new clean detached真实四full；工程树无.venv和一次元数据键误读的CPU准备退出已留记录，均0模型/环境/计费GPU。原件analysis/cpu_consumer_check.json与cpu_preparation_notes.json；main只读。
+
+## 2026-10-04 task16公共角色参照由实验session实际接手
+
+实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553从clean pushed 32a50c03建立codex/task16-public-role隔离树，独占canonical tracked/Git；main只读。完整合同/机制§130/findings§309已读，严格四full scene0/46×原noise0/46，teacher为空、condition public_beta900；原八行只读复用，0 Writer/native/训练/教学特权读取或新增环境smoke。
+strg01 data1独立quota/实际用量/shared准入通过，新增峰估计1.5/硬3GiB、完整GPUh硬.5、预计30–60分钟。按原common.values sorted76映射提取完整38-target A0/B0；原shared只有38 A0，不用它补零B。四合法case一次resident source最大batch4，官方scene/controller/预处理/原CPU噪声时钟保持；尚未启动模型/环境，push/freeze/实际开始和完成分别登记。交付后退役、Git/一次来源整批回报并交回窗口，不自动后继。下方登记/历史是此前时点。
+
 ## 2026-10-04 登记同一C900公共控制的四行角色参照
 
 唯一active design为[task16公共角色参照](docs/designs/task16_public_role_reference.md)，机制§130/findings§309。

@@ -1,3 +1,7 @@
+## 2026-10-04 实验session接手同C900公共控制四行参照
+
+独占canonical/Git由实验session持有，隔离分支codex/task16-public-role；main只读。先核76完整公共因子与官方scene/noise消费者，push/clean detached运行四full，统一与旧八行作12行行为及完整条件−公共首块差，退役/Git/整批一次交回并停止。硬.5完整GPUh/3GiB，0新训练/Writer-native编译/teacher文件读取或额外case；科学裁决仍由main独立消费。下方待交接为此前时点。
+
 ## 2026-10-04 下一项只判断当前角色失败相对同checkpoint公共控制的方向
 
 按[四行固定合同](docs/designs/task16_public_role_reference.md)读取C900公共A0/B0在原两scene/两noise的full闭环，

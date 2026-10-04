@@ -1,3 +1,11 @@
+## 2026-10-04 native_role_address固定24-prefix完成，专用运行面退役
+
+3221801e已push/clean detached实际读取24/24（teacher8＋自身原/换16），288配对/层行及完整8×2×18×50数组、双camera pre/post K与真实mask/position均齐，缺项0。source训练b8ea00e9，模型为原aligned1000；有效teacher prefix530、自身561，query位置530–579/561–610，第三masked相机只在官方自身路径保留而不计统计，KV1/Q heads8不重复计数。0 Writer/suffix/flow/LoRA构造/训练/环境或新行为。
+原first5/full50 m均值1.054743/.991081，换位−.252052/−.249631；原144个配对层均值全正，换位first5正44/负100、full50正45/负99。全50原7200槽全正，换2219正/4981负；pre-RoPE cosine原均值.932228（144正），换−.194058（47正/97负）。全部18层/8init和105条至少含负槽/负content的不利行保留，退化方向0；没有挑层/门槛/框/符号。m只是ROI面积加权平均logit对比的方向导数，不是区域总mass、动作效应或角色控制已解决；main独立科学消费。
+实际gpu02:7于01:29:19Z启动/01:29:46Z退出0，第一失败exit1的23.107706秒亦保留；完整两次50.569134秒/.014046981723GPUh（硬.5），源累计加载2次、有效消费者一次常驻。teacher8/self16全部合法同shape输入分别1.631518/2.654550秒，含K写盘，合计5.599538prefix/s；有效reserved峰12.109375GiB，失败峰未采集。不为剩余显存新增/重复样本，未做额外profile或声称相对旧batch提速。
+现场双节点own0→1、cap6、strg01 data1/shared准入均保留；退出后两PID不在且own GPU0。阶段实测新增root.768818＋隔离工程.255264=1.024082GiB（估计1.5/硬4，不冒称连续精确峰），所有新增data1。第一CPU quota引用错误、第一GPU dtype失败/frozen与修复源码均留证；原件只读。source/命令/CPU消费者/24 K、readback和全正反见 `/data1/user/ymdai/ember_runs/native_role_address_20261004/`。
+专用两文件已退役，仅保留Git/两frozen/原件；实际计算全部结束。整批Git/一次有来源回报/窗口交回以root completion及launch回执为准，本次交付后canonical/Git归main，实验session停止。下方首失败/接手/未派发文字仅为历史时点；无新增计算或自动后继。
+
 ## 2026-10-04 native_role_address首读取工程退出，按原合同修复
 
 486fb2b6已集成push并clean detached冻结，实际gpu02:7一次source加载/teacher8首batch在layer0 fused SDPA遇bias dtype接口退出1；无完整prefix/K原件，0 suffix/Writer/环境。完整费用23.107706秒/.006418807GPUh已计入.5硬限，原frozen/命令/日志/退出和run_contract保留于root failed_attempt1及launch。

@@ -108,3 +108,19 @@ main提交后交既有实验session独占canonical tracked/Git。它在隔离分
 CPU main准备曾因未设PYTHONPATH在读取数据前import失败，已修正后完成；保留于ROI registration，不计为模型或科学失败。
 交付source/代码/精确命令、24输入provenance与ROI原件、全部raw K/位置、完整正反统计、completion、GPU/存储/退出账本。
 一次整批有来源回报后交回canonical/Git并停止；不自动选架构或后继，main负责科学消费。
+
+## 6. 固定执行交付事实（2026-10-04，科学裁决仍由main消费）
+
+实际冻结3221801e、source训练b8ea00e9/原aligned1000，24/24真实prefix、288行及全部8×2×18×50齐备。
+teacher有效长度530/query530–579；官方自身有效561/query561–610，第三相机false mask保留。全部18层、双真实相机pre/post K、真实mask/position/input/ROI均存原件；没有suffix/Writer/flow/学习/环境或新行为。
+原first5/full50平均m为1.054743/.991081，换位−.252052/−.249631；配对层均值原全144正，换位first5为44正/100负、full50为45正/99负。
+pre-RoPE cosine原均值.932228/144正，换位−.194058/47正97负，105条不利行及全部层/槽/正例保留。
+它们只刻画固定首帧、框和两实体的区域平均logit方向；没有改变§4适用边界或测量新控制结果。
+原件根`/data1/user/ymdai/ember_runs/native_role_address_20261004/`：`raw/`、`readback.json`、`analysis/all_readout.npz`、
+`analysis/aggregate.json`、`analysis/pair_layer_rows.csv`、`analysis/README.md`及事前`analysis/visible_input/`。
+
+第一次486fb2b6 frozen因任务禁用canonical BF16 autocast，在首层SDPA bias dtype退出1/无完整K；
+恢复既有默认context后新push/frozen读取成功，未改source/mask/数学/样本。失败源码/log/费用/contract保留，非科学阴性。
+整批含两次source加载/失败/I-O/CPU读回/退出50.569134秒/.014046981723GPUh，硬.5；实际阶段新增1.024082GiB，估计1.5/硬4。
+合法teacher8/self16全组打包1.631518/2.654550秒，成功reserved峰12.109375GiB；无额外profile/样本，失败显存峰未观测，不声称全批VRAM精确峰或相对提速。
+两PID退出、GPU归零证据及完整账本保留；两临时文件交付时退役，仅保留Git/frozen/原件。停止线全部保持。

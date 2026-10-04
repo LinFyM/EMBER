@@ -1,3 +1,8 @@
+## 2026-10-04 native_role_address固定范围已完成，关闭新增计算
+
+24/24真实prefix、288行及全部8×2×18×50、原始K/位置/ROI和全正反齐备；0新行为/学习，完整.014046981723/硬.5GPUh。全50配对层均值原144正，换45正/99负；唯一pre-RoPE辅助原144正、换47正/97负。仅候选必要前提读回，不把静态阳性当角色控制或由阴性追加扫描。
+专用入口/hooks按合同退役，代码由Git/3221801e冻结和失败486fb2b6冻结保留；完成Git push/整批一次来源回报后交回canonical窗口，由main核原件科学裁决。无自动frame/ROI/层/对象/seed扩展、Writer/LoRA构造、环境/训练/400/controls/Test/RL。
+
 ## 2026-10-04 native_role_address唯一24-prefix由实验session实际接手
 
 从aeecda6c隔离实施，实验session独占canonical/Git；main只读。完成顺序为合法输入/原prefix与RoPE合同核验→push/clean detached真实24 prefix→全部8×2×18×50及唯一pre-RoPE辅助读回→退役/Git/一次整批回报/交回窗口。

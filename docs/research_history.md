@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：原生角色方向固定24-prefix完整交付事实
+
+[合同](designs/native_role_address_diagnostic.md)已由实验session完成24/24、288配对层行及全部8×2×18×50、双camera pre/post K/真实mask和位置；没有新行为结果、Writer/suffix/flow/训练/LoRA构造或环境。
+原配对层均值全144正，换位first5为44正/100负、full50为45正/99负；pre-RoPE cosine原144正，换47正/97负。
+全部层/init/槽与105条不利行保留，不挑层/框/符号。m只为ROI面积加权平均logit对比方向导数，主讨论尚待独立科学消费；不以本结果宣称动作/角色调用原因或恢复旧配方。
+source训练b8ea00e9/原aligned1000；有效读取3221801e/clean pushed detached，失败486fb2b6完整保留。
+首teacher batch因禁用canonical默认autocast而在SDPA bias dtype退出1，无完整K；同合同恢复默认context后退出0，非科学阴性。
+全部加载/失败/I-O/退出.014046981723GPUh/硬.5；阶段实测新增1.024082GiB/硬4，非连续精确峰；两PID退出/GPU归零。
+所有合法同shape输入打包teacher8/self16，共一有效resident source，不为显存增加工作；有效reserved12.109375GiB，失败峰未采集。
+root `/data1/user/ymdai/ember_runs/native_role_address_20261004/` 保存原件/全正反/账本与失败；事前可见材料整体归入analysis/visible_input。
+两任务专用文件交付退役，Git/frozen留证；本条为执行事实，不替代main机制裁决，所有扩展/训练/环境停止线保持。
+
 ## 2026-10-04：登记同一对象换位的原生角色方向辨识
 
 机制§126/findings§305/[合同](designs/native_role_address_diagnostic.md)延续§122/125的butter角色调用失败，

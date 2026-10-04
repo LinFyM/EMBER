@@ -1,3 +1,8 @@
+## 2026-10-04 task16八格实际消费者已启动
+
+2026-10-04T02:46:43.097143+00:00，clean pushed detached 4d3762a3消费者PID1896897在gpu02:7启动，一次source加载＋八合法case同resident batch；现场两节点own0→1、cap6，选卡空余约44.8GiB/known-owner低占共驻，不干扰他人。strg01 data1独立quota/实际用量/shared及原件预算均通过。失败首尝试15.142300秒已计硬1GPUh；当前唯一退出等待者等待整批，不轮询日志/状态或发selfQueue。
+原scene0/46、完整condition47/40和stream0/46身份分列；8 full含原两对角，官方全部协议/finite、38因子与source检查沿既有owner。退出后一次CPU全8读回/全部配对差/不利项、退役/Git/整批一次交回；这不是模型成绩或已完成。下方修复/待冻结状态仅为历史时点。
+
 ## 2026-10-04 task16八格首次消费者退出，修复已定位资产配置
 
 aa50238c clean pushed detached于02:42:36Z在gpu02:7启动PID1875693，02:42:51Z exit1；15.142300秒/.004206195完整GPUh计入硬1。进入GPU/NUMA初始化后，prepare_libero_config缺EMBER_LIBERO_ASSETS_ROOT而找缺失package/assets，0 source加载/环境case。原run_contract已移failed_attempt1，frozen/日志/命令/准入/费用/退出保留，PID消失且GPU释放。

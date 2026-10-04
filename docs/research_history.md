@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：登记教学角色与自身实际Q方向共同学习的有限比较
+
+机制§132/findings§311/[合同](designs/native_role_binding_compilation_diagnostic.md)继承同一butter调用失败，
+保留空间监督、真实native余切、自身attention移植、坐标及原生方向的完整正负边界。
+F普通FM、G增加自身角色对比、R额外由教学原生K选择角色并与真实因果动态形成Q因子；全38处头共同适应，单rank128 LoRA。
+不是宣告原生方向已经对齐或grounding足够；比较实际正确获取/完整任务与两正确teacher/换布局迁移。
+只用原36中八task的既有数据、各teacher0/1，固定64步；197新增闭环/固定B20，12完整GPUh/40GiB/预计4–6小时。
+此条是科学登记，0新模型/环境/GPU，执行身份和结果待实际发生；没有正式fresh/400或自动后继资格。
+
 ## 2026-10-04：公共角色参照的独立科学裁决
 
 机制§131/findings§310从全部十二raw连续轨迹/首块动作读回并核实际d583a75d消费者：四公共butter静止、EEF最近27.092–29.423cm，

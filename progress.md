@@ -1,3 +1,20 @@
+## 2026-10-04 main完成原消费者科学裁决，登记角色内容居中重编码的匹配辨识
+
+唯一active design为[教学角色内容居中重编码](docs/designs/native_role_centered_content_diagnostic.md)，机制§137/findings§316。
+main已直接归约修复101原数组/31R/八对全单元：布局差与读取/完整控制分离仍在，详见机制§136/findings§315；
+0新增模型/环境/标签，原F/G/R闭环负结果、旧19.207GiB资源违规及precision残余均保留，不再做第三次读取。
+
+新批raw_key/centered_rgb两臂共享旧R64冻结RGB/L选择器、同C900生成头及fresh P/D/optimizer；
+只改变角色内容来自原生全图K还是由同alpha居中的真实双RGB重新编码，全部38-target头共同学习。
+原25视频、八train task、全部query事件/64更新、scene/noise/mask复用，不扩数据或增加held特权。
+两臂共110新闭环/640 B20，首次计划被动测量随真实环境生成；以原布局正确获取/完整完成及能力得失裁决。
+理论性质只针对p内容字段，不保证整个LoRA不变性；G换位目标读取占优仍8/8失败的反例继续约束判断。
+硬8完整GPUh/24GiB新增峰，预计工程与执行2–4小时；无自动crop扫描、续训、fresh、400、Test或RL。
+
+此时main持canonical tracked/Git，完成科学登记但尚未派发/启动新批。提交推送后交既有实验session独占实施、
+实际消费者验证、clean detached执行、退役及整批一次回报；实际接手与启动另记，计划不算后台工作。
+下方“main待消费”及旧active均为历史时点；原修复已科学消费并关闭。
+
 ## 2026-10-04 同101原消费者精度修复已读取、归约及退役，交回main
 
 固定101输入各修复一次、25原mask复用、31R操作数、八换位分解与117同输入配对全部齐备，0新闭环/环境积分/学习/Writer-native/编译/独立科学样本。clean pushed detached `a019232a31554735575cee8506bc6870794b3679`于2026-10-04T12:31:05.307292Z在gpu02物理7实际启动，PID503842于12:31:52.052804Z exit0。实际入口inference、外层CUDA autocast关闭、原TF32；六个已定位原生路径实际FP32，36个Q/V物理adapter destination BF16、两action入口/出口FP32，未扩大FP32或改SDPA/Value/flow。

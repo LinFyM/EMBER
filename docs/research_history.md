@@ -3,6 +3,24 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：原消费者科学消费与教学内容坐标的匹配辨识登记
+
+机制§136/findings§315。main直接核a019232a与精度实测并归约全部101/31R/八对操作数，核心CPU.416秒、0新模型/环境。
+train G/R首tau目标rho=.784669/.868512，held原布局=.008716/.011519、交换=.817364/.580501；
+G交换8条都由butter占优却闭环全败，R末rho低仍保留两个交换成功。原train父/F/G/R26/22/24/20及held23的3/3/0/2不改。
+八对首步R局部margin差主要来自key投影，全部720单元key RMS13.14–16.08、自身.245–.789，末flow调用/交互仍存在；
+代数交叉不等于混合policy或行为中介，不唯一归因teacher位置/最后RoPE，也不因mean rho下降追加tau/mass辅助。
+修复首5总平方差降98.09%但残余与不利10行保留；旧资源不合规及旧autocast原件继续独立保存。
+独立CPU原件在consumer_precision_repair/analysis/main_scientific_readback.json、main_swap_all_unit_effects.json。
+
+机制§137/findings§316另登记[角色内容居中重编码匹配辨识](designs/native_role_centered_content_diagnostic.md)：
+同冻结旧R64选择器、同C900头及fresh P/D/optimizer，仅改变p来自原全图K还是alpha产生的双RGB局部视野重编码。
+推导只说明理想共同平移时p的归一化性质，原c/d、自身K、背景/尺度变化和完整控制问题仍在；
+Unified/VisibleObject已联合参数槽、SemanticPath已语义×过程乘法的真实历史保持，不把换名当新原理。
+原25视频、八task/64事件流、原scene/noise/mask；两臂110环境/640 B20，新增硬8GPUh/24GiB，预计2–4小时。
+以原布局正确获取/完整完成及能力得失判读，无rho过关自动晋级或crop/层/seed扫描；无formal fresh/400授权。
+本条仅记录科学选择，尚无新批运行或结果；实际接手/冻结/启动由progress及后续formal artifacts登记。
+
 ## 2026-10-04：同101原消费者精度修复一次完成，旧资源违规不覆盖
 
 [修复合同](designs/native_role_self_call_precision_repair.md)的101输入各一次、25mask复用、31R/八代数分解/117配对全齐，0新增环境/闭环/训练/Writer-native/编译或独立科学样本。实际clean pushed detached读取`a019232a31554735575cee8506bc6870794b3679`、PID503842于12:31:05.307292Z启动，12:31:52.052804Z exit0。原生六个已定位路径FP32、36个Q/V adapter destination BF16、action_in/out FP32；inference/TF32、完整生成外无autocast，未扩大FP32/修改因子或SDPA/Value/flow。原b546c76f额外autocast数组及旧completion/失败/I-O原件只读。

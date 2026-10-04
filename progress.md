@@ -1,3 +1,8 @@
+## 2026-10-04 task16八格首次消费者退出，修复已定位资产配置
+
+aa50238c clean pushed detached于02:42:36Z在gpu02:7启动PID1875693，02:42:51Z exit1；15.142300秒/.004206195完整GPUh计入硬1。进入GPU/NUMA初始化后，prepare_libero_config缺EMBER_LIBERO_ASSETS_ROOT而找缺失package/assets，0 source加载/环境case。原run_contract已移failed_attempt1，frozen/日志/命令/准入/费用/退出保留，PID消失且GPU释放。
+修复仅在原合同资产路径下初始化既有config helper；独占工程树、CPU实际资源配置检查、重新push/new detached后继续相同8行。没有科学阴性或未复现，不改模型/scene/noise/预算，不原地修改冻结源码；main继续只读。首次实际启动/退出以root launch/attempt1_process/exit.json为准。
+
 ## 2026-10-04 task16八格实现和CPU消费者核验完成，待冻结读取
 
 唯一193行任务模块与5行入口复用canonical rollout_shard/scene/episode/flow-noise及FrozenOperatorAdapter，不复制policy/evaluator或改formal guard。scoped三处只在固定panel内绑定真实physical state、原condition及原noise stream，退出恢复；每case独立capture目录防止同scene覆盖。CPU实际元数据/完整76因子shape/56项噪声/同流Gaussian/调度身份与hook还原检查通过，0模型/环境/GPU。

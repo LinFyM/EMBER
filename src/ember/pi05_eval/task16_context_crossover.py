@@ -142,6 +142,7 @@ def main() -> None:
     affinity = bind_current_process_to_cuda_numa(0)
     assert affinity is not None, 'canonical consumer requires GPU-local CPU affinity'
     torch.set_grad_enabled(False)
+    os.environ['EMBER_LIBERO_ASSETS_ROOT'] = run['libero_paths']['assets']
     prepare_libero_config(ROOT / 'cache/libero_config')
     policy = adapter = pool = None
     started = time.monotonic()

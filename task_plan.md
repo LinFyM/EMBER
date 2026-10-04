@@ -1,3 +1,8 @@
+## 2026-10-04 native_role_address唯一24-prefix由实验session实际接手
+
+从aeecda6c隔离实施，实验session独占canonical/Git；main只读。完成顺序为合法输入/原prefix与RoPE合同核验→push/clean detached真实24 prefix→全部8×2×18×50及唯一pre-RoPE辅助读回→退役/Git/一次整批回报/交回窗口。
+.5完整GPUh、4GiB、45–90分钟；原24输入/48 ROI已移入唯一root事前可见原件，0训练/环境/动作query或新行为结果。所有结果分支到此结束、不自动恢复旧完整配方。下方仅登记为历史时点。
+
 ## 2026-10-04 同一角色调用问题的下一项有限特征辨识
 
 机制§126/findings§305登记唯一[原生角色方向读回](docs/designs/native_role_address_diagnostic.md)：

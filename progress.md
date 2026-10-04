@@ -1,3 +1,10 @@
+## 2026-10-04 native_role_address实际接手，尚无模型计算
+
+实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553实际接手唯一24-prefix合同，从clean pushed aeecda6c建立codex/native-role-address隔离树，独占canonical tracked/Git窗口，main只读科学分析。
+完整design/机制§125补充与§126/findings§305已读。仅task16八teacher首帧双RGB＋同八自身原/交换首观测/state8，真实18层prefix K投影/cache；0 Writer/suffix/flow/LoRA构造/学习/环境或新行为结果。teacher128、自身256分别按原流程到224，查询位置各按自己的有效prefix计算，ROI仅CPU区域读回、不进模型。
+strg01 data1独立quota2147483648KiB、实占1200586796KiB、shared86838911276KiB通过；新峰估计1.5/硬4GiB，.5完整GPUh/预计45–90分钟。首次quota SSH参数引用错误在任何模型前修正，失败事实保留。事前可见ROI全部原件已整体移至唯一root `/data1/user/ymdai/ember_runs/native_role_address_20261004/analysis/visible_input/`，canonical tmp不保留重复副本；固定框不改。
+沿现有ecp prefix owner与canonical source加载/teacher和self处理器做最小专用捕获；实际消费者、push/clean detached后才运行。整批捕获24后退役入口/hooks、全层全槽正反与成本/退出/Git一次交回；不以方向阳性触发训练，不扩矩阵。下方登记未派发仅为历史时点。
+
 ## 2026-10-04 登记同一换位输入的原生角色方向分析
 
 唯一active design为[原生角色方向读回](docs/designs/native_role_address_diagnostic.md)，机制§126/findings§305。

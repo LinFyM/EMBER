@@ -120,3 +120,8 @@ main准备材料在canonical `.codex/tmp/task16_condition_crossover/`；准入ro
 CPU准备首次误将MuJoCo body名用作已存logical body_names，已按原件修正后保存；0模型/环境，不算科学失败。
 交付完整8行/两原参照/初次动作固定差/全部对象运动及目标、source/code/命令、配对有效性、completion和完整成本/退出证据。
 整批Git集成push后只发一次有来源回报、交回canonical窗口并停止；main负责科学分析与下一取舍。
+
+## 6. 实际完成记录（执行事实，科学裁决由main另记）
+
+8/8 full和原两参照/全部初次固定差/正反读回已完成；唯一成功scene46/teacher40/noise46，两原对角均重现，七阴性包括第三对象ketchup。有效读取4d3762a3/失败aa50238c的clean pushed detached与完整原件留于 `/data1/user/ymdai/ember_runs/task16_condition_context_crossover_20261004/`，完整.039754542396GPUh、阶段新增1.424923GiB，均在硬限内；GPU/PID已退出。
+两临时模块/入口及scoped绑定按本合同退役，canonical guard禁止新执行；旧冻结可用于原件归档核验。八格停止线保持，不因任何分支自动扩样本、换seed、重编译、训练或部署。整批Git/回报/窗口交回状态以root completion与launch回执为准。

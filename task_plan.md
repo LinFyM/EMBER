@@ -1,3 +1,8 @@
+## 2026-10-04 task16八格全交付范围已完成，停止新增计算
+
+8/8 full＋两原参照、12初次配对差/7混合差、全部对象/目标/动作读回齐备；仅原scene46/teacher40/noise46成功269，其余七失败，包括noise0的ketchup第三对象。两对角实际重现，事实与不利例完整保留，不判唯一根因或自动选择后继。
+完整.039754542396/1GPUh、阶段新增1.424923/4GiB、消费者exit0/首工程exit1留证、GPU/PID已释放。专用入口/模块退役，canonical runtime guard封闭新执行；actual4d3762a3和失败aa50238c冻结保留。完成必要Git push及一次来源整批回报后交回canonical窗口，main负责科学消费。无自动其它条件/scene/noise/模型/训练/400/controls/Test/RL。下方actual start与待派发文字仅为历史时点。
+
 ## 2026-10-04 实验session已接手task16八格交叉
 
 独占canonical/Git由实验session持有，main只读；工程分支codex/task16-condition-context。严格8 full行与原两对角、初次动作的三轴配对差和全部对象行为读回，硬1GPUh/4GiB。实际消费者验证后集成push、clean detached冻结运行；完成退役入口/hooks、整批一次交回并停止。无新训练/编译/held教学特权/后继，主讨论负责科学裁决。下方待派发状态仅为历史时点。

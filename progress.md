@@ -1,3 +1,13 @@
+## 2026-10-04 task16条件/scene/noise固定八格完成，专用运行面退役
+
+实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553完成8/8 full双RGB、全部50×7 chunk/实际actions/所有7对象与EEF/gripper的T+1 continuous/官方butter In目标；缺项0。两原对角均重现：scene0/teacher47/noise0失败280、butter静止/orange抬23.8483cm；scene46/teacher40/noise46成功269、butter抬38.8314cm/orange静止。唯一成功仍为后者。其它六失败抬orange18.3957–25.4546cm、butter静止；scene46/teacher40/noise0失败改为ketchup抬25.4665cm（>3cm首次65、中心最大位移44.4594cm），butter/orange均静止。basket位移与小量ketchup扰动、全部反例保留，不将中心/3cm/命令当抓持或唯一原因。
+真实scene/init、teacher/完整condition与noise stream三者分列，两condition各复用4次，不冒称paired400。两scene各4行初始观测/机器人/对象一致，原post-dummy sim/controller/双RGB owner guards均通过；56项原CPU Gaussian时钟逐行承接，source/normalization/exact language/官方256→224/10flow/前5/成功停/280保持。直接读完整38处A0+S/B0+M，不再加sharedA0；0 Writer/native/训练/held教学state/action/pose/reward、新布局或额外环境smoke。原formal映射与配对guard未改。
+初次规划全部8份50×7、前5 normalized/physical及12条固定配对差、6双因子+1三因子差保存，translation3/rotation3/gripper1和first5/full50分列；没有额外forward/hidden/Jacobian/ROI。原两对角初始/首块差自然为0，未逐bit追查；原成功旧compact无RGB不造图。已查看8新full的实际双RGB采样图，不称逐帧视频或terminal新render。原件 `/data1/user/ymdai/ember_runs/task16_condition_context_crossover_20261004/`：results、consumer_completion、analysis/rows.jsonl/summary/report.md/initial_action_fixed_differences.json/.npz及all8_full_RGB_review.jpg。
+
+有效consumer 4d3762a3 clean pushed detached，于02:46:43Z至02:48:51Z PID1896897 exit0；127.974052秒/.035548348GPUh。首aa50238c在GPU初始化后缺LIBERO资产根目录退出1，0 source加载/环境；15.142300秒/.004206195GPUh及failed_attempt1/frozen/日志/命令保留。原合同路径修复新push/freeze后继续，非科学阴性。完整143.116353秒/.039754542396GPUh（硬1），包括所有加载/失败/渲染/I-O/退出；两PID消失、双节点own GPU0。CPU接手checkout时序和原results rows字段读回错误已修正/留证，0额外GPU/环境，不覆盖有效原件。
+全八合法case一次resident source实际batch8，95.866512秒完成2229控制步（23.251081步/秒），reserved10.785156GiB/allocated10.109546GiB；无更多合法case可扩批，未为显存新增工作/profile或复制source。现场双节点own0→1、cap6及known-owner低占共驻准入保留。strg01 data1独立quota2147483648KiB/结束实占1202886608KiB、shared86836121600KiB；阶段新增root+工程观察1.424923GiB（估计2/硬4，非连续精确峰），含两frozen/失败/full/分析，全新写data1。
+source训练b8ea00e9，C900训练/物化85919994、450父a0e0248d，新读取身份分列；旧原件只读。两临时文件已退役，三scoped绑定实际退出还原，canonical guard拒绝新执行，Git/frozen/原件保留；仅剩必要运行记录待集成push、一次有来源整批交回。该八格计算已停止，无active后继/训练/扫描/400/Test/RL；科学解释由main独立消费后接续。完成Git及整批回报后canonical tracked/Git窗口交回main。下方运行/待启动/登记均为此前时点。
+
 ## 2026-10-04 task16八格实际消费者已启动
 
 2026-10-04T02:46:43.097143+00:00，clean pushed detached 4d3762a3消费者PID1896897在gpu02:7启动，一次source加载＋八合法case同resident batch；现场两节点own0→1、cap6，选卡空余约44.8GiB/known-owner低占共驻，不干扰他人。strg01 data1独立quota/实际用量/shared及原件预算均通过。失败首尝试15.142300秒已计硬1GPUh；当前唯一退出等待者等待整批，不轮询日志/状态或发selfQueue。

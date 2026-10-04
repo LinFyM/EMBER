@@ -3,6 +3,13 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：task16条件/场景/噪声八格完整读取交付事实
+
+[固定合同](designs/task16_condition_context_crossover.md)的8/8 full完成，两个原对角均重现其原结果/对象运动：仅scene46/teacher40/noise46在269步butter入篮，另七280失败。六失败抬orange18.396–25.455cm、butter不动；scene46/teacher40/noise0抬ketchup25.466cm（中心最大位移44.459cm）而butter/orange不动，第三对象反例及所有7对象位移保留。不把原成功LoRA自动称为跨情境成功，也不唯一归因scene/noise/参数；由main独立科学消费。
+全部50×7 chunk/physical actions/T+1对象与机器人/goal、8新双RGB full、原两参照、12初次固定边与7混合差齐备；first5/full50及motion3/rotation3/gripper1完整原数组见 `/data1/user/ymdai/ember_runs/task16_condition_context_crossover_20261004/analysis/`。初始scene/controller/真实RGB及原56项噪声时钟承接，三个身份明示，两完整38-target因子只读、无shared再次叠加。0 Writer/native/学习/held教学特权读取/新scene/额外环境smoke/400；有限condition各4复用，不冒称formal无放回或总体性能。
+有效4d3762a3 clean pushed detached、一次source加载/batch8，127.974052秒exit0；首aa50238c漏既有LIBERO资产目录，GPU初始化后0 source/环境退出1，15.142300秒保留/计费，原语义一行修复后新冻结继续。合计.039754542396完整GPUh/硬1，GPU/PID均释放；新增阶段观察1.424923GiB/硬4，含两frozen/工程/失败/8full/分析，非连续精确峰。所有合法case全打包、reserved10.785156GiB，没有额外合法工作可增批，不为填显存增样本或复制source。
+source训练b8ea00e9、C900训练/物化85919994（450父a0e0248d）与新consumer分列。两任务专用文件退役/scoped绑定还原、guard封闭新运行，Git/frozen/完整正反和失败原件保留；此条是执行交付事实，主讨论尚待独立解释，没有自动后继。
+
 ## 2026-10-04：登记task16条件控制、scene与原噪声流的八格交叉
 
 机制§128/findings§307/[合同](designs/task16_condition_context_crossover.md)延续同一错误实体调用。

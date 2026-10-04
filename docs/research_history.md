@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：同101原消费者精度修复一次完成，旧资源违规不覆盖
+
+[修复合同](designs/native_role_self_call_precision_repair.md)的101输入各一次、25mask复用、31R/八代数分解/117配对全齐，0新增环境/闭环/训练/Writer-native/编译或独立科学样本。实际clean pushed detached读取`a019232a31554735575cee8506bc6870794b3679`、PID503842于12:31:05.307292Z启动，12:31:52.052804Z exit0。原生六个已定位路径FP32、36个Q/V adapter destination BF16、action_in/out FP32；inference/TF32、完整生成外无autocast，未扩大FP32/修改因子或SDPA/Value/flow。原b546c76f额外autocast数组及旧completion/失败/I-O原件只读。
+首5总平方差修复/旧.019105293；逐行均值/最大.006852137/.243642627→.002042164/.021374414，全50均值/最大.007457701/.135379156→.002238231/.027454710。R swapped init0仍最大首5、一夹爪符号差；G swapped init7全50降至.016504120却仍有.297127 gripper绝对残余；新全50最大R task15/init32。10条首5误差高于旧读回及全部通道/全50/被动单元差留证，不把相近aggregate称逐单元一致；未证明全部旧偏差唯一由autocast造成，未重跑闭环或改变原三臂科学负结论。
+新train父/F/G/R rho tau1→.1为.211781→.197135/.214538→.198083/.784669→.476037/.868512→.197219；G/R held原布局8=.008716→.048896/.011519→.006431、交换8=.817364→.549722/.580501→.029042。101有效分母、等task/各teacher/init/noise/十flow/十八层/八头/前5槽完整保留；旧B20同时有阶段/分布和autocast差，不能当同分布单因素对照。R双线性closure5.204e-6，同key均值与m最大.145206残余原样交付，不追加精度/层/批扫描或宣称局部代数等于控制因果。
+首row logical484,152B/file490,997B，全101logical946,682,392B/file947,454,875B；保存前clone独立storage避免重犯批storage序列化。完整新增.012984864834GPUh、原加修复累计.045252212058/.5；实际32→剩余69合法packing为7.394754→8.408909query/s、reserved16.773438→26.130859GiB，一resident source、无重复成功输入/无用teacher K缓存，GPU/PID全部退出。CPU guard probe一次facade import顺序失败0GPU，canonical入口检查随后exit0，无无关源码修改。
+当前观察含旧root/新attempt/frozen/工程树及旧受影响data0约2.742652GiB/硬4、计划保守峰2.918058，非连续精确峰。旧19.206637GiB超限、145.4MiB默认data0缓存及原complete=false/closed=true永久保持；旧含糊cache不动，去重/修复不追溯冲销违约。修复数据可供科学消费与旧资源不合规独立声明。新专用入口退役、guard封闭且旧C900正式合同支持；frozen/Git/全部科学正反和失败费用保留。
+原件唯一`/data1/user/ymdai/ember_runs/native_role_self_call_20261004/attempts/consumer_precision_repair/`：completion/readback、101PT、analysis/report/rows/same_input_pairwise/R_swap_decomposition/consumer_comparison(.rows)/action_consumer_comparison/provenance/cost_ledger、launch/precision_witness/first_row_storage/packing_selection/exit与准入释放。实际Git交付/工程树清理/一次回报及窗口归还看completion；main独立科学消费待发生，无自动第三次读取/架构/学习/400/controls/Test/RL。
+
 ## 2026-10-04：main核出101读回的额外autocast，登记原消费者修复
 
 机制§135/findings§314。main直接核25双相机mask、101数组与原/新消费者，子任务独立定位重放边界：

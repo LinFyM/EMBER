@@ -1,3 +1,12 @@
+## 2026-10-04 同101原消费者精度修复已读取、归约及退役，交回main
+
+固定101输入各修复一次、25原mask复用、31R操作数、八换位分解与117同输入配对全部齐备，0新闭环/环境积分/学习/Writer-native/编译/独立科学样本。clean pushed detached `a019232a31554735575cee8506bc6870794b3679`于2026-10-04T12:31:05.307292Z在gpu02物理7实际启动，PID503842于12:31:52.052804Z exit0。实际入口inference、外层CUDA autocast关闭、原TF32；六个已定位原生路径实际FP32，36个Q/V物理adapter destination BF16、两action入口/出口FP32，未扩大FP32或改SDPA/Value/flow。
+全101相对原闭环首5平方差为旧autocast读回的.019105293（下降98.0895%）；首5逐行RMS均值/最大.006852137/.243642627→.002042164/.021374414，全50均值/最大.007457701/.135379156→.002238231/.027454710。R swapped init0仍最大首5、仍一gripper槽符号差；G swapped init7全50仍.016504120。另10行首5误差高于旧读回，全行/通道及原数组保留；不同batch/kernel/reduction差异也在，不宣称原误差唯一由autocast造成、全部低位一致或旧闭环成败改变。旧F/G/R控制负证据不撤销，不追加第三次读取。
+修复train八task等权rho tau1→.1父/F/G/R=.211781→.197135/.214538→.198083/.784669→.476037/.868512→.197219；G/R原布局8=.008716→.048896/.011519→.006431，换位8=.817364→.549722/.580501→.029042；held23与八格、全部mass/操作数和不利项均保留。旧B20有其自身autocast及不同阶段/分布，不以此差单独裁决泛化/精度或新架构。R swap代数closure最大5.204e-6，同key区域均值与m残余最大.145206，未增加forward追唯一数值来源。
+新101文件logical946,682,392B/file947,454,875B；首个合法row logical484,152B/file490,997B，保存前clone独立storage，未再序列化整批底层storage。新完整费用46.745513秒/.012984864834GPUh，原.032267347224加修复累计.045252212058/硬.5；32→剩余69合法packing实测7.394754→8.408909query/s，reserved16.773438→26.130859GiB，source一次resident、无无用teacher K/Writer/native缓存、无重复成功输入profile。退出live双节点本用户GPU0/PID消失。
+修复期间含旧保留root/新attempt/frozen/工程树/旧受影响data0当前观察2.742652GiB、保守计划峰2.918058GiB/硬4，非连续精确峰；旧19.206637GiB违规峰、data0默认cache违约及原complete=false/closed=true永久保留，旧原件只读、含糊cache不动。修复可用性与原批资源不合规分别声明，新增cache/tmp/输出data1且强制离线。CPU guard首probe直接import子模块触发已有facade循环依赖，0模型/环境/GPU；按canonical facade初始化后检查exit0，无无关源码修补。
+专用修复模块已退役，新guard封闭修复，旧self_call/binding guard仍封闭，实际原C900 correct400合同仍支持。交付唯一`/data1/user/ymdai/ember_runs/native_role_self_call_20261004/attempts/consumer_precision_repair/`的completion/readback、consumer_completion、101PT、analysis/report/rows/pairs/八分解/consumer_comparison与raw动作/precision/provenance/cost及退出准入原件；旧root不覆盖。最终Git集成push、task-owned工程树清理及一次整批回报回执以新completion为准；本提交交付后归还canonical tracked/Git窗口，停止新增计算，main独立消费，无active后继实验或自动训练/400/controls/Test/RL。下方接手/待运行文字仅是历史时点。
+
 ## 2026-10-04 实验session接手同101原消费者精度修复
 
 实验session `01a0fabb-f7a0-7100-93d8-6a0f66055553`从clean pushed `4a54589a`建立独占`codex/self-call-precision`隔离树，canonical tracked/Git窗口归实验session，main只读。完整修复合同/原101测量合同/机制§135/findings§314和实际旧调用链已读；仅恢复原生BF16/FP32混合精度及inference/TF32，无整体autocast，复用原25mask/101 processed输入/Gaussian/银行，不重新环境/Writer/native/编译。

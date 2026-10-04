@@ -52,6 +52,9 @@ def learn(runtime, spec, identity, affinity, arm):
         frozen=['source', 'common_A0_B0', 'interpreter', 'native_X_H_c_d_K', 'locator', 'p'],
         replay='complete76 same-version; real A/h and upstream cotangents', topology=topology(affinity),
         optimizer=dict(kind='AdamW', lr=1e-4, betas=[.9, .95], eps=1e-8, weight_decay=1e-4, clip=1, scheduler=None))
+    native_rows = read_json(OLD / 'native/manifest.json')['records']
+    lengths = {(r['task'], r['teacher']): r['sampled_frames'] for r in native_rows}
+    profile_entry = max(manifest['steps'], key=lambda e: sum(lengths[t,d] for t in e['tasks'] for d in (0,1)))
     initial = [p.detach().clone() for p in parameters]; initial_rng = rng_state(); profiles = []
     try:
         # Two registered real updates only; micro28 exhausts all logical queries.
@@ -63,13 +66,13 @@ def learn(runtime, spec, identity, affinity, arm):
             gc.collect(); torch.cuda.empty_cache(); torch.cuda.reset_peak_memory_stats()
             started = time.monotonic()
             try:
-                value = step(runtime, cached, data, labels, manifest['steps'][0], arm, binding, opt, parameters, micro)
+                value = step(runtime, cached, data, labels, profile_entry, arm, binding, opt, parameters, micro)
             except torch.cuda.OutOfMemoryError as error:
                 opt.zero_grad(set_to_none=True)
                 value = dict(microbatch=micro, failed=True, error=str(error), seconds=time.monotonic()-started,
                              reserved_peak_GiB=torch.cuda.max_memory_reserved()/2**30)
             profiles.append(value); del opt
-            write_json_atomic(out / 'profile.json', dict(discarded_updates=len(profiles), registered_event=1, profiles=profiles))
+            write_json_atomic(out / 'profile.json', dict(discarded_updates=len(profiles), registered_event=profile_entry['update'], profiles=profiles))
         usable = [r for r in profiles if not r.get('failed')]
         if not usable:
             raise RuntimeError('two bounded real profiles failed; no extra search')
@@ -82,7 +85,7 @@ def learn(runtime, spec, identity, affinity, arm):
             for p, before in zip(parameters, initial, strict=True):
                 p.copy_(before)
         del initial; restore_rng(initial_rng); opt = optimizer(parameters)
-        contract.update(microbatch=selected['microbatch'], expected_training_seconds=64*selected['seconds'],
+        contract.update(profile_registered_event=profile_entry['update'], microbatch=selected['microbatch'], expected_training_seconds=64*selected['seconds'],
             profiles=profiles, profile_restored_all_parameters_optimizer_RNG=True,
             unused_K_GPU_cache=False, packed_teachers=2, largest_legal_same_task_query_microbatch=28,
             selection_reason='maximum actual updates/s; two independent arms concurrently, no extra queries')
@@ -97,5 +100,7 @@ def learn(runtime, spec, identity, affinity, arm):
         write_json_atomic(out / 'learning_completion.json', dict(complete=True, updates=64, reading_git=identity))
     finally:
         data.close()
+    runtime.writer.zero_grad(set_to_none=True); runtime.writer.requires_grad_(False)
+    binding.zero_grad(set_to_none=True); binding.requires_grad_(False)
     del opt, parameters, cached, labels; gc.collect(); torch.cuda.empty_cache()
     return binding

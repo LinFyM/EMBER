@@ -3,6 +3,10 @@
 实验session `01a0fabb-f7a0-7100-93d8-6a0f66055553`从clean pushed `fad8e1b019ad806cc2e0e001f0f0fa70f8906c76`建立独占`codex/native-role-centered-content`和`EMBER-centered-content`工程树；本次canonical tracked/Git窗口归实验session，main只读。完整152行设计、机制§136–137/findings§315–316及Owner/AGENTS边界已读。唯一root `/data1/user/ymdai/ember_runs/native_role_centered_content_20261004`，判重无既存运行；strg01独立quota/shared与相关旧用量已核。旧25 native总783 sampled帧/758 origin，双臂p预计1.301GiB、alpha变换.145GiB、局部FP32 RGB.850GiB，全新输出/完整64恢复/50bank/110环境/640B20/工程与暂存估计18.206GiB/硬24；GPU硬8h、预计工程执行2–4小时，旧费用及违规单列。
 原Pq/Pk只读冻结、P identity/D zero、原十组头从同C900共同学习；只改变p，不读取held特权、不重跑native/标签。新临时诊断package按crop/prefix、参数/余切、生命周期、物化/被动测量和固定panel分责，复用canonical owner，不建第二policy/trainer；整批后包/窄hook退役，旧guards不重开。原400 query标签只保存面积归一q，B20报告真实image总质量，不把q加权均值冒称实体总质量；首计划25mask有原f，保存真实实体及image质量。逐video/row独立storage及首个合法输出大小前置核验，全部新cache/tmp/data1且强制offline。针对CPU消费者检查已通过：冻结327,680/fresh20,054,016参数、D=0/d=0严格R=0及初始D余切、16格中心/crop边界/camera质量保留、两臂各55/31full与25mask匹配、14,336事件和逻辑storage。临时10文件约1,140行按cohesive owner分责；沿同一真实FM/prefix/evaluator复用，复杂度主要为固定生命周期及原panel闭包，整批后全部退役，明确不留第二canonical路径。两次真实更新最多测试micro14/28；crop frame128耗尽单video输入，不另重复成功样本profile。实现待集成push/clean detached与live准入；尚无新GPU forward，实际运行另记。
 
+实现 `3ae08bfe1bdcfc3ef394fe9efa05b15f81ea1732`已集成main并push；实际content消费者来自其clean detached `frozen_content`。首次CPU准入在checkout尚未退出时被clean guard拒绝，0GPU/无模型/无data读取，回执保留；checkout实际退出后已提交唯一25-video编码启动，live双节点/quota/shared/占用记录由launcher保存。下一阶段仍等待此实际消费者退出，不读缓存轮询；两臂训练/110行/640B20尚未启动。
+
+实际content25/758已在 `3ae08bfe` clean detached完成，source一次resident、无suffix/新native，退出0，69.959秒/.019433GPUh，峰reserved17.961GiB；缓存2.296GiB、首91,080,563B对逻辑91,075,496B，首产物更新总峰17.296GiB/24。camera质量误差均合法，逐camera平均框占全图约.268–.738，全25/全origin不筛选。两臂profile改用原64manifest中实际native帧负载最大的event27（283帧），仍只14/28两次并恢复初值/RNG；64后清除无消费者的grad/optimizer/cache再物化读取。未新增profile事件/样本。下一真实训练/读取身份分列。
+
 ## 2026-10-04 main完成原消费者科学裁决，登记角色内容居中重编码的匹配辨识
 
 唯一active design为[教学角色内容居中重编码](docs/designs/native_role_centered_content_diagnostic.md)，机制§137/findings§316。

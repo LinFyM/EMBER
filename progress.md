@@ -1,3 +1,8 @@
+## 2026-10-04 末点R首批CPU汇总dtype接口修复，合法训练/bank保留
+
+F/G/R64均完整exit0；全部optimizer参数step64、Writer/RNG/cursor/topology/schema齐备，全部10类A/B梯度组有实际梯度，R第二正式更新Pq/Pk及18个P/18个D均非零。全加载/profile/失败/native/父点累计1.653288613GPUh，固定197/960读回已按live双节点本用户0→3/cap6启动，实际读取e628062c，main只读。
+R PID3252152在首task12两teacher40 query完成十flow后，CPU einsum BF16作用量×FP32区域权重异常退出1（44.457689秒/.012349358GPUh），0环境行、0持久有效B20行；这40失败消费者预测及全部费用如实登记。25套合法完整bank/alpha/R及64恢复点保留。只将CPU局部汇总作用量转FP32，复用完整已存bank（编译身份仍e628062c），先持久保存raw预测后汇总；不重读native/重新编译/更新模型、不修改冻结树。F/G独立合法消费者继续，R按原科学范围new push/freeze收齐，未把接口错误或辅助拟合当科学通过。
+
 ## 2026-10-04 固定末点B20按两teacher40合法query打包
 
 父C900匹配面板32行完整exit0/26成功，8 full/24 compact，376.995832秒/.104721065GPUh；主项父点是强的有限训练参照，完整32原件及消费者核验保留，不借它替三臂结果。

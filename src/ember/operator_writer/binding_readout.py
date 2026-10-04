@@ -84,7 +84,17 @@ def q_readback(policy, q, factors, residual):
 
 @torch.no_grad()
 def materialize(runtime, spec, arm, identity):
-    out = ROOT / 'banks' / arm; out.mkdir(exist_ok=False)
+    out = ROOT / 'banks' / arm
+    if (out / 'manifest.json').is_file():
+        bank = read_json(out / 'manifest.json')
+        expected = '85919994aef11c17b49b7d0e70a2c110158bff61' if arm == 'parent' else read_json(ROOT / arm / 'training_contract.json')['git']['commit']
+        if (bank['native_role_binding_compilation'] != dict(study=ROOT.name, arm=arm)
+                or bank['training_git'] != expected or len(bank['conditions']) != (16 if arm == 'parent' else 25)
+                or bank['condition_factors'] != 'complete_A0_plus_S_B0_plus_M'
+                or any(r['factors'] != file_record(Path(r['factors']['path'])) for r in bank['conditions'])):
+            raise ValueError('existing endpoint bank is not a complete matching compilation')
+        return bank  # Preserve actual compiler identity; no second compilation.
+    out.mkdir(exist_ok=False)
     binding = None
     if arm != 'parent':
         runtime.writer.load_state_dict(load_file(str(ROOT / arm / 'checkpoint64/writer.safetensors'), device='cuda:0'), strict=True)
@@ -185,15 +195,18 @@ def readout(runtime, spec, arm, bank):
                     image_attention_mass=torch.stack([r['image_mass'][selected] for r in role], 1),
                     target_entity_index=0, entities=label_records[task, queries[0]['demo']]['entities'],
                     extra_forward=False, Writer_removed=True, physical_query_batch=40)
+                path = ROOT / 'predictions' / arm / (key + '_B20.pt'); path.parent.mkdir(exist_ok=True)
+                if arm == 'R':
+                    # Durable prediction before CPU-only local contractions.
+                    torch.save(row, path.with_name(key + '_B20_raw.pt'))
                 if arm == 'R':
                     # Keep compact same-h effects; full logits reduce over image
                     # tokens only after recording each layer/head/slot contribution.
-                    effect = torch.stack([r['direct_R_image_logits'][selected] for r in role], 1)
+                    effect = torch.stack([r['direct_R_image_logits'][selected] for r in role], 1).float()
                     row.update(direct_R_image_logit_mean=effect.mean(-1), direct_R_image_logit_RMS=effect.square().mean(-1).sqrt(),
                         direct_R_entity_logit_mean=torch.einsum('btlhsp,bop->btlhso', effect, q[selected].cpu()),
                         direct_R_local_density_difference=torch.stack([r['direct_R_local_density'][selected] for r in role], 1),
                         direct_R_scope='same actual h/own K; local subtraction only, not a removed-R policy')
-                path = ROOT / 'predictions' / arm / (key + '_B20.pt'); path.parent.mkdir(exist_ok=True)
                 torch.save(row, path)
                 records.append(dict(task=task, teacher=teacher, predictions=file_record(path), queries=20))
     finally:

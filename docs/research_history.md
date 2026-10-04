@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：登记已训练角色编译的自身初态调用读取
+
+机制§134/findings§313明确train B20角色拟合、held teacher选择与held自身调用三个证据对象的区别。
+新[冻结读回](designs/native_role_self_call_diagnostic.md)只读前批101 full首次规划、25自身初态，复用完整sealed A/B与原输入/noise。
+原rho另配实体真实attention质量；R在原/交换布局以`m=(R^T d_own)^T A h_self`分解方向/调用/交互，不冒称行为中介。
+0新环境/训练/Writer/native、无held教学特权或梯度；1–2小时/0.5完整GPUh/4GiB，一次结束不自动补帧、辅助或formal。
+当前仅源码/原件结构与数学合同登记，没有新模型测量结果；旧三臂关闭与所有强参照保持，后继完整架构尚未选定。
+定向外部核查仅明确Zero-WAM/IMOP的额外输入、训练及部署条件，未移植或下载其模型/数据。
+
 ## 2026-10-04：角色密度与完整控制分离的独立科学裁决
 
 机制§133/findings§312从197 raw continuous、960预测/原标签及实际科学消费者独立读回；main另核25实际alpha/R，

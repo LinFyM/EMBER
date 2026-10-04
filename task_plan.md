@@ -1,3 +1,11 @@
+## 2026-10-04 冻结已训练角色编译的真实自身初态调用
+
+机制§134/findings§313与[唯一合同](docs/designs/native_role_self_call_diagnostic.md)：原101 full首次规划、25自身初态。
+直接复用sealed LoRA/原processed输入/noise，无新闭环/Writer/native/学习；分别看train初态、held读取及实际R双线性调用。
+补的是架构取舍所缺的消费者事实，不从train B20正例假定held已读对，不自动接辅助、续训或正式架构。
+预计1–2小时、硬0.5完整GPUh/4GiB；一次读回及整批交付后停止，完整EMBER性能目标与原数据规模保持。
+main当前拥有canonical/Git，提交后交既有实验session独占执行；实际接手/开始/完成只看progress。下方为历史计划。
+
 ## 2026-10-04 角色绑定科学消费完成，后继仍针对教学到自身控制的调用
 
 机制§133/findings§312：实际角色密度、教学选择与局部R作用均有正例，完整控制未取得对应收益。

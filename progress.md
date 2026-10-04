@@ -1,3 +1,13 @@
+## 2026-10-04 登记已训练角色编译的自身初态调用读回
+
+唯一active design为[冻结自身初态读回](docs/designs/native_role_self_call_diagnostic.md)，机制§134/findings§313。
+原.98角色rho是train B20，不能当held自身读取；读前批全部101 full的首次规划、25唯一自身初态，0新闭环/训练/Writer/native。
+原processed输入/CPU Gaussian及完整sealed A/B直接复用；原rho、实体实际attention质量与R的a/w/m及八对换位分解完整记录。
+CPU自身mask只作测量、不读held教学特权、不产生梯度；train同阶段与held分列，不从首计划推断整条控制或自动修复。
+1–2小时、硬0.5完整GPUh/4GiB，单次结束即退役、一次回报；不追加帧/方向/层扫描、角色续训、formal fresh/400或新数据。
+main独占canonical/Git，已核实际源码/两PT结构及101/25身份计数，0新模型/环境/GPU；提交推送后交既有实验session实施。
+尚未选定新的完整架构。下方已完成/无active/运行文字均为其历史时点。
+
 ## 2026-10-04 main已消费角色绑定三臂，继续同一控制调用问题
 
 机制§133/findings§312独立核197 raw continuous、960原预测与真实角色/余切消费者，补读25实际alpha/R及合法RGB。

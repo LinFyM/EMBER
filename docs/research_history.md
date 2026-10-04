@@ -3,6 +3,23 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-05：main裁决角色内容重编码阴性，动作误差改善主要来自夹爪
+
+机制§138/findings§317直接从110连续轨迹、62真实首规划、640动作预测、25内容缓存及128训练记录归约，
+核实际源码及关键双RGB，0新模型/环境/标签。p变化RMS.151–.297，实际框面积.268–.738；干预真实发生，
+但没有证明位置/背景已完全分离。raw/centered全部55成功22/21、R/G/L16/5/6；train21/20、held各1且不重合，原布局均0。
+raw原正确八格成功在centered丢失，centered交换成功为父已有条件；task12掉三条与15/43/96各增一条都保留。
+train breadth据原行是7→8；main纠正了交付文字“皆8”，没有修改原成功行或分数。
+
+B20前5误差下降15.34%，93.78%来自gripper；第一平移通道更差。full50下降3.14%，81.24%来自gripper且三平移均更差。
+143/320前5、126/320全50恶化；这不支持把平均动作误差改善当跨场景控制修复，也不自动指定新loss权重。
+原布局首tau rho .044722→.013820，交换.757075→.705424，实际目标mass同向下降；旧G交换全读butter仍全败的反例保持。
+
+按原停止线关闭固定内容居中构造，降低“仅规范化教学角色内容即可主修复”的支持，不接crop/层/seed扫描、辅助、续训或formal晋级。
+保留其它调用/控制未知和历史静态地址/动态Value的实际近例，主讨论继续同一完整反馈函数问题，尚无active新实验。
+独立原件在`native_role_centered_content_20261004/analysis/main_scientific_readback.py/.json`；CPU1.060秒，
+执行1.465238GPUh及保守峰14.906755GiB、旧资源违规均不变，实验者已停止并归还canonical/Git。
+
 ## 2026-10-05：角色内容两臂匹配学习及110/640完整执行交付
 
 [冻结合同](designs/native_role_centered_content_diagnostic.md)的raw_key/centered_rgb各64、25 bank/55环境/320 B20完整exit0，共110（62 full/48 compact）、640及62同次真实首规划读取。只从旧R64继承冻结Pq/Pk，两臂同C900十组头与fresh P identity/D zero/optimizer（新增20054016），未继承R64控制或旧optimizer；公共/native/c/d冻结。原25视频758 origin/p/alpha/框/camera质量/局部model224 RGB及全indices保持，0新native/环境label/held教学特权。每臂14336 FM与同epsilon tau1消费者、14190角色有效且原均值分母保持，64 optimizer/RNG/cursor/topology/schema齐备。

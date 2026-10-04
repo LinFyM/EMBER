@@ -1,8 +1,20 @@
+## 2026-10-05 main已消费内容匹配辨识，关闭角色内容规范化的主修复假设
+
+机制§138/findings§317直接归约110 raw continuous、62首规划、640 B20、25内容及128训练记录，核实际消费者和关键双RGB。
+raw/centered全部55为22/21、R/G/L16/5/6；train21/20、held各1且成功不重合，原布局均0/8。
+内容p确有实质变化，未建立原布局正确获取；B20前5改善15.34%的93.78%来自gripper，第一平移通道变差，不能当控制修复。
+全部得失、实际mass与训练拟合边界见原root analysis/main_scientific_readback.py/.json，0新模型/环境/标签。
+
+按原停止线关闭该固定crop构造，降低仅规范化教学内容足以修复的主假设支持，不接crop/层/seed、新loss/head、续训或formal fresh/400。
+main独占canonical tracked/Git，继续同一教学关系到自身控制的完整结构推导；尚未选定新架构或active实验。
+实验session已停止，GPU与临时运行面已释放/退役；不存在未完成的后台研究批次。固定数据、强MT目标及全部历史反例保持。
+下方“main待消费”、接手/启动/计划均为此前时点，不能恢复执行。
+
 ## 2026-10-05 角色内容两臂64及110/640已完整退出、读回和退役，交回main
 
 `native_role_centered_content_20261004`的raw_key/centered_rgb各64完整恢复、25套rank128/scale1/38-target完整76因子、55环境行及320 B20全部exit0；总110（62 full/48 compact）、640查询与62次真实首规划被动读取，缺少环境/预测/恢复原件0。原25视频/758 origin缓存一次完成，0重读native/新增label环境/held教学特权；原始动作、T+1全body/EEF/quat/gripper/goal、逐行条件/scene/noise和全部正反完整保留。当前不再有active新增计算；下方接手、运行、待派发均为此前时点。
 
-全部55成功raw/centered=22/21，R/G/L=16/5/6、churn11、Jaccard16/27；train32=21/20（旧父C90026），held23=1/1（旧C9003）。八训练task12/13/14/15/17/19/43/96各四行raw→centered为4→1、2→2、4→3、0→1、1→1、4→4、3→4、3→4，breadth皆8。原布局8均0，交换8为0/1，八格8为1/0。raw唯一held成功scene46/teacher40/noise0（222步）在centered丢失；centered swapped init3/teacher46/noise3（101步）是旧父已有正例，不是新增父点能力。完整teacher/init得失、目标交换、错误orange入篮、其它对象扰动与未完成例在逐行原件，43 In+Close未削弱；没有contact记录，不用3cm/中心/闭合命令宣称抓持或几何根因。
+全部55成功raw/centered=22/21，R/G/L=16/5/6、churn11、Jaccard16/27；train32=21/20（旧父C90026），held23=1/1（旧C9003）。八训练task12/13/14/15/17/19/43/96各四行raw→centered为4→1、2→2、4→3、0→1、1→1、4→4、3→4、3→4，breadth为7→8（main据原行纠正交付文字“皆8”，原分数不变）。原布局8均0，交换8为0/1，八格8为1/0。raw唯一held成功scene46/teacher40/noise0（222步）在centered丢失；centered swapped init3/teacher46/noise3（101步）是旧父已有正例，不是新增父点能力。完整teacher/init得失、目标交换、错误orange入篮、其它对象扰动与未完成例在逐行原件，43 In+Close未削弱；没有contact记录，不用3cm/中心/闭合命令宣称抓持或几何根因。
 
 原布局首tau目标rho raw/centered=.04472194/.01381996，赢家7 orange/1 ketchup与8 orange；交换=.75707520/.70542381，7 butter/1 ketchup与8 butter，仍未普遍完成控制。train八条teacher0/init32首次读取=.80113856/.77623011，不能称全部train32或B20同分布。B20前5/full50 unmasked action7 MSE=.105815288/.108796105→.089584367/.105385010，保留全有效future/各通道/320对的不利项（前5较差143、全50较差126）；有效role318/320，各臂约.98167/.98053，不把拟合当修复。旧400标签只存q、不含f，B20仅真实image总质量；首次规划有原f并保存实体实际质量，未补环境标签或冒称q加权均值为实体质量。实体mass−image质量最大.000239134的实际被动数值残余单列，原数组不裁剪、不额外forward追精度。
 

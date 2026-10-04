@@ -7421,3 +7421,13 @@ task16首规划tau1的正确butter位移模板误差F/G约.170/.172m，固定点
 主问题仍是教学角色怎样与自身变化中的正确实体建立可执行联系；无active新实验或已选新架构。
 原root analysis/main_scientific_readback及readout_decomposition保留全部独立CPU分解；0新模型/环境/GPU，
 原整批1.337958008933GPUh不变。main持canonical/Git继续科学推导。
+
+## 305. 登记同一换位输入的原生角色方向辨识，尚无模型结果（2026-10-04）
+
+机制§126/[合同](docs/designs/native_role_address_diagnostic.md)仍解释task16教学butter到自身实体调用的同一不足。
+§122/125新反事实输入允许区分同实体与旧位置；§25原生Q梯度方向的推导与缺少utility/使用系数的限制均保留，
+§110局部选物转移亦不被升级为完整控制。只检验一项候选前提，不恢复旧完整native-key/grounding配方。
+原八teacher首帧+八自身原/交换共24个合法prefix，全部18层实际K/RoPE；固定可见ROI不读held几何、不进模型或loss。
+主量是教学反旋转key差方向与自身实际两对象key差的作用，原始key内容余弦仅作同次分解；全部层/槽位/正反保留，不选高点。
+可对应仍未证明真实A h使用、动态操作Value或动作后果，不能凭此formal训练；不可对应不追加alignment/ROI/层扫描。
+main已核全部双RGB及24张画面的48框，0新模型/环境/GPU；预计45–90分钟、.5完整GPUh/4GiB。当前登记未派发，main仍持canonical/Git。

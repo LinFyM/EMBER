@@ -1,3 +1,13 @@
+## 2026-10-04 登记同一换位输入的原生角色方向分析
+
+唯一active design为[原生角色方向读回](docs/designs/native_role_address_diagnostic.md)，机制§126/findings§305。
+仍解释task16教学butter到自身对象调用的不足：原八teacher首帧及同八自身原/交换共24个真实prefix，
+读取全部18层K及实际RoPE，区分内容对应与Q方向在换位后的作用；没有训练、策略干预或新环境行。
+main已逐图核全部双RGB及24张画面的48个对象框，ROI仅分析、不进模型/loss；未读held教学state/动作/几何。
+预计45–90分钟，.5完整GPUh/新增峰4GiB；阴性不扫描保护、阳性不自动选择架构或formal训练。
+当前只完成可见RGB准备和合同，0新模型/环境/GPU；main独占canonical/Git，提交后交既有实验session实施。
+下方无active/未选后继是此前科学消费时点；原坐标批次的停止线保持。
+
 ## 2026-10-04 main完成role_coordinate_credit科学消费
 
 机制§125/findings§304已核e7d81bc4实际loss/ConditionalTarget/同版本余切与标签合同，直接读取96原continuous/projection、

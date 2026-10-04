@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：登记同一对象换位的原生角色方向辨识
+
+机制§126/findings§305/[合同](designs/native_role_address_diagnostic.md)延续§122/125的butter角色调用失败，
+用原八teacher首帧和八自身原/交换共24个真实prefix、全部18层K/RoPE区分内容对应与实际Q方向的空间依赖。
+依据是新的匹配对象换位输入；§25未实施原生key配方及使用系数/utility缺口、§110部分读图转移边界继续保留。
+只检验候选前提，不恢复完整方案或依据内部阳性formal训练；无新训练、策略干预、环境行、held teacher几何或Test。
+main先看全部真实双RGB并固定可见ROI，不按特征结果改框；0新模型/GPU，预计45–90分钟、.5完整GPUh/4GiB。
+本条是登记时点，尚未派发。原件`.codex/tmp/prefix_role_read_20261004/`待准入后由执行者移入新root analysis/visible_input。
+
 ## 2026-10-04：双域坐标风险改善主要来自偏差与采样波动，角色控制预测未兑现
 
 机制§125/findings§304消费e7d81bc4完整实际计算、96 continuous/projection、16 B20及16双RGB。

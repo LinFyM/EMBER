@@ -1,3 +1,13 @@
+## 2026-10-04 main已消费task16八格，正确条件作用仍依赖执行情境
+
+机制§129/findings§308：main独立核八continuous/全部chunk及真实RGB。W47四格搬orange，W40为两orange、一ketchup、
+原scene46/noise46唯一butter成功；两原对角重现。第一规划已有条件×情境作用，不能称视频无效、缺自身反馈，
+也不能把原成功LoRA当可跨情境搬用规则或唯一归因noise。两个合法teacher RGB均可见butter入篮、长度相同。
+旧同query多teacher功能监督及高参数一致性的正负历史已核，未由本差异选择一致性损失或恢复旧修正。
+main新增CPU核心.498741秒，0模型/环境/GPU/held教学特权读取；原账本/失败/全部不利行保留。
+canonical tracked/Git窗口已归main，实验session及只读子项均停止；无active新实验或已选训练。继续同一教学角色到自身控制问题。
+下方交付/接手/待启动均为此前时点，不恢复旧八格或其它实验。
+
 ## 2026-10-04 task16条件/scene/noise固定八格完成，专用运行面退役
 
 实验session 01a0fabb-f7a0-7100-93d8-6a0f66055553完成8/8 full双RGB、全部50×7 chunk/实际actions/所有7对象与EEF/gripper的T+1 continuous/官方butter In目标；缺项0。两原对角均重现：scene0/teacher47/noise0失败280、butter静止/orange抬23.8483cm；scene46/teacher40/noise46成功269、butter抬38.8314cm/orange静止。唯一成功仍为后者。其它六失败抬orange18.3957–25.4546cm、butter静止；scene46/teacher40/noise0失败改为ketchup抬25.4665cm（>3cm首次65、中心最大位移44.4594cm），butter/orange均静止。basket位移与小量ketchup扰动、全部反例保留，不将中心/3cm/命令当抓持或唯一原因。

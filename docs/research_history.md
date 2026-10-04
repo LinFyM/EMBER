@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：task16八格科学消费，条件作用未成为可搬用的正确角色规则
+
+机制§129/findings§308：main从八raw continuous/action chunks独立读回并看8 full RGB采样，
+W47四情境均搬orange；W40在scene0两流搬orange，scene46/noise0搬ketchup，只有原scene46/noise46搬butter成功。
+两原对角重现；固定scene/noise换完整LoRA在一格有正确角色因果收益，三格无此收益，不以唯一组合定义总体必要性。
+第一规划条件差已随自身scene/noise改变，说明已有输入相关函数，尚未形成正确角色的可靠调用；不归因单层或通用采样问题。
+另仅读demo47/40两路完整stride5 RGB，两条均155帧/32时刻并可见butter入篮，未读held教学特权标签。
+原root analysis/main_scientific_readback.py/.json与main_teacher_visible_review.json留证，CPU核心.498741秒、0新增模型/环境/GPU。
+只读近邻核对CV-CSD c1d8952的同query/noise四正确K4监督143→134，以及DJNFR 49a4129的修正cos约.790而143→136，
+不由本次视频差异重启一致性学习；旧正反与T161/MT153参照保持。八格结束、main持窗口、无active新增训练或实验。
+
 ## 2026-10-04：task16条件/场景/噪声八格完整读取交付事实
 
 [固定合同](designs/task16_condition_context_crossover.md)的8/8 full完成，两个原对角均重现其原结果/对象运动：仅scene46/teacher40/noise46在269步butter入篮，另七280失败。六失败抬orange18.396–25.455cm、butter不动；scene46/teacher40/noise0抬ketchup25.466cm（中心最大位移44.459cm）而butter/orange不动，第三对象反例及所有7对象位移保留。不把原成功LoRA自动称为跨情境成功，也不唯一归因scene/noise/参数；由main独立科学消费。

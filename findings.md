@@ -7472,3 +7472,23 @@ butter抬38.831cm并在269步入篮。两原scene/完整continuous已读，成�
 两condition各复用4次，明确为固定案例诊断；原400一一视频映射不改、不挑部署视频/held字典。
 无新数据/Writer编译/训练/held教学动作标签/Test/RL，预计45–90分钟、1完整GPUh/4GiB。
 此时仅main登记与CPU原件准备，尚未派发；main提交后交既有实验session独占实施、冻结运行和退役，整批一次交回。
+
+## 308. 同task条件参数有真实角色作用，但唯一成功未能跨原情境搬用（2026-10-04）
+
+机制§129从八份raw continuous/全部chunk独立重算，并看8新full双RGB与两teacher完整stride5 RGB。
+W47在scene0/46×noise0/46四格均搬orange；W40在scene0两格仍搬orange，scene46/noise0搬ketchup，
+只有原scene46/noise46搬butter并269步入篮。两原对角重现，所有7对象/第三对象反例保留。
+换条件在scene46/noise46确实改变正确角色和成功；另外三个情境没有可搬用的正确控制，不能把视频40称为稳定好LoRA。
+七失败butter全程静止、EEF最近17.74–31.43cm，主要差别早于正确目标获取；不将距离/中心高度当接触证明。
+
+四固定scene/noise的条件差在第一规划、任何新环境动作前已经不同；first5平移RMS .140641–.212870，
+完整12配对边/7混合差保留。当前已有自身输入相关的条件作用，不能解释成缺少状态反馈或只输出常量动作；
+幅度及噪声影响不定位S/M/Q/某层或通用VLA缺陷。选定两scene/两流不能估计总体成功率或独立因果贡献。
+两teacher均155原帧/32采样时刻且可见butter入篮；仅RGB核图，0held教学特权/新模型/环境/GPU。
+
+历史CV-CSD已有同query/noise的四正确K4功能信用，143→134；DJNFR共享A/B头把修正cos提升到约.790仍143→136。
+较一致不等于正确；同query平均多teacher FM的期望仍是原目标，不能从风险分解虚构新增一致性正则。
+这些后期受限消费者不等于当前fresh图；也不足以从本八格直接选择输出差惩罚、强公共目标或video均值部署。
+旧换位、几何/原生方向阴性和部分控制转移的正例均保留，T161/MT153完整目标不降低。
+八格结束，main持canonical/Git，无active新实验或已选训练；继续同一角色调用问题，不为补齐对照自动扩矩阵。
+原root analysis/main_scientific_readback.py/.json，CPU核心.498741秒；原完整费用.039754542396GPUh不变。

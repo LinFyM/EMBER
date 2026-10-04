@@ -18,6 +18,8 @@ ASSET = Path('/data1/user/ymdai/projects/EMBER')
 TARGETS = {12: 'salad_dressing_1', 13: 'bbq_sauce_1', 14: 'ketchup_1',
            15: 'tomato_sauce_1', 17: 'milk_1', 19: 'orange_juice_1',
            43: 'butter_2', 96: 'butter_1', 16: 'butter_1'}
+RECIPIENTS = {**{t: 'basket_1' for t in (12, 13, 14, 15, 17, 19, 16)},
+              43: 'wooden_cabinet_1', 96: 'wooden_tray_1'}
 IMAGE_KEYS = ('observation.images.base_0_rgb', 'observation.images.left_wrist_0_rgb')
 HELD_REFERENCE = ROOT.parent / 'conditional_read_write_continuation900_20261002/conditional_read_write/evaluation/900/correct400/run_contract.json'
 
@@ -80,7 +82,7 @@ def register():
     return result
 
 
-def object_groups(model, target):
+def object_groups(model, target, recipient):
     import mujoco
     roots = [int(model.jnt_bodyid[j]) for j in range(model.njnt)
              if model.jnt_type[j] == int(mujoco.mjtJoint.mjJNT_FREE)]
@@ -95,6 +97,8 @@ def object_groups(model, target):
     candidates = [target] + [n for n in movable if n != target and n not in containers]
     if target not in movable or len(candidates) != len(set(candidates)):
         raise ValueError(f'exact target or movable registry changed: {target}, {movable}')
+    if recipient not in containers and recipient not in candidates:
+        containers.append(recipient)
     names = candidates + containers
     groups = []
     for name in names:
@@ -108,6 +112,8 @@ def object_groups(model, target):
             if parent in roots:
                 members.add(i)
         groups.append(sorted(members))
+    if any(not group for group in groups):
+        raise ValueError('registered movable/recipient visual-body group missing')
     return names, groups, len(candidates)
 
 
@@ -147,7 +153,7 @@ def render_masks(env, row):
         expected = before.copy(); expected[:, :2] = before[::-1, :2]
         if not np.allclose(data.xpos[ids], expected, atol=1e-9, rtol=0):
             raise ValueError('actual own world-XY swap differs')
-    names, groups, n_candidates = object_groups(model, TARGETS[row['task']])
+    names, groups, n_candidates = object_groups(model, TARGETS[row['task']], RECIPIENTS[row['task']])
     renderer = mujoco.Renderer(model, 256, 256)
     option = mujoco.MjvOption(); option.geomgroup[0] = 0
     masks, rendered = [], []
@@ -203,6 +209,8 @@ def retained_mask(row):
     if not path.is_file() or not image_path.is_file():
         return None
     data = np.load(path); names = data['entities'].tolist(); f = data['f']
+    if RECIPIENTS[row['task']] not in names:
+        return None
     if names[0] != TARGETS[row['task']] or f.shape != (len(names), 512):
         raise ValueError('retained valid CPU mask identity changed')
     image = cv2.cvtColor(cv2.imread(str(image_path)), cv2.COLOR_BGR2RGB)
@@ -210,6 +218,9 @@ def retained_mask(row):
     obs, raw_state, _, _ = initial(row)
     rgb = np.stack([(obs[k][0].permute(1, 2, 0).numpy() * 255).round().astype(np.uint8) for k in IMAGE_KEYS])
     difference = rendered.astype(float) - rgb.astype(float); n = int(data['candidates'])
+    previous_manifest = ROOT / 'labels/manifest.json'
+    if previous_manifest.is_file():
+        return next(r for r in read_json(previous_manifest)['records'] if r['scene_key'] == row['scene_key'])
     return dict(scene_key=row['scene_key'], path=str(path), entities=names, candidates=n,
         visible=[bool(x.sum()) for x in f], valid_rho=bool(f[0].sum() and np.count_nonzero(f[:n].sum(-1)) > 1),
         target_index=0, target=TARGETS[row['task']], scene=row['scene'], source_trajectory=row['trajectory'],

@@ -1,3 +1,8 @@
+## 2026-10-04 公共角色参照四行实际消费者启动
+
+2026-10-04T04:03:28.639853+00:00，clean pushed detached d583a75d在gpu02:1启动PID2281278；现场双节点本用户总卡0→1、cap6，data1独立quota/实占/shared与峰预算通过。一次resident source，全部四合法case最大batch4；原两scene/post-dummy控制器/双RGB和56项CPU stream时钟沿canonical owner。唯一退出等待者等待整批，不轮询日志或selfQueue。
+公共完整76因子只从原900 common.values读取，teacher为空；0 Writer/native/训练/新scene或额外环境smoke。退出后与旧八行作12行CPU行为/首块差，退役/Git并一次交回，不能以当前开始写成完成。下方待冻结文字为此前时点。
+
 ## 2026-10-04 公共角色参照CPU实际消费者检查通过，待冻结运行
 
 原900 checkpoint只读取common.values.*的76因子（38 target、10,297,344参数），按既有public_state/factor_map映射完整/shape/finite通过；旧shared实际只有38 A0，未当完整公共使用。官方source/normalization/tokenizer/资产根目录与56项两stream时钟核验通过，实际CPU 4×50×32 Gaussian按stream配对，scoped三绑定退出恢复；0 source forward/环境/GPU。

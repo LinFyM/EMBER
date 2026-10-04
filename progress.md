@@ -1,3 +1,15 @@
+## 2026-10-04 自身初态101/25原件收齐，发生存储硬限违约，关闭本批交回main
+
+固定101首次规划（parent8、F/G/R各31）、25自身可见mask、31套R操作数、八对换位分解与117同输入配对均已齐，消费者`b546c76f` exit0，0新环境积分/闭环/训练/Writer-native/额外forward。全部10tau×18层×8头×前5槽的scores、实际image/实体mass、R的a/w/m/局部密度及完整50×7原/新首chunk保留；25mask和101rho均有效，未挑层/head/正例或更改分母。train八task等权初态tau1→.1 rho父/F/G/R为.210986→.196454、.213747→.197487、.784937→.477446、.868433→.198336；G/R的held原布局8为.008617→.048806/.011300→.006333，交换8为.816524→.548974/.581350→.028461，合并23为.297979→.234553/.214869→.016937。旧B20约.98只作不同阶段范围参照，旧197行为不计新成绩，科学取舍留main独立消费。
+完整GPU费用含loader失败为.032267347224/硬.5GPUh，两实际GPU PID均已消失，退出现场双节点本用户GPU0。32实际train输入4.209870秒/7.601185query/s/reserved16.878906GiB，剩余69一次7.688349秒/8.974619query/s/26.351562GiB；69已覆盖全部剩余授权输入，无多余teacher-K/Writer/native常驻、无重复成功输入profile。两个分组不是单因素速度试验，不宣称批量最优。
+资源合同明确违约：逐row保存CPU tensor view保留整批底层storage，101文件重复encoding达18.247GiB，现场新增root+工程树为19.064GiB；连首次data0受影响cache保守记账，观察约19.207GiB，超过4GiB硬限。发现后停止新增模型计算，用CPU clone逐row逻辑数组并原子替换，仅清理已核实task-owned未引用批storage，101全部测量/原数组/科学字段保留，旧source/bank/scene/历史原件不改；重归约检查exit0，当前root+工程树+受影响data0约1.847GiB。这不能抹去超限峰值或写成合规完成；`storage_compaction_incident.json`留精确前后大小/storage证据，主讨论收到的是一次资源异常整批交付。
+首块数值重放first5/full50 RMS均值.006852/.007458，最大.243643/.135379；R swapped init0为最大first5不利项，不能声称全体低位一致或新行为复现。实际输入/CPU Gaussian/source/normalization/完整因子/官方十flow合同已核，未追加forward追一致性。R换位代数closure最大6.33e-6，同key区域均值与m最大有限精度差.150528；全部逐行/通道及有限精度边界保留，不按阈值筛例。
+两个临时模块已退役，canonical guard拒绝native_role_self_call新执行，旧C900正式合同仍支持；Git/frozen/全部原件/失败/退出/费用保留。Primary root `/data1/user/ymdai/ember_runs/native_role_self_call_20261004/` 的completion/readback、analysis/report/rows/same_input_pairwise/R_swap_decomposition/numerical_readback/cost_ledger/provenance与两个I/O incident清单为交付。必要Git集成push/清理task-owned工程树及唯一整批异常回报后canonical tracked/Git窗口交回main，实验session停止本批；无active新增计算/自动后继。下方启动/接手/登记均为其历史时点。
+
+## 2026-10-04 自身初态101读取已实际启动
+
+实际有效消费者为clean pushed detached `b546c76f`，2026-10-04T11:27:49.981200Z在gpu02物理7开始，PID191596；launch同时live两节点本用户0→1/cap6、单节点1/6，已知其它owner仅148MiB/idle且充分余量共驻。data1独立quota/shared/实际新root与工程树用量准入留原件。前一`671e4ed0`启动在任何forward前因传入normalization整文档而非canonical `stats`退出1（22.934524秒/.006370701GPUh），0持久预测；精确修复原loader接口后new push/freeze，失败及费用保留。一次退出事件等待者负责该进程，无阶段selfQueue/日志定时轮询；101结束后统一读取、退役与整批一次交回。
+
 ## 2026-10-04 自身初态读回已接手，25个CPU可见mask完成，101读取待实际启动
 
 实验session `01a0fabb-f7a0-7100-93d8-6a0f66055553`从clean pushed `06c0ae5c`建立独占`codex/native-role-self-call`隔离树，canonical tracked/Git窗口归实验session，main只读。固定前批全部101 full首次规划、25自身物理初态，原processed RGB/tokens/state provenance、CPU Gaussian和完整sealed A/B/R来源已登记，0新增训练/Writer/native/闭环/环境积分。

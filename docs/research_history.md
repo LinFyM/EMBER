@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-04：101真实自身首计划读回及存储预算违约收束
+
+[合同](designs/native_role_self_call_diagnostic.md)固定101/25全部消费，parent8、F/G/R各31；全部10flow/18layer/8head/前5槽scores/实际实体与image mass、31R的a/w/m与局部密度、八原/换位代数分解、117同输入比较齐备，0新闭环/环境积分/学习/Writer-native。CPU自身mask逐25双相机叠图核对，43 butter_2/butter_1干扰/木柜、96与16 butter_1及目标承载容器均保持，所有101rho有效。首计划统计train父/F/G/R tau1→.1为.210986→.196454/.213747→.197487/.784937→.477446/.868433→.198336；held23 F/G/R为.151264→.137262/.297979→.234553/.214869→.016937。G原/换8为.008617→.048806/.816524→.548974，R为.011300→.006333/.581350→.028461；实际mass及全部不利teacher/init/noise分列，不把B20与初态当同分布干预、不从角色量声明操作已解决。
+完整.032267347224GPUh含671e4ed0的loader normalization stats接口失败22.934524秒，0forward；实际101消费者b546c76f93.227926秒/exit0，source成功消费者一次resident。32→69合法packing分别7.601185→8.974619query/s、reserved16.878906→26.351562GiB，R仅当前A/前5h/R常驻，F/G无teacher K或Writer/native；两实际GPU PID退出，现场双节点本用户GPU0。没有额外输入/profile重算，69为全部剩余合法行，不称最优batch或单因素速度比较。
+资源硬限未满足：torch.save(row view)序列化整批底层storage，101文件重复encoding18.247GiB，观察data1新root+工程树19.064GiB；加首CPU LIBERO遗漏canonical资产路由导致data0默认cache632个受影响文件145.4MiB，保守观察新增约19.207GiB/硬4。首次下载资产未被场景/模型消费，后续固定canonical data1资产并强制离线，旧cache原状不明确所以未删。全部CPU/GPU失败、明确I/O违约与预算超限如实保留，非科学阴性。发现重复storage后停止新增模型计算，用CPU clone逐row逻辑数组原子替换未引用批storage，所有101科学数组/来源字段保留，旧formal原件不改；当前新root+工程树及受影响data0约1.847GiB。去重不抹去超限事实，原重复encoding只属已核实task-owned clutter，精确大小/storage清单留证。
+首5/full50新旧normalized chunk RMS均值.006852/.007458，最大.243643/.135379；R swapped init0的大first5差明确保留，不能称全体低位一致或新行为复现。相同processed输入/CPU Gaussian/source/normalization/完整A-B及十flow已核，不加forward追逐bitwise。R双线性分解closure最大6.33e-6，同key区域均值与m的有限精度最大差.150528；原操作数/全τ/全层/head/实体保留，无门槛/赢家挑选。
+两专用模块退役，native_role_self_call guard封闭、旧C900正式合同仍支持；source b8ea00e9、C90085919994/450父a0e0248d、原F/G/R学习ef5eeb68/银行e628062c/原R读取77f995dc分列，新读取b546c76f。新root `/data1/user/ymdai/ember_runs/native_role_self_call_20261004/` 保存completion/readback、inputs/25mask、101PT、analysis/report/rows/pairs/八分解/numerical/cost/provenance、失败和两个I/O incident原件。整批唯一资源异常回报、Git push及工程树清理后交回canonical/Git并停止；main独立科学裁决尚待发生，无自动架构/补帧/学习/400/Test/RL资格。
+
 ## 2026-10-04：登记已训练角色编译的自身初态调用读取
 
 机制§134/findings§313明确train B20角色拟合、held teacher选择与held自身调用三个证据对象的区别。

@@ -7972,3 +7972,89 @@ parent读取代码0cf81778/frozen_attempt3，路由fda47bae/frozen_attempt4；�
 物理batch12已打包各臂全部合法格，实测峰allocated10.757/reserved11.852GiB、规划queries/s约7.15/6.77/6.80，
 不存在更大的唯一合法batch，不加case/dummy填显存；Owner允许下直接多卡共驻，两节点现场上限6、实际最大3，无额外GPU特例。
 有效parent没有重跑，全部GPU/PID释放；三个专用源码/入口随本次集成退役、guard封闭，Git/frozen/原件保留。
+
+## 327. main消费实际读取干预：少搬错物体没有变成目标控制，不再追加同类修补（2026-10-05）
+
+main直接读取§326的rows/逐case原件、实际冻结attention算子、C唯一原正例三臂continuous，
+并查看C900_scene46_teacher40_noise46、C900_scene0_teacher40_noise46、T2340_init2_swapped的三臂双RGB。
+这次独立消费保留3/2/2及全部正反例，补充动作进程解释；没有新forward、环境、训练或GPU。
+
+首先纠正一种容易产生的阶段归因。C唯一原正例在parent的butter首次比初始高3cm为第146步，
+正确路由为第247步，晚101步；parent第252步In终止，正确路由到第280步结束尚未In。
+正确路由终态butter与basket中心的XY距离36.89cm，parent为2.48cm；RGB和连续位置显示前者仍在取得物体一侧抬升，
+不是已经到篮上方而单独放置失败。中心距离与3cm只描述运动，不是grasp/contact或阶段真值。
+剩余执行时间可能参与失败，但没有延长horizon的反事实，不能宣称延长便会成功，也不据此追加运行。
+原件分别位于唯一root的cases/{parent,route_butter,route_orange_juice}/C900_scene46_teacher40_noise46/continuous/，
+精确NPZ路径由analysis/rows.jsonl索引；同case的三臂RGB在analysis/paired_RGB/。
+
+七个原butter失败格在正确路由下仍无butter位移；自身EEF与butter中心最近距离约17.49–31.08cm。
+C900_scene0_teacher40_noise46的orange搬运被抑制后，实际仍接近orange并未完成原抓取，而非转向butter。
+因此“少搬错物体”在这批里没有成为“会取得目标”的中间正证据。这个有限因果效应应保留，不能用其替代完整控制收益。
+T的两个正例在错误orange路由下仍成功，两个错误布局仍搬orange入篮；
+例如init4交换布局的butter首次抬高parent/butter/orange约70/50/166步，完整终止157/127/249步。
+视觉路由能改变速度和动作过程，却没有在固定T面板翻转取得哪个物体的结果。
+
+实际干预只转移其他可搬实体占patch的可见像素覆盖质量，未清空背景、机器人、basket、text/state/suffix路径。
+每个冻结prefix Value本身还含上下文；多个实体共享patch，视觉内容并不按分割天然独立。
+故它不是do(正确实体表示)，更不是已给出正确自身反馈函数。实际delta_y非零排除了纯记录分数，
+却不保证这个局部向量变化在后续残差、MLP与flow中成为期望动作；2–5%的attention-output比例也不是动作因果贡献率。
+不能由这次阴性证明视觉绑定无用、冻结prefix缺失语义或某个唯一神经根因。
+
+结合此前角色rho、内容crop与本次真实Value干预，继续把对象读取分配作为主要修复投入已缺少依据。
+按事前停止线关闭，不以更强mask、层/head选择、强度、时段或另一角色loss保护同一假设。
+这不是宣布所有对象信息研究无效，而是让累积负证据真正降低这条具体修补路线的优先级。
+
+下一步需要解释的是教学变化写下的控制作用如何在不同自身状态上被调用，以及原完整FM为何未学成这条联系。
+T实际作用可精确展开为各教学Value乘以含中间擦除算子的地址核，最终由自身Ah读取；
+同一个A只给共同坐标，并未证明教师X与自身h的距离对应同一操作适用性。
+这仍是待解释现象和候选致因，不能仅由公式另加对应loss。旧P/I、NativeCorrection、LocalField、
+Semantic Path和state-coupled Reader已涉及跨初态配对、直接参数消费或自身状态信用，须逐项核实际特征、标签及消费者。
+历史operation_semantics_feasibility还明确提出actual-A语义监督及零B/共享A反例，只有标签实施而无Writer学习；
+不能把未实施当已失败，也不能把同一原理包装成首次提出。本轮只读审计用于判断是否存在不同且有依据的干预。
+
+Owner已要求继续自主推进至次日检查；main恢复科学/Git窗口并承担后继取舍，未选定新架构或启动训练。
+
+## 328. 实际地址对应并非新的监督空白；不从局部信息缺口恢复旧辅助路线（2026-10-05）
+
+有界只读代理核P/I、NativeCorrection、LocalField、SemanticPath及state-coupled live/stop的原源码和结果：
+P/I改变reference与query联合分布，监督仍为最终FM；NativeCorrection直接监督BA；LocalField的同一Ur接受cotangent并构成实际LoRA；
+SemanticPath的32维路径无物理语义标签；live/stop公共A冻结，另设gamma Q/K通过当前own hidden给上游B信用。
+这些不是同一个学习对象，也不能统称缺少真实消费者。代理在这五条限定范围内没有找到双域实际A的关系监督，
+但main核到更近的10/4 role_coordinate_credit，故“全历史未检验”不成立。
+
+机制§125、docs/designs/role_coordinate_credit_diagnostic.md及原root role_coordinate_credit_20261004明确：
+同一个最终A前三行在teacher与own两域接受对象相对EEF坐标标签，L_Q直接进入A并经h进入前37处因子，
+L_T使用同参数版本重放，主FM完整保留；这不是独立probe，也不是梯度未接通。
+坐标MSE的改善主要包含偏差与tau/slot波动下降；对象交换后仍近固定世界点响应，F/G为21/19，task16原/换均无修复。
+前三坐标的直接动作项较小，但不是删项因果贡献率，不能以此自动强迫B使用或扩大语义rank。
+这已经约束了“加两域几何对应就能学会调用”的简单提案；不因更旧路线未做同一标签而清零它。
+
+同理，成功示范FM与自身闭环占据不同状态分布是数学事实，尚不是EMBER已定位根因。
+9/25回报方向、夹爪条件化与探索目标对齐均有真实原件及阴性；不能从本轮读取失败直接转为长RL，
+也不能把普通VLA的泛化问题当作视频编译特有解释。当前没有选择新RL、对应loss或训练课程。
+
+## 329. 从已有task39行为辨别目标区域与操作衔接，不新增模型或rollout（2026-10-05，读回合同）
+
+目的不是再确认已知0/50，而是区分正确取得mug后实际做了什么：是否朝炉腔搬运但无法送入，
+是否把杯带到门/其它区域，是否很晚才取得物体，或是否混有多种不同失败。
+这会约束后继完整机制必须解释的环节；任务16的物体选择问题不能覆盖全部缺口，也不能因此完全放弃该具体例。
+T与C都已保存全50条自身continuous；main先读init0见两者均向微波炉方向移动正确杯，
+并看C900/init0的0/50/100/150/200/300/400/515步双RGB，后段在门侧。只登记这一单例线索，不推广全体。
+
+固定只读范围及产物：
+
+- T2340与C900现成correct400中的global39/libero_10:9各50行，复用continuous、stage_predicates及已存在full RGB；
+  所有行保留，不按内部距离选“好看”案例。复用已有RGB覆盖，不补渲染/完整轨迹。
+- 只读已有36-task支持审计及对应训练侧同场景关微波炉的原件；若没有可比较continuous/RGB，明确缺项，不能新跑填齐。
+  同scene规格不当作同实际state；任何严格配对主张必须来自已有scene_reference与实际初态。
+- 逐行保存正确/干扰杯位移、高度、最初运动/抬升、EEF/杯的实际路径、开合命令及已登记In/Close谓词；
+  不把3cm、物体中心距离或gripper命令称为grasp/contact。炉腔region若没有已捕获权威位置，不能以microwave body中心冒充。
+- 对全部可用full RGB生成有时间映射的小型联系图，先报告原件现象，再区分目标位置、路径、放开与任务衔接的解释。
+  与训练关门轨迹的相似只作事实对照，不能证明它们使用同一内部控制器，更不能据此诊断神经根因。
+- 完整输出包括CPU入口、per-row JSON/表、简短结果、缺项与耗时；唯一临时目录.codex/tmp/task39_existing_readback_20261005/，≤50MiB。
+  已有main的C900_state0.jpg可直接复用；不复制大trajectory/native/model，不写其它root或tracked文件。
+
+预计30–45分钟，0新模型前向、梯度、环境初始化/step/渲染、GPU、训练或正式评测；不读held teacher action/state/pose/reward或Test。
+当前只消费已保存自身执行证据，合法teacher RGB若非解释现存图所必需也不扩读。不恢复旧in-policy/flow/角色辅助或新的位置oracle。
+实验session整批一次回报后停止新增分析，main独立结合完整历史裁决；没有从本读回自动晋级新架构/训练的授权。
+main保持canonical tracked/Git独占，接收方仅写指定临时目录；预期若已有分析已完整回答，直接索引原件与缺口，不重复计算。

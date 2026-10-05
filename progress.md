@@ -1,3 +1,19 @@
+## 2026-10-05 main已独立消费整批，按Owner授权继续自主推进
+
+Owner最新明确“之后你继续自主推进，我明天来检查进展”；没有暂停、取消或等待逐项指路。
+实验session完成交接，main持有canonical tracked/Git；上一批“没有下一批授权”仅限制执行者自动扩展，不撤销main的持续研究职责。
+main直接核实际重分配源码、36行行为表及C原正例的三臂continuous，查看关键C/T配对双RGB；详见findings§327。
+固定读取修补关闭：3/2/2且无新增成功；C正确路由仍未获取七个原失败格的butter，唯一正例首次抬高146→247步。
+不将这101步延迟及剩余短时窗解释为已确诊放置问题，不扩大horizon或追加更强对象读取oracle。
+source_mechanism只读历史审计已结束，main补核10/4双域实际A坐标的完整消费者与阴性，不将“对应监督”改名重试，见findings§328。
+当前下一项为task39已有行为读回：T2340/C900各50个continuous与可用full RGB，结合已有训练侧同场景关微波炉参照。
+固定研究正确取杯后的目标区域、搬运与操作衔接；不预设它是唯一根因，不把轨迹相似当同一神经控制器的证明。
+预计30–45分钟，0新模型/环境/训练/GPU，不读held teacher action/state/pose/reward；只消费已保存自身行为和既有train原件。
+实验session只写.codex/tmp/task39_existing_readback_20261005/，上限50MiB，main保持tracked/Git独占；整批一次回报后直接消费。
+main已先核T/C init0连续原件并看C的八时刻双RGB：确有正确取杯与向炉移动，后来处于门侧；仅为单例线索。
+尚未选定后继架构或active design；不自动延长horizon、恢复RL、补rollout或加辅助目标，具体边界见findings§329。
+实际派发与接收回执随后登记；当前文字不冒充后台已启动。科学改动须有具体原理与有界合同，不以保持忙碌为投入理由。
+
 ## 2026-10-05 可见物体读取36full执行、读回与专用运行面退役
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成固定12case×3臂全部36full及旧12行CPU读回；无active新增计算。

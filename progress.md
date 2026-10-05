@@ -1,3 +1,11 @@
+## 2026-10-06 main登记task23已有执行的抽屉状态补读
+
+findings§349实际核两条完整held教学RGB及T/C init0原120次双RGB；教学包含开柜，执行缺三层动态关节记录。
+唯一active分析为docs/designs/task23_drawer_state_replay_20261006.md及§350：原T2340/C900各50条动作纯CPU原物理重放，
+被动补三层开度/原生Open与接触，原In和原轨迹配对；无policy/Writer/GPU、物理干预或新训练。
+预计45–90分钟，硬从承接起2h wall/16CPUh/1GiB，100条一次读回后回main，无自动后继。
+此时main仍持tracked/Git，合同待push后派发并核实际承接；未称已运行。此前“无active”仅属此前时点。
+
 ## 2026-10-06 main接回窗口并独立消费手轴诊断
 
 e5fb0ecc clean/pushed的完整回执已消费，当前没有独立实验或待完成GPU工作，main持canonical tracked/Git。

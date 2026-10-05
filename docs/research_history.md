@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：task23教学/自身RGB读回与缺失抽屉状态的重放登记
+
+findings§349核init0/38对应demo30/16两条完整stride5双RGB，均有先操作抽屉再取碗；
+T/C init0原120次自身双RGB显示长期柜体附近行为，现有continuous仅柜体根body，不能据此判断三层动态开度。
+已见51/42的其它scene局部成功不拼成task23组合能力，原唯一C900/init38成功及其compact图像缺项保留。
+登记[原命令抽屉状态重放](designs/task23_drawer_state_replay_20261006.md)，固定原T/C各50条，CPU原物理、原命令，
+补关节/接触并核原轨迹与In；预计45–90分钟，硬2wall/16CPUh/0GPU/1GiB。
+这不是初态/策略干预或新Writer，不自动派生阶段辅助/新训练；执行与承接状态只看progress。
+
 ## 2026-10-06：准备差异的训练支持复核与实际入口读出辨识登记
 
 findings§342由现成36task姿态摘要计算：首正命令前倾角在32个有定义task中，task均值间方差占87.63%；

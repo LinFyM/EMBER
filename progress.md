@@ -1,3 +1,12 @@
+## 2026-10-06 main接回窗口并独立消费手轴诊断
+
+e5fb0ecc clean/pushed的完整回执已消费，当前没有独立实验或待完成GPU工作，main持canonical tracked/Git。
+直接核捕获/head/标签/采样消费者及终点原件后，§346记录两项只用既有逐帧预测/标签的CPU描述统计。
+同task新video的H动态对齐仍存在；KV额外变化没有更多对齐信号，不据差分误差发起滤波或pose辅助。
+四个head留出task的有限迁移较弱；task29标签方向已有邻近范围，仍不能推出输入覆盖或policy控制根因。
+本诊断已关闭，没有active后继模型/训练合同。main继续在Owner持续授权下分析同一视频到控制问题，不以阶段封口自行停工。
+下方承接、派发和active文字只表示此前时点。
+
 ## 2026-10-06 冻结手轴读出完整完成，专用运行面封口
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成唯一native_hand_axis_readout_20261006全部固定范围，见findings§345。

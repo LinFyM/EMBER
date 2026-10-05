@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：准备差异的训练支持复核与实际入口读出辨识登记
+
+findings§342由现成36task姿态摘要计算：首正命令前倾角在32个有定义task中，task均值间方差占87.63%；
+比例不是控制/信息量，但不支持将同task跨episode监督概括为抹去已有粗准备差别。P/I及同视频辅助历史保持。
+§343复核ProcessPullback真实全局余切/VJP及后继，拒绝改名重启；新增读取/非零信用不能代替具体特征原因。
+登记[冻结手轴读出分析](designs/native_hand_axis_readout_diagnostic_20261006.md)：T2340同次native的hbar与最后视觉K/V，
+原训练136clips/4382frames，两head各500更新，检验可见手轴及动态变化的有限可读性；不读官方held/Test、不训Writer或新闭环。
+尚无本项结果；可解码性不作控制资格，不恢复旧dP/450。预计1–2小时，硬3wall/2GPUh/8GiB，派发状态只看progress。
+
 ## 2026-10-06：main消费读取阴性与跨任务反例
 
 findings§340直接核父/L/R原400、实际算子与被动作用，保留161/158/159及能力交换，停止扩大本冻结内容读取族。

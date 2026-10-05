@@ -1,3 +1,15 @@
+## 2026-10-06 main登记实际手轴信息的冻结特征读出辨识
+
+main已完成原训练准备差异的CPU统计和最近似完整方案复核，findings§342–343记录事实与取舍；没有恢复旧实验。
+唯一active分析为docs/designs/native_hand_axis_readout_diagnostic_20261006.md及§344。
+父T2340/source/Writer全部冻结，同一次真实native取hbar及block17视觉K/V，各拟合一个诊断head；
+32个原训练task各demo16/17拟合，原36各demo42/43唯一终点评估，共136clips/4382stride5含末帧；每头500固定更新。
+29/34/38/73只是head拟合留出，官方validation/Test不读；姿态标签不进入native/Writer，0新LoRA/环境/闭环。
+这项有界学习仅判断具体可见准备信息的入口可读性，不宣称控制/迁移能力，也不自动派生辅助loss或重训。
+预计含工程1–2小时，硬3小时wall/2完整GPUh/8GiB新增峰，所有现场资源/实际消费者/Git由执行session闭环。
+登记时main仍持canonical tracked/Git；合同待push后派发并核实际承接，文字不等于已运行。
+整批一次回报后main继续独立消费；Owner持续自主推进授权保持。下方为此前状态，不恢复旧任务。
+
 ## 2026-10-06 main已消费固定T读取比较，继续科学判断
 
 main接回canonical tracked/Git窗口，直接核原400结果、实际读取公式、关键RGB与逐target被动作用，findings§340登记判断。

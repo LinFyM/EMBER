@@ -6,7 +6,8 @@
 补充robot—固定炉体真实接触仅被动记录，不追加第三臂或姿态干预。先T/C init0正常重放准入，mug/EEF全程最大位置差≤1cm并保留原false谓词。
 唯一root /data1/user/ymdai/ember_runs/task39_door_contact_replay_20261005/，开始11:45:14UTC、硬deadline14:15:14UTC；
 预计60–120分钟，硬16CPUh/0GPU/新增峰1GiB，最多8 CPU workers。data1 strg01现场quota实占1249746588KiB、软限2147483648KiB，
-共享容量另核；独立预算估计840MB含工程/frozen/cache/原件，不复制大资产。当前为专用消费者工程，尚未启动物理计算。
+共享容量另核；独立预算估计840MB含工程/frozen/cache/原件，不复制大资产。138eb096 clean pushed detached frozen的两条parent准入已实际启动：2026-10-05T11:59:27.247701+00:00，launcher PID219991，2 CPU workers。
+当前只运行T/init0、C/init0正常重放；它们属于固定200条，不重复计样本。尚无准入/吞吐结果。
 复用原scene恢复/谓词/被动trace owner与原OSC/settling，唯一修改实例中的门后代geom contact masks；原资产只读。
 科学解释为原命令在两种物理转移中的输送，分叉后不读取policy反馈，不称闭环改善或EMBER成绩。
 完成或实际预算/科学边界后退役专用入口，保留Git/frozen/原件，集成push并整批一次回报main；无自动后继。下方均为历史状态。

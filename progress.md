@@ -1,3 +1,11 @@
+## 2026-10-05 训练角色支持只读审计已实际接手
+
+Owner要求继续解决，main向新实验session派发固定36-task对象/角色/初始region及现成标签覆盖的CPU事实核查。
+Queue回执01a10ad5-41ed-7eb2-a45e-7fc7f5676b35；接收轮01a10ad5-41ef-7213-8945-9990ca28152e已明确接受并active。
+预计15–25分钟，0新模型/GPU/环境/训练，临时输出≤50MiB，仅写.codex/tmp/role_support_audit_20261005/。
+main并行读取实际训练/读写算子及旧相关方法；持有canonical tracked/Git，实验session不改tracked文件。
+整批事实表与反例回报后main独立裁决；当前没有formal active design或新训练授权，不恢复旧候选。
+
 ## 2026-10-05 Owner澄清已登记，新实验session身份已核实
 
 新实验session为01a10a98-6d4b-7d61-b12c-da38a628cb45，hostId remote-ssh-discovered:BCI-GPU02，

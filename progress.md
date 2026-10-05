@@ -12,7 +12,10 @@ source_mechanism只读历史审计已结束，main补核10/4双域实际A坐标�
 实验session只写.codex/tmp/task39_existing_readback_20261005/，上限50MiB，main保持tracked/Git独占；整批一次回报后直接消费。
 main已先核T/C init0连续原件并看C的八时刻双RGB：确有正确取杯与向炉移动，后来处于门侧；仅为单例线索。
 尚未选定后继架构或active design；不自动延长horizon、恢复RL、补rollout或加辅助目标，具体边界见findings§329。
-实际派发与接收回执随后登记；当前文字不冒充后台已启动。科学改动须有具体原理与有界合同，不以保持忙碌为投入理由。
+Queue 01a10b96-46e2-7200-9424-99e5ec2d85d0已送达实验session01a10a98-6d4b-7d61-b12c-da38a628cb45；
+接收轮01a10b96-46e6-74e0-8f15-f27a762bf09e已明确接受并实际读取，状态inProgress。不是仅排队或口头计划。
+原生snapshot查询未及时返回，已结束该只读等待并用既有app-server只读接口核实；没有重发任务、改服务或创建新session。
+科学改动须有具体原理与有界合同，不以保持忙碌为投入理由；main等待整批回报后直接科学接续，不逐阶段轮询。
 
 ## 2026-10-05 可见物体读取36full执行、读回与专用运行面退役
 

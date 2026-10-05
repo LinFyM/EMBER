@@ -1,3 +1,18 @@
+## 2026-10-06 冻结手轴读出完整完成，专用运行面封口
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成唯一native_hand_axis_readout_20261006全部固定范围，见findings§345。
+136clips/4382实际唯一帧，32task两个head各500等权更新、250/500完整恢复状态，全部fit与72eval clips唯一终点预测/标签/逐帧原件保留。
+H/KV拟合3.5568°/1.4841°，同task新视频6.2641°/7.4619°（H在30/32task较好），head留出4为22.1106°/20.3085°，全局常量18.1258°。
+KV的较好拟合没有形成新video/29与38动态迁移优势；task73局部正例、task20明显退步及全部反例保留，不称控制修复/根因或EMBER成绩。
+原native profile e876c22b；首四worker入口错误0模型加载/0科学帧，失败计费保留。修复后完整提取98bfaafc、head/终点评分cb66ba65，clean pushed detached。
+所有5个GPU launch退出，累计.157376312完整GPUh/2；最多4物理卡/现行6，特征2.975524GiB，阶段root约4.295GiB、保守新增峰界6GiB/8。
+CPU实际唯一帧/500步task等权/单位轴/两头四恢复消费者核验通过，无CUDA初始化；固定八条heldout4完整曲线已全部查看。
+三专用模块与temporary native observer入口退役，保留原Git/frozen/完整特征/heads/raw/源/失败，闭批launcher禁止后继。
+唯一root /data1/user/ymdai/ember_runs/native_hand_axis_readout_20261006/，主要入口analysis/report.md、summary.json、metrics.json、per_frame.jsonl和completion.json。
+整批一次回主讨论01a10a97-dedf-7042-a6a2-60214f0ef7b1并交回canonical tracked/Git；最终实际推送/清理/释放/耗时/回执由completion与launch记录。
+本批active执行已关闭、停止新增计算，无自动head/层/seed扫描、Writer/pose aux/prefix/dP/Reader/fresh400/RL/Test或后继授权。
+Owner对main持续自主推进授权保持，main独立消费科学原件并接续，不重复工程审批；下方承接/运行/active文字均为此前时点。
+
 ## 2026-10-06 实验session承接手轴原生特征读出诊断
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已完整读取119行合同与findings§342–344，

@@ -4254,3 +4254,14 @@ main直接读取task39_door_contact_replay_20261005的100对正常/无门原件�
 整体远离不能统一解释为马上掉杯。前5/10步到box的小幅改善也保留，固定命令不等于反事实反馈策略。
 完整事实、正反例和方法约束见findings§334；没有新增物理/模型/GPU运行。
 随后登记的8教学视频抓取方式审计尚属分析计划，实际接手只看progress，不构成训练或姿态oracle授权。
+
+## 2026-10-06：冻结原生手轴可读性诊断完整执行并封口
+
+固定T2340/source/公共beta与Writer，同次native被动保存H FP32及block17视觉K/V BF16；授权train36共136clips/4382stride5含末帧。
+32task demo16/17两同构head各500等权更新，36task demo42/43唯一评分；29/34/38/73仅对head留出、父policy已见。
+拟合H/KV3.5568°/1.4841°，同task新video6.2641°/7.4619°，四task22.1106°/20.3085°且未超过全局常量18.1258°。
+较低KV拟合没有转为新video/动态优势，H已有同task新video可读联系；有限读出/优化/分布解释与task73正例、task20退步保持，详findings§345。
+没有新Writer/LoRA/环境、官方Val/Test或EMBER闭环成绩；原件与两head完整恢复状态留在native_hand_axis_readout_20261006 root。
+profile e876c22b；入口首失败0科学帧保留，纯接口修复后完整提取98bfaafc、head/终点评分cb66ba65 clean pushed detached。
+5次launch含加载/失败完整费用.157376312GPUh/2，最多4卡/现行6；特征2.975524GiB，保守新增峰界6GiB/8。
+三专用模块及临时native observer退役，保留Git/frozen/原件；整批一次交main，不自动扫描或后继训练。

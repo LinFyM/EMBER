@@ -8544,3 +8544,54 @@ Value以hbar及相邻差参与门控/动态分量。原生视觉K/V先被query�
 预计含工程1–2小时，硬3小时wall/2完整GPUh/8GiB新增峰；执行者仍须现场quota/双节点准入及吞吐放大。
 任一结果仅整批回main更新机制判断，无自动Writer训练、pose aux、prefix改权重、Reader、fresh/400、RL或Test。
 登记时尚未派发，实际接手以progress及回执为准；main随后移交tracked/Git，工程闭环由实验session独占。
+
+## 345. 冻结手轴读出完成：较低K/V拟合误差没有形成新视频或动态迁移优势（2026-10-06）
+
+唯一native_hand_axis_readout_20261006合同完整执行并停止。父T2340/source/全部Writer/公共beta冻结，
+136条授权train36 clip/4382个stride5含末帧位置同次原native捕获hbar50×1024与block17真实旋转后前512视觉K/V。
+H按原FP32 RMS eps1e-6，K/V实际均BF16且分字段保存、head按[K,V]拼接；未计算response_difference/X/attention大图、bank或新LoRA。
+32task demo16/17拟合1940帧、36task demo42/43终点评估2442帧；29/34/38/73仅对head留出，父已见全部36。
+拟合ee_ori标签在native全部退出后读，评估标签在两头500完成后才读；同obs offset0，动作第6维仅被动分组，官方Val/Test不读。
+两head共享下游同seed7初值，H264451/KV198915参数；各500新AdamW更新、CPU seed20261006同事件流，
+每步32task×16=512，250只恢复点，500唯一读回。没有源/Writer梯度或环境。
+
+| clip后task等权轴角误差° | H | K/V | 仅fit全局常量 | 本task fit常量 |
+| --- | ---: | ---: | ---: | ---: |
+| 拟合32 | 3.5568 | 1.4841 | 10.6423 | 不评分 |
+| 同task新video32 | 6.2641 | 7.4619 | 10.1600 | 8.3309 |
+| head留出4 | 22.1106 | 20.3085 | 18.1258 | 禁止构造 |
+
+KV拟合32/32均较好，但新视频H在30/32较好。高倾角>30°的新视频73帧/7task为H13.061°/KV19.455°；
+留出83帧/2task为42.811°/41.998°。这些固定分组与空组均保留，不作抓取/接触或机械必要性真值。
+新视频相邻变化MSE H/KV/常量为.003664/.015611/.001697，去均值MSE.011362/.018894/.022348；
+留出相邻变化.006244/.015813/.002978，去均值.073185/.072601/.057207。
+H同task新视频低于本task平均轴且去均值误差低于常量，不能归为全是task均值；但相邻变化并未优于常量，不称动态读出已充分。
+
+四task轴角H/KV/全局常量：29为43.102/39.105/34.616，34为7.546/8.584/6.799，
+38为20.312/23.821/25.419，73为17.483/9.724/5.669。task73的KV相对H改善7.759°保留，
+仍逊常量且变化噪声更大；29的KV轴角稍低但倾角AE18.625→27.415°更差，38没有KV优势。
+固定八条完整手轴曲线全部已查看：29持续大转腕、38中等变化两头均低估；73 H后段预测了标签没有的明显倾斜。
+这只是单位轴曲线，不是teacher接触/RGB抓持真值或policy控制。新视频task20 H8.589°/KV16.749°及全部其它不利task保留。
+
+实际联系是原K/V经probe query混合和原残差/MLP成为H，再用hbar及差分供Writer。
+本次直接轴监督head仅测这两个合法接口的有限可读性，不测FM信用怎样学习适用关系、写成LoRA并改变自身动作。
+H在原task新视频可读，降低“一般手轴信息在H已丢失”的优先级；KV更低拟合却无跨视频/29与38动态优势，
+没有取得新增视觉入口的本项依据。四task仍保留有限head、500更新、两视频/任务、输入宽度/token数与分布/优化解释；
+不能证明H无信息、完整SO(3)/操作知识已保留、task39根因或修复。停止本批，不据较好拟合重开旧入口/Writer/pose aux。
+
+唯一root /data1/user/ymdai/ember_runs/native_hand_axis_readout_20261006/；
+analysis/report.md、summary.json、metrics.json、per_clip/per_task/aggregate.tsv、comparison_summary.json、adverse_examples.json、
+per_frame.jsonl、axis_dynamics_heldout4.png及axis_mean_errors.png保留全部范围；manifest/labels/label_sources/events/sampler、
+136个features、两head250/500完整优化状态/训练行/预测/completion与CPU actual endpoint_checks全留存。
+源e876c22b native profile；首四worker-m误传__main__均模型加载前exit1、0科学帧，失败日志/费用保留。
+669d05a1纯module入口修复及unique claim，经6个CPU命令消费者通过；完整提取98bfaafc、head/终点评分cb66ba65，
+均clean pushed detached，不原地改冻结树，科学合同不变。实际唯一136clip/4382帧及500步各task16、四恢复消费者核验通过。
+
+chunk16/32/64/128实测19.43/20.83/20.69/20.88帧每秒，选128装整条最长93帧；四卡独立动态提取。
+head选物理512等于完整逻辑上限，首profile含冷启动不作倍比；H/KV正式500学习7.49/8.41秒，预测.76/.80秒。
+每launch双节点live、最多4卡/当次全局6/单节点6，低负载共驻不抢停他人；GPU-local NUMA独立world1、无NCCL。
+全部5个GPU launch含失败/加载累计.157376312完整GPUh/2且已退出；特征2.975524GiB，阶段root实占约4.295GiB，
+新增保守峰界6GiB/8（含源码/冻结/缓存/失败/tmp，非连续峰遥测），data1独立quota和容量前后原件保留。
+三专用模块与临时native observer参数退役、闭批launcher禁止后继，Git/frozen/原件保留。
+最终Git推送、工程worktree清理、资源释放、实际耗时与唯一main回执见completion/launch；交回窗口后由main独立科学消费，
+本实验session无head/层/seed扫描、新Writer/pose/prefix/dP/Reader/fresh400/RL/Test或下一批授权。

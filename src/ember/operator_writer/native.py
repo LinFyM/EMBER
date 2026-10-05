@@ -130,15 +130,12 @@ class _NativeFrameCall(nn.Module):
     """Wrap the policy so torch.func substitutes β in suffix and all 38 hooks."""
 
     def __init__(self, policy: nn.Module, names: tuple[str, ...], probe: torch.Tensor,
-                 prefix_change: bool = False, *, observer=None) -> None:
+                 prefix_change: bool = False) -> None:
         super().__init__()
         self.policy = policy
         self.names = names
         self.probe = probe
         self.prefix_change = prefix_change
-        if prefix_change and observer is not None:
-            raise ValueError("native observers must have one owner")
-        self.observer = observer
 
     def forward(self, frames: torch.Tensor, tokens: torch.Tensor, token_mask: torch.Tensor):
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks, resize_with_pad_torch
@@ -147,7 +144,7 @@ class _NativeFrameCall(nn.Module):
             raise ValueError("teacher needs synchronized actual dual RGB")
         core = self.policy.model
         bridge = core.paligemma_with_expert
-        observer = self.observer
+        observer = None
         if self.prefix_change:
             from .prefix_change import NativeAttentionCapture
             observer = NativeAttentionCapture(bridge)

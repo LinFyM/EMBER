@@ -1,3 +1,11 @@
+## 2026-10-06 实验session封口：冻结手轴有限读出完成
+
+唯一native_hand_axis_readout_20261006固定136clip/4382帧与两head500已完整完成，findings§345保留终点、常量/动态对照、反例与局限。
+KV较低拟合误差没有成为新视频或29/38动态优势；H同task新视频可读，四个head留出task两头仍弱，不能归因H独有信息丢失或控制修复。
+专用运行面退役，原件/heads/Git/frozen留存，资源费用与一次回报见唯一root completion；实验session停止并交回窗口。
+无下一批执行授权或active模型/训练合同；main独立消费后在Owner持续授权下继续科学判断，不把本批封口视为Owner停工。
+下方active/design/待派发仅属此前时点，不恢复。
+
 ## 2026-10-06 当前分析：辨识具体可见准备信息在原生入口中的保留
 
 L/R读取族关闭及完整反例保持；findings§342进一步约束用同task跨episode平均简单解释转腕缺口。

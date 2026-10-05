@@ -103,6 +103,8 @@ def visible_coverage(env, observation, *, verify=False):
     assert (f >= 0).all() and (f <= 1).all() and (f.sum(0) <= 1.000001).all()
     return names, f, dict(camera_names=['agentview','robot0_eye_in_hand'],
         source='current own sim visual segmentation, geom type/id -> free-body descendants',
+        entity_root_body_ids={n:roots[n] for n in names},
+        entity_geom_ids={n:g.tolist() for n,g in zip(names,groups,strict=True)},
         decoder='native robosuite segmentation ID RGB buffer; explicit int32 decode for NumPy2',
         sensor_convention=macros.IMAGE_CONVENTION, canonical_rotate180=True,
         resize='native bilinear256->224, align_corners=False; avg14x14->16x16',

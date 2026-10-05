@@ -10,7 +10,9 @@ e876c22b已集成push，clean detached frozen_features实际单卡启动原合�
 拟合1940/评估2442、136clips/4382帧与canonical RGB源元数据核对通过；标签仍未读，完整提取及head500尚未运行。
 现场双节点检查后选gpu02/0低负载共驻，约45GiB余量，own0→1、全局6/单节点6上限；原件与实际命令/退出费用在root launch。
 原最长93帧实测chunk16/32/64/128分别19.43/20.83/20.69/20.88帧每秒，选128；两图K/V均原生BF16，预计特征2.975GiB，保留H原FP32。
-同e876c22b冻结来源在gpu02物理0/1/2/3实际启动4个独立long-first提取worker；own0→4、全局6/单节点6，低负载共驻，不等待凑空卡。
+首次四worker启动因子进程-m误传__main__，四worker均在模型加载前exit1、0科学帧；失败及0.013565完整GPUh保留。
+已定位纯启动接口，改明确module name；同次核head子进程同类入口，6个实际命令构造消费者CPU通过，0额外模型/环境/科学样本。
+动态claim发布后保留，避免并发check/claim间重复取得同clip；模型/input/标签/loss/面板不变。修复将在新clean pushed detached冻结中执行，不改旧树。
 两head的共享初值、真实token geometry、梯度、Rodrigues、task/clip等权、动态/空组/常量信息墙CPU消费者检查通过；H264451/KV198915参数。
 完整提取退出后才读同帧train姿态标签、生成两头同一事件列表、profile每头至多两更新并复位；500是唯一终点评估。普通工程由执行者闭环。
 专用接口在整批退出后退役，原件/Git/frozen/head恢复状态留存；整批一次回main并交回窗口，无下一批授权。

@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：main消费读取阴性与跨任务反例
+
+findings§340直接核父/L/R原400、实际算子与被动作用，保留161/158/159及能力交换，停止扩大本冻结内容读取族。
+没有已验证强条件控制器可用于推断LoRA压缩上限；R局部作用依赖Value/key的联合变化，边际均匀、小RMS或非零梯度不单独定位根因。
+§341只读既存task23四模型200条连续trace：T/L/R仍0，C900 init38/teacher16已有1例完成且腕倾角最大15.81度；
+task29三臂相似提前转腕却仅L新增完成，阻止把task39腕姿态差别当作完整问题的统一答案。
+无新模型/环境/GPU/训练或held教学特权；当前没有新active设计，main继续科学推导。
+
 ## 2026-10-06：强T固定内容的两种读取均完成，执行时软读取未获得完整增量
 
 按[固定合同](designs/query_conditioned_transition_read_diagnostic_20261005.md)完成同父T2340、同新J/Q/E初始函数的L预编译LoRA/R执行时读取，见findings§339。

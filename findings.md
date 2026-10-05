@@ -8058,3 +8058,53 @@ T与C都已保存全50条自身continuous；main先读init0见两者均向微波
 当前只消费已保存自身执行证据，合法teacher RGB若非解释现存图所必需也不扩读。不恢复旧in-policy/flow/角色辅助或新的位置oracle。
 实验session整批一次回报后停止新增分析，main独立结合完整历史裁决；没有从本读回自动晋级新架构/训练的授权。
 main保持canonical tracked/Git独占，接收方仅写指定临时目录；预期若已有分析已完整回答，直接索引原件与缺口，不重复计算。
+
+## 330. task39已有行为不是统一迟取杯；关门示范本就包含移杯，不能把训练动作误读为无关错误（2026-10-05）
+
+§329只读批次完整交付T2340/C900各50条held与T1800/C900各4条train73，共54437个自身物理样本。
+main阅读实际轴向/高度/开合计算代码和定义，查看全部四条full双RGB的overview，并结合先前直接读取的T/C init0 continuous。
+保留只有两个held init0有full RGB、其余98为compact的真实边界，不给全部轨迹补视觉阶段标签。
+
+| 描述量 | T2340 task39 | C900 task39 |
+| --- | ---: | ---: |
+| 首次高于自身初始杯高3cm：中位数/范围，步 | 93.5 / 57–446 | 79 / 56–313 |
+| 首次抬高后朝fixture body轴额外最大进展中位数，cm | 17.48 | 21.26 |
+| 全程最大轴向进展>10cm | 45/50 | 45/50 |
+| 抬高后出现负gripper命令 | 47/50 | 47/50 |
+| 峰值后高度回落至初始+3cm以内 | 44/50 | 41/50 |
+| 杯In / 微波炉Close曾成立 | 0 / 0 | 0 / 0 |
+
+这些是实际自身运动/命令，不是接触、抓持、释放或炉腔目标region的真值。轴向只取初始杯指向fixture body原点的XY方向；
+goal_operands的炉腔ranges为空，原件没有权威炉腔site pose/extent、门关节、动态杯姿态或contact，不能用body原点替代。
+T/init7首次抬高446步、轴向最大3.09cm；T/init29则59步即抬高、最大轴向仅.21cm、终态−21.87cm。
+C/init46首次313步、终态仍高10.95cm且之后无负开合。它们共同排除把全部失败压成一种慢取杯或不开爪的故事。
+
+有full RGB的T/C init0均先取白黄杯、向微波炉搬，后长期在门/外侧附近互动，门有运动而In/Close始终未成立。
+T首次抬高/后续首次负命令/峰值后回落分别58/195/359步，C为67/275/293步。
+图像支持这两个案例存在真实后续操作困难，但没有由这些图确定全部行的碰撞、姿态、区域误认或过早关门根因。
+
+训练73为“close the microwave”；T参照是1800，不能写成2340同点。init32–35八行全部先抬白黄杯7.07–13.49cm，
+最后把它沿fixture轴向外搬7.10–16.88cm；Close成功T为3/4、C为2/4。两个full init32显示移杯后门侧操作，
+分别153/381步Close成立。39/73的BDDL fixtures/objects/regions/init相同，但八条train的保存初始observables均不匹配held50任一行；
+因此是有限行为参照，不是同状态反事实。held多数向炉搬杯，训练则向外移杯，不支持held完整复制同一close轨迹的说法。
+末段EEF范围近似也不证明同一内部控制器；相关经验距离不升级为炉门region、操作阶段或神经根因。
+
+main进一步核对这八条训练条件实际使用的四条教学demo10/17/44/47，只读合法train73的两路RGB。
+按原180度rotate、stride5及真实末帧，共39/50/40/37个位置，直接查看全部166个位置的两相机画面。
+四条示范本身都先把白黄杯从初始位置移开并放回桌面，再靠近炉门完成关门；没有读取其动作、state、pose或reward。
+所以不能将训练策略的移杯直接称为误学，也不能把“Close目标”的演示理解为纯粹空手关门技能。
+这不证明移杯是物理上必需的先决条件；当前没有“不移杯能否关门”的反事实，也不因此新增此类测试。
+
+这一事实影响方法解释：最终语言/BDDL目标不足以列出视频中的全部操作角色和准备步骤，静态目标标签不能天然成为每帧作用语义。
+同时，held与train的完整条件及自身状态不同，方向差异不能单独归因视频，不能据此宣称已学会任务组合。
+当前已排除几种过强的行为解释，尚未把具体失败定位到地址、Value、源模型或优化；不以这次描述性读回直接指定新辅助或架构。
+
+原始held来自operator_read_write_learning_20260928/continuation2340/T/evaluation/2340/correct400及
+conditional_read_write_continuation900_20261002/conditional_read_write/evaluation/900/correct400的results/continuous_traces/trajectories。
+原train来自operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/T/evaluation/correct144及
+conditional_read_write_continuation900_20261002/conditional_read_write_seen/evaluation/900/correct144；以上root均为/data1/user/ymdai/ember_runs/。
+原教学是canonical dataset revision f13aa24a3da8c43c7225569f28c562979fa0e35a的
+libero_90/KITCHEN_SCENE6_close_the_microwave_demo.hdf5，限定上述四条obs/agentview_rgb与obs/eye_in_hand_rgb。
+临时CPU脚本/逐行索引/632自身画面及main新增332教学画面联系图在.codex/tmp/task39_existing_readback_20261005/；
+长期事实以本段及这些原始formal/data资产为准，临时目录不成为唯一证据。
+实验session成本约31.8分钟、22.7秒主入口、8.52MiB；main的四视频RGB补读另计为CPU只读，无新forward/环境/GPU/梯度/Test。

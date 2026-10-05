@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-05：task39已有轨迹读回完成，main核关门教学的实际移杯步骤
+
+findings§330记录100条held、8条train的自身连续行为与全部四行full RGB；0新模型/环境/GPU。
+多数held较早抬杯并朝fixture方向搬运，In/Close全无；98行缺full RGB，不用两个init0给全体定视觉失败阶段。
+训练Close参照八行也先搬杯。main直接查看四条实际train教学的166个stride5位置，确认示范本身先移杯再关门，
+因此不能把训练搬杯当作无关误学；也不能从Close谓词把整条视频缩成纯关门技能或声明移杯物理必需。
+held与train的搬杯方向不同，初态亦不配对，不支持完整close轨迹复制或同一神经控制器的结论。
+原件路径、反例、缺项及信息墙见findings；临时CPU输出不作为唯一长期证据。main继续机制取舍，无新模型/训练合同。
+
 ## 2026-10-05：main独立消费可见读取干预，关闭局部修补并继续机制研究
 
 findings§327补核实际attention代码、36行行为、关键三臂连续轨迹和双RGB；没有新增计算。

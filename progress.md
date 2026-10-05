@@ -6,16 +6,16 @@ main直接核实际重分配源码、36行行为表及C原正例的三臂continu
 固定读取修补关闭：3/2/2且无新增成功；C正确路由仍未获取七个原失败格的butter，唯一正例首次抬高146→247步。
 不将这101步延迟及剩余短时窗解释为已确诊放置问题，不扩大horizon或追加更强对象读取oracle。
 source_mechanism只读历史审计已结束，main补核10/4双域实际A坐标的完整消费者与阴性，不将“对应监督”改名重试，见findings§328。
-当前下一项为task39已有行为读回：T2340/C900各50个continuous与可用full RGB，结合已有训练侧同场景关微波炉参照。
-固定研究正确取杯后的目标区域、搬运与操作衔接；不预设它是唯一根因，不把轨迹相似当同一神经控制器的证明。
-预计30–45分钟，0新模型/环境/训练/GPU，不读held teacher action/state/pose/reward；只消费已保存自身行为和既有train原件。
-实验session只写.codex/tmp/task39_existing_readback_20261005/，上限50MiB，main保持tracked/Git独占；整批一次回报后直接消费。
-main已先核T/C init0连续原件并看C的八时刻双RGB：确有正确取杯与向炉移动，后来处于门侧；仅为单例线索。
-尚未选定后继架构或active design；不自动延长horizon、恢复RL、补rollout或加辅助目标，具体边界见findings§329。
+task39已有行为读回已于10:54UTC整批完成：100条held、8条train、54437物理样本及全部4行full RGB，约31.8分钟、8.52MiB。
+main已读实际统计代码、连续定义与四条full RGB；多数较早抬杯并朝fixture搬运，不能统一归为慢取得/不开爪/复制关门。
+main额外只读train73的四条对应教学RGB demo10/17/44/47，166个stride5含末帧位置：它们本就先移杯再关门，不能把训练策略移杯判为误学。
+完整事实与边界见findings§330。没有新模型/环境/GPU/梯度或held特权读取，实验session已停止，main保持tracked/Git独占。
+当前main核完整历史中的视频/自身状态功能读出与LoRA编译；尚未选定后继架构或active design，不自动恢复Reader、RL或辅助目标。
+临时读回位于.codex/tmp/task39_existing_readback_20261005/，所有长期事实同时指向原始formal trajectories/continuous及train HDF5。
 Queue 01a10b96-46e2-7200-9424-99e5ec2d85d0已送达实验session01a10a98-6d4b-7d61-b12c-da38a628cb45；
-接收轮01a10b96-46e6-74e0-8f15-f27a762bf09e已明确接受并实际读取，状态inProgress。不是仅排队或口头计划。
+接收轮01a10b96-46e6-74e0-8f15-f27a762bf09e此前明确接受并实际读取，现已完成回报，不能据旧inProgress恢复等待或执行。
 原生snapshot查询未及时返回，已结束该只读等待并用既有app-server只读接口核实；没有重发任务、改服务或创建新session。
-科学改动须有具体原理与有界合同，不以保持忙碌为投入理由；main等待整批回报后直接科学接续，不逐阶段轮询。
+科学改动须有具体原理与有界合同，不以保持忙碌为投入理由；main已直接消费整批并继续科学取舍，不逐阶段轮询。
 
 ## 2026-10-05 可见物体读取36full执行、读回与专用运行面退役
 

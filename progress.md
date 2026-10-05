@@ -1,3 +1,16 @@
+## 2026-10-06 实验session实际承接task23原命令抽屉状态重放
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45全文读取83行合同与findings§349–350，
+从main4b0a30bb隔离codex/task23-drawer-state-replay-20261006，接管canonical tracked/Git独占窗口；main停止并发写。
+实际承接2026-10-05T22:55:54Z，硬deadline2026-10-06T00:55:54Z；预计45–90分钟，硬2h wall/16完整CPUh/0GPU/1GiB，最多8 CPU workers。
+现场strg01 data1独立实占1266640628KiB/软限2147483648KiB、共享约81TiB；CPU负载约3、可用内存331GiB；个人du1297315536896B，项目486691762176B与既有runs749534547968B已实测。
+原T2340/C900 task23全100行来源已核，scene/teacher/env与policy种子映射相同；C/init38原成功274步，余下99行300步，保留实际长度。
+唯一root /data1/user/ymdai/ember_runs/task23_drawer_state_replay_20261006/。复用scene/passive trace/原task39 CPU消费者，仅添加三层真实site-joint注册与接触读取。
+无模型/policy/Writer/LoRA/GPU/CUDA/render、held教师特权/Test、物理/命令/目标改变或再次settling；Open仅描述、官方In唯一goal。
+423行本批专用consumer/dispatch，经100条原件shape/实际长度/原In-only和零物理CPU检查通过；专用入口整批后退役，既有scene/采样接口保持。
+先T/C init0纯原动作重放准入，两条计入100；全部行EEF/碗最大位置差≤1cm及完整In相同才作同过程解释。
+工程与运行由实验session闭环；只在整批完成或真实科学/预算边界一次回main并交回窗口，不阶段通知或自动后继。
+
 ## 2026-10-06 main登记task23已有执行的抽屉状态补读
 
 findings§349实际核两条完整held教学RGB及T/C init0原120次双RGB；教学包含开柜，执行缺三层动态关节记录。

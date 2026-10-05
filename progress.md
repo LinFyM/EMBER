@@ -1,6 +1,8 @@
 ## 2026-10-05 visible_object_readout由实验session实际接手
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已接受唯一active design，独占canonical tracked/Git写窗口；main不并发写。
+当前实际运行0cf81778 clean pushed detached frozen_attempt3；gpu02的3/0/1共驻三臂，PID3346267/3346269/3346271。
+已完成真实谓词与NumPy2原生分割解码CPU核验；尚无闭环完成结论。下方两次启动/退出为已保存失败历史。
 三臂已在gpu02的1/7/3共驻启动；ba4629e1首批因新消费者把运行时小写in写成In，在首query前全部退出并释放。
 全部加载/失败成本.10053完整GPUh，原件保留root/failed_attempts/attempt1；按真实parsed goal修复并CPU核实际BDDL后，
 2273b0a3 clean pushed detached frozen_attempt2已在gpu02的7/3/2共驻重新启动（PID3284094/3284099/3284101）。

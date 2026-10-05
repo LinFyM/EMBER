@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：main核连续关回幅度与单开教学的收尾边界
+
+findings§352只用99条准入原数组，开后未搬且末态退出Open的T5/C17峰到末态损失中位9.41/14.28cm，
+不是统一小回弹；C/init8后段持续Open且碗完全不动，以及开后搬碗仍未In的反例同时保留。
+原train51的50条数值与固定四条完整RGB收尾、42初态Open的BDDL说明单项成功不能拼成完整接续能力。
+其它训练/source任务已有衔接，旧task32同谓词不同续行能力及前后段增量边界保持；未据此确诊单一神经根因或启动后继。
+main描述原件在`.codex/tmp/task23_existing_sequence_readback_20261006/main_consumption/`，无新模型/环境/GPU/held教师特权/Test。
+
 ## 2026-10-06：task23原命令100条补齐抽屉状态，99条准入、一行In时序边界保留
 
 findings§351与[合同](designs/task23_drawer_state_replay_20261006.md)记录T2340/C900各50条纯CPU原动作重放，零policy/GPU/render/额外settling/物理干预/held教学特权/Test。

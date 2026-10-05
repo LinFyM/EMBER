@@ -49,7 +49,9 @@ def contracts(arm):
     run = deepcopy(originals['C900'])
     run.pop('task16_condition_context_crossover',None)
     run['git'] = dict(commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),dirty=False)
-    run.update(output_dir=str(ROOT/'evaluation'/arm),mode='frozen_diagnostic',role='privileged_analysis',
+    run.update(schema_version='ember_visible_object_readout_intervention_v1',
+        output_dir=str(ROOT/'evaluation'/arm),mode='frozen_diagnostic',role='privileged_analysis',
+        contract_reference=dict(path=str(ROOT/'evaluation'/arm/'run_contract.json')),
         visible_object_readout_intervention=dict(arm=arm,cases=panel(),gradient_use=False,qualification=False),
         command=['scripts/visible_object_readout.py','--arm',arm])
     run['parallel'].update(envs_per_replica=12,worker_count=1,replicas_per_gpu=1,physical_gpu_count=1,

@@ -3,6 +3,21 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-05：提前转腕差别跨固定教学成立，现有训练也包含大幅旋转控制
+
+findings§336消费8条held/4条train教学RGB与100条正常自身轨迹：held搬杯前转斜的外观差别并非单条偶然，
+T/C起点至初接触却多接近向下；同scene/noise MT50也近似。三维teacher角度、真正夹持面及机械必要性仍未知。
+main在§337只读36个授权train task×50 episodes/284735帧：task29提前倾角中位约62°，task34/73通常近竖直；
+T1800/C900在task29的已有自身轨迹能大幅转腕，但均仅2/4成功，MT0/4，不把姿态模仿当完成。
+这排除无任何训练支持/完全不能执行的简单解释，未证明task39精确关系已覆盖或视频因果成立。
+审计与main新增读取全部CPU、无环境/model/GPU/梯度/held教学特权/Test，原件索引及正反例见findings。
+
+§338登记[固定强T的读取方式诊断](designs/query_conditioned_transition_read_diagnostic_20261005.md)：
+同父T2340、同原转移内容、同零作用初值与新参数规模，比较预编译完整LoRA和执行时逐层非线性读取。
+后者不符合EMBER部署形式，只检验内容调用的有限机会，不能据此宣布Compiler根因或恢复旧蒸馏课程。
+原36-task同流各270更新、唯一终点各400及36训练参照；预算与全部停止线见design。
+此处仅登记科学选择，实际派发/承接/运行只看progress；没有用尚未执行的部分更新性能结论。
+
 ## 2026-10-05：固定200条CPU炉门反事实完成，取消碰撞未修复入炉
 
 按[合同](designs/task39_door_contact_replay_20261005.md)完成T2340/C900各50条原命令在正常/仅门child无碰撞物理下的200条完整重放，见findings§333。

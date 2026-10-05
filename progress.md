@@ -34,6 +34,15 @@ OOM当时包含16个EGL环境的非PyTorch显存，不能只按CUDA reserved判�
 L所选卡预启动约45GiB余量、R迁移后约40/45GiB；合计4卡，无附加“两臂最多两卡”限制。25full/811compact总836新闭环合同不缩减。
 终点评测仍未完成，不报告未验证400分数或EMBER资格。所有加载/失败/并行均计费；预算和deadline保持，直接等退出并推进既存原件CPU读回。
 
+### L唯一终点完整400已退出并读回
+
+L270 validation400 exit0、158/400；强父T2340为161/400，严格配对R144/G14/L17、churn31、Jaccard .822857，breadth均6/8。
+task31为24→29，task3为45→41，task26为36→33，其它完整分布见root analysis/L_endpoint_readback；保留新增与丢失，不以局部长任务增益代总分。
+task39仍0/50，50行均出现中心抬高>3cm但native In全0，最近真实box距离中位11.875→12.576cm；首次正gripper命令前最大倾角中位6.634→6.370°。
+task16仍5/50，butter中心抬高行12→9、orange 21→21；固定init0 full可见搬orange，未完成butter目标。
+这些是自身运动/原生谓词，不作抓稳/必要姿态真值。L全部400逐行continuous/pairing/真实box检查通过，8full全部保存；固定16/39 init0完整双RGB已查看。
+L整轮含加载实际1.65425完整GPUh，完整命令/退出/worker/raw/effects保留。R仍在同冻结270完整400执行，尚不裁决两读取方式；不恢复任何旧臂或自动后继。
+
 ## 2026-10-05 教学抓取方式审计已消费，登记固定强T的读取方式比较
 
 实验session只读审计已整批完成并停止，main直接核关键RGB/坐标定义/原连续轨迹；findings§336记录全部边界。

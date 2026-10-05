@@ -12,7 +12,12 @@ e876c22b已集成push，clean detached frozen_features实际单卡启动原合�
 原最长93帧实测chunk16/32/64/128分别19.43/20.83/20.69/20.88帧每秒，选128；两图K/V均原生BF16，预计特征2.975GiB，保留H原FP32。
 首次四worker启动因子进程-m误传__main__，四worker均在模型加载前exit1、0科学帧；失败及0.013565完整GPUh保留。
 已定位纯启动接口，改明确module name；同次核head子进程同类入口，6个实际命令构造消费者CPU通过，0额外模型/环境/科学样本。
-动态claim发布后保留，避免并发check/claim间重复取得同clip；模型/input/标签/loss/面板不变。修复将在新clean pushed detached冻结中执行，不改旧树。
+动态claim发布后保留，避免并发check/claim间重复取得同clip；模型/input/标签/loss/面板不变。修复已集成push并在98bfaafc新clean detached frozen_run执行，未改旧树；四worker已exit0、136唯一clip/4382实际帧，无重复/遗漏。
+完整保留H FP32与K/V BF16，特征实际2.975524GiB；含profile/零帧失败/四卡加载及完整提取累计0.133126完整GPUh。
+head固定500来源cb66ba65已集成push并clean detached frozen_heads。64个fit clips/1940同帧标签实际已读；eval72/2442标签仍不存在，延后至两头500结束。
+两头各2个可丢弃profile更新已退出，实际损失.08298679配对一致；选择完整逻辑512的物理512，H/KV reserved峰.422/1.859GiB；首profile含冷启动，不作夸大的吞吐倍比。
+现场再次核两节点后，gpu02/0/1独立world1两头fresh500已发起，GPU-local NUMA由原owner初始化、无NCCL；每更新32task×16同一event流，250仅恢复点、500唯一完整预测。
+加载/profile/失败/提取计费在resources_ledger；微小BF16/TF32差异不要求逐bit一致，不增加case、head/层/seed扫描或任何policy/Writer学习。
 两head的共享初值、真实token geometry、梯度、Rodrigues、task/clip等权、动态/空组/常量信息墙CPU消费者检查通过；H264451/KV198915参数。
 完整提取退出后才读同帧train姿态标签、生成两头同一事件列表、profile每头至多两更新并复位；500是唯一终点评估。普通工程由执行者闭环。
 专用接口在整批退出后退役，原件/Git/frozen/head恢复状态留存；整批一次回main并交回窗口，无下一批授权。

@@ -1,3 +1,12 @@
+## 2026-10-05 当前状态：冻结可见物体读取批次关闭，交回main独立消费
+
+登记的visible_object_readout_intervention_20261005合同已完成固定36full与旧12行读回，专用入口/hooks在本提交退役；没有active实验。
+parent/butter/orange为3/2/2，两个路由均无新成功、各丢失C900同一旧正例；T2340两正例均保留。细节及边界见findings§326。
+本项特权重分配改变真实Value混合，却未修复新butter获取/入篮；不自动启动同类loss、架构、强度或面板扫描。
+原件与最终Git/费用/释放/交接记录在/data1/user/ymdai/ember_runs/visible_object_readout_intervention_20261005/。
+实验session整批一次回报后交还canonical tracked/Git给main；main独立科学裁决，没有下一批运行授权。
+旧S=0、role/crop学习、扩数据、prefix修改及formal fresh继续保持未选/关闭。以下active登记及启动计划仅属此前时点。
+
 ## 2026-10-05 当前工作：冻结策略的可见物体读取因果辨识
 
 36-task只读审计完成并由main结合四套seen144原件消费，见findings§324。

@@ -1,3 +1,17 @@
+## 2026-10-05 可见物体读取36full执行、读回与专用运行面退役
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成固定12case×3臂全部36full及旧12行CPU读回；无active新增计算。
+parent/butter/orange成功3/2/2；C900八格1/0/0，T2340四格皆2，两个路由各R/G/L=2/0/1，均丢失scene46/teacher40/noise46。
+butter路由减少部分错误orange搬运，但未新增butter获取/入篮；C唯一原正例仍抬butter约32.3cm而未In，全部正反例保留。
+1907次真实规划、343260层/flow记录完整；两receiver始终可见，实际delta_y非零，不能用不可见或只改善rho解释本结果。
+实际质量转移及完整行为原件/每case表/12组三臂双RGB在唯一root /data1/user/ymdai/ember_runs/visible_object_readout_intervention_20261005/。
+全部失败/加载/无模型CUDA核验计入.4024976完整GPUh/2；退役清理前ROOT实占4.1521GiB（新增保守峰4.2GiB/8），两节点GPU和本批PID已释放。
+有效parent的0cf81778 frozen_attempt3保留不重跑；两路由为fda47bae frozen_attempt4，实际公式/attention/denoise/LoRA不变。
+三次工程失败原件保留；最终最小概率−4.27e−8对应覆盖求和1个FP32ulp，原公式未clip/renorm，检查采用既有3e−6容限。
+本分支已删除三个专用入口/hooks文件并加入retired-runtime guard，保留Git/frozen/原始行为；最终集成与交接身份以root completion为准。
+整批Git封口后仅一次带来源回报main并交还canonical/Git窗口，main独立消费；无自动扩面板/训练/formal400/Test或下一批授权。
+详见findings§326、research_history及root analysis/readback.json、per_case.tsv、resources.json。以下接手/启动文字均为历史时点。
+
 ## 2026-10-05 visible_object_readout由实验session实际接手
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已接受唯一active design，独占canonical tracked/Git写窗口；main不并发写。

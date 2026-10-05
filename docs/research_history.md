@@ -3,6 +3,22 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-05：冻结可见物体读取36full完成，专用运行面退役
+
+按[合同](designs/visible_object_readout_intervention_20261005.md)执行固定C900八格与T2340四格、三臂36full，并读取旧12行。
+实验session事实见findings§326；同批parent/butter/orange成功3/2/2，两个路由皆R/G/L2/0/1，丢失同一C正例、保留两个T正例。
+butter路由抑制部分错误orange搬运，未新增butter获取/入篮；已有C正例仍抬butter而未In，错误路由也未推翻T两个正例。
+实际m、delta_y、343260层/flow记录及所有不利行为保留；两个receiver始终可见，不能把结果缩成rho或不可见identity。
+一次固定特权干预未取得完整修复，不定位唯一神经根因，不当部署方案或EMBER成绩，无自动续训/扩大/扫强度授权。
+
+原件root /data1/user/ymdai/ember_runs/visible_object_readout_intervention_20261005/，完整rows/full RGB/actions/continuous、
+analysis/readback.json、per_case.tsv、effect_summary.json、paired_RGB/与resources.json可复核。
+原source/bank/scene只读复用；parent0cf81778/frozen_attempt3、路由fda47bae/frozen_attempt4的实际公式与策略计算相同。
+差别仅数值guard/记录：保存普通FP32覆盖舍入带来的最小概率−4.27e−8，未clip/renorm或修改干预公式。
+三次接口/兼容/零容限失败保留；整批.4024976完整GPUh/2，ROOT退役前4.1521GiB、新增保守峰4.2GiB/8。
+各臂真实batch12打包全部合法格，多卡共驻最大3/现场cap6；全部GPU/PID已退出，三个临时源码/入口与hooks退役，Git/frozen保留。
+实验session整批一次回报后交还canonical/Git写窗口，main独立消费；没有下一批架构或运行授权。
+
 ## 2026-10-05：角色支持审计完成，选择冻结物体读取干预
 
 Owner对根因方案的追问后，main已撤回S=0作为下一方法推荐（findings§322–323）；缺失消融不能承担EMBER原有性能缺口的解释。

@@ -7926,3 +7926,49 @@ T31正确完成butter+cream入篮的既有反例仍保留，故“未见butter-b
 只有真实获取和完整入篮的配对作用才能支持这一接口的有限修复价值；attention数字改善不够。
 正结果不自动接正式重训，阴性也只裁决实际干预；不再扫强度、层位、时间、mask或追加更强oracle保护假说。
 本项服务于决定是否继续投入对象读取修复，不能代替完整性能超越强MT，不能把C900的结构默认保为核心。
+
+## 326. 可见物体质量重分配改变实际Value，却未修复新butter获取与完成（2026-10-05，实验session事实交付）
+
+按§325唯一合同完成C900八格与T2340原/交换init2、4四格，parent/route_butter/route_orange_juice各12full。
+以下是实验session从36个完整原件、旧12行及全部三臂RGB抽帧直接读回的事实；main仍须独立消费和判断，不指定后继架构。
+
+| 固定面板 | 旧原件 | 同批parent | butter路由 | orange_juice路由 |
+| --- | ---: | ---: | ---: | ---: |
+| C900八格 | 1/8 | 1/8 | 0/8 | 0/8 |
+| T2340四格 | 2/4 | 2/4 | 2/4 | 2/4 |
+| 全12格 | 3/12 | 3/12 | 2/12 | 2/12 |
+
+同批parent与旧原件的success-set完全重合，但连续行为存在正常分叉：旧六条C搬orange、另一条搬ketchup，
+新parent只有五条orange body rise>3cm，两个格没有该抬高；T init4原布局也由旧未搬起变为新orange入篮。
+不以重现旧运动/步数为停点，不挑seed补跑；干预只与同批parent配对，旧行并列保留。
+两个路由各R/G/L=2/0/1、churn1、Jaccard2/3；共同丢失C900 scene46/teacher40/noise46，共同保留T init2原布局及init4交换布局。
+
+butter路由把C的orange抬高>3cm例由5/8减少到2/8，orange native In ever由4/8减少到2/8，
+但七个原butter失败格没有新增butter搬运/入篮。C唯一原正例在正确路由后仍抬butter约32.3cm，未完成In；
+RGB显示停在篮外，故不能把取得正确对象当完整修复。错误orange路由的C为六条orange抬高、五条orange In ever，butter皆未抬起/入篮。
+T init2交换及init4原布局在三臂都搬orange入篮；两个T正例在错误orange路由下仍搬butter完成，
+init4交换的终止步数parent/butter/orange为157/127/249，步数不是新性能门槛。
+全部对象位移/高度、T+1 body/EEF/quat/gripper、物理动作、native In和双RGB保留；无contact/grasp传感记录，中心/3cm仅作描述。
+
+实际自身sim可见visual geom覆盖f对应真实双相机512个patch；六食品实体包含干扰物，robot/basket等不转移。
+所有1907次规划均覆盖18层/8head/50slot/10flow，共343260层/flow紧凑记录；butter及orange每次均可见，未发生live不可见identity分支。
+CPU零可见mask核验identity通过；首query实际render RGB与保存policy RGB完全对应，逐实体body/geom编号及token layout可复核。
+逐case平均转移m为butter .00475–.01393、orange .00307–.00971；实际delta_y RMS/原attention-output RMS为
+1.93–5.67%与1.26–3.74%，这是当前query的局部Value混合变化，不是动作改善率或因果贡献率。
+image质量最大误差2.39e−7、概率和最大误差3.58e−7、非image差0，正常dtype与公式未改。
+最终最小概率−4.27e−8与donor覆盖最大1.000000119对应普通FP32舍入；不宣称逐bit精确非负。
+没有clip/renorm或新增强度，原实际公式保持；仅把零容限guard改为已有3e−6 FP32容限，完整min/覆盖上界在原件。
+
+因此该固定全层覆盖质量重分配确有部分行为作用，却没有修复新目标获取/完整入篮，降低其作为主要修复的依据。
+它仍非完美对象特征分离：共享patch和prefix Value上下文混合保留；不由本阴性宣判所有视觉绑定无用或定位唯一神经根因。
+不把本特权消费者当部署Writer/EMBER成绩，按预注册停止线关闭，不自动加loss、扫层/head/强度/时段或更强oracle。
+
+唯一原件root：/data1/user/ymdai/ember_runs/visible_object_readout_intervention_20261005/。
+analysis/readback.json、rows.jsonl、per_case.tsv、case_behavior_table.json、effect_summary.json、paired_RGB_sources.json及resources.json给逐case映射。
+parent读取代码0cf81778/frozen_attempt3，路由fda47bae/frozen_attempt4；两者实际redistribution/_attention/_denoise/_state相同。
+源bank/scene/交换及旧attention owner复用，无Writer/梯度/Test/teacher action/state/pose/reward读取；当前自身sim特权仅用于分析。
+小写in接口错误、NumPy2 uint8解码兼容问题及零容限guard失败均保留，三次失败.2171759GPUh；
+有效parent、完整路由、加载和小型无模型CUDA核验全部计入.4024976完整GPUh/2。退役前ROOT4.1521GiB，新增保守峰4.2GiB/8。
+物理batch12已打包各臂全部合法格，实测峰allocated10.757/reserved11.852GiB、规划queries/s约7.15/6.77/6.80，
+不存在更大的唯一合法batch，不加case/dummy填显存；Owner允许下直接多卡共驻，两节点现场上限6、实际最大3，无额外GPU特例。
+有效parent没有重跑，全部GPU/PID释放；三个专用源码/入口随本次集成退役、guard封闭，Git/frozen/原件保留。

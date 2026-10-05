@@ -99,7 +99,9 @@ def case_context(adapter,run,banks,arm):
             local['object_position_transport'] = dict(model='T2340',layout=case['layout'],schema_version=xy.TAG)
             slot['obs'],slot['object_position_transport'] = xy.apply(args['env'],slot['obs'],local,case['physical_init_state_id'])
             # Existing trace/capture began before the physical swap: reset the initial sample only.
-        states = (('In','butter_1','basket_1_contain_region'),('In','orange_juice_1','basket_1_contain_region'))
+        goal = args['env'].env.parsed_problem['goal_state']
+        assert goal == [['in','butter_1','basket_1_contain_region']]
+        states = tuple((goal[0][0],name,goal[0][2]) for name in ('butter_1','orange_juice_1'))
         slot['stage_predicate_states'] = states
         initial = tuple(bool(args['env'].env._eval_predicate(s)) for s in states)
         slot.update(stage_predicate_last=initial,stage_predicate_ever=initial,

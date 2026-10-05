@@ -7879,3 +7879,50 @@ Owner要求直接解释该候选是否符合要求、如何从理论层面解决
 将如何改变该因果链的连贯解释。不能把“可表示/更简单/可能更稳定/缺一个消融”换算成已针对根因。
 这不要求先百分之百确诊唯一根因才允许有界实验；至少需要受原件约束的具体致因假设、干预机制和可失败预测。
 本轮仅纠正方法判断，没有新实现、计算、派发或替代架构。
+
+## 324. 现成角色变化支持与实际控制已存在；不能由覆盖审计指定新修复（2026-10-05）
+
+有界CPU审计复用旧A_data_semantics、36-task谓词、机制§122–123与effective_label_consumers，补齐36行region/实体轴/消费者。
+原件为.codex/tmp/role_support_audit_20261005/；以下保留可长期引用的事实，不把临时目录当唯一证据。
+主讨论读取逐task表、实际BDDL的95/96/97 goal及四套seen144 raw rows；未调用模型/环境/GPU。
+
+完整主FM已有五组fixtures/objects/regions/init相同而goal不同的支持：20/21/22/25/28/29、42/43、51/55/56、62/64、95/96/97。
+这不是同一实际RGB/state的证明，旧95/96/97机器人初态不同的反例保留。八task角色辅助每组至多一个任务，不能移用完整FM的覆盖。
+400份原标签NPZ、7098保存帧含q[frame,entity,512]和45个实体槽；G/R自身loss对目标及可见干扰取相对密度，R教学项只消费目标q[:,0]。
+butter在43/96为正，15/17/19为可见负，43同时区分前butter_1负与后butter_2正；标签不是target-only。
+所有36中无butter→basket目标，既不能说从未见过/操作过butter，也不能据此确诊缺数据或扩大数据。
+六basket任务的同名target_object_region实际上分两组坐标；19的负butter与16的正butter共享局部BDDL区域，
+15的正tomato与16的负tomato同样共享区域，但完整对象池及其它位置不同，不能冒称图像反事实。
+本规格中的orange须准确理解为orange_juice_1。
+
+main从既有seen144逐行归约（每task4条，已训练teacher的有限面板）得到：
+
+| 场景/目标 | T1800 | MT300 | C450 | C900 |
+| --- | ---: | ---: | ---: | ---: |
+| 同scene95/96/97三种物体各入tray | 11/12 | 12/12 | 12/12 | 12/12 |
+| 其中96 butter入tray | 4/4 | 4/4 | 4/4 | 4/4 |
+| 六个basket训练task12/13/14/15/17/19 | 17/24 | 11/24 | 18/24 | 20/24 |
+| 全部原seen144 | 105/144 | 93/144 | 91/144 | 115/144 |
+
+来源：operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/{T,MT}/evaluation/correct144/results.json；
+conditional_read_write_fresh_20261001/conditional_read_write_seen/evaluation/correct144/results.json；
+conditional_read_write_continuation900_20261002/conditional_read_write_seen/evaluation/900/correct144/results.json。
+上述root均在/data1/user/ymdai/ember_runs/；逐行读取保存在临时main_existing_behavior.json。
+模型已经能在一些训练组合取得完整对象控制；该事实不能解释为何task16失败，也不能证明任意新组合能迁移。
+T31正确完成butter+cream入篮的既有反例仍保留，故“未见butter-basket原子目标所以完全不能”也不成立。
+
+这次审计排除了简单覆盖说法，没有找到唯一根因，不授权换八task名单重跑、扩大训练池或恢复S=0。
+
+## 325. 下一步直接干预实际物体读取，区分因果作用与角色分数（2026-10-05）
+
+主讨论选择一次冻结策略的分析实验，合同见docs/designs/visible_object_readout_intervention_20261005.md。
+问题是task16错误物体获取能否由实际视觉读取重分配修复；保持T/C、prefix及全部LoRA，不学习新辅助头。
+旧策略间attention移植的供体不保证正确角色，旧rho只规定跨层/头平均相对密度；它们没有直接实施本项的可见物体质量转移。
+按当前自身场景分割，把非接收可搬实体的patch覆盖质量转给接收实体，保持image总质量及本层其它token概率。
+实际改变量sum_p(delta attention_p * V_p)进入后续完整控制。正确butter与错误orange_juice路由共用公式并配parent。
+它含分析特权，不是部署候选；patch混合和冻结Value的上下文仍在，不能声称完美对象绑定。
+
+固定C900原八格和T2340原/交换init2、4四格，三臂36条完整闭环；预计2–4小时、硬2完整GPUh/8GiB。
+只有真实获取和完整入篮的配对作用才能支持这一接口的有限修复价值；attention数字改善不够。
+正结果不自动接正式重训，阴性也只裁决实际干预；不再扫强度、层位、时间、mask或追加更强oracle保护假说。
+本项服务于决定是否继续投入对象读取修复，不能代替完整性能超越强MT，不能把C900的结构默认保为核心。

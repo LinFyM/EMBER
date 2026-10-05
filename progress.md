@@ -1,4 +1,13 @@
-## 2026-10-05 训练角色支持只读审计已实际接手
+## 2026-10-05 角色支持审计完成，登记冻结读取干预
+
+CPU审计整批exit交回，0模型/梯度/环境/GPU、约.56MiB。main已读实际BDDL/表与四套seen144 rows，结论见findings§324。
+主FM有五组同BDDL布局不同目标；旧八task辅助未覆盖组内变化。C450/C900的95/96/97均12/12，覆盖事实不是根因。
+当前active design为docs/designs/visible_object_readout_intervention_20261005.md，主讨论已固定科学语义、12case/三臂/36条及停止线。
+这是冻结T/C的特权分析干预，不是新Writer、训练或正式400；预计2–4小时、硬2完整GPUh/8GiB。
+合同推送后交实验session01a10a98-6d4b-7d61-b12c-da38a628cb45接手工程/Git/运行；main随即停止tracked并发写。
+本条登记合同与交接安排，实际接收/启动回执由实验session记录；未执行部分不算结果。下方为此前时点。
+
+## 2026-10-05 训练角色支持只读审计已实际接手（已完成）
 
 Owner要求继续解决，main向新实验session派发固定36-task对象/角色/初始region及现成标签覆盖的CPU事实核查。
 Queue回执01a10ad5-41ed-7eb2-a45e-7fc7f5676b35；接收轮01a10ad5-41ef-7213-8945-9990ca28152e已明确接受并active。

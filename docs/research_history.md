@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-05：角色支持审计完成，选择冻结物体读取干预
+
+Owner对根因方案的追问后，main已撤回S=0作为下一方法推荐（findings§322–323）；缺失消融不能承担EMBER原有性能缺口的解释。
+新实验session完成固定36-task只读CPU审计，main补读四套seen144原行，事实与边界见findings§324。
+已有五组同BDDL布局不同目标，角色标签包含真实干扰实体；C450/C900在95/96/97均12/12，简单缺角色支持说法不成立。
+八task角色辅助未覆盖这些组内变化，但这不构成换名单重跑的资格，也没有由覆盖事实识别唯一根因。
+main据实际错物体、旧attention移植及rho/行为分离，登记[冻结可见物体读取干预](designs/visible_object_readout_intervention_20261005.md)。
+固定C900八格与T2340四格、parent/正确butter/错误orange_juice路由共36条，预估2–4小时、硬2GPUh/8GiB；尚无结果。
+干预带自身场景分割特权，不是部署方法或EMBER成绩；当前是否接手/启动只看progress，不由此恢复正式训练。
+
 ## 2026-10-05：新主讨论复核T的定位与近期核心取舍，未启动后继实验
 
 接任审计见[findings§321](../findings.md)。

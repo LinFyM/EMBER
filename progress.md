@@ -1,3 +1,12 @@
+## 2026-10-05 visible_object_readout由实验session实际接手
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已接受唯一active design，独占canonical tracked/Git写窗口；main不并发写。
+当前处于实现/消费者核验，尚无模型或GPU运行。仅固定12case×parent/butter/orange三臂36full，复用原bank/scene/交换与attention owner；
+无Writer/训练/formal400/梯度/Test，不恢复S=0、role/crop或prefix适配。硬2完整GPUh/8GiB，含工程预计2–4小时。
+唯一root为/data1/user/ymdai/ember_runs/visible_object_readout_intervention_20261005/；data1独立quota及相关用量已现场核验，新增峰估计5GiB。
+Owner最新允许无空卡时直接多卡共驻；仍按两节点总上限与每次live显存准入安排真实吞吐，不等待空卡。
+完成工程/Git/36条/原件/费用/释放/退役后，仅一次整批回报main并停止；无自动下一批授权。下方为历史状态。
+
 ## 2026-10-05 角色支持审计完成，登记冻结读取干预
 
 CPU审计整批exit交回，0模型/梯度/环境/GPU、约.56MiB。main已读实际BDDL/表与四套seen144 rows，结论见findings§324。

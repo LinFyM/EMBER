@@ -147,6 +147,9 @@ class VisibleObjectAdapter(AttentionOwner):
         receiver = {'parent':None, 'route_butter':'butter_1', 'route_orange_juice':'orange_juice_1'}[self.arm]
         self.receiver = None if receiver is None else names.index(receiver)
         self.visible_area = self.f.sum(-1).cpu().numpy()
+        d = self.f.sum(1) if self.receiver is None else self.f.sum(1)-self.f[:,self.receiver]
+        self.coverage_max = self.f.sum(1).amax(-1).cpu().numpy()
+        self.donor_coverage_max = d.amax(-1).cpu().numpy()
 
     def _attention(self, module, query, key, value, attention_mask, scaling, dropout=0., **kwargs):
         layer = self.layer_ids.get(id(module))
@@ -200,11 +203,16 @@ class VisibleObjectAdapter(AttentionOwner):
         values = self.current_stats.cpu().numpy()
         assert np.isfinite(values).all()
         assert values[...,2*len(self.names)+4:2*len(self.names)+7].max() < 3e-6
-        assert values[...,2*len(self.names)+7].min() >= 0
+        # Keep the actual formula unchanged; coverage/reductions have ordinary FP32 rounding.
+        assert values[...,2*len(self.names)+7].min() >= -3e-6, (
+            f"minimum_probability={values[...,2*len(self.names)+7].min()}, "
+            f"donor_coverage_max={self.donor_coverage_max.max()}, cases={self.slot_ids}")
         for i, case_id in enumerate(self.slot_ids):
-            entry = self.effects.setdefault(case_id, dict(metrics=[], visible_area=[]))
+            entry = self.effects.setdefault(case_id, dict(metrics=[], visible_area=[],coverage_max=[],donor_coverage_max=[]))
             entry['metrics'].append(values[i])
             entry['visible_area'].append(self.visible_area[i])
+            entry['coverage_max'].append(self.coverage_max[i])
+            entry['donor_coverage_max'].append(self.donor_coverage_max[i])
         torch.cuda.synchronize()
         n = len(prepared)
         record = self.packing.setdefault(n, dict(calls=0,seconds=0.,reserved_peak_GiB=0.))
@@ -220,6 +228,7 @@ class VisibleObjectAdapter(AttentionOwner):
             'm_mean','m_min','m_max','image_mass_mean','image_mass_error','other_probability_error',
             'total_probability_error','probability_min','ideal_delta_y_RMS','actual_delta_y_RMS','original_y_RMS'])
         np.savez_compressed(path, stats=np.stack(entry['metrics']),visible_area=np.stack(entry['visible_area']),
+            coverage_sum_max=np.asarray(entry['coverage_max']),donor_coverage_max=np.asarray(entry['donor_coverage_max']),
             metric_names=np.asarray(metric_names),entity_names=np.asarray(self.names))
         return dict(path=str(path),bytes=path.stat().st_size,axis_order='replan,layer,flow,metric',
             head_slot_reduction='18 layers individually; all8 heads/all50 slots mean; m min/max retained',

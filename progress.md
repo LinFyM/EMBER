@@ -9,6 +9,14 @@
 无模型/policy/Writer/LoRA/GPU/CUDA/render、held教师特权/Test、物理/命令/目标改变或再次settling；Open仅描述、官方In唯一goal。
 423行本批专用consumer/dispatch，经100条原件shape/实际长度/原In-only和零物理CPU检查通过；专用入口整批后退役，既有scene/采样接口保持。
 先T/C init0纯原动作重放准入，两条计入100；全部行EEF/碗最大位置差≤1cm及完整In相同才作同过程解释。
+8cc93082已集成main/push并clean detached frozen运行；首T/C init0均退出0，原In完整相同、碗误差0、EEF最大差约.047cm，夹爪差约.000170m。
+首两条含加载共17.87s/36.79CPU秒，最大RSS约1.67GiB；按现场CPU/内存选择8个单线程CPU worker，剩余98条保守ETA362秒/预计.88CPUh。
+T/init0三层qpos全0；C/init0上层最小-.12423m，低于Open所需绝对开度；二者碗不动，只是首例、不代表全100条。
+2026-10-05T23:08后剩余98条实际发起（panel_launch.json保存准确开始与PID），不重复init0、不读取新增RGB或教师特权；正常直接等退出。
+首panel退出2，已完成94条加准入2条，共96条；95条通过，C900/init38位置偏差EEF.094862cm/碗.208819cm但In第273步提前，原第274步、末态均成功。
+不扩大容限、不重复择优；该行保持原成功并标完整序列不符。原scene未保存ctrl/qacc_warmstart/完整controller runtime，其是否造成差异未证实，不造补充状态。
+原调度器对单行不符停止了整批提交，留下C900/init46..49未执行；只补remaining调度，物理consumer未改，已完成96条（含不符行）不重跑。
+remaining入口实际CPU源/存在性核验通过，4条唯一未执行source保持原场景/命令/长度；新版本集成/push后clean detached运行，并保留首panel退出与费用。
 工程与运行由实验session闭环；只在整批完成或真实科学/预算边界一次回main并交回窗口，不阶段通知或自动后继。
 
 ## 2026-10-06 main登记task23已有执行的抽屉状态补读

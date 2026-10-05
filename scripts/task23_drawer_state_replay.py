@@ -41,7 +41,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--attempt", required=True)
-    parser.add_argument("--phase", choices=("admission", "panel"), required=True)
+    parser.add_argument("--phase", choices=("admission", "panel", "remaining"), required=True)
     parser.add_argument("--workers", type=int, required=True)
     args = parser.parse_args()
     if not 1 <= args.workers <= 8 or os.environ.get("CUDA_VISIBLE_DEVICES") != "":
@@ -63,6 +63,10 @@ def main():
     if args.phase == "admission":
         jobs = [(row, ("recorded_parent",)) for row in rows if row["state"] == 0]
     else:
+        if args.phase == "remaining":
+            previous = json.loads((run / "panel_completion.json").read_text())
+            if previous["exceptions"] or len(previous["invalid"]) != 1:
+                raise ValueError("remaining-only continuation requires the recorded single-row validity boundary")
         for row in rows:
             parent = run / "rows" / f"{row['model']}_state{row['state']:03d}" / "recorded_parent.json"
             if row["state"] == 0:
@@ -70,6 +74,11 @@ def main():
                     raise ValueError("both init0 parent rows must pass admission before panel")
                 continue  # init0 admission rows are already part of the fixed 100
             else:
+                if args.phase == "remaining" and parent.is_file():
+                    saved = json.loads(parent.read_text())
+                    if saved["source"] != row:
+                        raise ValueError("existing source identity changed")
+                    continue  # retain admitted and non-admitted rows without repeating either
                 jobs.append((row, ("recorded_parent",)))
     start = dict(commit=commit, cwd=os.getcwd(), phase=args.phase, workers=args.workers,
                  command=list(__import__("sys").argv), started_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),

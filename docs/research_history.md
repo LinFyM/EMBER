@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：task23原命令100条补齐抽屉状态，99条准入、一行In时序边界保留
+
+findings§351与[合同](designs/task23_drawer_state_replay_20261006.md)记录T2340/C900各50条纯CPU原动作重放，零policy/GPU/render/额外settling/物理干预/held教学特权/Test。
+全部100条仅一次、29974步，99条满足≤1cm EEF/碗及完整In序列相同；C/init38在273步提前In、原274步，末态均成功，不放宽或重跑择优。
+准入T50/C49上层曾Open9/23，开过但碗无≥1cm运动8/20；其它层无普遍打开，末态Open各仅3。
+T/init19等开后搬碗仍未In及原C唯一成功保留；这区分混合最早缺口，不证单一阶段/神经根因，不派生新训练。
+原件/逐行/注册/17386真实contact与力/时序/未知在/data1/user/ymdai/ember_runs/task23_drawer_state_replay_20261006/analysis与attempts。
+实际8cc93082首2+94条、6ff430e9仅补未执行4条，物理consumer未变；完整CPU物理进程树.168043454CPUh，全部成本保守界≤1.169CPUh/16、GPU0、新增峰界900000000B/1GiB。
+专用consumer/dispatch退役，Git/frozen/完整原件与严格不符留存；准确退出、wall、Git/资源封口与一次窗口交回见completion/progress，无自动下一批。
+
 ## 2026-10-06：task23教学/自身RGB读回与缺失抽屉状态的重放登记
 
 findings§349核init0/38对应demo30/16两条完整stride5双RGB，均有先操作抽屉再取碗；

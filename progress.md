@@ -1,3 +1,15 @@
+## 2026-10-06 task23固定100条原命令重放封口，保留一行严格序列边界
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成task23_drawer_state_replay_20261006全部固定100条仅一次，见findings§351；99条准入，C900/init38一处In273/274时序不符保留，原/重放末态T0/C1保持。
+无GPU/CUDA/model/Writer/LoRA/render、held教师HDF/Test、额外settling或物理干预。原29974命令/30074状态及17386 contact样本全保留。
+准入T50/C49上层Open9/23、Open但碗无≥1cm运动8/20；其它层无普遍打开，末态Open各仅3。开后又退出、开后搬碗仍未In与C原成功不利例均保留，不称统一阶段根因。
+8cc93082第一冻结运行2+94条；首panel单行不符退出2，6ff430e9只补未执行C46..49，实际consumer未改、未重跑原96条；全部source/动作/长度/注册/力CPU读回核验通过（明确99/100严格配对）。
+三个launch已退出，完整物理进程树.168043454CPUh；工程/du/分析/Git保守1CPUh，总界≤1.169/16、GPUh0；三树阶段root839589888B、保守峰900000000B/1GiB。
+唯一root /data1/user/ymdai/ember_runs/task23_drawer_state_replay_20261006/，analysis/report.md、per_row.json/tsv、aggregate/sequence/contact/key_timelines/definitions/verification及100原NPZ/JSON、命令/退出/费用保留。
+专用consumer/dispatch与root运行入口退役，保留原Git/frozen/所有不符与失败记录；完成main集成push、工程树/branch清理后一次整批回主讨论01a10a97-dedf-7042-a6a2-60214f0ef7b1并交回tracked/Git。
+本实验session停止新增物理/分析，无自动后继；当前无本批active执行，Owner持续授权main自主推进保持，科学后继由main独立消费判断。
+准确封口时点/wall、推送/资源释放/回执以root completion/launch为准。下方active/运行文字仅为此前时点。
+
 ## 2026-10-06 实验session实际承接task23原命令抽屉状态重放
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45全文读取83行合同与findings§349–350，

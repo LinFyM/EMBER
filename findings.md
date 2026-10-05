@@ -8696,3 +8696,31 @@ CPU读图/旧自身PT，无环境/model/GPU/梯度；约2.32MiB临时输出。�
 未完成正确上层操作与已开后不取碗会约束不同的后继机制解释，不能事先统称时序/程序组合失败。
 预计含工程45–90分钟，硬2小时wall/16CPUh/0GPU/1GiB；100条及一次读回后停止，不自动初态干预或新学习。
 登记时尚未派发/运行；main提交后交既有实验session，实际承接只看progress。Owner持续自主推进授权保持。
+
+## 351. task23原命令100条补读显示上层操作与后续搬碗的混合缺口（2026-10-06）
+
+按§350唯一合同完成T2340/C900各50条纯CPU原动作重放：99×300+1×274步，100条仅一次、29974原命令、30074个T+1样本。
+无policy/Writer/LoRA、GPU/CUDA、相机/render、额外settling、物理干预、held教学HDF/Test或新闭环成绩；真实三层site-joint/body/geom注册及步末contact直接力保留。
+全部EEF/碗全过程最大位置差≤1cm；99条完整In序列同原，C900/init38在273步提前In（原274步），仅1个样本不符、末态两者仍成功。
+该行原成功没有重标，未扩大容限或重跑择优；其补读关节/contact作为未准入重放记录保留，不冒称已验证原执行时序。原T0/C1结果保持。
+
+准入T50/C49中，上层qpos变化≥1cm为14/47条，原生Open曾真为9/23条；其中8/20条原碗从未移动≥1cm。
+T41条未达Open且碗未移动≥1cm；C49中21条属此类，20条达到Open而碗仍无≥1cm移动，3条Open+碗移动却未In，5条未达Open但碗已移动。
+原完整50条碗完全不动仍为T49/C38；≥1cm运动T1/C9、高3cmT1/C5，不能把完全不动与描述阈值混为同一计数。
+开过却未搬碗的T8/C20首次Open中位152.5/65.5步，剩147.5/234.5步；各仅3条末态仍Open，不能把曾开等同持续可放入空间。
+T/init19上层61–82步Open后退出，202步开始搬碗、227步高3cm仍未In，反驳所有已开例都没有后续动作。
+中层≥1cm只有C/init1（最小−.05219m且此前上层已Open），中/下层原生Open均0；没有普遍拉开错误层的依据，也不把接触称对象选择/抓持真值。
+
+T/init0三层全不动、碗不动，239个步末robot—固定柜体接触样本；C/init0上层231步起接触、292步最小−.12423m、末态−.11010m，碗仍不动。
+T/C全50条EEF最大差.056799/.102002cm，碗.0000126/.208819cm；C盘子最大.590812cm及全部body/夹爪差逐行保留。
+实际Open asset range[-.16,-.14]与joint range[-.16,.01]严格区分；官方goal仅In，Open未加进成功gate。C/init38原碗105步移动、116步高3cm、274步成功保持。
+source scene未保存ctrl/qacc_warmstart/完整controller runtime，其缺项是否解释C38差异未知；不造状态，不补物理或图像。
+厘米轨迹/In准入不等于原contact逐点精确一致；原件未捕获动态关节/contact，步末读取亦不是积分substep完整扫描。
+本批支持混合具体缺口，降低全体不会开正确层或统一开后切换失败的解释；不唯一定位native/Value/loss/架构，不提出后继训练或方法。
+
+唯一root /data1/user/ymdai/ember_runs/task23_drawer_state_replay_20261006/。analysis/report.md、per_row.json/tsv、aggregate.json、sequence_summary.json、
+contact_pairs.json、key_timelines.json、definitions.json与verification.json保留100行、17386个真实contact样本、全部反例/不符/源映射；完整T+1与力原件在attempts/attempt1/rows。
+8cc93082 clean pushed detached消费初2+首94条；首panel在单行不符处退出2，未提交后4条；6ff430e9仅修剩余调度、物理consumer未变，C/init46..49完成，已有96条未重跑。
+三个实际launch完整进程树604.956435CPU秒（.168043454CPUh），含加载与异常；工程/du/Git/CPU分析另以保守1CPUh界计，总界≤1.169CPUh/16、0GPUh。
+三树阶段实际root839589888B，含Git/后续记录保守新增峰900000000B<1GiB；总wall/最终push/资源释放/退役及一次交回写窗口以completion/progress为准。
+全部100条原命令及一次完整读回到此停止；专用consumer/dispatch退役，Git/两frozen/完整原件/不符与退出2保留，无自动下一批。

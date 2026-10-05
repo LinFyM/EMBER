@@ -10,6 +10,7 @@ import math
 import os
 from pathlib import Path
 from types import SimpleNamespace
+import time
 
 import torch
 from safetensors.torch import load_file, save_file
@@ -278,6 +279,7 @@ class TransitionCompiler:
 
     def compile(self, condition):
         from .transition_read import read_frozen_memory
+        started = time.monotonic()
         memory = read_frozen_memory(self.runtime, self.data, condition["global_task_id"], condition["teacher_demo"], frame_chunk=self.config["frame_chunk"])
         frames = memory.frame_indices.cpu().tolist()
         if (memory.raw_frames, memory.sampled_frames, frames) != (condition["raw_frames"], condition["sampled_frames"], condition["frame_indices"]):
@@ -290,7 +292,10 @@ class TransitionCompiler:
         save_file(factors, str(temporary), metadata=factor_metadata(self.config["arm"], condition["condition_id"], self.config["checkpoint"]))
         temporary.replace(path)
         return {"condition_id": condition["condition_id"], "raw_frames": memory.raw_frames,
-                "sampled_frames": memory.sampled_frames, "frame_indices": frames}
+                "sampled_frames": memory.sampled_frames, "frame_indices": frames,
+                "compile_seconds": time.monotonic() - started,
+                "peak_allocated_bytes": torch.cuda.max_memory_allocated(self.runtime.device),
+                "peak_reserved_bytes": torch.cuda.max_memory_reserved(self.runtime.device)}
 
     def close(self):
         self.data.close()

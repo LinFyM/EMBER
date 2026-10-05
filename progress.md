@@ -4,7 +4,10 @@
 0cf81778 frozen_attempt3的parent12full已exit0且不重跑；两路由因严格零容限probability_min检查退出，0完成行。
 首查询保存f的CPU/CUDA复读没有复现该负值，不能断言失败位于首query；尚无两路由行为结论。
 保持实际公式/精度/面板不变，只让守恒/非负检查共用既有3e-6 FP32容限，并补存逐replan覆盖上界与实际min。
-验证后只继续未完成的两臂；保留原有效parent、失败/检查成本与各冻结Git身份。下方为已保存启动/退出历史。
+fda47bae clean pushed detached frozen_attempt4已在gpu02的0/7共驻启动两路由24full（PID3442147/3442149），物理batch各12。
+原有效parent12在0cf81778保留；两版本实际redistribution/_attention/_denoise/_state不变，仅数值guard和覆盖上界记录不同。
+包含有效parent、失败和小型CUDA无模型核验的已用成本.28099完整GPUh；本次live admission按剩余2GPUh安排。
+下方为已保存启动/退出历史。
 三臂已在gpu02的1/7/3共驻启动；ba4629e1首批因新消费者把运行时小写in写成In，在首query前全部退出并释放。
 全部加载/失败成本.10053完整GPUh，原件保留root/failed_attempts/attempt1；按真实parsed goal修复并CPU核实际BDDL后，
 2273b0a3 clean pushed detached frozen_attempt2已在gpu02的7/3/2共驻重新启动（PID3284094/3284099/3284101）。

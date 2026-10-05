@@ -18,6 +18,22 @@ R micro14/chunk8到micro28/chunk16宏步15.58→13.14秒，实测reserved峰17.7
 只有该诊断active；无姿态oracle/aux、标签/温度/key扫描、Test或自动后继。实际消费者检查、预算预期、clean pushed detached执行及最终退役由本实验session闭环。
 整批完成或实际科学/预算边界后仅一次带来源回main并交回写窗口，主讨论独立消费原件，不重复工程审批。下方为此前时点。
 
+### 固定270学习完成，唯一终点评测实际启动（16:41UTC）
+
+L/R两臂270均exit0；每臂30240 query、36task各840，实际1080条件与原T macro1..270的teacher/query/noise/tau逻辑流核对通过。
+90/180/270完整新JQE、AdamW、sampler与各rank RNG保存，90恢复消费者检查通过；2490368新参数finite，上游自身h信用保持。
+两臂学习各约3256秒/world2，含加载合计3.618完整GPUh；具体原件root analysis/endpoint_checks.json与launch/resources_ledger.json。
+父T2340 seen12已完成8/12，L270为9/12、R270为8/12；父成功全部保持，L仅task29/init32新增成功，不能用此小面板晋级。
+训练侧九条固定full双RGB全保存并查看；L/R24条件的38处×10flow真实读取摘要完整，见analysis/seen_readback及launch/effects_seen12。
+L validation400完整B-only bank已物化，frame chunk64实测reserved峰16.99GiB；复用common A，不复制父大资产。
+R首个400 launch在GPU现场util准入被拒绝，0worker/环境/科学行，失败约.00409完整GPUh保留；预启动env50配置因共享显存变化撤回并保存旧contract，0计算。
+再次live核gpu01/gpu02，按Owner允许共驻与全局6/单节点6卡上限，在ed662969 clean pushed detached frozen_eval_packing启动两臂固定400：
+L物理1/3、每卡一个worker/env容量32，实际启动16:41UTC。R同次2/7、env16在首批native读取时OOM，2个worker均exit1、0完成行，约.03330完整GPUh及失败原件保留。
+OOM当时包含16个EGL环境的非PyTorch显存，不能只按CUDA reserved判断余量。latest两节点现场后，在同ed662969冻结代码迁移R到物理4/7并resume、env16不变；
+迁移保留原28个queue分片/全部scene、teacher、RNG与capture，旧/新contract及原失败保留于launch/R_physical_worker_migration.json；0新增科学case。
+L所选卡预启动约45GiB余量、R迁移后约40/45GiB；合计4卡，无附加“两臂最多两卡”限制。25full/811compact总836新闭环合同不缩减。
+终点评测仍未完成，不报告未验证400分数或EMBER资格。所有加载/失败/并行均计费；预算和deadline保持，直接等退出并推进既存原件CPU读回。
+
 ## 2026-10-05 教学抓取方式审计已消费，登记固定强T的读取方式比较
 
 实验session只读审计已整批完成并停止，main直接核关键RGB/坐标定义/原连续轨迹；findings§336记录全部边界。

@@ -716,7 +716,12 @@ def run_worker(
         raise
     finally:
         if runtime is not None:
-            runtime.pool.close()
+            try:
+                close_adapter = getattr(runtime.task_adapter, "close", None)
+                if callable(close_adapter):
+                    close_adapter()
+            finally:
+                runtime.pool.close()
     import torch
 
     summary = {

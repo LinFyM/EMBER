@@ -5,8 +5,14 @@
 实际开始2026-10-05T14:28:00Z，硬deadline22:28:00Z；预计4–6h，硬8h wall/12完整GPUh/24GiB新增峰，临时native cache≤4GiB。
 唯一root /data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/。已核strg01 data1独立quota实际1250084508KiB、软限2147483648KiB及共享容量，
 新峰预算可覆盖；个人目录du仍在执行，GPU launch前封存。两节点当前没有空卡，按owner授权和现行全局6/单节点6上限选择共驻并实测吞吐。
-当前只在CPU工程：冻结父T2340/source/公共A0 B0/P C D O，新增J/Q/E两臂各270完整主FM，唯一270各correct400及父/L/R seen12，共836新full-horizon。
-尚未启动模型、GPU、训练、环境或科学forward，不把资源初查或登记写为已运行。评测接口仅由独立只读审计后隔离的工程子任务承接，我负责集成。
+冻结父T2340/source/公共A0 B0/P C D O，新增J/Q/E两臂各270完整主FM，唯一270各correct400及父/L/R seen12，共836新full-horizon。
+核心2de7aaa7已集成main并push；clean detached frozen_profile已实际启动两臂授权profile，各world2：gpu02的L3/6、R2/7共驻，合计4物理卡/现行6上限。
+profile仅原macro1/2训练输入，各至多两次可丢弃更新。R全部通过并恢复新参数/优化器/RNG/cursor：38读取/37自身上游真实梯度，J=0增量零，第二更新Q/E梯度非零。
+R micro14/chunk8到micro28/chunk16宏步15.58→13.14秒，实测reserved峰17.744GiB；L首宏15.73秒/13.623GiB通过，第二宏在共驻GPU6因实时余量不足OOM，保留失败，无额外profile。
+两次profile含加载成本.06297完整GPUh。再次live两节点后，L迁到gpu02的1/3（≥20GiB余量），R保留2/7；正常最大逻辑micro28/chunk16。
+2de7aaa7同clean pushed detached源的两臂正式270已于15:16UTC实际启动，各world2/fresh JQE和AdamW；未继承profile更新，尚无任何环境/held结果。
+初期实测路径预计两臂学习4–5.5GPUh，余下物化/836行为约3–5GPUh，仍在硬12GPUh/8h/24GiB；视频长度/共享负载变化保留未知，实际边界不缩面板。
+完整命令/启动时间/PID/live两节点/费用见root launch；评测接口在独立隔离工程worktree实现，我负责集成。只等退出事件并推进独立读回工程，不轮询训练日志。
 只有该诊断active；无姿态oracle/aux、标签/温度/key扫描、Test或自动后继。实际消费者检查、预算预期、clean pushed detached执行及最终退役由本实验session闭环。
 整批完成或实际科学/预算边界后仅一次带来源回main并交回写窗口，主讨论独立消费原件，不重复工程审批。下方为此前时点。
 

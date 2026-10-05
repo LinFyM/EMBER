@@ -1,3 +1,15 @@
+## 2026-10-06 实验session承接手轴原生特征读出诊断
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已完整读取119行合同与findings§342–344，
+从main4ad15bbb隔离codex/native-hand-axis-readout-20261006，独占canonical tracked/Git窗口；main停止并发写。
+实际承接按2026-10-05T19:57:00Z计，硬deadline22:57:00Z；预计1–2h，硬3h wall/2完整GPUh/8GiB新增峰。
+strg01 data1独立实占1262665508KiB、软限2147483648KiB；个人du1262665452KiB、共享余量88571521269760B；准入记录在唯一root launch/acceptance.json。
+固定父T2340/source/Writer与公共beta，无新LoRA或环境；仅136clips/4382帧的同次native H/block17视觉K/V和两个500更新head。
+标签只在提取完成后读取授权train同帧ee_ori，动作第6维仅被动分组；官方validation/Test不读。
+工程已实际开始，独立head/评分在隔离子worktree实现；实际GPU提取/学习尚未启动，不把登记写成已运行。
+专用接口在整批退出后退役，原件/Git/frozen/head恢复状态留存；整批一次回main并交回窗口，无下一批授权。
+下方为历史登记与旧批次，不恢复。
+
 ## 2026-10-06 main登记实际手轴信息的冻结特征读出辨识
 
 main已完成原训练准备差异的CPU统计和最近似完整方案复核，findings§342–343记录事实与取舍；没有恢复旧实验。

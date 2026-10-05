@@ -240,6 +240,13 @@ def load_evaluation_adapter(
 
         return FrozenComparisonAdapter(**common)
     if adapter.get("kind") == OPERATOR_READ_WRITE_KIND:
+        if adapter.get("transition_read_panel") is not None:
+            from ember.operator_writer.transition_read_eval import FrozenTransitionReader, linear_adapter
+
+            if adapter.get("mode") == "R":
+                return FrozenTransitionReader(**common)
+            if adapter.get("mode") == "L":
+                return linear_adapter(**common)
         from ember.operator_writer.bank import FrozenOperatorAdapter
 
         return FrozenOperatorAdapter(**common)

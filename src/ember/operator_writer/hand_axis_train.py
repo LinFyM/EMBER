@@ -113,6 +113,14 @@ def new_head(arm, device):
     return head, optimizer
 
 
+def head_context():
+    from ember.pi05_source_setup import initialize_distributed
+    context = initialize_distributed(require_numa=True, defer_process_group=True)
+    if context.world_size != 1:
+        raise ValueError('these are independent heads, not distributed scientific batches')
+    return context
+
+
 def update(head, optimizer, x, y, event, micro):
     optimizer.zero_grad(set_to_none=True)
     total = torch.zeros((), device=x.device)
@@ -133,8 +141,9 @@ def update(head, optimizer, x, y, event, micro):
 def profile(arm):
     from .run import frozen_git
     torch.set_num_threads(4)
+    context = head_context()
     torch.manual_seed(7)
-    device = torch.device('cuda:0')
+    device = context.device
     x, y, events = fit_data(arm, device)
     rows = []
     for micro in (128, 512):
@@ -173,9 +182,10 @@ def save_checkpoint(arm, head, optimizer, update_index, contract):
 def train(arm):
     from .run import frozen_git
     torch.set_num_threads(4)
+    context = head_context()
     torch.manual_seed(7)
     torch.backends.cuda.matmul.allow_tf32 = True
-    device = torch.device('cuda:0')
+    device = context.device
     micro = json.loads((ROOT/'launch'/f'head_profile_{arm}.json').read_text())['selected_microbatch']
     x, y, events = fit_data(arm, device)
     head, optimizer = new_head(arm, device)
@@ -183,7 +193,8 @@ def train(arm):
         frozen_writer=True, detached_native_features=True, input_dim=1024 if arm=='H' else 512,
         parameters=sum(p.numel() for p in head.parameters()), seed=7, updates=500,
         sampler_seed=20261006, task_equal32=True, logical_batch=512, microbatch=micro,
-        topology=dict(world_size=1, device=os.environ['CUDA_VISIBLE_DEVICES']),
+        topology=dict(world_size=1, device=os.environ['CUDA_VISIBLE_DEVICES'],
+                      numa_node=context.numa_node, cpu_affinity=list(context.cpu_affinity)),
         numeric=dict(features_saved='native KV/FP32 H', head='FP32 weights,BF16 autocast,TF32 allowed'),
         optimizer=dict(kind='AdamW', lr=.001, betas=[.9,.95], eps=1e-8, wd=1e-4, clip=1,
                        scheduler=None), loss='mean per-frame squared vector norm', evaluation_update=500)

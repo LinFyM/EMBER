@@ -6,7 +6,13 @@
 strg01 data1独立实占1262665508KiB、软限2147483648KiB；个人du1262665452KiB、共享余量88571521269760B；准入记录在唯一root launch/acceptance.json。
 固定父T2340/source/Writer与公共beta，无新LoRA或环境；仅136clips/4382帧的同次native H/block17视觉K/V和两个500更新head。
 标签只在提取完成后读取授权train同帧ee_ori，动作第6维仅被动分组；官方validation/Test不读。
-工程已实际开始，独立head/评分在隔离子worktree实现；实际GPU提取/学习尚未启动，不把登记写成已运行。
+e876c22b已集成push，clean detached frozen_features实际单卡启动原合法最长clip吞吐测量；同时捕获H和block17视觉K/V，不追加response_difference。
+拟合1940/评估2442、136clips/4382帧与canonical RGB源元数据核对通过；标签仍未读，完整提取及head500尚未运行。
+现场双节点检查后选gpu02/0低负载共驻，约45GiB余量，own0→1、全局6/单节点6上限；原件与实际命令/退出费用在root launch。
+原最长93帧实测chunk16/32/64/128分别19.43/20.83/20.69/20.88帧每秒，选128；两图K/V均原生BF16，预计特征2.975GiB，保留H原FP32。
+同e876c22b冻结来源在gpu02物理0/1/2/3实际启动4个独立long-first提取worker；own0→4、全局6/单节点6，低负载共驻，不等待凑空卡。
+两head的共享初值、真实token geometry、梯度、Rodrigues、task/clip等权、动态/空组/常量信息墙CPU消费者检查通过；H264451/KV198915参数。
+完整提取退出后才读同帧train姿态标签、生成两头同一事件列表、profile每头至多两更新并复位；500是唯一终点评估。普通工程由执行者闭环。
 专用接口在整批退出后退役，原件/Git/frozen/head恢复状态留存；整批一次回main并交回窗口，无下一批授权。
 下方为历史登记与旧批次，不恢复。
 

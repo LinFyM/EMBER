@@ -76,7 +76,10 @@ def prepare_labels():
 def labels():
     state = load_manifest()
     with np.load(ROOT / 'labels.npz') as store:
-        return {c['key']:dict(z=store[c['key']+'_z'], pre_positive=store[c['key']+'_pre_positive'])
+        return {c['key']:dict(z=store[c['key']+'_z'], pre_positive=store[c['key']+'_pre_positive'],
+                    source=dict(hdf5=c['hdf5'], orientation_field=f'data/demo_{c["demo"]}/obs/ee_ori',
+                        feature=str(ROOT/'features'/(c['key']+'.safetensors')),
+                        raw_indices=c['raw_indices'], same_obs_offset=0))
                 for c in state['clips']}
 
 

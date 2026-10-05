@@ -1,3 +1,15 @@
+## 2026-10-05 固定T转移读取比较由实验session实际承接
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已完整读取179行active design及findings§338，
+从clean pushed main936cd076隔离到codex/query-conditioned-transition-read-20261005，独占canonical tracked/Git写窗口；main停止并发写。
+实际开始2026-10-05T14:28:00Z，硬deadline22:28:00Z；预计4–6h，硬8h wall/12完整GPUh/24GiB新增峰，临时native cache≤4GiB。
+唯一root /data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/。已核strg01 data1独立quota实际1250084508KiB、软限2147483648KiB及共享容量，
+新峰预算可覆盖；个人目录du仍在执行，GPU launch前封存。两节点当前没有空卡，按owner授权和现行全局6/单节点6上限选择共驻并实测吞吐。
+当前只在CPU工程：冻结父T2340/source/公共A0 B0/P C D O，新增J/Q/E两臂各270完整主FM，唯一270各correct400及父/L/R seen12，共836新full-horizon。
+尚未启动模型、GPU、训练、环境或科学forward，不把资源初查或登记写为已运行。评测接口仅由独立只读审计后隔离的工程子任务承接，我负责集成。
+只有该诊断active；无姿态oracle/aux、标签/温度/key扫描、Test或自动后继。实际消费者检查、预算预期、clean pushed detached执行及最终退役由本实验session闭环。
+整批完成或实际科学/预算边界后仅一次带来源回main并交回写窗口，主讨论独立消费原件，不重复工程审批。下方为此前时点。
+
 ## 2026-10-05 教学抓取方式审计已消费，登记固定强T的读取方式比较
 
 实验session只读审计已整批完成并停止，main直接核关键RGB/坐标定义/原连续轨迹；findings§336记录全部边界。

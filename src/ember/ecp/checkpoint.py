@@ -41,7 +41,7 @@ def save_ecp_checkpoint(
     context: DistributedContext,
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
-    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    scheduler: torch.optim.lr_scheduler.LRScheduler | None,
     run_contract_schema: str,
     metrics_rows: int,
     sampler_state: Mapping[str, Any] | None = None,
@@ -82,7 +82,7 @@ def save_ecp_checkpoint(
                 "stage": stage,
                 "next_macro": macro,
                 "optimizer": optimizer.state_dict(),
-                "scheduler": scheduler.state_dict(),
+                "scheduler": scheduler.state_dict() if scheduler is not None else None,
                 "metrics_rows": metrics_rows,
                 "sampler_state": dict(sampler_state) if sampler_state is not None else None,
                 "training_state": dict(training_state) if training_state is not None else None,
@@ -179,7 +179,7 @@ def load_ecp_checkpoint(
     context: DistributedContext,
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
-    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    scheduler: torch.optim.lr_scheduler.LRScheduler | None,
     run_contract_schema: str,
     expected_sampler_state: Mapping[str, Any] | None = None,
     restored_state: dict[str, Any] | None = None,
@@ -207,7 +207,10 @@ def load_ecp_checkpoint(
         checkpoint, stage=stage, macro=macro, world_size=checkpoint_world_size
     )
     optimizer.load_state_dict(trainer["optimizer"])
-    scheduler.load_state_dict(trainer["scheduler"])
+    if (scheduler is None) != (trainer["scheduler"] is None):
+        raise ValueError("ECP scheduler presence changed")
+    if scheduler is not None:
+        scheduler.load_state_dict(trainer["scheduler"])
     if context.rank < checkpoint_world_size:
         restore_rng(rank_states[context.rank]["rng"], context)
     if restored_state is not None:

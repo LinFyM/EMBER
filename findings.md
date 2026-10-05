@@ -8108,3 +8108,59 @@ libero_90/KITCHEN_SCENE6_close_the_microwave_demo.hdf5，限定上述四条obs/a
 临时CPU脚本/逐行索引/632自身画面及main新增332教学画面联系图在.codex/tmp/task39_existing_readback_20261005/；
 长期事实以本段及这些原始formal/data资产为准，临时目录不成为唯一证据。
 实验session成本约31.8分钟、22.7秒主入口、8.52MiB；main的四视频RGB补读另计为CPU只读，无新forward/环境/GPU/梯度/Test。
+
+## 331. 自身scene与固定资产可重建炉腔：100条杯中心始终在前边界外（2026-10-05）
+
+§330的连续trace没有直接保存site坐标，但这不等于已有原件无法得到目标region。
+main沿run_contract指定的libero-assets/0b3ea86be5fe169d0fd036ae63d1070ec09e90f6，核对microwave.xml、
+SiteObject.in_box、SiteObjectState.check_contain和In，以及场景保存/fixture装载源码。
+炉体通过joints=None固定，heating_region直接附于炉体，门才是单独可动child；
+每条自身scene均有initial_body_pos/rot，100条所需炉体rotation皆identity、continuous中炉体位置保持。
+site局部中心(0,.01,.096)m、半宽(.12,.0835,.08)m，实际In将lower-z另下扩.01m，并测试杯body原点。
+因此无需环境、门角或杯姿态，就能由这些原件重建**原生谓词的box**；它不是完整杯形的无碰撞可行区。
+炉体坐标下实际边界为x∈(-.12,.12)、y∈(-.0735,.0935)、z∈(.006,.176)m。
+
+| 100条现存自身轨迹的读数 | T2340 /50 | C900 /50 |
+| --- | ---: | ---: |
+| 全程杯中心均未越过炉腔前边界y=-.0735 | 50 | 50 |
+| 到In box最近距离：中位数，cm | 11.8753 | 7.8058 |
+| 最近距离范围，cm | 1.7918–26.2942 | 1.5699–24.9579 |
+| 曾到box外2cm以内 / 5cm以内 | 1 / 9 | 1 / 18 |
+| 最近点同时位于box左边界外 | 41 | 29 |
+| 最近点同时低于box下边界 | 11 | 8 |
+
+距离是点到box的欧氏距离，三轴超出量可同时存在；不是接触力、杯形碰撞、grasp或计划距离。
+全部521×100样本重建In与保存predicate一致。两个full init0最近点均在270步；
+T距box4.2449cm（左缺1.4422、前缺3.9924cm），C为3.3652cm（只前缺3.3652cm）。
+这给出了比“向炉体移动”更具体的失败位置：没有任何杯中心先进入目标区域再掉出，
+多数轨迹甚至未靠近到足以统称精细插入失效。不能据此把动作称为关门意图，也没有识别实际碰撞原因。
+
+本次只读原自身scene/continuous及静态公开资产，不读held教学特权字段、无模型/环境/GPU/训练。
+复算代码和100行路径/轴向缺口位于原临时目录的main_cavity_readback.py/json；
+长期原件仍为§330列出的正式运行、每行scene_reference和上述固定XML，不修改执行者已封口的交付计数。
+这一新证据支持辨识门的物理约束与原命令输送作用，尚不足以选择新的视频编码器或学习辅助。
+
+## 332. 继续研究须检验实际约束；登记固定命令的炉门碰撞反事实（2026-10-05）
+
+main补核Video Functional、Native Conditional Reader撤回稿及10/2 state-coupled完整合同：
+已有真实FM、联合表示学习、当前自身hidden信用和实际Reader控制器，不能再把缺这些通路当根因。
+全38处非线性读出相对旧末端/双target确有计算差异，但目前没有证据把既有失败定位为此限制；
+函数类扩大或能包含T，不足以从头重新投资一个Reader再期待未来编译。
+
+只读外部审查也未补出这个保证：[MOSAIC](https://arxiv.org/html/2110.13423)的直接未见task-family结果很弱，
+较强迁移成绩依赖held任务数据微调；[NTP](https://arxiv.org/html/1710.01813)的少任务组合泛化依赖对象状态、
+已覆盖的局部关系、程序/片段监督及底层控制API。其限制子程序读取范围并按自身状态反应的原理值得保留，
+但不能把状态/API实验与大量任务的RGB实验拼成EMBER已有可用教师，也不能忽略最终单LoRA编译。
+本轮没有以这些论文为由重启Reader、增加数据或默认恢复分段课程。
+
+选定下一项[固定命令炉门碰撞诊断](docs/designs/task39_door_contact_replay_20261005.md)：
+T2340/C900 task39各50条原520步动作，正常parent与仅门child碰撞关闭两臂，共200条CPU重放。
+改变的是物理转移F_c，命令始终取原记录；无policy/Writer/LoRA生成、梯度、held教学特权或Test。
+先核原动作可重放的物理边界与CPU吞吐，记录mug/EEF偏差、真实接触、门角及到native In box的距离。
+该干预若有益，只支持原命令在不同接触约束下的输送机会；不是policy闭环反事实、合法任务成功或视频语义证明。
+阴性降低炉门阻挡作为充分解释的优先级，不把它直接转成任何神经模块的根因。
+它回答具体行为失败的一项竞争解释，不靠局部涨分晋升新方法；无自动其它障碍、oracle、学习或评测扩展。
+
+预期60–120分钟、硬限2.5小时wall/16 CPUh/0GPU/新增峰1GiB，最多8 CPU workers。
+具体重放容限、字段、预算、一次回报及退役见design。实验session接手工程/Git并自主修复合同内接口；
+main继续科学判断，不重复工程验收。派发与实际承接状态只看progress，登记不冒称运行或完成。

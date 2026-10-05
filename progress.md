@@ -10,7 +10,11 @@ task39已有行为读回已于10:54UTC整批完成：100条held、8条train、54
 main已读实际统计代码、连续定义与四条full RGB；多数较早抬杯并朝fixture搬运，不能统一归为慢取得/不开爪/复制关门。
 main额外只读train73的四条对应教学RGB demo10/17/44/47，166个stride5含末帧位置：它们本就先移杯再关门，不能把训练策略移杯判为误学。
 完整事实与边界见findings§330。没有新模型/环境/GPU/梯度或held特权读取，实验session已停止，main保持tracked/Git独占。
-当前main核完整历史中的视频/自身状态功能读出与LoRA编译；尚未选定后继架构或active design，不自动恢复Reader、RL或辅助目标。
+main进一步由每条自身scene的固定炉体姿态、正式XML和原In实现重建炉腔：100条杯中心始终未越前边界，最近box距离中位T11.875/C7.806cm，见findings§331。
+已登记下一项active诊断设计docs/designs/task39_door_contact_replay_20261005.md：原100条动作×正常/门无碰撞两臂，200条CPU物理重放。
+预期60–120分钟，硬限2.5小时/16CPUh/0GPU/新增峰1GiB；无模型、Writer、训练或新canonical架构，不自动恢复Reader、RL或辅助目标。
+主问题是门接触是否阻断现有命令的入炉输送；原动作在分叉状态上回放，不冒称policy反事实闭环能力，详见findings§332。
+尚待向实验session派发并核实承接；main当前仍持tracked/Git窗口，登记本身不是已运行。
 临时读回位于.codex/tmp/task39_existing_readback_20261005/，所有长期事实同时指向原始formal trajectories/continuous及train HDF5。
 Queue 01a10b96-46e2-7200-9424-99e5ec2d85d0已送达实验session01a10a98-6d4b-7d61-b12c-da38a628cb45；
 接收轮01a10b96-46e6-74e0-8f15-f27a762bf09e此前明确接受并实际读取，现已完成回报，不能据旧inProgress恢复等待或执行。

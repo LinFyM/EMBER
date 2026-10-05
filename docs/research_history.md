@@ -3,6 +3,24 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：强T固定内容的两种读取均完成，执行时软读取未获得完整增量
+
+按[固定合同](designs/query_conditioned_transition_read_diagnostic_20261005.md)完成同父T2340、同新J/Q/E初始函数的L预编译LoRA/R执行时读取，见findings§339。
+每臂原36-task同流270更新/30240 query，只有新2490368参数训练；完整38处/50槽/10flow和自身上游hidden信用保持。
+唯一终点L158/400、R159/400，强父161；breadth均6/8，对父保留/新增/丢失144/14/17、144/15/17。
+task31从24到29/27，但能力损失抵消，task39各0/50 In，task16为5/5/4；三训练任务seen12父8/L9/R8，仅L task29/init32新成功。
+全部不利/有利成功键、150条杯连续行为、目标/干扰物体位移、九条训练full及固定16/39 full保留，不以FM、倾角或读取量作晋级。
+R是额外Reader诊断，不作EMBER部署或成绩；两函数类不互相包含，本合同阴性不推出LoRA上界、充分训练、必要姿态或唯一神经根因。
+降低并停止扩张“冻结T内容加本逐层软读取即可修复”的主假设；无自动蒸馏/fresh/续训/温度或key扫描/下一Reader授权。
+
+唯一root /data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/保留836新full-horizon、25full/811compact与旧父400来源，
+analysis/report.md、summary.json、readback.json/per_row.json、motion/per_task/per_suite表、64张双RGB/来源时刻，以及824条件313120条被动target-flow摘要可复核。
+实际训练冻结2de7aaa7，父seen读取0ec4663a，L/R物化及评测ed662969；三frozen、完整新参数/优化器/RNG/cursor、bank、失败/命令/原合同不删。
+含全部失败/加载/profile7.982602完整GPUh/12，最大同时6卡；root封口前12.505GiB、保守峰界16/24GiB，R全池native disk cache为0。
+R两次400启动失败0完成行后，只迁物理卡保持全部原科学字段并完成400；live资源、旧新contract及预算原件保留。
+专用四文件/五hooks在封口退役，保留消费者通用finally关闭adapter修复，fresh CPU29项通过；父bank静态消费者仍通过，退役两臂已拒绝。
+资源退出、最终Git/工程树清理/一次main写窗口交回与耗时以root completion和progress为准，历史capture再准入限制保留，不冒称旧400已重新执行验收。
+
 ## 2026-10-05：提前转腕差别跨固定教学成立，现有训练也包含大幅旋转控制
 
 findings§336消费8条held/4条train教学RGB与100条正常自身轨迹：held搬杯前转斜的外观差别并非单条偶然，

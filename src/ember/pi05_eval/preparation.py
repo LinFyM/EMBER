@@ -336,10 +336,6 @@ def _registered_trajectory_capture(
         return None, None
     path = path.resolve()
     manifest = read_json(path)
-    if manifest.get("study_id") == "query_conditioned_transition_read_20261005":
-        from ember.operator_writer.bank import registered_capture
-
-        return registered_capture(args, tasks, output_dir, path, manifest, task_subset)
     if manifest.get("study_id") in {"operator_read_write_learning_20260928", "operator_public_beta_diagnosis_20260929", "operator_public_function_pilot_20260929", "operator_seen_task_diagnosis_20260929", "operator_selected_validation_20260929", "operator_change_clock_learning_20260930", "operator_change_clock_continuation450_20260930", "operator_joint_public_fresh_20260930", "operator_context_value_fresh_20261001", "operator_context_value_continuation900_20261001", "operator_context900_seen_task_diagnosis_20261001", "operator_context900_public_validation_20261001", "operator_self_conditioned_native_fresh_20261001", "conditional_read_write_fresh_20261001", "conditional_read_write_continuation900_20261002", "conditional_support_diversity_pilot_20261002", "conditional_A_reexpression_diagnostic_20261002", "native_prefix_change_value_20261002", "control_calibrated_read_write_20261003"}:
         from ember.operator_writer.bank import registered_capture
 
@@ -416,11 +412,6 @@ def _selected_tasks_and_capture(
     source_sft_requested: bool, output_dir: Path, repo_root: Path,
 ) -> tuple[tuple[Any, ...], dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
     installed_tasks = _select_init_states(args, installed_tasks)
-    manifest = getattr(args, "static_task_lora_manifest", None)
-    if manifest is not None and read_json(Path(manifest)).get("transition_read_panel") is not None:
-        from ember.operator_writer.transition_read_eval import select_tasks
-
-        installed_tasks = select_tasks(args, installed_tasks)
     subset_tasks, subset = _task_subset_tasks(args, installed_tasks, adapter_kind=adapter_kind)
     tasks, capture = _occupancy_capture_tasks(args, subset_tasks, output_dir=output_dir,
                                              adapter_kind=adapter_kind)

@@ -647,11 +647,6 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
-        if bank.get("transition_read_panel") is not None:
-            from .transition_read_eval import inspect
-
-            return inspect(bank, path, source, task_keys, evaluation_role,
-                           require_formal, task_init_state_ids)
         if bank.get("reexpression_panel") is not None:
             from .reexpression import inspect
 
@@ -715,8 +710,6 @@ class FrozenOperatorAdapter:
     def __init__(self, *, policy, source, evaluation_adapter, task_keys, device, require_formal):
         del device, require_formal
         bank = evaluation_adapter
-        if bank.get("transition_read_panel") is not None and bank.get("mode") == "R":
-            raise Pi05EvaluationError("transition R requires the actual-hidden reader consumer")
         if (bank.get("kind") != KIND or bank.get("schema_version") != EVAL_SCHEMA
                 or bank["source"] != source or not source_matches(bank["source"], source)):
             raise Pi05EvaluationError("operator worker bank/source changed")
@@ -802,8 +795,6 @@ def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
         evidence.update(support_diversity_arm=bank["support_diversity_arm"],
                         training_git=bank["training_git"], training_spec=bank["training_spec"],
                         materialization_git=bank["materialization_git"])
-    if bank.get("transition_read_panel") is not None:
-        evidence["transition_read_panel"] = bank["transition_read_panel"]
     if bank["mode"] in (PUBLIC_BETA_MODE, "context_public_validation", "self_read_public"):
         evidence.update(intervention="public_B0_A", teacher_video_values_read=0,
                         video_id_role="paired_metadata_only")

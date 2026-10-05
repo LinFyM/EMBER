@@ -8361,3 +8361,80 @@ R只作诊断，不符合单LoRA部署形式，不把它的分数记作EMBER能�
 新root为/data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/；缓存有明确4GiB临时上限，不建立全池大缓存。
 设计只登记科学合同，不等于已经运行。push及实际派发后实验session接管工程/Git/运行，main停止tracked并发写；
 实际承接/启动以progress为准，整批回报后main直接消费科学原件，无重复工程验收门槛。
+
+## 339. 冻结强T的预编译与执行时转移读取均未获得有覆盖的完整增量（2026-10-06）
+
+实验session按§338/design完成全部合同，未更改科学图、学习流或面板。父T2340/source/A0/B0/P/C/D/O/native保持冻结，
+两臂相同J零、Q/E单位初值与2490368新参数，同原36-task seed20260928 macro1..270、4task×28跨episode query的真实FM。
+每臂270/30240 query、各task840；1080个teacher/query/frame/noise/tau实际条件与原逻辑流匹配。
+90/180为完整恢复点，270唯一读回，90恢复消费者通过；38处增量读出、37处有可测自身上游hidden信用（action_in输入为noise），只有新J/Q/E训练，source/father无梯度。
+没有新encoder、pose/角色/其它辅助loss、held教学特权、Test、最终temporal controls或追加节点。
+
+L先以原FP32 delta规则形成R，再将B_L=B_T(I+RQ)、A_L=A0合并成完整38/rank128单LoRA；部署不保留Reader。
+R在全部真实转移×50上按自身s=Q A0h读normalize(Ek)，softmax无温度/sqrt/自身单位化、只mask padding，输出B_T(q+r)。
+预计算合法memory仅该条件内保留；R只作额外读取诊断，不当EMBER部署/分数。两类不互相包含，不能声称R为L上界。
+
+| 全部验证task，每task50 | 强父T2340 | L270 | R270 |
+| --- | ---: | ---: | ---: |
+| 3 / spatial:3 | 45 | 41 | 44 |
+| 6 / spatial:6 | 6 | 6 | 5 |
+| 11 / object:1 | 45 | 44 | 44 |
+| 16 / object:6 | 5 | 5 | 4 |
+| 23 / goal:3 | 0 | 0 | 0 |
+| 26 / goal:6 | 36 | 33 | 35 |
+| 31 / long:1 | 24 | 29 | 27 |
+| 39 / long:9 | 0 | 0 | 0 |
+| 合计 | 161 | 158 | 159 |
+
+Spatial/Object/Goal/Long各100条分别为父51/50/36/24、L47/49/33/29、R49/48/35/27，breadth均6/8。
+父→L保留/新增/丢失144/14/17、churn31、Jaccard .822857；父→R144/15/17、churn32、Jaccard .818182。
+L→R为142/17/16、churn33、Jaccard .811429。task31的净增5/3有实际正例，却被其它能力损失抵消；
+不能以相对L多1条为R背书，不能拼成功并集或用训练loss选择270之外的节点。
+
+task39父/L/R各50条杯中心均出现相对t0高3cm，但native In及成功全0。
+该运动事件中位步93.5/95/101，倾角中位7.047/6.714/7.675°；首次正gripper命令前最大倾角中位6.634/6.370/6.701°。
+最近真实炉腔box距离中位11.875/12.576/13.042cm，终态13.744/14.526/14.602cm；全部T+1样本与原native In一致。
+box使用公开XML direct-child heating_region及自身固定炉体pose，包含原SiteObject的z下界−1cm，不是body中心代理。
+这些是自身运动和原谓词，不能命名抓稳/掉杯/contact或必要姿态。固定L/R init0 full可见近竖直接近后向炉前搬、后段仍在门侧，
+只描述这两行，其余行为来自完整连续表，不由两个画面外推50条视觉阶段。
+
+task16成功父/L/R5/5/4；butter中心高3cm12/9/11条，orange21/21/21条；首次这种运动butter-first12/9/11、orange-first21/21/21、neither17/20/18。
+固定两臂init0 full仍朝orange并发生其搬移，butter未完成In；R该行butter中心全程未动。保留正确/错误实体完整位移及成功更替，
+没有把对象运动阈值改成抓持真值或只保留正例。
+
+三训练任务×原seen144 init32..35、同teacher/scene/env/policy RNG的父T2340/L/R各12为8/9/8。
+task29为2/3/2，task34及73均3/3/3；父8个成功两臂都保持，L仅29/init32新增。
+该行父/L/R首次正命令前最大倾角54.54/54.70/54.28°，瓶最大升高3.32/37.80/3.26cm；只有L完成rack。
+因此正例不等于补出原来没有的转腕。task29/init33全失败；task34/init35白杯目标全未完成但黄杯On已真；
+task73/init33均移黄杯却未Close，移杯本就见于该task示范，Close不是In。九条训练init32的完整双RGB均保存并查看；
+这里父是2340，不沿用§337的T1800作同模型参照。Seen小面板不冒充held-video/完整泛化资格。
+
+824个L/R条件全部有38处×10flow、313120条有限被动摘要，匹配原producer/worker/shard和实际replan次数。
+在该臂同一自身h测delta_L=(B_L−B_T)A0h、delta_R=B_T r；task39 delta RMS/父LoRA RMS为.04663/.005745，task16为.05574/.01275。
+三训练任务L为.05468/.09733/.04470，R为.009360/.01653/.01005，实际读取非零。小R分量是定位事实，
+不能直接当根因、完整动作差或改温度授权。R的task39/16有效帧均值56.23/29.47、槽47.16/47.06，
+定义为alpha先沿自身suffix位置平均后的marginal逆平方和，再按真实调用平均；不是逐位置熵、操作阶段真值或因果注意力。
+
+一处明确限制来自实际源码：action_in_proj的teacher X为每帧同probe1729，k/e沿帧重复，故该处帧marginal均匀；
+seen12的120条target-flow原行有效帧/真实转移约1、top-frame0是并列argmax，不是选择早期准备。
+此事实只覆盖38处之一，phi/U与其它37处仍可依赖视频，不能据此宣称整个Reader没有内容。
+完整定义、源码字段和实际原件见root analysis/key_source_limits.json、methods.md与launch/effects_readback；未新开forward或controls。
+
+本合同没有获得R对强父的有覆盖完整控制增量，也没有修复任务39的准备/输送或任务16的对象选择。
+按照事前结果分支，降低并停止扩张“冻结成熟T内容加本逐层软读取即可修复”的主假设，不扫描/续训保护它。
+两臂都学地址匹配，L也已有多层非线性自身反馈；替换同时改变保留/擦除和归一化选择，尚不能唯一归因于其中一项。
+输入内容是否足够、地址是否承接关系、固定270学习曝光是否充分仍未被分开，不能反推静态LoRA能力上限或冻结前缀丢信息。
+旧Reader/T-U/clock阴性保持。本批只有一终点，没有相邻能力及视频因果资格，不自动蒸馏/fresh/新Reader或另选架构。
+
+唯一root /data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/完整保留836新full-horizon（25full/811compact）及旧父400来源。
+CPU readback核1236行actions/continuous/predicates/配对，25条full产生64张双RGB及完整时间映射；实际查看九条训练init32及L/R16/39 init0，
+其它12条仅保存，不冒称已查看。主入口analysis/report.md、summary.json、readback.json、per_row.json、motion/per_task/per_suite/paired_summary表、
+behavior_summary.json、full_RGB/sources.json；原train/checkpoints、banks、evaluation/results/shards/trajectories/continuous/transition_effects是权威原件。
+实际训练2de7aaa7；父seen12物化/评测0ec4663a，L/R物化/评测ed662969；各clean pushed detached frozen留存不原地修改。
+14次launch含加载/profile/OOM/准入拒绝/重试7.982602完整GPUh/12，最大同时6卡，现场全局6/单节点6守住，GPU/PID已退出。
+train micro28/chunk16约11.90秒/宏；R profile14/8→28/16为15.58→13.14秒，reserved17.744GiB，正式L/R最大batch32/16有实际worker记录。
+R首个400现场准入拒绝、第二个EGL/native总显存OOM均0完成行；在原科学字段不变下迁物理2/7→4/7、同env16/28分片后完整完成400，失败与迁移原件保留。
+data1 strg01独立quota准入、封口前root12.505GiB及保守新增峰界16/24GiB（非连续峰遥测）有记录，R全池native disk cache为0。
+canonical四个专用入口/模块与五hooks退役，保留通用worker finally关闭adapter再关闭pool修复；fresh CPU29项、父400-condition bank静态消费者及退役两臂拒绝通过。
+旧历史capture今日再准入的既有输出scope限制保留，baseline未改、旧T400未重跑，不把静态消费者检查冒称旧全运行重验。
+最终Git/push/耗时/工程树清理/一次main交接以root completion与launch记录为准；整批交还tracked/Git后停止新增计算，主讨论独立消费与后继裁决。

@@ -1,3 +1,31 @@
+## 2026-10-06 固定T转移读取比较完成，专用运行面封口
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成query_conditioned_transition_read_20261005固定全部范围：
+L/R各270更新、30240跨episode query；唯一终点各correct400，加父/L/R seen12共36条，总836新full-horizon、25full/811compact。
+强父T2340原400直接复用，成功161；L158、R159，breadth均6/8。对父L为R144/G14/L17、R为R144/G15/L17；
+两臂互比R142/G17/L16，churn33。task31的24→29/27正例与其它task能力损失同时保留，task23/39未打开，见findings§339。
+task39杯中心高3cm各50/50但In全0；最近真实box距离中位父/L/R11.875/12.576/13.042cm。
+task16成功5/5/4，butter高3cm12/9/11、orange21/21/21；训练29/34/73父8/12、L9/12、R8/12，L仅29/init32新增。
+这降低并停止扩张本固定“冻结T内容加逐层软读取即可修复”假设；不宣布LoRA能力上界、充分训练或唯一根因。R不作EMBER成绩。
+
+全部1236来源行（400旧父＋836新）continuous/action/predicates/scene/teacher/RNG配对通过，task39全部T+1样本与真实XML box/native In一致。
+L/R824条件、313120条38处×10flow实际读取摘要覆盖完整，匹配producer/worker/shard；25条full有64张双RGB及完整时间映射。
+已查看九条固定训练init32与L/R的16/39 init0全部已捕获replans；其它保存画面不冒称已查看。
+唯一root /data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/；主要入口analysis/report.md、summary.json、readback.json、per_row.json、
+motion.tsv、per_task.tsv、per_suite.tsv、behavior_summary.json、full_RGB/sources.json及launch/effects_readback。完整原始训练/banks/results/shards/trace/checkpoints留存。
+
+所有14个GPU launch已退出，含profile/OOM/准入失败/加载/重试累计7.982602完整GPUh/12，最大同时6卡；现场双节点及记录PID均已释放。
+峰值卡数按当次全局6/单节点6执行。train micro28/chunk16约11.90秒/宏，L/R正式评测实际最大batch32/16；没有为两臂附加两卡上限。
+data1独立quota准入原件保留，封口前root12.505GiB，新增保守峰界16GiB/24（非连续峰遥测），R全池native disk cache为0。
+R首次400现场准入拒绝、第二次EGL/native总显存OOM各0完成科学行；保留失败，在原预算内迁物理2/7→4/7、原env16/28分片与全部科学字段不变后完整完成。
+实际训练来源2de7aaa7；父seen12读取0ec4663a，L/R全部物化/评测ed662969，三处clean pushed detached frozen不原地改动。
+
+canonical四个专用入口/模块、五处临时hooks已退役，保留通用worker finally关闭adapter再关闭pool的修复；Git/frozen/原件和完整新优化状态不删。
+fresh针对性CPU29项通过，原T2340 400-condition bank静态消费者通过，退役L/R bank拒绝；旧历史capture再准入的既有scope限制保留，未改baseline或重启旧T400。
+实际检查与最终推送/工程worktree清理/耗时/一次主讨论回执见root launch/retirement_checks.json与completion.json。
+本批active design执行已关闭、停止新增计算；仅整批一次回main并交回canonical tracked/Git窗口。main独立消费科学原件，没有自动蒸馏/fresh/续训/扫描/Reader/Test或下一批授权。
+下方接手、launch、待完成及写窗口文字均属此前时点。
+
 ## 2026-10-05 固定T转移读取比较由实验session实际承接
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已完整读取179行active design及findings§338，

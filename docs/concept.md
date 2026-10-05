@@ -61,6 +61,10 @@ exact task language + action-hidden、内部有序的正确教学RGB视频
 不能以无真实prefix、假动作query或无意义forward代替。H是条件化动作计算响应，并非恢复出的teacher action或待执行标签；
 完整50个horizon位置应保留到实际learned read。Video time、action horizon、flow time和layer depth分别解释。
 
+Owner要求尽可能保持原生图文prefix冻结，以保留图像理解基础；当前后继按这一边界设计。
+只读利用前缀特征不等于适配部署前缀，动作侧条件编译失败也不直接证明前缀表示不足。
+应先解释冻结前缀的已有信息怎样经Writer、动作侧Q/V及自身hidden形成正确控制，不能以改动图像理解替代这项解释。
+
 操作内容、顺序与条件作用可以由不同结构表达；Core、Procedure、memory token和具体decoder都是候选实现。
 模块须职责清楚、能复制加深并自然扩参；选择由完整相关历史及实际行为决定，不把某次局部诊断变成永久结构限制。
 共享参数和结构依赖提供学习偏置，不保证视频必要性、迁移或能力保持。

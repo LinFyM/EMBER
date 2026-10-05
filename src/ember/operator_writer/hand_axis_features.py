@@ -173,7 +173,8 @@ def worker(chunk, worker_id):
         write_json(feature_dir / (row['key'] + '.json'), record)
         rows.append(record)
         del values, condition
-        claim.rmdir()
+        # Keep the claim after publication: a late concurrent check cannot
+        # acquire it between the destination check and directory creation.
     data.close()
     write_json(ROOT / 'launch' / f'extract_worker_{worker_id}.json', dict(rows=rows,
         git=git, allocated_peak_bytes=torch.cuda.max_memory_allocated(),
@@ -186,7 +187,8 @@ def launch_workers(chunk):
     for index, gpu in enumerate(devices):
         env = dict(os.environ, CUDA_VISIBLE_DEVICES=gpu)
         log = (ROOT / 'launch' / f'extract_worker_{index}.log').open('w')
-        processes.append((subprocess.Popen([os.sys.executable, '-m', __name__, 'worker',
+        processes.append((subprocess.Popen([os.sys.executable, '-m',
+            'ember.operator_writer.hand_axis_features', 'worker',
             '--chunk', str(chunk), '--worker-id', str(index)], env=env, stdout=log,
             stderr=subprocess.STDOUT), log))
     codes = []

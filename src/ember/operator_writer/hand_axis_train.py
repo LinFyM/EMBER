@@ -259,7 +259,8 @@ def paired(phase):
     for arm, gpu in zip(('H','KV'), devices, strict=True):
         log = (ROOT/'launch'/f'head_{phase}_{arm}.log').open('w')
         env = dict(os.environ, CUDA_VISIBLE_DEVICES=gpu)
-        processes.append((subprocess.Popen([os.sys.executable,'-m',__name__,phase,'--arm',arm],
+        processes.append((subprocess.Popen([os.sys.executable,'-m',
+            'ember.operator_writer.hand_axis_train',phase,'--arm',arm],
             env=env, stdout=log, stderr=subprocess.STDOUT), log))
     codes = [p.wait() for p,_ in processes]
     for _, log in processes:

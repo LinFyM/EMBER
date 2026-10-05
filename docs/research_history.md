@@ -3,6 +3,19 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-05：固定200条CPU炉门反事实完成，取消碰撞未修复入炉
+
+按[合同](designs/task39_door_contact_replay_20261005.md)完成T2340/C900各50条原命令在正常/仅门child无碰撞物理下的200条完整重放，见findings§333。
+100正常parent的保存杯/EEF/gripper偏差0、原In/Close一致，均通过1cm准入；两模型In仍0/50→0/50。
+最近native box距离中位T11.875→17.606cm、C7.806→17.449cm，多数变差；最强改善、近/远/迟取杯和全部长距离终态同时保留。
+真实步末门/炉体/杯/robot/桌面接触、geom pairs、力与门角可复核，robot—固定炉体是同批被动字段，无额外碰撞臂。
+降低门阻挡作为原命令输送不足的充分解释，不确诊神经模块、姿态或抓持；从t0物理分叉后仍执行原命令，不称policy闭环成绩。
+唯一root /data1/user/ymdai/ember_runs/task39_door_contact_replay_20261005/ 保留inputs、200条raw、逐行表、CPU读回、launch/exit、核验/费用。
+实际运行138eb096 clean pushed detached frozen；两次launch均exit0，含加载物理计量.509232CPUh，工程/检查另记保守上界。
+源码/薄入口两文件在最终封口提交退役，原scene/OSC/谓词/passive owner保持；frozen/Git/原件保留。
+0模型/Writer/LoRA生成/forward、0GPU/CUDA/环境渲染/梯度/held teacher特权/Test；实际wall/新增峰和一次写窗口交回见root completion。
+无自动后继物理、模型或训练；main独立消费后继续科学判断。
+
 ## 2026-10-05：从自身scene重建真实炉腔边界，登记原命令的门碰撞辨识
 
 findings§331以原XML/site/In实现与固定炉体自身姿态补出目标box，而非用炉体原点代替。

@@ -1,3 +1,16 @@
+## 2026-10-05 task39固定命令炉门重放整批退出，专用运行面退役
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已完成固定200条full CPU物理重放，100对逐行读回/原生box/接触/命令核验通过。
+T2340/C900各正常50条mug/EEF/gripper保存偏差0、In/Close全序列一致；原命令不变，取消door child碰撞后两模型仍各0/50 In。
+最近box距离中位T11.875→17.606cm、C7.806→17.449cm，逐对差中位+5.257/+8.263cm；完整改善/退步、迟取杯与极端终态均保留，见findings§333。
+实际杯—门/robot—门接触100/93行；无门两类为0，另保存robot—固定炉体、杯—炉体/robot/桌面及直接力/门角，不追加其它臂。
+两次launch均exit0；物理进程树含加载实测.509232CPUh，余下198条8 workers实际231.128秒，全部计算已退出并停止新增物理计算。
+专用两个源码/入口在本提交退役，共享原scene/OSC/谓词/passive owner未改；138eb096 frozen及完整原件保留。
+唯一root /data1/user/ymdai/ember_runs/task39_door_contact_replay_20261005/；per_row.json/tsv、raw NPZ、命令/退出、verification/resources/completion可核。
+0模型/Writer/LoRA生成/forward、0GPU/CUDA/环境渲染/梯度/held teacher特权/Test；预算、最终Git和一次main交接以root completion为准。
+本批active design执行已关闭，没有自动新物理计算、模型或训练授权。完成Git封口/清理task-owned工程worktree后仅一次整批回报main并交还tracked/Git写窗口；
+main独立消费与科学裁决，不重复工程验收。以下接手、launch及active文字均为此前时点。
+
 ## 2026-10-05 task39炉门接触重放由实验session实际接手
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已完整接受227ce3ac active design及findings§330–332，

@@ -4,6 +4,8 @@
 三臂已在gpu02的1/7/3共驻启动；ba4629e1首批因新消费者把运行时小写in写成In，在首query前全部退出并释放。
 全部加载/失败成本.10053完整GPUh，原件保留root/failed_attempts/attempt1；按真实parsed goal修复并CPU核实际BDDL后，
 2273b0a3 clean pushed detached frozen_attempt2已在gpu02的7/3/2共驻重新启动（PID3284094/3284099/3284101）。
+该批又在首query前因robosuite分割uint8×256与NumPy2不兼容而退出，0完成行，累计.17623完整GPUh。
+只修专用消费者的原生ID-buffer int32解码，不改共享环境、分割含义、干预公式或面板；失败原件和frozen全部保留。
 三臂各常驻一套source、物理batch12；唯一launch持续等待整批退出，无阶段轮询/自通知。
 仅固定12case×parent/butter/orange三臂36full，复用原bank/scene/交换与attention owner；
 无Writer/训练/formal400/梯度/Test，不恢复S=0、role/crop或prefix适配。硬2完整GPUh/8GiB，含工程预计2–4小时。

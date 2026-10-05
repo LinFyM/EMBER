@@ -46,6 +46,22 @@ def redistribute(a, f, receiver):
     return result, m
 
 
+def render_segmentation(sim, camera):
+    """Native robosuite ID-buffer decoding with explicit int32 for NumPy2."""
+    from robosuite.utils.binding_utils import _MjSim_render_lock
+    with _MjSim_render_lock:
+        context = sim._render_context_offscreen
+        context.render(256,256,camera_id=sim.model.camera_name2id(camera),segmentation=True)
+        rgb = context.read_pixels(256,256).astype(np.int32)
+        ids = rgb[...,0] + rgb[...,1]*256 + rgb[...,2]*65536
+        ids[ids >= context.scn.ngeom+1] = 0
+        registry = np.full((context.scn.ngeom+1,2),-1,dtype=np.int32)
+        for geom in context.scn.geoms[:context.scn.ngeom]:
+            if geom.segid != -1:
+                registry[geom.segid+1] = (geom.objtype,geom.objid)
+        return registry[ids]
+
+
 def visible_coverage(env, observation, *, verify=False):
     """Current simulator visual geoms, original sensor convention and real224 mapping."""
     import mujoco
@@ -70,7 +86,7 @@ def visible_coverage(env, observation, *, verify=False):
     convention = IMAGE_CONVENTION_MAPPING[macros.IMAGE_CONVENTION]
     masks, pictures, checks = [], [], []
     for camera, obskey in [('agentview', 'agentview_image'), ('robot0_eye_in_hand', 'robot0_eye_in_hand_image')]:
-        segmentation = owner.sim.render(256, 256, camera_name=camera, segmentation=True)[::convention]
+        segmentation = render_segmentation(owner.sim, camera)[::convention]
         if verify:
             rgb = owner.sim.render(256, 256, camera_name=camera)[::convention]
             equal = np.array_equal(rgb, observation[obskey])
@@ -87,6 +103,7 @@ def visible_coverage(env, observation, *, verify=False):
     assert (f >= 0).all() and (f <= 1).all() and (f.sum(0) <= 1.000001).all()
     return names, f, dict(camera_names=['agentview','robot0_eye_in_hand'],
         source='current own sim visual segmentation, geom type/id -> free-body descendants',
+        decoder='native robosuite segmentation ID RGB buffer; explicit int32 decode for NumPy2',
         sensor_convention=macros.IMAGE_CONVENTION, canonical_rotate180=True,
         resize='native bilinear256->224, align_corners=False; avg14x14->16x16',
         current_RGB_equal=checks, pixels=np.stack(pictures) if verify else None,

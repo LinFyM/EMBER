@@ -20,7 +20,7 @@ def load_manifest():
     return json.loads((ROOT / 'manifest.json').read_text())
 
 
-def prepare_labels():
+def prepare_labels(*, evaluation=False):
     """Only runs after all action-hidden native feature consumers exit."""
     from .hand_axis_probe import axis_labels
     completion = json.loads((ROOT / 'features/completion.json').read_text())
@@ -28,7 +28,17 @@ def prepare_labels():
         raise ValueError('labels cannot precede complete native extraction')
     state = load_manifest()
     arrays, sources = {}, []
+    if evaluation:
+        for arm in ('H', 'KV'):
+            done = json.loads((ROOT/'heads'/arm/'completion.json').read_text())
+            if done['updates'] != 500:
+                raise ValueError('evaluation labels require both fixed500 endpoints')
+        with np.load(ROOT/'labels.npz') as store:
+            arrays = {key:store[key] for key in store.files}
+        sources = json.loads((ROOT/'label_sources.json').read_text())['sources']
     for clip in state['clips']:
+        if clip['role'] != ('eval' if evaluation else 'fit'):
+            continue
         indices = np.asarray(clip['raw_indices'], dtype=np.int64)
         with h5py.File(clip['hdf5'], 'r') as handle:
             demo = handle[f'data/demo_{clip["demo"]}']
@@ -49,9 +59,13 @@ def prepare_labels():
             command_use='passive grouping only, never native/head input or sampling',
             head_role=clip['role'], pre_positive_count=int(before.sum())))
     np.savez(ROOT / 'labels.npz', **arrays)
-    write_json(ROOT / 'label_sources.json', dict(sources=sources, frames=4382,
+    frame_count = sum(len(value) for key,value in arrays.items() if key.endswith('_z'))
+    write_json(ROOT / 'label_sources.json', dict(sources=sources, frames=frame_count,
         read_after_native_completion=True, official_validation_test=False,
+        evaluation_labels_read_only_after_both500=evaluation,
         privileged_fields_read=['authorized_train.obs/ee_ori', 'authorized_train.actions[:,6]_passive_only']))
+    if evaluation:
+        return
     rng = np.random.default_rng(20261006)
     events = []
     snapshots = {}
@@ -73,14 +87,14 @@ def prepare_labels():
         snapshots=snapshots))
 
 
-def labels():
+def labels(*, fit_only=False):
     state = load_manifest()
     with np.load(ROOT / 'labels.npz') as store:
         return {c['key']:dict(z=store[c['key']+'_z'], pre_positive=store[c['key']+'_pre_positive'],
                     source=dict(hdf5=c['hdf5'], orientation_field=f'data/demo_{c["demo"]}/obs/ee_ori',
                         feature=str(ROOT/'features'/(c['key']+'.safetensors')),
                         raw_indices=c['raw_indices'], same_obs_offset=0))
-                for c in state['clips']}
+                for c in state['clips'] if not fit_only or c['role'] == 'fit'}
 
 
 def feature(clip, arm):
@@ -89,7 +103,7 @@ def feature(clip, arm):
 
 
 def fit_data(arm, device):
-    state, target = load_manifest(), labels()
+    state, target = load_manifest(), labels(fit_only=True)
     clips = [r for r in state['clips'] if r['role'] == 'fit']
     # Fit is the first contiguous manifest block; indices are the saved global IDs.
     if clips[0]['global_start'] != 0 or sum(c['nframes'] for c in clips) != 1940:
@@ -237,7 +251,7 @@ def train(arm):
 
 def analyze():
     from .hand_axis_probe import analyze as score
-    state, target = load_manifest(), labels()
+    state = load_manifest()
     predictions = {}
     for arm in ('H','KV'):
         completion = json.loads((ROOT/'heads'/arm/'completion.json').read_text())
@@ -245,6 +259,9 @@ def analyze():
             raise ValueError('both fixed endpoints must precede scoring')
         with np.load(ROOT/'heads'/arm/'predictions.npz') as store:
             predictions[arm] = {key:store[key] for key in store.files}
+    if json.loads((ROOT/'label_sources.json').read_text())['frames'] == 1940:
+        prepare_labels(evaluation=True)
+    target = labels()
     result = score(state, target, predictions, ROOT/'analysis')
     rows = []
     for clip in state['clips']:

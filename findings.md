@@ -9324,3 +9324,7 @@ Phi FM—AUX cosine +.403/−.318/−.195；Compiler FM—KD −.037/−.410/−
 原frame16放大阈值过保守已承认；原task7/demo35/同28query frame32核验51.66→49.37s、25.66→39.77GiB，单次不称统计显著，未增加独立案例/替换科学结果。
 两个0GPU CPU/checkout接口拒绝原件保留，无模型OOM/非finite/缺项。完整费用计量边界、命令/退出/最后无本用户GPU与工程树清理/退役/clean pushed Git以root ledger/completion/delivery_receipt为准。
 三个专用source/hook入口封口退役，Git/frozen/raw/全部旧checkpoint保留；窗口交回main，本批0自动后继。
+
+封口另发现资源记录缺项：frame32 owner复用了通用admission/preflight/storage文件名，覆盖首次launch精确现场raw快照。
+首次实际现场check/cap/clean guard均执行通过，早期双节点快照、初始quota/个人du、实际started/exit/Git/命令与全费用仍保留；
+不能重建缺失快照或冒称原始资源记录全部保存。第二次原件独立改名保留、最后释放快照完整；科学输入/配对/结果不受影响，root engineering/recording_gap.json明确main验收限制，不GPU重跑。

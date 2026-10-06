@@ -511,5 +511,27 @@
     "raw/attempt1/manifest.json",
     "raw/attempt1/*.json/*.npz",
     "ledger/resource_ledger.json"
-  ]
+  ],
+  "known_recording_gap": {
+    "status": "known_recording_gap",
+    "reason": "Physical32 launch reused generic admission/preflight/storage filenames and overwrote first launch raw snapshot; not reconstructed or re-measured as historical state",
+    "missing": [
+      "first launch exact live two-node raw snapshot",
+      "first launch exact raw quota/shared snapshot and full admission payload"
+    ],
+    "preserved": [
+      "launch/preflight_initial_launch.json before first launch",
+      "launch/initial_storage.json authoritative independent quota and complete personal du",
+      "launch/attempt1_started.json actual PID/GPU7/Git/command/environment",
+      "launch/attempt1_exit.json exact complete wholeGPU charge/exit0",
+      "launch/run_readback.py original executable admission guard and finite process owner",
+      "launch/physical32_admission.json",
+      "launch/physical32_preflight.json",
+      "launch/physical32_storage.txt",
+      "launch/final_resources_after_physical32.json"
+    ],
+    "scientific_inputs_and_results": "All exact checkpoints/Git/events/query/noise/GT masks/G/C own native/pairing/finite/full-output files preserved, unaffected",
+    "launch_semantics": "Each owner actually fetched strg01 quota/shared and both GPU nodes before Popen; cap,eligibility and clean pushed checks passed as executable guards. First exact snapshot bytes now missing, not falsely called retained.",
+    "response": "No GPU/data rerun; batch sealed and gap reported once to main for independent acceptance"
+  }
 }

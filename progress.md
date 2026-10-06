@@ -5,6 +5,7 @@
 全部0optimizer step/0环境/0held/Test，旧G450126/强MT153/T2340161及弱F66保持。科学读取来自clean pushed detached e95ab18a，原G/C各自公共beta/native无互传；唯一同原首case frame32工程核验来自19d63cde，不替换原12条件科学结果。
 实际GPU计算结束2026-10-06T18:26前后，两消费者whole954.943417秒=.265262h/2；R与工程树测量+Git登记余量新增峰估计.646GiB/4，具体开始/退出/费用/计量边界看root ledger/resource_ledger.json。所有失败/加载/profile纳入；两项0GPU接口拒绝保留，模型全finite无OOM/缺项。
 frame32同原task7/demo35/28 query真实吞吐51.66→49.37s、peak25.66→39.77GiB；先前放大阈值过保守已如实更正，单次不声称统计显著，进一步64按已测内存增量超现场余量。
+封口发现第二次owner同名资源文件覆盖首次launch精确raw快照；初始现场/真实started-exit/Git/费用与执行准入guard仍在，缺字节不重造，engineering/recording_gap.json一次报main，科学原件/配对不受影响。
 双节点最后无本用户GPU，三个本批专用入口与统计helper退役，原Git/frozen/模型/标签/raw不改不删；final Git/工程worktree清理/资源退出/一次整批投递回执以root completion.json和launch/delivery_receipt.json为准。
 本批不再active；canonical tracked/Git完整交回main，main独立科学消费并裁决完整方法，Owner持续目标未完成。本session停止该批新增分析，无自动训练/下一诊断/扫描/controls/Test；下方承接和active文字均为历史。
 

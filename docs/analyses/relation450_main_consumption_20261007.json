@@ -1,0 +1,594 @@
+{
+  "schema_version": "ember_relation450_main_consumption_v1",
+  "created_utc": "2026-10-06T17:35:31.857606+00:00",
+  "scope": "Completed original rows and saved CPU optimizer state; no new model/environment/gradient/GPU; diagnostic inference below is not causal performance evidence.",
+  "panels": {
+    "G450": {
+      "source": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/readouts/G/450/correct400/evaluation/results.json",
+      "rows": 400,
+      "successes": 126,
+      "per_task": {
+        "libero_10/1": 12,
+        "libero_10/9": 0,
+        "libero_goal/3": 0,
+        "libero_goal/6": 37,
+        "libero_object/1": 33,
+        "libero_object/6": 3,
+        "libero_spatial/3": 30,
+        "libero_spatial/6": 11
+      }
+    },
+    "G360": {
+      "source": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/readouts/G/360/correct400/evaluation/results.json",
+      "rows": 400,
+      "successes": 131,
+      "per_task": {
+        "libero_10/1": 8,
+        "libero_10/9": 0,
+        "libero_goal/3": 0,
+        "libero_goal/6": 34,
+        "libero_object/1": 32,
+        "libero_object/6": 4,
+        "libero_spatial/3": 37,
+        "libero_spatial/6": 16
+      }
+    },
+    "T450": {
+      "source": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900/T/evaluation/450/correct400/results.json",
+      "rows": 400,
+      "successes": 122,
+      "per_task": {
+        "libero_10/1": 14,
+        "libero_10/9": 0,
+        "libero_goal/3": 1,
+        "libero_goal/6": 38,
+        "libero_object/1": 42,
+        "libero_object/6": 1,
+        "libero_spatial/3": 24,
+        "libero_spatial/6": 2
+      }
+    },
+    "U450": {
+      "source": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation900/U/evaluation/450/correct400/results.json",
+      "rows": 400,
+      "successes": 143,
+      "per_task": {
+        "libero_10/1": 27,
+        "libero_10/9": 0,
+        "libero_goal/3": 0,
+        "libero_goal/6": 41,
+        "libero_object/1": 40,
+        "libero_object/6": 2,
+        "libero_spatial/3": 31,
+        "libero_spatial/6": 2
+      }
+    },
+    "C450": {
+      "source": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/conditional_read_write/evaluation/correct400/results.json",
+      "rows": 400,
+      "successes": 137,
+      "per_task": {
+        "libero_10/1": 24,
+        "libero_10/9": 0,
+        "libero_goal/3": 0,
+        "libero_goal/6": 36,
+        "libero_object/1": 34,
+        "libero_object/6": 0,
+        "libero_spatial/3": 37,
+        "libero_spatial/6": 6
+      }
+    },
+    "Context450": {
+      "source": "/data1/user/ymdai/ember_runs/operator_context_value_fresh_20261001/context/evaluation/correct400/results.json",
+      "rows": 400,
+      "successes": 126,
+      "per_task": {
+        "libero_10/1": 9,
+        "libero_10/9": 0,
+        "libero_goal/3": 2,
+        "libero_goal/6": 34,
+        "libero_object/1": 42,
+        "libero_object/6": 8,
+        "libero_spatial/3": 28,
+        "libero_spatial/6": 3
+      }
+    },
+    "MT": {
+      "source": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1/MT/evaluation/correct400/results.json",
+      "rows": 400,
+      "successes": 153,
+      "per_task": {
+        "libero_10/1": 24,
+        "libero_10/9": 0,
+        "libero_goal/3": 0,
+        "libero_goal/6": 35,
+        "libero_object/1": 36,
+        "libero_object/6": 10,
+        "libero_spatial/3": 41,
+        "libero_spatial/6": 7
+      }
+    },
+    "T2340": {
+      "source": "/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340/T/evaluation/2340/correct400/results.json",
+      "rows": 400,
+      "successes": 161,
+      "per_task": {
+        "libero_10/1": 24,
+        "libero_10/9": 0,
+        "libero_goal/3": 0,
+        "libero_goal/6": 36,
+        "libero_object/1": 45,
+        "libero_object/6": 5,
+        "libero_spatial/3": 45,
+        "libero_spatial/6": 6
+      }
+    }
+  },
+  "G450_vs_reference": {
+    "G360": {
+      "retained": 94,
+      "gained": 32,
+      "lost": 37,
+      "churn": 69,
+      "Jaccard": 0.5766871165644172
+    },
+    "T450": {
+      "retained": 92,
+      "gained": 34,
+      "lost": 30,
+      "churn": 64,
+      "Jaccard": 0.5897435897435898
+    },
+    "U450": {
+      "retained": 95,
+      "gained": 31,
+      "lost": 48,
+      "churn": 79,
+      "Jaccard": 0.5459770114942529
+    },
+    "C450": {
+      "retained": 92,
+      "gained": 34,
+      "lost": 45,
+      "churn": 79,
+      "Jaccard": 0.5380116959064327
+    },
+    "Context450": {
+      "retained": 91,
+      "gained": 35,
+      "lost": 35,
+      "churn": 70,
+      "Jaccard": 0.5652173913043478
+    },
+    "MT": {
+      "retained": 102,
+      "gained": 24,
+      "lost": 51,
+      "churn": 75,
+      "Jaccard": 0.576271186440678
+    },
+    "T2340": {
+      "retained": 104,
+      "gained": 22,
+      "lost": 57,
+      "churn": 79,
+      "Jaccard": 0.5683060109289617
+    }
+  },
+  "training_windows": {
+    "90": {
+      "G_FM": 0.12399976326980525,
+      "F_FM": 0.12650113253750736,
+      "KD": 0.0017483499391346413,
+      "output_cosine": -0.025571224129286283,
+      "lambda_weighted_gradient_norm_ratio": 0.02221997412296713,
+      "F_lower_FM_conditions": 114,
+      "conditions": 360
+    },
+    "180": {
+      "G_FM": 0.11585169986097349,
+      "F_FM": 0.12386917855797543,
+      "KD": 0.005442112939070083,
+      "output_cosine": -0.051283061159042805,
+      "lambda_weighted_gradient_norm_ratio": 0.0541841891446268,
+      "F_lower_FM_conditions": 74,
+      "conditions": 360
+    },
+    "270": {
+      "G_FM": 0.11189856992827521,
+      "F_FM": 0.12224728243632449,
+      "KD": 0.007984618319379579,
+      "output_cosine": -0.03954535068853488,
+      "lambda_weighted_gradient_norm_ratio": 0.0667812926124664,
+      "F_lower_FM_conditions": 42,
+      "conditions": 360
+    },
+    "360": {
+      "G_FM": 0.10834099369951421,
+      "F_FM": 0.11916378837906652,
+      "KD": 0.008229738141461792,
+      "output_cosine": -0.043420275500184125,
+      "lambda_weighted_gradient_norm_ratio": 0.06890275860698745,
+      "F_lower_FM_conditions": 24,
+      "conditions": 360
+    },
+    "450": {
+      "G_FM": 0.10678760284144018,
+      "F_FM": 0.11802391971771915,
+      "KD": 0.009206174592772084,
+      "output_cosine": -0.03237400718644704,
+      "lambda_weighted_gradient_norm_ratio": 0.07340390987553091,
+      "F_lower_FM_conditions": 24,
+      "conditions": 360
+    }
+  },
+  "output_identity": "<G-y,G-F>=(L_G+L_KD-L_F)/2 on same z,tau,y; aggregate cosine is in concatenated output space, not parameters or Adam updates.",
+  "optimizer": {
+    "source": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/train/attempts/fresh/checkpoints/macro_00000450",
+    "scope": "CPU read only; saved G optimizer denominator, 2000 regularly spaced elements per parameter tensor, tensor stratified not element weighted; no model forward or gradient",
+    "groups": {
+      "public": {
+        "tensors": 76,
+        "parameters": 10297344,
+        "sample_n": 153642,
+        "sqrtv_q10_50_90": [
+          8.475035429000854e-08,
+          1.0728836059570312e-06,
+          5.4836273193359375e-06
+        ],
+        "fraction_lt_eps": 0.019102849066257477,
+        "fraction_lt_10eps": 0.11403132230043411,
+        "median_eps_attenuation": 0.990765392780304
+      },
+      "Phi": {
+        "tensors": 87,
+        "parameters": 3452241,
+        "sample_n": 74483,
+        "sqrtv_q10_50_90": [
+          7.128663810362923e-07,
+          1.646971213631332e-05,
+          0.0002136365947080776
+        ],
+        "fraction_lt_eps": 0.0030879529658704996,
+        "fraction_lt_10eps": 0.031107770279049873,
+        "median_eps_attenuation": 0.9993931651115417
+      },
+      "Omega": {
+        "tensors": 84,
+        "parameters": 3595024,
+        "sample_n": 84778,
+        "sqrtv_q10_50_90": [
+          5.835271821297283e-09,
+          7.872224472293965e-08,
+          7.597616331622703e-07
+        ],
+        "fraction_lt_eps": 0.15058152377605438,
+        "fraction_lt_10eps": 0.5519238710403442,
+        "median_eps_attenuation": 0.8872856497764587
+      },
+      "read": {
+        "tensors": 7,
+        "parameters": 853504,
+        "sample_n": 9590,
+        "sqrtv_q10_50_90": [
+          2.1732241006766628e-10,
+          4.380396845249379e-08,
+          6.679712782897695e-07
+        ],
+        "fraction_lt_eps": 0.46319082379341125,
+        "fraction_lt_10eps": 0.5663191080093384,
+        "median_eps_attenuation": 0.8141147494316101
+      },
+      "compiler": {
+        "tensors": 380,
+        "parameters": 85344256,
+        "sample_n": 768672,
+        "sqrtv_q10_50_90": [
+          1.0656530996175362e-12,
+          2.1139312522677756e-10,
+          1.0088689883502866e-08
+        ],
+        "fraction_lt_eps": 0.8993901014328003,
+        "fraction_lt_10eps": 0.9843405485153198,
+        "median_eps_attenuation": 0.020701533183455467
+      }
+    },
+    "windows": {
+      "90": {
+        "G_preclip_median": 6.215228319168091,
+        "F_preclip_median": 0.24065282195806503,
+        "G_clip_updates": 90,
+        "G_groups_postclip_median": {
+          "F": 0.24065281450748444,
+          "F_encoder": 0.0039990132208913565,
+          "F_out": 0.24061238765716553,
+          "G_Omega": 7.900582659203792e-07,
+          "G_Phi": 0.9999772310256958,
+          "G_compiler": 5.706708179786801e-06,
+          "G_public": 0.00671922997571528,
+          "G_read": 1.469345747295847e-07
+        }
+      },
+      "180": {
+        "G_preclip_median": 4.6771581172943115,
+        "F_preclip_median": 0.18190240859985352,
+        "G_clip_updates": 90,
+        "G_groups_postclip_median": {
+          "F": 0.18190240859985352,
+          "F_encoder": 0.0037781388964504004,
+          "F_out": 0.18049897253513336,
+          "G_Omega": 2.4113384824886452e-05,
+          "G_Phi": 0.9999736547470093,
+          "G_compiler": 9.242000305675901e-05,
+          "G_public": 0.0072340506594628096,
+          "G_read": 5.4989779982861364e-06
+        }
+      },
+      "270": {
+        "G_preclip_median": 3.7886322736740112,
+        "F_preclip_median": 0.18216412514448166,
+        "G_clip_updates": 87,
+        "G_groups_postclip_median": {
+          "F": 0.18216411024332047,
+          "F_encoder": 0.0026958822272717953,
+          "F_out": 0.17598813027143478,
+          "G_Omega": 0.00025778746203286573,
+          "G_Phi": 0.9999672770500183,
+          "G_compiler": 0.00048302220238838345,
+          "G_public": 0.007994386367499828,
+          "G_read": 8.030432582017966e-05
+        }
+      },
+      "360": {
+        "G_preclip_median": 3.371844530105591,
+        "F_preclip_median": 0.15091204643249512,
+        "G_clip_updates": 87,
+        "G_groups_postclip_median": {
+          "F": 0.15091204643249512,
+          "F_encoder": 0.0020649059442803264,
+          "F_out": 0.14596360176801682,
+          "G_Omega": 0.00010474858936504461,
+          "G_Phi": 0.9999639093875885,
+          "G_compiler": 0.000159903647727333,
+          "G_public": 0.008450229652225971,
+          "G_read": 3.437405212025624e-05
+        }
+      },
+      "450": {
+        "G_preclip_median": 3.1237934827804565,
+        "F_preclip_median": 0.13480206578969955,
+        "G_clip_updates": 84,
+        "G_groups_postclip_median": {
+          "F": 0.13480206578969955,
+          "F_encoder": 0.0023048960138112307,
+          "F_out": 0.12843333184719086,
+          "G_Omega": 0.00016095361206680536,
+          "G_Phi": 0.9999522566795349,
+          "G_compiler": 0.0002856636856449768,
+          "G_public": 0.00972771504893899,
+          "G_read": 4.932320189254824e-05
+        }
+      }
+    },
+    "CUDA_initialized": false
+  },
+  "compiler_comparison": {
+    "G450": {
+      "path": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/train/attempts/fresh/checkpoints/macro_00000450",
+      "tensors_in_actual_registration_order": {
+        "a_x": {
+          "q10_50_90": [
+            1.9394879311514929e-13,
+            8.447403367084494e-12,
+            1.5666710984074683e-10
+          ],
+          "lt_eps": 0.9996321797370911,
+          "median_attenuation": 0.0008439535740762949
+        },
+        "a_z": {
+          "q10_50_90": [
+            3.7439588105106503e-13,
+            1.972452409737535e-11,
+            3.107679391600726e-10
+          ],
+          "lt_eps": 0.9990105628967285,
+          "median_attenuation": 0.0019685467705130577
+        },
+        "a_context": {
+          "q10_50_90": [
+            2.3846549734862776e-12,
+            1.1802886445977379e-10,
+            2.584023439666794e-09
+          ],
+          "lt_eps": 0.9688075184822083,
+          "median_attenuation": 0.01166496891528368
+        },
+        "a_dynamic": {
+          "q10_50_90": [
+            7.367592647078425e-12,
+            3.0851932120157244e-10,
+            5.467009955850699e-09
+          ],
+          "lt_eps": 0.940362274646759,
+          "median_attenuation": 0.02992706000804901
+        },
+        "a_out": {
+          "q10_50_90": [
+            4.006713572035636e-10,
+            3.64749475068038e-09,
+            3.289198957645567e-08
+          ],
+          "lt_eps": 0.7425215840339661,
+          "median_attenuation": 0.2672615349292755
+        },
+        "b_key": {
+          "q10_50_90": [
+            4.1428028542400686e-12,
+            1.9110660276489e-10,
+            3.390876246456287e-09
+          ],
+          "lt_eps": 0.9606676697731018,
+          "median_attenuation": 0.018752237781882286
+        },
+        "b_delta": {
+          "q10_50_90": [
+            1.399003237881986e-14,
+            5.424680669940951e-12,
+            6.413027331397814e-10
+          ],
+          "lt_eps": 0.9886538982391357,
+          "median_attenuation": 0.0005421664682216942
+        },
+        "b_context": {
+          "q10_50_90": [
+            7.272785672307602e-12,
+            4.137004905313546e-10,
+            1.1556936740930723e-08
+          ],
+          "lt_eps": 0.8902938961982727,
+          "median_attenuation": 0.03972465172410011
+        },
+        "b_dynamic": {
+          "q10_50_90": [
+            2.5442875237202678e-11,
+            1.348355649355426e-09,
+            2.6603144576142768e-08
+          ],
+          "lt_eps": 0.790867030620575,
+          "median_attenuation": 0.11880305409431458
+        },
+        "b_out": {
+          "q10_50_90": [
+            1.2897782841747585e-10,
+            3.033217010894873e-09,
+            5.017446369492973e-08
+          ],
+          "lt_eps": 0.713021457195282,
+          "median_attenuation": 0.23272688686847687
+        }
+      }
+    },
+    "C450": {
+      "path": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/conditional_read_write/train/attempts/resume360_native_packing/checkpoints/macro_00000450",
+      "tensors_in_actual_registration_order": {
+        "a_x": {
+          "q10_50_90": [
+            8.665840961485927e-11,
+            1.371810887107472e-09,
+            2.4336248571898977e-08
+          ],
+          "lt_eps": 0.8105672597885132,
+          "median_attenuation": 0.12062850594520569
+        },
+        "a_z": {
+          "q10_50_90": [
+            1.6051285300910934e-10,
+            2.1665811367199694e-09,
+            3.2127648097457495e-08
+          ],
+          "lt_eps": 0.7616159319877625,
+          "median_attenuation": 0.17807433009147644
+        },
+        "a_context": {
+          "q10_50_90": [
+            8.658909145253801e-10,
+            3.790097480305121e-08,
+            1.1292000863249996e-06
+          ],
+          "lt_eps": 0.3260686695575714,
+          "median_attenuation": 0.7912273406982422
+        },
+        "a_dynamic": {
+          "q10_50_90": [
+            9.34416011233452e-09,
+            1.0141074824332463e-07,
+            1.3333051356312353e-06
+          ],
+          "lt_eps": 0.10720857977867126,
+          "median_attenuation": 0.9102374315261841
+        },
+        "a_out": {
+          "q10_50_90": [
+            7.633908438720027e-08,
+            8.924338885663019e-07,
+            9.582603524904698e-06
+          ],
+          "lt_eps": 0.00997121725231409,
+          "median_attenuation": 0.9889188408851624
+        },
+        "b_key": {
+          "q10_50_90": [
+            1.2371844659853082e-09,
+            2.0011833967714665e-08,
+            2.558971914368158e-07
+          ],
+          "lt_eps": 0.38664165139198303,
+          "median_attenuation": 0.6667978167533875
+        },
+        "b_delta": {
+          "q10_50_90": [
+            1.684618666786264e-09,
+            2.8901288473548448e-08,
+            3.575821097001608e-07
+          ],
+          "lt_eps": 0.3261461853981018,
+          "median_attenuation": 0.7429365515708923
+        },
+        "b_context": {
+          "q10_50_90": [
+            1.889858269876754e-09,
+            9.38880901912853e-08,
+            3.083609954046551e-06
+          ],
+          "lt_eps": 0.2279825508594513,
+          "median_attenuation": 0.903742253780365
+        },
+        "b_dynamic": {
+          "q10_50_90": [
+            1.6178958617274475e-08,
+            2.3105295099412615e-07,
+            4.808873200090602e-06
+          ],
+          "lt_eps": 0.06295020878314972,
+          "median_attenuation": 0.9585139155387878
+        },
+        "b_out": {
+          "q10_50_90": [
+            1.4705453743601993e-08,
+            4.146912999658525e-07,
+            2.0057597794220783e-05
+          ],
+          "lt_eps": 0.07898635417222977,
+          "median_attenuation": 0.9764530658721924
+        }
+      }
+    }
+  },
+  "optimizer_sampling": "Each parameter tensor uses regular stride max(1,numel//2000); tensor-stratified, not population-weighted. Registration order is G common/Phi/Omega/read/conditional_targets; C common/conditional_targets/interpreter; 10 matrices per target in constructor order.",
+  "main_RGB_viewed": [
+    "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/analysis/own_RGB/G450correct400_task016_init00.jpg",
+    "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/analysis/own_RGB/F450seen144_task029_init32.jpg",
+    "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/analysis/own_RGB/G450seen144_task029_init32.jpg",
+    "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/analysis/own_RGB/F450seen144_task042_init32.jpg",
+    "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/analysis/own_RGB/F450seen144_task073_init32.jpg",
+    "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/analysis/own_RGB/G450correct400_task039_init00.jpg"
+  ],
+  "RGB_scope": "6 fixed sheets, each 8 existing replans x 2 cameras = 96 images; not all 29 clips or terminal frames.",
+  "limitations": [
+    "Age matched panels differ in model and auxiliary losses, not a single-variable causal comparison.",
+    "G_Phi group gradient includes functional and relation terms; current logging does not separate their contributions.",
+    "Saved Adam moments show attenuation relative to eps=0 at the same moments; they do not establish that reducing eps would improve learning.",
+    "Global clipping median 3 to 6 alone does not establish the cause of 100-fold compiler denominator differences.",
+    "No current matched no-LoRA source panel found; old source47/51 belong to different evaluation scenes."
+  ],
+  "optimizer_dtype_spot_read": {
+    "G450_and_C450": {
+      "common_parameter_index_0": "FP32 exp_avg and exp_avg_sq",
+      "common_parameter_index_75": "BF16 exp_avg and exp_avg_sq",
+      "first_new_module_parameter": "FP32 exp_avg and exp_avg_sq",
+      "last_parameter": "FP32 exp_avg and exp_avg_sq"
+    },
+    "scope": "Saved state spot read after public denominator values suggested BF16; not a whole-state dtype audit and no dtype intervention. The original promise of entirely FP32 optimizer state was not fully met.",
+    "C_registration_order_verified_from_training_commit": "a0e0248d96568e42b24a3d1c4102e2ca6e35a40c"
+  }
+}

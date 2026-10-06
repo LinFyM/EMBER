@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：main以同龄原件收窄关系450解释，登记一次动态信用核验
+
+findings§368与[CPU原件消费](analyses/relation450_main_consumption_20261007.json)保存G450126对同龄T/U/C/Context的净+4/−17/−11/0及全部R/G/L。
+强T2340161/MT153继续保留，T更长曝光不能混作纯架构差；C seen91→115而held137→140限制无依据续训。
+G/F seen84/66、弱F的实际GT误差到动作学习图和旧Video Functional完整反例一起降低冷启动teacher假说。
+main查看6固定montage共96张已拍图，保留train42正例、29/73及held16/39完整失败与遮挡限制。
+原optimizer显示G条件编译器的eps衰减较同龄C重，但未区分预测运动、动态幅度、辅助信用；不是减eps有效或根因证明。
+仅登记[冻结信号核验](designs/relation_signal_readback_20261007.md)，train-only36 teacher/12原条件336 query及单一rms_zero干预，0新训练/闭环/held/Test。
+尚无本批新GPU结果，实际承接/预算/窗口看progress；局部阳性不自动接新训练，完整目标仍未达到。
+
 ## 2026-10-07：关系监督与独立反馈函数完成450共同学习，完整控制未改善
 
 findings§367与[合同](designs/relational_feedback_writer_learning_20261006.md)保留fresh G/F、训练关系GT仅loss/F、合法视频native关系轨迹编译完整38-LoRA的固定学习。

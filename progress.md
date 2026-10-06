@@ -1,3 +1,14 @@
+## 2026-10-07 main完成关系450科学消费，登记一次冻结信号核验
+
+main现持canonical tracked/Git窗口，已直接核原始结果、实际算子、六张固定RGB及CPU optimizer状态；findings§368保存完整取舍。
+G450126未显示广泛同龄优势（T122/U143/C137/Context126）；F66弱于G84，不恢复已结束共同学习或RL。
+发现Phi组主导clip及条件编译器实际Adam衰减，但尚不能归因为辅助项、eps或动态表示；也修正全optimizer FP32的过强记录。
+唯一新active design为`docs/designs/relation_signal_readback_20261007.md`：现有训练数据、冻结G450/C450，
+36个teacher表示链、12原条件336 query信用拆项，以及唯一固定rms_zero动态幅度干预；0训练更新、0新环境/闭环、0held教师特权/Test。
+预计45–90分钟，硬实际接受起3wall/2完整GPUh/4GiB；不是新候选或自动续训资格。
+main推送本合同后将交既有实验session独占工程/Git，实际承接及后继状态以回执/此处更新为准；当前登记不冒称GPU已运行。
+Owner持续自主授权保持，整批完成回main作完整方法裁决，不因低层指标变好自动追加局部修补。
+
 ## 2026-10-07 关系反馈450与全部1088读出完成，实验session封口交回窗口
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成唯一relation_grounded_writer_20261006；findings§367与root analysis/report.md保留完整事实、解释边界与正反例。

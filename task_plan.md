@@ -1,3 +1,12 @@
+## 2026-10-07 核清关系表示的实际动态信用，再决定完整方法
+
+findings§368保留同龄比较、F弱及实际Adam尺度证据；不自动恢复450共同学习或续训900。
+唯一active合同为`docs/designs/relation_signal_readback_20261007.md`，固定现有训练teacher和原query，
+只做冻结表示/真实梯度拆项与一个已定义的动态归一化干预，没有新增训练、环境、held或Test。
+目标是区分运动未学到、表示幅度衰减与信用分配，不以更大梯度或低pose loss代表完整能力。
+预计45–90分钟，硬3wall/2完整GPUh/4GiB；实际承接和写窗口见progress。
+所有结果整批回main继续完整方法判断，局部阳性没有自动后继资格；Owner持续自主目标尚未完成。
+
 ## 2026-10-07 关系反馈共同学习窗口完成，停止本批执行
 
 findings§367与`/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/analysis/report.md`保存完整450更新/1088新读出。

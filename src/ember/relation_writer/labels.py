@@ -281,7 +281,10 @@ def _check_sync(data, binding: Binding, position, rotation, fingers) -> tuple[fl
     errors = (float(np.linalg.norm(data.site_xpos[binding.grip_site] - position)),
               float(np.linalg.norm(data.xmat[binding.eef_body].reshape(3, 3) - rotation)),
               float(np.max(np.abs(data.qpos[list(binding.finger_addresses)] - fingers))))
-    if not np.isfinite(errors).all() or errors[0] > 1e-4 or errors[1] > 1e-3 or errors[2] > 1e-4:
+    # The validated recovery contract synchronizes grip p and eef-body R.
+    # Raw obs gripper_states is itself the hand-q label; reconstructed fingers
+    # are a diagnostic, not a replacement or an extra timing acceptance gate.
+    if not np.isfinite(errors).all() or errors[0] > 1e-4 or errors[1] > 1e-3:
         raise ValueError(f"observation/full-state timing mismatch (p_m,R_fro,finger_qpos): {errors}")
     return errors
 
@@ -322,6 +325,7 @@ def extract_episode(demo: h5py.Group, registry: Registry, frame_indices: Sequenc
         raise ValueError("nonfinite physical labels")
     summary = {"frames": frames.tolist(), "valid_frames": int(out["valid"].sum()),
                "max_sync_errors": np.max(errors, axis=0).tolist() if errors else [0., 0., 0.],
+               "hand_q_source": "same-frame obs/gripper_states raw two qpos; rewind difference diagnostic only",
                "timestep_seconds": float(model.opt.timestep), "registry": registry.description(model)}
     return out, summary
 

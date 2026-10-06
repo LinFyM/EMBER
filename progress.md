@@ -1,3 +1,17 @@
+## 2026-10-06 实验session承接固定LoRA的task23执行语言诊断
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取98行active design及findings§355–356，从clean pushed main d5491f2e接管canonical tracked/Git独占窗口。
+隔离codex/task23-post-open-language-20261006；main停止并发tracked写。承接保守从2026-10-06T01:16:00Z计，硬deadline03:16:00Z；预计45–75分钟，硬2wall/2GPUh/16CPUh/4GiB。
+strg01 data1独立实占1267560968KiB/软限2147483648KiB、个人du1297982373888B、共享余量88565158510592B；预计新增峰2GiB，唯一root task23_post_open_language_20261006。
+原cohort32起点与旧32实际Full（含C16成功）的canonical row/actual prefix/trace/8画面引用已保存，旧attempt路径按元数据读取，不重跑旧Full/Common。
+仅新增explicit_full/remaining_goal各32条；原G(V,L0)完整38-target、source/prefix权重、原自身前缀/branch/noise/剩时保持，零Writer/native/教学HDF/梯度/Test。
+复用c92c252e封存prefix/分支/因子叶函数及6ff430e9抽屉采样；只绑定叶函数输出到新root，不调用旧worker/plan/dispatcher，不改旧树/原件。
+新增两临时源文件368行，语言条件首规划与故障partial记录由本批入口承担；整批任一结果删除专用面，净保留执行源码增长0。
+canonical processor固定200 tokens并提供实际padding/mask；CPU用32个合法自身branch和已存T8双RGB核三文本编码、批/单一致及图像/state保持，不做模型/环境前向。
+首T8/C8两起点两新臂4条计入64兼实际消费者准入；旧1cm/In/branchOpen及对旧Full1e-8运行状态配对不改。
+剩余真实队列拟4persistent GPU，固定行实测batch6→24，不将旧16硬锁或增加profile行；每launch实时双节点/项目cap与预算检查。
+所有输出来自clean pushed detached frozen；只在完成或真实边界一次回main，专用面/资源/Git封口后交回窗口，无阶段Queue/心跳/自通知或自动后继。
+
 ## 2026-10-06 main消费后段条件作用并登记执行文本辨识
 
 main已接回8123070a的tracked/Git窗口；§355直接消费原件和固定全部8份RGB，关闭删除条件作用恢复已有后续能力的解释。

@@ -2,8 +2,9 @@
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取176行唯一active design、findings§366与最新Owner要求，从clean pushed main a1cd041d接管canonical tracked/Git独占窗口；main不并发写入。
 实际承接2026-10-06T11:31:40Z，硬截止2026-10-07T03:31:40Z；预计8–12h，硬16wall/40完整GPUh/96GiB新增峰，包括工程/加载/profile/失败/frozen/tmp。
-唯一root /data1/user/ymdai/ember_runs/relation_grounded_writer_20261006；独立data1现场quota已核，实际计费用量1305565500KiB/soft2147483648KiB，shared可用88437562540032B；全个人目录du测量仍在执行，大缓存未创建。
-当前实际状态为工程启动，尚无GPU、环境rollout、标签全池恢复或梯度。隔离实现按物理标签、关系模型、独立F/真实功能信用与官方读出分工，复用原native/完整ConditionalTarget/事件/评测器。
+唯一root /data1/user/ymdai/ember_runs/relation_grounded_writer_20261006；独立data1现场quota已核，实际计费用量1305565500KiB/soft2147483648KiB，shared可用88437562540032B；全个人目录du为1336899076096B，新增保守估计70GiB/硬96GiB。
+隔离实现和CPU消费者已完成：36场景registry最多11实体、所有内部slide/hinge保留；450步固定标签请求合计95568位置。关系表示/匹配、完整38处编译、独立F、source adapter旁路与官方400/144映射检查通过，原件在root/engineering。
+准备将clean pushed版本冻结后执行108点同步及1800训练episode标签恢复；尚无GPU、环境rollout或梯度。复用原native/完整ConditionalTarget/事件/ECP与官方评测器，不恢复旧专用trainer。
 fresh450共同更新、360/450各correct400、450 G/F各seen144共1088新episode固定；旧RL不恢复，GT只在loss/F侧。完成或真实科学/预算边界一次整批回main并交回窗口，无阶段通知或自Queue。
 
 ## 2026-10-06 当前授权：关系监督与训练用反馈函数的完整共同学习

@@ -8,7 +8,9 @@ data1 strg01独立实占1267197104KiB、软限2147483648KiB，个人du1297609777
 实际shared bank只存38个A0；按既有public_beta.factor_map从同checkpoint common.values只读取得B0，不运行Writer/native或新编译bank。
 复用封口抽屉frozen_remaining的原scene/Panda累计命令恢复、真实drawer registry/contact消费者；分别重放同一原前缀，无中途克隆/额外settling。
 两节点live均无严格空卡，gpu02多卡仅约150–210MiB/0%进程；可在显存余量内共驻，不改变他人作业。当前本项目0卡，现行全局/单节点上限6。
-工程实现与CPU资产/因子/信息墙检查进行中；正式首T8/C8两对须来自clean pushed detached，实际闭环尚未启动。
+CPU资产/完整因子/公共参数键映射、T/C同source/normalization/topology、固定32起点/64行/12210步/8full与噪声检查通过，无CUDA初始化。
+94bdfbaf已集成main/push并clean detached frozen；00:26:54Z实际首launch gpu02:0/1，两个worker PID4073994/4073995执行计入64的T8/C8两对。
+首消费者须核实际完整前缀位置/In、branch Open及同对controller/物理状态；正常直接等进程退出，不阶段Queue/自通知。
 专用两文件由本session拥有，整批后退役；只在完成或真实边界一次回main交回窗口，无自动后继。
 
 ## 2026-10-06 main登记task23已打开状态的条件算子因果比较

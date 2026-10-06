@@ -8786,3 +8786,49 @@ T仅移除M，C同时移除S/M的完整条件作用；基础、公共参数、�
 混合、反向损失、晚开时限、C38不准入及旧task32状态/策略交互反证保持；不以冻结删减胜负裁决共同学习架构。
 64行至多12210后续策略控制步，8 full/56 compact，固定原件与输出合同齐备；预计45–90分钟，硬2h wall/2GPUh/16CPUh/4GiB。
 该诊断尚无执行结果，实际承接见progress；所有分支整批回main，无自动训练、删除部署、更多切点、RL或Test。
+
+## 354. 已打开状态Full/Common全64续行：公共未恢复完整后续，条件作用存在双向局部效应（2026-10-06）
+
+按§353与103行合同完成T2340的9、C900的23个固定实际起点，Full/Common各一次共64条最终续行、32对全部准入。
+每臂分别原自身命令前缀到branch，零额外settling/中途克隆；EEF最大原前缀差.050897cm、碗0cm、完整In序列相同。
+32对已捕获EEF/物体/三层关节/sim/ctrl/warmstart/OSC/gripper分支状态差均0；原noise从branch/5起，horizon300保持。
+本批无Writer/native调用、新bank/教学HDF读取、梯度/训练/Test；仅固定同checkpoint公共/完整38-target算子作用不同。
+实际shared bank只存38个A0，B0经现有public_beta.factor_map读取同checkpoint ecp common.values；C为原conditional_read_write900，未用Gamma校准。
+
+|模型|Full In|Common In|保留|Common新增|Common丢失|两臂均未In|
+|---|---:|---:|---:|---:|---:|---:|
+|T2340|0/9|0/9|0|0|0|9|
+|C900|1/23|0/23|0|0|1（init16）|22|
+
+没有公共从同状态完成、完整不能的例子，降低“删除当前条件作用即可恢复已有完整后续控制”的支持度，停止此删除诊断。
+局部行为却是混合的：T Full在16/19碗最大位移29.95/30.62cm、最大抬高24.92/27.18cm，Common完全静止，均未In；
+C Common在18/36/40新增明显运动，36/40首次≥1cm于140/125、≥3cm于159/135，Full仅.50/4.00cm位移，仍未In。
+C18 Common很晚才在277/280步达到两阈值；C44/48 Full抬高29.63/25.31cm、Common无位移，同样未In。
+阈值仅描述碗中心/世界Z变化，不命名抓稳或阶段完成；不因局部正例把本轮升级为控制修复。
+
+C16 Full于192/206步达到两个运动阈值，实际总step265达官方In；Common同起点碗中心全程静止、未In。
+Full该终态top实际开度10.07cm、原生Open为false，再次说明Open14cm不是成功gate。
+该Full原历史行失败而本次实际成功；首次完整50×7、physical前5对原同边界指令差和新后缀保留，旧失败不替换新Full。
+T8/C8两臂碗中心全程静止，Common末态top约16.04cm、Full仅8.00/5.14cm，较好末态Open未形成完整后续。
+晚开T7/28/32和C6/46仅余40/15/10与15/35步，全部保留；其它27起点余115–250步，不能统一归为时限。
+31对共同失败不证明状态不可救、唯一神经根因或新Reader必要；Full正例与旧task32状态/策略交互、单项技能不可拼接的反证保持。
+T/C结构与年龄不同，只在各模型内部解释配对；不以这组冻结删减选择共同学习架构或部署阶段切换，不改原T161/C140及task23 T0/C1。
+
+全部6990前缀/12175最终后缀控制步、T+1连续数组、三层qpos/qvel/Open、原生In、EEF/碗/gripper/实际命令及38处因子身份保留。
+真实robot—固定柜体/各可动层geom pairs、步末时序和mj_contactForce力/力矩在逐行NPZ/JSON；积分substeps缺失，不将接触/距离当抓持真值。
+首次Full−Common physical5 translation/rotation/gripper RMS中位T为.141266/.017163/.002136，C为.029825/.008225/.001663；
+它们是命令单位，不是EEF米/弧度或某层key/Value语义。固定T8/T19/C8/C16双臂8full的373时刻/746张相机小图全部已查看，来源/绝对时刻保留；
+仅实际replan输入双RGB，终止帧及每控制步图像未捕获，56compact不冒称看过。T19/C16 Full可见后段碗运动，接触部位遮挡仍未知。
+
+工程与缺项：94bdfbaf首launch导入循环在0模型/环境处退出；5c1eb406首四行完整，剩余首launch在数组字典list.remove处退出。
+该失败已保存的4行（含C16成功）与前四行共8条永不重跑；另外28条在途臂旧失败后缀数值/RGB未落盘，只有完整prefix/日志/规划计时，明确保留缺项。
+c92c252e按对象身份修复后只补56条未完成臂，新增future-failure partial保存，无科学语义变化、择优或旧冻结原地改写。
+CPU初次分析错误假定顶层NPZ位置，修正登记的attempt子目录后64行/32对全部有效；旧错误输出留存，未放宽准入容限。
+
+原件唯一/data1/user/ymdai/ember_runs/task23_post_open_operator_20261006/：design/cohort/run_contract、rows/64个canonical row、
+analysis/report.md、per_row.json/tsv、pairs/aggregate/verification、source_provenance及full_RGB/sources/visual_readback；部分实际NPZ在attempt子目录。
+全部launch含失败/加载计0.381711635完整GPUh，完整worker进程树0.382314017CPUh；工程/du/分析/Git另计保守4CPUh，总界4.383/16。
+batch2/8/16实测中位4.69/8.73/9.23plans/s，16峰allocated/reserved11.44/13.35GiB；4persistent GPU动态队列耗尽固定32对，未增profile行。
+新增峰保守界1.5GiB/4（含三冻结树/工程树及整份既有Git作过量计入）；双节点最终ownGPU为空，所有worker退出。
+专用consumer/CLI及root运行入口退役，保留所有Git/frozen/raw/失败；集成push、实际wall、费用和一次窗口交回以completion/launch为准。
+整批停止，无自动更多切点/删减部署/新训练/Reader/RL/Test；main独立消费后负责下一科学判断。

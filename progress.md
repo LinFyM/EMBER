@@ -1,3 +1,21 @@
+## 2026-10-06 task23已打开状态64续行完成，专用面封口并交回main
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成唯一task23_post_open_operator_20261006，见findings§354。
+固定T9/C23起点的64条最终Full/Common均准入、实际32对branch/runtime差0；6990原前缀和12175后缀步、8full/56compact完整数值保留。
+T Full/Common In 0/9与0/9，C为1/23与0/23；Common无新增完成、丢失C16 Full总step265成功，31对共同失败。
+局部碗运动双向：T Full16/19有明显搬运、Common无；C Common18/36/40较有利仍不In；不以此做新EMBER成绩/架构选择。
+C16 Full末态top10.07cm但原生Open false，官方In true；Open描述不加进成功gate。晚开和全部不利反例保留。
+全部首规划50×7/physical5、noise剩余索引、三层动态qpos/qvel/Open、EEF/碗/接触与力均CPU核验通过。
+固定8full的373实际replan时刻/746张相机图小图均已查看；仅规划输入，无终止/逐控制步图，不声称compact画面或抓持真值。
+94bdfbaf导入失败0科学行；5c1eb406完成8最终行后异步list.remove失败；c92c252e只补56未完成臂，8已完成结果不重跑。
+原28条在途失败后缀未落盘为明确记录缺项；完整prefix/日志/计时保留，不造补充原件，不选好结果。CPU分析attempt路径假设修复及原输出均留存。
+唯一root /data1/user/ymdai/ember_runs/task23_post_open_operator_20261006/；report、64逐行/配对/聚合/source、cohort/design/raw/失败/Git/frozen和resources齐备。
+含失败/加载全批0.381711635完整GPUh，worker完整树.382314017CPUh；工程/du/核验/Git保守另4CPUh，总界4.383/16；新增峰界1.5GiB/4。
+实测batch2→8→16 median4.69/8.73/9.23plans/s，16峰allocated/reserved11.44/13.35GiB；4GPU动态队列全部32对done，无额外科学行。
+所有worker退出，双节点ownGPU为空；专用consumer/CLI与root启动入口已退役，原件/冻结树保留，工程树在集成后清理。
+本批停止新增模型/物理/分析，没有自动后继；当前无active执行或新design。完整封口推送后仅一次回主讨论01a10a97-dedf-7042-a6a2-60214f0ef7b1，tracked/Git窗口随整批回执交回main。
+准确最终Git/wall/资源与accepted回执见root completion.json、launch/delivery_receipt.json；主讨论不需重复工程验收。下方active/待派发仅属此前时点。
+
 ## 2026-10-06 实验session实际承接task23已打开状态算子诊断
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取103行active design与findings§352–353，

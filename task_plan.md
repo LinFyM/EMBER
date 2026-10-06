@@ -1,3 +1,11 @@
+## 2026-10-06 已打开状态删除诊断封口，公共未恢复完整后续
+
+findings§354保存固定64续行、全部32准入配对与反例：T Full/Common 0/9、0/9，C 1/23、0/23；Common无新增In，丢失C16 Full成功。
+局部碗运动双向而无完整公共增益，降低“删除条件作用即可恢复已有后续能力”的支持度；停止该诊断，不推广新删减部署或选共同学习架构。
+原T161/C140、task23原T0/C1、旧task32状态/策略交互反证保持。数值/RGB/失败缺项、成本及全部原件见唯一root与findings。
+专用运行面退役、资源释放、集成push后实验session一次整批交回main；当前无active新实验或自动更多切点/Reader/训练/RL/Test。
+后继科学取舍由main独立消费后负责，Owner持续自主推进授权保持；实际交回只看progress/completion。下方active文字仅属历史时点。
+
 ## 2026-10-06 从相同已打开状态辨别条件作用与公共后续能力
 
 唯一active分析为docs/designs/task23_post_open_operator_diagnostic_20261006.md：原T9/C23曾Open起点固定，共64 Full/Common配对续行。

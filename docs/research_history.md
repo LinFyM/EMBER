@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：同实际已打开状态Full/Common全64续行关闭
+
+findings§354与[合同](designs/task23_post_open_operator_diagnostic_20261006.md)记录32实际起点/64条最终续行全部准入，零新学习/教学HDF/native编译/Test。
+T Full/Common官方In0/9、0/9，C1/23、0/23；Common没有新增完成并丢失C16 Full成功，31对均未In，降低删除条件作用恢复已有完整控制的支持度。
+局部动作双向：T Full16/19及C Full44/48有明显碗运动，C Common18/36/40亦有正例却均未In；不将内部动作或Open保持当完整修复。
+C16新Full总step265 In、终态top10.07cm不满足Open描述阈值，原Full失败仍并列；原400和task23分数不改、不选新架构。
+6990原前缀/12175最终后缀步、完整连续接触/力/首规划、固定8full373时刻746图与全64原件在/data1/user/ymdai/ember_runs/task23_post_open_operator_20261006/。
+实际94bdfbaf零科学行导入失败、5c1eb406完成8最终行、c92c252e补56未完成臂；旧28在途失败后缀未落盘为明确缺项，prefix/日志/费用保留，不重跑已完成结果。
+全批.381711635完整GPUh，worker完整树.382314017CPUh，保守总CPU界4.383/16、新增峰界1.5GiB/4；专用面退役/Git封口/资源释放及一次写窗口交回见completion/progress。
+没有自动下一批、删减部署、切点扫描、新训练/Reader/RL/Test；main独立消费后接续科学判断。
+
 ## 2026-10-06：登记已打开状态下的完整条件/公共算子因果比较
 
 findings§353及[合同](designs/task23_post_open_operator_diagnostic_20261006.md)固定原32个准入曾Open起点，

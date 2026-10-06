@@ -157,7 +157,6 @@ def build_run_contract(
     adapter: Mapping[str, Any] | None = None,
     physical_gpu_ids: Sequence[int] | None = None,
     exploration_sigma: bool = False,
-    denoising_return_sampler: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     git = _validate_build_request(
         authorities,
@@ -214,11 +213,6 @@ def build_run_contract(
     }
     contract["diagnostic_exploration"] = build_exploration_contract(contract, enabled=exploration_sigma)
     validate_exploration_contract(contract)
-    if denoising_return_sampler is not None:
-        from ember.operator_writer.denoising_policy import validate_sampler_contract
-
-        contract["denoising_return_sampler"] = dict(denoising_return_sampler)
-        validate_sampler_contract(contract)
     contract["contract_reference"] = f"{RUN_CONTRACT_SCHEMA}:{uuid.uuid4().hex}"
     return contract
 
@@ -235,10 +229,6 @@ def load_run_contract(path: Path) -> dict[str, Any]:
     ):
         raise Pi05EvaluationError("PI05 evaluation run contract changed")
     validate_exploration_contract(contract)
-    if contract.get("denoising_return_sampler") is not None:
-        from ember.operator_writer.denoising_policy import validate_sampler_contract
-
-        validate_sampler_contract(contract)
     return contract
 
 

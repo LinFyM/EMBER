@@ -8,7 +8,6 @@ import os
 import string
 import time
 from dataclasses import asdict, dataclass
-from contextlib import nullcontext
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -154,12 +153,7 @@ def _plan_action_chunks(
             max_action_dim=int(policy.config.max_action_dim),
             device=batch[next(iter(batch))].device,
         )
-        sampler = nullcontext()
-        if contract.get("denoising_return_sampler") is not None:
-            from ember.operator_writer.denoising_policy import evaluation_sampler
-
-            sampler = evaluation_sampler(policy, contract, group, task)
-        with torch.inference_mode(), sampler:
+        with torch.inference_mode():
             predict = (
                 policy.predict_action_chunk
                 if task_adapter is None or not batched_adapter
@@ -259,15 +253,10 @@ def rollout_shard(
             if not bool(done) and slot["steps"] < max_steps:
                 continue
             slot["episode_done"] = bool(done)
-            row = finish_episode_row(
+            rows.append(finish_episode_row(
                 slot=slot, task=task, contract=contract,
                 task_adapter=task_adapter, worker_started=worker_started,
-            )
-            if contract.get("denoising_return_sampler") is not None:
-                from ember.operator_writer.denoising_policy import episode_sampler_fields
-
-                row.update(episode_sampler_fields(contract, slot))
-            rows.append(row)
+            ))
             if next_state < len(state_ids):
                 slots[slot_index] = start_slot(env, int(state_ids[next_state]))
                 next_state += 1
@@ -395,11 +384,6 @@ def _validate_episode_row(
         raise Pi05EvaluationError(
             f"raw evaluation row contract changed: {shard.job_id}"
         )
-    if contract.get("denoising_return_sampler") is not None or row.get("denoising_return_sampler") is not None:
-        from ember.operator_writer.denoising_policy import validate_episode_sampler
-
-        if not validate_episode_sampler(contract, row, task, len(expected_seeds)):
-            raise Pi05EvaluationError(f"raw SDE row sampler/seed contract changed: {shard.job_id}")
     if (contract.get("frozen_prefix_intervention") is not None
             or contract.get("approach_channel_intervention") is not None):
         from ember.pi05_eval.prefix_replay import validate_row

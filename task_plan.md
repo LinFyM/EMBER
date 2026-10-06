@@ -1,3 +1,10 @@
+## 2026-10-06 当前有界学习：共享Writer的去噪路径成功信用
+
+唯一新合同为docs/designs/denoising_return_writer_learning_20261006.md，科学依据及旧RL负证据见findings§363。
+从T2340进行固定72共享更新，以原ODE的63/72 strict400和完整能力交换判断；父/末点seen的SDE与ODE分列，防止把换采样器收益混作目标。
+不能自动延长/调alpha/LR/seed或恢复宽输出Reader；实际派发、资源与tracked/Git窗口由progress登记。
+目标仍是首次视频编译带来有益、可迁移且超过强MT的完整能力，本批完成不是研究完成。
+
 ## 2026-10-06 PB未支持以更宽固定内容Reader作为下一主线
 
 main的原件消费见findings§362：PB/PZ保留D新增数量相同，输出范围只解释有限修正差异，不能承担完整迁移主因。

@@ -1,3 +1,11 @@
+## 2026-10-06 登记共享Writer去噪回报学习的唯一有界合同
+
+findings§363补全旧共享回报阴性及§151边界，选择改变随机生成过程/信用算子而保持T2340的原视频编译图。
+唯一active design为docs/designs/denoising_return_writer_learning_20261006.md：72共享RL更新、63/72原ODE各correct400及固定seen诊断。
+原36task/50教学池/source/normalization/部署一套LoRA保持；不把SDE回报或已见收益称作held能力，不复活旧Gaussian/RB或扫参。
+预计4–6h，硬实际承接起8wall/20完整GPUh/48GiB；main当前仍持窗口，待push及实际派发/承接，未声称已开始GPU或环境计算。
+此前PB已完整消费与封口，下方“无active”为历史时点；Owner自主授权与未完成目标保持。
+
 ## 2026-10-06 main消费PB完成，关闭固定内容宽输出延长
 
 main已接回clean pushed fcc97441独占窗口，直接读取实际消费者、五臂原160行、八条件动作与固定全部4full画面，判断见findings§362。

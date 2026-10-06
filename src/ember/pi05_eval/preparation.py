@@ -336,10 +336,6 @@ def _registered_trajectory_capture(
         return None, None
     path = path.resolve()
     manifest = read_json(path)
-    if manifest.get("study_id") == "relation_grounded_writer_20261006":
-        from ember.relation_writer.readout import registered_capture
-
-        return registered_capture(args, tasks, output_dir, path, manifest, task_subset)
     if manifest.get("study_id") in {"operator_read_write_learning_20260928", "operator_public_beta_diagnosis_20260929", "operator_public_function_pilot_20260929", "operator_seen_task_diagnosis_20260929", "operator_selected_validation_20260929", "operator_change_clock_learning_20260930", "operator_change_clock_continuation450_20260930", "operator_joint_public_fresh_20260930", "operator_context_value_fresh_20261001", "operator_context_value_continuation900_20261001", "operator_context900_seen_task_diagnosis_20261001", "operator_context900_public_validation_20261001", "operator_self_conditioned_native_fresh_20261001", "conditional_read_write_fresh_20261001", "conditional_read_write_continuation900_20261002", "conditional_support_diversity_pilot_20261002", "conditional_A_reexpression_diagnostic_20261002", "native_prefix_change_value_20261002", "control_calibrated_read_write_20261003"}:
         from ember.operator_writer.bank import registered_capture
 
@@ -511,8 +507,7 @@ def _prepared_payload(
     if adapter is not None and adapter.get("kind") == "demonstration_comparison_lora_bank":
         contract["demonstration_comparison_scene"] = {
             "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
-    if adapter is not None and adapter.get("kind") in {
-            "operator_read_write_lora_bank", "relation_grounded_feedback_diagnostic"}:
+    if adapter is not None and adapter.get("kind") == "operator_read_write_lora_bank":
         if adapter.get("legacy_test_initialization") is not None:
             if args.role != "test" or adapter.get("scene_manifest") is not None:
                 raise Pi05EvaluationError("operator legacy Test cannot register a sealed scene")

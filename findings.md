@@ -9175,3 +9175,51 @@ F的Value显式含teacher关系相对当前自身关系的差；同一shared函�
 
 预计含工程8–12h，硬16wall/40完整GPUh/96GiB；原固定数据、信息墙、source/prefix冻结和官方ODE均保持。
 main完成设计与科学登记后把工程/运行交实验session独占，整批真实回报后main承担解释和接续；登记不等于已经训练或路线有效。
+
+## 367. 关系监督与独立F完整共同学习：候选126/400，F未建立更强控制（2026-10-07）
+
+实验session完成唯一relation_grounded_writer_20261006，原fresh450/1800条件/50400跨episode query与完整1088新读出均结束。
+完整原件、行为、来源/失败和资源在`/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/analysis/report.md`、readout_facts.json及同名TSV；本段为实验session事实封口，main后续独立消费。
+
+|task|T2340|MT|G360|G450唯一候选|
+|---|---:|---:|---:|---:|
+|3|45|41|37|30|
+|6|6|7|16|11|
+|11|45|36|32|33|
+|16|5|10|4|3|
+|23|0|0|0|0|
+|26|36|35|34|37|
+|31|24|24|8|12|
+|39|0|0|0|0|
+|总计|161|153|131|126|
+
+G450四suite41/36/37/12；G36053/36/34/8，T51/50/36/24、MT48/46/35/24。四者均6/8任务有成功，23/39未完整修复。
+G450对MT R102/G24/L51/churn75/J.576271，对T104/22/57/79/.568306；G360对MT101/30/52/82/.551913，对T104/27/57/84/.553191。
+G450对360为94/32/37/69/.576687；不取131替代固定候选，不以task6/26局部正例掩盖3/11/16/31损失。全部成功/失败和得失集合逐行保留。
+
+固定seen144：父T109（新132行101成功＋原12行8成功）、G84、F66；task覆盖34/36→G28/F24，4/4任务18→G12/F9。
+G对T80/4/29/33/.707965，F对T63/3/46/49/.562500，G对F62/22/4/26/.704545。F只在36训练任务读取GTteacher关系与实时自身关系，明确非部署/非held成绩。
+原scene/teacher/env/policy噪声及1088动作/提案/原生谓词全部CPU核对0不符，physical5与continuous最大差0，完成行无重跑。
+
+实际G为合法RGB/L→同fresh公共beta的native H/X→Phi匿名手/实体关系→Omega空间/时间处理→Read在native H上选择c/d→38处完整A0+S/B0+M。
+GT/count/mask/实体表只进loss与独立F，Phi hidden没有作为绕过关系的动态Value。F用GT关系、当前query关系及未适配source H0/v0学原FM，stopgrad功能目标监督实际LoRA；G主FM始终保留，source/prefix冻结。
+训练来源85614d9c，G103542369/F5640983参数、两个fresh opt/sched；450原事件/task.25/50teacher各一次/同z-tau-y/stopgrad及六个完整G/F ECP检查通过。
+公共/Phi/compiler450次非零，Omega/Read449、F450/Fencoder449，native H1800/X1796非零，source trainable0；不是整体缺信用。
+末90窗G FM .106788/F FM .118024/KD .009206/关系.190196，首90关系1.078798；六组归一化标签误差不解释为物理单位或完美感知。
+当前F未比G更强、G seen也低于T，降低本次“关系函数先提供有效控制并教会合法G”的支持；不能只指向视觉读取/静态LoRA传递瓶颈。
+蒸馏会引入F偏差，但本批没有匹配无辅助fresh训练，不能唯一归因KD/Phi/编译器/优化步数；固定450阴性不证明全部关系方法或整个架构不可能。
+
+1800训练episode原XML/state下一行回退一个积分子步恢复，95568请求位置cache/36×3同步通过、registry最多11<32、不截断moving links；RGB末帧保留而缺失GT mask。
+手p为grip site、R为EEF body，双指q不叫净宽/抓稳。F live仍用官方缓存手观测＋sim实体，sensor timestamp缺失；最终144最大p差1.198mm/R Frobenius.005876/finger.713mm，未替换输入/物理，离线标签同步门限保留，不能称同瞬时理想oracle。
+
+Task16 T/MT/G360/G450 butter抬高≥3cm为12/13/5/5，orange21/10/15/16；官方In5/10/4/3。G360/init0搬orange到篮侧而butter留桌，G450/init0两者都未明显抬高，目标身份尚未稳定解决。
+Task23四臂In均0，碗抬高≥3cm为1/4/2/3；新continuous无三层关节/contact，不以柜root/碗不动认定未开或开后未切换。
+Task39四臂正确杯各50都抬高3cm、In均0；G360/init40 step242和G450/init22 step340分别曾Close并最终true，仍完整失败，保留此正例反对“全部谓词零”。两条compact未称看过图。
+Train29/42/73 T为2/4、4/4、3/4；G1/4、4/4、3/4；F0/4、4/4、1/4。42已开初态碗入柜是保留正例，未迁移成held23先开再放。
+固定73/init32 T/G先移杯再转门侧Close161/164，F长期在杯区而400未Close；29可见转腕但init32三者均未On。运动/外观不叫接触、抓稳、必要姿态或同一控制器。
+
+新88full/1000compact、每路4369已拍replan时刻完整保留；实际看22新＋7旧固定clip各8均匀时刻×双RGB共464图，精确范围/遮挡在own_RGB/visual_review.json，未补render/终态。
+训练/编译/读出独立身份、所有失败和未发布F capture保留；G360原event不改，外部中断只用owner回执补独立terminal，未知worker退出码不造，时间为launcher退出界。
+完整GPU46746.929756秒=12.985258h/40，新增峰/CPU计量限制与全部退出见root ledger/completion；现场双节点无本用户GPU、四面板active worker为空。
+专用13 owner/入口/spec和临时注册退役，保留原Git/frozen/标签/全部完整checkpoint/raw及通用launcher证据修复；纯CPU语法/实际旧T trace检查通过。
+整批一次回main并交回tracked/Git窗口，main独立科学消费，不恢复旧RL或自动续训/小扫/controls/Test。最终Git/工程树清理与真实投递回执以completion/delivery_receipt为准。

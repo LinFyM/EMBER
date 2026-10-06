@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from importlib import import_module
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -15,7 +14,6 @@ EVALUATION_RELATIVE = Path('configs/relational_support_causality_v1/evaluation.j
 TAG = 'ember_relational_support_passive_capture_v1'
 VELOCITY_TAG = 'ember_conditional_velocity_passive_capture_v1'
 OPERATOR_TAG = 'ember_operator_read_write_passive_capture_v1'
-RELATION_WRITER_TAG = 'ember_relation_grounded_writer_passive_capture_v1'
 SUITES = ('libero_spatial', 'libero_object', 'libero_goal', 'libero_10')
 
 
@@ -198,22 +196,24 @@ def _trace_and_stage_match(
             and stage.get('capture') == 'all_rows_post_settling_then_every_executed_control_step')
 
 
-def _capture_owner(contract: Mapping[str, Any]):
-    tag = (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
-           .get('schema_version'))
-    if (contract.get('adapter') or {}).get('study_id') == 'relation_grounded_writer_20261006':
-        tag = RELATION_WRITER_TAG
-    owners = {RELATION_WRITER_TAG: 'ember.relation_writer.readout',
-              OPERATOR_TAG: 'ember.operator_writer.bank',
-              'ember_demonstration_comparison_passive_capture_v1': 'ember.demonstration_learning.bank',
-              VELOCITY_TAG: 'ember.writer.conditional_velocity_bank'}
-    return import_module(owners[tag]) if tag in owners else None
-
-
 def validate_contract(contract: Mapping[str, Any], repo_root: Path) -> None:
-    owner = _capture_owner(contract)
-    if owner is not None:
-        owner.validate_capture_contract(contract, repo_root)
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == OPERATOR_TAG):
+        from ember.operator_writer.bank import validate_capture_contract
+
+        validate_capture_contract(contract, repo_root)
+        return
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == 'ember_demonstration_comparison_passive_capture_v1'):
+        from ember.demonstration_learning.bank import validate_capture_contract
+
+        validate_capture_contract(contract, repo_root)
+        return
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == VELOCITY_TAG):
+        from ember.writer.conditional_velocity_bank import validate_capture_contract
+
+        validate_capture_contract(contract, repo_root)
         return
     output_dir = Path(contract['output_dir']).resolve()
     _, spec = _spec(repo_root)
@@ -250,10 +250,6 @@ def prepare_from_manifest(
     tasks: Sequence[Any], manifest: Mapping[str, Any], selection_path: Path,
     full: tuple[tuple[str, int, int], ...],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    if manifest.get('passive_control_trace') == RELATION_WRITER_TAG:
-        from ember.relation_writer.readout import registered_capture
-
-        return registered_capture(args, tasks, output_dir, selection_path, manifest, task_subset)
     if manifest.get('passive_control_trace') == OPERATOR_TAG:
         from ember.operator_writer.bank import registered_capture
 
@@ -278,9 +274,23 @@ def prepare_from_manifest(
 def attach_requested_capture(
     args: Any, contract: dict[str, Any], repo_root: Path, output_dir: Path,
 ) -> None:
-    owner = _capture_owner(contract)
-    if owner is not None:
-        owner.attach_capture_provenance(contract, repo_root)
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == OPERATOR_TAG):
+        from ember.operator_writer.bank import attach_capture_provenance
+
+        attach_capture_provenance(contract, repo_root)
+        return
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == 'ember_demonstration_comparison_passive_capture_v1'):
+        from ember.demonstration_learning.bank import attach_capture_provenance
+
+        attach_capture_provenance(contract, repo_root)
+        return
+    if (((contract.get('diagnostic_occupancy_capture') or {}).get('passive_trace') or {})
+            .get('schema_version') == VELOCITY_TAG):
+        from ember.writer.conditional_velocity_bank import attach_capture_provenance
+
+        attach_capture_provenance(contract, repo_root)
         return
     capture = contract.get('diagnostic_occupancy_capture') or {}
     _, spec = _spec(repo_root)

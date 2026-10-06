@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：关系监督与独立反馈函数完成450共同学习，完整控制未改善
+
+findings§367与[合同](designs/relational_feedback_writer_learning_20261006.md)保留fresh G/F、训练关系GT仅loss/F、合法视频native关系轨迹编译完整38-LoRA的固定学习。
+450宏步/1800条件/50400跨episode query、两套fresh optimizer/scheduler与六个完整checkpoint完成；source/prefix冻结，标签1800episode/108点同步通过，未增加数据/held标签。
+G450唯一候选126/400、G360131，强MT153/T161保持；G450对MT R102/G24/L51，对T104/22/57，相邻94/32/37。6/8任务覆盖未增加，23/39仍完整零。
+原seen144父T真实132+12合为109；G84、F66，F为训练任务privileged诊断。关系loss从首90窗1.0788降至末.1902，但F FM和闭环都未建立比G更强控制，不将误差/非零信用说成操作理解。
+Train42 T/G/F各4/4及task39 G两点各一个仅Close反例保留，任务16身份和23/39组合缺口保持；没有匹配无辅助训练，不能唯一归因KD/视觉/编译或证明架构不可能。
+原件root `/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006`：完整1088 continuous/提案/原谓词、88full/1000compact、每路4369拍摄时刻；实际查看29固定clips的464双RGB图，未补render/终态。
+训练冻结85614d9c、G读取c6e3500d、F读取307b3c51、G360 CPU聚合ab3c27bf；全部工程失败/中断和未发布F capture保留，不重跑已完成行。完整12.985258GPUh/40与存储/CPU计量限制见root ledger/completion。
+本批专用owner/入口/hooks退役，Git/frozen/raw/标签/六个完整checkpoint保留；通用中断证据及既有queue迁移保留。完成窗口交回main独立科学消费，没有自动续训/小扫/controls/Test或新后继。
+
 ## 2026-10-06：去噪回报未取得完整收益，Owner讨论后授权试验关系反馈学习
 
 唯一denoising_return_writer_20261006已完成72共享更新与1152训练episodes，63/72原ODE154/158，强T161/MT153不变。

@@ -1,3 +1,12 @@
+## 2026-10-07 关系反馈共同学习窗口完成，停止本批执行
+
+findings§367与`/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/analysis/report.md`保存完整450更新/1088新读出。
+G450唯一候选126/400、相邻G360131，未超过强MT153/T161；seen G84/F66/T109，F没有成为已强控制teacher。
+关系loss下降与完整信用不替代能力，训练42的入柜正例及task39仅Close反例保留，不唯一归因模块或证明全架构不可能。
+本批专用实现/入口/hooks退役，原Git/frozen/标签/六个完整checkpoint/raw/全部失败与成本保留；没有active模型/环境/梯度或自动后继。
+最终集成push、资源退出、工程树清理、整批消息及canonical tracked/Git交回以progress和root completion/delivery_receipt为准。
+main独立消费科学并承担后续取舍；Owner持续自主授权不等于实验session获得自动下一批授权。下方active文字均为历史。
+
 ## 2026-10-06 Owner恢复自主推进：训练关系函数并学习编译为完整LoRA
 
 唯一active合同为[关系反馈共同学习](docs/designs/relational_feedback_writer_learning_20261006.md)，依据见findings§365–366。

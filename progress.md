@@ -1,3 +1,15 @@
+## 2026-10-07 关系反馈450与全部1088读出完成，实验session封口交回窗口
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成唯一relation_grounded_writer_20261006；findings§367与root analysis/report.md保留完整事实、解释边界与正反例。
+450/1800条件/50400 query及六个完整G/F checkpoint已退出；唯一候选G450126/400、相邻G360131/400，强MT153/T161保持。seen G84/F66/父109（真实132+12来源）。
+全部1088 own continuous/实际动作/50×7及physical5/scene-teacher-RNG/原生谓词核验0不符；88full/1000compact、每路4369原拍replan RGB保留。实际查看固定29clips×8时刻×双RGB，未称全部full逐帧查看。
+G360两次外部SIGTERM遗漏terminal记录已用原owner回执补独立lineage，原events/shards/row不改；未知worker退出码不造，时间只为launcher退出界。最终GPU消费者全部已退出，未重跑完成行。
+完整GPU46746.929756秒=12.985258h/40；新增峰按原件保守封口，详见root ledger/resource_ledger.json。现场双节点无ymdai GPU、四路canonical evaluator active PID均空。
+本批专用13个关系owner、薄入口/spec及七处临时消费者注册恢复/退役；保留通用launcher中断证据修复和既有queue拓扑迁移，原Git/frozen/标签/全部checkpoint/失败/原件不删。
+CPU语法/模块与实际旧T passive trace检查通过，不启动新模型/环境/梯度。final clean/pushed Git及四个task-owned工程worktree移除以root completion为准，分支/commit仍保留。
+只一次整批投递main01a10a97-dedf-7042-a6a2-60214f0ef7b1；冷态使用同现有官方Queue/resume、不改配置、不重复发送。真实消费回执及canonical tracked/Git正式交回看root launch/delivery_receipt.json。
+当前无本批active执行或自动后继；Owner持续自主目标未完成，main收到后独立消费并承担下一科学取舍。下方承接/运行状态已成为历史，不恢复。
+
 ## 2026-10-06 实验session实际承接关系反馈完整共同学习
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取176行唯一active design、findings§366与最新Owner要求，从clean pushed main a1cd041d接管canonical tracked/Git独占窗口；main不并发写入。

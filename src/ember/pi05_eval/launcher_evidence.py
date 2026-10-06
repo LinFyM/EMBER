@@ -11,7 +11,7 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_queue import read_json_with_size
 
 
-def _read_invocation_events(path: Path) -> list[dict[str, Any]]:
+def _read_invocation_events(path: Path, contract: Mapping[str, Any]) -> list[dict[str, Any]]:
     try:
         events = [
             json.loads(line)
@@ -22,6 +22,36 @@ def _read_invocation_events(path: Path) -> list[dict[str, Any]]:
         raise Pi05EvaluationError("launcher invocation lineage is invalid") from error
     if any(not isinstance(row, dict) for row in events):
         raise Pi05EvaluationError("launcher invocation lineage is invalid")
+    recovered = path.with_name('invocations_recovered.jsonl')
+    if recovered.is_file():
+        rows = [json.loads(line) for line in recovered.read_text().splitlines() if line.strip()]
+        original = 0
+        for row in rows:
+            if original < len(events) and row == events[original]:
+                original += 1
+                continue
+            receipt = row.get('external_abort_receipt') or {}
+            source = json.loads(Path(receipt.get('path', '')).read_text())
+            matches = [value for value in source.get('processes', ())
+                       if value.get('job', {}).get('name') == receipt.get('job_name')]
+            adapter = contract.get('adapter') or {}
+            if len(matches) != 1:
+                raise Pi05EvaluationError('external launcher abort receipt is ambiguous')
+            process, previous = matches[0], events[original - 1] if original else {}
+            job = process.get('job', {})
+            if (row.get('event') != 'failed' or process.get('exit') != -15
+                    or previous.get('event') not in ('started', 'resume_started')
+                    or row.get('invocation_id') != previous.get('invocation_id')
+                    or row.get('unix') != process.get('exit_epoch')
+                    or row.get('return_codes') != {'external_launcher': -15}
+                    or job.get('phase') != 'eval'
+                    or any(job.get(key) != adapter.get(field) for key, field in (
+                        ('model', 'readout_model'), ('macro', 'macro'), ('panel', 'panel')))
+                    or not contract.get('parallel', {}).get('prior_worker_topologies')):
+                raise Pi05EvaluationError('external launcher abort evidence changed')
+        if original != len(events):
+            raise Pi05EvaluationError('recovered launcher lineage changed original events')
+        events = rows
     return events
 
 
@@ -58,7 +88,7 @@ def _close_attempt(
         abs_tol=1e-6,
     ):
         raise Pi05EvaluationError("launcher invocation timing changed")
-    return {
+    record = {
         "event": event,
         "invocation_id": str(terminal["invocation_id"]),
         "started_unix": float(opened["unix"]),
@@ -66,6 +96,10 @@ def _close_attempt(
         "wall_seconds": wall_seconds,
         "return_codes": terminal.get("return_codes"),
     }
+    if terminal.get("external_abort_receipt"):
+        record["external_abort_receipt"] = terminal["external_abort_receipt"]
+        record["timing_semantics"] = terminal["timing_semantics"]
+    return record
 
 
 def _parse_attempts(
@@ -196,14 +230,14 @@ def launcher_attempt_summary(
     *,
     total_shards: int,
 ) -> dict[str, Any]:
-    """Return exact active time and cumulative shard counts across resumes."""
+    """Return observed active intervals and cumulative shard counts across resumes."""
 
     path = output_dir / "invocations.jsonl"
     if not path.is_file():
         if contract.get("mode") != "smoke" or (output_dir / "failures").exists():
             raise Pi05EvaluationError("launcher invocation lineage is missing")
         return _smoke_fallback(launcher, total_shards=total_shards)
-    attempts = _parse_attempts(_read_invocation_events(path), contract, launcher)
+    attempts = _parse_attempts(_read_invocation_events(path, contract), contract, launcher)
     _validate_final_attempt(attempts, launcher)
     failures = _load_failures(output_dir, attempts)
     evidence, completed_before_final = _cumulative_attempt_evidence(

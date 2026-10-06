@@ -16,6 +16,7 @@ F真实live消费者在官方缓存EEF与sim派生量相差.161–.336mm时被�
 G450原400 bank已完整发布，不再编译；保留三次中断/部分复用和实际代码来源。现场18–23GiB卡被ops统一26GiB门限不必要排除，已改为canonical评测的每worker12GiB＋2GiB，按可行uniform1…3 replicas总worker数选物理安排，原全局6/单节点6保持。F已实际生成global34/init32一条完整full，但通用passive trace验收遗漏F的condition_id而未发布；原75.76MB完整失败capture、NPZ和日志保留，不冒充正式row或补造缺失row字段。已从真实失败NPZ/既有公共body-goal registry作CPU消费者检查，正确F身份通过、错误身份拒绝、原T trace仍通过。仅补typed condition_id接口；健康G360/G450读出继续来自c6e3500d，新F读出另冻结新reader，不重训或改动作/模型/标签/信息墙。
 全批现场cap6，训练world4仅为条件并行吞吐安排；就绪360/450读出由原persistent dynamic消费者独立并行，不收紧整批卡数。复用原native/完整ConditionalTarget/事件/ECP与官方评测器，不恢复旧专用trainer。
 fresh450共同更新、360/450各correct400、450 G/F各seen144共1088新episode固定；旧RL不恢复，GT只在loss/F侧。完成或真实科学/预算边界一次整批回main并交回窗口，无阶段通知或自Queue。
+四个固定面板的所有轨迹已完成，F最后从clean pushed detached307b3c51恢复144行exit0；全部GPU计算停止，累计完整GPU秒46746.929756/40h，新增峰当前52.932GiB/96。G360聚合被两次外部SIGTERM后的缺失terminal记录拒绝，原36分片/400行完整；不是worker拓扑不支持。独立补充invocations_recovered.jsonl只插入已有owner退出回执支持的failed事件，原JSONL及row不改，不造worker退出码；200行/20分片旧成功发布保留，最后16分片完成。真实CPU launcher消费者及错误回执拒绝、健康旧路径通过；外部中断时间只称owner观察退出界，最终worker时间/退出0仍为原件。新的clean pushed冻结只作CPU聚合与封口，不启动额外环境/forward或梯度。
 
 ## 2026-10-06 当前授权：关系监督与训练用反馈函数的完整共同学习
 

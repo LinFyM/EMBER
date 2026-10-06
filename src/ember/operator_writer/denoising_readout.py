@@ -356,6 +356,7 @@ def capture_expectations(bank: Mapping, manifest_path: Path, tasks: list,
         raise ValueError("denoising capture task geometry changed")
     first = 32 if panel == "seen" else 0
     return {"full": [{"suite": task.suite, "task_id": task.task_id, "init_state_id": first} for task in tasks],
+        "lossless_storage": "torch_zip_deflate",
         "capture": manifest_path.parent.parent / ("capture_ODE.json" if subset else "capture.json"),
         "study": TASK, "output": output, "role": scope.ROLE if panel == "seen" else "validation",
         "states": scope.STATES if panel == "seen" else tuple(range(50)),

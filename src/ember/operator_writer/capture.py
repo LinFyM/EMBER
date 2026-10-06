@@ -72,6 +72,8 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
              "checkpoint_selection_use": False, "validation_action_reads": 0,
              "validation_reward_reads": 0, "held_data_use": False,
              "claim_boundary": "BDDL predicates are partial progress signals"}
+    if expected.get("lossless_storage") is not None:
+        capture["lossless_storage"] = expected["lossless_storage"]
     return capture, stage
 
 

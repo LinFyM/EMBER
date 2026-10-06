@@ -1,3 +1,23 @@
+## 2026-10-06 实验session实际承接共享Writer去噪路径回报学习
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读138行active design、findings§363与旧§147–151，从clean pushed main57369d1e接管canonical tracked/Git独占窗口；main停止并发写。
+实际承接2026-10-06T04:48:42Z，硬deadline12:48:42Z；预计4–6h，硬8wall/20完整GPUh/48GiB新增峰（全部工程/加载/profile/失败/冻结/tmp计入）。
+唯一root /data1/user/ymdai/ember_runs/denoising_return_writer_20261006；strg01独立data1实占1268503200KiB/soft2147483648KiB、shared88512663650304B，个人du已核1298947264512B，未启动GPU/环境/物化/梯度。
+父T2340完整checkpoint实占448368640B、原official bank8732758016B；计划新增峰46GiB，复用旧大资产与原seen12，临时≤4GiB。完整live个人du及两节点准入在任何大物化/launch前补记，预算不合即停。
+隔离codex/denoising-return-20261006，SDE采样/evaluator和只读bank注册在不同独占worktree并行工程；root持完整采集/score/native VJP/训练及集成权。
+固定父图共享A0/B0/P/C/D/O全部可学、source/prefix冻结，原36task/50教学池、72次4task×4episode、原均匀采样/LOO/补权/AdamW/早停/63与72 ODE400均不改。
+复用原compile、真实单denoise和完整G/native信用、persistent环境与动态evaluator；旧Gaussian/RB/return_credit owner不恢复。新阶段专用入口按完整结果退役，原Git/frozen/raw/成本保留。
+只有整批完成或科学/预算实质阻碍一次回main；无阶段Queue/心跳/自通知或自动续RL。最终投递按notLoaded需官方thread/resume条件真实唤醒，禁止重复发送；写窗口交回看completion。
+
+### 同批工程与消费者封口（首GPU启动前）
+
+已复用原Runtime.compile、FormalData query_labels=False、functional_call、SUM梯度归约、persistent pool和canonical ECP完整checkpoint；source/prefix无学习参数。
+专用owner仅分采集/score/共享训练/SDE/readout，薄train入口；不增长旧run792行，不复活旧return_credit或保留第二RL trainer。约1.2k新增科研/接口行跨模块是完整共享RL阶段必需的五项职责，不是平行候选；闭批按完整结果退役，Git/frozen保留。
+实际CPU消费者核四episode重复init、reservoir/step与reward独立、联合Gaussian sum余切正号、76因子functional_call及完整Writer/native接口；0步/初始化失败原件丢失已工程修复并复验，失败记录保留。
+official400 video_schedule seed7与seen144 seed20260928各沿原件；parent ODE只新增132、原12只读引用，不伪造resume。新63/72保持canonical38/rank128 bank消费。
+full RGB的现有FP32张量用Torch ZIP deflate无损存储，标准torch.load数值不变；不量化、不删帧、不改capture范围。新增峰按bank约23/ckpt3.5/train8/full压缩≤10/tmp+代码2.5GiB保守估47GiB，硬48GiB。
+live现场没有严格空卡；可以低util且有足够显存共驻，原T native训练实际峰27.9GiB。首物化按现场准入使用多卡；训练rank以真实headroom/吞吐选择，不从四逻辑task设卡数上限，不打断其他job。首launch后另记实际devices/退出/费用。
+
 ## 2026-10-06 登记共享Writer去噪回报学习的唯一有界合同
 
 findings§363补全旧共享回报阴性及§151边界，选择改变随机生成过程/信用算子而保持T2340的原视频编译图。

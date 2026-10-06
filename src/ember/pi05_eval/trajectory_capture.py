@@ -144,12 +144,30 @@ def save_capture(
         if capture.get("external_prefix_commands"):
             payload["command_kinds"] = tuple(slot["replay_command_kinds"])
     torch.save(payload, path)
+    if level == "full" and capture.get("lossless_storage") == "torch_zip_deflate":
+        _deflate_torch_archive(path)
     return {
         "path": str(path),
         "bytes": path.stat().st_size,
         "replans": len(slot["replay_action_chunks"]),
         "capture_level": level,
     }
+
+
+def _deflate_torch_archive(path: Path) -> None:
+    """Lossless ZIP storage; canonical torch.load reads the identical tensors."""
+    import os
+    import zipfile
+
+    temporary = path.with_suffix(".deflate.tmp")
+    try:
+        with zipfile.ZipFile(path) as source, zipfile.ZipFile(
+                temporary, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1) as target:
+            for info in source.infolist():
+                target.writestr(info.filename, source.read(info))
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 PASSIVE_TRACE_SCHEMA = "ember_pi05_passive_control_trace_v1"
@@ -286,7 +304,7 @@ def save_passive_trace(
 
     trace = slot["passive_trace"]
     steps = int(slot["steps"])
-    arrays = {name: np.stack(trace[name]) for name in (
+    arrays = {name: np.stack(trace[name]) if trace[name] else np.empty((0, 7), dtype=np.float32) for name in (
         "actions", "body_positions", "eef_pos", "eef_quat", "gripper_qpos", "predicates")}
     expected = {"actions": (steps, 7), "body_positions": (steps + 1, len(trace["body_registry"]), 3),
                 "eef_pos": (steps + 1, 3), "eef_quat": (steps + 1, 4),

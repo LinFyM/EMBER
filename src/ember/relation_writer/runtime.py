@@ -95,7 +95,12 @@ def to_device(fields, device):
 @contextmanager
 def source_without_adapters(policy):
     """Bypass every PEFT adapter for F's true source call; preserve frozen flags."""
-    modules = [module for module in policy.modules() if callable(getattr(module, 'enable_adapters', None))]
+    from peft.tuners.tuners_utils import BaseTunerLayer
+    # Transformers' model-level PeftAdapterMixin has a different no-argument
+    # method; the actual injected tuner layers alone own the Boolean toggle.
+    modules = [module for module in policy.modules() if isinstance(module, BaseTunerLayer)]
+    if not modules:
+        raise ValueError('source query requires the real injected PEFT tuner layers')
     previous = [bool(module.disable_adapters) for module in modules]
     try:
         for module in modules:

@@ -15,6 +15,7 @@ import numpy as np
 
 from ember.eval_adapters import (
     load_evaluation_adapter as _load_evaluation_adapter,
+    observe_evaluation_adapter,
     validate_episode_adapter_fields,
 )
 from ember.pi05_assets import Pi05EvaluationError
@@ -135,6 +136,7 @@ def _plan_action_chunks(
     for group in groups:
         if task_adapter is not None and not batched_adapter:
             task_adapter.install(group[0]["episode_adapter"])
+        observe_evaluation_adapter(task_adapter, group)
         raw_inputs = [
             libero_policy_input(slot["obs"], str(task["language"])) for slot in group
         ]
@@ -214,6 +216,8 @@ def rollout_shard(
             task_adapter=task_adapter,
             capture_level=capture_level(occupancy_capture, task, int(state_id)),
         )
+        if callable(getattr(task_adapter, "observe", None)):
+            slot["adapter_env"] = env
         return slot
 
     active_count = min(len(envs), len(state_ids))

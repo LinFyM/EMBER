@@ -15,6 +15,7 @@ HORIZON_WRITER_KIND = "horizon_writer_lora_bank"
 CONDITIONAL_VELOCITY_KIND = "conditional_velocity_lora_bank"
 DEMONSTRATION_COMPARISON_KIND = "demonstration_comparison_lora_bank"
 OPERATOR_READ_WRITE_KIND = "operator_read_write_lora_bank"
+RELATION_FEEDBACK_KIND = "relation_grounded_feedback_diagnostic"
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -120,6 +121,15 @@ def inspect_static_task_lora_adapter(
     from ember.writer.materialization import BANK_SCHEMA
 
     manifest = read_json(manifest_path)
+    if manifest.get("kind") == RELATION_FEEDBACK_KIND:
+        from ember.relation_writer.readout import inspect
+
+        try:
+            return inspect(manifest, manifest_path, source,
+                tuple((task.suite, int(task.task_id)) for task in tasks), evaluation_role, require_formal,
+                {(task.suite, int(task.task_id)): task.init_state_ids for task in tasks})
+        except (KeyError, TypeError, ValueError, OSError) as error:
+            raise Pi05EvaluationError(str(error)) from error
     if manifest.get("kind") == OPERATOR_READ_WRITE_KIND:
         from ember.operator_writer.bank import inspect_bank
 
@@ -243,6 +253,10 @@ def load_evaluation_adapter(
         from ember.operator_writer.bank import FrozenOperatorAdapter
 
         return FrozenOperatorAdapter(**common)
+    if adapter.get("kind") == RELATION_FEEDBACK_KIND:
+        from ember.relation_writer.adapter import FrozenFeedbackAdapter
+
+        return FrozenFeedbackAdapter(**common)
     raise Pi05EvaluationError("unsupported evaluation adapter kind")
 
 
@@ -250,6 +264,8 @@ def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
+        if contract.get("adapter", {}).get("kind") == RELATION_FEEDBACK_KIND:
+            return {"relation_privileged_feedback": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == OPERATOR_READ_WRITE_KIND:
             return {"operator_read_write_lora": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == DEMONSTRATION_COMPARISON_KIND:
@@ -267,6 +283,13 @@ def episode_adapter_fields(
     return {}
 
 
+def observe_evaluation_adapter(task_adapter: Any | None, slots: Sequence[Mapping[str, Any]]) -> None:
+    observe = getattr(task_adapter, "observe", None)
+    if callable(observe):
+        observe([slot["episode_adapter"] for slot in slots],
+                [slot["adapter_env"] for slot in slots], [slot["obs"] for slot in slots])
+
+
 def validate_episode_adapter_fields(
     adapter: Mapping[str, Any] | None,
     row: Mapping[str, Any],
@@ -275,7 +298,15 @@ def validate_episode_adapter_fields(
     task_id: int,
     init_state_id: int,
 ) -> bool:
-    if adapter is not None and adapter.get("kind") == OPERATOR_READ_WRITE_KIND:
+    kind = (adapter or {}).get("kind")
+    if kind == RELATION_FEEDBACK_KIND:
+        from ember.relation_writer.readout import validate_feedback_episode_fields
+
+        return validate_feedback_episode_fields(adapter, row, suite=suite,
+                                                task_id=task_id, init_state_id=init_state_id)
+    if row.get("relation_privileged_feedback") is not None:
+        return False
+    if kind == OPERATOR_READ_WRITE_KIND:
         from ember.operator_writer.bank import validate_episode
 
         return (all(row.get(name) is None for name in (
@@ -285,7 +316,7 @@ def validate_episode_adapter_fields(
                                      suite=suite, task_id=task_id, init_state_id=init_state_id))
     if row.get("operator_read_write_lora") is not None:
         return False
-    if adapter is not None and adapter.get("kind") == DEMONSTRATION_COMPARISON_KIND:
+    if kind == DEMONSTRATION_COMPARISON_KIND:
         from ember.demonstration_learning.bank import validate_episode
 
         return (row.get("horizon_writer_lora") is None and row.get("static_task_lora") is None
@@ -293,14 +324,14 @@ def validate_episode_adapter_fields(
                                      suite=suite, task_id=task_id, init_state_id=init_state_id))
     if row.get("demonstration_comparison_lora") is not None:
         return False
-    if adapter is not None and adapter.get("kind") == CONDITIONAL_VELOCITY_KIND:
+    if kind == CONDITIONAL_VELOCITY_KIND:
         from ember.writer.conditional_velocity_bank import validate_velocity_adapter_fields
 
         return validate_velocity_adapter_fields(adapter, row, suite=suite, task_id=task_id,
                                                 init_state_id=init_state_id)
     if row.get("conditional_velocity_lora") is not None:
         return False
-    if adapter is not None and adapter.get("kind") == HORIZON_WRITER_KIND:
+    if kind == HORIZON_WRITER_KIND:
         from ember.writer.evaluation import validate_horizon_writer_episode
 
         return (row.get("task_expert") is None and row.get("static_task_lora") is None
@@ -315,13 +346,13 @@ def validate_episode_adapter_fields(
             and row.get("static_task_lora") is None
             and row.get("policy_adapter_sha256") is None
         )
-    if adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
+    if kind == STATIC_SOURCE_SFT_KIND:
         return (
             row.get("task_expert") is None
             and row.get("static_task_lora") is None
             and row.get("policy_adapter_sha256") == adapter.get("lora_state_sha256")
         )
-    if adapter.get("kind") == STATIC_TASK_EXPERT_KIND:
+    if kind == STATIC_TASK_EXPERT_KIND:
         from ember.expert_manifold.evaluation import validate_task_expert_episode
 
         return (
@@ -335,7 +366,7 @@ def validate_episode_adapter_fields(
                 init_state_id=init_state_id,
             )
         )
-    if adapter.get("kind") == STATIC_TASK_LORA_KIND:
+    if kind == STATIC_TASK_LORA_KIND:
         from ember.static_task_lora import validate_static_task_lora_episode
 
         return (

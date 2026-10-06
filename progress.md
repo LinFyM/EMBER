@@ -1,3 +1,12 @@
+## 2026-10-07 实验session实际承接同图关系输入匹配批次
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取132行唯一active design、findings§371与当前Owner要求，从clean pushed main730896cb接管canonical tracked/Git独占窗口；main停止并发写入。
+实际承接2026-10-06T20:17:33+00:00，硬截止2026-10-07T04:17:33+00:00；预计3–5h，硬8wall/12完整GPUh/40GiB新增峰，包括工程/失败/profile/物化/评测/frozen/tmp。
+唯一root /data1/user/ymdai/ember_runs/relation_input_compilation_20261007；首次strg01独立data1计费实占1360138132KiB/soft2147483648KiB，完整个人du1360138108KiB、共享可用88314855030784B，现场原始回执已封存；估计新增峰32GiB/硬40GiB。工程/临时root已建立，尚无GPU启动；所有大模型/标签/数据旧路径只读引用。
+P/Q共同删最后采样帧，公共beta/Phi固定；仅Omega/Read/原38 ConditionalTarget从父G450恢复原完整Adam索引与时钟451…630，实际主FM180步/臂。同原seen映射四144共576新行，u90仅恢复，Q为明确特权编译诊断、闭环无live GT/F/Reader。
+实际CPU消费者已通过：720原条件/20160 query、全部36每task20次、原seen144映射；805个不同教学条件共25647使用GT帧全部有效，完整634个G Adam注册顺序/shape/step450与原dtype、LR时钟恢复通过。一次CPU脚本import错误修正并保留，0GPU。新薄输入/更新owner复用原frozen_PEFTfix模块和通用native/data/FM/ECP，readout复用canonical评测器；两独占worktree分别持输入/更新和读出临时注册，整批结束入口/hooks退役，Git/frozen/raw/失败保留。逐launch资源回执使用唯一序号，禁止覆盖首次preflight/storage。
+结构自审：输入213行/更新237行/薄入口40行，下游实际算子逐项复用，prepare/restore/contract与单宏步分工清楚；更新43行complexity16、train53行20为内聚的四任务原子更新和有限ECP生命周期，保留review例外，无hard结构违约。本批owner为实验session，读出注册就绪后独立冻结，整批结束所有专用面退役。实际消费者、集成push/clean detached冻结、运行/分析/费用与资源退出由本session闭环；不设main工程审批停点。完成或真实科学/预算边界一次整批回main并交回窗口，无heartbeat/阶段Queue/自通知/自动后继。
+
 ## 2026-10-07 main登记同编译链的预测／真实关系匹配检验
 
 Owner持续自主授权有效，当前G/F组合仍停止；main已核真实算子、标签末帧、父参数/optimizer合同及最近完整支持扩展原件。

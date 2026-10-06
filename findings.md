@@ -8993,3 +8993,38 @@ Q/V/action_in父列rank均128，action_out实际rank7且D修正全部在其中�
 若丢失而旧PZ保留更多，则说明L/R排除了部分实际有用修正，收紧该阴性外推，但不能证明另一种读取会成功。
 未优化投影还可能破坏原D共同适应，任何分支都不证明空间内不存在更好参数；不以此自动恢复Reader、扩大rank或开新400。
 预计45–75分钟，硬实际承接起2wall/1.5完整GPUh/8完整CPUh/4GiB；完成后main独立消费，无自动后继。
+
+## 361. 固定父B投影PB完成32行：D的增益部分保留，任务分布与PZ反例限制单一范围解释（2026-10-06）
+
+实验session从455bd9bc承接，运行代码34eec675 clean pushed detached；完整合同为84行fixed_b_output_range_diagnostic_20261006。
+唯一新PB按各condition/site完整B_T作FP64 SVD相对cutoff1e−6，将B_D−B_T左投影，A_T原dtype不变、38个B落FP32；304处BA能量保留40.4252267%。
+Q/V/action_in实际rank128、action_out7；不是旧共享delta_O Z的95.86%空间，无新学习/native/教学forward或重编译。
+原8条件160个B20预测和32个闭环全完成，原事件/query_offset1/噪声/场景/seed/目标完整配对32/32；旧parent/D/PZ/S原件复用，无对照重跑。
+
+|task（每格8行）|parent|D|PZ|S|PB|
+|---|---:|---:|---:|---:|---:|
+|0|8|8|8|8|7|
+|12|3|4|3|4|2|
+|20|3|5|4|3|7|
+|32|3|6|6|5|4|
+|合计|17|23|21|20|20|
+
+PB对parent R15/G5/L2/churn7/Jaccard.681818，对D18/2/5/7/.72，对PZ17/3/4/7/.708333，对S15/5/5/10/.6。
+D七新增中PB保留(20,38,0)、(20,38,1)、(20,42,1)、(32,17,0)，未保留(12,25,0)、(32,17,2)、(32,17,3)；恢复D唯一丢失(20,42,3)。
+PB另新增(20,42,2)，丢失parent(0,40,2)/(12,14,0)。PZ也保留D七新增的4个，只是不同个例，不能称它在数量上保留更多D新增。
+Task32/teacher17 PB成功{0,1}，parent{1}、D{0,1,2,3}、PZ{0,1,2}、S{1,2}；teacher43 PB/parent/D{0,1}、PZ/S{0,1,3}，两teacher的反例均保留。
+
+PB归一化B20 MSE first5/full50/valid-future为.112708387/.130740686/.135617492；PB−parent相对D−parent cosine .949369/.822964/.833811，PB−D相对D−parent L2比.448498/.562423/.551669。
+PB−D motion6 MSE .000364219/.000840096/.000879065，gripper1 .006748903/.034284128/.032366419；所有臂风险、条件/逐query及PB−D/PB−parent完整统计见actions.json/per_query.tsv。
+动作接近不能替代成功，first5保留较近也未保证所有D增益。固定4full全199输入/398双RGB/24页已看，来源、绝对步、noise映射及外观未知在RGB/index.json、visual_review.json；28compact不称有画面。
+其中task12/teacher25/state0晚段瓶才明显抬起移向basket但280未In；task32/teacher17/state0壶一度侧倒外观、后段移向红炉，官方426成功，不把RGB当grasp/接触真值或必要控制器证据。
+
+未重优化投影损失了部分既存D收益，说明把L/R阴性推广到其它输出构造缺少依据；但task20 PB7>D5/PZ4、PZ与PB同保留4/7新增及双向损失，不支持按几何能量单调解释行为。
+输出范围、D共适配受破坏与后续非线性未分离；不证明空间内无有效策略、不认证新Reader或跨任务共享生成，也不改变原T2340/EMBER成绩。main整批独立消费后作方法判断。
+
+唯一root /data1/user/ymdai/ember_runs/fixed_b_output_range_20261006，projection/bank、160预测、32raw、per-row/aggregate/D得失、旧引用、固定全部full及report/费用/命令/退出/completion保留。
+CPU verifier误要求A全FP32，以及ops系统Python缺pidfd导致wrapper启动失败均保留；只修工程验证/ops解释器，合法B20继续一次完成、已完成科学行不重跑。
+B20 batch10/20/40实测8.56/10.13/10.31 query/s、峰10.23/11.67/14.55GiB；40仅重复既有20事件且收益约1.8%，选20。闭环两卡各3 persistent replicas动态队列，无无益占卡。
+全GPU449.831271秒=.124953131h（含加载/profile/失败B20）；两评测/B20退出0，最终两节点无ymdai GPU。CPU测量、未计时工程保守上界、新增峰2GiB界/实际目录量及wall在resource_ledger.json。
+本批专用159行入口和13条PB注册退役、原learning_limit恢复，Git/frozen/raw不删；最终集成push/工程树清理/一次回报以completion/delivery_receipt为准。
+所有结果停止本批，无自动空间内训练/阈值/layer/Reader/Writer/400/RL/Test。整批回报后tracked/Git交回main，Owner持续授权目标仍未完成。

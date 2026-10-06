@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：固定父B输出范围投影完成，实际收益部分保留且反例非单调
+
+[84行合同](designs/fixed_b_output_range_diagnostic_20261006.md)与findings§361登记唯一PB无学习投影：304处FP64 SVD cutoff1e−6、A原样/B FP32，BA保留40.4252267%。
+原8条件160 B20及32闭环全部配对有效；PB20、parent17、D23、PZ21、S20，按task0/12/20/32 PB7/2/7/4。PB对parent R15/G5/L2、对D18/2/5，成功集合及所有旧参照直接复用保留。
+D七新增PB保留4个/丢3个并恢复D唯一丢失，PZ也同保留4个且个例不同；task20 PB7>D5/PZ4、task32两teacher相反反例收紧按能量单调解释，不认证空间内不可能或新Reader。
+固定4full全部199规划时刻/398双RGB/24页已看，28compact无画面声明；动作first5/full50/validfuture motion6/grip、PB−D/parent增量和全部来源原件保留。
+运行冻结34eec675，原T训练e2afbfd7/source b8ea00e9/旧flow511791cb身份分开；CPU误dtype verifier与ops pidfd失败未改变科学、合法B20仅执行一次且已完成行不重跑。
+唯一root /data1/user/ymdai/ember_runs/fixed_b_output_range_20261006；全GPU.124953131h，3消费者退出0/GPU释放，完整CPU费用界、峰/命令/失败/completion及159行入口+13行注册退役/Git封口保留。
+有限train诊断不改变EMBER分数或支持共享生成已学；整批交回main独立消费，无自动空间内训练/Reader/Writer/400/RL/Test。
+
 ## 2026-10-06：task23执行文本两新臂全部阴性，原完整句正例保持
 
 findings§357与[98行合同](designs/task23_post_open_language_diagnostic_20261006.md)固定完整G(V,L0)、32真实已打开起点/剩余noise，

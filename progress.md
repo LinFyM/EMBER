@@ -1,3 +1,16 @@
+## 2026-10-06 固定父B投影PB原160预测/32行完成，专用面封口
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45从455bd9bc承接，34eec675 clean pushed detached完成，见findings§361。
+PB20/32，parent17/D23/PZ21/S20；32共同准入与160固定B20来源全部有效，16个物理初态，旧臂未重跑。
+PB保留D七新增4个并恢复唯一丢失；PZ同保留4个、个例不同。Task20 PB7>D5/PZ4，task12 PB2<parent3，所有成功集合/反例保留。
+固定4full全199规划时刻398双RGB/24页已看，不补渲染/终态或compact画面，不把外观和动作代理当成功或唯一根因。
+全GPU.124953131h、所有3个消费者退出0/现场双节点无ymdai GPU；batch10/20/40实测、两卡各3persistent replicas、CPU与失败/费用/峰值见root ledger。
+实际承接03:08:49Z；包含工程/加载/profile/验证失败/冻结/tmp，新峰保守2GiB/4、CPU未逐项计时部分明确保守计费不称精确实耗。
+唯一root /data1/user/ymdai/ember_runs/fixed_b_output_range_20261006；report/raw/预测/逐行/aggregate/映射/RGB/projection/完整bank/Git/frozen保留。
+本批159行专用入口与13条PB注册已退役，shared owner原样恢复；最终main push、工程树清理及一次整批回报/窗口交回见completion/delivery_receipt。
+本批计算已停止；无active新计算或自动下一分析/空间内训练/Reader/Writer/400/RL/Test，main独立消费后承担科学接续，Owner持续授权不变。
+当前实验session仅完成Git/原件交付，整批回报后交回canonical tracked/Git；下方active均为此前时点。
+
 ## 2026-10-06 实验session实际承接固定父B输出空间诊断
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取84行active design与findings§360，从clean pushed main455bd9bc接管canonical tracked/Git独占窗口；main停止并发写。

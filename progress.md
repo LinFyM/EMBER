@@ -3,6 +3,10 @@
 接续的首次训练加载暴露per-rank LIBERO空配置目录导致非交互import的EOF；没有环境/采集/更新，失败费用在batch_attempt2_exit.json完整保留。启动owner现调用原prepare_libero_config补同一canonical registry，不改frozen科研代码。
 修复后训练实际启动gpu02[1,0,7]三rank，父ODE132实际resume启动gpu02[2,3]×2 replicas；本批同时5卡、现场project cap6。继续唯一实际退出/checkpoint事件等待，不轮询或阶段通知main。
 
+父两面板已完整退出：ODE132+原12与SDE144均109/144，严格配对R95/G14/L14；teacher/scene/env/policy及共用初始噪声prefix零不匹配。仅消费已完成父原件，未读active训练分数，不改变学习合同。
+宏步1原合法轨迹上的两次discard profile已结束：32/16全512转移max35.170s、max_alloc24918350336B；64/32在native反向OOM（local CUDA2=physical7共驻），max_alloc39347417600B，失败及完整trace保留。父/optimizer/RNG复位，实际选择32/16；两次限额已用完，不追加profile或科学case。
+完整checkpoint9事件已自动预算预测：mean_macro129.101s、当时累计2.0293GPUh，固定余下1088评测/944编译预计整批13.2037GPUh；仍守12:48:42Z硬deadline。此处按父面板退出的资源调度事件一次读profile/forecast，未轮询训练metrics/cache；长任务继续由唯一owner等待真实退出与checkpoint事件。
+
 父SDE144实际完成109/144，36task完整且不是held结果；满足原合同的正奖励门限，原件只读保留，不重跑。
 随后parent ODE132已prepare、未执行科学行，在canonical evaluator实时准入处exit1；此前双节点snapshot可用但拒绝瞬间未保存telemetry，不能指定为某一外部进程或唯一memory/util原因。
 调度器连带SIGTERM的训练仍在加载阶段，train目录为空、没有run_contract/raw/采集/更新；实际GPU分配及失败费用保留，允许从同一父权重/fresh optimizer/RNG重新开始原宏步流。

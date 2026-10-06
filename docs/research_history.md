@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：登记同一LoRA链的预测／真实关系匹配检验
+
+findings§371及[合同](designs/relation_input_compilation_diagnostic_20261007.md)区分F/G执行图混杂与教学关系获取问题。
+固定G450公共beta/Phi，原Omega/Read/Compiler两臂同180步FM，唯一改变预测或GT教学字段；两臂共同截掉缺标签末帧。
+P0/Q0/P180/Q180各原seen144，无held/Test，GT只在原36训练任务编译侧，闭环仍单LoRA/官方自身观测。
+这是有限机制学习而非新部署候选，不恢复旧G/F组合；阳性仍须解决RGB获取/迁移，阴性不外推所有物理方法不可能。
+登记预计3–5h、硬8wall/12完整GPUh/40GiB，实际运行/结果只按progress与整批原件，不把合同写成已执行证据。
+
 ## 2026-10-07：main结束当前关系瓶颈与弱F组合，保留科学边界
 
 findings§370及[同批canonical分析](analyses/relation_signal_readback_20261007.json)的main_consumption保存CPU直接重算与完整裁决。

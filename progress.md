@@ -1,3 +1,13 @@
+## 2026-10-07 main登记同编译链的预测／真实关系匹配检验
+
+Owner持续自主授权有效，当前G/F组合仍停止；main已核真实算子、标签末帧、父参数/optimizer合同及最近完整支持扩展原件。
+唯一active design为`docs/designs/relation_input_compilation_diagnostic_20261007.md`，固定原36任务、G450父点，
+P/Q仅改变Omega的教学关系字段；公共beta/Phi固定，下游相同FM与原optimizer时钟各180步，四固定seen144共576新行。
+两臂共同去掉末个缺GT采样帧，学习前重新读出；GT只在训练诊断编译侧，无自身GT闭环/held/Test/新F。
+预计3–5h、硬实际承接起8wall/12完整GPUh/40GiB；科学边界与停止线见合同/findings§371，不自动转入感知修补或fresh。
+当前仅完成登记、尚未有实际GPU或结果。main仍持tracked/Git，将推送后交既有实验session独占；实际承接以其回执更新。
+整批回main独立消费、判断完整方法；下方无active/已封口文字为历史时点，不恢复旧任务。
+
 ## 2026-10-07 main完成关系路线裁决，当前组合停止
 
 findings§370记录main直接消费源码/raw、重算36手轨迹与全部336速度误差、完整历史比较和Adam解释修正；补充数据并入同批canonical分析JSON。

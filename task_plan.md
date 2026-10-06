@@ -1,3 +1,12 @@
+## 2026-10-07 分离物理信息获取与LoRA利用：唯一匹配诊断
+
+findings§371登记P/Q同父同图的有限学习：原G450公共beta/Phi固定，Omega/Read/Compiler各180步相同主FM，
+唯一不同是教学预测字段或既存训练GT；共同去掉缺标签的最后采样帧，P0/Q0/P180/Q180各原seen144。
+合同为`docs/designs/relation_input_compilation_diagnostic_20261007.md`，预计3–5h，硬8wall/12完整GPUh/40GiB。
+它决定准确关系是否值得继续获取，不是新部署候选或旧G/F续训；GT只限原36训练任务、编译后仍单LoRA官方闭环。
+执行承接及写窗口看progress；整批回main消费后判断，无自动扩数据/fresh/held400/controls/Test。
+旧组合停止的结论保持，最终目标和Owner自主授权保持；下方无active文字为此前时点。
+
 ## 2026-10-07 关系路线完整裁决：关闭当前组合，最终目标仍未达到
 
 findings§370及同批canonical分析JSON已保存main原件重算、数学作用链与最近完整正反例。

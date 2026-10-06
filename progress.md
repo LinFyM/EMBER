@@ -1,3 +1,12 @@
+## 2026-10-06 去噪回报批次已实际进入冻结GPU消费者
+
+工程已集成push 1c90e7d5681bf18c99f9dc4084225d03e76ee929，并从同一clean pushed detached root/frozen执行；canonical tracked/Git窗口仍由实验session独占。
+父seen bank132新condition已在gpu02[1,0,2,7,3]完成、原12/shared只读复用；canonical bank消费者已接受144完整条件。实际物化90.12s，计完整5卡费用并额外保守10 GPU秒，单worker实测frame32 peak_reserved约13GiB。
+首调度包装误用系统Python缺pidfd_open，编译子进程仍完成bank而final stdout丢失/exit120；完整失败、真实CPU400.01s/时间/有效原件均保留，不重编译；已用仓库Python修复仅ops接口接续。
+父SDE144实际已启动gpu02[1,0,3,7]×2 persistent replicas，现场严格空卡0、project cap6；低util共驻而未打断任何外部job。完整父门限结果未出，尚未进入训练。
+正常运行由唯一batch owner持续等待真实退出和checkpoint rename事件；预算预测只在完整checkpoint事件计算，不轮询分数/缓存、不自Queue/发main阶段消息。
+root合同/git/原件/source/准入/失败/费用在/data1/user/ymdai/ember_runs/denoising_return_writer_20261006；原设计停止线、固定范围与2次discard profile保持。
+
 ## 2026-10-06 实验session实际承接共享Writer去噪路径回报学习
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读138行active design、findings§363与旧§147–151，从clean pushed main57369d1e接管canonical tracked/Git独占窗口；main停止并发写。

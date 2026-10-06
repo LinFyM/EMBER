@@ -10,6 +10,9 @@
 完整63 checkpoint触发官方400物化，与余下训练并行；gpu02[2,3]的原固定400条件实际采用推理frame64（未加forward/profile案例），完整exit0，max_reserved18176016384B=16.93GiB，wall560.965s/1121.929GPU秒。canonical LoRA/metadata消费者通过。
 63 ODE400已启动gpu02[2,3,4]×2 replicas，训练仍gpu02[1,0,7]，当前合计6卡且现场cap6，新增可用卡自然纳入；没有整批两卡/四卡限制。72新bank仅在live≥36GiB、已完成64测量≤18GiB时物理放大至frame128，否则沿64/32显存准入；原teacher/条件/公式/FP32 bank均不改，没有第三次discard更新。
 
+训练实际完整exit0：72更新/1152episode/288组，140组非零LOO；六原参数组public_A/public_B0/p/c/d/o在68更新均非零finite，140组native H/X及public-B native pass非零；source_trainable始终0、每36任务等权8次访问，CPU读取已结束训练metrics的合同errors为空。raw/完整8个ECP及source在root/train，已停止新增梯度。
+训练wall8981.565s（完整3卡计费，包含两次profile），git仍clean pushed detached1c90e7d5；这仅证明信用和更新实际执行，不构成held收益或video必要性的证据。72 official物化已启动gpu02[7,1]、seen物化gpu02[0]，63 ODE400继续；后续仅固定原ODE400及seen ODE/SDE，不选择63高点或追加学习。
+
 父SDE144实际完成109/144，36task完整且不是held结果；满足原合同的正奖励门限，原件只读保留，不重跑。
 随后parent ODE132已prepare、未执行科学行，在canonical evaluator实时准入处exit1；此前双节点snapshot可用但拒绝瞬间未保存telemetry，不能指定为某一外部进程或唯一memory/util原因。
 调度器连带SIGTERM的训练仍在加载阶段，train目录为空、没有run_contract/raw/采集/更新；实际GPU分配及失败费用保留，允许从同一父权重/fresh optimizer/RNG重新开始原宏步流。

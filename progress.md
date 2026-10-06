@@ -8,6 +8,8 @@ P/Q共同删最后采样帧，公共beta/Phi固定；仅Omega/Read/原38 Conditi
 结构自审：输入213行/更新237行/薄入口40行，下游实际算子逐项复用，prepare/restore/contract与单宏步分工清楚；更新43行complexity16、train53行20为内聚的四任务原子更新和有限ECP生命周期，保留review例外，无hard结构违约。本批owner为实验session，读出注册就绪后独立冻结，整批结束所有专用面退役。两臂已从clean pushed detached84ef79c1于2026-10-06T20:40:16Z/20:40:20Z实际启动（gpu02 P[1,0]/Q[6,4]），总4卡/现场cap6；新学习world2来自父world4，按原rank0/1恢复RNG，记录为干预fork。P首合法宏步两profile均完成，common/Phi实际grad0且Adam step450不变，Omega/Read/Compiler真实FM均有finite信用。profile frame64/128耗时15.069/12.130s、peak18.254/18.260GiB；该首macro最长47帧，两设置都已完整单批读取，不能把wall差归因chunk放大。选择128覆盖本批最大94使用帧，micro28已达单condition全部query；只有两次丢弃更新，完整父/opt/clock/RNG复位，后续实际peak由合法宏步记录。读出CPU scope/capture已核四面板576行与原seen配对；发现新spec未消费的evaluation/budget残留旧1088/16wall/40GPUh/96GiB，实际训练owner始终451..630/8wall/12GPUh/40GiB，新reader只纠正这两个元数据字段，旧frozen/spec/原件不改，engineering/spec_metadata_correction.json保留来源。读出工程完成消费者核验后另新冻结，即就绪独立调度，不等两臂训练结束。
 实际消费者、集成push/clean detached冻结、运行/分析/费用与资源退出由本session闭环；不设main工程审批停点。完成或真实科学/预算边界一次整批回main并交回窗口，无heartbeat/阶段Queue/自通知/自动后继。
 
+读出消费者16718ac0已集成：四面板的旧scene/teacher/144条件、每面板full36/compact108、完整76因素rank128单LoRA、实际canonical evaluator run/resume和GT编译侧信息墙均经CPU消费者检查；4项既存pytest通过，0额外环境/forward。读出owner451行，只有bank/capture/preparation三处5/4/4行临时派发，仍使用原评测器和FrozenOperatorAdapter；既有bank大文件仅接受此最小派发内聚例外，不复制评测器，不扩大原run.py。新reader允许只改变未消费的evaluation/budget元数据并分别保存训练spec/reader spec，不能改变source/events/model/更新图。整批结束本批四个source owner、薄入口/spec和三hooks统一退役，旧Git/frozen/原件保留。读出将在本次集成push完成后新建clean detached frozen_readout，由唯一有限owner收到实际ready文件后现场准入启动；这段记录不冒称读出GPU已经启动。
+
 ## 2026-10-07 main登记同编译链的预测／真实关系匹配检验
 
 Owner持续自主授权有效，当前G/F组合仍停止；main已核真实算子、标签末帧、父参数/optimizer合同及最近完整支持扩展原件。

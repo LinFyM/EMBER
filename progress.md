@@ -11,6 +11,9 @@ data1 strg01独立实占1267197104KiB、软限2147483648KiB，个人du1297609777
 CPU资产/完整因子/公共参数键映射、T/C同source/normalization/topology、固定32起点/64行/12210步/8full与噪声检查通过，无CUDA初始化。
 94bdfbaf已集成main/push并clean detached frozen；00:26:54Z实际首launch gpu02:0/1，两个worker PID4073994/4073995执行计入64的T8/C8两对。
 首消费者须核实际完整前缀位置/In、branch Open及同对controller/物理状态；正常直接等进程退出，不阶段Queue/自通知。
+首launch两个worker因run_contract/facade导入循环在0模型/0环境/0前向/0重放处退出1；26.0876完整GPU秒及16.2170进程树CPU秒保留。
+原CPU因子检查先导入bank，掩盖独立worker顺序；已修正临时入口先初始化canonical facade，新进程按真实worker导入顺序验证通过，无CUDA初始化。
+SQLite首两起点仍pending，rows目录为空；不改科学语义或旧冻结树，仅推送新版本后续四条未开始行，失败/加载计入原预算。
 专用两文件由本session拥有，整批后退役；只在完成或真实边界一次回main交回窗口，无自动后继。
 
 ## 2026-10-06 main登记task23已打开状态的条件算子因果比较

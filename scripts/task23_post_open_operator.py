@@ -19,11 +19,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=('launch', 'worker'))
     parser.add_argument('--phase', choices=('admission','remaining'))
+    parser.add_argument('--attempt', type=int, default=1)
     parser.add_argument('--gpus', default='0,1')
     parser.add_argument('--worker-id')
     parser.add_argument('--gpu-id', type=int)
     parser.add_argument('--max-pairs', type=int, default=4)
     args = parser.parse_args()
+    label=args.phase if args.attempt==1 else f'{args.phase}_retry{args.attempt}'
     if args.command == 'worker':
         os.environ.update(MUJOCO_GL='egl', PYOPENGL_PLATFORM='egl', MUJOCO_EGL_DEVICE_ID=str(args.gpu_id))
         run_worker(args.max_pairs, args.worker_id, args.gpu_id)
@@ -39,7 +41,7 @@ def main():
         raise RuntimeError('formal consumer must be pushed')
     gpus = [int(x) for x in args.gpus.split(',')]
     if len(set(gpus)) != len(gpus) or len(gpus)>6: raise RuntimeError('physical GPU scope invalid')
-    preflight_path = ROOT/'launch'/f'{args.phase}_preflight.json'
+    preflight_path = ROOT/'launch'/f'{label}_preflight.json'
     with preflight_path.open('x') as f:
         subprocess.run(['/data0/soft/anaconda3/bin/python',
             '/data0/user/ymdai/.codex/skills/gpu-preflight/scripts/gpu_preflight.py',
@@ -72,12 +74,16 @@ def main():
                 raise RuntimeError('first consumer prefix pairing invalid; do not enlarge panel')
         for i,r in enumerate(cohort['rows']):
             if (i in indices)==(args.phase=='admission'):
-                db.execute('INSERT INTO pairs VALUES(?,?,"pending",NULL)',(i,r['remaining_control_steps']))
+                existing=db.execute('SELECT status FROM pairs WHERE cohort_index=?',(i,)).fetchone()
+                if existing is None:
+                    db.execute('INSERT INTO pairs VALUES(?,?,"pending",NULL)',(i,r['remaining_control_steps']))
+                elif existing[0]!='pending':
+                    raise RuntimeError('do not retry an attempted scientific start')
     started=time.time(); cpu_before=resource.getrusage(resource.RUSAGE_CHILDREN)
     processes=[]; logs=[]; commands=[]; active_times=[]
     try:
         for gpu in gpus:
-            wid=f'{args.phase}_gpu{gpu}'
+            wid=f'{label}_gpu{gpu}'
             env=os.environ.copy();env.update(CUDA_VISIBLE_DEVICES=str(gpu),CUDA_DEVICE_ORDER='PCI_BUS_ID',
                 PYTHONPATH=str(repo/'src'),OMP_NUM_THREADS='2',OPENBLAS_NUM_THREADS='2',MKL_NUM_THREADS='2',
                 HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',PYTHONDONTWRITEBYTECODE='1',
@@ -91,7 +97,7 @@ def main():
             log=(ROOT/'launch'/f'{wid}.log').open('xb');logs.append(log)
             stamp=time.time();p=subprocess.Popen(cmd,cwd=repo,env=env,stdout=log,stderr=subprocess.STDOUT)
             processes.append(p);commands.append(cmd);active_times.append(stamp)
-        write(ROOT/'launch'/f'{args.phase}_launch.json',dict(started_unix=started,git=commit,
+        write(ROOT/'launch'/f'{label}_launch.json',dict(started_unix=started,git=commit,
             gpus=gpus,preflight=str(preflight_path),whole_project_before=sorted(own),project_cap=cap,
             commands=commands,pids=[p.pid for p in processes],timeout_seconds=timeout))
         def wait_exit(item):
@@ -113,7 +119,7 @@ def main():
         cpu_after=resource.getrusage(resource.RUSAGE_CHILDREN)
         if 'durations' not in locals():
             durations=[time.time()-stamp for stamp in active_times]
-        write(ROOT/'launch'/f'{args.phase}_launch_exit.json',dict(started_unix=started,finished_unix=time.time(),
+        write(ROOT/'launch'/f'{label}_launch_exit.json',dict(started_unix=started,finished_unix=time.time(),
             exit_codes=[p.returncode for p in processes],complete_gpu_seconds=sum(durations),
             physical_gpu_seconds=dict(zip(map(str,gpus),durations)),
             process_tree_cpu_seconds=cpu_after.ru_utime+cpu_after.ru_stime-cpu_before.ru_utime-cpu_before.ru_stime))

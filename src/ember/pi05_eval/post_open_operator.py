@@ -237,6 +237,7 @@ def run_worker(max_pairs, worker_id, gpu_id):
     from ember.batched_lora import BatchedLoRAInference
     from ember.lora import inject_task_lora
     from ember.pi05_assets import configure_libero_runtime_assets
+    import ember.pi05_eval_contract  # initialize the canonical facade before its submodules
     from ember.pi05_eval.worker_setup import load_policy, validate_worker_assets
     from ember.pi05_eval.episode import stage_predicate_snapshot
     from ember.pi05_eval.trajectory_capture import record_passive_step

@@ -8774,3 +8774,15 @@ main原件：`.codex/tmp/task23_existing_sequence_readback_20261006/main_consump
 `train51_tail_readback.json`及四张完整stride5双RGB页；所有开度保留未clip的`-qpos`，接触/命令仅作描述。
 训练源为canonical数据内`libero_90/KITCHEN_SCENE2_open_the_top_drawer_of_the_cabinet_demo.hdf5`；42初态以对应原BDDL为准。
 旧交叉/视频段原件仍见机制§98/115与`task32_learned_video_segment_20261002/analysis/report.md`，本次没有重跑它们。
+
+## 353. 登记同一已打开状态的公共/完整算子比较，区分条件干扰与仍缺后续能力（2026-10-06）
+
+§352的连续开度与C/init8反例使“更多打开即可完成”不足；公共从原初态低分也不能回答它在真实已打开状态能否继续。
+新唯一诊断见`docs/designs/task23_post_open_operator_diagnostic_20261006.md`：原准入曾Open的T9/C23全部32条，
+固定首Open后的下一原五步规划边界，分别用同checkpoint完整条件LoRA与公共A0/B0从配对状态续行，共64条。
+T仅移除M，C同时移除S/M的完整条件作用；基础、公共参数、语言、原剩余时限和policy噪声保持，无新训练或教学读取。
+首规划实际动作和完整后续物理反馈共同判断；不是用单层范数代替控制，更不是部署时阶段切换或新初态成绩。
+公共若从同状态完成而完整失败，支持该状态上的条件作用干扰；若公共也失败，降低此解释，不自动扩大读写探针。
+混合、反向损失、晚开时限、C38不准入及旧task32状态/策略交互反证保持；不以冻结删减胜负裁决共同学习架构。
+64行至多12210后续策略控制步，8 full/56 compact，固定原件与输出合同齐备；预计45–90分钟，硬2h wall/2GPUh/16CPUh/4GiB。
+该诊断尚无执行结果，实际承接见progress；所有分支整批回main，无自动训练、删除部署、更多切点、RL或Test。

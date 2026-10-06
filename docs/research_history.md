@@ -3,6 +3,13 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：登记已打开状态下的完整条件/公共算子因果比较
+
+findings§353及[合同](designs/task23_post_open_operator_diagnostic_20261006.md)固定原32个准入曾Open起点，
+同checkpoint Full/Common各一条，共64续行；两臂共享真实起点、原剩余时限/噪声，只改变完整条件参数。
+这区分已有公共后续能力是否被条件作用干扰；不把冻结删减当新架构选择，不改变原400或task23分数。
+预计45–90分钟，硬2h wall/2GPUh/16CPUh/4GiB，尚无结果；实际承接见progress，所有分支整批回main。
+
 ## 2026-10-06：main核连续关回幅度与单开教学的收尾边界
 
 findings§352只用99条准入原数组，开后未搬且末态退出Open的T5/C17峰到末态损失中位9.41/14.28cm，

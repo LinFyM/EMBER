@@ -1,3 +1,11 @@
+## 2026-10-06 main登记task23已打开状态的条件算子因果比较
+
+唯一active分析为docs/designs/task23_post_open_operator_diagnostic_20261006.md及findings§353。
+32个原准入曾Open起点、Full/Common各一次共64续行，固定原首次Open后的规划边界/剩余时限/噪声；无学习/教学重读/新模型成绩。
+目标是区分生成条件作用是否干扰公共部分本来可完成的后续控制，保留公共也不能完成及混合结果，不自动恢复删减/Reader/阶段路线。
+预计45–90分钟，硬实际承接起2h wall/2GPUh/16CPUh/4GiB；所有输出data1，资源现场准入由实验session执行。
+当前main持tracked/Git，合同待push派发并核实际承接；尚未声称已运行。下方无active文字仅属此前时点。
+
 ## 2026-10-06 main消费task23连续开度与训练收尾边界
 
 main已接回5e7ff632的tracked/Git窗口，直接消费§351原件；无本批active计算或待回报实验。

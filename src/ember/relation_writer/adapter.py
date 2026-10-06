@@ -120,19 +120,26 @@ class FrozenFeedbackAdapter:
         current = {key: torch.as_tensor(np.stack([row[key] for row in self.context[1]]), device=self.device)
                    for key in self.context[1][0] if key != "frame_indices"}
         teacher, indices = _teacher_batch([self._teacher(item) for item in prepared], self.device)
-        calls, h0 = 0, None
+        calls, h0, memories = 0, None, None
 
         def capture_hidden(_module, arguments):
             nonlocal h0
             h0 = arguments[0]
 
         def feedback_velocity(_module, _arguments, v0):
-            nonlocal calls, h0
+            nonlocal calls, h0, memories
             if h0 is None or h0.shape != (len(prepared), 50, 1024) or v0.shape != noise.shape:
                 raise Pi05EvaluationError("F hook did not capture the same complete source H0/v0")
             with torch.autocast(device_type=self.device.type, dtype=torch.bfloat16,
                                 enabled=self.device.type == "cuda"):
-                result = self.feedback(teacher, current, h0, v0, indices)
+                if memories is None:
+                    memories = [self.feedback.prepare_memory(
+                        {key: value[index] for key, value in teacher.items()},
+                        {key: value[index:index+1] for key, value in current.items()}, indices[index])
+                        for index in range(len(prepared))]
+                result = torch.cat([self.feedback.read_memory(
+                    h0[index:index+1], v0[index:index+1], *memory)
+                    for index, memory in enumerate(memories)])
             h0, calls = None, calls + 1
             if result.shape != v0.shape or not torch.isfinite(result).all():
                 raise Pi05EvaluationError("F produced an invalid full source velocity")

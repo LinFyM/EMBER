@@ -6,7 +6,8 @@
 隔离实现和CPU消费者已完成：36场景registry最多11实体、所有内部slide/hinge保留；450步固定标签请求合计95568位置。关系表示/匹配、完整38处编译、独立F、source adapter旁路与官方400/144映射检查通过，原件在root/engineering。
 实际1800训练episode标签已恢复，108点同步通过；最大EEF p/R误差1.0733e-15m/3.8087e-15，原双指obs标签未改，回退state双指差最大.19756mm只记录。95,568位置cache约30.4MB，0GPU，原件在labels/。
 两个CPU启动失败与首次GPU PEFT接口失败完整保留；后者四卡whole torchrun50.11s，含1s启动保守余量共.056789GPUh，0完整更新。三次物理profile尝试均在F/source接口前失败，不再追加丢弃profile。
-已定位接口修复只切实际PEFT BaseTunerLayer，CPU实际inject_adapter消费者通过；新clean pushed detached85614d9c在gpu02[7,3,1,2]启动完整fresh450，checkpoint0已完整保存，尚不宣称450或完整宏步通过。owner改用支持pidfd的现有.venv Python直接等待真实退出/checkpoint事件；labels来源f22283ff及旧冻结/费用保留。
+已定位接口修复只切实际PEFT BaseTunerLayer，CPU实际inject_adapter消费者通过；新clean pushed detached85614d9c在gpu02[7,3,1,2]启动完整fresh450，checkpoint0已完整保存。首宏步112 queries实际13.9576s/峰reserved24.3965GiB，真实FM/stopgrad F/公共beta及关系预测信用通过，未宣称450或行为收益。owner使用现有.venv Python直接等待真实退出/checkpoint事件；labels来源f22283ff及旧冻结/费用保留。
+后续F诊断消费者仅在每replan内复用不变teacher/current关系memory，十步仍分别读取真实H0/v0；训练仍来自85614d9c，未改活动冻结树。合成CPU实际F/注册adapter在FP32/BF16、不同padded长度及末帧mask上输出误差0，十次source调用/每行一次关系编码/训练梯度/退出hook检查通过；一个临时检查脚本属性引用错误已修正，0GPU。读出将使用另一个clean pushed detached版本并保留独立代码来源，不增加科学case或丢弃更新。
 全批现场cap6，训练world4仅为条件并行吞吐安排；就绪360/450读出由原persistent dynamic消费者独立并行，不收紧整批卡数。复用原native/完整ConditionalTarget/事件/ECP与官方评测器，不恢复旧专用trainer。
 fresh450共同更新、360/450各correct400、450 G/F各seen144共1088新episode固定；旧RL不恢复，GT只在loss/F侧。完成或真实科学/预算边界一次整批回main并交回窗口，无阶段通知或自Queue。
 

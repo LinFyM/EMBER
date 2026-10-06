@@ -29,7 +29,8 @@ class FeedbackFunction(nn.Module):
             nn.init.zeros_(self.out.weight)
             nn.init.zeros_(self.out.bias)
 
-    def _single_teacher(self, teacher, current, h0, v0, indices):
+    def prepare_memory(self, teacher, current, indices):
+        """Encode the unchanged teacher/current relationships once per query."""
         # Missing terminal GT and physical padding are masked, never fake poses.
         observed = teacher['valid'].bool()
         if not bool(observed.any()):
@@ -38,7 +39,7 @@ class FeedbackFunction(nn.Module):
         indices = indices[observed]
         w = self.encoder(teacher, indices)
         current_nodes = self.encoder.spatial(current)
-        count, frames, entities = len(h0), len(w), w.shape[-2]
+        count, frames, entities = len(current['p']), len(w), w.shape[-2]
         r_a, q_a = hand_relations(teacher)
         r_b, q_b = hand_relations(current)
         relative_q = q_b[:, None].transpose(-1, -2) @ q_a[None]
@@ -58,11 +59,18 @@ class FeedbackFunction(nn.Module):
         keys = (weights > 0).flatten()[None].expand(count, -1)
         if not bool(keys.any(-1).all()):
             raise ValueError('F teacher has no observed valid relationship')
+        return memory, keys
+
+    def read_memory(self, h0, v0, memory, keys):
+        """Read with the actual changing source hidden and velocity at each tau."""
         query = self.query(h0.float())
         for layer in self.layers:
             query = layer(query, memory, key_valid=keys)
         residual = self.out(query).float()
         return torch.cat((v0[..., :7].float() + residual, v0[..., 7:].float()), -1)
+
+    def _single_teacher(self, teacher, current, h0, v0, indices):
+        return self.read_memory(h0, v0, *self.prepare_memory(teacher, current, indices))
 
     def forward(self, teacher, current, h0, v0, frame_indices):
         if h0.shape[1:] != (50, 1024) or v0.shape != (len(h0), 50, 32):

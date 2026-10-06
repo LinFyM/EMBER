@@ -1,3 +1,13 @@
+## 2026-10-07 冻结关系信号整批完成，专用面退役并交回main
+
+唯一relation_signal_readback_20261007的36×2表示条件/12原条件336 query/9宏步信用报告全部退出0；findings§369、docs/analyses/relation_signal_readback_20261007.json及root analysis/report.md保留事实、反例和边界。
+手位移/手物关系不准确，当前三批关系辅助梯度主导clip；实际d与写入小成立，但原Compiler坐标epsfactor中位不能直接当FM信用衰减率。唯一rms_zero固定干预12/12条件平均FM均变差，323/336查询变差、13改善；不宣称控制修复或新学习资格。
+全部0optimizer step/0环境/0held/Test，旧G450126/强MT153/T2340161及弱F66保持。科学读取来自clean pushed detached e95ab18a，原G/C各自公共beta/native无互传；唯一同原首case frame32工程核验来自19d63cde，不替换原12条件科学结果。
+实际GPU计算结束2026-10-06T18:26前后，两消费者whole954.943417秒=.265262h/2；R与工程树测量+Git登记余量新增峰估计.646GiB/4，具体开始/退出/费用/计量边界看root ledger/resource_ledger.json。所有失败/加载/profile纳入；两项0GPU接口拒绝保留，模型全finite无OOM/缺项。
+frame32同原task7/demo35/28 query真实吞吐51.66→49.37s、peak25.66→39.77GiB；先前放大阈值过保守已如实更正，单次不声称统计显著，进一步64按已测内存增量超现场余量。
+双节点最后无本用户GPU，三个本批专用入口与统计helper退役，原Git/frozen/模型/标签/raw不改不删；final Git/工程worktree清理/资源退出/一次整批投递回执以root completion.json和launch/delivery_receipt.json为准。
+本批不再active；canonical tracked/Git完整交回main，main独立科学消费并裁决完整方法，Owner持续目标未完成。本session停止该批新增分析，无自动训练/下一诊断/扫描/controls/Test；下方承接和active文字均为历史。
+
 ## 2026-10-07 实验session实际承接冻结关系信号读回
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已完整读94行唯一active design、findings§368与Owner稳定要求，从clean pushed main d0a760d5接管canonical tracked/Git独占窗口；main停止并发写入。

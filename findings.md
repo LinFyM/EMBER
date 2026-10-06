@@ -9282,3 +9282,45 @@ main未声称看过执行者全部29clips，未新增render，也保留§367的t
 它检查“真实物理运动→预测轨迹→实际d→完整LoRA功能梯度”的联系，会决定是否还有依据修订关系路线的学习接口。
 轨迹失真时单纯增大梯度不支持新长训；信号和信用已足时关闭幅度解释。任何局部阳性均不能修复F弱、同龄阴性或代替超过MT。
 预计45–90分钟，硬3wall/2完整GPUh/4GiB；实际执行与窗口移交见progress，整批后main再作完整方法判断，不自动接诊断链。
+
+## 369. 冻结关系信号：实际物理失真、辅助clip与小写入共存，单位化不改为控制资格（2026-10-07）
+
+完整唯一合同relation_signal_readback_20261007；root `/data1/user/ymdai/ember_runs/relation_signal_readback_20261007`，
+[紧凑原件](docs/analyses/relation_signal_readback_20261007.json)、root analysis/report.md与完整JSON/NPZ/TSV可复核。
+冻结G450/F450与C450，原36 seen init32条件各自公共beta/native，以及原宏步1/225/450的12条件336跨episode查询；
+macro号只选事件，三项系数均冻结450的FM/.25KD/.1关系，同z/tau/y/full50×7，GT只loss/F/离线匹配，0step/0环境/0held/Test。
+科学消费者e95ab18a，原G/F训练85614d9c、C450训练a0e0248d；原模型/标签/数据未复制或热改。
+
+1201 RGB采样位/1165有效手帧、316 hand/实体clip；36末帧保留RGB并mask缺失GT。
+手绝对p误差池均值.217232m、相对首帧位移误差.225951m，R31.144°；36-task手路径预测/GT中位.427、范围.283–.765。
+Omega实际手坐标边R_handᵀ(p_entity−p_hand)误差.270987m，世界手—实体相对差.237072m（8373cells），不能只解释成共同平移偏置。
+GT非零手相邻步均值3.454cm、预测1.558cm；6975个GT精确零相邻p上预测1.547cm，未把极小非零积分变化自动叫任务运动。
+slide1512cells误差.173387m，hinge498cells .515388rad，双指原qpos2330cells .042168m；不称净宽/抓稳/控制真值。
+task28/demo16 R8.99°、task43/demo18 top slide误差3.85cm较好；task29/demo15 R90.40°、73/demo10门hinge GT−1.764而预测+.324rad较差，全36/316行保留。
+真实实体presence质量task均值5.091（实体数7.778），空槽6.804（24.222槽）；每cell概率.642/.277。
+只作原Hungarian离线分组，不喂GT/count/mask，不从总质量断言空槽attention主导或其造成的d衰减。
+
+原36条件d RMS中位G.003830/C.241293，写入前A/B乘积中位G.000308/.000911、C.100342/.327693；
+38处S/M合并norm中位G.007085/.117818、C1.230931/19.652690。不同表示的范数不是物理精度或独立幅度因果。
+G全部12条件FM对真实native H/X非零，未detach公共beta信用。三个冻结事件macro聚合FM norm为.023778/.025678/.028146，
+加权关系Phi norm4.406/4.249/4.438、Phi FM仅.001094/.001672/.001465，合并clip1因子.226932/.235389/.225315。
+因此这三批确由关系辅助项主导clip，不能推广为450步逐步拆项或用约4倍裁剪解释全部Compiler/闭环差。
+Phi FM—AUX cosine +.403/−.318/−.195；Compiler FM—KD −.037/−.410/−.033，公共/十矩阵/各组全部范数内积及不利方向保留。
+
+原实际公共76个moments为72 BF16/4 FP32，Compiler FP32；未修dtype/optimizer。
+固定每tensor2048样本Compiler epsfactor坐标中位G.020656/C.841603；G89.54%sqrt(vhat)<eps（main旧2000点口径89.94%原件不改）。
+当前真实Compiler FM的g²加权epsfactor G.991344/.988883/.990883、C.999593/.999702/.999743；
+故坐标中位不等于当前FM被削98%。这仍是抽样g²口径，不等于完整预条件更新或无eps训练效果，不证明eps无影响；原固定moments/分母/内积保留，0optimizer step。
+
+唯一G ConditionalTarget d的rms_zero放大RMS151.77–332.17倍；首帧零保持，S/M/功能梯度明显放大。
+336查询平均FM G.096295→.296858（+.200564），C.091823/Ftarget.103756；12/12条件平均恶化，323查询恶化、13改善。
+改善最大task4/query demo31 frame117为−.076049；全部13正例和全部反例都有实际来源，不按结果选视频。
+三个macro Compiler FM norm从.000264/.000400/.000261到.791627/7.719393/2.592330；更大Jacobian/功能残差不叫更有效学习。
+这是固定450权重的幅度干预，不等价于重训有归一化模型，亦无新闭环；50×7输出为给定z/tau的velocity，不叫实际动作或gripper命令。
+
+读回支持实际小动态写入及辅助clip，但未支持“已正确物理操作仅被尺度压住”的前提；手物关系失真、弱F及同龄G阴性仍约束完整方法判断。
+不能由本次冻结阴性证明所有关系/归一化方案不可能，不能据梯度增大自动开长训、eps/seed/LR扫描或追加诊断链。main独立消费后负责下一完整方法取舍。
+两个GPU消费者退出0/全费用954.943417s=.265262h；主读取与一次原首case frame32工程核验全计入，新增峰估计.646GiB/4。
+原frame16放大阈值过保守已承认；原task7/demo35/同28query frame32核验51.66→49.37s、25.66→39.77GiB，单次不称统计显著，未增加独立案例/替换科学结果。
+两个0GPU CPU/checkout接口拒绝原件保留，无模型OOM/非finite/缺项。完整费用计量边界、命令/退出/最后无本用户GPU与工程树清理/退役/clean pushed Git以root ledger/completion/delivery_receipt为准。
+三个专用source/hook入口封口退役，Git/frozen/raw/全部旧checkpoint保留；窗口交回main，本批0自动后继。

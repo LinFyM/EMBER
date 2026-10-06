@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：冻结关系信号完成，物理失真与辅助clip不能被单位化读回修复
+
+findings§369、[紧凑原件](analyses/relation_signal_readback_20261007.json)及root `relation_signal_readback_20261007`保留36×2表示/12原条件336查询/9宏步信用全部原件。
+原450模型冻结；手相对位移误差.226m、Omega实际手坐标关系边误差.271m，静态实体预测仍有相邻位移；不将近似关系loss或非零动态称操作理解。
+真实拆项确认三批当前clip主要来自关系辅助Phi梯度，Compiler动态乘积/写入明显小；同时原坐标epsfactor中位.0207与真实FM g²加权约.99不能混用。
+唯一固定rms_zero使12/12条件平均FM升高、323/336查询恶化，13改善保留；更大写入与梯度未取得控制资格，不等价于重新训练归一化模型或否定所有关系方法。
+科学源码e95ab18a、同原首case物理frame32核验19d63cde，原G/C各自beta/native、同z/tau/y/标签仅loss/F不改。0step/0新环境/0held/Test，无新closed-loop分数。
+全GPU.265262h、新增峰估计.646GiB；失败/计量边界/退出与三文件专用面退役/工程树清理/最终Git/整批可靠投递以root completion/ledger为准。
+窗口交回main承担完整方法取舍，不自动续训、eps/LR/seed扫描或下一诊断。
+
 ## 2026-10-07：main以同龄原件收窄关系450解释，登记一次动态信用核验
 
 findings§368与[CPU原件消费](analyses/relation450_main_consumption_20261007.json)保存G450126对同龄T/U/C/Context的净+4/−17/−11/0及全部R/G/L。

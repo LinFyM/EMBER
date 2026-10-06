@@ -1,0 +1,515 @@
+{
+  "schema": "ember_relation_signal_readback_v1",
+  "source_session": "01a10a98-6d4b-7d61-b12c-da38a628cb45",
+  "root": "/data1/user/ymdai/ember_runs/relation_signal_readback_20261007",
+  "contract": "docs/designs/relation_signal_readback_20261007.md",
+  "original_scope": {
+    "original_representation_conditions": 36,
+    "models_per_condition": 2,
+    "functional_conditions": 12,
+    "independent_queries": 336,
+    "macro_reports": 9
+  },
+  "source_identity": {
+    "G_training_git": "85614d9c",
+    "G_original_frozen": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/frozen_PEFTfix",
+    "G_F_checkpoint": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/train/attempts/fresh/checkpoints/macro_00000450",
+    "C_training_git": "a0e0248d96568e42b24a3d1c4102e2ca6e35a40c",
+    "C_checkpoint": "/data1/user/ymdai/ember_runs/conditional_read_write_fresh_20261001/conditional_read_write/train/attempts/resume360_native_packing/checkpoints/macro_00000450",
+    "C_source_spec": "/data1/user/ymdai/projects/EMBER-conditional-read-write-mlp-formal/configs/operator_read_write_v1/conditional_read_write_fresh_spec.json",
+    "shared_source": {
+      "source_run": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915",
+      "source_run_contract": {
+        "path": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/run_contract.json",
+        "bytes": 11169,
+        "schema_version": "ember_pi05_source_launch_v1"
+      },
+      "source_training_commit": "b8ea00e9fbb86742ef076bac9dd35c5314cd5aed",
+      "checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+      "checkpoint_manifest": {
+        "path": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000/checkpoint_manifest.json",
+        "bytes": 2007,
+        "schema_version": "ember_pi05_source_checkpoint_v1"
+      },
+      "optimizer_step": 1000,
+      "source_run_summary": {
+        "path": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/run_summary.json",
+        "bytes": 3182,
+        "schema_version": "ember_pi05_source_run_summary_v1"
+      },
+      "frozen_policy_subdir": "policy",
+      "model_path": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000/policy",
+      "model_files": [
+        {
+          "path": "policy/config.json",
+          "bytes": 2422
+        },
+        {
+          "path": "policy/model.safetensors",
+          "bytes": 9354050752
+        }
+      ]
+    },
+    "native_reads": "each original writer uses its own shared beta; no cross-model H transfer",
+    "optimizer_moments": "original actual dtypes, no dtype correction, no optimizer step"
+  },
+  "representation": {
+    "conditions": 36,
+    "entity_rows": 316,
+    "pooled_valid_label_cells": {
+      "hand_abs": {
+        "n": 1165,
+        "mean": 0.21723231778204313,
+        "median": 0.206943079829216,
+        "min": 0.0060576824471354485,
+        "max": 0.4655878245830536
+      },
+      "hand_rel": {
+        "n": 1165,
+        "mean": 0.2259507002477842,
+        "median": 0.23463302850723267,
+        "min": 0.0,
+        "max": 0.48851630091667175
+      },
+      "hand_rot": {
+        "n": 1165,
+        "mean": 31.14356700934054,
+        "median": 21.327186584472656,
+        "min": 3.6285786628723145,
+        "max": 138.52471923828125
+      },
+      "body_abs": {
+        "n": 8373,
+        "mean": 0.14353888902596745,
+        "median": 0.13014541566371918,
+        "min": 0.0033686920069158077,
+        "max": 0.5042650699615479
+      },
+      "body_rel": {
+        "n": 8373,
+        "mean": 0.06699483914943816,
+        "median": 0.045815251767635345,
+        "min": 0.0,
+        "max": 0.5119489431381226
+      },
+      "GT_nonzero_p": {
+        "n": 2247,
+        "mean": 0.02685395868011906,
+        "median": 0.025673413649201393,
+        "min": 2.9103830456733704e-11,
+        "max": 0.12535282969474792
+      },
+      "pred_on_GT_nonzero_p": {
+        "n": 2247,
+        "mean": 0.01593737088940755,
+        "median": 0.012477473355829716,
+        "min": 0.0,
+        "max": 0.1684931218624115
+      },
+      "pred_on_GT_static_p": {
+        "n": 6975,
+        "mean": 0.015473101892538609,
+        "median": 0.012391189113259315,
+        "min": 0.0,
+        "max": 0.1848202645778656
+      },
+      "GT_nonzero_hand_p": {
+        "n": 1129,
+        "mean": 0.03453680156239861,
+        "median": 0.03593335673213005,
+        "min": 0.00020620222494471818,
+        "max": 0.08085830509662628
+      },
+      "pred_on_GT_nonzero_hand_p": {
+        "n": 1129,
+        "mean": 0.01558354059336344,
+        "median": 0.012352647259831429,
+        "min": 0.0,
+        "max": 0.13794441521167755
+      },
+      "world_hand_entity_relative_error_m": {
+        "n": 8373,
+        "mean": 0.2370715687663399,
+        "median": 0.2287791520357132,
+        "min": 0.007313976064324379,
+        "max": 0.5875315070152283
+      },
+      "hand_frame_entity_relative_error_m": {
+        "n": 8373,
+        "mean": 0.27098718504342995,
+        "median": 0.2582663297653198,
+        "min": 0.006480605807155371,
+        "max": 0.910862922668457
+      },
+      "hand_adjacent_motion_cosine": {
+        "n": 1126,
+        "mean": 0.11798365993934334,
+        "median": 0.18503601104021072,
+        "min": -0.9997706413269043,
+        "max": 0.9988022446632385
+      }
+    },
+    "task_equal_summary": {
+      "rgb": {
+        "n": 36,
+        "mean": 33.361111111111114,
+        "median": 30.0,
+        "min": 16.0,
+        "max": 92.0
+      },
+      "valid_geometry": {
+        "n": 36,
+        "mean": 32.361111111111114,
+        "median": 29.0,
+        "min": 15.0,
+        "max": 91.0
+      },
+      "no_geometry": {
+        "n": 36,
+        "mean": 1.0,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "raw_first": {
+        "n": 36,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "raw_last": {
+        "n": 36,
+        "mean": 159.66666666666666,
+        "median": 143.0,
+        "min": 72.0,
+        "max": 453.0
+      },
+      "real_entities": {
+        "n": 36,
+        "mean": 7.777777777777778,
+        "median": 7.0,
+        "min": 3.0,
+        "max": 11.0
+      },
+      "empty_slots": {
+        "n": 36,
+        "mean": 24.22222222222222,
+        "median": 25.0,
+        "min": 21.0,
+        "max": 29.0
+      },
+      "hand_abs_mean_m": {
+        "n": 36,
+        "mean": 0.2127283214448748,
+        "median": 0.21505179058750934,
+        "min": 0.12442241096900446,
+        "max": 0.3125061270047812
+      },
+      "hand_relative_mean_m": {
+        "n": 36,
+        "mean": 0.22455885395107775,
+        "median": 0.22913590046840265,
+        "min": 0.1656224231593947,
+        "max": 0.3108577044008551
+      },
+      "hand_rotation_mean_deg": {
+        "n": 36,
+        "mean": 28.17537139835828,
+        "median": 19.824520732772868,
+        "min": 8.985586444496237,
+        "max": 92.7322630156271
+      },
+      "hand_GT_path_m": {
+        "n": 36,
+        "mean": 1.083112472409374,
+        "median": 1.0419106797942557,
+        "min": 0.4846189959790932,
+        "max": 2.242646866904627
+      },
+      "hand_pred_path_m": {
+        "n": 36,
+        "mean": 0.4887171488323786,
+        "median": 0.45209614333201253,
+        "min": 0.16704483736105166,
+        "max": 1.2144005155165696
+      },
+      "hand_path_ratio": {
+        "n": 36,
+        "mean": 0.447036111915424,
+        "median": 0.4274417306532024,
+        "min": 0.28336581076490197,
+        "max": 0.7653791754759086
+      },
+      "real_presence_mass": {
+        "n": 36,
+        "mean": 5.091244535832584,
+        "median": 4.486033337783407,
+        "min": 1.9093941697164585,
+        "max": 7.974094356361189
+      },
+      "empty_presence_mass": {
+        "n": 36,
+        "mean": 6.804185762337756,
+        "median": 6.755312021309418,
+        "min": 3.3729089300413135,
+        "max": 10.15571080975956
+      },
+      "real_presence_mean_probability": {
+        "n": 36,
+        "mean": 0.6420644395684467,
+        "median": 0.663605380895127,
+        "min": 0.4773485424291146,
+        "max": 0.780208523784365
+      },
+      "empty_presence_mean_probability": {
+        "n": 36,
+        "mean": 0.27673807795012756,
+        "median": 0.2704476792708686,
+        "min": 0.16061471095434826,
+        "max": 0.36287655901852184
+      }
+    },
+    "matched_entities_only": true,
+    "stationary_definition": "exact zero GT adjacent position displacement",
+    "units_and_limits": "body origins, hand grip-site p/eef-body R; no contact/grasp/phase labels"
+  },
+  "interface_medians_36": {
+    "G": {
+      "H_rms": 0.398149237036705,
+      "context_rms": 0.3523070067167282,
+      "d_rms": 0.003829803899861872,
+      "a_out_input_product_mean_target_rms": 0.0003083905905537234,
+      "b_out_input_product_mean_target_rms": 0.0009114268058941601,
+      "S_combined_norm": 0.0070846278330066546,
+      "M_combined_norm": 0.11781768577989277
+    },
+    "C": {
+      "H_rms": 0.3952978551387787,
+      "context_rms": 2.4243685007095337,
+      "d_rms": 0.24129346758127213,
+      "a_out_input_product_mean_target_rms": 0.10034177501342798,
+      "b_out_input_product_mean_target_rms": 0.32769293318453585,
+      "S_combined_norm": 1.2309312630040437,
+      "M_combined_norm": 19.652690229379353
+    }
+  },
+  "functional_credit": {
+    "conditions": 12,
+    "independent_queries": 336,
+    "condition_FM_delta": {
+      "n": 12,
+      "mean": 0.20056366796294847,
+      "median": 0.14996512234210968,
+      "min": 0.032095834612846375,
+      "max": 0.9844144135713577
+    },
+    "query_FM_delta": {
+      "n": 336,
+      "mean": 0.20056366705934384,
+      "median": 0.10804182291030884,
+      "min": -0.07604870200157166,
+      "max": 2.79711651802063
+    },
+    "conditions_improved": 0,
+    "conditions_worse": 12,
+    "queries_improved": 13,
+    "queries_worse": 323,
+    "F_FM_below_G_queries": 110,
+    "scope": "fixed450, same z/tau/y, loss and gradient readback only; no steps or closed-loop claim"
+  },
+  "macro_credit": [
+    {
+      "event_macro": 1,
+      "G_FM_norm": 0.023777523039761005,
+      "G_weighted_KD_norm": 0.003886398713223405,
+      "G_weighted_relation_norm": 4.406109657737197,
+      "G_combined_clip_factor": 0.22693230211734772,
+      "G_Phi_FM_norm": 0.0010942899992017494,
+      "G_Phi_relation_norm": 4.4061065158870605,
+      "G_public_FM_norm": 0.023750611471074337,
+      "G_compiler_FM_norm": 0.0002635269651326278,
+      "C_compiler_FM_norm": 0.04106602362858833,
+      "normalized_G_compiler_FM_norm": 0.7916274357097393,
+      "G_Phi_FM_AUX_cosine": 0.4028608947147265,
+      "G_Compiler_FM_KD_cosine": -0.03746165111498588,
+      "G_compiler_coordinate_median_epsfactor": 0.020656157591399008,
+      "G_compiler_gradient_squared_weighted_epsfactor": 0.9913439760969194,
+      "C_compiler_gradient_squared_weighted_epsfactor": 0.9995926159648062
+    },
+    {
+      "event_macro": 225,
+      "G_FM_norm": 0.025677612385128647,
+      "G_weighted_KD_norm": 0.005042412710412209,
+      "G_weighted_relation_norm": 4.248774245096324,
+      "G_combined_clip_factor": 0.23538903892040253,
+      "G_Phi_FM_norm": 0.0016724801655190044,
+      "G_Phi_relation_norm": 4.24877086008211,
+      "G_public_FM_norm": 0.025619220937808534,
+      "G_compiler_FM_norm": 0.00040012429682277054,
+      "C_compiler_FM_norm": 0.036670823073887915,
+      "normalized_G_compiler_FM_norm": 7.719393031223546,
+      "G_Phi_FM_AUX_cosine": -0.31831244639923034,
+      "G_Compiler_FM_KD_cosine": -0.4099758637183009,
+      "G_compiler_coordinate_median_epsfactor": 0.020656157591399008,
+      "G_compiler_gradient_squared_weighted_epsfactor": 0.9888828082916472,
+      "C_compiler_gradient_squared_weighted_epsfactor": 0.9997016213677253
+    },
+    {
+      "event_macro": 450,
+      "G_FM_norm": 0.02814568145505713,
+      "G_weighted_KD_norm": 0.003530477369255439,
+      "G_weighted_relation_norm": 4.438445286995876,
+      "G_combined_clip_factor": 0.22531536221504211,
+      "G_Phi_FM_norm": 0.0014645476012259914,
+      "G_Phi_relation_norm": 4.438443015347766,
+      "G_public_FM_norm": 0.028106105623146953,
+      "G_compiler_FM_norm": 0.0002611588776364061,
+      "C_compiler_FM_norm": 0.043695601471859614,
+      "normalized_G_compiler_FM_norm": 2.592330472659879,
+      "G_Phi_FM_AUX_cosine": -0.19483761966511856,
+      "G_Compiler_FM_KD_cosine": -0.03299818674824635,
+      "G_compiler_coordinate_median_epsfactor": 0.020656157591399008,
+      "G_compiler_gradient_squared_weighted_epsfactor": 0.9908825887488493,
+      "C_compiler_gradient_squared_weighted_epsfactor": 0.9997434309334067
+    }
+  ],
+  "condition_FM": [
+    {
+      "macro": 1,
+      "task": 7,
+      "teacher_demo": 35,
+      "G": 0.11555054038763046,
+      "rms_zero": 0.15989531576633453,
+      "C": 0.11239767074584961,
+      "delta": 0.04434477537870407
+    },
+    {
+      "macro": 1,
+      "task": 43,
+      "teacher_demo": 13,
+      "G": 0.0922028198838234,
+      "rms_zero": 0.36350786685943604,
+      "C": 0.09107092767953873,
+      "delta": 0.27130504697561264
+    },
+    {
+      "macro": 1,
+      "task": 101,
+      "teacher_demo": 14,
+      "G": 0.0762365385890007,
+      "rms_zero": 0.12931080162525177,
+      "C": 0.0742814838886261,
+      "delta": 0.05307426303625107
+    },
+    {
+      "macro": 1,
+      "task": 97,
+      "teacher_demo": 29,
+      "G": 0.09129195660352707,
+      "rms_zero": 0.12503986060619354,
+      "C": 0.088903047144413,
+      "delta": 0.03374790400266647
+    },
+    {
+      "macro": 225,
+      "task": 56,
+      "teacher_demo": 13,
+      "G": 0.08540217578411102,
+      "rms_zero": 1.0698165893554688,
+      "C": 0.07986453175544739,
+      "delta": 0.9844144135713577
+    },
+    {
+      "macro": 225,
+      "task": 28,
+      "teacher_demo": 27,
+      "G": 0.1127501055598259,
+      "rms_zero": 0.27124759554862976,
+      "C": 0.10171173512935638,
+      "delta": 0.15849748998880386
+    },
+    {
+      "macro": 225,
+      "task": 38,
+      "teacher_demo": 21,
+      "G": 0.0965881273150444,
+      "rms_zero": 0.25573617219924927,
+      "C": 0.09461089223623276,
+      "delta": 0.15914804488420486
+    },
+    {
+      "macro": 225,
+      "task": 55,
+      "teacher_demo": 21,
+      "G": 0.09392695873975754,
+      "rms_zero": 0.23535971343517303,
+      "C": 0.09351798892021179,
+      "delta": 0.1414327546954155
+    },
+    {
+      "macro": 450,
+      "task": 34,
+      "teacher_demo": 14,
+      "G": 0.0915156677365303,
+      "rms_zero": 0.21442313492298126,
+      "C": 0.08765798062086105,
+      "delta": 0.12290746718645096
+    },
+    {
+      "macro": 450,
+      "task": 43,
+      "teacher_demo": 37,
+      "G": 0.07429389655590057,
+      "rms_zero": 0.3173174560070038,
+      "C": 0.07100198417901993,
+      "delta": 0.2430235594511032
+    },
+    {
+      "macro": 450,
+      "task": 96,
+      "teacher_demo": 35,
+      "G": 0.08676587045192719,
+      "rms_zero": 0.2495383322238922,
+      "C": 0.08547544479370117,
+      "delta": 0.16277246177196503
+    },
+    {
+      "macro": 450,
+      "task": 4,
+      "teacher_demo": 39,
+      "G": 0.13901062309741974,
+      "rms_zero": 0.1711064577102661,
+      "C": 0.12138426303863525,
+      "delta": 0.032095834612846375
+    }
+  ],
+  "resource_summary": {
+    "whole_GPU_hours": 0.26526206036408745,
+    "peak_estimate_GiB": 0.6458854675292969
+  },
+  "boundaries": [
+    "frozen450 only; old macro numbers select samples, not weight trajectory replay",
+    "physics labels only offline/error/F; no G condition/presence alteration",
+    "coordinate medians and g^2-weighted estimates do not equal an optimizer update or epsilon-free effect",
+    "no optimizer step, environment, held/Test, causal rollout effect or new method qualification",
+    "all12 condition-mean FM worsened,13/336 favorable query counterexamples retained"
+  ],
+  "originals": [
+    "analysis/representation_tasks.tsv",
+    "analysis/representation_entities.tsv",
+    "analysis/representation_hand_entity_relations.tsv",
+    "analysis/representation_joints.tsv",
+    "analysis/representation_fingers.tsv",
+    "analysis/representation_interfaces.tsv",
+    "analysis/representation_frames.tsv",
+    "analysis/credit_conditions.tsv",
+    "analysis/credit_queries.tsv",
+    "analysis/credit_groups.tsv",
+    "analysis/credit_macros.tsv",
+    "analysis/verification.json",
+    "raw/attempt1/manifest.json",
+    "raw/attempt1/*.json/*.npz",
+    "ledger/resource_ledger.json"
+  ]
+}

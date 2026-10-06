@@ -23,6 +23,19 @@ G3_VERIFIED_MEMBER_OCCUPANCY_CAPTURE_SCHEMA = (
 )
 
 
+def denoising_return_tasks(args: Any, tasks: Sequence[Any], *, output_dir: Path) -> tuple[Any, ...]:
+    path = getattr(args, "static_task_lora_manifest", None)
+    if path is None:
+        return tuple(tasks)
+    from ember.pi05_source_checkpoint import read_json
+
+    if read_json(Path(path)).get("denoising_return") is None:
+        return tuple(tasks)
+    from ember.operator_writer.denoising_readout import remaining_tasks
+
+    return remaining_tasks(args, tasks, output_dir=output_dir)
+
+
 def _selection_contract(
     manifest: Mapping[str, Any], rows: Sequence[Mapping[str, Any]]
 ) -> tuple[dict[str, int], set[tuple[str, int, int]]]:

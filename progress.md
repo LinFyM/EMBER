@@ -1,3 +1,11 @@
+## 2026-10-06 登记唯一固定父B输出空间的功能诊断
+
+main已完成旧parent/D八套bank的CPU投影：BA保留40.4252%，Q/V为36.9008%/81.6823%，见findings§360及完整几何JSON。
+它与旧共享delta_O Z投影不同，局部算子能量不代表行为贡献；原L/R阴性及既存D/PZ正反例保持。
+唯一active为docs/designs/fixed_b_output_range_diagnostic_20261006.md：无学习PB投影、原B20及32条配对train闭环，旧臂复用。
+预计45–75分钟，硬承接起2wall/1.5GPUh/8CPUh/4GiB；无自动Reader/新Writer/400/RL/Test。
+当前main持tracked/Git窗口，待push及实验session实际承接；未声称GPU/模型/环境计算已启动。下方无active均属此前时点。
+
 ## 2026-10-06 学习目标复核完成，未由局部阴性自动启动新训练
 
 findings§359核当前实际Writer/FM事件及旧共享Gaussian RL消费者，明确RL改变当前策略状态上的完整回报信用，

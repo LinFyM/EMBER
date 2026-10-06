@@ -1,3 +1,19 @@
+## 2026-10-07 同图预测／真实关系180匹配批次完成，停止计算并交回窗口
+
+唯一relation_input_compilation_20261007按完整合同完成：P/Q各180宏步/720条件/20160 query，四面板576新行。
+P0/Q0/P180/Q180为81/82/78/81，target24为35/37/33/36，support12为46/45/45/45；Q180对P180 R72/G9/L6、净+3。
+两臂自身学习后−3/−1、终点breadth同27/36；准确teacher字段没有获得广泛控制收益。有限180步、冻结beta/Phi和GT分布适应的边界保留，不把Q写成合法Writer或普遍不可能。
+findings§372、docs/analyses/relation_input_compilation_20261007.json与root analysis/report.md保存全部逐task/suite/目标支持组/RGL/J/原件及不利行。
+所有576条实际动作/提案full50×7/physical5/continuous/原生谓词/scene-teacher-RNG配对0不符，131683实际动作、26475提案，前缀差0。
+144full/432compact、每路6646真实replan RGB原件完整；全部144八时刻双RGB小图保留，实际看过29/34/38/56/73×四臂20clip/320张图，不声称其余124逐帧已看。
+实际720匹配事件、原全634 Adam ID/clock、冻结163参数gradNone及step450、活动471参数四u90/u180 step540/630通过；三个活动组每臂180/180有finite主FM信用，0额外query/标签/held/Test。只从已有teacher GT编译，source/自身RGB/8state单LoRA执行，无live GT/F。
+来源：父G450训练85614d9c，新匹配学习clean pushed detached84ef79c1，读出clean pushed detached e7950406；旧frozen及未消费的spec metadata不热改，新reader纠正evaluation/budget而不改科学图。
+10个GPU消费者全部exit0，17297.011507完整GPU秒=4.804725h；最后模型/环境退出2026-10-06T21:49:48Z，承接到计算结束5535.763s。
+事件及完成分析后测量含两工程树/Git余量新增峰37.664GiB，保守38.5/硬40；已计时去重复CPU6.653h，交互/Git等未完整CPU计时明确保留，wall包含全部。
+一次CPU导入错误和一次无资源准入0GPU保留，无GPU失败/缺行/择优恢复。首次现场quota/完整个人du/shared、逐launch两节点raw回执独立保留，末两节点无ymdai GPU、11个注册evaluator worker PID均退出。
+专用四owner/薄入口/spec及三处临时注册在此次封口退役，旧资产/labels/四完整checkpoint/Git/frozen/raw/失败不删；最终push、clean、两个工程worktree清理和一次官方整批投递看root completion.json与launch/delivery_receipt.json。
+本批无active模型/环境/梯度或自动后继，canonical tracked/Git在整批投递后完整归main；实验session停止本批新增工作，main独立消费并作完整方法判断。Owner最终目标未完成；下方承接/active措辞只为历史时点。
+
 ## 2026-10-07 实验session实际承接同图关系输入匹配批次
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取132行唯一active design、findings§371与当前Owner要求，从clean pushed main730896cb接管canonical tracked/Git独占窗口；main停止并发写入。

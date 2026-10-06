@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：同链GT输入与预测输入匹配学习完成，未建立广泛控制增益
+
+findings§372、[紧凑原件](analyses/relation_input_compilation_20261007.json)和唯一root analysis/report.md保留P/Q从G450固定公共beta/Phi的180匹配主FM以及四seen144。
+P0/Q0/P180/Q180为81/82/78/81；Q终点对P R72/G9/L6、target R28/G8/L5，support各45/48，但两臂自身均下降且coverage同27/36。
+准确teacher关系确已进入原Omega/Read/38完整LoRA，三个活动组真实信用和Frozen Adam边界通过；仅内部c/d/S/M显著变化未带来完整控制收益。
+保留task22与task29局部正例、task2/38/73等丢失、task32成功初态交换、task56原已有能力保持；576行原生谓词/动作/scene/teacher/noise完整读回无不符，144full原件及20clip实际RGB审看范围明确。
+Q是已有训练teacher GT的特权编译诊断，不是合法Writer或上界；有限180步/固定beta-Phi/预测分布父点的适应限制仍在，不否定所有GT或LoRA控制，但不沿此接口自动加头、放大或续窗。
+父85614d9c、新学习84ef79c1、读出e7950406分别保留；新spec继承的evaluation/budget元数据只在新reader纠正，原frozen未热改。
+完整4.804725GPUh、计算1.538wallh、新增测量37.664GiB/保守38.5，失败/CPU计量/资源释放/Git与入口退役/工程树清理/唯一整批回报详见root ledger/completion。所有新产物data1，历史资产只读不删。
+实验session结束该批执行并交回窗口，main独立消费科学；最终目标仍未达到，没有自动下一批授权。
+
 ## 2026-10-07：登记同一LoRA链的预测／真实关系匹配检验
 
 findings§371及[合同](designs/relation_input_compilation_diagnostic_20261007.md)区分F/G执行图混杂与教学关系获取问题。

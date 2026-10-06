@@ -1,3 +1,10 @@
+## 2026-10-07 同图关系输入匹配批次完成，等待main完整方法裁决
+
+findings§372与同批canonical JSON/root report保留全部576闭环及两臂180步；P81→78、Q82→81，Q终点对P净+3/R72G9L6，target净+3但自身仍−1，未建立广泛控制获取。
+七字段GT整组替换的利用正反例和有限分布适应边界保持；Q为train-only特权诊断，不能替代合法部署Writer成绩，强T/MT与旧完整视频背景不削弱。
+全部原件/配对/四恢复状态/成本已封口，专用入口/hooks退役并释放资源；final Git/一次整批投递/写窗口交回以progress及completion为准。
+本批停止，无自动续窗/头/scale/aux/更多任务/held400/controls/Test；main收到后独立消费并决定完整方法，最终Owner目标仍在。
+
 ## 2026-10-07 分离物理信息获取与LoRA利用：唯一匹配诊断
 
 findings§371登记P/Q同父同图的有限学习：原G450公共beta/Phi固定，Omega/Read/Compiler各180步相同主FM，

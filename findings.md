@@ -9429,3 +9429,54 @@ Q起点来自适配预测分布的G450，且只有180步，阴性仍不证明一
 
 预计3–5h，硬8wall/12完整GPUh/40GiB，包含失败/工程/读出；实验session负责独占实现与原件交付，
 main负责科学消费和后继判断。此段只登记方法与预测，尚无本批新训练或分数；实际承接、写窗口和运行以progress为准。
+
+## 372. 同图准确教学字段没有带来广泛控制收益；匹配180步与576行完成（2026-10-07）
+
+唯一relation_input_compilation_20261007完整执行，原件见[canonical JSON](docs/analyses/relation_input_compilation_20261007.json)
+与`/data1/user/ymdai/ember_runs/relation_input_compilation_20261007/analysis/report.md`。
+P0/Q0/P180/Q180为81/82/78/81（各144），target24为35/37/33/36（各96），support12为46/45/45/45（各48）。
+Q180对P180 R72/G9/L6，净+3、churn15/144、J=.827586；target R28/G8/L5，support R44/G1/L1。
+两臂自身学习后−3/−1，P R74/G4/L7、Q R77/G4/L5；Q0对P0已净+1，差上差整体+2/target+1。
+终点breadth均27/36、target均15/24。Q的有限终点优势没有建立GT学习后的广泛获取，不能以P丢失或内部写入变大冒充修复。
+
+**实际干预及信用。** 两臂各180/720条件/20160跨episode query，全部36每task20条件/560 query。
+720真实teacher/query frames/flow seeds/权重/共同截帧事件匹配，原完整634 Adam注册ID与原moment dtype保留。
+公共beta/Phi163参数无梯度/decay/状态推进，四u90/u180中冻结step450、活动471参数step540/630核验通过；
+Omega/Read/Compiler三组每臂180/180都有真实finite主FM信用。没有F调用、KD、关系aux、公共FM或新query GT。
+805个不同teacher条件25647使用GT帧均有原cache字段；P/Q只在native/Phi前共同删最后采样帧，原/使用indices完整保留。
+Q七字段为整组特权输入，包含语义/presence/实体数；闭环仅自身RGB/8state和一次编译的完整38处rank128单LoRA，
+无live GT、第二策略或重看teacher。不是合法Writer/EMBER成绩、部署上界或完美操作知识。
+
+原链确实改变：四面板c RMS条件均值.34485/.66082/.89177/1.37702，d为.003685/.006976/.010451/.004619；
+S跨target-condition均值1.80e−6/8.53e−6/1.04e−4/7.29e−5，M为3.78e−5/1.71e−4/.001185/.000515。
+它们是原摘要统计，不是作用于自身hidden的控制能量。匹配720条件Q−P主FM均值+.0002989，Q较低301/720，
+没有依据称GT已经改善整体主FM；首末90窗不是同query对照。更大S/M和非零信用没有转化为覆盖增益，不作bug修补。
+
+**行为正反例与失效边界。** task22 Q1804/4对P1802/4，新增init33/34在225/297步On柜顶；
+Q自身比Q0仅新增init34。task29 Q180 init35在247步唯一OnRack成功，其他三臂0/4，正例保留；
+该行为是compact，不能说看过RGB。四臂init32实际RGB均搬动酒瓶却从未OnRack，没有普遍解决目标放置。
+task2 Q终点2/4对P4/4，init33/34目标碗最大位移27.57/22.37cm、Z上升15.38/11.48cm仍全程无OnPlate，
+不能把搬运当成功；Q自身新增丢失init34。task38 P在init34 438步完成双壶，Q0/4且全部4条moka_pot_1的On从未true，
+初态TurnOn在四臂全部已true，不能叫本轮学会开炉。task32各1/4但P34/Q33成功初态互换，不是同能力集合。
+task56 Q保持init32原Stack（248步）而P丢失P0/Q0已有成功，图上P搬碗未完成目标；该正例是保持，不是从无获取。
+task73 Q丢init33 Close，黄白杯实际移动17.65cm、Z上升7.72cm仍全程没有Close，不统称立即掉杯。
+四臂init32图仍先移杯后关门，不能以单条成功掩盖该丢失。task34四臂均3/4，完整双杯已有能力保持；
+task1/17/25/36/37始终0/4，target缺口仍大，旧完整视频G84、强T109/MT93的不同合同背景不被削弱。
+
+全部576 own continuous/50×7/实际前5/原生predicate序列/scene-teacher-env-policy RNG核验0不符，
+131683实际动作、26475提案，提案前缀与实际动作差0。144full/432compact、每路6646真实replan RGB保留；
+全部144八时刻双RGB图及来源映射已存，实际看过29/34/38/56/73×四臂20clip/320张图，其余124不冒称已看。
+自身body origin、EEF轴倾角和原生目标全部逐行保留；没有新grasp/contact/关节真值、人工阶段gate或补渲染，根body不动不能代替关节不动。
+
+**解释与停止。** 准确字段进入同链且接受匹配真实FM后仍无广泛控制收益，降低“在现有链上只改关系获取即可修复”
+的支持；有限局部正例不能解释原G大缺口。阴性受适配预测分布的G450父点、固定beta/Phi、仅下游180步的边界约束，
+不证明全部GT/LoRA控制或新联合方法不可能，也未隔离七字段单项作用。本执行批结束，不延窗、不换头/scale/aux、
+不扩数据、不自动fresh/held400/controls/Test；main独立消费完整原件并作完整方法判断。
+
+父G训练85614d9c、新学习84ef79c1、读出e7950406各clean pushed detached来源分别保留。
+未消费的旧evaluation/budget元数据只在新reader纠正，实际有限owner一直守8wall/12GPUh/40GiB、451..630与四144；旧frozen不热改。
+10个GPU消费者全部exit0，完整17297.011507秒=4.804725GPUh，最后计算退出2026-10-06T21:49:48Z，承接到计算结束5535.763s。
+新增测量37.664GiB含工程树/Git余量、保守38.5/硬40；去重已计时CPU6.653h，交互/Git等CPU未完整计量明确保留。
+一次CPU import和一次未launch资源准入0GPU原件保留，无GPU失败/缺行/择优恢复；首次现场与逐launch raw资源回执独立保存。
+双节点末无ymdai GPU、注册worker PID全退出；专用owner/入口/spec与三hooks在此批封口退役，
+完整checkpoint/Git/frozen/raw/失败保留，最终push/工程树清理/唯一整批投递及写窗口交回以root completion为准。

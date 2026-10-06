@@ -1,3 +1,12 @@
+## 2026-10-06 父SDE144完成，独立ODE准入拒绝已按原合同接续
+
+父SDE144实际完成109/144，36task完整且不是held结果；满足原合同的正奖励门限，原件只读保留，不重跑。
+随后parent ODE132已prepare、未执行科学行，在canonical evaluator实时准入处exit1；此前双节点snapshot可用但拒绝瞬间未保存telemetry，不能指定为某一外部进程或唯一memory/util原因。
+调度器连带SIGTERM的训练仍在加载阶段，train目录为空、没有run_contract/raw/采集/更新；实际GPU分配及失败费用保留，允许从同一父权重/fresh optimizer/RNG重新开始原宏步流。
+仅ops接续修复：读取原完整SDE和全部历史费用、恢复原ODE queue与gpu02[2,3]×2拓扑，独立准入拒绝不再打断有效训练，后续失败保留canonical telemetry；没有热改frozen源码或科学范围。
+本次batch owner已再次启动，训练实际开始和完整退出以launch/readouts/train原件为准；source仍为clean pushed detached1c90e7d5。
+此前整批累计2215.087 GPU秒（.6153完整GPUh）、root实占峰3692322816B；batch_attempt0/1失败与原编译exit120均保留。硬deadline12:48:42Z、20GPUh/48GiB不扩；写窗口仍由实验session独占，无main阶段回报。
+
 ## 2026-10-06 去噪回报批次已实际进入冻结GPU消费者
 
 工程已集成push 1c90e7d5681bf18c99f9dc4084225d03e76ee929，并从同一clean pushed detached root/frozen执行；canonical tracked/Git窗口仍由实验session独占。

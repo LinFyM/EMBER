@@ -1,3 +1,16 @@
+## 2026-10-06 当前授权：关系监督与训练用反馈函数的完整共同学习
+
+Owner在结果后曾暂停等待讨论，现已明确“接下来你自主推进，尝试下这条路”，恢复main的持续自主推进。
+当前重点超过强MT，教学评估仍RGB＋既定exact language；允许充分使用既有训练LIBERO特权标签，不要求本批实现人类/换视角适配。
+唯一active design为`docs/designs/relational_feedback_writer_learning_20261006.md`：fresh视频关系预测→实际完整38-LoRA，
+独立训练F用真实teacher关系/自身query状态学动作函数，再监督实际LoRA；原36×50固定池，450共同更新，无新纠错数据或RL。
+360/450各原ODE strict400，450 G/F各原seen144；F明确非部署/nonheld诊断，MT153/T161与全部负证据保留。
+预计8–12h，硬16 wallh/40完整GPUh/96GiB，含工程/标签/profile/失败/物化/评测；实际起点在实验session承接时登记。
+main已直接核最近RL原400 rows、得失集合及132+12 seen来源，结论与§364一致；§365–366记录科学取舍与新机制边界。
+此处登记时main持canonical tracked/Git；合同push后将整批移交既有实验session01a10a98-6d4b-7d61-b12c-da38a628cb45，
+以其对本合同的实际承接为准。移交后main停止tracked/Git并发写入，工程由实验session闭环，整批一次回报并交还窗口。
+没有恢复已结束RL、旧Reader或task23局部干预；下方“无active/等待讨论”等文字仅为此前时点。
+
 ## 2026-10-06 去噪回报批次整批完成，停止计算并退役专用面
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成唯一denoising_return_writer_20261006，结论/原件见findings§364与root analysis/report.md。

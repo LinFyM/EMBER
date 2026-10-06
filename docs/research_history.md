@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：去噪回报未取得完整收益，Owner讨论后授权试验关系反馈学习
+
+唯一denoising_return_writer_20261006已完成72共享更新与1152训练episodes，63/72原ODE154/158，强T161/MT153不变。
+72对T R141/G17/L20，seen ODE109→102、SDE109→109；没有隐藏的SDE净增益，非零信用不能替代完整控制。
+科学原件/成本/失败与退役见findings§364和root analysis/report.md，完整11.742447GPUh；专用面关闭，不恢复RL扫描。
+main在§365直接重算400原始行和得失集合，并核父seen132新行101成功＋12旧行8成功的真实合并来源。
+Owner先暂停等待讨论，随后明确当前超过MT、可充分利用既有训练LIBERO、评估不加特权输入、未来视角/本体适配非本批要求，
+最终于11:05Z授权“接下来你自主推进，尝试下这条路”。
+§366及[首批合同](designs/relational_feedback_writer_learning_20261006.md)登记真实状态关系监督、独立训练F和实际完整LoRA的共同学习。
+这是有明确旧反证的待测机制，不是已定位根因或有效新结果；实际实现/承接和当前状态只看progress。
+
 ## 2026-10-06：固定父B输出范围投影完成，实际收益部分保留且反例非单调
 
 [84行合同](designs/fixed_b_output_range_diagnostic_20261006.md)与findings§361登记唯一PB无学习投影：304处FP64 SVD cutoff1e−6、A原样/B FP32，BA保留40.4252267%。

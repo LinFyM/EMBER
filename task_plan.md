@@ -1,3 +1,13 @@
+## 2026-10-06 Owner恢复自主推进：训练关系函数并学习编译为完整LoRA
+
+唯一active合同为[关系反馈共同学习](docs/designs/relational_feedback_writer_learning_20261006.md)，依据见findings§365–366。
+在原36×50固定池内，训练物理关系只监督RGB读取和独立训练用反馈函数F；真实生成LoRA始终接受跨episode FM及F功能监督。
+一套fresh完整候选固定450更新，360/450各official correct400；450另有G/F各seen144，F仅为nonheld特权诊断。
+强MT153与T161原件保留，完整G能力裁决，不以pose/F分数、局部阶段成功或未来换视角兼容性代替目标。
+预计8–12h，硬16h/40完整GPUh/96GiB；不扩数据、不采新纠错、不RL、不自动续训/小扫/controls/Test。
+主讨论完成合同及Git登记后交既有实验session独占实现/运行，实际承接及写窗口以progress和回执为准。
+此前暂停已由Owner“接下来你自主推进，尝试下这条路”明确撤销；旧设计和下方无active文字只属历史时点。
+
 ## 2026-10-06 去噪回报学习固定窗口结束，没有新active执行
 
 findings§364保留72原ODE158、63 154、父161/MT153及全部得失；固定seen SDE无净提升、ODE下降。实际完整信用/72更新没有转化为合同要求的相邻held有覆盖收益。

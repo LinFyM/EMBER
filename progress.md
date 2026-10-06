@@ -10,6 +10,8 @@ P/Q共同删最后采样帧，公共beta/Phi固定；仅Omega/Read/原38 Conditi
 
 读出消费者16718ac0已集成：四面板的旧scene/teacher/144条件、每面板full36/compact108、完整76因素rank128单LoRA、实际canonical evaluator run/resume和GT编译侧信息墙均经CPU消费者检查；4项既存pytest通过，0额外环境/forward。读出owner451行，只有bank/capture/preparation三处5/4/4行临时派发，仍使用原评测器和FrozenOperatorAdapter；既有bank大文件仅接受此最小派发内聚例外，不复制评测器，不扩大原run.py。新reader允许只改变未消费的evaluation/budget元数据并分别保存训练spec/reader spec，不能改变source/events/model/更新图。整批结束本批四个source owner、薄入口/spec和三hooks统一退役，旧Git/frozen/原件保留。读出将在本次集成push完成后新建clean detached frozen_readout，由唯一有限owner收到实际ready文件后现场准入启动；这段记录不冒称读出GPU已经启动。
 
+实际读出已从clean pushed detached e7950406启动；P0/Q0各144 bank物化exit0，完整single-LoRA消费者通过后canonical evaluator在gpu01:1/6继续运行。物化frame128/64各601.44/590.36完整GPU秒、原condition总时间408.47/406.88s、peak20.59/17.31GiB；P/Q不同字段消费者不能据此单独归因chunk收益。两臂完整180学习均exit0，每臂720条件/20160 query且全部36每task20次；实际720事件的teacher/query frames/flow seeds/截帧/PQ权重匹配，公共/Phi梯度为None且四u90/u180 checkpoint的全部冻结Adam step450、活动step540/630核验通过，原moment dtype保留。macro均值14.082/14.238s、实际峰28.717/28.768GiB，world2；源训练代码84ef79c1未改。P180/Q180 bank已在gpu02:1/0实际开始；u90没有闭环读出，四面板全结束后才分析固定576行的控制比较，当前不报告中途分数或晋级判断。
+
 ## 2026-10-07 main登记同编译链的预测／真实关系匹配检验
 
 Owner持续自主授权有效，当前G/F组合仍停止；main已核真实算子、标签末帧、父参数/optimizer合同及最近完整支持扩展原件。

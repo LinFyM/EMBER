@@ -21,6 +21,10 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
 
     bank_path = Path(args.static_task_lora_manifest).resolve()
     bank = read_json(bank_path)
+    if bank.get("relation_input_compilation_study") is True:
+        from ember.relation_input_readout import registered_capture as input_capture
+
+        return input_capture(args, tasks, output_dir, path, manifest, task_subset)
     if bank.get("reexpression_panel") is not None:
         from .reexpression import registered_capture as reexpression_capture
 

@@ -16,6 +16,7 @@
 实际CPU消费者核四episode重复init、reservoir/step与reward独立、联合Gaussian sum余切正号、76因子functional_call及完整Writer/native接口；0步/初始化失败原件丢失已工程修复并复验，失败记录保留。
 official400 video_schedule seed7与seen144 seed20260928各沿原件；parent ODE只新增132、原12只读引用，不伪造resume。新63/72保持canonical38/rank128 bank消费。
 full RGB的现有FP32张量用Torch ZIP deflate无损存储，标准torch.load数值不变；不量化、不删帧、不改capture范围。新增峰按bank约23/ckpt3.5/train8/full压缩≤10/tmp+代码2.5GiB保守估47GiB，硬48GiB。
+结构self-review已落launch/architecture_review.json：profile/采集/checkpoint分责，新有界生命周期及显式lineage检查保留cohesive exception；legacy bank/scope仅各5行注册增量，不做无关大owner拆分。自动guard信号及逐项解释原样保留，未称机械检查全部pass。
 live现场没有严格空卡；可以低util且有足够显存共驻，原T native训练实际峰27.9GiB。首物化按现场准入使用多卡；训练rank以真实headroom/吞吐选择，不从四逻辑task设卡数上限，不打断其他job。首launch后另记实际devices/退出/费用。
 
 ## 2026-10-06 登记共享Writer去噪回报学习的唯一有界合同

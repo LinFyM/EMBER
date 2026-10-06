@@ -68,6 +68,90 @@ def coordinated_call(function, context):
     return value
 
 
+def _profile(runtime, local, context, output):
+    optimizer, scheduler = optimizer_for(runtime.writer)
+    original = copy.deepcopy(runtime.writer.state_dict())
+    initial_rng = capture_rng(context)
+    profiles = []
+    for physical_micro, physical_frames in ((32, 16), (64, 32)):
+        optimizer.zero_grad(set_to_none=True)
+        torch.cuda.reset_peak_memory_stats(context.device)
+        tick = time.perf_counter()
+        failure = None
+        try:
+            credits = coordinated_call(lambda: [score_group(runtime, condition, state, group,
+                microbatch=physical_micro, frame_chunk=physical_frames, force_zero=True)
+                for condition, state, group in local], context)
+            reduce_update(runtime, optimizer, scheduler, context)
+        except RuntimeError as error:
+            if "out of memory" not in str(error).lower():
+                raise
+            failure, credits = str(error), []
+        seconds = time.perf_counter() - tick
+        profile = {"microbatch": physical_micro, "frame_chunk": physical_frames,
+                   "seconds": seconds, "transitions": sum(c["scored_transitions"] for c in credits),
+                   "failure": failure,
+                   "peak_memory_bytes": torch.cuda.max_memory_allocated(context.device)}
+        profiles.append(gather(profile, context.world_size))
+        runtime.writer.load_state_dict(original, strict=True)
+        optimizer, scheduler = optimizer_for(runtime.writer)
+        restore_rng(initial_rng, context)
+        torch.cuda.empty_cache()
+    means = [float("inf") if any(row["failure"] for row in profile) else
+             max(row["seconds"] for row in profile) for profile in profiles]
+    if all(value == float("inf") for value in means):
+        raise ValueError("both bounded profiles exceed actual physical capacity")
+    chosen = min(range(2), key=means.__getitem__)
+    microbatch, frame_chunk = ((32, 16), (64, 32))[chosen]
+    if context.is_main:
+        write_json_atomic(output / "profile.json", {"discarded_updates": 2, "profiles": profiles,
+            "chosen": {"microbatch": microbatch, "frame_chunk": frame_chunk},
+            "stop_reason": "two authorised discard updates exhausted; true logical batch unchanged",
+            "parent_optimizer_RNG_restored": True})
+    del original
+    return optimizer, scheduler, microbatch, frame_chunk
+
+
+def _save_checkpoint(output, macro, rows, context, runtime, optimizer, scheduler, data, nonzero_groups, topology, microbatch, frame_chunk, contract, git):
+    checkpoint = save_ecp_checkpoint(output_dir=output, macro=macro, stage=STAGE,
+        context=context, model=runtime.writer, optimizer=optimizer, scheduler=scheduler,
+        run_contract_schema=SCHEMA, metrics_rows=rows, sampler_state=data.sampler_state(),
+        training_state={"updates": macro, "nonzero_groups": nonzero_groups,
+                        "noise_seed_root": 20261006, "topology": topology,
+                        "physical_microbatch": microbatch, "frame_chunk": frame_chunk})
+    if context.is_main:
+        manifest = read_json(checkpoint / "checkpoint_manifest.json")
+        manifest.update(source=contract["source"], parent_checkpoint=contract["parent_checkpoint"],
+                        training_git=git["commit"])
+        write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
+    barrier(context)
+    if context.is_main and macro in (63, 72):
+        print(json.dumps({"event": "readout_checkpoint", "macro": macro,
+                          "checkpoint": str(checkpoint)}), flush=True)
+
+
+def _collect_macro(runtime, data, jobs, tasks, context, pool, environment, output, macro, frame_chunk, git, contract):
+    costs = {index: tasks[(data.tasks[event["task"]].suite,
+                          data.tasks[event["task"]].suite_task_id)]["horizon"]
+             for index, event in enumerate(jobs)}
+    assigned = condition_assignment(tuple(costs), costs, world_size=context.world_size)
+    local = []
+    for index in assigned[context.rank]:
+        event = jobs[index]
+        condition, raw, sampled = data.condition(runtime, event["task"], event["teacher_demo"])
+        with torch.no_grad():
+            state, _ = runtime.compile(condition, frame_chunk=frame_chunk)
+        teaching = data.tasks[event["task"]]
+        suite, local_task = teaching.suite, teaching.suite_task_id
+        group = collect_group(runtime, pool, tasks[suite, int(local_task)], environment, event, state,
+                              output / "raw" / f"macro_{macro+1:03d}" / f"task_{event['task']:03d}", macro+1)
+        group.update(raw_teacher_frames=raw, sampled_teacher_frames=sampled,
+                     complete_lora_targets=len(state) // 2, source_git=git,
+                     parent_checkpoint=contract["parent_checkpoint"])
+        local.append((condition, state, group))
+    return local
+
+
 def execute(args) -> None:
     wall_started = time.monotonic()
     root = args.root.resolve()
@@ -149,66 +233,12 @@ def execute(args) -> None:
         while macro < 72:
             update_started = time.perf_counter()
             jobs = [data.event(macro, task) for task in data.tasks_for_step(macro)]
-            costs = {index: tasks[(data.tasks[event["task"]].suite,
-                                  data.tasks[event["task"]].suite_task_id)]["horizon"]
-                     for index, event in enumerate(jobs)}
-            assigned = condition_assignment(tuple(costs), costs, world_size=context.world_size)
-            local = []
-            for index in assigned[context.rank]:
-                event = jobs[index]
-                condition, raw, sampled = data.condition(runtime, event["task"], event["teacher_demo"])
-                with torch.no_grad():
-                    state, _ = runtime.compile(condition, frame_chunk=frame_chunk)
-                teaching = data.tasks[event["task"]]
-                suite, local_task = teaching.suite, teaching.suite_task_id
-                group = collect_group(runtime, pool, tasks[suite, int(local_task)], environment, event, state,
-                                      output / "raw" / f"macro_{macro+1:03d}" / f"task_{event['task']:03d}", macro+1)
-                group.update(raw_teacher_frames=raw, sampled_teacher_frames=sampled,
-                             complete_lora_targets=len(state) // 2, source_git=git,
-                             parent_checkpoint=contract["parent_checkpoint"])
-                local.append((condition, state, group))
+            local = coordinated_call(lambda: _collect_macro(runtime, data, jobs, tasks, context, pool,
+                environment, output, macro, frame_chunk, git, contract), context)
             # Each rank owns whole conditions; all four logical conditions still
             # use the identical unmodified omega before the single score update.
             if macro == 0 and args.profile:
-                original = copy.deepcopy(runtime.writer.state_dict())
-                initial_rng = capture_rng(context)
-                profiles = []
-                for physical_micro, physical_frames in ((32, 16), (64, 32)):
-                    optimizer.zero_grad(set_to_none=True)
-                    torch.cuda.reset_peak_memory_stats(context.device)
-                    tick = time.perf_counter()
-                    failure = None
-                    try:
-                        credits = coordinated_call(lambda: [score_group(runtime, condition, state, group,
-                            microbatch=physical_micro, frame_chunk=physical_frames, force_zero=True)
-                            for condition, state, group in local], context)
-                        reduce_update(runtime, optimizer, scheduler, context)
-                    except RuntimeError as error:
-                        if "out of memory" not in str(error).lower():
-                            raise
-                        failure, credits = str(error), []
-                    seconds = time.perf_counter() - tick
-                    profile = {"microbatch": physical_micro, "frame_chunk": physical_frames,
-                               "seconds": seconds, "transitions": sum(c["scored_transitions"] for c in credits),
-                               "failure": failure,
-                               "peak_memory_bytes": torch.cuda.max_memory_allocated(context.device)}
-                    profiles.append(gather(profile, context.world_size))
-                    runtime.writer.load_state_dict(original, strict=True)
-                    optimizer, scheduler = optimizer_for(runtime.writer)
-                    restore_rng(initial_rng, context)
-                    torch.cuda.empty_cache()
-                means = [float("inf") if any(row["failure"] for row in profile) else
-                         max(row["seconds"] for row in profile) for profile in profiles]
-                if all(value == float("inf") for value in means):
-                    raise ValueError("both bounded profiles exceed actual physical capacity")
-                chosen = min(range(2), key=means.__getitem__)
-                microbatch, frame_chunk = ((32, 16), (64, 32))[chosen]
-                if context.is_main:
-                    write_json_atomic(output / "profile.json", {"discarded_updates": 2, "profiles": profiles,
-                        "chosen": {"microbatch": microbatch, "frame_chunk": frame_chunk},
-                        "stop_reason": "two authorised discard updates exhausted; true logical batch unchanged",
-                        "parent_optimizer_RNG_restored": True})
-                del original
+                optimizer, scheduler, microbatch, frame_chunk = _profile(runtime, local, context, output)
             optimizer.zero_grad(set_to_none=True)
             credits = coordinated_call(lambda: [score_group(runtime, condition, state, group,
                 microbatch=microbatch, frame_chunk=frame_chunk) for condition, state, group in local], context)
@@ -227,21 +257,8 @@ def execute(args) -> None:
             if context.is_main:
                 append_jsonl(output / "metrics.jsonl", metric)
             if macro % 9 == 0:
-                checkpoint = save_ecp_checkpoint(output_dir=output, macro=macro, stage=STAGE,
-                    context=context, model=runtime.writer, optimizer=optimizer, scheduler=scheduler,
-                    run_contract_schema=SCHEMA, metrics_rows=rows, sampler_state=data.sampler_state(),
-                    training_state={"updates": macro, "nonzero_groups": nonzero_groups,
-                                    "noise_seed_root": 20261006, "topology": topology,
-                                    "physical_microbatch": microbatch, "frame_chunk": frame_chunk})
-                if context.is_main:
-                    manifest = read_json(checkpoint / "checkpoint_manifest.json")
-                    manifest.update(source=contract["source"], parent_checkpoint=contract["parent_checkpoint"],
-                                    training_git=git["commit"])
-                    write_json_atomic(checkpoint / "checkpoint_manifest.json", manifest)
-                barrier(context)
-                if context.is_main and macro in (63, 72):
-                    print(json.dumps({"event": "readout_checkpoint", "macro": macro,
-                                      "checkpoint": str(checkpoint)}), flush=True)
+                _save_checkpoint(output, macro, rows, context, runtime, optimizer, scheduler, data,
+                                 nonzero_groups, topology, microbatch, frame_chunk, contract, git)
             if macro == 9 and nonzero_groups == 0:
                 break
             del local

@@ -271,6 +271,9 @@ def run(args):
     assert spec['source'] == c_spec['source'], 'shared source/prefix identity differs'
     data = FormalData(ASSETS, spec)
     plan = manifest(data)
+    if args.physical_first_case:
+        plan = {**plan, 'representation': [], 'events': plan['events'][:1],
+                'physical_profile_only': 'same first authorized case, no new scientific case or update'}
     save(args.output / 'manifest.json', plan)
     if args.manifest_only:
         data.close()
@@ -377,8 +380,10 @@ def run(args):
             save(args.output / f'macro{macro}_{model}_credit.json', credit_report(terms,
                 meta['G' if model == 'normalized' else model], optimizer['G' if model == 'normalized' else model],
                 'G' if model == 'normalized' else model))
-        save(args.output / 'completion.json', {'status': 'complete', 'representation_conditions_per_model': 36,
-            'functional_conditions': 12, 'queries': 336, 'records': records, 'seconds_after_load': time.monotonic() - started,
+        save(args.output / 'completion.json', {'status': 'physical_profile' if args.physical_first_case else 'complete',
+            'representation_conditions_per_model': len(plan['representation']),
+            'functional_conditions': len(plan['events']), 'queries': sum(len(e['queries']) for e in plan['events']),
+            'records': records, 'seconds_after_load': time.monotonic() - started,
             'optimizer_steps': 0, 'source_trainable': 0, 'new_environments': 0, 'held_Test': 0})
     finally:
         data.close()
@@ -404,6 +409,8 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--source-root', type=Path, default=OLD / 'frozen_PEFTfix')
     p.add_argument('--manifest-only', action='store_true')
+    p.add_argument('--physical-first-case', action='store_true',
+                   help='Physical packing check of the same first registered condition, never a new case')
     p.add_argument('--device', default='cuda:0')
     p.add_argument('--microbatch', type=int, default=28)
     p.add_argument('--frame-chunk', type=int, default=16)

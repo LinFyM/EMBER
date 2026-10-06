@@ -6,7 +6,7 @@
 新消费者只复用原G frozen_PEFTfix的native/完整ConditionalTarget/flow sample/VJP和原标签cache，不复活退役trainer或新建评测器；临时薄入口与两个紧凑统计helper有本批owner、整批封口删除触发，Git/frozen/raw保留。
 固定36个原seen init32条件，12个宏步1/225/450原条件336独立query，真实同z/tau/y；G三项信用使用冻结450定义FM/.25KD/.1关系，原macro编号只选事件，不恢复macro1的旧ramp。
 唯一干预为ConditionalTarget入参d的原rms_zero；GT/实体数/mask不进入G，0step/0新环境/0held/Test。原BF16公共Adam状态/FP32新矩阵记录偏差，保持实际dtype，不修复或扫描。
-原36 seen条件与12原宏步事件/336 query的实际FormalData CPU消费者已通过，G/C source/prefix配置相同；三文件语法与原标签matcher检查已通过。GPU尚未启动。
+原36 seen条件与12原宏步事件/336 query的实际FormalData CPU消费者已通过，G/C source/prefix配置相同；三文件语法与原标签matcher检查已通过。已集成push e95ab18a，clean detached frozen从2026-10-06T18:03:48Z在gpu02:7实际启动，microbatch28、inference frame64、backward frame16并按固定后续case实测余量放大；一张A40有45GiB现场余量，项目cap6/本批1，未打断其它作业。一次冻结worktree尚未写完时的cleanliness拒绝在加载/CUDA前退出，0GPU，原件保留。
 结构自审：本批薄编排428行/CPU物理统计270行/CPU分组信用273行，共971临时source行，复用原完整native/关系预测/ConditionalTarget/F/flow/VJP，不重建trainer或评测器。guard记录geometry 196行/复杂度44、credit 122行/58、run129行；按本次一次性诊断合同接受内聚例外：同一逐实体物理字段表和同一逐参数moment/梯度归约不可拆成平行实现，root实验session独占owner，整批完成或边界时三个专用文件全部退役，Git与只读frozen保留。没有长期新runtime、fallback或隐藏注册。
 整批一次回main并交回窗口，无阶段队列、自通知或自动续训/后继。
 

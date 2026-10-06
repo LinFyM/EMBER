@@ -1,3 +1,12 @@
+## 2026-10-06 main消费后段条件作用并登记执行文本辨识
+
+main已接回8123070a的tracked/Git窗口；§355直接消费原件和固定全部8份RGB，关闭删除条件作用恢复已有后续能力的解释。
+保留C16 Full成功及T19搬碗、Common无对应能力的反例，不把Open保持或局部运动当完整控制。
+唯一新active分析为docs/designs/task23_post_open_language_diagnostic_20261006.md（§356）：
+固定原32 Full对照与完整LoRA，新增明确完整指令/剩余目标指令各32条，分辨持续开柜目标和inside表达对后续调用的作用。
+预计45–75分钟，硬实际承接起2h wall/2GPUh/16CPUh/4GiB；无学习/新视频/新模型成绩或自动后继。
+当前main持写窗口，待push及派发核实际承接；尚未声称新计算启动。下方无active/交回仅指此前时点。
+
 ## 2026-10-06 task23已打开状态64续行完成，专用面封口并交回main
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成唯一task23_post_open_operator_20261006，见findings§354。

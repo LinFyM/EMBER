@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：main消费条件作用并登记固定参数下的执行文本辨识
+
+findings§355直接核§354原件、实际因子消费者和固定8份双RGB全部规划时刻；C16 Full成功、T19搬碗而Common均无相应能力，
+削弱统一首段干扰解释；Open保持和局部动作都不成为完整修复，停止删除条件作用与public FM延伸。
+§356及[合同](designs/task23_post_open_language_diagnostic_20261006.md)固定旧32 Full对照、完整LoRA及实际branch，
+只新增明确完整句/剩余目标句各32条，区分持续开柜分句与inside指代对后续调用的有限作用。
+这是诊断例外，不改变exact language部署目标、原400或视频增量结论；预计45–75分钟，硬2h wall/2GPUh/16CPUh/4GiB。
+尚无本批新结果，真实承接与后继裁决见progress；无自动更多文本/阶段/训练/数据/Test工作。
+
 ## 2026-10-06：同实际已打开状态Full/Common全64续行关闭
 
 findings§354与[合同](designs/task23_post_open_operator_diagnostic_20261006.md)记录32实际起点/64条最终续行全部准入，零新学习/教学HDF/native编译/Test。

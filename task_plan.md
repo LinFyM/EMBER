@@ -1,3 +1,11 @@
+## 2026-10-06 保留完整视频算子，辨识执行文本对后续目标调用的影响
+
+findings§355消费Full/Common原件并保留条件后段正例，停止删减/公共能力修补；§356登记唯一新语言诊断。
+同32起点、同完整LoRA、旧exact_full对照冻结，只新增explicit_full/remaining_goal两臂；主要比较完整In及全部反向损失。
+它区分已完成开柜分句与目的地表达的影响，不选择部署改写，不把改善或可达性当视频理解证明。
+完整合同、停止线和预算见docs/designs/task23_post_open_language_diagnostic_20261006.md；实际派发/承接及写窗口看progress。
+Owner持续自主授权保持，所有结果回main后再判断；下方无active文字是此前时点。
+
 ## 2026-10-06 已打开状态删除诊断封口，公共未恢复完整后续
 
 findings§354保存固定64续行、全部32准入配对与反例：T Full/Common 0/9、0/9，C 1/23、0/23；Common无新增In，丢失C16 Full成功。

@@ -3,6 +3,13 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：main原件消费显示GT终点净差来自能力保持
+
+findings§373及同一[canonical分析](analyses/relation_input_compilation_20261007.json) main_consumption保存576行直接重算与源码消费。
+初始共同成功77行的P/Q终点72/75形成全部净+3；初始共同失败58行两臂各新得3条，不把局部新成功抹去或放大为广泛获取。
+main实际审看task56/init32两终点2clip/32张既存RGB，保留未拍成功终态和抓取/contact未知。
+停止沿该物理输入／下游编译接口延窗、换头或调幅；有限学习与冻结条件的边界保持，后继完整方法尚未选定，自主研究继续。
+
 ## 2026-10-07：同链GT输入与预测输入匹配学习完成，未建立广泛控制增益
 
 findings§372、[紧凑原件](analyses/relation_input_compilation_20261007.json)和唯一root analysis/report.md保留P/Q从G450固定公共beta/Phi的180匹配主FM以及四seen144。

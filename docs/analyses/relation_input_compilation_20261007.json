@@ -15292,5 +15292,123 @@
     "GPU_released": true
   },
   "lifecycle": "dedicated input/update/readout owners, thin script/config and three canonical dispatches retired; frozen/Git/checkpoints/raw preserved; final commit/worktree removal and one main report in completion.json",
-  "completion": "/data1/user/ymdai/ember_runs/relation_input_compilation_20261007/completion.json"
+  "completion": "/data1/user/ymdai/ember_runs/relation_input_compilation_20261007/completion.json",
+  "main_consumption": {
+    "read_UTC": "2026-10-06T22:16:38.740961+00:00",
+    "source": "four original evaluation/results.json, frozen_train relation_input_compilation.py and relation_input_training.py; no new model/environment run",
+    "successes": {
+      "P0": 81,
+      "Q0": 82,
+      "P180": 78,
+      "Q180": 81
+    },
+    "original_row_and_pairing_recomputed": {
+      "rows": 576,
+      "unique_per_panel": 144,
+      "pairs": "Q180/P180,P180/P0,Q180/Q0,Q0/P0",
+      "task_state_language_scene_teacher_ordinal_env_policy_RNG_mismatches": 0
+    },
+    "initial_outcome_strata": {
+      "both_initially_successful": {
+        "rows": 77,
+        "P180": 72,
+        "Q180": 75,
+        "Q_only": [
+          [
+            5,
+            33
+          ],
+          [
+            7,
+            35
+          ],
+          [
+            28,
+            35
+          ],
+          [
+            35,
+            35
+          ],
+          [
+            56,
+            32
+          ]
+        ],
+        "P_only": [
+          [
+            2,
+            34
+          ],
+          [
+            73,
+            33
+          ]
+        ]
+      },
+      "one_initially_successful": {
+        "rows": 9,
+        "P180": 3,
+        "Q180": 3,
+        "Q_only": [
+          [
+            22,
+            33
+          ]
+        ],
+        "P_only": [
+          [
+            2,
+            33
+          ]
+        ]
+      },
+      "neither_initially_successful": {
+        "rows": 58,
+        "P180": 3,
+        "Q180": 3,
+        "Q_only": [
+          [
+            22,
+            34
+          ],
+          [
+            29,
+            35
+          ],
+          [
+            32,
+            33
+          ]
+        ],
+        "P_only": [
+          [
+            0,
+            33
+          ],
+          [
+            32,
+            34
+          ],
+          [
+            38,
+            34
+          ]
+        ]
+      }
+    },
+    "interpretation": "The full Q180-P180 net +3 lies in retaining initially common successes. Both arms gain three successes outside the union of the two initial success sets. This is a post-hoc description of observed paired outcomes, not a separate causal mediation experiment or proof that GT has no local control effect.",
+    "actual_main_RGB_review": {
+      "sheets": [
+        "/data1/user/ymdai/ember_runs/relation_input_compilation_20261007/analysis/own_RGB/P180_task056_init32.jpg",
+        "/data1/user/ymdai/ember_runs/relation_input_compilation_20261007/analysis/own_RGB/Q180_task056_init32.jpg"
+      ],
+      "clips": 2,
+      "captured_times_per_clip": 8,
+      "cameras": 2,
+      "images": 32,
+      "scope": "Actual captured times only; Q last image step245 precedes Stack predicate at248. No new terminal image or contact/grasp label."
+    },
+    "adjudication": "Do not continue this physics-input/downstream-learning interface through longer windows, replacement heads, scaling or auxiliary-weight sweeps. This does not disprove new joint methods or all geometric supervision; no successor implementation is selected by this result."
+  }
 }

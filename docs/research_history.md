@@ -3,6 +3,13 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：准确轨迹没有替代控制学习，后继不由接口相似性指定
+
+findings§374落实Omega/Read/S/M到自身hidden的实际联系，保留跨episode FM已有反馈信用和Q会改变寻址的事实；
+不把GT阴性扩写为物理普遍无用、无state不可迁移或已定位唯一Compiler根因。
+有限原论文/源码审计区分DAML、Make-An-Agent、RoboTTT的部署条件；main重读WIZARD，保留其一次LoRA正例与Long完整0的边界。
+本轮关系路线已完成尝试与裁决，后继修正尚未成立，无新active设计/运行；Owner总体目标及自主授权保持。
+
 ## 2026-10-07：main原件消费显示GT终点净差来自能力保持
 
 findings§373及同一[canonical分析](analyses/relation_input_compilation_20261007.json) main_consumption保存576行直接重算与源码消费。

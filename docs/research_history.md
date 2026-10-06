@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：main结束当前关系瓶颈与弱F组合，保留科学边界
+
+findings§370及[同批canonical分析](analyses/relation_signal_readback_20261007.json)的main_consumption保存CPU直接重算与完整裁决。
+36条手位移预测误差22.595cm、零位移数学参照22.858cm，20/36任务较好；不是部署baseline或新干预。
+全部336速度原数组复算确认单位化12/12条件均值恶化；实际FM g²加权epsfactor约.99修正了坐标中位约.02的过度外推。
+实际F已含GT语义、同实体对应与自身关系，弱控制不能归于简单缺对象身份，也不能当关系控制上界。
+LocalActionGrounded、ControlCalibrated的获取/迁移阴性与JointActionEffect普通动作学习13→24的有限正例一起约束方法判断。
+结束当前硬物理瓶颈＋共同冷启动F蒸馏，不自动续训、调幅、扫eps或换感知头；不由此否定所有物理监督/静态LoRA反馈。
+首次资源快照缺项明确接受为provenance限制，科学原件继续有效消费；没有新增模型/环境/held/Test或RGB审看。
+该次试验及读回已处理完毕，后继完整修正尚未成立；Owner持续授权与最终目标保留，当前执行状态仍只看progress。
+
 ## 2026-10-07：冻结关系信号完成，物理失真与辅助clip不能被单位化读回修复
 
 findings§369、[紧凑原件](analyses/relation_signal_readback_20261007.json)及root `relation_signal_readback_20261007`保留36×2表示/12原条件336查询/9宏步信用全部原件。

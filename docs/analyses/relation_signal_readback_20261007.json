@@ -533,5 +533,439 @@
     "scientific_inputs_and_results": "All exact checkpoints/Git/events/query/noise/GT masks/G/C own native/pairing/finite/full-output files preserved, unaffected",
     "launch_semantics": "Each owner actually fetched strg01 quota/shared and both GPU nodes before Popen; cap,eligibility and clean pushed checks passed as executable guards. First exact snapshot bytes now missing, not falsely called retained.",
     "response": "No GPU/data rerun; batch sealed and gap reported once to main for independent acceptance"
+  },
+  "main_consumption": {
+    "date": "2026-10-07",
+    "scope": "CPU-only direct read of retained raw arrays and training log; no new model forward, gradient, environment, or images",
+    "decision": "Close the present hard physical bottleneck plus jointly cold F-distillation combination; no scale/eps/dtype/LR scan, automatic continuation, or new active successor. Full EMBER objective remains unmet.",
+    "hand_displacement_reference": {
+      "definition": "Per clip, subtract that trajectory first valid hand p from every valid hand p, separately for prediction and GT. Compare Euclidean displacement error to the mathematical zero-displacement reference. Pool frames; retain each task mean. No baseline policy, intervention, or additional data.",
+      "raw_pattern": "/data1/user/ymdai/ember_runs/relation_signal_readback_20261007/raw/attempt1/representation_G_task*.npz",
+      "tasks": 36,
+      "valid_frames": 1165,
+      "pooled_predicted_error_m": 0.22595070040285958,
+      "pooled_zero_displacement_error_m": 0.228577327257504,
+      "tasks_predicted_error_lower": 20,
+      "per_task": [
+        {
+          "task": 0,
+          "valid_frames": 34,
+          "predicted_relative_error_m": 0.2961818637573061,
+          "zero_displacement_error_m": 0.2983702972088453
+        },
+        {
+          "task": 1,
+          "valid_frames": 24,
+          "predicted_relative_error_m": 0.3108577044008551,
+          "zero_displacement_error_m": 0.3171658393045293
+        },
+        {
+          "task": 2,
+          "valid_frames": 25,
+          "predicted_relative_error_m": 0.24819591595957163,
+          "zero_displacement_error_m": 0.2711547519057587
+        },
+        {
+          "task": 4,
+          "valid_frames": 29,
+          "predicted_relative_error_m": 0.277710322665292,
+          "zero_displacement_error_m": 0.286195691449497
+        },
+        {
+          "task": 5,
+          "valid_frames": 29,
+          "predicted_relative_error_m": 0.2291174741003092,
+          "zero_displacement_error_m": 0.24181187512321714
+        },
+        {
+          "task": 7,
+          "valid_frames": 25,
+          "predicted_relative_error_m": 0.26065607109916383,
+          "zero_displacement_error_m": 0.22891707365036212
+        },
+        {
+          "task": 12,
+          "valid_frames": 24,
+          "predicted_relative_error_m": 0.19417491479049542,
+          "zero_displacement_error_m": 0.2244315721218667
+        },
+        {
+          "task": 13,
+          "valid_frames": 27,
+          "predicted_relative_error_m": 0.17818601225849198,
+          "zero_displacement_error_m": 0.21147782649153263
+        },
+        {
+          "task": 14,
+          "valid_frames": 30,
+          "predicted_relative_error_m": 0.18456069303058717,
+          "zero_displacement_error_m": 0.2100621147415189
+        },
+        {
+          "task": 15,
+          "valid_frames": 37,
+          "predicted_relative_error_m": 0.23747562682206824,
+          "zero_displacement_error_m": 0.2393538175966008
+        },
+        {
+          "task": 17,
+          "valid_frames": 28,
+          "predicted_relative_error_m": 0.18527527302848507,
+          "zero_displacement_error_m": 0.21715499026373813
+        },
+        {
+          "task": 19,
+          "valid_frames": 30,
+          "predicted_relative_error_m": 0.20323183659192737,
+          "zero_displacement_error_m": 0.22694220544281238
+        },
+        {
+          "task": 20,
+          "valid_frames": 29,
+          "predicted_relative_error_m": 0.23966812076420324,
+          "zero_displacement_error_m": 0.2346036232273679
+        },
+        {
+          "task": 21,
+          "valid_frames": 21,
+          "predicted_relative_error_m": 0.19340982418138944,
+          "zero_displacement_error_m": 0.21738190492205828
+        },
+        {
+          "task": 22,
+          "valid_frames": 21,
+          "predicted_relative_error_m": 0.17692138014189102,
+          "zero_displacement_error_m": 0.16106755551835394
+        },
+        {
+          "task": 25,
+          "valid_frames": 34,
+          "predicted_relative_error_m": 0.3107958158545763,
+          "zero_displacement_error_m": 0.337015749888442
+        },
+        {
+          "task": 28,
+          "valid_frames": 19,
+          "predicted_relative_error_m": 0.2460363344644508,
+          "zero_displacement_error_m": 0.24035896742803856
+        },
+        {
+          "task": 29,
+          "valid_frames": 30,
+          "predicted_relative_error_m": 0.19654650017226993,
+          "zero_displacement_error_m": 0.15219286109799013
+        },
+        {
+          "task": 32,
+          "valid_frames": 49,
+          "predicted_relative_error_m": 0.22962794788465488,
+          "zero_displacement_error_m": 0.24049138829651778
+        },
+        {
+          "task": 34,
+          "valid_frames": 49,
+          "predicted_relative_error_m": 0.22915432683649614,
+          "zero_displacement_error_m": 0.22129532358673623
+        },
+        {
+          "task": 35,
+          "valid_frames": 35,
+          "predicted_relative_error_m": 0.18410389540632557,
+          "zero_displacement_error_m": 0.1596795427858014
+        },
+        {
+          "task": 36,
+          "valid_frames": 51,
+          "predicted_relative_error_m": 0.20803643187548035,
+          "zero_displacement_error_m": 0.1887281291098433
+        },
+        {
+          "task": 37,
+          "valid_frames": 63,
+          "predicted_relative_error_m": 0.1656224231593947,
+          "zero_displacement_error_m": 0.18405144302884952
+        },
+        {
+          "task": 38,
+          "valid_frames": 91,
+          "predicted_relative_error_m": 0.2489206777187213,
+          "zero_displacement_error_m": 0.26762315217822846
+        },
+        {
+          "task": 42,
+          "valid_frames": 28,
+          "predicted_relative_error_m": 0.1915903701423479,
+          "zero_displacement_error_m": 0.1883534059689416
+        },
+        {
+          "task": 43,
+          "valid_frames": 39,
+          "predicted_relative_error_m": 0.26105969439039634,
+          "zero_displacement_error_m": 0.21905142505154482
+        },
+        {
+          "task": 51,
+          "valid_frames": 15,
+          "predicted_relative_error_m": 0.1822265903731818,
+          "zero_displacement_error_m": 0.19269485193939737
+        },
+        {
+          "task": 55,
+          "valid_frames": 26,
+          "predicted_relative_error_m": 0.2556974726663074,
+          "zero_displacement_error_m": 0.22893536377101464
+        },
+        {
+          "task": 56,
+          "valid_frames": 23,
+          "predicted_relative_error_m": 0.257936211868608,
+          "zero_displacement_error_m": 0.2545492156165628
+        },
+        {
+          "task": 62,
+          "valid_frames": 30,
+          "predicted_relative_error_m": 0.29346154064680935,
+          "zero_displacement_error_m": 0.29873101795015633
+        },
+        {
+          "task": 64,
+          "valid_frames": 23,
+          "predicted_relative_error_m": 0.17388953932651297,
+          "zero_displacement_error_m": 0.21653826265649842
+        },
+        {
+          "task": 73,
+          "valid_frames": 38,
+          "predicted_relative_error_m": 0.22999308297119359,
+          "zero_displacement_error_m": 0.2039231408861462
+        },
+        {
+          "task": 95,
+          "valid_frames": 24,
+          "predicted_relative_error_m": 0.17645167034313716,
+          "zero_displacement_error_m": 0.16816006010390896
+        },
+        {
+          "task": 96,
+          "valid_frames": 22,
+          "predicted_relative_error_m": 0.17999907054964742,
+          "zero_displacement_error_m": 0.20439318282499236
+        },
+        {
+          "task": 97,
+          "valid_frames": 30,
+          "predicted_relative_error_m": 0.21410424144499154,
+          "zero_displacement_error_m": 0.20864264117476014
+        },
+        {
+          "task": 101,
+          "valid_frames": 33,
+          "predicted_relative_error_m": 0.23324187055125814,
+          "zero_displacement_error_m": 0.2257346926278873
+        }
+      ]
+    },
+    "velocity_recomputed": {
+      "raw_pattern": "/data1/user/ymdai/ember_runs/relation_signal_readback_20261007/raw/attempt1/credit_macro*_velocity.npz",
+      "definition": "Float64 statistics on saved float32 [28,50,7] arrays, mean squared error over horizon and action dimensions at the original shared z/tau. Not 10-step ODE actions.",
+      "query_count": 336,
+      "improved": 13,
+      "worsened": 323,
+      "mean_FM": {
+        "G": 0.09629460726009832,
+        "normalized": 0.29685827322871233,
+        "C": 0.09182316230062862,
+        "F_target": 0.1037557643691408
+      },
+      "condition_means": [
+        {
+          "file": "credit_macro1_task101_velocity.npz",
+          "G": 0.07623654003170191,
+          "normalized": 0.12931079820314076,
+          "C": 0.07428148279161471,
+          "F_target": 0.07920869204752011
+        },
+        {
+          "file": "credit_macro1_task43_velocity.npz",
+          "G": 0.09220281852587967,
+          "normalized": 0.36350785030117955,
+          "C": 0.09107092548451497,
+          "F_target": 0.09780972325964506
+        },
+        {
+          "file": "credit_macro1_task7_velocity.npz",
+          "G": 0.11555052917798976,
+          "normalized": 0.1598953142297915,
+          "C": 0.11239766625160168,
+          "F_target": 0.12668243433657336
+        },
+        {
+          "file": "credit_macro1_task97_velocity.npz",
+          "G": 0.09129195851268225,
+          "normalized": 0.12503985418029068,
+          "C": 0.08890304667152706,
+          "F_target": 0.09270641664365972
+        },
+        {
+          "file": "credit_macro225_task28_velocity.npz",
+          "G": 0.11275010862565318,
+          "normalized": 0.27124760066891956,
+          "C": 0.10171172885356149,
+          "F_target": 0.1448292655729937
+        },
+        {
+          "file": "credit_macro225_task38_velocity.npz",
+          "G": 0.09658813167687039,
+          "normalized": 0.2557361682334194,
+          "C": 0.09461090055088393,
+          "F_target": 0.10281313285928194
+        },
+        {
+          "file": "credit_macro225_task55_velocity.npz",
+          "G": 0.09392696049456613,
+          "normalized": 0.23535971503756686,
+          "C": 0.09351798732320249,
+          "F_target": 0.10012859169513941
+        },
+        {
+          "file": "credit_macro225_task56_velocity.npz",
+          "G": 0.08540217826864885,
+          "normalized": 1.0698166037513626,
+          "C": 0.07986453153733339,
+          "F_target": 0.08575470326512169
+        },
+        {
+          "file": "credit_macro450_task34_velocity.npz",
+          "G": 0.09151566464007126,
+          "normalized": 0.2144231491094306,
+          "C": 0.08765798069231309,
+          "F_target": 0.09921016314349475
+        },
+        {
+          "file": "credit_macro450_task43_velocity.npz",
+          "G": 0.07429389820083443,
+          "normalized": 0.3173174471494558,
+          "C": 0.07100199116789414,
+          "F_target": 0.07979727185063876
+        },
+        {
+          "file": "credit_macro450_task4_velocity.npz",
+          "G": 0.13901062318594823,
+          "normalized": 0.17110645200082972,
+          "C": 0.12138426340365675,
+          "F_target": 0.14975814904384094
+        },
+        {
+          "file": "credit_macro450_task96_velocity.npz",
+          "G": 0.086765875780334,
+          "normalized": 0.24953832587916128,
+          "C": 0.08547544287943967,
+          "F_target": 0.08637062871178028
+        }
+      ]
+    },
+    "training_windows": {
+      "path": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/train/attempts/fresh/metrics.jsonl",
+      "definition": "Five consecutive 90-update windows, four equally weighted conditions per update; descriptive training observations, not fixed-query learning curves or closed-loop evidence.",
+      "windows": [
+        {
+          "macro_first": 1,
+          "macro_last": 90,
+          "conditions": 360,
+          "means": {
+            "G_FM": 0.12399976326980525,
+            "F_FM": 0.12650113253750736,
+            "KD": 0.0017483499391346413,
+            "relation_loss": 1.0787977339492905
+          },
+          "relation_groups": {
+            "p": 0.3696514861451255,
+            "R": 0.8178559358749125,
+            "semantic": 0.4292677950838374,
+            "presence": 0.6932744094067149,
+            "joint": 0.5330768356720607,
+            "hand_q": 3.6296597470011975
+          }
+        },
+        {
+          "macro_first": 91,
+          "macro_last": 180,
+          "conditions": 360,
+          "means": {
+            "G_FM": 0.11585169986097349,
+            "F_FM": 0.12386917855797543,
+            "KD": 0.005442112939070083,
+            "relation_loss": 0.49866716261539196
+          },
+          "relation_groups": {
+            "p": 0.14342755010972422,
+            "R": 0.2705274738112671,
+            "semantic": 0.03421036500690712,
+            "presence": 0.6333808452718788,
+            "joint": 0.2829803113411698,
+            "hand_q": 1.6274763515219093
+          }
+        },
+        {
+          "macro_first": 181,
+          "macro_last": 270,
+          "conditions": 360,
+          "means": {
+            "G_FM": 0.11189856992827521,
+            "F_FM": 0.12224728243632449,
+            "KD": 0.007984618319379579,
+            "relation_loss": 0.3483543766455518
+          },
+          "relation_groups": {
+            "p": 0.14923042012378573,
+            "R": 0.09700420112607794,
+            "semantic": 0.025480647974958023,
+            "presence": 0.5695282603303592,
+            "joint": 0.19456700978852395,
+            "hand_q": 1.05431566200633
+          }
+        },
+        {
+          "macro_first": 271,
+          "macro_last": 360,
+          "conditions": 360,
+          "means": {
+            "G_FM": 0.10834099369951421,
+            "F_FM": 0.11916378837906652,
+            "KD": 0.008229738141461792,
+            "relation_loss": 0.23948562279757526
+          },
+          "relation_groups": {
+            "p": 0.1253269454360836,
+            "R": 0.07649410993455806,
+            "semantic": 0.022258767617555957,
+            "presence": 0.5362565922240417,
+            "joint": 0.1310067888226412,
+            "hand_q": 0.5455704973079264
+          }
+        },
+        {
+          "macro_first": 361,
+          "macro_last": 450,
+          "conditions": 360,
+          "means": {
+            "G_FM": 0.10678760284144018,
+            "F_FM": 0.11802391971771915,
+            "KD": 0.009206174592772084,
+            "relation_loss": 0.1901959604687161
+          },
+          "relation_groups": {
+            "p": 0.10462607244133121,
+            "R": 0.06113100066884524,
+            "semantic": 0.01975007171018256,
+            "presence": 0.47605662528011533,
+            "joint": 0.12300477917306125,
+            "hand_q": 0.3566071789530623
+          }
+        }
+      ]
+    },
+    "correction": "Coordinate median epsfactor about .0207 is not a claim that 98% of current FM credit is suppressed. The gradient-squared-weighted sampled factors are about .989-.991, not complete Adam update ratios.",
+    "resource_record_acceptance": "Scientific original inputs, pairing, outputs, source identity, and total compute are consumable with the recorded missing first exact admission snapshot; do not certify complete resource provenance or reconstruct missing bytes."
   }
 }

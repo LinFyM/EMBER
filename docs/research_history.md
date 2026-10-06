@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：已有RL信用覆盖与动作记忆闭环的辨识问题
+
+findings§375与[原RL信用覆盖](analyses/denoising_credit_coverage_20261007.json)保存1152原训练行/288组直接重算：
+140组混合、22全失败、126全成功；不是单一固定policy成功率，也不能由零LOO断言缺控制能力或新增稠密奖励有效。
+继承§81绝对几何动作匹配的离线正证据及相对替换阴性，登记[固定两Value闭环合同](designs/privileged_action_memory_control_20261007.md)。
+原36训练任务/144条件，真实教学动作与同帧source动作共享几何1-NN；288新闭环、0训练、0held/Test，全部明确特权。
+它检验已有示范动作能否成为可用控制内容，不冒称修复LoRA编译或学得强F；预计2–4h，硬6wall/3GPUh/24GiB。
+此处为事前登记，实际承接/运行只看progress；没有新结果或自动后继资格。
+
 ## 2026-10-07：准确轨迹没有替代控制学习，后继不由接口相似性指定
 
 findings§374落实Omega/Read/S/M到自身hidden的实际联系，保留跨episode FM已有反馈信用和Q会改变寻址的事实；

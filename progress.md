@@ -1,3 +1,15 @@
+## 2026-10-07 main登记教学动作记忆的匹配闭环诊断
+
+Owner持续自主授权有效；§373原物理输入/下游编译接口停止不变，未恢复G/F、P/Q或RL。
+main直接重算原RL全部1152行、288组：140混合有信用、22全失败、126全成功；findings§375与新canonical JSON保存范围及反例。
+唯一active design为`docs/designs/privileged_action_memory_control_20261007.md`，原36训练任务/原seen144映射，
+同一个历史绝对几何1-NN和真实自身查询，只替换真实教学动作值或同帧source预测值，两臂共288新episode。
+这是0训练的特权控制诊断，不是合法视频Writer、EMBER分数或新F教师资格；没有held/Test、更多数据、近邻变体或自动后继。
+预计2–4h，硬实际承接起6wall/3完整GPUh/24GiB，包括工程/缓存/失败/EGL/profile/冻结/临时。
+本条仅登记合同，尚未启动新GPU或环境；main仍持tracked/Git，push后交既有实验session01a10a98-6d4b-7d61-b12c-da38a628cb45独占。
+实际承接以目标session回执和后续本文件为准；完成或真实边界一次整批回main，main直接消费、裁决并继续最终目标。
+下方无active/未选后继文字均为历史状态，不覆盖本次有限诊断；最终可部署方法仍未达到目标。
+
 ## 2026-10-07 main完成关系路线裁决，后继方法尚未成立
 
 findings§373及canonical JSON main_consumption保存原行重算、实际输入/更新源码和2clip/32图的main审看范围。

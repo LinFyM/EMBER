@@ -13,12 +13,15 @@ TASKS = (0,12,20,32)
 TEACHERS = {0:(40,11),12:(25,14),20:(38,42),32:(17,43)}
 ARMS = ('parent','S','P','D')
 PROJECTED_ROOT = ROOT.parent / 'operator_projected_repair_consumers_20260930'
+FIXED_B_ROOT = ROOT.parent / 'fixed_b_output_range_20261006'
 STATES = (0,1,2,3)
 PARENT = Path('/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/continuation2340/T/train/attempts/continuation/checkpoints/macro_00002340')
 BASE_BANK = PARENT.parents[4] / 'banks/2340/manifest.json'
 
 
 def panel_root(arm):
+    if arm == 'PB':
+        return FIXED_B_ROOT
     if arm == 'PZ':
         return PROJECTED_ROOT
     if arm not in ARMS:
@@ -27,6 +30,14 @@ def panel_root(arm):
 
 
 def endpoint(arm):
+    if arm == 'PB':
+        record = FIXED_B_ROOT/'projection/projection.json'
+        complete = read_json(record)
+        if (complete.get('status') != 'complete' or complete.get('source_root') != str(ROOT)
+                or complete.get('singular_relative_cutoff') != 1e-6
+                or complete.get('projection_space') != 'complete_parent_B_column_space'):
+            raise ValueError('fixed parent-B projection definition changed')
+        return record
     if arm == 'PZ':
         complete = read_json(PROJECTED_ROOT/'projection/projection.json')
         if (complete.get('status')!='complete' or complete.get('source_root')!=str(ROOT)
@@ -47,6 +58,8 @@ def panel_identity(arm, slot):
         'query_manifest':file_record(ROOT/'query_manifest.json')}
     if arm == 'PZ':
         result['projection'] = file_record(PROJECTED_ROOT/'projection/projection.json')
+    if arm == 'PB':
+        result['projection'] = file_record(endpoint(arm))
     return result
 
 

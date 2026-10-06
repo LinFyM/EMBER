@@ -1,3 +1,12 @@
+## 2026-10-06 实验session实际承接固定父B输出空间诊断
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取84行active design与findings§360，从clean pushed main455bd9bc接管canonical tracked/Git独占窗口；main停止并发写。
+实际承接2026-10-06T03:08:49Z，硬deadline05:08:49Z；预计45–75分钟，硬2wall/1.5完整GPUh/8完整CPUh/4GiB新增峰。
+strg01独立data1实占1267648076KiB/soft2147483648KiB，个人du1298071572480B，共享余量88556722716672B；预计新增峰2GiB，唯一root fixed_b_output_range_20261006。
+从最新main隔离codex/fixed-b-output-range-20261006；复用现存learning_limit注册器、canonical complete38 adapter/persistent dynamic evaluator及旧B20准确叶函数/冻结十步flow。
+仅新增CPU FP64 PB投影与原160预测/32行，parent/D/PZ/S原件直接复用；不编译视频/加载Writer/native/学习/新scene/Test。PB注册与临时入口在任意整批结果后退役，Git/frozen/raw保留。
+资源准入与clean pushed detached运行前检查按合同执行；无main工程复审、阶段Queue/心跳/自通知或自动后继，整批封口后一次交回窗口。
+
 ## 2026-10-06 登记唯一固定父B输出空间的功能诊断
 
 main已完成旧parent/D八套bank的CPU投影：BA保留40.4252%，Q/V为36.9008%/81.6823%，见findings§360及完整几何JSON。

@@ -1,5 +1,8 @@
 ## 2026-10-06 父SDE144完成，独立ODE准入拒绝已按原合同接续
 
+接续的首次训练加载暴露per-rank LIBERO空配置目录导致非交互import的EOF；没有环境/采集/更新，失败费用在batch_attempt2_exit.json完整保留。启动owner现调用原prepare_libero_config补同一canonical registry，不改frozen科研代码。
+修复后训练实际启动gpu02[1,0,7]三rank，父ODE132实际resume启动gpu02[2,3]×2 replicas；本批同时5卡、现场project cap6。继续唯一实际退出/checkpoint事件等待，不轮询或阶段通知main。
+
 父SDE144实际完成109/144，36task完整且不是held结果；满足原合同的正奖励门限，原件只读保留，不重跑。
 随后parent ODE132已prepare、未执行科学行，在canonical evaluator实时准入处exit1；此前双节点snapshot可用但拒绝瞬间未保存telemetry，不能指定为某一外部进程或唯一memory/util原因。
 调度器连带SIGTERM的训练仍在加载阶段，train目录为空、没有run_contract/raw/采集/更新；实际GPU分配及失败费用保留，允许从同一父权重/fresh optimizer/RNG重新开始原宏步流。

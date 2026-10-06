@@ -1,3 +1,16 @@
+## 2026-10-06 实验session实际承接task23已打开状态算子诊断
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取103行active design与findings§352–353，
+从clean pushed main df4cd239隔离codex/task23-post-open-20261006，接管canonical tracked/Git独占窗口；main停止并发写。
+承接按2026-10-06T00:11:00Z计，硬deadline02:11:00Z；预计45–90分钟，硬2h wall/2完整GPUh/16完整CPUh/4GiB新增峰。
+data1 strg01独立实占1267197104KiB、软限2147483648KiB，个人du1297609777152B，共享余量88565829599232B；预计新增峰3GiB。
+唯一root task23_post_open_operator_20261006已保存事前完整cohort/design/acceptance；32固定起点、64 Full/Common、原horizon/noise及8full保持。
+实际shared bank只存38个A0；按既有public_beta.factor_map从同checkpoint common.values只读取得B0，不运行Writer/native或新编译bank。
+复用封口抽屉frozen_remaining的原scene/Panda累计命令恢复、真实drawer registry/contact消费者；分别重放同一原前缀，无中途克隆/额外settling。
+两节点live均无严格空卡，gpu02多卡仅约150–210MiB/0%进程；可在显存余量内共驻，不改变他人作业。当前本项目0卡，现行全局/单节点上限6。
+工程实现与CPU资产/因子/信息墙检查进行中；正式首T8/C8两对须来自clean pushed detached，实际闭环尚未启动。
+专用两文件由本session拥有，整批后退役；只在完成或真实边界一次回main交回窗口，无自动后继。
+
 ## 2026-10-06 main登记task23已打开状态的条件算子因果比较
 
 唯一active分析为docs/designs/task23_post_open_operator_diagnostic_20261006.md及findings§353。

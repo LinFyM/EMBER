@@ -14,6 +14,11 @@ CPU资产/完整因子/公共参数键映射、T/C同source/normalization/topolo
 首launch两个worker因run_contract/facade导入循环在0模型/0环境/0前向/0重放处退出1；26.0876完整GPU秒及16.2170进程树CPU秒保留。
 原CPU因子检查先导入bank，掩盖独立worker顺序；已修正临时入口先初始化canonical facade，新进程按真实worker导入顺序验证通过，无CUDA初始化。
 SQLite首两起点仍pending，rows目录为空；不改科学语义或旧冻结树，仅推送新版本后续四条未开始行，失败/加载计入原预算。
+5c1eb406 clean pushed detached sparse frozen_fix1的修复后首两worker均退出0，T8/C8 Full/Common四行全部准入，各执行原剩余240步。
+前缀碗最大差0、EEF约.049cm、原In完整一致，三层读回与封口CPU重放相同；同对实际sim/ctrl/warmstart/OSC/gripper/EEF/碗/关节差均0。
+batch2实际约4.46–4.62 plans/s、9.079GiB峰；首四行均未In，完整原件保留，不以此替代其余60行。
+按该吞吐和显存余量，剩余30起点在同冻结版本用gpu02:0/1/2/3动态long-first queue、persistent environments，真实batch8后有余量实测16，全部仍固定64行。
+修复后首launch124.6066完整GPU秒/129.5456进程树CPU秒，连首失败累计150.6942GPU秒，远低于2GPUh；剩余预计数分钟，无额外profile行。
 专用两文件由本session拥有，整批后退役；只在完成或真实边界一次回main交回窗口，无自动后继。
 
 ## 2026-10-06 main登记task23已打开状态的条件算子因果比较

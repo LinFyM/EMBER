@@ -9079,3 +9079,54 @@ RB去掉执行无关夹爪幅度信用后仍未修复原能力，原采集条件
 末点72唯一候选，63为相邻证据；只有训练或SDE收益不算目标进步。固定窗口后整批停止，无参数小扫或自动controls/Test。
 工程估计4–6h，硬8wall/20完整GPUh/48GiB；真正承接后实验session持tracked/Git独占窗口，主讨论消费结果并承担后继判断。
 这是基于不同信用机制的有界学习假说，不是新结果、已解决迁移或最终方法成立；实际启动必须有独立承接与资源/冻结原件。
+
+## 364. 共享去噪路径回报学习完成：信用接通但固定seen与held未形成完整收益（2026-10-06）
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45从main57369d1e实际承接，138行合同完整执行。
+科学运行均为1c90e7d5681bf18c99f9dc4084225d03e76ee929 clean pushed detached；退役/文档Git另记，不把读取身份改成训练来源。
+父T2340/source/prefix/原36task与50教学池、38/rank128及原完整A0/B0/P/C/D/O图保持；72次新共享AdamW与1152自身episode完成，63相邻证据/72唯一候选。
+新1364评测全退出：父SDE144，父ODE只新增132并复用原12，63/72原ODE各400，末72 seen ODE/SDE各144。
+严格teacher/scene/env/policy及共用初始noise配对零错误，没有重跑已完成行、held教师特权/Test或额外科学case。
+
+|global task，每格50|T2340|63 ODE|72 ODE|
+|---|---:|---:|---:|
+|3|45|45|43|
+|6|6|5|7|
+|11|45|43|42|
+|16|5|7|6|
+|23|0|0|0|
+|26|36|35|33|
+|31|24|19|27|
+|39|0|0|0|
+|合计|161|154|158|
+
+72四suite为50/48/33/27；63为50/50/35/19，父51/50/36/24，三者仍6task有成功/4suite。
+63对父R140/G14/L21/churn35/Jaccard.8；72对父141/17/20/37/.792135；对强MT153分别120/34/33/67/.641711和117/41/36/77/.603093。
+72相邻63为142/16/12/28/.835294；其task31虽+3，同时3/11/26为−2/−3/−3，不以总分接近或单例更快隐藏能力交换。
+全部成功/失败和R/G/L逐行集合、per-task/suite/breadth在root analysis/results_summary.json、paired_case_sets.json及两个TSV。
+
+父seen ODE/SDE均109/144，末ODE102/SDE109；末对对应父为R95/G7/L14/churn21/J.818966和100/9/9/18/.847458。
+父SDE/ODE虽同总数，R95/G14/L14；末SDE/ODE为89/20/13，不能称分布相同。
+SDE自身也未净提高，故本批阴性不能只解释为SDE增益未转回ODE；固定seen原ODE反而下降，两held邻点均未反超强父。
+未选高点/union/训练或SDE成绩，本候选没有合同要求的有覆盖实质收益；停止本窗口，不追加RL/noise/LR/seed/controls/Test。
+
+288四episode组有140非零LOO（48.61%）；每36task等权8访问，六原参数组在68/72更新均非零finite，140组native H/X与public-B native pass均非零，source_trainable0。
+实际reservoir18346个decision/36692个全50×32去噪转移的source/shape/finite、两步无放回与Q/M补权已读回；8完整ECP和终点optimizer/scheduler/sampler/rank RNG字段保留。
+采集830/1152成功，各9宏步块103/105/106/104/91/107/105/109；事件初态/教学/噪声改变，不能当配对提升。
+非零信用排除本窗口整体无信用/公共native遗漏，不证明信用低方差、video有必要增量或机制语义已学会；不把preclip norm/内部指标当成功或调参资格。
+
+全部1776条自身连续原件（1364新+T400+原seen12）与真实动作、规划提案/T+1位置/谓词已核；不得把末次成功后尚未执行的提案命令当动作，实际continuous是定界原件。
+Task16各50的butter≥3cm为T12/63 14/72 14、orange21/19/20，完整In5/7/6；这是body原点运动，不是grasp真值。固定init0仍搬orange且butter不动，首次orange≥3cm 204/91/103，局部更快未修对象目标。
+Task39三臂各50目标杯均≥3cm，In/Close各0；路径/运动有差异而目标缺口保持，不重建接触/炉腔/姿态oracle。Task23 In全0、碗≥3cm为1/1/0；本批无动态三层/Open/contact，不能由根body或碗不动命名未开柜/未切换。
+不利例：task3/init0父96/63 115完成，72到盘附近仍220未On；seen29/init32末ODE瓶升高42.85cm仍失败，父仅3.32cm也失败而两个SDE152/153完成；seen34/init32父ODE249成功、末ODE520未第二On。
+正例同保留：task31/init0 T320/63 302/72 296完整两物In，seen73/init32四臂Close均成立；它们不证明新held组合、机械必要姿态或同一控制器。
+
+新157full/1207compact，full每路6714个实际replan RGB完整留存；capture_coverage列全部时钟/源，不补终态、不称compact有图。
+本次实际看官方8task/init0×T/63/72及seen29/34/73/init32四臂共36clips的均匀8个已保存时刻、两路576图；并非所有full的所有帧，逐项限制/来源见RGB/visual_review.json。
+唯一root /data1/user/ymdai/ember_runs/denoising_return_writer_20261006；report、raw、银行、完整checkpoint、逐采样/逐行/聚合/失败/退出/成本及Git/frozen保留。
+全部GPU消费者退出，完整42272.810409GPU秒=11.742447h/20；实测root35.342GiB，加三工程worktree等保守37GiB/48，tmp约12.08MB/4GiB，现场两节点无ymdai GPU。
+首pidfd包装编译有效而stdout丢失、独立准入拒绝及连带加载停止、LIBERO配置EOF、较大第二profile OOM和CPU检查假定失败均保留；只修已知ops/读回接口，不把科学阴性改bug。
+实际3rank训练32/16，profile64/32 backward OOM后复位；推理frame64→128使用固定未完成条件，72实际峰20.21/20.32GiB，最多6卡，persistent replicas2→3，完整预算和未计时CPU限制见resource_ledger。
+
+依据合同退役五专用owner/薄入口及临时SDE/bank/hooks，2e1ccc68已集成推送；canonical共享面恢复，只留已验证的零步失败动作(0,7)保存修复。原冻结树不热改。
+整批唯一投递、真实唤醒与tracked/Git交回看completion/delivery_receipt；main独立消费并负责后继科学取舍。没有自动下一批；此阴性约束本次完整共享去噪回报假说，不证明所有RL或固定数据内所有方法无效。

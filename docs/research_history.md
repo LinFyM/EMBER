@@ -4389,3 +4389,13 @@ PB/PZ同保留D七新增的四个，且first5功能修正仍cosine.949369/幅度
 findings§363与denoising_return_writer_learning_20261006.md明确继承9/25 RAW/RB及§151撤回边界。
 新假说采用原生去噪随机转移score，保留T2340的原视频到LoRA图；不是复活末端Gaussian或宣称FM已被证伪。
 固定72共享更新与63/72原ODE400判断，SDE/seen收益不能替代held；登记时尚未实际承接或计算，后续以progress/原件为准。
+
+## 2026-10-06：共享去噪路径回报学习完整72窗口未形成稳定迁移增益
+
+从T2340原完整A0/B0/P/C/D/O与state-free原教学编译图开始，1c90e7d5 clean pushed detached完成72更新/1152自身episode及1364新评测，8完整ECP留存。
+新随机50×32去噪转移LOO评分/完整native公共信用确实接通，140/288组非零；不把接通当语义或收益，完整论证和source见findings§364。
+63/72原ODE为154/158，父161/强MT153；72对父R141/G17/L20，对63 142/16/12。task31局部+3伴其它任务下降，23/39仍0，没有覆盖扩大。
+父seen ODE/SDE均109，末102/109；没有SDE净收益，故不能只称执行分布转换丢了已有收益；有限固定窗口阴性不证明所有RL无效。
+全部raw/真实动作/条件来源/采样/成功集合及固定完整捕获原件保留，实际RGB审阅范围和缺项如实记录。无新oracle、held教师特权或Test。
+root denoising_return_writer_20261006留contract/Git/frozen/checkpoints/report/resource/failed attempts；完整GPU11.742447h，新增峰保守37GiB/48，三次ops/准入失败、一次授权profile OOM和读回检查修正均计入并保留。
+本批专用运行面及临时注册2e1ccc68退役，保留已验证的零步失败保存修复；工程树清理、最终push及整批真实交回以completion/receipt为准，没有自动新学习或扫描。主讨论独立消费后负责接续。

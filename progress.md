@@ -1,3 +1,14 @@
+## 2026-10-06 去噪回报批次整批完成，停止计算并退役专用面
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成唯一denoising_return_writer_20261006，结论/原件见findings§364与root analysis/report.md。
+72更新/1152训练episode/1364新评测完整退出，63原ODE154/400、72唯一候选158/400，低于父T161；MT153仍强参照。父seen ODE/SDE109/109，末102/109；非零LOO140/288及六组/native信用实际接通不替代性能。
+全部配对与source/采样/实际动作/原件CPU检查通过；新157full/1207compact、每路6714已拍时刻保留，实际查看36固定clip×8时刻×双RGB，未补终态/compact图片或新增oracle。
+完整GPU11.742447h/20，新增峰保守37GiB/48（含三个工程树/失败/tmp/frozen），临时12.08MB/4GiB；CPU精确计量与未计时限制、所有失败及资源退出见root ledger/launch。
+source仍clean pushed detached1c90e7d5；退休代码2e1ccc68已push，删除五owner/薄入口和临时SDE/bank注册，保留原Git/frozen/raw/checkpoint及零步保存修复。
+本批没有active模型/环境/梯度或自动后继。原active design及下方运行/待启动文字已成为历史，不能恢复。
+实验session只完成交付封口；唯一整批回main01a10a97-dedf-7042-a6a2-60214f0ef7b1、notLoaded官方resume真实唤醒/回执及canonical tracked/Git归main以root/completion.json、launch/delivery_receipt.json为准。交回后实验session停止新增工作，main独立消费并承担科研接续。
+Owner持续自主授权与最终目标未完成；停止这批不表示方法或EMBER目标完成。
+
 ## 2026-10-06 父SDE144完成，独立ODE准入拒绝已按原合同接续
 
 接续的首次训练加载暴露per-rank LIBERO空配置目录导致非交互import的EOF；没有环境/采集/更新，失败费用在batch_attempt2_exit.json完整保留。启动owner现调用原prepare_libero_config补同一canonical registry，不改frozen科研代码。

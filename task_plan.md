@@ -1,3 +1,9 @@
+## 2026-10-06 去噪回报学习固定窗口结束，没有新active执行
+
+findings§364保留72原ODE158、63 154、父161/MT153及全部得失；固定seen SDE无净提升、ODE下降。实际完整信用/72更新没有转化为合同要求的相邻held有覆盖收益。
+本批停止并退役专用面，Git/frozen/原件与完整成本保留。主讨论消费后承担科学取舍；没有自动延長RL/alpha/LR/seed/Writer/controls/Test，原design及下方“当前”已是历史。
+唯一整批交付和tracked/Git窗口归属以progress及run root completion/delivery_receipt为准；最终目标仍是首次视频编译的完整可迁移能力，本批结束不是研究完成。
+
 ## 2026-10-06 当前有界学习：共享Writer的去噪路径成功信用
 
 唯一新合同为docs/designs/denoising_return_writer_learning_20261006.md，科学依据及旧RL负证据见findings§363。

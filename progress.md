@@ -7,6 +7,9 @@
 宏步1原合法轨迹上的两次discard profile已结束：32/16全512转移max35.170s、max_alloc24918350336B；64/32在native反向OOM（local CUDA2=physical7共驻），max_alloc39347417600B，失败及完整trace保留。父/optimizer/RNG复位，实际选择32/16；两次限额已用完，不追加profile或科学case。
 完整checkpoint9事件已自动预算预测：mean_macro129.101s、当时累计2.0293GPUh，固定余下1088评测/944编译预计整批13.2037GPUh；仍守12:48:42Z硬deadline。此处按父面板退出的资源调度事件一次读profile/forecast，未轮询训练metrics/cache；长任务继续由唯一owner等待真实退出与checkpoint事件。
 
+完整63 checkpoint触发官方400物化，与余下训练并行；gpu02[2,3]的原固定400条件实际采用推理frame64（未加forward/profile案例），完整exit0，max_reserved18176016384B=16.93GiB，wall560.965s/1121.929GPU秒。canonical LoRA/metadata消费者通过。
+63 ODE400已启动gpu02[2,3,4]×2 replicas，训练仍gpu02[1,0,7]，当前合计6卡且现场cap6，新增可用卡自然纳入；没有整批两卡/四卡限制。72新bank仅在live≥36GiB、已完成64测量≤18GiB时物理放大至frame128，否则沿64/32显存准入；原teacher/条件/公式/FP32 bank均不改，没有第三次discard更新。
+
 父SDE144实际完成109/144，36task完整且不是held结果；满足原合同的正奖励门限，原件只读保留，不重跑。
 随后parent ODE132已prepare、未执行科学行，在canonical evaluator实时准入处exit1；此前双节点snapshot可用但拒绝瞬间未保存telemetry，不能指定为某一外部进程或唯一memory/util原因。
 调度器连带SIGTERM的训练仍在加载阶段，train目录为空、没有run_contract/raw/采集/更新；实际GPU分配及失败费用保留，允许从同一父权重/fresh optimizer/RNG重新开始原宏步流。

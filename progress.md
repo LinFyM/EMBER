@@ -1,3 +1,18 @@
+## 2026-10-06 task23固定完整LoRA的执行语言诊断全部64新行封口
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45完成唯一task23_post_open_language_20261006，见findings§357。
+从d5491f2e承接、fa23dff2 clean pushed detached冻结：新两臂各32完整续行，合计8full/56compact，与旧32实际Full共同32/32准入，branch/runtime差0。
+T exact/explicit/remaining In均0/9；C为1/23、0/23、0/23，两新臂均无新增且丢失C16旧Full step265成功。原T161/C140与初态task23T0/C1不改。
+局部正反运动、关回/保持与全部迟开短余时保留，不以Open或搬碗晋级；C12 explicit晚段抬碗仍未In、T19剩余句丢失明显搬运、C16保持更久仍失败。
+首真实tokens/mask/50×7/physical5、原noise剩余索引、6990前缀/12210后缀步、三层/geom/直接力及32旧引用全部核验；无新运行失败或重复完成行。
+新8full380实际时刻760图和旧4Full183时刻366图均已看，来源/绝对步/时钟保留；无terminal图或compact画面声明，旧28失败suffix缺项保持。
+六worker均退出0、现场两节点无ymdai GPU进程；全批.248045350GPUh、worker树.253762877CPUh，含检查/分析及辅助保守总CPU界4.25714/16。
+固定行batch2→6→24提高实际吞吐至9.415 plans/s，峰12.767/14.654GiB，队列耗尽不扩profile；新增峰保守1GiB/4。
+唯一root /data1/user/ymdai/ember_runs/task23_post_open_language_20261006/，完整report/raw/pairs/aggregate/verification/RGB/来源/资源/退出保留。
+专用两文件368行与运行入口退役，保留Git/fa23dff2 frozen；最终main推送、工程树清理与一次整批交回见completion/delivery_receipt。
+本批计算结束、无active新执行或自动语言/切点/训练/400/RL/Test；实验session整批交回后停止新增工作，main独立消费后接续Owner持续授权科学判断。
+本段以下承接、active及待派发文字均属此前时点，不能恢复旧批。
+
 ## 2026-10-06 实验session承接固定LoRA的task23执行语言诊断
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取98行active design及findings§355–356，从clean pushed main d5491f2e接管canonical tracked/Git独占窗口。

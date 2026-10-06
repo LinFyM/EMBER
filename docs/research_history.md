@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-06：task23执行文本两新臂全部阴性，原完整句正例保持
+
+findings§357与[98行合同](designs/task23_post_open_language_diagnostic_20261006.md)固定完整G(V,L0)、32真实已打开起点/剩余noise，
+仅新增explicit_full/remaining_goal各32；旧exact_full32实际Full只读复用，含C16成功，0Writer/native/teacher HDF/梯度/Test。
+所有32三方共同准入、branch/runtime差0；T三臂0/9，C1/23、0/23、0/23，两个新文本均无新增并丢失C16，原400/task23分数保持。
+C12明确完整句有晚段抬碗而不In、T19删开柜分句丢失明显搬运、C16保持Open更久仍失败；全部局部反向/迟开/短余时保留。
+64新原件6990prefix/12210suffix步、首token/50×7/physical5、三层/真实contact与力，新8full380时刻760图及旧4Full183时刻366图完整查看/来源可复核。
+旧28失败suffix缺项保持、本次0失败；不是视频理解、唯一根因、新部署改写或架构选择，停止本项执行文本解释不追加扫描/学习。
+唯一root /data1/user/ymdai/ember_runs/task23_post_open_language_20261006/；完整.248045350GPUh、worker树.253762877CPUh、辅助含计保守CPU界4.25714/16、新增峰界1GiB/4。
+实测batch2→6→24，最高9.415 plans/s/allocated12.767GiB/reserved14.654GiB；队列耗尽不增加profile行。专用面退役，Git/frozen/raw保留。
+最终main集成push、资源/工程树清理及一次整批回报/窗口交回见completion/progress；无自动后继，main独立消费后继续科学判断。
+
 ## 2026-10-06：main消费条件作用并登记固定参数下的执行文本辨识
 
 findings§355直接核§354原件、实际因子消费者和固定8份双RGB全部规划时刻；C16 Full成功、T19搬碗而Common均无相应能力，

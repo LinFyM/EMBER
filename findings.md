@@ -8863,3 +8863,49 @@ C16成功终态开度10.07cm、Open false，与两个init8的Common保持更大�
 无完整增益便关闭本语言诊断，局部运动不推出修复；所有分支均不自动开阶段模型、语言部署、训练或Test。
 本项只是诊断例外，不更改EMBER必须输入exact task language或初次完整LoRA的目标，不改任何原400成绩。
 预计45–75分钟，硬实际承接起2h wall/2GPUh/16CPUh/4GiB；执行与真实承接见progress，无自动后继。
+
+## 357. task23固定完整参数的执行文本比较关闭：无完整增益，保留旧指令正例与局部反向损失（2026-10-06）
+
+唯一合同为98行docs/designs/task23_post_open_language_diagnostic_20261006.md（§356），从main d5491f2e承接，实际工程/冻结fa23dff2。
+固定§354的T9/C23全部32事前起点及完整LoRA W=G(V,L0)，只改变实际policy L；旧exact_full=原句严格复用32实际Full，其中C16总step265成功不可替换。
+新explicit_full='open the top drawer and put the bowl in the top drawer'与remaining_goal='put the bowl in the top drawer'各32条，仅本次64新续行。
+T2340为(A0,B0+M)，C900为原conditional_read_write900的(A0+S,B0+M)，不是Gamma；没有新Writer/native/teacher HDF、梯度/Test或新物理。
+
+全部64新行完成、全部32三方共同准入，无排除、新失败、重跑或额外科学profile行；fixed8full/56compact与原horizon/noise保持。
+三方实际branch六物理＋六sim/ctrl/warmstart/OSC/gripper字段和原In的最大差0（容限1e-8）；原前缀EEF最大差.0508966cm、碗0、完整In一致且branch仍Open。
+真实processor保持双RGB/state，三文本长度49–50/52–53/47–48、padding200/mask无截断；新32对首tokens均不同，真实首normalized50×7/physical5已保存。
+改变L自然改变原生prefix token/KV及自身hidden，不改prefix权重或重编译G(V,L0)，不能缩写成单层语言方向/纯attention干预。
+所有case的实际首规划差额、原policy seeds从branch/5起、三层连续开度/接触geom/直接力、EEF/碗/原生In均由CPU数组读回核实。
+
+| 模型 | exact_full旧实际Full | explicit_full新 | remaining_goal新 |
+| --- | ---: | ---: | ---: |
+| T2340 | 0/9 | 0/9 | 0/9 |
+| C900 | 1/23（init16） | 0/23 | 0/23 |
+
+主要remaining_goal对explicit_full为T9/C23均无新增/丢失/保留成功；各新臂对exact_full都无新增，C均丢失init16成功。
+原T161/C140及task23初态T0/C1不改；本批不是新EMBER分数或部署改写选择。旧Common只作已完成背景，旧Full未重跑或换回原400失败。
+局部运动变化与全部不利例并列：T两新明确句的≥3cm抬高行由旧16/19变为16/19与16；C旧9/16/44/48变为新explicit12/16、remaining无。
+C12 explicit在272/283步才达1cm位移/3cm抬高，最大抬高22.47cm仍不In；旧exact只有.81cm位移，remaining碗不动。
+T16两新句最大抬高30.08/30.38cm（旧24.92），1cm运动由217延后至257/252，均不In；T19 explicit晚段抬高26.78cm，remaining仅.76cm、旧27.18cm。
+C16 exact有27.40cm抬高并In265；explicit仅3.33cm、remaining2.23cm均不In，首次Open退出反而由88延至123/177。
+remaining C16末开度11.88cm较exact10.07cm更大仍丢失成功；C12 remaining末仍Open且碗不动，保留Open不等于完整后续。
+五个≤50步短余时及全部迟开起点均保留，不延时、挑状态或追加切点；1cm/3cm/接触仅描述，不命名抓稳/掉杯或阶段真值。
+
+固定新8full的380规划输入时刻/760双RGB，以及旧4exact_full的183时刻/366图均完整查看，逐frame/camera/control_step/sim_time来源可复核。
+T8/C8新句没有明显离柜搬碗；T19 explicit的可见搬运推迟而remaining缺相当变化；C16新句未出现旧Full的大幅搬运。
+末态In来自数值，旧C16最后RGB260不冒称终止265画面；没有逐控制步/积分子步/终止图，不声称见过56compact画面。
+本次6990原前缀/12210后缀步的64完整数值、实际38-target bank/语言/source/seed引用、首计划与全部图像保留。
+旧28条在途失败suffix numeric/RGB缺项继续明确，未重建/补造或据缺失解释行为；本次无新失败partial缺口。
+
+本干预没有获得“删除已完成开柜分句或明确inside目的地可调用有覆盖后续能力”的支持；按无完整增益停止该语言诊断，不续同义句/更多task或据此正式训练。
+C16原句在固定参数/状态下的正例继续约束“完全没有后续能力”；原句与条件共适配是一种仍可保留的解释，未由本批确证。
+它不证明语言普遍无用、视频动态被理解/丢失、某层故障或唯一根因；不选择新架构，旧Reader/删减/局部准备负证据不被这批抹去。
+执行者只闭环本批科学/工程合同，后继由main独立消费判断，无自动文本/切点/学习/400/RL/Test。
+
+唯一root /data1/user/ymdai/ember_runs/task23_post_open_language_20261006/：design/run_contract/cohort/exact_full_references，64新rows与32旧只读引用，
+analysis/report.md、per_row.json/tsv、pairs.json、aggregate/verification/additional_records、full_RGB/sources与visual_readback；launch全部命令/双节点live/退出/费用/completion。
+所有六worker退出0且GPU现场无ymdai进程，完整计892.96326065GPU秒=.248045350GPUh；worker进程树.253762877CPUh，检查/分析另列、含辅助保守总界4.25714CPUh/16。
+固定行实测batch2→6→24，实际4.60→约8.0→9.415 plans/s，最大12.767GiB allocated/14.654GiB reserved；剩余队列耗尽后不追加profile行。
+strg01 data1独立quota/个人du/shared事前已核，root/frozen/工程树/临时/Git新增峰保守1GiB/硬4GiB，代码/历史资产没有迁往data0。
+本批专用两入口/consumer共368行退役，净保留执行源码增长0；原Git/fa23dff2 clean pushed detached frozen与完整原件保留，root退役标记阻止重启。
+实际wall、最终main push、工程树清理与整批一次回报/窗口交回以completion和delivery_receipt为准；不存在自动后继。

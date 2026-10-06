@@ -8,6 +8,8 @@
 两个CPU启动失败与首次GPU PEFT接口失败完整保留；后者四卡whole torchrun50.11s，含1s启动保守余量共.056789GPUh，0完整更新。三次物理profile尝试均在F/source接口前失败，不再追加丢弃profile。
 已定位接口修复只切实际PEFT BaseTunerLayer，CPU实际inject_adapter消费者通过；新clean pushed detached85614d9c在gpu02[7,3,1,2]启动完整fresh450，checkpoint0已完整保存。首宏步112 queries实际13.9576s/峰reserved24.3965GiB，真实FM/stopgrad F/公共beta及关系预测信用通过，未宣称450或行为收益。owner使用现有.venv Python直接等待真实退出/checkpoint事件；labels来源f22283ff及旧冻结/费用保留。
 后续F诊断消费者仅在每replan内复用不变teacher/current关系memory，十步仍分别读取真实H0/v0；训练仍来自85614d9c，未改活动冻结树。合成CPU实际F/注册adapter在FP32/BF16、不同padded长度及末帧mask上输出误差0，十次source调用/每行一次关系编码/训练梯度/退出hook检查通过；一个临时检查脚本属性引用错误已修正，0GPU。读出将使用另一个clean pushed detached版本并保留独立代码来源，不增加科学case或丢弃更新。
+实际450更新/1800条件/50400 query完整exit0，whole四卡训练8211.91s/9.12434GPUh，已停止梯度。完成后CPU事件/任务等权/50教师各一次/同z-tau-y/stopgrad/六个完整G-F ECP及两套opt/sched检查零不符；G公共/Phi/compiler450次非零，Omega/read449，F450/Fencoder449次非零，不构成控制改善证明。
+读出代码已冻结于clean pushed detached85c57d2b。360原400完整编译exit0/0.35381GPUh，frame64最长峰17.3027GiB，已以每卡3 replicas开始原400；450两G bank及F注册分别运行/完成。后续原条件仅在现场显存可容纳两倍该峰+2GiB时使用frame128；没有额外profile更新或科学case。全批仍最多现场cap6，物化/评测按实际退出调度，不读取partial分数或用FM选择点。
 全批现场cap6，训练world4仅为条件并行吞吐安排；就绪360/450读出由原persistent dynamic消费者独立并行，不收紧整批卡数。复用原native/完整ConditionalTarget/事件/ECP与官方评测器，不恢复旧专用trainer。
 fresh450共同更新、360/450各correct400、450 G/F各seen144共1088新episode固定；旧RL不恢复，GT只在loss/F侧。完成或真实科学/预算边界一次整批回main并交回窗口，无阶段通知或自Queue。
 

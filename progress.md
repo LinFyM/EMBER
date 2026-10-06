@@ -11,6 +11,8 @@
 实际450更新/1800条件/50400 query完整exit0，whole四卡训练8211.91s/9.12434GPUh，已停止梯度。完成后CPU事件/任务等权/50教师各一次/同z-tau-y/stopgrad/六个完整G-F ECP及两套opt/sched检查零不符；G公共/Phi/compiler450次非零，Omega/read449，F450/Fencoder449次非零，不构成控制改善证明。
 读出代码已冻结于clean pushed detached85c57d2b。360原400完整编译exit0/0.35381GPUh，frame64最长峰17.3027GiB，已以每卡3 replicas开始原400；450两G bank及F注册分别运行/完成。后续原条件仅在现场显存可容纳两倍该峰+2GiB时使用frame128；没有额外profile更新或科学case。全批仍最多现场cap6，物化/评测按实际退出调度，不读取partial分数或用FM选择点。
 F seen启动在worker前被canonical recovery遗漏kind注册拒绝；prepare/load已接受同一F bank。已定位为一行接口注册，CPU实际原run contract重检完全相等，0新forward/环境/CUDA。owner停止当时G360评测及G450部分编译，全部已完成row/bank、失败/中断与累计10.4421GPUh保留；不会重训或重跑完成行。独占修复推送、新冻结后使用canonical evaluator恢复/reader迁移及已保存部分bank接续，科学合同不变。
+恢复CPU消费者进一步核清冻结路径迁移：source model完全相同，tokenizer manifest及seen-task scope内容逐字节相同，仅路径改变；evaluation provenance更新为新reader，原队列36/54个分片身份保持。G360原20个完整分片共200行保留，不重跑。实际恢复已从clean pushed detached c7c08d02启动G450余下编译gpu02[7,3]、G360剩余评测[1,2]和F450 seen评测[0,6]，现场两节点/独立quota准入与累计失败费用仍纳入40GPUh/16wall/96GiB。只读出恢复，不启动新梯度；原run contract另存，新旧训练/编译/评测代码身份分开保留。
+F真实live消费者在官方缓存EEF与sim派生量相差.161–.336mm时被离线HDF恢复的同步检查拒绝，尚无完成F行；原失败/日志与同批中断已保留，累计10.5303GPUh。已核安装robosuite的Observable按sampling_rate缓存，故该离线同步拒绝不能套到live读出。窄修复保留原sim实体与官方手观测输入，离线标签同步/几何及原模型均不改，仅live保留finite而不以该误差拒绝，并保存按row的被动差异摘要。真实Registry/adapter observe/close CPU消费者核输入字段未改、sim不变、离线拒绝仍生效，0新环境/GPU；CPU检查首次资产环境变量缺失失败原件也保留。后续readout以新clean pushed detached接续；ops owner将不再因一项消费者失败中断无依赖的有效读出，硬预算仍可停止整批。
 全批现场cap6，训练world4仅为条件并行吞吐安排；就绪360/450读出由原persistent dynamic消费者独立并行，不收紧整批卡数。复用原native/完整ConditionalTarget/事件/ECP与官方评测器，不恢复旧专用trainer。
 fresh450共同更新、360/450各correct400、450 G/F各seen144共1088新episode固定；旧RL不恢复，GT只在loss/F侧。完成或真实科学/预算边界一次整批回main并交回窗口，无阶段通知或自Queue。
 

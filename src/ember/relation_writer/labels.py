@@ -242,7 +242,12 @@ class Registry:
         out["valid"][index] = True
 
     def runtime(self, sim, observation: Mapping) -> dict[str, np.ndarray]:
-        """Privileged nonheld F diagnostic only; reads current, never future state."""
+        """Read live bodies and official cached hand observations without mutation.
+
+        The offline states[i+1] recovery check is not a live sensor gate:
+        robosuite caches its official hand observables at their sampling rate.
+        Keep those original values, as in the policy's own state input.
+        """
         from scipy.spatial.transform import Rotation
         model, data = getattr(sim.model, "_model", sim.model), getattr(sim.data, "_data", sim.data)
         binding = self.bind(model)
@@ -251,7 +256,8 @@ class Registry:
         fingers = np.asarray(observation["robot0_gripper_qpos"], dtype=np.float64)
         if position.shape != (3,) or fingers.shape != (2,):
             raise ValueError("official runtime EEF/finger observation contract changed")
-        _check_sync(data, binding, position, rotation, fingers)
+        if not np.isfinite(_sync_errors(data, binding, position, rotation, fingers)).all():
+            raise ValueError("nonfinite live body/official hand observations")
         out = self.empty([-1])
         self._fill(out, 0, data, binding, position, rotation, fingers)
         return {key: value[0] for key, value in out.items()}
@@ -277,10 +283,14 @@ def compile_episode(xml: str, assets_root: Path, robosuite_root: Path):
     return mujoco.MjModel.from_xml_string(ET.tostring(tree, encoding="unicode"))
 
 
+def _sync_errors(data, binding: Binding, position, rotation, fingers) -> tuple[float, float, float]:
+    return (float(np.linalg.norm(data.site_xpos[binding.grip_site] - position)),
+            float(np.linalg.norm(data.xmat[binding.eef_body].reshape(3, 3) - rotation)),
+            float(np.max(np.abs(data.qpos[list(binding.finger_addresses)] - fingers))))
+
+
 def _check_sync(data, binding: Binding, position, rotation, fingers) -> tuple[float, float, float]:
-    errors = (float(np.linalg.norm(data.site_xpos[binding.grip_site] - position)),
-              float(np.linalg.norm(data.xmat[binding.eef_body].reshape(3, 3) - rotation)),
-              float(np.max(np.abs(data.qpos[list(binding.finger_addresses)] - fingers))))
+    errors = _sync_errors(data, binding, position, rotation, fingers)
     # The validated recovery contract synchronizes grip p and eef-body R.
     # Raw obs gripper_states is itself the hand-q label; reconstructed fingers
     # are a diagnostic, not a replacement or an extra timing acceptance gate.

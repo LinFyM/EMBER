@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 import numpy as np
@@ -85,6 +86,7 @@ class FrozenFeedbackAdapter:
         self.policy.requires_grad_(False).eval()
         self.teachers: OrderedDict[tuple[int, int], dict] = OrderedDict()
         self.context = None
+        self.runtime_timing = {}
 
     def prepare_episode(self, *, suite, task_id, init_state_id):
         if init_state_id not in STATES:
@@ -102,7 +104,16 @@ class FrozenFeedbackAdapter:
             if item.task not in TASKS:
                 raise Pi05EvaluationError("F current registry is outside training36")
             owner = getattr(env, "env", env)
-            current.append(self.labels.registries[item.task].runtime(owner.sim, observation))
+            registry = self.labels.registries[item.task]
+            values = registry.runtime(owner.sim, observation)
+            current.append(values)
+            from .labels import _sync_errors
+            model = getattr(owner.sim.model, "_model", owner.sim.model)
+            data = getattr(owner.sim.data, "_data", owner.sim.data)
+            errors = _sync_errors(data, registry.bind(model), values['p'][0], values['R'][0], values['hand_q'])
+            stats = self.runtime_timing.setdefault(item.key, {'replans': 0, 'max_errors': [0., 0., 0.]})
+            stats['replans'] += 1
+            stats['max_errors'] = np.maximum(stats['max_errors'], errors).tolist()
         self.context = ([item.key for item in prepared], current)
 
     def _teacher(self, item):
@@ -161,6 +172,13 @@ class FrozenFeedbackAdapter:
                 self.teachers.popitem(last=False)
 
     def close(self):
+        from ember.pi05_source_checkpoint import write_json_atomic
+        path = ROOT / 'readouts/F/450/seen144/evaluation/runtime_timing' / f'worker_{os.getpid()}.json'
+        write_json_atomic(path, {'source': 'live simulator body fields and unchanged official cached hand observations',
+            'definitions': ['grip-site to official eef_pos L2 meters', 'eef-body to official rotation Frobenius',
+                            'simulator to official raw finger qpos maxabs meters'],
+            'sensor_timestamp_available': False, 'offline_label_sync_gate_unchanged': True,
+            'model_input_values_replaced': False, 'conditions': self.runtime_timing})
         self.data.close()
         self.teachers.clear()
         self.context = None

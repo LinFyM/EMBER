@@ -647,6 +647,11 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
+        if bank.get("relation_grounded_study") is True:
+            from ember.relation_writer.readout import inspect
+
+            return inspect(bank, path, source, task_keys, evaluation_role,
+                           require_formal, task_init_state_ids)
         if bank.get("reexpression_panel") is not None:
             from .reexpression import inspect
 

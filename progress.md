@@ -4,7 +4,10 @@
 实际承接2026-10-06T11:31:40Z，硬截止2026-10-07T03:31:40Z；预计8–12h，硬16wall/40完整GPUh/96GiB新增峰，包括工程/加载/profile/失败/frozen/tmp。
 唯一root /data1/user/ymdai/ember_runs/relation_grounded_writer_20261006；独立data1现场quota已核，实际计费用量1305565500KiB/soft2147483648KiB，shared可用88437562540032B；全个人目录du为1336899076096B，新增保守估计70GiB/硬96GiB。
 隔离实现和CPU消费者已完成：36场景registry最多11实体、所有内部slide/hinge保留；450步固定标签请求合计95568位置。关系表示/匹配、完整38处编译、独立F、source adapter旁路与官方400/144映射检查通过，原件在root/engineering。
-准备将clean pushed版本冻结后执行108点同步及1800训练episode标签恢复；尚无GPU、环境rollout或梯度。复用原native/完整ConditionalTarget/事件/ECP与官方评测器，不恢复旧专用trainer。
+实际1800训练episode标签已恢复，108点同步通过；最大EEF p/R误差1.0733e-15m/3.8087e-15，原双指obs标签未改，回退state双指差最大.19756mm只记录。95,568位置cache约30.4MB，0GPU，原件在labels/。
+两个CPU启动失败与首次GPU PEFT接口失败完整保留；后者四卡whole torchrun50.11s，含1s启动保守余量共.056789GPUh，0完整更新。三次物理profile尝试均在F/source接口前失败，不再追加丢弃profile。
+已定位接口修复只切实际PEFT BaseTunerLayer，CPU实际inject_adapter消费者通过；新clean pushed detached85614d9c在gpu02[7,3,1,2]启动完整fresh450，checkpoint0已完整保存，尚不宣称450或完整宏步通过。owner改用支持pidfd的现有.venv Python直接等待真实退出/checkpoint事件；labels来源f22283ff及旧冻结/费用保留。
+全批现场cap6，训练world4仅为条件并行吞吐安排；就绪360/450读出由原persistent dynamic消费者独立并行，不收紧整批卡数。复用原native/完整ConditionalTarget/事件/ECP与官方评测器，不恢复旧专用trainer。
 fresh450共同更新、360/450各correct400、450 G/F各seen144共1088新episode固定；旧RL不恢复，GT只在loss/F侧。完成或真实科学/预算边界一次整批回main并交回窗口，无阶段通知或自Queue。
 
 ## 2026-10-06 当前授权：关系监督与训练用反馈函数的完整共同学习

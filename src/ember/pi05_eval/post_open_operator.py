@@ -8,6 +8,7 @@ from pathlib import Path
 import resource
 import sqlite3
 import time
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -93,7 +94,7 @@ def runtime_state(env):
         gripper_current_action=np.asarray(robot.gripper.current_action).copy())
 
 
-def begin(env, row, arm, contract, owner):
+def begin(env, row, arm, contract, owner, worker_id):
     from ember.pi05_eval.episode import stage_predicate_snapshot
     from ember.pi05_eval.trajectory_capture import start_passive_trace, record_passive_step
 
@@ -132,8 +133,10 @@ def begin(env, row, arm, contract, owner):
                      drawer_max_qvel_error_m_per_s=verr.max(axis=0).tolist(),
                      branch_top_Open=bool(prefix['drawer_Open'][-1, 0]))
     admitted = deviation['interpretable_parent'] and deviation['branch_top_Open']
-    directory = ROOT / 'rows' / f"{row['model']}_state{row['state']:03d}_{arm}"
-    directory.mkdir(exist_ok=False)
+    canonical = ROOT / 'rows' / f"{row['model']}_state{row['state']:03d}_{arm}"
+    if (canonical/'row.json').exists(): raise ValueError('completed row must not run again')
+    directory = canonical / f'attempt_{worker_id}' if canonical.exists() else canonical
+    directory.mkdir(parents=True, exist_ok=False)
     np.savez_compressed(directory / 'prefix.npz', body_names=np.asarray(names), **prefix,
                         **{'branch_' + k: v for k, v in runtime_state(env).items()})
     write(directory / 'prefix.json', dict(deviation=deviation, admitted=bool(admitted), registry=registry))
@@ -142,7 +145,7 @@ def begin(env, row, arm, contract, owner):
     start_passive_trace(env, slot, capture)
     drawers = owner.DrawerCapture(env, registry, pair_group); drawers.sample(0)
     condition = source['operator_read_write_lora']['condition_id']
-    slot.update(env=env, row=row, arm=arm, directory=directory, drawer_capture=drawers,
+    slot.update(env=env, row=row, arm=arm, directory=directory, canonical=canonical, worker_id=worker_id, drawer_capture=drawers,
         replan_index=branch // 5, branch=branch, admitted=bool(admitted), deviation=deviation,
         factor_key=row['model'] + (':Common' if arm == 'Common' else ':' + condition),
         full=(row['model'], row['state']) in FULL_CASES, rgb=[], rgb_steps=[],
@@ -150,6 +153,19 @@ def begin(env, row, arm, contract, owner):
         original_branch_actions=original['actions'][branch:branch + 5],
         body_names=names, registry=registry, branch_runtime=runtime_state(env), success=False)
     return slot
+
+
+def saved_partner(row, arm):
+    """Read a completed arm's captured branch; never restore a mid-state or rerun it."""
+    path=ROOT/'rows'/f"{row['model']}_state{row['state']:03d}_{arm}"/'row.json'
+    if not path.exists(): return None
+    result=json.loads(path.read_text())
+    with np.load(result['prefix'], allow_pickle=False) as f:
+        data={key:f[key] for key in f.files}
+    return dict(passive_trace={k:[data[k][-1]] for k in ('body_positions','eef_pos','eef_quat','gripper_qpos')},
+        drawer_capture=SimpleNamespace(qpos=[data['drawer_qpos'][-1]],qvel=[data['drawer_qvel'][-1]]),
+        branch_runtime={k[7:]:v for k,v in data.items() if k.startswith('branch_')},
+        stage_predicate_last=tuple(data['predicates'][-1].tolist()), admitted=result['admitted'])
 
 
 def pair_check(left, right):
@@ -199,16 +215,17 @@ def plan(slots, policy, processor, batched, factor_states, measurements):
         peak_allocated_bytes=torch.cuda.max_memory_allocated(), peak_reserved_bytes=torch.cuda.max_memory_reserved()))
 
 
-def finish(s):
+def finish(s, partial=False):
     arrays = {**trace_arrays(s), **s['drawer_capture'].arrays()}
     arrays.update(body_names=np.asarray(s['body_names']), control_steps=np.arange(s['branch'], s['branch'] + s['steps'] + 1),
                   first_normalized_plan=s['first_normalized'] if s['first_normalized'] is not None else np.empty((0, 7)),
                   first_physical_5=s['first_physical'] if s['first_physical'] is not None else np.empty((0, 7)),
                   original_branch_actions=s['original_branch_actions'])
-    np.savez_compressed(s['directory'] / 'continuation.npz', **arrays)
+    trace_name='partial_continuation.npz' if partial else 'continuation.npz'
+    np.savez_compressed(s['directory'] / trace_name, **arrays)
     rgb_path = None
     if s['full']:
-        rgb_path = str(s['directory'] / 'full_rgb.npz')
+        rgb_path = str(s['directory'] / ('partial_full_rgb.npz' if partial else 'full_rgb.npz'))
         np.savez_compressed(rgb_path, rgb=np.asarray(s['rgb'], dtype=np.uint8),
                             control_steps=np.asarray(s['rgb_steps']), cameras=np.asarray(['agentview', 'eye_in_hand']), rotation_degrees=np.asarray(180))
     result = dict(model=s['row']['model'], state=s['row']['state'], arm=s['arm'],
@@ -216,10 +233,11 @@ def finish(s):
         success=bool(s['success']), admitted=s['admitted'], prefix_deviation=s['deviation'],
         capture='full' if s['full'] else 'compact', full_rgb=rgb_path,
         source=s['row']['source'], policy_noise_seeds=s['policy_noise_seeds'],
-        first_noise_index=s['branch']//5, trace=str(s['directory']/'continuation.npz'),
+        first_noise_index=s['branch']//5, trace=str(s['directory']/trace_name), worker_id=s['worker_id'],
         prefix=str(s['directory']/'prefix.npz'), registry=s['registry'], pairing=s['pairing'],
-        exit='complete' if s['admitted'] else 'prefix_not_admitted')
-    write(s['directory'] / 'row.json', result)
+        exit='worker_error_partial' if partial else ('complete' if s['admitted'] else 'prefix_not_admitted'))
+    write(s['directory'] / ('partial_row.json' if partial else 'row.json'), result)
+    if not partial and s['directory']!=s['canonical']: write(s['canonical']/'row.json',result)
     return result
 
 
@@ -264,18 +282,26 @@ def run_worker(max_pairs, worker_id, gpu_id):
     from libero.libero.envs import OffScreenRenderEnv
     task = selected[0]['source']['task']
     bddl = Path(contract['libero_paths']['bddl_files'])/task['problem_folder']/task['bddl_file']
-    envs, results, measurements = [], [], []
+    envs, results, measurements, active = [], [], [], []
     try:
         capacity = max_pairs
         while indices := claim_pairs(capacity, worker_id):
             group = [cohort['rows'][i] for i in indices]
-            while len(envs) < 2 * len(group):
+            needed=sum(saved_partner(r,a) is None for r in group for a in ('Full','Common'))
+            while len(envs) < needed:
                 envs.append(OffScreenRenderEnv(bddl_file_name=str(bddl), camera_heights=256, camera_widths=256))
-            active = [begin(envs[2*i+j], row, arm, contract, owner)
-                      for i, row in enumerate(group) for j, arm in enumerate(('Full','Common'))]
-            for i in range(len(group)): pair_check(active[2*i], active[2*i+1])
+            active=[]
+            for row in group:
+                pair=[]
+                for arm in ('Full','Common'):
+                    saved=saved_partner(row,arm)
+                    if saved is not None: pair.append(saved)
+                    else:
+                        slot=begin(envs[len(active)],row,arm,contract,owner,worker_id)
+                        active.append(slot); pair.append(slot)
+                pair_check(*pair)
             for s in list(active):
-                if not s['admitted']: results.append(finish(s)); active.remove(s)
+                if not s['admitted']: results.append(finish(s)); active=[v for v in active if v is not s]
             while active:
                 plan(active, policy, processor, batched, factor_states, measurements)
                 for s in list(active):
@@ -287,12 +313,18 @@ def run_worker(max_pairs, worker_id, gpu_id):
                         s['drawer_capture'].sample(s['steps'])
                         if done or s['branch'] + s['steps'] == 300: break
                     if s['success'] or s['branch'] + s['steps'] == 300:
-                        results.append(finish(s)); active.remove(s)
+                        results.append(finish(s)); active=[v for v in active if v is not s]
             with sqlite3.connect(ROOT/'launch/pairs.sqlite') as db:
                 for index in indices: db.execute('UPDATE pairs SET status="done" WHERE cohort_index=?', (index,))
             # Use the authorized rows themselves to test physical 8 -> 16 batches.
             if capacity == 4 and torch.cuda.max_memory_reserved() < 32*1024**3:
                 capacity = 8
+    except BaseException as error:
+        for s in active:
+            if not (s['canonical']/'row.json').exists(): finish(s, partial=True)
+        write(ROOT/'launch'/f'{worker_id}_failure.json',dict(error=repr(error),
+            unfinished=[str(s['directory']) for s in active if not (s['canonical']/'row.json').exists()]))
+        raise
     finally:
         for env in envs: env.close()
         batched.close()

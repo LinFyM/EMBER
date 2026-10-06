@@ -69,16 +69,23 @@ def main():
     with sqlite3.connect(ROOT/'launch/pairs.sqlite') as db:
         db.execute('CREATE TABLE IF NOT EXISTS pairs(cohort_index INTEGER PRIMARY KEY, remaining INTEGER, status TEXT, worker TEXT)')
         if args.phase=='remaining':
-            if len(list((ROOT/'rows').glob('*/row.json')))!=4: raise RuntimeError('four first consumer rows not complete')
-            if not all(json.loads(p.read_text())['admitted'] for p in (ROOT/'rows').glob('*/row.json')):
-                raise RuntimeError('first consumer prefix pairing invalid; do not enlarge panel')
+            for model,state in [('T2340',8),('C900',8)]:
+                for arm in ('Full','Common'):
+                    p=ROOT/'rows'/f'{model}_state{state:03d}_{arm}'/'row.json'
+                    if not p.exists() or not json.loads(p.read_text())['admitted']:
+                        raise RuntimeError('four first consumer rows not admitted/complete')
         for i,r in enumerate(cohort['rows']):
             if (i in indices)==(args.phase=='admission'):
                 existing=db.execute('SELECT status FROM pairs WHERE cohort_index=?',(i,)).fetchone()
                 if existing is None:
                     db.execute('INSERT INTO pairs VALUES(?,?,"pending",NULL)',(i,r['remaining_control_steps']))
                 elif existing[0]!='pending':
-                    raise RuntimeError('do not retry an attempted scientific start')
+                    completed=[(ROOT/'rows'/f"{r['model']}_state{r['state']:03d}_{arm}"/'row.json').exists() for arm in ('Full','Common')]
+                    if all(completed):
+                        db.execute('UPDATE pairs SET status="done" WHERE cohort_index=?',(i,))
+                    elif args.attempt>1 and existing[0]=='running':
+                        db.execute('UPDATE pairs SET status="pending", worker=NULL WHERE cohort_index=?',(i,))
+                    else: raise RuntimeError('resume only unfinished arms after an explicit engineering repair')
     started=time.time(); cpu_before=resource.getrusage(resource.RUSAGE_CHILDREN)
     processes=[]; logs=[]; commands=[]; active_times=[]
     try:

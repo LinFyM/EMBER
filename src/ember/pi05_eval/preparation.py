@@ -412,6 +412,11 @@ def _selected_tasks_and_capture(
     source_sft_requested: bool, output_dir: Path, repo_root: Path,
 ) -> tuple[tuple[Any, ...], dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
     installed_tasks = _select_init_states(args, installed_tasks)
+    path = getattr(args, "static_task_lora_manifest", None)
+    if path is not None and read_json(path).get("kind") == "aligned_teacher_recovery_complete_lora":
+        from ember.aligned_teacher_recovery.readout import select_tasks
+
+        installed_tasks = select_tasks(args, installed_tasks)
     subset_tasks, subset = _task_subset_tasks(args, installed_tasks, adapter_kind=adapter_kind)
     tasks, capture = _occupancy_capture_tasks(args, subset_tasks, output_dir=output_dir,
                                              adapter_kind=adapter_kind)
@@ -504,6 +509,10 @@ def _prepared_payload(
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicates
     contract["diagnostic_task_subset"] = task_subset
+    if adapter is not None and adapter.get("kind") == "aligned_teacher_recovery_complete_lora":
+        from ember.aligned_teacher_recovery.readout import attach_provenance
+
+        attach_provenance(contract)
     if adapter is not None and adapter.get("kind") == "demonstration_comparison_lora_bank":
         contract["demonstration_comparison_scene"] = {
             "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}

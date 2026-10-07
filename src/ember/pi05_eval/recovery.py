@@ -140,7 +140,7 @@ def _reinspect_adapter(
         return inspected
     if adapter.get("kind") in {"static_task_lora_bank", "horizon_writer_lora_bank",
                                "conditional_velocity_lora_bank", "demonstration_comparison_lora_bank",
-                               "operator_read_write_lora_bank"}:
+                               "operator_read_write_lora_bank", "aligned_teacher_recovery_complete_lora"}:
         return inspect_static_task_lora_adapter(
             manifest_path=Path(adapter["manifest"]["path"]),
             source=model,

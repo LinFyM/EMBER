@@ -121,6 +121,9 @@ def _plan_action_chunks(
 ) -> None:
     import torch
 
+    if contract.get("adapter", {}).get("kind") == "aligned_teacher_recovery_complete_lora":
+        task_adapter.before_plan(slots, task=task, preprocess=preprocess,
+                                 root_seed=root_seed, replan_steps=replan_steps)
     planning = [slot for slot in slots if slot is not None and not slot["action_plan"]
                 and not slot.get("prefix_terminal", False)]
     if not planning:

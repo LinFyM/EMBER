@@ -149,6 +149,10 @@ def save_capture(
             payload["replan_predicates"] = tuple(slot["replay_replan_predicates"])
         if capture.get("external_prefix_commands"):
             payload["command_kinds"] = tuple(slot["replay_command_kinds"])
+    if capture.get("aligned_teacher_recovery"):
+        from ember.aligned_teacher_recovery.readout import capture_fields
+
+        payload.update(capture_fields(slot))
     torch.save(payload, path)
     return {
         "path": str(path),

@@ -8,11 +8,20 @@ strg01独立data1软配额2TiB、实际quota/个人du约1.355TiB及共享空间�
 固定四task12/29/32/38各同MT300完整38-target rank128 A/B/fresh FP32 AdamW/no scheduler，480×112query；
 320/480初态及T50接手、原MT接手共80行。0/160/320/480完整ECP保留，不择高点/拼任务或自动接Writer。
 16来源及旧重放前50raw/前51保存状态已CPU核误差0，T6/MT5/NN7；task38完整目标双On∧TurnOn。
-当前是CPU接口实现与来源核验，尚未启动GPU；后续所有profile/smoke/训练/EGL/失败均记完整费用。
+三次同112查询profile真实前后向完成：micro28/56/112为8.43/8.05/8.05秒，reserved17.35/24.01/38.50GiB；
+112无可辨收益而多14.49GiB，采用micro56。独立task38 fresh2→完整ECP恢复至4共448查询完成，
+真实1→2 rank迁移、76个FP32 Adam状态/时钟与显式null scheduler/scaler/224→448 cursor通过，smoke权重不入正式。
+四项正式0→320已从pushed clean detached b8abc2a4独立launch到gpu02/0,1,2,3；
+source/prefix冻结、每任务53,760查询和0/160/320/480合同保持；具体实际开始/退出/总成本见独立launch回执。
+首次CLI因冻结checkout尚未退出而找不到入口，0forward/0update、.066123秒费用保留；旧冻结未热改。
 CPU实际data owner核215040查询与4个首112批，offset1/repeat-last通过；MT原4F32+72BF16，学习参数明确转FP32。
-通用ECP只补显式null scheduler/恢复presence合同；两种scheduler CPU round-trip通过，真实2→4仍待执行。
-临时data与training owner复用FunctionalQueryDataset/NativeFlowPrediction/DirectLoRA/ECP，薄入口无第二评测器；
-结构检查无hard violation，FM宏步复杂度21因真实梯度/通信/记录内聚保留，旧80行checkpoint不扩科研逻辑，整批退役专用面。
+通用ECP只补显式null scheduler/恢复presence合同；两种scheduler CPU round-trip通过，真实2→4已完成。
+临时data/training/readout内聚owner复用FunctionalQueryDataset/NativeFlowPrediction/DirectLoRA/ECP与canonical static factor install；
+显式新rank128诊断type复用canonical scene/queue/capture/前缀真实动作，原rank16 guard不改；9个旧static CPU检查通过。
+原16条仅4条有t50双RGB，12条原RGB缺失明确，仍全部核51数值；t50后首次执行沿绝对replan10。
+薄入口无第二评测器；
+结构检查无hard violation；303行FM/341行readout为两个有限owner，约800新增source为本批临时面，
+大型canonical文件仅薄typed hooks，legacy字段校验同义提取以不扩大既有复杂度；完整面/薄hooks在封口时退役。
 root闭环工程/实际消费者/Git/冻结/学习读回/退役；只有整批或真实科学/预算/原件边界一次回main，不工程阶段停等。
 
 ## 2026-10-08 main完成跨配对科学消费，登记困难任务教师与恢复

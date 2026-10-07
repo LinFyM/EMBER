@@ -1,3 +1,13 @@
+## 2026-10-07 第二轮专家讨论材料与prompt已整理
+
+Owner要求专家在第一轮理解上深入判断接下来怎么推进，并核查缺失资料。原专家全文保存于review_materials/20261007_research_reassessment/EXPERT_RESPONSE.md；
+当前FOLLOWUP_PROMPT.md要求完整“现象→问题→竞争原因→数学／特征算子→解决原理”，正面解释为何应超过强MT并检验上一轮候选。
+EVIDENCE_ADDENDUM.md及followup_evidence/index.json给出26份既有证据约11.50MiB：4份机制读回、task23/39全量逐行与有效性边界、90条接手及两张既有RGB图。
+使用自身调用consumer_precision_repair/a019232a版本，未误用旧整体autocast文件；保留C38非准入、固定命令回放、无terminal RGB等边界及全部不利例。
+尚无广泛有效续行教师、同新增数据MT/语言完整比较或独立重复；大权重／完整hidden及新Jacobian测量未提供，不能称资料已覆盖所有未知。
+本次只复制／规范化现成科学记录并写文档，0模型／环境／GPU／新标签；没有外部联系、采纳方法、active设计或后继计算。
+数据1独立quota及峰值余量已核；JSON、导出覆盖、文档链接与diff按本次交付核验，最终推送和远程回读随Git交付确认。
+
 ## 2026-10-07 专家prompt与完整历史路线已整理
 
 Owner最新要求再次核实远程材料，并将专家任务聚焦到数月/最近两周的实际尝试、事前逻辑、正反结果与长期未突破强MT的原因。

@@ -1,0 +1,176 @@
+{
+  "schema": "ember_expert_followup_existing_evidence_v1",
+  "prepared": "2026-10-07",
+  "scope": "Existing non-held/development evidence only. No new model, environment, gradient, label, checkpoint selection, or tensor computation. The archive is not a complete replay package.",
+  "transformations": [
+    "JSON numeric values, signs, rows and ordering preserved; formatting compacted.",
+    "Local absolute paths normalized to source-relative provenance, not promises that referenced local assets are in Git.",
+    "Private worker, host and device identity fields removed; original scientific validity and consumer-repair boundaries retained.",
+    "TSV scientific columns preserved; three existing PNG files copied without editing.",
+    "The two post-open RGB sheets were already inspected and cited in the preceding main readback; they are illustrations, not new sample selection or full-panel RGB coverage."
+  ],
+  "removed_runtime_fields": {
+    "CUDA_VISIBLE_DEVICES": 2,
+    "pid": 2,
+    "worker_id": 90
+  },
+  "files": [
+    {
+      "source": "runs/joint_action_effect_credit_20261003/analysis/query_function_decomposition.json",
+      "export": "mechanism/a64_query_function_decomposition.json",
+      "export_bytes": 822108,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/native_role_self_call_20261004/attempts/consumer_precision_repair/analysis/main_scientific_readback.json",
+      "export": "mechanism/role_self_call_corrected_consumer.json",
+      "export_bytes": 725878,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/native_role_self_call_20261004/attempts/consumer_precision_repair/analysis/main_swap_all_unit_effects.json",
+      "export": "mechanism/role_swap_all_unit_effects.json",
+      "export_bytes": 24958,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/native_role_centered_content_20261004/analysis/main_scientific_readback.json",
+      "export": "mechanism/role_centered_content.json",
+      "export_bytes": 981231,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task23_drawer_state_replay_20261006/analysis/definitions.json",
+      "export": "task23_drawer/definitions.json",
+      "export_bytes": 2252,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task23_drawer_state_replay_20261006/analysis/aggregate.json",
+      "export": "task23_drawer/aggregate.json",
+      "export_bytes": 6839,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task23_drawer_state_replay_20261006/analysis/per_row.json",
+      "export": "task23_drawer/per_row.json",
+      "export_bytes": 2426778,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task23_drawer_state_replay_20261006/analysis/per_row.tsv",
+      "export": "task23_drawer/per_row.tsv",
+      "export_bytes": 64472,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task23_drawer_state_replay_20261006/analysis/contact_pairs.json",
+      "export": "task23_drawer/contact_pairs.json",
+      "export_bytes": 143597,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task23_drawer_state_replay_20261006/analysis/key_timelines.json",
+      "export": "task23_drawer/key_timelines.json",
+      "export_bytes": 409382,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task23_drawer_state_replay_20261006/analysis/sequence_summary.json",
+      "export": "task23_drawer/sequence_summary.json",
+      "export_bytes": 1886,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task23_drawer_state_replay_20261006/analysis/verification.json",
+      "export": "task23_drawer/verification.json",
+      "export_bytes": 448,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task39_door_contact_replay_20261005/analysis/readback.json",
+      "export": "task39_door/readback.json",
+      "export_bytes": 9339,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task39_door_contact_replay_20261005/analysis/per_row.json",
+      "export": "task39_door/per_row.json",
+      "export_bytes": 3895004,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task39_door_contact_replay_20261005/analysis/per_row.tsv",
+      "export": "task39_door/per_row.tsv",
+      "export_bytes": 56898,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task39_door_contact_replay_20261005/analysis/verification.json",
+      "export": "task39_door/verification.json",
+      "export_bytes": 38624,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task39_door_contact_replay_20261005/analysis/original_cavity_reference_check.json",
+      "export": "task39_door/original_cavity_reference_check.json",
+      "export_bytes": 374,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/task39_door_contact_replay_20261005/analysis/all_pair_distances.png",
+      "export": "task39_door/all_pair_distances.png",
+      "export_bytes": 202342,
+      "treatment": "original_image_unmodified"
+    },
+    {
+      "source": "runs/cross_task_post_open_transfer_20261007/analysis/per_row.json",
+      "export": "post_open_transfer/per_row.json",
+      "export_bytes": 477615,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/cross_task_post_open_transfer_20261007/analysis/per_row.tsv",
+      "export": "post_open_transfer/per_row.tsv",
+      "export_bytes": 25604,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/cross_task_post_open_transfer_20261007/analysis/summary.json",
+      "export": "post_open_transfer/summary.json",
+      "export_bytes": 6971,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/cross_task_post_open_transfer_20261007/analysis/actual_first_plan_effects.json",
+      "export": "post_open_transfer/actual_first_plan_effects.json",
+      "export_bytes": 22479,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/cross_task_post_open_transfer_20261007/analysis/rgb/T2340_state019_M23_L42/mapping.json",
+      "export": "post_open_transfer/rgb/T2340_state019_M23_L42/mapping.json",
+      "export_bytes": 7394,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/cross_task_post_open_transfer_20261007/analysis/rgb/T2340_state019_M23_L42/contactsheet.png",
+      "export": "post_open_transfer/rgb/T2340_state019_M23_L42/contactsheet.png",
+      "export_bytes": 871145,
+      "treatment": "original_image_unmodified"
+    },
+    {
+      "source": "runs/cross_task_post_open_transfer_20261007/analysis/rgb/T2340_state008_M42_demo09_L42/mapping.json",
+      "export": "post_open_transfer/rgb/T2340_state008_M42_demo09_L42/mapping.json",
+      "export_bytes": 7546,
+      "treatment": "scientific_content_preserved_paths_normalized_runtime_identity_removed"
+    },
+    {
+      "source": "runs/cross_task_post_open_transfer_20261007/analysis/rgb/T2340_state008_M42_demo09_L42/contactsheet.png",
+      "export": "post_open_transfer/rgb/T2340_state008_M42_demo09_L42/contactsheet.png",
+      "export_bytes": 822534,
+      "treatment": "original_image_unmodified"
+    }
+  ],
+  "total_evidence_bytes": 12053698
+}

@@ -158,7 +158,8 @@ def restore_registered_scene(env: Any, observation: dict, task: dict, state: int
 
 
 def validate_scene_row(row: dict, task: dict, contract: dict) -> None:
-    registered = contract.get("demonstration_comparison_scene") or contract.get("operator_read_write_scene")
+    registered = (contract.get("demonstration_comparison_scene") or contract.get("operator_read_write_scene")
+                  or contract.get("native_video_control_scene"))
     if registered is None:
         if row.get("scene_reference") is not None:
             raise ValueError("unregistered evaluation row contains a transfer scene")

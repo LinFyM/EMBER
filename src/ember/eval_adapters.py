@@ -15,6 +15,8 @@ HORIZON_WRITER_KIND = "horizon_writer_lora_bank"
 CONDITIONAL_VELOCITY_KIND = "conditional_velocity_lora_bank"
 DEMONSTRATION_COMPARISON_KIND = "demonstration_comparison_lora_bank"
 OPERATOR_READ_WRITE_KIND = "operator_read_write_lora_bank"
+NATIVE_VIDEO_MEMORY_KIND = "native_video_memory_controller"
+NATIVE_SHARED_LORA_KIND = "native_shared_lora_reference"
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -50,12 +52,14 @@ def adapter_requests(args: Any) -> tuple[str | None, bool]:
     source_requested = source_sft_requested(args)
     expert_requested = task_expert_requested(args)
     static_requested = static_task_lora_requested(args)
-    if sum((source_requested, expert_requested, static_requested)) > 1:
+    native_requested = getattr(args, "native_video_control_manifest", None) is not None
+    if sum((source_requested, expert_requested, static_requested, native_requested)) > 1:
         raise Pi05EvaluationError("PI05 evaluation adapters are mutually exclusive")
     kind = (
         "task_expert"
         if expert_requested
-        else "static_task_lora" if static_requested else None
+        else "static_task_lora" if static_requested
+        else "native_video_control" if native_requested else None
     )
     return kind, source_requested
 
@@ -214,6 +218,10 @@ def load_evaluation_adapter(
         "device": device,
         "require_formal": contract["mode"] != "smoke",
     }
+    if adapter.get("kind") in {NATIVE_VIDEO_MEMORY_KIND, NATIVE_SHARED_LORA_KIND}:
+        from ember.native_video_control.evaluation import FrozenNativeControlAdapter
+
+        return FrozenNativeControlAdapter(**common)
     if adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
         from ember.source_sft.inference import FrozenSourceSFTAdapter
 
@@ -250,6 +258,8 @@ def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
+        if (contract.get("adapter") or {}).get("kind") in {NATIVE_VIDEO_MEMORY_KIND, NATIVE_SHARED_LORA_KIND}:
+            return {"native_video_control": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == OPERATOR_READ_WRITE_KIND:
             return {"operator_read_write_lora": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == DEMONSTRATION_COMPARISON_KIND:
@@ -275,7 +285,19 @@ def validate_episode_adapter_fields(
     task_id: int,
     init_state_id: int,
 ) -> bool:
-    if adapter is not None and adapter.get("kind") == OPERATOR_READ_WRITE_KIND:
+    kind = (adapter or {}).get("kind")
+    if kind in {NATIVE_VIDEO_MEMORY_KIND, NATIVE_SHARED_LORA_KIND}:
+        from ember.native_video_control.evaluation import validate_episode
+
+        return (all(row.get(name) is None for name in (
+                    "operator_read_write_lora", "horizon_writer_lora", "static_task_lora",
+                    "demonstration_comparison_lora", "conditional_velocity_lora", "task_expert",
+                    "policy_adapter_sha256"))
+                and validate_episode(adapter, row.get("native_video_control"), suite=suite,
+                                     task_id=task_id, init_state_id=init_state_id))
+    if row.get("native_video_control") is not None:
+        return False
+    if kind == OPERATOR_READ_WRITE_KIND:
         from ember.operator_writer.bank import validate_episode
 
         return (all(row.get(name) is None for name in (
@@ -285,7 +307,7 @@ def validate_episode_adapter_fields(
                                      suite=suite, task_id=task_id, init_state_id=init_state_id))
     if row.get("operator_read_write_lora") is not None:
         return False
-    if adapter is not None and adapter.get("kind") == DEMONSTRATION_COMPARISON_KIND:
+    if kind == DEMONSTRATION_COMPARISON_KIND:
         from ember.demonstration_learning.bank import validate_episode
 
         return (row.get("horizon_writer_lora") is None and row.get("static_task_lora") is None
@@ -293,14 +315,14 @@ def validate_episode_adapter_fields(
                                      suite=suite, task_id=task_id, init_state_id=init_state_id))
     if row.get("demonstration_comparison_lora") is not None:
         return False
-    if adapter is not None and adapter.get("kind") == CONDITIONAL_VELOCITY_KIND:
+    if kind == CONDITIONAL_VELOCITY_KIND:
         from ember.writer.conditional_velocity_bank import validate_velocity_adapter_fields
 
         return validate_velocity_adapter_fields(adapter, row, suite=suite, task_id=task_id,
                                                 init_state_id=init_state_id)
     if row.get("conditional_velocity_lora") is not None:
         return False
-    if adapter is not None and adapter.get("kind") == HORIZON_WRITER_KIND:
+    if kind == HORIZON_WRITER_KIND:
         from ember.writer.evaluation import validate_horizon_writer_episode
 
         return (row.get("task_expert") is None and row.get("static_task_lora") is None
@@ -310,11 +332,8 @@ def validate_episode_adapter_fields(
     if row.get("horizon_writer_lora") is not None:
         return False
     if adapter is None:
-        return (
-            row.get("task_expert") is None
-            and row.get("static_task_lora") is None
-            and row.get("policy_adapter_sha256") is None
-        )
+        return all(row.get(name) is None for name in (
+            "task_expert", "static_task_lora", "policy_adapter_sha256"))
     if adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
         return (
             row.get("task_expert") is None

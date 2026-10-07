@@ -56,7 +56,8 @@ def start_fixed_episode(
     for _ in range(int(contract["environment"]["dummy_settling_steps"])):
         observation, _, _, _ = env.step(dummy)
     scene_reference = None
-    paired_scene = contract.get("demonstration_comparison_scene") or contract.get("operator_read_write_scene")
+    paired_scene = (contract.get("demonstration_comparison_scene") or contract.get("operator_read_write_scene")
+                    or contract.get("native_video_control_scene"))
     if paired_scene is not None:
         from ember.pi05_eval.scene import restore_registered_scene
 

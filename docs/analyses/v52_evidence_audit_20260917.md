@@ -10,6 +10,9 @@
 其中部分“尚缺消融”已获得限定范围的新证据；不能将本文旧假设或最新两次诊断单独当作下一架构的充分依据。
 最新要求及实际状态分别见[Owner要求](../current_owner_requirements.md)和[progress](../../progress.md)。
 
+
+**2026-10-07远程审阅补充：** 下列开发结果与训练合同已连接到Git内既有导出或[本轮历史证据补包](../review_materials/20261007_research_reassessment/history_records/README.md)。仅修正可访问入口，不改变原分析与当时结论。§6.1含历史封存结果，排除在本轮方法重审之外；新导出不包含其结果。
+
 ## 1. 审计口径
 
 “充分／不足”须带具体命题。一个完整400行结果足以说明该 checkpoint 的能力，不等于该架构已训练收敛；
@@ -35,8 +38,8 @@ K>1另计 video appearances。step、C、Q、每task曝光、有效上游更新�
 2. **不能由日期推断全部早期结果重复视频。** 旧 v5.2 原始900合同已明确 seed7、每task50条无放回，合计400条件；
    其132和9月15日同映射重放125均与新 A seed20260911只有8/400相同state-video组合。
    因此旧新单点差额不是同一paired实验。参考
-   [比较边界](../../runs/analysis/source_alignment_20260915/archival_A_B_comparison_boundary.json)与
-   [原始／重放分别比较](../../runs/analysis/source_alignment_20260915/A/node900_reference_comparisons.json)。
+   [比较边界](../review_materials/20261007_research_reassessment/history_records/analysis/source_alignment_20260915/archival_A_B_comparison_boundary.json)与
+   [原始／重放分别比较](../review_materials/20261007_research_reassessment/history_records/analysis/source_alignment_20260915/A/node900_reference_comparisons.json)。
 
 ### 1.2 原件入口
 
@@ -72,11 +75,11 @@ Adam作用于聚合梯度的非线性矩统计，等条件数不等于等更新�
 
 主要原件：
 
-- [v5.2/v6匹配曝光](../../runs/outputs/pi05_as_writer_v52_v6_recipe_matched_exposure_seed7_20260801/analysis.json)。
-- [Target-Owned合同](../../runs/outputs/pi05_as_writer_target_owned_factor_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_34be4a0_20260804T051244Z/run_contract.json)。
-- [Dynamic-K合同](../../runs/outputs/pi05_dynamic_k_backbone_memory_rank8_budget64_formal_fresh0to50_r6_b20_micro8_5319022_20260813/run_contract.json)。
-- [LPCP合同](../../runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/run_contract.json)。
-- [GOMQ合同](../../runs/outputs/pi05_v6_lpcp_cfmg_gomq_formal_fresh_cycle0to2_r6_k4_views4_b8_8553b61_gpu02p123467_20260817/run_contract.json)。
+- [v5.2/v6匹配曝光](../review_materials/20261007_research_reassessment/history_records/training/pi05_as_writer_v52_v6_recipe_matched_exposure_seed7_20260801/analysis.json)。
+- [Target-Owned合同](../review_materials/20261007_research_reassessment/history_records/training/pi05_as_writer_target_owned_factor_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_34be4a0_20260804T051244Z/run_contract.json)。
+- [Dynamic-K合同](../review_materials/20261007_research_reassessment/history_records/training/pi05_dynamic_k_backbone_memory_rank8_budget64_formal_fresh0to50_r6_b20_micro8_5319022_20260813/run_contract.json)。
+- [LPCP合同](../review_materials/20260907/records/historical_lpcp/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/run_contract.json)。
+- [GOMQ合同](../review_materials/20260907/records/historical_gomq/pi05_v6_lpcp_cfmg_gomq_formal_fresh_cycle0to2_r6_k4_views4_b8_8553b61_gpu02p123467_20260817/run_contract.json)。
 - 代码：`529da6b`的`writer/{model,temporal,video_program}.py`；`5319022`的`backbone_memory.py:339–362,449–451`；
   `aecbce5`的`backbone_memory.py:430–482,528–564`及`model.py:464–529`；`8553b61:model.py:382–441`。
 
@@ -104,8 +107,8 @@ Adam作用于聚合梯度的非线性矩统计，等条件数不等于等更新�
 原件：旧账本§7、10–29、43–63、91–103、109–181；
 `2050de9e:src/ember/ecp/key_value_replay.py`的实际白化为Cholesky L^{-T}q并含score-RMS；
 `b2bb03ce:src/ember/ecp/policy_response_writer/{model,process,composer}.py`；
-[P/Q四任务合同](../../runs/outputs/pi05_ecp_prw_complete_shared4_s64_b2bb03ce_gpu02p235_20260906/run_contract.json)；
-[width256完成范围](../../runs/outputs/pi05_ecp_prw_complete_target18_width256_s128_14bc7605_gpu02p012356_20260906/result.json)。
+[P/Q四任务合同](../review_materials/20261007_research_reassessment/history_records/training/pi05_ecp_prw_complete_shared4_s64_b2bb03ce_gpu02p235_20260906/run_contract.json)；
+[width256完成范围](../review_materials/20261007_research_reassessment/history_records/training/pi05_ecp_prw_complete_target18_width256_s128_14bc7605_gpu02p012356_20260906/result.json)。
 
 ### 3.1 bank／chart／interaction 中间路线的完整补表
 
@@ -127,13 +130,13 @@ Adam作用于聚合梯度的非线性矩统计，等条件数不等于等更新�
 | §81–86 EBSRI summary/shared/polish | S0/S1两task通过，S1 held .962/.881、wrong负；fresh direct S2 held正确.949/.899、wrong.931/.900；polish训wrong下降但held正确.498/.614，task93 margin .030 | S0/S1各task110；S2各110共享，direct为660分支条件；polish非fresh。仍主要fixed routing/R5 chart，不能当Natural Program joint成败 |
 | §87–90 quotient/owner/relation | 去absolute后task93 correct-held .725，补owner .662，保留target-centered关系 .724；未恢复full-z容量 | 各两task fresh110，只到S0，无S1/S2；同时删B0/B1并有free-token/真实summary拓扑不匹配，不能唯一归责关系表示或认定absolute code必需 |
 
-补表直接入口：[stable-anchor合同](../../runs/outputs/pi05_ecp_shared_compiler_g3_f3_stable_anchor_fold0_m5_20acc33_gpu01p012346_r6_20260827/run_contract.json)、
-[P1报告](../../runs/analysis/pi05_ecp_primal_capacity_p1_v1_c9e8198_gpu01p012345_20260829/report.json)、
-[G2-B420步合同](../../runs/outputs/pi05_ecp_natural_program_g2_behavior_fold0_m10_5cbe76e_gpu01p012345_r6_20260829/run_contract.json)、
-[candidate interaction](../../runs/outputs/pi05_ecp_program_bank_candidate_interaction_v3_anchor_s110_fd20251_gpu01p012_r3_20260831/run_contract.json)、
-[EBSRI direct-S2](../../runs/outputs/pi05_ecp_event_bank_set_s2_direct_functional_s110_25477c9_gpu01p013456_r6_20260901/run_contract.json)、
-[functional polish](../../runs/outputs/pi05_ecp_event_bank_set_s2_functional_polish_gate_s70s110_bb98b81_gpu01p0256_w4_20260901/aggregate.json)、
-[relational quotient](../../runs/outputs/pi05_ecp_event_bank_set_relational_quotient_s0_gate_s110_ad64757_gpu01p34_20260901/aggregate.json)。
+补表直接入口：[stable-anchor合同](../review_materials/20261007_research_reassessment/history_records/training/pi05_ecp_shared_compiler_g3_f3_stable_anchor_fold0_m5_20acc33_gpu01p012346_r6_20260827/run_contract.json)、
+[P1报告](../review_materials/20261007_research_reassessment/history_records/analysis/pi05_ecp_primal_capacity_p1_v1_c9e8198_gpu01p012345_20260829/report.json)、
+[G2-B420步合同](../review_materials/20261007_research_reassessment/history_records/training/pi05_ecp_natural_program_g2_behavior_fold0_m10_5cbe76e_gpu01p012345_r6_20260829/run_contract.json)、
+[candidate interaction](../review_materials/20261007_research_reassessment/history_records/training/pi05_ecp_program_bank_candidate_interaction_v3_anchor_s110_fd20251_gpu01p012_r3_20260831/run_contract.json)、
+[EBSRI direct-S2](../review_materials/20261007_research_reassessment/history_records/training/pi05_ecp_event_bank_set_s2_direct_functional_s110_25477c9_gpu01p013456_r6_20260901/run_contract.json)、
+[functional polish](../review_materials/20261007_research_reassessment/history_records/training/pi05_ecp_event_bank_set_s2_functional_polish_gate_s70s110_bb98b81_gpu01p0256_w4_20260901/aggregate.json)、
+[relational quotient](../review_materials/20261007_research_reassessment/history_records/training/pi05_ecp_event_bank_set_relational_quotient_s0_gate_s110_ad64757_gpu01p34_20260901/aggregate.json)。
 
 ## 4. Layered、Horizon与视频功能路线
 
@@ -164,25 +167,25 @@ E20同样只是捕获全部层之后外部计算；VL Meta 可训不等于当前
 
 本组主要原件：
 
-- [Layered384裁决](../../runs/analysis/layered_relation_writer_20260907/train24_shared/decision_after384.json)。
-- [Horizon K1合同](../../runs/outputs/horizon_k1_supervised_v1_seed7_20260908/run_contract.json)、
-  [共享D矩阵](../../runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/sharing/completed_matrix.json)。
-- [Consumption](../../runs/analysis/video_consumption_20260911/first_round_summary.json)、
-  [No-change](../../runs/analysis/video_change_reference_20260911/step200/paired_summary.json)。
-- [Functional完整比较](../../runs/analysis/video_functional_20260911/paired_summary.json)、
-  [pure-FM+VL结果目录](../../runs/analysis/video_functional_20260911/direct_fm_vl)。
-- [Local Action](../../runs/analysis/local_action_grounded_20260912/bounded_200_decision.json)、
-  [V-JEPA固定交叉复核](../../runs/analysis/frozen_positive_replication_20260913/paired_replication_summary.json)。
-- [offset1](../../runs/analysis/execution_aligned_video_20260912/paired_summary.json)、
-  [双相机](../../runs/analysis/native_dual_video_20260913/camera_comparison.json)、
-  [空间监督](../../runs/analysis/visible_object_grounding_20260913/supervision_comparison.json)、
-  [Semantic-Path](../../runs/analysis/semantic_path_writer_20260914/paired_readout.json)。
+- [Layered384裁决](../review_materials/20260907/records/current_train24/layered_relation_writer_20260907/train24_shared/decision_after384.json)。
+- [Horizon K1合同](../review_materials/20261007_research_reassessment/history_records/training/horizon_k1_supervised_v1_seed7_20260908/run_contract.json)、
+  [共享D矩阵](../review_materials/20260911/analysis/sharing_matrix.json)。
+- [Consumption](../review_materials/video_specificity_20260911/analysis/consumption/first_round_summary.json)、
+  [No-change](../review_materials/video_specificity_20260911/analysis/nochange/step200_summary.json)。
+- [Functional完整比较](../review_materials/20261007_research_reassessment/history_records/analysis/video_functional_20260911/paired_summary.json)、
+  [pure-FM+VL结果目录](../review_materials/20261007_research_reassessment/history_records/analysis/video_functional_20260911/direct_fm_vl/bounded_200_decision.json)。
+- [Local Action](../review_materials/20261007_research_reassessment/history_records/analysis/local_action_grounded_20260912/bounded_200_decision.json)、
+  [V-JEPA固定交叉复核](../review_materials/20261007_research_reassessment/history_records/analysis/frozen_positive_replication_20260913/paired_replication_summary.json)。
+- [offset1](../review_materials/20261007_research_reassessment/history_records/analysis/execution_aligned_video_20260912/paired_summary.json)、
+  [双相机](../review_materials/20261007_research_reassessment/history_records/analysis/native_dual_video_20260913/camera_comparison.json)、
+  [空间监督](../review_materials/20261007_research_reassessment/history_records/analysis/visible_object_grounding_20260913/supervision_comparison.json)、
+  [Semantic-Path](../review_materials/20261007_research_reassessment/history_records/analysis/semantic_path_writer_20260914/paired_readout.json)。
 
 ### 4.1 本组局部诊断不能升级成什么
 
 - Horizon first-query-only 的74496次冻结预测中 own-task FM .111621→.106557，400时24/24task自己的条件优于其它task平均，
   两video／两query半份都成立。它反对“完全没有学到任务映射”，但语言和视频一起变，不能单独证明视频因果。
-  [functional assignment](../../runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/summary.json)。
+  [functional assignment](../review_materials/20261007_research_reassessment/history_records/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/summary.json)。
 - P4/C/A-B局部oracle用了很小的固定支持集重复拟合；A/B仅6.8% fit收益迁到新noise，独立episode八task都变差；
   闭环A/B15/32、normal18/32、free-C20/32。task7的normal/P4各1/4而C/A-B各4/4是局部正例，不能外推为整个decoder充足。
   [完整诊断及预算](horizon_k1_causal_diagnostics_20260909.md)。
@@ -190,8 +193,8 @@ E20同样只是捕获全部层之后外部计算；VL Meta 可训不等于当前
   source/Meta/E/Compiler/D都冻结，只训新reader，没有写VL prefix。1536支持queries×32epochs＝49152复用、192updates；
   held FM .154897→.139792，旧末端reader .140281，LoRA学生 .110005，24/24仍逊学生，16→32仍在改善，无rollout。
   这是该固定表示/读头/预算的诊断，不能否定fresh联合teacher Z/H桥。
-  [合同](../../runs/analysis/video_functional_20260911/native_reader_diagnostic/run_contract.json)、
-  [配对分析](../../runs/analysis/video_functional_20260911/native_reader_analysis.json)。
+  [合同](../review_materials/20261007_research_reassessment/history_records/analysis/video_functional_20260911/native_reader_diagnostic/run_contract.json)、
+  [配对分析](../review_materials/20261007_research_reassessment/history_records/analysis/video_functional_20260911/native_reader_analysis.json)。
 - Semantic-Path固定回放128次有120次复现结果，失败同时包括选错物体、抽屉子阶段、搬运/放置困难、子目标后丢失。
   不存在从这些片段唯一推出“没有顺序理解”或“只差Compiler”的依据；原400分数没有被回放替换。
   [行为回放](semantic_path_behavior_replay.md)。
@@ -218,13 +221,13 @@ E37/E38限制为 vecΔW=M_V q，q∈R^{T×50×7}。它不是“只有7个数”�
 
 原件：
 
-- [真G功能](../../runs/analysis/native_corrective_transfer_20260913/paired_summary.json)、
-  [真G行为](../../runs/analysis/native_correction_writer_20260913/oracle_rollout/decision.json)、
-  [A/B误差分解](../../runs/analysis/native_correction_writer_20260913/acquisition_audit/summary.json)。
-- [Local Field](../../runs/analysis/local_correction_field_writer_20260914/paired_readout.json)、
-  [Pullback训练审计](../../runs/analysis/process_pullback_writer_20260914/training_audit.json)、
-  [free-q/AB预注册](../../runs/analysis/process_pullback_writer_20260914/causal_diagnostics/registration.json)、
-  [learned outlet](../../runs/analysis/process_pullback_learned_outlet_20260915/paired_readout.json)。
+- [真G功能](../review_materials/20261007_research_reassessment/history_records/analysis/native_corrective_transfer_20260913/paired_summary.json)、
+  [真G行为](../review_materials/20261007_research_reassessment/history_records/analysis/native_correction_writer_20260913/oracle_rollout/decision.json)、
+  [A/B误差分解](../review_materials/20261007_research_reassessment/history_records/analysis/native_correction_writer_20260913/acquisition_audit/summary.json)。
+- [Local Field](../review_materials/20261007_research_reassessment/history_records/analysis/local_correction_field_writer_20260914/paired_readout.json)、
+  [Pullback训练审计](../review_materials/20261007_research_reassessment/history_records/analysis/process_pullback_writer_20260914/training_audit.json)、
+  [free-q/AB预注册](../review_materials/20261007_research_reassessment/history_records/analysis/process_pullback_writer_20260914/causal_diagnostics/registration.json)、
+  [learned outlet](../review_materials/20261007_research_reassessment/history_records/analysis/process_pullback_learned_outlet_20260915/paired_readout.json)。
 
 ## 6. 原生读出、source对齐、当前A与SFT
 
@@ -239,17 +242,17 @@ E37/E38限制为 vecΔW=M_V q，q∈R^{T×50×7}。它不是“只有7个数”�
 | E46 旧source C任务共现 | 与E45相同模型、同事件多重集合与曝光，只重排4task/update的预登记语义共现；改变轮内Adam历史 | 300/600 correct91/65、train28/43；600比B105少40，CI[−18.5,−2.75]pp。两臂在300新获的58个验证成功，600时B留42、C留28；611更新后owner停止，完整点止于600，非完成1200 |
 
 E40原件见[source读出审计](source_endpoint_readout_audit.md)。E41–44参见
-[A训练合同](../../runs/analysis/source_alignment_20260915/A/training/run_contract.json)、
-[A累计读出](../../runs/analysis/source_alignment_20260915/A/continuation_readout.json)、
-[2700主面板](../../runs/analysis/source_alignment_20260915/A/node2700_primary_readout.json)、
-[SFT配对读出](../../runs/analysis/source_alignment_20260915/SFT/paired_readout.json)以及findings§107–114。
+[A训练合同](../review_materials/20261007_research_reassessment/history_records/analysis/source_alignment_20260915/A/training/run_contract.json)、
+[A累计读出](../review_materials/20261007_research_reassessment/history_records/analysis/source_alignment_20260915/A/continuation_readout.json)、
+[2700主面板](../review_materials/20261007_research_reassessment/history_records/analysis/source_alignment_20260915/A/node2700_primary_readout.json)、
+[SFT配对读出](../review_materials/20261007_research_reassessment/history_records/analysis/source_alignment_20260915/SFT/paired_readout.json)以及findings§107–114。
 
 E45/E46原件见[旧窗口合同](../designs/v52_return_plan.md)、
-[B完整配对](../../runs/analysis/v52_return_20260915/baseline/paired_readout.json)、
-[C已完成配对](../../runs/analysis/v52_return_20260915/cooccurrence/paired_readout.json)。
+[B完整配对](../review_materials/20261007_research_reassessment/history_records/analysis/v52_return_20260915/baseline/paired_readout.json)、
+[C已完成配对](../review_materials/20261007_research_reassessment/history_records/analysis/v52_return_20260915/cooccurrence/paired_readout.json)。
 旧B四点的H-read q范数为.11328/.16078/.21298/.26040；由RMS归一化logit可导出每个位置最大权重
 至多2.533%/2.797%/3.106%/3.417%。它排除强权重集中，不是实际分布测量，也不能证明H-read变化无影响或把差距全归双相机。
-[精确参数上界](../../runs/analysis/source_alignment_20260915/archival_B_horizon_weight_bound.json)。
+[精确参数上界](../review_materials/20261007_research_reassessment/history_records/analysis/source_alignment_20260915/archival_B_horizon_weight_bound.json)。
 E46则表明按语义分组不自动改善保持；优化顺序和Adam历史仍是干预组成，不能仅称梯度冲突导致差额。
 
 E42与旧v5.2的`temporal.py`主计算近等价；`529da6b→575c189a`只有注释/格式变化。
@@ -267,7 +270,7 @@ fixed-mean的零query/bias与旧H均值数学等价，新增1074个冻结参数�
 | v6 old500 | 121/122/111/84/47 |
 | v6 TC400 | 143/135/125/128/129 |
 
-[历史视频审计](../../runs/outputs/pi05_as_writer_v52_v6_recipe_video_causality_audit_seed7_20260802/analysis.json)。
+`runs/outputs/pi05_as_writer_v52_v6_recipe_video_causality_audit_seed7_20260802/analysis.json`（本次远程重审排除的封存来源）。
 它们是不同曝光下的winner snapshots，不是上文同曝光配方估计。
 正确输入相对干预有真实依赖证据，仍不单独等于胜过充分训练的language-only／全帧无序参照。
 

@@ -1,0 +1,315 @@
+{
+  "schema": "ember_remote_history_evidence_v1",
+  "prepared": "2026-10-07",
+  "scope": "Existing development records referenced by the 2026-09-17 historical audit; no new experiment. Not a complete export of all historical raw assets.",
+  "transformations": [
+    "Existing remote exports are reused.",
+    "New JSON copies preserve scientific values and ordering; formatting is compacted.",
+    "Local absolute asset paths, private IPs, host identities, emails and runtime command/device fields are removed or normalized.",
+    "Shuffled/reversed result branches and sealed control analysis are excluded; test use metadata is not a test result.",
+    "Source-relative names are provenance, not promises that original run files are tracked."
+  ],
+  "removed_runtime_fields": {
+    "cpu_affinity": 44,
+    "numa_node": 44,
+    "visible_devices": 18,
+    "cuda_visible_devices": 5,
+    "hostname": 12,
+    "command": 2,
+    "host": 2,
+    "gpu_uuid": 8,
+    "quota_used_kib": 1,
+    "quota_soft_kib": 1
+  },
+  "excluded_fields": {
+    "/information_wall/forbidden/[]": 1,
+    "/config/evidence/paired_inference/final_primary/[]": 3,
+    "/config/evidence/sealed_final_controls/conditions/[]": 2,
+    "/controls/[]": 2,
+    "shuffled": 51,
+    "reversed": 51
+  },
+  "entries": [
+    {
+      "source": "runs/analysis/source_alignment_20260915/archival_A_B_comparison_boundary.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/source_alignment_20260915/archival_A_B_comparison_boundary.json",
+      "export_bytes": 13921
+    },
+    {
+      "source": "runs/analysis/source_alignment_20260915/A/node900_reference_comparisons.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/source_alignment_20260915/A/node900_reference_comparisons.json",
+      "export_bytes": 46550
+    },
+    {
+      "source": "runs/outputs/pi05_as_writer_v52_v6_recipe_matched_exposure_seed7_20260801/analysis.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_as_writer_v52_v6_recipe_matched_exposure_seed7_20260801/analysis.json",
+      "export_bytes": 48933
+    },
+    {
+      "source": "runs/outputs/pi05_as_writer_target_owned_factor_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_34be4a0_20260804T051244Z/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_as_writer_target_owned_factor_bci_rawfull24_decay400_formal_r6_b20_micro2_seed7_formalvideo20260722_34be4a0_20260804T051244Z/run_contract.json",
+      "export_bytes": 25071
+    },
+    {
+      "source": "runs/outputs/pi05_dynamic_k_backbone_memory_rank8_budget64_formal_fresh0to50_r6_b20_micro8_5319022_20260813/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_dynamic_k_backbone_memory_rank8_budget64_formal_fresh0to50_r6_b20_micro8_5319022_20260813/run_contract.json",
+      "export_bytes": 15121
+    },
+    {
+      "source": "runs/outputs/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/run_contract.json",
+      "status": "reuse_existing_export",
+      "export": "../20260907/records/historical_lpcp/pi05_v6_layerwise_probe_conditioned_procedure_formal_fresh0to25_r6_b20_515f91e_gpu01_20260814/run_contract.json",
+      "export_bytes": 16467
+    },
+    {
+      "source": "runs/outputs/pi05_v6_lpcp_cfmg_gomq_formal_fresh_cycle0to2_r6_k4_views4_b8_8553b61_gpu02p123467_20260817/run_contract.json",
+      "status": "reuse_existing_export",
+      "export": "../20260907/records/historical_gomq/pi05_v6_lpcp_cfmg_gomq_formal_fresh_cycle0to2_r6_k4_views4_b8_8553b61_gpu02p123467_20260817/run_contract.json",
+      "export_bytes": 24163
+    },
+    {
+      "source": "runs/outputs/pi05_ecp_prw_complete_shared4_s64_b2bb03ce_gpu02p235_20260906/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_ecp_prw_complete_shared4_s64_b2bb03ce_gpu02p235_20260906/run_contract.json",
+      "export_bytes": 17602
+    },
+    {
+      "source": "runs/outputs/pi05_ecp_prw_complete_target18_width256_s128_14bc7605_gpu02p012356_20260906/result.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_ecp_prw_complete_target18_width256_s128_14bc7605_gpu02p012356_20260906/result.json",
+      "export_bytes": 519005
+    },
+    {
+      "source": "runs/outputs/pi05_ecp_shared_compiler_g3_f3_stable_anchor_fold0_m5_20acc33_gpu01p012346_r6_20260827/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_ecp_shared_compiler_g3_f3_stable_anchor_fold0_m5_20acc33_gpu01p012346_r6_20260827/run_contract.json",
+      "export_bytes": 21009
+    },
+    {
+      "source": "runs/analysis/pi05_ecp_primal_capacity_p1_v1_c9e8198_gpu01p012345_20260829/report.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/pi05_ecp_primal_capacity_p1_v1_c9e8198_gpu01p012345_20260829/report.json",
+      "export_bytes": 2748
+    },
+    {
+      "source": "runs/outputs/pi05_ecp_natural_program_g2_behavior_fold0_m10_5cbe76e_gpu01p012345_r6_20260829/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_ecp_natural_program_g2_behavior_fold0_m10_5cbe76e_gpu01p012345_r6_20260829/run_contract.json",
+      "export_bytes": 36715
+    },
+    {
+      "source": "runs/outputs/pi05_ecp_program_bank_candidate_interaction_v3_anchor_s110_fd20251_gpu01p012_r3_20260831/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_ecp_program_bank_candidate_interaction_v3_anchor_s110_fd20251_gpu01p012_r3_20260831/run_contract.json",
+      "export_bytes": 13355
+    },
+    {
+      "source": "runs/outputs/pi05_ecp_event_bank_set_s2_direct_functional_s110_25477c9_gpu01p013456_r6_20260901/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_ecp_event_bank_set_s2_direct_functional_s110_25477c9_gpu01p013456_r6_20260901/run_contract.json",
+      "export_bytes": 33383
+    },
+    {
+      "source": "runs/outputs/pi05_ecp_event_bank_set_s2_functional_polish_gate_s70s110_bb98b81_gpu01p0256_w4_20260901/aggregate.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_ecp_event_bank_set_s2_functional_polish_gate_s70s110_bb98b81_gpu01p0256_w4_20260901/aggregate.json",
+      "export_bytes": 37372
+    },
+    {
+      "source": "runs/outputs/pi05_ecp_event_bank_set_relational_quotient_s0_gate_s110_ad64757_gpu01p34_20260901/aggregate.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/pi05_ecp_event_bank_set_relational_quotient_s0_gate_s110_ad64757_gpu01p34_20260901/aggregate.json",
+      "export_bytes": 1804
+    },
+    {
+      "source": "runs/analysis/layered_relation_writer_20260907/train24_shared/decision_after384.json",
+      "status": "reuse_existing_export",
+      "export": "../20260907/records/current_train24/layered_relation_writer_20260907/train24_shared/decision_after384.json",
+      "export_bytes": 5186
+    },
+    {
+      "source": "runs/outputs/horizon_k1_supervised_v1_seed7_20260908/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/training/horizon_k1_supervised_v1_seed7_20260908/run_contract.json",
+      "export_bytes": 7223
+    },
+    {
+      "source": "runs/analysis/horizon_relation_writer_20260908/causal_learning_20260909/sharing/completed_matrix.json",
+      "status": "reuse_existing_export",
+      "export": "../20260911/analysis/sharing_matrix.json",
+      "export_bytes": 4709
+    },
+    {
+      "source": "runs/analysis/video_consumption_20260911/first_round_summary.json",
+      "status": "reuse_existing_export",
+      "export": "../video_specificity_20260911/analysis/consumption/first_round_summary.json",
+      "export_bytes": 29782
+    },
+    {
+      "source": "runs/analysis/video_change_reference_20260911/step200/paired_summary.json",
+      "status": "reuse_existing_export",
+      "export": "../video_specificity_20260911/analysis/nochange/step200_summary.json",
+      "export_bytes": 101820
+    },
+    {
+      "source": "runs/analysis/video_functional_20260911/paired_summary.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/video_functional_20260911/paired_summary.json",
+      "export_bytes": 2069298
+    },
+    {
+      "source": "runs/analysis/video_functional_20260911/direct_fm_vl/bounded_200_decision.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/video_functional_20260911/direct_fm_vl/bounded_200_decision.json",
+      "export_bytes": 152794
+    },
+    {
+      "source": "runs/analysis/local_action_grounded_20260912/bounded_200_decision.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/local_action_grounded_20260912/bounded_200_decision.json",
+      "export_bytes": 4975
+    },
+    {
+      "source": "runs/analysis/frozen_positive_replication_20260913/paired_replication_summary.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/frozen_positive_replication_20260913/paired_replication_summary.json",
+      "export_bytes": 35603
+    },
+    {
+      "source": "runs/analysis/execution_aligned_video_20260912/paired_summary.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/execution_aligned_video_20260912/paired_summary.json",
+      "export_bytes": 162037
+    },
+    {
+      "source": "runs/analysis/native_dual_video_20260913/camera_comparison.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/native_dual_video_20260913/camera_comparison.json",
+      "export_bytes": 80950
+    },
+    {
+      "source": "runs/analysis/visible_object_grounding_20260913/supervision_comparison.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/visible_object_grounding_20260913/supervision_comparison.json",
+      "export_bytes": 79970
+    },
+    {
+      "source": "runs/analysis/semantic_path_writer_20260914/paired_readout.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/semantic_path_writer_20260914/paired_readout.json",
+      "export_bytes": 151792
+    },
+    {
+      "source": "runs/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/summary.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/horizon_relation_writer_20260908/k1_first_query_only/functional_assignment/summary.json",
+      "export_bytes": 95249
+    },
+    {
+      "source": "runs/analysis/video_functional_20260911/native_reader_diagnostic/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/video_functional_20260911/native_reader_diagnostic/run_contract.json",
+      "export_bytes": 7631
+    },
+    {
+      "source": "runs/analysis/video_functional_20260911/native_reader_analysis.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/video_functional_20260911/native_reader_analysis.json",
+      "export_bytes": 6768
+    },
+    {
+      "source": "runs/analysis/native_corrective_transfer_20260913/paired_summary.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/native_corrective_transfer_20260913/paired_summary.json",
+      "export_bytes": 230186
+    },
+    {
+      "source": "runs/analysis/native_correction_writer_20260913/oracle_rollout/decision.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/native_correction_writer_20260913/oracle_rollout/decision.json",
+      "export_bytes": 9150
+    },
+    {
+      "source": "runs/analysis/native_correction_writer_20260913/acquisition_audit/summary.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/native_correction_writer_20260913/acquisition_audit/summary.json",
+      "export_bytes": 92925
+    },
+    {
+      "source": "runs/analysis/local_correction_field_writer_20260914/paired_readout.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/local_correction_field_writer_20260914/paired_readout.json",
+      "export_bytes": 128627
+    },
+    {
+      "source": "runs/analysis/process_pullback_writer_20260914/training_audit.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/process_pullback_writer_20260914/training_audit.json",
+      "export_bytes": 5448
+    },
+    {
+      "source": "runs/analysis/process_pullback_writer_20260914/causal_diagnostics/registration.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/process_pullback_writer_20260914/causal_diagnostics/registration.json",
+      "export_bytes": 1934
+    },
+    {
+      "source": "runs/analysis/process_pullback_learned_outlet_20260915/paired_readout.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/process_pullback_learned_outlet_20260915/paired_readout.json",
+      "export_bytes": 99009
+    },
+    {
+      "source": "runs/analysis/source_alignment_20260915/A/training/run_contract.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/source_alignment_20260915/A/training/run_contract.json",
+      "export_bytes": 10417
+    },
+    {
+      "source": "runs/analysis/source_alignment_20260915/A/continuation_readout.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/source_alignment_20260915/A/continuation_readout.json",
+      "export_bytes": 414385
+    },
+    {
+      "source": "runs/analysis/source_alignment_20260915/A/node2700_primary_readout.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/source_alignment_20260915/A/node2700_primary_readout.json",
+      "export_bytes": 176307
+    },
+    {
+      "source": "runs/analysis/source_alignment_20260915/SFT/paired_readout.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/source_alignment_20260915/SFT/paired_readout.json",
+      "export_bytes": 160996
+    },
+    {
+      "source": "runs/analysis/v52_return_20260915/baseline/paired_readout.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/v52_return_20260915/baseline/paired_readout.json",
+      "export_bytes": 161491
+    },
+    {
+      "source": "runs/analysis/v52_return_20260915/cooccurrence/paired_readout.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/v52_return_20260915/cooccurrence/paired_readout.json",
+      "export_bytes": 68689
+    },
+    {
+      "source": "runs/analysis/source_alignment_20260915/archival_B_horizon_weight_bound.json",
+      "status": "new_sanitized_export",
+      "export": "history_records/analysis/source_alignment_20260915/archival_B_horizon_weight_bound.json",
+      "export_bytes": 3088
+    },
+    {
+      "source": "runs/outputs/pi05_as_writer_v52_v6_recipe_video_causality_audit_seed7_20260802/analysis.json",
+      "status": "excluded_sealed_control_analysis",
+      "reason": "Outside this reassessment; historical numbers are not exported or used for method selection."
+    }
+  ]
+}

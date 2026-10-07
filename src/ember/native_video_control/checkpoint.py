@@ -90,12 +90,15 @@ def _validate_model_optimizer(model: torch.nn.Module, optimizer: torch.optim.Opt
     if set(optimizer.state) != set(parameters):
         raise ValueError("native ECP lacks optimizer state for a learned parameter")
     for parameter in parameters:
-        state = optimizer.state[parameter]
-        if (not {"step", "exp_avg", "exp_avg_sq"} <= state.keys() or int(state["step"].item()) != macro
-                or state["exp_avg"].shape != parameter.shape or state["exp_avg_sq"].shape != parameter.shape
-                or any(value.is_floating_point() and value.dtype != torch.float32
-                       for value in state.values() if isinstance(value, torch.Tensor))):
-            raise ValueError("native ECP optimizer dtype, shape or update cursor changed")
+        _validate_optimizer_state(parameter, optimizer.state[parameter], macro)
+
+
+def _validate_optimizer_state(parameter, state, macro):
+    if (not {"step", "exp_avg", "exp_avg_sq"} <= state.keys() or int(state["step"].item()) != macro
+            or state["exp_avg"].shape != parameter.shape or state["exp_avg_sq"].shape != parameter.shape
+            or any(value.is_floating_point() and value.dtype != torch.float32
+                   for value in state.values() if isinstance(value, torch.Tensor))):
+        raise ValueError("native ECP optimizer dtype, shape or update cursor changed")
 
 
 def save(*, output_dir: Path, macro: int, stage: str, context: DistributedContext,
@@ -162,12 +165,12 @@ def inspect_checkpoint(checkpoint: Path, *, arm: str | None = None, terminal: bo
     stage = manifest.get("arm")
     world = int(manifest.get("world_size", -1))
     expected_files = {"ecp.safetensors", "trainer_state.pt", *(f"rank_{rank:02d}_state.pt" for rank in range(world))}
-    if (manifest.get("schema_version") != CHECKPOINT_SCHEMA or manifest.get("study_id") != STUDY_ID
-            or manifest.get("run_contract_schema") != SCHEMA or (arm is not None and stage != arm)
-            or manifest.get("stage") != stage or manifest.get("step") != macro or manifest.get("next_macro") != macro
-            or world < 1 or manifest.get("topology", {}).get("world_size") != world
-            or manifest.get("fullmodel_FP32") is not True or manifest.get("optimizer_dtype") != "float32"
-            or manifest.get("scheduler") is not None or manifest.get("scaler") is not None
+    expected = {"schema_version": CHECKPOINT_SCHEMA, "study_id": STUDY_ID, "run_contract_schema": SCHEMA,
+                "stage": stage, "step": macro, "next_macro": macro, "fullmodel_FP32": True,
+                "optimizer_dtype": "float32", "scheduler": None, "scaler": None}
+    if (any(manifest.get(key) != value for key, value in expected.items())
+            or arm is not None and stage != arm or world < 1
+            or manifest.get("topology", {}).get("world_size") != world
             or set(manifest.get("files", {})) != expected_files):
         raise ValueError("native checkpoint authority or completeness changed")
     origin = manifest.get("origin", {})

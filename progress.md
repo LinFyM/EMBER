@@ -1,3 +1,12 @@
+## 2026-10-07 实验session实际承接原生视频控制有限诊断
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取171行唯一active design、findings§383及当前Owner/progress/task_plan；从clean pushed main83076777接管canonical tracked/Git独占窗口，main停止并发写入。
+实际承接时钟2026-10-07T04:58:25Z，硬截止14:58:25Z；预计4–7h，硬10wall/12完整GPUh/data1新增峰48GiB，含全部工程、失败、profile、加载、编码、EGL、分析、frozen/tmp。
+唯一root为/data1/user/ymdai/ember_runs/native_video_control_diagnostic_20261007；同名root不存在，未恢复或重复旧批。本条0新GPU/模型/环境。
+首次strg01独立data1实占1419901708KiB/soft2147483648KiB/limit2157969408KiB，共享可用88165217992704B；canonical实际du475341908KiB，个人全目录du仍独立读取，首次快照不覆盖。
+四个data1工程worktree均已完成clean checkout。模型、事件/恢复状态和官方memory消费者各有独占隔离范围，root负责功能信用/训练/集成；复用原native/data/FM/queue，不修改旧frozen。
+M/V同MT300完整A/B，V教学H和执行两路beta信用都保留；128唯一科学读回和304固定行不变。只在整批完成或真实边界一次回main，无阶段Queue/自通知或自动后继。
+
 ## 2026-10-07 Owner要求自主推进，登记强MT原生视频控制的有限分析
 
 Owner最新要求暂时无暇跟进，main仔细分析现状后自主推进；最终合法视频一次生成单LoRA并超过强MT的目标保持。

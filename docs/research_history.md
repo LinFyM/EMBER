@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：从强T正证据登记实际控制迁移诊断
+
+Owner明确继续自主推进。findings§387核T/U学习反转、旧功能输出与真实future误差，未以padding解释U的低FM。
+同T2340 task42四既有条件全部成功，但task23九个post-open起点的完整/公共和旧文本干预都未完成；
+[唯一冻结合同](designs/cross_task_post_open_transfer_20261007.md)固定90续行，交叉五套完整参数与两执行语言。
+旧ECP跨任务整套LoRA接手已有0/44、28/9的正反例，严格recovery14与普通成功31口径分开；不称首次发现或自动teacher资格。
+本次直接检验当前真实失败状态上的控制迁移，0训练/新编译/Test；预算与是否实际启动只看progress及run原件。
+
 ## 2026-10-07：成功功能保持的历史辨识完成，本轮未采纳新的学习补丁
 
 findings§386记录实际源码与原件：ADSP的22个成功支持一阶约束全满足，139→138、R116/G22/L23；

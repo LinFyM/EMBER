@@ -1,0 +1,550 @@
+{
+  "contract": {
+    "question": "Does U900 lower saved FM mostly arise from padded future slots?",
+    "scope": "Existing train tasks 0,12,20,32, two correct teachers, original 28 queries each; no new labels or forward.",
+    "comparison": "T900 versus U900, full50, real future slots, padded slots, valid first5; equal task and teacher weight.",
+    "decision": "If U advantage vanishes outside padding, weaken the claim of better fitting useful query actions. Otherwise do not adopt padding masking as its explanation.",
+    "limits": "Small fixed training panel; no causal training intervention, rollout, held labels, or new method qualification."
+  },
+  "rows": [
+    {
+      "task": 0,
+      "teacher": 40,
+      "valid_slots": 1129,
+      "pad_slots": 271,
+      "valid_lengths": [
+        11,
+        50,
+        13,
+        50,
+        1,
+        50,
+        40,
+        50,
+        46,
+        50,
+        27,
+        50,
+        38,
+        50,
+        50,
+        50,
+        41,
+        50,
+        50,
+        36,
+        17,
+        50,
+        49,
+        20,
+        50,
+        50,
+        50,
+        40
+      ],
+      "metrics": {
+        "T": {
+          "full50": 0.1616266369819641,
+          "valid": 0.17769715189933777,
+          "padded": 0.09467612951993942,
+          "valid_prefix5": 0.17713311314582825,
+          "equal_query_valid": 0.17043174803256989
+        },
+        "U": {
+          "full50": 0.16230736672878265,
+          "valid": 0.17767226696014404,
+          "padded": 0.09829634428024292,
+          "valid_prefix5": 0.17444324493408203,
+          "equal_query_valid": 0.17028288543224335
+        }
+      },
+      "U_minus_T": {
+        "full50": 0.0006807297468185425,
+        "valid": -2.4884939193725586e-05,
+        "padded": 0.0036202147603034973,
+        "valid_prefix5": -0.002689868211746216,
+        "equal_query_valid": -0.00014886260032653809
+      },
+      "sources": [
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/T_attempt0/full_target000_donor000_teacher40.pt",
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/U_attempt0/full_target000_donor000_teacher40.pt"
+      ],
+      "mask_source": "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport/attempt0/task000_query_noise_target.pt"
+    },
+    {
+      "task": 0,
+      "teacher": 11,
+      "valid_slots": 1129,
+      "pad_slots": 271,
+      "valid_lengths": [
+        11,
+        50,
+        13,
+        50,
+        1,
+        50,
+        40,
+        50,
+        46,
+        50,
+        27,
+        50,
+        38,
+        50,
+        50,
+        50,
+        41,
+        50,
+        50,
+        36,
+        17,
+        50,
+        49,
+        20,
+        50,
+        50,
+        50,
+        40
+      ],
+      "metrics": {
+        "T": {
+          "full50": 0.1610596925020218,
+          "valid": 0.17725372314453125,
+          "padded": 0.09359455108642578,
+          "valid_prefix5": 0.17906232178211212,
+          "equal_query_valid": 0.1705860048532486
+        },
+        "U": {
+          "full50": 0.16257594525814056,
+          "valid": 0.17812736332416534,
+          "padded": 0.09778792411088943,
+          "valid_prefix5": 0.1758318841457367,
+          "equal_query_valid": 0.17048075795173645
+        }
+      },
+      "U_minus_T": {
+        "full50": 0.0015162527561187744,
+        "valid": 0.0008736401796340942,
+        "padded": 0.0041933730244636536,
+        "valid_prefix5": -0.0032304376363754272,
+        "equal_query_valid": -0.000105246901512146
+      },
+      "sources": [
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/T_attempt0/full_target000_donor000_teacher11.pt",
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/U_attempt0/full_target000_donor000_teacher11.pt"
+      ],
+      "mask_source": "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport/attempt0/task000_query_noise_target.pt"
+    },
+    {
+      "task": 12,
+      "teacher": 25,
+      "valid_slots": 1212,
+      "pad_slots": 188,
+      "valid_lengths": [
+        38,
+        50,
+        50,
+        38,
+        21,
+        50,
+        50,
+        18,
+        50,
+        50,
+        32,
+        50,
+        50,
+        50,
+        50,
+        47,
+        50,
+        23,
+        50,
+        29,
+        50,
+        50,
+        50,
+        48,
+        50,
+        50,
+        18,
+        50
+      ],
+      "metrics": {
+        "T": {
+          "full50": 0.06998433917760849,
+          "valid": 0.07524407655000687,
+          "padded": 0.036075811833143234,
+          "valid_prefix5": 0.0925283208489418,
+          "equal_query_valid": 0.08127670735120773
+        },
+        "U": {
+          "full50": 0.06964001804590225,
+          "valid": 0.07454865425825119,
+          "padded": 0.037995003163814545,
+          "valid_prefix5": 0.09112226963043213,
+          "equal_query_valid": 0.08042808622121811
+        }
+      },
+      "U_minus_T": {
+        "full50": -0.0003443211317062378,
+        "valid": -0.0006954222917556763,
+        "padded": 0.0019191913306713104,
+        "valid_prefix5": -0.001406051218509674,
+        "equal_query_valid": -0.000848621129989624
+      },
+      "sources": [
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/T_attempt0/full_target012_donor012_teacher25.pt",
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/U_attempt0/full_target012_donor012_teacher25.pt"
+      ],
+      "mask_source": "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport/attempt0/task012_query_noise_target.pt"
+    },
+    {
+      "task": 12,
+      "teacher": 14,
+      "valid_slots": 1212,
+      "pad_slots": 188,
+      "valid_lengths": [
+        38,
+        50,
+        50,
+        38,
+        21,
+        50,
+        50,
+        18,
+        50,
+        50,
+        32,
+        50,
+        50,
+        50,
+        50,
+        47,
+        50,
+        23,
+        50,
+        29,
+        50,
+        50,
+        50,
+        48,
+        50,
+        50,
+        18,
+        50
+      ],
+      "metrics": {
+        "T": {
+          "full50": 0.0702386274933815,
+          "valid": 0.0756949782371521,
+          "padded": 0.0350625179708004,
+          "valid_prefix5": 0.09094610065221786,
+          "equal_query_valid": 0.08173117786645889
+        },
+        "U": {
+          "full50": 0.06845296174287796,
+          "valid": 0.07341112941503525,
+          "padded": 0.036488547921180725,
+          "valid_prefix5": 0.09015633910894394,
+          "equal_query_valid": 0.07924558967351913
+        }
+      },
+      "U_minus_T": {
+        "full50": -0.00178566575050354,
+        "valid": -0.002283848822116852,
+        "padded": 0.0014260299503803253,
+        "valid_prefix5": -0.0007897615432739258,
+        "equal_query_valid": -0.0024855881929397583
+      },
+      "sources": [
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/T_attempt0/full_target012_donor012_teacher14.pt",
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/U_attempt0/full_target012_donor012_teacher14.pt"
+      ],
+      "mask_source": "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport/attempt0/task012_query_noise_target.pt"
+    },
+    {
+      "task": 20,
+      "teacher": 38,
+      "valid_slots": 1154,
+      "pad_slots": 246,
+      "valid_lengths": [
+        43,
+        9,
+        50,
+        50,
+        50,
+        50,
+        34,
+        12,
+        32,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        20,
+        50,
+        50,
+        30,
+        50,
+        50,
+        15,
+        39,
+        50,
+        20
+      ],
+      "metrics": {
+        "T": {
+          "full50": 0.11445874720811844,
+          "valid": 0.12825602293014526,
+          "padded": 0.04973489046096802,
+          "valid_prefix5": 0.12971194088459015,
+          "equal_query_valid": 0.12378240376710892
+        },
+        "U": {
+          "full50": 0.11085324734449387,
+          "valid": 0.12463095784187317,
+          "padded": 0.04622126743197441,
+          "valid_prefix5": 0.123070128262043,
+          "equal_query_valid": 0.1192726120352745
+        }
+      },
+      "U_minus_T": {
+        "full50": -0.0036054998636245728,
+        "valid": -0.0036250650882720947,
+        "padded": -0.0035136230289936066,
+        "valid_prefix5": -0.00664181262254715,
+        "equal_query_valid": -0.004509791731834412
+      },
+      "sources": [
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/T_attempt0/full_target020_donor020_teacher38.pt",
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/U_attempt0/full_target020_donor020_teacher38.pt"
+      ],
+      "mask_source": "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport/attempt0/task020_query_noise_target.pt"
+    },
+    {
+      "task": 20,
+      "teacher": 42,
+      "valid_slots": 1154,
+      "pad_slots": 246,
+      "valid_lengths": [
+        43,
+        9,
+        50,
+        50,
+        50,
+        50,
+        34,
+        12,
+        32,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        20,
+        50,
+        50,
+        30,
+        50,
+        50,
+        15,
+        39,
+        50,
+        20
+      ],
+      "metrics": {
+        "T": {
+          "full50": 0.11312408745288849,
+          "valid": 0.12667348980903625,
+          "padded": 0.04956304654479027,
+          "valid_prefix5": 0.12391968071460724,
+          "equal_query_valid": 0.12163915485143661
+        },
+        "U": {
+          "full50": 0.11268728971481323,
+          "valid": 0.12666365504264832,
+          "padded": 0.04712335020303726,
+          "valid_prefix5": 0.12513336539268494,
+          "equal_query_valid": 0.12107681483030319
+        }
+      },
+      "U_minus_T": {
+        "full50": -0.00043679773807525635,
+        "valid": -9.834766387939453e-06,
+        "padded": -0.002439696341753006,
+        "valid_prefix5": 0.0012136846780776978,
+        "equal_query_valid": -0.0005623400211334229
+      },
+      "sources": [
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/T_attempt0/full_target020_donor020_teacher42.pt",
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/U_attempt0/full_target020_donor020_teacher42.pt"
+      ],
+      "mask_source": "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport/attempt0/task020_query_noise_target.pt"
+    },
+    {
+      "task": 32,
+      "teacher": 17,
+      "valid_slots": 1246,
+      "pad_slots": 154,
+      "valid_lengths": [
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        1,
+        50,
+        50,
+        50,
+        50,
+        21,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        11,
+        50,
+        50,
+        13
+      ],
+      "metrics": {
+        "T": {
+          "full50": 0.09994924068450928,
+          "valid": 0.10682506859302521,
+          "padded": 0.0443175807595253,
+          "valid_prefix5": 0.12615816295146942,
+          "equal_query_valid": 0.1055508479475975
+        },
+        "U": {
+          "full50": 0.09775093197822571,
+          "valid": 0.10473455488681793,
+          "padded": 0.04124702513217926,
+          "valid_prefix5": 0.12761330604553223,
+          "equal_query_valid": 0.10404878854751587
+        }
+      },
+      "U_minus_T": {
+        "full50": -0.0021983087062835693,
+        "valid": -0.0020905137062072754,
+        "padded": -0.003070555627346039,
+        "valid_prefix5": 0.0014551430940628052,
+        "equal_query_valid": -0.0015020594000816345
+      },
+      "sources": [
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/T_attempt0/full_target032_donor032_teacher17.pt",
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/U_attempt0/full_target032_donor032_teacher17.pt"
+      ],
+      "mask_source": "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport/attempt0/task032_query_noise_target.pt"
+    },
+    {
+      "task": 32,
+      "teacher": 43,
+      "valid_slots": 1246,
+      "pad_slots": 154,
+      "valid_lengths": [
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        1,
+        50,
+        50,
+        50,
+        50,
+        21,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        11,
+        50,
+        50,
+        13
+      ],
+      "metrics": {
+        "T": {
+          "full50": 0.09933704882860184,
+          "valid": 0.10634206235408783,
+          "padded": 0.042659975588321686,
+          "valid_prefix5": 0.128478541970253,
+          "equal_query_valid": 0.10521761327981949
+        },
+        "U": {
+          "full50": 0.09708898514509201,
+          "valid": 0.10416922718286514,
+          "padded": 0.03980333358049393,
+          "valid_prefix5": 0.13314317166805267,
+          "equal_query_valid": 0.10341716557741165
+        }
+      },
+      "U_minus_T": {
+        "full50": -0.0022480636835098267,
+        "valid": -0.0021728351712226868,
+        "padded": -0.002856642007827759,
+        "valid_prefix5": 0.004664629697799683,
+        "equal_query_valid": -0.001800447702407837
+      },
+      "sources": [
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/T_attempt0/full_target032_donor032_teacher43.pt",
+        "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/train_functional_900/U_attempt0/full_target032_donor032_teacher43.pt"
+      ],
+      "mask_source": "/data1/user/ymdai/ember_runs/operator_chain_diagnosis_20260929/sampler_transport/attempt0/task032_query_noise_target.pt"
+    }
+  ],
+  "equal_task_teacher_mean": {
+    "T": {
+      "full50": 0.11122230254113674,
+      "valid": 0.12174832168966532,
+      "padded": 0.055710562970489264,
+      "valid_prefix5": 0.13099227286875248,
+      "equal_query_valid": 0.12002695724368095
+    },
+    "U": {
+      "full50": 0.11016959324479103,
+      "valid": 0.12049472611397505,
+      "padded": 0.05562034947797656,
+      "valid_prefix5": 0.13006421364843845,
+      "equal_query_valid": 0.11853158753365278
+    }
+  },
+  "U_minus_T": {
+    "full50": -0.0010527092963457108,
+    "valid": -0.0012535955756902695,
+    "padded": -9.021349251270294e-05,
+    "valid_prefix5": -0.0009280592203140259,
+    "equal_query_valid": -0.0014953697100281715
+  },
+  "wall_seconds": 2.9726978577673435,
+  "model_forward_count": 0,
+  "environment_count": 0,
+  "new_label_read_count": 0
+}

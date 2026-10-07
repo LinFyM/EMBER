@@ -10052,3 +10052,53 @@ M93/V88没有取得强教师资格；它与既有冻结内容L/R阴性一起降�
 `15ef050a:src/ember/expert_manifold/v6_success_key.py`的constraint_plan/commit_first_successes_，
 `e22cff19:src/ember/expert_manifold/v6_reward_credit.py`的functional_success_lora_gradients/project_blind_program_direction，
 `c1d8952:src/ember/writer/reward_preference.py`的functional_selected_success_lora_gradient。
+
+## 387. 从强T已取得的条件控制出发，检验具体控制能否迁移到失败状态（2026-10-07）
+
+Owner在§386后明确要求继续自主推进。旧批关闭不是完整问题无解，也不解除main继续独立形成判断的责任。
+本轮先回到T/U完整正反证据，而不从上一Reader阴性直接另换模块。相同年龄的T/U为450时122/143、
+900时148/132、1080时147/128；独立key的U早期更强、后期反转，不能只以末点宣布绑定天然更会理解教学。
+二者都在原训练功能查询上学到了有用的condition作用；U900的较低FM也不能直接解释held较差。
+
+**一个实际排除的读数解释。** CPU只读原task0/12/20/32×两条正确video×28查询的已存预测、target与valid mask，
+没有模型前向、环境或新标签。按task/video等权，U−T的full50 FM为−.001052709，
+真实future为−.001253596，valid first5为−.000928059；padding部分仅−.000090213，按query等权有效段也是−.001495370。
+所以不能把U较低误差主要解释为学好了补齐尾巴，也不据此改loss。该小面板不是全训练分布或闭环因果实验。
+原件在`operator_chain_diagnosis_20260929/train_functional_900/{T,U}_attempt0/`与sampler_transport，
+本次计算及全部路径保留于`docs/analyses/t_u_existing_function_readback_20261007.json`。
+
+**为何转向控制本身的可复用性。** T的教学native X经同一A形成key，转移hidden与key共同形成Value，递推得到M；
+部署时M A h作用于真实自身状态及此前层已经改变的hidden。同一A和真实FM把两侧联系起来，
+仍没有保证“放碗”对应跨场景可复用控制，也没有保证完整教学的M会在打开后产生合适的退出/取碗/放入反馈。
+因此不能由attention、key或FM读数直接指定新的语义模块；先检验已经学得的完整条件函数在具体新状态的作用。
+
+main直接核原T2340 seen结果：LIBERO-90 task2/global42四行均成功，init32/33/34/35对应demo30/14/43/9、
+完成步101/117/113/127，公共shared与task23均来自同T2340。实际BDDL为KITCHEN_SCENE10，初始Open，
+goal同为黑碗In上层；桌面、杂物、柜体位置和机器人状态不同，原4/4不是task23后半段资格。
+task23自己的完整条件在原九个post-open起点0/9，Common0/9；此前两种执行文本也未取得完整收益。
+这些负证据关闭的是删除自身M或改旧文本即可恢复的具体解释，没有测试其它已学完整M在同一实际状态上的控制。
+
+最近似历史不能省略：`24c5bdc3`实际按phase安装另一task的完整LoRA、换语言并丢弃旧chunk；
+55/56各50/50却组合0/50、44/50，65/68原43/50、47/50却组合28/50、9/50。
+这同时支持局部可迁移与严重上下文依赖，不能只保留其中一边。recovery14/100是要求前目标不再次掉落的严格成功，
+普通environment success31/100，53/100曾掉落；与本次单一In不是同一口径。
+旧phase learner-state velocity蒸馏确实执行过，但没有从那些状态跑expert continuation；
+另一批2773/3998 query的蒸馏被取消，不能写成已运行失败。main核了安装源码和原专家裁决，历史审计核了封存结果。
+原始A2/A3运行根当前不在，0/44与28/9沿Git中的封存正式证据引用，没有冒称重算丢失raw。
+
+**本次选择与可失败预测。** 登记`cross_task_post_open_transfer_20261007`：固定这九个实际起点、同T公共参数，
+自己的M23及原全部四M42分别交叉exact L23与exact L42，共90冻结续行，保留三个剩余≤40步起点与每个donor。
+固定L23时M42若有跨视频、多个状态的完整新增，才增加“现有控制可迁移但原task23编译未实现”的支持；
+仅配L42成功则保留参数/执行语言共同条件，不能单归因Compiler；全部失败则关闭这组donor在该状态集合上的迁移，
+不能外推所有primitive不可能。比较更换完整教学condition的M，包含生成时视频与语言共同作用，不称纯视频因果干预。
+
+这项诊断服务于是否值得研究已有控制的组合编译，或须重新面对控制对场景/状态的适用条件；
+它本身不提供更强完整方法，单例正结果也不认证纠正教师，不自动接数据采集、蒸馏、拼接、Reader或新训练。
+完整计算、90行、配对、RGB、结果分支及1–2h预计/3wall/2GPUh/16CPUh/8GiB硬限已在唯一active design登记。
+此时仅完成科学合同，无新GPU/环境；实际承接和结果以progress及run原件为准。
+
+直接控制原件：`denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/{results,run_contract}.json`、
+`task23_post_open_operator_20261006/{cohort.json,analysis/per_row.json}`及`task23_post_open_language_20261006/analysis/`。
+历史：`cadade40:docs/evidence/ecp_20260824/ecp_process_{phase_expert,separate_plates}_teacher_gate_20260824.json`，
+`cadade40:docs/ecp_recovery_teacher_expert_ruling_20260824.md`，
+`runs/outputs/pi05_ecp_recovery_gate_a_ebdd509_gpu02p012345_20260824/gate_adjudication.json`。

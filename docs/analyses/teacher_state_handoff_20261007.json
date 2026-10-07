@@ -2,7 +2,7 @@
   "study": "teacher_state_handoff_20261007",
   "source_session": "01a10a98-6d4b-7d61-b12c-da38a628cb45",
   "main_session": "01a10a97-dedf-7042-a6a2-60214f0ef7b1",
-  "status": "complete_fixed_computation",
+  "status": "complete_main_consumption_branch_closed",
   "input_base_git": "226f7065ececaa92232cc9299efe6cf673bee647",
   "consumer_clean_pushed_detached_git": "36f2a0441283bc8dd009e9d3d3e0c44419c60609",
   "NN_math_git": "bfd76c99",
@@ -14546,6 +14546,34 @@
     "source_changes_vs_input_base": 0,
     "retirement_checks": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/engineering/retirement_checks.json",
     "final_wall_Git_and_delivery_authority": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/completion.json",
-    "scientific_main_consumption_pending": true
+    "scientific_main_consumption_pending": false
+  },
+  "main_consumption": {
+    "record": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/analysis/main_consumption.json",
+    "rows_read": 576,
+    "pairing_issues": 0,
+    "reviewed_clips": 4,
+    "reviewed_saved_images": 64,
+    "review_scope": "tasks29/38 init32 both arms; not all 12 executor-reviewed clips",
+    "handoff_vs_T": {
+      "n": 144,
+      "A": "T_replay",
+      "B": "T50_demo_NN",
+      "A_success": 109,
+      "B_success": 91,
+      "R": 80,
+      "G": 11,
+      "L": 29,
+      "net": -18,
+      "churn": 40,
+      "J": 0.6666666666666666
+    },
+    "original_both_success_retained": 59,
+    "original_both_success_total": 71,
+    "original_T_success_NN_fail_retained": 21,
+    "original_T_success_NN_fail_total": 38,
+    "decision": "Close the fixed NN corrective-teacher branch. Preserve local positive cases without selecting a new training candidate or claiming the final objective achieved.",
+    "findings_section": 382,
+    "new_model_environment_or_gradient_work": false
   }
 }

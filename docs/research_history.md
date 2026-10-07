@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：main关闭现成NN纠正教师支线，保留部分继续控制的正例
+
+findings§382及[canonical main消费](analyses/teacher_state_handoff_20261007.json)保存576原行独立重算、四clip/64图和两例真实前缀/状态证据。
+T109→接力91、R80/G11/L29；原T/初态NN共同成功71行仍丢12，T成功/NN失败38行保留21；原潜在互补20得7、原双失败15得4。
+相同初态NN/接力91隐藏25得25失；正例跨10target，不抹成整体失效，也不认证强教师或部署接力。
+主讨论将原几何检索、示范动作Value及实际状态反馈联系到其有限适用域，未指定距离/接触/阶段为唯一根因。
+旧phase学生访态expert信用、P/I和CV-CSD/DJNFR成功轨迹学习继续约束后继，不由11新增筛出新训练，不扫控制器或重开NN教师。
+本支线按事前停止线结束；没有新active设计/派发/后台计算，后继完整训练依据尚未成立，最终目标仍未达到。
+
 ## 2026-10-07：固定T50访态接力完成，部分继续控制成立但原能力交换仍大
 
 findings§381及[完整原件](analyses/teacher_state_handoff_20261007.json)索引唯一root teacher_state_handoff_20261007；288新行，0训练/新VLA-native/flow/teacher HDF/held/Test。

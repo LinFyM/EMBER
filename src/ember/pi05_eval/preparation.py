@@ -527,7 +527,8 @@ def _prepared_payload(
         else:
             contract["operator_read_write_scene"] = {
                 "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
-    attach_requested_capture(args, contract, repo_root, output_dir)
+    if adapter is None or adapter.get("kind") != "aligned_teacher_recovery_complete_lora":
+        attach_requested_capture(args, contract, repo_root, output_dir)
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

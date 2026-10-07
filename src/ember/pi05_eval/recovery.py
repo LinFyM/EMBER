@@ -198,9 +198,14 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         and _reinspect_adapter(adapter, contract=contract, model=model) != adapter
     ):
         raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
-    from ember.pi05_eval.registered_passive_capture import validate_contract
+    if (contract.get("adapter") or {}).get("kind") == "aligned_teacher_recovery_complete_lora":
+        from ember.aligned_teacher_recovery.readout import validate_capture_contract
 
-    validate_contract(contract, REPO_ROOT)
+        validate_capture_contract(contract)
+    else:
+        from ember.pi05_eval.registered_passive_capture import validate_contract
+
+        validate_contract(contract, REPO_ROOT)
 
 
 def worker_ids(

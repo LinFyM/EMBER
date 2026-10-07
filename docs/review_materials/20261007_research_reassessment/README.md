@@ -1,9 +1,11 @@
 # EMBER：停滞原因与完整方法的重新审视
 
-2026-10-07。供只能访问 Git 远程仓库的专家使用。当前是第二轮深入讨论：在已理解历史的基础上，
-从现象、问题、竞争原因及实际特征／算子，推导下一完整方法为何有望突破强MT。
-可直接转发[第二轮完整提示词](FOLLOWUP_PROMPT.md)，先读[证据补充与剩余缺口](EVIDENCE_ADDENDUM.md)；
-[第一轮专家意见](EXPERT_RESPONSE.md)完整存档，尚未采纳为active design。
+2026-10-08更新。供只能访问 Git 远程仓库的专家使用。三轮讨论已完成；
+[第二轮原文](EXPERT_RESPONSE_ROUND2.md)、[第三轮原文](EXPERT_RESPONSE_ROUND3.md)保留候选的提出和收窄。
+主讨论核对后只采纳同T、同数据、改变配对的[有界学习检验](../../designs/cross_context_pairing_20261008.md)，
+没有采纳同时换encoder/decoder/初始化的组合，也没有把它认定为已解决停滞的完整方法。当前无需再次向专家提问。
+[第二轮完整提示词](FOLLOWUP_PROMPT.md)、[证据补充与剩余缺口](EVIDENCE_ADDENDUM.md)及
+[第一轮专家意见](EXPERT_RESPONSE.md)保留当时完整讨论背景。
 首次接触材料者仍从[第一轮委托](EXPERT_PROMPT.md)和[历史阅读路线](HISTORY_MAP.md)建立全貌；
 不要求维护现有架构，也不默认第一轮候选已经解决了问题。
 

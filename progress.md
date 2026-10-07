@@ -1,3 +1,15 @@
+## 2026-10-08 同目标跨情境配对设计登记，恢复持续自主推进
+
+Owner最新要求“确实符合实际”“还需要再问专家吗”及持续长时间推进；main确认关键事实/推导，但没有性能保证，当前无需继续专家往返。
+第二/三轮原文已完整归档review_materials/20261007_research_reassessment/EXPERT_RESPONSE_ROUND2/ROUND3.md；findings§390保存采纳范围与限制。
+唯一active为`docs/designs/cross_context_pairing_20261008.md`：同T2340完整状态Within/Product两臂，原36+book-caddy9，固定216更新/臂。
+新9项的同目标三scene按28-query的平衡9/9/10矩阵重分配；每macro视频/query/标签/实际tau-noise边际完全匹配，只改配对。
+固定终点各correct400+other400，父/两终点训练侧九格各54，共1762新行。没有新encoder/decoder/公共loss/RL/Test或参数扫描。
+预算预计6–10wall小时/15–18GPUh，实际承接起硬12wall/20GPUh/data1峰96GiB；GPU/quota/吞吐由执行者launch前现场核验。
+此条是科学合同登记，尚未启动计算。main当前持tracked/Git；push后交既有实验session01a10a98-6d4b-7d61-b12c-da38a628cb45独占工程/Git。
+整批可靠回报后由main核原件、解释结果、裁决并主动接续；有限路线停止不解除项目责任，不再以“无下一设计”为停止理由。
+最终目标未完成；下方旧无active、结束与待讨论均为当时时点，不能覆盖此最新授权和设计。
+
 ## 2026-10-07 第二轮专家讨论材料与prompt已整理
 
 Owner要求专家在第一轮理解上深入判断接下来怎么推进，并核查缺失资料。原专家全文保存于review_materials/20261007_research_reassessment/EXPERT_RESPONSE.md；

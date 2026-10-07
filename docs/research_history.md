@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-08：第三轮专家建议收窄到学习关系，登记匹配检验
+
+[第二轮原文](review_materials/20261007_research_reassessment/EXPERT_RESPONSE_ROUND2.md)与
+[第三轮原文](review_materials/20261007_research_reassessment/EXPERT_RESPONSE_ROUND3.md)完整保留；
+main核对source71/spec、T实际图/采样、旧C95/P-I边界和完整T2340资产，findings§390记录判断。
+九格改变抓取起点/朝向和干扰物，caddy固定，已被source/C95见过；不能包装成新容器几何或操作程序变化。
+平方风险分解解释跨配对的功能不变性压力，不证明V胜过充分L；第三轮撤回直接升级完整新方法的推荐合理。
+Owner要求持续长期自主推进，main登记[两臂固定学习合同](designs/cross_context_pairing_20261008.md)，
+只改变同目标配对，保留强T/MT、完整400及另一视频、父与终点训练侧功能；此时尚无新结果。
+阴性降低相关假说优先级而非停止项目；阳性仍需同数据M/L及稳定性，不能只胜退化Within便宣称突破。
+
 ## 2026-10-07：main消费最后迁移诊断，整理完整方法重新审视材料
 
 findings§389及[canonical分析](analyses/cross_task_post_open_transfer_20261007.json)的main_consumption记录

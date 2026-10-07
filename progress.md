@@ -13,6 +13,12 @@ M/V同MT300完整A/B，V教学H和执行两路beta信用都保留；128唯一科
 V独立fresh2在gpu02:0/1/4/6完成224query和完整ECP；第二步实际encoder/Q/K/V/O及教学beta余切全部非零，首步零O恢复MT同FM输出、18hook各一次，source仍冻结、optimizer moments FP32。当前正在从该ECP续到4核验恢复与物理world4→2/frame8→32，绝不混入正式128。
 M首正式步真实完整50×7随机tau FM核验通过，峰reserved约16.46GiB；4task×28query流与权重不变，未另开M smoke。原件/root analysis保留CPU核验和两项非GPU读取命令错误；无科学/预算改变或main工程审批停点。
 
+V独立smoke完整2→4已退出，逻辑448query、FP32完整AdamW/RNG恢复及world4→2均核验；不混入正式。M128/14,336query已在05:48:09Z完成且退出，用9a3f046c发布M唯一144 manifest并在gpu01:1/6、每卡2persistent workers读回。
+V正式从原MT300/fresh模块及fresh optimizer重新开始，使用clean pushed detached d76e42fd；只增加typed逐rank frame chunk，计算图/事件/loss/更新不变。gpu02:4/6用已测32 chunk，0/1用已成功8 chunk，query micro14，world4；与M读回合计6物理卡。
+0006在新冻结checkout未实际退出时被root过早启动，因ember包尚不存在3.425秒退出，0训练/模型/环境；.003806GPUh完整计费，失败原件保留。checkout正常结束且clean pushed detached核验后，0007独立现场回执重新启动同原事件，无科学样本重跑。
+首M正式full实际消费者保存57个1×50×7提案、284个真实命令，末prefix4及285个T+1自身状态/native均匹配；只作capture准入，不以单例裁决方法。
+剩余V编码144/16与两个固定读回由root唯一有限CPU exit-event owner接续：先等当前正式128实际退出，再就绪独立调度既有native/evaluator CLI，逐launch保留live quota/双节点GPU与费用；无日志/cache轮询、主讨论阶段Queue或自动后继。两新读回计划各3persistent workers/GPU，实际显存/吞吐按原件封口。
+
 ## 2026-10-07 Owner要求自主推进，登记强MT原生视频控制的有限分析
 
 Owner最新要求暂时无暇跟进，main仔细分析现状后自主推进；最终合法视频一次生成单LoRA并超过强MT的目标保持。

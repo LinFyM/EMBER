@@ -1,3 +1,15 @@
+## 2026-10-07 强T冻结跨任务接手90条已完成，整批封口与写窗口交回
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45从09:47:17Z实际承接；两GPU阶段10:08:29–10:10:38Z、
+10:15:02–10:19:29Z均exit0。完整90行/13100后缀步/13900原命令前缀步，十臂全部0/9；配对、noise、完整因子/文本输入均通过实际消费者及全部逐行读回。
+findings§388与docs/analyses/cross_task_post_open_transfer_20261007.json保留所有四donor/两文本/九起点、短时限、局部抬碗与反例。
+20full/70compact、实际first50/5、三层关节/接触/力全部保留；160双RGB对/320原帧逐张审看，20终点RGB均缺失而非补造。
+执行source8d432bb6 clean pushed detached；物理GPU费用.219780081643h。六worker及本批GPU全部释放，逐launch/最终现场回执独立保存。
+专用src/ember/pi05_eval/cross_task_transfer.py和scripts/cross_task_post_open_transfer.py退役，未改共享evaluator/hooks；Git/frozen/raw保留。
+唯一root为/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007；CPU计时与工程allowance、新增峰、失败、final clean/pushed及一次main实际消费回执见completion/resource_ledger/launch。
+main独立专家材料仅在codex/expert-reassessment-20261007的新review_materials目录写，不与本批源码/状态冲突；其材料集成以实际commit回执为准。
+本批停止新增计算、无自动后继；canonical tracked/Git在完整封口投递后交回main。Owner最终目标与main继续自主研究责任保留，下方active均为历史时点。
+
 ## 2026-10-07 实验session实际承接强T冻结跨任务接手诊断
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取120行active design、findings§387和最新Owner/AGENTS；

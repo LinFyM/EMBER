@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：既有四套放碗控制在九个post-open访态均未完成
+
+[固定合同](designs/cross_task_post_open_transfer_20261007.md)实际90续行全部完成：十个参数×文本臂均0/9，
+配对/原命令/noise核验无缺项，六个长剩时起点也全失败。findings§388及
+[canonical读回](analyses/cross_task_post_open_transfer_20261007.json)保留全部四donor、两个文本、九起点、R/G/L/空集合边界与行为。
+L42的局部抬碗增加也发生在自身M23，没有形成官方In；四donor原task42初态4/4不再被误当纠正教师资格。
+20full的160双RGB对/320真实原帧已逐条审看，全部950 replan RGB保留而未称全看过；终点RGB缺项明确。
+执行代码clean pushed8d432bb6，专用两入口退役；完整physical/numeric/frozen/Git/失败及.219780081643GPUh费用留在run root。
+结论只关闭四donor在九访态/两文本的迁移，不外推所有primitive不能组合；0新学习/native编译/teacherHDF/Test。
+本批停止，完整方法判断由main消费后承担；不自动追加donor/文本/切点或蒸馏。
+
 ## 2026-10-07：从强T正证据登记实际控制迁移诊断
 
 Owner明确继续自主推进。findings§387核T/U学习反转、旧功能输出与真实future误差，未以padding解释U的低FM。

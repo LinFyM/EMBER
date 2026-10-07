@@ -1,0 +1,722 @@
+{
+  "schema_version": "ember_cross_task_post_open_transfer_readback_v1",
+  "study_id": "cross_task_post_open_transfer_20261007",
+  "root": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007",
+  "source_session": "01a10a98-6d4b-7d61-b12c-da38a628cb45",
+  "main_session": "01a10a97-dedf-7042-a6a2-60214f0ef7b1",
+  "execution_git": "8d432bb68487de8b51f58cf3327a294e8baf30f9",
+  "frozen": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/frozen_8d432bb6",
+  "scope": {
+    "environment_global_task": 23,
+    "suite": "libero_goal",
+    "suite_task": 3,
+    "unique_actual_starts": 9,
+    "factor_conditions": 5,
+    "policy_texts": 2,
+    "new_episodes": 90,
+    "full": 20,
+    "compact": 70,
+    "original_prefix_control_steps": 13900,
+    "new_suffix_control_steps": 13100,
+    "horizon": 300
+  },
+  "summary": {
+    "status": "complete90_verified",
+    "study_id": "cross_task_post_open_transfer_20261007",
+    "episodes": 90,
+    "initial_starts": 9,
+    "full": 20,
+    "compact": 70,
+    "actual_suffix_control_steps": 13100,
+    "maximum_authorized_suffix_steps": 13100,
+    "actual_replayed_prefix_steps": 13900,
+    "pairing_mismatches": 0,
+    "original_prefix_command_mismatches": 0,
+    "noise_or_capture_mismatches": 0,
+    "totals_per9": {
+      "M23": {
+        "L23": 0,
+        "L42": 0
+      },
+      "M42_demo30": {
+        "L23": 0,
+        "L42": 0
+      },
+      "M42_demo14": {
+        "L23": 0,
+        "L42": 0
+      },
+      "M42_demo43": {
+        "L23": 0,
+        "L42": 0
+      },
+      "M42_demo09": {
+        "L23": 0,
+        "L42": 0
+      }
+    },
+    "per_state_matrix": [
+      {
+        "state": 3,
+        "branch": 120,
+        "remaining_horizon": 180,
+        "success": {
+          "M23": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo30": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo14": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo43": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo09": {
+            "L23": false,
+            "L42": false
+          }
+        }
+      },
+      {
+        "state": 7,
+        "branch": 260,
+        "remaining_horizon": 40,
+        "success": {
+          "M23": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo30": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo14": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo43": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo09": {
+            "L23": false,
+            "L42": false
+          }
+        }
+      },
+      {
+        "state": 8,
+        "branch": 60,
+        "remaining_horizon": 240,
+        "success": {
+          "M23": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo30": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo14": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo43": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo09": {
+            "L23": false,
+            "L42": false
+          }
+        }
+      },
+      {
+        "state": 14,
+        "branch": 60,
+        "remaining_horizon": 240,
+        "success": {
+          "M23": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo30": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo14": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo43": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo09": {
+            "L23": false,
+            "L42": false
+          }
+        }
+      },
+      {
+        "state": 16,
+        "branch": 65,
+        "remaining_horizon": 235,
+        "success": {
+          "M23": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo30": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo14": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo43": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo09": {
+            "L23": false,
+            "L42": false
+          }
+        }
+      },
+      {
+        "state": 19,
+        "branch": 65,
+        "remaining_horizon": 235,
+        "success": {
+          "M23": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo30": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo14": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo43": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo09": {
+            "L23": false,
+            "L42": false
+          }
+        }
+      },
+      {
+        "state": 28,
+        "branch": 285,
+        "remaining_horizon": 15,
+        "success": {
+          "M23": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo30": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo14": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo43": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo09": {
+            "L23": false,
+            "L42": false
+          }
+        }
+      },
+      {
+        "state": 32,
+        "branch": 290,
+        "remaining_horizon": 10,
+        "success": {
+          "M23": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo30": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo14": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo43": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo09": {
+            "L23": false,
+            "L42": false
+          }
+        }
+      },
+      {
+        "state": 34,
+        "branch": 185,
+        "remaining_horizon": 115,
+        "success": {
+          "M23": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo30": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo14": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo43": {
+            "L23": false,
+            "L42": false
+          },
+          "M42_demo09": {
+            "L23": false,
+            "L42": false
+          }
+        }
+      }
+    ],
+    "parameter_effect_vs_same_text_M23": {
+      "M42_demo30": {
+        "L23": {
+          "retained": [],
+          "gained": [],
+          "lost": [],
+          "R": 0,
+          "G": 0,
+          "L": 0,
+          "churn": 0,
+          "Jaccard": null,
+          "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+        },
+        "L42": {
+          "retained": [],
+          "gained": [],
+          "lost": [],
+          "R": 0,
+          "G": 0,
+          "L": 0,
+          "churn": 0,
+          "Jaccard": null,
+          "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+        }
+      },
+      "M42_demo14": {
+        "L23": {
+          "retained": [],
+          "gained": [],
+          "lost": [],
+          "R": 0,
+          "G": 0,
+          "L": 0,
+          "churn": 0,
+          "Jaccard": null,
+          "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+        },
+        "L42": {
+          "retained": [],
+          "gained": [],
+          "lost": [],
+          "R": 0,
+          "G": 0,
+          "L": 0,
+          "churn": 0,
+          "Jaccard": null,
+          "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+        }
+      },
+      "M42_demo43": {
+        "L23": {
+          "retained": [],
+          "gained": [],
+          "lost": [],
+          "R": 0,
+          "G": 0,
+          "L": 0,
+          "churn": 0,
+          "Jaccard": null,
+          "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+        },
+        "L42": {
+          "retained": [],
+          "gained": [],
+          "lost": [],
+          "R": 0,
+          "G": 0,
+          "L": 0,
+          "churn": 0,
+          "Jaccard": null,
+          "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+        }
+      },
+      "M42_demo09": {
+        "L23": {
+          "retained": [],
+          "gained": [],
+          "lost": [],
+          "R": 0,
+          "G": 0,
+          "L": 0,
+          "churn": 0,
+          "Jaccard": null,
+          "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+        },
+        "L42": {
+          "retained": [],
+          "gained": [],
+          "lost": [],
+          "R": 0,
+          "G": 0,
+          "L": 0,
+          "churn": 0,
+          "Jaccard": null,
+          "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+        }
+      }
+    },
+    "text_effect_within_factor": {
+      "M23": {
+        "retained": [],
+        "gained": [],
+        "lost": [],
+        "R": 0,
+        "G": 0,
+        "L": 0,
+        "churn": 0,
+        "Jaccard": null,
+        "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+      },
+      "M42_demo30": {
+        "retained": [],
+        "gained": [],
+        "lost": [],
+        "R": 0,
+        "G": 0,
+        "L": 0,
+        "churn": 0,
+        "Jaccard": null,
+        "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+      },
+      "M42_demo14": {
+        "retained": [],
+        "gained": [],
+        "lost": [],
+        "R": 0,
+        "G": 0,
+        "L": 0,
+        "churn": 0,
+        "Jaccard": null,
+        "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+      },
+      "M42_demo43": {
+        "retained": [],
+        "gained": [],
+        "lost": [],
+        "R": 0,
+        "G": 0,
+        "L": 0,
+        "churn": 0,
+        "Jaccard": null,
+        "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+      },
+      "M42_demo09": {
+        "retained": [],
+        "gained": [],
+        "lost": [],
+        "R": 0,
+        "G": 0,
+        "L": 0,
+        "churn": 0,
+        "Jaccard": null,
+        "both_empty_Jaccard_boundary": "undefined when both success sets empty; no zero-success retention claim"
+      }
+    },
+    "donor_agreement": {
+      "L23": {
+        "all4_success_states": [],
+        "any4_success_states": [],
+        "per_state_successful_donors": {
+          "3": [],
+          "7": [],
+          "8": [],
+          "14": [],
+          "16": [],
+          "19": [],
+          "28": [],
+          "32": [],
+          "34": []
+        }
+      },
+      "L42": {
+        "all4_success_states": [],
+        "any4_success_states": [],
+        "per_state_successful_donors": {
+          "3": [],
+          "7": [],
+          "8": [],
+          "14": [],
+          "16": [],
+          "19": [],
+          "28": [],
+          "32": [],
+          "34": []
+        }
+      }
+    },
+    "short_limit_states": [
+      7,
+      28,
+      32
+    ],
+    "six_long_limit_states": [
+      3,
+      8,
+      14,
+      16,
+      19,
+      34
+    ],
+    "success_set_per_arm": {
+      "M23_L23": [],
+      "M23_L42": [],
+      "M42_demo30_L23": [],
+      "M42_demo30_L42": [],
+      "M42_demo14_L23": [],
+      "M42_demo14_L42": [],
+      "M42_demo43_L23": [],
+      "M42_demo43_L42": [],
+      "M42_demo09_L23": [],
+      "M42_demo09_L42": []
+    },
+    "by_remaining_time": {
+      "short_le40": {
+        "M23": {
+          "L23": 0,
+          "L42": 0
+        },
+        "M42_demo30": {
+          "L23": 0,
+          "L42": 0
+        },
+        "M42_demo14": {
+          "L23": 0,
+          "L42": 0
+        },
+        "M42_demo43": {
+          "L23": 0,
+          "L42": 0
+        },
+        "M42_demo09": {
+          "L23": 0,
+          "L42": 0
+        }
+      },
+      "long_gt40": {
+        "M23": {
+          "L23": 0,
+          "L42": 0
+        },
+        "M42_demo30": {
+          "L23": 0,
+          "L42": 0
+        },
+        "M42_demo14": {
+          "L23": 0,
+          "L42": 0
+        },
+        "M42_demo43": {
+          "L23": 0,
+          "L42": 0
+        },
+        "M42_demo09": {
+          "L23": 0,
+          "L42": 0
+        }
+      }
+    },
+    "observations": {
+      "RGB_full_rows": 20,
+      "RGB_replans": 950,
+      "terminal_RGB_rows": 0,
+      "compact_RGB_claimed": false
+    },
+    "source_identity": "all use T2340 original shared A0 and exactly one complete B0+M, complete38/rank128; global23 environment distinct from donor42(KITCHEN_SCENE10)",
+    "scientific_boundary": "90 repetitions of9 initial starts under10 arms, not independent90states/36donor states or paired400; no checkpoint/video selection; video+compile language joint condition replacement;0new learning/native/teacherHDF/Test",
+    "CPU_wall_seconds": 3.5561277866363525,
+    "CPU_process_seconds": 3.3985637090000003
+  },
+  "pairing": {
+    "new_text_pair_maximum": 0.0,
+    "old_actual_Full_branch_maximum": 0.0,
+    "original_prefix_EEF_maximum_cm": 0.04938435181975365,
+    "original_prefix_bowl_maximum_cm": 0.0,
+    "all_branch_Open": true,
+    "all_native_sequences_equal_in_original_prefix": true,
+    "original_actions_and_noise_matches": true,
+    "interpretation": "Original 1e-8 branch-runtime / 1cm original-prefix admission only; no suffix reproduction or tolerance extension"
+  },
+  "behavior": {
+    "M23": {
+      "L23": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 1,
+        "top_Open_at_final": 3,
+        "top_left_Open_range_at_least_once": 7
+      },
+      "L42": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 3,
+        "top_Open_at_final": 1,
+        "top_left_Open_range_at_least_once": 8
+      }
+    },
+    "M42_demo30": {
+      "L23": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 1,
+        "top_Open_at_final": 3,
+        "top_left_Open_range_at_least_once": 7
+      },
+      "L42": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 3,
+        "top_Open_at_final": 1,
+        "top_left_Open_range_at_least_once": 8
+      }
+    },
+    "M42_demo14": {
+      "L23": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 0,
+        "top_Open_at_final": 4,
+        "top_left_Open_range_at_least_once": 6
+      },
+      "L42": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 1,
+        "top_Open_at_final": 1,
+        "top_left_Open_range_at_least_once": 8
+      }
+    },
+    "M42_demo43": {
+      "L23": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 0,
+        "top_Open_at_final": 4,
+        "top_left_Open_range_at_least_once": 7
+      },
+      "L42": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 0,
+        "top_Open_at_final": 1,
+        "top_left_Open_range_at_least_once": 8
+      }
+    },
+    "M42_demo09": {
+      "L23": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 0,
+        "top_Open_at_final": 4,
+        "top_left_Open_range_at_least_once": 6
+      },
+      "L42": {
+        "rows": 9,
+        "success": 0,
+        "bowl_body_origin_height_at_least3cm": 4,
+        "top_Open_at_final": 1,
+        "top_left_Open_range_at_least_once": 8
+      }
+    }
+  },
+  "actual_first5_changes": {
+    "parameter at same text": {
+      "comparisons": 72,
+      "minimum": 0.00018432810611557215,
+      "median": 0.0024311100132763386,
+      "maximum": 0.010342072695493698,
+      "meaning": "Passive actual first-plan difference; mixed seven command units; not a competence metric"
+    },
+    "policy text at same complete factor": {
+      "comparisons": 45,
+      "minimum": 0.011215316131711006,
+      "median": 0.04102550074458122,
+      "maximum": 0.09893590956926346,
+      "meaning": "Passive actual first-plan difference; mixed seven command units; not a competence metric"
+    }
+  },
+  "RGB": {
+    "full_rows": 20,
+    "raw_replans": 950,
+    "viewed_pairs": 160,
+    "viewed_single_camera_images": 320,
+    "review_record": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/rgb/visual_review.json",
+    "source_mapping": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/rgb/index.json",
+    "final_saved_control_step": 295,
+    "terminal_control_step": 300,
+    "terminal_RGB_rows": 0,
+    "compact_RGB_claimed": false,
+    "contact_and_grasp_truth_from_images": false
+  },
+  "conclusion": "All ten arms remain0/9, including six starts with115–240 remaining commands. The four donor complete functions do not transfer to these nine own visited states under either fixed text. This weakens direct reuse as a corrective teacher for this setting; it does not prove general primitive composition impossible or identify a unique state/scene/language cause.",
+  "behavior_boundary": "L42 yields11/45 bowl-body-origin height changes>=3cm versus2/45 forL23, but its same-parameter M23 arm also changes3/9. These are descriptive motions, not grasp/stability/In labels. All official In samples are false; there is no successful donor to select.",
+  "source_boundary": "Same source1000/T2340 original sharedA and one complete38-target rank128 B0+M per row. Donor42 is LIBERO90 task2/KITCHEN_SCENE10; it never selects the target environment. Replacement includes video and compile-language effects jointly.",
+  "contact_boundary": "Native top/middle/bottom joint registry and geom names are in every row.registry. NPZ contact_samples/forces preserve actual paired geoms, control-step-end timing and six-component local contact-frame force. No initial/substep contact coverage, bowl-contact truth or inferred grasp labels.",
+  "historical_references": {
+    "original_donor_success": "denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/results.json: global42/init32..35/demo30,14,43,09 =4/4, steps101,117,113,127; reference only",
+    "original_T2340_correct400": 161,
+    "original_task23_initial": "0/50; unchanged",
+    "old_Full_post_open": "0/9 reference only; newM23+L23 independently executed",
+    "closest_history": "findings§387: ECP primitive cross-task transfer0/44 and28/9, strict recovery14 distinct from ordinary31; not rerun"
+  },
+  "artifacts": {
+    "contract": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/run_contract.json",
+    "cohort": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/cohort.json",
+    "row_manifest": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/row_manifest.json",
+    "source_audit": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/source_audit.json",
+    "per_row": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/per_row.json",
+    "table": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/per_row.tsv",
+    "summary": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/summary.json",
+    "first_plan_effects": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/actual_first_plan_effects.json",
+    "actual_consumer_check": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/pilot_actual_consumer_check.json",
+    "report": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/report.md",
+    "throughput": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/analysis/throughput_summary.json",
+    "resources": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/resource_ledger.json",
+    "completion": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/completion.json",
+    "release": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/launch/final_release_check.json",
+    "retirement": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/retired_entrypoints.json"
+  },
+  "stop": "Fixed batch complete;0new training/native/teacherHDF/heldprivilege/Test; no donor/text/cut/scale search, distillation, Reader or automatic successor. Main independently consumes and decides next work."
+}

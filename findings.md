@@ -10102,3 +10102,49 @@ task23自己的完整条件在原九个post-open起点0/9，Common0/9；此前�
 历史：`cadade40:docs/evidence/ecp_20260824/ecp_process_{phase_expert,separate_plates}_teacher_gate_20260824.json`，
 `cadade40:docs/ecp_recovery_teacher_expert_ruling_20260824.md`，
 `runs/outputs/pi05_ecp_recovery_gate_a_ebdd509_gpu02p012345_20260824/gate_adjudication.json`。
+
+## 388. 四套已有放碗条件在九个已打开访态上均未完成，文本改变运动但没有恢复In（2026-10-07）
+
+`cross_task_post_open_transfer_20261007`已实际完成全部90续行：同T2340的自身M23与task42全部四M42，
+各交叉L23/L42、各九个原post-open起点。十臂均0/9、所有连续官方In样本false，全部运行到原总horizon300。
+实际后缀13100步、原自身命令前缀重放13900步；20full/70compact全部保留，没有原失败补新对照、择donor或重复有效行。
+
+| 完整条件 | L23 In | L42 In | 碗体原点曾升高≥3cm：L23 / L42 | 终点top Open：L23 / L42 |
+| --- | --- | --- | --- | --- |
+| 自身M23 | 0/9 | 0/9 | 1 / 3 | 3 / 1 |
+| M42 demo30 | 0/9 | 0/9 | 1 / 3 | 3 / 1 |
+| M42 demo14 | 0/9 | 0/9 | 0 / 1 | 4 / 1 |
+| M42 demo43 | 0/9 | 0/9 | 0 / 0 | 4 / 1 |
+| M42 demo09 | 0/9 | 0/9 | 0 / 4 | 4 / 1 |
+
+三条剩余40/15/10步与另六条115–240步分开保存，后者全部十臂仍无完成，所以不能将全阴性只归于晚开。
+各donor对同期M23、各M内文本比较R/G/L/churn均0，全部成功集合为空；空集合Jaccard未定义，不能声称保留了成功能力。
+九个实际起点的重复比较不当成90独立初始化或paired400，原T161和task23初态0/50均不改写。
+
+实际干预进入了完整消费者：source1000、原T公共A0不变，每行一套38-target/rank128完整B0+M，固定后闭环，
+执行文本真实进入原processor padding与10flow。首次physical5在同文本换条件72对的MSE中位.00243111，
+同条件换文本45对中位.04102550；全部差额非零。这只是作用证据，七维混合单位与first50差异不是控制质量。
+每条独立重放原自身actions[:branch]、零额外settling/物理改动/中途克隆；两文本间及对原实际Full的branch运行状态
+最大差均0，原前缀EEF最大误差.04938435cm、碗0cm，In序列一致、全部branch仍Open。沿原1e-8/1cm准入，没有扩大容限。
+init19引用旧Full真实`attempt_remaining_retry2_gpu2`路径；demo09使用实际`task_42_demos_09`，未按文件名猜场景。
+环境始终task23/libero_goal:3，donor42实际LIBERO90 task2/KITCHEN_SCENE10仅是条件参数来源。
+
+局部行为变化须与完整阴性一起保留。L42下碗体原点曾升高≥3cm为11/45，L23为2/45；自身M23+L42已3/9，
+所以不能将变化都记给donor。init19自身M23+L42及demo30+L42都出现末段抬碗；demo30+L23最大升高20.95cm却终点
+回到原高度附近，demo09+L42/init8升高24.92cm也始终未In。L42的终点top Open为5/45，L23为18/45；
+这些不能证明关柜是唯一原因，Open不是成功gate，位移/中心距离/外观不是抓稳或掉碗真值。
+全部20full各八个事前等距真实replan双RGB已逐条view_image审看，160对/320原帧与遮挡、反例、源索引齐全；
+原950个replan双RGB仍保留，未称全部看过。20行最后保存图295步、数值终点300步，明确无terminal RGB；70compact不声称RGB审看。
+真实三层关节、native Open、固定柜体/各层robot geom配对及直接六分量contact-frame力均保留；仅control-step-end，无初始/积分子步接触。
+
+本次削弱“原task23仅未编译出另一任务已经能在这些状态使用的完整控制”这一具体解释，关闭四donor在九状态/两文本的迁移。
+它没有分别裁决所有场景/访态/语言因素，不证明所有primitive不可组合、所有状态不可救或更大Reader必要。
+同原L下单独更换M没有完整新增，配合L42也没有，因此没有可靠纠正教师或自动蒸馏/组合编译资格；
+局部抬碗不能升级为完整正例。旧ECP0/44、28/9及严格recovery14/普通31的适用边界仍保持，未为本批重跑历史。
+
+原件root：`/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/`，
+`analysis/{per_row.json,per_row.tsv,summary.json,actual_first_plan_effects.json,report.md}`、`analysis/rgb/{index,visual_review}.json`；
+canonical索引`docs/analyses/cross_task_post_open_transfer_20261007.json`。
+执行代码为clean pushed `8d432bb6` detached冻结；两次GPU launch均exit0，完整物理卡时.219780081643GPUh，六worker退出。
+专用两入口退役、Git/frozen/原件/失败/费用保留；实际封口时钟、CPU工程计费边界、新增峰与final Git见root completion/resource_ledger。
+0新Writer/native编译/teacherHDF/梯度/Test，固定批次结束即停，下一完整科学判断交main独立消费，不自动追加donor/文本/切点/训练。

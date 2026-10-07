@@ -177,6 +177,8 @@ def predict_frames(policy, processor, demo, row, frames, noise, batch_size):
 def build_source(root, shard=0, shards=1, batch_size=32, profile=False):
     """Read-only source Value materialization; no LoRA/native Writer or gradients."""
     import torch
+    # The canonical facade initializes the run-contract owner before worker_setup.
+    from ember import pi05_eval_contract  # noqa: F401
     from ember.pi05_eval.worker_setup import load_policy
     from ember.writer.topology import bind_current_process_to_cuda_numa
 

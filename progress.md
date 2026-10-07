@@ -1,3 +1,14 @@
+## 2026-10-07 固定T访态接力288行完成，停止计算与退役
+
+findings§381/canonical JSON/root analysis/report保存完整288行：T_replay109完全复现原T，T50_demo_NN91、R80/G11/L29/churn40/J2/3。
+Target62→53、support47→38；原T失败35中新成11，原20初态互补只保留7、原双失败15新成4。相同初态NN91隐藏R66/G25/L25交换，不能认证强纠正教师。
+全部59760动作/12037提案、0..50步配对和T全过程raw/位置/quat/gripper/body/native/终止均匹配，0不符；固定12clip/192图已审看，其余60full/216compact不冒称看过。
+GPU562.501612秒=.156250448h，两EGL正常退出03:09:11Z，计算承接23.188min；14worker与两个实际launcher均退出、两节点无ymdai GPU。
+系统Python协调器接口失败已接管健康原T且完整计费、未重跑；CPU退役probe导入入口及一项PID记录边界保留。原frozen/Git/raw/cache与全部失败不删。
+临时owner/11hooks/8worker profile已退役，89现有回归、两真实合同拒绝及有限协调器封口检查通过。新增保守峰5.344GiB/硬16，已计时去重复CPU.6022h（非完整CPU账）；最终wall/费用/final clean pushed Git/工程树清理见root completion/resource_ledger。
+唯一teacher_state_handoff批已结束，无active模型/环境/训练、无其它cut/NN扫描/新训练或自动后继。当前tracked/Git仍由实验session封口；一次整批main投递完成后完整交回，实际接受/消费以delivery_receipt为准。
+main独立消费科学并继续Owner完整目标，下方active/运行/扫描未完成等只为当时时点，不恢复旧任务。
+
 ## 2026-10-07 实验session实际承接T访态接力诊断
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已完整读取112行唯一active design和findings§379–380、当前Owner/progress/task_plan，从clean pushed226f7065接管canonical tracked/Git独占窗口；main停止并发写入。
@@ -5,6 +16,10 @@
 首次strg01独立data1实占1414695444KiB/soft2147483648KiB/limit2157969408KiB，共享可用88204252282880B；个人实际du读取与最小隔离实现并行，完整回执在大评测输出前补齐。此条0新GPU/环境/forward。
 固定两臂T_replay/T50_demo_NN各原144：共同原T真实actions[:50]，after50 before action50切换，无reset/settling/状态覆盖/增horizon。原demo数学/geometry cache及原T raw只读；新增最小命令所有权、真实耗尽停止和第50步证据接口，复用canonical queue/scene/capture。
 专用接口仅本批使用，计算停止后退役；全部原件、失败与费用保留。只在整批结束或真实科学/预算/参照边界一次回main并交回窗口，无阶段Queue/自通知或自动后继。
+
+两臂现已实际从clean pushed detached36f2a044运行：T_replay在gpu01:1六persistent renderer；首已完成授权行实际raw前缀匹配，第50步EEF/body差0且原失败重放保持，然后T50_demo_NN在gpu01:6检验八worker更高并发。每次双节点live/quota/shared独立回执与真正物理卡时保存于root launch；0模型/VLA/native/flow或teacher HDF。
+协调器初次在系统Python3.12.2缺失os.pidfd_open、Popen后记录前退出；已定位该接口差异，用既有data1 .venv接管原SSH/remote PID，未中断健康T、未重跑有效行、未改冻结科学代码。初次错误回执的0GPU字段明确作废，修复ledger从原immutable request mtime保守覆盖真实加载/执行到退出；原失败和未使用b783c521冻结保留。
+独立data1 quota与相关个人目录实际du475337252KiB证明16GiB峰值余量，全个人du仍独立读取，不冒称完成。正常仅直接等待进程退出事件；不轮询共享log/cache、阶段Queue或自通知。
 
 ## 2026-10-07 main消费Gamma，登记真实动作教师的T访态接力诊断
 

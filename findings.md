@@ -9750,3 +9750,67 @@ state aggregation确实取projected decoder自身rollout的30个状态，再查�
 新重放工程不确定性单列。0训练/新VLA-native/teacher HDF/held/Test；只使用既存T raw、原scene及当前审计36-task动作缓存。
 主讨论已直接核144原T continuous共28264实际动作及condition/scene/长度；这不是新环境重放通过的声明。
 实验session独占工程/Git，整批完成或真实边界回main后再决定完整学习方法；Owner最终目标和自主授权持续。
+
+## 381. 固定T50访态接力完成：局部新增成立，仍有大交换且未认证强纠正教师（2026-10-07）
+
+实验session完整执行[112行固定合同](docs/designs/teacher_state_handoff_20261007.md)，两臂各原seen144，
+[canonical原件索引](docs/analyses/teacher_state_handoff_20261007.json)及唯一root
+`/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/analysis/report.md`保存全部288行、原件、检查与范围。
+原T来自真实132+12，共28264实际raw动作；共同物理执行前50步，after50 before action50分别继续原raw或原demo NN。
+原场景/teacher/exact语言/RNG来源/控制器/总horizon固定；不reset、settle、中途覆盖state、补命令或额外时间。
+
+T_replay完整复现原109/144、全部成功集合、原实际长度/终止步和全过程native序列。
+两臂相对原T及相互间0..50步EEF位置、quat分量、夹爪和所有保存body位置差0，原生谓词一致；
+T完整重放同样差0，35失败明确replay-exhausted，未补末动作追分。角差arccos最高4.215e-8rad是相同quat的舍入，
+没有把普通低位数值差修成bug。参照成立，结果不是重放识别失败。
+
+T50_demo_NN为91/144，对同批T109保留80、得11、失29，共同失败24；净−18/churn40/J=2/3。
+Target24 62→53（R42/G11/L20/J=.575342），support12 47→38（R38/G0/L9/J=.808511）。
+Spatial16→14、Object19→14、Goal16→16、Long11→9（各24行）；support90 47→38/48。
+Breadth均34/36，但T零任务25/38变为NN零任务13/34，不能把相同覆盖数当能力保持。
+全部11新增global task/init为0/34、1/34、5/35、20/34、25/34、29/32、32/35、35/32/33、37/33、38/34，分布10个target任务。
+29丢失/80保持及各臂成功集合完整保留；task13 2→0、task34 3→0、support56 4→1是不利例，不能用净分遮掉。
+
+预登记原T失败35行新增11；T失败而初态NN成功20行只保留7，原T/NN都失败15行新成4。
+原T成功109行保持80、丢29（73.39%保持）。相对原初态NN91，本批仍91却保留66、得25、失25，
+churn50/J=.568966；target63→53、support28→38。它未整体崩溃，但原20个互补正例不能直接当学生访态的可靠教师。
+T前缀让原NN的一些支持任务有用，也失去目标任务能力；不同trajectory history的影响没有被隔离为单一物理/读取根因。
+
+实际NN严格复用bfd76c99原controller/nearest和9f90a14d完整OOI body/site，原对象等权、.10m/.04m尺度、
+最早argmin、offset1和144条件/4556合法departure不变。Live自身查询无回退同步门槛；原EEF缓存差异只被动保留。
+T提案最多5个真正原raw valid，未执行尾padding全false；NN保留原full50真动作Value/valid mask。
+全部59760实际命令、12037提案、前5/argmin/query/scene-teacher-RNG/native/valid mask检查0不符。
+Policy seed仅来源记录，两臂0flow，0在线T/source/Writer/native/VLA/LoRA生成/梯度/teacher HDF/held/Test。
+
+72full/216compact均保留，固定12/25/29/32/38/73各init32双臂12clip/192图实际审看，
+每clip八个已有replan时刻和双camera的来源/时间见root `analysis/own_RGB/sources.json`，依据/不利例见reviewed.json。
+没有声称其余60full或216compact看过；最后已存replan图不等于native终止图。
+29/init32 NN瓶移动30.90cm并在126原生On，原T4.06cm无On，是正例。
+12原T搬错cream_cheese54.16cm，NN目标最大11.26cm与前缀一致，两臂In全false；25目标盘仅4.71/2.10cm，两臂On全false。
+32 NN更早TurnOn71（T135）而On仍从未成立；38 NN第二壶On从328保持，但第一壶从未On，仍失败。
+73两臂Close161/178成功，杯最大23.31/3.98cm；杯运动不是该task目标，也不证明contact/grasp或必要姿态。
+Body原点/RGB不代替完整关节、接触与抓持记录，不由木架或炉体外观猜region完成。
+
+判断边界：11新增跨10任务支持这个固定教师在部分T早期访态的有限继续控制用途；
+7/20潜在互补继承与29原成功丢失削弱“初态可用便足以提供广泛可靠纠正”的假设，降低它作为全任务强教师的优先级。
+仍有4条初态双方失败被接住，不能外推所有反馈学习不可能，不能认定occupancy/Reader/Compiler是唯一根因。
+这不是合法EMBER、部署接力或union/router分数，未证明纠正监督可学、晚期恢复、未见video/task、单LoRA或held迁移。
+T/MT/G/F/Gamma背景只引用已有原件，强MT153/T161的完整方法比较不被seen91遮掉；
+旧state aggregation已经查student-state expert velocity的事实及原正反边界继续约束后继，不称DAgger未尝试。
+任一结果均停止本批，不变cut/距离/phase/平滑/scale，不恢复Gamma/F/Writer/Reader/RL/400/controls/Test或自动下一批。
+
+来源：消费者clean pushed detached36f2a044，未用b783c521前元数据冻结保留0GPU；基线226f7065。
+两EGL launch均exit0，完整GPU562.501612秒=.156250448h；承接02:46:00Z，计算退出03:09:11Z，23.188min。
+T六/NN八worker，实际time-v wall301.00/260.12s、launcher231.77/244.01s；NN八并发利用原未完成行，没重做有效case。
+两臂命令数量与时长不同，93.90/121.08control-step/s不是worker数的配对因果加速；所有授权行完成后不继续profile。
+Host maxRSS7.747/7.895GiB，EGL VRAM未连续采峰；现场显存余量/保守准入/退出原件保留，不伪报精确VRAM峰。
+
+一次协调器系统Python缺os.pidfd_open的工程失败发生在Popen后，原T健康，改用既有.venv接管，未中断/重跑。
+原错误退出记录GPU0字段作废，修复账从原immutable request mtime先于Popen至实际退出完整计费；无物理/GPUrow失败或缺行。
+CPU退役probe初次直接导入内部run_contract触发既有facade循环，按实际pi05_eval_contract入口重检通过，无共享source修补。
+另一次手列第二launcher PID不权威，末按原remote_pid3245893核退出，旧回执不隐藏。
+首独立strg01 quota/相关du/shared、后来完整个人du及逐launch双节点回执独立保存；全部新增data1，原大资产只读。
+所有14 worker、两个实际remote launcher已退出，末双节点无ymdai GPU；专用owner/11hooks/8worker临时面退役，
+89项现有回归/实际两新合同拒绝/finite owner封口检查通过。原frozen/Git/raw/cache/失败保留。
+新增保守峰5.344GiB/硬16，已计时去重复CPU.6022h（非完整CPU账）；最终wall/费用/Git/工程树清理和一次可靠main投递见root resource_ledger/completion/delivery回执。
+执行者交回tracked/Git后停止新增工作，main独立消费科学、裁决完整方法，最终Owner目标未完成。

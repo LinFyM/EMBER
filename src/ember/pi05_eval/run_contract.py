@@ -41,13 +41,7 @@ def require_supported_runtime(contract: Mapping[str, Any]) -> None:
     adapter = contract.get("adapter") or {}
     retired = [key for key in keys if contract.get(key) is not None or adapter.get(key) is not None]
     if adapter.get("kind") == "privileged_action_memory_controller":
-        if (adapter.get("study_id") == "teacher_state_handoff_20261007"
-                and adapter.get("schema_version") == "ember_teacher_state_handoff_evaluation_v1"):
-            from ember.pi05_eval.action_memory_controller import validate_contract
-
-            validate_contract(contract)
-        else:
-            retired.append("privileged_action_memory_controller")
+        retired.append("privileged_action_memory_controller")
     capture = contract.get("diagnostic_occupancy_capture") or {}
     if capture.get("schema_version") == "ember_pi05_frozen_replay_capture_v1":
         retired.append("frozen_replay")

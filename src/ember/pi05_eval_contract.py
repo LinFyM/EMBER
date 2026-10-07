@@ -32,8 +32,8 @@ ROLE_NAMES = {
 DERIVED_ROLE_NAMES = {"seen_panel", "operator_seen_training36"}
 SEEN_PANEL_RELATIVE_PATH = Path("configs/pi05_seen_panel_v1.json")
 FROZEN_SOURCE_POLICY_SUBDIR = "policy"
-RUNTIME_REPLICA_PROFILES = (1, 2, 3, 4, 5, 6, 8)
-RUNTIME_OMP_THREADS = {"1": 8, "2": 4, "3": 2, "4": 1, "5": 1, "6": 1, "8": 1}
+RUNTIME_REPLICA_PROFILES = (1, 2, 3, 4, 5, 6)
+RUNTIME_OMP_THREADS = {"1": 8, "2": 4, "3": 2, "4": 1, "5": 1, "6": 1}
 
 
 @dataclass(frozen=True)

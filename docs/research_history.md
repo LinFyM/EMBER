@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：固定T50访态接力完成，部分继续控制成立但原能力交换仍大
+
+findings§381及[完整原件](analyses/teacher_state_handoff_20261007.json)索引唯一root teacher_state_handoff_20261007；288新行，0训练/新VLA-native/flow/teacher HDF/held/Test。
+T_replay109完整复现原真实132+12的成功集合、全部28264raw命令、状态与native终止；两臂共同前50实际raw/第50步状态一致，未reset/补horizon。
+T50_demo_NN91，对T R80/G11/L29、churn40/J2/3，target62→53/support47→38，breadth同34而零任务不同。
+原T失败35得11，原初态互补20只继承7、原双失败15新成4；与原NN91相同总数隐藏R66/G25/L25交换。
+局部正例保留，不认证全任务强纠正教师，不外推所有反馈学习失败或唯一根因；没有部署接力/union/router成绩或后继学习授权。
+固定12clip/192保存图实际审看，29/init32新增与12/25/32/38失败、73共同Close保留；原点/RGB不叫contact/grasp。
+消费者clean pushed detached36f2a044，原NN/几何bfd76c99/9f90a14d只读。GPU.156250448h、计算承接23.188min；一次协调器运行时接口失败接管健康T，0有效case重跑。
+全部14worker/两节点GPU释放，临时owner/11hooks/8worker面退役、89回归及实际拒绝检查通过；原Git/frozen/raw/cache/失败保留。
+最终成本/峰值/CPU计时边界/clean pushed Git/工程树清理和一次可靠main消费见root completion与delivery；执行者停止本批，由main独立承担后继完整方法判断。
+
 ## 2026-10-07：Gamma局部控制与剩余误差，转向核验现成教师在T访态的用途
 
 findings§378–380与[同批main原件消费](analyses/calibrated_action_memory_control_20261007.json)保存288新行及1008背景原行、144缓存分解和main四clip/64图范围。

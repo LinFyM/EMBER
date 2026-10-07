@@ -1,3 +1,10 @@
+## 2026-10-07 固定T50访态接力完成，有限教师用途与完整方法区分
+
+findings§381与docs/analyses/teacher_state_handoff_20261007.json保存完整288行：原T重放109及所有参照状态/终止复现，NN接手91（R80/G11/L29）。
+11新增跨10任务，但target/support各净−9，原20初态互补只继承7；有4条原双失败被接住，也有29原成功丢失，不能认证强纠正教师或以union/router构成方法。
+本唯一批已停止计算/退役，无active实验或自动切点/距离/phase扫描、Gamma/F/Writer/Reader训练、RL/400/controls/Test；最终目标尚未完成，后继由main独立科学消费后裁决。
+工程/资源/费用/final Git/一次投递与写窗口交回按progress及root completion；下方active合同均为历史时点。
+
 ## 2026-10-07 检验现成动作教师能否继续T已访问的状态
 
 findings§379–380保存Gamma完整消费和历史依据：6→22仍远弱于真动作91，不能由MSE恢复旧校准；初态NN与T有互补但尚无偏离状态的教师资格。

@@ -56,8 +56,7 @@ def start_fixed_episode(
     for _ in range(int(contract["environment"]["dummy_settling_steps"])):
         observation, _, _, _ = env.step(dummy)
     scene_reference = None
-    paired_scene = (contract.get("demonstration_comparison_scene") or contract.get("operator_read_write_scene")
-                    or contract.get("privileged_action_memory_scene"))
+    paired_scene = contract.get("demonstration_comparison_scene") or contract.get("operator_read_write_scene")
     if paired_scene is not None:
         from ember.pi05_eval.scene import restore_registered_scene
 
@@ -132,6 +131,4 @@ def finish_episode_row(
     if passive is not None:
         row["continuous_control_trace"] = passive
     row.update(episode_adapter_fields(contract, task_adapter, slot.get("episode_adapter")))
-    if callable(getattr(task_adapter, "finish_evidence", None)):
-        row["teacher_state_handoff"] = task_adapter.finish_evidence(slot)
     return row

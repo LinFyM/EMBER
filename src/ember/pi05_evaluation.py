@@ -14,7 +14,6 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from ember.eval_adapters import (
-    PRIVILEGED_ACTION_MEMORY_KIND,
     load_evaluation_adapter as _load_evaluation_adapter,
     validate_episode_adapter_fields,
 )
@@ -118,11 +117,7 @@ def _plan_action_chunks(
     task_adapter: Any | None,
     root_seed: int,
     replan_steps: int,
-    envs: Sequence[Any] | None = None,
 ) -> None:
-    if getattr(task_adapter, "kind", None) == PRIVILEGED_ACTION_MEMORY_KIND:
-        task_adapter.plan_slots(envs, slots, task=task, root_seed=root_seed, replan_steps=replan_steps)
-        return
     import torch
 
     planning = [slot for slot in slots if slot is not None and not slot["action_plan"]
@@ -228,8 +223,7 @@ def rollout_shard(
         start_slot(env, int(state_id))
         for env, state_id in zip(active_envs, state_ids[:active_count], strict=True)
     ]
-    if policy is not None:
-        policy.reset()
+    policy.reset()
     while any(slot is not None for slot in slots):
         _plan_action_chunks(
             slots,
@@ -241,7 +235,6 @@ def rollout_shard(
             task_adapter=task_adapter,
             root_seed=root_seed,
             replan_steps=replan_steps,
-            envs=active_envs,
         )
 
         for slot_index, (env, slot) in enumerate(zip(active_envs, slots, strict=True)):
@@ -257,7 +250,7 @@ def rollout_shard(
                 if "stage_predicate_states" in slot:
                     update_stage_predicates(env, slot)
                 record_passive_step(env, slot, action, occupancy_capture)
-            if not bool(done) and slot["steps"] < min(max_steps, slot.get("recorded_action_limit", max_steps)):
+            if not bool(done) and slot["steps"] < max_steps:
                 continue
             slot["episode_done"] = bool(done)
             rows.append(finish_episode_row(
@@ -510,16 +503,17 @@ def _initialize_worker(
     numa_node = cuda_numa_node(0)
     if affinity is None or numa_node is None:
         raise Pi05EvaluationError("PI05 evaluator requires GPU-local NUMA affinity")
+    model_path, normalization, tokenizer_path = validate_worker_assets(contract)
     torch.manual_seed(int(contract["rng"]["inference_seed"]))
     torch.cuda.manual_seed(int(contract["rng"]["inference_seed"]))
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.set_grad_enabled(False)
-    if (contract.get("adapter") or {}).get("kind") == PRIVILEGED_ACTION_MEMORY_KIND:
-        policy = preprocess = postprocess = None
-    else:
-        model_path, normalization, tokenizer_path = validate_worker_assets(contract)
-        policy, preprocess, postprocess = load_policy(
-            model_path, normalization["stats"], tokenizer_path, contract["policy"])
+    policy, preprocess, postprocess = load_policy(
+        model_path,
+        normalization["stats"],
+        tokenizer_path,
+        contract["policy"],
+    )
     task_adapter = _load_evaluation_adapter(
         policy,
         contract,

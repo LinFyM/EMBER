@@ -29,7 +29,6 @@
       "sources": [
         "control_calibrated_read_write_20261003/control_calibrated_read_write/evaluation/correct400/results.json"
       ],
-      "reader_code": "2c630fb3940c16365ac9a9a672b1f632e8d31e51",
       "expected_rows": 400,
       "expected_successes": 122,
       "episodes": 400,
@@ -128,14 +127,14 @@
         "26": 50,
         "31": 50,
         "39": 50
-      }
+      },
+      "implementation_reference": "2c630fb3940c16365ac9a9a672b1f632e8d31e51"
     },
     "Calibrated450_seen": {
       "role": "seen144",
       "sources": [
         "control_calibrated_read_write_20261003/control_calibrated_read_write_seen/evaluation/correct144/results.json"
       ],
-      "reader_code": "2c630fb3940c16365ac9a9a672b1f632e8d31e51",
       "expected_rows": 144,
       "expected_successes": 77,
       "episodes": 144,
@@ -425,14 +424,14 @@
       "breadth": {
         "tasks_with_success": 26,
         "suites_with_success": 5
-      }
+      },
+      "implementation_reference": "2c630fb3940c16365ac9a9a672b1f632e8d31e51"
     },
     "C450": {
       "role": "validation400",
       "sources": [
         "conditional_read_write_fresh_20261001/conditional_read_write/evaluation/correct400/results.json"
       ],
-      "reader_code": "a0e0248d96568e42b24a3d1c4102e2ca6e35a40c",
       "expected_rows": 400,
       "expected_successes": 137,
       "episodes": 400,
@@ -531,14 +530,14 @@
         "26": 50,
         "31": 50,
         "39": 50
-      }
+      },
+      "implementation_reference": "a0e0248d96568e42b24a3d1c4102e2ca6e35a40c"
     },
     "C450_seen": {
       "role": "seen144",
       "sources": [
         "conditional_read_write_fresh_20261001/conditional_read_write_seen/evaluation/correct144/results.json"
       ],
-      "reader_code": "a0e0248d96568e42b24a3d1c4102e2ca6e35a40c",
       "expected_rows": 144,
       "expected_successes": 91,
       "episodes": 144,
@@ -828,14 +827,14 @@
       "breadth": {
         "tasks_with_success": 29,
         "suites_with_success": 5
-      }
+      },
+      "implementation_reference": "a0e0248d96568e42b24a3d1c4102e2ca6e35a40c"
     },
     "C900": {
       "role": "validation400",
       "sources": [
         "conditional_read_write_continuation900_20261002/conditional_read_write/evaluation/900/correct400/results.json"
       ],
-      "reader_code": "85919994aef11c17b49b7d0e70a2c110158bff61",
       "expected_rows": 400,
       "expected_successes": 140,
       "episodes": 400,
@@ -934,14 +933,14 @@
         "26": 50,
         "31": 50,
         "39": 50
-      }
+      },
+      "implementation_reference": "85919994aef11c17b49b7d0e70a2c110158bff61"
     },
     "C900_seen": {
       "role": "seen144",
       "sources": [
         "conditional_read_write_continuation900_20261002/conditional_read_write_seen/evaluation/900/correct144/results.json"
       ],
-      "reader_code": "85919994aef11c17b49b7d0e70a2c110158bff61",
       "expected_rows": 144,
       "expected_successes": 115,
       "episodes": 144,
@@ -1231,14 +1230,14 @@
       "breadth": {
         "tasks_with_success": 35,
         "suites_with_success": 5
-      }
+      },
+      "implementation_reference": "85919994aef11c17b49b7d0e70a2c110158bff61"
     },
     "A64": {
       "role": "validation400",
       "sources": [
         "fixed_B_transfer_readback_20261003/evaluation/correct400/results.json"
       ],
-      "reader_code": "d56f6fa244200bcc70623893f6ef5695d30de883",
       "expected_rows": 400,
       "expected_successes": 143,
       "episodes": 400,
@@ -1337,7 +1336,8 @@
         "26": 50,
         "31": 50,
         "39": 50
-      }
+      },
+      "implementation_reference": "d56f6fa244200bcc70623893f6ef5695d30de883"
     },
     "AJ_parent": {
       "role": "local32_16_physical_starts",
@@ -1346,7 +1346,6 @@
         "conditional_A_reexpression_diagnostic_20261002/Original/evaluation/teacher1/results.json"
       ],
       "derived_row_source": "joint_action_effect_credit_20261003/analysis/rows.jsonl",
-      "reader_code": "a270fb01300949e86166f20ac4fa48d4d06a83c5",
       "training_code": "85919994aef11c17b49b7d0e70a2c110158bff61",
       "expected_rows": 32,
       "expected_successes": 13,
@@ -1409,7 +1408,8 @@
       "breadth": {
         "tasks_with_success": 4,
         "suites_with_success": 4
-      }
+      },
+      "implementation_reference": "a270fb01300949e86166f20ac4fa48d4d06a83c5"
     },
     "AJ_A": {
       "role": "local32_16_physical_starts",
@@ -1417,7 +1417,6 @@
         "joint_action_effect_credit_20261003/A/results.json"
       ],
       "derived_row_source": "joint_action_effect_credit_20261003/analysis/rows.jsonl",
-      "reader_code": "a270fb01300949e86166f20ac4fa48d4d06a83c5",
       "training_code": "b0df34ee1bc3fd09ff48bc603f08a272dd8ae359",
       "expected_rows": 32,
       "expected_successes": 24,
@@ -1480,7 +1479,8 @@
       "breadth": {
         "tasks_with_success": 4,
         "suites_with_success": 4
-      }
+      },
+      "implementation_reference": "a270fb01300949e86166f20ac4fa48d4d06a83c5"
     },
     "AJ_J": {
       "role": "local32_16_physical_starts",
@@ -1488,7 +1488,6 @@
         "joint_action_effect_credit_20261003/J/results.json"
       ],
       "derived_row_source": "joint_action_effect_credit_20261003/analysis/rows.jsonl",
-      "reader_code": "a270fb01300949e86166f20ac4fa48d4d06a83c5",
       "training_code": "b0df34ee1bc3fd09ff48bc603f08a272dd8ae359",
       "expected_rows": 32,
       "expected_successes": 22,
@@ -1551,7 +1550,8 @@
       "breadth": {
         "tasks_with_success": 4,
         "suites_with_success": 4
-      }
+      },
+      "implementation_reference": "a270fb01300949e86166f20ac4fa48d4d06a83c5"
     },
     "RL_parent_seen_ODE": {
       "role": "seen144",
@@ -1559,7 +1559,6 @@
         "denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/results.json",
         "query_conditioned_transition_read_20261005/parent/evaluation/seen12/results.json"
       ],
-      "reader_code": "1c90e7d5681bf18c99f9dc4084225d03e76ee929",
       "expected_rows": 144,
       "expected_successes": 109,
       "episodes": 144,
@@ -1849,14 +1848,15 @@
       "breadth": {
         "tasks_with_success": 34,
         "suites_with_success": 5
-      }
+      },
+      "implementation_reference": "1c90e7d5681bf18c99f9dc4084225d03e76ee929",
+      "reused_source_boundary": "132 rows from the RL parent ODE readout plus 12 existing parent rows from query_conditioned_transition_read_20261005; the latter evaluator identity is not re-attributed to the RL commit."
     },
     "RL_parent_seen_SDE": {
       "role": "seen144",
       "sources": [
         "denoising_return_writer_20261006/readouts/parent/seen/SDE/evaluation/results.json"
       ],
-      "reader_code": "1c90e7d5681bf18c99f9dc4084225d03e76ee929",
       "expected_rows": 144,
       "expected_successes": 109,
       "episodes": 144,
@@ -2146,14 +2146,14 @@
       "breadth": {
         "tasks_with_success": 34,
         "suites_with_success": 5
-      }
+      },
+      "implementation_reference": "1c90e7d5681bf18c99f9dc4084225d03e76ee929"
     },
     "RL_63_official_ODE": {
       "role": "validation400",
       "sources": [
         "denoising_return_writer_20261006/readouts/63/official/ODE/evaluation/results.json"
       ],
-      "reader_code": "1c90e7d5681bf18c99f9dc4084225d03e76ee929",
       "expected_rows": 400,
       "expected_successes": 154,
       "episodes": 400,
@@ -2252,14 +2252,14 @@
         "26": 50,
         "31": 50,
         "39": 50
-      }
+      },
+      "implementation_reference": "1c90e7d5681bf18c99f9dc4084225d03e76ee929"
     },
     "RL_72_official_ODE": {
       "role": "validation400",
       "sources": [
         "denoising_return_writer_20261006/readouts/72/official/ODE/evaluation/results.json"
       ],
-      "reader_code": "1c90e7d5681bf18c99f9dc4084225d03e76ee929",
       "expected_rows": 400,
       "expected_successes": 158,
       "episodes": 400,
@@ -2358,14 +2358,14 @@
         "26": 50,
         "31": 50,
         "39": 50
-      }
+      },
+      "implementation_reference": "1c90e7d5681bf18c99f9dc4084225d03e76ee929"
     },
     "RL_72_seen_ODE": {
       "role": "seen144",
       "sources": [
         "denoising_return_writer_20261006/readouts/72/seen/ODE/evaluation/results.json"
       ],
-      "reader_code": "1c90e7d5681bf18c99f9dc4084225d03e76ee929",
       "expected_rows": 144,
       "expected_successes": 102,
       "episodes": 144,
@@ -2655,14 +2655,14 @@
       "breadth": {
         "tasks_with_success": 33,
         "suites_with_success": 5
-      }
+      },
+      "implementation_reference": "1c90e7d5681bf18c99f9dc4084225d03e76ee929"
     },
     "RL_72_seen_SDE": {
       "role": "seen144",
       "sources": [
         "denoising_return_writer_20261006/readouts/72/seen/SDE/evaluation/results.json"
       ],
-      "reader_code": "1c90e7d5681bf18c99f9dc4084225d03e76ee929",
       "expected_rows": 144,
       "expected_successes": 109,
       "episodes": 144,
@@ -2952,7 +2952,8 @@
       "breadth": {
         "tasks_with_success": 34,
         "suites_with_success": 5
-      }
+      },
+      "implementation_reference": "1c90e7d5681bf18c99f9dc4084225d03e76ee929"
     }
   },
   "comparisons": {
@@ -7792,5 +7793,6 @@
         ]
       ]
     }
-  }
+  },
+  "implementation_reference_semantics": "A verified immutable Git entry for the relevant implementation/batch, not a claim that every reused row was freshly evaluated by that commit; original run-relative sources are preserved separately."
 }

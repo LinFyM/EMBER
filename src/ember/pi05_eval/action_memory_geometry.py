@@ -1,7 +1,7 @@
 """Original absolute retrieval geometry plus its live own-state signature.
 
-geometry_episode and nearest are unchanged from Git 9f90a14d; the diagnostic
-adds only live reads, with no rewind or teacher synchronization gate on them.
+Geometry and nearest retain Git 9f90a14d's definitions. Asset paths also accept
+the original support XML's repeated package prefix; live reads never rewind.
 """
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -16,7 +16,7 @@ def geometry_episode(demo, objects, asset_root: Path, robosuite_root: Path):
         if name is None:
             continue
         if "/robosuite/" in name:
-            path = robosuite_root / name.split("/robosuite/")[-1]
+            path = robosuite_root / name.split("/robosuite/")[-1].removeprefix("robosuite/")
         elif "/assets/" in name:
             path = asset_root / name.split("/assets/")[-1]
         else:

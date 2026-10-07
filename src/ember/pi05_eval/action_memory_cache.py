@@ -59,7 +59,7 @@ def registration(asset_root, root):
                                "language": task["language"], "init_state_id": ep["init_state_id"],
                                "teacher_demo": demo, "hdf5": str(learning[tid].authority.path.resolve()),
                                "length": learning[tid].episode_lengths[demo],
-                               "geometry_path": str(root / "memory/attempts/installed_bddl_registry/geometry" / f"task{tid:03d}_demo{demo:02d}.npz"),
+                               "geometry_path": str(root / "memory/attempts/original_xml_asset_mapping/geometry" / f"task{tid:03d}_demo{demo:02d}.npz"),
                                "source_path": str(root / "memory/source" / f"task{tid:03d}_demo{demo:02d}.npz")})
     from ember.pi05_eval.scene import inspect_registered_scenes
     scene = inspect_registered_scenes(SCENE, tasks, states=(32, 33, 34, 35),

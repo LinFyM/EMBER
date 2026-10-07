@@ -1,3 +1,15 @@
+## 2026-10-07 实验session实际承接强T冻结跨任务接手诊断
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取120行active design、findings§387和最新Owner/AGENTS；
+从clean pushed main714291b7接管canonical tracked/Git独占窗口，main停止并发写入。
+实际承接2026-10-07T09:47:17Z，硬截止12:47:17Z；预计1–2h，硬3wall/2完整GPUh/16完整CPUh/data1新增峰8GiB。
+唯一root为/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007，确认不存在同名已承接/完成批次。
+首strg01独立data1 quota实占1427746052KiB/soft2147483648/limit2157969408，个人du1427745996KiB，共享可用86086682624KiB；
+新增峰预估3GiB含工程/frozen/RGB/数值/失败/cache/Git，复用旧source/banks不复制；完整原现场回执在root/launch。
+九个原T真实post-open起点与四donor齐，demo09实际文件名、init19旧Full实际attempt按原row路径消费。
+全部90参数×文本续行固定，0新Writer/native编译/梯度/teacher HDF/Test；当前只有CPU工程和来源核验，尚未启动GPU。
+专用薄消费者只复用封存prefix/plan/capture函数与canonical完整LoRA/source，不恢复旧dispatcher；结束后退役并一次交回main。
+
 ## 2026-10-07 自主推进：登记强T既有控制的冻结跨任务接手诊断
 
 Owner最新明确继续自主推进。findings§387保留T/U正反证据、真实future误差补读及旧primitive接手历史，

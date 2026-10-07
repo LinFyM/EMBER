@@ -6,6 +6,10 @@
 已核旧Gamma实际八个FP32张量及原Controls完整50槽/4头定义，首既定bare cache真实CPU检查通过i与i+5、H0/mu0/source身份。此条仍0新GPU/Gamma forward/环境；临时Value owner复用原Gamma，NN/capture复用sealed bfd76c99，旧冻结/原件只读。
 两臂bare_endpoint/calibrated_value各原seen144，只改变Gamma残差，GT几何仅用于相同绝对1NN调用；绝不替换为旧有State/10ODE source。完整288行/72full/216compact、12固定clip及两次以内真实首块profile由本session闭环。只在整批结束或真实边界一次回main，无阶段Queue/自通知或自动下一批。
 
+实际Value物化已从clean pushed detached2456ecd0运行并正常退出：4556个合法departure，144 bare cache只读、八Gamma权重、全50槽attention，0 native/teacher HDF/梯度/geometry restore。两次同首块batch1024→2048实测4557.86→19466.19转移/s，峰reserved2.666GiB，selected2048且保留首有效Value；2profile合同达到后停止放大。
+正式双manifest144行真实CPU消费者通过；原NN/capture消费者3c58a008已clean/pushed detached。两臂已实际由协调器分别启动gpu01:1和gpu01:6，每卡六persistent renderer，CPU NN不加载VLA/flow；本批首GPU仅Gamma在gpu02:7，已退出。每次独立双节点live/quota/shared回执保存于root launch，project cap6、本批两个EGL卡并行。
+strg01全个人du实际1407755624KiB、原本地全个人扫描1407213948KiB也已正常返回，时间不同不冒称相同瞬时占用。首次本地NFS扫描约19min含等待，未改变科学/资源口径；独立quota与相关目录实际du先行证明峰值空间，full du在大评测输出前补齐。正在直接等待固定整批实际退出，无共享log/cache轮询或阶段Queue。
+
 ## 2026-10-07 main消费动作记忆，登记冻结视频动作校准的匹配读出
 
 main已接回canonical tracked/Git，直接重算288主行及576背景行、看4clip/64原图、核source与NN实际计算，findings§377保留完整判断。

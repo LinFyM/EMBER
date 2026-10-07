@@ -6,8 +6,15 @@
 唯一root为/data1/user/ymdai/ember_runs/cross_context_pairing_20261008，未发现同名已运行或已完成批次。
 strg01独立data1软配额2TiB、个人实占约1.36TiB、共享余量均已核，可承接96GiB峰值；初次原始回执保留于root/launch。
 两节点现场空闲计数触发全项目6卡上限；工程隔离树为EMBER-cross-context-pairing-dev，分支codex/cross-context-pairing-20261008。
-训练接口已集成推送6cc3e87c并clean detached冻结。首次GPU02/0因现场显存不足拒绝，0模型/0GPU费用；
-2026-10-07T16:45:17Z实际在GPU02/4启动最长合法条件的0更新profile（launch0002），原始独立准入/命令/计费回执在root/launch。
+训练及readout接口已集成推送e86dbfbc并clean detached冻结。首次GPU02/0因现场显存不足拒绝，0模型/0GPU费用；
+首次最长合法条件profile完成前后向后因可选记录字段退出，费用.020474GPUh计入一次调用；新冻结修复记录接口而未改科学图。
+剩余两次0更新profile中micro28/frame32完成（33.65秒、reserved37.91GiB），frame64在反向OOM；三次上限已用完，不追加profile。
+独立Product smoke2→完整ECP恢复到4完成448query，2→4物理rank迁移和新rank RNG来源已登记；全部T参数组与native H/X信用非零，
+228个optimizer状态同步到2344、lr保持1e−5。micro28/frame16两rank峰25.95GiB；micro14/frame8四rank峰18.08GiB，后者宏步16.53/13.56秒。
+父九格18条件bank已物化；首teacher_scene1正式18行完成、3full/15compact，真实raw/continuous与官方In保留，属于固定54行而非额外smoke。
+2026-10-07T17:22:21Z两臂正式216更新实际启动：Within=gpu01/1,6两rank micro28/frame16；Product=gpu02/1,2,4,7四rank micro14/frame8。
+两臂合计6张物理卡；逐launch双节点live、独立storage/命令/预算及退出回执均在root/launch，不把原四逻辑condition当整批卡上限。
+未完成的父36行在资源释放后继续；它不构成学习分数闯关。所有正式训练从同完整T2340重新分叉，smoke参数不进入正式结果。
 CPU核45来源及全216两臂事件、48384实际query索引、首triplet六batch RGB/state/action/padding一致；九项官方init0/1存在、horizon400。
 固定54/point拆三教学scene×18行以符合canonical task/state唯一键，18teacher条件各复用三receiver；总1762/43full/10固定clip不变。
 按合同闭环恢复、真实query/tau/noise配对、两臂216更新与1762固定行；不在工程完成处等待main审批。

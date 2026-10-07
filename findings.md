@@ -9605,3 +9605,46 @@ controller及几何bfd76c99、source窄导入修复5f88b8c1各来自clean pushed
 四GPU消费者含模型加载前失败共.293188h，最后退出00:39:42.587Z/承接至计算43.973min；新增实测7.980GiB/保守8.25、去重复已计时CPU .906897h，未计交互CPU明确保留。
 source首32帧batch16/32吞吐9.304/10.258帧每秒，选32并保留首有效值，最多两profile；NN用既存6persistent renderer，实际288全完成，无额外case。
 最终12 worker PID及两节点GPU释放，四专用owner/入口/hooks退役，89项既有回归及退役拒绝消费者通过；final Git/窗口交回/唯一整批消费见root completion。
+
+## 377. main消费动作记忆原件：Value有控制内容，合法获取与LoRA使用仍须分开（2026-10-07）
+
+main直接重算两个原results的288行及T/MT/G/F的576原背景行，144条件覆盖与两臂scene/teacher/env-policy RNG等匹配。
+demo/source91/0成立；demo对T target24为R44/G19/L18、support12为R27/G1/L20，
+对MT target为R34/G29/L12、support为R28/G0/L19。target63比T62仅净+1，却有大量相反初态得失，不能写成普遍更强。
+task25/29/32/38的demo为3/4、4/4、3/4、3/4，对T的0/4、2/4、1/4、0/4是真实局部获取；
+task36/55的demo均0/4，对T3/4和4/4仍是明确不足。所有逐task及成功集合并入同一canonical JSON的main_consumption。
+执行报告background_references中的MT路径字符串漏了`attempts/scene_canonical144`；main从真实原路径重算93，
+在canonical JSON更正引用并保留记录缺项，旧raw/报告不覆盖、不重跑。不是分数或配对失效。
+
+main直接读源缓存构建与NN消费者：teacher RGB/L/8state经原processor，原1729噪声和10步完整采样，反归一化一次；
+距离argmin选中raw Value，执行直接取前5，记录用normalized chunk没有再次影响动作。
+只读代理另核两个原HDF/cache及一个真实proposal到连续执行片段，没有发现状态旋转、双相机处理、单位或缓存接口违约。
+source0来自把teacher观测上的动作预测固定为Value、交给几何NN调用，失去了source按自身RGB/state重新预测的功能；
+固定噪声与教学128/自身256原生图像尺寸差也保留。当前没有证据把科学阴性改判工程bug或source普遍零能力。
+
+main实际看了demo29/source29/demo38/demo32四张原montage，共4clips/64张已拍RGB：
+29的demo沿瓶子搬向架体，原谓词134步OnRack；source在桌面左侧反复停留、瓶子原位；
+38的demo先后搬两壶，原On在226/487步成立，TurnOn初始已真，不能说该行新学会开炉。
+32的demo开炉后未完成放壶，原On始终为假。末张图分别早于完成终点，不冒称看见未保存终态或接触真值。
+其它case保留执行者审看范围，main未重复全部72full/84624步的工程校验，也没有新模型/环境计算。
+
+数学上，同一q_live经D_abs得到i，再执行V_i；动作Value变化足以改变后续物理状态与i序列，
+故91对0确有完整控制后果，不能被压成仅MSE/特征差异。但它只证明给定特权对应时原动作值可用，
+没有隔离NN相对开环重放的贡献，也没有建立RGB能取得该对应、学得Value同样准确或静态LoRA实现这种调用。
+这不消除LocalActionGrounded的局部获取阴性，更不消除NativeCorrection/LocalField真实参数/场监督、
+ControlCalibrated同q直接调制Value、VideoFunctional真实自身query联合学习的完整负证据；旧阳性及有限窗口边界同时保留。
+因此不由本正例启动新F、再加几何/A辅助、action-loss重训或同一弱Writer配方。
+
+一个现成冻结对象能进一步区分原始动作可用与合法视频读出可用：原ControlCalibrated450 Gamma。
+它的q=mu0+Gamma(H0_i,H0_i+5)已经受真实动作与完整LoRA FM监督，并实际调制两侧Value；
+q误差下降但完整122/400、seen77/144，未证明它本身能形成可靠控制，也未定位唯一写入失败。
+main核原完整设计、实际controls与原compile的BF16调用；144个原裸cache约988MB只读复用，4556个departure及arrival全部在，
+八个Gamma权重仍在原450。这个metadata/帧核对未运行Gamma、VLA或环境，无需补新特征库或训练。
+
+唯一后继是[冻结校准Value闭环](docs/designs/calibrated_action_memory_control_20261007.md)：
+同一上批GT几何与144条件，bare_endpoint用原mu0，calibrated_value用原mu0+Gamma450；各144新行、零训练。
+上批source0含真实teacher8state和10步ODE，不能代替无State/tau1的mu0；故两新臂必须严格匹配。
+若Gamma已能在此调用下保留有覆盖控制，支持一种有限合法视频Value获取正例，仍不称动态必要性、held泛化或LoRA资格；
+若只降低MSE而无控制，不再声称旧方法已学会动作、只待编译，也不继续调Gamma或NN保护它。
+这检验已学函数的实际功能，不复活ControlCalibrated的训练/900续窗，不新增oracle拟合或独立Reader。
+预计45–90分钟，硬实际承接起3wall/1完整GPUh/16GiB；完整主比较与真动作91行分层均预登记，main收到后继续完整方法裁决。

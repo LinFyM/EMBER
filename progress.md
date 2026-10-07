@@ -1,3 +1,15 @@
+## 2026-10-07 main消费动作记忆，登记冻结视频动作校准的匹配读出
+
+main已接回canonical tracked/Git，直接重算288主行及576背景行、看4clip/64原图、核source与NN实际计算，findings§377保留完整判断。
+demo91/source0成立，但对T target净+1是得19失18、support净−19；不称强完整教师或合法EMBER，不把source缓存0改判普遍源策略无能力。
+MT背景记录路径漏中间目录已在canonical JSON纠正并保留记录边界，真实93及原行不变，无重跑。
+唯一active design为`docs/designs/calibrated_action_memory_control_20261007.md`：冻结旧ControlCalibrated450 Gamma，
+相同原GT几何/144条件下比较mu0与mu0+Gamma；两臂共288新行、0训练/新source-native/held/Test。
+main仅核144既有bare cache的4556对帧和8个Gamma张量metadata，当前尚无新Gamma/GPU/环境运行。
+预计45–90分钟，硬实际承接起3wall/1完整GPUh/16GiB，包括全部工程/失败/profile/Γ/EGL/frozen/tmp/分析。
+本合同push后交既有实验session01a10a98-6d4b-7d61-b12c-da38a628cb45独占工程/Git；实际承接以其回执和后续本文件为准。
+整批完成或真实边界一次回main裁决并继续Owner目标；不恢复旧Writer/Reader/F/关系学习或自动下一批。
+
 ## 2026-10-07 特权动作记忆288行完成，停止计算并交回窗口
 
 唯一privileged_action_memory_control_20261007完成两臂各144：demo91/source0，target63/0、support28/0，R0/G91/L0、churn91/J0，breadth34对0。53共同失败、36/55零任务及25/32预登记反例保留；findings§376与canonical JSON/root report保存完整原件，不当合法EMBER、强F资格或自动后继。

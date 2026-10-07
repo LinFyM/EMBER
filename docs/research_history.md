@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：main确认动作Value的控制正例，辨别旧Gamma获取与使用
+
+findings§377与[上批main消费](analyses/privileged_action_memory_control_20261007.json)保存直接288+576原行、4clip/64图及实际source/NN源码。
+demo对T的target净+1来自得19失18，support得1失20；25/29/32/38新控制和36/55失败并存，不把总覆盖当强教师。
+source0未见具体输入/单位/执行违约，含teacher冻结Value调用与真实在线policy的区别；MT引用路径字符串更正但原93不变。
+最近完整ControlCalibrated q误差下降而122/77的阴性保持；登记[冻结Gamma两Value诊断](designs/calibrated_action_memory_control_20261007.md)。
+原mu0与mu0+Gamma450在同一GT调用下各144，复用全部144纯裸特征/4556对帧，0训练/新source-native/held/Test。
+这是旧已学读出是否能控制的检验，不是新模型、时序因果结论或恢复旧配方；预计45–90分钟，硬3wall/1GPUh/16GiB。
+此处为事前登记，实际承接/执行见progress；结果须再由main作完整方法判断。
+
 ## 2026-10-07：原绝对状态匹配加入闭环和动作Value对照，完整288行封口
 
 findings§376及[完整分析](analyses/privileged_action_memory_control_20261007.json)索引唯一root `privileged_action_memory_control_20261007`，完整CPU读回/RGB来源/成本/失败/Git/frozen保留。

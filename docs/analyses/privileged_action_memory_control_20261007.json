@@ -9027,7 +9027,7 @@
       }
     },
     "paths": {
-      "MT_seen144": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/MT/evaluation/correct144/results.json",
+      "MT_seen144": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/results.json",
       "G450_seen144": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/readouts/G/450/seen144/evaluation/results.json",
       "F450_seen144": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/readouts/F/450/seen144/evaluation/results.json"
     },
@@ -10922,5 +10922,6328 @@
     "live_policy_or_VLA_forward": 0,
     "deployment_candidate": false
   },
-  "interpretation": "With original privileged correspondence and absolute1NN, recorded demo Values add broad control versus this same-frame source Value cache; this does not establish learned feedback, legal RGB retrieval, single-LoRA compilation, or held transfer. Frozen source memoryNN0 does not establish source closed-loop universal impossibility. No automatic successor."
+  "interpretation": "With original privileged correspondence and absolute1NN, recorded demo Values add broad control versus this same-frame source Value cache; this does not establish learned feedback, legal RGB retrieval, single-LoRA compilation, or held transfer. Frozen source memoryNN0 does not establish source closed-loop universal impossibility. No automatic successor.",
+  "main_consumption": {
+    "demo_action": {
+      "rows": 144,
+      "successes": 91,
+      "by_task": {
+        "0": 3,
+        "1": 1,
+        "2": 3,
+        "4": 2,
+        "5": 1,
+        "7": 3,
+        "12": 3,
+        "13": 3,
+        "14": 4,
+        "15": 4,
+        "17": 1,
+        "19": 4,
+        "20": 2,
+        "21": 4,
+        "22": 3,
+        "25": 3,
+        "28": 4,
+        "29": 4,
+        "32": 3,
+        "34": 1,
+        "35": 2,
+        "36": 0,
+        "37": 2,
+        "38": 3,
+        "42": 2,
+        "43": 2,
+        "51": 2,
+        "55": 0,
+        "56": 2,
+        "62": 4,
+        "64": 4,
+        "73": 4,
+        "95": 1,
+        "96": 3,
+        "97": 2,
+        "101": 2
+      }
+    },
+    "source_action": {
+      "rows": 144,
+      "successes": 0,
+      "by_task": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "5": 0,
+        "7": 0,
+        "12": 0,
+        "13": 0,
+        "14": 0,
+        "15": 0,
+        "17": 0,
+        "19": 0,
+        "20": 0,
+        "21": 0,
+        "22": 0,
+        "25": 0,
+        "28": 0,
+        "29": 0,
+        "32": 0,
+        "34": 0,
+        "35": 0,
+        "36": 0,
+        "37": 0,
+        "38": 0,
+        "42": 0,
+        "43": 0,
+        "51": 0,
+        "55": 0,
+        "56": 0,
+        "62": 0,
+        "64": 0,
+        "73": 0,
+        "95": 0,
+        "96": 0,
+        "97": 0,
+        "101": 0
+      },
+      "demo_comparison": {
+        "all": {
+          "counts": {
+            "retained": 0,
+            "gained": 91,
+            "lost": 0,
+            "both_failed": 53
+          },
+          "sets": {
+            "retained": [],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "lost": [],
+            "both_failed": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ]
+          }
+        },
+        "target24": {
+          "counts": {
+            "retained": 0,
+            "gained": 63,
+            "lost": 0,
+            "both_failed": 33
+          },
+          "sets": {
+            "retained": [],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "lost": [],
+            "both_failed": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ]
+          }
+        },
+        "support12": {
+          "counts": {
+            "retained": 0,
+            "gained": 28,
+            "lost": 0,
+            "both_failed": 20
+          },
+          "sets": {
+            "retained": [],
+            "gained": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              }
+            ],
+            "lost": [],
+            "both_failed": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              }
+            ]
+          }
+        }
+      }
+    },
+    "MT_seen144": {
+      "rows": 144,
+      "successes": 93,
+      "by_task": {
+        "0": 4,
+        "1": 0,
+        "2": 3,
+        "4": 2,
+        "5": 3,
+        "7": 1,
+        "12": 2,
+        "13": 3,
+        "14": 3,
+        "15": 2,
+        "17": 0,
+        "19": 1,
+        "20": 2,
+        "21": 4,
+        "22": 4,
+        "25": 0,
+        "28": 4,
+        "29": 0,
+        "32": 2,
+        "34": 3,
+        "35": 2,
+        "36": 0,
+        "37": 0,
+        "38": 1,
+        "42": 4,
+        "43": 3,
+        "51": 4,
+        "55": 4,
+        "56": 4,
+        "62": 4,
+        "64": 4,
+        "73": 4,
+        "95": 4,
+        "96": 4,
+        "97": 4,
+        "101": 4
+      },
+      "demo_comparison": {
+        "all": {
+          "counts": {
+            "retained": 62,
+            "gained": 29,
+            "lost": 31,
+            "both_failed": 22
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ]
+          }
+        },
+        "target24": {
+          "counts": {
+            "retained": 34,
+            "gained": 29,
+            "lost": 12,
+            "both_failed": 21
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ]
+          }
+        },
+        "support12": {
+          "counts": {
+            "retained": 28,
+            "gained": 0,
+            "lost": 19,
+            "both_failed": 1
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [],
+            "lost": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              }
+            ]
+          }
+        }
+      }
+    },
+    "G450_seen144": {
+      "rows": 144,
+      "successes": 84,
+      "by_task": {
+        "0": 3,
+        "1": 0,
+        "2": 4,
+        "4": 0,
+        "5": 2,
+        "7": 2,
+        "12": 2,
+        "13": 2,
+        "14": 3,
+        "15": 1,
+        "17": 0,
+        "19": 2,
+        "20": 1,
+        "21": 4,
+        "22": 3,
+        "25": 0,
+        "28": 4,
+        "29": 1,
+        "32": 0,
+        "34": 3,
+        "35": 2,
+        "36": 0,
+        "37": 0,
+        "38": 0,
+        "42": 4,
+        "43": 3,
+        "51": 4,
+        "55": 4,
+        "56": 3,
+        "62": 4,
+        "64": 4,
+        "73": 3,
+        "95": 4,
+        "96": 4,
+        "97": 4,
+        "101": 4
+      },
+      "demo_comparison": {
+        "all": {
+          "counts": {
+            "retained": 56,
+            "gained": 35,
+            "lost": 28,
+            "both_failed": 25
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              }
+            ]
+          }
+        },
+        "target24": {
+          "counts": {
+            "retained": 30,
+            "gained": 33,
+            "lost": 9,
+            "both_failed": 24
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              }
+            ]
+          }
+        },
+        "support12": {
+          "counts": {
+            "retained": 26,
+            "gained": 2,
+            "lost": 19,
+            "both_failed": 1
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              }
+            ]
+          }
+        }
+      }
+    },
+    "F450_seen144": {
+      "rows": 144,
+      "successes": 66,
+      "by_task": {
+        "0": 3,
+        "1": 1,
+        "2": 3,
+        "4": 0,
+        "5": 0,
+        "7": 2,
+        "12": 0,
+        "13": 0,
+        "14": 1,
+        "15": 0,
+        "17": 0,
+        "19": 2,
+        "20": 1,
+        "21": 3,
+        "22": 1,
+        "25": 0,
+        "28": 4,
+        "29": 0,
+        "32": 0,
+        "34": 2,
+        "35": 1,
+        "36": 0,
+        "37": 0,
+        "38": 0,
+        "42": 4,
+        "43": 3,
+        "51": 4,
+        "55": 4,
+        "56": 3,
+        "62": 3,
+        "64": 4,
+        "73": 1,
+        "95": 4,
+        "96": 4,
+        "97": 4,
+        "101": 4
+      },
+      "demo_comparison": {
+        "all": {
+          "counts": {
+            "retained": 45,
+            "gained": 46,
+            "lost": 21,
+            "both_failed": 32
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              }
+            ]
+          }
+        },
+        "target24": {
+          "counts": {
+            "retained": 22,
+            "gained": 41,
+            "lost": 2,
+            "both_failed": 31
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              }
+            ]
+          }
+        },
+        "support12": {
+          "counts": {
+            "retained": 23,
+            "gained": 5,
+            "lost": 19,
+            "both_failed": 1
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              }
+            ]
+          }
+        }
+      }
+    },
+    "T2340": {
+      "rows": 144,
+      "successes": 109,
+      "by_task": {
+        "0": 3,
+        "1": 1,
+        "2": 4,
+        "4": 2,
+        "5": 3,
+        "7": 3,
+        "12": 3,
+        "13": 2,
+        "14": 4,
+        "15": 4,
+        "17": 2,
+        "19": 4,
+        "20": 2,
+        "21": 4,
+        "22": 4,
+        "25": 0,
+        "28": 4,
+        "29": 2,
+        "32": 1,
+        "34": 3,
+        "35": 2,
+        "36": 3,
+        "37": 2,
+        "38": 0,
+        "42": 4,
+        "43": 4,
+        "51": 4,
+        "55": 4,
+        "56": 4,
+        "62": 4,
+        "64": 4,
+        "73": 3,
+        "95": 4,
+        "96": 4,
+        "97": 4,
+        "101": 4
+      },
+      "demo_comparison": {
+        "all": {
+          "counts": {
+            "retained": 71,
+            "gained": 20,
+            "lost": 38,
+            "both_failed": 15
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              }
+            ]
+          }
+        },
+        "target24": {
+          "counts": {
+            "retained": 44,
+            "gained": 19,
+            "lost": 18,
+            "both_failed": 15
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 21,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 28,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 14,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 15,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 19,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 33
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 32,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 29,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 34
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 34,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 37,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 22,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 12,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 2,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 7,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": [
+              {
+                "global_task_id": 32,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 34,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 35,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 36,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 38,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 20,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 25,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 13,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 17,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 0,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 1,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 4,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 5,
+                "init_state_id": 35
+              }
+            ]
+          }
+        },
+        "support12": {
+          "counts": {
+            "retained": 27,
+            "gained": 1,
+            "lost": 20,
+            "both_failed": 0
+          },
+          "sets": {
+            "retained": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 62,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 64,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 73,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 34
+              }
+            ],
+            "gained": [
+              {
+                "global_task_id": 73,
+                "init_state_id": 33
+              }
+            ],
+            "lost": [
+              {
+                "global_task_id": 42,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 42,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 43,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 51,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 55,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 56,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 33
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 95,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 96,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 34
+              },
+              {
+                "global_task_id": 97,
+                "init_state_id": 35
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 32
+              },
+              {
+                "global_task_id": 101,
+                "init_state_id": 35
+              }
+            ],
+            "both_failed": []
+          }
+        }
+      }
+    },
+    "metadata": {
+      "primary_rows_directly_read": 288,
+      "background_rows_directly_read": 576,
+      "paired_primary_condition_mismatches": 0,
+      "source_inputs_and_controller_directly_read": true,
+      "viewed_own_RGB_sheets": [
+        "demo_action_task029_init32.jpg",
+        "source_action_task029_init32.jpg",
+        "demo_action_task038_init32.jpg",
+        "demo_action_task032_init32.jpg"
+      ],
+      "viewed_existing_RGB_frames": 64,
+      "new_model_forwards": 0,
+      "new_environment_episodes": 0,
+      "actual_reference_paths": {
+        "MT_seen144": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/results.json",
+        "G450_seen144": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/readouts/G/450/seen144/evaluation/results.json",
+        "F450_seen144": "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/readouts/F/450/seen144/evaluation/results.json"
+      },
+      "T_parts": [
+        "denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/results.json",
+        "query_conditioned_transition_read_20261005/parent/evaluation/seen12/results.json"
+      ],
+      "MT_reference_path_correction": "Original background_references.json omitted attempts/scene_canonical144 in MT path. Actual primary path restored here; original rows and scores unchanged.",
+      "wall_seconds": 0.05926155671477318,
+      "Gamma_successor_prerequisite_metadata": {
+        "old_control_root": "/data1/user/ymdai/ember_runs/control_calibrated_read_write_20261003",
+        "existing_feature_conditions": 144,
+        "feature_bytes": 988168960,
+        "departure_arrival_pairs": 4556,
+        "missing_pairs": 0,
+        "gamma_tensors": 8,
+        "new_Gamma_forwards": 0,
+        "new_source_forwards": 0,
+        "metadata_read_wall_seconds": 6.905238821171224
+      }
+    }
+  }
 }

@@ -1,3 +1,12 @@
+## 2026-10-07 检验冻结Gamma的视频动作读出是否已有控制用途
+
+findings§377及上批canonical main_consumption保存主讨论直接原件复算、4clip/64图和source链核读；接受demo91/source0的有限Value结论。
+真实动作可用不等于已学视频读出可用；唯一active设计为`docs/designs/calibrated_action_memory_control_20261007.md`。
+原Gamma450冻结、原144裸cache和GT几何只读，bare_endpoint与mu0+Gamma各原seen144，0训练/新source-native/held/Test。
+主比较只改变原Gamma残差，不能用上批有State/10ODE的source0替代本批无State/tau1裸端点；不复活旧122/77配方。
+预计45–90分钟，硬实际承接起3wall/1完整GPUh/16GiB。执行承接/窗口见progress，整批回main继续完整方法判断。
+最终Owner目标未完成；下方已结束批次/active文字均为历史时点，不恢复旧任务。
+
 ## 2026-10-07 教学动作值的固定特权闭环诊断已完成
 
 findings§376/canonical JSON和root完整原件保留demo91/source0及所有288行；特权动作值有34-task覆盖，但不等于合法Writer或强功能teacher，T/MT支持损失不隐藏。

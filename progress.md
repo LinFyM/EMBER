@@ -1,3 +1,12 @@
+## 2026-10-07 Owner要求专家重新审视，main材料已安全集成
+
+Owner要求“专家只能看到远程仓库，所以你整理一下，然后和我讨论下，到底需要专家思考些什么”。
+main的独立文档提交1152399f已由实验session在安全Git点cherry-pick到canonical main；仅新增
+docs/review_materials/20261007_research_reassessment/下六文件，入口README.md，未含源代码、运行配置或私有服务器路径。
+专家尚未联系，审阅重点和后继研究方向留待与Owner讨论；材料不是新active实验或后继训练授权。
+原90行按原科学/预算合同独立执行，没有等待材料或扩大范围；现已全部结束，结果及费用见下一段和findings§388。
+推送、final main commit、整批回报与tracked/Git交回以root launch/final_Git_delivery.json和completion为准。
+
 ## 2026-10-07 强T冻结跨任务接手90条已完成，整批封口与写窗口交回
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45从09:47:17Z实际承接；两GPU阶段10:08:29–10:10:38Z、

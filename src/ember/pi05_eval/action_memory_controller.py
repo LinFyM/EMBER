@@ -129,8 +129,13 @@ def _episode_evidence(adapter: Mapping[str, Any], row: Mapping[str, Any]) -> dic
             "cut_control_steps": CUT, "privileged": True, "training_tasks_only": True,
             "ember_score": False, "controller": "recorded_T_prefix_then_replay_or_absolute_demo_1nn",
             "rollout_model_loaded": False, "rollout_flow_steps": 0, "policy_noise_consumed": False,
-            "proposal_kind": "recorded_future_with_nonexecuted_last_action_padding",
-            "action_origin": "recorded_teacher_post_action_offset1"}
+            "proposal_kind": "at_most_five_actual_commands_with_invalid_nonexecuted_padding"
+            if adapter["arm"] == "T_replay" else "recorded_future_with_nonexecuted_last_action_padding",
+            "action_origin": "recorded_T_actual_raw_commands" if adapter["arm"] == "T_replay"
+            else "recorded_teacher_post_action_offset1",
+            "action_origin_scope": "whole_episode" if adapter["arm"] == "T_replay" else "suffix_only",
+            "prefix_action_origin": "recorded_T_actual_raw_commands",
+            "actual_replan_metadata_authoritative": True}
 
 
 def validate_episode(adapter: Mapping[str, Any], evidence: Any, *,

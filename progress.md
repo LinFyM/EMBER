@@ -6,6 +6,8 @@
 两臂保留同原36-task/seen144/teacher/scene映射、原Git9f90a14d完整body/site绝对1NN和真实自身查询，只更换HDF offset1真实动作值或同帧冻结source1000原10-step ODE值。source仅合法train教师双RGB/语言/8state离线物化，NN自身CPU直接控制，无VLA/LoRA bank。临时controller接入原评测器环境/恢复/queue/capture；工程、实际消费者、push/clean detached、完整288行、分析/费用与退役由本session闭环，不等main工程审批。
 只在整批完成或真实科学/原件/预算边界一次整批回main并交回tracked/Git，无心跳/阶段Queue/自通知/自动后继。
 
+实际缓存消费者已完成144条教学/4556合法位置，全部原geometry离线同步最大1.414e-15m、OOI完整body/site数1–12；实际manifest/惰性动作缓存CPU检查通过，无额外模型或环境case。初轮support BDDL缺字段保留96partial，第二轮历史XML重复robosuite前缀保留116partial；只修正式安装registry及同名资产映射，原数学定义/offset/信息墙未变。完整工程提交bfd76c99已clean/pushed detached冻结，NN controller348行及十处薄派发复用canonical队列/scene/capture；92项现有CPU回归通过。source首次GPU启动在模型加载前导入顺序错误，2.063完整GPU秒计费、原件保留；source修复5f88b8c1通过真实依赖CPU导入检查，需新冻结不热改旧树。demo_action就绪即独立启动gpu01:1六persistent renderer/CPU NN消费者，实际launch回执0002_eval_demo_action保留；没有无用VLA/fake bank/自身随机flow，NN元数据明确0 flow，10步仅属source Value物化。source待新冻结就绪，启动以独立live准入和原始回执为准，不以消息承诺冒称已运行。
+
 ## 2026-10-07 main登记教学动作记忆的匹配闭环诊断
 
 Owner持续自主授权有效；§373原物理输入/下游编译接口停止不变，未恢复G/F、P/Q或RL。

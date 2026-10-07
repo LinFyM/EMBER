@@ -7,6 +7,12 @@
 四个data1工程worktree均已完成clean checkout。模型、事件/恢复状态和官方memory消费者各有独占隔离范围，root负责功能信用/训练/集成；复用原native/data/FM/queue，不修改旧frozen。
 M/V同MT300完整A/B，V教学H和执行两路beta信用都保留；128唯一科学读回和304固定行不变。只在整批完成或真实边界一次回main，无阶段Queue/自通知或自动后继。
 
+工程已集成并推送clean main9a3f046c；正式/工程计算均来自root/frozen_9a3f046c的clean detached来源，旧冻结树未改。
+首次个人全目录实际du1419901668KiB，峰估25GiB/硬48GiB；每次launch独立保存strg01 quota、共享容量与两节点完整GPU raw。
+05:32Z已启动V最长合法condition的三次0更新profile及M正式128（gpu01:1/6，world2，query batch28）。三种profile实测7×16为1.437query/s、14×32为1.581、28×32为1.576；峰reserved22.97/36.91/36.59GiB，选择14×32，三次预算已耗尽。
+V独立fresh2在gpu02:0/1/4/6完成224query和完整ECP；第二步实际encoder/Q/K/V/O及教学beta余切全部非零，首步零O恢复MT同FM输出、18hook各一次，source仍冻结、optimizer moments FP32。当前正在从该ECP续到4核验恢复与物理world4→2/frame8→32，绝不混入正式128。
+M首正式步真实完整50×7随机tau FM核验通过，峰reserved约16.46GiB；4task×28query流与权重不变，未另开M smoke。原件/root analysis保留CPU核验和两项非GPU读取命令错误；无科学/预算改变或main工程审批停点。
+
 ## 2026-10-07 Owner要求自主推进，登记强MT原生视频控制的有限分析
 
 Owner最新要求暂时无暇跟进，main仔细分析现状后自主推进；最终合法视频一次生成单LoRA并超过强MT的目标保持。

@@ -1,3 +1,14 @@
+## 2026-10-08 实验session实际承接同目标跨情境配对
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取active design、findings§390与最新Owner/AGENTS；
+从clean pushed main c58c098d接管canonical tracked/Git独占窗口，main停止并发写入。
+实际承接2026-10-07T16:11:10Z，硬截止2026-10-08T04:11:10Z；预计6–10wall小时/15–18GPUh，硬12wall/20完整GPUh/新增峰96GiB。
+唯一root为/data1/user/ymdai/ember_runs/cross_context_pairing_20261008，未发现同名已运行或已完成批次。
+strg01独立data1软配额2TiB、个人实占约1.36TiB、共享余量均已核，可承接96GiB峰值；初次原始回执保留于root/launch。
+两节点现场空闲计数触发全项目6卡上限，尚未launch；工程隔离树为EMBER-cross-context-pairing-dev，分支codex/cross-context-pairing-20261008。
+按合同闭环恢复、真实query/tau/noise配对、两臂216更新与1762固定行；不在工程完成处等待main审批。
+只在整批完成或真实科学/有效性/预算边界一次回报并交回窗口；旧批均不恢复。
+
 ## 2026-10-08 同目标跨情境配对设计登记，恢复持续自主推进
 
 Owner最新要求“确实符合实际”“还需要再问专家吗”及持续长时间推进；main确认关键事实/推导，但没有性能保证，当前无需继续专家往返。

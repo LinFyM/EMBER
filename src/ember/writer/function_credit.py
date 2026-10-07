@@ -25,12 +25,9 @@ class FlowSample:
     action_width: int
 
 
-def flow_sample(policy, batch, *, seed: int, device, random_batch: int, offset: int,
-                noise_endpoint: bool = False) -> FlowSample:
-    from lerobot.utils.constants import ACTION, OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
-
-    images, masks = policy._preprocess_images(dict(batch))
-    actions = policy.prepare_action(batch)
+def sample_flow_randomness(policy, shape, *, seed: int, device, random_batch: int,
+                           offset: int = 0, noise_endpoint: bool = False) -> tuple[Tensor, Tensor]:
+    """Sample the canonical logical-query noise/time before changing its owner."""
     with ExitStack() as stack:
         stack.enter_context(scoped_policy_randomness(seed, device))
         stack.enter_context(scoped_policy_flow_noise_sampling(
@@ -39,9 +36,30 @@ def flow_sample(policy, batch, *, seed: int, device, random_batch: int, offset: 
         stack.enter_context(scoped_policy_flow_time_sampling(
             policy, INDEPENDENT_BETA_TIME_SAMPLING_SCHEME,
             logical_batch_size=random_batch, batch_offset=offset))
-        noise = policy.model.sample_noise(actions.shape, actions.device)
-        time = (torch.ones(len(actions), device=actions.device) if noise_endpoint
-                else policy.model.sample_time(len(actions), actions.device))
+        noise = policy.model.sample_noise(shape, device)
+        time = (torch.ones(shape[0], device=device) if noise_endpoint
+                else policy.model.sample_time(shape[0], device))
+    return noise, time
+
+
+def flow_sample(policy, batch, *, seed: int, device, random_batch: int, offset: int,
+                noise_endpoint: bool = False,
+                flow_randomness: tuple[Tensor, Tensor] | None = None) -> FlowSample:
+    from lerobot.utils.constants import ACTION, OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
+
+    images, masks = policy._preprocess_images(dict(batch))
+    actions = policy.prepare_action(batch)
+    if flow_randomness is None:
+        noise, time = sample_flow_randomness(policy, actions.shape, seed=seed,
+            device=actions.device, random_batch=random_batch, offset=offset,
+            noise_endpoint=noise_endpoint)
+    else:
+        noise, time = flow_randomness
+        if (noise_endpoint or noise.shape != actions.shape or time.shape != (len(actions),)
+                or noise.device != actions.device or time.device != actions.device
+                or not torch.isfinite(noise).all() or not torch.isfinite(time).all()
+                or bool(((time < 0) | (time > 1)).any())):
+            raise ValueError("explicit query flow randomness lost native shape/device/time")
     return FlowSample(
         (images, masks, batch[OBS_LANGUAGE_TOKENS], batch[OBS_LANGUAGE_ATTENTION_MASK], actions, noise, time),
         noise - actions, int(policy.config.output_features[ACTION].shape[0]),
@@ -102,13 +120,14 @@ def paired_functional_credit(policy, state, contract, batch, *,
                              seed: int, device, random_batch: int, offset: int, microbatch: int,
                              condition_weight: float, backward: bool = True,
                              noise_endpoint: bool = False, prefix_steps: int | None = None,
-                             query_weights: Sequence[float] | None = None) -> dict[str, Any]:
+                             query_weights: Sequence[float] | None = None,
+                             flow_randomness: tuple[Tensor, Tensor] | None = None) -> dict[str, Any]:
     """Return one separately normalized loss and weighted complete-LoRA cotangent."""
     return _functional_credit(policy, state, contract, batch, seed=seed, device=device,
                               random_batch=random_batch, offset=offset, microbatch=microbatch,
                               condition_weight=condition_weight, backward=backward,
                               noise_endpoint=noise_endpoint, prefix_steps=prefix_steps,
-                              query_weights=query_weights)
+                              query_weights=query_weights, flow_randomness=flow_randomness)
 
 
 def dual_functional_credit(policy, state, public_state, contract, batch, *,
@@ -127,7 +146,8 @@ def _functional_credit(policy, state, contract, batch, *,
                              condition_weight: float, backward: bool = True,
                              noise_endpoint: bool = False, prefix_steps: int | None = None,
                              query_weights: Sequence[float] | None = None,
-                             public_state: Mapping[str, Tensor] | None = None) -> dict[str, Any]:
+                             public_state: Mapping[str, Tensor] | None = None,
+                             flow_randomness: tuple[Tensor, Tensor] | None = None) -> dict[str, Any]:
     """Return full credit, optionally public credit on the same sample/prefix KV."""
     states = (state,) if public_state is None else (state, public_state)
     for values in states:
@@ -140,6 +160,10 @@ def _functional_credit(policy, state, contract, batch, *,
         flow_noise_sampling_scheme=INDEPENDENT_GAUSSIAN_NOISE_SAMPLING_SCHEME,
         policy_random_batch_size=random_batch, policy_batch_offset=offset,
     )
+    if flow_randomness is not None and (len(flow_randomness) != 2
+            or flow_randomness[0].shape[0] != total
+            or flow_randomness[1].shape != (total,)):
+        raise ValueError("explicit flow randomness must cover every actual query")
     if query_weights is not None and (len(query_weights) != total or
             any(not math.isfinite(float(weight)) or float(weight) < 0 for weight in query_weights)):
         raise ValueError("functional query weights must cover the unchanged logical batch")
@@ -151,7 +175,9 @@ def _functional_credit(policy, state, contract, batch, *,
         sliced = {name: value[start:stop] if isinstance(value, Tensor) and value.ndim and len(value) == total else value
                   for name, value in batch.items()}
         sample = flow_sample(policy, sliced, seed=seed, device=device, random_batch=random_batch,
-                             offset=offset + start, noise_endpoint=noise_endpoint)
+                             offset=offset + start, noise_endpoint=noise_endpoint,
+                             flow_randomness=(tuple(value[start:stop] for value in flow_randomness)
+                                              if flow_randomness is not None else None))
         prepared = owner.prepare(sample)
         weight = (stop - start) / total
         for values, credit in zip(states, credits, strict=True):

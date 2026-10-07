@@ -61,7 +61,8 @@ def native_credit(native: dict) -> dict:
 
 
 def one_job(runtime, data, event: dict, microbatch: int,
-            frame_chunk: int, loss_variant: str, *, target_executor=None) -> dict:
+            frame_chunk: int, loss_variant: str, *, target_executor=None,
+            flow_randomness: tuple[torch.Tensor, torch.Tensor] | None = None) -> dict:
     if loss_variant not in ("full", "full_plus_public_beta"):
         raise ValueError("operator pilot loss identity changed")
     started = time.perf_counter()
@@ -79,7 +80,8 @@ def one_job(runtime, data, event: dict, microbatch: int,
             credit, beta_credit = dual_functional_credit(
                 runtime.policy, state, runtime.writer.public_state(), runtime.lora, batch, **arguments)
         else:
-            credit = paired_functional_credit(runtime.policy, state, runtime.lora, batch, **arguments)
+            credit = paired_functional_credit(runtime.policy, state, runtime.lora, batch,
+                                              flow_randomness=flow_randomness, **arguments)
             beta_credit = None
     torch.cuda.synchronize(runtime.device)
     fm = time.perf_counter() - started - compilation

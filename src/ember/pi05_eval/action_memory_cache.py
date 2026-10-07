@@ -32,7 +32,8 @@ def registration(asset_root, root):
     """Use the real existing seen144 state/video schedule and source identity."""
     from ember.operator_writer.scope import task_rows
     from ember.pi05_eval_contract import (load_evaluation_authorities,
-                                         inspect_source_checkpoint, inspect_tokenizer)
+                                         inspect_source_checkpoint, inspect_tokenizer,
+                                         inspect_installed_target_tasks)
     from ember.writer.learning_data import load_learning_tasks
 
     if root.resolve() != ROOT:
@@ -43,6 +44,9 @@ def registration(asset_root, root):
     checkpoint = (asset_root / spec["source"]["checkpoint"]).resolve()
     source = inspect_source_checkpoint(authorities, checkpoint.parents[1], checkpoint, evaluation_mode="formal")
     tokenizer = inspect_tokenizer(authorities, (asset_root / spec["source"]["tokenizer"]).resolve())
+    installed, libero_paths = inspect_installed_target_tasks(
+        authorities, role="operator_seen_training36", state_count=4,
+        libero_config_dir=root / "tmp/geometry_libero_config")
     learning = load_learning_tasks(asset_root, [row["global_task_id"] for row in tasks],
                                    protocol_path=spec["source"]["data_protocol"])
     conditions = []
@@ -73,26 +77,29 @@ def registration(asset_root, root):
             "source_noise_shape": [50, 32], "source_inference_steps": 10,
             "policy_noise_used": False, "privileged_training_diagnostic": True,
             "deployment_candidate": False, "held_or_test_reads": 0,
-            "gradient_updates": 0, "tasks": tasks, "scene_count": len(scene["scenes"])}
+            "gradient_updates": 0, "tasks": tasks, "scene_count": len(scene["scenes"]),
+            "libero_paths": libero_paths,
+            "installed_tasks": [{"suite": task.suite, "task_id": task.task_id,
+                                 "language": task.language, "problem_folder": task.problem_folder,
+                                 "bddl_file": task.bddl_file} for task in installed]}
 
 
 def prepare_geometry(asset_root, root):
     """Restore only the144 registered train teachers with the original function."""
     from bddl.parsing import scan_tokens
-    from ember.task_protocol import load_task_authorities
 
     started = time.time()
     value = registration(asset_root, root)
-    _, manifest = load_task_authorities(asset_root, "configs/libero_24_8_8_coverage_v1/protocol.json")
-    rows = {row["global_task_id"]: row for row in manifest["tasks"]}
+    rows = {(row["suite"], row["task_id"]): row for row in value["installed_tasks"]}
     cfg = read_json(asset_root / "configs/pi05_writer_data_v1.json")
     assets = (asset_root / cfg["authorities"]["libero_assets"]).resolve()
-    libero = Path(importlib.util.find_spec("libero").origin).parent / "libero"
     robosuite = Path(importlib.util.find_spec("robosuite").origin).parent
     references = {}
     for row in value["conditions"]:
-        task = rows[row["global_task_id"]]
-        bddl = libero / "bddl_files" / task["problem_folder"] / task["bddl"]["filename"]
+        task = rows[row["suite"], row["task_id"]]
+        if task["language"] != row["language"]:
+            raise ValueError("Installed BDDL task differs from the registered teacher language")
+        bddl = Path(value["libero_paths"]["bddl_files"]) / task["problem_folder"] / task["bddl_file"]
         objects = next(group[1:] for group in scan_tokens(filename=str(bddl))
                        if isinstance(group, list) and group[0] == ":obj_of_interest")
         with h5py.File(row["hdf5"], "r") as handle:

@@ -107,11 +107,12 @@ def save_capture(
         f"state_{int(slot['init_state_id']):03d}.pt"
     )
     level = str(slot["occupancy_capture_level"])
-    captured_prefixes = tuple(slot["replay_executed_prefixes"])
-    if capture.get("cross_context_pairing") is not None:
-        from ember.cross_context_pairing.readout import actual_prefixes
-
-        captured_prefixes = actual_prefixes(slot)
+    # A successful control can terminate before all proposed prefix actions run.
+    captured_prefixes = tuple(
+        prefix[:max(0, min(len(prefix), int(slot["steps"]) - int(start)))]
+        for start, prefix in zip(slot["replay_replan_steps"],
+                                 slot["replay_executed_prefixes"], strict=True)
+    )
     common = {
         "suite": task["suite"],
         "task_id": int(task["task_id"]),

@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-08：同图跨情境配对216完整学习，未建立总体修复
+
+[固定合同](designs/cross_context_pairing_20261008.md)的两臂216更新/24192query及1762固定完整行结束。
+[canonical统计与来源](analyses/cross_context_pairing_20261008.json)、findings§391保留真实宏步噪声携带、完整ECP、逐任务/suite和成功集合。
+Within147/148、Product152/151，原T161/150、强MT153；Product仅对退化Within净+5/+3，correct仍低强参照，breadth均6/8。
+训练侧父21/54、Within36、Product35；Product成功全被Within覆盖且少一条，共同提升不能单归因新增数据价值或跨配对。
+18个登记task/init起点各重复三teacher scene，非54独立泛化样本；源任务已被source/C95见过，非source新任务。
+十个固定clip80双RGB对/160图全部审看，无terminal RGB；task23/39仍全部失败，位移/视觉不叫接触或唯一根因。
+训练/物化e86dbfbc、30条恢复消费者7fe01c51；physics1e−8不改，3色值LSB渲染差不追逐bit，四已结束行耗时缺失保持null、未重复有效行。
+全卡时13.666172210815GPUh含失败/加载/profile/EGL，原件/Git/frozen保留，临时入口退役；资源/新增峰/最终Git见run completion。
+降低本次配对变化作为立即总体修复的优先级，不外推所有情境学习不可能，也不自动延窗/换头；main消费原件后继续Owner完整研究目标。
+
 ## 2026-10-08：第三轮专家建议收窄到学习关系，登记匹配检验
 
 [第二轮原文](review_materials/20261007_research_reassessment/EXPERT_RESPONSE_ROUND2.md)与

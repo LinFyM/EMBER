@@ -21,10 +21,6 @@ def registered_capture(args, tasks, output_dir: Path, path: Path, manifest: Mapp
 
     bank_path = Path(args.static_task_lora_manifest).resolve()
     bank = read_json(bank_path)
-    if bank.get("cross_context_pairing") is not None:
-        from ember.cross_context_pairing.readout import registered_capture as pairing_capture
-
-        return pairing_capture(args, tasks, output_dir, path, manifest, task_subset, bank)
     if bank.get("reexpression_panel") is not None:
         from .reexpression import registered_capture as reexpression_capture
 
@@ -84,11 +80,6 @@ def attach_capture_provenance(contract: dict, repo_root: Path) -> None:
 
     del repo_root
     adapter = contract.get("adapter") or {}
-    if adapter.get("cross_context_pairing") is not None:
-        from ember.cross_context_pairing.readout import attach_provenance
-
-        attach_provenance(contract)
-        return
     scene = contract.get("operator_read_write_scene") or {}
     legacy_test = contract.get("operator_read_write_legacy_test")
     if adapter.get("kind") != KIND:

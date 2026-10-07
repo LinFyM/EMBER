@@ -67,6 +67,19 @@ def test_compact_capture_keeps_state_action_and_only_selected_images(tmp_path: P
     assert tuple(compact["states"][0].shape) == (8,)
 
 
+def test_terminal_capture_keeps_only_controls_that_ran(tmp_path: Path) -> None:
+    task = {"suite": "libero_goal", "task_id": 4}
+    slot = _slot("compact")  # Proposed five controls at replan step 7.
+    slot["steps"] = 9  # Success after two actual controls.
+    slot["replay_executed_prefixes"][0] = torch.arange(35).reshape(5, 7).float()
+    record = save_capture({"trajectory_root": str(tmp_path), "mode": "compact"},
+                          task, slot, success=True)
+    payload = torch.load(record["path"], map_location="cpu", weights_only=False)
+    assert tuple(payload["action_chunks"][0].shape) == (1, 50, 7)
+    assert torch.equal(payload["executed_action_prefixes"][0],
+                       torch.arange(14).reshape(2, 7).float())
+
+
 def test_legacy_capture_payload_remains_v1(tmp_path: Path) -> None:
     task = {"suite": "libero_goal", "task_id": 4}
     capture = {"trajectory_root": str(tmp_path)}

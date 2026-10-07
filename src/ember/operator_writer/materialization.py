@@ -16,14 +16,6 @@ from ember.writer.materialization_workers import MaterializationWorkers, _config
 from .data import FormalData
 
 
-def _video_data(asset_root, spec, task_ids, role):
-    if spec.get("task") == "cross_context_pairing_20261008" and role == "train":
-        from ember.cross_context_pairing.readout import materialization_data
-
-        return materialization_data(asset_root, spec, task_ids, role)
-    return FormalData(asset_root, spec, query_labels=False, task_ids=task_ids, role=role)
-
-
 def register_partial(output, contract, previous_git):
     """A reader transition may change code identity, never the training source."""
     registration = output / 'materialization_contract.json'
@@ -118,8 +110,8 @@ class OperatorCompiler:
                                                       device=str(self.runtime.device)), strict=True)
         self.runtime.writer.requires_grad_(False).eval()
         self.runtime.policy.eval()
-        self.data = _video_data(self.asset_root, self.config['spec'],
-                                self.config['task_ids'], self.config['role'])
+        self.data = FormalData(self.asset_root, self.config['spec'], query_labels=False,
+                               task_ids=self.config['task_ids'], role=self.config['role'])
         self.request = request
 
     def compile(self, job):
@@ -137,7 +129,7 @@ class OperatorCompiler:
 def compile_conditions(asset_root, spec, mode, checkpoint, source, output, conditions, shapes,
                        *, devices, frame_chunk, task_ids, role, cpu_threads):
     # Header-check existing factors on CPU; dispatch only unfinished videos, longest first.
-    data = _video_data(asset_root, spec, task_ids, role)
+    data = FormalData(asset_root, spec, query_labels=False, task_ids=task_ids, role=role)
     completed, statistics, pending = {}, [], []
     try:
         for condition in conditions:

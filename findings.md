@@ -10208,3 +10208,56 @@ canonical source manifest各50条、overlap audit均active；三行目标分别f
 阴性撤下“该配对变化是当前优先修复”的判断，不外推原则不可能，也不通过换头/加宽/延窗保护同一弱假说。
 这项停止线只终止有限投入，不终止项目。Owner要求的长期推进已写入稳定协作要求；main负责结果后原件消费、
 完整理论更新和下一项有依据的工作，在有可做工作、无实际阻塞时不能只交阶段报告等Owner催促。
+
+
+## 391. 同图同曝光跨情境配对完整执行：局部学习提升未形成总体修复（2026-10-08）
+
+实验session从c58c098d实际承接，按§390/唯一design完成Within/Product各216更新及24192query、全部1762固定完整episode。
+本节是执行者原件读回，不冒称main已独立消费。[canonical完整统计](docs/analyses/cross_context_pairing_20261008.json)
+保留全部per-task/suite、success sets、R/G/L/churn/Jaccard、来源与正反例；原件位于cross_context_pairing_20261008 run。
+
+| 模型 | correct/400 | same-task-other/400 | source54 |
+| --- | ---: | ---: | ---: |
+| T2340/Parent | 161（复用） | 150（复用） | 21 |
+| Within216 | 147 | 148 | 36 |
+| Product216 | 152 | 151 | 35 |
+| 强MT300 | 153（复用） | 未新增 | 未新增 |
+
+Product对Within correct R135/G17/L12、净+5/churn29/J.823171，other R136/G15/L12、净+3/churn27/J.834356。
+Tcorrect对Within R136/G11/L25，对Product R140/G12/L21；Tother对Within R134/G14/L16，对Product R130/G21/L20。
+Product仅other比父净+1，correct仍低9；对历史MTcorrect R116/G36/L37、净−1，不能由只胜退化Within宣称修复或突破。
+四新官方面板breadth均6/8，task23/39全部0/50；正确换视频两臂churn均43，总分接近没有消除逐状态交换。
+原T、MT与本批45-task曝光不同，旧强参照不降级，也不称完成同数据MT/L公平比较。
+
+实际匹配保持T双RGB/exactL→native X/H→P/C/D/O顺序写M→完整38处(A0,B0+M)→自身观测/10ODE/前5反馈。
+公共A/B0及读写参数均由原真实FM/native两侧信用学习；Product只将同84query连同实际tau/noise重新交给三教学LoRA。
+216宏步真实保存张量和query身份匹配，视频边际/权重一致；27个goal×teacher/query cell各224，新9每项672、旧36每项504。
+0/108/216完整ECP的228optimizer状态步2340/2448/2556、scheduler/sampler/RNG/拓扑匹配；原156FP32/72BF16状态保留。
+所有T组与native H/X信用非零；generic independent_S占位0是原图性质，没有去S或新架构/辅助分支。
+平均FM Within.0907820772/Product.0908160970，不作为能力或不变性结论。
+
+source54前/左/右为父3/8/10、Within11/14/11、Product11/14/10；对角6→11/11，非对角15→25/24。
+父→Within R20/G16/L1，父→Product R19/G16/L2；两终点R35/G0/L1，唯一Product丢失teacher2/libero_90/83/01。
+两臂都有训练侧功能收益与9/9接收task覆盖，Product没有独有完整新增；共同收益混合继续学习与九项曝光，不单独识别新增数据因果价值。
+source54是18个登记task/init起点重复三教学scene，不是54独立样本、完整训练未见任务或稳定性认证；两臂物理rank2/4的正常数值差异保留。
+
+全部493236完成控制步、1762份数值capture通过；完整50×7提案、实际末prefix、T+1状态、官方goal AND和noise一致。
+配对记录的初始EEF位置/quat/双指qpos/body原点/谓词最大差0；未保存完整任意runtime状态，不能声称任意中途克隆。
+task23四面板In从未true、碗原点最大位移中位0；本批未捕获三层动态关节/接触，不能据此叫未开柜或唯一阶段原因。
+task39四面板In/Close从未true，目标杯原点移动中位约27.85–28.44cm、抬高中位15.39–16.17cm，运动不等于入腔/抓稳。
+十个固定clip全部审看80双RGB对/160图，全部没有terminal RGB；43full保留，不声称其它full全看过，1719compact无RGB。
+SCENE3→1父失败、两终点175/173步成功；SCENE1→3两终点虽搬向caddy仍失败。task39/init0中Product后段杯回桌面、Within仍在手/门前附近，
+两者都未In/Close；不同视觉过程不等于同神经控制器，外观/原点不能证明接触或必要抓法。
+
+本批削弱“仅改同目标跨BDDL配对即可形成当前总体修复”的支持，降低其优先级；不证明所有跨情境学习不可能或视频没有作用。
+保持原特征/算子/参数与边际使配对效应可识别，但没有证据表明已学出情境不变操作规则；局部几何/运动收益不替代完整held控制。
+书/caddy数据没有提供柜门退出接触后放碗、杯入炉腔的完整连接；不能把这两类主要缺口的零成功修成工程bug。
+216是有限窗口、一个分叉/臂，没有相邻读回或独立重复；不由微小净增自动续训、小扫、换头或启动同数据大矩阵。
+有限批次结束不终止Owner的持续研究授权，main接回原件后独立分析并承担下一完整方法取舍。
+
+正式训练/物化和1732条完成控制来源clean pushed e86dbfbc；剩30条恢复评测来源7fe01c51，旧T训练来源e2afbfd7单独保留。
+五零行启动失败、profile元数据与frame64 OOM、Product bank观察器缺失全部保留计费；695.08秒原GNUtime恢复退出，未知信号不造原因。
+Within other366发布后新state27因3个uint8色值差1失败，physics1e−8已通过。新消费者只接受单档渲染量化并保留真实输入，不改物理容限。
+四条已完成state16–19从真实PT/NPZ恢复，逐行耗时/finished_at缺失保持null；仅30未完成行接续，未重复370有效行，未造7个丢失runtime partial。
+完整物理卡时13.666172210815GPUh（formal train仅7.348368074629），峰6卡、单节点峰2/5，最终无本用户GPU进程。
+实际峰值/独立quota、失败/退出/费用/最终Git、专用入口退役及可靠回报见run resource_ledger/completion/launch；没有额外held特权/RL/Test/时序controls。

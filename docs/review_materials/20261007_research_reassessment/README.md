@@ -52,7 +52,7 @@ seen 从 **91→115/144**，held 从 **137→140/400**。后续动作校准、�
 | --- | --- |
 | [稳定目标与 Owner 边界](../../current_owner_requirements.md)、[concept](../../concept.md) | 先区分最终目标、信息墙与可替换的方法选择 |
 | [机制说明](MECHANISM.md) | 原 T 与实际 C 的完整计算和训练信用；精确到特征来源与真实算子 |
-| [正反证据与历史对照](EVIDENCE.md) | 强参照、八组主要干预、近似历史及每个结论的适用范围 |
+| [正反证据与历史对照](EVIDENCE.md) | 强参照、主要干预、最新冻结迁移读回、近似历史及每个结论的适用范围 |
 | [上次专家原文](../20260930_t_architecture/EXPERT_RESPONSE.md)、[当时的整合判断](../20260930_t_architecture/PUBLIC_BASE_REVIEW.md) | 检查建议原意、保留条件与实际实现差异；不能只看转述 |
 | [上次 T 材料入口](../20260930_t_architecture/README.md) | T/U、学习曲线、公共项和局部功能诊断的已有逐行证据 |
 | [本次新增逐行结果](episode_outcomes.csv)、[汇总与配对](outcome_summary.json) | 补齐此前只在服务器的 C/校准、A/J、A64、RL 结果；含可复算的任务/状态/视频键 |
@@ -60,9 +60,10 @@ seen 从 **91→115/144**，held 从 **137→140/400**。后续动作校准、�
 | [科学历史索引](../../research_history.md)、[跨轮发现](../../../findings.md) | 按证据问题回查；不把全文实验年表作为首先阅读的材料 |
 
 最新 `progress.md` / `task_plan.md` 的顶部才表示执行状态。旧 design 中“当前”“下一步”仅指当时。
-本材料基于已完成结果；另有原 T 冻结跨任务 post-open 接手的 **90 行** 有界诊断正在独立执行，
-其合同见[设计](../../designs/cross_task_post_open_transfer_20261007.md)。在完成和审阅前不把它计入正反结论，
-也不由这项小分析自动产生后继训练授权。
+材料准备期间，原 T 冻结跨任务 post-open 接手的 **90 行** 有界诊断也已完成，十个参数×文本臂均为0/9。
+主讨论已核实际消费者、90条原始结果与两张既有RGB sheet，结果和适用边界已补入EVIDENCE；
+合同见[设计](../../designs/cross_task_post_open_transfer_20261007.md)，[完成读回](../../analyses/cross_task_post_open_transfer_20261007.json)。
+它没有把现成donor参数认证为纠正教师，也没有证明所有操作组合或视频编译不可能；没有据此启动后继训练。
 
 ## 材料的边界
 

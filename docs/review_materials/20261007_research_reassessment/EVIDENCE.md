@@ -35,9 +35,16 @@ public-only是同一模型删去视频残差的诊断，并不是另训的强lan
 | **关系G/F与输入替换P/Q**：G从native预测匿名关系再S/M，辅助监督+F蒸馏；F读取GT教学及自身关系，bare source H/v上动作残差 | G360/450 held131/126，seen G84/F66，T109。统一同链P0/Q0/P180/Q180为81/82/78/81（/144）；换GT终点+3来自保留差异 | F不是强MT/β上的oracle。不能以F66宣布正确关系无价值，也不能将GT替换看成隔离全部视觉/蒸馏/编译瓶颈；双方joint-fail新增都3 | [G完整消费](../../analyses/relation450_main_consumption_20261007.json)、[P/Q](../../analyses/relation_input_compilation_20261007.json)、[实际G/F代码](https://github.com/LinFyM/EMBER/tree/85614d9c/src/ember/relation_writer) |
 | **特权state→示范动作1NN**：固定寻址几何，仅比较Value；再从T真实50步后交接相同NN | true teacher actions91、bare source动作0（/144）；校准面板原生μ6→Gamma预测22，仍低于true91。T50接力T109→91，R80/G11/L29；T失败35救11 | 11新增是真实局部控制；29丢失与原NN相同总分下的不同成功集同时存在。不能把oracle union或特权Value当可靠纠正教师，更不能部署 | [true动作](../../analyses/privileged_action_memory_control_20261007.json)、[Gamma Value](../../analyses/calibrated_action_memory_control_20261007.json)、[T50接力](../../analyses/teacher_state_handoff_20261007.json) |
 | **强MT上的在线视频M/V**：同MT300继续128/14,336queries；V两层视频encoder+18层Reader直接查询自身hidden，教学β信用真实；非EMBER部署 | M93/V88（/144），R84/G4/L9；原MT93/T109。新增训练留出4tasks：M6/V3，V同task另一video5（/16） | 同时改变教师特征、地址绑定和写入位置，不能视作只解除编译瓶颈的强T上界。MT早见过4tasks，它们不是全程held。未认证强教师，停止延长/蒸馏 | [完整证据](../../analyses/native_video_control_diagnostic_20261007.json)、[实际V代码](https://github.com/LinFyM/EMBER/tree/d76e42fd/src/ember/native_video_control) |
+| **冻结跨任务接手**：同T2340，task23九个真实已开柜状态；自己的M23与四套完整M42，交叉原L23/L42，0新编译/训练 | 10臂全部0/9，90条无成功；六个剩115–240步起点也全部失败。实际参数和文本均改变首5动作；L42/L23下碗体原点升高≥3cm为11/45、2/45，含M23自身3/9、1/9 | 现成task42成功控制没有在这九个task23状态变成可靠接手，不能自动进入蒸馏/组合。9个重复状态不是90独立样本；条件替换同时含教学视频与编译语言，场景/状态依赖未分离 | [完整读回](../../analyses/cross_task_post_open_transfer_20261007.json)、[固定合同](../../designs/cross_task_post_open_transfer_20261007.md)、[实际消费者](https://github.com/LinFyM/EMBER/blob/8d432bb6/src/ember/pi05_eval/cross_task_transfer.py) |
 
 各数字的完整配对分布优先看链接JSON及本目录outcome_summary；不能用分母相同掩盖场景、视频或参数干预不同。
 C、动作校准、A/J及RL新增CSV共有3,504行，其余已在Git的逐行/成功集证据直接引用，避免多份权威副本。
+
+最新90行是在本材料整理期间完成的独立批次，主讨论直接核对了消费者的完整38-target安装/实际反馈执行、
+90份原始row与派生矩阵；实际后缀13,100步，官方In全程未满足，配对检查无不符。
+另直接查看了init19 M23+L42和init8 M42_demo09+L42的既有8时刻双RGB sheet：局部抬碗仍未完成放入，
+末保存图为295步而非300步terminal；不把稀疏RGB或体原点高度当接触/抓稳真值。
+这个结果削弱“已有成功donor可以直接充当这类失败状态的纠正教师”，不单独定位视频表示、编译器或训练目标的根因。
 
 ## 3. 更早、最相近的机制必须继承
 

@@ -718,5 +718,33 @@
     "release": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/launch/final_release_check.json",
     "retirement": "/data1/user/ymdai/ember_runs/cross_task_post_open_transfer_20261007/retired_entrypoints.json"
   },
-  "stop": "Fixed batch complete;0new training/native/teacherHDF/heldprivilege/Test; no donor/text/cut/scale search, distillation, Reader or automatic successor. Main independently consumes and decides next work."
+  "stop": "Fixed batch complete;0new training/native/teacherHDF/heldprivilege/Test; no donor/text/cut/scale search, distillation, Reader or automatic successor. Main independently consumes and decides next work.",
+  "main_consumption": {
+    "date": "2026-10-07",
+    "session": "01a10a97-dedf-7042-a6a2-60214f0ef7b1",
+    "execution_source_inspected": "8d432bb6:src/ember/pi05_eval/cross_task_transfer.py",
+    "original_rows_read": 90,
+    "unique_state_arm_keys": 90,
+    "successes": 0,
+    "arms": 10,
+    "physical_starts": 9,
+    "suffix_control_steps": 13100,
+    "complete_targets": 38,
+    "complete_factors": 76,
+    "official_global_task": 23,
+    "total_horizon": 300,
+    "original_row_summary_agreement": true,
+    "pairing_admitted_all": true,
+    "RGB_sheets_directly_viewed": [
+      "T2340_state019_M23_L42",
+      "T2340_state008_M42_demo09_L42"
+    ],
+    "RGB_pairs_directly_viewed": 16,
+    "RGB_boundary": "Last saved observation295, numeric terminal300. This does not claim rereading all20 sheets/950 replans. Body-origin height and sparse RGB are not grasp/contact ground truth.",
+    "new_model_forwards": 0,
+    "new_environment_steps": 0,
+    "decision": "No completed transfer for these four existing donors at these nine target states under either exact text; do not promote to corrective teacher or automatic composition training. Does not identify a unique root cause or refute all video compilation.",
+    "next_context": "Owner requested a remote-Git expert reassessment discussion; materials prepared, expert not contacted, no successor experiment selected.",
+    "review_entry": "docs/review_materials/20261007_research_reassessment/README.md"
+  }
 }

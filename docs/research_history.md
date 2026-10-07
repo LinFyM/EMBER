@@ -3,6 +3,14 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：main消费最后迁移诊断，整理完整方法重新审视材料
+
+findings§389及[canonical分析](analyses/cross_task_post_open_transfer_20261007.json)的main_consumption记录
+实际消费者、90原行和两张既有RGB sheet的独立读取。固定donor迁移没有完整正例，不推导所有视频编译不可能或自动更换架构。
+Owner要求远程专家只能看Git，先整理后讨论；新[审阅入口](review_materials/20261007_research_reassessment/README.md)
+汇集T/C实际机制、强T正例、后续干预、最相近历史、上次专家原文，补3504条既有结果及18组配对统计。
+主讨论明确承认局部证据尚未收敛成有预测力的完整方法判断；建议审阅机制、学习设定、方法取舍与科研决策，尚未委托专家或启动后继。
+
 ## 2026-10-07：既有四套放碗控制在九个post-open访态均未完成
 
 [固定合同](designs/cross_task_post_open_transfer_20261007.md)实际90续行全部完成：十个参数×文本臂均0/9，

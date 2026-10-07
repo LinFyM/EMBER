@@ -9995,3 +9995,60 @@ M/V的task29/init32都有瓶运动却未形成On。这些是保留的具体失�
 扩任务、同视频辅助、lookahead及普通FM允许视频无关解的理论均有完整历史，不作为新发现重开。
 main另在只读核对“用自身已成功状态的旧完整函数约束后续FM更新”的历史与决策价值；尚未采纳该训练目标，
 也不因其可抑制变化便承诺新增能力或未见任务保持。当前无新active训练/GPU/环境，Owner自主授权及最终目标仍在。
+
+## 386. 成功功能保持并非没有历史负担的新解法；本轮不再自动接续学习补丁（2026-10-07）
+
+§385后的只读历史辨识已结束。main直接核了ADSP/SKNC/OSG-PC/CV-CSD的关键历史源码，
+ADSP实际metrics、400原行及strict裁决，SKNC正式决策原件；其它近邻沿既有索引辨明适用边界。
+没有新增模型前向、环境、标签、梯度或GPU，不把本段记成新训练结果。
+
+**最接近的实测约束。** ADSP（ad2e1be）从自身成功rollout的执行动作构造FM loss，
+把ProcedureCommonValueSet的最终共享AdamW更新投影到各task成功支持loss一阶不增的半空间。
+实际22个约束、投影前6个违反、投影后0，保留96.3787%的原偏好下降方向；
+其余主体冻结、主更新是RLLOO，不是端到端继续普通FM或完整旧函数蒸馏。
+正式相对匹配AS为139→138，R116/G22/L23；相对无投影reward更新也同为138，但21得21失。
+保护约束生效没有形成held净收益，不能把它误记为没接通成功信用。
+
+SKNC（15ef050a，实际e3863cb）保存自身4/4成功条件的Program key，要求后续更新对这些key为零，
+使固定compiler下相应完整LoRA/action不变，普通跨episodeFM在剩余零空间学习。
+15个条件得到保持、实际Program closure通过，仍134→137、R121/G16/L13。
+它确实比仅约束latent范数更直接；但没有保存全部自身状态，也没有共同训练整个Writer，
+有限成功条件的严格不变没有自动迁移成held成功集合不变。
+
+OSG-PC（e22cff19）的自身成功轨迹FM梯度约束与普通FM投影在科学结构上也接近，
+但实际9263851只到profile，NCCL/watchdog失败且成本较高，没有有效正式checkpoint/闭环结果，不能记作科学阴性。
+CV-CSD/DJNFR已有跨正确视频条件的成功动作重放，143→134/136；标签是执行动作，活动参数受限，
+不是固定强父模型的完整denoiser/10-step函数，同时也未保持完整普通FM主训练。
+旧裸source自蒸馏的identity论证、学生访态expert监督、RL trust与公共FM分别有不同目标，不能混作同一个反例。
+
+**尚未检验的差别不足以自动构成立项。** 若从强T继续学习，固定其合法视频条件和自身成功non-held观测，
+可写出联合假说 `L = L_FM + lambda E_keep ||F_theta(c,o,xi)-stopgrad(F_theta0(c,o,xi))||^2`。
+这里c仍是RGB/video与exact language，旧成功动作/观测只作为训练监督，不能进入部署Writer。
+在theta0处保持项梯度为零；局部二次项为`delta^T J_keep^T J_keep delta`，因此它约束FM更新引起的函数漂移，
+不会像“只模仿裸source”那样把整个目标在起点化为零，也不会自行提供新的正确控制方向。
+其约束范围仅是采样条件和观测处的Jacobian；其它视频、新任务、新初始化或后续闭环偏移上的作用不由该式保证。
+匹配sampled velocity、完整10-step动作与真实闭环保持亦不是同一合同。
+
+这不是已完成同类实验的冒认，但ADSP和SKNC已降低“保护训练成功支持就能积累held能力”的先验。
+T2340→2430及本次M相对MT的得失说明能力交换真实存在，仍未证明保留与获取对应可兼容的同一个共享更新，
+更未证明保持项会帮助新任务从教学中取得所缺的操作知识。不能把更严格的保持直接当作最终目标，
+Owner允许正常交换，首要要求仍是有覆盖的绝对控制收益。当前不采用这项追加学习。
+
+**回到完整方法取舍。** 本轮自主推进已经实际检验强MT起点、全部执行A/B与视频memory共同学习的直接参照，
+M93/V88没有取得强教师资格；它与既有冻结内容L/R阴性一起降低“增加读取自由度/信用便足够”的优先级。
+与此同时，T161/other150及公共删除103仍显示一次编译有实际有益条件作用，不能把瓶颈直接归成LoRA或单次编译不可能。
+教师动作值、物理字段、原生特征更可读、读取更自由和成功支持保持都只解决完整联系的部分条件；
+历史中这些条件局部成立后仍有控制缺口，不能把各自正例拼接成已具备的完整方案。
+
+当前尚未定位一种能够解释具体失败、同时有证据预期改变有覆盖绝对能力的修正。
+这限制当前方法选择的把握，不证明问题无解，也不需要Owner补一个许可才能执行已有授权工作。
+本轮固定诊断与科学消费在此收束；没有新active设计、后台计算或自动后继，不以继续堆Reader、扩大保持约束、
+续训/小扫或再造一个局部资格测试维持活动。最终目标未完成，自主授权保留，后继须由新的实际机制依据形成。
+
+原件：`runs/outputs/pi05_v6_actual_delta_success_support_projection_formal_cycle0to1_r4_k4_nmc4_b8_ad2e1be_gpu02_20260814/metrics.jsonl`；
+`runs/outputs/pi05_v6_actual_delta_success_support_projection_cycle1_k4_correct400_noreplacement_seed7_trainr4_evalr5_ad2e1be_gpu02_20260814/{results,actual_delta_support_projection_strict_adjudication}.json`；
+`runs/outputs/pi05_sknc_success_key_nullspace_correct400_noreplacement_seed7_macro0005_e3863cb_20260812/sknc_formal_decision_evidence.json`。
+源码：`ad2e1be:src/ember/writer/reward_preference.py`的成功权重/功能信用/最终投影，
+`15ef050a:src/ember/expert_manifold/v6_success_key.py`的constraint_plan/commit_first_successes_，
+`e22cff19:src/ember/expert_manifold/v6_reward_credit.py`的functional_success_lora_gradients/project_blind_program_direction，
+`c1d8952:src/ember/writer/reward_preference.py`的functional_selected_success_lora_gradient。

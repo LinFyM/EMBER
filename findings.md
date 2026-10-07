@@ -9577,3 +9577,31 @@ T109/MT93/G84/F66只作有信息边界的原件背景，不以特权NN超过参�
 固定288新episode、0训练/held/Test，预计2–4h，硬实际承接起6wall/3完整GPUh/24GiB；
 全部前5真实控制、Value来源、检索索引、原生目标和固定own RGB一起约束解释，不以MSE或阶段故事代替完整成功。
 本条登记时尚无新模型/环境运行，main将推送后交既有实验session独占执行；整批回报后由main作完整方法取舍并接续。
+
+## 376. 同一特权状态匹配下，真实教学动作值91/144对source值0/144，有覆盖但非完整教师（2026-10-07）
+
+[完整配对原件](docs/analyses/privileged_action_memory_control_20261007.json)与root `privileged_action_memory_control_20261007/analysis/report.md`保存两臂288行。
+原D_abs/OOI全body-site/对象等权/offset1/0.10m和0.04m完全保留；只是Value替换，实际自身NN无模型/随机flow。
+demo91/source0，target63/96对0、support28/48对0，R0/G91/L0、churn91、J0；breadth34/36对0，9 task4/4。
+36/55均0/4，1/5/17/34/95仅1/4，53共同失败全部保留；收益不是只来自一个任务，但也不是已强完整功能教师。
+完整36-task、suite及全部success-set见JSON，未读held/Test或训练，没有新增NN变体、更多seed或拟合。
+
+task29四初态4/4、task38为3/4，预登记init32实际OnRack134步、两壶On226/487步；12入basket104、73关门175。
+不利的25/init32推盘12.82cm仍无On、32/init32 TurnOn93步而On始终无；后者另外三初态成功也未抹去。
+固定六task×两臂12clip/192图真实看过；source12移动basket而目标原位、29目标不动、38两On全假、73移杯但不Close。
+图像没有接触真值；只用原生完成谓词判断，不由root中心替代关节或宣称未拍末态RGB已看到。
+source与GT同memory前5归一化MSE .1164263（平移.1207938/旋转.0699701/夹爪.2426926），不与旧跨episode .1244355假作同口径改进。
+选择停滞比率中位source .868567/demo .114835是症状描述，不是可加时钟/phase gate的根因证据。
+
+T109/MT93/G84/F66直接复用原行，T为真实132+12；demo对T R71/G20/L38（−18）、对MT62/29/31（−2），
+虽然target63高于其62/46，support28低于47，不能只靠该局部涨分晋级。与G/F的总体+7/+25也不是同图因果比较。
+具体更新：在已给定真实对象/状态对应与此固定调用规则时，成功示范动作确有超出同帧冻结source Value的新增控制内容；
+原“成功视频/准确轨迹即可当强教师”仍不成立。合法RGB获取与对应、真实反馈可学性、一次完整LoRA实现和held迁移均未验证；
+不由source缓存NN0推出source全部执行无能力，也不由本差额唯一解释F/G阴性。科学取舍仍由main独立承担，无自动后继。
+
+完整288/84624控制步/16960提案、原first5与raw/normalized50/valid mask/argmin/scene-teacher-RNG/原生谓词均0不符；72full/216compact全部保留。
+144 teacher/4556合法位置离线同步最大1.414e−15m，live cache/sim最大5.423mm只记不gate。0梯度/LoRA生成/held/Test，自身0VLA/flow。
+controller及几何bfd76c99、source窄导入修复5f88b8c1各来自clean pushed detached；重复support路径映射只修接口，96/116旧partial及失败冻结都保留。
+四GPU消费者含模型加载前失败共.293188h，最后退出00:39:42.587Z/承接至计算43.973min；新增实测7.980GiB/保守8.25、去重复已计时CPU .906897h，未计交互CPU明确保留。
+source首32帧batch16/32吞吐9.304/10.258帧每秒，选32并保留首有效值，最多两profile；NN用既存6persistent renderer，实际288全完成，无额外case。
+最终12 worker PID及两节点GPU释放，四专用owner/入口/hooks退役，89项既有回归及退役拒绝消费者通过；final Git/窗口交回/唯一整批消费见root completion。

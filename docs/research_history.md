@@ -3,6 +3,17 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：原绝对状态匹配加入闭环和动作Value对照，完整288行封口
+
+findings§376及[完整分析](analyses/privileged_action_memory_control_20261007.json)索引唯一root `privileged_action_memory_control_20261007`，完整CPU读回/RGB来源/成本/失败/Git/frozen保留。
+两臂同144 teacher/4556合法位置与D_abs，只替换真实HDF五动作或source1000同帧原生50动作前5；自身均CPU NN，无LoRA/训练/held/Test。
+demo91/source0，target63/96与support28/48，34/36 task有成功、9全4/4，配对R0/G91/L0；53共同失败、36/55零任务和预登记25/32失败仍在。
+它把§81部分动作传递正例扩展到实际有覆盖的闭环Value差额，没有改变旧相对几何假说；不建立合法RGB对应、学习反馈、一次完整LoRA或held迁移，不唯一解释F/G失败。
+T109原132+12/MT93/G84/F66只引用，demo对T/MT总体−18/−2且support−19，不能靠target局部优势当EMBER晋级。
+全部84624实际动作/16960提案/raw-valid mask/argmin/native/scene-teacher-RNG配对0问题；72full/216compact，真实审看12固定clip/192保存图，末态未补拍。
+controller/几何bfd76c99、source消费者窄修5f88b8c1均clean pushed detached；旧96/116 partial与冻结不覆盖。GPU含导入失败共.293188h，计算43.973min，新增实测7.980GiB/保守8.25；89项退役回归通过、12worker和两节点GPU退出。
+专用入口/hooks/4owner退役，Git/原件/cache/frozen保留，最终push/工程树清理/一次整批接收按completion。执行者停止该批，main独立接续方法判断，无自动后继。
+
 ## 2026-10-07：已有RL信用覆盖与动作记忆闭环的辨识问题
 
 findings§375与[原RL信用覆盖](analyses/denoising_credit_coverage_20261007.json)保存1152原训练行/288组直接重算：

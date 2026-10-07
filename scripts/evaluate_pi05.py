@@ -14,8 +14,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Mapping
 
-from ember.eval_adapters import (HORIZON_WRITER_KIND, OPERATOR_READ_WRITE_KIND,
-                                 PRIVILEGED_ACTION_MEMORY_KIND, STATIC_TASK_LORA_KIND)
+from ember.eval_adapters import HORIZON_WRITER_KIND, OPERATOR_READ_WRITE_KIND, STATIC_TASK_LORA_KIND
 from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval.launcher import (
     MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
@@ -109,8 +108,6 @@ def _add_prepare_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-expert-bank-root", type=Path)
     parser.add_argument("--task-expert-step", type=_positive_int)
     parser.add_argument("--static-task-lora-manifest", type=Path)
-    parser.add_argument("--privileged-action-memory-manifest", type=Path,
-                        help="Train-only CPU nearest-neighbour diagnostic; VLA values are cached offline.")
     parser.add_argument("--occupancy-capture-selection", type=Path)
     parser.add_argument("--trajectory-capture-selection", type=Path)
     parser.add_argument("--task-subset-selection", type=Path)
@@ -301,8 +298,6 @@ def _start_workers_locked(
     if ready_to_aggregate:
         return _finalize_aggregate(output_dir)
     physical_gpu_ids = tuple(int(value) for value in contract["parallel"]["physical_gpu_ids"])
-    renderer_budget = ({"renderer_only_replicas": int(contract["parallel"]["replicas_per_gpu"])}
-                       if (contract.get("adapter") or {}).get("kind") == PRIVILEGED_ACTION_MEMORY_KIND else {})
     preflight = _gpu_preflight(
         physical_gpu_ids,
         max_utilization_percent=max_utilization_percent,
@@ -312,7 +307,6 @@ def _start_workers_locked(
             in {HORIZON_WRITER_KIND, STATIC_TASK_LORA_KIND, OPERATOR_READ_WRITE_KIND}
             else None
         ),
-        **renderer_budget,
     )
     if not _evaluator_gpus_are_eligible(preflight):
         raise Pi05EvaluationError("selected GPUs do not satisfy evaluator admission limits")

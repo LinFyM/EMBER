@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
-    PRIVILEGED_ACTION_MEMORY_KIND,
     inspect_source_sft_adapter,
     inspect_static_task_lora_adapter,
     inspect_task_expert_adapter,
@@ -102,16 +101,10 @@ def _reinspect_adapter(
 ) -> Mapping[str, Any]:
     tasks = tuple(
         argparse.Namespace(suite=row["suite"], task_id=int(row["task_id"]),
-                           init_state_ids=row.get("init_state_ids"), language=row.get("language"))
+                           init_state_ids=row.get("init_state_ids"))
         for row in contract["tasks"]
     )
     require_formal = contract["mode"] != "smoke"
-    if adapter.get("kind") == PRIVILEGED_ACTION_MEMORY_KIND:
-        from ember.pi05_eval.action_memory_controller import inspect_manifest
-
-        return inspect_manifest(
-            manifest_path=Path(adapter["manifest"]["path"]), source=model, tasks=tasks,
-            evaluation_role=str(contract["role"]), require_formal=require_formal)
     if adapter.get("kind") == "shared_source_sft_lora":
         return inspect_source_sft_adapter(
             config_path=Path(adapter["config"]["path"]),
@@ -205,14 +198,9 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         and _reinspect_adapter(adapter, contract=contract, model=model) != adapter
     ):
         raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
-    if adapter is not None and adapter.get("kind") == PRIVILEGED_ACTION_MEMORY_KIND:
-        from ember.pi05_eval.action_memory_controller import validate_contract
+    from ember.pi05_eval.registered_passive_capture import validate_contract
 
-        validate_contract(contract)
-    else:
-        from ember.pi05_eval.registered_passive_capture import validate_contract
-
-        validate_contract(contract, REPO_ROOT)
+    validate_contract(contract, REPO_ROOT)
 
 
 def worker_ids(

@@ -1,3 +1,13 @@
+## 2026-10-07 特权动作记忆288行完成，停止计算并交回窗口
+
+唯一privileged_action_memory_control_20261007完成两臂各144：demo91/source0，target63/0、support28/0，R0/G91/L0、churn91/J0，breadth34对0。53共同失败、36/55零任务及25/32预登记反例保留；findings§376与canonical JSON/root report保存完整原件，不当合法EMBER、强F资格或自动后继。
+全部84624动作/16960提案与72full/216compact、实际argmin/前5/full50-valid mask/scene-teacher-RNG/native均0不符；预登记12clip/192图已看，其余60full/216compact不冒称看过。0训练/LoRA/held/Test；NN自身CPU控制、无VLA/flow，source4556帧一次缓存后退出。
+原T109真实132+12、MT93/G84/F66只作背景；demo对T−18/对MT−2，support明显损失与target63局部优势一起保留。真实动作Value在特权对应后有跨task作用，不证明合法获取/LoRA编译/held迁移或唯一根因。
+来源controller/完整几何clean pushed detached bfd76c99、source消费者5f88b8c1；旧frozen/96和116 partial及所有cache/raw/费用不删。两个CPU资产接口和source加载前2.063GPU秒导入失败、CPU读回导入错误都记录，无失败评测/缺行/择优重跑。
+全部GPU1055.477150秒=.293188h、计算结束2026-10-07T00:39:42.587Z（承接43.973min）；新增实测7.980GiB/保守8.25，硬24，已计时去重复CPU .906897h，交互/Git/初检查未完整CPU计时明确保留，wall全计至最终封口。source两profile9.304/10.258帧每秒/selected32，保留首有效cache；NN实际6persistent renderer，不加载无用VLA、没有额外科学case。
+最后两节点无ymdai GPU、12个worker PID均退出。专用4owner/入口和临时hooks已退役，只留旧诊断拒绝guard；89项既有回归/实际拒绝消费者通过。final clean/push、两工程树清理及一次官方整批投递/实际新轮消费以root completion和launch/delivery_receipt为准。
+本批没有active模型/环境/梯度或自动下一批；整批投递后canonical tracked/Git完整归main，实验session停止新增工作，main独立消费科学并作下一方法裁决。Owner最终目标尚未完成；下方active与承接文字仅为历史时点。
+
 ## 2026-10-07 实验session实际承接privileged action memory匹配闭环批次
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取136行唯一active design、findings§375、Owner稳定合同及原几何审计§81，从clean pushed main1f000398接管canonical tracked/Git独占窗口；main停止并发写入。

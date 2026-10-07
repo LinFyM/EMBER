@@ -1,3 +1,11 @@
+## 2026-10-07 实验session实际承接T访态接力诊断
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已完整读取112行唯一active design和findings§379–380、当前Owner/progress/task_plan，从clean pushed226f7065接管canonical tracked/Git独占窗口；main停止并发写入。
+保守承接时钟2026-10-07T02:46:00Z（先于首次live回执），硬截止05:46:00Z；预计30–60min，硬3wall/1完整GPUh/16GiB，含工程、失败、EGL、profile、Git/frozen/tmp/分析。唯一root为/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007。
+首次strg01独立data1实占1414695444KiB/soft2147483648KiB/limit2157969408KiB，共享可用88204252282880B；个人实际du读取与最小隔离实现并行，完整回执在大评测输出前补齐。此条0新GPU/环境/forward。
+固定两臂T_replay/T50_demo_NN各原144：共同原T真实actions[:50]，after50 before action50切换，无reset/settling/状态覆盖/增horizon。原demo数学/geometry cache及原T raw只读；新增最小命令所有权、真实耗尽停止和第50步证据接口，复用canonical queue/scene/capture。
+专用接口仅本批使用，计算停止后退役；全部原件、失败与费用保留。只在整批结束或真实科学/预算/参照边界一次回main并交回窗口，无阶段Queue/自通知或自动后继。
+
 ## 2026-10-07 main消费Gamma，登记真实动作教师的T访态接力诊断
 
 main已接回canonical tracked/Git，直接消费1296原行、144缓存的动作误差分解及4clip/64图；findings§379和同批canonical main_consumption保存科学判断。

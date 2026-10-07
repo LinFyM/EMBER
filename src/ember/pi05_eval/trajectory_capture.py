@@ -58,7 +58,8 @@ def record_pre_exploration_means(slots: Any, chunks: Any) -> None:
 def record_replan(
     slot: dict[str, Any], raw_input: Mapping[str, Any], processed: Mapping[str, Any],
     chunk: Any | None, executed_prefix: Any | None = None,
-    *, command_kind: str = "model_prediction",
+    *, command_kind: str = "model_prediction", raw_chunk: Any | None = None,
+    valid_action_mask: Any | None = None, replan_metadata: Mapping[str, Any] | None = None,
 ) -> None:
     if "replay_action_chunks" not in slot:
         return
@@ -67,12 +68,21 @@ def record_replan(
     slot["replay_states"].append(
         raw_input["observation.state"].detach().to(device="cpu").contiguous()
     )
-    if command_kind not in ("model_prediction", "external_saved_action") or (chunk is None) != (command_kind == "external_saved_action"):
+    if command_kind not in ("model_prediction", "external_saved_action", "privileged_action_memory_controller") or (chunk is None) != (command_kind == "external_saved_action"):
         raise Pi05EvaluationError("diagnostic capture command provenance changed")
     slot["replay_action_chunks"].append(
         None if chunk is None else chunk.detach().to(device="cpu").contiguous()
     )
     slot.setdefault("replay_command_kinds", []).append(command_kind)
+    if replan_metadata is not None:
+        raw = torch.as_tensor(raw_chunk, dtype=torch.float32)
+        mask = torch.as_tensor(valid_action_mask, dtype=torch.bool)
+        if (raw.shape != (50, 7) or mask.shape != (50,) or
+                not bool(mask[:len(executed_prefix)].all()) or not 1 <= len(executed_prefix) <= 5):
+            raise Pi05EvaluationError("action-memory proposal or five-real-action mask changed")
+        slot.setdefault("replay_raw_action_chunks", []).append(raw.clone())
+        slot.setdefault("replay_action_valid_masks", []).append(mask.clone())
+        slot.setdefault("replay_replan_metadata", []).append(dict(replan_metadata))
     slot["replay_replan_steps"].append(int(slot["steps"]))
     if executed_prefix is not None:
         slot["replay_executed_prefixes"].append(torch.as_tensor(executed_prefix).clone())
@@ -118,6 +128,11 @@ def save_capture(
         "executed_action_prefixes": tuple(slot["replay_executed_prefixes"]),
         "replan_steps": tuple(slot["replay_replan_steps"]),
     }
+    if "replay_replan_metadata" in slot:
+        common.update(raw_action_chunks=tuple(slot["replay_raw_action_chunks"]),
+                      action_valid_masks=tuple(slot["replay_action_valid_masks"]),
+                      replan_metadata=tuple(slot["replay_replan_metadata"]),
+                      command_kinds=tuple(slot["replay_command_kinds"]))
     if "pre_exploration_normalized_means" in slot:
         if len(slot["pre_exploration_normalized_means"]) != len(slot["replay_action_chunks"]):
             raise Pi05EvaluationError("objective-alignment pre-exploration means are incomplete")
@@ -334,7 +349,8 @@ def validate_passive_trace_row(
             or info.get("condition_id") != ((row.get("horizon_writer_lora") or
                                               row.get("conditional_velocity_lora") or
                                               row.get("demonstration_comparison_lora") or
-                                              row.get("operator_read_write_lora") or {}).get("condition_id"))
+                                              row.get("operator_read_write_lora") or
+                                              row.get("privileged_action_memory_controller") or {}).get("condition_id"))
             or info.get("goal_predicates") != stage.get("predicates")
             or not isinstance(info.get("body_registry"), list)
             or not info["body_registry"] or not isinstance(info.get("goal_operands"), list)):

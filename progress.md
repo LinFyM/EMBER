@@ -19,6 +19,17 @@ CPU核45来源及全216两臂事件、48384实际query索引、首triplet六batc
 固定54/point拆三教学scene×18行以符合canonical task/state唯一键，18teacher条件各复用三receiver；总1762/43full/10固定clip不变。
 按合同闭环恢复、真实query/tau/noise配对、两臂216更新与1762固定行；不在工程完成处等待main审批。
 只在整批完成或真实科学/有效性/预算边界一次回报并交回窗口；旧批均不恢复。
+两臂216正式更新已正常退出：Product 2026-10-07T18:27:19Z，3898.12秒/4.331248GPUh；Within 18:52:52Z，5430.82秒/3.017120GPUh。
+这里只计本两次formal train，所有smoke/profile/物化/失败/EGL继续另列完整费用，不把7.348368GPUh当整批成本。
+actual_training_readback.json核两臂24192个真实query身份携带的完整noise/tau逐macro一致、每个Product cell224；864条件和216时钟匹配。
+新增0/108/216各完整ECP的228个optimizer状态、scheduler和sampler匹配2340/2448/2556；exp_avg dtype原样为156FP32+72BF16。
+public A/B₀/P/C/D/O及native H/X信用非零；generic independent_S占位为0符合原T图，不是引入/恢复去S臂。
+父九格54行已全部完成，9full/45compact；固定两个父跨scene clip的八时点双RGB已审看，terminal RGB未捕获，不把搬书当In。
+首次两个新Parent面板因其他用户在两道准入间增占约23GiB显存，canonical内层守门拒绝；原零行prepared队列和成本封存于各panel/attempts。
+最新现场迁移后两面板均正常完成，没有重复任何有效环境行；非模型/消费者bug。CPU调度回执和shared-A发布串行修正保留，冻结树未热改。
+Product/Within终点bank在现场cap内并行物化；两个family共用A发布需串行，400独立condition可按现场余量用至多四同节点物理worker。
+全部1762闭环及完整capture/成功集合/费用/退役仍待完成，未由FM或训练检查作科学晋级，后续只等实际退出事件。
+
 
 ## 2026-10-08 同目标跨情境配对设计登记，恢复持续自主推进
 

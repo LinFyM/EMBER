@@ -21,6 +21,7 @@ from ember.pi05_assets import Pi05EvaluationError
 from ember.pi05_eval_contract import load_run_contract, policy_noise_seed
 from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
 from ember.pi05_eval.episode import finish_episode_row, start_fixed_episode, update_stage_predicates
+from ember.pi05_eval.completed_episode import load_completed_rows, save_completed_row
 from ember.pi05_eval.exploration import (
     add_exploration_noise,
     validate_episode_exploration, validate_exploration_contract,
@@ -253,10 +254,12 @@ def rollout_shard(
             if not bool(done) and slot["steps"] < max_steps:
                 continue
             slot["episode_done"] = bool(done)
-            rows.append(finish_episode_row(
+            row = finish_episode_row(
                 slot=slot, task=task, contract=contract,
                 task_adapter=task_adapter, worker_started=worker_started,
-            ))
+            )
+            save_completed_row(contract, row)
+            rows.append(row)
             if next_state < len(state_ids):
                 slots[slot_index] = start_slot(env, int(state_ids[next_state]))
                 next_state += 1
@@ -603,19 +606,18 @@ def _execute_claim(runtime: WorkerRuntime, claim: EvaluationClaim) -> bool:
     if published is not None:
         return True
     task = runtime.tasks[claim.task_key]
-    envs, init_states = runtime.pool.switch(task)
     started_unix = time.time()
-    rows = rollout_shard(
-        envs=envs,
-        init_states=init_states,
-        task=task,
-        state_ids=claim.shard.init_state_ids,
-        contract=runtime.contract,
-        policy=runtime.policy,
-        preprocess=runtime.preprocess,
-        postprocess=runtime.postprocess,
-        task_adapter=runtime.task_adapter,
-    )
+    rows = load_completed_rows(runtime.contract, claim.shard, task, _validate_episode_row)
+    completed = {row["init_state_id"] for row in rows}
+    remaining = [state for state in claim.shard.init_state_ids if state not in completed]
+    if remaining:
+        envs, init_states = runtime.pool.switch(task)
+        rows.extend(rollout_shard(
+            envs=envs, init_states=init_states, task=task, state_ids=remaining,
+            contract=runtime.contract, policy=runtime.policy,
+            preprocess=runtime.preprocess, postprocess=runtime.postprocess,
+            task_adapter=runtime.task_adapter))
+    rows.sort(key=lambda row: int(row["init_state_id"]))
     return _publish_claim_result(runtime, claim, rows, started_unix)
 
 

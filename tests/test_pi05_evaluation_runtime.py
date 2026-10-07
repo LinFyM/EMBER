@@ -91,6 +91,36 @@ def _payload(contract: dict, shard: EvaluationShard) -> dict:
     }
 
 
+def test_finished_episode_recovery_runs_only_unfinished_states(tmp_path, monkeypatch):
+    import ember.pi05_evaluation as runtime_owner
+    from ember.pi05_eval.completed_episode import save_completed_row
+
+    contract = _contract(tmp_path)
+    shard = EvaluationShard(job_id="recovery", ordinal=0, suite="libero_spatial", task_id=0,
+                            horizon=220, init_state_ids=(0, 1), estimated_cost=440)
+    row0, row1 = _rows()
+    save_completed_row(contract, row0)
+    task = contract["tasks"][0]
+    switches = []
+    worker = SimpleNamespace(contract=contract, tasks={shard.task_key: task},
+        pool=SimpleNamespace(switch=lambda task: (switches.append(task) or (["env"], ["init"]))),
+        policy=None, preprocess=None, postprocess=None, task_adapter=None,
+        output_dir=tmp_path, queue_path=tmp_path / "queue", worker_id="0-r0")
+    claim = SimpleNamespace(shard=shard, task_key=shard.task_key)
+    monkeypatch.setattr(runtime_owner, "_complete_published_shard", lambda **kwargs: None)
+    def remaining_rollout(**kwargs):
+        assert kwargs["state_ids"] == [1]
+        return [row1]
+    monkeypatch.setattr(runtime_owner, "rollout_shard", remaining_rollout)
+    monkeypatch.setattr(runtime_owner, "_publish_claim_result",
+                        lambda runtime, claim, rows, started: rows)
+    assert runtime_owner._execute_claim(worker, claim) == [row0, row1]
+    assert len(switches) == 1
+    save_completed_row(contract, row1)
+    assert runtime_owner._execute_claim(worker, claim) == [row0, row1]
+    assert len(switches) == 1
+
+
 def test_static_source_sft_rows_remain_batched_without_task_expert_evidence(
     tmp_path: Path,
 ) -> None:

@@ -1,4 +1,4 @@
-"""Strict scene pairing survives stale RGB but rejects geometry and real image differences."""
+"""Scene pairing tolerates uint8 quantization but rejects physical/image changes."""
 from pathlib import Path
 from types import SimpleNamespace
 import numpy as np
@@ -31,3 +31,19 @@ def test_real_restore_entry_refreshes_only_rgb_and_preserves_strict_pairing(tmp_
         with pytest.raises(ValueError):scene.restore_registered_scene(env,stale,{'suite':'libero_spatial','task_id':6},24,tmp_path,diagnostic_output=tmp_path/'failures')
         assert len(list((tmp_path/'failures').glob('*.npz'))) == (0 if failure=='physics' else 1)
         assert calls.count('refresh')==(0 if failure=='physics' else 1)
+
+
+def test_registered_scene_accepts_one_color_level_without_relaxing_geometry(monkeypatch):
+    expected = {"initial_rgb_canonical180": np.zeros((2, 256, 256, 3), dtype=np.uint8),
+                "initial_eef_pos": np.zeros(3)}
+    actual = {key: value.copy() for key, value in expected.items()}
+    actual["initial_rgb_canonical180"][1, 5, 7] = 1
+    monkeypatch.setattr(scene, "_scene_snapshot", lambda *args, **kwargs: actual)
+    scene._assert_scene_pair(None, {}, [], [], expected, image=True)
+    actual["initial_rgb_canonical180"][1, 5, 7] = 2
+    with pytest.raises(ValueError, match="initial_rgb_canonical180"):
+        scene._assert_scene_pair(None, {}, [], [], expected, image=True)
+    actual["initial_rgb_canonical180"][1, 5, 7] = 1
+    actual["initial_eef_pos"][0] = 2e-8
+    with pytest.raises(ValueError, match="initial_eef_pos"):
+        scene._assert_scene_pair(None, {}, [], [], expected, image=True)

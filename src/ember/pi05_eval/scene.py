@@ -88,7 +88,14 @@ def _assert_scene_pair(env: Any, observation: dict[str, Any], names: list[str],
     actual = _scene_snapshot(env, observation, names, goals, image=image)
     for key, expected in snapshot.items():
         observed = actual[key]
-        if key == "model_body_names" or key == "initial_rgb_canonical180" or key == "initial_predicates":
+        if key == "initial_rgb_canonical180":
+            # Rendering the same verified physical state can round uint8 colors
+            # differently on another device. Keep the actual policy image;
+            # this check only accepts a single quantization level, never a
+            # changed physical state or a substituted reference observation.
+            equal = (observed.shape == expected.shape and observed.dtype == expected.dtype
+                     and np.max(np.abs(observed.astype(np.int16) - expected.astype(np.int16))) <= 1)
+        elif key == "model_body_names" or key == "initial_predicates":
             equal = np.array_equal(observed, expected)
         else:
             equal = observed.shape == expected.shape and np.allclose(observed, expected, rtol=0, atol=1e-8)

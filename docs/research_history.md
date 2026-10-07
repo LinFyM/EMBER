@@ -3,6 +3,13 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：main消费原生视频控制，关闭本强教师充分性假说的默认延长
+
+findings§385及native_video_control_diagnostic_20261007 canonical/main_consumption记录592原行、512实际事件、16首plan和64张既有图的独立读取。
+M93/V88、4得9失成立；描述性task簇区间仍跨零，不外推普遍不可行。V改变了最终H入口、独立地址、时序处理和18处post-block作用，因此不是编译限制的单因素识别。
+本固定组合未建立可蒸馏强教师；与10/5 L/R及旧VF/F的各自负证据共同约束继续增加Reader/信用边的投入理由，强T一次编译的实用视频条件正例保留。
+当前没有新训练合同。自身成功状态上的旧完整函数保持仅处于只读历史与决策价值核对，不把保护已有行为当作取得新能力的证明；Owner最终目标与自主推进授权保持。
+
 ## 2026-10-07：强MT完整执行与全层memory共同学习未建立更强直接教师
 
 findings§384及[完整事实表](analyses/native_video_control_diagnostic_20261007.json)保存同MT300起点、两臂128更新和304新闭环；

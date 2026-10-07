@@ -1,3 +1,10 @@
+## 2026-10-07 main已消费直接控制结果，继续作方法判断
+
+main已实际收到整批回报并接回canonical tracked/Git。findings§385和本批canonical JSON的main_consumption保存592原行独立归约、512事件配对、16首plan及4张既有RGB sheet的直接核读。
+接受M93/V88的固定窗口non-pass，停止本组合的延长/蒸馏/编译。V还改变了教师特征入口、地址绑定与写入位置，不把它当作只解除编译限制或已证明的强T表达上界。
+保留强T的既有条件作用；不由负结果直接转入扩数据、换Reader或通用FM修补。当前只在核对自身成功状态上的旧函数保持这一学习假说的历史和决策价值，尚未采纳或授权后继训练。
+当前无active模型/GPU/环境任务；独立只读历史核对由history_baselines处理，main负责完整取舍。最终目标未达成，Owner自主推进授权保持；下方实验session写窗口/active段为历史。
+
 ## 2026-10-07 原生视频直接控制固定窗口完成，停止计算与退役
 
 findings§384与docs/analyses/native_video_control_diagnostic_20261007.json登记完整两臂128/各14,336 query和304新行；root analysis/report、per-row/per-task与全部raw/RGB保留。

@@ -15529,5 +15529,187 @@
       "body_origin_max_distance_m": 0.0
     },
     "source": "/data1/user/ymdai/ember_runs/native_video_control_diagnostic_20261007/analysis/actual_initial_state_pairing.json"
+  },
+  "main_consumption": {
+    "status": "main_independent_scientific_consumption_complete",
+    "raw_rows_read": 592,
+    "new_arm_pairing_checked": 160,
+    "learning": {
+      "actual_matched_conditions": 512,
+      "actual_queries_each": 14336,
+      "all_task_visits": {
+        "0": 16,
+        "1": 16,
+        "2": 16,
+        "4": 16,
+        "5": 16,
+        "7": 16,
+        "13": 16,
+        "14": 16,
+        "15": 16,
+        "17": 16,
+        "19": 16,
+        "20": 16,
+        "21": 16,
+        "22": 16,
+        "25": 16,
+        "28": 16,
+        "34": 16,
+        "35": 16,
+        "36": 16,
+        "37": 16,
+        "42": 16,
+        "43": 16,
+        "51": 16,
+        "55": 16,
+        "56": 16,
+        "62": 16,
+        "64": 16,
+        "73": 16,
+        "95": 16,
+        "96": 16,
+        "97": 16,
+        "101": 16
+      },
+      "V_minus_M_mean_actual_FM": 5.227830115472898e-05,
+      "V_minus_M_median_actual_FM": 2.8545036911964417e-05,
+      "paired_condition_delta_RMS": 0.000646584915289989,
+      "FM_mean_per_32_updates": {
+        "M": [
+          0.0987087739049457,
+          0.09956596387200989,
+          0.0973164739261847,
+          0.09727942402241752
+        ],
+        "V": [
+          0.09891612874343991,
+          0.09957300384121481,
+          0.09726049230084755,
+          0.09733012404467445
+        ]
+      },
+      "all_steps_optimizer_applied": true
+    },
+    "uncertainty": {
+      "observed_delta_pp": -3.4722222222222223,
+      "task_cluster_bootstrap_95_pp": [
+        -9.027777777777777,
+        1.3888888888888888
+      ],
+      "bootstrap_replicates": 20000,
+      "seed": 20261007,
+      "cluster": "36 fixed tasks, all four cases retained; descriptive, no training-seed uncertainty",
+      "McNemar_two_sided_exact": 0.266845703125,
+      "interpretation": "No observed broad gain; interval includes zero. This finite window does not establish universal inferiority or impossibility."
+    },
+    "RGB_main_directly_viewed": [
+      "V_correct_task12_state032",
+      "V_same_task_other_task12_state032",
+      "M_correct_task29_state032",
+      "V_correct_task29_state032"
+    ],
+    "RGB_main_images": 64,
+    "RGB_boundary": "Four existing 8-time dual-camera contact sheets; all last images precede terminal. No extra environment/render/contact oracle. Cream Cheese motion on task12 and bottle motion without On on task29 are direct visual observations; not an explanation for all net losses.",
+    "mechanism": {
+      "T": "Actual per-target native X and final H; execution A also constructs teaching keys; ordered Delta H gate and delta writes produce fixed M; video action at one projection is M A h. Whole policy remains nonlinear and state-dependent.",
+      "V": "Final H only; full time/horizon memory through two-layer encoder; independent post-block Q/K/V/O readers at 18 execution layers; same-version query and teaching beta gradient.",
+      "comparison_boundary": "V changes feature interface, address tie, temporal operator and injection sites as well as bypassing compilation. V does not constitute a proven representational superset or causal test of compilation alone. T has different training history.",
+      "FM_boundary": "Same-task cross-episode risk permits video-invariant solutions, but current finite sampler excludes the teacher, and strong T/older pure-FM positives rule out treating this as an impossibility or newly established root cause.",
+      "conclusion": "This finite joint MT+full native Reader combination did not establish a stronger direct control teacher. Stop default extension, distillation and compilation from it; do not promote larger width, nonzero credit or small conditional action changes into a method justification."
+    },
+    "further_work": "No new model/GPU/rollout authorized by this consumption. A bounded read-only audit of historical own-success functional protection is in progress; no follow-on training selected.",
+    "full_evidence": "/data1/user/ymdai/ember_runs/native_video_control_diagnostic_20261007/analysis/main_consumption.json",
+    "first_plan_summary": {
+      "full_V_vs_M": {
+        "normalized_first5_proposal": {
+          "all7_RMS": 0.01567684588371776,
+          "translation_RMS": 0.01888525634421967,
+          "rotation_RMS": 0.01243492608773522,
+          "gripper_RMS": 0.006884133556013694,
+          "gripper_sign_flips": 0
+        },
+        "executed_first5_commands": {
+          "all7_RMS": 0.010861167786060832,
+          "translation_RMS": 0.01551761690643616,
+          "rotation_RMS": 0.0023947004483488854,
+          "gripper_RMS": 0.006884133556013694,
+          "gripper_sign_flips": 0
+        }
+      },
+      "same_V_video_change": {
+        "normalized_first5_proposal": {
+          "all7_RMS": 0.0027649862022371963,
+          "translation_RMS": 0.003148580355627928,
+          "rotation_RMS": 0.0023966362277860753,
+          "gripper_RMS": 0.0012497906100179534,
+          "gripper_sign_flips": 0
+        },
+        "executed_first5_commands": {
+          "all7_RMS": 0.0018699131906032562,
+          "translation_RMS": 0.0026380134622741025,
+          "rotation_RMS": 0.0004602723856805824,
+          "gripper_RMS": 0.0012497906100179534,
+          "gripper_sign_flips": 0
+        }
+      }
+    },
+    "paired_comparison_counts": {
+      "M->V": {
+        "reference_success": 93,
+        "candidate_success": 88,
+        "R": 84,
+        "G": 4,
+        "L": 9,
+        "J": 0.865979381443299
+      },
+      "MT->M": {
+        "reference_success": 93,
+        "candidate_success": 93,
+        "R": 80,
+        "G": 13,
+        "L": 13,
+        "J": 0.7547169811320755
+      },
+      "MT->V": {
+        "reference_success": 93,
+        "candidate_success": 88,
+        "R": 79,
+        "G": 9,
+        "L": 14,
+        "J": 0.7745098039215687
+      },
+      "T->M": {
+        "reference_success": 109,
+        "candidate_success": 93,
+        "R": 83,
+        "G": 10,
+        "L": 26,
+        "J": 0.6974789915966386
+      },
+      "T->V": {
+        "reference_success": 109,
+        "candidate_success": 88,
+        "R": 82,
+        "G": 6,
+        "L": 27,
+        "J": 0.7130434782608696
+      },
+      "V->V_other": {
+        "reference_success": 3,
+        "candidate_success": 5,
+        "R": 3,
+        "G": 2,
+        "L": 0,
+        "J": 0.6
+      },
+      "M->V_other": {
+        "reference_success": 6,
+        "candidate_success": 5,
+        "R": 4,
+        "G": 1,
+        "L": 2,
+        "J": 0.5714285714285714
+      }
+    }
   }
 }

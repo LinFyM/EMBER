@@ -3,6 +3,22 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：强MT完整执行与全层memory共同学习未建立更强直接教师
+
+findings§384及[完整事实表](analyses/native_video_control_diagnostic_20261007.json)保存同MT300起点、两臂128更新和304新闭环；
+M93/V88，对M R84/G4/L9、target50→43/support43→45、breadth32→29；原MT93和真实132+12的T109保留。
+新fit32上87→85，新增训练留出12/29/32/38由M6→V3，V另一合法video5/16；原MT此前见过四task，不称最终未见任务。
+V四新增、九target丢失及34任务内一得一失、29两原M成功丢失、38始终完整失败均保留，不以局部正例认证后继。
+真实H50→两层encoder/C→18处自身hidden读取与完整A/B共同信用经实际消费者核验；512事件匹配、508教学beta/C/KV非零信用，
+source/prefix冻结、FP32 AdamW及0/64/128 ECP完整；64不闭环。几乎相同FM与非零梯度不等于内容理解/控制修复。
+固定12clip/192已存图审看，12/init32错物、29移动未上架、32官方成功与末图遮挡、38部分On一帧真后失去分开解释。
+所有末图非terminal；304配对/capture0不符、76full/228compact、全69,382实际动作/13,950完整提案/T+1状态保留。
+M/readout/工程来源9a3f046c，V正式/物化/评测d76e42fd只加physical frame chunk；完整费用3.646563014GPUh含失败、
+profile/加载/EGL，逐launch现场raw独立保留。06:46:04.964Z全部GPU退出，13worker及两节点释放，观察新增约8.51GiB/保守峰10。
+临时13文件owner/7shared hooks退役、104回归及真实拒绝核验，Git/frozen/完整模型/optimizer/C/raw/失败保留；最终wall/Git/清理/一次投递看root completion。
+按事前停止线关闭该有限组合默认延长，不泛化所有Reader/LoRA/FM无效，不把科学阴性修bug；没有自动编译、蒸馏、Writer、续训、400或Test。
+V执行消费C，明确非EMBER部署。main独立消费科学并决定完整后继，Owner最终目标尚未达成。
+
 ## 2026-10-07：强MT起点的全层视频控制参照进入有限训练型分析
 
 Owner要求暂时无暇跟进时由main先分析清楚再自主推进；findings§383及[唯一合同](designs/native_video_control_diagnostic_20261007.md)

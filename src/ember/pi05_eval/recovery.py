@@ -105,12 +105,6 @@ def _reinspect_adapter(
         for row in contract["tasks"]
     )
     require_formal = contract["mode"] != "smoke"
-    if adapter.get("kind") in {"native_video_memory_controller", "native_shared_lora_reference"}:
-        from ember.native_video_control.evaluation import inspect_manifest
-
-        return inspect_manifest(manifest_path=Path(adapter["manifest"]["path"]), source=model,
-                                tasks=tasks, evaluation_role=str(contract["role"]),
-                                require_formal=require_formal)
     if adapter.get("kind") == "shared_source_sft_lora":
         return inspect_source_sft_adapter(
             config_path=Path(adapter["config"]["path"]),
@@ -204,14 +198,9 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         and _reinspect_adapter(adapter, contract=contract, model=model) != adapter
     ):
         raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
-    if (adapter or {}).get("kind") in {"native_video_memory_controller", "native_shared_lora_reference"}:
-        from ember.native_video_control.evaluation import validate_capture_contract
+    from ember.pi05_eval.registered_passive_capture import validate_contract
 
-        validate_capture_contract(contract)
-    else:
-        from ember.pi05_eval.registered_passive_capture import validate_contract
-
-        validate_contract(contract, REPO_ROOT)
+    validate_contract(contract, REPO_ROOT)
 
 
 def worker_ids(

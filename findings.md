@@ -9893,3 +9893,64 @@ V只胜退化M、只在fit变强或只有零星差额均不足以启动编译；
 预计4–7h，实际承接起硬10wall/12完整GPUh/data1新增峰48GiB，所有工程、失败、profile和EGL计入。
 具体profile给出吞吐/显存与能否完成；不适配预算就回报，不缩图/扫超参保护假说。实验session负责实现、检查、Git、运行、退出和一次整批回报；
 main负责科学消费与下一取舍，不重复工程验收。写窗口及实际承接看progress，登记不等于后台已经工作。
+
+## 384. 强MT完整执行与18层视频读取共同学习的固定窗口结束：V88低于M93，无覆盖优势（2026-10-07）
+
+唯一171行合同的两臂128更新及304新闭环全部完成；[canonical事实表](docs/analyses/native_video_control_diagnostic_20261007.json)
+和`/data1/user/ymdai/ember_runs/native_video_control_diagnostic_20261007/analysis/report.md`保存完整来源、36行表、五suite、
+scopes/breadth、所有成功集合与不利例。M93/144、V88/144，原MT93及原T109（真实132+12）只读复用；
+strong400的MT153/T161保留背景，不把seen144作为最终部署成绩或checkpoint选择。
+
+实际图从同一MT300完整38-target/rank128 A/B出发；source基础及图文prefix冻结。V教学以合法双RGB/exact L、
+stride5含末帧、probe1729/τ1取得真实native H(T×50×1024)，经RMS/线性、time/horizon PE及两层256宽encoder，
+保留完整T×50为C。18处完整Gemma block之后用自身h的Q读取C的K/V，O残差进入下一原生层，保留final norm/action_out；
+教学不装Reader，执行十步flow消费同一固定C。V额外13,638,912参数，M只有原普通FM，比较混合了条件计算/容量与视频信息。
+教学只输入RGB/L，没有动作/state/实体标签；本批不使用NN/GT对应、第二adapter或执行中再看视频。
+
+两臂各14,336真实跨episode query，32task各16teacher事件，512条件的实际task/teacher/demo/frame/flow seed逐更新匹配；
+仅world2/world4的物理记录排序不同。V的K/V叶子余切在同版本重放K/V→C→encoder/native→teacher beta，再与查询beta/Q/O更新。
+512条件中508有teacher beta/C/KV信用，首四因零O为零；encoder/Q/K/V在127更新非零、O及beta在128更新非零。
+零O真实初值恢复MT、checkpoint重算作用域、独立fresh2→完整恢复4及FP32 optimizer均经实际消费者核验；
+64只作恢复，未物化或闭环选点。因此不将no_grad物化误称断梯度，也不由非零梯度证明操作内容已学会。
+末8次FM M0.098004979/V0.098003911几乎相同，实际控制由完整原行判断。
+
+| 配对reference→candidate | R | G | L | churn | J |
+|---|---:|---:|---:|---:|---:|
+| M93→V88 | 84 | 4 | 9 | 13 | .865979 |
+| MT93→M93 | 80 | 13 | 13 | 26 | .754717 |
+| MT93→V88 | 79 | 9 | 14 | 23 | .774510 |
+| T109→M93 | 83 | 10 | 26 | 36 | .697479 |
+| T109→V88 | 82 | 6 | 27 | 33 | .713043 |
+
+Target24为MT46/T62/M50/V43（/96），support12为47/47/43/45（/48），breadth30/34/32/29；
+fit32为88/103/87/85（/128）。V四新增34/init32、28/init33、56/init33、97/init35保留；后两是恢复原MT已成功行。
+34另丢init33，task总数仍2/4；九丢失全在target：1/init34、5/init34、13/init32/34、20/init33、
+29/init34/35、32/init34、34/init33。M总分不变隐藏13得13失，不能只用breadth或少量新增认证改进。
+
+新增训练留出12/29/32/38（原MT曾训练，非完全未见task）的M为2/2/2/0、V为2/0/1/0，合计6→3/16；
+V换另一合法video为2/1/2/0、合计5/16，保留原3成功另得29/init35、32/init35。
+这支持该函数有影响控制的条件变化，仍未分开静态信息、额外容量和动态必要性，也未优于M的完整留出表现。
+M在29两行成功而V失去，不能把这里直接归结为固定LoRA本来不能控制或唯一缺教学信息；原MT见过29的边界同时保留。
+32实际目标是TurnOn(stove)+On(moka pot,cook_region)，不是打开微波炉门；38还含初始已真的TurnOn，完整目标不变。
+
+固定12 clips/192已有双RGB由有界CPU消费者实际全部审看，root另复看四张既选sheet；来源/已看清单/未知在root `analysis/rgb/`。
+12/init32三臂可见Cream Cheese包装向篮转移，目标salad-dressing In全程未真；不推广其它init。
+29/init32有瓶运动、other路径变化但On从未真；32/init32三臂官方成功，末图仍遮挡/倾斜，不额外认定释放稳放。
+38/init32三臂失败，other第二壶On仅431步真、432步失去，选定图没有该两步，不能假称从440步图看见瞬时On。
+所有末图非terminal，之后仍有2–5实际命令；位置/抬高/单谓词不叫抓持真值或完整技能。
+全部304配对/capture核验0不符，69,382真实动作、13,950完整50提案、69,686个T+1状态、76full/228compact原件保留。
+
+原有限假说是强控制起点、完整A/B共同学习和逐层条件选择可能自然形成更强直接教师。本固定窗口没有实现，
+fit和留出均未胜匹配M，target净−7，support局部保持不足以抵消；按事前停止线结束该组合的默认延长。
+真实教学/Reader信用使“完全断梯度/未消费memory”不足以解释本次阴性；表示语义、选择、保持与有限学习条件仍未区分。
+不由此否定所有Reader/LoRA/视频信息或FM原则，不将科学non-pass修为bug，也不把部分正例拼成后继编译资格。
+旧T条件作用、VF/Reader/F历史边界保持，下一完整方法取舍由main独立消费；没有自动续训、扫描、蒸馏、Writer、400或Test。
+
+M/profile/smoke来源clean pushed detached9a3f046c，V正式/物化/读回来源d76e42fd；后者仅typed逐rank frame chunk。
+三次同最长condition profile14×32胜7×16、28×32无进一步收益；V正式32/32/8/8按实际显存，M/V就绪并行峰6物理卡。
+11次实际GPU launch含加载/失败/profile/编码/EGL共3.646563014完整GPUh，checkout过早启动0模型/环境失败.003805809已计入。
+correct144现场headroom拒绝为0GPU/0episode；健康other16独立结束，全部C/有效行复用，仅换物理卡并实测3worker继续。
+06:46:04.964Z最后GPU退出，13worker命令身份和双节点GPU释放已核；root+4工程树约8.51GiB、保守峰10GiB/硬48。
+完整失败/CPU读取假设修正与实计launch CPU4.929075h保留，后者不冒称完整工程账；最终wall/du/Git/清理/投递看root completion。
+临时13文件owner/CLI和7处shared hooks退役，104现有回归、两真实历史合同无GPU拒绝及finite owner封口拒绝通过；
+全部Git/frozen/完整ECP0/64/128、C、raw及RGB保留。整批一次main回报交回tracked/Git，不再新增本批计算。

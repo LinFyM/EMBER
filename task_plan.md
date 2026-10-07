@@ -1,3 +1,11 @@
+## 2026-10-07 强MT全层视频直接控制固定诊断封口
+
+findings§384/canonical JSON和唯一root report保留完整两臂128、304新行、512匹配事件、全部得失和固定12clip/192图。
+M93/V88（原MT93/T109），V相对M4得9失、target净−7/breadth32→29；新增训练留出3<6，另一video5/16。局部正例未形成有覆盖额外控制，不把信用/loss或自由函数类替代完整行为。
+停止本有限假说的默认延长，专用owner/7hooks退役、104回归及拒绝消费者核验；原frozen/ECP/C/raw/Git保留，0后继计算。
+main收到整批可靠Queue及写窗口后独立裁决；最终合法视频一次生成单LoRA稳定超过强MT的目标尚未达到，没有新active设计/Writer/Reader/蒸馏/400/RL/Test。
+实际费用、退出、最终Git/清理与投递来源见progress及root completion/resource_ledger。下方active均为当时时点。
+
 ## 2026-10-07 自主推进：强MT起点的直接条件控制参照
 
 Owner要求先分析清楚再自主推进；findings§383与`docs/designs/native_video_control_diagnostic_20261007.md`登记唯一active有限分析。

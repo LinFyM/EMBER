@@ -1,3 +1,17 @@
+## 2026-10-07 原生视频直接控制固定窗口完成，停止计算与退役
+
+findings§384与docs/analyses/native_video_control_diagnostic_20261007.json登记完整两臂128/各14,336 query和304新行；root analysis/report、per-row/per-task与全部raw/RGB保留。
+M93/V88，原MT93/T109不降级；M→V R84/G4/L9，target50→43/support43→45/breadth32→29。新增训练留出M6/V3，V other5（/16）；四局部新增与九target丢失完整保留，不认证强直接教师或EMBER部署。
+512实际学习事件按task键匹配，V教学beta/C/KV信用508/512（首4零O），FP32完整0/64/128 ECP及2→4工程恢复核验；没有科学non-pass修bug、64闭环或额外梯度。
+304配对/capture0不符，69,382真实命令/13,950完整50提案/69,686个T+1状态，76full/228compact；固定12clip/192图全部实际审看，所有末图非terminal，root独立复看4张既选sheet。
+32实际为TurnOn(stove)+On(pot)，38的部分On短暂满足不替代全goal；12/init32错误Cream Cheese转移、29路径改变仍失败等反例和遮挡保留，不把稀疏RGB/原点位移称为接触或抓持真值。
+全部GPU于06:46:04.964Z正常结束，13worker命令身份和双节点无本用户GPU均核验；11次launch含加载/工程/失败/profile/编码/EGL共3.646563014完整GPUh，失败.003805809已计费。
+correct144一次现场headroom准入拒绝0GPU/0episode，健康other16继续结束；原C/模型/已完成行复用，同语义换卡各3worker完成剩余144。其它CPU读取假设错误及checkout过早GPU失败保留，不抹去费用。
+临时13文件owner/CLI与7处shared hooks已退役；104现有回归、两真实历史合同无GPU拒绝、finite owner封口拒绝通过。原Git/frozen/完整ECP/C/raw/失败不删，工程树清理/final clean push/最终wall和空间以root completion/ledger为准。
+退出时root+4工程树约8.51GiB、保守新增峰10GiB/硬48；逐launch data1独立quota/shared/双节点raw不覆盖，完整已计时launch CPU4.929075h不是全部工程CPU账。
+本批无active模型、环境、训练或后继；停止这个有限组合的默认延长，未授权新Reader/蒸馏/Writer/更多训练/400/RL/Test。main独立消费科学后负责下一完整判断。
+tracked/Git仍由实验session完成封口；仅整批一次main Queue及必要同thread官方resume核消费后交回窗口。当前文件的下方active/运行文字均为历史，不恢复旧任务。
+
 ## 2026-10-07 实验session实际承接原生视频控制有限诊断
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取171行唯一active design、findings§383及当前Owner/progress/task_plan；从clean pushed main83076777接管canonical tracked/Git独占窗口，main停止并发写入。
@@ -17,7 +31,11 @@ V独立smoke完整2→4已退出，逻辑448query、FP32完整AdamW/RNG恢复及
 V正式从原MT300/fresh模块及fresh optimizer重新开始，使用clean pushed detached d76e42fd；只增加typed逐rank frame chunk，计算图/事件/loss/更新不变。gpu02:4/6用已测32 chunk，0/1用已成功8 chunk，query micro14，world4；与M读回合计6物理卡。
 0006在新冻结checkout未实际退出时被root过早启动，因ember包尚不存在3.425秒退出，0训练/模型/环境；.003806GPUh完整计费，失败原件保留。checkout正常结束且clean pushed detached核验后，0007独立现场回执重新启动同原事件，无科学样本重跑。
 首M正式full实际消费者保存57个1×50×7提案、284个真实命令，末prefix4及285个T+1自身状态/native均匹配；只作capture准入，不以单例裁决方法。
-剩余V编码144/16与两个固定读回由root唯一有限CPU exit-event owner接续：先等当前正式128实际退出，再就绪独立调度既有native/evaluator CLI，逐launch保留live quota/双节点GPU与费用；无日志/cache轮询、主讨论阶段Queue或自动后继。两新读回计划各3persistent workers/GPU，实际显存/吞吐按原件封口。
+剩余V编码144/16与两个固定读回由root唯一有限CPU exit-event owner接续：先等当前正式128实际退出，再就绪独立调度既有native/evaluator CLI，逐launch保留live quota/双节点GPU与费用；无日志/cache轮询、主讨论阶段Queue或自动后继。下列实际回执替代此前物理worker计划，不改任何科学行。
+
+V128已在06:20:27Z完成并实际退出，正式14,336 query、完整0/64/128 ECP、32task各16真实跨episode事件/FP32 optimizer均核验；峰reserved38.7207GiB。两编码144/16及other16分别正常退出，未重读视频或新增case。
+原correct144在gpu01:6显存余量降至32658MiB、低于32768MiB准入时被现场拒绝，0GPU/0episode；原始快照和失败包保留，other16健康工作独立完成。复用全部有效memory，以同一clean detached d76e42fd从gpu02:4/6重新准入原144，选择每卡3persistent workers；other16实际3worker每worker峰reserved约9.52GiB，当前两卡free约39GiB并要求38912MiB准入。只变物理安排，不增加科学profile或重跑有效行。
+最终M/V及另一视频304行、固定192图、完整得失与资源封口仍待全批完成后一次回main；无后台新训练、心跳或阶段Queue。
 
 ## 2026-10-07 Owner要求自主推进，登记强MT原生视频控制的有限分析
 

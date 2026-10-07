@@ -118,12 +118,6 @@ def _inspect_adapter(
     args: Any, *, adapter_kind: str | None, source_sft_requested: bool,
     model: Mapping[str, Any], tasks: Sequence[Any], output_dir: Path | None = None,
 ) -> Mapping[str, Any] | None:
-    if adapter_kind == "native_video_control":
-        from ember.native_video_control.evaluation import inspect_manifest
-
-        return inspect_manifest(manifest_path=args.native_video_control_manifest.resolve(),
-                                source=model, tasks=tasks, evaluation_role=args.role,
-                                require_formal=args.mode != "smoke")
     if source_sft_requested:
         return inspect_source_sft_adapter(
             config_path=args.source_sft_config.resolve(), checkpoint=args.source_sft_checkpoint.resolve(),
@@ -418,10 +412,6 @@ def _selected_tasks_and_capture(
     source_sft_requested: bool, output_dir: Path, repo_root: Path,
 ) -> tuple[tuple[Any, ...], dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
     installed_tasks = _select_init_states(args, installed_tasks)
-    if adapter_kind == "native_video_control":
-        from ember.native_video_control.evaluation import select_tasks
-
-        return select_tasks(args, installed_tasks), None, None, None
     subset_tasks, subset = _task_subset_tasks(args, installed_tasks, adapter_kind=adapter_kind)
     tasks, capture = _occupancy_capture_tasks(args, subset_tasks, output_dir=output_dir,
                                              adapter_kind=adapter_kind)
@@ -514,14 +504,6 @@ def _prepared_payload(
     contract["diagnostic_occupancy_capture"] = occupancy_capture
     contract["diagnostic_stage_predicates"] = stage_predicates
     contract["diagnostic_task_subset"] = task_subset
-    if adapter_kind == "native_video_control":
-        from ember.native_video_control.evaluation import capture_contract, validate_capture_contract
-
-        capture, stage = capture_contract(adapter, output_dir)
-        contract["diagnostic_occupancy_capture"] = capture
-        contract["diagnostic_stage_predicates"] = stage
-        contract["native_video_control_scene"] = adapter["scene"]
-        validate_capture_contract(contract)
     if adapter is not None and adapter.get("kind") == "demonstration_comparison_lora_bank":
         contract["demonstration_comparison_scene"] = {
             "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
@@ -536,8 +518,7 @@ def _prepared_payload(
         else:
             contract["operator_read_write_scene"] = {
                 "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
-    if adapter_kind != "native_video_control":
-        attach_requested_capture(args, contract, repo_root, output_dir)
+    attach_requested_capture(args, contract, repo_root, output_dir)
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

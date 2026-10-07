@@ -118,12 +118,6 @@ def save_capture(
         "executed_action_prefixes": tuple(slot["replay_executed_prefixes"]),
         "replan_steps": tuple(slot["replay_replan_steps"]),
     }
-    if (capture.get("passive_trace") or {}).get("schema_version") == "ember_native_video_control_passive_capture_v1":
-        # The last proposal can terminate before five actions are applied.
-        common["executed_action_prefixes"] = tuple(
-            prefix[:min(len(prefix), int(slot["steps"]) - int(step))]
-            for prefix, step in zip(slot["replay_executed_prefixes"], slot["replay_replan_steps"], strict=True)
-        )
     if "pre_exploration_normalized_means" in slot:
         if len(slot["pre_exploration_normalized_means"]) != len(slot["replay_action_chunks"]):
             raise Pi05EvaluationError("objective-alignment pre-exploration means are incomplete")
@@ -340,8 +334,7 @@ def validate_passive_trace_row(
             or info.get("condition_id") != ((row.get("horizon_writer_lora") or
                                               row.get("conditional_velocity_lora") or
                                               row.get("demonstration_comparison_lora") or
-                                              row.get("operator_read_write_lora") or
-                                              row.get("native_video_control") or {}).get("condition_id"))
+                                              row.get("operator_read_write_lora") or {}).get("condition_id"))
             or info.get("goal_predicates") != stage.get("predicates")
             or not isinstance(info.get("body_registry"), list)
             or not info["body_registry"] or not isinstance(info.get("goal_operands"), list)):

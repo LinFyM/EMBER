@@ -10261,3 +10261,63 @@ Within other366发布后新state27因3个uint8色值差1失败，physics1e−8�
 四条已完成state16–19从真实PT/NPZ恢复，逐行耗时/finished_at缺失保持null；仅30未完成行接续，未重复370有效行，未造7个丢失runtime partial。
 完整物理卡时13.666172210815GPUh（formal train仅7.348368074629），峰6卡、单节点峰2/5，最终无本用户GPU进程。
 实际峰值/独立quota、失败/退出/费用/最终Git、专用入口退役及可靠回报见run resource_ledger/completion/launch；没有额外held特权/RL/Test/时序controls。
+
+## 392. main消费跨情境学习：能力损失集中，不能把配对微增解释成总体修复（2026-10-08）
+
+main接回tracked/Git，直接读取16份原始results的2962行（本批1762＋旧T双视频/MT各400），独立重算逐task/成功集合。
+canonical分析的main_consumption保存原件引用、逐task和配对读回；没有新GPU/模型/环境或sealed controls/Test读取。
+Within→Product的correct净+5来自task6 +1、16 +3、31 +2、26 −1；other净+3来自11 +3、31 +1、26 −1。
+Product对原T correct净−9全部为task3 −2与task31 −7；other净+1则有3 −1、16 −2、26 +3、31 +1。
+所以配对变化部分减轻了另一分叉的退化，但没有取得所需的绝对进展；不应把同幅总分看成同一功能保持。
+两臂换视频churn均43；原T的49次交换中25次集中在task31，这项双对象完整任务仍是明显不稳来源。
+以上描述任务分布，不把两个视频成绩拼成部署ensemble；task23/39在四新面板均0这一主要缺口没有改变。
+
+source54的两个终点几乎同一成功集，Product对Within R35/G0/L1。main直接看Product前格SCENE3→1、
+SCENE1→3两张既有8时点双RGB sheet（32图），并读它们原continuous NPZ：前者173步官方In首次成立，
+后者400步从未In，书虽到caddy前沿仍失败。末存图170/395不是terminal，不推定接触或抓稳。
+这些原件与实际e86dbfbc训练/data接口、现有TargetWrite数学相符：没有换模型，实际FM把同84query/噪声交给不同教学LoRA。
+直接学习确有训练侧收益；“额外九项曝光＋继续学习”的共同效应与配对差异应分开，不单归因新增数据。
+216仅一个有限学习窗、一个分叉/臂；这批既不能证明没有更长窗阳性，也没有足以优先续窗的实用信号。
+main裁决降低该具体配对修复的优先级，停止其默认续训/换头，不恢复新45task的大M/L比较来保护弱假说。
+
+完整问题仍是教学产生的控制是否能在自身访问的状态上完成并保持任务。FM query虽然真实经过自身适配hidden，
+状态却来自固定示范；Product只改teacher/query情境关系，没有把查询分布变成条件策略自身的访态。
+部署视频改变M，再通过M·A·x_pi(s,z)改变动作和后继s，故需要区分视频读出不足、状态相关控制缺口与共享更新交换。
+这个条件访态联系是竞争解释，不是由当前阴性唯一确诊；不把一般covariate shift口号当已找到根因。
+
+历史只读协作核原件/源码，main沿既有审计与实际消费者核对：旧task bank step2000为658/1200，参数重构48→75；
+固定字典effective-BA hard80仍3/80，不能只归咎于factor交叉项；它们都不是当前aligned source/rank128专家。
+旧non-held71 decoder：56任务direct2519/projected2451（各2800），15任务direct684/decoder659（各750）；
+同150行source/direct/privileged-decoder/video-Writer为131/141/134/131，真实容量正例不等于视频映射掌握能力。
+旧phase aggregation在学生访态查expert velocity后44/44→54/47（held5/250），direct74/108，视频Writer阶段没启动。
+旧SEOD/GOMQ实际完整10步端点和合法视频信用曾143/151，但后续136/131；固定A、B residual的失败边界保留。
+源码入口分别为925e7b1:expert_manifold/writer_training.py、1619631:model.py、
+4ef0685:functional_adaptation/functional_response.py、966353e:phase_decoder_panels.py、8553b613:reward/rollout.py。
+这些结果来自8月旧source e2cc238与旧协议，不能直接与当前153/161相减。旧bank与当前train24实际交集20，缺1/13/17/32；
+不能沿用另一诊断的“交集13”，也不能把旧adapter移到新source后沿用原能力结论。
+
+因此下一步不重新宣布“从成功轨迹蒸馏”是新方法，也不假定已存在可靠纠正函数。
+先建立同一当前source、同单LoRA函数类的任务控制参照，并在原T实际前缀后检验它是否仍有效；
+这是对标签可用性的实际检验，成功后也仍须完整视频编译学习，不能把两个阶段的局部正例拼成端到端资格。
+Owner持续长期推进要求保持；关闭跨配对不结束研究，main负责下一有依据的实际任务。
+
+## 393. 登记当前source上的困难任务教师及恢复资格（2026-10-08）
+
+唯一后继合同为[aligned_teacher_recovery_20261008](docs/designs/aligned_teacher_recovery_20261008.md)。
+四task12/29/32/38已在上一直接控制诊断前登记，分别涉及沙拉酱入篮、酒瓶上架、开炉搬壶、双壶与开炉完整目标。
+原T/MT对应16行6/5；旧NN接手为7（逐task2/2/2/1），有局部可控正例而非普遍可靠教师。
+各task从相同强MT300完整38-target rank128 A/B独立学习，source/prefix冻结，沿近期M实际全50×7 FM和FP32训练参数，
+不加视频Reader或部署task-ID路由。各专家独立A/B不等于已证明当前T共享A的条件输出族可表示它们。
+每task480×112=53,760 query，四项215,040，完整0/160/320/480 ECP；
+明确在原50示范上给合理学习曝光，不称收敛，也不由负结果自动小扫或延训。
+
+固定320/480各初态16＋T50接手16，再加原MT300的同T50 16，共80新行，旧T/MT初态与NN接手复用。
+接手重放原T前50真实命令，保留controller/environment历史与原剩余horizon；policy noise从绝对replan10继续。
+没有held action/state/梯度、RL、新Writer、额外400/时序controls/Test，也不以任务专家作为EMBER部署或最终分数。
+两个固定节点初态/T50各≥12/16、每task≥2/4、T50保留原6成功至少5，才形成局部教师候选；
+这只是下一步投入所需的能力/保持裕量，不是统计或泛化证明，不自动启动蒸馏。
+若初态强但访态弱，撤下纠正教师资格；若都弱，结合真实覆盖/曲线更新有限假说，不宣称source或LoRA不可能。
+
+预计4–7wall小时、10–12GPUh，依据近期M128实测.5326GPUh按query规模约8GPUh训练；
+硬实际承接10wall/16完整GPUh/data1新增峰32GiB，含工程/所有失败/恢复/EGL。实现由实验session在独占写窗口闭环。
+此处只登记科学合同，尚未启动计算；实际派发/承接与所有权以progress/回执为准。main收到整批后继续完整方法判断。

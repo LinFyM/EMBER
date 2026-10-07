@@ -24965,5 +24965,254 @@
     "final_git": "launch/final_Git_delivery.json",
     "retirement": "retired_entrypoints.json",
     "recovered_missing_timings": "analysis/finished_episode_recovery.json"
+  },
+  "main_consumption": {
+    "record": "2026-10-08 independent scientific consumption; not repeated engineering verification",
+    "original_result_files": 16,
+    "original_rows": 2962,
+    "new_rows": 1762,
+    "old_reference_rows": 1200,
+    "findings_sections": [
+      392,
+      393
+    ],
+    "scope": "Read original result JSON rows, no rerun, no sealed controls/Test",
+    "source_paths": {
+      "MT_correct": "run_artifact:/operator_read_write_learning_20260928/stage1/MT/evaluation/correct400/results.json",
+      "Parent/source9/1": "run_artifact:/cross_context_pairing_20261008/Parent/readouts/source9/teacher_scene_1/evaluation/results.json",
+      "Parent/source9/2": "run_artifact:/cross_context_pairing_20261008/Parent/readouts/source9/teacher_scene_2/evaluation/results.json",
+      "Parent/source9/3": "run_artifact:/cross_context_pairing_20261008/Parent/readouts/source9/teacher_scene_3/evaluation/results.json",
+      "Product/correct": "run_artifact:/cross_context_pairing_20261008/Product/readouts/correct/evaluation/results.json",
+      "Product/same_task_other": "run_artifact:/cross_context_pairing_20261008/Product/readouts/same_task_other/evaluation/results.json",
+      "Product/source9/1": "run_artifact:/cross_context_pairing_20261008/Product/readouts/source9/teacher_scene_1/evaluation/results.json",
+      "Product/source9/2": "run_artifact:/cross_context_pairing_20261008/Product/readouts/source9/teacher_scene_2/evaluation/results.json",
+      "Product/source9/3": "run_artifact:/cross_context_pairing_20261008/Product/readouts/source9/teacher_scene_3/evaluation/results.json",
+      "T_correct": "run_artifact:/operator_read_write_learning_20260928/continuation2340/T/evaluation/2340/correct400/results.json",
+      "T_other": "run_artifact:/operator_selected_validation_20260929/same_task_other/evaluation/correct400/results.json",
+      "Within/correct": "run_artifact:/cross_context_pairing_20261008/Within/readouts/correct/evaluation/results.json",
+      "Within/same_task_other": "run_artifact:/cross_context_pairing_20261008/Within/readouts/same_task_other/evaluation/results.json",
+      "Within/source9/1": "run_artifact:/cross_context_pairing_20261008/Within/readouts/source9/teacher_scene_1/evaluation/results.json",
+      "Within/source9/2": "run_artifact:/cross_context_pairing_20261008/Within/readouts/source9/teacher_scene_2/evaluation/results.json",
+      "Within/source9/3": "run_artifact:/cross_context_pairing_20261008/Within/readouts/source9/teacher_scene_3/evaluation/results.json"
+    },
+    "official_counts": {
+      "MT_correct": {
+        "3": 41,
+        "6": 7,
+        "11": 36,
+        "16": 10,
+        "23": 0,
+        "26": 35,
+        "31": 24,
+        "39": 0
+      },
+      "T_correct": {
+        "3": 45,
+        "6": 6,
+        "11": 45,
+        "16": 5,
+        "23": 0,
+        "26": 36,
+        "31": 24,
+        "39": 0
+      },
+      "T_other": {
+        "3": 44,
+        "6": 6,
+        "11": 43,
+        "16": 5,
+        "23": 0,
+        "26": 33,
+        "31": 19,
+        "39": 0
+      },
+      "Within/correct": {
+        "3": 43,
+        "6": 5,
+        "11": 45,
+        "16": 2,
+        "23": 0,
+        "26": 37,
+        "31": 15,
+        "39": 0
+      },
+      "Within/same_task_other": {
+        "3": 43,
+        "6": 6,
+        "11": 40,
+        "16": 3,
+        "23": 0,
+        "26": 37,
+        "31": 19,
+        "39": 0
+      },
+      "Product/correct": {
+        "3": 43,
+        "6": 6,
+        "11": 45,
+        "16": 5,
+        "23": 0,
+        "26": 36,
+        "31": 17,
+        "39": 0
+      },
+      "Product/same_task_other": {
+        "3": 43,
+        "6": 6,
+        "11": 43,
+        "16": 3,
+        "23": 0,
+        "26": 36,
+        "31": 20,
+        "39": 0
+      }
+    },
+    "comparisons": {
+      "Within/correct -> Product/correct": {
+        "R": 135,
+        "G": 17,
+        "L": 12,
+        "net": 5,
+        "per_task_net": {
+          "3": 0,
+          "6": 1,
+          "11": 0,
+          "16": 3,
+          "23": 0,
+          "26": -1,
+          "31": 2,
+          "39": 0
+        },
+        "descriptive_task_cluster_delta_pp_95": [
+          -0.25,
+          3.0
+        ],
+        "boundary": "Eight fixed task clusters; descriptive only, no independent training repeat or population claim."
+      },
+      "Within/same_task_other -> Product/same_task_other": {
+        "R": 136,
+        "G": 15,
+        "L": 12,
+        "net": 3,
+        "per_task_net": {
+          "3": 0,
+          "6": 0,
+          "11": 3,
+          "16": 0,
+          "23": 0,
+          "26": -1,
+          "31": 1,
+          "39": 0
+        },
+        "descriptive_task_cluster_delta_pp_95": [
+          -0.5,
+          2.5
+        ],
+        "boundary": "Eight fixed task clusters; descriptive only, no independent training repeat or population claim."
+      },
+      "T_correct -> Product/correct": {
+        "R": 140,
+        "G": 12,
+        "L": 21,
+        "net": -9,
+        "per_task_net": {
+          "3": -2,
+          "6": 0,
+          "11": 0,
+          "16": 0,
+          "23": 0,
+          "26": 0,
+          "31": -7,
+          "39": 0
+        },
+        "descriptive_task_cluster_delta_pp_95": [
+          -5.75,
+          0.0
+        ],
+        "boundary": "Eight fixed task clusters; descriptive only, no independent training repeat or population claim."
+      },
+      "T_other -> Product/same_task_other": {
+        "R": 130,
+        "G": 21,
+        "L": 20,
+        "net": 1,
+        "per_task_net": {
+          "3": -1,
+          "6": 0,
+          "11": 0,
+          "16": -2,
+          "23": 0,
+          "26": 3,
+          "31": 1,
+          "39": 0
+        },
+        "descriptive_task_cluster_delta_pp_95": [
+          -1.5,
+          2.25
+        ],
+        "boundary": "Eight fixed task clusters; descriptive only, no independent training repeat or population claim."
+      }
+    },
+    "source_product_unique_gains": [],
+    "source_product_unique_losses": [
+      [
+        2,
+        123,
+        1
+      ]
+    ],
+    "direct_trace_readback": [
+      {
+        "key": "teacher1/libero_90/81/00",
+        "panel": "Product/source9/1",
+        "trace": "run_artifact:/cross_context_pairing_20261008/Product/readouts/source9/teacher_scene_1/evaluation/continuous_traces/libero_90_task_81_state_000_24388fd51c034fdd859340071a77d758.npz",
+        "actions_shape": [
+          400,
+          7
+        ],
+        "positions_shape": [
+          401,
+          4,
+          3
+        ],
+        "predicates_shape": [
+          401,
+          1
+        ],
+        "full_goal_true_steps": []
+      },
+      {
+        "key": "teacher3/libero_90/73/00",
+        "panel": "Product/source9/3",
+        "trace": "run_artifact:/cross_context_pairing_20261008/Product/readouts/source9/teacher_scene_3/evaluation/continuous_traces/libero_90_task_73_state_000_6075016104e74c9f8ff708acb472586a.npz",
+        "actions_shape": [
+          173,
+          7
+        ],
+        "positions_shape": [
+          174,
+          3,
+          3
+        ],
+        "predicates_shape": [
+          174,
+          1
+        ],
+        "full_goal_true_steps": [
+          173
+        ]
+      }
+    ],
+    "main_visual_review": {
+      "clips": [
+        "Product_front_SC3_to_SC1_init0",
+        "Product_front_SC1_to_SC3_init0"
+      ],
+      "saved_camera_pairs": 16,
+      "RGB_images": 32,
+      "scope": "Two existing sheets, eight saved replans/clip and dual RGB. No terminal RGB; no contact/grasp inference. SC3->1 book moves to front compartment and native AND true at173; SC1->3 book near front rim at late saved frames, AND never true through400."
+    },
+    "decision": "Deprioritize this finite pairing repair: marginal gains relative to Within do not improve original T absolute control; source gains essentially shared. Continue EMBER via a bounded current-source task-teacher and T50 recovery qualification. No automatic Writer/distillation or larger expert bank.",
+    "new_model_environment_GPU_work": false
   }
 }

@@ -1,6 +1,9 @@
 # EMBER：停滞原因与完整方法的重新审视
 
-2026-10-08更新。供只能访问 Git 远程仓库的专家使用。三轮讨论已完成；
+2026-10-08更新。跨配对完整学习已结束：Within147/148、Product152/151，未建立总体修复；main消费见findings§392和[完整读回](../../analyses/cross_context_pairing_20261008.json)。
+当前接续为[当前source任务教师与T访态恢复](../../designs/aligned_teacher_recovery_20261008.md)，只检验监督函数资格，尚无新结果。
+
+供只能访问 Git 远程仓库的专家使用。三轮讨论已完成；
 [第二轮原文](EXPERT_RESPONSE_ROUND2.md)、[第三轮原文](EXPERT_RESPONSE_ROUND3.md)保留候选的提出和收窄。
 主讨论核对后只采纳同T、同数据、改变配对的[有界学习检验](../../designs/cross_context_pairing_20261008.md)，
 没有采纳同时换encoder/decoder/初始化的组合，也没有把它认定为已解决停滞的完整方法。当前无需再次向专家提问。

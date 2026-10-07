@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-08：main消费跨配对，接续当前source任务教师与恢复资格
+
+findings§392和[cross配对main消费](analyses/cross_context_pairing_20261008.json)保留2962原行、逐task能力交换及两份正反RGB/连续轨迹。
+Product对T correct的−9集中task3/31；source两终点R35/G0/L1，不以净+5/+3或共同训练收益宣布跨配对修复。
+旧参数重构/字典、functional decoder、phase aggregation及SEOD/GOMQ的实际输入/梯度和正负范围仍约束后继；旧source专家不套用当前。
+新的[唯一有限合同](designs/aligned_teacher_recovery_20261008.md)先在四个已登记困难train task建立当前source单LoRA任务教师，
+各480更新并查320/480初态/T50恢复，加原MT恢复，共80新行。只检验标签函数资格，不部署专家路由或自动启动Writer蒸馏。
+此时只有科学登记；实际承接、费用与结果看progress，Owner长期目标和自主接续责任保持。
+
 ## 2026-10-08：同图跨情境配对216完整学习，未建立总体修复
 
 [固定合同](designs/cross_context_pairing_20261008.md)的两臂216更新/24192query及1762固定完整行结束。

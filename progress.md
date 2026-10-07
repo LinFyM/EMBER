@@ -1,3 +1,14 @@
+## 2026-10-08 main完成跨配对科学消费，登记困难任务教师与恢复
+
+main已接回canonical tracked/Git，直接消费16份原始results共2962行、两张既有sheet的32图及两份连续轨迹。
+findings§392与cross_context_pairing canonical/main_consumption保存独立统计、实际源码/旧历史边界与判断。
+Product对Within净+5/+3但没有原T绝对进展；source无独有新增；停止该配对修复的默认延训，最终目标及长期自主授权保持。
+唯一active为`docs/designs/aligned_teacher_recovery_20261008.md`：四task12/29/32/38从当前MT300各独立480更新，
+固定320/480初态及T50接手、原MT接手共80行，先检验同source可靠反馈函数是否存在，不能把它当视频方法或自动蒸馏许可。
+预计4–7wall小时/10–12GPUh，硬实际承接10wall/16完整GPUh/data1峰32GiB，含工程/失败/加载/评测；当前尚无该批GPU计算。
+main当前持有tracked/Git写窗口；本次文档push后交既有实验session独占工程、Git与运行，实际接手以回执为准。
+整批完成后main主动科学消费、裁决并接续；不重复问Owner批准既有授权，也不因一项诊断阴性结束项目。
+
 ## 2026-10-08 同目标跨情境配对1762条完整结束，执行封口与写窗口交接
 
 唯一cross_context_pairing_20261008两臂各216更新/24192query，13面板1762完整行/493236控制步全部完成；数值核验1762通过。

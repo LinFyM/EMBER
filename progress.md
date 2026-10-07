@@ -1,3 +1,20 @@
+## 2026-10-08 实验session实际承接当前source教师与T50恢复
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45全文读唯一163行合同/findings§392–393/Owner与AGENTS，
+从clean pushed main fee0ebf8接管canonical tracked/Git独占窗口，main停止并发写入。
+实际承接2026-10-07T22:55:59Z，硬截止2026-10-08T08:55:59Z；预计4–7wall/10–12GPUh，硬10wall/16GPUh/32GiB新增峰。
+唯一root aligned_teacher_recovery_20261008，判重未见已有run；工程隔离codex/aligned-teacher-recovery-20261008于EMBER-aligned-teacher-recovery-dev。
+strg01独立data1软配额2TiB、实际quota/个人du约1.355TiB及共享空间已核，32GiB峰可承接；首次原件独立保存、不覆盖。
+固定四task12/29/32/38各同MT300完整38-target rank128 A/B/fresh FP32 AdamW/no scheduler，480×112query；
+320/480初态及T50接手、原MT接手共80行。0/160/320/480完整ECP保留，不择高点/拼任务或自动接Writer。
+16来源及旧重放前50raw/前51保存状态已CPU核误差0，T6/MT5/NN7；task38完整目标双On∧TurnOn。
+当前是CPU接口实现与来源核验，尚未启动GPU；后续所有profile/smoke/训练/EGL/失败均记完整费用。
+CPU实际data owner核215040查询与4个首112批，offset1/repeat-last通过；MT原4F32+72BF16，学习参数明确转FP32。
+通用ECP只补显式null scheduler/恢复presence合同；两种scheduler CPU round-trip通过，真实2→4仍待执行。
+临时data与training owner复用FunctionalQueryDataset/NativeFlowPrediction/DirectLoRA/ECP，薄入口无第二评测器；
+结构检查无hard violation，FM宏步复杂度21因真实梯度/通信/记录内聚保留，旧80行checkpoint不扩科研逻辑，整批退役专用面。
+root闭环工程/实际消费者/Git/冻结/学习读回/退役；只有整批或真实科学/预算/原件边界一次回main，不工程阶段停等。
+
 ## 2026-10-08 main完成跨配对科学消费，登记困难任务教师与恢复
 
 main已接回canonical tracked/Git，直接消费16份原始results共2962行、两张既有sheet的32图及两份连续轨迹。

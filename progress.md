@@ -1,3 +1,11 @@
+## 2026-10-07 实验session实际承接冻结Gamma动作记忆批次
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取127行唯一active design、findings§377、当前Owner合同/progress/task_plan，从clean pushed main fdbea2bc接管canonical tracked/Git独占窗口；main停止并发写入。
+实际承接保守时钟2026-10-07T01:16:36Z，硬截止04:16:36Z；预计45–90min，硬3wall/1完整GPUh/16GiB新增峰，包含工程、失败/profile/Gamma/EGL/frozen/tmp/分析。
+唯一运行root为/data1/user/ymdai/ember_runs/calibrated_action_memory_control_20261007；代码在data1隔离工程树实现。首次strg01 data1实占1406669552KiB/soft2147483648KiB/limit2157969408KiB，共享可用88245588197376B；完整个人du在NFS读取中，缓存/运行准入前补齐原始回执。
+已核旧Gamma实际八个FP32张量及原Controls完整50槽/4头定义，首既定bare cache真实CPU检查通过i与i+5、H0/mu0/source身份。此条仍0新GPU/Gamma forward/环境；临时Value owner复用原Gamma，NN/capture复用sealed bfd76c99，旧冻结/原件只读。
+两臂bare_endpoint/calibrated_value各原seen144，只改变Gamma残差，GT几何仅用于相同绝对1NN调用；绝不替换为旧有State/10ODE source。完整288行/72full/216compact、12固定clip及两次以内真实首块profile由本session闭环。只在整批结束或真实边界一次回main，无阶段Queue/自通知或自动下一批。
+
 ## 2026-10-07 main消费动作记忆，登记冻结视频动作校准的匹配读出
 
 main已接回canonical tracked/Git，直接重算288主行及576背景行、看4clip/64原图、核source与NN实际计算，findings§377保留完整判断。

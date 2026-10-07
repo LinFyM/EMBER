@@ -9852,3 +9852,44 @@ privileged-code decoder；P/I已有跨初态成功轨迹及真实完整LoRA FM�
 这是所检验路线的有限否定，不是全部反馈学习、训练侧物理信息或静态LoRA不可能的证明。
 目前没有具备新功能信用依据的后继完整训练方案；未登记新active design或后台计算，不把分析文字写成已经执行的接续。
 Owner最终性能目标仍未达到，自主授权未被撤销；这项事实不能用虚构后台工作、补齐局部探针或重复弱假设掩盖。
+
+## 383. 强控制起点与完整执行共同学习：把直接视频参照收窄为可辨识的一批（2026-10-07）
+
+Owner再次明确暂时无暇跟进，要求main仔细分析现状后自主推进。最终目标和信息墙不变；
+主讨论先前推荐“建立完整视频条件控制参照”，本节记录历史核对、具体假说和实际选择，不将推荐当已运行。
+
+最近似原件审计纠正了一个可能过度概括的结论。Video Functional `a81a38ed/a8964874`虽共同学习过
+教学Action/VL Meta、encoder和Reader，真实function_credit中的Reader query仍是未适配source的no_grad调用；
+完整38-target LoRA属于独立学生。9/26 `2fbd4c7d`的层9 q/v Reader只有12次工程更新/6条接口episode，
+630正式训练撤回，不能列为正式学习阴性。10/2 `795e86a0/1449c908`的live/stop确实在T2340自身hidden
+读Z并影响条件B，但公共A/B固定，只训P/C/D/O和gamma；student20/24、reader19/23（各32）不被抹去。
+关系F `85614d9c`更明确在source_query中禁用全部PEFT adapter并no_grad；F66/144与G84/144是独立消费者。
+main直接核该source_query/credit及当前native完整读取和真实FM源码；只读协作补核VF、Reader运行身份和原JSON。
+原VF69→72→74→32是生成LoRA学生的400分数，不冒充Reader直接闭环或与当前协议强MT153直接相减。
+
+因此，旧结果降低“加联合读头自然得到强教师”的支持，却尚未检验强MT初始化、完整执行A/B可学且各层读取memory
+同时成立的直接控制器。这个历史空白本身不够；当前有限依据是：T确有条件控制作用，旧F本身远未成为强教师，
+而T/NN的部分互补又没有在自身访态上可靠顺接，不能继续拿一个弱函数的蒸馏结果裁决一次编译的可行性。
+新参照让实际状态相关选择进入完整控制网络，从既有控制函数开始学习，检验这个更完整的函数是否先能成立。
+它不补一条此前不存在的泛化梯度，也不预先断言冻结source特征、末端头或LoRA编译是唯一根因。
+
+main从原T真实132+12及MT144直接归约，12/29/32/38的T为3/2/1/0、MT2/0/2/1，各task四初态；
+其余32项T103/128、MT88/128。瓶入篮、瓶到架、开炉后搬壶、双壶放置与保持都纳入判断，
+不只追最近一个成功的瓶或用单个On代替完整双目标控制。四task作为本批新增训练留出，
+MT此前已见过它们全部示范，因此明确不是整个方法的未见任务，也不改official 24/8/8协议。
+
+唯一[合同](docs/designs/native_video_control_diagnostic_20261007.md)固定M/V两臂：同强MT300完整A/B初值，
+M继续普通FM；V加合法全H50教学memory的两层encoder、18个原生block后的状态相关Reader，并共同学习完整A/B。
+β、encoder和Reader的实际查询/教学梯度与作用域在合同写明，图文prefix/source基础权重冻结；
+Reader零输出只保证初始函数，不保证训练后保持。全层softmax读取通常不能在单个投影处精确改名为固定LoRA，
+这是参照到最终方法仍待解决的边界，不是声明整个深层LoRA类不可表示。
+
+仅原32训练task、每task16teacher事件、固定128宏步、每臂14,336跨episode真实FM query，fresh optimizer而非MT exact-resume。
+两臂相同query/flow流，唯一终点128；64只用于恢复。M/V各原seen144，V另在留出四task读same-task-other16，共304新episode。
+没有新official validation/Test、蒸馏、Writer fresh训练、RL或额外标签。完整成功优先，与同预算M、未更新MT93及强T109都比较。
+V只胜退化M、只在fit变强或只有零星差额均不足以启动编译；即便V有益，新增计算容量和视频信息尚未由learned静态参照分开。
+这是一项训练型分析，不靠改名把完整fresh Writer＋400提前启动，也不把四task局部正例自动升级为整方法资格。
+
+预计4–7h，实际承接起硬10wall/12完整GPUh/data1新增峰48GiB，所有工程、失败、profile和EGL计入。
+具体profile给出吞吐/显存与能否完成；不适配预算就回报，不缩图/扫超参保护假说。实验session负责实现、检查、Git、运行、退出和一次整批回报；
+main负责科学消费与下一取舍，不重复工程验收。写窗口及实际承接看progress，登记不等于后台已经工作。

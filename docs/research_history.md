@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：强MT起点的全层视频控制参照进入有限训练型分析
+
+Owner要求暂时无暇跟进时由main先分析清楚再自主推进；findings§383及[唯一合同](designs/native_video_control_diagnostic_20261007.md)
+保留最近似VF/Reader/F源码边界和推导。旧联合表示/中层读取/自身hidden信用都已尝试，
+但其消费者没有同时采用强MT初始化与完整执行A/B共同学习；9/26未训设计不计作科学阴性。
+本次M/V同MT300起点、同fit32事件与普通FM，V加18层状态相关视频memory读取；固定128更新、各14,336 query。
+12/29/32/38只留出新增训练，MT此前见过，不冒称最终未见任务；M/V各seen144、V other16，共304新行。
+参照允许执行时查预编码memory，明确不符合最终单LoRA部署；没有official validation/Test/蒸馏/新Writer或自动后继。
+比较同预算M、未更新MT93与原T109、fit/本批留出、另一video及完整成功得失，不以loss/少数新增或只胜退化baseline晋级。
+预计4–7h，实际承接硬10wall/12GPUh/data1新增峰48GiB，工程/profile/失败/EGL全计；实际承接和写窗口以progress为准。
+本段为科学选择与登记，不能解释为模型已训练、控制已改善或完整方法已成立。
+
 ## 2026-10-07：main关闭现成NN纠正教师支线，保留部分继续控制的正例
 
 findings§382及[canonical main消费](analyses/teacher_state_handoff_20261007.json)保存576原行独立重算、四clip/64图和两例真实前缀/状态证据。

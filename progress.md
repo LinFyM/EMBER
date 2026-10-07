@@ -1,3 +1,14 @@
+## 2026-10-07 Owner要求自主推进，登记强MT原生视频控制的有限分析
+
+Owner最新要求暂时无暇跟进，main仔细分析现状后自主推进；最终合法视频一次生成单LoRA并超过强MT的目标保持。
+findings§383核旧VF/Reader/F真实训练边界，未把“没有试过全层”单独当作训练理由，也未恢复已关闭NN/Gamma/关系修补。
+唯一active design为`docs/designs/native_video_control_diagnostic_20261007.md`：同强MT300起点的M继续FM与V全层视频memory共同学习。
+新增训练fit32明确排除12/29/32/38；每臂128宏步/14,336 query，同流同loss；这四task早已被MT见过，只是新增训练留出。
+终点M/V各seen144，V另other16，共304新行；0official validation/Test/蒸馏/Writer fresh/RL，V明确非EMBER部署参照。
+预计4–7h，实际承接起硬10wall/12完整GPUh/48GiB；包含工程/失败/profile/训练/编码/EGL/分析/代码。
+当前仅完成科学登记和原件CPU读取，0新模型/GPU/环境；push后交既有实验session独占工程/Git，实际承接以其回执为准。
+整批完成或真实边界一次回main，由main独立分析并继续取舍，不要求Owner逐项跟进，不从旧active段恢复任务。
+
 ## 2026-10-07 main完成接力科学消费，关闭现成NN纠正教师支线
 
 main已实际收到整批回报并接回canonical tracked/Git；findings§382和canonical JSON main_consumption保存独立576原行重算、四clip/64图及两例真实前缀状态核对。

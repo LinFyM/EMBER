@@ -15,6 +15,7 @@ HORIZON_WRITER_KIND = "horizon_writer_lora_bank"
 CONDITIONAL_VELOCITY_KIND = "conditional_velocity_lora_bank"
 DEMONSTRATION_COMPARISON_KIND = "demonstration_comparison_lora_bank"
 OPERATOR_READ_WRITE_KIND = "operator_read_write_lora_bank"
+PRIVILEGED_ACTION_MEMORY_KIND = "privileged_action_memory_controller"
 
 
 def _all_or_none(values: Sequence[Any], label: str) -> bool:
@@ -50,10 +51,11 @@ def adapter_requests(args: Any) -> tuple[str | None, bool]:
     source_requested = source_sft_requested(args)
     expert_requested = task_expert_requested(args)
     static_requested = static_task_lora_requested(args)
-    if sum((source_requested, expert_requested, static_requested)) > 1:
+    memory_requested = getattr(args, "privileged_action_memory_manifest", None) is not None
+    if sum((source_requested, expert_requested, static_requested, memory_requested)) > 1:
         raise Pi05EvaluationError("PI05 evaluation adapters are mutually exclusive")
     kind = (
-        "task_expert"
+        PRIVILEGED_ACTION_MEMORY_KIND if memory_requested else "task_expert"
         if expert_requested
         else "static_task_lora" if static_requested else None
     )
@@ -204,6 +206,12 @@ def load_evaluation_adapter(
     adapter = contract.get("adapter")
     if adapter is None:
         return None
+    if adapter.get("kind") == PRIVILEGED_ACTION_MEMORY_KIND:
+        from ember.pi05_eval.action_memory_controller import PrivilegedActionMemoryController
+
+        if policy is not None:
+            raise Pi05EvaluationError("privileged NN rollout must not load a VLA policy")
+        return PrivilegedActionMemoryController(contract)
     common = {
         "policy": policy,
         "source": contract["model"],
@@ -250,6 +258,8 @@ def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
+        if contract.get("adapter", {}).get("kind") == PRIVILEGED_ACTION_MEMORY_KIND:
+            return {"privileged_action_memory_controller": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == OPERATOR_READ_WRITE_KIND:
             return {"operator_read_write_lora": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == DEMONSTRATION_COMPARISON_KIND:
@@ -267,6 +277,21 @@ def episode_adapter_fields(
     return {}
 
 
+def _validate_memory_episode(adapter, row, *, suite, task_id, init_state_id) -> bool | None:
+    if adapter is not None and adapter.get("kind") == PRIVILEGED_ACTION_MEMORY_KIND:
+        from ember.pi05_eval.action_memory_controller import validate_episode
+
+        return (all(row.get(name) is None for name in (
+                    "horizon_writer_lora", "static_task_lora", "demonstration_comparison_lora",
+                    "conditional_velocity_lora", "operator_read_write_lora", "task_expert",
+                    "policy_adapter_sha256"))
+                and validate_episode(adapter, row.get("privileged_action_memory_controller"),
+                                     suite=suite, task_id=task_id, init_state_id=init_state_id))
+    if row.get("privileged_action_memory_controller") is not None:
+        return False
+    return None
+
+
 def validate_episode_adapter_fields(
     adapter: Mapping[str, Any] | None,
     row: Mapping[str, Any],
@@ -275,6 +300,10 @@ def validate_episode_adapter_fields(
     task_id: int,
     init_state_id: int,
 ) -> bool:
+    memory_valid = _validate_memory_episode(adapter, row, suite=suite, task_id=task_id,
+                                            init_state_id=init_state_id)
+    if memory_valid is not None:
+        return memory_valid
     if adapter is not None and adapter.get("kind") == OPERATOR_READ_WRITE_KIND:
         from ember.operator_writer.bank import validate_episode
 

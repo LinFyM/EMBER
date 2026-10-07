@@ -214,8 +214,10 @@ class CompleteRecoveryAdapter(FrozenStaticTaskLoRAAdapter):
         self.lora = load_pi05_lora_contract(Path(observed['lora_contract']['path']))
         inject_task_lora(policy, self.lora)
         for parameter in task_lora_state_dict(policy).values():
-            if observed['step'] != 300:
-                parameter.data = parameter.data.float()
+            # Original strong MT applies its stored factors as FP32 state in
+            # BatchedLoRAInference. Preserve those values in the same complete
+            # FP32 factor family here, with the source computation unchanged.
+            parameter.data = parameter.data.float()
             parameter.requires_grad_(False)
         policy.eval()
         self.policy, self.records = policy, {(r['suite'], r['task_id']): r for r in observed['tasks']}

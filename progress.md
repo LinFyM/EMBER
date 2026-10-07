@@ -22,6 +22,10 @@ CPU实际data owner核215040查询与4个首112批，offset1/repeat-last通过�
 薄入口无第二评测器；
 结构检查无hard violation；303行FM/341行readout为两个有限owner，约800新增source为本批临时面，
 大型canonical文件仅薄typed hooks，legacy字段校验同义提取以不扩大既有复杂度；完整面/薄hooks在封口时退役。
+MT300 T50首次prepare被旧relational被动capture provenance误分派，0环境/0policy forward即退出，6.12秒完整卡时保留。
+新schema已有独立capture validator，补实际prepare/recovery typed分派而不恢复旧relational面；新冻结后接续未执行的固定16行。
+同时核原强MT FrozenOperator/BatchedLoRAInference使用FP32完整state，typed consumer将原BF16存档值精确cast为FP32安装，
+原4F32+72BF16存档不改、新专家全FP32，普通matmul/reduction差异按AGENTS接受；不称逐bit同旧MT。
 root闭环工程/实际消费者/Git/冻结/学习读回/退役；只有整批或真实科学/预算/原件边界一次回main，不工程阶段停等。
 
 ## 2026-10-08 main完成跨配对科学消费，登记困难任务教师与恢复

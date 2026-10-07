@@ -1,3 +1,11 @@
+## 2026-10-07 实验session实际承接privileged action memory匹配闭环批次
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45已全文读取136行唯一active design、findings§375、Owner稳定合同及原几何审计§81，从clean pushed main1f000398接管canonical tracked/Git独占窗口；main停止并发写入。
+实际承接首读取时钟2026-10-06T23:55:44Z，保守硬截止2026-10-07T05:55:44Z；预计2–4h，硬6wall/3完整GPUh/24GiB新增峰，包含工程/失败/profile/source缓存/EGL/评测/frozen/tmp。唯一root为/data1/user/ymdai/ember_runs/privileged_action_memory_control_20261007。
+首次strg01 data1计费实占1398969504KiB/soft2147483648KiB/limit2157969408KiB，完整个人du1398969476KiB，共享可用88270454128640B；原始quota/du/shared与首次两节点GPU回执独立保存，预计新增12–16GiB。两个轻量工程隔离树建立；本条仍0新GPU/环境。
+两臂保留同原36-task/seen144/teacher/scene映射、原Git9f90a14d完整body/site绝对1NN和真实自身查询，只更换HDF offset1真实动作值或同帧冻结source1000原10-step ODE值。source仅合法train教师双RGB/语言/8state离线物化，NN自身CPU直接控制，无VLA/LoRA bank。临时controller接入原评测器环境/恢复/queue/capture；工程、实际消费者、push/clean detached、完整288行、分析/费用与退役由本session闭环，不等main工程审批。
+只在整批完成或真实科学/原件/预算边界一次整批回main并交回tracked/Git，无心跳/阶段Queue/自通知/自动后继。
+
 ## 2026-10-07 main登记教学动作记忆的匹配闭环诊断
 
 Owner持续自主授权有效；§373原物理输入/下游编译接口停止不变，未恢复G/F、P/Q或RL。

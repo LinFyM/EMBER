@@ -4515,3 +4515,12 @@ findings§363与denoising_return_writer_learning_20261006.md明确继承9/25 RAW
 全部raw/真实动作/条件来源/采样/成功集合及固定完整捕获原件保留，实际RGB审阅范围和缺项如实记录。无新oracle、held教师特权或Test。
 root denoising_return_writer_20261006留contract/Git/frozen/checkpoints/report/resource/failed attempts；完整GPU11.742447h，新增峰保守37GiB/48，三次ops/准入失败、一次授权profile OOM和读回检查修正均计入并保留。
 本批专用运行面及临时注册2e1ccc68退役，保留已验证的零步失败保存修复；工程树清理、最终push及整批真实交回以completion/receipt为准，没有自动新学习或扫描。主讨论独立消费后负责接续。
+
+
+### 2026-10-07 calibrated_action_memory_control：旧冻结Gamma在特权GT对应下只有有限控制用途
+
+127行合同、原36 seen144×bare/calibrated完整288行；原Source1000 state-free tau1 mu0与mu0+Gamma450，原绝对GT几何1NN，不读held/Test或新source-native/训练。
+结果6→22（target0→7/support6→15，R2/G20/L4、breadth4→10）；同几何真动作91成功仅保持17/91，Object/Long全零，4丢失/5超出demo成功与固定12失败clips均保留。
+原q已在完整Writer Value调制中使用，此次直接动作消费不同；不把MSE .1071→.0701或弱基线净增称强教师、动态必要性、泛化或LoRA修复。
+findings§378及docs/analyses/calibrated_action_memory_control_20261007.json索引全部raw/行为/来源/费用；Value2456ecd0、消费者3c58a008、原Gamma2c630fb3、几何9f90a14d/NN bfd76c99。
+完整GPU .169086646h/三正常launch，专用两owner与临时hooks退役，原frozen/cache/raw保留；任一结果停止、main接回写窗口作完整方法选择，无自动Gamma/NN/F/Writer后继。

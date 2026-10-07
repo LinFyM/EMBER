@@ -9648,3 +9648,42 @@ main核原完整设计、实际controls与原compile的BF16调用；144个原裸
 若只降低MSE而无控制，不再声称旧方法已学会动作、只待编译，也不继续调Gamma或NN保护它。
 这检验已学函数的实际功能，不复活ControlCalibrated的训练/900续窗，不新增oracle拟合或独立Reader。
 预计45–90分钟，硬实际承接起3wall/1完整GPUh/16GiB；完整主比较与真动作91行分层均预登记，main收到后继续完整方法裁决。
+
+
+## 378. 冻结Gamma的动作记忆匹配闭环：6→22，局部控制改善未保留多数真动作价值（2026-10-07）
+
+唯一`calibrated_action_memory_control_20261007`已按127行合同完成；不是旧ControlCalibrated训练恢复、EMBER分数或新强F资格。
+[canonical原件索引](docs/analyses/calibrated_action_memory_control_20261007.json)与root `/data1/user/ymdai/ember_runs/calibrated_action_memory_control_20261007/analysis/report.md`保存全部288行/逐task与suite、成功集合、行为/反例、错误与边界；summary/per_row/own_RGB/resource/completion可就地复核。
+
+实际图：只读原144裸cache的4556个合法departure i及arrival i+5；原Source1000/probe1729/tau1、无State的双RGB/exact L派生完整50×1024 H0与mu0。
+仅加载原Gamma450八个FP32张量，以原RMS eps1e−6/四头双端50槽attention/MLP、正常BF16得到前5×7残差；bare为mu0，calibrated为mu0+Gamma。
+各一次原冻结源quantile反归一化；自身GT绝对D_abs/原body-site signature/0.10m与0.04m/原最早1NN，固定teacher/scene/init32…35/seed20260928，CPU读同memory前5。
+旧有teacher8state/10ODE source0不同，不能替代本次bare6；旧q确曾调制A/B Value，本批直接动作消费也不能称其未接上。
+Capture仅前5真valid，后45复制第五动作、不称完整50预测；无VLA/LoRA、训练、native/source forward、新几何恢复、teacher HDF或held/Test读取。
+
+主结果bare6/144→calibrated22/144：R2/G20/L4，net+16/churn24/J=.076923；144原metadata及实际已保存初始EEF/body/谓词配对无不符。
+Target24为0→7/96（R0/G7/L0），support12为6→15/48（R2/G13/L4）；breadth4→10/36、calibrated26task零、两个全4/4为51/62抽屉task。
+Spatial3/24、Object0/24、Goal4/24、Long0/24、support90 15/48；两抽屉task占20新增中的8行，不能由+16写为广泛操作获取。
+四丢失：43/init34、55/init32、55/init34、95/init32；全20新增/2保留/118共同失败在原逐row成功集合中。
+
+预登记demo91成功层仅3→17/91（R1/G16/L2），53个原demo失败层3→5（R1/G4/L2）。对真动作demo91本身calibrated R17/G5/L74、net−69/churn79/J=.177083；
+五个额外成功为2/init33、43/init35、51/init34/35、55/init35，说明原demo NN也不是上界，但不抹去74条丢失。
+同memory5×7 task等权归一化MSE .1070987→.0700747；平移.0984687→.0651024、旋转.0847796→.0594685、夹爪.1999461→.1168106，仅分析侧GT，不进入Gamma/选择。
+T109真实132+12、MT93真实已更正目录、旧Writer77/G84/F66只读原行作背景，不同执行参数化与学习合同不作该干预因果比较。
+
+固定12clips/192双RGB图已实际审看，另60full只保留、216compact不冒称看过；12/25/29/32/38/73 init32双臂均失败。
+calibrated task12目标原点移动44.47cm仍无In；task29酒瓶28.23cm仍无On rack；task25目标盘不动而碗约7.10cm；task32两谓词全false。
+task38两个On全false、TurnOn初已true；task73两臂黄色杯约12.5–12.9cm、Close全false。移动/外观不称contact/grasp，根body不动不代表门/抽屉关节不动。
+所有95059动作/19023提案、原argmin/实际前5/raw/padding-valid/scene-teacher-RNG/nativegoal核验0不符；live EEF缓存与sim最大4.703mm只被动记录，无离线阈值live gate。
+
+整项冻结Gamma加入后有20真实新增，使“完全无控制用途”弱化；但只保留17/91可用示范控制且Object/Long仍零，未支持“已取得足够精确控制只待编译”。
+剩余读出误差、自身/教学状态差与轨迹分叉如何交互未被隔离；不由MSE/索引stall或这批弱分数认定唯一根因。
+Gamma包含已学参数、departure与arrival，未证明arrival/动态必要性、未见video/task泛化、合法RGB对应或单LoRA可达/编译修复。
+执行者按任一结果均停止本批，不调Gamma/NN、不恢复77配方，不自动新F/Reader/Writer/更大窗口/400/controls/Test；main独立消费并承担完整方法取舍。
+
+来源Value clean/pushed detached2456ecd0、消费者3c58a008、原Gamma训练2c630fb3/裸cache e314d227、原几何9f90a14d/NN frozen bfd76c99。
+计算退出01:42:08Z，承接到计算25.54min；完整GPU608.711925秒=.169086646h，包括加载、两次首块profile和EGL，0GPU或评测失败/缺行/择优重跑。
+batch1024/2048实测4557.86/19466.19转移/s、reserved峰1.104/2.666GiB，采用2048、保留第一次有效Value；两次授权profile上限达到后停放大。
+两个EGL卡各6persistent worker并行，launcher272.87/274.98s。独立data1 quota/相关与全个人du/shared、各launch独立双节点回执不覆盖。
+非GPU工程错误/修复与未完整CPU计时在report/ledger如实保留；hard3wall/1GPUh/16GiB未越界，最终wall/峰值/Git/清理/一次main实际消费见completion与delivery回执。
+两节点无ymdai GPU、12worker PID均退出；临时两owner/入口/hooks已退役，89项现有回归与两新合同实际拒绝消费者通过；原frozen/Git/cache/raw/全部费用保留。

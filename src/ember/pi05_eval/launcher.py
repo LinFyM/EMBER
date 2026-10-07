@@ -19,20 +19,7 @@ MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT = 10
 # The identical frozen source without an adapter also fits this per-worker budget.
 EVALUATOR_WORKER_MEMORY_MIB = 12 * 1024
 EVALUATOR_GPU_HEADROOM_MIB = 2 * 1024
-RENDERER_WORKER_MEMORY_MIB = 2 * 1024
 OTHER_EVALUATOR_FREE_MEMORY_MIB = 32 * 1024
-
-
-def _worker_memory_budget(materialized_replicas: int | None, renderer_replicas: int | None) -> int:
-    if renderer_replicas is not None:
-        if renderer_replicas < 1 or materialized_replicas is not None:
-            raise Pi05EvaluationError("renderer-only replicas require a separate positive worker budget")
-        return renderer_replicas * RENDERER_WORKER_MEMORY_MIB + EVALUATOR_GPU_HEADROOM_MIB
-    if materialized_replicas is not None:
-        if materialized_replicas < 1:
-            raise Pi05EvaluationError("evaluator replicas_per_gpu must be positive")
-        return materialized_replicas * EVALUATOR_WORKER_MEMORY_MIB + EVALUATOR_GPU_HEADROOM_MIB
-    return OTHER_EVALUATOR_FREE_MEMORY_MIB
 
 
 def _storage_root() -> Path:
@@ -46,7 +33,6 @@ def _storage_root() -> Path:
 
 def gpu_preflight(
     physical_gpu_ids: Sequence[int], *, materialized_lora_replicas: int | None = None,
-    renderer_only_replicas: int | None = None,
     max_utilization_percent: int = MAX_COSCHEDULED_GPU_UTILIZATION_PERCENT,
 ) -> dict[str, Any]:
     """Record storage, CUDA runtime, GPU telemetry, and co-scheduled processes."""
@@ -55,7 +41,14 @@ def gpu_preflight(
         raise Pi05EvaluationError("GPU utilization limit must be between 0 and 100")
     import torch
 
-    required_memory_mib = _worker_memory_budget(materialized_lora_replicas, renderer_only_replicas)
+    required_memory_mib = OTHER_EVALUATOR_FREE_MEMORY_MIB
+    if materialized_lora_replicas is not None:
+        if materialized_lora_replicas < 1:
+            raise Pi05EvaluationError("evaluator replicas_per_gpu must be positive")
+        required_memory_mib = (
+            materialized_lora_replicas * EVALUATOR_WORKER_MEMORY_MIB
+            + EVALUATOR_GPU_HEADROOM_MIB
+        )
     selected_indices = tuple(int(value) for value in physical_gpu_ids)
     if (
         not selected_indices
@@ -160,8 +153,6 @@ def gpu_preflight(
             "max_utilization_percent": max_utilization_percent,
             "min_free_memory_mib": required_memory_mib,
             "materialized_lora_replicas": materialized_lora_replicas,
-            "renderer_only_replicas": renderer_only_replicas,
-            "renderer_worker_memory_mib": RENDERER_WORKER_MEMORY_MIB,
             "materialized_worker_memory_mib": EVALUATOR_WORKER_MEMORY_MIB,
             "materialized_gpu_headroom_mib": EVALUATOR_GPU_HEADROOM_MIB,
         },

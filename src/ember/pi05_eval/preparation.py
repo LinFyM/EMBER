@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ember.eval_adapters import (
-    PRIVILEGED_ACTION_MEMORY_KIND,
     adapter_requests,
     inspect_source_sft_adapter,
     inspect_static_task_lora_adapter,
@@ -119,12 +118,6 @@ def _inspect_adapter(
     args: Any, *, adapter_kind: str | None, source_sft_requested: bool,
     model: Mapping[str, Any], tasks: Sequence[Any], output_dir: Path | None = None,
 ) -> Mapping[str, Any] | None:
-    if adapter_kind == PRIVILEGED_ACTION_MEMORY_KIND:
-        from ember.pi05_eval.action_memory_controller import inspect_manifest
-
-        return inspect_manifest(
-            manifest_path=args.privileged_action_memory_manifest, source=model, tasks=tasks,
-            evaluation_role=args.role, require_formal=args.mode != "smoke")
     if source_sft_requested:
         return inspect_source_sft_adapter(
             config_path=args.source_sft_config.resolve(), checkpoint=args.source_sft_checkpoint.resolve(),
@@ -525,12 +518,7 @@ def _prepared_payload(
         else:
             contract["operator_read_write_scene"] = {
                 "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
-    if adapter is not None and adapter.get("kind") == PRIVILEGED_ACTION_MEMORY_KIND:
-        from ember.pi05_eval.action_memory_controller import attach_contract
-
-        attach_contract(contract)
-    else:
-        attach_requested_capture(args, contract, repo_root, output_dir)
+    attach_requested_capture(args, contract, repo_root, output_dir)
     shards = shards_from_contract(contract)
     summary = {
         "event": "prepared",

@@ -1,3 +1,9 @@
+## 2026-10-07 冻结Gamma有限控制读回完成
+
+唯一calibrated_action_memory_control_20261007按合同完成288行并退役。bare6→calibrated22、R2/G20/L4，demo91仅保持17/91；findings§378保存全部正反与范围。
+它显示局部动作Value贡献，尚未取得广泛精确控制，不能称强F资格或EMBER；不恢复旧Gamma训练/NN扫描、Writer/Reader或自动下一批。
+本批GPU/worker释放，tracked/Git与一次main消费以progress/completion为准。Owner目标未完成、自主授权持续，下一完整方法由main独立裁决；下方active和运行文字只为历史时点。
+
 ## 2026-10-07 检验冻结Gamma的视频动作读出是否已有控制用途
 
 findings§377及上批canonical main_consumption保存主讨论直接原件复算、4clip/64图和source链核读；接受demo91/source0的有限Value结论。

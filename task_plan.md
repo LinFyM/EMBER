@@ -3,7 +3,7 @@
 Owner要求再次核实专家意见，并持续长时间推进。第三轮建议的事实/数学支持一项有界检验，不证明已找到突破。
 唯一active设计为`docs/designs/cross_context_pairing_20261008.md`：同T2340两臂、同45task曝光，只改变新9项同目标的teacher/query联合配对。
 实验session已完成四更新独立恢复检查；两臂216正式学习于2026-10-07T17:22:21Z从pushed clean detached e86dbfbc以2+4卡启动，详见progress与独立launch回执。
-父54已完成首18行；其余父行、两臂终点银行及完整官方1600行继续原合同，不按partial结果选择或缩面板。
+父54和两臂216匹配学习已全部完成；Product400 bank已实际发布，Within及剩余1708固定读回继续原合同，不按partial结果选择或缩面板。
 各216更新、固定唯一终点correct/other各400，加父/两终点九格各54；共1762新闭环，完整结果而非loss决定优先级。
 预计6–10wall小时/15–18GPUh，硬实际承接12wall/20GPUh/data1新增峰96GiB；实际启动与tracked/Git归属见progress。
 main在整批后消费原件、更新完整方法判断并继续推进；单项假说阴性不结束EMBER，也不自动延训或换encoder保护同族假说。

@@ -29,6 +29,11 @@ public A/B₀/P/C/D/O及native H/X信用非零；generic independent_S占位为0
 最新现场迁移后两面板均正常完成，没有重复任何有效环境行；非模型/消费者bug。CPU调度回执和shared-A发布串行修正保留，冻结树未热改。
 Product/Within终点bank在现场cap内并行物化；两个family共用A发布需串行，400独立condition可按现场余量用至多四同节点物理worker。
 全部1762闭环及完整capture/成功集合/费用/退役仍待完成，未由FM或训练检查作科学晋级，后续只等实际退出事件。
+2026-10-07T19:38Z定点排障确认Product400 bank实际11:35.08正常退出且两manifest完整发布，但CPU observer退出回执缺失。
+按原/usr/bin/time原件恢复695.08秒×2卡=.386156GPUh；恢复回执显式标记推算end epoch与不可确证的observer信号，不重跑400有效条件。
+Within首bank launch在GPU准入前拒绝，0模型/0缓存/0GPU；独立拒绝原件与唯一新重试保留。
+CPU有限DAG v4从实际退出接续；原源代码冻结e86dbfbc、模型/事件/面板不变，launcher observer独立于调度进程信号。
+此次退出观察器恢复造成了额外wall延迟，计入实际承接预算；不能把失去退出回执期间的幽灵卡预留记为真实GPU驻留。
 
 
 ## 2026-10-08 同目标跨情境配对设计登记，恢复持续自主推进

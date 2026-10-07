@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-07：Gamma局部控制与剩余误差，转向核验现成教师在T访态的用途
+
+findings§378–380与[同批main原件消费](analyses/calibrated_action_memory_control_20261007.json)保存288新行及1008背景原行、144缓存分解和main四clip/64图范围。
+冻结Gamma在同GT绝对NN下6→22，R2/G20/L4；相对真实动作91只保留17、得5失74，Object/Long零、两个抽屉task占8新增。
+五步平均动作项占MSE下降98.3446%、剩余87.3064%，不能把误差下降当控制已读准或定位唯一编译失败；所有teacher在原训练池，未见video与动态必要性未检验。
+不恢复Gamma/旧Writer/Reader或mean5辅助。继承历史phase实际student-state expert velocity监督的局部正反与未验证expert接手的缺口，
+登记[固定T50接力](designs/teacher_state_handoff_20261007.md)：原144条件共同物理执行原T前50动作，再T_replay/原demo NN各144行。
+两臂均为特权/重放诊断，保留原T109/NN91及预登记失败层；不将接力/union当EMBER、不自动训练纠正模型。
+预计30–60分钟，硬3wall/1完整GPUh/16GiB，0训练/新VLA-native/teacher HDF/held/Test；此处事前登记，实际承接/运行见progress。
+
 ## 2026-10-07：main确认动作Value的控制正例，辨别旧Gamma获取与使用
 
 findings§377与[上批main消费](analyses/privileged_action_memory_control_20261007.json)保存直接288+576原行、4clip/64图及实际source/NN源码。

@@ -1,3 +1,15 @@
+## 2026-10-07 main消费Gamma，登记真实动作教师的T访态接力诊断
+
+main已接回canonical tracked/Git，直接消费1296原行、144缓存的动作误差分解及4clip/64图；findings§379和同批canonical main_consumption保存科学判断。
+Gamma6→22有局部控制作用，但真动作91仅保留17，误差下降98.3446%来自五步平均项，不能恢复“已读准只待写入”的旧Gamma配方。
+findings§380继承state aggregation/SEOD/GOMQ/P-I实际历史，区别初态成功与在学生访态上的教师用途；没有把DAgger当新方法或认定唯一occupancy根因。
+唯一active design为`docs/designs/teacher_state_handoff_20261007.md`：原T144条真实前50动作共同物理重放，之后T_replay与原demo NN各144，共288新行。
+固定50步、原36-task/teacher/scene/seed与完整horizon；0训练/新VLA-native/teacher HDF/held/Test，不用接力或success union充当合法EMBER成绩。
+main已核144原连续轨迹/28264实际动作、全部长度>50且此前无成功；当前仅登记，尚无新环境重放或GPU运行。
+预计30–60分钟，硬实际承接起3wall/1完整GPUh/16GiB，含全部工程/失败/EGL/profile/分析/Git/冻结/临时；重放识别边界与科学停止线见合同。
+推送后交既有实验session01a10a98-6d4b-7d61-b12c-da38a628cb45独占代码/Git；实际承接以其回执和后续本文件为准，main届时停止并发写入。
+整批完成或真实边界一次回main，独立消费并继续完整方法判断；不自动启动纠正训练、新F/Writer/RL或其它cut。最终Owner目标尚未完成，下方active均为历史时点。
+
 ## 2026-10-07 冻结Gamma动作Value批次完成，停止计算并交回窗口
 
 findings§378/canonical索引与唯一root report保存完整288行：bare6→calibrated22，R2/G20/L4，target0→7、support6→15，breadth4→10。

@@ -1,3 +1,12 @@
+## 2026-10-07 检验现成动作教师能否继续T已访问的状态
+
+findings§379–380保存Gamma完整消费和历史依据：6→22仍远弱于真动作91，不能由MSE恢复旧校准；初态NN与T有互补但尚无偏离状态的教师资格。
+唯一active合同为`docs/designs/teacher_state_handoff_20261007.md`：原144条件共同执行T原前50真实动作，再继续原T动作或切换原demo NN，各144行。
+0训练/新VLA-native/held/Test，固定切换点与原控制器、不扩horizon；重放必须对原T109/状态核参照，不筛行追回分数。
+这批只决定是否值得研究该条件教师的纠正监督，不把接力当部署方案，不以局部成功自动晋级新Writer。
+预计30–60分钟，硬实际承接起3wall/1完整GPUh/16GiB；实际承接与tracked/Git归属以progress为准。
+Owner完整性能目标和自主授权保持；下方已结束批次及active文字只为历史时点。
+
 ## 2026-10-07 冻结Gamma有限控制读回完成
 
 唯一calibrated_action_memory_control_20261007按合同完成288行并退役。bare6→calibrated22、R2/G20/L4，demo91仅保持17/91；findings§378保存全部正反与范围。

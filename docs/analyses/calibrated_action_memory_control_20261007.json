@@ -440,5 +440,210 @@
     "Direct indexed action consumption differs from old q modulation of LoRA Value; old122/77 trajectory is not repaired or revived."
   ],
   "dedicated_surfaces_retired": true,
-  "automatic_successor_authorized": false
+  "automatic_successor_authorized": false,
+  "main_consumption": {
+    "evidence_path": "/data1/user/ymdai/ember_runs/calibrated_action_memory_control_20261007/analysis/main_consumption.json",
+    "original_results_read": 1296,
+    "panel_summary": {
+      "bare_endpoint": {
+        "n": 144,
+        "successes": 6,
+        "breadth": 4
+      },
+      "calibrated_value": {
+        "n": 144,
+        "successes": 22,
+        "breadth": 10
+      },
+      "demo_action91": {
+        "n": 144,
+        "successes": 91,
+        "breadth": 34
+      },
+      "source_action0_state_ODE10": {
+        "n": 144,
+        "successes": 0,
+        "breadth": 0
+      },
+      "ControlCalibrated450_seen77": {
+        "n": 144,
+        "successes": 77,
+        "breadth": 26
+      },
+      "T2340_seen109_132plus12": {
+        "n": 144,
+        "successes": 109,
+        "breadth": 34
+      },
+      "MT_seen93": {
+        "n": 144,
+        "successes": 93,
+        "breadth": 30
+      },
+      "G450_seen84": {
+        "n": 144,
+        "successes": 84,
+        "breadth": 28
+      },
+      "F450_seen66": {
+        "n": 144,
+        "successes": 66,
+        "breadth": 24
+      }
+    },
+    "raw_paths": {
+      "bare_endpoint": [
+        "/data1/user/ymdai/ember_runs/calibrated_action_memory_control_20261007/evaluation/bare_endpoint/results.json"
+      ],
+      "calibrated_value": [
+        "/data1/user/ymdai/ember_runs/calibrated_action_memory_control_20261007/evaluation/calibrated_value/results.json"
+      ],
+      "demo_action91": [
+        "/data1/user/ymdai/ember_runs/privileged_action_memory_control_20261007/evaluation/demo_action/results.json"
+      ],
+      "source_action0_state_ODE10": [
+        "/data1/user/ymdai/ember_runs/privileged_action_memory_control_20261007/evaluation/source_action/results.json"
+      ],
+      "ControlCalibrated450_seen77": [
+        "/data1/user/ymdai/ember_runs/control_calibrated_read_write_20261003/control_calibrated_read_write_seen/evaluation/correct144/results.json"
+      ],
+      "T2340_seen109_132plus12": [
+        "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/results.json",
+        "/data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/parent/evaluation/seen12/results.json"
+      ],
+      "MT_seen93": [
+        "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/results.json"
+      ],
+      "G450_seen84": [
+        "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/readouts/G/450/seen144/evaluation/results.json"
+      ],
+      "F450_seen66": [
+        "/data1/user/ymdai/ember_runs/relation_grounded_writer_20261006/readouts/F/450/seen144/evaluation/results.json"
+      ]
+    },
+    "pairing_issues": [],
+    "target24": {
+      "panels": {
+        "bare_endpoint": 0,
+        "calibrated_value": 7,
+        "demo_action91": 63,
+        "source_action0_state_ODE10": 0,
+        "ControlCalibrated450_seen77": 36,
+        "T2340_seen109_132plus12": 62,
+        "MT_seen93": 46,
+        "G450_seen84": 39,
+        "F450_seen66": 24
+      },
+      "gamma_effect": {
+        "R": 0,
+        "G": 7,
+        "L": 0,
+        "net": 7,
+        "churn": 7,
+        "jaccard": 0.0,
+        "retained": [],
+        "gained": [
+          "libero_goal/task_01/state_032",
+          "libero_goal/task_01/state_035",
+          "libero_goal/task_08/state_033",
+          "libero_goal/task_08/state_034",
+          "libero_spatial/task_02/state_032",
+          "libero_spatial/task_02/state_033",
+          "libero_spatial/task_02/state_035"
+        ],
+        "lost": []
+      }
+    },
+    "support12": {
+      "panels": {
+        "bare_endpoint": 6,
+        "calibrated_value": 15,
+        "demo_action91": 28,
+        "source_action0_state_ODE10": 0,
+        "ControlCalibrated450_seen77": 41,
+        "T2340_seen109_132plus12": 47,
+        "MT_seen93": 47,
+        "G450_seen84": 45,
+        "F450_seen66": 42
+      },
+      "gamma_effect": {
+        "R": 2,
+        "G": 13,
+        "L": 4,
+        "net": 9,
+        "churn": 17,
+        "jaccard": 0.10526315789473684,
+        "retained": [
+          "libero_90/task_15/state_035",
+          "libero_90/task_56/state_033"
+        ],
+        "gained": [
+          "libero_90/task_02/state_034",
+          "libero_90/task_02/state_035",
+          "libero_90/task_03/state_032",
+          "libero_90/task_03/state_035",
+          "libero_90/task_11/state_032",
+          "libero_90/task_11/state_033",
+          "libero_90/task_11/state_034",
+          "libero_90/task_11/state_035",
+          "libero_90/task_22/state_032",
+          "libero_90/task_22/state_033",
+          "libero_90/task_22/state_034",
+          "libero_90/task_22/state_035",
+          "libero_90/task_24/state_035"
+        ],
+        "lost": [
+          "libero_90/task_03/state_034",
+          "libero_90/task_15/state_032",
+          "libero_90/task_15/state_034",
+          "libero_90/task_55/state_032"
+        ]
+      }
+    },
+    "action_error_decomposition": {
+      "scope": "post-hoc existing all144 cached actions only; no fitting, model, new control arm or rollout; squared-error decomposition is descriptive not control causation",
+      "conditions": 144,
+      "tasks": 36,
+      "normalization": "2 * (raw - source_q01) / (source_q99 - source_q01 + 1e-6) - 1; original frozen quantiles",
+      "identity": "MSE(pred,gt) = MSE(mean_5(pred),mean_5(gt)) + MSE(pred-mean_5(pred),gt-mean_5(gt)); average within condition then equally across conditions/tasks",
+      "mean": {
+        "bare_endpoint": {
+          "total_mse": 0.10709868964334893,
+          "mean5_mse": 0.09759083153157828,
+          "centered5_mse": 0.009507858111770648,
+          "predicted_within5_energy": 0.002086925873632924
+        },
+        "calibrated_value": {
+          "total_mse": 0.07007474753363604,
+          "mean5_mse": 0.06117976913736337,
+          "centered5_mse": 0.008894978396272695,
+          "predicted_within5_energy": 0.0025080313371299776
+        }
+      },
+      "ground_truth_within5_energy": 0.010850619171295107,
+      "mean_component_fraction_of_improvement": 0.9834463949386636,
+      "calibrated_remaining_mean_fraction": 0.8730644246416577,
+      "interpretation": "The reduction is dominated by the five-step mean. This decomposition does not identify which component caused control gains or establish that within-chunk timing is irrelevant."
+    },
+    "RGB_review": {
+      "tasks": [
+        12,
+        29
+      ],
+      "init_state": 32,
+      "arms": [
+        "bare_endpoint",
+        "calibrated_value"
+      ],
+      "clips": 4,
+      "saved_images": 64,
+      "source_index": "/data1/user/ymdai/ember_runs/calibrated_action_memory_control_20261007/analysis/own_RGB/reviewed.json",
+      "observations": [
+        "calibrated task29 moves the wine bottle upward and near the rack but saved native On remains false; bare task29 also moves the bottle, so it is not immobile.",
+        "calibrated task12 moves the bottle toward the basket and later outside it; saved In remains false. Bare task12 target is approximately stationary."
+      ],
+      "limits": "Only these four existing montages were independently viewed by main; no missing terminal frame, contact, grasp or necessary pose ground truth is inferred."
+    },
+    "decision": "Accept limited Gamma control gain; do not reinstate Gamma training, claim a strong video action reader, isolate arrival causality or locate a unique Compiler failure. Separately register one finite T-visited-state handoff diagnostic to test whether the existing demo-action NN can supply useful corrective-teacher behavior."
+  }
 }

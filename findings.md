@@ -9687,3 +9687,66 @@ batch1024/2048实测4557.86/19466.19转移/s、reserved峰1.104/2.666GiB，采�
 两个EGL卡各6persistent worker并行，launcher272.87/274.98s。独立data1 quota/相关与全个人du/shared、各launch独立双节点回执不覆盖。
 非GPU工程错误/修复与未完整CPU计时在report/ledger如实保留；hard3wall/1GPUh/16GiB未越界，最终wall/峰值/Git/清理/一次main实际消费见completion与delivery回执。
 两节点无ymdai GPU、12worker PID均退出；临时两owner/入口/hooks已退役，89项现有回归与两新合同实际拒绝消费者通过；原frozen/Git/cache/raw/全部费用保留。
+
+## 379. main消费冻结Gamma：动作误差的改善与控制缺口不能互相替代（2026-10-07）
+
+main直接读取两新臂288原行及七个背景面板1008原行，逐condition重算总分、逐task、target/support和成功集合；
+原scene/teacher/语言/env与policy RNG配对无不符。[canonical索引](docs/analyses/calibrated_action_memory_control_20261007.json)
+的main_consumption及同root `analysis/main_consumption.json`保留全部1296行引用、36-task统计和144条件误差分解。
+原T109来自真实132＋12，MT93使用已经纠正的实际路径；没有用执行者汇总替代原件，也没有重跑模型或环境。
+main另直接核Gamma实际双端50槽attention/前5残差和原编译调用，独立审看12/29各init32双臂共4clip/64张已存图，
+不冒称看过执行者全部12clip或完整72full。29校准后向木架方向举瓶而On未成立；12移向篮子后仍在外、In未成立。
+bare29也使瓶子发生位移，不能概括为“裸值全部不动”；保存的末图不等于原生终止帧，contact/grasp仍未知。
+
+6→22、R2/G20/L4确实反驳“Gamma完全没有控制作用”，但不能把这个局部正例解释为已获得充足动作知识。
+相对真实动作91，校准仅保留17、得5、失74；Object/Long仍0，两个抽屉task51/62占20新增中的8条。
+完整旧Writer77和本次22执行图不同，不能相减定位哪个模块损失55条；原GT NN91也不等于可部署Writer的上界。
+本批所有144 teacher都在Gamma原训练池，不能用这组结果支持未见视频迁移；加入Gamma同时带入已学参数与arrival，
+不能隔离动态必要性或arrival的因果贡献。完整强MT与T的对照仍约束最终方法选择。
+
+为解释动作MSE改善的实际内容，main仅在144个既存Value/cache上作正交分解，未新增控制臂或拟合：
+把每个5×7误差分成五步平均动作误差与去均值的五步变化误差，其平方均值严格相加。
+bare总.10709869＝均值.09759083＋变化.00950786；Gamma总.07007475＝均值.06117977＋变化.00889498。
+98.3446%的误差下降来自平均动作项，剩余校准误差87.3064%也属于此项；预测五步变化能量.00208693→.00250803，
+真实动作为.01085062。该分解不证明平均动作修正造成全部闭环增益，更不证明五步内时序不重要。
+task12校准MSE .05524465仍0/4，而task62更高的.10310却4/4；平均误差大小不充分规定控制成败，
+不能据这个数选新mean5辅助、平滑或缩放。误差落在何种状态/方向、动作怎样改变后续检索与物理状态仍未被隔离。
+
+完整机制判断因此是：已有已学读出能产生局部有用控制，但尚未把示范动作中广泛可用的内容可靠带到自身执行。
+原ControlCalibrated的q已通过真实aux与完整FM学习、已调制A/B Value；不能把阴性重新描述为没有信用或未被消费。
+LocalActionGrounded、NativeCorrection、LocalField与VideoFunctional的实际作用和学习阴性继续降低相近修补的优先级。
+不恢复Gamma/旧Writer、不再围绕其MSE延窗或小扫，也不把本批结果归为唯一Reader或Compiler根因。
+
+## 380. 纠正教师必须在学生访态上仍可用：一次固定接力决定是否投入（2026-10-07）
+
+现有跨episode FM已提供同task不同场景的真实动作目标，不能说EMBER完全没有反馈学习；
+但该监督采样于成功示范状态，并不保证访问学生偏离后的状态。若考虑后继训练用条件反馈
+`a*(s,V)`，首先要判断现成教师在这些状态是否真的能继续任务，不能由其初态91/144自动认证。
+它的潜在作用是给学生实际执行状态上的生成LoRA提供功能误差；只有这样的标签可靠，才有理由研究如何由
+视频/语言取得相应控制内容、通过真实FM学入单套LoRA。此处没有认定occupancy是唯一根因，也没有登记这段学习。
+
+历史并非空白。main直接读Git966353e的`functional_adaptation/phase_decoder_panels.py`：
+state aggregation确实取projected decoder自身rollout的30个状态，再查询task expert的FM velocity；
+所以“从学生状态取监督”不是本轮新发明。那轮更新privileged-code decoder、没有完整视频Writer学习，
+也没有从这些状态实际切换expert检验恢复。该取样12/30来自成功轨迹、held decoder 44/44→54/47仍Goal/Long零的
+正反边界保持。SEOD/GOMQ主要查询成功expert occupancy，P/I监督来自预建几何成功轨迹；
+不能把它们与学生偏离状态的真实继续控制混为一项已验证能力，也不能因差异存在便自动支持新投入。
+
+当前真动作NN与T有具体但不充分的互补：T109/NN91，R71、NN得20失38；target24得19失18，support12得1失20。
+因此唯一新问题是这20条潜在补足能否在**同一T已经执行后**仍然使用，同时付出多少原成功损失。
+选择[固定50步接力合同](docs/designs/teacher_state_handoff_20261007.md)：原36任务/init32–35全部144条件，
+共同物理重放原T实际前50动作，再分别继续T原动作或切换原demo-action绝对1-NN，两臂共288新行。
+切换点固定十次五步执行、不按结果扫描；144原轨迹全部长于50、无此前成功，因而没有事后选择可切换案例。
+保留从初态NN91、T109及原T失败35/成功109、T失败且NN成功20/两者都失败15的预登记描述层。
+没有中途sim-state覆盖、重置、额外horizon、在线新T forward或新控制器拟合。
+
+重放参照须与原T109和第50步真实状态一起核对；若合法重放无法支持既定对比，报告识别限制而不补动作、筛行或追分。
+若固定教师从T访态取得有覆盖的新增且能保持较多能力，只支持其在此早期访态域作为训练教师的有限用途，
+不等于纠正监督可学、未见视频泛化、静态LoRA编译或合法EMBER已成立。若大幅退化或只剩少数可挑正例，
+降低并停止该NN纠正教师假说，不改距离/phase/平滑/cut继续保护它；两边共同失败也不证明所有反馈学习不可能。
+这批不将接力/union/router作为方法成绩，不启动新F/Writer、RL、400/controls/Test或自动后继。
+
+本批预计30–60分钟，硬实际承接起3wall小时/1完整GPU小时/16GiB新增峰，依据上轮288闭环与真实EGL成本，
+新重放工程不确定性单列。0训练/新VLA-native/teacher HDF/held/Test；只使用既存T raw、原scene及当前审计36-task动作缓存。
+主讨论已直接核144原T continuous共28264实际动作及condition/scene/长度；这不是新环境重放通过的声明。
+实验session独占工程/Git，整批完成或真实边界回main后再决定完整学习方法；Owner最终目标和自主授权持续。

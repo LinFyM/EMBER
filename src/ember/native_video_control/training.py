@@ -66,6 +66,13 @@ class Session:
     frame_chunk: int
 
 
+def frame_chunk_layout(args, world_size):
+    chunks = getattr(args, "frame_chunks_per_rank", None) or (args.frame_chunk,) * world_size
+    if len(chunks) != world_size or any(value < 1 for value in chunks):
+        raise ValueError("frame chunks must give one positive physical size per rank")
+    return tuple(chunks)
+
+
 def prepare(args) -> Session:
     git = frozen_git()
     spec = specification()
@@ -74,6 +81,7 @@ def prepare(args) -> Session:
     if args.kind != "formal" and args.arm != "V":
         raise ValueError("only the registered V engineering branch exists")
     context = initialize_distributed(require_numa=True, defer_process_group=True)
+    chunks = frame_chunk_layout(args, context.world_size)
     if os.environ.get("NCCL_P2P_DISABLE") != "1":
         raise ValueError("explicit BCI NCCL contract is required")
     torch.set_num_threads(args.cpu_threads)
@@ -90,7 +98,8 @@ def prepare(args) -> Session:
     topology = {"host": socket.gethostname(), "world_size": context.world_size,
                 "visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"), "nccl_p2p_disable": "1",
                 "ranks": gather(local, context.world_size), "condition_assignment": "whole_condition_cost_balanced",
-                "microbatch": args.microbatch, "frame_chunk": args.frame_chunk}
+                "microbatch": args.microbatch, "frame_chunk": args.frame_chunk,
+                "frame_chunks_per_rank": list(chunks)}
     origin = {"kind": "smoke" if args.kind != "formal" else "formal", "source": runtime.source,
               "mt_checkpoint": str(MT_WEIGHTS), "training_git": git,
               "fresh_optimizer": True, "lora": runtime.lora.to_dict()}
@@ -109,7 +118,7 @@ def prepare(args) -> Session:
             raise ValueError("attempt path already has a launch contract; choose a new retained attempt")
         write_json_atomic(path, contract)
     return Session(spec, context, data, runtime, optimizer, parameters, output, origin, contract,
-                   args.microbatch, args.frame_chunk)
+                   args.microbatch, chunks[context.rank])
 
 
 def one_update(session, step, *, optimize=True):

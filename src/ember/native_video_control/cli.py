@@ -14,6 +14,7 @@ def main():
     parser.add_argument("--kind", choices=("formal", "smoke", "profile"), default="formal")
     parser.add_argument("--microbatch", type=int, default=14)
     parser.add_argument("--frame-chunk", type=int, default=16)
+    parser.add_argument("--frame-chunks-per-rank", type=lambda x: tuple(map(int, x.split(","))))
     parser.add_argument("--cpu-threads", type=int, default=4)
     parser.add_argument("--stop-after", type=int, default=128)
     parser.add_argument("--resume", type=Path)

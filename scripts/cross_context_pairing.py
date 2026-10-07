@@ -21,6 +21,8 @@ def main():
     parser.add_argument("--microbatch", type=int, default=28)
     parser.add_argument("--frame-chunk", type=int, default=32)
     parser.add_argument("--cpu-threads", type=int, default=4)
+    parser.add_argument("--profile-skip", type=int, choices=(0,1,2), default=0,
+                        help="Resume only unused physical profile calls after a recorded interface failure.")
     parser.add_argument("--devices", nargs="+", default=["cuda:0"])
     parser.add_argument("--slot", choices=("official", "train"), default="official")
     args = parser.parse_args()
@@ -33,8 +35,16 @@ def main():
         from ember.cross_context_pairing.training import execute
         execute(spec, args)
     else:
-        from ember.cross_context_pairing.readout import materialize
-        materialize(spec, args)
+        from ember.cross_context_pairing.readout import build_banks, SOURCE_AUDIT
+        from ember.pi05_eval_contract import git_state
+        from ember.writer.materialization_workers import execution_devices
+        manifests = build_banks(args.asset_root, args.spec,
+            "Parent" if args.arm == "parent" else args.arm,
+            "validation" if args.slot == "official" else "source9",
+            devices=execution_devices(devices=args.devices), frame_chunk=args.frame_chunk,
+            cpu_threads=args.cpu_threads, materialization_git=git_state(Path(__file__).resolve().parents[1]),
+            source_audit=SOURCE_AUDIT)
+        print(*manifests, sep="\n", flush=True)
 
 
 if __name__ == "__main__":

@@ -5,7 +5,11 @@
 实际承接2026-10-07T16:11:10Z，硬截止2026-10-08T04:11:10Z；预计6–10wall小时/15–18GPUh，硬12wall/20完整GPUh/新增峰96GiB。
 唯一root为/data1/user/ymdai/ember_runs/cross_context_pairing_20261008，未发现同名已运行或已完成批次。
 strg01独立data1软配额2TiB、个人实占约1.36TiB、共享余量均已核，可承接96GiB峰值；初次原始回执保留于root/launch。
-两节点现场空闲计数触发全项目6卡上限，尚未launch；工程隔离树为EMBER-cross-context-pairing-dev，分支codex/cross-context-pairing-20261008。
+两节点现场空闲计数触发全项目6卡上限；工程隔离树为EMBER-cross-context-pairing-dev，分支codex/cross-context-pairing-20261008。
+训练接口已集成推送6cc3e87c并clean detached冻结。首次GPU02/0因现场显存不足拒绝，0模型/0GPU费用；
+2026-10-07T16:45:17Z实际在GPU02/4启动最长合法条件的0更新profile（launch0002），原始独立准入/命令/计费回执在root/launch。
+CPU核45来源及全216两臂事件、48384实际query索引、首triplet六batch RGB/state/action/padding一致；九项官方init0/1存在、horizon400。
+固定54/point拆三教学scene×18行以符合canonical task/state唯一键，18teacher条件各复用三receiver；总1762/43full/10固定clip不变。
 按合同闭环恢复、真实query/tau/noise配对、两臂216更新与1762固定行；不在工程完成处等待main审批。
 只在整批完成或真实科学/有效性/预算边界一次回报并交回窗口；旧批均不恢复。
 

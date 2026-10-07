@@ -647,6 +647,11 @@ def inspect_bank(*, manifest_path: Path, source: Mapping, task_keys: tuple,
     try:
         path = manifest_path.resolve()
         bank = read_json(path)
+        if bank.get("cross_context_pairing") is not None:
+            from ember.cross_context_pairing.readout import inspect
+
+            return inspect(bank, path, source, task_keys, evaluation_role,
+                           require_formal, task_init_state_ids)
         if bank.get("reexpression_panel") is not None:
             from .reexpression import inspect
 
@@ -802,6 +807,10 @@ def episode_evidence(bank: Mapping, task: Mapping, episode: Mapping) -> dict:
         evidence["selected_control_arm"] = bank["selected_control"]["arm"]
         if episode.get("video_global_task_id") is not None:
             evidence["video_global_task_id"] = episode["video_global_task_id"]
+    if bank.get("cross_context_pairing") is not None:
+        from ember.cross_context_pairing.readout import evidence_fields
+
+        evidence.update(evidence_fields(bank, task, episode))
     return evidence
 
 

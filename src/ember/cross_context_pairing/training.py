@@ -13,9 +13,10 @@ import torch.distributed as dist
 
 from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
 from ember.operator_writer.credit import gradient_groups, one_job
-from ember.operator_writer.run import build_runtime, frozen_git, gather, optimizer_for
+from ember.operator_writer.run import build_runtime, gather, optimizer_for
 from ember.operator_writer.specification import SCHEMA as PARENT_SCHEMA, STAGE as PARENT_STAGE
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
+from ember.pi05_eval_contract import git_state
 from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import initialize_distributed, initialize_deferred_process_group, seed_everything
 from ember.writer.function_credit import sample_flow_randomness
@@ -99,7 +100,11 @@ def _job(runtime, data, event, args, output, *, save_randomness):
 def execute(spec, args):
     from .data import PairingData
 
-    git = frozen_git()
+    from ember.writer.materialization import frozen_authority
+
+    git = git_state(Path(__file__).resolve().parents[3])
+    if not frozen_authority(git):
+        raise ValueError("pairing execution requires clean pushed detached source")
     context = initialize_distributed(require_numa=True, defer_process_group=True)
     if not 1 <= context.world_size <= 6 or os.environ.get("NCCL_P2P_DISABLE") != "1":
         raise ValueError("pairing requires one-node NUMA/NCCL physical topology")
@@ -217,7 +222,7 @@ def _profile(runtime, data, args, output, context, optimizer):
     events = [data.event(u,t) for u in range(216) for t in data.tasks_for_step(u)]
     event = max(events, key=lambda row:data.videos.frame_counts(row["task"], row["teacher_demo"])[1])
     records = []
-    for microbatch, frame_chunk in ((14,16),(28,32),(28,64)):
+    for microbatch, frame_chunk in ((14,16),(28,32),(28,64))[args.profile_skip:]:
         optimizer.zero_grad(set_to_none=True)
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats(runtime.device)

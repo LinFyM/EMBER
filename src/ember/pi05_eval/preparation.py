@@ -336,7 +336,7 @@ def _registered_trajectory_capture(
         return None, None
     path = path.resolve()
     manifest = read_json(path)
-    if manifest.get("study_id") in {"operator_read_write_learning_20260928", "operator_public_beta_diagnosis_20260929", "operator_public_function_pilot_20260929", "operator_seen_task_diagnosis_20260929", "operator_selected_validation_20260929", "operator_change_clock_learning_20260930", "operator_change_clock_continuation450_20260930", "operator_joint_public_fresh_20260930", "operator_context_value_fresh_20261001", "operator_context_value_continuation900_20261001", "operator_context900_seen_task_diagnosis_20261001", "operator_context900_public_validation_20261001", "operator_self_conditioned_native_fresh_20261001", "conditional_read_write_fresh_20261001", "conditional_read_write_continuation900_20261002", "conditional_support_diversity_pilot_20261002", "conditional_A_reexpression_diagnostic_20261002", "native_prefix_change_value_20261002", "control_calibrated_read_write_20261003"}:
+    if manifest.get("study_id") in {"operator_read_write_learning_20260928", "operator_public_beta_diagnosis_20260929", "operator_public_function_pilot_20260929", "operator_seen_task_diagnosis_20260929", "operator_selected_validation_20260929", "operator_change_clock_learning_20260930", "operator_change_clock_continuation450_20260930", "operator_joint_public_fresh_20260930", "operator_context_value_fresh_20261001", "operator_context_value_continuation900_20261001", "operator_context900_seen_task_diagnosis_20261001", "operator_context900_public_validation_20261001", "operator_self_conditioned_native_fresh_20261001", "conditional_read_write_fresh_20261001", "conditional_read_write_continuation900_20261002", "conditional_support_diversity_pilot_20261002", "conditional_A_reexpression_diagnostic_20261002", "native_prefix_change_value_20261002", "control_calibrated_read_write_20261003", "cross_context_pairing_20261008"}:
         from ember.operator_writer.bank import registered_capture
 
         return registered_capture(args, tasks, output_dir, path, manifest, task_subset)
@@ -412,7 +412,12 @@ def _selected_tasks_and_capture(
     source_sft_requested: bool, output_dir: Path, repo_root: Path,
 ) -> tuple[tuple[Any, ...], dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
     installed_tasks = _select_init_states(args, installed_tasks)
-    subset_tasks, subset = _task_subset_tasks(args, installed_tasks, adapter_kind=adapter_kind)
+    if getattr(args, "cross_context_pairing", False):
+        from ember.cross_context_pairing.readout import select_source_tasks
+
+        subset_tasks, subset = select_source_tasks(args, installed_tasks)
+    else:
+        subset_tasks, subset = _task_subset_tasks(args, installed_tasks, adapter_kind=adapter_kind)
     tasks, capture = _occupancy_capture_tasks(args, subset_tasks, output_dir=output_dir,
                                              adapter_kind=adapter_kind)
     stage = _stage_predicate_capture(args, capture)
@@ -438,7 +443,13 @@ def _prepared_payload(
     authorities = load_evaluation_authorities(args.config, repo_root)
     _explicit_diagnostic_states(args)
     formal_count = int(authorities.config["environment"]["fixed_init_state_count"])
-    if args.mode == "formal" and args.state_count != formal_count and args.role != "operator_seen_training36":
+    pairing_source = False
+    if getattr(args, "cross_context_pairing", False):
+        from ember.cross_context_pairing.readout import source_request
+
+        pairing_source = source_request(args)
+    if (args.mode == "formal" and args.state_count != formal_count
+            and args.role != "operator_seen_training36" and not pairing_source):
         raise Pi05EvaluationError("formal PI05 evaluation requires all fixed states")
     if (
         args.mode == "screen"
@@ -508,7 +519,10 @@ def _prepared_payload(
         contract["demonstration_comparison_scene"] = {
             "root": adapter["scene_root"], "manifest": adapter["scene_manifest"]}
     if adapter is not None and adapter.get("kind") == "operator_read_write_lora_bank":
-        if adapter.get("legacy_test_initialization") is not None:
+        if (adapter.get("cross_context_pairing") or {}).get("slot") == "source9":
+            # Ordinary reset/set_init_state/dummy10 is the real official source entry.
+            contract["cross_context_pairing_initialization"] = "official_source_init_dummy10"
+        elif adapter.get("legacy_test_initialization") is not None:
             if args.role != "test" or adapter.get("scene_manifest") is not None:
                 raise Pi05EvaluationError("operator legacy Test cannot register a sealed scene")
             contract["operator_read_write_legacy_test"] = {

@@ -111,7 +111,7 @@ def one_job(runtime, data, event: dict, microbatch: int,
     native_norm = native_credit(native)
     return {"task": event["task"], "teacher_demo": event["teacher_demo"],
             "visit": event["visit"], "weight": event.get("weight", 1.),
-            **({key: event[key] for key in ("group", "original_task")} if "group" in event else {}),
+            **{key: event[key] for key in ("group", "original_task") if key in event},
             "queries": len(event["queries"]), "query_demos": [row["demo"] for row in event["queries"]],
             "query_frames": [row["frame"] for row in event["queries"]], "flow_seed": event["flow_seed"],
             "raw_frames": raw, "sampled_frames": sampled, **aux_record, "flow_loss": credit["flow_loss"],

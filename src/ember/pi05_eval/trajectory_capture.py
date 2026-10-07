@@ -107,6 +107,11 @@ def save_capture(
         f"state_{int(slot['init_state_id']):03d}.pt"
     )
     level = str(slot["occupancy_capture_level"])
+    captured_prefixes = tuple(slot["replay_executed_prefixes"])
+    if capture.get("cross_context_pairing") is not None:
+        from ember.cross_context_pairing.readout import actual_prefixes
+
+        captured_prefixes = actual_prefixes(slot)
     common = {
         "suite": task["suite"],
         "task_id": int(task["task_id"]),
@@ -115,7 +120,7 @@ def save_capture(
         "steps": int(slot["steps"]),
         "policy_noise_seeds": tuple(slot["policy_noise_seeds"]),
         "action_chunks": tuple(slot["replay_action_chunks"]),
-        "executed_action_prefixes": tuple(slot["replay_executed_prefixes"]),
+        "executed_action_prefixes": captured_prefixes,
         "replan_steps": tuple(slot["replay_replan_steps"]),
     }
     if "pre_exploration_normalized_means" in slot:

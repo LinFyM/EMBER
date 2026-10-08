@@ -1,3 +1,12 @@
+## 2026-10-09 新专家完整设计提示词与阅读包已重写
+
+Owner要求新的完整架构、数学推导与详细规划；[唯一当前prompt](docs/review_materials/20261008_method_rethink/EXPERT_PROMPT_FRESH.md)已按最新排除条件重写。
+[入口](docs/review_materials/20261008_method_rethink/README.md)和[讨论衔接](docs/review_materials/20261008_method_rethink/DISCUSSION_BRIEF.md)区分当前边界、历史认可与未实施方案，
+[Owner原话](docs/review_materials/20261008_method_rethink/OWNER_FOLLOWUP_REQUESTS.md)追加第6、7节，第七轮完整粘贴原文作为已否决历史归档。
+新委托要求对真实特征、编译算子、各层LoRA、自身hidden／动作、标签与梯度作具体推导，再给完整循环、资源与失败分支；不指定新架构。
+第一阶段性能优先、合法自身反馈和共享监督保留；轨迹准备后微调无例外，正式400个教学条件的独立成本须明确核算。
+main持有tracked/Git窗口，本次仅文档与远程交付，Owner自行发送prompt；没有active design、新代码、模型、采集、GPU任务或对外消息。
+
 ## 2026-10-09 Owner否决轨迹准备后微调的完整候选形式
 
 第七轮专家将物理轨迹读取、短步动力学和真实实践连接到局部动作监督／完整FM，再直接优化最终LoRA；该完整方案未实施。

@@ -3,6 +3,13 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-09：新专家完整方法、数学与推进规划委托
+
+Owner要求重写提示词，让新专家完整理解要求并独立设计；[唯一当前prompt](review_materials/20261008_method_rethink/EXPERT_PROMPT_FRESH.md)已突出轨迹准备后微调排除条件。
+阅读入口与讨论衔接按七轮意见和最新边界更新；[第七轮完整回复](review_materials/20261008_method_rethink/EXPERT_RESPONSE_ROUND7.md)按Owner提供原文归档，明确未实施且形式已否决。
+委托要求实际特征—算子—各层LoRA—自身执行—训练信用的推导、具体任务与伪代码，以及按依赖／证据／成本形成的详细规划和失败分支。
+这次只交付讨论材料，没有新方法结果、active design或实验；专家由Owner自行联系，旧提示词版本由Git保留。
+
 ## 2026-10-09：Owner排除轨迹数据准备后微调路线
 
 第七轮进一步将教学物理轨迹、动力学与真实尝试组织成有效动作经验，再以局部前缀监督／完整FM直接训练最终LoRA；未实施。

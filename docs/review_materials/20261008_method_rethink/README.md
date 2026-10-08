@@ -1,44 +1,46 @@
-# EMBER 专家讨论归档：2026-10-08方法重思
+# EMBER 新专家入口：视频到LoRA编译的完整设计
 
-**2026-10-09状态：本轮委托已结束，相关主线被Owner否决。** 任何先准备动作轨迹数据、再微调得到最终LoRA的路线都不接受，
-包括经过学习的数据生成器与真实实践采集；下面的认可、问题和提示词只代表当时，不构成当前方法或新委托。
-最新边界见[Owner要求](../../current_owner_requirements.md)，裁决与责任见[findings](../../../findings.md)§406，状态见[progress](../../../progress.md)。
+更新于2026-10-09。Owner要求新专家充分理解最新边界与已有证据，独立设计完整方法，给出具体数学推导及详细推进规划。
+[EXPERT_PROMPT_FRESH](EXPERT_PROMPT_FRESH.md)是唯一当前提示词，旧版本由Git保留。本目录是讨论与证据入口，不是active design，不授权实验。
 
-原包更新于2026-10-08，纳入第六轮架构、主讨论审阅和当时owner澄清。
-本目录是研究讨论的永久归档与阅读入口，不是active design，也不授权启动新实验。
+## 先明确方法边界
 
-**2026-10-08历史委托：选定一套立足现有数据、经过实质推导、能够完整实施的主设计，并给首批小而完整学习方案，
-使这一轮回答足以支持冻结科学合同、进入实施。** 整个教学—实践—固定LoRA过程替代Writer；
-视频必须贡献实际有用的操作知识，不能以形式读取掩盖额外任务内训练。第一阶段先超过强MT、不前置全部视频controls的原则保持。
-Owner基本接受教学引导实践、发现有效行为再学进LoRA的方向，没有逐项接受第六轮模块、目标或规模。
+**任何先准备动作轨迹数据，再通过微调得到最终LoRA的路线都不接受。** 恢复、合成、搜索、规划、自身真实采集，
+以及可学习数据准备器、交错采集／微调、先生成后末端微调，都不豁免。性能更好或视频确有增益也不能改变这个判定。
+共享Writer训练时使用合法动作／功能监督允许；面对新教学条件构造动作训练集后拟合最终LoRA不允许。
+自身实践和反馈仍可帮助视频理解与参数编译，不据此另设单网络、单次前向或全面禁止梯度的限制。
+
+第五至第七轮“发现有效行为再直接训练LoRA”的主线已因上述形式被否决，未实施的完整组合不记作实验阴性。
+此前材料中的“基本接受”“当前方案”“可以实施”只代表原时点。新专家应独立设计，不负责补齐或维护这些被否决的模块。
 
 ## 建议阅读顺序
 
-1. [最新架构审阅](ARCHITECTURE_REVIEW.md)：第六轮具体建议、主讨论认可、四条待补连接、实际代码/数据入口和本轮交付目标。
-2. [第六轮架构正文](EXPERT_RESPONSE_ROUND6.md)和[owner原话与实际后续请求](OWNER_FOLLOWUP_REQUESTS.md)第4、5节：
-   理解刚刚讨论的主设计及最新核心，不能只根据审阅摘要推断专家原意。
-3. [讨论衔接与最新边界](DISCUSSION_BRIEF.md)：目标、原机制、历史正反证据和六轮意见的变化；
-   旧“零交互/无奖励”规则按历史解释。
-4. [长期要求](../../current_owner_requirements.md)、[概念](../../concept.md)、[当前状态](../../../progress.md)：
-   最新信息边界、科研原则、职责及授权。当前无新active design；早期阶段条款只解释对应实验。
-5. [历史推理路线](../20261007_research_reassessment/HISTORY_MAP.md)、
-   [实际T/C机制](../20261007_research_reassessment/MECHANISM.md)、
-   [核心证据](../20261007_research_reassessment/EVIDENCE.md)：建立完整历史，不只对上一版候选做局部修补。
-   与所提方法最近似的路线，再沿设计、Git和原行索引核对。
-6. 需要理解建议如何改变时，读[第一轮](../20261007_research_reassessment/EXPERT_RESPONSE.md)、
-   [第二轮](../20261007_research_reassessment/EXPERT_RESPONSE_ROUND2.md)、
-   [第三轮](../20261007_research_reassessment/EXPERT_RESPONSE_ROUND3.md)、[第四轮](EXPERT_RESPONSE_ROUND4.md)及[第五轮](EXPERT_RESPONSE_ROUND5.md)。
+1. [当前完整提示词](EXPERT_PROMPT_FRESH.md)、[Owner原话第6、7节](OWNER_FOLLOWUP_REQUESTS.md)，理解排除条件与本次交付要求。
+2. [长期要求](../../current_owner_requirements.md)、[概念](../../concept.md)、[AGENTS](../../../AGENTS.md)及[当前状态](../../../progress.md)，
+   理解信息来源、编译与执行边界、数据／评测合同和授权。旧条款按其时点解释，最新Owner表达优先。
+3. [讨论衔接](DISCUSSION_BRIEF.md)，区分现有资产、关键正反证据、七轮专家建议和实际实施边界。
+4. [历史图谱](../20261007_research_reassessment/HISTORY_MAP.md)、[T/C实际机制](../20261007_research_reassessment/MECHANISM.md)、
+   [原件入口](../20261007_research_reassessment/EVIDENCE.md)及[研究历史](../../research_history.md)。
+   沿索引核对与新候选最接近的完整论证、修订和原件，不必无差别重读所有历史。
+5. 需要核对历史建议原意时，读[第一轮](../20261007_research_reassessment/EXPERT_RESPONSE.md)、
+   [第二轮](../20261007_research_reassessment/EXPERT_RESPONSE_ROUND2.md)、[第三轮](../20261007_research_reassessment/EXPERT_RESPONSE_ROUND3.md)、
+   [第四轮](EXPERT_RESPONSE_ROUND4.md)、[第五轮](EXPERT_RESPONSE_ROUND5.md)、[第六轮](EXPERT_RESPONSE_ROUND6.md)、[第七轮完整原文](EXPERT_RESPONSE_ROUND7.md)。
+   [第六轮主讨论审阅](ARCHITECTURE_REVIEW.md)保留当时判断，其认可不构成现在的方案约束。
 
-[该轮完整提示词](EXPERT_PROMPT_FRESH.md)只保留历史委托，不再直接用于新对话。
-原[EXPERT_PROMPT](EXPERT_PROMPT.md)是第四轮的历史请求，保留原文，不承担当前委托。
-此前的新对话提示词版本由Git保存，不再建立并行的“最新”文件。
+## 本次希望得到的结果
 
-## 归档边界
+一套有明确方法选择的完整架构，贯通共享训练、教学与实践的参数编译、最终固定策略执行。
+数学须落实到实际特征、算子、各层A/B、真实自身hidden与动作、标签和梯度消费者；区分可表示、可学到、可迁移。
+给出训练与编译伪代码，用一个现有任务贯通，并说明相对最近似历史方法改变了什么、仍需检验什么。
 
-- 第四、第五轮回复和owner已发送的后续请求按原文归档；第六轮保留架构、训练、规划与困难处理正文，略去末尾总结句。
-- [架构审阅](ARCHITECTURE_REVIEW.md)是主讨论判断，不能当作专家已经承认的结论；候选设计、成本估计和首批规模均未执行。
-- 讨论衔接由主讨论整理，明确区分事实、专家假说、主讨论判断与owner要求；它不代替原文或原始证据。
-- 旧会话的专用引文标记可能无法在新会话解析；使用正文Git链接、上述证据包与论文原文。
-- 远程材料包含设计、代码身份、主要指标及可导出的原行，并不包含全部模型、数据、轨迹或大张量。
-  依赖缺失材料的判断须标明未核实；不能声称重新跑过实验。
-- 历史Test和shuffled/reversed封存结果不用于新方法设计或选点；旧协议分数不与当前协议混排。
+详细规划从小而完整的学习／闭环循环开始，按依赖说明产物、判断分支、wall-clock／GPU小时／存储、扩大及停止条件。
+分别计算共享训练、单condition编译／实践和最终评估成本，不能用8次任务适应代替正式400个不同教学条件。
+首批合同是待主讨论科学审阅的草案，不是直接实验授权；专家由Owner自行联系，后续实现由实验session承接。
+
+## 原件与可访问范围
+
+第七轮使用Owner提供的完整文本归档；第六轮保存架构、训练、规划与困难处理正文，略去末尾总结句，其余轮次保持原存档范围。
+讨论衔接及审阅是主讨论整理，不替代专家原文或实验原件。旧专家建议中的实施指令均不直接执行。
+远程材料有设计、代码身份、统计与可导出原行，不包含全部模型、数据、轨迹或大张量。缺失材料须明确，不假称重新核对或运行。
+历史Test及shuffled／reversed封存结果不反哺新设计或选点，不跨协议混排分数。
+原[EXPERT_PROMPT](EXPERT_PROMPT.md)只保留第四轮历史请求，当前委托统一使用[EXPERT_PROMPT_FRESH](EXPERT_PROMPT_FRESH.md)。

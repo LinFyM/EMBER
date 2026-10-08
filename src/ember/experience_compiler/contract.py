@@ -39,6 +39,11 @@ def condition_seed(*coordinates: int, domain: int = 0) -> int:
     return ((int(values[0]) << 32) | int(values[1])) & ((1 << 63) - 1)
 
 
+def query_seed(seed: int, position: int) -> int:
+    """Independent query root in LIBERO/NumPy's actual uint32 seed domain."""
+    return int(np.random.SeedSequence([seed, position, 0xA5DE]).generate_state(1)[0])
+
+
 def training_tasks(asset_root: Path = ASSET_ROOT):
     """Only metadata for the fixed 24+12 allowlist; no HDF5 labels are opened."""
     return load_learning_tasks(Path(asset_root), TASKS36, role="train",

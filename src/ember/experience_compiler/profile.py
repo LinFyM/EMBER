@@ -18,6 +18,7 @@ from .data import QueryData
 from .interaction import Chain, Runner, cpu_state
 from .learning import gradient_groups
 from .runtime import Runtime
+from .contract import query_seed
 
 
 def measure(runtime, label, function):
@@ -105,7 +106,7 @@ def profile_teaching(runtime, data, rows):
     long_teacher = runtime.teacher(task_id, demo)
     raw = data.videos.load(task_id, demo)
     tokens, mask, _ = runtime.tokenizer([data.tasks[task_id].authority.language])
-    for chunk in (8, 16, 32):
+    for chunk in dict.fromkeys((8, 16, 32, 64, 128, len(raw.frames))):
         def native_read():
             with autocast(runtime.device):
                 return read_frozen_teacher_features(runtime.policy, runtime.mt, runtime.probe,
@@ -119,7 +120,7 @@ def profile_teaching(runtime, data, rows):
     long_batch = data.query_batch(long_event, runtime.processor)
     long_credit = fm_credit(runtime, long_chain.states, long_batch, seed=long_event.seed,
                             microbatch=best(rows, 'FM')['value'])
-    for chunk in (8, 16, 32):
+    for chunk in dict.fromkeys((8, 16, 32, 64, 128, len(raw.frames))):
         runtime.compiler.reader.chunk = chunk
         record, _ = measure(runtime, f'learned_frame_chunk{chunk}',
                              lambda: replay_backward(runtime, long_teacher, long_chain, long_credit))
@@ -138,19 +139,21 @@ def profile_teaching(runtime, data, rows):
     return long_event, long_teacher, dict(task_id=task_id, demo=demo, raw_frames=length, sampled_frames=len(raw.frames))
 
 
-def profile_actual(runtime, runner, event, teacher, batch, rows):
+def profile_actual(runtime, runner, event, teacher, batch, rows, destination):
     # Actual open-ended practice: the implementation imposes no J menu.
     task = next(t for t in runner.contract['tasks'] if t['global_task_id'] == event.task_id)
     record, chain = measure(runtime, 'actual_adaptation',
         lambda: runner.adapt(task, teacher, event.seed, (*event.query_states2, 32, 33, 34)))
     rows.append(dict(record, category='adaptation', compilation=chain.metrics))
     queries = []
+    retain_profile_chain(destination, chain, queries)
     for i, state_id in enumerate(event.query_states2):
         record, query = measure(runtime, 'actual_SDE_query',
-            lambda state_id=state_id, i=i: runner.query(task, state_id, chain.states[-1], event.seed + i + 1))
+            lambda state_id=state_id, i=i: runner.query(task, state_id, chain.states[-1], query_seed(event.seed, i)))
         rows.append(dict(record, category='SDE_query', environment_steps=query['row']['environment_steps'],
                          success=query['row']['success']))
         queries.append(query)
+        retain_profile_chain(destination, chain, queries)
     returns = [int(q['row']['success']) for q in queries]
     if any(returns):
         for micro in (4, 8, 16, 32):
@@ -159,7 +162,7 @@ def profile_actual(runtime, runner, event, teacher, batch, rows):
             rows.append(dict(record, category='PG', value=micro))
     credit = fm_credit(runtime, chain.states, batch, seed=event.seed, microbatch=best(rows, 'FM')['value'])
     if chain.endpoints:
-        for chunk in (16, 32, 64):
+        for chunk in dict.fromkeys((16, 32, 64, 128, len(chain.records))):
             runtime.compiler.encoder.chunk = chunk
             record, _ = measure(runtime, f'experience_chunk{chunk}',
                 lambda: replay_backward(runtime, teacher, chain, credit))
@@ -203,11 +206,9 @@ def profile(args):
     init_behavior, warm = profile_initial(runtime, teacher, event, batch)
     rows = profile_fm(runtime, event, teacher, batch)
     long_event, long_teacher, longest = profile_teaching(runtime, data, rows)
-    chain, queries, returns = profile_actual(runtime, runner, event, teacher, batch, rows)
-    retain_profile_chain(args.output / 'short_condition', chain, queries)
+    chain, queries, returns = profile_actual(runtime, runner, event, teacher, batch, rows, args.output / 'short_condition')
     long_batch = data.query_batch(long_event, runtime.processor)
-    long_chain, long_queries, long_returns = profile_actual(runtime, runner, long_event, long_teacher, long_batch, rows)
-    retain_profile_chain(args.output / 'long_condition', long_chain, long_queries)
+    long_chain, long_queries, long_returns = profile_actual(runtime, runner, long_event, long_teacher, long_batch, rows, args.output / 'long_condition')
     if runner.total_environment_steps > 12000:
         raise RuntimeError('disposable profile exceeded its real environment-step budget')
     pg_observed = any(returns + long_returns)

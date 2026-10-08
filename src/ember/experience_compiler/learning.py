@@ -21,6 +21,7 @@ from ember.writer.runtime import autocast
 from .credit import fm_credit, pg_credit, pg_surrogate, surrogate
 from .interaction import Chain, Runner, cpu_state
 from .runtime import Runtime
+from .contract import query_seed
 
 
 class ValueBaseline(nn.Module):
@@ -80,8 +81,7 @@ def one_condition(runtime, data, runner, baseline, event, args):
         task = next(t for t in runner.contract['tasks'] if t['global_task_id'] == event.task_id)
         chain = runner.adapt(task, teacher, event.seed, event.query_states2, masked=event.masked_experience)
         for position, state_id in enumerate(event.query_states2):
-            query_seed = int(__import__('numpy').random.SeedSequence([event.seed, position, 0xA5DE]).generate_state(1)[0])
-            queries.append(runner.query(task, state_id, chain.states[-1], query_seed))
+            queries.append(runner.query(task, state_id, chain.states[-1], query_seed(event.seed, position)))
         features = baseline_features(chain, queries, runtime.device)
         with torch.no_grad():
             predictions = baseline(features)

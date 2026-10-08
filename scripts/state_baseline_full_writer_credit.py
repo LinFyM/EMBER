@@ -178,7 +178,11 @@ def writer_credit(runtime, condition, credits, frame_chunk):
     vectors, natives, coverage = [], [], []
     with torch.enable_grad():
         replay, native = runtime.compile(condition, frame_chunk=frame_chunk, retain_native=True)
-        if len(replay) != 76 or not native['h'].requires_grad or any(not x.requires_grad for x in native['x'].values()):
+        constant_x = [n for n,x in native['x'].items() if not x.requires_grad]
+        # The action_in projection receives the fixed probe itself. Its X is
+        # legitimately constant; later X and final H depend on public A/B0.
+        if (len(replay) != 76 or not native['h'].requires_grad
+                or constant_x != ['model.action_in_proj']):
             raise ValueError('complete live native/compiler credit was detached')
         for j in range(3):
             runtime.writer.zero_grad(set_to_none=True)
@@ -196,7 +200,8 @@ def writer_credit(runtime, condition, credits, frame_chunk):
     runtime.writer.zero_grad(set_to_none=True)
     if any(not torch.isfinite(v).all() for c in vectors for v in c.values()):
         raise ValueError('nonfinite complete G gradient')
-    return vectors, natives, coverage
+    return vectors, natives, coverage, {'h':True,'X_live':len(native['x'])-len(constant_x),
+                                      'constant_X':constant_x,'complete_X':len(native['x'])}
 
 
 def evaluate(runtime, condition, state, entries, microbatch, frame_chunk):
@@ -205,10 +210,10 @@ def evaluate(runtime, condition, state, entries, microbatch, frame_chunk):
     torch.cuda.synchronize()
     score_seconds = time.perf_counter() - start
     boundary = summaries([{n:v.cpu() for n, v in c.items()} for c in credits], {'full':tuple(state)})
-    vectors, natives, coverage = writer_credit(runtime, condition, credits, frame_chunk)
+    vectors, natives, coverage, graph = writer_credit(runtime, condition, credits, frame_chunk)
     torch.cuda.synchronize()
     return vectors, {'lora_boundary':boundary, 'native_cotangent':dict(zip(BASELINES,natives)),
-        'trainable_coverage':dict(zip(BASELINES,coverage)), 'score_seconds':score_seconds,
+        'trainable_coverage':dict(zip(BASELINES,coverage)), 'native_graph':graph, 'score_seconds':score_seconds,
         'replay_seconds':time.perf_counter()-start-score_seconds}
 
 
@@ -307,8 +312,10 @@ def main():
     parser.add_argument('--microbatch',type=int,default=64)
     parser.add_argument('--frame-chunk',type=int,default=32)
     parser.add_argument('--profile',action='store_true')
+    parser.add_argument('--attempt',default='initial')
     args = parser.parse_args()
-    path = ROOT/'launch'/('worker_'+'_'.join(map(str,args.macros))+'.json')
+    if not args.attempt.replace('_','').isalnum():raise ValueError('unsafe attempt identity')
+    path = ROOT/'launch'/('worker_'+'_'.join(map(str,args.macros))+'_'+args.attempt+'.json')
     if path.exists():raise ValueError('worker receipt already exists')
     started = time.time()
     receipt = {'started_UTC':datetime.now(timezone.utc).isoformat(),'macros':args.macros,'command':sys.argv,

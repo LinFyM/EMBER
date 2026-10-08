@@ -140,7 +140,7 @@ def _reinspect_adapter(
         return inspected
     if adapter.get("kind") in {"static_task_lora_bank", "horizon_writer_lora_bank",
                                "conditional_velocity_lora_bank", "demonstration_comparison_lora_bank",
-                               "operator_read_write_lora_bank", "aligned_teacher_recovery_complete_lora"}:
+                               "operator_read_write_lora_bank"}:
         return inspect_static_task_lora_adapter(
             manifest_path=Path(adapter["manifest"]["path"]),
             source=model,
@@ -198,14 +198,9 @@ def validate_resume_inputs(contract: dict[str, Any]) -> None:
         and _reinspect_adapter(adapter, contract=contract, model=model) != adapter
     ):
         raise Pi05EvaluationError("evaluation adapter assets changed after prepare")
-    if (contract.get("adapter") or {}).get("kind") == "aligned_teacher_recovery_complete_lora":
-        from ember.aligned_teacher_recovery.readout import validate_capture_contract
+    from ember.pi05_eval.registered_passive_capture import validate_contract
 
-        validate_capture_contract(contract)
-    else:
-        from ember.pi05_eval.registered_passive_capture import validate_contract
-
-        validate_contract(contract, REPO_ROOT)
+    validate_contract(contract, REPO_ROOT)
 
 
 def worker_ids(

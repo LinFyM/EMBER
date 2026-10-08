@@ -40,8 +40,9 @@ def require_supported_runtime(contract: Mapping[str, Any]) -> None:
             "visible_object_readout_intervention")
     adapter = contract.get("adapter") or {}
     retired = [key for key in keys if contract.get(key) is not None or adapter.get(key) is not None]
-    if adapter.get("kind") == "privileged_action_memory_controller":
-        retired.append("privileged_action_memory_controller")
+    if adapter.get("kind") in {"privileged_action_memory_controller",
+                               "aligned_teacher_recovery_complete_lora"}:
+        retired.append(adapter["kind"])
     capture = contract.get("diagnostic_occupancy_capture") or {}
     if capture.get("schema_version") == "ember_pi05_frozen_replay_capture_v1":
         retired.append("frozen_replay")

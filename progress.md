@@ -1,3 +1,23 @@
+## 2026-10-08 困难任务教师与T50恢复80行完整结束
+
+aligned_teacher_recovery_20261008已完成四task各480更新/53760真实query，共215040；
+320/480初态与T50、同期MT接手共80行/25406实际步、20full/60compact全部核验。
+320初态11/16、T50 6/16；480初态12/16、T50 9/16；MT接手4/16，原T初态6、MT初态5、旧NN接手7直接复用。
+按12/29/32/38，初态320=3/1/4/3、480=4/1/4/3；接手320=3/0/2/1、480=2/0/4/3。
+相邻初态R10/G2/L1/J.7692；接手R5/G4/L1/J.5；原T6在两接手节点仅保留4/3，480救6失败同时丢3成功。
+局部教师事前资格未过：两个接手均不足12、task29均0/4、原T保持不足5，不能由FM下降或分数+3认证恢复教师。
+findings§394、docs/analyses/aligned_teacher_recovery_20261008.json与run report保留全部配对/正反例/当前source表达边界。
+固定12clip192张实际双RGB全部审看；task12初态117成功/T50搬cream_cheese失败、task38相邻初态丢失且480T50成功等反例保留。
+全48接手按原前50raw/前51保存状态、绝对replan10/原剩时验证；无Writer/held特权/Test或额外科学行。
+4.917044302093完整GPUh（含加载/失败/profile/EGL）；承接2026-10-07T22:55:59Z，最后GPU退出2026-10-08T00:37:26.992918Z。
+task-owned实占约6.91GiB，初始规划峰9.85GiB，硬32GiB保持；strg01独立quota/du/shared及每launch双节点原件保留。
+微批28/56/112真实8.43/8.05/8.05秒，选56；评测2→3workers固定行内实测，无依据的额外卡数上限未添加。
+正式source/恢复b8abc2a4，实际读出f2f81352、两复用MT完成行692ba99d；全0/160/320/480 ECP/Git/frozen/raw/失败/费用保留。
+专用CLI/四模块及七处hooks已退役，保留通用ECP显式null scheduler和旧诊断运行拒绝；最新9项static CPU检查及两种scheduler恢复通过。
+两节点现场无本用户GPU进程；final clean/pushed Git、开发树清理、完整completion和一次官方回报以run记录为准。
+实验session在可靠整批投递后完整交回tracked/Git；本条不冒称main已独立消费。没有本批自动续训/蒸馏/扩专家或Writer。
+主讨论接回后须继续Owner完整目标判断及自主推进；此批停止不是项目停止。下方active/承接段均为历史时点。
+
 ## 2026-10-08 实验session实际承接当前source教师与T50恢复
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45全文读唯一163行合同/findings§392–393/Owner与AGENTS，

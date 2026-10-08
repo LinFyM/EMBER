@@ -149,10 +149,6 @@ def save_capture(
             payload["replan_predicates"] = tuple(slot["replay_replan_predicates"])
         if capture.get("external_prefix_commands"):
             payload["command_kinds"] = tuple(slot["replay_command_kinds"])
-    if capture.get("aligned_teacher_recovery"):
-        from ember.aligned_teacher_recovery.readout import capture_fields
-
-        payload.update(capture_fields(slot))
     torch.save(payload, path)
     return {
         "path": str(path),
@@ -344,8 +340,7 @@ def validate_passive_trace_row(
             or info.get("condition_id") != ((row.get("horizon_writer_lora") or
                                               row.get("conditional_velocity_lora") or
                                               row.get("demonstration_comparison_lora") or
-                                              row.get("operator_read_write_lora") or
-                                              row.get("aligned_teacher_recovery_lora") or {}).get("condition_id"))
+                                              row.get("operator_read_write_lora") or {}).get("condition_id"))
             or info.get("goal_predicates") != stage.get("predicates")
             or not isinstance(info.get("body_registry"), list)
             or not info["body_registry"] or not isinstance(info.get("goal_operands"), list)):

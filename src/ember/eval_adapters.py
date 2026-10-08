@@ -120,12 +120,6 @@ def inspect_static_task_lora_adapter(
     from ember.writer.materialization import BANK_SCHEMA
 
     manifest = read_json(manifest_path)
-    if manifest.get("kind") == "aligned_teacher_recovery_complete_lora":
-        from ember.aligned_teacher_recovery.readout import inspect_manifest
-
-        return inspect_manifest(manifest_path=manifest_path, source=source,
-            task_keys=tuple((task.suite, int(task.task_id)) for task in tasks),
-            evaluation_role=evaluation_role, require_formal=require_formal)
     if manifest.get("kind") == OPERATOR_READ_WRITE_KIND:
         from ember.operator_writer.bank import inspect_bank
 
@@ -220,10 +214,6 @@ def load_evaluation_adapter(
         "device": device,
         "require_formal": contract["mode"] != "smoke",
     }
-    if adapter.get("kind") == "aligned_teacher_recovery_complete_lora":
-        from ember.aligned_teacher_recovery.readout import CompleteRecoveryAdapter
-
-        return CompleteRecoveryAdapter(**common)
     if adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
         from ember.source_sft.inference import FrozenSourceSFTAdapter
 
@@ -260,8 +250,6 @@ def episode_adapter_fields(
     contract: Mapping[str, Any], task_adapter: Any | None, prepared: Any | None
 ) -> dict[str, Any]:
     if task_adapter is not None:
-        if contract.get("adapter", {}).get("kind") == "aligned_teacher_recovery_complete_lora":
-            return {"aligned_teacher_recovery_lora": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == OPERATOR_READ_WRITE_KIND:
             return {"operator_read_write_lora": dict(prepared.evidence)}
         if contract.get("adapter", {}).get("kind") == DEMONSTRATION_COMPARISON_KIND:
@@ -279,10 +267,6 @@ def episode_adapter_fields(
     return {}
 
 
-def _adapter_fields_absent(row: Mapping[str, Any], names: Sequence[str]) -> bool:
-    return all(row.get(name) is None for name in names)
-
-
 def validate_episode_adapter_fields(
     adapter: Mapping[str, Any] | None,
     row: Mapping[str, Any],
@@ -291,13 +275,7 @@ def validate_episode_adapter_fields(
     task_id: int,
     init_state_id: int,
 ) -> bool:
-    kind = adapter.get("kind") if adapter is not None else None
-    if kind == "aligned_teacher_recovery_complete_lora":
-        from ember.aligned_teacher_recovery.readout import validate_episode
-
-        return validate_episode(adapter, row, suite=suite, task_id=task_id,
-                                init_state_id=init_state_id)
-    if kind == OPERATOR_READ_WRITE_KIND:
+    if adapter is not None and adapter.get("kind") == OPERATOR_READ_WRITE_KIND:
         from ember.operator_writer.bank import validate_episode
 
         return (all(row.get(name) is None for name in (
@@ -307,7 +285,7 @@ def validate_episode_adapter_fields(
                                      suite=suite, task_id=task_id, init_state_id=init_state_id))
     if row.get("operator_read_write_lora") is not None:
         return False
-    if kind == DEMONSTRATION_COMPARISON_KIND:
+    if adapter is not None and adapter.get("kind") == DEMONSTRATION_COMPARISON_KIND:
         from ember.demonstration_learning.bank import validate_episode
 
         return (row.get("horizon_writer_lora") is None and row.get("static_task_lora") is None
@@ -315,36 +293,40 @@ def validate_episode_adapter_fields(
                                      suite=suite, task_id=task_id, init_state_id=init_state_id))
     if row.get("demonstration_comparison_lora") is not None:
         return False
-    if kind == CONDITIONAL_VELOCITY_KIND:
+    if adapter is not None and adapter.get("kind") == CONDITIONAL_VELOCITY_KIND:
         from ember.writer.conditional_velocity_bank import validate_velocity_adapter_fields
 
         return validate_velocity_adapter_fields(adapter, row, suite=suite, task_id=task_id,
                                                 init_state_id=init_state_id)
     if row.get("conditional_velocity_lora") is not None:
         return False
-    if kind == HORIZON_WRITER_KIND:
+    if adapter is not None and adapter.get("kind") == HORIZON_WRITER_KIND:
         from ember.writer.evaluation import validate_horizon_writer_episode
 
-        return (_adapter_fields_absent(row, ("task_expert", "static_task_lora", "policy_adapter_sha256")) and validate_horizon_writer_episode(
+        return (row.get("task_expert") is None and row.get("static_task_lora") is None
+                and row.get("policy_adapter_sha256") is None and validate_horizon_writer_episode(
                     adapter, row.get("horizon_writer_lora"), suite=suite,
                     task_id=task_id, init_state_id=init_state_id))
     if row.get("horizon_writer_lora") is not None:
         return False
     if adapter is None:
         return (
-            _adapter_fields_absent(row, ("task_expert", "static_task_lora", "policy_adapter_sha256"))
+            row.get("task_expert") is None
+            and row.get("static_task_lora") is None
+            and row.get("policy_adapter_sha256") is None
         )
-    if kind == STATIC_SOURCE_SFT_KIND:
+    if adapter.get("kind") == STATIC_SOURCE_SFT_KIND:
         return (
             row.get("task_expert") is None
             and row.get("static_task_lora") is None
             and row.get("policy_adapter_sha256") == adapter.get("lora_state_sha256")
         )
-    if kind == STATIC_TASK_EXPERT_KIND:
+    if adapter.get("kind") == STATIC_TASK_EXPERT_KIND:
         from ember.expert_manifold.evaluation import validate_task_expert_episode
 
         return (
-            _adapter_fields_absent(row, ("static_task_lora", "policy_adapter_sha256"))
+            row.get("static_task_lora") is None
+            and row.get("policy_adapter_sha256") is None
             and validate_task_expert_episode(
                 adapter,
                 row.get("task_expert"),
@@ -353,11 +335,12 @@ def validate_episode_adapter_fields(
                 init_state_id=init_state_id,
             )
         )
-    if kind == STATIC_TASK_LORA_KIND:
+    if adapter.get("kind") == STATIC_TASK_LORA_KIND:
         from ember.static_task_lora import validate_static_task_lora_episode
 
         return (
-            _adapter_fields_absent(row, ("task_expert", "policy_adapter_sha256"))
+            row.get("task_expert") is None
+            and row.get("policy_adapter_sha256") is None
             and validate_static_task_lora_episode(
                 adapter,
                 row.get("static_task_lora"),

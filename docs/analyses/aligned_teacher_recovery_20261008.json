@@ -1,0 +1,3460 @@
+{
+  "schema": "ember_aligned_teacher_recovery_outcome_v1",
+  "study": "aligned_teacher_recovery_20261008",
+  "root": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008",
+  "complete_new_episodes": 80,
+  "full": 20,
+  "compact": 60,
+  "new_executed_control_steps": 25406,
+  "training_updates": 1920,
+  "training_queries": 215040,
+  "panels": {
+    "expert_u320_initial": {
+      "successes": 11,
+      "episodes": 16,
+      "success_set": [
+        {
+          "task": 12,
+          "init": 33
+        },
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 29,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 32
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 32
+        },
+        {
+          "task": 38,
+          "init": 33
+        },
+        {
+          "task": 38,
+          "init": 34
+        }
+      ],
+      "per_task": {
+        "12": 3,
+        "29": 1,
+        "32": 4,
+        "38": 3
+      },
+      "per_suite": {
+        "libero_object": 3,
+        "libero_goal": 1,
+        "libero_10": 7
+      },
+      "vs_T": {
+        "R": 4,
+        "G": 7,
+        "L": 2,
+        "churn": 9,
+        "Jaccard": 0.3076923076923077,
+        "retained": [
+          {
+            "task": 12,
+            "init": 33
+          },
+          {
+            "task": 12,
+            "init": 34
+          },
+          {
+            "task": 12,
+            "init": 35
+          },
+          {
+            "task": 32,
+            "init": 33
+          }
+        ],
+        "gained": [
+          {
+            "task": 29,
+            "init": 33
+          },
+          {
+            "task": 32,
+            "init": 32
+          },
+          {
+            "task": 32,
+            "init": 34
+          },
+          {
+            "task": 32,
+            "init": 35
+          },
+          {
+            "task": 38,
+            "init": 32
+          },
+          {
+            "task": 38,
+            "init": 33
+          },
+          {
+            "task": 38,
+            "init": 34
+          }
+        ],
+        "lost": [
+          {
+            "task": 29,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          }
+        ]
+      },
+      "T_success6": {
+        "retained": 4,
+        "lost": [
+          {
+            "task": 29,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          }
+        ]
+      },
+      "T_failure10": {
+        "rescued": 7,
+        "still_failed": [
+          {
+            "task": 12,
+            "init": 32
+          },
+          {
+            "task": 29,
+            "init": 32
+          },
+          {
+            "task": 38,
+            "init": 35
+          }
+        ]
+      },
+      "breadth_tasks_with_success": 4,
+      "per_suite_denominators": {
+        "libero_object": 4,
+        "libero_goal": 4,
+        "libero_10": 8
+      }
+    },
+    "expert_u480_initial": {
+      "successes": 12,
+      "episodes": 16,
+      "success_set": [
+        {
+          "task": 12,
+          "init": 32
+        },
+        {
+          "task": 12,
+          "init": 33
+        },
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 29,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 32
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 33
+        },
+        {
+          "task": 38,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 35
+        }
+      ],
+      "per_task": {
+        "12": 4,
+        "29": 1,
+        "32": 4,
+        "38": 3
+      },
+      "per_suite": {
+        "libero_object": 4,
+        "libero_goal": 1,
+        "libero_10": 7
+      },
+      "vs_T": {
+        "R": 4,
+        "G": 8,
+        "L": 2,
+        "churn": 10,
+        "Jaccard": 0.2857142857142857,
+        "retained": [
+          {
+            "task": 12,
+            "init": 33
+          },
+          {
+            "task": 12,
+            "init": 34
+          },
+          {
+            "task": 12,
+            "init": 35
+          },
+          {
+            "task": 32,
+            "init": 33
+          }
+        ],
+        "gained": [
+          {
+            "task": 12,
+            "init": 32
+          },
+          {
+            "task": 29,
+            "init": 33
+          },
+          {
+            "task": 32,
+            "init": 32
+          },
+          {
+            "task": 32,
+            "init": 34
+          },
+          {
+            "task": 32,
+            "init": 35
+          },
+          {
+            "task": 38,
+            "init": 33
+          },
+          {
+            "task": 38,
+            "init": 34
+          },
+          {
+            "task": 38,
+            "init": 35
+          }
+        ],
+        "lost": [
+          {
+            "task": 29,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          }
+        ]
+      },
+      "T_success6": {
+        "retained": 4,
+        "lost": [
+          {
+            "task": 29,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          }
+        ]
+      },
+      "T_failure10": {
+        "rescued": 8,
+        "still_failed": [
+          {
+            "task": 29,
+            "init": 32
+          },
+          {
+            "task": 38,
+            "init": 32
+          }
+        ]
+      },
+      "breadth_tasks_with_success": 4,
+      "per_suite_denominators": {
+        "libero_object": 4,
+        "libero_goal": 4,
+        "libero_10": 8
+      }
+    },
+    "expert_u320_T50": {
+      "successes": 6,
+      "episodes": 16,
+      "success_set": [
+        {
+          "task": 12,
+          "init": 33
+        },
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 33
+        }
+      ],
+      "per_task": {
+        "12": 3,
+        "29": 0,
+        "32": 2,
+        "38": 1
+      },
+      "per_suite": {
+        "libero_object": 3,
+        "libero_goal": 0,
+        "libero_10": 3
+      },
+      "vs_T": {
+        "R": 4,
+        "G": 2,
+        "L": 2,
+        "churn": 4,
+        "Jaccard": 0.5,
+        "retained": [
+          {
+            "task": 12,
+            "init": 33
+          },
+          {
+            "task": 12,
+            "init": 34
+          },
+          {
+            "task": 12,
+            "init": 35
+          },
+          {
+            "task": 32,
+            "init": 33
+          }
+        ],
+        "gained": [
+          {
+            "task": 32,
+            "init": 34
+          },
+          {
+            "task": 38,
+            "init": 33
+          }
+        ],
+        "lost": [
+          {
+            "task": 29,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          }
+        ]
+      },
+      "T_success6": {
+        "retained": 4,
+        "lost": [
+          {
+            "task": 29,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          }
+        ]
+      },
+      "T_failure10": {
+        "rescued": 2,
+        "still_failed": [
+          {
+            "task": 12,
+            "init": 32
+          },
+          {
+            "task": 29,
+            "init": 32
+          },
+          {
+            "task": 29,
+            "init": 33
+          },
+          {
+            "task": 32,
+            "init": 32
+          },
+          {
+            "task": 32,
+            "init": 35
+          },
+          {
+            "task": 38,
+            "init": 32
+          },
+          {
+            "task": 38,
+            "init": 34
+          },
+          {
+            "task": 38,
+            "init": 35
+          }
+        ]
+      },
+      "breadth_tasks_with_success": 3,
+      "per_suite_denominators": {
+        "libero_object": 4,
+        "libero_goal": 4,
+        "libero_10": 8
+      }
+    },
+    "expert_u480_T50": {
+      "successes": 9,
+      "episodes": 16,
+      "success_set": [
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 32,
+          "init": 32
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 32
+        },
+        {
+          "task": 38,
+          "init": 33
+        },
+        {
+          "task": 38,
+          "init": 34
+        }
+      ],
+      "per_task": {
+        "12": 2,
+        "29": 0,
+        "32": 4,
+        "38": 3
+      },
+      "per_suite": {
+        "libero_object": 2,
+        "libero_goal": 0,
+        "libero_10": 7
+      },
+      "vs_T": {
+        "R": 3,
+        "G": 6,
+        "L": 3,
+        "churn": 9,
+        "Jaccard": 0.25,
+        "retained": [
+          {
+            "task": 12,
+            "init": 34
+          },
+          {
+            "task": 12,
+            "init": 35
+          },
+          {
+            "task": 32,
+            "init": 33
+          }
+        ],
+        "gained": [
+          {
+            "task": 32,
+            "init": 32
+          },
+          {
+            "task": 32,
+            "init": 34
+          },
+          {
+            "task": 32,
+            "init": 35
+          },
+          {
+            "task": 38,
+            "init": 32
+          },
+          {
+            "task": 38,
+            "init": 33
+          },
+          {
+            "task": 38,
+            "init": 34
+          }
+        ],
+        "lost": [
+          {
+            "task": 12,
+            "init": 33
+          },
+          {
+            "task": 29,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          }
+        ]
+      },
+      "T_success6": {
+        "retained": 3,
+        "lost": [
+          {
+            "task": 12,
+            "init": 33
+          },
+          {
+            "task": 29,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          }
+        ]
+      },
+      "T_failure10": {
+        "rescued": 6,
+        "still_failed": [
+          {
+            "task": 12,
+            "init": 32
+          },
+          {
+            "task": 29,
+            "init": 32
+          },
+          {
+            "task": 29,
+            "init": 33
+          },
+          {
+            "task": 38,
+            "init": 35
+          }
+        ]
+      },
+      "breadth_tasks_with_success": 3,
+      "per_suite_denominators": {
+        "libero_object": 4,
+        "libero_goal": 4,
+        "libero_10": 8
+      }
+    },
+    "MT300_T50": {
+      "successes": 4,
+      "episodes": 16,
+      "success_set": [
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 29,
+          "init": 34
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 33
+        }
+      ],
+      "per_task": {
+        "12": 1,
+        "29": 1,
+        "32": 1,
+        "38": 1
+      },
+      "per_suite": {
+        "libero_object": 1,
+        "libero_goal": 1,
+        "libero_10": 2
+      },
+      "vs_T": {
+        "R": 2,
+        "G": 2,
+        "L": 4,
+        "churn": 6,
+        "Jaccard": 0.25,
+        "retained": [
+          {
+            "task": 12,
+            "init": 35
+          },
+          {
+            "task": 29,
+            "init": 34
+          }
+        ],
+        "gained": [
+          {
+            "task": 32,
+            "init": 34
+          },
+          {
+            "task": 38,
+            "init": 33
+          }
+        ],
+        "lost": [
+          {
+            "task": 12,
+            "init": 33
+          },
+          {
+            "task": 12,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          },
+          {
+            "task": 32,
+            "init": 33
+          }
+        ]
+      },
+      "T_success6": {
+        "retained": 2,
+        "lost": [
+          {
+            "task": 12,
+            "init": 33
+          },
+          {
+            "task": 12,
+            "init": 34
+          },
+          {
+            "task": 29,
+            "init": 35
+          },
+          {
+            "task": 32,
+            "init": 33
+          }
+        ]
+      },
+      "T_failure10": {
+        "rescued": 2,
+        "still_failed": [
+          {
+            "task": 12,
+            "init": 32
+          },
+          {
+            "task": 29,
+            "init": 32
+          },
+          {
+            "task": 29,
+            "init": 33
+          },
+          {
+            "task": 32,
+            "init": 32
+          },
+          {
+            "task": 32,
+            "init": 35
+          },
+          {
+            "task": 38,
+            "init": 32
+          },
+          {
+            "task": 38,
+            "init": 34
+          },
+          {
+            "task": 38,
+            "init": 35
+          }
+        ]
+      },
+      "breadth_tasks_with_success": 4,
+      "per_suite_denominators": {
+        "libero_object": 4,
+        "libero_goal": 4,
+        "libero_10": 8
+      }
+    }
+  },
+  "comparisons": {
+    "320_to480_initial": {
+      "R": 10,
+      "G": 2,
+      "L": 1,
+      "churn": 3,
+      "Jaccard": 0.7692307692307693,
+      "retained": [
+        {
+          "task": 12,
+          "init": 33
+        },
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 29,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 32
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 33
+        },
+        {
+          "task": 38,
+          "init": 34
+        }
+      ],
+      "gained": [
+        {
+          "task": 12,
+          "init": 32
+        },
+        {
+          "task": 38,
+          "init": 35
+        }
+      ],
+      "lost": [
+        {
+          "task": 38,
+          "init": 32
+        }
+      ]
+    },
+    "320_to480_T50": {
+      "R": 5,
+      "G": 4,
+      "L": 1,
+      "churn": 5,
+      "Jaccard": 0.5,
+      "retained": [
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 33
+        }
+      ],
+      "gained": [
+        {
+          "task": 32,
+          "init": 32
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 32
+        },
+        {
+          "task": 38,
+          "init": 34
+        }
+      ],
+      "lost": [
+        {
+          "task": 12,
+          "init": 33
+        }
+      ]
+    },
+    "MT_initial_to320": {
+      "R": 5,
+      "G": 6,
+      "L": 0,
+      "churn": 6,
+      "Jaccard": 0.45454545454545453,
+      "retained": [
+        {
+          "task": 12,
+          "init": 33
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 32,
+          "init": 32
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 34
+        }
+      ],
+      "gained": [
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 29,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 32
+        },
+        {
+          "task": 38,
+          "init": 33
+        }
+      ],
+      "lost": []
+    },
+    "MT_initial_to480": {
+      "R": 5,
+      "G": 7,
+      "L": 0,
+      "churn": 7,
+      "Jaccard": 0.4166666666666667,
+      "retained": [
+        {
+          "task": 12,
+          "init": 33
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 32,
+          "init": 32
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 34
+        }
+      ],
+      "gained": [
+        {
+          "task": 12,
+          "init": 32
+        },
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 29,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 33
+        },
+        {
+          "task": 38,
+          "init": 35
+        }
+      ],
+      "lost": []
+    },
+    "MT_T50_to320": {
+      "R": 3,
+      "G": 3,
+      "L": 1,
+      "churn": 4,
+      "Jaccard": 0.42857142857142855,
+      "retained": [
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 33
+        }
+      ],
+      "gained": [
+        {
+          "task": 12,
+          "init": 33
+        },
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 32,
+          "init": 33
+        }
+      ],
+      "lost": [
+        {
+          "task": 29,
+          "init": 34
+        }
+      ]
+    },
+    "MT_T50_to480": {
+      "R": 3,
+      "G": 6,
+      "L": 1,
+      "churn": 7,
+      "Jaccard": 0.3,
+      "retained": [
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 33
+        }
+      ],
+      "gained": [
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 32,
+          "init": 32
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 32
+        },
+        {
+          "task": 38,
+          "init": 34
+        }
+      ],
+      "lost": [
+        {
+          "task": 29,
+          "init": 34
+        }
+      ]
+    },
+    "NN_T50_to320": {
+      "R": 3,
+      "G": 3,
+      "L": 4,
+      "churn": 7,
+      "Jaccard": 0.3,
+      "retained": [
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 32,
+          "init": 33
+        }
+      ],
+      "gained": [
+        {
+          "task": 12,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 33
+        }
+      ],
+      "lost": [
+        {
+          "task": 29,
+          "init": 32
+        },
+        {
+          "task": 29,
+          "init": 34
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 34
+        }
+      ]
+    },
+    "NN_T50_to480": {
+      "R": 5,
+      "G": 4,
+      "L": 2,
+      "churn": 6,
+      "Jaccard": 0.45454545454545453,
+      "retained": [
+        {
+          "task": 12,
+          "init": 34
+        },
+        {
+          "task": 12,
+          "init": 35
+        },
+        {
+          "task": 32,
+          "init": 33
+        },
+        {
+          "task": 32,
+          "init": 35
+        },
+        {
+          "task": 38,
+          "init": 34
+        }
+      ],
+      "gained": [
+        {
+          "task": 32,
+          "init": 32
+        },
+        {
+          "task": 32,
+          "init": 34
+        },
+        {
+          "task": 38,
+          "init": 32
+        },
+        {
+          "task": 38,
+          "init": 33
+        }
+      ],
+      "lost": [
+        {
+          "task": 29,
+          "init": 32
+        },
+        {
+          "task": 29,
+          "init": 34
+        }
+      ]
+    }
+  },
+  "local_teacher_criteria": {
+    "320": {
+      "initial_at_least12": false,
+      "T50_at_least12": false,
+      "each_task_each_panel_at_least2": false,
+      "T50_retains_at_least5_of_T6": false
+    },
+    "480": {
+      "initial_at_least12": true,
+      "T50_at_least12": false,
+      "each_task_each_panel_at_least2": false,
+      "T50_retains_at_least5_of_T6": false
+    }
+  },
+  "local_teacher_candidate": false,
+  "training": {
+    "12": {
+      "updates": 480,
+      "queries": 53760,
+      "checkpoints": {
+        "0": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0012/attempts/formal_to320/checkpoints/macro_00000000",
+          "optimizer_states": 0,
+          "scheduler": null,
+          "query_cursor": 0,
+          "FP32_complete_model": 76,
+          "clock": []
+        },
+        "160": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0012/attempts/formal_to320/checkpoints/macro_00000160",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 17920,
+          "FP32_complete_model": 76,
+          "clock": [
+            160
+          ]
+        },
+        "320": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0012/attempts/formal_to320/checkpoints/macro_00000320",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 35840,
+          "FP32_complete_model": 76,
+          "clock": [
+            320
+          ]
+        },
+        "480": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0012/attempts/formal_to480/checkpoints/macro_00000480",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 53760,
+          "FP32_complete_model": 76,
+          "clock": [
+            480
+          ]
+        }
+      },
+      "actual_episode_visits": {
+        "15": 1075,
+        "14": 1075,
+        "31": 1075,
+        "5": 1075,
+        "4": 1075,
+        "22": 1076,
+        "7": 1076,
+        "43": 1075,
+        "21": 1075,
+        "8": 1075,
+        "35": 1075,
+        "19": 1075,
+        "29": 1075,
+        "27": 1075,
+        "47": 1076,
+        "13": 1075,
+        "1": 1075,
+        "25": 1075,
+        "23": 1076,
+        "17": 1075,
+        "16": 1075,
+        "44": 1075,
+        "30": 1076,
+        "20": 1075,
+        "10": 1075,
+        "0": 1075,
+        "11": 1075,
+        "6": 1075,
+        "45": 1076,
+        "24": 1075,
+        "41": 1076,
+        "3": 1075,
+        "12": 1075,
+        "39": 1075,
+        "32": 1075,
+        "38": 1075,
+        "48": 1075,
+        "40": 1075,
+        "37": 1076,
+        "42": 1075,
+        "33": 1076,
+        "18": 1075,
+        "36": 1075,
+        "28": 1075,
+        "26": 1076,
+        "2": 1075,
+        "46": 1075,
+        "34": 1075,
+        "9": 1075,
+        "49": 1075
+      },
+      "full_actual_noise_tau_panels": 480,
+      "loss_by_fixed_window": {
+        "1..40": 0.07891480894759298,
+        "121..160": 0.07211689907126129,
+        "281..320": 0.06869010669179261,
+        "441..480": 0.0665767477825284
+      },
+      "macro_seconds_median": 8.307016090489924,
+      "native_AB_credit_positive_all_updates": true
+    },
+    "29": {
+      "updates": 480,
+      "queries": 53760,
+      "checkpoints": {
+        "0": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0029/attempts/formal_to320/checkpoints/macro_00000000",
+          "optimizer_states": 0,
+          "scheduler": null,
+          "query_cursor": 0,
+          "FP32_complete_model": 76,
+          "clock": []
+        },
+        "160": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0029/attempts/formal_to320/checkpoints/macro_00000160",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 17920,
+          "FP32_complete_model": 76,
+          "clock": [
+            160
+          ]
+        },
+        "320": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0029/attempts/formal_to320/checkpoints/macro_00000320",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 35840,
+          "FP32_complete_model": 76,
+          "clock": [
+            320
+          ]
+        },
+        "480": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0029/attempts/formal_to480/checkpoints/macro_00000480",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 53760,
+          "FP32_complete_model": 76,
+          "clock": [
+            480
+          ]
+        }
+      },
+      "actual_episode_visits": {
+        "46": 1075,
+        "37": 1076,
+        "38": 1075,
+        "9": 1075,
+        "49": 1075,
+        "2": 1075,
+        "32": 1075,
+        "30": 1075,
+        "24": 1075,
+        "43": 1075,
+        "7": 1076,
+        "1": 1075,
+        "29": 1075,
+        "47": 1075,
+        "28": 1076,
+        "19": 1075,
+        "12": 1075,
+        "40": 1075,
+        "25": 1076,
+        "21": 1075,
+        "8": 1075,
+        "34": 1075,
+        "5": 1075,
+        "33": 1075,
+        "44": 1075,
+        "35": 1075,
+        "0": 1076,
+        "39": 1075,
+        "45": 1075,
+        "10": 1075,
+        "27": 1076,
+        "15": 1075,
+        "31": 1075,
+        "23": 1076,
+        "4": 1075,
+        "13": 1075,
+        "26": 1075,
+        "3": 1075,
+        "41": 1075,
+        "11": 1075,
+        "42": 1076,
+        "6": 1075,
+        "18": 1076,
+        "17": 1075,
+        "48": 1075,
+        "16": 1075,
+        "20": 1075,
+        "14": 1075,
+        "22": 1075,
+        "36": 1076
+      },
+      "full_actual_noise_tau_panels": 480,
+      "loss_by_fixed_window": {
+        "1..40": 0.12757892832159995,
+        "121..160": 0.11511365827172995,
+        "281..320": 0.10857808776199818,
+        "441..480": 0.10424329917877913
+      },
+      "macro_seconds_median": 8.219256579410285,
+      "native_AB_credit_positive_all_updates": true
+    },
+    "32": {
+      "updates": 480,
+      "queries": 53760,
+      "checkpoints": {
+        "0": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0032/attempts/formal_to320/checkpoints/macro_00000000",
+          "optimizer_states": 0,
+          "scheduler": null,
+          "query_cursor": 0,
+          "FP32_complete_model": 76,
+          "clock": []
+        },
+        "160": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0032/attempts/formal_to320/checkpoints/macro_00000160",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 17920,
+          "FP32_complete_model": 76,
+          "clock": [
+            160
+          ]
+        },
+        "320": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0032/attempts/formal_to320/checkpoints/macro_00000320",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 35840,
+          "FP32_complete_model": 76,
+          "clock": [
+            320
+          ]
+        },
+        "480": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0032/attempts/formal_to480/checkpoints/macro_00000480",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 53760,
+          "FP32_complete_model": 76,
+          "clock": [
+            480
+          ]
+        }
+      },
+      "actual_episode_visits": {
+        "25": 1075,
+        "14": 1075,
+        "13": 1076,
+        "19": 1076,
+        "4": 1075,
+        "34": 1075,
+        "24": 1076,
+        "23": 1075,
+        "43": 1076,
+        "48": 1075,
+        "8": 1076,
+        "38": 1075,
+        "41": 1075,
+        "0": 1076,
+        "20": 1075,
+        "33": 1076,
+        "12": 1075,
+        "6": 1075,
+        "30": 1076,
+        "32": 1075,
+        "21": 1075,
+        "11": 1075,
+        "39": 1075,
+        "2": 1075,
+        "44": 1076,
+        "47": 1075,
+        "31": 1075,
+        "15": 1075,
+        "17": 1075,
+        "49": 1076,
+        "42": 1075,
+        "22": 1075,
+        "3": 1075,
+        "36": 1075,
+        "1": 1075,
+        "28": 1075,
+        "16": 1075,
+        "7": 1075,
+        "46": 1075,
+        "5": 1075,
+        "45": 1075,
+        "10": 1075,
+        "35": 1075,
+        "29": 1075,
+        "9": 1075,
+        "40": 1075,
+        "37": 1075,
+        "27": 1075,
+        "18": 1075,
+        "26": 1075
+      },
+      "full_actual_noise_tau_panels": 480,
+      "loss_by_fixed_window": {
+        "1..40": 0.10062449239194393,
+        "121..160": 0.09539765631780028,
+        "281..320": 0.09199013812467456,
+        "441..480": 0.08927544374018907
+      },
+      "macro_seconds_median": 8.209765960928053,
+      "native_AB_credit_positive_all_updates": true
+    },
+    "38": {
+      "updates": 480,
+      "queries": 53760,
+      "checkpoints": {
+        "0": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0038/attempts/formal_to320/checkpoints/macro_00000000",
+          "optimizer_states": 0,
+          "scheduler": null,
+          "query_cursor": 0,
+          "FP32_complete_model": 76,
+          "clock": []
+        },
+        "160": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0038/attempts/formal_to320/checkpoints/macro_00000160",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 17920,
+          "FP32_complete_model": 76,
+          "clock": [
+            160
+          ]
+        },
+        "320": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0038/attempts/formal_to320/checkpoints/macro_00000320",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 35840,
+          "FP32_complete_model": 76,
+          "clock": [
+            320
+          ]
+        },
+        "480": {
+          "path": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/training/task_0038/attempts/formal_to480/checkpoints/macro_00000480",
+          "optimizer_states": 76,
+          "scheduler": null,
+          "query_cursor": 53760,
+          "FP32_complete_model": 76,
+          "clock": [
+            480
+          ]
+        }
+      },
+      "actual_episode_visits": {
+        "0": 1075,
+        "14": 1076,
+        "9": 1075,
+        "43": 1075,
+        "46": 1075,
+        "38": 1075,
+        "22": 1075,
+        "21": 1076,
+        "1": 1075,
+        "36": 1075,
+        "17": 1076,
+        "11": 1075,
+        "27": 1075,
+        "31": 1075,
+        "47": 1075,
+        "12": 1075,
+        "32": 1075,
+        "42": 1076,
+        "10": 1075,
+        "16": 1075,
+        "26": 1075,
+        "30": 1075,
+        "44": 1076,
+        "49": 1075,
+        "48": 1075,
+        "39": 1075,
+        "3": 1075,
+        "37": 1075,
+        "24": 1075,
+        "15": 1075,
+        "6": 1076,
+        "34": 1075,
+        "5": 1075,
+        "23": 1075,
+        "35": 1075,
+        "29": 1075,
+        "8": 1076,
+        "28": 1075,
+        "4": 1076,
+        "2": 1075,
+        "40": 1075,
+        "20": 1076,
+        "33": 1075,
+        "19": 1075,
+        "45": 1075,
+        "18": 1075,
+        "41": 1075,
+        "25": 1075,
+        "13": 1075,
+        "7": 1076
+      },
+      "full_actual_noise_tau_panels": 480,
+      "loss_by_fixed_window": {
+        "1..40": 0.08885788596235215,
+        "121..160": 0.08040375737473368,
+        "281..320": 0.07670670989900827,
+        "441..480": 0.07395361321978271
+      },
+      "macro_seconds_median": 8.235678198281676,
+      "native_AB_credit_positive_all_updates": true
+    }
+  },
+  "paired16": [
+    {
+      "global_task_id": 12,
+      "init_state_id": 32,
+      "T_original": false,
+      "MT_initial": false,
+      "NN_T50": false,
+      "expert_u320_initial": {
+        "success": false,
+        "steps": 280,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 117,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          117
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 280,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u480_T50": {
+        "success": false,
+        "steps": 280,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 280,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      }
+    },
+    {
+      "global_task_id": 12,
+      "init_state_id": 33,
+      "T_original": true,
+      "MT_initial": true,
+      "NN_T50": false,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 128,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          128
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 134,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          134
+        ]
+      },
+      "expert_u320_T50": {
+        "success": true,
+        "steps": 161,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          161
+        ]
+      },
+      "expert_u480_T50": {
+        "success": false,
+        "steps": 280,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 280,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      }
+    },
+    {
+      "global_task_id": 12,
+      "init_state_id": 34,
+      "T_original": true,
+      "MT_initial": false,
+      "NN_T50": true,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 110,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          110
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 115,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          115
+        ]
+      },
+      "expert_u320_T50": {
+        "success": true,
+        "steps": 116,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          116
+        ]
+      },
+      "expert_u480_T50": {
+        "success": true,
+        "steps": 121,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          121
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 280,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      }
+    },
+    {
+      "global_task_id": 12,
+      "init_state_id": 35,
+      "T_original": true,
+      "MT_initial": true,
+      "NN_T50": true,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 108,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          108
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 129,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          129
+        ]
+      },
+      "expert_u320_T50": {
+        "success": true,
+        "steps": 113,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          113
+        ]
+      },
+      "expert_u480_T50": {
+        "success": true,
+        "steps": 109,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          109
+        ]
+      },
+      "MT300_T50": {
+        "success": true,
+        "steps": 120,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          120
+        ]
+      }
+    },
+    {
+      "global_task_id": 29,
+      "init_state_id": 32,
+      "T_original": false,
+      "MT_initial": false,
+      "NN_T50": true,
+      "expert_u320_initial": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u480_initial": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u480_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      }
+    },
+    {
+      "global_task_id": 29,
+      "init_state_id": 33,
+      "T_original": false,
+      "MT_initial": false,
+      "NN_T50": false,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 187,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          187
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 139,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          139
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u480_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      }
+    },
+    {
+      "global_task_id": 29,
+      "init_state_id": 34,
+      "T_original": true,
+      "MT_initial": false,
+      "NN_T50": true,
+      "expert_u320_initial": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u480_initial": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u480_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "MT300_T50": {
+        "success": true,
+        "steps": 170,
+        "final_predicates": [
+          true
+        ],
+        "first_predicate_true_step": [
+          170
+        ]
+      }
+    },
+    {
+      "global_task_id": 29,
+      "init_state_id": 35,
+      "T_original": true,
+      "MT_initial": false,
+      "NN_T50": false,
+      "expert_u320_initial": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u480_initial": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "expert_u480_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 300,
+        "final_predicates": [
+          false
+        ],
+        "first_predicate_true_step": [
+          null
+        ]
+      }
+    },
+    {
+      "global_task_id": 32,
+      "init_state_id": 32,
+      "T_original": false,
+      "MT_initial": true,
+      "NN_T50": false,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 300,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          93,
+          300
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 246,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          106,
+          246
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          true,
+          false
+        ],
+        "first_predicate_true_step": [
+          127,
+          null
+        ]
+      },
+      "expert_u480_T50": {
+        "success": true,
+        "steps": 466,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          124,
+          466
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          true
+        ],
+        "first_predicate_true_step": [
+          null,
+          199
+        ]
+      }
+    },
+    {
+      "global_task_id": 32,
+      "init_state_id": 33,
+      "T_original": true,
+      "MT_initial": false,
+      "NN_T50": true,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 245,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          84,
+          245
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 259,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          87,
+          259
+        ]
+      },
+      "expert_u320_T50": {
+        "success": true,
+        "steps": 246,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          80,
+          246
+        ]
+      },
+      "expert_u480_T50": {
+        "success": true,
+        "steps": 253,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          82,
+          253
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          true,
+          false
+        ],
+        "first_predicate_true_step": [
+          78,
+          null
+        ]
+      }
+    },
+    {
+      "global_task_id": 32,
+      "init_state_id": 34,
+      "T_original": false,
+      "MT_initial": true,
+      "NN_T50": false,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 221,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          88,
+          221
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 234,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          100,
+          234
+        ]
+      },
+      "expert_u320_T50": {
+        "success": true,
+        "steps": 284,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          84,
+          284
+        ]
+      },
+      "expert_u480_T50": {
+        "success": true,
+        "steps": 258,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          85,
+          258
+        ]
+      },
+      "MT300_T50": {
+        "success": true,
+        "steps": 230,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          82,
+          230
+        ]
+      }
+    },
+    {
+      "global_task_id": 32,
+      "init_state_id": 35,
+      "T_original": false,
+      "MT_initial": false,
+      "NN_T50": true,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 290,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          94,
+          290
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 432,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          102,
+          432
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          true,
+          false
+        ],
+        "first_predicate_true_step": [
+          95,
+          null
+        ]
+      },
+      "expert_u480_T50": {
+        "success": true,
+        "steps": 304,
+        "final_predicates": [
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          94,
+          304
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          true,
+          false
+        ],
+        "first_predicate_true_step": [
+          92,
+          null
+        ]
+      }
+    },
+    {
+      "global_task_id": 38,
+      "init_state_id": 32,
+      "T_original": false,
+      "MT_initial": false,
+      "NN_T50": false,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 364,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          364,
+          180,
+          0
+        ]
+      },
+      "expert_u480_initial": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          null,
+          179,
+          0
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          null,
+          169,
+          0
+        ]
+      },
+      "expert_u480_T50": {
+        "success": true,
+        "steps": 476,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          476,
+          179,
+          0
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          false,
+          true
+        ],
+        "first_predicate_true_step": [
+          null,
+          null,
+          0
+        ]
+      }
+    },
+    {
+      "global_task_id": 38,
+      "init_state_id": 33,
+      "T_original": false,
+      "MT_initial": false,
+      "NN_T50": false,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 420,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          420,
+          169,
+          0
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 385,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          385,
+          178,
+          0
+        ]
+      },
+      "expert_u320_T50": {
+        "success": true,
+        "steps": 416,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          416,
+          157,
+          0
+        ]
+      },
+      "expert_u480_T50": {
+        "success": true,
+        "steps": 415,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          415,
+          165,
+          0
+        ]
+      },
+      "MT300_T50": {
+        "success": true,
+        "steps": 477,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          477,
+          164,
+          0
+        ]
+      }
+    },
+    {
+      "global_task_id": 38,
+      "init_state_id": 34,
+      "T_original": false,
+      "MT_initial": true,
+      "NN_T50": true,
+      "expert_u320_initial": {
+        "success": true,
+        "steps": 422,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          422,
+          184,
+          0
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 419,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          419,
+          191,
+          0
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          null,
+          186,
+          0
+        ]
+      },
+      "expert_u480_T50": {
+        "success": true,
+        "steps": 413,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          413,
+          186,
+          0
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          null,
+          502,
+          0
+        ]
+      }
+    },
+    {
+      "global_task_id": 38,
+      "init_state_id": 35,
+      "T_original": false,
+      "MT_initial": false,
+      "NN_T50": false,
+      "expert_u320_initial": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          null,
+          205,
+          0
+        ]
+      },
+      "expert_u480_initial": {
+        "success": true,
+        "steps": 514,
+        "final_predicates": [
+          true,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          507,
+          185,
+          0
+        ]
+      },
+      "expert_u320_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          false,
+          true
+        ],
+        "first_predicate_true_step": [
+          429,
+          183,
+          0
+        ]
+      },
+      "expert_u480_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          false,
+          true
+        ],
+        "first_predicate_true_step": [
+          null,
+          null,
+          0
+        ]
+      },
+      "MT300_T50": {
+        "success": false,
+        "steps": 520,
+        "final_predicates": [
+          false,
+          true,
+          true
+        ],
+        "first_predicate_true_step": [
+          null,
+          185,
+          0
+        ]
+      }
+    }
+  ],
+  "baseline_sources": {
+    "frozen_replay_git": "36f2a0441283bc8dd009e9d3d3e0c44419c60609",
+    "frozen_root": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/frozen_controller",
+    "canonical_git_when_inspected": "fee0ebf8e9ee8a3d9615a2f5abac3f750482323e",
+    "source_policy": {
+      "checkpoint": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+      "checkpoint_manifest": {
+        "bytes": 2007,
+        "path": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000/checkpoint_manifest.json",
+        "schema_version": "ember_pi05_source_checkpoint_v1"
+      },
+      "frozen_policy_subdir": "policy",
+      "model_files": [
+        {
+          "bytes": 2422,
+          "path": "policy/config.json"
+        },
+        {
+          "bytes": 9354050752,
+          "path": "policy/model.safetensors"
+        }
+      ],
+      "model_path": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000/policy",
+      "optimizer_step": 1000,
+      "source_run": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915",
+      "source_run_contract": {
+        "bytes": 11169,
+        "path": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/run_contract.json",
+        "schema_version": "ember_pi05_source_launch_v1"
+      },
+      "source_run_summary": {
+        "bytes": 3182,
+        "path": "/data1/user/ymdai/projects/EMBER/runs/outputs/pi05_source_aligned_seed7_1k_20260915/run_summary.json",
+        "schema_version": "ember_pi05_source_run_summary_v1"
+      },
+      "source_training_commit": "b8ea00e9fbb86742ef076bac9dd35c5314cd5aed"
+    },
+    "MT_checkpoint": "/data0/user/ymdai/ember_runs/coverage_retraining_20260920/training/mtbc/checkpoints/step_00000300/lora.safetensors",
+    "original_T_results_counts": {
+      "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/results.json": 132,
+      "/data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/parent/evaluation/seen12/results.json": 12
+    },
+    "baseline_results": {
+      "MT_initial": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/results.json",
+      "NN_T50": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/results.json",
+      "T_replay": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T_replay/results.json"
+    },
+    "cohort_source": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/memory/cohort.json",
+    "old_runtime_replay_owner": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/frozen_controller/src/ember/pi05_eval/action_memory_controller.py",
+    "old_replay_methods": [
+      "_load_memory",
+      "_capture_boundary",
+      "_record_raw_plan",
+      "plan_slots"
+    ],
+    "old_canonical_loop": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/frozen_controller/src/ember/pi05_evaluation.py",
+    "canonical_loop": "/data1/user/ymdai/projects/EMBER/src/ember/pi05_evaluation.py",
+    "canonical_scene": "/data1/user/ymdai/projects/EMBER/src/ember/pi05_eval/scene.py",
+    "canonical_capture": "/data1/user/ymdai/projects/EMBER/src/ember/pi05_eval/trajectory_capture.py",
+    "LIBERO_wrapper": "/data1/user/ymdai/projects/EMBER/.venv/lib/python3.12/site-packages/libero/libero/envs/env_wrapper.py",
+    "native_goal_AND_consumers": [
+      {
+        "path": "/data1/user/ymdai/projects/EMBER/.venv/lib/python3.12/site-packages/libero/libero/envs/problems/libero_tabletop_manipulation.py",
+        "function": "_check_success",
+        "operation": "result = self._eval_predicate(state) and result for each parsed goal state"
+      },
+      {
+        "path": "/data1/user/ymdai/projects/EMBER/.venv/lib/python3.12/site-packages/libero/libero/envs/problems/libero_kitchen_tabletop_manipulation.py",
+        "function": "_check_success",
+        "operation": "result = self._eval_predicate(state) and result for each parsed goal state"
+      }
+    ]
+  },
+  "baseline_counts": {
+    "T_initial": 6,
+    "MT_initial": 5,
+    "NN_T50": 7,
+    "T_replay": 6
+  },
+  "numeric_evidence": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/readback.json",
+  "per_row_table": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/per_row.tsv",
+  "viewed_12_clips": {
+    "clips": [
+      {
+        "panel": "expert_u480_initial",
+        "task": 32,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/expert_u480_initial_task32_init32.png",
+        "viewed_physical_steps": [
+          0,
+          35,
+          70,
+          105,
+          140,
+          175,
+          210,
+          245
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "35–105在炉旋钮附近动作，140炉面可见红；175–245搬单moka至炉面。原TurnOn106、On246首次真，完整AND成功；两目标分开记录。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "expert_u480_initial",
+        "task": 38,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/expert_u480_initial_task38_init32.png",
+        "viewed_physical_steps": [
+          0,
+          75,
+          145,
+          220,
+          295,
+          370,
+          440,
+          515
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "先搬近端moka至炉面，220–295第一只留在炉面；370–515又搬另一只，后段该只倾倒在炉侧桌面。原moka2 On179、moka1 On从未真，TurnOn初态真，完整AND失败；与320该init成功相反的相邻不利例。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "expert_u480_initial",
+        "task": 29,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/expert_u480_initial_task29_init32.png",
+        "viewed_physical_steps": [
+          0,
+          40,
+          85,
+          125,
+          170,
+          210,
+          255,
+          295
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "85后拿起酒瓶并向rack方向搬，125–295瓶横置在rack附近、仍贴近指尖；原On全程假。瓶body原点最大移动36.35cm，故该例不能统称没有搬瓶；无直接接触/净力/抓持标签，未认证是释放或几何的唯一原因。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "expert_u480_initial",
+        "task": 12,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/expert_u480_initial_task12_init32.png",
+        "viewed_physical_steps": [
+          0,
+          15,
+          35,
+          50,
+          65,
+          80,
+          100,
+          115
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "35–50接近目标绿黑瓶，65后瓶随夹爪上移，100–115移入篮中；实际In在117首次真，成功。其它可动实体保存原点未明显移动，保留这是固定init32单例而非全task抓持真值。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "expert_u480_T50",
+        "task": 32,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/expert_u480_T50_task32_init32.png",
+        "viewed_physical_steps": [
+          50,
+          110,
+          170,
+          230,
+          285,
+          345,
+          405,
+          465
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "110后炉旋钮转动、170炉面红；230–405反复停留/调整moka附近，465移到炉面。TurnOn124、On466首次真，完整AND成功，明显晚于同expert初态246；原MT同例只有On。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "expert_u480_T50",
+        "task": 38,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/expert_u480_T50_task38_init32.png",
+        "viewed_physical_steps": [
+          50,
+          110,
+          170,
+          230,
+          295,
+          355,
+          415,
+          475
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "110–230把第一只moka搬到炉面，295起靠近另一只，355–475完成第二只搬运。原moka2 On179、moka1 On476与初态已真TurnOn共同成功；同expert同init初态失败，明确保留状态依赖反例。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "expert_u480_T50",
+        "task": 29,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/expert_u480_T50_task29_init32.png",
+        "viewed_physical_steps": [
+          50,
+          85,
+          120,
+          155,
+          190,
+          225,
+          260,
+          295
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "50先承接原T接近姿态，85–120酒瓶上抬移向rack，155–295横置近rack处且指尖邻近瓶。瓶原点最大移动34.30cm、On全程假；不把该单例扩成全部四个失败的同一控制器/机械根因。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "expert_u480_T50",
+        "task": 12,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/expert_u480_T50_task12_init32.png",
+        "viewed_physical_steps": [
+          50,
+          80,
+          115,
+          145,
+          180,
+          210,
+          245,
+          275
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "80后移动蓝白cream_cheese纸盒，210–275位于篮内附近；目标salad_dressing留在桌上横倒区域。原cream_cheese自50最大移动55.38cm，目标9.69cm，目标In从未真。同weights从初态成功117、此T50失败280，不能把运输能力当正确对象控制。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "MT300_T50",
+        "task": 32,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/MT300_T50_task32_init32.png",
+        "viewed_physical_steps": [
+          50,
+          115,
+          185,
+          250,
+          315,
+          380,
+          450,
+          515
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "185–250把单moka移向炉面，250–515保留在炉面附近、后段发生倾斜。原On199首次真、末帧真，但TurnOn全程假；不能把搬对对象等同完整任务成功。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "MT300_T50",
+        "task": 38,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/MT300_T50_task38_init32.png",
+        "viewed_physical_steps": [
+          50,
+          115,
+          185,
+          250,
+          315,
+          380,
+          450,
+          515
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "50时炉面已红，TurnOn在初态就真。115–380主要操作靠前那只moka，450–515它倾倒在炉前，另一只保存时点基本未动。原moka_pot_1位移0、moka_pot_2最大22.6cm，两个On全程假。无接触仪器，不据此给抓稳/掉杯真值。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "MT300_T50",
+        "task": 29,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/MT300_T50_task29_init32.png",
+        "viewed_physical_steps": [
+          50,
+          85,
+          120,
+          155,
+          190,
+          225,
+          260,
+          295
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "50瓶子接近竖直；85后倾向右侧，后六个保存时点维持斜姿态且臂停留其附近，没有看见置于rack顶的完成布置。杯/夹持细节存在遮挡；目标On全程假，瓶body原点自50最大移动1.78cm。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      },
+      {
+        "panel": "MT300_T50",
+        "task": 12,
+        "init": 32,
+        "sheet": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/analysis/RGB/MT300_T50_task12_init32.png",
+        "viewed_physical_steps": [
+          50,
+          80,
+          115,
+          145,
+          180,
+          210,
+          245,
+          275
+        ],
+        "viewed_cameras": [
+          "base_0_rgb",
+          "left_wrist_0_rgb"
+        ],
+        "viewed_all_registered_8_saved_times": true,
+        "visible_behavior_and_numeric_counterexample": "接手50时指尖邻近桌上对象。80后蓝白纸盒被移向左侧篮子，210–275位于篮前桌面；原body记录标出cream_cheese原点最大移动53.0cm，而目标salad_dressing自50最大移动9.69cm。目标In全程假；不以外观推断抓稳或释放时刻。",
+        "terminal_RGB_missing": true,
+        "mechanical_contact_grasp_or_cause_certified": false
+      }
+    ],
+    "viewed_images": 192,
+    "environment_or_render_invocations": 0,
+    "fixed_preregistration": "480initial4 +480T50_4 +MTT50_4, each init32; no selection by success"
+  },
+  "behavioral_limits": [
+    "train-only fixed4task diagnostic; no video Writer or held-score",
+    "independent full A/B does not certify the original T shared-A output family",
+    "body origins, motion and gripper commands are not grasp/contact truth",
+    "all complete checkpoints fixed; no checkpoint/task union or automatic successor"
+  ],
+  "resource": {
+    "study": "aligned_teacher_recovery_20261008",
+    "physical_GPU_hours": 4.917044302092658,
+    "training_GPU_hours": 4.547586896750662,
+    "engineering_profile_smoke_GPU_hours": 0.043309136165512935,
+    "evaluation_all_failure_load_GPU_hours": 0.32614826917648315,
+    "measured_launch_CPU_hours": 5.3451055555555556,
+    "CPU_measurement_boundary": "launches via /usr/bin/time; root CPU analysis/Git/preflight not fully metered; no CPUh hard cap in this contract",
+    "last_GPU_exit_utc": "2026-10-08T00:37:26.992918+00:00",
+    "acceptance_to_last_GPU_exit_hours": 1.691109143892924,
+    "actual_owned_bytes_before_dev_cleanup": 7423352832,
+    "actual_owned_GiB_before_dev_cleanup": 6.913536071777344,
+    "peak_measurement_basis": "retained root+dev footprint measured before dev cleanup; no substantive run-root deletions; not continuous peak telemetry; original enumerated planning upper bound 9.8522 GiB includes cache/raw/tmp reserve",
+    "pre_GPU_admission_rejections": [
+      "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u320_T50_f2_actual_dispatcher.log"
+    ],
+    "jobs": [
+      {
+        "label": "MT300_T50_actual",
+        "GPU_seconds": 92.79188871383667,
+        "GPU_hours": 0.02577552464273241,
+        "node": "gpu02",
+        "gpus": [
+          7
+        ],
+        "seconds": 92.79188871383667,
+        "exit_code": 1,
+        "end_epoch": 1791416372.65037,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_actual_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_actual_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_actual_CPU.txt",
+        "measured_launch_CPU_seconds": 164.08
+      },
+      {
+        "label": "MT300_T50_first",
+        "GPU_seconds": 6.117575407028198,
+        "GPU_hours": 0.0016993265019522772,
+        "node": "gpu02",
+        "gpus": [
+          7
+        ],
+        "seconds": 6.117575407028198,
+        "exit_code": 1,
+        "end_epoch": 1791415742.4648724,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_first_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_first_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_first_CPU.txt",
+        "measured_launch_CPU_seconds": 5.279999999999999
+      },
+      {
+        "label": "MT300_T50_resume_f2",
+        "GPU_seconds": 3,
+        "GPU_hours": 0.0008333333333333334,
+        "node": "gpu02",
+        "gpus": [
+          7
+        ],
+        "seconds": 3,
+        "exit_code": 1,
+        "end_epoch": 1791417243.6409297,
+        "conservative_recovered_exit": true,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_resume_f2_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_resume_f2_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_resume_f2_CPU.txt",
+        "measured_launch_CPU_seconds": 1.88
+      },
+      {
+        "label": "MT300_T50_resume_f2_valid",
+        "GPU_seconds": 209.26288986206055,
+        "GPU_hours": 0.05812858051723904,
+        "node": "gpu02",
+        "gpus": [
+          7
+        ],
+        "seconds": 209.26288986206055,
+        "exit_code": 0,
+        "end_epoch": 1791417620.5036058,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_resume_f2_valid_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_resume_f2_valid_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/MT300_T50_resume_f2_valid_CPU.txt",
+        "measured_launch_CPU_seconds": 389.59
+      },
+      {
+        "label": "expert_u320_T50_f2_v4_actual",
+        "GPU_seconds": 227.67685389518738,
+        "GPU_hours": 0.06324357052644093,
+        "node": "gpu01",
+        "gpus": [
+          1
+        ],
+        "seconds": 227.67685389518738,
+        "exit_code": 0,
+        "end_epoch": 1791418636.5376081,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u320_T50_f2_v4_actual_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u320_T50_f2_v4_actual_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u320_T50_f2_v4_actual_CPU.txt",
+        "measured_launch_CPU_seconds": 618.14
+      },
+      {
+        "label": "expert_u320_initial_f2_actual",
+        "GPU_seconds": 212.4671926498413,
+        "GPU_hours": 0.05901866462495592,
+        "node": "gpu02",
+        "gpus": [
+          7
+        ],
+        "seconds": 212.4671926498413,
+        "exit_code": 0,
+        "end_epoch": 1791418497.3036463,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u320_initial_f2_actual_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u320_initial_f2_actual_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u320_initial_f2_actual_CPU.txt",
+        "measured_launch_CPU_seconds": 604.66
+      },
+      {
+        "label": "expert_u480_T50_f2_v4_actual",
+        "GPU_seconds": 206.80179524421692,
+        "GPU_hours": 0.057444943123393585,
+        "node": "gpu02",
+        "gpus": [
+          3
+        ],
+        "seconds": 206.80179524421692,
+        "exit_code": 0,
+        "end_epoch": 1791419843.0997136,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u480_T50_f2_v4_actual_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u480_T50_f2_v4_actual_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u480_T50_f2_v4_actual_CPU.txt",
+        "measured_launch_CPU_seconds": 592.47
+      },
+      {
+        "label": "expert_u480_initial_f2_v4_actual",
+        "GPU_seconds": 216.01557326316833,
+        "GPU_hours": 0.060004325906435646,
+        "node": "gpu02",
+        "gpus": [
+          7
+        ],
+        "seconds": 216.01557326316833,
+        "exit_code": 0,
+        "end_epoch": 1791419846.992918,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u480_initial_f2_v4_actual_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u480_initial_f2_v4_actual_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/expert_u480_initial_f2_v4_actual_CPU.txt",
+        "measured_launch_CPU_seconds": 605.7
+      },
+      {
+        "label": "formal12_to320",
+        "GPU_seconds": 2731.221727371216,
+        "GPU_hours": 0.75867270204756,
+        "node": "gpu02",
+        "gpus": [
+          0
+        ],
+        "seconds": 2731.221727371216,
+        "exit_code": 0,
+        "end_epoch": 1791418175.138391,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal12_to320_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal12_to320_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal12_to320_CPU.txt",
+        "measured_launch_CPU_seconds": 2695.36
+      },
+      {
+        "label": "formal12_to480",
+        "GPU_seconds": 1344.3626928329468,
+        "GPU_hours": 0.37343408134248524,
+        "node": "gpu02",
+        "gpus": [
+          0
+        ],
+        "seconds": 1344.3626928329468,
+        "exit_code": 0,
+        "end_epoch": 1791419523.7114012,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal12_to480_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal12_to480_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal12_to480_CPU.txt",
+        "measured_launch_CPU_seconds": 1353.85
+      },
+      {
+        "label": "formal29_to320",
+        "GPU_seconds": 2712.326549053192,
+        "GPU_hours": 0.7534240414036645,
+        "node": "gpu02",
+        "gpus": [
+          1
+        ],
+        "seconds": 2712.326549053192,
+        "exit_code": 0,
+        "end_epoch": 1791418156.8189843,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal29_to320_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal29_to320_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal29_to320_CPU.txt",
+        "measured_launch_CPU_seconds": 2669.92
+      },
+      {
+        "label": "formal29_to480",
+        "GPU_seconds": 1339.7999069690704,
+        "GPU_hours": 0.37216664082474177,
+        "node": "gpu02",
+        "gpus": [
+          1
+        ],
+        "seconds": 1339.7999069690704,
+        "exit_code": 0,
+        "end_epoch": 1791419501.0385885,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal29_to480_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal29_to480_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal29_to480_CPU.txt",
+        "measured_launch_CPU_seconds": 1344.15
+      },
+      {
+        "label": "formal32_to320",
+        "GPU_seconds": 2759.4403064250946,
+        "GPU_hours": 0.766511196229193,
+        "node": "gpu02",
+        "gpus": [
+          2
+        ],
+        "seconds": 2759.4403064250946,
+        "exit_code": 0,
+        "end_epoch": 1791418205.1452346,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal32_to320_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal32_to320_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal32_to320_CPU.txt",
+        "measured_launch_CPU_seconds": 2670.35
+      },
+      {
+        "label": "formal32_to480",
+        "GPU_seconds": 1327.7980773448944,
+        "GPU_hours": 0.36883279926247065,
+        "node": "gpu02",
+        "gpus": [
+          2
+        ],
+        "seconds": 1327.7980773448944,
+        "exit_code": 0,
+        "end_epoch": 1791419537.0583897,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal32_to480_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal32_to480_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal32_to480_CPU.txt",
+        "measured_launch_CPU_seconds": 1337.97
+      },
+      {
+        "label": "formal38_to320",
+        "GPU_seconds": 2816.003432750702,
+        "GPU_hours": 0.7822231757640838,
+        "node": "gpu02",
+        "gpus": [
+          3
+        ],
+        "seconds": 2816.003432750702,
+        "exit_code": 0,
+        "end_epoch": 1791418262.741513,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal38_to320_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal38_to320_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal38_to320_CPU.txt",
+        "measured_launch_CPU_seconds": 2686.42
+      },
+      {
+        "label": "formal38_to480",
+        "GPU_seconds": 1340.3601355552673,
+        "GPU_hours": 0.37232225987646317,
+        "node": "gpu02",
+        "gpus": [
+          3
+        ],
+        "seconds": 1340.3601355552673,
+        "exit_code": 0,
+        "end_epoch": 1791419607.5268362,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal38_to480_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal38_to480_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/formal38_to480_CPU.txt",
+        "measured_launch_CPU_seconds": 1342.7
+      },
+      {
+        "label": "profile_task38_01",
+        "GPU_seconds": 0.06612300872802734,
+        "GPU_hours": 1.836750242445204e-05,
+        "node": "gpu02",
+        "gpus": [
+          1
+        ],
+        "seconds": 0.06612300872802734,
+        "exit_code": 2,
+        "end_epoch": 1791415049.3391516,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/profile_task38_01_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/profile_task38_01_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/profile_task38_01_CPU.txt",
+        "measured_launch_CPU_seconds": 0.03
+      },
+      {
+        "label": "profile_task38_02",
+        "GPU_seconds": 47.948784828186035,
+        "GPU_hours": 0.013319106896718343,
+        "node": "gpu02",
+        "gpus": [
+          1
+        ],
+        "seconds": 47.948784828186035,
+        "exit_code": 0,
+        "end_epoch": 1791415163.4501204,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/profile_task38_02_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/profile_task38_02_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/profile_task38_02_CPU.txt",
+        "measured_launch_CPU_seconds": 50.91
+      },
+      {
+        "label": "smoke38_fresh2",
+        "GPU_seconds": 38.063199281692505,
+        "GPU_hours": 0.010573110911581252,
+        "node": "gpu02",
+        "gpus": [
+          1
+        ],
+        "seconds": 38.063199281692505,
+        "exit_code": 0,
+        "end_epoch": 1791415291.0326586,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/smoke38_fresh2_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/smoke38_fresh2_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/smoke38_fresh2_CPU.txt",
+        "measured_launch_CPU_seconds": 40.92
+      },
+      {
+        "label": "smoke38_resume4_w2",
+        "GPU_seconds": 69.83478307723999,
+        "GPU_hours": 0.019398550854788886,
+        "node": "gpu02",
+        "gpus": [
+          1,
+          2
+        ],
+        "seconds": 34.917391538619995,
+        "exit_code": 0,
+        "end_epoch": 1791415365.9334977,
+        "conservative_recovered_exit": false,
+        "launch_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/smoke38_resume4_w2_started.json",
+        "exit_receipt": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/smoke38_resume4_w2_exit.json",
+        "CPU_time_raw": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/launch/smoke38_resume4_w2_CPU.txt",
+        "measured_launch_CPU_seconds": 68.0
+      }
+    ],
+    "hard_GPU_hours": 16,
+    "hard_added_peak_GiB": 32
+  },
+  "information_wall": {
+    "source_and_prefix_frozen": true,
+    "train_tasks": [
+      12,
+      29,
+      32,
+      38
+    ],
+    "Writer_training_or_forward": 0,
+    "held_teacher_actions_state_rewards": 0,
+    "official_validation_Test": 0,
+    "deployment_expert_route": false,
+    "is_EMBER_method_score": false
+  },
+  "source_identity": {
+    "training_and_full_restore": "b8abc2a427ed2b153cc20a8b3977b97a25fe71af",
+    "new_readout": "f2f81352bb7e10326662341374a805b906a6c8ed",
+    "two_preserved_MT_completed_rows": "692ba99d6e4a9e5e0644b1430e73dd8ba0bef844",
+    "shared_MT_archive_dtype": "4F32 +72BF16; actual runtime installed exact cast FP32 full factors",
+    "experts_model_and_Adam_moments": "FP32",
+    "scheduler": null
+  }
+}

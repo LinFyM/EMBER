@@ -4658,3 +4658,13 @@ root denoising_return_writer_20261006留contract/Git/frozen/checkpoints/report/r
 原q已在完整Writer Value调制中使用，此次直接动作消费不同；不把MSE .1071→.0701或弱基线净增称强教师、动态必要性、泛化或LoRA修复。
 findings§378及docs/analyses/calibrated_action_memory_control_20261007.json索引全部raw/行为/来源/费用；Value2456ecd0、消费者3c58a008、原Gamma2c630fb3、几何9f90a14d/NN bfd76c99。
 完整GPU .169086646h/三正常launch，专用两owner与临时hooks退役，原frozen/cache/raw保留；任一结果停止、main接回写窗口作完整方法选择，无自动Gamma/NN/F/Writer后继。
+
+
+### 2026-10-08 当前source困难任务教师与T50恢复（完整结束）
+
+唯一合同 docs/designs/aligned_teacher_recovery_20261008.md；findings§394与docs/analyses/aligned_teacher_recovery_20261008.json索引完整原件。
+四独立完整A/B专家各480/53760query；固定80新行，初态11→12、T50 6→9/16；MT接手4，原T6/MT初态5/旧NN接手7复用。
+事前局部纠正教师资格未过，task29接手0/4、原T保持4→3/6；部分源控制可学证据与相邻损失并存。
+全部192固定RGB和连续数值/真实前50重放/完整goal AND保留；4.917044302093 GPUh，10wall/16GPUh/32GiB内。
+train/restore b8abc2a4、readout f2f81352（两复用MT行692ba99d）；专用面退役，完整0/160/320/480 ECP/frozen/Git/raw/失败保留。
+没有自动延训/蒸馏/扩专家/Writer，整批回main继续Owner目标裁决；执行停止不等于项目停止。

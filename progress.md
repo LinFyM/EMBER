@@ -27,6 +27,16 @@ MT300 T50首次prepare被旧relational被动capture provenance误分派，0环�
 同时核原强MT FrozenOperator/BatchedLoRAInference使用FP32完整state，typed consumer将原BF16存档值精确cast为FP32安装，
 原4F32+72BF16存档不改、新专家全FP32，普通matmul/reduction差异按AGENTS接受；不称逐bit同旧MT。
 root闭环工程/实际消费者/Git/冻结/学习读回/退役；只有整批或真实科学/预算/原件边界一次回main，不工程阶段停等。
+MT300 T50完整16行已正常退出，4/16，四task各1/4；对原T6为R2/G2/L4，非强恢复教师结论。
+首次实际发布因新typed condition与scene字段未纳入旧validator，已保存两条真实完成行；
+f2f81352最小接口修复经两原行完整CPU发布校验通过，clean pushed新冻结接续，2行未重跑。
+迁移仅重绑同JSON的seen scope/tokenizer manifest读取路径；一次不成熟恢复调用在模型/环境前退出，
+原time 2.24秒按3秒保守计费；系统python3缺pidfd的observer错误原件保留，后续一律原.venv Python。
+有效恢复14剩余行209.26秒/.058129GPUh；首次实际失败92.79秒/.025776GPUh均计入，不隐去加载/失败费用。
+MT固定四init32全64张实际RGB已审看，未把搬错cream_cheese、单moka On或初态已有TurnOn当完整目标成功。
+有限readout CPU退出调度观察器曾SIGTERM（发信方未知），0GPU/0新行；持久stdout/独立process group重新绑定后
+只等待四task真实320/480退出，正式训练和有效原件不动，不自Queue/按日志轮询。
+
 
 ## 2026-10-08 main完成跨配对科学消费，登记困难任务教师与恢复
 

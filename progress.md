@@ -1,11 +1,11 @@
 ## 2026-10-09 Owner要求开始实施并持续自主推进
 
 唯一active：[经验条件完整rank128编译器](docs/designs/experience_conditioned_compiler_20261009.md)。
-Owner最新明确观看/实践不限制两轮，当前输出固定rank128，不认可MT128＋残差64拼接；架构与后继实验在硬边界内由main自主决定。
+Owner最新明确观看/实践不固定任何轮数，同等能力下重读越少越能体现效率；当前输出固定rank128，不认可MT128＋残差64拼接；架构与后继实验在硬边界内由main自主决定。
 阶段停止意味着消费证据并解决下一问题，不能产生“没有Owner新许可就一直停”的阻塞。
 本批直接解码完整38-target A/B，以可训练MT坐标作初始化；共享U循环重读原始教学与自身事实，没有condition轨迹拟合。
-当前已登记唯一实施/首批学习合同，尚未声称实现、采集或GPU训练已开始。首批128 warm＋54 meta，36 tasks各6条链覆盖J1/2/3。
-固定train面板与meta54唯一formal correct paired400，总最多2812 episodes、80GPUh、计算24wall/data1峰160GiB；profile据实替换估计。
+当前已登记唯一实施/首批学习合同，尚未声称实现、采集或GPU训练已开始。首批共享学习记录点为128 warm＋meta54，36 tasks各6条条件链；每链实际观看/实践轮数不预设。
+固定train面板与meta54唯一formal correct paired400，按实际环境steps计量，80GPUh、计算24wall/data1峰160GiB；profile据实替换估计。
 首批不是最终成功资格；小面板不用来选checkpoint，正式相邻稳定性和匹配端点参照由后续有依据的科学接续处理。
 
 main当前正在完成记录/push；推送后的正式交接消息把本批tracked/Git独占窗口交给实验session`01a11a0a-fd39-74b1-83ba-001ede5330df`

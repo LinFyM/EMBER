@@ -3,8 +3,8 @@
 Owner要求现在开始并持续自主推进；专家推进表不是许可门槛，不得因阶段停止线把整个项目卡在等待Owner批准。
 唯一active为[experience_conditioned_compiler_20261009](docs/designs/experience_conditioned_compiler_20261009.md)。
 教学形成初始完整A/B，当前LoRA真实实践，经历改变教学重读与共享Q修订，最终在新初态用唯一固定LoRA执行。
-输出直接为全部38-target rank128；MT只初始化可训练坐标，取消冻结MT128＋残差64拼接。循环不硬编码两轮。
-首批单一主模型：完整实现/profile、128 warm＋54 meta（每task覆盖J1/2/3各两条链）、固定train读出及唯一meta54 strict paired400。
+输出直接为全部38-target rank128；MT只初始化可训练坐标，取消冻结MT128＋残差64拼接。实际观看/实践/重读不预设轮数，同等新初态能力下优先更少读取与实践。
+首批单一主模型：完整实现/profile、128 warm＋首个54次共享meta更新记录点（condition内按自身结果/step预算开放循环）、固定train读出及唯一meta54 strict paired400。
 预计实现4–8小时，计算12–24小时/50–80GPUh，峰160GiB；实测profile替换估计，资源与负结果由main自主裁决接续。
 代码/运行/Git交实验session闭环；main承担机制分析与结果消费，不重复工程验收，不请求Owner逐阶段许可。
 下方两轮/rank192/仅审阅及无active记录均为历史时点，不覆盖此处。

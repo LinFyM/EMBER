@@ -44,13 +44,14 @@ EMBER研究能否从generic `lerobot/pi05_base`建立的冻结π0.5-LIBERO sourc
 和一条或多条action-hidden正确教学视频，在最终评估前编译为一套完整task-conditioned LoRA，使policy从
 未见初始化闭环完成任务。
 
-编译期允许有预算、无奖励的真实试做与阶段性LoRA修订：Writer可读自身RGB、proprioception、实际执行动作及其后果，
+编译期允许有预算的真实实践、任务内学习与阶段性LoRA修订：可使用自身观测、实际执行动作、环境状态、接触及奖励等反馈，
 最终固定一套完整LoRA，在未参与该condition适应的新初态评估。试做预算、重置与最终评测须预先分开登记；
-有交互适应不得记作zero-interaction。环境reward/success/terminal与teacher动作/state仍不作为适应输入；
-有奖励task-local RL仍是独立实验，不由无奖励试做许可自动开放。
+有交互适应不得记作zero-interaction。离线teacher episode的动作/state等配套标签仍不可读；
+自身交互所得reward/success/terminal可以用于适应。观看、实践和修订可多轮进行，具体学习组织由active design登记。
 
 性能接受标准以`docs/current_owner_requirements.md`中的owner最新取舍为准；不得把历史`>145/400`合同
-自动恢复为新的硬门槛。仍须用strict single-checkpoint paired400、相邻能力保持、任务/suite覆盖、
+自动恢复为新的硬门槛。第一阶段以完整固定LoRA明显超过强MT为先，不把胜过同预算充分语言适应或补齐全部视频controls作为开工前提。
+正式结论仍须用strict single-checkpoint paired400、相邻能力保持、任务/suite覆盖、
 same-task换视频和视频因果证据说明结果，区分正常小幅交换与大范围能力丢失，不以偶然峰值代表稳定能力。
 
 closed-loop absolute性能首先选择方法。LoRA norm/rank/cosine、reconstruction、functional loss、内部时序margin、
@@ -59,18 +60,19 @@ hidden差异和surrogate只作定位证据，不能为了数值漂亮接受明�
 ## 5. Input, output and information wall
 
 - 输入必须包含exact task language和一条或多条同task、action-hidden、内部有序teacher videos。
-- language说明关注什么和目标是什么，但不能独立写出有效LoRA；video dynamic evidence必须是必要Value路径。
-- deployment Writer不得读取teacher action、proprio/state、reward、terminal、task ID、filename、object pose、
-  hidden normalization或特权policy outcome。编译期获准的自身试做RGB/proprio/动作/可观察后果是独立合法输入，
-  不得伪装成teacher标签；试做不得通过成功触发的停止、重置或选择向Writer间接传入success。
+- language说明关注什么和目标是什么；方法须解释video操作内容怎样参与理解、实践和最终能力，视频增量主张须有实际证据。
+- 教学条件不得包含teacher episode的action、proprio/state、reward、terminal、task ID、filename、object pose、
+  hidden normalization或特权policy outcome，也不得额外调取held task的离线训练资料。
+  编译期自身真实交互的RGB/proprio/动作、环境状态、接触、reward/success/terminal等可用于学习，须与teacher标签区分。
   授权的non-held meta tasks可在训练时使用action、privileged expert或on-policy reward学习共享Writer/functional decoder，
   这些监督标签不得成为deployment输入或task-ID route。
-- validation/test actions或reward不得产生梯度。允许模型冻结、无checkpoint选择、预注册的一次性sealed post-hoc
-  held诊断；Test默认保留到最终方法冻结后，提前使用必须明确登记且不得反哺设计。
+- validation/test离线示范标签及最终评测反馈不得产生梯度；获准的validation任务内适应可用自身交互学习，
+  须明确任务内参数副本与共享训练状态，不把held适应经验混成未登记的共享训练。
+  允许模型冻结、无checkpoint选择、预注册的一次性sealed post-hoc held诊断；Test默认保留到最终方法冻结后，提前使用必须明确登记且不得反哺设计。
 - 每个condition最终只部署一套完整38-target task LoRA；编译期可修订中间LoRA，但不生成多套video LoRA后平均，
   不挑video、不融合checkpoint、不部署第二套expert adapter。
-- Writer只在最终评估前的适应期运行；可重复读取合法教学及自身试做，并让当前LoRA参与后续理解。
-  最终LoRA冻结后Writer退出，最终闭环不反复看teacher video或继续适应；旧零交互实验按原合同解释。
+- Writer/Compiler只在最终评估前的适应期运行，可包含前向生成或任务内优化；可重复读取合法教学及自身实践，并让当前LoRA参与后续理解。
+  最终同一教学condition的一套LoRA冻结后，Writer、搜索和外部阶段选择等适应辅助退出；最终闭环不看teacher video或继续适应，旧零交互实验按原合同解释。
 - frame stride固定为5；frozen source policy无trainable parameters。允许learned language-only诊断baseline，以及
   rollout前合并为一套LoRA的principled shared prior/base adapter + video-conditioned residual；canonical仍必须证明
   video相对language/static prior有必要条件增量，且不得部署并行carrier、expert或第二adapter。
@@ -99,8 +101,8 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 
 ## 7. Training and decision contract
 
-- target development gradients只来自24 train tasks；active design可登记额外、经审计的non-held LIBERO-90 meta-task
-  gradients。所有授权meta tasks按预注册口径等权或显式分层，validation/test不得产生梯度。
+- 共享训练的target监督只来自24 train tasks；active design可登记额外、经审计的non-held LIBERO-90 meta-task
+  gradients。所有授权meta tasks按预注册口径等权或显式分层；held离线标签不产生梯度，自身交互任务内学习按§5单独登记。
 - 主video-conditioned LoRA的功能监督使用同task但跨episode的video/action query，阻断逐帧轨迹复制。
   经owner授权并在active design登记，训练期可用授权episode自身的RGB转移与动作作辅助监督，包括经同一套
   生成LoRA回传的功能误差；须显式登记标签来源、梯度消费者和与跨episode主项的权重。
@@ -109,10 +111,10 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 - formal checkpoint保存Writer、optimizer、scheduler/scaler、sampler/cursor、rank RNG、world topology和schema。
 - incompatible架构必须fresh。同拓扑exact-resume保留原world size/topology；Writer和MT-BC均可在完整checkpoint边界显式迁移物理卡数、设备与分片，保持逻辑查询流、任务/loss权重、有效batch、optimizer/scheduler及选择合同，记录新旧拓扑与RNG恢复/新增来源，不称bitwise exact。
 - 物理rank数是吞吐安排，不是科学超参数或永久上限。不得因一次smoke或旧恢复实现锁死卡数；迁移须由实际实现正确承接，不能直接绕过校验。已近完成的训练不为形式上的扩卡而中断、丢弃未保存更新或重复计算。
-- Writer（含内部读取模块Meta）采用fresh初始化、fresh optimizer/scheduler，以真实FM直接端到端共同训练，source基础权重始终冻结。active design可登记训练期辅助功能读出与显式分组蒸馏；辅助动作query不得进入部署Writer，蒸馏不得替代真实LoRA FM。
-  监督不计算RL、不采集RL更新rollout、不做trust回滚；真实平台后从单个监督checkpoint接独立共享RL，使用fresh RL optimizer/scheduler，默认不混FM。
-  G1--G3分段冻结属于历史机制验证，不构成当前训练课程，也不要求额外建立阶段初始化候选。
-  基础LoRA使用设计规定的合法identity初始化；fresh不要求每个张量随机非零。学习与闭环节点由真实证据裁决。
+- source基础权重始终冻结。共享Writer复现实验遵循其登记的fresh初始化、真实FM共同训练与独立共享RL合同，
+  不将历史配方套作所有后继方法的固定课程。后继可从强MT控制起点做任务内学习；初始化、共享/局部参数、
+  FM/价值学习/策略优化的组织与消费者须在完整设计中明确，teacher辅助动作query仍不得进入教学条件。
+  G1--G3分段冻结属于历史机制验证，不自动构成新课程。合法identity不要求每个张量随机非零，学习与闭环节点由真实证据裁决。
 - 机制smoke只证明图接通。到有信息量的预注册节点后及时做strict paired400；loss不能代替闭环。
 - 好结果应训练到足以判断相邻稳定性；明确坏结果不得靠无限续训或rank/scale/seed/LR/dtype小扫挽救。
 - 每轮必须报告per-task、per-suite、breadth、retained/gained/lost、churn及相邻success-set重合，并定位最早失效接口。

@@ -10527,3 +10527,45 @@ main已核旧denoising_training/credit、Runtime.compile和TargetWrite原源：c
 硬实际承接4wall/3完整GPUh/data1新增峰8GiB。执行前现场quota/双节点GPU、实际物理batch吞吐与完整预算由实验session闭环。
 代码从新clean pushed detached运行，旧冻结不热改；main交接后停止tracked/Git并发写。实际承接、完成和写窗口以progress为准。
 main整批后继续完整科学取舍；不是以完成这一局部诊断替代或结束EMBER目标。
+
+## 400. 完整G状态基线信用：额外局部减幅到达但衰减，视频组及困难任务保留反例（2026-10-08）
+
+按§399唯一合同完成旧checkpoint18/27/36/45/54/63对应macro19/28/37/46/55/64的全部24条件、96原episode、1525decision、3050转移。
+LOO/Context/State严格复用先前冻结预测、同phi/自身原观测/z/tau，恢复1/16×Q/M×5×c/tau；0更新/采集/环境/FM/held/Test/controls。
+实际消费者67ee55df复用1c90e7d5 NativeVelocity/Runtime.compile；完整76执行A/B余切经G/native回到全部228参数。
+37个X及H依赖公共参数，action_in_proj X为固定probe，全部38个X均使用；source/prefix冻结，156 FP32/72 BF16原参数dtype保持。
+
+| 原macro / checkpoint | 局部State/Context | LoRA边界 | 完整G | P/C/D/O联合 |
+| --- | ---: | ---: | ---: | ---: |
+| 19 / 18 | .985651 | 1.014795 | 1.037119 | 1.163405 |
+| 28 / 27 | .935577 | .930939 | .932186 | .907008 |
+| 37 / 36 | .903130 | .908329 | .915485 | 1.005823 |
+| 46 / 45 | .601854 | .646165 | .668424 | .634959 |
+| 55 / 54 | .878002 | .877252 | .889321 | .906388 |
+| 64 / 63 | .858026 | .854723 | .871976 | .982740 |
+
+各比为同事件成对平方量；LoRA宏边界是四独立condition输出的direct-sum，G则真实求四条件和并保留跨condition项。
+六个不同phi只汇总标量，未平均方向或报方差/SNR。合计局部.857640、完整G.882919、视频组.947462：额外降低14.24%/11.71%/5.25%。
+完整G 5/6macro降低、视频4/6；condition完整G15降低/9反增、视频13降低/11反增。Context/LOO完整G .406475、State/LOO .358884，
+task/时间的已有作用明显大于State额外减幅。P/C/D/O合计分别.918365/.901788/.898159/.948541，但macro19四组均反增。
+State净减幅91.24%在public_B0坐标，视频组仅3.69%、Context平方量本来占8.23%；public A/B0也影响教学native读取，不能当知识互斥分区。
+
+mixed12条件完整G/视频比.878602/.948154；全成功12组LOO精确零，Context/State仍真实产生完整G平方量90072.63/61281.78。
+全成功完整G虽降31.96%，视频3031.76→3079.12、反增1.56%，8/12视频条件变差；零LOO比值/cosine为空，未加epsilon或跳过Context/State。
+新增信用不能仅由非零/范数命名正确或有害，LOO四条共享其它回报，不当独立SNR样本。
+
+完整G不利组为(19,29/56)、(28,5/97)、(37,55)、(46,51)、(55,0/2)、(64,32)；视频另有(19,64)/(37,36)，全部逐行/Gram保留。
+困难例：task29完整G/视频1.16268/1.21329；12为.90543/.88564但cosine.71111/.75742；38为.99089/.99982近无视频减幅；32为1.02431/1.09416。
+无25/全失败组，只有22task，CPU净收益37/73缺席；不由六点认定早期正确操作、真实梯度方差或闭环收益。
+这完成local→LoRA→G桥接：局部相同能量变化经实际自身观测Jacobian及compiler/native再加权，19在LoRA处已翻转，37/64视频组进一步削弱；
+有限状态信用未被完全抵消，也未形成一致实质视频增益。结果只能更新后继投入判断，不能自动恢复RL/critic扫描或认证完整Writer修复。
+
+六点新LOO norm与旧preclip数量级相符、最大相对差.02395%；接受普通BF16/物理batch/reduction差，未做逐tensor/逐bit/hash比较。
+32×16、64×32、128×32真实耗时29.54/29.56/30.69秒，峰allocated26.69/40.50/44.90GB，扩大无收益，选32转移/16帧。
+原四卡在launch前被其它任务占满，四次准入GPU前拒绝、健康macro28保留；最终跨两节点实际峰4卡共驻，现场cap6，无额外GPU例外。
+相对Python路径失败.1473秒、常量X断言过严失败40.7285秒均计费；修复仅工程检查/命令，不改科学图，原6541c0f9与新67ee55df冻结均保留。
+全部GPU .287050219h、GPU进程树CPU .314h（不称全批精确CPU）、26.02分钟到最后GPU退出，R+DEV观测约3.40GiB/规划5GiB/硬8GiB。
+18份完整FP32梯度3,049,770,720B、全macro/condition Gram/分组/cosine/交叉项/来源/失败/命令/费用保存；GPU现场无本用户进程。
+原CPU cached8state比对只覆盖position3/gripper2，姿态未比；不为措辞重扫旧captures。旧模型/原件只读、预测器无refit。
+canonical docs/analyses/state_baseline_full_writer_credit_20261008.json及唯一run report为入口；临时消费者封口退役，Git/frozen/原件保留。
+实验session完成Git/资源/可靠一次交付后交回写窗口；main独立消费继续Owner最终目标，本批终止不等于项目终止。

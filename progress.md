@@ -1,3 +1,31 @@
+## 2026-10-08 完整Writer三基线信用读回全部结束
+
+state_baseline_full_writer_credit_20261008已完成固定6macro/24condition/96原episode/1525decision/3050转移，0参数更新/环境/held/Test。
+local State/Context .857640→完整G .882919、P/C/D/O联合 .947462，额外平方量降低14.24%/11.71%/5.25%；完整G5/6宏改善、视频4/6。
+9/24完整G、11/24视频条件反增；macro19在LoRA边界已反转，37/64视频作用削弱。task29/32反增、38几乎不变，12改变方向的例子均保留。
+Context本身对LOO .406475，State .358884；净减幅91.24%在public_B0坐标，不能把公共参数等同无视频知识。
+12全成功组Context/State真实经全部G，LOO0；视频联合反增1.56%，8/12不利。没有全失败或task25，22task覆盖限制保留。
+findings§400/canonical JSON与run report记录全体Gram/分组/原预测/交叉项/不利例及不可外推范围，不作方差/SNR/控制成绩或自动学习资格。
+原1c90e7d5 native/collection只读，实际消费者67ee55df；156 FP32/72 BF16原参数保留，18份全228参数FP32梯度3,049,770,720B保存。
+6成功GPU进程及2失败全退出；实际 .287050219GPUh、进程树 .314CPUh，02:58:03.013Z最后GPU退出、距承接26.02分钟。
+现场跨两节点实际峰4卡（原计划5）、cap6，最终无本用户GPU进程；R+DEV观测3.40GiB、规划5GiB/硬8GiB，独立quota/du/shared及逐launch原件保留。
+32×16/64×32/128×32实测29.54/29.56/30.69秒、allocated26.69/40.50/44.90GB，扩大无收益，选32/16，未增加科学case。
+相对Python路径及过严常量X断言两失败、四现场卡占用变化导致的GPU前拒绝全部保留计费，健康无依赖计算未停。
+专用临时单文件消费者退役，原Git/frozen/代码/权重只读引用/完整梯度/原件保留；最后集成push、开发区清理/可靠整批投递以completion为准。
+整批计算停止；无自动RL/critic扫描/新Writer或后继。可靠一次回main后交回tracked/Git，主讨论独立消费继续Owner目标。
+
+## 2026-10-08 完整Writer三基线首个实际消费者及并行读回
+
+macro19完整三基线退出0；全部228参数/76执行LoRA因子、37个依赖公共参数的X及真实H均覆盖，action_in_proj的X为固定probe。
+首次错误地要求38个X均requires_grad的诊断断言已修正：67ee55df新clean pushed sparse detached冻结复用原1c90e7d5计算，不改原冻结。
+相对Python路径启动失败.147秒及断言失败40.729秒、原件/源身份保留计费；没有源图detach违约或科学变量修改。
+32×16、64×32、128×32实测29.54/29.56/30.69秒，峰allocated26.69/40.50/44.90GB；扩大没有收益，选32转移/16帧chunk。
+macro19新LOO norm1668.415与原1668.302数量级一致，普通BF16/物理batch/reduction差接受，未逐tensor或hash。
+剩余五checkpoint各四condition已独立排入gpu02/0,1,2,3,7，逐launch同时两节点live准入/独立quota回执，现场cap6、实际本批最多5卡。
+原计划gpu02/1,2,3,7在launch前被其它新任务占至40,790MiB/100%util，四次准入在GPU子进程前拒绝，原快照均保留。
+macro28在gpu02/0健康继续；37/46/55/64原事件同版本重排至gpu02/4、gpu01/1、gpu02/6、gpu01/6，现场低util与显存余量满足实测峰，不干预其它任务。
+所有原事件/预测/参数版本不变，0新环境/optimizer更新；当前为实际运行状态，完整科学判断仅在六macro全体结束后。
+
 ## 2026-10-08 实验session实际承接完整Writer基线信用辨识
 
 实验session01a10a98-6d4b-7d61-b12c-da38a628cb45从clean pushed b23453ff接管canonical tracked/Git独占窗口；main停止并发写入。

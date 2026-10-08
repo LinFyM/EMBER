@@ -4701,3 +4701,13 @@ findings§399及state_baseline_full_writer_credit_20261008.md登记六个真实�
 选择只依赖现成checkpoint及past-only预测器，不依据结果；22task、无全失败组，跨condition与视频读写梯度完整报告。
 0环境/参数更新/held/Test；预计1–2wall/.5–1.5GPUh，硬4wall/3GPUh/8GiB，从新clean pushed detached代码执行。
 登记不代表已运行或RL资格；实际承接和完整结果另记，main继续承担下一完整科学判断。
+
+### 2026-10-08 完整Writer状态基线信用：有限增量到达G，视频组衰减及反向组保留
+
+findings§400、canonical state_baseline_full_writer_credit_20261008分析与唯一run report保存6精确版本/24条件/96episode/3050旧转移的完整三基线VJP。
+State/Context局部.857640、完整G .882919、视频联合.947462；G5/6宏降低但9/24条件不利，视频4/6宏降低且11/24条件不利，19/37/64边界衰减完整保留。
+Context/LOO .406475已有task/time作用大，State额外净减幅主要落public_B0坐标；公共参数也影响native读取，不能按坐标互斥分知识。
+全成功12组LOO0未被Context/State跳过，视频反增1.56%/8不利；29/32反增、38近无视频收益，12方向变化；无全失败/25，22task范围保持。
+source/native1c90e7d5、新消费者67ee55df完整76因子/228参数信用，真实H/37liveX及固定probe X，原混合dtype保留，0更新/环境/held/Test。
+18份FP32全梯度约2.84GiB、全Gram/交叉项/原件/费用保留；.287050219GPUh含失败/profile/加载，跨节点峰4卡、扩大32→64/128无收益而选32/16。
+唯一临时入口退役、Git/frozen证据保留；本次仅paired second moments，不证明方差/正确操作/闭环或自动RL资格，main独立消费后继续完整方法。

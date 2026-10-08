@@ -1,3 +1,13 @@
+## 2026-10-08 main完成完整G原件消费，解释专家意见与方法边界
+
+整批completion与可靠交付已收到，main接回clean pushed fe88e5ed及canonical tracked/Git；全部GPU结束，执行方不再计算。
+main独立核六macro/24条件原始Gram、实际VJP/native消费者及旧clip1→Adam更新；findings§401/canonical main_consumption保存判断。
+裁剪前完整G/视频组额外平方量降低11.71%/5.25%，但旧全局clip会消除共同幅度变化；方向发生改变，尚无更好控制方向的证据。
+解析沿原clip计算后PCDO分量4/6反增，只是相对信用分配，不称行为恶化；没有新optimizer模拟、VJP或模型更新。
+降低复杂State critic作为主要修复的优先级；本0更新分析不能登记成actor-critic学习失败，不追加局部模型/clip扫描。
+Owner当前要求详细解释专家意见的进度与是否被否定：具体跨配对修复降级，整体诊断、未实施组合与main自主后续须分开。
+当前无新active计算或已确定的新完整架构；main继续完整方法判断及Owner持续研究目标，不从下方历史active恢复实验。
+
 ## 2026-10-08 完整Writer三基线信用读回全部结束
 
 state_baseline_full_writer_credit_20261008已完成固定6macro/24condition/96原episode/1525decision/3050转移，0参数更新/环境/held/Test。

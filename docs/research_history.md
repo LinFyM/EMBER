@@ -4711,3 +4711,13 @@ Context/LOO .406475已有task/time作用大，State额外净减幅主要落publi
 source/native1c90e7d5、新消费者67ee55df完整76因子/228参数信用，真实H/37liveX及固定probe X，原混合dtype保留，0更新/环境/held/Test。
 18份FP32全梯度约2.84GiB、全Gram/交叉项/原件/费用保留；.287050219GPUh含失败/profile/加载，跨节点峰4卡、扩大32→64/128无收益而选32/16。
 唯一临时入口退役、Git/frozen证据保留；本次仅paired second moments，不证明方差/正确操作/闭环或自动RL资格，main独立消费后继续完整方法。
+
+
+### 2026-10-08 main消费完整G信用并澄清专家意见的裁决范围
+
+findings§401/canonical main_consumption独立复算六macro/24条件原始Gram；State/Context完整G .882919、PCDO .947462。
+旧实际更新全局clip1后进入Adam，六点均触发clip；裁剪前二阶量不能直接当实际更新/性能增益。
+State/Context方向cosine .70–.96；原clip解析后的PCDO分量4/6反增，仅表示信用分配改变，未进行optimizer模拟/策略更新/新环境。
+复杂State critic作为主修复降级，基线候选保留；不能把0更新诊断登记为actor-critic失败。
+专家具体跨配对修复的优先级已下降，原问题诊断仍部分受支持，撤回/未实施完整组合不作实测否定；后续教师/基线选择由main负责。
+当前尚无新完整行为优势或确定后继架构，Owner要求详细解释现状；main持有Git并继续科学判断，旧active不恢复。

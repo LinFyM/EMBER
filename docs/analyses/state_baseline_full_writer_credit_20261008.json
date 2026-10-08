@@ -19508,5 +19508,193 @@
       "67ee55df native boundary repair; clean pushed sparse detached"
     ],
     "sparse_freeze": "New detached checkout contains only actual diagnostic entry/design/AGENTS/progress; full commit identity retained; imports original immutable native source in place."
+  },
+  "main_consumption": {
+    "source": "six original macro JSONs, with original per-condition Grams",
+    "parameter_or_environment_updates": 0,
+    "new_VJP": false,
+    "macro_summary": {
+      "full": {
+        "squared_norm_sums": {
+          "LOO": 11502477.697177073,
+          "Context": 4675467.75604517,
+          "State": 4128060.837248077
+        },
+        "State_Context": 0.8829193254323441,
+        "Context_LOO": 0.4064748377814824,
+        "State_lower_macros": 5,
+        "State_lower_conditions": 15
+      },
+      "public_A": {
+        "squared_norm_sums": {
+          "LOO": 614108.3410228678,
+          "Context": 273768.02003829053,
+          "State": 246030.0485635424
+        },
+        "State_Context": 0.8986807463089788,
+        "Context_LOO": 0.44579759262396357,
+        "State_lower_macros": 4,
+        "State_lower_conditions": 15
+      },
+      "public_B0": {
+        "squared_norm_sums": {
+          "LOO": 10015386.283469502,
+          "Context": 4016934.2756115925,
+          "State": 3517479.992971591
+        },
+        "State_Context": 0.8756628193614252,
+        "Context_LOO": 0.4010763201656619,
+        "State_lower_macros": 5,
+        "State_lower_conditions": 15
+      },
+      "P": {
+        "squared_norm_sums": {
+          "LOO": 21.741430909849754,
+          "Context": 10.589404049331062,
+          "State": 9.72493522750456
+        },
+        "State_Context": 0.9183647334827014,
+        "Context_LOO": 0.48706104456692545,
+        "State_lower_macros": 5,
+        "State_lower_conditions": 14
+      },
+      "C": {
+        "squared_norm_sums": {
+          "LOO": 5685.667385516274,
+          "Context": 2723.735087844247,
+          "State": 2456.231000908291
+        },
+        "State_Context": 0.9017877736605886,
+        "Context_LOO": 0.4790528363974855,
+        "State_lower_macros": 4,
+        "State_lower_conditions": 14
+      },
+      "D": {
+        "squared_norm_sums": {
+          "LOO": 11596.385864793816,
+          "Context": 5700.817319906276,
+          "State": 5120.238486780993
+        },
+        "State_Context": 0.8981586673374008,
+        "Context_LOO": 0.4916029344292293,
+        "State_lower_macros": 4,
+        "State_lower_conditions": 13
+      },
+      "O": {
+        "squared_norm_sums": {
+          "LOO": 855679.2780034832,
+          "Context": 376330.31858348835,
+          "State": 356964.6012900251
+        },
+        "State_Context": 0.9485406401313717,
+        "Context_LOO": 0.4398030059364794,
+        "State_lower_macros": 4,
+        "State_lower_conditions": 12
+      },
+      "video_read_write": {
+        "squared_norm_sums": {
+          "LOO": 872983.0726847032,
+          "Context": 384765.4603952882,
+          "State": 364550.7957129419
+        },
+        "State_Context": 0.9474623718522479,
+        "Context_LOO": 0.4407479050103582,
+        "State_lower_macros": 4,
+        "State_lower_conditions": 13
+      }
+    },
+    "clip1_readback": [
+      {
+        "macro": 19,
+        "preclip_norms": [
+          1668.4149541594736,
+          758.3027287010559,
+          772.248392985985
+        ],
+        "State_Context_cosine": 0.9566005327902181,
+        "unit_gradient_squared_difference": 0.08679893441956388,
+        "video_share_Context": 0.039806126450667535,
+        "video_share_State": 0.044653152501946666,
+        "video_State_Context_after_global_clip": 1.1217658306262515
+      },
+      {
+        "macro": 28,
+        "preclip_norms": [
+          689.1064850349644,
+          502.92649338728796,
+          485.57429354504944
+        ],
+        "State_Context_cosine": 0.7016374211341966,
+        "unit_gradient_squared_difference": 0.5967251577316068,
+        "video_share_Context": 0.0650380278733886,
+        "video_share_State": 0.06328140255920515,
+        "video_State_Context_after_global_clip": 0.9729907967442815
+      },
+      {
+        "macro": 37,
+        "preclip_norms": [
+          1298.952919058127,
+          809.3551764095706,
+          774.3987590553701
+        ],
+        "State_Context_cosine": 0.9298957653798766,
+        "unit_gradient_squared_difference": 0.14020846924024677,
+        "video_share_Context": 0.07079889047320811,
+        "video_share_State": 0.07778523377101366,
+        "video_State_Context_after_global_clip": 1.0986787116451964
+      },
+      {
+        "macro": 46,
+        "preclip_norms": [
+          1056.0522268838586,
+          748.5843118350393,
+          612.0214739719808
+        ],
+        "State_Context_cosine": 0.9107241181469827,
+        "unit_gradient_squared_difference": 0.17855176370603454,
+        "video_share_Context": 0.048018074306483485,
+        "video_share_State": 0.04561406809821936,
+        "video_State_Context_after_global_clip": 0.9499353890595413
+      },
+      {
+        "macro": 55,
+        "preclip_norms": [
+          1669.4403248099536,
+          1236.9895410193626,
+          1166.5283978030318
+        ],
+        "State_Context_cosine": 0.9586516056309897,
+        "unit_gradient_squared_difference": 0.08269678873802055,
+        "video_share_Context": 0.06997783308524448,
+        "video_share_State": 0.07132077821811596,
+        "video_State_Context_after_global_clip": 1.019191007690043
+      },
+      {
+        "macro": 64,
+        "preclip_norms": [
+          1629.246911999321,
+          1049.7296184451825,
+          980.2339703951428
+        ],
+        "State_Context_cosine": 0.9391854202099428,
+        "unit_gradient_squared_difference": 0.12162915958011444,
+        "video_share_Context": 0.14979505426477546,
+        "video_share_State": 0.16882295960862628,
+        "video_State_Context_after_global_clip": 1.1270262588924824
+      }
+    ],
+    "interpretation": {
+      "preclip_norm_reduction_is_not_reduction_of_actual_clipped_step": true,
+      "all_baselines_all_six_macros_norm_exceeds_one": true,
+      "video_postclip_fraction_increases_in_macros": 4,
+      "this_is_not_optimizer_simulation_or_behavior_evidence": true,
+      "different_phi_gradients_not_averaged": true
+    },
+    "actual_source_review": [
+      "consumer.py entries_for/lora_credit/writer_credit/groups_for/summaries/execute",
+      "old frozen denoising_training.py reduce_update",
+      "six original macro Grams and all 24 conditions"
+    ],
+    "decision": "Real but limited baseline-induced credit change. Lower priority of a complex State critic as the principal repair; retain baseline candidates without claiming actor learning or closed-loop improvement. No automatic successor."
   }
 }

@@ -162,6 +162,10 @@ def main():
     os.environ['MUJOCO_EGL_DEVICE_ID'] = str(args.physical_gpu)
     os.environ['LIBERO_CONFIG_PATH'] = str(args.output / f'libero_config_{os.getpid()}')
     if args.command in {'profile', 'train', 'worker'}:
+        from ember.pi05_assets import prepare_libero_config
+        from .contract import learning_environment
+        os.environ['EMBER_LIBERO_ASSETS_ROOT'] = learning_environment(asset_root=args.asset_root)['libero_paths']['assets']
+        prepare_libero_config(Path(os.environ['LIBERO_CONFIG_PATH']))
         import torch
         torch.set_num_threads(args.cpu_threads)
         torch.backends.cuda.matmul.allow_tf32 = True

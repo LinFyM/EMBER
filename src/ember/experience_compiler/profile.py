@@ -144,8 +144,13 @@ def profile_actual(runtime, runner, event, teacher, batch, rows):
     record, chain = measure(runtime, 'actual_adaptation',
         lambda: runner.adapt(task, teacher, event.seed, (*event.query_states2, 32, 33, 34)))
     rows.append(dict(record, category='adaptation', compilation=chain.metrics))
-    queries = [runner.query(task, state_id, chain.states[-1], event.seed + i + 1)
-               for i, state_id in enumerate(event.query_states2)]
+    queries = []
+    for i, state_id in enumerate(event.query_states2):
+        record, query = measure(runtime, 'actual_SDE_query',
+            lambda state_id=state_id, i=i: runner.query(task, state_id, chain.states[-1], event.seed + i + 1))
+        rows.append(dict(record, category='SDE_query', environment_steps=query['row']['environment_steps'],
+                         success=query['row']['success']))
+        queries.append(query)
     returns = [int(q['row']['success']) for q in queries]
     if any(returns):
         for micro in (4, 8, 16, 32):
@@ -165,6 +170,10 @@ def profile_actual(runtime, runner, event, teacher, batch, rows):
     record, finals = measure(runtime, 'actual_final_batch3',
                              lambda: runner.final_many(task, [32, 33, 34], chain.states[-1]))
     rows.append(dict(record, category='final_batch3', rows=finals))
+    record, final = measure(runtime, 'actual_final_single',
+                            lambda: runner.final(task, 32, chain.states[-1]))
+    rows.append(dict(record, category='final_single', environment_steps=final['environment_steps'],
+                     success=final['success']))
     return chain, queries, returns
 
 

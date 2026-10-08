@@ -148,6 +148,8 @@ def profile_teaching(runtime, data, rows):
 
 def profile_actual(runtime, runner, event, teacher, batch, rows, destination):
     # Actual open-ended practice: the implementation imposes no J menu.
+    # These features were explicitly prefetched by the native-frame profile.
+    runtime.last_teacher_cost = dict(cache_hit=True, native_encoder_seconds=0., native_encoded_frames=0)
     task = next(t for t in runner.contract['tasks'] if t['global_task_id'] == event.task_id)
     record, chain = measure(runtime, 'actual_adaptation',
         lambda: runner.adapt(task, teacher, event.seed, (*event.query_states2, 32, 33, 34)))

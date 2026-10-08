@@ -2,8 +2,13 @@
 
 main已交出tracked/Git窗口；实际来源clean pushed183f08d1，实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占codex/experience-compiler-20261009。
 唯一active仍为docs/designs/experience_conditioned_compiler_20261009.md：完整rank128坐标解码，真实经验在空间压缩前影响重读，condition无optimizer与固定J。
-已实现完整运行面，复用实际source/native、FM、数据/环境及配对消费者；当前进行实际native/开放循环profile前的集成检查。
-strg01 data1现场798291308KiB/2TiB，合计本批160GiB新增峰可容纳；GPU学习及formal尚未开始，预算/失败/吞吐将保存于唯一root。
+已实现完整运行面并推送main，复用实际source/native、FM、数据/环境及配对消费者；32项CPU检查与完整38-target checkpoint/cursor/optimizer/CUDA RNG恢复消费者通过。
+clean pushed detached b162b161实际profile完成5176环境steps；task0自身成功后停止（114steps、无重读），最长合法教学task38在1024steps预算结束（2次真实重读）。
+完整MT初始化native FM差7.80e-6；实际梯度进入读取、初始Q与U输出，U内部初始零梯度符合零输出identity初始化，不把此时点说成已学会修订。
+真实SDE query有1/4成功，未制造非零奖励。micro28/PG32、native与learned frame64、decoder65536、经验201按实测吞吐采用；更大帧/解码块已测且未更快。
+保守按全部适应step上限投影约36.5GPUh、原件约76GiB；计入额外存储/序列化/尾部余量后按50GPUh、约16wall小时安排，仍在80GPUh/24wall/160GiB界内。
+拟按现场准入gpu01:0/6学习，gpu02:4/6读出；学习退出后前两卡也参加同一评测pool，总物理卡峰4，现行总6/单节点6。整批执行器持续等待checkpoint/退出事件，不轮询共享缓存，不发自Queue。
+strg01 data1新复核798880948KiB/2TiB，合计本批160GiB新增峰可容纳；GPU学习及formal尚未开始，全部预算/失败/吞吐保存在唯一root。
 实施预计4–8wall小时，计算初估12–24wall/50–80GPUh；profile按实际测量替换，不预设condition观看/实践轮数。
 全部原件及实施开始计时在/data1/user/ymdai/ember_runs/experience_conditioned_compiler_20261009/implementation.json；工程事项自主闭环，不按阶段回main或等验收。
 窗口整批交付前由实验session持有；只有实际科学/资源边界需main裁决或完整科学结果结束才回报一次。

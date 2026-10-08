@@ -156,6 +156,7 @@ class Runner:
 
         chain, budget = Chain(), 1024
         started, native_before = time.monotonic(), self.runtime.feature_seconds
+        teacher_cost = dict(self.runtime.last_teacher_cost)
         with autocast(self.runtime.device):
             q = self.runtime.compiler.initial(teacher)
             current = self.runtime.compiler.decode(q)
@@ -188,9 +189,9 @@ class Runner:
             environment_steps=1024 - budget, resets=len(chain.episodes), state_reuses=repeats,
             stop_reason='own_success' if success else 'step_budget', practice_success=success,
             masked_experience=bool(masked), wall_seconds=time.monotonic() - started,
-            native_feature_seconds=self.runtime.feature_seconds - native_before,
+            native_feature_seconds=self.runtime.feature_seconds - native_before + teacher_cost.get('native_encoder_seconds', 0.),
             excluded_states=list(map(int, excluded_states)), condition_seed=int(condition_seed))
-        chain.metrics['teacher_feature_cost'] = dict(self.runtime.last_teacher_cost)
+        chain.metrics['teacher_feature_cost'] = teacher_cost
         chain.q_context = q.detach().float().mean((0, 1)).cpu()
         return chain
 

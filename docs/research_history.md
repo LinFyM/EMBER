@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-08：第六轮架构审阅与教学实质作用澄清
+
+第六轮将教学引导实践进一步具体化为操作段读取、真实状态校准、目标条件双Q、原生候选编辑、完整FM/局部前缀energy score及最终裸actor。
+主讨论核对相关数据/控制/LoRA接口与损失含义，认可参数和经验分工；操作字段的监督、视频到真实命令、随目标变化的Q比较与经验吸收仍需补齐。
+没有把合理energy-score公式判为错误，也不由局部历史阴性否定未实施的任务内完整组合；findings§405保存判断。
+Owner进一步明确整个适应过程就是新Writer：视频必须贡献有用操作知识，经实践形成固定LoRA，不能以额外任务内训练替代研究核心。
+[第六轮正文](review_materials/20261008_method_rethink/EXPERT_RESPONSE_ROUND6.md)、[审阅意见](review_materials/20261008_method_rethink/ARCHITECTURE_REVIEW.md)、
+[owner原话及实际后续请求](review_materials/20261008_method_rethink/OWNER_FOLLOWUP_REQUESTS.md)已补入既有包；最新prompt要求主设计、可行学习路径及首批完整有界方案。
+本次仅研究记录与专家交接，无新增实验结果或active design；第六轮的模块、32/64episode和成本估计均未作为运行授权。
+
 ## 2026-10-08：专家第四/第五轮与新对话完整架构委托
 
 在无奖励试做前提下，第四轮提出效果元编译器；owner随后澄清，自身validation交互的状态、动作、接触、奖励、成功与终止均可用于学习，

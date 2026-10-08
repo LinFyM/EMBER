@@ -61,6 +61,9 @@ hidden差异和surrogate只作定位证据，不能为了数值漂亮接受明�
 
 - 输入必须包含exact task language和一条或多条同task、action-hidden、内部有序teacher videos。
 - language说明关注什么和目标是什么；方法须解释video操作内容怎样参与理解、实践和最终能力，视频增量主张须有实际证据。
+- 从教学读取、实践反馈到固定LoRA的完整过程替代Writer；视频须提供有用操作知识，不能以形式读取掩盖额外任务内训练。
+  第一阶段性能目标不取消该要求；按具体机制在早期完整循环取得适量公平证据，不把全部消融变成开工前置门槛。
+  推导须落实已有数据、可获取监督和真实控制接口；不得为held task人为提供正确操作程序后归因于教学理解。
 - 教学条件不得包含teacher episode的action、proprio/state、reward、terminal、task ID、filename、object pose、
   hidden normalization或特权policy outcome，也不得额外调取held task的离线训练资料。
   编译期自身真实交互的RGB/proprio/动作、环境状态、接触、reward/success/terminal等可用于学习，须与teacher标签区分。

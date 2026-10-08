@@ -1,3 +1,13 @@
+## 2026-10-08 第六轮架构审阅已归档，准备新专家收敛设计
+
+[既有阅读入口](docs/review_materials/20261008_method_rethink/README.md)新增第六轮架构正文与[主讨论审阅](docs/review_materials/20261008_method_rethink/ARCHITECTURE_REVIEW.md)，
+owner最新原话和实际后续请求并入原澄清文件；[当前prompt](docs/review_materials/20261008_method_rethink/EXPERT_PROMPT_FRESH.md)要求选定完整主设计与首批有界学习方案。
+审阅保留任务内直接LoRA学习、真实经验分工、搜索/裸actor区分等进步；尚需补齐操作语义监督、实际控制转换、目标选择及经验吸收的学习依据。
+最新稳定澄清同步requirements/concept/AGENTS：整个适应过程替代Writer，视频必须贡献有用操作知识，不能把形式视频输入下的额外任务内训练收益当成目标完成。
+少量早期公平证据服务这一核心；第一阶段先超过强MT、不前置全部消融的原则保持。第六轮的模块、规模与成本估计均未冻结为实验合同。
+主讨论继续持有tracked/Git窗口，本次仅归档、提示词与远程同步；没有代码、模型、采集、GPU任务、新active design或对外联系。
+新专家由Owner自行开启；答复后再由主讨论形成科学取舍和首批合同，实验session承接实现与运行，不从下方历史active恢复执行。
+
 ## 2026-10-08 汇总专家讨论，交新专家设计完整方法
 
 Owner要求把旧专家讨论主要内容推送仓库，并直接交付可复制的新对话完整提示词。

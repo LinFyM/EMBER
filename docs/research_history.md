@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-08：Owner授权的仓库与存储清理
+
+[清理摘要](analyses/workspace_cleanup_20261008.json)及runs/analysis/workspace_cleanup_20261008保存逐项删除与现状记录。
+实际退役61组物化bank载荷、1204个封口checkpoint训练状态（含488份冗余中间权重）、62个无消费者且已合并checkout及14组旧临时目录；六批allocated共637.24GiB。
+关键权重、source/data/专家库、raw rows/metrics/completion、18份完整G和旧RL原件保留；847份受保护权重实际存在，T2340/C900完整checkpoint与各400条件bank读回有效。
+退役资产旁记录weights-only/metadata-only，不改历史manifest、不冒称exact resume或原CLI仍可重放；dirty/unmerged与当前实际冻结消费者保护。
+条件A重表达一次性诊断生成入口及独占辅助逻辑退役，原实现由实际冻结923ff89b/Git保留；当前封存读取与捕获路由保留，8项CPU检查通过。
+本轮只处理生命周期，不增加科学结果或恢复旧实验；最终quota/Git回执及当前授权看progress与整批completion。
+
 ## 2026-10-08：综述阅读推动完整学习分工重审
 
 Owner提供34页综述并质疑局部修补；main全文阅读、核相关一手论文及T/C/历史实现，findings§402保存判断与来源。

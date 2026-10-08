@@ -1,0 +1,119 @@
+{
+  "schema_version": "ember_workspace_cleanup_summary_v1",
+  "date": "2026-10-08",
+  "status": "storage_retirement_complete",
+  "scope": "Owner-authorized EMBER data1 storage and retained source lifecycle cleanup; no new experiment or scientific-method change",
+  "artifact_root": "runs/analysis/workspace_cleanup_20261008",
+  "git_delivery_record": "runs/analysis/workspace_cleanup_20261008/completion.json",
+  "storage": {
+    "quota_authority": "strg01 /data1 user ymdai",
+    "before": {
+      "blocks_KiB": 1466106828,
+      "soft_quota_KiB": 2147483648,
+      "hard_limit_KiB": 2157969408,
+      "record": "quota_before.txt"
+    },
+    "after_retirements": {
+      "blocks_KiB": 797696708,
+      "soft_quota_KiB": 2147483648,
+      "hard_limit_KiB": 2157969408,
+      "record": "quota_after_retirements.txt"
+    },
+    "quota_net_freed_bytes_at_snapshot": 684451962880,
+    "retirement_batches_allocated_bytes": 684230672384,
+    "task_temporary_allocated_bytes_removed": 222302208,
+    "snapshot_note": "Post-retirement quota includes the delivery worktree. Final quota after its removal is saved in the artifact completion; allocated batch sums and quota deltas use different accounting."
+  },
+  "retirement_batches": [
+    {
+      "kind": "materialized_banks",
+      "record": "bank_retirement_completion.json",
+      "allocated_bytes": 501289615360,
+      "groups": 59,
+      "files": 20584
+    },
+    {
+      "kind": "intermediate_checkpoints",
+      "record": "checkpoint_retirement_completion.json",
+      "allocated_bytes": 124295495680,
+      "checkpoints": 872,
+      "redundant_intermediate_weight_files": 488
+    },
+    {
+      "kind": "merged_unused_worktrees",
+      "record": "worktree_retirement_completion.json",
+      "allocated_bytes": 15446843392,
+      "removed_count": 62
+    },
+    {
+      "kind": "latest_paired_banks",
+      "record": "bank_retirement_addendum_completion.json",
+      "allocated_bytes": 17426022400,
+      "groups": 2,
+      "files": 800
+    },
+    {
+      "kind": "closed_terminal_training_state",
+      "record": "terminal_state_retirement_completion.json",
+      "allocated_bytes": 25326866432,
+      "checkpoints": 332
+    },
+    {
+      "kind": "old_test_fixtures_and_generated_schemas",
+      "record": "temp_retirement_completion.json",
+      "allocated_bytes": 445829120,
+      "directories": 14
+    }
+  ],
+  "availability": {
+    "full_and_bank_verified": [
+      "T2340",
+      "C900"
+    ],
+    "retained_bank_conditions": {
+      "T2340": 400,
+      "C900": 400
+    },
+    "other_retained_references": [
+      "C900 seen bank",
+      "T support donor bank",
+      "source and expert library assets",
+      "original full-G gradient and RL capture evidence"
+    ],
+    "protected_weight_files_verified_present": 847,
+    "bank_retirement": "61 groups / 21384 factor payload files are metadata-only. Original manifests, raw rows and producer weights remain; original evaluator requires authorized rematerialization.",
+    "checkpoint_retirement": "1204 closed checkpoints lost optimizer/RNG state; 488 redundant intermediate weights also retired. Adjacent retirement records distinguish weights-only and metadata-only; neither permits exact resume or unadapted full-checkpoint CLI.",
+    "state_dependency_preservation": "37 dependency paths for retained bank readers and source/expert assets remain protected. Lists are preservation decisions, not certification that every path is a complete checkpoint.",
+    "original_manifests": "Preserved as historical records; checkpoint_retirement.json and payload_retirement.json record current availability.",
+    "code_replay": "62 unused clean merged checkouts removed; integrated Git commits retained. Recreate a clean checkout and honor actual asset availability before any authorized historical replay."
+  },
+  "protected_unclear_work": [
+    "/data1/user/ymdai/ember_runs/native_role_binding_compilation_20261004/frozen_training",
+    "/data1/user/ymdai/projects/EMBER-flow-path-intervention-dev",
+    "/data1/user/ymdai/projects/EMBER-self-read-consumers-dev"
+  ],
+  "source_retirement": {
+    "entrypoint": "scripts/conditional_A_reexpression.py",
+    "original_frozen_commit": "923ff89b60f4f8a269e5352d8d82189d72a9cd0a",
+    "retired": "Only completed one-shot generation/diagnostic CLI and its otherwise-unused helpers and producer tests.",
+    "retained": "Actual sealed source-identity/capture readers and joint functional-readout consumers."
+  },
+  "verification": {
+    "targeted_cpu_tests_passed": 8,
+    "cli_help_passed": 2,
+    "actual_bank_readers_passed": [
+      "T2340 400 conditions",
+      "C900 400 conditions"
+    ],
+    "deleted_target_files_verified_absent": 27637,
+    "full_G_gradient_files_retained": 18,
+    "raw_formal_or_dataset_paths_in_deletion_ledger": 0,
+    "gpu_training_or_environment_forward": false,
+    "records": [
+      "verification.json",
+      "deletion_verification.json",
+      "retained_reference_T_verification.json",
+      "retained_reference_C_verification.json"
+    ]
+  }
+}

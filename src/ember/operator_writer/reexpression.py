@@ -1,10 +1,9 @@
-"""Frozen §7 algebra and finite panels; never a training or deployment Writer mode."""
+"""Read-only identities and captures for the sealed §7 finite-panel diagnostic."""
 from __future__ import annotations
 
 from pathlib import Path
-import torch
 
-from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, expected_lora_state_shapes
+from ember.lora import expected_lora_state_shapes
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.writer.materialization import file_record
 from . import joint_readout, learning_limit
@@ -15,54 +14,6 @@ ARMS = ('Original', 'Reexpressed')
 TASKS, TEACHERS, STATES = joint_readout.TRAIN_TASKS, joint_readout.TEACHERS, (0, 1, 2, 3)
 SCENES = learning_limit.ROOT / 'scenes'
 FORMULA = 'C=SX(A0X)^+; A_tilde=A0; B_tilde=(B0+M)(I+C); CPU float64 gelsd/default-rcond'
-
-
-def ratio(numerator, denominator):
-    return float(numerator.double().norm() / denominator.double().norm().clamp_min(1e-30))
-
-
-def reexpress_target(a0, s, b, x):
-    """Labels/query/reward are absent from this pure, unregularized map."""
-    a0, s, b = (v.detach().cpu().double() for v in (a0, s, b))
-    x = x.detach().cpu().reshape(-1, a0.shape[1]).double()
-    if a0.shape != s.shape or b.shape[1] != a0.shape[0] or not len(x):
-        raise ValueError('reexpression factor/native shape changed')
-    if not all(torch.isfinite(v).all() for v in (a0, s, b, x)):
-        raise ValueError('nonfinite original factors/native input')
-    z, sx = x @ a0.T, x @ s.T
-    fit = torch.linalg.lstsq(z, sx, driver='gelsd')
-    c = fit.solution.T.contiguous()
-    bt = b @ (torch.eye(a0.shape[0], dtype=torch.float64) + c)
-    if not torch.isfinite(bt).all() or not torch.isfinite(c).all():
-        raise ValueError('nonfinite least-squares output; no clipping or rank sweep permitted')
-    residual = sx - z @ c.T
-    original = (z + sx) @ b.T
-    deployed = z @ bt.float().double().T
-    stats = dict(rows=len(x), address_rank=int(fit.rank),
-        singular_values=fit.singular_values.tolist(), C_norm=float(c.norm()),
-        original_B_norm=float(b.norm()), B_edit_norm=float((bt-b).norm()),
-        S_response_residual=ratio(residual, sx),
-        S_output_residual=ratio(residual @ b.T, sx @ b.T),
-        full_LoRA_output_residual=ratio(residual @ b.T, original),
-        float32_deployed_output_residual=ratio(original-deployed, original))
-    return a0.float().contiguous(), bt.float().contiguous(), c, stats
-
-
-def reexpress_compilation(state, native, names):
-    if len(names) != 38 or set(native['x']) != set(names):
-        raise ValueError('reexpression requires all38 actual native sites')
-    fields = native['mechanism']['targets']
-    if set(fields) != set(names):
-        raise ValueError('original S/M compilation is incomplete')
-    result, coefficients, rows = {}, {}, []
-    for name in names:
-        f = fields[name]
-        # Use the actual original B, with its actual FP32 B0+M rounding.
-        a, b, c, stats = reexpress_target(f['A0'], f['S'], state[name+LORA_B_SUFFIX], native['x'][name])
-        result[name+LORA_A_SUFFIX], result[name+LORA_B_SUFFIX] = a, b
-        coefficients[name] = c
-        rows.append(dict(site=name, **stats))
-    return result, coefficients, rows
 
 
 def source_record():
@@ -97,29 +48,6 @@ def register_inputs():
             'mode':'compact', 'passive_control_trace':'ember_operator_read_write_passive_capture_v1',
             'stage_predicates':True, 'training_gradient_use':False,
             'checkpoint_selection_use':False, 'validation_use':False, 'test_use':False})
-
-
-def register_bank(arm, slot, lora, training, spec_path, reading_git):
-    from .bank import BANK_SCHEMA, KIND
-    rows, conditions = tasks_for_panel(), []
-    for row in rows:
-        task, teacher = row['global_task_id'], TEACHERS[row['global_task_id']][slot]
-        key = f'task{task:03d}_teacher{teacher:02d}'
-        conditions.append(dict(condition_id=key, global_task_id=task, teacher_demo=teacher,
-            factors=file_record(ROOT/arm/'bank'/f'{key}.safetensors')))
-        row['episodes'] = [dict(init_state_id=s, condition_id=key,
-            teacher_demo_indices=[teacher], video_ordinal=slot) for s in STATES]
-    bank = dict(schema_version=BANK_SCHEMA, kind=KIND, status='sealed', mode=arm,
-        condition_layout='complete38', reexpression_panel=dict(study=ROOT.name,
-            arm=arm, teacher_slot=slot, formula=FORMULA), asset_root=str(joint_readout.REPO),
-        spec=file_record(spec_path), source=training['source'], lora=lora.to_dict(),
-        shared=file_record(ROOT/'public.safetensors'), checkpoint=str(CHECKPOINT),
-        training_git=training['git']['commit'], reading_git=reading_git,
-        scene_root=str(SCENES), tasks=rows, conditions=conditions)
-    # The runtime's frozen tree is code only; canonical assets remain read-only.
-    bank['asset_root'] = '/data1/user/ymdai/projects/EMBER'
-    write_json_atomic(bank_path(arm, slot), bank)
-    return bank_path(arm, slot)
 
 
 def sealed_source_record():

@@ -55,7 +55,9 @@ python -m pytest -q
 由Git及各run登记的冻结commit保存；读取历史原行不恢复旧训练或干预。
 旧spec因当前消费者的metadata继承和封存provenance而保留，不能仅凭目录年龄删除。
 
-本次退役的旧实现可从清理前快照`797ae01f`读取，更早运行须采用其实际训练/读取commit。
+旧Writer清理前实现可从`797ae01f`读取；条件A重表达诊断生成入口已退役，原八条件诊断采用其实际冻结`923ff89b`。
+当前清理记录见[progress](progress.md)与[存储清理摘要](docs/analyses/workspace_cleanup_20261008.json)。已退休的checkout可从登记Git commit重建，
+当前bank/spec实际消费者依赖的冻结路径保留。
 代码存在不保证资产可重放：原manifest记录历史完整状态，现状还要看资产旁的
 `checkpoint_retirement.json`与`payload_retirement.json`。`weights_only`不能exact resume，
 `metadata_only`没有模型权重；冻结版本中的旧CLI可能要求完整trainer，不能把剩余权重称为完整恢复资产。

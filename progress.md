@@ -1,3 +1,16 @@
+## 2026-10-08 仓库存储清理完成
+
+Owner授权的data1清理已实际完成；六批释放allocated 684230672384B（637.24GiB），另清除本任务222302208B临时盘点/夹具。
+strg01独立个人配额从1466106828KiB降至797696708KiB（约1.365TiB→0.743TiB）；这是交付worktree移除前快照，最终quota见completion。
+61组/21384份物化bank载荷退役；1204个封口checkpoint退役optimizer/RNG，其中488个冗余中间权重同步退役。
+62个clean、已集成且无当前消费者的历史worktree以及14组旧测试夹具/生成schema已移除；dirty/unmerged和实际冻结读取路径保留。
+所有bank生产者及family必要端点权重、source/data/专家库、原始formal rows/metrics/completion、旧RL及18份完整G原件保留。
+847份受保护权重实际存在；强T2340/C900仍为完整checkpoint，原冻结消费者各400条件读取通过；其bank及T support donor保留。
+相邻retirement记录明确weights-only/metadata-only，不宣称exact resume或原CLI直接可用；原manifest只记录历史状态，不被改写。
+条件A重表达一次性生成诊断入口及仅它使用的逻辑/测试退役，实际reader/capture和joint readout保留；8项CPU检查、两CLI help通过。
+[摘要](docs/analyses/workspace_cleanup_20261008.json)及runs/analysis/workspace_cleanup_20261008保存清单、删除回执、可用性和验证；最终Git/配额/窗口交付以completion为准。
+未开展新模型、环境、GPU或科学实验；没有active design，清理整批交付后交回tracked/Git，主讨论继续等待专家分析。
+
 ## 2026-10-08 主讨论接任，登记新实验session并等待专家分析
 
 Owner指定新的实验session：`01a11a0a-fd39-74b1-83ba-001ede5330df`，host为`remote-ssh-discovered:BCI-GPU02`。

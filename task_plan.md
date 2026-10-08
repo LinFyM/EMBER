@@ -1,3 +1,12 @@
+## 2026-10-08 Owner派发存储与仓库清理：完成
+
+本轮清理针对已结束路线的存储生命周期与退役运行面，不改变方法、数据协议、评测或已有科学结果。
+61组bank载荷、1204个checkpoint训练状态、488个冗余中间权重、62个无消费者且已合并worktree和14组旧临时目录已实际退役。
+source/data/关键权重/原始formal rows及当前消费者保留；full、weights-only与metadata-only现状分别登记，实际T2340/C900读回和8项CPU检查通过。
+执行session为01a11a0a-fd39-74b1-83ba-001ede5330df，现任主讨论01a11a0b-f021-7372-a9d7-db231e3345ba已让出tracked/Git窗口。
+[清理摘要](docs/analyses/workspace_cleanup_20261008.json)、progress顶部与runs/analysis/workspace_cleanup_20261008记录实际删除和配额；
+最终clean main推送、任务worktree清除及整批回报以completion为准。整批交付即交回窗口，主讨论继续等待专家，不恢复历史active。
+
 ## 2026-10-08 等待专家分析，更新实验session
 
 Owner当前明确要求等待专家分析结果；收到后由主讨论分析并形成科学取舍，当前不派发新实验。

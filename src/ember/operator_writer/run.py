@@ -758,34 +758,10 @@ def audit(spec: dict, asset_root: Path) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("audit", "train", "bare-cache", "profile"))
-    parser.add_argument("--asset-root", type=Path, required=True)
-    parser.add_argument("--mode", choices=(joint_training.CONDITIONAL_MODE, prefix_change.MODE, control_calibration.MODE))
-    parser.set_defaults(pilot_arm=None)
-    parser.add_argument("--attempt", type=str)
-    parser.add_argument("--resume", type=Path)
-    parser.add_argument("--microbatch", type=int, default=28)
-    parser.add_argument("--frame-chunk", type=int, default=8)
-    parser.add_argument("--cpu-threads", type=int, default=6)
-    parser.add_argument("--stop-after-macro", type=int)
-    parser.add_argument("--spec", type=Path, default=CONDITIONAL_SPEC_PATH)
-    parser.add_argument("--cache-shard", type=int, default=0)
-    parser.add_argument("--cache-shards", type=int, default=1)
-    args = parser.parse_args()
-    spec = specification(args.spec)
-    if args.phase == "bare-cache":
-        from .bare_native import cache
-        if spec["task"] != control_calibration.TASK or not 0 <= args.cache_shard < args.cache_shards:
-            raise ValueError("bare-cache requires the registered calibrated Writer feature scope")
-        cache(spec, args)
-    elif getattr(args, "phase", "train") == "profile":
-        from .control_calibration_profile import profile
-        profile(spec, args)
-    elif args.phase == "train":
-        train(spec, args)
-    else:
-        print(json.dumps(audit(spec, args.asset_root), sort_keys=True))
+    raise RuntimeError(
+        "operator Writer training CLI is retired; historical readers keep their sealed APIs. "
+        "The active Compiler uses python -m ember.experience_compiler.run; "
+        "historical reproduction requires the run's registered frozen commit.")
 
 
 if __name__ == "__main__":

@@ -130,12 +130,13 @@ class _NativeFrameCall(nn.Module):
     """Wrap the policy so torch.func substitutes β in suffix and all 38 hooks."""
 
     def __init__(self, policy: nn.Module, names: tuple[str, ...], probe: torch.Tensor,
-                 prefix_change: bool = False) -> None:
+                 prefix_change: bool = False, include_image_prefix: bool = False) -> None:
         super().__init__()
         self.policy = policy
         self.names = names
         self.probe = probe
         self.prefix_change = prefix_change
+        self.include_image_prefix = include_image_prefix
 
     def forward(self, frames: torch.Tensor, tokens: torch.Tensor, token_mask: torch.Tensor):
         from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks, resize_with_pad_torch
@@ -185,7 +186,22 @@ class _NativeFrameCall(nn.Module):
         if set(captured) != set(self.names) or hidden.shape != (count, 50, 1024):
             raise ValueError("native full suffix/target capture is incomplete")
         return (hidden, *(captured[name] for name in self.names),
-                *(observer.outputs() if observer else ()))
+                *(observer.outputs() if observer else ()),
+                *((image_tokens.reshape(count, 512, 2048),) if self.include_image_prefix else ()))
+
+
+@torch.no_grad()
+def read_frozen_teacher_features(policy, mt_state, probe, condition, *, frame_chunk=8):
+    """Return actual legal RGB prefix and MT-probe H, without retaining unused X."""
+    frames, indices, tokens, token_mask = condition
+    if frame_chunk < 1 or len(frames) != len(indices):
+        raise ValueError("frozen teacher frame chunk or position identity changed")
+    wrapper = _NativeFrameCall(policy, (), probe, include_image_prefix=True)
+    state = {"policy." + name: value for name, value in mt_state.items()}
+    outputs = [tuple(value.cpu() for value in torch.func.functional_call(wrapper, state,
+               (frames[start:start + frame_chunk], tokens, token_mask), strict=False))
+               for start in range(0, len(frames), frame_chunk)]
+    return torch.cat([row[1] for row in outputs]), torch.cat([row[0] for row in outputs])
 
 
 def read_native_video(policy: nn.Module, common: dict[str, torch.Tensor], probe: torch.Tensor,

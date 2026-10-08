@@ -21,7 +21,7 @@ from ember.pi05_eval_queue import (EvaluationShard, claim_next, complete_job, co
                                    queue_summary, read_json_with_size)
 from ember.pi05_eval_results import paired_success_comparison
 from .contract import (ASSET_ROOT, RUN_ROOT, SCHEMA, MT_RESULTS, T_RESULTS, _LEARNING_CONTRACT, formal_environment,
-                       learning_environment, formal400_mapping, panel_contract)
+                       learning_environment, formal400_mapping, panel_contract, STAGE)
 
 
 def read_json(path: Path) -> dict:
@@ -44,6 +44,10 @@ def prepare(output: Path, checkpoint: Path, stage: str = "meta27", asset_root: P
     output, checkpoint, asset_root = Path(output).resolve(), Path(checkpoint).resolve(), Path(asset_root).resolve()
     if not checkpoint.is_dir():
         raise ValueError("evaluation requires an existing checkpoint directory")
+    manifest = read_json(checkpoint / 'checkpoint_manifest.json')
+    expected_macro = 155 if stage == 'meta27' else 182
+    if manifest.get('stage') != STAGE or manifest.get('next_macro') != expected_macro:
+        raise ValueError('evaluation checkpoint is not its preregistered shared optimizer node')
     formal = stage == "formal"
     conditions = list(formal400_mapping(asset_root=asset_root) if formal
                       else panel_contract(asset_root=asset_root)["conditions"])
@@ -95,13 +99,16 @@ def _validate_panel(contract: dict) -> None:
     if len(tasks) != 8:
         raise ValueError("readout must cover the registered eight tasks")
     for rows in tasks.values():
-        if formal:
-            if ({c["teacher_demo"] for c in rows} != set(range(50))
-                    or {c["final_state_ids"][0] for c in rows} != set(range(50))
-                    or len(rows) != 50):
-                raise ValueError("formal task/video/state conditions must be without replacement")
-        elif len(rows) != 2 or len({c["teacher_demo"] for c in rows}) != 2:
-            raise ValueError("train readout requires two distinct videos per task")
+        _validate_task_conditions(rows, formal)
+
+
+def _validate_task_conditions(rows, formal):
+    if formal:
+        if ({c['teacher_demo'] for c in rows} != set(range(50))
+                or {c['final_state_ids'][0] for c in rows} != set(range(50)) or len(rows) != 50):
+            raise ValueError('formal task/video/state conditions must be without replacement')
+    elif len(rows) != 2 or len({c['teacher_demo'] for c in rows}) != 2:
+        raise ValueError('train readout requires two distinct videos per task')
 
 
 def _validate_rows(rows: list[dict], condition: dict, arm: str, task: dict) -> None:
@@ -201,7 +208,8 @@ def worker(args) -> dict:
     try:
         runtime = Runtime(Path(contract["asset_root"]), getattr(args, "device", "cuda:0"),
                           frame_chunk=args.frame_chunk, decoder_chunk=args.decoder_chunk,
-                          experience_chunk=getattr(args, "experience_chunk", 16))
+                          experience_chunk=getattr(args, "experience_chunk", 16),
+                          native_frame_chunk=getattr(args, "native_frame_chunk", args.frame_chunk))
         runtime.load_checkpoint(Path(contract["checkpoint"]))
         runtime.compiler.eval()
         runner = Runner(runtime, contract["environment_contract"], gpu)

@@ -1,3 +1,22 @@
+## 2026-10-09 实验session承接经验条件完整rank128编译器
+
+main已交出tracked/Git窗口；实际来源clean pushed183f08d1，实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占codex/experience-compiler-20261009。
+唯一active仍为docs/designs/experience_conditioned_compiler_20261009.md：完整rank128坐标解码，真实经验在空间压缩前影响重读，condition无optimizer与固定J。
+已实现完整运行面，复用实际source/native、FM、数据/环境及配对消费者；当前进行实际native/开放循环profile前的集成检查。
+strg01 data1现场798291308KiB/2TiB，合计本批160GiB新增峰可容纳；GPU学习及formal尚未开始，预算/失败/吞吐将保存于唯一root。
+实施预计4–8wall小时，计算初估12–24wall/50–80GPUh；profile按实际测量替换，不预设condition观看/实践轮数。
+全部原件及实施开始计时在/data1/user/ymdai/ember_runs/experience_conditioned_compiler_20261009/implementation.json；工程事项自主闭环，不按阶段回main或等验收。
+窗口整批交付前由实验session持有；只有实际科学/资源边界需main裁决或完整科学结果结束才回报一次。
+
+本批新增运行面的结构理由与所有权：现有bank/native/FM/队列owner继续复用；`experience_compiler`为完整新学习事件所需的
+单一运行面，`decoder/model`拥有全部参数生成与经验条件读取，`runtime`拥有冻结资产及有界特征，
+`execution/interaction`拥有真实ODE/SDE与无固定J的实践/原始证据，`credit/learning`拥有逐query keep、1/8 score与共享optimizer恢复，
+`data/contract`拥有36映射、teacher/query/初态流与固定面板，`evaluation`拥有单condition适应及配对队列，`profile/run`拥有物理吞吐、计费与唯一CLI。
+新增约3千行包括必要CPU科学合同检查；没有复制dataset/模型/大缓存，没有并行候选或fallback。episode/信用/update/队列聚合的复合分支
+源于实际生命周期及不同阶段的数据消费者，保持在各自cohesive owner中；profile已按真实物理消费者整理，避免单个大编排函数。
+旧`operator_writer.run`的训练CLI已退役；其历史读出factory/API仍被`operator_joint_readouts`及封存合同读取调用，
+不会成为当前训练默认或fallback。后续历史consumer维护可将factory归回bank owner并退役其未调用训练helpers，不能作为本批启动停点。
+
 ## 2026-10-09 Owner要求开始实施并持续自主推进
 
 唯一active：[经验条件完整rank128编译器](docs/designs/experience_conditioned_compiler_20261009.md)。

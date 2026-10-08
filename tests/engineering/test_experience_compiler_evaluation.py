@@ -41,6 +41,7 @@ def prepared(tmp_path, monkeypatch):
     monkeypatch.setattr(ev, "learning_environment", lambda **kwargs: environment)
     checkpoint = tmp_path / "checkpoint"
     checkpoint.mkdir()
+    publish_json_exclusive(checkpoint / 'checkpoint_manifest.json', {'stage': ev.STAGE, 'next_macro': 182})
     output = tmp_path / "meta54"
     ev.prepare(output, checkpoint, "meta54")
     return output, checkpoint
@@ -85,7 +86,7 @@ def test_prepare_is_immutable_long_first_and_counts_conditions(prepared):
     assert "operator_read_write_scene" not in contract["adaptation_environment_contract"]
     claim = claim_next(output / "queue.sqlite3", worker_id="cpu-test")
     assert claim.shard.suite == "libero_10" and len(claim.shard.init_state_ids) == 3
-    with pytest.raises(ValueError, match="immutable"):
+    with pytest.raises(ValueError, match="checkpoint"):
         ev.prepare(output, checkpoint, "meta27")
 
 
@@ -95,6 +96,7 @@ def test_formal400_freezes_without_replacement(tmp_path, monkeypatch):
     monkeypatch.setattr(ev, "formal_environment", lambda **kwargs: environment)
     checkpoint = tmp_path / "checkpoint"
     checkpoint.mkdir()
+    publish_json_exclusive(checkpoint / 'checkpoint_manifest.json', {'stage': ev.STAGE, 'next_macro': 182})
     path = ev.prepare(tmp_path / "formal", checkpoint, "formal")
     contract = ev.read_json(path)
     assert len(contract["conditions"]) == 400 and contract["arms"] == ["end"]

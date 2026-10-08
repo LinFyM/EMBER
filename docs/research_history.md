@@ -3,6 +3,13 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-08：综述阅读推动完整学习分工重审
+
+Owner提供34页综述并质疑局部修补；main全文阅读、核相关一手论文及T/C/历史实现，findings§402保存判断与来源。
+HOST/XSkill的自身状态与示范进程联系、Doc-to-LoRA的功能内化、WAM-TTT的联合学习条件改变候选的优先级，
+不把在线教学、测试时更新或额外数据直接搬入部署合同，也不把已有delta rule重新包装成新记忆原理。
+继续降低当前固定probe差分/顺序写入作为后继默认的优先级；尚未选定完整替代或新active，无新增模型/环境计算。
+
 ## 2026-10-08：main消费跨配对，接续当前source任务教师与恢复资格
 
 findings§392和[cross配对main消费](analyses/cross_context_pairing_20261008.json)保留2962原行、逐task能力交换及两份正反RGB/连续轨迹。

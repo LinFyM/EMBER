@@ -1,3 +1,11 @@
+## 2026-10-08 Owner提供综述，main重审完整学习分工
+
+34页综述已全文阅读，关键一手论文与T/C实际实现、旧功能教师/关系/阶段路线已对照；判断与原文入口见findings§402。
+优先整体推敲教学进程到自身状态控制、再到完整LoRA的学习联系，降低默认继承当前probe差分/delta写入的优先级。
+这不是唯一根因诊断或已选定的新架构；T的正证据保留，固定数据、冻结source/prefix、单LoRA部署边界保持。
+WAM-TTT主配置一步更新及New场景人类训练覆盖已纠正，外部论文内部不一致不冒称源码核实。
+没有新active、模型更新、环境或GPU任务；main持有tracked/Git，后续不从下方历史active恢复实验。
+
 ## 2026-10-08 main完成完整G原件消费，解释专家意见与方法边界
 
 整批completion与可靠交付已收到，main接回clean pushed fe88e5ed及canonical tracked/Git；全部GPU结束，执行方不再计算。

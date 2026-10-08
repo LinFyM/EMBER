@@ -54,7 +54,14 @@ def replay_backward(runtime, teacher, chain, credit):
 
 
 def best(rows, category):
-    return min((row for row in rows if row['category'] == category and row['valid']), key=lambda r: r['seconds'])
+    groups = {}
+    for row in rows:
+        if row['category'] == category:
+            groups.setdefault(row['value'], []).append(row)
+    # Keep a physical size eligible only if every profiled workload fit it.
+    eligible = [max(group, key=lambda r: r['seconds']) for group in groups.values()
+                if all(r['valid'] for r in group)]
+    return min(eligible, key=lambda r: r['seconds'])
 
 
 def profile_initial(runtime, teacher, event, batch):

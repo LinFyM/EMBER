@@ -93,7 +93,7 @@ def admission(snapshots, requested, leased, owner, minimum_free, maximum_utiliza
     if unknown:
         raise ValueError(f"cannot attribute GPU processes on {unknown}")
     owned = {key for key, row in devices.items() if any(p["owner"] == owner for p in row["processes"])}
-    free = sum(not row["processes"] and row["used"] <= 256 and row["utilization"] <= 5
+    free = sum(not row["processes"] and row["used"] <= 1000 and row["utilization"] <= 5
                and key not in leased for key, row in devices.items())
     cap = 6 if free <= 10 else 8
     occupied = owned | set(leased) | set(requested)

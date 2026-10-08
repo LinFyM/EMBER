@@ -9,7 +9,10 @@ clean pushed detached b162b161实际profile完成5176环境steps；task0自身�
 保守按全部适应step上限投影约36.5GPUh、原件约76GiB；计入额外存储/序列化/尾部余量后按50GPUh、约16wall小时安排，仍在80GPUh/24wall/160GiB界内。
 按双节点现场准入，clean pushed detached 76c136a3已实际在gpu01:0/6启动fresh学习，world2、128warm→54meta连续optimizer；2026-10-08T20:31:35UTC一次启动核验run_contract与完整macro0成立。
 gpu02:4/6在meta27 checkpoint事件后并行读出；学习退出后前两卡也参加同一评测pool，总物理卡峰4，现行总6/单节点6。
-tmux ember-ecp-batch-001为整批事件执行器；本thread已建立一次持续退出等待，不轮询共享缓存、不发自Queue，原始回执为root/batch_execution.json。
+tmux ember-ecp-batch-001为实际整批事件执行器，原始回执为root/batch_execution.json。
+2026-10-08T20:51:54UTC将本thread直接等待改为独立tmux ember-ecp-exit-001的一次阻塞退出等待；原直接等待已关闭，没有重叠等待者。
+整批完成或异常后才通过现有CLI向本实验thread Queue一条消费/修复接续；当前尚未触发，状态与未来入队回执在root/wakeup_receipt.json。
+watcher实际PID与tmux wait-for子进程已核验；不轮询训练/共享缓存，不发阶段通知或心跳。科学消费完成前不把执行器complete视作任务完成。
 strg01 data1新复核798880948KiB/2TiB，合计本批160GiB新增峰可容纳；formal尚未开始，全部预算/失败/吞吐保存在唯一root。
 实施预计4–8wall小时，计算初估12–24wall/50–80GPUh；profile按实际测量替换，不预设condition观看/实践轮数。
 全部原件及实施开始计时在/data1/user/ymdai/ember_runs/experience_conditioned_compiler_20261009/implementation.json；工程事项自主闭环，不按阶段回main或等验收。

@@ -1,3 +1,15 @@
+## 2026-10-08 实验session实际承接完整Writer基线信用辨识
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45从clean pushed b23453ff接管canonical tracked/Git独占窗口；main停止并发写入。
+实际承接2026-10-08T02:32:02Z，硬截止06:32:02Z；全文读取129行唯一active合同及findings§398–399，旧CPU/RL批保持封口。
+固定24condition/96episode/1525decision/3050转移与checkpoint18/27/36/45/54/63及冻结预测精确对应，12mixed/12全成功，无全失败组。
+只重算LOO/Context/State同版本完整velocity→38-target LoRA→G/native信用，0optimizer更新/新环境/held/Test。
+strg01独立data1 quota现场已核，2TiB软额/个人quota实用约1.36TiB；18份FP32梯度精确3,049,390,080B，新增峰规划5GiB、硬8GiB。
+独占隔离codex/state-baseline-credit-20261008；临时单一消费者复用1c90e7d5冻结native/编译/score数学，不恢复旧RL入口。
+双节点均无完全空卡，低利用率设备有充足余量；尚未启动GPU，逐launch现场准入及实际费用将保留独立原件。
+旧cached8state核对仅position3/gripper2，未核姿态三维/quat4；沿main已纠正范围，不为措辞重扫旧8GiB。
+整批或真实合同边界仅一次回main，窗口最终随可靠交付交回；无阶段Queue/心跳/selfQueue或自动后继。
+
 ## 2026-10-08 main消费状态预测，登记完整Writer信用辨识
 
 main已接回0d837df5及tracked/Git，直接核实际两CPU脚本/13754条已存预测及旧完整score/G源码；findings§398保存独立判断。

@@ -1,3 +1,10 @@
+## 2026-10-08 转交专家独立重思完整方法
+
+Owner要求更新远程仓库，将综述启发与无奖励试做、阶段性生成的新思路写成prompt，由Owner自行提供给专家。
+本次prompt不包含主讨论具体候选、损失配方或适应轮数，不把findings§403的提议当作已选方法。
+入口为docs/review_materials/20261008_method_rethink/EXPERT_PROMPT.md，要求专家继承完整正反证据并独立提出实质方法更新。
+当前只交付评审材料与远程同步；不启动新实验，不从下方候选或历史active恢复执行。
+
 ## 2026-10-08 编译期无奖励试做获准，具体候选转为学习参数修订规则
 
 Owner明确允许source/阶段性LoRA真实动作，Writer读取自身RGB/proprio/动作及后果；teacher标签和环境success/reward仍不可读。

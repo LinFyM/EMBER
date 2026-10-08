@@ -1,3 +1,11 @@
+## 2026-10-08 Owner要求不预置设计的新专家委托
+
+Owner将下一步明确为：更新远程仓库，汇总综述启发与自己的新思路，由Owner把prompt交给专家彻底重思大方法更新。
+新增docs/review_materials/20261008_method_rethink/EXPERT_PROMPT.md；不预置主讨论具体架构、损失配方、训练课程或适应轮数。
+保留真实无奖励试做、阶段性理解/生成、最终单LoRA与信息墙，并要求专家独立质疑、推导和比较历史近邻。
+旧评审入口已注明本次委托；主讨论候选仅作历史提议，不是新active设计或Owner选型。
+当前没有新训练、采集、GPU任务或对外发送；由Owner转交，main持有tracked/Git，实际push以Git回执为准。
+
 ## 2026-10-08 Owner明确开放无奖励真实试做，main收敛完整适应候选
 
 Owner答复“符合，允许无奖励的真实试做”：自身RGB/proprio/执行动作/后果可进入Writer，teacher动作/state及环境reward/success仍不可见。

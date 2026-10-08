@@ -1,5 +1,9 @@
 # EMBER：停滞原因与完整方法的重新审视
 
+**后续委托：** Owner已开放编译期无奖励真实试做，并要求结合综述由专家独立重思完整方法，见
+[2026-10-08新提示词](../20261008_method_rethink/EXPERT_PROMPT.md)。下文的“当前接续/无需再次提问”等属于旧轮次历史状态；
+本目录继续保存三轮原文与证据，新任务状态以progress顶部及新委托为准。
+
 2026-10-08更新。跨配对完整学习已结束：Within147/148、Product152/151，未建立总体修复；main消费见findings§392和[完整读回](../../analyses/cross_context_pairing_20261008.json)。
 当前接续为[当前source任务教师与T访态恢复](../../designs/aligned_teacher_recovery_20261008.md)，只检验监督函数资格，尚无新结果。
 

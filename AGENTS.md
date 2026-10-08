@@ -49,6 +49,10 @@ EMBER研究能否从generic `lerobot/pi05_base`建立的冻结π0.5-LIBERO sourc
 有交互适应不得记作zero-interaction。离线teacher episode的动作/state等配套标签仍不可读；
 自身交互所得reward/success/terminal可以用于适应。观看、实践和修订可多轮进行，具体学习组织由active design登记。
 
+方法必须将教学视频编译为LoRA，明确排除“通过恢复、合成、搜索或自身交互等手段准备动作轨迹，再微调得到最终LoRA”的路线。
+数据准备模块经过学习、采集与微调交错、先生成后微调或最终仅部署一套LoRA，都不豁免此边界；性能更好也不构成采用理由。
+合法训练动作／功能监督可用于训练共享Writer如何生成或修订LoRA；这与新教学condition下准备轨迹再拟合最终LoRA须严格区分。
+
 性能接受标准以`docs/current_owner_requirements.md`中的owner最新取舍为准；不得把历史`>145/400`合同
 自动恢复为新的硬门槛。第一阶段以完整固定LoRA明显超过强MT为先，不把胜过同预算充分语言适应或补齐全部视频controls作为开工前提。
 正式结论仍须用strict single-checkpoint paired400、相邻能力保持、任务/suite覆盖、
@@ -74,7 +78,8 @@ hidden差异和surrogate只作定位证据，不能为了数值漂亮接受明�
   允许模型冻结、无checkpoint选择、预注册的一次性sealed post-hoc held诊断；Test默认保留到最终方法冻结后，提前使用必须明确登记且不得反哺设计。
 - 每个condition最终只部署一套完整38-target task LoRA；编译期可修订中间LoRA，但不生成多套video LoRA后平均，
   不挑video、不融合checkpoint、不部署第二套expert adapter。
-- Writer/Compiler只在最终评估前的适应期运行，可包含前向生成或任务内优化；可重复读取合法教学及自身实践，并让当前LoRA参与后续理解。
+- Writer/Compiler只在最终评估前的适应期运行，负责生成或修订LoRA；可重复读取合法教学及自身实践，并让当前LoRA参与后续理解。
+  自身反馈用于教学理解与参数编译，不能绕过§4的轨迹准备后微调排除条件。
   最终同一教学condition的一套LoRA冻结后，Writer、搜索和外部阶段选择等适应辅助退出；最终闭环不看teacher video或继续适应，旧零交互实验按原合同解释。
 - frame stride固定为5；frozen source policy无trainable parameters。允许learned language-only诊断baseline，以及
   rollout前合并为一套LoRA的principled shared prior/base adapter + video-conditioned residual；canonical仍必须证明

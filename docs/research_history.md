@@ -4668,3 +4668,13 @@ findings§378及docs/analyses/calibrated_action_memory_control_20261007.json索�
 全部192固定RGB和连续数值/真实前50重放/完整goal AND保留；4.917044302093 GPUh，10wall/16GPUh/32GiB内。
 train/restore b8abc2a4、readout f2f81352（两复用MT行692ba99d）；专用面退役，完整0/160/320/480 ECP/frozen/Git/raw/失败保留。
 没有自动延训/蒸馏/扩专家/Writer，整批回main继续Owner目标裁决；执行停止不等于项目停止。
+
+### 2026-10-08 main消费当前专家并复核历史回报信用
+
+findings§395与aligned_teacher_recovery canonical JSON的main_consumption记录9份原results/128相关行及4张RGB sheet的独立消费。
+480专家初态对MT保持5增7丢0，T50对T保持3增6丢3；32/38确有新控制，29接手始终0，未建立有覆盖恢复教师。
+画面中沙拉酱倒下发生在专家接手后的后续时点，纠正先前口头过早归因；原件不认证接触真值或唯一原因。
+旧30977b5/9c263865/e1ea3596/4e3ade36及当前1c90e7d5五组RL实际学习范围、正反证据和source边界已核，
+不能把已完成末端Gaussian或完整SDE score当作新方法；当前72步没有V/Q/GAE/TD，但缺少critic不等于根因确诊。
+findings§396及state_conditioned_return_analysis_20261008登记仅旧训练原件的CPU前向时间预测/局部信用分析；
+登记时无新模型/环境/GPU或Writer更新，无自动RL。它服务于下一真实方法投入判断，不用预测替代EMBER性能。

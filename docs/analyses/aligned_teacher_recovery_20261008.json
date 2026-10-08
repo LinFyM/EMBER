@@ -3456,5 +3456,1572 @@
     "shared_MT_archive_dtype": "4F32 +72BF16; actual runtime installed exact cast FP32 full factors",
     "experts_model_and_Adam_moments": "FP32",
     "scheduler": null
+  },
+  "main_consumption": {
+    "kind": "main_independent_original_result_consumption",
+    "new_model_environment_gradients": false,
+    "inputs": {
+      "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/results.json": {
+        "source_rows": 16,
+        "selected_rows": 16
+      },
+      "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/results.json": {
+        "source_rows": 16,
+        "selected_rows": 16
+      },
+      "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/results.json": {
+        "source_rows": 16,
+        "selected_rows": 16
+      },
+      "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/results.json": {
+        "source_rows": 16,
+        "selected_rows": 16
+      },
+      "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/results.json": {
+        "source_rows": 16,
+        "selected_rows": 16
+      },
+      "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/results.json": {
+        "source_rows": 132,
+        "selected_rows": 12
+      },
+      "/data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/parent/evaluation/seen12/results.json": {
+        "source_rows": 12,
+        "selected_rows": 4
+      },
+      "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/results.json": {
+        "source_rows": 144,
+        "selected_rows": 16
+      },
+      "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/results.json": {
+        "source_rows": 144,
+        "selected_rows": 16
+      }
+    },
+    "distinct_original_files": 9,
+    "selected_original_rows": 128,
+    "new_rows": 80,
+    "new_control_steps": 25406,
+    "panels": {
+      "MT300_T50": {
+        "successes": 4,
+        "per_task": {
+          "12": 1,
+          "29": 1,
+          "32": 1,
+          "38": 1
+        },
+        "success_set": [
+          [
+            12,
+            35
+          ],
+          [
+            29,
+            34
+          ],
+          [
+            32,
+            34
+          ],
+          [
+            38,
+            33
+          ]
+        ],
+        "steps": 5857,
+        "per_row": [
+          {
+            "task": 12,
+            "init": 32,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_object_task_02_state_032_994bd5a968c5419c877dcff62062471e.npz"
+          },
+          {
+            "task": 12,
+            "init": 33,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_object_task_02_state_033_a0a64aae5e3947058ee3cc2001e850db.npz"
+          },
+          {
+            "task": 12,
+            "init": 34,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_object_task_02_state_034_3a882101fcaf49528392df23adf9f838.npz"
+          },
+          {
+            "task": 12,
+            "init": 35,
+            "success": true,
+            "steps": 120,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_object_task_02_state_035_2546f0faced64ca391c2362cde7a37db.npz"
+          },
+          {
+            "task": 29,
+            "init": 32,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_goal_task_09_state_032_4c6e8ec5239a4223afaee182701b3b50.npz"
+          },
+          {
+            "task": 29,
+            "init": 33,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_goal_task_09_state_033_a813c5a8e67a4ca491c681f660f03ac0.npz"
+          },
+          {
+            "task": 29,
+            "init": 34,
+            "success": true,
+            "steps": 170,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_goal_task_09_state_034_34a0c959acbf44f8892adc75f417f9d1.npz"
+          },
+          {
+            "task": 29,
+            "init": 35,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_goal_task_09_state_035_be1dd22218554b76a71a6a2c22866546.npz"
+          },
+          {
+            "task": 32,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_10_task_02_state_032_56b5e8ac7d3a452687d77e5bbc1608c0.npz"
+          },
+          {
+            "task": 32,
+            "init": 33,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_10_task_02_state_033_58ba9817f9d747fa860052d0eaba5496.npz"
+          },
+          {
+            "task": 32,
+            "init": 34,
+            "success": true,
+            "steps": 230,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_10_task_02_state_034_b0400fc8e95a4df0b9d026d02f2535f5.npz"
+          },
+          {
+            "task": 32,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_10_task_02_state_035_85a441d6aeef45cfa93c520d38b57969.npz"
+          },
+          {
+            "task": 38,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_10_task_08_state_032_02d56d5aad774ff8b4296b809dc3ccc0.npz"
+          },
+          {
+            "task": 38,
+            "init": 33,
+            "success": true,
+            "steps": 477,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_10_task_08_state_033_2262d36b76f44dc7b377afaa54abf661.npz"
+          },
+          {
+            "task": 38,
+            "init": 34,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_10_task_08_state_034_d4b7f3d2ab9047898f73c222c55a00fd.npz"
+          },
+          {
+            "task": 38,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/MT300_T50/evaluation/continuous_traces/libero_10_task_08_state_035_3635461885394144b25e60adbe185c64.npz"
+          }
+        ],
+        "per_suite": {
+          "libero_object": 1,
+          "libero_goal": 1,
+          "libero_10": 2
+        },
+        "task_breadth_of4": 4
+      },
+      "expert_u320_T50": {
+        "successes": 6,
+        "per_task": {
+          "12": 3,
+          "29": 0,
+          "32": 2,
+          "38": 1
+        },
+        "success_set": [
+          [
+            12,
+            33
+          ],
+          [
+            12,
+            34
+          ],
+          [
+            12,
+            35
+          ],
+          [
+            32,
+            33
+          ],
+          [
+            32,
+            34
+          ],
+          [
+            38,
+            33
+          ]
+        ],
+        "steps": 5416,
+        "per_row": [
+          {
+            "task": 12,
+            "init": 32,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_object_task_02_state_032_c35977e4333c4c7e8bbb194bc03a31f9.npz"
+          },
+          {
+            "task": 12,
+            "init": 33,
+            "success": true,
+            "steps": 161,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_object_task_02_state_033_19eb9f7de33a469c87f3e876860153b0.npz"
+          },
+          {
+            "task": 12,
+            "init": 34,
+            "success": true,
+            "steps": 116,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_object_task_02_state_034_fb94c5dfcf044fd9b24bbf39b20d1a4e.npz"
+          },
+          {
+            "task": 12,
+            "init": 35,
+            "success": true,
+            "steps": 113,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_object_task_02_state_035_bd0063b9521a4a3f9ad5e0854b04cdd0.npz"
+          },
+          {
+            "task": 29,
+            "init": 32,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_goal_task_09_state_032_06f699a712794029bd41e838f2e0e0a5.npz"
+          },
+          {
+            "task": 29,
+            "init": 33,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_goal_task_09_state_033_eef007b8085041a0a26e77665565ca84.npz"
+          },
+          {
+            "task": 29,
+            "init": 34,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_goal_task_09_state_034_60f1f384591847cb8ed8925c5b81f479.npz"
+          },
+          {
+            "task": 29,
+            "init": 35,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_goal_task_09_state_035_adf02fb99e6343d3a82c479e1d661955.npz"
+          },
+          {
+            "task": 32,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_10_task_02_state_032_0cca353e03764fd5a8b0dc30180915b0.npz"
+          },
+          {
+            "task": 32,
+            "init": 33,
+            "success": true,
+            "steps": 246,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_10_task_02_state_033_3f78871e35574d5d8d0632ec320f53c6.npz"
+          },
+          {
+            "task": 32,
+            "init": 34,
+            "success": true,
+            "steps": 284,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_10_task_02_state_034_284d010b75324a5e8c43747383476738.npz"
+          },
+          {
+            "task": 32,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_10_task_02_state_035_e7f3ecc75d97438eb90003440be79495.npz"
+          },
+          {
+            "task": 38,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_10_task_08_state_032_eff55f27839141b8b516a1247469e15f.npz"
+          },
+          {
+            "task": 38,
+            "init": 33,
+            "success": true,
+            "steps": 416,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_10_task_08_state_033_50b5333b78854f1498f04d67342b4ff4.npz"
+          },
+          {
+            "task": 38,
+            "init": 34,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_10_task_08_state_034_69599ce05a594c24b7310a7265516718.npz"
+          },
+          {
+            "task": 38,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_T50/evaluation/continuous_traces/libero_10_task_08_state_035_b5262527050a450db7374ef84a4ab447.npz"
+          }
+        ],
+        "per_suite": {
+          "libero_object": 3,
+          "libero_goal": 0,
+          "libero_10": 3
+        },
+        "task_breadth_of4": 3
+      },
+      "expert_u320_initial": {
+        "successes": 11,
+        "per_task": {
+          "12": 3,
+          "29": 1,
+          "32": 4,
+          "38": 3
+        },
+        "success_set": [
+          [
+            12,
+            33
+          ],
+          [
+            12,
+            34
+          ],
+          [
+            12,
+            35
+          ],
+          [
+            29,
+            33
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            32,
+            33
+          ],
+          [
+            32,
+            34
+          ],
+          [
+            32,
+            35
+          ],
+          [
+            38,
+            32
+          ],
+          [
+            38,
+            33
+          ],
+          [
+            38,
+            34
+          ]
+        ],
+        "steps": 4495,
+        "per_row": [
+          {
+            "task": 12,
+            "init": 32,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_object_task_02_state_032_09d4ce50c4c04bb086fe0c458f5df930.npz"
+          },
+          {
+            "task": 12,
+            "init": 33,
+            "success": true,
+            "steps": 128,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_object_task_02_state_033_50d3b7a7acff44408574479c50802e0e.npz"
+          },
+          {
+            "task": 12,
+            "init": 34,
+            "success": true,
+            "steps": 110,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_object_task_02_state_034_a53764477c6d430bb2a7fc38f202e199.npz"
+          },
+          {
+            "task": 12,
+            "init": 35,
+            "success": true,
+            "steps": 108,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_object_task_02_state_035_2ca5c5b95b44476986b6ed5c79444dcb.npz"
+          },
+          {
+            "task": 29,
+            "init": 32,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_goal_task_09_state_032_a0a3180a6b4b4ed99adeff5fe036b535.npz"
+          },
+          {
+            "task": 29,
+            "init": 33,
+            "success": true,
+            "steps": 187,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_goal_task_09_state_033_47bd3a46e4694634b39ece063dea34fd.npz"
+          },
+          {
+            "task": 29,
+            "init": 34,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_goal_task_09_state_034_8d79583441bf429e9ca1e4c94e0968fe.npz"
+          },
+          {
+            "task": 29,
+            "init": 35,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_goal_task_09_state_035_09c24eeb06c3439f8faccc8d6453acd1.npz"
+          },
+          {
+            "task": 32,
+            "init": 32,
+            "success": true,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_10_task_02_state_032_70c33fa8ea804279905e778a5b36ef63.npz"
+          },
+          {
+            "task": 32,
+            "init": 33,
+            "success": true,
+            "steps": 245,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_10_task_02_state_033_7cd00130a4214aea8d3bc6ee43aafa79.npz"
+          },
+          {
+            "task": 32,
+            "init": 34,
+            "success": true,
+            "steps": 221,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_10_task_02_state_034_e1c5ba3a15684509967ebd9d4c7ef7bb.npz"
+          },
+          {
+            "task": 32,
+            "init": 35,
+            "success": true,
+            "steps": 290,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_10_task_02_state_035_be8b6085523f40938c2115d85476433a.npz"
+          },
+          {
+            "task": 38,
+            "init": 32,
+            "success": true,
+            "steps": 364,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_10_task_08_state_032_26b294eae8b746eb87a8cbee6c32cb6b.npz"
+          },
+          {
+            "task": 38,
+            "init": 33,
+            "success": true,
+            "steps": 420,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_10_task_08_state_033_8ca1325578cf4619904040975285e6e4.npz"
+          },
+          {
+            "task": 38,
+            "init": 34,
+            "success": true,
+            "steps": 422,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_10_task_08_state_034_a3b4ea53f4e347dca69235e4363864ff.npz"
+          },
+          {
+            "task": 38,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u320_initial/evaluation/continuous_traces/libero_10_task_08_state_035_7cbe106545b0445888d6e789de2c0d44.npz"
+          }
+        ],
+        "per_suite": {
+          "libero_object": 3,
+          "libero_goal": 1,
+          "libero_10": 7
+        },
+        "task_breadth_of4": 4
+      },
+      "expert_u480_T50": {
+        "successes": 9,
+        "per_task": {
+          "12": 2,
+          "29": 0,
+          "32": 4,
+          "38": 3
+        },
+        "success_set": [
+          [
+            12,
+            34
+          ],
+          [
+            12,
+            35
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            32,
+            33
+          ],
+          [
+            32,
+            34
+          ],
+          [
+            32,
+            35
+          ],
+          [
+            38,
+            32
+          ],
+          [
+            38,
+            33
+          ],
+          [
+            38,
+            34
+          ]
+        ],
+        "steps": 5095,
+        "per_row": [
+          {
+            "task": 12,
+            "init": 32,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_object_task_02_state_032_fc595d3659e84178b056ea743f8af426.npz"
+          },
+          {
+            "task": 12,
+            "init": 33,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_object_task_02_state_033_5f2455bd3d304184b6b6beed87601c15.npz"
+          },
+          {
+            "task": 12,
+            "init": 34,
+            "success": true,
+            "steps": 121,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_object_task_02_state_034_cdbb22b422d140c3a664d1073877b041.npz"
+          },
+          {
+            "task": 12,
+            "init": 35,
+            "success": true,
+            "steps": 109,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_object_task_02_state_035_6883f1a2febf4c0ea696edfc9e4e9e1d.npz"
+          },
+          {
+            "task": 29,
+            "init": 32,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_goal_task_09_state_032_b2b83099477243d199f63ef052d44d10.npz"
+          },
+          {
+            "task": 29,
+            "init": 33,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_goal_task_09_state_033_06d60efc175b4ff1b08d64800a933904.npz"
+          },
+          {
+            "task": 29,
+            "init": 34,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_goal_task_09_state_034_166f606f067644b68ac02606e43a5031.npz"
+          },
+          {
+            "task": 29,
+            "init": 35,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_goal_task_09_state_035_4e01f49ec68f4750b07a624d02cf6da7.npz"
+          },
+          {
+            "task": 32,
+            "init": 32,
+            "success": true,
+            "steps": 466,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_10_task_02_state_032_ce82d7ee916242a0b7991e863a5bd390.npz"
+          },
+          {
+            "task": 32,
+            "init": 33,
+            "success": true,
+            "steps": 253,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_10_task_02_state_033_085fb9449ea84c10be26b6846126802a.npz"
+          },
+          {
+            "task": 32,
+            "init": 34,
+            "success": true,
+            "steps": 258,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_10_task_02_state_034_693dab4cbeb8421a849be3155a4af65a.npz"
+          },
+          {
+            "task": 32,
+            "init": 35,
+            "success": true,
+            "steps": 304,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_10_task_02_state_035_d85654f52eff49a8b226a7aef6cef56e.npz"
+          },
+          {
+            "task": 38,
+            "init": 32,
+            "success": true,
+            "steps": 476,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_10_task_08_state_032_0daf09e8af7d4c5ba680ad9a35cd9088.npz"
+          },
+          {
+            "task": 38,
+            "init": 33,
+            "success": true,
+            "steps": 415,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_10_task_08_state_033_d391a1794c5f439d93d9516124dde3c3.npz"
+          },
+          {
+            "task": 38,
+            "init": 34,
+            "success": true,
+            "steps": 413,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_10_task_08_state_034_aba9cc4efa894175b4a9d436c4b94fd2.npz"
+          },
+          {
+            "task": 38,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_T50/evaluation/continuous_traces/libero_10_task_08_state_035_b3d738326770427b8f22244567e4aee4.npz"
+          }
+        ],
+        "per_suite": {
+          "libero_object": 2,
+          "libero_goal": 0,
+          "libero_10": 7
+        },
+        "task_breadth_of4": 3
+      },
+      "expert_u480_initial": {
+        "successes": 12,
+        "per_task": {
+          "12": 4,
+          "29": 1,
+          "32": 4,
+          "38": 3
+        },
+        "success_set": [
+          [
+            12,
+            32
+          ],
+          [
+            12,
+            33
+          ],
+          [
+            12,
+            34
+          ],
+          [
+            12,
+            35
+          ],
+          [
+            29,
+            33
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            32,
+            33
+          ],
+          [
+            32,
+            34
+          ],
+          [
+            32,
+            35
+          ],
+          [
+            38,
+            33
+          ],
+          [
+            38,
+            34
+          ],
+          [
+            38,
+            35
+          ]
+        ],
+        "steps": 4543,
+        "per_row": [
+          {
+            "task": 12,
+            "init": 32,
+            "success": true,
+            "steps": 117,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_object_task_02_state_032_9b2d27f91abf4f5cb0a0b577d205bd62.npz"
+          },
+          {
+            "task": 12,
+            "init": 33,
+            "success": true,
+            "steps": 134,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_object_task_02_state_033_7dab48dfd0cc4a368ddacb88e4b71ada.npz"
+          },
+          {
+            "task": 12,
+            "init": 34,
+            "success": true,
+            "steps": 115,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_object_task_02_state_034_5f601795daf948f59b5e34602c0ca068.npz"
+          },
+          {
+            "task": 12,
+            "init": 35,
+            "success": true,
+            "steps": 129,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_object_task_02_state_035_6d77f1f6286948419901a1c907af1cb1.npz"
+          },
+          {
+            "task": 29,
+            "init": 32,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_goal_task_09_state_032_72ec93878a744179975af521cf2b8181.npz"
+          },
+          {
+            "task": 29,
+            "init": 33,
+            "success": true,
+            "steps": 139,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_goal_task_09_state_033_9c741bab0f304ef7b62c53ee7acecab0.npz"
+          },
+          {
+            "task": 29,
+            "init": 34,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_goal_task_09_state_034_00f3e15b7e4549cc8fbe5e181e2970ca.npz"
+          },
+          {
+            "task": 29,
+            "init": 35,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_goal_task_09_state_035_fc8d4403012b4f23bb471fc051ad146a.npz"
+          },
+          {
+            "task": 32,
+            "init": 32,
+            "success": true,
+            "steps": 246,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_10_task_02_state_032_bdb4d5574a24455184bcd204c3295d1b.npz"
+          },
+          {
+            "task": 32,
+            "init": 33,
+            "success": true,
+            "steps": 259,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_10_task_02_state_033_9154abb9841d47508d8155ca4e06001e.npz"
+          },
+          {
+            "task": 32,
+            "init": 34,
+            "success": true,
+            "steps": 234,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_10_task_02_state_034_e5382f521abb40bba51e309b474f7eaf.npz"
+          },
+          {
+            "task": 32,
+            "init": 35,
+            "success": true,
+            "steps": 432,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_10_task_02_state_035_3a0e684fc03a4ba39b08af399fb9e076.npz"
+          },
+          {
+            "task": 38,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_10_task_08_state_032_91835786c0bd4f54bc6c5a10b9debe1e.npz"
+          },
+          {
+            "task": 38,
+            "init": 33,
+            "success": true,
+            "steps": 385,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_10_task_08_state_033_0453dd3083874df1ba50b295ce7423c9.npz"
+          },
+          {
+            "task": 38,
+            "init": 34,
+            "success": true,
+            "steps": 419,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_10_task_08_state_034_3c84949ab6b844dc8bd3d0bf229a3e22.npz"
+          },
+          {
+            "task": 38,
+            "init": 35,
+            "success": true,
+            "steps": 514,
+            "trace": "/data1/user/ymdai/ember_runs/aligned_teacher_recovery_20261008/readouts/expert_u480_initial/evaluation/continuous_traces/libero_10_task_08_state_035_44fa25efc21d4ed792c59d2f3b32a5cd.npz"
+          }
+        ],
+        "per_suite": {
+          "libero_object": 4,
+          "libero_goal": 1,
+          "libero_10": 7
+        },
+        "task_breadth_of4": 4
+      },
+      "T_initial": {
+        "successes": 6,
+        "per_task": {
+          "12": 3,
+          "29": 2,
+          "32": 1,
+          "38": 0
+        },
+        "success_set": [
+          [
+            12,
+            33
+          ],
+          [
+            12,
+            34
+          ],
+          [
+            12,
+            35
+          ],
+          [
+            29,
+            34
+          ],
+          [
+            29,
+            35
+          ],
+          [
+            32,
+            33
+          ]
+        ],
+        "steps": 5734,
+        "per_row": [
+          {
+            "task": 12,
+            "init": 32,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_object_task_02_state_032_365db7b9537d41d493d3f1a9c860c7b6.npz"
+          },
+          {
+            "task": 12,
+            "init": 33,
+            "success": true,
+            "steps": 236,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_object_task_02_state_033_4b9b2b85b47a43e2b32c1cc6c6c43b7a.npz"
+          },
+          {
+            "task": 12,
+            "init": 34,
+            "success": true,
+            "steps": 123,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_object_task_02_state_034_91ff2bc021f34eff9cd4b2099fb6874d.npz"
+          },
+          {
+            "task": 12,
+            "init": 35,
+            "success": true,
+            "steps": 122,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_object_task_02_state_035_3324dc57dd9447f7be68d054c604a666.npz"
+          },
+          {
+            "task": 29,
+            "init": 32,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/parent/evaluation/seen12/continuous_traces/libero_goal_task_09_state_032_e74ed65c635949d08f1991e7900b7ec4.npz"
+          },
+          {
+            "task": 29,
+            "init": 33,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/parent/evaluation/seen12/continuous_traces/libero_goal_task_09_state_033_bf9fd97b16f844f9bfa02d8c2e546861.npz"
+          },
+          {
+            "task": 29,
+            "init": 34,
+            "success": true,
+            "steps": 141,
+            "trace": "/data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/parent/evaluation/seen12/continuous_traces/libero_goal_task_09_state_034_8e30eee7199f4b09904b0a1e771c82e7.npz"
+          },
+          {
+            "task": 29,
+            "init": 35,
+            "success": true,
+            "steps": 208,
+            "trace": "/data1/user/ymdai/ember_runs/query_conditioned_transition_read_20261005/parent/evaluation/seen12/continuous_traces/libero_goal_task_09_state_035_d9d11ccca20b41c1ba8f6217b2b7fec8.npz"
+          },
+          {
+            "task": 32,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_10_task_02_state_032_61e4b7c33ec64065b4fb54cfba1a0c0d.npz"
+          },
+          {
+            "task": 32,
+            "init": 33,
+            "success": true,
+            "steps": 384,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_10_task_02_state_033_1f0ba19fe64a4a5d92e9dc0f55135450.npz"
+          },
+          {
+            "task": 32,
+            "init": 34,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_10_task_02_state_034_6b39142989744b4da3ff396b6668e146.npz"
+          },
+          {
+            "task": 32,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_10_task_02_state_035_a6e6925b26874f1fb289270312d9f8a5.npz"
+          },
+          {
+            "task": 38,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_10_task_08_state_032_55107569e82f47ecb679bffc64b110dc.npz"
+          },
+          {
+            "task": 38,
+            "init": 33,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_10_task_08_state_033_d77688eb91e746a2b4a48ca714c095ba.npz"
+          },
+          {
+            "task": 38,
+            "init": 34,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_10_task_08_state_034_ceac46f29ced471bbeeeec5e3112b327.npz"
+          },
+          {
+            "task": 38,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/denoising_return_writer_20261006/readouts/parent/seen/ODE/evaluation/continuous_traces/libero_10_task_08_state_035_d755d52fdef346fdbf7a1a979f1fd88c.npz"
+          }
+        ],
+        "per_suite": {
+          "libero_object": 3,
+          "libero_goal": 2,
+          "libero_10": 1
+        },
+        "task_breadth_of4": 3
+      },
+      "MT_initial": {
+        "successes": 5,
+        "per_task": {
+          "12": 2,
+          "29": 0,
+          "32": 2,
+          "38": 1
+        },
+        "success_set": [
+          [
+            12,
+            33
+          ],
+          [
+            12,
+            35
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            32,
+            34
+          ],
+          [
+            38,
+            34
+          ]
+        ],
+        "steps": 5917,
+        "per_row": [
+          {
+            "task": 12,
+            "init": 32,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_object_task_02_state_032_6502364286e64cfea49f98e4f0f43cf9.npz"
+          },
+          {
+            "task": 12,
+            "init": 33,
+            "success": true,
+            "steps": 213,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_object_task_02_state_033_85256eb3d8ca458093fa0d926bfdaa39.npz"
+          },
+          {
+            "task": 12,
+            "init": 34,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_object_task_02_state_034_b59002b9beb74e59ac4ade88a3c5289e.npz"
+          },
+          {
+            "task": 12,
+            "init": 35,
+            "success": true,
+            "steps": 134,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_object_task_02_state_035_c4035950385e4a02be549d4c24de64f9.npz"
+          },
+          {
+            "task": 29,
+            "init": 32,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_goal_task_09_state_032_30f31ee898a148f2b5a11df86ea05290.npz"
+          },
+          {
+            "task": 29,
+            "init": 33,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_goal_task_09_state_033_1779925f13e7411ea282a3d1f2f49059.npz"
+          },
+          {
+            "task": 29,
+            "init": 34,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_goal_task_09_state_034_f0374f4473f242a0a491a09ae193bb4e.npz"
+          },
+          {
+            "task": 29,
+            "init": 35,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_goal_task_09_state_035_fcd35235dfa04296999b4229d935423f.npz"
+          },
+          {
+            "task": 32,
+            "init": 32,
+            "success": true,
+            "steps": 257,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_10_task_02_state_032_bb64cca7951e41d5a23a25e9da67d903.npz"
+          },
+          {
+            "task": 32,
+            "init": 33,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_10_task_02_state_033_a1d53c07f11d48329be895b8060019bc.npz"
+          },
+          {
+            "task": 32,
+            "init": 34,
+            "success": true,
+            "steps": 487,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_10_task_02_state_034_052881b385424b5f873925ba757cf886.npz"
+          },
+          {
+            "task": 32,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_10_task_02_state_035_5f6de1ecf0fa4f539a184e809ac9a20c.npz"
+          },
+          {
+            "task": 38,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_10_task_08_state_032_b84551b1e6f7472294eddbdd605ef6a9.npz"
+          },
+          {
+            "task": 38,
+            "init": 33,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_10_task_08_state_033_c19fa2f4329f4a2694badb517bd10aa1.npz"
+          },
+          {
+            "task": 38,
+            "init": 34,
+            "success": true,
+            "steps": 466,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_10_task_08_state_034_ba6e7bc35d1d49e685b74702f87b8a0d.npz"
+          },
+          {
+            "task": 38,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144/continuous_traces/libero_10_task_08_state_035_3e3eb8d409b84092a0f6659cb1cc6a6e.npz"
+          }
+        ],
+        "per_suite": {
+          "libero_object": 2,
+          "libero_goal": 0,
+          "libero_10": 3
+        },
+        "task_breadth_of4": 3
+      },
+      "NN_T50": {
+        "successes": 7,
+        "per_task": {
+          "12": 2,
+          "29": 2,
+          "32": 2,
+          "38": 1
+        },
+        "success_set": [
+          [
+            12,
+            34
+          ],
+          [
+            12,
+            35
+          ],
+          [
+            29,
+            32
+          ],
+          [
+            29,
+            34
+          ],
+          [
+            32,
+            33
+          ],
+          [
+            32,
+            35
+          ],
+          [
+            38,
+            34
+          ]
+        ],
+        "steps": 5328,
+        "per_row": [
+          {
+            "task": 12,
+            "init": 32,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_object_task_02_state_032_b10eb1a3c7aa49b2908b4bd66d5ea974.npz"
+          },
+          {
+            "task": 12,
+            "init": 33,
+            "success": false,
+            "steps": 280,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_object_task_02_state_033_fc1e20b5ad9440ad82ba6db70c515c53.npz"
+          },
+          {
+            "task": 12,
+            "init": 34,
+            "success": true,
+            "steps": 128,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_object_task_02_state_034_afdb9143ffc64edebaf4fc47f2b179bc.npz"
+          },
+          {
+            "task": 12,
+            "init": 35,
+            "success": true,
+            "steps": 116,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_object_task_02_state_035_0235303b2c1b4123b3b7fb7d0e233564.npz"
+          },
+          {
+            "task": 29,
+            "init": 32,
+            "success": true,
+            "steps": 126,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_goal_task_09_state_032_f29dfd4dac89446491008c1f7fc51b97.npz"
+          },
+          {
+            "task": 29,
+            "init": 33,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_goal_task_09_state_033_3988e4b113074ea598990e6e12c7813b.npz"
+          },
+          {
+            "task": 29,
+            "init": 34,
+            "success": true,
+            "steps": 146,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_goal_task_09_state_034_f18a7c77d465418dbb887a722673e604.npz"
+          },
+          {
+            "task": 29,
+            "init": 35,
+            "success": false,
+            "steps": 300,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_goal_task_09_state_035_aa9b1f9b696b4c1086179ef16018302e.npz"
+          },
+          {
+            "task": 32,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_10_task_02_state_032_115e4072e46b4d4a9bee2f83ddd7c251.npz"
+          },
+          {
+            "task": 32,
+            "init": 33,
+            "success": true,
+            "steps": 303,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_10_task_02_state_033_32ae256f125b4c539b5a176ca539e12b.npz"
+          },
+          {
+            "task": 32,
+            "init": 34,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_10_task_02_state_034_55c69215d0974c6f965a4d174cbbbe30.npz"
+          },
+          {
+            "task": 32,
+            "init": 35,
+            "success": true,
+            "steps": 290,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_10_task_02_state_035_78e24925a39d4313aeed20d4b62c3771.npz"
+          },
+          {
+            "task": 38,
+            "init": 32,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_10_task_08_state_032_b7eb6f1276a248db976d52086e8c853d.npz"
+          },
+          {
+            "task": 38,
+            "init": 33,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_10_task_08_state_033_43d93a83499a4839aa5308e329569278.npz"
+          },
+          {
+            "task": 38,
+            "init": 34,
+            "success": true,
+            "steps": 459,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_10_task_08_state_034_5f49a7dd92694781a5fe35018e248284.npz"
+          },
+          {
+            "task": 38,
+            "init": 35,
+            "success": false,
+            "steps": 520,
+            "trace": "/data1/user/ymdai/ember_runs/teacher_state_handoff_20261007/evaluation/T50_demo_NN/continuous_traces/libero_10_task_08_state_035_19adae14eff14040a2c6ecca334fbdc6.npz"
+          }
+        ],
+        "per_suite": {
+          "libero_object": 2,
+          "libero_goal": 2,
+          "libero_10": 3
+        },
+        "task_breadth_of4": 4
+      }
+    },
+    "comparisons": {
+      "expert_u480_initial_vs_expert_u320_initial": {
+        "R": 10,
+        "G": 2,
+        "L": 1,
+        "churn": 3,
+        "Jaccard": 0.7692307692307693,
+        "gained": [
+          [
+            12,
+            32
+          ],
+          [
+            38,
+            35
+          ]
+        ],
+        "lost": [
+          [
+            38,
+            32
+          ]
+        ]
+      },
+      "expert_u480_T50_vs_expert_u320_T50": {
+        "R": 5,
+        "G": 4,
+        "L": 1,
+        "churn": 5,
+        "Jaccard": 0.5,
+        "gained": [
+          [
+            32,
+            32
+          ],
+          [
+            32,
+            35
+          ],
+          [
+            38,
+            32
+          ],
+          [
+            38,
+            34
+          ]
+        ],
+        "lost": [
+          [
+            12,
+            33
+          ]
+        ]
+      },
+      "expert_u480_initial_vs_MT_initial": {
+        "R": 5,
+        "G": 7,
+        "L": 0,
+        "churn": 7,
+        "Jaccard": 0.4166666666666667,
+        "gained": [
+          [
+            12,
+            32
+          ],
+          [
+            12,
+            34
+          ],
+          [
+            29,
+            33
+          ],
+          [
+            32,
+            33
+          ],
+          [
+            32,
+            35
+          ],
+          [
+            38,
+            33
+          ],
+          [
+            38,
+            35
+          ]
+        ],
+        "lost": []
+      },
+      "expert_u480_T50_vs_MT300_T50": {
+        "R": 3,
+        "G": 6,
+        "L": 1,
+        "churn": 7,
+        "Jaccard": 0.3,
+        "gained": [
+          [
+            12,
+            34
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            32,
+            33
+          ],
+          [
+            32,
+            35
+          ],
+          [
+            38,
+            32
+          ],
+          [
+            38,
+            34
+          ]
+        ],
+        "lost": [
+          [
+            29,
+            34
+          ]
+        ]
+      },
+      "expert_u480_T50_vs_T_initial": {
+        "R": 3,
+        "G": 6,
+        "L": 3,
+        "churn": 9,
+        "Jaccard": 0.25,
+        "gained": [
+          [
+            32,
+            32
+          ],
+          [
+            32,
+            34
+          ],
+          [
+            32,
+            35
+          ],
+          [
+            38,
+            32
+          ],
+          [
+            38,
+            33
+          ],
+          [
+            38,
+            34
+          ]
+        ],
+        "lost": [
+          [
+            12,
+            33
+          ],
+          [
+            29,
+            34
+          ],
+          [
+            29,
+            35
+          ]
+        ]
+      },
+      "expert_u480_T50_vs_NN_T50": {
+        "R": 5,
+        "G": 4,
+        "L": 2,
+        "churn": 6,
+        "Jaccard": 0.45454545454545453,
+        "gained": [
+          [
+            32,
+            32
+          ],
+          [
+            32,
+            34
+          ],
+          [
+            38,
+            32
+          ],
+          [
+            38,
+            33
+          ]
+        ],
+        "lost": [
+          [
+            29,
+            32
+          ],
+          [
+            29,
+            34
+          ]
+        ]
+      }
+    },
+    "viewed_by_main": [
+      "expert_u480_initial_task12_init32",
+      "expert_u480_T50_task12_init32",
+      "expert_u480_initial_task29_init32",
+      "expert_u480_T50_task29_init32"
+    ],
+    "visual_limits": "Main viewed four original contact sheets (64 RGB images), not all twelve; salad dressing fall is visible only after the T50 handoff in these sampled images, not established in the T prefix. No terminal RGB or contact truth inferred.",
+    "scientific_decision": "Current-source independent A/B experts show additional learnable control, but do not qualify as broadly reliable recovery teachers. Do not automatically continue fitting or distillation; retain positive task32/38 and task29/retention failures. A separate bounded prequential state-return analysis is registered, without Writer/RL/model/environment/GPU execution."
   }
 }

@@ -1,3 +1,15 @@
+## 2026-10-08 main消费教师原件，接续状态条件回报辨识
+
+main已接回0c4b2114及tracked/Git，独立核9份results的128相关行与4张原RGB sheet；findings§395保存完整判断与画面时点纠正。
+专家480初态12/16、接手9/16；对T接手R3/G6/L3，32/38正例保留，task29始终0，未取得预登记恢复教师资格。
+不自动延训或蒸馏，也不以旧Gaussian/SDE RL已有信用就宣称状态信用已解决；五组最近似历史正负与真实梯度边界已核。
+唯一新active为docs/designs/state_conditioned_return_analysis_20261008.md：旧1152训练episode、三个只学过去的时间窗，
+比较LOO/task均值/task+时间/当前物理状态预测，判断是否存在值得进一步检验的状态基线依据。
+只训练固定CPU小预测器；0新VLA/GPU/环境/Writer更新/held/Test，没有自动RL。预测和局部余切能量都不是控制或完整G方差证明。
+预计20–45分钟，硬实际承接90分钟/8CPUh/data1新增峰1GiB；原大capture只读复用，完整合同见findings§396。
+当前仅完成科学登记、main持有全部tracked/Git；推送后交既有实验session独占执行与交付，实际承接以回执为准。
+main整批后核原件、裁决并继续Owner完整目标；下方旧active/等待措辞仅为当时时点。
+
 ## 2026-10-08 困难任务教师与T50恢复80行完整结束
 
 aligned_teacher_recovery_20261008已完成四task各480更新/53760真实query，共215040；

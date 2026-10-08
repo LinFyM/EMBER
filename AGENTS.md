@@ -41,11 +41,13 @@ GPU launch与formal train/eval仍须满足下文完整科学、资源、checkpoi
 ## 4. Scientific objective
 
 EMBER研究能否从generic `lerobot/pi05_base`建立的冻结π0.5-LIBERO source policy出发，把目标task的exact language
-和一条或多条action-hidden正确教学视频，在rollout前一次性编译为一套完整task-conditioned LoRA，使policy从
+和一条或多条action-hidden正确教学视频，在最终评估前编译为一套完整task-conditioned LoRA，使policy从
 未见初始化闭环完成任务。
 
-当前目标是Writer初次生成的LoRA立即有效。生成LoRA后的task-local RL是后续独立实验，不能混入当前
-zero-interaction分数。
+编译期允许有预算、无奖励的真实试做与阶段性LoRA修订：Writer可读自身RGB、proprioception、实际执行动作及其后果，
+最终固定一套完整LoRA，在未参与该condition适应的新初态评估。试做预算、重置与最终评测须预先分开登记；
+有交互适应不得记作zero-interaction。环境reward/success/terminal与teacher动作/state仍不作为适应输入；
+有奖励task-local RL仍是独立实验，不由无奖励试做许可自动开放。
 
 性能接受标准以`docs/current_owner_requirements.md`中的owner最新取舍为准；不得把历史`>145/400`合同
 自动恢复为新的硬门槛。仍须用strict single-checkpoint paired400、相邻能力保持、任务/suite覆盖、
@@ -59,14 +61,16 @@ hidden差异和surrogate只作定位证据，不能为了数值漂亮接受明�
 - 输入必须包含exact task language和一条或多条同task、action-hidden、内部有序teacher videos。
 - language说明关注什么和目标是什么，但不能独立写出有效LoRA；video dynamic evidence必须是必要Value路径。
 - deployment Writer不得读取teacher action、proprio/state、reward、terminal、task ID、filename、object pose、
-  hidden normalization或policy outcome。授权的non-held meta tasks可在训练时使用action、privileged expert或
-  on-policy reward学习共享Writer/functional decoder，但这些信息不得成为deployment输入或task-ID route。
+  hidden normalization或特权policy outcome。编译期获准的自身试做RGB/proprio/动作/可观察后果是独立合法输入，
+  不得伪装成teacher标签；试做不得通过成功触发的停止、重置或选择向Writer间接传入success。
+  授权的non-held meta tasks可在训练时使用action、privileged expert或on-policy reward学习共享Writer/functional decoder，
+  这些监督标签不得成为deployment输入或task-ID route。
 - validation/test actions或reward不得产生梯度。允许模型冻结、无checkpoint选择、预注册的一次性sealed post-hoc
   held诊断；Test默认保留到最终方法冻结后，提前使用必须明确登记且不得反哺设计。
-- 每个condition只生成一套完整38-target task LoRA；不生成多套video LoRA后平均，不挑video，不融合checkpoint，
-  不部署第二套expert adapter。
-- Writer在rollout前运行一次；一次调用内部可以对同一组授权视频/native activations做固定、只读的多阶段流式读取与重放，
-  但闭环中不反复观看teacher video，也不进行task-local优化或环境交互。
+- 每个condition最终只部署一套完整38-target task LoRA；编译期可修订中间LoRA，但不生成多套video LoRA后平均，
+  不挑video、不融合checkpoint、不部署第二套expert adapter。
+- Writer只在最终评估前的适应期运行；可重复读取合法教学及自身试做，并让当前LoRA参与后续理解。
+  最终LoRA冻结后Writer退出，最终闭环不反复看teacher video或继续适应；旧零交互实验按原合同解释。
 - frame stride固定为5；frozen source policy无trainable parameters。允许learned language-only诊断baseline，以及
   rollout前合并为一套LoRA的principled shared prior/base adapter + video-conditioned residual；canonical仍必须证明
   video相对language/static prior有必要条件增量，且不得部署并行carrier、expert或第二adapter。

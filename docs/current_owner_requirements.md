@@ -14,8 +14,13 @@
 Owner随后选定保留S/M残差编译、最终直接输出A_V/B_V；没有采用以B₀初始化并覆盖完整B的替代递推。
 已授权按最终版本实施并继续自主推进，实际运行状态及批次边界只看progress和active design，不把授权当已完成结果。
 
-EMBER应把exact task language和action-hidden正确教学视频，在rollout前一次编译成冻结source的一套完整task-conditioned
-LoRA，让policy从未见初始化完成任务。科学对象是生成后立即可用的能力；task-local FT/RL是另外的实验，不能混入零交互成绩。
+EMBER应把exact task language和action-hidden正确教学视频编译成冻结source的一套完整task-conditioned LoRA，
+让policy从未见初始化完成任务。Owner于2026-10-08明确扩展编译期资源：允许source或阶段性LoRA进行无奖励真实试做，
+Writer可以读取自己的RGB、proprioception、执行动作及可观察后果，并分阶段修订LoRA。教师动作/state、环境success/reward、
+目标物体真值仍不可读。最终固定唯一完整LoRA后，在未参与该condition适应的新初态评估，Writer退出。
+这会获得新的环境反馈，不能沿用零交互的成本或成绩表述；有奖励task-local RL仍是另一项实验。
+Owner提出分段理解、LoRA参与后续理解与保持已学功能作为设计启发，未指定SSM、扩散或逐段叠加adapter为方法。
+须保护有用控制功能，不能把参数不变、多个LoRA相加或形式上的分阶段当作不遗忘保证。
 
 Owner用“Writer最差可以固定输出一套共同LoRA”说明模型类的理想可达下界：如果能表示同rank共享LoRA的常量映射，
 直接训练共享LoRA得到的能力应属于EMBER可达解的一部分；正确视频应进一步提供超过这个退化解的能力空间。
@@ -229,7 +234,9 @@ Owner进一步要求同时防止“低分后连续换架构”和“逐模块过
 ## 4. 方法边界
 
 语言说明目标与关注对象，有序视频动态应贡献必要Value信息；执行policy仍读取自身观测/state。
-Teacher action、state/proprio、reward、terminal、task ID、filename、pose及policy outcome不成为部署Writer输入。
+Teacher action、state/proprio、reward、terminal、task ID、filename、pose及特权policy outcome不成为部署Writer输入。
+获准的自身试做RGB/proprio/动作/可观察后果与teacher标签严格区分；适应的固定交互预算与重置协议须登记，
+不能利用成功触发的提前停止、reset或挑选轨迹把环境success间接传入Writer。最终评测才按官方成功终止口径计分。
 合法训练监督、non-held meta任务、privileged诊断、Test信息墙和配对评测按AGENTS及当轮登记合同执行。
 
 Owner澄清：除不可读teacher state等信息墙外，教学读取的预处理、noise/flow等可配置计算可以与真实执行设置对齐；
@@ -241,15 +248,16 @@ Owner于2026-10-06补充：这里的off-policy提醒主要指跨本体、相机�
 
 Owner于2026-10-02明确要求：不许扩数据，现有数据规模固定。后继方案不得通过增加训练任务、示范数量或引入额外
 数据来源扩大规模；方法与学习机制须在现有数据规模内研究。旧合同中的扩数据许可不再构成后继执行授权，
-已完成实验及其原件仍作为历史证据保留。
+已完成实验及其原件仍作为历史证据保留。2026-10-08获准的自身交互是新的适应经验，须独立计量；
+不由此增加外部教师视频、独立meta任务或隐含引入带标签的held数据。
 
-Writer在rollout前生成一套完整38-target LoRA；不挑视频、平均最终LoRA、融合checkpoint或并行部署第二expert adapter。
+Writer在最终评估前固定一套完整38-target LoRA；不挑视频、平均最终LoRA、融合checkpoint或并行部署第二expert adapter。
 Owner于2026-10-05明确：前缀尽可能不允许改动，因为会改变图像理解。后继按保持source原生图文prefix冻结的
 边界推进，保留其图像理解基础；大胆改架构的授权不应解释为默认开放部署prefix适配。
 可只读利用合法原生前缀特征，但不能把读取已有特征与修改执行前缀混为一事；也不把低分或局部key差额当作必须改前缀的证据。
 Core/Procedure、rank、memory token和decoder是候选实现，可以实质重构，但须保留科学边界并给出完整可检验原理。
 Owner进一步明确：架构与训练方式不必守住现有方案，可以参考元学习、VLA等外部工作，同时必须保留这两个月推进形成的自身特色。
-落实时保留教学视频到一次完整LoRA编译、原生策略知识参与理解、跨初态闭环与有益视频增量这条研究主线，
+落实时保留教学视频到最终一套完整LoRA编译、原生策略知识参与理解、跨初态闭环与有益视频增量这条研究主线，
 以及已经积累的正负证据；具体模块和训练配方按机制证据取舍。借鉴应说明原工作解决了什么、与EMBER的条件差异、
 自身保留和新增的计算机制，不把沿用模块名当特色，也不把外部论文的结果当作本项目已验证的修复。
 

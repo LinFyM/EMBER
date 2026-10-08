@@ -1,7 +1,9 @@
 # EMBER concept
 
-EMBER研究能否把exact task language与action-hidden正确教学视频，在rollout前一次编译为冻结π0.5 source的一套完整task-conditioned LoRA，
-使机器人从未见初始化闭环完成任务。语言说明目标与关注对象，视频中的操作内容和顺序应提供必要条件信息。
+EMBER研究能否把exact task language与action-hidden正确教学视频，编译为冻结π0.5 source的一套完整task-conditioned LoRA，
+使机器人从未见初始化闭环完成任务。编译期允许有预算的无奖励真实试做及中间LoRA修订，最终固定唯一LoRA后Writer退出。
+Writer可读自身RGB、proprioception、实际执行动作与可观察后果，teacher标签和环境success/reward仍不可读。
+语言说明目标与关注对象，视频中的操作内容和顺序应提供必要条件信息。有交互结果与旧零交互结果分开计量。
 人从他人教学迁移到自己身体的能力是科学动机；LIBERO结果本身不证明跨身体泛化。
 
 本文保留科学对象、信息流与证据标准。稳定要求以[Owner要求](current_owner_requirements.md)为准；
@@ -9,7 +11,8 @@ EMBER研究能否把exact task language与action-hidden正确教学视频，在r
 
 ## 可达能力、学习过程与部署效果是三层问题
 
-令Writer输出为`G_phi(language, video)`。Owner提出的固定LoRA退化解是
+旧零交互Writer输出为`G_phi(language, video)`；新适应过程还可读取合法自身试做历史，最终仍是同一形式的执行LoRA。
+Owner提出的固定LoRA退化解是
 `G_phi(language, video) = theta_shared`：如果模型类能表示这一常量映射，同rank共享LoRA的可达策略就在其解空间中。
 这是理想可达能力的下界参照，不是对有限训练轨迹的保证，也不推出先训练公共底座的课程。
 研究问题是端到端学习怎样实现并超过这一解；不能把rank差异或当前实现限制当作研究结论。
@@ -52,8 +55,9 @@ exact task language + action-hidden、内部有序的正确教学RGB视频
   → stride5及真实末帧；每条视频独立编码，保留时序与视角身份
   → 冻结source的真实图文prefix与原生Action Expert读取
   → 任务相关视觉内容、动作计算响应及跨帧操作关系
-  → 共享Writer把这些条件编译为唯一38-target完整A/B LoRA
-  → rollout前固定参数；source根据机器人自身观测与state闭环执行
+  → 共享Writer形成阶段性38-target完整A/B LoRA
+  → 有限次真实试做：自身RGB/proprio/动作/后果与当前LoRA共同参与重读和修订
+  → 适应结束后固定唯一完整LoRA；在新的初态由source闭环执行
 ```
 
 语言负责目标与关注对象，视频提供实际操作及其后果，执行观测确定机器人目前应做什么。
@@ -75,15 +79,18 @@ Owner已明确允许在发现问题后更深入推导修正，并更大胆地重
 
 ## 信息墙与共同学习
 
-Teacher action、state/proprio、reward、terminal、task ID、filename、pose和policy outcome不进入部署Writer。
-执行policy使用机器人自己的观测/state，与teacher信息墙不同。一套生成LoRA覆盖所有38个执行目标，
+Teacher action、state/proprio、reward、terminal、task ID、filename、pose和特权policy outcome不进入部署Writer。
+执行policy及获准适应期的Writer可用机器人自身的观测/state与真实试做历史，与teacher信息墙不同。
+试做的固定预算与重置不依赖success，防止通过终止或轨迹选择泄漏标签；最终评估初态不参与该condition适应。
+一套最终生成LoRA覆盖所有38个执行目标，
 不挑视频、不平均最终LoRA、不融合checkpoint，也不部署第二expert adapter。
 两相机是同一时点的同步观测，不是K=2；如声称dynamic K，必须训练覆盖各cardinality，并只在集合阶段做置换不变聚合。
 
 主监督来自同task、严格跨episode的真实执行FM。授权的训练期辅助标签须登记来源、梯度消费者和权重，
 只能在生成之后用于监督，不得进入条件表示。Writer与读取Meta从fresh状态共同学习，source冻结；
 合法identity可使首步部分上游信用为零，须核实后续实际学习过程，不能由单次梯度或机制smoke宣称方法成功。
-适配的Z/KV/H不能跨参数更新缓存，validation/test不产生梯度。部署无teacher标签、loss、optimizer或环境试错。
+适配的Z/KV/H不能跨参数更新缓存，validation/test监督标签不产生梯度。共享Writer的前向计算可以修订任务LoRA，
+不能将这种条件适应混称为用held监督重新训练共享参数；自身试做提供条件证据，不把自己采取的动作当作正确动作标签。
 
 ## 怎样判断
 

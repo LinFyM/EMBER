@@ -1,3 +1,15 @@
+## 2026-10-08 main消费状态预测，登记完整Writer信用辨识
+
+main已接回0d837df5及tracked/Git，直接核实际两CPU脚本/13754条已存预测及旧完整score/G源码；findings§398保存独立判断。
+State相对Context有15.4%局部能量增量，但相对原LOO最早时段几乎无变化，主要降低中后段广播信用；全同结果组额外信用也完整保留。
+第三窗19%不作科学否决线；预测性不等于早期正确动作、完整G方差或控制修复，原CPU批保持封口。
+唯一新active为docs/designs/state_baseline_full_writer_credit_20261008.md：旧checkpoint18/27/36/45/54/63对应原macro19/28/37/46/55/64。
+24condition/96episode/1525decision/3050转移，复用固定LOO/Context/State预测，重算同版本velocity→LoRA→完整G/native梯度。
+22不同task、12mixed/12全成功、无全失败组；保留覆盖限制、完整macro交叉项及视频读写组，不作checkpoint选择。
+0新环境/参数更新/held/Test；预计1–2wall小时/.5–1.5GPUh，硬实际承接4wall/3完整GPUh/data1峰8GiB。
+当前仅科学登记，main持有tracked/Git；推送后交既有实验session独占工程/运行/Git，实际承接以其回执为准。
+结果只改变下一笔完整方法投入，不自动RL或critic扫描；main收到整批原件继续Owner最终目标。下方active均为历史时点。
+
 ## 2026-10-08 状态回报CPU分析完整结束，交主讨论独立消费
 
 state_conditioned_return_analysis_20261008已完成1152原episode/288组单次读取、六固定CPU模型和864后续episode/13754 decision的三窗完整读回。
@@ -6,7 +18,7 @@ Context→State三窗Brier .106197→.104105、.110296→.087956、.108239→.08
 合并State比Context Brier降低14.62%/能量15.41%，task归一化等权能量降低12.97%；Context本身比LOO下降37.37%/32.21%，须先归为task/时间作用。
 三窗全部预测/校准/task/suite/时段/成功失败/不利例保存；合并11任务Brier变差、11项能量变差，前三task34/37/73占净能量减幅54.1%。
 task25始终0/32成功、LOO能量0，State预测不创造正标签；task38仅1/32，State合并略变差。最早四分位Brier几乎不增益，末四分位局部能量也几乎不改善。
-信息墙/真实t和t-5/官方H（LIBERO-90=400）/cached8state差0/过去窗口和1/M/局部C2独立复算通过；0CUDA/VLA/环境/held/Test/G或RL更新。
+信息墙/真实t和t-5/官方H（LIBERO-90=400）/cached position3与gripper2差0/过去窗口和1/M/局部C2独立复算通过；0CUDA/VLA/环境/held/Test/G或RL更新。
 source1c90e7d5/contract aa25c010；只run-scoped脚本，既有sklearn1.5.1复用，未安装依赖或更改canonical环境，无trainer/CLI/hooks需保留。
 两个主消费者实测58.61 CPU秒，读取120.44秒、六模型及完整读回5.23秒；其它有限核对/Git与保守全批成本边界在completion，不冒称全批精确CPUh。
 完整新增实占约40MiB、规划256MiB，硬90分钟/8CPUh/1GiB/0GPU内；所有模型/脚本/原件索引/失败说明保留，不重扫8GiB原score。

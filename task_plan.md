@@ -1,3 +1,12 @@
+## 2026-10-08 接续：状态基线能否改善完整视频编译信用
+
+main已独立消费CPU三窗原件；有限状态预测成立，但最早局部信用未优于旧LOO，尚不说明生成器更新获益。
+唯一active为docs/designs/state_baseline_full_writer_credit_20261008.md；固定6对应旧checkpoint、24条件/96episode/3050转移。
+比较LOO/Context/State真实完整G梯度，保留公共与视频读写组、跨condition项、零LOO组及22task覆盖限制。
+0新采集/Writer更新/held/Test；预计1–2wall，硬4wall/3GPUh/data1峰8GiB，实际调度与写窗口见progress。
+本次只回答局部信用是否到达完整G；main据完整原件决定下一真实方法工作，不由预测或范数自动重开RL。
+最终稳定明显超过强MT及有益视频增量仍未实现，持续自主推进授权保持；下方各active为当时时点。
+
 ## 2026-10-08 三窗状态回报分析完成，主讨论接续方法判断
 
 固定1152原episode/六CPU预测器/864后续episode完整交付；State后两窗相对Context有20–21% Brier增益和23.1%/19.0%局部能量降低。

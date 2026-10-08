@@ -4689,3 +4689,15 @@ Context→State后两窗Brier .110296→.087956、.108239→.085193，局部能�
 不是完整G信用方差、RGB获取或控制结果，没有新环境/GPU/Writer或RL/held/Test；不由预测自动重开RL或扫模型。
 两主消费者58.61CPU秒，0GPU，约40MiB新增，六模型/脚本/完整预测/依赖/source1c90e7d5和contract aa25c010保存。
 本批结束一次交main科学消费并继续项目；不从旧RL训练入口恢复，无canonical运行面新增。
+
+
+### 2026-10-08 main消费状态回报并登记完整G梯度比较
+
+findings§398/canonical main_consumption保存13754条已存预测的独立复算和实际源码依据。
+State/LOO四时间分位局部能量比.9988/.7163/.2957/.1273；主要是中后段广播信用变化，不宣称早期正确操作信用已改善。
+mixed组减幅与全成功/全失败组97.59m新增局部信用均保留；第三窗19%不机械否定状态预测，完整G/控制证据仍缺。
+原cached state的数值核对范围纠正为position3/gripper2，不冒称axis-angle与quat也已比对；原预测/模型不变。
+findings§399及state_baseline_full_writer_credit_20261008.md登记六个真实采集版本、24条件/96episode/3050转移的三基线完整G比较。
+选择只依赖现成checkpoint及past-only预测器，不依据结果；22task、无全失败组，跨condition与视频读写梯度完整报告。
+0环境/参数更新/held/Test；预计1–2wall/.5–1.5GPUh，硬4wall/3GPUh/8GiB，从新clean pushed detached代码执行。
+登记不代表已运行或RL资格；实际承接和完整结果另记，main继续承担下一完整科学判断。

@@ -10457,7 +10457,8 @@ macro28/task12/replica3成功（.27014/.50021）；完整864行保留，不以�
 真实消费者：Context37维=36 one-hot+t/H，State149维；最大7个已捕获body/3原BDDL谓词，name排序/右补零/有效mask。
 EEF p/原存quat4/双指q、body p与相对EEF、过去5步位置和q差及可用位、当前goal向量；无quat差分、未捕获旋转/关节/接触。
 H来自原official registry，LIBERO-90=400、其它220/280/300/520，不用终止长度；所有当前t<steps、执行五动作前，
-原cached8state和trace差0。没有demo/init/filename/replica/R/Q/M/终点/未来噪声进入X；M用于1/M等权，Q/M仅规定局部余切。
+cached state形状为8；实际和trace数值核对的是position3及gripper2，差0，并未比较axis-angle3与原quat4。
+没有demo/init/filename/replica/R/Q/M/终点/未来噪声进入X；M用于1/M等权，Q/M仅规定局部余切。
 三窗各拟合288/576/864过去episode、测试288；每task8/16/24→8，六个固定sklearn1.5.1 HGB200轮、保存后预测未来，无调参。
 各窗拟合/后续episode不交叉，三段后续互不重叠、拟合窗按合同嵌套；LOO严格其他三条，四基线三窗Brier与E独立复算通过。
 六保存模型在实际首末未来事件匹配；这不把三个嵌套拟合叫独立训练重复。
@@ -10472,3 +10473,57 @@ C严格沿原消费者(Q/M)*5*c/tau*(z_next-m)，50×32和实际两个抽中tau�
 原源读取120.44秒、六模型及完整读回5.23秒，两个主消费者58.61CPU秒=.016281CPUh；有限辅助核对/Git与保守整批计费边界见completion。
 新增约40MiB/规划256MiB，0GPU，硬90分钟/8CPUh/1GiB内；全部进程退出、原1152 captures保持。
 本条是执行方完整事实，不冒称main已独立消费；可靠一次交回后main继续Owner目标，有限分析结束不终止项目。
+
+## 398. main消费：状态可预测性主要减少中后段广播信用，尚未说明视频编译更新获益（2026-10-08）
+
+main直接读取两份实际CPU脚本及13754条已存预测，按原episode/四例组独立复算三窗、逐task、时段和组类别，
+未重扫约8GiB score、重拟合模型或新增VLA/环境。复算进入canonical分析JSON的main_consumption。
+合并Brier State/Context=.853795、局部能量=.845925，State/LOO能量=.573424；执行方总体数字成立。
+第三窗18.98%与20%参考线的差距不构成“状态无效”的科学证据；后两窗预测改善均约20–21%，
+但第一窗仅2% Brier改善也应保留，说明小数据/变化策略条件下并非立即可靠。
+
+新增的具体辨识是相对原LOO的时间分布：最早四分之一局部能量State/LOO=.998825，
+后续三个四分位=.716286/.295679/.127302。Context在最早时段能量还高于LOO，State基本仅补回这部分。
+所以总体42.7%的LOO降幅不能被解释为早期选对对象/操作方向的信用已经更准；
+更相容的候选是task/时间先识别难度和余时，再用当前物理状态减少中后段低成功率动作被整条R广播的程度。
+相对Context，State中两个四分位确有20.0%/25.4%的额外局部降幅，并非仅在临近时限识别失败；
+这支持有限状态信息，但不等于已识别哪个动作造成成功，仍无法解释task12早期搬错对象怎样被纠正。
+
+864后续episode含102个mixed组、98全成功组、16全失败组。mixed组State能量805.64m、Context967.62m、LOO1575.15m；
+全成功/全失败组LOO均为0，新State分别产生30.12m/67.47m，合计97.59m额外局部信用。
+全失败组State还比Context高2.24%；非零不能叫创造成功知识，完全0/32的task25尤甚。
+LOO在某次四例全同结果时零信用也不证明真实policy梯度应为零；应保留它作为不同估计器的有限样本差异，
+不把State新增信用一概叫有害，更不能因总体范数小就叫学习更好。25项改善/11项变差、task34/37/73占净降幅54.1%均保留。
+
+原代码中的C是单transition velocity损失余切，原梯度接着经过自身观测下的38-target LoRA Jacobian，
+再通过该教学的完整G/native视频读取回传到A/B0/P/C/D/O。后两层实际矩阵和跨时点叠加并未进入CPU能量。
+同一个局部降幅可能在完整生成器中被增强、抵消或仅改变公共B0；这才是与EMBER视频到LoRA学习相关、仍缺的桥接证据。
+因此不启动长训，也不把“没有critic”升级为根因；选择一次旧原件上的完整G信用比较，结果须改变下一笔真实学习取舍。
+这保留最近教师状态适用范围不足、旧RL真实阴性及T原有正能力，不转成通用VLA/预测器比赛。
+
+记录精度纠正：extract.py只比较cached8state中的position3和gripper2与trace，未比较姿态三维与四元数；
+§397/progress及canonical main说明已改准。State仍使用真实当前trace quat4；没有发现当前/未来泄漏，也没有为措辞重开工程测试。
+CPU批完整封口及费用保持；本科学消费不改变已存原模型、原预测或原评测结果，Owner最终目标未完成。
+
+## 399. 六个精确采集checkpoint上的完整G基线信用辨识（2026-10-08，登记未运行）
+
+唯一active科学合同见docs/designs/state_baseline_full_writer_credit_20261008.md。
+main已核旧denoising_training/credit、Runtime.compile和TargetWrite原源：checkpoint18/27/36/45/54/63
+正好对应采集macro19/28/37/46/55/64的参数版本，全部六份Writer权重仍存在，无需重放历史optimizer。
+按可用checkpoint而非结果选择全部后续macro：24条件、96 episode、1525decision/3050原转移、22不同task。
+其中12 mixed/12全成功、无全失败组；缺task25及大收益task37/73，范围限制预先保存。
+
+复用已经冻结且只学过去的Context/State预测和原LOO，三者同事件同phi；恢复原1/16、Q/M及10/2权重，
+真实velocity→完整LoRA余切→同版本完整G/native回传，0新环境、0optimizer/Writer更新、0held/Test。
+每condition与macro保留三基线Gram/范数、public A/B0/P/C/D/O及联合视频读写组，以及macro跨condition交叉项；
+保存18个macro完整梯度约2.84GiB，不能以各组平方和替代真实16episode更新。
+在动作前状态与past-only拟合、原独立episode的LOO条件下，三个梯度估计器条件期望相同，
+故平方范数差的期望对应trace covariance差；实际六个自适应历史点仅为高噪声的成对二阶量证据，
+不报方差比/SNR或独立重复置信声明，不把小范数、方向变化或非零信用当控制改善。
+
+若局部收益不能到达完整G/视频读写组，降低此基线作为下一完整学习修复的优先级，不扫critic保护假说；
+若有一致实质收益，才讨论一次有界真实学习比较，仍不自动恢复RL，也不能替代闭环与迁移。
+预计1–2wall小时/.5–1.5GPUh，依据原128transition score约9.4秒/native约6–16秒，无新环境；
+硬实际承接4wall/3完整GPUh/data1新增峰8GiB。执行前现场quota/双节点GPU、实际物理batch吞吐与完整预算由实验session闭环。
+代码从新clean pushed detached运行，旧冻结不热改；main交接后停止tracked/Git并发写。实际承接、完成和写窗口以progress为准。
+main整批后继续完整科学取舍；不是以完成这一局部诊断替代或结束EMBER目标。

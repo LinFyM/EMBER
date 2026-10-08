@@ -4678,3 +4678,14 @@ findings§395与aligned_teacher_recovery canonical JSON的main_consumption记录
 不能把已完成末端Gaussian或完整SDE score当作新方法；当前72步没有V/Q/GAE/TD，但缺少critic不等于根因确诊。
 findings§396及state_conditioned_return_analysis_20261008登记仅旧训练原件的CPU前向时间预测/局部信用分析；
 登记时无新模型/环境/GPU或Writer更新，无自动RL。它服务于下一真实方法投入判断，不用预测替代EMBER性能。
+
+
+### 2026-10-08 原1152训练交互的三窗状态回报辨识（CPU完整完成）
+
+唯一合同state_conditioned_return_analysis_20261008；findings§397/canonical同名JSON与run完整原件。
+固定6个HGB预测器，仅过去标签，864后续episode/13754decision，LOO/task均值/Context/State全部配对读回；原score约8GiB只读一遍。
+Context→State后两窗Brier .110296→.087956、.108239→.085193，局部能量比 .768576/.810191；两窗20%投入参考仅一窗满足。
+合并State额外Brier减14.62%、局部能量减15.41%，task归一化减12.97%；任务/时间Context自身已有较大LOO增益，正反/单类/时段边界保存。
+不是完整G信用方差、RGB获取或控制结果，没有新环境/GPU/Writer或RL/held/Test；不由预测自动重开RL或扫模型。
+两主消费者58.61CPU秒，0GPU，约40MiB新增，六模型/脚本/完整预测/依赖/source1c90e7d5和contract aa25c010保存。
+本批结束一次交main科学消费并继续项目；不从旧RL训练入口恢复，无canonical运行面新增。

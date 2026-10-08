@@ -1,3 +1,28 @@
+## 2026-10-08 状态回报CPU分析完整结束，交主讨论独立消费
+
+state_conditioned_return_analysis_20261008已完成1152原episode/288组单次读取、六固定CPU模型和864后续episode/13754 decision的三窗完整读回。
+Context→State三窗Brier .106197→.104105、.110296→.087956、.108239→.085193；局部余切能量比 .970978/.768576/.810191。
+后两窗预测增量成立，第二窗能量降低23.14%、第三窗18.98%，只有一窗达20%投入参考；不把参考升级为科学接受硬门槛，也不由阳性自动恢复RL。
+合并State比Context Brier降低14.62%/能量15.41%，task归一化等权能量降低12.97%；Context本身比LOO下降37.37%/32.21%，须先归为task/时间作用。
+三窗全部预测/校准/task/suite/时段/成功失败/不利例保存；合并11任务Brier变差、11项能量变差，前三task34/37/73占净能量减幅54.1%。
+task25始终0/32成功、LOO能量0，State预测不创造正标签；task38仅1/32，State合并略变差。最早四分位Brier几乎不增益，末四分位局部能量也几乎不改善。
+信息墙/真实t和t-5/官方H（LIBERO-90=400）/cached8state差0/过去窗口和1/M/局部C2独立复算通过；0CUDA/VLA/环境/held/Test/G或RL更新。
+source1c90e7d5/contract aa25c010；只run-scoped脚本，既有sklearn1.5.1复用，未安装依赖或更改canonical环境，无trainer/CLI/hooks需保留。
+两个主消费者实测58.61 CPU秒，读取120.44秒、六模型及完整读回5.23秒；其它有限核对/Git与保守全批成本边界在completion，不冒称全批精确CPUh。
+完整新增实占约40MiB、规划256MiB，硬90分钟/8CPUh/1GiB/0GPU内；所有模型/脚本/原件索引/失败说明保留，不重扫8GiB原score。
+findings§397及docs/analyses/state_conditioned_return_analysis_20261008.json/run report索引全部原件；可靠一次交付后交回tracked/Git，main独立裁决并继续Owner目标。
+当前批计算结束，没有自动RL/预测器扫描/采集/新Writer；下方active/承接措辞是历史时点。
+
+## 2026-10-08 实验session承接固定CPU状态回报分析
+
+实验session01a10a98-6d4b-7d61-b12c-da38a628cb45从clean pushed aa25c010接管canonical tracked/Git独占窗口；main停止并发写。
+已全文读126行active合同/findings§395–396/Owner规则。实际承接2026-10-08T01:28:50Z，硬截止02:58:50Z；预计20–45分钟，硬90分钟/8CPUh/1GiB/0GPU。
+唯一root state_conditioned_return_analysis_20261008，判重未见旧root；1152条历史训练episode、864条三个前向窗后续读回，0新环境/VLA/native/Writer/held/Test。
+strg01独立data1 quota与实际个人du/shared已核；新增峰规划256MiB，原约8GiB captures只单次顺序读取不复制。
+现有system sklearn1.5.1与canonical CPU torch通过两个只读数据进程复用，无依赖安装或canonical环境修改；固定4线程上限。
+实现仅run-scoped两内聚CPU脚本，精确复算原LOO及余切，episode等权、36task等曝光、窗口只学过去；不加trainer/CLI/hooks。
+本条登记实际接管/原件接口核对，不冒称预测已经拟合或GPU已启动；整批或真实边界仅一次回main，结果不自动恢复RL。
+
 ## 2026-10-08 main消费教师原件，接续状态条件回报辨识
 
 main已接回0c4b2114及tracked/Git，独立核9份results的128相关行与4张原RGB sheet；findings§395保存完整判断与画面时点纠正。

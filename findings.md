@@ -10423,3 +10423,52 @@ State须相对Context有跨窗实际裕量，而不是只从接近超时或少�
 预计20–45分钟，硬承接90分钟/8CPUh/data1新增峰1GiB/0GPUh，依赖仅在run root内，原约8GiB captures不复制。
 实验session负责实际实现/因果窗口检查/资源/交付，main独占科学文档后推送派发；此处登记不冒称实际承接。
 main收到整批原件后继续方法判断；本分析的结束不结束Owner持续推进授权或EMBER最终目标。
+
+
+## 397. 历史前向窗有状态回报预测增量，局部信用余量有限且不等于G控制修复（2026-10-08）
+
+唯一原件state_conditioned_return_analysis_20261008；canonical docs/analyses/state_conditioned_return_analysis_20261008.json、run report.md、
+analysis/per_decision_predictions.jsonl/per_episode.json/tsv、完整三窗校准和36task分层。1152原训练episode/288组、
+18346个原reservoir decision/36692转移只顺序读取一次，7,968,034,409B score原件不复制；864后续episode/13754 decision全部读回。
+
+| 拟合→后续macro | LOO Brier | past-task Brier | Context Brier | State Brier | State/Context E_local | State/LOO E_local |
+|---|---:|---:|---:|---:|---:|---:|
+| 1–18→19–36 | .166667 | .142083 | .106197 | .104105 | .970978 | .612638 |
+| 1–36→37–54 | .169753 | .146819 | .110296 | .087956 | .768576 | .639135 |
+| 1–54→55–72 | .182099 | .142135 | .108239 | .085193 | .810191 | .483390 |
+| 后续864合并 | .172840 | .143679 | .108244 | .092418 | .845925 | .573424 |
+
+Context本身比原LOO降低Brier37.37%/局部能量32.21%，不能把task/时间作用归给状态；
+State在此之上降低Brier14.62%/原事件能量15.41%，按每task C平方质量归一再等权降低12.97%。
+后两窗Brier减20.25%/21.29%、能量减23.14%/18.98%，支持有限的额外状态预测性；
+只有第二窗同时达到20%能量投入参考，未满足两窗余量。该参考不是科学接受硬门槛，也不授权RL或选Writer；
+不能由第三窗19%叫状态完全不可预测，亦不能把尚无完整信用/控制证据写成方法资格。
+
+合并Brier及能量各25task改善/11项变差，三个净能量最大项34/37/73占净减幅54.1%；广度不等于收益均匀。
+四时间分位能量比分别.89915/.79992/.74618/.99278，最早分位Brier几乎持平.99705，窗1最早分位Brier还变差1.13575倍。
+主要增量在中段，没有只靠最后四分之一时限；但跨窗/早期/任务的可靠性差异必须保留。libero_goal合并Brier1.03298倍而能量.97090倍。
+完全无成功task25原0/32、后续0/24，LOO Brier/E为0；State .009403高于Context .002572、能量3.310倍；
+正预测是误差，不是新成功标签或动作方向。task38原1/32、后续1/24，State合并Brier .043184高于.041731，能量也高。
+重点12/29/32后续成功16/7/11各24条，Context→State Brier .180427→.132124、.178191→.159350、.208757→.204183。
+task2/55/64/96/97全32成功，原LOO同为0，学习器在单类任务的额外误差未隐藏。
+不利episode包括macro50/task73/replica2真实成功（Context .06192/State .40427）、macro32/task1/replica1失败（.18972/.50221）、
+macro28/task12/replica3成功（.27014/.50021）；完整864行保留，不以相邻decision独立样本作显著性包装。
+
+真实消费者：Context37维=36 one-hot+t/H，State149维；最大7个已捕获body/3原BDDL谓词，name排序/右补零/有效mask。
+EEF p/原存quat4/双指q、body p与相对EEF、过去5步位置和q差及可用位、当前goal向量；无quat差分、未捕获旋转/关节/接触。
+H来自原official registry，LIBERO-90=400、其它220/280/300/520，不用终止长度；所有当前t<steps、执行五动作前，
+原cached8state和trace差0。没有demo/init/filename/replica/R/Q/M/终点/未来噪声进入X；M用于1/M等权，Q/M仅规定局部余切。
+三窗各拟合288/576/864过去episode、测试288；每task8/16/24→8，六个固定sklearn1.5.1 HGB200轮、保存后预测未来，无调参。
+各窗拟合/后续episode不交叉，三段后续互不重叠、拟合窗按合同嵌套；LOO严格其他三条，四基线三窗Brier与E独立复算通过。
+六保存模型在实际首末未来事件匹配；这不把三个嵌套拟合叫独立训练重复。
+
+C严格沿原消费者(Q/M)*5*c/tau*(z_next-m)，50×32和实际两个抽中tau完整保存，公共1/16约掉（绝对量256倍，比例相同）。
+这是拼接velocity输出局部余切二阶能量，不含跨时点协方差和完整G Jacobian，不称Writer梯度方差、SNR或闭环增益。
+72采集参数版本不断变化，这不是固定T能力估计；特权状态基线的预测性不证明RGB获取、部署G或held迁移。
+正反证据供main决定下一完整方法投入，没有新score/VJP/G或RL更新/环境/held/Test/GPU或自动后继。
+
+源合同aa25c010，旧采集/score1c90e7d5；run-scoped两脚本/六模型/完整预测、依赖和实际命令保留，未改旧冻结源码或canonical环境。
+现成system sklearn1.5.1与canonical CPU torch复用、未安装或复制依赖，无canonical trainer/CLI/hooks或长期运行面。
+原源读取120.44秒、六模型及完整读回5.23秒，两个主消费者58.61CPU秒=.016281CPUh；有限辅助核对/Git与保守整批计费边界见completion。
+新增约40MiB/规划256MiB，0GPU，硬90分钟/8CPUh/1GiB内；全部进程退出、原1152 captures保持。
+本条是执行方完整事实，不冒称main已独立消费；可靠一次交回后main继续Owner目标，有限分析结束不终止项目。

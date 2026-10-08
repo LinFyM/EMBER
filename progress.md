@@ -1,3 +1,12 @@
+## 2026-10-09 新专家完整回复已审阅，收敛共享参数修订主骨架
+
+Owner提供新专家回复并要求审阅；[完整原文](docs/review_materials/20261008_method_rethink/EXPERT_RESPONSE_FRESH.md)与[交叉审阅](docs/review_materials/20261008_method_rethink/FRESH_RESPONSE_REVIEW.md)已保存。
+main建议采用教学先生成Λ0、当前Λ0/Λ1两轮实践、反馈条件重读/持续Q状态、最后唯一rank192完整LoRA的主骨架，符合排除轨迹微调的边界。
+独立核实际native/FM和冻结SDE/score消费者；拼接与score数学成立，rank64修订不等于任意rank192更新，semi-gradient不含主动探索信用。
+Owner此前已开放FM/RL组织；main纠正独立分析沿旧分段默认收窄的判断，混合共享训练有具体功能理由，不新增权限门槛。
+首批32meta仅128修订链/每task约3.6，不能用短窗未胜成熟参照直接否决主假说；null只作有限诊断，明确初态独立、task权重与实际预算。
+专家prompt和答复前分析保留原貌；findings§408记录取舍。当前是科学审阅，无active design、实现、采集、GPU工作或执行派发，main仍持有tracked/Git。
+
 ## 2026-10-09 新专家答复前，主讨论形成独立机制判断
 
 Owner要求主讨论独立思考，之后与新专家交叉验证；[分析](docs/analyses/independent_video_lora_compilation_20261009.md)保存答复前的取舍与可失败预测。

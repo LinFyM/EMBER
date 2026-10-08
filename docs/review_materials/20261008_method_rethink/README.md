@@ -3,6 +3,10 @@
 更新于2026-10-09。Owner要求新专家充分理解最新边界与已有证据，独立设计完整方法，给出具体数学推导及详细推进规划。
 [EXPERT_PROMPT_FRESH](EXPERT_PROMPT_FRESH.md)是唯一当前提示词，旧版本由Git保留。本目录是讨论与证据入口，不是active design，不授权实验。
 
+新专家答复已收到：[完整原文](EXPERT_RESPONSE_FRESH.md)、[主讨论交叉审阅与取舍](FRESH_RESPONSE_REVIEW.md)。
+专家依据984b28ed；主讨论答复前的[独立分析](../../analyses/independent_video_lora_compilation_20261009.md)依据同一历史，保存于3a8969e0。
+当前建议保留真实实践条件下的共享参数修订主架构，修订学习曝光、停止线及比较结论；没有登记active运行合同。
+
 ## 先明确方法边界
 
 **任何先准备动作轨迹数据，再通过微调得到最终LoRA的路线都不接受。** 恢复、合成、搜索、规划、自身真实采集，

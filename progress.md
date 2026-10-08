@@ -2,6 +2,7 @@
 
 Owner将下一步明确为：更新远程仓库，汇总综述启发与自己的新思路，由Owner把prompt交给专家彻底重思大方法更新。
 新增docs/review_materials/20261008_method_rethink/EXPERT_PROMPT.md；不预置主讨论具体架构、损失配方、训练课程或适应轮数。
+Owner指出专家已了解项目，原稿不应重复背景；已改为接续prompt，仅保留综述新启发、新边界/直觉与待独立解决的问题。
 保留真实无奖励试做、阶段性理解/生成、最终单LoRA与信息墙，并要求专家独立质疑、推导和比较历史近邻。
 旧评审入口已注明本次委托；主讨论候选仅作历史提议，不是新active设计或Owner选型。
 当前没有新训练、采集、GPU任务或对外发送；由Owner转交，main持有tracked/Git，实际push以Git回执为准。

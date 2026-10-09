@@ -46,7 +46,7 @@ def measure(runtime, label, function):
 def load_original(runtime, condition):
     """Use exactly the original event's incoming and full cumulative real E."""
     started = time.monotonic()
-    metadata = read_json(condition['source_record'])
+    metadata = read_json(Path(condition['source_record']))
     event = next(e for e in metadata['events'] if e['endpoint'] == condition['endpoint'])
     if (event['behavior_version'] != condition['behavior_version'] or
             event['incoming'] != condition['original_incoming']):
@@ -130,5 +130,217 @@ def event_queries(data, condition):
         str(Path(condition['source_record']).parent), condition['behavior_version'])
 
 
+
+def _compile(runtime, prepared, label):
+    def run():
+        costs = []
+        for item in prepared:
+            item['outgoing'] = runtime.edit(item['incoming'], item['teacher'], item['experience'],
+                                             support=item['support'])
+            costs.append(dict(runtime.last_revision_cost))
+        return costs
+    row, costs = measure(runtime, label, run)
+    if not row['valid']:
+        raise RuntimeError('complete four-condition edit did not fit')
+    return dict(measurement=row, events=costs)
+
+
+def _best(rows, label):
+    valid = [r for r in rows if r['valid']]
+    if not valid:
+        raise RuntimeError(f'no usable physical configuration: {label}')
+    return min(valid, key=lambda r: r['seconds'])['microbatch']
+
+
+def profile_physical(runtime, prepared, args):
+    from .credit import fm_credit
+    from .learning import gradient_groups
+    rows = []
+    representative = max(prepared, key=lambda item: len(item['experience']['episode']))
+    for chunk in (1, 4, 8, 16):
+        runtime.support_microbatch = chunk
+        row, _ = measure(runtime, f'complete_edit_support_micro{chunk}', lambda:
+            runtime.edit(representative['incoming'], representative['teacher'], representative['experience'],
+                         support=representative['support']))
+        rows.append(dict(row, microbatch=chunk))
+        if not row['valid']:
+            break
+    support_chunk = _best(rows, 'support')
+    runtime.support_microbatch = support_chunk
+    compiled = _compile(runtime, prepared, 'initial_four_complete_edits')
+    fm_rows, latest = [], None
+    for chunk in (28, 56, 112):
+        row, values = measure(runtime, f'outer_FM_112queries_micro{chunk}', lambda:
+            fm_credit(runtime, [p['incoming'] for p in prepared], [p['outgoing'] for p in prepared],
+                [p['batch'] for p in prepared], seeds=[p['seed'] for p in prepared], microbatch=chunk))
+        fm_rows.append(dict(row, microbatch=chunk))
+        if values is not None:
+            latest = values
+        if not row['valid']:
+            break
+    if latest is None:
+        raise RuntimeError('full four-event FM credit did not fit')
+    fm_chunk = _best(fm_rows, 'FM')
+    jvp_rows = []
+    credit = latest[next(i for i, item in enumerate(prepared) if item is representative)]['cotangent']
+    for chunk in (1, 4, 8, 16):
+        runtime.compiler.zero_grad(set_to_none=True)
+        row, _ = measure(runtime, f'real_FM_shared_adjoint_micro{chunk}', lambda:
+            runtime.backward_revision(representative['incoming'], representative['teacher'],
+                representative['experience'], representative['support'], credit, microbatch=chunk))
+        row.update(microbatch=chunk, gradient_groups=gradient_groups(runtime.compiler))
+        jvp_rows.append(row)
+        if not row['valid']:
+            break
+    jvp_chunk = _best(jvp_rows, 'shared adjoint')
+    runtime.compiler.zero_grad(set_to_none=True)
+    return dict(support_microbatch=support_chunk, FM_microbatch=fm_chunk,
+        adjoint_microbatch=jvp_chunk, support=rows, FM=fm_rows, adjoint=jvp_rows, initial_compile=compiled,
+        enlargement_boundary='logical M<=16 and exactly112 FM queries; all useful physical sizes measured')
+
+
+def _save_stage(runtime, optimizer, scheduler, update, stage):
+    path = runtime.profile_root / 'implementation_state.pt'
+    partial = path.with_suffix('.partial')
+    torch.save(dict(model=runtime.compiler.state_dict(), optimizer=optimizer.state_dict(),
+        scheduler=scheduler.state_dict(), FM_updates=update, stage=stage,
+        cpu_rng=torch.get_rng_state(), cuda_rng=torch.cuda.get_rng_state(),
+        disposable_implementation_validation=True, code_git=runtime.profile_git), partial)
+    partial.replace(path)
+
+
+def collect_queries(runtime, contract, prepared, args):
+    """Exactly sixteen new episodes; completed episodes survive engineering exit."""
+    root = runtime.profile_root / 'queries'
+    root.mkdir(exist_ok=True)
+    if (root / 'partial').exists():
+        raise RuntimeError('preserved partial queries require a scope decision; do not repeat episodes')
+    tasks = {task['global_task_id']: task for task in contract['environment_contract']['tasks']}
+    requests, results = [], {}
+    for item in prepared:
+        condition = item['condition']
+        for query, state in enumerate(condition['query_state_ids']):
+            roots = condition['roots'][query]
+            for arm in ('outgoing', 'incoming'):
+                identity = f"{condition['condition_id']}_query{query}_{arm}"
+                path = root / f'{identity}.pt'
+                if path.exists():
+                    results[identity] = torch.load(path, weights_only=False, map_location='cpu')
+                    continue
+                requests.append(dict(identity=identity, task=tasks[condition['task_id']],
+                    state=item[arm], state_id=state, arm=arm, capture=True, reservoir=16,
+                    reservoir_seed=roots[f'{arm}_reservoir'], exploration_sigma=.1,
+                    exploration_root=roots[f'{arm}_exploration'], noise_root=roots[f'{arm}_policy'],
+                    environment_root=roots['environment'], query=query, condition_id=condition['condition_id']))
+    runner = Runner(runtime, contract['environment_contract'], args.physical_gpu,
+                    slot_batch=min(args.slot_batch, 16))
+    started = time.monotonic()
+    try:
+        for result in runner.final_requests(requests):
+            request = result['request']
+            saved = dict(records=result['trajectory'], total_replans=result['total_replans'],
+                success=bool(result['row']['success']), row=result['row'], language=request['task']['language'],
+                state_id=request['state_id'], arm=request['arm'], query=request['query'],
+                condition_id=request['condition_id'], identity=request['identity'],
+                phi_version='disposable_FM2', code_git=runtime.profile_git)
+            torch.save(saved, root / f"{request['identity']}.pt")
+            results[request['identity']] = saved
+    except BaseException:
+        runner.preserve_partial(root / 'partial')
+        raise
+    finally:
+        runner.close()
+        write_json_atomic(root / 'execution.json', dict(new_environment_steps=runner.total_environment_steps,
+            seconds=time.monotonic() - started, components=runner.components, episode_count=len(results)))
+    if len(results) != 16 or sum(r['row']['environment_steps'] for r in results.values()) > 5440:
+        raise ValueError('actual queries exceeded their registered episode/environment scope')
+    episodes = []
+    for item in prepared:
+        queries = []
+        for query in range(2):
+            prefix = f"{item['condition']['condition_id']}_query{query}_"
+            outgoing, incoming = results[prefix + 'outgoing'], results[prefix + 'incoming']
+            queries.append(dict(**outgoing, baseline_success=incoming['success']))
+        episodes.append(queries)
+    return episodes, dict(total_environment_steps=sum(r['row']['environment_steps'] for r in results.values()),
+        actual_query_episodes=16, seconds=time.monotonic() - started,
+        returns={key: int(value['success']) for key, value in results.items()}, components=runner.components)
+
+
 def profile(runtime, contract, args):
-    raise RuntimeError('complete consumer profile must be integrated before launch')
+    from .learning import fresh_optimizer, finish_update, supervised_backward, reinforcement_backward
+    prepared, data = [], QueryData()
+    root = runtime.profile_root
+    try:
+        for condition in contract['conditions']:
+            row, item = measure(runtime, f"original_input_task{condition['task_id']}",
+                                lambda: load_original(runtime, condition))
+            if item is None:
+                raise RuntimeError('actual original condition failed to load')
+            event = event_queries(data, condition)
+            item.update(batch=data.query_batch(event, runtime.processor), seed=event.seed, event=event.as_dict())
+            prepared.append(item)
+        write_json_atomic(root / 'event_stream.json', dict(events=[item['event'] for item in prepared],
+            bootstrap_origin='original_chi360_actual_event_not_new_model_experience'))
+        optimizer, scheduler = fresh_optimizer(runtime.compiler, stage='supervised')
+        state_path = root / 'implementation_state.pt'
+        update, resumed = 0, None
+        if state_path.exists():
+            resumed = torch.load(state_path, map_location=runtime.device, weights_only=False)
+            runtime.compiler.load_state_dict(resumed['model'])
+            update = resumed['FM_updates']
+            if resumed['stage'] == 'reinforcement_complete':
+                return dict(FM_updates=2, PG_updates=1, already_computed=True,
+                            query=read_json(root / 'query_summary.json'), no_formal_learning=True)
+            optimizer.load_state_dict(resumed['optimizer'])
+            scheduler.load_state_dict(resumed['scheduler'])
+        if update == 0:
+            physical = profile_physical(runtime, prepared, args)
+            write_json_atomic(root / 'physical_selection.json', physical)
+        else:
+            physical = read_json(root / 'physical_selection.json')
+        runtime.support_microbatch = physical['support_microbatch']
+        while update < 2:
+            compile_cost = _compile(runtime, prepared, f'FM{update + 1}_four_complete_edits')
+            optimizer.zero_grad(set_to_none=True)
+            row, consumer = measure(runtime, f'FM{update + 1}_complete_shared_update', lambda:
+                supervised_backward(runtime, prepared, microbatch=physical['FM_microbatch'],
+                                    revision_microbatch=physical['adjoint_microbatch']))
+            if consumer is None:
+                raise RuntimeError('full supervised consumer failed to fit selected physical batch')
+            step = finish_update(runtime, optimizer, scheduler)
+            update += 1
+            _save_stage(runtime, optimizer, scheduler, update, 'supervised')
+            append_jsonl(root / 'updates.jsonl', dict(stage='FM', update=update, consumer=consumer,
+                step=step, measurement=row, compile=compile_cost))
+        compiled = _compile(runtime, prepared, 'FM2_frozen_query_edit_four_conditions')
+        episodes, query = collect_queries(runtime, contract, prepared, args)
+        write_json_atomic(root / 'query_summary.json', query)
+        # New RL moments, no FM; all PG replays occur before this sole step.
+        optimizer, scheduler = fresh_optimizer(runtime.compiler, stage='reinforcement')
+        pg_rows, chosen = [], None
+        for chunk in (4, 8, 16):
+            optimizer.zero_grad(set_to_none=True)
+            row, consumer = measure(runtime, f'real_PG_keep_shared_micro{chunk}', lambda:
+                reinforcement_backward(runtime, prepared, episodes, microbatch=chunk,
+                                       revision_microbatch=physical['adjoint_microbatch']))
+            pg_rows.append(dict(row, microbatch=chunk))
+            if consumer is not None:
+                chosen = consumer
+            if not row['valid']:
+                break
+        pg_chunk = _best(pg_rows, 'actual score/keep')
+        optimizer.zero_grad(set_to_none=True)
+        row, consumer = measure(runtime, f'PG1_complete_shared_update_micro{pg_chunk}', lambda:
+            reinforcement_backward(runtime, prepared, episodes, microbatch=pg_chunk,
+                                   revision_microbatch=physical['adjoint_microbatch']))
+        if consumer is None:
+            raise RuntimeError('complete actual PG+keep consumer did not fit')
+        step = finish_update(runtime, optimizer, scheduler)
+        _save_stage(runtime, optimizer, scheduler, 2, 'reinforcement_complete')
+        append_jsonl(root / 'updates.jsonl', dict(stage='PG', update=1, consumer=consumer,
+            step=step, measurement=row, compile=compiled, physical_profiles=pg_rows))
+        return dict(FM_updates=2, PG_updates=1, disposable=True, query=query,
+                    physical=physical, PG_physical=pg_rows, no_formal_learning=True)
+    finally:
+        data.close()

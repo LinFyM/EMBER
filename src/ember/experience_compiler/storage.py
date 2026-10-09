@@ -181,22 +181,6 @@ def save_condition(destination, condition, chain, *, fixed_behavior=False):
     return record
 
 
-def complete_pool(output, contract):
-    from ember.pi05_eval_queue import completed_jobs
-    paths = {job['job_id']: read_json(Path(output) / job['rows_path'])['record_path']
-             for job in completed_jobs(Path(output) / 'queue.sqlite3')}
-    conditions = []
-    for condition in contract['conditions']:
-        record = read_json(Path(paths[condition['condition_id']]) / 'record.json')
-        if not record.get('complete') or not record.get('actual_incoming_parameters'):
-            raise ValueError('collection lost actual incoming provenance')
-        conditions.append(record)
-    manifest = dict(schema_version=EVENT_SCHEMA, pool=contract['pool'], version=contract['version'],
-                    conditions=conditions, complete=True, collection_contract=str(Path(output) / 'collection_contract.json'))
-    write_json_atomic(Path(output) / 'manifest.json', manifest)
-    return manifest
-
-
 def load_event(runtime, event, *, loaded=None):
     """Native H remains original; only missing frozen Phi is reconstructed."""
     from .interaction import Chain

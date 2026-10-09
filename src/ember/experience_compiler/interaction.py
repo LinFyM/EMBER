@@ -251,6 +251,7 @@ class Runner:
         kind = slot.request['kind']
         if kind == 'final':
             row['physical_slot_batch'] = self.slot_batch
+            row['policy_seed_root'] = slot.noise_root
             result = dict(request=slot.request, row=row)
             if slot.request.get('capture'):
                 result.update(trajectory=slot.trajectory, terminal_raw=slot.raw,

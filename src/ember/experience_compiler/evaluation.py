@@ -248,6 +248,7 @@ def worker(args) -> dict:
         if runner is not None:
             runner.close()
         receipt = {"worker_id": worker_id, "host": socket.gethostname(), "physical_gpu": gpu,
+                   "code_git": getattr(args, "code_git", None), "checkpoint": str(args.checkpoint),
                    "started_unix": started, "finished_unix": time.time(), "status": status,
                    "cpu_affinity": list(affinity), "completed_jobs": completed, "error": error}
         immutable(output / "workers" / f"{worker_id}.json", receipt)

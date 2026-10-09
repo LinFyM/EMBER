@@ -173,7 +173,7 @@ def main():
         devices = args.physical_gpus if args.command == 'train' else [args.physical_gpu]
         with cost_interval(args.run_root, args.command + '_process', devices):
             check_budget(args.run_root)
-            frozen_git()
+            args.code_git = frozen_git()
             if args.command == 'train':
                 # EGL uses the physical device, whereas CUDA uses local rank.
                 os.environ['MUJOCO_EGL_DEVICE_ID'] = str(args.physical_gpus[int(os.environ.get('LOCAL_RANK', '0'))])

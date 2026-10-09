@@ -112,13 +112,15 @@ class Supervisor:
     def __init__(self, args):
         self.args, self.events = args, asyncio.Queue()
         self.leased, self.lock = set(), asyncio.Lock()
-        self.root, self.logs = args.root, args.root / "batch_logs"
+        self.root = args.root
+        self.execution_root = args.execution_output or self.root
+        self.logs = self.execution_root / "batch_logs"
         self.record = {"schema_version": "ember_experience_batch_execution_v1", "status": "running",
                        "started_unix": time.time(), "arguments": {k: str(v) if isinstance(v, Path) else v
                        for k, v in vars(args).items()}, "processes": [], "admissions": [], "stages": []}
 
     def save(self):
-        path = self.root / "batch_execution.json"
+        path = self.execution_root / "batch_execution.json"
         partial = path.with_suffix(".partial")
         partial.write_text(json.dumps(self.record, indent=2) + "\n")
         partial.replace(path)
@@ -165,6 +167,8 @@ class Supervisor:
             cli += ["--checkpoint", str(checkpoint)]
         if stage is not None:
             cli += ["--stage", stage]
+        if command == "prepare" and stage == args.resume_stage == "formal":
+            cli += ["--recover-claims", "--retry-failed"]
         prefix = [str(args.python), "-u"]
         devices = args.train_gpus if command == "train" else ([] if gpu is None else [gpu])
         if command == "train":
@@ -266,18 +270,45 @@ class Supervisor:
             await self.panel(f"meta{expected}", event[1], targets)
         await self.panel("formal", event[1], targets)
 
+    async def resume_formal(self):
+        """Consume the original completed learning/panels; never restart them."""
+        original = self.root / "batch_execution.json"
+        previous = json.loads(original.read_text())
+        if previous["status"] != "failed" or any("finished_unix" not in p for p in previous["processes"]):
+            raise ValueError("formal recovery requires a terminated failed execution receipt")
+        completion = json.loads((self.root / "training/completion.json").read_text())
+        checkpoint = self.root / "training/checkpoints/macro_00000182"
+        if (not completion.get("training_complete") or completion.get("updates") != 182
+                or completion.get("warm") != 128 or completion.get("meta") != 54
+                or Path(completion["checkpoint"]).resolve() != checkpoint):
+            raise ValueError("formal recovery requires the original complete meta54 training")
+        for stage, macro in (("meta27", 155), ("meta54", 182)):
+            results = json.loads((self.root / f"evaluation/{stage}/results.json").read_text())
+            if Path(results["checkpoint"]).resolve() != self.root / f"training/checkpoints/macro_{macro:08d}":
+                raise ValueError("completed train panel changed its registered optimizer node")
+        self.record["preserved_execution"] = str(original)
+        self.record["training_completion"] = str(self.root / "training/completion.json")
+        targets = [(self.args.eval_node, gpu) for gpu in self.args.eval_gpus]
+        if self.args.borrow_training_gpus:
+            targets += [(self.args.train_node, gpu) for gpu in self.args.train_gpus]
+        await self.panel("formal", checkpoint, targets)
+
     async def run(self):
         self.root.mkdir(parents=True, exist_ok=True)
+        self.execution_root.mkdir(parents=True, exist_ok=True)
         self.logs.mkdir(exist_ok=True)
-        if (self.root / "batch_execution.json").exists():
+        if (self.execution_root / "batch_execution.json").exists():
             raise ValueError("batch_execution.json already exists; preserve its evidence before an explicit repair")
         self.save()
         try:
-            async with asyncio.TaskGroup() as group:
-                train = group.create_task(self.child("train", self.args.train_node,
-                    self.program("train", self.root / "training"),
-                    tuple((self.args.train_node, gpu) for gpu in self.args.train_gpus), training=True))
-                group.create_task(self.readouts(train))
+            if self.args.resume_stage == "formal":
+                await self.resume_formal()
+            else:
+                async with asyncio.TaskGroup() as group:
+                    train = group.create_task(self.child("train", self.args.train_node,
+                        self.program("train", self.root / "training"),
+                        tuple((self.args.train_node, gpu) for gpu in self.args.train_gpus), training=True))
+                    group.create_task(self.readouts(train))
             self.record["status"] = "complete"
         except BaseException:
             self.record.update(status="failed", traceback=traceback.format_exc())
@@ -298,6 +329,8 @@ def parser():
     result = argparse.ArgumentParser(description=__doc__)
     for name in ("code", "root"):
         result.add_argument("--" + name, type=Path, required=True)
+    result.add_argument("--resume-stage", choices=["formal"])
+    result.add_argument("--execution-output", type=Path)
     result.add_argument("--python", type=Path, default=Path("/data1/user/ymdai/projects/EMBER/.venv/bin/python"))
     result.add_argument("--asset-root", type=Path, default=Path("/data1/user/ymdai/projects/EMBER"))
     result.add_argument("--nodes", nargs=2, default=["gpu01", "gpu02"])
@@ -321,6 +354,12 @@ def main():
     args = parser().parse_args()
     args.code, args.root = args.code.resolve(), args.root.resolve()
     args.python, args.asset_root = args.python.absolute(), args.asset_root.resolve()
+    if args.execution_output is not None:
+        args.execution_output = args.execution_output.resolve()
+        if not args.execution_output.is_relative_to(args.root):
+            raise ValueError("execution receipts must remain within the owned run root")
+    if args.resume_stage and (args.execution_output is None or args.execution_output == args.root):
+        raise ValueError("formal recovery requires a new execution-output to retain the failed receipt")
     args.train_minimum_free_mib = args.minimum_free_mib if args.train_minimum_free_mib is None else args.train_minimum_free_mib
     args.eval_minimum_free_mib = args.minimum_free_mib if args.eval_minimum_free_mib is None else args.eval_minimum_free_mib
     if (len(set(args.nodes)) != 2 or args.train_node not in args.nodes or args.eval_node not in args.nodes

@@ -80,6 +80,23 @@ def test_environment_metadata_restores_full50_without_old_scene_or_launch_fields
     assert contract.MT_PATH.is_file() and contract.MT_RESULTS.is_file() and contract.T_RESULTS.is_file()
 
 
+def test_real_validation_teacher_store_uses_only_fixed_held_metadata_and_seals_Test():
+    from ember.experience_compiler.runtime import Runtime
+    runtime = Runtime.__new__(Runtime)
+    runtime.asset_root, runtime.stores = contract.ASSET_ROOT, {}
+    tasks, store = runtime._store('validation')
+    try:
+        assert set(tasks) == {3, 6, 11, 16, 23, 26, 31, 39}
+        assert set(store.authorities) == set(tasks)
+        assert store.frame_stride == 5 and store.camera_view == 'dual'
+        assert not store._handles  # Metadata admission opens no held episode labels.
+        assert runtime._store('validation') == (tasks, store)
+        with pytest.raises(ValueError, match='Test is sealed'):
+            runtime._store('test')
+    finally:
+        store.close()
+
+
 def test_real_train_query_and_RGB_reader_with_source_only_processor(tasks):
     data = QueryData(contract.ASSET_ROOT)
     event = data.events(0)[0]

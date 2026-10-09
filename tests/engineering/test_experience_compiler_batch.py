@@ -126,3 +126,46 @@ def test_registered_events_and_remote_shell_arguments_preserve_physical_flags(tm
     assert parsed.command == "train" and parsed.physical_gpus == [0]
     remote = runner.transport("gpu01", [sys.executable, "-c", "print('$(must not run)`')"])
     assert shlex.split(remote[-1]) == [sys.executable, "-c", "print('$(must not run)`')"]
+
+
+def test_formal_recovery_preserves_failed_receipt_and_never_repeats_learning(tmp_path):
+    args = arguments(tmp_path)
+    args.resume_stage = "formal"
+    args.execution_output = args.root / "batch_attempts/formal_recovery"
+    args.root.mkdir()
+    original = args.root / "batch_execution.json"
+    original.write_text(json.dumps({"status": "failed", "processes": [{"finished_unix": 10}]}))
+    retained = original.read_bytes()
+    checkpoint = args.root / "training/checkpoints/macro_00000182"
+    checkpoint.mkdir(parents=True)
+    (args.root / "training/completion.json").write_text(json.dumps({
+        "training_complete": True, "updates": 182, "warm": 128, "meta": 54,
+        "checkpoint": str(checkpoint)}))
+    for stage, macro in (("meta27", 155), ("meta54", 182)):
+        output = args.root / "evaluation" / stage
+        output.mkdir(parents=True)
+        (output / "results.json").write_text(json.dumps({
+            "checkpoint": str(args.root / f"training/checkpoints/macro_{macro:08d}")}))
+    runner = CPUChildren(args)
+    program = batch.Supervisor(args).program("prepare", args.root / "evaluation/formal",
+                                            checkpoint=checkpoint, stage="formal")
+    assert "--recover-claims" in program and "--retry-failed" in program
+    asyncio.run(runner.run())
+    assert original.read_bytes() == retained
+    assert runner.record["status"] == "complete"
+    assert [s["stage"] for s in runner.record["stages"]] == ["formal"]
+    assert all(p["name"].startswith("formal-") for p in runner.record["processes"])
+    assert not runner.overlap and not runner.leased
+    assert (args.execution_output / "batch_execution.json").exists()
+
+
+def test_formal_recovery_rejects_incomplete_original_training(tmp_path):
+    args = arguments(tmp_path)
+    args.resume_stage = "formal"
+    args.execution_output = args.root / "repair"
+    args.root.mkdir()
+    (args.root / "batch_execution.json").write_text(json.dumps({"status": "failed", "processes": []}))
+    (args.root / "training").mkdir()
+    (args.root / "training/completion.json").write_text(json.dumps({"training_complete": False}))
+    with pytest.raises(ValueError, match="complete meta54"):
+        asyncio.run(CPUChildren(args).run())

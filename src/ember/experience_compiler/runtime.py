@@ -63,6 +63,7 @@ class Runtime:
                 tasks = self.tasks
             elif role == 'validation':
                 from ember.task_protocol import load_task_authorities
+                from .contract import SOURCE
                 _, manifest = load_task_authorities(self.asset_root, SOURCE['data_protocol'])
                 ids = [r['global_task_id'] for r in manifest['tasks'] if r['split_role'] == role]
                 tasks = load_learning_tasks(self.asset_root, ids, role=role, protocol_path=SOURCE['data_protocol'])

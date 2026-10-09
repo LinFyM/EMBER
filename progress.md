@@ -1,3 +1,15 @@
+## 2026-10-09 训练与train面板完成，修复formal启动接口
+
+clean pushed frozen76c136a3已完成128 warm＋54 meta，唯一formal候选为完整macro182；meta27/54固定train面板均已完成。
+整批在formal启动时失败：Runtime._store(validation)引用了只在构造函数局部导入的SOURCE；失败发生在教学读取/真实适应前。
+原始batch_execution、失败日志和全部费用保留，formal队列为failed2/pending398/complete0；原有训练checkpoint和train原件继续有效。
+实验session已补齐validation导入，并复用现有事件执行器实现显式formal续接及独立失败/重启回执；完整训练与已完成面板不会重复执行。
+读取代码身份与原训练身份分别登记；模型计算、信息墙、condition适应/停止、唯一meta54选择、state/video/RNG配对口径没有改变。
+实际validation metadata store与Test封存、队列/配对、恢复执行消费者18项检查通过（32.10s），CLI help和任务diff检查通过。
+strg01复核data1为821294300KiB/2147483648KiB，run root allocated24150794240B；已计费9.8714GPUh，资源预算仍有余量。
+下一步从新clean pushed detached修复版本接续原formal队列；现场可用的两节点6张A40用于同一long-first persistent pool。
+旧退出消息01a11e21-e89c-7271-bd53-4026f2d93135已消费；整批科学结果尚未交付，tracked/Git仍由实验session独占。
+
 ## 2026-10-09 实验session承接经验条件完整rank128编译器
 
 main已交出tracked/Git窗口；实际来源clean pushed183f08d1，实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占codex/experience-compiler-20261009。

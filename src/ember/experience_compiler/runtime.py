@@ -27,9 +27,9 @@ from .model import ExperienceCompiler
 class Runtime:
     """One frozen source and one trainable Compiler; no condition optimizer."""
 
-    def __init__(self, asset_root, device, *, frame_chunk=8, decoder_chunk=4096,
+    def __init__(self, asset_root, device, *, frame_chunk=8,
                  experience_chunk=16, native_frame_chunk=None, cache_bytes=2 * 1024**3,
-                 cache_root=None, feature_cache_bytes=32 * 1024**3):
+                 cache_root=None, feature_cache_bytes=2 * 1024**3, support_microbatch=4):
         from .contract import SOURCE, MT_PATH, TASKS36 as TASKS
 
         self.asset_root, self.device = Path(asset_root), torch.device(device)
@@ -49,8 +49,9 @@ class Runtime:
         self.policy.model.gradient_checkpointing_disable()
         self.mt = load_file(str(MT_PATH), device=str(self.device))
         self.compiler = ExperienceCompiler(self.mt, [t.name for t in self.lora.targets],
-            decoder_chunk=decoder_chunk, frame_chunk=frame_chunk, experience_chunk=experience_chunk).to(self.device)
+            frame_chunk=frame_chunk, experience_chunk=experience_chunk).to(self.device)
         self.execution = BatchedLoRAInference(self.policy, self.lora)
+        self.support_microbatch = support_microbatch
         self.probe = torch.randn((50, 32), generator=torch.Generator().manual_seed(1729)).to(self.device)
         self.tasks = load_learning_tasks(self.asset_root, TASKS, protocol_path=SOURCE['data_protocol'])
         self.stores, self.cache = {}, OrderedDict()
@@ -61,9 +62,8 @@ class Runtime:
         from .contract import RUN_ROOT
         from .storage import FeatureCache, RecordWriter
         cache_root = Path(cache_root) if cache_root is not None else RUN_ROOT / 'frozen_features'
-        # Two host shards retain the registered 64GiB total cache budget. The
-        # frozen derivatives can be reconstructed from preserved raw facts;
-        # GPU loops never arbitrate this hot lock between NFS clients.
+        # Frozen derivatives are reconstructible; bounded host shards avoid
+        # duplicating raw facts or copying the historical large cache.
         self.features = FeatureCache(cache_root / socket.gethostname(), max_bytes=feature_cache_bytes)
         self.io = RecordWriter()
         self.image_cache_hits, self.image_encoded_observations = 0, 0
@@ -139,18 +139,53 @@ class Runtime:
             result = [self.policy.model.paligemma_with_expert.embed_image(value) for value in pixels[:2]]
         return torch.cat(result, 1).detach().cpu()
 
-    def edit(self, incoming, teacher, experience):
-        """Actual incoming factors/raw facts detach inside the shared modules."""
+    def native_actions(self, states, batch, noise, *, batch_indices=None, checkpointed=True):
+        from .execution import native_actions
         with autocast(self.device):
-            return self.compiler(incoming, teacher, experience)
+            return native_actions(self, states, batch, noise, batch_indices=batch_indices,
+                                  checkpointed=checkpointed)
 
-    @torch.no_grad()
-    def null_replay(self, teacher, chain):
-        """Start MT; only real-chain edit count is shared with masked-E replay."""
-        current = self.mt
-        for _ in chain.endpoints:
-            current = self.edit(current, teacher, {})
-        return current
+    def edit(self, incoming, teacher, experience, *, support):
+        """Frozen incoming; learned functional pressure writes full A/B once."""
+        from .execution import factor_vjp
+        started = time.monotonic()
+        with torch.no_grad(), autocast(self.device):
+            context = self.compiler.context(teacher, experience, support['indices'])
+        context_seconds = time.monotonic() - started
+        def pressure(actions, start, stop):
+            with torch.enable_grad(), autocast(self.device):
+                return self.compiler.action_cotangent(context[start:stop], actions,
+                    create_graph=False).detach() / len(context)
+        started = time.monotonic()
+        pullback, actions = factor_vjp(self, incoming, support, pressure,
+            microbatch=self.support_microbatch, return_actions=True)
+        change = self.compiler.precondition(pullback)
+        outgoing = {key: value.detach().to(self.device).float() - change[key]
+                    for key, value in incoming.items()}
+        if any(not bool(torch.isfinite(value).all()) for value in outgoing.values()):
+            raise RuntimeError('functional edit produced nonfinite complete factors')
+        support['actions'] = actions.detach()
+        self.last_revision_cost = dict(context_seconds=context_seconds,
+            native_F_VJP_seconds=time.monotonic() - started, support_points=len(context),
+            physical_support_microbatch=self.support_microbatch)
+        return outgoing
+
+    def backward_revision(self, incoming, teacher, experience, support, credit, *, microbatch=None):
+        """Exact -J(P^T v)/M adjoint into q and the small energy/context graph."""
+        from .execution import factor_jvp
+        chunk = self.support_microbatch if microbatch is None else microbatch
+        started = time.monotonic()
+        qbar = -factor_jvp(self, incoming, support, self.compiler.precondition(credit),
+                          microbatch=chunk) / len(support['indices'])
+        jvp_seconds = time.monotonic() - started
+        started = time.monotonic()
+        with torch.enable_grad(), autocast(self.device):
+            context = self.compiler.context(teacher, experience, support['indices'])
+            q = self.compiler.action_cotangent(context, support['actions'], create_graph=True)
+            torch.autograd.backward(q, qbar.to(q))
+        self.last_adjoint_cost = dict(native_JVP_seconds=jvp_seconds,
+            shared_context_energy_backward_seconds=time.monotonic() - started)
+        return qbar.detach()
 
     @torch.no_grad()
     def observation_features(self, observations):

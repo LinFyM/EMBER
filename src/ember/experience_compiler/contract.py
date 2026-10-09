@@ -15,10 +15,10 @@ from ember.writer.learning_data import load_learning_tasks
 
 
 ASSET_ROOT = Path("/data1/user/ymdai/projects/EMBER")
-RUN_ROOT = Path("/data1/user/ymdai/ember_runs/parameter_conditioned_compiler_20261009")
-SCHEMA = "ember_parameter_conditioned_compiler_v1"
-STAGE = "parameter_conditioned_compiler_20261009"
-SEED = 20261009
+RUN_ROOT = Path("/data1/user/ymdai/ember_runs/functional_revision_compiler_20261010")
+SCHEMA = "ember_functional_revision_compiler_v1"
+STAGE = "functional_revision_compiler_20261010"
+SEED = 20261010
 EVENT_SCHEMA = "ember_parameter_compiler_events_v1"
 _SOURCE_SPEC = read_json(ASSET_ROOT / "configs/operator_read_write_v1/learning_spec.json")
 SOURCE = dict(_SOURCE_SPEC["source"])

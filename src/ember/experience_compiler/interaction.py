@@ -60,6 +60,29 @@ class Chain:
                     endpoints=self.endpoints, episodes=self.episodes, metrics=self.metrics,
                     behavior_versions=self.behavior_versions)
 
+    def support(self, runtime, language, *, endpoint=None, successful_only=False):
+        """Uniform distinct real decisions with their original policy noise."""
+        endpoint = len(self.records) if endpoint is None else endpoint
+        eligible = [i for i, row in enumerate(self.records[:endpoint])
+                    if not successful_only or self.episodes[row['episode']]['success']]
+        if not eligible:
+            return None
+        positions = np.floor(np.linspace(0, len(eligible) - 1, min(16, len(eligible)))).astype(int)
+        indices = [eligible[i] for i in positions]
+        inputs, noise, seeds = [], [], []
+        for index in indices:
+            row = self.records[index]
+            episode = self.episodes[row['episode']]
+            seed = episode['policy_noise_seeds'][row['step'] // 5]
+            if row.get('noise_seed', seed) != seed:
+                raise ValueError('actual support noise differs from its episode stream')
+            inputs.append(processed(runtime, self.observations[row['pre']], language))
+            noise.append(torch.randn((50, 32), generator=torch.Generator().manual_seed(seed)))
+            seeds.append(seed)
+        return dict(indices=torch.tensor(indices, dtype=torch.long, device=runtime.device),
+            batch={key: torch.cat([value[key] for value in inputs]) for key in inputs[0]},
+            noise=torch.stack(noise).to(runtime.device), noise_seeds=seeds)
+
     @classmethod
     def from_record(cls, value):
         return cls(**value)
@@ -80,6 +103,8 @@ class _Slot:
     noise_root: int = 7
     pending: dict | None = None
     trajectory: list = field(default_factory=list)
+    total_replans: int = 0
+    reservoir_rng: object = None
     used_states: set = field(default_factory=set)
     state_reuses: int = 0
     native_cost: dict = field(default_factory=lambda: dict(seconds=0., frames=0, cache_hits=0))
@@ -112,7 +137,7 @@ class Runner:
         slot.state_id, slot.noise_root, slot.ready, slot.episode_steps = state_id, root, False, 0
         self.environments.submit(index, 'start', task=task,
             contract=request.get('environment_contract', self.contract), state_id=state_id,
-            noise_root=root, remaining=slot.remaining)
+            noise_root=request.get('environment_root', root), remaining=slot.remaining)
 
     def _new_slot(self, request):
         from .contract import state_stream
@@ -123,6 +148,8 @@ class Runner:
         current = {k: v.detach().to(self.runtime.device) for k, v in current.items()}
         chain = Chain(states=[] if kind == 'final' else [cpu_state(current)])
         slot = _Slot(request, current, chain, None if kind == 'final' else request.get('step_budget', 1024))
+        if request.get('reservoir'):
+            slot.reservoir_rng = np.random.default_rng(request['reservoir_seed'])
         if kind != 'final':
             condition = request['condition']
             slot.stream = state_stream(condition, condition.get('excluded_states', condition.get('final_state_ids', ())))
@@ -183,9 +210,17 @@ class Runner:
                 executed = torch.from_numpy(result['executed']).clone()
                 actions = torch.zeros(5, 7)
                 actions[:len(executed)] = executed
-                slot.trajectory.append(dict(**pending, actions=actions,
+                record = dict(**pending, actions=actions,
                     executed=torch.arange(5) < len(executed),
-                    reward=result['reward'], done=result['done']))
+                    reward=result['reward'], done=result['done'])
+                slot.total_replans += 1
+                capacity = slot.request.get('reservoir')
+                if capacity is None or len(slot.trajectory) < capacity:
+                    slot.trajectory.append(record)
+                else:
+                    replacement = int(slot.reservoir_rng.integers(slot.total_replans))
+                    if replacement < capacity:
+                        slot.trajectory[replacement] = record
                 slot.pending = None
             slot.raw = result['raw']
             return
@@ -201,7 +236,8 @@ class Runner:
             hidden=pending['hidden'], proprio=torch.stack((before['proprio'], slot.raw['proprio'])),
             actions=actions, executed=torch.arange(5) < len(executed),
             feedback=torch.tensor([result['reward'], float(result['done']), float(result['done']), float(truncated)]),
-            episode=len(slot.chain.episodes), step=slot.episode_steps, behavior_version=version))
+            episode=len(slot.chain.episodes), step=slot.episode_steps, behavior_version=version,
+            noise_seed=pending['noise_seed']))
         slot.pending = None
 
     def _behavior(self, slot):
@@ -217,7 +253,8 @@ class Runner:
             row['physical_slot_batch'] = self.slot_batch
             result = dict(request=slot.request, row=row)
             if slot.request.get('capture'):
-                result.update(trajectory=slot.trajectory, terminal_raw=slot.raw)
+                result.update(trajectory=slot.trajectory, terminal_raw=slot.raw,
+                              total_replans=slot.total_replans)
             return result
         chain = slot.chain
         previous_endpoint = chain.endpoints[-1] if chain.endpoints else 0
@@ -239,7 +276,8 @@ class Runner:
                     slot.native_cost['cache_hits'] += int(cost.get('cache_hit', False))
                 slot.teacher_frames = len(teacher['indices'])
                 evidence = {} if slot.request.get('masked', False) else chain.experience(len(chain.records))
-                slot.current = self.runtime.edit(slot.current, teacher, evidence)
+                support = chain.support(self.runtime, slot.request['task']['language'])
+                slot.current = self.runtime.edit(slot.current, teacher, evidence, support=support)
                 chain.states.append(cpu_state(slot.current))
                 seconds = time.monotonic() - tick
                 slot.edit_seconds += seconds
@@ -289,7 +327,19 @@ class Runner:
             tick = time.monotonic()
             chunks, hidden = action_chunk(velocity, torch.stack(noise).to(self.runtime.device),
                 capture_hidden=collect, capture_indices=fact_indices if collect else None)
-            actions = self.runtime.processor.unnormalize_action(chunks).cpu().numpy()
+            sampled, gaussian = chunks.clone(), []
+            for position, index in enumerate(indices):
+                request = slots[index].request
+                if request.get('exploration_sigma') is not None:
+                    seed = int(np.random.SeedSequence([request['exploration_root'],
+                        slots[index].episode_steps // 5]).generate_state(1)[0])
+                    perturbation = torch.randn((5, 7), generator=torch.Generator().manual_seed(seed))
+                    value = chunks[position, :5] + request['exploration_sigma'] * perturbation.to(chunks.device)
+                    sampled[position, :5] = value
+                    gaussian.append(value.detach().float().cpu())
+                else:
+                    gaussian.append(None)
+            actions = self.runtime.processor.unnormalize_action(sampled).cpu().numpy()
             self.components['native_flow_seconds'] += time.monotonic() - tick
         self.components['plans'] += len(indices)
         histogram = self.components['physical_batch_histogram']
@@ -305,11 +355,13 @@ class Runner:
                 cache_entries[key] = {'phi': phi}
                 # A contiguous slot view still owns the whole native batch's
                 # CPU storage; torch.save would retain the other conditions.
-                slot.pending = dict(pre=key, hidden=hidden[fact_position].clone())
+                slot.pending = dict(pre=key, hidden=hidden[fact_position].clone(), noise_seed=seeds[position])
             elif slot.request.get('capture'):
                 slot.pending = dict(raw=slot.raw, noise=noise[position].clone(), noise_seed=seeds[position],
                     normalized_actions=normalized[position].clone(),
                     commands=torch.from_numpy(actions[position]).clone(), step=slot.episode_steps)
+                if gaussian[position] is not None:
+                    slot.pending['gaussian_actions'] = gaussian[position].clone()
             slot.ready = False
             capture = {} if not slot.request.get('capture') else dict(normalized_chunk=normalized[position].numpy())
             self.environments.submit(index, 'step', actions=actions[position], noise_seed=seeds[position], **capture)

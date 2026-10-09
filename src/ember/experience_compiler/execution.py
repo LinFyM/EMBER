@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import torch
 from torch import nn
+from torch.utils.checkpoint import checkpoint
 
 from ember.ecp.policy_effects import ExecutionPolicyPrefix, prepare_prefix_kv_cache
 
@@ -29,8 +30,8 @@ class NativeVelocity(nn.Module):
         return self.policy.model.denoise_step(self.padding, self.cache, z, time)
 
 
-@torch.no_grad()
-def action_chunk(velocity, noise, *, capture_hidden=True, capture_indices=None):
+def action_chunk(velocity, noise, *, capture_hidden=True, capture_indices=None,
+                 denoise=None):
     """Ten native calls; only practice consumes same-call hidden evidence."""
     hidden = []
     calls = 0
@@ -48,7 +49,7 @@ def action_chunk(velocity, noise, *, capture_hidden=True, capture_indices=None):
     try:
         for step in range(10):
             tau = 1 - step * .1
-            v = velocity(z, tau)
+            v = velocity(z, tau) if denoise is None else denoise(z, tau)
             z = z - .1 * v
     finally:
         if handle is not None:
@@ -60,3 +61,84 @@ def action_chunk(velocity, noise, *, capture_hidden=True, capture_indices=None):
         # Defer the necessary practice transfer until the ten flow calls finish.
         evidence = torch.stack(hidden, 1).to(torch.bfloat16).cpu()
     return z[:, :, :7], evidence
+
+
+def slice_batch(batch, start, stop):
+    return {key: value[start:stop] for key, value in batch.items()}
+
+
+def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpointed=True):
+    """Complete ten-step response; rebind all factors on every recomputation.
+
+    The frozen prefix is independent of the suffix adapter. Explicit factor
+    inputs keep non-reentrant checkpoint replay valid after hooks deactivate.
+    Forward AD uses the same calls without activation checkpointing.
+    """
+    if noise.shape[1:] != (50, 32):
+        raise ValueError('functional revision requires native 50x32 noise')
+    keys = tuple(states[0])
+    if not states or any(tuple(state) != keys for state in states):
+        raise ValueError('functional response requires aligned complete factors')
+    flat = tuple(value for state in states for value in state.values())
+    velocity = NativeVelocity(runtime.policy, batch, capture_phi=False)
+
+    def denoise(z, tau):
+        def call(value, *factors):
+            bound = [dict(zip(keys, factors[i * len(keys):(i + 1) * len(keys)], strict=True))
+                     for i in range(len(states))]
+            with runtime.execution.activate(bound, batch_indices=batch_indices):
+                return velocity(value, tau)
+        if checkpointed and torch.is_grad_enabled():
+            return checkpoint(call, z, *flat, use_reentrant=False, preserve_rng_state=False)
+        return call(z, *flat)
+
+    actions, _ = action_chunk(velocity, noise, capture_hidden=False, denoise=denoise)
+    return actions[:, :5]
+
+
+def factor_vjp(runtime, incoming, support, q, *, microbatch, return_actions=False):
+    """Actual J^T q in all 76 factor coordinates, with fixed incoming."""
+    count = len(support['noise'])
+    if (not callable(q) and (len(q) != count or q.shape[1:] != (5, 7))) or microbatch < 1:
+        raise ValueError('support cotangent or physical chunk changed')
+    result = {key: torch.zeros_like(value, dtype=torch.float32, device=runtime.device)
+              for key, value in incoming.items()}
+    actions = []
+    for start in range(0, count, microbatch):
+        stop = min(start + microbatch, count)
+        leaves = {key: value.detach().to(runtime.device).requires_grad_()
+                  for key, value in incoming.items()}
+        with torch.enable_grad():
+            action = runtime.native_actions([leaves], slice_batch(support['batch'], start, stop),
+                support['noise'][start:stop], batch_indices=torch.zeros(stop - start,
+                    dtype=torch.long, device=runtime.device))
+            cotangent = q(action.detach(), start, stop) if callable(q) else q[start:stop]
+            gradients = torch.autograd.grad(action, tuple(leaves.values()),
+                                            cotangent.detach().to(action))
+        if return_actions:
+            actions.append(action.detach())
+        for key, value in zip(leaves, gradients, strict=True):
+            result[key].add_(value.detach().float())
+    return (result, torch.cat(actions)) if return_actions else result
+
+
+def factor_jvp(runtime, incoming, support, direction, *, microbatch):
+    """First-order forward AD through all ten native calls; no policy Hessian."""
+    from torch.autograd import forward_ad
+    if incoming.keys() != direction.keys() or microbatch < 1:
+        raise ValueError('functional tangent lost full A/B coverage')
+    results = []
+    for start in range(0, len(support['noise']), microbatch):
+        stop = min(start + microbatch, len(support['noise']))
+        with torch.no_grad(), forward_ad.dual_level():
+            dual = {key: forward_ad.make_dual(value.detach().to(runtime.device),
+                    direction[key].detach().to(device=runtime.device, dtype=value.dtype))
+                    for key, value in incoming.items()}
+            response = runtime.native_actions([dual], slice_batch(support['batch'], start, stop),
+                support['noise'][start:stop], batch_indices=torch.zeros(stop - start,
+                    dtype=torch.long, device=runtime.device), checkpointed=False)
+            _, tangent = forward_ad.unpack_dual(response)
+            if tangent is None or not bool(torch.isfinite(tangent).all()):
+                raise RuntimeError('actual native forward AD lost a finite factor tangent')
+            results.append(tangent.detach())
+    return torch.cat(results)

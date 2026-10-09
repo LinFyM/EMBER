@@ -1,16 +1,21 @@
-## 2026-10-10 实验session实施完整功能修订，启动有界实际消费者实测
+## 2026-10-10 功能修订真实导数/FM通过，从有效FM2接续首次query/PG消费者
 
-实验session01a11a0a-fd39-74b1-83ba-001ede5330df已承接f11cc774；独占codex/functional-revision-20261010，main保持只读。
-canonical experience_compiler已替换raw参数/rank/chunk decoder，复用真实Reader、Runner、persistent环境和不同完整LoRA执行。
-完整76因子十步VJP/JVP、跨episode FM、成功自身函数keep与独立RNG Gaussian score消费者均已实现；旧已消费运行入口由Git/原件保留。
-原45项相关CPU检查通过，跨条件支撑M均值/信用更新后的24项检查通过；实际native链与学习事实以ROOT回执为准。
-从clean pushed detached 0791d711启动数值核验和同版本profile；单张gpu02:0现场可用45,845MiB，项目占用0→1，按6卡/单节点限制准入。
-strg01 data1用量1,260,496,480KiB/2,147,483,648KiB，新增峰计划40GiB；共享容量另核，全部新增data1，不复制大资产。
-四原condition直接引用实际incoming/E，新query均为state0/1，剔除原全部实践与32–34；最多FM2/PG1、16新episodes/5440steps。
-原5cafacab native伴随误差0.226%，checkpoint方向一致；BF16有限差分误差2.36仍须数值核验，不把它当生产梯度或已定位原因。
-实际profile扩大跨条件support/native物理batch4/8/16/32/64和112条FM的28/56/112物理batch，按真实吞吐和显存选点，M/任务权重不变。
-ROOT=/data1/user/ymdai/ember_runs/functional_revision_compiler_20261010；一次tmux退出事件持续等待，不叠加自通知/Queue/心跳。
-当前授权只覆盖完整实现和有界实测，没有正式长训/held/Test；main完整消费真实成本后登记后继。下方均为历史派发/安排。
+实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占codex/functional-revision-20261010，main只读。
+唯一canonical已撤换raw参数/rank/chunk decoder，复用Reader、Runner、persistent环境、不同完整LoRA及现有FM；旧消费者由Git/原件保留。
+55项相关CPU消费者通过；真实76因子完整十步伴随相对误差.002264、checkpoint方向误差0，FP32有限差分误差.003228。
+BF16小扰动有限差分误差2.36259保留，精度核验支持算术舍入解释；生产仍为普通BF16和真实AD，不使用FD作梯度。
+0791d711已完成全部原四条件的物理profile及FM1/2；63支撑、112 FM queries/更新，真实首步能量混合梯度1.899e−7，次步读取通路梯度很小但非零。
+完整四条件编辑28.70→10.09秒（micro4→64），真实共享伴随33.18→9.42秒；FM28/56/112分别8.48/8.40/8.82秒，选择56，不以显存占满择点。
+micro112 allocated40.56GiB已实测；无额外逻辑事件/M/task权重，支持实际吞吐但不等同方法有效或整批加速。
+query首次启动缺LIBERO配置，8 child均在资产import前交互stdin/EOF退出，0环境steps/0真实episode；完整失败/费用/partial保留。
+CPU真实构造器已复现EOF并核验ROOT配置可无交互构造/退出，修复异常pipe关闭；不重做已有FM、不重采已发生环境。
+首次稀疏冻结3fb84062缺少已版本化的configs，实际authority loader在policy/环境加载前退出；0新增环境/更新，完整失败与费用保留。
+冻结布局须含src/tests/configs，实际authority consumer直接核验；接续仍使用有效implementation_state FM2，首次16 query episodes/最多5440steps、fresh PG optimizer且仅1更新。
+四条件query IDs均0/1，原实践/32–34隔离，outgoing/baseline policy与exploration RNG独立；slot_batch16，M按各条件15/16/16/16。
+两节点live准入项目0→gpu02:0一张，GPU余量>40,000MiB、总/单节点≤6；strg01 data1用量1,262,675,252KiB/2,147,483,648KiB，新增峰计划40GiB。
+ROOT=/data1/user/ymdai/ember_runs/functional_revision_compiler_20261010；一次tmux退出事件持续等待，profile设备采样有测量目的，不发送心跳/自Queue。
+当前仍只授权完整实现与有界实测，无正式长训/held/Test；完整消费后一次回报main并串行交回所有权，main据实际成本登记后继。
+以下均为历史派发/安排。
 
 ## 2026-10-10 main消费诊断，登记自身功能修订Compiler的实施与实测
 

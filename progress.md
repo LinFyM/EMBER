@@ -6,8 +6,17 @@
 CPU实际面板消费者已核8个真实最后incoming、原E+及原state32–34；31项记录/执行/场景capture/评测consumer检查通过。
 新E0限8套；72闭环、最多576离线十步和672单time FM，无新学习、适应、held/Test或checkpoint选择。
 新增磁盘cache限每host128MiB，源资产/父ROOT只读复用。strg01 data1观察用量约1198.85/2048GiB，新增计划24GiB准入。
-正式计算须来自clean pushed detached；当前只实施和CPU检查，未启动科学GPU计算。实际运行/费用/失败/完成以ROOT原件为准。
+首次CPU验收时未启动科学GPU计算；实际启动见下段，运行/费用/失败/完成以ROOT原件为准，计算来自clean pushed detached。
 main保持只读；完整消费、Git/资源退出后一次可靠科学回报及交回所有权。下方均为历史。
+
+实际closedloop阶段已从clean pushed detached `c381f178` 启动，先8套E0再gpu01:1/6、gpu02:0/2四worker B16；
+新离线consumer已并行完成，由后续clean pushed detached承接，读取代码身份单独登记，不重采原实践或重跑有效闭环。
+结构自审：`edit_diagnostic.py`只拥有冻结面板、E0/queue/完成记录；`edit_readouts.py`只拥有固定自身状态十步和合法FM读出。
+策略、prefix/flow、不同LoRA批量、persistent仿真及scene/capture均复用原owner；没有第二Writer、仿真或缓存运行面。
+两模块300/338行；新增测试保护noise/prefix/真实incoming和实际FM消费者。worker的68行异常/关闭/费用生命周期保持凝聚，
+既有Runner/IPC状态机不做无关拆分。约1000行增长信号包含专门consumer测试；新测试并入既有execution owner，
+避免继续增加已有42-peer engineering目录；source职责和实际消费者各自凝聚，结构检查不构成Owner审批门槛。
+诊断入口随本次机制辨识，main消费裁决后决定有实际第二用途的复用或退役，历史证据通过Git/原件保留；task-owned树在交付退役。
 
 ## 2026-10-09 main接回完整χ360，登记固定真实incoming的一步经验诊断
 

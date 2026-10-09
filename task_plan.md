@@ -5,8 +5,8 @@ main消费完整实施/profile后，选择不改算子/P/LR/rank/精度，不将
 唯一active为[功能修订设计§6](docs/designs/functional_revision_compiler_20261010.md#6-首批正式学习fresh-fm360真实分布刷新与一个固定400节点)，
 依据及可失败解释见[main分析§7](docs/analyses/functional_revision_compiler_20261010.md#7-main判断信用接通以后首先检验真实学习而非扩大梯度数字)。
 
-1. 实验session从clean main独占实施正式sampler/checkpoint/完整循环与单次400消费者，复用canonical owner，实际验证后推送冻结运行。
-2. fresh监督1–180：36任务等权、逻辑batch4，旧216条件内按真实MT/非MT层采样；缺失20任务的非MT层不伪造、不重权。
+1. 正式sampler/checkpoint/完整循环与原配对消费者已实施、实际CPU检查并推送；唯一canonical代码6b2b4ffd，clean detached运行。
+2. fresh监督1–180已启动：同版本零更新profile据吞吐选择gpu02:0,2，不锁死world；36任务等权、逻辑batch4，缺失20任务的非MT层不伪造、不重权。
 3. φ180采72新模型实际条件；后半181–360只用新池，仍任务等权/真实层采样；每task共40次呈现不是40条新经验。
 4. 原固定train48在180/360各完成end读出与MT/相邻比较；180读出不阻塞独立刷新/后半，不作为正式选点或停止门槛。
 5. 固定唯一φ360完成correct paired400，复用原state-video/scene/RNG，报告完整MT153/T161/历史135/127/130得失及成本。

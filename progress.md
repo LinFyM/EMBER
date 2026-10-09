@@ -1,4 +1,4 @@
-## 2026-10-10 实验session独占实施正式功能修订学习，冻结显式采样与原配对消费者
+## 2026-10-10 正式功能修订学习已启动，世界大小据真实整链profile选择
 
 已实际承接main a71bdb57的唯一active设计§6；实验session01a11a0a-fd39-74b1-83ba-001ede5330df持tracked/Git/运行独占窗口，main只读。
 开发分支codex/functional-learning-20261010，ROOT=/data1/user/ymdai/ember_runs/functional_revision_learning_20261010。
@@ -17,10 +17,17 @@ collection只拥有实际φ180刷新原件与manifest；evaluation只拥有原�
 完整90/180/270/360保存模型一次、optimizer/scheduler/scalerNone、sampler/cursor、各rank RNG/source/schema/topology；
 在完整边界迁移物理拓扑保持逻辑4/任务等权/SUM/.25与真实query流，记录恢复来源，不称bitwise exact。
 
-本段工程登记时尚未启动本批GPU计算。data1 strg01独立用户用量约1203GiB、quota2048GiB，224GiB新增峰可准入；个人runs实际844617338880bytes。
-现场两节点有可用显存共驻A40，Owner允许高UTL共驻；正式启动前重新核验，单卡profile不锁死world。
-CPU实际检查与同版本首逻辑批零更新world profile、clean pushed detached启动/成本/退出均以ROOT原件为准；
-180独立train读出与72刷新并行，后半不等train180，360后完成end48与唯一400。没有main阶段ACK/心跳、自Queue或额外退出等待者。
+CPU实际消费者检查81项通过，随后删除未被消费者调用的元数据重建路径；17项针对性检查通过，现存80项。
+六个物理profile均用a8212333的相同fresh首逻辑批，零optimizer更新：缓存后world1/2/3/4分别37.63/20.68/21.85/18.24秒。
+world3在gpu01、world2/4在gpu02，含现场共驻，不将差值泛化为硬件无关最优；四卡相对两卡仅约13%wall收益，单批GPU时间高约76%。
+真实冷/热输入已验证frame32/experience64/native32，FM56/support64/adjoint64；profile实际峰allocated26.86/reserved28.08GiB。
+正式采用gpu02:0,2、world2与上述较大chunk；保留完整checkpoint物理迁移能力，180后刷新/读出利用独立卡并行。
+profile费用窗全部闭合，计入本批.254861GPUh；原始分解与选择见ROOT/analysis/physical_profile.json，不用填满显存代替吞吐。
+正式代码6b2b4ffd已clean pushed detached；tmux ember-fr-learning-20261010已启动完整360/72/end48/400批次，运行身份与准入在ROOT/batch_execution.json。
+首次正式launch的strg01 data1独立用量1297193766912bytes/quota2199023255552bytes；合计224GiB峰可准入，共享容量另已核验。
+启动有一条持续tmux退出等待（ROOT/direct_exit_wait.json），没有main阶段ACK/心跳、自Queue或额外退出等待者。
+180独立train读出不阻塞72刷新及后半；train360计算与formal400独立，只有相邻聚合等待train180原件发布。
+当前学习结果未知；普通工程失败保护所有有效checkpoint/原件/费用后按同一科学合同接续，不以小面板或内部值取消360。
 以下主讨论登记及旧实施/profile条目保留为历史。
 
 ## 2026-10-10 main已登记首批正式学习：fresh FM360、72刷新、固定360 paired400

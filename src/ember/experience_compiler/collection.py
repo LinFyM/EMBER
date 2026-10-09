@@ -152,9 +152,10 @@ def worker(args):
             # Failed attempts retain their files; a retry has its own root.
             if destination.exists():
                 destination = output / 'conditions' / f"{condition['condition_id']}_{claim.claim_token}"
+            from .storage import tensor_bytes
             future = runtime.io.submit(save_condition, destination,
                 dict(**condition, behavior_checkpoint=contract['checkpoint'], collection_code_git=args.code_git),
-                chain, fixed_behavior=fixed)
+                chain, fixed_behavior=fixed, byte_cost=tensor_bytes(vars(chain)))
             pending.append((condition, chain, claim, future))
             consume_finished()
         consume_finished(all_pending=True)
@@ -172,6 +173,8 @@ def worker(args):
                 runner.preserve_partial(output / 'failures' / identity)
         if runtime is not None:
             runtime.close()
+            if runner is not None:
+                runner.components['record_io_wait_seconds'] = runtime.io.wait_seconds
         receipt = dict(worker_id=identity, host=socket.gethostname(), physical_gpu=gpu,
             code_git=args.code_git, checkpoint=contract['checkpoint'], started_unix=started,
             finished_unix=time.time(), status=status, completed_jobs=completed, error=error,

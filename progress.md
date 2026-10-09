@@ -12,7 +12,15 @@ FM物理56与112近似等速，峰25.10/40.11GiB，选择56；native64、reader1
 四实际事件/112query的world1完整FM/replay/SUM/clip热态10.44秒，allocated25.01/reserved30.32GiB；变化事件IO、optimizer不在该短测内。
 world2及更大rank因同节点卡转为其他用户高负载未获有效测量，当前选world1不声称最优，也不锁死后续完整checkpoint边界物理迁移。
 原件与负边界见run root profile/report.md、profile_driver_attempts；GPU占用并集0.145815GPUh，所有失败保留。
-clean pushed detached ec81bcd2整批已在普通tmux ember-pcc-20261009-001运行，当前固定MT池0采集；gpu02:7与gpu01:6均通过live准入并已见实际CUDA进程。
+clean pushed detached ec81bcd2整批已在普通tmux ember-pcc-20261009-001启动固定MT池0；gpu02:7与gpu01:6在当时通过live准入。
+Owner随后要求核验长时间UTL0及两卡效率。远端中断原件直接显示GPU主线程等待逐观测缓存写入future；
+CPU单节点4次put/get仅0.631秒，而跨节点共用同一cache的测试一侧37.147秒未完成，不能唯一归因SQLite/flock/NFS。
+远端已保存失败/16条部分经验并退出；Supervisor暂时受控暂停以免取消本机有效采集，本机SIGINT因后台继承ignore未生效，继续完成合法条件。
+原件在run root analysis/utl_runtime_20261009；全部已完成条件、原事实、失败及成本保留，尚无共享训练/正式400启动。
+工程修复使用按host分片的32+32GiB派生缓存、每native batch一次put/get事务及单future、512MiB待写字节限制，先发环境step后排写盘。
+显式关闭SQLite连接并恢复Python SIGINT处理；只改变IO/物理调度，不改模型、dtype、数据/标签、损失、逻辑流、终点或信息墙。
+缓存/Runner/监督器17项针对性CPU检查通过；真实GPU恢复吞吐和world2/3/4测量尚待执行，不提前称修复成功或两卡最优。
+旧frozen不原地修改，已完成pool0条件在新clean pushed frozen接续中复用；本机有效采集退出后解除Supervisor暂停并消费唯一退出回执。
 监督器依退出事件接续144池0→fresh180→并行72刷新/train48/formal180→fresh360及全部读出；不重复已完成profile或旧首批训练。
 启动命令/计费/原件为run root batch_launch.json、batch_execution.json、costs.jsonl；唯一launch wrapper整批退出后Steer或无覆盖resume/start唤醒本session。
 安装记录wakeup_installation.json；无需打开页面、无自Queue、没有额外直接等待者。所有权仍在实验session，完整科学消费/Git/整批回报完成后才交回main。

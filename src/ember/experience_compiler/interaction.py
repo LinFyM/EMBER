@@ -281,16 +281,20 @@ class Runner:
         self.components['plans'] += len(indices)
         histogram = self.components['physical_batch_histogram']
         histogram[len(indices)] = histogram.get(len(indices), 0) + 1
+        cache_entries = {}
         for position, index in enumerate(indices):
             slot = slots[index]
             if slot.request['kind'] != 'final':
                 fact_position = fact_indices.index(position)
                 key, phi = slot.observation_id, velocity.phi[fact_position]
                 slot.chain.phi[key] = phi
-                self.runtime.io.submit(self.runtime.features.put, key, {'phi': phi})
+                cache_entries[key] = {'phi': phi}
                 slot.pending = dict(pre=key, hidden=hidden[fact_position])
             slot.ready = False
             self.environments.submit(index, 'step', actions=actions[position], noise_seed=seeds[position])
+        if cache_entries:
+            from .storage import tensor_bytes
+            self.runtime.io.submit(self.runtime.features.put_many, cache_entries, byte_cost=tensor_bytes(cache_entries))
 
     @torch.no_grad()
     def run(self, requests):

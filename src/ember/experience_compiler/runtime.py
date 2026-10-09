@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from pathlib import Path
+import socket
 import time
 
 import torch
@@ -59,7 +60,11 @@ class Runtime:
         self.last_teacher_cost = {}
         from .contract import RUN_ROOT
         from .storage import FeatureCache, RecordWriter
-        self.features = FeatureCache(Path(cache_root) if cache_root is not None else RUN_ROOT / 'frozen_features')
+        cache_root = Path(cache_root) if cache_root is not None else RUN_ROOT / 'frozen_features'
+        # Two host shards retain the registered 64GiB total cache budget. The
+        # frozen derivatives can be reconstructed from preserved raw facts;
+        # GPU loops never arbitrate this hot lock between NFS clients.
+        self.features = FeatureCache(cache_root / socket.gethostname(), max_bytes=32 * 1024**3)
         self.io = RecordWriter()
         self.image_cache_hits, self.image_encoded_observations = 0, 0
 
@@ -110,7 +115,8 @@ class Runtime:
         self.last_teacher_cost = dict(cache_hit=False, native_encoder_seconds=elapsed,
                                       native_encoded_frames=len(raw.frames))
         self.native_teacher_frames += len(raw.frames)
-        self.io.submit(self.features.put, disk_key, features)
+        from .storage import tensor_bytes
+        self.io.submit(self.features.put, disk_key, features, byte_cost=tensor_bytes(features))
         self._remember(key, features)
         return features
 
@@ -149,8 +155,9 @@ class Runtime:
     @torch.no_grad()
     def observation_features(self, observations):
         result, missing, keys = {}, [], []
+        cached_features = self.features.get_many(observations)
         for key, raw in observations.items():
-            cached = self.features.get(key)
+            cached = cached_features.get(key)
             if cached is None:
                 missing.append(raw['images'])
                 keys.append(key)
@@ -161,9 +168,12 @@ class Runtime:
             self.image_encoded_observations += len(missing)
             for start in range(0, len(missing), self.native_frame_chunk):
                 phi = self.frozen_images(torch.stack(missing[start:start + self.native_frame_chunk]))
+                entries = {}
                 for key, value in zip(keys[start:start + len(phi)], phi, strict=True):
                     result[key] = value
-                    self.io.submit(self.features.put, key, {'phi': value})
+                    entries[key] = {'phi': value}
+                from .storage import tensor_bytes
+                self.io.submit(self.features.put_many, entries, byte_cost=tensor_bytes(entries))
         return result
 
     def load_checkpoint(self, checkpoint):

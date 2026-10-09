@@ -185,6 +185,9 @@ def main():
         # CUDA stalls without polling or changing scientific computation.
         import faulthandler, signal
         faulthandler.register(signal.SIGUSR1, file=sys.stderr, all_threads=True)
+        # Detached background shells may inherit SIGINT ignored. Restore the
+        # Python handler so a controlled stop preserves unfinished real facts.
+        signal.signal(signal.SIGINT, signal.default_int_handler)
         devices = args.physical_gpus if args.command == 'train' else [args.physical_gpu]
         with cost_interval(args.run_root, args.command + '_process', devices):
             check_budget(args.run_root)

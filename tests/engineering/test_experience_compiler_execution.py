@@ -112,7 +112,7 @@ def fake_runtime(monkeypatch):
                                               if capture_hidden else None)
     runtime = SimpleNamespace(device=torch.device('cpu'), policy=None, mt={'factor': torch.tensor(10.)},
         processor=processor, execution=SimpleNamespace(activate=activate),
-        io=SimpleNamespace(submit=lambda *args, **kw: None), features=SimpleNamespace(put=lambda *args: None),
+        io=SimpleNamespace(submit=lambda *args, **kw: None), features=SimpleNamespace(put_many=lambda *args: None),
         observation_features=lambda raw: {k: torch.zeros(512, 4) for k in raw},
         teacher=lambda *args: {'indices': torch.tensor([0, 5, 9])}, last_teacher_cost={})
     def edit(incoming, teacher, evidence):

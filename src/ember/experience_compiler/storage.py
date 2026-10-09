@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 import fcntl
 from pathlib import Path
 import sqlite3
@@ -16,7 +16,7 @@ from .contract import EVENT_SCHEMA, MT_PATH
 
 
 class FeatureCache:
-    """One disk budget shared by frozen teacher/native observation features.
+    """Bounded frozen teacher/native features within one host's cache shard.
 
     Cache entries are disposable derivatives, never raw facts or parameters.
     SQLite metadata and file mutations share the existing filesystem lock;
@@ -33,8 +33,9 @@ class FeatureCache:
     def _locked(self):
         with self.lock.open('a+b') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            with sqlite3.connect(self.root / 'cache.sqlite3', timeout=60) as database:
-                yield database
+            with closing(sqlite3.connect(self.root / 'cache.sqlite3', timeout=60)) as database:
+                with database:
+                    yield database
 
     def _path(self, key):
         if not key or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-. ' for c in key):
@@ -42,54 +43,90 @@ class FeatureCache:
         return self.root / (key + '.safetensors')
 
     def get(self, key):
-        path = self._path(key)
+        return self.get_many([key]).get(key)
+
+    def get_many(self, keys):
+        paths = {key: self._path(key) for key in keys}
+        result = {}
         with self._locked() as database:
-            if not database.execute('SELECT 1 FROM entries WHERE key=?', (key,)).fetchone():
-                return None
-            result = load_file(str(path))
-            database.execute('UPDATE entries SET touched=? WHERE key=?', (time.time(), key))
-            return result
+            for key, path in paths.items():
+                if database.execute('SELECT 1 FROM entries WHERE key=?', (key,)).fetchone():
+                    result[key] = load_file(str(path))
+                    database.execute('UPDATE entries SET touched=? WHERE key=?', (time.time(), key))
+        return result
 
     def put(self, key, values):
-        size = sum(v.nbytes for v in values.values()) + 4096
-        if size > self.max_bytes:
+        self.put_many({key: values})
+
+    def put_many(self, entries):
+        # CPU conversion happens before taking the file/metadata lock. Native
+        # batches use one future and one transaction, rather than one per Phi.
+        entries = [(key, self._path(key), {k: v.detach().cpu().contiguous() for k, v in values.items()})
+                   for key, values in entries.items() if tensor_bytes(values) + 4096 <= self.max_bytes]
+        if not entries:
             return
-        path = self._path(key)
         with self._locked() as database:
-            if database.execute('SELECT 1 FROM entries WHERE key=?', (key,)).fetchone():
-                return
             used = database.execute('SELECT COALESCE(SUM(bytes),0) FROM entries').fetchone()[0]
-            for old, old_size in database.execute('SELECT key,bytes FROM entries ORDER BY touched').fetchall():
-                if used + size <= self.max_bytes:
-                    break
-                self._path(old).unlink(missing_ok=True)
-                database.execute('DELETE FROM entries WHERE key=?', (old,))
-                used -= old_size
-            partial = path.with_suffix('.partial')
-            save_file({k: v.detach().cpu().contiguous() for k, v in values.items()}, str(partial))
-            actual = partial.stat().st_size
-            partial.replace(path)
-            database.execute('INSERT INTO entries VALUES (?,?,?)', (key, actual, time.time()))
+            for key, path, values in entries:
+                if database.execute('SELECT 1 FROM entries WHERE key=?', (key,)).fetchone():
+                    continue
+                size = tensor_bytes(values) + 4096
+                if used + size > self.max_bytes:
+                    for old, old_size in database.execute('SELECT key,bytes FROM entries ORDER BY touched').fetchall():
+                        if used + size <= self.max_bytes:
+                            break
+                        self._path(old).unlink(missing_ok=True)
+                        database.execute('DELETE FROM entries WHERE key=?', (old,))
+                        used -= old_size
+                partial = path.with_suffix('.partial')
+                save_file(values, str(partial))
+                actual = partial.stat().st_size
+                partial.replace(path)
+                database.execute('INSERT INTO entries VALUES (?,?,?)', (key, actual, time.time()))
+                used += actual
+
+
+def tensor_bytes(value):
+    if isinstance(value, torch.Tensor):
+        return value.nbytes
+    if isinstance(value, dict):
+        return sum(tensor_bytes(v) for v in value.values())
+    if isinstance(value, (tuple, list)):
+        return sum(tensor_bytes(v) for v in value)
+    return 0
 
 
 class RecordWriter:
     """CPU serialization overlaps other slots; failures propagate on flush."""
-    def __init__(self, workers=2):
+    def __init__(self, workers=2, *, max_bytes=512 * 1024**2):
         self.executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix='compiler-record')
         self.pending = []
+        self.max_bytes, self.pending_bytes, self.wait_seconds = max_bytes, 0, 0.
 
-    def submit(self, function, *args, **kwargs):
+    def _finish(self, index=0):
+        future, size = self.pending.pop(index)
+        tick = time.monotonic()
+        try:
+            return future.result()
+        finally:
+            self.wait_seconds += time.monotonic() - tick
+            self.pending_bytes -= size
+
+    def submit(self, function, *args, byte_cost=0, **kwargs):
         # Keep asynchronous temporary memory bounded instead of buffering a run.
-        if len(self.pending) >= 16:
-            self.pending.pop(0).result()
+        for index in reversed(range(len(self.pending))):
+            if self.pending[index][0].done():
+                self._finish(index)
+        while self.pending and (len(self.pending) >= 16 or self.pending_bytes + byte_cost > self.max_bytes):
+            self._finish()
         future = self.executor.submit(function, *args, **kwargs)
-        self.pending.append(future)
+        self.pending.append((future, byte_cost))
+        self.pending_bytes += byte_cost
         return future
 
     def flush(self):
-        for future in self.pending:
-            future.result()
-        self.pending.clear()
+        while self.pending:
+            self._finish()
 
     def close(self):
         try:

@@ -209,3 +209,52 @@ def test_null_replay_starts_actual_MT_and_never_uses_real_intermediate_parameter
     runtime.edit = edit
     chain = interaction.Chain(states=[{'a': torch.tensor(99.)}], endpoints=[5, 10, 11])
     assert Runtime.null_replay(runtime, {}, chain)['a'] == 11 and seen == [2, 5, 8]
+
+
+def test_final_raw_capture_preserves_noise_commands_and_skips_facts(monkeypatch, tmp_path):
+    """Capture adds evidence to the same final actor, including an early prefix."""
+    runtime, batches, edits, states = fake_runtime(monkeypatch)
+    calls = []
+    def chunk(velocity, noise, capture_hidden, capture_indices):
+        assert not capture_hidden and capture_indices is None
+        calls.append(noise.clone())
+        return noise[..., :7].clone(), None
+    monkeypatch.setattr(interaction, 'action_chunk', chunk)
+    runner = interaction.Runner(runtime, {}, 0, slot_batch=2)
+    requests = [dict(kind='final', task=request(i)['task'], state_id=32+i,
+                     state={'factor': torch.tensor(20.+i)}, noise_root=7, capture=True) for i in (0, 1)]
+    try:
+        results = list(runner.run(requests))
+        assert not edits and states[0] == [20., 21.]
+        first = next(r for r in results if r['request']['task']['task_id'] == 0)
+        record = first['trajectory'][0]
+        seed = policy_noise_seed(7, 'libero_spatial', 0, 32, 0)
+        expected = torch.randn((50, 32), generator=torch.Generator().manual_seed(seed))
+        assert record['noise_seed'] == seed and record['step'] == 0
+        torch.testing.assert_close(record['noise'], expected)
+        torch.testing.assert_close(record['normalized_actions'], expected[:, :7])
+        torch.testing.assert_close(record['commands'], expected[:, :7])
+        assert record['raw']['images'].dtype == torch.uint8 and record['raw']['proprio'].shape == (8,)
+        assert record['executed'].tolist() == [True] * 5 and 'hidden' not in record
+        torch.save(first['trajectory'], tmp_path / 'raw.pt')
+        restored = torch.load(tmp_path / 'raw.pt', weights_only=False)[0]
+        for name in ('noise', 'normalized_actions', 'commands'):
+            torch.testing.assert_close(restored[name], record[name])
+            assert restored[name].untyped_storage().nbytes() == restored[name].nbytes
+    finally:
+        runner.close()
+
+
+def test_final_capture_records_only_the_executed_terminal_prefix(monkeypatch):
+    runtime, *_ = fake_runtime(monkeypatch)
+    runner = interaction.Runner(runtime, {}, 0)
+    slot = runner._new_slot(dict(kind='final', task=request(0)['task'], state_id=32, capture=True))
+    slot.raw = {'images': torch.zeros(2, 3, 2, 2, dtype=torch.uint8), 'proprio': torch.zeros(8)}
+    slot.pending = dict(raw=slot.raw, noise=torch.zeros(50, 32), noise_seed=10,
+                        normalized_actions=torch.ones(50, 7), commands=torch.ones(50, 7), step=20)
+    actual = np.arange(14, dtype=np.float32).reshape(2, 7)
+    runner._record(slot, dict(raw=slot.raw, executed=actual, reward=1., done=True))
+    row = slot.trajectory[0]
+    assert row['executed'].tolist() == [True, True, False, False, False]
+    torch.testing.assert_close(row['actions'][:2], torch.from_numpy(actual))
+    assert row['actions'][2:].count_nonzero() == 0 and row['done']

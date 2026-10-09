@@ -12,7 +12,8 @@ import numpy as np
 import torch
 
 from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
-from ember.pi05_eval.episode import start_fixed_episode, finish_episode_row
+from ember.pi05_eval.episode import start_fixed_episode, finish_episode_row, update_stage_predicates
+from ember.pi05_eval.trajectory_capture import capture_level, record_replan, record_passive_step
 from ember.pi05_processing import libero_policy_input
 
 
@@ -58,11 +59,13 @@ def _serve(pipe, contract, physical_gpu, affinity):
                 slot = start_fixed_episode(env=env, init_state_id=command['state_id'], init_states=states,
                     task=task, contract=episode_contract, root_seed=command['noise_root'],
                     dummy=np.asarray(episode_contract['environment']['dummy_action']),
-                    task_adapter=None, capture_level=None)
+                    task_adapter=None, capture_level=capture_level(
+                        episode_contract.get('diagnostic_occupancy_capture'), task, command['state_id']))
                 controls = int(episode_contract['environment']['horizons'][task['suite']])
                 if remaining is not None:
                     controls = min(controls, remaining - settling)
                 initial = raw_observation(slot['obs'], task['language'])
+                current_raw = initial
                 operation_steps = settling
                 initial_proprio = initial['proprio'].tolist()
                 reward, done = 0., False
@@ -71,18 +74,27 @@ def _serve(pipe, contract, physical_gpu, affinity):
             elif command['kind'] == 'step':
                 if slot is None:
                     raise ValueError('environment step preceded a registered start')
+                capture = episode_contract.get('diagnostic_occupancy_capture')
+                if capture:
+                    record_replan(slot, {'observation.state': current_raw['proprio']}, {},
+                        torch.from_numpy(command['normalized_chunk']).unsqueeze(0),
+                        command['actions'][:min(5, controls - slot['steps'])])
                 executed = []
                 for action in command['actions'][:min(5, controls - slot['steps'])]:
                     slot['obs'], reward, done, _ = env.step(action.tolist())
                     slot['steps'] += 1
                     operation_steps += 1
                     executed.append(action)
+                    if 'stage_predicate_states' in slot:
+                        update_stage_predicates(env, slot)
+                    record_passive_step(env, slot, action, capture)
                     if done:
                         break
                 slot['replan_index'] += 1
                 slot['policy_noise_seeds'].append(command['noise_seed'])
                 slot['episode_done'] = bool(done)
-                result = dict(kind='step', raw=_wire(raw_observation(slot['obs'], task['language'])),
+                current_raw = raw_observation(slot['obs'], task['language'])
+                result = dict(kind='step', raw=_wire(current_raw),
                     executed=np.asarray(executed, dtype=np.float32).reshape(-1, 7),
                     done=bool(done), reward=float(reward), steps=slot['steps'],
                     replans=slot['replan_index'])

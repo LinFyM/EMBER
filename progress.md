@@ -1,3 +1,14 @@
+## 2026-10-09 实验session实施固定incoming的一步经验诊断
+
+已接受main `73525c64` 的唯一active诊断合同，实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占tracked/Git/运行窗口。
+开发分支`codex/parameter-edit-credit-20261009`；ROOT为`/data1/user/ymdai/ember_runs/parameter_edit_credit_diagnostic_20261009`。
+复用canonical Runner、动态queue、完整scene恢复、native十步与被动T+1 capture；final只加紧凑raw/noise/action记录，不采H/Phi。
+CPU实际面板消费者已核8个真实最后incoming、原E+及原state32–34；31项记录/执行/场景capture/评测consumer检查通过。
+新E0限8套；72闭环、最多576离线十步和672单time FM，无新学习、适应、held/Test或checkpoint选择。
+新增磁盘cache限每host128MiB，源资产/父ROOT只读复用。strg01 data1观察用量约1198.85/2048GiB，新增计划24GiB准入。
+正式计算须来自clean pushed detached；当前只实施和CPU检查，未启动科学GPU计算。实际运行/费用/失败/完成以ROOT原件为准。
+main保持只读；完整消费、Git/资源退出后一次可靠科学回报及交回所有权。下方均为历史。
+
 ## 2026-10-09 main接回完整χ360，登记固定真实incoming的一步经验诊断
 
 main已直接消费92cf996e交付的完整130/400、实际train参数/events和当前算子，接回tracked/Git。

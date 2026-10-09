@@ -29,7 +29,7 @@ class Runtime:
 
     def __init__(self, asset_root, device, *, frame_chunk=8, decoder_chunk=4096,
                  experience_chunk=16, native_frame_chunk=None, cache_bytes=2 * 1024**3,
-                 cache_root=None):
+                 cache_root=None, feature_cache_bytes=32 * 1024**3):
         from .contract import SOURCE, MT_PATH, TASKS36 as TASKS
 
         self.asset_root, self.device = Path(asset_root), torch.device(device)
@@ -64,7 +64,7 @@ class Runtime:
         # Two host shards retain the registered 64GiB total cache budget. The
         # frozen derivatives can be reconstructed from preserved raw facts;
         # GPU loops never arbitrate this hot lock between NFS clients.
-        self.features = FeatureCache(cache_root / socket.gethostname(), max_bytes=32 * 1024**3)
+        self.features = FeatureCache(cache_root / socket.gethostname(), max_bytes=feature_cache_bytes)
         self.io = RecordWriter()
         self.image_cache_hits, self.image_encoded_observations = 0, 0
 

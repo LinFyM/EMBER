@@ -79,6 +79,7 @@ class _Slot:
     state_id: int = 0
     noise_root: int = 7
     pending: dict | None = None
+    trajectory: list = field(default_factory=list)
     used_states: set = field(default_factory=set)
     state_reuses: int = 0
     native_cost: dict = field(default_factory=lambda: dict(seconds=0., frames=0, cache_hits=0))
@@ -177,6 +178,15 @@ class Runner:
 
     def _record(self, slot, result):
         if slot.request['kind'] == 'final':
+            if slot.request.get('capture'):
+                pending = slot.pending
+                executed = torch.from_numpy(result['executed']).clone()
+                actions = torch.zeros(5, 7)
+                actions[:len(executed)] = executed
+                slot.trajectory.append(dict(**pending, actions=actions,
+                    executed=torch.arange(5) < len(executed),
+                    reward=result['reward'], done=result['done']))
+                slot.pending = None
             slot.raw = result['raw']
             return
         pending = slot.pending
@@ -205,7 +215,10 @@ class Runner:
         kind = slot.request['kind']
         if kind == 'final':
             row['physical_slot_batch'] = self.slot_batch
-            return dict(request=slot.request, row=row)
+            result = dict(request=slot.request, row=row)
+            if slot.request.get('capture'):
+                result.update(trajectory=slot.trajectory, terminal_raw=slot.raw)
+            return result
         chain = slot.chain
         previous_endpoint = chain.endpoints[-1] if chain.endpoints else 0
         chain.episodes.append(row)
@@ -282,6 +295,7 @@ class Runner:
         histogram = self.components['physical_batch_histogram']
         histogram[len(indices)] = histogram.get(len(indices), 0) + 1
         cache_entries = {}
+        normalized = chunks.detach().float().cpu() if any(slots[i].request.get('capture') for i in indices) else None
         for position, index in enumerate(indices):
             slot = slots[index]
             if slot.request['kind'] != 'final':
@@ -292,8 +306,13 @@ class Runner:
                 # A contiguous slot view still owns the whole native batch's
                 # CPU storage; torch.save would retain the other conditions.
                 slot.pending = dict(pre=key, hidden=hidden[fact_position].clone())
+            elif slot.request.get('capture'):
+                slot.pending = dict(raw=slot.raw, noise=noise[position].clone(), noise_seed=seeds[position],
+                    normalized_actions=normalized[position].clone(),
+                    commands=torch.from_numpy(actions[position]).clone(), step=slot.episode_steps)
             slot.ready = False
-            self.environments.submit(index, 'step', actions=actions[position], noise_seed=seeds[position])
+            capture = {} if not slot.request.get('capture') else dict(normalized_chunk=normalized[position].numpy())
+            self.environments.submit(index, 'step', actions=actions[position], noise_seed=seeds[position], **capture)
         if cache_entries:
             from .storage import tensor_bytes
             self.runtime.io.submit(self.runtime.features.put_many, cache_entries, byte_cost=tensor_bytes(cache_entries))
@@ -366,6 +385,10 @@ class Runner:
             path = Path(destination) / f'slot{index}_{slot.identity}'
             path.mkdir(parents=True, exist_ok=False)
             torch.save(slot.chain.to_record(), path / 'experience.pt')
+            if slot.request.get('capture'):
+                torch.save(dict(records=slot.trajectory, terminal_raw=slot.raw,
+                    condition=slot.request.get('condition'), arm=slot.request.get('arm'),
+                    state_id=slot.state_id, complete=False), path / 'partial_trajectory.pt')
             for ordinal, state in enumerate(slot.chain.states[1:], 1):
                 save_file(state, str(path / f'lambda_{ordinal:03d}.safetensors'))
             write_json_atomic(path / 'partial.json', dict(condition=slot.request.get('condition'),

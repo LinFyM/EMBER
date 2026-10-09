@@ -94,15 +94,15 @@ def cost_summary(root, *, now=None, phases=None):
                 science_elapsed_hours=science_hours, device_count=len(by_device), intervals=len(records))
 
 
-def check_budget(root, *, storage=False):
+def check_budget(root, *, storage=False, gpu_hours=40, science_hours=16, artifact_gib=224):
     summary = cost_summary(root)
-    if summary['GPU_hours'] >= 40 or summary['science_elapsed_hours'] >= 16:
+    if summary['GPU_hours'] >= gpu_hours or summary['science_elapsed_hours'] >= science_hours:
         raise RuntimeError(f'actual scientific/resource boundary: {summary}')
     if storage:
         usage = int(subprocess.run(['du', '-s', '-B1', str(root)], check=True, capture_output=True,
                                   text=True).stdout.split()[0])
-        if usage > 224 * 1024**3:
-            raise RuntimeError(f'actual new artifact peak exceeds 224GiB: {usage} bytes')
+        if usage > artifact_gib * 1024**3:
+            raise RuntimeError(f'actual new artifact peak exceeds {artifact_gib}GiB: {usage} bytes')
         summary['artifact_bytes'] = usage
     return summary
 
@@ -139,7 +139,8 @@ def register_launch(args, runtime, context, data, start, *, topology_resume=None
 def parser():
     from .contract import ASSET_ROOT, RUN_ROOT
     result = argparse.ArgumentParser(description=__doc__)
-    result.add_argument('command', choices=['profile', 'train', 'collect-prepare', 'collect', 'collect-aggregate', 'prepare', 'worker', 'aggregate', 'cost'])
+    result.add_argument('command', choices=['profile', 'train', 'collect-prepare', 'collect', 'collect-aggregate',
+        'prepare', 'worker', 'aggregate', 'cost', 'diagnostic-prepare', 'diagnostic-worker', 'diagnostic-aggregate'])
     result.add_argument('--asset-root', type=Path, default=ASSET_ROOT)
     result.add_argument('--run-root', type=Path, default=RUN_ROOT)
     result.add_argument('--output', type=Path)
@@ -162,6 +163,8 @@ def parser():
     result.add_argument('--allow-topology-change', action='store_true')
     result.add_argument('--recover-claims', action='store_true')
     result.add_argument('--retry-failed', action='store_true')
+    result.add_argument('--diagnostic-phase', choices=['materialize', 'rollout', 'readout'], default='rollout')
+    result.add_argument('--condition-ids')
     return result
 
 
@@ -172,7 +175,7 @@ def main():
     os.environ.setdefault('PYOPENGL_PLATFORM', 'egl')
     os.environ['MUJOCO_EGL_DEVICE_ID'] = str(args.physical_gpu)
     os.environ['LIBERO_CONFIG_PATH'] = str(args.output / f'libero_config_{os.getpid()}')
-    if args.command in {'profile', 'train', 'worker', 'collect'}:
+    if args.command in {'profile', 'train', 'worker', 'collect', 'diagnostic-worker'}:
         from ember.pi05_assets import prepare_libero_config
         from .contract import learning_environment
         os.environ['EMBER_LIBERO_ASSETS_ROOT'] = learning_environment(asset_root=args.asset_root)['libero_paths']['assets']
@@ -189,14 +192,19 @@ def main():
         # Python handler so a controlled stop preserves unfinished real facts.
         signal.signal(signal.SIGINT, signal.default_int_handler)
         devices = args.physical_gpus if args.command == 'train' else [args.physical_gpu]
-        with cost_interval(args.run_root, args.command + '_process', devices):
-            check_budget(args.run_root)
+        phase = 'worker_' + args.diagnostic_phase if args.command == 'diagnostic-worker' else args.command + '_process'
+        with cost_interval(args.run_root, phase, devices):
+            limits = dict(gpu_hours=6, science_hours=3, artifact_gib=24) if args.command == 'diagnostic-worker' else {}
+            check_budget(args.run_root, **limits)
             args.code_git = frozen_git()
             if args.command == 'train':
                 # EGL uses the physical device, whereas CUDA uses local rank.
                 os.environ['MUJOCO_EGL_DEVICE_ID'] = str(args.physical_gpus[int(os.environ.get('LOCAL_RANK', '0'))])
             try:
-                if args.command == 'train':
+                if args.command == 'diagnostic-worker':
+                    from .edit_diagnostic import worker
+                    worker(args)
+                elif args.command == 'train':
                     from .learning import train
                     train(args)
                 elif args.command == 'profile':
@@ -212,6 +220,14 @@ def main():
                 write_json_atomic(args.output / f'failure_{os.getpid()}.json',
                     dict(command=sys.argv, error=repr(error), traceback=traceback.format_exc(), cost=cost_summary(args.run_root)))
                 raise
+    elif args.command == 'diagnostic-prepare':
+        from .edit_diagnostic import prepare
+        print(prepare(args.run_root, code_git=frozen_git(),
+                      recover_claims=args.recover_claims, retry_failed=args.retry_failed))
+    elif args.command == 'diagnostic-aggregate':
+        from .edit_diagnostic import aggregate
+        result = aggregate(args.run_root)
+        print({arm: value['successes'] for arm, value in result['arms'].items()})
     elif args.command == 'collect-prepare':
         from .collection import prepare
         print(prepare(args.output, args.pool, checkpoint=args.checkpoint, asset_root=args.asset_root,

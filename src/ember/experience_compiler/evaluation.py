@@ -261,7 +261,9 @@ def run_evaluation(runtime, args):
     checkpoint = Path(args.checkpoint).resolve()
     manifest = read_json(checkpoint / 'manifest.json')
     if (str(checkpoint) != contract['checkpoint'] or
-        manifest['macro_update'] != KINDS[args.evaluation] or manifest['schema_version'] != SCHEMA):
+        manifest['macro_update'] != KINDS[args.evaluation] or
+        manifest['schema_version'] != 'ember_functional_revision_learning_checkpoint_v1' or
+        manifest.get('compiler_schema') != SCHEMA or manifest.get('complete') is not True):
         raise ValueError('worker changed its registered frozen shared checkpoint')
     runtime.load_checkpoint(checkpoint)
     runtime.compiler.eval()
@@ -371,7 +373,8 @@ def aggregate_evaluation(root, kind):
                    for name, path in contract['references'].items()}
     arm = dict(rows=rows, row_count=len(rows), successes=summary['successes'], breadth=self_comparison['candidate_breadth'],
         success_keys=[(r['suite'], r['task_id'], r['condition_id'], r['init_state_id']) for r in rows if r['success']],
-        per_task=self_comparison['per_task'], per_suite=self_comparison['per_suite'])
+        per_task=[dict(suite=t['suite'], task_id=t['task_id'], row_count=t['rows'], successes=t['candidate_successes']) for t in self_comparison['per_task']],
+        per_suite=[dict(suite=s['suite'], row_count=s['rows'], successes=s['candidate_successes']) for s in self_comparison['per_suite']])
     receipts = [read_json(p) for p in sorted((output / 'workers').glob('*.json'))]
     fields = ('actual_J', 'initial_reads', 'rereads', 'read_frames', 'environment_steps', 'resets',
               'failure_environment_steps', 'tail_environment_steps', 'edit_seconds', 'wall_seconds')

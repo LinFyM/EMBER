@@ -17,7 +17,8 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 def prepared(tmp_path, kind='train180'):
     checkpoint = tmp_path / 'training/checkpoints' / f'step_{ev.KINDS[kind]:08d}'
-    write_json_atomic(checkpoint / 'manifest.json', dict(schema_version=SCHEMA, macro_update=ev.KINDS[kind]))
+    write_json_atomic(checkpoint / 'manifest.json', dict(schema_version='ember_functional_revision_learning_checkpoint_v1',
+        compiler_schema=SCHEMA, complete=True, macro_update=ev.KINDS[kind]))
     result = ev.prepare_evaluation(tmp_path, checkpoint, kind)
     return read_json(Path(result['contract'])), Path(result['output']), checkpoint
 
@@ -183,6 +184,8 @@ def test_frozen_cpu_consumer_saves_actual_endpoints_and_reuses_completed_conditi
         monkeypatch.setattr(ev, '_reference_rows', lambda path, arm='end': raw)
         result = ev.aggregate_evaluation(tmp_path, 'train180')
         assert result['aggregated_complete'] and result['arms']['end']['row_count'] == 48
+        assert sum(t['row_count'] for t in result['arms']['end']['per_task']) == 48
+        assert sum(s['successes'] for s in result['arms']['end']['per_suite']) == result['arms']['end']['successes']
         assert result['cost']['practice_successes'] == 16 and result['cost']['condition_cost_totals']['actual_J'] == 16
         assert read_json(output / 'complete.json')['rows'] == 48
         assert ev.aggregate_evaluation(tmp_path, 'train180') == result
@@ -225,9 +228,11 @@ def test_recovery_reuses_saved_adaptation_and_only_missing_final_rows(tmp_path):
         runtime.io.close()
 
 
-def test_worker_rejects_other_checkpoint_node_before_loading_model(tmp_path):
+@pytest.mark.parametrize('change', [dict(macro_update=180), dict(complete=False),
+    dict(compiler_schema='other_compiler'), dict(schema_version='other_checkpoint')])
+def test_worker_rejects_other_checkpoint_node_before_loading_model(tmp_path, change):
     _, _, checkpoint = prepared(tmp_path, 'train360')
-    write_json_atomic(checkpoint / 'manifest.json', dict(schema_version=SCHEMA, macro_update=180))
+    write_json_atomic(checkpoint / 'manifest.json', {**read_json(checkpoint / 'manifest.json'), **change})
     runtime = Runtime()
     try:
         with pytest.raises(ValueError, match='frozen shared checkpoint'):

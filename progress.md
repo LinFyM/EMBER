@@ -8,9 +8,9 @@ strg01启动前data1使用约823.41GiB，软限2048GiB，本批224GiB新增峰�
 完整canonical实现已替换旧Q/PG/54运行面，真实参数事件池、独立多环境slot、配对FM和退出驱动监督器已落地；
 CPU消费者53项通过，结构扫描无新/增长hard violation，3个新模块的owner/复用/退役理由见run root implementation/review.md。
 实际native/profile已完成4064环境steps、0optimizer；持续B16短段41.08steps/s，冷启动实际batch多为1–4，不能外推完整整批。
-FM物理56与112近似等速，峰25.10/40.11GiB，选择56；native64、reader128、经验64、decoder131072按实测选择。
+初次profile的FM物理56与112近似等速，峰25.10/40.11GiB，最初选56；native64、reader128、经验64、decoder131072按实测选择。
 四实际事件/112query的world1完整FM/replay/SUM/clip热态10.44秒，allocated25.01/reserved30.32GiB；变化事件IO、optimizer不在该短测内。
-world2及更大rank因同节点卡转为其他用户高负载未获有效测量，当前选world1不声称最优，也不锁死后续完整checkpoint边界物理迁移。
+初次launch的world2及更大rank因同节点卡转为其他用户高负载未获测量；后续world2/3已取得下述有效实测，不锁死完整checkpoint边界物理迁移。
 原件与负边界见run root profile/report.md、profile_driver_attempts；GPU占用并集0.145815GPUh，所有失败保留。
 clean pushed detached ec81bcd2整批已在普通tmux ember-pcc-20261009-001启动固定MT池0；gpu02:7与gpu01:6在当时通过live准入。
 Owner随后要求核验长时间UTL0及两卡效率。远端中断原件直接显示GPU主线程等待逐观测缓存写入future；
@@ -27,9 +27,18 @@ world4及后续2/6拓扑尝试因其他用户新任务未获准入，保留原�
 原直接根缓存11410个已可重建派生文件退役，实释放45.3518GiB；原metadata审计、所有原始经验/参数/失败/费用及新host shards保留。
 run root analysis/utl_runtime_20261009/retired_cache_manifest.json记录逐文件清单与实际释放。127完整条件不重复采集，仅补17失败。
 小池恢复按剩余条件选择有用worker及slot数，避免空卡加载与一worker先领取全部16；原逻辑条件/预算/RNG/权重不变。
-旧frozen不原地修改，新的clean pushed frozen接续真实环境吞吐尚待核验，不提前称修复成功或固定两卡最优。
+旧frozen不原地修改。clean pushed db53422e恢复的17条件全部完整，两个worker退出0；原127复用，pool0完整144。
+实际7833环境steps，最长224.67秒窗口合计约34.86steps/s；写盘背压仅0.312/0.268秒，各<0.15%墙钟。
+这是注册真实采集，不新增环境profile；前后条件/批量不同，不冒称受控整批加速。所有失败及费用保留。
+随后两次训练准入因其他用户负载/显存变化拒绝，均未启动CUDA/optimizer；不用重采。
+10秒现场测量显示gpu01:6持续0%、空余33727MiB，gpu01:1平均36.4%、gpu02:0/2平均77.5%/70.6%。
+因此training_admission_recovery_002按同一冻结代码继续原批，暂用gpu01:6 world1与实测近等吞吐/较低峰的microbatch28。
+保持逻辑4事件/112query及所有科学合同；gpu01:1只是未来评测候选，并未预占，实际launch仍须两节点准入。
+共享训练已实际通过准入，并连续完成optimizer更新1/2/3，墙钟31.61/30.52/25.63秒，梯度finite/nonzero，完整macro0恢复点已保存。
+每更新真实4事件/112query；startup_health.json保留消费者证据。不称一rank最优或永久上限，后续卡数仍按有用吞吐与资源调整。
+整批唯一退出回执为active_batch.json所指attempt；没有额外正常进度轮询或重复自通知。
 监督器依退出事件接续144池0→fresh180→并行72刷新/train48/formal180→fresh360及全部读出；不重复已完成profile或旧首批训练。
-启动命令/计费/原件为run root batch_launch.json、batch_execution.json、costs.jsonl；唯一launch wrapper整批退出后Steer或无覆盖resume/start唤醒本session。
+原始和所有恢复attempt的启动/退出/失败保留，当前命令/回执由run root active_batch.json索引，累计计费仍为costs.jsonl；唯一launch wrapper整批退出后Steer或无覆盖resume/start唤醒本session。
 安装记录wakeup_installation.json；无需打开页面、无自Queue、没有额外直接等待者。所有权仍在实验session，完整科学消费/Git/整批回报完成后才交回main。
 实测导出的预测为15–34GPUh/8–13h、新增峰145–200GiB，原40/16h/224GiB作为执行计划与监控；完整成本和近全预算失败增长仍有未知。
 
@@ -53,7 +62,7 @@ Owner最新授权已同步current_owner_requirements：上述预算是主讨论�
 必要调整由实验session提供成本/原因/判断价值、主讨论自主取舍；存储不足可按已核实生命周期自主清理并记录释放量，保留原件/关键模型/有效恢复点及当前依赖。
 本增补继续原批，不重复已完成工作或静默更改科学比较、终点候选及停止规则；当前科学整批已按上述冻结代码运行。
 复用原生不同LoRA批量接口，保留一个canonical experience_compiler；独占分支实施、clean pushed detached formal，不原地改旧frozen代码。
-当前科学合同已经登记，新的实现/训练尚未冒称完成。main在本次推送及派发接受前持有tracked/Git；
+当前实现与采集已完成，共享训练实际运行，正式400及整批科学消费尚未完成。main在派发接受前持有tracked/Git；
 接受后由实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占整个实施/运行/Git窗口，main停止tracked写入并承担科学分析。
 派发与真实处理证据保存于.codex/tmp/parameter_conditioned_compiler_delivery_20261009.json；完成/科学边界仅一次可靠回报到当前main01a11b05-3460-7eb0-aca8-177d6d86ef48。
 旧experience_conditioned_compiler首批及下方“正在形成合同/尚未派发”只表示历史时点，不重新激活旧训练。

@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-09：完整130后登记同incoming的一步经验贡献与功能辨识
+
+main直接读完整400、原train参数/events和当前实现；成功实践组MT130→end118，预算耗尽组MT23→end12。
+全局净损23分为J1成功组4、J≥2成功组8和预算组11；不能仅以成功后编辑解释全部不足。
+[main连续分析](analyses/parameter_compiler_fullreadout_20261009.md#7-main消费后的取舍先分开一次编辑的收益与经验的作用)指出旧null在多轮时混入不同incoming，
+[新冻结合同](designs/parameter_edit_credit_diagnostic_20261009.md)固定χ360及train0/13/20/32的8原condition，
+真实最后incoming I、原end E+及同I/V/L的empty-E E0各24条，再读相同自身观测/noise的实际动作及配对FM。
+这项辨识须决定当前E信用/共同编译与保持假说的投入，不是新保持loss、训练方法或性能资格。
+ADSP/SKNC/CV-CSD/DJNFR正反历史及旧T/Long1正证据保留；当前授权/实际派发/结果只看progress，登记不代表已运行。
+
 ## 2026-10-09：冻结χ360完整补充130，Long1改善未抵消整体损失
 
 [完整补充分析](analyses/parameter_compiler_fullreadout_20261009.md)消费原32+新增368的完整correct paired400。

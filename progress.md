@@ -1,3 +1,17 @@
+## 2026-10-09 main接回完整χ360，登记固定真实incoming的一步经验诊断
+
+main已直接消费92cf996e交付的完整130/400、实际train参数/events和当前算子，接回tracked/Git。
+实践成功组MT130→end118，预算停止组MT23→end12；J1净损4不能解释全部净损23。
+现有null递推使用自己的incoming，不能分离当前E的作用；原MT/end也不能分离最后一次编辑和前面累计变化。
+唯一active为[固定真实incoming的一步经验贡献与控制变化](docs/designs/parameter_edit_credit_diagnostic_20261009.md)。
+固定χ360、train0/13/20/32各两原teacher、原state32–34，比较真实最后incoming I、原end E+、相同I/V/L的empty-E输出E0。
+三臂72条，附同自身观测/noise的真实10-flow前5动作、最后实践函数和相同28query FM；无学习、新validation/Test或新选点。
+结果用于选择后继信用/编译修正，不自动增加保持loss、RL、轮数或探针。旧完整分数/停止、Long1正例与历史阴性均保留。
+main分析写入[完整补充报告§7](docs/analyses/parameter_compiler_fullreadout_20261009.md#7-main消费后的取舍先分开一次编辑的收益与经验的作用)、findings§415。
+预计实现1–3小时，科学20–60分钟/1–3GPUh，观察线6GPUh/3小时、新增峰24GiB；现场资源由执行者准入，main自主调整投入。
+登记不冒称启动；实际派发接受后实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占工程/运行/Git，main停止tracked写入。
+独立整批回报后main直接消费、裁决与接续，不等待Owner逐项批准、不重复工程验收。以下全部为历史执行快照。
+
 ## 2026-10-09 χ360完整补充科学消费：130/400，局部晚期学习被其它损失抵消
 
 [完整科学分析](docs/analyses/parameter_compiler_fullreadout_20261009.md)消费原32与新增368，固定原macro360，correct strict paired400完整130。

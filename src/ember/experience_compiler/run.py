@@ -181,6 +181,10 @@ def main():
         torch.set_num_threads(args.cpu_threads)
         torch.backends.cuda.matmul.allow_tf32 = True
         args.output.mkdir(parents=True, exist_ok=True)
+        # A targeted owned-process stack dump distinguishes CPU/IO waits from
+        # CUDA stalls without polling or changing scientific computation.
+        import faulthandler, signal
+        faulthandler.register(signal.SIGUSR1, file=sys.stderr, all_threads=True)
         devices = args.physical_gpus if args.command == 'train' else [args.physical_gpu]
         with cost_interval(args.run_root, args.command + '_process', devices):
             check_budget(args.run_root)

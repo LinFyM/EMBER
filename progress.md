@@ -1,3 +1,16 @@
+## 2026-10-09 main接回科学所有权，登记冻结χ360的完整补充读出
+
+main已核对clean pushed899554fb、原始配对行、实际事件/损失与模型算子，接回tracked/Git窗口。
+原χ180科学停止保留；χ360已完成的Long1 20/32对χ1806/MT16，构成重新审视晚期学习的具体依据。
+唯一active为[冻结χ360完整补充读出](docs/designs/parameter_compiler_fullreadout_20261009.md)：
+只补原368个未执行condition、复用原32行，形成同一冻结终点的完整paired400；无新训练、其它checkpoint或held controls。
+这是事后明确登记的开发补充，不倒写原停止，也不因局部高点宣称方法通过。完整结果将区分总体学习与局部能力交换。
+实际keep梯度只是同query FM梯度的1/1.2倍加权；并没有新增独立的incoming行为保持方向。该结构事实与J1/训练损失一起约束后继信用解释。
+同时发现单slot H保存仍持有整批底层storage；只交执行者做物理保存窄修复，不用它解释127科学阴性。
+预计计算45–120分钟/2–4GPUh，观察线8GPUh/4h，新增峰220GiB；现场quota/实际增长及共享GPU准入由执行者核验，main自主调整投入。
+本次提交/派发接受前main持tracked；接受后实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占工程/执行/Git，main只读分析。
+实际承接/启动另以派发与launch原件记录；此登记不冒称补充已运行或完成。以下为原批封口与历史。
+
 ## 2026-10-09 parameter compiler科学封口：180触发预注册停止，保留已发生360正负证据
 
 完整[科学分析](docs/analyses/parameter_conditioned_compiler_20261009.md)已直接消费源码、实际事件、原始配对行、训练与费用。

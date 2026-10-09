@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-09：main保留原停止，因晚期局部正证据登记χ360完整补充
+
+main从899554fb接回所有权并直接读原始行/实际经历/credit与模型算子；原180127科学停止及全部成本不改。
+360既定终点已完整训练，Long1已发生32行20成功对1806/MT16；这不足以证明整体，但也不能被早期阴性覆盖。
+[新补充合同](designs/parameter_compiler_fullreadout_20261009.md)仅补368、复用32，完整同checkpoint paired400，无训练或新选择。
+这项适应性开发决策明确登记，完整结果尚未知；不是静默取消旧停止或以局部分数宣布稳定能力。
+main另确认keep只将同query FM梯度加权1/1.2，不直接保持incoming动作；实际H的整批storage被单slot保存也放大I/O，
+后者交执行者修复物理保存，不作为科学阴性借口。后继学习改动仍须由实际缺口和完整正反历史连续推导。
+
 ## 2026-10-09：实际参数编辑器180严重非通过，完整共享训练与已发生360证据
 
 [完整分析](analyses/parameter_conditioned_compiler_20261009.md)直接消费144池0、180/360训练、72刷新、两个train48及180 strict paired400；原件根parameter_conditioned_compiler_20261009。

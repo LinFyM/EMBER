@@ -1,18 +1,21 @@
-"""Shared Read/Encode/I/U for complete, experience-conditioned LoRA compilation.
+"""Shared actual-parameter and experience-conditioned complete LoRA editing.
 
-Only raw teacher/native-execution evidence stops gradient. Every learned read,
-experience encoding and parameter-state revision remains on the shared graph.
+Raw teacher/execution evidence and incoming behavior factors stop gradient.
+Learned parameter/evidence encoding, teaching reads and edits share one graph.
 The runtime owns evidence provenance, interaction budgets and stopping; this
 module has no prescribed number of practices or teaching reads.
 """
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
+
+from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
 
 WIDTH, RANK = 256, 128
 TEACHER_KEYS = {"phi", "hidden", "language", "indices"}
@@ -161,7 +164,7 @@ class ExperienceEncoder(nn.Module):
 
 
 class TeachingReader(nn.Module):
-    """Experience/current-Q queries precede the eight-slot spatial compression."""
+    """Actual-parameter/experience queries precede eight-slot spatial compression."""
 
     def __init__(self, chunk: int) -> None:
         super().__init__()
@@ -188,7 +191,7 @@ class TeachingReader(nn.Module):
         return queries + self.spatial(queries, memory)
 
     def forward(self, teacher: dict[str, torch.Tensor], facts: torch.Tensor,
-                q: torch.Tensor | None = None) -> torch.Tensor:
+                q: torch.Tensor) -> torch.Tensor:
         if set(teacher) != TEACHER_KEYS:
             raise ValueError("teacher input is only Phi, full hidden, exact language and real frame indices")
         count = teacher["phi"].shape[0]
@@ -203,8 +206,7 @@ class TeachingReader(nn.Module):
         language = self.language(teacher["language"].detach().to(device=device, dtype=dtype))
         queries = self.spatial_queries + language
         queries = queries + self.experience_read(queries[None], facts[None])[0]
-        if q is not None:
-            queries = queries + self.state_read(queries[None], q.reshape(1, -1, WIDTH))[0]
+        queries = queries + self.state_read(queries[None], q.reshape(1, -1, WIDTH))[0]
         # Both boundaries are represented even when a video has one actual frame.
         ordinal = torch.arange(count, device=device)
         boundaries = torch.stack((ordinal == 0, ordinal == count - 1), -1).to(dtype)
@@ -219,8 +221,52 @@ class TeachingReader(nn.Module):
         return torch.cat((language[None], tokens[0]), 0)
 
 
+class ParameterEncoder(nn.Module):
+    """Encode actual A rows/B columns, sharing projections only within each role."""
+
+    def __init__(self, mt_state: Mapping[str, torch.Tensor], target_names) -> None:
+        super().__init__()
+        self.keys = tuple((name + LORA_A_SUFFIX, name + LORA_B_SUFFIX) for name in target_names)
+        self.shapes, widths, scales = {}, (set(), set()), []
+        for keys in self.keys:
+            for role, key in enumerate(keys):
+                matrix = mt_state[key]
+                rank_axis, width_axis = (0, 1) if role == 0 else (1, 0)
+                if (matrix.ndim != 2 or not matrix.is_floating_point()
+                        or matrix.shape[rank_axis] != RANK or matrix.shape[width_axis] < 1):
+                    raise ValueError(f"actual A/B factors require rank128 and positive width: {key}")
+                self.shapes[key] = tuple(matrix.shape)
+                widths[role].add(matrix.shape[width_axis])
+                scales.append(matrix.detach().to(device="cpu", dtype=torch.float32)
+                              .square().mean().sqrt().clamp_min(1e-6))
+        self.a = nn.ModuleDict({str(width): nn.Linear(width, 128) for width in sorted(widths[0])})
+        self.b = nn.ModuleDict({str(width): nn.Linear(width, 128) for width in sorted(widths[1])})
+        self.target_identity = nn.Parameter(torch.randn(len(self.keys), WIDTH) * 0.02)
+        self.rank_identity = nn.Parameter(torch.randn(RANK, WIDTH) * 0.02)
+        self.norm = nn.LayerNorm(WIDTH)
+        self.register_buffer("rms", torch.stack(scales).reshape(len(self.keys), 2))
+
+    def forward(self, incoming: Mapping[str, torch.Tensor]) -> torch.Tensor:
+        if set(incoming) != self.shapes.keys():
+            raise ValueError("incoming state must contain exactly the complete registered A/B factors")
+        device, dtype = self.target_identity.device, self.target_identity.dtype
+        tokens = []
+        for target, keys in enumerate(self.keys):
+            roles = []
+            for role, key in enumerate(keys):
+                matrix = incoming[key]
+                if tuple(matrix.shape) != self.shapes[key] or not matrix.is_floating_point():
+                    raise ValueError(f"incoming factor changed its actual registered A/B shape: {key}")
+                rows = matrix.detach().to(device=device, dtype=dtype)
+                rows = (rows if role == 0 else rows.T) / self.rms[target, role]
+                projection = (self.a if role == 0 else self.b)[str(rows.shape[1])]
+                roles.append(projection(rows))
+            tokens.append(torch.cat(roles, -1))
+        return self.norm(torch.stack(tokens) + self.target_identity[:, None] + self.rank_identity[None])
+
+
 class ExperienceCompiler(nn.Module):
-    """Condition-local Q, shared forward revision, one complete rank128 decoder."""
+    """Stateless shared editor: actual complete A/B plus teaching and real facts."""
 
     def __init__(self, mt_state: dict[str, torch.Tensor], target_names,
                  seed: int = 20261009, decoder_chunk: int = 4096, *,
@@ -237,33 +283,23 @@ class ExperienceCompiler(nn.Module):
         with torch.random.fork_rng(devices=[]), torch.device("cpu"):
             torch.random.default_generator.manual_seed(seed)
             self.reader, self.encoder = TeachingReader(frame_chunk), ExperienceEncoder(experience_chunk)
-            self.target_identity = nn.Parameter(torch.randn(len(self.target_names), WIDTH) * 0.02)
-            self.rank_identity = nn.Parameter(torch.randn(RANK, WIDTH) * 0.02)
-            self.initializer = nn.ModuleList(AxialBlock() for _ in range(4))
-            self.updater = nn.ModuleList(AxialBlock() for _ in range(2))
+            self.parameter_encoder = ParameterEncoder(mt_state, self.target_names)
+            self.editor = nn.ModuleList(AxialBlock() for _ in range(2))
             self.update_gate, self.update_out = nn.Linear(WIDTH, WIDTH), nn.Linear(WIDTH, WIDTH)
             nn.init.constant_(self.update_gate.bias, -2.0)
             nn.init.zeros_(self.update_out.weight)
             nn.init.zeros_(self.update_out.bias)
             self.decoder = CoordinateDecoder(mt_state, self.target_names, seed=seed, chunk_rows=decoder_chunk)
 
-    def initial(self, teacher: dict[str, torch.Tensor]) -> torch.Tensor:
-        memory = self.reader(teacher, self.encoder({}))
-        q = self.target_identity[:, None] + self.rank_identity[None]
-        for block in self.initializer:
-            q = recompute(block, q, memory)
-        return q
-
-    def revise(self, q: torch.Tensor, teacher: dict[str, torch.Tensor],
-               experience: dict[str, torch.Tensor]) -> torch.Tensor:
-        if q.shape != (len(self.target_names), RANK, WIDTH):
-            raise ValueError("parameter state must retain all target/rank coordinates")
+    def delta(self, incoming_state: Mapping[str, torch.Tensor], teacher: dict[str, torch.Tensor],
+              experience: dict[str, torch.Tensor]) -> torch.Tensor:
+        q = self.parameter_encoder(incoming_state)
         facts = self.encoder(experience)
         memory = torch.cat((self.reader(teacher, facts, q), facts), 0)
-        revision = q
-        for block in self.updater:
-            revision = recompute(block, revision, memory)
-        return q + torch.sigmoid(self.update_gate(revision)) * self.update_out(revision)
+        for block in self.editor:
+            q = recompute(block, q, memory)
+        return torch.sigmoid(self.update_gate(q)) * self.update_out(q)
 
-    def decode(self, q: torch.Tensor) -> dict[str, torch.Tensor]:
-        return self.decoder(q)
+    def forward(self, incoming_state: Mapping[str, torch.Tensor], teacher: dict[str, torch.Tensor],
+                experience: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+        return self.decoder(incoming_state, self.delta(incoming_state, teacher, experience))

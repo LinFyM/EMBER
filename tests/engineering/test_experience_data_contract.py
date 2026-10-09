@@ -6,10 +6,10 @@ from itertools import islice
 
 import pytest
 import torch
+import numpy as np
 
 from ember.experience_compiler import contract
-from ember.experience_compiler.data import QueryData
-from ember.experience_compiler.profile import event_queries
+from ember.experience_compiler.data import Event, QueryData
 from ember.pi05_processing import Pi05LiberoProcessor
 from ember.pi05_source_checkpoint import read_json
 from ember.writer.data import RawTeacherVideoStore
@@ -26,7 +26,11 @@ def event(tasks):
     condition = dict(task_id=0, teacher_demo=29, position=0, condition_id="query-contract",
         endpoint=15, original_incoming="MT", source_record="/not-opened/record.json",
         behavior_version="original-bootstrap")
-    return event_queries(SimpleNamespace(tasks=tasks), condition)
+    data = object.__new__(QueryData)
+    data.tasks = tasks
+    queries = data.query_coordinates(0, 29, np.random.default_rng(contract.SEED))
+    return Event(0, 0, 0, 29, queries, False, contract.SEED, 'query-contract',
+                 'metadata_fixture', 15, 'MT', '/not-opened', 'original-bootstrap')
 
 
 def test_cross_episode_queries_preserve_seven_demos_and_four_time_intervals(tasks, event):

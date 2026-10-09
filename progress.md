@@ -9,6 +9,7 @@
 结构自审：sampling只拥有世界大小无关的task/层/条件/endpoint/query袋；training只拥有实际消费者、SUM信用、更新与完整checkpoint；
 collection只拥有实际φ180刷新原件与manifest；evaluation只拥有原显式面板/配对聚合，复用既有queue/Runner/native/Runtime与保存。
 退役已消费的profile.py及FM2/PG1旧入口，证据由2c1f7e8e/Git及旧ROOT保留，当前只有同一experience_compiler正式运行面；
+未被实际消费者引用的panel_contract/formal400_mapping/query_seed旧元数据重建路径同时退役；原显式面板由evaluation唯一持有与验证。
 新增正式consumer测试与原有五个Compiler测试归入tests/engineering/experience_compiler，避免继续增加拥挤engineering根目录peer；
 有界采样、checkpoint、身份/scene/RNG配对合同是本批新增职责，净source增长及测试增长不以拆出第二运行栈消解。
 已有learning中的完整FM/keep/真实PG能力继续共用，当前合同没有调用PG。新模块不复制Writer、仿真或缓存层，必要恢复/身份校验保持凝聚。

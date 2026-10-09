@@ -1,6 +1,5 @@
 """Real metadata and CPU queries for fixed36/held-label separation."""
 from collections import Counter
-from types import SimpleNamespace
 from dataclasses import replace
 from itertools import islice
 
@@ -23,9 +22,6 @@ def tasks():
 @pytest.fixture(scope="module")
 def event(tasks):
     # This is a sampler-facing descriptor, without invented practice evidence.
-    condition = dict(task_id=0, teacher_demo=29, position=0, condition_id="query-contract",
-        endpoint=15, original_incoming="MT", source_record="/not-opened/record.json",
-        behavior_version="original-bootstrap")
     data = object.__new__(QueryData)
     data.tasks = tasks
     queries = data.query_coordinates(0, 29, np.random.default_rng(contract.SEED))
@@ -52,21 +48,6 @@ def test_state_stream_is_disjoint_deterministic_and_not_capped_by_pool(event):
     assert not set(first) & set(excluded)
     assert set(first[:count]) == set(range(50)) - set(excluded)
     assert set(first[count:2 * count]) == set(first[:count])
-
-
-def test_panel_uses_original_manifest_order_and_formal400_matches_original(tasks):
-    panel = contract.panel_contract(tasks)
-    assert panel["task_ids"] == [0, 1, 12, 13, 20, 21, 32, 34]
-    assert len(panel["conditions"]) == 16 and panel["final_state_ids"] == [32, 33, 34]
-    reversed_order = contract.panel_contract(dict(reversed(tuple(tasks.items()))))
-    assert reversed_order == panel
-    rows = contract.formal400_mapping()
-    assert len(rows) == 400 and len({row["condition_id"] for row in rows}) == 400
-    assert {row["video_schedule_seed"] for row in rows} == {7}
-    for task_id in (3, 6, 11, 16, 23, 26, 31, 39):
-        subset = [row for row in rows if row["task_id"] == task_id]
-        assert {row["teacher_demo"] for row in subset} == set(range(50))
-        assert {row["init_state_id"] for row in subset} == set(range(50))
 
 
 def test_environment_metadata_restores_full50_without_old_scene_or_launch_fields():

@@ -41,6 +41,18 @@ class QueryData:
             demo_indices=tuple(range(50)), action_chunk_size=50, action_start_offset=1)
         self.rows = self.queries.task_episode_rows
 
+    def query_coordinates(self, task_id, teacher_demo, rng):
+        """Seven other episodes, one native query in each of four intervals."""
+        task = self.tasks[task_id]
+        demos = rng.choice([d for d in range(50) if d != teacher_demo], 7, replace=False)
+        rows = []
+        for demo in demos:
+            length = int(task.episode_lengths[int(demo)]) - 1
+            for interval in range(4):
+                low, high = length * interval // 4, length * (interval + 1) // 4
+                rows.append((int(demo), int(rng.integers(low, high))))
+        return tuple(rows)
+
     def raw_query_batch(self, event):
         demos = [demo for demo, _ in event.queries28]
         if (event.task_id not in self.tasks or len(demos) != 28 or len(set(demos)) != 7

@@ -4,6 +4,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing, contextmanager
 import fcntl
+import json
 from pathlib import Path
 import sqlite3
 import time
@@ -170,6 +171,13 @@ def save_condition(destination, condition, chain, *, fixed_behavior=False):
         actual_incoming_parameters=True, metrics=chain.metrics, complete=True,
         serialization_seconds=time.monotonic() - started)
     write_json_atomic(destination / 'record.json', record)
+    sizes = [path.stat() for path in destination.iterdir() if path.is_file()]
+    # A save event provides actual growth/health evidence without polling the
+    # queue, model or shared cache during a normal long run.
+    print('EMBER_ARTIFACT ' + json.dumps(dict(condition_id=condition['condition_id'],
+        path=str(destination.resolve()), bytes=sum(s.st_size for s in sizes),
+        allocated_bytes=sum(s.st_blocks * 512 for s in sizes),
+        environment_steps=chain.metrics.get('environment_steps'), recorded_unix=time.time())), flush=True)
     return record
 
 

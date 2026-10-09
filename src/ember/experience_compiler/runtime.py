@@ -210,20 +210,22 @@ class Runtime:
             [self.compiler.precondition(credit) for credit in credits], microbatch=chunk)
         jvp_seconds = time.monotonic() - started
         started = time.monotonic()
-        results, cursor = [], 0
+        results, scales, cursor = [], [], 0
         for item, count in zip(items, counts, strict=True):
             qbar = -tangent[cursor:cursor + count] / count
             with torch.enable_grad(), autocast(self.device):
                 context = self._context(item)
                 q = self.compiler.action_cotangent(context, item['support']['actions'], create_graph=True)
                 torch.autograd.backward(q, qbar.to(q))
+            scales.append(dict(q_RMS=float(q.detach().float().square().mean().sqrt()),
+                               qbar_RMS=float(qbar.float().square().mean().sqrt())))
             results.append(qbar.detach())
             cursor += count
         if hasattr(self, 'profile_root'):
             torch.cuda.synchronize(self.device)
         self.last_adjoint_cost = dict(native_JVP_seconds=jvp_seconds,
             shared_context_energy_backward_seconds=time.monotonic() - started,
-            group_event_count=len(items), event_support_counts=counts)
+            group_event_count=len(items), event_support_counts=counts, event_pressure_scales=scales)
         return results
 
     @torch.no_grad()

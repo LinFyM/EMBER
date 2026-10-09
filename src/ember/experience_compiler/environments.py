@@ -160,9 +160,12 @@ class EnvironmentSlots:
             index = self.pipes.index(pipe)
             try:
                 result = pipe.recv()
-            except EOFError:
+            except (EOFError, ConnectionResetError):
                 result = dict(error='environment process exited without an operation receipt',
-                              confirmed_environment_steps=0)
+                              confirmed_environment_steps=0,
+                              pending_operation=self.pending[index],
+                              process_exitcode=self.processes[index].exitcode,
+                              operation_steps_unknown=True)
             self.pending.pop(index)
             if 'raw' in result:
                 result['raw'] = {k: torch.from_numpy(v) for k, v in result['raw'].items()}
@@ -176,7 +179,7 @@ class EnvironmentSlots:
         for pipe, process in zip(self.pipes, self.processes, strict=True):
             try:
                 pipe.send(dict(kind='close'))
-            except (BrokenPipeError, EOFError):
+            except (BrokenPipeError, EOFError, ConnectionResetError):
                 pass
             process.join(timeout=20)
             if process.is_alive():

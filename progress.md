@@ -1,3 +1,17 @@
+## 2026-10-10 实验session实施完整功能修订，启动有界实际消费者实测
+
+实验session01a11a0a-fd39-74b1-83ba-001ede5330df已承接f11cc774；独占codex/functional-revision-20261010，main保持只读。
+canonical experience_compiler已替换raw参数/rank/chunk decoder，复用真实Reader、Runner、persistent环境和不同完整LoRA执行。
+完整76因子十步VJP/JVP、跨episode FM、成功自身函数keep与独立RNG Gaussian score消费者均已实现；旧已消费运行入口由Git/原件保留。
+原45项相关CPU检查通过，跨条件支撑M均值/信用更新后的24项检查通过；实际native链与学习事实以ROOT回执为准。
+从clean pushed detached 0791d711启动数值核验和同版本profile；单张gpu02:0现场可用45,845MiB，项目占用0→1，按6卡/单节点限制准入。
+strg01 data1用量1,260,496,480KiB/2,147,483,648KiB，新增峰计划40GiB；共享容量另核，全部新增data1，不复制大资产。
+四原condition直接引用实际incoming/E，新query均为state0/1，剔除原全部实践与32–34；最多FM2/PG1、16新episodes/5440steps。
+原5cafacab native伴随误差0.226%，checkpoint方向一致；BF16有限差分误差2.36仍须数值核验，不把它当生产梯度或已定位原因。
+实际profile扩大跨条件support/native物理batch4/8/16/32/64和112条FM的28/56/112物理batch，按真实吞吐和显存选点，M/任务权重不变。
+ROOT=/data1/user/ymdai/ember_runs/functional_revision_compiler_20261010；一次tmux退出事件持续等待，不叠加自通知/Queue/心跳。
+当前授权只覆盖完整实现和有界实测，没有正式长训/held/Test；main完整消费真实成本后登记后继。下方均为历史派发/安排。
+
 ## 2026-10-10 main消费诊断，登记自身功能修订Compiler的实施与实测
 
 main已接回clean pushed c60882e1，直接核对72行/576十步/672FM的原件、代表性双相机行为和相关完整历史；不重复工程验收。

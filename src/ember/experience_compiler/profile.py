@@ -365,7 +365,7 @@ def profile(runtime, contract, args):
             row, consumer = measure(runtime, f'real_PG_keep_shared_micro{chunk}', lambda:
                 reinforcement_backward(runtime, prepared, episodes, microbatch=chunk,
                                        revision_microbatch=physical['adjoint_microbatch']))
-            pg_rows.append(dict(row, microbatch=chunk))
+            pg_rows.append(dict(row, microbatch=chunk, adjoint=dict(runtime.last_adjoint_cost)))
             if consumer is not None:
                 chosen = consumer
             if not row['valid']:
@@ -380,7 +380,8 @@ def profile(runtime, contract, args):
         step = finish_update(runtime, optimizer, scheduler)
         _save_stage(runtime, optimizer, scheduler, 2, 'reinforcement_complete')
         append_jsonl(root / 'updates.jsonl', dict(stage='PG', update=1, consumer=consumer,
-            step=step, measurement=row, compile=compiled, physical_profiles=pg_rows))
+            step=step, measurement=row, compile=compiled, physical_profiles=pg_rows,
+            adjoint=dict(runtime.last_adjoint_cost)))
         return dict(FM_updates=2, PG_updates=1, disposable=True, query=query,
                     physical=physical, PG_physical=pg_rows, no_formal_learning=True)
     finally:

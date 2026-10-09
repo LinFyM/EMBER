@@ -123,6 +123,8 @@ def fake_runtime(monkeypatch):
                       evidence.get('feedback', torch.empty(0, 4)).clone()))
         return {'factor': incoming['factor'] + 1}
     runtime.edit = edit
+    runtime.edit_many = lambda items: [edit(item['incoming'], item['teacher'],
+        item['experience'], support=item['support']) for item in items]
     monkeypatch.setattr(interaction, 'processed', lambda *args: {'input': torch.ones(1, 1)})
     monkeypatch.setattr(interaction, 'EnvironmentSlots', FakeSlots)
     monkeypatch.setattr(interaction, 'NativeVelocity', Velocity)
@@ -331,3 +333,43 @@ def test_batched_different_conditions_keep_their_own_support_mean(monkeypatch):
         torch.testing.assert_close(state['weight'], value)
     assert [len(item['support']['actions']) for item in items] == [2, 3]
     assert runtime.last_revision_cost['event_support_counts'] == [2, 3]
+
+
+def test_ready_episode_edits_batch_without_freezing_before_own_success(monkeypatch):
+    runtime, _, edits, _ = fake_runtime(monkeypatch)
+    groups, original = [], runtime.edit_many
+    def edit_many(items):
+        groups.append(len(items))
+        return original(items)
+    runtime.edit_many = edit_many
+    runner = interaction.Runner(runtime, {}, 0, slot_batch=2)
+    try:
+        results = list(runner.run([request(0), request(0)]))
+        assert groups == [2]
+        assert len(results) == 2 and len(edits) == 2
+        assert all(result['chain'].states[-1]['factor'] == 11 for result in results)
+        assert all(result['chain'].metrics['actual_J'] == 1 for result in results)
+        assert all(result['chain'].records[-1]['feedback'][1] == 1 for result in results)
+    finally:
+        runner.close()
+
+
+def test_failed_environment_pipe_reports_pending_operation_and_can_close(monkeypatch):
+    from ember.experience_compiler import environments
+    class Pipe:
+        def recv(self):
+            raise ConnectionResetError('child exited during startup')
+        def send(self, message):
+            raise ConnectionResetError('child exited during startup')
+        def close(self):
+            self.closed = True
+    pipe = Pipe()
+    actor = SimpleNamespace(exitcode=1, join=lambda **kwargs: None, is_alive=lambda: False)
+    slots = environments.EnvironmentSlots.__new__(environments.EnvironmentSlots)
+    slots.pipes, slots.processes, slots.pending = [pipe], [actor], {0: 'start'}
+    monkeypatch.setattr(environments, 'wait', lambda connections, **kwargs: connections)
+    row = slots.receive(block=True)[0][1]
+    assert row['pending_operation'] == 'start' and row['process_exitcode'] == 1
+    assert row['operation_steps_unknown'] and not slots.pending
+    slots.close()
+    assert pipe.closed

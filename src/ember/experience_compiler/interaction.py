@@ -247,47 +247,63 @@ class Runner:
             return 'MT'
         return f"{slot.request['behavior_version']}:lambda{len(slot.chain.states) - 1:03d}"
 
-    def _finish_episode(self, index, slot, row):
-        kind = slot.request['kind']
-        if kind == 'final':
-            row['physical_slot_batch'] = self.slot_batch
-            row['policy_seed_root'] = slot.noise_root
-            result = dict(request=slot.request, row=row)
-            if slot.request.get('capture'):
-                result.update(trajectory=slot.trajectory, terminal_raw=slot.raw,
-                              total_replans=slot.total_replans)
-            return result
-        chain = slot.chain
-        previous_endpoint = chain.endpoints[-1] if chain.endpoints else 0
-        chain.episodes.append(row)
-        if len(chain.records) > previous_endpoint:
-            chain.behavior_versions.append(self._behavior(slot))
-            chain.endpoints.append(len(chain.records))
-            if kind == 'adapt':
-                # Even own success enters editing before stopping/freezing.
-                tick = time.monotonic()
-                teacher = slot.request.get('teacher')
-                if teacher is None:
-                    condition = slot.request['condition']
-                    teacher = self.runtime.teacher(condition['task_id'], condition['teacher_demo'],
-                                                   slot.request.get('role', 'train'))
-                    cost = self.runtime.last_teacher_cost
-                    slot.native_cost['seconds'] += cost.get('native_encoder_seconds', 0.)
-                    slot.native_cost['frames'] += cost.get('native_encoded_frames', 0)
-                    slot.native_cost['cache_hits'] += int(cost.get('cache_hit', False))
-                slot.teacher_frames = len(teacher['indices'])
-                evidence = {} if slot.request.get('masked', False) else chain.experience(len(chain.records))
-                support = chain.support(self.runtime, slot.request['task']['language'])
-                slot.current = self.runtime.edit(slot.current, teacher, evidence, support=support)
-                chain.states.append(cpu_state(slot.current))
-                seconds = time.monotonic() - tick
-                slot.edit_seconds += seconds
-                self.components['edit_seconds'] += seconds
-        if row['success'] or slot.remaining == 0:
-            self._metrics(slot, row['success'])
-            return dict(request=slot.request, chain=chain)
-        self._start(index, slot)
-        return None
+    def _edit_episodes(self, editing):
+        """Batch ended conditions without changing any condition's edit point."""
+        started, items = time.monotonic(), []
+        for slot in editing:
+            teacher = slot.request.get('teacher')
+            if teacher is None:
+                condition = slot.request['condition']
+                teacher = self.runtime.teacher(condition['task_id'], condition['teacher_demo'],
+                                               slot.request.get('role', 'train'))
+                cost = self.runtime.last_teacher_cost
+                slot.native_cost['seconds'] += cost.get('native_encoder_seconds', 0.)
+                slot.native_cost['frames'] += cost.get('native_encoded_frames', 0)
+                slot.native_cost['cache_hits'] += int(cost.get('cache_hit', False))
+            slot.teacher_frames = len(teacher['indices'])
+            chain = slot.chain
+            evidence = {} if slot.request.get('masked', False) else chain.experience(len(chain.records))
+            items.append(dict(incoming=slot.current, teacher=teacher, experience=evidence,
+                support=chain.support(self.runtime, slot.request['task']['language'])))
+        outgoing = self.runtime.edit_many(items)
+        seconds = time.monotonic() - started
+        self.components['edit_seconds'] += seconds
+        for slot, state in zip(editing, outgoing, strict=True):
+            slot.current = state
+            slot.chain.states.append(cpu_state(state))
+            slot.edit_seconds += seconds  # Per-condition latency; group compute counted once above.
+
+    def _finish_episodes(self, slots, ended):
+        editing = []
+        for index, row in ended:
+            slot = slots[index]
+            if slot.request['kind'] == 'final':
+                continue
+            chain = slot.chain
+            previous_endpoint = chain.endpoints[-1] if chain.endpoints else 0
+            chain.episodes.append(row)
+            if len(chain.records) > previous_endpoint:
+                chain.behavior_versions.append(self._behavior(slot))
+                chain.endpoints.append(len(chain.records))
+                if slot.request['kind'] == 'adapt':
+                    editing.append(slot)
+        # Own successful facts are edited before any stopping/freezing decision.
+        if editing:
+            self._edit_episodes(editing)
+        for index, row in ended:
+            slot = slots[index]
+            if slot.request['kind'] == 'final':
+                row.update(physical_slot_batch=self.slot_batch, policy_seed_root=slot.noise_root)
+                result = dict(request=slot.request, row=row)
+                if slot.request.get('capture'):
+                    result.update(trajectory=slot.trajectory, terminal_raw=slot.raw,
+                                  total_replans=slot.total_replans)
+                yield index, result
+            elif row['success'] or slot.remaining == 0:
+                self._metrics(slot, row['success'])
+                yield index, dict(request=slot.request, chain=slot.chain)
+            else:
+                self._start(index, slot)
 
     def _metrics(self, slot, success):
         chain, request = slot.chain, slot.request
@@ -395,19 +411,13 @@ class Runner:
                 break
             ready = [i for i, s in slots.items() if s.ready]
             ended = self._responses(slots, block=not ready)
-            for index, row in ended:
-                output = self._finish_episode(index, slots[index], row)
-                if output is not None:
-                    del slots[index]
-                    yield output
-            # A five-action CPU cohort finishes independently of condition
-            # endings; gather its replies before launching the next GPU batch.
+            # Gather the completed CPU cohort before compiling its independent
+            # conditions together; no slot receives another slot's evidence.
             while any(kind == 'step' for kind in self.environments.pending.values()):
-                for index, row in self._responses(slots, block=True):
-                    output = self._finish_episode(index, slots[index], row)
-                    if output is not None:
-                        del slots[index]
-                        yield output
+                ended.extend(self._responses(slots, block=True))
+            for index, output in self._finish_episodes(slots, ended):
+                del slots[index]
+                yield output
             ready = [i for i, s in slots.items() if s.ready]
             if ready:
                 self._infer(slots, ready)

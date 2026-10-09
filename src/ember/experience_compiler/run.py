@@ -109,6 +109,11 @@ def main(argv=None):
     runtime, failed = None, None
     try:
         contract = read_json(args.run_root / 'run_contract.json')
+        if args.command == 'profile':
+            from ember.pi05_assets import prepare_libero_config
+            os.environ.update(EMBER_LIBERO_ASSETS_ROOT=contract['environment_contract']['libero_paths']['assets'],
+                MUJOCO_GL='egl', PYOPENGL_PLATFORM='egl', MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu))
+            prepare_libero_config(args.run_root / 'libero_config')
         runtime = Runtime(ASSET_ROOT, 'cuda:0', frame_chunk=args.frame_chunk,
             experience_chunk=args.experience_chunk, native_frame_chunk=args.native_frame_chunk,
             cache_root=args.run_root / 'frozen_features', support_microbatch=args.support_microbatch)

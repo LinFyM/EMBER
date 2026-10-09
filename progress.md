@@ -1,3 +1,20 @@
+## 2026-10-10 main消费诊断，登记自身功能修订Compiler的实施与实测
+
+main已接回clean pushed c60882e1，直接核对72行/576十步/672FM的原件、代表性双相机行为和相关完整历史；不重复工程验收。
+经验有正负控制作用，7/8条件专家FM均值改善仍不足以判断真实修订收益；小E数值改动与旧/新6条翻转的稳定性边界保留。
+Owner最新认可并要求持续采用实际问题→数学推导→完整架构/训练→实现/有界验证，整体框架可撤换；已写入稳定要求与concept。
+唯一active：[自身功能修订Compiler](docs/designs/functional_revision_compiler_20261010.md)，完整候选尚无性能证据。
+撤换raw参数编码/rank编辑/chunk decoder，以自身观测上的真实十步响应F和学习能量C产生`Λout=Λin−P Jᵀq`；
+保留有序教学/真实经验、冻结source与唯一完整rank128。共享FM及独立真实回报信用、成功自身函数软保持均在合同中明确。
+旧PPW/local field与保持/RL阴性限制支持度；不宣称换成梯度即可解决，也不把新condition变成动作轨迹拟合。
+
+当前执行范围只有完整实现及四个合法原condition的真实导数/信用/profile：FM≤2/PG≤1更新、最多16 query episodes/5440steps，
+不采新适应、不读held/Test、不启动正式长训。正式学习规模由真实VJP/JVP/PG吞吐决定，再由main自主登记接续，不待Owner许可。
+预计实现3–6小时，计算30–90分钟；观察线2GPUh/3小时、新增峰40GiB，资源准入由执行者live核验。
+新ROOT=/data1/user/ymdai/ember_runs/functional_revision_compiler_20261010；登记不代表已经启动。
+本次文档提交/派发前main持tracked；实验session01a11a0a-fd39-74b1-83ba-001ede5330df实际接受后独占工程/Git/运行，main只读。
+完整一次回报后main按真实成本冻结正式学习批次并继续，主讨论不重复工程测试。以下均为历史结果/安排。
+
 ## 2026-10-10 固定incoming诊断完整消费：三臂同为13/24，经验与编辑均有得失
 
 [完整科学报告](docs/analyses/parameter_edit_credit_diagnostic_20261009.md)已消费8个原最后incoming、原E+及新E0，

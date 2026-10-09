@@ -1,3 +1,15 @@
+## 2026-10-10 当前目标：实现从自身功能修订到完整LoRA的共享Compiler
+
+最终目标不变：合法视频与自身实践形成唯一固定LoRA，获得超过强MT的完整新初态能力，随后建立视频增量和稳定性证据。
+main已消费固定incoming诊断及原件：保留经验的Goal/Long正例与Spatial/Object/Long损失，拒绝由同分或小动作差一概删E。
+沿Owner最新认可的推导方式，采用[完整功能修订候选](docs/designs/functional_revision_compiler_20261010.md)：
+实际自身F十步响应→学习的局部准则→真实Jacobian回写全部A/B；共享监督和修订后新初态回报分别承担学习职责。
+当前实施完整接口及有界实际消费者/profile，先补齐真实十步VJP/JVP/PG的吞吐和内存事实，不能以无梯度速度推算正式训练。
+四个明确non-held原condition、最多3个可丢弃更新/16新query episodes，无新适应或held/Test；2GPUh/3小时、峰40GiB。
+代码由实验session独占实现、测试、冻结运行、Git集成和一次完整回报；main按实测成本登记正式训练/刷新与400节点并接续。
+这是成本受控的完整方法实施，不是靠内部指标逐模块自动晋级；数学自洽不当可学性，旧PPW/local field/保持/RL阴性不清零。
+登记/派发/实际启动按progress及回执区分，以下均为历史目标与执行。
+
 ## 2026-10-10 当前接续：固定incoming诊断已完成，main据正反行为推导后继
 
 [唯一诊断合同](docs/designs/parameter_edit_credit_diagnostic_20261009.md)的8新E0、72闭环、576十步及672 FM均已完整计算与消费。

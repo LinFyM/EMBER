@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-10：main据实际修订得失选择功能准则与真实policy导数的完整候选
+
+Owner认可从实际问题、数学依据到完整架构/训练/实现的推进方式，明确整体框架可撤换；稳定要求已记录。
+main消费c60882e1的原始成功集合、同观测函数、FM及代表性双相机行为：Goal可获益，Spatial放置与Long后段可受损，
+Object同失败仍会改变所操作目标。有限经验作用不能等同净正学习，专家FM改善不能保证完整修订有效。
+最近似PPW/local field的导数写入阴性与T/Long1正例一并继承，不由公式自然推断方法优势。
+[完整后继](designs/functional_revision_compiler_20261010.md)撤换raw A/B坐标生成，以当前LoRA自身真实十步响应和学习准则产生完整参数修订；
+共享FM、独立新初态回报和真实函数软保持的消费者分开明确。有限支撑的迁移、回报稀疏与视频学习仍待实证。
+当前只授权完整实现/实际导数信用/profile，四个non-held原条件、最多3个可丢弃更新/16 query episodes，无新适应/held/Test。
+2GPUh/3小时、峰40GiB；实际VJP/JVP成本出来后main自主登记正式学习预算和评测，不以Owner许可或内部过关作自动晋级。
+本条是设计取舍，尚无新方法分数；实际派发和运行以progress及回执为准。
+
 ## 2026-10-10：同incoming诊断完整交付，E与最终编辑都有增益和损失
 
 [完整报告](analyses/parameter_edit_credit_diagnostic_20261009.md)按冻结χ360与原8condition/24初态完成三臂72闭环，I/E+/E0均13/24。

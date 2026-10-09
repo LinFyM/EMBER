@@ -1,3 +1,27 @@
+## 2026-10-09 χ360完整补充科学消费：130/400，局部晚期学习被其它损失抵消
+
+[完整科学分析](docs/analyses/parameter_compiler_fullreadout_20261009.md)消费原32与新增368，固定原macro360，correct strict paired400完整130。
+对强MT153 R104/G26/L49，对T161 R101/G29/L60，对旧135 R96/G34/L39，对χ180127 R100/G30/L27；
+suite Spatial/Object/Goal/Long=37/33/33/27，breadth6/8。Long1为27，对18015/MT24；另七task对180净丢9。
+原32为20，对1806/MT16；Long1剩余18为7，对1809/MT8，不能把原32正例外推整批。新368为110，对180121/MT137。
+完整J1子集163条件，MT103→end99，R83/G16/L20；递推曝光不足不能解释全部损失。
+自身成功218，最终新初态其中118成功；成功经验先编辑已落实，但不是跨初态能力保持保证。原train180/360 MT/end/null27/25/25保留。
+降低“后半刷新+当前配对FM已经形成广泛净正修订”支持，保留Long1实质正证据；原样续训/只增曝光或自动加RL均没有本批充分依据。
+信用仍只按专家query的FM梯度1/1.2加权，不能跳过自身状态/前5动作/新初态保持链路；具体失效行为与视频/E独立贡献仍未知。
+
+ROOT=/data1/user/ymdai/ember_runs/parameter_compiler_fullreadout_20261009；batch_exit_code0/complete、400队列全complete，
+scientific_analysis.json保存全/分列及逐task/suite/实际J的成功集合、R/G/L、churn/Jaccard和实践/读取/成本。
+完整400实践249396steps/920重置、失败208858/尾部46198（尾部已包含）、400初读+520重读=920全片；
+本批新增331599实际steps、871全片神经读取、4.034421GPUh，12费用窗闭合，六卡batch wall45.66分钟，无新增failed/partial条件。
+原32只读引用、不重跑/复制/重复计费；原父ROOT科学停止及所有失败/费用不改，无新训练、checkpoint选择、controls或Test。
+读取代码原32 db53422e/新368 f0c49811，正式来自clean pushed detached；clone单slot H实际序列化consumer18项通过、真实63条H底层1倍。
+本次真实退出后约7.61秒自动核实处理，无页面打开/Queue/第二通知。退出资源、实际存储和Git移交以报告及ROOT完成回执为准。
+当前ROOT allocated105.972GiB（不follow复用symlink）、cache约64GiB；连续峰未知，末次109.958GiB为推导而非观测峰。
+strg01 data1使用1199.405/2048GiB、余量848.595GiB，共享余量80.053TiB；双节点六PID/本ROOT工作任务与ymdai compute GPU进程均已退出。
+这是明确事后开发补充，未产生原预注册通过、独立确认、视频/E因果或正式相邻稳定资格。
+实验session完成Git/资源退出后仅向当前main01a11b05一次科学回报，真实处理回执后交回tracked窗口；
+main须沿完整历史与实际特征—算子—信用—参数—执行连续推导后继，自主取舍接续，不等待Owner例行许可。下方运行快照均为历史。
+
 ## 2026-10-09 χ360完整补充实际启动：原32只读复用，新增368由六卡运行
 
 新ROOT=/data1/user/ymdai/ember_runs/parameter_compiler_fullreadout_20261009。

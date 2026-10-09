@@ -3,6 +3,20 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-10：功能修订完整消费者与有界实测完成，真实信用和成本成为后继依据
+
+[实际报告](analyses/functional_revision_compiler_20261010.md)按唯一设计完成原四个non-held condition的完整十步功能写入、FM2/PG1及物理profile。
+raw参数/rank/chunk decoder与旧课程/诊断入口退役，保留有序教学/完整事实Reader，唯一完整rank128用`−P Jᵀq`修订。
+真实76因子VJP/JVP伴随误差.002264，checkpoint方向误差0；FP32差分.003228只作已出现BF16核验异常的oracle，不入生产梯度。
+首两FM combined约1.9e−7、Reader极弱、配对功能未变；真实PG combined .00416883、Reader1.50e−6/经验2.33e−6。
+这加强完整信用可执行性的支持，不能代替有益编辑/教学理解/新初态迁移；旧PPW/保持/RL阴性及T/Long正证据全部继承。
+实际16条query共4,456steps，outgoing4/8对独立incoming3/8不是能力比较；Object负advantage、Long零信用全部保留，无重采。
+真实四事件编辑micro4→64为28.70→10.09秒、伴随33.18→9.42；PG128reservoir完整消费者105.77→42.18秒，峰27.56GiB。
+FM112较56更慢；PG96、多rank/长E/新适应链仍未知，单卡事实不作为world上限或正式完整ETA。
+ROOT=functional_revision_compiler_20261010，计算来源0791d711/6e4aac1d；6费用窗闭合，保守.278335GPUh、科学elapsed78.19分钟。
+全部失败、有效状态、实际行为和读取成本保留，资源退出；Git/退役工作树/一次主讨论真实处理回执完成串行交接。
+本批只完成实施/profile，无新适应/held/Test/正式长训或400；main收到后据实际信用与成本继续科学取舍，不凭内部接通自动晋级。
+
 ## 2026-10-10：main据实际修订得失选择功能准则与真实policy导数的完整候选
 
 Owner认可从实际问题、数学依据到完整架构/训练/实现的推进方式，明确整体框架可撤换；稳定要求已记录。

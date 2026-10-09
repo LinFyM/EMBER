@@ -1,21 +1,25 @@
-## 2026-10-10 功能修订真实导数/FM通过，从有效FM2接续首次query/PG消费者
+## 2026-10-10 功能修订完整实施与有界实测完成，交付真实信用及正式成本单位
 
-实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占codex/functional-revision-20261010，main只读。
-唯一canonical已撤换raw参数/rank/chunk decoder，复用Reader、Runner、persistent环境、不同完整LoRA及现有FM；旧消费者由Git/原件保留。
-55项相关CPU消费者通过；真实76因子完整十步伴随相对误差.002264、checkpoint方向误差0，FP32有限差分误差.003228。
-BF16小扰动有限差分误差2.36259保留，精度核验支持算术舍入解释；生产仍为普通BF16和真实AD，不使用FD作梯度。
-0791d711已完成全部原四条件的物理profile及FM1/2；63支撑、112 FM queries/更新，真实首步能量混合梯度1.899e−7，次步读取通路梯度很小但非零。
-完整四条件编辑28.70→10.09秒（micro4→64），真实共享伴随33.18→9.42秒；FM28/56/112分别8.48/8.40/8.82秒，选择56，不以显存占满择点。
-micro112 allocated40.56GiB已实测；无额外逻辑事件/M/task权重，支持实际吞吐但不等同方法有效或整批加速。
-query首次启动缺LIBERO配置，8 child均在资产import前交互stdin/EOF退出，0环境steps/0真实episode；完整失败/费用/partial保留。
-CPU真实构造器已复现EOF并核验ROOT配置可无交互构造/退出，修复异常pipe关闭；不重做已有FM、不重采已发生环境。
-首次稀疏冻结3fb84062缺少已版本化的configs，实际authority loader在policy/环境加载前退出；0新增环境/更新，完整失败与费用保留。
-冻结布局须含src/tests/configs，实际authority consumer直接核验；接续仍使用有效implementation_state FM2，首次16 query episodes/最多5440steps、fresh PG optimizer且仅1更新。
-四条件query IDs均0/1，原实践/32–34隔离，outgoing/baseline policy与exploration RNG独立；slot_batch16，M按各条件15/16/16/16。
-两节点live准入项目0→gpu02:0一张，GPU余量>40,000MiB、总/单节点≤6；strg01 data1用量1,262,675,252KiB/2,147,483,648KiB，新增峰计划40GiB。
-ROOT=/data1/user/ymdai/ember_runs/functional_revision_compiler_20261010；一次tmux退出事件持续等待，profile设备采样有测量目的，不发送心跳/自Queue。
-当前仍只授权完整实现与有界实测，无正式长训/held/Test；完整消费后一次回报main并串行交回所有权，main据实际成本登记后继。
-以下均为历史派发/安排。
+唯一active合同[functional_revision_compiler_20261010](docs/designs/functional_revision_compiler_20261010.md)的实施/profile范围已完成，整批退出0。
+[完整消费报告](docs/analyses/functional_revision_compiler_20261010.md)及findings§418保留原生导数、实际FM/keep/PG、吞吐和全部失败。
+canonical撤换raw参数/rank/chunk decoder，复用有序Reader、Runner/persistent环境、不同完整LoRA及真实FM；13模块2,710行，旧入口退役。
+55项实际CPU消费者通过；真实76因子完整十步伴随误差.002264、checkpoint方向误差0，FP32方向差分误差.003228。
+BF16方向差分误差2.36259保留，生产仍用正常BF16真实AD；不将FD用于梯度或固定低效执行来追逐低位一致。
+四个原non-held condition、63支撑，实际仅FM2/PG1可丢弃更新，无新适应/held/Test/正式长训或400。
+FM1/2 combined梯度约1.9e−7，FM2 Reader4.8e−11；四事件配对FM相同、keep0，尚无实用编辑证据。
+真实PG combined .00416883、Reader1.50e−6，信用到达教学和经验；Object两query均−1 advantage，Long两条均0，如实保留。
+16条新query在原实践及32–34外取0/1，outgoing/baseline policy与exploration RNG独立；4,456实际steps含160settling、863replans。
+outgoing4/8对独立incoming3/8是学习query，不是编辑能力、视频因果或正式性能证据；没有PG后能力读出/重采。
+真实四事件编辑micro4→64为28.70→10.09秒，伴随33.18→9.42；FM28/56/112为8.48/8.40/8.82，选56。
+PG真实128reservoir的完整消费者micro4→64为105.77→42.18秒，峰27.56GiB；PG96/128和新适应链仍未测，不锁死world/卡数。
+16 persistent slots实际native batch1–13，含reset/采集/保存26.79step/s；query/PG attempt设备采样mean67.3%/median89%，包含共驻，不能归因本进程独占。
+6费用窗闭合，日志.270509GPUh、保守补记启动后.278335GPUh，科学elapsed78.19分钟；所有工程失败/有效FM2保留。
+单卡逻辑batch4成本单位：FM每100更新约1.11GPUh，PG约6.09GPUh另加新自身实践；完整刷新/400尚缺新链特征/编辑/I/O实测。
+正式学习/采集/相邻400合同尚未登记；main须据实际信用强弱、历史阴性和成本决定后继，本次不自动开长训。
+ROOT=/data1/user/ymdai/ember_runs/functional_revision_compiler_20261010；计算身份0791d711/6e4aac1d，原χ360行为来源单独保存。
+两节点本项目GPU进程已退出；原件/权重存档/完整可丢弃实现状态/费用保留，已合并task-owned工作树随Git集成退役。
+实验session01a11a0a-fd39-74b1-83ba-001ede5330df完成工程/消费/Git；独占窗口以ROOT/main_delivery_receipt真实处理为界串行交回main01a11b05-3460-7eb0-aca8-177d6d86ef48。
+没有自Queue、额外退出通知或心跳；批次完成不关闭EMBER，main接收原件后主动科学取舍。以下均为历史派发/安排。
 
 ## 2026-10-10 main消费诊断，登记自身功能修订Compiler的实施与实测
 

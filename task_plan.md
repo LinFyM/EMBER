@@ -1,14 +1,16 @@
-## 2026-10-10 当前目标：实现从自身功能修订到完整LoRA的共享Compiler
+## 2026-10-10 当前接续：功能修订实施/profile完成，据真实信用与成本登记后继
 
-最终目标不变：合法视频与自身实践形成唯一固定LoRA，获得超过强MT的完整新初态能力，随后建立视频增量和稳定性证据。
-main已消费固定incoming诊断及原件：保留经验的Goal/Long正例与Spatial/Object/Long损失，拒绝由同分或小动作差一概删E。
-沿Owner最新认可的推导方式，采用[完整功能修订候选](docs/designs/functional_revision_compiler_20261010.md)：
-实际自身F十步响应→学习的局部准则→真实Jacobian回写全部A/B；共享监督和修订后新初态回报分别承担学习职责。
-当前实施完整接口及有界实际消费者/profile，先补齐真实十步VJP/JVP/PG的吞吐和内存事实，不能以无梯度速度推算正式训练。
-四个明确non-held原condition、最多3个可丢弃更新/16新query episodes，无新适应或held/Test；2GPUh/3小时、峰40GiB。
-代码由实验session独占实现、测试、冻结运行、Git集成和一次完整回报；main按实测成本登记正式训练/刷新与400节点并接续。
-这是成本受控的完整方法实施，不是靠内部指标逐模块自动晋级；数学自洽不当可学性，旧PPW/local field/保持/RL阴性不清零。
-登记/派发/实际启动按progress及回执区分，以下均为历史目标与执行。
+最终目标仍是合法视频与自身实践形成唯一固定LoRA，明显超过强MT，并逐步建立视频增量及稳定性证据。
+[完整功能修订候选](docs/designs/functional_revision_compiler_20261010.md)的完整事件消费者/有界profile已完成，
+[实际报告](docs/analyses/functional_revision_compiler_20261010.md)保留76因子完整十步导数、FM2/PG1和16条真实query。
+FM信用到Reader极弱且配对功能未变，PG实际回报信用更强并进入视频/经验路径；Object负例、Long零信用与旧PPW/保持/RL阴性不清零。
+原始query outgoing4/8、独立incoming3/8只用于本次学习消费者，不能充当有益编辑、视频因果或新初态性能结论。
+完整消费者实测按逻辑batch4推算：单卡FM约39.91秒/更新、PG含16queries约219.42秒/更新；
+新模型适应/刷新、长E特征及序列化、多rank和相邻paired400仍需main明确科学合同后承接，不能拿无H/Phi query率包办正式ETA。
+工程已保持单canonical运行面及显式事件权重，旧课程/诊断入口退役；正式采样、更新节点、刷新和选择合同未登记。
+实际.278335GPUh保守记账、78.19分钟科学elapsed、4,456steps，无新适应/held/Test，资源已退出。
+main真实接收一次整批回报及独占窗口后，须结合信用幅度/可达方向/迁移条件与历史结果自主作出有界正式学习取舍并接续；
+不凭smoke自动晋级、不等Owner逐项许可、不由单卡profile锁死训练world或卡数。以下均为历史目标与执行。
 
 ## 2026-10-10 当前接续：固定incoming诊断已完成，main据正反行为推导后继
 

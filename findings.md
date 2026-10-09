@@ -11052,3 +11052,22 @@ main据§416的真实控制得失选择[自身功能修订候选](docs/designs/f
 新condition中φ冻结，学习准则属于参数编译算子，不生成正确动作轨迹或拟合自身成功动作；最终唯一固定LoRA和信息墙保持。
 首批只有完整实现与实际导数/吞吐消费者，正式学习规模随后按真实成本登记；不可用无梯度速度、非零梯度或架构完成冒充可学性。
 旧方法总体130、局部Goal/Long/T正证据及小面板重算不稳定边界均保留，后继结果必须改变完整假说的支持度与投入。
+
+## 418. 完整十步功能写入可执行，实际PG信用强于首两步FM，迁移和有效学习仍待正式证据（2026-10-10）
+
+[实际实施与消费](docs/analyses/functional_revision_compiler_20261010.md)完成唯一canonical的功能修订、成功自身函数keep及独立Gaussian query信用。
+76完整A/B的真实十步VJP/JVP伴随误差.002264，checkpoint重算重新绑定正确factors；FP32方向差分误差.003228，正常BF16生产AD保留。
+四个原non-held事件直接引用真实incoming/E，支撑15/16/16/16；没有新方法适应、held/Test、正式共享训练或能力读出。
+仅FM2/PG1可丢弃更新：FM1/2 combined约1.9e−7、FM2 Reader4.8e−11，配对FM未变、keep0，接通未形成有用编辑。
+PG1来自真实16条query（4,456steps）、完整十步Gaussian均值/执行mask及reservoir16补偿，独立incoming baseline不共享policy/exploration RNG。
+PG combined .00416883、Reader1.50e−6、经验encoder2.33e−6；实际信用回到视频与经验，降低“整链断图或所有信用必然很弱”的解释。
+Object两个advantage均−1、Long均0；不重采凑信用，outgoing4/8对baseline3/8不是同噪声编辑对照或性能资格。
+外层`−J_E(Pv)/M`在三事件有真实幅度，Long为0；有用新初态作用仍需`Jnew P JEᵀq`方向/幅度及有限支撑迁移条件成立。
+PG路径可执行不证明学到操作知识，FM弱不证明整个方法不可学；旧PPW/local field、ADSP/SKNC与共享RL阴性继续限制充分性预期。
+
+真实不同条件批量编辑28.70→10.09秒、共享伴随33.18→9.42秒，PG完整消费者105.77→42.18秒（micro4→64）。
+FM112实测比56更慢且峰40.56GiB，故选56；PG64峰27.56GiB，PG96/128未测，不冒称显存余量已完全利用或持续最优。
+query persistent slots实际flow batch1–13、26.79step/s含重置/采集/保存；新适应链的H/Phi/完整参数保存及长E成本未知。
+物理执行须保持每事件M及全局query/loss权重，不能由单卡实测固定world2；后续按正式授权的真实首步消费者再选择有用配置。
+预算内实际保守.278335GPUh/78.19分钟、6费用窗闭合，失败/有效FM2与原件均保留，资源退出。
+成本单位FM每100更新约1.11GPUh、PG约6.09GPUh另加实际适应/刷新；main据此登记后继，不自动开始未授权长训。

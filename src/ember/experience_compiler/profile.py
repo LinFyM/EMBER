@@ -365,7 +365,8 @@ def profile(runtime, contract, args):
             row, consumer = measure(runtime, f'real_PG_keep_shared_micro{chunk}', lambda:
                 reinforcement_backward(runtime, prepared, episodes, microbatch=chunk,
                                        revision_microbatch=physical['adjoint_microbatch']))
-            pg_rows.append(dict(row, microbatch=chunk, adjoint=dict(runtime.last_adjoint_cost)))
+            pg_rows.append(dict(row, microbatch=chunk,
+                                adjoint=dict(runtime.last_adjoint_cost) if consumer is not None else None))
             if consumer is not None:
                 chosen = consumer
             if not row['valid']:

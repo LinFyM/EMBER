@@ -7,7 +7,13 @@
 strg01 当前 data1 使用约818.1GiB，软限2048GiB，本批224GiB新增峰有余量；科学计算尚未开始。
 完整canonical实现已替换旧Q/PG/54运行面，真实参数事件池、独立多环境slot、配对FM和退出驱动监督器已落地；
 CPU消费者53项通过，结构扫描无新/增长hard violation，3个新模块的owner/复用/退役理由见run root implementation/review.md。
-下一执行为clean pushed detached实际native/profile，再按实测吞吐、峰值和现场两节点准入启动整批。
+实际native/profile已完成4064环境steps、0optimizer；持续B16短段41.08steps/s，冷启动实际batch多为1–4，不能外推完整整批。
+FM物理56与112近似等速，峰25.10/40.11GiB，选择56；native64、reader128、经验64、decoder131072按实测选择。
+四实际事件/112query的world1完整FM/replay/SUM/clip热态10.44秒，allocated25.01/reserved30.32GiB；变化事件IO、optimizer不在该短测内。
+world2及更大rank因同节点卡转为其他用户高负载未获有效测量，当前选world1不声称最优，也不锁死后续完整checkpoint边界物理迁移。
+原件与负边界见run root profile/report.md、profile_driver_attempts；GPU占用并集0.145815GPUh，所有失败保留。
+下一执行为clean pushed detached ec81bcd2实际固定MT池0采集及完整共享学习/两节点读出；现场候选gpu02:7训练、gpu01:6独立评测。
+实测导出的预测为15–34GPUh/8–13h、新增峰145–200GiB，原40/16h/224GiB作为执行计划与监控；完整成本和近全预算失败增长仍有未知。
 
 唯一active design为[parameter_conditioned_compiler_20261009](docs/designs/parameter_conditioned_compiler_20261009.md)。
 主讨论已消费首批135/400、train无净修订及独立效率实测，选择完整实际参数编辑器；不是原54节点续训或rank/LR/seed小扫。

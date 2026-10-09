@@ -1,3 +1,23 @@
+## 2026-10-09 active推进：实际参数编辑器的有界完整学习
+
+唯一[active design](docs/designs/parameter_conditioned_compiler_20261009.md)已由首批科学负结果和真实批量profile收敛；目标仍是完整固定LoRA明显超过强MT，且解释教学/经验如何获得可迁移控制。
+采用强MT实际起点、真实参数条件编辑、零更新保持的完整rank128 decoder、成功/失败经验和可复用的共享FM事件；不是新condition动作轨迹微调。
+执行顺序：实际consumer实现/profile → 144固定行为条件 → fresh FM180 → 并行formal180与72新条件刷新 → FM360 → formal360及全部原件消费。
+两个节点均有固定train48 MT/end/null；180/360 strict paired400保留完整得失与相邻稳定性，360为唯一终点候选，有限提前停止见design。
+跨condition原生批量已有短程1.922倍证据，完整实践批量、环境/reset重叠及训练物理配置由真实消费者实测选择，不锁死B8或world2。
+预算40GPUh/科学计算elapsed16小时/新增峰224GiB，估计实现4–8小时、计算6–12小时；现场双节点及strg01准入，Test封存。
+本次文档推送/派发接受后实验session独占tracked/Git并闭环实现、运行和整批回报；main继续承担科学判断，不重复工程验收。
+完成当前批次后按训练获得、held迁移、实际视频/经验作用及成本自主接续；不能把阴性或预算边界变成等待Owner例行许可。
+
+## 2026-10-09 下一完整方法：同时改变有用修订的学习条件与串行计算成本
+
+最终目标仍是合法教学和自身实践编译出的唯一固定LoRA明显超过强MT，并逐步建立视频贡献与相邻能力证据。
+首批135/400及train无净修订已消费；main接回tracked/Git，自主选择下一方法，不重复工程验收或等待Owner例行许可。
+当前重点：解释成功经历未被修订器消费、共享初始功能漂移、有限经验学习与每次更新重新在线采集的成本，
+比较实际参数条件的编译事件和原隐状态递推如何获得可迁移控制；新科学合同收敛前不把候选写成已经启动。
+独立效率工作由原实验session在1GPUh/4096steps/5GiB内完成实测分解及跨condition批量可行性；它不修改tracked或启动新学习。
+下一交付须包含具体特征/算子/梯度/部署联系、最近似历史、可失败预测、完整评测与时间/资源预算，再由实验session独占实施和整批回报。
+
 ## 2026-10-09 首批整批科学消费完成，交回主讨论接续
 
 唯一首批[experience_conditioned_compiler_20261009](docs/designs/experience_conditioned_compiler_20261009.md)已完成实现/profile、128warm/54meta、固定train面板和meta54 correct strict paired400。

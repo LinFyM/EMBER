@@ -3,6 +3,16 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-09：真实多condition批量profile与后继学习取舍
+
+主讨论在首批交回后独立消费真实实现/训练事件；成功在U之前退出、216链只有70条未屏蔽经验修订，约束了经验学习的实际覆盖。
+有界效率任务原件为experience_conditioned_compiler_20261009/analysis/throughput_followup_20261009：八个不同task、归档LoRA与独立环境，
+同注册state32/seed7的40-control-step窗口，两顺序测B1/2/4/8，端到端吞吐8.208/11.240/14.250/15.779，B8/B1为1.922倍。
+实际Phi/H采集短段1.666倍；B16单replan可行但未测持续吞吐，world3/4未测。环境/reset占比仅属短测，搬运/pack不足0.2%，不把低UTL全部归为decoder。
+4096环境steps、无optimizer、最多1GPU、保守整进程0.130040GPUh、约85.7MiB；后段scene guard拒绝与冷启动6-step细分限制均保留，无formal或科学分数变动。
+[下一设计](designs/parameter_conditioned_compiler_20261009.md)据此选择实际参数条件、强MT起点、成功经验进入编辑及可复用共享FM，
+同时沿用实测不同LoRA批量接口。此处只记录取舍与已完成效率事实，不把新方法性能、完整链速度或机制写成已证实。
+
 ## 2026-10-09：经验条件完整rank128首批真实学习与formal400未胜强MT
 
 [完整结果](analyses/experience_conditioned_compiler_20261009.md)消费root experience_conditioned_compiler_20261009全部128warm/54meta、train面板与meta54唯一correct strict paired400。

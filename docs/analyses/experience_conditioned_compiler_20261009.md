@@ -146,3 +146,43 @@ canonical codex-session-messaging skill已修正为无设置覆盖地后台resum
 隔离notLoaded且页面未打开的实际回复12.850秒；本次真实formal退出到接受0.434秒、到实际agent活动**2.715秒**，模型/推理/cwd/权限均保留。
 唯一whole-batch事件等待者已经消费退出并结束；没有自Queue、阶段通知或第二持续等待者。
 完整原回执、修复、7项消息测试、回滚脚本及真实本批验证均在root保留。一次整批主讨论回报以`main_delivery_receipt.json`的实际处理证据确认。
+
+## 7. 主讨论后续消费：经验曝光与真实执行瓶颈
+
+原`Runner.adapt`在success后先break，再进入U；因此成功经历不参与任何实际编辑。这属于原学习组织，不能冒称工程缺陷。
+training metrics的216条meta链中134条J0、82条有修订；扣除其中12条masked，只有70条向U呈现未屏蔽的真实经验，覆盖24个映射。
+三个18-update窗口里有修订的28/27/27条事件，配对end−initial FM均值约`1.58e-5/-8.67e-6/2.39e-5`，
+相对绝对变化均值约`.00034/.00057/.00055`；同链query/noise配对，跨update不同，不能当作统一验证集上的收敛曲线。
+结合train的无净收益，它降低“少量真实失败经验已经教会修订，只差held迁移”的支持。
+同时，首批每映射只6条链，不能由小量未学会证明该族不可能；下一投入需要改变实际学习机会，而非只称训练不够。
+
+独立效率原件位于`root/analysis/throughput_followup_20261009`，main读取了batch_summary、components、simulator、report和成本回执。
+八个不同task/语言/实际归档LoRA/环境的同一cohort，从注册state32、seed7推进各40控制steps；B1/2/4/8再逆序各一次。
+含reset/settling/scene/搬运的320控制steps平均wall为38.987/28.470/22.456/20.281秒，B8比B1快1.922倍。
+每个B公平复用同组persistent环境；初始化单独计费，不能把这个B1当成原生产逐task重建环境的完整baseline。
+实际Phi/H采集的20-step短段提高1.666倍；B16单replan可运行但未测持续窗口，world3/4也未测。
+
+B1十步flow/prefix/env/reset为18.269/6.526/5.046/8.793秒，B8为2.337/4.334/5.021/8.383秒。
+实际flow摊销接近8倍，整个系统只有约1.9倍：批量后prefix、环境推进和reset成为更大的份额。
+这不是“显卡低UTL证明模型数学算子低效”，也不能把40-step短窗口的reset占比外推到完整1024预算。
+完整非held150-decision/3次重读链的Compiler replay+VJP为1.331秒，四阶段FM VJP2.542秒；
+归档gzip读取7.260秒、保存3.092秒，归档Phi重建2.485秒不是原在线训练成本。
+LoRA热搬运/pack占B8短测wall不到0.2%；后续不再把复制和decoder作为主要提速论据。
+6-step physics/render分解仅是未settle的冷启动小样本，原paired scene恢复被controller_goal_pos guard拒绝的失败和费用保留，不绕过guard。
+新增测量4096环境steps、0optimizer、最多1卡、保守整进程0.130040GPUh、约85.7MiB，独立于首批20.518080GPUh，不改原科学结果。
+
+## 8. 后继方法取舍与仍然可能失败的联系
+
+[新合同](../designs/parameter_conditioned_compiler_20261009.md)选择以真实Λ为输入的经验编辑器，保留强MT为每condition初始控制，
+成功/失败实际经验均在停止前参与教学重读，然后直接产生一套新的完整rank128 A/B。
+原Q的意义依赖过去的共享参数；新事件记录的是实际行为参数与事实，可在χ变化后复用于共享FM，不假装旧轨迹由当前χ生成。
+decoder使用共享非线性在`u=0`处的差分，使零编辑保持incoming因子且对编辑token有非零导数；
+它取消“改可训练MT坐标就改变尚未实践的初始控制”的直接路径，但仍可能学到忽略输入的公共编辑，也不保证训练后能力保持。
+真实FM用同task不同teacher episode的query教共享G，标签梯度经完整A/B回到读取/经验/参数编码和编辑器；新condition没有动作拟合optimizer。
+
+这同时改变了行为起点、参数状态、成功经验消费和学习复用，不是一个可以把所有收益独归某个模块的因果消融。
+decoder改变服务于学习关系；实际跨condition native batch、环境生命周期和采集/学习分离服务于效率，二者证据不能混用。
+预注册144固定行为条件、180共享更新、72条件刷新及360终点，两个完整400与固定train MT/end/null，成本和提前停止见design。
+若train没有净修订收益，不能先归咎held；若train有益而held无效，迁移解释上升；若完整性能提升但null同样，经历必要性尚未建立。
+原生teacher特征、8-slot压缩和跨episode成功query的局限仍保留；本次没有证明这些足以表征操作知识，也不把后继成功写在实验前。
+本批有界检验结束后仍须更新完整方法判断，不能围绕同一编辑decoder继续小扫，也不能仅交计划后等待Owner催促。

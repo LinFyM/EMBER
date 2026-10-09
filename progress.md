@@ -1,3 +1,42 @@
+## 2026-10-09 下一active：实际参数条件的经验编译与跨condition批量执行
+
+唯一active design为[parameter_conditioned_compiler_20261009](docs/designs/parameter_conditioned_compiler_20261009.md)。
+主讨论已消费首批135/400、train无净修订及独立效率实测，选择完整实际参数编辑器；不是原54节点续训或rank/LR/seed小扫。
+初始实际控制固定为强MT；以当前完整A/B和真实E改变教学读取，零更新保持的decoder产生下一完整rank128 A/B。
+成功经验在停止前进入编辑；没有新condition轨迹微调，最终唯一LoRA固定后Writer退出。仍须由实际闭环证明收益，不把identity或梯度当机制成立。
+固定MT采集144个非heldcondition，fresh共享FM学习至180；冻结180再采72个新condition，复用实际参数/经验事件学习至360。
+逻辑batch4、36映射等权，每事件28跨episodequery；FM与0.2功能keep，1/8 E屏蔽，当前批不加SDE PG。
+180/360各correct strict paired400及相同train48 MT/end/null，360为唯一终点候选；严重退步合取停止线、相邻读出与未来视频因果证据见design。
+180 formal与非held刷新可并行，数据刷新完成后即可继续训练，不让ready工作等待无关阶段。
+
+效率有界任务已完成并退出：八个不同task/LoRA/环境的真实40-step短测，B1/2/4/8端到端8.21/11.24/14.25/15.78 control steps/s，
+B8/B1为1.922倍（两顺序重复），practice采集短段1.666倍；B16只有可运行证据，没有持续吞吐/world3/4结论。
+reset/环境开始主导批量后的短窗口，不能外推完整链占比；实际搬运不足0.2%，decoder不是当前主要耗时。
+原件在原run的analysis/throughput_followup_20261009，4096环境steps、0optimizer、最多1GPU、保守0.130040GPUh、约85.7MiB；含一次scene guard失败，不篡改formal口径。
+
+新root为/data1/user/ymdai/ember_runs/parameter_conditioned_compiler_20261009。
+本批预计实现4–8小时、计算6–12小时；总上界40GPUh、科学计算elapsed16小时、data1新增峰224GiB，必须由实际consumer profile替换细目并现场quota/GPU准入。
+复用原生不同LoRA批量接口，保留一个canonical experience_compiler；独占分支实施、clean pushed detached formal，不原地改旧frozen代码。
+当前科学合同已经登记，新的实现/训练尚未冒称完成。main在本次推送及派发接受前持有tracked/Git；
+接受后由实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占整个实施/运行/Git窗口，main停止tracked写入并承担科学分析。
+派发与真实处理证据保存于.codex/tmp/parameter_conditioned_compiler_delivery_20261009.json；完成/科学边界仅一次可靠回报到当前main01a11b05-3460-7eb0-aca8-177d6d86ef48。
+旧experience_conditioned_compiler首批及下方“正在形成合同/尚未派发”只表示历史时点，不重新激活旧训练。
+
+## 2026-10-09 主讨论接回所有权，联合研究学习机制与GPU计算效率
+
+main（01a11b05-3460-7eb0-aca8-177d6d86ef48）已收到首批完整回报并接回tracked/Git；起点为clean pushed6ea066db。
+已直接消费正式400/MT原始配对、训练事件与真实实现；135对153的负结果、训练域无净修订与失败尾部保持，不重复工程验收。
+Owner最新要求允许在硬约束及EMBER核心内重构方法，并让架构适合GPU高效执行；稳定要求已同步current_owner_requirements/concept。
+原首批运行已结束；当前在形成下一科学合同，没有自动延长原54节点或启动新的formal train/eval。
+
+main持有tracked窗口，正在比较持续隐状态修订与以真实行为参数/结果为条件的可复用编译事件，结合完整近邻历史决定下一主干。
+已确认原success在U之前停止：成功经历不进入任何实际修订；216条meta链中82条修订、70条具有未遮蔽的真实经验。
+已修订事件的配对FM变化很小且无持续改善趋势；这些事实约束学习组织，但不把它们宣称为唯一根因。
+实验session承接独立的有界效率归因/批量可行性工作，回执在.codex/tmp/experience_efficiency_delivery_20261009.json：
+只读canonical源码，临时原件写原run的analysis/throughput_followup_20261009，不写tracked；最多1张A40、1GPUh、4096环境steps、5GiB，预计20–45分钟。
+任务拆解原生flow、仿真/render、搬运、教学/经验读取、坐标解码、FM/PG/replay与保存，并实测不同条件的批量执行机会。
+没有新科学训练、held标签、Test或重复动作等价验收；主讨论并行完成科学取舍，收到该有界回报后整合下一实施合同。
+
 ## 2026-10-09 首批完整科学结果已消费，Git与一次整批移交
 
 Owner最新确认主讨论为01a11b05-3460-7eb0-aca8-177d6d86ef48；旧交接文本中的01a11a0b为已归档旧讨论。

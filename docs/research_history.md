@@ -3,6 +3,18 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-10：main从真实更新与事件覆盖登记首批功能修订学习
+
+完整实施的PG原始梯度更大，但FM2→PG1能量末层实际Adam更新RMS约3e−5；没有PG后能力读出，不能从梯度norm推算修订收益。
+零头初期弱与P未归一化功能响应的限制分开说明，见[main连续分析§7](analyses/functional_revision_compiler_20261010.md#7-main判断信用接通以后首先检验真实学习而非扩大梯度数字)。
+旧两池216条件/362endpoint仅48非MT且分布16/36任务；先task等权再按真实层采样，不能用各池一半虚报递推学习。
+[同一方法正式合同§6](designs/functional_revision_compiler_20261010.md#6-首批正式学习fresh-fm360真实分布刷新与一个固定400节点)
+登记fresh FM360、中点72个新模型实际条件刷新、原固定train48两个读出及唯一360 correct paired400。
+不由两步结果改P/LR/rank/精度，不继承可丢弃权重，不恢复旧135提前停止线，不用小面板挑正式checkpoint。
+本批先建立有能力读出的监督起点，未训练共享RL，不把FM阴性当完整方法否证；一个400也没有相邻held/视频因果资格。
+预计10–16GPUh/科学3–6h，观察20GPUh/8h/224GiB，工程预计1–3h；实际启动及交接只看progress/回执。
+这是投入决策而非已完成结果，所有历史科学原件、阴性边界与T/Goal/Long正例保持。
+
 ## 2026-10-10：功能修订完整消费者与有界实测完成，真实信用和成本成为后继依据
 
 [实际报告](analyses/functional_revision_compiler_20261010.md)按唯一设计完成原四个non-held condition的完整十步功能写入、FM2/PG1及物理profile。

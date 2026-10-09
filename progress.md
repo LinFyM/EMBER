@@ -1,3 +1,21 @@
+## 2026-10-10 main已登记首批正式学习：fresh FM360、72刷新、固定360 paired400
+
+Owner继续自主推进的授权保持。main已消费2c1f7e8e整批实施回报、实际消费者/学习原件、Adam权重变化及旧池覆盖。
+PG信用更强但不意味着参数修订同比放大；两步FM不足以裁决正常启动与持续学习限制。没有新尺度/梯度探针或main重复工程测试。
+[main连续判断](docs/analyses/functional_revision_compiler_20261010.md#7-main判断信用接通以后首先检验真实学习而非扩大梯度数字)
+与findings§419登记支持度、未知及历史正反证据；唯一active仍为[功能修订设计，新增正式学习§6](docs/designs/functional_revision_compiler_20261010.md#6-首批正式学习fresh-fm360真实分布刷新与一个固定400节点)。
+本批全模型/optimizer fresh、逻辑batch4、36任务等权；1–180使用216个旧合法条件，再由φ180采72真实新条件，181–360只用新池。
+先task等权，再在每task真实可用MT/非MT层内分配，缺层如实登记；旧非MT仅16/36任务，phase1非MT160/720，不能用“各池一半”虚报。
+沿原显式condition/scene/RNG完成train180/360各end48，MT原27仅在相同身份下复用；现行日期seed不能重造面板后冒称原配对。
+唯一正式点预定360，correct strict paired400对原MT153/T161/旧135/127/130；不恢复旧180/135停止线，不由小面板/内部量改点。
+本批不启动共享RL、Test或held视频controls；360不是收敛声明，一个正式点不提供相邻held稳定/视频因果资格。
+完整方法中的RL由下一次实际曲线和能力证据决定，并未增加FM先赢MT或Owner再次许可的门槛。
+ROOT=/data1/user/ymdai/ember_runs/functional_revision_learning_20261010；预计工程1–3h、科学3–6h/10–16GPUh，观察20GPUh/科学8h，新增峰224GiB。
+资源由执行者在每次launch现场核验双节点/6或8总卡/单节点≤6、strg01 data1独立quota及共享容量；按真实吞吐选择物理rank，不沿用保守默认值。
+正式学习/完整链需由实验session实现、验证、clean pushed detached运行、消费与Git闭环；main不重复工程验收。
+本段登记时尚无本批新GPU计算；main推送合同并真实派发后，实验session持有独占tracked/Git窗口，实际接收及运行以回执/launch记录为准。
+整批一次可靠回报后main主动消费并接续；没有自Queue、心跳或逐阶段重复通知。下方实施/profile及更早条目均为历史。
+
 ## 2026-10-10 功能修订完整实施与有界实测完成，交付真实信用及正式成本单位
 
 唯一active合同[functional_revision_compiler_20261010](docs/designs/functional_revision_compiler_20261010.md)的实施/profile范围已完成，整批退出0。

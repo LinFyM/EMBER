@@ -184,7 +184,7 @@ per-task/suite、breadth、retained/gained/lost/churn及完成/异常/计费。�
 主讨论据实际学习速度、覆盖、控制得失及同等能力下的读取/交互效率决定增加学习、匹配端点参照、改变主要算子/监督或退休弱假说。
 不恢复专家+4/48、180/400、80%等临时硬门槛；最终以完整能力、正确教学有益贡献及稳定性接近Owner目标。
 
-整批完成或确有科学/资源边界需main裁决时，实验session仅回报一次到主讨论`01a11a0b-f021-7372-a9d7-db231e3345ba`，
+整批完成或确有科学/资源边界需main裁决时，实验session仅回报一次到Owner最新确认的主讨论`01a11b05-3460-7eb0-aca8-177d6d86ef48`，
 active默认Steer；idle/notLoaded通过既有app-server无设置覆盖地resume原session、直接turn/start并核实实际处理，首行包含agent来源。
 Queue只用于明确要求延后或恢复原已接受消息；普通实现/冻结/profile修复自行闭环，不另开批准请求。
 main消费原始科学证据后主动接续，批次完成不关闭EMBER。科研tracked/Git窗口按progress串行移交，禁止双方并发改同一树。

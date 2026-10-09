@@ -1,5 +1,8 @@
 ## 2026-10-09 首批完整科学结果已消费，Git与一次整批移交
 
+Owner最新确认主讨论为01a11b05-3460-7eb0-aca8-177d6d86ef48；旧交接文本中的01a11a0b为已归档旧讨论。
+旧UUID在resume阶段明确拒绝，尚无消息被接受；旧失败回执保留，旧会话仍归档。唯一实际交付与所有权接收目标已修正。
+
 experience_conditioned_compiler_20261009的128warm/54meta、meta27/54 train面板及唯一meta54 correct strict paired400全部完成。
 formal恢复整批exit0/complete，队列400complete；actual scene/state/video/env-policy RNG及原始sidecars由canonical聚合消费者再次核验。
 [完整分析](docs/analyses/experience_conditioned_compiler_20261009.md)与root/scientific_analysis.json保留全部负结果、条件、能力交换与解释边界。
@@ -22,7 +25,7 @@ CPU物理/队列消费者18项通过；退出后从clean frozen a692实际non-he
 原六卡formal和所有本批GPU进程已退出；唯一whole-batch callback也已消费退出。真实event到接受0.434秒、实际agent活动2.715秒，保留原模型/权限。
 
 当前首批scientific消费完成，性能假说受负证据约束；真实经历存在不自动教出正确参数修订，完整分析比较旧self-read、T和共享SDE正反证据。
-tracked/Git整批已准备交回主讨论01a11a0b-f021-7372-a9d7-db231e3345ba；实际移交以root/scientific_completion.json及main_delivery_receipt.json为准。
+tracked/Git整批已准备交回主讨论01a11b05-3460-7eb0-aca8-177d6d86ef48；实际移交以root/scientific_completion.json及main_delivery_receipt.json为准。
 实验session完成推送/clean检查、清理已集成task-owned dev worktree后，只发一次有来源的科学回报，移交后停止tracked写入。
 主讨论须消费原件、自主选择有依据的扩训/比较/主要干预并接续，不按54节点关闭EMBER、不等待Owner例行许可。
 下方running/pending/Queue-only等保留其历史时点，不恢复旧执行或创建重复通知。

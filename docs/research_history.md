@@ -3,6 +3,20 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-09：经验条件完整rank128首批真实学习与formal400未胜强MT
+
+[完整结果](analyses/experience_conditioned_compiler_20261009.md)消费root experience_conditioned_compiler_20261009全部128warm/54meta、train面板与meta54唯一correct strict paired400。
+冻结学习76c136a3，validation metadata import故障修复后从517e0c20恢复原formal队列；原checkpoint、面板、失败与费用保留，没有fresh重跑或结果择优。
+正式135/400，对同scene MT153为R111/G24/L42，对T2340 161为R105/G30/L56；suite40/43/33/19，breadth7只新增task23一行，39仍0。
+固定train meta27初始33/最终30，meta54初始/最终/null均28；相邻最终R24/G4/L6。没有训练域净修订收益，不能称已获得能力而只在held丢失。
+正式实践252083steps、936重置、222自身success/178预算停止，400初读＋714重读＝1114全片读取；失败使用72.31%实践steps，全部尾部保留。
+学习216meta链、36映射各6次、432真实SDE query（265成功）；新增完整坐标自由度、实际经历/压缩前重读/递推Q及FM/PG共同学习仍未兑现完整收益。
+旧T/self-read/shared-SDE证据不抹去；该阴性降低“接通这些接口便自然学成”的支持，不证明整个经验编译族不可学，也不支持无依据原样续训或小扫。
+完整闭合20.518080GPUh、占卡wall并集6.326509h、首次GPU至最后核验elapsed8.747508h、最大6卡，现存56.701GiB；实际storage全程峰未连续测量。
+原Queue-only回报延迟6503.7s，技能修复保留设置后台resume/Steer或direct start；本次退出2.715s出现真实处理。
+a692物理执行优化18项CPU及真实CUDA动作等价通过，时间差接近噪声，不声称整批提速；Test封存。
+本批scientific/Git/原件通过一次主讨论实际回报移交；main消费后须主动科学接续，首批完成不关闭EMBER。
+
 ## 2026-10-09：新专家完整方法、数学与推进规划委托
 
 Owner要求重写提示词，让新专家完整理解要求并独立设计；[唯一当前prompt](review_materials/20261008_method_rethink/EXPERT_PROMPT_FRESH.md)已突出轨迹准备后微调排除条件。

@@ -1,3 +1,15 @@
+## 2026-10-09 首批整批科学消费完成，交回主讨论接续
+
+唯一首批[experience_conditioned_compiler_20261009](docs/designs/experience_conditioned_compiler_20261009.md)已完成实现/profile、128warm/54meta、固定train面板和meta54 correct strict paired400。
+[完整结果与机制分析](docs/analyses/experience_conditioned_compiler_20261009.md)：135/400，对MT153保持111/增24/丢42，对T161保持105/增30/丢56；不是性能资格。
+meta27 initial/end33/30，meta54 initial/end/null均28；没有训练域净修订收益。正式实践252083steps/936重置，400初读＋714重读＝1114全片读取，失败尾部保留。
+实际闭合20.518080GPUh、占卡wall并集6.326509h、首次GPU至核验退出elapsed8.747508h、最大6卡；现存56.701GiB，存储全程峰未连续测量。
+原训练/面板及失败保留，formal从clean517接续；clean a692物理执行CUDA核验通过，未声称整批提速或world2最优。
+真实formal退出后2.715秒自动处理；canonical消息机制active默认Steer、idle/notLoaded后台resume原thread直接start，唯一waiter已结束。
+原件和scientific completion在/data1/user/ymdai/ember_runs/experience_conditioned_compiler_20261009。
+Git整批交付及tracked独占窗口通过一次main_delivery_receipt实际处理证据移交；主讨论须主动消费完整原件、作下一科学取舍并持续接续。
+首批结束不关闭EMBER，不按阴性小扫/固定更多轮数或等待Owner例行许可；也不自动启动未经登记的新科学批。
+
 ## 2026-10-09 开始持续实施：经验条件完整rank128编译器
 
 Owner要求现在开始并持续自主推进；专家推进表不是许可门槛，不得因阶段停止线把整个项目卡在等待Owner批准。

@@ -1,3 +1,32 @@
+## 2026-10-09 首批完整科学结果已消费，Git与一次整批移交
+
+experience_conditioned_compiler_20261009的128warm/54meta、meta27/54 train面板及唯一meta54 correct strict paired400全部完成。
+formal恢复整批exit0/complete，队列400complete；actual scene/state/video/env-policy RNG及原始sidecars由canonical聚合消费者再次核验。
+[完整分析](docs/analyses/experience_conditioned_compiler_20261009.md)与root/scientific_analysis.json保留全部负结果、条件、能力交换与解释边界。
+正式135/400（33.75%），同scene MT153/T2340 161；对MT R111/G24/L42、churn66/400，对T R105/G30/L56、churn86/400。
+suite Spatial/Object/Goal/Long为40/43/33/19；breadth7仅比MT/T6多task23的一行，task39仍0。task16有净增，但四suite总分均下降。
+固定train meta27 initial/end33/30；meta54 initial/end/null均28（end对null G1/L1）；相邻end R24/G4/L6，尚无净修订收益或formal相邻稳定性。
+正式400条件实践252083steps/936重置、222自身success停止/178预算停止，actual J0..5来自实际结果而非预设。
+初读400/重读714/全片等价1114；预算失败使用182272steps和618重读，final16/178；自身成功后final119/222，不以早停替代能力。
+学习216meta链/36映射各6次、432真实SDE query（265成功），实践90307steps/206重读；可微整链replay另934全片读取，缓存不是零成本。
+meta54 train null另33次读取，学习/面板/formal合计3080神经全片passes（不含profile与激活内部重算，算子成本均计费）。
+
+原训练clean frozen76c136a3、formal读取修复clean517e0c20、后续物理优化cleana692ec2b身份分开；没有fresh重跑或据结果改候选。
+原module/import故障、两个formal失败、全部旧回执和计费保留；有效macro155/182及所有formal chains/LoRA/rows保留。
+实际46行闭合账本物理GPU区间并集20.518080GPUh，最大并发6，占卡wall并集6.326509h，首次GPU至核验退出elapsed8.747508h；
+实施起至formal退出9.694107h，原失败到恢复的1.985205h等待不计GPUh但计elapsed。
+两个取消transport及最早import失败未有CUDA记录；保守全部已登记GPU transport窗口合计20.590723GPUh，未伪称实测。
+strg01 data1 used817.458/2048GiB，run allocated56.701GiB；全程storage峰没有连续测量，75.833GiB是profile预测。
+CPU物理/队列消费者18项通过；退出后从clean frozen a692实际non-held native ODE/SDE动作等价通过（差0、0环境steps、0.016929GPUh）。
+10flow timing约0.368–0.372秒，差异接近噪声，不宣称端到端提速；较大frame/decoder已测无收益，world3/4吞吐未测，不称world2最优。
+原六卡formal和所有本批GPU进程已退出；唯一whole-batch callback也已消费退出。真实event到接受0.434秒、实际agent活动2.715秒，保留原模型/权限。
+
+当前首批scientific消费完成，性能假说受负证据约束；真实经历存在不自动教出正确参数修订，完整分析比较旧self-read、T和共享SDE正反证据。
+tracked/Git整批已准备交回主讨论01a11a0b-f021-7372-a9d7-db231e3345ba；实际移交以root/scientific_completion.json及main_delivery_receipt.json为准。
+实验session完成推送/clean检查、清理已集成task-owned dev worktree后，只发一次有来源的科学回报，移交后停止tracked写入。
+主讨论须消费原件、自主选择有依据的扩训/比较/主要干预并接续，不按54节点关闭EMBER、不等待Owner例行许可。
+下方running/pending/Queue-only等保留其历史时点，不恢复旧执行或创建重复通知。
+
 ## 2026-10-09 formal六卡接续，修复真实后台唤醒与执行冗余
 
 唯一macro182 formal400已从clean pushed detached517e0c20接续，gpu01:0/6与gpu02:0/2/4/6组成六卡persistent pool；

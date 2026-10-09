@@ -209,7 +209,7 @@ def test_rl_update_has_fresh_optimizer_and_never_calls_fm(runtime, monkeypatch):
     assert reinforcement.param_groups[0]['weight_decay'] == 0
     monkeypatch.setattr(learning, 'fm_credit', lambda *a, **kw: pytest.fail('RL called FM'))
     collected = []
-    runtime.backward_revision = lambda incoming, teacher, experience, support, value, **kw: collected.append(value)
+    runtime.backward_revisions = lambda prepared, values, **kw: collected.extend(values)
     incoming, outgoing = states(1, incoming=True), states(1)
     prepared = [dict(incoming=incoming[0], outgoing=outgoing[0], teacher={}, experience={}, support={})]
     result = learning.reinforcement_backward(runtime, prepared, query_episodes(1), microbatch=4)
@@ -224,7 +224,7 @@ def test_supervised_backward_combines_fm_and_independent_keep_before_revision(ru
     fm = credit.fm_credit(runtime, incoming, outgoing, batches, seeds=[1], microbatch=7)[0]
     keep = credit.keep_credit(runtime, incoming, outgoing, [keep_support], microbatch=7)[0]
     collected = []
-    runtime.backward_revision = lambda incoming, teacher, experience, support, value, **kw: collected.append(value)
+    runtime.backward_revisions = lambda prepared, values, **kw: collected.extend(values)
     prepared = [dict(incoming=incoming[0], outgoing=outgoing[0], batch=batches[0], seed=1,
                      teacher={}, experience={}, support={}, keep_support=keep_support)]
     result = learning.supervised_backward(runtime, prepared, microbatch=7, revision_microbatch=2)

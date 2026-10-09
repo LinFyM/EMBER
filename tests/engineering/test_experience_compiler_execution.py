@@ -46,7 +46,7 @@ def test_native_prefix_keeps_full_batch_when_only_practice_phi_is_copied(monkeyp
         model=SimpleNamespace(embed_prefix=lambda *_: (embeddings, padding, None)),
         _preprocess_images=lambda batch: ([], []))
     calls = []
-    monkeypatch.setattr(execution, 'prepare_prefix_kv_cache', lambda policy, prefix: calls.append(prefix) or prefix)
+    monkeypatch.setattr(execution, 'prepare_prefix_kv_cache', lambda policy, prefix, **kwargs: calls.append(prefix) or prefix)
     batch = {'observation.language.tokens': None, 'observation.language.attention_mask': None}
     practice = execution.NativeVelocity(policy, batch, capture_indices=[1])
     final = execution.NativeVelocity(policy, batch, capture_phi=False)
@@ -282,3 +282,52 @@ def test_checkpoint_rebinds_factors_after_activation_and_preserves_ten_step_deri
     expected, = torch.autograd.grad(reference[:, :5, :7].sum(), state['weight'])
     torch.testing.assert_close(actual, expected)
     assert current['value'] is None
+
+
+def test_batched_different_conditions_keep_their_own_support_mean(monkeypatch):
+    """Independent dense objective verifies M2/M3 weights across a batch boundary."""
+    from ember.experience_compiler.runtime import Runtime
+    current = {'weight': None}
+    @contextmanager
+    def activate(states, *, batch_indices=None):
+        values = torch.stack([state['weight'] for state in states])
+        current['weight'] = values if batch_indices is None else values[batch_indices]
+        try:
+            yield
+        finally:
+            current['weight'] = None
+    class Native:
+        def __init__(self, *args, **kwargs):
+            pass
+        def __call__(self, z, tau):
+            return z * current['weight'][:, None, None] + tau
+    class Criterion:
+        def context(self, teacher, experience, indices):
+            return torch.full((len(indices), 256), teacher['pressure'])
+        def action_cotangent(self, context, actions, **kwargs):
+            return context[:, 0, None, None].expand_as(actions)
+        def precondition(self, value):
+            return {key: tensor * .02 for key, tensor in value.items()}
+    monkeypatch.setattr(execution, 'NativeVelocity', Native)
+    runtime = Runtime.__new__(Runtime)
+    runtime.device, runtime.policy, runtime.compiler = torch.device('cpu'), None, Criterion()
+    runtime.execution, runtime.support_microbatch = SimpleNamespace(activate=activate), 4
+    runtime.neural_reads, runtime.neural_read_frames = 0, 0
+    items, expected = [], []
+    for count, weight, pressure in ((2, .3, .2), (3, .7, -.3)):
+        noise = torch.randn(count, 50, 32)
+        incoming = {'weight': torch.tensor(weight)}
+        value = incoming['weight'].clone().requires_grad_()
+        response = noise
+        for step in range(10):
+            response = response - .1 * (response * value + 1 - step * .1)
+        objective = response[:, :5, :7].sum() * pressure / count
+        derivative, = torch.autograd.grad(objective, value)
+        expected.append(value.detach() - .02 * derivative)
+        items.append(dict(incoming=incoming, teacher={'pressure': pressure, 'indices': torch.arange(2)}, experience={},
+            support=dict(indices=torch.arange(count), batch={'input': torch.zeros(count, 1)}, noise=noise)))
+    actual = runtime.edit_many(items)
+    for state, value in zip(actual, expected, strict=True):
+        torch.testing.assert_close(state['weight'], value)
+    assert [len(item['support']['actions']) for item in items] == [2, 3]
+    assert runtime.last_revision_cost['event_support_counts'] == [2, 3]

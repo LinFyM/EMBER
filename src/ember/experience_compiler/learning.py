@@ -27,7 +27,7 @@ def fresh_optimizer(model, *, stage):
 
 
 def _backward_events(runtime, prepared, components, *, microbatch, stage):
-    records = []
+    records, credits = [], []
     for index, item in enumerate(prepared):
         credit, metrics = {}, {}
         for component, rows in components.items():
@@ -40,11 +40,14 @@ def _backward_events(runtime, prepared, components, *, microbatch, stage):
                 else:
                     credit[name] = value
             metrics[component] = {key: value for key, value in row.items() if key != 'cotangent'}
-        started = time.monotonic()
-        runtime.backward_revision(item['incoming'], item['teacher'], item['experience'],
-                                  item['support'], credit, microbatch=microbatch)
-        records.append(dict(stage=stage, components=metrics,
-                            revision_backward_seconds=time.monotonic() - started))
+        credits.append(credit)
+        records.append(dict(stage=stage, components=metrics))
+    started = time.monotonic()
+    runtime.backward_revisions(prepared, credits, microbatch=microbatch)
+    seconds = time.monotonic() - started
+    for record in records:
+        record['group_revision_backward_seconds'] = seconds
+        record['group_events'] = len(prepared)
     return records
 
 

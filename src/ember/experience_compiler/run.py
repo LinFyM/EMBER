@@ -103,7 +103,7 @@ def main(argv=None):
     torch.set_num_threads(4)
     check_budget(args.run_root)
     attempt = f'{args.command}_{time.time_ns()}'
-    start = dict(event='start', attempt=attempt, unix=time.time(), hostname=socket.gethostname(),
+    start = dict(event='start', attempt=attempt, unix=float(os.environ.get('EMBER_LAUNCH_UNIX', time.time())), hostname=socket.gethostname(),
         physical_gpu=args.physical_gpu, pid=os.getpid(), code_git=git, command=args.command)
     append_jsonl(args.run_root / 'costs.jsonl', start)
     runtime, failed = None, None
@@ -126,10 +126,22 @@ def main(argv=None):
         write_json_atomic(args.run_root / f'failure_{attempt}.json', dict(error=failed, code_git=git))
         raise
     finally:
-        if runtime is not None:
-            runtime.close()
-        append_jsonl(args.run_root / 'costs.jsonl', dict(event='stop', attempt=attempt,
-            unix=time.time(), failed=failed is not None, duration_seconds=time.time() - start['unix']))
+        try:
+            if runtime is not None:
+                write_json_atomic(args.run_root / f'reading_cost_{attempt}.json', dict(code_git=git,
+                    attempted_neural_full_video_reads=runtime.neural_reads,
+                    attempted_neural_read_frames=runtime.neural_read_frames,
+                    native_teacher_encoded_frames=runtime.native_teacher_frames,
+                    native_teacher_feature_seconds=runtime.feature_seconds,
+                    native_encoded_own_observations=runtime.image_encoded_observations,
+                    own_observation_cache_hits=runtime.image_cache_hits))
+                runtime.close()
+        except BaseException:
+            failed = traceback.format_exc()
+            raise
+        finally:
+            append_jsonl(args.run_root / 'costs.jsonl', dict(event='stop', attempt=attempt,
+                unix=time.time(), failed=failed is not None, duration_seconds=time.time() - start['unix']))
 
 
 if __name__ == '__main__':

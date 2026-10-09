@@ -30,7 +30,7 @@ def measure(runtime, label, function):
     try:
         value = function()
         torch.cuda.synchronize(runtime.device)
-        row = dict(label=label, valid=True, seconds=time.monotonic() - started,
+        row = dict(label=label, valid=True, code_git=runtime.profile_git, unix=time.time(), seconds=time.monotonic() - started,
             peak_allocated_GiB=torch.cuda.max_memory_allocated(runtime.device) / 1024**3,
             peak_reserved_GiB=torch.cuda.max_memory_reserved(runtime.device) / 1024**3)
     except torch.cuda.OutOfMemoryError:
@@ -103,17 +103,64 @@ def verify_native(runtime, contract):
                    for k, g in zip(leaves, gradients, strict=True))
     row, uncheckpointed = measure(runtime, 'actual_uncheckpointed_binding_direction', ordinary_vjp)
     binding = None if not row['valid'] else abs(uncheckpointed - rhs) / max(abs(rhs), 1e-12)
+    fp32 = None
+    if error > .2:
+        row, fp32 = measure(runtime, 'actual_FP32_bounded_directional_oracle',
+                            lambda: numerical_fp32(runtime, incoming, support, directions))
+        if fp32 is None or fp32['finite_direction_relative_RMS'] > .1:
+            raise RuntimeError(f'continuous native directional check failed: {fp32}')
     result = dict(task_id=0, teacher_demo=29, actual_noise_seed=item['support']['noise_seeds'][0],
         full_factor_count=len(credit), native_latent=[50, 32], native_flow_steps=10, response=[5, 7],
         lhs=lhs, rhs=rhs, adjoint_relative_error=relative, finite_direction_relative_RMS=error,
         checkpoint_binding_relative_error=binding, finite_difference_only_for_numerical_oracle=True,
-        code_git=runtime.profile_git)
+        FP32_numerical_oracle=fp32, code_git=runtime.profile_git)
+    write_json_atomic(runtime.profile_root / f'native_derivatives_{runtime.profile_git[:8]}.json', result)
     write_json_atomic(runtime.profile_root / 'native_derivatives.json', result)
     if len(credit) != 76 or relative > .1 or binding is None or binding > .05:
         raise RuntimeError(f'actual native derivative/binding check failed: {result}')
     # BF16 finite differencing has quantization noise; retain its measured
     # error for interpretation instead of silently using FD as a gradient.
     return result
+
+
+def numerical_fp32(runtime, incoming, support, direction):
+    """One floating-point oracle for a measured BF16 small-perturbation mismatch.
+
+    Same weights, inputs and direction; temporarily promote frozen arithmetic.
+    This is not a production gradient or changed learning/policy consumer.
+    """
+    from .execution import native_actions
+    original = runtime.native_actions
+    parameters = [(parameter, parameter.dtype) for parameter in runtime.policy.parameters()]
+    buffers = [(name, value.dtype) for name, value in runtime.policy.named_buffers()]
+    precision = torch.get_float32_matmul_precision()
+    def precise(states, batch, noise, **kwargs):
+        with torch.autocast('cuda', enabled=False):
+            return native_actions(runtime, states, batch, noise, **kwargs)
+    try:
+        torch.set_float32_matmul_precision('highest')
+        runtime.policy.float()
+        runtime.native_actions = precise
+        tangent = factor_jvp(runtime, incoming, support, direction, microbatch=1)
+        epsilon = .01
+        values = []
+        with torch.no_grad():
+            for sign in (1, -1):
+                state = {key: value + sign * epsilon * direction[key] for key, value in incoming.items()}
+                values.append(runtime.native_actions([state], support['batch'], support['noise']))
+        finite = (values[0] - values[1]) / (2 * epsilon)
+        error = float((finite - tangent).square().mean().sqrt() / tangent.square().mean().sqrt().clamp_min(1e-12))
+        return dict(finite_direction_relative_RMS=error, epsilon=epsilon, arithmetic='FP32',
+                    same_actual_input_and_noise=True, no_optimizer=True)
+    finally:
+        runtime.native_actions = original
+        for parameter, dtype in parameters:
+            parameter.data = parameter.data.to(dtype=dtype)
+        for name, dtype in buffers:
+            parent, _, field = name.rpartition('.')
+            module = runtime.policy.get_submodule(parent) if parent else runtime.policy
+            module._buffers[field] = module._buffers[field].to(dtype=dtype)
+        torch.set_float32_matmul_precision(precision)
 
 
 def event_queries(data, condition):
@@ -133,16 +180,14 @@ def event_queries(data, condition):
 
 def _compile(runtime, prepared, label):
     def run():
-        costs = []
-        for item in prepared:
-            item['outgoing'] = runtime.edit(item['incoming'], item['teacher'], item['experience'],
-                                             support=item['support'])
-            costs.append(dict(runtime.last_revision_cost))
-        return costs
+        outgoing = runtime.edit_many(prepared)
+        for item, state in zip(prepared, outgoing, strict=True):
+            item['outgoing'] = state
+        return dict(runtime.last_revision_cost)
     row, costs = measure(runtime, label, run)
     if not row['valid']:
         raise RuntimeError('complete four-condition edit did not fit')
-    return dict(measurement=row, events=costs)
+    return dict(measurement=row, group=costs)
 
 
 def _best(rows, label):
@@ -156,12 +201,9 @@ def profile_physical(runtime, prepared, args):
     from .credit import fm_credit
     from .learning import gradient_groups
     rows = []
-    representative = max(prepared, key=lambda item: len(item['experience']['episode']))
-    for chunk in (1, 4, 8, 16):
+    for chunk in (4, 8, 16, 32, 64):
         runtime.support_microbatch = chunk
-        row, _ = measure(runtime, f'complete_edit_support_micro{chunk}', lambda:
-            runtime.edit(representative['incoming'], representative['teacher'], representative['experience'],
-                         support=representative['support']))
+        row, _ = measure(runtime, f'four_complete_edits_support_micro{chunk}', lambda: runtime.edit_many(prepared))
         rows.append(dict(row, microbatch=chunk))
         if not row['valid']:
             break
@@ -182,12 +224,11 @@ def profile_physical(runtime, prepared, args):
         raise RuntimeError('full four-event FM credit did not fit')
     fm_chunk = _best(fm_rows, 'FM')
     jvp_rows = []
-    credit = latest[next(i for i, item in enumerate(prepared) if item is representative)]['cotangent']
-    for chunk in (1, 4, 8, 16):
+    credits = [row['cotangent'] for row in latest]
+    for chunk in (4, 8, 16, 32, 64):
         runtime.compiler.zero_grad(set_to_none=True)
         row, _ = measure(runtime, f'real_FM_shared_adjoint_micro{chunk}', lambda:
-            runtime.backward_revision(representative['incoming'], representative['teacher'],
-                representative['experience'], representative['support'], credit, microbatch=chunk))
+            runtime.backward_revisions(prepared, credits, microbatch=chunk))
         row.update(microbatch=chunk, gradient_groups=gradient_groups(runtime.compiler))
         jvp_rows.append(row)
         if not row['valid']:
@@ -196,7 +237,7 @@ def profile_physical(runtime, prepared, args):
     runtime.compiler.zero_grad(set_to_none=True)
     return dict(support_microbatch=support_chunk, FM_microbatch=fm_chunk,
         adjoint_microbatch=jvp_chunk, support=rows, FM=fm_rows, adjoint=jvp_rows, initial_compile=compiled,
-        enlargement_boundary='logical M<=16 and exactly112 FM queries; all useful physical sizes measured')
+        enlargement_boundary='per-event M<=16, four-event supports and exactly112 FM queries; useful physical sizes measured')
 
 
 def _save_stage(runtime, optimizer, scheduler, update, stage):
@@ -319,7 +360,7 @@ def profile(runtime, contract, args):
         # New RL moments, no FM; all PG replays occur before this sole step.
         optimizer, scheduler = fresh_optimizer(runtime.compiler, stage='reinforcement')
         pg_rows, chosen = [], None
-        for chunk in (4, 8, 16):
+        for chunk in (4, 8, 16, 32, 64):
             optimizer.zero_grad(set_to_none=True)
             row, consumer = measure(runtime, f'real_PG_keep_shared_micro{chunk}', lambda:
                 reinforcement_backward(runtime, prepared, episodes, microbatch=chunk,

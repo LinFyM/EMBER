@@ -52,6 +52,7 @@ class Runtime:
             frame_chunk=frame_chunk, experience_chunk=experience_chunk).to(self.device)
         self.execution = BatchedLoRAInference(self.policy, self.lora)
         self.support_microbatch = support_microbatch
+        self.neural_reads, self.neural_read_frames = 0, 0
         self.probe = torch.randn((50, 32), generator=torch.Generator().manual_seed(1729)).to(self.device)
         self.tasks = load_learning_tasks(self.asset_root, TASKS, protocol_path=SOURCE['data_protocol'])
         self.stores, self.cache = {}, OrderedDict()
@@ -145,47 +146,85 @@ class Runtime:
             return native_actions(self, states, batch, noise, batch_indices=batch_indices,
                                   checkpointed=checkpointed)
 
+    def _context(self, item):
+        self.neural_reads += 1
+        self.neural_read_frames += len(item['teacher']['indices'])
+        return self.compiler.context(item['teacher'], item['experience'], item['support']['indices'])
+
     def edit(self, incoming, teacher, experience, *, support):
-        """Frozen incoming; learned functional pressure writes full A/B once."""
-        from .execution import factor_vjp
+        return self.edit_many([dict(incoming=incoming, teacher=teacher, experience=experience,
+                                    support=support)])[0]
+
+    def edit_many(self, items):
+        """Different conditions share native batches; each retains its own M mean."""
+        from .execution import factor_vjp, join_supports
         started = time.monotonic()
         with torch.no_grad(), autocast(self.device):
-            context = self.compiler.context(teacher, experience, support['indices'])
+            contexts = [self._context(item) for item in items]
+        if hasattr(self, 'profile_root'):
+            torch.cuda.synchronize(self.device)
         context_seconds = time.monotonic() - started
+        support, counts = join_supports([item['support'] for item in items])
+        bounds = [0]
+        for count in counts:
+            bounds.append(bounds[-1] + count)
         def pressure(actions, start, stop):
-            with torch.enable_grad(), autocast(self.device):
-                return self.compiler.action_cotangent(context[start:stop], actions,
-                    create_graph=False).detach() / len(context)
+            result = torch.empty_like(actions)
+            for i, context in enumerate(contexts):
+                low, high = max(start, bounds[i]), min(stop, bounds[i + 1])
+                if low < high:
+                    with torch.enable_grad(), autocast(self.device):
+                        result[low - start:high - start] = self.compiler.action_cotangent(
+                            context[low - bounds[i]:high - bounds[i]], actions[low - start:high - start],
+                            create_graph=False).detach() / counts[i]
+            return result
         started = time.monotonic()
-        pullback, actions = factor_vjp(self, incoming, support, pressure,
+        incoming = [item['incoming'] for item in items]
+        pullbacks, actions = factor_vjp(self, incoming, support, pressure,
             microbatch=self.support_microbatch, return_actions=True)
-        change = self.compiler.precondition(pullback)
-        outgoing = {key: value.detach().to(self.device).float() - change[key]
-                    for key, value in incoming.items()}
-        if any(not bool(torch.isfinite(value).all()) for value in outgoing.values()):
-            raise RuntimeError('functional edit produced nonfinite complete factors')
-        support['actions'] = actions.detach()
+        outgoing = []
+        for i, (state, pullback) in enumerate(zip(incoming, pullbacks, strict=True)):
+            change = self.compiler.precondition(pullback)
+            edited = {key: value.detach().to(self.device).float() - change[key] for key, value in state.items()}
+            if any(not bool(torch.isfinite(value).all()) for value in edited.values()):
+                raise RuntimeError('functional edit produced nonfinite complete factors')
+            outgoing.append(edited)
+            items[i]['support']['actions'] = actions[bounds[i]:bounds[i + 1]].detach()
         self.last_revision_cost = dict(context_seconds=context_seconds,
-            native_F_VJP_seconds=time.monotonic() - started, support_points=len(context),
+            native_F_VJP_seconds=time.monotonic() - started, support_points=sum(counts),
+            event_support_counts=counts, group_event_count=len(items),
             physical_support_microbatch=self.support_microbatch)
         return outgoing
 
     def backward_revision(self, incoming, teacher, experience, support, credit, *, microbatch=None):
-        """Exact -J(P^T v)/M adjoint into q and the small energy/context graph."""
-        from .execution import factor_jvp
+        return self.backward_revisions([dict(incoming=incoming, teacher=teacher,
+            experience=experience, support=support)], [credit], microbatch=microbatch)[0]
+
+    def backward_revisions(self, items, credits, *, microbatch=None):
+        """Exact -J(P^T v)/M, batched across distinct actual incoming adapters."""
+        from .execution import factor_jvp, join_supports
         chunk = self.support_microbatch if microbatch is None else microbatch
+        support, counts = join_supports([item['support'] for item in items])
         started = time.monotonic()
-        qbar = -factor_jvp(self, incoming, support, self.compiler.precondition(credit),
-                          microbatch=chunk) / len(support['indices'])
+        tangent = factor_jvp(self, [item['incoming'] for item in items], support,
+            [self.compiler.precondition(credit) for credit in credits], microbatch=chunk)
         jvp_seconds = time.monotonic() - started
         started = time.monotonic()
-        with torch.enable_grad(), autocast(self.device):
-            context = self.compiler.context(teacher, experience, support['indices'])
-            q = self.compiler.action_cotangent(context, support['actions'], create_graph=True)
-            torch.autograd.backward(q, qbar.to(q))
+        results, cursor = [], 0
+        for item, count in zip(items, counts, strict=True):
+            qbar = -tangent[cursor:cursor + count] / count
+            with torch.enable_grad(), autocast(self.device):
+                context = self._context(item)
+                q = self.compiler.action_cotangent(context, item['support']['actions'], create_graph=True)
+                torch.autograd.backward(q, qbar.to(q))
+            results.append(qbar.detach())
+            cursor += count
+        if hasattr(self, 'profile_root'):
+            torch.cuda.synchronize(self.device)
         self.last_adjoint_cost = dict(native_JVP_seconds=jvp_seconds,
-            shared_context_energy_backward_seconds=time.monotonic() - started)
-        return qbar.detach()
+            shared_context_energy_backward_seconds=time.monotonic() - started,
+            group_event_count=len(items), event_support_counts=counts)
+        return results
 
     @torch.no_grad()
     def observation_features(self, observations):

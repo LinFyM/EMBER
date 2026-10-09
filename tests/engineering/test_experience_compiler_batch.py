@@ -142,6 +142,18 @@ class QueueCLI(batch.Supervisor):
             self.timeline.append(("end", command, stage, tuple(targets)))
 
 
+def test_small_pool_retry_reuses_completed_rows_and_starts_only_useful_workers(tmp_path):
+    args = arguments(tmp_path)
+    args.slot_batch = 16
+    runner = QueueCLI(args)
+    runner.queues['pool0'] = dict(pending=17, claimed=0, complete=127)
+    asyncio.run(runner.collect_initial())
+    workers = [p for p in runner.record['processes'] if p['command'] == 'collect']
+    assert len(workers) == 2
+    assert [p['argv'][p['argv'].index('--slot-batch') + 1] for p in workers] == ['9', '9']
+    assert runner.counts('pool0') == {'complete': 144}
+
+
 def test_full_batch_resumes_before_formal_tail_and_prioritizes_pending180(tmp_path):
     runner = QueueCLI(arguments(tmp_path))
     asyncio.run(asyncio.wait_for(runner.run(), 5))

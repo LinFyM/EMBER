@@ -158,11 +158,12 @@ class Supervisor:
             raise
 
     def program(self, command, output, *, checkpoint=None, stage=None, pool=None,
-                gpu=None, stop_update=None, resume=None):
+                gpu=None, stop_update=None, resume=None, slot_batch=None):
         args = self.args
         cli = ["--asset-root", str(args.asset_root), "--run-root", str(self.root), "--output", str(output)]
         for key in PHYSICAL:
-            cli += ["--" + key.replace("_", "-"), str(getattr(args, key))]
+            value = slot_batch if key == "slot_batch" and slot_batch is not None else getattr(args, key)
+            cli += ["--" + key.replace("_", "-"), str(value)]
         for key, value in (("checkpoint", checkpoint), ("stage", stage), ("pool", pool),
                            ("stop-update", stop_update), ("resume", resume)):
             if value is not None:
@@ -333,12 +334,13 @@ class Supervisor:
         self.check_stop()
         self.save()
 
-    async def worker(self, name, card):
+    async def worker(self, name, card, *, slot_batch=None):
         spec, (node, gpu) = self.spec(name), card
         return await self.child(f"{name}-{node}-gpu{gpu}-{len(self.record['processes']):04d}", node,
             self.program("collect" if spec["pool"] else "worker", spec["output"], gpu=gpu,
                          pool=name if spec["pool"] else None, stage=None if spec["pool"] else name,
-                         checkpoint=None if name == "pool0" else self.checkpoint(spec["point"])), (card,))
+                         checkpoint=None if name == "pool0" else self.checkpoint(spec["point"]),
+                         slot_batch=slot_batch), (card,))
 
     def check_stop(self):
         formal, train = self.result("formal180"), self.result("train180")
@@ -363,9 +365,12 @@ class Supervisor:
         if self.counts("pool0") == {"complete": self.spec("pool0")["count"]}:
             await self.aggregate("pool0")
             return
+        pending = self.counts("pool0").get("pending", 0)
+        workers = min(len(self.cards), max(1, (pending + self.args.slot_batch - 1) // self.args.slot_batch))
+        slots = min(self.args.slot_batch, max(1, (pending + workers - 1) // workers))
         async with asyncio.TaskGroup() as pool:
-            for card in self.cards:
-                pool.create_task(self.worker("pool0", card))
+            for card in self.cards[:workers]:
+                pool.create_task(self.worker("pool0", card, slot_batch=slots))
         if not self.stopped:
             await self.aggregate("pool0")
 

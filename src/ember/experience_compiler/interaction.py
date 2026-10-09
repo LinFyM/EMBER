@@ -289,7 +289,9 @@ class Runner:
                 key, phi = slot.observation_id, velocity.phi[fact_position]
                 slot.chain.phi[key] = phi
                 cache_entries[key] = {'phi': phi}
-                slot.pending = dict(pre=key, hidden=hidden[fact_position])
+                # A contiguous slot view still owns the whole native batch's
+                # CPU storage; torch.save would retain the other conditions.
+                slot.pending = dict(pre=key, hidden=hidden[fact_position].clone())
             slot.ready = False
             self.environments.submit(index, 'step', actions=actions[position], noise_seed=seeds[position])
         if cache_entries:

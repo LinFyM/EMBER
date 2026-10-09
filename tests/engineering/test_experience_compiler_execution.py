@@ -168,6 +168,35 @@ def test_final_different_loras_keep_independent_noise_and_skip_all_fact_reading(
         runner.close()
 
 
+def test_saved_slot_hidden_does_not_serialize_other_conditions(monkeypatch, tmp_path):
+    from ember.experience_compiler.storage import save_condition
+
+    runtime, batches, edits, states = fake_runtime(monkeypatch)
+    captured = []
+    def chunk(velocity, noise, capture_hidden, capture_indices):
+        hidden = torch.stack([torch.full((2, 50, 1024), float(i + 1), dtype=torch.bfloat16)
+                              for i in range(len(capture_indices))])
+        captured.append(hidden)
+        return torch.ones(len(noise), 50, 7), hidden
+    monkeypatch.setattr(interaction, 'action_chunk', chunk)
+    runner = interaction.Runner(runtime, {}, 0, slot_batch=2)
+    try:
+        results = list(runner.run([request(0), request(1)]))
+        first = next(r for r in results if r['request']['condition']['task_id'] == 0)
+        chain = first['chain']
+        save_condition(tmp_path / 'condition', first['request']['condition'], chain)
+        saved = torch.load(tmp_path / 'condition/experience.pt', map_location='cpu', weights_only=False)
+        original, restored = captured[0][0], saved['records'][0]['hidden']
+        assert captured[0].shape == (2, 2, 50, 1024)
+        assert original.untyped_storage().nbytes() == 2 * original.nbytes
+        assert restored.shape == original.shape and restored.dtype == original.dtype
+        torch.testing.assert_close(restored, original, rtol=0, atol=0)
+        assert restored.untyped_storage().nbytes() == restored.nbytes
+        assert (tmp_path / 'condition/experience.pt').stat().st_size < original.nbytes + 20000
+    finally:
+        runner.close()
+
+
 def test_null_replay_starts_actual_MT_and_never_uses_real_intermediate_parameters():
     from ember.experience_compiler.runtime import Runtime
     runtime = Runtime.__new__(Runtime)

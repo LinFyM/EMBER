@@ -11,6 +11,11 @@ main已核对clean pushed899554fb、原始配对行、实际事件/损失与模�
 本次提交/派发接受前main持tracked；接受后实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占工程/执行/Git，main只读分析。
 实际承接/启动另以派发与launch原件记录；此登记不冒称补充已运行或完成。以下为原批封口与历史。
 
+实验session已从675915a3创建独占codex/parameter-fullreadout-20261009；canonical Runner在持有边界clone单slot H，
+实际save_condition/torch.load回归及现有执行/存储/配对消费者18项通过，值/dtype/shape保留且保存不带其它condition底层storage。
+新ROOT已用只读symlink和小metadata复用原32，原contract完整相等，实际新队列32complete/368pending；父队列和停止记录不写入。
+strg01 data1实测约1093GiB/2048GiB，共享余量81TiB，220GiB计划可准入。新冻结/实际启动及资源身份以新ROOT原件为准。
+
 ## 2026-10-09 parameter compiler科学封口：180触发预注册停止，保留已发生360正负证据
 
 完整[科学分析](docs/analyses/parameter_conditioned_compiler_20261009.md)已直接消费源码、实际事件、原始配对行、训练与费用。

@@ -1,3 +1,27 @@
+## 2026-10-10 固定incoming诊断完整消费：三臂同为13/24，经验与编辑均有得失
+
+[完整科学报告](docs/analyses/parameter_edit_credit_diagnostic_20261009.md)已消费8个原最后incoming、原E+及新E0，
+三臂72闭环、576新增十步和672单time FM全部complete，两个attempt均exit0；无新学习/适应/held/Test、pilot或重试。
+I/E+/E0各13/24、breadth4；I→E+ R11/G2/L2、churn4/24、Jaccard.7333；E0→E+ R8/G5/L5、churn10/24、Jaccard.4444。
+Goal0 I2→E+4、E01→E+4；E还保持Long16/state34，却丢Spatial29、两Object/state33、Goal6/state34及Long44/state32。
+Spatial43在最后I已全失败；Spatial29与Long44最后编辑损失且专家full50 FM改善。Object同失败仍有不同目标/转移行为。
+完整成功集合、真实body/predicate及双相机图/72短片索引保留；报告连续连接实际参数/经验/教学读取、差分decoder、FM信用及控制。
+降低成功门控、统一删E或原样FM/递推曝光作为充分修复的支持，保留Goal/Long1/T正证据及ADSP/SKNC等阴性；不指定唯一根因。
+这是已见结果定向train面板，不改完整χ360130/MT153或原train MT/end/null；旧end11与新E+13的6个翻转全部保留，不追逐一致或择分。
+
+ROOT=/data1/user/ymdai/ember_runs/parameter_edit_credit_diagnostic_20261009；原父ROOT只读，8新E0与全部预测/行为/费用保留。
+实际17,580环境steps（含720settling）、33失败用11,110steps/尾部1,650（内含）、8新全片神经读取/275frames；
+0.283373GPUh、science elapsed17.09分钟、峰4卡，18费用窗全闭合；没有新实践链，也不重复计费父8条件的15读取/3,618steps。
+闭环复用实际不同LoRA B1–16/persistent环境；离线使用注册矩阵实测28/56/72 batch，allocated峰13.49/17.13/19.48GiB，
+未因world2或建议2卡限制吞吐，也未制造额外query/dummy。不同条件/节点，不宣称匹配speedup或持续最优batch。
+37项实际执行/scene/capture/FM消费者检查通过；E0/closedloop冻结c381f178，读出6204e027，原E+编译身份不改。
+72份raw/prefix/noise和T+1时钟完整核验；两节点本ROOT进程与ymdai compute GPU进程均已退出，见analysis/resource_exit.json。
+当前科学原件约1.686GiB，历史峰未连续测量；已合并计算/agent树及最终dev树的退役/释放以analysis/cleanup.json为准。
+科学计算与本轮消费完成，没有新增active计算；Git/完成记录及一次当前main可靠处理回执后交回tracked窗口。
+main继续沿原件和完整历史独立形成后继合同，不等待Owner许可、不重复工程验收、不自动新增保持loss/RL/panel。
+本批无自Queue/逐阶段心跳/第二退出等待者；唯一main_delivery_receipt区分接受与真实处理，scientific_completion判重。
+以下实施、派发及旧结果均为历史，不恢复已完成或科学停止任务。
+
 ## 2026-10-09 实验session实施固定incoming的一步经验诊断
 
 已接受main `73525c64` 的唯一active诊断合同，实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占tracked/Git/运行窗口。

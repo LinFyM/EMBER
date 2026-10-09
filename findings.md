@@ -11006,3 +11006,29 @@ ADSP/SKNC/CV-CSD/DJNFR与§386限制保持假说；尤其SKNC保持训练条件�
 一次编辑是否有益、E是否帮助当前编辑、变化在何种实际行为出现必须分开；E0仍继承I及实际编辑时点，不是假想无交互算法。
 完整判据与未知见[main分析§7](docs/analyses/parameter_compiler_fullreadout_20261009.md#7-main消费后的取舍先分开一次编辑的收益与经验的作用)。
 预计科学1–3GPUh/20–60分钟，新增峰24GiB；实际启动与结果另记progress，不以登记代替执行。
+
+## 416. 同incoming诊断确认经验与编辑的双向作用，专家FM不能保证实际控制（2026-10-10）
+
+[冻结诊断完整消费](docs/analyses/parameter_edit_credit_diagnostic_20261009.md)固定χ360、train0/13/20/32各两原teacher和states32–34。
+实际最后incoming I、原end E+、同I/V/L的empty-E E0各13/24，breadth4；I→E+ R11/G2/L2，E0→E+ R8/G5/L5。
+E0继承实际I和时点，不是旧null或独立无交互算法；定向已见train面板不形成held/strict400/video因果资格。
+Goal0 E+4对I2/E01，恢复4条E0缺失成功却也丢其唯一state34；Long16/state34由E保持，Long44/state32却由E丢失。
+Spatial43的I/E+/E0均0，目标未动，部分原能力损失在最后编辑前已存在；Spatial29最后从3到2，E0仍3。
+两Object条件各丢E0的state33；I/E+同失败不等于同行为，teacher4 I抬salad_dressing、E+移动目标bbq但未入basket，E0实际成功。
+Long44/state32三臂都开炉，损失在后段pot获取/转移；pot未明显抬起而frypan被移动，唯一接触/抓持原因仍未知。
+
+576次同观测/noise完整十步及48个最后实践query证明参数和E差进入实际控制函数；E差多数远小于完整编辑差，却交换10条成功。
+有限采样的E+−E0没有夹爪sign翻转，不能排除其它时点/已到状态/接触时序；未执行尾部不称真实行为。
+原实践I重算有正常数值参照差，状态函数分解是代数关系而非失败百分比；没有bitwise验收、低位重跑或择分。
+672同query FM中7/8 condition的E+均值改善，但224对query仅108改善/116变差；Spatial43恶化使full50总均值稍差。
+Spatial29与Long44专家full50分别约改善1.07%/.46%而丢新初态成功；前者front5 FM也更好，不能把只重权前5当充分修复。
+Goal E的FM与能力排序又不统一，约束“压小所有修改”的方向。实际keep仍只沿同专家FM梯度1/1.2加权，无独立incoming保持方向。
+当前事实增强经验有功能作用及专家信用不能保证有用编辑的有限证据；净正能力、稳定保持、唯一编码/信用根因及后继可学性未建立。
+成功后门控、统一删E、原样FM/递推曝光作为完整解释的支持降低；ADSP/SKNC/CV-CSD/DJNFR阴性和T/Long1正证据不清零。
+main须连续推导能够获得新控制且解释保持/迁移的后继合同，不自动加loss/RL、更多panel或固定实践次数。
+
+全部72新行和历史MT/end/null13/11/12保留；新E+13对旧end11有6成功翻转，不改旧结果，不宣称稳定复现。
+四卡真实B1–16闭环和注册读出28/56/72物理batch完成，17,580steps、8新神经全片读取、0.283373GPUh、17.09分钟科学elapsed。
+18费用窗闭合，无新failed/partial/pilot/retry；父实践/读取只引用不重复计费，全部行为/预测/图索引保留。
+两节点本批进程/资源已退出，代码clean pushed frozen身份c381f178/6204e027、针对实际消费者37项检查通过。
+独占Git窗口与资源/存储退役通过完成记录及一次当前main真实处理回执交回，main主动消费并继续EMBER。

@@ -3,6 +3,20 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-10：同incoming诊断完整交付，E与最终编辑都有增益和损失
+
+[完整报告](analyses/parameter_edit_credit_diagnostic_20261009.md)按冻结χ360与原8condition/24初态完成三臂72闭环，I/E+/E0均13/24。
+I→E+ R11/G2/L2，E0→E+ R8/G5/L5；Goal获得控制，Spatial/Object/Long及一条Goal也有E损失。
+Spatial43在最后I已失败；Spatial29/Long44最后编辑丢成功而专家full50 FM更好。实际body/predicate与双RGB区分目标获取、转移和放置，
+同为失败也可能改变目标操作；唯一接触/编码/信用原因未建立。完整576十步与672 FM、所有不利query和图/短片索引保留。
+降低成功门控、统一删E或原样FM/递推曝光作为充分解释的支持，保留旧T/Long1正证据与ADSP/SKNC等阴性；本轮不自动开启新学习。
+这是定向已见train诊断，不改完整χ360130/MT153、旧train分数/科学停止或原null；新E0继承同I，非独立无交互算法。
+新E+13与旧end11的6条翻转单列，不重复择分，不冒称held资格、稳定复现或视频必要性。
+ROOT=parameter_edit_credit_diagnostic_20261009；E0/闭环c381f178、离线6204e027均clean pushed detached，父ROOT全程只读。
+新增17,580环境steps/8神经全片读取，0.283373GPUh、科学elapsed17.09分钟、四卡，18费用窗闭合、两个attempt exit0。
+原件/关键权重/全部费用保留；37项实际消费者检查及72时钟/来源核验通过，资源退出与工作树退役以analysis原件为准。
+一次当前main可靠处理回执交回独占Git后，main据完整历史主动形成后继，未登记新训练/held/Test，不关闭EMBER。
+
 ## 2026-10-09：完整130后登记同incoming的一步经验贡献与功能辨识
 
 main直接读完整400、原train参数/events和当前实现；成功实践组MT130→end118，预算耗尽组MT23→end12。

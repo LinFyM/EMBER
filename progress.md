@@ -37,6 +37,11 @@ run root analysis/utl_runtime_20261009/retired_cache_manifest.json记录逐文�
 共享训练已实际通过准入，并连续完成optimizer更新1/2/3，墙钟31.61/30.52/25.63秒，梯度finite/nonzero，完整macro0恢复点已保存。
 每更新真实4事件/112query；startup_health.json保留消费者证据。不称一rank最优或永久上限，后续卡数仍按有用吞吐与资源调整。
 整批唯一退出回执为active_batch.json所指attempt；没有额外正常进度轮询或重复自通知。
+Owner随后要求继续提高卡数与缩短wall。新增GPU01:1短测因其他用户新增作业/79%负载在准入前拒绝，0新CUDA/optimizer/环境步。
+训练已跨完整macro45并继续更新；按最近10更新约23.64秒估计，180训练段剩约0.79小时，非整批ETA。
+已安装单个实际checkpoint事件资源接续器，45现场无可用第二卡则继续原训练，90重新检查GPU01:1的33000MiB/60%共驻门槛。
+有实际准入才在保存边界受控中断，并由原唯一整批退出唤醒从最新checkpoint以world2/--allow-topology-change恢复；保留所有已完成更新。
+没有额外训练日志轮询、第二退出通知或重启科学数据；资源方案/消费者记录为analysis/utl_runtime_20261009/owner_scaleup。
 监督器依退出事件接续144池0→fresh180→并行72刷新/train48/formal180→fresh360及全部读出；不重复已完成profile或旧首批训练。
 原始和所有恢复attempt的启动/退出/失败保留，当前命令/回执由run root active_batch.json索引，累计计费仍为costs.jsonl；唯一launch wrapper整批退出后Steer或无覆盖resume/start唤醒本session。
 安装记录wakeup_installation.json；无需打开页面、无自Queue、没有额外直接等待者。所有权仍在实验session，完整科学消费/Git/整批回报完成后才交回main。

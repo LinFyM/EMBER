@@ -25,6 +25,9 @@ reset/环境开始主导批量后的短窗口，不能外推完整链占比；�
 
 新root为/data1/user/ymdai/ember_runs/parameter_conditioned_compiler_20261009。
 本批预计实现4–8小时、计算6–12小时；总上界40GPUh、科学计算elapsed16小时、data1新增峰224GiB，必须由实际consumer profile替换细目并现场quota/GPU准入。
+Owner最新授权已同步current_owner_requirements：上述预算是主讨论负责规划、可据实测更新的本批执行计划，不是Owner审批闸门。
+必要调整由实验session提供成本/原因/判断价值、主讨论自主取舍；存储不足可按已核实生命周期自主清理并记录释放量，保留原件/关键模型/有效恢复点及当前依赖。
+本增补继续原批，不重复已完成工作或静默更改科学比较、终点候选及停止规则；目前科学计算尚未开始。
 复用原生不同LoRA批量接口，保留一个canonical experience_compiler；独占分支实施、clean pushed detached formal，不原地改旧frozen代码。
 当前科学合同已经登记，新的实现/训练尚未冒称完成。main在本次推送及派发接受前持有tracked/Git；
 接受后由实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占整个实施/运行/Git窗口，main停止tracked写入并承担科学分析。

@@ -8,8 +8,9 @@ gpu01:1/2/6与gpu02:0/2/7六卡均通过两节点现场准入，允许高UTL共�
 canonical Runner已紧凑clone单slot H；新增保存事件记录实际bytes/allocated_bytes，Supervisor按真实保存事件记录增长，
 不周期读取queue/checkpoint/cache。18项执行/序列化/配对消费者在最终代码通过，源H值/dtype/shape合同保持。
 launch_contract.json保存source/env/设备/命令/quota/范围；batch_execution.json指向唯一当前attempt，成本全写新ROOT/costs.jsonl。
-启动健康检查等待每worker实际实践/编译/save_condition；截至本次记录已有8个新条件保存、两worker取得实际执行证据，
-完整六worker核验完成后以startup_health.json为准，不把模型加载或占显存本身当运行正常。
+启动健康检查已收到六worker各自真实实践/编译/save_condition，完整核验见startup_health.json；
+不是只凭模型加载或占显存。最晚gpu01:2也保存了548个真实steps的条件，实际本进程显存20410MiB，保留共驻吞吐边界。
+实际新经验63条H的逻辑与不同底层storage均12902400bytes，shape/dtype保持，actual_H_storage_check.json保存只读原件检查。
 整批实际退出后仅一次Steer或无设置覆盖resume/start唤醒本实验session；没有Queue/第二退出等待者，执行器complete后仍须科学消费。
 科学投入观察线8GPUh/4h，新增计划220GiB；初始data1独立quota约1093/2048GiB，实际保存增长为样本推导、不是已测全程峰。
 当前完整结果未知，不根据中途分数停止或切点；全400消费/Git/资源退出后只向main01a11b05一次科学回报并交回所有权。

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from contextlib import ExitStack
 import copy
 import time
 
@@ -97,14 +98,16 @@ class Runner:
         initial_proprio = raw['proprio'].tolist()
         with self.runtime.execution.activate([state]), autocast(self.runtime.device):
             while slot['steps'] < controls and not done:
-                velocity = NativeVelocity(self.runtime.policy, processed(self.runtime, raw, task['language']))
+                velocity = NativeVelocity(self.runtime.policy, processed(self.runtime, raw, task['language']),
+                                          capture_phi=collect)
                 if rows:
                     rows[-1]['_phi_post'] = velocity.phi[0]
                 seed = policy_noise_seed(noise_root, task['suite'], int(task['task_id']), state_id, replans)
                 noise = torch.randn((1, 50, 32), generator=torch.Generator().manual_seed(seed)).to(self.runtime.device)
                 slot['policy_noise_seeds'].append(seed)
                 sde_seed = policy_noise_seed(noise_root, 'sde:' + task['suite'], int(task['task_id']), state_id, replans)
-                chunk, hidden, path = action_chunk(velocity, noise, sde_seed=sde_seed if sde else None)
+                chunk, hidden, path = action_chunk(velocity, noise, sde_seed=sde_seed if sde else None,
+                                                  capture_hidden=collect)
                 actions = self.runtime.processor.unnormalize_action(chunk)[0].cpu().numpy()
                 executed = []
                 before, before_step = raw, slot['steps']
@@ -219,8 +222,14 @@ class Runner:
             self.total_environment_steps += settling
             slots.append(slot)
         active = list(range(len(slots)))
-        with autocast(self.runtime.device):
+        gpu_lora = {name: value.to(self.runtime.device) for name, value in lora.items()}
+        with ExitStack() as adapters, autocast(self.runtime.device):
+            packed_count = 0
             while active:
+                if len(active) != packed_count:
+                    adapters.close()
+                    adapters.enter_context(self.runtime.execution.activate([gpu_lora] * len(active)))
+                    packed_count = len(active)
                 inputs = [self.runtime.processor(libero_policy_input(slots[i]['obs'], task['language']))
                           for i in active]
                 batch = {k: torch.cat([row[k] for row in inputs]) for k in inputs[0]}
@@ -231,9 +240,9 @@ class Runner:
                                              slot['init_state_id'], slot['replan_index'])
                     slot['policy_noise_seeds'].append(seed)
                     noise.append(torch.randn((50, 32), generator=torch.Generator().manual_seed(seed)))
-                with self.runtime.execution.activate([lora] * len(active)):
-                    velocity = NativeVelocity(self.runtime.policy, batch)
-                    chunks, _, _ = action_chunk(velocity, torch.stack(noise).to(self.runtime.device))
+                velocity = NativeVelocity(self.runtime.policy, batch, capture_phi=False)
+                chunks, _, _ = action_chunk(velocity, torch.stack(noise).to(self.runtime.device),
+                                             capture_hidden=False)
                 actions = self.runtime.processor.unnormalize_action(chunks).cpu().numpy()
                 continuing = []
                 for i, plan in zip(active, actions):

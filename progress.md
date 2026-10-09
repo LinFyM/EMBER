@@ -1,3 +1,29 @@
+## 2026-10-09 formal六卡接续，修复真实后台唤醒与执行冗余
+
+唯一macro182 formal400已从clean pushed detached517e0c20接续，gpu01:0/6与gpu02:0/2/4/6组成六卡persistent pool；
+原失败batch_execution、128warm/54meta训练及meta27/54面板原件不覆盖、不重复，恢复回执为root/batch_attempts/formal_recovery_001。
+本次Owner指出退出消息卡至打开页面；原CLI Queue在00:48:21UTC被接受，本thread02:36:45UTC才开始处理，间隔6503.7s。
+本机现有app-server0.160.0实证notLoaded时Queue只持久化消息；后台resume原thread后才处理。Owner最新要求普通消息默认Steer。
+已修正canonical codex-session-messaging skill及其唯一notify_thread.py：无设置覆盖地resume，active Steer，idle直接turn/start，
+已有Queue只恢复原条目，分别记录接受与匹配的真实模型输出。隔离Desktop线程从notLoaded且未打开页面直接完成回复（12.850s），7项CPU检查与skill validation通过。
+本threadresume实测保留gpt-6.1-sol/max/原cwd/never/priority；skill修改前快照、可执行回滚与实际投递证据在root/skill_update_20261009及wakeup_repair.json。
+唯一tmux ember-ecp-formal-wakeup-001阻塞等待整批退出channel，原Queue-only回报路径退役；没有直接退出等待者、重复callback、心跳或进度轮询。
+
+Owner再次要求用满有用显卡并提高吞吐；原实测micro28/PG32、两类frame64、decoder65536、经验201保留，较大配置实测未更快。
+代码已去除final/query/credit无消费者的Phi/H CPU传输；practice保留同次真实十步flow的H和完整Phi，必要H复制延至十步结束。
+final_many复用已搬入显存的完整LoRA，仅active batch大小改变时重新打包；没有改模型、学习、输入/配对或停止规则。
+ODE/SDE十次调用、动作/score信用、双时点H/shape、完整prefix和batch缩小时逐slot RNG的CPU检查通过；与队列/批次消费者合计16项通过。
+现场六卡正式pool已占用，未找到有安全余量的本session卡或空闲本地A40；未启动额外GPU检查。
+原生CUDA动作/吞吐核验脚本与资源拒绝事实在root/throughput_capture_check.*，等待既有整批退出事件后核验，不挤占当前formal、不声称端到端提速比例。
+当前formal继续读取原frozen517；以上执行优化由Git保存供随后clean frozen消费者使用，不原地修改运行版本。
+首批训练实际world2；1–4有用ranks消费者已支持，但world3/4吞吐未实测，不把2卡宣称为最优或后继固定上限。
+tracked/Git仍由实验session独占，科研整批未交付。余下工作为formal全原件消费、CUDA物理验证、真实成本/能力得失分析、Git及一次整批科学回报。
+已消费的固定train48原件：meta27初始33/48、最终30/48（gain0/loss3）；meta54初始/最终/null均28/48，
+最终相对null为gain1/loss1；相邻最终gain4/loss6，尚无净修订收益。meta27/54实际实践7093/7626steps、
+完整视频等价读取32/33，meta54另有33次缓存教学的masked-null replay读取；全部不利行与能力交换保留在root/train_panel_analysis.json。
+共享学习实际216meta条件、36映射各6次、432个真实SDE query（265成功），实践90307steps/206重读；
+这些完成原件不替代held400或视频必要性证据，也不据此换formal候选。物理修复与既有batched owner合计18项CPU检查通过（14.51s）。
+
 ## 2026-10-09 训练与train面板完成，修复formal启动接口
 
 clean pushed frozen76c136a3已完成128 warm＋54 meta，唯一formal候选为完整macro182；meta27/54固定train面板均已完成。

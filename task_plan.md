@@ -7,6 +7,9 @@ Owner要求现在开始并持续自主推进；专家推进表不是许可门槛
 首批单一主模型：完整实现/profile、128 warm＋首个54次共享meta更新记录点（condition内按自身结果/step预算开放循环）、固定train读出及唯一meta54 strict paired400。
 预计实现4–8小时，计算12–24小时/50–80GPUh，峰160GiB；实测profile替换估计，资源与负结果由main自主裁决接续。
 代码/运行/Git交实验session闭环；main承担机制分析与结果消费，不重复工程验收，不请求Owner逐阶段许可。
+实际128warm/54meta与两个train面板已完成；唯一macro182 formal400从修复后的clean pushed517e0c20继续，6卡persistent pool。
+后台接续已修复notLoaded：默认Steer，空闲resume＋直接start；整批退出仅一个可存活等待者，无需打开页面。
+Owner再次强调充分使用GPU与真实吞吐；当前无用特征传输和批量LoRA搬运已完成物理执行修复，CUDA消费核验待现有整批退出后的资源事件。
 下方两轮/rank192/仅审阅及无active记录均为历史时点，不覆盖此处。
 
 ## 2026-10-09 专家交叉验证完成，收敛下一版完整方法

@@ -87,7 +87,7 @@ def pg_credit(runtime, final_state, task, queries, advantages, *, microbatch=16)
             rows = [processed(runtime, raw, task['language']) for raw, _ in block]
             batch = {key: torch.cat([row[key] for row in rows]) for key in rows[0]}
             with autocast(runtime.device):
-                owner = NativeVelocity(runtime.policy, batch)
+                owner = NativeVelocity(runtime.policy, batch, capture_phi=False)
             leaves = {k: v.detach().to(runtime.device).requires_grad_() for k, v in final_state.items()}
             cotangent = torch.cat([score_cotangent(t, advantage, replans=replans, retained=len(records))
                                    for _, t in block]).to(runtime.device)

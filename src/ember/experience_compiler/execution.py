@@ -14,7 +14,7 @@ from ember.ecp.policy_effects import ExecutionPolicyPrefix, prepare_prefix_kv_ca
 
 
 class NativeVelocity(nn.Module):
-    def __init__(self, policy, batch):
+    def __init__(self, policy, batch, *, capture_phi=True):
         super().__init__()
         self.policy = policy
         if (policy.config.chunk_size, policy.config.max_action_dim) != (50, 32):
@@ -23,7 +23,7 @@ class NativeVelocity(nn.Module):
             images, masks = policy._preprocess_images(batch)
             embeddings, padding, _ = policy.model.embed_prefix(images, masks,
                 batch['observation.language.tokens'], batch['observation.language.attention_mask'])
-            self.phi = embeddings[:, :512].detach().cpu()
+            self.phi = embeddings[:, :512].detach().cpu() if capture_phi else None
             self.cache = prepare_prefix_kv_cache(policy, ExecutionPolicyPrefix(embeddings, padding))
         self.register_buffer('padding', padding, persistent=False)
 
@@ -46,18 +46,19 @@ class Transition:
 
 
 @torch.no_grad()
-def action_chunk(velocity, noise, *, sde_seed=None):
-    """Ten actual native calls; retain H at the first and last real times."""
+def action_chunk(velocity, noise, *, sde_seed=None, capture_hidden=True):
+    """Ten native calls; only practice consumes same-call hidden evidence."""
     hidden, transitions = [], []
     calls = 0
 
     def capture(_module, args):
         nonlocal calls
         if calls in (0, 9):
-            hidden.append(args[0].detach().cpu().to(torch.bfloat16))
+            hidden.append(args[0].detach())
         calls += 1
 
-    handle = velocity.policy.model.action_out_proj.register_forward_pre_hook(capture)
+    handle = (velocity.policy.model.action_out_proj.register_forward_pre_hook(capture)
+              if capture_hidden else None)
     generator = None if sde_seed is None else torch.Generator().manual_seed(int(sde_seed))
     z = noise
     try:
@@ -73,10 +74,15 @@ def action_chunk(velocity, noise, *, sde_seed=None):
                 transitions.append(Transition(step, tau, z, m, nxt))
                 z = nxt
     finally:
-        handle.remove()
-    if calls != 10 or len(hidden) != 2 or hidden[0].shape[1:] != (50, 1024):
-        raise ValueError('actual native action-hidden capture lost real flow times')
-    return z[:, :, :7], torch.stack(hidden, 1), transitions
+        if handle is not None:
+            handle.remove()
+    evidence = None
+    if capture_hidden:
+        if calls != 10 or len(hidden) != 2 or hidden[0].shape[1:] != (50, 1024):
+            raise ValueError('actual native action-hidden capture lost real flow times')
+        # Defer the necessary practice transfer until the ten flow calls finish.
+        evidence = torch.stack(hidden, 1).to(torch.bfloat16).cpu()
+    return z[:, :, :7], evidence, transitions
 
 
 def score_cotangent(transition, advantage, *, replans, retained):

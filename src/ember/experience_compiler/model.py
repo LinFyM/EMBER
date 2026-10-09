@@ -1,9 +1,8 @@
-"""Shared actual-parameter and experience-conditioned complete LoRA editing.
+"""Ordered evidence context and a learned energy on actual control responses.
 
-Raw teacher/execution evidence and incoming behavior factors stop gradient.
-Learned parameter/evidence encoding, teaching reads and edits share one graph.
-The runtime owns evidence provenance, interaction budgets and stopping; this
-module has no prescribed number of practices or teaching reads.
+Raw teaching and execution facts stop gradient. Current policy actions enter
+only the small energy MLP; the runtime owns native policy derivatives, complete
+factor updates, evidence provenance and interaction stopping.
 """
 from __future__ import annotations
 
@@ -77,23 +76,6 @@ class TemporalBlock(nn.Module):
         return tokens + self.feedforward(tokens)
 
 
-class AxialBlock(nn.Module):
-    """Preserve actual target/rank axes while reading the condition memory."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.read, self.rank, self.target = Attention(), Attention(), Attention()
-        self.feedforward = nn.Sequential(nn.LayerNorm(WIDTH), nn.Linear(WIDTH, 4 * WIDTH),
-                                         nn.SiLU(), nn.Linear(4 * WIDTH, WIDTH))
-
-    def forward(self, q: torch.Tensor, memory: torch.Tensor) -> torch.Tensor:
-        q = q + self.read(q.reshape(1, -1, WIDTH), memory[None]).reshape(q.shape)
-        q = q + self.rank(q, q)
-        across_targets = q.transpose(0, 1)
-        q = q + self.target(across_targets, across_targets).transpose(0, 1)
-        return q + self.feedforward(q)
-
-
 class ExperienceEncoder(nn.Module):
     """All real decisions enter facts; pooling never filters failed decisions."""
 
@@ -126,9 +108,10 @@ class ExperienceEncoder(nn.Module):
         query = self.fact_query[None] + self.numeric(numeric)[:, None]
         return (query + self.fact_read(query, memory))[:, 0]
 
-    def forward(self, experience: dict[str, torch.Tensor]) -> torch.Tensor:
+    def encode(self, experience: dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return ordered decision facts and slots pooling every real decision."""
         if not experience:
-            return self.slots
+            return self.slots.new_empty((0, WIDTH)), self.slots
         if set(experience) != set(EXPERIENCE_SHAPES):
             raise ValueError("experience must contain only the registered actual-execution fields")
         count = experience["images"].shape[0]
@@ -138,7 +121,7 @@ class ExperienceEncoder(nn.Module):
         if experience["executed"].dtype != torch.bool:
             raise ValueError("executed is the boolean actual-action mask")
         if count == 0:
-            return self.slots
+            return self.slots.new_empty((0, WIDTH)), self.slots
         device, dtype = self.slots.device, self.slots.dtype
         episode = experience["episode"].detach().to(device=device)
         step = experience["step"].detach().to(device=device)
@@ -160,11 +143,14 @@ class ExperienceEncoder(nn.Module):
         facts = (facts + positions.to(dtype=dtype))[None]
         for block in self.temporal:
             facts = recompute(block, facts)
-        return self.slots + self.pool(self.slots[None], facts)[0]
+        return facts[0], self.slots + self.pool(self.slots[None], facts)[0]
+
+    def forward(self, experience: dict[str, torch.Tensor]) -> torch.Tensor:
+        return self.encode(experience)[1]
 
 
 class TeachingReader(nn.Module):
-    """Actual-parameter/experience queries precede eight-slot spatial compression."""
+    """Language and real experience change queries before spatial compression."""
 
     def __init__(self, chunk: int) -> None:
         super().__init__()
@@ -175,7 +161,7 @@ class TeachingReader(nn.Module):
         self.camera = nn.Parameter(torch.randn(2, WIDTH) * 0.02)
         self.modality = nn.Parameter(torch.randn(2, WIDTH) * 0.02)
         self.endpoints = nn.Parameter(torch.randn(2, WIDTH) * 0.02)
-        self.experience_read, self.state_read, self.spatial = Attention(), Attention(), Attention()
+        self.experience_read, self.spatial = Attention(), Attention()
         self.temporal = nn.ModuleList(TemporalBlock() for _ in range(4))
         self.register_buffer("patch_position", patch_code(), persistent=False)
         self.register_buffer("horizon_position", position_code(torch.arange(50)), persistent=False)
@@ -190,8 +176,7 @@ class TeachingReader(nn.Module):
         memory = torch.cat((phi, hidden), 1)
         return queries + self.spatial(queries, memory)
 
-    def forward(self, teacher: dict[str, torch.Tensor], facts: torch.Tensor,
-                q: torch.Tensor) -> torch.Tensor:
+    def forward(self, teacher: dict[str, torch.Tensor], facts: torch.Tensor) -> torch.Tensor:
         if set(teacher) != TEACHER_KEYS:
             raise ValueError("teacher input is only Phi, full hidden, exact language and real frame indices")
         count = teacher["phi"].shape[0]
@@ -206,7 +191,6 @@ class TeachingReader(nn.Module):
         language = self.language(teacher["language"].detach().to(device=device, dtype=dtype))
         queries = self.spatial_queries + language
         queries = queries + self.experience_read(queries[None], facts[None])[0]
-        queries = queries + self.state_read(queries[None], q.reshape(1, -1, WIDTH))[0]
         # Both boundaries are represented even when a video has one actual frame.
         ordinal = torch.arange(count, device=device)
         boundaries = torch.stack((ordinal == 0, ordinal == count - 1), -1).to(dtype)
@@ -221,85 +205,94 @@ class TeachingReader(nn.Module):
         return torch.cat((language[None], tokens[0]), 0)
 
 
-class ParameterEncoder(nn.Module):
-    """Encode actual A rows/B columns, sharing projections only within each role."""
-
-    def __init__(self, mt_state: Mapping[str, torch.Tensor], target_names) -> None:
-        super().__init__()
-        self.keys = tuple((name + LORA_A_SUFFIX, name + LORA_B_SUFFIX) for name in target_names)
-        self.shapes, widths, scales = {}, (set(), set()), []
-        for keys in self.keys:
-            for role, key in enumerate(keys):
-                matrix = mt_state[key]
-                rank_axis, width_axis = (0, 1) if role == 0 else (1, 0)
-                if (matrix.ndim != 2 or not matrix.is_floating_point()
-                        or matrix.shape[rank_axis] != RANK or matrix.shape[width_axis] < 1):
-                    raise ValueError(f"actual A/B factors require rank128 and positive width: {key}")
-                self.shapes[key] = tuple(matrix.shape)
-                widths[role].add(matrix.shape[width_axis])
-                scales.append(matrix.detach().to(device="cpu", dtype=torch.float32)
-                              .square().mean().sqrt().clamp_min(1e-6))
-        self.a = nn.ModuleDict({str(width): nn.Linear(width, 128) for width in sorted(widths[0])})
-        self.b = nn.ModuleDict({str(width): nn.Linear(width, 128) for width in sorted(widths[1])})
-        self.target_identity = nn.Parameter(torch.randn(len(self.keys), WIDTH) * 0.02)
-        self.rank_identity = nn.Parameter(torch.randn(RANK, WIDTH) * 0.02)
-        self.norm = nn.LayerNorm(WIDTH)
-        self.register_buffer("rms", torch.stack(scales).reshape(len(self.keys), 2))
-
-    def forward(self, incoming: Mapping[str, torch.Tensor]) -> torch.Tensor:
-        if set(incoming) != self.shapes.keys():
-            raise ValueError("incoming state must contain exactly the complete registered A/B factors")
-        device, dtype = self.target_identity.device, self.target_identity.dtype
-        tokens = []
-        for target, keys in enumerate(self.keys):
-            roles = []
-            for role, key in enumerate(keys):
-                matrix = incoming[key]
-                if tuple(matrix.shape) != self.shapes[key] or not matrix.is_floating_point():
-                    raise ValueError(f"incoming factor changed its actual registered A/B shape: {key}")
-                rows = matrix.detach().to(device=device, dtype=dtype)
-                rows = (rows if role == 0 else rows.T) / self.rms[target, role]
-                projection = (self.a if role == 0 else self.b)[str(rows.shape[1])]
-                roles.append(projection(rows))
-            tokens.append(torch.cat(roles, -1))
-        return self.norm(torch.stack(tokens) + self.target_identity[:, None] + self.rank_identity[None])
-
-
 class ExperienceCompiler(nn.Module):
-    """Stateless shared editor: actual complete A/B plus teaching and real facts."""
+    """Shared functional criterion; no raw parameter tokens or factor decoder."""
 
-    def __init__(self, mt_state: dict[str, torch.Tensor], target_names,
-                 seed: int = 20261009, decoder_chunk: int = 4096, *,
+    def __init__(self, mt_state: Mapping[str, torch.Tensor], target_names,
+                 seed: int = 20261010, *,
                  frame_chunk: int = 8, experience_chunk: int = 16) -> None:
         super().__init__()
-        from .decoder import CoordinateDecoder
-
         self.target_names = tuple(target_names)
         if not self.target_names or len(set(self.target_names)) != len(self.target_names):
             raise ValueError("parameter targets must be a nonempty unique sequence")
         if frame_chunk < 1 or experience_chunk < 1:
             raise ValueError("physical frame/experience chunks must be positive")
+        self.keys = tuple(name + suffix for name in self.target_names
+                          for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX))
+        self.shapes, scales = self._factor_units(mt_state)
+        self.register_buffer("rms", scales)
         # All construction is CPU; this scope leaves caller CPU/CUDA RNG intact.
         with torch.random.fork_rng(devices=[]), torch.device("cpu"):
             torch.random.default_generator.manual_seed(seed)
             self.reader, self.encoder = TeachingReader(frame_chunk), ExperienceEncoder(experience_chunk)
-            self.parameter_encoder = ParameterEncoder(mt_state, self.target_names)
-            self.editor = nn.ModuleList(AxialBlock() for _ in range(2))
-            self.update_gate, self.update_out = nn.Linear(WIDTH, WIDTH), nn.Linear(WIDTH, WIDTH)
-            nn.init.constant_(self.update_gate.bias, -2.0)
-            nn.init.zeros_(self.update_out.weight)
-            nn.init.zeros_(self.update_out.bias)
-            self.decoder = CoordinateDecoder(mt_state, self.target_names, seed=seed, chunk_rows=decoder_chunk)
+            self.support_read = Attention()
+            self.action_projection = nn.Linear(35, 128)
+            self.energy = nn.Sequential(nn.Linear(384, WIDTH), nn.SiLU(),
+                                        nn.Linear(WIDTH, 128), nn.SiLU(),
+                                        nn.Linear(128, 1, bias=False))
+            nn.init.zeros_(self.energy[-1].weight)
 
-    def delta(self, incoming_state: Mapping[str, torch.Tensor], teacher: dict[str, torch.Tensor],
-              experience: dict[str, torch.Tensor]) -> torch.Tensor:
-        q = self.parameter_encoder(incoming_state)
-        facts = self.encoder(experience)
-        memory = torch.cat((self.reader(teacher, facts, q), facts), 0)
-        for block in self.editor:
-            q = recompute(block, q, memory)
-        return torch.sigmoid(self.update_gate(q)) * self.update_out(q)
+    def _factor_units(self, mt_state):
+        if set(mt_state) != set(self.keys):
+            raise ValueError("MT state must contain exactly the complete registered A/B factors")
+        shapes, scales = {}, []
+        for index, key in enumerate(self.keys):
+            matrix = mt_state[key]
+            rank_axis, width_axis = (0, 1) if index % 2 == 0 else (1, 0)
+            if (matrix.ndim != 2 or not matrix.is_floating_point()
+                    or matrix.shape[rank_axis] != RANK or matrix.shape[width_axis] < 1):
+                raise ValueError(f"actual A/B factors require rank128 and positive width: {key}")
+            shapes[key] = tuple(matrix.shape)
+            scales.append(matrix.detach().to(device="cpu", dtype=torch.float32)
+                          .square().mean().sqrt().clamp_min(1e-6))
+        units = torch.stack(scales)
+        if not torch.isfinite(units).all():
+            raise ValueError("fixed MT RMS units must be finite")
+        return shapes, units
 
-    def forward(self, incoming_state: Mapping[str, torch.Tensor], teacher: dict[str, torch.Tensor],
-                experience: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
-        return self.decoder(incoming_state, self.delta(incoming_state, teacher, experience))
+    def precondition(self, cotangent: Mapping[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+        """Multiply all actual factor cotangents by fixed MT RMS squared in FP32."""
+        if set(cotangent) != set(self.keys):
+            raise ValueError("cotangent must contain exactly the complete registered A/B factors")
+        result = {}
+        for index, key in enumerate(self.keys):
+            value = cotangent[key]
+            if tuple(value.shape) != self.shapes[key] or not value.is_floating_point():
+                raise ValueError(f"cotangent changed its actual registered A/B shape: {key}")
+            scale = self.rms[index].to(device=value.device, dtype=torch.float32)
+            result[key] = value.float() * scale.square()
+        return result
+
+    def context(self, teacher: dict[str, torch.Tensor], experience: dict[str, torch.Tensor],
+                support_indices: torch.Tensor) -> torch.Tensor:
+        """Read the entire legal condition for selected, distinct real decisions."""
+        if (support_indices.ndim != 1 or support_indices.dtype != torch.long
+                or not 1 <= support_indices.numel() <= 16):
+            raise ValueError("support indices must be one to sixteen actual long decision indices")
+        decisions, facts = self.encoder.encode(experience)
+        indices = support_indices.detach().to(device=decisions.device)
+        if (bool((indices < 0).any()) or bool((indices >= len(decisions)).any())
+                or len(indices.unique()) != len(indices)):
+            raise ValueError("support indices require distinct existing actual decisions")
+        memory = torch.cat((self.reader(teacher, facts), facts), 0)
+        queries = decisions.index_select(0, indices)
+        return queries + self.support_read(queries[None], memory[None])[0]
+
+    def action_cotangent(self, context: torch.Tensor, actions: torch.Tensor, *,
+                         create_graph: bool) -> torch.Tensor:
+        """Return each ∂C_i/∂a_i; the native derivative owner supplies 1/M.
+
+        Actions are independent leaves, so no native policy or evidence graph is
+        traversed here. Only this small MLP participates in mixed differentiation.
+        """
+        count = context.shape[0]
+        if (context.shape != (count, WIDTH) or not 1 <= count <= 16
+                or actions.shape != (count, 5, 7)
+                or not context.is_floating_point() or not actions.is_floating_point()):
+            raise ValueError("energy requires one to sixteen contexts256 and actual actions5x7")
+        dtype, device = self.action_projection.weight.dtype, self.action_projection.weight.device
+        with torch.enable_grad():
+            points = actions.detach().to(device=device, dtype=dtype).requires_grad_()
+            facts = context.to(device=device, dtype=dtype) if create_graph else context.detach().to(device=device, dtype=dtype)
+            energies = self.energy(torch.cat((facts, self.action_projection(points.flatten(1))), -1))
+            return torch.autograd.grad(energies.sum(), points, create_graph=create_graph)[0]

@@ -1,4 +1,4 @@
-"""CPU checks of actual parameter routing, ordered facts and editing credit."""
+"""CPU contracts for ordered real context, fixed coordinates and energy credit."""
 from __future__ import annotations
 
 import pytest
@@ -20,34 +20,11 @@ def cpu_threads():
     torch.set_num_threads(previous)
 
 
-class JacobianDecoder(nn.Module):
-    """A small assembly mock; separate decoder tests own the nonlinear rule."""
-
-    def __init__(self, mt_state, target_names, **kwargs):
-        super().__init__()
-        self.target_names = tuple(target_names)
-
-    def forward(self, incoming_state, delta_q):
-        result = {}
-        for target, name in enumerate(self.target_names):
-            change = delta_q[target, :, :1]
-            for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX):
-                key = name + suffix
-                result[key] = incoming_state[key].detach() + (change if suffix == LORA_A_SUFFIX else change.T)
-        return result
-
-
-@pytest.fixture(autouse=True)
-def small_decoder(monkeypatch):
-    from ember.experience_compiler import decoder
-    monkeypatch.setattr(decoder, "CoordinateDecoder", JacobianDecoder)
-
-
-def mt_state():
+def mt_state(names=TARGETS):
     generator = torch.Generator().manual_seed(10)
     return {name + suffix: torch.randn(shape, generator=generator) * .02
-            for name, a_width, b_width in zip(TARGETS, (64, 64, 96), (80, 80, 64), strict=True)
-            for suffix, shape in ((LORA_A_SUFFIX, (128, a_width)), (LORA_B_SUFFIX, (b_width, 128)))}
+            for name in names for suffix, shape in
+            ((LORA_A_SUFFIX, (128, 64)), (LORA_B_SUFFIX, (80, 128)))}
 
 
 def teacher(count=2, *, requires_grad=False):
@@ -74,72 +51,92 @@ def model():
     return ExperienceCompiler(mt_state(), TARGETS, frame_chunk=1, experience_chunk=1)
 
 
-def test_fresh_construction_preserves_rng_and_retires_persistent_q():
+def test_fresh_construction_preserves_rng_and_retires_parameter_routing():
     incoming = mt_state()
     before = torch.get_rng_state().clone()
     compiler = ExperienceCompiler(incoming, TARGETS)
     assert torch.equal(before, torch.get_rng_state())
-    assert not any(hasattr(compiler, name) for name in ("initial", "revise", "decode", "initializer"))
-    with torch.no_grad():
-        outgoing = compiler(incoming, teacher(), experience(1))
-    assert set(outgoing) == set(incoming)
-    assert all(torch.equal(outgoing[key], incoming[key]) for key in incoming)
+    assert not any(hasattr(compiler, name) for name in
+                   ("parameter_encoder", "editor", "decoder", "delta", "update_gate", "update_out"))
+    assert not hasattr(compiler.reader, "state_read")
+    layers = [layer for layer in compiler.energy if isinstance(layer, nn.Linear)]
+    assert [(layer.in_features, layer.out_features) for layer in layers] == [(384, 256), (256, 128), (128, 1)]
+    assert layers[-1].bias is None and torch.count_nonzero(layers[-1].weight) == 0
+    assert compiler.action_projection.in_features == 35 and compiler.action_projection.out_features == 128
     assert all(parameter.requires_grad for parameter in compiler.parameters())
 
 
-def test_actual_factor_roles_width_sharing_and_frozen_rms(model):
-    encoder, incoming = model.parameter_encoder, mt_state()
-    assert set(encoder.a) == {"64", "96"} and set(encoder.b) == {"64", "80"}
-    assert encoder.a["64"] is not encoder.b["64"]
-    expected = []
-    for target, name in enumerate(TARGETS):
-        a, b = incoming[name + LORA_A_SUFFIX], incoming[name + LORA_B_SUFFIX]
-        torch.testing.assert_close(encoder.rms[target], torch.stack((a.square().mean().sqrt(), b.square().mean().sqrt())))
-        expected.append(torch.cat((encoder.a[str(a.shape[1])](a / encoder.rms[target, 0]),
-                                   encoder.b[str(b.shape[0])](b.T / encoder.rms[target, 1])), -1))
-    expected = encoder.norm(torch.stack(expected) + encoder.target_identity[:, None] + encoder.rank_identity[None])
-    torch.testing.assert_close(encoder(incoming), expected)
-    before = encoder.rms.clone()
-    changed = {**incoming, "first" + LORA_B_SUFFIX: incoming["first" + LORA_B_SUFFIX] * 3}
-    assert not torch.allclose(encoder(incoming), encoder(changed))
-    assert torch.equal(before, encoder.rms) and not encoder.rms.requires_grad
+def test_fixed_complete_metric_uses_actual_factor_units_and_fp32(model):
+    incoming = mt_state()
+    assert model.keys == tuple(incoming) and model.shapes == {key: tuple(value.shape) for key, value in incoming.items()}
+    direction = {key: torch.ones_like(value, dtype=torch.bfloat16) for key, value in incoming.items()}
+    expected = torch.stack([value.square().mean().sqrt() for value in incoming.values()])
+    torch.testing.assert_close(model.rms, expected)
+    assert not model.rms.requires_grad
+    scaled = model.precondition(direction)
+    assert set(scaled) == set(incoming)
+    for index, key in enumerate(model.keys):
+        assert scaled[key].dtype == torch.float32 and scaled[key].shape == incoming[key].shape
+        torch.testing.assert_close(scaled[key], torch.full_like(scaled[key], expected[index].square()))
+    for value in incoming.values():
+        value.zero_()
+    torch.testing.assert_close(model.rms, expected)
     zeros = {key: torch.zeros_like(value) for key, value in incoming.items()}
-    floor = ExperienceCompiler(zeros, TARGETS).parameter_encoder.rms
-    torch.testing.assert_close(floor, torch.full_like(floor, 1e-6))
+    floored = ExperienceCompiler(zeros, TARGETS)
+    torch.testing.assert_close(floored.rms, torch.full_like(floored.rms, 1e-6))
+    assert all(torch.count_nonzero(value) > 0 for value in floored.precondition(direction).values())
 
 
-def test_feedback_and_actual_a_b_change_queries_before_spatial_compression(model):
-    teaching, evidence, incoming = teacher(), experience(1), mt_state()
+def test_all38_actual_a_and_b_coordinates_are_registered():
+    names = tuple(f"target{index}" for index in range(38))
+    incoming = mt_state(names)
+    compiler = ExperienceCompiler(incoming, names)
+    assert len(compiler.keys) == compiler.rms.numel() == 76
+    scaled = compiler.precondition({key: torch.ones_like(value) for key, value in incoming.items()})
+    assert len(scaled) == 76 and all(value.shape == incoming[key].shape for key, value in scaled.items())
+
+
+def test_feedback_changes_teaching_queries_before_spatial_compression(model):
+    teaching, evidence = teacher(), experience(2)
     calls = []
     hook = model.reader.spatial.register_forward_pre_hook(
         lambda module, args: calls.append(args[0].detach().clone()))
-    def queries(state, facts):
-        calls.clear()
-        model.delta(state, teaching, facts)
-        return torch.cat(calls)
     with torch.no_grad():
-        original = queries(incoming, evidence)
-        feedback = queries(incoming, {**evidence, "feedback": evidence["feedback"] + 2})
-        changes = []
-        for suffix in (LORA_A_SUFFIX, LORA_B_SUFFIX):
-            key = "first" + suffix
-            changes.append(queries({**incoming, key: incoming[key] * 2}, evidence))
+        original = model.context(teaching, evidence, torch.tensor([0]))
+        first_queries = torch.cat(calls)
+        calls.clear()
+        changed = model.context(teaching, {**evidence, "feedback": evidence["feedback"] + 2}, torch.tensor([0]))
+        second_queries = torch.cat(calls)
     hook.remove()
-    assert original.shape == (2, 8, 256) and not torch.allclose(original, feedback)
-    assert all(not torch.allclose(original, changed) for changed in changes)
+    assert first_queries.shape == (2, 8, 256) and not torch.allclose(first_queries, second_queries)
+    assert original.shape == (1, 256) and not torch.allclose(original, changed)
 
 
-def test_encoder_observes_late_horizon_and_ordered_facts(model):
+def test_context_reads_ordered_teacher_and_all_decisions_not_only_support(model):
+    teaching, evidence = teacher(), experience(3)
+    reordered = {**teaching, "phi": teaching["phi"].flip(0), "hidden": teaching["hidden"].flip(0)}
+    unselected = {**evidence, "feedback": evidence["feedback"].clone()}
+    unselected["feedback"][2] += 3
+    with torch.no_grad():
+        original = model.context(teaching, evidence, torch.tensor([0]))
+        assert not torch.allclose(original, model.context(reordered, evidence, torch.tensor([0])))
+        assert not torch.allclose(original, model.context(teaching, unselected, torch.tensor([0])))
+
+
+def test_encoder_keeps_full_actual_hidden_and_ordered_time(model):
     evidence = experience(2)
     late_horizon = {**evidence, "hidden": evidence["hidden"].clone()}
     late_horizon["hidden"][:, :, 49] += 3
     reordered = {name: value.flip(0) if name not in {"episode", "step"} else value
                  for name, value in evidence.items()}
     with torch.no_grad():
-        original, changed_hidden = model.encoder(evidence), model.encoder(late_horizon)
-        changed_order, empty = model.encoder(reordered), model.encoder(experience(0))
-    assert original.shape == empty.shape == (16, 256)
-    assert not torch.allclose(original, changed_hidden) and not torch.allclose(original, changed_order)
+        facts, original = model.encoder.encode(evidence)
+        assert facts.shape == (2, 256) and original.shape == (16, 256)
+        assert not torch.allclose(original, model.encoder(late_horizon))
+        assert not torch.allclose(original, model.encoder(reordered))
+        empty, slots = model.encoder.encode({})
+        assert empty.shape == (0, 256) and slots.shape == (16, 256)
+        assert model.reader(teacher(), slots).shape == (17, 256)
 
 
 def test_unexecuted_action_values_cannot_enter_facts(model):
@@ -150,58 +147,75 @@ def test_unexecuted_action_values_cannot_enter_facts(model):
         torch.testing.assert_close(model.encoder(evidence), model.encoder(not_executed))
 
 
-def test_delta_is_zero_for_variable_evidence_and_has_only_last_projection_credit(model):
-    incoming, teaching = mt_state(), teacher()
-    with torch.no_grad():
-        for count in (0, 1, 4, 2, 0):
-            delta = model.delta(incoming, teaching, experience(count))
-            assert delta.shape == (3, 128, 256) and torch.count_nonzero(delta) == 0
-    torch.testing.assert_close(model.update_gate.bias, torch.full((256,), -2.0))
-    assert torch.count_nonzero(model.update_gate.weight) > 0
-    outgoing = model(incoming, teaching, experience(2))
-    generator = torch.Generator().manual_seed(40)
-    loss = sum((value * torch.randn(value.shape, generator=generator)).mean() for value in outgoing.values())
-    loss.backward()
-    for parameter in (model.update_out.weight, model.update_out.bias):
-        assert parameter.grad is not None and torch.isfinite(parameter.grad).all()
-        assert torch.count_nonzero(parameter.grad) > 0
-    assert all(p.grad is None or torch.count_nonzero(p.grad) == 0
-               for name, p in model.named_parameters() if not name.startswith("update_out."))
+def test_zero_action_cotangent_has_first_update_mixed_derivative(model):
+    contexts = model.context(teacher(), experience(2), torch.tensor([0, 1]))
+    actions = torch.randn(2, 5, 7, requires_grad=True)
+    pressure = model.action_cotangent(contexts, actions, create_graph=True)
+    assert pressure.shape == (2, 5, 7) and torch.count_nonzero(pressure) == 0
+    (pressure * torch.linspace(-1, 1, pressure.numel()).reshape_as(pressure)).sum().backward()
+    assert model.energy[-1].weight.grad is not None
+    assert torch.isfinite(model.energy[-1].weight.grad).all() and model.energy[-1].weight.grad.norm() > 0
+    assert all(parameter.grad is None or torch.count_nonzero(parameter.grad) == 0
+               for name, parameter in model.named_parameters() if name != "energy.4.weight")
+    assert actions.grad is None
 
 
-def test_learned_delta_backpropagates_to_shared_modules_but_stops_raw_history(model):
+def test_learned_energy_credits_readers_but_stops_raw_history_and_actions(model):
     teaching, evidence = teacher(requires_grad=True), experience(3, requires_grad=True)
-    incoming = {key: value.detach().requires_grad_() for key, value in mt_state().items()}
+    actions = torch.randn(2, 5, 7, requires_grad=True)
     generator = torch.Generator().manual_seed(40)
     with torch.no_grad():
-        model.update_out.weight.copy_(torch.randn(model.update_out.weight.shape, generator=generator) * .001)
-    outgoing = model(incoming, teaching, evidence)
-    sum((value * torch.randn(value.shape, generator=generator)).mean() for value in outgoing.values()).backward()
+        model.energy[-1].weight.copy_(torch.randn(model.energy[-1].weight.shape, generator=generator) * .02)
+    contexts = model.context(teaching, evidence, torch.tensor([0, 2]))
+    pressure = model.action_cotangent(contexts, actions, create_graph=True)
+    (pressure * torch.randn(pressure.shape, generator=generator)).sum().backward()
     checked = (model.reader.image.weight, model.reader.hidden.weight, model.reader.language.weight,
                model.encoder.image.weight, model.encoder.hidden.weight, model.encoder.numeric[0].weight,
-               model.parameter_encoder.a["64"].weight, model.parameter_encoder.b["80"].weight,
-               model.parameter_encoder.target_identity, model.parameter_encoder.rank_identity,
-               model.editor[0].read.query.weight, model.editor[1].read.query.weight)
+               model.support_read.query.weight, model.action_projection.weight, model.energy[0].weight)
     for parameter in checked:
         assert parameter.grad is not None and torch.isfinite(parameter.grad).all()
         assert torch.count_nonzero(parameter.grad) > 0
-    assert all(value.grad is None for value in incoming.values())
+    assert actions.grad is None
     assert all(teaching[field].grad is None for field in ("phi", "hidden", "language"))
     assert all(evidence[field].grad is None for field in ("images", "hidden", "proprio", "actions", "feedback"))
 
 
-def test_teacher_and_parameter_information_walls(model):
-    teaching, incoming = teacher(), mt_state()
+def test_frozen_deployment_can_compute_action_pressure_under_no_grad(model):
+    for parameter in model.parameters():
+        parameter.requires_grad_(False)
+    with torch.no_grad():
+        contexts = model.context(teacher(), experience(1), torch.tensor([0]))
+        pressure = model.action_cotangent(contexts, torch.randn(1, 5, 7), create_graph=False)
+    assert not pressure.requires_grad and torch.count_nonzero(pressure) == 0
+
+
+def test_teacher_and_metric_information_walls(model):
+    teaching, evidence, incoming = teacher(), experience(1), mt_state()
     with pytest.raises(ValueError, match="only Phi"):
-        model.delta(incoming, {**teaching, "teacher_action": torch.zeros(7)}, {})
+        model.context({**teaching, "teacher_action": torch.zeros(7)}, evidence, torch.tensor([0]))
     with pytest.raises(ValueError, match="complete ordered"):
-        model.delta(incoming, {**teaching, "hidden": teaching["hidden"][:, :49]}, {})
+        model.context({**teaching, "hidden": teaching["hidden"][:, :49]}, evidence, torch.tensor([0]))
     with pytest.raises(ValueError, match="real stride"):
-        model.delta(incoming, {**teaching, "indices": torch.tensor([5, 0])}, {})
-    with pytest.raises(ValueError, match="complete registered A/B"):
-        model.parameter_encoder({**incoming, "task_id": torch.zeros(1)})
+        model.context({**teaching, "indices": torch.tensor([5, 0])}, evidence, torch.tensor([0]))
+    with pytest.raises(ValueError, match="complete registered"):
+        model.precondition({**incoming, "task_id": torch.zeros(1)})
     with pytest.raises(ValueError, match="actual registered A/B shape"):
-        model.parameter_encoder({**incoming, "first" + LORA_B_SUFFIX: torch.zeros(128, 80)})
+        model.precondition({**incoming, "first" + LORA_B_SUFFIX: torch.zeros(128, 80)})
+    with pytest.raises(ValueError, match="rank128"):
+        ExperienceCompiler({**incoming, "first" + LORA_A_SUFFIX: torch.zeros(64, 64)}, TARGETS)
+
+
+@pytest.mark.parametrize("indices", (torch.tensor([], dtype=torch.long), torch.arange(17),
+                                      torch.tensor([0., 1.]), torch.tensor([0, 0]),
+                                      torch.tensor([-1]), torch.tensor([2])))
+def test_revision_support_is_bounded_and_only_actual_distinct_decisions(model, indices):
+    with pytest.raises(ValueError, match="support indices"):
+        model.context(teacher(), experience(2), indices)
+
+
+def test_empty_e_does_not_manufacture_functional_support(model):
+    with pytest.raises(ValueError, match="existing actual"):
+        model.context(teacher(), {}, torch.tensor([0]))
 
 
 def test_experience_requires_actual_mask_and_time_identity(model):

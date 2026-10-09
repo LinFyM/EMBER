@@ -1,10 +1,10 @@
-## 2026-10-09 下一active：实际参数条件的经验编译与跨condition批量执行
+## 2026-10-09 active运行：实际参数条件的经验编译与跨condition批量执行
 
 执行窗口已由主讨论 `01a11b05-3460-7eb0-aca8-177d6d86ef48` 从 clean pushed `92c5dd75` 交给实验 session。
 独占实现分支为 `codex/parameter-compiler-20261009`，worktree `/data1/user/ymdai/projects/EMBER-parameter-compiler-dev`；
 模型与差分解码器分别在独立 task-owned worktree 实现，root 负责统一消费者、资源 profile 与完整科学交付。
 实施记录及预算为 `/data1/user/ymdai/ember_runs/parameter_conditioned_compiler_20261009/implementation/state.json`。
-strg01 当前 data1 使用约818.1GiB，软限2048GiB，本批224GiB新增峰有余量；科学计算尚未开始。
+strg01启动前data1使用约823.41GiB，软限2048GiB，本批224GiB新增峰有余量。科学GPU分配计费已于07:47:20 UTC开始（包含startup）。
 完整canonical实现已替换旧Q/PG/54运行面，真实参数事件池、独立多环境slot、配对FM和退出驱动监督器已落地；
 CPU消费者53项通过，结构扫描无新/增长hard violation，3个新模块的owner/复用/退役理由见run root implementation/review.md。
 实际native/profile已完成4064环境steps、0optimizer；持续B16短段41.08steps/s，冷启动实际batch多为1–4，不能外推完整整批。
@@ -12,7 +12,10 @@ FM物理56与112近似等速，峰25.10/40.11GiB，选择56；native64、reader1
 四实际事件/112query的world1完整FM/replay/SUM/clip热态10.44秒，allocated25.01/reserved30.32GiB；变化事件IO、optimizer不在该短测内。
 world2及更大rank因同节点卡转为其他用户高负载未获有效测量，当前选world1不声称最优，也不锁死后续完整checkpoint边界物理迁移。
 原件与负边界见run root profile/report.md、profile_driver_attempts；GPU占用并集0.145815GPUh，所有失败保留。
-下一执行为clean pushed detached ec81bcd2实际固定MT池0采集及完整共享学习/两节点读出；现场候选gpu02:7训练、gpu01:6独立评测。
+clean pushed detached ec81bcd2整批已在普通tmux ember-pcc-20261009-001运行，当前固定MT池0采集；gpu02:7与gpu01:6均通过live准入并已见实际CUDA进程。
+监督器依退出事件接续144池0→fresh180→并行72刷新/train48/formal180→fresh360及全部读出；不重复已完成profile或旧首批训练。
+启动命令/计费/原件为run root batch_launch.json、batch_execution.json、costs.jsonl；唯一launch wrapper整批退出后Steer或无覆盖resume/start唤醒本session。
+安装记录wakeup_installation.json；无需打开页面、无自Queue、没有额外直接等待者。所有权仍在实验session，完整科学消费/Git/整批回报完成后才交回main。
 实测导出的预测为15–34GPUh/8–13h、新增峰145–200GiB，原40/16h/224GiB作为执行计划与监控；完整成本和近全预算失败增长仍有未知。
 
 唯一active design为[parameter_conditioned_compiler_20261009](docs/designs/parameter_conditioned_compiler_20261009.md)。
@@ -33,7 +36,7 @@ reset/环境开始主导批量后的短窗口，不能外推完整链占比；�
 本批预计实现4–8小时、计算6–12小时；总上界40GPUh、科学计算elapsed16小时、data1新增峰224GiB，必须由实际consumer profile替换细目并现场quota/GPU准入。
 Owner最新授权已同步current_owner_requirements：上述预算是主讨论负责规划、可据实测更新的本批执行计划，不是Owner审批闸门。
 必要调整由实验session提供成本/原因/判断价值、主讨论自主取舍；存储不足可按已核实生命周期自主清理并记录释放量，保留原件/关键模型/有效恢复点及当前依赖。
-本增补继续原批，不重复已完成工作或静默更改科学比较、终点候选及停止规则；目前科学计算尚未开始。
+本增补继续原批，不重复已完成工作或静默更改科学比较、终点候选及停止规则；当前科学整批已按上述冻结代码运行。
 复用原生不同LoRA批量接口，保留一个canonical experience_compiler；独占分支实施、clean pushed detached formal，不原地改旧frozen代码。
 当前科学合同已经登记，新的实现/训练尚未冒称完成。main在本次推送及派发接受前持有tracked/Git；
 接受后由实验session01a11a0a-fd39-74b1-83ba-001ede5330df独占整个实施/运行/Git窗口，main停止tracked写入并承担科学分析。

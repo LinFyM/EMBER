@@ -15,9 +15,9 @@ from ember.writer.learning_data import load_learning_tasks
 
 
 ASSET_ROOT = Path("/data1/user/ymdai/projects/EMBER")
-RUN_ROOT = Path("/data1/user/ymdai/ember_runs/functional_revision_compiler_20261010")
+RUN_ROOT = Path("/data1/user/ymdai/ember_runs/functional_revision_learning_20261010")
 SCHEMA = "ember_functional_revision_compiler_v1"
-STAGE = "functional_revision_compiler_20261010"
+STAGE = "functional_revision_learning_20261010"
 SEED = 20261010
 EVENT_SCHEMA = "ember_actual_compiler_events_v2"
 _SOURCE_SPEC = read_json(ASSET_ROOT / "configs/operator_read_write_v1/learning_spec.json")

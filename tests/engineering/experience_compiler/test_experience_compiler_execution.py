@@ -313,6 +313,7 @@ def test_batched_different_conditions_keep_their_own_support_mean(monkeypatch):
     monkeypatch.setattr(execution, 'NativeVelocity', Native)
     runtime = Runtime.__new__(Runtime)
     runtime.device, runtime.policy, runtime.compiler = torch.device('cpu'), None, Criterion()
+    runtime.mt = {'weight': torch.tensor(.3)}
     runtime.execution, runtime.support_microbatch = SimpleNamespace(activate=activate), 4
     runtime.neural_reads, runtime.neural_read_frames = 0, 0
     items, expected = [], []
@@ -333,6 +334,9 @@ def test_batched_different_conditions_keep_their_own_support_mean(monkeypatch):
         torch.testing.assert_close(state['weight'], value)
     assert [len(item['support']['actions']) for item in items] == [2, 3]
     assert runtime.last_revision_cost['event_support_counts'] == [2, 3]
+    effects = runtime.last_revision_cost['event_parameter_effects']
+    assert effects[0]['incoming_is_MT'] and not effects[1]['incoming_is_MT']
+    assert all(value['delta_MT_relative_RMS'] > 0 for value in effects)
 
 
 def test_ready_episode_edits_batch_without_freezing_before_own_success(monkeypatch):

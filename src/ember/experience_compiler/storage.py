@@ -160,8 +160,14 @@ def save_condition(destination, condition, chain, *, fixed_behavior=False):
             incoming = f'incoming_{ordinal:03d}.safetensors'
             save_file({k: v.contiguous() for k, v in chain.states[ordinal].items()}, str(destination / incoming))
         behavior = chain.behavior_versions[ordinal]
-        events.append(dict(endpoint=endpoint, incoming=incoming, behavior_version=behavior,
-                           episode=chain.records[endpoint - 1]['episode']))
+        event = dict(endpoint=endpoint, incoming=incoming, behavior_version=behavior,
+                     episode=chain.records[endpoint - 1]['episode'])
+        effects = chain.metrics.get('edit_parameter_statistics', [])
+        if fixed_behavior or ordinal == 0:
+            event['incoming_is_MT'] = True
+        elif ordinal < len(effects):
+            event['incoming_is_MT'] = effects[ordinal]['incoming_is_MT']
+        events.append(event)
     # The initial MT is a read-only reference, never a duplicate model asset.
     if not fixed_behavior:
         save_file({k: v.contiguous() for k, v in chain.states[-1].items()}, str(destination / 'end.safetensors'))

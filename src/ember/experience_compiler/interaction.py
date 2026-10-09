@@ -109,6 +109,7 @@ class _Slot:
     state_reuses: int = 0
     native_cost: dict = field(default_factory=lambda: dict(seconds=0., frames=0, cache_hits=0))
     edit_seconds: float = 0.
+    edit_statistics: list = field(default_factory=list)
     started: float = field(default_factory=time.monotonic)
     identity: str = field(default_factory=lambda: uuid.uuid4().hex)
 
@@ -268,10 +269,13 @@ class Runner:
         outgoing = self.runtime.edit_many(items)
         seconds = time.monotonic() - started
         self.components['edit_seconds'] += seconds
-        for slot, state in zip(editing, outgoing, strict=True):
+        effects = getattr(self.runtime, 'last_revision_cost', {}).get('event_parameter_effects', [])
+        for ordinal, (slot, state) in enumerate(zip(editing, outgoing, strict=True)):
             slot.current = state
             slot.chain.states.append(cpu_state(state))
             slot.edit_seconds += seconds  # Per-condition latency; group compute counted once above.
+            if effects:
+                slot.edit_statistics.append(effects[ordinal])
 
     def _finish_episodes(self, slots, ended):
         editing = []
@@ -321,7 +325,8 @@ class Runner:
             condition_seed=request['condition']['seed'],
             excluded_states=request['condition'].get('excluded_states', request['condition'].get('final_state_ids', [])),
             behavior_actor_uses_teaching=request['kind'] == 'adapt',
-            edit_seconds=slot.edit_seconds, wall_seconds=time.monotonic() - slot.started,
+            edit_seconds=slot.edit_seconds, edit_parameter_statistics=slot.edit_statistics,
+            wall_seconds=time.monotonic() - slot.started,
             physical_slot_batch=self.slot_batch)
 
     @torch.no_grad()

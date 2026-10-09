@@ -248,7 +248,7 @@ def test_actual_peft_batched_FM_credit_has_per_event_means_and_complete_factor_g
             self.proj = torch.nn.Linear(5, 7, bias=False)
         def forward(self, x):
             return torch.nn.functional.pad(self.proj(x), (0, 25))
-    contract = replace(load_pi05_lora_contract(Path(__file__).resolve().parents[2] / 'configs/pi05_lora_v1.json'),
+    contract = replace(load_pi05_lora_contract(Path(__file__).resolve().parents[3] / 'configs/pi05_lora_v1.json'),
         targets=(LoRATarget('proj', 5, 7),), rank=2, alpha=2, dropout=0., identity_seed=7)
     policy = inject_task_lora(Policy(), contract).requires_grad_(False)
     identity = task_lora_state_dict(policy, clone=True)

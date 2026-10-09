@@ -20,6 +20,24 @@ from ember.experience_compiler.sampling import EventSampler
 from ember.pi05_source_checkpoint import DistributedContext, read_json, write_json_atomic
 
 
+def test_frozen_refresh72_excludes_original_six_and_old_train_teachers(tmp_path):
+    from ember.experience_compiler.collection import prepare_learning
+    assert prepare_learning(tmp_path) == dict(bootstrap_conditions=216, refresh_conditions=72,
+                                            phase1_nonMT_exposures=160)
+    original = read_json(tmp_path / 'pools/bootstrap/manifest.json')
+    refresh = read_json(tmp_path / 'pools/refresh180/collection_contract.json')
+    assert Counter(c['task_id'] for c in refresh['conditions']) == Counter({task: 2 for task in TASKS36})
+    for task in TASKS36:
+        candidates = [c for c in refresh['conditions'] if c['task_id'] == task]
+        excluded = set(refresh['excluded_teachers'][str(task)])
+        assert not {c['teacher_demo'] for c in candidates} & excluded
+        assert {c['teacher_demo'] for c in original['conditions'] if c['task_id'] == task} <= excluded
+        assert all(c['excluded_states'] == [32, 33, 34] for c in candidates)
+    # An unchanged resume consumes the same explicit rows, including ordering.
+    prepare_learning(tmp_path)
+    assert read_json(tmp_path / 'pools/refresh180/collection_contract.json') == refresh
+
+
 def query_data():
     data = QueryData.__new__(QueryData)
     data.tasks = {task: SimpleNamespace(episode_lengths=tuple(65 + demo % 7 for demo in range(50)))

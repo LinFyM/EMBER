@@ -79,3 +79,17 @@ def test_slow_serialization_does_not_hold_cache_publication_lock(tmp_path, monke
     finally:
         release.set()
     assert not list(tmp_path.glob('*.partial'))
+
+
+def test_actual_mt_layer_flag_retains_the_recorded_incoming_file(tmp_path):
+    from ember.experience_compiler.interaction import Chain
+    from safetensors.torch import load_file
+    chain = Chain(states=[{'w': torch.ones(2)}] * 3,
+        records=[dict(episode=0), dict(episode=1)], endpoints=[1, 2],
+        behavior_versions=['MT', 'phi180:lambda001'],
+        metrics={'edit_parameter_statistics': [dict(incoming_is_MT=True, outgoing_is_MT=True),
+                                               dict(incoming_is_MT=True, outgoing_is_MT=False)]})
+    record = storage.save_condition(tmp_path / 'condition', dict(condition_id='actual_mt'), chain)
+    assert all(event['incoming_is_MT'] for event in record['events'])
+    assert record['events'][1]['incoming'] == 'incoming_001.safetensors'
+    torch.testing.assert_close(load_file(str(tmp_path / 'condition/incoming_001.safetensors'))['w'], torch.ones(2))

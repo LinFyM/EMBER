@@ -1,3 +1,27 @@
+## 2026-10-10 实验session独占实施正式功能修订学习，冻结显式采样与原配对消费者
+
+已实际承接main a71bdb57的唯一active设计§6；实验session01a11a0a-fd39-74b1-83ba-001ede5330df持tracked/Git/运行独占窗口，main只读。
+开发分支codex/functional-learning-20261010，ROOT=/data1/user/ymdai/ember_runs/functional_revision_learning_20261010。
+共享模型/optimizer fresh；旧216条件/362 endpoint中314 MT及48非MT、仅16/36覆盖已读原件核实；180阶段严格160/720非MT曝光。
+首次学习前已保存显式72新teacher候选，排除原六条与原train48教学；实践排除32–34，不强制多次编辑。
+原train180/360显式condition/scene/RNG及固定360 paired400队列均已封存；不调用日期SEED变更后的panel_contract、不恢复135停止线。
+
+结构自审：sampling只拥有世界大小无关的task/层/条件/endpoint/query袋；training只拥有实际消费者、SUM信用、更新与完整checkpoint；
+collection只拥有实际φ180刷新原件与manifest；evaluation只拥有原显式面板/配对聚合，复用既有queue/Runner/native/Runtime与保存。
+退役已消费的profile.py及FM2/PG1旧入口，证据由2c1f7e8e/Git及旧ROOT保留，当前只有同一experience_compiler正式运行面；
+新增正式consumer测试与原有五个Compiler测试归入tests/engineering/experience_compiler，避免继续增加拥挤engineering根目录peer；
+有界采样、checkpoint、身份/scene/RNG配对合同是本批新增职责，净source增长及测试增长不以拆出第二运行栈消解。
+已有learning中的完整FM/keep/真实PG能力继续共用，当前合同没有调用PG。新模块不复制Writer、仿真或缓存层，必要恢复/身份校验保持凝聚。
+实际参数幅度只由已有incoming/outgoing/MT张量归约记录，不增加动作query或导数；新池实际仍等MT时按真实层记，完整incoming原件仍保存。
+完整90/180/270/360保存模型一次、optimizer/scheduler/scalerNone、sampler/cursor、各rank RNG/source/schema/topology；
+在完整边界迁移物理拓扑保持逻辑4/任务等权/SUM/.25与真实query流，记录恢复来源，不称bitwise exact。
+
+本段工程登记时尚未启动本批GPU计算。data1 strg01独立用户用量约1203GiB、quota2048GiB，224GiB新增峰可准入；个人runs实际844617338880bytes。
+现场两节点有可用显存共驻A40，Owner允许高UTL共驻；正式启动前重新核验，单卡profile不锁死world。
+CPU实际检查与同版本首逻辑批零更新world profile、clean pushed detached启动/成本/退出均以ROOT原件为准；
+180独立train读出与72刷新并行，后半不等train180，360后完成end48与唯一400。没有main阶段ACK/心跳、自Queue或额外退出等待者。
+以下主讨论登记及旧实施/profile条目保留为历史。
+
 ## 2026-10-10 main已登记首批正式学习：fresh FM360、72刷新、固定360 paired400
 
 Owner继续自主推进的授权保持。main已消费2c1f7e8e整批实施回报、实际消费者/学习原件、Adam权重变化及旧池覆盖。

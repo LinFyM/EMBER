@@ -182,17 +182,30 @@ class Runtime:
         incoming = [item['incoming'] for item in items]
         pullbacks, actions = factor_vjp(self, incoming, support, pressure,
             microbatch=self.support_microbatch, return_actions=True)
-        outgoing = []
+        outgoing, effects = [], []
         for i, (state, pullback) in enumerate(zip(incoming, pullbacks, strict=True)):
             change = self.compiler.precondition(pullback)
             edited = {key: value.detach().to(self.device).float() - change[key] for key, value in state.items()}
-            if any(not bool(torch.isfinite(value).all()) for value in edited.values()):
+            if not bool(torch.stack([torch.isfinite(value).all() for value in edited.values()]).all()):
                 raise RuntimeError('functional edit produced nonfinite complete factors')
+            # These are actual rounded factors, not the intended pullback.
+            # Recording their aggregate amplitudes does not add a policy query.
+            with torch.no_grad():
+                totals = torch.stack([torch.stack((
+                    (edited[key] - value.to(edited[key])).square().sum(),
+                    (value.to(edited[key]) - self.mt[key].float()).square().sum(),
+                    (edited[key] - self.mt[key].float()).square().sum(),
+                    self.mt[key].float().square().sum())) for key, value in state.items()]).sum(0).cpu()
+            denominator = max(float(totals[3]), 1e-30)
+            effects.append(dict(delta_MT_relative_RMS=(float(totals[0]) / denominator)**.5,
+                incoming_MT_relative_RMS=(float(totals[1]) / denominator)**.5,
+                outgoing_MT_relative_RMS=(float(totals[2]) / denominator)**.5,
+                incoming_is_MT=bool(totals[1] == 0), outgoing_is_MT=bool(totals[2] == 0)))
             outgoing.append(edited)
             items[i]['support']['actions'] = actions[bounds[i]:bounds[i + 1]].detach()
         self.last_revision_cost = dict(context_seconds=context_seconds,
             native_F_VJP_seconds=time.monotonic() - started, support_points=sum(counts),
-            event_support_counts=counts, group_event_count=len(items),
+            event_support_counts=counts, event_parameter_effects=effects, group_event_count=len(items),
             physical_support_microbatch=self.support_microbatch)
         return outgoing
 

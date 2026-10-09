@@ -96,6 +96,7 @@ def admission(snapshots, requested, leased, owner, minimum_free, maximum_utiliza
 class Supervisor:
     def __init__(self, args):
         self.args, self.leased, self.lock = args, set(), asyncio.Lock()
+        self.released = {}
         self.root, self.execution_root = args.root, args.execution_output or args.root
         self.logs = self.execution_root / "batch_logs"
         self.prepared, self.results = set(), {}
@@ -137,6 +138,12 @@ class Supervisor:
         return json.loads(stdout)
 
     async def admit(self, name, targets):
+        # NVIDIA utilization describes the preceding sample window. Allow our
+        # just-exited child to leave that window before taking the next live
+        # snapshot; busy/unknown owners are still rejected by admission.
+        age = min((time.monotonic() - self.released.get(card, 0.) for card in targets), default=2.)
+        if age < 1.5:
+            await asyncio.sleep(1.5 - age)
         snapshots = dict(zip(self.args.nodes, await asyncio.gather(*(self.snapshot(n) for n in self.args.nodes))))
         minimum = (self.args.train_minimum_free_mib if name.startswith("train-") else self.args.eval_minimum_free_mib)
         receipt = {"child": name, "time": time.time(), "snapshots": snapshots, "minimum_free_mib": minimum}
@@ -246,6 +253,7 @@ class Supervisor:
                 log.close()
             if allocated:
                 self.leased.difference_update(targets)
+                self.released.update({card: time.monotonic() for card in targets})
             if "allocation_identity" in entry:
                 self.allocation(entry, "end")
             entry.update(finished_unix=time.time(), return_code=None if proc is None else proc.returncode)

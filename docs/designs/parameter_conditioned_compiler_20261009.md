@@ -234,3 +234,12 @@ formal采集/训练/评测来自clean pushed detached frozen版本；现场物�
 有直接退出等待者时不另叠加自Queue。最终回报至主讨论`01a11b05-3460-7eb0-aca8-177d6d86ef48`，
 通过既有codex-session-messaging的active Steer或idle/notLoaded resume/direct start，核实真实处理并保留原session设置。
 交付完整原件、方法预测更新、负例与成本、Git clean pushed及tracked窗口移交。批次结束不代表EMBER完成，main须自主消费并继续作出取舍。
+
+## 8. 本批执行封口注记（2026-10-09）
+
+[完整科学消费](../analyses/parameter_conditioned_compiler_20261009.md)保存实际结果及适用范围。
+180 strict paired400为127、train MT/end/null27/25/25，触发§5预注册科学停止；
+刷新72和360共享训练/面板已经并行完成，360 formal只完成32个Long1条件20成功，其余368取消，没有selected checkpoint。
+实际费用13.053185GPUh（原账本保守13.480595）、science elapsed4.863415h、峰6卡；当前新增ROOT275.60GiB超224登记51.60，历史峰未知。
+strg01 data1独立quota仍有953.46GiB余量，但存储估计/监控不足保留并交main自主调整投入/保存计划，不产生Owner审批。
+原科学比较、停止合同和所有有效/失败产物不据上述结果改写；本设计为已执行历史合同，新科学执行须由main另行登记。

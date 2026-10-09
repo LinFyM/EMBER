@@ -1,13 +1,15 @@
-## 2026-10-09 active推进：实际参数编辑器的有界完整学习
+## 2026-10-09 当前接续：parameter compiler科学停止，主讨论消费完整证据后形成后继
 
-唯一[active design](docs/designs/parameter_conditioned_compiler_20261009.md)已由首批科学负结果和真实批量profile收敛；目标仍是完整固定LoRA明显超过强MT，且解释教学/经验如何获得可迁移控制。
-采用强MT实际起点、真实参数条件编辑、零更新保持的完整rank128 decoder、成功/失败经验和可复用的共享FM事件；不是新condition动作轨迹微调。
-执行顺序：实际consumer实现/profile → 144固定行为条件 → fresh FM180 → 并行formal180与72新条件刷新 → FM360 → formal360及全部原件消费。
-两个节点均有固定train48 MT/end/null；180/360 strict paired400保留完整得失与相邻稳定性，360为唯一终点候选，有限提前停止见design。
-跨condition原生批量已有短程1.922倍证据，完整实践批量、环境/reset重叠及训练物理配置由真实消费者实测选择，不锁死B8或world2。
-预算40GPUh/科学计算elapsed16小时/新增峰224GiB，估计实现4–8小时、计算6–12小时；现场双节点及strg01准入，Test封存。
-本次文档推送/派发接受后实验session独占tracked/Git并闭环实现、运行和整批回报；main继续承担科学判断，不重复工程验收。
-完成当前批次后按训练获得、held迁移、实际视频/经验作用及成本自主接续；不能把阴性或预算边界变成等待Owner例行许可。
+[本批合同](docs/designs/parameter_conditioned_compiler_20261009.md)已实际执行并按180合取规则科学停止；
+[完整分析](docs/analyses/parameter_conditioned_compiler_20261009.md)保留127/400、MT153的R106/G21/L47、两个train MT/end/null27/25/25及全部费用。
+144池0/180/72刷新/360训练和面板已完成；360 formal仅32个Long1条件20成功（同子集1806/MT16），其余368取消，无selected或完整360资格。
+1440学习事件只有81个实际非MT incoming且覆盖16映射，但J1也有损失；后段配对FM逐渐改善未转成train净收益，不能仅用held迁移或断图解释。
+main下一判断须从实际问题连续解释特征—算子—信用—完整参数—执行，比较递推曝光、控制分布信用与经验/教学作用，
+保留Long1局部正证据及其它任务损失，结合旧T/self-read/shared-SDE/experience完整正负历史自主选择有界后继。
+实际13.053185GPUh（保守13.480595）、science elapsed4.863415h、峰6卡；存储当前275.60GiB超224计划51.60，quota未越界、历史峰未知。
+main自主更新投入/保存计划；不为补矩阵或局部高点恢复已停止队列，不等待Owner逐批批准，不以小扫/无限续训保护同一弱假说。
+科学原件/有效checkpoint/失败均保留，两节点本批工作已退出；唯一真实消息回执后tracked/Git交回main。
+当前没有新active科学运行，所有下方派发/运行安排均为历史。EMBER最终目标与Test封存保持，批次停止后main须主动接续。
 
 ## 2026-10-09 下一完整方法：同时改变有用修订的学习条件与串行计算成本
 

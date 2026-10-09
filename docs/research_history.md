@@ -3,6 +3,21 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-09：实际参数编辑器180严重非通过，完整共享训练与已发生360证据
+
+[完整分析](analyses/parameter_conditioned_compiler_20261009.md)直接消费144池0、180/360训练、72刷新、两个train48及180 strict paired400；原件根parameter_conditioned_compiler_20261009。
+χ180为127/400，对同scene强MT153 R106/G21/L47、T161 R98/G29/L63、旧135 R97/G30/L38；suite39/39/34/15、breadth5/8。
+train180/360 MT/end/null都27/25/25，end相邻R23/G2/L2，360 breadth由7降6；没有训练域净修订或优于null。
+触发预注册formal180<=135且train end<=MT/null，整批退出0/scientific_stopped；不把科学阴性当bug修补。
+刷新/360共享训练先完成，360 formal尾部已发生32个Long1条件，20成功，对同子集1806/MT16；局部正证据保留，368取消，无完整360选点资格。
+1440事件/40320query、36映射各40次；实际非MT incoming仅81（未屏蔽74、覆盖16映射），成功经验57条件在刷新停止前编辑。
+首步identity与条件梯度已接通，update2起所有组真实非零；配对FM后段改善但J1与train能力仍有损失，约束“接口修复+共享FM足以学成”的假说，不否定整个视频编译族。
+全批572360环境steps，含失败/部分经验3450和profile4064；全片神经读取4099，失败和尾部不省略。
+63费用窗/18worker全闭合；回执修正13.053185GPUh、原账本保守13.480595，wall并集3.951856h、science elapsed4.863415h、峰6卡。
+current ROOT275.60GiB超224计划51.60，历史峰未知；strg01 data1余量953.46GiB不抵消超计划事实。原始经验/参数/有效checkpoint/失败保留。
+最终消费者clean db53422e，135完整checkpoint迁移world1→4，逻辑有效batch/任务权重保留，新增rank RNG登记，不称bitwise exact。
+整批退出后约9.01秒已实际后台处理，资源全退出。执行窗口由一次当前main真实回执交回，main须消费局部正负与信用/曝光机制后自主接续，不等待Owner指定。
+
 ## 2026-10-09：真实多condition批量profile与后继学习取舍
 
 主讨论在首批交回后独立消费真实实现/训练事件；成功在U之前退出、216链只有70条未屏蔽经验修订，约束了经验学习的实际覆盖。

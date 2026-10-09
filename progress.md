@@ -1,4 +1,33 @@
-## 2026-10-09 active运行：实际参数条件的经验编译与跨condition批量执行
+## 2026-10-09 parameter compiler科学封口：180触发预注册停止，保留已发生360正负证据
+
+完整[科学分析](docs/analyses/parameter_conditioned_compiler_20261009.md)已直接消费源码、实际事件、原始配对行、训练与费用。
+parameter_conditioned_compiler_20261009池0144/180/刷新72/360共享训练与两个train48全部完整；
+χ180 strict paired400为127，对MT153 R106/G21/L47，四suite39/39/34/15、breadth5/8。
+train180/360 MT/end/null均27/25/25，end相邻R23/G2/L2；不属于仅held迁移失败，也不能由同分宣称E完全无作用。
+formal180<=135且train end<=MT/null触发已登记科学停止，topology_scaleup_001退出0、scientific_stopped，不做工程修补或fresh重启。
+360 formal只完成32个Long1条件、368 pending取消；已完成20/32，对同32行180为6、MT16，局部正证据完整保留。
+没有360完整400、selected checkpoint或正式相邻稳定资格，不据局部结果事后变更停止规则。
+
+360真实共享更新共1440事件/40320跨episode query，36映射各40次、E屏蔽180次；池0全MT incoming。
+实际非MT incoming仅81事件、未屏蔽74、覆盖16映射，递推参数曝光仍有限；J1正式子集也净丢6条MT能力，不能全部归因递推偏移。
+首步零编辑配对FM0、其它模块update2起非零梯度；后段平均配对FM改善约0.77%却train无净收益，
+降低“这些输入/identity/复用加现有FM已足以形成有用修订”的支持。真实E/Λ与控制分布信用及视频贡献仍须main连续推导，不用局部指标或小扫维护弱假说。
+
+完整条件实践375066steps/1394重置，失败episode296664steps；实际final189780，加失败/部分经验3450和profile4064，
+全批572360实际环境steps。共享learning/replay2880、实际采集/编译1152、null67，共4099全片神经读取；缓存重读计入。
+63费用窗口/18worker回执全闭合；实际退出回执修正13.053185GPUh，保守账本13.480595GPUh，原账本/失败不改。
+占卡wall并集3.951856h、science elapsed4.863415h、峰并行6卡；world1/4各段真实吞吐与共驻/缓存边界见报告，不宣称world4最优或受控2.11倍。
+ROOT当前allocated275.60GiB，比登记224GiB多51.60GiB，连续历史峰未知；strg01 data1使用1094.54/2048GiB，余量953.46GiB。
+存储预测与监控不足如实交main自主调整后继投入；原始经验、参数、180/360有效checkpoint与失败保留，可重建缓存约64GiB有明确退役候选。
+最后双节点核验无本ROOT/ymdai compute GPU工作进程。本次唯一唤醒退出后约9.01秒核实实际处理，无需打开页面、没有Queue或第二通知。
+
+ROOT=/data1/user/ymdai/ember_runs/parameter_conditioned_compiler_20261009；scientific_analysis.json保存全部成功集合及原件索引，
+analysis/batch_resource_audit_20261009保存费用/退出/quota/du原件；scientific_completion.json与main_delivery_receipt.json为科学交付及消息判重入口。
+最终源码消费者db53422e、训练world1从完整macro135显式迁移world4，rank0恢复/1–3新种子，不称bitwise exact；全部工程修复已新冻结。
+本批结果/记录集成后只发当前main01a11b05-3460-7eb0-aca8-177d6d86ef48一次科学回报；tracked窗口以该回执实际处理后交回main。
+当前没有新科学批运行；下面active/运行表述均是历史快照。本批停止不关闭EMBER，main必须主动消费并自主形成后继，不等待Owner例行许可。
+
+## 2026-10-09 实施与恢复历史：以下运行快照已由顶部科学封口覆盖
 
 执行窗口已由主讨论 `01a11b05-3460-7eb0-aca8-177d6d86ef48` 从 clean pushed `92c5dd75` 交给实验 session。
 独占实现分支为 `codex/parameter-compiler-20261009`，worktree `/data1/user/ymdai/projects/EMBER-parameter-compiler-dev`；

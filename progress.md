@@ -1,3 +1,19 @@
+## 2026-10-09 χ360完整补充实际启动：原32只读复用，新增368由六卡运行
+
+新ROOT=/data1/user/ymdai/ember_runs/parameter_compiler_fullreadout_20261009。
+已从clean pushed f0c49811的detached frozen启动，tmux为ember-pcc-full360-20261009；
+gpu01:1/2/6与gpu02:0/2/7六卡均通过两节点现场准入，允许高UTL共驻，仅保留显存与6卡/单节点限制。
+固定原macro360，原contract完整相等，新队列初始化32complete/368pending；原primary/sidecar/参数和经验只读symlink复用，
+父ROOT/原停止记录不改、旧32不重跑且不重复计费，无新训练/刷新/其它checkpoint/controls/Test。
+canonical Runner已紧凑clone单slot H；新增保存事件记录实际bytes/allocated_bytes，Supervisor按真实保存事件记录增长，
+不周期读取queue/checkpoint/cache。18项执行/序列化/配对消费者在最终代码通过，源H值/dtype/shape合同保持。
+launch_contract.json保存source/env/设备/命令/quota/范围；batch_execution.json指向唯一当前attempt，成本全写新ROOT/costs.jsonl。
+启动健康检查等待每worker实际实践/编译/save_condition；截至本次记录已有8个新条件保存、两worker取得实际执行证据，
+完整六worker核验完成后以startup_health.json为准，不把模型加载或占显存本身当运行正常。
+整批实际退出后仅一次Steer或无设置覆盖resume/start唤醒本实验session；没有Queue/第二退出等待者，执行器complete后仍须科学消费。
+科学投入观察线8GPUh/4h，新增计划220GiB；初始data1独立quota约1093/2048GiB，实际保存增长为样本推导、不是已测全程峰。
+当前完整结果未知，不根据中途分数停止或切点；全400消费/Git/资源退出后只向main01a11b05一次科学回报并交回所有权。
+
 ## 2026-10-09 main接回科学所有权，登记冻结χ360的完整补充读出
 
 main已核对clean pushed899554fb、原始配对行、实际事件/损失与模型算子，接回tracked/Git窗口。

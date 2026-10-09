@@ -2,6 +2,8 @@
 
 最终目标及信息墙保持；main接回899554fb后独立消费原始结果、实际输入/学习目标和最近似FM/共享SDE/experience历史。
 当前唯一active是[χ360完整补充读出](docs/designs/parameter_compiler_fullreadout_20261009.md)。
+新ROOT及clean pushed f0c49811已经实际启动六卡独立B16 evaluator，原32只读导入、只补368；
+运行/健康/保存增长/退出及费用以ROOT launch_contract/batch_execution/startup_health/costs原件为准，完整400尚未产生。
 原χ180127/400及科学停止保留；360已训练完成且Long1局部20/32对1806/MT16，不能只据180或只据局部正例作完整方法判断。
 补原未执行368并复用32，固定checkpoint、全部任务与配对、1024实践预算和最终官方口径；无新训练、模型选择或视频controls。
 main并行解释实际失败：独立expert query如何给不同E/Λ信用，功能keep究竟约束什么，有限递推曝光如何作用于自身visited分布；

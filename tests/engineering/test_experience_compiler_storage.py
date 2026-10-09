@@ -7,6 +7,7 @@ import pytest
 import torch
 
 from ember.experience_compiler.storage import FeatureCache, RecordWriter, tensor_bytes
+from ember.experience_compiler import storage
 
 
 def test_native_phi_batch_preserves_dtype_and_evicts_within_disk_budget(tmp_path):
@@ -53,3 +54,28 @@ def test_writer_bounds_bytes_before_sixteen_futures_and_propagates_errors():
     finally:
         release.set()
         writer.close()
+
+
+def test_slow_serialization_does_not_hold_cache_publication_lock(tmp_path, monkeypatch):
+    cache = FeatureCache(tmp_path)
+    started, release = Event(), Event()
+    original = storage.save_file
+    def save(values, path):
+        if '/slow.' in path:
+            started.set()
+            assert release.wait(5)
+        return original(values, path)
+    monkeypatch.setattr(storage, 'save_file', save)
+    try:
+        with ThreadPoolExecutor(2) as executor:
+            slow = executor.submit(cache.put, 'slow', {'phi': torch.ones(2)})
+            assert started.wait(5)
+            fast = executor.submit(cache.put, 'fast', {'phi': torch.zeros(2)})
+            fast.result(timeout=5)
+            assert cache.get('slow') is None
+            torch.testing.assert_close(cache.get('fast')['phi'], torch.zeros(2))
+            release.set()
+            slow.result(timeout=5)
+    finally:
+        release.set()
+    assert not list(tmp_path.glob('*.partial'))

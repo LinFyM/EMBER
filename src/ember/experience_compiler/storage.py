@@ -7,6 +7,7 @@ import fcntl
 from pathlib import Path
 import sqlite3
 import time
+import uuid
 
 import torch
 from safetensors.torch import load_file, save_file
@@ -65,25 +66,33 @@ class FeatureCache:
                    for key, values in entries.items() if tensor_bytes(values) + 4096 <= self.max_bytes]
         if not entries:
             return
-        with self._locked() as database:
-            used = database.execute('SELECT COALESCE(SUM(bytes),0) FROM entries').fetchone()[0]
+        staged = []
+        try:
             for key, path, values in entries:
-                if database.execute('SELECT 1 FROM entries WHERE key=?', (key,)).fetchone():
-                    continue
-                size = tensor_bytes(values) + 4096
-                if used + size > self.max_bytes:
-                    for old, old_size in database.execute('SELECT key,bytes FROM entries ORDER BY touched').fetchall():
-                        if used + size <= self.max_bytes:
-                            break
-                        self._path(old).unlink(missing_ok=True)
-                        database.execute('DELETE FROM entries WHERE key=?', (old,))
-                        used -= old_size
-                partial = path.with_suffix('.partial')
+                # File serialization overlaps other workers. Only publishing
+                # and eviction need the shard metadata lock, not a 64MiB save.
+                partial = path.with_suffix(f'.{uuid.uuid4().hex}.partial')
+                staged.append((key, path, partial))
                 save_file(values, str(partial))
-                actual = partial.stat().st_size
-                partial.replace(path)
-                database.execute('INSERT INTO entries VALUES (?,?,?)', (key, actual, time.time()))
-                used += actual
+            with self._locked() as database:
+                used = database.execute('SELECT COALESCE(SUM(bytes),0) FROM entries').fetchone()[0]
+                for key, path, partial in staged:
+                    if database.execute('SELECT 1 FROM entries WHERE key=?', (key,)).fetchone():
+                        continue
+                    actual = partial.stat().st_size
+                    if used + actual > self.max_bytes:
+                        for old, old_size in database.execute('SELECT key,bytes FROM entries ORDER BY touched').fetchall():
+                            if used + actual <= self.max_bytes:
+                                break
+                            self._path(old).unlink(missing_ok=True)
+                            database.execute('DELETE FROM entries WHERE key=?', (old,))
+                            used -= old_size
+                    partial.replace(path)
+                    database.execute('INSERT INTO entries VALUES (?,?,?)', (key, actual, time.time()))
+                    used += actual
+        finally:
+            for _, _, partial in staged:
+                partial.unlink(missing_ok=True)
 
 
 def tensor_bytes(value):

@@ -1,5 +1,14 @@
 ## 2026-10-09 下一active：实际参数条件的经验编译与跨condition批量执行
 
+执行窗口已由主讨论 `01a11b05-3460-7eb0-aca8-177d6d86ef48` 从 clean pushed `92c5dd75` 交给实验 session。
+独占实现分支为 `codex/parameter-compiler-20261009`，worktree `/data1/user/ymdai/projects/EMBER-parameter-compiler-dev`；
+模型与差分解码器分别在独立 task-owned worktree 实现，root 负责统一消费者、资源 profile 与完整科学交付。
+实施记录及预算为 `/data1/user/ymdai/ember_runs/parameter_conditioned_compiler_20261009/implementation/state.json`。
+strg01 当前 data1 使用约818.1GiB，软限2048GiB，本批224GiB新增峰有余量；科学计算尚未开始。
+完整canonical实现已替换旧Q/PG/54运行面，真实参数事件池、独立多环境slot、配对FM和退出驱动监督器已落地；
+CPU消费者53项通过，结构扫描无新/增长hard violation，3个新模块的owner/复用/退役理由见run root implementation/review.md。
+下一执行为clean pushed detached实际native/profile，再按实测吞吐、峰值和现场两节点准入启动整批。
+
 唯一active design为[parameter_conditioned_compiler_20261009](docs/designs/parameter_conditioned_compiler_20261009.md)。
 主讨论已消费首批135/400、train无净修订及独立效率实测，选择完整实际参数编辑器；不是原54节点续训或rank/LR/seed小扫。
 初始实际控制固定为强MT；以当前完整A/B和真实E改变教学读取，零更新保持的decoder产生下一完整rank128 A/B。

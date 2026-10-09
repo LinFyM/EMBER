@@ -1,120 +1,90 @@
-"""Per-query FM/keep credit and globally normalized real SDE terminal credit."""
+"""Paired incoming/outgoing native FM credit for one observed edit event."""
 from __future__ import annotations
 
 import torch
 
-from ember.writer.function_credit import NativeFlowPrediction, flow_sample
+from ember.writer.function_credit import FlowSample, NativeFlowPrediction, flow_sample
 from ember.writer.runtime import autocast
-
-from .execution import NativeVelocity, score_cotangent
-from .interaction import processed
-
-
-def add_credit(destination, names, gradients, weight=1.):
-    for name, value in zip(names, gradients, strict=True):
-        contribution = value.detach().float() * weight
-        if name in destination:
-            destination[name].add_(contribution)
-        else:
-            destination[name] = contribution
 
 
 def per_query_loss(prediction, sample):
     if prediction.shape != sample.target.shape or prediction.shape[1:] != (50, 32):
-        raise ValueError('FM retains native 50x32 latent with canonical first-seven consumer')
+        raise ValueError('FM retains native 50x32 latent and first-seven action consumer')
     return (prediction[..., :7].float() - sample.target[..., :7].float()).square().mean((1, 2))
 
 
-def stage_weights(count):
-    if count < 1:
-        raise ValueError('compilation must have an initial complete state')
-    return [1.] if count == 1 else [1 / (2 * (count - 1))] * (count - 1) + [.5]
+def edit_objective(outgoing, incoming, *, condition_weight=.25):
+    if outgoing.shape != incoming.shape or outgoing.ndim != 1:
+        raise ValueError('keep compares the same per-query incoming/outgoing losses')
+    regression = torch.relu(outgoing - incoming.detach())
+    return condition_weight * (outgoing + .2 * regression).mean(), regression
 
 
-def fm_credit(runtime, states, batch, *, seed, microbatch):
-    """One noise/time/query sample shared by every actual compilation stage."""
-    count = len(batch['action'])
-    if count != 28 or microbatch < 1:
-        raise ValueError('one condition requires seven episodes x four interval queries')
+def _map_tensors(value, function):
+    if isinstance(value, torch.Tensor):
+        return function(value)
+    return type(value)(_map_tensors(item, function) for item in value)
+
+
+def _join(values):
+    if isinstance(values[0], torch.Tensor):
+        return torch.cat(values)
+    return type(values[0])(_join([v[index] for v in values]) for index in range(len(values[0])))
+
+
+def fm_credit(runtime, incoming, outgoing, batches, *, seeds, microbatch):
+    """Batch different complete LoRAs and queries without changing event weights.
+
+    All28 noise/time samples are drawn per logical event before chunking. The
+    same prepared native prefix is used by incoming/outgoing. Indexed hooks
+    retain the factor VJP while sharing each event's factors across its queries.
+    """
+    count = len(incoming)
+    if not 1 <= count <= 4 or len(outgoing) != count or len(batches) != count or len(seeds) != count:
+        raise ValueError('FM physical rank must own one through four logical events')
+    if microbatch < 1 or any(len(b['action']) != 28 for b in batches):
+        raise ValueError('each event needs seven nonteacher episodes x four intervals')
+    samples = [flow_sample(runtime.policy, batch, seed=seed, device=runtime.device,
+                          random_batch=28, offset=0) for batch, seed in zip(batches, seeds, strict=True)]
+    sample = FlowSample(_join([s.arguments for s in samples]), torch.cat([s.target for s in samples]), 7)
     owner = NativeFlowPrediction(runtime.policy)
-    credits = [{} for _ in states]
-    losses, keep = [0.] * len(states), 0.
-    alphas, revisions = stage_weights(len(states)), len(states) - 1
-    for start in range(0, count, microbatch):
-        end = min(count, start + microbatch)
-        sliced = {k: v[start:end] if isinstance(v, torch.Tensor) and v.ndim and len(v) == count else v
-                  for k, v in batch.items()}
-        sample = flow_sample(runtime.policy, sliced, seed=seed, device=runtime.device,
-                             random_batch=count, offset=start)
+    leaves = [{k: v.detach().to(runtime.device).requires_grad_() for k, v in state.items()} for state in outgoing]
+    flattened = [value for state in leaves for value in state.values()]
+    credits = [{} for _ in range(count)]
+    losses, keep = [[0., 0.] for _ in range(count)], [0.] * count
+    for start in range(0, 28 * count, microbatch):
+        end = min(start + microbatch, 28 * count)
+        chunk = FlowSample(_map_tensors(sample.arguments, lambda v: v[start:end]), sample.target[start:end], 7)
+        assignment = torch.arange(start, end, device=runtime.device) // 28
         with autocast(runtime.device):
-            prepared = owner.prepare(sample)
-        previous = None
-        for j, state in enumerate(states):
-            leaves = {k: v.detach().to(runtime.device).requires_grad_() for k, v in state.items()}
-            with autocast(runtime.device):
-                prediction = torch.func.functional_call(owner, {'policy.' + k: v for k, v in leaves.items()},
-                                                         (sample, prepared), strict=False)
-                ell = per_query_loss(prediction, sample)
-                regression = torch.zeros_like(ell) if previous is None else torch.relu(ell - previous)
-                objective = (alphas[j] * ell + (0.2 / revisions * regression if revisions else 0.)).sum() / count / 4
-                gradients = torch.autograd.grad(objective, tuple(leaves.values()))
-            add_credit(credits[j], leaves, gradients)
-            losses[j] += float(ell.detach().sum()) / count
-            if previous is not None:
-                keep += float(regression.detach().sum()) / count / revisions
-            previous = ell.detach()
-    return dict(cotangents=credits, stage_losses=losses, keep=keep,
-                weighted_loss=sum(a * b for a, b in zip(alphas, losses)) + .2 * keep)
+            prepared = owner.prepare(chunk)
+        with torch.no_grad(), runtime.execution.activate(incoming, batch_indices=assignment), autocast(runtime.device):
+            before = per_query_loss(owner(chunk, prepared), chunk)
+        with runtime.execution.activate(leaves, batch_indices=assignment), autocast(runtime.device):
+            after = per_query_loss(owner(chunk, prepared), chunk)
+            regression = torch.relu(after - before.detach())
+            objective = (after + .2 * regression).sum() / 28 / 4
+            gradients = torch.autograd.grad(objective, flattened)
+        offset = 0
+        for index, state in enumerate(leaves):
+            for name in state:
+                value = gradients[offset].detach().float()
+                offset += 1
+                if name in credits[index]:
+                    credits[index][name].add_(value)
+                else:
+                    credits[index][name] = value
+            mask = assignment == index
+            losses[index][0] += float(before[mask].sum()) / 28
+            losses[index][1] += float(after.detach()[mask].sum()) / 28
+            keep[index] += float(regression.detach()[mask].sum()) / 28
+    return [dict(cotangent=credit, incoming_loss=loss[0], outgoing_loss=loss[1], keep=penalty,
+                 weighted_loss=loss[1] + .2 * penalty, paired_difference=loss[1] - loss[0], queries=28)
+            for credit, loss, penalty in zip(credits, losses, keep, strict=True)]
 
 
-def pg_credit(runtime, final_state, task, queries, advantages, *, microbatch=16):
-    if len(queries) != 2 or len(advantages) != 2:
-        raise ValueError('each condition has exactly two independent SDE query labels')
-    credit = {k: torch.zeros_like(v, dtype=torch.float32, device=runtime.device)
-              for k, v in final_state.items()}
-    decisions, transitions = 0, 0
-    for query, advantage in zip(queries, advantages, strict=True):
-        records, replans = query['reservoir'], query['row']['replans']
-        if replans < 1 or len(records) != min(16, replans):
-            raise ValueError('query reservoir lost actual decision count')
-        points = [(record['raw'], transition) for record in records for transition in record['transitions']]
-        decisions += len(records)
-        transitions += len(points)
-        if float(advantage) == 0:
-            continue  # An exactly zero score coefficient has exactly zero credit.
-        for start in range(0, len(points), microbatch):
-            block = points[start:start + microbatch]
-            rows = [processed(runtime, raw, task['language']) for raw, _ in block]
-            batch = {key: torch.cat([row[key] for row in rows]) for key in rows[0]}
-            with autocast(runtime.device):
-                owner = NativeVelocity(runtime.policy, batch, capture_phi=False)
-            leaves = {k: v.detach().to(runtime.device).requires_grad_() for k, v in final_state.items()}
-            cotangent = torch.cat([score_cotangent(t, advantage, replans=replans, retained=len(records))
-                                   for _, t in block]).to(runtime.device)
-            z = torch.cat([t.z for _, t in block]).to(runtime.device)
-            tau = torch.tensor([t.tau for _, t in block], device=runtime.device)
-            with autocast(runtime.device):
-                prediction = torch.func.functional_call(owner, {'policy.' + k: v for k, v in leaves.items()},
-                    (z, tau), strict=False)
-                gradients = torch.autograd.grad(prediction, tuple(leaves.values()), grad_outputs=cotangent)
-            add_credit(credit, leaves, gradients)
-    return dict(cotangent=credit, reservoir_decisions=decisions, transitions=transitions,
-                advantages=list(map(float, advantages)), returns=[int(q['row']['success']) for q in queries])
-
-
-def surrogate(states, fm, pg=None, beta=0.):
-    """Shared Compiler VJP; this scalar is a cotangent carrier, not an FM loss."""
-    result = None
-    for j, state in enumerate(states):
-        for name, cotangent in fm[j].items():
-            value = (state[name].float() * cotangent).sum()
-            result = value if result is None else result + value
-    if pg is not None and beta:
-        for name, cotangent in pg.items():
-            value = beta * (states[-1][name].float() * cotangent).sum()
-            result = value if result is None else result + value
-    return result
-
-
-def pg_surrogate(final, credit):
-    return sum((final[name].float() * value).sum() for name, value in credit.items())
+def surrogate(outgoing, credit):
+    """Exact shared-module VJP carrier; its numerical value is not an FM loss."""
+    if outgoing.keys() != credit.keys():
+        raise ValueError('shared edit VJP lost complete factor coverage')
+    return sum((outgoing[name].float() * value).sum() for name, value in credit.items())

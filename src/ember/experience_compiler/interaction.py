@@ -1,32 +1,22 @@
-"""Budget/success driven practice, cumulative facts and independent query episodes."""
+"""Independent budget/success-driven slots and batched native control."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from contextlib import ExitStack
-import copy
+from copy import deepcopy
 import time
+import uuid
 
 import numpy as np
 import torch
 
-from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
-from ember.pi05_eval.episode import start_fixed_episode, finish_episode_row
 from ember.pi05_eval_contract import policy_noise_seed
-from ember.pi05_processing import libero_policy_input
 from ember.writer.runtime import autocast
-
+from .environments import EnvironmentSlots, raw_observation
 from .execution import NativeVelocity, action_chunk
 
 
 def cpu_state(state):
-    return {k: v.detach().cpu() for k, v in state.items()}
-
-
-def raw_observation(obs, language):
-    value = libero_policy_input(obs, language)
-    images = torch.stack((value['observation.images.base_0_rgb'],
-                          value['observation.images.left_wrist_0_rgb'])).mul(255).round().to(torch.uint8)
-    return {'images': images, 'proprio': value['observation.state']}
+    return {k: v.detach().cpu().contiguous() for k, v in state.items()}
 
 
 def processed(runtime, raw, language):
@@ -42,229 +32,337 @@ class Chain:
     endpoints: list = field(default_factory=list)
     episodes: list = field(default_factory=list)
     metrics: dict = field(default_factory=dict)
+    observations: dict = field(default_factory=dict)
+    phi: dict = field(default_factory=dict)
+    behavior_versions: list = field(default_factory=list)
 
-    def experience(self, endpoint):
+    def experience(self, endpoint, *, runtime=None):
         rows = self.records[:endpoint]
         if not rows:
             return {}
-        result = {key: torch.stack([row[key] for row in rows]) for key in (
-            'hidden', 'proprio', 'actions', 'executed', 'feedback')}
-        result['images'] = torch.stack([torch.stack((row['_phi_pre'], row['_phi_post'])) for row in rows])
+        if endpoint > len(self.records) or endpoint < 1:
+            raise ValueError('experience endpoint exceeds recorded actual decisions')
+        ids = {row[phase] for row in rows for phase in ('pre', 'post')}
+        missing = {key: self.observations[key] for key in ids if key not in self.phi}
+        if missing:
+            if runtime is None:
+                raise ValueError('recorded observation Phi needs its frozen native owner')
+            self.phi.update(runtime.observation_features(missing))
+        result = {key: torch.stack([row[key] for row in rows]) for key in
+                  ('hidden', 'proprio', 'actions', 'executed', 'feedback')}
+        result['images'] = torch.stack([torch.stack((self.phi[row['pre']], self.phi[row['post']])) for row in rows])
         result.update({key: torch.tensor([row[key] for row in rows], dtype=torch.long)
                        for key in ('episode', 'step')})
         return result
 
-    @property
-    def experiences(self):
-        return self.to_record()['records']
-
     def to_record(self):
-        return dict(records=[{k: v for k, v in row.items() if not k.startswith('_phi')}
-                             for row in self.records], endpoints=self.endpoints,
-                    episodes=self.episodes, metrics=self.metrics)
+        return dict(records=self.records, observations=self.observations,
+                    endpoints=self.endpoints, episodes=self.episodes, metrics=self.metrics,
+                    behavior_versions=self.behavior_versions)
+
+    @classmethod
+    def from_record(cls, value):
+        return cls(**value)
+
+
+@dataclass
+class _Slot:
+    request: dict
+    current: dict
+    chain: Chain
+    remaining: int | None
+    stream: object = None
+    ready: bool = False
+    raw: dict | None = None
+    observation_id: str = ''
+    episode_steps: int = 0
+    state_id: int = 0
+    noise_root: int = 7
+    pending: dict | None = None
+    used_states: set = field(default_factory=set)
+    state_reuses: int = 0
+    native_cost: dict = field(default_factory=lambda: dict(seconds=0., frames=0, cache_hits=0))
+    edit_seconds: float = 0.
+    started: float = field(default_factory=time.monotonic)
+    identity: str = field(default_factory=lambda: uuid.uuid4().hex)
 
 
 class Runner:
-    def __init__(self, runtime, contract, physical_gpu):
-        self.runtime, self.contract = runtime, copy.deepcopy(contract)
-        self.contract.setdefault('parallel', {'envs_per_replica': 1})
-        self.pool = PersistentTaskEnvironmentPool(self.contract, physical_gpu_id=int(physical_gpu))
-        self.started = time.monotonic()
-        self.total_environment_steps = 0
+    """Bounded EGL slots; each completed condition releases its own capacity."""
+    def __init__(self, runtime, contract, physical_gpu, *, slot_batch=8):
+        self.runtime, self.contract = runtime, deepcopy(contract)
+        self.slot_batch, self.physical_gpu = slot_batch, int(physical_gpu)
+        self.environments = None
+        self.started, self.total_environment_steps = time.monotonic(), 0
+        self.components = dict(native_prefix_seconds=0., native_flow_seconds=0.,
+                               env_operation_seconds=0., env_wait_seconds=0.,
+                               edit_seconds=0., plans=0, physical_batch_histogram={})
 
-    def _start(self, task, state_id, noise_root, *, remaining=None):
-        envs, states = self.pool.switch(task)
-        settling = int(self.contract['environment']['dummy_settling_steps'])
-        if remaining is not None:
-            settling = min(settling, remaining)
-        contract = copy.deepcopy(self.contract)
-        contract['environment']['dummy_settling_steps'] = settling
-        slot = start_fixed_episode(env=envs[0], init_state_id=state_id, init_states=states,
-            task=task, contract=contract, root_seed=noise_root,
-            dummy=np.asarray(contract['environment']['dummy_action']), task_adapter=None, capture_level=None)
-        self.total_environment_steps += settling
-        return envs[0], slot, settling
+    def _start(self, index, slot):
+        request, condition = slot.request, slot.request.get('condition', {})
+        task = request['task']
+        if request['kind'] == 'final':
+            state_id, root = request['state_id'], request.get('noise_root', 7)
+        else:
+            state_id = next(slot.stream)
+            slot.state_reuses += int(state_id in slot.used_states)
+            slot.used_states.add(state_id)
+            root = int(np.random.SeedSequence([condition['seed'], len(slot.chain.episodes), 0xADA]).generate_state(1)[0])
+        slot.state_id, slot.noise_root, slot.ready, slot.episode_steps = state_id, root, False, 0
+        self.environments.submit(index, 'start', task=task,
+            contract=request.get('environment_contract', self.contract), state_id=state_id,
+            noise_root=root, remaining=slot.remaining)
 
-    @torch.no_grad()
-    def episode(self, task, state_id, state, *, noise_root=7, remaining=None,
-                collect=False, episode_index=0, sde=False):
-        env, slot, settling = self._start(task, state_id, noise_root, remaining=remaining)
-        horizon = int(self.contract['environment']['horizons'][task['suite']])
-        controls = horizon if remaining is None else min(horizon, remaining - settling)
-        rows, reservoir, replans = [], [], 0
-        selection = np.random.default_rng(np.random.SeedSequence([noise_root, state_id, 0x51DE]))
-        done, reward = False, 0.
-        raw = raw_observation(slot['obs'], task['language'])
-        initial_proprio = raw['proprio'].tolist()
-        with self.runtime.execution.activate([state]), autocast(self.runtime.device):
-            while slot['steps'] < controls and not done:
-                velocity = NativeVelocity(self.runtime.policy, processed(self.runtime, raw, task['language']),
-                                          capture_phi=collect)
-                if rows:
-                    rows[-1]['_phi_post'] = velocity.phi[0]
-                seed = policy_noise_seed(noise_root, task['suite'], int(task['task_id']), state_id, replans)
-                noise = torch.randn((1, 50, 32), generator=torch.Generator().manual_seed(seed)).to(self.runtime.device)
-                slot['policy_noise_seeds'].append(seed)
-                sde_seed = policy_noise_seed(noise_root, 'sde:' + task['suite'], int(task['task_id']), state_id, replans)
-                chunk, hidden, path = action_chunk(velocity, noise, sde_seed=sde_seed if sde else None,
-                                                  capture_hidden=collect)
-                actions = self.runtime.processor.unnormalize_action(chunk)[0].cpu().numpy()
-                executed = []
-                before, before_step = raw, slot['steps']
-                for action in actions[:min(5, controls - slot['steps'])]:
-                    slot['obs'], reward, done, _ = env.step(action.tolist())
-                    slot['steps'] += 1
-                    self.total_environment_steps += 1
-                    executed.append(torch.as_tensor(action).clone())
-                    if done:
-                        break
-                raw = raw_observation(slot['obs'], task['language'])
-                truncated = remaining is not None and settling + slot['steps'] == remaining and not done
-                if collect:
-                    padded = torch.zeros(5, 7)
-                    padded[:len(executed)] = torch.stack(executed)
-                    rows.append(dict(images=torch.stack((before['images'], raw['images'])), hidden=hidden[0],
-                        proprio=torch.stack((before['proprio'], raw['proprio'])), actions=padded,
-                        executed=torch.arange(5) < len(executed),
-                        feedback=torch.tensor([float(reward), float(done), float(done), float(truncated)]),
-                        episode=episode_index, step=before_step, _phi_pre=velocity.phi[0]))
-                replans += 1
-                if sde:
-                    chosen = selection.choice(10, 2, replace=False)
-                    record = dict(raw=before, transitions=[path[int(i)].cpu() for i in chosen],
-                                  replan=replans - 1, noise_seed=seed, sde_seed=sde_seed)
-                    replace = replans - 1 if replans <= 16 else int(selection.integers(replans))
-                    if replace < 16:
-                        if replans <= 16:
-                            reservoir.append(record)
-                        else:
-                            reservoir[replace] = record
-                slot['replan_index'] = replans
-                del velocity, path
-        if rows:
-            rows[-1]['_phi_post'] = self.runtime.frozen_images(raw['images'][None])[0]
-        slot['episode_done'] = bool(done)
-        row_contract = {**self.contract, 'rng': {'inference_seed': noise_root}}
-        row = finish_episode_row(slot=slot, task=task, contract=row_contract,
-                                 task_adapter=None, worker_started=self.started)
-        row.update(settling_steps=settling, environment_steps=settling + slot['steps'],
-                   budget_truncated=bool(remaining is not None and settling + slot['steps'] == remaining and not done),
-                   replans=replans, initial_proprio=initial_proprio)
-        return row, rows, reservoir
-
-    @torch.no_grad()
-    def adapt(self, task, teacher, condition_seed, excluded_states, masked=False):
-        """The only adaptation stopping rule is own success or 1024 real steps."""
+    def _new_slot(self, request):
         from .contract import state_stream
+        kind = request['kind']
+        if kind not in {'adapt', 'fixed', 'final'}:
+            raise ValueError('unknown condition control consumer')
+        current = request.get('state', self.runtime.mt)
+        current = {k: v.detach().to(self.runtime.device) for k, v in current.items()}
+        chain = Chain(states=[] if kind == 'final' else [cpu_state(current)])
+        slot = _Slot(request, current, chain, None if kind == 'final' else request.get('step_budget', 1024))
+        if kind != 'final':
+            condition = request['condition']
+            slot.stream = state_stream(condition, condition.get('excluded_states', condition.get('final_state_ids', ())))
+        return slot
 
-        chain, budget = Chain(), 1024
-        started, native_before = time.monotonic(), self.runtime.feature_seconds
-        teacher_cost = dict(self.runtime.last_teacher_cost)
-        with autocast(self.runtime.device):
-            q = self.runtime.compiler.initial(teacher)
-            current = self.runtime.compiler.decode(q)
-        chain.states.append(cpu_state(current))
-        stream = state_stream({'seed': condition_seed}, excluded_states)
-        used_states, repeats, success = set(), 0, False
-        while budget > 0:
-            state_id = next(stream)
-            repeats += int(state_id in used_states)
-            used_states.add(state_id)
-            noise_root = int(np.random.SeedSequence([condition_seed, len(chain.episodes), 0xADA]).generate_state(1)[0])
-            row, facts, _ = self.episode(task, state_id, current, noise_root=noise_root, remaining=budget,
-                                         collect=True, episode_index=len(chain.episodes))
-            budget -= row['environment_steps']
-            chain.records.extend(facts)
-            chain.episodes.append(row)
-            success = row['success']
-            if success:
-                break
-            # A partial settling-only reset has no new decision evidence.
-            if facts:
-                chain.endpoints.append(len(chain.records))
-                with autocast(self.runtime.device):
-                    q = self.runtime.compiler.revise(q, teacher, {} if masked else chain.experience(len(chain.records)))
-                    current = self.runtime.compiler.decode(q)
-                chain.states.append(cpu_state(current))
-        reads = 1 + len(chain.endpoints)
-        chain.metrics = dict(initial_reads=1, rereads=len(chain.endpoints), full_video_equivalent_reads=float(reads),
-            teacher_frames=len(teacher['indices']), read_frames=len(teacher['indices']) * reads,
-            environment_steps=1024 - budget, resets=len(chain.episodes), state_reuses=repeats,
-            stop_reason='own_success' if success else 'step_budget', practice_success=success,
-            masked_experience=bool(masked), wall_seconds=time.monotonic() - started,
-            native_feature_seconds=self.runtime.feature_seconds - native_before + teacher_cost.get('native_encoder_seconds', 0.),
-            excluded_states=list(map(int, excluded_states)), condition_seed=int(condition_seed))
-        chain.metrics['teacher_feature_cost'] = teacher_cost
-        chain.q_context = q.detach().float().mean((0, 1)).cpu()
-        return chain
+    def _observation(self, slot, raw):
+        slot.raw = raw
+        if slot.request['kind'] != 'final':
+            key = f'{slot.identity}_o{len(slot.chain.observations):05d}'
+            slot.chain.observations[key] = raw
+            slot.observation_id = key
 
-    def query(self, task, state_id, state, seed):
-        row, _, reservoir = self.episode(task, state_id, state, noise_root=seed, sde=True)
-        return dict(row=row, reservoir=reservoir)
+    def _responses(self, slots, *, block, capture_terminal=True, raise_errors=True):
+        tick = time.monotonic()
+        replies = self.environments.receive(block=block)
+        self.components['env_wait_seconds'] += time.monotonic() - tick
+        ended, errors = [], []
+        for index, result in replies:
+            slot = slots[index]
+            if 'error' in result:
+                self.total_environment_steps += result['confirmed_environment_steps']
+                slot.failure = result
+                errors.append(f'actual environment slot{index} failed:\n{result["error"]}')
+                continue
+            self.components['env_operation_seconds'] += result['operation_seconds']
+            if result['kind'] == 'start':
+                steps = result['settling_steps']
+                self._observation(slot, result['raw'])
+            else:
+                steps = len(result['executed'])
+                self._record(slot, result)
+                slot.episode_steps = result['steps']
+            self.total_environment_steps += steps
+            if slot.remaining is not None:
+                slot.remaining -= steps
+                if slot.remaining < 0:
+                    raise ValueError('actual environment exceeded its registered condition budget')
+            if result['episode_ended']:
+                ended.append((index, result['row']))
+            else:
+                slot.ready = True
+        # Terminal observations have no subsequent prefix: encode them once.
+        if errors and raise_errors:
+            raise RuntimeError('\n'.join(errors))
+        observations = {slots[i].observation_id: slots[i].raw for i, _ in ended
+                        if slots[i].request['kind'] != 'final' and slots[i].chain.records}
+        phi = self.runtime.observation_features(observations) if observations and capture_terminal else {}
+        for index, _ in ended:
+            key = slots[index].observation_id
+            if key in phi:
+                slots[index].chain.phi[key] = phi[key]
+        return ended
 
-    def final(self, task, state_id, lora, noise_root=7):
-        return self.episode(task, state_id, lora, noise_root=noise_root)[0]
+    def _record(self, slot, result):
+        if slot.request['kind'] == 'final':
+            slot.raw = result['raw']
+            return
+        pending = slot.pending
+        before = slot.raw
+        self._observation(slot, result['raw'])
+        executed = torch.from_numpy(result['executed'])
+        actions = torch.zeros(5, 7)
+        actions[:len(executed)] = executed
+        truncated = bool(slot.remaining == len(executed) and not result['done'])
+        version = self._behavior(slot)
+        slot.chain.records.append(dict(pre=pending['pre'], post=slot.observation_id,
+            hidden=pending['hidden'], proprio=torch.stack((before['proprio'], slot.raw['proprio'])),
+            actions=actions, executed=torch.arange(5) < len(executed),
+            feedback=torch.tensor([result['reward'], float(result['done']), float(result['done']), float(truncated)]),
+            episode=len(slot.chain.episodes), step=slot.episode_steps, behavior_version=version))
+        slot.pending = None
+
+    def _behavior(self, slot):
+        if slot.request['kind'] == 'fixed':
+            return slot.request.get('fixed_behavior_version', 'MT')
+        if len(slot.chain.states) == 1:
+            return 'MT'
+        return f"{slot.request['behavior_version']}:lambda{len(slot.chain.states) - 1:03d}"
+
+    def _finish_episode(self, index, slot, row):
+        kind = slot.request['kind']
+        if kind == 'final':
+            row['physical_slot_batch'] = self.slot_batch
+            return dict(request=slot.request, row=row)
+        chain = slot.chain
+        previous_endpoint = chain.endpoints[-1] if chain.endpoints else 0
+        chain.episodes.append(row)
+        if len(chain.records) > previous_endpoint:
+            chain.behavior_versions.append(self._behavior(slot))
+            chain.endpoints.append(len(chain.records))
+            if kind == 'adapt':
+                # Even own success enters editing before stopping/freezing.
+                tick = time.monotonic()
+                teacher = slot.request.get('teacher')
+                if teacher is None:
+                    condition = slot.request['condition']
+                    teacher = self.runtime.teacher(condition['task_id'], condition['teacher_demo'],
+                                                   slot.request.get('role', 'train'))
+                    cost = self.runtime.last_teacher_cost
+                    slot.native_cost['seconds'] += cost.get('native_encoder_seconds', 0.)
+                    slot.native_cost['frames'] += cost.get('native_encoded_frames', 0)
+                    slot.native_cost['cache_hits'] += int(cost.get('cache_hit', False))
+                slot.teacher_frames = len(teacher['indices'])
+                evidence = {} if slot.request.get('masked', False) else chain.experience(len(chain.records))
+                slot.current = self.runtime.edit(slot.current, teacher, evidence)
+                chain.states.append(cpu_state(slot.current))
+                seconds = time.monotonic() - tick
+                slot.edit_seconds += seconds
+                self.components['edit_seconds'] += seconds
+        if row['success'] or slot.remaining == 0:
+            self._metrics(slot, row['success'])
+            return dict(request=slot.request, chain=chain)
+        self._start(index, slot)
+        return None
+
+    def _metrics(self, slot, success):
+        chain, request = slot.chain, slot.request
+        reads = len(chain.states) - 1
+        frames = getattr(slot, 'teacher_frames', 0)
+        chain.metrics = dict(initial_reads=min(1, reads), rereads=max(0, reads - 1), actual_J=reads,
+            full_video_equivalent_reads=float(reads), teacher_frames=frames, read_frames=reads * frames,
+            native_teacher_encoded_frames=slot.native_cost['frames'], teacher_feature_cost=slot.native_cost,
+            environment_steps=sum(e['environment_steps'] for e in chain.episodes),
+            resets=len(chain.episodes), state_reuses=slot.state_reuses,
+            stop_reason='own_success' if success else 'step_budget', practice_success=bool(success),
+            failure_environment_steps=sum(e['environment_steps'] for e in chain.episodes if not e['success']),
+            tail_environment_steps=chain.episodes[-1]['environment_steps'] if not success else 0,
+            data_endpoints=len(chain.endpoints), masked_experience=bool(request.get('masked', False)),
+            condition_seed=request['condition']['seed'],
+            excluded_states=request['condition'].get('excluded_states', request['condition'].get('final_state_ids', [])),
+            behavior_actor_uses_teaching=request['kind'] == 'adapt',
+            edit_seconds=slot.edit_seconds, wall_seconds=time.monotonic() - slot.started,
+            physical_slot_batch=self.slot_batch)
 
     @torch.no_grad()
-    def final_many(self, task, state_ids, lora, noise_root=7):
-        """Batch the actual independent final episodes, with per-slot RNG."""
-        envs, initial = self.pool.switch(task)
-        if len(state_ids) > len(envs):
-            raise ValueError('final environment batch exceeds the registered persistent pool')
-        slots = []
-        settling = int(self.contract['environment']['dummy_settling_steps'])
-        horizon = int(self.contract['environment']['horizons'][task['suite']])
-        for env, state_id in zip(envs, state_ids):
-            slot = start_fixed_episode(env=env, init_state_id=state_id, init_states=initial,
-                task=task, contract=self.contract, root_seed=noise_root,
-                dummy=np.asarray(self.contract['environment']['dummy_action']),
-                task_adapter=None, capture_level=None)
-            self.total_environment_steps += settling
-            slots.append(slot)
-        active = list(range(len(slots)))
-        gpu_lora = {name: value.to(self.runtime.device) for name, value in lora.items()}
-        with ExitStack() as adapters, autocast(self.runtime.device):
-            packed_count = 0
-            while active:
-                if len(active) != packed_count:
-                    adapters.close()
-                    adapters.enter_context(self.runtime.execution.activate([gpu_lora] * len(active)))
-                    packed_count = len(active)
-                inputs = [self.runtime.processor(libero_policy_input(slots[i]['obs'], task['language']))
-                          for i in active]
-                batch = {k: torch.cat([row[k] for row in inputs]) for k in inputs[0]}
-                noise = []
-                for i in active:
-                    slot = slots[i]
-                    seed = policy_noise_seed(noise_root, task['suite'], int(task['task_id']),
-                                             slot['init_state_id'], slot['replan_index'])
-                    slot['policy_noise_seeds'].append(seed)
-                    noise.append(torch.randn((50, 32), generator=torch.Generator().manual_seed(seed)))
-                velocity = NativeVelocity(self.runtime.policy, batch, capture_phi=False)
-                chunks, _, _ = action_chunk(velocity, torch.stack(noise).to(self.runtime.device),
-                                             capture_hidden=False)
-                actions = self.runtime.processor.unnormalize_action(chunks).cpu().numpy()
-                continuing = []
-                for i, plan in zip(active, actions):
-                    slot, done = slots[i], False
-                    for action in plan[:min(5, horizon - slot['steps'])]:
-                        slot['obs'], _, done, _ = envs[i].step(action.tolist())
-                        slot['steps'] += 1
-                        self.total_environment_steps += 1
-                        if done:
-                            break
-                    slot['replan_index'] += 1
-                    slot['episode_done'] = bool(done)
-                    if not done and slot['steps'] < horizon:
-                        continuing.append(i)
-                active = continuing
-        row_contract = {**self.contract, 'rng': {'inference_seed': noise_root}}
-        rows = [finish_episode_row(slot=s, task=task, contract=row_contract,
-                                   task_adapter=None, worker_started=self.started) for s in slots]
-        for row in rows:
-            row.update(settling_steps=settling, environment_steps=settling + row['steps'],
-                       replans=len(row['policy_noise_seeds']), physical_final_batch=len(state_ids))
-        return rows
+    def _infer(self, slots, indices):
+        inputs = [processed(self.runtime, slots[i].raw, slots[i].request['task']['language']) for i in indices]
+        batch = {key: torch.cat([row[key] for row in inputs]) for key in inputs[0]}
+        fact_indices = [p for p, i in enumerate(indices) if slots[i].request['kind'] != 'final']
+        collect = bool(fact_indices)
+        noise, seeds = [], []
+        for index in indices:
+            slot, task = slots[index], slots[index].request['task']
+            seed = policy_noise_seed(slot.noise_root, task['suite'], int(task['task_id']),
+                                     slot.state_id, slot.episode_steps // 5)
+            seeds.append(seed)
+            noise.append(torch.randn((50, 32), generator=torch.Generator().manual_seed(seed)))
+        with self.runtime.execution.activate([slots[i].current for i in indices]), autocast(self.runtime.device):
+            tick = time.monotonic()
+            velocity = NativeVelocity(self.runtime.policy, batch, capture_phi=collect, capture_indices=fact_indices if collect else None)
+            self.components['native_prefix_seconds'] += time.monotonic() - tick
+            tick = time.monotonic()
+            chunks, hidden = action_chunk(velocity, torch.stack(noise).to(self.runtime.device),
+                capture_hidden=collect, capture_indices=fact_indices if collect else None)
+            actions = self.runtime.processor.unnormalize_action(chunks).cpu().numpy()
+            self.components['native_flow_seconds'] += time.monotonic() - tick
+        self.components['plans'] += len(indices)
+        histogram = self.components['physical_batch_histogram']
+        histogram[len(indices)] = histogram.get(len(indices), 0) + 1
+        for position, index in enumerate(indices):
+            slot = slots[index]
+            if slot.request['kind'] != 'final':
+                fact_position = fact_indices.index(position)
+                key, phi = slot.observation_id, velocity.phi[fact_position]
+                slot.chain.phi[key] = phi
+                self.runtime.io.submit(self.runtime.features.put, key, {'phi': phi})
+                slot.pending = dict(pre=key, hidden=hidden[fact_position])
+            slot.ready = False
+            self.environments.submit(index, 'step', actions=actions[position], noise_seed=seeds[position])
+
+    @torch.no_grad()
+    def run(self, requests):
+        """Yield each completed slot immediately, then admit its next request."""
+        if self.environments is None:
+            self.environments = EnvironmentSlots(self.contract, self.physical_gpu, self.slot_batch)
+        provider = requests if callable(requests) else None
+        source, slots, exhausted = None if provider else iter(requests), {}, False
+        self.live_slots = slots
+        while slots or not exhausted:
+            for index in range(self.slot_batch):
+                if index in slots or exhausted:
+                    continue
+                try:
+                    request = provider() if provider else next(source)
+                    if request is None:
+                        break
+                except StopIteration:
+                    exhausted = True
+                    break
+                slots[index] = self._new_slot(request)
+                self._start(index, slots[index])
+            if not slots:
+                break
+            ready = [i for i, s in slots.items() if s.ready]
+            ended = self._responses(slots, block=not ready)
+            for index, row in ended:
+                output = self._finish_episode(index, slots[index], row)
+                if output is not None:
+                    del slots[index]
+                    yield output
+            # A five-action CPU cohort finishes independently of condition
+            # endings; gather its replies before launching the next GPU batch.
+            while any(kind == 'step' for kind in self.environments.pending.values()):
+                for index, row in self._responses(slots, block=True):
+                    output = self._finish_episode(index, slots[index], row)
+                    if output is not None:
+                        del slots[index]
+                        yield output
+            ready = [i for i, s in slots.items() if s.ready]
+            if ready:
+                self._infer(slots, ready)
+
+    def adapt_many(self, conditions, *, role='train', fixed_behavior=False, behavior_version='fresh', step_budget=1024):
+        tasks = {t['global_task_id']: t for t in self.contract['tasks']}
+        requests = (dict(kind='fixed' if fixed_behavior else 'adapt', condition=c, task=tasks[c['task_id']],
+            role=role, behavior_version=behavior_version, step_budget=step_budget) for c in conditions)
+        return self.run(requests)
+
+    def final_requests(self, requests):
+        return self.run(dict(kind='final', **request) for request in requests)
 
     def close(self):
-        self.pool.close()
+        if self.environments is not None:
+            # Pending real environment operations remain charged on failure.
+            while self.environments.pending and getattr(self, 'live_slots', None):
+                self._responses(self.live_slots, block=True, capture_terminal=False, raise_errors=False)
+            self.environments.close()
+            self.environments = None
+
+    def preserve_partial(self, destination):
+        """Keep raw unfinished facts/parameters after failure without GPU work."""
+        from pathlib import Path
+        from safetensors.torch import save_file
+        from ember.pi05_source_checkpoint import write_json_atomic
+        for index, slot in getattr(self, 'live_slots', {}).items():
+            path = Path(destination) / f'slot{index}_{slot.identity}'
+            path.mkdir(parents=True, exist_ok=False)
+            torch.save(slot.chain.to_record(), path / 'experience.pt')
+            for ordinal, state in enumerate(slot.chain.states[1:], 1):
+                save_file(state, str(path / f'lambda_{ordinal:03d}.safetensors'))
+            write_json_atomic(path / 'partial.json', dict(condition=slot.request.get('condition'),
+                kind=slot.request['kind'], complete=False, endpoints=slot.chain.endpoints,
+                remaining_environment_steps=slot.remaining, failure=getattr(slot, 'failure', None),
+                registered_budget=slot.request.get('step_budget', 1024)))

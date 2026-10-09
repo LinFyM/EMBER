@@ -30,6 +30,7 @@ class BatchedLoRAInference:
         modules = dict(policy.named_modules())
         self._contract = contract
         self._active_state: dict[str, torch.Tensor] | None = None
+        self._batch_indices: torch.Tensor | None = None
         self._closed = False
         self._handles: list[Any] = []
         self._targets: list[tuple[str, Any, float]] = []
@@ -85,6 +86,9 @@ class BatchedLoRAInference:
             value = inputs[0]
             lora_a = state[a_name]
             lora_b = state[b_name]
+            if self._batch_indices is not None:
+                lora_a = lora_a.index_select(0, self._batch_indices)
+                lora_b = lora_b.index_select(0, self._batch_indices)
             if value.shape[0] != lora_a.shape[0]:
                 raise LoRAContractError(
                     f"policy batch and LoRA batch differ at {target_name}: "
@@ -103,9 +107,15 @@ class BatchedLoRAInference:
 
     @contextmanager
     def activate(
-        self, states: Sequence[Mapping[str, torch.Tensor]]
+        self, states: Sequence[Mapping[str, torch.Tensor]], *,
+        batch_indices: torch.Tensor | None = None,
     ) -> Iterator[None]:
-        """Activate one complete adapter per policy-batch sample."""
+        """Activate complete factors, optionally sharing one state across queries.
+
+        An indexed query batch packs only distinct states. Index selection at
+        each target retains gradients and avoids permanent full-factor copies
+        for all repeated query rows. Ordinary inference keeps its original API.
+        """
 
         if self._closed:
             raise LoRAContractError("batched LoRA inference hooks are closed")
@@ -133,11 +143,18 @@ class BatchedLoRAInference:
                     ],
                     dim=0,
                 )
+        if batch_indices is not None:
+            if (batch_indices.ndim != 1 or batch_indices.dtype != torch.long
+                    or batch_indices.numel() == 0 or bool((batch_indices < 0).any())
+                    or bool((batch_indices >= len(states)).any())):
+                raise LoRAContractError("indexed LoRA query assignment is invalid")
+            self._batch_indices = batch_indices.to(next(iter(stacked.values())).device)
         self._active_state = stacked
         try:
             yield
         finally:
             self._active_state = None
+            self._batch_indices = None
 
     def close(self) -> None:
         if self._closed:

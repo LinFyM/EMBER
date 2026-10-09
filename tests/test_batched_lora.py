@@ -88,3 +88,25 @@ def test_bfloat16_base_matches_physical_fp32_lora_at_rounding_boundary() -> None
         actual = policy(value)
     batched.close()
     torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+
+
+def test_indexed_query_states_share_storage_and_receive_complete_gradients():
+    contract = _contract()
+    policy = inject_task_lora(_TinyPolicy(), contract)
+    identity = task_lora_state_dict(policy, clone=True)
+    states = [{k: torch.randn_like(v).requires_grad_() for k, v in identity.items()} for _ in range(2)]
+    assignment = torch.tensor([1, 0, 1, 1, 0])
+    value = torch.randn(5, 4, 5)
+    batched = BatchedLoRAInference(policy, contract)
+    with batched.activate(states, batch_indices=assignment):
+        assert all(v.shape[0] == 2 for v in batched._active_state.values())
+        actual = policy(value)
+        gradient = torch.autograd.grad(actual.square().mean(), [v for s in states for v in s.values()])
+    expected = torch.cat([torch.func.functional_call(policy, states[int(slot)], (value[i:i + 1],), strict=False)
+                          for i, slot in enumerate(assignment)])
+    expected_gradient = torch.autograd.grad(expected.square().mean(), [v for s in states for v in s.values()])
+    torch.testing.assert_close(actual, expected)
+    for a, b in zip(gradient, expected_gradient):
+        torch.testing.assert_close(a, b)
+    assert batched._batch_indices is None
+    batched.close()

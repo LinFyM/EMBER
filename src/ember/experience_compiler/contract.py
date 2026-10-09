@@ -15,11 +15,11 @@ from ember.writer.learning_data import load_learning_tasks
 
 
 ASSET_ROOT = Path("/data1/user/ymdai/projects/EMBER")
-RUN_ROOT = Path("/data1/user/ymdai/ember_runs/experience_conditioned_compiler_20261009")
-SCHEMA = "ember_experience_conditioned_compiler_v1"
-STAGE = "experience_conditioned_compiler_20261009"
+RUN_ROOT = Path("/data1/user/ymdai/ember_runs/parameter_conditioned_compiler_20261009")
+SCHEMA = "ember_parameter_conditioned_compiler_v1"
+STAGE = "parameter_conditioned_compiler_20261009"
 SEED = 20261009
-EVENT_SCHEMA = "ember_experience_compiler_events_v1"
+EVENT_SCHEMA = "ember_parameter_compiler_events_v1"
 _SOURCE_SPEC = read_json(ASSET_ROOT / "configs/operator_read_write_v1/learning_spec.json")
 SOURCE = dict(_SOURCE_SPEC["source"])
 MT_PATH = Path(_SOURCE_SPEC["evaluation"]["mt_checkpoint"])

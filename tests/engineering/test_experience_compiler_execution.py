@@ -1,13 +1,13 @@
-"""Native capture must preserve actions/credit and retain complete practice facts."""
+"""Native ten-step evidence and independent budget/success-driven slots."""
 from types import SimpleNamespace
 from contextlib import contextmanager
 
+import numpy as np
 import pytest
 import torch
 from torch import nn
 
-from ember.experience_compiler import execution
-from ember.experience_compiler import interaction
+from ember.experience_compiler import execution, interaction
 from ember.pi05_eval_contract import policy_noise_seed
 
 
@@ -23,86 +23,160 @@ class Velocity(nn.Module):
         return self.policy.model.action_out_proj(hidden)
 
 
-@pytest.mark.parametrize("sde_seed", [None, 91])
-def test_optional_capture_preserves_ten_flow_calls_actions_and_sde_credit(sde_seed):
+def test_optional_capture_keeps_native_ten_flow_calls_and_selects_actual_slots():
     velocity = Velocity()
-    noise = torch.randn(2, 50, 32)
-    with torch.no_grad():
-        actions, hidden, path = execution.action_chunk(velocity, noise, sde_seed=sde_seed)
+    noise = torch.randn(3, 50, 32)
+    actions, hidden = execution.action_chunk(velocity, noise, capture_indices=[0, 2])
     assert len(velocity.inputs) == 10 and hidden.shape == (2, 2, 50, 1024)
-    torch.testing.assert_close(hidden[:, 0], velocity.inputs[0].to(torch.bfloat16))
-    torch.testing.assert_close(hidden[:, 1], velocity.inputs[-1].to(torch.bfloat16))
+    torch.testing.assert_close(hidden[:, 0], velocity.inputs[0][[0, 2]].to(torch.bfloat16))
+    torch.testing.assert_close(hidden[:, 1], velocity.inputs[-1][[0, 2]].to(torch.bfloat16))
     velocity.inputs.clear()
-    fast_actions, absent, fast_path = execution.action_chunk(velocity, noise,
-        sde_seed=sde_seed, capture_hidden=False)
+    fast, absent = execution.action_chunk(velocity, noise, capture_hidden=False)
     assert absent is None and len(velocity.inputs) == 10
-    torch.testing.assert_close(actions, fast_actions, rtol=0, atol=0)
-    assert len(path) == len(fast_path) == (0 if sde_seed is None else 10)
-    for original, fast in zip(path, fast_path):
-        assert original.step == fast.step and original.tau == fast.tau
-        torch.testing.assert_close(execution.score_cotangent(original, 1, replans=10, retained=10),
-                                   execution.score_cotangent(fast, 1, replans=10, retained=10), rtol=0, atol=0)
+    torch.testing.assert_close(actions, fast)
     assert not velocity.policy.model.action_out_proj._forward_pre_hooks
 
 
-def test_prefix_computation_is_kept_when_unused_phi_is_not_copied(monkeypatch):
-    embeddings = torch.randn(1, 520, 8)
-    padding = torch.ones(1, 520, dtype=torch.bool)
-    model = SimpleNamespace(embed_prefix=lambda *_: (embeddings, padding, None))
-    policy = SimpleNamespace(config=SimpleNamespace(chunk_size=50, max_action_dim=32), model=model,
-                             _preprocess_images=lambda batch: ([], []))
+def test_native_prefix_keeps_full_batch_when_only_practice_phi_is_copied(monkeypatch):
+    embeddings, padding = torch.randn(3, 520, 8), torch.ones(3, 520, dtype=torch.bool)
+    policy = SimpleNamespace(config=SimpleNamespace(chunk_size=50, max_action_dim=32),
+        model=SimpleNamespace(embed_prefix=lambda *_: (embeddings, padding, None)),
+        _preprocess_images=lambda batch: ([], []))
     calls = []
-    def prepare(policy, prefix):
-        calls.append(prefix)
-        return prefix
-    monkeypatch.setattr(execution, "prepare_prefix_kv_cache", prepare)
+    monkeypatch.setattr(execution, 'prepare_prefix_kv_cache', lambda policy, prefix: calls.append(prefix) or prefix)
     batch = {'observation.language.tokens': None, 'observation.language.attention_mask': None}
-    practice = execution.NativeVelocity(policy, batch)
+    practice = execution.NativeVelocity(policy, batch, capture_indices=[1])
     final = execution.NativeVelocity(policy, batch, capture_phi=False)
-    assert practice.phi.shape == (1, 512, 8) and final.phi is None and len(calls) == 2
-    assert calls[0].embeddings is embeddings and calls[1].embeddings is embeddings
+    assert practice.phi.shape == (1, 512, 8) and final.phi is None
+    assert all(call.embeddings is embeddings for call in calls)
 
 
-def test_final_batch_reuses_adapter_until_size_changes_and_keeps_slot_rng(monkeypatch):
-    activations, calls = [], []
+class FakeSlots:
+    """CPU bookkeeping only; each slot has its own state and action counter."""
+    def __init__(self, contract, physical_gpu, count):
+        self.pending, self.messages, self.slots, self.closed = {}, {}, {}, False
+
+    def submit(self, index, kind, **value):
+        assert index not in self.pending
+        self.pending[index], self.messages[index] = kind, value
+
+    def receive(self, block=False):
+        result = []
+        for index in list(self.pending):
+            kind, value = self.pending.pop(index), self.messages.pop(index)
+            if kind == 'start':
+                settle = min(10, value.get('remaining') or 10)
+                limit = value.get('remaining')
+                limit = 15 if limit is None else min(15, limit - settle)
+                self.slots[index] = dict(state_id=value['state_id'], root=value['noise_root'], task=value['task'],
+                                         steps=0, limit=limit, settle=settle, seeds=[])
+                row = dict(kind=kind, settling_steps=settle, state_id=value['state_id'], controls=limit)
+            else:
+                slot = self.slots[index]
+                n = min(5, slot['limit'] - slot['steps'])
+                # Task0 succeeds in its first actual action group; task1 fails.
+                slot['steps'] += n
+                slot['seeds'].append(value['noise_seed'])
+                row = dict(kind=kind, executed=np.ones((n, 7), dtype=np.float32),
+                           steps=slot['steps'], done=slot['task']['task_id'] == 0, reward=0.)
+            slot = self.slots[index]
+            done = bool(row.get('done', False))
+            ended = done or slot['steps'] >= slot['limit']
+            row.update(raw={'images': torch.zeros(2, 3, 2, 2, dtype=torch.uint8),
+                            'proprio': torch.full((8,), float(index))}, operation_seconds=0., episode_ended=ended)
+            if ended:
+                row['row'] = dict(success=done, environment_steps=slot['settle'] + slot['steps'],
+                    steps=slot['steps'], init_state_id=slot['state_id'], policy_noise_seeds=slot['seeds'],
+                    suite=slot['task']['suite'], task_id=slot['task']['task_id'])
+            result.append((index, row))
+        return result
+
+    def close(self):
+        assert not self.pending
+        self.closed = True
+
+
+def fake_runtime(monkeypatch):
+    batches, edits, incoming_states = [], [], []
     @contextmanager
     def activate(states):
-        activations.append(len(states))
+        incoming_states.append([float(s['factor']) for s in states])
         yield
-    class Environment:
-        def __init__(self, stop):
-            self.stop, self.steps = stop, 0
-        def step(self, action):
-            self.steps += 1
-            return {}, 0., self.steps == self.stop, {}
-    envs = [Environment(5), Environment(100), Environment(11)]
-    class Processor:
-        def __call__(self, value):
-            return {'input': torch.zeros(1, 2)}
-        def unnormalize_action(self, value):
-            return value
-    runner = object.__new__(interaction.Runner)
-    runner.runtime = SimpleNamespace(device=torch.device('cpu'), policy=None, processor=Processor(),
-                                     execution=SimpleNamespace(activate=activate))
-    runner.pool = SimpleNamespace(switch=lambda task: (envs, None))
-    runner.contract = {'environment': {'dummy_settling_steps': 10, 'dummy_action': [0.] * 7,
-                                      'horizons': {'libero_spatial': 15}}}
-    runner.total_environment_steps, runner.started = 0, 0
-    def start(**kwargs):
-        return dict(obs={}, steps=0, policy_noise_seeds=[], init_state_id=kwargs['init_state_id'], replan_index=0)
-    def chunk(velocity, noise, *, capture_hidden):
-        assert capture_hidden is False
-        calls.append(len(noise))
-        return torch.ones(len(noise), 50, 7), None, []
-    monkeypatch.setattr(interaction, 'start_fixed_episode', start)
-    monkeypatch.setattr(interaction, 'finish_episode_row', lambda **kwargs: dict(kwargs['slot']))
-    monkeypatch.setattr(interaction, 'libero_policy_input', lambda *args: {})
-    monkeypatch.setattr(interaction, 'NativeVelocity', lambda *args, capture_phi: None if not capture_phi else pytest.fail())
+    processor = SimpleNamespace(unnormalize_action=lambda x: x)
+    class Velocity:
+        def __init__(self, policy, batch, capture_phi, capture_indices):
+            batches.append(len(batch['input']))
+            self.phi = torch.zeros(len(capture_indices or []), 512, 4) if capture_phi else None
+    def chunk(velocity, noise, capture_hidden, capture_indices):
+        return torch.ones(len(noise), 50, 7), (torch.zeros(len(capture_indices), 2, 50, 1024)
+                                              if capture_hidden else None)
+    runtime = SimpleNamespace(device=torch.device('cpu'), policy=None, mt={'factor': torch.tensor(10.)},
+        processor=processor, execution=SimpleNamespace(activate=activate),
+        io=SimpleNamespace(submit=lambda *args, **kw: None), features=SimpleNamespace(put=lambda *args: None),
+        observation_features=lambda raw: {k: torch.zeros(512, 4) for k in raw},
+        teacher=lambda *args: {'indices': torch.tensor([0, 5, 9])}, last_teacher_cost={})
+    def edit(incoming, teacher, evidence):
+        edits.append((float(incoming['factor']), len(evidence.get('feedback', [])),
+                      evidence.get('feedback', torch.empty(0, 4)).clone()))
+        return {'factor': incoming['factor'] + 1}
+    runtime.edit = edit
+    monkeypatch.setattr(interaction, 'processed', lambda *args: {'input': torch.ones(1, 1)})
+    monkeypatch.setattr(interaction, 'EnvironmentSlots', FakeSlots)
+    monkeypatch.setattr(interaction, 'NativeVelocity', Velocity)
     monkeypatch.setattr(interaction, 'action_chunk', chunk)
-    task = {'suite': 'libero_spatial', 'task_id': 0, 'language': 'exact task'}
-    rows = runner.final_many(task, [32, 33, 34], {'complete_adapter': torch.zeros(1)}, noise_root=7)
-    assert calls == [3, 2, 2] and activations == [3, 2]
-    assert runner.total_environment_steps == 30 + 5 + 15 + 11
-    for row in rows:
-        assert row['policy_noise_seeds'] == [policy_noise_seed(7, 'libero_spatial', 0,
-            row['init_state_id'], index) for index in range(row['replan_index'])]
+    return runtime, batches, edits, incoming_states
+
+
+def request(task_id, kind='adapt', budget=35):
+    task = dict(suite='libero_spatial', task_id=task_id, language=f'exact {task_id}')
+    c = dict(task_id=task_id, teacher_demo=0, condition_id=f'c{task_id}', seed=42 + task_id,
+             excluded_states=[32, 33, 34])
+    return dict(kind=kind, condition=c, task=task, behavior_version='profile', step_budget=budget)
+
+
+def test_success_is_edited_before_freeze_and_budget_counts_settling_per_slot(monkeypatch):
+    runtime, batches, edits, states = fake_runtime(monkeypatch)
+    runner = interaction.Runner(runtime, {}, 0, slot_batch=2)
+    results = list(runner.run([request(0), request(1)]))
+    try:
+        by_task = {x['request']['condition']['task_id']: x['chain'] for x in results}
+        success, failed = by_task[0], by_task[1]
+        assert success.metrics['actual_J'] == 1 and success.states[-1]['factor'] == 11
+        assert success.metrics['environment_steps'] == 15 and edits[0][2][-1, 1] == 1
+        # Task1: 10 settling+15 control, then10 settling-only, no invented edit.
+        assert failed.metrics['environment_steps'] == 35 and failed.metrics['actual_J'] == 1
+        assert failed.endpoints == [3] and len(failed.episodes) == 2
+        assert runner.total_environment_steps == 50 and 2 in batches
+        assert states[0] == [10., 10.] and failed.states[-1]['factor'] == 11
+        assert not set(e['init_state_id'] for e in failed.episodes) & {32, 33, 34}
+    finally:
+        runner.close()
+
+
+def test_final_different_loras_keep_independent_noise_and_skip_all_fact_reading(monkeypatch):
+    runtime, batches, edits, states = fake_runtime(monkeypatch)
+    runner = interaction.Runner(runtime, {}, 0, slot_batch=2)
+    requests = [dict(kind='final', task=request(i)['task'], state_id=32+i,
+                     state={'factor': torch.tensor(20.+i)}, noise_root=7) for i in (0, 1)]
+    rows = [x['row'] for x in runner.run(requests)]
+    try:
+        assert not edits and states[0] == [20., 21.] and runner.total_environment_steps == 40
+        for row in rows:
+            assert row['policy_noise_seeds'] == [policy_noise_seed(7, row['suite'], row['task_id'],
+                row['init_state_id'], index) for index in range(len(row['policy_noise_seeds']))]
+    finally:
+        runner.close()
+
+
+def test_null_replay_starts_actual_MT_and_never_uses_real_intermediate_parameters():
+    from ember.experience_compiler.runtime import Runtime
+    runtime = Runtime.__new__(Runtime)
+    runtime.mt = {'a': torch.tensor(2.)}
+    seen = []
+    def edit(state, teacher, evidence):
+        seen.append(float(state['a']))
+        assert evidence == {}
+        return {'a': state['a'] + 3}
+    runtime.edit = edit
+    chain = interaction.Chain(states=[{'a': torch.tensor(99.)}], endpoints=[5, 10, 11])
+    assert Runtime.null_replay(runtime, {}, chain)['a'] == 11 and seen == [2, 5, 8]

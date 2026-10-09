@@ -1,45 +1,81 @@
-"""Scientific normalization regressions: full latent score and per-query keep."""
+"""Paired edit pressure and complete-factor VJPs, independent of chunks/ranks."""
+from types import SimpleNamespace
+from pathlib import Path
+from dataclasses import replace
+
+import pytest
 import torch
 
-from ember.experience_compiler.credit import stage_weights
-from ember.experience_compiler.execution import Transition, score_cotangent
-from ember.experience_compiler.learning import ValueBaseline
+from ember.experience_compiler import credit
+from ember.batched_lora import BatchedLoRAInference
+from ember.lora import LoRATarget, inject_task_lora, task_lora_state_dict
+from ember.pi05_lora import load_pi05_lora_contract
+from ember.writer.function_credit import FlowSample
 
 
-def test_score_is_four_conditions_two_queries_with_sampling_compensation():
-    transition = Transition(3, .7, torch.zeros(1, 50, 32), torch.ones(1, 50, 32),
-                            torch.full((1, 50, 32), 3.))
-    value = score_cotangent(transition, 2., replans=40, retained=16)
-    # Full unsampled episode/condition coefficient is 1/8, not the old 1/16.
-    expected = 2 * (1 / 8) * (40 / 16) * (10 / 2) * 1.15 / .7 * 2
-    assert torch.allclose(value, torch.full((1, 50, 32), expected))
-    assert value[..., 31].abs().sum() > 0  # score credit includes latent tail.
+def test_edit_pressure_stops_incoming_and_uses_global_four_event_weight():
+    incoming = torch.tensor([1., 2., 4.], requires_grad=True)
+    outgoing = torch.tensor([2., 1., 4.], requires_grad=True)
+    objective, regression = credit.edit_objective(outgoing, incoming)
+    assert objective.item() == pytest.approx((7 / 3 + .2 / 3) / 4)
+    objective.backward()
+    torch.testing.assert_close(regression, torch.tensor([1., 0., 0.]))
+    torch.testing.assert_close(outgoing.grad, torch.tensor([1.2, 1., 1.]) / 12)
+    assert incoming.grad is None
 
 
-def test_stage_mass_does_not_depend_on_number_of_actual_revisions():
-    assert stage_weights(1) == [1.]
-    for count in (2, 4, 7, 20):
-        weights = stage_weights(count)
-        assert weights[-1] == .5
-        assert abs(sum(weights) - 1.) < 1e-12
-        assert abs(sum(weights[:-1]) - .5) < 1e-12
-
-
-def test_value_targets_cannot_backpropagate_into_compilation_context():
-    baseline = ValueBaseline()
-    context = torch.randn(2, 264, requires_grad=True)
-    baseline(context).square().sum().backward()
-    assert context.grad is None
-    assert baseline.network[-1].weight.grad is not None
-
-
-def test_keep_requires_querywise_regression_before_averaging():
-    previous = torch.tensor([1., 9.], requires_grad=True)
-    current = torch.tensor([4., 4.], requires_grad=True)
-    keep = torch.relu(current - previous.detach()).mean() * .2
-    keep.backward()
-    assert abs(float(keep.detach()) - .3) < 1e-7
-    assert current.grad.tolist() == [.10000000149011612, 0.]
-    assert previous.grad is None
-    # Positive and negative query changes must not cancel before the ReLU.
-    assert torch.relu(current.detach().mean() - previous.detach().mean()) == 0
+def test_heterogeneous_native_credit_keeps_queries_noise_prefix_and_complete_vjp(monkeypatch):
+    torch.manual_seed(17)
+    class Policy(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.proj = torch.nn.Linear(5, 7, bias=False)
+        def forward(self, x):
+            return torch.nn.functional.pad(self.proj(x), (0, 25))
+    contract = replace(load_pi05_lora_contract(Path(__file__).resolve().parents[2] / 'configs/pi05_lora_v1.json'),
+        targets=(LoRATarget('proj', 5, 7),), rank=2, alpha=2, dropout=0., identity_seed=7)
+    policy = inject_task_lora(Policy(), contract)
+    identity = task_lora_state_dict(policy, clone=True)
+    incoming = [{k: torch.randn_like(v) for k, v in identity.items()} for _ in range(2)]
+    outgoing = [{k: torch.randn_like(v) for k, v in identity.items()} for _ in range(2)]
+    batches = [dict(action=torch.zeros(28, 50, 7), x=torch.randn(28, 50, 5),
+                    target=torch.randn(28, 50, 32)) for _ in range(2)]
+    prepared, draws = [], []
+    class Owner(torch.nn.Module):
+        def __init__(self, p):
+            super().__init__()
+            self.policy = p
+        def prepare(self, sample):
+            marker = object()
+            prepared.append((len(sample.target), marker))
+            return marker
+        def forward(self, sample, cache):
+            assert cache is prepared[-1][1]
+            return self.policy(sample.arguments[0])
+    def sample(p, batch, **kwargs):
+        draws.append(kwargs)
+        return FlowSample((batch['x'],), batch['target'], 7)
+    monkeypatch.setattr(credit, 'NativeFlowPrediction', Owner)
+    monkeypatch.setattr(credit, 'flow_sample', sample)
+    execution = BatchedLoRAInference(policy, contract)
+    runtime = SimpleNamespace(policy=policy, execution=execution, device=torch.device('cpu'))
+    full = credit.fm_credit(runtime, incoming, outgoing, batches, seeds=[71, 93], microbatch=56)
+    assert [size for size, _ in prepared] == [56]
+    assert [(d['seed'], d['random_batch'], d['offset']) for d in draws] == [(71, 28, 0), (93, 28, 0)]
+    for microbatch in (7, 14, 28):
+        chunked = credit.fm_credit(runtime, incoming, outgoing, batches, seeds=[71, 93], microbatch=microbatch)
+        for expected, actual in zip(full, chunked):
+            assert expected['weighted_loss'] == pytest.approx(actual['weighted_loss'], rel=2e-6)
+            for key in expected['cotangent']:
+                torch.testing.assert_close(expected['cotangent'][key], actual['cotangent'][key])
+    for index in range(2):
+        leaves = {k: v.clone().requires_grad_() for k, v in outgoing[index].items()}
+        before = torch.func.functional_call(policy, incoming[index], (batches[index]['x'],), strict=False)
+        after = torch.func.functional_call(policy, leaves, (batches[index]['x'],), strict=False)
+        ell_in = (before[..., :7] - batches[index]['target'][..., :7]).square().mean((1, 2))
+        ell_out = (after[..., :7] - batches[index]['target'][..., :7]).square().mean((1, 2))
+        objective, _ = credit.edit_objective(ell_out, ell_in)
+        expected = torch.autograd.grad(objective, tuple(leaves.values()))
+        for key, gradient in zip(leaves, expected):
+            torch.testing.assert_close(full[index]['cotangent'][key], gradient)
+    execution.close()

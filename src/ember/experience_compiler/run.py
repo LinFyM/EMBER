@@ -52,14 +52,21 @@ def cost_interval(root, phase, physical_gpus, *, rank=None):
         append_cost(Path(root), dict(record, event='end', end=time.time()))
 
 
-def cost_summary(root, *, now=None):
+def cost_summary(root, *, now=None, phases=None):
     path = Path(root) / 'costs.jsonl'
     if not path.exists():
-        return dict(GPU_hours=0., compute_wall_hours=0.)
+        return dict(GPU_hours=0., compute_wall_hours=0., science_elapsed_hours=0.)
     records, now = {}, time.time() if now is None else now
-    for line in path.read_text().splitlines():
+    with path.open() as handle:
+        fcntl.flock(handle, fcntl.LOCK_SH)
+        lines = handle.read().splitlines()
+    for line in lines:
         row = json.loads(line)
+        if phases is not None and row['phase'].split('_')[0] not in phases:
+            continue
         records[row['identity']] = row
+    if not records:
+        return dict(GPU_hours=0., compute_wall_hours=0., science_elapsed_hours=0.)
     by_device = {}
     starts, ends = [], []
     for row in records.values():
@@ -81,68 +88,72 @@ def cost_summary(root, *, now=None):
                 previous = [start, end]
         if previous is not None:
             seconds += previous[1] - previous[0]
+    science = [r for r in records.values() if r['phase'].split('_')[0] in {'collect', 'train', 'worker'}]
+    science_hours = 0. if not science else (max(ends) - min(r['start'] for r in science)) / 3600
     return dict(GPU_hours=seconds / 3600, compute_wall_hours=(max(ends) - min(starts)) / 3600,
-                device_count=len(by_device), intervals=len(records))
+                science_elapsed_hours=science_hours, device_count=len(by_device), intervals=len(records))
 
 
 def check_budget(root, *, storage=False):
     summary = cost_summary(root)
-    if summary['GPU_hours'] >= 80 or summary['compute_wall_hours'] >= 24:
+    if summary['GPU_hours'] >= 40 or summary['science_elapsed_hours'] >= 16:
         raise RuntimeError(f'actual scientific/resource boundary: {summary}')
     if storage:
         usage = int(subprocess.run(['du', '-s', '-B1', str(root)], check=True, capture_output=True,
                                   text=True).stdout.split()[0])
-        if usage > 160 * 1024**3:
-            raise RuntimeError(f'actual new artifact peak exceeds 160GiB: {usage} bytes')
+        if usage > 224 * 1024**3:
+            raise RuntimeError(f'actual new artifact peak exceeds 224GiB: {usage} bytes')
         summary['artifact_bytes'] = usage
     return summary
 
 
-def register_launch(args, runtime, context, data, start):
-    from .contract import SCHEMA, STAGE, MT_PATH, SOURCE, TASKS36 as TASKS
+def register_launch(args, runtime, context, data, start, *, topology_resume=None):
+    from .contract import SCHEMA, STAGE, MT_PATH, SOURCE, TASKS36
     contract = dict(schema_version=SCHEMA, stage=STAGE, git=frozen_git(), asset_root=str(args.asset_root),
         command=sys.argv, output=str(args.output), source=runtime.source, source_configuration=SOURCE,
-        MT=dict(path=str(MT_PATH), bytes=Path(MT_PATH).stat().st_size, use='trainable complete decoder initialization and fixed probe'),
-        task_ids=list(TASKS), warm_updates=128, meta_updates=54, conditions_per_update=4, FM_queries_per_condition=28,
-        FM_query_episode_intervals=[7, 4], practice_step_budget=1024, condition_revisions='actual success/budget endpoints; no fixed J',
-        SDE_queries_per_condition=2, SDE_normalization='1/4 * 1/2 * N/min(16,N) * 10/2; all50x32',
+        MT=dict(path=str(MT_PATH), bytes=Path(MT_PATH).stat().st_size,
+                use='actual fixed initial complete LoRA, frozen RMS and teacher probe'),
+        task_ids=list(TASKS36), updates=[180, 360], stop_update=args.stop_update,
+        logical_events_per_update=4, FM_queries_per_event=28, FM_query_episode_intervals=[7, 4],
+        pool_versions={k: v['version'] for k, v in data.pools.items()},
         physical_gpus=args.physical_gpus, world_size=context.world_size,
-        physical=dict(microbatch=args.microbatch, pg_microbatch=args.pg_microbatch, frame_chunk=args.frame_chunk,
-                      native_frame_chunk=args.native_frame_chunk,
-                      decoder_chunk=args.decoder_chunk, experience_chunk=args.experience_chunk),
+        physical={k: getattr(args, k) for k in ('microbatch', 'frame_chunk', 'native_frame_chunk',
+                    'decoder_chunk', 'experience_chunk', 'cpu_threads')},
         optimization=dict(lr=3e-5, weight_decay=0., clip=1., scheduler='constant', initialization='fresh'),
-        baseline=dict(input='detached Q mean256 + actual pre-query proprio8', width=64, output_init='zero',
-                      optimizer='fresh AdamW lr3e-5 wd0 after actor credit', return_target='own query success'),
-        derivative='raw environment E/H stopped; all learned readings/Q/revisions/decoder live; semi-gradient practice distribution',
-        held_offline_gradients=False, Test_opened=False, start_update=start,
-        resume=None if args.resume is None else str(args.resume), topology_migration=bool(args.allow_topology_change))
+        objective='mean FM_out + .2 mean relu(FM_out - stopgrad FM_in); globally normalized /4 events',
+        derivative='actual incoming/raw E/H stopped; all shared parameter/read/experience/editor/decoder live',
+        condition_optimizer=False, held_offline_gradients=False, Test_opened=False, start_update=start,
+        resume=None if args.resume is None else str(args.resume), topology_resume=topology_resume)
     path = args.output / 'run_contract.json'
     if path.exists():
-        if not args.resume:
-            raise ValueError('fresh computation cannot overwrite an existing training contract')
-        write_json_atomic(args.output / f'resume_{start:08d}.json', contract)
+        if args.resume is None:
+            raise ValueError('fresh training cannot overwrite an existing contract')
+        write_json_atomic(args.output / f'resume_{start:08d}_{os.getpid()}.json', contract)
     else:
         write_json_atomic(path, contract)
-        write_json_atomic(args.output / 'events.json', dict(schema_version=SCHEMA, events=[
-            event.as_dict() for update in range(182) for event in data.events(update)]))
+    write_json_atomic(args.output / f'events_{start:08d}_{args.stop_update:08d}.json',
+        dict(schema_version=SCHEMA, sampling=data.state_dict(), events=[
+            e.as_dict() for update in range(start, args.stop_update) for e in data.events(update)]))
 
 
 def parser():
     from .contract import ASSET_ROOT, RUN_ROOT
     result = argparse.ArgumentParser(description=__doc__)
-    result.add_argument('command', choices=['profile', 'train', 'prepare', 'worker', 'aggregate', 'cost'])
+    result.add_argument('command', choices=['profile', 'train', 'collect-prepare', 'collect', 'collect-aggregate', 'prepare', 'worker', 'aggregate', 'cost'])
     result.add_argument('--asset-root', type=Path, default=ASSET_ROOT)
     result.add_argument('--run-root', type=Path, default=RUN_ROOT)
     result.add_argument('--output', type=Path)
     result.add_argument('--checkpoint', type=Path)
     result.add_argument('--resume', type=Path)
-    result.add_argument('--stage', choices=['meta27', 'meta54', 'formal'], default='formal')
+    result.add_argument('--stage', choices=['train180', 'train360', 'formal180', 'formal360'], default='formal360')
     result.add_argument('--device', default='cuda:0')
     result.add_argument('--physical-gpu', type=int, default=0)
     result.add_argument('--physical-gpus', type=lambda s: list(map(int, s.split(','))), default=[0])
     result.add_argument('--worker-id', default=None)
     result.add_argument('--microbatch', type=int, default=28)
-    result.add_argument('--pg-microbatch', type=int, default=16)
+    result.add_argument('--pool', choices=['pool0', 'refresh180'], default='pool0')
+    result.add_argument('--stop-update', type=int, choices=[180, 360], default=180)
+    result.add_argument('--slot-batch', type=int, default=8)
     result.add_argument('--frame-chunk', type=int, default=16)
     result.add_argument('--native-frame-chunk', type=int, default=16)
     result.add_argument('--decoder-chunk', type=int, default=16384)
@@ -161,7 +172,7 @@ def main():
     os.environ.setdefault('PYOPENGL_PLATFORM', 'egl')
     os.environ['MUJOCO_EGL_DEVICE_ID'] = str(args.physical_gpu)
     os.environ['LIBERO_CONFIG_PATH'] = str(args.output / f'libero_config_{os.getpid()}')
-    if args.command in {'profile', 'train', 'worker'}:
+    if args.command in {'profile', 'train', 'worker', 'collect'}:
         from ember.pi05_assets import prepare_libero_config
         from .contract import learning_environment
         os.environ['EMBER_LIBERO_ASSETS_ROOT'] = learning_environment(asset_root=args.asset_root)['libero_paths']['assets']
@@ -184,6 +195,9 @@ def main():
                 elif args.command == 'profile':
                     from .profile import profile
                     profile(args)
+                elif args.command == 'collect':
+                    from .collection import worker
+                    worker(args)
                 else:
                     from .evaluation import worker
                     worker(args)
@@ -191,6 +205,14 @@ def main():
                 write_json_atomic(args.output / f'failure_{os.getpid()}.json',
                     dict(command=sys.argv, error=repr(error), traceback=traceback.format_exc(), cost=cost_summary(args.run_root)))
                 raise
+    elif args.command == 'collect-prepare':
+        from .collection import prepare
+        print(prepare(args.output, args.pool, checkpoint=args.checkpoint, asset_root=args.asset_root,
+                      code_git=frozen_git(), recover_claims=args.recover_claims, retry_failed=args.retry_failed))
+    elif args.command == 'collect-aggregate':
+        from .collection import aggregate
+        result = aggregate(args.output)
+        print(dict(pool=result['pool'], conditions=len(result['conditions']), complete=True))
     elif args.command == 'prepare':
         from .evaluation import prepare
         print(prepare(args.output, args.checkpoint, args.stage, asset_root=args.asset_root,

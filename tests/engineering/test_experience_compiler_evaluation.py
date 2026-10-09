@@ -1,15 +1,15 @@
 """CPU queue/panel checks; fake episodes exercise bookkeeping, never science."""
 from __future__ import annotations
 
-import gzip
-from pathlib import Path
+from concurrent.futures import Future
 from types import SimpleNamespace
 
 import pytest
 import torch
 
 from ember.experience_compiler import evaluation as ev
-from ember.pi05_eval_queue import claim_next, complete_job, publish_json_exclusive, queue_summary
+from ember.pi05_eval_queue import (claim_next, complete_job, completed_jobs, fail_job,
+                                  publish_json_exclusive, queue_summary)
 
 
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
@@ -39,19 +39,26 @@ def prepared(tmp_path, monkeypatch):
     conditions, environment = panel()
     monkeypatch.setattr(ev, "panel_contract", lambda **kwargs: {"conditions": conditions})
     monkeypatch.setattr(ev, "learning_environment", lambda **kwargs: environment)
-    checkpoint = tmp_path / "checkpoint"
-    checkpoint.mkdir()
-    publish_json_exclusive(checkpoint / 'checkpoint_manifest.json', {'stage': ev.STAGE, 'next_macro': 182})
-    output = tmp_path / "meta54"
-    ev.prepare(output, checkpoint, "meta54")
+    checkpoint = make_checkpoint(tmp_path / "checkpoint", 180)
+    output = tmp_path / "train180"
+    ev.prepare(output, checkpoint, "train180")
     return output, checkpoint
+
+
+def make_checkpoint(path, update):
+    path.mkdir()
+    publish_json_exclusive(path / 'checkpoint_manifest.json', {
+        'stage': ev.STAGE, 'next_macro': update, 'run_contract_schema': ev.SCHEMA})
+    return path
 
 
 def row(condition, state, arm):
     return {"suite": condition["suite"], "task_id": condition["suite_task_id"], "init_state_id": state,
             "condition_id": condition["condition_id"], "teacher_demo": condition["teacher_demo"], "arm": arm,
             "language": f"task {condition['task_id']}", "success": arm == "end", "env_seed": 7,
-            "policy_seed_root": 7, "policy_noise_seeds": [10, 20], "split_role": "train"}
+            "policy_seed_root": 7, "policy_noise_seeds": [10, 20],
+            "split_role": "validation" if "video_ordinal" in condition else "train",
+            **({"video_ordinal": condition["video_ordinal"]} if "video_ordinal" in condition else {})}
 
 
 def finish_all(output):
@@ -68,7 +75,8 @@ def finish_all(output):
         primary = ev.read_json(output / paths["end"])
         primary.update(arm_paths=paths, artifact_root="conditions/cpu-test", actual_J=1,
                        metrics={"reads": 2, "steps": 100}, wall_seconds=1.0,
-                       weights={"end": "end.safetensors"}, chain="chain.pt.gz")
+                       weights={arm: "canonical_MT_reference" if arm == "MT" else f"{arm}.safetensors"
+                                for arm in contract["arms"]}, chain="experience.pt")
         path = f"shards/{claim.shard.job_id}.json"
         size = publish_json_exclusive(output / path, primary)
         complete_job(output / "queue.sqlite3", job_id=claim.shard.job_id, worker_id="cpu-test",
@@ -78,26 +86,26 @@ def finish_all(output):
 
 def test_prepare_is_immutable_long_first_and_counts_conditions(prepared):
     output, checkpoint = prepared
-    assert ev.prepare(output, checkpoint, "meta54") == output / "evaluation_contract.json"
+    assert ev.prepare(output, checkpoint, "train180") == output / "evaluation_contract.json"
     contract = ev.read_json(output / "evaluation_contract.json")
     assert len(contract["conditions"]) == 16 and contract["expected_rows_per_arm"] == 48
-    assert contract["environment_contract"]["parallel"]["envs_per_replica"] == 3
+    assert contract["arms"] == ["MT", "end", "null"]
+    assert contract["environment_contract"]["parallel"]["envs_per_replica"] == 1
     assert "operator_read_write_scene" in contract["environment_contract"]
     assert "operator_read_write_scene" not in contract["adaptation_environment_contract"]
     claim = claim_next(output / "queue.sqlite3", worker_id="cpu-test")
     assert claim.shard.suite == "libero_10" and len(claim.shard.init_state_ids) == 3
     with pytest.raises(ValueError, match="checkpoint"):
-        ev.prepare(output, checkpoint, "meta27")
+        ev.prepare(output, checkpoint, "train360")
 
 
-def test_formal400_freezes_without_replacement(tmp_path, monkeypatch):
+@pytest.mark.parametrize("stage,update", [("formal180", 180), ("formal360", 360)])
+def test_formal400_freezes_without_replacement(tmp_path, monkeypatch, stage, update):
     conditions, environment = panel(True)
     monkeypatch.setattr(ev, "formal400_mapping", lambda **kwargs: conditions)
     monkeypatch.setattr(ev, "formal_environment", lambda **kwargs: environment)
-    checkpoint = tmp_path / "checkpoint"
-    checkpoint.mkdir()
-    publish_json_exclusive(checkpoint / 'checkpoint_manifest.json', {'stage': ev.STAGE, 'next_macro': 182})
-    path = ev.prepare(tmp_path / "formal", checkpoint, "formal")
+    checkpoint = make_checkpoint(tmp_path / "checkpoint", update)
+    path = ev.prepare(tmp_path / stage, checkpoint, stage)
     contract = ev.read_json(path)
     assert len(contract["conditions"]) == 400 and contract["arms"] == ["end"]
     contract["conditions"][1]["teacher_demo"] = 0
@@ -113,46 +121,138 @@ def test_aggregate_arm_counts_and_paired_exchange(prepared):
     assert result["arms"]["end"]["row_count"] == 48
     assert result["arms"]["end"]["successes"] == 48 and result["arms"]["end"]["breadth"] == 8
     assert len(result["conditions"]) == 16
-    assert result["comparisons"]["initial_to_end"]["gained"] == 48
+    assert result["comparisons"]["MT_to_end"]["gained"] == 48
     assert result["comparisons"]["null_to_end"]["lost"] == 0
-    assert result["comparisons"]["initial_to_end"]["candidate_breadth"] == 8
+    assert result["comparisons"]["MT_to_end"]["candidate_breadth"] == 8
     assert ev.aggregate(output) == result
 
 
-def test_condition_executes_one_chain_then_fixed_three_state_readouts(prepared):
+def test_train360_reuses_complete180_MT_and_compares_adjacent_readouts(prepared):
     output, _ = prepared
+    finish_all(output)
+    previous = ev.aggregate(output)
+    checkpoint = make_checkpoint(output.parent / "checkpoint360", 360)
+    next_output = output.parent / "train360"
+    contract = ev.read_json(ev.prepare(next_output, checkpoint, "train360"))
+    assert contract["arms"] == ["end", "null"]
+    assert contract["MT_reuse"] == str(output / "results.json")
+    finish_all(next_output)
+    result = ev.aggregate(next_output)
+    assert result["arms"]["MT"]["rows"] == previous["arms"]["MT"]["rows"]
+    assert result["comparisons"]["MT_to_end"]["gained"] == 48
+    assert result["comparisons"]["180_to_360"]["retained"] == 48
+
+
+@pytest.fixture
+def consumer(prepared, monkeypatch):
+    """Toy CPU factors/experience exercise only _Cases persistence and scheduling."""
+    from ember.experience_compiler.interaction import Chain
+    from ember.experience_compiler import run
+
+    monkeypatch.setattr(run, "check_budget", lambda root: None)
+    output, checkpoint = prepared
     contract = ev.read_json(output / "evaluation_contract.json")
-    c = contract["conditions"][0]
-    loras = [{"a": torch.zeros(1)}, {"a": torch.ones(1)}]
-    calls = []
-    chain = SimpleNamespace(states=loras, endpoints=[1], metrics={"reads": 2})
-    chain.to_record = lambda: {"records": [{"images": torch.zeros(1, dtype=torch.uint8)}], "endpoints": [1]}
-    runtime = SimpleNamespace(teacher=lambda *args, **kwargs: {"real_frames": True})
-    runtime.replay = lambda teaching, actual, masked: (calls.append(("null", actual is chain, masked)) or [loras[0]])
-    def adapt(task, teaching, condition_seed, excluded_states):
-        assert "operator_read_write_scene" not in runner.contract
-        calls.append(("adapt", condition_seed, excluded_states))
-        return chain
-    def final_many(task, states, lora, noise_root):
-        assert runner.contract["operator_read_write_scene"] == contract["environment_contract"]["operator_read_write_scene"]
-        calls.append(("final", id(lora), tuple(states), noise_root))
-        arm = "end" if lora is loras[1] else "initial"
-        return [row(c, state, arm) for state in states]
-    runner = SimpleNamespace(adapt=adapt, final_many=final_many)
-    destination = output / "condition-test"
-    result = ev.execute_condition(runtime, runner, contract, c, destination)
-    assert sum(call[0] == "adapt" for call in calls) == 1
-    assert calls[0][2] == (32, 33, 34) and ("null", True, True) in calls
-    assert all(len(rows) == 3 for rows in result["rows"].values())
-    assert result["actual_J"] == 1 and len(set(result["weights"].values())) == 2
-    with gzip.open(destination / "chain.pt.gz", "rb") as stream:
-        assert torch.load(stream, map_location="cpu", weights_only=False)["endpoints"] == [1]
+    states = [{"a": torch.tensor([value])} for value in (0., 1., 2.)]
+    chain = Chain(states=states, records=[{"episode": 0, "feedback": torch.zeros(3)},
+                                         {"episode": 0, "feedback": torch.tensor([1., 1., 1.])}],
+                  endpoints=[1, 2], episodes=[{"success": True}],
+                  metrics={"actual_J": 2, "wall_seconds": 1., "practice_success": True, "reads": 2},
+                  observations={"cpu-observation": {"images": torch.zeros(1, dtype=torch.uint8)}},
+                  behavior_versions=["train180", "train180"])
+    saves, replay_calls, future = [], [], Future()
+    def submit(save):
+        saves.append(save)
+        return future
+    null = {"a": torch.tensor([-1.])}
+    def replay(teacher, actual):
+        replay_calls.append(actual)
+        return null
+    runtime = SimpleNamespace(mt=states[0], teacher=lambda *args: {"indices": torch.arange(2)},
+        null_replay=replay, last_teacher_cost={"frames": 2}, io=SimpleNamespace(submit=submit))
+    cases = ev._Cases(runtime, contract, output, "cpu-test", 0, "cpu-consumer", output.parent)
+    request = cases.next_request()
+    assert request["kind"] == "adapt"
+    assert "operator_read_write_scene" not in request["environment_contract"]
+    cases.adapted({"request": request, "chain": chain})
+    return SimpleNamespace(cases=cases, chain=chain, request=request, future=future, saves=saves,
+                           runtime=runtime, replay_calls=replay_calls, null=null,
+                           output=output, checkpoint=checkpoint, contract=contract)
+
+
+def test_cases_freeze_success_chain_last_edit_and_wait_for_originals(consumer):
+    from safetensors.torch import load_file
+
+    cases, request = consumer.cases, consumer.request
+    c = request["condition"]
+    assert consumer.replay_calls == [consumer.chain]
+    assert len(cases.finals) == 9
+    for _ in range(9):
+        final = cases.next_request()
+        assert final["kind"] == "final" and final["noise_root"] == 7
+        assert final["environment_contract"] == consumer.contract["environment_contract"]
+        expected = {"MT": consumer.runtime.mt, "end": consumer.chain.states[-1], "null": consumer.null}
+        assert torch.equal(final["state"]["a"], expected[final["arm"]]["a"])
+        cases.final({"request": final, "row": row(c, final["state_id"], final["arm"])})
+    cases.publish_ready()
+    assert queue_summary(consumer.output / "queue.sqlite3")["completed_rows"] == 0
+    record = consumer.saves.pop()()
+    consumer.future.set_result(record)
+    cases.publish_ready(flush=True)
+    job = completed_jobs(consumer.output / "queue.sqlite3")[0]
+    primary = ev.read_json(consumer.output / job["rows_path"])
+    destination = consumer.output / primary["artifact_root"]
+    assert primary["actual_J"] == 2 and primary["chain"] == "experience.pt"
+    assert primary["weights"]["MT"] == "canonical_MT_reference"
+    assert record["metrics"]["practice_success"] and record["actual_incoming_parameters"]
+    assert [e["incoming"] for e in record["events"]] == ["MT", "incoming_001.safetensors"]
+    assert torch.equal(load_file(str(destination / "end.safetensors"))["a"], consumer.chain.states[-1]["a"])
+    assert torch.equal(load_file(str(destination / "incoming_001.safetensors"))["a"], consumer.chain.states[1]["a"])
+    actual = torch.load(destination / "experience.pt", map_location="cpu", weights_only=False)
+    assert actual["endpoints"] == [1, 2] and actual["episodes"][0]["success"]
+
+
+def test_cases_recovery_reuses_actual_adaptation_and_negative_final_rows(consumer):
+    cases, request = consumer.cases, consumer.request
+    consumer.future.set_result(consumer.saves.pop()())
+    case = cases.cases[request["case_id"]]
+    negative_request = next(r for r in cases.finals if r["arm"] == "end" and r["state_id"] == 32)
+    negative = row(request["condition"], 32, "end")
+    negative["success"] = False
+    cases.final({"request": negative_request, "row": negative})
+    record_path = case["destination"] / "record.json"
+    negative_path = case["destination"] / "final_end_32.json"
+    old_negative = negative_path.read_text()
+    claim = case["claim"]
+    fail_job(consumer.output / "queue.sqlite3", job_id=claim.shard.job_id, worker_id="cpu-test",
+             claim_token=claim.claim_token, error="CPU consumer interruption")
+    ev.prepare(consumer.output, consumer.checkpoint, "train180", recover_claims=True, retry_failed=True)
+    def forbidden(*args):
+        pytest.fail("recovery must reuse the saved adaptation and null factors")
+    runtime = SimpleNamespace(mt=consumer.runtime.mt, teacher=forbidden, null_replay=forbidden,
+                              io=SimpleNamespace(submit=forbidden))
+    recovered = ev._Cases(runtime, consumer.contract, consumer.output, "cpu-recovery", 0,
+                          "cpu-recovery", consumer.output.parent)
+    first = recovered.next_request()
+    assert first["kind"] == "final" and first["case_id"] == request["case_id"]
+    restored = recovered.cases[first["case_id"]]
+    assert restored["actual_J"] == 2 and restored["recovered_from"] == str(record_path)
+    finals = [first, *recovered.finals]
+    recovered.finals.clear()
+    assert len(finals) == 8
+    assert not any(r["arm"] == "end" and r["state_id"] == 32 for r in finals)
+    for final in finals:
+        recovered.final({"request": final, "row": row(request["condition"], final["state_id"], final["arm"])})
+    recovered.publish_ready(flush=True)
+    primary = ev.read_json(consumer.output / completed_jobs(consumer.output / "queue.sqlite3")[0]["rows_path"])
+    assert primary["recovered_from"] == str(record_path) and primary["actual_J"] == 2
+    assert next(r for r in primary["rows"] if r["init_state_id"] == 32)["success"] is False
+    assert negative_path.read_text() == old_negative
 
 
 def test_pairing_rejects_changed_noise_and_gpu_cost_unions(prepared):
     output, _ = prepared
     c = ev.read_json(output / "evaluation_contract.json")["conditions"][0]
-    before, after = row(c, 32, "initial"), row(c, 32, "end")
+    before, after = row(c, 32, "MT"), row(c, 32, "end")
     after["policy_noise_seeds"] = [11, 20]
     with pytest.raises(ValueError, match="RNG pairing"):
         ev.compare_train([before], [after])

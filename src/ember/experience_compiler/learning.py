@@ -1,50 +1,23 @@
-"""Continuous fresh FM warm -> shared experience/FM/SDE meta learning."""
+"""Fresh shared FM editing from explicit actual incoming/experience events."""
 from __future__ import annotations
 
-import gzip
+from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from pathlib import Path
 import time
-from datetime import timedelta
 
 import torch
 import torch.distributed as dist
-from torch import nn
-from safetensors.torch import save_file
 
 from ember.ecp.checkpoint import load_ecp_checkpoint, save_ecp_checkpoint
-from ember.pi05_source_checkpoint import barrier, read_json, write_json_atomic
+from ember.pi05_source_checkpoint import barrier, write_json_atomic
 from ember.pi05_source_contract import append_jsonl
 from ember.pi05_source_setup import initialize_deferred_process_group, initialize_distributed, seed_everything
 from ember.writer.replay import sum_writer_gradients
-from ember.writer.runtime import autocast
 
-from .credit import fm_credit, pg_credit, pg_surrogate, surrogate
-from .interaction import Chain, Runner, cpu_state
-from .runtime import Runtime
-from .contract import query_seed
-
-
-class ValueBaseline(nn.Module):
-    """Only detached current Q summary and actual pre-query proprioception."""
-    def __init__(self):
-        super().__init__()
-        with torch.random.fork_rng(devices=[]):
-            torch.random.default_generator.manual_seed(20261009)
-            self.network = nn.Sequential(nn.LayerNorm(264), nn.Linear(264, 64), nn.SiLU(), nn.Linear(64, 1))
-            nn.init.zeros_(self.network[-1].weight)
-            nn.init.zeros_(self.network[-1].bias)
-
-    def forward(self, features):
-        return self.network(features.detach()).flatten()
-
-
-def baseline_features(chain, queries, device):
-    return torch.stack([torch.cat((chain.q_context,
-        torch.tensor(query['row']['initial_proprio'], dtype=torch.float32))) for query in queries]).to(device)
-
-
-def gradient_norm(parameters):
-    return sum(p.grad.float().square().sum() for p in parameters if p.grad is not None).sqrt()
+from .contract import SCHEMA, STAGE
+from .credit import fm_credit, surrogate
+from .storage import load_event
 
 
 def gradient_groups(model):
@@ -56,194 +29,163 @@ def gradient_groups(model):
     return {key: value**.5 for key, value in groups.items()}
 
 
-def save_condition(output, event, chain, queries, *, meta_index, credit):
-    target = output / 'conditions' / event.condition_id
-    target.mkdir(parents=True, exist_ok=False)
-    with gzip.open(target / 'experience.pt.gz', 'wb', compresslevel=1) as handle:
-        torch.save(chain.to_record(), handle)
-    with gzip.open(target / 'query.pt.gz', 'wb', compresslevel=1) as handle:
-        torch.save(queries, handle)
-    save_file({k: v.contiguous() for k, v in chain.states[-1].items()}, str(target / 'adapted.safetensors'))
-    write_json_atomic(target / 'record.json', dict(event=event.as_dict(), meta_index=meta_index,
-        compilation=chain.metrics, fm={k: v for k, v in credit['fm'].items() if k != 'cotangents'},
-        pg={k: v for k, v in credit['pg'].items() if k != 'cotangent'},
-        shared_parameter_version=event.update, complete=True))
+def prefetch_event(data, event):
+    """One CPU reader overlaps the current event; it never runs policy forward."""
+    tick = time.monotonic()
+    record = torch.load(Path(event.record_path) / 'experience.pt', map_location='cpu', weights_only=False)
+    raw_batch = data.raw_query_batch(event)
+    return record, raw_batch, time.monotonic() - tick
 
 
-def one_condition(runtime, data, runner, baseline, event, args):
+def prepare_edit(runtime, event, prefetched):
+    tick = time.monotonic()
+    raw_record, raw_batch, io_seconds = prefetched
+    incoming, experience, authority = load_event(runtime, event, loaded=raw_record)
+    load_seconds = time.monotonic() - tick
     teacher = runtime.teacher(event.task_id, event.teacher_demo)
-    queries, pg, features = [], None, None
-    if event.update < 128:
-        with torch.no_grad(), autocast(runtime.device):
-            q = runtime.compiler.initial(teacher)
-            chain = Chain(states=[cpu_state(runtime.compiler.decode(q))])
-    else:
-        task = next(t for t in runner.contract['tasks'] if t['global_task_id'] == event.task_id)
-        chain = runner.adapt(task, teacher, event.seed, event.query_states2, masked=event.masked_experience)
-        for position, state_id in enumerate(event.query_states2):
-            queries.append(runner.query(task, state_id, chain.states[-1], query_seed(event.seed, position)))
-        features = baseline_features(chain, queries, runtime.device)
-        with torch.no_grad():
-            predictions = baseline(features)
-        advantages = [float(q['row']['success']) - float(v) for q, v in zip(queries, predictions)]
-        pg = pg_credit(runtime, chain.states[-1], task, queries, advantages, microbatch=args.pg_microbatch)
-        pg['baseline_predictions'] = predictions.tolist()
-    batch = data.query_batch(event, runtime.processor)
-    fm = fm_credit(runtime, chain.states, batch, seed=event.seed, microbatch=args.microbatch)
-    replay = runtime.replay(teacher, chain, masked=event.masked_experience)
-    return dict(chain=chain, queries=queries, fm=fm, pg=pg, replay=replay, baseline_features=features)
+    teacher_cost = dict(runtime.last_teacher_cost)
+    tick = time.monotonic()
+    with torch.no_grad():
+        outgoing = runtime.edit(incoming, teacher, experience)
+    edit_seconds = time.monotonic() - tick
+    batch = runtime.processor.training_batch(raw_batch)
+    record = dict(event=event.as_dict(), behavior_actor_uses_teaching=authority['behavior_actor_uses_teaching'],
+        learning_neural_reads=1, differentiable_replay_reads=1, full_video_equivalent_reads=2.,
+        read_frames=2 * len(teacher['indices']), teacher_feature_cost=teacher_cost,
+        prefetch_io_seconds=io_seconds, event_load_seconds=load_seconds, edit_forward_seconds=edit_seconds)
+    return dict(incoming=incoming, outgoing=outgoing, experience=experience,
+                teacher=teacher, batch=batch, event=event, record=record)
 
 
-def accumulate(parameters, gradients, destination):
-    for parameter, gradient in zip(parameters, gradients):
-        if gradient is not None:
-            destination[parameter].add_(gradient.detach())
+def group_backward(runtime, prepared, *, microbatch):
+    tick = time.monotonic()
+    credits = fm_credit(runtime, [p['incoming'] for p in prepared], [p['outgoing'] for p in prepared],
+        [p['batch'] for p in prepared], seeds=[p['event'].seed for p in prepared], microbatch=microbatch)
+    fm_seconds = time.monotonic() - tick
+    records = []
+    for item, credit in zip(prepared, credits, strict=True):
+        item.pop('batch')
+        item.pop('outgoing')
+        tick = time.monotonic()
+        replay = runtime.edit(item['incoming'], item['teacher'], item['experience'])
+        surrogate(replay, credit['cotangent']).backward()
+        record = item['record']
+        record.update({k: v for k, v in credit.items() if k != 'cotangent'})
+        record.update(shared_replay_vjp_seconds=time.monotonic() - tick,
+                      FM_physical_microbatch=microbatch, FM_physical_group_events=len(prepared),
+                      FM_group_vjp_seconds=fm_seconds)
+        records.append(record)
+        del replay
+    return records
 
 
-def condition_backward(result, parameters, beta, fm_buffer, pg_buffer):
-    states, fm, pg = result['replay'], result['fm']['cotangents'], result['pg']
-    if pg is None or beta is not None:
-        surrogate(states, fm, None if pg is None else pg['cotangent'], beta or 0.).backward()
-    else:
-        gradients = torch.autograd.grad(surrogate(states, fm), parameters, allow_unused=True, retain_graph=True)
-        accumulate(parameters, gradients, fm_buffer)
-        gradients = torch.autograd.grad(pg_surrogate(states[-1], pg['cotangent']), parameters, allow_unused=True)
-        accumulate(parameters, gradients, pg_buffer)
-
-
-def calibrate_and_reduce(parameters, context, beta, fm_buffer, pg_buffer):
-    stats = {}
-    if fm_buffer is not None:
-        for p in parameters:
-            p.grad = fm_buffer[p]
-        sum_writer_gradients(parameters, world_size=context.world_size, bucket_bytes=64 * 1024**2)
-        fm_norm = float(gradient_norm(parameters))
-        fm_global = [p.grad.clone() for p in parameters]
-        for p in parameters:
-            p.grad = pg_buffer[p]
-        sum_writer_gradients(parameters, world_size=context.world_size, bucket_bytes=64 * 1024**2)
-        pg_norm = float(gradient_norm(parameters))
-        if fm_norm > 0 and pg_norm > 0:
-            beta = min(1., .25 * fm_norm / pg_norm)
-        for p, fm in zip(parameters, fm_global):
-            p.grad = fm + (beta or 0.) * p.grad
-        stats.update(fm_chi_gradient_norm=fm_norm, pg_chi_gradient_norm=pg_norm)
-    else:
-        sum_writer_gradients(parameters, world_size=context.world_size, bucket_bytes=64 * 1024**2)
-    return beta, stats
-
-
-def update(runtime, data, runner, baseline, value_optimizer, optimizer, scheduler, context, index, beta, args):
+def update(runtime, data, optimizer, scheduler, context, index, args, prefetch):
     parameters = tuple(runtime.compiler.parameters())
     optimizer.zero_grad(set_to_none=True)
-    calibration = index >= 128 and beta is None
-    fm_buffer = {p: torch.zeros_like(p) for p in parameters} if calibration else None
-    pg_buffer = {p: torch.zeros_like(p) for p in parameters} if calibration else None
-    records, value_batches = [], []
+    events = [e for e in data.events(index) if e.position % context.world_size == context.rank]
     started = time.monotonic()
-    for event in data.events(index):
-        if event.position % context.world_size != context.rank:
-            continue
-        result = one_condition(runtime, data, runner, baseline, event, args)
-        condition_backward(result, parameters, beta, fm_buffer, pg_buffer)
-        record = dict(event=event.as_dict(), fm_loss=result['fm']['weighted_loss'],
-                      stage_losses=result['fm']['stage_losses'], keep=result['fm']['keep'])
-        if index >= 128:
-            save_condition(args.output, event, result['chain'], result['queries'], meta_index=index - 127, credit=result)
-            record.update(compilation=result['chain'].metrics,
-                          pg={k: v for k, v in result['pg'].items() if k != 'cotangent'})
-            targets = torch.tensor(result['pg']['returns'], dtype=torch.float32, device=context.device)
-            value_batches.append((result['baseline_features'].detach(), targets))
-        records.append(record)
-        del result
-    beta, stats = calibrate_and_reduce(parameters, context, beta, fm_buffer, pg_buffer)
+    futures = [prefetch.submit(prefetch_event, data, event) for event in events]
+    prepared = [prepare_edit(runtime, event, future.result())
+                for event, future in zip(events, futures, strict=True)]
+    records = group_backward(runtime, prepared, microbatch=args.microbatch)
+    del prepared
+    local_seconds = time.monotonic() - started
+    tick = time.monotonic()
+    sum_writer_gradients(parameters, world_size=context.world_size, bucket_bytes=64 * 1024**2)
+    collective_seconds = time.monotonic() - tick
     norm = torch.nn.utils.clip_grad_norm_(parameters, 1., error_if_nonfinite=True)
-    stats.update(beta=beta, combined_gradient_norm=float(norm), gradient_groups=gradient_groups(runtime.compiler))
+    groups = gradient_groups(runtime.compiler)
     optimizer.step()
     scheduler.step()
-    # Every advantage above used the old baseline, before this batch's labels.
-    value_optimizer.zero_grad(set_to_none=True)
-    for features, targets in value_batches:
-        ((baseline(features) - targets).square().sum() / 8).backward()
-    if index >= 128:
-        sum_writer_gradients(tuple(baseline.parameters()), world_size=context.world_size)
-        torch.nn.utils.clip_grad_norm_(baseline.parameters(), 1., error_if_nonfinite=True)
-        value_optimizer.step()
+    local = dict(records=records, rank=context.rank, local_work_seconds=local_seconds,
+                 collective_seconds=collective_seconds)
     gathered = [None] * context.world_size if context.is_main else None
     if context.world_size > 1:
-        dist.gather_object(records, gathered, dst=0)
+        dist.gather_object(local, gathered, dst=0)
     else:
-        gathered = [records]
+        gathered = [local]
     if context.is_main:
-        all_records = sorted([r for rows in gathered for r in rows], key=lambda r: r['event']['position'])
+        all_records = sorted([r for row in gathered for r in row['records']], key=lambda r: r['event']['position'])
         if len(all_records) != 4:
-            raise ValueError('physical topology changed the four-condition update')
-        append_jsonl(args.output / 'metrics.jsonl', dict(update=index + 1, phase='warm' if index < 128 else 'meta',
-            meta_update=max(0, index - 127), wall_seconds=time.monotonic() - started, records=all_records, **stats))
-    return beta
+            raise ValueError('physical topology changed the logical four-event update')
+        append_jsonl(args.output / 'metrics.jsonl', dict(update=index + 1,
+            phase='pool0' if index < 180 else 'pool0_refresh_half',
+            records=all_records, rank_timing=[{k: v for k, v in row.items() if k != 'records'} for row in gathered],
+            wall_seconds=time.monotonic() - started, combined_gradient_norm=float(norm), gradient_groups=groups))
 
 
-def save_training(args, runtime, data, baseline, value_optimizer, optimizer, scheduler, context, macro, beta):
-    from .contract import SCHEMA, STAGE
+def save_training(args, runtime, data, optimizer, scheduler, context, macro):
     data.next_update = macro
     return save_ecp_checkpoint(output_dir=args.output, macro=macro, stage=STAGE, context=context,
         model=runtime.compiler, optimizer=optimizer, scheduler=scheduler, run_contract_schema=SCHEMA,
         metrics_rows=macro, sampler_state=data.state_dict(),
-        training_state=dict(beta=beta, value=baseline.state_dict(), value_optimizer=value_optimizer.state_dict()))
+        training_state=dict(pool_versions={k: v['version'] for k, v in data.pools.items()},
+                            update_objective='paired FM_out + .2 ReLU(FM_out - stopgrad FM_in)',
+                            logical_events=4, FM_queries_per_event=28))
 
 
 def train(args):
-    from .contract import SCHEMA, STAGE, learning_environment
     from .data import QueryData
-    from .run import register_launch, check_budget, cost_interval
+    from .runtime import Runtime
+    from .run import register_launch, check_budget
 
     context = initialize_distributed(require_numa=True, defer_process_group=True)
-    if not 1 <= context.world_size <= 4:
-        raise ValueError('this four-condition batch uses one through four useful training ranks')
+    if not 1 <= context.world_size <= 4 or args.stop_update not in {180, 360}:
+        raise ValueError('logical batch4 uses ranks1..4 and registered180/360 nodes')
     seed_everything(20261009, context)
     runtime = Runtime(args.asset_root, context.device, frame_chunk=args.frame_chunk,
-                      decoder_chunk=args.decoder_chunk, experience_chunk=args.experience_chunk,
-                      native_frame_chunk=args.native_frame_chunk)
-    data = QueryData(args.asset_root)
-    runner = Runner(runtime, learning_environment(asset_root=args.asset_root), args.physical_gpus[context.local_rank])
-    baseline = ValueBaseline().to(context.device)
+        decoder_chunk=args.decoder_chunk, experience_chunk=args.experience_chunk,
+        native_frame_chunk=args.native_frame_chunk, cache_root=args.run_root / 'frozen_features')
+    paths = [args.run_root / 'pools/pool0/manifest.json']
+    if args.stop_update == 360:
+        paths.append(args.run_root / 'pools/refresh180/manifest.json')
+    data = QueryData(args.asset_root, pool_paths=paths)
     optimizer = torch.optim.AdamW(runtime.compiler.parameters(), lr=3e-5, weight_decay=0.)
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda _: 1.)
-    value_optimizer = torch.optim.AdamW(baseline.parameters(), lr=3e-5, weight_decay=0.)
     initialize_deferred_process_group(context, rendezvous_root=args.output, collective_timeout=timedelta(minutes=45))
-    index, beta = 0, None
-    with cost_interval(args.output.parent, 'train', args.physical_gpus, rank=context.rank):
+    index, topology_resume = 0, None
+    try:
         if args.resume:
             state = {}
             index, rows = load_ecp_checkpoint(checkpoint=args.resume, stage=STAGE, context=context,
                 model=runtime.compiler, optimizer=optimizer, scheduler=scheduler, run_contract_schema=SCHEMA,
                 restored_state=state, allow_world_size_change=args.allow_topology_change)
             data.load_state_dict(state['sampler_state'])
+            topology_resume = state.get('topology_resume')
             if rows != index or data.next_update != index or scheduler.last_epoch != index:
-                raise ValueError('continuous sampler/optimizer/scheduler cursor changed')
-            beta = state['training_state']['beta']
-            baseline.load_state_dict(state['training_state']['value'])
-            value_optimizer.load_state_dict(state['training_state']['value_optimizer'])
+                raise ValueError('logical sampler/optimizer/scheduler cursor changed')
+        elif args.stop_update != 180:
+            raise ValueError('stage360 must preserve the valid180 checkpoint')
         if context.is_main:
-            register_launch(args, runtime, context, data, index)
+            register_launch(args, runtime, context, data, index, topology_resume=topology_resume)
         barrier(context)
         if not args.resume:
-            save_training(args, runtime, data, baseline, value_optimizer, optimizer, scheduler, context, 0, beta)
-        for update_index in range(index, 182):
-            check_budget(args.output.parent)
-            beta = update(runtime, data, runner, baseline, value_optimizer, optimizer, scheduler,
-                          context, update_index, beta, args)
-            macro = update_index + 1
-            if macro in (32, 64, 96, 128) or macro > 128 and (macro - 128) % 9 == 0:
-                checkpoint = save_training(args, runtime, data, baseline, value_optimizer, optimizer, scheduler,
-                                           context, macro, beta)
-                if context.is_main:
-                    print({'checkpoint_ready': str(checkpoint), 'meta_update': max(0, macro - 128)}, flush=True)
+            save_training(args, runtime, data, optimizer, scheduler, context, 0)
+        stopped, checkpoint, macro = False, args.resume, index
+        with ThreadPoolExecutor(max_workers=1, thread_name_prefix='FM-prefetch') as prefetch:
+            for update_index in range(index, args.stop_update):
+                check_budget(args.run_root)
+                update(runtime, data, optimizer, scheduler, context, update_index, args, prefetch)
+                macro = update_index + 1
+                # An early scientific stop saves this just-completed update.
+                signal = torch.tensor(int(context.is_main and
+                    (args.run_root / 'early_stop_requested.json').is_file()), device=context.device)
+                if context.world_size > 1:
+                    dist.broadcast(signal, src=0)
+                stopped = bool(signal.item())
+                if macro % 45 == 0 or stopped:
+                    checkpoint = save_training(args, runtime, data, optimizer, scheduler, context, macro)
+                    if context.is_main:
+                        print(dict(checkpoint_ready=str(checkpoint), update=macro), flush=True)
+                if stopped:
+                    break
         if context.is_main:
-            write_json_atomic(args.output / 'completion.json', dict(updates=182, warm=128, meta=54,
-                beta=beta, checkpoint=str(checkpoint), training_complete=True))
-    runner.close()
-    data.close()
-    runtime.close()
-    if context.world_size > 1:
-        dist.destroy_process_group()
+            write_json_atomic(args.output / f'completion_{args.stop_update}.json',
+                dict(updates=macro, checkpoint=str(checkpoint), requested_stop_update=args.stop_update,
+                     training_complete=macro == 360, stage_complete=macro == args.stop_update,
+                     scientific_early_stop=stopped, topology_resume=topology_resume))
+    finally:
+        data.close()
+        runtime.close()
+        if context.world_size > 1:
+            dist.destroy_process_group()

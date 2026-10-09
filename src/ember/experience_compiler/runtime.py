@@ -1,4 +1,4 @@
-"""Frozen native assets, bounded legal teacher features, and shared replay."""
+"""Frozen assets and observed complete-factor editing; no hidden persistent Q."""
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -27,7 +27,8 @@ class Runtime:
     """One frozen source and one trainable Compiler; no condition optimizer."""
 
     def __init__(self, asset_root, device, *, frame_chunk=8, decoder_chunk=4096,
-                 experience_chunk=16, native_frame_chunk=None, cache_bytes=2 * 1024**3):
+                 experience_chunk=16, native_frame_chunk=None, cache_bytes=2 * 1024**3,
+                 cache_root=None):
         from .contract import SOURCE, MT_PATH, TASKS36 as TASKS
 
         self.asset_root, self.device = Path(asset_root), torch.device(device)
@@ -56,6 +57,11 @@ class Runtime:
         self.feature_seconds = 0.
         self.native_teacher_frames = 0
         self.last_teacher_cost = {}
+        from .contract import RUN_ROOT
+        from .storage import FeatureCache, RecordWriter
+        self.features = FeatureCache(Path(cache_root) if cache_root is not None else RUN_ROOT / 'frozen_features')
+        self.io = RecordWriter()
+        self.image_cache_hits, self.image_encoded_observations = 0, 0
 
     def _store(self, role):
         if role not in self.stores:
@@ -80,6 +86,13 @@ class Runtime:
             self.cache.move_to_end(key)
             self.last_teacher_cost = dict(cache_hit=True, native_encoder_seconds=0., native_encoded_frames=0)
             return self.cache[key]
+        disk_key = f'teacher_{role}_{int(task_id):03d}_{int(demo):02d}'
+        disk = self.features.get(disk_key)
+        if disk is not None:
+            self.last_teacher_cost = dict(cache_hit=True, disk_cache_hit=True,
+                                          native_encoder_seconds=0., native_encoded_frames=0)
+            self._remember(key, disk)
+            return disk
         tasks, store = self._store(role)
         raw = store.load(task_id, demo)
         tokens, mask, task_span = self.tokenizer([tasks[task_id].authority.language])
@@ -97,13 +110,17 @@ class Runtime:
         self.last_teacher_cost = dict(cache_hit=False, native_encoder_seconds=elapsed,
                                       native_encoded_frames=len(raw.frames))
         self.native_teacher_frames += len(raw.frames)
+        self.io.submit(self.features.put, disk_key, features)
+        self._remember(key, features)
+        return features
+
+    def _remember(self, key, features):
         size = sum(v.nbytes for v in features.values())
         while self.cache and self.cache_size + size > self.cache_bytes:
             _, old = self.cache.popitem(last=False)
             self.cache_size -= sum(v.nbytes for v in old.values())
         if size <= self.cache_bytes:
             self.cache[key], self.cache_size = features, self.cache_size + size
-        return features
 
     @torch.no_grad()
     def frozen_images(self, raw):
@@ -116,22 +133,45 @@ class Runtime:
             result = [self.policy.model.paligemma_with_expert.embed_image(value) for value in pixels[:2]]
         return torch.cat(result, 1).detach().cpu()
 
-    def replay(self, teacher, chain, masked=False):
-        """All Q revisions stay differentiable; raw E/H alone stop gradient."""
+    def edit(self, incoming, teacher, experience):
+        """Actual incoming factors/raw facts detach inside the shared modules."""
         with autocast(self.device):
-            q = self.compiler.initial(teacher)
-            states = [self.compiler.decode(q)]
-            for endpoint in chain.endpoints:
-                experience = {} if masked else chain.experience(endpoint)
-                q = self.compiler.revise(q, teacher, experience)
-                states.append(self.compiler.decode(q))
-        return states
+            return self.compiler(incoming, teacher, experience)
+
+    @torch.no_grad()
+    def null_replay(self, teacher, chain):
+        """Start MT; only real-chain edit count is shared with masked-E replay."""
+        current = self.mt
+        for _ in chain.endpoints:
+            current = self.edit(current, teacher, {})
+        return current
+
+    @torch.no_grad()
+    def observation_features(self, observations):
+        result, missing, keys = {}, [], []
+        for key, raw in observations.items():
+            cached = self.features.get(key)
+            if cached is None:
+                missing.append(raw['images'])
+                keys.append(key)
+            else:
+                result[key] = cached['phi']
+                self.image_cache_hits += 1
+        if missing:
+            self.image_encoded_observations += len(missing)
+            for start in range(0, len(missing), self.native_frame_chunk):
+                phi = self.frozen_images(torch.stack(missing[start:start + self.native_frame_chunk]))
+                for key, value in zip(keys[start:start + len(phi)], phi, strict=True):
+                    result[key] = value
+                    self.io.submit(self.features.put, key, {'phi': value})
+        return result
 
     def load_checkpoint(self, checkpoint):
         self.compiler.load_state_dict(load_file(str(Path(checkpoint) / 'ecp.safetensors'),
                                                device=str(self.device)), strict=True)
 
     def close(self):
+        self.io.close()
         self.execution.close()
         for _, store in self.stores.values():
             store.close()

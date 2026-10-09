@@ -1,4 +1,4 @@
-"""CPU subprocess checks for events, failure cleanup and live-admission policy."""
+"""CPU checks of queue dependencies, recovery, early stop and child ownership."""
 import asyncio
 import importlib.util
 import json
@@ -15,157 +15,288 @@ batch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(batch)
 
 
-def snapshots():
-    return {node: [dict(index=gpu, uuid=f"{node}-{gpu}", name="NVIDIA A40", used=0,
-                       free=45000, utilization=0, processes=[]) for gpu in range(8)]
-            for node in ("gpu01", "gpu02")}
-
-
 def arguments(tmp_path):
     args = batch.parser().parse_args(["--code", str(tmp_path), "--root", str(tmp_path / "run"),
-        "--python", sys.executable, "--local-node", "gpu02", "--train-node", "gpu02",
-        "--train-gpus", "0", "--eval-node", "gpu02", "--eval-gpus", "1",
-        "--minimum-free-mib", "40000", "--borrow-training-gpus"])
+        "--python", sys.executable, "--local-node", "gpu01", "--train-node", "gpu01",
+        "--train-gpus", "0,1", "--eval-node", "gpu02", "--eval-gpus", "0,1",
+        "--minimum-free-mib", "40000"])
     args.train_minimum_free_mib = args.eval_minimum_free_mib = args.minimum_free_mib
     return args
 
 
-class CPUChildren(batch.Supervisor):
-    def __init__(self, args, fail=False):
-        super().__init__(args)
-        self.fail, self.queries, self.overlap = fail, [], False
+def snapshots():
+    return {node: [dict(index=gpu, uuid=f"{node}-{gpu}", name="NVIDIA A40", used=0,
+        free=45000, utilization=0, processes=[], hostname=f"BCI-{node}") for gpu in range(8)]
+        for node in ("gpu01", "gpu02")}
 
+
+def write_checkpoint(runner, macro, world=2):
+    path = runner.checkpoint(macro)
+    path.mkdir(parents=True, exist_ok=True)
+    (path / "checkpoint_manifest.json").write_text(json.dumps(dict(
+        schema_version="ember_ecp_checkpoint_v1", stage=batch.STAGE,
+        run_contract_schema=batch.SCHEMA, next_macro=macro, world_size=world)))
+    return path
+
+
+class QueueCLI(batch.Supervisor):
+    """Mock only the CLI boundary; production scheduling and metadata stay real."""
+    def __init__(self, args, mode="pass"):
+        super().__init__(args)
+        self.mode, self.queues, self.timeline = mode, {}, []
+        self.resumed, self.chi360, self.tail, self.stop_notice = (asyncio.Event() for _ in range(4))
+        self.formal_done = asyncio.Event()
+        self.formal_claims = 0
+
+    def counts(self, name):
+        return {k: v for k, v in self.queues[name].items() if v}
+
+    def check_stop(self):
+        super().check_stop()
+        if self.stopped:
+            self.stop_notice.set()
+
+    def emit_result(self, name):
+        spec = self.spec(name)
+        row = dict(schema_version=batch.SCHEMA, stage=name, checkpoint=str(self.checkpoint(spec["point"])),
+                   aggregated_complete=True)
+        if spec["pool"]:
+            row = dict(schema_version=batch.EVENT_SCHEMA, pool=name, version=f"{name}_20261009_v1",
+                       complete=True, conditions=[dict(condition_id=i) for i in range(spec["count"])])
+        elif name.startswith("train"):
+            row["arms"] = {k: dict(successes=v) for k, v in dict(MT=25, end=20 if self.mode != "pass" else 30, null=24).items()}
+            if name == "train360":
+                row["MT_reference"] = str(self.spec("train180")["result"])
+        else:
+            row["arms"] = dict(end=dict(successes=135 if self.mode != "pass" else 160))
+        spec["output"].mkdir(parents=True, exist_ok=True)
+        spec["result"].write_text(json.dumps(row))
+
+    async def train_cli(self, argv):
+        stop = int(argv[argv.index("--stop-update") + 1])
+        if stop == 360:
+            assert self.result("refresh180") and self.result("train180")
+            self.timeline.append(("resume360", self.counts("formal180")))
+            self.resumed.set()
+            if self.mode == "late_stop":
+                await self.stop_notice.wait()
+                point = 181
+            else:
+                point = 360
+        else:
+            point = stop
+        checkpoint = write_checkpoint(self, point, len(self.train_cards))
+        output = self.root / "training"
+        (output / f"completion_{stop}.json").write_text(json.dumps(dict(updates=point,
+            checkpoint=str(checkpoint), requested_stop_update=stop, stage_complete=point == stop,
+            training_complete=point == 360, scientific_early_stop=point != stop)))
+        if point == 360:
+            self.chi360.set()
+
+    async def queue_cli(self, name):
+        queue = self.queues[name]
+        count = min(100, queue["pending"]) if name == "formal180" else queue["pending"]
+        queue["pending"] -= count
+        queue["claimed"] += count
+        if name == "formal180" and count:
+            ordinal, self.formal_claims = self.formal_claims, self.formal_claims + 1
+            if self.mode == "pass":
+                await (self.tail.wait() if ordinal == 0 else self.chi360.wait() if ordinal == 1 else asyncio.sleep(0))
+            elif self.mode == "late_stop":
+                await self.resumed.wait()
+        if name == "formal360":
+            self.tail.set()
+        if name == "train180" and self.mode == "early_stop":
+            # Complete the formal arm first, so the registered non-pass cancels an unstarted segment.
+            await self.formal_done.wait()
+        await asyncio.sleep(0)
+        queue["claimed"] -= count
+        queue["complete"] += count
+        if name == "formal180" and queue["complete"] == 400:
+            self.formal_done.set()
+
+    async def child(self, name, node, argv, targets=(), *, training=False):
+        command = argv[argv.index(batch.MODULE) + 1]
+        output = Path(argv[argv.index("--output") + 1])
+        stage = output.name
+        assert not self.leased.intersection(targets), "two different pools overlap a physical GPU"
+        self.leased.update(targets)
+        entry = dict(name=name, command=command, stage=stage, argv=argv,
+                     physical_gpus=list(targets), started_unix=time.monotonic())
+        self.record["processes"].append(entry)
+        self.timeline.append(("start", command, stage, tuple(targets)))
+        try:
+            if command.endswith("prepare"):
+                self.queues.setdefault(stage, dict(pending=self.spec(stage)["count"], claimed=0, complete=0))
+            elif command.endswith("aggregate"):
+                assert self.counts(stage) == {"complete": self.spec(stage)["count"]}
+                self.emit_result(stage)
+            elif command == "train":
+                await self.train_cli(argv)
+            else:
+                await self.queue_cli(stage)
+            return entry
+        finally:
+            self.leased.difference_update(targets)
+            entry.update(status="complete", return_code=0, finished_unix=time.monotonic())
+            self.timeline.append(("end", command, stage, tuple(targets)))
+
+
+def test_full_batch_resumes_before_formal_tail_and_prioritizes_pending180(tmp_path):
+    runner = QueueCLI(arguments(tmp_path))
+    asyncio.run(asyncio.wait_for(runner.run(), 5))
+    assert runner.record["status"] == "complete" and not runner.leased
+    assert set(runner.results) == {"pool0", "refresh180", "train180", "formal180", "train360", "formal360"}
+    assert next(t for t in runner.timeline if t[0] == "resume360")[1]["pending"] > 0
+    processes = runner.record["processes"]
+    train = [p for p in processes if p["command"] == "train"]
+    assert len(train) == 2 and "--resume" not in train[0]["argv"]
+    assert train[1]["argv"][train[1]["argv"].index("--resume") + 1] == str(runner.checkpoint(180))
+    formal = [p for p in processes if p["stage"] == "formal180" and p["command"] == "worker"]
+    later = [p for p in processes if p["stage"] in ("train360", "formal360") and p["command"] == "worker"]
+    assert train[1]["started_unix"] < min(p["finished_unix"] for p in formal)
+    assert min(p["started_unix"] for p in later) < max(p["finished_unix"] for p in formal)
+    borrowed = [p for p in formal if p["started_unix"] > train[1]["finished_unix"]]
+    assert borrowed and all(p["started_unix"] < min(q["started_unix"] for q in later) for p in borrowed)
+    assert runner.results["train360"]["MT_reference"] == str(runner.spec("train180")["result"])
+    assert len({tuple(p["physical_gpus"][0]) for p in processes if p["stage"] == "pool0" and p["command"] == "collect"}) == 4
+
+
+@pytest.mark.parametrize("mode", ["early_stop", "late_stop"])
+def test_registered_early_stop_skips_or_finishes_active360_without_qualification(tmp_path, mode):
+    runner = QueueCLI(arguments(tmp_path), mode)
+    asyncio.run(asyncio.wait_for(runner.run(), 5))
+    marker = json.loads((runner.root / "early_stop_requested.json").read_text())
+    assert marker["formal180"] == 135 and marker["train180"] == dict(MT=25, end=20, null=24)
+    assert runner.record["status"] == "scientific_stopped" and runner.record["candidate"] is None
+    train360 = [p for p in runner.record["processes"] if p["name"] == "train-360"]
+    assert bool(train360) == (mode == "late_stop")
+    assert not ({"train360", "formal360"} & runner.prepared) and not runner.leased
+    assert runner.results["formal180"]["aggregated_complete"] is True
+    if mode == "late_stop":
+        assert runner.latest_checkpoint()[0] == 181
+        assert json.loads((runner.root / "training/completion_360.json").read_text())["scientific_early_stop"]
+
+
+@pytest.mark.parametrize("pending", [0, 7])
+def test_resume_retains_receipts_and_reuses_complete_artifacts_and_partial_queue(tmp_path, pending):
+    original = QueueCLI(arguments(tmp_path))
+    asyncio.run(asyncio.wait_for(original.run(), 5))
+    original.spec("formal360")["result"].unlink()
+    receipt = original.root / "batch_execution.json"
+    failed = json.loads(receipt.read_text())
+    failed["status"] = "failed"
+    receipt.write_text(json.dumps(failed))
+    protected = {p: p.read_bytes() for p in (receipt, original.spec("pool0")["result"], original.spec("train180")["result"])}
+    args = arguments(tmp_path)
+    args.resume, args.execution_output = True, args.root / "batch_attempts/repair1"
+    resumed = QueueCLI(args)
+    resumed.queues["formal360"] = dict(pending=pending, claimed=0, complete=400-pending)
+    asyncio.run(asyncio.wait_for(resumed.run(), 5))
+    assert resumed.record["status"] == "complete" and all(p.read_bytes() == data for p, data in protected.items())
+    assert {p["stage"] for p in resumed.record["processes"]} == {"formal360"}
+    assert {p["command"] for p in resumed.record["processes"]} == ({"prepare", "worker", "aggregate"} if pending else {"prepare", "aggregate"})
+    prepared = next(p for p in resumed.record["processes"] if p["command"] == "prepare")
+    assert {"--recover-claims", "--retry-failed"} <= set(prepared["argv"])
+    assert str(receipt) in resumed.record["preserved_executions"]
+
+
+def test_resume_topology_change_requires_explicit_flag_and_uses_full_checkpoint(tmp_path):
+    args = arguments(tmp_path)
+    runner = QueueCLI(args)
+    runner.root.mkdir()
+    runner.logs.mkdir()
+    write_checkpoint(runner, 45, world=1)
+    with pytest.raises(ValueError, match="world changed"):
+        asyncio.run(runner.train(180))
+    args.allow_topology_change = True
+    asyncio.run(runner.train(180))
+    command = runner.record["processes"][0]["argv"]
+    assert command[command.index("--resume") + 1] == str(runner.checkpoint(45))
+    assert "--allow-topology-change" in command and "--nproc-per-node=2" in command
+
+
+def test_partial_aggregate_or_changed_scientific_metadata_cannot_qualify(tmp_path):
+    runner = QueueCLI(arguments(tmp_path))
+    runner.root.mkdir()
+    runner.seal()
+    runner.emit_result("train180")
+    runner.emit_result("formal180")
+    path = runner.spec("formal180")["result"]
+    row = json.loads(path.read_text())
+    row["aggregated_complete"] = False
+    path.write_text(json.dumps(row))
+    runner.check_stop()
+    assert runner.result("formal180") is None and not runner.stopped
+    row["checkpoint"] = str(runner.checkpoint(360))
+    path.write_text(json.dumps(row))
+    with pytest.raises(ValueError, match="registered checkpoint"):
+        runner.result("formal180")
+    runner.args.resume = True
+    runner.args.asset_root = tmp_path / "different_assets"
+    with pytest.raises(ValueError, match="scientific/asset"):
+        runner.seal()
+    runner.emit_result("pool0")
+    path = runner.spec("pool0")["result"]
+    row = json.loads(path.read_text())
+    row["version"] = "new_behavior"
+    path.write_text(json.dumps(row))
+    with pytest.raises(ValueError, match="registered pool"):
+        runner.result("pool0")
+
+
+class LocalChildren(batch.Supervisor):
     async def snapshot(self, node):
-        self.queries.append(node)
         return snapshots()[node]
 
-    def program(self, command, output, *, checkpoint=None, stage=None, gpu=None):
-        if command == "train":
-            first = self.root / "training/checkpoints/macro_00000155"
-            last = self.root / "training/checkpoints/macro_00000182"
-            text = f"print({{'checkpoint_ready': str({str(first)!r}), 'meta_update': 27}}, flush=True)\n"
-            text += f"time.sleep({60 if self.fail else 1})\n"
-            text += f"print({{'checkpoint_ready': str({str(last)!r}), 'meta_update': 54}}, flush=True)\n"
-        elif command == "prepare":
-            text = f"Path({str(output)!r}).mkdir(parents=True, exist_ok=True)\nprint('prepared')\n"
-        elif command == "worker":
-            text = "print('worker raw evidence', flush=True)\n"
-            text += "sys.exit(7)\n" if self.fail else "time.sleep(.03)\n"
-        else:
-            text = f"Path({str(output / 'results.json')!r}).write_text('{{}}')\nprint('X' * 100000)\n"
-        return [sys.executable, "-u", "-c", "from pathlib import Path\nimport sys,time\n" + text]
-
-    async def panel(self, stage, checkpoint, targets):
-        if stage == "meta27":
-            self.overlap = not any(p["name"] == "train" and "finished_unix" in p for p in self.record["processes"])
-        await super().panel(stage, checkpoint, targets)
+    async def collect_initial(self):
+        async with asyncio.TaskGroup() as group:
+            group.create_task(self.child("pool0-long", "gpu01", [sys.executable, "-u", "-c",
+                "import time; print('owned long child',flush=True); time.sleep(60)"], (("gpu01", 0),)))
+            group.create_task(self.child("pool0-fail", "gpu01", [sys.executable, "-u", "-c",
+                "import time,sys; time.sleep(.2); print('original failure',flush=True); sys.exit(7)"], (("gpu01", 1),)))
 
 
-def test_events_overlap_training_then_reuse_released_cards_and_aggregate(tmp_path):
-    runner = CPUChildren(arguments(tmp_path))
-    asyncio.run(runner.run())
-    record = json.loads((runner.root / "batch_execution.json").read_text())
-    assert record["status"] == "complete" and runner.overlap and not runner.leased
-    assert [(s["stage"], s["conditions"]) for s in record["stages"]] == [("meta27", 16), ("meta54", 16), ("formal", 400)]
-    assert all(p["return_code"] == 0 for p in record["processes"])
-    train = next(p for p in record["processes"] if p["name"] == "train")
-    later = [p for p in record["processes"] if p["name"].startswith("meta54-")]
-    assert all(train["finished_unix"] <= p["started_unix"] for p in later)
-    assert len(record["admissions"]) == 6 and len(runner.queries) == 12
-    assert (runner.logs / "formal-aggregate.log").stat().st_size > 100000
-    assert all(Path(s["results"]).exists() for s in record["stages"])
-
-
-def test_child_failure_cancels_only_our_live_groups_and_retains_exit_evidence(tmp_path):
-    runner, start = CPUChildren(arguments(tmp_path), fail=True), time.monotonic()
+def test_nonzero_child_cancels_owned_group_and_records_transport_cost_and_logs(tmp_path):
+    runner, start = LocalChildren(arguments(tmp_path)), time.monotonic()
     with pytest.raises(ExceptionGroup):
         asyncio.run(runner.run())
     assert time.monotonic() - start < 10 and not runner.leased
-    record = json.loads((runner.root / "batch_execution.json").read_text())
-    assert record["status"] == "failed"
-    worker = next(p for p in record["processes"] if p["name"] == "meta27-gpu02-gpu1")
-    train = next(p for p in record["processes"] if p["name"] == "train")
-    assert worker["return_code"] == 7 and train["status"] == "cancelled"
-    assert '"batch_child_returncode": -15' in Path(train["log"]).read_text()
-    assert "worker raw evidence" in Path(worker["log"]).read_text()
-    assert "formal" not in [s["stage"] for s in record["stages"]]
+    assert runner.record["status"] == "failed"
+    failed, cancelled = next(p for p in runner.record["processes"] if p["name"] == "pool0-fail"), runner.record["processes"][0]
+    assert failed["return_code"] == 7 and cancelled["status"] == "cancelled"
+    assert "original failure" in Path(failed["log"]).read_text()
+    assert '"batch_child_returncode": -15' in Path(cancelled["log"]).read_text()
+    costs = [json.loads(line) for line in (runner.root / "costs.jsonl").read_text().splitlines()]
+    assert len(costs) == 4 and {r["event"] for r in costs} == {"start", "end"}
+    assert all(r["allocation_window"] and r["node"] == "BCI-gpu01" and r["phase"] == "collect" for r in costs)
+    assert all(r["end"] >= r["start"] for r in costs if r["event"] == "end")
 
 
-def test_gpu_limits_include_other_owner_jobs_leases_and_actual_headroom():
+def test_gpu_admission_checks_current_cap_process_ownership_and_actual_headroom():
     live = snapshots()
-    decision = batch.admission(live, [("gpu02", 2)], {("gpu02", 0)}, "ymdai", 40000, 10)
-    assert decision["total_cap"] == 8 and len(decision["owned_or_allocated"]) == 2
+    assert batch.admission(live, [("gpu02", 2)], {("gpu02", 0)}, "ymdai", 40000, 10)["total_cap"] == 8
     for row in live["gpu01"][:6]:
         row["processes"] = [dict(owner="ymdai")]
     with pytest.raises(ValueError, match="total6/node6"):
         batch.admission(live, [("gpu02", 2)], set(), "ymdai", 40000, 10)
     live = snapshots()
-    with pytest.raises(ValueError, match="/node6"):
-        batch.admission(live, [("gpu02", 6)], {("gpu02", i) for i in range(6)}, "ymdai", 40000, 10)
     live["gpu02"][1]["free"] = 39999
     with pytest.raises(ValueError, match="admission refused"):
         batch.admission(live, [("gpu02", 1)], set(), "ymdai", 40000, 10)
+    live["gpu02"][1]["processes"] = [dict(owner="unknown")]
+    with pytest.raises(ValueError, match="attribute"):
+        batch.admission(live, [("gpu02", 2)], set(), "ymdai", 40000, 10)
     with pytest.raises(ValueError, match="already leased"):
         batch.admission(snapshots(), [("gpu02", 1)], {("gpu02", 1)}, "ymdai", 40000, 10)
 
 
-def test_registered_events_and_remote_shell_arguments_preserve_physical_flags(tmp_path):
-    args = arguments(tmp_path)
-    runner = batch.Supervisor(args)
-    checkpoint = runner.root / "training/checkpoints/macro_00000155"
-    event = repr(dict(checkpoint_ready=str(checkpoint), meta_update=27)).encode()
-    assert batch.checkpoint_event(event, runner.root) == (27, checkpoint)
-    assert batch.checkpoint_event(b"{'checkpoint_ready': 'ignored', 'meta_update': 9}", runner.root) is None
-    with pytest.raises(ValueError, match="optimizer node"):
-        batch.checkpoint_event(event.replace(b"00000155", b"00000154"), runner.root)
-    argv = runner.program("train", runner.root / "training")
-    assert "CUDA_VISIBLE_DEVICES=0" in argv and "NCCL_P2P_DISABLE=1" in argv
-    assert "torch.distributed.run" in argv and "--physical-gpus" in argv
-    from ember.experience_compiler.run import parser as native_parser
-    parsed = native_parser().parse_args(argv[argv.index(batch.MODULE) + 1:])
-    assert parsed.command == "train" and parsed.physical_gpus == [0]
-    remote = runner.transport("gpu01", [sys.executable, "-c", "print('$(must not run)`')"])
+def test_commands_keep_new_physical_flags_and_shell_arguments(tmp_path):
+    runner = batch.Supervisor(arguments(tmp_path))
+    command = runner.program("train", runner.root / "training", stop_update=360, resume=runner.checkpoint(180))
+    assert {"CUDA_VISIBLE_DEVICES=0,1", "NCCL_P2P_DISABLE=1", "torch.distributed.run", "--nproc-per-node=2"} <= set(command)
+    assert {"--slot-batch", "--stop-update", "--resume"} <= set(command) and "--pg-microbatch" not in command
+    remote = runner.transport("gpu02", [sys.executable, "-c", "print('$(must not run)`')"])
     assert shlex.split(remote[-1]) == [sys.executable, "-c", "print('$(must not run)`')"]
-
-
-def test_formal_recovery_preserves_failed_receipt_and_never_repeats_learning(tmp_path):
-    args = arguments(tmp_path)
-    args.resume_stage = "formal"
-    args.execution_output = args.root / "batch_attempts/formal_recovery"
-    args.root.mkdir()
-    original = args.root / "batch_execution.json"
-    original.write_text(json.dumps({"status": "failed", "processes": [{"finished_unix": 10}]}))
-    retained = original.read_bytes()
-    checkpoint = args.root / "training/checkpoints/macro_00000182"
-    checkpoint.mkdir(parents=True)
-    (args.root / "training/completion.json").write_text(json.dumps({
-        "training_complete": True, "updates": 182, "warm": 128, "meta": 54,
-        "checkpoint": str(checkpoint)}))
-    for stage, macro in (("meta27", 155), ("meta54", 182)):
-        output = args.root / "evaluation" / stage
-        output.mkdir(parents=True)
-        (output / "results.json").write_text(json.dumps({
-            "checkpoint": str(args.root / f"training/checkpoints/macro_{macro:08d}")}))
-    runner = CPUChildren(args)
-    program = batch.Supervisor(args).program("prepare", args.root / "evaluation/formal",
-                                            checkpoint=checkpoint, stage="formal")
-    assert "--recover-claims" in program and "--retry-failed" in program
-    asyncio.run(runner.run())
-    assert original.read_bytes() == retained
-    assert runner.record["status"] == "complete"
-    assert [s["stage"] for s in runner.record["stages"]] == ["formal"]
-    assert all(p["name"].startswith("formal-") for p in runner.record["processes"])
-    assert not runner.overlap and not runner.leased
-    assert (args.execution_output / "batch_execution.json").exists()
-
-
-def test_formal_recovery_rejects_incomplete_original_training(tmp_path):
-    args = arguments(tmp_path)
-    args.resume_stage = "formal"
-    args.execution_output = args.root / "repair"
-    args.root.mkdir()
-    (args.root / "batch_execution.json").write_text(json.dumps({"status": "failed", "processes": []}))
-    (args.root / "training").mkdir()
-    (args.root / "training/completion.json").write_text(json.dumps({"training_complete": False}))
-    with pytest.raises(ValueError, match="complete meta54"):
-        asyncio.run(CPUChildren(args).run())
+    with pytest.raises(SystemExit):
+        batch.parser().parse_args(["--resume-stage", "formal"])

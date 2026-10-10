@@ -220,6 +220,10 @@ def evaluate_fixed(runtime, runner, path, task, state_ids, noise_root, *, refere
                    global_task_id=path.task, reference=result['request']['parameter_ref'],
                    arm=result['request']['arm'],
                    selected=path.selected, query_excluded_from_H=True)
+        if result['history'].records and not row.get('model_failure'):
+            first=result['history'].records[0]
+            row.update(first_native_normalized_actions=first['normalized_actions'].tolist(),
+                       first_noise_seed=first['noise_seed'],first_action_mask=first['executed'].tolist())
         rows.append(row)
     return rows
 

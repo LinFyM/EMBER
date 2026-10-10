@@ -52,6 +52,24 @@ def test_roles_are_disjoint_full_fifty_panels():
         assert len(set(row['video_order']))==50
 
 
+def test_locked_queries_capture_function_without_appending_history():
+    from ember.proposal_writer.path import evaluate_fixed
+    from ember.writer.practice import History
+    class Runner:
+        def run(self,requests):
+            for request in requests:
+                first=dict(normalized_actions=torch.ones(5,7),noise_seed=1729,executed=torch.ones(5,dtype=torch.bool))
+                yield dict(request=request,row=dict(success=True,init_state_id=request['state_id']),
+                           history=History(records=[first]))
+    own=History()
+    path=SimpleNamespace(selected='G',states={'G':{},'MT300':{}},identity='condition',demo=0,task=12,history=own)
+    rows=evaluate_fixed(None,Runner(),path,{'horizon':280},[3],1234)
+    assert len(rows)==2 and not own.records and not own.episodes
+    assert {row['arm'] for row in rows}=={'MT','selected'}
+    assert all(row['query_excluded_from_H'] and row['first_noise_seed']==1729 for row in rows)
+    assert all(torch.tensor(row['first_native_normalized_actions']).shape==(5,7) for row in rows)
+
+
 def test_full_native_latent_and_same_call_hidden_times():
     class Velocity(nn.Module):
         def __init__(self):

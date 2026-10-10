@@ -1,5 +1,9 @@
 # 从当前实践重新推导完整方法：讨论稿
 
+最新授权：Owner已定案不用T、fresh双meta读取、首轮MT任务起点并要求自主实施。
+当前唯一active定义及首批见[完整设计§13](../designs/video_guided_proposal_writer_20261010.md#13-owner最新定案宏观推进与首批完整检验)。
+下面的“仍为讨论/无计算”描述保留各次推导时点，不覆盖最新progress和Owner授权。
+
 状态：Owner于2026-10-10要求先从头分析当前约束下的完整架构，再讨论；本稿不是active design、实现派发或启动合同。
 主讨论已消费functional_revision_learning整批交付并接回tracked/Git窗口。当前无新计算；不自动续FM、加PG或修P后再测。
 Owner随后要求复核该候选是否足够符合第一性原理、已尽可能解决旧问题。最新判断见§7：§3–6保留原提案，

@@ -84,9 +84,10 @@ exact task language + action-hidden、内部有序的正确教学RGB视频
 并非恢复出的teacher action或真实环境后果；应充分考虑完整horizon的价值，不把固定probe读法当硬约束。
 Video time、action horizon、flow time和layer depth分别解释。
 
-Owner要求尽可能保持原生图文prefix冻结，以保留图像理解基础；当前后继按这一边界设计。
-只读利用前缀特征不等于适配部署前缀，动作侧条件编译失败也不直接证明前缀表示不足。
-应先解释冻结前缀的已有信息怎样经Writer、动作侧Q/V及自身hidden形成正确控制，不能以改动图像理解替代这项解释。
+source基础视觉/语言权重保持冻结。Owner于2026-10-10进一步明确，本轮Gemma与action expert可以分别用fresh meta LoRA
+学习教学特征；这些共享读取参数在新condition固定，并在最终部署时退出。最终执行的Gemma仍为原冻结source，
+只安装一套完整任务LoRA。读取适配与最终执行参数分开，动作侧编译失败不直接证明前缀表示不足；
+仍须解释真实特征怎样经Writer形成有用控制，而不能把新增meta LoRA本身当成机制改进证据。
 
 操作内容、顺序与条件作用可以由不同结构表达；Core、Procedure、memory token和具体decoder都是候选实现。
 模块须职责清楚、能复制加深并自然扩参；选择由完整相关历史及实际行为决定，不把某次局部诊断变成永久结构限制。

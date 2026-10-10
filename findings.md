@@ -11267,3 +11267,33 @@ U仍只是实际路径，早期parent/STOP的未走分支不能凭空纳入，�
 
 本次没有实现/新数据/GPU/held或Test使用。具体接口缺项已有处理；有益教师、G控制传递、视频操作增量、
 有限预算辨识和迁移仍需完整实证。专家216×480×112仅demo项已11612160queries，不能据旧耗时自动称作小批或启动。
+
+## 427. 双meta读取的学习身份必须完整冻结，递推父参数需要真实训练覆盖（2026-10-10）
+
+Owner定案不用T、Gemma与action expert分别fresh meta LoRA读取教学，原则上任务LoRA从恒等起点可训练，
+首批使用强MT快速验证，并要求审查后自主推进。当前[active设计](docs/designs/video_guided_proposal_writer_20261010.md)
+据此替换T特征/起点/尺度依赖；不将历史T公共action LoRA说成必须运行整个T Writer。
+source本身可产生原生特征，读取meta学习的是特征适配；这种可计算性不证明新增meta优于冻结读取。
+
+实际PI05双stream每层分别计算Gemma与action expert的Q/K/V后按原生mask注意，最后分别norm并返回。
+Gemma的contextual图像位置可作为Z，action suffix可作为H；raw embed_image不经过Gemma LoRA，不能混称适配后Z。
+prefix不读取suffix，suffix读取prefix；因此Z依赖Gemma meta，H依赖两组meta。q/v-only读取适配避免没有消费者的action_out meta。
+这些是源码级计算依赖，非新forward/梯度实测。真实检查须确认CFM回传、source冻结、参数上下文与checkpoint重计算。
+
+两组meta共享给G/π，但它们归ψ，只随G的监督CFM学习。π局部用途及完整RL冻结全部ψ，π的下游Reader/heads归θ。
+若π更新共享meta，G生成核K也随θ变化，旧完整类别score不再覆盖全部依赖；不能把共享网络参数当成无害实现细节。
+meta更新后其contextual缓存失效；只有raw source embedding等真正不依赖它的量可跨更新复用。
+读取侧使用meta、执行侧用原source prefix及唯一完整任务LoRA，不能在最终部署暗叠两组meta。
+
+恒等A非零/B0允许教师功能梯度先作用B，再学完整A/B；双零的一阶死点不适用这种初始化。
+但可求导不等于当前已训练过该起点，恒等的教师副本学习与新condition禁止动作拟合仍严格区分。
+首批MT-only时，空历史final只有一个选项，其score为零，不再把T/MT之间的初始选择学习当新能力来源。
+
+完整复核还发现：若G监督只来自恒定MT parent，它可以忽略父参数，随后π选择生成参数继续修改便缺少实际递推覆盖。
+首批因此登记G320后的4条真实学生路径，从实际试过的候选/H构造至多4个额外教师事件，继续G至480，再固定ψ训练π。
+这是一次有界真实分布刷新，不由“非MT”字符串保证有效变化，也不保证覆盖所有未来父参数；缺覆盖如实报告。
+由此将首批计划从32增至40GPUh，计算预期8–12h、工程另4–8h，首次新profile修正。没有把未测吞吐说成现成结果。
+
+宏观顺序为四task完整机制/成本链→36-task迁移学习→相邻strict paired400及视频因果证据。
+G的因子CFM能否传递控制、合法视频能否帮助提案与选择、有限预算误选/保持和迁移仍受实际结果约束。
+负结果按teacher供给、U生成、P实践/保留、最终选择和输入信息分解；停止当前投入后自主接续，不等新Owner许可。

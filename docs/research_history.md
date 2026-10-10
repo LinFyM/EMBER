@@ -3,6 +3,15 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-10：Owner定案双meta读取与MT起点，完整审查后授权自主实施
+
+Owner明确不用T，Gemma和action expert各fresh一组meta LoRA用于共享特征学习；恒等任务LoRA副本可优化，
+首批采用强MT执行起点。主讨论把[完整设计](designs/video_guided_proposal_writer_20261010.md)登记为active，
+明确读取/执行参数隔离、contextual prefix消费者、双meta归ψ及π阶段完整冻结，保留正确path-score的前提。
+首批从4个合法训练任务、8个初始教师事件开始，G320后一次实际学生刷新至多4事件/G480，再训练π并读出完整48行train面板。
+递推父参数覆盖缺口导致首批成本由初拟32修订到40GPUh；正式36-task规模和相邻400据实际行为/吞吐接续。
+这记录的是方法/投入选择，不是训练完成或性能结果。旧teacher、decoder、交互阴性与视频价值边界继续约束解释。
+
 ## 2026-10-10：新Writer专家审阅指出定义缺口，主讨论保留G/π并补成具体实例
 
 Owner提供的[专家原文](review_materials/20261010_writer_design_review/EXPERT_REVIEW.md)审阅`be0d469a`：

@@ -3,12 +3,13 @@
 EMBER把exact task language与action-hidden教学视频，通过最终评估前的观看与自身实践编译为冻结π0.5 source的一套完整
 38-target task-conditioned LoRA，研究它能否从未见初始化闭环完成任务，并取得有益视频增量与能力保持。
 
-当前工作是[专家审阅后的完整Writer设计](docs/designs/video_guided_proposal_writer_20261010.md)：
-保留完整参数提案G与教学条件决策π，补齐训练教师、跨块通信、空历史、三类决策和完整更新语义。
+当前工作是[双meta读取、MT起点的完整Writer](docs/designs/video_guided_proposal_writer_20261010.md)：
+Owner已授权自主实施；不用T，fresh Gemma/action-expert读取meta与G共同学习，固定生成核后训练π完整决策。
+首批从强MT任务LoRA出发，完成四个non-held任务的教师—G—实践决策—新初态闭环，再据证据扩大36任务与正式400。
 [审阅入口与专家原文](docs/review_materials/20261010_writer_design_review/README.md)保留审阅依据和独立判断。
-新G/π尚未实现，没有新active实验；明确的设计修正不等于已证明控制传递或视频收益。
+实际实现/运行状态看[progress](progress.md)，active设计和首批预算不等于已经取得控制传递或视频收益。
 
-现存上一轮功能修订Compiler的唯一运行入口是`python -m ember.experience_compiler.run`。
+待新消费者验证后退役的上一轮功能修订入口是`python -m ember.experience_compiler.run`，不是新方案的启动命令。
 [model.py](src/ember/experience_compiler/model.py)读取有序教学与真实经验，产生作用于当前原生十步响应的能量余切；
 [execution.py](src/ember/experience_compiler/execution.py)以真实完整因子Jacobian修订唯一rank128 LoRA，
 [credit.py](src/ember/experience_compiler/credit.py)与[learning.py](src/ember/experience_compiler/learning.py)承担共享FM、成功功能保持及新初态回报信用。

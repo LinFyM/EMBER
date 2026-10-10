@@ -1,3 +1,9 @@
+## 2026-10-10 22:11 首八事件采集完成，教师160边界已实际启动
+
+collector_resume_002退出0/398.28s，八个原事件齐全。四个实际MT episode均失败；16次现场专家恢复验证有3次成功（task12/32/38各1，task29为0），真实rec1/0/1/1，keep均0；负例不重采。initial_collection_summary保存全部原件定位，不解释为教师修订能力。
+原八条fresh轨迹由18666c10冻结源码先执行预注册160完整checkpoint，随后原optimizer/RNG/query cursor继续480；科学节点、112query分母和最终selection4/audit16不变。运行面pilot/teachers_to160，长任务由当前session直接退出等待，无自Queue/心跳。当前三张gpu01共驻1/3/5实际启动；物理microbatch14/28依前述实测和当时余量选择，逻辑合同不变，仍40GPUh上限。
+预算消息processing_verified已确认，主讨论最新真实回复开始消费实测原件/取舍，不当作52GPUh已经授权。launch前现场gpu01:1显存已回到39572MiB，资源再次变化，后继以实测/新现场安排，不中断未保存更新。
+
 ## 2026-10-10 22:08 实际共驻吞吐引出总预算取舍
 
 clean pushed main/frozen现18666c10；collector_resume_002从该版本在gpu02:4/6/7真实运行，复用四空H事件。原fba失败及费用保留。profile_06在新共驻后的gpu01:1实测logical112+keep4 physical14/28为12.79/11.87秒、reserved13.21/16.89GiB；profile_07 gpu01:3 physical28为20.72秒、reserved16.89GiB。原gpu01:6显存余量约13.2GiB，不能沿用两快卡假设；所有高UTL显存足够卡仍可共驻。

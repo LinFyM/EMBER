@@ -1,3 +1,9 @@
+## 2026-10-10 22:08 实际共驻吞吐引出总预算取舍
+
+clean pushed main/frozen现18666c10；collector_resume_002从该版本在gpu02:4/6/7真实运行，复用四空H事件。原fba失败及费用保留。profile_06在新共驻后的gpu01:1实测logical112+keep4 physical14/28为12.79/11.87秒、reserved13.21/16.89GiB；profile_07 gpu01:3 physical28为20.72秒、reserved16.89GiB。原gpu01:6显存余量约13.2GiB，不能沿用两快卡假设；所有高UTL显存足够卡仍可共驻。
+一快两慢的完整最坏教师/后继预测约45–51GPUh，G/π实际长H吞吐仍未测，不称精确总费。只用快卡预计26–34h，可能38–44GPUh。向主讨论发送一次真实预算边界：建议52GPUh完整并行或保留40优先快卡接受更长wall，并以实测后继具体边界裁决；不请求Owner、不改科学矩阵。当前继续已授权采集，未因预算预测恢复G/π或减少面板。
+通知原件pilot/budget_boundary_delivery.json；送达及实际处理以其回执/主讨论真实新消息为准，不把发送动作当作裁决。实验仍独占tracked/Git，main只读。
+
 ## 2026-10-10 22:00 首批恢复标签工程故障与修复核验
 
 初次正式协调器退出1，四个collect任务在运动前缀快照恢复时报同一`initial_body_pos`错误；没有进入教师优化。四个空H事件完整保留，event01实际MT H未在标签前保存而丢失；费用0.1424942008GPUh全部计入。首次launch/exit/log及fba90073冻结树保留，不原地修。

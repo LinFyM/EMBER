@@ -1,3 +1,10 @@
+## 2026-10-10 实验执行：正式教师首批准备冻结
+
+实验session继续独占tracked/Git，唯一active科学合同不变。实现已实际通过双meta梯度/执行隔离、完整76因子输出、三head、完整10ODE反向、v3现场重放及整步教师消费者；能力结果尚无。详细原件见pilot/profile_03–05及工程记录。
+正式科学初值不加载disposable更新，首阶段8条教师480/160轨迹与selection4/audit16不缩减。教师query physical28、function4；G读取chunk16；56/24无实测收益、112 OOM。独立执行8 slots先按真实读出调整。
+GPU训练设备选择依据12.6秒整步/16.4GiB与近期共驻约2倍差距，先用gpu01:1/6；gpu02:4/6/7并行采集/读出，整批上限仍6（现场idle≤10），不以高UTL排除共驻。每launch双节点及strg01复查。
+整批计算预期暂上修14–18h，GPUh暂估32–40，硬上限40；新增64GiB按cache-free H和消费者完成后的可重算候选退休规划，原始事实/必要U/最终参数保留。G/π真实完整历史成本待后继原件更新，不默改科学矩阵。正式launch身份由下一接续记录登记。
+
 ## 2026-10-10 实验执行：完整提案Writer工程与实际消费者profile
 
 实验session 01a12384-17a9-7382-aeec-cee89479428f继续独占tracked/Git，main 01a12385-4cfc-7ec2-9017-ef2b242243cf只读。唯一active科学合同未变。

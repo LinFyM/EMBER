@@ -25,17 +25,19 @@ class Job:
     arguments: list
     dependencies: tuple = ()
     estimate_seconds: float = 0
+    eligible_devices: tuple = ()
 
 
-def initial_jobs(microbatch, slots):
+def initial_jobs(microbatch,slots,teacher_devices,*,demo_seconds=10.9,function_seconds=1.74):
     jobs = []
     for task in TASKS:
         collect = f'collect_{task:04d}'
-        jobs.append(Job(collect, ['collect','--task',str(task),'--slots',str(slots)],estimate_seconds=240))
+        jobs.append(Job(collect, ['collect','--task',str(task),'--slots',str(slots)],estimate_seconds=600 if task in (32,38) else 360))
         for event in (0,1):
             teacher = f'teacher_{task:04d}_{event}'
             jobs.append(Job(teacher,['teacher','--task',str(task),'--event',str(event),
-                '--microbatch',str(microbatch),'--stop','480'],(collect,),480*9.))
+                '--microbatch',str(microbatch),'--stop','480'],(collect,),
+                480*(demo_seconds+(function_seconds if event else 0)),tuple(teacher_devices)))
             jobs.append(Job(f'audit_{task:04d}_{event}',['audit','--task',str(task),'--event',str(event),
                 '--slots',str(slots)],(teacher,),600 if task in (32,38) else 360))
     return jobs
@@ -139,9 +141,11 @@ class Batch:
             while pending or futures:
                 ready=sorted([j for j in pending.values() if set(j.dependencies)<=done],
                              key=lambda j:-j.estimate_seconds)
-                while ready and free and not failures:
-                    job=ready.pop(0);device=free.pop(0);del pending[job.identity]
-                    futures[executor.submit(self.execute,job,device)]=device
+                for job in ready:
+                    eligible=next((d for d in free if not job.eligible_devices or d in job.eligible_devices),None)
+                    if eligible is None or failures:continue
+                    free.remove(eligible);del pending[job.identity]
+                    futures[executor.submit(self.execute,job,eligible)]=eligible
                 if not futures:
                     if failures:break
                     raise RuntimeError('pending jobs have missing dependencies')
@@ -166,13 +170,16 @@ def main():
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--workspace',type=Path,required=True)
     parser.add_argument('--devices',required=True,help='node:index comma-separated live eligible devices')
+    parser.add_argument('--teacher-devices',required=True,help='measured throughput/budget selection, not utilization filter')
     parser.add_argument('--microbatch',type=int,required=True)
     parser.add_argument('--slots',type=int,default=8)
     parser.add_argument('--required-free-MiB',type=int,required=True)
     args=parser.parse_args()
     devices=[(s.split(':')[0],int(s.split(':')[1])) for s in args.devices.split(',')]
     batch=Batch(args.workspace,devices,root=args.root,required_free_MiB=args.required_free_MiB)
-    done=batch.run(initial_jobs(args.microbatch,args.slots))
+    teacher_devices=[(v.split(':')[0],int(v.split(':')[1])) for v in args.teacher_devices.split(',')]
+    if not set(teacher_devices)<=set(devices):raise ValueError('teacher devices must be in the admitted batch device set')
+    done=batch.run(initial_jobs(args.microbatch,args.slots,teacher_devices))
     summary=teacher_summary(args.root)
     write=json.dumps(dict(stage=args.stage,complete=True,jobs=done,billing=summary['billing'],
                          no_beneficial_teacher_supply=summary['no_beneficial_teacher_supply']))

@@ -42,3 +42,9 @@ NativeMT完成一条515环境步的真实episode；旧v1/v2快照不补造标签
 profile_03从clean实现commit20c43627在gpu01:1共驻运行，退出0/295.81秒/0.082168GPUh。新读取真实84帧chunk8/16为19.62/17.67秒、17.43/25.00GiB peak；source/meta执行RMSE0，两组meta第二步A/B梯度、三head实际OwnH及完整10ODE因子反向通过。112query物理28/56为10.00/10.14秒，112仍OOM；不把批量56当成有收益。
 实测一份515步实际历史：无损gzip302798405bytes；不持久化冻结source的raw image embedding缓存后75818792bytes，真实RGB/hidden/动作/反馈/快照完整保留。只释放可重算缓存；共享CFM对不可变事件H做进程内复用，其下游ψ编码照常重算。
 最后focused消费者将测完整10ODE功能标签的物理1/2/4批量及chunk24，并覆盖真实π的STOP到完整MT冻结出口，不执行freshG随机策略；正常G实践链留到预定G320原件。新增功能物理批量保持每item masked均值、item间均值，无监督/任务权重改变。
+
+profile_04（7595f413）退出0/65.90秒/0.018305GPUh：chunk24为17.77秒/32.56GiB，没有比16提速；4个实际保持函数标签physical1/2/4为6.33/3.43/1.73秒，最大10.59GiB；没有逐tensor一致性追查。真实π的STOP到完整MT出口通过，明确只核这项冷启动安全分支，未执行freshG。profile_05整步退出0/38.13秒/0.010591GPUh：112query+4实际keep+prox+clip+optimizer共12.60秒/16.40GiB，任务副本L2改变0.307135，source无梯度。这些不称能力学习。
+实际选择：教师physical demo28、functional4；G frame chunk16；独立执行暂8 slots。56/24未显示吞吐收益，112 OOM，故没有照显存扩大。正式读取和训练初值仍fresh，不加载这些disposable更新。
+调度预算依据：gpu01:1实测约10秒/112 forward-backward、完整带keep约12.6秒；gpu02:7近期共驻约20.6秒/112。首轮教师使用已在现场可用的gpu01:1/6，gpu02:4/6/7并行采集/读出，不因高UTL排除后者。不是按world_size限制整批，预算实际约束了长梯度阶段的设备选择。启动时重新现场准入，变化自行调整物理安排。
+预计完整计算暂14–18h（2张已可用的高吞吐训练卡，独立采集/读出最多再3卡，严格阶段依赖；相对原8–12h上修）。整批暂估32–40GPUh，π/G的完整历史成本仍不确定；40为硬上限，不能通过缩矩阵满足，达到具体边界给主讨论。
+存储峰值64GiB计划包含cache-free真实H、12条教师端点/full optimizer、G/π完整状态、当前未消费候选、最终LoRA及指定完整U。局部数据在local128完整保存后、每RL batch在完整checkpoint后、报告在query/指定U完成后，退休已消费可重算的中间候选及H中重复参数副本，保存原始RGB/actual隐藏/动作/反馈、seed/父参数引用、raw rows和选定最终参数。该生命周期操作在相应消费者完成前不执行，必要G刷新教师/恢复资产保留。

@@ -52,3 +52,10 @@ profile_04（7595f413）退出0/65.90秒/0.018305GPUh：chunk24为17.77秒/32.56
 首次formal collect四任务在恢复标签阶段失败，原件jobs/collect_*/attempt_001与initial_teachers_exit完整保留；尚未执行教师更新。event00完成，event01尚未保存真实H，故没有将丢失的H补造为可恢复原件。
 v4现场快照补integration+真实微步kinematic/contact缓存，根因为mj_step后pose/cache和qpos微步时点不同；单独forward不是现场恢复。200控制步复现0.34mm差，39KB payload跨进程重放及随后5个实际动作RGB/proprio一致，profile_snapshot_04/05保留。完整MjData pickle嵌入133MB模型不采用；不放宽场景一致性guard。v1/v2/v3旧快照不补造为v4。
 新采集在标签前保存实际H/代码/episode回执；四个原event00不重复。π只缓存停止梯度的原生响应预测，θ Reader/trunk/heads每次重新编码；消费者完成后候选生命周期保存最终和指定完整U、原始实践事实、全部参数改变量及固定ψ重算身份，非U旧path不能继续完整旧on-policy回放。对应source-cache live-θ梯度和候选消费/事实保留两个协议回归补入，共6tests通过。尚无G/π或教学学习能力结果。
+
+主讨论裁决将同一首批累计硬预算40提高52GPUh，峰值64GiB与所有科学范围保持；原预算/时间/launch保留为历史。
+Batch读取ROOT注册上限，显式CLI只能在该上限内；完整教师更新按所选设备估计，缺实测时暂用慢卡20.8秒上界并计启动余量。
+完整160 checkpoint接续只预留剩余320更新，原opt/query/RNG不重置；费用包含已发生profile/失败及其它协调器未退出的launch。
+不为承接预算建立新runner/模块，batch仍是资源owner；新增检查保留于现有协议文件，共7tests通过13.35秒。
+guard相对18666净source增69行/4既有文件，无新增module、parallel family或hard violation；既有admit/run/analysis复杂度提示未扩大科学计算。
+当前预测45–51GPUh、恢复后主要计算16–24h；G/π完整历史实测与报告预留仍须在既定消费者/完整checkpoint边界核算。

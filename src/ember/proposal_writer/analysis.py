@@ -45,7 +45,9 @@ def billing(root):
     paths = sorted(Path(root).glob('profile_*/exit.json')) + sorted((Path(root)/'jobs').glob('*/attempt_*/exit.json'))
     rows = [dict(path=str(p), **read_json(p)) for p in paths]
     return dict(GPU_hours=sum(r['GPU_hours'] for r in rows), jobs=len(rows),
-                failed_jobs=sum(r['exit_code'] != 0 for r in rows), raw_receipts=rows)
+                failed_jobs=sum(r['exit_code'] != 0 for r in rows),
+                attempts=sum(r.get('attempts',1) for r in rows),
+                failed_attempts=sum(r.get('failed_attempts',int(r['exit_code'] != 0)) for r in rows),raw_receipts=rows)
 
 
 def teacher_event(event_root,task,ordinal,mt):

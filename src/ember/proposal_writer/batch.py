@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import datetime
 import json
+import math
 import os
 from pathlib import Path
 import shlex
@@ -26,18 +27,26 @@ class Job:
     dependencies: tuple = ()
     estimate_seconds: float = 0
     eligible_devices: tuple = ()
+    device_estimates: dict = field(default_factory=dict)
+
+    def estimated_seconds(self, device):
+        return self.device_estimates.get(device, self.estimate_seconds)
 
 
-def initial_jobs(microbatch,slots,teacher_devices,*,demo_seconds=10.9,function_seconds=1.74):
+def initial_jobs(microbatch,slots,teacher_devices,*,root=RUN_ROOT,teacher_update_seconds=None):
+    # Complete query/function/optimizer measurements, with a conservative unmeasured fallback.
     jobs = []
     for task in TASKS:
         collect = f'collect_{task:04d}'
         jobs.append(Job(collect, ['collect','--task',str(task),'--slots',str(slots)],estimate_seconds=600 if task in (32,38) else 360))
         for event in (0,1):
             teacher = f'teacher_{task:04d}_{event}'
+            checkpoint=Path(root)/'events'/f'task_{task:04d}_event_{event:02d}'/'teacher/checkpoints/update_00000160/manifest.json'
+            updates=320 if checkpoint.exists() and json.loads(checkpoint.read_text())['complete'] else 480
+            estimates = {device: 60+updates*seconds for device,seconds in (teacher_update_seconds or {}).items()}
             jobs.append(Job(teacher,['teacher','--task',str(task),'--event',str(event),
                 '--microbatch',str(microbatch),'--stop','480'],(collect,),
-                480*(demo_seconds+(function_seconds if event else 0)),tuple(teacher_devices)))
+                60+updates*20.8,tuple(teacher_devices),estimates))
             jobs.append(Job(f'audit_{task:04d}_{event}',['audit','--task',str(task),'--event',str(event),
                 '--slots',str(slots)],(teacher,),600 if task in (32,38) else 360))
     return jobs
@@ -45,8 +54,12 @@ def initial_jobs(microbatch,slots,teacher_devices,*,demo_seconds=10.9,function_s
 
 class Batch:
     """One coordinator owns resource decisions; completion futures release slots."""
-    def __init__(self, workspace, devices, *, root=RUN_ROOT, maximum_GPUh=40., required_free_MiB=12000):
+    def __init__(self, workspace, devices, *, root=RUN_ROOT, maximum_GPUh=None, required_free_MiB=12000):
         self.workspace, self.devices, self.root = Path(workspace), list(devices), Path(root)
+        registered = json.loads((self.root/'run_contract.json').read_text())['limits']['GPU_hours']
+        maximum_GPUh = registered if maximum_GPUh is None else maximum_GPUh
+        if not math.isfinite(maximum_GPUh) or not 0 < maximum_GPUh <= registered:
+            raise ValueError('requested GPUh exceeds the registered cumulative hard budget')
         self.maximum_GPUh, self.lock = maximum_GPUh, threading.Lock()
         self.running = {}
         self.required_free_MiB=required_free_MiB
@@ -92,9 +105,26 @@ class Batch:
     def reserve_budget(self,job,node,gpu):
         spent = billing(self.root)['GPU_hours']
         inflight=sum(max(time.time()-r['start'],r['estimate_seconds'])/3600 for r in self.running.values())
-        if spent + inflight + job.estimate_seconds/3600 > self.maximum_GPUh:
+        # Other stage coordinators retain their original launch receipts; count their active jobs too.
+        owned = {r['job'] for r in self.running.values()}
+        for path in (self.root/'jobs').glob('*/attempt_*/launch.json'):
+            if (path.parent/'exit.json').exists():continue
+            launch = json.loads(path.read_text())
+            if launch['job'] in owned:continue
+            elapsed = time.time()-datetime.datetime.fromisoformat(launch['start_utc']).timestamp()
+            estimate = launch['estimate_seconds']
+            command = launch['command']
+            if 'teacher' in command and 'budget_GPUh' not in launch:
+                stop = int(command[command.index('--stop')+1])
+                # Legacy launches predate the complete-update measurement wiring.
+                estimate=max(estimate,60+20.8*stop)
+            inflight+=max(elapsed,estimate)/3600
+        estimate = job.estimated_seconds((node,gpu))
+        if not math.isfinite(estimate) or estimate <= 0:
+            raise ValueError('GPU job requires a finite positive full-cost estimate')
+        if spent + inflight + estimate/3600 > self.maximum_GPUh:
             raise RuntimeError('registered total GPUh exhausted/projected boundary; scientific budget decision required')
-        self.running[(node,gpu)] = dict(start=time.time(),job=job.identity,estimate_seconds=job.estimate_seconds)
+        self.running[(node,gpu)] = dict(start=time.time(),job=job.identity,estimate_seconds=estimate)
 
     def execute(self, job, device):
         node, gpu = device
@@ -108,7 +138,7 @@ class Batch:
                  *job.arguments,'--root',str(self.root),'--physical-gpu',str(gpu)]
         start=time.time();receipt=dict(job=job.identity,command=command,env=env,workspace=str(self.workspace),
             code_commit=self.code,admission=admission,start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            physical_GPU_count=1,estimate_seconds=job.estimate_seconds)
+            physical_GPU_count=1,estimate_seconds=job.estimated_seconds(device),budget_GPUh=self.maximum_GPUh)
         (destination/'launch.json').write_text(json.dumps(receipt,indent=2)+'\n')
         local=socket.gethostname().split('.')[0].lower() in {node,'bci-'+node}
         if local:
@@ -174,12 +204,20 @@ def main():
     parser.add_argument('--microbatch',type=int,required=True)
     parser.add_argument('--slots',type=int,default=8)
     parser.add_argument('--required-free-MiB',type=int,required=True)
+    parser.add_argument('--maximum-GPUh',type=float,default=None,help='defaults to the registered cumulative root limit')
+    parser.add_argument('--teacher-update-seconds',action='append',default=[],help='node:index=seconds for a measured complete update')
     args=parser.parse_args()
     devices=[(s.split(':')[0],int(s.split(':')[1])) for s in args.devices.split(',')]
-    batch=Batch(args.workspace,devices,root=args.root,required_free_MiB=args.required_free_MiB)
+    batch=Batch(args.workspace,devices,root=args.root,maximum_GPUh=args.maximum_GPUh,required_free_MiB=args.required_free_MiB)
     teacher_devices=[(v.split(':')[0],int(v.split(':')[1])) for v in args.teacher_devices.split(',')]
     if not set(teacher_devices)<=set(devices):raise ValueError('teacher devices must be in the admitted batch device set')
-    done=batch.run(initial_jobs(args.microbatch,args.slots,teacher_devices))
+    estimates={}
+    for item in args.teacher_update_seconds:
+        location,value=item.split('=');node,gpu=location.split(':');seconds=float(value)
+        if (node,int(gpu)) not in teacher_devices or not math.isfinite(seconds) or seconds<=0:
+            raise ValueError('teacher estimate must be positive and identify an eligible device')
+        estimates[(node,int(gpu))]=seconds
+    done=batch.run(initial_jobs(args.microbatch,args.slots,teacher_devices,root=args.root,teacher_update_seconds=estimates))
     summary=teacher_summary(args.root)
     write=json.dumps(dict(stage=args.stage,complete=True,jobs=done,billing=summary['billing'],
                          no_beneficial_teacher_supply=summary['no_beneficial_teacher_supply']))

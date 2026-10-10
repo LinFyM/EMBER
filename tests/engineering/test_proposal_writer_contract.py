@@ -111,3 +111,31 @@ def test_candidate_retirement_requires_consumption_and_preserves_facts(tmp_path)
     assert torch.equal(saved.observations['seen']['images'],raw) and torch.equal(saved.records[0]['hidden'],hidden)
     assert set(saved.states)=={'MT300'} and not saved.image_features
     assert result['deleted_parameter_bytes']>0 and result['full_compilation_replay_available'] is False
+
+
+def test_registered_budget_counts_device_cost_spent_and_other_coordinator(tmp_path,monkeypatch):
+    import datetime
+    import pytest
+    import time
+    from ember.proposal_writer import batch
+    from ember.pi05_source_checkpoint import write_json_atomic
+    write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':52}})
+    monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed_commit' if command[1]=='rev-parse' else '')
+    coordinator=batch.Batch(tmp_path,[('gpu01',1),('gpu01',3)],root=tmp_path)
+    assert coordinator.maximum_GPUh==52
+    with pytest.raises(ValueError,match='registered cumulative'):
+        batch.Batch(tmp_path,[],root=tmp_path,maximum_GPUh=53)
+    write_json_atomic(tmp_path/'profile_charged/exit.json',{'GPU_hours':47.,'exit_code':1})
+    outside=tmp_path/'jobs/old_teacher/attempt_001'
+    write_json_atomic(outside/'launch.json',dict(job='old_teacher',command=['teacher','--stop','160'],
+        start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),estimate_seconds=160*10.9))
+    fast=batch.Job('fast',['teacher'],estimate_seconds=4*3600,device_estimates={('gpu01',1):3600})
+    coordinator.reserve_budget(fast,'gpu01',1)
+    assert coordinator.running[('gpu01',1)]['estimate_seconds']==3600
+    slow=batch.Job('slow',['teacher'],estimate_seconds=4*3600)
+    with pytest.raises(RuntimeError,match='projected boundary'):
+        coordinator.reserve_budget(slow,'gpu01',3)
+    # A long current job is charged by elapsed time once its estimate has been exceeded.
+    coordinator.running[('gpu01',1)]['start']=time.time()-2*3600
+    with pytest.raises(RuntimeError,match='projected boundary'):
+        coordinator.reserve_budget(batch.Job('additional',['audit'],estimate_seconds=3*3600),'gpu01',3)

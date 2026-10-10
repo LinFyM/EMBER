@@ -1,3 +1,12 @@
+## 2026-10-10 21:43 正式首批已实际启动
+
+main/frozen代码fba90073c8fe1b6ba957f3bec62fa37dd9a4db17已push。正式计算来自clean detached `/data1/user/ymdai/ember_worktrees/video_guided_proposal_writer_20261010_fba90073`。
+ROOT=`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261010/pilot`；run_contract已登记精确command/env、资产/面板、source和代码、设备、成本/存储/恢复边界。协调器UTC13:43:16开始，collect32/38/12分别于13:43:23/27/32真实launch；后继依实际退出自动dispatch，不把计划说成已学习完成。
+首批仍8条fresh教师×480×112、160/480预定节点、parent/节点selection4+audit16；初始teacher实际query数430080，raw读出480行。G/π尚未formal运行。
+当前长梯度准入gpu01:1/6，gpu02:4/6/7用于独立采集/读出，总5卡以内（现场硬cap6）；每job都刷新两节点与strg01，最大40GPUh。profile已累计0.3236389537652334GPUh，3个失败原件完整保留。个人data1 quota2147483648KiB、当时使用1406704796KiB，64GiB新增可容纳，ROOT当时1.7GiB。
+实验session仍独占tracked/Git，主讨论只读。正式树不原地改；独立实现树仅补实际需要的响应缓存/已消费可重算候选生命周期，消费者通过后新clean版本承接后继阶段。
+协调器由当前session直接持续等待退出，不叠自Queue/心跳；正常不周期读取训练log/checkpoint/cache。
+
 ## 2026-10-10 实验执行：正式教师首批准备冻结
 
 实验session继续独占tracked/Git，唯一active科学合同不变。实现已实际通过双meta梯度/执行隔离、完整76因子输出、三head、完整10ODE反向、v3现场重放及整步教师消费者；能力结果尚无。详细原件见pilot/profile_03–05及工程记录。

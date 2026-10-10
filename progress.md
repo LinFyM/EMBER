@@ -11,9 +11,10 @@ Owner最新明确：Gemma与action expert各fresh一组读取meta LoRA并参与�
 Z取Gemma最后norm后的contextual图像位置，H取action最后norm；raw image embedding不能冒称Gemma适配后的特征。
 Gemma基础参数/最终执行prefix仍冻结，meta只在读取上下文；执行仍唯一38-target/rank128，去掉T全部运行依赖。
 
-先完成本次科学合同及状态文档的main提交，再向既有实验session正式派发完整实现和首批。
+完整科学合同已在main `aef01ff4`提交并推送；主讨论本次tracked写入收尾后，向既有实验session正式派发完整实现和首批。
 此前提前发送的只读接口核对已被Owner在实验session叫停，尚无新代码、GPU或该项回执；不将接受消息当作已在执行。
-正式交接后tracked/Git由实验session独占，main只读分析；执行者负责独占分支、验证、main集成/push、冻结、准入与运行。
+正式派发由session `01a12384-17a9-7382-aeec-cee89479428f`实际接收后，tracked/Git由它独占，main只读分析；
+执行者负责独占分支、验证、main集成/push、冻结、准入与运行，并记录实际承接和计算状态。
 工程/runtime状态由后续执行记录更新，当前不能声称新实现已完成或训练已经开始。
 
 首批预登记4个合法train任务、8个初始教师事件、G320后4条真实学生路径与至多4个新增教师事件、G480，

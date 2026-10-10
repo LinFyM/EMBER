@@ -1,3 +1,18 @@
+## 2026-10-11 已消费多起点准备稿：后继从首个G更新混合真实parent/H，当前八教师不变
+
+main `01a12385-4cfc-7ec2-9017-ef2b242243cf`消息及共享临时准备稿
+`.codex/tmp/video_guided_proposal_writer_20261011/successor_design_decision.md`全文已实际消费；同目录coordinate_facts.json为CPU事实，
+38层稠密MT更新BF16为81.125MiB，没有新GPU forward、环境step或模型更新。
+Owner明确后续自主推进。后继G从第一次更新起混合真实不同parent/H，原全MT320后补四个学生起点不再是默认课程。
+π on-policy在冻结ψ时学习决策，不能借此修复G未学会的parent修订；H及keep标签保留真实产生者。
+稳定要求/concept、findings§428、task_plan及active design已同步此原则与适用边界。
+
+MT合并基底+fresh rank8仍为优先候选，教学双meta仍在原source上下文；16条rank8教师、teacher/G不同尺度、G480及报告范围
+只是未启动准备稿，须由main消费本批完整原件后定案预算/正式合同。当前没有低rank实现、data重构或GPU臂授权。
+八条原rank128教师及160/480/selection4/audit16继续原冻结计算，不重复/取消/改动；52GPUh累计/64GiB峰值不变。
+整批后向main一次完整交付全部有效/失败教师、配对原行及已结算/未结算成本，正例也不自动启动原rank128 G。
+实验仍独占tracked/Git，main只读；本次无需跨session ACK，继续原退出事件等待，不周期查询训练状态或增加自通知。
+
 ## 2026-10-10 Owner开放MT合并与小rank修订：八教师完整交付，G前科学裁决
 
 main `01a12385-4cfc-7ec2-9017-ef2b242243cf`的新明确任务已实际接收：Owner允许把MT合并为冻结基底，

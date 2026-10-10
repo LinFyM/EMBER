@@ -1,4 +1,4 @@
-## 2026-10-10 正式功能修订学习已启动，世界大小据真实整链profile选择
+## 2026-10-10 功能修订360/72/两个48完成，formal磁盘统计竞态修复后接续
 
 已实际承接main a71bdb57的唯一active设计§6；实验session01a11a0a-fd39-74b1-83ba-001ede5330df持tracked/Git/运行独占窗口，main只读。
 开发分支codex/functional-learning-20261010，ROOT=/data1/user/ymdai/ember_runs/functional_revision_learning_20261010。
@@ -27,7 +27,13 @@ profile费用窗全部闭合，计入本批.254861GPUh；原始分解与选择�
 首次正式launch的strg01 data1独立用量1297193766912bytes/quota2199023255552bytes；合计224GiB峰可准入，共享容量另已核验。
 启动有一条持续tmux退出等待（ROOT/direct_exit_wait.json），没有main阶段ACK/心跳、自Queue或额外退出等待者。
 180独立train读出不阻塞72刷新及后半；train360计算与formal400独立，只有相邻聚合等待train180原件发布。
-当前学习结果未知；普通工程失败保护所有有效checkpoint/原件/费用后按同一科学合同接续，不以小面板或内部值取消360。
+真实360训练、72刷新及两个train48已完成，90/180/270/360完整状态均保留；训练/采集来源6b2b4ffd。
+首次整批在formal中因strg01上du遍历到被原子重命名的cache UUID.partial而退出1；不是独立quota不足、模型故障或科学停止。
+原formal13行complete、80 claimed及307 pending保持，已有合法适应/最终原件可直接复用；只恢复尚未发布完整行。
+所有本批进程组已核实退出。保留首次退出/取消及全部费用9.089735GPUh、科学elapsed4.11584h，取消中未保存的环境步数仍为未知，不填零。
+窄修复仅容忍ROOT内已确认disposable cache或原子临时文件的ENOENT并保存路径；权限、关键权重缺失或ROOT外错误继续失败。
+实际STORAGE五个边界检查通过，独立xfs quota和磁盘用量输出均保留；原launcher、复现及新读取身份在ROOT/analysis中保存。
+新clean pushed detached读取版本接续原φ360，原训练/刷新/面板不重启，不因小面板或内部值改400范围。
 以下主讨论登记及旧实施/profile条目保留为历史。
 
 ## 2026-10-10 main已登记首批正式学习：fresh FM360、72刷新、固定360 paired400

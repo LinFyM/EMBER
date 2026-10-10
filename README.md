@@ -9,11 +9,9 @@ Owner已授权自主实施；不用T，fresh Gemma/action-expert读取meta与G�
 [审阅入口与专家原文](docs/review_materials/20261010_writer_design_review/README.md)保留审阅依据和独立判断。
 实际实现/运行状态看[progress](progress.md)，active设计和首批预算不等于已经取得控制传递或视频收益。
 
-待新消费者验证后退役的上一轮功能修订入口是`python -m ember.experience_compiler.run`，不是新方案的启动命令。
-[model.py](src/ember/experience_compiler/model.py)读取有序教学与真实经验，产生作用于当前原生十步响应的能量余切；
-[execution.py](src/ember/experience_compiler/execution.py)以真实完整因子Jacobian修订唯一rank128 LoRA，
-[credit.py](src/ember/experience_compiler/credit.py)与[learning.py](src/ember/experience_compiler/learning.py)承担共享FM、成功功能保持及新初态回报信用。
-观看/实践次数由实际success或环境step预算产生；condition内不运行轨迹拟合optimizer。
+当前唯一运行面为`python -m ember.proposal_writer.run`，拥有双meta读取、完整因子CFM、三head决策及独立训练教师。
+官方固定参数episode、真实十步执行与现场恢复快照由`ember.writer.practice`承接。
+上一轮功能修订算法及专用测试已退役，源码可从Git c76615fc及原formal冻结版本复核。
 科学合同见[功能修订编译器](docs/designs/functional_revision_compiler_20261010.md)；首批fresh FM360、72刷新与固定400已完成，
 [完整消费](docs/analyses/functional_revision_learning_20261010.md)为143/400，对强MT153尚无净增。
 当前授权、写入分工及后继只看[progress](progress.md)，导数接通不等于方法有效。
@@ -26,7 +24,8 @@ Owner已授权自主实施；不用T，fresh Gemma/action-expert读取meta与G�
 | [progress](progress.md)／[task_plan](task_plan.md) | 当前状态与计划；不从历史许可恢复执行 |
 | [concept](docs/concept.md) | 科学对象、信息流与证据标准 |
 | [findings](findings.md)／[research_history](docs/research_history.md) | 跨轮发现、正负历史、专家意见和原件索引 |
-| `src/ember/experience_compiler/` | 现存功能修订Compiler；真实十步修订及学习/读出，不是新G/pi的实现 |
+| `src/ember/proposal_writer/` | 当前完整参数G、独立三head π、双meta读取、训练教师与唯一CLI |
+| `src/ember/writer/practice/` | 通用固定episode、十步执行、真实H与现场恢复快照 |
 | `src/ember/operator_writer/` | 复用native/data与封存operator读取；旧训练CLI已退役 |
 | `src/ember/writer/` | 共享视频、FM、重放、拓扑与物化调度；旧视频Writer仅保留bank/配置读取 |
 | `src/ember/source_sft/`、`pi05_source_*`、`expert_manifold/` | Source、共享MT-BC与授权task expert组件 |
@@ -45,7 +44,7 @@ Python 3.12及依赖由[pyproject.toml](pyproject.toml)和`uv.lock`固定，首�
 
 ```bash
 export PYTHONPATH="$PWD/src"
-python -m ember.experience_compiler.run --help
+python -m ember.proposal_writer.run --help
 python scripts/operator_joint_readouts.py --help
 python scripts/evaluate_pi05.py --help
 python scripts/compare_pi05_results.py --help

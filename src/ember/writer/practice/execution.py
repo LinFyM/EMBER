@@ -76,7 +76,7 @@ def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpo
     Forward AD uses the same calls without activation checkpointing.
     """
     if noise.shape[1:] != (50, 32):
-        raise ValueError('functional revision requires native 50x32 noise')
+        raise ValueError('native execution requires native 50x32 noise')
     if not states:
         raise ValueError('functional response requires complete factors')
     keys = tuple(states[0])
@@ -98,68 +98,3 @@ def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpo
     actions, _ = action_chunk(velocity, noise, capture_hidden=False, denoise=denoise)
     return actions[:, :5]
 
-
-def join_supports(supports):
-    counts = [len(support['noise']) for support in supports]
-    return dict(batch={key: torch.cat([s['batch'][key] for s in supports]) for key in supports[0]['batch']},
-        noise=torch.cat([s['noise'] for s in supports]),
-        owners=torch.repeat_interleave(torch.arange(len(supports), device=supports[0]['noise'].device),
-                                       torch.tensor(counts, device=supports[0]['noise'].device))), counts
-
-
-def factor_vjp(runtime, incoming, support, q, *, microbatch, return_actions=False):
-    """Actual J^T q in all 76 factor coordinates, with fixed incoming."""
-    count = len(support['noise'])
-    if (not callable(q) and (len(q) != count or q.shape[1:] != (5, 7))) or microbatch < 1:
-        raise ValueError('support cotangent or physical chunk changed')
-    single = isinstance(incoming, dict)
-    states = [incoming] if single else incoming
-    result = [{key: torch.zeros_like(value, dtype=torch.float32, device=runtime.device)
-               for key, value in state.items()} for state in states]
-    owners = support.get('owners', torch.zeros(count, dtype=torch.long, device=runtime.device))
-    actions = []
-    for start in range(0, count, microbatch):
-        stop = min(start + microbatch, count)
-        leaves = [{key: value.detach().to(runtime.device).requires_grad_()
-                   for key, value in state.items()} for state in states]
-        flat = tuple(value for state in leaves for value in state.values())
-        with torch.enable_grad():
-            action = runtime.native_actions(leaves, slice_batch(support['batch'], start, stop),
-                support['noise'][start:stop], batch_indices=owners[start:stop])
-            cotangent = q(action.detach(), start, stop) if callable(q) else q[start:stop]
-            gradients = torch.autograd.grad(action, flat,
-                                            cotangent.detach().to(action))
-        if return_actions:
-            actions.append(action.detach())
-        offset = 0
-        for index, state in enumerate(leaves):
-            for key in state:
-                result[index][key].add_(gradients[offset].detach().float())
-                offset += 1
-    result = result[0] if single else result
-    return (result, torch.cat(actions)) if return_actions else result
-
-
-def factor_jvp(runtime, incoming, support, direction, *, microbatch):
-    """First-order forward AD through all ten native calls; no policy Hessian."""
-    from torch.autograd import forward_ad
-    states = [incoming] if isinstance(incoming, dict) else incoming
-    directions = [direction] if isinstance(direction, dict) else direction
-    if (len(states) != len(directions) or any(state.keys() != delta.keys()
-            for state, delta in zip(states, directions, strict=True)) or microbatch < 1):
-        raise ValueError('functional tangent lost full A/B coverage')
-    results = []
-    owners = support.get('owners', torch.zeros(len(support['noise']), dtype=torch.long, device=runtime.device))
-    for start in range(0, len(support['noise']), microbatch):
-        stop = min(start + microbatch, len(support['noise']))
-        with torch.no_grad(), forward_ad.dual_level():
-            dual = [{key: forward_ad.make_dual(value.detach().to(runtime.device),
-                    delta[key].detach().to(device=runtime.device, dtype=value.dtype))
-                    for key, value in state.items()} for state, delta in zip(states, directions, strict=True)]
-            response = runtime.native_actions(dual, slice_batch(support['batch'], start, stop),
-                support['noise'][start:stop], batch_indices=owners[start:stop], checkpointed=False)
-            _, tangent = forward_ad.unpack_dual(response)
-            if tangent is None or not bool(torch.isfinite(tangent).all()):
-                raise RuntimeError('actual native forward AD lost a finite factor tangent')
-            results.append(tangent.detach())
-    return torch.cat(results)

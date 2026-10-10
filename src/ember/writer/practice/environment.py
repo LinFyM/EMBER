@@ -15,6 +15,7 @@ from ember.pi05_eval.environment_pool import PersistentTaskEnvironmentPool
 from ember.pi05_eval.episode import start_fixed_episode, finish_episode_row, update_stage_predicates
 from ember.pi05_eval.trajectory_capture import capture_level, record_replan, record_passive_step
 from ember.pi05_processing import libero_policy_input
+from ember.writer.practice.snapshot import capture_snapshot, restore_snapshot
 
 
 def raw_observation(obs, language):
@@ -26,6 +27,33 @@ def raw_observation(obs, language):
 
 def _wire(raw):
     return {k: v.numpy() for k, v in raw.items()}
+
+
+def step_environment(env,slot,command,episode_contract,current_raw,controls,task):
+    capture = episode_contract.get('diagnostic_occupancy_capture')
+    if capture:
+        record_replan(slot, {'observation.state': current_raw['proprio']}, {},
+            torch.from_numpy(command['normalized_chunk']).unsqueeze(0),
+            command['actions'][:min(5, controls - slot['steps'])])
+    executed = []
+    for action in command['actions'][:min(5, controls - slot['steps'])]:
+        slot['obs'], reward, done, _ = env.step(action.tolist())
+        slot['steps'] += 1
+        executed.append(action)
+        if 'stage_predicate_states' in slot:
+            update_stage_predicates(env, slot)
+        record_passive_step(env, slot, action, capture)
+        if done:
+            break
+    slot['replan_index'] += 1
+    slot['policy_noise_seeds'].append(command['noise_seed'])
+    slot['episode_done'] = bool(done)
+    current_raw = raw_observation(slot['obs'], task['language'])
+    result = dict(kind='step', raw=_wire(current_raw),
+        executed=np.asarray(executed, dtype=np.float32).reshape(-1, 7),
+        done=bool(done), reward=float(reward), steps=slot['steps'],
+        replans=slot['replan_index'])
+    return result,current_raw,reward,done,len(executed)
 
 
 def _serve(pipe, contract, physical_gpu, affinity):
@@ -52,6 +80,10 @@ def _serve(pipe, contract, physical_gpu, affinity):
                 envs, states = pool.switch(task)
                 env = envs[0]
                 settling = int(episode_contract['environment']['dummy_settling_steps'])
+                snapshot = command.get('snapshot')
+                if snapshot is not None:
+                    settling = 0
+                    episode_contract['environment']['dummy_settling_steps'] = 0
                 remaining = command.get('remaining')
                 if remaining is not None:
                     settling = min(settling, int(remaining))
@@ -61,9 +93,16 @@ def _serve(pipe, contract, physical_gpu, affinity):
                     dummy=np.asarray(episode_contract['environment']['dummy_action']),
                     task_adapter=None, capture_level=capture_level(
                         episode_contract.get('diagnostic_occupancy_capture'), task, command['state_id']))
+                if snapshot is not None:
+                    slot['obs'] = restore_snapshot(env, snapshot)
+                    slot['steps'] = int(snapshot['episode_control_steps'])
+                    slot['replan_index'] = int(snapshot['episode_replans'])
+                    settling = 0
+                initial_steps = int(slot['steps'])
+                initial_replans = int(slot['replan_index'])
                 controls = int(episode_contract['environment']['horizons'][task['suite']])
                 if remaining is not None:
-                    controls = min(controls, remaining - settling)
+                    controls = min(controls, slot['steps'] + remaining - settling)
                 initial = raw_observation(slot['obs'], task['language'])
                 current_raw = initial
                 operation_steps = settling
@@ -74,42 +113,32 @@ def _serve(pipe, contract, physical_gpu, affinity):
             elif command['kind'] == 'step':
                 if slot is None:
                     raise ValueError('environment step preceded a registered start')
-                capture = episode_contract.get('diagnostic_occupancy_capture')
-                if capture:
-                    record_replan(slot, {'observation.state': current_raw['proprio']}, {},
-                        torch.from_numpy(command['normalized_chunk']).unsqueeze(0),
-                        command['actions'][:min(5, controls - slot['steps'])])
-                executed = []
-                for action in command['actions'][:min(5, controls - slot['steps'])]:
-                    slot['obs'], reward, done, _ = env.step(action.tolist())
-                    slot['steps'] += 1
-                    operation_steps += 1
-                    executed.append(action)
-                    if 'stage_predicate_states' in slot:
-                        update_stage_predicates(env, slot)
-                    record_passive_step(env, slot, action, capture)
-                    if done:
-                        break
-                slot['replan_index'] += 1
-                slot['policy_noise_seeds'].append(command['noise_seed'])
-                slot['episode_done'] = bool(done)
-                current_raw = raw_observation(slot['obs'], task['language'])
-                result = dict(kind='step', raw=_wire(current_raw),
-                    executed=np.asarray(executed, dtype=np.float32).reshape(-1, 7),
-                    done=bool(done), reward=float(reward), steps=slot['steps'],
-                    replans=slot['replan_index'])
+                result,current_raw,reward,done,operation_steps=step_environment(
+                    env,slot,command,episode_contract,current_raw,controls,task)
+            elif command['kind'] == 'numerical_failure':
+                if slot is None:
+                    raise ValueError('model failure preceded a registered start')
+                result = dict(kind='numerical_failure', raw=_wire(current_raw),
+                    executed=np.zeros((0, 7), dtype=np.float32), done=False, reward=0.,
+                    steps=slot['steps'], replans=slot['replan_index'], failure_type='nonfinite_native_action')
             else:
                 raise ValueError('unknown environment slot operation')
-            ended = bool(done or slot['steps'] >= controls)
+            ended = bool(done or slot['steps'] >= controls or command['kind'] == 'numerical_failure')
             result.update(episode_ended=ended, operation_seconds=time.monotonic() - tick)
+            if command.get('capture_snapshot') and not ended:
+                result['snapshot'] = capture_snapshot(env, slot['obs'], slot)
             if ended:
                 slot['episode_done'] = bool(done)
                 row = finish_episode_row(slot=slot, task=task,
                     contract={**episode_contract, 'rng': dict(inference_seed=noise_root)},
                     task_adapter=None, worker_started=started)
-                truncated = bool(remaining is not None and settling + slot['steps'] == remaining and not done)
-                row.update(settling_steps=settling, environment_steps=settling + slot['steps'],
-                    budget_truncated=truncated, replans=slot['replan_index'], initial_proprio=initial_proprio)
+                consumed = settling + slot['steps'] - initial_steps
+                truncated = bool(remaining is not None and consumed == remaining and not done)
+                row.update(settling_steps=settling, environment_steps=consumed,
+                    budget_truncated=truncated, replans=slot['replan_index'] - initial_replans,
+                    restored_control_steps=initial_steps, initial_proprio=initial_proprio)
+                if command['kind'] == 'numerical_failure':
+                    row.update(success=False, failure_type='nonfinite_native_action', model_failure=True)
                 result['row'] = row
             pipe.send(result)
             operation_steps = 0

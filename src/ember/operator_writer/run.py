@@ -760,7 +760,7 @@ def audit(spec: dict, asset_root: Path) -> dict:
 def main() -> None:
     raise RuntimeError(
         "operator Writer training CLI is retired; historical readers keep their sealed APIs. "
-        "The active Compiler uses python -m ember.experience_compiler.run; "
+        "The active Writer uses python -m ember.proposal_writer.run; "
         "historical reproduction requires the run's registered frozen commit.")
 
 

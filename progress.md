@@ -1,3 +1,13 @@
+## 2026-10-10 实验执行：完整提案Writer工程与实际消费者profile
+
+实验session 01a12384-17a9-7382-aeec-cee89479428f继续独占tracked/Git，main 01a12385-4cfc-7ec2-9017-ef2b242243cf只读。唯一active科学合同未变。
+新proposal_writer运行面已实现双meta/G/三headπ、训练教师、真实编译状态机、一次刷新/局部/完整RL及固定报告入口，仍在实际消费者验证，未启动formal共享学习。
+原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261010/pilot；panel已在学习前物化。
+[工程记录](docs/analyses/video_guided_proposal_implementation_20261010.md)保存源码责任、必要机制、共享卡吞吐与失败/恢复。
+实际84帧profile、76因子完整输出、两组meta两步梯度与执行隔离、MT完整episode、v3现场重放已有原件；这些不说明方法能力成功。
+旧experience_compiler算法/专用tests已退役，通用机制由writer/practice承接；historical/frozen原件不修改。
+正式训练/报告仍须完成新消费者核验、main集成/push并从clean detached冻结版本运行。40GPUh/64GiB与信息墙/固定科学矩阵不改。
+
 ## 2026-10-10 正式实施派发已接收：实验session独占工程/Git窗口
 
 实验session `01a12384-17a9-7382-aeec-cee89479428f` 已实际接收新主讨论

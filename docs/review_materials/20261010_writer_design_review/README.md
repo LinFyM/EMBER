@@ -1,8 +1,8 @@
 # 新 Writer 专家审阅与修订入口
 
-状态：2026-10-10，专家意见已消费。Owner进一步定案不用T、fresh双meta读取、首轮MT任务起点，
-并授权自主实施；[当前设计§13](../../designs/video_guided_proposal_writer_20261010.md#13-owner最新定案宏观推进与首批完整检验)
-登记宏观路线与首批，实际状态见progress。
+状态：2026-10-11，专家意见及原八rank128教师结果已消费。Owner定案不用T、fresh双meta读取及自主实施，
+进一步开放MT合并基底和小rank修订；[当前设计§13](../../designs/video_guided_proposal_writer_20261010.md#13-当前正式实例rank8多起点完整链2026-10-11)
+登记rank8多起点完整后继，实际状态见progress。专家审阅对象仍是原快照，不冒称已审阅本次全部修订。
 
 ## 当前应读什么
 
@@ -61,5 +61,5 @@ G及两组读取meta由合法训练任务中的实际教师编辑监督学习；
 | [对齐教师原件](../../analyses/aligned_teacher_recovery_20261008.json) | 四任务有限初态/接手正例，不是覆盖36任务的恢复oracle |
 | [更早功能监督审计](../../analyses/flow_supervision_history_20260926.md)／[历史索引](../../research_history.md) | Native Correction、phase/decoder与learner-state监督的负证据不因新名称清零 |
 
-当前[源码](../../../src/ember/experience_compiler/)仍是上一轮功能修订Compiler；原生读取和执行接口可以复用，
-不据此宣称新G/π及训练教师已经存在。主讨论本轮核对的是设计、相关源码和既有记录，没有重跑历史分数。
+当前[源码](../../../src/ember/proposal_writer/)已承接G/π及训练教师，旧experience算法退役；原八教师有实际控制收益，
+G/meta/π尚无formal学习。rank8参数上下文、尺度和多起点实例由实验session按新合同承接，不能把已有机制当作新能力证据。

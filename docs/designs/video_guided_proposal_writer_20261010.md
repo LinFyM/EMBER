@@ -1,39 +1,23 @@
-# 视频指导的完整参数提案 Writer：双 meta 读取与 MT 起点
+# 视频指导的完整参数提案 Writer：双meta、MT合并基底与多起点rank8修订
 
 状态：**Owner 已授权自主实施；由 progress 登记为当前唯一 active design。**
 本稿纳入 Owner 最新选择：不用 T；Gemma 和 action expert 各自 fresh 初始化可训练读取 meta LoRA；
-任务 LoRA 原则上可以从恒等起步，首批为快速检验使用强 MT 起点。完整首批范围见§13。
+执行从强MT开始：把MT合并为冻结基底，fresh rank8残差用非零A0/B0初始化。完整当前批次见§13。
 本稿替代
 [连续推导](../analyses/architecture_rethink_discussion_20261010.md)§9–11 中仍开放的实例选择，
 保留那些段落作为推导历史，不恢复已关闭的实验。
 [专家原文](../review_materials/20261010_writer_design_review/EXPERT_REVIEW.md)审阅的快照为 `be0d469a`。
 实现、launch 与实证状态看 progress；设计定义不冒充已经实现或已经学成。数值是本实例选择，不是 Owner 永久要求。
 
-## 当前教师单元已完成（2026-10-11）
+## 当前定案与证据身份（2026-10-11）
 
-八条原rank128教师及全部160/480配对selection4/audit16已闭合；完整结果见[报告](../analyses/video_guided_proposal_teacher_batch_20261011.md)。
-audit MT16/128→T16074→T48083，含相邻13个丢失及task29下降；有益供给不自动授权原G320/π。
-G/meta/π formal更新为0，rank8/multi-parent准备稿尚未启动；main据全部原件定案下一完整合同。本稿下方原定义和修订保留身份。
-
-## 当前执行边界：原教师完成后裁决参数化（2026-10-10）
-
-Owner最新允许冻结MT合并基底加一套38-target小rank任务残差，main优先考虑rank8，rank4据能力/成本再判断。
-这覆盖本稿原rank128-only选择，读取meta rank32不变；不是简单改当前配置中的rank数字，也不证明已过拟合或rank8够用。
-**本稿当前执行版本仅继续已经启动的八条rank128教师及160/480配对selection4/audit16。**
-不在当前教师中修改source、rank、loss、query或恢复；八教师与完整读出后先向main科学交付，正例也不自动启动原G320/π。
-G尚未formal运行。下文保留原完整实例定义作为科学/工程历史；低rank后继由main据本批原件另完整定案和派发，
-须承接合并基底身份、读取/执行隔离、残差父参数/教师标签、布局尺度、checkpoint兼容性、部署和MT严格配对。
-非零随机A/B0使初始有效策略保持MT；不能截断128因子/复用旧optimizer或把B0的floor1e-6当作合理残差尺度。
-本次不新增低rankGPU臂，累计52GPUh/64GiB不变；未来实例和投入由main据实登记，不等待Owner新许可。
-
-### 多起点后继准备与本实例的区分（2026-10-11）
-
-后继已确定从第一次G更新起混合真实不同parent/H；原§13的全MT320+四学生parent一次刷新不再是默认课程。
-H逐段保留实际产生者，当前parent的keep不得借其它parent成功；多parent不等于更多独立任务或任意parent泛化。
-π在冻结ψ的局部/完整on-policy阶段学习决策，不能修复G未学会的parent修订或创造其缺失的有效候选。
-优先候选为MT合并冻结基底+fresh rank8残差，教学meta仍使用原source上下文。主讨论准备稿的16教师、
-teacher固定prox单位/G合法bank编辑尺度、G480及报告数值均未定案或启动；八原rank128教师完整交付后另登记正式合同。
-当前八教师、52GPUh/64GiB与G前科学回报点不变，不把本段变成低rank实现或GPU启动授权。
+main已消费原八条rank128教师及全部配对原行：[完整报告与科学判断](../analyses/video_guided_proposal_teacher_batch_20261011.md)。
+audit MT16/128→T16074→T48083支持原参数族中有益教师供给；相邻丢13、task29下降和selection排序错位保留。
+本稿现登记后继完整实例：MT合并冻结基底、fresh 38-target/rank8、预先准备16个多parent/H教师事件，
+G从首个更新联合学习，随后固定ψ训练π并完成规定读出。累计预算96GPUh，包含已记账18.640412104GPUh；新增峰值64GiB。
+原八教师不重启；原G320后一次四学生刷新未实施，其合同由Git `e0d09485`、原run contract及历史记录保存。
+当前rank8实现与计算尚待实验session按本稿承接，设计授权不等于已经开跑或验证。原rank128端点不截断为新标签，不恢复旧optimizer。
+rank8降低生成坐标数而不是证明容量、泛化或不遗忘；π冻结G时不能修复未学会的parent编辑。§13给出具体范围与科学停止线。
 
 ## 1. 结论、目标和真正改变的假设
 
@@ -46,7 +30,10 @@ teacher固定prox单位/G合法bank编辑尺度、G480及报告数值均未定�
 G 不通过旧 `P J^T q` 出口生成参数；π 不沿估计价值的动作导数修改参数。
 这撤换具体写入与信用组织，不宣称旧方法没有完整 A/B、经历、功能梯度或真实 RL。
 
-首版只用同 source 的 MT300 初始化任务参数，K=1、38 targets/rank128；不加载 T Writer、T公共参数或T特征缓存。
+当前实例把同source的MT300合并为冻结执行基底，K=1、38 targets/rank8残差；不加载T Writer、T公共参数或T特征缓存。
+对38层以FP32计算`W_base=W_source+B_MT A_MT`，按原生执行dtype使用；原MT alpha/rank=1，其它source权重不变。
+最终是一套登记清楚的冻结基底与一套完整任务残差，Gemma执行prefix保持原source。原source/MT资产只读。
+这不是压缩MT：其完整更新已进入基底；新增任务改变量才受rank8约束。原教师的`B′A′−B_MT A_MT`不能直接等价搬入此族。
 新初始化的两组读取 meta LoRA 属于共享特征学习，不是初始任务策略或最终的第二套 adapter。
 弱执行起点在数学上允许；首批不展开弱起点学习臂，其父参数、失败历史及训练监督须在真正采用时实际覆盖。
 若采用恒等LoRA，沿现有合同取确定性非零A、B=0，避免教师功能优化的A/B双零一阶死点；
@@ -83,7 +70,7 @@ H 可以由多套参数产生。每段保留原产生者；选回旧 parent 不�
 **教学读取使用两组 fresh meta LoRA，全部 source 基础权重冻结。**
 Gemma语言/视觉prefix支路与action expert支路分别在各自18层q_proj/v_proj上安装rank32、alpha32、dropout0的读取LoRA；
 两组均采用确定性非零A、B=0，独立seed为202610101和202610102。它们是共享参数，归ψ，不按教学生成。
-meta rank是本轮读取容量选择，不改变最终38-target/rank128合同，也不承诺为最优值。
+meta rank是本轮读取容量选择，与最终38-target/rank8残差不同，也不承诺为最优值。
 
 逐帧使用真实双RGB和exact language构造原生prefix，固定probe seed1729的完整`50×32`噪声、flow time=1；
 省略teacher state，不补零state。一次原生双stream前向取Gemma最后层图像位置的contextual `Z_t:512×2048`，
@@ -99,12 +86,13 @@ G监督CFM阶段共同训练这两组meta及G的Reader/融合/数值网络；π�
 共享特征也由π梯度更新会改变候选生成核K；本实例不采用这种未计入完整score的更新。
 meta更新后所有依赖它的特征缓存失效；不得继续调用旧`@torch.no_grad()`读取或使用T/MT特征缓存来冒充训练。
 
-读取与执行是同一冻结source的两种明确参数上下文：读取使用两组meta且不叠MT/候选；
-候选响应、教师动作监督、实际实践与最终执行关闭读取meta，Gemma恢复原source，action侧只装当前完整任务LoRA。
-共享source不必复制；执行者须正确承接functional_call、并发、重计算与缓存作用域，不能泄漏读取参数到执行。
-当前PEFT任务注入、state导出及BatchedLoRA接口只认识38/r128；不能直接追加Gemma meta后沿用全模型LoRA导出，
-也不能让rank32读取因子误入rank128执行校验。新的参数所有权和上下文切换须由实际消费者明确承接。
-meta只在编译期读取教学，最终只留下完整任务LoRA。
+读取与执行有明确参数上下文：教学读取使用原source加两组meta，不叠MT/任务残差；候选响应、新教师功能优化、
+实际实践与最终执行使用MT合并基底加当前rank8残差，关闭meta，Gemma恢复原source。
+旧对齐专家作为标签消费者时，使用原source加其完整rank128，不能在MT基底上再叠专家128。
+复用同一policy实现及显式权重上下文，正确承接functional_call、并发、重计算、冻结与缓存身份；不复制整套policy或保留平行fallback。
+38层合并权重BF16共81.125MiB，必要原始/合并target缓存纳入实际存储；允许正常数值差异，不要求逐bit等价。
+rank32读取因子、rank8任务因子、旧专家128和两种冻结基底的所有权/导出/schema分开；以实际消费者核验上下文。
+meta只在编译期读取教学，最终只留下完整rank8任务LoRA及登记基底。
 
 复用原生图文/attention算子、合法teacher store与官方执行接口；工程落点及原件定位由执行者登记，
 旧特征函数不是可直接复用的梯度合同。实际模块shape、双stream返回与两条meta梯度由消费者核验。
@@ -124,7 +112,7 @@ G 和 π 各自拥有可训练 Reader/融合参数；共享§2读取器，在G�
 
 G 的父参数表示与自身历史不是一个训练 expert ID。每条事件引用其实际参数的 38 个 target 摘要，
 使模型能够区分“同一动作后果来自哪个实际控制器”。为避免循环依赖，先用独立的静态因子编码器：
-实际 `Λ/S` 与地址进入64数值块，经2层§4同类 block/rank/target 通信得到38个摘要，**不读取 H、视频或流变量 x_t**；
+实际 `(Λ−Λ0)/S_G` 与地址进入64数值块，经2层§4同类 block/rank/target 通信得到38个摘要，**不读取 H、视频或流变量 x_t**；
 再由摘要与真实事件组成 H 编码，最后供 G 的6层速度网络读取。静态编码器参数归 ψ，随 G 一起训练/冻结。
 π 使用相同类型但独立权重的 Reader。其候选 query 还要读取候选的预测动作和参数，见§5。
 
@@ -137,15 +125,16 @@ G 的视频梯度来自完整编辑目标；π 的视频梯度来自实际用途
 ### 4.1 坐标、输入和真实跨块通信
 
 每个 target 的 `A[r,:]` 与 `B[:,r]` 沿实际坐标分成 64 数值块；短块 padding 并 mask。
-当前 [LoRA 配置](../../configs/pi05_lora_rank128_aligned.json)有 10,297,344 个有效数值，
-产生 161,024 块、4,864 个 target/rank 组、38 个 target；padding 共8,192个数值。
+沿原38-target顺序使用rank8/alpha8/dropout0：643,584个有效数值、10,064块、304个target/rank组、38个target，
+padding共512个值。所有任务共享由seed7按canonical target/side顺序生成的Kaiming非零A0、B0=0；Λ0与基底身份保存。
+A/B均可优化或生成，A0不是永久冻结的容量限制；不得逐condition改随机基、截断旧128因子或重分解教师坐标。
 同一完整样本只有一组完整噪声和一个 flow time，不逐块独立采样再拼接。
 
-每个块输入自己的 `x_t[64]`、实际 `parent/S` 数值、有效位 mask、target/side/rank/块坐标及 t；
+每个块输入自己的 `x_t[64]`、实际 `(parent−Λ0)/S_G` 数值、有效位mask、target/side/rank/块坐标及t；
 数值投影到 width256，6 层按以下顺序通信：
 
 1. 每块保留本地数值残差和共享 FFN；同 target/rank 的 A/B 块汇入同一个 rank query。
-2. 每个 target 内 128 个 rank tokens 交互；target query 读取这些 rank tokens。
+2. 每个target内8个rank tokens交互；target query读取这些rank tokens。
 3. 38 个 target tokens 相互注意，并读取 G 的有序教学/经历 memory。
 4. 更新后的 target 回灌到各 rank；rank 与 target 上下文回灌到**每个本地块**，更新其数值状态。
 
@@ -153,20 +142,33 @@ G 的视频梯度来自完整编辑目标；π 的视频梯度来自实际用途
 最终每个块直接输出64维速度，padding 不参与输出/loss。
 摘要用于跨块通信，不成为唯一的低维输出码；每个局部块一直保留自己的随机和数值通路。
 这个层次结构允许全局控制模式在 A/B、rank、target 间协调，但不保证有限宽度足以学成。
-不做161,024块的全局 self-attention：那会有约259亿个 pair/层。
-单个 BF16 block hidden 已约78.625 MiB，仍未计反传、FFN、视频和物理 batch；具体吞吐必须实测。
+不做10,064块的全局self-attention；同一BF16 block hidden约4.914MiB，仍未计反传、FFN、视频和物理batch。
+输出坐标数缩小16倍不代表共享网络参数或原生读取/教师训练成本同比缩小；具体吞吐必须实测。
 
 ### 4.2 参数尺度与条件 Flow Matching
 
-对每个 target/side，固定正标量
+区分教师的固定参数邻近单位`S_prox`与G的编辑尺度`S_G`，二者不可在实现中混成一个layout字段。
+先由冻结MT及共同初值对每target定义
 
-    S_l = max(RMS(MT_l), 1e-6).
+    S_prox,A,l = RMS(A0,l),
+    S_prox,B,l = RMS(B_MT,l A_MT,l) / (sqrt(8) * RMS(A0,l)).
 
-将其广播到该因子；只用合法已冻结共享参数，不由 held、每条教师标签或当前 batch 重估。
-S 是参数坐标尺度，不修改 source 的动作/state normalization，也不是函数距离。
-教师从真实 parent 原始 A/B 副本出发，禁止 SVD 重分解、rank 置换或 gauge restart。
+按独立零均值单位方差B与固定A0估算，后一式使单位化残差的期望稠密更新能量与该层MT更新同阶。
+这只定义坐标单位，不等于函数邻近或能力保持；原MT稠密更新与Kaiming期望RMS给出的B单位估计约0.01422–0.15957，
+formal数值使用实际保存的A0之RMS计算，不能把此估计区间当固定常量。
+B0=0不能用其RMS的1e-6地板作新残差尺度。原source normalization不变。
 
-设完整教师编辑 `d*=S^{-1}(Λ_T−Λ_p)`，同一次训练抽样使用
+全部16事件的合法教师bank及selection完成后，在任何G正式更新前按§13固定task/event/q_T权重计算
+
+    S_G,l = max(sqrt(E_registered mean((Λ_T,l−Λ_p,l)^2)), 1e−3 S_prox,l).
+
+missing事件按原机会贡献0且保留分母，合法节点按q_T；不按单条标签、当前batch、audit或held重估。
+保存权重、各因子统计和地板生效情况；全无有效标签不得靠地板启动G。源标签与统计只来自授权non-held共享训练。
+静态参数输入以Λ0为中心，零坐标对应MT有效策略；CFM编辑以真实parent为中心。后续数据刷新保持S_G，
+改变尺度属于共享模型输入/optimizer语义迁移，不能称普通exact resume。
+教师从真实parent原始A/B副本出发，禁止SVD重分解、rank置换或gauge restart。
+
+设完整教师编辑 `d*=S_G^{-1}(Λ_T−Λ_p)`，同一次训练抽样使用
 
     ξ ~ N(0,I_D),  t ~ Uniform[0,1),
     x_t = (1−t)ξ + t d*,
@@ -176,7 +178,7 @@ loss 的坐标可加性不意味着输出分布独立。六层通信联合决定
 推断从完整 ξ 出发，固定16步 Euler、步长1/16，评估 t=0,…,15/16：
 
     x_{k+1}=x_k+v_ψ(x_k,k/16,X)/16,
-    Λ_c=Λ_p+S x_16.
+    Λ_c=Λ_p+S_G x_16.
 
 这是参数分布生成，不是生成动作轨迹后微调。有限网络/16步积分不等于精确复现理想条件分布。
 **零速度头留下的是 ξ，不是零编辑。** 随机初始化 G 只接受共享监督，不能先当作可用实践策略；
@@ -188,12 +190,12 @@ loss 的坐标可加性不意味着输出分布独立。六层通信联合决定
 
 ### 4.3 生成参数怎样改变自身执行
 
-物化后的候选已经是一套完整 A/B，不另外叠加 T、MT 或第二个 residual adapter。
+物化后的候选已经是一套完整rank8 A/B，使用同一MT合并基底，不另部署T、MT动态adapter或第二个residual。
 每个目标线性层对**当前自身执行**的真实 hidden h_l 计算
 
-    y_l = Linear_source,l(h_l) + B_l A_l h_l           (alpha/rank=1).
+    y_l = Linear_MTbase,l(h_l) + B_l A_l h_l           (alpha/rank=1).
 
-Linear_source包含原层已有的冻结bias。q/v 投影的变化改变 action expert 内的注意力及后续 hidden，
+Linear_MTbase包含原source冻结bias及已合并MT更新。q/v投影的变化改变action expert内的注意力及后续hidden，
 action_in/out 改变流变量的输入/速度输出。
 这些作用在当前自身 RGB、proprio 和 exact L 的原生 prefix 下重复经过10次流更新，形成真实执行的前5个动作；
 后续观测再进入同一套固定参数。这里的 h_l 不同于教学读取时由双meta产生的 state-free hidden。
@@ -236,7 +238,7 @@ H 为空时响应集合为空，不伪造图像、state 或原生 prefix。
 
 ```text
 预先分开 practice 与独立 query 初态/RNG；最终 query 不向 Writer 暴露
-H ← 空；P ← {完整 MT}；U ← P
+H ← 空；P ← {MT基底上的完整rank8初值Λ0}；U ← P
 while 还可完成10步settling及至少1个真实控制步:
     a ← π_parent/STOP(V,L,H,P,budget)
     若 a=STOP: break
@@ -248,7 +250,7 @@ while 还可完成10步settling及至少1个真实控制步:
     在一个新实践 episode 中固定 c；成功/自然horizon/预算耗尽分别结束
     将真实经历及其实际参数身份追加 H；P 保留实际试过的有效 c
 Λ_final ← π_final(V,L,H,P,budget) 的一次实际抽样
-锁定 Λ_final；独立新初态只运行 source+Λ_final
+锁定 Λ_final；独立新初态只运行 MT合并冻结基底+Λ_final
 ```
 
 生成额度耗尽仍可实践原样 parent，环境预算保证过程有限；新候选全无效也不无限重采。
@@ -281,7 +283,7 @@ OOM、资产或进程故障属于工程失败并保留费用，不能悄悄作�
 从 Λ_p 的原始 A/B 副本和 fresh optimizer 开始，目标是
 
     L_T = L_demo + 1_{rec有标签} L_rec + 1_{keep有标签} L_keep
-          + 1e−3 ||S^{-1}(Λ−Λ_p)||² / D.
+          + 1e−3 ||S_prox^{-1}(Λ−Λ_p)||² / D.
 
 各项定义如下；不存在的标签项为缺失，不补零动作，也不重新归一化其它项的权重。
 
@@ -293,7 +295,7 @@ OOM、资产或进程故障属于工程失败并保留费用，不能悄悄作�
   提前成功只监督实际执行的坐标。候选 LoRA 在相同 RGB/state/L/noise 上作完整10步预测，与该目标作有效坐标 MSE。
 - `L_keep`：只取 H 中**实际由当前 parent 产生且完整成功**的 episode，等距至多16个真实状态；
   用相同输入/noise 的 frozen parent 原生前5函数作软保持。其它 parent 的成功不能冒称当前 parent 的成功。
-- proximal 使用§4固定 S 与原始 parent，不重分解因子，不重新计算 source normalization。
+- proximal使用§4固定S_prox与原始parent，不使用尚未形成的bank尺度，不重分解因子或重算source normalization。
 
 恢复的“验证成功”只证明这次前缀/noise 的适用，不证明专家在附近状态普遍可靠。
 当前四任务 aligned 专家并不覆盖全部36任务；其它任务缺恢复标签就如实缺失，L_demo仍可用。
@@ -359,7 +361,7 @@ query结果只作标签，不进输入；包括失败候选。空H的合法P只�
 
 ### 8.2 一条完整路径的真实目标
 
-冻结G的**全部**meta读取/Reader/融合/数值网络/S/normalization/运行统计/积分和无效规则，以及MT/source。
+冻结G的**全部**meta读取/Reader/融合/数值网络/S_G/Λ0/normalization/运行统计/积分和无效规则，以及MT基底/source。
 π 无可训练状态送入 G；G 只从 raw 合法输入与自己的冻结编码生成参数。
 给定原始信息 I_j、decision type d_j 和固定 mask M_j，路径为
 
@@ -397,14 +399,13 @@ query 初态/RNG 在采集前独立保留，不在看到最终策略或实践结
 
 ### 8.4 学生分布刷新
 
-以下是原实例的一次刷新安排；后继从首个G更新混合真实多parent/H，不能把这里的先后次序当默认课程或充分覆盖保证。
-
-完整候选实例允许一次有界 G 刷新：冻结当前 G 与采集行为采实际学生完整路径，从其实际父参数与 H 构造§7标签；
-首批按§13采用固定均匀行为，尚未使用学习后的π；后续若用π采集也在该次采集期间固定它。
-保存成功、失败、不同实际父参数与混合历史，不能用“非 MT”字符串代替有效数值/控制变化。
-更新 G 后重新固定全部 ψ，重新取得当前候选的用途标签与完整 π 路径；π 可保留兼容初始化，但不能复用旧路径的 on-policy 身份。
-这是一项共享训练投入上限，不是规定新 condition 只能两轮观看/实践。
-是否扩大刷新须由完整失败分析和实际预算决定，不能无限刷新来保护弱假说。
+本批从首个G更新混合§13四类真实parent/H，不沿用原全MT320后一次刷新的课程。
+这些父参数来自训练教师，尚不是真实G样本；多producer长H与连续学生parent的覆盖仍有限。
+本批用完整G480→π→新初态及指定U读出检验这种近似是否足以形成能力，不预称任意parent可迁移。
+若实际学生分布暴露缺口，main从已有路径选择有意义的后继投入，另登记有限教师事件、权重、版本、更新数与预算；
+本批不预留自动刷新的额外教师，也不以固定一次刷新作为普遍充分条件。
+未来刷新须冻结当次G/采集行为，保存全部实际产生者及成功/失败；更新G后重新固定ψ，旧路径退出on-policy池。
+π可保留兼容初始化，不能只校正π概率便把新生成核下的旧路径当on-policy；不无限刷新保护弱假说。
 
 ## 9. 能力来源与损失：修正原来的诊断分解
 
@@ -470,16 +471,16 @@ G 的6层/16步、教师目标权重、候选/环境额度都是当前可检验�
 
 成本至少分别登记教师拟合、专家前缀验证、selection/audit、G训练及积分、候选原生响应、实践、
 meta queries、正式读出、视频编码/重读/缓存和 I/O；无效提案、失败与取消都计费。
-当前完整 factor FP32 约39.28 MiB；待更新 batch 的全部候选需要支持 π 重算，不能只存 stale trainable embeddings。
+当前完整rank8 factor FP32约2.455MiB；待更新batch的全部候选需要支持π重算，不能只存stale trainable embeddings。
 已消费 batch 可按生命周期退役可重建候选，预登记诊断面板保留 U 的必要参数；不默认永久保存每条路径全部32个大样本。
 训练标签、正式最终参数、raw rows、来源与必要复核证据按仓库合同保留。总峰值还须计 RGB、optimizer、缓存、临时副本，
 不能用上述因子尺寸冒充总空间；运行前按 data1 独立 quota 和实时 GPU 规则准入。
 
-工程应复用 source、teacher store、官方执行/队列和数据权重消费者，新增的真实职责是 G 数值场、π 三类决策、
-训练教师标签和完整 condition score。当前 `experience_compiler` 仍是旧功能修订实现，不把它改名视为新方法已完成。
-Owner已授权实施。唯一实验session负责在独占分支实现并集成；旧experience运行面由本次替代实现消费后退役，
-只保留真正被新方法复用的执行/数据/评测责任，旧算法及必要消费者身份由Git和formal原件保留。
-不复制一个长期平行runner，也不让旧命令继续作为新方法默认；临时并存只到新消费者验证和集成为止。
+工程复用现有`ember.proposal_writer`的source、teacher store、官方执行/队列、G、π与完整condition score，
+由唯一实验session在独占分支承接基底上下文、rank/尺度、四类事件与恢复schema，再集成main并冻结。
+旧experience算法已退役；本次不再创建rank8平行runner，不以兼容名保留旧rank128 G作为active fallback。
+旧rank128教师/模型读取仅服务明确的历史原件或训练标签专家上下文，生命周期和类型不可混同当前任务残差。
+必要公共执行/数据职责复用，旧算法与计算身份由Git、原formal冻结版本和run contract保存。
 
 ## 12. 与专家意见的取舍及结论层级
 
@@ -500,139 +501,150 @@ Owner已授权实施。唯一实验session负责在独占分支实现并集成�
 但有益教师覆盖、参数到控制的传递、可由合法视频/经历辨识的效用差、有限预算泛化与误选控制仍是可失败假说。
 不能把“目前没有未处理的已知接口反例”扩写为“这套方法必然学成、交互后的历史问题全部解决”。
 
-## 13. Owner最新定案、宏观推进与首批完整检验
+## 13. 当前正式实例：rank8多起点完整链（2026-10-11）
 
-### 13.1 当前选择与全局路线
+### 13.1 科学取舍与宏观路线
 
-Owner明确授权审查后自主实施和推进；只有突破科学/数据/部署等原则边界的问题才需要Owner裁决。
-去掉T、fresh双meta读取、首轮MT任务起点是当前方法选择。恒等任务LoRA的副本可经梯度优化，
-但首批不据此宣称已学会弱起点；恒等接口只做必要梯度/执行检查，不另开大规模学习臂。
+本节由main消费原八教师完整结果后定案，授权现有实验session实现、核验、启动并完成下述整批。
+Owner已授权主讨论自主调整方法和投入；常规实现、参数族迁移和本节预算不再请求Owner批准。
+原批只证明有标签训练教师在原rank128族能改善当前四任务；本批检验较小残差族的能力能否经G与π传递。
+同时改变任务参数族与parent训练覆盖，是明确登记的完整后继，不把结果单独归因于rank或某个新模块。
+保留两个教师节点及原selection/q_T规则；task29的反例降低“晚节点更强”和小池偏好可靠性的支持，
+不据旧audit追选480、重加权个别task或扩大selection池来保护本次假说。
 
-| 层级 | 要回答的完整问题 | 扩大或调整的依据 |
+| 层级 | 完整问题 | 依据与后继 |
 | --- | --- | --- |
-| A：本节小型non-held完整链 | 实际教师编辑能否经新meta/G变成可用候选，π能否利用实践留下净收益 | 同条件teacher、G样本、实际编译与独立初态能力，连同代价和视频作用；不能只看模块loss |
-| B：完整36任务学习 | 在实际学生分布上是否学到可迁移的教学编译，收益是否超出语言/共同能力 | 按36任务等权扩展、真实parent/H刷新、适量公平视频参照；规模由A的行为/吞吐决定 |
-| C：正式held裁决 | 是否明显超过强MT并保持相邻稳定、任务覆盖及视频增量 | strict paired400、相邻节点、R/G/L/breadth/churn与冻结后controls；Test保持最终冻结边界 |
+| A：本批4个non-held任务 | rank8教师是否可用，G是否传递控制，π是否通过实践留下净收益 | 完整bank、实际G/π路径、指定U与新初态结果；连同成本及少量视频干预 |
+| B：36任务共享学习 | 参数编译能否迁移，视频是否超过语言/共同能力 | 据A行为与吞吐确定等权规模、真实学生数据及公平语言/静态参照，不自动复制大矩阵 |
+| C：正式held结论 | 是否明显且稳定超过强MT | 相邻strict single-checkpoint paired400、task/suite覆盖、R/G/L/churn及冻结后controls；Test保持最终方法冻结边界 |
 
-这是宏观投入顺序，不是模块通关清单。A正例不自动批准B，更不拼成C资格；A负例也不自动推翻全部框架。
-主讨论根据§9/10分解解释实际不足，修改下一批完整假说并接续，不把阶段停止写成等待Owner许可。
+A是有限训练诊断，可能凭语言记住四任务，不凭A正例认定视频操作知识或held泛化。A阴性约束实际受检链路，
+由main消费既有原件、更新假说并自主接续；停止无效投入不等于停止整个研究。
 
-### 13.2 首批数据与预留池
+### 13.2 身份、数据与初态预留
 
-首批ID为`video_guided_proposal_writer_20261010/pilot`，只使用当前train tasks `[12,29,32,38]`。
-它们已有同source的合法恢复专家及已核吞吐，选择是监督接口覆盖，不是新的held选择或按本次分数挑task。
-这是四任务机制/计算pilot，不冒充36任务共享学习、跨任务迁移或正式400。
-source1000、MT300、38/r128、固定source normalization及当前coverage24/8/8协议不变。
+新run ID为`video_guided_proposal_writer_20261011/rank8_multistart`，ROOT在`/data1/user/ymdai/ember_runs/`下。
+原`video_guided_proposal_writer_20261010/pilot`只读保留全部原件/失败/16个完整checkpoint，不作为新rank8恢复源。
+新实例只用train tasks `[12,29,32,38]`；沿现有coverage24/8/8、source1000、MT300、source normalization和官方执行。
+任务来自预先已有的同source恢复专家/接口覆盖，不按本批分数换task；Spatial仍未覆盖。
 
-数据计划在任何学习前一次物化，保存task、video ordinal、init ordinal、各类RNG及角色；task ID仅调度/审计使用。
-每task用`numpy.default_rng(SeedSequence([20261010,domain,task]))`生成两个50项排列，domain0为video、1为init。
-固定数组保存为实际manifest，以后不因worker、恢复或结果重建/更换。
+学习前复用原已冻结`panel.json`中的50视频/50初态排列与角色，保存新manifest及引用；
+原数组来自`numpy.default_rng(SeedSequence([20261010,domain,task]))`，domain0/1为video/init。
+每类事件、阶段和condition的环境/政策/query/CFM RNG实际根与调度写入新manifest，在计算前固定。
+同一比较按task/state/env/policy/first-noise配对；GPU、分片、worker顺序和恢复不改变这些逻辑身份。
+task ID、文件名、event ID仅调度审计，不作为可学习条件。
 
-- 教学排列前两条分别用于空H和单次MT实践后的教师事件；每task两个事件，共8个。
-  教师FM query排除该事件教学episode。第三、四条用于π训练；第五、六条只用于首批最终报告。
-  所有教学输入仍只有RGB/L；训练query、恢复分支、报告结果不回填输入。
-- 初态排列前4个是教师label-selection，接着16个是教师report-audit；它们不进入教师拟合或H。
-- 第21–36个初态用于真实practice；有限池按固定循环使用，明确报告复用，不能称无放回。
-  teacher的非空H事件使用该池第一个初态完成一次MT episode，按自然成功/horizon结束。
-- 第37–40个用于π局部用途标签，第41–44个用于π共享RL的独立query，第45–50个用于最终pilot报告。
-  同一condition的practice始终排除对应query池。所有池仅当前non-held训练任务；不新增Val/Test曝光。
+- 教学前两条记V0/V1，用于四类教师事件；第三/四条用于π训练，第五/六条用于最终报告，第七条用于same-task-other。
+- 初态前4个是教师selection，随后16个是教师audit；都不进入H、教师拟合或Reader。
+- 第21–36个是practice有限池，部署路径按固定循环使用；首批代理parent数据按下节明确采集。
+- 第37–40个用于π-local候选用途标签，第41–44个用于π-RL独立query，第45–50个用于最终报告。
+  同一condition的实践排除对应query池；query在最终参数锁定后执行，不回填当次H。
+- 所有teacher输入action-hidden；动作监督仍可使用合法train池中除当前教学episode之外的49条。
+  教学condition留出不等于所有训练监督的episode留出，不宣称本批测到了新episode标签泛化。
 
-上述video划分限定其作为教学condition的用途；合法train动作query仍来自该task原有episode池并排除当前教学episode。
-因此报告教学未作为G/π训练condition，不等于其离线episode在所有监督中均未出现；本pilot不据此宣称全episode留出泛化。
+原source/MT、dataset、tokenizer和四个已审计专家只读复用；准确路径/版本由现有asset入口登记。
+canonical目标顺序与原38-target相同，fresh任务rank8/alpha8/dropout0；新Λ0、合并规则、S_prox及最终S_G完整保存。
+原专家执行仍为原source+原128，不截断、不叠在MT基底上。新教师优化自身rank8副本，最终condition只用G生成参数。
 
-首批报告每task两条教学、每条最终固定LoRA评估6个新初态，共48行；教学会在这6行复用，
-明确标为有限教学池的train诊断，不能称正式50教学无放回或single-checkpoint paired400。
+### 13.3 先完成16个真实多起点事件，再共同训练G
 
-### 13.3 学习与完整读出
+每task预注册四个事件，序号0/1/2/3固定对应seed/mid/late/return；缺失仍占原机会和分母，不重采容易事件。
+先从Λ0做seed教师，教学V0、空H，fresh optimizer训练至480，保留160/480。
+然后分别从空H开始，在practice池第一个初态执行seed160完整episode、第二个初态执行seed480完整episode，
+得到H160与H480。两条为独立的真实实践路径，按自然成功/horizon结束；每条最多horizon+10≤530，
+保留足够1024步预算供下一次生成/实践。收集行为不读取教学、不使用G，身份记为训练教师产生的代理parent。
+不因节点成功与否或新旧次序挑选/替换节点；160/480不是预称“弱/强”。
 
-最新执行边界见本稿顶部：仅原八教师及全部配对读出继续；之后先科学交付。以下G/π部分是原计划，
-不因教师出现正例自动续行，低rank后继尚待main据原件完整定案。
+| 事件 | V | parent | 真实H | 教师端点 |
+| --- | --- | --- | --- | --- |
+| seed | V0 | Λ0，即MT有效策略 | 空 | fresh160/480 |
+| mid | V1 | seed160 | H160，实际由seed160产生 | 从该parent fresh160/480 |
+| late | V1 | seed480 | H480，实际由seed480产生 | 从该parent fresh160/480 |
+| return | V0 | Λ0 | H160，产生者仍是seed160 | 从MT fresh160/480 |
 
-工程profile先验证真实最长教学的两组meta梯度、完整G输出、读取/执行参数隔离及一次完整编译消费者。
-恒等任务LoRA以非零A/B0做一个真实合法功能loss的梯度检查，source参数保持冻结；不以此宣称弱起点学习成功。
-纯profile不改变保留训练初值，不使用held，不把未训练G的大噪声参数当成正常实践策略。
+return覆盖“保留新经历后选回MT”，当前parent可与经历产生者不同；其keep不能借用seed160的成功。
+mid/late的keep只来自各自实际成功episode；所有rec来自真实可恢复前缀并经专家在剩余horizon内验证。
+H、参数引用、首末观测/hidden/实际动作、反馈、完整快照先保存再产生标签；缺项如实保留，不补造或只保留成功。
+两个种子检查点复用为parent，不冒充已经针对新H优化的标签；mid/late/return各自有fresh optimizer与§7目标。
+每个事件仍112跨episode demo queries/更新、480步上限、160/480固定节点；§7优化器、rec/keep/prox权重不暗改。
+最多32个预定教师节点中的合法节点与各自parent均作selection4/audit16配对；q_T只读selection，audit不重选节点、不进入尺度或梯度。
 
-**教师与G。** 8个事件均按§7做一条fresh教师轨迹，固定160/480节点、每更新112个跨episode queries。
-额外恢复/保持项按真实可得标签启用；不为补齐数量编造恢复，不把旧四任务专家端点直接冒充当前事件教师编辑。
-两节点与MT按预留池配对评测并建立q_T。教师无净收益须如实回报；全批缺乏有益供给时先消费这个科学结果，
-不自动投入大G/π去“修好”不存在的监督。
+两条完整长任务episode可能各需530步，串接后已用尽1024预算；本实例因此分别采集H160/H480，
+不把预算终点的H_mix包装成仍可继续修订的部署状态。当前四类事件均对应可实际继续的状态；
+它们并未覆盖完整多producer长历史或真实G误差，后两者由本批学生路径检验，不声称已被穷举。
+更多parent/节点是四任务内的状态覆盖，不是新增独立meta-task；数据由教师生成，不冒称当前G的on-policy采样。
 
-G及双meta fresh，AdamW lr1e-4、betas(.9,.95)、eps1e-8、wd1e-4、clip1，无scheduler。
-LoRA A确定性非零/B0，其余网络按同一个登记seed7的常规非退化初始化；不能靠未登记零门阻断读取梯度。
-最多320个更新，有效batch4、每task一个事件，task内两事件等机会，按§7标签分布抽端点及CFM噪声/time。
-缺标签事件保持机会/分母，不重采容易task。只按参数loss训练ψ，不将动作标签输入G，也不暗加新功能loss。
-保存160/320及完整恢复状态，320为预定学生采集版本；160是相邻学习记录，不凭小面板择优。
-真实积分样本/完整候选用途与下游编译共同回答控制传递，低CFM不单独构成通过。
+全部16事件的训练/selection/audit完成后一次形成bank和§4 S_G，再开始G正式学习；
+只有全bank无合法标签，或所有合法事件的两个节点均未在audit对各自parent取得净增时，先交完整科学结果而不投入G/π。
+这条停止线不用于挑选好task、删除负标签或改q_T；普通单task回退不改变登记矩阵。
 
-**一次真实学生刷新。** 若只在恒定MT父参数上训练，G可忽略parent而无法获得递推修订监督；首批显式覆盖这项缺口。
-固定G320，用预算内均匀parent/practice行为在每task的第三条教学各采一条完整路径，共4条。
-每条路径按时间选第一套实际试过、数值有效的G候选及其执行后的真实H，构造一个新的§7教师事件；
-选择不看是否成功或是否有利。记录实际参数和原生函数变化，不能用“非MT”标签代替真实控制差异。
-每task最多一个、合计最多4个额外教师事件，仍只做160/480两个预定节点；缺合格实际候选则记缺覆盖，不伪造parent。
-发生生成/控制供给失败时据完整原件裁决，不把原样MT改名凑成学生刷新。
-在原G320及其optimizer状态上继续160个CFM更新，task仍等权，task内原两事件/新增一事件等机会，缺项保留零贡献。
-G480为预定π训练版本，全部ψ冻结后重新取得局部用途与RL数据；G320采集仅作监督来源，不混作G480下on-policy路径。
-这就是§8.4允许的一次有界刷新，不追加第二次来保护本批假说，也不要求新condition固定观看轮数。
+G与两组meta fresh，seed7为网络/训练随机身份，meta A/B按§2独立固定seed；不加载profile更新。
+AdamW lr1e-4、betas(.9,.95)、eps1e-8、wd1e-4、clip1、无scheduler，480次更新，有效batch4且每task一个事件。
+从第1次起，task内四事件各1/4，节点按q_T；完整CFM噪声/time独立抽样，missing事件保留0贡献与逻辑分母。
+所有ψ由CFM共同学习，不暗加功能loss、teacher动作输入、参数clipping或零门控。240/480保存完整恢复状态，
+240只作预定学习记录，480是固定的后续π版本；不按有限小面板选择共享checkpoint。
+本批没有自动学生教师刷新；若完整证据要求，main另定具体后继，不因已有代码实现了旧刷新便执行它。
 
-**π局部用途。** 用固定G和均匀parent/practice行为，在4task×2训练教学上各采2条完整1024步上限路径，共16条。
-初始不主动STOP，预算自然终止；这是监督数据行为，不伪称π的on-policy数据。
-各真实episode边界保存H和合法P；对P的固定参数按4个局部query初态取得结果，query不进H。
-以条件等权、条件内合法prefix均匀抽样作128次局部final目标更新，有效batch4、task等权。
-单选P不产生排序信用，保持其零贡献；不为挑出容易有信号的条件而重采。parent/practice heads不使用局部成功率作探索标签。
-π及独立baseline fresh；optimizer沿G数值口径，但各自独立，ψ冻结。
+### 13.4 固定G后的π学习与完整报告
 
-**π完整RL。** 固定ψ，最多16个actor更新；每batch4条完整condition，每task一条，共64条实际on-policy路径。
-每条路径最终参数锁定后，在RL query池按固定循环取一个初态得R；同初态/RNG的MT回报可作独立控制变量。
-条件内全部parent/STOP/practice/final scores求和，条件间平均；θ固定采整batch，一次actor更新后重采。
-baseline按§8保持当前batch独立/冻结，只在actor更新后训练下一版。不能多轮SGD复用旧路径或改成动作SDE。
-首批只包含上面已登记的一次G刷新；完整RL期间ψ固定，不交错暗改特征或生成器。
+固定G480的全部ψ、双meta、S_G/Λ0/基底、积分规则及缓存身份；π下游Reader/trunk/三个head独立fresh。
+π与独立baseline各自使用上述AdamW口径，不能让π梯度改变生成核。
 
-**完整报告。** 对预定π-local128和π-RL16两个版本，在相同8个报告条件上完成全编译，各48个独立query rows，
-与固定MT逐行配对。报告task/suite、R/G/L、churn、相邻success-set、实践轨迹、最终候选来源和全部费用；
-四task对suite覆盖不完整，如实标缺，不推成四suite普遍收益。全程最终一套完整LoRA，不做成功集合union或跨checkpoint融合。
-只在task12/32的第一条报告教学两个预定条件上，对实际U做完整候选独立读出，支持§9归因；其它条件不凭不完整U诊断G供给。
-按真实保存的实际路径分析，诊断结果不改变这条condition的最终选择。
+**局部用途。** 4task×2训练教学各采2条完整路径，共16条，以均匀parent/practice行为、不主动STOP采到预算结束。
+每条最大1024环境步（含settling）、32次提案尝试、每次至多4个、16步参数积分，沿§6开放循环；不是固定实践轮数。
+各真实episode边界保存H与合法P，对P候选用4个local query初态配对取得固定参数用途标签，失败候选也保留。
+作128次final目标更新，有效batch4/task等权，task内condition等权、condition内真实prefix均匀。
+单选P保留零排序信用；不因没有正例而重采容易条件。该行为数据不冒称π的on-policy路径，parent/practice头不拟合局部成功率。
 
-π-RL16冻结后，同两个预定条件补same-task-other（教学排列第7条）和cross-task-wrong完整编译，
-wrong在task12与32间交换对应教学，L仍为目标任务；practice/query/RNG/预算按相同合同配对。
-这是小型non-held操作输入干预，只回答此链是否使用并受益于正确教学，不把wrong单独下降视为操作理解证明。
-same-task-other不要求下降；shuffle/reverse不运行。公平训练的语言/静态参照在B早期按实际缺口登记，不能无限推迟视频增量。
+**完整RL。** 固定ψ，16个actor更新，每次4条当前π完整condition、每task一条，共64条新路径。
+训练视频按预注册循环交替；参数锁定后从4个RL query初态按固定循环取一个取得R，同task/state/RNG的MT基底初值作控制变量。
+每个batch固定θ采集并重算完整score，condition内parent/STOP/practice/final的score求和，condition间平均；
+只更新一次再采新batch。baseline当前batch独立/冻结，actor后拟合下一版。原生10步ODE不改成SDE。
+无旧G版本路径或旧θ路径多轮SGD；强制单选/预算停止score0。全部原始行为概率、失败、预算截断和实际产生者保留。
+这阶段真实看到不同学生parent/H，更新的是选择与实践，不能宣称因此教会了被冻结G的新parent修订。
 
-### 13.4 资源、时间和退出
+**报告。** 预定π-local128及π-RL16各在4task×2报告教学完成一次全编译；每condition固定唯一LoRA在6个新初态执行，
+各48 rows，与MT合并基底/Λ0逐行配对。读出不反哺梯度、q_T、G或π选择；不由两个报告挑最好版本，后者仍为预定终点。
+报告绝对成功、task/suite、R/G/L、churn、相邻success-set、实际parent深度/来源、是否选择生成参数、停止与重读/实践成本。
+同一教学在6行复用，只有8个教学condition；不是50视频无放回、不是held或正式paired400。
 
-本批新增输出全部data1，复用既有source/data/环境/MT，不下载或复制大底座。首批峰值新增暂按64GiB估计，
-包含raw实践、教师/模型/optimizer、候选重算资产和缓存；执行者先按真实尺寸修订并查strg01独立quota，
-未验证预算不能仅凭df开跑。消费过的可重建候选按已确认生命周期释放，必要完整U、最终参数与raw rows保留。
+在task12/32各第一条报告教学的π-RL16实际路径上，对全部有效U（含MT）作同6个report初态完整读出，
+支持§9的U/P/selected分解。未走的分支仍未知；max的择优偏差明确报告，不用逐初态success union替代固定参数能力。
+其它条件保留原件但不凭不完整U归因G；完整诊断不改变当次已锁定的最终参数。
 
-当前主讨论裁决：同一首批累计硬上限提高为52 GPUh，新增峰值仍64GiB；不是在已发生费用上再加52。
-profile、失败/取消、真实采集、教师/恢复标签/selection/audit、G/π与全部规定报告/视频干预统一计费。
-按profile_06/07完整112query+keep4更新11.87/20.72秒，当前整链粗估45–51 GPUh；G/π完整历史尚待实际消费者修正。
-恢复后主要计算先按16–24h宽区间规划，不沿用下述旧8–12h或14–18h估计。一快两慢是当前启动安排，
-后续继续按两节点live、显存和实际吞吐调度，不固定卡数/组合，不打断已接近完成的有效更新。
-首个真实G/π消费者或完整checkpoint边界，使用本来产生的费用/吞吐核剩余预测，并预留规定读出费用；
-预计超52时向主讨论给出具体缺口和消费者，由其裁决，不缩减科学矩阵、不向Owner重复求许可。
-初始八事件、至多四刷新、全部学习节点/有效batch/任务分母/报告和信息墙均不变；首八教师全无有益供给仍先科学停止，
-预算扩大不授权以G/π挽救缺供给。
+冻结π-RL16后，同两个条件补same-task-other（第7条教学）和cross-task-wrong两种完整编译；wrong互换task12/32教学，
+语言仍是目标任务。practice/query/RNG/预算配对，same-task正确视频不要求下降，wrong下降本身不证明操作理解。
+不跑shuffled/reversed。充分训练的语言/无视频与静态参照仍在B的早期按实际缺口登记，不无限推迟视频必要性。
 
-以下保留最初预算和时间依据作为历史：计算上限40 GPUh，profile/消费者核验暂分1、教师及其评测18、G10、π训练与完整报告11；
-子项可在总上限内据实测协调，不能悄悄缩短科学有效batch、丢掉难task或漏记失败开销。
-已有直接LoRA更新实测8.21–8.31秒/112 queries，最多12×480约13.2 GPUh；余量覆盖恢复功能与教师评测。
-已有执行消费者约26steps/s，但包含旧编辑，**不是新meta/G/候选响应的实测吞吐**；G和π上限需profile更新预测。
-预计计算wall-clock约8–12小时（按实际可用4–6卡并行和阶段依赖粗估），工程实施另计约4–8小时；
-两者均为当前预期而非保证。完成首个真实profile即修正预计；明显超期/预算由主讨论据具体证据调整并向Owner说明。
+### 13.5 资源、工程、失败与交付
 
-GPU遵守AGENTS双节点live准入及总8/条件降6/单节点6规则；不把某个DDP world size变成整批并发上限。
-独立教师与readout可并行，G/π同一训练不跨节点拼碎卡。物理microbatch/frame chunk/worker按实测吞吐和峰值选择，
-有明显显存余量须验证更大物理批量，不做科学LR/rank/seed扫描。
-formal保留计算来自clean pushed detached worktree；代码、精确command/env/inputs/output/devices、checkpoint完整状态、
-query池和实际成本写入同一run contract。profile与正式初值分开，incompatible fresh，迁移遵守完整checkpoint合同。
+累计硬上限由52修订为**96 GPUh**，包含原批18.640412104GPUh（其中0.0375是未计时短诊断的保守占用）及此后全部开销。
+新批可用上限77.359587896GPUh，不把96当作再加96；profile、工程失败/取消、采集/恢复、教师/readout、G、π和全部报告统一计费。
+原8×480教师实耗15.65815GPUh，按相似消费16条约31.32GPUh，按各设备10.01–20.44秒更新的外侧范围约21.35–43.61GPUh；
+新成功parent可能引入keep，rank8教师真实速度仍需profile，不能按输出减少16倍外推。
+暂规划教师更新32–40、教师/恢复/配对读出5–7、G8–14、π及完整报告8–12、profile与新采集1–2GPUh，
+整批新增约54–75GPUh。分项可在总上限内据实调度；首个真实G/π消费者修正预测，预留规定报告费用。
+工程预计4–8h，主要计算预计14–24h，依据上述费用、实际4–6卡有用并行及teacher→G→π依赖；不是保证或已测rank8时长。
+明显超期、预测超96或科学范围改变时向main交具体原件，由main自主裁决，不能静默缩科学矩阵或向Owner例行求许可。
 
-第一批的停止线约束实际假说：无有益teacher、参数样本控制传递失败、π反复漏掉好候选或完整链没有净收益，
-都先用既有原件分辨供给、生成、选择、信息或迁移层，不将科学阴性当成bug，也不无限续训或小扫。
-接口/数据墙/参数隔离/数值/恢复等可复现工程违约由执行者在原范围内修复、验证并以新clean版本继续；
-改变计算/损失/选择口径或会超出已登记成本则向主讨论给具体证据，由主讨论自主裁决下一步。
-只向Owner请求真正跨越其原则边界的决定，不将每个负结果、例行预算更新或阶段边界做成人工许可门。
+新增峰值仍64GiB，按整个proposal工作自原批开始的保留输出及新批峰值合计，不是每子目录各64。
+复用source/data/环境，不复制整套policy；计入合并target、完整checkpoint、rawH/快照、可重算候选、optimizer/cache/临时副本。
+launch前执行者核strg01的data1独立quota、相关目录用量和预计峰值。主讨论当前只作小型文档/CPU分析，不以旧quota代替新准入。
+已消费、可重建的候选仅在消费者与完整checkpoint边界按已有生命周期退休；指定U、最终参数、raw事实、必要恢复与失败原件保留。
 
-整批实现和运行由现有实验session负责，主讨论负责机制/预算/后继决策。tracked/Git串行交接，源码实现使用独占分支，
-集成main并push后冻结。正常长任务使用整批退出事件与一次可靠回报；不心跳、不阶段自Queue、不重复轮询共享缓存。
-收到回报后主讨论核原件并主动接续；如已独立运行且有可靠回报，主讨论可结束当前回合，不以口头计划代替后台任务。
+先核真实rank8/MT基底及原source/meta/专家上下文、非零A/B0的实际教师梯度、两种尺度消费者和四事件/均衡采样。
+仅做必要的真实消费者/吞吐profile，不重复已核且未变的整个机制；profile参数不装入formal初值。
+frozen base只读、meta/G/π/教师参数所有权、实际10ODE、finite/shape、保存恢复和新schema须由真实消费者承接。
+physical query/frame chunk/worker/rank数按显存与真实吞吐选择，保持逻辑batch/数据流/任务权重；有明显余量须验证扩大而非沿保守默认。
+遵守两节点live准入、合计8/闲卡≤10时6、单节点6；不跨节点拼同一训练，不因共驻高util自动排除，不操作他人进程。
+
+实现/配置在独占`codex/`分支，验后集成main并push，从clean detached冻结版本formal运行；冻结源码不原地修改。
+原teacher/schema不可当rank8 resume；同族完整恢复保存G/meta/π、optimizer、sampler/RNG、坐标、拓扑和版本，
+设备/物理batch迁移保持更新语义并登记，正常BF16/TF32差异不做逐bit验收。原失败与原成本不覆盖。
+接口违约由实验session在原授权范围修复并用新clean冻结代码接续；科学阴性不作为bug或参数小扫理由。
+
+整批范围是16教师→G480→πlocal128/RL16→规定48行/U/视频干预；除明确停止线、资源或原则边界外直接完成，不逐模块等待main工程验收。
+main据完整结果判断教师供给、参数到控制的传递、实际学生分布、用途选择与视频信息；π不能补救缺失候选，更多teacher也不能自动解决条件不可预测。
+不无限续训或追加rank/seed/LR臂；需要后继时重新解释可失败预测并有界接续。
+正常长任务持续等待退出事件，不周期查训练log/checkpoint、不心跳或阶段自Queue；只对整批完成/异常可靠回报一次。
+tracked/Git由main完成本合同提交后正式交实验session独占；整批回报实际处理后再串行交回main科学消费并自主推进。

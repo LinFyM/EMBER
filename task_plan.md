@@ -1,4 +1,23 @@
-## 2026-10-11 当前目标：八教师完整科学交接，由main定案后继
+## 2026-10-11 当前目标：实施rank8多起点完整Writer并取得控制传递证据
+
+最终目标是合法视频与实践编译固定LoRA，在未见任务上稳定超过强MT并建立视频增量、保持与成本证据。
+原八rank128教师已完整消费；当前唯一active为[完整设计§13](docs/designs/video_guided_proposal_writer_20261010.md#13-当前正式实例rank8多起点完整链2026-10-11)。
+main已接回串行tracked/Git窗口，完成科学合同后提交/push并一次正式派发，实验session随即接回独占实现/运行。
+
+1. 在现有proposal_writer承接MT合并冻结基底、fresh38/r8、原source双meta/专家隔离、固定Λ0、S_prox/S_G和新schema；
+   实际消费者核验及吞吐profile后clean pushed detached运行，不创建平行rank8 runner或复制整套policy。
+2. 复用原四task/视频/初态面板，准备seed/mid/late/return各四事件的全部教师bank、160/480与配对selection/audit，
+   再固定训练bank编辑尺度。parent必须对应真实实践，经历产生者保留，不用不利结果更换task/节点。
+3. G及双meta fresh480，从首个更新四事件等机会、task等权；240/480保存，固定480进入π-local128/RL16。
+   完成两个48行报告、指定两condition完整U及冻结后other/wrong；本批无额外学生教师刷新、Val/Test或正式400。
+4. 累计96GPUh含原18.640412104，新批估54–75GPUh；工程4–8h/计算14–24h，新增总峰值64GiB，launch前live准入。
+   普通中间正负不改矩阵；无标签/全bank缺改善等明确停止线或资源/原则边界则完整交main科学消费，不自动小扫/追加。
+5. 完整结果分别判断低rank教师、G控制传递、真实学生分布、π用途和视频作用，再自主决定36-task规模与相邻strict400。
+   rank8、归一化和多parent都不是成功保证，教师分数不冒充EMBER分数，Test保持方法冻结后边界。
+
+当前为已定案、待正式实施派发；实际进程/集成与交接看progress。下方保留历史合同，不恢复旧rank128 G计划。
+
+## 2026-10-11 历史交接：八教师完整科学交接，由main定案后继
 
 最终目标仍是合法教学与自身实践编译一套固定LoRA，明显超过强MT，并取得视频增量、能力保持及成本证据。
 当前授权八教师及全部160/480配对读出已完成，完整[结果](docs/analyses/video_guided_proposal_teacher_batch_20261011.md)与ROOT/analysis原行/读回保留。

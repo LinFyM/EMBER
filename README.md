@@ -3,9 +3,10 @@
 EMBER把exact task language与action-hidden教学视频，通过最终评估前的观看与自身实践编译为冻结π0.5 source的一套完整
 38-target task-conditioned LoRA，研究它能否从未见初始化闭环完成任务，并取得有益视频增量与能力保持。
 
-当前工作是[双meta读取、MT起点的完整Writer](docs/designs/video_guided_proposal_writer_20261010.md)：
+当前工作是[双meta读取、MT合并基底与多起点rank8 Writer](docs/designs/video_guided_proposal_writer_20261010.md)：
 Owner已授权自主实施；不用T，fresh Gemma/action-expert读取meta与G共同学习，固定生成核后训练π完整决策。
-首批从强MT任务LoRA出发，完成四个non-held任务的教师—G—实践决策—新初态闭环，再据证据扩大36任务与正式400。
+原八条rank128教师已取得有限train净增；后继检验MT基底上的小rank残差，从首次G更新混合真实不同parent/H，
+完成四个non-held任务的教师—G—实践决策—新初态闭环，再据证据扩大36任务与正式400。
 [审阅入口与专家原文](docs/review_materials/20261010_writer_design_review/README.md)保留审阅依据和独立判断。
 实际实现/运行状态看[progress](progress.md)，active设计和首批预算不等于已经取得控制传递或视频收益。
 

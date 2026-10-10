@@ -3,6 +3,22 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-11：八rank128教师有益供给完整消费，定案rank8多起点完整链
+
+原八教师及160/480的selection4/audit16全部闭合：audit MT16/128→74→83，480对MT R15/G68/L1，
+相邻R61/G22/L13；task29回退及selection排序错位完整保留。64个不同task/init、四训练任务、Spatial缺失，
+没有G/meta/π formal更新、rank8或video/held结论。[完整报告及main独立判断](analyses/video_guided_proposal_teacher_batch_20261011.md)保存原件与解释。
+原计算来自18666c10/9a4fa85a的clean pushed detached版本；16完整checkpoint、430080 demo query、全部失败/费用保留。
+整批记账18.640412104GPUh、教师读出wall3.832529h，资源已退出；e0d09485记录原完整交付及未执行G/π范围。
+
+main核原件后采用[同一active设计的新实例](designs/video_guided_proposal_writer_20261010.md#13-当前正式实例rank8多起点完整链2026-10-11)：
+MT合并冻结基底、fresh38/r8，原source双meta读取；teacher固定prox单位与G训练bank尺度分开。
+4task×seed/mid/late/return共16教师先准备，从首次G更新共同学习480，再固定ψ训练πlocal128/RL16与规定报告。
+mid/late各为独立真实实践episode，return保留H160的产生者；不串接耗尽1024预算的两条长episode作伪继续状态。
+新参数族不截断/恢复旧128端点；原全MT320+四学生一次刷新课程未实施、不续行。
+累计预算52→96GPUh含原记账、新增峰值仍64GiB；工程4–8h/计算14–24h是新消费者前估计，不是实际成绩。
+这是依据有益监督与Owner多起点要求形成的联合改动，不把未来差异单独归因rank；实际学生分布、video知识与held迁移仍待证据。
+
 ## 2026-10-10：Owner定案双meta读取与MT起点，完整审查后授权自主实施
 
 Owner明确不用T，Gemma和action expert各fresh一组meta LoRA用于共享特征学习；恒等任务LoRA副本可优化，

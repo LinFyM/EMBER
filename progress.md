@@ -1,3 +1,23 @@
+## 2026-10-11 main已消费教师原件并定案rank8多起点完整后继
+
+原批main_delivery_receipt已processing_verified，tracked/Git串行交main；实验session当前停止并发写，等待本次完整实施派发。
+main直接核run contract/panel/event来源/教师实现与480原行，复算audit128组及首输入配对，确认原参数族有益供给，
+同时保留task29下降、selection/audit错位、相邻13 losses、64个不同task/init及G/meta/π未学习的边界。
+[报告新增main分析](docs/analyses/video_guided_proposal_teacher_batch_20261011.md#main独立消费与后继取舍)解释证据、历史限制与下一假说。
+
+当前唯一[active design](docs/designs/video_guided_proposal_writer_20261010.md)已全文承接MT合并冻结基底+fresh rank8完整38-target残差；
+教学双meta仍在原source上下文，旧专家仍为原source+原128。teacher固定S_prox与G合法bank尺度S_G分开，参数以共同Λ0为中心。
+当前科学范围明确为4task×seed/mid/late/return共16教师，160/480+selection4/audit16全部保留；
+mid/late各自独立采一条真实parent episode，return保留H160真实产生者，避免两条长episode已耗尽1024预算的伪继续状态。
+G从第一次更新混合四事件，fresh480、保存240/480，固定480训练π-local128/RL16并完成两个48行、指定U及other/wrong。
+不自动运行旧G320/一次刷新，不截断旧128标签，不预先追加真实学生教师。多producer深H/实际G分布仍待本批证据，不宣称覆盖充分。
+
+累计预算由52修订为96GPUh，含原已记账18.640412104；新增峰值仍64GiB（旧ROOT+新批总增长口径）。
+新批估54–75GPUh，工程4–8h/计算14–24h；消费者实测后更新，原data1/GPU准入与费用完整计量保持。
+新ROOT登记为`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/rank8_multistart`，由执行者live准入后创建/运行。
+当前只完成科学定案和文档修改，没有rank8 GPU、G/meta/π formal更新；提交/push并正式派发后，实验session接回独占实施窗口。
+除合同明确科学停止线、资源或原则边界外完成整批，不逐模块请求main工程验收或Owner许可；整批回报后main继续科学裁决。
+
 ## 2026-10-11 原八教师及完整读出已闭合：有益供给成立，G前科学交付
 
 八条原rank128教师各480更新、全部16完整checkpoint及480配对原行已完成；教师/读出24个GPU job均exit0。

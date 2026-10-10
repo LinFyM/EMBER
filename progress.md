@@ -1,3 +1,33 @@
+## 2026-10-10 接任实验已完整消费360/72/两个48/400，向新主讨论一次交付
+
+Owner指定新实验01a12384-17a9-7382-aeec-cee89479428f接任01a11a0a-fd39-74b1-83ba-001ede5330df。
+新主讨论为01a12385-4cfc-7ec2-9017-ef2b242243cf（BCI-GPU02），负责科学取舍；旧主讨论01a11b05-3460-7eb0-aca8-177d6d86ef48退役，不再唤醒。
+新实验独占当前tracked/Git窗口，新主讨论只读；ROOT/main_delivery_receipt真实处理整批报告后串行交回，无阶段ACK/心跳/自Queue。
+ROOT=/data1/user/ymdai/ember_runs/functional_revision_learning_20261010；唯一active设计仍为functional_revision_compiler_20261010§6，现有整批已完成。
+[完整科学消费](docs/analyses/functional_revision_learning_20261010.md)及findings§420登记结果、实际输入/信用/写入和能力关系；没有新科学计算或新设计启动。
+
+固定φ360 correct143/400，suite44/44/36/19、breadth7；对MT153 R127/G16/L26/churn42/Jaccard.75148，
+对T161 R109/G34/L52，对历史130 R103/G40/L27。Goal3一条成功保留，Long9仍0，旧Long1高点27未保持，本轮19。
+原train18029/48对MT27 R25/G4/L2；train36025对MT R24/G1/L3，对180 R24/G1/L5/churn6/Jaccard.8；不能仅归因held迁移。
+1440实际事件/40320 FM query，36任务每阶段各20次呈现；非MT phase1=160/720覆盖16task，phase2=180/720覆盖18task，缺层未伪造。
+能量末层fresh→360 RMS1.27958e−3，Reader图像投影变化8.96101e−8（约自身权重7.02e−6）；仅四个原指定投影CPU读取，非完整语义判断。
+formal881编辑单次实际δ/MT RMS均值7.97514e−9，最终相对MT均值1.60177e−8，零/identity计数均0；非MT标签不代表有效改变。
+末9更新26个success支撑事件，21个实际前5函数MSE非零、均值2.04257e−7；没有held同观测函数或视频/经验反事实，不归因143收益。
+formal成功实践242组MT138→131，预算158组15→12；J1组106→101、J≥2组47→42。损失跨组存在，不能仅用成功后编辑或递推缺失解释。
+
+完整已保存condition共422283环境steps、1075次编译全片读取（504初读/571重读）/38613 teacher frames；
+含共享重放/profile的神经receipt最低3961全片读取/131168frames。首次5个取消worker缺未保存steps/读取，未知不填零。
+formal保存条件353308steps与恢复receipt329699范围不同且重叠，不相加；原父失败/取消和全部费用保留。
+全批14.262670GPUh、科学elapsed5.133958h，含原失败9.089735与profile.254861；parent/consumer是两层账，不相加，预算观察线未越。
+strg01收尾data1个人用量1340.375/2048GiB，ROOT136.887GiB，cache payload63.870GiB（磁盘64.096含元数据/分配开销），共享可用约79.91TiB。
+未连续测历史峰；所有准入及收尾快照未越224GiB。gpu01/gpu02本批Python/torchrun及GPU进程均0，接任者没有新GPU运行。
+实际消费者80项CPU检查通过；当前结构检查无hard violation，48/48/400 raw/聚合/scene/video/RNG和practice/final分离核验通过。
+90/180/270/360四点完整训练状态仍保留，world2、逻辑4；训练来源clean detached6b2b4ffd、formal恢复读取8d7cab05，原profilea8212333。
+仅ROOT生成的CPU汇总脚本修正嵌套condition_id读取，不改变冻结科研代码、模型或原数据；当前Git集成/生命周期以scientific_completion及lifecycle_cleanup原件为准。
+已整合的task开发工作树退役，冻结源码、完整checkpoint、raw rows、正式失败及必要分析保留；没有PG/Test/held controls/>360更新。
+新主讨论实际接收后消费原件并自主登记后继；当前合同的FM阴性不冒称尚未训练的完整FM+RL否证，批次完成不关闭EMBER。
+以下均为前任执行、主讨论登记及更早历史状态。
+
 ## 2026-10-10 功能修订360/72/两个48完成，formal磁盘统计竞态修复后接续
 
 已实际承接main a71bdb57的唯一active设计§6；实验session01a11a0a-fd39-74b1-83ba-001ede5330df持tracked/Git/运行独占窗口，main只读。

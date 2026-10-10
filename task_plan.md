@@ -1,4 +1,20 @@
-## 2026-10-10 当前计划：有界真实学习回答功能修订能否形成新初态收益
+## 2026-10-10 当前状态：首批功能修订学习完整消费，交回新主讨论形成后继
+
+最终目标仍是合法教学和自身实践编译唯一固定LoRA，明显超过强MT，并证明视频增量与能力保持。
+唯一[active合同§6](docs/designs/functional_revision_compiler_20261010.md#6-首批正式学习fresh-fm360真实分布刷新与一个固定400节点)
+的360更新、72刷新、两个train48及固定φ360 correct400全部完成；[完整报告](docs/analyses/functional_revision_learning_20261010.md)。
+本轮143/400对MT153为R127/G16/L26，train18029→36025（MT27）；能量头学习而实际修订极小，不能宣称视频/经验已学会。
+没有相邻held稳定、视频因果或PG结论；不重启已完成学习，不自行恢复旧计划或超360/PG/Test/held controls。
+
+新主讨论01a12385-4cfc-7ec2-9017-ef2b242243cf负责科学消费、方法及预算取舍，旧主讨论01a11b05-3460-7eb0-aca8-177d6d86ef48已退役。
+新实验01a12384-17a9-7382-aeec-cee89479428f接任01a11a0a-fd39-74b1-83ba-001ede5330df，独占tracked/Git完成消费、集成、生命周期和一次整批交付。
+以ROOT=/data1/user/ymdai/ember_runs/functional_revision_learning_20261010的main_delivery_receipt实际处理为交接界；此前新主讨论只读，之后串行接回。
+本批14.262670GPUh/科学5.133958h、ROOT收尾136.887GiB，所有本批资源退出；接任消费无新GPU或环境steps。
+原失败、四个完整checkpoint及raw rows保留，费用/读取未保存部分明确标未知；完整执行身份与检查见报告和ROOT/scientific_completion.json。
+新主讨论收到后须自主形成后继合同，当前没有已授权的新计算批次；交付不是Owner例行审批，也不关闭EMBER。
+下方全部为原计划及历史执行状态，不能作为新启动授权。
+
+## 2026-10-10 原计划：有界真实学习回答功能修订能否形成新初态收益
 
 最终目标仍为合法教学/自身实践编译唯一固定LoRA，明显超过强MT并建立视频必要性及能力保持证据。
 main消费完整实施/profile后，选择不改算子/P/LR/rank/精度，不将PG原始梯度大等同实际修订大，直接开展首批真实共享学习。

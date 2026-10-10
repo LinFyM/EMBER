@@ -3,6 +3,22 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-10：功能修订fresh FM360及完整400消费，头部学习未形成强MT以上净修订
+
+[完整报告](analyses/functional_revision_learning_20261010.md)保留360更新/72实际刷新/原train48两个节点/固定φ360 strict paired400。
+本轮143对MT153 R127/G16/L26、T161 R109/G34/L52、历史130 R103/G40/L27；suite44/44/36/19、breadth7。
+旧Long1=27正例未保持，本轮19，Goal3一条成功保留、Long9仍0。原train18029→36025对MT27，邻接R24/G1/L5。
+能量末层持续更新，Reader图像投影相对权重RMS约改变7.02e−6；formal881次实际单次δ/MT RMS均值7.975e−9。
+末9更新成功支撑前5函数MSE均值2.043e−7，只支持小变化，未建立held同观测函数或教学/经验因果。
+成功实践组MT138→131、预算组15→12，J1及多次修订均净丢；降低当前FM/P/有限支撑足以形成有益修订的支持，未唯一确诊或训练PG。
+1440事件、40320 FM query，非MT曝光前半160/720覆盖16task、后半180/720覆盖18task，任务始终等权。
+ROOT=functional_revision_learning_20261010，profilea8212333、训练/刷新/两个48来源6b2b4ffd，formal恢复读取8d7cab05。
+原du/cache原子重命名ENOENT导致首次整批失败；仅窄修复统计，13原行复用/387补发布，未重跑已完成训练或重择checkpoint。
+费用14.262670GPUh/科学5.133958h含首次失败、恢复及profile；422283已保存环境steps，取消中未保存steps/读取未知不填零。
+收尾ROOT136.887GiB、data1独立quota未越；四个完整checkpoint及raw rows/失败保留，资源退出、80项实际CPU检查及逐行配对核验通过。
+新实验01a12384-17a9-7382-aeec-cee89479428f接任消费与Git闭环，主讨论改为01a12385-4cfc-7ec2-9017-ef2b242243cf，旧主讨论退役。
+一次实际处理回执串行交回窗口；没有新PG/Test/held controls/>360或后继启动，接收后由新主讨论自主消费并接续。
+
 ## 2026-10-10：main从真实更新与事件覆盖登记首批功能修订学习
 
 完整实施的PG原始梯度更大，但FM2→PG1能量末层实际Adam更新RMS约3e−5；没有PG后能力读出，不能从梯度norm推算修订收益。

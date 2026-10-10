@@ -1,6 +1,6 @@
 # EMBER
 
-EMBER把exact task language与action-hidden教学视频，在rollout前一次编译为冻结π0.5 source的一套完整
+EMBER把exact task language与action-hidden教学视频，通过最终评估前的观看与自身实践编译为冻结π0.5 source的一套完整
 38-target task-conditioned LoRA，研究它能否从未见初始化闭环完成任务，并取得有益视频增量与能力保持。
 
 当前唯一Compiler运行入口是`python -m ember.experience_compiler.run`。
@@ -8,8 +8,9 @@ EMBER把exact task language与action-hidden教学视频，在rollout前一次编
 [execution.py](src/ember/experience_compiler/execution.py)以真实完整因子Jacobian修订唯一rank128 LoRA，
 [credit.py](src/ember/experience_compiler/credit.py)与[learning.py](src/ember/experience_compiler/learning.py)承担共享FM、成功功能保持及新初态回报信用。
 观看/实践次数由实际success或环境step预算产生；condition内不运行轨迹拟合optimizer。
-科学合同见[功能修订编译器](docs/designs/functional_revision_compiler_20261010.md)；当前仅授权完整消费者实现与有界实测，
-正式学习尚未登记。当前授权、写入分工及结果只看[progress](progress.md)，导数接通不等于方法有效。
+科学合同见[功能修订编译器](docs/designs/functional_revision_compiler_20261010.md)；首批fresh FM360、72刷新与固定400已完成，
+[完整消费](docs/analyses/functional_revision_learning_20261010.md)为143/400，对强MT153尚无净增。
+当前授权、写入分工及后继只看[progress](progress.md)，导数接通不等于方法有效。
 
 ## 阅读与目录
 
@@ -19,7 +20,7 @@ EMBER把exact task language与action-hidden教学视频，在rollout前一次编
 | [progress](progress.md)／[task_plan](task_plan.md) | 当前状态与计划；不从历史许可恢复执行 |
 | [concept](docs/concept.md) | 科学对象、信息流与证据标准 |
 | [findings](findings.md)／[research_history](docs/research_history.md) | 跨轮发现、正负历史、专家意见和原件索引 |
-| `src/ember/experience_compiler/` | 唯一活跃Compiler；真实十步功能修订、实践、共享信用与有界消费者实测 |
+| `src/ember/experience_compiler/` | 唯一活跃Compiler；真实十步功能修订、实践、共享学习、完整checkpoint与配对读出 |
 | `src/ember/operator_writer/` | 复用native/data与封存operator读取；旧训练CLI已退役 |
 | `src/ember/writer/` | 共享视频、FM、重放、拓扑与物化调度；旧视频Writer仅保留bank/配置读取 |
 | `src/ember/source_sft/`、`pi05_source_*`、`expert_manifold/` | Source、共享MT-BC与授权task expert组件 |

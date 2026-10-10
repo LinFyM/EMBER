@@ -1,5 +1,9 @@
 # EMBER 新专家入口：视频到LoRA编译的完整设计
 
+历史范围说明：本目录保留2026-10-08至10-09的专家讨论。2026-10-10的新设计审阅请从
+[当前独立入口](../20261010_writer_design_review/README.md)及[新提示词](../20261010_writer_design_review/EXPERT_PROMPT.md)开始。
+下述“当前”“唯一”和建议仅指原讨论时点，不恢复被修正的候选。
+
 更新于2026-10-09。Owner要求新专家充分理解最新边界与已有证据，独立设计完整方法，给出具体数学推导及详细推进规划。
 [EXPERT_PROMPT_FRESH](EXPERT_PROMPT_FRESH.md)是唯一当前提示词，旧版本由Git保留。本目录是讨论与证据入口，不是active design，不授权实验。
 

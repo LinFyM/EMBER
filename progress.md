@@ -1,3 +1,22 @@
+## 2026-10-11 原八教师及完整读出已闭合：有益供给成立，G前科学交付
+
+八条原rank128教师各480更新、全部16完整checkpoint及480配对原行已完成；教师/读出24个GPU job均exit0。
+[完整结果](docs/analyses/video_guided_proposal_teacher_batch_20261011.md)与ROOT/analysis/teacher_decision_readback.json已消费全部正负原件：
+audit MT16/128→T16074→T48083；160对MT R13/G61/L3，480 R15/G68/L1；相邻R61/G22/L13、churn35。
+逐task MT/160/480为12:9/27/31、29:0/16/11、32:5/26/27、38:2/5/14（各32）；Spatial缺失。
+所有8事件两节点均audit净正，但task29/event1相邻11→6，selection反而0→1并偏好480，不能隐藏此排序错位。
+参数/首次原生前5动作真实变化；3,840更新/430,080 demo查询、1,440 rec目标，keep0。没有G/meta/π formal学习、rank8或video/held结论。
+
+正式0→160冻结18666c10，原opt/RNG/query cursor续480及读出冻结9a4fa85a；代码均已clean pushed，全部480条原行的配对、16个checkpoint及预算字段按实际消费者核验。
+16完整checkpoint保留；8 final480 full state均CPU加载、8 initial160由续段真实恢复。迁移仅物理卡/microbatch，不称bitwise exact。
+预算记账18.640412104GPUh（定时18.602912104+.0375未定时诊断保守占用），在途0，余33.359587896；当前52/64不扩大。
+教师+读出wall3.832529h，不外推未运行全链。实际峰并发6卡，单节点4/3；双节点live已无本用户GPU进程。
+ROOT收尾约4.00GiB，strg01 data1独立used1409972884KiB/quota2147483648KiB；原失败/费用/丢失H、真实标签和全部原行保留。
+
+按最新Owner/main，本单元在完整教师交付点结束，不自动进入原G320/π；rank8、多parent及具体数值仍待main据原件定案完整合同。
+实验session仍独占tracked/Git到ROOT/main_delivery_receipt.json实际处理为止；该回执确认后串行交main定案，实验不并发写tracked。
+后继正式实施派发后再接回。当前交付由消息技能一次可靠回报，不ACK/心跳/自Queue或新GPU探针。
+
 ## 2026-10-11 已消费多起点准备稿：后继从首个G更新混合真实parent/H，当前八教师不变
 
 main `01a12385-4cfc-7ec2-9017-ef2b242243cf`消息及共享临时准备稿

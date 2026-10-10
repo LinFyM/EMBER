@@ -11314,3 +11314,15 @@ MT合并冻结基底+fresh rank8任务残差仍为优先候选，教学双meta�
 旧rank128教师完整结果只说明其原参数族的编辑能力，不能替代低rank能力或跨parent标签。
 历史坐标/低rank修正仍未恢复专家控制的负证据继续有效，不以缩输出维数或新名称清零它们。
 本次仅消费准备稿与CPU事实、同步记录；当前八教师及160/480读出、52GPUh/64GiB和G前完整科学交付边界不变。
+
+## 429. MT的训练专用完整因子教师已有闭环净增，尚未建立G/视频/小rank能力（2026-10-11）
+
+原八条rank128教师各480更新的全部固定读出完成。独立audit MT16/128、160为74、480为83；
+两节点对MT R/G/L分别13/61/3与15/68/1，八事件均净正。相邻R61/G22/L13、churn35，总体+9但task29两事件16→11，
+其event1由11→6且selection反而0→1。合法selection偏好与audit用途会错位，不事后改q_T或隐藏不利节点。
+A/B与相同首观测/噪声下的native前5函数均实际改变；430,080 demo query及1,440 rec目标产生真实任务教师学习。
+这支持当前四non-held任务、原参数族中的可改进监督供给，不证明整个生成映射已传递控制。
+G、双meta及π没有formal学习；没有video干预、任意parent、rank8或held结果，Spatial也缺覆盖。
+两H事件还同时改变教学排除/query RNG/部分rec，不能把其差归因于经验。参数或loss更大改进不保证更高闭环率。
+原完整因子差B′A′−B_MT A_MT与MT基底上的rank8残差是不同族；低rank后继需自身有效教师和真实多parent/H，不截断旧端点。
+全部480原行、16完整checkpoint、恢复/费用/资源原件与不利success集合见[完整报告](docs/analyses/video_guided_proposal_teacher_batch_20261011.md)。

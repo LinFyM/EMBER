@@ -9,6 +9,12 @@
 [专家原文](../review_materials/20261010_writer_design_review/EXPERT_REVIEW.md)审阅的快照为 `be0d469a`。
 实现、launch 与实证状态看 progress；设计定义不冒充已经实现或已经学成。数值是本实例选择，不是 Owner 永久要求。
 
+## 当前教师单元已完成（2026-10-11）
+
+八条原rank128教师及全部160/480配对selection4/audit16已闭合；完整结果见[报告](../analyses/video_guided_proposal_teacher_batch_20261011.md)。
+audit MT16/128→T16074→T48083，含相邻13个丢失及task29下降；有益供给不自动授权原G320/π。
+G/meta/π formal更新为0，rank8/multi-parent准备稿尚未启动；main据全部原件定案下一完整合同。本稿下方原定义和修订保留身份。
+
 ## 当前执行边界：原教师完成后裁决参数化（2026-10-10）
 
 Owner最新允许冻结MT合并基底加一套38-target小rank任务残差，main优先考虑rank8，rank4据能力/成本再判断。

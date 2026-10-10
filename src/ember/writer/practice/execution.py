@@ -97,4 +97,3 @@ def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpo
 
     actions, _ = action_chunk(velocity, noise, capture_hidden=False, denoise=denoise)
     return actions[:, :5]
-

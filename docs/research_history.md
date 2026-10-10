@@ -3,6 +3,19 @@
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。
 今天的授权与执行状态只看[progress](../progress.md)，稳定规则见[Owner要求](current_owner_requirements.md)。
 
+## 2026-10-10：新Writer专家审阅指出定义缺口，主讨论保留G/π并补成具体实例
+
+Owner提供的[专家原文](review_materials/20261010_writer_design_review/EXPERT_REVIEW.md)审阅`be0d469a`：
+未发现推翻完整参数CFM与冻结G后的完整类别score的硬数学错误，但教师分布、探索供给、空H/阶段输入、
+因子耦合、完整冻结/更新及候选归因仍未闭合，控制传递和视频收益没有成立证据。
+[主讨论取舍](analyses/architecture_rethink_discussion_20261010.md#12-消费专家意见保留分工补齐可执行定义与因果归因)
+与[修订设计](designs/video_guided_proposal_writer_20261010.md)给出有限教师目标、preferred/coverage、
+真实64数值块通信、常驻query与三个heads、完整on-policy更新和U/P/selected分解。
+另把标签selection与独立audit分开，修正final训练候选资格与T/MT原生特征身份；不将零速度头误写identity。
+首版不承诺专门探测策略，弱起点不自动开新臂；未采用无实测的整批额度或将建议阈值改作永久门槛。
+本次仅设计文档，未运行实现/教师/G/π/环境；没有新科学分数、active合同或对外联系。
+旧完整decoder/FM/交互阴性及T/局部任务正例继续约束预期；定义修正不认证有益教师、视频指导或泛化。
+
 ## 2026-10-10：功能修订fresh FM360及完整400消费，头部学习未形成强MT以上净修订
 
 [完整报告](analyses/functional_revision_learning_20261010.md)保留360更新/72实际刷新/原train48两个节点/固定φ360 strict paired400。

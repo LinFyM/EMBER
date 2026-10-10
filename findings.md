@@ -11234,3 +11234,36 @@ Owner追问不从强起点是否可训练，以及交互开放后的问题是否
 最终能选已有MT不等于能够先直接试做MT，保留候选也不保证不会误选。
 [当前独立审阅稿](docs/review_materials/20261010_writer_design_review/README.md)与提示词如实列出这些修正及未完成设计。
 这是供Owner自行提交的候选审阅，不以“理论上已绝无问题”为前提，不联系专家、不启动实现/实验。
+
+## 426. 专家认可条件式分工不等于供给已建立；教师、决策与更新须各自闭合（2026-10-10）
+
+Owner提供[专家原文](docs/review_materials/20261010_writer_design_review/EXPERT_REVIEW.md)后，
+主讨论核对实际原生读取、执行、自身事实和参数配置，形成[修订设计](docs/designs/video_guided_proposal_writer_20261010.md)。
+未发现推翻G参数CFM与固定G后的完整类别score的硬数学错误，但原稿缺少的教师算法、目标分布、
+空历史/不同用途输入、跨块通信、缓存/更新版本和诊断归因不是可以隐藏到实验后的“小细节”。
+
+教师现在明确从实际parent原始A/B副本做有限轨迹：跨episode FM、经真实自身前缀继续验证的恢复功能、
+当前parent实际成功函数的软保持及固定坐标proximal。其它策略产生的成功不能冒称parent成功，
+只有RGB/proprio的旧事件也不能冒充保存了完整环境snapshot；恢复缺标签如实缺失。
+相同source/坐标不消除因子gauge，`BE_A+E_BA+E_BE_A`说明小参数误差仍可能放大成控制损失。
+G的161024个64值块保留局部数值/噪声通路，通过4864rank与38target真实回灌通信；不用块边缘独立采样冒称联合控制器。
+CFM零速度头保留初始噪声，不等于零编辑；监督前随机G不能当可用策略，原样parent仍须显式存在。
+
+preferred/coverage目标分布让部分负/零/不确定编辑真正进入G监督；它不证明包含延迟有益的专门探测。
+首版明确只依赖任务候选附带产生的信息，不用完整score或多模态表达掩盖合法信息/候选缺失。
+标签selection与独立report-audit分开，防止按同批audit挑标签后又宣称教师收益无偏；小池正偏好不等于已证实真实正增益。
+π的final密集目标只训练合法保留集P，不能将未实践候选当部署时合格final；parent/practice需要剩余编译价值。
+
+H为空仍有常驻candidate/decision query直接读V/L；各候选读绝对原生动作预测，只有明确parent的practice阶段附差值。
+新特征明确T2340.public_state，当前experience代码实际为MT-probe，同形状不可静默互换缓存。
+冻结生成核包括Reader、尺度、统计与积分；raw事实可以detach，π自身的历史编码不能缓存后错误detach。
+整batch同版本采集、一次actor更新、condition内score求和、真实mask/概率与final选择计分，才对应完整路径目标。
+baseline合法性是给定当前信息后的条件独立，不是计算时刻本身；旧G路径不能只用π概率比恢复新核的on-policy身份。
+
+原只对保留集P的能力分解代数无误，但不能区分G未生成和生成后漏试。
+改用全部有效生成U、实际实践保留P与selected，分开生成新增、实践漏选和最终误选；
+U仍只是实际路径，早期parent/STOP的未走分支不能凭空纳入，也不以逐初态success union代替固定LoRA能力。
+强T/MT可选不保证实际保持；相同预算仅T/MT决策参照用于识别新增控制与更好选择已有能力。
+
+本次没有实现/新数据/GPU/held或Test使用。具体接口缺项已有处理；有益教师、G控制传递、视频操作增量、
+有限预算辨识和迁移仍需完整实证。专家216×480×112仅demo项已11612160queries，不能据旧耗时自动称作小批或启动。

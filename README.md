@@ -3,9 +3,10 @@
 EMBER把exact task language与action-hidden教学视频，通过最终评估前的观看与自身实践编译为冻结π0.5 source的一套完整
 38-target task-conditioned LoRA，研究它能否从未见初始化闭环完成任务，并取得有益视频增量与能力保持。
 
-当前工作是[新Writer专家审阅](docs/review_materials/20261010_writer_design_review/README.md)：
-完整参数提案生成与教学条件实践决策，附[专家提示词](docs/review_materials/20261010_writer_design_review/EXPERT_PROMPT.md)。
-新G/pi尚未实现，没有新active实验；[连续推导](docs/analyses/architecture_rethink_discussion_20261010.md)§10–11为当前讨论。
+当前工作是[专家审阅后的完整Writer设计](docs/designs/video_guided_proposal_writer_20261010.md)：
+保留完整参数提案G与教学条件决策π，补齐训练教师、跨块通信、空历史、三类决策和完整更新语义。
+[审阅入口与专家原文](docs/review_materials/20261010_writer_design_review/README.md)保留审阅依据和独立判断。
+新G/π尚未实现，没有新active实验；明确的设计修正不等于已证明控制传递或视频收益。
 
 现存上一轮功能修订Compiler的唯一运行入口是`python -m ember.experience_compiler.run`。
 [model.py](src/ember/experience_compiler/model.py)读取有序教学与真实经验，产生作用于当前原生十步响应的能量余切；

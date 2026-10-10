@@ -33,6 +33,17 @@ def test_condition_sum_and_forced_zero_credit():
     assert float(forced.detach())==0
 
 
+def test_distributed_missing_label_batch_has_zero_gradient(monkeypatch):
+    from ember.proposal_writer import learning
+    module=nn.Linear(2,1)
+    context=SimpleNamespace(world_size=2,device=torch.device('cpu'))
+    reductions=[]
+    monkeypatch.setattr(learning.dist,'all_reduce',lambda value,**_: reductions.append(value.clone()))
+    learning.synchronize_gradients(module,context)
+    assert len(reductions)==1 and int(reductions[0].sum())==0
+    assert all(parameter.grad is None for parameter in module.parameters())
+
+
 def test_roles_are_disjoint_full_fifty_panels():
     for row in pilot_panel()['tasks']:
         roles=['selection_states','audit_states','practice_states','local_query_states','rl_query_states','report_states']

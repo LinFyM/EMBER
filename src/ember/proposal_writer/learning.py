@@ -39,6 +39,8 @@ def synchronize_gradients(module, context):
     used = torch.tensor([p.grad is not None for p in parameters], device=context.device, dtype=torch.int32)
     dist.all_reduce(used, op=dist.ReduceOp.MAX)
     active = [p for p, flag in zip(parameters, used.tolist(), strict=True) if flag]
+    if not active:
+        return  # A complete missing-label batch still retains its logical opportunity.
     flat = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten() for p in active])
     dist.all_reduce(flat, op=dist.ReduceOp.SUM)
     cursor = 0

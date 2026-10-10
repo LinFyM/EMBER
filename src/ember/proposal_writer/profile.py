@@ -250,3 +250,71 @@ def tree_slice_local(value, first, last):
     if isinstance(value, torch.Tensor):
         return value[first:last]
     return type(value)(tree_slice_local(v, first, last) for v in value)
+
+
+def functional_throughput(runtime,runner,event,history,task,root):
+    from .teacher import functional_labels,function_credit
+    labels=functional_labels(runtime,runner,event,history,task,None)
+    items=labels['keep'][:4]
+    if len(items)!=4:raise ValueError('existing real successful MT H must provide four keep consumers')
+    results=[]
+    for microbatch in (1,2,4):
+        model=DirectLoRAParameters(runtime.mt).to(runtime.device)
+        # Disposable small factor perturbation; never an execution policy or retained initial value.
+        with torch.no_grad():model.values[0].mul_(1.05)
+        torch.cuda.reset_peak_memory_stats(runtime.device);torch.cuda.synchronize(runtime.device)
+        started=time.monotonic()
+        loss=function_credit(runtime,model,items,microbatch=microbatch)
+        torch.cuda.synchronize(runtime.device)
+        norm=sum(float(p.grad.square().sum()) for p in model.parameters() if p.grad is not None)**.5
+        if not norm>0 or any(p.grad is not None for p in runtime.policy.parameters()):
+            raise ValueError('batched ten-step functional credit or source freeze failed')
+        results.append(dict(microbatch=microbatch,items=4,seconds=time.monotonic()-started,
+            loss=loss,gradient_norm=norm,peak_GiB=torch.cuda.max_memory_allocated(runtime.device)/2**30))
+        del model
+    write_json_atomic(root/'functional_credit_profile.json',dict(physical_batches=results,
+        source_frozen=True,actual_parent_function_targets=True,only_disposable_factor_perturbation=True))
+    return results
+
+
+@torch.no_grad()
+def stop_compilation_consumer(args,runtime,runner,task,panel,demo,root):
+    from .path import Compilation,compile_condition,decision_logits,cpu_state
+    from ember.writer.practice import History
+    state=cpu_state(runtime.mt)
+    empty=Compilation(task['global_task_id'],demo,'profile_STOP',0,0,History(states={'MT300':state}),{'MT300':state})
+    decision=dict(kind='parent',candidates=['MT300','STOP'],records=0,episodes=0,budget=[1.,1.,0.,1/33])
+    probability=decision_logits(runtime,empty,decision,runtime.teaching(empty.task,demo)).softmax(-1).detach().cpu()
+    # Branch coverage from the genuine categorical head, without practicing an untrained G.
+    for ordinal in range(1000):
+        noise_root=seed(93,empty.task,ordinal)
+        rng=torch.Generator().manual_seed(seed(30,noise_root,0))
+        if int(torch.multinomial(probability,1,generator=rng))==1:break
+    else:raise ValueError('engineering STOP branch was not reachable')
+    path=compile_condition(runtime,runner,task,panel,demo,identity='profile_STOP',path_ordinal=0,noise_root=noise_root)
+    if path.selected!='MT300' or path.environment_steps!=0 or path.attempts:
+        raise ValueError('complete STOP compilation did not lock the legal full MT output')
+    path.save(root/'complete_compilation')
+    write_json_atomic(root/'complete_compilation_consumer.json',dict(complete=True,selected=path.selected,
+        environment_steps=0,complete_task_factors=len(path.states[path.selected]),decisions=path.decisions,
+        engineering_STOP_branch_only=True,no_outcome_used_for_seed=True,fresh_G_never_practiced=True))
+
+
+def execution_profile(args,runtime,runner,contract):
+    if args.profile_history is None:raise ValueError('focused profile needs the existing actual MT H')
+    root=Path(args.output);root.mkdir(parents=True,exist_ok=True)
+    panel=read_json(args.root/'panel.json')
+    choices=[(runtime.tasks[r['task_id']].episode_lengths[d],r['task_id'],d)
+             for r in panel['tasks'] for d in r['teacher_videos']]
+    _,task,demo=max(choices);condition=runtime.condition(task,demo)
+    with autocast(runtime.device):raw=runtime.generator.meta.encode_raw(condition)
+    original={k:v.detach().cpu().clone() for k,v in runtime.generator.state_dict().items()}
+    readers=reader_profile(args,runtime,condition,raw,original,root)
+    runtime.generator.load_state_dict(original);runtime.generator.zero_grad(set_to_none=True)
+    results,_,task_info,row=actual_consumers(args,runtime,runner,contract,task,demo,root,readers,None)
+    event=dict(task_id=task,event_ordinal=0,event_id='disposable_profile',parent_ref='MT300')
+    functional=functional_throughput(runtime,runner,event,results[0]['history'],task_info,root)
+    stop_compilation_consumer(args,runtime,runner,task_info,row,demo,root)
+    write_json_atomic(root/'complete.json',dict(complete=True,reader=readers,functional=functional,
+        disposable=True,retained_initial_state_changed=False))
+    print(json.dumps(dict(complete=True,profile=str(root),functional=functional)))

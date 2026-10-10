@@ -133,7 +133,24 @@ def save_checkpoint(root, model, optimizer, stream, update, event, *, extra=None
     return destination
 
 
-def fit_teacher(runtime, event, parent, labels, root, *, microbatch=56, stop=480, resume=None):
+def function_credit(runtime,model,items,*,microbatch=4):
+    """Physical batching only; retain the uniform mean of masked per-item losses."""
+    total=0.
+    for first in range(0,len(items),microbatch):
+        part=items[first:first+microbatch]
+        batch={k:torch.cat([v['batch'][k] for v in part]).to(runtime.device) for k in part[0]['batch']}
+        noise=torch.cat([v['noise'] for v in part]).to(runtime.device)
+        pred=runtime.native_actions([model()],batch,noise,
+            batch_indices=torch.zeros(len(part),dtype=torch.long,device=runtime.device))
+        targets=torch.cat([v['target'] for v in part]).to(runtime.device)
+        mask=torch.cat([v['mask'] for v in part]).to(runtime.device)
+        error=(pred.float()-targets.float()).square().masked_fill(~mask,0)
+        value=(error.flatten(1).sum(1)/mask.flatten(1).sum(1)).sum()/len(items)
+        value.backward();total+=float(value.detach())
+    return total
+
+
+def fit_teacher(runtime, event, parent, labels, root, *,microbatch=28,stop=480,resume=None,function_microbatch=4):
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
     model = DirectLoRAParameters({k: v.detach().float() for k, v in parent.items()}).to(runtime.device)
@@ -175,16 +192,8 @@ def fit_teacher(runtime, event, parent, labels, root, *, microbatch=56, stop=480
                     continue
                 rng = np.random.default_rng(seed(13 if kind == 'rec' else 14, event['task_id'], event['event_ordinal'], update))
                 chosen = rng.choice(len(pool), min(4, len(pool)), replace=False).tolist()
-                losses[kind] = 0.
-                for index in chosen:
-                    item = pool[index]
-                    batch = {k: v.to(runtime.device) for k, v in item['batch'].items()}
-                    pred = runtime.native_actions([model()], batch, item['noise'].to(runtime.device),
-                        batch_indices=torch.zeros(1, dtype=torch.long, device=runtime.device))
-                    mask = item['mask'].to(runtime.device)
-                    loss = ((pred.float() - item['target'].to(runtime.device).float()).square()[mask]).mean() / len(chosen)
-                    loss.backward()
-                    losses[kind] += float(loss.detach())
+                losses[kind]=function_credit(runtime,model,[pool[i] for i in chosen],
+                    microbatch=function_microbatch)
             proximal = sum(((value - parent[name].to(value)) / scales[name]).square().sum()
                            for name, value in model().items()) * (1e-3 / 10297344)
             proximal.backward()

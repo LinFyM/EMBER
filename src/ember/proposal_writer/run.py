@@ -70,6 +70,7 @@ def _episode_request(runtime, task, state, reference, state_id, noise_root, iden
 def collect(args, runtime, runner, contract):
     panel = task_panel(args.root, args.task)
     task = next(t for t in contract['tasks'] if t['global_task_id'] == args.task)
+    from .path import save_history
     root = Path(args.root) / 'events'
     expert = {k: v.float() for k, v in load_file(str(EXPERT_ROOT / f'task_{args.task:04d}_u480/lora.safetensors'),
                                               device=str(runtime.device)).items()}
@@ -91,9 +92,9 @@ def collect(args, runtime, runner, contract):
                 snapshots=True, uses_teaching=False)
             output = next(runner.run([request])); history = output['history']
         labels = functional_labels(runtime, runner, event, history, task, expert)
-        torch.save(history, destination / 'history.pt')
+        save_history(destination/'history.pt.gz',history)
         torch.save(labels, destination / 'functional_labels.pt')
-        event.update(history_path=str(destination / 'history.pt'), labels_path=str(destination / 'functional_labels.pt'),
+        event.update(history_path=str(destination/'history.pt.gz'), labels_path=str(destination / 'functional_labels.pt'),
             rec_labels=len(labels['rec']), keep_labels=len(labels['keep']), recovery_attempts=len(labels['recovery_validations']),
             capture_components=deep_components(runtime, runner), complete=True)
         write_json_atomic(destination / 'event.json', event)
@@ -119,7 +120,7 @@ def fit(args, runtime):
         if (available / 'manifest.json').exists() and args.stop == 480:
             args.resume = available
     fit_teacher(runtime, event, parent, labels, destination / 'teacher', microbatch=args.microbatch,
-                stop=args.stop, resume=args.resume)
+                stop=args.stop,resume=args.resume,function_microbatch=args.function_microbatch)
     print(json.dumps(dict(event_id=event['event_id'], trained_to=args.stop)))
 
 
@@ -186,6 +187,8 @@ def main():
     parser.add_argument('--checkpoint', type=Path)
     parser.add_argument('--video-arm', choices=['correct', 'other', 'wrong'], default='correct')
     parser.add_argument('--microbatch', type=int, default=56)
+    parser.add_argument('--function-microbatch',type=int,choices=[1,2,4],default=4)
+    parser.add_argument('--profile-components',choices=['full','execution'],default='full')
     parser.add_argument('--frame-chunk', type=int, default=4)
     parser.add_argument('--frame-chunks', type=lambda s: [int(v) for v in s.split(',')], default=[2, 4, 8])
     parser.add_argument('--slots', type=int, default=8)
@@ -223,8 +226,9 @@ def main():
         elif args.command == 'teacher': fit(args, runtime)
         elif args.command == 'audit': audit(args, runtime, runner, contract)
         elif args.command == 'profile':
-            from .profile import profile
-            profile(args, runtime, runner, contract)
+            from .profile import profile,execution_profile
+            consumer=profile if args.profile_components=='full' else execution_profile
+            consumer(args,runtime,runner,contract)
         else:
             from .pipeline import run
             run(args, runtime, runner, contract, context)

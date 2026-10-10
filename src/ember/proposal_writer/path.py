@@ -1,7 +1,7 @@
 """Complete bounded compilation, categorical records and stopped raw histories."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 import gzip
 import math
@@ -34,7 +34,7 @@ def history_prefix(history, records, episodes):
 def save_history(path, history):
     """Lossless compression bounds raw RGB storage; labels are not Reader inputs."""
     with gzip.open(path, 'wb', compresslevel=1) as f:
-        torch.save(history, f)
+        torch.save(replace(history,image_features={}),f)
 
 
 def load_history(path):
@@ -76,7 +76,7 @@ class Compilation:
             save_file(self.states[ref], str(root / f'{ref}.safetensors'))
         write_json_atomic(root / 'path.json', {**self.manifest(), 'retained_U': retain_U,
             'untried_reconstruction': 'frozen ψ plus attempt noise seed, exact chronological H and parent',
-            'raw_history_compression': 'lossless gzip level1'})
+            'raw_history_compression': 'lossless gzip level1; frozen raw-image cache recomputed from actual RGB'})
 
 
 def decision_inputs(runtime, path, decision, features):

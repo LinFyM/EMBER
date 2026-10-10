@@ -116,6 +116,7 @@ class Runtime:
         self.feature_cache_size = 0
 
     def freeze_psi(self):
+        if self.psi_frozen:return
         self.psi_frozen = True
         self.generator.eval().requires_grad_(False)
         self.feature_cache.clear()

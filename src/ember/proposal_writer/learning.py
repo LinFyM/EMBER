@@ -109,6 +109,7 @@ def train_cfm(runtime, context, root, *, stop, resume=None):
     start = resume_checkpoint(resume, 'G', runtime, optimizer, context) if resume else 0
     if stop == 480 and start != 320:
         raise ValueError('one refresh continues the original G320 optimizer; no fresh G480')
+    history_cache={}
     for update in range(start, stop):
         tick = time.monotonic(); optimizer.zero_grad(set_to_none=True); records = []
         for task in assigned_tasks(context):
@@ -133,8 +134,9 @@ def train_cfm(runtime, context, root, *, stop, resume=None):
             from safetensors.torch import load_file
             endpoint = load_file(str(event_root / 'teacher' / 'checkpoints' / f'update_{node:08d}' / 'lora.safetensors'))
             parent = runtime.mt if event['parent_ref'] == 'MT300' else load_file(event['parent'])
-            history = load_history(event['history_path']) if event['history_path'].endswith('.gz') else torch.load(
-                event['history_path'], map_location='cpu', weights_only=False)
+            if event['history_path'] not in history_cache:
+                history_cache[event['history_path']]=load_history(event['history_path'])
+            history=history_cache[event['history_path']]
             features = runtime.teaching(task, event['teacher_demo'])
             packed = runtime.generator.layout.pack(parent).to(runtime.device)
             target = (runtime.generator.layout.pack(endpoint).to(runtime.device) - packed) / runtime.generator.layout.scale

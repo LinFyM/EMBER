@@ -38,3 +38,7 @@ NativeMT完成一条515环境步的真实episode；旧v1/v2快照不补造标签
 旧experience_compiler专用源码16文件和7项旧算法tests已退役，原件/Git c76615fc保留。通用native10-flow、固定episode/实际H与现场快照统一在writer/practice包，避免继续增长writer根目录peer。
 
 结构自审：新增surface按职责持有，不超过262行/文件；profile消费拆成读取、教师、实际head、完整原生反向的同模块函数，环境步进与退出receipt独立。guard基于c76615fc没有新增hard violation，净source减少约2000行；既有operator文件仅更新退役入口文字。固定坐标、score求和、50初态角色划分及完整10-step同调用hidden四项针对性tests通过（13.22秒）。下一profile仍待核新缓存/三head/原生反向，不宣称formal已就绪。
+
+profile_03从clean实现commit20c43627在gpu01:1共驻运行，退出0/295.81秒/0.082168GPUh。新读取真实84帧chunk8/16为19.62/17.67秒、17.43/25.00GiB peak；source/meta执行RMSE0，两组meta第二步A/B梯度、三head实际OwnH及完整10ODE因子反向通过。112query物理28/56为10.00/10.14秒，112仍OOM；不把批量56当成有收益。
+实测一份515步实际历史：无损gzip302798405bytes；不持久化冻结source的raw image embedding缓存后75818792bytes，真实RGB/hidden/动作/反馈/快照完整保留。只释放可重算缓存；共享CFM对不可变事件H做进程内复用，其下游ψ编码照常重算。
+最后focused消费者将测完整10ODE功能标签的物理1/2/4批量及chunk24，并覆盖真实π的STOP到完整MT冻结出口，不执行freshG随机策略；正常G实践链留到预定G320原件。新增功能物理批量保持每item masked均值、item间均值，无监督/任务权重改变。

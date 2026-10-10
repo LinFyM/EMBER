@@ -54,8 +54,12 @@ v4现场快照补integration+真实微步kinematic/contact缓存，根因为mj_s
 新采集在标签前保存实际H/代码/episode回执；四个原event00不重复。π只缓存停止梯度的原生响应预测，θ Reader/trunk/heads每次重新编码；消费者完成后候选生命周期保存最终和指定完整U、原始实践事实、全部参数改变量及固定ψ重算身份，非U旧path不能继续完整旧on-policy回放。对应source-cache live-θ梯度和候选消费/事实保留两个协议回归补入，共6tests通过。尚无G/π或教学学习能力结果。
 
 主讨论裁决将同一首批累计硬预算40提高52GPUh，峰值64GiB与所有科学范围保持；原预算/时间/launch保留为历史。
-Batch读取ROOT注册上限，显式CLI只能在该上限内；完整教师更新按所选设备估计，缺实测时暂用慢卡20.8秒上界并计启动余量。
+Batch读取ROOT注册上限，显式CLI只能在该上限内；完整教师更新按所选设备实测估计，未测设备暂按22.5秒估计并计启动余量，
+依据近期慢demo约20.6秒加实测功能项，不宣称固定吞吐或保证上界。
 完整160 checkpoint接续只预留剩余320更新，原opt/query/RNG不重置；费用包含已发生profile/失败及其它协调器未退出的launch。
-不为承接预算建立新runner/模块，batch仍是资源owner；新增检查保留于现有协议文件，共7tests通过13.35秒。
-guard相对18666净source增69行/4既有文件，无新增module、parallel family或hard violation；既有admit/run/analysis复杂度提示未扩大科学计算。
+不为承接预算建立新runner/模块，batch仍是资源owner；新增检查保留于现有协议文件。跨协调器依赖只等待其退出回执文件事件，
+已完成160的教师可在别的合格设备原opt续480/并行audit，原160协调器持有的设备等它全部退出后才转交，不周期读进度或重启更新。
+新增协议检查核预算与外部退出事件；结构检查继续检查既有batch，不新增长期runner或parallel family。
+8项协议tests通过14.41秒；随后受影响预算/事件检查通过10.55秒，最终退出处理拆分后的事件检查通过5.73秒。
+最终guard相对18666净source增135行/4既有文件，没有hard violation；完成事件处理、延后设备释放仍由同一Batch资源owner承担。
 当前预测45–51GPUh、恢复后主要计算16–24h；G/π完整历史实测与报告预留仍须在既定消费者/完整checkpoint边界核算。

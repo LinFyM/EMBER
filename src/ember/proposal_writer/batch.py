@@ -18,6 +18,7 @@ from .contract import ASSET_ROOT, RUN_ROOT, TASKS
 from .analysis import billing, teacher_summary, report_summary
 
 PREFLIGHT = '/data0/user/ymdai/.codex/skills/gpu-preflight/scripts/gpu_preflight.py'
+UNMEASURED_TEACHER_SECONDS = 22.5  # Recent slow demo ~20.6 plus the measured functional update cost.
 
 
 @dataclass
@@ -46,10 +47,33 @@ def initial_jobs(microbatch,slots,teacher_devices,*,root=RUN_ROOT,teacher_update
             estimates = {device: 60+updates*seconds for device,seconds in (teacher_update_seconds or {}).items()}
             jobs.append(Job(teacher,['teacher','--task',str(task),'--event',str(event),
                 '--microbatch',str(microbatch),'--stop','480'],(collect,),
-                60+updates*20.8,tuple(teacher_devices),estimates))
+                60+updates*UNMEASURED_TEACHER_SECONDS,tuple(teacher_devices),estimates))
             jobs.append(Job(f'audit_{task:04d}_{event}',['audit','--task',str(task),'--event',str(event),
                 '--slots',str(slots)],(teacher,),600 if task in (32,38) else 360))
     return jobs
+
+
+def dependency_completion(root, identities):
+    """Wait on coordinator receipt writes, without polling training or shared caches."""
+    import ctypes
+    native=ctypes.CDLL(None,use_errno=True)
+    descriptor=native.inotify_init1(os.O_CLOEXEC)
+    if descriptor<0:raise OSError(ctypes.get_errno(),'dependency event descriptor')
+    try:
+        for identity in identities:
+            directory=Path(root)/'jobs'/identity;directory.mkdir(parents=True,exist_ok=True)
+            if native.inotify_add_watch(descriptor,os.fsencode(directory),0x8|0x80)<0:
+                raise OSError(ctypes.get_errno(),'dependency receipt watch')
+        while True:
+            complete=set()
+            for identity in identities:
+                path=Path(root)/'jobs'/identity/'latest.json'
+                if path.exists():
+                    if read_exit(path):raise RuntimeError(f'external dependency failed: {identity}')
+                    complete.add(identity)
+            if complete:return complete
+            os.read(descriptor,65536)
+    finally:os.close(descriptor)
 
 
 class Batch:
@@ -117,7 +141,7 @@ class Batch:
             if 'teacher' in command and 'budget_GPUh' not in launch:
                 stop = int(command[command.index('--stop')+1])
                 # Legacy launches predate the complete-update measurement wiring.
-                estimate=max(estimate,60+20.8*stop)
+                estimate=max(estimate,60+UNMEASURED_TEACHER_SECONDS*stop)
             inflight+=max(elapsed,estimate)/3600
         estimate = job.estimated_seconds((node,gpu))
         if not math.isfinite(estimate) or estimate <= 0:
@@ -160,15 +184,38 @@ class Batch:
         finally:
             with self.lock:self.running.pop((node,gpu),None)
 
-    def run(self, jobs):
+    def _consume_completions(self, completed, futures, executor, done, external, free, failures):
+        for future in completed:
+            device=futures.pop(future)
+            if device is not None:free.append(device)
+            try:
+                result=future.result()
+                if device is not None:done.add(result)
+                else:
+                    done.update(result)
+                    if external-done and not failures:
+                        futures[executor.submit(dependency_completion,self.root,external-done)]=None
+            except Exception as error:failures.append(str(error))
+
+    def _release_deferred_devices(self, deferred, done, free):
+        for device,dependencies in list(deferred.items()):
+            if set(dependencies)<=done:
+                free.append(device);del deferred[device]
+
+    def run(self, jobs, *, deferred_devices=None):
         pending={job.identity:job for job in jobs};done=set();failures=[]
+        external=set().union(*(job.dependencies for job in jobs))-pending.keys()
+        deferred=dict(deferred_devices or {})
+        if not set(deferred)<=set(self.devices):raise ValueError('deferred devices must belong to this batch')
         for identity in list(pending):
             file=self.root/'jobs'/identity/'latest.json'
             if file.exists() and read_exit(file)==0:
                 done.add(identity);del pending[identity]
-        with ThreadPoolExecutor(max_workers=len(self.devices)) as executor:
-            futures={};free=list(self.devices)
+        with ThreadPoolExecutor(max_workers=len(self.devices)+1) as executor:
+            futures={};free=[d for d in self.devices if d not in deferred]
+            if external:futures[executor.submit(dependency_completion,self.root,external)]=None
             while pending or futures:
+                self._release_deferred_devices(deferred,done,free)
                 ready=sorted([j for j in pending.values() if set(j.dependencies)<=done],
                              key=lambda j:-j.estimate_seconds)
                 for job in ready:
@@ -180,10 +227,7 @@ class Batch:
                     if failures:break
                     raise RuntimeError('pending jobs have missing dependencies')
                 completed,_=wait(futures,return_when=FIRST_COMPLETED)
-                for future in completed:
-                    free.append(futures.pop(future))
-                    try:done.add(future.result())
-                    except Exception as error:failures.append(str(error))
+                self._consume_completions(completed,futures,executor,done,external,free,failures)
             if failures:
                 raise RuntimeError('batch engineering/budget failure: '+ '; '.join(failures))
         return sorted(done)

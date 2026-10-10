@@ -139,3 +139,25 @@ def test_registered_budget_counts_device_cost_spent_and_other_coordinator(tmp_pa
     coordinator.running[('gpu01',1)]['start']=time.time()-2*3600
     with pytest.raises(RuntimeError,match='projected boundary'):
         coordinator.reserve_budget(batch.Job('additional',['audit'],estimate_seconds=3*3600),'gpu01',3)
+
+
+def test_external_checkpoint_exit_event_releases_deferred_device(tmp_path,monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from ember.proposal_writer import batch
+    from ember.pi05_source_checkpoint import write_json_atomic
+    write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':52}})
+    monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed_commit' if command[1]=='rev-parse' else '')
+    coordinator=batch.Batch(tmp_path,[('gpu01',1)],root=tmp_path)
+    launches=[]
+    monkeypatch.setattr(coordinator,'execute',lambda job,device: launches.append((job.identity,device)) or job.identity)
+    parent=tmp_path/'jobs/teacher160/latest.json'
+    # The receipt can precede registration: watch-before-read also handles this race.
+    write_json_atomic(parent,{'exit_code':0})
+    completed=coordinator.run([batch.Job('resume480',['teacher'],('teacher160',),10)],
+        deferred_devices={('gpu01',1):('teacher160',)})
+    assert launches==[('resume480',('gpu01',1))] and set(completed)=={'teacher160','resume480'}
+    parent.unlink()
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future=executor.submit(batch.dependency_completion,tmp_path,{'teacher160'})
+        write_json_atomic(parent,{'exit_code':0})
+        assert future.result(timeout=3)=={'teacher160'}

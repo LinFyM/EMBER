@@ -1,3 +1,19 @@
+## 2026-10-10 累计52预算已由实际消费者承接，原教师按退出事件续480
+
+代码`9a4fa85a4eff3963cd5e891914eeaa4c7978b2d9`已main集成/push，clean detached冻结于
+`/data1/user/ymdai/ember_worktrees/video_guided_proposal_writer_20261010_9a4fa85a`。budget_revision_consumer实际读取52、拒绝53，
+并在ROOT现有账目/在途下执行预留；CPU核验不含GPU forward。run_contract保留原40及旧时间/launch/failure身份，登记预算/代码/物理接续修订。
+
+pilot/teacher_followup_003协调器已实际启动，确认进程存活及kernel inotify退出回执等待注册。
+完整160后原optimizer/RNG/query cursor续320到480，显式resume来源写进每个真实launch；query physical28/logical112/function4。
+先使用未被原160协调器持有的gpu01:6、gpu02:4/6；gpu01:1/3/5在原八节点全部退出后才接入，合计不超过现场规则。
+不称六卡已经同时训练；实际设备/费用按每次live准入和exit记录。1/3按12.8/20.8秒完整更新预留，未测设备参考22.5秒+60秒启动余量。
+launch前已结算0.772113909GPUh（含已标明非精确的短render诊断保守上界）；现有教师在途费用也计入预留。
+strg01 data1 used1407724840KiB/quota2147483648KiB，ROOT约2.2GiB，64GiB峰值预算可容纳。尚无G/π formal学习或教师能力结论。
+
+实验session继续直接等待整批退出，不周期读取训练进度/log/checkpoint，不自Queue或向main逐阶段ACK；
+八原教师及selection/audit完整后消费有益供给停止线，再按原§13接G/π。main继续只读，tracked/Git仍由实验独占。
+
 ## 2026-10-10 主讨论裁决累计52 GPUh，完整首批范围不变
 
 main `01a12385-4cfc-7ec2-9017-ef2b242243cf`消费profile_06/07、运动快照和launch/exit原件后明确选择A：

@@ -1,3 +1,14 @@
+## 2026-10-11 rank8正式教师bank已从clean pushed b73d15c8启动
+
+canonical main与origin/main已集成b73d15c8f987a39fc7ab868d107060b69f874916；正式计算冻结在
+/data1/user/ymdai/ember_worktrees/video_guided_proposal_rank8_20261011_b73d15c8（clean detached）。
+新ROOT run_contract实际预算消费者为96GPUh含18.640412103864882 carry-in，原52 ROOT保持只读。
+4个空H seed事件已CPU物化。首四教师UTC19:16:08–20分别在gpu01:1、gpu02:4/6/7启动，均按实际余量micro56；
+GPU01:6仅用于后继采集/小物理读出。共5卡执行池，不把当前组合当后继上限，所有launch重新双节点live与strg01 quota。
+当前教师依赖图48个有计算作用job，160→原optimizer续480，并采独立H160/H480、mid/late/return及全部selection4/audit16。
+源码未在冻结树原地修改；当前没有G/π formal更新或rank8能力结论。实际launch/exit与精确费用由ROOT/jobs和profile原件保存。
+当前实验session直接持续等整批退出事件；没有周期训练log/checkpoint查询、阶段ACK或selfQueue。tracked/Git/docs仍由实验独占，main只读。
+
 ## 2026-10-11 rank8多起点正式派发已接收，实验独占实施
 
 main fd5ae91354584c38457120ba32d04df53abb1e67的完整设计§1–13已实际阅读，

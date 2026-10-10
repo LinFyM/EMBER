@@ -10,6 +10,37 @@ import torch
 from ember.pi05_eval.scene import _scene_snapshot, _restore_scene, _assert_scene_pair
 
 
+def _microstep_state(sim):
+    """Keep post-integrator state and its actual pre-integration pose/contact cache.
+
+    Robosuite returns mj_step's cache without a final mj_forward. Recomputing
+    only qpos/qvel changes a moving prefix's pose/contact predicates. Full
+    MjData pickle also embeds the large model, so retain the integration state
+    and precisely the live cache consumed before the next normal mj_forward.
+    """
+    import mujoco
+    data, model = sim.data._data, sim.model._model
+    signature = int(mujoco.mjtState.mjSTATE_INTEGRATION)
+    state = np.empty(mujoco.mj_stateSize(model, signature), dtype=np.float64)
+    mujoco.mj_getState(model, data, state, signature)
+    return dict(signature=signature, integration=state,
+        kinematics={key:getattr(data,key).copy() for key in
+            ('xpos','xquat','xmat','geom_xpos','geom_xmat','site_xpos','site_xmat','cam_xpos','cam_xmat')},
+        ncon=int(data.ncon), contacts={key:getattr(data.contact,key).copy() for key in dir(data.contact)
+            if not key.startswith('_') and isinstance(getattr(data.contact,key),np.ndarray)})
+
+
+def _restore_microstep(sim, saved):
+    import mujoco
+    data, model = sim.data._data, sim.model._model
+    mujoco.mj_setState(model, data, saved['integration'], saved['signature'])
+    for key,value in saved['kinematics'].items():
+        getattr(data,key)[:] = value
+    data.ncon = saved['ncon']
+    for key,value in saved['contacts'].items():
+        getattr(data.contact,key)[:] = value
+
+
 def _simple_attributes(owner):
     """Mutable numerical controller/wrapper state; exclude simulator references."""
     result = {}
@@ -32,8 +63,9 @@ def capture_snapshot(env, observation, slot):
             interpolators=interpolators, gripper=_simple_attributes(robot.gripper),
             buffers={key:_simple_attributes(value) for key,value in vars(robot).items()
                      if key.startswith('recent_') and hasattr(value,'__dict__')}))
-    return dict(schema_version='ember_actual_practice_snapshot_v3',
+    return dict(schema_version='ember_actual_practice_snapshot_v4',
         scene=_scene_snapshot(env, observation, names, goals, image=True), names=names, goals=goals,
+        microstep=_microstep_state(owner.sim),
         model_arrays={key: np.asarray(getattr(owner.sim.model, key)).copy()
                       for key in ('geom_rgba', 'site_rgba', 'eq_active') if hasattr(owner.sim.model, key)},
         simulator_arrays={key: np.asarray(getattr(owner.sim.data, key)).copy() for key in
@@ -47,7 +79,7 @@ def capture_snapshot(env, observation, slot):
 
 
 def restore_snapshot(env, snapshot):
-    if snapshot.get('schema_version') != 'ember_actual_practice_snapshot_v3':
+    if snapshot.get('schema_version') != 'ember_actual_practice_snapshot_v4':
         raise ValueError('recovery needs a real live snapshot, never RGB/proprio reconstruction')
     owner = env.env
     observation = _restore_scene(env, snapshot['scene'])
@@ -72,6 +104,7 @@ def restore_snapshot(env, snapshot):
     owner.sim.forward()
     for key,value in snapshot.get('simulator_arrays',{}).items():
         getattr(owner.sim.data,key)[:] = value
+    _restore_microstep(owner.sim,snapshot['microstep'])
     if 'observables' not in snapshot:
         raise ValueError('old snapshot lacks live observable timing/cache; it cannot create recovery labels')
     owner._obs_cache=deepcopy(snapshot['observation_cache'])

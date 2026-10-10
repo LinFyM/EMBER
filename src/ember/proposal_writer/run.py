@@ -70,7 +70,7 @@ def _episode_request(runtime, task, state, reference, state_id, noise_root, iden
 def collect(args, runtime, runner, contract):
     panel = task_panel(args.root, args.task)
     task = next(t for t in contract['tasks'] if t['global_task_id'] == args.task)
-    from .path import save_history
+    from .path import save_history, load_history
     root = Path(args.root) / 'events'
     expert = {k: v.float() for k, v in load_file(str(EXPERT_ROOT / f'task_{args.task:04d}_u480/lora.safetensors'),
                                               device=str(runtime.device)).items()}
@@ -85,14 +85,21 @@ def collect(args, runtime, runner, contract):
             role='nonheld_shared_training', history_kind='empty' if ordinal == 0 else 'one_actual_MT_episode',
             selection_states=panel['selection_states'], audit_states=panel['audit_states'],
             rng_roots=panel['rng_roots'])
-        history = History(states={'MT300': {k: v.detach().cpu() for k, v in runtime.mt.items()}})
-        if ordinal == 1:
+        history_path = destination/'history.pt.gz'
+        captured = destination/'history_capture.json'
+        history = (load_history(history_path) if captured.exists() else
+                   History(states={'MT300': {k: v.detach().cpu() for k, v in runtime.mt.items()}}))
+        if ordinal == 1 and not captured.exists():
             request = _episode_request(runtime, task, runtime.mt, 'MT300', panel['practice_states'][0],
                 seed(3, args.task, ordinal), event['event_id'], remaining=task['horizon'] + 10,
                 snapshots=True, uses_teaching=False)
             output = next(runner.run([request])); history = output['history']
+        if not captured.exists():
+            save_history(history_path,history)
+            write_json_atomic(captured, dict(event_id=event['event_id'], complete=True,
+                code=git_state(), episodes=history.episodes, records=len(history.records),
+                actual_practice=True, labels_complete=False))
         labels = functional_labels(runtime, runner, event, history, task, expert)
-        save_history(destination/'history.pt.gz',history)
         torch.save(labels, destination / 'functional_labels.pt')
         event.update(history_path=str(destination/'history.pt.gz'), labels_path=str(destination / 'functional_labels.pt'),
             rec_labels=len(labels['rec']), keep_labels=len(labels['keep']), recovery_attempts=len(labels['recovery_validations']),

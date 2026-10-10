@@ -1,3 +1,10 @@
+## 2026-10-10 22:00 首批恢复标签工程故障与修复核验
+
+初次正式协调器退出1，四个collect任务在运动前缀快照恢复时报同一`initial_body_pos`错误；没有进入教师优化。四个空H事件完整保留，event01实际MT H未在标签前保存而丢失；费用0.1424942008GPUh全部计入。首次launch/exit/log及fba90073冻结树保留，不原地修。
+工程定位：robosuite最后mj_step后的真实pose/contact缓存处于积分微步，只有qpos/qvel再forward会改变该缓存。200控制步现场复现位置差0.00034155m；v4保存integration和实际kinematic/contact缓存，每快照39176bytes，不复制完整模型。跨进程实际恢复及后续5同动作双RGB/proprio差0、settling0、消耗5控制步，profile_snapshot_05通过。该证据只核工程，不表明教师恢复成功或能力有效。
+采集改为先保存真实H与采集回执再创建标签；响应仅缓存冻结source/候选/已见观测/固定噪声的原生预测，θ下游每score重算。局部/RL/报告在消费者及完整checkpoint后才退休任务owned可重算候选，最终/U与真实RGB/hidden/动作/反馈保留，并明确旧path不再完整可重放的恢复边界。六个有意义协议tests通过（13.77s）。
+三个未包围计时的短render诊断保留已知失败/成功事实，保守记0.0375GPUh预算上界，明确不是实测精确费用；其余新增诊断有精确exit回执。40GPUh/64GiB、面板、更新、损失、选择和信息墙不改。新的clean pushed冻结代码核验后恢复原首批，不恢复旧算法。
+
 ## 2026-10-10 21:43 正式首批已实际启动
 
 main/frozen代码fba90073c8fe1b6ba957f3bec62fa37dd9a4db17已push。正式计算来自clean detached `/data1/user/ymdai/ember_worktrees/video_guided_proposal_writer_20261010_fba90073`。

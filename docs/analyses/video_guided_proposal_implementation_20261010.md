@@ -48,3 +48,7 @@ profile_04（7595f413）退出0/65.90秒/0.018305GPUh：chunk24为17.77秒/32.56
 调度预算依据：gpu01:1实测约10秒/112 forward-backward、完整带keep约12.6秒；gpu02:7近期共驻约20.6秒/112。首轮教师使用已在现场可用的gpu01:1/6，gpu02:4/6/7并行采集/读出，不因高UTL排除后者。不是按world_size限制整批，预算实际约束了长梯度阶段的设备选择。启动时重新现场准入，变化自行调整物理安排。
 预计完整计算暂14–18h（2张已可用的高吞吐训练卡，独立采集/读出最多再3卡，严格阶段依赖；相对原8–12h上修）。整批暂估32–40GPUh，π/G的完整历史成本仍不确定；40为硬上限，不能通过缩矩阵满足，达到具体边界给主讨论。
 存储峰值64GiB计划包含cache-free真实H、12条教师端点/full optimizer、G/π完整状态、当前未消费候选、最终LoRA及指定完整U。局部数据在local128完整保存后、每RL batch在完整checkpoint后、报告在query/指定U完成后，退休已消费可重算的中间候选及H中重复参数副本，保存原始RGB/actual隐藏/动作/反馈、seed/父参数引用、raw rows和选定最终参数。该生命周期操作在相应消费者完成前不执行，必要G刷新教师/恢复资产保留。
+
+首次formal collect四任务在恢复标签阶段失败，原件jobs/collect_*/attempt_001与initial_teachers_exit完整保留；尚未执行教师更新。event00完成，event01尚未保存真实H，故没有将丢失的H补造为可恢复原件。
+v4现场快照补integration+真实微步kinematic/contact缓存，根因为mj_step后pose/cache和qpos微步时点不同；单独forward不是现场恢复。200控制步复现0.34mm差，39KB payload跨进程重放及随后5个实际动作RGB/proprio一致，profile_snapshot_04/05保留。完整MjData pickle嵌入133MB模型不采用；不放宽场景一致性guard。v1/v2/v3旧快照不补造为v4。
+新采集在标签前保存实际H/代码/episode回执；四个原event00不重复。π只缓存停止梯度的原生响应预测，θ Reader/trunk/heads每次重新编码；消费者完成后候选生命周期保存最终和指定完整U、原始实践事实、全部参数改变量及固定ψ重算身份，非U旧path不能继续完整旧on-policy回放。对应source-cache live-θ梯度和候选消费/事实保留两个协议回归补入，共6tests通过。尚无G/π或教学学习能力结果。

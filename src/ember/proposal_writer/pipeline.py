@@ -16,14 +16,16 @@ from .contract import TASKS, OPTIMIZER, EXPERT_ROOT, seed
 from .learning import (Baseline, train_cfm, train_local, on_policy_update, checkpoint,
                        assigned_tasks, resume_checkpoint)
 from .path import (compile_condition, evaluate_fixed, history_prefix, save_history, load_history,
-                   restore_compilation)
+                   restore_compilation,retire_consumed_parameters)
 from .teacher import functional_labels
 
 
 def load_version(runtime, directory, *, fixed_psi=True):
     state = torch.load(Path(directory) / 'state.pt', map_location='cpu', weights_only=False)
     runtime.generator.load_state_dict(state['psi']); runtime.actor.load_state_dict(state['theta'])
-    runtime.version = state['psi_version']
+    runtime.version=state['psi_version']
+    runtime.fixed_kernel_identity=dict(checkpoint=str(Path(directory).resolve()),psi_version=runtime.version,
+        checkpoint_stage=state['stage'],checkpoint_update=state['next_update'])
     if fixed_psi:
         runtime.freeze_psi()
     return state
@@ -161,10 +163,13 @@ def rl(args, runtime, runner, contract, context):
             paths.append(path)
         on_policy_update(runtime, context, args.root, update+1, paths, rewards, controls,
                          optimizer, baseline, baseline_optimizer)
-        checkpoint(args.root, 'RL', update+1, runtime, optimizer, context,
+        saved=checkpoint(args.root,'RL',update+1,runtime,optimizer,context,
             sampler=dict(next_update=update+1, task_order=list(TASKS), new_paths_per_task=1,
                          query_pool_cycle=4, condition_weight=.25), baseline=baseline,
             baseline_optimizer=baseline_optimizer)
+        for path in paths:
+            retire_consumed_parameters(args.root/'RL_paths'/path.identity,saved/'manifest.json',
+                {k:v.cpu() for k,v in runtime.mt.items()})
         del paths
 
 
@@ -201,8 +206,9 @@ def report(args, runtime, runner, contract):
                                references=path.valid)
             write_json_atomic(destination / 'U_diagnostic.json', dict(rows=U, complete_U=True,
                 diagnosis_after_final_locked=True, diagnosis_does_not_change_selected=True))
-        write_json_atomic(destination / 'complete.json', dict(complete=True, version=version, input_arm=arm,
-            code_stage='fixed report', condition=path.identity, query_rows=len(rows), environment_steps=path.environment_steps))
+        write_json_atomic(destination / 'complete.json',dict(complete=True,version=version,input_arm=arm,
+            code_stage='fixed report',condition=path.identity,query_rows=len(rows),environment_steps=path.environment_steps))
+        retire_consumed_parameters(destination,destination/'complete.json',{k:v.cpu() for k,v in runtime.mt.items()})
 
 
 def run(args, runtime, runner, contract, context):
@@ -213,7 +219,11 @@ def run(args, runtime, runner, contract, context):
     elif args.command == 'local':
         load_version(runtime, args.checkpoint)
         baseline = Baseline().to(runtime.device)
-        train_local(runtime, context, args.root, local_examples(args.root, runtime),
-                    stop=128, resume=args.resume, baseline=baseline)
+        train_local(runtime,context,args.root,local_examples(args.root,runtime),
+            stop=128,resume=args.resume,baseline=baseline)
+        if context.is_main:
+            proof=args.root/'checkpoints/local/update_00000128/manifest.json'
+            for file in sorted((args.root/'local_data').glob('*/path.json')):
+                retire_consumed_parameters(file.parent,proof,{k:v.cpu() for k,v in runtime.mt.items()})
     elif args.command == 'RL': rl(args, runtime, runner, contract, context)
     elif args.command == 'report': report(args, runtime, runner, contract)

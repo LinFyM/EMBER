@@ -183,8 +183,8 @@ def train_local(runtime, context, root, examples, *, stop=128, resume=None, base
             prefix = prefixes[int(rng.integers(len(prefixes)))]
             path = example['path']
             candidates = prefix['practiced']
-            decision = dict(kind='final', candidates=candidates, records=prefix['records'],
-                            episodes=prefix['episodes'], budget=prefix['budget'], parent=None)
+            decision=prefix.setdefault('decision',dict(kind='final',candidates=candidates,
+                records=prefix['records'],episodes=prefix['episodes'],budget=prefix['budget'],parent=None))
             features = runtime.teaching(task, path.demo, video_task=path.video_task)
             logits = decision_logits(runtime, path, decision, features)
             probabilities = logits.softmax(-1)

@@ -59,13 +59,14 @@ class Compilation:
     selected: str | None = None
     environment_steps: int = 0
     video_task: int | None = None
+    kernel_identity: dict = field(default_factory=dict)
 
     def manifest(self):
         return dict(task_id=self.task, teacher_demo=self.demo, video_task=self.video_task,
             identity=self.identity, path_ordinal=self.path_ordinal, noise_root=self.noise_root,
             practiced_P=self.practiced, valid_U=self.valid, selected=self.selected,
             decisions=self.decisions, attempts=self.attempts, boundaries=self.boundaries,
-            environment_steps=self.environment_steps, final_locked=self.selected is not None)
+            environment_steps=self.environment_steps,final_locked=self.selected is not None,kernel_identity=self.kernel_identity)
 
     def save(self, root, *, retain_U=False):
         root = Path(root); root.mkdir(parents=True, exist_ok=True)
@@ -80,14 +81,22 @@ class Compilation:
 
 
 def decision_inputs(runtime, path, decision, features):
+    # Only source-frozen raw image embeddings are reused; θ encodings below remain fresh.
+    path.history.model_rows(runtime)
     history = history_prefix(path.history, decision['records'], decision['episodes'])
     refs = set(decision['candidates']) - {'STOP'}
     refs |= {row['parameter_ref'] for row in history.records}
     refs.add('MT300')
     states = {k: path.states[k] for k in refs}
     parent = decision.get('parent') if decision['kind'] == 'practice' else None
-    responses = runtime.responses({k: states[k] for k in decision['candidates'] if k != 'STOP'},
-                                 history, runtime.tasks[path.task].authority.language, parent=parent)
+    if 'native_response_predictions' in decision:
+        responses={key:torch.tensor(value,dtype=torch.float32) for key,value in
+                   decision['native_response_predictions'].items()}
+    else:
+        responses=runtime.responses({k:states[k] for k in decision['candidates'] if k!='STOP'},
+            history,runtime.tasks[path.task].authority.language,parent=parent)
+        decision['native_response_predictions']={k:v.detach().cpu().tolist() for k,v in responses.items()}
+        decision['prediction_source']='frozen source, complete candidate task factors, actual seen RGB and saved native noise; ten ODE calls'
     return history.model_rows(runtime), states, responses
 
 
@@ -129,7 +138,8 @@ def compile_condition(runtime, runner, task, panel, demo, *, identity, path_ordi
         raise ValueError('compilation needs a fixed generation/read kernel')
     mt = cpu_state(runtime.mt)
     path = Compilation(task['global_task_id'], int(demo), identity, int(path_ordinal), int(noise_root),
-        History(states={'MT300': mt}), {'MT300': mt}, video_task=video_task)
+        History(states={'MT300':mt}),{'MT300':mt},video_task=video_task,
+        kernel_identity=getattr(runtime,'fixed_kernel_identity',{}))
     features = runtime.teaching(path.task, demo, video_task=video_task)
     rng = torch.Generator().manual_seed(seed(30, noise_root, path_ordinal))
     while 1024 - path.environment_steps >= 11:
@@ -218,12 +228,16 @@ def restore_compilation(root, runtime):
     from safetensors.torch import load_file
     from ember.pi05_source_checkpoint import read_json
     root = Path(root); meta = read_json(root / 'path.json')
+    if meta.get('parameter_lifecycle_complete') and not meta['parameter_retirement']['full_compilation_replay_available']:
+        raise ValueError('consumed path parameters retired; resume the completed shared checkpoint, not old on-policy paths')
     history = load_history(root / 'history.pt.gz')
     states = dict(history.states)
     states['MT300'] = cpu_state(runtime.mt)
     states.update({file.stem: load_file(str(file)) for file in root.glob('*.safetensors')})
+    refs={'MT300'}|{r['parameter_ref'] for r in history.records}
+    history.states={k:states[k] for k in refs}
     path = Compilation(meta['task_id'], meta['teacher_demo'], meta['identity'], meta['path_ordinal'],
-        meta['noise_root'], history, states, video_task=meta['video_task'])
+        meta['noise_root'],history,states,video_task=meta['video_task'],kernel_identity=meta.get('kernel_identity',{}))
     for attr, key in [('practiced', 'practiced_P'), ('valid', 'valid_U'), ('selected', 'selected'),
                       ('decisions', 'decisions'), ('attempts', 'attempts'), ('boundaries', 'boundaries'),
                       ('environment_steps', 'environment_steps')]:
@@ -236,3 +250,38 @@ def score_log_probability(logits, selected, *, forced=False):
     if forced or len(logits) == 1:
         return logits.sum() * 0
     return logits.log_softmax(-1)[selected]
+
+
+def retire_consumed_parameters(root,proof,mt):
+    """After complete consumption, keep final/U and raw facts, retire replay-only copies."""
+    from safetensors.torch import load_file
+    from ember.pi05_source_checkpoint import read_json
+    from .analysis import parameter_changes
+    root=Path(root);proof=Path(proof)
+    if not read_json(proof)['complete']:raise ValueError('parameter retirement requires a complete consumer receipt')
+    meta=read_json(root/'path.json')
+    if meta.get('parameter_lifecycle_complete'):return meta['parameter_retirement']
+    if not meta['final_locked']:raise ValueError('an active compilation has not been consumed')
+    files=list(root.glob('*.safetensors'))
+    keep={f.stem for f in files}|{'MT300'} if meta['retained_U'] else {meta['selected']}
+    changes={}
+    for file in files:
+        changes[file.stem]=parameter_changes(mt,load_file(str(file)),mt)
+    dropped=[str(file) for file in files if file.stem not in keep]
+    record=dict(consumer_proof=str(proof),kernel_identity=meta['kernel_identity'],retained_parameter_refs=sorted(keep),
+        retired_candidate_files=dropped,actual_parameter_changes_relative_MT=changes,
+        reconstruction='fixed psi checkpoint, source/MT, exact teaching, attempt seed/parent and chronological actual H',
+        raw_RGB_hidden_actions_feedback_preserved=True,bitwise_reconstruction_not_claimed=True,
+        full_compilation_replay_available=bool(meta['retained_U']))
+    write_json_atomic(root/'parameter_retirement_started.json',record)
+    history=load_history(root/'history.pt.gz')
+    history.states={k:v for k,v in history.states.items() if k=='MT300'}
+    temporary=root/'.history_retirement.pt.gz'
+    save_history(temporary,history);temporary.replace(root/'history.pt.gz')
+    deleted_bytes=0
+    for file in files:
+        if file.stem not in keep:
+            deleted_bytes+=file.stat().st_size;file.unlink()
+    record['deleted_parameter_bytes']=deleted_bytes
+    write_json_atomic(root/'path.json',{**meta,'parameter_lifecycle_complete':True,'parameter_retirement':record})
+    return record

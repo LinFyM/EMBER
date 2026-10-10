@@ -55,3 +55,59 @@ def test_full_native_latent_and_same_call_hidden_times():
     assert len(velocity.calls)==10 and actions.shape==(2,50,7) and hidden.shape==(2,2,50,1024)
     torch.testing.assert_close(actions,torch.zeros_like(actions),atol=1e-6,rtol=0)
     assert float(hidden[0,0,0,0])==1. and abs(float(hidden[0,1,0,0])-.1)<.001
+
+
+def test_frozen_response_cache_keeps_fresh_actor_gradient():
+    from ember.proposal_writer.path import decision_logits
+    from ember.writer.practice import History
+    class Reader(nn.Module):
+        def __init__(self):super().__init__();self.weight=nn.Parameter(torch.tensor(2.));self.calls=0
+        def forward(self,kind,features,rows,states,candidates,responses,budget):
+            self.calls+=1
+            return self.weight*responses['MT300'][0,:1]
+    class Runtime:
+        def __init__(self):
+            self.device=torch.device('cpu');self.actor=Reader();self.calls=0
+            self.tasks={12:SimpleNamespace(authority=SimpleNamespace(language='real target language'))}
+        def observation_features(self,observations):return {}
+        def responses(self,states,history,language,*,parent=None):
+            self.calls+=1;return {'MT300':torch.ones(1,70)}
+    runtime=Runtime();state={'factor':torch.ones(1)}
+    path=SimpleNamespace(task=12,history=History(states={'MT300':state}),states={'MT300':state})
+    decision=dict(kind='final',candidates=['MT300'],records=0,episodes=0,budget=[1.,1.,0.,0.])
+    first=decision_logits(runtime,path,decision,{})
+    first.sum().backward()
+    assert float(runtime.actor.weight.grad)==1
+    with torch.no_grad():runtime.actor.weight.add_(1.)
+    runtime.actor.zero_grad(set_to_none=True)
+    second=decision_logits(runtime,path,decision,{})
+    second.sum().backward()
+    assert runtime.calls==1 and runtime.actor.calls==2
+    assert float(second.detach()[0])==3 and float(runtime.actor.weight.grad)==1
+
+
+def test_candidate_retirement_requires_consumption_and_preserves_facts(tmp_path):
+    import pytest
+    from ember.proposal_writer.path import Compilation,retire_consumed_parameters,load_history
+    from ember.writer.practice import History
+    from ember.pi05_source_checkpoint import write_json_atomic
+    names=['layer.lora_A.default.weight','layer.lora_B.default.weight']
+    mt={k:torch.ones(2,2) for k in names}
+    states={'MT300':mt,'G_000':{k:v+1 for k,v in mt.items()},'G_001':{k:v+2 for k,v in mt.items()}}
+    raw=torch.arange(24,dtype=torch.uint8).reshape(2,3,2,2)
+    hidden=torch.ones(2,50,3)
+    h=History(records=[dict(parameter_ref='G_000',hidden=hidden,actions=torch.ones(5,7))],
+        observations={'seen':dict(images=raw)},states=states,image_features={'seen':torch.ones(2,3)})
+    path=Compilation(12,42,'owned_test',0,7,h,states,practiced=list(states),valid=list(states),
+        selected='G_001',kernel_identity={'checkpoint':'retained_fixed_psi'})
+    path.save(tmp_path)
+    proof=tmp_path/'consumer.json';write_json_atomic(proof,{'complete':False})
+    with pytest.raises(ValueError,match='complete consumer'):retire_consumed_parameters(tmp_path,proof,mt)
+    assert (tmp_path/'G_000.safetensors').exists()
+    write_json_atomic(proof,{'complete':True})
+    result=retire_consumed_parameters(tmp_path,proof,mt)
+    saved=load_history(tmp_path/'history.pt.gz')
+    assert not (tmp_path/'G_000.safetensors').exists() and (tmp_path/'G_001.safetensors').exists()
+    assert torch.equal(saved.observations['seen']['images'],raw) and torch.equal(saved.records[0]['hidden'],hidden)
+    assert set(saved.states)=={'MT300'} and not saved.image_features
+    assert result['deleted_parameter_bytes']>0 and result['full_compilation_replay_available'] is False

@@ -1,3 +1,18 @@
+## 2026-10-10 正式实施派发已接收：实验session独占工程/Git窗口
+
+实验session `01a12384-17a9-7382-aeec-cee89479428f` 已实际接收新主讨论
+`01a12385-4cfc-7ec2-9017-ef2b242243cf` 的完整正式任务；接收main为
+`4e16cfeaac05a34c22bba6b4f4d618fd3624cf97`，科学合同见唯一active设计全文及§13。
+现在tracked/Git、实现、消费者验证、资源及运行窗口归实验session独占；主讨论只读科学消费。
+此前被Owner叫停的只读meta接口子任务不恢复；本轮是完整新方法实施，不恢复旧functional算法。
+
+当前为工程实施，尚无新GPU计算。使用独占 `codex/video-guided-proposal-writer` worktree，
+复用source1000/MT300/合法数据/官方执行与捕获，新增运行面拥有双meta、G、三类π、教师标签及condition-SUM。
+先核真实消费者、参数隔离和吞吐；主分支集成/push后由clean detached版本进行保留计算。
+旧experience算法仅临时保留到新消费者验证后退役，通用执行/环境责任承接为单一owner。
+首批仍限tasks12/29/32/38、§13预登记面板与学习节点、40GPUh及新增64GiB；不新增held/旧T依赖。
+预算/科学边界需裁决时给主讨论具体证据；正常只在完整交付时可靠一次回报，不ACK/心跳/自Queue。
+
 ## 2026-10-10 Owner定案不用T、双meta读取、首轮MT起点，转入自主实施
 
 Owner最新明确：Gemma与action expert各fresh一组读取meta LoRA并参与共享学习；任务LoRA可从恒等起点优化，

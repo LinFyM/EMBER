@@ -1,4 +1,4 @@
-"""Registered stage consumers; one bounded refresh and fixed reporting panels."""
+"""Registered multistart G480, frozen-kernel decision training and fixed reports."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -12,7 +12,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_source_setup import initialize_deferred_process_group
 from ember.writer.practice import History
 
-from .contract import TASKS, OPTIMIZER, EXPERT_ROOT, seed
+from .contract import TASKS, OPTIMIZER, seed, SCHEMA
 from .learning import (Baseline, train_cfm, train_local, on_policy_update, checkpoint,
                        assigned_tasks, resume_checkpoint)
 from .path import (compile_condition, evaluate_fixed, history_prefix, save_history, load_history,
@@ -22,6 +22,8 @@ from .teacher import functional_labels
 
 def load_version(runtime, directory, *, fixed_psi=True):
     state = torch.load(Path(directory) / 'state.pt', map_location='cpu', weights_only=False)
+    if state['schema_version'] != SCHEMA:
+        raise ValueError('checkpoint belongs to a retired parameter family')
     runtime.generator.load_state_dict(state['psi']); runtime.actor.load_state_dict(state['theta'])
     runtime.version=state['psi_version']
     runtime.fixed_kernel_identity=dict(checkpoint=str(Path(directory).resolve()),psi_version=runtime.version,
@@ -38,52 +40,6 @@ def panels(root):
 def task_spec(contract, task):
     return next(r for r in contract['tasks'] if r['global_task_id'] == task)
 
-
-def refresh(args, runtime, runner, contract):
-    state = load_version(runtime, args.checkpoint)
-    if state['stage'] != 'G' or state['next_update'] != 320:
-        raise ValueError('refresh uses the fixed G320 version once')
-    task, panel = task_spec(contract, args.task), panels(args.root)[args.task]
-    destination = Path(args.root) / 'refresh' / f'task_{args.task:04d}'
-    if (destination / 'path.json').exists():
-        path = restore_compilation(destination, runtime)
-    else:
-        path = compile_condition(runtime, runner, task, panel, panel['policy_videos'][0],
-            identity=f'refresh_{args.task:04d}', path_ordinal=0, noise_root=seed(9, args.task),
-            uniform=True, snapshots=True)
-        path.save(destination)
-    eligible = [r for r in path.boundaries if r['actual_parameter_ref'].startswith('G_') and
-                not r['row'].get('model_failure')]
-    if not eligible:
-        write_json_atomic(destination / 'refresh_event.json', dict(missing_label=True,
-            reason='no actual tried valid G proposal; no MT-renaming or success-based replacement'))
-        return
-    first = eligible[0]; parent_ref = first['actual_parameter_ref']
-    event_root = Path(args.root) / 'events' / f'task_{args.task:04d}_event_02'
-    if (event_root / 'event.json').exists():
-        return
-    event_root.mkdir(parents=True, exist_ok=True)
-    parent = path.states[parent_ref]
-    save_file(parent, str(event_root / 'parent.safetensors'))
-    history = history_prefix(path.history, first['records'], first['episodes'])
-    save_history(event_root / 'history.pt.gz', history)
-    event = dict(event_id=event_root.name, task_id=args.task, event_ordinal=2,
-        teacher_demo=panel['policy_videos'][0], parent_ref=parent_ref, parent=str(event_root / 'parent.safetensors'),
-        role='nonheld_shared_training', history_kind='first_actual_valid_G320_candidate_and_actual_H',
-        selection_states=panel['selection_states'], audit_states=panel['audit_states'], rng_roots=panel['rng_roots'],
-        history_path=str(event_root / 'history.pt.gz'), labels_path=str(event_root / 'functional_labels.pt'),
-        candidate_selected_by_chronology=True, outcome_used_for_selection=False, generator_version=320)
-    expert = load_file(str(EXPERT_ROOT / f'task_{args.task:04d}_u480/lora.safetensors'), device=str(runtime.device))
-    labels = functional_labels(runtime, runner, event, history, task, expert)
-    torch.save(labels, event_root / 'functional_labels.pt')
-    support = runtime.responses({parent_ref: parent, 'MT300': runtime.mt}, history, task['language'])
-    difference = sum(float((parent[k] - runtime.mt[k].cpu().float()).square().sum()) for k in parent) ** .5
-    native_RMSE = float((support[parent_ref][:, :35] - support['MT300'][:, :35]).square().mean().sqrt())
-    event.update(rec_labels=len(labels['rec']), keep_labels=len(labels['keep']),
-        recovery_attempts=len(labels['recovery_validations']), parent_parameter_change_L2=difference,
-        parent_native_first5_RMSE_relative_MT=native_RMSE, complete=True)
-    write_json_atomic(event_root / 'event.json', event)
-    write_json_atomic(destination / 'refresh_event.json', event)
 
 
 def local_data(args, runtime, runner, contract):
@@ -147,7 +103,7 @@ def rl(args, runtime, runner, contract, context):
         runtime.actor.eval(); baseline.eval()
         for task_id in assigned_tasks(context):
             task, panel = task_spec(contract, task_id), panel_by_task[task_id]
-            demo = panel['policy_videos'][int(np.random.default_rng(seed(43, task_id, update)).integers(2))]
+            demo = panel['policy_videos'][update % 2]
             identity = f'RL_{update+1:03d}_task_{task_id:04d}'
             destination = args.root / 'RL_paths' / identity
             # New paths only at the current fixed batch θ; no stale-path replay pool.
@@ -169,7 +125,7 @@ def rl(args, runtime, runner, contract, context):
             baseline_optimizer=baseline_optimizer)
         for path in paths:
             retire_consumed_parameters(args.root/'RL_paths'/path.identity,saved/'manifest.json',
-                {k:v.cpu() for k,v in runtime.mt.items()})
+                {k:v.cpu() for k,v in runtime.mt.items()},runtime.prox_scales)
         del paths
 
 
@@ -197,24 +153,23 @@ def report(args, runtime, runner, contract):
         else:
             path = compile_condition(runtime, runner, task, panel, demo, identity=destination.name,
                 path_ordinal=ordinal, noise_root=seed(8, args.task, ordinal), video_task=video_task)
-            path.save(destination, retain_U=arm == 'correct' and args.task in (12,32) and ordinal == 0)
+            path.save(destination, retain_U=version == 'RL16' and arm == 'correct' and args.task in (12,32) and ordinal == 0)
         rows = evaluate_fixed(runtime, runner, path, task, panel['report_states'], seed(80, args.task, ordinal))
         write_json_atomic(destination / 'query.json', dict(rows=rows, finite_train_diagnostic=True,
             teacher_video_reused_six_times=True, single_fixed_task_LoRA=True, final_feedback_not_used_for_selection=True))
-        if arm == 'correct' and args.task in (12,32) and ordinal == 0:
+        if version == 'RL16' and arm == 'correct' and args.task in (12,32) and ordinal == 0:
             U = evaluate_fixed(runtime, runner, path, task, panel['report_states'], seed(80, args.task, ordinal),
                                references=path.valid)
             write_json_atomic(destination / 'U_diagnostic.json', dict(rows=U, complete_U=True,
                 diagnosis_after_final_locked=True, diagnosis_does_not_change_selected=True))
         write_json_atomic(destination / 'complete.json',dict(complete=True,version=version,input_arm=arm,
             code_stage='fixed report',condition=path.identity,query_rows=len(rows),environment_steps=path.environment_steps))
-        retire_consumed_parameters(destination,destination/'complete.json',{k:v.cpu() for k,v in runtime.mt.items()})
+        retire_consumed_parameters(destination,destination/'complete.json',{k:v.cpu() for k,v in runtime.mt.items()},runtime.prox_scales)
 
 
 def run(args, runtime, runner, contract, context):
     if args.command == 'G':
         train_cfm(runtime, context, args.root, stop=args.stop, resume=args.resume)
-    elif args.command == 'refresh': refresh(args, runtime, runner, contract)
     elif args.command == 'local-data': local_data(args, runtime, runner, contract)
     elif args.command == 'local':
         load_version(runtime, args.checkpoint)
@@ -224,6 +179,6 @@ def run(args, runtime, runner, contract, context):
         if context.is_main:
             proof=args.root/'checkpoints/local/update_00000128/manifest.json'
             for file in sorted((args.root/'local_data').glob('*/path.json')):
-                retire_consumed_parameters(file.parent,proof,{k:v.cpu() for k,v in runtime.mt.items()})
+                retire_consumed_parameters(file.parent,proof,{k:v.cpu() for k,v in runtime.mt.items()},runtime.prox_scales)
     elif args.command == 'RL': rl(args, runtime, runner, contract, context)
     elif args.command == 'report': report(args, runtime, runner, contract)

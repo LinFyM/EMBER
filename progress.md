@@ -1,3 +1,22 @@
+## 2026-10-11 rank8多起点正式派发已接收，实验独占实施
+
+main fd5ae91354584c38457120ba32d04df53abb1e67的完整设计§1–13已实际阅读，
+主讨论01a12385-4cfc-7ec2-9017-ef2b242243cf正式交回tracked/Git/docs/实现与运行窗口，
+实验01a12384-17a9-7382-aeec-cee89479428f独占，main只读科学消费。接收UTC 2026-10-10T18:36:37.445979+00:00。
+独占分支codex/video-guided-proposal-rank8，工作树/data1/user/ymdai/ember_worktrees/video_guided_proposal_rank8_20261011。
+原ROOT/16完整checkpoint及18.640412103864882GPUh只读保留，新ROOT登记累计96含carry-in，峰值64GiB跨两ROOT合计。
+实施唯一runtime的MT合并基底+fresh38/r8、原source双meta/旧专家隔离、Λ0与S_prox/S_G，
+16事件全部教师/selection/audit→G480(240/480)→πlocal128/RL16→48行/U/other/wrong。
+不恢复旧G320/刷新、未批准小扫或held；工程消费者修复自主闭环，真实科学/预算边界一次回main。
+已核strg01 data1 used1409685144KiB/quota2147483648KiB；64GiB预计可容纳。两次disposable profile已exit0，共0.0831978965858515GPUh（含micro112 OOM测量），当前累计18.723610000450733GPUh；正式更新尚未开始。
+
+已完成MT合并+rank8/原source双meta/原128专家隔离、实际teacher与ψ恢复消费者；11项工程检查通过。
+84帧CFM chunk16较8快约7.6%，快/共驻教师112-query micro56为9.822/16.838秒；原生4/8/16/32物理吞吐已测，
+采用teacher余量≥27000MiB时micro56、否则28，function4；audit优先32 slots、低余量16，collect至多4。
+空H seed事件CPU物化，不占GPU；同节点共享训练支持多worker但保持逻辑batch4。
+[工程原件与所有权](docs/analyses/video_guided_proposal_rank8_implementation_20261011.md)登记13个既有source owner替换、旧refresh退役，无parallel runner。
+下面从clean pushed detached冻结启动16事件/160与480/全部selection及audit，实际launch/exit计费保存在新ROOT。
+
 ## 2026-10-11 main已消费教师原件并定案rank8多起点完整后继
 
 原批main_delivery_receipt已processing_verified，tracked/Git串行交main；实验session当前停止并发写，等待本次完整实施派发。

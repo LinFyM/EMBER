@@ -7,7 +7,7 @@ import numpy as np
 from safetensors.torch import load_file
 
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from .contract import TASKS, MT_PATH
+from .contract import TASKS, SCHEMA
 
 
 def paired(parent, candidate):
@@ -29,28 +29,33 @@ def paired(parent, candidate):
         first_native_first5_RMSE=float(np.sqrt(np.mean(changes))) if changes else None)
 
 
-def parameter_changes(parent, candidate, mt):
+def parameter_changes(parent, candidate, scales=None):
     squared = {side: 0. for side in ('A','B')}; scaled = 0.; count = 0
     for name, value in candidate.items():
         delta = value.float() - parent[name].float()
         side = 'A' if '.lora_A.' in name else 'B'
         squared[side] += float(delta.square().sum())
-        scale = max(float(mt[name].float().square().mean().sqrt()),1e-6)
-        scaled += float((delta / scale).square().sum()); count += delta.numel()
+        if scales is not None:
+            scale = float(scales[name])
+            scaled += float((delta / scale).square().sum())
+        count += delta.numel()
     return dict(factor_change_L2={k:v**.5 for k,v in squared.items()},
-                fixed_MT_scaled_coordinate_RMS=(scaled/count)**.5, valid_coordinates=count)
+                fixed_S_prox_coordinate_RMS=(scaled/count)**.5 if scales is not None else None, valid_coordinates=count)
 
 
 def billing(root):
     paths = sorted(Path(root).glob('profile_*/exit.json')) + sorted((Path(root)/'jobs').glob('*/attempt_*/exit.json'))
     rows = [dict(path=str(p), **read_json(p)) for p in paths]
-    return dict(GPU_hours=sum(r['GPU_hours'] for r in rows), jobs=len(rows),
+    contract_path = Path(root)/'run_contract.json'
+    carry = read_json(contract_path)['limits'].get('carry_in_GPU_hours',0.) if contract_path.exists() else 0.
+    current = sum(r['GPU_hours'] for r in rows)
+    return dict(GPU_hours=carry+current, current_root_GPU_hours=current, carry_in_GPU_hours=carry, jobs=len(rows),
                 failed_jobs=sum(r['exit_code'] != 0 for r in rows),
                 attempts=sum(r.get('attempts',1) for r in rows),
                 failed_attempts=sum(r.get('failed_attempts',int(r['exit_code'] != 0)) for r in rows),raw_receipts=rows)
 
 
-def teacher_event(event_root,task,ordinal,mt):
+def teacher_event(event_root,task,ordinal,mt,scales):
     event = read_json(event_root/'event.json')
     data = read_json(event_root/'readout/aggregate.json')
     rows = data['rows']; raw=[{**r,'global_task_id':task} for r in rows]
@@ -62,29 +67,31 @@ def teacher_event(event_root,task,ordinal,mt):
             [r for r in rows if r['pool']==pool and r['endpoint']==str(node)])
             for pool in ('selection','audit')}
         weights = load_file(str(event_root/'teacher/checkpoints'/f'update_{node:08d}'/'lora.safetensors'))
-        effects[str(node)]['parameters'] = parameter_changes(parent, weights, mt)
+        effects[str(node)]['parameters'] = parameter_changes(parent, weights, scales)
     adjacent = paired([r for r in rows if r['pool']=='audit' and r['endpoint']=='160'],
               [r for r in rows if r['pool']=='audit' and r['endpoint']=='480'])
     result=dict(task_id=task,event_ordinal=ordinal,teaching_demo=event['teacher_demo'],
+        event_kind=event['event_kind'],parent_ref=event['parent_ref'],history_producer=event['history_producer'],
         rec_labels=event['rec_labels'],keep_labels=event['keep_labels'],q_T=data['q_T'],
         effects=effects,adjacent160_480=adjacent,missing_label=False)
     return result,raw
 
 
 def no_supply(events):
-    return all(r['effects'][str(node)][pool]['net']<=0 for r in events
-               if not r.get('missing_label') for node in (160,480) for pool in ('selection','audit'))
+    legal=[(event,str(node)) for event in events if not event.get('missing_label')
+           for node in event['q_T']['legal_nodes']]
+    return not legal or all(event['effects'][node]['audit']['net']<=0 for event,node in legal)
 
 
-def teacher_summary(root, *, refreshed=False):
-    root=Path(root);mt=load_file(str(MT_PATH));events=[];raw=[]
+def teacher_summary(root):
+    root=Path(root);mt=load_file(str(root/'initial.safetensors'));events=[];raw=[]
+    scales=read_json(root/'coordinates.json')['S_prox']
     for task in TASKS:
-        for ordinal in range(3 if refreshed else 2):
+        for ordinal in range(4):
             event_root=root/'events'/f'task_{task:04d}_event_{ordinal:02d}'
             if not (event_root/'event.json').exists():
-                if ordinal!=2:raise ValueError('teacher supply needs the full eight-event batch')
-                events.append(dict(task_id=task,event_ordinal=ordinal,missing_label=True));continue
-            event,rows=teacher_event(event_root,task,ordinal,mt)
+                raise ValueError('teacher supply needs all sixteen registered events or explicit missing-label originals')
+            event,rows=teacher_event(event_root,task,ordinal,mt,scales)
             events.append(event);raw.extend(rows)
     absent=no_supply(events)
     result=dict(complete=True,events=events,all_raw_rows=raw,no_beneficial_teacher_supply=absent,
@@ -94,6 +101,38 @@ def teacher_summary(root, *, refreshed=False):
         scientific_stop_reason='consume absent beneficial teacher supply before G/pi investment' if absent else None)
     write_json_atomic(root/'teacher_summary.json',result)
     return result
+
+
+def freeze_bank_scale(root):
+    """One task/event/q_T-weighted edit statistic; audit never sets these units."""
+    import math
+    root=Path(root)
+    path=root/'bank_scale.json'
+    if path.exists():
+        return read_json(path)
+    summary=teacher_summary(root)
+    if summary['no_beneficial_teacher_supply']:
+        raise ValueError('scientific stop: full teacher bank has no audit improvement; no G investment')
+    prox=read_json(root/'coordinates.json')['S_prox']
+    initial=load_file(str(root/'initial.safetensors'))
+    mean={name:0. for name in initial}; sources=[]
+    for event in summary['events']:
+        directory=root/'events'/f"task_{event['task_id']:04d}_event_{event['event_ordinal']:02d}"
+        metadata=read_json(directory/'event.json')
+        parent=initial if metadata['parent_ref']=='MT300' else load_file(metadata['parent'])
+        for node in event['q_T']['legal_nodes']:
+            weight=float(event['q_T']['probabilities'][str(node)])/16
+            endpoint=load_file(str(directory/'teacher/checkpoints'/f'update_{node:08d}'/'lora.safetensors'))
+            for name in mean:
+                mean[name]+=weight*float((endpoint[name].float()-parent[name].float()).square().mean())
+            sources.append(dict(task=event['task_id'],event=event['event_ordinal'],node=node,weight=weight))
+    scales={name:max(math.sqrt(value),1e-3*prox[name]) for name,value in mean.items()}
+    record=dict(schema_version=SCHEMA,S_G=scales,edit_mean_square=mean,S_prox=prox,sources=sources,
+        task_weight=.25,event_weight=.25,missing_contributes_zero_denominator_retained=True,
+        floor_active=[name for name in mean if math.sqrt(mean[name])<=1e-3*prox[name]],
+        selection_only=True,audit_not_used_for_scale=True,fixed_before_first_G_update=True)
+    write_json_atomic(path,record)
+    return record
 
 
 def report_rows(root,version):
@@ -165,7 +204,7 @@ def report_summary(root):
     for version in ('local128','RL16'):
         rows,conditions=report_rows(root,version)
         summaries[version]=version_summary(conditions)
-        summaries[version]['complete_U_diagnostics']=complete_U_diagnostics(root,version)
+        summaries[version]['complete_U_diagnostics']=complete_U_diagnostics(root,version) if version=='RL16' else []
         raw_by_version[version]=rows
     a,b=map(success_index,(raw_by_version['local128'],raw_by_version['RL16']))
     result=dict(complete=True,versions=summaries,raw_rows=raw_by_version,video_controls=video_controls(root),

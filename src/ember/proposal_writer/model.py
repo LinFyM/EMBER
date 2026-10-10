@@ -22,33 +22,34 @@ def attention():
 
 class FactorLayout(nn.Module):
     """Original A rows/B columns, including masks; no gauge/rank reordering."""
-    def __init__(self, contract, mt):
+    def __init__(self, contract, initial, scales=None):
         super().__init__()
-        self.parts, self.names = [], []
-        target, rank, side, coordinate, valid, scales = [], [], [], [], [], []
+        self.parts, self.names, self.factor_rank = [], [], contract.rank
+        target, rank, side, coordinate, valid, scale_blocks = [], [], [], [], [], []
         cursor = 0
         for i, item in enumerate(contract.targets):
             for j, suffix in enumerate((LORA_A_SUFFIX, LORA_B_SUFFIX)):
                 name = item.name + suffix
                 width = item.in_features if j == 0 else item.out_features
                 blocks = math.ceil(width / 64)
-                self.parts.append((name, j, width, blocks, cursor, cursor + 128 * blocks))
+                self.parts.append((name, j, width, blocks, cursor, cursor + contract.rank * blocks))
                 self.names.append(name)
-                mask = (torch.arange(blocks * 64).reshape(blocks, 64) < width).repeat(128, 1)
+                mask = (torch.arange(blocks * 64).reshape(blocks, 64) < width).repeat(contract.rank, 1)
                 valid.append(mask)
-                target.append(torch.full((128 * blocks,), i))
-                rank.append(torch.arange(128).repeat_interleave(blocks))
-                side.append(torch.full((128 * blocks,), j))
-                coordinate.append(torch.arange(blocks).repeat(128))
-                scales.append(torch.full((128 * blocks, 1), max(float(mt[name].float().square().mean().sqrt()), 1e-6)))
-                cursor += 128 * blocks
+                target.append(torch.full((contract.rank * blocks,), i))
+                rank.append(torch.arange(contract.rank).repeat_interleave(blocks))
+                side.append(torch.full((contract.rank * blocks,), j))
+                coordinate.append(torch.arange(blocks).repeat(contract.rank))
+                scale_blocks.append(torch.full((contract.rank * blocks, 1), 1. if scales is None else scales[name]))
+                cursor += contract.rank * blocks
         for name, chunks in [('target', target), ('rank', rank), ('side', side), ('coordinate', coordinate),
-                             ('valid', valid), ('scale', scales)]:
+                             ('valid', valid), ('scale', scale_blocks)]:
             self.register_buffer(name, torch.cat(chunks))
-        self.register_buffer('group', self.target * 128 + self.rank)
+        self.register_buffer('group', self.target * contract.rank + self.rank)
         self.count = int(self.valid.sum())
-        if (cursor, self.count, int(self.valid.numel() - self.count)) != (161024, 10297344, 8192):
-            raise ValueError('full rank128 block layout differs from registered coordinates')
+        if (cursor, self.count, int(self.valid.numel() - self.count)) != (10064, 643584, 512):
+            raise ValueError('full rank8 block layout differs from registered coordinates')
+        self.register_buffer('center', self.pack(initial))
 
     def pack(self, state):
         blocks = []
@@ -57,7 +58,7 @@ class FactorLayout(nn.Module):
         for name, side, width, n, _, _ in self.parts:
             value = state[name].float()
             value = value if side == 0 else value.T
-            if value.shape != (128, width):
+            if value.shape != (self.factor_rank, width):
                 raise ValueError('factor shape differs from original coordinates')
             blocks.append(torch.nn.functional.pad(value, (0, n * 64 - width)).reshape(-1, 64))
         return torch.cat(blocks)
@@ -67,7 +68,7 @@ class FactorLayout(nn.Module):
             raise ValueError('complete coordinate output has wrong shape')
         result = {}
         for name, side, width, n, start, stop in self.parts:
-            value = blocks[start:stop].reshape(128, n * 64)[:, :width]
+            value = blocks[start:stop].reshape(self.factor_rank, n * 64)[:, :width]
             result[name] = (value if side == 0 else value.T).contiguous()
         return result
 
@@ -87,11 +88,11 @@ class BlockLayer(nn.Module):
         blocks = blocks + self.ff(self.local_norm(blocks))
         # Query-weighted pooling within each actual target/rank (A and B together).
         scores = (self.local_norm(blocks) * self.rank_query).sum(-1).float() / 16
-        maxima = scores.new_full((4864,), -torch.inf).scatter_reduce_(0, group, scores, reduce='amax', include_self=True)
+        maxima = scores.new_full((ranks.numel() // 256,), -torch.inf).scatter_reduce_(0, group, scores, reduce='amax', include_self=True)
         weights = (scores - maxima[group]).exp()
-        sums = weights.new_zeros(4864).index_add_(0, group, weights)
-        pooled = blocks.new_zeros((4864, 256)).index_add_(0, group, blocks * (weights / sums[group])[:, None].to(blocks))
-        ranks = ranks + pooled.reshape(38, 128, 256)
+        sums = weights.new_zeros(ranks.numel() // 256).index_add_(0, group, weights)
+        pooled = blocks.new_zeros((ranks.numel() // 256, 256)).index_add_(0, group, blocks * (weights / sums[group])[:, None].to(blocks))
+        ranks = ranks + pooled.reshape_as(ranks)
         q = self.rank_norm(ranks)
         ranks = ranks + self.rank_attention(q, q, q, need_weights=False)[0]
         score = (self.rank_norm(ranks) * self.target_query).sum(-1).float() / 16
@@ -102,7 +103,7 @@ class BlockLayer(nn.Module):
             targets = targets + self.memory_attention(self.target_norm(targets)[None], memory[None],
                                                       memory[None], need_weights=False)[0][0]
         ranks = ranks + targets[:, None]
-        context = torch.cat((ranks.flatten(0, 1)[group], targets[group // 128]), -1)
+        context = torch.cat((ranks.flatten(0, 1)[group], targets[group // ranks.shape[1]]), -1)
         return blocks + self.broadcast(context), ranks, targets
 
 
@@ -113,7 +114,7 @@ class FactorEncoder(nn.Module):
         object.__setattr__(self, 'layout', layout)
         self.flow = flow
         self.input = nn.Linear(192 if flow else 128, 256)
-        self.target_address, self.rank_address = nn.Embedding(38, 256), nn.Embedding(128, 256)
+        self.target_address, self.rank_address = nn.Embedding(38, 256), nn.Embedding(layout.factor_rank, 256)
         self.side_address, self.block_address = nn.Embedding(2, 256), nn.Embedding(32, 256)
         self.layers = nn.ModuleList(BlockLayer() for _ in range(layers))
         self.norm = nn.LayerNorm(256)
@@ -200,13 +201,13 @@ class Generator(nn.Module):
         self.field = FactorEncoder(layout, 6, flow=True)
 
     def context(self, features, history, states):
-        summaries = {key: self.static(self.layout.pack(value).to(self.layout.scale.device) / self.layout.scale)
+        summaries = {key: self.static((self.layout.pack(value).to(self.layout.scale.device) - self.layout.center) / self.layout.scale)
                      for key, value in states.items()}
         return self.reader(features, history, summaries)
 
     def forward(self, x, time, parent, features, history, states):
         memory = self.context(features, history, states)
-        return self.field(parent / self.layout.scale, x=x, time=time, memory=memory)
+        return self.field((parent - self.layout.center) / self.layout.scale, x=x, time=time, memory=memory)
 
     @torch.no_grad()
     def generate(self, parent, features, history, states, *, noise_seed):
@@ -215,7 +216,7 @@ class Generator(nn.Module):
         x = xi.to(packed.device) * self.layout.valid
         memory = self.context(features, history, states)
         for step in range(16):
-            x = x + self.field(packed / self.layout.scale, x=x, time=step / 16, memory=memory,
+            x = x + self.field((packed - self.layout.center) / self.layout.scale, x=x, time=step / 16, memory=memory,
                                checkpoint_layers=False).float() / 16
         return self.layout.unpack(packed + self.layout.scale * x)
 
@@ -237,7 +238,7 @@ class Actor(nn.Module):
 
     def forward(self, kind, features, history, states, candidates, responses, budget):
         type_id = {'parent': 0, 'practice': 1, 'final': 2}[kind]
-        summaries = {key: self.static(self.layout.pack(value).to(self.layout.scale.device) / self.layout.scale)
+        summaries = {key: self.static((self.layout.pack(value).to(self.layout.scale.device) - self.layout.center) / self.layout.scale)
                      for key, value in states.items()}
         memory = self.reader(features, history, summaries)
         context = self.budget(torch.as_tensor(budget, device=memory.device).float()) + self.types.weight[type_id]

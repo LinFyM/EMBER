@@ -252,7 +252,7 @@ def score_log_probability(logits, selected, *, forced=False):
     return logits.log_softmax(-1)[selected]
 
 
-def retire_consumed_parameters(root,proof,mt):
+def retire_consumed_parameters(root,proof,mt,scales=None):
     """After complete consumption, keep final/U and raw facts, retire replay-only copies."""
     from safetensors.torch import load_file
     from ember.pi05_source_checkpoint import read_json
@@ -266,7 +266,7 @@ def retire_consumed_parameters(root,proof,mt):
     keep={f.stem for f in files}|{'MT300'} if meta['retained_U'] else {meta['selected']}
     changes={}
     for file in files:
-        changes[file.stem]=parameter_changes(mt,load_file(str(file)),mt)
+        changes[file.stem]=parameter_changes(mt,load_file(str(file)),scales)
     dropped=[str(file) for file in files if file.stem not in keep]
     record=dict(consumer_proof=str(proof),kernel_identity=meta['kernel_identity'],retained_parameter_refs=sorted(keep),
         retired_candidate_files=dropped,actual_parameter_changes_relative_MT=changes,

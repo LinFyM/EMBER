@@ -106,7 +106,8 @@ def functional_labels(runtime, runner, event, history, task, expert):
         request = dict(task=task, state=expert, parameter_ref=f"recovery_expert_{event['task_id']}",
             state_id=episode['init_state_id'], noise_root=root, episode_id=f"{event['event_id']}_rec{ordinal}",
             remaining=remaining, snapshot=snapshot, snapshots=False, uses_teaching=False)
-        result = next(runner.run([request]))
+        with runtime.execution.source_expert():
+            result = next(runner.run([request]))
         validations.append(dict(episode=row['episode'], step=row['step'], success=result['row']['success'],
                                 row=result['row'], actual_snapshot=True))
         if result['row']['success'] and result['history'].records:
@@ -122,7 +123,7 @@ def save_checkpoint(root, model, optimizer, stream, update, event, *, extra=None
     destination = Path(root) / 'checkpoints' / f'update_{update:08d}'
     destination.mkdir(parents=True, exist_ok=False)
     save_file({k: v.detach().cpu().contiguous() for k, v in model().items()}, str(destination / 'lora.safetensors'))
-    state = dict(schema_version='ember_parameter_teacher_checkpoint_v1', optimizer=optimizer.state_dict(),
+    state = dict(schema_version='ember_rank8_teacher_checkpoint_v2', optimizer=optimizer.state_dict(),
         next_update=update, sampler=dict(task=stream.task, teacher_demo=stream.demo, event_ordinal=stream.ordinal,
                                        next_query=update * 112), names=list(model.names),
         rng=dict(python=random.getstate(), numpy=np.random.get_state(), cpu=torch.random.get_rng_state(),
@@ -159,7 +160,8 @@ def fit_teacher(runtime, event, parent, labels, root, *,microbatch=28,stop=480,r
     start = 0
     if resume is not None:
         state = torch.load(Path(resume) / 'state.pt', map_location='cpu', weights_only=False)
-        if state['event'] != event or tuple(state['names']) != model.names:
+        if (state['schema_version'] != 'ember_rank8_teacher_checkpoint_v2'
+                or state['event'] != event or tuple(state['names']) != model.names):
             raise ValueError('teacher resume event or complete factor topology changed')
         weights = load_file(str(Path(resume) / 'lora.safetensors'), device=str(runtime.device))
         with torch.no_grad():
@@ -169,7 +171,8 @@ def fit_teacher(runtime, event, parent, labels, root, *,microbatch=28,stop=480,r
         random.setstate(state['rng']['python']); np.random.set_state(state['rng']['numpy'])
         torch.random.set_rng_state(state['rng']['cpu']); torch.cuda.set_rng_state_all(state['rng']['cuda'])
         start = state['next_update']
-    scales = {name: runtime.generator.layout.scale[first, 0].detach() for name, _, _, _, first, _ in runtime.generator.layout.parts}
+    scales = runtime.prox_scales
+    valid_coordinates = runtime.lora.parameter_count
     owner = NativeFlowPrediction(runtime.policy)
     try:
         for update in range(start, stop):
@@ -181,7 +184,7 @@ def fit_teacher(runtime, event, parent, labels, root, *,microbatch=28,stop=480,r
                 last = min(first + microbatch, 112)
                 part = FlowSample(tree_slice(sample.arguments, first, last), sample.target[first:last], sample.action_width)
                 with autocast(runtime.device):
-                    prediction = torch.func.functional_call(owner, {'policy.' + k: v for k, v in model().items()},
+                    prediction = torch.func.functional_call(owner, runtime.task_parameters(model()),
                                                              (part,), strict=False)
                     loss = mean_velocity_loss(prediction, part.target, part.action_width) * ((last - first) / 112)
                 loss.backward()
@@ -195,7 +198,7 @@ def fit_teacher(runtime, event, parent, labels, root, *,microbatch=28,stop=480,r
                 losses[kind]=function_credit(runtime,model,[pool[i] for i in chosen],
                     microbatch=function_microbatch)
             proximal = sum(((value - parent[name].to(value)) / scales[name]).square().sum()
-                           for name, value in model().items()) * (1e-3 / 10297344)
+                           for name, value in model().items()) * (1e-3 / valid_coordinates)
             proximal.backward()
             losses['proximal'] = float(proximal.detach())
             norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1., error_if_nonfinite=True)
@@ -219,6 +222,9 @@ def endpoint_distribution(selection_rows, parent_rows):
     for update, rows in selection_rows.items():
         if {row['init_state_id'] for row in rows} != set(parent):
             raise ValueError('teacher preference lost independent paired selection pool')
+        if any(row.get('model_failure') for row in rows):
+            effects[int(update)] = None
+            continue
         gains = sum(int(row['success']) - parent[row['init_state_id']] for row in rows) / len(rows)
         legal.append(int(update)); effects[int(update)] = gains
         if gains > 0:

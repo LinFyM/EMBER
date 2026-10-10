@@ -9,8 +9,11 @@ import numpy as np
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 ASSET_ROOT = Path('/data1/user/ymdai/projects/EMBER')
-RUN_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261010/pilot')
-SCHEMA = 'ember_video_guided_proposal_writer_v1'
+RUN_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/rank8_multistart')
+PRIOR_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261010/pilot')
+CARRY_IN_GPUH = 18.640412103864882
+SCHEMA = 'ember_proposal_rank8_multistart_v2'
+EVENT_KINDS = ('seed', 'mid', 'late', 'return')
 TASKS = (12, 29, 32, 38)
 ALLOWLIST = (0, 1, 2, 4, 5, 7, 12, 13, 14, 15, 17, 19, 20, 21, 22, 25, 28, 29,
              32, 34, 35, 36, 37, 38, 42, 43, 51, 55, 56, 62, 64, 73, 95, 96, 97, 101)

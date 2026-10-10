@@ -14,7 +14,7 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic, capture_r
 from ember.pi05_source_setup import initialize_deferred_process_group
 from ember.writer.runtime import autocast
 
-from .contract import TASKS, OPTIMIZER, seed
+from .contract import TASKS, OPTIMIZER, seed, SCHEMA
 from .path import decision_logits, history_prefix, score_log_probability, load_history
 
 
@@ -60,12 +60,15 @@ def checkpoint(root, stage, update, runtime, optimizer, context, *, sampler, bas
         ranks = [rng]
     if context.is_main:
         root.mkdir(parents=True, exist_ok=False)
-        state = dict(schema_version='ember_proposal_learning_checkpoint_v1', stage=stage, next_update=update,
+        state = dict(schema_version=SCHEMA, stage=stage, next_update=update,
             psi=runtime.generator.state_dict(), theta=runtime.actor.state_dict(), optimizer=optimizer.state_dict(),
             baseline=baseline.state_dict() if baseline is not None else None,
             baseline_optimizer=baseline_optimizer.state_dict() if baseline_optimizer is not None else None,
             sampler=sampler, rank_rng=ranks, topology=dict(world_size=context.world_size,
                 task_order=list(TASKS), logical_condition_batch=4), psi_version=runtime.version,
+            coordinates=dict(rank=8,valid=runtime.lora.parameter_count,center=str(runtime.root/'initial.safetensors'),
+                fixed_bank_scale=str(runtime.bank_scale_path)),
+            fixed_kernel_identity=getattr(runtime,'fixed_kernel_identity',None),
             parameter_names=dict(psi=list(dict(runtime.generator.named_parameters())),
                                  theta=list(dict(runtime.actor.named_parameters()))))
         torch.save(state, root / 'state.pt')
@@ -78,7 +81,8 @@ def checkpoint(root, stage, update, runtime, optimizer, context, *, sampler, bas
 
 def resume_checkpoint(path, stage, runtime, optimizer, context, *, baseline=None, baseline_optimizer=None):
     state = torch.load(Path(path) / 'state.pt', map_location='cpu', weights_only=False)
-    if state['stage'] != stage or state['topology']['world_size'] != context.world_size:
+    if (state['schema_version'] != SCHEMA or state['stage'] != stage
+            or state['topology']['world_size'] != context.world_size):
         raise ValueError('resume stage/topology changed; explicit migration needs a recorded new topology contract')
     runtime.generator.load_state_dict(state['psi']); runtime.actor.load_state_dict(state['theta'])
     optimizer.load_state_dict(state['optimizer']); runtime.version = state['psi_version']
@@ -101,28 +105,29 @@ def assigned_tasks(context):
 
 
 def train_cfm(runtime, context, root, *, stop, resume=None):
-    if stop not in (160, 320, 480):
+    if stop not in (240, 480):
         raise ValueError('CFM checkpoints are predeclared')
     runtime.psi_frozen = False; runtime.generator.train().requires_grad_(True)
     optimizer = torch.optim.AdamW(runtime.generator.parameters(), **OPTIMIZER)
     initialize_deferred_process_group(context, rendezvous_root=Path(root) / 'rendezvous')
     start = resume_checkpoint(resume, 'G', runtime, optimizer, context) if resume else 0
-    if stop == 480 and start != 320:
-        raise ValueError('one refresh continues the original G320 optimizer; no fresh G480')
+    if not runtime.bank_scale_path.exists():
+        raise ValueError('CFM requires the complete registered teacher bank and fixed S_G')
+    if resume is None and context.is_main:
+        torch.save(dict(schema_version=SCHEMA,psi=runtime.generator.state_dict(),theta=runtime.actor.state_dict(),
+            formal_fresh=True,coordinates=str(runtime.root/'coordinates.json'),bank_scale=str(runtime.bank_scale_path)),
+            Path(root)/'initial_models.pt')
     history_cache={}
     for update in range(start, stop):
         tick = time.monotonic(); optimizer.zero_grad(set_to_none=True); records = []
         for task in assigned_tasks(context):
-            slots = 3 if update >= 320 else 2
+            slots = 4
             rng = np.random.default_rng(seed(40, task, update))
             ordinal = int(rng.integers(slots))
             event_root = Path(root) / 'events' / f'task_{task:04d}_event_{ordinal:02d}'
             event_path = event_root / 'event.json'
             if not event_path.exists():
-                if ordinal != 2:
-                    raise ValueError('original teacher event unexpectedly missing')
-                records.append(dict(task=task, event_ordinal=ordinal, missing_label=True, denominator=4))
-                continue
+                raise ValueError('registered multistart event missing before full-bank CFM')
             event = read_json(event_path)
             distribution = read_json(event_root / 'teacher_distribution.json')
             nodes = distribution['legal_nodes']
@@ -161,10 +166,10 @@ def train_cfm(runtime, context, root, *, stop, resume=None):
         metrics(root, 'G', dict(update=update + 1, events=records, gradient_norm=float(norm),
             meta_gradient_norm=group_norms, seconds=time.monotonic() - tick,
             source_has_gradient=any(p.grad is not None for p in runtime.policy.parameters())), context)
-        if update + 1 in (160, 320, 480):
+        if update + 1 in (240, 480):
             checkpoint(root, 'G', update + 1, runtime, optimizer, context,
                 sampler=dict(seed=20261010, next_update=update + 1, events_per_task=slots,
-                             task_order=list(TASKS), task_weight=.25))
+                             task_order=list(TASKS), task_weight=.25, event_weight=.25))
 
 
 def train_local(runtime, context, root, examples, *, stop=128, resume=None, baseline=None):

@@ -11,6 +11,75 @@ from torch import nn
 from torch.utils.checkpoint import checkpoint
 
 from ember.operator_writer.native import _teacher_attention_kernel
+from ember.batched_lora import BatchedLoRAInference
+from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX, validate_lora_state
+
+
+class PolicyContexts(BatchedLoRAInference):
+    """One policy, frozen merged target weights, and explicitly separate experts.
+
+    Outside execution, physical base weights are always the original source.
+    Each native checkpoint replay activates its complete factors and base again.
+    Teacher functional calls explicitly bind merged weights, rather than relying
+    on a physical forward context surviving until backward.
+    """
+    def __init__(self, policy, contract, expert_contract, mt, initial, merged_state=None):
+        super().__init__(policy, contract)
+        self.lock, self.expert_contract = RLock(), expert_contract
+        self.expert_active = ContextVar(f'ember_source_expert_{id(self)}', default=False)
+        self.bases, self.merged, self.dense_rms, self.prox = [], {}, {}, {}
+        for target in contract.targets:
+            name, module = target.name, policy.get_submodule(target.name).base_layer
+            original = module.weight
+            dense = mt[name + LORA_B_SUFFIX].float() @ mt[name + LORA_A_SUFFIX].float()
+            dense *= expert_contract.alpha / expert_contract.rank
+            key = name + '.base_layer.weight'
+            value = (original.float()+dense).to(original.dtype) if merged_state is None else merged_state[key]
+            if value.shape != original.shape or not torch.isfinite(value).all():
+                raise ValueError('frozen merged target cache has invalid shape or values')
+            merged = nn.Parameter(value.to(original), requires_grad=False)
+            self.bases.append((module, original, merged))
+            self.merged[key] = merged
+            rms_a = float(initial[name + LORA_A_SUFFIX].square().mean().sqrt())
+            rms_dense = float(dense.square().mean().sqrt())
+            self.dense_rms[name] = rms_dense
+            self.prox[name + LORA_A_SUFFIX] = rms_a
+            self.prox[name + LORA_B_SUFFIX] = rms_dense / (math.sqrt(contract.rank) * rms_a)
+        if any(not math.isfinite(v) or v <= 0 for v in self.prox.values()):
+            raise ValueError('actual A0/MT dense update cannot define positive fixed proximal units')
+
+    @contextmanager
+    def source_expert(self):
+        with self.lock:
+            if self._active_state is not None or self.expert_active.get():
+                raise ValueError('source expert cannot nest a task execution')
+            token = self.expert_active.set(True)
+            try:
+                yield
+            finally:
+                self.expert_active.reset(token)
+
+    @contextmanager
+    def activate(self, states, *, batch_indices=None):
+        with self.lock:
+            task_contract = self._contract
+            expert = self.expert_active.get()
+            self._contract = self.expert_contract if expert else task_contract
+            try:
+                for module, original, merged in self.bases:
+                    module.weight = original if expert else merged
+                with super().activate(states, batch_indices=batch_indices):
+                    yield
+            finally:
+                for module, original, _ in self.bases:
+                    module.weight = original
+                self._contract = task_contract
+
+    def task_parameters(self, state, *, prefix='policy.'):
+        if self.expert_active.get() or self._active_state is not None:
+            raise ValueError('teacher task functional call overlaps another execution owner')
+        validate_lora_state(state, self._contract)
+        return {prefix + k: v for k, v in {**self.merged, **state}.items()}
 
 
 class MetaReader(nn.Module):
@@ -26,7 +95,7 @@ class MetaReader(nn.Module):
         object.__setattr__(self, 'execution', execution)
         self.frame_chunk = frame_chunk
         self.active = ContextVar(f'ember_proposal_meta_{id(self)}', default=None)
-        self.lock = RLock()
+        self.lock = execution.lock
         self.values = nn.ParameterList()
         self.names, self.groups, self.handles = [], [], []
         for group, stem, init_seed, width in (
@@ -61,7 +130,8 @@ class MetaReader(nn.Module):
     @contextmanager
     def activate(self, weights):
         with self.lock:
-            if self.active.get() is not None or self.execution._active_state is not None:
+            if (self.active.get() is not None or self.execution._active_state is not None
+                    or self.execution.expert_active.get()):
                 raise ValueError('meta read and native task execution contexts overlap')
             token = self.active.set(weights)
             try:

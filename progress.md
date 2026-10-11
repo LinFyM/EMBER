@@ -1,3 +1,32 @@
+## 2026-10-12 确定端点/query16整批退出0，消费完成、交付主讨论
+
+唯一37-job有限批UTC2026-10-11T23:38:59.602226完整退出0，冻结48fa1247/v7；原唯一退出投递processing_verified，
+没有重复消费/交付记录。独立CPU核实际job/CP/训练/四臂原行，最终anomalies=[]，未新增GPU/forward/episode。
+完整分析为docs/analyses/proposal_deterministic_endpoint_query16_20261012.md；原件ROOT/analysis/whole_completion_20261012/consume_originals.py及statistics.json。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/deterministic_endpoint_query16。
+
+576严格配对条件、2304逻辑臂行：MT340/旧G339/新G341/E455。MT→新G R314/G27/L26、net+1、churn53、Jaccard.855586；
+旧G→新G R307/G34/L32、net+2。本轮没有明显超过MT信号；任务净优/平/劣11/16/9，成功task MT33/旧G34/新G35/E36。
+S/O/G/L/non-held90净变−8/+7/−4/+3/+3；train24小计169→167，support12为171→174。
+新G在E-only 134行成功15（旧G22），both-success321行成功301（旧G294）；主要保持更接近MT，教师大幅优势未传递。
+曾teacher选点72行MT43/旧G50/新G46/E55，其余504为MT297/旧G289/新G295/E400，分别净+3/−2。
+完整36同教学/MT-H/实践/RNG映射、一次确定G_000/decoder1、14/16/16/4池与native配对通过；E/旧G只读、query不入H/梯度。
+
+CP216 world2/logical4/sampler216/RNG2，485 optimizer状态step216；864训练条件每task24、source无梯度/chunk16。
+末三完整36-task endpoint loss .966249/.964239/.962570，对同标签MT约1；首步上游零梯度后双meta430/432记录非零。
+唯一保存端点CPU算术未重跑：新G对E MSE.961878、编辑RMS.168181、跨task cosine.978810；
+输出公共均值能量占97.677%，条件变化能量.000659对目标.813884；相对自身常量均值MSE只改善.001424。
+现有首5原生动作新G/MT RMSE.003809，对E/MT .088126；内部改善尚未成为实际条件控制传递，不唯一裁定根因或视频/H利用。
+
+实际612新episode/143672环境步：36 G实践成功21、8564步，576 G query135108步；1728逻辑引用=1584历史episode，不重复计历史费。
+ROOT allocation4.121798GPUh=G2.226971+学生1.830138+profile.064689，无GPU失败；G1.113h、读出.955h、整批2.078h，预测内。
+首次CPU消费错误假设了复用H的local文件名，已按bootstrap complete.history真实消费者修正；attempt_001原件/原因保留，训练无故障/无改动。
+所有正式原件、v7完整恢复CP、初始模型、36参数/H及48fa冻结树保留；本轮开发分支/worktree已退休，准确恢复范围见完整分析。
+
+该批按合同停止，未启动warm/RL/held/Teacher/controls/probe。实验持canonical/Git窗口，串行完成结果集成push后仅向
+01a12bb0-5273-7462-b5e2-72a18aba7b8d一次可靠整批回报；交付/判重原件为该coordinator/result_main_delivery.json和completion_consumed.json。
+后继科学由main自主消费取舍；没有新实验合同，不恢复旧v5/v6链、不增心跳/自Queue/重复等待者。
+
 ## 2026-10-12 确定端点/query16有限批已实际启动
 
 主讨论直接消费normalized完整原件后收口v6：MT340/G339/E455，无净控制增益；不追加其warm/RL/held或小扫。

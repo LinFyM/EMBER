@@ -1,22 +1,26 @@
-## 2026-10-12 当前授权：确定MT中心完整端点，固定全36与同query16
+## 2026-10-12 当前状态：确定端点有限批消费完成，后继科学由主讨论接续
 
 最终目标仍为MT基底完整Writer明显超过强MT并解释视频/真实实践怎样进入固定LoRA能力。
 normalized-flow/query16已由main收口；广播修复真实发生，但MT340/G339/E455无控制净增。
 全36扣xi算术也未发现被噪声遮住的好编辑；不追加v6 warm/RL/held/小扫。
 
-本轮执行唯一active设计§12：沿既有读取/通信学习确定e=(E−P0)/S_G，零head初始化回MT，一次生成完整P0+S_G*e_hat。
+本轮已完整执行唯一active设计§12：沿既有读取/通信学习确定e=(E−P0)/S_G，零head初始化回MT，一次生成完整P0+S_G*e_hat。
 保留真实L/V/MT-H/当前P、static/Actor算子与native policy10flow/RNG，彻底移除参数噪声/time/Euler与旧CFM更新owner。
 fresh v7、同36/216/logical B4/优化器/video采样，G216固定后沿旧36首学生教学/实践映射，各一个新G实践。
-同query16新增576 G行、兼容MT/E/旧G576只读引用；预计612新episode，E/旧G不进候选/H/信用/梯度。
+同query16新增576 G行、兼容MT/E/旧G576只读引用；实际612新episode，E/旧G不进候选/H/信用/梯度。
 
-实际消费者检查/工程与对照复用、集成push、clean detached/live quota与双节点GPU及真实吞吐选择已完成，有限整批已经实际启动。
+实际消费者检查/工程与对照复用、集成push、clean detached/live quota与双节点GPU及真实吞吐选择、有限整批执行与原件消费已完成。
 工程实施/54项实际消费者检查已完成，control576×3真实兼容。最长完整B4已实测chunk16/32热步均20.5s、峰26.32/42.19GiB，正式选16。
 启动时同node两完全空闲A40（gpu01:0/6），world2有实测并行收益，真实Runtime两个rank均chunk16/logicalB4；
 冻结代码48fa1247来自clean pushed detached，CPU1262989/tmux ember-deterministic-endpoint-query16-20261012。
 唯一37-job协调器为新ROOT/coordinator/deterministic_G216_students_query16_01；命令/启动/准入/唯一退出回报合同已持久保存。
-预计1.5–3.5h/增量16GiB，仍按每次live和项目6/8/node6规则，不等凑卡或固化两卡。
+实际整批2.078h/ROOT约1.9GiB、4.121798GPUh，无GPU失败；原预测1.5–3.5h/增量16GiB保留。
+实际MT340/旧G339/新G341/E455，R314/G27/L26；只有净+1，未出现明显MT优势。train24净−2，support12净+3。
+端点MSE.961878但输出97.677%能量为公共均值、条件增益仅.001424；取消参数输运尚未足以传递教师能力。
+完整v7 CP216/optimizer/sampler/RNG及四臂配对通过，原件消费anomalies=[]。集成后一次交main科学消费取舍，不自动恢复或追加实验。
 完成不自动进入warm/RL/held/Teacher/controls/probe；参数loss/公共均值算术只定位，不能代控制或视频/held资格。
-完整理论/历史反证见docs/analyses/proposal_endpoint_parameterization_20261012.md，事实/状态看progress与findings§437。
+完整理论/历史反证见docs/analyses/proposal_endpoint_parameterization_20261012.md，实际结果见docs/analyses/proposal_deterministic_endpoint_query16_20261012.md；
+事实/状态看progress与findings§438。本轮已停止，目前没有新科学运行合同。
 
 ## 2026-10-12 当前有限批已完成：normalized flow与query16科学交付
 

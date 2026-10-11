@@ -11464,3 +11464,31 @@ diag内段不双计，共驻分配不称独占物理GPU小时。02 wall2.634h，
 主讨论收口v6（MT340/G339/E455），不追加旧warm/RL/held/time/scale小扫；新§12有限批G216/36首学生/新G576，
 同面板MT/E/旧G只读引用、612新增episode预期、无Actor训练/资格/视频因果结论。实际结果尚待运行。
 详见docs/analyses/proposal_endpoint_parameterization_20261012.md及唯一active设计§12。
+
+## 438. 取消参数输运改善近MT保持，确定端点仍以公共方向为主（2026-10-12）
+
+48fa1247/v7完整有限批已实际退出0，fresh全36 G216/36首学生/同query16，固定新G341对MT340、旧G339、E455。
+MT→新G R314/G27/L26、net+1/churn53/Jaccard.855586；较旧G保持增加10、churn减少18，但没有明显超MT信号。
+任务净优/平/劣11/16/9；S/O/G/L/non-held90净变−8/+7/−4/+3/+3，目标train24合计169→167，support12为171→174。
+E-only134行成功15（旧G22），双方成功321行301（旧G294）；这是更接近MT的保持，尚未传递共同E大幅操作优势。
+选点重叠72行MT43/新G46/旧G50/E55、其余504行MT297/新G295/旧G289/E400，分别+3/−2，仍只train机制读出。
+
+真实CP216的485 optimizer状态step216，world2/logical4/sampler216/RNG2、full38/rank8/643584、supervision_version0；
+864条件每task24、MT parent/实际MT-H、source无梯度/chunk16，零head首步后双meta430/432记录真实梯度打开。
+末三完整36-task端点loss .966249/.964239/.962570，对同标签MT约1；不跨CFM与endpoint比较raw loss。
+已有一次保存参数CPU算术：G对E MSE .961878，RMS .168181；共同输出均值能量 .027726，占全输出编辑能量97.677%。
+G跨task cosine .978810，条件变化能量 .000659对目标 .813884，仅约.0810%；相对自身常量均值的MSE增益 .001424。
+公共教师均值MSE .813884不部署；新G均值对E .963301，条件增益只占相对MT全部改善约3.734%。
+E=MT的task13仍有RMS .172414编辑；非零task17 MSE1.703362→1.644773，但query仅1对E12，不以局部下降称目标控制学成。
+
+现有首次原生5动作G/MT RMSE .003809，旧G/MT .006278，E/MT .088126，G/E .088033；没有新增forward。
+这些与E-only传递弱相互支持，不能单独解释全部闭环交换或证明V/H完全忽略。
+独立参数噪声问题已经按构造移除，实际学习也有进展，但该干预未足以使现有完整条件映射传递控制；
+旧expert-manifold§24–29公共方向负证据在新native/MT/归一化配置下仍需继承，不把架构名称变化清零历史。
+没有证明训练已充分收敛；条件信息、decoder利用、参数目标几何和有限学习仍未唯一分解，不据此无限续训、扫参或整体否定路线。
+
+实际612新episode/143672环境步，37jobs及profile均退出0，ROOT4.121798GPUh含profile.064689，零GPU失败；整批2.078h，未重计1728逻辑控制引用。
+独立原件消费ROOT/analysis/whole_completion_20261012/consume_originals.py及statistics.json最终anomalies=[]；
+一次参数算术原件ROOT/analysis/endpoint_arithmetic保留未重跑，原始formal结果未修改，完整v7恢复CP/初始模型/参数/H及冻结读取树保留。
+有限批按原合同停止，未自动warm/RL/held/Teacher/controls/probe；本次整批一次交01a12bb0主讨论自主科学接续。
+详见docs/analyses/proposal_deterministic_endpoint_query16_20261012.md；下一实际科学合同尚未登记。

@@ -305,3 +305,14 @@ source始终无梯度、首步等真实MT端点标签基线、后续双meta真�
 当前只两同node完全空闲卡、其它有他人任务，先world2正式，不等world4或跨node碎片；首学生同两卡动态long-first执行。
 G预测3600–6600s、读出1800–5400s、整批1.5–3.5h，参考旧G1.491h及本次只612新增episode，实际每次launch再次live准入。
 默认Runtime16/launch每rank实际chunk消费者已验证，正式chunk ceiling16；不保留无当前吞吐收益的更大chunk活动运行面。
+
+### 12.5 有限批执行完成（不登记后继）
+
+48fa1247/v7实际G216+36首学生/query16整批退出0；严格576条件MT340/旧G339/新G341/E455，
+MT→新G R314/G27/L26、net+1、churn53，未形成明显超过MT信号。
+端点MSE .961878，输出97.677%编辑能量来自公共均值，条件差异只改善.001424；首5原生动作仍近MT。
+实际完整CP/optimizer/sampler/RNG、每task24训练事件、映射/池隔离/native配对通过；不把内部改善称控制或视频资格。
+612新增episode/143672环境步，整批2.078h/4.121798GPUh、无GPU失败，旧控制引用未重计。
+本节有界运行已经按合同停止，没有自动warm/RL/held/Teacher/controls/probe或新运行授权；
+完整原件/得失/公共方向与竞争解释见[端点整批分析](../analyses/proposal_deterministic_endpoint_query16_20261012.md)，
+当前消费交付状态看progress，后继科学取舍由main依据完整结果自主登记。

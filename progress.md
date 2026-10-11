@@ -1,3 +1,11 @@
+## 2026-10-11 完整成本链与有界等价复用
+
+profile_joint_cost_03实际退出0，1051.954988秒/.292209719664GPUh，承接02原五轮而未重跑实践；恢复及最后出口58.429582秒独立列出。20条独立query865.810661秒、θ及baseline21.777864秒、最长624-record H的部分B4 ψ更新60.260876秒，source无梯度，GPU reserved18.636719GiB。03实际slots8/native最大batch4，不沿01误写16；这是单Long完整消费者的成本证据，不是全36/B4吞吐或能力资格。
+原五轮的phase未写出，只由实践396.953368秒与生成12.673929秒得到下界409.627298秒，上界572.931232秒含输入/I/O；02错误、.165826686471GPUh及03恢复全部保留。
+安装的native embed_prefix图像部分直接使用同一冻结embed_image，实践φ可供θ→G复用。joint pipeline将当前真实path借入8GiB/最多2条有界HistoryCache，prefix依实际records/episodes过滤，学习的θ/ψ编码仍fresh；不增加持久特征库或H副本。现场gpu02/gpu01可用host内存约277/363GiB，四worker缓存最多32GiB；旧2GiB长H会立刻逐出，造成03同630观测再算一遍。
+EpisodeRunner允许最多0.1秒收齐当前ready波，避免异步环境交替小组反复batch4；仅改变物理调度，各行scene/state/parameter/noise保持。四项针对性CPU消费者通过12.43秒（就绪波、缓存前缀墙、完整horizon、真实R5），随后31项相关回归通过13.23秒；dataflow两项按明确职责从大contract测试文件拆出，架构检查无硬违约。实际吞吐收益尚待当前必要比较，不提前声称提速。
+主讨论最新收束为MT-only G更新与执行/query合批的实际缺口；不为12.67秒候选生成再开矩阵，不重采四条R5。新版G/π整数窗口仍待据实登记，现有教师score队列继续，冻结源码不热改。
+
 ## 2026-10-11 完整五轮判定修复与无损恢复
 
 教师同一Batch已于UTC10:18:40从a3b5db54 clean pushed detached实际接续，六设备、85个有效收据不重算；CPU owner1759145/teacher_bank_render_recovery_04，原失败与ee2冻结身份保持。

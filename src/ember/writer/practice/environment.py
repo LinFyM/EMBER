@@ -185,11 +185,11 @@ class EnvironmentSlots:
         self.pipes[index].send(dict(kind=kind, **fields))
         self.pending[index] = kind
 
-    def receive(self, *, block=False):
+    def receive(self, *, block=False, timeout=None):
         connections = [self.pipes[index] for index in self.pending]
         if not connections:
             return []
-        ready = wait(connections, timeout=None if block else 0)
+        ready = wait(connections, timeout=(None if block else 0) if timeout is None else timeout)
         output = []
         for pipe in ready:
             index = self.pipes.index(pipe)

@@ -62,9 +62,11 @@ class EpisodeRunner:
     Scheduling/reset/step/batched ODE is lifted from the existing fixed runner.
     No edit operator, learned trajectory fitting, SDE or algorithm fallback.
     """
-    def __init__(self, runtime, contract, physical_gpu, *, slots=8):
+    def __init__(self, runtime, contract, physical_gpu, *, slots=8,coalesce_seconds=.1):
         self.runtime, self.contract, self.physical_gpu = runtime, deepcopy(contract), int(physical_gpu)
         self.slots, self.environments = slots, None
+        self.coalesce_seconds=float(coalesce_seconds)
+        if self.coalesce_seconds<0:raise ValueError('physical coalescing delay must be nonnegative')
         self.components = dict(native_prefix_seconds=0., native_flow_seconds=0., env_operation_seconds=0.,
                                env_wait_seconds=0., plans=0, physical_batch_histogram={})
         self.environment_steps = 0
@@ -91,9 +93,9 @@ class EpisodeRunner:
         if slot['request'].get('capture_history',True):history.observations[key] = raw
         slot.update(raw=raw, key=key, snapshot=snapshot)
 
-    def _receive(self, live, *, block):
+    def _receive(self, live, *, block,timeout=None):
         started = time.monotonic()
-        results = self.environments.receive(block=block)
+        results = self.environments.receive(block=block,timeout=timeout)
         self.components['env_wait_seconds'] += time.monotonic() - started
         finished = []
         for index, result in results:
@@ -201,6 +203,17 @@ class EpisodeRunner:
                         source=chain(following,source);exhausted=False
                 yield result
             ready = [i for i, slot in live.items() if slot['ready']]
+            # Briefly collect the same ready wave instead of perpetually splitting
+            # alternating environment groups into small native ODE calls.
+            deadline=time.monotonic()+self.coalesce_seconds
+            while ready and self.environments.pending and time.monotonic()<deadline:
+                for index,result in self._receive(live,block=False,timeout=max(0.,deadline-time.monotonic())):
+                    del live[index]
+                    if on_completion is not None:
+                        following=on_completion(result)
+                        if following:source=chain(following,source);exhausted=False
+                    yield result
+                ready=[i for i,slot in live.items() if slot['ready']]
             if ready:
                 self._infer(live, ready)
 

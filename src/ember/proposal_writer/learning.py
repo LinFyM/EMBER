@@ -135,7 +135,7 @@ def assigned_tasks(context,update):
 
 class HistoryCache:
     """Decoded H and its frozen raw image features have a bounded worker lifetime."""
-    def __init__(self,limit_bytes=2*1024**3,max_entries=2):
+    def __init__(self,limit_bytes=8*1024**3,max_entries=2):
         self.limit_bytes,self.max_entries,self.items=limit_bytes,max_entries,OrderedDict()
         self.decode_seconds,self.cache_hits=0.,0
 
@@ -149,6 +149,10 @@ class HistoryCache:
     def trim(self):
         while self.items and (len(self.items)>self.max_entries or sum(self.nbytes(vars(h)) for h in self.items.values())>self.limit_bytes):
             self.items.popitem(last=False)
+
+    def seed(self,path,history):
+        """Borrow the actual current batch H/raw φ; learned encodings are absent."""
+        path=str(path);self.items[path]=history;self.items.move_to_end(path);self.trim()
 
     def get(self,path):
         descriptor=path if isinstance(path,dict) else None

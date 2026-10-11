@@ -130,6 +130,8 @@ def rl(args,runtime,runner,environment,context):
         # Theta consumes its whole original kernel first; only then may all psi learn.
         supervision_version=register_students(args.root,paths,update+1,context)
         generator_trainer.refresh_bank(supervision_version)
+        for path in paths:
+            generator_trainer.cache.seed(args.root/'RL_paths'/path.identity/'history.pt.gz',path.history)
         timings['append_and_reload_supervision_seconds']=time.monotonic()-append_tick;psi_tick=time.monotonic()
         for _ in range(generator_updates):
             generator_trainer.step(runtime.G_sampler['next_update'],stage='joint_G')

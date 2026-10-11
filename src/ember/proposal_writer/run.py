@@ -54,6 +54,7 @@ def prepare(args):
     if (old['teacher']['selection_per_node'],old['teacher']['report_per_arm'])!=(16,16):
         raise ValueError('previous teacher selection and independent report must be16/16')
     root.mkdir(parents=True,exist_ok=True)
+    for cache in ('cuda','triton','huggingface'):(root/'cache'/cache).mkdir(parents=True,exist_ok=True)
     panel=materialize_panel(root,selection_count=16,report_count=16)
     previous_panel={r['task_id']:r for r in read_json(previous/'panel.json')['tasks']}
     links=['initial.safetensors','task_lora_contract.json','bank_scale.json','base/merged_targets.safetensors']

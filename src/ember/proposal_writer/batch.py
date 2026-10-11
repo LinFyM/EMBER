@@ -218,7 +218,9 @@ class Batch:
                 admissions.append(self.admit(job,n,g,admission_root))
             env=dict(PYTHONDONTWRITEBYTECODE='1',PYTHONPATH=str(self.workspace/'src'),
                 CUDA_VISIBLE_DEVICES=','.join(str(g) for _,g in devices),NCCL_P2P_DISABLE='1',
-                TOKENIZERS_PARALLELISM='false',OMP_NUM_THREADS='8',MUJOCO_GL='egl')
+                TOKENIZERS_PARALLELISM='false',OMP_NUM_THREADS='8',MUJOCO_GL='egl',
+                CUDA_CACHE_PATH=str(self.root/'cache/cuda'),TRITON_CACHE_DIR=str(self.root/'cache/triton'),
+                HF_HOME=str(self.root/'cache/huggingface'))
             command=[str(ASSET_ROOT/'.venv/bin/python')]
             if len(devices)>1:
                 command+=['-m','torch.distributed.run','--standalone',f'--nproc-per-node={len(devices)}']

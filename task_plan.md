@@ -2,15 +2,17 @@
 
 实验01a12384继续独占tracked/Git；main01a12385只读科学消费。唯一active为docs/designs/video_guided_proposal_writer_20261010.md。
 教师最多800×query28/save100，候选MT/200/400/600/800各完整16 paired score，严格16/16且更早点完整才省未来未启动工作。
-安全交接后同一Batch按任务MT读出→实际CP或下一200→完整读出接续，已完成35段及全部恢复状态/失败费用保留，不重训。
+教师bank已UTC13:36完整退出0，36E/指定MT H/固定S_G齐备；155节点完整读出、25未来节点严格饱和省略，全部有效/失败原件保留。
 教师端只供E/选择/独立E+MT各16逻辑报告，不再准备教师H池或两折热身；每task仅指定第一MT selection行保存真实bootstrap H。
 36个E/MT H到齐后固定task等权E−MT尺度，fresh共享G作MT-only初始化；首学生MT/G pair同一份参数/H/query供final热身与G bank。
 然后完整R5固定ψ/θ采集→θ一次→登记实际P/H→ψ块→新批；后续visit重新实际MT起步，query与未来H墙保持。
 首RL visit0四条MT query引用初始学生兼容原行，最多144条无需新增episode；引用保留原condition/实际episode，不能改noise或把旧cost重计。
-教师score队列优先继续；旧合法rank8原件可作可丢弃G/R5端到端成本消费者，不能冒称本合同36覆盖/能力/exact-resume。
+教师独立报告与共享学习并行；main已收口方法/效率goal，不再追加成本profile，完整科学结果尚待正式学习/400。
 main已于UTC11:35冻结G216（全36各24次）→首学生36→同pair final warm36（各4次）→联合RL9（每task一condition/实采R5），每次θ后ψ块9，最终G sampler297；唯一RL9 joint checkpoint做correct strict paired400、video_seed7、MT153逐行参照。
 必要04成本已UTC11:18:59实际退出0并释放分析卡：MT-only暖partialB4为26.09秒/chunk16（26.06GiB），长H借用raw为27.49秒，同8query收齐ready波wall短2.38%且步数不同。全B4/36吞吐仍为外推；整数已据原件冻结，不追加profile矩阵。
 14:30授权与原20:30目标保留，UTC09:24未裁剪bank22:11预测另列；G暂1–1.75h、学生0.5–1.25h、warm5–10m、联合1.5–3.25h、formal3–7h均为外推，由首正式消费者/已需shard校正，不新增训练报告矩阵。GPUh无硬cap，物理6/8/node6/data1 quota与256GiB峰值安排保持。
+
+实际接续：UTC13:38从db72ee91 clean pushed detached启动唯一Batch依赖图；G216四卡/chunk16，另外两卡独立报告，后继学生36→warm36→joint9→strict400按依赖自动派发。CPU PID2897665/tmux ember-full36-shared-20261011，ROOT/coordinator/registered_shared_window_01保留真实启动/退出身份；一次持续退出事件等待。实际bank21:36完成，原20:30目标晚66分钟，不重置计时。
 
 以下为按时点保留的历史计划，不恢复其teacher-H、旧G课程或旧π矩阵。
 

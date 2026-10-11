@@ -1,3 +1,12 @@
+## 2026-10-11 21:38 全36教师bank完成，共享窗口实际启动
+
+teacher_bank_render_recovery_04于UTC13:36:21自然退出0；bank_ready于13:36:20发布，36个E、36条指定真实MT bootstrap H及固定S_G全部完成。实际完整selection为155节点/2480行，25未来节点按严格饱和规则省略；E选点为MT9、200步4、400步7、600步6、800步10任务。独立报告尚未齐备，选点数量和非MT身份不等于泛化增益。
+原14:30授权/20:30数据目标保留；实际bank21:36完成，比目标晚66分钟。原15:21正式launch到bank完成约6h15；本次恢复协调器3h17m40.57s，不把它冒称全部数据准备wall。
+方法/效率goal已由main实际核原件并收口，不追加profile或工程审查。tracked/Git仍归实验01a12384，main只读；完整科学实验继续。
+UTC13:38:12启动同一canonical Batch的81-job依赖图，CPU PID2897665/tmux ember-full36-shared-20261011；G216实际13:38:48启动，来源clean pushed detached db72ee913d5a341fd2262ea87d36ccb39d87cde6，gpu01:0/1/2/6四worker、logicalB4、chunk16。gpu01:5与gpu02:6并行独立teacher report，物理slots分别8/16，逻辑面板不变；报告不阻塞学生36/final warm36/joint9。
+每次实际GPU启动继续由Batch做双节点live/data1 quota准入。启动快照data1用量1414819732KiB/软quota2147483648KiB，ROOT约2.97GiB，256GiB峰值计划有余量；GPUh无硬cap，普通六卡/单节点六卡约束保持。
+后继仅固定joint RL9做strict paired400，最多五修订、MT起步另计、π真STOP、MT153参照；未执行新版能力报告或视频controls。原件ROOT/coordinator/registered_shared_window_01/{plan,launcher,launch}.json及各jobs实际launch/exit。一次持续内核退出/实际阶段输出事件等待，无定时训练log/CP读取或自Queue。
+
 ## 2026-10-11 首个完整36共享窗口已定案并落地
 
 main最新§8已完整消费并整合唯一active design，保留旧历史/机制限制：G fresh216→同一首学生36→final warm36→完整9个B4/R5条件继续批；每批θ后ψ9，共81次，末G sampler297。

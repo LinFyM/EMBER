@@ -4990,3 +4990,11 @@ ROOT57.533346 allocation GPUh（strict40012.153929、六失败尝试1.278765已�
 独立G216诊断0.053786另列。当前ROOT首末job约12.165h，末recovery coordinator3.486h；共驻分配GPUh不称去重物理时长。
 资格读取/末训练1b44903d；G216/学生/warm来源db72ee91，EGL中间工程来源5c6bf6bb，v5/schema与全部原件/恢复点保留。
 新的发送端归一化/query16有限批为fa03656f fresh v6，已独立派发运行；本次旧负结果不自动扩Teacher或重开旧训练。
+
+main独立消费后收口旧版本，不追加旧续训/相邻/controls，不据此否定整条路线。两项新增CPU复算保持原formal结果：
+324条实际P/E/xi配对零场2.9443830616对实际2.9447506456，相对改善−0.012484%，九个全36块均近零场；
+这是已记录更新前训练样本的重建，不是G297新forward，也不以跨阶段raw loss作判断。
+formal parent/practice全TV0.114745/0.075934，同角色条件TV0.000269/0.000321；偏移主要为角色偏好，
+不证明具体候选能力排序。实际final为multinomial，固定候选集的最后重加权相对均匀至多改变约0.11238/400
+期望成功数；不约束整个适应过程或一次实际采样。五份决策/py/json原件稳定保存于
+旧ROOT/analysis/whole_completion_20261012/main_scientific_readout；完整解释归入原报告及findings§435。

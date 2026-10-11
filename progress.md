@@ -1,3 +1,21 @@
+## 2026-10-12 03:55 主讨论收口旧版本，配对零场与角色条件证据持久归档
+
+main已直接消费旧v5完整400原行/训练/实际概率并裁决旧版本结束：147对MT153、R145/G2/L8，无task/suite净增，
+不追加旧续训、相邻checkpoint或controls；不是大范围遗忘或整条路线不可能。原整批交付已可靠消费，不重复通知。
+主讨论的whole_result_decision.md及whole_result_reasoning.py/json、choice_conditioning_analysis.py/json共五份
+原件原样保存到/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/full36_common_teacher/analysis/whole_completion_20261012/main_scientific_readout。
+
+324条实际P/E/xi的CPU重建：训练loss2.9447506456对同样本零场2.9443830616，相对改善−0.012484%，
+九个完整36-condition块均近零场；这不是G297新forward，不跨阶段比较raw loss。formal parent/practice全TV
+0.114745/0.075934，去角色偏好后同角色0.000269/0.000321，last-final0.000528；具体候选排序仍弱。
+实际multinomial最后重加权相对均匀的固定候选集期望成功数差至多约0.11238/400，不约束整个适应过程或单次采样成绩。
+证据/竞争解释/适用范围并入现有完整交付分析、findings§435与历史记录；不修改formal原行，不重跑计算/工程检查。
+
+当前fa03656f normalized-flow/query16仍按原有限合同与唯一整批退出回报者继续，无新warm/RL/held/Teacher/probe。
+G216学习未消费query16；新读出同16-state配对，不以旧4行对新16行解释传播修复，也不以局部敏感性代替控制传递。
+本次仅科研记录集成，不新增active design、不读取训练状态；canonical/Git窗口仍由实验独占。
+纯记录完成不另唤醒main，本次commit及稳定路径随下一次实际整批交付合并回报。
+
 ## 2026-10-12 03:44 旧完整链RL9/strict400完成，未取得超过MT信号
 
 旧ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/full36_common_teacher，recovery03实际退出0；

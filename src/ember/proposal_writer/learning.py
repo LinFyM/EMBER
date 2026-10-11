@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from collections import OrderedDict
 import random
 import time
 
@@ -108,76 +109,89 @@ def metrics(root, stage, record, context):
         f.write(json.dumps(record) + '\n')
 
 
-def assigned_tasks(context):
-    return [t for i, t in enumerate(TASKS) if i % context.world_size == context.rank]
+def logical_tasks(update):
+    """Nine B4 updates form one equal-weight full36 round, independent of topology."""
+    round_index,slot=divmod(update,len(TASKS)//4)
+    order=np.random.default_rng(seed(44,round_index)).permutation(TASKS).tolist()
+    return order[4*slot:4*(slot+1)]
 
 
-def train_cfm(runtime, context, root, *, stop, resume=None):
-    if stop not in (240, 480):
-        raise ValueError('CFM checkpoints are predeclared')
-    runtime.psi_frozen = False; runtime.generator.train().requires_grad_(True)
-    optimizer = torch.optim.AdamW(runtime.generator.parameters(), **OPTIMIZER)
-    initialize_deferred_process_group(context, rendezvous_root=Path(root) / 'rendezvous')
-    start = resume_checkpoint(resume, 'G', runtime, optimizer, context) if resume else 0
-    if not runtime.bank_scale_path.exists():
-        raise ValueError('CFM requires the complete registered teacher bank and fixed S_G')
+def assigned_tasks(context,update):
+    return [t for i,t in enumerate(logical_tasks(update)) if i%context.world_size==context.rank]
+
+
+class HistoryCache:
+    """Decoded H and its frozen raw image features have a bounded worker lifetime."""
+    def __init__(self,limit_bytes=2*1024**3,max_entries=2):
+        self.limit_bytes,self.max_entries,self.items=limit_bytes,max_entries,OrderedDict()
+
+    @staticmethod
+    def nbytes(value):
+        if isinstance(value,(torch.Tensor,np.ndarray)):return value.nbytes
+        if isinstance(value,dict):return sum(HistoryCache.nbytes(v) for v in value.values())
+        if isinstance(value,(tuple,list)):return sum(HistoryCache.nbytes(v) for v in value)
+        return 0
+
+    def trim(self):
+        while self.items and (len(self.items)>self.max_entries or sum(self.nbytes(vars(h)) for h in self.items.values())>self.limit_bytes):
+            self.items.popitem(last=False)
+
+    def get(self,path):
+        if path not in self.items:self.items[path]=load_history(path)
+        self.items.move_to_end(path);result=self.items[path];self.trim();return result
+
+
+def train_cfm(runtime,context,root,*,stop,resume=None):
+    contract=read_json(Path(root)/'run_contract.json')
+    if stop not in contract['updates']['G'] or stop%(len(TASKS)//4):
+        raise ValueError('CFM needs registered integer complete full36 task rounds')
+    runtime.psi_frozen=False;runtime.generator.train().requires_grad_(True)
+    optimizer=torch.optim.AdamW(runtime.generator.parameters(),**OPTIMIZER)
+    initialize_deferred_process_group(context,rendezvous_root=Path(root)/'rendezvous')
+    start=resume_checkpoint(resume,'G',runtime,optimizer,context) if resume else 0
+    if not runtime.bank_scale_path.exists():raise ValueError('complete full36 bank and fixed S_G required')
     if resume is None and context.is_main:
         torch.save(dict(schema_version=SCHEMA,psi=runtime.generator.state_dict(),theta=runtime.actor.state_dict(),
-            formal_fresh=True,coordinates=str(runtime.root/'coordinates.json'),bank_scale=str(runtime.bank_scale_path)),
-            Path(root)/'initial_models.pt')
-    history_cache={}
-    for update in range(start, stop):
-        tick = time.monotonic(); optimizer.zero_grad(set_to_none=True); records = []
-        for task in assigned_tasks(context):
-            slots = 4
-            rng = np.random.default_rng(seed(40, task, update))
-            ordinal = int(rng.integers(slots))
-            event_root = Path(root) / 'events' / f'task_{task:04d}_event_{ordinal:02d}'
-            event_path = event_root / 'event.json'
-            if not event_path.exists():
-                raise ValueError('registered multistart event missing before full-bank CFM')
-            event = read_json(event_path)
-            distribution = read_json(event_root / 'teacher_distribution.json')
-            nodes = distribution['legal_nodes']
-            if not nodes:
-                records.append(dict(task=task, event_ordinal=ordinal, missing_label=True, denominator=4))
-                continue
-            q = np.asarray([distribution['probabilities'][str(i)] for i in nodes])
-            node = int(rng.choice(nodes, p=q / q.sum()))
-            from safetensors.torch import load_file
-            endpoint = load_file(str(event_root / 'teacher' / 'checkpoints' / f'update_{node:08d}' / 'lora.safetensors'))
-            parent = runtime.mt if event['parent_ref'] == 'MT300' else load_file(event['parent'])
-            if event['history_path'] not in history_cache:
-                history_cache[event['history_path']]=load_history(event['history_path'])
-            history=history_cache[event['history_path']]
-            features = runtime.teaching(task, event['teacher_demo'])
-            packed = runtime.generator.layout.pack(parent).to(runtime.device)
-            target = (runtime.generator.layout.pack(endpoint).to(runtime.device) - packed) / runtime.generator.layout.scale
-            xi = torch.randn(target.shape, generator=torch.Generator().manual_seed(seed(41, task, update))).to(runtime.device)
-            xi = xi * runtime.generator.layout.valid
-            t = float(rng.uniform())
-            x = (1 - t) * xi + t * target
+            formal_fresh=True,coordinates=str(runtime.root/'coordinates.json'),bank_scale=str(runtime.bank_scale_path)),Path(root)/'initial_models.pt')
+    cache=HistoryCache()
+    bank={task:read_json(Path(root)/'teachers'/f'task_{task:04d}'/'E.json') for task in TASKS}
+    panel={r['task_id']:r for r in read_json(Path(root)/'panel.json')['tasks']}
+    from safetensors.torch import load_file
+    for update in range(start,stop):
+        tick=time.monotonic();optimizer.zero_grad(set_to_none=True);records=[]
+        for task in assigned_tasks(context,update):
+            rng=np.random.default_rng(seed(40,task,update));entry=bank[task]
+            # No class/category weights: parent cardinality and H cardinality are separate.
+            parent_row=entry['parents'][int(rng.integers(len(entry['parents'])))]
+            history_path=parent_row['histories'][int(rng.integers(len(parent_row['histories'])))]
+            history=cache.get(history_path)
+            if not history.records:raise ValueError('G receives nonempty real parent H')
+            parent=load_file(parent_row['weights']);endpoint=load_file(entry['weights'])
+            demo=panel[task]['policy_videos'][int(rng.integers(len(panel[task]['policy_videos'])))]
+            features=runtime.teaching(task,demo)
+            packed=runtime.generator.layout.pack(parent).to(runtime.device)
+            target=(runtime.generator.layout.pack(endpoint).to(runtime.device)-packed)/runtime.generator.layout.scale
+            xi=torch.randn(target.shape,generator=torch.Generator().manual_seed(seed(41,task,update))).to(runtime.device)
+            xi*=runtime.generator.layout.valid;t=float(rng.uniform());x=(1-t)*xi+t*target
             with autocast(runtime.device):
-                predicted = runtime.generator(x, t, packed, features, history.model_rows(runtime), history.states)
-                loss = (predicted.float()[runtime.generator.layout.valid] -
-                        (target - xi)[runtime.generator.layout.valid]).square().mean()
-            (loss / 4).backward()
-            records.append(dict(task=task, event_ordinal=ordinal, node=node, time=t, loss=float(loss.detach()),
-                                frames=len(features['z']), denominator=4, missing_label=False))
-            del features, predicted, loss, x, xi, target, endpoint
-        synchronize_gradients(runtime.generator, context)
-        norm = torch.nn.utils.clip_grad_norm_(runtime.generator.parameters(), 1., error_if_nonfinite=True)
-        group_norms = {g: sum(float(p.grad.float().square().sum()) for p, name in
-                        zip(runtime.generator.meta.values, runtime.generator.meta.groups, strict=True)
-                        if name == g and p.grad is not None) ** .5 for g in ('gemma', 'action')}
-        optimizer.step(); runtime.mark_psi_update(); torch.cuda.synchronize(context.device)
-        metrics(root, 'G', dict(update=update + 1, events=records, gradient_norm=float(norm),
-            meta_gradient_norm=group_norms, seconds=time.monotonic() - tick,
-            source_has_gradient=any(p.grad is not None for p in runtime.policy.parameters())), context)
-        if update + 1 in (240, 480):
-            checkpoint(root, 'G', update + 1, runtime, optimizer, context,
-                sampler=dict(seed=20261010, next_update=update + 1, events_per_task=slots,
-                             task_order=list(TASKS), task_weight=.25, event_weight=.25))
+                prediction=runtime.generator(x,t,packed,features,history.model_rows(runtime),history.states)
+                loss=(prediction.float()[runtime.generator.layout.valid]-(target-xi)[runtime.generator.layout.valid]).square().mean()
+            (loss/4).backward()
+            records.append(dict(task=task,parent=parent_row['reference'],E=entry['reference'],H=history_path,demo=demo,
+                time=t,loss=float(loss.detach()),frames=len(features['z']),denominator=4,missing_label=False))
+            del features,prediction,loss,x,xi,target,endpoint,parent,history;cache.trim()
+        synchronize_gradients(runtime.generator,context)
+        norm=torch.nn.utils.clip_grad_norm_(runtime.generator.parameters(),1.,error_if_nonfinite=True)
+        group_norms={g:sum(float(p.grad.float().square().sum()) for p,name in zip(runtime.generator.meta.values,runtime.generator.meta.groups,strict=True)
+            if name==g and p.grad is not None)**.5 for g in ('gemma','action')}
+        optimizer.step();runtime.mark_psi_update();torch.cuda.synchronize(context.device)
+        metrics(root,'G',dict(update=update+1,events=records,logical_task_batch=logical_tasks(update),gradient_norm=float(norm),
+            meta_gradient_norm=group_norms,seconds=time.monotonic()-tick,decoded_H_cache_entries=len(cache.items),
+            source_has_gradient=any(p.grad is not None for p in runtime.policy.parameters())),context)
+        if update+1 in contract['updates']['G']:
+            checkpoint(root,'G',update+1,runtime,optimizer,context,sampler=dict(seed=20261011,next_update=update+1,
+                logical_batch=4,task_order=list(TASKS),task_weight=1/36,parent_weight='equal actual parent',H_weight='uniform within parent',
+                bank_version=contract.get('G_bank_version',0),history_cache='2GiB and at most2 decoded H per worker; includes raw features'))
 
 
 def train_local(runtime, context, root, examples, *, stop=128, resume=None, baseline=None):
@@ -188,7 +202,7 @@ def train_local(runtime, context, root, examples, *, stop=128, resume=None, base
     by_task = {t: [x for x in examples if x['task'] == t] for t in TASKS}
     for update in range(start, stop):
         tick = time.monotonic(); optimizer.zero_grad(set_to_none=True); records = []
-        for task in assigned_tasks(context):
+        for task in assigned_tasks(context,update):
             rng = np.random.default_rng(seed(42, task, update))
             conditions = by_task[task]
             example = conditions[int(rng.integers(len(conditions)))]

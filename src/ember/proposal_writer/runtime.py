@@ -79,8 +79,8 @@ class Runtime:
 
     def condition(self, task_id, demo, *, video_task=None):
         video_task = task_id if video_task is None else video_task
-        if task_id not in TASKS or video_task not in TASKS or not 0 <= demo < 50:
-            raise ValueError('pilot teaching condition outside registered non-held pool')
+        if task_id not in self.tasks or video_task not in self.tasks or not 0 <= demo < 50:
+            raise ValueError('teaching condition outside the explicitly loaded task role')
         raw = self.videos.load(video_task, demo)
         tokens, mask, _ = self.tokenizer([self.tasks[task_id].authority.language])
         return (torch.from_numpy(raw.frames).to(self.device),

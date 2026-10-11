@@ -1,3 +1,9 @@
+## 2026-10-11 旧四task多H-Q实例封口、新全36共同E接续
+
+旧rank8 teacher32CP/960行及G240/480全部保持历史身份；G480自然退出0，累计61.880279552975615GPUh，原旧π/报告/U/video controls未运行。G有实际梯度/参数变化不构成教学或实践控制能力。
+原件：rank8_multistart/analysis/G480_consumer.json、final_billing.json、scientific_completion.json；最后完整来源c12c66d8，前段02781720。main撤回逐H重训Q必要性，Owner明确全36共同E及bootstrap真实H后接续，tracked窗口仍由实验执行。
+两退役Compiler的训练optimizer/RNG已清理66文件4.10GiB，全部ECP权重及小原件保留；相应ROOT/training_state_retirement_20261011.json登记weights-only，不能继续称exact-resume。
+
 # EMBER research history
 
 本文索引各时点的科学设计、正负结果、原件与取舍；段落中的“当前/active/下一步”只指当时。

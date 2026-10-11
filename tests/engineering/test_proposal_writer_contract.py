@@ -7,7 +7,7 @@ from ember.pi05_lora import load_pi05_lora_contract, derive_pi05_lora_rank
 from ember.lora import expected_lora_state_shapes
 from ember.proposal_writer.model import FactorLayout
 from ember.proposal_writer.path import score_log_probability
-from ember.proposal_writer.contract import pilot_panel
+from ember.proposal_writer.contract import materialize_panel,TASKS
 from ember.writer.practice.execution import action_chunk
 
 
@@ -44,12 +44,17 @@ def test_distributed_missing_label_batch_has_zero_gradient(monkeypatch):
     assert all(parameter.grad is None for parameter in module.parameters())
 
 
-def test_roles_are_disjoint_full_fifty_panels():
-    for row in pilot_panel()['tasks']:
-        roles=['selection_states','audit_states','practice_states','local_query_states','rl_query_states','report_states']
-        states=[s for role in roles for s in row[role]]
-        assert len(states)==50 and set(states)==set(range(50))
-        assert len(set(row['video_order']))==50
+def test_training_roles_respect_independent_teacher_report_and_query(tmp_path):
+    panel=materialize_panel(tmp_path,selection_count=16,report_count=16)
+    assert len(panel['tasks'])==36
+    for row in panel['tasks']:
+        selection=set(row['teacher_selection_states']);report=set(row['teacher_report_states'])
+        practice=set(row['practice_states']);query=set(row['query_states']);limited=set(row['report_states'])
+        assert len(practice)==20 and len(query)==10 and row['local_query_states']==row['rl_query_states']
+        assert selection<=practice and not report&(practice|query|limited|selection)
+        assert not query&(practice|limited) and not limited&practice
+        assert len(report|practice|query|limited)==50 and len(set(row['video_order']))==50
+        assert set(row['teacher_query_demos'])==set(range(46)) and set(row['teacher_videos'])==set(range(46,50))
 
 
 def test_locked_queries_capture_function_without_appending_history():
@@ -174,7 +179,7 @@ def test_capless_admission_preserves_physical_and_quota_guards(tmp_path,monkeypa
     import pytest
     from ember.proposal_writer import batch
     from ember.pi05_source_checkpoint import write_json_atomic
-    write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':None,'GPU_hours_hard_cap_active':False}})
+    write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':None,'GPU_hours_hard_cap_active':False,'added_peak_GiB':128}})
     write_json_atomic(tmp_path/'profile_charged/exit.json',{'GPU_hours':1000.,'exit_code':0})
     monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed' if command[1]=='rev-parse' else '')
     coordinator=batch.Batch(tmp_path,[('gpu01',0)],root=tmp_path)
@@ -250,14 +255,18 @@ def test_merged_base_task_source_expert_and_backward_ownership():
     context.close()
 
 
-def test_multistart_dependencies_and_same_node_shared_allocation():
+def test_common_teacher_dependencies_and_same_node_shared_allocation(tmp_path):
     from ember.proposal_writer.batch import initial_jobs,Job,Batch
-    jobs={j.identity:j for j in initial_jobs(28,16,[('gpu01',1)],root=Path('/unused'))}
-    assert len(jobs)==48
-    assert jobs['collect_0012_1'].dependencies==('teacher_0012_0_160',)
-    assert jobs['collect_0012_2'].dependencies==('teacher_0012_0_480',)
-    assert jobs['collect_0012_3'].dependencies==('collect_0012_1',)
-    assert jobs['teacher_0012_3_480'].dependencies==('collect_0012_3',)
+    from ember.pi05_source_checkpoint import write_json_atomic
+    write_json_atomic(tmp_path/'run_contract.json',dict(teacher=dict(readout_updates=[0,200,400,600,800],selection_H_per_node=16,report_per_arm=16),
+        environment=dict(tasks=[dict(global_task_id=t,horizon=400 if t>=40 else 520) for t in TASKS])))
+    jobs={j.identity:j for j in initial_jobs(28,16,[('gpu01',1)],root=tmp_path)}
+    assert len(jobs)==360
+    assert jobs['teacher_0012_00000400'].dependencies==('teacher_0012_00000200',)
+    assert jobs['readout_0012_00000200'].dependencies==('teacher_0012_00000200',)
+    assert not jobs['readout_0012_00000000'].dependencies
+    assert len(jobs['teacher_report_0012'].dependencies)==5
+    assert not any('100'==j.arguments[j.arguments.index('--stop')+1] for j in jobs.values() if '--stop' in j.arguments)
     shared=Job('G',['G'],gpu_count=2)
     assert Batch.allocation(shared,[('gpu01',1),('gpu02',4),('gpu02',6)])==[('gpu02',4),('gpu02',6)]
     assert Batch.allocation(shared,[('gpu01',1),('gpu02',4)]) is None
@@ -333,44 +342,3 @@ def test_shared_launch_uses_measured_headroom_chunks_without_changing_logical_fl
         return job.identity
     monkeypatch.setattr(coordinator,'launch',launch)
     assert coordinator.execute(batch.Job('G240',['G','--stop','240','--frame-chunk','4'],gpu_count=4),devices)=='G240'
-
-
-def test_condition_queue_preserves_full_panels_and_parallel_RL_report_dependencies(tmp_path):
-    from ember.proposal_writer.batch import stage_jobs
-    args=SimpleNamespace(root=tmp_path,stage='decision-report',shared_gpus=4,shared_frame_chunk=4,slots=16)
-    jobs={job.identity:job for job in stage_jobs(args)}
-    local=[job for job in jobs.values() if job.arguments[0]=='local-data']
-    report=[job for job in jobs.values() if job.arguments[0]=='report' and '--video-arm' not in job.arguments]
-    pair=lambda job:(int(job.arguments[job.arguments.index('--task')+1]),
-                     int(job.arguments[job.arguments.index('--condition-ordinal')+1]))
-    assert {pair(job) for job in local}=={(task,ordinal) for task in (12,29,32,38) for ordinal in range(4)}
-    assert len(local)==16 and len(report)==16
-    for version in ('local128','RL16'):
-        rows=[job for job in report if job.dependencies==(version,)]
-        assert {pair(job) for job in rows}=={(task,ordinal) for task in (12,29,32,38) for ordinal in (0,1)}
-    assert set(jobs['local128'].dependencies)=={job.identity for job in local}
-    assert jobs['RL16'].dependencies==('local128',)
-    for task in (12,32):
-        for arm in ('other','wrong'):
-            assert jobs[f'control_{arm}_{task:04d}'].dependencies==(f'report_RL16_{task:04d}_00',)
-
-
-def test_empty_seed_events_and_true_producer_parent_identity(tmp_path):
-    from safetensors.torch import save_file
-    from ember.proposal_writer.contract import pilot_panel
-    from ember.proposal_writer.run import seed_events,event_record
-    from ember.proposal_writer.path import load_history
-    from ember.pi05_source_checkpoint import read_json
-    panel=pilot_panel()
-    save_file({'A':torch.ones(1),'B':torch.zeros(1)},str(tmp_path/'initial.safetensors'))
-    seed_events(tmp_path,panel)
-    for row in panel['tasks']:
-        task=row['task_id'];directory=tmp_path/'events'/f'task_{task:04d}_event_00'
-        event=read_json(directory/'event.json');history=load_history(event['history_path'])
-        assert event['complete'] and event['parent_ref']=='MT300' and event['history_producer'] is None
-        assert not history.records and set(history.states)=={'MT300'}
-        mid,_=event_record(tmp_path,row,task,1);late,_=event_record(tmp_path,row,task,2)
-        returned,_=event_record(tmp_path,row,task,3)
-        assert mid['parent_ref']==returned['history_producer']==f'seed160_task_{task:04d}'
-        assert returned['parent_ref']=='MT300' and late['parent_ref']==f'seed480_task_{task:04d}'
-        assert mid['teacher_demo']==late['teacher_demo'] and event['teacher_demo']==returned['teacher_demo']

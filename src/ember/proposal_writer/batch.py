@@ -15,10 +15,10 @@ import threading
 import time
 
 from .contract import ASSET_ROOT, RUN_ROOT, TASKS
-from .analysis import billing, teacher_summary, report_summary, freeze_bank_scale
+from .analysis import billing, teacher_summary, freeze_bank_scale
 
 PREFLIGHT = '/data0/user/ymdai/.codex/skills/gpu-preflight/scripts/gpu_preflight.py'
-UNMEASURED_TEACHER_SECONDS = 22.5  # Shared-card demo16.84 + measured rec4/keep4 + optimizer margin.
+UNMEASURED_TEACHER_SECONDS = 4.4  # Actual shared-card query28 native demoFM complete update.
 
 
 class DeviceWorkloadFailure(RuntimeError):
@@ -35,6 +35,7 @@ class Job:
     device_estimates: dict = field(default_factory=dict)
     gpu_count: int = 1
     required_free_MiB: int = 0
+    bank_priority: int = 0
 
     def estimated_seconds(self, device):
         return self.device_estimates.get(device, self.estimate_seconds)
@@ -58,28 +59,27 @@ def critical_path_costs(jobs):
 
 
 def initial_jobs(microbatch,slots,teacher_devices,*,root=RUN_ROOT,teacher_update_seconds=None):
-    """Seed160 immediately enables independent H160, while seed continues480."""
+    """One continuous teacher/task, while released checkpoint readouts run independently."""
+    contract=json.loads((Path(root)/'run_contract.json').read_text())
+    nodes=contract['teacher']['readout_updates'];specs={r['global_task_id']:r for r in contract['environment']['tasks']}
     jobs=[]
-    def teacher(task,event,stop,dependency,updates):
-        estimates={device:60+updates*seconds for device,seconds in (teacher_update_seconds or {}).items()}
-        return Job(f'teacher_{task:04d}_{event}_{stop}',
-            ['teacher','--task',str(task),'--event',str(event),'--microbatch',str(microbatch),'--stop',str(stop)],
-            (() if dependency is None else (dependency,)),60+updates*UNMEASURED_TEACHER_SECONDS,tuple(teacher_devices),estimates,
-            required_free_MiB=18000)
     for task in TASKS:
-        seed160=f'teacher_{task:04d}_0_160'
-        seed480=f'teacher_{task:04d}_0_480'
-        jobs.append(teacher(task,0,160,None,160))
-        jobs.append(teacher(task,0,480,seed160,320))
-        for event in (1,2,3):
-            collect=f'collect_{task:04d}_{event}'
-            dependency=seed160 if event==1 else seed480 if event==2 else f'collect_{task:04d}_1'
-            jobs.append(Job(collect,['collect','--task',str(task),'--event',str(event),'--slots',str(min(slots,4))],
-                (dependency,),600 if task in (32,38) else 360))
-            jobs.append(teacher(task,event,480,collect,480))
-        for event in range(4):
-            jobs.append(Job(f'audit_{task:04d}_{event}',['audit','--task',str(task),'--event',str(event),
-                '--slots',str(slots)],(f'teacher_{task:04d}_{event}_480',),600 if task in (32,38) else 360))
+        predecessor=None;readouts=[]
+        for node in nodes:
+            if node:
+                identity=f'teacher_{task:04d}_{node:08d}';updates=node-nodes[nodes.index(node)-1]
+                estimates={device:15+updates*seconds for device,seconds in (teacher_update_seconds or {}).items()}
+                jobs.append(Job(identity,['teacher','--task',str(task),'--microbatch',str(microbatch),'--stop',str(node)],
+                    () if predecessor is None else (predecessor,),15+updates*UNMEASURED_TEACHER_SECONDS,
+                    tuple(teacher_devices),estimates,required_free_MiB=18000))
+                predecessor=identity
+            readout=f'readout_{task:04d}_{node:08d}';readouts.append(readout)
+            seconds=15+contract['teacher']['selection_H_per_node']*31.335*specs[task]['horizon']/520
+            jobs.append(Job(readout,['readout','--task',str(task),'--stop',str(node),'--slots',str(slots)],
+                () if node==0 else (predecessor,),seconds,required_free_MiB=18000))
+        seconds=15+2*contract['teacher']['report_per_arm']*31.335*specs[task]['horizon']/520
+        jobs.append(Job(f'teacher_report_{task:04d}',['teacher-report','--task',str(task),'--slots',str(slots)],
+            tuple(readouts),seconds,required_free_MiB=18000,bank_priority=1))
     return jobs
 
 
@@ -106,12 +106,12 @@ def dependency_completion(root, identities):
     finally:os.close(descriptor)
 
 
-def quota_headroom(report):
+def quota_headroom(report, *, peak_GiB=128):
     numbers=[line.split() for line in report.splitlines() if line.startswith('/dev/')]
     if len(numbers)!=1:
         raise RuntimeError('authoritative data1 quota could not be parsed')
     used,limit=int(numbers[0][1]),int(numbers[0][2])
-    if used+64*1024**2>=limit:
+    if used+peak_GiB*1024**2>=limit:
         raise RuntimeError('data1 independent quota cannot cover retained peak')
     return used,limit
 
@@ -154,7 +154,8 @@ class Batch:
             combined = allocated | outside | {(node,gpu)}
             if len(combined) > cap or sum(n==node for n,_ in combined)>6:
                 raise RuntimeError('outside project allocation would exceed the shared cap')
-            used,limit=quota_headroom(quota.stdout)
+            peak=json.loads((self.root/'run_contract.json').read_text())['limits']['added_peak_GiB']
+            used,limit=quota_headroom(quota.stdout,peak_GiB=peak)
             forecast=self.track_cost_estimate(job,node,gpu)
             return dict(node=node,physical_gpu=gpu,uuid=selected['uuid'],free_MiB=selected['mem_free_mib'],
                         utilization=selected['util_gpu_pct'],concurrency_cap=cap,quota_used_KiB=used,quota_KiB=limit,
@@ -206,9 +207,7 @@ class Batch:
             if len(devices)>1:
                 command+=['-m','torch.distributed.run','--standalone',f'--nproc-per-node={len(devices)}']
             arguments=list(job.arguments)
-            if arguments[0]=='teacher' and admissions[0]['free_MiB']>=27000:
-                arguments[arguments.index('--microbatch')+1]='56'
-            if arguments[0] in ('audit','report') and admissions[0]['free_MiB']<25000:
+            if arguments[0] in ('readout','teacher-report','report') and admissions[0]['free_MiB']<25000:
                 arguments[arguments.index('--slots')+1]=str(min(16,int(arguments[arguments.index('--slots')+1])))
             if len(devices)>1 and '--frame-chunk' in arguments:
                 env['EMBER_META_FRAME_CHUNKS']=','.join(str(16 if a['free_MiB']>=28000 else
@@ -275,7 +274,7 @@ class Batch:
             if set(dependencies)<=done:
                 free.append(device);del deferred[device]
 
-    def run(self, jobs, *, deferred_devices=None):
+    def run(self, jobs, *, deferred_devices=None, on_completion=None):
         pending={job.identity:job for job in jobs};done=set();failures=[]
         external=set().union(*(job.dependencies for job in jobs))-pending.keys()
         deferred=dict(deferred_devices or {})
@@ -284,6 +283,7 @@ class Batch:
             file=self.root/'jobs'/identity/'latest.json'
             if file.exists() and read_exit(file)==0:
                 done.add(identity);del pending[identity]
+        if on_completion:on_completion(done)
         with ThreadPoolExecutor(max_workers=len(self.devices)+1) as executor:
             futures={};free=[d for d in self.devices if d not in deferred]
             if external:futures[executor.submit(dependency_completion,self.root,external)]=None
@@ -291,7 +291,7 @@ class Batch:
                 self._release_deferred_devices(deferred,done,free)
                 costs=critical_path_costs(pending)
                 ready=sorted([j for j in pending.values() if set(j.dependencies)<=done],
-                             key=lambda j:-costs[j.identity])
+                             key=lambda j:(j.bank_priority,-costs[j.identity]))
                 for job in ready:
                     eligible=self.allocation(job,free)
                     if eligible is None or any(not isinstance(e,DeviceWorkloadFailure) for e in failures):continue
@@ -303,53 +303,41 @@ class Batch:
                     raise RuntimeError('pending jobs have missing dependencies')
                 completed,_=wait(futures,return_when=FIRST_COMPLETED)
                 self._consume_completions(completed,futures,executor,done,external,free,failures)
+                if on_completion:on_completion(done)
             if failures:
                 raise RuntimeError('batch engineering/budget failure: '+ '; '.join(map(str,failures)))
         return sorted(done)
+
+
+def teacher_bank_ready(root, done):
+    """Publish E/H readiness at completion events, independently of teacher reports."""
+    from .run import select_teacher
+    from ember.pi05_source_checkpoint import read_json, write_json_atomic
+    root=Path(root)
+    if (root/'bank_ready.json').exists():return
+    contract=read_json(root/'run_contract.json');nodes=contract['teacher']['readout_updates']
+    for task in TASKS:
+        directory=root/'teachers'/f'task_{task:04d}'
+        if not (directory/'E.json').exists() and all(f'readout_{task:04d}_{node:08d}' in done for node in nodes):
+            select_teacher(root,task)
+    if not all((root/'teachers'/f'task_{task:04d}'/'E.json').exists() for task in TASKS):return
+    scale=freeze_bank_scale(root)
+    pending=[task for task in TASKS if f'teacher_report_{task:04d}' not in done]
+    write_json_atomic(root/'bank_ready.json',dict(complete=True,task_count=len(TASKS),
+        parent_count=len(TASKS)*len(nodes),history_episodes=len(TASKS)*len(nodes)*contract['teacher']['selection_H_per_node'],
+        ready_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),bank_scale=str(root/'bank_scale.json'),
+        scale_source_count=len(scale['sources']),independent_teacher_report_pending_tasks=pending,
+        reports_not_used_for_E_or_scale=True))
 
 
 def read_exit(path):
     return json.loads(Path(path).read_text())['exit_code']
 
 
-def stage_jobs(args):
-    root=args.root;G=root/'checkpoints/G/update_00000480'
-    local=root/'checkpoints/local/update_00000128';RL=root/'checkpoints/RL/update_00000016'
-    def shared(identity,arguments,dependencies,seconds):
-        return Job(identity,arguments+['--frame-chunk',str(args.shared_frame_chunk)],dependencies,seconds,
-            gpu_count=args.shared_gpus,required_free_MiB=28000 if args.shared_frame_chunk>=16 else
-                21000 if args.shared_frame_chunk>=8 else 18000)
-    if args.stage=='G':
-        estimate=60+240*4*args.CFM_condition_seconds/args.shared_gpus
-        return [shared('G240',['G','--stop','240'],(),estimate),
-                shared('G480',['G','--stop','480','--resume',str(root/'checkpoints/G/update_00000240')],('G240',),estimate)]
-    jobs=[Job(f'local_data_{task:04d}_{ordinal:02d}',['local-data','--task',str(task),'--checkpoint',str(G),
-        '--condition-ordinal',str(ordinal),'--slots',str(args.slots),'--frame-chunk',str(args.shared_frame_chunk)],
-        estimate_seconds=1800 if task in (32,38) else 1200) for task in TASKS for ordinal in range(4)]
-    jobs.append(shared('local128',['local','--checkpoint',str(G)],tuple(j.identity for j in jobs),
-        128*4*6/args.shared_gpus+60))
-    jobs.append(shared('RL16',['RL','--checkpoint',str(local)],('local128',),16*4*180/args.shared_gpus+60))
-    for version,checkpoint,dependency in [('local128',local,'local128'),('RL16',RL,'RL16')]:
-        for task in TASKS:
-            for ordinal in (0,1):
-                identity=f'report_{version}_{task:04d}_{ordinal:02d}'
-                seconds=3750 if version=='RL16' and task==32 and ordinal==0 else (
-                    2050 if version=='RL16' and task==12 and ordinal==0 else 900)
-                jobs.append(Job(identity,['report','--task',str(task),'--condition-ordinal',str(ordinal),
-                    '--checkpoint',str(checkpoint),'--slots',str(args.slots),'--frame-chunk',str(args.shared_frame_chunk)],
-                    (dependency,),seconds))
-    for task in (12,32):
-        for arm in ('other','wrong'):
-            jobs.append(Job(f'control_{arm}_{task:04d}',['report','--task',str(task),'--video-arm',arm,
-                '--condition-ordinal','0','--checkpoint',str(RL),'--slots',str(args.slots),
-                '--frame-chunk',str(args.shared_frame_chunk)],(f'report_RL16_{task:04d}_00',),600))
-    return jobs
-
-
 def main():
     import argparse
     parser=argparse.ArgumentParser()
-    parser.add_argument('stage',choices=['teacher-bank','G','decision-report'])
+    parser.add_argument('stage',choices=['teacher-data'])
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--workspace',type=Path,required=True)
     parser.add_argument('--devices',required=True,help='node:index comma-separated live eligible devices')
@@ -357,9 +345,6 @@ def main():
     parser.add_argument('--microbatch',type=int,required=True)
     parser.add_argument('--slots',type=int,default=8)
     parser.add_argument('--required-free-MiB',type=int,required=True)
-    parser.add_argument('--shared-gpus',type=int,default=2)
-    parser.add_argument('--shared-frame-chunk',type=int,default=16)
-    parser.add_argument('--CFM-condition-seconds',type=float,default=28.)
     parser.add_argument('--teacher-update-seconds',action='append',default=[],help='node:index=seconds for a measured complete update')
     args=parser.parse_args()
     devices=[(s.split(':')[0],int(s.split(':')[1])) for s in args.devices.split(',')]
@@ -372,19 +357,10 @@ def main():
         if (node,int(gpu)) not in teacher_devices or not math.isfinite(seconds) or seconds<=0:
             raise ValueError('teacher estimate must be positive and identify an eligible device')
         estimates[(node,int(gpu))]=seconds
-    if args.stage=='teacher-bank':
-        from .run import seed_events
-        from .contract import materialize_panel
-        seed_events(args.root,materialize_panel(args.root))
-        done=batch.run(initial_jobs(args.microbatch,args.slots,teacher_devices,root=args.root,teacher_update_seconds=estimates))
-        summary=teacher_summary(args.root)
-        print(json.dumps(dict(stage=args.stage,complete=True,jobs=done,billing=summary['billing'],
-            no_beneficial_teacher_supply=summary['no_beneficial_teacher_supply'])))
-    else:
-        if args.stage=='G':freeze_bank_scale(args.root)
-        done=batch.run(stage_jobs(args))
-        result=report_summary(args.root) if args.stage=='decision-report' else billing(args.root)
-        print(json.dumps(dict(stage=args.stage,complete=True,jobs=done,summary=result if args.stage=='G' else dict(billing=result['billing'],adjacent=result['adjacent']))))
+    done=batch.run(initial_jobs(args.microbatch,args.slots,teacher_devices,root=args.root,teacher_update_seconds=estimates),
+                   on_completion=lambda done:teacher_bank_ready(args.root,done))
+    summary=teacher_summary(args.root)
+    print(json.dumps(dict(stage=args.stage,complete=True,jobs=done,billing=summary['billing'],teacher_report=summary['independent_report'])))
 
 
 if __name__=='__main__':main()

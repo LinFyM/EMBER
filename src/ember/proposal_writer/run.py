@@ -1,34 +1,30 @@
-"""Thin canonical commands for the registered complete-parameter pilot."""
+"""Canonical full36 teacher preparation and shared Writer consumers."""
 from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import os
+from pathlib import Path
 import subprocess
-import time
 
 import torch
 from safetensors.torch import load_file, save_file
 
 from ember.pi05_source_checkpoint import read_json, write_json_atomic, git_state
 from ember.pi05_source_setup import initialize_distributed
-from ember.writer.practice import EpisodeRunner, History
-from ember.writer.runtime import autocast
-from ember.writer.model import DirectLoRAParameters
-from ember.writer.function_credit import NativeFlowPrediction, mean_velocity_loss
-from ember.lora import identity_lora_state, validate_lora_state, task_lora_state_dict, LORA_A_SUFFIX, LORA_B_SUFFIX
+from ember.writer.practice import EpisodeRunner
+from ember.lora import identity_lora_state, LORA_A_SUFFIX, LORA_B_SUFFIX
 from ember.pi05_lora import load_pi05_lora_contract, derive_pi05_lora_rank
 
-from .contract import (RUN_ROOT, ASSET_ROOT, TASKS, SOURCE, MT_PATH, EXPERT_ROOT, OPTIMIZER,
-                       SCHEMA, PRIOR_ROOT, CARRY_IN_GPUH, EVENT_KINDS, materialize_panel, environment_contract, seed)
+from .contract import (RUN_ROOT, ASSET_ROOT, TASKS, SOURCE, MT_PATH, OPTIMIZER, SCHEMA,
+                       PRIOR_ROOT, BUDGET_SCHEMA, materialize_panel, environment_contract, seed, parameter_ref)
 from .runtime import Runtime
-from .teacher import QueryStream, fit_teacher, functional_labels, endpoint_distribution
+from .teacher import fit_teacher
+from .path import save_history
 
 
 def task_panel(root, task):
-    panel = read_json(Path(root) / 'panel.json')
-    return next(row for row in panel['tasks'] if row['task_id'] == task)
+    return next(row for row in materialize_panel(root)['tasks'] if row['task_id'] == task)
 
 
 def save_state(path, state):
@@ -60,276 +56,222 @@ def coordinates(root, asset_root):
         center='shared actual nonzero Kaiming A0/B0, no gauge restart'))
 
 
+
 def prepare(args):
-    root = Path(args.root)
-    root.mkdir(parents=True, exist_ok=True)
-    panel = materialize_panel(root)
-    original_panel = read_json(PRIOR_ROOT/'panel.json')
-    if any(new[k] != old[k] for new, old in zip(panel['tasks'], original_panel['tasks'], strict=True)
-           for k in ('task_id', 'video_order', 'init_order')):
-        raise ValueError('rank8 successor changed original preregistered panel')
-    coordinates(root, args.asset_root)
-    seed_events(root,panel)
-    contract = dict(schema_version=SCHEMA, stage='pilot', design='docs/designs/video_guided_proposal_writer_20261010.md#13',
-        source=SOURCE, mt_checkpoint=str(MT_PATH), training_tasks=list(TASKS), panel=str(root / 'panel.json'),
-        environment=environment_contract(), seed=7, meta_seeds=[202610101, 202610102], meta_rank=32,
-        meta_alpha=32, task_rank=8, task_targets=38, task_factors=76, probe_seed=1729,
-        limits=dict(GPU_hours=None, GPU_hours_hard_cap_active=False,
-            GPU_hours_policy='Owner: no cumulative GPU-hour launch/resume cap; retain accounting and forecasts',
-            carry_in_GPU_hours=CARRY_IN_GPUH, added_peak_GiB=64,
-            storage_scope='old and new ROOT retained growth plus new peak'),
-        prior_root=str(PRIOR_ROOT), prior_cost_identity='18.60291210386488 timed plus .0375 conservative untimed',
-        event_kinds=list(EVENT_KINDS), task_initial=str(root/'initial.safetensors'),
-        coordinates=str(root/'coordinates.json'), bank_scale=str(root/'bank_scale.json'),
-        elapsed_prediction_hours=[14,24], engineering_prediction_hours=[4,8], new_GPUh_prediction=[54,75],
-        updates=dict(teacher=[160, 480], G=[240, 480], actor_local=128, actor_RL=16),
-        logical_batch=dict(teacher_queries=112, G_conditions=4, actor_conditions=4),
-        rng_schedule=dict(root='SeedSequence([20261010,domain,task,...])',
-            domains=dict(practice=3,selection=4,audit=5,local=6,RL=7,report=8,query_episode=10,
-                query_frame=11,recovery=12,rec_sample=13,keep_sample=14,decisions=30,proposals=31,practice_episode=32,
-                CFM_event_and_time=40,CFM_noise=41,local_update=42,local_query=60,RL_query=70,report_query=80),
-            initial_H160='practice[0],seed(3,task,1)',initial_H480='practice[1],seed(3,task,2)',
-            RL_video='policy_videos[update%2]',RL_query='rl_query_states[update%4]',
-            source_noise_probe=1729,task_initial_seed=7,meta_initial_seeds=[202610101,202610102]),
-        optimizer=OPTIMIZER, compilation=dict(environment_steps=1024, proposals_per_decision=4,
-            proposal_attempts=32, parameter_euler_steps=16, response_observations=16),
-        exact_resume='full parameters/optimizer/sampler/rank RNG/schema; explicit topology migrations separately recorded',
-        git=git_state(), code_status='initial implementation consumers pending',
-        information_wall='no T model/features; teacher labels only training endpoints; query after final lock; no held use')
-    path = root / 'run_contract.json'
-    if path.exists():
-        original = read_json(path)
-        for key in ('source', 'training_tasks', 'panel', 'meta_rank', 'updates', 'logical_batch', 'compilation'):
-            if original[key] != contract[key]:
-                raise ValueError('registered pilot science changed')
-    else:
-        write_json_atomic(path, contract)
-    print(json.dumps(dict(panel=str(root / 'panel.json'), contract=str(path), tasks=len(panel['tasks']))))
+    if any(v is None for v in (args.teacher_stop,args.checkpoint_interval,args.selection_count)):
+        raise ValueError('formal teacher update/CP/selection values must be explicitly frozen')
+    if args.teacher_stop % args.checkpoint_interval:
+        raise ValueError('teacher terminal must be a registered complete checkpoint')
+    root = args.root; root.mkdir(parents=True, exist_ok=True)
+    panel = materialize_panel(root,selection_count=args.selection_count,report_count=args.report_count)
+    coordinates(root,args.asset_root)
+    environment = environment_contract(args.asset_root,root=root)
+    contract = dict(schema_version=SCHEMA, stage='teacher-data',
+        design='docs/designs/video_guided_proposal_writer_20261010.md',
+        source=SOURCE,mt_checkpoint=str(MT_PATH),training_tasks=list(TASKS),panel=str(root/'panel.json'),
+        environment=environment,seed=7,meta_seeds=[202610101,202610102],meta_rank=32,meta_alpha=32,
+        task_rank=8,task_targets=38,task_factors=76,probe_seed=1729,
+        limits=dict(GPU_hours=None,GPU_hours_hard_cap_active=False,added_peak_GiB=256,
+            carry_in_GPU_hours=read_json(PRIOR_ROOT/'analysis/final_billing.json')['GPU_hours']+sum(read_json(Path(x))['GPU_hours'] for x in args.profile_receipts),
+                    GPU_hours_policy='Owner removed cumulative GPU-hour launch/resume limits'),
+        historical_roots=[str(PRIOR_ROOT)],historical_profiles=args.profile_receipts,
+        task_initial=str(root/'initial.safetensors'),coordinates=str(root/'coordinates.json'),
+        bank_scale=str(root/'bank_scale.json'),
+        updates=dict(teacher=list(range(100,args.teacher_stop+1,100))),
+        logical_batch=dict(teacher_queries=28,G_conditions=4,actor_conditions=4),
+        teacher=dict(action_demos=list(range(46)),internal_unfitted_demos=list(range(46,50)),
+            trajectory='one per task, continuous optimizer/RNG',loss='native demoFM + 1e-3 fixed-initialMT prox',
+            proximal_target=str(root/'initial.safetensors'),save_interval=100,
+            readout_updates=[0,*range(args.checkpoint_interval,args.teacher_stop+1,args.checkpoint_interval)],
+            selection_H_per_node=args.selection_count,
+            selection_folds=[args.selection_count//2]*2,report_per_arm=args.report_count,
+            choice='maximum registered selection success count, ties earliest including MT',
+            independent_report_not_in_H_or_gradient=True),
+        task_parent_history_sampling='equal task; equal actual parent within task; uniform real H within parent',
+        optimizer=OPTIMIZER,budget_schema=list(BUDGET_SCHEMA),
+        compilation=dict(proposals_per_decision=4,proposal_attempts=32,parameter_euler_steps=16,
+            response_observations=16,bootstrap='actual MT episode before first G',
+            budget_training_env_multiples=[2,4]),
+        deadline=dict(authority_UTC='2026-10-11T06:30:00+00:00',target_UTC='2026-10-11T12:30:00+00:00',
+            bank_ready_prediction_UTC=['2026-10-11T12:40:00+00:00','2026-10-11T13:05:00+00:00'],
+            revised_from_original_target=True,fast_device_B28_seconds=2.0744460243731737,fast_capture16_seconds=277.30491822306067),
+        exact_resume='full teacher optimizer/sampler/RNG; shared checkpoints retain topology and physical-migration identity',
+        git=git_state(),information_wall='no held offline labels, no per-H Q, no rec/keep; query never in H')
+    path=root/'run_contract.json'
+    if path.exists() and read_json(path) != contract:
+        raise ValueError('new run contract changed; append explicit revision rather than overwrite')
+    if not path.exists():write_json_atomic(path,contract)
+    base=root/'base';base.mkdir(exist_ok=True)
+    source=PRIOR_ROOT/'base/merged_targets.safetensors'
+    if not source.is_file():raise ValueError('canonical frozen merged-MT targets absent')
+    if not (base/source.name).exists():(base/source.name).symlink_to(source.resolve())
+    print(json.dumps(dict(contract=str(path),tasks=len(panel['tasks']),updates=contract['updates']['teacher'])))
 
 
-def _episode_request(runtime, task, state, reference, state_id, noise_root, identity, **fields):
-    return dict(task=task, state=state, parameter_ref=reference, state_id=int(state_id), noise_root=int(noise_root),
-                episode_id=identity, **fields)
+def teacher_root(root, task):
+    return Path(root)/'teachers'/f'task_{int(task):04d}'
 
 
-def event_record(root,panel,task_id,ordinal):
-    destination=root/'events'/f'task_{task_id:04d}_event_{ordinal:02d}'
-    seed_root = root/'events'/f'task_{task_id:04d}_event_00'/'teacher/checkpoints'
-    node = 160 if ordinal in (1,3) else 480
-    producer = f'seed{node}_task_{task_id:04d}'
-    parent_ref = producer if ordinal in (1,2) else 'MT300'
-    parent_path = seed_root/f'update_{node:08d}'/'lora.safetensors' if ordinal in (1,2) else root/'initial.safetensors'
-    event = dict(event_id=destination.name, task_id=task_id, event_ordinal=ordinal, event_kind=EVENT_KINDS[ordinal],
-        teacher_demo=panel['teacher_videos'][int(ordinal in (1,2))], parent_ref=parent_ref, parent=str(parent_path),
-        role='nonheld_shared_training', coordinates=str(root/'coordinates.json'),
-        base_identity=dict(source=SOURCE,MT=str(MT_PATH),task_rank=8), history_kind=('empty' if ordinal==0 else f'independent_actual_seed{node}_episode'),
-        history_producer=None if ordinal==0 else producer, selection_states=panel['selection_states'],
-        audit_states=panel['audit_states'], rng_roots=panel['rng_roots'], schema_version=SCHEMA)
-    return event,node
-
-
-def seed_events(root,panel):
-    """Empty-H events need no policy load or GPU allocation."""
-    from .path import save_history
-    initial=load_file(str(root/'initial.safetensors'))
-    for row in panel['tasks']:
-        event,_=event_record(root,row,row['task_id'],0)
-        destination=root/'events'/event['event_id'];destination.mkdir(parents=True,exist_ok=True)
-        if (destination/'event.json').exists():continue
-        history_path=destination/'history.pt.gz';labels_path=destination/'functional_labels.pt'
-        save_history(history_path,History(states={'MT300':initial}))
-        torch.save(dict(rec=[],keep=[],recovery_validations=[]),labels_path)
-        write_json_atomic(destination/'history_capture.json',dict(complete=True,code=git_state(),
-            episodes=[],records=0,actual_practice=False,actual_producer=None,labels_complete=True))
-        event.update(history_path=str(history_path),labels_path=str(labels_path),rec_labels=0,keep_labels=0,
-            recovery_attempts=0,capture_components={},complete=True)
-        write_json_atomic(destination/'event.json',event)
-
-
-def collect(args, runtime, runner, contract):
-    from .path import save_history, load_history
-    panel = task_panel(args.root, args.task)
-    task = next(t for t in contract['tasks'] if t['global_task_id'] == args.task)
-    ordinal = args.event
-    if ordinal not in range(4):
-        raise ValueError('only registered seed/mid/late/return events')
-    destination = args.root/'events'/f'task_{args.task:04d}_event_{ordinal:02d}'
-    if (destination/'event.json').exists():
-        return
-    destination.mkdir(parents=True, exist_ok=True)
-    event,node=event_record(args.root,panel,args.task,ordinal)
-    seed_root=args.root/'events'/f'task_{args.task:04d}_event_00'/'teacher/checkpoints'
-    producer=event['history_producer']
-    captured = destination/'history_capture.json'
-    history_path = (args.root/'events'/f'task_{args.task:04d}_event_01'/'history.pt.gz'
-                    if ordinal==3 else destination/'history.pt.gz')
-    if captured.exists() or ordinal==3:
-        history = load_history(history_path)
-    else:
-        history = History(states={'MT300': {k:v.detach().cpu() for k,v in runtime.mt.items()}})
-        if ordinal in (1,2):
-            producer_state = load_file(str(seed_root/f'update_{node:08d}'/'lora.safetensors'), device=str(runtime.device))
-            request = _episode_request(runtime, task, producer_state, producer, panel['practice_states'][ordinal-1],
-                seed(3,args.task,ordinal), destination.name, remaining=task['horizon']+10,
-                snapshots=True, uses_teaching=False)
-            output = next(runner.run([request])); history = output['history']
-            history.states['MT300'] = {k:v.detach().cpu() for k,v in runtime.mt.items()}
-        save_history(history_path,history)
-    if not captured.exists():
-        write_json_atomic(captured, dict(event_id=event['event_id'], complete=True, code=git_state(),
-            episodes=history.episodes, records=len(history.records), actual_producer=event['history_producer'],
-            labels_complete=False, independent_history_not_H_mix=True, shared_history_source=str(history_path)))
-    expert = None
-    if history.records:
-        expert = load_file(str(EXPERT_ROOT/f'task_{args.task:04d}_u480/lora.safetensors'), device=str(runtime.device))
-        validate_lora_state(expert,runtime.expert_lora)
-    labels = functional_labels(runtime, runner, event, history, task, expert)
-    torch.save(labels,destination/'functional_labels.pt')
-    event.update(history_path=str(history_path), labels_path=str(destination/'functional_labels.pt'),
-        rec_labels=len(labels['rec']), keep_labels=len(labels['keep']), recovery_attempts=len(labels['recovery_validations']),
-        capture_components=deep_components(runtime,runner), complete=True)
-    write_json_atomic(destination/'event.json',event)
-    print(json.dumps(dict(task=args.task,event_ordinal=ordinal,collected=True,components=deep_components(runtime,runner))))
-
-
-def deep_components(runtime, runner):
-    return dict(native=dict(runner.components), environment_steps=runner.environment_steps,
-                reader=dict(runtime.components))
+def node_weights(root, task, update):
+    return (Path(root)/'initial.safetensors' if int(update)==0 else
+            teacher_root(root,task)/'checkpoints'/f'update_{int(update):08d}'/'lora.safetensors')
 
 
 def fit(args, runtime):
-    destination = Path(args.root) / 'events' / f'task_{args.task:04d}_event_{args.event:02d}'
-    event = read_json(destination / 'event.json')
-    labels = torch.load(event['labels_path'], map_location='cpu', weights_only=False)
-    parent = runtime.mt if event['parent_ref'] == 'MT300' else load_file(event['parent'], device=str(runtime.device))
-    completed = destination / 'teacher' / 'checkpoints' / f'update_{args.stop:08d}' / 'manifest.json'
-    if completed.exists() and read_json(completed)['complete']:
-        print(json.dumps(dict(event_id=event['event_id'], trained_to=args.stop, existing_complete_checkpoint=True)))
-        return
+    contract=read_json(args.root/'run_contract.json');nodes=contract['updates']['teacher']
+    if args.stop not in nodes:raise ValueError('unregistered teacher checkpoint')
+    panel=task_panel(args.root,args.task);destination=teacher_root(args.root,args.task)
+    complete=destination/'checkpoints'/f'update_{args.stop:08d}'/'manifest.json'
+    if complete.exists() and read_json(complete)['complete']:return
+    event=dict(event_id=f'task_{args.task:04d}_common_teacher_trajectory',task_id=args.task,
+        teacher_demo=panel['teacher_videos'][0],event_ordinal=0,schema_version=SCHEMA,
+        base_source=SOURCE,MT=str(MT_PATH),task_rank=8,initial=str(args.root/'initial.safetensors'),
+        action_pool=contract['teacher']['action_demos'],proximal_target='fixed initialMT',
+        labels='native demoFM only; no privileged expert, rec or keep')
     if args.resume is None:
-        available = destination / 'teacher' / 'checkpoints' / 'update_00000160'
-        if (available / 'manifest.json').exists() and args.stop == 480:
-            args.resume = available
-    fit_teacher(runtime, event, parent, labels, destination / 'teacher', microbatch=args.microbatch,
-                stop=args.stop,resume=args.resume,function_microbatch=args.function_microbatch)
-    print(json.dumps(dict(event_id=event['event_id'], trained_to=args.stop)))
+        previous=[u for u in nodes if u<args.stop and (destination/'checkpoints'/f'update_{u:08d}'/'manifest.json').exists()]
+        if previous:args.resume=destination/'checkpoints'/f'update_{max(previous):08d}'
+    fit_teacher(runtime,event,runtime.mt,destination,microbatch=args.microbatch,stop=args.stop,
+        resume=args.resume,logical_queries=contract['logical_batch']['teacher_queries'],
+        query_demo_indices=contract['teacher']['action_demos'],checkpoint_updates=tuple(nodes))
+    print(json.dumps(dict(task=args.task,trained_to=args.stop,trajectory=event['event_id'])))
 
 
-def audit(args, runtime, runner, contract):
-    panel = task_panel(args.root, args.task)
-    task = next(t for t in contract['tasks'] if t['global_task_id'] == args.task)
-    destination = Path(args.root) / 'events' / f'task_{args.task:04d}_event_{args.event:02d}'
-    event = read_json(destination / 'event.json')
-    states = {'parent': runtime.mt if event['parent_ref'] == 'MT300' else
-              load_file(event['parent'], device=str(runtime.device))}
-    for update in (160, 480):
-        p = destination / 'teacher' / 'checkpoints' / f'update_{update:08d}' / 'lora.safetensors'
-        if not p.exists():
-            raise ValueError('predefined teacher endpoint absent; cannot change selection nodes')
-        states[str(update)] = load_file(str(p), device=str(runtime.device))
-    root = destination / 'readout'; root.mkdir(exist_ok=True)
-    requests = []
-    for pool, values, domain in [('selection', panel['selection_states'], 4), ('audit', panel['audit_states'], 5)]:
-        for name, state in states.items():
-            for state_id in values:
-                identity = f'{pool}_{name}_{state_id:03d}'
-                if (root / f'{identity}.json').exists():
-                    continue
-                request = _episode_request(runtime, task, state, name, state_id,
-                    seed(domain, args.task, args.event), f'{event["event_id"]}_{identity}', snapshots=False, uses_teaching=False)
-                request.update(pool=pool, output_name=identity)
-                requests.append(request)
-    requests.sort(key=lambda r: -r['task']['horizon'])
+def readout(args, runtime, runner, environment):
+    contract=read_json(args.root/'run_contract.json')
+    if args.stop not in contract['teacher']['readout_updates']:raise ValueError('unregistered readout node')
+    panel=task_panel(args.root,args.task)
+    task=next(t for t in environment['tasks'] if t['global_task_id']==args.task)
+    weights=load_file(str(node_weights(args.root,args.task,args.stop)),device=str(runtime.device))
+    reference=parameter_ref(args.task,args.stop)
+    destination=teacher_root(args.root,args.task)/'selection'/f'update_{args.stop:08d}'
+    destination.mkdir(parents=True,exist_ok=True)
+    requests=[]
+    for state_id in panel['teacher_selection_states']:
+        identity=f'task_{args.task:04d}_u{args.stop:08d}_selection_{state_id:03d}'
+        if (destination/f'state_{state_id:03d}.json').exists():continue
+        requests.append(dict(task=task,state=weights,parameter_ref=reference,state_id=state_id,
+            noise_root=seed(4,args.task,state_id),episode_id=identity,snapshots=False,uses_teaching=False))
     for output in runner.run(requests):
-        request = output['request']
-        row = dict(**output['row'], pool=request['pool'], endpoint=request['parameter_ref'], event_id=event['event_id'])
-        if output['history'].records and not output['row'].get('model_failure'):
-            first = output['history'].records[0]
-            row.update(first_native_normalized_actions=first['normalized_actions'].tolist(),
-                       first_noise_seed=first['noise_seed'], first_action_mask=first['executed'].tolist())
-        write_json_atomic(root / f'{request["output_name"]}.json', row)
-    rows = [read_json(root / f'{pool}_{name}_{state_id:03d}.json') for pool, values in
-            [('selection', panel['selection_states']), ('audit', panel['audit_states'])]
-            for name in states for state_id in values]
-    selection = {name: [r for r in rows if r['pool'] == 'selection' and r['endpoint'] == name] for name in states}
-    distribution = endpoint_distribution({u: selection[str(u)] for u in (160, 480)}, selection['parent'])
-    write_json_atomic(destination / 'teacher_distribution.json', distribution)
-    write_json_atomic(root / 'aggregate.json', dict(rows=rows, q_T=distribution, components=deep_components(runtime, runner),
-        audit_is_selection=False, complete=True))
-    print(json.dumps(dict(event_id=event['event_id'], q_T=distribution, rows=len(rows))))
+        state_id=output['request']['state_id'];history_path=destination/f'state_{state_id:03d}.history.pt.gz'
+        save_history(history_path,output['history'])
+        row=dict(**output['row'],global_task_id=args.task,checkpoint_update=args.stop,parameter_ref=reference,
+            history=str(history_path),history_records=len(output['history'].records),
+            uses=['teacher_selection','G_history','selector_supervision'],independent_report=False,
+            same_actual_rollout_history=True,checkpoint=str(node_weights(args.root,args.task,args.stop)),
+            fold=next(i for i,fold in enumerate(panel['selection_folds']) if state_id in fold))
+        if output['history'].records:
+            row['first_native_normalized_actions']=output['history'].records[0]['normalized_actions'].tolist()
+        write_json_atomic(destination/f'state_{state_id:03d}.json',row)
+    rows=[read_json(destination/f'state_{i:03d}.json') for i in panel['teacher_selection_states']]
+    write_json_atomic(destination/'complete.json',dict(complete=True,task=args.task,checkpoint_update=args.stop,
+        rows=rows,components=runner.components,environment_steps=runner.environment_steps,
+        history_bytes=sum(Path(r['history']).stat().st_size for r in rows)))
+    print(json.dumps(dict(task=args.task,node=args.stop,readout_rows=len(rows),capture_reused=True)))
 
 
+def select_teacher(root, task):
+    contract=read_json(Path(root)/'run_contract.json');panel=task_panel(root,task)
+    existing=teacher_root(root,task)/'E.json'
+    if existing.exists():return read_json(existing)
+    nodes=contract['teacher']['readout_updates'];scores={};parents=[]
+    for update in nodes:
+        path=teacher_root(root,task)/'selection'/f'update_{update:08d}'/'complete.json'
+        record=read_json(path)
+        if not record['complete'] or len(record['rows']) != contract['teacher']['selection_H_per_node']:
+            raise ValueError('all registered teacher node readouts required before E choice')
+        rows=record['rows'];scores[update]=sum(bool(r['success']) for r in rows)
+        parents.append(dict(update=update,reference=parameter_ref(task,update),
+            weights=str(node_weights(root,task,update)),histories=[r['history'] for r in rows],
+            rows=rows,selection_successes=scores[update]))
+    best=max(nodes,key=lambda u:(scores[u],-u))
+    result=dict(complete=True,task=task,selected_update=best,reference=parameter_ref(task,best),
+        weights=str(node_weights(root,task,best)),parents=parents,selection_states=panel['teacher_selection_states'],
+        selection_folds=panel['selection_folds'],selection_noise=f"{contract['teacher']['selection_H_per_node']}-row teacher selection; no held/formal checkpoint choice",
+        choice_rule='max success; earliest tie including MT',shared_target_for_all_parent_H=True)
+    write_json_atomic(teacher_root(root,task)/'E.json',result)
+    return result
 
 
+def teacher_report(args,runtime,runner,environment):
+    chosen=select_teacher(args.root,args.task);panel=task_panel(args.root,args.task)
+    task=next(t for t in environment['tasks'] if t['global_task_id']==args.task)
+    weights=load_file(chosen['weights'],device=str(runtime.device))
+    destination=teacher_root(args.root,args.task)/'report';destination.mkdir(exist_ok=True)
+    requests=[]
+    for arm,state,reference in [('E',weights,chosen['reference']),('MT',runtime.mt,'MT300')]:
+        for state_id in panel['teacher_report_states']:
+            if (destination/f'{arm}_{state_id:03d}.json').exists():continue
+            requests.append(dict(task=task,state=state,parameter_ref=reference,state_id=state_id,
+                noise_root=seed(5,args.task,state_id),episode_id=f'task_{args.task:04d}_teacher_report_{arm}_{state_id:03d}',
+                arm=arm,snapshots=False,uses_teaching=False))
+    for output in runner.run(requests):
+        request=output['request']
+        row=dict(**output['row'],arm=request['arm'],global_task_id=args.task,selected_teacher_update=chosen['selected_update'],
+            uses=['independent_teacher_report'],independent_report=True,excluded_from_H_and_gradient=True)
+        if output['history'].records:
+            row['first_native_normalized_actions']=output['history'].records[0]['normalized_actions'].tolist()
+        write_json_atomic(destination/f"{request['arm']}_{request['state_id']:03d}.json",row)
+    rows=[read_json(destination/f'{arm}_{i:03d}.json') for arm in ('E','MT') for i in panel['teacher_report_states']]
+    write_json_atomic(destination/'complete.json',dict(complete=True,rows=rows,components=runner.components,
+        independent_report=True,environment_steps=runner.environment_steps))
+    print(json.dumps(dict(task=args.task,E_update=chosen['selected_update'],independent_report_rows=len(rows))))
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=['prepare', 'profile', 'collect', 'teacher', 'audit',
-                                          'G', 'local-data', 'local', 'RL', 'report'])
-    parser.add_argument('--root', type=Path, default=RUN_ROOT)
-    parser.add_argument('--asset-root', type=Path, default=ASSET_ROOT)
-    parser.add_argument('--output', type=Path)
-    parser.add_argument('--profile-consumer',choices=['full','throughput'],default='full')
-    parser.add_argument('--task', type=int, choices=TASKS, default=12)
-    parser.add_argument('--event', type=int, default=0)
-    parser.add_argument('--condition-ordinal',type=int,choices=range(4),default=None)
-    parser.add_argument('--stop', type=int, choices=[160, 240, 480], default=480)
-    parser.add_argument('--resume', type=Path)
-    parser.add_argument('--checkpoint', type=Path)
-    parser.add_argument('--video-arm', choices=['correct', 'other', 'wrong'], default='correct')
-    parser.add_argument('--microbatch', type=int, default=28)
-    parser.add_argument('--function-microbatch',type=int,choices=[1,2,4],default=4)
-    parser.add_argument('--frame-chunk', type=int, default=4)
-    parser.add_argument('--frame-chunks', type=lambda s: [int(v) for v in s.split(',')], default=[2, 4, 8])
-    parser.add_argument('--slots', type=int, default=8)
-    parser.add_argument('--physical-gpu', type=int, required=False)
-    args = parser.parse_args()
-    if args.command == 'prepare':
-        prepare(args); return
-    shared = args.command in {'G','local','RL'}
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('command',choices=['prepare','teacher','readout','teacher-report','G','local-data','local','RL','report'])
+    parser.add_argument('--root',type=Path,default=RUN_ROOT)
+    parser.add_argument('--asset-root',type=Path,default=ASSET_ROOT)
+    parser.add_argument('--task',type=int,choices=TASKS,default=0)
+    parser.add_argument('--stop',type=int)
+    parser.add_argument('--teacher-stop',type=int)
+    parser.add_argument('--checkpoint-interval',type=int)
+    parser.add_argument('--selection-count',type=int)
+    parser.add_argument('--report-count',type=int,default=8)
+    parser.add_argument('--profile-receipts',nargs='*',default=[])
+    parser.add_argument('--resume',type=Path)
+    parser.add_argument('--checkpoint',type=Path)
+    parser.add_argument('--condition-ordinal',type=int)
+    parser.add_argument('--video-arm',choices=['correct','other','wrong'],default='correct')
+    parser.add_argument('--microbatch',type=int,default=28)
+    parser.add_argument('--frame-chunk',type=int,default=16)
+    parser.add_argument('--slots',type=int,default=8)
+    parser.add_argument('--physical-gpu',type=int)
+    args=parser.parse_args()
+    if args.command=='prepare':prepare(args);return
+    identity=git_state()
+    if identity['dirty_paths'] or identity['branch']:
+        raise ValueError('formal consumers require a clean pushed detached frozen worktree')
+    subprocess.run(['git','merge-base','--is-ancestor',identity['commit'],'origin/main'],check=True)
+    write_json_atomic(args.root/'code'/f'{args.command}_{identity["commit"]}.json',identity)
+    shared=args.command in ('G','local','RL')
     if shared:
-        args.physical_gpu = int(os.environ['CUDA_VISIBLE_DEVICES'].split(',')[int(os.environ.get('LOCAL_RANK', '0'))])
-        chunks=os.environ.get('EMBER_META_FRAME_CHUNKS')
-        if chunks:
-            chunks=chunks.split(',')
-            if len(chunks)!=int(os.environ.get('WORLD_SIZE','1')):raise ValueError('physical meta chunks/topology differ')
-            args.frame_chunk=int(chunks[int(os.environ.get('LOCAL_RANK','0'))])
-    if args.physical_gpu is None:
-        parser.error('GPU consumers require explicit physical GPU identity')
-    if args.command != 'profile':
-        identity = git_state()
-        if identity['dirty_paths'] or identity['branch']:
-            raise ValueError('formal consumers require a clean pushed detached frozen worktree')
-        subprocess.run(['git', 'merge-base', '--is-ancestor', identity['commit'], 'origin/main'], check=True)
-        write_json_atomic(args.root / 'code' / f'{args.command}_{identity["commit"]}.json', identity)
-    context = initialize_distributed(require_numa=True, defer_process_group=True)
-    if context.world_size != 1 and not shared:
-        raise ValueError('these independent teacher/profile consumers use one worker per GPU')
+        args.physical_gpu=int(os.environ['CUDA_VISIBLE_DEVICES'].split(',')[int(os.environ.get('LOCAL_RANK','0'))])
+        if args.command not in read_json(args.root/'run_contract.json')['updates']:
+            raise ValueError('shared learning update window must be registered before formal launch')
+    if args.physical_gpu is None:parser.error('GPU consumer requires its actual physical GPU')
+    context=initialize_distributed(require_numa=True,defer_process_group=True)
     torch.set_num_threads(8)
-    runtime = Runtime(context.device, asset_root=args.asset_root, root=args.root, frame_chunk=args.frame_chunk)
-    contract = environment_contract(args.asset_root)
-    for task in contract['tasks']:
-        if runtime.tasks[task['global_task_id']].authority.language != task['language']:
-            raise ValueError('task/video/action/environment exact language identity differs')
-    from ember.pi05_assets import prepare_libero_config
-    os.environ.update(EMBER_LIBERO_ASSETS_ROOT=contract['libero_paths']['assets'],
-                      MUJOCO_GL='egl', PYOPENGL_PLATFORM='egl', MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu))
-    prepare_libero_config(args.root / 'libero_config')
-    runner = EpisodeRunner(runtime, contract, args.physical_gpu, slots=args.slots)
+    runtime=Runtime(context.device,asset_root=args.asset_root,root=args.root,frame_chunk=args.frame_chunk)
+    runner=None
     try:
-        if args.command == 'collect': collect(args, runtime, runner, contract)
-        elif args.command == 'teacher': fit(args, runtime)
-        elif args.command == 'audit': audit(args, runtime, runner, contract)
-        elif args.command == 'profile':
-            from .profile import profile
-            profile(args,runtime,runner,contract)
+        if args.command=='teacher':fit(args,runtime);return
+        environment=read_json(args.root/'run_contract.json')['environment']
+        os.environ.update(EMBER_LIBERO_ASSETS_ROOT=environment['libero_paths']['assets'],MUJOCO_GL='egl',
+            PYOPENGL_PLATFORM='egl',MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu))
+        from ember.pi05_assets import prepare_libero_config,configure_libero_runtime_assets
+        prepare_libero_config(args.root/'libero_config')
+        configure_libero_runtime_assets(Path(environment['libero_paths']['assets']))
+        runner=EpisodeRunner(runtime,environment,args.physical_gpu,slots=args.slots)
+        if args.command=='readout':readout(args,runtime,runner,environment)
+        elif args.command=='teacher-report':teacher_report(args,runtime,runner,environment)
         else:
             from .pipeline import run
-            run(args, runtime, runner, contract, context)
+            run(args,runtime,runner,environment,context)
     finally:
-        runner.close(); runtime.close()
+        if runner is not None:runner.close()
+        runtime.close()
 
 
-if __name__ == '__main__':
-    main()
+if __name__=='__main__':main()

@@ -1,3 +1,10 @@
+## 当前组织修订：全36任务共同E、真实节点H与不同预算信用（2026-10-11）
+
+共享映射覆盖train24+support12全部36。每task复用一条同坐标任务LoRA学习轨迹，实际节点闭环selection选共同E；G样本是合法(L,V,P,H; E−P)，H来自P对应的同一次真实评估，不逐H新拟合Q。
+初次生成前MT真实实践，统一非空H。晚期退化parent可回到实测强E；若持续上升如实记录，不能制造过拟合来补标签。共同E可能使G忽略视频/H，须由实际增量判断，不再靠逐H目标强迫必要性。
+π在完整ψ冻结后，用独立query的完整condition score学习预算条件的实践/选择/STOP；保留原样和实际已试参数以学习中途能力与追加预算的保持，结构可表示不等于已学会单调改进。
+新condition不拟合动作轨迹；教学双meta/CFM及执行单LoRA信息墙保持。旧四task bank/G480是历史优化原件，完整新合同见唯一active设计；当前首轮数字待实际吞吐冻结。
+
 # EMBER concept
 
 EMBER研究能否把exact task language与action-hidden正确教学视频，编译为冻结π0.5 source的一套完整task-conditioned LoRA，

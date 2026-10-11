@@ -17,7 +17,6 @@ from .learning import (Baseline, train_cfm, train_local, on_policy_update, check
                        assigned_tasks, resume_checkpoint, memory_peak)
 from .path import (compile_condition, evaluate_fixed, history_prefix, save_history, load_history,
                    restore_compilation,retire_consumed_parameters)
-from .teacher import functional_labels
 
 
 def load_version(runtime, directory, *, fixed_psi=True):

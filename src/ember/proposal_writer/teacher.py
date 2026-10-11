@@ -1,4 +1,4 @@
-"""Training-only endpoint optimization with actual recovery/keep labels."""
+"""One task trajectory: native demoFM and fixed initial-MT proximal units."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,10 +15,9 @@ from ember.writer.data import FunctionalQueryDataset
 from ember.writer.functional import task_logical_batch_policy_rng_seed
 from ember.writer.function_credit import FlowSample, NativeFlowPrediction, flow_sample, mean_velocity_loss
 from ember.writer.model import DirectLoRAParameters
-from ember.writer.practice import processed
 from ember.writer.runtime import autocast
 
-from .contract import SOURCE, OPTIMIZER, seed
+from .contract import OPTIMIZER, seed
 
 
 def tree_slice(value, start, stop):
@@ -36,8 +35,16 @@ def tree_cat(values):
 
 
 class QueryStream:
-    def __init__(self, runtime, task, teaching_demo, event_ordinal):
+    def __init__(self, runtime, task, teaching_demo, event_ordinal, *, logical_queries=112,
+                 query_demo_indices=None):
         self.task, self.demo, self.ordinal = int(task), int(teaching_demo), int(event_ordinal)
+        if logical_queries <= 0 or logical_queries % 28:
+            raise ValueError('teacher query count must contain complete registered 28-query flow blocks')
+        self.logical_queries = int(logical_queries)
+        self.query_demos = tuple(i for i in (range(50) if query_demo_indices is None else query_demo_indices)
+                                 if i != self.demo)
+        if not self.query_demos or len(set(self.query_demos)) != len(self.query_demos):
+            raise ValueError('teacher query episode pool must be explicit and unique')
         self.authority = runtime.tasks[task]
         self.data = FunctionalQueryDataset((self.authority.authority,), demo_indices=tuple(range(50)),
                                            action_chunk_size=50, action_start_offset=1)
@@ -45,10 +52,9 @@ class QueryStream:
         self.orders, self.frames = {}, {}
 
     def query(self, n):
-        cycle, slot = divmod(n, 49)
+        cycle, slot = divmod(n, len(self.query_demos))
         if cycle not in self.orders:
-            pool = [i for i in range(50) if i != self.demo]
-            self.orders[cycle] = np.random.default_rng(seed(10, self.task, self.ordinal, cycle)).permutation(pool)
+            self.orders[cycle] = np.random.default_rng(seed(10, self.task, self.ordinal, cycle)).permutation(self.query_demos)
         demo = int(self.orders[cycle][slot])
         length = self.authority.episode_lengths[demo] - 1
         turn, position = divmod(cycle, length)
@@ -58,16 +64,16 @@ class QueryStream:
         return dict(demo=demo, frame=int(self.frames[key][position]))
 
     def sample(self, runtime, update):
-        queries = [self.query(update * 112 + i) for i in range(112)]
+        queries = [self.query(update * self.logical_queries + i) for i in range(self.logical_queries)]
         if any(row['demo'] == self.demo for row in queries):
             raise ValueError('teaching episode actions crossed condition wall')
         batch = default_collate([self.data[self.rows[row['demo']][row['frame']]] for row in queries])
         batch = runtime.processor.training_batch(batch)
         samples, blocks = [], []
-        for i in range(4):
+        for i in range(self.logical_queries // 28):
             rows = queries[28 * i:28 * (i + 1)]
             flow_seed = task_logical_batch_policy_rng_seed(optimization_seed=7, task_id=self.task,
-                task_visit=4 * update + i, demo_indices=[r['demo'] for r in rows],
+                task_visit=(self.logical_queries // 28) * update + i, demo_indices=[r['demo'] for r in rows],
                 frame_indices=[r['frame'] for r in rows])
             samples.append(flow_sample(runtime.policy, {k: v[28 * i:28 * (i + 1)] for k, v in batch.items()},
                 seed=flow_seed, device=runtime.device, random_batch=28, offset=0))
@@ -81,51 +87,14 @@ class QueryStream:
         self.data.close()
 
 
-def functional_labels(runtime, runner, event, history, task, expert):
-    """Recovery only from this live history; global pools capped at 4/16."""
-    rec, keep, validations = [], [], []
-    successful = [row for row in history.records if
-        history.episodes[row['episode']]['success'] and row['parameter_ref'] == event['parent_ref']]
-    failed = [row for row in history.records if not history.episodes[row['episode']]['success']]
-    def spaced(rows, cap):
-        return [rows[i] for i in np.floor(np.linspace(0, len(rows) - 1, min(cap, len(rows)))).astype(int)] if rows else []
-    for row in spaced(successful, 16):
-        batch = processed(runtime, history.observations[row['pre']], task['language'])
-        noise = torch.randn(1, 50, 32, generator=torch.Generator().manual_seed(row['noise_seed']))
-        keep.append(dict(batch={k: v.cpu() for k, v in batch.items()}, noise=noise,
-            target=row['normalized_actions'][None], mask=torch.ones(1, 5, 7, dtype=torch.bool),
-            source_episode=row['episode'], source_step=row['step'], actual_parent_function=True))
-    for ordinal, row in enumerate(spaced(failed, 4)):
-        if row.get('snapshot') is None or expert is None:
-            continue
-        episode = history.episodes[row['episode']]
-        batch = processed(runtime, history.observations[row['pre']], task['language'])
-        root = seed(12, event['task_id'], event['event_ordinal'], row['episode'], ordinal)
-        snapshot = row['snapshot']
-        remaining = task['horizon'] - snapshot['episode_control_steps']
-        request = dict(task=task, state=expert, parameter_ref=f"recovery_expert_{event['task_id']}",
-            state_id=episode['init_state_id'], noise_root=root, episode_id=f"{event['event_id']}_rec{ordinal}",
-            remaining=remaining, snapshot=snapshot, snapshots=False, uses_teaching=False)
-        with runtime.execution.source_expert():
-            result = next(runner.run([request]))
-        validations.append(dict(episode=row['episode'], step=row['step'], success=result['row']['success'],
-                                row=result['row'], actual_snapshot=True))
-        if result['row']['success'] and result['history'].records:
-            first = result['history'].records[0]
-            noise = torch.randn(1, 50, 32, generator=torch.Generator().manual_seed(first['noise_seed']))
-            rec.append(dict(batch={k: v.cpu() for k, v in batch.items()}, noise=noise,
-                target=first['normalized_actions'][None], mask=first['executed'][None, :, None].expand(1, 5, 7),
-                source_episode=row['episode'], source_step=row['step'], verified_remaining_horizon_success=True))
-    return dict(rec=rec, keep=keep, recovery_validations=validations)
-
-
 def save_checkpoint(root, model, optimizer, stream, update, event, *, extra=None):
     destination = Path(root) / 'checkpoints' / f'update_{update:08d}'
     destination.mkdir(parents=True, exist_ok=False)
     save_file({k: v.detach().cpu().contiguous() for k, v in model().items()}, str(destination / 'lora.safetensors'))
-    state = dict(schema_version='ember_rank8_teacher_checkpoint_v2', optimizer=optimizer.state_dict(),
+    state = dict(schema_version='ember_full36_common_teacher_checkpoint_v4', optimizer=optimizer.state_dict(),
         next_update=update, sampler=dict(task=stream.task, teacher_demo=stream.demo, event_ordinal=stream.ordinal,
-                                       next_query=update * 112), names=list(model.names),
+                                       logical_queries=stream.logical_queries, query_demos=stream.query_demos,
+                                       next_query=update * stream.logical_queries), names=list(model.names),
         rng=dict(python=random.getstate(), numpy=np.random.get_state(), cpu=torch.random.get_rng_state(),
                  cuda=torch.cuda.get_rng_state_all()), topology=dict(world_size=1), event=event, extra=extra)
     torch.save(state, destination / 'state.pt')
@@ -134,34 +103,21 @@ def save_checkpoint(root, model, optimizer, stream, update, event, *, extra=None
     return destination
 
 
-def function_credit(runtime,model,items,*,microbatch=4):
-    """Physical batching only; retain the uniform mean of masked per-item losses."""
-    total=0.
-    for first in range(0,len(items),microbatch):
-        part=items[first:first+microbatch]
-        batch={k:torch.cat([v['batch'][k] for v in part]).to(runtime.device) for k in part[0]['batch']}
-        noise=torch.cat([v['noise'] for v in part]).to(runtime.device)
-        pred=runtime.native_actions([model()],batch,noise,
-            batch_indices=torch.zeros(len(part),dtype=torch.long,device=runtime.device))
-        targets=torch.cat([v['target'] for v in part]).to(runtime.device)
-        mask=torch.cat([v['mask'] for v in part]).to(runtime.device)
-        error=(pred.float()-targets.float()).square().masked_fill(~mask,0)
-        value=(error.flatten(1).sum(1)/mask.flatten(1).sum(1)).sum()/len(items)
-        value.backward();total+=float(value.detach())
-    return total
-
-
-def fit_teacher(runtime, event, parent, labels, root, *,microbatch=28,stop=480,resume=None,function_microbatch=4):
+def fit_teacher(runtime, event, parent, root, *, microbatch, stop, logical_queries,
+                query_demo_indices, checkpoint_updates, resume=None):
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
     model = DirectLoRAParameters({k: v.detach().float() for k, v in parent.items()}).to(runtime.device)
     optimizer = torch.optim.AdamW(model.parameters(), **OPTIMIZER)
-    stream = QueryStream(runtime, event['task_id'], event['teacher_demo'], event['event_ordinal'])
+    stream = QueryStream(runtime, event['task_id'], event['teacher_demo'], event['event_ordinal'],
+                         logical_queries=logical_queries, query_demo_indices=query_demo_indices)
     start = 0
     if resume is not None:
         state = torch.load(Path(resume) / 'state.pt', map_location='cpu', weights_only=False)
-        if (state['schema_version'] != 'ember_rank8_teacher_checkpoint_v2'
-                or state['event'] != event or tuple(state['names']) != model.names):
+        if (state['schema_version'] != 'ember_full36_common_teacher_checkpoint_v4'
+                or state['event'] != event or tuple(state['names']) != model.names
+                or state['sampler']['logical_queries'] != logical_queries
+                or tuple(state['sampler']['query_demos']) != stream.query_demos):
             raise ValueError('teacher resume event or complete factor topology changed')
         weights = load_file(str(Path(resume) / 'lora.safetensors'), device=str(runtime.device))
         with torch.no_grad():
@@ -179,24 +135,16 @@ def fit_teacher(runtime, event, parent, labels, root, *,microbatch=28,stop=480,r
             started = time.monotonic()
             optimizer.zero_grad(set_to_none=True)
             sample, query_event = stream.sample(runtime, update)
-            losses = dict(demo=0., rec=None, keep=None, proximal=0.)
-            for first in range(0, 112, microbatch):
-                last = min(first + microbatch, 112)
+            losses = dict(demo=0., proximal=0.)
+            for first in range(0, logical_queries, microbatch):
+                last = min(first + microbatch, logical_queries)
                 part = FlowSample(tree_slice(sample.arguments, first, last), sample.target[first:last], sample.action_width)
                 with autocast(runtime.device):
                     prediction = torch.func.functional_call(owner, runtime.task_parameters(model()),
                                                              (part,), strict=False)
-                    loss = mean_velocity_loss(prediction, part.target, part.action_width) * ((last - first) / 112)
+                    loss = mean_velocity_loss(prediction, part.target, part.action_width) * ((last - first) / logical_queries)
                 loss.backward()
                 losses['demo'] += float(loss.detach())
-            for kind in ('rec', 'keep'):
-                pool = labels[kind]
-                if not pool:
-                    continue
-                rng = np.random.default_rng(seed(13 if kind == 'rec' else 14, event['task_id'], event['event_ordinal'], update))
-                chosen = rng.choice(len(pool), min(4, len(pool)), replace=False).tolist()
-                losses[kind]=function_credit(runtime,model,[pool[i] for i in chosen],
-                    microbatch=function_microbatch)
             proximal = sum(((value - parent[name].to(value)) / scales[name]).square().sum()
                            for name, value in model().items()) * (1e-3 / valid_coordinates)
             proximal.backward()
@@ -209,27 +157,8 @@ def fit_teacher(runtime, event, parent, labels, root, *,microbatch=28,stop=480,r
             with (root / 'metrics.jsonl').open('a') as f:
                 import json
                 f.write(json.dumps(record) + '\n')
-            if update + 1 in (160, 480):
+            if update + 1 in checkpoint_updates:
                 save_checkpoint(root, model, optimizer, stream, update + 1, event)
         return model()
     finally:
         stream.close()
-
-
-def endpoint_distribution(selection_rows, parent_rows):
-    parent = {row['init_state_id']: int(row['success']) for row in parent_rows}
-    legal, preferred, effects = [], [], {}
-    for update, rows in selection_rows.items():
-        if {row['init_state_id'] for row in rows} != set(parent):
-            raise ValueError('teacher preference lost independent paired selection pool')
-        if any(row.get('model_failure') for row in rows):
-            effects[int(update)] = None
-            continue
-        gains = sum(int(row['success']) - parent[row['init_state_id']] for row in rows) / len(rows)
-        legal.append(int(update)); effects[int(update)] = gains
-        if gains > 0:
-            preferred.append(int(update))
-    probability = {key: .25 / len(legal) + (.75 / len(preferred) if key in preferred else 0)
-                   for key in legal} if preferred else {key: 1 / len(legal) for key in legal}
-    return dict(legal_nodes=legal, preferred_nodes=preferred, selection_gain=effects,
-                probabilities=probability, missing_labels=not legal)

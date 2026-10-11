@@ -1,3 +1,31 @@
+## 2026-10-11 全36实现、吞吐与旧G实际退出
+
+唯一active仍为 docs/designs/video_guided_proposal_writer_20261010.md 的full36共同E/非空真实H/不同预算合同；实验session继续独占tracked/Git。
+main已定36条800×query28纯demoFM+初始MT prox，完整CP每100保存；本批读出只MT/200/400/600/800，odd100节点保存备用，不自动加入parent/H池。
+main已冻结每节点16 selection/H（8+8折）、独立E/MT各16；2880条训练H与1152条报告分开，共4032 episodes。原4/8精度取舍是历史，不作为当前启动数字。实际CPU prepare/panel/coordinates/installed-environment/360-job依赖消费者已通过；17项针对性检查通过13.09秒，正完成formal冻结，尚未launch。
+纯demo完整consumer已测gpu02:6 B28 warmed4.381051秒/reserved16.582GiB、B56 8.699503秒/23.884766GiB，单位query无重要吞吐收益。
+gpu01:0新0–45 pool的B28 warmed2.074446秒/reserved16.591797GiB，3+1实际完整optimizer/query/RNG恢复且source无梯度。
+必要profile两次capture启动资产/配置责任已定位并保留失败费用，只恢复capture，不重复成功的教师更新；36环境CPU消费者已确认train24/support12、libero90 horizon400。
+Long slow-card8条完整520+10 episode、同rollout直接save_H耗250.680858秒/4240envsteps/832records，H303492574bytes；fast slots4=119.936450秒/4条；slots16=277.304918秒/16条，17.331557秒/episode，对比slots4快42.2%，reserved17.248GiB，选slots16。
+π实践池init_order[:36]排除16个teacher报告初态共20；local/RL query同一init_order[36:46]10池、每condition均衡4条，query不进实践/H；46:50保留有限train诊断。
+训练bank ETA北京时间20:40–21:05，保留14:30起算/原20:30目标，报告E锁定就绪且bank优先，可与G并行；不冒称报告已完成。
+新consumer采用唯一task/MTmerged/r8/update ref；不读sim snapshots。G代码已改task→实际parent→H分层等权、固定共同E编辑，decoded H/raw-features每worker2GiB且至多2段，meta/θ编码不跨更新缓存。
+旧G480已UTC06:47:44自然退出0；480完整B4更新、486optimizer states、4rank RNG，继续更新warmed14.878678秒，四卡reserved峰值25.451–26.258GiB；这些只证明旧目标优化，不是视频闭环能力。
+旧批总账61.880279552975615GPUh（本ROOT43.23986744911073+carry18.640412103864882），55退出原件/1失败；ROOT/scientific_completion.json已封口，旧π/报告均未执行，不恢复。
+strg01 data1最新used1409744836KiB/quota2147483648KiB，2026-10-11 07:18UTC核得quota used1410477984KiB，256GiB新峰值计划有余量（全Long2880条压缩H上界101.75GiB，含新CP、共享模型与π/400缓存）。已删除两退役Compiler的66 optimizer/RNG文件4401320680bytes，各ROOT有weights-only/not-exact-resume retirement receipt；权重/小formal原件保留。
+
+## 2026-10-11 14:30 Owner全36-task自主授权：旧G收口，新共同教师/真实H复用接续
+
+已实际承接main本轮full36_execution_contract.md（共享临时稿全文已读）。范围改为审计train24+support12全部36，G/π从首次共享更新即task等权。
+旧G480继续自然完整保存，旧π/报告保持停止；旧原件是旧目标学习，不改称新版。tracked/Git仍由实验01a12384-17a9-7382-aeec-cee89479428f独占，不在旧G退出后归还。
+新合同采用每task一条teacher轨迹及同task共同E，MT及节点真实评估History直接复用；首次生成前MT实践、非空H，支持libero90 horizon400。
+新teacher action0–45/46–49内部留出按本次参数训练身份登记，既有MT50/旧Q49如实保留；Val8/Test8离线墙不变。
+纯FM query数/保存间隔/selection与报告数量待main消费正在执行的必要full-update/capture profile冻结；800/28/每100/每节点8及报告8尚不是已启动formal。
+数据deadline按14:30授权起算含工程/profile，目标4–5h/最迟约20:30北京时间。新formal必须clean pushed detached，profile无正式学习身份。
+现场2026-10-11 06:32UTC旧G占4卡；gpu02:4/6分别约28.8/29.8GiB余量，可共驻，不按高UTL排除。全项目上限当前6，profile准入后5卡。
+data1独立quota used1413373120KiB/quota2147483648KiB；新数据峰值将按真实H压缩/节点数量重新估算，旧64GiB不直接作为新版预测。
+Owner已授权退休无恢复/当前依赖的旧checkpoint/训练状态；当前G依赖、source/MT/强参照/原始数据/小formal证据保留，删除清单和剩余恢复身份须逐项记录。
+
 ## 2026-10-11 main科学修订：旧多事件bank收口至当前G480，停止后继自动晋级
 
 主讨论01a12385-4cfc-7ec2-9017-ef2b242243cf已在Owner持续自主授权内撤回逐H fresh Q必要性的论证，修正教师选择/复用/先实践合同。

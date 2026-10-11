@@ -56,82 +56,66 @@ def billing(root):
                 failed_attempts=sum(r.get('failed_attempts',int(r['exit_code'] != 0)) for r in rows),raw_receipts=rows)
 
 
-def teacher_event(event_root,task,ordinal,mt,scales):
-    event = read_json(event_root/'event.json')
-    data = read_json(event_root/'readout/aggregate.json')
-    rows = data['rows']; raw=[{**r,'global_task_id':task} for r in rows]
-    parent = mt if event['parent_ref']=='MT300' else load_file(event['parent'])
-    effects = {}
-    for node in (160,480):
-        effects[str(node)] = {pool: paired(
-            [r for r in rows if r['pool']==pool and r['endpoint']=='parent'],
-            [r for r in rows if r['pool']==pool and r['endpoint']==str(node)])
-            for pool in ('selection','audit')}
-        weights = load_file(str(event_root/'teacher/checkpoints'/f'update_{node:08d}'/'lora.safetensors'))
-        effects[str(node)]['parameters'] = parameter_changes(parent, weights, scales)
-    adjacent = paired([r for r in rows if r['pool']=='audit' and r['endpoint']=='160'],
-              [r for r in rows if r['pool']=='audit' and r['endpoint']=='480'])
-    result=dict(task_id=task,event_ordinal=ordinal,teaching_demo=event['teacher_demo'],
-        event_kind=event['event_kind'],parent_ref=event['parent_ref'],history_producer=event['history_producer'],
-        rec_labels=event['rec_labels'],keep_labels=event['keep_labels'],q_T=data['q_T'],
-        effects=effects,adjacent160_480=adjacent,missing_label=False)
-    return result,raw
-
-
-def no_supply(events):
-    legal=[(event,str(node)) for event in events if not event.get('missing_label')
-           for node in event['q_T']['legal_nodes']]
-    return not legal or all(event['effects'][node]['audit']['net']<=0 for event,node in legal)
-
-
 def teacher_summary(root):
-    root=Path(root);mt=load_file(str(root/'initial.safetensors'));events=[];raw=[]
-    scales=read_json(root/'coordinates.json')['S_prox']
+    """Consume every node and the independent paired report across all36 tasks."""
+    root=Path(root);contract=read_json(root/'run_contract.json')
+    selection=[];reports=[];tasks=[]
+    initial=load_file(str(root/'initial.safetensors'));prox=read_json(root/'coordinates.json')['S_prox']
     for task in TASKS:
-        for ordinal in range(4):
-            event_root=root/'events'/f'task_{task:04d}_event_{ordinal:02d}'
-            if not (event_root/'event.json').exists():
-                raise ValueError('teacher supply needs all sixteen registered events or explicit missing-label originals')
-            event,rows=teacher_event(event_root,task,ordinal,mt,scales)
-            events.append(event);raw.extend(rows)
-    absent=no_supply(events)
-    result=dict(complete=True,events=events,all_raw_rows=raw,no_beneficial_teacher_supply=absent,
-        interpretation='finite train paired selection4/audit16; neither formal400 nor evidence of video learning',
-        teaching_split_not_all_action_label_holdout=True,learning_tasks=list(TASKS),
-        absent_suite_coverage=['libero_spatial'],billing=billing(root),
-        scientific_stop_reason='consume absent beneficial teacher supply before G/pi investment' if absent else None)
+        directory=root/'teachers'/f'task_{task:04d}'
+        chosen=read_json(directory/'E.json')
+        if not chosen['complete'] or [p['update'] for p in chosen['parents']] != contract['teacher']['readout_updates']:
+            raise ValueError('complete registered common-E parent bank required')
+        selection.extend(row for parent in chosen['parents'] for row in parent['rows'])
+        rows=read_json(directory/'report/complete.json')['rows'];reports.extend(rows)
+        report=paired([r for r in rows if r['arm']=='MT'],[r for r in rows if r['arm']=='E'])
+        weights=load_file(chosen['weights'])
+        tasks.append(dict(task=task,selected_update=chosen['selected_update'],
+            node_successes={str(p['update']):p['selection_successes'] for p in chosen['parents']},
+            independent_report=report,parameters=parameter_changes(initial,weights,prox),
+            parent_references=[p['reference'] for p in chosen['parents']],
+            checkpoint_selection_is_training_data=True,selection_uses=f"{contract['teacher']['selection_H_per_node']} selection/H rows, equal two folds"))
+    expected_selection=36*len(contract['teacher']['readout_updates'])*contract['teacher']['selection_H_per_node']
+    expected_report=36*2*contract['teacher']['report_per_arm']
+    if len(selection)!=expected_selection or len(reports)!=expected_report:
+        raise ValueError('full36 teacher raw row coverage incomplete')
+    aggregate=paired([r for r in reports if r['arm']=='MT'],[r for r in reports if r['arm']=='E'])
+    result=dict(complete=True,schema_version=SCHEMA,tasks=tasks,selection_raw_rows=selection,report_raw_rows=reports,
+        independent_report=aggregate,bank_task_weight=1/36,parent_weight='equal actual registered parent within task',
+        H_weight='uniform within parent; H count does not weight parent',
+        teacher_supports_video_writer=False,interpretation='teacher control and label supply only, not G or video capability',
+        no_nonMT_selected=all(t['selected_update']==0 for t in tasks),
+        selected_teacher_report_net=aggregate['net'],billing=billing(root))
     write_json_atomic(root/'teacher_summary.json',result)
+    import json
+    for name,rows in [('teacher_selection_raw_rows',selection),('teacher_report_raw_rows',reports)]:
+        with (root/f'{name}.jsonl').open('w') as handle:
+            for row in rows:handle.write(json.dumps(row)+'\n')
     return result
 
 
 def freeze_bank_scale(root):
-    """One task/event/q_T-weighted edit statistic; audit never sets these units."""
+    """Exactly task→parent equal E−P statistic; independent report never sets S_G."""
     import math
-    root=Path(root)
-    path=root/'bank_scale.json'
-    if path.exists():
-        return read_json(path)
-    summary=teacher_summary(root)
-    if summary['no_beneficial_teacher_supply']:
-        raise ValueError('scientific stop: full teacher bank has no audit improvement; no G investment')
-    prox=read_json(root/'coordinates.json')['S_prox']
-    initial=load_file(str(root/'initial.safetensors'))
-    mean={name:0. for name in initial}; sources=[]
-    for event in summary['events']:
-        directory=root/'events'/f"task_{event['task_id']:04d}_event_{event['event_ordinal']:02d}"
-        metadata=read_json(directory/'event.json')
-        parent=initial if metadata['parent_ref']=='MT300' else load_file(metadata['parent'])
-        for node in event['q_T']['legal_nodes']:
-            weight=float(event['q_T']['probabilities'][str(node)])/16
-            endpoint=load_file(str(directory/'teacher/checkpoints'/f'update_{node:08d}'/'lora.safetensors'))
-            for name in mean:
-                mean[name]+=weight*float((endpoint[name].float()-parent[name].float()).square().mean())
-            sources.append(dict(task=event['task_id'],event=event['event_ordinal'],node=node,weight=weight))
+    root=Path(root);path=root/'bank_scale.json'
+    if path.exists():return read_json(path)
+    initial=load_file(str(root/'initial.safetensors'));prox=read_json(root/'coordinates.json')['S_prox']
+    mean={name:0. for name in initial};sources=[]
+    for task in TASKS:
+        record=read_json(root/'teachers'/f'task_{task:04d}'/'E.json')
+        target=load_file(record['weights']);parents=record['parents']
+        if not parents or any(not p['histories'] for p in parents):raise ValueError('G requires nonempty actual H for every parent')
+        weight=1/(len(TASKS)*len(parents))
+        for parent in parents:
+            state=load_file(parent['weights'])
+            for name in mean:mean[name]+=weight*float((target[name].float()-state[name].float()).square().mean())
+            sources.append(dict(task=task,parent=parent['reference'],E=record['reference'],weight=weight))
     scales={name:max(math.sqrt(value),1e-3*prox[name]) for name,value in mean.items()}
     record=dict(schema_version=SCHEMA,S_G=scales,edit_mean_square=mean,S_prox=prox,sources=sources,
-        task_weight=.25,event_weight=.25,missing_contributes_zero_denominator_retained=True,
+        task_weight=1/len(TASKS),parent_weight='equal all actual registered parents',history_count_does_not_weight_parent=True,
         floor_active=[name for name in mean if math.sqrt(mean[name])<=1e-3*prox[name]],
-        selection_only=True,audit_not_used_for_scale=True,fixed_before_first_G_update=True)
+        training_selection_only=True,independent_teacher_report_not_used=True,fixed_before_first_G_update=True,
+        student_refresh_reestimates_scale=False)
     write_json_atomic(path,record)
     return record
 

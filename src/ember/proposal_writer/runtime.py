@@ -29,7 +29,7 @@ from .model import FactorLayout, Generator, Actor
 class Runtime:
     """One physical frozen source; owned ψ and θ are independent small modules."""
     def __init__(self, device='cuda:0', *, asset_root=ASSET_ROOT, root=RUN_ROOT, frame_chunk=4, response_microbatch=16,
-                 feature_cache_bytes=2 * 1024**3):
+                 feature_cache_bytes=2 * 1024**3,task_ids=TASKS,task_role='train'):
         self.device, self.asset_root = torch.device(device), Path(asset_root)
         authorities = load_evaluation_authorities(self.asset_root / SOURCE['evaluation_config'], self.asset_root)
         checkpoint = self.asset_root / SOURCE['checkpoint']
@@ -48,7 +48,7 @@ class Runtime:
         tokenizer = self.asset_root / SOURCE['tokenizer']
         self.processor = Pi05LiberoProcessor(stats, tokenizer, 200, str(self.device))
         self.tokenizer = Pi05TeacherPrefixTokenizer(tokenizer, 200, str(self.device))
-        self.tasks = load_learning_tasks(self.asset_root, TASKS, role='train', protocol_path=SOURCE['data_protocol'])
+        self.tasks = load_learning_tasks(self.asset_root, task_ids, role=task_role, protocol_path=SOURCE['data_protocol'])
         self.videos = RawTeacherVideoStore([t.authority for t in self.tasks.values()], frame_stride=5, camera_view='dual')
         base_path=self.root/'base/merged_targets.safetensors'
         merged=load_file(str(base_path),device=str(self.device)) if base_path.exists() else None
@@ -72,7 +72,7 @@ class Runtime:
         self.raw_cache, self.raw_cache_size = OrderedDict(), 0
         self.feature_cache_bytes = feature_cache_bytes
         self.components = dict(meta_read_seconds=0., meta_read_frames=0, teacher_cache_hits=0,
-                               response_seconds=0., response_observations=0, image_observations=0)
+                               response_seconds=0., response_observations=0, response_cache_hits=0,image_observations=0)
 
     def task_parameters(self, state):
         return self.execution.task_parameters(state)
@@ -126,7 +126,7 @@ class Runtime:
 
     def mark_psi_update(self):
         if self.psi_frozen:
-            raise ValueError('π training cannot modify its fixed generation kernel ψ')
+            raise ValueError('theta update and behavior collection must keep their generation kernel fixed')
         self.version += 1
         self.feature_cache.clear()
         self.feature_cache_size = 0
@@ -163,12 +163,22 @@ class Runtime:
             return native_actions(self, states, batch, noise, batch_indices=batch_indices, checkpointed=checkpointed)
 
     @torch.no_grad()
-    def responses(self, states, history, language, *, parent=None):
+    def responses(self, states, history, language, *, parent=None,absolute_cache=None):
+        if self.execution.expert_active.get() or self.generator.meta.active.get() is not None:
+            raise ValueError('native candidate response must use merged-MT task execution with read-meta closed')
         support = history.response_support(self, language)
         if support is None:
             return {}
-        started, absolute = time.monotonic(), {}
-        for key, state in states.items():
+        started,absolute=time.monotonic(),{}
+        # Cache belongs to one Compilation with immutable candidate refs; only one support is retained.
+        identity=(str(MT_PATH),str(self.root/'initial.safetensors'),language,
+            tuple((history.records[i]['pre'],history.records[i]['noise_seed']) for i in support['positions']))
+        if absolute_cache is not None and absolute_cache.get('identity')!=identity:
+            absolute_cache.clear();absolute_cache.update(identity=identity,values={})
+        cached={} if absolute_cache is None else absolute_cache['values']
+        for key,state in states.items():
+            if key in cached:
+                absolute[key]=cached[key];self.components['response_cache_hits']+=1;continue
             chunks = []
             count = len(support['noise'])
             for start in range(0, count, self.response_microbatch):
@@ -177,9 +187,10 @@ class Runtime:
                 owners = torch.zeros(stop - start, dtype=torch.long, device=self.device)
                 chunks.append(self.native_actions([state], batch, support['noise'][start:stop],
                                                    batch_indices=owners, checkpointed=False).float().cpu())
-            absolute[key] = torch.cat(chunks).flatten(1)
+            absolute[key]=torch.cat(chunks).flatten(1)
+            if absolute_cache is not None:cached[key]=absolute[key]
+            self.components['response_observations']+=len(support['noise'])
         self.components['response_seconds'] += time.monotonic() - started
-        self.components['response_observations'] += len(support['noise']) * len(states)
         return {key: torch.cat((value, value - absolute[parent] if parent is not None else torch.zeros_like(value)), 1)
                 for key, value in absolute.items()}
 

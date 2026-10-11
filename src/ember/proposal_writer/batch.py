@@ -334,10 +334,63 @@ def read_exit(path):
     return json.loads(Path(path).read_text())['exit_code']
 
 
+def shared_learning_job(root,contract,stage,shared_gpus,stop,slots):
+    """One shared current-theta batch owner, with an explicit recorded physical topology."""
+    if shared_gpus is None or not 1<=shared_gpus<=4:raise ValueError('shared physical world size needs actual throughput selection')
+    if stop not in contract['updates'].get(stage,[]):raise ValueError('formal shared update not preregistered')
+    arguments=[stage,'--stop',str(stop),'--slots',str(slots),'--frame-chunk','16']
+    if stage=='local':arguments+=['--checkpoint',str(root/'checkpoints/G'/f"update_{contract['fixed_G_update']:08d}")]
+    if stage=='RL':arguments+=['--checkpoint',str(root/'checkpoints/local'/f"update_{contract['fixed_local_update']:08d}")]
+    previous=[u for u in contract['updates'][stage] if u<stop and (root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').exists()]
+    if previous:arguments+=['--resume',str(root/'checkpoints'/stage/f'update_{max(previous):08d}')]
+    seconds=contract.get('stage_estimate_seconds',{}).get(f'{stage}_{stop}',0.)
+    return [Job(f'{stage}_{stop:08d}',arguments,estimate_seconds=seconds,gpu_count=shared_gpus)]
+
+
+def stage_jobs(root,stage,*,microbatch,slots,teacher_devices,estimates,shared_gpus,stop):
+    """Independent condition jobs reuse this queue; shared actor batches retain one owner."""
+    root=Path(root);contract=json.loads((root/'run_contract.json').read_text())
+    if stage=='teacher-data':return initial_jobs(microbatch,slots,teacher_devices,root=root,teacher_update_seconds=estimates)
+    if stage=='teacher-reports':
+        return [j for j in initial_jobs(microbatch,slots,teacher_devices,root=root,teacher_update_seconds=estimates)
+                if j.identity.startswith('teacher_report_')]
+    if stage in ('G','local','RL'):return shared_learning_job(root,contract,stage,shared_gpus,stop,slots)
+    jobs=[];seconds=contract.get('condition_estimate_seconds',{}).get(stage,0.)
+    if stage=='student-data':
+        checkpoint=root/'checkpoints/G'/f"update_{contract['student_refresh']['G_update']:08d}"
+        for task in TASKS:jobs.append(Job(f"student_{contract['student_refresh']['version']}_{task:04d}",
+            ['student-data','--task',str(task),'--checkpoint',str(checkpoint),'--slots',str(slots)],estimate_seconds=seconds))
+    elif stage=='local-data':
+        checkpoint=root/'checkpoints/G'/f"update_{contract['fixed_G_update']:08d}"
+        for task in TASKS:
+            for ordinal in range(contract['local_supervision']['G_conditions_per_task']):
+                jobs.append(Job(f"local_data_{contract['local_data_version']}_{task:04d}_{ordinal:03d}",
+                    ['local-data','--task',str(task),'--condition-ordinal',str(ordinal),'--checkpoint',str(checkpoint),
+                     '--slots',str(slots)],estimate_seconds=seconds))
+    elif stage=='training-report':
+        for name,update in contract['training_report']['versions']:
+            checkpoint=root/'checkpoints'/name/f'update_{update:08d}'
+            for task in TASKS:
+                for ordinal in range(contract['training_report']['conditions_per_task']):
+                    jobs.append(Job(f'train_report_{name}_{update:08d}_{task:04d}_{ordinal:03d}',
+                        ['report','--task',str(task),'--condition-ordinal',str(ordinal),'--checkpoint',str(checkpoint),
+                         '--slots',str(slots)],estimate_seconds=seconds))
+    elif stage=='formal':
+        panel=json.loads((root/'formal_panel.json').read_text())
+        for row in panel['rows']:
+            jobs.append(Job(f"formal_{Path(panel['checkpoint']).parent.name}_{Path(panel['checkpoint']).name}_{row['task']:04d}_{row['init_state_id']:03d}",
+                ['formal','--task',str(row['task']),'--condition-ordinal',str(row['init_state_id']),
+                 '--checkpoint',panel['checkpoint'],'--slots',str(slots)],estimate_seconds=seconds))
+    if not jobs:raise ValueError('stage has no registered independent work')
+    return jobs
+
+
 def main():
     import argparse
     parser=argparse.ArgumentParser()
-    parser.add_argument('stage',choices=['teacher-data'])
+    parser.add_argument('stage',choices=['teacher-data','teacher-reports','G','student-data','local-data','local','RL','training-report','formal'])
+    parser.add_argument('--shared-gpus',type=int)
+    parser.add_argument('--stop',type=int)
     parser.add_argument('--bank-only',action='store_true',help='prepare E/H first; reports use their independently frozen consumer')
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--workspace',type=Path,required=True)
@@ -358,14 +411,16 @@ def main():
         if (node,int(gpu)) not in teacher_devices or not math.isfinite(seconds) or seconds<=0:
             raise ValueError('teacher estimate must be positive and identify an eligible device')
         estimates[(node,int(gpu))]=seconds
-    jobs=initial_jobs(args.microbatch,args.slots,teacher_devices,root=args.root,teacher_update_seconds=estimates)
+    jobs=stage_jobs(args.root,args.stage,microbatch=args.microbatch,slots=args.slots,teacher_devices=teacher_devices,
+        estimates=estimates,shared_gpus=args.shared_gpus,stop=args.stop)
     if args.bank_only:jobs=[j for j in jobs if not j.identity.startswith('teacher_report_')]
-    done=batch.run(jobs,on_completion=lambda done:teacher_bank_ready(args.root,done))
+    done=batch.run(jobs,on_completion=(lambda done:teacher_bank_ready(args.root,done)) if args.stage=='teacher-data' else None)
     if args.bank_only:
         print(json.dumps(dict(stage='teacher-bank',complete=True,jobs=done,billing=billing(args.root),independent_report_pending=True)))
         return
-    summary=teacher_summary(args.root)
-    print(json.dumps(dict(stage=args.stage,complete=True,jobs=done,billing=summary['billing'],teacher_report=summary['independent_report'])))
+    summary=teacher_summary(args.root) if args.stage in ('teacher-data','teacher-reports') else None
+    print(json.dumps(dict(stage=args.stage,complete=True,jobs=done,billing=billing(args.root),
+        teacher_report=summary['independent_report'] if summary else None)))
 
 
 if __name__=='__main__':main()

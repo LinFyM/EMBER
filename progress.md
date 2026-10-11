@@ -1,3 +1,39 @@
+## 2026-10-11 六卡恢复与持续学生共同训练实施
+
+共同训练最新§4/§5全文已消费，唯一active设计同步：每批固定ψ/θ采五轮，先θ更新，再索引全部真实P/H并更新ψ，下一批重采。
+联合schema_v4保存同一时点ψ/θ、两个optimizer及baseline/RNG、G sampler与监督版本；CPU24项针对性检查通过14.05秒，含有限树梯度、query墙、joint恢复及真实前缀/参数保留。
+CFM更新复用同一CFMTrainer，G学生bank只有原H前缀索引，没有复制多套历史；selector消费后删参数的旧路径/专用测试退役。
+科学上共同E仍可能忽略H/视频，多噪声不证明有用探索；本实现和CPU检查不构成能力成功。正式G/local/RL/400未启动，窗口/块长仍待真实消费者预登记。
+
+gpu01:5启动准入时free降至3275MiB，task37_200从未launch，费用0；UTC08:07:46转gpu02:4继续原800×28链，原dab2冻结源码/数据/损失不变。
+恢复六卡调度时实验误向外层launcher发SIGINT，内层调度器退出、local14未满100完整点丢失，四gpu01有效200段继续自然完成。该工程失误及保守费用单独保留，不称全部无中断。
+四remote段由进程退出及完整CP接管，OS退出码已不可读，成功身份由完整manifest证明且写明推断来源；local14按首次确认无进程时刻上界计费，从最近完整点恢复。
+UTC08:13:47启动teacher_bank_resume_02，仍用同一clean frozen dab2 consumer，四remote设备按实际结束依赖释放；替补gpu02:4只在task37非零链完整结束后释放，MT37由主bank所有者做，避免重复。
+ROOT/coordinator与各job attempt保留原失败/实际launch/接管费用与出处。旧协调器exit130是工程退出，不冒称teacherbank科学完成。
+首23个完整200段实际更新含启动秒数：gpu01:0/1/2/6约2.363/2.869/2.415/2.797、gpu02:6约4.482；不再把代理快卡均按2.074估。
+当前五卡旧队列保守模型bank约22:04北京时间，六卡恢复将用于真实调度，成功早停/共驻与capture尚待实际退出消费；原14:30起算/20:30目标保留，不重置时钟。
+实验继续独占tracked/Git，main只读；长bank等待一次退出事件session45200，不周期查训练log/checkpoint，不selfQueue。
+
+## 2026-10-11 当前π修订实际承接：五轮条件继续，原教师bank不变
+
+main最新§5已完整消费：退休环境步区间加权目标及未来预算接口，采用R=5/继续成本0.001、完整parent+STOP logits条件继续采样。
+Actor/baseline已移除未来预算投影；path记录conditional_continue身份/真实轮来源/独立final RNG，learning实现各深度停止递推及条件score+STOP/final直接梯度。
+CPU21项检查已通过，有限树枚举梯度与直接期望相合；这是数学/工程证据，不是π/G能力结果。新的π/G schema fresh，不从旧G480恢复。
+新增evaluation拥有strict held400/固定MT参照元数据；尚未启动held计算或选择共享checkpoint。
+新增supervision只拥有有界teacher prefix重放和每λ同query面板一次标签，供local/RL共同消费；pipeline替换旧4task/local128/RL16/1024路径，不建并行runner。
+全部36教师bank仍按dab2f725/07:21:08/六卡/原800×28与16selection运行，不热改/重训；52条MT报告兼容元数据已通过，score不造H。
+main关于确定共同E/可能忽略H的审查已登记findings§431与design§9；同节点一次G context已实现，native跨head等价复用键有明确单path作用域，实际收益未测。
+G/π正式更新窗口仍待首完整消费者实测与main登记；当前未启动新版G/π/400。tracked/Git继续实验独占。
+
+## 2026-10-11 15:21 全36正式教师bank已启动
+
+已集成push dab2f72547901e3d00750ac54c800bf5cf40f7b8；clean detached /data1/user/ymdai/ember_worktrees/video_guided_proposal_full36_20261011_dab2f725。
+唯一ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/full36_common_teacher，run_contract/panel/coordinates已由实际prepare冻结，carry-in62.121703224167895GPUh含全部准备失败。
+UTC07:21:08.283359启动teacher-bank协调器，tmux ember-full36-data-20261011；同一canonical Batch初批324个训练/readout jobs，teacher reports待复用消费者完成后独立就绪派发，不减1152逻辑报告行。
+live准入六物理gpu01:0/1/2/5/6、gpu02:6（cap6/node1五卡）；gpu01:5余量21262MiB满足实际17.248GiB capture峰值，按保守4.381秒估计，不因UTL高排除也不宣称已测该卡吞吐。
+800×28、save100/eval0/200/400/600/800及16 pairedH保持。bank_ready由真实完成事件发布共同E/S_G，不依赖独立报告；原14:30授权/20:30目标及main20:40–21:05预测保留，按实际15:21启动更新bank预测20:55–21:20。
+持续exit-event等待已附着session66813，不固定查log/CP、不Queue自通知；实验继续实现新版π/MT报告复用，不将旧pipeline称作完成。
+
 ## 2026-10-11 全36实现、吞吐与旧G实际退出
 
 唯一active仍为 docs/designs/video_guided_proposal_writer_20261010.md 的full36共同E/非空真实H/不同预算合同；实验session继续独占tracked/Git。

@@ -120,81 +120,29 @@ def freeze_bank_scale(root):
     return record
 
 
-def report_rows(root,version):
-    all_rows, conditions = [], []
-    for task in TASKS:
-        for ordinal in (0,1):
-            destination=root/'reports'/version/'correct'/f'task_{task:04d}_condition_{ordinal:02d}'
-            read_json(destination/'complete.json');rows=read_json(destination/'query.json')['rows']
-            selected=[r for r in rows if r['arm']=='selected']; parent=[r for r in rows if r['arm']=='MT']
-            stats=paired(parent,selected)
-            record=read_json(destination/'path.json')
-            conditions.append(dict(task_id=task,ordinal=ordinal,paired=stats,
-                final_source=record['selected'],environment_steps=record['environment_steps'],
-                practiced_P=record['practiced_P'],valid_U_count=len(record['valid_U']),suite=rows[0]['suite']))
-            all_rows.extend([{**r,'report_ordinal':ordinal} for r in rows])
-    return all_rows,conditions
-
-
-def version_summary(conditions):
-    result=dict(conditions=conditions,selected_success=sum(c['paired']['candidate_success'] for c in conditions),
-        MT_success=sum(c['paired']['parent_success'] for c in conditions),rows=48,
-        gained=sum(c['paired']['gained'] for c in conditions),lost=sum(c['paired']['lost'] for c in conditions),
-        retained=sum(c['paired']['retained'] for c in conditions),churn=sum(c['paired']['churn'] for c in conditions))
-    for group in ('task_id','suite'):
-        result['per_'+group] = {str(value):dict(
-            rows=sum(c['paired']['rows'] for c in conditions if c[group]==value),
-            selected_success=sum(c['paired']['candidate_success'] for c in conditions if c[group]==value),
-            MT_success=sum(c['paired']['parent_success'] for c in conditions if c[group]==value),
-            gained=sum(c['paired']['gained'] for c in conditions if c[group]==value),
-            lost=sum(c['paired']['lost'] for c in conditions if c[group]==value)) for value in {c[group] for c in conditions}}
-    return result
-
-
-def complete_U_diagnostics(root,version):
-    diagnostics=[]
-    for task in (12,32):
-        destination=root/'reports'/version/'correct'/f'task_{task:04d}_condition_00'
-        data=read_json(destination/'U_diagnostic.json')['rows']; path=read_json(destination/'path.json')
-        rates={ref:sum(int(r['success']) for r in data if r['reference']==ref)/6 for ref in path['valid_U']}
-        U=max(rates.values()); P=max(rates[ref] for ref in path['practiced_P']); selected=rates[path['selected']]
-        diagnostics.append(dict(task_id=task,complete_U=True,fixed_policy_success_rates=rates,
-            MT=rates['MT300'],selected=selected,generation_gain=U-rates['MT300'],
-            practice_retention_loss=U-P,final_selection_loss=P-selected,
-            empirical_maximum_sampling_bias=True,not_per_state_success_union=True))
-    return diagnostics
-
-
-def video_controls(root):
-    controls=[]
-    for task in (12,32):
-        original=root/'reports'/'RL16'/'correct'/f'task_{task:04d}_condition_00'
-        correct=[r for r in read_json(original/'query.json')['rows'] if r['arm']=='selected']
-        for arm in ('other','wrong'):
-            destination=root/'reports'/'RL16'/arm/f'task_{task:04d}_condition_00'
-            rows=read_json(destination/'query.json')['rows']
-            selected=[r for r in rows if r['arm']=='selected'];mt=[r for r in rows if r['arm']=='MT']
-            controls.append(dict(task_id=task,video_arm=arm,paired_MT=paired(mt,selected),
-                                 paired_correct=paired(correct,selected),raw_rows=rows))
-    return controls
-
-
-def success_index(rows):
-    return {(r['global_task_id'],r['report_ordinal'],r['init_state_id']) for r in rows
-            if r['arm']=='selected' and r['success']}
-
 
 def report_summary(root):
-    root=Path(root);summaries={};raw_by_version={}
-    for version in ('local128','RL16'):
-        rows,conditions=report_rows(root,version)
-        summaries[version]=version_summary(conditions)
-        summaries[version]['complete_U_diagnostics']=complete_U_diagnostics(root,version) if version=='RL16' else []
-        raw_by_version[version]=rows
-    a,b=map(success_index,(raw_by_version['local128'],raw_by_version['RL16']))
-    result=dict(complete=True,versions=summaries,raw_rows=raw_by_version,video_controls=video_controls(root),
-        adjacent=dict(retained=len(a&b),gained=len(b-a),lost=len(a-b),churn=len(a^b),success_set_overlap=len(a&b)),
-        fixed_checkpoints_only=True,finite_train_diagnostic_not_paired400=True,
-        absent_suite_coverage=['libero_spatial'],billing=billing(root))
+    """All registered finite train conditions, with logical rows and paired success sets."""
+    root=Path(root);contract=read_json(root/'run_contract.json');spec=contract['training_report']
+    versions={};raw={}
+    for stage,update in spec['versions']:
+        version=f'{stage}_{update:08d}';conditions=[];rows=[]
+        for task in TASKS:
+            for ordinal in range(spec['conditions_per_task']):
+                destination=root/'reports'/version/'correct'/f'task_{task:04d}_condition_{ordinal:03d}'
+                read_json(destination/'complete.json');data=read_json(destination/'query.json')['rows']
+                parent=[r for r in data if r['arm']=='MT'];selected=[r for r in data if r['arm']=='selected']
+                result=paired(parent,selected);meta=read_json(destination/'path.json')
+                conditions.append(dict(task=task,ordinal=ordinal,paired=result,selected=meta['selected'],
+                    actual_environment_steps=meta['environment_steps'],completed_rounds=meta['completed_rounds']))
+                rows.extend(dict(**r,report_ordinal=ordinal) for r in data)
+        versions[version]=dict(conditions=conditions,rows=sum(c['paired']['rows'] for c in conditions),
+            retained=sum(c['paired']['retained'] for c in conditions),gained=sum(c['paired']['gained'] for c in conditions),
+            lost=sum(c['paired']['lost'] for c in conditions),churn=sum(c['paired']['churn'] for c in conditions),
+            selected_success=sum(c['paired']['candidate_success'] for c in conditions),
+            MT_success=sum(c['paired']['parent_success'] for c in conditions))
+        raw[version]=rows
+    result=dict(complete=True,versions=versions,raw_rows=raw,all36=True,
+        finite_train_diagnostic_not_formal_qualification=True,billing=billing(root))
     write_json_atomic(root/'report_summary.json',result)
     return result

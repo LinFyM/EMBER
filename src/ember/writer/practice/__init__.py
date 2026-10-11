@@ -74,7 +74,11 @@ class EpisodeRunner:
         history = History(states={request['parameter_ref']: {k: v.detach().cpu() for k, v in request['state'].items()}})
         slot = dict(request=request, history=history, raw=None, ready=False, key='', steps=0,
                     pending=None, initial_steps=int(request.get('snapshot', {}).get('episode_control_steps', 0)))
-        self.environments.submit(index, 'start', task=request['task'], contract=self.contract,
+        episode_contract=self.contract
+        if request.get('registered_scene') is not None:
+            episode_contract=deepcopy(self.contract)
+            episode_contract['operator_read_write_scene']=request['registered_scene']
+        self.environments.submit(index, 'start', task=request['task'], contract=episode_contract,
             state_id=request['state_id'], noise_root=request['noise_root'], remaining=request.get('remaining'),
             snapshot=request.get('snapshot'), capture_snapshot=request.get('snapshots', False))
         return slot

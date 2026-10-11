@@ -17,7 +17,7 @@ from ember.lora import identity_lora_state, LORA_A_SUFFIX, LORA_B_SUFFIX
 from ember.pi05_lora import load_pi05_lora_contract, derive_pi05_lora_rank
 
 from .contract import (RUN_ROOT, ASSET_ROOT, TASKS, SOURCE, MT_PATH, OPTIMIZER, SCHEMA,
-                       PRIOR_ROOT, BUDGET_SCHEMA, materialize_panel, environment_contract, seed, parameter_ref)
+                       PRIOR_ROOT, SELECTOR_SCHEMA, materialize_panel, environment_contract, seed, parameter_ref)
 from .runtime import Runtime
 from .teacher import fit_teacher
 from .path import save_history
@@ -88,10 +88,13 @@ def prepare(args):
             choice='maximum registered selection success count, ties earliest including MT',
             independent_report_not_in_H_or_gradient=True),
         task_parent_history_sampling='equal task; equal actual parent within task; uniform real H within parent',
-        optimizer=OPTIMIZER,budget_schema=list(BUDGET_SCHEMA),
+        optimizer=OPTIMIZER,selector_schema=SELECTOR_SCHEMA,future_budget_model_input=False,
         compilation=dict(proposals_per_decision=4,proposal_attempts=32,parameter_euler_steps=16,
             response_observations=16,bootstrap='actual MT episode before first G',
-            budget_training_env_multiples=[2,4]),
+            future_budget_model_input=False),
+        selector_training=dict(schema=SELECTOR_SCHEMA,rounds=5,continue_cost=.001,
+            collection='complete parent+STOP logits; conditional nonSTOP parent plus practice',
+            objective='mean depths1..5 exact STOP/final expectation; conditional score plus direct gradient'),
         deadline=dict(authority_UTC='2026-10-11T06:30:00+00:00',target_UTC='2026-10-11T12:30:00+00:00',
             bank_ready_prediction_UTC=['2026-10-11T12:40:00+00:00','2026-10-11T13:05:00+00:00'],
             revised_from_original_target=True,fast_device_B28_seconds=2.0744460243731737,fast_capture16_seconds=277.30491822306067),
@@ -193,37 +196,96 @@ def select_teacher(root, task):
     return result
 
 
+def report_references(root, asset_root=ASSET_ROOT):
+    """Index compatible fixed MT originals; row priority never depends on success."""
+    root=Path(root);current=read_json(root/'run_contract.json')
+    source=Path('/data1/user/ymdai/ember_runs/operator_seen_task_diagnosis_20260929/attempts/scene_canonical144/MT/evaluation/correct144')
+    previous=read_json(source/'run_contract.json');results=read_json(source/'results.json')
+    from .evaluation import reference_compatibility
+    reasons=reference_compatibility(previous,asset_root)
+    tasks={t['global_task_id']:t for t in current['environment']['tasks']};panel={r['task_id']:r for r in materialize_panel(root)['tasks']}
+    references={};missing=[]
+    for index,row in enumerate(results['rows']):
+        task=int(row['operator_read_write_lora']['global_task_id']);state=int(row['init_state_id'])
+        if task not in tasks or state not in panel[task]['teacher_report_states']:continue
+        local_reasons=list(reasons);spec=tasks[task]
+        if (row['suite'],row['task_id'],row['language'])!=(spec['suite'],spec['task_id'],spec['language']):local_reasons.append('task specification')
+        if row.get('env_seed')!=7 or row.get('policy_seed_root')!=7 or not row.get('policy_noise_seeds'):local_reasons.append('actual environment/policy RNG')
+        scene=row.get('scene_reference');registered=previous.get('operator_read_write_scene')
+        if not scene or not registered or not Path(scene['path']).is_file():local_reasons.append('actual registered scene')
+        if local_reasons:
+            missing.append(dict(task=task,state=state,source=str(source/'results.json'),row_index=index,incompatible=local_reasons));continue
+        key=f'{task}:{state}'
+        if key in references:raise ValueError('duplicate fixed MT reference')
+        raw={k:row[k] for k in ('suite','task_id','language','split_role','init_state_id','env_seed','policy_seed_root','policy_noise_seeds','scene_reference','success','steps')}
+        raw['environment_steps']=int(row['steps'])+10
+        references[key]=dict(task=task,state=state,noise_root=7,registered_scene=registered,MT_row=raw,
+            source=str(source/'results.json'),source_contract=str(source/'run_contract.json'),source_row_index=index,
+            reused=True,new_environment_steps=0,new_GPU_hours=0,
+            equivalence='same source1000+MT300, frozen MT merged base plus B0 rank8; native BF16 reduction differences accepted')
+    record=dict(complete=True,report_states_unchanged=True,selection_and_H_unchanged=True,references=references,
+        reused_MT_rows=len(references),source_priority=[str(source/'results.json')],incompatible_rows=missing,
+        success_not_used_for_reference_choice=True,score_only_no_bootstrap_H=True,
+        unmatched_states='new strictly paired E/MT official rollout with registered seed(5,task,state)',
+        report_logical_rows=36*2*current['teacher']['report_per_arm'])
+    write_json_atomic(root/'teacher_report_references.json',record)
+    return record
+
+
 def teacher_report(args,runtime,runner,environment):
     chosen=select_teacher(args.root,args.task);panel=task_panel(args.root,args.task)
     task=next(t for t in environment['tasks'] if t['global_task_id']==args.task)
-    weights=load_file(chosen['weights'],device=str(runtime.device))
-    destination=teacher_root(args.root,args.task)/'report';destination.mkdir(exist_ok=True)
-    requests=[]
-    for arm,state,reference in [('E',weights,chosen['reference']),('MT',runtime.mt,'MT300')]:
-        for state_id in panel['teacher_report_states']:
-            if (destination/f'{arm}_{state_id:03d}.json').exists():continue
-            requests.append(dict(task=task,state=state,parameter_ref=reference,state_id=state_id,
-                noise_root=seed(5,args.task,state_id),episode_id=f'task_{args.task:04d}_teacher_report_{arm}_{state_id:03d}',
-                arm=arm,snapshots=False,uses_teaching=False))
+    destination=teacher_root(args.root,args.task)/'report';destination.mkdir(parents=True,exist_ok=True)
+    index=read_json(args.root/'teacher_report_references.json')['references']
+    weights=load_file(chosen['weights'],device=str(runtime.device));requests=[];reused=0;new_episodes=0
+    def publish(row,arm,state,reference,provenance):
+        output={**row,'global_task_id':args.task,'arm':arm,'checkpoint_update':chosen['selected_update'] if arm=='E' else 0,
+            'actual_parameter_ref':reference,'independent_report':True,'uses':['independent_teacher_report'],
+            'query_excluded_from_H':True,'checkpoint_selection_use':False,'reference_provenance':provenance}
+        write_json_atomic(destination/f'{arm}_{state:03d}.json',output)
+    for state in panel['teacher_report_states']:
+        saved=lambda arm:(destination/f'{arm}_{state:03d}.json').exists()
+        reference=index.get(f'{args.task}:{state}')
+        if reference is not None:
+            provenance={k:v for k,v in reference.items() if k not in ('MT_row','registered_scene')}
+            if not saved('MT'):publish(reference['MT_row'],'MT',state,'MT300',provenance);reused+=1
+            if chosen['selected_update']==0:
+                if not saved('E'):publish(reference['MT_row'],'E',state,'MT300',dict(**provenance,same_policy_E_MT_alias=True))
+                continue
+        noise_root=reference['noise_root'] if reference is not None else seed(5,args.task,state)
+        aliases=(['E','MT'] if chosen['selected_update']==0 else ['E'])
+        if any(not saved(arm) for arm in aliases):
+            requests.append(dict(task=task,state=weights,parameter_ref=chosen['reference'],state_id=state,
+                noise_root=noise_root,episode_id=f'task_{args.task:04d}_report_E_{state:03d}',snapshots=False,
+                uses_teaching=False,aliases=aliases,registered_scene=reference['registered_scene'] if reference else None))
+        if chosen['selected_update']!=0 and reference is None and not saved('MT'):
+            requests.append(dict(task=task,state=runtime.mt,parameter_ref='MT300',state_id=state,
+                noise_root=noise_root,episode_id=f'task_{args.task:04d}_report_MT_{state:03d}',snapshots=False,
+                uses_teaching=False,aliases=['MT']))
+    before_steps=runner.environment_steps
     for output in runner.run(requests):
-        request=output['request']
-        row=dict(**output['row'],arm=request['arm'],global_task_id=args.task,selected_teacher_update=chosen['selected_update'],
-            uses=['independent_teacher_report'],independent_report=True,excluded_from_H_and_gradient=True)
+        request=output['request'];state=request['state_id'];new_episodes+=1
+        row=dict(output['row'])
         if output['history'].records:
             row['first_native_normalized_actions']=output['history'].records[0]['normalized_actions'].tolist()
-        write_json_atomic(destination/f"{request['arm']}_{request['state_id']:03d}.json",row)
-    rows=[read_json(destination/f'{arm}_{i:03d}.json') for arm in ('E','MT') for i in panel['teacher_report_states']]
-    write_json_atomic(destination/'complete.json',dict(complete=True,rows=rows,components=runner.components,
-        independent_report=True,environment_steps=runner.environment_steps))
-    print(json.dumps(dict(task=args.task,E_update=chosen['selected_update'],independent_report_rows=len(rows))))
+        for arm in request['aliases']:
+            publish(row,arm,state,request['parameter_ref'],dict(reused=False,new_actual_episode=request['episode_id'],
+                same_policy_E_MT_alias=len(request['aliases'])==2,registered_scene=request.get('registered_scene'),
+                new_environment_steps=row['environment_steps']))
+    rows=[read_json(destination/f'{arm}_{state:03d}.json') for arm in ('E','MT') for state in panel['teacher_report_states']]
+    write_json_atomic(destination/'complete.json',dict(complete=True,task=args.task,rows=rows,
+        logical_rows=len(rows),actual_new_episodes_this_attempt=new_episodes,actual_new_environment_steps_this_attempt=runner.environment_steps-before_steps,
+        historical_MT_rows=sum(r['arm']=='MT' and r['reference_provenance']['reused'] for r in rows),
+        report_excluded_from_H_and_gradient=True,components=runner.components))
+    print(json.dumps(dict(task=args.task,independent_logical_rows=len(rows),actual_new_episodes_this_attempt=new_episodes)))
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['prepare','teacher','readout','teacher-report','G','local-data','local','RL','report'])
+    parser.add_argument('command',choices=['prepare','report-references','formal-prepare','formal','teacher','readout','teacher-report','G','student-data','local-data','local','RL','report'])
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--asset-root',type=Path,default=ASSET_ROOT)
-    parser.add_argument('--task',type=int,choices=TASKS,default=0)
+    parser.add_argument('--task',type=int,default=0)
     parser.add_argument('--stop',type=int)
     parser.add_argument('--teacher-stop',type=int)
     parser.add_argument('--checkpoint-interval',type=int)
@@ -240,6 +302,11 @@ def main():
     parser.add_argument('--physical-gpu',type=int)
     args=parser.parse_args()
     if args.command=='prepare':prepare(args);return
+    if args.command=='report-references':
+        result=report_references(args.root,args.asset_root);print(json.dumps(dict(reused_MT_rows=result['reused_MT_rows'],incompatible_rows=len(result['incompatible_rows']))));return
+    if args.command=='formal-prepare':
+        from .evaluation import prepare_formal
+        result=prepare_formal(args);print(json.dumps(dict(formal_rows=len(result['rows']),held_offline_labels_read=False)));return
     identity=git_state()
     if identity['dirty_paths'] or identity['branch']:
         raise ValueError('formal consumers require a clean pushed detached frozen worktree')
@@ -253,11 +320,13 @@ def main():
     if args.physical_gpu is None:parser.error('GPU consumer requires its actual physical GPU')
     context=initialize_distributed(require_numa=True,defer_process_group=True)
     torch.set_num_threads(8)
-    runtime=Runtime(context.device,asset_root=args.asset_root,root=args.root,frame_chunk=args.frame_chunk)
+    environment=read_json(args.root/'formal_panel.json')['environment'] if args.command=='formal' else read_json(args.root/'run_contract.json')['environment']
+    if not shared and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')
+    runtime=Runtime(context.device,asset_root=args.asset_root,root=args.root,frame_chunk=args.frame_chunk,
+        task_ids=tuple(t['global_task_id'] for t in environment['tasks']),task_role=environment['role'])
     runner=None
     try:
         if args.command=='teacher':fit(args,runtime);return
-        environment=read_json(args.root/'run_contract.json')['environment']
         os.environ.update(EMBER_LIBERO_ASSETS_ROOT=environment['libero_paths']['assets'],MUJOCO_GL='egl',
             PYOPENGL_PLATFORM='egl',MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu))
         from ember.pi05_assets import prepare_libero_config,configure_libero_runtime_assets
@@ -266,6 +335,9 @@ def main():
         runner=EpisodeRunner(runtime,environment,args.physical_gpu,slots=args.slots)
         if args.command=='readout':readout(args,runtime,runner,environment)
         elif args.command=='teacher-report':teacher_report(args,runtime,runner,environment)
+        elif args.command=='formal':
+            from .evaluation import formal_condition
+            formal_condition(args,runtime,runner)
         else:
             from .pipeline import run
             run(args,runtime,runner,environment,context)

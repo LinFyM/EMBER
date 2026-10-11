@@ -25,8 +25,8 @@ SOURCE = dict(checkpoint='runs/outputs/pi05_source_aligned_seed7_1k_20260915/che
 MT_PATH = Path('/data0/user/ymdai/ember_runs/coverage_retraining_20260920/training/mtbc'
                '/checkpoints/step_00000300/lora.safetensors')
 OPTIMIZER = dict(lr=1e-4, betas=(.9, .95), eps=1e-8, weight_decay=1e-4)
-BUDGET_SCHEMA = ('total_env/(horizon+10)', 'remaining_env/(horizon+10)',
-                 'remaining_proposals/32', 'completed_episodes/33')
+SELECTOR_SCHEMA = 'ember_full36_joint_conditional_continue_selector_v4'
+CHECKPOINT_SCHEMA = 'ember_full36_joint_conditional_continue_writer_v4'
 
 
 def seed(domain, *coordinates):

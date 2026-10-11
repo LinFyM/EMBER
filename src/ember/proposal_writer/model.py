@@ -210,11 +210,11 @@ class Generator(nn.Module):
         return self.field((parent - self.layout.center) / self.layout.scale, x=x, time=time, memory=memory)
 
     @torch.no_grad()
-    def generate(self, parent, features, history, states, *, noise_seed):
+    def generate(self, parent, features, history, states, *, noise_seed, memory=None):
         packed = self.layout.pack(parent).to(self.layout.scale.device)
         xi = torch.randn(self.layout.valid.shape, generator=torch.Generator().manual_seed(noise_seed))
         x = xi.to(packed.device) * self.layout.valid
-        memory = self.context(features, history, states)
+        memory = self.context(features, history, states) if memory is None else memory
         for step in range(16):
             x = x + self.field((packed - self.layout.center) / self.layout.scale, x=x, time=step / 16, memory=memory,
                                checkpoint_layers=False).float() / 16
@@ -230,18 +230,17 @@ class Actor(nn.Module):
         self.candidate_query, self.stop_query = (nn.Parameter(torch.randn(1, 256) / 16) for _ in range(2))
         self.candidate_attention, self.response_attention, self.set_attention = (attention() for _ in range(3))
         self.responses = nn.Linear(70, 256)  # absolute prediction, optional parent-relative difference
-        self.budget = nn.Linear(4, 256)
         self.practiced = nn.Embedding(2, 256)
         self.types = nn.Embedding(3, 256)
         self.norm = nn.LayerNorm(256)
         self.heads = nn.ModuleList(nn.Linear(256, 1) for _ in range(3))
 
-    def forward(self, kind, features, history, states, candidates, responses, budget):
+    def forward(self, kind, features, history, states, candidates, responses):
         type_id = {'parent': 0, 'practice': 1, 'final': 2}[kind]
         summaries = {key: self.static((self.layout.pack(value).to(self.layout.scale.device) - self.layout.center) / self.layout.scale)
                      for key, value in states.items()}
         memory = self.reader(features, history, summaries)
-        context = self.budget(torch.as_tensor(budget, device=memory.device).float()) + self.types.weight[type_id]
+        context = self.types.weight[type_id]
         tokens = []
         for candidate in candidates:
             q = self.stop_query if candidate == 'STOP' else self.candidate_query

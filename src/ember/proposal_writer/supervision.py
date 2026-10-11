@@ -22,6 +22,8 @@ def register_students(root,paths,update,context):
             if node['row'].get('model_failure') or node['row'].get('budget_truncated'):
                 raise ValueError('incomplete practice cannot enter complete joint supervision')
             descriptor=dict(path=str(directory/'history.pt.gz'),records=node['records'],episodes=node['episodes'])
+            if ref=='MT300' and node['episodes']==1 and path.bootstrap_provenance.get('reused'):
+                descriptor=path.bootstrap_provenance['source']
             weights=root/'initial.safetensors' if ref=='MT300' else directory/f'{ref}.safetensors'
             if not weights.exists():raise ValueError('student parameters must survive selector consumption')
             parent_ref='MT300' if ref=='MT300' else f'{path.identity}:{ref}'

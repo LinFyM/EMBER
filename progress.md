@@ -1,3 +1,10 @@
+## 2026-10-11 教师分数已接续，学生经历引用去重
+
+教师score队列UTC09:23:30由ee2a21ca clean pushed detached实际启动，CPU1428483，五gpu01+一gpu02共六卡；35个有效教师段接管不重训。真实launch及一次模型预测在ROOT/coordinator/teacher_bank_pruned_03。
+UTC09:24无裁剪保守预测bank北京时间22:11、剩4.78h，不含独立报告/G，不预计未发生饱和和score-only收益；已结算68.25407977480259GPUh含carry-in，inflight另计。原14:30/20:30时钟保持，实际共驻/选点结果会修订预测。
+补齐学生监督引用：首个MT边界若复用bootstrap，直接引用原H；bank不再因另一path保存同一H而重复计H采样权重。该真实bank回归通过12.24秒，未改变任务/parent等权或当时真实前缀。
+当前教师运行ee2a源码不热改；下一shared消费者使用随后clean冻结版本。一次必要R5成本consumer可复用旧合法rank8 G/目标及104-record真实MT H；明确weights-only/成本身份，不冒称新版完整B4、36覆盖或能力。
+
 ## 2026-10-11 最新教师-H退休与MT查询复用（记录UTC 2026-10-11T09:17:40.613978+00:00）
 
 main最新裁决全文已消费，覆盖此前教师多parent/H和两折warm。活动代码已删除teacher replay；selection/report关闭完整H与hidden捕获，只在指定第一MT selection行保存起步H。

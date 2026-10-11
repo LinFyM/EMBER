@@ -200,7 +200,7 @@ class CFMTrainer:
             parents=self.bank[row['task']]['parents'];parent=row['parent']
             existing=next((p for p in parents if p['reference']==parent['reference']),None)
             if existing is None:parents.append(parent)
-            else:existing['histories'].extend(parent['histories'])
+            else:existing['histories'].extend(h for h in parent['histories'] if h not in existing['histories'])
         self.runtime.supervision_version=version
 
     def step(self,update,*,stage='G'):

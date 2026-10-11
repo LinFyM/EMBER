@@ -565,6 +565,9 @@ def test_joint_bank_retains_parameters_and_excludes_future_prefixes(tmp_path):
     trainer.refresh_bank(1);assert len(trainer.bank[12]['parents'])==2
     assert len(trainer.bank[12]['parents'][0]['histories'])==2
     assert (directory/'G_000.safetensors').exists() and (directory/'history.pt.gz').exists()
+    path.bootstrap_provenance=dict(reused=True,source='original')
+    register_students(root,[path],1,context);trainer.refresh_bank(1)
+    assert trainer.bank[12]['parents'][0]['histories']==['original']  # Reuse does not multiply actual H weight.
 
 
 def test_joint_resume_restores_both_optimizers_and_data_version(monkeypatch,tmp_path):

@@ -1,3 +1,15 @@
+## 2026-10-11 rank8教师bank首次协调器退出：保留3,200更新，恢复实际渲染读出
+
+首次bank协调器在audit_0029_0的32个真实环境初始化时报Offscreen framebuffer 0x8cdd后，等已启动任务结束退出1。
+没有将工程失败记为科学阴性。6个事件已480、Long两seed已160，共3,200有效更新/358,400 demo queries及14个完整checkpoint；
+10个H/标签采集job已成功，所有有效教师和task12 seed完整60行保留。失败task29审计未产生行，不重启已有教师。
+当前累计33.685865498157995GPUh（新ROOT15.045453394293112含失败.038168及profile.083198），在途以launch/exit原件为准。
+旧ROOT/费用不改；新ROOT/analysis/recovery_01.json登记原件与完成量。仍未开始G/π formal学习。
+纯32-observation计算profile未验证32真实renderer；task29规定审计改16 slots实际重试，render256/model224、场景/RNG/完整行不变。
+后续读取使用clean pushed fdcee632；教师原来源b73d15c8保持。原源码不原地改，新的多rank缺标签零梯度及query首动作原件消费已通过13项检查。
+双节点新live余量表明gpu01:5/6也可承接教师；16 renderer重试闭环后按实测与显存重新组成至多6卡池，保持全部16事件科学范围。
+工程恢复无需Owner或main逐项验收；全部成本保留，不取消有效更新、不重采负例、不自动增加科学臂。tracked/Git仍实验独占。
+
 ## 2026-10-11 rank8正式教师bank已从clean pushed b73d15c8启动
 
 canonical main与origin/main已集成b73d15c8f987a39fc7ab868d107060b69f874916；正式计算冻结在

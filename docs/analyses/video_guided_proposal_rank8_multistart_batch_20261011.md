@@ -2,7 +2,7 @@
 
 当前已完成16个教师事件、每事件160/480两完整checkpoint及selection4/audit16，32个完整checkpoint和960原始行。
 全部7,680实际更新、860,160 demo queries已从完成的metrics逐条核对无缺失/重复；rec/keep实际训练query分别3,840/7,680。
-这些是共享Writer的训练端点供给，尚不构成G、视频理解或held任务能力证据。本报告将在整批G/π与规定读出完成后补齐。
+这些是共享Writer的训练端点供给，尚不构成G、视频理解或held任务能力证据。本报告将在整批G/π与规定读出完成后补齐。G240完整学习原件已消费，G480继续执行。
 
 ## 教师控制增益与不利个例
 
@@ -60,3 +60,16 @@ ROOT：`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/rank8
 - `events/*/teacher/checkpoints/update_{160,480}`、`events/*/readout`：完整恢复与原始读出；manifest保留各真实来源。
 - `bank_scale.json`、`coordinates.json`、`initial.safetensors`：固定坐标、真实Λ0与32端点权重。
 - `analysis/G240_plan.json`、`jobs/G240/attempt_001/launch.json`：精确命令、每卡live/quota、取消硬限与物理配置。
+
+## G240学习覆盖与实际吞吐
+
+240次逻辑B4更新、每task240个机会，四类事件实际抽样分别：12为66/63/54/57，29为53/62/75/50，
+32为70/73/50/47，38为62/56/71/51；登记为等机会随机流，未改为按结果重采。没有缺标签机会。
+完整checkpoint有486 optimizer states及4rank RNG，全部source gradient记录为false。两组meta各960记录非零梯度；
+G各Reader/static/field与meta参数相对fresh初值实际改变，逐模块数字在`analysis/G240_consumer.json`。
+这些证据支持真实优化发生，不能由此认定视频/经验知识已学会或G输出能控制；尚未生成G240实践探针。
+
+该阶段实际wall3750.377903秒/4.167086559GPUh，完整B4 warmed15.458848秒、末50为14.792761秒。
+与此前34.562157秒比较同时涉及实际event/坐标/H分布、空闲卡和chunk16，不能把差额全归因某个优化。
+累计57.86510237114892GPUh，G480预测1–1.25h/4–5GPUh、整批剩余暂5–10h；π完整历史仍待实际消费者计时修订。
+G480从新clean pushed detachedc12c66d8同四卡接续240的完整optimizer/sampler/rank RNG，统计修订不改计算。

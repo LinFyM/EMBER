@@ -18,7 +18,7 @@
 
 当前正式派发已接收，实验session独占工程/Git，main只读；实际进程/集成与交接看progress。下方保留历史合同，不恢复旧rank128 G计划。
 当前teacher bank已16事件/32完整checkpoint及全部960行，7,680更新/860,160 demo queries完整，停止线未触发。
-S_G按selection一次固定；G240已从02781720四worker/chunk16正式fresh启动，完整节点后同拓扑续480。
+S_G按selection一次固定；G240已240完整更新/4.167087GPUh，G480从c12c66d8同world4/chunk16完整恢复接续。
 教师阶段结算53.698015812GPUh含失败/carry-in；GPUh硬限取消，64GiB与完整G/π/报告范围保持。
 Owner/main明确后续G/π高效率推进：局部设备故障隔离、剩余依赖长链优先；实际B4比较四卡较两卡wall短27.1%，
 G优先同节点4worker并按显存选frame chunk；π采集/报告细化合法独立condition，保持同θ整batch/每batch一次更新。

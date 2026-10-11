@@ -1,3 +1,17 @@
+## 2026-10-11 G240完整消费；同四卡/optimizer/RNG续480
+
+G240退出0，240个完整逻辑B4更新、每task240机会/全部16 parent-H事件实际覆盖，missing0。
+完整schema_v2 checkpoint包含486 optimizer states、4rank RNG、原sampler/任务权重与固定S_G；source所有记录无gradient。
+Gemma/action两组meta在所有960 rank更新记录有非零梯度，G Reader/static/field及meta参数对fresh初值有真实变化。
+这些是实际学习覆盖/参数移动证据，尚无G固定λ实践或视频能力结论；不另开函数/因果探针补结论。
+实际端到端G240 wall3750.377903秒/4.167086559GPUh，完整更新warmed15.458848秒、末50更新14.792761秒。
+当前实现/设备较先前34.562157秒比较快，但事件/坐标/历史与卡组/chunk同时不同，不归因于单一改动。
+已结算57.86510237114892GPUh含carry-in18.640412103864882；G480约1–1.25h/4–5GPUh，整批剩余约5–10h待首π实测。
+G480已从clean pushed detachedc12c66d8完整240点接续，same world4/物理gpu01:1/6/0/2/chunk16；新增仅allocator高水位记录。
+G240峰值未保存在源码中，后继记录实际峰值，不把meta-reader旧profile冒称完整G峰值。
+data1 used1413371704KiB/quota2147483648KiB，新增ROOT约1.9G/原4.1G，64GiB及科学矩阵不变，GPUh无硬限。
+ROOT/analysis/G240_consumer.json和G480_plan.json保存完整计时/参数/曝光/恢复/费用原件；正常持续等待退出，不周期读log。
+
 ## 2026-10-11 rank8完整16教师供给已完成；四卡G240正式fresh接续
 
 教师协调器teacher_bank_resume_02退出0；全部16事件/32完整checkpoint/960原始行与7,680更新、860,160 demo queries已消费核验。

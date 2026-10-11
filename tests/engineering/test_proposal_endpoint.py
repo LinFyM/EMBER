@@ -134,21 +134,3 @@ def test_only_one_deterministic_candidate_is_generated_and_invalid_output_is_not
     with pytest.raises(ValueError,match='invalid deterministic endpoint'):
         owner.generate_candidates(runtime,compiled,'MT300',{})
     assert len(calls)==2 and len(compiled.attempts)==2
-
-
-def test_batch_launch_consumes_measured_large_chunks_without_changing_logical_batch(tmp_path):
-    import threading
-    from ember.pi05_source_checkpoint import write_json_atomic
-    from ember.proposal_writer.batch import Batch,Job
-    write_json_atomic(tmp_path/'run_contract.json',dict(physical_execution={
-        'G_frame_chunk_admission':[dict(chunk=32,minimum_free_MiB=42000)]}))
-    batch=Batch.__new__(Batch);batch.root=tmp_path;batch.workspace=tmp_path
-    batch.lock=threading.Lock();batch.running={}
-    batch.admit=lambda job,node,gpu,destination:dict(free_MiB=45000 if gpu==0 else 30000)
-    calls=[]
-    batch.launch=lambda job,devices,destination,command,env,admissions:calls.append((command,env)) or job.identity
-    job=Job('G_216',['G','--frame-chunk','32'],estimate_seconds=1,gpu_count=2)
-    assert batch.execute(job,[('gpu01',0),('gpu01',6)])=='G_216'
-    command,env=calls[0]
-    assert env['EMBER_META_FRAME_CHUNKS']=='32,16' and '--nproc-per-node=2' in command
-    assert job.gpu_count==2 and job.arguments==['G','--frame-chunk','32']

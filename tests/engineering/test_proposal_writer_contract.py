@@ -534,6 +534,7 @@ def test_five_real_continue_rounds_stop_deployment_and_branch_rng(monkeypatch,tm
 
 def test_query_labels_cached_once_and_never_added_to_history(tmp_path):
     from ember.proposal_writer.supervision import query_once,query_conditions
+    from ember.pi05_eval_contract import policy_noise_seed
     from ember.writer.practice import History
     class Runner:
         environment_steps=0;requests=[]
@@ -541,8 +542,10 @@ def test_query_labels_cached_once_and_never_added_to_history(tmp_path):
             self.requests.extend(requests)
             for request in requests:
                 self.environment_steps+=12
+                native_seed=policy_noise_seed(request['noise_root'],'libero_10',2,request['state_id'],0)
                 yield dict(request=request,row=dict(success=True,init_state_id=request['state_id'],environment_steps=12,
                     env_seed=request['noise_root'],policy_seed_root=request['noise_root'],
+                    first_noise_seed=native_seed,policy_noise_seeds=[native_seed],
                     suite='libero_10',task_id=2,language='exact'),history=History())
     path=SimpleNamespace(selected='G',states={'MT300':{},'G':{},'unpracticed':{}},identity='condition',demo=0,
         task=12,history=History(episodes=[dict(init_state_id=0)]),

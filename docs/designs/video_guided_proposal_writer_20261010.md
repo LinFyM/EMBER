@@ -289,3 +289,14 @@ formal使用clean pushed detached代码，精确命令、冻结身份、费用�
 唯一有限coordinator等待实际子进程退出，只一条整批完成/真实异常接续；无子阶段心跳、自Queue或重复等待者。
 实验持canonical/Git独占窗口，闭环工程/恢复/集成push及分支worktree管理；实际启动允许一次实质身份/预测回报main，随后只整批回报。
 主讨论接收方01a12bb0-5273-7462-b5e2-72a18aba7b8d，科学阴性由main消费取舍，不当工程bug挽救。
+
+### 12.4 实际消费者与首次物理安排
+
+54项聚焦检查通过；真实上一批MT/E/旧G各576行兼容，不需控制补跑。实际36教学/实践映射由prepare读原path冻结。
+同node两完全空闲卡gpu01:0/6的world2最长合法92帧/logical B4实测：chunk16热20.50495s/峰26.322GiB，
+chunk32热20.50381s/峰42.186GiB。无吞吐收益，选择16；更大chunk按实际增长约超45GiB容量，不作进一步尝试。
+source始终无梯度、首步等真实MT端点标签基线、后续双meta真梯度已打开；profile全部更新/optimizer丢弃。
+原件ROOT/profile_physical_chunks/selection.json与attempt_001；116.440s/.064689GPUh记账，不当科学训练节点。
+当前只两同node完全空闲卡、其它有他人任务，先world2正式，不等world4或跨node碎片；首学生同两卡动态long-first执行。
+G预测3600–6600s、读出1800–5400s、整批1.5–3.5h，参考旧G1.491h及本次只612新增episode，实际每次launch再次live准入。
+默认Runtime16/launch每rank实际chunk消费者已验证，正式chunk ceiling16；不保留无当前吞吐收益的更大chunk活动运行面。

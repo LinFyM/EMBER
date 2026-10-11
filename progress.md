@@ -1,4 +1,4 @@
-## 2026-10-12 确定端点/query16有界接续已派发，工程实施中
+## 2026-10-12 确定端点/query16消费者验证完成，准备正式启动
 
 主讨论直接消费normalized完整原件后收口v6：MT340/G339/E455，无净控制增益；不追加其warm/RL/held或小扫。
 另全36 CPU算术G-xi cosine .986249、目标MSE2.038007（MT1）、扣xi后仍1.015798，未物化扣噪adapter。
@@ -8,7 +8,11 @@
 授权沿唯一Writer改MT中心确定完整端点：[p,valid]、六层发送端归一化、零输出Linear、masked endpoint MSE；取消参数xi/time/Euler。
 fresh全共享/optimizer、v7拒旧v6；全部36/216更新/logical B4/E/S_G/MT-H不改。
 216后同旧36教学/实践条件各一次G实践、同query16新G576；兼容MT/E/旧G原行只读引用，预计新增612 episodes。
-止于该有限批，不自动warm/RL/held/Teacher/controls/probe。45项核心消费者检查已通过；尚未启动本批GPU或声称性能有效。
+止于该有限批，不自动warm/RL/held/Teacher/controls/probe。54项针对性检查通过（7.07s）；真实MT/E/旧G各576行兼容、无补控制episode。尚未启动正式训练，未声称性能有效。
+两张空闲gpu01:0/6的真实最长92帧/完整B4物理profile已退出0：chunk16/32热步20.505/20.504s，峰reserved26.322/42.186GiB。
+增大无吞吐收益，选16；再增大预计超设备余量。source始终无梯度，零head首步等真实MT标签基线、随后双meta真梯度打开。
+profile116.440s/.064689GPUh、全部disposable更新丢弃；原件新ROOT/profile_physical_chunks。正式暂world2，因同node仅两完全空闲卡。
+G预计1–1.83h、首学生.5–1.5h、整批1.5–3.5h；数据1quota现场1462984024/2147483648KiB，增量16GiB，共享81TiB可用。
 
 实验独占canonical/Git，负责实现/实际吞吐准入/clean pushed detached/运行恢复/整批可靠回报及分支worktree生命周期。
 main科学接收01a12bb0；允许实际启动一次实质身份/预测交付，随后唯一整批完成/失败接续，无心跳/Queue/第二等待者。

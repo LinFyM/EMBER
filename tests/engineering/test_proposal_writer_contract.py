@@ -367,7 +367,7 @@ def test_shared_launch_uses_measured_headroom_chunks_without_changing_logical_fl
     assert coordinator.execute(batch.Job('G240',['G','--stop','240','--frame-chunk','4'],gpu_count=4),devices)=='G240'
     memory.update({1:39572,3:34304,4:45000,5:21262})
     def joint_launch(job,selected,destination,command,env,admissions):
-        assert env['EMBER_META_FRAME_CHUNKS']=='16,8,16,8'
+        assert env['EMBER_META_FRAME_CHUNKS']=='8,8,16,8'
         assert command[command.index('--stop')+1]=='9'
         return job.identity
     monkeypatch.setattr(coordinator,'launch',joint_launch)

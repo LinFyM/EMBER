@@ -127,7 +127,7 @@ Owner允许退休旧架构无恢复/当前依赖的checkpoint和训练状态：�
 4. **第一共同窗口9次logical B4更新**，即全部36 task各一条当前策略condition。每condition固定实采5轮；每批固定ψ/θ采集与独立query→θ一次→登记真实P/H→**ψ做9次CFM更新**→下一批重新采集。ψ块9是一次完整36-task均衡覆盖，避免只更新刚采到的4个task；task→parent→H原等权不变。整个窗口合计9次θ更新、81次ψ更新，G sampler由216接到297；不将全任务覆盖或一次采样当作收敛证明。
 5. **RL9是首个完整(ψ,θ)资格checkpoint**，保存两个optimizer、baseline、G/θ sampler、bank版本、全部rank RNG及拓扑。只用这一完整点进行首轮formal；不拼阶段最优G/π。此前学习路径上的query仅诊断既定机制，不挑共享checkpoint。
 
-工程恢复补充：每个完整θ→append→ψ块结束保存同点完整恢复状态；RL1–8只用于恢复，资格节点仍唯一RL9。未持久化的整batch从前一完整点接回，已保存且同核的真实路径/query可复用，不对旧路径做额外actor训练。θ消费结束释放该路径native KV和已消费梯度，保留G bank仍引用的参数/H及frozen raw特征；联合RL的chunk16现场门槛为free≥36000MiB，G初始化仍为28000MiB，低余量按既有8/4物理chunk承接，不改逻辑B4/任务权重/训练步数。
+工程恢复补充：每个完整θ→append→ψ块结束保存同点完整恢复状态；RL1–8只用于恢复，资格节点仍唯一RL9。未持久化的整batch从前一完整点接回，已保存且同核的真实路径/query可复用，不对旧路径做额外actor训练。θ消费结束释放该路径native KV和已消费梯度，保留G bank仍引用的参数/H及frozen raw特征；联合RL的chunk16现场门槛为free≥40000MiB，G初始化仍为28000MiB，低余量按既有8/4物理chunk承接，不改逻辑B4/任务权重/训练步数。
 
 首学生最多新增36次G实践及288条query；首共同窗口在兼容MT bootstrap/144条MT query引用后最多新增900个episode（180实践+720查询），别名/提前成功按实际计账。36条件仍各有完整五轮，引用不伪造新经历。没有新的训练诊断矩阵或独立无H/语言/多预算模型；消费已有实际query解释最早缺口。
 

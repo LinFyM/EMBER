@@ -229,8 +229,8 @@ class Batch:
                 arguments[arguments.index('--slots')+1]=str(min(8,int(arguments[arguments.index('--slots')+1])))
             if len(devices)>1 and '--frame-chunk' in arguments:
                 # Joint learning retains both optimizers after real R5 collection;
-                # its measured OOM at 34GiB admission needs more chunk16 margin.
-                chunk16_headroom=36000 if arguments[0]=='RL' else 28000
+                # its resident EGL workers also need headroom beyond the G-only peak.
+                chunk16_headroom=40000 if arguments[0]=='RL' else 28000
                 env['EMBER_META_FRAME_CHUNKS']=','.join(str(16 if a['free_MiB']>=chunk16_headroom else
                     8 if a['free_MiB']>=21000 else 4) for a in admissions)
             command+=[str(self.workspace/'scripts/video_guided_proposal_writer.py'),*arguments,

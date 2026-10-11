@@ -150,3 +150,61 @@ def report_summary(root):
         finite_train_diagnostic_not_formal_qualification=True,billing=billing(root))
     write_json_atomic(root/'report_summary.json',result)
     return result
+
+
+def student_summary(root,*,tasks=TASKS):
+    """One fixed first G per train task, paired MT/G/E rows and honest unique episode cost."""
+    from .supervision import panels,query_panel,student_data_complete
+    import json
+    root=Path(root);contract=read_json(root/'run_contract.json');version=contract['student_refresh']['version']
+    panel_by_task=panels(root);task_results=[];raw=[];episodes=0;steps=0;reused=0
+    categories={name:dict(rows=0,G_success=0) for name in ('E_only','MT_only','both_success','both_fail')}
+    for task in tasks:
+        destination=root/'student_data'/version/f'task_{task:04d}';panel=panel_by_task[task]
+        if not student_data_complete(destination,panel,task,require_E=True):
+            raise ValueError('complete actual MT/G practice and paired MT/G/E query required for every task')
+        parent=read_json(destination/'parent.json');query=read_json(destination/'query/complete.json')
+        control=read_json(destination/'readonly_E/complete.json');states=query_panel(panel,0)
+        if len(states)!=contract['student_refresh']['query_states_per_parameter']:
+            raise ValueError('query count differs from the frozen first-student contract')
+        mt=[r for r in query['rows'] if r['reference']=='MT300']
+        g=[r for r in query['rows'] if r['reference']==parent['actual_generated_parameter_ref']]
+        e=control['rows'];pair_g,pair_e=paired(mt,g),paired(mt,e)
+        keyed=[{r['init_state_id']:r for r in arm} for arm in (mt,g,e)]
+        task_categories={name:dict(rows=0,G_success=0) for name in categories}
+        for state in states:
+            m,g_row,e_row=(arm[state] for arm in keyed)
+            name=('both_success' if e_row['success'] else 'MT_only') if m['success'] else ('E_only' if e_row['success'] else 'both_fail')
+            for result in (categories,task_categories):
+                result[name]['rows']+=1;result[name]['G_success']+=int(bool(g_row['success']))
+        task_results.append(dict(task=task,suite=mt[0]['suite'],query_count=len(states),MT_G=pair_g,MT_E=pair_e,
+            G_by_teacher_MT_category=task_categories,generated_parameter_ref=parent['actual_generated_parameter_ref'],
+            readonly_teacher_reference=control['teacher_reference'],teacher_selection_overlap_states=sorted(
+                set(states)&set(panel['teacher_selection_states']))))
+        for label,rows in (('MT',mt),('G',g),('E',e)):
+            raw.extend(dict(row,readout_arm=label) for row in rows)
+        for receipt in (query,control):
+            episodes+=receipt['actual_new_episodes_total'];steps+=receipt['actual_new_environment_steps_total']
+        reused+=len(query['row_reuse'])+sum(bool(row.get('reused')) for row in e)
+    arms={label:[row for row in raw if row['readout_arm']==label] for label in ('MT','G','E')}
+    suites={suite:dict(MT_G=paired([r for r in arms['MT'] if r['suite']==suite],[r for r in arms['G'] if r['suite']==suite]),
+        MT_E=paired([r for r in arms['MT'] if r['suite']==suite],[r for r in arms['E'] if r['suite']==suite]))
+        for suite in sorted({row['suite'] for row in raw})}
+    aggregate=paired(arms['MT'],arms['G']);teacher=paired(arms['MT'],arms['E'])
+    result=dict(complete=True,schema_version=SCHEMA,readout='fixed_first_G_MT_E_query16',version=version,
+        task_count=len(task_results),paired_conditions=aggregate['rows'],logical_rows=len(raw),tasks=task_results,
+        per_suite=suites,MT_G=aggregate,MT_E=teacher,G_by_teacher_MT_category=categories,
+        breadth=dict(tasks_with_gain=sum(t['MT_G']['gained']>0 for t in task_results),
+            tasks_with_loss=sum(t['MT_G']['lost']>0 for t in task_results),
+            net_positive=sum(t['MT_G']['net']>0 for t in task_results),
+            net_zero=sum(t['MT_G']['net']==0 for t in task_results),net_negative=sum(t['MT_G']['net']<0 for t in task_results)),
+        query_cost=dict(unique_new_episodes=episodes,unique_new_environment_steps=steps,reused_logical_rows=reused,
+            practice_not_included=True),billing=billing(root),finite_train_mechanism_readout=True,
+        formal_qualification=False,independent_teacher_generalization=False,readonly_E_not_used_for_Actor_credit=True,
+        G_learning_did_not_consume_query=True,adjacent_checkpoint_comparison_available=False,
+        previous_G216_is_separate_method_and_panel=True)
+    destination=root/'analysis';destination.mkdir(parents=True,exist_ok=True)
+    write_json_atomic(destination/'first_student_query16_summary.json',result)
+    with (destination/'first_student_query16_rows.jsonl').open('w') as handle:
+        for row in raw:handle.write(json.dumps(row)+'\n')
+    return result

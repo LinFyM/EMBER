@@ -13,7 +13,8 @@ from .contract import TASKS,OPTIMIZER,seed,CHECKPOINT_SCHEMA,SELECTOR_SCHEMA
 from .learning import (Baseline,CFMTrainer,train_cfm,train_local,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
 from .path import compile_condition,compile_conditions,evaluate_fixed,restore_compilation
-from .supervision import panels,bootstrap_source,query_once,query_conditions,LocalExamples,register_students
+from .supervision import (panels,bootstrap_source,query_once,query_conditions,LocalExamples,register_students,
+                          readonly_E_query,student_data_complete,query_panel)
 
 
 def load_version(runtime,directory,*,fixed_psi=True):
@@ -48,7 +49,8 @@ def refresh(args,runtime,runner,environment):
         raise ValueError('student data only at its registered complete G node')
     panel=panels(args.root)[args.task];task=task_spec(environment,args.task)
     destination=args.root/'student_data'/version/f'task_{args.task:04d}'
-    if (destination/'parent.json').exists():return
+    readonly_E=run['student_refresh'].get('readonly_E_query',False)
+    if student_data_complete(destination,panel,args.task,require_E=readonly_E):return
     if (destination/'path.json').exists():path=restore_compilation(destination,runtime)
     else:
         history,source=bootstrap_source(args.root,args.task,panel,0,HistoryCache())
@@ -60,14 +62,18 @@ def refresh(args,runtime,runner,environment):
     actual=path.boundaries[-1]['actual_parameter_ref']
     weight_path=destination/f'{actual}.safetensors'
     history_descriptor=dict(path=str(destination/'history.pt.gz'),records=len(path.history.records),episodes=len(path.history.episodes))
-    rewards=query_once(runtime,runner,path,task,panel,0,destination/'query')
+    rewards=query_once(runtime,runner,path,task,panel,0,destination/'query',
+        mt_reference_version=run.get('previous_student_version'),mt_reference_root=run.get('previous_root'))
     E=read_json(args.root/'teachers'/f'task_{args.task:04d}'/'E.json')
+    reference=readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',E) if readonly_E else None
     write_json_atomic(destination/'parent.json',dict(complete=True,task=args.task,version=version,
         parent=dict(reference=f'{version}_task_{args.task:04d}_{actual}',weights=str(weight_path),histories=[history_descriptor]),
         actual_generated_parameter_ref=actual,common_E_reference=E['reference'],common_E_weights=E['weights'],
         actual_producer_refs=list(path.history.states),fixed_scale_reestimated=False,
         first_valid_candidate_in_chronological_order=True,selection_did_not_use_reward_or_query=True,
         kernel_identity=path.kernel_identity,timings=path.timings,query_rewards=rewards,
+        query_count=len(query_panel(panel,0)),readonly_E_complete=reference is not None,
+        readonly_E_receipt=str(destination/'readonly_E/complete.json') if reference is not None else None,
         warmstart_source='same actual MT/G pair; no additional uniform R5 collection'))
 
 
@@ -111,6 +117,9 @@ def rl(args,runtime,runner,environment,context):
     baseline_optimizer=torch.optim.AdamW(baseline.parameters(),**OPTIMIZER)
     generator_trainer=CFMTrainer(runtime,context,args.root)
     generator_updates=run['joint_training']['G_updates_per_batch']
+    panel_by_task=panels(args.root)
+    query_sampling={str(task):dict(query_rotation=len(query_panel(panel,0)),query_pool_size=len(panel['query_states']))
+        for task,panel in panel_by_task.items()}
     if not isinstance(generator_updates,int) or generator_updates<1:
         raise ValueError('joint supervised update block must be explicitly registered')
     initialize_deferred_process_group(context,rendezvous_root=args.root/'rendezvous')
@@ -147,7 +156,7 @@ def rl(args,runtime,runner,environment,context):
         timings['psi_update_block_seconds']=time.monotonic()-psi_tick;checkpoint_tick=time.monotonic()
         checkpoint(args.root,'RL',update+1,runtime,optimizer,context,
             sampler=dict(next_update=update+1,task_order=list(TASKS),logical_condition_batch=4,
-                query_rotation=4,query_pool_size=10,sampling_identity='conditional_continue',
+                query_sampling=query_sampling,sampling_identity='conditional_continue',
                 actual_depth=run['selector_training']['rounds'],supervision_version=supervision_version,
                 checkpoint_role='registered_node' if update+1 in run['updates']['RL'] else 'recovery_only',
                 alternating_order=['fixed psi/theta collection','theta','append true P/H','psi','resample']),

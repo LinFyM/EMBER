@@ -1,3 +1,9 @@
+## 2026-10-11 23:46 第二批EGL失败，保留完整RL1继续工程恢复
+
+registered_shared_window_recovery_02于UTC15:46:09自然退出1；RL attempt_002共476.676881秒/0.529640978707GPUh，累计结算101.904458017034GPUh。完整RL1（G sampler225、双模型/双optimizer/4rank RNG）保留，第二批task25/43已保存真实五轮路径及部分query，不回退或重复首批学习；其余未完整保存范围按真实状态接回。正式400尚未启动。
+原日志显示rank3的EGL初始化落到无权限DRM renderD134/card7；当前两节点仍可访问，不重置GPU、不改系统权限或占用他人任务。设备解析改按EGL CUDA属性对齐实际visible ordinal，完整query结束释放闲置renderer且保留CPU worker，CFM→环境前释放未使用allocator缓存。5项针对性回归已通过；实际16-slot消费者UTC15:57:14–15:58:16退出0，62.031890秒/0.017231080514GPUh，仅17次reset/170 settling steps、零policy forward/新query成绩。16 renderer占用6783MiB，释放后回落6772MiB，原CPU worker重新reset成功；这些证明设备/生命周期接口，不证明完整联合链已恢复或Writer能力。
+保持216/36/9、每ψ9/末297、R5/完整score/query墙及81-job不变；从RL1/同world4恢复，保留失败费用与旧5c6/db72冻结身份。教师后续仍只登记，不因工程修复增加科学矩阵。
+
 ## 2026-10-11 23:38 Writer联合恢复已实际启动
 
 main/origin已推送5c6bf6bb，采用同commit clean detached；registered_shared_window_recovery_02/launcher.json保留UTC15:37:40 CPU PID3565481/tmux ember-full36-shared-recovery-02，RL attempt_002实际15:38:12启动，GPU01 0/1/2/6、world4、frame chunks16/8/16/8，另两张后续正式worker换为GPU02 4/6（GPU01:5现场只余6424MiB）。原db72有效G216/student36/warm36和失败原件只读保留，81-job/科学矩阵不变；旧成功jobs自动跳过，无新教师/复核。

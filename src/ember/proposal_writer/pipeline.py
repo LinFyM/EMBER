@@ -120,10 +120,14 @@ def rl(args,runtime,runner,environment,context):
     cache=HistoryCache()
     for update in range(start,args.stop):
         tick=time.monotonic();runtime.freeze_psi();runtime.actor.eval();baseline.eval()
+        # Cached CFM allocations are not used by the next actual environment phase.
+        # EGL cannot reclaim PyTorch's unused reserved blocks itself.
+        torch.cuda.empty_cache()
         runtime.fixed_kernel_identity=dict(origin_checkpoint=str(args.checkpoint.resolve()),
             actor_next_update=update,psi_version=runtime.version,G_next_update=runtime.G_sampler['next_update'],
             supervision_version=runtime.supervision_version,schema=SELECTOR_SCHEMA)
         paths,rewards,timings=collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
+        runner.release_renderers()
         theta_tick=time.monotonic()
         on_policy_update(runtime,context,args.root,update+1,paths,rewards,optimizer,baseline,baseline_optimizer)
         optimizer.zero_grad(set_to_none=True);baseline_optimizer.zero_grad(set_to_none=True)

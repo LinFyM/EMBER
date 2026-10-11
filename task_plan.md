@@ -14,7 +14,7 @@ main已于UTC11:35冻结G216（全36各24次）→首学生36→同pair final wa
 
 实际接续：UTC13:38从db72ee91 clean pushed detached启动唯一Batch依赖图；G216四卡/chunk16，另外两卡独立报告，后继学生36→warm36→joint9→strict400按依赖自动派发。CPU PID2897665/tmux ember-full36-shared-20261011，ROOT/coordinator/registered_shared_window_01保留真实启动/退出身份；一次持续退出事件等待。实际bank21:36完成，原20:30目标晚66分钟，不重置计时。
 
-当前工程接续：首联合B4真实R5/query已保留，ψ首步OOM后从完整local36恢复；重用原采集，按实测联合峰值选择rank frame chunk，完整联合batch逐点保存恢复状态，正式只读RL9。原81-job科学依赖与教师后续优先级不变，实际新冻结/运行身份进入progress及ROOT修订。
+当前工程接续：首批从完整local36恢复并已保存完整RL1/G sampler225；第二批query的EGL初始化失败已结算，保留真实路径/部分query，从RL1继续。按CUDA身份选择EGL设备，完整查询后释放闲置renderer且保留CPU worker，CFM→环境前释放未使用allocator缓存；原逻辑B4、81-job与正式只读RL9不变。实际消费者、新冻结/运行身份进入progress及ROOT修订。
 
 Owner最新优先级：先完整验证Writer相对强MT是否有性能提升；以下教师事项仅登记后续待办，不追加本批81-job、不分走Writer算力、不改当前E/S_G/bank。main消费既定完整链后，依据性能/保持/视频价值及历史决定接续；教师事项不按空卡或本批完成自动触发，无需Owner例行再批准。
 

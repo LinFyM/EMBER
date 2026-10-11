@@ -221,3 +221,7 @@ class EpisodeRunner:
         if self.environments is not None:
             self.environments.close()
             self.environments = None
+
+    def release_renderers(self):
+        if self.environments is not None:
+            self.environments.release_renderers()

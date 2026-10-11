@@ -33,6 +33,42 @@ def test_full_horizon_equal_budget_is_complete_and_shorter_cutoff_is_truncated()
         assert not budget_truncated(remaining=None,consumed=horizon+10,done=False,steps=horizon,official_horizon=horizon)
 
 
+def test_egl_device_uses_cuda_identity_instead_of_enumeration(monkeypatch):
+    from ember.pi05_eval import environment_pool
+    from mujoco.egl import egl_ext
+    from OpenGL import EGL
+    monkeypatch.setenv('CUDA_VISIBLE_DEVICES','0,1,2,6')
+    monkeypatch.setenv('MUJOCO_EGL_DEVICE_ID','6')
+    monkeypatch.setattr(egl_ext,'eglQueryDevicesEXT',lambda: ['DRM','cuda6','cuda0'])
+    def query(device,attribute,output):
+        assert attribute==0x323A
+        output._obj.value={'cuda6':3,'cuda0':0}.get(device,-1)
+        return device!='DRM'
+    monkeypatch.setattr(environment_pool.ctypes,'CFUNCTYPE',lambda *args: lambda address:query)
+    monkeypatch.setattr(EGL,'eglGetProcAddress',lambda name:1)
+    errors=[]
+    monkeypatch.setattr(EGL,'eglGetError',lambda:errors.append('cleared'))
+    assert environment_pool.configure_egl_device(6)==1
+    import os
+    assert os.environ['MUJOCO_EGL_DEVICE_ID']=='1' and len(errors)==2
+
+
+def test_idle_renderers_release_preserves_workers_and_rejects_live_operation():
+    import pytest
+    from ember.writer.practice.environment import EnvironmentSlots
+    slots=EnvironmentSlots.__new__(EnvironmentSlots)
+    slots.pending={};slots.pipes=[object(),object()];workers=[object(),object()];slots.processes=workers
+    requests=[]
+    def submit(index,kind):requests.append((index,kind));slots.pending[index]=kind
+    def receive(**kwargs):
+        rows=[(index,{'kind':kind}) for index,kind in slots.pending.items()];slots.pending.clear();return rows
+    slots.submit=submit;slots.receive=receive
+    slots.release_renderers()
+    assert requests==[(0,'release_renderers'),(1,'release_renderers')] and slots.processes is workers
+    slots.pending[0]='step'
+    with pytest.raises(ValueError,match='during an environment operation'):slots.release_renderers()
+
+
 def test_condition_sum_and_forced_zero_credit():
     logits=torch.tensor([.2,.6],requires_grad=True)
     score=score_log_probability(logits,0)+score_log_probability(logits,1)

@@ -77,6 +77,11 @@ def _serve(pipe, contract, physical_gpu, affinity):
                 break
             tick = time.monotonic()
             operation_steps = 0
+            if command['kind'] == 'release_renderers':
+                pool.close()
+                slot = None
+                pipe.send(dict(kind='release_renderers', operation_seconds=time.monotonic()-tick))
+                continue
             if command['kind'] == 'start':
                 task, episode_contract = command['task'], deepcopy(command['contract'])
                 noise_root = command['noise_root']
@@ -221,3 +226,14 @@ class EnvironmentSlots:
                 process.terminate()
                 process.join(timeout=10)
             pipe.close()
+
+    def release_renderers(self):
+        """Retain CPU workers while releasing idle GPU renderers before learning."""
+        if self.pending:
+            raise ValueError('cannot release renderers during an environment operation')
+        for index in range(len(self.pipes)):
+            self.submit(index, 'release_renderers')
+        while self.pending:
+            for _, result in self.receive(block=True):
+                if 'error' in result:
+                    raise RuntimeError(result['error'])

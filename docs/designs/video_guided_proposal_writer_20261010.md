@@ -129,6 +129,8 @@ Owner允许退休旧架构无恢复/当前依赖的checkpoint和训练状态：�
 
 工程恢复补充：每个完整θ→append→ψ块结束保存同点完整恢复状态；RL1–8只用于恢复，资格节点仍唯一RL9。未持久化的整batch从前一完整点接回，已保存且同核的真实路径/query可复用，不对旧路径做额外actor训练。θ消费结束释放该路径native KV和已消费梯度，保留G bank仍引用的参数/H及frozen raw特征；联合RL的chunk16现场门槛为free≥40000MiB，G初始化仍为28000MiB，低余量按既有8/4物理chunk承接，不改逻辑B4/任务权重/训练步数。
 
+EGL工程边界：渲染设备按实际CUDA可见身份解析，不把EGL枚举位置直接当物理卡号；非CUDA DRM设备不作替代。完整查询结束后释放闲置renderer，CPU worker保留，下批仍按原state/scene/RNG重置；进入环境阶段前释放未使用的PyTorch allocator缓存。不得释放未完成episode的环境或改动真实H/P/query，物理资源阶段交接不改变固定R5和θ→append→ψ顺序。
+
 首学生最多新增36次G实践及288条query；首共同窗口在兼容MT bootstrap/144条MT query引用后最多新增900个episode（180实践+720查询），别名/提前成功按实际计账。36条件仍各有完整五轮，引用不伪造新经历。没有新的训练诊断矩阵或独立无H/语言/多预算模型；消费已有实际query解释最早缺口。
 
 ### 8.3 首个strict paired400

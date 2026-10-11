@@ -3,11 +3,33 @@
 from __future__ import annotations
 
 import fcntl
+import ctypes
 import os
 from pathlib import Path
 from typing import Any, Mapping
 
 from ember.pi05_assets import Pi05EvaluationError, configure_libero_runtime_assets
+
+
+def configure_egl_device(physical_gpu_id: int) -> int:
+    """Select the actual CUDA device, rather than an EGL enumeration position."""
+    from mujoco.egl import egl_ext
+    from OpenGL import EGL
+
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    cuda_ordinal = ([int(value) for value in visible.split(",")].index(physical_gpu_id)
+                    if visible is not None else physical_gpu_id)
+    query = ctypes.CFUNCTYPE(ctypes.c_uint, ctypes.c_void_p, ctypes.c_int,
+                            ctypes.POINTER(ctypes.c_ssize_t))(
+        EGL.eglGetProcAddress(b"eglQueryDeviceAttribEXT"))
+    for index, device in enumerate(egl_ext.eglQueryDevicesEXT()):
+        ordinal = ctypes.c_ssize_t(-1)
+        available = query(device, 0x323A, ctypes.byref(ordinal))  # EGL_CUDA_DEVICE_NV
+        EGL.eglGetError()  # Non-CUDA DRM devices may report EGL_BAD_ATTRIBUTE.
+        if available and ordinal.value == cuda_ordinal:
+            os.environ["MUJOCO_EGL_DEVICE_ID"] = str(index)
+            return index
+    raise Pi05EvaluationError(f"no CUDA EGL device for physical GPU {physical_gpu_id}, visible={visible}")
 
 
 class PersistentTaskEnvironmentPool:
@@ -24,6 +46,7 @@ class PersistentTaskEnvironmentPool:
 
         if physical_gpu_id < 0:
             raise Pi05EvaluationError("environment pool physical GPU is invalid")
+        configure_egl_device(physical_gpu_id)
         self.contract = contract
         self.suites = {
             name: benchmark.get_benchmark_dict()[name]()

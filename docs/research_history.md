@@ -4998,3 +4998,21 @@ formal parent/practice全TV0.114745/0.075934，同角色条件TV0.000269/0.00032
 不证明具体候选能力排序。实际final为multinomial，固定候选集的最后重加权相对均匀至多改变约0.11238/400
 期望成功数；不约束整个适应过程或一次实际采样。五份决策/py/json原件稳定保存于
 旧ROOT/analysis/whole_completion_20261012/main_scientific_readout；完整解释归入原报告及findings§435。
+
+### 2026-10-12 fresh发送端归一化/query16有限批完成：传播受控，首学生339对MT340
+
+[完整结果](analyses/proposal_normalized_flow_query16_20261012.md)、findings§436及新ROOT/analysis/whole_completion_20261012
+保存fresh G216、36首学生MT/G/E paired576与原task13/17真实context初始-训练输运对照，coordinator02完整退出0。
+G339/MT340/E455，MT→G R304/G35/L36、churn71、任务净优/平/劣9/14/13；G完成E独有成功22/134。
+S/O/G/L/non-held90净变−6/−1/−3/+4/+5；事后固定condition MT/G oracle356、含E460不是部署或qualification。
+14/16/16/4池、2曾teacher选点query的train读出边界、16真实行、E只读及288合法引用均核原件。
+
+六层发送量归一化使广播约.6、末block约3.7、LN后局部差异约.49，原巨大压制缓解；
+末三全36 loss1.970163/1.961623/1.975886小幅改善。但task13解析−xi仍弱于zero，task17 t.5有约3%局部改善；
+生成xi cosine约.986、目标误差仍高于零场。限制量级不保证所需方向或控制传递，未唯一分解残余科学原因。
+G216不消费query16，Actor未更新，不直接以旧4行与新16行成绩解释架构因果；无held或视频/H因果资格。
+
+实际新增1476episode/333032步；ROOT6.379302 launch allocation GPUh含2失败.019431，诊断内段不双计，旧教师/MT引用不重计。
+02 wall2.634h，G成功1.491h；38实际job latest均0，39 job尝试+3 profile尝试完整保留。
+fa03656f clean detached v6及full CP216/RNG2/optimizer、initial/参数/H/原行保留，无新warm/RL/held/Teacher/probe。
+本有界批一次交main科学消费与接续，不自动保护弱假说续训，也不恢复已收口旧v5。

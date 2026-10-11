@@ -11416,3 +11416,34 @@ formal281选MT/119选G（后者子集43→37），187条件final仅MT支持；�
 G216学习未消费query16；新MT/G/E须在同16-state面板比较，不能以旧4行与新16行分数差解释归一化效果。
 原件与完整执行/成本/范围见docs/analyses/video_guided_proposal_full36_writer_20261012.md及旧ROOT/analysis/whole_completion_20261012。
 main的决策、两份CPU脚本及对应JSON共五份原件稳定保存于该目录/main_scientific_readout，临时目录不再是唯一证据。
+
+## 436. 发送端归一化控制了传播量级，首学生仍未传递教师大幅优势（2026-10-12）
+
+fa03656f fresh v6有限批完整退出0：G216/全36首学生/同初态MT/G/E query16/原task13与17初始-训练输运对照。
+独立原件CPU消费anomalies均为空，实际864事件/每task24、optimizer485个状态step216、world2/logicalB4/chunk16，
+source无梯度，完整schema/RNG/sampler216出口保留；不是工程失败，无新warm/RL/held。
+
+G339/576对MT340，R304/G35/L36、churn71、Jaccard0.810667；任务净优/平/劣9/14/13，成功任务覆盖33→34/36。
+S/O/G/L/non-held90净变−6/−1/−3/+4/+5。目标E455（MT→E R321/G134/L19、净+115），同面板确有操作供给，
+G仅完成E独有成功22/134，MT独有10/19、双方成功294/321、双方失败13/102；不能把近MT总分当稳定保持或目标传递。
+固定condition事后MT/G oracle356、MT/G/E oracle460，均非部署/qualification，不用逐state拼接。
+首native前5动作RMSE MT→G0.006278、MT→E0.088126，只有功能定位意义。
+
+末三全36 CFM块1.970163/1.961623/1.975886，对照原固定尺度零场期望约2，存在小幅后段改善。
+六层广播RMS约.6、末blocks约3.7而非旧4466，末LN局部差异约.49而非旧.000264；
+原巨量消息压制已缓解，不能把它原样当当前唯一根因。task13 E=P=MT的t0/.5预测MSE1.031512/1.014589，
+仍高于配对zero.999460，沿−xi方向投影系数为负；task17 t.5的2.622730优于zero2.703774约3%，局部正例保留。
+两task生成xi余弦均约.986、编辑RMS约1.025、目标MSE1.049855/2.737675仍高于零场；
+从initial抑制错误输出的真实学习不等于基本噪声输运或目标映射已学成。噪声翻转响应幅度增大但方向仍偏离解析要求。
+可用量级、可学方向与闭环传递必须分别判断；剩余坐标/时间利用、条件映射及学习组织未唯一分解，不自动追加probe或续训。
+
+14/16/16/4池互斥；每task2 query曾参与E选点，72行MT43/G50/E55，其余504行MT297/G289/E400。
+全部36首个有效G_000、一次尝试/实践，没有按reward补采，E只读不进候选/信用/H；query不进G条件。
+G训练不消费query16，本批没有Actor更新；不能称query扩充已改善信用学习或直接比较旧query4闭环分数归因归一化。
+这是合法train36机制读出，不是held/独立teacher泛化或完整方法资格，Teacher仍未被判定充分。
+
+实际新增query1440 episode/323933步，另36G实践/9099步，总1476/333032；288逻辑复用保留原episode来源、旧费用不重计。
+ROOT分配6.379302GPUh（G含失败2.992589、学生3.273161、profile.102843、输运.010708）；2失败.019431已含，
+diag内段不双计，共驻分配不称独占物理GPU小时。02 wall2.634h，G成功1.491h，完整38latest退出0。
+完整结果/每task/限制见docs/analyses/proposal_normalized_flow_query16_20261012.md；原件ROOT/analysis/whole_completion_20261012。
+该有限批结束并一次交main科学消费，后继由实际认识更新，不自动新warm/RL/held/Teacher/probe或恢复已收口旧v5。

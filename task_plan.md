@@ -1,12 +1,14 @@
-## 2026-10-12 当前有界接续：normalized flow与query16
+## 2026-10-12 当前有限批已完成：normalized flow与query16科学交付
 
 主讨论已直接消费旧G216真实输运/传播原件，派发单一生成架构变化：只改G.field六层跨层消息发送端归一化；
 static/Actor/Reader/meta/CFM目标及logical B4不变，全部共享参数/optimizer fresh。复用既有强MT、E、S_G与实际MT H。
 新ROOT为/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/normalized_flow_query16。
 全36 G216（每task24次）后各一个原规则首valid G实践，完成同state/RNG的MT/G/E query16；E只读不入候选/H。
 新的practice14/query16/teacher report16/train report4显式隔离；query其中2state参与过teacher selection，仅作train读出。
-本批到此停止，不自动启动新warm/RL/held400，结果交主讨论决定完整共同训练。唯一active design仍为原文件§11；
+本批已在此完整结束，不自动启动新warm/RL/held400，整批结果交主讨论科学消费后决定接续。唯一active design仍为原文件§11；
 详细推导见docs/analyses/proposal_transport_and_query16_20261012.md，不复制第二份active合同。
+实际首学生MT340/G339/E455、R304/G35/L36，控制仍未明显超过MT；归一化传播量级受控但目标输运不足，
+详细执行/原件与结论见docs/analyses/proposal_normalized_flow_query16_20261012.md、findings§436，不用局部loss或探针代替闭环。
 
 实验负责实现、实际消费者验证、集成push、clean detached、live双节点与data1独立quota、吞吐/显存安排和整批可靠回报。
 旧1b44903d链已完整退出0：RL9 paired400为147对MT153、R145/G2/L8；原退出事件已消费，结果一次交主讨论。
@@ -16,9 +18,9 @@ main已直接消费并收口旧版本，不追加旧续训/相邻/controls，不
 新批仍只回报整批完成或真实失败，无子阶段心跳/自Queue；不因旧链完成自动加Teacher、旧probe或controls。
 新批G216学习不消费query16，首学生MT/G/E同16-state配对；不以旧4行与新16行分数差归因传播修复，
 后继以真实目标控制传递和闭环得失裁决，不因局部去噪/敏感性改善自动进入共同训练。
-已完成实际消费者/46项检查并集成push，冻结来源fa03656f。当前02整批实际运行；原01缺configs的导入失败已保留并修复。
+已完成实际消费者/46项检查并集成push，冻结来源fa03656f。02整批实际退出0；原01缺configs的导入失败已保留并修复。
 实测两卡逻辑B4：热步chunk16约14.52s、最长92帧约38.93s/26.10GiB reserved；G2卡后最多3卡首学生读出，预计2.1–5.5h。
-冻结physical chunk ceiling16并按live每rank余量承接16/8；整批37jobs完成及一次登记输运对照后交主讨论，不等world4。
+冻结physical chunk ceiling16并按live每rank余量承接16/8；37jobs及一次登记输运对照实际完成，wall2.634h、ROOT6.379302GPUh含失败。
 旧诊断小原件持久存到新ROOT/analysis/previous_G216，标记旧证据；不复制大模型/H，不增加旧诊断probe。
 
 ## 当前目标：先取得MT基底上完整Writer明显超过强MT的闭环信号
@@ -31,7 +33,7 @@ Owner于2026-10-12明确以实际架构效果为核心：当前只在MT合并冻
 主讨论01a12bb0-5273-7462-b5e2-72a18aba7b8d负责科学判断与后继合同；Owner已指定的新实验
 01a12bb6-b606-71e2-a057-8d92620b7651负责工程/运行/恢复/Git并向该主讨论整批交付。科研记录与代码集成串行写入，
 本次主讨论短文档窗口提交推送后归还实验。唯一active仍为docs/designs/video_guided_proposal_writer_20261010.md；
-当前只执行顶部登记的新有界批。以下数字与执行段落保留旧全36完整链的历史合同，现已完成并由main收口，
+当前顶部有界批亦已完成，正在整批交付main科学消费；没有自动后续运行。以下数字与执行段落保留旧全36完整链的历史合同，现已完成并由main收口，
 不恢复旧续训或等待状态。
 
 教师最多800×query28/save100，候选MT/200/400/600/800各完整16 paired score，严格16/16且更早点完整才省未来未启动工作。

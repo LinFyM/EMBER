@@ -1,3 +1,29 @@
+## 2026-10-12 normalized-flow/query16有限批完整退出，首学生未超过MT
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/normalized_flow_query16，
+coordinator/normalized_G216_students_query16_02于UTC20:46:56退出0，wall2.634h；原唯一退出投递已核并正在统一消费交付。
+全部37登记窗口任务及原task13/17输运诊断齐备，38实际job identity的latest均0；完整42次尝试含2失败费用已保留。
+本批止于fresh G216/36首学生/MT-G-E query16，无新warm/RL/held/Teacher/probe；旧v5已经main收口，不恢复旧等待者。
+
+独立CPU原件消费anomalies=[]。MT340/G339/E455（576条件、1728逻辑臂行）；MT→G R304/G35/L36、churn71，
+Jaccard.810667，任务净优/平/劣9/14/13，S/O/G/L/non-held90净变−6/−1/−3/+4/+5。
+G完成E独有成功22/134，双方成功294/321；每task首G_000一次真实实践，不按成绩补采。
+query实际16/state唯一/scene及RNG配对、14/16/16/4隔离，72行曾teacher选点明确只作train机制读出。
+E只读不进候选/信用/H；G216不消费query16、Actor未更新，不能称完整闭环/held或视频/H因果已经有效。
+
+actual CP216 schema v6/world2/logical4/sampler216/RNG2，485个optimizer状态step216；864训练事件每task24、source无梯度/chunk16。
+末全36 loss块1.970163/1.961623/1.975886有局部改善。发送端归一化控制消息量级，末LN局部差异约.49，
+但task13解析−xi仍弱于zero，task17 t.5约3%改善；两task生成xi cosine约.986、目标误差仍高于零场。
+传播量级恢复不等于目标控制已学成，残余科学原因未唯一分解，不作工程修补或自动续训。
+
+新增1440 query/323933步，加36G实践/9099步，总1476新episode/333032步；288引用不重计旧费用。
+最终ROOT allocation6.379302GPUh（G含失败2.992589、学生3.273161、profile.102843、诊断.010708），
+2失败.019431已含，诊断内段.006286不双计；summary是diag前快照，不混作final费用。
+冻结来源fa03656fd61d26f69393fa2940cdea77a0ae441f及完整CP/初始模型/H/原行保留。
+结果/逐任务/竞争解释见[完整分析](docs/analyses/proposal_normalized_flow_query16_20261012.md)、findings§436，
+CPU原件ROOT/analysis/whole_completion_20261012；与旧五份科学归档commit1e96deb7及路径合并一次交01a12bb0主讨论。
+实验继续持canonical/Git窗口，只完成本次集成/可靠交付；后继科学由main消费接续，不增心跳、自Queue或第二等待者。
+
 ## 2026-10-12 03:55 主讨论收口旧版本，配对零场与角色条件证据持久归档
 
 main已直接消费旧v5完整400原行/训练/实际概率并裁决旧版本结束：147对MT153、R145/G2/L8，无task/suite净增，

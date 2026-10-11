@@ -1,3 +1,8 @@
+## 2026-10-11 23:38 Writer联合恢复已实际启动
+
+main/origin已推送5c6bf6bb，采用同commit clean detached；registered_shared_window_recovery_02/launcher.json保留UTC15:37:40 CPU PID3565481/tmux ember-full36-shared-recovery-02，RL attempt_002实际15:38:12启动，GPU01 0/1/2/6、world4、frame chunks16/8/16/8，另两张后续正式worker换为GPU02 4/6（GPU01:5现场只余6424MiB）。原db72有效G216/student36/warm36和失败原件只读保留，81-job/科学矩阵不变；旧成功jobs自动跳过，无新教师/复核。
+首完整联合RL1已安全保存（恢复点，不作正式选点），首批原R5/query复用；由真实consumer核完整双模型/双optimizer/4rank RNG、G sampler225及固定S_G。该首批恢复未新增环境，不能用其峰值代替接下来新R5常驻renderer的完整峰值；继续实际后继，不另开profile。data1现场used1418074264KiB/quota2147483648KiB、ROOT约5.8GiB，原256GiB总新增峰值仍覆盖，逐batch恢复CP新增上界约4GiB；GPUh无硬限，失败0.478010357486GPUh保留。剩余joint+400宽估4.5–10h，沿真实阶段结束校正；一次持续退出事件等待，无自Queue。
+
 ## 2026-10-11 23:14 联合首batch工程OOM与保留原件恢复
 
 registered_shared_window_01自然退出1，RL attempt_001于UTC15:14:39结束；四卡430.209322秒/0.478010357486GPUh，原log/launch/exit和已结算101.374817038327GPUh保留。首B4任务1/19/21/64均已完整R5（MT另计），76条新query和16条兼容MT引用齐备；θ已计算，但首ψ CFM backward在gpu01:6（rank1）OOM，无完整联合checkpoint，不把未持久化θ称恢复点。正式400尚未启动。

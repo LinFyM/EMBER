@@ -1,3 +1,8 @@
+## 2026-10-12 00:02 EGL阶段交接恢复已实际启动
+
+main/origin已推送1b44903d，实际运行采用同commit clean detached；CPU PID3694323/tmux ember-full36-shared-recovery-03，ROOT/coordinator/registered_shared_window_recovery_03。RL attempt_003于UTC16:02:35实际启动，从完整RL1/G sampler225接回，GPU01 0/1/2/6、world4/logicalB4、chunks16/8/16/8及slots16；后继formal仍使用已登记六设备持久队列。G216/student36/warm36成功收据跳过，第二批task25/43旧真实路径/部分query直接恢复，其余缺口按原核和种子补齐，不重算已完成首批学习。
+16-slot实际工程消费者退出0，释放6772MiB且保留CPU worker；5项针对性回归通过。原两次失败、旧冻结代码与完整RL1均保留，资格仍只RL9；运行效果与正式能力均待完整原件。GPU小时无hard cap，现场data1使用1419094388KiB/quota2147483648KiB，256GiB峰值仍覆盖；一次持续kernel退出事件等待，无阶段自通知/教师待办触发。剩余4.5–10h仍为宽外推，新增工程费用完整计入。
+
 ## 2026-10-11 23:46 第二批EGL失败，保留完整RL1继续工程恢复
 
 registered_shared_window_recovery_02于UTC15:46:09自然退出1；RL attempt_002共476.676881秒/0.529640978707GPUh，累计结算101.904458017034GPUh。完整RL1（G sampler225、双模型/双optimizer/4rank RNG）保留，第二批task25/43已保存真实五轮路径及部分query，不回退或重复首批学习；其余未完整保存范围按真实状态接回。正式400尚未启动。

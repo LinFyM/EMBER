@@ -1,3 +1,13 @@
+## 2026-10-11 必要物理成本consumer已退出：实际读数与配置取舍
+
+profile_physical_cost_04从3b042855 clean pushed detached于UTC11:01:50启动、11:18:59退出0，1029.813969秒/.286059435907GPUh，PID2017257已消失、分析额外卡已释放；不是超20分钟仍运行。16条既定重复query、零新实践，不扩比较矩阵。
+同8行参数/初态/环境与policy RNG核对一致，ready收齐0→0.1秒的query wall356.779747→348.285840秒（短2.38%）；实际3973→4200步，吞吐11.136→12.059steps/s。保留两次物理执行产生的4行success交换，不作能力/数值低位诊断。native16片段约6.40秒、13.49GiB证明容量；microbatch8首测非平稳，不据此宣称整链四倍提速。
+MT-only单Long、71教学帧、104-record真实H的部分B4更新：chunk8/16暖更新27.082614/26.085293秒、reserved18.061/26.057GiB。chunk16仅快3.68%却多约8GiB，充足余量快卡可用16，低余量共享卡用8；当前28.8GiB空闲不再放大32，保持逻辑B4/数据/梯度分母。
+当前真实path的冻结raw φ借入8GiB/最多2段缓存后，最长624-record/6-episode部分B4 ψ更新27.491265秒、26.090GiB，decode与raw重复计算均0；03的60.260876秒同时含19.415秒decode、12.288秒raw与不同chunk，不能把全部差归于单一缓存。实际H frozen raw占2.823GiB，旧2GiB必逐出；meta/θ编码仍每更新fresh。
+final warm旧合法MT/G、312-record三episode前缀部分B4为7.228746秒，引用既有query；并非新版两episode或完整B4吞吐。恢复φ预备12.370646秒另计，不算正常在线实践额外成本。以上旧E/尺度只用于成本，source无梯度，绝非新36学习/能力资格。
+01–04必要成本累计.746383341846GPUh含01/02失败与03恢复；UTC11:30结算全ROOT79.915078187137GPUh（carry62.121703224168、当前17.793374962969），在途教师未结另计、GPUh无硬限。精确原件在ROOT/profile_physical_cost_04/{consumer,comparison,billing_at_delivery,exit}.json。
+现有教师正常持续退出等待不轮询；下一步向main交这份实测/外推范围，由main冻结G初始化、唯一final warm、整36 joint窗口、ψ块与首paired400，未自动启动新版formal G/π。实验继续独占tracked/Git。
+
 ## 2026-10-11 完整成本链与有界等价复用
 
 profile_joint_cost_03实际退出0，1051.954988秒/.292209719664GPUh，承接02原五轮而未重跑实践；恢复及最后出口58.429582秒独立列出。20条独立query865.810661秒、θ及baseline21.777864秒、最长624-record H的部分B4 ψ更新60.260876秒，source无梯度，GPU reserved18.636719GiB。03实际slots8/native最大batch4，不沿01误写16；这是单Long完整消费者的成本证据，不是全36/B4吞吐或能力资格。

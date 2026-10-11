@@ -9,6 +9,7 @@
 首RL visit0四条MT query引用初始学生兼容原行，最多144条无需新增episode；引用保留原condition/实际episode，不能改noise或把旧cost重计。
 教师score队列优先继续；旧合法rank8原件可作可丢弃G/R5端到端成本消费者，不能冒称本合同36覆盖/能力/exact-resume。
 G/π整数窗口、ψ块和formal400资格在真实成本后预登记；完整模型需strict paired400与强MT能力保持/视频证据。
+必要04成本已UTC11:18:59实际退出0并释放分析卡：MT-only暖partialB4为26.09秒/chunk16（26.06GiB），长H借用raw为27.49秒，同8query收齐ready波wall短2.38%且步数不同。全B4/36吞吐仍为外推，由main据原件登记整数；不追加profile矩阵。
 14:30授权与原20:30目标保留，旧无裁剪21:57预测是历史；新节省尚无实测，不先承诺提前。GPUh无硬cap，物理6/8/node6/data1 quota与256GiB峰值安排保持。
 
 以下为按时点保留的历史计划，不恢复其teacher-H、旧G课程或旧π矩阵。

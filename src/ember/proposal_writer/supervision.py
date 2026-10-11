@@ -17,7 +17,14 @@ def register_students(root,paths,update,context):
     for path in paths:
         directory=root/'RL_paths'/path.identity
         if not (directory/'path.json').exists():raise ValueError('student supervision needs retained actual source path')
-        for node in path.boundaries:
+        nodes=list(path.boundaries)
+        if not any(node['episodes']==1 for node in nodes):
+            bootstrap=[row for row in path.history.records if row['episode']==0]
+            if not bootstrap or any(row['parameter_ref']!='MT300' for row in bootstrap):
+                raise ValueError('student supervision needs the actual MT bootstrap prefix')
+            nodes.insert(0,dict(records=len(bootstrap),episodes=1,actual_parameter_ref='MT300',
+                row=path.history.episodes[0]))
+        for node in nodes:
             ref=node['actual_parameter_ref']
             if node['row'].get('model_failure') or node['row'].get('budget_truncated'):
                 raise ValueError('incomplete practice cannot enter complete joint supervision')

@@ -556,14 +556,13 @@ def test_joint_bank_retains_parameters_and_excludes_future_prefixes(tmp_path):
     from ember.writer.practice import History
     root=tmp_path;directory=root/'RL_paths'/'batch1_task12';directory.mkdir(parents=True)
     state={'factor':torch.ones(1)};save_file(state,str(root/'initial.safetensors'))
-    history=History(records=[dict(pre='a',post='a',parameter_ref='MT300'),
-        dict(pre='b',post='b',parameter_ref='G_000')],observations={'a':{},'b':{}},
+    history=History(records=[dict(pre='a',post='a',parameter_ref='MT300',episode=0),
+        dict(pre='b',post='b',parameter_ref='G_000',episode=1)],observations={'a':{},'b':{}},
         episodes=[dict(init_state_id=0),dict(init_state_id=1)],states={'MT300':state,'G_000':state})
     save_history(directory/'history.pt.gz',history);save_file(state,str(directory/'G_000.safetensors'))
     (directory/'path.json').write_text('{}')
     path=Compilation(12,0,directory.name,0,7,history,history.states,
-        boundaries=[dict(records=1,episodes=1,actual_parameter_ref='MT300',row=dict(success=False)),
-                    dict(records=2,episodes=2,actual_parameter_ref='G_000',row=dict(success=False))])
+        boundaries=[dict(records=2,episodes=2,actual_parameter_ref='G_000',row=dict(success=False))])
     context=SimpleNamespace(world_size=1,is_main=True,rank=0)
     register_students(root,[path],1,context)
     register_students(root,[path],1,context)  # Same unconsumed batch may be recovered.

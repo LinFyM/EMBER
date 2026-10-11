@@ -1,5 +1,7 @@
 ## 2026-10-11 完整五轮判定修复与无损恢复
 
+教师同一Batch已于UTC10:18:40从a3b5db54 clean pushed detached实际接续，六设备、85个有效收据不重算；CPU owner1759145/teacher_bank_render_recovery_04，原失败与ee2冻结身份保持。
+修正持续学生索引的一个明确遗漏：真实MT bootstrap不在practice boundaries列表，后续visit的新MT H此前不会进入G bank；现在按实际episode0前缀登记，复用起步H仍直接引用原descriptor，不增加采样权重。实际bank/五轮/horizon三项CPU检查通过13.81秒；无额外episode、教师H或query进入输入。
 profile_joint_cost_02已实际完成5个Long官方episode（起步MT另计），624条record/6个episode、20个有效提案保留；第五轮520+10恰好耗尽执行器remaining时被误标预算截断，故未补最后出口及θ/ψ。原退出1、596.976秒/.165826686471GPUh保留，不称共享学习或能力成功。
 执行器现在仅在steps小于官方horizon且提前耗尽额度时标截断；完整horizon即使未成功也完整接收。两个针对性CPU消费者通过13.49秒，固定五轮/无未来预算输入/部署STOP合同不变。接续只补原完整H/P上的最后出口及query/θ/append/ψ，不重跑五轮；原链未写出的R5 phase只作有依据的范围重建，不以恢复耗时替代。
 教师CPU owner1428483于UTC10:09:42仅停止新派发，已提交GPU作业自然完成，UTC10:11:40协调器退出；全部attempt收据已闭合（85个有效收据，两个原失败），未给GPU子进程发信号。下一同一Batch从新clean pushed frozen接续渲染缺口，逻辑16行不缩减；显存不足25GiB时物理slots8。实际恢复成功及吞吐待消费者原件，不提前声称修好。

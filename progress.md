@@ -1,3 +1,16 @@
+## 2026-10-11 rank8教师bank已恢复：16 renderer实际通过，剩余更新按六卡池接续
+
+audit_0029_0/attempt_002从clean pushed detached fdcee632实际退出0，完整selection4/audit16共60行；
+16个真实环境并行549.141338秒/0.152539261GPUh。原32环境初始化失败与费用不改，不作为科学阴性。
+恢复前累计33.838404758810325GPUh，新ROOT15.197992654945443；已完成3,200更新/14完整checkpoint保持，未完成4,480更新不重采。
+teacher_bank_resume_02已实际启动，源码fdcee632；UTC00:22:10–22已有task29 late/return及task32 mid/return launch原件。
+动态设备池gpu01:1/6/5与gpu02:4/6/7，共驻按真实显存准入，不用util排除；实际并发以各launch/exit为准，合计仍至多6。
+教师物理micro28，余量≥27000MiB自动56；读出16环境、采集至多4，科学有效batch/query/节点/全部16事件不变。
+完成更新实测12.37–19.46秒，完整更新预留gpu01:1为17秒、其余22.5秒，不以demo单项低估在途。
+ROOT/run_contract保留原b73d15c8 launch身份，并追加fdcee632消费者与物理修订；新ROOT约1.1GiB/旧ROOT4.1GiB。
+strg01 data1独立used1411640172KiB/quota2147483648KiB，64GiB峰值可容纳；未开始G/π formal更新。
+当前session持续等待协调器退出事件，不周期读训练log/checkpoint/cache，不ACK/心跳/selfQueue；tracked/Git仍实验独占。
+
 ## 2026-10-11 rank8教师bank首次协调器退出：保留3,200更新，恢复实际渲染读出
 
 首次bank协调器在audit_0029_0的32个真实环境初始化时报Offscreen framebuffer 0x8cdd后，等已启动任务结束退出1。

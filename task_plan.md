@@ -2,7 +2,7 @@
 
 最终目标是合法视频与实践编译固定LoRA，在未见任务上稳定超过强MT并建立视频增量、保持与成本证据。
 原八rank128教师已完整消费；当前唯一active为[完整设计§13](docs/designs/video_guided_proposal_writer_20261010.md#13-当前正式实例rank8多起点完整链2026-10-11)。
-main已接回串行tracked/Git窗口，完成科学合同后提交/push并一次正式派发，实验session随即接回独占实现/运行。
+完整科学合同已提交/push并正式派发，实验session当前独占tracked/Git/docs/实现与运行，main保持只读科学消费。
 
 1. 在现有proposal_writer承接MT合并冻结基底、fresh38/r8、原source双meta/专家隔离、固定Λ0、S_prox/S_G和新schema；
    实际消费者核验及吞吐profile后clean pushed detached运行，不创建平行rank8 runner或复制整套policy。
@@ -16,6 +16,8 @@ main已接回串行tracked/Git窗口，完成科学合同后提交/push并一次
    rank8、归一化和多parent都不是成功保证，教师分数不冒充EMBER分数，Test保持方法冻结后边界。
 
 当前正式派发已接收，实验session独占工程/Git，main只读；实际进程/集成与交接看progress。下方保留历史合同，不恢复旧rank128 G计划。
+当前teacher bank保留3,200更新及14完整checkpoint，实际16环境审计恢复已通过；剩余4,480更新按六卡共驻池接续。
+恢复前累计33.838404759GPUh含全部失败及carry-in；96/64上限与全部16事件、G480及π/完整报告范围不变。
 
 ## 2026-10-11 历史交接：八教师完整科学交接，由main定案后继
 

@@ -1,5 +1,8 @@
 # 视频指导的完整参数提案 Writer：双meta、MT合并基底与多起点rank8修订
 
+> 2026-10-11 当前执行修订：main已要求旧bank实例在已启动G480自然保存后收口，不启动π或规定报告/新实验。
+> 本文§13原完整范围保留为历史合同；教师供给必要性已撤回，main另行修订后继，不由本稿自动晋级。
+
 状态：**Owner 已授权自主实施；由 progress 登记为当前唯一 active design。**
 本稿纳入 Owner 最新选择：不用 T；Gemma 和 action expert 各自 fresh 初始化可训练读取 meta LoRA；
 执行从强MT开始：把MT合并为冻结基底，fresh rank8残差用非零A0/B0初始化。完整当前批次见§13。

@@ -297,6 +297,11 @@ formal使用clean pushed detached代码，精确命令、冻结身份、费用�
 chunk32热20.50381s/峰42.186GiB。无吞吐收益，选择16；更大chunk按实际增长约超45GiB容量，不作进一步尝试。
 source始终无梯度、首步等真实MT端点标签基线、后续双meta真梯度已打开；profile全部更新/optimizer丢弃。
 原件ROOT/profile_physical_chunks/selection.json与attempt_001；116.440s/.064689GPUh记账，不当科学训练节点。
+正式有限批已从clean pushed detached 48fa1247db1845831ec9bac5afd865ad86cbd4eb启动；唯一37-job owner及
+实际双rank chunk16/logicalB4身份保存在ROOT/coordinator/deterministic_G216_students_query16_01。
+两节点live检查后的分配为gpu01:0/6，正式缓存也在ROOT/cache，data1独立quota覆盖16GiB峰值预测。
+工程开发树/分支与未运行候选冻结树已退休，正式冻结树、科学原件、profile与复用验证保留；准确清单见该owner的development_tree_retirement.json。
+启动身份与当前状态以progress顶部为准；这次启动和真实传播/梯度验证仍不构成端点控制有效性结论。
 当前只两同node完全空闲卡、其它有他人任务，先world2正式，不等world4或跨node碎片；首学生同两卡动态long-first执行。
 G预测3600–6600s、读出1800–5400s、整批1.5–3.5h，参考旧G1.491h及本次只612新增episode，实际每次launch再次live准入。
 默认Runtime16/launch每rank实际chunk消费者已验证，正式chunk ceiling16；不保留无当前吞吐收益的更大chunk活动运行面。

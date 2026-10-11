@@ -1,4 +1,4 @@
-## 2026-10-12 确定端点/query16消费者验证完成，准备正式启动
+## 2026-10-12 确定端点/query16有限批已实际启动
 
 主讨论直接消费normalized完整原件后收口v6：MT340/G339/E455，无净控制增益；不追加其warm/RL/held或小扫。
 另全36 CPU算术G-xi cosine .986249、目标MSE2.038007（MT1）、扣xi后仍1.015798，未物化扣噪adapter。
@@ -8,14 +8,27 @@
 授权沿唯一Writer改MT中心确定完整端点：[p,valid]、六层发送端归一化、零输出Linear、masked endpoint MSE；取消参数xi/time/Euler。
 fresh全共享/optimizer、v7拒旧v6；全部36/216更新/logical B4/E/S_G/MT-H不改。
 216后同旧36教学/实践条件各一次G实践、同query16新G576；兼容MT/E/旧G原行只读引用，预计新增612 episodes。
-止于该有限批，不自动warm/RL/held/Teacher/controls/probe。54项针对性检查通过（7.07s）；真实MT/E/旧G各576行兼容、无补控制episode。尚未启动正式训练，未声称性能有效。
+止于该有限批，不自动warm/RL/held/Teacher/controls/probe。54项针对性检查通过（7.07s）；真实MT/E/旧G各576行兼容、无补控制episode。正式训练已经启动，当前没有新方法控制结果。
 两张空闲gpu01:0/6的真实最长92帧/完整B4物理profile已退出0：chunk16/32热步20.505/20.504s，峰reserved26.322/42.186GiB。
 增大无吞吐收益，选16；再增大预计超设备余量。source始终无梯度，零head首步等真实MT标签基线、随后双meta真梯度打开。
-profile116.440s/.064689GPUh、全部disposable更新丢弃；原件新ROOT/profile_physical_chunks。正式暂world2，因同node仅两完全空闲卡。
-G预计1–1.83h、首学生.5–1.5h、整批1.5–3.5h；数据1quota现场1462984024/2147483648KiB，增量16GiB，共享81TiB可用。
+profile116.440s/.064689GPUh、全部disposable更新丢弃；原件新ROOT/profile_physical_chunks。正式world2，现场仅gpu01:0/6两完全空闲卡。
+G预计1–1.83h、首学生.5–1.5h、整批1.5–3.5h；启动data1 quota现场1463270896/2147483648KiB，增量16GiB，共享81TiB可用。
+
+冻结来源48fa1247db1845831ec9bac5afd865ad86cbd4eb，clean pushed detached工作树为
+/data1/user/ymdai/ember_worktrees/proposal_deterministic_endpoint_query16_20261012_48fa1247，含实际configs读取依赖。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/deterministic_endpoint_query16。
+唯一整批coordinator/deterministic_G216_students_query16_01于UTC2026-10-11T21:34:18.759936实际启动，CPU1262989，
+tmux ember-deterministic-endpoint-query16-20261012；37-job有限依赖图只含G216和36首学生，不恢复旧链。
+实际G进程UTC21:34:27.606322启动，两rank Runtime回执确认world2、各frame_chunk16、logicalB4；
+命令/代码身份/双节点准入与strg01原quota/缓存data1路径见jobs/G_00000216/attempt_001/launch.json，
+实际消费者身份见coordinator/deterministic_G216_students_query16_01/startup_verified.json。
+所有共享参数与optimizer fresh；profile更新不继承，旧v6只用于只读原行比较，模型原生十步flow/RNG不改。
+本轮开发树/分支和未运行a791候选冻结树在确认集成与生命周期后退休，原件/检查证据及正式48fa冻结树保留；
+准确清单见该coordinator/development_tree_retirement.json。历史formal/关键checkpoint/当前依赖不随此清理。
 
 实验独占canonical/Git，负责实现/实际吞吐准入/clean pushed detached/运行恢复/整批可靠回报及分支worktree生命周期。
-main科学接收01a12bb0；允许实际启动一次实质身份/预测交付，随后唯一整批完成/失败接续，无心跳/Queue/第二等待者。
+main科学接收01a12bb0；本次实际启动一次实质身份/预测交付，随后仅整批完成/失败可靠回报。
+唯一CPU整批owner直接等待其jobs退出，结束后只发送一条实际退出事件接续本实验聊天；没有第二等待者、子阶段Queue或心跳。
 
 ## 2026-10-12 normalized-flow/query16有限批完整退出，首学生未超过MT
 

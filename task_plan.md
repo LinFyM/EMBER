@@ -9,9 +9,12 @@ normalized-flow/query16已由main收口；广播修复真实发生，但MT340/G3
 fresh v7、同36/216/logical B4/优化器/video采样，G216固定后沿旧36首学生教学/实践映射，各一个新G实践。
 同query16新增576 G行、兼容MT/E/旧G576只读引用；预计612新episode，E/旧G不进候选/H/信用/梯度。
 
-完成实际消费者检查/工程与对照复用→集成push→clean detached/live quota与双节点GPU→真实吞吐选择→有限整批启动与一次完成交付。
+实际消费者检查/工程与对照复用、集成push、clean detached/live quota与双节点GPU及真实吞吐选择已完成，有限整批已经实际启动。
 工程实施/54项实际消费者检查已完成，control576×3真实兼容。最长完整B4已实测chunk16/32热步均20.5s、峰26.32/42.19GiB，正式选16。
-目前同node两完全空闲A40，world2有实测并行收益；正式暂1.5–3.5h/增量16GiB，仍按每次live和项目6/8/node6规则，不等凑卡或固化两卡。
+启动时同node两完全空闲A40（gpu01:0/6），world2有实测并行收益，真实Runtime两个rank均chunk16/logicalB4；
+冻结代码48fa1247来自clean pushed detached，CPU1262989/tmux ember-deterministic-endpoint-query16-20261012。
+唯一37-job协调器为新ROOT/coordinator/deterministic_G216_students_query16_01；命令/启动/准入/唯一退出回报合同已持久保存。
+预计1.5–3.5h/增量16GiB，仍按每次live和项目6/8/node6规则，不等凑卡或固化两卡。
 完成不自动进入warm/RL/held/Teacher/controls/probe；参数loss/公共均值算术只定位，不能代控制或视频/held资格。
 完整理论/历史反证见docs/analyses/proposal_endpoint_parameterization_20261012.md，事实/状态看progress与findings§437。
 

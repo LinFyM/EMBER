@@ -1,3 +1,19 @@
+## 2026-10-12 训练期间独立诊断完成，退休已集成rank8开发树
+
+Owner要求推进可并行工作；主讨论另派发只读G216输运诊断，范围固定task13/17的首学生真实V/L/MT bootstrap H/P与保存noise。
+从原1b44903d clean frozen完整读取initial_models/G216，实际双meta/ContextReader与16步field已退出0，无新episode、梯度、更新或科学合同改动。
+task13的零编辑标签为−xi，t=0/.5 MSE为1.000427/1.000404，零场基线0.999460；两task输出与xi cosine约0.99947，修正RMS约0.0325。
+G216六层block RMS约2.19→4466，组内局部差异约1.177，经最终norm降至0.000264；实际x/t配对响应及代表参数216次Adam更新已核。
+这加强累计/归一化压制局部信号的解释，不确认唯一根因或修复闭环收益；原件及竞争解释在.codex/tmp/proposal_transport_diagnostic_20261012。
+GPU01:3共驻（项目4→5卡/node5），峰9.899GiB allocated/10.266GiB reserved，UTC17:15:51退出并释放。
+脚本107.822s；含首次导入的启动到退出按193.631s/0.053786GPUh保守记账一次，内段不双计。独立结果已Steer交01a12bb0（delivery.json），
+接口已接受，实际科学消费待接收方证据；当前joint9/RL9/strict400与原唯一整批退出回报者继续，没有新修复或候选训练。
+
+Git生命周期核实覆盖50本地分支/163 worktree，重点六个开发树；b0dfd3f9已集成main，旧rank8开发树clean且两节点进程、当前合同无依赖，
+已移除/data1/user/ymdai/ember_worktrees/video_guided_proposal_rank8_20261011及codex/video-guided-proposal-rank8，释放301477888bytes（约288MiB）。
+现49本地分支/162 worktree；全部formal detached与原始ROOT保留，flow-path/self-read未合并及其它归属或原件生命周期未清楚的开发树保留。
+核实与删除清单在.codex/tmp/git_lifecycle_20261012/{audit.json,retirement.json}；没有重写历史、删除远端分支或变更冻结运行树。
+
 ## 2026-10-12 Owner重申主线，新主讨论承担科学推进与接续
 
 接任仓库与前任主讨论的阅读已完成。Owner最新要求主讨论01a12bb0-5273-7462-b5e2-72a18aba7b8d持续以实际结果为起点，

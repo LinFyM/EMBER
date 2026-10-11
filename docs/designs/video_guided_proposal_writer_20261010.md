@@ -26,6 +26,7 @@ G输出更新因子ΔA/ΔB，替换为A+ΔA,B+ΔB；目标E与全部parent同基
 - 每节点16个真实selection/H初态，完整保留成功与失败；36×(MT+4CP)×16=2880 episodes。每个任务固定的16个初态及RNG在所有checkpoint共用；预先分成两个8-state折。E按全部16行成功数择优，tie取最早节点；有限面板排序噪声与不利节点全报，不宣称实测E是全局最优。无模型/训练效果后追加易初态。相较此前为时间提出的4行，本次增加决定全部G目标的配对证据；16仍不证明精确峰值、过拟合或充分收敛。
 - 这些行明确uses=[teacher_selection,G_history,selector_supervision]、independent_report=false。π监督若复用两折，输入H只取其中一折，候选回报标签只取另一折；交换折可复用数据，但同一训练样本不把query回填H。
 - E锁定后另取16个预留初态读E与MT，共1152 episodes，作为教师能力报告；不用于挑E或本批G/π/H，teacher报告阴性不重标成bug。训练bank与独立报告合计4032次真实episode，角色分开、费用完整记录。报告在E锁定后就绪即运行，可与首段G并行；bank齐备不等于报告已经完成，不因报告未完成静默改变E或共享训练数据。
+- 上项1152/4032是逻辑报告行数，不再默认全为新环境episode。MT固定参照先索引既有逐行原件，只补实际缺口；每行登记reuse/new及原始来源、真实新增成本。复用须保持同MT身份、task/init、官方执行与真实scene/env/policy RNG；让新E对应行沿用现有配对条件，无必要不另造随机根。当前旧canonical seen144覆盖全部36×init32–35，按未变的新16报告面板有52个初态交集；这些是候选复用行，真实scene/RNG消费者匹配后才可正式引用。其它既有MT原件继续按元数据合并，不按success挑来源。validation原paired400继续复用其原强MT逐行参照，不拿不同任务面板的总分替代本批36配对。没有相应完整H的旧score不能冒充G bootstrap经历；完整且合法的已有H也应复用。
 - 评估参数引用必须真实且唯一，例task/checkpoint/base/rank的稳定ref；禁止跨事件复用parent/160/480导致History.states覆盖。原始文件名/ID只做索引，不进入学习特征。无需为G输入保存sim snapshot；只保存已有必要RGB/proprio/action/hidden/feedback/noise/结束原因/产生者，source raw-image embedding可以运行时重算/有界缓存。
 - 出现晚期退化，后段P→E天然提供回退标签；若仍单调增长或持平，如实记录，没有必要也不允许人为弄坏模型制造过拟合。达到最大节点仍上升的任务不能称已充分收敛；可在同一条轨迹、当日时间余量内安排已登记的一段延长来判平台，不开LR/rank/seed扫描。
 
@@ -50,6 +51,10 @@ G从fresh meta/G初始化学习新目标（旧G240/480不是此合同exact resum
 教师离线warmstart的prefix必须预算可行：先取一段实际MT H，再取已登记候选各自的一段真实H，按预先固定的、与回报无关的顺序组成逐步增长的候选/经历集合；每个prefix按这些episode实际environment_steps累计成本。H折中未进入该prefix的其它episode不读，标签仍来自另一折；不可把所有checkpoint的整折H全部塞给一个声称短预算的样本。单个prefix只列实际已实践候选，MT始终保留。旧轨迹重放属于离线final监督，不能称当前π生成的on-policy行为；完整路径RL另用当前固定θ/G真正采集。早期/晚期前缀的选择训练共用同一个θ，不为不同预算训练独立π或选择checkpoint。
 
 同一固定候选λ在相同query初态/env-policy RNG上的最终闭环不依赖prefix H。故同一路径的每个候选只评估一次固定query面板，并把成绩复用于所有含该候选的prefix；不在每个prefix重新评估旧候选或另换noise重复付费。查询只产生训练标签，不进该样本H。θ的所有编码仍随更新重新计算；这种query复用不等于缓存θ的表示或把未实践候选放进final集合。
+
+Owner进一步提出长路径在各选择节点分叉短程结果。本批落实为长主路径各个已经真实到达的决策前缀都建立“此刻终止并由final head选一套已实践LoRA”的终止分支，复用同一前缀H/P与已算候选query回报。终止分支的抽样RNG单独登记，不影响主路径随后真正执行的行为；后续H/候选不能回流到早期分支。离线/辅助final监督覆盖这些分支，不从头重复采短路径，也不把分支数算成独立环境经历数。先按条件内前缀均值、再task等权，避免长路径因节点多而被暗中重权。这项复用不改变下项完整路径RL的主要目标及on-policy口径。
+
+当前π在先前parent/practice决策已读取总预算，所以长预算下前缀不等于从开始按短预算执行的整条策略。可把前缀状态给final头作离线训练，但不能把总预算改小后，将该前缀历史的旧log-prob/回报冒称短预算on-policy梯度。因此完整三头RL仍使用事前抽定预算的真实路径；这些路径同样产出可复用的终止分支。若以后决定完全只采固定长程来训练所有预算，需要把继续决策改为不读取未来截止预算的anytime策略并重新登记目标/信用，本批不因采样复用悄悄改变这个架构合同。
 
 阶段B：同一固定G/meta下，训练完整parent/STOP、practice、final的路径score，目标J=E_{task,B,path}[R_query(λ_final)]，task等权、预算先抽、query独立且不进H；完整condition累加所有真实决策score，batch平均，不除可变决策数。一批θ冻结采样→一次actor更新→重采。R_query初步用4个实际新初态的平均success，MT控制严格配对；跨更新均衡轮换登记query池，完整路径实践初态必须排除本condition的全部query初态。4个随机query在持续重采的梯度估计中与4行一次性选E的身份不同，不能用前者为后者的排序可靠性辩护。训练/适应同一实际采样分布，不最后偷换argmax。baseline独立、当批前冻结，θ不向G提供trainable输入。
 

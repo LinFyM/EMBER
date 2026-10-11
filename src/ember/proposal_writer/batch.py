@@ -338,6 +338,7 @@ def main():
     import argparse
     parser=argparse.ArgumentParser()
     parser.add_argument('stage',choices=['teacher-data'])
+    parser.add_argument('--bank-only',action='store_true',help='prepare E/H first; reports use their independently frozen consumer')
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--workspace',type=Path,required=True)
     parser.add_argument('--devices',required=True,help='node:index comma-separated live eligible devices')
@@ -357,8 +358,12 @@ def main():
         if (node,int(gpu)) not in teacher_devices or not math.isfinite(seconds) or seconds<=0:
             raise ValueError('teacher estimate must be positive and identify an eligible device')
         estimates[(node,int(gpu))]=seconds
-    done=batch.run(initial_jobs(args.microbatch,args.slots,teacher_devices,root=args.root,teacher_update_seconds=estimates),
-                   on_completion=lambda done:teacher_bank_ready(args.root,done))
+    jobs=initial_jobs(args.microbatch,args.slots,teacher_devices,root=args.root,teacher_update_seconds=estimates)
+    if args.bank_only:jobs=[j for j in jobs if not j.identity.startswith('teacher_report_')]
+    done=batch.run(jobs,on_completion=lambda done:teacher_bank_ready(args.root,done))
+    if args.bank_only:
+        print(json.dumps(dict(stage='teacher-bank',complete=True,jobs=done,billing=billing(args.root),independent_report_pending=True)))
+        return
     summary=teacher_summary(args.root)
     print(json.dumps(dict(stage=args.stage,complete=True,jobs=done,billing=summary['billing'],teacher_report=summary['independent_report'])))
 

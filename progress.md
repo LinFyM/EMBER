@@ -2,12 +2,14 @@
 
 唯一active仍为 docs/designs/video_guided_proposal_writer_20261010.md 的full36共同E/非空真实H/不同预算合同；实验session继续独占tracked/Git。
 main已定36条800×query28纯demoFM+初始MT prox，完整CP每100保存；本批读出只MT/200/400/600/800，odd100节点保存备用，不自动加入parent/H池。
-main已冻结每节点16 selection/H（8+8折）、独立E/MT各16；2880条训练H与1152条报告分开，共4032 episodes。原4/8精度取舍是历史，不作为当前启动数字。实际CPU prepare/panel/coordinates/installed-environment/360-job依赖消费者已通过；17项针对性检查通过13.09秒，正完成formal冻结，尚未launch。
+main已冻结每节点16 selection/H（8+8折）、独立E/MT各16；2880条训练H与1152条报告逻辑行分开，4032是逻辑总行而非新增episode；main最新授权按兼容scene/RNG复用MT历史逐行参照，E=MT时同条件两arm只执行一次。原4/8精度取舍是历史，不作为当前启动数字。实际CPU prepare/panel/coordinates/installed-environment/360-job依赖消费者已通过；17项针对性检查通过13.09秒，正完成formal冻结，尚未launch。
 纯demo完整consumer已测gpu02:6 B28 warmed4.381051秒/reserved16.582GiB、B56 8.699503秒/23.884766GiB，单位query无重要吞吐收益。
 gpu01:0新0–45 pool的B28 warmed2.074446秒/reserved16.591797GiB，3+1实际完整optimizer/query/RNG恢复且source无梯度。
 必要profile两次capture启动资产/配置责任已定位并保留失败费用，只恢复capture，不重复成功的教师更新；36环境CPU消费者已确认train24/support12、libero90 horizon400。
 Long slow-card8条完整520+10 episode、同rollout直接save_H耗250.680858秒/4240envsteps/832records，H303492574bytes；fast slots4=119.936450秒/4条；slots16=277.304918秒/16条，17.331557秒/episode，对比slots4快42.2%，reserved17.248GiB，选slots16。
 π实践池init_order[:36]排除16个teacher报告初态共20；local/RL query同一init_order[36:46]10池、每condition均衡4条，query不进实践/H；46:50保留有限train诊断。
+教师bank先启动，不让尚在实现的MT-report复用阻塞；独立报告由同一canonical队列/消费者新冻结版本承接，不重跑bank。
+π真实前缀终止分支使用当时H/P及独立final RNG，λ/query缓存复用，prefix辅助监督condition内平均；不能重填短B伪称on-policy。
 训练bank ETA北京时间20:40–21:05，保留14:30起算/原20:30目标，报告E锁定就绪且bank优先，可与G并行；不冒称报告已完成。
 新consumer采用唯一task/MTmerged/r8/update ref；不读sim snapshots。G代码已改task→实际parent→H分层等权、固定共同E编辑，decoded H/raw-features每worker2GiB且至多2段，meta/θ编码不跨更新缓存。
 旧G480已UTC06:47:44自然退出0；480完整B4更新、486optimizer states、4rank RNG，继续更新warmed14.878678秒，四卡reserved峰值25.451–26.258GiB；这些只证明旧目标优化，不是视频闭环能力。

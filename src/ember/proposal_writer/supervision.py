@@ -8,6 +8,7 @@ import torch.distributed as dist
 from safetensors.torch import load_file
 
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
+from ember.pi05_eval_contract import policy_noise_seed
 from .contract import TASKS,seed
 from .path import fixed_requests,fixed_row,restore_compilation
 
@@ -91,13 +92,37 @@ def complete_query(saved,states,noise_root,references):
                 for ref in references))
 
 
-def query_row(file):
+def query_row_source(file):
     visited=set();file=Path(file)
     while True:
         if file in visited:raise ValueError('cyclic query row reference')
         visited.add(file);row=read_json(file)
-        if 'source_row' not in row:return row
+        if 'source_row' not in row:return file
         file=Path(row['source_row'])
+
+
+def query_row(file):
+    return read_json(query_row_source(file))
+
+
+def control_row_compatibility(row,task,task_id,state,noise_root,*,reference=None,paired_row=None):
+    """Check actual task/scene RNG and native noise evidence, without restoring a Writer."""
+    expected=dict(global_task_id=task_id,init_state_id=state,env_seed=noise_root,policy_seed_root=noise_root,
+        **{key:task[key] for key in ('suite','task_id','language')})
+    if reference is not None:expected['reference']=reference
+    changed=[key for key,value in expected.items() if row.get(key)!=value]
+    native_seed=policy_noise_seed(noise_root,task['suite'],task['task_id'],state,0)
+    if row.get('first_noise_seed')!=native_seed:changed.append('first_noise_seed')
+    trace=row.get('policy_noise_seeds',[])
+    if not trace or trace[:3]!=[policy_noise_seed(noise_root,task['suite'],task['task_id'],state,i)
+            for i in range(min(3,len(trace)))]:changed.append('policy_noise_seeds')
+    if paired_row is not None:
+        other=paired_row.get('policy_noise_seeds',[]);length=min(len(trace),len(other))
+        if not length or trace[:length]!=other[:length]:changed.append('policy_noise_common_prefix')
+        left,right=row.get('initial_proprio',[]),paired_row.get('initial_proprio',[])
+        if not left or len(left)!=len(right) or max(abs(a-b) for a,b in zip(left,right))>1e-5:
+            changed.append('initial_proprio')
+    return changed
 
 
 def MT_source_compatibility(root,source_root):
@@ -121,12 +146,12 @@ def reuse_initial_MT(entry,task,root,version,*,source_root=None):
         entry['incompatible_references'].append(dict(source=str(source),fields=changed));return
     for state in entry['states']:
         target=entry['destination']/f'MT300_{state:03d}.json';original=source/target.name
-        if target.exists() or not original.exists():continue
+        if target.exists():continue
+        if not original.is_file():
+            entry['incompatible_references'].append(dict(source=str(original),fields=['missing source row']));continue
         row=query_row(original)
-        expected=dict(global_task_id=path.task,init_state_id=state,reference='MT300',
-            env_seed=entry['noise_root'],policy_seed_root=entry['noise_root'],
-            **{key:task[key] for key in ('suite','task_id','language')})
-        changed=[key for key,value in expected.items() if row.get(key)!=value]
+        changed=control_row_compatibility(row,task,path.task,state,entry['noise_root'],reference='MT300')
+        if row.get('actual_parameter_ref','MT300')!='MT300':changed.append('actual_parameter_ref')
         if changed:
             entry['incompatible_references'].append(dict(source=str(original),fields=changed));continue
         write_json_atomic(target,dict(reused=True,source_row=str(original),
@@ -209,7 +234,20 @@ def readonly_E_query(runtime,runner,path,task,panel,visit,destination,teacher):
                 and saved.get('teacher_weights')==teacher['weights'] and saved.get('excluded_from_Actor_credit')):
             return saved
     mt_rows={row['init_state_id']:row for row in credit['rows'] if row['reference']=='MT300'}
-    requests=[];reused=[];new_steps=0;new_episodes=0
+    requests=[];reused=[];incompatible=[];new_steps=0;new_episodes=0
+    run_file=Path(runtime.root)/'run_contract.json';run=read_json(run_file) if run_file.exists() else {}
+    previous=None
+    if visit==0 and run.get('previous_root') and run.get('previous_student_version'):
+        source_root=Path(run['previous_root'])
+        previous=source_root/'student_data'/run['previous_student_version']/f'task_{path.task:04d}'/'readonly_E'
+        old=read_json(previous/'complete.json') if (previous/'complete.json').exists() else {}
+        changed=MT_source_compatibility(runtime.root,source_root)
+        if not complete_query(old,states,noise_root,['E']):changed.append('complete readonly E panel')
+        if old.get('teacher_reference')!=teacher['reference']:changed.append('teacher_reference')
+        before=Path(old.get('teacher_weights') or '');after=Path(teacher['weights'])
+        if not before.is_file() or not after.is_file() or before.resolve()!=after.resolve():changed.append('teacher_weights')
+        if changed:
+            incompatible.append(dict(source=str(previous),fields=changed));previous=None
     weights=None
     for state in states:
         file=destination/f'E_{state:03d}.json'
@@ -220,6 +258,19 @@ def readonly_E_query(runtime,runner,path,task,panel,visit,destination,teacher):
                 teacher_parameter_reference='MT300',actual_new_episodes=0,actual_new_environment_steps=0))
             reused.append(str(source))
         else:
+            source=previous/file.name if previous is not None else None
+            if source is not None and source.is_file():
+                row=query_row(source)
+                changed=control_row_compatibility(row,task,path.task,state,noise_root,reference='E',paired_row=mt_rows[state])
+                if row.get('teacher_parameter_reference')!=teacher['reference']:changed.append('teacher_parameter_reference')
+                if row.get('actual_parameter_ref',teacher['reference'])!=teacher['reference']:changed.append('actual_parameter_ref')
+                if not changed:
+                    write_json_atomic(file,dict(reused=True,source_row=str(source),reference='E',init_state_id=state,
+                        teacher_parameter_reference=teacher['reference'],actual_episode_identity_unchanged=True,
+                        actual_new_episodes=0,actual_new_environment_steps=0))
+                    continue
+                incompatible.append(dict(source=str(source),fields=changed))
+            elif source is not None:incompatible.append(dict(source=str(source),fields=['missing source row']))
             if weights is None:weights=load_file(teacher['weights'])
             requests.append(dict(task=task,state=weights,parameter_ref=teacher['reference'],state_id=state,
                 noise_root=noise_root,snapshots=False,uses_teaching=False,
@@ -231,11 +282,12 @@ def readonly_E_query(runtime,runner,path,task,panel,visit,destination,teacher):
             excluded_from_Actor_credit=True,not_a_compiler_candidate=True)
         write_json_atomic(destination/f'E_{state:03d}.json',row)
         new_steps+=int(row.get('environment_steps',0));new_episodes+=1
-    rows=[];new_rows=[]
+    rows=[];new_rows=[];row_reuse=[]
     for state in states:
         row=read_json(destination/f'E_{state:03d}.json')
         if 'source_row' in row:
-            row=dict(mt_rows[state],reference='E',arm='E',teacher_parameter_reference='MT300',
+            row_reuse.append(dict(destination=str(destination/f'E_{state:03d}.json'),**row))
+            row=dict(query_row(row['source_row']),reference='E',arm='E',teacher_parameter_reference=teacher['reference'],
                 readonly_teacher_control=True,excluded_from_Actor_credit=True,not_a_compiler_candidate=True,
                 source_row=row['source_row'],reused=True)
         else:new_rows.append(row)
@@ -245,7 +297,8 @@ def readonly_E_query(runtime,runner,path,task,panel,visit,destination,teacher):
         policy_env_noise_root=noise_root,teacher_reference=teacher['reference'],teacher_weights=teacher['weights'],
         excluded_from_Actor_credit=True,excluded_from_H=True,not_a_compiler_candidate=True,
         score_did_not_select_teacher_or_model=True,actual_new_episodes_this_attempt=new_episodes,
-        actual_new_environment_steps_this_attempt=new_steps,reused_MT_source_rows=reused,
+        actual_new_environment_steps_this_attempt=new_steps,reused_MT_source_rows=reused,row_reuse=row_reuse,
+        incompatible_E_references=incompatible,
         actual_new_episodes_total=len(new_rows),actual_new_environment_steps_total=sum(int(r.get('environment_steps',0)) for r in new_rows),
         wall_seconds_this_attempt=time.monotonic()-tick)
     if any(row.get('teacher_parameter_reference')!=teacher['reference'] for row in rows):

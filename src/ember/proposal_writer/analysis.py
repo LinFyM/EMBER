@@ -18,13 +18,27 @@ def paired(parent, candidate):
     for k in p:
         if (p[k]['env_seed'], p[k]['policy_seed_root']) != (c[k]['env_seed'], c[k]['policy_seed_root']):
             raise ValueError('paired policy/environment RNG changed')
+        for field in ('suite','task_id','language','split_role'):
+            if p[k].get(field)!=c[k].get(field):raise ValueError('paired task/scene identity changed')
+        if ('first_noise_seed' in p[k] and 'first_noise_seed' in c[k]
+                and p[k]['first_noise_seed']!=c[k]['first_noise_seed']):
+            raise ValueError('paired first native policy noise changed')
+        if 'policy_noise_seeds' in p[k] or 'policy_noise_seeds' in c[k]:
+            left,right=p[k].get('policy_noise_seeds',[]),c[k].get('policy_noise_seeds',[])
+            length=min(len(left),len(right))
+            if not length or left[:length]!=right[:length]:raise ValueError('paired native policy-noise prefix changed')
+        if 'initial_proprio' in p[k] and 'initial_proprio' in c[k]:
+            left,right=p[k].get('initial_proprio',[]),c[k].get('initial_proprio',[])
+            if not left or len(left)!=len(right) or max(abs(a-b) for a,b in zip(left,right))>1e-5:
+                raise ValueError('paired actual initial proprio changed')
     ps = {k for k, r in p.items() if r['success']}; cs = {k for k, r in c.items() if r['success']}
     changes = [np.mean((np.asarray(c[k]['first_native_normalized_actions']) -
                        np.asarray(p[k]['first_native_normalized_actions'])) ** 2) for k in p
                if 'first_native_normalized_actions' in p[k] and 'first_native_normalized_actions' in c[k]]
     return dict(rows=len(p), parent_success=len(ps), candidate_success=len(cs), net=len(cs)-len(ps),
         retained=len(ps & cs), gained=len(cs-ps), lost=len(ps-cs), churn=len(ps ^ cs),
-        success_set_overlap=len(ps & cs), gained_states=sorted([list(k) for k in cs-ps]),
+        success_set_overlap=len(ps & cs),success_Jaccard=len(ps & cs)/len(ps | cs) if ps | cs else 1.,
+        gained_states=sorted([list(k) for k in cs-ps]),
         lost_states=sorted([list(k) for k in ps-cs]), retained_states=sorted([list(k) for k in ps & cs]),
         first_native_first5_RMSE=float(np.sqrt(np.mean(changes))) if changes else None)
 
@@ -152,13 +166,50 @@ def report_summary(root):
     return result
 
 
+def previous_student_G(root,contract,task,panel,destination,mt):
+    """Read the same-condition historical G as raw evidence, never restore its Writer/path."""
+    from .supervision import (MT_source_compatibility,complete_query,control_row_compatibility,
+        query_panel,query_row,query_row_source)
+    from .contract import seed
+    source_root=Path(contract['previous_root']);version=contract['previous_student_version']
+    source=source_root/'student_data'/version/f'task_{task:04d}'
+    previous=read_json(source_root/'run_contract.json')
+    if previous['student_refresh']['version']!=version or MT_source_compatibility(root,source_root):
+        raise ValueError('historical G comparator source/MT/official scene identity changed')
+    before,after=read_json(source/'path.json'),read_json(destination/'path.json')
+    if any(before[key]!=after[key] for key in ('task_id','teacher_demo','path_ordinal','noise_root','identity')):
+        raise ValueError('historical G comparator changed the registered teaching/practice condition')
+    parent=read_json(source/'parent.json');ref=parent['actual_generated_parameter_ref']
+    query=read_json(source/'query/complete.json');states=query_panel(panel,0)
+    noise_root=seed(70,task,0)
+    if not parent.get('complete') or not complete_query(query,states,noise_root,['MT300',ref]):
+        raise ValueError('historical G comparator requires the full unique same-state query16')
+    task_spec={key:mt[0][key] for key in ('suite','task_id','language')};rows=[]
+    for anchor in mt:
+        state=anchor['init_state_id'];file=source/'query'/f'{ref}_{state:03d}.json';row=query_row(file)
+        if (row.get('teaching_demo')!=before['teacher_demo'] or
+                control_row_compatibility(row,task_spec,task,state,noise_root,reference=ref,paired_row=anchor)):
+            raise ValueError(f'historical G comparator task/state/native pairing changed: {task}/{state}')
+        rows.append(dict(row,source_row=str(file),actual_episode_row_file=str(query_row_source(file)),
+            source_parent_receipt=str(source/'parent.json'),source_parameter_weights=parent['parent']['weights'],
+            source_kernel_identity=parent['kernel_identity'],reused=True,readonly_previous_G_comparator=True,
+            excluded_from_Actor_credit=True,excluded_from_H=True,not_a_compiler_candidate=True,
+            actual_new_episodes=0,actual_new_environment_steps=0))
+    return rows
+
+
 def student_summary(root,*,tasks=TASKS):
-    """One fixed first G per train task, paired MT/G/E rows and honest unique episode cost."""
-    from .supervision import panels,query_panel,student_data_complete
+    """Fixed first-student controls and an optional registered same-panel historical G."""
+    from .supervision import panels,query_panel,student_data_complete,query_row_source
     import json
     root=Path(root);contract=read_json(root/'run_contract.json');version=contract['student_refresh']['version']
     panel_by_task=panels(root);task_results=[];raw=[];episodes=0;steps=0;reused=0
+    comparator=contract['student_refresh'].get('readonly_previous_G_query',False)
+    comparisons={'MT_G':('MT','G'),'MT_E':('MT','E'),'E_G':('E','G')}
+    if comparator:comparisons.update(MT_oldG=('MT','oldG'),oldG_G=('oldG','G'),oldG_E=('oldG','E'))
     categories={name:dict(rows=0,G_success=0) for name in ('E_only','MT_only','both_success','both_fail')}
+    if comparator:
+        for result in categories.values():result['oldG_success']=0
     for task in tasks:
         destination=root/'student_data'/version/f'task_{task:04d}';panel=panel_by_task[task]
         if not student_data_complete(destination,panel,task,require_E=True):
@@ -169,40 +220,66 @@ def student_summary(root,*,tasks=TASKS):
             raise ValueError('query count differs from the frozen first-student contract')
         mt=[r for r in query['rows'] if r['reference']=='MT300']
         g=[r for r in query['rows'] if r['reference']==parent['actual_generated_parameter_ref']]
-        e=control['rows'];pair_g,pair_e=paired(mt,g),paired(mt,e)
+        e=control['rows'];task_arms=dict(MT=mt,G=g,E=e)
+        if comparator:task_arms['oldG']=previous_student_G(root,contract,task,panel,destination,mt)
+        pairs={name:paired(task_arms[a],task_arms[b]) for name,(a,b) in comparisons.items()}
         keyed=[{r['init_state_id']:r for r in arm} for arm in (mt,g,e)]
         task_categories={name:dict(rows=0,G_success=0) for name in categories}
+        old_by_state={r['init_state_id']:r for r in task_arms.get('oldG',[])}
+        if comparator:
+            for result in task_categories.values():result['oldG_success']=0
         for state in states:
             m,g_row,e_row=(arm[state] for arm in keyed)
             name=('both_success' if e_row['success'] else 'MT_only') if m['success'] else ('E_only' if e_row['success'] else 'both_fail')
             for result in (categories,task_categories):
                 result[name]['rows']+=1;result[name]['G_success']+=int(bool(g_row['success']))
-        task_results.append(dict(task=task,suite=mt[0]['suite'],query_count=len(states),MT_G=pair_g,MT_E=pair_e,
+                if comparator:result[name]['oldG_success']+=int(bool(old_by_state[state]['success']))
+        task_results.append(dict(task=task,suite=mt[0]['suite'],query_count=len(states),**pairs,
+            successes={label:sum(bool(row['success']) for row in rows) for label,rows in task_arms.items()},
             G_by_teacher_MT_category=task_categories,generated_parameter_ref=parent['actual_generated_parameter_ref'],
             readonly_teacher_reference=control['teacher_reference'],teacher_selection_overlap_states=sorted(
                 set(states)&set(panel['teacher_selection_states']))))
-        for label,rows in (('MT',mt),('G',g),('E',e)):
-            raw.extend(dict(row,readout_arm=label) for row in rows)
+        for label,rows in task_arms.items():
+            for row in rows:
+                state=row['init_state_id'];file=(destination/'readonly_E'/f'E_{state:03d}.json' if label=='E'
+                    else destination/'query'/f"{row['reference']}_{state:03d}.json")
+                if label=='oldG':raw_file=Path(row['source_row'])
+                else:raw_file=file
+                raw.append(dict(row,readout_arm=label,readout_row_file=str(raw_file),
+                    actual_episode_row_file=str(query_row_source(raw_file)),
+                    teacher_selection_overlap=state in panel['teacher_selection_states']))
         for receipt in (query,control):
             episodes+=receipt['actual_new_episodes_total'];steps+=receipt['actual_new_environment_steps_total']
         reused+=len(query['row_reuse'])+sum(bool(row.get('reused')) for row in e)
-    arms={label:[row for row in raw if row['readout_arm']==label] for label in ('MT','G','E')}
-    suites={suite:dict(MT_G=paired([r for r in arms['MT'] if r['suite']==suite],[r for r in arms['G'] if r['suite']==suite]),
-        MT_E=paired([r for r in arms['MT'] if r['suite']==suite],[r for r in arms['E'] if r['suite']==suite]))
+    arms={label:[row for row in raw if row['readout_arm']==label] for label in task_arms}
+    suites={suite:{name:paired([r for r in arms[a] if r['suite']==suite],[r for r in arms[b] if r['suite']==suite])
+        for name,(a,b) in comparisons.items()}
         for suite in sorted({row['suite'] for row in raw})}
-    aggregate=paired(arms['MT'],arms['G']);teacher=paired(arms['MT'],arms['E'])
-    result=dict(complete=True,schema_version=SCHEMA,readout='fixed_first_G_MT_E_query16',version=version,
-        task_count=len(task_results),paired_conditions=aggregate['rows'],logical_rows=len(raw),tasks=task_results,
-        per_suite=suites,MT_G=aggregate,MT_E=teacher,G_by_teacher_MT_category=categories,
-        breadth=dict(tasks_with_gain=sum(t['MT_G']['gained']>0 for t in task_results),
-            tasks_with_loss=sum(t['MT_G']['lost']>0 for t in task_results),
-            net_positive=sum(t['MT_G']['net']>0 for t in task_results),
-            net_zero=sum(t['MT_G']['net']==0 for t in task_results),net_negative=sum(t['MT_G']['net']<0 for t in task_results)),
+    aggregate={name:paired(arms[a],arms[b]) for name,(a,b) in comparisons.items()}
+    breadth={name:dict(tasks_with_gain=sum(t[name]['gained']>0 for t in task_results),
+        tasks_with_loss=sum(t[name]['lost']>0 for t in task_results),net_positive=sum(t[name]['net']>0 for t in task_results),
+        net_zero=sum(t[name]['net']==0 for t in task_results),net_negative=sum(t[name]['net']<0 for t in task_results))
+        for name in comparisons}
+    subsets={label:{name:paired([r for r in arms[a] if r['teacher_selection_overlap']==overlap],
+        [r for r in arms[b] if r['teacher_selection_overlap']==overlap]) for name,(a,b) in comparisons.items()}
+        for label,overlap in [('teacher_selection_overlap',True),('remaining_query',False)]}
+    result=dict(complete=True,schema_version=SCHEMA,
+        readout='fixed_first_G_MT_oldG_E_same_query16' if comparator else 'fixed_first_G_MT_E_query16',version=version,
+        task_count=len(task_results),paired_conditions=aggregate['MT_G']['rows'],logical_rows=len(raw),tasks=task_results,
+        per_suite=suites,**aggregate,G_by_teacher_MT_category=categories,breadth=breadth['MT_G'],comparison_breadth=breadth,
+        success_task_coverage={label:sum(t['successes'][label]>0 for t in task_results) for label in arms},
+        teacher_selection_subsets=subsets,
+        fixed_condition_empirical_oracles=dict(MT_G=sum(max(t['successes']['MT'],t['successes']['G']) for t in task_results),
+            all_readout_arms=sum(max(t['successes'].values()) for t in task_results),
+            selects_one_fixed_parameter_per_task=True,formal_qualification=False),
         query_cost=dict(unique_new_episodes=episodes,unique_new_environment_steps=steps,reused_logical_rows=reused,
+            historical_comparator_rows=len(arms.get('oldG',[])),historical_comparator_new_episodes=0,
+            all_arms_reused_logical_rows=reused+len(arms.get('oldG',[])),
             practice_not_included=True),billing=billing(root),finite_train_mechanism_readout=True,
         formal_qualification=False,independent_teacher_generalization=False,readonly_E_not_used_for_Actor_credit=True,
         G_learning_did_not_consume_query=True,adjacent_checkpoint_comparison_available=False,
-        previous_G216_is_separate_method_and_panel=True)
+        previous_G216_is_separate_method_and_panel=not comparator,
+        previous_G_same_panel_readonly_comparator=comparator)
     destination=root/'analysis';destination.mkdir(parents=True,exist_ok=True)
     write_json_atomic(destination/'first_student_query16_summary.json',result)
     with (destination/'first_student_query16_rows.jsonl').open('w') as handle:

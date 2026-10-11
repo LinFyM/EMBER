@@ -19,6 +19,11 @@ def condition(root, task_id=13):
     return SimpleNamespace(root=root),path,task,panel
 
 
+def native_evidence(task,state,noise):
+    trace=[q.policy_noise_seed(noise,task['suite'],task['task_id'],state,i) for i in range(3)]
+    return dict(first_noise_seed=trace[0],policy_noise_seeds=trace,initial_proprio=[0.]*8)
+
+
 class Runner:
     def __init__(self):self.requests=[]
     def run(self,requests):
@@ -28,6 +33,7 @@ class Runner:
             success=state%2==0 if ref=='MT300' else state%3==0
             row=dict(init_state_id=state,success=success,
                 env_seed=request['noise_root'],policy_seed_root=request['noise_root'],environment_steps=17,
+                **native_evidence(task,state,request['noise_root']),
                 **{key:task[key] for key in ('suite','task_id','language')})
             yield dict(request=request,row=row,history=SimpleNamespace(records=[]))
 
@@ -60,6 +66,7 @@ def test_MT_external_reuse_checks_sources_and_rng(tmp_path):
         write_json_atomic(source/'student_data/previous/task_0013/query'/f'MT300_{state:03d}.json',
             dict(global_task_id=13,init_state_id=state,reference='MT300',success=state%2==0,
                 env_seed=noise,policy_seed_root=noise,environment_steps=17,
+                **native_evidence(task,state,noise),
                 **{key:task[key] for key in ('suite','task_id','language')}))
     bad=source/'student_data/previous/task_0013/query/MT300_003.json'
     row=read_json(bad);row['policy_seed_root']+=1;write_json_atomic(bad,row)
@@ -147,3 +154,75 @@ def test_refresh_resumes_missing_E_despite_parent_receipt(tmp_path,monkeypatch):
     assert read_json(destination/'parent.json')['readonly_E_complete']
     monkeypatch.setattr(pipeline,'restore_compilation',lambda *args:pytest.fail('complete student must not be recompiled'))
     pipeline.refresh(args,runtime,runner,dict(tasks=[dict(global_task_id=13,**task)]))
+
+
+def previous_control_fixture(tmp_path,*,teacher_MT=False):
+    root,source=tmp_path/'new',tmp_path/'previous';root.mkdir();source.mkdir()
+    shared=dict(source={'checkpoint':'source'},mt_checkpoint='/existing/MT',environment={'scene':'official'})
+    for relative in ('initial.safetensors','base/merged_targets.safetensors'):
+        original=source/relative;original.parent.mkdir(exist_ok=True);save_file({'factor':torch.zeros(1)},str(original))
+        target=root/relative;target.parent.mkdir(exist_ok=True);target.symlink_to(original)
+    write_json_atomic(source/'run_contract.json',dict(**shared,limits={},
+        student_refresh=dict(version='previous',query_states_per_parameter=16)))
+    write_json_atomic(root/'run_contract.json',dict(**shared,limits={},previous_root=str(source),previous_student_version='previous',
+        student_refresh=dict(version='endpoint',query_states_per_parameter=16,readonly_previous_G_query=True)))
+    runtime,path,task,panel=condition(source);previous=source/'student_data/previous/task_0013'
+    runner=Runner();q.query_once(runtime,runner,path,task,panel,0,previous/'query')
+    weights=source/'E.safetensors';save_file({'factor':torch.full((1,),2.)},str(weights))
+    teacher=dict(reference='MT300' if teacher_MT else 'E_fixed',
+        weights=str(source/'initial.safetensors' if teacher_MT else weights))
+    q.readonly_E_query(runtime,runner,path,task,panel,0,previous/'readonly_E',teacher)
+    weights=previous/'G_000.safetensors';save_file({'factor':torch.ones(1)},str(weights))
+    write_json_atomic(previous/'parent.json',dict(complete=True,actual_generated_parameter_ref='G_000',
+        common_E_reference=teacher['reference'],common_E_weights=teacher['weights'],
+        parent={'weights':str(weights)},kernel_identity={'checkpoint':'actual_previous_G216'}))
+    meta=dict(task_id=13,teacher_demo=path.demo,path_ordinal=0,noise_root=123,identity=path.identity)
+    write_json_atomic(previous/'path.json',meta)
+    write_json_atomic(root/'panel.json',dict(tasks=[panel]))
+    runtime,path,task,panel=condition(root)
+    return runtime,path,task,panel,teacher,source,meta
+
+
+@pytest.mark.parametrize('teacher_MT',[False,True])
+def test_endpoint_reuses_full_MT_E_and_reads_real_previous_G(tmp_path,teacher_MT):
+    from ember.proposal_writer.analysis import student_summary
+    runtime,path,task,panel,teacher,source,meta=previous_control_fixture(tmp_path,teacher_MT=teacher_MT)
+    destination=runtime.root/'student_data/endpoint/task_0013';runner=Runner()
+    q.query_once(runtime,runner,path,task,panel,0,destination/'query',mt_reference_root=source,mt_reference_version='previous')
+    result=q.readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',teacher)
+    assert len(runner.requests)==16 and {r['parameter_ref'] for r in runner.requests}=={'G_000'}
+    assert result['actual_new_episodes_total']==0 and len(result['row_reuse'])==16
+    assert not result['incompatible_E_references']
+    write_json_atomic(destination/'parent.json',dict(complete=True,actual_generated_parameter_ref='G_000',
+        common_E_reference=teacher['reference'],common_E_weights=teacher['weights']))
+    write_json_atomic(destination/'path.json',meta)
+    summary=student_summary(runtime.root,tasks=[13])
+    assert summary['logical_rows']==64 and summary['MT_oldG']['rows']==16 and summary['oldG_G']['net']==0
+    assert summary['query_cost']['unique_new_episodes']==16 and summary['query_cost']['unique_new_environment_steps']==16*17
+    assert summary['query_cost']['reused_logical_rows']==32 and summary['query_cost']['historical_comparator_rows']==16
+    import json
+    rows=[json.loads(line) for line in (runtime.root/'analysis/first_student_query16_rows.jsonl').read_text().splitlines()]
+    previous=[row for row in rows if row['readout_arm']=='oldG']
+    assert len(previous)==16 and all(row['source_kernel_identity']=={'checkpoint':'actual_previous_G216'} for row in previous)
+    assert all(str(source/'student_data/previous/task_0013/query') in row['actual_episode_row_file'] for row in previous)
+    assert all(row['excluded_from_Actor_credit'] and row['excluded_from_H'] for row in previous)
+    assert set(read_json(destination/'query/complete.json')['rewards'])=={'MT300','G_000'}
+    assert set(path.states)=={'MT300','G_000'}
+    if teacher_MT:
+        assert all(row['source_row']==str(destination/'query'/f"MT300_{row['init_state_id']:03d}.json") for row in result['rows'])
+    q.query_once(runtime,runner,path,task,panel,0,destination/'query',mt_reference_root=source,mt_reference_version='previous')
+    (destination/'readonly_E/complete.json').unlink()
+    q.readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',teacher)
+    assert len(runner.requests)==16
+
+
+def test_endpoint_recomputes_only_incompatible_E_row(tmp_path):
+    runtime,path,task,panel,teacher,source,_=previous_control_fixture(tmp_path)
+    file=source/'student_data/previous/task_0013/readonly_E/E_003.json'
+    row=read_json(file);row['policy_noise_seeds'][1]+=1;write_json_atomic(file,row)
+    destination=runtime.root/'student_data/endpoint/task_0013';runner=Runner()
+    q.query_once(runtime,runner,path,task,panel,0,destination/'query',mt_reference_root=source,mt_reference_version='previous')
+    result=q.readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',teacher)
+    assert len(runner.requests)==17 and result['actual_new_episodes_total']==1
+    assert result['actual_new_environment_steps_total']==17 and len(result['row_reuse'])==15
+    assert result['incompatible_E_references']==[dict(source=str(file),fields=['policy_noise_seeds','policy_noise_common_prefix'])]

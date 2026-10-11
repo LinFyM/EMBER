@@ -94,7 +94,13 @@ def resume_checkpoint(path, stage, runtime, optimizer, context, *, baseline=None
     return state['next_update']
 
 
+def memory_peak(device):
+    return dict(allocated_GiB=torch.cuda.max_memory_allocated(device)/2**30,
+                reserved_GiB=torch.cuda.max_memory_reserved(device)/2**30)
+
+
 def metrics(root, stage, record, context):
+    record['process_GPU_peak']=memory_peak(context.device)
     destination = Path(root) / 'metrics' / f'{stage}_rank_{context.rank}.jsonl'
     destination.parent.mkdir(parents=True, exist_ok=True)
     import json

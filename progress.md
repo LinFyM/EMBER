@@ -1,3 +1,17 @@
+## 2026-10-11 rank8完整16教师供给已完成；四卡G240正式fresh接续
+
+教师协调器teacher_bank_resume_02退出0；全部16事件/32完整checkpoint/960原始行与7,680更新、860,160 demo queries已消费核验。
+audit own-parent84/256→T160116→T480139，480 gained69/lost14；160→480 gained43/lost20，完整原件保留task38等不利个例。
+8rec/64keep标签实际训练query3,840/7,680；parent/真实H覆盖与函数幅度见[整批报告](docs/analyses/video_guided_proposal_rank8_multistart_batch_20261011.md)。
+全部合法供给缺增益停止线未触发，S_G从全16事件selection权重一次固定，76尺度/32端点/floor0，audit不定尺度。
+已结算53.698015811747304GPUh（本ROOT35.05760370788242/carry-in18.640412103864882），含全部1失败；无GPUh硬限。
+G240已于UTC04:41:32从clean pushed detached02781720启动，物理gpu01:1/6/0/2、逻辑B4/task等权/event¼、每rank chunk16。
+现场0/2新空闲、3/4只2341MiB，较长task32/38映射0/2；4rank有实际作用，不为world6增加空task分片。
+四卡chunk16/新映射的收益尚待正式G240端到端结果，未宣称比原比较已更快；该边界消费实际费用/预测后同world续480。
+strg01 data1 used1412560232KiB/quota2147483648KiB；ROOT约1.4G/旧4.1G，32GiB规划峰覆盖cache/CP/候选/H，64GiB合同不变。
+后继既有metrics/完成字段补allocator高水位统计，G240冻结源码不改；reader峰值不冒称完整G峰值。
+只持续等真实退出事件，不周期读G log/checkpoint；尚无G480/π/报告完成或视频能力结论。main只读，tracked/Git仍实验独占。
+
 ## 2026-10-11 已承接Owner长期政策：GPU小时只记账/预测，不作启动或续跑硬门槛
 
 Owner明确“你以后不用限制gpu时，要不然实验session都不敢多卡加速”，覆盖此前主讨论累计96GPUh及更早额度。

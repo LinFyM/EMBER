@@ -14,7 +14,7 @@ from ember.writer.practice import History
 
 from .contract import TASKS, OPTIMIZER, seed, SCHEMA
 from .learning import (Baseline, train_cfm, train_local, on_policy_update, checkpoint,
-                       assigned_tasks, resume_checkpoint)
+                       assigned_tasks, resume_checkpoint, memory_peak)
 from .path import (compile_condition, evaluate_fixed, history_prefix, save_history, load_history,
                    restore_compilation,retire_consumed_parameters)
 from .teacher import functional_labels
@@ -75,7 +75,7 @@ def local_data(args, runtime, runner, contract):
                 condition=path.identity, prefixes=prefixes, raw_rows=rows, complete=True,
                 query_excluded_from_H=True, uniform_behavior_not_on_policy=True,
                 end_to_end_seconds=time.monotonic()-tick,compilation_timings=path.timings,
-                components=dict(runtime.components)))
+                components=dict(runtime.components),process_GPU_peak=memory_peak(runtime.device)))
 
 
 def local_examples(root, runtime):
@@ -176,7 +176,8 @@ def report(args, runtime, runner, contract):
                 diagnosis_after_final_locked=True, diagnosis_does_not_change_selected=True))
         write_json_atomic(destination / 'complete.json',dict(complete=True,version=version,input_arm=arm,
             code_stage='fixed report',condition=path.identity,query_rows=len(rows),environment_steps=path.environment_steps,
-            end_to_end_seconds=time.monotonic()-tick,compilation_timings=path.timings,components=dict(runtime.components)))
+            end_to_end_seconds=time.monotonic()-tick,compilation_timings=path.timings,
+            components=dict(runtime.components),process_GPU_peak=memory_peak(runtime.device)))
         retire_consumed_parameters(destination,destination/'complete.json',{k:v.cpu() for k,v in runtime.mt.items()},runtime.prox_scales)
 
 

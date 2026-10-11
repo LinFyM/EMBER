@@ -13,11 +13,9 @@ from safetensors.torch import load_file, save_file
 from ember.pi05_source_checkpoint import read_json, write_json_atomic, git_state
 from ember.pi05_source_setup import initialize_distributed
 from ember.writer.practice import EpisodeRunner
-from ember.lora import identity_lora_state, LORA_A_SUFFIX, LORA_B_SUFFIX
-from ember.pi05_lora import load_pi05_lora_contract, derive_pi05_lora_rank
 
 from .contract import (RUN_ROOT, ASSET_ROOT, TASKS, SOURCE, MT_PATH, OPTIMIZER, SCHEMA,
-                       PRIOR_ROOT, SELECTOR_SCHEMA, materialize_panel, environment_contract, seed, parameter_ref)
+                       SELECTOR_SCHEMA, materialize_panel, seed, parameter_ref)
 from .runtime import Runtime
 from .teacher import fit_teacher
 from .path import save_history
@@ -27,89 +25,92 @@ def task_panel(root, task):
     return next(row for row in materialize_panel(root)['tasks'] if row['task_id'] == task)
 
 
+def frame_chunk_for_rank(default, context):
+    """Consume the launcher's physical chunks in CUDA-visible rank order."""
+    chunks=os.environ.get('EMBER_META_FRAME_CHUNKS')
+    values=[int(value) for value in chunks.split(',')] if chunks is not None else [int(default)]*context.world_size
+    if len(values)!=context.world_size or any(value<1 for value in values):
+        raise ValueError('physical meta frame chunks must be positive and match the actual world size')
+    return values[context.local_rank]
+
+
+def create_runtime(args, context, environment):
+    return Runtime(context.device,asset_root=args.asset_root,root=args.root,
+        frame_chunk=frame_chunk_for_rank(args.frame_chunk,context),
+        task_ids=tuple(t['global_task_id'] for t in environment['tasks']),task_role=environment['role'])
+
+
 def save_state(path, state):
     path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)
     save_file({k: v.detach().cpu().contiguous() for k, v in state.items()}, str(path))
 
 
-def coordinates(root, asset_root):
-    """Actual deterministic Λ0 and fixed proximal units, before any teacher update."""
-    if (root/'coordinates.json').exists():
-        return
-    original = load_pi05_lora_contract(asset_root/SOURCE['lora_contract'])
-    current = derive_pi05_lora_rank(original, rank=8)
-    initial = identity_lora_state(current)
-    save_state(root/'initial.safetensors', initial)
-    mt = load_file(str(MT_PATH))
-    scales, dense_rms = {}, {}
-    for target in current.targets:
-        a_name, b_name = target.name + LORA_A_SUFFIX, target.name + LORA_B_SUFFIX
-        a = float(initial[a_name].square().mean().sqrt())
-        dense = mt[b_name].float() @ mt[a_name].float() * (original.alpha/original.rank)
-        dense_rms[target.name] = float(dense.square().mean().sqrt())
-        scales[a_name], scales[b_name] = a, dense_rms[target.name]/(8**.5*a)
-    write_json_atomic(root/'task_lora_contract.json', current.to_dict())
-    write_json_atomic(root/'coordinates.json', dict(schema_version=SCHEMA, task_rank=8,
-        valid_coordinates=current.parameter_count, initial=str(root/'initial.safetensors'), initial_seed=7,
-        base_source=SOURCE, MT=str(MT_PATH), base_rule='FP32(W_source+alpha/rank*B_MT@A_MT) then native dtype',
-        S_prox=scales, actual_MT_dense_RMS=dense_rms, S_G_not_yet_formed=True,
-        center='shared actual nonzero Kaiming A0/B0, no gauge restart'))
-
-
-
 def prepare(args):
-    if any(v is None for v in (args.teacher_stop,args.checkpoint_interval,args.selection_count)):
-        raise ValueError('formal teacher update/CP/selection values must be explicitly frozen')
-    if args.teacher_stop % args.checkpoint_interval:
-        raise ValueError('teacher terminal must be a registered complete checkpoint')
-    root = args.root; root.mkdir(parents=True, exist_ok=True)
-    panel = materialize_panel(root,selection_count=args.selection_count,report_count=args.report_count)
-    coordinates(root,args.asset_root)
-    environment = environment_contract(args.asset_root,root=root)
-    contract = dict(schema_version=SCHEMA, stage='teacher-data',
+    """Register this bounded fresh Writer run against the immutable existing bank."""
+    if args.reuse_root is None:raise ValueError('fresh normalized field requires the registered previous E/MT/H root')
+    root=args.root;previous=args.reuse_root.resolve();old=read_json(previous/'run_contract.json')
+    if root.resolve()==previous or tuple(old['training_tasks'])!=TASKS:
+        raise ValueError('fresh output root and exact audited all36 scope required')
+    if (old['teacher']['selection_per_node'],old['teacher']['report_per_arm'])!=(16,16):
+        raise ValueError('previous teacher selection and independent report must be16/16')
+    root.mkdir(parents=True,exist_ok=True)
+    panel=materialize_panel(root,selection_count=16,report_count=16)
+    previous_panel={r['task_id']:r for r in read_json(previous/'panel.json')['tasks']}
+    links=['initial.safetensors','task_lora_contract.json','bank_scale.json','base/merged_targets.safetensors']
+    for row in panel['tasks']:
+        task=row['task_id'];before=previous_panel[task]
+        if any(row[k]!=before[k] for k in ('init_order','video_order','bootstrap_state_id','policy_videos','teacher_report_states','report_states')):
+            raise ValueError('original initialization/video/bootstrap/report mapping changed')
+        E=read_json(previous/'teachers'/f'task_{task:04d}'/'E.json')
+        H=read_json(previous/'bootstrap'/f'task_{task:04d}'/'complete.json')
+        if not E['complete'] or not H['complete'] or H['reference']!='MT300' or not Path(E['weights']).is_file() or not Path(H['history']).is_file():
+            raise ValueError('existing E weights and actual MT bootstrap are required')
+        links.extend([f'teachers/task_{task:04d}/E.json',f'bootstrap/task_{task:04d}/complete.json'])
+    for name in links:
+        source=(previous/name).resolve(strict=True);target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
+        if target.exists():
+            if target.resolve()!=source:raise ValueError('reused bank asset destination changed')
+        else:target.symlink_to(source)
+    coordinates={**read_json(previous/'coordinates.json'),'schema_version':SCHEMA,
+        'initial':str(root/'initial.safetensors'),'reused_from':str(previous/'coordinates.json'),'S_G_not_yet_formed':False}
+    if (root/'coordinates.json').exists() and read_json(root/'coordinates.json')!=coordinates:
+        raise ValueError('fresh coordinates changed')
+    write_json_atomic(root/'coordinates.json',coordinates)
+    contract = dict(schema_version=SCHEMA, stage='G-and-student-readout',
         design='docs/designs/video_guided_proposal_writer_20261010.md',
         source=SOURCE,mt_checkpoint=str(MT_PATH),training_tasks=list(TASKS),panel=str(root/'panel.json'),
-        environment=environment,seed=7,meta_seeds=[202610101,202610102],meta_rank=32,meta_alpha=32,
+        environment=old['environment'],seed=7,meta_seeds=[202610101,202610102],meta_rank=32,meta_alpha=32,
         task_rank=8,task_targets=38,task_factors=76,probe_seed=1729,
-        limits=dict(GPU_hours=None,GPU_hours_hard_cap_active=False,added_peak_GiB=256,
-            carry_in_GPU_hours=read_json(PRIOR_ROOT/'analysis/final_billing.json')['GPU_hours']+sum(read_json(Path(x))['GPU_hours'] for x in args.profile_receipts),
-                    GPU_hours_policy='Owner removed cumulative GPU-hour launch/resume limits'),
-        historical_roots=[str(PRIOR_ROOT)],historical_profiles=args.profile_receipts,
+        limits=dict(GPU_hours=None,GPU_hours_hard_cap_active=False,added_peak_GiB=16,carry_in_GPU_hours=0.,
+            GPU_hours_policy='actual cost retained; no cumulative GPU-hour hard limit'),
+        previous_root=str(previous),previous_student_version=old['student_refresh']['version'],
+        reused_bank=dict(E='same selected teacher weights',S_G='same task-equal fixed scale',
+            H='same actual MT bootstrap; no new teacher trajectories',MT='same frozen merged base and task initial'),
         task_initial=str(root/'initial.safetensors'),coordinates=str(root/'coordinates.json'),
-        bank_scale=str(root/'bank_scale.json'),
-        updates=dict(teacher=list(range(100,args.teacher_stop+1,100))),
+        bank_scale=str(root/'bank_scale.json'),updates=dict(G=[216]),fixed_G_update=216,
+        student_refresh=dict(version='G216_normalized_first_students',G_update=216,task_count=36,
+            valid_proposal_rule='same chronological first valid; at most4; no success resampling',
+            MT_bootstrap_reference_reused=True,query_states_per_parameter=16,readonly_E_query=True,
+            parameters_and_H_single_source=True,post_refresh_G_only=False),
+        architecture_change='G.field6 cross-level sender LayerNorm; static/Reader/Actor/CFM unchanged',
+        shared_initialization='fresh seed7 G/meta/Actor and all optimizers; no previous shared weights',
         logical_batch=dict(teacher_queries=28,G_conditions=4,actor_conditions=4),
-        teacher=dict(action_demos=list(range(46)),internal_unfitted_demos=list(range(46,50)),
-            trajectory='one per task, continuous optimizer/RNG',loss='native demoFM + 1e-3 fixed-initialMT prox',
-            proximal_target=str(root/'initial.safetensors'),save_interval=100,
-            readout_updates=[0,*range(args.checkpoint_interval,args.teacher_stop+1,args.checkpoint_interval)],
-            selection_per_node=args.selection_count,
-            capture_history='only fixed first MT selection row; other selection/report score only',
-            selection_folds=[args.selection_count//2]*2,report_per_arm=args.report_count,
-            choice='maximum registered selection success count, ties earliest including MT',
-            independent_report_not_in_H_or_gradient=True),
+        teacher=dict(**old['teacher'],readonly_reuse=True,source_root=str(previous)),
         task_parent_history_sampling='equal task; equal actual parent within task; uniform real H within parent',
         optimizer=OPTIMIZER,selector_schema=SELECTOR_SCHEMA,future_budget_model_input=False,
-        compilation=dict(proposals_per_decision=4,proposal_attempts=32,parameter_euler_steps=16,
-            response_observations=16,bootstrap='actual MT episode before first G',
-            future_budget_model_input=False),
-        selector_training=dict(schema=SELECTOR_SCHEMA,rounds=5,continue_cost=.001,
-            collection='complete parent+STOP logits; conditional nonSTOP parent plus practice',
-            objective='mean depths1..5 exact STOP/final expectation; conditional score plus direct gradient'),
-        deadline=dict(authority_UTC='2026-10-11T06:30:00+00:00',target_UTC='2026-10-11T12:30:00+00:00',
-            bank_ready_prediction_UTC=['2026-10-11T12:40:00+00:00','2026-10-11T13:05:00+00:00'],
-            revised_from_original_target=True,fast_device_B28_seconds=2.0744460243731737,fast_capture16_seconds=277.30491822306067),
-        exact_resume='full teacher optimizer/sampler/RNG; shared checkpoints retain topology and physical-migration identity',
+        compilation=old['compilation'],selector_training=old['selector_training'],
+        stage_estimate_seconds=dict(G_216=7200.),condition_estimate_seconds={'student-data':750.},
+        bounded_stop='G216 then all36 first students and paired MT/G/E query16; no local/RL/held400',
+        query_independent_of_teacher_selection=False,query_teacher_selection_overlap_per_task=2,
+        exact_resume='only matching normalized-field schema complete checkpoints; retain RNG/topology',
         git=git_state(),information_wall='no held offline labels, no per-H Q, no rec/keep; query never in H')
     path=root/'run_contract.json'
     if path.exists() and read_json(path) != contract:
         raise ValueError('new run contract changed; append explicit revision rather than overwrite')
     if not path.exists():write_json_atomic(path,contract)
-    base=root/'base';base.mkdir(exist_ok=True)
-    source=PRIOR_ROOT/'base/merged_targets.safetensors'
-    if not source.is_file():raise ValueError('canonical frozen merged-MT targets absent')
-    if not (base/source.name).exists():(base/source.name).symlink_to(source.resolve())
-    print(json.dumps(dict(contract=str(path),tasks=len(panel['tasks']),updates=contract['updates']['teacher'])))
+    write_json_atomic(root/'bank_ready.json',dict(complete=True,task_count=36,initial_parent='MT300 only',
+        history_episodes=36,readonly_source=str(previous),bank_scale=str(root/'bank_scale.json'),retrained_teachers=False))
+    print(json.dumps(dict(contract=str(path),tasks=len(panel['tasks']),updates=contract['updates'])))
 
 
 def teacher_root(root, task):
@@ -313,11 +314,7 @@ def main():
     parser.add_argument('--asset-root',type=Path,default=ASSET_ROOT)
     parser.add_argument('--task',type=int,default=0)
     parser.add_argument('--stop',type=int)
-    parser.add_argument('--teacher-stop',type=int)
-    parser.add_argument('--checkpoint-interval',type=int)
-    parser.add_argument('--selection-count',type=int)
-    parser.add_argument('--report-count',type=int,default=8)
-    parser.add_argument('--profile-receipts',nargs='*',default=[])
+    parser.add_argument('--reuse-root',type=Path,help='immutable complete previous E/MT/bootstrap/scale root')
     parser.add_argument('--resume',type=Path)
     parser.add_argument('--checkpoint',type=Path)
     parser.add_argument('--condition-ordinal',type=int)
@@ -352,8 +349,11 @@ def main():
     if args.command=='formal' and (not args.worker_id or not args.condition_batch or args.condition_batch<1):
         parser.error('formal needs its persistent queue worker identity and measured condition batch')
     if not shared and args.command!='formal' and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')
-    runtime=Runtime(context.device,asset_root=args.asset_root,root=args.root,frame_chunk=args.frame_chunk,
-        task_ids=tuple(t['global_task_id'] for t in environment['tasks']),task_role=environment['role'])
+    runtime=create_runtime(args,context,environment)
+    consumer=args.worker_id or (str(args.stop) if shared else f'task{args.task}')
+    write_json_atomic(args.root/'code'/f'{args.command}_{consumer}_{identity["commit"]}_rank{context.local_rank:02d}_execution.json',
+        dict(frame_chunk=runtime.frame_chunk,local_rank=context.local_rank,world_size=context.world_size,
+            physical_gpu=args.physical_gpu,logical_condition_batch=4 if shared else None))
     runner=None
     try:
         if args.command=='teacher':fit(args,runtime);return

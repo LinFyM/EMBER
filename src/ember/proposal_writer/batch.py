@@ -227,12 +227,13 @@ class Batch:
                 # The shared gpu01:5 MT101 consumer exhausted its EGL framebuffers at16.
                 # Smaller physical waves still evaluate every registered selection/report row.
                 arguments[arguments.index('--slots')+1]=str(min(8,int(arguments[arguments.index('--slots')+1])))
-            if len(devices)>1 and '--frame-chunk' in arguments:
+            if '--frame-chunk' in arguments:
                 # Joint learning retains both optimizers after real R5 collection;
                 # its resident EGL workers also need headroom beyond the G-only peak.
                 chunk16_headroom=40000 if arguments[0]=='RL' else 28000
-                env['EMBER_META_FRAME_CHUNKS']=','.join(str(16 if a['free_MiB']>=chunk16_headroom else
-                    8 if a['free_MiB']>=21000 else 4) for a in admissions)
+                ceiling=int(arguments[arguments.index('--frame-chunk')+1])
+                env['EMBER_META_FRAME_CHUNKS']=','.join(str(min(ceiling,16 if a['free_MiB']>=chunk16_headroom else
+                    8 if a['free_MiB']>=21000 else 4)) for a in admissions)
             command+=[str(self.workspace/'scripts/video_guided_proposal_writer.py'),*arguments,
                       '--root',str(self.root),'--physical-gpu',str(gpu)]
             return self.launch(job,devices,destination,command,env,admissions)
@@ -399,7 +400,8 @@ def shared_learning_job(root,contract,stage,shared_gpus,stop,slots):
     """One shared current-theta batch owner, with an explicit recorded physical topology."""
     if shared_gpus is None or not 1<=shared_gpus<=4:raise ValueError('shared physical world size needs actual throughput selection')
     if stop not in contract['updates'].get(stage,[]):raise ValueError('formal shared update not preregistered')
-    arguments=[stage,'--stop',str(stop),'--slots',str(slots),'--frame-chunk','16']
+    chunk=contract.get('physical_execution',{}).get(f'{stage}_frame_chunk_ceiling',16)
+    arguments=[stage,'--stop',str(stop),'--slots',str(slots),'--frame-chunk',str(chunk)]
     if stage=='local':arguments+=['--checkpoint',str(root/'checkpoints/G'/f"update_{contract['fixed_G_update']:08d}")]
     if stage=='RL':arguments+=['--checkpoint',str(root/'checkpoints/local'/f"update_{contract['fixed_local_update']:08d}")]
     previous=[u for u in contract['updates'][stage] if u<stop and (root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').exists()]

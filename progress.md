@@ -1,3 +1,17 @@
+## 2026-10-12 01:37 新有界批已进入工程实施
+
+主讨论完整决定已消费：G.field发送端归一化是唯一生成架构变化，query16另作信用精度修正；新批仅全36 fresh G216与首学生MT/G/E读出。
+Owner明确影响大且可及时修正的问题现在解决，不将第一阶段限定为修bug；教师全面完善仍后置。
+工程主树codex/proposal-flow-normalized-query16与query消费者独立codex/proposal-query16-readout由实验独占协调，canonical未并发写入。
+flow/static保留原参数注册与随机初始化顺序，checkpoint schema v6拒绝旧同shape Writer；已承接真实rank frame chunk环境消费者。
+已完成传播尺度、旧schema拒绝、实际Runtime创建与原合同消费者40项CPU检查；query/E读出检查和集成待收齐。
+当前只表示工程状态，不宣称已修复学习或闭环。此前旧诊断结束，不追加probe。
+
+资源调度必要检查发现旧RL9已进入strict400，六卡原冻结消费者持续运行；不改旧代码/选点/数据。
+data1权威quota现场used1427482924KiB/quota2147483648KiB，旧ROOT约15GiB，shared filesystem约81TiB空余；
+新批增量峰值暂16GiB，连同原旧256GiB峰值预留在独立data1预算内。新训练按实际余量与完整B4吞吐选择同节点共驻安排。
+新ROOT和旧analysis稳定路径见active design§11；准备、profile及formal启动身份将随实际结果续写，不以计划代替运行。
+
 ## 2026-10-12 训练期间独立诊断完成，退休已集成rank8开发树
 
 Owner要求推进可并行工作；主讨论另派发只读G216输运诊断，范围固定task13/17的首学生真实V/L/MT bootstrap H/P与保存noise。

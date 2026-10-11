@@ -1,3 +1,7 @@
+> 2026-10-12 authority：本文件仍是唯一active design。当前新ROOT的唯一授权整批为§11的normalized-flow/query16有限批。
+> 下文原G216→warm36→joint9→strict400启动数字/数据角色只适用于旧full36_common_teacher的1b44903d冻结链；该在途链继续，
+> 不将其课程自动恢复到新ROOT。未被§11覆盖的完整方法算子/信息墙继续有效。下一共同训练窗口由main消费本批后另登记。
+
 # 36任务目标教师、自身实践与交替共同学习：main执行合同
 
 Owner 2026-10-11约14:30北京时间明确要求立即自主推进；本稿由main定科学内容，实验session在独占工程窗口整合进唯一active设计/状态文件后，用clean pushed detached实施。旧四task G480仅自然收口，不恢复旧π矩阵。新批不再以四task试训筛方法。
@@ -171,3 +175,64 @@ G保留完整ξ/time、64数值块、block/rank/target通信、6层width256/FF10
 supervision拥有local/RL共同使用的lazy真实重放及once-per-λ query标签，替换旧每prefix重新query；evaluation拥有held400无梯度适应/固定MT参照，
 并给教师报告复用同一模型/normalization/执行口径兼容检查。新增两文件是训练监督与held报告各自已有消费者责任，不是新runner或fallback。
 旧固定local128/RL16/48/U和step-weighted F消费者已删除；历史仅由旧commit/冻结树/原件保存。局部复杂函数按bootstrap、CFM更新和共同训练职责收窄；新CFMTrainer复用同一参数更新，联合原件同时保存ψ/θ优化器与bank版本。旧selector消费后删除参数的路径及专用测试退役，学生参数/H仍是G依赖。
+
+
+## 11. 当前有界批：G.field发送端归一化与query16（2026-10-12）
+
+目的为检验旧G216实际生成学习失败是否受跨层raw-state循环放大影响，并精确读取G传递E控制优势的情况。
+主讨论完整推导、竞争解释及最近似历史见[生成传播与query16决定](../analyses/proposal_transport_and_query16_20261012.md)。
+本节是新ROOT唯一执行合同；内部统计不替代完整闭环、held迁移或视频/H增量结论。
+
+### 11.1 计算与学习
+
+只改G.field六层BlockLayer的跨层发送量：原局部FF残差后，用local_norm(blocks)同时计算原group内softmax的score和value；
+rank self-attention不改，再用rank_norm(ranks)同时作原target_query的score和value。target self/cross attention及真实memory不改；
+下行rank接收target_norm(targets)，block广播concat(rank_norm(ranks),target_norm(targets))的原Linear消息。
+最终field.norm、Linear256→64、valid mask、完整643584坐标、16步Euler、xi/time原输入和CFM标签保持。
+static两层、Actor独立static/Reader/三head、ContextReader、双meta的实际算子/参数结构保持；flow/static在同一模块内按职责组织，
+不保留旧flow fallback。旧代码由1b44903d/Git保留，不原地修改冻结树。
+
+G/meta/Actor全部seed7 fresh、参数形状/注册/RNG顺序保持可比、两个meta原seed不变，optimizer fresh；新Writer checkpoint schema v6
+明确拒绝旧同shape恢复。复用原MT merged frozen基底、初始非零A0/B0、全部36共同E、一次固定S_G和每task原MT bootstrap真实H。
+E只在标签侧，不进入条件；教学为exact L与action-hidden双RGB/stride5，H仍只来自自身真实交互。源权重冻结。
+
+全36等权、logical B4、216次CFM/24轮，原任务/parent/H及L/V采样、AdamW1e−4/(.9,.95)/1e−8/wd1e−4/clip1保持，
+不加时间网络、endpoint loss、功能损失、解析去噪或rank/dtype/LR扫描。这个G学习阶段不消费query16，传播学习比较仍单一主要变量。
+只在216保存完整模型/optimizer/sampler/RNG/topology出口，不用loss选点；按live同节点物理执行安排实际rank/chunk，保持逻辑更新。
+EMBER_META_FRAME_CHUNKS由run的实际Runtime消费者按LOCAL_RANK承接，不能只在launch env登记而忽略。旧在途运行不重启。
+
+### 11.2 面板、首学生及E参照
+
+沿原init_order/video_order/seed，practice=init_order[:14]；query=init_order[36:46]+init_order[14:16]+init_order[32:36]，
+teacher independent report=init_order[16:32]、finite train report=init_order[46:50]保持。14/16/16/4各池互斥覆盖50。
+MT bootstrap仍init_order[0]；首visit原6实践前缀不变。query中2初态参与过E selection，仅作train36机制/信用读出，
+不称独立teacher泛化或formal资格；教师独立report16原身份不变。
+
+216后全部36各一个原教学/MT-H/noise规则的首valid G实际实践，最多4提案尝试、不按成功补采。对固定已实践MT/G同16初态、
+official scene/env/policy RNG各一次查询，跨prefix复用；query不入H、G条件或Teacher选点。分母/循环/cache/complete/成本均实际16行，
+不能重复旧4行充数。旧MT只在实际参数/task/state/scene/RNG与原MT/base/initial都兼容时引用，保留原episode/成本与reuse/new；
+旧G标签不复用。新查询只作只读评价，任何反馈不改变本批G216或候选选择。
+
+固定E另外在同16初态/RNG只读运行；E=MT9task引用同一MT行。E不进Actor候选、path.states、H或信用rewards，
+参照只用于解释传递。保存MT/G/E全576配对条件、per-task/suite、R/G/L/churn/breadth、success-set和E-only/MT-only/both-success/both-fail
+各类中的G结果，空类如实为0。每task原件及唯一新增episode/环境步/GPUh均保存。
+
+本批仅G216→首学生36→MT/G/E query16→原件分析，停于此，不启动新warm/RL/held400；主讨论消费后决定接续。
+只在216对task13/17原相同真实V/L/MT-H/P/xi重复已有简洁输运/传播统计，不追加probe系列或训练修复臂。
+
+### 11.3 输出、资源、证据与回报
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/normalized_flow_query16。
+原E/MT/base/S_G/真实H用绝对引用或小metadata，禁止复制大资产/旧教师重训。保存完整216恢复CP、fresh initial模型、全部候选参数/真实H、
+固定查询raw rows、completion与实际计费。新增峰值估16GiB（完整CP/模型<2GiB、真实36条G H及原生raw/cache约12GiB、余量），
+launch前核strg01 data1独立quota和在途旧root峰值，共享df另查。所有新增位于data1。
+
+旧G216定位的稳定原件为ROOT/analysis/previous_G216/native_diagnostic/{diagnose.py,statistics.json,analysis.md,launch.json,exit.json,accounting.json}；
+主讨论CPU复算为ROOT/analysis/previous_G216/initial_generation_analysis.json，推导transport_reasoning.md亦保留。
+它们明确是previous_G216，不是新方法结果；原旧ROOT、CP/冻结代码继续保留，不把tmp作为唯一持久证据，不新做hash。
+
+工程准入暂20–40min；新学习+首学生读出暂2–5h，G约50–100min、控制读出1–3h，由当前拓扑/完整B4/峰值更新预测。
+最多1728逻辑query行+36条G实践，E=MT及合法旧MT引用减少真实新增；计费不重算历史复用。
+现场双节点总6或8/node6、显存/非干扰合同保持，允许有收益的共驻，不等待world4、不dummy占卡。
+新CPU协调器仅这一有限依赖图及单次整批完成/异常回报；旧RL9/strict400原冻结合同和唯一退出回报者并行继续。
+实验闭环实现/验证/Git/push/clean detached/运行恢复；整批完成或科学边界只向01a12bb0主讨论一次可靠回报，不逐阶段心跳、自Queue或重复等待。

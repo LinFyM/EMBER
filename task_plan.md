@@ -1,3 +1,18 @@
+## 2026-10-12 当前有界接续：normalized flow与query16
+
+主讨论已直接消费旧G216真实输运/传播原件，派发单一生成架构变化：只改G.field六层跨层消息发送端归一化；
+static/Actor/Reader/meta/CFM目标及logical B4不变，全部共享参数/optimizer fresh。复用既有强MT、E、S_G与实际MT H。
+新ROOT为/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/normalized_flow_query16。
+全36 G216（每task24次）后各一个原规则首valid G实践，完成同state/RNG的MT/G/E query16；E只读不入候选/H。
+新的practice14/query16/teacher report16/train report4显式隔离；query其中2state参与过teacher selection，仅作train读出。
+本批到此停止，不自动启动新warm/RL/held400，结果交主讨论决定完整共同训练。唯一active design仍为原文件§11；
+详细推导见docs/analyses/proposal_transport_and_query16_20261012.md，不复制第二份active合同。
+
+实验负责实现、实际消费者验证、集成push、clean detached、live双节点与data1独立quota、吞吐/显存安排和整批可靠回报。
+现旧1b44903d链已进入RL9 strict400，其合同与唯一退出回报者保持；新批只回报整批完成或真实失败，无子阶段心跳/自Queue。
+暂估工程准入20–40min、学习与首学生读出2–5h；按真实同节点可用拓扑/完整B4吞吐修订，不等world4。
+旧诊断小原件持久存到新ROOT/analysis/previous_G216，标记旧证据；不复制大模型/H，不增加旧诊断probe。
+
 ## 当前目标：先取得MT基底上完整Writer明显超过强MT的闭环信号
 
 Owner于2026-10-12明确以实际架构效果为核心：当前只在MT合并冻结基底上训练Writer，暂不开展纯source起点。

@@ -96,8 +96,8 @@ def test_training_roles_respect_independent_teacher_report_and_query(tmp_path):
     for row in panel['tasks']:
         selection=set(row['teacher_selection_states']);report=set(row['teacher_report_states'])
         practice=set(row['practice_states']);query=set(row['query_states']);limited=set(row['report_states'])
-        assert len(practice)==20 and len(query)==10 and row['local_query_states']==row['rl_query_states']
-        assert selection<=practice and not report&(practice|query|limited|selection)
+        assert len(practice)==14 and len(query)==16 and row['query_count']==16 and row['local_query_states']==row['rl_query_states']
+        assert selection==(practice|set(row['query_teacher_selection_overlap'])) and not report&(practice|query|limited|selection)
         assert not query&(practice|limited) and not limited&practice
         assert len(report|practice|query|limited)==50 and len(set(row['video_order']))==50
         assert set(row['teacher_query_demos'])==set(range(46)) and set(row['teacher_videos'])==set(range(46,50))
@@ -400,7 +400,12 @@ def test_shared_launch_uses_measured_headroom_chunks_without_changing_logical_fl
         assert command[command.index('--stop')+1]=='240'
         return job.identity
     monkeypatch.setattr(coordinator,'launch',launch)
-    assert coordinator.execute(batch.Job('G240',['G','--stop','240','--frame-chunk','4'],gpu_count=4),devices)=='G240'
+    assert coordinator.execute(batch.Job('G240',['G','--stop','240','--frame-chunk','16'],gpu_count=4),devices)=='G240'
+    def ceiling_launch(job,selected,destination,command,env,admissions):
+        assert env['EMBER_META_FRAME_CHUNKS']=='8,4,4,8'
+        return job.identity
+    monkeypatch.setattr(coordinator,'launch',ceiling_launch)
+    assert coordinator.execute(batch.Job('G240_chunk8',['G','--stop','240','--frame-chunk','8'],gpu_count=4),devices)=='G240_chunk8'
     memory.update({1:39572,3:34304,4:45000,5:21262})
     def joint_launch(job,selected,destination,command,env,admissions):
         assert env['EMBER_META_FRAME_CHUNKS']=='8,8,16,8'
@@ -542,7 +547,7 @@ def test_query_labels_cached_once_and_never_added_to_history(tmp_path):
     path=SimpleNamespace(selected='G',states={'MT300':{},'G':{},'unpracticed':{}},identity='condition',demo=0,
         task=12,history=History(episodes=[dict(init_state_id=0)]),
         outputs=[dict(candidates=['MT300']),dict(candidates=['MT300','G']),dict(candidates=['MT300','G'])])
-    panel=dict(query_states=list(range(10,20)));runner=Runner();task=dict(horizon=100,suite='libero_10',task_id=2,language='exact')
+    panel=dict(query_states=list(range(10,20)),query_count=4);runner=Runner();task=dict(horizon=100,suite='libero_10',task_id=2,language='exact')
     destination=tmp_path/'student_data/G_init/task_0012/query'
     first=query_once(None,runner,path,task,panel,0,destination)
     original_complete=(destination/'complete.json').read_text()

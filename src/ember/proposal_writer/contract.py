@@ -10,10 +10,10 @@ import numpy as np
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 ASSET_ROOT = Path('/data1/user/ymdai/projects/EMBER')
-RUN_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/full36_common_teacher')
+RUN_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/normalized_flow_query16')
 PRIOR_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/rank8_multistart')
-SCHEMA = 'ember_proposal_full36_common_teacher_v1'
-PANEL_ROLE_SCHEMA = 'ember_full36_score_only_MT_bootstrap_v2'
+SCHEMA = 'ember_proposal_full36_normalized_flow_query16_v1'
+PANEL_ROLE_SCHEMA = 'ember_full36_practice14_query16_report16_v3'
 ALLOWLIST = (0, 1, 2, 4, 5, 7, 12, 13, 14, 15, 17, 19, 20, 21, 22, 25, 28, 29,
              32, 34, 35, 36, 37, 38, 42, 43, 51, 55, 56, 62, 64, 73, 95, 96, 97, 101)
 TASKS = ALLOWLIST
@@ -27,7 +27,7 @@ MT_PATH = Path('/data0/user/ymdai/ember_runs/coverage_retraining_20260920/traini
                '/checkpoints/step_00000300/lora.safetensors')
 OPTIMIZER = dict(lr=1e-4, betas=(.9, .95), eps=1e-8, weight_decay=1e-4)
 SELECTOR_SCHEMA = 'ember_full36_student_joint_conditional_continue_selector_v5'
-CHECKPOINT_SCHEMA = 'ember_full36_student_joint_conditional_continue_writer_v5'
+CHECKPOINT_SCHEMA = 'ember_full36_sender_normalized_flow_writer_v6'
 
 
 def seed(domain, *coordinates):
@@ -46,8 +46,8 @@ def materialize_panel(root=RUN_ROOT, *, selection_count=None, report_count=None)
                 or tuple(r['task_id'] for r in panel['tasks']) != TASKS):
             raise ValueError('registered full36 panel scope changed')
         return panel
-    if selection_count < 2 or selection_count % 2 or report_count <= 0 or selection_count + report_count >= 36:
-        raise ValueError('selection needs two equal nonempty folds and independent report states')
+    if (selection_count, report_count) != (16, 16):
+        raise ValueError('reused teacher selection/report panels must remain16/16')
     rows = []
     for task in TASKS:
         video = np.random.default_rng(seed(0, task)).permutation(50).tolist()
@@ -59,8 +59,11 @@ def materialize_panel(root=RUN_ROOT, *, selection_count=None, report_count=None)
             selection_folds=[selection[:selection_count//2], selection[selection_count//2:]],
             bootstrap_state_id=selection[0],bootstrap_noise_root=seed(4,task,selection[0]),
             teacher_report_states=init[selection_count:selection_count+report_count],
-            practice_states=[i for i in init[:36] if i not in init[selection_count:selection_count+report_count]],
-            query_states=init[36:46],local_query_states=init[36:46],rl_query_states=init[36:46],report_states=init[46:50],
+            practice_states=init[:14],query_count=16,
+            query_states=init[36:46]+init[14:16]+init[32:36],
+            local_query_states=init[36:46]+init[14:16]+init[32:36],
+            rl_query_states=init[36:46]+init[14:16]+init[32:36],report_states=init[46:50],
+            query_teacher_selection_overlap=init[14:16],query_independent_of_teacher_selection=False,
             practice_reuses_teacher_selection_training=True,local_RL_share_query_pool=True,
             rng_roots={role: seed(domain, task) for role, domain in
                        [('teacher', 2), ('practice', 3), ('selection', 4), ('teacher_report', 5),
@@ -71,7 +74,9 @@ def materialize_panel(root=RUN_ROOT, *, selection_count=None, report_count=None)
         information_wall='task/file/role metadata only; RGB and exact language are teaching',
         selection_uses=['teacher_selection'],selection_folds_are_historical_metadata=True,independent_report=False,
         bootstrap_uses=['MT_self_practice','G_initialization','student_bootstrap'],
-        teacher_report_uses=['independent_teacher_report'], teacher_report_excluded_from_H_and_gradient=True)
+        teacher_report_uses=['independent_teacher_report'], teacher_report_excluded_from_H_and_gradient=True,
+        query_uses=['train_credit','train_mechanism_readout'],query_count_per_parameter=16,
+        query_independent_of_condition_practice=True,query_independent_of_teacher_selection=False)
     if path.exists() and read_json(path) != panel:
         raise ValueError('pre-registered full36 panel changed')
     if not path.exists():

@@ -246,6 +246,7 @@ class CFMTrainer:
         runtime.G_sampler=dict(next_update=update+1,logical_batch=4,task_order=list(TASKS),
             task_weight=1/36,parent_weight='equal actual parent',H_weight='uniform within parent')
         metrics(root,stage,dict(update=update+1,events=records,logical_task_batch=logical_tasks(update),gradient_norm=float(norm),
+            meta_frame_chunk=runtime.generator.meta.frame_chunk,
             meta_gradient_norm=group_norms,seconds=time.monotonic()-tick,decoded_H_cache_entries=len(self.cache.items),
             supervision_version=runtime.supervision_version,
             phases={k:v-before.get(k,0.) for k,v in runtime.components.items()},

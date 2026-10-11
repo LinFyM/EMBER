@@ -75,8 +75,9 @@ class FactorLayout(nn.Module):
 
 class BlockLayer(nn.Module):
     """Bidirectional block→rank→target→rank→block communication."""
-    def __init__(self):
+    def __init__(self, *, normalize_messages=False):
         super().__init__()
+        self.normalize_messages = normalize_messages
         self.local_norm, self.rank_norm, self.target_norm = (nn.LayerNorm(256) for _ in range(3))
         self.ff = nn.Sequential(nn.Linear(256, 1024), nn.GELU(), nn.Linear(1024, 256))
         self.rank_query = nn.Parameter(torch.randn(256) / 16)
@@ -87,23 +88,29 @@ class BlockLayer(nn.Module):
     def forward(self, blocks, ranks, targets, group, memory):
         blocks = blocks + self.ff(self.local_norm(blocks))
         # Query-weighted pooling within each actual target/rank (A and B together).
-        scores = (self.local_norm(blocks) * self.rank_query).sum(-1).float() / 16
+        sender = self.local_norm(blocks)
+        scores = (sender * self.rank_query).sum(-1).float() / 16
         maxima = scores.new_full((ranks.numel() // 256,), -torch.inf).scatter_reduce_(0, group, scores, reduce='amax', include_self=True)
         weights = (scores - maxima[group]).exp()
         sums = weights.new_zeros(ranks.numel() // 256).index_add_(0, group, weights)
-        pooled = blocks.new_zeros((ranks.numel() // 256, 256)).index_add_(0, group, blocks * (weights / sums[group])[:, None].to(blocks))
+        values = sender if self.normalize_messages else blocks
+        pooled = blocks.new_zeros((ranks.numel() // 256, 256)).index_add_(0, group, values * (weights / sums[group])[:, None].to(blocks))
         ranks = ranks + pooled.reshape_as(ranks)
         q = self.rank_norm(ranks)
         ranks = ranks + self.rank_attention(q, q, q, need_weights=False)[0]
-        score = (self.rank_norm(ranks) * self.target_query).sum(-1).float() / 16
-        targets = targets + (score.softmax(-1)[..., None].to(ranks) * ranks).sum(1)
+        sender = self.rank_norm(ranks)
+        score = (sender * self.target_query).sum(-1).float() / 16
+        values = sender if self.normalize_messages else ranks
+        targets = targets + (score.softmax(-1)[..., None].to(ranks) * values).sum(1)
         q = self.target_norm(targets)[None]
         targets = targets + self.target_attention(q, q, q, need_weights=False)[0][0]
         if memory.numel():
             targets = targets + self.memory_attention(self.target_norm(targets)[None], memory[None],
                                                       memory[None], need_weights=False)[0][0]
-        ranks = ranks + targets[:, None]
-        context = torch.cat((ranks.flatten(0, 1)[group], targets[group // ranks.shape[1]]), -1)
+        target_message = self.target_norm(targets) if self.normalize_messages else targets
+        ranks = ranks + target_message[:, None]
+        rank_message = self.rank_norm(ranks) if self.normalize_messages else ranks
+        context = torch.cat((rank_message.flatten(0, 1)[group], target_message[group // ranks.shape[1]]), -1)
         return blocks + self.broadcast(context), ranks, targets
 
 
@@ -116,7 +123,7 @@ class FactorEncoder(nn.Module):
         self.input = nn.Linear(192 if flow else 128, 256)
         self.target_address, self.rank_address = nn.Embedding(38, 256), nn.Embedding(layout.factor_rank, 256)
         self.side_address, self.block_address = nn.Embedding(2, 256), nn.Embedding(32, 256)
-        self.layers = nn.ModuleList(BlockLayer() for _ in range(layers))
+        self.layers = nn.ModuleList(BlockLayer(normalize_messages=flow) for _ in range(layers))
         self.norm = nn.LayerNorm(256)
         if flow:
             self.output = nn.Linear(256, 64)

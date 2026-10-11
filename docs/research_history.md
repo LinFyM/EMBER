@@ -4971,3 +4971,22 @@ audit MT16/128、T16074、T48083；相邻R61/G22/L13，task29合计16→11，全
 本批预算记账18.640412104GPUh（定时18.602912104+.0375未定时诊断保守占用）、在途0；教师+读出3.832529h，实际峰6卡、GPU已释放。
 Owner允许MT合并基底+小rank修订，main优先rank8并确定首个G更新混合真实多parent/H；原全MT320+四parent刷新不再默认。
 八教师完整交付后由main定案下一实例/预算，不自动启动原G/π或把准备稿16教师/归一化/G480当launch授权；不等待Owner例行许可。
+
+
+### 2026-10-12 全36共同教师完整Writer首RL9闭环完成：147对强MT153
+
+[完整报告](analyses/video_guided_proposal_full36_writer_20261012.md)及findings§435保存旧ROOT全36 G216、首学生、warm36、
+九批真实R5/9theta+81psi（cursor297）和唯一RL9 correct strict400。全部登记job/动态queue完成，原EGL失败及费用保留。
+147/400对MT153，R145/G2/L8、churn10、breadth6；suite43/46/35/23对48/46/35/24，无suite或task净增。
+281最终MT引用原行，119选G子集MT43→37；187 singleton MT，其余last-final TV均值0.000528。
+
+目标E独立报告453/576对MT350；初始G首学生83/144对MT83、R74/G9/L9，末CFM近零场期望2。
+warm24/36条件同奖励，有限θ信用与后续final近均匀同时保留；parent/practice有偏移，joint loss因parent尺度不同不能与初始2直比。
+已有G216真实输运原件加强局部消息/归一化压制解释，不确认唯一根因；完整循环接通没有取得闭环增益。
+一CP、无视频/相邻对照，不据旧145阈值称资格，不把负结果当bug或普遍不可能。
+
+formal实际1,133适应episode、334,511步及119新增final query/35,339步，共369,850新增步；307真STOP、93外部/轮数边界。
+ROOT57.533346 allocation GPUh（strict40012.153929、六失败尝试1.278765已含），carry62.121703，总登记119.655049；
+独立G216诊断0.053786另列。当前ROOT首末job约12.165h，末recovery coordinator3.486h；共驻分配GPUh不称去重物理时长。
+资格读取/末训练1b44903d；G216/学生/warm来源db72ee91，EGL中间工程来源5c6bf6bb，v5/schema与全部原件/恢复点保留。
+新的发送端归一化/query16有限批为fa03656f fresh v6，已独立派发运行；本次旧负结果不自动扩Teacher或重开旧训练。

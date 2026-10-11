@@ -1,5 +1,6 @@
 > 2026-10-12 authority：本文件仍是唯一active design。当前新ROOT的唯一授权整批为§11的normalized-flow/query16有限批。
-> 下文原G216→warm36→joint9→strict400启动数字/数据角色只适用于旧full36_common_teacher的1b44903d冻结链；该在途链继续，
+> 下文原G216→warm36→joint9→strict400启动数字/数据角色只适用于旧full36_common_teacher的1b44903d冻结链；旧链已完整退出0，
+> RL9为147/400对MT153，完整结果见docs/analyses/video_guided_proposal_full36_writer_20261012.md；
 > 不将其课程自动恢复到新ROOT。未被§11覆盖的完整方法算子/信息墙继续有效。下一共同训练窗口由main消费本批后另登记。
 
 # 36任务目标教师、自身实践与交替共同学习：main执行合同

@@ -11382,3 +11382,24 @@ Owner再次纠正教师只需提供目标LoRA。共同E已给真实学生P/H提�
 可靠选择E的完整16-state闭环仍有标签消费者，不能把少存H夸成省掉选点评估。每task事前一条MT真实起步H足以启动当前MT-only G监督；它不覆盖任意parent，后续实际学生共同学习承担真实分布覆盖。
 初始学生与首RL visit0的固定MT query拥有同task/state/scene/env-policy RNG及official执行，path identity只命名，故可引用同一实际行；不同visit不能改seed来复用。保存source_row与原condition/episode身份，唯一费用不重计。
 退休数据依赖须同时删除消费代码和课程字段，不能用兼容teacher replay继续准备无消费者H；旧已写原件保持历史，不反向重标新合同。当前属于科学组织精简及等价复用，闭环能力和实测wall收益仍待实际结果。
+
+
+## 435. 全36共同E完整Writer未超强MT，生成与final排序缺口同时保留（2026-10-12）
+
+旧v5全链完成：G216/36首学生/warm36/联合9theta+81psi/唯一RL9 correct strict400均有实际完整消费者；
+最终147对MT153，R145/G2/L8、churn10、breadth同6，suite43/46/35/23对48/46/35/24。
+小幅交换与高度保留不是明显增益，不恢复历史145门槛；一CP、无邻近/视频controls，不能宣称完整方法或因果视频作用。
+
+共同E独立train/non-held报告453对350/576（27任务非MT）显示目标供给有操作增量，不能据此称教师充分或held可迁移。
+初始G已先失败控制传递：首候选83对83/144，固定condition oracle89；末全36 CFM块近task等权零场期望2。
+既有实际输运/消息累计诊断与其相符，但只加强局部信号受压解释，不确认唯一根因；不把final选错当唯一解释。
+
+warm有限真实信用：24/36 MT/G同奖励，梯度小且5次聚合为0。共同循环真实聚合216个prefix，query隔离/更新正确，
+仍不等于学会。train final TV均值0.000439、加权query期望86.582对均匀86.583；formal213个非singleton last-final TV均值0.000528。
+parent/practice有学习偏移，不能一并称整个Actor均匀；joint CFM随parent标签尺度变动，raw均值2.94475不自动表示退步。
+
+formal281选MT/119选G（后者子集43→37），187条件final仅MT支持；基底保留与弱final排序解释接近MT的形态，
+尚未完成生成弱与信用弱的唯一因果分解。真实1,133适应episode/369,850总新增环境步，没有超过MT；不称zero-interaction。
+此负证据降低旧完整方案的有效性支持，不通过无限续训、小扫或补全部controls维护假设。
+已登记单变量发送端归一化新批和query16信用修正独立继续；是否有效及怎样共同训练由新实际证据更新判断。
+原件与完整执行/成本/范围见docs/analyses/video_guided_proposal_full36_writer_20261012.md及旧ROOT/analysis/whole_completion_20261012。

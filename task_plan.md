@@ -9,7 +9,8 @@ static/Actor/Reader/meta/CFM目标及logical B4不变，全部共享参数/optim
 详细推导见docs/analyses/proposal_transport_and_query16_20261012.md，不复制第二份active合同。
 
 实验负责实现、实际消费者验证、集成push、clean detached、live双节点与data1独立quota、吞吐/显存安排和整批可靠回报。
-现旧1b44903d链已进入RL9 strict400，其合同与唯一退出回报者保持；新批只回报整批完成或真实失败，无子阶段心跳/自Queue。
+旧1b44903d链已完整退出0：RL9 paired400为147对MT153、R145/G2/L8；原退出事件已消费，结果一次交主讨论。
+新批仍只回报整批完成或真实失败，无子阶段心跳/自Queue；不因旧链完成自动加Teacher、旧probe或controls。
 已完成实际消费者/46项检查并集成push，冻结来源fa03656f。当前02整批实际运行；原01缺configs的导入失败已保留并修复。
 实测两卡逻辑B4：热步chunk16约14.52s、最长92帧约38.93s/26.10GiB reserved；G2卡后最多3卡首学生读出，预计2.1–5.5h。
 冻结physical chunk ceiling16并按live每rank余量承接16/8；整批37jobs完成及一次登记输运对照后交主讨论，不等world4。

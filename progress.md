@@ -1,3 +1,32 @@
+## 2026-10-12 03:44 旧完整链RL9/strict400完成，未取得超过MT信号
+
+旧ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/full36_common_teacher，recovery03实际退出0；
+原唯一退出事件/投递已消费。全81个窗口jobs及358个latest退出0，106个formal queue shard共400行已完成。
+实际400 task-state-video各唯一、每task50video各一次，scene/env与policy RNG配对，最终G不读教学、无评估梯度；
+旧v5/1b44903d消费者，未以canonical v6/query16代码读取旧schema。
+
+唯一RL9 joint checkpoint：147/400对强MT153，R145/G2/L8、churn10、success Jaccard0.935484，breadth均6/8。
+S/O/G/L为43/46/35/23，对MT48/46/35/24，无suite或task净增；不是大范围能力丢失，也没有当前所需明显闭环增益。
+281条件最终MT（原行复用），119条件G子集MT43→37；187条件final仅有MT支持，其余213的last-final TV均值0.000528。
+没有相邻稳定性/视频controls，不将147高于旧145门槛称资格，不以科学负结果开启工程修补。
+
+全36 G216各24次、首学生MT/G83/144（R74/G9/L9、fixed-condition oracle89）；末三全task loss块接近零场期望2。
+warm36每task4次、24/36条件同奖励；global梯度均值0.000293，5次为0。RL9实际36×R5、9theta/81psi，
+末cursor297、bank9/216真prefix，query712逻辑行=144MT引用+568直接行，未回填H。
+末行为86/144及train final期望86.582/均匀86.583不能当固定RL9成绩；parent/practice已有偏移，不能称整个Actor均匀。
+最早缺口已在初始G控制传递，后段final排序也弱；联合raw loss因P/label尺度变化不能直接对初始2判退步。
+
+formal实际1,133适应episode/334,511步、2,932候选；307真STOP/93边界，最终119新增query/35,339步，
+总新增369,850步。此方法有交互适应；281 MT final与400对照不重复计历史cost。
+ROOT allocation57.533346GPUh（strict40012.153929，六失败尝试1.278765已含），carry62.121703，总登记119.655049；
+独立G216诊断0.053786另列、不双计脚本内段。分配device-hours不能把共驻新旧root相加称独占物理时长。
+最后recovery wall3.486h；ROOT first-job至last约12.165h。详细原件、成本分项/源commit与恢复能力见
+[完整交付分析](docs/analyses/video_guided_proposal_full36_writer_20261012.md)，CPU原件ROOT/analysis/whole_completion_20261012。
+
+新normalized-flow/query16有限批仍按fa03656f冻结合同及唯一整批退出回报者继续，当前没有新闭环结论。
+不重复旧G/学生/warm/联合，不自动扩Teacher、补旧probe/相邻/controls；关键权重、full恢复CP、当前H与v5读取冻结树保留。
+本实验继续持canonical/Git窗口，完成本次记录push后向01a12bb0主讨论一次可靠旧整批交付；科学后继由main消费裁决。
+
 ## 2026-10-12 02:10 新有界批已集成并实际启动，冻结目录遗漏已恢复
 
 main/origin已集成推送fa03656fd61d26f69393fa2940cdea77a0ae441f；正式运行来自同commit的clean detached

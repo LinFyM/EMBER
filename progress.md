@@ -1,3 +1,11 @@
+## 2026-10-11 首个完整36共享窗口已定案并落地
+
+main最新§8已完整消费并整合唯一active design，保留旧历史/机制限制：G fresh216→同一首学生36→final warm36→完整9个B4/R5条件继续批；每批θ后ψ9，共81次，末G sampler297。
+仅RL9同一时点完整joint checkpoint作correct strict paired400，video_seed7/旧MT300153逐行参照；最多5修订、MT起步另计、外部环境6×官方episode，π可真STOP，未来预算不输入模型。无新训练report、预算矩阵或自动相邻续训。
+实际ROOT合同追加本次修订与旧pending字段，原teacher配置/面板/已完成更新/失败/费用不变；现有a3b5db54教师继续自然完成，后继使用新clean pushed detached消费者。
+G1–1.75h、首学生0.5–1.25h、warm5–10m、共同1.5–3.25h、首4003–7h是main据实际消费者冻结的外推范围；完整B4/all36 wall仍待正式首消费者校正，不机械维持旧1h或重置14:30数据时钟。
+实际CPU配置消费者已通过：216/36/9均完整task等权、每ψ块9覆盖36、末sampler297、36学生jobs；formal-prepare实际400 unique/每task50视频/最终初态排除/旧MT153全部通过，未加载held离线标签或采episode。原件ROOT/coordinator/first_shared_window/config_consumer.json。随后push/clean freeze并向main一次集成/接续成本回报；全科学实验继续，尚未宣称能力。
+
 ## 2026-10-11 必要物理成本consumer已退出：实际读数与配置取舍
 
 profile_physical_cost_04从3b042855 clean pushed detached于UTC11:01:50启动、11:18:59退出0，1029.813969秒/.286059435907GPUh，PID2017257已消失、分析额外卡已释放；不是超20分钟仍运行。16条既定重复query、零新实践，不扩比较矩阵。
@@ -6,7 +14,7 @@ MT-only单Long、71教学帧、104-record真实H的部分B4更新：chunk8/16暖
 当前真实path的冻结raw φ借入8GiB/最多2段缓存后，最长624-record/6-episode部分B4 ψ更新27.491265秒、26.090GiB，decode与raw重复计算均0；03的60.260876秒同时含19.415秒decode、12.288秒raw与不同chunk，不能把全部差归于单一缓存。实际H frozen raw占2.823GiB，旧2GiB必逐出；meta/θ编码仍每更新fresh。
 final warm旧合法MT/G、312-record三episode前缀部分B4为7.228746秒，引用既有query；并非新版两episode或完整B4吞吐。恢复φ预备12.370646秒另计，不算正常在线实践额外成本。以上旧E/尺度只用于成本，source无梯度，绝非新36学习/能力资格。
 01–04必要成本累计.746383341846GPUh含01/02失败与03恢复；UTC11:30结算全ROOT79.915078187137GPUh（carry62.121703224168、当前17.793374962969），在途教师未结另计、GPUh无硬限。精确原件在ROOT/profile_physical_cost_04/{consumer,comparison,billing_at_delivery,exit}.json。
-现有教师正常持续退出等待不轮询；下一步向main交这份实测/外推范围，由main冻结G初始化、唯一final warm、整36 joint窗口、ψ块与首paired400，未自动启动新版formal G/π。实验继续独占tracked/Git。
+现有教师正常持续退出等待不轮询；main已直接消费04并于UTC11:35冻结G216/local36/RL9、每θ后ψ9和首paired400；正在实际ROOT配置/消费者验证后clean freeze接续，尚无新版formal G/π更新。实验继续独占tracked/Git。
 
 ## 2026-10-11 完整成本链与有界等价复用
 

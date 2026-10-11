@@ -8,9 +8,9 @@
 然后完整R5固定ψ/θ采集→θ一次→登记实际P/H→ψ块→新批；后续visit重新实际MT起步，query与未来H墙保持。
 首RL visit0四条MT query引用初始学生兼容原行，最多144条无需新增episode；引用保留原condition/实际episode，不能改noise或把旧cost重计。
 教师score队列优先继续；旧合法rank8原件可作可丢弃G/R5端到端成本消费者，不能冒称本合同36覆盖/能力/exact-resume。
-G/π整数窗口、ψ块和formal400资格在真实成本后预登记；完整模型需strict paired400与强MT能力保持/视频证据。
-必要04成本已UTC11:18:59实际退出0并释放分析卡：MT-only暖partialB4为26.09秒/chunk16（26.06GiB），长H借用raw为27.49秒，同8query收齐ready波wall短2.38%且步数不同。全B4/36吞吐仍为外推，由main据原件登记整数；不追加profile矩阵。
-14:30授权与原20:30目标保留，旧无裁剪21:57预测是历史；新节省尚无实测，不先承诺提前。GPUh无硬cap，物理6/8/node6/data1 quota与256GiB峰值安排保持。
+main已于UTC11:35冻结G216（全36各24次）→首学生36→同pair final warm36（各4次）→联合RL9（每task一condition/实采R5），每次θ后ψ块9，最终G sampler297；唯一RL9 joint checkpoint做correct strict paired400、video_seed7、MT153逐行参照。
+必要04成本已UTC11:18:59实际退出0并释放分析卡：MT-only暖partialB4为26.09秒/chunk16（26.06GiB），长H借用raw为27.49秒，同8query收齐ready波wall短2.38%且步数不同。全B4/36吞吐仍为外推；整数已据原件冻结，不追加profile矩阵。
+14:30授权与原20:30目标保留，UTC09:24未裁剪bank22:11预测另列；G暂1–1.75h、学生0.5–1.25h、warm5–10m、联合1.5–3.25h、formal3–7h均为外推，由首正式消费者/已需shard校正，不新增训练报告矩阵。GPUh无硬cap，物理6/8/node6/data1 quota与256GiB峰值安排保持。
 
 以下为按时点保留的历史计划，不恢复其teacher-H、旧G课程或旧π矩阵。
 

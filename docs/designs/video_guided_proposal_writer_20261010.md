@@ -107,9 +107,45 @@ Owner允许退休旧架构无恢复/当前依赖的checkpoint和训练状态：�
 
 实验session可在上述已经定清的scope内自主完成工程、清理、完整检查、Git集成/push、freeze与launch；main负责及时消费实际吞吐确定尚未冻结的数字，不把重复人工ACK变成流水线等待。实现修改旧canonical路径，历史代码由冻结worktree/Git/原件保留，active tree一个运行面。
 
-正式评测的执行责任复用既有pi05_eval_queue（long-first、atomic claim及raw-row completion），每物理worker保留同一Runtime/共享checkpoint，compile_conditions与EpisodeRunner合批合法独立condition。queue面板/scene/RNG与最终初态排除不随物理卡数/condition chunk变化；MT选中结果引用既有逐行参照，查询仍不进H。实际batch按完整消费者吞吐/峰值选择，尚未测得的收益不声称已实现；没有第二套独立适应runner。
+## 8. 首个完整共享窗口与正式读出定案（2026-10-11 UTC11:33）
 
-## 8. 保留的实际计算与历史边界
+本节冻结此前待实测的整数，适用于当前全36共同E/自身H合同；不恢复历史G480/local128/RL16。main已直接消费3b042855的profile_physical_cost_04脚本、consumer及exit：实际UTC11:01:50–11:18:59退出0、1029.814秒/0.286059436 GPUh，分析例外设备已释放。先前因回报延后推断超时不成立，不作为故障或额外成本记录。
+
+### 8.1 实测与物理安排
+
+- 同一Long任务、104-record MT H、71-frame视频，部分B4的CFM热步：chunk8为27.083秒/18.061GiB reserved，chunk16为26.085秒/26.057GiB。只支持这台共享卡/该输入的约3.7%热步差；不是完整B4或全36实测。现场28,798MiB余量限制继续放大，不能宣称chunk32已测或最优。
+- 当前624-record H大小约2.823GiB，超过旧2GiB cache。借用同一path/冻结φ后，最长H的部分B4 ψ步27.491秒、image_observations=0；不再解压或重编码原始图像。它与03的60.261秒同时存在chunk/现场负载差异，不把全部差额归因一个改动。变化meta/θ/ψ表示仍fresh。
+- 同8-query面板、相同task/参数/初态/RNG，ready合批0→0.1秒，wall356.780→348.286秒；实际环境步3973→4200，需同时报告吞吐，不能当成相同执行步数。0.1秒安排实际多数native batch8，选择此物理安排，不依据这两次闭环分数选模型。native批量4/8/16的早期测量明显非平稳，不宣称4倍收益。
+- G优先使用已实测能缩短完整B4 wall的同节点4卡、logical B4不变；首launch现场没有4卡时用可立即运行且有效的拓扑，不等凑卡。frame chunk按真实显存选16或8，必要的更大物理安排比较由实验在当前授权内自决，不能因此再铺科学矩阵或阻止已就绪工作。每次启动保留实测峰值/余量和选择原因。
+- 独立环境worker在高余量设备沿已测slots16，低余量沿slots8；采用已验证的ready coalescing。持久模型/队列、多condition采集、frozen raw/context合法复用保持。共享optimizer常驻下的峰值不可用本次释放optimizer后的native峰值替代；按实际启动准入承接。
+
+### 8.2 冻结整数和数据消费者
+
+1. **G初始化216次完整logical B4更新**，即24遍全36任务、每task24个采样机会。全部E与指定MT H到齐、S_G一次固定后fresh；只在216保存当前阶段出口/完整恢复点，不用中间loss选点。旧合法G仅用于成本，不作为此训练初始化。
+2. **初始学生一次全36覆盖**：每task原顺序至首个valid G提案后实践，至多4个提案，沿既定失败处理，不按成功率补采。复用原MT H，同一个MT/G pair及query4供final warm与G bank；无额外教师H或uniform R5段。
+3. **final warm36次logical B4更新**，即4遍全36 task，只消费上述现成pair/查询。共享参数、optimizer及查询墙沿已实现合同，不新增损失/LR/seed搜索。
+4. **第一共同窗口9次logical B4更新**，即全部36 task各一条当前策略condition。每condition固定实采5轮；每批固定ψ/θ采集与独立query→θ一次→登记真实P/H→**ψ做9次CFM更新**→下一批重新采集。ψ块9是一次完整36-task均衡覆盖，避免只更新刚采到的4个task；task→parent→H原等权不变。整个窗口合计9次θ更新、81次ψ更新，G sampler由216接到297；不将全任务覆盖或一次采样当作收敛证明。
+5. **RL9是首个完整(ψ,θ)资格checkpoint**，保存两个optimizer、baseline、G/θ sampler、bank版本、全部rank RNG及拓扑。只用这一完整点进行首轮formal；不拼阶段最优G/π。此前学习路径上的query仅诊断既定机制，不挑共享checkpoint。
+
+首学生最多新增36次G实践及288条query；首共同窗口在兼容MT bootstrap/144条MT query引用后最多新增900个episode（180实践+720查询），别名/提前成功按实际计账。36条件仍各有完整五轮，引用不伪造新经历。没有新的训练诊断矩阵或独立无H/语言/多预算模型；消费已有实际query解释最早缺口。
+
+### 8.3 首个strict paired400
+
+RL9保存后运行唯一correct K1 validation400，与现有兼容MT300/153参照逐行配对；video_seed=7，8任务每task全部50合法视频一次、同state-video映射贯穿后续checkpoint。测试集保持关闭，适应排除该condition最终初态，最终反馈不进入H或更新。
+
+本次正式读出在已训练深度内预登记资源截止：MT起步最多一条官方episode，最多5次修订实践、外部环境步上界6×(该suite horizon+10)。π按真实parent/STOP分布决定是否继续，可在任何已完成节点提前交付一套LoRA，绝不强制部署跑满5轮；这个首批上界不成为永久方法轮数，也不新增轮数菜单。未来预算仍不输入π/baseline，外部资源终止与π主动STOP分开记录。
+
+第一400后main直接消费per-task/suite、R/G/L、breadth及原件。若有初步实质优势，再在同一科学合同下登记相邻完整窗口/CP检验稳定性；没有优势先定位教师供给、G传递、π选择或视频/H效用的最早缺口，不自动延长训练、调小参或重开架构。selected冻结后补必要same-task-other及视频controls；shuffle/reverse仍最后，不进模型选择。
+
+### 8.4 时间预期与接续
+
+216步G按当前共享卡26秒及历史实际四快卡约15.5秒/global B4，连同首次编码/启动暂估约1–1.75小时；新全36真实全局wall仍待首正式消费者校正。final warm按部分B4 7.23秒/现成3-episode prefix外推约5–10分钟，该prefix并非初始学生精确2-episode成本。
+
+首学生全36实践/查询暂估0.5–1.25小时；首共同9批按当前Long R5范围、20-query成本、36任务官方horizon及81次ψ更新外推约1.5–3.25小时。它明确可能超过早先“约1h共同窗口”的规划，不缩水任务或五轮。首400若都走到外部截止暂按约3–7小时安排；实际STOP、长短任务与多condition吞吐会改变wall，首完成shard再修订预测，不靠预先假定成功/早停压低预算。这些是有出处的范围预测，不是全36或formal400已测结果；数据bank/独立教师报告的现行ETA另列，不重置14:30数据准备时钟。
+
+实验session据本节直接完成必要合同/配置消费者、集成push、clean detached及真实依赖接续，无需main逐项ACK。既有有效教师工作/原件不重跑，独立报告与就绪共享阶段并行遵守总卡数。完成方法/效率goal并不声称EMBER能力已证明；正式整批结果或真实边界仍按既定可靠消息回main，main承担科学消费与后继选择。
+
+## 9. 保留的实际计算与历史边界
 
 当前canonical实现为 `src/ember/proposal_writer/`。双meta各18层q/v rank32/alpha32/dropout0，seed202610101/102；教学读取原source双RGB/exact L、stride5、50×32固定probe1729/time1/state-free。Gemma finalnorm contextual前512图像位、raw frozen合法语言embedding及action finalnorm H均有G消费者，source冻结；实际任务执行关闭meta并用MT合并基底+唯一38/r8。
 G保留完整ξ/time、64数值块、block/rank/target通信、6层width256/FF1024与16Euler；meta及全部G编码/归一化/速度网络归ψ，π独立下游Reader/trunk/heads归θ。π采集及对应θ更新冻结全部ψ，跨批由登记CFM块更新ψ；不用θ可训练embedding改变G核。源raw量可有界缓存，变化meta输出跨更新失效。
@@ -117,7 +153,7 @@ G保留完整ξ/time、64数值块、block/rank/target通信、6层width256/FF10
 旧四task/逐H-Q/空H/1024与rank8 bank/G240/G480只作为原Git/冻结代码/正式原件的历史身份；新版不用旧G optimizer恢复、不执行旧π/报告，不重写旧成本或数据留出。
 
 
-## 9. 共同目标的已知限制与等价计算复用
+## 10. 共同目标的已知限制与等价计算复用
 
 共同E让监督E−P确定；CFM可拟合单目标，旧多模态/避免均值/随机性自然带来有益探索论证不再适用。
 不造多个弱E，不新增回归/采样数臂。当前有界生成的控制传递及完整循环证据裁决后续，参数差异不等于探索收益。

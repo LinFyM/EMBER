@@ -59,7 +59,7 @@ def critical_path_costs(jobs):
 
 
 def initial_jobs(microbatch,slots,teacher_devices,*,root=RUN_ROOT,teacher_update_seconds=None):
-    """One continuous teacher/task, while released checkpoint readouts run independently."""
+    """Read each complete selection panel before the next teacher segment."""
     contract=json.loads((Path(root)/'run_contract.json').read_text())
     nodes=contract['teacher']['readout_updates'];specs={r['global_task_id']:r for r in contract['environment']['tasks']}
     jobs=[]
@@ -72,11 +72,11 @@ def initial_jobs(microbatch,slots,teacher_devices,*,root=RUN_ROOT,teacher_update
                 jobs.append(Job(identity,['teacher','--task',str(task),'--microbatch',str(microbatch),'--stop',str(node)],
                     () if predecessor is None else (predecessor,),15+updates*UNMEASURED_TEACHER_SECONDS,
                     tuple(teacher_devices),estimates,required_free_MiB=18000))
-                predecessor=identity
             readout=f'readout_{task:04d}_{node:08d}';readouts.append(readout)
             seconds=15+contract['teacher']['selection_H_per_node']*31.335*specs[task]['horizon']/520
             jobs.append(Job(readout,['readout','--task',str(task),'--stop',str(node),'--slots',str(slots)],
-                () if node==0 else (predecessor,),seconds,required_free_MiB=18000))
+                () if node==0 else (identity,predecessor),seconds,required_free_MiB=18000))
+            predecessor=readout
         seconds=15+2*contract['teacher']['report_per_arm']*31.335*specs[task]['horizon']/520
         jobs.append(Job(f'teacher_report_{task:04d}',['teacher-report','--task',str(task),'--slots',str(slots)],
             tuple(readouts),seconds,required_free_MiB=18000,bank_priority=1))
@@ -274,8 +274,49 @@ class Batch:
             if set(dependencies)<=done:
                 free.append(device);del deferred[device]
 
+    def _saturated_omissions(self,pending,done,omitted,checked):
+        from ember.pi05_source_checkpoint import read_json,write_json_atomic
+        contract=read_json(self.root/'run_contract.json')
+        if contract.get('teacher',{}).get('saturation_stop')!=16:return
+        nodes=contract['teacher']['readout_updates']
+        for identity in sorted(done-checked):
+            if not identity.startswith('readout_'):continue
+            _,task_text,node_text=identity.split('_');task,node=int(task_text),int(node_text)
+            directory=self.root/'teachers'/f'task_{task:04d}'/'selection'
+            paths=[directory/f'update_{u:08d}'/'complete.json' for u in nodes if u<=node]
+            if not all(p.exists() for p in paths):continue
+            records=[read_json(p) for p in paths]
+            if any(not r['complete'] or len(r['rows'])!=16 for r in records):continue
+            checked.add(identity)
+            saturated=[u for u,r in zip((u for u in nodes if u<=node),records,strict=True)
+                       if sum(bool(row['success']) for row in r['rows'])==16]
+            if not saturated:continue
+            winner=min(saturated);file=self.root/'scientific_omissions'/f'task_{task:04d}.json'
+            old=read_json(file) if file.exists() else dict(omitted_jobs=[])
+            skipped=[key for key in pending if key.startswith((f'teacher_{task:04d}_',f'readout_{task:04d}_'))
+                     and int(key.split('_')[-1])>winner]
+            for key in skipped:del pending[key]
+            omitted.update(skipped);omitted.update(old['omitted_jobs'])
+            write_json_atomic(file,dict(task=task,reason='selection_saturated',selection_successes=16,
+                selection_rows=16,incumbent_update=winner,all_earlier_candidates_complete=True,
+                complete_selection_source=str(directory/f'update_{winner:08d}'/'complete.json'),
+                omitted_jobs=sorted(set(old['omitted_jobs'])|set(skipped)),new_work_not_started=True,
+                prior_attempts_and_actual_scores_preserved=True,
+                in_flight_jobs_not_interrupted=True,existing_late_checkpoint_weights_retained=True))
+
+    def _dispatch_ready(self,executor,pending,free,settled,failures,futures):
+        costs=critical_path_costs(pending)
+        ready=sorted((j for j in pending.values() if set(j.dependencies)<=settled),
+                     key=lambda j:(j.bank_priority,-costs[j.identity]))
+        for job in ready:
+            eligible=self.allocation(job,free)
+            if eligible is None or any(not isinstance(e,DeviceWorkloadFailure) for e in failures):continue
+            for d in (eligible if isinstance(eligible,list) else [eligible]):free.remove(d)
+            del pending[job.identity]
+            futures[executor.submit(self.execute,job,eligible)]=eligible
+
     def run(self, jobs, *, deferred_devices=None, on_completion=None):
-        pending={job.identity:job for job in jobs};done=set();failures=[]
+        pending={job.identity:job for job in jobs};done=set();omitted=set();checked=set();failures=[]
         external=set().union(*(job.dependencies for job in jobs))-pending.keys()
         deferred=dict(deferred_devices or {})
         if not set(deferred)<=set(self.devices):raise ValueError('deferred devices must belong to this batch')
@@ -283,26 +324,20 @@ class Batch:
             file=self.root/'jobs'/identity/'latest.json'
             if file.exists() and read_exit(file)==0:
                 done.add(identity);del pending[identity]
+        self._saturated_omissions(pending,done,omitted,checked)
         if on_completion:on_completion(done)
         with ThreadPoolExecutor(max_workers=len(self.devices)+1) as executor:
             futures={};free=[d for d in self.devices if d not in deferred]
             if external:futures[executor.submit(dependency_completion,self.root,external)]=None
             while pending or futures:
                 self._release_deferred_devices(deferred,done,free)
-                costs=critical_path_costs(pending)
-                ready=sorted([j for j in pending.values() if set(j.dependencies)<=done],
-                             key=lambda j:(j.bank_priority,-costs[j.identity]))
-                for job in ready:
-                    eligible=self.allocation(job,free)
-                    if eligible is None or any(not isinstance(e,DeviceWorkloadFailure) for e in failures):continue
-                    for d in (eligible if isinstance(eligible,list) else [eligible]):free.remove(d)
-                    del pending[job.identity]
-                    futures[executor.submit(self.execute,job,eligible)]=eligible
+                self._dispatch_ready(executor,pending,free,done|omitted,failures,futures)
                 if not futures:
                     if failures:break
                     raise RuntimeError('pending jobs have missing dependencies')
                 completed,_=wait(futures,return_when=FIRST_COMPLETED)
                 self._consume_completions(completed,futures,executor,done,external,free,failures)
+                self._saturated_omissions(pending,done,omitted,checked)
                 if on_completion:on_completion(done)
             if failures:
                 raise RuntimeError('batch engineering/budget failure: '+ '; '.join(map(str,failures)))
@@ -318,13 +353,16 @@ def teacher_bank_ready(root, done):
     contract=read_json(root/'run_contract.json');nodes=contract['teacher']['readout_updates']
     for task in TASKS:
         directory=root/'teachers'/f'task_{task:04d}'
-        if not (directory/'E.json').exists() and all(f'readout_{task:04d}_{node:08d}' in done for node in nodes):
+        omission=root/'scientific_omissions'/f'task_{task:04d}.json'
+        skipped=set(read_json(omission)['omitted_jobs']) if omission.exists() else set()
+        if not (directory/'E.json').exists() and all(f'readout_{task:04d}_{node:08d}' in done|skipped for node in nodes):
             select_teacher(root,task)
     if not all((root/'teachers'/f'task_{task:04d}'/'E.json').exists() for task in TASKS):return
     scale=freeze_bank_scale(root)
     pending=[task for task in TASKS if f'teacher_report_{task:04d}' not in done]
+    entries=[read_json(root/'teachers'/f'task_{t:04d}'/'E.json') for t in TASKS]
     write_json_atomic(root/'bank_ready.json',dict(complete=True,task_count=len(TASKS),
-        parent_count=len(TASKS)*len(nodes),history_episodes=len(TASKS)*len(nodes)*contract['teacher']['selection_H_per_node'],
+        parent_count=sum(len(e['parents']) for e in entries),history_episodes=sum(len(p['histories']) for e in entries for p in e['parents']),
         ready_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),bank_scale=str(root/'bank_scale.json'),
         scale_source_count=len(scale['sources']),independent_teacher_report_pending_tasks=pending,
         reports_not_used_for_E_or_scale=True))
@@ -360,13 +398,6 @@ def stage_jobs(root,stage,*,microbatch,slots,teacher_devices,estimates,shared_gp
         checkpoint=root/'checkpoints/G'/f"update_{contract['student_refresh']['G_update']:08d}"
         for task in TASKS:jobs.append(Job(f"student_{contract['student_refresh']['version']}_{task:04d}",
             ['student-data','--task',str(task),'--checkpoint',str(checkpoint),'--slots',str(slots)],estimate_seconds=seconds))
-    elif stage=='local-data':
-        checkpoint=root/'checkpoints/G'/f"update_{contract['fixed_G_update']:08d}"
-        for task in TASKS:
-            for ordinal in range(contract['local_supervision']['G_conditions_per_task']):
-                jobs.append(Job(f"local_data_{contract['local_data_version']}_{task:04d}_{ordinal:03d}",
-                    ['local-data','--task',str(task),'--condition-ordinal',str(ordinal),'--checkpoint',str(checkpoint),
-                     '--slots',str(slots)],estimate_seconds=seconds))
     elif stage=='training-report':
         for name,update in contract['training_report']['versions']:
             checkpoint=root/'checkpoints'/name/f'update_{update:08d}'
@@ -388,7 +419,7 @@ def stage_jobs(root,stage,*,microbatch,slots,teacher_devices,estimates,shared_gp
 def main():
     import argparse
     parser=argparse.ArgumentParser()
-    parser.add_argument('stage',choices=['teacher-data','teacher-reports','G','student-data','local-data','local','RL','training-report','formal'])
+    parser.add_argument('stage',choices=['teacher-data','teacher-reports','G','student-data','local','RL','training-report','formal'])
     parser.add_argument('--shared-gpus',type=int)
     parser.add_argument('--stop',type=int)
     parser.add_argument('--bank-only',action='store_true',help='prepare E/H first; reports use their independently frozen consumer')

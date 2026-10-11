@@ -11364,3 +11364,13 @@ main根据Owner反馈撤回一次刷新后整个π阶段永久固定G的组织�
 π梯度仍不能修复冻结核；ψ获得的是共同E参数CFM监督，未声称完整成功率PG、环境可微或收敛。
 新增学生覆盖与实际纠错/H因果增量分开判断，不只留最终成功节点、不人工设计固定五段端点。
 联合完整checkpoint和前缀索引同时保留ψ/θ optimizer/RNG、数据/kernel版本；参数/H继续是G依赖，不能先退休再补造。
+
+## 433. 精简必须保留真实消费者与信息墙，完整选择饱和不等于数据分布不变（2026-10-11）
+
+Owner整体合理性/效率goal要求main科学判断与实验真实工程合作，不能以模块少、CPU检查或理论峰值宣称最高效率。
+共同E提供密集控制器端点；CFM并未由此获得多模态必要性，H/V捷径与参数误差到闭环误差的鸿沟保留。旧functional360为143/400对MT153，约1e-8的实际修订负证据不能由改名清除；直接参数监督改变梯度消费者，尚无能力成功结论。
+相同ψ/parent/V/H的G条件可一次供多个ξ；实际action-only task targets允许原source Gemma prefix跨候选复用。Reader逐query独立且dropout0，可合批event/video K/V，θ/ψ变化后learned编码须失效；训练不能detach共享图。语言量仍是raw frozen embedding。
+一份实际首学生MT/G参数/H既供final热身又供G bank，无独立消费者的额外uniform R5与第二段G-only退休；后继真实R5承担新多轮分布和全部head信用，删数据不意味着这些能力已会。
+固定16-row selection中完整16/16且更早候选全已读出，max-success/earliest-tie的E已确定，未来未启动训练/readout可科学省略。未做分数不填，inflight自然保存，不将部分行或低分作停止证据。
+这一裁剪保持有限面板E规则，确实改变初始G parent/H覆盖；只MT的task可合法进入，实际parent等权、SG由实际全36池固定，学生持续反馈补自身访问分布而不自动证明H增量。完整teacher独立报告/query墙不变。
+实际吞吐/内存/生成控制传递仍需消费者；π不能在固定ψ的当批修补G，跨批CFM学生标签才更新修订规则。未来唯一联合checkpoint/正式paired400与视频/相邻证据裁决投入，不拼局部通过。

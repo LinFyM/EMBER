@@ -101,6 +101,7 @@ def test_frozen_response_cache_keeps_fresh_actor_gradient():
             return self.weight*responses['MT300'][0,:1]
     class Runtime:
         def __init__(self):
+            self.components={}
             self.device=torch.device('cpu');self.actor=Reader();self.calls=0
             self.tasks={12:SimpleNamespace(authority=SimpleNamespace(language='real target language'))}
         def observation_features(self,observations):return {}
@@ -237,8 +238,8 @@ def test_common_teacher_dependencies_and_same_node_shared_allocation(tmp_path):
         environment=dict(tasks=[dict(global_task_id=t,horizon=400 if t>=40 else 520) for t in TASKS])))
     jobs={j.identity:j for j in initial_jobs(28,16,[('gpu01',1)],root=tmp_path)}
     assert len(jobs)==360
-    assert jobs['teacher_0012_00000400'].dependencies==('teacher_0012_00000200',)
-    assert jobs['readout_0012_00000200'].dependencies==('teacher_0012_00000200',)
+    assert jobs['teacher_0012_00000400'].dependencies==('readout_0012_00000200',)
+    assert jobs['readout_0012_00000200'].dependencies==('teacher_0012_00000200','readout_0012_00000000')
     assert not jobs['readout_0012_00000000'].dependencies
     assert len(jobs['teacher_report_0012'].dependencies)==5
     assert not any('100'==j.arguments[j.arguments.index('--stop')+1] for j in jobs.values() if '--stop' in j.arguments)
@@ -261,6 +262,42 @@ def test_batch_prioritizes_unlocking_chain_and_measured_device(tmp_path,monkeypa
     assert launches==['seed','collect','late','leaf']
     measured=batch.Job('measured',[],estimate_seconds=20,device_estimates={('gpu01',5):10})
     assert batch.Batch.allocation(measured,[('gpu01',1),('gpu01',5)])==('gpu01',5)
+
+
+def test_complete_saturation_prunes_future_jobs_without_faking_completion(tmp_path,monkeypatch):
+    from ember.proposal_writer import batch
+    from ember.pi05_source_checkpoint import read_json,write_json_atomic
+    monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed' if command[1]=='rev-parse' else '')
+    for successes in (15,16):
+        root=tmp_path/str(successes)
+        write_json_atomic(root/'run_contract.json',dict(teacher=dict(saturation_stop=16,readout_updates=[0,200,400])))
+        completed_teacher='teacher_0012_00000200'
+        write_json_atomic(root/'jobs'/completed_teacher/'latest.json',dict(exit_code=0))
+        coordinator=batch.Batch(root,[('gpu01',1)],root=root);launches=[]
+        def execute(job,device):
+            launches.append(job.identity)
+            if job.identity.startswith('readout_'):
+                update=int(job.identity.split('_')[-1])
+                write_json_atomic(root/'teachers/task_0012/selection'/f'update_{update:08d}/complete.json',
+                    dict(complete=True,rows=[dict(success=i<successes) for i in range(16)]))
+            return job.identity
+        monkeypatch.setattr(coordinator,'execute',execute)
+        jobs=[batch.Job('readout_0012_00000000',[],estimate_seconds=2),
+              batch.Job(completed_teacher,[],('readout_0012_00000000',),2),
+              batch.Job('readout_0012_00000200',[],(completed_teacher,'readout_0012_00000000'),2),
+              batch.Job('teacher_0012_00000400',[],('readout_0012_00000200',),2),
+              batch.Job('readout_0012_00000400',[],('teacher_0012_00000400','readout_0012_00000200'),2),
+              batch.Job('teacher_report_0012',[],tuple(f'readout_0012_{u:08d}' for u in (0,200,400)),2)]
+        done=coordinator.run(jobs)
+        assert completed_teacher in done and completed_teacher not in launches
+        if successes==16:
+            assert launches==['readout_0012_00000000','teacher_report_0012']
+            omission=read_json(root/'scientific_omissions/task_0012.json')
+            assert omission['incumbent_update']==0 and omission['selection_rows']==16
+            assert not set(omission['omitted_jobs'])&set(done)
+            assert not (root/'teachers/task_0012/selection/update_00000200/complete.json').exists()
+        else:
+            assert len(launches)==5 and not (root/'scientific_omissions/task_0012.json').exists()
 
 
 def test_located_device_failure_keeps_independent_work_and_blocks_descendant(tmp_path,monkeypatch):
@@ -324,6 +361,7 @@ def test_conditional_parent_uses_complete_logits_and_exact_normalization():
     from ember.writer.practice import History
     class Runtime:
         device=torch.device('cpu')
+        components={}
         tasks={12:SimpleNamespace(authority=SimpleNamespace(language='legitimate language'))}
         def observation_features(self,observations):return {}
         def responses(self,*args,**kwargs):return {}
@@ -381,13 +419,17 @@ def test_five_real_continue_rounds_stop_deployment_and_branch_rng(monkeypatch,tm
     from ember.writer.practice import History
     class Runner:
         environment_steps=0
-        def run(self,requests):
-            for request in requests:
+        def run(self,requests,*,on_completion=None):
+            pending=list(requests)
+            while pending:
+                request=pending.pop(0)
                 self.environment_steps+=20;episode=dict(environment_steps=20,init_state_id=request['state_id'],success=False)
                 key=request['episode_id'];record=dict(pre=key,post=key,parameter_ref=request['parameter_ref'],
                     feedback=torch.zeros(5),episode=0)
                 history=History(records=[record],observations={key:{}},episodes=[episode],states={request['parameter_ref']:request['state']})
-                yield dict(row=episode,history=history,request=request)
+                output=dict(row=episode,history=history,request=request)
+                if on_completion:pending.extend(on_completion(output))
+                yield output
     class Runtime:
         psi_frozen=True;root=tmp_path;device=torch.device('cpu');components={};mt={'factor':torch.ones(1)}
         tasks={12:SimpleNamespace(authority=SimpleNamespace(language='correct language'))}
@@ -415,6 +457,13 @@ def test_five_real_continue_rounds_stop_deployment_and_branch_rng(monkeypatch,tm
     assert [(d['kind'],d['selected']) for d in first.decisions if d['kind']!='final']==[(d['kind'],d['selected']) for d in second.decisions if d['kind']!='final']
     deployed=owner.compile_condition(Runtime(),Runner(),task,panel,0,**keywords)
     assert deployed.completed_rounds==0 and len(deployed.history.episodes)==1 and deployed.selected=='MT300'
+    specifications=[dict(task=task,panel=panel,demo=0,conditional_continue=True,**{**keywords,'identity':name}) for name in ('a','b')]
+    together=owner.compile_conditions(Runtime(),Runner(),specifications)
+    assert [p.identity for p in together]==['a','b']
+    for path in together:
+        assert path.completed_rounds==5 and len(path.history.episodes)==6
+        assert [(d['kind'],d['selected']) for d in path.decisions]==[(d['kind'],d['selected']) for d in second.decisions]
+        assert path.timings['shared_compilation_group']['simultaneous_conditions']==2
 
 
 def test_query_labels_cached_once_and_never_added_to_history(tmp_path):
@@ -438,13 +487,18 @@ def test_query_labels_cached_once_and_never_added_to_history(tmp_path):
     assert all(request['parameter_ref']!='unpracticed' for request in runner.requests)
 
 
-def test_native_absolute_response_cross_head_reuse_and_support_invalidation():
+def test_native_absolute_response_cross_head_reuse_and_support_invalidation(monkeypatch):
     from contextvars import ContextVar
     from ember.proposal_writer.runtime import Runtime
     runtime=Runtime.__new__(Runtime);runtime.device=torch.device('cpu');runtime.root=Path('/data1/test_only')
     runtime.response_microbatch=16;runtime.components=dict(response_seconds=0.,response_observations=0,response_cache_hits=0)
     runtime.execution=SimpleNamespace(expert_active=ContextVar('expert',default=False))
     runtime.generator=SimpleNamespace(meta=SimpleNamespace(active=ContextVar('meta',default=None)))
+    runtime.lora=SimpleNamespace(targets=[SimpleNamespace(name='model.gemma_expert.layer')])
+    prefixes=[]
+    from ember.proposal_writer import runtime as owner
+    monkeypatch.setattr(owner,'NativeVelocity',lambda *args,**kwargs:prefixes.append(1) or object())
+    runtime.policy=object()
     calls=[]
     def native(states,batch,noise,**kwargs):
         calls.append(1);return torch.full((2,5,7),float(states[0]['value']))
@@ -456,10 +510,10 @@ def test_native_absolute_response_cross_head_reuse_and_support_invalidation():
     runtime.responses({'MT300':states['MT300']},history,'exact language',absolute_cache=cache)
     practice=runtime.responses(states,history,'exact language',parent='MT300',absolute_cache=cache)
     final=runtime.responses(states,history,'exact language',absolute_cache=cache)
-    assert len(calls)==2 and torch.all(practice['G'][:,35:]==4) and torch.all(final['G'][:,35:]==0)
+    assert len(calls)==2 and len(prefixes)==1 and torch.all(practice['G'][:,35:]==4) and torch.all(final['G'][:,35:]==0)
     records[0]['noise_seed']=8
     runtime.responses(states,history,'exact language',absolute_cache=cache)
-    assert len(calls)==4
+    assert len(calls)==4 and len(prefixes)==2
 
 
 def test_joint_bank_retains_parameters_and_excludes_future_prefixes(tmp_path):

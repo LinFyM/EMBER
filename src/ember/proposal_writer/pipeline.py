@@ -5,7 +5,6 @@ from pathlib import Path
 import time
 
 import torch
-from safetensors.torch import save_file
 
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.pi05_source_setup import initialize_deferred_process_group
@@ -13,8 +12,8 @@ from ember.pi05_source_setup import initialize_deferred_process_group
 from .contract import TASKS,OPTIMIZER,seed,CHECKPOINT_SCHEMA,SELECTOR_SCHEMA
 from .learning import (Baseline,CFMTrainer,train_cfm,train_local,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
-from .path import compile_condition,evaluate_fixed,restore_compilation,save_history
-from .supervision import panels,bootstrap_source,query_once,LocalExamples,register_students
+from .path import compile_condition,compile_conditions,evaluate_fixed,restore_compilation
+from .supervision import panels,bootstrap_source,query_once,query_conditions,LocalExamples,register_students
 
 
 def load_version(runtime,directory,*,fixed_psi=True):
@@ -50,50 +49,55 @@ def refresh(args,runtime,runner,environment):
     panel=panels(args.root)[args.task];task=task_spec(environment,args.task)
     destination=args.root/'student_data'/version/f'task_{args.task:04d}'
     if (destination/'parent.json').exists():return
-    history,source=bootstrap_source(args.root,args.task,panel,0,HistoryCache())
-    path=compile_condition(runtime,runner,task,panel,panel['policy_videos'][0],identity=destination.name,
-        path_ordinal=0,noise_root=seed(9,args.task),max_rounds=1,uniform=True,student_only=True,
-        bootstrap_history=history,bootstrap_provenance=source)
+    if (destination/'path.json').exists():path=restore_compilation(destination,runtime)
+    else:
+        history,source=bootstrap_source(args.root,args.task,panel,0,HistoryCache())
+        path=compile_condition(runtime,runner,task,panel,panel['policy_videos'][0],identity=destination.name,
+            path_ordinal=0,noise_root=seed(9,args.task),max_rounds=1,uniform=True,student_only=True,
+            bootstrap_history=history,bootstrap_provenance=source)
+        path.save(destination,retain_U=True)
     if path.completed_rounds!=1:raise ValueError('student refresh needs one real complete G-produced episode')
-    destination.mkdir(parents=True,exist_ok=True);path.save(destination,retain_U=True)
     actual=path.boundaries[-1]['actual_parameter_ref']
-    weight_path=destination/'parent.safetensors';save_file(path.states[actual],str(weight_path))
-    # Real mixed H (MT then G) retains both actual producers; final E is unchanged.
-    history_path=destination/'parent.history.pt.gz';save_history(history_path,path.history)
+    weight_path=destination/f'{actual}.safetensors'
+    history_descriptor=dict(path=str(destination/'history.pt.gz'),records=len(path.history.records),episodes=len(path.history.episodes))
+    rewards=query_once(runtime,runner,path,task,panel,0,destination/'query')
     E=read_json(args.root/'teachers'/f'task_{args.task:04d}'/'E.json')
     write_json_atomic(destination/'parent.json',dict(complete=True,task=args.task,version=version,
-        parent=dict(reference=f'{version}_task_{args.task:04d}_{actual}',weights=str(weight_path),histories=[str(history_path)]),
+        parent=dict(reference=f'{version}_task_{args.task:04d}_{actual}',weights=str(weight_path),histories=[history_descriptor]),
         actual_generated_parameter_ref=actual,common_E_reference=E['reference'],common_E_weights=E['weights'],
         actual_producer_refs=list(path.history.states),fixed_scale_reestimated=False,
         first_valid_candidate_in_chronological_order=True,selection_did_not_use_reward_or_query=True,
-        kernel_identity=path.kernel_identity,timings=path.timings))
+        kernel_identity=path.kernel_identity,timings=path.timings,query_rewards=rewards,
+        warmstart_source='same actual MT/G pair; no additional uniform R5 collection'))
 
 
-def local_data(args,runtime,runner,environment):
-    run=fixed_G(args,runtime);version=run['local_data_version']
-    task=task_spec(environment,args.task);panel=panels(args.root)[args.task]
-    count=run['local_supervision']['G_conditions_per_task']
-    ordinals=range(count) if args.condition_ordinal is None else [args.condition_ordinal]
-    cache=HistoryCache()
-    for ordinal in ordinals:
-        if ordinal not in range(count):raise ValueError('local condition outside registered panel')
-        destination=args.root/'local_data'/version/f'task_{args.task:04d}_condition_{ordinal:03d}'
-        if (destination/'local_labels.json').exists():continue
-        tick=time.monotonic()
-        if (destination/'path.json').exists():path=restore_compilation(destination,runtime)
+def collect_batch(args,runtime,runner,environment,context,baseline,update,cache):
+    """One fixed theta/psi batch shares the persistent official environment workers."""
+    tick=time.monotonic();visit=update//9;panel_by_task=panels(args.root);entries=[];missing=[]
+    rounds=read_json(args.root/'run_contract.json')['selector_training']['rounds']
+    for task_id in assigned_tasks(context,update):
+        task=task_spec(environment,task_id);panel=panel_by_task[task_id]
+        destination=args.root/'RL_paths'/f'update_{update+1:06d}_task_{task_id:04d}'
+        entry=dict(task=task,panel=panel,destination=destination,path=None);entries.append(entry)
+        if (destination/'path.json').exists():
+            if read_json(destination/'batch_identity.json')['kernel_identity']!=runtime.fixed_kernel_identity:
+                raise ValueError('saved path has a different behavior theta or generation kernel')
+            entry['path']=restore_compilation(destination,runtime)
         else:
-            history,source=bootstrap_source(args.root,args.task,panel,ordinal,cache)
-            path=compile_condition(runtime,runner,task,panel,panel['policy_videos'][ordinal%4],identity=destination.name,
-                path_ordinal=ordinal,noise_root=seed(6,args.task,ordinal),max_rounds=run['selector_training']['rounds'],
-                uniform=True,bootstrap_history=history,bootstrap_provenance=source)
-            path.save(destination,retain_U=True)
-        rewards=query_once(runtime,runner,path,task,panel,ordinal,destination/'query')
-        prefixes=[dict(records=node['records'],episodes=node['episodes'],practiced=node['candidates'],
-                       reward={ref:rewards[ref] for ref in node['candidates']}) for node in path.outputs]
-        write_json_atomic(destination/'local_labels.json',dict(complete=True,task=args.task,condition=path.identity,
-            prefixes=prefixes,query_excluded_from_H=True,sampling_identity=path.sampling_identity,
-            supervised_collection_not_on_policy=True,end_to_end_seconds=time.monotonic()-tick,
-            compilation_timings=path.timings,components=dict(runtime.components),process_GPU_peak=memory_peak(runtime.device)))
+            history,source=bootstrap_source(args.root,task_id,panel,visit,cache)
+            missing.append((entry,dict(task=task,panel=panel,demo=panel['policy_videos'][visit%4],identity=destination.name,
+                path_ordinal=visit,noise_root=seed(7,task_id,visit),max_rounds=rounds,conditional_continue=True,
+                baseline=baseline,bootstrap_history=history,bootstrap_provenance=source)))
+    generation_tick=time.monotonic()
+    for (entry,_),path in zip(missing,compile_conditions(runtime,runner,[spec for _,spec in missing]) if missing else [],strict=True):
+        entry['path']=path;path.save(entry['destination'],retain_U=True)
+        write_json_atomic(entry['destination']/'batch_identity.json',dict(theta_next_update=update,
+            checkpoint=str(args.checkpoint.resolve()),schema=SELECTOR_SCHEMA,current_fixed_theta=True,
+            kernel_identity=runtime.fixed_kernel_identity))
+    collection_seconds=time.monotonic()-generation_tick;query_tick=time.monotonic()
+    rewards=query_conditions(runtime,runner,[(e['path'],e['task'],e['panel'],visit,e['destination']/'query') for e in entries])
+    return [e['path'] for e in entries],rewards,dict(collection_and_path_IO_seconds=collection_seconds,
+        independent_query_and_row_IO_seconds=time.monotonic()-query_tick,total_collection_query_seconds=time.monotonic()-tick)
 
 
 def rl(args,runtime,runner,environment,context):
@@ -112,38 +116,24 @@ def rl(args,runtime,runner,environment,context):
     start=resume_checkpoint(args.resume,'RL',runtime,optimizer,context,baseline=baseline,
         baseline_optimizer=baseline_optimizer,generator_optimizer=generator_trainer.optimizer) if args.resume else 0
     generator_trainer.refresh_bank(runtime.supervision_version)
-    panel_by_task=panels(args.root);cache=HistoryCache()
+    cache=HistoryCache()
     for update in range(start,args.stop):
-        tick=time.monotonic();paths=[];rewards=[];runtime.freeze_psi();runtime.actor.eval();baseline.eval();visit=update//9
+        tick=time.monotonic();runtime.freeze_psi();runtime.actor.eval();baseline.eval()
         runtime.fixed_kernel_identity=dict(origin_checkpoint=str(args.checkpoint.resolve()),
             actor_next_update=update,psi_version=runtime.version,G_next_update=runtime.G_sampler['next_update'],
             supervision_version=runtime.supervision_version,schema=SELECTOR_SCHEMA)
-        for task_id in assigned_tasks(context,update):
-            task=task_spec(environment,task_id);panel=panel_by_task[task_id]
-            destination=args.root/'RL_paths'/f'update_{update+1:06d}_task_{task_id:04d}'
-            # Only the exact unconsumed batch under the restored theta may survive an engineering exit.
-            if (destination/'path.json').exists():
-                batch=read_json(destination/'batch_identity.json')
-                if batch['kernel_identity']!=runtime.fixed_kernel_identity:
-                    raise ValueError('saved path has a different behavior theta or generation kernel')
-                path=restore_compilation(destination,runtime)
-            else:
-                history,source=bootstrap_source(args.root,task_id,panel,visit,cache)
-                path=compile_condition(runtime,runner,task,panel,panel['policy_videos'][visit%4],identity=destination.name,
-                    path_ordinal=visit,noise_root=seed(7,task_id,visit),max_rounds=run['selector_training']['rounds'],
-                    conditional_continue=True,baseline=baseline,bootstrap_history=history,bootstrap_provenance=source)
-                path.save(destination,retain_U=True)
-                write_json_atomic(destination/'batch_identity.json',dict(theta_next_update=update,
-                    checkpoint=str(args.checkpoint.resolve()),schema=SELECTOR_SCHEMA,current_fixed_theta=True,
-                    kernel_identity=runtime.fixed_kernel_identity))
-            rewards.append(query_once(runtime,runner,path,task,panel,visit,destination/'query'));paths.append(path)
+        paths,rewards,timings=collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
+        theta_tick=time.monotonic()
         on_policy_update(runtime,context,args.root,update+1,paths,rewards,optimizer,baseline,baseline_optimizer)
+        timings['theta_and_baseline_update_seconds']=time.monotonic()-theta_tick;append_tick=time.monotonic()
         # Theta consumes its whole original kernel first; only then may all psi learn.
         supervision_version=register_students(args.root,paths,update+1,context)
         generator_trainer.refresh_bank(supervision_version)
+        timings['append_and_reload_supervision_seconds']=time.monotonic()-append_tick;psi_tick=time.monotonic()
         for _ in range(generator_updates):
             generator_trainer.step(runtime.G_sampler['next_update'],stage='joint_G')
         runtime.freeze_psi()
+        timings['psi_update_block_seconds']=time.monotonic()-psi_tick;checkpoint_tick=time.monotonic()
         if update+1 in run['updates']['RL']:
             checkpoint(args.root,'RL',update+1,runtime,optimizer,context,
                 sampler=dict(next_update=update+1,task_order=list(TASKS),logical_condition_batch=4,
@@ -151,7 +141,8 @@ def rl(args,runtime,runner,environment,context):
                     actual_depth=run['selector_training']['rounds'],supervision_version=supervision_version,
                     alternating_order=['fixed psi/theta collection','theta','append true P/H','psi','resample']),
                 baseline=baseline,baseline_optimizer=baseline_optimizer,generator_optimizer=generator_trainer.optimizer)
-        metrics(args.root,'RL_cycle',dict(update=update+1,full_update_seconds=time.monotonic()-tick,
+        timings['checkpoint_IO_seconds']=time.monotonic()-checkpoint_tick
+        metrics(args.root,'RL_cycle',dict(update=update+1,full_update_seconds=time.monotonic()-tick,phases=timings,
             path_timings=[path.timings for path in paths],components=dict(runtime.components),
             G_updates_after_theta=generator_updates,psi_version=runtime.version,
             supervision_version=supervision_version),context)
@@ -192,7 +183,6 @@ def report(args,runtime,runner,environment):
 def run(args,runtime,runner,environment,context):
     if args.command=='G':train_cfm(runtime,context,args.root,stop=args.stop,resume=args.resume)
     elif args.command=='student-data':refresh(args,runtime,runner,environment)
-    elif args.command=='local-data':local_data(args,runtime,runner,environment)
     elif args.command=='local':
         fixed_G(args,runtime);baseline=Baseline().to(runtime.device)
         train_local(runtime,context,args.root,LocalExamples(args.root,runtime),stop=args.stop,resume=args.resume,baseline=baseline)

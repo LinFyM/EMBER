@@ -68,7 +68,7 @@ def slice_batch(batch, start, stop):
     return {key: value[start:stop] for key, value in batch.items()}
 
 
-def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpointed=True):
+def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpointed=True, prepared_velocity=None):
     """Complete ten-step response; rebind all factors on every recomputation.
 
     The frozen prefix is independent of the suffix adapter. Explicit factor
@@ -83,7 +83,7 @@ def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpo
     if any(tuple(state) != keys for state in states):
         raise ValueError('functional response requires aligned complete factors')
     flat = tuple(value for state in states for value in state.values())
-    velocity = NativeVelocity(runtime.policy, batch, capture_phi=False)
+    velocity = NativeVelocity(runtime.policy, batch, capture_phi=False) if prepared_velocity is None else prepared_velocity
 
     def denoise(z, tau):
         def call(value, *factors):

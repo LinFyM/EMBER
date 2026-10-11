@@ -173,22 +173,23 @@ class ContextReader(nn.Module):
     def forward(self, features, history, parameter_summaries):
         video = self.teaching(features)
         events = []
-        for i, row in enumerate(history):
-            images = row['images'].to(video.device).float()  # frozen raw image embeddings, pre/post
-            actual_hidden = row['hidden'].to(video.device).float()
-            p = parameter_summaries[row['parameter_ref']]
-            pixels = self.z(images) + self.spatial.weight[None] + self.pre_post.weight[:, None]
-            hidden = self.h(actual_hidden) + self.action_position.weight[None] + self.flow_call.weight[:, None]
-            memory = torch.cat((pixels.flatten(0, 1), hidden.flatten(0, 1), p))
-            facts = torch.cat((row['proprio'].flatten(), row['actions'].flatten(), row['executed'].float(),
-                               row['feedback'], torch.tensor([row['episode'], row['step']], dtype=torch.float32)))
-            q = self.event_query + self.facts(facts.to(video.device))[None] + positions(torch.tensor(i, device=video.device))
-            event = q + self.event_attention(q[None], memory[None], memory[None], need_weights=False)[0][0]
-            event = event + self.correspondence(event[None], video[None], video[None], need_weights=False)[0][0]
-            events.append(event)
-        history_memory = self.empty if not events else self.history_time(torch.cat(events)[None])[0]
-        q = self.decision_query
-        decision = q + self.correspondence(q[None], video[None], video[None], need_weights=False)[0][0]
+        for start in range(0,len(history),16):
+            rows=history[start:start+16]
+            images=torch.stack([r['images'] for r in rows]).to(video.device).float()
+            actual_hidden=torch.stack([r['hidden'] for r in rows]).to(video.device).float()
+            p=torch.stack([parameter_summaries[r['parameter_ref']] for r in rows])
+            pixels=self.z(images)+self.spatial.weight[None,None]+self.pre_post.weight[None,:,None]
+            hidden=self.h(actual_hidden)+self.action_position.weight[None,None]+self.flow_call.weight[None,:,None]
+            memory=torch.cat((pixels.flatten(1,2),hidden.flatten(1,2),p),1)
+            facts=torch.stack([torch.cat((r['proprio'].flatten(),r['actions'].flatten(),r['executed'].float(),
+                r['feedback'],torch.tensor([r['episode'],r['step']],dtype=torch.float32))) for r in rows]).to(video.device)
+            q=self.event_query[None]+self.facts(facts)[:,None]+positions(torch.arange(start,start+len(rows),device=video.device))[:,None]
+            events.append((q+self.event_attention(q,memory,memory,need_weights=False)[0])[:,0])
+        # Queries are independent: project the same video K/V once for all events and decision.
+        q=torch.cat((*events,self.decision_query))[None]
+        related=(q+self.correspondence(q,video[None],video[None],need_weights=False)[0])[0]
+        history_memory=self.empty if not history else self.history_time(related[:-1][None])[0]
+        decision=related[-1:]
         return self.norm(torch.cat((video, history_memory, decision)))
 
 

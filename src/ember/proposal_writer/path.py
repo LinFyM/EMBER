@@ -16,6 +16,7 @@ from ember.writer.runtime import autocast
 from ember.pi05_source_checkpoint import write_json_atomic
 
 from .contract import seed, SELECTOR_SCHEMA
+from .runtime import phase,finish_phases
 
 
 def cpu_state(state):
@@ -81,12 +82,14 @@ class Compilation:
             completed_rounds=self.completed_rounds)
 
     def save(self, root, *, retain_U=False):
+        started=time.monotonic()
         root = Path(root); root.mkdir(parents=True, exist_ok=True)
         save_history(root / 'history.pt.gz', self.history)
         refs = set(self.valid if retain_U else self.practiced) | {'MT300', self.selected}
         refs |= {r['parameter_ref'] for r in self.history.records}
         for ref in refs - {'MT300', None}:
             save_file(self.states[ref], str(root / f'{ref}.safetensors'))
+        self.timings['path_IO_seconds']=self.timings.get('path_IO_seconds',0.)+time.monotonic()-started
         write_json_atomic(root / 'path.json', {**self.manifest(), 'retained_U': retain_U,
             'untried_reconstruction': 'frozen ψ plus attempt noise seed, exact chronological H and parent',
             'raw_history_compression': 'lossless gzip level1; frozen raw-image cache recomputed from actual RGB'})
@@ -116,7 +119,7 @@ def decision_inputs(runtime, path, decision, features):
 
 def decision_logits(runtime, path, decision, features):
     rows, states, responses = decision_inputs(runtime, path, decision, features)
-    with autocast(runtime.device):
+    with phase(runtime,'theta_forward'),autocast(runtime.device):
         return runtime.actor(decision['kind'], features, rows, states, decision['candidates'],
                              responses).float()
 
@@ -167,13 +170,13 @@ def emit_output(runtime,path,features,*,uniform):
     path.selected=selected
 
 
-def bootstrap(runtime,runner,path,task,panel,*,history=None,provenance=None,snapshots=False):
+def bootstrap(path,task,panel,*,history=None,provenance=None,snapshots=False):
     if history is None:
         state_id=panel['practice_states'][path.path_ordinal%len(panel['practice_states'])]
         request=dict(task=task,state=path.states['MT300'],parameter_ref='MT300',state_id=state_id,
             noise_root=seed(32,path.noise_root,0),episode_id=f'{path.identity}_bootstrap_MT',
             snapshots=snapshots,uses_teaching=True,remaining=path.external_max_environment_steps)
-        output=next(runner.run([request]));history=output['history']
+        output=yield request;history=output['history']
         path.bootstrap_provenance=dict(reused=False,actual_episode=request['episode_id'])
     else:
         if len(history.episodes)!=1 or not history.records or any(r['parameter_ref']!='MT300' for r in history.records):
@@ -185,14 +188,15 @@ def bootstrap(runtime,runner,path,task,panel,*,history=None,provenance=None,snap
     path.environment_steps+=sum(int(row['environment_steps']) for row in history.episodes)
 
 
-def generate_candidates(runtime,path,parent,features):
+def generate_candidates(runtime,path,parent,features,*,first_valid_only=False):
+    started=time.monotonic()
     proposals=[];refs={'MT300',parent}|{r['parameter_ref'] for r in path.history.records}
     states={key:path.states[key] for key in refs};rows=path.history.model_rows(runtime)
-    with autocast(runtime.device):memory=runtime.generator.context(features,rows,states)
+    with phase(runtime,'G_shared_context'),autocast(runtime.device):memory=runtime.generator.context(features,rows,states)
     for ordinal in range(min(4,32-len(path.attempts))):
         attempt=len(path.attempts);ref=f'G_{attempt:03d}';xi_seed=seed(31,path.noise_root,path.path_ordinal,attempt)
         tick=time.monotonic()
-        with autocast(runtime.device):
+        with phase(runtime,'G_candidate_Euler16'),autocast(runtime.device):
             candidate=runtime.generator.generate(path.states[parent],features,rows,states,noise_seed=xi_seed,memory=memory)
         try:
             validate_lora_state(candidate,runtime.lora)
@@ -205,15 +209,17 @@ def generate_candidates(runtime,path,parent,features):
             path.states[ref]=cpu_state(candidate);path.valid.append(ref);proposals.append(ref)
         item['generation_and_materialization_seconds']=time.monotonic()-tick
         del candidate
+        if valid and first_valid_only:break
+    path.timings['generation_seconds']=path.timings.get('generation_seconds',0.)+time.monotonic()-started
     return proposals
 
 
-def practice(runtime,runner,path,task,panel,chosen,*,snapshots):
+def practice(path,task,panel,chosen,*,snapshots):
     n=len(path.history.episodes);state_id=panel['practice_states'][(path.path_ordinal+n)%len(panel['practice_states'])]
     request=dict(task=task,state=path.states[chosen],parameter_ref=chosen,state_id=state_id,
         noise_root=seed(32,path.noise_root,n),episode_id=f'{path.identity}_practice_{n:03d}',
         remaining=path.external_max_environment_steps-path.environment_steps,snapshots=snapshots,uses_teaching=True)
-    output=next(runner.run([request]));row=output['row']
+    output=yield request;row=output['row']
     path.environment_steps+=int(row['environment_steps']);path.history.append(output['history'])
     if row.get('model_failure'):
         if chosen!='MT300':
@@ -226,9 +232,8 @@ def practice(runtime,runner,path,task,panel,chosen,*,snapshots):
     return bool(row.get('budget_truncated'))
 
 
-def begin_condition(runtime,runner,task,panel,demo,identity,path_ordinal,noise_root,max_rounds,
-                    external_max_environment_steps,uniform,snapshots,video_task,bootstrap_history,
-                    bootstrap_provenance,conditional_continue,student_only):
+def begin_condition(runtime,task,demo,identity,path_ordinal,noise_root,max_rounds,
+                    external_max_environment_steps,uniform,video_task,conditional_continue,student_only):
     if not runtime.psi_frozen:raise ValueError('compilation needs a fixed generation/read kernel')
     if max_rounds<1 or max_rounds*4>32:raise ValueError('registered depth exceeds proposal cap')
     if conditional_continue and uniform:raise ValueError('RL continuation must use actual current theta')
@@ -239,23 +244,21 @@ def begin_condition(runtime,runner,task,panel,demo,identity,path_ordinal,noise_r
         History(states={'MT300':mt}),{'MT300':mt},video_task=video_task,
         kernel_identity=getattr(runtime,'fixed_kernel_identity',{}),external_max_environment_steps=cap,
         sampling_identity=identity_kind,selected='MT300')
-    bootstrap(runtime,runner,path,task,panel,history=bootstrap_history,provenance=bootstrap_provenance,snapshots=snapshots)
+    return path,cap
+
+
+def condition_steps(runtime,task,panel,demo,*,identity,path_ordinal,noise_root,
+                      max_rounds,external_max_environment_steps=None,uniform=False,snapshots=False,
+                      video_task=None,baseline=None,bootstrap_history=None,bootstrap_provenance=None,
+                      conditional_continue=False,student_only=False):
+    tick=time.monotonic()
+    path,cap=begin_condition(runtime,task,demo,identity,path_ordinal,noise_root,
+        max_rounds,external_max_environment_steps,uniform,video_task,conditional_continue,student_only)
+    yield from bootstrap(path,task,panel,history=bootstrap_history,provenance=bootstrap_provenance,snapshots=snapshots)
     if path.history.episodes[-1].get('budget_truncated'):
         raise ValueError('bootstrap interrupted; no complete current selector state')
     features=runtime.teaching(path.task,demo,video_task=video_task)
     emit_output(runtime,path,features,uniform=uniform)
-    return path,features,cap
-
-
-@torch.no_grad()
-def compile_condition(runtime,runner,task,panel,demo,*,identity,path_ordinal,noise_root,
-                      max_rounds,external_max_environment_steps=None,uniform=False,snapshots=False,
-                      video_task=None,baseline=None,bootstrap_history=None,bootstrap_provenance=None,
-                      conditional_continue=False,student_only=False):
-    tick=time.monotonic();before=dict(runtime.components);env_start=runner.environment_steps
-    path,features,cap=begin_condition(runtime,runner,task,panel,demo,identity,path_ordinal,noise_root,
-        max_rounds,external_max_environment_steps,uniform,snapshots,video_task,bootstrap_history,
-        bootstrap_provenance,conditional_continue,student_only)
     rng=torch.Generator().manual_seed(seed(30,noise_root,path_ordinal))
     for round_index in range(max_rounds):
         if cap-path.environment_steps<11 or len(path.attempts)>=32:break
@@ -264,12 +267,12 @@ def compile_condition(runtime,runner,task,panel,demo,*,identity,path_ordinal,noi
         parent=categorical_record(runtime,path,'parent',choices,features,rng=rng,uniform=uniform,
             baseline=baseline,conditional_continue=(conditional_continue or uniform) and not student_only,round_index=round_index)
         if parent=='STOP':break
-        proposals=generate_candidates(runtime,path,parent,features)
+        proposals=generate_candidates(runtime,path,parent,features,first_valid_only=True) if student_only else generate_candidates(runtime,path,parent,features)
         if student_only and not proposals:raise ValueError('no valid actual G proposal for registered student data')
         practice_choices=[proposals[0]] if student_only else [parent,*proposals]
         chosen=categorical_record(runtime,path,'practice',practice_choices,features,parent=parent,
             rng=rng,uniform=uniform,baseline=baseline,round_index=round_index)
-        truncated=practice(runtime,runner,path,task,panel,chosen,snapshots=snapshots)
+        truncated=yield from practice(path,task,panel,chosen,snapshots=snapshots)
         if truncated or path.history.episodes[-1].get('model_failure'):break
         path.completed_rounds+=1;emit_output(runtime,path,features,uniform=uniform)
     if conditional_continue and path.completed_rounds!=max_rounds:
@@ -280,14 +283,49 @@ def compile_condition(runtime,runner,task,panel,demo,*,identity,path_ordinal,noi
         path.decisions.append(dict(kind='forced_exit',candidates=['STOP'],selected='STOP',forced=True,
             records=len(path.history.records),episodes=len(path.history.episodes),log_probability=0.,
             forced_reason='registered external depth/resource boundary; not a STOP label'))
-    path.timings=dict(compilation_seconds=time.monotonic()-tick,new_environment_steps=runner.environment_steps-env_start,
-        generation_seconds=sum(a['generation_and_materialization_seconds'] for a in path.attempts),
-        components_delta={k:v-before.get(k,0) for k,v in runtime.components.items()},
+    path.timings.update(compilation_residence_seconds=time.monotonic()-tick,
+        new_environment_steps=path.environment_steps-(int(path.history.episodes[0]['environment_steps']) if bootstrap_history is not None else 0),
+        generation_seconds=path.timings.get('generation_seconds',sum(a['generation_and_materialization_seconds'] for a in path.attempts)),
         completed_rounds=path.completed_rounds,sampling_identity=path.sampling_identity)
     return path
 
 
-def evaluate_fixed(runtime, runner, path, task, state_ids, noise_root, *, references=None,existing_rows=()):
+@torch.no_grad()
+def compile_conditions(runtime,runner,specifications):
+    """Interleave independent conditions in the existing persistent episode queue."""
+    tick=time.monotonic();before=dict(runtime.components);env_start=runner.environment_steps
+    active={i:condition_steps(runtime,**spec) for i,spec in enumerate(specifications)}
+    completed={};owners={};requests=[]
+    def advance(index,output=None):
+        try:
+            request=next(active[index]) if output is None else active[index].send(output)
+        except StopIteration as done:
+            completed[index]=done.value;del active[index];return []
+        key=request['episode_id']
+        if key in owners:raise ValueError('independent conditions require unique actual episode identities')
+        owners[key]=index
+        return [request]
+    for index in sorted(active,key=lambda i:specifications[i]['task']['horizon'],reverse=True):
+        requests.extend(advance(index))
+    def receive(output):
+        return advance(owners.pop(output['request']['episode_id']),output)
+    for _ in runner.run(requests,on_completion=receive):pass
+    if active:raise ValueError('condition driver exited with unfinished real episode dependencies')
+    finish_phases(runtime)
+    shared=dict(compilation_seconds=time.monotonic()-tick,new_environment_steps=runner.environment_steps-env_start,
+        simultaneous_conditions=len(specifications),components_delta={k:v-before.get(k,0) for k,v in runtime.components.items()})
+    paths=[completed[i] for i in range(len(specifications))]
+    for path in paths:
+        path.timings['shared_compilation_group']=shared
+        path.timings['shared_group_members']=[p.identity for p in paths]
+    return paths
+
+
+def compile_condition(runtime,runner,task,panel,demo,**options):
+    return compile_conditions(runtime,runner,[dict(task=task,panel=panel,demo=demo,**options)])[0]
+
+
+def fixed_requests(path, task, state_ids, noise_root, *, references=None,existing_rows=()):
     if path.selected is None:
         raise ValueError('independent query cannot precede final parameter lock')
     requests = []
@@ -297,19 +335,26 @@ def evaluate_fixed(runtime, runner, path, task, state_ids, noise_root, *, refere
             if (reference,state_id) in existing_rows:continue
             requests.append(dict(task=task, state=path.states[reference], parameter_ref=reference,
                 state_id=state_id, noise_root=noise_root, snapshots=False, uses_teaching=False,
-                episode_id=f'{path.identity}_query_{arm}_{state_id}', remaining=task['horizon'] + 10, arm=arm))
-    rows = []
-    for result in runner.run(requests):
-        row = dict(**result['row'], condition=path.identity, teaching_demo=path.demo,
+                episode_id=f'{path.identity}_query_{arm}_{state_id}', remaining=task['horizon'] + 10,
+                arm=arm,capture_history=False))
+    return requests
+
+
+def fixed_row(path,result):
+    row = dict(**result['row'], condition=path.identity, teaching_demo=path.demo,
                    global_task_id=path.task, reference=result['request']['parameter_ref'],
                    arm=result['request']['arm'],
                    selected=path.selected, query_excluded_from_H=True)
-        if result['history'].records and not row.get('model_failure'):
-            first=result['history'].records[0]
-            row.update(first_native_normalized_actions=first['normalized_actions'].tolist(),
+    if result['history'].records and not row.get('model_failure'):
+        first=result['history'].records[0]
+        row.update(first_native_normalized_actions=first['normalized_actions'].tolist(),
                        first_noise_seed=first['noise_seed'],first_action_mask=first['executed'].tolist())
-        rows.append(row)
-    return rows
+    return row
+
+
+def evaluate_fixed(runtime, runner, path, task, state_ids, noise_root, *, references=None,existing_rows=()):
+    return [fixed_row(path,result) for result in runner.run(
+        fixed_requests(path,task,state_ids,noise_root,references=references,existing_rows=existing_rows))]
 
 
 def restore_compilation(root, runtime):

@@ -13,7 +13,7 @@ from ember.writer.practice import History
 
 from .contract import TASKS,seed
 from .learning import HistoryCache
-from .path import Compilation,cpu_state,evaluate_fixed,restore_compilation
+from .path import Compilation,cpu_state,fixed_requests,fixed_row,restore_compilation
 
 
 def register_students(root,paths,update,context):
@@ -68,25 +68,41 @@ def query_panel(panel,visit):
 
 
 def query_once(runtime,runner,path,task,panel,visit,destination):
-    """No query H enters path; identical λ/state/RNG outcomes serve all its prefixes."""
-    destination=Path(destination);destination.mkdir(parents=True,exist_ok=True)
-    states=query_panel(panel,visit);noise_root=seed(70,path.task,visit)
-    references=list(dict.fromkeys(ref for node in path.outputs for ref in node['candidates']))
-    practice_states={row['init_state_id'] for row in path.history.episodes}
-    if practice_states.intersection(states):raise ValueError('query initial states leaked into practice')
-    tick=time.monotonic();before=runner.environment_steps
-    for row in evaluate_fixed(runtime,runner,path,task,states,noise_root,references=references,
-                             existing_rows={(ref,state) for ref in references for state in states
-                                 if (destination/f'{ref}_{state:03d}.json').exists()}):
-        write_json_atomic(destination/f"{row['reference']}_{row['init_state_id']:03d}.json",row)
-    rows=[read_json(destination/f'{ref}_{state:03d}.json') for ref in references for state in states]
-    rewards={ref:sum(bool(row['success']) for row in rows if row['reference']==ref)/4 for ref in references}
-    write_json_atomic(destination/'complete.json',dict(complete=True,rewards=rewards,rows=rows,
-        query_states=states,policy_env_noise_root=noise_root,query_excluded_from_H=True,
-        each_parameter_query_once_across_prefixes=True,unpracticed_candidates_not_queried=True,
-        actual_new_environment_steps_this_attempt=runner.environment_steps-before,
-        query_seconds_this_attempt=time.monotonic()-tick))
-    return rewards
+    return query_conditions(runtime,runner,[(path,task,panel,visit,destination)])[0]
+
+
+def query_conditions(runtime,runner,conditions):
+    """Batch only missing independent λ/state/RNG queries, never their histories."""
+    tick=time.monotonic();entries=[];requests=[];owners={}
+    for path,task,panel,visit,destination in conditions:
+        destination=Path(destination);destination.mkdir(parents=True,exist_ok=True)
+        states=query_panel(panel,visit);noise_root=seed(70,path.task,visit)
+        references=list(dict.fromkeys(ref for node in path.outputs for ref in node['candidates']))
+        if {r['init_state_id'] for r in path.history.episodes}.intersection(states):raise ValueError('query initial states leaked into practice')
+        entry=dict(path=path,destination=destination,states=states,noise_root=noise_root,references=references,new_steps=0,new_episodes=0)
+        entries.append(entry)
+        missing=fixed_requests(path,task,states,noise_root,references=references,
+            existing_rows={(ref,state) for ref in references for state in states if (destination/f'{ref}_{state:03d}.json').exists()})
+        for request in missing:
+            if request['episode_id'] in owners:raise ValueError('query episode identity reused across conditions')
+            owners[request['episode_id']]=entry
+        requests.extend(missing)
+    for output in runner.run(sorted(requests,key=lambda r:r['task']['horizon'],reverse=True)):
+        entry=owners[output['request']['episode_id']];row=fixed_row(entry['path'],output)
+        write_json_atomic(entry['destination']/f"{row['reference']}_{row['init_state_id']:03d}.json",row)
+        entry['new_steps']+=int(row.get('environment_steps',0));entry['new_episodes']+=1
+    results=[]
+    for entry in entries:
+        destination=entry['destination'];references=entry['references'];states=entry['states']
+        rows=[read_json(destination/f'{ref}_{state:03d}.json') for ref in references for state in states]
+        rewards={ref:sum(bool(r['success']) for r in rows if r['reference']==ref)/4 for ref in references}
+        write_json_atomic(destination/'complete.json',dict(complete=True,rewards=rewards,rows=rows,query_states=states,
+            policy_env_noise_root=entry['noise_root'],query_excluded_from_H=True,each_parameter_query_once_across_prefixes=True,
+            unpracticed_candidates_not_queried=True,actual_new_environment_steps_this_attempt=entry['new_steps'],
+            actual_new_episodes_this_attempt=entry['new_episodes'],shared_query_group_seconds=time.monotonic()-tick,
+            shared_group_members=[p.identity for p,*_ in conditions]))
+        results.append(rewards)
+    return results
 
 
 class LocalExamples:
@@ -96,20 +112,21 @@ class LocalExamples:
         self.panel=panels(root);self.cache=HistoryCache(max_entries=2)
         contract=read_json(self.root/'run_contract.json')
         self.teacher_updates=contract['local_supervision']['teacher_warm_updates']
-        self.data_version=contract['local_data_version']
-        self.current={task:[] for task in TASKS}
-        for file in sorted((self.root/'local_data'/self.data_version).glob('*/local_labels.json')):
-            row=read_json(file)
-            if not row['complete']:raise ValueError('current G local examples incomplete')
-            self.current[row['task']].append(file)
-        if any(not self.current[t] for t in TASKS):raise ValueError('current G local data must cover all36')
+        self.data_version=contract['student_refresh']['version']
+        self.current={task:self.root/'student_data'/self.data_version/f'task_{task:04d}' for task in TASKS}
+        for directory in self.current.values():
+            if not read_json(directory/'parent.json')['complete'] or not read_json(directory/'query/complete.json')['complete']:
+                raise ValueError('same initial student practice/query must cover all36 before final warmstart')
 
     def __call__(self,task,update):
         visit=update//9
         if update<self.teacher_updates:return self.teacher(task,visit)
-        file=self.current[task][visit%len(self.current[task])]
-        record=read_json(file);path=restore_compilation(file.parent,self.runtime)
-        return dict(path=path,prefixes=record['prefixes'],source=dict(kind='current_G',file=str(file),data_version=self.data_version))
+        directory=self.current[task];path=restore_compilation(directory,self.runtime)
+        rewards=read_json(directory/'query/complete.json')['rewards']
+        prefixes=[dict(records=node['records'],episodes=node['episodes'],practiced=node['candidates'],
+            reward={ref:rewards[ref] for ref in node['candidates']}) for node in path.outputs]
+        return dict(path=path,prefixes=prefixes,source=dict(kind='initial_actual_student_pair',
+            file=str(directory/'path.json'),data_version=self.data_version,additional_uniform_R5=False))
 
     def teacher(self,task,visit):
         panel=self.panel[task];entry=read_json(self.root/'teachers'/f'task_{task:04d}'/'E.json')

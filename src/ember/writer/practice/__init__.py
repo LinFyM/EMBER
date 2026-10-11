@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from copy import deepcopy
+from itertools import chain
 import time
 
 import numpy as np
@@ -71,7 +72,8 @@ class EpisodeRunner:
     def _start(self, index, request):
         if 'state' not in request or 'parameter_ref' not in request:
             raise ValueError('episode needs actual complete incoming factors and provenance')
-        history = History(states={request['parameter_ref']: {k: v.detach().cpu() for k, v in request['state'].items()}})
+        capture=request.get('capture_history',True)
+        history = History(states={request['parameter_ref']: {k: v.detach().cpu() for k, v in request['state'].items()}} if capture else {})
         slot = dict(request=request, history=history, raw=None, ready=False, key='', steps=0,
                     pending=None, initial_steps=int(request.get('snapshot', {}).get('episode_control_steps', 0)))
         episode_contract=self.contract
@@ -86,7 +88,7 @@ class EpisodeRunner:
     def _observation(self, slot, raw, snapshot=None):
         history = slot['history']
         key = f"{slot['request']['episode_id']}_o{len(history.observations):05d}"
-        history.observations[key] = raw
+        if slot['request'].get('capture_history',True):history.observations[key] = raw
         slot.update(raw=raw, key=key, snapshot=snapshot)
 
     def _receive(self, live, *, block):
@@ -109,7 +111,8 @@ class EpisodeRunner:
                 actions = torch.zeros(5, 7)
                 actions[:len(executed)] = executed
                 self._observation(slot, result['raw'], result.get('snapshot'))
-                slot['history'].records.append(dict(pre=pending['pre'], post=slot['key'],
+                if slot['request'].get('capture_history',True) or slot['steps']==0:
+                    slot['history'].records.append(dict(pre=pending['pre'], post=slot['key'],
                     hidden=pending['hidden'], snapshot=pending['snapshot'], noise_seed=pending['noise_seed'],
                     failure_type=result.get('failure_type'),
                     normalized_actions=pending['normalized_actions'],
@@ -146,10 +149,15 @@ class EpisodeRunner:
         batch = {key: torch.cat([value[key] for value in inputs]) for key in inputs[0]}
         with self.runtime.execution.activate([live[i]['request']['state'] for i in indices]), autocast(self.runtime.device):
             tick = time.monotonic()
-            velocity = NativeVelocity(self.runtime.policy, batch)
+            capture=[pos for pos,index in enumerate(indices) if live[index]['request'].get('capture_history',True)]
+            capture_index={pos:i for i,pos in enumerate(capture)}
+            phi_capture=[pos for pos,index in enumerate(indices) if pos in capture_index and live[index]['request'].get('capture_phi',True)]
+            phi_index={pos:i for i,pos in enumerate(phi_capture)}
+            velocity = NativeVelocity(self.runtime.policy,batch,capture_phi=bool(phi_capture),capture_indices=phi_capture)
             self.components['native_prefix_seconds'] += time.monotonic() - tick
             tick = time.monotonic()
-            normalized, hidden = action_chunk(velocity, torch.stack(noises).to(self.runtime.device))
+            normalized, hidden = action_chunk(velocity,torch.stack(noises).to(self.runtime.device),
+                capture_hidden=bool(capture),capture_indices=capture)
             finite = torch.isfinite(normalized).flatten(1).all(1).cpu()
             commands = self.runtime.processor.unnormalize_action(torch.nan_to_num(normalized)).cpu().numpy()
             self.components['native_flow_seconds'] += time.monotonic() - tick
@@ -158,8 +166,9 @@ class EpisodeRunner:
         histogram[len(indices)] = histogram.get(len(indices), 0) + 1
         for pos, index in enumerate(indices):
             slot = live[index]
-            slot['history'].image_features[slot['key']] = velocity.phi[pos].clone()
-            slot.update(ready=False, pending=dict(pre=slot['key'], hidden=torch.nan_to_num(hidden[pos]).clone(),
+            if pos in phi_index:slot['history'].image_features[slot['key']] = velocity.phi[phi_index[pos]].clone()
+            evidence=torch.nan_to_num(hidden[capture_index[pos]]).clone() if pos in capture_index else None
+            slot.update(ready=False, pending=dict(pre=slot['key'], hidden=evidence,
                 normalized_actions=torch.nan_to_num(normalized[pos, :5].detach().float().cpu()).clone(),
                 snapshot=slot['snapshot'], noise_seed=seeds[pos]))
             if bool(finite[pos]):
@@ -169,7 +178,7 @@ class EpisodeRunner:
                 self.environments.submit(index, 'numerical_failure')
 
     @torch.no_grad()
-    def run(self, requests):
+    def run(self, requests, *, on_completion=None):
         if self.environments is None:
             self.environments = EnvironmentSlots(self.contract, self.physical_gpu, self.slots)
         source, live, exhausted = iter(requests), {}, False
@@ -186,6 +195,10 @@ class EpisodeRunner:
             ready = [i for i, slot in live.items() if slot['ready']]
             for index, result in self._receive(live, block=not ready):
                 del live[index]
+                if on_completion is not None:
+                    following=on_completion(result)
+                    if following:
+                        source=chain(following,source);exhausted=False
                 yield result
             ready = [i for i, slot in live.items() if slot['ready']]
             if ready:

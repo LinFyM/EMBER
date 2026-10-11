@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from contextlib import contextmanager
 from pathlib import Path
 import time
 
@@ -18,12 +19,36 @@ from ember.writer.data import RawTeacherVideoStore
 from ember.writer.learning_data import load_learning_tasks
 from ember.writer.functional import prepare_frozen_writer_policy
 from ember.writer.runtime import autocast
-from ember.writer.practice.execution import native_actions
+from ember.writer.practice.execution import native_actions, NativeVelocity
 from ember.writer.practice import processed
 
 from .contract import SOURCE, MT_PATH, TASKS, ASSET_ROOT, RUN_ROOT
 from .native import MetaReader, PolicyContexts
 from .model import FactorLayout, Generator, Actor
+
+
+@contextmanager
+def phase(runtime,name):
+    """Separate host dispatch/residence from deferred CUDA stream intervals."""
+    start=time.monotonic();events=None
+    if runtime.device.type=='cuda':
+        events=(torch.cuda.Event(enable_timing=True),torch.cuda.Event(enable_timing=True))
+        events[0].record(torch.cuda.current_stream(runtime.device))
+    try:yield
+    finally:
+        key=name+'_host_seconds';runtime.components[key]=runtime.components.get(key,0.)+time.monotonic()-start
+        if events is not None:
+            events[1].record(torch.cuda.current_stream(runtime.device))
+            if not hasattr(runtime,'timing_events'):runtime.timing_events=[]
+            runtime.timing_events.append((name,*events))
+
+
+def finish_phases(runtime):
+    events=getattr(runtime,'timing_events',[])
+    if events:events[-1][2].synchronize()
+    for name,start,end in events:
+        key=name+'_CUDA_stream_seconds';runtime.components[key]=runtime.components.get(key,0.)+start.elapsed_time(end)/1000
+    events.clear()
 
 
 class Runtime:
@@ -60,12 +85,7 @@ class Runtime:
         if any(abs(v / coordinates['S_prox'][k] - 1) > 1e-5 for k, v in self.prox_scales.items()):
             raise ValueError('fixed proximal units differ from actual saved A0/MT dense update')
         self.bank_scale_path = self.root / 'bank_scale.json'
-        scales = read_json(self.bank_scale_path)['S_G'] if self.bank_scale_path.exists() else None
-        torch.manual_seed(7)
-        meta = MetaReader(self.policy, self.execution, frame_chunk=frame_chunk)
-        layout = FactorLayout(self.lora, self.mt, scales)
-        self.generator = Generator(layout, meta).to(self.device)
-        self.actor = Actor(self.generator.layout).to(self.device)
+        self.frame_chunk=frame_chunk;self._generator,self._actor=None,None
         self.response_microbatch = response_microbatch
         self.version, self.psi_frozen = 0, False
         self.feature_cache, self.feature_cache_size = OrderedDict(), 0
@@ -73,6 +93,25 @@ class Runtime:
         self.feature_cache_bytes = feature_cache_bytes
         self.components = dict(meta_read_seconds=0., meta_read_frames=0, teacher_cache_hits=0,
                                response_seconds=0., response_observations=0, response_cache_hits=0,image_observations=0)
+
+    def initialize_writer(self):
+        if self._generator is not None:return
+        torch.manual_seed(7)
+        scales=read_json(self.bank_scale_path)['S_G'] if self.bank_scale_path.exists() else None
+        meta=MetaReader(self.policy,self.execution,frame_chunk=self.frame_chunk)
+        self._generator=Generator(FactorLayout(self.lora,self.mt,scales),meta).to(self.device)
+        self._actor=Actor(self._generator.layout).to(self.device)
+
+    @property
+    def generator(self):
+        self.initialize_writer();return self._generator
+
+    @generator.setter
+    def generator(self,value):self._generator=value
+
+    @property
+    def actor(self):
+        self.initialize_writer();return self._actor
 
     def task_parameters(self, state):
         return self.execution.task_parameters(state)
@@ -99,7 +138,7 @@ class Runtime:
             self.raw_cache.move_to_end(raw_key)
             raw=tuple(v.to(self.device) for v in self.raw_cache[raw_key])
         else:
-            with autocast(self.device):
+            with phase(self,'teaching_raw_prefix'),autocast(self.device):
                 raw=self.generator.meta.encode_raw(condition)
             cpu=tuple(v.detach().cpu() for v in raw)
             size=sum(v.nbytes for v in cpu)
@@ -108,7 +147,7 @@ class Runtime:
                 self.raw_cache_size-=sum(v.nbytes for v in previous)
             if size<=self.feature_cache_bytes:
                 self.raw_cache[raw_key]=cpu;self.raw_cache_size+=size
-        with torch.set_grad_enabled(not self.psi_frozen), autocast(self.device):
+        with phase(self,'dual_meta_forward'),torch.set_grad_enabled(not self.psi_frozen), autocast(self.device):
             features = self.generator.meta(condition,raw_prefix=raw)
         self.components['meta_read_frames'] += len(condition[0])
         if self.psi_frozen:
@@ -140,7 +179,7 @@ class Runtime:
 
     @torch.no_grad()
     def observation_features(self, observations):
-        result = {}
+        started=time.monotonic();result = {}
         items = list(observations.items())
         for start in range(0, len(items), 16):
             selected = items[start:start + 16]
@@ -154,13 +193,15 @@ class Runtime:
                 phi = torch.cat([self.policy.model.paligemma_with_expert.embed_image(v) for v in pixels[:2]], 1)
             result.update({key: value.detach().cpu().clone() for (key, _), value in zip(selected, phi, strict=True)})
             self.components['image_observations'] += len(selected)
+        self.components['actual_H_raw_image_seconds']=self.components.get('actual_H_raw_image_seconds',0.)+time.monotonic()-started
         return result
 
-    def native_actions(self, states, batch, noise, *, batch_indices=None, checkpointed=True):
-        if self.generator.meta.active.get() is not None:
+    def native_actions(self, states, batch, noise, *, batch_indices=None, checkpointed=True, prepared_velocity=None):
+        if self._generator is not None and self._generator.meta.active.get() is not None:
             raise ValueError('read-meta leaked into native task response')
         with autocast(self.device):
-            return native_actions(self, states, batch, noise, batch_indices=batch_indices, checkpointed=checkpointed)
+            return native_actions(self, states, batch, noise, batch_indices=batch_indices,
+                                  checkpointed=checkpointed, prepared_velocity=prepared_velocity)
 
     @torch.no_grad()
     def responses(self, states, history, language, *, parent=None,absolute_cache=None):
@@ -176,17 +217,27 @@ class Runtime:
         if absolute_cache is not None and absolute_cache.get('identity')!=identity:
             absolute_cache.clear();absolute_cache.update(identity=identity,values={})
         cached={} if absolute_cache is None else absolute_cache['values']
+        # Task targets affect only the action stream; original-source Gemma prefix is shared.
+        if any('gemma_expert' not in t.name and 'action_' not in t.name for t in self.lora.targets):
+            raise ValueError('candidate-dependent prefix cannot be reused')
+        prepared=absolute_cache.get('prepared') if absolute_cache is not None else None
+        if prepared is None:
+            prepared=[]
+            for start in range(0,len(support['noise']),self.response_microbatch):
+                stop=min(len(support['noise']),start+self.response_microbatch)
+                batch={k:v[start:stop] for k,v in support['batch'].items()}
+                with phase(self,'native_response_prefix'),autocast(self.device):velocity=NativeVelocity(self.policy,batch,capture_phi=False)
+                prepared.append((batch,support['noise'][start:stop],velocity))
+            if absolute_cache is not None:absolute_cache['prepared']=prepared
         for key,state in states.items():
             if key in cached:
                 absolute[key]=cached[key];self.components['response_cache_hits']+=1;continue
             chunks = []
-            count = len(support['noise'])
-            for start in range(0, count, self.response_microbatch):
-                stop = min(count, start + self.response_microbatch)
-                batch = {k: v[start:stop] for k, v in support['batch'].items()}
-                owners = torch.zeros(stop - start, dtype=torch.long, device=self.device)
-                chunks.append(self.native_actions([state], batch, support['noise'][start:stop],
-                                                   batch_indices=owners, checkpointed=False).float().cpu())
+            for batch,noise,velocity in prepared:
+                owners = torch.zeros(len(noise), dtype=torch.long, device=self.device)
+                with phase(self,'native_response_flow'):
+                    chunks.append(self.native_actions([state], batch, noise,batch_indices=owners,
+                        checkpointed=False,prepared_velocity=velocity).float().cpu())
             absolute[key]=torch.cat(chunks).flatten(1)
             if absolute_cache is not None:cached[key]=absolute[key]
             self.components['response_observations']+=len(support['noise'])
@@ -196,5 +247,5 @@ class Runtime:
 
     def close(self):
         self.videos.close()
-        self.generator.meta.close()
+        if self._generator is not None:self._generator.meta.close()
         self.execution.close()

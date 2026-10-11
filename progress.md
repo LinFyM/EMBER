@@ -1,3 +1,17 @@
+## 2026-10-11 17:01 教师严格饱和修订：实际CPU协调器无损交接，准备新冻结队列
+
+main最新full36合同§3–5全文已消费并同步唯一active设计。36任务、28-query/nativeFM/固定初始MT prox、保存100、候选MT/200/400/600/800及完整16 selection不变；800/180parent/2880H是未裁剪上界。
+新canonical Batch按task先MT16，再读实际CP或训练下一200并马上读16；只有全更早节点完整且16/16才省略未来未启动工作，不做partial竞赛/低分停止。
+ROOT/coordinator/scientific_drain_03/request.json记录UTC08:52:17只对两个实际CPU Batch owner停止派发，同冻结Batch的CPU消费者已证明已提交future自然结束、不派下一job。
+在途task37_600及task2_200分别UTC08:54:14/08:59:55实际退出0并保存完整点；未信号GPU子进程、未丢这两段更新。旧primary外部依赖等待仍阻塞，确认所有实际workload收据关闭且无子进程后，于UTC09:01:22仅终止CPU waiter。
+两个CPU协调器的OS wait status不可读，controlled_handoff回执显式exit_code=null/exit_observed，不伪造GPU工作退出状态或未做read37_800。此前local14丢失与费用身份不改。
+25项针对性CPU回归通过，包括完整STOP条件概率/有限树两项梯度、多condition状态机、实际query墙、严格饱和与不伪造完成；这不构成方法能力或实测提速。
+学习组织收简为G初始化→36首valid实际学生/必要query→复用教师和同一MT/G pair final热身→持续R5交替。旧uniform local-data与refresh后独立G-only入口已删除，parent权重/H只存canonical一份。
+同support冻结NativeVelocity prefix复用、Reader事件chunk16/一次video K/V、θ每更新fresh与有界raw/H缓存已实施；完整GPU吞吐仍待实际消费者。未因审查新增科学矩阵。
+Owner架构/效率goal与共同E/多模态/H捷径未知进入findings§433；语言是raw frozen embedding，图像Z才是Gemma finalnorm contextual512。
+原未裁剪21:57及更早ETA保留，新规则节省、工程handoff成本和新capture出来前不承诺更早。下一步clean pushed新冻结→双节点/quota准入→同一Batch复用全部实际成功收据接续，不再保留独立task37调度器。
+tracked/Git仍实验01a12384独占；main只读。G初始化/热身/共同学习整数窗口及ψ块待真实完整消费者成本冻结，尚无新版G/π/400正式更新。
+
 ## 2026-10-11 六卡恢复与持续学生共同训练实施
 
 共同训练最新§4/§5全文已消费，唯一active设计同步：每批固定ψ/θ采五轮，先θ更新，再索引全部真实P/H并更新ψ，下一批重采。

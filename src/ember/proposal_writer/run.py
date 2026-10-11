@@ -154,7 +154,7 @@ def readout(args, runtime, runner, environment):
         identity=f'task_{args.task:04d}_u{args.stop:08d}_selection_{state_id:03d}'
         if (destination/f'state_{state_id:03d}.json').exists():continue
         requests.append(dict(task=task,state=weights,parameter_ref=reference,state_id=state_id,
-            noise_root=seed(4,args.task,state_id),episode_id=identity,snapshots=False,uses_teaching=False))
+            noise_root=seed(4,args.task,state_id),episode_id=identity,snapshots=False,uses_teaching=False,capture_phi=False))
     for output in runner.run(requests):
         state_id=output['request']['state_id'];history_path=destination/f'state_{state_id:03d}.history.pt.gz'
         save_history(history_path,output['history'])
@@ -178,8 +178,11 @@ def select_teacher(root, task):
     existing=teacher_root(root,task)/'E.json'
     if existing.exists():return read_json(existing)
     nodes=contract['teacher']['readout_updates'];scores={};parents=[]
+    omission=Path(root)/'scientific_omissions'/f'task_{task:04d}.json'
+    omitted=set(read_json(omission)['omitted_jobs']) if omission.exists() else set()
     for update in nodes:
         path=teacher_root(root,task)/'selection'/f'update_{update:08d}'/'complete.json'
+        if not path.exists() and f'readout_{task:04d}_{update:08d}' in omitted:continue
         record=read_json(path)
         if not record['complete'] or len(record['rows']) != contract['teacher']['selection_H_per_node']:
             raise ValueError('all registered teacher node readouts required before E choice')
@@ -187,11 +190,13 @@ def select_teacher(root, task):
         parents.append(dict(update=update,reference=parameter_ref(task,update),
             weights=str(node_weights(root,task,update)),histories=[r['history'] for r in rows],
             rows=rows,selection_successes=scores[update]))
-    best=max(nodes,key=lambda u:(scores[u],-u))
+    best=max(scores,key=lambda u:(scores[u],-u))
     result=dict(complete=True,task=task,selected_update=best,reference=parameter_ref(task,best),
         weights=str(node_weights(root,task,best)),parents=parents,selection_states=panel['teacher_selection_states'],
         selection_folds=panel['selection_folds'],selection_noise=f"{contract['teacher']['selection_H_per_node']}-row teacher selection; no held/formal checkpoint choice",
-        choice_rule='max success; earliest tie including MT',shared_target_for_all_parent_H=True)
+        choice_rule='max success; earliest tie including MT',shared_target_for_all_parent_H=True,
+        evaluated_nodes=sorted(scores),scientifically_omitted_nodes=[u for u in nodes if u not in scores],
+        saturation_proof=str(omission) if omission.exists() else None)
     write_json_atomic(teacher_root(root,task)/'E.json',result)
     return result
 
@@ -257,11 +262,11 @@ def teacher_report(args,runtime,runner,environment):
         if any(not saved(arm) for arm in aliases):
             requests.append(dict(task=task,state=weights,parameter_ref=chosen['reference'],state_id=state,
                 noise_root=noise_root,episode_id=f'task_{args.task:04d}_report_E_{state:03d}',snapshots=False,
-                uses_teaching=False,aliases=aliases,registered_scene=reference['registered_scene'] if reference else None))
+                uses_teaching=False,aliases=aliases,capture_history=False,registered_scene=reference['registered_scene'] if reference else None))
         if chosen['selected_update']!=0 and reference is None and not saved('MT'):
             requests.append(dict(task=task,state=runtime.mt,parameter_ref='MT300',state_id=state,
                 noise_root=noise_root,episode_id=f'task_{args.task:04d}_report_MT_{state:03d}',snapshots=False,
-                uses_teaching=False,aliases=['MT']))
+                uses_teaching=False,aliases=['MT'],capture_history=False))
     before_steps=runner.environment_steps
     for output in runner.run(requests):
         request=output['request'];state=request['state_id'];new_episodes+=1
@@ -282,7 +287,7 @@ def teacher_report(args,runtime,runner,environment):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['prepare','report-references','formal-prepare','formal','teacher','readout','teacher-report','G','student-data','local-data','local','RL','report'])
+    parser.add_argument('command',choices=['prepare','report-references','formal-prepare','formal','teacher','readout','teacher-report','G','student-data','local','RL','report'])
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--asset-root',type=Path,default=ASSET_ROOT)
     parser.add_argument('--task',type=int,default=0)

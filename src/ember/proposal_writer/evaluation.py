@@ -99,7 +99,7 @@ def formal_condition(args,runtime,runner):
         raise ValueError('condition final initial state participated in adaptation')
     request=dict(task=task,state=path.states[path.selected],parameter_ref=path.selected,state_id=row['init_state_id'],
         noise_root=row['noise_root'],episode_id=f'{path.identity}_fixed_final',remaining=task['horizon']+10,
-        snapshots=False,uses_teaching=False,registered_scene=row['registered_scene'])
+        snapshots=False,uses_teaching=False,capture_history=False,registered_scene=row['registered_scene'])
     if path.selected=='MT300':
         result=dict(row['MT_row']);result['fixed_parameter_result_reused_from']=row['MT_source']
         first_actions=result.get('first_native_normalized_actions')

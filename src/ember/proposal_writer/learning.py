@@ -5,6 +5,7 @@ from pathlib import Path
 from collections import OrderedDict
 import random
 import time
+import resource
 
 import numpy as np
 import torch
@@ -17,6 +18,7 @@ from ember.writer.runtime import autocast
 
 from .contract import TASKS, OPTIMIZER, seed, CHECKPOINT_SCHEMA
 from .path import decision_logits, history_prefix, score_log_probability, load_history, conditional_parent_log_probability
+from .runtime import phase,finish_phases
 
 
 class Baseline(nn.Module):
@@ -107,7 +109,8 @@ def resume_checkpoint(path, stage, runtime, optimizer, context, *, baseline=None
 
 def memory_peak(device):
     return dict(allocated_GiB=torch.cuda.max_memory_allocated(device)/2**30,
-                reserved_GiB=torch.cuda.max_memory_reserved(device)/2**30)
+                reserved_GiB=torch.cuda.max_memory_reserved(device)/2**30,
+                host_max_RSS_GiB=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024**2)
 
 
 def metrics(root, stage, record, context):
@@ -134,6 +137,7 @@ class HistoryCache:
     """Decoded H and its frozen raw image features have a bounded worker lifetime."""
     def __init__(self,limit_bytes=2*1024**3,max_entries=2):
         self.limit_bytes,self.max_entries,self.items=limit_bytes,max_entries,OrderedDict()
+        self.decode_seconds,self.cache_hits=0.,0
 
     @staticmethod
     def nbytes(value):
@@ -149,7 +153,9 @@ class HistoryCache:
     def get(self,path):
         descriptor=path if isinstance(path,dict) else None
         path=descriptor['path'] if descriptor else path
-        if path not in self.items:self.items[path]=load_history(path)
+        if path not in self.items:
+            tick=time.monotonic();self.items[path]=load_history(path);self.decode_seconds+=time.monotonic()-tick
+        else:self.cache_hits+=1
         self.items.move_to_end(path);result=self.items[path];self.trim()
         return history_prefix(result,descriptor['records'],descriptor['episodes']) if descriptor else result
 
@@ -190,7 +196,8 @@ class CFMTrainer:
     def step(self,update,*,stage='G'):
         from safetensors.torch import load_file
         runtime,context,root=self.runtime,self.context,self.root
-        tick=time.monotonic();runtime.psi_frozen=False;runtime.generator.train().requires_grad_(True)
+        tick=time.monotonic();before=dict(runtime.components);decode_before=self.cache.decode_seconds
+        runtime.psi_frozen=False;runtime.generator.train().requires_grad_(True)
         self.optimizer.zero_grad(set_to_none=True);records=[]
         for task in assigned_tasks(context,update):
             rng=np.random.default_rng(seed(40,task,update));entry=self.bank[task]
@@ -206,24 +213,29 @@ class CFMTrainer:
             target=(runtime.generator.layout.pack(endpoint).to(runtime.device)-packed)/runtime.generator.layout.scale
             xi=torch.randn(target.shape,generator=torch.Generator().manual_seed(seed(41,task,update))).to(runtime.device)
             xi*=runtime.generator.layout.valid;t=float(rng.uniform());x=(1-t)*xi+t*target
-            with autocast(runtime.device):
-                prediction=runtime.generator(x,t,packed,features,history.model_rows(runtime),history.states)
+            rows=history.model_rows(runtime)
+            with phase(runtime,'CFM_forward'),autocast(runtime.device):
+                prediction=runtime.generator(x,t,packed,features,rows,history.states)
                 loss=(prediction.float()[runtime.generator.layout.valid]-(target-xi)[runtime.generator.layout.valid]).square().mean()
-            (loss/4).backward()
+            with phase(runtime,'CFM_backward'):(loss/4).backward()
             records.append(dict(task=task,parent=parent_row['reference'],E=entry['reference'],H=history_path,demo=demo,
-                time=t,loss=float(loss.detach()),frames=len(features['z']),denominator=4,missing_label=False))
+                time=t,loss=float(loss.detach()),frames=len(features['z']),H_records=len(history.records),
+                H_episodes=len(history.episodes),H_producers=len(history.states),denominator=4,missing_label=False))
             self.cache.remember_features(history_path,history)
-            del features,prediction,loss,x,xi,target,endpoint,parent,history
+            del features,prediction,loss,x,xi,target,endpoint,parent,history,rows
         synchronize_gradients(runtime.generator,context)
         norm=torch.nn.utils.clip_grad_norm_(runtime.generator.parameters(),1.,error_if_nonfinite=True)
         group_norms={g:sum(float(p.grad.float().square().sum()) for p,name in zip(runtime.generator.meta.values,runtime.generator.meta.groups,strict=True)
             if name==g and p.grad is not None)**.5 for g in ('gemma','action')}
         self.optimizer.step();runtime.mark_psi_update();torch.cuda.synchronize(context.device)
+        finish_phases(runtime)
         runtime.G_sampler=dict(next_update=update+1,logical_batch=4,task_order=list(TASKS),
             task_weight=1/36,parent_weight='equal actual parent',H_weight='uniform within parent')
         metrics(root,stage,dict(update=update+1,events=records,logical_task_batch=logical_tasks(update),gradient_norm=float(norm),
             meta_gradient_norm=group_norms,seconds=time.monotonic()-tick,decoded_H_cache_entries=len(self.cache.items),
             supervision_version=runtime.supervision_version,
+            phases={k:v-before.get(k,0.) for k,v in runtime.components.items()},
+            history_decode_seconds=self.cache.decode_seconds-decode_before,
             source_has_gradient=any(p.grad is not None for p in runtime.policy.parameters())),context)
 
 
@@ -339,11 +351,12 @@ def on_policy_update(runtime,context,root,update,paths,query_rewards,optimizer,b
             else:
                 logp=score_log_probability(logits,decision['selected_index'],forced=decision['forced'])
                 direct=logits.sum()*0
-            score=-coefficient*logp;((score+direct)/4).backward()
+            score=-coefficient*logp
+            with phase(runtime,'theta_backward'):((score+direct)/4).backward()
             behavior_loss+=float(score.detach())
             history=history_prefix(path.history,decision['records'],decision['episodes'])
             prediction=baseline(features,history.records);target=sum(values[i:])/(rounds-i)
-            ((prediction-target)**2/(4*len(behavior))).backward()
+            with phase(runtime,'independent_baseline_backward'):((prediction-target)**2/(4*len(behavior))).backward()
             scores.append(dict(kind=decision['kind'],round_index=i,conditional_score=float(logp.detach()),
                 behavior_score=decision['log_probability'],coefficient=coefficient,forced=decision['forced']))
             del logits,logp,score,direct,prediction,history
@@ -351,7 +364,8 @@ def on_policy_update(runtime,context,root,update,paths,query_rewards,optimizer,b
             if not coefficient or len(out['candidates'])==1:continue
             logits=decision_logits(runtime,path,out,features)
             loss=-coefficient*expected_query(logits,[rewards[ref] for ref in out['candidates']])
-            (loss/4).backward();final_loss+=float(loss.detach());del logits,loss
+            with phase(runtime,'theta_backward'):(loss/4).backward()
+            final_loss+=float(loss.detach());del logits,loss
         records.append(dict(condition=path.identity,depth_values=values,mean_depth_return=sum(values)/rounds,
             stop_probabilities=p,query_expectations=q,query_adjoint=q_coeff,stop_adjoint=p_coeff,
             candidate_query_rewards=rewards,conditional_behavior_loss=behavior_loss,
@@ -362,6 +376,7 @@ def on_policy_update(runtime,context,root,update,paths,query_rewards,optimizer,b
     optimizer.step()
     synchronize_gradients(baseline,context)
     torch.nn.utils.clip_grad_norm_(baseline.parameters(),1.,error_if_nonfinite=True);baseline_optimizer.step()
+    torch.cuda.synchronize(context.device);finish_phases(runtime)
     metrics(root,'RL',dict(update=update,conditions=records,actor_gradient_norm=float(norm),
         gradient='mean_d stopgrad(V0d)*SUM_{i<d} conditional behavior scores + grad V0d; mean B4',
         future_budget_model_input=False,continue_cost=cost,psi_frozen=True,one_actor_update=True,

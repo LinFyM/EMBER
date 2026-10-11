@@ -50,9 +50,11 @@ def local_data(args, runtime, runner, contract):
     for video_index, demo in enumerate(panel['policy_videos']):
         for repeat in range(2):
             ordinal = video_index * 2 + repeat
+            if args.condition_ordinal is not None and ordinal!=args.condition_ordinal:continue
             destination = Path(args.root) / 'local_data' / f'task_{args.task:04d}_condition_{ordinal:02d}'
             if (destination / 'local_labels.json').exists():
                 continue
+            tick=time.monotonic()
             if (destination / 'path.json').exists():
                 path = restore_compilation(destination, runtime)
             else:
@@ -71,7 +73,9 @@ def local_data(args, runtime, runner, contract):
                             (32-boundary['attempts'])/32, boundary['episodes']/100, len(P)/33], reward=reward))
             write_json_atomic(destination / 'local_labels.json', dict(task=args.task, demo=demo,
                 condition=path.identity, prefixes=prefixes, raw_rows=rows, complete=True,
-                query_excluded_from_H=True, uniform_behavior_not_on_policy=True))
+                query_excluded_from_H=True, uniform_behavior_not_on_policy=True,
+                end_to_end_seconds=time.monotonic()-tick,compilation_timings=path.timings,
+                components=dict(runtime.components)))
 
 
 def local_examples(root, runtime):
@@ -99,6 +103,7 @@ def rl(args, runtime, runner, contract, context):
                               baseline_optimizer=baseline_optimizer) if args.resume else 0
     panel_by_task = panels(args.root)
     for update in range(start, 16):
+        tick=time.monotonic()
         paths, rewards, controls = [], [], []
         runtime.actor.eval(); baseline.eval()
         for task_id in assigned_tasks(context):
@@ -123,6 +128,9 @@ def rl(args, runtime, runner, contract, context):
             sampler=dict(next_update=update+1, task_order=list(TASKS), new_paths_per_task=1,
                          query_pool_cycle=4, condition_weight=.25), baseline=baseline,
             baseline_optimizer=baseline_optimizer)
+        from .learning import metrics
+        metrics(args.root,'RL_cycle',dict(update=update+1,full_update_seconds=time.monotonic()-tick,
+            path_timings=[p.timings for p in paths],components=dict(runtime.components)),context)
         for path in paths:
             retire_consumed_parameters(args.root/'RL_paths'/path.identity,saved/'manifest.json',
                 {k:v.cpu() for k,v in runtime.mt.items()},runtime.prox_scales)
@@ -130,6 +138,7 @@ def rl(args, runtime, runner, contract, context):
 
 
 def report(args, runtime, runner, contract):
+    if args.condition_ordinal not in (None,0,1):raise ValueError('report has exactly two registered conditions per task')
     state = load_version(runtime, args.checkpoint)
     version = 'local128' if state['stage'] == 'local' and state['next_update'] == 128 else 'RL16'
     if version == 'RL16' and (state['stage'] != 'RL' or state['next_update'] != 16):
@@ -137,6 +146,7 @@ def report(args, runtime, runner, contract):
     task, panel = task_spec(contract, args.task), panels(args.root)[args.task]
     runtime.actor.eval()
     for ordinal, demo in enumerate(panel['report_videos']):
+        if args.condition_ordinal is not None and ordinal!=args.condition_ordinal:continue
         arm = args.video_arm
         if arm != 'correct' and (version != 'RL16' or args.task not in (12, 32) or ordinal != 0):
             continue
@@ -145,25 +155,28 @@ def report(args, runtime, runner, contract):
         if arm == 'wrong':
             video_task = 32 if args.task == 12 else 12
             demo = panels(args.root)[video_task]['report_videos'][0]
+        full_U=version=='RL16' and arm=='correct' and args.task in (12,32) and ordinal==0
         destination = args.root / 'reports' / version / arm / f'task_{args.task:04d}_condition_{ordinal:02d}'
         if (destination / 'complete.json').exists():
             continue
+        tick=time.monotonic()
         if (destination / 'path.json').exists():
             path = restore_compilation(destination, runtime)
         else:
             path = compile_condition(runtime, runner, task, panel, demo, identity=destination.name,
                 path_ordinal=ordinal, noise_root=seed(8, args.task, ordinal), video_task=video_task)
-            path.save(destination, retain_U=version == 'RL16' and arm == 'correct' and args.task in (12,32) and ordinal == 0)
+            path.save(destination, retain_U=full_U)
         rows = evaluate_fixed(runtime, runner, path, task, panel['report_states'], seed(80, args.task, ordinal))
         write_json_atomic(destination / 'query.json', dict(rows=rows, finite_train_diagnostic=True,
             teacher_video_reused_six_times=True, single_fixed_task_LoRA=True, final_feedback_not_used_for_selection=True))
-        if version == 'RL16' and arm == 'correct' and args.task in (12,32) and ordinal == 0:
+        if full_U:
             U = evaluate_fixed(runtime, runner, path, task, panel['report_states'], seed(80, args.task, ordinal),
                                references=path.valid)
             write_json_atomic(destination / 'U_diagnostic.json', dict(rows=U, complete_U=True,
                 diagnosis_after_final_locked=True, diagnosis_does_not_change_selected=True))
         write_json_atomic(destination / 'complete.json',dict(complete=True,version=version,input_arm=arm,
-            code_stage='fixed report',condition=path.identity,query_rows=len(rows),environment_steps=path.environment_steps))
+            code_stage='fixed report',condition=path.identity,query_rows=len(rows),environment_steps=path.environment_steps,
+            end_to_end_seconds=time.monotonic()-tick,compilation_timings=path.timings,components=dict(runtime.components)))
         retire_consumed_parameters(destination,destination/'complete.json',{k:v.cpu() for k,v in runtime.mt.items()},runtime.prox_scales)
 
 

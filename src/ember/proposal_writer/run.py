@@ -271,6 +271,7 @@ def main():
     parser.add_argument('--profile-consumer',choices=['full','throughput'],default='full')
     parser.add_argument('--task', type=int, choices=TASKS, default=12)
     parser.add_argument('--event', type=int, default=0)
+    parser.add_argument('--condition-ordinal',type=int,choices=range(4),default=None)
     parser.add_argument('--stop', type=int, choices=[160, 240, 480], default=480)
     parser.add_argument('--resume', type=Path)
     parser.add_argument('--checkpoint', type=Path)
@@ -287,6 +288,11 @@ def main():
     shared = args.command in {'G','local','RL'}
     if shared:
         args.physical_gpu = int(os.environ['CUDA_VISIBLE_DEVICES'].split(',')[int(os.environ.get('LOCAL_RANK', '0'))])
+        chunks=os.environ.get('EMBER_META_FRAME_CHUNKS')
+        if chunks:
+            chunks=chunks.split(',')
+            if len(chunks)!=int(os.environ.get('WORLD_SIZE','1')):raise ValueError('physical meta chunks/topology differ')
+            args.frame_chunk=int(chunks[int(os.environ.get('LOCAL_RANK','0'))])
     if args.physical_gpu is None:
         parser.error('GPU consumers require explicit physical GPU identity')
     if args.command != 'profile':

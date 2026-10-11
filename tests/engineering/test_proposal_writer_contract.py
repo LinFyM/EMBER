@@ -240,6 +240,98 @@ def test_multistart_dependencies_and_same_node_shared_allocation():
     assert Batch.allocation(shared,[('gpu01',1),('gpu02',4)]) is None
 
 
+def test_batch_prioritizes_unlocking_chain_and_measured_device(tmp_path,monkeypatch):
+    from ember.proposal_writer import batch
+    from ember.pi05_source_checkpoint import write_json_atomic
+    write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':96}})
+    monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed' if command[1]=='rev-parse' else '')
+    coordinator=batch.Batch(tmp_path,[('gpu01',1)],root=tmp_path)
+    launches=[]
+    monkeypatch.setattr(coordinator,'execute',lambda job,device: launches.append(job.identity) or job.identity)
+    jobs=[batch.Job('leaf',[],estimate_seconds=15),batch.Job('seed',[],estimate_seconds=2),
+          batch.Job('collect',[],('seed',),2),batch.Job('late',[],('collect',),20)]
+    coordinator.run(jobs)
+    assert launches==['seed','collect','late','leaf']
+    measured=batch.Job('measured',[],estimate_seconds=20,device_estimates={('gpu01',5):10})
+    assert batch.Batch.allocation(measured,[('gpu01',1),('gpu01',5)])==('gpu01',5)
+
+
+def test_located_device_failure_keeps_independent_work_and_blocks_descendant(tmp_path,monkeypatch):
+    import pytest
+    from ember.proposal_writer import batch
+    from ember.pi05_source_checkpoint import write_json_atomic
+    write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':96}})
+    monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed' if command[1]=='rev-parse' else '')
+    coordinator=batch.Batch(tmp_path,[('gpu01',1),('gpu01',5)],root=tmp_path)
+    launches=[]
+    def execute(job,device):
+        launches.append((job.identity,device))
+        if job.identity=='renderer':raise batch.DeviceWorkloadFailure('located framebuffer failure')
+        return job.identity
+    monkeypatch.setattr(coordinator,'execute',execute)
+    jobs=[batch.Job('renderer',[],estimate_seconds=20),batch.Job('dependent',[],('renderer',),30),
+          batch.Job('independent',[],estimate_seconds=10),batch.Job('independent_next',[],('independent',),5)]
+    with pytest.raises(RuntimeError,match='framebuffer'):
+        coordinator.run(jobs)
+    assert [name for name,_ in launches]==['renderer','independent','independent_next']
+    assert launches[1][1]==launches[2][1]==('gpu01',5)
+
+
+def test_unknown_batch_failure_stops_new_dispatch(tmp_path,monkeypatch):
+    import pytest
+    from ember.proposal_writer import batch
+    from ember.pi05_source_checkpoint import write_json_atomic
+    write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':96}})
+    monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed' if command[1]=='rev-parse' else '')
+    coordinator=batch.Batch(tmp_path,[('gpu01',1)],root=tmp_path)
+    launches=[]
+    def execute(job,device):
+        launches.append(job.identity)
+        raise RuntimeError('unknown data/gradient failure')
+    monkeypatch.setattr(coordinator,'execute',execute)
+    with pytest.raises(RuntimeError,match='unknown data'):
+        coordinator.run([batch.Job('unknown',[],estimate_seconds=20),batch.Job('later',[],estimate_seconds=10)])
+    assert launches==['unknown']
+
+
+def test_shared_launch_uses_measured_headroom_chunks_without_changing_logical_flow(tmp_path,monkeypatch):
+    from ember.proposal_writer import batch
+    from ember.pi05_source_checkpoint import write_json_atomic
+    write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':96}})
+    monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed' if command[1]=='rev-parse' else '')
+    devices=[('gpu01',gpu) for gpu in (1,3,4,5)]
+    coordinator=batch.Batch(tmp_path,devices,root=tmp_path)
+    memory={1:39572,3:20118,4:20118,5:21262}
+    monkeypatch.setattr(coordinator,'admit',lambda job,node,gpu,destination: {'free_MiB':memory[gpu]})
+    def launch(job,selected,destination,command,env,admissions):
+        assert selected==devices and env['EMBER_META_FRAME_CHUNKS']=='16,4,4,8'
+        assert env['CUDA_VISIBLE_DEVICES']=='1,3,4,5'
+        assert command[command.index('--stop')+1]=='240'
+        return job.identity
+    monkeypatch.setattr(coordinator,'launch',launch)
+    assert coordinator.execute(batch.Job('G240',['G','--stop','240','--frame-chunk','4'],gpu_count=4),devices)=='G240'
+
+
+def test_condition_queue_preserves_full_panels_and_parallel_RL_report_dependencies(tmp_path):
+    from ember.proposal_writer.batch import stage_jobs
+    args=SimpleNamespace(root=tmp_path,stage='decision-report',shared_gpus=4,shared_frame_chunk=4,slots=16)
+    jobs={job.identity:job for job in stage_jobs(args)}
+    local=[job for job in jobs.values() if job.arguments[0]=='local-data']
+    report=[job for job in jobs.values() if job.arguments[0]=='report' and '--video-arm' not in job.arguments]
+    pair=lambda job:(int(job.arguments[job.arguments.index('--task')+1]),
+                     int(job.arguments[job.arguments.index('--condition-ordinal')+1]))
+    assert {pair(job) for job in local}=={(task,ordinal) for task in (12,29,32,38) for ordinal in range(4)}
+    assert len(local)==16 and len(report)==16
+    for version in ('local128','RL16'):
+        rows=[job for job in report if job.dependencies==(version,)]
+        assert {pair(job) for job in rows}=={(task,ordinal) for task in (12,29,32,38) for ordinal in (0,1)}
+    assert set(jobs['local128'].dependencies)=={job.identity for job in local}
+    assert jobs['RL16'].dependencies==('local128',)
+    for task in (12,32):
+        for arm in ('other','wrong'):
+            assert jobs[f'control_{arm}_{task:04d}'].dependencies==(f'report_RL16_{task:04d}_00',)
+
+
 def test_empty_seed_events_and_true_producer_parent_identity(tmp_path):
     from safetensors.torch import save_file
     from ember.proposal_writer.contract import pilot_panel

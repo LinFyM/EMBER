@@ -110,7 +110,6 @@ class Runtime:
                 self.raw_cache[raw_key]=cpu;self.raw_cache_size+=size
         with torch.set_grad_enabled(not self.psi_frozen), autocast(self.device):
             features = self.generator.meta(condition,raw_prefix=raw)
-        self.components['meta_read_seconds'] += time.monotonic() - started
         self.components['meta_read_frames'] += len(condition[0])
         if self.psi_frozen:
             features = {k: v.detach() for k, v in features.items()}
@@ -122,6 +121,7 @@ class Runtime:
             if size <= self.feature_cache_bytes:
                 self.feature_cache[key] = cpu
                 self.feature_cache_size += size
+        self.components['meta_read_seconds'] += time.monotonic() - started
         return features
 
     def mark_psi_update(self):

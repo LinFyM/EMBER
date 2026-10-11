@@ -5,6 +5,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 import gzip
 import math
+import time
 
 import torch
 from safetensors.torch import save_file
@@ -60,13 +61,15 @@ class Compilation:
     environment_steps: int = 0
     video_task: int | None = None
     kernel_identity: dict = field(default_factory=dict)
+    timings: dict = field(default_factory=dict)
 
     def manifest(self):
         return dict(task_id=self.task, teacher_demo=self.demo, video_task=self.video_task,
             identity=self.identity, path_ordinal=self.path_ordinal, noise_root=self.noise_root,
             practiced_P=self.practiced, valid_U=self.valid, selected=self.selected,
             decisions=self.decisions, attempts=self.attempts, boundaries=self.boundaries,
-            environment_steps=self.environment_steps,final_locked=self.selected is not None,kernel_identity=self.kernel_identity)
+            environment_steps=self.environment_steps,final_locked=self.selected is not None,
+            kernel_identity=self.kernel_identity,timings=self.timings)
 
     def save(self, root, *, retain_U=False):
         root = Path(root); root.mkdir(parents=True, exist_ok=True)
@@ -136,6 +139,7 @@ def compile_condition(runtime, runner, task, panel, demo, *, identity, path_ordi
                       uniform=False, snapshots=False, video_task=None, baseline=None):
     if not runtime.psi_frozen:
         raise ValueError('compilation needs a fixed generation/read kernel')
+    tick=time.monotonic();before=dict(runtime.components);environment_seconds=0.
     mt = cpu_state(runtime.mt)
     path = Compilation(task['global_task_id'], int(demo), identity, int(path_ordinal), int(noise_root),
         History(states={'MT300':mt}),{'MT300':mt},video_task=video_task,
@@ -156,6 +160,7 @@ def compile_condition(runtime, runner, task, panel, demo, *, identity, path_ordi
             ref, xi_seed = f'G_{attempt:03d}', seed(31, noise_root, path_ordinal, attempt)
             refs = {'MT300', parent} | {r['parameter_ref'] for r in path.history.records}
             states = {key: path.states[key] for key in refs}
+            candidate_tick=time.monotonic()
             with autocast(runtime.device):
                 candidate = runtime.generator.generate(path.states[parent], features,
                     path.history.model_rows(runtime), states, noise_seed=xi_seed)
@@ -170,6 +175,7 @@ def compile_condition(runtime, runner, task, panel, demo, *, identity, path_ordi
             if valid:
                 path.states[ref] = cpu_state(candidate)
                 path.valid.append(ref); proposals.append(ref)
+            item['generation_and_materialization_seconds']=time.monotonic()-candidate_tick
             del candidate
         practice_budget=[(1024-path.environment_steps)/1024,(32-len(path.attempts))/32,
                          len(path.history.episodes)/100,len(path.practiced)/33]
@@ -180,7 +186,8 @@ def compile_condition(runtime, runner, task, panel, demo, *, identity, path_ordi
         request = dict(task=task, state=path.states[chosen], parameter_ref=chosen, state_id=state_id,
             noise_root=seed(32, noise_root, n), episode_id=f'{identity}_practice_{n:03d}',
             remaining=1024 - path.environment_steps, snapshots=snapshots, uses_teaching=True)
-        result = next(runner.run([request]))
+        episode_tick=time.monotonic();result = next(runner.run([request]))
+        environment_seconds+=time.monotonic()-episode_tick
         path.environment_steps += int(result['row']['environment_steps'])
         path.history.append(result['history'])
         if result['row'].get('model_failure'):
@@ -201,6 +208,9 @@ def compile_condition(runtime, runner, task, panel, demo, *, identity, path_ordi
         path.decisions[-1]['forced_reason']='insufficient_environment_budget'
     path.selected = categorical_record(runtime, path, 'final', path.practiced, features,
         budget=budget, rng=rng, uniform=uniform, baseline=baseline)
+    path.timings=dict(compilation_seconds=time.monotonic()-tick,environment_seconds=environment_seconds,
+        generation_seconds=sum(a['generation_and_materialization_seconds'] for a in path.attempts),
+        components_delta={k:v-before.get(k,0) for k,v in runtime.components.items()})
     return path
 
 
@@ -241,7 +251,8 @@ def restore_compilation(root, runtime):
     refs={'MT300'}|{r['parameter_ref'] for r in history.records}
     history.states={k:states[k] for k in refs}
     path = Compilation(meta['task_id'], meta['teacher_demo'], meta['identity'], meta['path_ordinal'],
-        meta['noise_root'],history,states,video_task=meta['video_task'],kernel_identity=meta.get('kernel_identity',{}))
+        meta['noise_root'],history,states,video_task=meta['video_task'],kernel_identity=meta.get('kernel_identity',{}),
+        timings=meta.get('timings',{}))
     for attr, key in [('practiced', 'practiced_P'), ('valid', 'valid_U'), ('selected', 'selected'),
                       ('decisions', 'decisions'), ('attempts', 'attempts'), ('boundaries', 'boundaries'),
                       ('environment_steps', 'environment_steps')]:

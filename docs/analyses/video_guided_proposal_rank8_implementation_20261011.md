@@ -47,3 +47,21 @@ Batch只负责live准入、预算/退出和依赖调度；quota解析独立于�
 后续规定query消费者保留已经产生的首个原生前5动作/noise/实际执行mask，支持参数—函数—能力配对消费。
 没有新增forward或将query回填H；原query历史原先仅输出success后丢弃，现在记录该最小函数原件。
 13项检查通过，含锁定参数后query与编译H隔离。教师来源b73d15c8不变，G/π/报告从后续clean冻结读取。
+
+Owner/main随后明确要求实质提速。Batch的已定位renderer/OOM/headroom错误只隔离失败设备和依赖，无限重试未引入；
+独立安全job继续，未知数据/梯度、信息墙、全局资源/预算仍停派。剩余依赖链cost替换单leaf长短，单卡选真实设备估计。
+相应真实ThreadPool消费者覆盖局部失败后继续、后继阻塞、全局未知停止和Long解锁优先。
+
+一次小型实际完整B4比较读取四个真实mid parent/H，教学35/37/60/83帧，H36/60/104/104记录：
+2worker/chunk8 warmed47.432790秒(peak17.563982/reserved18.820313GiB)，4worker/chunk4为34.562157秒
+(peak13.779171/reserved14.441406GiB)。4worker wall短27.1%，每更新GPUh多45.7%；比较总0.318552152GPUh。
+原件为新ROOT/cfm_throughput_2、cfm_throughput_4和jobs/profile_cfm_2/4；未完整bank时unit坐标，仅物理吞吐，未保存formal训练状态。
+已有84帧chunk16实际reserved25.623GiB，故高余量卡16、≥21000MiB用已实测chunk8、其余4；
+GPU01:3/4当时20118MiB扣CUDA/context开销不能稳妥承接18.82GiB reserved，选择4有真实边界。
+每rank物理chunk登记在launch env，逻辑任务/事件流、B4/分母/optimizer与恢复schema保持；G240实际边界重新预算。
+
+现有pipeline按condition细化local-data16、每版本report8与指定control4，原panel/ordinal/RNG/输出身份不变，无第二runner。
+RL与local128报告保持独立就绪；path和既有metrics保存生成/物化、环境、候选响应、θ与完整cycle实际计时。
+context仍在每候选16Euler外；同parent四候选context或冻结prefix复用待首个必要π消费者定量，不预设收益或建无界缓存。
+效率修订18项针对性检查通过；architecture guard相对d1ee4a20为+186/-28/net158，7个既有source/test文件、零新模块、无hard。
+队列准入/依赖、CFM等权及条件状态机保留各自owner；复杂度review来自这些已存在的实际协议，未拆成并行runner。

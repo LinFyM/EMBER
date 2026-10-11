@@ -213,6 +213,7 @@ def train_local(runtime, context, root, examples, *, stop=128, resume=None, base
 def on_policy_update(runtime, context, root, update, paths, query_rewards, control_rewards,
                      optimizer, baseline, baseline_optimizer):
     """Recompute all θ encoding at frozen batch θ, then one update and discard paths."""
+    tick=time.monotonic()
     runtime.freeze_psi(); runtime.actor.train(); baseline.eval()
     optimizer.zero_grad(set_to_none=True); baseline_optimizer.zero_grad(set_to_none=True)
     baseline_losses, records = [], []
@@ -247,4 +248,4 @@ def on_policy_update(runtime, context, root, update, paths, query_rewards, contr
     metrics(root, 'RL', dict(update=update, conditions=records, actor_gradient_norm=float(norm),
         score_reduction='SUM all decisions within condition; MEAN four conditions',
         psi_frozen=not any(p.requires_grad for p in runtime.generator.parameters()),
-        one_actor_update=True, resample_required=True), context)
+        one_actor_update=True, resample_required=True,theta_and_baseline_update_seconds=time.monotonic()-tick), context)

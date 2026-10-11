@@ -21,6 +21,10 @@ PREFLIGHT = '/data0/user/ymdai/.codex/skills/gpu-preflight/scripts/gpu_preflight
 UNMEASURED_TEACHER_SECONDS = 22.5  # Shared-card demo16.84 + measured rec4/keep4 + optimizer margin.
 
 
+class DeviceWorkloadFailure(RuntimeError):
+    """Located renderer/headroom/OOM failure; quarantine devices, never retry."""
+
+
 @dataclass
 class Job:
     identity: str
@@ -34,6 +38,23 @@ class Job:
 
     def estimated_seconds(self, device):
         return self.device_estimates.get(device, self.estimate_seconds)
+
+
+def critical_path_costs(jobs):
+    children = {identity: [] for identity in jobs}
+    for identity, job in jobs.items():
+        for dependency in job.dependencies:
+            if dependency in children:children[dependency].append(identity)
+    costs = {}
+    def cost(identity, ancestors=frozenset()):
+        if identity in ancestors:raise ValueError('job dependencies contain a cycle')
+        if identity not in costs:
+            job=jobs[identity]
+            duration=min(job.device_estimates.values(),default=job.estimate_seconds)
+            costs[identity]=duration+max((cost(child,ancestors|{identity}) for child in children[identity]),default=0)
+        return costs[identity]
+    for identity in jobs:cost(identity)
+    return costs
 
 
 def initial_jobs(microbatch,slots,teacher_devices,*,root=RUN_ROOT,teacher_update_seconds=None):
@@ -129,7 +150,7 @@ class Batch:
             allocated = set(self.running)
             selected = next(g for n,g in devices if n==node and g['index']==gpu)
             if selected['compute_mode']=='Prohibited' or selected['mem_free_mib'] < (job.required_free_MiB or self.required_free_MiB):
-                raise RuntimeError(f'live device headroom below measured workload requirement: {node}:{gpu}')
+                raise DeviceWorkloadFailure(f'live device headroom below measured workload requirement: {node}:{gpu}')
             if len(allocated) >= cap or sum(n==node for n,_ in allocated) >= 6:
                 raise RuntimeError('current physical GPU project cap prevents this launch')
             # Live allocation may include a task-owned process outside this driver's futures.
@@ -190,6 +211,9 @@ class Batch:
                 arguments[arguments.index('--microbatch')+1]='56'
             if arguments[0] in ('audit','report') and admissions[0]['free_MiB']<25000:
                 arguments[arguments.index('--slots')+1]=str(min(16,int(arguments[arguments.index('--slots')+1])))
+            if len(devices)>1 and '--frame-chunk' in arguments:
+                env['EMBER_META_FRAME_CHUNKS']=','.join(str(16 if a['free_MiB']>=28000 else
+                    8 if a['free_MiB']>=21000 else 4) for a in admissions)
             command+=[str(self.workspace/'scripts/video_guided_proposal_writer.py'),*arguments,
                       '--root',str(self.root),'--physical-gpu',str(gpu)]
             return self.launch(job,devices,destination,command,env,admissions)
@@ -216,13 +240,18 @@ class Batch:
             end_utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
         (destination/'exit.json').write_text(json.dumps(receipt,indent=2)+'\n')
         (destination.parent/'latest.json').write_text(json.dumps(dict(exit_code=code,receipt=str(destination/'exit.json')))+'\n')
-        if code:raise RuntimeError(f'{job.identity} exited {code}; original log {destination}/process.log')
+        if code:
+            failure=f'{job.identity} exited {code}; original log {destination}/process.log'
+            log=(destination/'process.log').read_text(errors='replace')
+            scoped=any(marker in log for marker in ('Offscreen framebuffer is not complete',
+                'torch.OutOfMemoryError', 'torch.cuda.OutOfMemoryError', 'CUDA out of memory'))
+            raise (DeviceWorkloadFailure if scoped else RuntimeError)(failure)
         return job.identity
 
     @staticmethod
     def allocation(job,free):
         eligible=[d for d in free if not job.eligible_devices or d in job.eligible_devices]
-        if job.gpu_count==1:return eligible[0] if eligible else None
+        if job.gpu_count==1:return min(eligible,key=job.estimated_seconds) if eligible else None
         for node in dict.fromkeys(n for n,_ in eligible):
             group=[d for d in eligible if d[0]==node]
             if len(group)>=job.gpu_count:return group[:job.gpu_count]
@@ -231,15 +260,15 @@ class Batch:
     def _consume_completions(self, completed, futures, executor, done, external, free, failures):
         for future in completed:
             device=futures.pop(future)
-            if device is not None:free.extend(device if isinstance(device,list) else [device])
             try:
                 result=future.result()
-                if device is not None:done.add(result)
+                if device is not None:
+                    done.add(result);free.extend(device if isinstance(device,list) else [device])
                 else:
                     done.update(result)
-                    if external-done and not failures:
+                    if external-done and not any(not isinstance(e,DeviceWorkloadFailure) for e in failures):
                         futures[executor.submit(dependency_completion,self.root,external-done)]=None
-            except Exception as error:failures.append(str(error))
+            except Exception as error:failures.append(error)
 
     def _release_deferred_devices(self, deferred, done, free):
         for device,dependencies in list(deferred.items()):
@@ -260,11 +289,12 @@ class Batch:
             if external:futures[executor.submit(dependency_completion,self.root,external)]=None
             while pending or futures:
                 self._release_deferred_devices(deferred,done,free)
+                costs=critical_path_costs(pending)
                 ready=sorted([j for j in pending.values() if set(j.dependencies)<=done],
-                             key=lambda j:-j.estimate_seconds)
+                             key=lambda j:-costs[j.identity])
                 for job in ready:
                     eligible=self.allocation(job,free)
-                    if eligible is None or failures:continue
+                    if eligible is None or any(not isinstance(e,DeviceWorkloadFailure) for e in failures):continue
                     for d in (eligible if isinstance(eligible,list) else [eligible]):free.remove(d)
                     del pending[job.identity]
                     futures[executor.submit(self.execute,job,eligible)]=eligible
@@ -274,7 +304,7 @@ class Batch:
                 completed,_=wait(futures,return_when=FIRST_COMPLETED)
                 self._consume_completions(completed,futures,executor,done,external,free,failures)
             if failures:
-                raise RuntimeError('batch engineering/budget failure: '+ '; '.join(failures))
+                raise RuntimeError('batch engineering/budget failure: '+ '; '.join(map(str,failures)))
         return sorted(done)
 
 
@@ -287,27 +317,32 @@ def stage_jobs(args):
     local=root/'checkpoints/local/update_00000128';RL=root/'checkpoints/RL/update_00000016'
     def shared(identity,arguments,dependencies,seconds):
         return Job(identity,arguments+['--frame-chunk',str(args.shared_frame_chunk)],dependencies,seconds,
-            gpu_count=args.shared_gpus,required_free_MiB=28000 if args.shared_frame_chunk>=16 else 20000)
+            gpu_count=args.shared_gpus,required_free_MiB=28000 if args.shared_frame_chunk>=16 else
+                21000 if args.shared_frame_chunk>=8 else 18000)
     if args.stage=='G':
         estimate=60+240*4*args.CFM_condition_seconds/args.shared_gpus
         return [shared('G240',['G','--stop','240'],(),estimate),
                 shared('G480',['G','--stop','480','--resume',str(root/'checkpoints/G/update_00000240')],('G240',),estimate)]
-    jobs=[Job(f'local_data_{task:04d}',['local-data','--task',str(task),'--checkpoint',str(G),
-        '--slots',str(args.slots),'--frame-chunk',str(args.shared_frame_chunk)],estimate_seconds=1800) for task in TASKS]
+    jobs=[Job(f'local_data_{task:04d}_{ordinal:02d}',['local-data','--task',str(task),'--checkpoint',str(G),
+        '--condition-ordinal',str(ordinal),'--slots',str(args.slots),'--frame-chunk',str(args.shared_frame_chunk)],
+        estimate_seconds=1800 if task in (32,38) else 1200) for task in TASKS for ordinal in range(4)]
     jobs.append(shared('local128',['local','--checkpoint',str(G)],tuple(j.identity for j in jobs),
         128*4*6/args.shared_gpus+60))
     jobs.append(shared('RL16',['RL','--checkpoint',str(local)],('local128',),16*4*180/args.shared_gpus+60))
     for version,checkpoint,dependency in [('local128',local,'local128'),('RL16',RL,'RL16')]:
         for task in TASKS:
-            identity=f'report_{version}_{task:04d}'
-            jobs.append(Job(identity,['report','--task',str(task),'--checkpoint',str(checkpoint),'--slots',str(args.slots),
-                '--frame-chunk',str(args.shared_frame_chunk)],(dependency,),4200 if version=='RL16' and task==32 else
-                2500 if version=='RL16' and task==12 else 900))
+            for ordinal in (0,1):
+                identity=f'report_{version}_{task:04d}_{ordinal:02d}'
+                seconds=3750 if version=='RL16' and task==32 and ordinal==0 else (
+                    2050 if version=='RL16' and task==12 and ordinal==0 else 900)
+                jobs.append(Job(identity,['report','--task',str(task),'--condition-ordinal',str(ordinal),
+                    '--checkpoint',str(checkpoint),'--slots',str(args.slots),'--frame-chunk',str(args.shared_frame_chunk)],
+                    (dependency,),seconds))
     for task in (12,32):
         for arm in ('other','wrong'):
             jobs.append(Job(f'control_{arm}_{task:04d}',['report','--task',str(task),'--video-arm',arm,
-                '--checkpoint',str(RL),'--slots',str(args.slots),'--frame-chunk',str(args.shared_frame_chunk)],
-                (f'report_RL16_{task:04d}',),600))
+                '--condition-ordinal','0','--checkpoint',str(RL),'--slots',str(args.slots),
+                '--frame-chunk',str(args.shared_frame_chunk)],(f'report_RL16_{task:04d}_00',),600))
     return jobs
 
 

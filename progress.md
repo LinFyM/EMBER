@@ -1,3 +1,23 @@
+## 2026-10-11 已消费Owner与main提速要求：修复调度，按真实B4选择四卡G
+
+Owner明确当前速度过慢，且后续G/π必须高效率。main指出原局部renderer失败触发全局停止派发，以及最长叶子优先延迟Long seed长链。
+当前教师有效进程不取消/重跑/热改；新的Batch在原owner内隔离已定位renderer/显存故障的设备与依赖，独立安全任务继续，
+未知全局、信息墙、资源总量或预算失败仍停派；没有自动重试。ready按剩余依赖链成本优先，单卡按实测设备估计选择。
+
+已授权的唯一小型比较实际完成：四task真实mid parent/H、每配置3次完整逻辑B4更新，真实教学35/37/60/83帧及36/60/104/104条H记录。
+2卡chunk8 warmed更新47.432790秒、reserved最高18.820313GiB；4卡chunk4为34.562157秒、reserved最高14.441406GiB。
+四卡wall缩短27.1%，每更新GPUh增加45.7%；两次总0.318552152GPUh全部计费。为未完成bank的unit坐标disposable吞吐比较，
+没有formal模型/checkpoint或fresh G实践，不作为S_G训练或能力证据。原84帧chunk8/16 profile仍作为最长视频与高余量证据。
+当前现场gpu01:1/3/4/5允许同节点四卡；后续正式G按live准入、完整bank S_G和逻辑B4运行，不锁死旧world2。
+各rank依真实余量选择chunk16(≥28000MiB)/8(≥21000MiB)/4，其对应实际峰值有原件；低余量卡不勉强沿18.82GiB reserved的chunk8。
+后继G240完整节点更新实际费用/剩余报告预留，再原opt/RNG续480。初步剩余主要计算约9–14h，首个formal消费者再修正。
+
+local-data现有队列细化为16个独立condition，两个版本报告各8condition；输出目录、panel/ordinal/RNG/查询与loss分母不变。
+RL同θ整batch的4task仍同节点并行，local128报告不阻塞RL16；冻结RL16后指定U/other/wrong按就绪依赖并行，不增加科学臂。
+现有path/metrics增加真实生成物化、环境、候选响应、θ/基线更新与整cycle耗时，固定ψ才复用contextual/cache，θ编码继续重算。
+暂未以未测收益大改生成context或candidate prefix；将从首个必要π消费者判断。96GPUh含carry-in/64GiB及科学矩阵全部保持。
+18项针对性检查已通过，guard无hard、零新模块；随后clean pushed新冻结承接。旧b73/fdcee教师与launch身份保留，tracked/Git/main只读模式不变。
+
 ## 2026-10-11 rank8教师bank已恢复：16 renderer实际通过，剩余更新按六卡池接续
 
 audit_0029_0/attempt_002从clean pushed detached fdcee632实际退出0，完整selection4/audit16共60行；

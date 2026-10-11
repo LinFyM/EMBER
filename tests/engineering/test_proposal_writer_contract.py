@@ -24,6 +24,15 @@ def test_complete_original_coordinate_roundtrip():
     assert all(torch.equal(restored[k],v) for k,v in state.items())
 
 
+def test_full_horizon_equal_budget_is_complete_and_shorter_cutoff_is_truncated():
+    from ember.writer.practice.environment import budget_truncated
+    for horizon in (220,280,300,400,520):
+        assert not budget_truncated(remaining=horizon+10,consumed=horizon+10,done=False,steps=horizon,official_horizon=horizon)
+        assert budget_truncated(remaining=horizon+5,consumed=horizon+5,done=False,steps=horizon-5,official_horizon=horizon)
+        assert not budget_truncated(remaining=110,consumed=110,done=True,steps=100,official_horizon=horizon)
+        assert not budget_truncated(remaining=None,consumed=horizon+10,done=False,steps=horizon,official_horizon=horizon)
+
+
 def test_condition_sum_and_forced_zero_credit():
     logits=torch.tensor([.2,.6],requires_grad=True)
     score=score_log_probability(logits,0)+score_log_probability(logits,1)

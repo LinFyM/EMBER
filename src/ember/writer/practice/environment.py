@@ -29,6 +29,11 @@ def _wire(raw):
     return {k: v.numpy() for k, v in raw.items()}
 
 
+def budget_truncated(*,remaining,consumed,done,steps,official_horizon):
+    """A full official episode is complete even when it exactly exhausts a budget."""
+    return bool(remaining is not None and consumed==remaining and not done and steps<official_horizon)
+
+
 def step_environment(env,slot,command,episode_contract,current_raw,controls,task):
     capture = episode_contract.get('diagnostic_occupancy_capture')
     if capture:
@@ -133,7 +138,8 @@ def _serve(pipe, contract, physical_gpu, affinity):
                     contract={**episode_contract, 'rng': dict(inference_seed=noise_root)},
                     task_adapter=None, worker_started=started)
                 consumed = settling + slot['steps'] - initial_steps
-                truncated = bool(remaining is not None and consumed == remaining and not done)
+                truncated = budget_truncated(remaining=remaining,consumed=consumed,done=done,steps=slot['steps'],
+                    official_horizon=int(episode_contract['environment']['horizons'][task['suite']]))
                 row.update(settling_steps=settling, environment_steps=consumed,
                     budget_truncated=truncated, replans=slot['replan_index'] - initial_replans,
                     restored_control_steps=initial_steps, initial_proprio=initial_proprio)

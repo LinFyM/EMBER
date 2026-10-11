@@ -1,3 +1,9 @@
+## 2026-10-11 完整五轮判定修复与无损恢复
+
+profile_joint_cost_02已实际完成5个Long官方episode（起步MT另计），624条record/6个episode、20个有效提案保留；第五轮520+10恰好耗尽执行器remaining时被误标预算截断，故未补最后出口及θ/ψ。原退出1、596.976秒/.165826686471GPUh保留，不称共享学习或能力成功。
+执行器现在仅在steps小于官方horizon且提前耗尽额度时标截断；完整horizon即使未成功也完整接收。两个针对性CPU消费者通过13.49秒，固定五轮/无未来预算输入/部署STOP合同不变。接续只补原完整H/P上的最后出口及query/θ/append/ψ，不重跑五轮；原链未写出的R5 phase只作有依据的范围重建，不以恢复耗时替代。
+教师CPU owner1428483于UTC10:09:42仅停止新派发，已提交GPU作业自然完成，UTC10:11:40协调器退出；全部attempt收据已闭合（85个有效收据，两个原失败），未给GPU子进程发信号。下一同一Batch从新clean pushed frozen接续渲染缺口，逻辑16行不缩减；显存不足25GiB时物理slots8。实际恢复成功及吞吐待消费者原件，不提前声称修好。
+
 ## 2026-10-11 持久正式评测与已定位的局部恢复
 
 正式400入口复用现有pi05_eval_queue及同一compile_conditions/EpisodeRunner：每个worker只加载一次source/共享checkpoint，动态领取long-first shards，独立conditions和最终查询合批；逐condition教学映射、scene/RNG、最终初态排除及MT153引用保持。物理condition batch/卡数可迁移而不改immutable面板；尚未启动held/G/π正式计算或宣称吞吐收益。

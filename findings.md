@@ -11447,3 +11447,20 @@ ROOT分配6.379302GPUh（G含失败2.992589、学生3.273161、profile.102843、
 diag内段不双计，共驻分配不称独占物理GPU小时。02 wall2.634h，G成功1.491h，完整38latest退出0。
 完整结果/每task/限制见docs/analyses/proposal_normalized_flow_query16_20261012.md；原件ROOT/analysis/whole_completion_20261012。
 该有限批结束并一次交main科学消费，后继由实际认识更新，不自动新warm/RL/held/Teacher/probe或恢复已收口旧v5。
+
+
+## 437. 归一化批扣噪算术与确定端点有界接续（2026-10-12）
+
+主讨论全36已保存参数的CPU算术：G-xi cosine .986249，G对共同E的归一化MSE2.038007（MT1），
+仅算术扣xi后的累计field对E仍1.015798、RMS .169761；不存在本证据支持的“噪声下已有好编辑”。
+扣噪结果没有物化/部署，不据它推断闭环分数。公共教师均值MSE .813884、能量 .186116只是诊断基线。
+原py/json归档到normalizedROOT/analysis/main_scientific_readout；不重复计算，不改原formal结果。
+
+旧直接因子回归§24–29的48→75/400修复和后续公共方向收缩保留；去掉噪声不能抹去此负证据。
+当前六层归一化/真实可学习native-meta/MT基底/rank8/36共同E与旧图有实质区别，但不保证可学/可迁移。
+本次科学选择仅检验直接确定端点是否能传递实际教师优势；P/H作为条件，标签为E−P0而非E−P，输出P0+S_G*e_hat。
+零输出head与移除xi/time/Euler同属本次参数化组成，不称只换loss单因素，也不与CFM raw数值比较。
+
+主讨论收口v6（MT340/G339/E455），不追加旧warm/RL/held/time/scale小扫；新§12有限批G216/36首学生/新G576，
+同面板MT/E/旧G只读引用、612新增episode预期、无Actor训练/资格/视频因果结论。实际结果尚待运行。
+详见docs/analyses/proposal_endpoint_parameterization_20261012.md及唯一active设计§12。

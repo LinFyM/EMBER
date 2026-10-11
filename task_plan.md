@@ -1,3 +1,19 @@
+## 2026-10-12 当前授权：确定MT中心完整端点，固定全36与同query16
+
+最终目标仍为MT基底完整Writer明显超过强MT并解释视频/真实实践怎样进入固定LoRA能力。
+normalized-flow/query16已由main收口；广播修复真实发生，但MT340/G339/E455无控制净增。
+全36扣xi算术也未发现被噪声遮住的好编辑；不追加v6 warm/RL/held/小扫。
+
+本轮执行唯一active设计§12：沿既有读取/通信学习确定e=(E−P0)/S_G，零head初始化回MT，一次生成完整P0+S_G*e_hat。
+保留真实L/V/MT-H/当前P、static/Actor算子与native policy10flow/RNG，彻底移除参数噪声/time/Euler与旧CFM更新owner。
+fresh v7、同36/216/logical B4/优化器/video采样，G216固定后沿旧36首学生教学/实践映射，各一个新G实践。
+同query16新增576 G行、兼容MT/E/旧G576只读引用；预计612新episode，E/旧G不进候选/H/信用/梯度。
+
+完成实际消费者检查/工程与对照复用→集成push→clean detached/live quota与双节点GPU→真实吞吐选择→有限整批启动与一次完成交付。
+工程初估30–60min，训练+首学生1.5–4h，增量16GiB；资源只按实测/live和项目6/8/node6规则安排，不等凑卡或硬锁world2。
+完成不自动进入warm/RL/held/Teacher/controls/probe；参数loss/公共均值算术只定位，不能代控制或视频/held资格。
+完整理论/历史反证见docs/analyses/proposal_endpoint_parameterization_20261012.md，事实/状态看progress与findings§437。
+
 ## 2026-10-12 当前有限批已完成：normalized flow与query16科学交付
 
 主讨论已直接消费旧G216真实输运/传播原件，派发单一生成架构变化：只改G.field六层跨层消息发送端归一化；

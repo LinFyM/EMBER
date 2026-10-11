@@ -232,8 +232,11 @@ class Batch:
                 # its resident EGL workers also need headroom beyond the G-only peak.
                 chunk16_headroom=40000 if arguments[0]=='RL' else 28000
                 ceiling=int(arguments[arguments.index('--frame-chunk')+1])
-                env['EMBER_META_FRAME_CHUNKS']=','.join(str(min(ceiling,16 if a['free_MiB']>=chunk16_headroom else
-                    8 if a['free_MiB']>=21000 else 4)) for a in admissions)
+                measured=json.loads((self.root/'run_contract.json').read_text()).get('physical_execution',{}).get(
+                    f'{arguments[0]}_frame_chunk_admission',[])
+                env['EMBER_META_FRAME_CHUNKS']=','.join(str(max(
+                    [min(ceiling,16 if a['free_MiB']>=chunk16_headroom else 8 if a['free_MiB']>=21000 else 4)]+
+                    [p['chunk'] for p in measured if p['chunk']<=ceiling and a['free_MiB']>=p['minimum_free_MiB']])) for a in admissions)
             command+=[str(self.workspace/'scripts/video_guided_proposal_writer.py'),*arguments,
                       '--root',str(self.root),'--physical-gpu',str(gpu)]
             return self.launch(job,devices,destination,command,env,admissions)

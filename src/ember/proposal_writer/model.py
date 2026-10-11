@@ -1,4 +1,4 @@
-"""Full-coordinate hierarchical flow fields and independent decision Readers."""
+"""Complete MT-centered parameter endpoints and independent decision Readers."""
 from __future__ import annotations
 
 import math
@@ -115,28 +115,27 @@ class BlockLayer(nn.Module):
 
 
 class FactorEncoder(nn.Module):
-    """Two-layer static factor summaries without H/video/flow dependence."""
-    def __init__(self, layout, layers=2, *, flow=False):
+    """Shared layout/communication owner for static summaries and endpoint output."""
+    def __init__(self, layout, layers=2, *, endpoint=False):
         super().__init__()
         object.__setattr__(self, 'layout', layout)
-        self.flow = flow
-        self.input = nn.Linear(192 if flow else 128, 256)
+        self.endpoint = endpoint
+        self.input = nn.Linear(128, 256)
         self.target_address, self.rank_address = nn.Embedding(38, 256), nn.Embedding(layout.factor_rank, 256)
         self.side_address, self.block_address = nn.Embedding(2, 256), nn.Embedding(32, 256)
-        self.layers = nn.ModuleList(BlockLayer(normalize_messages=flow) for _ in range(layers))
+        self.layers = nn.ModuleList(BlockLayer(normalize_messages=endpoint) for _ in range(layers))
         self.norm = nn.LayerNorm(256)
-        if flow:
+        if endpoint:
             self.output = nn.Linear(256, 64)
+            nn.init.zeros_(self.output.weight)
+            nn.init.zeros_(self.output.bias)
 
-    def forward(self, parent, *, x=None, time=None, memory=None, checkpoint_layers=True):
+    def forward(self, parent, *, memory=None, checkpoint_layers=True):
         layout = self.layout
         valid = layout.valid.to(parent)
-        fields = (parent, valid) if x is None else (x, parent, valid)
-        blocks = self.input(torch.cat(fields, -1))
+        blocks = self.input(torch.cat((parent, valid), -1))
         blocks = blocks + self.target_address(layout.target) + self.rank_address(layout.rank)
         blocks = blocks + self.side_address(layout.side) + self.block_address(layout.coordinate)
-        if time is not None:
-            blocks = blocks + positions(torch.as_tensor(time, device=blocks.device))
         ranks = self.rank_address.weight[None].expand(38, -1, -1)
         targets = self.target_address.weight
         memory = blocks.new_empty(0, 256) if memory is None else memory
@@ -144,7 +143,7 @@ class FactorEncoder(nn.Module):
             args = (blocks, ranks, targets, layout.group, memory)
             blocks, ranks, targets = (checkpoint(layer, *args, use_reentrant=False, preserve_rng_state=False)
                                       if checkpoint_layers and torch.is_grad_enabled() else layer(*args))
-        return self.output(self.norm(blocks)) * valid if self.flow else self.norm(targets)
+        return self.output(self.norm(blocks)) * valid if self.endpoint else self.norm(targets)
 
 
 class ContextReader(nn.Module):
@@ -201,32 +200,29 @@ class ContextReader(nn.Module):
 
 
 class Generator(nn.Module):
-    """ψ owns meta, independent context and full-coordinate velocity field."""
+    """ψ predicts one complete deterministic endpoint relative to the fixed MT center."""
     def __init__(self, layout, meta):
         super().__init__()
         self.layout, self.meta = layout, meta
         self.reader, self.static = ContextReader(), FactorEncoder(layout)
-        self.field = FactorEncoder(layout, 6, flow=True)
+        self.endpoint = FactorEncoder(layout, 6, endpoint=True)
 
     def context(self, features, history, states):
         summaries = {key: self.static((self.layout.pack(value).to(self.layout.scale.device) - self.layout.center) / self.layout.scale)
                      for key, value in states.items()}
         return self.reader(features, history, summaries)
 
-    def forward(self, x, time, parent, features, history, states):
+    def forward(self, parent, features, history, states):
         memory = self.context(features, history, states)
-        return self.field((parent - self.layout.center) / self.layout.scale, x=x, time=time, memory=memory)
+        return self.endpoint((parent - self.layout.center) / self.layout.scale, memory=memory)
 
     @torch.no_grad()
-    def generate(self, parent, features, history, states, *, noise_seed, memory=None):
+    def generate(self, parent, features, history, states, *, memory=None):
         packed = self.layout.pack(parent).to(self.layout.scale.device)
-        xi = torch.randn(self.layout.valid.shape, generator=torch.Generator().manual_seed(noise_seed))
-        x = xi.to(packed.device) * self.layout.valid
         memory = self.context(features, history, states) if memory is None else memory
-        for step in range(16):
-            x = x + self.field((packed - self.layout.center) / self.layout.scale, x=x, time=step / 16, memory=memory,
-                               checkpoint_layers=False).float() / 16
-        return self.layout.unpack(packed + self.layout.scale * x)
+        endpoint = self.endpoint((packed - self.layout.center) / self.layout.scale, memory=memory,
+                                 checkpoint_layers=False).float()
+        return self.layout.unpack(self.layout.center + self.layout.scale * endpoint)
 
 
 class Actor(nn.Module):

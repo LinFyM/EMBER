@@ -1,3 +1,13 @@
+## 2026-10-12：normalized-flow科学收口与确定端点决定
+
+main直接消费MT340/G339/E455、真实传播/训练/保存参数后关闭v6，不继续warm/RL/held或小扫。
+全36 CPU扣xi后的field-to-E MSE仍1.015798（MT1），不支持已有好编辑被参数噪声遮住；未物化扣噪版本。
+原件normalizedROOT/analysis/main_scientific_readout/normalized_endpoint_arithmetic.py/json；详见findings§437。
+
+后继保留真实读取、MT基底与归一化通信，fresh确定完整端点+零head+masked MSE，完整历史反证和可失败预测见
+analyses/proposal_endpoint_parameterization_20261012.md，唯一执行合同designs/video_guided_proposal_writer_20261010.md §12。
+本记录是已作出的科学取舍与新授权，不宣称端点训练/控制已经通过；当前实施/启动看progress。
+
 ## 2026-10-11 旧四task多H-Q实例封口、新全36共同E接续
 
 旧rank8 teacher32CP/960行及G240/480全部保持历史身份；G480自然退出0，累计61.880279552975615GPUh，原旧π/报告/U/video controls未运行。G有实际梯度/参数变化不构成教学或实践控制能力。

@@ -10,9 +10,9 @@ import numpy as np
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 ASSET_ROOT = Path('/data1/user/ymdai/projects/EMBER')
-RUN_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/normalized_flow_query16')
+RUN_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/deterministic_endpoint_query16')
 PRIOR_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/rank8_multistart')
-SCHEMA = 'ember_proposal_full36_normalized_flow_query16_v1'
+SCHEMA = 'ember_proposal_full36_deterministic_endpoint_query16_v1'
 PANEL_ROLE_SCHEMA = 'ember_full36_practice14_query16_report16_v3'
 ALLOWLIST = (0, 1, 2, 4, 5, 7, 12, 13, 14, 15, 17, 19, 20, 21, 22, 25, 28, 29,
              32, 34, 35, 36, 37, 38, 42, 43, 51, 55, 56, 62, 64, 73, 95, 96, 97, 101)
@@ -27,7 +27,7 @@ MT_PATH = Path('/data0/user/ymdai/ember_runs/coverage_retraining_20260920/traini
                '/checkpoints/step_00000300/lora.safetensors')
 OPTIMIZER = dict(lr=1e-4, betas=(.9, .95), eps=1e-8, weight_decay=1e-4)
 SELECTOR_SCHEMA = 'ember_full36_student_joint_conditional_continue_selector_v5'
-CHECKPOINT_SCHEMA = 'ember_full36_sender_normalized_flow_writer_v6'
+CHECKPOINT_SCHEMA = 'ember_full36_deterministic_endpoint_writer_v7'
 
 
 def seed(domain, *coordinates):

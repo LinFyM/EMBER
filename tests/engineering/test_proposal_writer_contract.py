@@ -604,7 +604,7 @@ def test_joint_bank_retains_parameters_and_excludes_future_prefixes(tmp_path):
     import json
     from safetensors.torch import save_file
     from ember.proposal_writer.supervision import register_students
-    from ember.proposal_writer.learning import CFMTrainer,HistoryCache
+    from ember.proposal_writer.learning import EndpointTrainer,HistoryCache
     from ember.proposal_writer.path import Compilation,save_history
     from ember.writer.practice import History
     root=tmp_path;directory=root/'RL_paths'/'batch1_task12';directory.mkdir(parents=True)
@@ -628,7 +628,7 @@ def test_joint_bank_retains_parameters_and_excludes_future_prefixes(tmp_path):
         (folder/'E.json').write_text(json.dumps(dict(reference='E',weights='teacher')))
         bootstrap=root/'bootstrap'/f'task_{task:04d}';bootstrap.mkdir(parents=True)
         (bootstrap/'complete.json').write_text(json.dumps(dict(complete=True,reference='MT300',history='original')))
-    trainer=CFMTrainer.__new__(CFMTrainer);trainer.root=root;trainer.runtime=SimpleNamespace()
+    trainer=EndpointTrainer.__new__(EndpointTrainer);trainer.root=root;trainer.runtime=SimpleNamespace()
     trainer.refresh_bank(0);assert len(trainer.bank[12]['parents'])==1
     trainer.refresh_bank(1);assert len(trainer.bank[12]['parents'])==2
     assert len(trainer.bank[12]['parents'][0]['histories'])==2

@@ -10,7 +10,7 @@ from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.pi05_source_setup import initialize_deferred_process_group
 
 from .contract import TASKS,OPTIMIZER,seed,CHECKPOINT_SCHEMA,SELECTOR_SCHEMA
-from .learning import (Baseline,CFMTrainer,train_cfm,train_local,on_policy_update,checkpoint,assigned_tasks,
+from .learning import (Baseline,EndpointTrainer,train_endpoint,train_local,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
 from .path import compile_condition,compile_conditions,evaluate_fixed,restore_compilation
 from .supervision import (panels,bootstrap_source,query_once,query_conditions,LocalExamples,register_students,
@@ -54,8 +54,9 @@ def refresh(args,runtime,runner,environment):
     if (destination/'path.json').exists():path=restore_compilation(destination,runtime)
     else:
         history,source=bootstrap_source(args.root,args.task,panel,0,HistoryCache())
-        path=compile_condition(runtime,runner,task,panel,panel['policy_videos'][0],identity=destination.name,
-            path_ordinal=0,noise_root=seed(9,args.task),max_rounds=1,uniform=True,student_only=True,
+        condition=run['student_refresh']['condition_mapping'][str(args.task)]
+        path=compile_condition(runtime,runner,task,panel,condition['teacher_demo'],identity=destination.name,
+            path_ordinal=condition['path_ordinal'],noise_root=condition['noise_root'],max_rounds=1,uniform=True,student_only=True,
             bootstrap_history=history,bootstrap_provenance=source)
         path.save(destination,retain_U=True)
     if path.completed_rounds!=1:raise ValueError('student refresh needs one real complete G-produced episode')
@@ -70,7 +71,7 @@ def refresh(args,runtime,runner,environment):
         parent=dict(reference=f'{version}_task_{args.task:04d}_{actual}',weights=str(weight_path),histories=[history_descriptor]),
         actual_generated_parameter_ref=actual,common_E_reference=E['reference'],common_E_weights=E['weights'],
         actual_producer_refs=list(path.history.states),fixed_scale_reestimated=False,
-        first_valid_candidate_in_chronological_order=True,selection_did_not_use_reward_or_query=True,
+        deterministic_endpoint_single_candidate=True,selection_did_not_use_reward_or_query=True,
         kernel_identity=path.kernel_identity,timings=path.timings,query_rewards=rewards,
         query_count=len(query_panel(panel,0)),readonly_E_complete=reference is not None,
         readonly_E_receipt=str(destination/'readonly_E/complete.json') if reference is not None else None,
@@ -115,7 +116,7 @@ def rl(args,runtime,runner,environment,context):
     baseline=Baseline().to(runtime.device);baseline.load_state_dict(state['baseline'])
     optimizer=torch.optim.AdamW(runtime.actor.parameters(),**OPTIMIZER);optimizer.load_state_dict(state['optimizer'])
     baseline_optimizer=torch.optim.AdamW(baseline.parameters(),**OPTIMIZER)
-    generator_trainer=CFMTrainer(runtime,context,args.root)
+    generator_trainer=EndpointTrainer(runtime,context,args.root)
     generator_updates=run['joint_training']['G_updates_per_batch']
     panel_by_task=panels(args.root)
     query_sampling={str(task):dict(query_rotation=len(query_panel(panel,0)),query_pool_size=len(panel['query_states']))
@@ -129,7 +130,7 @@ def rl(args,runtime,runner,environment,context):
     cache=HistoryCache()
     for update in range(start,args.stop):
         tick=time.monotonic();runtime.freeze_psi();runtime.actor.eval();baseline.eval()
-        # Cached CFM allocations are not used by the next actual environment phase.
+        # Cached learning allocations are not used by the next environment phase.
         # EGL cannot reclaim PyTorch's unused reserved blocks itself.
         torch.cuda.empty_cache()
         runtime.fixed_kernel_identity=dict(origin_checkpoint=str(args.checkpoint.resolve()),
@@ -201,7 +202,7 @@ def report(args,runtime,runner,environment):
 
 
 def run(args,runtime,runner,environment,context):
-    if args.command=='G':train_cfm(runtime,context,args.root,stop=args.stop,resume=args.resume)
+    if args.command=='G':train_endpoint(runtime,context,args.root,stop=args.stop,resume=args.resume)
     elif args.command=='student-data':refresh(args,runtime,runner,environment)
     elif args.command=='local':
         fixed_G(args,runtime);baseline=Baseline().to(runtime.device)

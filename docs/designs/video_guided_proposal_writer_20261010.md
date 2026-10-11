@@ -1,7 +1,7 @@
-> 2026-10-12 authority：本文件仍是唯一active design。当前新ROOT的唯一授权整批为§11的normalized-flow/query16有限批。
-> 下文原G216→warm36→joint9→strict400启动数字/数据角色只适用于旧full36_common_teacher的1b44903d冻结链；旧链已完整退出0，
-> RL9为147/400对MT153，完整结果见docs/analyses/video_guided_proposal_full36_writer_20261012.md；
-> 不将其课程自动恢复到新ROOT。未被§11覆盖的完整方法算子/信息墙继续有效。下一共同训练窗口由main消费本批后另登记。
+> 2026-10-12 authority：本文件仍是唯一active design。当前唯一授权整批为§12的deterministic-endpoint/query16。
+> §11 normalized-flow已完成并由main收口：MT340/G339/E455，传播量级修复但无控制净增；不再启动其warm/RL/held或小扫。
+> 旧full36_common_teacher/1b44903d链亦收口（147/400对MT153），旧课程/xi-time-CFM算子不恢复到新ROOT。
+> 未被§12覆盖的合法读取、静态/Actor及完整方法信息墙继续有效。共同训练后继须main消费本批后另登记。
 
 # 36任务目标教师、自身实践与交替共同学习：main执行合同
 
@@ -237,3 +237,55 @@ launch前核strg01 data1独立quota和在途旧root峰值，共享df另查。所
 现场双节点总6或8/node6、显存/非干扰合同保持，允许有收益的共驻，不等待world4、不dummy占卡。
 新CPU协调器仅这一有限依赖图及单次整批完成/异常回报；旧RL9/strict400原冻结合同和唯一退出回报者并行继续。
 实验闭环实现/验证/Git/push/clean detached/运行恢复；整批完成或科学边界只向01a12bb0主讨论一次可靠回报，不逐阶段心跳、自Queue或重复等待。
+
+
+## 12. 当前有界批：确定MT中心完整端点与同面板query16（2026-10-12）
+
+目的为检验去掉两轮均未学成的独立参数噪声输运后，现有真实条件能否传递共同E控制优势。
+完整数学关系、旧expert-manifold§24–29对照、公共均值风险与可失败预测见
+[端点参数化科学决定](../analyses/proposal_endpoint_parameterization_20261012.md)；本节是唯一执行合同。
+
+### 12.1 参数、算子与学习消费者
+
+固定P0为MT合并基底上的初始完整38-target/rank8 LoRA（A0非零/B0=0），S_G不重估。
+当前P仍输入p=(P−P0)/S_G；唯一六层decoder每块读取[p,valid]（Linear128→256）及原地址、实际ContextReader memory。
+保留六层发送端归一化和末LayerNorm，输出Linear256→64的weight/bias零初始化，预测e_hat；
+部署P_new=P0+S_G*e_hat。目标固定e=(E−P0)/S_G，不用E−P作端点目标，也不把输出误加回当前P。
+移除生成参数的xi、x_t、t及16步Euler，不计算1/(1−t)。原生policy十步action flow及教学/实践/query全部RNG保留。
+exact L/action-hidden有序双RGB/stride5、双rank32 meta、真实非空MT bootstrap H及producer、static两层与Actor三head实际算子不改。
+E/teacher动作/state/reward及任务元信息不进入condition；本批读取P/H不构成反馈利用或视频因果已证实。
+
+G/meta/Actor/optimizer全部fresh seed7，双meta原seed不变；v7 schema明确拒绝旧v6/旧参数状态。
+唯一G更新owner由CFM替为masked endpoint MSE，初始及未来joint共用同一owner，不保留旧flow fallback或另建runner。
+全36既有allowlist、每task24次、216更新/864条件/logical B4、原任务/parent/H/video采样与AdamW
+lr1e−4、betas(.9,.95)、eps1e−8、wd1e−4、clip1、数值精度不改。删除xi/time不改变独立video采样。
+梯度给G/Reader/static/双meta，source/Actor无梯度；零head首步上游零梯度符合初始化定义，随后由真实监督打开。
+只在216保存完整共享模型/optimizer/sampler/rank RNG/topology；记录endpoint loss及同标签MT基线，不与旧CFM raw loss比较。
+公共均值MSE .813884（MT1）仅诊断，不作teacher均值adapter/检索/额外loss或选点。
+
+### 12.2 唯一候选、固定条件与配对对照
+
+每个实际P/H/V/L决策一次forward只产一个完整新候选；不计算/复制四个确定重复提案、不伪造noise_seed。
+非finite/非法候选按真实失败，不重复同输入采样恢复。以后真实H或parent改变仍可重新生成，非固定适应轮数菜单。
+本批G216后36首学生各沿normalized-flow原path的teacher_demo/path_ordinal/practice noise_root，以及同一MT bootstrap H/P。
+prepare冻结完整36映射并核实践初态/RNG，首次唯一G实际实践一次，不按成绩补采；不以旧G产生H作新首学生条件。
+
+保持practice14/query16/teacher independent report16/train report4全部state池与scene/RNG；query root仍seed(70,task,0)。
+新G每task16行，共576；精确兼容的normalized MT/E576及旧G576原行引用，不重跑或改变seed求缓存。
+E=MT九task仍引用同MT行，E及旧G不进G/Actor候选、H、信用或梯度；旧v6路径仅读取原JSON控制原件，不能由v7恢复生成。
+query内每task两行（72）曾teacher选点，明确只作train机制读出，并分列余504；不能称held/独立teacher泛化/正式资格。
+报告MT/旧G/新G/E四臂per-task/suite、覆盖、R/G/L/churn/成功集重合及新G在E-only/MT-only/both-success/both-fail结果。
+从36已保存端点作一次CPU MSE/目标方向/task差异/公共均值算术；已有query首次动作可直接汇总，不开旧输运或新probe。
+
+### 12.3 有界停止、物理安排与可靠交付
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/deterministic_endpoint_query16。
+只执行fresh G216→36首学生真实实践→新G576 query与兼容MT/E/旧G引用→完整科学交付；兼容时新增612 episodes。
+真实不兼容才补必要对照并保留原因/成本。完成停止，不自动warm/RL/held400/Teacher/视频controls/相邻点/科学配置扫描。
+初估工程30–60min、训练+首学生1.5–4h（基于旧world2 G1.491h外推），依实际消费者/吞吐/live设备修订，不称已测新图。
+新峰值估16GiB，复用初始参数/MT merged/E/S_G/H/大模型，旧原件/冻结消费者/关键恢复点保留；所有新增data1。
+现场双节点quota/总量6或8/node6/非干扰；按真实完整B4和最长输入峰值选择实际world/chunk/worker，不能固化历史world2或忽略显存余量。
+formal使用clean pushed detached代码，精确命令、冻结身份、费用（含profile/失败/历史引用）与退出收据记录在ROOT。
+唯一有限coordinator等待实际子进程退出，只一条整批完成/真实异常接续；无子阶段心跳、自Queue或重复等待者。
+实验持canonical/Git独占窗口，闭环工程/恢复/集成push及分支worktree管理；实际启动允许一次实质身份/预测回报main，随后只整批回报。
+主讨论接收方01a12bb0-5273-7462-b5e2-72a18aba7b8d，科学阴性由main消费取舍，不当工程bug挽救。

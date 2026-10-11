@@ -15,7 +15,7 @@ from ember.writer.practice import History
 from ember.writer.runtime import autocast
 from ember.pi05_source_checkpoint import write_json_atomic
 
-from .contract import seed, SELECTOR_SCHEMA
+from .contract import seed, SELECTOR_SCHEMA, CHECKPOINT_SCHEMA
 from .runtime import phase,finish_phases
 
 
@@ -77,6 +77,7 @@ class Compilation:
             decisions=self.decisions, attempts=self.attempts, boundaries=self.boundaries,
             environment_steps=self.environment_steps,final_locked=self.selected is not None,
             kernel_identity=self.kernel_identity,timings=self.timings,selector_schema=SELECTOR_SCHEMA,
+            generator_schema=CHECKPOINT_SCHEMA,
             outputs=self.outputs,external_max_environment_steps=self.external_max_environment_steps,
             bootstrap_provenance=self.bootstrap_provenance,sampling_identity=self.sampling_identity,
             completed_rounds=self.completed_rounds)
@@ -91,7 +92,7 @@ class Compilation:
             save_file(self.states[ref], str(root / f'{ref}.safetensors'))
         self.timings['path_IO_seconds']=self.timings.get('path_IO_seconds',0.)+time.monotonic()-started
         write_json_atomic(root / 'path.json', {**self.manifest(), 'retained_U': retain_U,
-            'untried_reconstruction': 'frozen ψ plus attempt noise seed, exact chronological H and parent',
+            'untried_reconstruction': 'deterministic frozen ψ with exact chronological H, teaching and parent',
             'raw_history_compression': 'lossless gzip level1; frozen raw-image cache recomputed from actual RGB'})
 
 
@@ -188,28 +189,25 @@ def bootstrap(path,task,panel,*,history=None,provenance=None,snapshots=False):
     path.environment_steps+=sum(int(row['environment_steps']) for row in history.episodes)
 
 
-def generate_candidates(runtime,path,parent,features,*,first_valid_only=False):
+def generate_candidates(runtime,path,parent,features):
     started=time.monotonic()
     proposals=[];refs={'MT300',parent}|{r['parameter_ref'] for r in path.history.records}
     states={key:path.states[key] for key in refs};rows=path.history.model_rows(runtime)
     with phase(runtime,'G_shared_context'),autocast(runtime.device):memory=runtime.generator.context(features,rows,states)
-    for ordinal in range(min(4,32-len(path.attempts))):
-        attempt=len(path.attempts);ref=f'G_{attempt:03d}';xi_seed=seed(31,path.noise_root,path.path_ordinal,attempt)
-        tick=time.monotonic()
-        with phase(runtime,'G_candidate_Euler16'),autocast(runtime.device):
-            candidate=runtime.generator.generate(path.states[parent],features,rows,states,noise_seed=xi_seed,memory=memory)
-        try:
-            validate_lora_state(candidate,runtime.lora)
-            valid=all(bool(torch.isfinite(v).all()) for v in candidate.values())
-        except LoRAContractError:valid=False
-        item=dict(reference=ref,parent=parent,noise_seed=xi_seed,valid=valid,
-            records=len(path.history.records),episodes=len(path.history.episodes),euler_steps=16)
-        path.attempts.append(item)
-        if valid:
-            path.states[ref]=cpu_state(candidate);path.valid.append(ref);proposals.append(ref)
-        item['generation_and_materialization_seconds']=time.monotonic()-tick
-        del candidate
-        if valid and first_valid_only:break
+    if len(path.attempts)>=32:return proposals
+    attempt=len(path.attempts);ref=f'G_{attempt:03d}';tick=time.monotonic()
+    with phase(runtime,'G_candidate_endpoint'),autocast(runtime.device):
+        candidate=runtime.generator.generate(path.states[parent],features,rows,states,memory=memory)
+    try:
+        validate_lora_state(candidate,runtime.lora)
+        valid=all(bool(torch.isfinite(v).all()) for v in candidate.values())
+    except LoRAContractError:valid=False
+    item=dict(reference=ref,parent=parent,valid=valid,generation='deterministic_MT_centered_endpoint',
+        records=len(path.history.records),episodes=len(path.history.episodes),decoder_calls=1,
+        generation_and_materialization_seconds=time.monotonic()-tick)
+    path.attempts.append(item)
+    if not valid:raise ValueError('invalid deterministic endpoint; repeating the same condition is not recovery')
+    path.states[ref]=cpu_state(candidate);path.valid.append(ref);proposals.append(ref)
     path.timings['generation_seconds']=path.timings.get('generation_seconds',0.)+time.monotonic()-started
     return proposals
 
@@ -235,7 +233,7 @@ def practice(path,task,panel,chosen,*,snapshots):
 def begin_condition(runtime,task,demo,identity,path_ordinal,noise_root,max_rounds,
                     external_max_environment_steps,uniform,video_task,conditional_continue,student_only):
     if not runtime.psi_frozen:raise ValueError('compilation needs a fixed generation/read kernel')
-    if max_rounds<1 or max_rounds*4>32:raise ValueError('registered depth exceeds proposal cap')
+    if max_rounds<1 or max_rounds>32:raise ValueError('registered depth exceeds proposal cap')
     if conditional_continue and uniform:raise ValueError('RL continuation must use actual current theta')
     cap=(max_rounds+1)*(task['horizon']+10) if external_max_environment_steps is None else int(external_max_environment_steps)
     mt=cpu_state(runtime.mt)
@@ -267,7 +265,7 @@ def condition_steps(runtime,task,panel,demo,*,identity,path_ordinal,noise_root,
         parent=categorical_record(runtime,path,'parent',choices,features,rng=rng,uniform=uniform,
             baseline=baseline,conditional_continue=(conditional_continue or uniform) and not student_only,round_index=round_index)
         if parent=='STOP':break
-        proposals=generate_candidates(runtime,path,parent,features,first_valid_only=True) if student_only else generate_candidates(runtime,path,parent,features)
+        proposals=generate_candidates(runtime,path,parent,features)
         if student_only and not proposals:raise ValueError('no valid actual G proposal for registered student data')
         practice_choices=[proposals[0]] if student_only else [parent,*proposals]
         chosen=categorical_record(runtime,path,'practice',practice_choices,features,parent=parent,
@@ -364,6 +362,7 @@ def restore_compilation(root, runtime):
     if meta.get('parameter_lifecycle_complete') and not meta['parameter_retirement']['full_compilation_replay_available']:
         raise ValueError('consumed path parameters retired; resume the completed shared checkpoint, not old on-policy paths')
     if meta.get('selector_schema')!=SELECTOR_SCHEMA:raise ValueError('retired budget-conditioned paths are not current selector data')
+    if meta.get('generator_schema')!=CHECKPOINT_SCHEMA:raise ValueError('retired stochastic generation paths are not endpoint data')
     history = load_history(root / 'history.pt.gz')
     states = dict(history.states)
     states['MT300'] = cpu_state(runtime.mt)

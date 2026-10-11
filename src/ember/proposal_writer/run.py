@@ -47,7 +47,7 @@ def save_state(path, state):
 
 def prepare(args):
     """Register this bounded fresh Writer run against the immutable existing bank."""
-    if args.reuse_root is None:raise ValueError('fresh normalized field requires the registered previous E/MT/H root')
+    if args.reuse_root is None:raise ValueError('fresh endpoint requires the registered previous E/MT/H and query16 root')
     root=args.root;previous=args.reuse_root.resolve();old=read_json(previous/'run_contract.json')
     if root.resolve()==previous or tuple(old['training_tasks'])!=TASKS:
         raise ValueError('fresh output root and exact audited all36 scope required')
@@ -57,15 +57,30 @@ def prepare(args):
     panel=materialize_panel(root,selection_count=16,report_count=16)
     previous_panel={r['task_id']:r for r in read_json(previous/'panel.json')['tasks']}
     links=['initial.safetensors','task_lora_contract.json','bank_scale.json','base/merged_targets.safetensors']
+    condition_mapping={}
     for row in panel['tasks']:
         task=row['task_id'];before=previous_panel[task]
-        if any(row[k]!=before[k] for k in ('init_order','video_order','bootstrap_state_id','policy_videos','teacher_report_states','report_states')):
-            raise ValueError('original initialization/video/bootstrap/report mapping changed')
+        if any(row[k]!=before[k] for k in ('init_order','video_order','bootstrap_state_id','policy_videos',
+                'practice_states','query_states','teacher_report_states','report_states')):
+            raise ValueError('original initialization/video/bootstrap/practice/query/report mapping changed')
         E=read_json(previous/'teachers'/f'task_{task:04d}'/'E.json')
         H=read_json(previous/'bootstrap'/f'task_{task:04d}'/'complete.json')
         if not E['complete'] or not H['complete'] or H['reference']!='MT300' or not Path(E['weights']).is_file() or not Path(H['history']).is_file():
             raise ValueError('existing E weights and actual MT bootstrap are required')
         links.extend([f'teachers/task_{task:04d}/E.json',f'bootstrap/task_{task:04d}/complete.json'])
+        source_path=previous/'student_data'/old['student_refresh']['version']/f'task_{task:04d}'/'path.json'
+        original=read_json(source_path)
+        if (original['completed_rounds']!=1 or len(original['boundaries'])!=1
+                or original['teacher_demo'] not in row['policy_videos']):
+            raise ValueError('same actual first-student teaching/practice condition required')
+        practice=original['boundaries'][0]['row'];ordinal=original['path_ordinal']
+        if (practice['init_state_id']!=row['practice_states'][(ordinal+1)%len(row['practice_states'])]
+                or practice['env_seed']!=seed(32,original['noise_root'],1)
+                or practice['policy_seed_root']!=practice['env_seed']):
+            raise ValueError('previous actual practice mapping differs from the native consumer')
+        condition_mapping[str(task)]=dict(teacher_demo=original['teacher_demo'],path_ordinal=ordinal,
+            noise_root=original['noise_root'],practice_state_id=practice['init_state_id'],
+            practice_noise_root=practice['env_seed'],source_path=str(source_path))
     for name in links:
         source=(previous/name).resolve(strict=True);target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
         if target.exists():
@@ -88,21 +103,32 @@ def prepare(args):
             H='same actual MT bootstrap; no new teacher trajectories',MT='same frozen merged base and task initial'),
         task_initial=str(root/'initial.safetensors'),coordinates=str(root/'coordinates.json'),
         bank_scale=str(root/'bank_scale.json'),updates=dict(G=[216]),fixed_G_update=216,
-        student_refresh=dict(version='G216_normalized_first_students',G_update=216,task_count=36,
-            valid_proposal_rule='same chronological first valid; at most4; no success resampling',
+        student_refresh=dict(version='G216_deterministic_endpoint_first_students',G_update=216,task_count=36,
+            valid_proposal_rule='one deterministic full endpoint; invalid is failure; no success resampling',
             MT_bootstrap_reference_reused=True,query_states_per_parameter=16,readonly_E_query=True,
+            readonly_previous_G_query=True,condition_mapping=condition_mapping,
             parameters_and_H_single_source=True,post_refresh_G_only=False),
-        architecture_change='G.field6 cross-level sender LayerNorm; static/Reader/Actor/CFM unchanged',
+        architecture_change='deterministic MT-centered complete endpoint with zero output head; no parameter xi/time/Euler',
+        generator_parameterization=dict(input='current p=(P-P0)/S_G plus valid mask; true L/V/H context',
+            target='e=(E-P0)/S_G',output='P0+S_G*e_hat',objective='masked endpoint MSE',
+            initial_output='P0 via zero Linear weight and bias',parameter_noise=False,parameter_time=False,
+            current_P_H_are_conditions_not_target_center=True,decoder_layers=6,sender_normalization=True),
         shared_initialization='fresh seed7 G/meta/Actor and all optimizers; no previous shared weights',
         logical_batch=dict(teacher_queries=28,G_conditions=4,actor_conditions=4),
-        teacher=dict(**old['teacher'],readonly_reuse=True,source_root=str(previous)),
+        teacher={**old['teacher'],'readonly_reuse':True,'source_root':str(previous)},
         task_parent_history_sampling='equal task; equal actual parent within task; uniform real H within parent',
         optimizer=OPTIMIZER,selector_schema=SELECTOR_SCHEMA,future_budget_model_input=False,
-        compilation=old['compilation'],selector_training=old['selector_training'],
-        stage_estimate_seconds=dict(G_216=7200.),condition_estimate_seconds={'student-data':750.},
-        bounded_stop='G216 then all36 first students and paired MT/G/E query16; no local/RL/held400',
+        compilation=dict(bootstrap='same actual MT episode before first G',proposal_attempts=32,
+            proposals_per_decision=1,parameter_decoder_calls=1,response_observations=16,
+            generation='deterministic_MT_centered_endpoint',native_policy_flow_steps=10),
+        selector_training=dict(**{k:v for k,v in old['selector_training'].items() if k not in
+            ('query_states_per_parameter','registered_theta_updates','formal_update_window_not_yet_registered')},
+            query_states_per_parameter=16,registered_theta_updates=None,formal_update_window_not_yet_registered=True),
+        stage_estimate_seconds=dict(G_216=5760.),condition_estimate_seconds={'student-data':300.},
+        bounded_stop='G216 then all36 deterministic first students and paired MT/oldG/newG/E query16; no local/RL/held400',
+        expected_new_episodes=612,expected_new_query_episodes=576,
         query_independent_of_teacher_selection=False,query_teacher_selection_overlap_per_task=2,
-        exact_resume='only matching normalized-field schema complete checkpoints; retain RNG/topology',
+        exact_resume='only matching deterministic-endpoint schema complete checkpoints; retain RNG/topology',
         git=git_state(),information_wall='no held offline labels, no per-H Q, no rec/keep; query never in H')
     path=root/'run_contract.json'
     if path.exists() and read_json(path) != contract:

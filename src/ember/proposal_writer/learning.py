@@ -1,4 +1,4 @@
-"""Equal-condition CFM, local final-use learning and one-update on-policy credit."""
+"""Equal-condition endpoint learning, final-use learning and on-policy credit."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -67,6 +67,7 @@ def checkpoint(root, stage, update, runtime, optimizer, context, *, sampler, bas
     if context.is_main:
         root.mkdir(parents=True, exist_ok=False)
         state = dict(schema_version=CHECKPOINT_SCHEMA, stage=stage, next_update=update,
+            G_objective='masked_endpoint_MSE',generation='deterministic_MT_centered_endpoint',
             psi=runtime.generator.state_dict(), theta=runtime.actor.state_dict(), optimizer=optimizer.state_dict(),
             baseline=baseline.state_dict() if baseline is not None else None,
             baseline_optimizer=baseline_optimizer.state_dict() if baseline_optimizer is not None else None,
@@ -169,8 +170,8 @@ class HistoryCache:
         self.trim()
 
 
-class CFMTrainer:
-    """The same equal-parent CFM update serves initialization and joint learning."""
+class EndpointTrainer:
+    """The same fixed-center endpoint update serves initial and joint supervision."""
     def __init__(self,runtime,context,root):
         self.runtime,self.context,self.root=runtime,context,Path(root)
         self.optimizer=torch.optim.AdamW(runtime.generator.parameters(),**OPTIMIZER)
@@ -224,19 +225,18 @@ class CFMTrainer:
             demo=self.panel[task]['policy_videos'][int(rng.integers(len(self.panel[task]['policy_videos'])))]
             features=runtime.teaching(task,demo)
             packed=runtime.generator.layout.pack(parent).to(runtime.device)
-            target=(runtime.generator.layout.pack(endpoint).to(runtime.device)-packed)/runtime.generator.layout.scale
-            xi=torch.randn(target.shape,generator=torch.Generator().manual_seed(seed(41,task,update))).to(runtime.device)
-            xi*=runtime.generator.layout.valid;t=float(rng.uniform());x=(1-t)*xi+t*target
+            target=(runtime.generator.layout.pack(endpoint).to(runtime.device)-runtime.generator.layout.center)/runtime.generator.layout.scale
             rows=history.model_rows(runtime)
-            with phase(runtime,'CFM_forward'),autocast(runtime.device):
-                prediction=runtime.generator(x,t,packed,features,rows,history.states)
-                loss=(prediction.float()[runtime.generator.layout.valid]-(target-xi)[runtime.generator.layout.valid]).square().mean()
-            with phase(runtime,'CFM_backward'):(loss/4).backward()
+            with phase(runtime,'endpoint_forward'),autocast(runtime.device):
+                prediction=runtime.generator(packed,features,rows,history.states)
+                loss=(prediction.float()[runtime.generator.layout.valid]-target[runtime.generator.layout.valid]).square().mean()
+            with phase(runtime,'endpoint_backward'):(loss/4).backward()
             records.append(dict(task=task,parent=parent_row['reference'],E=entry['reference'],H=history_path,demo=demo,
-                time=t,loss=float(loss.detach()),frames=len(features['z']),H_records=len(history.records),
+                endpoint_loss=float(loss.detach()),MT_endpoint_loss=float(target[runtime.generator.layout.valid].square().mean()),
+                frames=len(features['z']),H_records=len(history.records),
                 H_episodes=len(history.episodes),H_producers=len(history.states),denominator=4,missing_label=False))
             self.cache.remember_features(history_path,history)
-            del features,prediction,loss,x,xi,target,endpoint,parent,history,rows
+            del features,prediction,loss,target,endpoint,parent,history,rows
         synchronize_gradients(runtime.generator,context)
         norm=torch.nn.utils.clip_grad_norm_(runtime.generator.parameters(),1.,error_if_nonfinite=True)
         group_norms={g:sum(float(p.grad.float().square().sum()) for p,name in zip(runtime.generator.meta.values,runtime.generator.meta.groups,strict=True)
@@ -254,10 +254,10 @@ class CFMTrainer:
             source_has_gradient=any(p.grad is not None for p in runtime.policy.parameters())),context)
 
 
-def train_cfm(runtime,context,root,*,stop,resume=None):
+def train_endpoint(runtime,context,root,*,stop,resume=None):
     contract=read_json(Path(root)/'run_contract.json')
-    if stop not in contract['updates']['G'] or stop%9:raise ValueError('registered full36 CFM rounds required')
-    trainer=CFMTrainer(runtime,context,root)
+    if stop not in contract['updates']['G'] or stop%9:raise ValueError('registered full36 endpoint rounds required')
+    trainer=EndpointTrainer(runtime,context,root)
     initialize_deferred_process_group(context,rendezvous_root=Path(root)/'rendezvous')
     start=resume_checkpoint(resume,'G',runtime,trainer.optimizer,context) if resume else 0
     trainer.refresh_bank(getattr(runtime,'supervision_version',0))

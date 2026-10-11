@@ -7,7 +7,7 @@ G216六层block RMS约2.19→4466，组内局部差异约1.177，经最终norm�
 这加强累计/归一化压制局部信号的解释，不确认唯一根因或修复闭环收益；原件及竞争解释在.codex/tmp/proposal_transport_diagnostic_20261012。
 GPU01:3共驻（项目4→5卡/node5），峰9.899GiB allocated/10.266GiB reserved，UTC17:15:51退出并释放。
 脚本107.822s；含首次导入的启动到退出按193.631s/0.053786GPUh保守记账一次，内段不双计。独立结果已Steer交01a12bb0（delivery.json），
-接口已接受，实际科学消费待接收方证据；当前joint9/RL9/strict400与原唯一整批退出回报者继续，没有新修复或候选训练。
+同turn已明确回应本诊断并接续科学消费（关联assistant消息证据在delivery.json）；当前joint9/RL9/strict400与原唯一整批退出回报者继续，没有新修复或候选训练。
 
 Git生命周期核实覆盖50本地分支/163 worktree，重点六个开发树；b0dfd3f9已集成main，旧rank8开发树clean且两节点进程、当前合同无依赖，
 已移除/data1/user/ymdai/ember_worktrees/video_guided_proposal_rank8_20261011及codex/video-guided-proposal-rank8，释放301477888bytes（约288MiB）。

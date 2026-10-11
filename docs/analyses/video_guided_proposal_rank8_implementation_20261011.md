@@ -65,3 +65,9 @@ RL与local128报告保持独立就绪；path和既有metrics保存生成/物化�
 context仍在每候选16Euler外；同parent四候选context或冻结prefix复用待首个必要π消费者定量，不预设收益或建无界缓存。
 效率修订18项针对性检查通过；architecture guard相对d1ee4a20为+186/-28/net158，7个既有source/test文件、零新模块、无hard。
 队列准入/依赖、CFM等权及条件状态机保留各自owner；复杂度review来自这些已存在的实际协议，未拆成并行runner。
+
+Owner取消累计GPU小时硬门槛后，Batch删除数值限额参数与拒绝分支，run.prepare用null/false登记，billing报告无硬限。
+已结算、自己和其它协调器在途、实际物理卡数及完整更新估计仍在准入回执，原历史96和费用/失败不倒写。
+19项针对性消费者检查通过，含累计1000GPUh仍可准入、两节点共享卡数与data1 quota越界仍拒绝；CLI不再有maximum-GPUh。
+首轮CPU检查的费用literal断言因浮点舍入失败，改为1e-10绝对容差后完整重验通过；没有更改费用计算或新增GPU测量。
+现有教师有效进程自然完成，新消费者从clean pushed detached承接G/π；科研计算、更新/采样/选择及64GiB全部保持。

@@ -142,36 +142,59 @@ def test_candidate_retirement_requires_consumption_and_preserves_facts(tmp_path)
     assert result['deleted_parameter_bytes']>0 and result['full_compilation_replay_available'] is False
 
 
-def test_registered_budget_counts_device_cost_spent_and_other_coordinator(tmp_path,monkeypatch):
+def test_cost_forecast_counts_all_receipts_without_gpu_hour_gate(tmp_path,monkeypatch):
     import datetime
     import pytest
     import time
     from ember.proposal_writer import batch
     from ember.pi05_source_checkpoint import write_json_atomic
+    # Historical numeric limits do not reactivate an Owner-cancelled launch cap.
     write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':96,'carry_in_GPU_hours':18.640412103864882}})
     monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed_commit' if command[1]=='rev-parse' else '')
     coordinator=batch.Batch(tmp_path,[('gpu01',1),('gpu01',3)],root=tmp_path)
-    assert coordinator.maximum_GPUh==96
-    with pytest.raises(ValueError,match='registered cumulative'):
-        batch.Batch(tmp_path,[],root=tmp_path,maximum_GPUh=97)
-    write_json_atomic(tmp_path/'profile_charged/exit.json',{'GPU_hours':72.,'exit_code':1})
+    write_json_atomic(tmp_path/'profile_charged/exit.json',{'GPU_hours':1000.,'exit_code':1})
     outside=tmp_path/'jobs/old_teacher/attempt_001'
     write_json_atomic(outside/'launch.json',dict(job='old_teacher',command=['teacher','--stop','160'],
         start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),estimate_seconds=160*10.9))
     fast=batch.Job('fast',['teacher'],estimate_seconds=4*3600,device_estimates={('gpu01',1):3600})
-    coordinator.reserve_budget(fast,'gpu01',1)
+    forecast=coordinator.track_cost_estimate(fast,'gpu01',1)
+    assert forecast['settled_GPU_hours']==pytest.approx(1018.6404121038649,abs=1e-10)
+    assert forecast['inflight_GPU_hours']>=batch.UNMEASURED_TEACHER_SECONDS*160/3600
+    assert forecast['added_device_GPU_hours']==1 and forecast['GPU_hours_hard_cap_active'] is False
     assert coordinator.running[('gpu01',1)]['estimate_seconds']==3600
-    slow=batch.Job('slow',['teacher'],estimate_seconds=4*3600)
-    with pytest.raises(RuntimeError,match='projected boundary'):
-        coordinator.reserve_budget(slow,'gpu01',3)
     write_json_atomic(outside/'launch.json',dict(job='outside_G',command=['G'],physical_GPU_count=2,
         start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),estimate_seconds=3600,budget_GPUh=96))
-    with pytest.raises(RuntimeError,match='projected boundary'):
-        coordinator.reserve_budget(batch.Job('multi_card_bound',['audit'],estimate_seconds=2.5*3600),'gpu01',3)
-    # A long current job is charged by elapsed time once its estimate has been exceeded.
     coordinator.running[('gpu01',1)]['start']=time.time()-2*3600
-    with pytest.raises(RuntimeError,match='projected boundary'):
-        coordinator.reserve_budget(batch.Job('additional',['audit'],estimate_seconds=3*3600),'gpu01',3)
+    forecast=coordinator.track_cost_estimate(batch.Job('additional',['audit'],estimate_seconds=3*3600),'gpu01',3)
+    assert forecast['inflight_GPU_hours']>=4 and forecast['projected_GPU_hours']>=1025.6404121038649
+
+
+def test_capless_admission_preserves_physical_and_quota_guards(tmp_path,monkeypatch):
+    import json
+    import pytest
+    from ember.proposal_writer import batch
+    from ember.pi05_source_checkpoint import write_json_atomic
+    write_json_atomic(tmp_path/'run_contract.json',{'limits':{'GPU_hours':None,'GPU_hours_hard_cap_active':False}})
+    write_json_atomic(tmp_path/'profile_charged/exit.json',{'GPU_hours':1000.,'exit_code':0})
+    monkeypatch.setattr(batch.subprocess,'check_output',lambda command,**_: 'pushed' if command[1]=='rev-parse' else '')
+    coordinator=batch.Batch(tmp_path,[('gpu01',0)],root=tmp_path)
+    gpus=[dict(index=i,processes=[{'owner':'ymdai'}],mem_used_mib=10000,mem_free_mib=30000,
+               compute_mode='Default',uuid=str(i),util_gpu_pct=100) for i in range(7)]
+    quota='/dev/data1 100 2147483648'
+    def run(command,**_):
+        return SimpleNamespace(stdout=json.dumps(dict(bad_nodes=[],node_results={'gpu01':{'gpus':gpus},
+            'gpu02':{'gpus':[]}})) if command[0]=='python3' else quota)
+    monkeypatch.setattr(batch.subprocess,'run',run)
+    job=batch.Job('G240',['G'],estimate_seconds=3600)
+    with pytest.raises(RuntimeError,match='outside project allocation'):
+        coordinator.admit(job,'gpu01',0,tmp_path)
+    for gpu in gpus:gpu['processes']=[]
+    quota='/dev/data1 2097152000 2147483648'
+    with pytest.raises(RuntimeError,match='independent quota'):
+        coordinator.admit(job,'gpu01',0,tmp_path)
+    quota='/dev/data1 100 2147483648'
+    admission=coordinator.admit(job,'gpu01',0,tmp_path)
+    assert admission['concurrency_cap']==6 and admission['cost_forecast']['projected_GPU_hours']==1001
 
 
 def test_external_checkpoint_exit_event_releases_deferred_device(tmp_path,monkeypatch):

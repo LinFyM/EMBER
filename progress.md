@@ -1,3 +1,15 @@
+## 2026-10-11 已承接Owner长期政策：GPU小时只记账/预测，不作启动或续跑硬门槛
+
+Owner明确“你以后不用限制gpu时，要不然实验session都不敢多卡加速”，覆盖此前主讨论累计96GPUh及更早额度。
+当前ROOT的active限额用GPU_hours=null、GPU_hours_hard_cap_active=false表达，并追加原96与carry-in的政策修订历史。
+新Batch移除累计费用拒绝分支和数值cap CLI；准入继续记录已结算、在途和新增设备预测，准确计费不变。
+历史数字不会在新消费者恢复硬门槛；物理6/8卡、单节点6卡、两节点live、显存/非干扰、data1 quota和64GiB继续准入。
+教师协调器fdcee的有效进程自然完成，不因不会触发的旧96门槛重启；旧冻结源码/launch/失败费用不覆写。
+后续G/π使用新clean pushed detached消费者，优先已实测wall缩短27.1%的四卡G，接受每更新GPUh增加45.7%。
+科学矩阵、逻辑B4、更新/交互/候选/Euler/报告范围和阴性停止线不变；费用偏差更新预测，不再成为许可门槛。
+19项针对性检查通过（含累计1000GPUh仍准入、物理/独立quota越界仍拒绝），CLI数值cap入口已退役。
+集成推送后以新clean detached冻结承接；tracked/Git仍实验session独占，下方记录保留为各时点历史。
+
 ## 2026-10-11 已消费Owner与main提速要求：修复调度，按真实B4选择四卡G
 
 Owner明确当前速度过慢，且后续G/π必须高效率。main指出原局部renderer失败触发全局停止派发，以及最长叶子优先延迟Long seed长链。

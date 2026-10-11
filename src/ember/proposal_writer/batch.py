@@ -118,13 +118,9 @@ def quota_headroom(report):
 
 class Batch:
     """One coordinator owns resource decisions; completion futures release slots."""
-    def __init__(self, workspace, devices, *, root=RUN_ROOT, maximum_GPUh=None, required_free_MiB=12000):
+    def __init__(self, workspace, devices, *, root=RUN_ROOT, required_free_MiB=12000):
         self.workspace, self.devices, self.root = Path(workspace), list(devices), Path(root)
-        registered = json.loads((self.root/'run_contract.json').read_text())['limits']['GPU_hours']
-        maximum_GPUh = registered if maximum_GPUh is None else maximum_GPUh
-        if not math.isfinite(maximum_GPUh) or not 0 < maximum_GPUh <= registered:
-            raise ValueError('requested GPUh exceeds the registered cumulative hard budget')
-        self.maximum_GPUh, self.lock = maximum_GPUh, threading.Lock()
+        self.lock = threading.Lock()
         self.running = {}
         self.required_free_MiB=required_free_MiB
         self.code = subprocess.check_output(['git','rev-parse','HEAD'],cwd=workspace,text=True).strip()
@@ -159,11 +155,13 @@ class Batch:
             if len(combined) > cap or sum(n==node for n,_ in combined)>6:
                 raise RuntimeError('outside project allocation would exceed the shared cap')
             used,limit=quota_headroom(quota.stdout)
-            self.reserve_budget(job,node,gpu)
+            forecast=self.track_cost_estimate(job,node,gpu)
             return dict(node=node,physical_gpu=gpu,uuid=selected['uuid'],free_MiB=selected['mem_free_mib'],
-                        utilization=selected['util_gpu_pct'],concurrency_cap=cap,quota_used_KiB=used,quota_KiB=limit)
+                        utilization=selected['util_gpu_pct'],concurrency_cap=cap,quota_used_KiB=used,quota_KiB=limit,
+                        cost_forecast=forecast)
 
-    def reserve_budget(self,job,node,gpu):
+    def track_cost_estimate(self,job,node,gpu):
+        # Owner policy: cost forecasts inform scheduling, never prohibit a launch.
         spent = billing(self.root)['GPU_hours']
         inflight=sum(max(time.time()-r['start'],r['estimate_seconds'])/3600 for r in self.running.values())
         # Other stage coordinators retain their original launch receipts; count their active jobs too.
@@ -183,9 +181,10 @@ class Batch:
         estimate = job.estimated_seconds((node,gpu))
         if not math.isfinite(estimate) or estimate <= 0:
             raise ValueError('GPU job requires a finite positive full-cost estimate')
-        if spent + inflight + estimate/3600 > self.maximum_GPUh:
-            raise RuntimeError('registered total GPUh exhausted/projected boundary; scientific budget decision required')
         self.running[(node,gpu)] = dict(start=time.time(),job=job.identity,estimate_seconds=estimate)
+        return dict(settled_GPU_hours=spent,inflight_GPU_hours=inflight,
+                    added_device_GPU_hours=estimate/3600,projected_GPU_hours=spent+inflight+estimate/3600,
+                    GPU_hours_hard_cap_active=False)
 
     def execute(self, job, device):
         devices = device if isinstance(device,list) else [device]
@@ -225,7 +224,8 @@ class Batch:
         node=devices[0][0]
         start=time.time();receipt=dict(job=job.identity,command=command,env=env,workspace=str(self.workspace),
             code_commit=self.code,admission=admissions,start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            physical_GPU_count=len(devices),estimate_seconds=job.estimated_seconds(devices[0]),budget_GPUh=self.maximum_GPUh)
+            physical_GPU_count=len(devices),estimate_seconds=job.estimated_seconds(devices[0]),
+            budget_GPUh=None,GPU_hours_hard_cap_active=False)
         (destination/'launch.json').write_text(json.dumps(receipt,indent=2)+'\n')
         local=socket.gethostname().split('.')[0].lower() in {node,'bci-'+node}
         if local:
@@ -357,14 +357,13 @@ def main():
     parser.add_argument('--microbatch',type=int,required=True)
     parser.add_argument('--slots',type=int,default=8)
     parser.add_argument('--required-free-MiB',type=int,required=True)
-    parser.add_argument('--maximum-GPUh',type=float,default=None,help='defaults to the registered cumulative root limit')
     parser.add_argument('--shared-gpus',type=int,default=2)
     parser.add_argument('--shared-frame-chunk',type=int,default=16)
     parser.add_argument('--CFM-condition-seconds',type=float,default=28.)
     parser.add_argument('--teacher-update-seconds',action='append',default=[],help='node:index=seconds for a measured complete update')
     args=parser.parse_args()
     devices=[(s.split(':')[0],int(s.split(':')[1])) for s in args.devices.split(',')]
-    batch=Batch(args.workspace,devices,root=args.root,maximum_GPUh=args.maximum_GPUh,required_free_MiB=args.required_free_MiB)
+    batch=Batch(args.workspace,devices,root=args.root,required_free_MiB=args.required_free_MiB)
     teacher_devices=[(v.split(':')[0],int(v.split(':')[1])) for v in args.teacher_devices.split(',') if v]
     if not set(teacher_devices)<=set(devices):raise ValueError('teacher devices must be in the admitted batch device set')
     estimates={}

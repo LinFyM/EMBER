@@ -10,7 +10,9 @@ static/Actor/Reader/meta/CFM目标及logical B4不变，全部共享参数/optim
 
 实验负责实现、实际消费者验证、集成push、clean detached、live双节点与data1独立quota、吞吐/显存安排和整批可靠回报。
 现旧1b44903d链已进入RL9 strict400，其合同与唯一退出回报者保持；新批只回报整批完成或真实失败，无子阶段心跳/自Queue。
-暂估工程准入20–40min、学习与首学生读出2–5h；按真实同节点可用拓扑/完整B4吞吐修订，不等world4。
+已完成实际消费者/46项检查并集成push，冻结来源fa03656f。当前02整批实际运行；原01缺configs的导入失败已保留并修复。
+实测两卡逻辑B4：热步chunk16约14.52s、最长92帧约38.93s/26.10GiB reserved；G2卡后最多3卡首学生读出，预计2.1–5.5h。
+冻结physical chunk ceiling16并按live每rank余量承接16/8；整批37jobs完成及一次登记输运对照后交主讨论，不等world4。
 旧诊断小原件持久存到新ROOT/analysis/previous_G216，标记旧证据；不复制大模型/H，不增加旧诊断probe。
 
 ## 当前目标：先取得MT基底上完整Writer明显超过强MT的闭环信号

@@ -1,3 +1,36 @@
+## 2026-10-12 02:10 新有界批已集成并实际启动，冻结目录遗漏已恢复
+
+main/origin已集成推送fa03656fd61d26f69393fa2940cdea77a0ae441f；正式运行来自同commit的clean detached
+/data1/user/ymdai/ember_worktrees/proposal_normalized_flow_query16_20261012_fa03656f。
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/normalized_flow_query16。
+实际活跃整批owner为ROOT/coordinator/normalized_G216_students_query16_02；37 jobs仅G216及36首学生MT/G/E query16，
+随后一次原task13/17输运对照。没有自动新warm/RL/held，旧1b44903d链/strict400与原唯一退出回报者保持。
+
+46项针对性CPU检查通过（11.21s）：归一化传播/参数与初始化顺序、旧schema拒绝、真实Runtime rank chunk消费者，
+以及query实际cardinality/去重/MT兼容复用/E只读与汇总。diff已检查；source变化沿现有model/contract/run/batch及
+query/summary消费者落地，无新production模块、并行Writer/runner或旧flow fallback；static不变、field统一新schema。
+主科学变量仍只有field六层消息发送端归一化，query16另作登记的信用精度修正；不将工程通过称为有效学习。
+
+真实两rank完整B4物理测试：chunk8热步15.3775s，chunk16热步14.5179s；原注册最长task38、92frames/H104在chunk16
+完成一次B4约38.9252s，峰25.0172GiB allocated/26.0957GiB reserved，双meta有梯度/source无梯度。
+原件ROOT/profile_physical_chunks，未保存或继承这些disposable更新。三次profile实际0.102843GPUh，包含首个profile.py
+遮蔽stdlib导致的导入失败；失败原件保留。现约27.3–28.3GiB共驻余量支持chunk16，不能继续翻倍；实际每rank按launch余量
+接入16/8，logical B4与更新流不变。G2卡约1–2.33h、36首学生最多3卡读出约1–3h，总预计2.1–5.5h，实际成本以exit收据为准。
+
+首次formal启动在Runtime authority加载、模型/共享初始化/CFM之前退出：稀疏检出只含src/scripts，meta_protocol的
+REPO_ROOT消费者缺configs/pi05_source_corpus_v1/source_manifest.json。已在相同冻结commit补检出configs、clean不变，
+实际load_evaluation_authorities消费者通过；无源码/科学合同改变。原01整批退出/投递已消费，失败19.2112s/0.010673GPUh
+保留于ROOT/jobs/G_00000216/attempt_001；02从更新0 fresh恢复，未丢更新。不要把旧01退出消息再当当前批或重执行。
+
+第二次正式launch已现场核双节点/data1 quota：GPU01:0,2共驻，总physical6/node4；free28894/28691MiB，
+actual env16,16与两rank真实Runtime execution记录均一致。exact命令/资源/冻结身份只在ROOT/coordinator和jobs保存，
+不提交host-private细节；权威quota与原新峰值仍覆盖。现唯一CPU coordinator持有整批事件等待，退出后仅一次真实唤醒
+本实验消费并向01a12bb0主讨论回报，没有心跳、分阶段Queue或第二直接等待者。尚无新闭环/学习效果结论。
+
+两棵本轮开发worktree及codex分支已清理：query cherry-pick全树diff为空、normalized分支已是main祖先，均clean且
+双节点无实际运行依赖；保留formal frozen、profile原件与Git历史。清单ROOT/coordinator/development_tree_retirement.json。
+旧G216诊断及main CPU分析小原件已持久存ROOT/analysis/previous_G216，并明确为旧证据。
+
 ## 2026-10-12 01:37 新有界批已进入工程实施
 
 主讨论完整决定已消费：G.field发送端归一化是唯一生成架构变化，query16另作信用精度修正；新批仅全36 fresh G216与首学生MT/G/E读出。

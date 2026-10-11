@@ -1,3 +1,10 @@
+## 2026-10-11 23:14 联合首batch工程OOM与保留原件恢复
+
+registered_shared_window_01自然退出1，RL attempt_001于UTC15:14:39结束；四卡430.209322秒/0.478010357486GPUh，原log/launch/exit和已结算101.374817038327GPUh保留。首B4任务1/19/21/64均已完整R5（MT另计），76条新query和16条兼容MT引用齐备；θ已计算，但首ψ CFM backward在gpu01:6（rank1）OOM，无完整联合checkpoint，不把未持久化θ称恢复点。正式400尚未启动。
+G216完整47.52分钟/3.167964143753GPUh；首学生36完整20.62分钟/1.766303304235GPUh，训练query144对为MT83/G83、得9失9；warm36四卡7.65分钟/0.510230641100GPUh。小训练面板/梯度/功能变化均不替代正式能力结论，保持Writer优先和教师后续待办。
+工程修复保持原loss/采样/任务分母及216/36/9、每ψ9、末G297：θ消费后释放完成的native KV及θ梯度；RL的chunk16仅在live free≥36000MiB使用，否则仍按实际余量取8/4（G原28000MiB门槛保留）；完整query恢复直接复用原complete和实际环境账目；每个完整θ→append→ψ块后保存同点双模型/双optimizer/RNG/sampler，1–8仅recovery_only，正式资格仍只9。
+从完整local36恢复，直接引用同一旧核采集的首B4 P/H/query，重新计算丢失的θ/ψ；不重采环境、不把工程恢复称midbatch exact。后续只从完整联合边界接回，同物理world4/逻辑B4，物理卡与frame chunk按live准入登记；冻结db72ee91不原地修改，使用新clean pushed冻结源码接续。原部分metrics保留为失败attempt证据，恢复执行的有效metrics另登记身份。
+
 ## 2026-10-11 Owner优先级修正：教师复核仅登记，先完成Writer性能验证
 
 主讨论01a12385转达Owner最新原话：“这个只是你记下来之后做，目前还是先专注于看writer能否有性能提升”。已登记task_plan当前计划；实验继续独占tracked/Git，main只读。本次只维护文档，不检查GPU/主机、不运行测试、不调整冻结源码或既定81-job；G216→学生36→warm36→joint9→strict paired400继续。

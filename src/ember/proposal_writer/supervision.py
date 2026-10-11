@@ -105,6 +105,13 @@ def query_conditions(runtime,runner,conditions,*,mt_reference_version=None):
         entry=dict(path=path,destination=destination,states=states,noise_root=noise_root,references=references,
             new_steps=0,new_episodes=0,reused_rows=[],incompatible_references=[])
         entries.append(entry)
+        complete=destination/'complete.json'
+        if complete.exists():
+            saved=read_json(complete)
+            if (saved.get('complete') and saved['query_states']==states
+                    and saved['policy_env_noise_root']==noise_root and set(saved['rewards'])==set(references)):
+                entry['completed_query']=saved
+                continue  # Restore the immutable panel and its original environment ledger.
         if visit==0 and mt_reference_version is not None and 'MT300' in references:
             reuse_initial_MT(entry,task,runtime.root,mt_reference_version)
         missing=fixed_requests(path,task,states,noise_root,references=references,
@@ -119,6 +126,8 @@ def query_conditions(runtime,runner,conditions,*,mt_reference_version=None):
         entry['new_steps']+=int(row.get('environment_steps',0));entry['new_episodes']+=1
     results=[]
     for entry in entries:
+        if 'completed_query' in entry:
+            results.append(entry['completed_query']['rewards']);continue
         destination=entry['destination'];references=entry['references'];states=entry['states']
         rows=[]
         for ref in references:

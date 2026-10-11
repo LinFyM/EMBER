@@ -126,24 +126,28 @@ def rl(args,runtime,runner,environment,context):
         paths,rewards,timings=collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
         theta_tick=time.monotonic()
         on_policy_update(runtime,context,args.root,update+1,paths,rewards,optimizer,baseline,baseline_optimizer)
+        optimizer.zero_grad(set_to_none=True);baseline_optimizer.zero_grad(set_to_none=True)
         timings['theta_and_baseline_update_seconds']=time.monotonic()-theta_tick;append_tick=time.monotonic()
         # Theta consumes its whole original kernel first; only then may all psi learn.
         supervision_version=register_students(args.root,paths,update+1,context)
         generator_trainer.refresh_bank(supervision_version)
         for path in paths:
             generator_trainer.cache.seed(args.root/'RL_paths'/path.identity/'history.pt.gz',path.history)
+            # Prepared native KV belongs to the finished behavior/score consumer.
+            # G uses retained true H/raw features and parameters, not these prefixes.
+            path.native_response_cache.clear()
         timings['append_and_reload_supervision_seconds']=time.monotonic()-append_tick;psi_tick=time.monotonic()
         for _ in range(generator_updates):
             generator_trainer.step(runtime.G_sampler['next_update'],stage='joint_G')
         runtime.freeze_psi()
         timings['psi_update_block_seconds']=time.monotonic()-psi_tick;checkpoint_tick=time.monotonic()
-        if update+1 in run['updates']['RL']:
-            checkpoint(args.root,'RL',update+1,runtime,optimizer,context,
-                sampler=dict(next_update=update+1,task_order=list(TASKS),logical_condition_batch=4,
-                    query_rotation=4,query_pool_size=10,sampling_identity='conditional_continue',
-                    actual_depth=run['selector_training']['rounds'],supervision_version=supervision_version,
-                    alternating_order=['fixed psi/theta collection','theta','append true P/H','psi','resample']),
-                baseline=baseline,baseline_optimizer=baseline_optimizer,generator_optimizer=generator_trainer.optimizer)
+        checkpoint(args.root,'RL',update+1,runtime,optimizer,context,
+            sampler=dict(next_update=update+1,task_order=list(TASKS),logical_condition_batch=4,
+                query_rotation=4,query_pool_size=10,sampling_identity='conditional_continue',
+                actual_depth=run['selector_training']['rounds'],supervision_version=supervision_version,
+                checkpoint_role='registered_node' if update+1 in run['updates']['RL'] else 'recovery_only',
+                alternating_order=['fixed psi/theta collection','theta','append true P/H','psi','resample']),
+            baseline=baseline,baseline_optimizer=baseline_optimizer,generator_optimizer=generator_trainer.optimizer)
         timings['checkpoint_IO_seconds']=time.monotonic()-checkpoint_tick
         metrics(args.root,'RL_cycle',dict(update=update+1,full_update_seconds=time.monotonic()-tick,phases=timings,
             path_timings=[path.timings for path in paths],components=dict(runtime.components),

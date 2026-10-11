@@ -365,6 +365,13 @@ def test_shared_launch_uses_measured_headroom_chunks_without_changing_logical_fl
         return job.identity
     monkeypatch.setattr(coordinator,'launch',launch)
     assert coordinator.execute(batch.Job('G240',['G','--stop','240','--frame-chunk','4'],gpu_count=4),devices)=='G240'
+    memory.update({1:39572,3:34304,4:45000,5:21262})
+    def joint_launch(job,selected,destination,command,env,admissions):
+        assert env['EMBER_META_FRAME_CHUNKS']=='16,8,16,8'
+        assert command[command.index('--stop')+1]=='9'
+        return job.identity
+    monkeypatch.setattr(coordinator,'launch',joint_launch)
+    assert coordinator.execute(batch.Job('RL9',['RL','--stop','9','--frame-chunk','16'],gpu_count=4),devices)=='RL9'
     def readout_launch(job,selected,destination,command,env,admissions):
         assert selected==[devices[-1]] and command[command.index('--slots')+1]=='8'
         assert command[command.index('--stop')+1]=='0' and '--microbatch' not in command
@@ -502,8 +509,10 @@ def test_query_labels_cached_once_and_never_added_to_history(tmp_path):
     panel=dict(query_states=list(range(10,20)));runner=Runner();task=dict(horizon=100,suite='libero_10',task_id=2,language='exact')
     destination=tmp_path/'student_data/G_init/task_0012/query'
     first=query_once(None,runner,path,task,panel,0,destination)
+    original_complete=(destination/'complete.json').read_text()
     second=query_once(None,runner,path,task,panel,0,destination)
     assert first==second=={'MT300':1.,'G':1.} and len(runner.requests)==8
+    assert (destination/'complete.json').read_text()==original_complete
     assert not path.history.records and len(path.history.episodes)==1
     assert all(request['parameter_ref']!='unpracticed' for request in runner.requests)
     path.identity='first_RL';runtime=SimpleNamespace(root=tmp_path)
@@ -514,6 +523,9 @@ def test_query_labels_cached_once_and_never_added_to_history(tmp_path):
     complete=json.loads((output/'complete.json').read_text())
     assert len(complete['row_reuse'])==4 and complete['actual_new_episodes_this_attempt']==4
     assert all(row['condition']=='condition' for row in complete['rows'] if row['reference']=='MT300')
+    original_complete=(output/'complete.json').read_text()
+    assert query_conditions(runtime,runner,[(path,task,panel,0,output)],mt_reference_version='G_init')==[first]
+    assert len(runner.requests)==12 and (output/'complete.json').read_text()==original_complete
     query_conditions(runtime,runner,[(path,task,panel,1,tmp_path/'visit1')],mt_reference_version='G_init')
     assert len(runner.requests)==20  # Later RNG/state panels execute all eight real queries.
 
@@ -606,6 +618,22 @@ def test_joint_resume_restores_both_optimizers_and_data_version(monkeypatch,tmp_
     assert len(new_theta.state)==2 and len(new_psi.state)==2
     torch.testing.assert_close(fresh.generator.weight,generator.weight)
     torch.testing.assert_close(new_baseline.weight,baseline.weight)
+
+
+def test_joint_job_resumes_complete_recovery_nodes_without_selecting_them(tmp_path):
+    from ember.proposal_writer.batch import shared_learning_job
+    from ember.pi05_source_checkpoint import write_json_atomic
+    contract=dict(updates={'RL':[9]},fixed_local_update=36)
+    checkpoint=tmp_path/'checkpoints/RL'
+    for update,complete in [(1,True),(2,True),(3,False)]:
+        write_json_atomic(checkpoint/f'update_{update:08d}/manifest.json',
+            dict(stage='RL',next_update=update,complete=complete))
+    job=shared_learning_job(tmp_path,contract,'RL',4,9,16)[0]
+    assert job.arguments[job.arguments.index('--resume')+1]==str(checkpoint/'update_00000002')
+    assert job.arguments[job.arguments.index('--stop')+1]=='9' and contract['updates']['RL']==[9]
+    write_json_atomic(checkpoint/'update_00000009/manifest.json',dict(stage='RL',next_update=9,complete=True))
+    job=shared_learning_job(tmp_path,contract,'RL',4,9,16)[0]
+    assert job.arguments[job.arguments.index('--resume')+1]==str(checkpoint/'update_00000009')
 
 
 def test_teacher_report_same_MT_alias_uses_one_real_episode(monkeypatch,tmp_path):

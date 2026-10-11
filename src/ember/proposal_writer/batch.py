@@ -228,7 +228,10 @@ class Batch:
                 # Smaller physical waves still evaluate every registered selection/report row.
                 arguments[arguments.index('--slots')+1]=str(min(8,int(arguments[arguments.index('--slots')+1])))
             if len(devices)>1 and '--frame-chunk' in arguments:
-                env['EMBER_META_FRAME_CHUNKS']=','.join(str(16 if a['free_MiB']>=28000 else
+                # Joint learning retains both optimizers after real R5 collection;
+                # its measured OOM at 34GiB admission needs more chunk16 margin.
+                chunk16_headroom=36000 if arguments[0]=='RL' else 28000
+                env['EMBER_META_FRAME_CHUNKS']=','.join(str(16 if a['free_MiB']>=chunk16_headroom else
                     8 if a['free_MiB']>=21000 else 4) for a in admissions)
             command+=[str(self.workspace/'scripts/video_guided_proposal_writer.py'),*arguments,
                       '--root',str(self.root),'--physical-gpu',str(gpu)]
@@ -400,6 +403,11 @@ def shared_learning_job(root,contract,stage,shared_gpus,stop,slots):
     if stage=='local':arguments+=['--checkpoint',str(root/'checkpoints/G'/f"update_{contract['fixed_G_update']:08d}")]
     if stage=='RL':arguments+=['--checkpoint',str(root/'checkpoints/local'/f"update_{contract['fixed_local_update']:08d}")]
     previous=[u for u in contract['updates'][stage] if u<stop and (root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').exists()]
+    if stage=='RL':
+        previous=[saved['next_update']
+            for p in (root/'checkpoints/RL').glob('update_*/manifest.json')
+            if (saved:=json.loads(p.read_text())).get('complete') and saved.get('stage')=='RL'
+            and saved['next_update']<=stop]
     if previous:arguments+=['--resume',str(root/'checkpoints'/stage/f'update_{max(previous):08d}')]
     seconds=contract.get('stage_estimate_seconds',{}).get(f'{stage}_{stop}',0.)
     return [Job(f'{stage}_{stop:08d}',arguments,estimate_seconds=seconds,gpu_count=shared_gpus)]

@@ -321,6 +321,8 @@ def main():
     parser.add_argument('--resume',type=Path)
     parser.add_argument('--checkpoint',type=Path)
     parser.add_argument('--condition-ordinal',type=int)
+    parser.add_argument('--worker-id',help='persistent formal dynamic queue worker identity')
+    parser.add_argument('--condition-batch',type=int,help='measured physical independent condition group')
     parser.add_argument('--video-arm',choices=['correct','other','wrong'],default='correct')
     parser.add_argument('--microbatch',type=int,default=28)
     parser.add_argument('--frame-chunk',type=int,default=16)
@@ -347,7 +349,9 @@ def main():
     context=initialize_distributed(require_numa=True,defer_process_group=True)
     torch.set_num_threads(8)
     environment=read_json(args.root/'formal_panel.json')['environment'] if args.command=='formal' else read_json(args.root/'run_contract.json')['environment']
-    if not shared and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')
+    if args.command=='formal' and (not args.worker_id or not args.condition_batch or args.condition_batch<1):
+        parser.error('formal needs its persistent queue worker identity and measured condition batch')
+    if not shared and args.command!='formal' and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')
     runtime=Runtime(context.device,asset_root=args.asset_root,root=args.root,frame_chunk=args.frame_chunk,
         task_ids=tuple(t['global_task_id'] for t in environment['tasks']),task_role=environment['role'])
     runner=None
@@ -362,8 +366,8 @@ def main():
         if args.command=='readout':readout(args,runtime,runner,environment)
         elif args.command=='teacher-report':teacher_report(args,runtime,runner,environment)
         elif args.command=='formal':
-            from .evaluation import formal_condition
-            formal_condition(args,runtime,runner)
+            from .evaluation import formal_worker
+            formal_worker(args,runtime,runner)
         else:
             from .pipeline import run
             run(args,runtime,runner,environment,context)

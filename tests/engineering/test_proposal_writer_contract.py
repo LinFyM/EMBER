@@ -356,6 +356,13 @@ def test_shared_launch_uses_measured_headroom_chunks_without_changing_logical_fl
         return job.identity
     monkeypatch.setattr(coordinator,'launch',launch)
     assert coordinator.execute(batch.Job('G240',['G','--stop','240','--frame-chunk','4'],gpu_count=4),devices)=='G240'
+    def readout_launch(job,selected,destination,command,env,admissions):
+        assert selected==[devices[-1]] and command[command.index('--slots')+1]=='8'
+        assert command[command.index('--stop')+1]=='0' and '--microbatch' not in command
+        return job.identity
+    monkeypatch.setattr(coordinator,'launch',readout_launch)
+    job=batch.Job('MT101',['readout','--task','101','--stop','0','--slots','16'])
+    assert coordinator.execute(job,devices[-1])=='MT101' and job.arguments[-1]=='16'
 
 
 def test_conditional_parent_uses_complete_logits_and_exact_normalization():
@@ -616,3 +623,105 @@ def test_teacher_report_same_MT_alias_uses_one_real_episode(monkeypatch,tmp_path
     record=json.loads((tmp_path/'teachers/task_0012/report/complete.json').read_text())
     assert len(runner.requests)==1 and record['logical_rows']==2 and record['actual_new_episodes_this_attempt']==1
     assert all(r['query_excluded_from_H'] and r['reference_provenance']['same_policy_E_MT_alias'] for r in record['rows'])
+
+
+def test_formal_persistent_worker_claims_all400_without_reloading_kernel(monkeypatch,tmp_path):
+    from ember.pi05_source_checkpoint import write_json_atomic
+    from ember.proposal_writer import evaluation,pipeline
+    checkpoint=tmp_path/'checkpoint';tasks=[dict(global_task_id=i,task_id=i,suite='fixture',horizon=220+100*(i%2)) for i in range(8)]
+    panel=dict(checkpoint=str(checkpoint),specification=dict(version=['RL',9]),environment=dict(tasks=tasks),
+        rows=[dict(task=i,init_state_id=j) for i in range(8) for j in range(50)])
+    write_json_atomic(tmp_path/'formal_panel.json',panel)
+    write_json_atomic(tmp_path/'run_contract.json',dict(condition_estimate_seconds=dict(formal=10)))
+    base=evaluation.formal_queue(tmp_path,workers=6,condition_batch=4)
+    plan=(base/'queue_plan.json').read_text()
+    evaluation.formal_queue(tmp_path,workers=4,condition_batch=2)  # New physical workers/chunks reuse immutable shards.
+    assert (base/'queue_plan.json').read_text()==plan
+    from ember.proposal_writer.batch import stage_jobs
+    jobs=stage_jobs(tmp_path,'formal',microbatch=28,slots=16,teacher_devices=(),estimates={},shared_gpus=None,
+        stop=None,physical_workers=4,condition_batch=2)
+    assert len(jobs)==4 and len({j.identity for j in jobs})==4
+    assert all('--worker-id' in j.arguments and j.estimate_seconds==1000 for j in jobs)
+    loaded=[];groups=[]
+    monkeypatch.setattr(pipeline,'load_version',lambda runtime,path:loaded.append(path) or dict(stage='RL',next_update=9))
+    def consume(args,runtime,runner,panel,rows):
+        groups.append([(r['task'],r['init_state_id']) for r in rows])
+        return [dict(success=False) for _ in rows]
+    monkeypatch.setattr(evaluation,'formal_conditions',consume)
+    args=SimpleNamespace(root=tmp_path,checkpoint=checkpoint,video_arm='correct',worker_id='fixture-persistent',condition_batch=2)
+    result=evaluation.formal_worker(args,SimpleNamespace(actor=SimpleNamespace(eval=lambda:None)),None)
+    assert loaded==[checkpoint] and result['completed_rows']==400
+    assert max(map(len,groups))<=2 and len({row for group in groups for row in group})==400
+
+
+def test_formal_group_keeps_paired_rng_and_reuses_selected_MT(monkeypatch,tmp_path):
+    from ember.pi05_source_checkpoint import read_json
+    from ember.proposal_writer import evaluation
+    from ember.writer.practice import History
+    checkpoint=tmp_path/'checkpoint';compiled=[]
+    tasks=[dict(global_task_id=i,task_id=i,suite='fixture',horizon=220) for i in (0,1)]
+    rows=[dict(task=i,init_state_id=i,teacher_demo=i+10,video_ordinal=i,practice_states=[3],noise_root=7,
+        registered_scene=dict(root='registered'),MT_source='historical-MT',MT_row=dict(success=False,
+            init_state_id=i,environment_steps=220)) for i in (0,1)]
+    panel=dict(specification=dict(version=['RL',9],max_rounds=5,environment_multiplier=6),environment=dict(tasks=tasks))
+    def compile_group(runtime,runner,specifications):
+        compiled.extend(specifications);paths=[]
+        for index,spec in enumerate(specifications):
+            def save(destination,**_):destination.mkdir(parents=True,exist_ok=True)
+            selected='G' if index==0 else 'MT300'
+            paths.append(SimpleNamespace(identity=spec['identity'],selected=selected,states={selected:{}},
+                history=History(episodes=[dict(init_state_id=3)]),environment_steps=100,
+                timings=dict(new_environment_steps=100),save=save))
+        return paths
+    monkeypatch.setattr(evaluation,'compile_conditions',compile_group)
+    class Runner:
+        requests=[]
+        def run(self,requests):
+            self.requests.extend(requests)
+            for request in requests:
+                yield dict(request=request,row=dict(success=True,init_state_id=request['state_id'],environment_steps=14),
+                    history=History(records=[dict(normalized_actions=torch.ones(5,7))]))
+    runner=Runner();args=SimpleNamespace(root=tmp_path,checkpoint=checkpoint,video_arm='correct')
+    results=evaluation.formal_conditions(args,None,runner,panel,rows)
+    assert len(compiled)==2 and len(runner.requests)==1
+    request=runner.requests[0]
+    assert request['state_id']==0 and request['noise_root']==7 and request['registered_scene']==rows[0]['registered_scene']
+    assert not request['capture_history'] and not request['capture_hidden']
+    assert all(r['query_excluded_from_H'] and r['fixed_unique_LoRA'] for r in results)
+    assert results[1]['fixed_parameter_result_reused_from']=='historical-MT'
+    records=[read_json(tmp_path/'validation/RL_00000009/correct'/f'task_{i:04d}_state_{i:03d}'/'complete.json') for i in (0,1)]
+    assert [r['actual_new_environment_steps'] for r in records]==[114,100]
+    assert evaluation.formal_conditions(args,None,runner,panel,rows)==results and len(runner.requests)==1
+
+
+def test_analysis_exception_requires_registered_live_child_and_preserves_ordinary_cap(monkeypatch,tmp_path):
+    import json,threading,pytest
+    from ember.pi05_source_checkpoint import write_json_atomic
+    from ember.proposal_writer import batch as owner
+    from ember.proposal_writer.batch import Batch,Job
+    batch=object.__new__(Batch);batch.root=tmp_path
+    folder=tmp_path/'profile_cost';folder.mkdir()
+    launch=dict(analysis_exception_only=True,PID=73,node='gpu02',physical_gpu=4)
+    write_json_atomic(folder/'launch.json',launch)
+    devices=[('gpu02',dict(index=4,processes=[dict(pid=73,owner='ymdai')]))]
+    assert batch.bounded_analysis_devices(devices)=={('gpu02',4)}
+    assert not batch.bounded_analysis_devices([('gpu02',dict(index=4,processes=[dict(pid=74,owner='ymdai')]))])
+    def gpu(index,pid=None):
+        return dict(index=index,processes=[] if pid is None else [dict(pid=pid,owner='ymdai')],
+            mem_used_mib=0 if pid is None else 15000,mem_free_mib=32000,compute_mode='Default',uuid=str(index),util_gpu_pct=100)
+    snapshot=dict(bad_nodes=[],node_results=dict(gpu01=dict(gpus=[gpu(i,100+i if i<5 else None) for i in range(6)]),
+        gpu02=dict(gpus=[gpu(4,73)])))
+    def command(arguments,**_):
+        return SimpleNamespace(stdout=json.dumps(snapshot) if 'gpu_preflight.py' in arguments[1] else '/dev/fixture 1000 2147483648 2147483648\n')
+    monkeypatch.setattr(owner.subprocess,'run',command)
+    batch.running={('gpu01',i):{} for i in range(5)};batch.required_free_MiB=18000;batch.lock=threading.Lock()
+    batch.track_cost_estimate=lambda *_:dict(GPU_hours_hard_cap_active=False)
+    write_json_atomic(tmp_path/'run_contract.json',dict(limits=dict(added_peak_GiB=256)))
+    destination=tmp_path/'admit';destination.mkdir()
+    admission=batch.admit(Job('actual-normal',['teacher'],estimate_seconds=10),'gpu01',5,destination)
+    assert admission['concurrency_cap']==6 and admission['ordinary_physical_GPU_count']==6
+    assert admission['physical_GPU_count_including_analysis']==7 and admission['active_bounded_analysis_devices']==['gpu02:4']
+    write_json_atomic(folder/'exit.json',dict(exit_code=0))
+    assert not batch.bounded_analysis_devices(devices)
+    with pytest.raises(RuntimeError,match='outside project allocation'):
+        batch.admit(Job('unregistered-extra',['teacher'],estimate_seconds=10),'gpu01',5,destination)

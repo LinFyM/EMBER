@@ -107,6 +107,8 @@ Owner允许退休旧架构无恢复/当前依赖的checkpoint和训练状态：�
 
 实验session可在上述已经定清的scope内自主完成工程、清理、完整检查、Git集成/push、freeze与launch；main负责及时消费实际吞吐确定尚未冻结的数字，不把重复人工ACK变成流水线等待。实现修改旧canonical路径，历史代码由冻结worktree/Git/原件保留，active tree一个运行面。
 
+正式评测的执行责任复用既有pi05_eval_queue（long-first、atomic claim及raw-row completion），每物理worker保留同一Runtime/共享checkpoint，compile_conditions与EpisodeRunner合批合法独立condition。queue面板/scene/RNG与最终初态排除不随物理卡数/condition chunk变化；MT选中结果引用既有逐行参照，查询仍不进H。实际batch按完整消费者吞吐/峰值选择，尚未测得的收益不声称已实现；没有第二套独立适应runner。
+
 ## 8. 保留的实际计算与历史边界
 
 当前canonical实现为 `src/ember/proposal_writer/`。双meta各18层q/v rank32/alpha32/dropout0，seed202610101/102；教学读取原source双RGB/exact L、stride5、50×32固定probe1729/time1/state-free。Gemma finalnorm contextual前512图像位、raw frozen合法语言embedding及action finalnorm H均有G消费者，source冻结；实际任务执行关闭meta并用MT合并基底+唯一38/r8。

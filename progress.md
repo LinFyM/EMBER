@@ -1,3 +1,11 @@
+## 2026-10-11 持久正式评测与已定位的局部恢复
+
+正式400入口复用现有pi05_eval_queue及同一compile_conditions/EpisodeRunner：每个worker只加载一次source/共享checkpoint，动态领取long-first shards，独立conditions和最终查询合批；逐condition教学映射、scene/RNG、最终初态排除及MT153引用保持。物理condition batch/卡数可迁移而不改immutable面板；尚未启动held/G/π正式计算或宣称吞吐收益。
+两项实际CPU消费者已通过21.72秒：400行完整且无重复、一worker不重载kernel；最终查询不回H、MT选中行引用、恢复不重复执行。首条测试命令缺PYTHONPATH只导致import collection失败，已修正；新准入及完整28项针对性回归通过30.97秒；随后低余量readout物理slots8/持久queue/分析例外三项启动消费者通过26.13秒，完整16行面板不变。
+教师score队列中的task101 MT16于UTC09:42:01在gpu01:5发生Offscreen framebuffer错误，原91.389秒/.025385937691GPUh失败保留；其他独立任务继续，未杀GPU进程。正在准备CPU owner安全退出后由同一Batch承接缺口，实际恢复前不称已修好渲染。
+已授权单Long R5成本consumer的第一稀疏冻结副本漏configs，模型加载前退出1，8.235秒/.002287499805GPUh；保留原件。第二副本包含原configs，CPU实际authority读取通过，从UTC09:42:58启动同一必要成本链，仍是weights-only/部分B4，不作为全36训练或能力证据。
+新准入只将ROOT中明确登记且当前PID确实占用设备的短时analysis子进程列为Owner例外，退出或PID不符立即不适用；常规6/8卡、单节点6卡、显存/独立quota继续检查，不取消成本记账。旧ee2教师与dce成本进程源码不热改。
+
 ## 2026-10-11 教师分数已接续，学生经历引用去重
 
 教师score队列UTC09:23:30由ee2a21ca clean pushed detached实际启动，CPU1428483，五gpu01+一gpu02共六卡；35个有效教师段接管不重训。真实launch及一次模型预测在ROOT/coordinator/teacher_bank_pruned_03。

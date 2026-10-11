@@ -10,9 +10,11 @@ import numpy as np
 
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.expert_manifold.video_schedule import condition_demo_index,task_video_mapping
+from ember.pi05_eval_queue import (EvaluationTask,EvaluationShard,build_cost_balanced_shards,
+    initialize_queue,claim_next,complete_job,fail_job,publish_json_exclusive,queue_summary)
 
 from .contract import SOURCE,MT_PATH,seed,environment_contract
-from .path import compile_condition,restore_compilation
+from .path import compile_conditions,restore_compilation
 from .analysis import paired,billing
 
 MT400=Path('/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1/MT/evaluation/correct400/results.json')
@@ -70,50 +72,121 @@ def prepare_formal(args):
     return panel
 
 
-def formal_condition(args,runtime,runner):
+def formal_queue(root,*,workers,condition_batch,arm='correct'):
+    """Reuse the official dynamic queue with immutable condition shards."""
+    root=Path(root);panel=read_json(root/'formal_panel.json');stage,update=panel['specification']['version']
+    base=root/'validation'/f'{stage}_{update:08d}'/arm;base.mkdir(parents=True,exist_ok=True)
+    plan_path=base/'queue_plan.json'
+    if plan_path.exists():
+        plan=read_json(plan_path)
+        if plan['checkpoint']!=panel['checkpoint']:
+            raise ValueError('formal queue checkpoint changed')
+        shards=[EvaluationShard(**{**s,'init_state_ids':tuple(s['init_state_ids'])}) for s in plan['shards']]
+    else:
+        from dataclasses import asdict
+        tasks=[EvaluationTask(t['suite'],t['task_id'],t['horizon'],tuple(r['init_state_id'] for r in panel['rows']
+            if r['task']==t['global_task_id'])) for t in panel['environment']['tasks']]
+        balanced=build_cost_balanced_shards(tasks,env_batch_size=condition_batch,physical_gpu_count=workers)
+        parts=[(s,s.init_state_ids[first:first+condition_batch]) for s in balanced
+            for first in range(0,len(s.init_state_ids),condition_batch)]
+        shards=[EvaluationShard(f'{s.job_id}_{ordinal:03d}',ordinal,s.suite,s.task_id,s.horizon,ids,
+            s.horizon*len(ids),s.preferred_gpu) for ordinal,(s,ids) in enumerate(parts)]
+        plan=dict(checkpoint=panel['checkpoint'],arm=arm,condition_batch=condition_batch,
+            initial_physical_workers=workers,shards=[asdict(s) for s in shards])
+        write_json_atomic(plan_path,plan)
+    initialize_queue(base/'jobs.sqlite',shards,contract_reference=str(root/'formal_panel.json'))
+    return base
+
+
+def formal_worker(args,runtime,runner):
+    """One policy/kernel load serves successive dynamically claimed groups."""
     from .pipeline import load_version
     state=load_version(runtime,args.checkpoint);runtime.actor.eval()
     panel=read_json(args.root/'formal_panel.json');spec=panel['specification']
-    if args.condition_ordinal not in range(50):raise ValueError('formal initial state outside registered50')
     if [state['stage'],state['next_update']]!=spec['version'] or str(args.checkpoint.resolve())!=panel['checkpoint']:
         raise ValueError('strict formal version changed')
-    row=next(r for r in panel['rows'] if r['task']==args.task and r['init_state_id']==args.condition_ordinal)
-    task=next(t for t in panel['environment']['tasks'] if t['global_task_id']==args.task)
+    stage,update=spec['version'];base=args.root/'validation'/f'{stage}_{update:08d}'/args.video_arm
+    tasks={(t['suite'],t['task_id']):t for t in panel['environment']['tasks']}
+    queue=base/'jobs.sqlite'
+    while (claim:=claim_next(queue,worker_id=args.worker_id)) is not None:
+        try:
+            task=tasks[claim.task_key]
+            entries=[r for r in panel['rows'] if r['task']==task['global_task_id'] and r['init_state_id'] in claim.shard.init_state_ids]
+            results=[]
+            for first in range(0,len(entries),args.condition_batch):
+                results.extend(formal_conditions(args,runtime,runner,panel,entries[first:first+args.condition_batch]))
+            relative=Path('shards')/claim.shard.job_id/f'attempt_{claim.attempt:03d}.json'
+            size=publish_json_exclusive(base/relative,dict(rows=results,checkpoint=panel['checkpoint'],
+                worker_id=args.worker_id,code_reading_conditions_in_one_persistent_runtime=True))
+            complete_job(queue,job_id=claim.shard.job_id,worker_id=args.worker_id,claim_token=claim.claim_token,
+                rows_path=str(relative),rows_bytes=size,row_count=len(results),successes=sum(bool(r['success']) for r in results))
+        except BaseException as error:
+            fail_job(queue,job_id=claim.shard.job_id,worker_id=args.worker_id,claim_token=claim.claim_token,error=repr(error))
+            raise
+    return queue_summary(queue)
+
+
+def formal_entry(args,panel,row):
+    task=next(t for t in panel['environment']['tasks'] if t['global_task_id']==row['task'])
     demo=row['teacher_demo'];video_task=None
     if args.video_arm=='other':demo=(demo+17)%50
     elif args.video_arm=='wrong':
         keys=[(t['suite'],t['task_id']) for t in panel['environment']['tasks']]
         mapping=task_video_mapping(keys,{key:'validation' for key in keys},'cross_suite_wrong')
-        video_task=next(r['video_global_task_id'] for r in mapping if r['language_global_task_id']==args.task)
-    destination=args.root/'validation'/f"{state['stage']}_{state['next_update']:08d}"/args.video_arm/f"task_{args.task:04d}_state_{row['init_state_id']:03d}"
-    if (destination/'complete.json').exists():return
-    tick=time.monotonic();before_steps=runner.environment_steps
-    if (destination/'path.json').exists():path=restore_compilation(destination,runtime)
-    else:
-        path=compile_condition(runtime,runner,task,dict(practice_states=row['practice_states']),demo,
-            identity=destination.name,path_ordinal=row['video_ordinal'],noise_root=seed(77,args.task,row['video_ordinal']),
-            max_rounds=spec['max_rounds'],external_max_environment_steps=spec['environment_multiplier']*(task['horizon']+10),
-            video_task=video_task)
-        path.save(destination,retain_U=True)
-    if row['init_state_id'] in {r['init_state_id'] for r in path.history.episodes}:
-        raise ValueError('condition final initial state participated in adaptation')
-    request=dict(task=task,state=path.states[path.selected],parameter_ref=path.selected,state_id=row['init_state_id'],
-        noise_root=row['noise_root'],episode_id=f'{path.identity}_fixed_final',remaining=task['horizon']+10,
-        snapshots=False,uses_teaching=False,capture_history=False,registered_scene=row['registered_scene'])
-    if path.selected=='MT300':
-        result=dict(row['MT_row']);result['fixed_parameter_result_reused_from']=row['MT_source']
-        first_actions=result.get('first_native_normalized_actions')
-    else:
-        output=next(runner.run([request]));result=dict(output['row'])
-        first_actions=output['history'].records[0]['normalized_actions'].tolist() if output['history'].records else None
-    result={**result,'global_task_id':args.task,'teacher_demo':demo,'reference_teacher_demo':row['teacher_demo'],
-        'video_ordinal':row['video_ordinal'],'condition':path.identity,'reference':path.selected,'arm':'selected',
-        'query_excluded_from_H':True,'fixed_unique_LoRA':True,'checkpoint':str(args.checkpoint.resolve())}
-    if first_actions is not None:result['first_native_normalized_actions']=first_actions
-    write_json_atomic(destination/'query.json',dict(selected=result,MT=row['MT_row'],MT_reused_from=row['MT_source']))
-    write_json_atomic(destination/'complete.json',dict(complete=True,condition=path.identity,environment_steps=path.environment_steps,
-        actual_new_environment_steps=runner.environment_steps-before_steps,selected=path.selected,
-        end_to_end_seconds=time.monotonic()-tick,compilation_timings=path.timings,no_evaluation_gradients=True))
+        video_task=next(r['video_global_task_id'] for r in mapping if r['language_global_task_id']==row['task'])
+    stage,update=panel['specification']['version']
+    destination=args.root/'validation'/f'{stage}_{update:08d}'/args.video_arm/f"task_{row['task']:04d}_state_{row['init_state_id']:03d}"
+    return dict(row=row,task=task,demo=demo,video_task=video_task,destination=destination,path=None,new_steps=0)
+
+
+def formal_conditions(args,runtime,runner,panel,rows):
+    """Independent paths share slots; their final query never contributes to H."""
+    tick=time.monotonic();spec=panel['specification'];entries=[formal_entry(args,panel,r) for r in rows]
+    missing=[]
+    for entry in entries:
+        destination=entry['destination']
+        if (destination/'complete.json').exists():continue
+        if (destination/'path.json').exists():entry['path']=restore_compilation(destination,runtime)
+        else:missing.append(entry)
+    specifications=[dict(task=e['task'],panel=dict(practice_states=e['row']['practice_states']),demo=e['demo'],
+        identity=e['destination'].name,path_ordinal=e['row']['video_ordinal'],noise_root=seed(77,e['row']['task'],e['row']['video_ordinal']),
+        max_rounds=spec['max_rounds'],external_max_environment_steps=spec['environment_multiplier']*(e['task']['horizon']+10),
+        video_task=e['video_task']) for e in missing]
+    for entry,path in zip(missing,compile_conditions(runtime,runner,specifications) if missing else [],strict=True):
+        entry['path']=path;entry['new_steps']=path.timings['new_environment_steps']
+        path.save(entry['destination'],retain_U=True)
+    requests=[];by_identity={}
+    for entry in entries:
+        path=entry['path']
+        if path is None:continue
+        row=entry['row']
+        if row['init_state_id'] in {r['init_state_id'] for r in path.history.episodes}:
+            raise ValueError('condition final initial state participated in adaptation')
+        if path.selected=='MT300':
+            entry['result']={**row['MT_row'],'fixed_parameter_result_reused_from':row['MT_source']}
+        else:
+            identity=f'{path.identity}_fixed_final';by_identity[identity]=entry
+            requests.append(dict(task=entry['task'],state=path.states[path.selected],parameter_ref=path.selected,
+                state_id=row['init_state_id'],noise_root=row['noise_root'],episode_id=identity,remaining=entry['task']['horizon']+10,
+                snapshots=False,uses_teaching=False,capture_history=False,capture_hidden=False,registered_scene=row['registered_scene']))
+    for output in runner.run(requests):
+        entry=by_identity[output['request']['episode_id']];entry['result']=dict(output['row'])
+        entry['new_steps']+=output['row']['environment_steps']
+        if output['history'].records:
+            entry['result']['first_native_normalized_actions']=output['history'].records[0]['normalized_actions'].tolist()
+    for entry in entries:
+        path=entry['path']
+        if path is None:continue
+        row=entry['row'];result={**entry['result'],'global_task_id':row['task'],'teacher_demo':entry['demo'],
+            'reference_teacher_demo':row['teacher_demo'],'video_ordinal':row['video_ordinal'],'condition':path.identity,
+            'reference':path.selected,'arm':'selected','query_excluded_from_H':True,'fixed_unique_LoRA':True,
+            'checkpoint':str(args.checkpoint.resolve())}
+        write_json_atomic(entry['destination']/'query.json',dict(selected=result,MT=row['MT_row'],MT_reused_from=row['MT_source']))
+        write_json_atomic(entry['destination']/'complete.json',dict(complete=True,condition=path.identity,
+            environment_steps=path.environment_steps,actual_new_environment_steps=entry['new_steps'],selected=path.selected,
+            shared_group_residence_seconds=time.monotonic()-tick,shared_group_conditions=len(rows),
+            compilation_timings=path.timings,no_evaluation_gradients=True))
+    return [read_json(e['destination']/'query.json')['selected'] for e in entries]
 
 
 def formal_summary(root,arm='correct'):

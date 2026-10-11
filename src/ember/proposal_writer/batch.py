@@ -128,6 +128,18 @@ class Batch:
                 ['git','branch','--show-current'],cwd=workspace,text=True).strip():
             raise ValueError('batch requires the frozen clean detached source')
 
+    def bounded_analysis_devices(self,devices):
+        """Only an explicitly registered, still-live analysis child gets the exception."""
+        active=set()
+        for file in self.root.glob('profile*/launch.json'):
+            if (file.parent/'exit.json').exists():continue
+            launch=json.loads(file.read_text())
+            if not launch.get('analysis_exception_only') or not launch.get('PID'):continue
+            address=launch['node'],launch['physical_gpu']
+            if any((node,gpu['index'])==address and any(p['owner']=='ymdai' and int(p['pid'])==launch['PID']
+                for p in gpu['processes']) for node,gpu in devices):active.add(address)
+        return active
+
     def admit(self, job, node, gpu, destination):
         # Serial admission excludes overlapping launch snapshots within this batch.
         with self.lock:
@@ -152,13 +164,17 @@ class Batch:
             # Live allocation may include a task-owned process outside this driver's futures.
             outside = {(n,g['index']) for n,g in devices if any(p['owner']=='ymdai' for p in g['processes'])}
             combined = allocated | outside | {(node,gpu)}
-            if len(combined) > cap or sum(n==node for n,_ in combined)>6:
+            analyses=self.bounded_analysis_devices(devices)
+            ordinary=allocated | (outside-analyses) | {(node,gpu)}
+            if len(ordinary) > cap or sum(n==node for n,_ in combined)>6:
                 raise RuntimeError('outside project allocation would exceed the shared cap')
             peak=json.loads((self.root/'run_contract.json').read_text())['limits']['added_peak_GiB']
             used,limit=quota_headroom(quota.stdout,peak_GiB=peak)
             forecast=self.track_cost_estimate(job,node,gpu)
             return dict(node=node,physical_gpu=gpu,uuid=selected['uuid'],free_MiB=selected['mem_free_mib'],
                         utilization=selected['util_gpu_pct'],concurrency_cap=cap,quota_used_KiB=used,quota_KiB=limit,
+                        ordinary_physical_GPU_count=len(ordinary),physical_GPU_count_including_analysis=len(combined),
+                        active_bounded_analysis_devices=[f'{n}:{g}' for n,g in sorted(analyses)],
                         cost_forecast=forecast)
 
     def track_cost_estimate(self,job,node,gpu):
@@ -208,7 +224,9 @@ class Batch:
                 command+=['-m','torch.distributed.run','--standalone',f'--nproc-per-node={len(devices)}']
             arguments=list(job.arguments)
             if arguments[0] in ('readout','teacher-report','report') and admissions[0]['free_MiB']<25000:
-                arguments[arguments.index('--slots')+1]=str(min(16,int(arguments[arguments.index('--slots')+1])))
+                # The shared gpu01:5 MT101 consumer exhausted its EGL framebuffers at16.
+                # Smaller physical waves still evaluate every registered selection/report row.
+                arguments[arguments.index('--slots')+1]=str(min(8,int(arguments[arguments.index('--slots')+1])))
             if len(devices)>1 and '--frame-chunk' in arguments:
                 env['EMBER_META_FRAME_CHUNKS']=','.join(str(16 if a['free_MiB']>=28000 else
                     8 if a['free_MiB']>=21000 else 4) for a in admissions)
@@ -387,7 +405,8 @@ def shared_learning_job(root,contract,stage,shared_gpus,stop,slots):
     return [Job(f'{stage}_{stop:08d}',arguments,estimate_seconds=seconds,gpu_count=shared_gpus)]
 
 
-def stage_jobs(root,stage,*,microbatch,slots,teacher_devices,estimates,shared_gpus,stop):
+def stage_jobs(root,stage,*,microbatch,slots,teacher_devices,estimates,shared_gpus,stop,
+               physical_workers=None,condition_batch=None,video_arm='correct'):
     """Independent condition jobs reuse this queue; shared actor batches retain one owner."""
     root=Path(root);contract=json.loads((root/'run_contract.json').read_text())
     if stage=='teacher-data':return initial_jobs(microbatch,slots,teacher_devices,root=root,teacher_update_seconds=estimates)
@@ -409,11 +428,16 @@ def stage_jobs(root,stage,*,microbatch,slots,teacher_devices,estimates,shared_gp
                         ['report','--task',str(task),'--condition-ordinal',str(ordinal),'--checkpoint',str(checkpoint),
                          '--slots',str(slots)],estimate_seconds=seconds))
     elif stage=='formal':
+        from .evaluation import formal_queue
         panel=json.loads((root/'formal_panel.json').read_text())
-        for row in panel['rows']:
-            jobs.append(Job(f"formal_{Path(panel['checkpoint']).parent.name}_{Path(panel['checkpoint']).name}_{row['task']:04d}_{row['init_state_id']:03d}",
-                ['formal','--task',str(row['task']),'--condition-ordinal',str(row['init_state_id']),
-                 '--checkpoint',panel['checkpoint'],'--slots',str(slots)],estimate_seconds=seconds))
+        if physical_workers is None or physical_workers<1 or condition_batch is None or condition_batch<1:
+            raise ValueError('formal persistent workers need measured positive physical condition batch and devices')
+        formal_queue(root,workers=physical_workers,condition_batch=condition_batch,arm=video_arm)
+        for ordinal in range(physical_workers):
+            identity=f"formal_{Path(panel['checkpoint']).parent.name}_{Path(panel['checkpoint']).name}_{video_arm}_worker{ordinal:03d}"
+            jobs.append(Job(identity,['formal','--worker-id',identity,'--video-arm',video_arm,
+                '--checkpoint',panel['checkpoint'],'--slots',str(slots),'--condition-batch',str(condition_batch)],
+                estimate_seconds=seconds*len(panel['rows'])/physical_workers))
     if not jobs:raise ValueError('stage has no registered independent work')
     return jobs
 
@@ -431,6 +455,8 @@ def main():
     parser.add_argument('--teacher-devices',default='',help='measured throughput/budget selection, not utilization filter')
     parser.add_argument('--microbatch',type=int,required=True)
     parser.add_argument('--slots',type=int,default=8)
+    parser.add_argument('--condition-batch',type=int,help='measured independent formal paths per persistent queue shard')
+    parser.add_argument('--video-arm',choices=['correct','other','wrong'],default='correct')
     parser.add_argument('--required-free-MiB',type=int,required=True)
     parser.add_argument('--teacher-update-seconds',action='append',default=[],help='node:index=seconds for a measured complete update')
     args=parser.parse_args()
@@ -445,13 +471,17 @@ def main():
             raise ValueError('teacher estimate must be positive and identify an eligible device')
         estimates[(node,int(gpu))]=seconds
     jobs=stage_jobs(args.root,args.stage,microbatch=args.microbatch,slots=args.slots,teacher_devices=teacher_devices,
-        estimates=estimates,shared_gpus=args.shared_gpus,stop=args.stop)
+        estimates=estimates,shared_gpus=args.shared_gpus,stop=args.stop,physical_workers=len(devices),
+        condition_batch=args.condition_batch,video_arm=args.video_arm)
     if args.bank_only:jobs=[j for j in jobs if not j.identity.startswith('teacher_report_')]
     done=batch.run(jobs,on_completion=(lambda done:teacher_bank_ready(args.root,done)) if args.stage=='teacher-data' else None)
     if args.bank_only:
         print(json.dumps(dict(stage='teacher-bank',complete=True,jobs=done,billing=billing(args.root),independent_report_pending=True)))
         return
     summary=teacher_summary(args.root) if args.stage in ('teacher-data','teacher-reports') else None
+    if args.stage=='formal':
+        from .evaluation import formal_summary
+        formal_summary(args.root,args.video_arm)
     print(json.dumps(dict(stage=args.stage,complete=True,jobs=done,billing=billing(args.root),
         teacher_report=summary['independent_report'] if summary else None)))
 

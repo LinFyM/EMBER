@@ -1,20 +1,20 @@
 ## 当前目标：全36共同E、最小真实起步与持续学生共同学习
 
-实验01a12384继续独占tracked/Git；main01a12385只读科学消费。唯一active为docs/designs/video_guided_proposal_writer_20261010.md。
+实验01a12bb6-b606-71e2-a057-8d92620b7651已接任前任01a12384并独占工程/运行/恢复/tracked/Git；新接收主讨论UID待Owner主动提供。唯一active为docs/designs/video_guided_proposal_writer_20261010.md，继续已派发完整链。
 教师最多800×query28/save100，候选MT/200/400/600/800各完整16 paired score，严格16/16且更早点完整才省未来未启动工作。
 教师bank已UTC13:36完整退出0，36E/指定MT H/固定S_G齐备；155节点完整读出、25未来节点严格饱和省略，全部有效/失败原件保留。
 教师端只供E/选择/独立E+MT各16逻辑报告，不再准备教师H池或两折热身；每task仅指定第一MT selection行保存真实bootstrap H。
 36个E/MT H到齐后固定task等权E−MT尺度，fresh共享G作MT-only初始化；首学生MT/G pair同一份参数/H/query供final热身与G bank。
 然后完整R5固定ψ/θ采集→θ一次→登记实际P/H→ψ块→新批；后续visit重新实际MT起步，query与未来H墙保持。
 首RL visit0四条MT query引用初始学生兼容原行，最多144条无需新增episode；引用保留原condition/实际episode，不能改noise或把旧cost重计。
-教师独立报告与共享学习并行；main已收口方法/效率goal，不再追加成本profile，完整科学结果尚待正式学习/400。
+教师独立报告已全部齐备（E453/576、MT350/576）；方法/效率goal已收口，不再追加成本profile，完整Writer科学结果仍待联合RL9/400。
 main已于UTC11:35冻结G216（全36各24次）→首学生36→同pair final warm36（各4次）→联合RL9（每task一condition/实采R5），每次θ后ψ块9，最终G sampler297；唯一RL9 joint checkpoint做correct strict paired400、video_seed7、MT153逐行参照。
 必要04成本已UTC11:18:59实际退出0并释放分析卡：MT-only暖partialB4为26.09秒/chunk16（26.06GiB），长H借用raw为27.49秒，同8query收齐ready波wall短2.38%且步数不同。全B4/36吞吐仍为外推；整数已据原件冻结，不追加profile矩阵。
 14:30授权与原20:30目标保留，UTC09:24未裁剪bank22:11预测另列；G暂1–1.75h、学生0.5–1.25h、warm5–10m、联合1.5–3.25h、formal3–7h均为外推，由首正式消费者/已需shard校正，不新增训练报告矩阵。GPUh无硬cap，物理6/8/node6/data1 quota与256GiB峰值安排保持。
 
 实际接续：UTC13:38从db72ee91 clean pushed detached启动唯一Batch依赖图；G216四卡/chunk16，另外两卡独立报告，后继学生36→warm36→joint9→strict400按依赖自动派发。CPU PID2897665/tmux ember-full36-shared-20261011，ROOT/coordinator/registered_shared_window_01保留真实启动/退出身份；一次持续退出事件等待。实际bank21:36完成，原20:30目标晚66分钟，不重置计时。
 
-当前工程接续：首批从完整local36恢复并已保存完整RL1/G sampler225；第二批query的EGL初始化失败已结算，保留真实路径/部分query，从RL1继续。按CUDA身份选择EGL设备，完整查询后释放闲置renderer且保留CPU worker，CFM→环境前释放未使用allocator缓存；原逻辑B4、81-job与正式只读RL9不变。实际消费者、新冻结/运行身份进入progress及ROOT修订。
+当前工程接续：EGL恢复已从1b44903d clean pushed detached实际启动，CPU3694323/registered_shared_window_recovery_03，首批完整RL1/G sampler225及第二批真实路径/部分query均保留；新实验已接管原持续退出事件等待，并保存一次整批退出后自动接续本实验聊天的CPU回报者（experiment_takeover_01a12bb6），无定时查询/自Queue。按CUDA身份选择EGL设备，完整查询后释放闲置renderer且保留CPU worker，CFM→环境前释放未使用allocator缓存；原逻辑B4、81-job与正式只读RL9不变。实际消费者、新冻结/运行身份进入progress及ROOT修订。
 
 Owner最新优先级：先完整验证Writer相对强MT是否有性能提升；以下教师事项仅登记后续待办，不追加本批81-job、不分走Writer算力、不改当前E/S_G/bank。main消费既定完整链后，依据性能/保持/视频价值及历史决定接续；教师事项不按空卡或本批完成自动触发，无需Owner例行再批准。
 

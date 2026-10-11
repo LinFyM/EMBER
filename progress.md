@@ -1,3 +1,13 @@
+## 2026-10-12 新实验session接任：原完整Writer链继续
+
+Owner要求详细接续前任实验01a12384-17a9-7382-aeec-cee89479428f，现由实验01a12bb6-b606-71e2-a057-8d92620b7651独占工程、运行、恢复、资源、Git与本批记录；新的接收主讨论UID待Owner主动提供，不向历史主讨论发送本批报告。前任聊天、最新Owner要求、唯一active设计全文、实际proposal_writer数据/模型/梯度/状态机/恢复/正式评测消费者及相关完整历史已消费。下方旧四task、teacher-H课程与旧预算不恢复。
+
+UTC16:08–16:12接任核验：registered_shared_window_recovery_03的CPU owner3694323、四卡RL attempt_003仍在原1b44903d clean pushed detached运行，已有完整RL1/G sampler225恢复点；G216/学生36/warm36成功收据保留。原81-job依赖继续自行完成joint9→correct strict paired400及独立教师报告，不重启进程、不改E/S_G/更新数/任务权重。RL1–8仅恢复；唯一资格仍完整RL9，MT153逐行参照、video_seed7、最终初态排除、Test关闭与真实STOP合同保持。已把前任CPU事件等待者移交给本session，以现有.venv Python继续同一持续kernel退出事件等待；system python不支持pidfd的首次等待尝试已更正，未触及GPU工作。UTC16:15已转为可存活的单次整批退出接续：tmux ember-full36-experiment-takeover-01a12bb6/CPU3831640，原件在同coordinator的experiment_takeover_01a12bb6。退出后使用现有codex-session-messaging/notify_thread.py及已核实daemon直接Steer或启动本实验原聊天；尚无投递，不向旧main发送。直接工具等待已退休，没有重叠自Queue或阶段心跳。
+
+本次从已完成的原件逐行复算，36任务教师独立报告1152逻辑行全部齐备：E453/576对MT350/576，retained327/gained126/lost23/churn149；Spatial56→83、Object34→72、Goal56→66、Long30→53、support174→179（各suite分母依次96/96/96/96/192）。目标教师确有独立控制增益，但不是Writer或视频能力证据。
+G216首学生同一MT/G query面板为83/144→83/144，retained74/gained9/lost9/churn18；Spatial10→10、Object11→11、Goal10→12、Long9→11、support43→39。教师16-state独立报告与学生4-state query面板不同，不拿两者总分直接当控制传递比例或因果归因；正式能力仍待联合RL9/400。
+原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/full36_common_teacher：teachers/task_*/report/complete.json、student_data/G216_first_students/task_*/query/complete.json及既有run_contract/formal_panel/coordinator/launch。接任没有新GPU实验、profile或科学矩阵；教师复核/续训仍只保留后续用途。
+
 ## 2026-10-12 00:02 EGL阶段交接恢复已实际启动
 
 main/origin已推送1b44903d，实际运行采用同commit clean detached；CPU PID3694323/tmux ember-full36-shared-recovery-03，ROOT/coordinator/registered_shared_window_recovery_03。RL attempt_003于UTC16:02:35实际启动，从完整RL1/G sampler225接回，GPU01 0/1/2/6、world4/logicalB4、chunks16/8/16/8及slots16；后继formal仍使用已登记六设备持久队列。G216/student36/warm36成功收据跳过，第二批task25/43旧真实路径/部分query直接恢复，其余缺口按原核和种子补齐，不重算已完成首批学习。

@@ -95,7 +95,8 @@ def collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
             checkpoint=str(args.checkpoint.resolve()),schema=SELECTOR_SCHEMA,current_fixed_theta=True,
             kernel_identity=runtime.fixed_kernel_identity))
     collection_seconds=time.monotonic()-generation_tick;query_tick=time.monotonic()
-    rewards=query_conditions(runtime,runner,[(e['path'],e['task'],e['panel'],visit,e['destination']/'query') for e in entries])
+    rewards=query_conditions(runtime,runner,[(e['path'],e['task'],e['panel'],visit,e['destination']/'query') for e in entries],
+        mt_reference_version=read_json(args.root/'run_contract.json')['student_refresh']['version'])
     return [e['path'] for e in entries],rewards,dict(collection_and_path_IO_seconds=collection_seconds,
         independent_query_and_row_IO_seconds=time.monotonic()-query_tick,total_collection_query_seconds=time.monotonic()-tick)
 

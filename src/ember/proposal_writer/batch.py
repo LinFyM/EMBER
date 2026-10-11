@@ -73,7 +73,7 @@ def initial_jobs(microbatch,slots,teacher_devices,*,root=RUN_ROOT,teacher_update
                     () if predecessor is None else (predecessor,),15+updates*UNMEASURED_TEACHER_SECONDS,
                     tuple(teacher_devices),estimates,required_free_MiB=18000))
             readout=f'readout_{task:04d}_{node:08d}';readouts.append(readout)
-            seconds=15+contract['teacher']['selection_H_per_node']*31.335*specs[task]['horizon']/520
+            seconds=15+contract['teacher']['selection_per_node']*31.335*specs[task]['horizon']/520
             jobs.append(Job(readout,['readout','--task',str(task),'--stop',str(node),'--slots',str(slots)],
                 () if node==0 else (identity,predecessor),seconds,required_free_MiB=18000))
             predecessor=readout
@@ -345,7 +345,7 @@ class Batch:
 
 
 def teacher_bank_ready(root, done):
-    """Publish E/H readiness at completion events, independently of teacher reports."""
+    """Publish all36 E and MT-bootstrap readiness, independently of reports."""
     from .run import select_teacher
     from ember.pi05_source_checkpoint import read_json, write_json_atomic
     root=Path(root)
@@ -358,11 +358,13 @@ def teacher_bank_ready(root, done):
         if not (directory/'E.json').exists() and all(f'readout_{task:04d}_{node:08d}' in done|skipped for node in nodes):
             select_teacher(root,task)
     if not all((root/'teachers'/f'task_{task:04d}'/'E.json').exists() for task in TASKS):return
+    if not all((root/'bootstrap'/f'task_{task:04d}'/'complete.json').exists() for task in TASKS):return
     scale=freeze_bank_scale(root)
     pending=[task for task in TASKS if f'teacher_report_{task:04d}' not in done]
     entries=[read_json(root/'teachers'/f'task_{t:04d}'/'E.json') for t in TASKS]
     write_json_atomic(root/'bank_ready.json',dict(complete=True,task_count=len(TASKS),
-        parent_count=sum(len(e['parents']) for e in entries),history_episodes=sum(len(p['histories']) for e in entries for p in e['parents']),
+        initial_parent_count=len(TASKS),history_episodes=len(TASKS),initial_parent='MT300 only',
+        evaluated_teacher_candidate_count=sum(len(e['evaluated_candidates']) for e in entries),
         ready_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),bank_scale=str(root/'bank_scale.json'),
         scale_source_count=len(scale['sources']),independent_teacher_report_pending_tasks=pending,
         reports_not_used_for_E_or_scale=True))

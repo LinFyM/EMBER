@@ -11374,3 +11374,11 @@ Owner整体合理性/效率goal要求main科学判断与实验真实工程合作
 固定16-row selection中完整16/16且更早候选全已读出，max-success/earliest-tie的E已确定，未来未启动训练/readout可科学省略。未做分数不填，inflight自然保存，不将部分行或低分作停止证据。
 这一裁剪保持有限面板E规则，确实改变初始G parent/H覆盖；只MT的task可合法进入，实际parent等权、SG由实际全36池固定，学生持续反馈补自身访问分布而不自动证明H增量。完整teacher独立报告/query墙不变。
 实际吞吐/内存/生成控制传递仍需消费者；π不能在固定ψ的当批修补G，跨批CFM学生标签才更新修订规则。未来唯一联合checkpoint/正式paired400与视频/相邻证据裁决投入，不拼局部通过。
+
+
+## 434. 共同目标不要求教师经历课程；实际结果跨消费者引用
+
+Owner再次纠正教师只需提供目标LoRA。共同E已给真实学生P/H提供E−P标签；教师全节点H池与teacher-prefix warm是继承课程，未证实其必要性，现已退役。
+可靠选择E的完整16-state闭环仍有标签消费者，不能把少存H夸成省掉选点评估。每task事前一条MT真实起步H足以启动当前MT-only G监督；它不覆盖任意parent，后续实际学生共同学习承担真实分布覆盖。
+初始学生与首RL visit0的固定MT query拥有同task/state/scene/env-policy RNG及official执行，path identity只命名，故可引用同一实际行；不同visit不能改seed来复用。保存source_row与原condition/episode身份，唯一费用不重计。
+退休数据依赖须同时删除消费代码和课程字段，不能用兼容teacher replay继续准备无消费者H；旧已写原件保持历史，不反向重标新合同。当前属于科学组织精简及等价复用，闭环能力和实测wall收益仍待实际结果。

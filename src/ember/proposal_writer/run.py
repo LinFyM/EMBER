@@ -83,7 +83,8 @@ def prepare(args):
             trajectory='one per task, continuous optimizer/RNG',loss='native demoFM + 1e-3 fixed-initialMT prox',
             proximal_target=str(root/'initial.safetensors'),save_interval=100,
             readout_updates=[0,*range(args.checkpoint_interval,args.teacher_stop+1,args.checkpoint_interval)],
-            selection_H_per_node=args.selection_count,
+            selection_per_node=args.selection_count,
+            capture_history='only fixed first MT selection row; other selection/report score only',
             selection_folds=[args.selection_count//2]*2,report_per_arm=args.report_count,
             choice='maximum registered selection success count, ties earliest including MT',
             independent_report_not_in_H_or_gradient=True),
@@ -149,51 +150,70 @@ def readout(args, runtime, runner, environment):
     reference=parameter_ref(args.task,args.stop)
     destination=teacher_root(args.root,args.task)/'selection'/f'update_{args.stop:08d}'
     destination.mkdir(parents=True,exist_ok=True)
-    requests=[]
+    requests=[];bootstrap=args.root/'bootstrap'/f'task_{args.task:04d}'/'complete.json'
     for state_id in panel['teacher_selection_states']:
         identity=f'task_{args.task:04d}_u{args.stop:08d}_selection_{state_id:03d}'
-        if (destination/f'state_{state_id:03d}.json').exists():continue
+        existing=destination/f'state_{state_id:03d}.json'
+        capture=args.stop==0 and state_id==panel['bootstrap_state_id']
+        prior=read_json(existing) if existing.exists() else None
+        if prior and (not capture or bootstrap.exists()):continue
+        if prior and 'history' in prior:
+            write_json_atomic(bootstrap,dict(complete=True,task=args.task,state_id=state_id,
+                reference='MT300',history=prior['history'],selection_source=str(existing),
+                same_actual_selection_rollout=True,original_episode_evidence=prior))
+            continue
         requests.append(dict(task=task,state=weights,parameter_ref=reference,state_id=state_id,
-            noise_root=seed(4,args.task,state_id),episode_id=identity,snapshots=False,uses_teaching=False,capture_phi=False))
+            noise_root=seed(4,args.task,state_id),episode_id=identity+('_bootstrap_recollect' if prior else ''),
+            snapshots=False,uses_teaching=False,capture_phi=False,capture_hidden=capture,
+            capture_history=capture,bootstrap_only=bool(prior)))
     for output in runner.run(requests):
-        state_id=output['request']['state_id'];history_path=destination/f'state_{state_id:03d}.history.pt.gz'
-        save_history(history_path,output['history'])
+        state_id=output['request']['state_id']
         row=dict(**output['row'],global_task_id=args.task,checkpoint_update=args.stop,parameter_ref=reference,
-            history=str(history_path),history_records=len(output['history'].records),
-            uses=['teacher_selection','G_history','selector_supervision'],independent_report=False,
-            same_actual_rollout_history=True,checkpoint=str(node_weights(args.root,args.task,args.stop)),
+            uses=['teacher_selection'],independent_report=False,checkpoint=str(node_weights(args.root,args.task,args.stop)),
             fold=next(i for i,fold in enumerate(panel['selection_folds']) if state_id in fold))
         if output['history'].records:
             row['first_native_normalized_actions']=output['history'].records[0]['normalized_actions'].tolist()
+        if output['request']['capture_history']:
+            bootstrap.parent.mkdir(parents=True,exist_ok=True)
+            history_path=bootstrap.parent/'history.pt.gz';save_history(history_path,output['history'])
+            write_json_atomic(bootstrap,dict(complete=True,task=args.task,state_id=state_id,reference='MT300',
+                history=str(history_path),selection_source=str(destination/f'state_{state_id:03d}.json'),
+                same_actual_selection_rollout=not output['request']['bootstrap_only'],original_episode_evidence=row))
+            row.update(history=str(history_path),history_records=len(output['history'].records),
+                bootstrap_self_practice=True,same_actual_rollout_history=True)
+        if output['request']['bootstrap_only']:continue
         write_json_atomic(destination/f'state_{state_id:03d}.json',row)
     rows=[read_json(destination/f'state_{i:03d}.json') for i in panel['teacher_selection_states']]
     write_json_atomic(destination/'complete.json',dict(complete=True,task=args.task,checkpoint_update=args.stop,
         rows=rows,components=runner.components,environment_steps=runner.environment_steps,
-        history_bytes=sum(Path(r['history']).stat().st_size for r in rows)))
-    print(json.dumps(dict(task=args.task,node=args.stop,readout_rows=len(rows),capture_reused=True)))
+        history_bytes=sum(Path(r['history']).stat().st_size for r in rows if 'history' in r),
+        teacher_histories_not_learning_data=True,bootstrap_history=str(bootstrap) if args.stop==0 else None))
+    print(json.dumps(dict(task=args.task,node=args.stop,readout_rows=len(rows),
+        bootstrap_history_available=bootstrap.exists(),other_selection_histories_captured=False)))
 
 
 def select_teacher(root, task):
     contract=read_json(Path(root)/'run_contract.json');panel=task_panel(root,task)
     existing=teacher_root(root,task)/'E.json'
     if existing.exists():return read_json(existing)
-    nodes=contract['teacher']['readout_updates'];scores={};parents=[]
+    nodes=contract['teacher']['readout_updates'];scores={};candidates=[]
     omission=Path(root)/'scientific_omissions'/f'task_{task:04d}.json'
     omitted=set(read_json(omission)['omitted_jobs']) if omission.exists() else set()
     for update in nodes:
         path=teacher_root(root,task)/'selection'/f'update_{update:08d}'/'complete.json'
         if not path.exists() and f'readout_{task:04d}_{update:08d}' in omitted:continue
         record=read_json(path)
-        if not record['complete'] or len(record['rows']) != contract['teacher']['selection_H_per_node']:
+        if not record['complete'] or len(record['rows']) != contract['teacher']['selection_per_node']:
             raise ValueError('all registered teacher node readouts required before E choice')
         rows=record['rows'];scores[update]=sum(bool(r['success']) for r in rows)
-        parents.append(dict(update=update,reference=parameter_ref(task,update),
-            weights=str(node_weights(root,task,update)),histories=[r['history'] for r in rows],
+        candidates.append(dict(update=update,reference=parameter_ref(task,update),
+            weights=str(node_weights(root,task,update)),
             rows=rows,selection_successes=scores[update]))
     best=max(scores,key=lambda u:(scores[u],-u))
     result=dict(complete=True,task=task,selected_update=best,reference=parameter_ref(task,best),
-        weights=str(node_weights(root,task,best)),parents=parents,selection_states=panel['teacher_selection_states'],
-        selection_folds=panel['selection_folds'],selection_noise=f"{contract['teacher']['selection_H_per_node']}-row teacher selection; no held/formal checkpoint choice",
+        weights=str(node_weights(root,task,best)),evaluated_candidates=candidates,selection_states=panel['teacher_selection_states'],
+        selection_noise=f"{contract['teacher']['selection_per_node']}-row teacher selection; no held/formal checkpoint choice",
+        bootstrap=str(Path(root)/'bootstrap'/f'task_{task:04d}'/'complete.json'),
         choice_rule='max success; earliest tie including MT',shared_target_for_all_parent_H=True,
         evaluated_nodes=sorted(scores),scientifically_omitted_nodes=[u for u in nodes if u not in scores],
         saturation_proof=str(omission) if omission.exists() else None)
@@ -262,11 +282,12 @@ def teacher_report(args,runtime,runner,environment):
         if any(not saved(arm) for arm in aliases):
             requests.append(dict(task=task,state=weights,parameter_ref=chosen['reference'],state_id=state,
                 noise_root=noise_root,episode_id=f'task_{args.task:04d}_report_E_{state:03d}',snapshots=False,
-                uses_teaching=False,aliases=aliases,capture_history=False,registered_scene=reference['registered_scene'] if reference else None))
+                uses_teaching=False,aliases=aliases,capture_history=False,capture_hidden=False,
+                registered_scene=reference['registered_scene'] if reference else None))
         if chosen['selected_update']!=0 and reference is None and not saved('MT'):
             requests.append(dict(task=task,state=runtime.mt,parameter_ref='MT300',state_id=state,
                 noise_root=noise_root,episode_id=f'task_{args.task:04d}_report_MT_{state:03d}',snapshots=False,
-                uses_teaching=False,aliases=['MT'],capture_history=False))
+                uses_teaching=False,aliases=['MT'],capture_history=False,capture_hidden=False))
     before_steps=runner.environment_steps
     for output in runner.run(requests):
         request=output['request'];state=request['state_id'];new_episodes+=1

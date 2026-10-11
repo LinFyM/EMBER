@@ -180,9 +180,19 @@ class CFMTrainer:
         contract=read_json(self.root/'run_contract.json')
         self.bank={t:read_json(self.root/'teachers'/f'task_{t:04d}'/'E.json') for t in TASKS}
         for task in TASKS:
-            for data_version in contract.get('G_data_versions',[]):
-                student=read_json(self.root/'student_data'/data_version/f'task_{task:04d}'/'parent.json')
-                self.bank[task]['parents'].append(student['parent'])
+            bootstrap=read_json(self.root/'bootstrap'/f'task_{task:04d}'/'complete.json')
+            if not bootstrap['complete'] or bootstrap['reference']!='MT300':
+                raise ValueError('initial G needs registered nonempty MT self practice for all36')
+            self.bank[task]['parents']=[dict(reference='MT300',weights=str(self.root/'initial.safetensors'),
+                histories=[bootstrap['history']])]
+        version_name=contract.get('student_refresh',{}).get('version')
+        if version_name is not None:
+            files=[self.root/'student_data'/version_name/f'task_{task:04d}'/'parent.json' for task in TASKS]
+            if any(file.exists() for file in files):
+                if not all(file.exists() and read_json(file)['complete'] for file in files):
+                    raise ValueError('all36 actual initial student parents must precede joint G updates')
+                for task,file in zip(TASKS,files,strict=True):
+                    self.bank[task]['parents'].append(read_json(file)['parent'])
         path=self.root/'G_student_bank.json'
         rows=read_json(path)['rows'] if path.exists() else []
         for row in rows:
@@ -295,7 +305,7 @@ def train_local(runtime,context,root,example_loader,*,stop,resume=None,baseline=
         if update+1 in contract['updates']['local']:
             checkpoint(root,'local',update+1,runtime,optimizer,context,
                 sampler=dict(next_update=update+1,task_order=list(TASKS),condition_weight=.25,
-                    prefix_reduction='mean within actual condition',data_version=contract['local_data_version']),baseline=baseline)
+                    prefix_reduction='mean within actual condition',data_version=contract['student_refresh']['version']),baseline=baseline)
 
 
 def continuation_values(stop_probabilities,query_expectations,*,cost=.001):

@@ -47,6 +47,7 @@ def test_distributed_missing_label_batch_has_zero_gradient(monkeypatch):
 def test_training_roles_respect_independent_teacher_report_and_query(tmp_path):
     panel=materialize_panel(tmp_path,selection_count=16,report_count=16)
     assert len(panel['tasks'])==36
+    assert panel['selection_uses']==['teacher_selection'] and panel['selection_folds_are_historical_metadata']
     for row in panel['tasks']:
         selection=set(row['teacher_selection_states']);report=set(row['teacher_report_states'])
         practice=set(row['practice_states']);query=set(row['query_states']);limited=set(row['report_states'])
@@ -55,6 +56,7 @@ def test_training_roles_respect_independent_teacher_report_and_query(tmp_path):
         assert not query&(practice|limited) and not limited&practice
         assert len(report|practice|query|limited)==50 and len(set(row['video_order']))==50
         assert set(row['teacher_query_demos'])==set(range(46)) and set(row['teacher_videos'])==set(range(46,50))
+        assert row['bootstrap_state_id']==row['teacher_selection_states'][0]
 
 
 def test_locked_queries_capture_function_without_appending_history():
@@ -234,7 +236,7 @@ def test_merged_base_task_source_expert_and_backward_ownership():
 def test_common_teacher_dependencies_and_same_node_shared_allocation(tmp_path):
     from ember.proposal_writer.batch import initial_jobs,Job,Batch
     from ember.pi05_source_checkpoint import write_json_atomic
-    write_json_atomic(tmp_path/'run_contract.json',dict(teacher=dict(readout_updates=[0,200,400,600,800],selection_H_per_node=16,report_per_arm=16),
+    write_json_atomic(tmp_path/'run_contract.json',dict(teacher=dict(readout_updates=[0,200,400,600,800],selection_per_node=16,report_per_arm=16),
         environment=dict(tasks=[dict(global_task_id=t,horizon=400 if t>=40 else 520) for t in TASKS])))
     jobs={j.identity:j for j in initial_jobs(28,16,[('gpu01',1)],root=tmp_path)}
     assert len(jobs)==360
@@ -467,7 +469,7 @@ def test_five_real_continue_rounds_stop_deployment_and_branch_rng(monkeypatch,tm
 
 
 def test_query_labels_cached_once_and_never_added_to_history(tmp_path):
-    from ember.proposal_writer.supervision import query_once
+    from ember.proposal_writer.supervision import query_once,query_conditions
     from ember.writer.practice import History
     class Runner:
         environment_steps=0;requests=[]
@@ -475,16 +477,29 @@ def test_query_labels_cached_once_and_never_added_to_history(tmp_path):
             self.requests.extend(requests)
             for request in requests:
                 self.environment_steps+=12
-                yield dict(request=request,row=dict(success=True,init_state_id=request['state_id'],environment_steps=12),history=History())
+                yield dict(request=request,row=dict(success=True,init_state_id=request['state_id'],environment_steps=12,
+                    env_seed=request['noise_root'],policy_seed_root=request['noise_root'],
+                    suite='libero_10',task_id=2,language='exact'),history=History())
     path=SimpleNamespace(selected='G',states={'MT300':{},'G':{},'unpracticed':{}},identity='condition',demo=0,
         task=12,history=History(episodes=[dict(init_state_id=0)]),
         outputs=[dict(candidates=['MT300']),dict(candidates=['MT300','G']),dict(candidates=['MT300','G'])])
-    panel=dict(query_states=list(range(10,20)));runner=Runner()
-    first=query_once(None,runner,path,dict(horizon=100),panel,0,tmp_path)
-    second=query_once(None,runner,path,dict(horizon=100),panel,0,tmp_path)
+    panel=dict(query_states=list(range(10,20)));runner=Runner();task=dict(horizon=100,suite='libero_10',task_id=2,language='exact')
+    destination=tmp_path/'student_data/G_init/task_0012/query'
+    first=query_once(None,runner,path,task,panel,0,destination)
+    second=query_once(None,runner,path,task,panel,0,destination)
     assert first==second=={'MT300':1.,'G':1.} and len(runner.requests)==8
     assert not path.history.records and len(path.history.episodes)==1
     assert all(request['parameter_ref']!='unpracticed' for request in runner.requests)
+    path.identity='first_RL';runtime=SimpleNamespace(root=tmp_path)
+    output=tmp_path/'RL_query'
+    rewards=query_conditions(runtime,runner,[(path,task,panel,0,output)],mt_reference_version='G_init')
+    assert rewards==[first] and len(runner.requests)==12
+    import json
+    complete=json.loads((output/'complete.json').read_text())
+    assert len(complete['row_reuse'])==4 and complete['actual_new_episodes_this_attempt']==4
+    assert all(row['condition']=='condition' for row in complete['rows'] if row['reference']=='MT300')
+    query_conditions(runtime,runner,[(path,task,panel,1,tmp_path/'visit1')],mt_reference_version='G_init')
+    assert len(runner.requests)==20  # Later RNG/state panels execute all eight real queries.
 
 
 def test_native_absolute_response_cross_head_reuse_and_support_invalidation(monkeypatch):
@@ -542,7 +557,9 @@ def test_joint_bank_retains_parameters_and_excludes_future_prefixes(tmp_path):
     (root/'run_contract.json').write_text('{}')
     for task in TASKS:
         folder=root/'teachers'/f'task_{task:04d}';folder.mkdir(parents=True)
-        (folder/'E.json').write_text(json.dumps(dict(parents=[dict(reference='MT300',histories=['original'])])))
+        (folder/'E.json').write_text(json.dumps(dict(reference='E',weights='teacher')))
+        bootstrap=root/'bootstrap'/f'task_{task:04d}';bootstrap.mkdir(parents=True)
+        (bootstrap/'complete.json').write_text(json.dumps(dict(complete=True,reference='MT300',history='original')))
     trainer=CFMTrainer.__new__(CFMTrainer);trainer.root=root;trainer.runtime=SimpleNamespace()
     trainer.refresh_bank(0);assert len(trainer.bank[12]['parents'])==1
     trainer.refresh_bank(1);assert len(trainer.bank[12]['parents'])==2

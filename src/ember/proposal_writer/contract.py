@@ -13,6 +13,7 @@ ASSET_ROOT = Path('/data1/user/ymdai/projects/EMBER')
 RUN_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/full36_common_teacher')
 PRIOR_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/rank8_multistart')
 SCHEMA = 'ember_proposal_full36_common_teacher_v1'
+PANEL_ROLE_SCHEMA = 'ember_full36_score_only_MT_bootstrap_v2'
 ALLOWLIST = (0, 1, 2, 4, 5, 7, 12, 13, 14, 15, 17, 19, 20, 21, 22, 25, 28, 29,
              32, 34, 35, 36, 37, 38, 42, 43, 51, 55, 56, 62, 64, 73, 95, 96, 97, 101)
 TASKS = ALLOWLIST
@@ -25,8 +26,8 @@ SOURCE = dict(checkpoint='runs/outputs/pi05_source_aligned_seed7_1k_20260915/che
 MT_PATH = Path('/data0/user/ymdai/ember_runs/coverage_retraining_20260920/training/mtbc'
                '/checkpoints/step_00000300/lora.safetensors')
 OPTIMIZER = dict(lr=1e-4, betas=(.9, .95), eps=1e-8, weight_decay=1e-4)
-SELECTOR_SCHEMA = 'ember_full36_joint_conditional_continue_selector_v4'
-CHECKPOINT_SCHEMA = 'ember_full36_joint_conditional_continue_writer_v4'
+SELECTOR_SCHEMA = 'ember_full36_student_joint_conditional_continue_selector_v5'
+CHECKPOINT_SCHEMA = 'ember_full36_student_joint_conditional_continue_writer_v5'
 
 
 def seed(domain, *coordinates):
@@ -41,7 +42,8 @@ def materialize_panel(root=RUN_ROOT, *, selection_count=None, report_count=None)
     path = Path(root) / 'panel.json'
     if selection_count is None:
         panel = read_json(path)
-        if panel['schema_version'] != SCHEMA or tuple(r['task_id'] for r in panel['tasks']) != TASKS:
+        if (panel['schema_version'] != SCHEMA or panel['data_role_schema'] != PANEL_ROLE_SCHEMA
+                or tuple(r['task_id'] for r in panel['tasks']) != TASKS):
             raise ValueError('registered full36 panel scope changed')
         return panel
     if selection_count < 2 or selection_count % 2 or report_count <= 0 or selection_count + report_count >= 36:
@@ -55,6 +57,7 @@ def materialize_panel(root=RUN_ROOT, *, selection_count=None, report_count=None)
             teacher_videos=[i for i in video if i >= 46], policy_videos=[i for i in video if i >= 46],
             teacher_query_demos=list(range(46)), teacher_selection_states=selection,
             selection_folds=[selection[:selection_count//2], selection[selection_count//2:]],
+            bootstrap_state_id=selection[0],bootstrap_noise_root=seed(4,task,selection[0]),
             teacher_report_states=init[selection_count:selection_count+report_count],
             practice_states=[i for i in init[:36] if i not in init[selection_count:selection_count+report_count]],
             query_states=init[36:46],local_query_states=init[36:46],rl_query_states=init[36:46],report_states=init[46:50],
@@ -62,11 +65,12 @@ def materialize_panel(root=RUN_ROOT, *, selection_count=None, report_count=None)
             rng_roots={role: seed(domain, task) for role, domain in
                        [('teacher', 2), ('practice', 3), ('selection', 4), ('teacher_report', 5),
                         ('local', 6), ('rl', 7), ('report', 8), ('refresh', 9)]}))
-    panel = dict(schema_version=SCHEMA, seed=20261011, tasks=rows, learning_task_allowlist=list(TASKS),
+    panel = dict(schema_version=SCHEMA,data_role_schema=PANEL_ROLE_SCHEMA,seed=20261011,tasks=rows,learning_task_allowlist=list(TASKS),
         action_training_demos=list(range(46)), task_internal_unfitted_demos=list(range(46,50)),
         historical_exposure='MT saw50/previousQ49; this holdout applies to the new teacher only',
         information_wall='task/file/role metadata only; RGB and exact language are teaching',
-        selection_uses=['teacher_selection','G_history','selector_supervision'], independent_report=False,
+        selection_uses=['teacher_selection'],selection_folds_are_historical_metadata=True,independent_report=False,
+        bootstrap_uses=['MT_self_practice','G_initialization','student_bootstrap'],
         teacher_report_uses=['independent_teacher_report'], teacher_report_excluded_from_H_and_gradient=True)
     if path.exists() and read_json(path) != panel:
         raise ValueError('pre-registered full36 panel changed')

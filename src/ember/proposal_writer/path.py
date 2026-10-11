@@ -336,7 +336,7 @@ def fixed_requests(path, task, state_ids, noise_root, *, references=None,existin
             requests.append(dict(task=task, state=path.states[reference], parameter_ref=reference,
                 state_id=state_id, noise_root=noise_root, snapshots=False, uses_teaching=False,
                 episode_id=f'{path.identity}_query_{arm}_{state_id}', remaining=task['horizon'] + 10,
-                arm=arm,capture_history=False))
+                arm=arm,capture_history=False,capture_hidden=False))
     return requests
 
 

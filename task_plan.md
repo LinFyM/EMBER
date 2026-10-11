@@ -1,25 +1,17 @@
-## 当前教师队列与整体效率闭环（2026-10-11 最新修订）
+## 当前目标：全36共同E、最小真实起步与持续学生共同学习
 
-在同一canonical Batch接续已完成教师CP，先完整16-row读出再决定下一200；达到完整16/16且更早节点全读完才裁剪未来未启动工作。
-实际已有H的parents按task→parent→H等权，36个E及实际池齐备后一次固定S_G。旧未裁剪数量与ETA保留历史，不将省略记作完成。
-已提交GPU段安全退出；从新clean pushed detached冻结接续队列，保持原教师optimizer/query/RNG恢复，不改冻结运行源码。
-G初始化→36首valid实践/query→同一教师/学生final热身→R5交替共同学习；删除uniform R5数据与第二个G-only初始化阶段。
-工程与main共同完成Owner方法合理性/最高实际效率goal：确认每类数据消费者、实际必要性与历史边界，实测完整G/R5/θ→append→ψ链成本后冻结全36整数窗口。
-首完整模型做strict paired400及强MT得失，不用CPU接通/参数误差/teacher强代替视频控制；共同E可能不用H/V及随机提案价值仍待证据。
+实验01a12384继续独占tracked/Git；main01a12385只读科学消费。唯一active为docs/designs/video_guided_proposal_writer_20261010.md。
+教师最多800×query28/save100，候选MT/200/400/600/800各完整16 paired score，严格16/16且更早点完整才省未来未启动工作。
+安全交接后同一Batch按任务MT读出→实际CP或下一200→完整读出接续，已完成35段及全部恢复状态/失败费用保留，不重训。
+教师端只供E/选择/独立E+MT各16逻辑报告，不再准备教师H池或两折热身；每task仅指定第一MT selection行保存真实bootstrap H。
+36个E/MT H到齐后固定task等权E−MT尺度，fresh共享G作MT-only初始化；首学生MT/G pair同一份参数/H/query供final热身与G bank。
+然后完整R5固定ψ/θ采集→θ一次→登记实际P/H→ψ块→新批；后续visit重新实际MT起步，query与未来H墙保持。
+首RL visit0四条MT query引用初始学生兼容原行，最多144条无需新增episode；引用保留原condition/实际episode，不能改noise或把旧cost重计。
+教师score队列优先继续；旧合法rank8原件可作可丢弃G/R5端到端成本消费者，不能冒称本合同36覆盖/能力/exact-resume。
+G/π整数窗口、ψ块和formal400资格在真实成本后预登记；完整模型需strict paired400与强MT能力保持/视频证据。
+14:30授权与原20:30目标保留，旧无裁剪21:57预测是历史；新节省尚无实测，不先承诺提前。GPUh无硬cap，物理6/8/node6/data1 quota与256GiB峰值安排保持。
 
-## 2026-10-11 当前目标：全36-task共同强教师、真实评估History复用与交替共同训练G/π
-
-Owner约14:30明确全36自主推进；完整main临时合同已消费，实验继续独占工程/Git。旧G480已完整退出并封口（61.880279552975615GPUh），旧π/报告不恢复。
-已完成28/56及fast B28实测并向main交deadline配置；800×28/save100/evaluate200节点已定，最终E选点16/独立报告每arm16已冻结，slots16实际有效吞吐17.331557秒/Long episode。
-以现有teacher/EpisodeRunner/History与官方36任务authority承接一条轨迹、多CP、唯一producer ref、节点读出即H；新参数训练action0–45，46–49内部验证。
-先按真实依赖清理已退休训练状态，保留小证据/强参照和当前新数据候选；记录bytes与metadata/weights/full-resume范围。
-36条教师各800×28，save100/只评MT及200步间隔，每节点16 selection/H、E/MT各16独立报告逻辑行，兼容历史MT/source/scene/RNG复用且不重计费用；8+8折与π实践20/query10已冻结；正式G/π学习窗口按吞吐登记，不沿用旧数值/空H/1024或旧G optimizer。
-保留14:30授权/原20:30目标，选点扩16后bank预计20:40–21:05，256GiB新增峰值已有独立quota余量；所有36任务到齐才固定S_G、fresh G，从第一次共享更新task平衡；π无未来预算输入，R5条件继续采集/停止递推/两项梯度按新合同。
-
-当前最新合同：G密集初始化及全36学生覆盖后，在每个实际B4内固定ψ/θ，先θ更新再聚合真实P/H、执行登记CFM ψ块，重采下一批。
-同一联合checkpoint保存两个optimizer/RNG和bank/kernel版本，首轮更新数/块长度/400资格在真实consumer吞吐后预登记。
-资源异常已恢复task37至gpu02:4；原调度器交接失误保留，四remote段采用完整CP/进程退出接管，local14从最近完整点恢复。
-新六卡协调器按依赖释放设备，当前保守预测22:04须由后续真实capture修正，不再以20:40–21:05作为当前承诺。
+以下为按时点保留的历史计划，不恢复其teacher-H、旧G课程或旧π矩阵。
 
 ## 2026-10-11 当前收口任务：保存已启动G480，完成一次科学交接后归还main写窗口
 

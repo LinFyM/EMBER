@@ -1,3 +1,15 @@
+## 2026-10-11 最新教师-H退休与MT查询复用（记录UTC 2026-10-11T09:17:40.613978+00:00）
+
+main最新裁决全文已消费，覆盖此前教师多parent/H和两折warm。活动代码已删除teacher replay；selection/report关闭完整H与hidden捕获，只在指定第一MT selection行保存起步H。
+G初始bank改为36个MT parent与实际bootstrap，S_G仅来自task等权E−MT；初始学生pair及后续R5真实P/H提供多parent。以后visit走canonical实际MT bootstrap，不从退休16H池索引。
+首RL visit0兼容MT query以source_row引用初始学生/query，保留原condition/episode/费用，缺口实际补；之后visit RNG不同继续新跑。未声称已节约144条实际episode。
+旧两个CPU协调器已安全收口：task37_600与task2_200自然退出0；仅在确认GPU任务退出且CPU无子进程后结束旧external waiter，受控CPU回执不伪造OS wait状态。
+旧持续等待器因CPU受控回执没有end_UTC退出1，是回执消费格式问题，未造成新GPU工作/费用或丢更新。35个有效teacher段保留；新score队列尚未启动。
+正在完成针对性消费者/Git冻结和ROOT用途迁移；不改变原教师optimizer/query cursor/RNG、task/state/noise顺序或已发生历史。新版G/π/400仍未正式开始。
+
+针对性25项CPU回归通过11.39秒；抽取MT引用/真实学生bank/数据用途三项在函数简化后再次通过10.74秒。实际readout/select/bootstrap消费者确认32行仅一条指定MT H、CP不采H、重访不重复、后续visit不引用固定H；过程后NFS临时清理异常已准确记账并清理，非GPU故障。架构检查无新增硬违约，沿现有supervision owner抽出窄MT引用职责，无新模块/运行面。ROOT用途迁移原件保留全部旧任务/video/init/RNG字段和旧合同。
+教师原未裁剪ETA、此前local14丢失与保守费用均保留；新吞吐/省略必须实际退出后才报告收益。tracked/Git继续实验独占。
+
 ## 2026-10-11 17:01 教师严格饱和修订：实际CPU协调器无损交接，准备新冻结队列
 
 main最新full36合同§3–5全文已消费并同步唯一active设计。36任务、28-query/nativeFM/固定初始MT prox、保存100、候选MT/200/400/600/800及完整16 selection不变；800/180parent/2880H是未裁剪上界。

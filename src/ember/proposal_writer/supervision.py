@@ -1,19 +1,14 @@
-"""Bounded teacher-prefix replay and once-per-parameter independent query labels."""
+"""Actual student prefixes and once-per-parameter independent query labels."""
 from __future__ import annotations
 
 from pathlib import Path
 import time
 
-import numpy as np
 import torch.distributed as dist
-from safetensors.torch import load_file
 
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
-from ember.writer.practice import History
-
 from .contract import TASKS,seed
-from .learning import HistoryCache
-from .path import Compilation,cpu_state,fixed_requests,fixed_row,restore_compilation
+from .path import fixed_requests,fixed_row,restore_compilation
 
 
 def register_students(root,paths,update,context):
@@ -54,11 +49,11 @@ def panels(root):
 
 
 def bootstrap_source(root,task,panel,ordinal,cache):
-    """A real MT selection episode, with actual producer and logical cost retained."""
-    entry=read_json(Path(root)/'teachers'/f'task_{task:04d}'/'E.json')
-    parent=next(p for p in entry['parents'] if p['update']==0)
-    legal=[r for r in parent['rows'] if r['init_state_id'] in panel['practice_states']]
-    row=legal[ordinal%len(legal)]
+    """First visit reuses registered MT practice; later visits really execute MT."""
+    if ordinal!=0:return None,None
+    row=read_json(Path(root)/'bootstrap'/f'task_{task:04d}'/'complete.json')
+    if not row['complete'] or row['reference']!='MT300' or row['state_id']!=panel['bootstrap_state_id']:
+        raise ValueError('fixed initial MT bootstrap identity changed')
     return cache.get(row['history']),row['history']
 
 
@@ -71,7 +66,26 @@ def query_once(runtime,runner,path,task,panel,visit,destination):
     return query_conditions(runtime,runner,[(path,task,panel,visit,destination)])[0]
 
 
-def query_conditions(runtime,runner,conditions):
+def reuse_initial_MT(entry,task,root,version):
+    """A single registered second consumer references compatible initial MT rows."""
+    path=entry['path'];source=Path(root)/'student_data'/version/f'task_{path.task:04d}'/'query'
+    for state in entry['states']:
+        target=entry['destination']/f'MT300_{state:03d}.json';original=source/target.name
+        if target.exists() or not original.exists():continue
+        row=read_json(original)
+        expected=dict(global_task_id=path.task,init_state_id=state,reference='MT300',
+            env_seed=entry['noise_root'],policy_seed_root=entry['noise_root'],
+            **{key:task[key] for key in ('suite','task_id','language')})
+        changed=[key for key,value in expected.items() if row.get(key)!=value]
+        if changed:
+            entry['incompatible_references'].append(dict(source=str(original),fields=changed));continue
+        write_json_atomic(target,dict(reused=True,source_row=str(original),
+            logical_consumer=path.identity,actual_episode_identity_unchanged=True,
+            reference='MT300',init_state_id=state,actual_new_episodes=0,actual_new_environment_steps=0,
+            equivalence='same immutable MT, task/state/official scene/env-policy RNG; identity only names output'))
+
+
+def query_conditions(runtime,runner,conditions,*,mt_reference_version=None):
     """Batch only missing independent λ/state/RNG queries, never their histories."""
     tick=time.monotonic();entries=[];requests=[];owners={}
     for path,task,panel,visit,destination in conditions:
@@ -79,8 +93,11 @@ def query_conditions(runtime,runner,conditions):
         states=query_panel(panel,visit);noise_root=seed(70,path.task,visit)
         references=list(dict.fromkeys(ref for node in path.outputs for ref in node['candidates']))
         if {r['init_state_id'] for r in path.history.episodes}.intersection(states):raise ValueError('query initial states leaked into practice')
-        entry=dict(path=path,destination=destination,states=states,noise_root=noise_root,references=references,new_steps=0,new_episodes=0)
+        entry=dict(path=path,destination=destination,states=states,noise_root=noise_root,references=references,
+            new_steps=0,new_episodes=0,reused_rows=[],incompatible_references=[])
         entries.append(entry)
+        if visit==0 and mt_reference_version is not None and 'MT300' in references:
+            reuse_initial_MT(entry,task,runtime.root,mt_reference_version)
         missing=fixed_requests(path,task,states,noise_root,references=references,
             existing_rows={(ref,state) for ref in references for state in states if (destination/f'{ref}_{state:03d}.json').exists()})
         for request in missing:
@@ -94,24 +111,29 @@ def query_conditions(runtime,runner,conditions):
     results=[]
     for entry in entries:
         destination=entry['destination'];references=entry['references'];states=entry['states']
-        rows=[read_json(destination/f'{ref}_{state:03d}.json') for ref in references for state in states]
+        rows=[]
+        for ref in references:
+            for state in states:
+                file=destination/f'{ref}_{state:03d}.json';row=read_json(file)
+                if 'source_row' in row:
+                    entry['reused_rows'].append(dict(destination=str(file),**row));row=read_json(Path(row['source_row']))
+                rows.append(row)
         rewards={ref:sum(bool(r['success']) for r in rows if r['reference']==ref)/4 for ref in references}
         write_json_atomic(destination/'complete.json',dict(complete=True,rewards=rewards,rows=rows,query_states=states,
             policy_env_noise_root=entry['noise_root'],query_excluded_from_H=True,each_parameter_query_once_across_prefixes=True,
             unpracticed_candidates_not_queried=True,actual_new_environment_steps_this_attempt=entry['new_steps'],
             actual_new_episodes_this_attempt=entry['new_episodes'],shared_query_group_seconds=time.monotonic()-tick,
+            row_reuse=entry['reused_rows'],incompatible_MT_references=entry['incompatible_references'],
             shared_group_members=[p.identity for p,*_ in conditions]))
         results.append(rewards)
     return results
 
 
 class LocalExamples:
-    """Lazy all36 supervision: bounded decoded H, teacher warmstart then current G paths."""
+    """All36 final warmstart uses only the same actual initial MT/G student pairs."""
     def __init__(self,root,runtime):
         self.root,self.runtime=Path(root),runtime
-        self.panel=panels(root);self.cache=HistoryCache(max_entries=2)
         contract=read_json(self.root/'run_contract.json')
-        self.teacher_updates=contract['local_supervision']['teacher_warm_updates']
         self.data_version=contract['student_refresh']['version']
         self.current={task:self.root/'student_data'/self.data_version/f'task_{task:04d}' for task in TASKS}
         for directory in self.current.values():
@@ -119,37 +141,9 @@ class LocalExamples:
                 raise ValueError('same initial student practice/query must cover all36 before final warmstart')
 
     def __call__(self,task,update):
-        visit=update//9
-        if update<self.teacher_updates:return self.teacher(task,visit)
         directory=self.current[task];path=restore_compilation(directory,self.runtime)
         rewards=read_json(directory/'query/complete.json')['rewards']
         prefixes=[dict(records=node['records'],episodes=node['episodes'],practiced=node['candidates'],
             reward={ref:rewards[ref] for ref in node['candidates']}) for node in path.outputs]
         return dict(path=path,prefixes=prefixes,source=dict(kind='initial_actual_student_pair',
             file=str(directory/'path.json'),data_version=self.data_version,additional_uniform_R5=False))
-
-    def teacher(self,task,visit):
-        panel=self.panel[task];entry=read_json(self.root/'teachers'/f'task_{task:04d}'/'E.json')
-        fold=visit%2;input_states=panel['selection_folds'][fold];query_states=set(panel['selection_folds'][1-fold])
-        mt=next(p for p in entry['parents'] if p['update']==0)
-        # Order independent of outcomes; one true episode per producer, never an offline demonstration.
-        rest=[p for p in entry['parents'] if p['update']!=0]
-        order=[mt,*np.random.default_rng(seed(61,task,visit)).permutation(rest).tolist()]
-        state={'MT300':cpu_state(self.runtime.mt)};history=History(states=state.copy())
-        path=Compilation(task,panel['policy_videos'][visit%4],f'teacher_replay_{task}_{visit}',visit,
-            seed(62,task,visit),history,state,sampling_identity='teacher_replay')
-        practiced=[];prefixes=[];sources=[]
-        for position,parent in enumerate(order):
-            rows=[r for r in parent['rows'] if r['init_state_id'] in input_states]
-            row=rows[(visit//2+position)%len(rows)];actual=self.cache.get(row['history'])
-            if not actual.records or len(actual.episodes)!=1:raise ValueError('teacher prefix needs one actual complete episode')
-            ref=parent['reference'];path.states[ref]=load_file(parent['weights']);history.append(actual)
-            practiced.append(ref);sources.append(row['history'])
-            reward={p['reference']:sum(bool(r['success']) for r in p['rows'] if r['init_state_id'] in query_states)/len(query_states)
-                    for p in order[:position+1]}
-            prefixes.append(dict(records=len(history.records),episodes=len(history.episodes),
-                practiced=practiced.copy(),reward=reward))
-        path.practiced=practiced;path.valid=practiced.copy();path.selected=practiced[-1]
-        self.cache.trim()
-        return dict(path=path,prefixes=prefixes,source=dict(kind='teacher_replay',input_fold=fold,
-            query_fold=1-fold,actual_history_files=sources,supervised_replay_not_on_policy=True))

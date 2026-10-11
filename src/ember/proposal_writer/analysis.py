@@ -57,32 +57,37 @@ def billing(root):
 
 
 def teacher_summary(root):
-    """Consume every node and the independent paired report across all36 tasks."""
+    """Consume actual evaluated nodes, scientific omissions and paired all36 reports."""
     root=Path(root);contract=read_json(root/'run_contract.json')
     selection=[];reports=[];tasks=[]
     initial=load_file(str(root/'initial.safetensors'));prox=read_json(root/'coordinates.json')['S_prox']
     for task in TASKS:
         directory=root/'teachers'/f'task_{task:04d}'
         chosen=read_json(directory/'E.json')
-        if not chosen['complete'] or [p['update'] for p in chosen['parents']] != contract['teacher']['readout_updates']:
-            raise ValueError('complete registered common-E parent bank required')
-        selection.extend(row for parent in chosen['parents'] for row in parent['rows'])
+        candidates=chosen['evaluated_candidates']
+        if (not chosen['complete'] or sorted([p['update'] for p in candidates]+chosen['scientifically_omitted_nodes'])
+                !=contract['teacher']['readout_updates']):
+            raise ValueError('all teacher nodes need actual readout or registered scientific omission')
+        if any(len(p['rows'])!=contract['teacher']['selection_per_node'] for p in candidates):
+            raise ValueError('teacher choice requires complete selection panels')
+        selection.extend(row for candidate in candidates for row in candidate['rows'])
         rows=read_json(directory/'report/complete.json')['rows'];reports.extend(rows)
         report=paired([r for r in rows if r['arm']=='MT'],[r for r in rows if r['arm']=='E'])
         weights=load_file(chosen['weights'])
         tasks.append(dict(task=task,selected_update=chosen['selected_update'],
-            node_successes={str(p['update']):p['selection_successes'] for p in chosen['parents']},
+            node_successes={str(p['update']):p['selection_successes'] for p in candidates},
             independent_report=report,parameters=parameter_changes(initial,weights,prox),
-            parent_references=[p['reference'] for p in chosen['parents']],
-            checkpoint_selection_is_training_data=True,selection_uses=f"{contract['teacher']['selection_H_per_node']} selection/H rows, equal two folds"))
-    expected_selection=36*len(contract['teacher']['readout_updates'])*contract['teacher']['selection_H_per_node']
+            evaluated_candidate_references=[p['reference'] for p in candidates],
+            scientifically_omitted_nodes=chosen['scientifically_omitted_nodes'],saturation_proof=chosen['saturation_proof'],
+            selection_uses='teacher choice only; fixed first MT rollout also supplies bootstrap',
+            bootstrap=chosen['bootstrap']))
+    expected_selection=sum(len(t['node_successes']) for t in tasks)*contract['teacher']['selection_per_node']
     expected_report=36*2*contract['teacher']['report_per_arm']
     if len(selection)!=expected_selection or len(reports)!=expected_report:
         raise ValueError('full36 teacher raw row coverage incomplete')
     aggregate=paired([r for r in reports if r['arm']=='MT'],[r for r in reports if r['arm']=='E'])
     result=dict(complete=True,schema_version=SCHEMA,tasks=tasks,selection_raw_rows=selection,report_raw_rows=reports,
-        independent_report=aggregate,bank_task_weight=1/36,parent_weight='equal actual registered parent within task',
-        H_weight='uniform within parent; H count does not weight parent',
+        independent_report=aggregate,initial_G_parent='MT only',initial_G_history_episodes=len(TASKS),
         teacher_supports_video_writer=False,interpretation='teacher control and label supply only, not G or video capability',
         no_nonMT_selected=all(t['selected_update']==0 for t in tasks),
         selected_teacher_report_net=aggregate['net'],billing=billing(root))
@@ -95,7 +100,7 @@ def teacher_summary(root):
 
 
 def freeze_bank_scale(root):
-    """Exactly task→parent equal E−P statistic; independent report never sets S_G."""
+    """Task-equal E−MT statistic fixed before initialization; reports never set S_G."""
     import math
     root=Path(root);path=root/'bank_scale.json'
     if path.exists():return read_json(path)
@@ -103,16 +108,15 @@ def freeze_bank_scale(root):
     mean={name:0. for name in initial};sources=[]
     for task in TASKS:
         record=read_json(root/'teachers'/f'task_{task:04d}'/'E.json')
-        target=load_file(record['weights']);parents=record['parents']
-        if not parents or any(not p['histories'] for p in parents):raise ValueError('G requires nonempty actual H for every parent')
-        weight=1/(len(TASKS)*len(parents))
-        for parent in parents:
-            state=load_file(parent['weights'])
-            for name in mean:mean[name]+=weight*float((target[name].float()-state[name].float()).square().mean())
-            sources.append(dict(task=task,parent=parent['reference'],E=record['reference'],weight=weight))
+        bootstrap=read_json(root/'bootstrap'/f'task_{task:04d}'/'complete.json')
+        if not bootstrap['complete'] or not Path(bootstrap['history']).is_file():
+            raise ValueError('all36 initial MT histories required before fixed G scale')
+        target=load_file(record['weights']);weight=1/len(TASKS)
+        for name in mean:mean[name]+=weight*float((target[name].float()-initial[name].float()).square().mean())
+        sources.append(dict(task=task,parent='MT300',E=record['reference'],weight=weight))
     scales={name:max(math.sqrt(value),1e-3*prox[name]) for name,value in mean.items()}
     record=dict(schema_version=SCHEMA,S_G=scales,edit_mean_square=mean,S_prox=prox,sources=sources,
-        task_weight=1/len(TASKS),parent_weight='equal all actual registered parents',history_count_does_not_weight_parent=True,
+        task_weight=1/len(TASKS),initial_parent='MT300 only',history_count_does_not_weight_parent=True,
         floor_active=[name for name in mean if math.sqrt(mean[name])<=1e-3*prox[name]],
         training_selection_only=True,independent_teacher_report_not_used=True,fixed_before_first_G_update=True,
         student_refresh_reestimates_scale=False)

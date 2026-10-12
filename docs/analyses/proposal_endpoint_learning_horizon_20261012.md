@@ -145,4 +145,6 @@ G_checkpoint_updates为432/648/864。新root的G_bank_mode=MT_only在refresh_ban
 G退出后一次现场判定第三读出卡；所有job仍逐次live双节点GPU/独立quota准入。
 预测新增G3.34h+读出.6–1.1h；原root/CP216与新冻结树保留，开发分支/worktree已安全退休。
 准确命令、临时缓存路径、时间与回执存于新ROOT/coordinator/deterministic_G864_students_query16_01；
-当前没有864性能结果，启动信息及后续消费看progress。
+上述为实际启动时的记录。864现已完成，完整结果见[整批分析](proposal_endpoint_learning864_query16_20261012.md)：
+参数MSE .961878→.843335，条件增益 .001424→.054377，闭环G216341→G864341/576，MT340/E455。
+有限时长改变了参数条件学习，未救回完整控制假设；按原合同停止延长和自动后段。当前状态只看progress。

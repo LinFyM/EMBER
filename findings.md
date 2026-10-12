@@ -11505,3 +11505,35 @@ main直接读两rank24轮metrics与真实算子后修正端点决定：首/末�
 432/648只完整恢复，不读出/选点，864同36/576面板对MT/G216/E原行；无自动warm/RL/held/Teacher/probe。
 864若仍公共拟合且无控制净增，停止再延长当前全坐标回归组合，不以继续降loss或小扫保护假设。
 详细推导与负证据对照见docs/analyses/proposal_endpoint_learning_horizon_20261012.md；执行合同唯一active§13。
+
+## 440. 同v7学习到864增强条件参数映射，但未形成控制净收益（2026-10-12）
+
+完整CP216→864的唯一学习时长干预已实际完成，b1a21f70/v7、37正式job全退出0。
+固定同36/576为MT340/G216341/G864341/E455；MT→G864 R309/G32/L31/net+1/churn63/Jaccard.830645，
+216→864 R313/G28/L28/net0/churn56/Jaccard.848238。train24为169/167/168/272、support12为171/174/173/183。
+相对MT任务净优/平/劣11/13/12，suite净变Spatial−4/Object+1/Goal+1/Long+1/support90+2。
+G864覆盖36task各至少一成功，不能以该16state面板覆盖称完整能力或held资格。
+E-only134行G21615/G86417，双方成功321行301/296；MT-only19均13，双方失败102为12/15。
+72 teacher-selection重合行MT43/G21646/G86443/E55，504其余行297/295/298/400，均只train/non-held机制。
+
+真实恢复每rank485 optimizer状态step216、cursor216/RNG0/1；CP864为485 step864/cursor864/RNG2/world2/logicalB4/bank0。
+新增1296rank日志/2592条件，每task72、累计96；全程MT parent/实际原MT-H/source无梯度/chunk16。
+末三完整36任务endpoint MSE .847124/.846355/.845354，九个E=MT末块 .001235；晚期下降不授权超864。
+一次保存端点CPU MSE .843335（216 .961878），公共均值误差 .083829、中心化误差 .759506；
+输出公共能量占比69.057%（216 97.677%），条件变化能量 .040073/目标 .813884，相对自身固定均值的MSE增益 .054377（216 .001424）。
+条件项占相对MT全部参数改善34.709%，跨task cosine .759063（216 .978810）。不能仍把864描述为几乎同一输出，
+也未隔离细粒度task映射与E=MT/非零E等粗分组、L/V/H因果或充分收敛。
+task13零目标编辑RMS .172414→.035980但query11→9（MT/E7）；task17 MSE1.644773→1.473420而query仍1（E12）。
+task29从0到1、task36从1到5的真实局部收益保留，不能掩盖其它能力损失后称整体成功。
+现有首5动作G864/MT RMSE .003722（216 .003809）、G864/E .088268（E/MT .088126），没有新forward。
+
+有限学习量确能改变几何，削弱“早期信用尚未打开/一直同常数”作为完整解释；整体控制仍近MT，
+尚未建立参数条件学习到E操作优势的有效传递。不把阴性当工程bug、教师不足、唯一规范自由度问题或路线不可能。
+真实梯度优化完整因子端点，经块/秩/目标消息、Reader/native meta回传；不直接优化query成功或执行动作距离。
+旧直接因子回归公共方向/功能保持风险继续约束该组合。按§13停止继续延长及自动后段，后继由main独立推导/另登记。
+
+新增612episode/145036步，整批4.305975h/8.503693GPUh（新增G6.650591+学生1.853102），无GPU失败或新profile。
+原件ROOT/analysis/whole_completion_20261012的consume_originals/statistics与raw_rows_verification.py/json均通过、anomalies=[]；
+CPU消费脚本两次字段假设错误已修正并保留收据，不改正式结果/训练，也未重跑已有端点算术。
+完整CP216/432/648/864、关键权重/H/原行和冻结树保留；没有自动warm/RL/held/Teacher/controls/probe或>864。
+完整分析docs/analyses/proposal_endpoint_learning864_query16_20261012.md；只向01a12bb0主讨论一次整批可靠交付。

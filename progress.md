@@ -1,4 +1,30 @@
-## 2026-10-12 同v7 G216→864有限学习批已实际启动
+## 2026-10-12 当前状态：G864整批消费完成，条件拟合增强而控制持平
+
+同v7完整216→864有限批UTC04:34:52.823612实际退出0，37jobs/37attempt全成功；
+MT340/G216341/G864341/E455，同576严格配对。MT→G864 R309/G32/L31，net+1/churn63/Jaccard.830645；
+G216→G864 R313/G28/L28，net0/churn56/Jaccard.848238，没有明显超MT闭环信号。
+train24 MT169/G216167/G864168/E272、support12 MT171/G216174/G864173/E183；
+72选点重合行43/46/43/55、其余504行297/295/298/400，均只train/non-held机制读出。
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16。
+冻结训练/学生代码b1a21f70、原48fa/v7 CP216；实际恢复485 optimizer step216/RNG2/cursor216，
+新完整CP864为step864/cursor864/RNG2/world2/logical4/bank0；新增2592条件每task72、累计96/task。
+末36任务块loss .845354；已保存端点CPU MSE .843335（216 .961878），公共能量占比69.057%（216 97.677%），
+优于自身常量均值的条件MSE增益 .054377（216 .001424）。不再称几乎恒定输出；几何改善未转成控制净增。
+首5动作G864/MT .003722、G864/E .088268，E-only134只传递17；不证明视频/H因果或唯一根因。
+
+新增612episode/145036环境步，整批4.305975h/8.503693GPUh（新增G6.650591+学生1.853102），无GPU失败。
+G退出时gpu01:2余量/进程变化未满足已登记共驻条件，读出用0/6两卡；没有中断他人任务或新profile。
+最终CPU原件消费anomalies=[]；两次消费脚本字段假设错误及修正收据保留，不是正式训练错误，未重跑端点算术。
+完整分析docs/analyses/proposal_endpoint_learning864_query16_20261012.md、findings§440；
+原件ROOT/analysis/whole_completion_20261012，整批一次交付/判重以coordinator/deterministic_G864_students_query16_01的
+result_main_delivery.json与completion_consumed.json为准，科学接收仍main 01a12bb0-5273-7462-b5e2-72a18aba7b8d。
+
+最近执行合同唯一design§13已完成；没有新的已登记科学批，不自动warm/RL/held/Teacher/controls/probe或>864。
+按原停止线不再自动延长当前全坐标回归组合，后继由main自主消费/另登记，不以Owner许可或工程ACK作停点。
+原CP216、新CP432/648/864及冻结树仍完整保留；开发分支/worktree已安全退休，实验继续持canonical/Git独占写窗口。
+
+## 2026-10-12 历史启动：同v7 G216→864有限学习批
 
 完整科学决定已推送，唯一active为docs/designs/video_guided_proposal_writer_20261010.md §13；
 详细推导/早期出口修正见docs/analyses/proposal_endpoint_learning_horizon_20261012.md、findings§439。

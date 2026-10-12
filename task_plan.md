@@ -1,4 +1,17 @@
-## 2026-10-12 同v7 G216→864有限学习批已实际启动
+## 2026-10-12 当前执行目标完成：同v7 G864唯一出口及完整交付
+
+最终目标仍是MT基底上完整Writer明显超过强MT，并解释合法教学/自身经历怎样进入固定LoRA能力。
+最近唯一执行合同designs/video_guided_proposal_writer_20261010.md §13已完成，未登记新批。
+实际MT340/G216341/G864341/E455；学习时长使参数条件拟合增强，但G864较216闭环net0，较MT仅net+1。
+末loss .845354、保存端点MSE .843335、条件MSE增益 .054377不能替代控制传递或视频因果。
+36实践+576 query16完成、37jobs全退出0、完整恢复/配对/成本消费完成，612新增episode/145036步，8.503693GPUh/4.305975h。
+
+原始行与恢复状态保持；完整结果/推理/费用见docs/analyses/proposal_endpoint_learning864_query16_20261012.md及findings§440。
+整批只向main 01a12bb0-5273-7462-b5e2-72a18aba7b8d可靠交付一次，回执见progress所列coordinator；无子阶段通知或重复等待者。
+按本批停止合同不自动Actor/warm/RL/held/Teacher/controls/probe或>864，也不因loss下降追加当前组合时长。
+后继科学分析/取舍由main自主接续并另登记，不需Owner逐项许可；工程/运行/恢复/Git与分支worktree生命周期仍由实验闭环。
+
+## 2026-10-12 历史启动：同v7 G216→864有限学习批
 
 完整科学决定已推送，唯一active为docs/designs/video_guided_proposal_writer_20261010.md §13；
 详细推导/早期出口修正见docs/analyses/proposal_endpoint_learning_horizon_20261012.md、findings§439。

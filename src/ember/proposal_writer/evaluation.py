@@ -128,6 +128,7 @@ def formal_worker(args,runtime,runner):
             histogram={key:value-runner_before['physical_batch_histogram'].get(key,0)
                 for key,value in runner.components['physical_batch_histogram'].items()}
             performance=dict(job_id=claim.shard.job_id,condition_batch=args.condition_batch,slots=args.slots,
+                task=task['global_task_id'],suite=task['suite'],horizon=task['horizon'],
                 conditions=len(results),seconds=time.monotonic()-tick,
                 actual_new_environment_steps=runner.environment_steps-before_steps,
                 runner={key:value-runner_before[key] for key,value in runner.components.items() if key!='physical_batch_histogram'},

@@ -201,15 +201,16 @@ def _baseline(runtime, seed):
     return baseline.to(runtime.device)
 
 
-def _rng(state, context):
-    if context.rank >= len(state['rank_rng']):
+def _rng(state, context, source_rank=None):
+    source_rank = context.rank if source_rank is None else source_rank
+    if source_rank >= len(state['rank_rng']):
         raise ValueError('new physical rank needs an explicitly registered additional RNG source')
     if context.device.type == 'cuda':
-        restore_rng(state['rank_rng'][context.rank], context)
+        restore_rng(state['rank_rng'][source_rank], context)
     else:
         import random
         import numpy as np
-        rng = state['rank_rng'][context.rank]
+        rng = state['rank_rng'][source_rank]
         random.setstate(rng['python']); np.random.set_state(rng['numpy']); torch.set_rng_state(rng['torch_cpu'])
 
 
@@ -284,11 +285,17 @@ def assemble(args, runtime, context):
     runtime.component_migration = dict(G_checkpoint=str(G_path), theta_checkpoint=str(actor_path),
         G_source_topology=G['topology'], theta_source_topology=actor['topology'],
         current_topology=dict(world_size=context.world_size, logical_condition_batch=4),
-        behavior_RNG_source='local90 current-rank RNG',
+        behavior_RNG_sources=run['physical_execution']['assembled_rank_rng_sources'],
         baseline_optimizer_source='local90' if actor['baseline_optimizer'] is not None else 'fresh; baseline never warm-updated',
         exact_resume=False, best_point_selection=False)
     runtime.component_rng_sources = dict(G=G['rank_rng'], theta=actor['rank_rng'])
     runtime.component_samplers = dict(G=copy.deepcopy(G['G_sampler']), theta=copy.deepcopy(actor['sampler']))
-    runtime.freeze_psi(); runtime.actor.requires_grad_(True); _rng(actor, context)
+    sources = run['physical_execution']['assembled_rank_rng_sources']
+    if len(sources) != context.world_size:
+        raise ValueError('assembly physical topology needs one registered RNG origin per rank')
+    origin = sources[context.rank]
+    state_by_owner = {'theta_local90': actor, 'G_coverage30249': G}
+    runtime.freeze_psi(); runtime.actor.requires_grad_(True)
+    _rng(state_by_owner[origin['owner']], context, source_rank=origin['rank'])
     return dict(generator_optimizer=G_optimizer, actor_optimizer=actor_optimizer, baseline=baseline,
         baseline_optimizer=baseline_optimizer, G_cursor=COVERED_G, local_cursor=90, migration=runtime.component_migration)

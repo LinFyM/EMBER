@@ -735,3 +735,8 @@ ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_wri
 
 主讨论直接核源码后确认原派发将确定一套提案误读为practice单候选：原说明是科学误读，非实现bug。最新明确保留[parent,newG]真实π两选，训练与validation一致；180是全practice轮数，G query/3060只为上界。原派发消息历史保留，本节及上述当前合同记录修正来源，不能静默强制新G或student_only。
 保留单一Generator/Runtime/EndpointTrainer与现有compile/query/formal消费者。新增context缓存模块只持冻结输入函数，组件模块只做受控CP432+24849导入/固定A/B组装，完整checkpoint模块统一保存/恢复独立owner；旧fixed原144诊断CLI退休，历史以原冻结源码/原件保留。run旧fresh864注册不再是canonical默认；同一运行面prepare现在登记§20。必要新增文件分别对应缓存、组件迁移、完整状态三个凝聚职责，不建立并行Writer/版本fallback。
+本轮结构自审：三新增模块分别179/294/99行；active源净增约493行，新增约754行，删去旧注册与重复checkpoint owner。`full_writer._students`的34行/complexity28来自同一受控迁移的完整科学谓词核对，作为凝聚的声明式合同保留，不拆成散落的小验证器；它只在准备时消费真实原件，不产生模型选择或额外实验。旧长函数保持局部改动。CPU验证覆盖原36/1152资产与完整166参数Adam承接；实际CUDA读取、完整状态保存与吞吐仍由正式消费者验证，不能以CPU检查声称GPU已运行。
+
+§20物理执行登记：A四rank与B两rank独立并行，总六卡；完整A/B边界组装到四rank后采joint逻辑B4，每rank一条真实condition。选择依据是900F块已有四rank实测，以及query16阶段最多四套slot16推理并发，不能拿slots16称实践batch16。θ/B两rank迁移后的行为RNG rank0/1承接local90，新增rank2/3显式取完整A30249对应rank RNG；G和θ各自完整source RNG/optimizer/sampler均保存，不称bitwise或同拓扑exact resume。正式400六persistent worker，slots16起点；允许首个已登记真实group用condition8检验物理收益，保留所有有效行且0额外episode，其余group4就绪立即执行。后续设置以相同suite/horizon的实测wall、实际batch histogram和峰值决定，无可比收益证据继续已测4，不复测slots32，不等待profile让就绪卡空闲。
+CPU实际检查：完整496 G/212 θ状态与166 F Adam24849/独立baseline及optimizer完成一次state save/load；真实task0保存H34条，warm仅构建两个实际final prefix，不写Actor outputs或on-policy decisions。检查是丢弃的CPU状态运输/真实H消费者，无新forward/episode，不验证CUDA RNG或完整Runtime。原检查脚本与JSON随启动归档。
+存储测量：旧完整400结果根约31.7GiB，当前36 MT+G H与学生原件约1.16GiB，新完整state约221MiB；结合180实践、400最多6段H、九完整CP、冻结输入cache/临时输出，96GiB峰值预测保留并在每launch核独立quota。大source、原144缓存与既有H/信用仅引用。

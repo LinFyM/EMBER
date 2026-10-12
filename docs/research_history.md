@@ -1,3 +1,13 @@
+## 2026-10-12：fresh匹配target/block memory入口，已启动而未形成结果
+
+G1296完整348/MT340/E455仅小幅不均收益；main据实际BA和固定因子空间证据授权两臂匹配fresh，从首更新同BA监督至864，每task96条件，432只恢复。
+唯一变化为六层memory_attention由38target移至10064block，旧target仅冻结科学控制；历史925e7b1 direct-chunk48→75等负证据和Reader全坐标链停止线保留。
+控制17:46 c7e76b56/world4/gpu01:0–3实际启动，候选18:12 c35c34b5/v9/world2/gpu01:4/5启动；直接读出控制c4f53841/候选c35，均clean pushed detached。
+62项针对性检查及真实fresh prepare/query原件CPU消费者通过；最长完整L/V/H候选profile选择chunk16，32无吞吐收益，.075387129GPUh/5discard更新/0episode。
+每臂同36唯一固定端点直接同576query，省未消费G-practice，总1152新G episode，全部强参照兼容复用；目前没有CP864或新闭环结果。
+普通cap6/data1独立quota可容纳16GiB；唯一事件owner matched_coordinate_read864_01，候选正式首36曝光外推训练4.475h，含读出整批暂估23:10至次日00:15，原3–5h初估保留。
+完整推导/反证/实际物理依据与稳定原件见[匹配入口分析](analyses/proposal_coordinate_memory_read_20261012.md)，唯一active design§15；不自动后段/第三臂/>864，不设新绝对截止或工程ACK。
+
 ## 2026-10-12：恢复后48query补齐，全36 G1296小幅净增但教师能力仍弱
 
 Owner16:37确认gpu01恢复并授权只补原缺48query；新leg16:56:31启动、17:03:03退出0，保存端点/实践/H未重做。

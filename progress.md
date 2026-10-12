@@ -4,11 +4,15 @@ main完整消费G1296=348/MT340/E455后授权新有限两臂，工程/Git由实�
 唯一active design：docs/designs/video_guided_proposal_writer_20261010.md §15；完整决定与历史反证：docs/analyses/proposal_coordinate_memory_read_20261012.md。
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16；target_memory_control/block_memory_candidate均fresh全部状态、同BA从首步到864，432只恢复；仅memory MHA由target移到block。
 每臂36端点直接576query、0新G-practice；总1152新G episode，原MT/E/G864/G1296参照兼容复用；不启动任何后段或第三臂。
-控制复用c7e76b56 clean pushed detached旧计算源，准入就绪先启动；候选独占codex/coordinate-memory-read864开发树并行实现，实际消费者/新schema/profile/push冻结后启动。
-两节点现场GPU01八卡空闲、GPU02多数他人任务，普通cap6；拟控制4rank+候选实测安排，单node6；data1独立quota used1469426020/soft2147483648KiB、shared81TiB，16GiB增量可容纳。
+控制17:46:45已实际启动，c7e76b56/world4/gpu01:0–3；候选18:12:49已启动，c35c34b5/v9/world2/gpu01:4/5；控制直接query来源c4f53841，同旧图省未消费实践。均clean pushed detached，不改旧冻结树。
+两个真实consumer首次完整36曝光匹配，candidate双meta实际梯度finite且非零、source无梯度；62项检查及真实fresh prepare/query CPU准入通过，不称控制收益。
+两节点launch现场普通cap6，项目4+2实际6卡、node6；candidate data1独立quota used1470479352/soft2147483648KiB、shared81TiB，16GiB增量可容纳。
 固定因子几何已归档operator1296 ROOT/analysis/main_scientific_readout，不重跑；当前A非B硬瓶颈，固定MT-H可学B，旧direct-block负证据保留。
-初估工程30–60min、并行compute/readout3–5h，未承诺未经测量加速；真实启动/ETA/冻结/费用随后追加，不覆盖旧记录。
-一个整批owner，一次真实启动与整批完成/异常交main01a12bb0；无心跳/阶段Queue/第二等待者，无新绝对deadline。
+原初估工程30–60min/并行compute-readout3–5h保留；candidate最长profile chunk16平均20.602s/reserved26.10GiB，chunk32无收益/42.79GiB，采用16，5更新全部discard/0episode/.075387129GPUh，已释放。
+候选首次9更新/完整36平均18.645s，864训练外推4.475h；保留4.4–5h加动态query .5–1h，整批暂估23:10至次日00:15。控制首9更新外推2.796h；物理选择/边界与实际profile见分析§9。
+唯一owner coordinator/matched_coordinate_read864_01，17:46:32启动、PID681682/tmux ember-coordinate-memory864-20261012；就绪query在真实G退出后动态派发，不受训练world2限制。
+task-owned开发分支/worktree在确认等价集成和profile退出后清理；三个正式冻结树/恢复依赖保留。main/origin已推送科学决定与canonical唯一block实现，运行源码c35冻结不随文档更新。
+原件ROOT/analysis/admission、profile_candidate/attempt_001及coordinator/matched_coordinate_read864_01/{control,candidate}_startup_verified.json；一个真实启动与整批完成/异常交main01a12bb0，无心跳/阶段Queue/第二等待者，无新绝对deadline。
 
 ## 2026-10-12 历史完成：G1296恢复补测完成，全36/576已消费
 

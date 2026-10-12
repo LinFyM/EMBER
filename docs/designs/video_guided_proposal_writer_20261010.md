@@ -484,3 +484,7 @@ ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordina
 常规live6/8、node6、data1独立quota/16GiB预估，无GPUh硬门槛；Owner恢复授权后没有新绝对截止，不复活旧guard/队列。
 初估工程30–60min、并行训练/读出3–5h，以实测修订。一个整批owner及时运行就绪臂/读出，一次真实启动身份/ETA和一次整批完成/异常交main01a12bb0，无心跳/阶段Queue/第二等待者。
 无Teacher/Actor/warm/RL/held/video controls/probe/第三臂/>864授权；本批结果须更新机制支持度与main自主后继，不设工程ACK。
+
+§15实际执行补充：17:46控制c7e76b56/world4/gpu01:0–3已启动，18:12候选c35c34b5/v9/world2/gpu01:4/5已启动；控制直接读出c4f53841保持旧v8计算图。三树均clean pushed detached，canonical仅block路径，开发分支/树已核实集成后清理。
+62项针对性检查与真实fresh prepare/直接query CPU消费者通过；完整最长L/V/H候选profile退出0、5更新全部discard/0episode/.075387129GPUh。chunk16实测20.602秒/26.10GiB reserved，chunk32无收益且42.79GiB，采用16。完整原件/成本/物理依据只在对应分析§9及ROOT，未获得CP864/控制结论。
+普通cap6下控制4+候选2全部有效使用；后续动态读出不受训练rank数限制。候选训练4.4–5h加读出.5–1h，18:12启动后暂估23:10至次日00:15；原3–5h预测保留为初估。唯一owner matched_coordinate_read864_01已独立存活，不加整批等待者/阶段Queue/心跳或新截止。

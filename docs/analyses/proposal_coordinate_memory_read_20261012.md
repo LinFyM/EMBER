@@ -148,3 +148,17 @@ main不重复工程审查。正式来源clean pushed detached，当前记录串�
 稳定决定原件：/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/analysis/coordinate_memory_read_decision.md。
 固定因子分析原样归档：/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/operator_effect_learning1296_query16/analysis/main_scientific_readout/operator1296_fixed_factor_geometry.py及同名json；未重跑。
 当前进入工程/正式准入，实际冻结身份、拓扑/吞吐/费用与启动时刻以coordinator和后续记录为准。
+
+## 9. 实际消费者、物理选择与启动（2026-10-12 UTC+8）
+
+两个正式臂已实际启动，模型结构之外的共同监督及逻辑曝光合同不变。控制训练来源c7e76b566e3d50178f9e43dbdaa977bf28fd9d5b，17:46:45启动于gpu01:0–3/world4；直接读出来源c4f53841be370a510d9f1094f60325b990ac714c，保持同一v8 target-memory图，只省掉未消费的G-practice。候选训练及直接读出来源c35c34b555ea2aa2694c1c43f23de11c6d8e6d4f，18:12:49启动于gpu01:4/5/world2，v9拒绝旧图checkpoint。三个来源均已推送、clean detached冻结，旧树未原地修改。
+
+新接口复用真实MT bootstrap/H、教学、生成、保存与query消费者。每condition只生成一套完整端点；保存路径明确未实践的端点身份，不登记虚构G-H、Actor父节点或student-bank资格。真实task13/34原件的CPU请求检查为每task16条only-G，原场景/env/native RNG、MT/E兼容引用不变；全部36只读参照兼容。新fresh prepare实际CLI消费者核对36条原condition、MT-only/bank0、原S_G/D38/P0与864/432合同，未重算D、未导入旧共享状态。源代码有62项针对性检查通过，静态/Actor空memory行为与初始化规则保持。稳定准入原件在ROOT/analysis/admission，而非仅临时目录。
+
+候选profile使用完整10064 blocks/643584坐标、最长实际92帧教学及104条MT-H；memory最大857 token，没有截断。chunk16两次热更新20.60172/20.60180秒，均值20.60176，allocated/reserved峰值25.20946/26.10156GiB；chunk32为21.14613/20.66695秒，均值20.90654，峰值40.30330/42.79102GiB。32没有实测吞吐增益且多占16.69GiB reserved，距45GiB卡仅约2.2GiB，故选16并停止扩大物理chunk。实际梯度finite、零头打开后双meta梯度均正、source无梯度；5更新/20条件全部丢弃，0episode。profile在18:02:30–18:04:46退出0并释放gpu01:4/5，wall135.697秒、.075387129GPUh，稳定原件ROOT/profile_candidate/attempt_001/verification.json；这只证明执行和成本，不证明拟合或控制收益。
+
+控制首次完整36曝光的9更新平均11.65140秒，外推864训练2.796h；候选实际首次9更新/36条件平均18.64500秒、外推864为4.4748h，两个rank双meta实际梯度为正且source无梯度，完整36逻辑task与control一致。候选最长world2 profile、这一正式启动样本与旧world2平均18.47秒共同给出候选正式训练4.4–5.0h、直接查询.5–1.0h。按18:12实际启动暂估整批23:10至次日00:15结束，较原并行3–5h初估向后修订；候选两卡是当前控制4卡和普通合计6卡现场上限下的安排，不是模型或整批永久上限。控制训练退出后就绪读出立即利用释放卡；候选训练退出后读出可使用所有有效空余卡，不被world2限制。现有完整中间恢复点只有432，不为形式扩卡回退未保存更新或原地改冻结训练代码；物理迁移仍须完整checkpoint和正确消费者及真实wall收益。
+
+实际candidate launch核双节点与strg01独立data1 quota，used1470479352/soft2147483648KiB，项目最终6卡/cap6/node6；16GiB增量与共享81TiB容量可容纳。大资产原位引用，所有新增cache/TMPDIR/output都在data1。单一owner为ROOT/coordinator/matched_coordinate_read864_01，17:46:32启动、gpu02 PID681682、tmux ember-coordinate-memory864-20261012；依赖文件采用事件等待，真实G退出才派发常驻动态query队列，整批实际退出仅一次通知实验session消费。
+
+工程变更已集成main；task-owned codex/coordinate-memory-read864开发分支和开发树在确认等价集成、clean及profile退出后清理。正式训练/读出三个冻结树及关键恢复资产保留。当前没有CP864或576新结果，后续验收按本分析§6完整口径；不把启动、profile、测试或有限loss作为科学通过，也不自动派发任何后段。

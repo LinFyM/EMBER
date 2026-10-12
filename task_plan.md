@@ -4,11 +4,12 @@ main完整消费G1296=348/MT340/E455后授权新有限两臂，工程/Git由实�
 唯一active design：docs/designs/video_guided_proposal_writer_20261010.md §15；完整决定与历史反证：docs/analyses/proposal_coordinate_memory_read_20261012.md。
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16；target_memory_control/block_memory_candidate均fresh全部状态、同BA从首步到864，432只恢复；仅memory MHA由target移到block。
 每臂36端点直接576query、0新G-practice；总1152新G episode，原MT/E/G864/G1296参照兼容复用；不启动任何后段或第三臂。
-控制复用c7e76b56 clean pushed detached旧计算源，准入就绪先启动；候选独占codex/coordinate-memory-read864开发树并行实现，实际消费者/新schema/profile/push冻结后启动。
-两节点现场GPU01八卡空闲、GPU02多数他人任务，普通cap6；拟控制4rank+候选实测安排，单node6；data1独立quota used1469426020/soft2147483648KiB、shared81TiB，16GiB增量可容纳。
+两臂已实际启动：控制17:46 c7e76b56/world4/gpu01:0–3，候选18:12 c35c34b5/v9/world2/gpu01:4/5；控制直接query读出来源c4f53841。均clean pushed detached，canonical仅block路径。
+62项检查、真实fresh prepare/同36实际曝光及query原件/RNG/参照兼容通过；开发分支/tree已核实集成后清理，正式三冻结树与恢复资产保留。
+双节点launch核当前cap6/项目6/node6，data1 used1470479352/soft2147483648KiB/shared81TiB，16GiB增量可容纳。真实最长profile选chunk16，chunk32无吞吐收益，.075387129GPUh/5discard更新/0episode。
 固定因子几何已归档operator1296 ROOT/analysis/main_scientific_readout，不重跑；当前A非B硬瓶颈，固定MT-H可学B，旧direct-block负证据保留。
-初估工程30–60min、并行compute/readout3–5h，未承诺未经测量加速；真实启动/ETA/冻结/费用随后追加，不覆盖旧记录。
-一个整批owner，一次真实启动与整批完成/异常交main01a12bb0；无心跳/阶段Queue/第二等待者，无新绝对deadline。
+原初估工程30–60min/并行3–5h保留；候选实测首36条件18.645s/有效更新外推4.475h，正式训练4.4–5h加query .5–1h，暂估23:10至次日00:15。控制实测外推2.796h；实际选择与执行原件见现有分析§9。
+唯一owner matched_coordinate_read864_01事件等待两臂及就绪query，后续动态读出不受训练rank数限制。一次真实启动与整批完成/异常交main01a12bb0；无心跳/阶段Queue/第二等待者，无新绝对deadline。
 
 ## 2026-10-12 历史交付：完整G1296/query16已消费，main自主决定后继
 

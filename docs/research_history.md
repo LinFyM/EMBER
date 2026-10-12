@@ -1,3 +1,7 @@
+## 2026-10-13：完整Writer原范围工程恢复，RL9/400尚未形成
+
+§20 A5400/F30249、local90和组装成功，完整RL1/F31149保存；原1bcb2601 owner于05:05:41 exit1，快rank的Actor梯度等待超过NCCL600秒，慢rank仍在合法长query写入有效行。原费用3.476801314GPUh/失败1.649988668保留。八path40实践/240有效G query不重做，恢复只从完整RL1接原范围并隔离CPU采集就绪与NCCL窗口；未完成RL9或400，不写完整方法结论。证据ROOT/analysis/collective_timeout_recovery_20261013，唯一design§20.7；原启动/预测和旧结果保持。
+
 ## 2026-10-13：主讨论消费24849教学证据，登记完整Writer有限窗口
 
 §19 correct425/other414/wrong395对MT340；换未入Writer四视频池的同task教学保持大部分能力，wrong仍超MT且跨suite风格与L/V冲突未分离。36实际G/H完整，查询未入H。当前候选取得真实明显先行增益，主讨论授权唯一design§20的非MT输入覆盖5400、final warm90、共同9批每批900F与首个RL9/validation400；Test关闭，不自动恢复旧R5或第三同缓存块。

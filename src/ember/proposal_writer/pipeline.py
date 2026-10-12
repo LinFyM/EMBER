@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import timedelta
+import os
+import re
 import time
 import copy
 
@@ -296,6 +299,20 @@ def collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
             for key,value in runner.components['physical_batch_histogram'].items()})
 
 
+def wait_for_collectors(root,context,update):
+    """Keep uneven environment/query residence outside the NCCL gradient timeout."""
+    if context.world_size==1:return 0.
+    token=re.sub(r'[^A-Za-z0-9_.-]','_',
+        f"{os.environ['TORCHELASTIC_RUN_ID']}-{os.environ['MASTER_PORT']}-RL-{update}")
+    destination=Path(root)/'rendezvous'/f'.collectors-ready-{token}'
+    destination.parent.mkdir(parents=True,exist_ok=True)
+    started=time.monotonic()
+    store=torch.distributed.FileStore(str(destination),context.world_size)
+    store.set(f'rank-{context.rank}',b'ready')
+    store.wait([f'rank-{rank}' for rank in range(context.world_size)],timedelta(minutes=30))
+    return time.monotonic()-started
+
+
 def rl(args,runtime,runner,environment,context):
     run=read_json(args.root/'run_contract.json');state=load_version(runtime,args.checkpoint)
     if state['stage']!=run['initial_writer_stage'] or state['next_update']!=run['fixed_local_update']:
@@ -332,6 +349,7 @@ def rl(args,runtime,runner,environment,context):
             supervision_version=runtime.supervision_version,schema=SELECTOR_SCHEMA)
         paths,rewards,timings=collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
         runner.release_renderers()
+        timings['collector_ready_wait_seconds']=wait_for_collectors(args.root,context,update+1)
         theta_tick=time.monotonic()
         on_policy_update(runtime,context,args.root,update+1,paths,rewards,optimizer,baseline,baseline_optimizer)
         optimizer.zero_grad(set_to_none=True);baseline_optimizer.zero_grad(set_to_none=True)

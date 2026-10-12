@@ -752,3 +752,9 @@ main§19CPU消费原件已原样归档ROOT/analysis/main_scientific_readout/term
 原P0监督不能教F数值parent方向，新P/H是实际覆盖变化；共同E仍允许忽略P/H，不能把增加H称纠错。旧147/400的初G无增益不同于当前强候选，完整后段有一次有限重新检验价值；Context900 held阴性仍约束外推。固定旧pair oracle430只比G425高5，磨旧选择器无法补主要能力缺口。
 唯一合同见active design§20：F独立梯度/Adam24849→5400覆盖→joint9×900=cursor38349，θ独立local90+RL9，实际R5路径/query16与全36分层bank；完整RL9后唯一correctK1 strict validation400。只预登记终点，不恢复native全G训练/CFM/旧RL9，不自动其它点/controls/Test，原144同状态第三块仍禁止。
 结果必须区分更强候选+真实新域是否转成跨task能力、已有task共同E映射是否局限泛化、θ是否保住好候选，按实际轮/核的控制及单完整strict400裁决；BA曝光和loss仅定位。所有科学语义/投入/停止/信息墙/恢复组件身份以§20为单一active合同，工程实现和真实吞吐尚待验证，不把计划当执行。
+
+### 20.1 完整状态已到RL1，长采集超时属运行接口失效
+
+A固定5400更新/F30249实际866.285秒/4卡，local90实际1429.665秒/2卡，组装63.014秒/4卡均exit0；final warm90按原36既有信用的无梯度期望425.579477/576，相对uniform382.5/alwaysG425/posthoc430，只说明这套pair上final分布结果，不是新闭环或资格选点。
+共同RL1每rank完整周期571.8秒；快任务采集/query154.1–245.8秒而慢任务431.2秒，θ阶段记录含快rank等待，不能把195/284秒全部称Actor算子计算。RL2的task38实际尝试四个不同G，长horizon query在快rank进入同步后仍超过600秒；原未隔离采集等候与NCCL窗口，导致原整批exit1/3.476801314GPUh，其中失败RLjob1.649988668GPUh。保留40真实实践、240有效G query/65287 query环境步；未完成RL9或400，不能消费为完整方法阴性或跨核拼分。
+修复只将合法采集耗时的rank就绪放入CPU FileStore，完整RL1/F31149/θ及baseline optimizer/bank/RNG同world4恢复，原冻结代码/失败/有效rows不改写。CPU复现与实际函数验证不新增环境或模型forward；详细收据ROOT/analysis/collective_timeout_recovery_20261013。科学架构、BA目标/共同E、真实[parent,newG]π、F38349/完整RL9→400合同不变；末轮query仍不得反哺G/H或用于checkpoint选择。

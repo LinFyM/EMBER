@@ -11780,3 +11780,9 @@ main完整学习源码分析已归档ROOT/analysis/main_scientific_readout/full_
 
 §19主讨论直接消费5184原行：425/414/395对MT340，换未入Writer四视频池的同task教学保持大部分能力，wrong少19主要少18 E-only，但仍明显超过MT；跨suite风格/L/V冲突及局部正例未拆开。36真实G-H完整（25成功/11正常horizon失败），query未入H，已有后继F/θ明确消费者。原P0数值parent域未受训不是旧MT-only弱拟合的解释；补实际非MT覆盖也不强迫共同E监督使用P/H。
 main据此授权唯一§20 F-only低成本密集监督+独立θ/真实R5共同窗口及首validation400，而非恢复旧native全G或RL9。F完整Adam24849→30249→38349，local90/RL9/严格400单完整点，实际输入/梯度/阶段与组件状态均须消费者承接；当前只是实施中，不宣称已启动或通过。原pair上限430仅比G425高5，θ不能替主要新能力获取；历史held阴性和原第三同缓存块停止保持。
+
+## 458. 完整Writer到RL1后因采集耗时差异超时，工程恢复不构成科学换线（2026-10-13）
+
+§20的A5400/F30249、local90和完整组装成功，RL1/F31149全G/θ/独立optimizer/baseline/G与θsampler/bank1/四rank RNG完整。local90在同既有MT/G信用上的final期望425.579477，只为warm消费者读回，无新闭环/资格。
+RL2快rank04:54:33已进入Actor梯度allreduce，task38慢rank到05:05:29仍完成合法query并写有效行，越过默认600秒；原ownerexit1不是完整方法阴性或GPU故障证明。40实践/240G query保留，跨采集核不拼完整资格。原费用3.476801314GPUh含失败1.649988668。
+采用同torchrun身份CPU FileStore采集就绪屏障后才开始原θ/NCCL更新，30min有界；实际CPU消费者复现旧超时并通过修复，0新forward/episode。完整RL1同四rank恢复，只补原kernel实际缺行，不重复A/B或已完成path/query；仅工程运行改变，不改科学图、B4、数据、损失、π或唯一RL9/F38349/validation400。停止合同与Test关闭保持。

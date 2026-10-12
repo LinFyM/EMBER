@@ -1,3 +1,11 @@
+## 2026-10-13 05:05 完整窗口工程退出，原范围从RL1恢复准备中
+
+原owner full_writer24849_RL9_validation400_01实际exit1；A5400至F30249、local90与完整组装均exit0，共同RL1/F31149完整checkpoint已保存，RL9/validation400尚未完成或启动。此次退出不是完整方法科学结论，原exit1/失败与费用保留。
+原件确认RL2快rank在04:54:33进入Actor首梯度allreduce时，慢rank仍在task38合法独立query；到05:05:29仍有有效新行保存，越过默认600秒NCCL等待。没有源码/日志证据指向梯度序列不一致或GPU故障。窄修复在collect→正常renderer释放→theta之间用同torchrun身份的CPU FileStore等待全部采集就绪（30min有界），NCCL梯度/概率/损失/更新保持。
+CPU实际修复消费者复现原未等待超时并通过修复后的梯度求和；真实完整RL1 state含166 F Adam步31149、θ201已使用Adam state、baseline4、G/θ/bank1及四rank RNG通过读取，0新forward/episode。恢复保持world4/完整CP，原A/B/组装不重做，原八路径40实践/240有效G query/65287 query步保留；第二批task38仅缺一套G的16条query，其余已完成行只读。
+稳定证据ROOT/analysis/collective_timeout_recovery_20261013/{failure_evidence.json,complete_RL1_state.json,check_transport.py,check_transport.log,transport_rank_0.json,transport_rank_1.json}。截至本记录，恢复尚未实际launch；已授权完整RL9/F38349→strict validation400链不缩规模、不增加科学范围，Test关闭。旧总预计08:45–12:15保持历史，恢复按实际launch及RL1 571.8秒/最长读出修订剩余ETA，不把11点改强杀。
+一个新恢复owner继承旧实际退出与有效产物，旧完成回执已判重且不再重启旧owner；此后仅整批实际结束/真实异常可靠交main，无阶段Queue/第二等待者。
+
 ## 2026-10-13 04:15 实际启动：完整Writer唯一有限窗口
 
 唯一design§20实际运行：source1bcb2601已合入push，clean detached冻结执行；一个整批owner接A/B→组装→joint9→RL9→strict validation400，退出一次可靠接续。完整来源/命令/准入/进程身份保留ROOT/coordinator/full_writer24849_RL9_validation400_01，ROOT=.../video_guided_proposal_writer_20261012/full_writer_after24849_20261013。

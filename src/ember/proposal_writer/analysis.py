@@ -180,6 +180,8 @@ def previous_student_G(root,contract,task,panel,destination,mt):
     if any(before[key]!=after[key] for key in ('task_id','teacher_demo','path_ordinal','noise_root','identity')):
         raise ValueError('historical G comparator changed the registered teaching/practice condition')
     parent=read_json(source/'parent.json');ref=parent['actual_generated_parameter_ref']
+    weights=parent['generated_weights'] if parent.get('readout_mode')=='endpoint_query_only' else parent['parent']['weights']
+    if not Path(weights).is_file():raise ValueError('historical G comparator parameter file missing')
     query=read_json(source/'query/complete.json');states=query_panel(panel,0)
     noise_root=seed(70,task,0)
     if not parent.get('complete') or not complete_query(query,states,noise_root,['MT300',ref]):
@@ -191,7 +193,7 @@ def previous_student_G(root,contract,task,panel,destination,mt):
                 control_row_compatibility(row,task_spec,task,state,noise_root,reference=ref,paired_row=anchor)):
             raise ValueError(f'historical G comparator task/state/native pairing changed: {task}/{state}')
         rows.append(dict(row,source_row=str(file),actual_episode_row_file=str(query_row_source(file)),
-            source_parent_receipt=str(source/'parent.json'),source_parameter_weights=parent['parent']['weights'],
+            source_parent_receipt=str(source/'parent.json'),source_parameter_weights=weights,
             source_kernel_identity=parent['kernel_identity'],reused=True,readonly_previous_G_comparator=True,
             excluded_from_Actor_credit=True,excluded_from_H=True,not_a_compiler_candidate=True,
             actual_new_episodes=0,actual_new_environment_steps=0))

@@ -155,16 +155,32 @@ class HistoryCache:
 
 
 class EndpointTrainer:
-    """The same fixed-center endpoint update serves initial and joint supervision."""
+    """One F-only gradient owner serves initial and joint actual-parent supervision."""
     def __init__(self,runtime,context,root):
+        from .endpoint_context import FrozenEndpointContexts
         self.runtime,self.context,self.root=runtime,context,Path(root)
-        self.optimizer=torch.optim.AdamW(runtime.generator.parameters(),**OPTIMIZER)
+        contract=read_json(self.root/'run_contract.json')
+        if contract.get('G_gradient_owner')!='endpoint':
+            raise ValueError('current shared G training requires the registered endpoint owner')
+        runtime.generator.eval().requires_grad_(False)
+        self.parameters=list(runtime.generator.endpoint.parameters())
+        self.parameter_names=['endpoint.'+name for name,_ in runtime.generator.endpoint.named_parameters()]
+        if len(self.parameters)!=166 or sum(p.numel() for p in self.parameters)!=8761152:
+            raise ValueError('the original complete166-tensor endpoint owner changed')
+        self.optimizer=torch.optim.AdamW(self.parameters,**OPTIMIZER)
+        self.optimizer.owner='endpoint';self.optimizer.parameter_names=self.parameter_names
         self.objective=OperatorObjective(runtime,self.root)
         self.cache=HistoryCache();self.panel={r['task_id']:r for r in read_json(self.root/'panel.json')['tasks']}
         if not runtime.bank_scale_path.exists():raise ValueError('complete full36 bank and fixed S_G required')
         if getattr(runtime,'generator_optimizer_state',None) is not None:
+            if getattr(runtime,'generator_optimizer_parameter_names',None)!=self.parameter_names:
+                raise ValueError('saved endpoint Adam must map the actual166 named parameters')
             self.optimizer.load_state_dict(runtime.generator_optimizer_state)
+        self.contexts=FrozenEndpointContexts(runtime,context,self.root,self.cache,self.panel)
         self.refresh_bank(getattr(runtime,'supervision_version',0))
+
+    def prepare_bank(self):
+        self.contexts.prepare(self.bank)
 
     def refresh_bank(self,version):
         contract=read_json(self.root/'run_contract.json')
@@ -199,52 +215,50 @@ class EndpointTrainer:
         self.runtime.supervision_version=version
 
     def step(self,update,*,stage='G'):
-        from safetensors.torch import load_file
         runtime,context,root=self.runtime,self.context,self.root
-        tick=time.monotonic();before=dict(runtime.components);decode_before=self.cache.decode_seconds
-        runtime.psi_frozen=False;runtime.generator.train().requires_grad_(True)
+        tick=time.monotonic();before=dict(runtime.components)
+        hits_before,loads_before=self.contexts.hits,self.contexts.loads
+        load_before=self.contexts.load_seconds
+        runtime.psi_frozen=False;runtime.generator.eval().requires_grad_(False)
+        runtime.generator.endpoint.train().requires_grad_(True)
         self.optimizer.zero_grad(set_to_none=True);records=[]
         for task in assigned_tasks(context,update):
             rng=np.random.default_rng(seed(40,task,update));entry=self.bank[task]
             # No class/category weights: parent cardinality and H cardinality are separate.
-            parent_row=entry['parents'][int(rng.integers(len(entry['parents'])))]
-            history_path=parent_row['histories'][int(rng.integers(len(parent_row['histories'])))]
-            history=self.cache.get(history_path)
-            if not history.records:raise ValueError('G receives nonempty real parent H')
-            parent=load_file(parent_row['weights']);endpoint=load_file(entry['weights'])
+            parent_index=int(rng.integers(len(entry['parents'])));parent_row=entry['parents'][parent_index]
+            history_index=int(rng.integers(len(parent_row['histories'])));history_path=parent_row['histories'][history_index]
             demo=self.panel[task]['policy_videos'][int(rng.integers(len(self.panel[task]['policy_videos'])))]
-            features=runtime.teaching(task,demo)
-            packed=runtime.generator.layout.pack(parent).to(runtime.device)
-            target=(runtime.generator.layout.pack(endpoint).to(runtime.device)-runtime.generator.layout.center)/runtime.generator.layout.scale
-            rows=history.model_rows(runtime)
+            value,parent,teacher=self.contexts.get(task,parent_index,history_index,demo,parent_row,entry)
             with phase(runtime,'endpoint_forward'),autocast(runtime.device):
-                prediction=runtime.generator(packed,features,rows,history.states)
+                prediction=runtime.generator.endpoint(parent,memory=value['memory'],checkpoint_layers=False)
             with phase(runtime,'operator_loss'):
                 layout=runtime.generator.layout
                 generated=layout.unpack(layout.center+layout.scale*prediction.float())
-                loss,MT_loss=self.objective(generated,endpoint)
+                loss,MT_loss=self.objective(generated,teacher)
             with phase(runtime,'endpoint_backward'):(loss/4).backward()
             records.append(dict(task=task,parent=parent_row['reference'],E=entry['reference'],H=history_path,demo=demo,
+                parent_index=parent_index,history_index=history_index,
                 operator_loss=float(loss.detach()),MT_operator_loss=float(MT_loss.detach()),
-                factor_MSE_diagnostic=float((prediction.detach().float()[layout.valid]-target[layout.valid]).square().mean()),
-                frames=len(features['z']),H_records=len(history.records),
-                H_episodes=len(history.episodes),H_producers=len(history.states),denominator=4,missing_label=False))
-            self.cache.remember_features(history_path,history)
-            del features,prediction,generated,loss,MT_loss,target,endpoint,parent,history,rows
-        synchronize_gradients(runtime.generator,context)
-        norm=torch.nn.utils.clip_grad_norm_(runtime.generator.parameters(),1.,error_if_nonfinite=True)
-        group_norms={g:sum(float(p.grad.float().square().sum()) for p,name in zip(runtime.generator.meta.values,runtime.generator.meta.groups,strict=True)
-            if name==g and p.grad is not None)**.5 for g in ('gemma','action')}
+                frames=value['frames'],H_records=value['H_records'],H_episodes=value['H_episodes'],
+                H_producers=value['producers'],context_source=value['source'],denominator=4,missing_label=False))
+            del prediction,generated,loss,MT_loss
+        synchronize_gradients(runtime.generator.endpoint,context)
+        norm=torch.nn.utils.clip_grad_norm_(self.parameters,1.,error_if_nonfinite=True)
         self.optimizer.step();runtime.mark_psi_update();torch.cuda.synchronize(context.device)
+        steps=[int(value['step']) for value in self.optimizer.state.values()]
+        if len(steps)!=166 or min(steps)!=update+1 or max(steps)!=update+1:
+            raise ValueError('the complete166 endpoint Adam states must advance with the actual cursor')
         finish_phases(runtime)
         runtime.G_sampler=dict(next_update=update+1,logical_batch=4,task_order=list(TASKS),
-            task_weight=1/36,parent_weight='equal actual parent',H_weight='uniform within parent')
+            task_weight=1/36,parent_weight='equal actual parent',H_weight='uniform within parent',gradient_owner='endpoint')
         metrics(root,stage,dict(update=update+1,events=records,logical_task_batch=logical_tasks(update),gradient_norm=float(norm),
-            meta_frame_chunk=runtime.generator.meta.frame_chunk,
-            meta_gradient_norm=group_norms,seconds=time.monotonic()-tick,decoded_H_cache_entries=len(self.cache.items),
+            endpoint_parameter_tensors=len(self.parameters),Adam_step_min=min(steps),Adam_step_max=max(steps),
+            seconds=time.monotonic()-tick,frozen_context_device_cache_entries=len(self.contexts.items),
+            frozen_context_hits=self.contexts.hits-hits_before,frozen_context_loads=self.contexts.loads-loads_before,
+            frozen_context_load_seconds=self.contexts.load_seconds-load_before,
             supervision_version=runtime.supervision_version,
             phases={k:v-before.get(k,0.) for k,v in runtime.components.items()},
-            history_decode_seconds=self.cache.decode_seconds-decode_before,
+            frontend_has_gradient=any(p.grad is not None for name,p in runtime.generator.named_parameters() if not name.startswith('endpoint.')),
             source_has_gradient=any(p.grad is not None for p in runtime.policy.parameters())),context)
 
 
@@ -255,7 +269,9 @@ def train_endpoint(runtime,context,root,*,stop,resume=None):
         raise ValueError('registered continued endpoint learning cannot start fresh')
     trainer=EndpointTrainer(runtime,context,root)
     initialize_deferred_process_group(context,rendezvous_root=Path(root)/'rendezvous')
-    start=resume_checkpoint(resume,'G',runtime,trainer.optimizer,context) if resume else 0
+    start=resume_checkpoint(resume,'G',runtime,trainer.optimizer,context) if resume else runtime.G_sampler['next_update']
+    if runtime.version!=start or start>stop:
+        raise ValueError('component import must retain the endpoint sampler/version cursor')
     if resume is not None:
         if (runtime.G_sampler['next_update']!=start or runtime.version!=start
                 or start>stop or (contract.get('G_initial_resume') and start<contract['G_initial_resume']['update'])):
@@ -269,7 +285,8 @@ def train_endpoint(runtime,context,root,*,stop,resume=None):
             G_bank_mode=contract.get('G_bank_mode','actual_parents'),fresh=False,
             G_objective=G_OBJECTIVE,objective_migration=runtime.objective_migration))
     trainer.refresh_bank(getattr(runtime,'supervision_version',0))
-    if resume is None and context.is_main:
+    trainer.prepare_bank()
+    if resume is None and start==0 and context.is_main:
         torch.save(dict(schema_version=CHECKPOINT_SCHEMA,psi=runtime.generator.state_dict(),theta=runtime.actor.state_dict(),
             formal_fresh=True,coordinates=str(runtime.root/'coordinates.json'),bank_scale=str(runtime.bank_scale_path)),Path(root)/'initial_models.pt')
     for update in range(start,stop):
@@ -277,7 +294,8 @@ def train_endpoint(runtime,context,root,*,stop,resume=None):
         if update+1 in contract.get('G_checkpoint_updates',contract['updates']['G']):
             checkpoint(root,'G',update+1,runtime,trainer.optimizer,context,sampler=dict(seed=20261011,next_update=update+1,
                 logical_batch=4,task_order=list(TASKS),task_weight=1/36,parent_weight='equal actual parent',H_weight='uniform within parent',
-                bank_version=contract.get('G_bank_version',0),history_cache='2GiB and at most2 decoded H per worker; includes raw features'))
+                bank_version=runtime.supervision_version,gradient_owner='endpoint',
+                context_cache='exact frozen frontend and real P/H prefix; shared data1 files and bounded device reuse'))
 
 
 def expected_query(logits, rewards):

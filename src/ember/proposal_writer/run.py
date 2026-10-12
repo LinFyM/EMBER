@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import math
 from pathlib import Path
 import subprocess
 
@@ -15,7 +16,7 @@ from ember.pi05_source_setup import initialize_distributed
 from ember.writer.practice import EpisodeRunner
 
 from .contract import (RUN_ROOT, ASSET_ROOT, TASKS, SOURCE, MT_PATH, OPTIMIZER, SCHEMA,
-                       SELECTOR_SCHEMA, materialize_panel, seed, parameter_ref)
+                       SELECTOR_SCHEMA, CHECKPOINT_SCHEMA, G_OBJECTIVE, materialize_panel, seed, parameter_ref)
 from .runtime import Runtime
 from .teacher import fit_teacher
 from .path import save_history
@@ -46,32 +47,57 @@ def save_state(path, state):
 
 
 def endpoint_learning_registration(args, previous, old):
-    """Separate the registered learning exit from recovery saves and initialization."""
+    """Import v7 G864 once, then use v8 operator-objective recovery checkpoints."""
     resume=getattr(args,'resume',None)
-    stop=216 if resume is None else 864
-    registration=dict(updates=dict(G=[stop]),fixed_G_update=stop,
-        G_checkpoint_updates=[stop],G_bank_mode='MT_only',G_bank_version=0,
-        shared_initialization='fresh seed7 G/meta/Actor and all optimizers; no previous shared weights',
-        stage_estimate_seconds={f'G_{stop}':5760.},
-        bounded_stop=f'G{stop} then all36 deterministic first students and paired MT/previousG/newG/E query16; no local/RL/held400')
-    if resume is not None:
-        from .contract import CHECKPOINT_SCHEMA
-        resume=Path(resume).resolve()
-        expected=(previous/'checkpoints/G/update_00000216').resolve()
-        manifest=read_json(resume/'manifest.json')
-        if (getattr(args,'stop',None)!=864 or resume!=expected or old['fixed_G_update']!=216
-                or manifest.get('schema_version')!=CHECKPOINT_SCHEMA or manifest.get('stage')!='G'
-                or manifest.get('next_update')!=216 or not manifest.get('complete')
-                or not manifest.get('full_optimizer_rng_sampler') or not (resume/'state.pt').is_file()):
-            raise ValueError('learning horizon requires the complete original v7 G216 and registered exit864')
-        registration.update(G_checkpoint_updates=[432,648,864],
-            shared_initialization='continue complete v7 G216 psi/theta/optimizer/sampler/rank RNG; supervision version0',
-            G_initial_resume=dict(checkpoint=str(resume),update=216,source_root=str(previous),
-                source_code=old['git'],topology=manifest['topology'],supervision_version=0,
-                recovery_only_updates=[432,648],scientific_exit=864),
-            stage_estimate_seconds={'G_864':4008.548594*3},
-            architecture_change='none; same v7 deterministic endpoint graph; learning duration only')
-    return registration
+    if resume is None or getattr(args,'stop',None)!=1296 or old['fixed_G_update']!=864:
+        raise ValueError('operator learning requires complete original v7 G864 and registered exit1296')
+    resume=Path(resume).resolve();expected=(previous/'checkpoints/G/update_00000864').resolve()
+    manifest=read_json(resume/'manifest.json')
+    source_schema='ember_full36_deterministic_endpoint_writer_v7'
+    if (resume!=expected or manifest.get('schema_version')!=source_schema or manifest.get('stage')!='G'
+            or manifest.get('next_update')!=864 or not manifest.get('complete')
+            or not manifest.get('full_optimizer_rng_sampler') or not (resume/'state.pt').is_file()):
+        raise ValueError('operator learning requires complete original v7 G864 and registered exit1296')
+    migration=dict(checkpoint=str(resume),source_schema=source_schema,destination_schema=CHECKPOINT_SCHEMA,
+        source_objective='masked_endpoint_MSE',destination_objective=G_OBJECTIVE,
+        update=864,all_shared_parameters_and_Adam_inherited=True,sampler_and_rank_RNG_inherited=True,
+        source_root=str(previous),source_code=old['git'],exact_resume=False)
+    return dict(updates=dict(G=[1296]),fixed_G_update=1296,G_checkpoint_updates=[1080,1296],
+        G_bank_mode='MT_only',G_bank_version=0,checkpoint_schema=CHECKPOINT_SCHEMA,objective_migration=migration,
+        shared_initialization='continue complete v7 G864 psi/theta/Adam/sampler/rank RNG; explicit new operator objective; bank0',
+        G_initial_resume=dict(checkpoint=str(resume),update=864,source_root=str(previous),source_code=old['git'],
+            topology=manifest['topology'],supervision_version=0,recovery_only_updates=[1080],scientific_exit=1296),
+        stage_estimate_seconds={'G_1296':11971.063878*2/3},
+        architecture_change='none; full deployed s*B@A objective replaces factor MSE',
+        bounded_stop='G1296 then all36 deterministic first students and paired MT/G864/newG/E query16; no local/RL/held400')
+
+
+def freeze_operator_scale(root, previous):
+    """Reuse saved exact teacher energies; no G/query data enters the denominator."""
+    evidence=previous/'analysis/main_scientific_readout/endpoint864_factor_effects.json'
+    analysis=read_json(evidence);lora=read_json(root/'task_lora_contract.json')
+    targets=[item['name'] for item in lora['targets']]
+    scaling=lora['adapter']['alpha']/lora['adapter']['rank']
+    values={name:{} for name in targets}
+    for row in analysis['layers']:
+        if row['task'] not in TASKS or row['layer'] not in values or row['task'] in values[row['layer']]:
+            raise ValueError('operator normalization needs unique exact full36/38 teacher energies')
+        values[row['layer']][row['task']]=row['EE']*scaling**2
+    if len(targets)!=38 or any(set(v)!=set(TASKS) for v in values.values()):
+        raise ValueError('operator normalization is missing a teacher or target')
+    D={name:math.fsum(values[name].values())/len(TASKS) for name in targets}
+    if any(not math.isfinite(v) or v<=0 for v in D.values()):
+        raise ValueError('all38 task-equal operator energies must be positive and finite')
+    sources=[dict(task=t,weights=read_json(root/'teachers'/f'task_{t:04d}'/'E.json')['weights'],
+        evidence=str(evidence)) for t in TASKS]
+    record=dict(objective=G_OBJECTIVE,D_by_target=D,scaling={name:scaling for name in targets},sources=sources,
+        energy='mean36 ||s*B_E@A_E||F^2',task_weight=1/36,layer_weight=1/38,
+        teacher_energy_source=str(evidence),frozen=True,sample_normalization=False,
+        zero_teachers_included=True,labels_never_conditions=True)
+    path=root/'operator_scale.json'
+    if path.exists() and read_json(path)!=record:raise ValueError('frozen operator denominators changed')
+    if not path.exists():write_json_atomic(path,record)
+    return path
 
 
 def prepare(args):
@@ -117,6 +143,7 @@ def prepare(args):
         if target.exists():
             if target.resolve()!=source:raise ValueError('reused bank asset destination changed')
         else:target.symlink_to(source)
+    operator_scale=freeze_operator_scale(root,previous)
     coordinates={**read_json(previous/'coordinates.json'),'schema_version':SCHEMA,
         'initial':str(root/'initial.safetensors'),'reused_from':str(previous/'coordinates.json'),'S_G_not_yet_formed':False}
     if (root/'coordinates.json').exists() and read_json(root/'coordinates.json')!=coordinates:
@@ -133,18 +160,16 @@ def prepare(args):
         reused_bank=dict(E='same selected teacher weights',S_G='same task-equal fixed scale',
             H='same actual MT bootstrap; no new teacher trajectories',MT='same frozen merged base and task initial'),
         task_initial=str(root/'initial.safetensors'),coordinates=str(root/'coordinates.json'),
-        bank_scale=str(root/'bank_scale.json'),updates=dict(G=[stop]),fixed_G_update=stop,
-        student_refresh=dict(version=f'G{stop}_deterministic_endpoint_first_students',G_update=stop,task_count=36,
+        bank_scale=str(root/'bank_scale.json'),operator_scale=str(operator_scale),updates=dict(G=[stop]),fixed_G_update=stop,
+        student_refresh=dict(version=f'G{stop}_operator_effect_first_students',G_update=stop,task_count=36,
             valid_proposal_rule='one deterministic full endpoint; invalid is failure; no success resampling',
             MT_bootstrap_reference_reused=True,query_states_per_parameter=16,readonly_E_query=True,
             readonly_previous_G_query=True,condition_mapping=condition_mapping,
             parameters_and_H_single_source=True,post_refresh_G_only=False),
-        architecture_change='deterministic MT-centered complete endpoint with zero output head; no parameter xi/time/Euler',
         generator_parameterization=dict(input='current p=(P-P0)/S_G plus valid mask; true L/V/H context',
-            target='e=(E-P0)/S_G',output='P0+S_G*e_hat',objective='masked endpoint MSE',
-            initial_output='P0 via zero Linear weight and bias',parameter_noise=False,parameter_time=False,
+            target='complete deployed s*B_E@A_E; supervision only',output='P0+S_G*e_hat',objective=G_OBJECTIVE,
+            initial_output='restore complete learned G864; original update0 head was zero',parameter_noise=False,parameter_time=False,
             current_P_H_are_conditions_not_target_center=True,decoder_layers=6,sender_normalization=True),
-        shared_initialization='fresh seed7 G/meta/Actor and all optimizers; no previous shared weights',
         logical_batch=dict(teacher_queries=28,G_conditions=4,actor_conditions=4),
         teacher={**old['teacher'],'readonly_reuse':True,'source_root':str(previous)},
         task_parent_history_sampling='equal task; equal actual parent within task; uniform real H within parent',
@@ -155,15 +180,12 @@ def prepare(args):
         selector_training=dict(**{k:v for k,v in old['selector_training'].items() if k not in
             ('query_states_per_parameter','registered_theta_updates','formal_update_window_not_yet_registered')},
             query_states_per_parameter=16,registered_theta_updates=None,formal_update_window_not_yet_registered=True),
-        stage_estimate_seconds=dict(G_216=5760.),condition_estimate_seconds={'student-data':300.},
-        bounded_stop='G216 then all36 deterministic first students and paired MT/oldG/newG/E query16; no local/RL/held400',
+        condition_estimate_seconds={'student-data':300.},
         expected_new_episodes=612,expected_new_query_episodes=576,
         query_independent_of_teacher_selection=False,query_teacher_selection_overlap_per_task=2,
-        exact_resume='only matching deterministic-endpoint schema complete checkpoints; retain RNG/topology',
+        exact_resume='v8 same-objective complete checkpoints only; original v7 G864 is an explicit objective migration',
         git=git_state(),information_wall='no held offline labels, no per-H Q, no rec/keep; query never in H')
     contract.update(learning)
-    if contract.get('G_initial_resume'):
-        contract['generator_parameterization']['initial_output']='restore learned G216 output; zero Linear was original update0 initialization'
     path=root/'run_contract.json'
     if path.exists() and read_json(path) != contract:
         raise ValueError('new run contract changed; append explicit revision rather than overwrite')

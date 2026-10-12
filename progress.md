@@ -1,4 +1,15 @@
-## 2026-10-12 当前状态：G864整批消费完成，条件拟合增强而控制持平
+## 2026-10-12 当前状态：完整BA算子监督有限批工程接续
+
+main已消费旧G864；唯一active design §14授权从原完整v7 CP864显式目标迁移到v8，总1296。
+完整决定docs/analyses/proposal_operator_supervision_20261012.md，机制证据见findings§441。
+同模型/Adam/cursor/rank RNG，新增432；1080恢复only、1296唯一出口，MT-only H bank0不消费学生bank。
+当前实现/针对性验证与冻结准入中，尚未启动正式GPU；预计工程30–60min、正式2.5–4.5h，按新目标消费者实测修订。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/operator_effect_learning1296_query16。
+只G1296+36首学生+同query16，MT/G864/E只读兼容引用；612新episode，不自动任何后段或新probe。
+实验继续持canonical/Git独占窗口，科学接收main 01a12bb0-5273-7462-b5e2-72a18aba7b8d；一次真实启动/唯一整批退出机制保持。
+旧864 CPU A/B+BA新证据已归档原ROOT/analysis/main_scientific_readout/endpoint864_factor_effects.py/json，未重复运行。
+
+## 2026-10-12 历史结果：G864整批消费完成，条件拟合增强而控制持平
 
 同v7完整216→864有限批UTC04:34:52.823612实际退出0，37jobs/37attempt全成功；
 MT340/G216341/G864341/E455，同576严格配对。MT→G864 R309/G32/L31，net+1/churn63/Jaccard.830645；

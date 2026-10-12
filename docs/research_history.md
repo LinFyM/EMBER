@@ -5057,3 +5057,10 @@ G216不消费query16，Actor未更新，不直接以旧4行与新16行成绩解�
 02 wall2.634h，G成功1.491h；38实际job latest均0，39 job尝试+3 profile尝试完整保留。
 fa03656f clean detached v6及full CP216/RNG2/optimizer、initial/参数/H/原行保留，无新warm/RL/held/Teacher/probe。
 本有界批一次交main科学消费与接续，不自动保护弱假说续训，也不恢复已收口旧v5。
+
+## 2026-10-12 G864后：完整部署BA监督的有限目标迁移
+
+G864的同576控制结果保持阴性；main新CPU分解定位因子改善几乎全部来自A，实际BA误差仍.999573。
+原件保存在原864ROOT/analysis/main_scientific_readout/endpoint864_factor_effects.py/json；未重跑。
+完整历史对照和科学决定见[算子监督](analyses/proposal_operator_supervision_20261012.md)、findings§441。
+旧factor-MSE组合停止延长；新同图v7 CP864→v8总1296只换部署算子目标，工程准入与后续状态见progress，不能从本文自动恢复旧链。

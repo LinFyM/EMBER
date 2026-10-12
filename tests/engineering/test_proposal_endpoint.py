@@ -157,43 +157,74 @@ def test_MT_only_bank_never_reads_existing_student_parents(tmp_path):
     with pytest.raises(ValueError,match='version0'):trainer.refresh_bank(1)
 
 
-def test_horizon_jobs_resume_recovery_saves_but_only_qualify864(tmp_path):
+def test_operator_jobs_resume1080_but_only_qualify1296(tmp_path):
     from ember.pi05_source_checkpoint import write_json_atomic
     from ember.proposal_writer.batch import shared_learning_job,stage_jobs
-    contract=dict(updates={'G':[864]},G_checkpoint_updates=[432,648,864],
-        G_initial_resume={'checkpoint':'/original/G216'},stage_estimate_seconds={'G_864':12026},
-        student_refresh={'version':'G864','G_update':864})
-    job=shared_learning_job(tmp_path,contract,'G',2,864,16)[0]
-    assert job.arguments[job.arguments.index('--resume')+1]=='/original/G216'
-    write_json_atomic(tmp_path/'checkpoints/G/update_00000432/manifest.json',dict(complete=True))
-    write_json_atomic(tmp_path/'checkpoints/G/update_00000648/manifest.json',dict(complete=False))
-    job=shared_learning_job(tmp_path,contract,'G',2,864,16)[0]
-    assert job.arguments[job.arguments.index('--resume')+1].endswith('update_00000432')
+    contract=dict(updates={'G':[1296]},G_checkpoint_updates=[1080,1296],
+        G_initial_resume={'checkpoint':'/original/G864'},stage_estimate_seconds={'G_1296':7981},
+        student_refresh={'version':'G1296','G_update':1296})
+    job=shared_learning_job(tmp_path,contract,'G',2,1296,16)[0]
+    assert job.arguments[job.arguments.index('--resume')+1]=='/original/G864'
+    write_json_atomic(tmp_path/'checkpoints/G/update_00001080/manifest.json',dict(complete=True))
+    job=shared_learning_job(tmp_path,contract,'G',2,1296,16)[0]
+    assert job.arguments[job.arguments.index('--resume')+1].endswith('update_00001080')
     with pytest.raises(ValueError,match='not preregistered'):
-        shared_learning_job(tmp_path,contract,'G',2,432,16)
+        shared_learning_job(tmp_path,contract,'G',2,1080,16)
     write_json_atomic(tmp_path/'run_contract.json',contract)
     jobs=stage_jobs(tmp_path,'student-data',microbatch=28,slots=16,teacher_devices=[],
         estimates={},shared_gpus=2,stop=None)
     assert len(jobs)==36
-    assert all(j.arguments[j.arguments.index('--checkpoint')+1].endswith('update_00000864') for j in jobs)
+    assert all(j.arguments[j.arguments.index('--checkpoint')+1].endswith('update_00001296') for j in jobs)
 
 
-def test_learning_registration_requires_original_complete_v7_and_is_not_fresh(tmp_path):
+def test_operator_registration_requires_original_v7_864_and_new_objective(tmp_path):
     from ember.pi05_source_checkpoint import write_json_atomic
-    from ember.proposal_writer.contract import CHECKPOINT_SCHEMA
+    from ember.proposal_writer.contract import CHECKPOINT_SCHEMA,G_OBJECTIVE
     from ember.proposal_writer.run import endpoint_learning_registration
-    checkpoint=tmp_path/'checkpoints/G/update_00000216';checkpoint.mkdir(parents=True)
+    checkpoint=tmp_path/'checkpoints/G/update_00000864';checkpoint.mkdir(parents=True)
     (checkpoint/'state.pt').touch()
-    manifest=dict(schema_version=CHECKPOINT_SCHEMA,stage='G',next_update=216,complete=True,
-        full_optimizer_rng_sampler=True,topology=dict(world_size=2,logical_condition_batch=4))
+    manifest=dict(schema_version='ember_full36_deterministic_endpoint_writer_v7',stage='G',next_update=864,
+        complete=True,full_optimizer_rng_sampler=True,topology=dict(world_size=2,logical_condition_batch=4))
     write_json_atomic(checkpoint/'manifest.json',manifest)
-    old=dict(fixed_G_update=216,git={'commit':'original216'})
-    args=SimpleNamespace(resume=checkpoint,stop=864)
+    old=dict(fixed_G_update=864,git={'commit':'original864'})
+    args=SimpleNamespace(resume=checkpoint,stop=1296)
     record=endpoint_learning_registration(args,tmp_path,old)
-    assert record['updates']=={'G':[864]} and record['G_checkpoint_updates']==[432,648,864]
+    assert record['updates']=={'G':[1296]} and record['G_checkpoint_updates']==[1080,1296]
     assert record['G_bank_mode']=='MT_only' and 'continue' in record['shared_initialization']
-    assert record['G_initial_resume']['source_code']==old['git']
-    args.stop=648
-    with pytest.raises(ValueError,match='exit864'):endpoint_learning_registration(args,tmp_path,old)
-    args.stop=864;manifest['schema_version']='old_v6';write_json_atomic(checkpoint/'manifest.json',manifest)
+    assert record['objective_migration']['destination_schema']==CHECKPOINT_SCHEMA
+    assert record['objective_migration']['destination_objective']==G_OBJECTIVE
+    assert not record['objective_migration']['exact_resume']
+    args.stop=1080
+    with pytest.raises(ValueError,match='exit1296'):endpoint_learning_registration(args,tmp_path,old)
+    args.stop=1296;manifest['schema_version']='old_v6';write_json_atomic(checkpoint/'manifest.json',manifest)
     with pytest.raises(ValueError,match='complete original v7'):endpoint_learning_registration(args,tmp_path,old)
+
+
+def test_operator_gram_matches_dense_value_and_full_factor_gradients():
+    from ember.proposal_writer.learning import operator_squared_error
+    torch.manual_seed(7)
+    A=torch.randn(3,11,requires_grad=True);B=torch.randn(13,3,requires_grad=True)
+    E_A=torch.randn(3,11);E_B=torch.randn(13,3);scale=.75
+    loss,energy=operator_squared_error(A,B,E_A,E_B,scale)
+    dense=(scale*(B@A-E_B@E_A)).square().sum()
+    torch.testing.assert_close(loss,dense,rtol=2e-6,atol=1e-4)
+    torch.testing.assert_close(energy,(scale*E_B@E_A).square().sum(),rtol=2e-6,atol=1e-4)
+    actual=torch.autograd.grad(loss,(A,B),retain_graph=True)
+    expected=torch.autograd.grad(dense,(A,B))
+    for a,e in zip(actual,expected,strict=True):torch.testing.assert_close(a,e,rtol=3e-6,atol=1e-4)
+    own,_=operator_squared_error(E_A,E_B,E_A,E_B,scale)
+    torch.testing.assert_close(own,torch.zeros_like(own),atol=1e-4,rtol=0)
+    same,_=operator_squared_error(E_A*2,E_B/2,E_A,E_B,scale)
+    torch.testing.assert_close(same,own,atol=1e-4,rtol=0)
+
+
+def test_operator_zero_B_does_not_credit_A_only_changes_and_uses_nonzero_A0():
+    from ember.proposal_writer.learning import operator_squared_error
+    torch.manual_seed(7)
+    A0=torch.randn(3,11,requires_grad=True);B=torch.zeros(13,3,requires_grad=True)
+    E_A=torch.randn(3,11);E_B=torch.randn(13,3)
+    loss,_=operator_squared_error(A0,B,E_A,E_B,1.)
+    changed,_=operator_squared_error(A0+100,B,E_A,E_B,1.)
+    torch.testing.assert_close(loss,changed)
+    loss.backward()
+    assert torch.count_nonzero(A0.grad)==0 and B.grad.norm()>0

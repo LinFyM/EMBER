@@ -11537,3 +11537,14 @@ task29从0到1、task36从1到5的真实局部收益保留，不能掩盖其它�
 CPU消费脚本两次字段假设错误已修正并保留收据，不改正式结果/训练，也未重跑已有端点算术。
 完整CP216/432/648/864、关键权重/H/原行和冻结树保留；没有自动warm/RL/held/Teacher/controls/probe或>864。
 完整分析docs/analyses/proposal_endpoint_learning864_query16_20261012.md；只向01a12bb0主讨论一次整批可靠交付。
+
+## 441. G864因子改善主要来自A，实际BA写入仍弱；新目标须控制裁决（2026-10-12）
+
+main一次2.232秒CPU分解已归档原864ROOT/analysis/main_scientific_readout/endpoint864_factor_effects.py及json，无新增GPU/forward/episode。
+同SG下A MSE .667975、B .999695；总改善.156665中A .156504/B .000161，条件增益.054377中A .054339/B .0000389。
+聚合完整部署BA的G/E norm ratio .021085/cos .020679/相对误差 .999573；与首动作仍近MT相容，但不是唯一根因证明。
+因子MSE可在B≈0时因A拟合下降，而同部署仍近MT；因此不能把总因子loss进步解释为两个因子都学到了有效编辑。
+新有界假设直接监督完整s*B@A，以全36原E的38层平均能量固定尺度，各task等权、零E纳入，无混合因子loss或B手权重。
+从完整CP864承接同图参数/Adam/RNG到1296，只改目标；真实矩阵拟合也不保证实际hidden、动作或控制保持。
+历史直接因子回归公共方向、端点动作蒸馏局部正例/相邻退化、functional revision极弱写入负证据继续有效。
+完整推导/失败预测/停止线见docs/analyses/proposal_operator_supervision_20261012.md和唯一design§14。

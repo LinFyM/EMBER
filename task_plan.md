@@ -1,4 +1,14 @@
-## 2026-10-12 当前执行目标完成：同v7 G864唯一出口及完整交付
+## 2026-10-12 当前目标：G864→1296完整部署算子监督有限检验
+
+最终目标仍是MT基底完整Writer明显超过强MT。唯一active design §14以实际BA拟合检验当前A-only因子改善与执行写入缺口。
+完整决定docs/analyses/proposal_operator_supervision_20261012.md；不把算子MSE当控制能力或唯一根因。
+执行：实现唯一G损失/受控目标迁移，验证完整AB值与梯度、真实CP864消费者；集成push/clean detached后按live资源启动。
+新v8保持全部共享参数/Adam/sampler/RNG，bank0/同36/logicalB4，新增432到1296；1080仅恢复、不选点。
+终点36一次G实践+576 query16、引用MT/G864/E原件；一次CPU A/B+BA与公共条件分解及全配对/费用读出。
+不自动Teacher/Actor/warm/RL/held/controls/probe/>1296。工程/运行/Git与分支worktree归实验闭环，main消费整批后自主裁决。
+预计16GiB增量、工程30–60min、正式2.5–4.5h，旧两rank外推中心3.2h；新目标实际profile后修订。
+
+## 2026-10-12 历史完成：同v7 G864唯一出口及完整交付
 
 最终目标仍是MT基底上完整Writer明显超过强MT，并解释合法教学/自身经历怎样进入固定LoRA能力。
 最近唯一执行合同designs/video_guided_proposal_writer_20261010.md §13已完成，未登记新批。

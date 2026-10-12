@@ -1,7 +1,7 @@
-> 2026-10-12 authority：本文件仍是唯一active design；当前唯一授权新批为§13同v7 CP216→864学习时长检验。
-> §12确定端点G216/首学生/query16已完整退出0，MT340/G216341/E455；保留阴性，不当成充分学习架构裁决。
-> §11 normalized-flow及旧full36链均已main收口，不恢复旧算子/课程；未被§13覆盖的信息墙与静态/Actor合同保持。
-> 432/648仅完整恢复保存；唯一新科学出口864。共同训练后继须main消费本批后另登记。
+> 2026-10-12 authority：本文件仍是唯一active design，当前授权有限批为§14完整部署BA算子监督。
+> §13 v7 G864/query16已完成并由main消费，原factor-MSE组合停止延长；旧§11–12与旧full36均已收口。
+> 同图从完整v7 CP864显式迁移目标，新增432到1296；1080仅恢复，1296唯一科学出口。
+> 保持MT-only H bank0、同36/logicalB4/SG/RNG；未被§14覆盖的信息墙与静态/Actor合同保持。
 
 # 36任务目标教师、自身实践与交替共同学习：main执行合同
 
@@ -382,3 +382,36 @@ MT→G864 R309/G32/L31、G216→G864 R313/G28/L28；train24较MT净−1、suppor
 这较216有实际条件学习，不恢复“完全恒定输出”的解释，仍未传递E455的控制优势。
 新增612episode/145036步、4.305975h/8.503693GPUh；原件/得失/边界与账目由整批分析引用。
 本批到此停止，不自动延长或后段；432/648仍仅恢复，完整CP保留不产生新科学授权。后继由main自主取舍。
+
+## 14. 完整部署BA算子监督：v7 G864→新v8 G1296有限接续（2026-10-12）
+
+完整原件、推导、最近似历史正反边界、结果分支与成本见
+[算子监督科学决定](../analyses/proposal_operator_supervision_20261012.md)，本节是唯一活动执行合同。
+原864分解总因子改善.156665中A贡献.156504、B仅.000161；实际BA的G/E norm ratio .021085、cos .020679。
+这解释因子loss为何未代表执行写入，不证明唯一根因或修复必有效。
+
+唯一主变量把G更新目标换为38层mean(||s*B_G@A_G−s*B_E@A_E||F²/D_l)，
+D_l=全36原E算子能量等权均值，全部正且有限；九零E仍等权，不逐样本归一化或加floor。
+使用完整A=A0+生成变化、完整B；精确rank Gram在正常FP32中计算，原模型BF16/数值政策保持。
+原factor-MSE只允许无梯度廉价诊断，不混入训练；不叠nativeFM/action、B权重、冻结A或新decoder。
+E及D始终在监督侧，不进入教学、H、候选、信用或部署条件。
+
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/operator_effect_learning1296_query16。
+唯一G路径显式导入原完整v7 CP864的psi/meta/Reader/static/decoder/theta/Adam/cursor/rank RNG；
+目标变更后schema为ember_full36_operator_effect_writer_v8，不称旧合同exact-resume。
+新v8同目标完整恢复有效；不能普遍接受旧v7或重置零head/Adam。
+同P0/SG/MT-only真实H bank0、36任务等权/logicalB4、原视频采样与原生policy RNG。
+新增432/1728条件、每task新增48次/累计144次，保存1080仅恢复、1296唯一出口；不得导入学生bank。
+
+1296同原36实际teacher_demo/MT-H/P/实践映射各一次确定G和真实实践，同query16新576行。
+兼容MT/G864/E576逐行只读引用，E=MT同源别名；预计612新episode，实际引用来源和历史费用分开。
+报告任务/套件/train24support12/breadth/得失/churn/重合/E分类与72选点重合、504其余行；仍是train机制读出。
+终点仅一次已保存端点CPU A/B+BA及公共/条件分解，首次原生动作复用已有记录。
+本批不启动Teacher/Actor/warm/RL/held400/controls/probe或>1296；整批结束交main科学裁决。
+算子弱且控制弱将降低当前Reader+完整因子decoder共同E学习假设，不能靠延长/小扫/重启噪声保护组合。
+
+新增峰值16GiB、大资产复用data1；工程预计30–60min，正式2.5–4.5h（旧两rank外推中心3.2h）。
+live双节点/独立quota和真实新目标梯度、恢复消费者由实验验证，按实际吞吐选物理安排；不固化world2。
+旧最长chunk16/32读取profile可复用，但不当成新loss消费者验收；实际验证更新全部discard。
+工程/Git/clean pushed detached/运行恢复/分支生命周期由实验闭环，无main ACK或Owner新许可门槛。
+一次真实启动身份/ETA及唯一整批完成或真实异常回报给main 01a12bb0-5273-7462-b5e2-72a18aba7b8d；无心跳/子阶段Queue/第二等待者。

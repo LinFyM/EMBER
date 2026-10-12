@@ -643,17 +643,21 @@ def test_joint_bank_retains_parameters_and_excludes_future_prefixes(tmp_path):
 
 def test_joint_resume_restores_both_optimizers_and_data_version(monkeypatch,tmp_path):
     from ember.proposal_writer import learning
-    from ember.proposal_writer.contract import CHECKPOINT_SCHEMA
+    from ember.proposal_writer.contract import CHECKPOINT_SCHEMA,TASKS,G_OBJECTIVE
+    from ember.pi05_source_checkpoint import write_json_atomic
     generator=nn.Linear(1,1);actor=nn.Linear(1,1);baseline=nn.Linear(1,1)
     theta_optimizer=torch.optim.AdamW(actor.parameters());psi_optimizer=torch.optim.AdamW(generator.parameters())
     actor(torch.ones(1,1)).sum().backward();theta_optimizer.step()
     generator(torch.ones(1,1)).sum().backward();psi_optimizer.step()
-    state=dict(schema_version=CHECKPOINT_SCHEMA,stage='RL',topology=dict(world_size=1),
+    state=dict(schema_version=CHECKPOINT_SCHEMA,stage='RL',G_objective=G_OBJECTIVE,topology=dict(world_size=1,task_order=list(TASKS),logical_condition_batch=4),
+        parameter_names=dict(psi=list(dict(generator.named_parameters())),theta=list(dict(actor.named_parameters()))),
         psi=generator.state_dict(),theta=actor.state_dict(),baseline=baseline.state_dict(),
         optimizer=theta_optimizer.state_dict(),generator_optimizer=psi_optimizer.state_dict(),
         psi_version=11,G_sampler=dict(next_update=11),supervision_version=9,next_update=9,rank_rng=[{}])
     torch.save(state,tmp_path/'state.pt')
-    fresh=SimpleNamespace(generator=nn.Linear(1,1),actor=nn.Linear(1,1))
+    write_json_atomic(tmp_path/'manifest.json',dict(schema_version=CHECKPOINT_SCHEMA,next_update=9,complete=True,full_optimizer_rng_sampler=True))
+    write_json_atomic(tmp_path/'run_contract.json',{})
+    fresh=SimpleNamespace(root=tmp_path,generator=nn.Linear(1,1),actor=nn.Linear(1,1))
     new_theta=torch.optim.AdamW(fresh.actor.parameters());new_psi=torch.optim.AdamW(fresh.generator.parameters())
     new_baseline=nn.Linear(1,1);monkeypatch.setattr(learning,'restore_rng',lambda *_:None)
     result=learning.resume_checkpoint(tmp_path,'RL',fresh,new_theta,SimpleNamespace(world_size=1,rank=0),

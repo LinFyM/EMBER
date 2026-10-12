@@ -15,10 +15,45 @@ from torch import nn
 from ember.pi05_source_checkpoint import read_json, write_json_atomic, capture_rng, restore_rng
 from ember.pi05_source_setup import initialize_deferred_process_group
 from ember.writer.runtime import autocast
+from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
 
-from .contract import TASKS, OPTIMIZER, seed, CHECKPOINT_SCHEMA
+from .contract import TASKS, OPTIMIZER, seed, CHECKPOINT_SCHEMA, G_OBJECTIVE
 from .path import decision_logits, history_prefix, score_log_probability, load_history, conditional_parent_log_probability
 from .runtime import phase,finish_phases
+
+
+def operator_squared_error(A, B, E_A, E_B, scaling):
+    """Exact full s*BA residual norm using rank-sized Grams, with FP32 gradients."""
+    with torch.autocast(device_type=A.device.type, enabled=False):
+        A,B,E_A,E_B=(value.float() for value in (A,B,E_A,E_B))
+        generated=((B.T@B)*(A@A.T)).sum()
+        teacher=((E_B.T@E_B)*(E_A@E_A.T)).sum()
+        cross=((B.T@E_B)*(A@E_A.T)).sum()
+        return scaling**2*(generated+teacher-2*cross),scaling**2*teacher
+
+
+class OperatorObjective:
+    """Frozen all36 teacher energies; each condition averages the same 38 layers."""
+    def __init__(self, runtime, root):
+        record=read_json(Path(root)/'operator_scale.json')
+        targets=[item.name for item in runtime.lora.targets]
+        expected_scaling=runtime.lora.alpha/runtime.lora.rank
+        if (record['objective']!=G_OBJECTIVE or set(record['D_by_target'])!=set(targets)
+                or set(record['scaling'])!=set(targets)
+                or sorted(row['task'] for row in record['sources'])!=sorted(TASKS)
+                or any(record['scaling'][name]!=expected_scaling for name in targets)
+                or any(not np.isfinite(record['D_by_target'][name]) or record['D_by_target'][name]<=0 for name in targets)):
+            raise ValueError('operator objective needs exact positive all36 teacher energies and deployed scaling')
+        self.layers=[(name,record['scaling'][name],record['D_by_target'][name]) for name in targets]
+
+    def __call__(self, generated, teacher):
+        errors,baseline=[],[]
+        for name,scaling,denominator in self.layers:
+            A,B=generated[name+LORA_A_SUFFIX],generated[name+LORA_B_SUFFIX]
+            E_A=teacher[name+LORA_A_SUFFIX].to(A.device);E_B=teacher[name+LORA_B_SUFFIX].to(A.device)
+            error,energy=operator_squared_error(A,B,E_A,E_B,scaling)
+            errors.append(error/denominator);baseline.append(energy/denominator)
+        return torch.stack(errors).mean(),torch.stack(baseline).mean()
 
 
 class Baseline(nn.Module):
@@ -67,7 +102,8 @@ def checkpoint(root, stage, update, runtime, optimizer, context, *, sampler, bas
     if context.is_main:
         root.mkdir(parents=True, exist_ok=False)
         state = dict(schema_version=CHECKPOINT_SCHEMA, stage=stage, next_update=update,
-            G_objective='masked_endpoint_MSE',generation='deterministic_MT_centered_endpoint',
+            G_objective=G_OBJECTIVE,generation='deterministic_MT_centered_endpoint',
+            objective_migration=getattr(runtime,'objective_migration',None),
             psi=runtime.generator.state_dict(), theta=runtime.actor.state_dict(), optimizer=optimizer.state_dict(),
             baseline=baseline.state_dict() if baseline is not None else None,
             baseline_optimizer=baseline_optimizer.state_dict() if baseline_optimizer is not None else None,
@@ -84,7 +120,8 @@ def checkpoint(root, stage, update, runtime, optimizer, context, *, sampler, bas
                                  theta=list(dict(runtime.actor.named_parameters()))))
         torch.save(state, root / 'state.pt')
         write_json_atomic(root / 'manifest.json', dict(schema_version=state['schema_version'], stage=stage,
-            next_update=update, full_optimizer_rng_sampler=True, complete=True, topology=state['topology']))
+            next_update=update, G_objective=G_OBJECTIVE, full_optimizer_rng_sampler=True,
+            complete=True, topology=state['topology'],objective_migration=state['objective_migration']))
     if context.world_size > 1:
         dist.barrier(device_ids=[context.local_rank])
     return root
@@ -92,14 +129,32 @@ def checkpoint(root, stage, update, runtime, optimizer, context, *, sampler, bas
 
 def resume_checkpoint(path, stage, runtime, optimizer, context, *, baseline=None, baseline_optimizer=None,
                       generator_optimizer=None):
-    state = torch.load(Path(path) / 'state.pt', map_location='cpu', weights_only=False)
-    if (state['schema_version'] != CHECKPOINT_SCHEMA or state['stage'] != stage
+    path=Path(path).resolve();manifest=read_json(path/'manifest.json')
+    state = torch.load(path / 'state.pt', map_location='cpu', weights_only=False)
+    contract=read_json(runtime.root/'run_contract.json')
+    migration=contract.get('objective_migration')
+    importing=(migration is not None and path==Path(migration['checkpoint']).resolve())
+    schema=migration['source_schema'] if importing else CHECKPOINT_SCHEMA
+    objective=migration['source_objective'] if importing else G_OBJECTIVE
+    if (state['schema_version']!=schema or state.get('G_objective')!=objective or state['stage']!=stage
+            or manifest.get('schema_version')!=schema or not manifest.get('complete')
+            or not manifest.get('full_optimizer_rng_sampler') or manifest['next_update']!=state['next_update']
             or state['topology']['world_size'] != context.world_size):
         raise ValueError('resume stage/topology changed; explicit migration needs a recorded new topology contract')
+    if importing and (stage!='G' or state['next_update']!=864 or state['supervision_version']!=0
+            or state['psi_version']!=864 or state['G_sampler']['next_update']!=864
+            or state['sampler'].get('bank_version')!=0):
+        raise ValueError('objective migration requires the complete original MT-only v7 G864')
+    if (state['topology']['task_order']!=list(TASKS) or state['topology']['logical_condition_batch']!=4
+            or len(state['rank_rng'])!=context.world_size
+            or state['parameter_names']['psi']!=list(dict(runtime.generator.named_parameters()))
+            or state['parameter_names']['theta']!=list(dict(runtime.actor.named_parameters()))):
+        raise ValueError('complete Writer topology, parameter ownership and rank RNG required')
     runtime.generator.load_state_dict(state['psi']); runtime.actor.load_state_dict(state['theta'])
     optimizer.load_state_dict(state['optimizer']); runtime.version = state['psi_version']
     runtime.generator_optimizer_state=state['generator_optimizer'];runtime.G_sampler=state['G_sampler']
     runtime.supervision_version=state['supervision_version']
+    runtime.objective_migration=migration if importing else state.get('objective_migration')
     if generator_optimizer is not None:generator_optimizer.load_state_dict(state['generator_optimizer'])
     restore_rng(state['rank_rng'][context.rank], context)
     if baseline is not None:
@@ -175,6 +230,7 @@ class EndpointTrainer:
     def __init__(self,runtime,context,root):
         self.runtime,self.context,self.root=runtime,context,Path(root)
         self.optimizer=torch.optim.AdamW(runtime.generator.parameters(),**OPTIMIZER)
+        self.objective=OperatorObjective(runtime,self.root)
         self.cache=HistoryCache();self.panel={r['task_id']:r for r in read_json(self.root/'panel.json')['tasks']}
         if not runtime.bank_scale_path.exists():raise ValueError('complete full36 bank and fixed S_G required')
         if getattr(runtime,'generator_optimizer_state',None) is not None:
@@ -234,14 +290,18 @@ class EndpointTrainer:
             rows=history.model_rows(runtime)
             with phase(runtime,'endpoint_forward'),autocast(runtime.device):
                 prediction=runtime.generator(packed,features,rows,history.states)
-                loss=(prediction.float()[runtime.generator.layout.valid]-target[runtime.generator.layout.valid]).square().mean()
+            with phase(runtime,'operator_loss'):
+                layout=runtime.generator.layout
+                generated=layout.unpack(layout.center+layout.scale*prediction.float())
+                loss,MT_loss=self.objective(generated,endpoint)
             with phase(runtime,'endpoint_backward'):(loss/4).backward()
             records.append(dict(task=task,parent=parent_row['reference'],E=entry['reference'],H=history_path,demo=demo,
-                endpoint_loss=float(loss.detach()),MT_endpoint_loss=float(target[runtime.generator.layout.valid].square().mean()),
+                operator_loss=float(loss.detach()),MT_operator_loss=float(MT_loss.detach()),
+                factor_MSE_diagnostic=float((prediction.detach().float()[layout.valid]-target[layout.valid]).square().mean()),
                 frames=len(features['z']),H_records=len(history.records),
                 H_episodes=len(history.episodes),H_producers=len(history.states),denominator=4,missing_label=False))
             self.cache.remember_features(history_path,history)
-            del features,prediction,loss,target,endpoint,parent,history,rows
+            del features,prediction,generated,loss,MT_loss,target,endpoint,parent,history,rows
         synchronize_gradients(runtime.generator,context)
         norm=torch.nn.utils.clip_grad_norm_(runtime.generator.parameters(),1.,error_if_nonfinite=True)
         group_norms={g:sum(float(p.grad.float().square().sum()) for p,name in zip(runtime.generator.meta.values,runtime.generator.meta.groups,strict=True)
@@ -277,7 +337,8 @@ def train_endpoint(runtime,context,root,*,stop,resume=None):
             G_sampler=runtime.G_sampler,supervision_version=runtime.supervision_version,
             optimizer_state_count=len(trainer.optimizer.state),optimizer_step_min=min(steps),optimizer_step_max=max(steps),
             world_size=context.world_size,restored_rng_rank=context.rank,logical_condition_batch=4,
-            G_bank_mode=contract.get('G_bank_mode','actual_parents'),fresh=False))
+            G_bank_mode=contract.get('G_bank_mode','actual_parents'),fresh=False,
+            G_objective=G_OBJECTIVE,objective_migration=runtime.objective_migration))
     trainer.refresh_bank(getattr(runtime,'supervision_version',0))
     if resume is None and context.is_main:
         torch.save(dict(schema_version=CHECKPOINT_SCHEMA,psi=runtime.generator.state_dict(),theta=runtime.actor.state_dict(),

@@ -9,7 +9,7 @@ import torch
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.pi05_source_setup import initialize_deferred_process_group
 
-from .contract import TASKS,OPTIMIZER,seed,CHECKPOINT_SCHEMA,SELECTOR_SCHEMA
+from .contract import TASKS,OPTIMIZER,seed,CHECKPOINT_SCHEMA,SELECTOR_SCHEMA,G_OBJECTIVE
 from .learning import (Baseline,EndpointTrainer,train_endpoint,train_local,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
 from .path import compile_condition,compile_conditions,evaluate_fixed,restore_compilation
@@ -20,10 +20,12 @@ from .supervision import (panels,bootstrap_source,query_once,query_conditions,Lo
 def load_version(runtime,directory,*,fixed_psi=True):
     state=torch.load(Path(directory)/'state.pt',map_location='cpu',weights_only=False)
     if state['schema_version']!=CHECKPOINT_SCHEMA:raise ValueError('retired shared model schema; fresh training required')
+    if state.get('G_objective')!=G_OBJECTIVE:raise ValueError('checkpoint deployment-operator objective changed')
     runtime.generator.load_state_dict(state['psi']);runtime.actor.load_state_dict(state['theta'])
     runtime.version=state['psi_version']
     runtime.generator_optimizer_state=state['generator_optimizer'];runtime.G_sampler=state['G_sampler']
     runtime.supervision_version=state['supervision_version']
+    runtime.objective_migration=state.get('objective_migration')
     runtime.fixed_kernel_identity=dict(checkpoint=str(Path(directory).resolve()),psi_version=runtime.version,
         checkpoint_stage=state['stage'],checkpoint_update=state['next_update'])
     if fixed_psi:runtime.freeze_psi()

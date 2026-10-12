@@ -1,5 +1,14 @@
 ## 2026-10-12 当前硬截止：16:00前结束，15:55前全部GPU退出
 
+UTC06:05:20（14:05）CPU调度排他交接已实际完成，新唯一整批owner PID3749639，tmux ember-operator1296-deadline-resident-20261012。
+新owner原件ROOT/coordinator/operator_G1296_deadline_resident_02/{launch,handoff,startup_verified}.json；
+读出冻结c7e76b566e3d50178f9e43dbdaa977bf28fd9d5b，clean pushed detached工作树proposal_deadline_readout_20261012_c7e76b56。
+原3494574只停止新派发，继续保留G真实exit；G torchrun1376966及rank1377290/1377291实际身份/运行状态不变，未信号G。
+新owner只等G_00001296实际退出原件，之后live择卡启动resident；不会提前以1080或其它CP读出，也不会越过派发截止。
+唯一整批实际退出通知由新owner的delivery.json负责，原delivery.lock排他持有；无额外阶段通知或第二整批等待者。
+首次CPU准备失败因no-checkout稀疏树未填文件，发生在交接前；补齐并验证clean后恢复，0GPU/0episode、未信号训练，
+失败preparation_attempt_001.log/json留上述新coordinator；它不是G训练或科学失败。
+
 Owner最新要求今天UTC+8 16:00（UTC08:00）前结束，本批目标15:50完成消费，最迟15:55清空本批GPU并禁止继续派发。
 此要求覆盖原中心16:30/上限17:46预测；原启动和预算记录保留，不能转移到gpu02延长截止。
 ROOT/coordinator/deadline_ops_20261012已在双节点独立tmux落地：初版UTC05:33实际armed，原PID1414272/3577229保留历史。
@@ -14,7 +23,7 @@ ROOT/coordinator/deadline_ops_20261012已在双节点独立tmux落地：初版UT
 候选physical为足够余量卡slots32/group3，中等slots16/group2，小余量slots8/group1；首原定组记录实际吞吐和显存，不另加探针。
 CPU调度交接由新coordinator/operator_G1296_deadline_resident_02排他持原delivery.lock、仅SIGINT原3494574停止旧学生派发；
 原线程继续收取G真实退出，新owner直接等该退出原件后读出，原通知helper在发送前被非阻塞锁排除。
-交接实际状态以新handoff/launch收据为准；训练仍2a1fb813，后续读出另用clean pushed detached来源。完整576及时完成尚未保证。
+交接实际收据已核；训练仍2a1fb813、后续读出c7e76b56。预期G约15:30、六卡若有效读出15–25min，即15:45–15:55；完整576及时完成尚未保证。
 完整CP1080仅恢复，1296唯一读出；现有训练没有任意信号保存接口，保留原完整864及新登记完整点。
 若截止间仍有未保存更新或未完成task/rows，准确报告范围与缺项，不冒充1296完整结论，不自动16:00后或重启续跑。
 

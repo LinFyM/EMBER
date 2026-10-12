@@ -5105,3 +5105,15 @@ G864的同576控制结果保持阴性；main新CPU分解定位因子改善几乎
 G1296完整576=348对MT340的结果与原失败/逾时/恢复48保留；mainCPU固定因子几何说明当前A未封死B拟合，不证明可学/控制。
 新有界授权target-memory control/block-memory candidate均fresh同BA到864、各直接576query，唯一改变条件memory入口；无新G-practice或后段。
 原925e7b1 direct-reading48→75负证据保留，停止线约束Reader+共同E全坐标回归的补丁链。完整推导docs/analyses/proposal_coordinate_memory_read_20261012.md、active design§15；本条为决定登记，不是尚未取得的结果。
+
+
+## 2026-10-12 block-memory候选432提前完整闭环：337对MT340
+
+Owner允许预登记CP432全36/576提前诊断，每task48呈现，实际22:34:58完成。
+MT340/G432337/旧factorG864341/旧BAG1296=348/E455，R311/G26/L29/net−3，72选点重合净+4/504其余净−7，E-only134传17。
+任务/套件/覆盖/旧G重合/所有不利行与费用见[原有条件入口分析§13](analyses/proposal_coordinate_memory_read_20261012.md)及findings§447。
+未通过当前G阶段，不作held/完整Writer或432对864结构归因；原fresh两864匹配训练/读出仍继续。
+原EGL失败和全局停派保留，新唯一scoped owner串行恢复，仅补保存端点的32query；新源只释放未用CUDA缓存，实际六卡运行。
+早期readout2.904308725GPUh含失败.330519542，576完成query/136249步/0practice-update，失败未完成步未知；原在途训练不双计。
+稳定原件ROOT/early_candidate432_query16/analysis/early_completion_20261012，实际event和handoff见原root/coordinator/scoped_readout_recovery_02。
+阶段已按Owner纠正为先G过关、后完整Writer；11点不是必须完成后段或强杀截止，运行效率记录见同分析§12。

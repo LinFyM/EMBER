@@ -1,4 +1,27 @@
-## 2026-10-12 最新科学修订：候选CP432提前全36/query16
+## 2026-10-12 最新阶段纠正与有界读出效率恢复
+
+Owner明确先通过G从MT一次修订的完整闭环证据与合理保持，再训练/评估完整Writer；11:00不要求塞入完整Writer/400，当前无新后段或held授权。
+22:15有界核查已完成原物理统计快照：12个group/384完成G query，实际batch均值8.599、满16调用10.73%，native前缀/flow占resident时间54.47%、环境等待5.22%。
+Torch allocated峰值11.50GiB/reserved20.76GiB，worker03上一完整group记录设备free0，随后21:55:36 EGL切换失败；不能由此唯一断言OOM/GPU故障。
+旧dispatcher把worker03失败扩大成全局停派，worker04/02退出后空卡未及时接任务；这是实验session的调度错误，Owner要求避免重犯，失败/空档费用完整保留。
+原worker01/02/04最终均实际exit0、34条件544行保留；原失败task95/96的保存端点直接恢复32条query，未重生成或实践。
+CUDA cache修复仅在endpoint读出组生成后/环境重置前释放未使用缓存，数学/模型/schema/逐行RNG不变；CPU真实已完成条件消费0.011秒/0新forward或episode，通过后集成推送f9c29356。
+候选读出冻结eac6ebf4/v9、控制读出冻结62e615c9/v8，均clean pushed detached；canonical只保留原block模型，不把新v9代码读旧控制CP。
+22:28:35新唯一dispatcher scoped_readout_recovery_02/PID2084323实际启动；旧失败CPU在全部实际query退出收据齐备后仅CPU TERM，原G receipt writer与两训练进程未受信号。
+22:28:41–53实际launch早期补缺worker及控制读出，随后一项无领取任务的早期worker自然exit0/0query，其卡22:29:12立即接控制；不能把该启动开销写成新增episode。
+实际Runtime确认gpu01:0/2/3控制、:1早期补缺，原candidate训练:4/5；项目6/cap6/node6。每launch双节点/独立quota准入，data1 used1472447812–1472448036KiB/limit2147483648KiB。
+新派发器限定失败root/worker，独立就绪工作继续，已定位device failure不重复占同卡，失败分片至多一次有界工程恢复；有效query不重跑、实践/共享更新均0新增。
+后续worker采用slots16/chunk8/group4、原coalesce0.1s；扩大未完成条件组改善补位，实际wall收益尚未证实。slots32因原16的EGL/zero-free证据及未测32 EGL/native峰值暂不采用，不新铺profile矩阵。
+新实际恢复group32query/332.062s，平均动作batch7.755，Torch allocated11.339GiB/reserved18.959GiB，组后device free5.086GiB；不同任务且仅两condition，不能证明group4提速或唯一OOM根因。
+候选432于22:34:58实际全36/576完成：MT340/G432337/G864341/G1296=348/E455，R311/G26/L29/net−3/churn55。
+target24净−3、support12净0；72选点重合净+4、504其余净−7，E-only134只传17。半程48/task未通过当前G净增益，不冒充结构匹配/held/完整Writer资格。
+新增576query/0practice/0共享更新，已完成步136249，读出2.904308725GPUh包含失败.330519542；失败未完成步未知，训练来源仍在途不重复计费。
+CPU实际冻结消费者15.575s核原配对、CP432/schema、保存权重/RNG与全部六attempt，0新forward/episode。原件early_candidate432_query16/analysis/early_completion_20261012，现有分析§13/findings§447。
+稳定物理原件analysis/execution_efficiency_20261012_2215、coordinator/scoped_readout_recovery_02；早期完整结果与本次效率工作合并可靠交main，原两864由同一owner继续。
+恢复时早期预计22:38–23:10保留为历史，实际22:34:58完成；整批暂02:15–04:00沿原candidate关键路径保留不确定性，不承诺提速。
+原早期22:35–23:35及两臂原估计保留历史。早期576与两864完整结果分别一次可靠交main；旧两个CPU回报按handoff判重，不恢复旧队列，无额外等待者/心跳/自动后段。
+
+## 2026-10-12 历史科学修订：候选CP432提前全36/query16
 
 Owner要求释放四卡尽早产出有用结果；main在读新闭环分数前授权候选完整432提前诊断，现按唯一design§15.1优先实施。
 原control近完成后实际退出0，candidate训练及原有效工作保留；没有回退更新或信号任何GPU进程。
@@ -26,8 +49,10 @@ Owner重申最终要完整Writer在固定validation/test超过强MT；训练任�
 原话已完整写入current_owner_requirements，concept说明阶段关系；耗时提问涉及训练规模安排，不只涉及吞吐。
 2026-10-13 11:00 UTC+8为希望得到较好效果的交付/决策时间目标，不是GPU强制终止；没有新guard，不恢复旧绝对截止。
 当前唯一active design仍§15及最新§15.1，fresh匹配两臂各864/logicalB4/全36/3456条件/576query保持；另登记候选432提前全576诊断，不自动启动其它后段。
-沿20:32快照整批预计02:10–03:15，后续约7小时45分–8小时50分由main按真实结果倒排完整方法学习、validation400及分析。
-明显增益且保持合理时优先必要的真实parent/H修订学习和validation；若仍弱则执行链级停止线，main自主设计有界后继。
+历史20:32快照整批预计02:10–03:15、其后约7小时45分–8小时50分保留；当前ETA看顶部最新修订。
+Owner已纠正阶段安排：先通过MT起点的一次G修订，才登记完整Writer学习/评估；11:00不要求塞入完整训练/400。
+未通过时继续解决这一阶段，不启动后段掩盖失败；旧完整流程4–5h只是成本情景，不是当前G读出开销或固定阶段时刻。
+若仍弱则执行链级停止线，main自主设计有界后继；当前无新增held或后继训练。
 完整共享/局部状态、实践与query隔离、选点须新科学登记；Test仅方法/选择冻结后最终评估，不用于夜间路线选择。
 这一独立工作只更新四文件目标记录并清点既有源码/历史成本，未实现后继路线或重算旧科学算术，清点本身0新GPU/forward/episode/profile。
 清点原件ROOT/analysis/successor_cost_inventory_20261012/inventory.md；后继计时缺口与假设明确列出，不能拿query吞吐代替Compiler端到端成本。

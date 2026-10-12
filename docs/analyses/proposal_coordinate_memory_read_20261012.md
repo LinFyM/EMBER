@@ -186,3 +186,90 @@ Owner最终目标仍是完整Writer在固定validation/test超过强MT，训练�
 四卡优先早期432，所有就绪早期任务已派发后释放的有效slot及时服务control864；candidate864就绪后也按有效空余slot动态处理。按既有共驻成本四卡早期1–2h，当前22:35–23:35有完整早期结果的预期；尽量把早期与control读出覆盖candidate原预计至01:09的训练窗口，整批暂修订次日02:15–04:00。尚无完整早期query实测，不保证固定速度或正结果；原预测保留为历史。完整432允许一次提前科学交main，原两864整批仍交一次，分别判重，无心跳或task级消息。
 
 后继有限CPU成本/消费者清点原件ROOT/analysis/successor_cost_inventory_20261012/inventory.md，0新forward/episode/profile。v9已经由EndpointTrainer承接BA/实际P-H的G-theta交替及固定Writer400消费者，但当前直接端点没有实践prefix，theta未训练、后继未登记，不能据接口存在称完整方法就绪。旧真实strict400六worker2.081h包含1133适应和119新final，不能用576直接query吞吐代替Compiler成本；共驻同路径粗情景约4.2h，大H/theta与新formal成本缺计时。主讨论据完整早期或整批结果自主冻结后继规模，清点不自动启动旧课程、Actor、held或Test选择。
+
+
+## 12. 真实batch、局部故障恢复与阶段纠正（2026-10-12晚）
+
+Owner明确先通过G从MT一次修订的完整闭环增益和合理保持，才登记完整Writer训练/评估。完整Writer在固定validation/test超过强MT仍是最终目标；11:00是效果和决策目标，不要求塞入后段或400，也没有新的GPU强杀截止。此次有界运行检查、两条CUDA缓存释放语句和物理组大小变化均不改变科学矩阵、模型、标签、BA目标、CP/schema或逐行policy/env RNG。
+
+22:15核已有真实runner统计，四resident快照合计12组、384个完成G query、2209次native调用/18996行计划；平均物理batch8.599，满16调用10.73%、满16计划19.96%。resident累计7279.494秒为多worker之和，吞吐189.903 episode/GPUh；native prefix521.615秒、flow3443.251秒，合计54.47%，环境等待380.140秒/5.22%。独立环境操作时长不能加成墙钟比例。Torch allocated峰11.503GiB/reserved20.756GiB，组后设备free分别1.11/8.69/0/7.63GiB。显卡利用率和slots16不表示实际batch充分；当前主要计时是native计算，未证明改变coalesce会有收益。
+
+early worker03在21:55:36切换task95/96环境时EGL framebuffer0x8cdd退出1；上一成功group记录设备free0，提示模型/缓存和EGL共驻余量风险，但不是唯一OOM或GPU故障证明。更明确的调度错误是旧owner的全局failures分支取消其它就绪派发，导致worker自然退出后空卡未接control864。执行者承担该错误。保留三个成功resident原544行、原失败日志/费用/保存端点；等待这些实际GPU退出收据齐全后只结束旧CPU派发owner，原候选两卡G训练及其真实receipt writer未受信号。旧回报按dispatch_handoff判重，不复活旧队列。
+
+新唯一owner scoped_readout_recovery_02于22:28:35/PID2084323实际启动，22:28:41–53派发原两缺项及control864，22:29:12把没有领取任务而自然退出的早期worker卡立即用于control；该启动成本计账而不虚增episode。实际Runtime为项目6/cap6/node6：四卡读出、候选两卡原训练。每次launch双节点/非干扰和strg01独立data1 quota核验，used1472447812–1472448036/limit2147483648KiB，大资产原位复用。新owner限定失败root/worker，已定位设备故障避免重复同卡、失败分片至多一次工程恢复，独立就绪工作继续；没有第二等待者、额外profile或心跳。
+
+后续worker保持slots16/chunk8/coalesce0.1，把待消费condition组2→4以减少组尾补位不足。环境重置前仅释放Torch未用缓存：v9读出eac6ebf45e02652d6e04c27ebde7d42163eb0808、v8控制62e615c9a83e23f17126a7aeff77f74c10f40982，均clean pushed detached；canonical保持单一block模型，原训练身份不变。实际CPU消费者读取已完成条件0.011秒/0新forward或episode。新真实恢复组从保存端点只补32query，332.062秒/4362步，平均batch7.755，prefix24.841秒/flow151.622秒/env wait23.299秒，allocated11.339GiB/reserved18.959GiB、组后device free5.086GiB，实际exit0。该组只有两项且任务不同，不能证明group4墙钟收益或缓存是唯一EGL根因。slots32未采用：16已出现free0和EGL失败，32的EGL/native合计峰值未测；不以模型加载前空闲显存承诺可放大，也不延迟主要读出铺profile矩阵。组4的真实收益待原整批已有物理记录消费，未证实前不称已充分优化。
+
+完整Writer已有ready批量native、独立环境、每行LoRA/RNG和0.1s coalesce，但compile_conditions的同步teaching/Actor/G回调仍会挡ready结果消费；history observation microbatch16而响应states逐候选循环。旧适应condition_batch4同时只有至多4条真实episode，组尾等待未消除。这与当前直接query已有最多16活跃环境不同。旧strict400去重106组，编译residence合计38675.382秒、G host614.557秒/1.59%、native candidate response8658.717秒/22.39%；六worker端到端2.081h包含1133适应及119新final。不能把CFM生成说成主要耗时，或把576直接query吞吐代替完整Compiler成本。完整Writer批量结构本次未实施，先服从G阶段证据。
+
+物理小原件：ROOT/analysis/execution_efficiency_20261012_2215/{gpu_preflight,resident_snapshot,baseline_statistics,path_timing_snapshot,first_new_group_physical}.json；handoff、实际launch/退出/source/Git生命周期见ROOT/coordinator/scoped_readout_recovery_02。恢复时早期预计22:38–23:10，实际更早22:34:58完成；整批保留02:15–04:00共驻负载情景，不将组4当已测加速，原预测保留。
+
+
+## 13. 候选432提前全36/576闭环已完成：337对MT340（2026-10-12）
+
+候选完整v9 CP432/full optimizer-RNG-sampler/world2/logicalB4在读出前显式登记为一次半程诊断，每task48次呈现。22:34:58全部36条件各原query16完成，固定教学/MT-H/P0、唯一38-target端点、初态及每行native/env RNG不变；原34项544行保留，仅task95/96读取原保存端点和H补32query，mtime及真实恢复消费者证明未重生成或实践。全部六job attempt、原失败和CPU派发交接保留，未把worker故障当模型科学失败。实际冻结CPU消费者15.575秒核配对、合法引用、schema与所有原件，0新增GPU/forward/episode；未另做算术或探针。
+
+| 臂 | MT | G432 | 旧factor G864 | 旧BA G1296 | E |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 成功/576 | 340 | 337 | 341 | 348 | 455 |
+
+MT→G432保留311/新增26/丢失29，净−3、churn55、success Jaccard .849727。旧factor G864→G432为R303/G34/L38/net−4/churn72/Jaccard .808；旧BA G1296→G432为R315/G22/L33/net−11/churn55/Jaccard .851351。它们保留强历史参照，不是同学习年龄或单变量架构比较。任务净优/平/劣13/11/12，20个task有新增、18个有丢失；至少一成功覆盖MT33/G43235/E36，覆盖增加不能抵消成功总数未增。
+
+| suite | MT | G432 | 旧G864 | 旧G1296 | E | R/G/L | 净 |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| libero_spatial | 53 | 50 | 49 | 46 | 79 | 46/4/7 | -3 |
+| libero_object | 34 | 36 | 35 | 40 | 68 | 29/7/5 | +2 |
+| libero_goal | 49 | 45 | 50 | 50 | 64 | 43/2/6 | -4 |
+| libero_10 | 33 | 35 | 34 | 38 | 61 | 27/8/6 | +2 |
+| libero_90 | 171 | 171 | 173 | 174 | 183 | 166/5/5 | +0 |
+
+train24/384为MT169/G432166/G864168/G1296=174/E272，R145/G21/L24/net−3；support12/192为171/171/173/174/183，R166/G5/L5/net0。72条teacher选点重合为43/47/43/47/55、R42/G5/L1/net+4；504其余为297/290/298/301/400、R269/G21/L28/net−7。不能只报前72的正变化，504也仍是训练task机制读出，不称held或独立teacher泛化。
+
+E-only134仅传17（旧G1296 22）；MT-only19保13（旧12）；both-success321保298（旧298）；both-fail102获9（旧16）。新增26分成17条E-only和9条both-fail，同时原MT成功丢29；未出现把E的大幅能力优势稳定传给G的证据。原已有首5 native action的G432/MT RMSE .004600、G432/E .088068、MT/E .088126，仅作定位，不证明视频/H因果或闭环改善原因。
+
+全部任务原件，不隐去task20−4、task5−3、task0/25−2；task1+3、task13+2也保留：
+
+| task | MT | G432 | 旧G864 | 旧G1296 | E | R/G/L | 净 |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| 0 | 14 | 12 | 11 | 12 | 15 | 12/0/2 | -2 |
+| 1 | 4 | 7 | 3 | 6 | 15 | 4/3/0 | +3 |
+| 2 | 14 | 14 | 15 | 13 | 16 | 14/0/0 | +0 |
+| 4 | 8 | 7 | 9 | 8 | 7 | 7/0/1 | -1 |
+| 5 | 6 | 3 | 5 | 3 | 14 | 3/0/3 | -3 |
+| 7 | 7 | 7 | 6 | 4 | 12 | 6/1/1 | +0 |
+| 12 | 7 | 8 | 7 | 7 | 11 | 7/1/0 | +1 |
+| 13 | 7 | 9 | 9 | 11 | 7 | 6/3/1 | +2 |
+| 14 | 11 | 10 | 10 | 11 | 16 | 10/0/1 | -1 |
+| 15 | 3 | 3 | 4 | 3 | 9 | 2/1/1 | +0 |
+| 17 | 0 | 1 | 1 | 1 | 12 | 0/1/0 | +1 |
+| 19 | 6 | 5 | 4 | 7 | 13 | 4/1/2 | -1 |
+| 20 | 8 | 4 | 9 | 7 | 8 | 4/0/4 | -4 |
+| 21 | 14 | 14 | 14 | 14 | 16 | 14/0/0 | +0 |
+| 22 | 10 | 11 | 9 | 11 | 15 | 10/1/0 | +1 |
+| 25 | 2 | 0 | 1 | 1 | 6 | 0/0/2 | -2 |
+| 28 | 15 | 15 | 16 | 15 | 16 | 15/0/0 | +0 |
+| 29 | 0 | 1 | 1 | 2 | 3 | 0/1/0 | +1 |
+| 32 | 2 | 3 | 2 | 4 | 13 | 1/2/1 | +1 |
+| 34 | 11 | 10 | 10 | 12 | 10 | 9/1/2 | -1 |
+| 35 | 12 | 13 | 10 | 11 | 12 | 12/1/0 | +1 |
+| 36 | 1 | 1 | 5 | 3 | 12 | 0/1/1 | +0 |
+| 37 | 7 | 7 | 6 | 7 | 12 | 5/2/2 | +0 |
+| 38 | 0 | 1 | 1 | 1 | 2 | 0/1/0 | +1 |
+| 42 | 16 | 16 | 16 | 16 | 16 | 16/0/0 | +0 |
+| 43 | 7 | 8 | 10 | 8 | 15 | 7/1/0 | +1 |
+| 51 | 14 | 15 | 14 | 15 | 16 | 14/1/0 | +1 |
+| 55 | 16 | 15 | 16 | 16 | 16 | 15/0/1 | -1 |
+| 56 | 13 | 14 | 13 | 15 | 13 | 13/1/0 | +1 |
+| 62 | 14 | 15 | 14 | 15 | 16 | 14/1/0 | +1 |
+| 64 | 16 | 15 | 16 | 16 | 16 | 15/0/1 | -1 |
+| 73 | 14 | 13 | 13 | 13 | 14 | 12/1/2 | -1 |
+| 95 | 13 | 13 | 13 | 13 | 13 | 13/0/0 | +0 |
+| 96 | 16 | 16 | 16 | 16 | 16 | 16/0/0 | +0 |
+| 97 | 16 | 16 | 16 | 16 | 16 | 16/0/0 | +0 |
+| 101 | 16 | 15 | 16 | 15 | 16 | 15/0/1 | -1 |
+
+此次早期读出新增576个完成G query/136249步，0G-practice/共享更新/参照episode。六attempt一失败，readout allocation 2.904308725GPUh包含失败.330519542，恢复32query/4362步和无领取任务的worker启动开销均计入。失败未完成环境步未知而非0，不能把136249写成全部实际交互步；CP432借用原在途864训练资产，不重复收费或把尚未退出训练费用写成已结算。首次实际query worker启动21:35:38.983至最后退出22:34:58.051，墙钟约59分19秒；失败范围/全局停派造成的空档保留，不用新成功回执改写旧失败。
+
+半程完整读出尚未取得G从MT一次修订的净增益，没有通过当前先行阶段。它降低“将条件入口移到block即可早期显著传递E能力”的支持度，但不单独证明充分学习后的结构失败：曝光是每task48而非最终96，旧参照学习年龄与目标历史不同，未补control432。两臂864才是已登记fresh等曝光结构比较，仍由同一owner继续；不自动停止原训练、不挑最高CP、不借完整Writer/held掩盖这一阴性。完整结果优先可靠交main，后继由main科学消费裁决。
+
+稳定原件：ROOT/early_candidate432_query16/analysis/early_completion_20261012/{consume_early576.py,statistics.json,paired_raw_rows.jsonl}，raw共2880逻辑行/五臂各576，逐行保留真实源；EARLY/analysis/first_student_query16_{summary.json,rows.jsonl}为实际原生消费四臂2304逻辑行。ROOT/coordinator/scoped_readout_recovery_02/early_complete.json是实际完整事件；统计不会覆盖原失败或未来两864输出。

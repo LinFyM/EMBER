@@ -11633,3 +11633,24 @@ G1296实际BA .961445，固定A的最优B .326453、范数/教师中位1.0609；
 旧925e7b1 chunk×rank直接读取48→75且公共收缩、独立heads/CRW/动作调制负证据继续降低相关直觉支持度。
 两臂仍弱时停止当前Reader+全坐标共同E回归链的入口/宽度/层数补丁，由main重新推导；不能只关本版本名或等待Owner新许可。
 完整推导/结果分支/限制：docs/analyses/proposal_coordinate_memory_read_20261012.md；唯一active design§15，非held/视频/相邻资格。
+
+
+## 447. 候选block-memory半程全576未超MT，完整配对与局部故障须分开（2026-10-12）
+
+Owner在读分数前登记v9完整CP432提前一次诊断，36条件/原query16/每task48曝光于22:34:58完成。
+MT340/G432337/旧factorG864341/旧BAG1296=348/E455，MT→G R311/G26/L29/net−3/churn55/Jaccard .849727。
+train24净−3/support12净0；suite S/O/G/L/support−3/+2/−4/+2/0，任务净优/平/劣13/11/12。
+72选点重合净+4（43→47）、504其余净−7（297→290）；不得只保留小正子集。
+E-only134传17（旧22），both-success321保298、MT-only19保13、both-fail102获9；原首5动作与E没有实质更近。
+task1+3/13+2和task20−4/5−3/0与25各−2保留，旧两G重合/全任务原件见现有coordinate分析§13。
+半程没有通过当前G净增益，不单独证明充分学习架构失败，也不作不同曝光432/864的结构因果或held/完整Writer/正式选点资格。
+两864仍原合同继续，main消费后自主裁决；最终完整Writer Val/Test目标不能替代当前先G过关的阶段顺序。
+
+原worker03 EGL失败与dispatcher全局停派是工程事件；保存端点/原544有效行保留，仅补两缺项32query，不重生成/practice。
+新唯一owner22:28:35真实接手，以局部失败隔离继续其它就绪派发，已恢复项目六卡运行；原候选G未被信号。
+真实baseline平均batch8.599/满16调用10.73%、native54.47%/env wait5.22%，slots/utilization不能宣称充分batch。
+仅释放未用CUDA缓存，未来组2→4/slots16/chunk8；不同task的恢复组32query332.062s/free5.086GiB不证明group4提速或唯一OOM根因。
+EGL原16已有free0证据、32峰值未知，未扩大slots或铺新profile；完整Writer同步回调/逐候选响应/适应batch4仍有串行，不在此阶段重构。
+新读出clean frozen eac6ebf4/v9、62e615c9/v8与所有旧源保留，分支/工作树生命周期由实验session闭环；不热改旧树。
+早期readout2.904308725GPUh含一失败.330519542、576完成query/136249步、0practice/update；失败未完成步未知，原在途训练不双计。
+实际CPU消费15.575秒/0GPU/forward/episode；稳定raw2880行/5臂各576，分析§12–13及EARLY/analysis/early_completion_20261012保存原件。

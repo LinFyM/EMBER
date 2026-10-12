@@ -1,3 +1,30 @@
+## 2026-10-12 最新科学修订：候选CP432提前全36/query16
+
+Owner要求释放四卡尽早产出有用结果；main在读新闭环分数前授权候选完整432提前诊断，现按唯一design§15.1优先实施。
+原control近完成后实际退出0，candidate训练及原有效工作保留；没有回退更新或信号任何GPU进程。
+新增early_candidate432_query16独立根，同36真实condition/原query16/唯一端点，576新G query、0practice/共享更新/探针。
+候选432原恢复only已显式改为一次科学诊断；两臂864仍完整匹配比较，432对control864不作结构因果归因/正式选点。
+新总期望1728query；四卡先早期432再control864，candidate继续两卡、864就绪后动态使用实际空余slot。
+CPU派发权使用原abort_dependencies接口串行交接，原G实际进程/SSH退出收据保留；旧CPU退出只作handoff判重，不作科学整批退出。
+旧冻结树不热改，早期复用c35c34b5/v9消费者和保存CP432；ROOT/coordinator/early_candidate432_priority_01保存接手与预算/启动原件。
+当前处于只读注册与实际准入，真实启动/ETA以本协调器后续收据为准；不把准备写成已运行。
+独立data1 quota/live双节点在launch前核，新增预计<1GiB，大资产/CP不复制，沿slots16/chunk8/group2、不新profile。
+早期完整576允许一次有科学内容的提前交main，原两864完整交付保留，分别判重；无心跳/阶段Queue/第二整批等待者。
+Owner完整WriterVal/Test>MT与10月13日11:00决策目标继续；后继成本清点可串行完成，不阻塞四卡准入。
+
+## 2026-10-12 最新Owner目标接续：完整Writer与明早11:00
+
+Owner重申最终要完整Writer在固定validation/test超过强MT；训练任务MT-only初次修正只是先行证据。
+原话已完整写入current_owner_requirements，concept说明阶段关系；耗时提问涉及训练规模安排，不只涉及吞吐。
+2026-10-13 11:00 UTC+8为希望得到较好效果的交付/决策时间目标，不是GPU强制终止；没有新guard，不恢复旧绝对截止。
+当前唯一active design仍§15及最新§15.1，fresh匹配两臂各864/logicalB4/全36/3456条件/576query保持；另登记候选432提前全576诊断，不自动启动其它后段。
+沿20:32快照整批预计02:10–03:15，后续约7小时45分–8小时50分由main按真实结果倒排完整方法学习、validation400及分析。
+明显增益且保持合理时优先必要的真实parent/H修订学习和validation；若仍弱则执行链级停止线，main自主设计有界后继。
+完整共享/局部状态、实践与query隔离、选点须新科学登记；Test仅方法/选择冻结后最终评估，不用于夜间路线选择。
+这一独立工作只更新四文件目标记录并清点既有源码/历史成本，未实现后继路线或重算旧科学算术，清点本身0新GPU/forward/episode/profile。
+清点原件ROOT/analysis/successor_cost_inventory_20261012/inventory.md；后继计时缺口与假设明确列出，不能拿query吞吐代替Compiler端到端成本。
+本段记录Owner重申时原owner PID681682与两臂安排；当前派发权以顶部最新handoff为准。目标记录/有限清点合并回main一次，无心跳或阶段Queue。
+
 ## 2026-10-12 当前执行：fresh匹配memory入口两臂864/query16
 
 main完整消费G1296=348/MT340/E455后授权新有限两臂，工程/Git由实验独占，无Owner/main工程ACK。

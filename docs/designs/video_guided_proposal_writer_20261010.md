@@ -474,6 +474,25 @@ target24净+5、support12净+3，Spatial−7/Object+6/Goal+1/Long+5/support+3；
 
 ## 15. 当前active：fresh匹配参数块直接memory读取（2026-10-12）
 
+### 15.1 Owner授权的候选432提前诊断与优先派发（2026-10-12晚）
+
+Owner要求四卡先完成后立即做有用工作，并允许提前查看训练结果；main在未读取任何新闭环分数前登记：
+增加唯一block_memory_candidate完整CP432的全36条件、每condition同原query16，共576条提前诊断。
+同exact L/原teacher_demo/真实MT-H/P0/初态/env/native RNG，唯一完整LoRA，0新实践/共享更新/额外native探针；
+MT340/E455/G864341/G1296=348原兼容参照只读引用，不补control432、不选择容易task或缩为query4。
+432原为恢复only，现明确改为一次提前科学诊断；864两臂训练与匹配比较保持，禁止回退重训或丢未保存更新。
+候选432与control864曝光不同，不能用于memory结构因果比较；432不是held、完整反馈Writer或正式checkpoint选择资格。
+完整576先交main及时裁决，阴性不自动推出864不可能改善，也不自动按最高分选择CP或添加其它中间点。
+
+唯一新增576query，总期望1728；输出独立ROOT/early_candidate432_query16，CP/大资产只读引用，预计新增<1GiB。
+控制实际退出后四卡优先早期432，完成立即接control864；candidate训练继续两卡，864就绪后按有效空余slot读出。
+在途GPU工作及实际收据保留，派发权串行交接，只有一个实际dispatcher；旧冻结模型代码不原地修改。
+所有准入仍须live双节点/6或8总量/node6/非干扰及data1独立quota；沿已实测slots16/chunk8/conditionbatch2，不新profile。
+当前11:00为交付目标，不设强杀截止。早期按共驻成本预计1–2h，实际启动与新整批ETA以progress/ops收据为准。
+早期完整结果是Owner要求的独立科学决策事件，允许一次可靠提前交main；原两864完整交付仍保留，分别判重。
+无心跳/每task状态/第二整批等待者，无Teacher/Actor/warm/RL/held/Test/第三臂/>864自动授权。
+下面原始注册中的“432恢复only/864唯一出口/1152episode”保留历史，涉及早期读出的当前执行语义由本修订覆盖。
+
 本节替代已完成§14的执行状态，保留其全部失败/逾时/恢复完整576及348小幅收益记录。
 完整数据—算子—学习—部署推导、925e7b1最近似负证据、结果分支与停止线仅由[匹配结构分析](../analyses/proposal_coordinate_memory_read_20261012.md)承载；本节引用为完整合同，不复制第二active design。
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16；target_memory_control/block_memory_candidate两臂均fresh全部共享状态/未训练θ/Adam/sampler/RNG，seed7/meta原seed，同真实MT-only H/bank0、同36/P0/E/S_G/D38、BA目标从首更新、logicalB4/原优化器。

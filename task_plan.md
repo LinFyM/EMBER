@@ -1,3 +1,26 @@
+## 2026-10-12 当前优先执行：候选432早期完整诊断
+
+最新Owner要求释放四卡做有用工作/允许看早期结果；main登记候选CP432全36/query16，新增576、总1728query，0practice/共享更新。
+原两臂继续864，不丢更新、不补control432；432原恢复only现改为一次早期科学诊断，864仍唯一完整匹配结构比较。
+控制实际退出后四卡先候选432，再原control864；candidate继续两卡，之后864按有效空余slot读出。
+独立只读输出根early_candidate432_query16，复用CP432与所有大资产/参照；串行CPU派发权交接，旧GPU进程与收据保留。
+沿现有c35c34b5/v9冻结消费者合法登记CP432身份，双节点/quota/物理slots16/chunk8/group2准入，不新profile或绕校验。
+早期完整576提前可靠交main一次用于11点前决策，原两864整批交付仍保留、分别判重；不能把曝光不同的432/864归因结构。
+无第三臂/其它中间点/held/Teacher/Actor/warm/RL/Test选择或>864自动授权；具体合同唯一design§15.1，实际启动见progress。
+
+## 2026-10-12 最新最终目标与10月13日11:00安排
+
+最终目标是完整Writer在固定validation/test协议上超过强MT；MT-only训练任务初次修正是先行机制证据，不能替代最终标准。
+Owner希望2026-10-13 11:00 UTC+8前看到较好实验效果；这是交付/决策目标，不是GPU强杀截止，不复活旧guard，不保证正结果。
+当前fresh两臂864/logicalB4/全36、各3456条件与完整576query保持；最新§15.1另允许候选432一次提前诊断，不加第三臂、不自动选最高点或延长弱G。
+按20:32共驻负载快照，整批预计次日02:10–03:15；其后至11:00约7小时45分–8小时50分，仍有外部负载不确定性。
+实际整批回main后立即消费、裁决、自主接续。明显增益且保持合理时优先必要的真实修订学习与validation strict400；
+两臂仍弱则执行既定主假设停止线，设计有界后继，不铺G入口/宽深/超参补丁矩阵。
+后继共享/局部状态、曝光、互动、适应与最终query隔离及checkpoint资格须main依据实际结果登记，时间框架不自动开旧Actor/R5/held。
+Test留到完整方法与选择冻结后的最终评估，不能用于夜间选择。完整适应、400独立视频condition与分析须进入时间预算，不能只算576query吞吐。
+有限CPU后继消费者与成本清点原件：/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/analysis/successor_cost_inventory_20261012/inventory.md。
+这一独立清点只更新目标记录并消费既有证据，清点本身0新GPU/forward/episode/profile；早期432是上方另登记的实际读出，不增加第二整批等待者或阶段Queue。
+
 ## 2026-10-12 当前目标：匹配条件读取结构，完整闭环决定支持度
 
 main完整消费G1296=348/MT340/E455后授权新有限两臂，工程/Git由实验独占，无Owner/main工程ACK。

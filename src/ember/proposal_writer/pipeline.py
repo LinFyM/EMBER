@@ -41,7 +41,9 @@ def saved_endpoint_version(runtime,directory,run):
     complete=read_json(Path(run['saved_endpoint_complete']));manifest=read_json(Path(directory)/'manifest.json')
     spec=run['student_refresh'];rows=complete['original36_endpoints']
     update=spec['G_update']
-    if (run['schema_version']!='ember_frozen_endpoint_saved_query16_v2'
+    schema = ('ember_terminal_student_video_evidence_v1' if spec.get('readout_mode')=='saved_endpoint_practice_only'
+              else 'ember_frozen_endpoint_saved_query16_v2')
+    if (run['schema_version']!=schema
             or complete['schema_version']!=endpoint_schema or not complete['complete']
             or complete['terminal_node']!=run['saved_endpoint_terminal_node'] or complete['terminal_update']!=update
             or Path(complete['checkpoint']).resolve()!=Path(directory).resolve()
@@ -57,6 +59,47 @@ def saved_endpoint_version(runtime,directory,run):
         frozen_frontend_checkpoint=manifest['source_checkpoint'],training_code=run['training_source'],
         Writer_loaded=False,Writer_forward=False)
     return dict(stage='saved_endpoint',next_update=update)
+
+
+def composed_endpoint_version(runtime,directory,run):
+    """Bind the full frozen frontend to its explicitly trained endpoint owner."""
+    from .frozen_context import SCHEMA as endpoint_schema
+    binding=run['inference_components'];directory=Path(directory).resolve(strict=True)
+    frontend=Path(binding['frontend_checkpoint']).resolve(strict=True)
+    manifest=read_json(directory/'manifest.json');front_manifest=read_json(frontend/'manifest.json')
+    complete=read_json(Path(binding['endpoint_complete']))
+    update=run['student_refresh']['G_update']
+    if (run['schema_version']!='ember_terminal_student_video_evidence_v1'
+            or directory!=Path(binding['endpoint_checkpoint']).resolve()
+            or not manifest['complete'] or manifest['schema_version']!=endpoint_schema
+            or not manifest['full_endpoint_optimizer_rng_sampler'] or manifest['next_update']!=update
+            or frontend!=Path(manifest['source_checkpoint']).resolve()
+            or not front_manifest['complete'] or front_manifest['schema_version']!=CHECKPOINT_SCHEMA
+            or not front_manifest['full_optimizer_rng_sampler'] or front_manifest['next_update']!=432
+            or not complete['complete'] or complete['terminal_update']!=update
+            or directory!=Path(complete['checkpoint']).resolve()):
+        raise ValueError('inference requires the registered complete frontend/endpoint composition')
+    source=torch.load(frontend/'state.pt',map_location='cpu',weights_only=False)
+    endpoint=torch.load(directory/'state.pt',map_location='cpu',weights_only=False)
+    names=list(dict(runtime.generator.named_parameters()))
+    endpoint_names=['endpoint.'+name for name,_ in runtime.generator.endpoint.named_parameters()]
+    if (source['schema_version']!=CHECKPOINT_SCHEMA or source['G_objective']!=G_OBJECTIVE
+            or source['next_update']!=432 or source['supervision_version']!=0
+            or source['parameter_names']['psi']!=names or endpoint['parameter_names']!=endpoint_names
+            or endpoint['schema_version']!=endpoint_schema or endpoint['next_update']!=update
+            or endpoint['G_objective']!=G_OBJECTIVE or endpoint['gradient_owner']!='endpoint only'
+            or frontend!=Path(endpoint['frozen_checkpoint']).resolve()):
+        raise ValueError('actual parameter owners differ from the frozen inference binding')
+    runtime.generator.load_state_dict(source['psi'],strict=True)
+    runtime.generator.endpoint.load_state_dict(endpoint['endpoint'],strict=True)
+    runtime.actor.load_state_dict(source['theta'],strict=True)
+    runtime.version=update;runtime.freeze_psi();runtime.actor.eval().requires_grad_(False)
+    runtime.fixed_kernel_identity=dict(checkpoint=str(directory),psi_version=update,
+        checkpoint_stage='composed_endpoint',checkpoint_update=update,checkpoint_schema=endpoint_schema,
+        frozen_frontend_checkpoint=str(frontend),frontend_schema=CHECKPOINT_SCHEMA,
+        endpoint_training_code=run['training_source'],inference_code=run['git'],
+        optimizer_loaded=False,Writer_loaded=True,Writer_forward=True,all_shared_parameters_frozen=True)
+    return dict(stage='composed_endpoint',next_update=update)
 
 
 def lock_saved_endpoint(runtime,path,destination):
@@ -182,17 +225,17 @@ def endpoint_query_group(args,runtime,runner,environment,run,task_ids):
         else:
             condition=spec['condition_mapping'][str(task_id)]
             path,_=begin_condition(runtime,task,condition['teacher_demo'],destination.name,
-                condition['path_ordinal'],condition['noise_root'],1,None,True,None,False,True)
+                condition['path_ordinal'],condition['noise_root'],1,None,True,condition.get('video_task'),False,True)
             path.sampling_identity='endpoint_query_only'
             history,source=bootstrap_source(args.root,task_id,panel,0,cache)
             for _ in bootstrap(path,task,panel,history=history,provenance=source):
                 raise ValueError('direct endpoint readout cannot collect a bootstrap episode')
             if run.get('saved_endpoint_complete'):lock_saved_endpoint(runtime,path,destination)
             else:
-                features=runtime.teaching(task_id,path.demo)
+                features=runtime.teaching(task_id,path.demo,video_task=path.video_task)
                 proposals=generate_candidates(runtime,path,'MT300',features)
                 if len(proposals)!=1:raise ValueError('direct readout requires one full deterministic endpoint')
-                path.selected=proposals[0];path.save(destination,retain_U=True)
+                path.selected=proposals[0];path.save(destination,retain_U=True,history_source=source)
         if (path.sampling_identity!='endpoint_query_only' or path.completed_rounds or path.boundaries
                 or path.outputs or path.decisions or path.practiced!=['MT300'] or len(path.attempts)!=1):
             raise ValueError('direct readout must retain only real MT history and one unpracticed endpoint')
@@ -217,6 +260,7 @@ def endpoint_query_group(args,runtime,runner,environment,run,task_ids):
             query_count=len(query_panel(panel,0)),readonly_E_complete=reference['complete'],
             readonly_E_receipt=str(destination/'readonly_E/complete.json'),
             new_G_practice_episodes=0,real_H_source=path.bootstrap_provenance,
+            video_task=path.video_task,teacher_demo=path.demo,video_arm=run.get('video_arm','correct'),
             saved_endpoint_source=path.attempts[0].get('saved_weights'),
             new_G_generations=sum(int(a['decoder_calls']) for a in path.attempts)))
     return [str(args.root/'student_data'/version/f'task_{task_id:04d}') for task_id in task_ids]

@@ -1,3 +1,13 @@
+## 2026-10-13 当前实施：固定24849学生经历与两教学内容臂，尚未启动GPU
+
+main科学消费确认425/MT340的先行G要求；唯一active design为docs/designs/video_guided_proposal_writer_20261010.md §19，§18完成与原负结果/阈值保持。
+新ROOT=.../terminal24849_student_video_evidence_20261013；CP432完整冻结前端+endpoint24849真实组合，0更新。正确G保存权重36次新实践；other/wrong各36生成+576 query，合计1188新episode/72生成，全部参照只读兼容复用。
+原MT-H保持producer，新G完整H及独立credit给明确后继共享G/π消费者；本批没有授权共享训练/Actor/held/Test/其它controls或第三缓存时间块。
+main已修正wrong函数实际只返回24的遗漏：full36按四suite+90/local key排序轮转18，双射全cross-suite，manifest在任何生成前固定。
+独占codex/terminal24849-evidence实现组合/控制/队列，隔离codex/terminal24849-practice只承接实践消费者；按仓库串行集成push、clean detached正式启动，旧冻结树不热改。
+strg01 data1 used1475613808KiB/soft2147483648KiB，shared81TiB；旧bootstrap602MiB/学生1.4GiB，峰值<32GiB可容纳，不复制大资产。实际launch再live双节点准入、合计6/8/node6，独立工作及时并行。
+预计准备30–60min/执行20–50min/消费10min，总1–2h；72实际读取与H IO须实测修订，11:00非硬截止。一个总owner、启动一次/整批完成或真实异常一次可靠回main，当前尚未声称GPU已运行。
+
 ## 2026-10-13 02:06 实际完成：终点24849全576净增85，交main科学消费接续
 
 唯一design§18已完成：refinement8883_query16_01/PID2996926于02:06:41.554退出0，01:24启动至退出wall2559.653秒（42.661min）。冻结训练/读出7179d581；一fit/六query真实job均0，无失败/恢复。

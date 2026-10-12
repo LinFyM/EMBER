@@ -207,6 +207,31 @@ def formal_summary(root,arm='correct'):
     return result
 
 
+def evidence_video_conditions(environment,original):
+    """The predeclared full36 finite panel, including audited LIBERO-90 support."""
+    from ember.pi05_target_data import SUITE_ORDER
+    from .contract import TASKS
+    suites=(*SUITE_ORDER,'libero_90')
+    tasks=sorted(environment['tasks'],key=lambda task:(suites.index(task['suite']),task['task_id']))
+    if (len(tasks)!=36 or {t['global_task_id'] for t in tasks}!=set(TASKS)
+            or [sum(t['suite']==suite for t in tasks) for suite in suites]!=[6,6,6,6,12]
+            or any(t['split_role']!='train' for t in tasks)):
+        raise ValueError('the registered non-held full36 evidence panel changed')
+    mapping=[];other={};wrong={}
+    for index,target in enumerate(tasks):
+        source=tasks[(index+18)%36];task=target['global_task_id'];condition=original[str(task)]
+        if target['suite']==source['suite']:raise ValueError('wrong video must cross actual suites')
+        other[str(task)]=dict(condition,teacher_demo=(condition['teacher_demo']+17)%50,video_task=task)
+        wrong[str(task)]=dict(condition,video_task=source['global_task_id'])
+        mapping.append(dict(target_global_task_id=task,target_suite=target['suite'],target_local_task_id=target['task_id'],
+            video_global_task_id=source['global_task_id'],video_suite=source['suite'],video_local_task_id=source['task_id'],
+            language_split_role='authorized_meta',video_split_role='authorized_meta',
+            teacher_demo=condition['teacher_demo'],sorted_target_index=index,sorted_source_index=(index+18)%36))
+    return dict(same_task_other=other,cross_suite_wrong=wrong,mapping=mapping,
+        wrong_rule='sort by actual four-suite order then libero_90 and local task; rotate18',
+        same_task_other_rule='(original correct demo+17)%50',old_four_suite_schedule_changed=False)
+
+
 def student_queue(root):
     """One immutable condition per task, using the existing dynamic row queue."""
     from dataclasses import asdict
@@ -216,20 +241,22 @@ def student_queue(root):
     version=run['student_refresh']['version'];base=root/'student_data'/version/'queue'
     tasks={task['global_task_id']:task for task in run['environment']['tasks']}
     if set(tasks)!=set(TASKS):raise ValueError('student queue requires the registered full36 tasks')
-    endpoint_only=run['student_refresh'].get('readout_mode')=='endpoint_query_only'
+    mode=run['student_refresh'].get('readout_mode','practice_then_query')
+    endpoint_only=mode=='endpoint_query_only';practice_only=mode=='saved_endpoint_practice_only'
     if endpoint_only and run['student_refresh'].get('post_generation_practice') is not False:
         raise ValueError('direct endpoint queue must omit new G practice explicitly')
     practice_count=0 if endpoint_only else 1
     shards=[]
     for ordinal,task_id in enumerate(TASKS):
-        task=tasks[task_id];states=tuple(query_panel(panel[task_id],0))
-        if len(states)!=run['student_refresh']['query_states_per_parameter']:
+        task=tasks[task_id]
+        states=(run['student_refresh']['practice_mapping'][str(task_id)]['init_state_id'],) if practice_only else tuple(query_panel(panel[task_id],0))
+        if not practice_only and len(states)!=run['student_refresh']['query_states_per_parameter']:
             raise ValueError('student queue cannot shrink the actual query panel')
         shards.append(EvaluationShard(f'student_{version}_{task_id:04d}',ordinal,task['suite'],task['task_id'],
-            task['horizon'],states,task['horizon']*(len(states)+practice_count),0 if task['horizon']==520 else None))
+            task['horizon'],states,task['horizon']*(1 if practice_only else len(states)+practice_count),0 if task['horizon']==520 else None))
     plan=dict(checkpoint=run.get('readout_checkpoint',str(root/'checkpoints/G'/f"update_{run['student_refresh']['G_update']:08d}")),
-        logical_tasks=list(TASKS),new_episodes=36*(practice_count+run['student_refresh']['query_states_per_parameter']),
-        new_G_practice_episodes=36*practice_count,readout_mode='endpoint_query_only' if endpoint_only else 'practice_then_query',
+        logical_tasks=list(TASKS),new_episodes=36 if practice_only else 36*(practice_count+run['student_refresh']['query_states_per_parameter']),
+        new_G_practice_episodes=36*practice_count,readout_mode=mode,
         shards=[asdict(shard) for shard in shards],condition_mapping=run['student_refresh']['condition_mapping'],
         G_training_code=run['git'],one_complete_LoRA_per_condition=True)
     file=base/'queue_plan.json'
@@ -242,17 +269,24 @@ def student_queue(root):
 
 def student_worker(args,runtime,runner,environment):
     """One frozen resident consumes distinct groups; all policy RNG stays per row."""
-    from .pipeline import load_version,refresh_group,endpoint_query_group,saved_endpoint_version
+    from .pipeline import load_version,refresh_group,endpoint_query_group,saved_endpoint_version,composed_endpoint_version
     from .supervision import query_row
     from .learning import memory_peak
     import torch
     run=read_json(args.root/'run_contract.json');saved_endpoint=bool(run.get('saved_endpoint_complete'))
-    state=saved_endpoint_version(runtime,args.checkpoint,run) if saved_endpoint else load_version(runtime,args.checkpoint)
+    if saved_endpoint:state=saved_endpoint_version(runtime,args.checkpoint,run)
+    elif run.get('inference_components'):state=composed_endpoint_version(runtime,args.checkpoint,run)
+    else:state=load_version(runtime,args.checkpoint)
     endpoint_only=args.command=='endpoint-query'
     if endpoint_only!=(run['student_refresh'].get('readout_mode')=='endpoint_query_only'):
         raise ValueError('resident command must match its registered practice/query consumer')
-    consume=endpoint_query_group if endpoint_only else refresh_group
-    if state['stage']!=('saved_endpoint' if saved_endpoint else 'G') or state['next_update']!=run['student_refresh']['G_update']:
+    practice_only=run['student_refresh'].get('readout_mode')=='saved_endpoint_practice_only'
+    if practice_only:
+        from .student_practice import saved_practice_group
+        consume=saved_practice_group
+    else:consume=endpoint_query_group if endpoint_only else refresh_group
+    stage='saved_endpoint' if saved_endpoint else ('composed_endpoint' if run.get('inference_components') else 'G')
+    if state['stage']!=stage or state['next_update']!=run['student_refresh']['G_update']:
         raise ValueError('resident student worker requires the registered final complete G')
     version=run['student_refresh']['version'];base=args.root/'student_data'/version/'queue'
     queue=base/'jobs.sqlite';tasks={(t['suite'],t['task_id']):t for t in environment['tasks']}
@@ -273,7 +307,8 @@ def student_worker(args,runtime,runner,environment):
             for claim,task_id in zip(claims,task_ids,strict=True):
                 destination=args.root/'student_data'/version/f'task_{task_id:04d}'
                 parent=read_json(destination/'parent.json');ref=parent['actual_generated_parameter_ref']
-                rows=[query_row(destination/'query'/f'{ref}_{state_id:03d}.json') for state_id in claim.shard.init_state_ids]
+                rows=[read_json(destination/'practice.json')] if practice_only else [
+                    query_row(destination/'query'/f'{ref}_{state_id:03d}.json') for state_id in claim.shard.init_state_ids]
                 relative=Path('shards')/claim.shard.job_id/f'attempt_{claim.attempt:03d}.json'
                 size=publish_json_exclusive(base/relative,dict(rows=rows,task=task_id,condition=str(destination),
                     checkpoint=str(args.checkpoint),worker_id=args.worker_id,shared_group_seconds=time.monotonic()-tick))

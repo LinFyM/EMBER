@@ -685,3 +685,15 @@ main已做的旧8883固定两候选CPU算术原样归档：原36条件各自一�
 | 96 | 16 | 16 | 16 | 16 | 16 | 0 | 0 | +0 | +0 |
 | 97 | 16 | 16 | 16 | 16 | 16 | 0 | 0 | +0 | +0 |
 | 101 | 16 | 16 | 15 | 15 | 15 | 0 | 1 | -1 | +0 |
+
+## 19. 取得广泛G能力后，固定推理组合采真实经历并检验教学内容
+
+main独立复算24849的4032原行，确认425对340、合理保持和跨suite覆盖，先行G要求已取得；27丢失与53条E成功尚缺保留。原36固定condition仅MT/G两候选事后选择界430，比G425只多5，因此磨这两套旧候选的选择器不足以取得剩余能力；该界不约束新修订LoRA/条件。原CPU消费完整文件已原样归档SOURCE/analysis/main_scientific_readout/terminal24849_main_scientific_consumption.json，未重跑算术。
+
+真实链现在有共同E算子→冻结MT执行hidden/原生动作→闭环取得更多教师能力的正证据，但仍只有固定MT-H、36独立E目标。沿已证实的CP432冻结前端+endpoint24849，下一必要未知是教学变化的保持/内容敏感性与真实non-MT P/H上的共享修订。固定读取和端点续优化不是Reader漂移的等曝光因果对照，也未识别视频/H贡献；不能把真实反馈字段叫纠错。当前先采36条真实G实践给明确后继消费者，并冻结同checkpoint的两教学臂，0梯度，不恢复旧R5/81psi9theta或自动完整Writer/held。
+
+正确G直接引用保存权重，一条新完整实践保留实际RGB/proprio/flow hidden/action/反馈和完整终止范围。旧MT-H producer不被改写，query信用是同权重的兼容独立功能读出，不能混成H。共同E继续仅标签侧，实践自身动作不用于轨迹整理后task LoRA微调。正常完整失败可以提供真实经历，模型故障/截断不能冒充完整student bank。
+
+other demo从原46–49换为13–16，改变合法教学输入但同task L/MT-H/P和G状态；只能称Writer输入未见video。wrong采用main明示的新全36 rotation18：actual four-suite+90/local key升序，[6,6,6,6,12]构成cross-suite双射；原调度实际漏12个support证据保持。它与旧24下一suite轮换不同，不作历史匹配对照/全部错来源平均效应。三correct/other/wrong的固定LoRA按同query16/RNG评，other保持和wrong敏感性共同更新内容理解假设，单独wrong下降不证明操作知识、weak effect不抹去G控制正例。
+
+唯一design§19、ROOT=.../terminal24849_student_video_evidence_20261013登记36新实践+72新G教学生成+两576控制查询，0新正确/参照query、0更新/held/Test/其它controls。一个调度owner即时并行就绪工作，32GiB峰值以旧真实H体量估算，准备30–60min/执行20–50min/消费10min为待实测预计；不是时间强杀或新的科学Gate。

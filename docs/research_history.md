@@ -5171,3 +5171,7 @@ early432完整576=337/MT340；control864仅351真实完成行/24task，252/同�
 六臂3456原行及退出被main独立消费，新增E能力44/134与362/MT340是部分控制传递，净收益集中与保持缺口仍限制后段。
 已完成原8883 ROOT/analysis/main_scientific_readout新增main两份CPU原件原样归档；没有新forward/episode/算术重跑。
 后继唯一design§18从完整8883状态恢复原cache，只改有限优化量；此处仅记录科学决定，不称新GPU已启动或结果。原§16/17阈值/结果与旧864取消保留。
+
+### 2026-10-13 先行G能力取得后的有限准备授权
+
+main独立消费24849全4032逻辑行，425对MT340及广泛保持/覆盖满足当前先行G要求；固定两候选condition选择界430仅多5，完整方法/held/video-H仍未资格。§19固定前端CP432+endpoint24849，采36真实实践并作两个教学臂各576，后段学习另登记。原wrong调度漏12 support，经main事前科学裁决全36 actual suite/local rotation18，不改旧formal四suite/held调度。见唯一design§19、coordinate分析§19/findings455，原§18完成和旧阈值/停止记录保留。

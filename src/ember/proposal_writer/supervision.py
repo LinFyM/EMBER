@@ -187,7 +187,8 @@ def query_conditions(runtime,runner,conditions,*,mt_reference_version=None,mt_re
             reuse_initial_MT(entry,task,runtime.root,mt_reference_version,source_root=mt_reference_root)
         missing=fixed_requests(path,task,states,noise_root,references=references,
             existing_rows={(ref,state) for ref in references for state in states if (destination/f'{ref}_{state:03d}.json').exists()})
-        if read_json(runtime.root/'run_contract.json').get('saved_endpoint_complete') and any(
+        run=read_json(runtime.root/'run_contract.json')
+        if (run.get('saved_endpoint_complete') or run.get('strict_reference_reuse')) and any(
                 r['parameter_ref']=='MT300' for r in missing):
             raise ValueError('saved endpoint readout requires compatible reused MT rows; no new reference episodes')
         for request in missing:
@@ -286,7 +287,7 @@ def readonly_E_query(runtime,runner,path,task,panel,visit,destination,teacher):
                 noise_root=noise_root,snapshots=False,uses_teaching=False,
                 episode_id=f'{path.identity}_readonly_E_query_{state}',remaining=task['horizon']+10,
                 arm='E',capture_history=False,capture_hidden=False))
-    if requests and run.get('saved_endpoint_complete'):
+    if requests and (run.get('saved_endpoint_complete') or run.get('strict_reference_reuse')):
         raise ValueError('saved endpoint readout requires compatible reused E rows; no new reference episodes')
     for output in runner.run(requests):
         row=fixed_row(path,output);state=row['init_state_id']

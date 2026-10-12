@@ -1,3 +1,11 @@
+## 2026-10-13 当前有限接续：真实学生数据与固定教学控制
+
+G24849在原36/query16明显超MT且保持合理，先行阶段取得；完整Writer Val/Test>强MT仍为最终目标，held/video-H/修订学习未被当前分数替代。
+唯一design§19：固定CP432冻结前端+endpoint24849，直接保存正确G各一次真实实践，准备下一non-MT P/H及π真实经历；固定other/wrong各一LoRA/原query16全部576，0更新。总1188episode/72生成，原参照无重复episode。
+wrong full36的actual suite/local mapping已获main事前裁决rotation18，other+17demo；实践初态沿下一合法practice规则且与query分离。
+工程组件/消费者针对性核验、独占分支集成push/冻结→live资源/独立quota→一个总owner动态并行执行→一次全分布/成本交付；后段共享学习由main另登记，不自动Actor/held/Test/第三同缓存块。
+准备30–60min/执行20–50min/消费10min为初估，按实际新教学/H吞吐修订；11点希望效果而非强杀或正结果保证。
+
 ## 2026-10-13 当前交付：24849全576取得广泛增益，有限批已停止
 
 唯一design§18完成，G24849=425/MT340/E455，MT保持313/新增112/丢失27/net+85；相邻8883净+63、E-only134传97，21task净正，各suite净正，局部损失与能力缺口保留。

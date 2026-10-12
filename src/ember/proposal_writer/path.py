@@ -82,10 +82,14 @@ class Compilation:
             bootstrap_provenance=self.bootstrap_provenance,sampling_identity=self.sampling_identity,
             completed_rounds=self.completed_rounds)
 
-    def save(self, root, *, retain_U=False):
+    def save(self, root, *, retain_U=False, history_source=None):
         started=time.monotonic()
         root = Path(root); root.mkdir(parents=True, exist_ok=True)
-        save_history(root / 'history.pt.gz', self.history)
+        if history_source is None:save_history(root / 'history.pt.gz', self.history)
+        else:
+            if self.practiced!=['MT300'] or self.boundaries or self.outputs or len(self.history.episodes)!=1:
+                raise ValueError('only unchanged real MT bootstrap history may be referenced directly')
+            (root/'history.pt.gz').symlink_to(Path(history_source).resolve(strict=True))
         refs = set(self.valid if retain_U else self.practiced) | {'MT300', self.selected}
         refs |= {r['parameter_ref'] for r in self.history.records}
         for ref in refs - {'MT300', None}:

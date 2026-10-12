@@ -651,3 +651,34 @@ E-only134传97、both-success321保持305、MT-only19保持8、both-fail102取�
 一个fit/六query均0，02:06:41整批退出，wall42.661min；新fit2.063189811+query .962372164=3.025561975GPUh，576episode/121030步，含旧冻结阶段累计5.247514581，参照/CP432不重复计费。
 本批已结束，原8883调查信号false与旧864停止不变，新参数信号true不成为方法资格。无第三同缓存块/Actor/完整Writer/held/Test自动授权，main完整消费后自主登记新的科学决定。
 完整分布与实际链路解释见现有[coordinate分析§18](../analyses/proposal_coordinate_memory_read_20261012.md)；稳定ROOT/analysis/completion_20261013及coordinator/refinement8883_query16_01/exit.json。
+
+## 19. 当前有限准备：固定24849真实学生经历与早期教学内容证据（2026-10-13）
+
+main已直接消费4032原行并裁决：G24849=425/MT340/E455，R313/G112/L27、21task净正、仅5task各−1、全部suite净正，去task32/36仍+65/544，满足当前G从MT一次修订明显增益与合理保持的先行要求。仍不是held、完整Writer、视频/H因果或不同经历修订资格。§18已完成；原8883 .50未过/全部负结果和§15旧864停止保留，不追加原144缓存同状态第三时间块，也不立即恢复native前端全梯度或改架构。
+
+### 19.1 固定组件、数据消费者与36次真实实践
+
+唯一推理组合为原完整v9 CP432的meta/Reader/static/layout/Actor及共享endpoint24849；前端与endpoint来源、schema和参数名称明确绑定，后者不冒称完整Writer checkpoint。沿现有Generator/Runtime实际计算，全部ψ/θ/source/MT冻结，0共享/局部更新或optimizer恢复。P0/S_G/D38、MT合并基底、完整38-target/rank8和原官方十步native policy保持。
+SOURCE=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013，端点为complete.json.original36_endpoints逐项引用的terminal_30min/update24849。
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013。
+
+原全部36 task各一次正确G24849真实完整实践，直接使用已保存的原指定teacher_demo LoRA，0正确G再生成、0新MT实践、0正确G/MT/E参照query。原非空MT-H只读复用，保持真实producer/参数/RNG。新状态按既有practice消费者：n=len(MT-H.episodes)=1，state=practice_states[(path_ordinal+n)%pool]，env/native policy root=seed(32,condition.noise_root,n)。launch前practice_mapping_manifest冻结全36实际初态与seed，均不同bootstrap且与原query16分离，不用query补H。
+
+保存实际RGB/proprio/两次flow hidden/执行action/反馈、真实参数ref、完整History和实际终止范围；新G段和组合MT/G前缀明确producer/records/episodes。只有实际完整实践（包括正常horizon失败）的新P/H可进真实学生bank；model_failure/截断/未完成不得伪造完整或资格。原MT/G24849各16 query信用按真实权重/task/state/scene/env/native RNG兼容只读引用，与H分开。共同E保持，只作标签/参照，不入可部署候选或特权条件。明确后继消费者为G对真实non-MT P/H的共同E监督及π真实候选/经历的选择与on-policy学习；本批没有授权它们的共享训练，不整理自身轨迹再微调最终task LoRA。
+
+### 19.2 固定24849的两个教学控制
+
+每arm全36条件各生成唯一完整LoRA并做原query16共576新G-only episode。P0、原MT-H、目标exact L、固定完整推理组合保持；不使用本批新G-H。same-task-other demo=(原correct demo+17)%50，即46–49→13–16，未入Writer原144缓存，只称Writer输入未见video，不称未参与E/meta的独立数据。wrong保留原correct demo ordinal，语言始终目标task。两arm均真实双RGB/stride5重新完整读取与生成，0平均frames/features/LoRAs、0择video、0零图/fake query。
+
+main在任何wrong生成/读出前修正原派发遗漏：原task_video_mapping只遍历四suite，36输入实际仅24输出，遗漏12个LIBERO-90，证据ROOT/analysis/wrong_schedule_actual_boundary.json。当前有限面板按实际(SUITE_ORDER四suite,libero_90)及各suite local task_id升序排36已审计non-held keys，目标i取来源(i+18)%36。大小[6,6,6,6,12]，目标/来源各一次、全部cross-suite；spatial↔long、object↔support前6、goal↔support后6。显式global/local/source/demo映射在video_mapping_manifest.json固定，不能把global ID当local或按性能改映射。它改变旧24下一suite轮换，不与旧wrong成绩作匹配因果比较、不代表全部wrong来源平均效应；旧正式四suite/held调度不变。
+
+两臂所有task/init/scene/env/native policy RNG与原correct24849、MT/E/旧G逐行配对，参照只读兼容引用，兼容失败不得暗中新采参照。两臂无实践/适应，最终各condition仅一套固定完整LoRA。总新增1188环境episode=36实践+1152控制query，72教学条件生成，0正确G/MT/E新query/梯度、0其它controls/held/Test/checkpoint选择。other检验换教学保持，wrong与other共同检验内容敏感性及原condition记忆/L-H任务识别的解释；wrong下降不单独证明操作知识，弱视频效应不自动推翻已有G能力或触发架构更换。这是早期有限证据，不是补齐全部controls才能开完整Writer的新Gate。
+
+### 19.3 执行、投入与交付
+
+36保存端点实践与两个教学/查询队列独立就绪并行，一个总owner以cost-balanced/long-first/persistent worker调度，空卡及时接就绪工作，不锁原world4或静态task绑卡。沿现有saved endpoint/History/query底层，窄消费者承接由实验session独占分支、实际消费者验证、main集成push后clean detached执行；冻结树不热改、不增加平行Writer/fallback。局部工程失败隔离、有效行不重做、不停无依赖队列；实际科学计算/标签/选择/信息墙变更由main裁决，常规工程无额外ACK。
+
+每launch同时live gpu01/02，合计6或8/node6、非干扰；所有新增data1、独立strg01 quota和shared capacity分别核对。旧36 bootstrap约602MiB/旧36学生1.4GiB，大资产原位引用，含新H/cache/临时峰值估<32GiB。已测query slots16/group4为起点，实践可用原定36episode测H/吞吐/峰值并保留有效行，不新增profile episode或铺slots32矩阵。
+准备30–60min，GPU/IO20–50min、消费10min、总1–2h为初估；旧纯576 query11.2min/六GPU/.96GPUh只支持两个query臂25–40min量级，72 native生成/新H IO需真实修订。11:00是希望效果/判断目标，非强杀或正结果保证，GPUh准确记账无硬cap。
+
+一个实际owner等待整批退出，启动给一次真实身份/准入/ETA，完成或真实异常一次可靠交main01a12bb0；无心跳、子阶段Queue、自Queue、第二等待者或自动共享训练。全交付包括36真实H/兼容信用/producer清单，correct/other/wrong全576的task/suite/train-support/RGL/churn/重叠/E类别/72与504及完整映射，教学读取/实践/query/steps/失败费用/存储/恢复能力。

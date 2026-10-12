@@ -11757,3 +11757,10 @@ E-only134传97对旧44，both-success305对296、MT-only8对9、both-fail15对13
 main旧8883两候选固定condition上限379（比G362多17）原件已原样归档；397逐初态union依赖未来结果换LoRA，不合法。旧界不限制新LoRA/其它条件，不是部署oracle/held估计或Actor授权；新425不与旧界矛盾。选择保护已有能力不能替生成器取得缺失能力。
 一fit/六query均0，576新query/0实践与参照episode，wall42.661min，新3.025562GPUh；含旧冻结阶段累计5.247515，失败0。四rank沿已测安排/峰值reserved1.174GiB，六卡slots16/group4 query九组/batch9.647/peak reserved27.965GiB，不再profile32。
 原8883未过.50与旧864停止不改；新参数调查信号true只属新终点。当前无第三同缓存块/Actor/fullWriter/held/Test自动授权，main消费原件后按保持/反馈/泛化缺口自主接续；完整机制与数据见既有coordinate分析§18。
+
+## 455. 初次G明确超MT后，接续真实学生经历与固定教学内容证据（2026-10-13）
+
+main直接消费七臂4032原行确认G24849=425对MT340，R313/G112/L27、21task净正且全部suite净正，去32/36仍+65/544；当前先行要求取得，但非held/完整Writer/video-H资格。固定两候选condition选择界430，仅比425多5，下一缺口主要在新条件/真实修订/教学与泛化。CPU原件归档SOURCE/analysis/main_scientific_readout/terminal24849_main_scientific_consumption.json，未重复计算。
+唯一design§19只保留CP432冻结真实前端+共享endpoint24849组合，0更新：原36保存正确G各一次新真实practice，原MT/G各query16信用兼容只读；两教学臂各36生成/576 query，总1188新episode/72新G生成。新G-H有真实non-MT P/H和π经历的明确后继消费者，后段学习仍另登记；E不入部署候选/特权condition，不做轨迹准备后task LoRA微调。
+原task_video_mapping对全36实际仅返回24且遗漏12 support，经main科学修订事前采用四suite+90/local key排序rotation18，全36cross-suite双射，完整manifest固定，不冒充原24轮换或与旧wrong作匹配比较。other demo=(correct+17)%50，在13–16，Writer缓存未见而非E/meta全独立；视频敏感性与换视频保持分别解释，wrong降分不单独证明操作知识。
+原.50历史/旧864停止/负结果保留，原144同状态第三块停止。工程独占Git/clean pushed frozen、双节点6/8/node6、独立data1 quota/<32GiB峰值、一总owner可靠整批交付，无新完整Writer/held/Test/自动学习。

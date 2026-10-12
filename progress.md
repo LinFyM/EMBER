@@ -1,3 +1,12 @@
+## 2026-10-13 04:15 实际启动：完整Writer唯一有限窗口
+
+唯一design§20实际运行：source1bcb2601已合入push，clean detached冻结执行；一个整批owner接A/B→组装→joint9→RL9→strict validation400，退出一次可靠接续。完整来源/命令/准入/进程身份保留ROOT/coordinator/full_writer24849_RL9_validation400_01，ROOT=.../video_guided_proposal_writer_20261012/full_writer_after24849_20261013。
+04:15:36两卡local90、04:15:44四卡F30249真实job启动。实际六Runtime与六份CP432+F24849组件导入均存在；初始F只训练原166参数/Adam，φ/source冻结。native response microbatch32已由真实Runtime消费，frame chunk16；初始20–50min预计包含144新G/H四视频context与IO，未将导入当更新终点完成。
+A4/B2终点组装到joint4，local90 ranks0/1及完整A30249 ranks2/3显式提供行为RNG；logicalB4/task权重/13500新增F/local90+RL9与F38349不变。真实[parent,newG]选择及180实践、新G query最多2880保持，不采未实践提案信用。
+RL9实际结束后重新live选择formal可用卡/6或8总cap/node6，不用训练world锁评估并发；slot16/group4为起点，唯一已登记真实首group8检验物理吞吐，保留有效条件且0新增科学episode。局部failure隔离，原范围有界恢复保存有效行。Test关闭。
+独立strg01 data1 used1478494152KiB/soft2147483648KiB/sharedfree81TiB，96GiB预测可容纳；旧完整400根31.7GiB与当前36H/student1.16GiB/完整state221MiB提供体量依据，全部大资产只读引用。
+整批forecast自04:15起4.5–8h，约08:45–12:15，当前新joint完整消费者尚无吞吐计时；原11:00希望效果保持为软目标，不保证正结果或缩水口径。三个已集成task-owned开发分支/worktree已清理，CPU小证据归档ROOT/ops/checks，正式冻结树/来源CP/全部历史原件保留。
+
 ## 2026-10-13 当前授权：完整Writer有限窗口实施中，尚未启动GPU
 
 main已完成§19科学消费，授权唯一design§20：CP432冻结前端+F24849承接原166参数Adam，F5400更新至30249；θ从未训练Actor做90次final warm。两者组装后九个B4真实R5/query16共同批，每批θ→真实bank→900F，最终F38349/完整RL9唯一点，直接接correctK1 validation400；Test关闭。

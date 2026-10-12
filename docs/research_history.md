@@ -5155,3 +5155,9 @@ early432完整576=337/MT340；control864仅351真实完成行/24task，252/同�
 实际00:31:40–00:44:28 owner、7job0/1.055261149GPUh，含短fit总2.221952607；GPU读出代码61ea7f86，CPU消费f3e878e1仅修复旧direct-G权重来源，不改原行/模型/资格。
 原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/query16_terminal8883/analysis/completion_20261013；完整推理/任务分布/物理与费用见[现有coordinate分析§16.2](analyses/proposal_coordinate_memory_read_20261012.md)，跨轮边界findings452。
 这不是完整Writer/held或video/H因果结论；旧864停止和§16阈值保留，后继由main实际消费后另行登记，不自动复活旧链。
+
+## 2026-10-13 main消费固定8883完整结果并登记一次有限优化后继
+
+六臂3456原行及退出被main独立消费，新增E能力44/134与362/MT340是部分控制传递，净收益集中与保持缺口仍限制后段。
+已完成原8883 ROOT/analysis/main_scientific_readout新增main两份CPU原件原样归档；没有新forward/episode/算术重跑。
+后继唯一design§18从完整8883状态恢复原cache，只改有限优化量；此处仅记录科学决定，不称新GPU已启动或结果。原§16/17阈值/结果与旧864取消保留。

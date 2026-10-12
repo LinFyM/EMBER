@@ -40,22 +40,23 @@ def saved_endpoint_version(runtime,directory,run):
     from .frozen_context import SCHEMA as endpoint_schema
     complete=read_json(Path(run['saved_endpoint_complete']));manifest=read_json(Path(directory)/'manifest.json')
     spec=run['student_refresh'];rows=complete['original36_endpoints']
-    if (run['schema_version']!='ember_frozen_endpoint8883_saved_query16_v1'
+    update=spec['G_update']
+    if (run['schema_version']!='ember_frozen_endpoint_saved_query16_v2'
             or complete['schema_version']!=endpoint_schema or not complete['complete']
-            or complete['terminal_node']!='terminal_15min' or complete['terminal_update']!=8883
-            or spec['G_update']!=8883 or Path(complete['checkpoint']).resolve()!=Path(directory).resolve()
+            or complete['terminal_node']!=run['saved_endpoint_terminal_node'] or complete['terminal_update']!=update
+            or Path(complete['checkpoint']).resolve()!=Path(directory).resolve()
             or manifest['schema_version']!=endpoint_schema or not manifest['complete']
-            or not manifest['full_endpoint_optimizer_rng_sampler'] or manifest['next_update']!=8883
+            or not manifest['full_endpoint_optimizer_rng_sampler'] or manifest['next_update']!=update
             or len(rows)!=36 or {r['task'] for r in rows}!=set(TASKS)
             or any(r['demo']!=spec['condition_mapping'][str(r['task'])]['teacher_demo'] for r in rows)):
-        raise ValueError('saved readout needs the original36 fixed complete terminal8883 endpoints')
+        raise ValueError('saved readout needs the registered36 fixed complete terminal endpoints')
     runtime.saved_endpoint_rows={r['task']:r for r in rows}
-    runtime.version=8883;runtime.psi_frozen=True
-    runtime.fixed_kernel_identity=dict(checkpoint=str(Path(directory).resolve()),psi_version=8883,
-        checkpoint_stage='saved_endpoint',checkpoint_update=8883,checkpoint_schema=endpoint_schema,
+    runtime.version=update;runtime.psi_frozen=True
+    runtime.fixed_kernel_identity=dict(checkpoint=str(Path(directory).resolve()),psi_version=update,
+        checkpoint_stage='saved_endpoint',checkpoint_update=update,checkpoint_schema=endpoint_schema,
         frozen_frontend_checkpoint=manifest['source_checkpoint'],training_code=run['training_source'],
         Writer_loaded=False,Writer_forward=False)
-    return dict(stage='saved_endpoint',next_update=8883)
+    return dict(stage='saved_endpoint',next_update=update)
 
 
 def lock_saved_endpoint(runtime,path,destination):
@@ -68,7 +69,7 @@ def lock_saved_endpoint(runtime,path,destination):
         raise ValueError('saved fixed endpoint has nonfinite parameters')
     path.selected='G_000';path.states[path.selected]=state;path.valid.append(path.selected)
     path.attempts.append(dict(reference=path.selected,parent='MT300',valid=True,
-        generation='previously_saved_terminal8883_endpoint',decoder_calls=0,
+        generation='previously_saved_terminal_endpoint',decoder_calls=0,
         saved_weights=str(weights),new_G_generation=False))
     destination.mkdir(parents=True,exist_ok=True)
     (destination/'G_000.safetensors').symlink_to(weights)

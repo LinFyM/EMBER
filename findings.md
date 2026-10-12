@@ -11735,3 +11735,12 @@ E-only134传44（旧G1296=22），both-success321保持296、MT-only19保持9、
 slots32单个原定组成功但分批碎片化/余量2.8GiB且未见native/环境吞吐收益，下一worker16及时接任务；不当32普遍不支持或宣称绝对最佳。
 GPU代码61ea7f86/训练cb27adfc/前端CP432/端点8883、CPU汇总f3e878e1分列；唯一修复是历史未实践G权重来源字段，bank资格false/原始行/RNG保持，实际576行检查通过。
 00:45:20双节点核本项目GPU0，稳定结果ROOT/query16_terminal8883/analysis/completion_20261013；当前有限批结束，由main消费完整证据自主裁决，不自动新训练/完整Writer/held/Test。
+
+## 453. 8883部分控制传递提高进一步共同E获取支持度，保持与收益集中限制后段资格（2026-10-13）
+
+main直接消费3456原行确认G362/MT340；去Long task32/36仅+8/544，全部+22在train24。相对G1296的净+14是E-only多22、both-success少2、MT-only少3、both-fail少3，不能只报总分。
+共同E拟合已部分传成自身hidden/动作与控制，仍90 E-only未取得、35 MT损失；不自动完整Writer/held或称视频H贡献。
+144条件只36独立E，固定MT-H足以学习目标；不同失败H缺失不是当前弱拟合借口。增加H不会单独令共同E监督学成反馈修订；Actor选择信用不回G，选中已有能力与生成更好能力需分开。
+BA不是访问hidden/闭环风险加权，参数近E不等于控制相同；同缓存更多曝光的有界检验有新增正证据但仍非Reader冻结因果或泛化对照。
+main新授权完整8883状态的一次10/30min有限优化和唯一终点576，既有.50未过与旧停止不改；若能力/净收益停滞就停止原cache/endpoint堆更新，不能loss下降保护第三时间块。
+主讨论CPU两原件已原样归档原8883 root/analysis/main_scientific_readout，不重算。global_task_id配对，探索重采样只体现task异质性，非held置信/选点规则。完整机制与合同见既有coordinate分析§17/唯一design§18。

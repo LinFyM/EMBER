@@ -589,3 +589,17 @@ BA没有按当前自身hidden上的控制作用加权，.574896残差仍可能�
 | 96 | 16 | 16 | 16 | 16 | 16 | 16 | +0 | 16/0/0 |
 | 97 | 16 | 16 | 16 | 16 | 16 | 16 | +0 | 16/0/0 |
 | 101 | 16 | 15 | 16 | 15 | 15 | 16 | -1 | 15/0/1 |
+
+## 17. main完整8883消费、共同E/反馈边界与唯一有限优化后继
+
+main从3456原行独立确认362/340及E-only44/134。所有+22在train24，Long两个task32/36贡献14，去掉它们+8/544。
+相对G1296净+14来自E-only多22，both-success少保2、MT-only少保3、both-fail少得3；进一步拟合具有部分控制传递，仍未证明均匀收益/充分保持。
+原144只对应36个共同E，L足以识别训练task，存在忽略V/H的统计解；这不证明实际走捷径。固定MT-H可以学习共同E，不能用缺不同失败H解释弱拟合。
+真实教学是语言上下文化视觉z/固定probe的action hidden，自身H则含另一真实视觉/flow算子的特征及自身state/action/执行反馈/producer；Reader提供关系学习通路，不保证注意力就是操作知识。
+BA约束38处实际部署矩阵而非访问hidden协方差/闭环风险；矩阵残差在自身hidden上作用后经10步flow和环境反馈，故BA降低不能换算成功率。
+后续增加P/H但共同E不变仍可用固定task→E达到零loss，增加H本身不教会反馈纠错。Actor的候选响应/选择信用不回G；保护/选中已有好LoRA和G依据新H创造好LoRA是不同收益，旧RL9阴性保留。
+8883更充分曝光与前端冻结未隔离因果，不能唯一归因Reader漂移；这里接续只改变额外共享优化量，以真实保持和E能力获取为判断，避免重开昂贵native反传或尚未具备候选改进的后段。
+唯一新合同见design§18：完整8883状态/原144，10min全池相对改善不足5%即停，否则至30min边界；实际唯一终点同576控制，0native读取/实践/Actor/held，新优化之后无第三同缓存块自动授权。
+两份main原样CPU材料在 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/query16_terminal8883/analysis/main_scientific_readout/feedback_learning_before_terminal8883_result.txt` 与同目录 `terminal8883_main_scientific_consumption.json`。
+其键是global_task_id，suite-local task_id不能跨suite聚合；task重采样约−.69至+8.68个百分点仅是面板异质性探索，不是held区间、预注册检验或选点。非零27 raw-loss相关不扩大探针、不重算。
+工程保留同一endpoint拟合owner与保存端点restore→query面，新增完整状态导入/明确terminal来源登记，不是第二Writer或旧schema fallback；446行模块的必要状态/停止承接保持内聚，不铺测试/通用runner。

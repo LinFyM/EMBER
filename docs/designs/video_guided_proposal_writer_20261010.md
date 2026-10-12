@@ -607,3 +607,36 @@ E-only134传44、both-success321保持296、MT-only19保持9、both-fail102新�
 原GPU代码61ea7f86，CPU读出消费者f3e878e1仅修复历史未实践G的权重来源字段；不改模型/查询/原始行，不造bank资格，实际576旧行/RNG检查通过。
 本次GPU读出wall768.782s、1.055261149GPUh/131251步；此前短fit含profile1.166691458，合计2.221952607，所有GPU已退出。
 到此停止：main消费完整原件后自主决定下一科学干预，当前没有新的训练/完整Writer/held/Test/controls/probe授权；原§17有限合同与启动估计保留历史。
+
+## 18. 新有限授权：完整8883端点状态的有界优化与唯一终点query16（2026-10-13）
+
+main消费六臂3456实际逻辑行后授权：G362/MT340，R305/G57/L35，E-only44/134支持部分教师控制传递，但全部+22在train24，task32/36贡献14；去二者仅+8/544。
+G1296→8883净+14由E-only多22、both-success少2、MT-only少3、both-fail少3组成；保持缺口不允许自动完整Writer。
+§16/17完成、原substantial_teacher_fit=false/.50信号未过、旧coordinate864停止与不利原件全部保持；本节是独立新授权，不恢复native全梯度长训或同族入口/宽深/超参小扫。
+
+唯一问题是同一冻结合法读取/共同E/BA目标下额外共享优化是否继续获取E能力并改善保持；唯一变量额外优化量，图、目标、输入/标签、task权重与超参不变。
+新根 /data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013；原根不改。
+从原完整update_00008883承接166参数张量/8,761,152参数、全部Adam、sampler/cursor、四rank RNG；原冻结CP432、144完整真实m、P0/S_G/D38/E/4-video池只读复用，不重建native缓存。
+owner仍原endpoint六层/地址/输入/输出；330前端参数不step，不载大source/meta作GPU计算。logicalB4、全36等权、lr1e-4/原AdamW/clip1、BF16等运算保持。
+完整endpoint恢复不等于load_version或bitwise exact；优先原四rank逻辑拓扑/RNG，真实物理迁移须正确承接和登记，不绕过校验。
+
+计时从恢复后首个有效optimizer更新起：首次越过600秒的完整9update/全36边界读全144 loss。
+若L10 >= .95×L8883（L8883=.5748958587646484），保存该实际终点并停止；否则仅继续到首次越过1800秒的完整全36边界并保存停止。
+两节点记录精确update、elapsed、新增更新/条件与实际task/demo曝光，不再漏节点update。10分钟规则是有限投入保护，不是性能合格线、数学必然或未来固定课程。
+不选10/30最好点、不按.50追阈值、不训练到指定loss；finite异常如实处理。中间节点没有checkpoint选择资格，只有实际停止终点参与控制。
+终点从原cache物化原36指定teacher_demo各一套完整38-target/rank8 LoRA；不择视频/平均LoRA。原144等权loss不能用末batch或36面板均值替代。
+
+训练退出立即释放，原36保存端点做同task/MT-H/P0/query16/init/env/native RNG/官方口径的576新G query。
+MT/E/G432/G864/G1296/G8883各576兼容只读引用，0新增教学/native context读取、MT/G实践、Actor、student bank、held/Test或完整Writer。
+未实践端点bank=false，query不进入H/梯度/训练选择或中途干预。保存端点restore→query仍唯一运行面，v2登记实际terminal update/node，旧8883 v1由原冻结树保留，无canonical fallback。
+六卡slots16/group4，long-first/cost-balanced动态resident队列，不重测32/静态task绑卡；局部失败隔离且至多一次有界缺项恢复，不重做有效行。
+
+交付完整576、train24/support12/task/suite、RGL/churn/相邻8883重叠、E-only134/both-success321/MT-only19/both-fail102、零/非零E及72/504。
+若获取与净收益停滞或新增损失抵消新增取得，结束原cache/endpoint堆更新；loss下降不豁免，本批后不直接追加第三同缓存时间块。
+若实质进一步改善，再由main按真实缺口登记完整方法接续；无自动Actor/R5/held，不把BA接近E当控制相同、video/H贡献或未知task资格。
+
+每launch同时双节点live、普通6/8合计/node6/非干扰；原四rank约.10s/update对单卡仅前反传.309s下界支持优先安排，非永久上限或绝对最优，不加profile矩阵。
+data1独立quota/实用量/共享容量和<8GiB峰值核实，大资产/缓存只读引用，GPUh计费无硬cap。
+初估准备20–40min、fit最多30min、query15–35min、消费5–10min，总1–2h；12.8min最近只读query实测不是完整Writer成本，按共驻/消费者实际修订，无强杀截止。
+一个owner接训练退出→唯一terminal→保存端点→query，直接等退出；真实启动一次回main身份/准入/ETA，整批完成或真实异常一次可靠回报，无心跳/阶段Queue/第二等待者。
+两份main CPU原件归档已完成8883 root/analysis/main_scientific_readout，不重算；科学解释并入既有coordinate分析§17和findings453。

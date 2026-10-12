@@ -1,3 +1,15 @@
+## 2026-10-13 新有限接续实施中：从完整8883恢复，尚未启动GPU
+
+main消费六臂3456原行，已明确授权唯一design§18；旧§16/17完成与原.50未过保持，旧coordinate864永不恢复。
+ROOT=.../frozen_context_decoder_fit/refinement_from8883_20261013；原144 context/CP432前端只读链接，完整endpoint8883/166 Adam/sampler/四rank RNG承接，logicalB4。
+首10min全36边界144 loss不足5%下降即停，否则至30min全36边界；只用实际终点原36固定LoRA完成同576新G query，六参照只读复用。
+独占codex/endpoint8883-refinement窄实现恢复及动态terminal来源登记；不新增模型/损失/数据/入口fallback，旧冻结树不热改。
+两份main CPU原件已归档原query16_terminal8883/analysis/main_scientific_readout，未重跑算术。
+data1独立quota strg01实核used1474962816KiB/soft2147483648KiB，shared81TiB；旧fit含读出实际919MiB，<8GiB新增可容纳。
+首次双节点快照gpu01:0–6空闲约44GiB、gpu02忙，普通cap6/node6；各正式launch再live核验。拟四rank fit→六卡slots16/group4 query，无32复测。
+准备20–40min/fit最多30min/query15–35min/消费5–10min为估计，尚未把准备称GPU运行；无强杀截止/GPUh硬门槛。
+一个真实owner整批接续、实际启动一次回main/整批完成或异常一次可靠回报；无心跳/阶段Queue/第二等待者，无自动第三时间块/Actor/fullWriter/held。
+
 ## 2026-10-13 00:44 实际完成：固定8883全36/576净增22，交main裁决
 
 唯一design§17已实际结束，owner terminal8883_query16_01/PID2719409于00:44:28退出0，wall768.782秒；7个真实job均exit0，无失败/恢复，576G-only query完整。

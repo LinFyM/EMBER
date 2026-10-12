@@ -34,11 +34,52 @@ def test_sender_role_preserves_initialization_draws_and_parameter_schema():
     assert not static.normalize_messages and endpoint.normalize_messages
 
 
-def test_same_shape_previous_writer_cannot_be_loaded(tmp_path):
+def test_endpoint_memory_reads_local_blocks_before_rank_pool():
+    torch.set_num_threads(2);torch.manual_seed(7)
+    layer=BlockLayer(normalize_messages=True)
+    blocks=torch.randn(6,256);ranks=torch.zeros(1,2,256);targets=torch.zeros(1,256)
+    group=torch.tensor([0,0,0,1,1,1]);memory=torch.randn(4,256,requires_grad=True)
+    reads=[];rank_queries=[]
+    handles=[layer.memory_attention.register_forward_pre_hook(lambda _,inputs:reads.append(inputs)),
+        layer.rank_attention.register_forward_pre_hook(lambda _,inputs:rank_queries.append(inputs[0]))]
+    try:
+        b,r,t=layer(blocks,ranks,targets,group,memory)
+    finally:
+        for handle in handles:handle.remove()
+    # One read per layer, with a query for every block, after its local FF update.
+    assert len(reads)==1 and reads[0][0].shape==(1,len(blocks),256)
+    torch.testing.assert_close(reads[0][0][0],layer.local_norm(blocks+layer.ff(layer.local_norm(blocks))))
+    torch.testing.assert_close(reads[0][1][0],memory)
+    torch.testing.assert_close(reads[0][2][0],memory)
+    # Memory already reaches the rank-pooling consumer before target communication.
+    pool_gradient=torch.autograd.grad(rank_queries[0][...,:13].square().mean(),memory,retain_graph=True)[0]
+    assert torch.isfinite(pool_gradient).all() and pool_gradient.norm()>0
+    (b.square().mean()+r.square().mean()+t.square().mean()).backward()
+    assert torch.isfinite(memory.grad).all() and memory.grad.norm()>0
+    assert all(torch.isfinite(p.grad).all() for p in layer.parameters() if p.grad is not None)
+
+
+@pytest.mark.parametrize('schema',['ember_full36_sender_normalized_flow_writer_v6',
+    'ember_full36_operator_effect_writer_v8'])
+def test_same_shape_previous_writer_cannot_be_loaded(tmp_path,schema):
     from ember.proposal_writer.pipeline import load_version
-    torch.save({'schema_version':'ember_full36_sender_normalized_flow_writer_v6'},tmp_path/'state.pt')
+    torch.save({'schema_version':schema},tmp_path/'state.pt')
     with pytest.raises(ValueError,match='fresh training required'):
         load_version(object(),tmp_path)
+
+
+def test_target_memory_v8_cannot_resume_the_block_memory_graph(tmp_path):
+    from ember.pi05_source_checkpoint import write_json_atomic
+    from ember.proposal_writer.contract import G_OBJECTIVE
+    from ember.proposal_writer.learning import resume_checkpoint
+    schema='ember_full36_operator_effect_writer_v8'
+    torch.save(dict(schema_version=schema,G_objective=G_OBJECTIVE,stage='G',next_update=432,
+        topology=dict(world_size=1)),tmp_path/'state.pt')
+    write_json_atomic(tmp_path/'manifest.json',dict(schema_version=schema,next_update=432,complete=True,
+        full_optimizer_rng_sampler=True))
+    write_json_atomic(tmp_path/'run_contract.json',{})
+    with pytest.raises(ValueError,match='resume stage/topology changed'):
+        resume_checkpoint(tmp_path,'G',SimpleNamespace(root=tmp_path),None,SimpleNamespace(world_size=1))
 
 
 @pytest.mark.parametrize('rank,expected',[(0,16),(1,8)])
@@ -114,6 +155,8 @@ def test_endpoint_zero_head_opens_upstream_gradient_after_first_update_and_masks
     assert torch.count_nonzero(second[~layout.valid])==0
     (second[layout.valid]-target[layout.valid]).square().mean().backward()
     assert memory.grad.norm()>0 and decoder.input.weight.grad.norm()>0
+    assert torch.isfinite(memory.grad).all()
+    assert all(torch.isfinite(p.grad).all() for p in decoder.parameters() if p.grad is not None)
 
 
 def test_only_one_deterministic_candidate_is_generated_and_invalid_output_is_not_retried(monkeypatch):

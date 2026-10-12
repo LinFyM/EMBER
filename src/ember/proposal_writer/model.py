@@ -87,6 +87,9 @@ class BlockLayer(nn.Module):
 
     def forward(self, blocks, ranks, targets, group, memory):
         blocks = blocks + self.ff(self.local_norm(blocks))
+        if memory.numel():
+            blocks = blocks + self.memory_attention(self.local_norm(blocks)[None], memory[None],
+                                                    memory[None], need_weights=False)[0][0]
         # Query-weighted pooling within each actual target/rank (A and B together).
         sender = self.local_norm(blocks)
         scores = (sender * self.rank_query).sum(-1).float() / 16
@@ -104,9 +107,6 @@ class BlockLayer(nn.Module):
         targets = targets + (score.softmax(-1)[..., None].to(ranks) * values).sum(1)
         q = self.target_norm(targets)[None]
         targets = targets + self.target_attention(q, q, q, need_weights=False)[0][0]
-        if memory.numel():
-            targets = targets + self.memory_attention(self.target_norm(targets)[None], memory[None],
-                                                      memory[None], need_weights=False)[0][0]
         target_message = self.target_norm(targets) if self.normalize_messages else targets
         ranks = ranks + target_message[:, None]
         rank_message = self.rank_norm(ranks) if self.normalize_messages else ranks

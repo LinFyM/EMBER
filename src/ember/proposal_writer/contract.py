@@ -10,7 +10,8 @@ import numpy as np
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 
 ASSET_ROOT = Path('/data1/user/ymdai/projects/EMBER')
-RUN_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/operator_effect_learning1296_query16')
+RUN_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/'
+                'coordinate_memory_read864_query16/block_memory_candidate')
 PRIOR_ROOT = Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/rank8_multistart')
 SCHEMA = 'ember_proposal_full36_deterministic_endpoint_query16_v1'
 PANEL_ROLE_SCHEMA = 'ember_full36_practice14_query16_report16_v3'
@@ -27,7 +28,7 @@ MT_PATH = Path('/data0/user/ymdai/ember_runs/coverage_retraining_20260920/traini
                '/checkpoints/step_00000300/lora.safetensors')
 OPTIMIZER = dict(lr=1e-4, betas=(.9, .95), eps=1e-8, weight_decay=1e-4)
 SELECTOR_SCHEMA = 'ember_full36_student_joint_conditional_continue_selector_v5'
-CHECKPOINT_SCHEMA = 'ember_full36_operator_effect_writer_v8'
+CHECKPOINT_SCHEMA = 'ember_full36_coordinate_memory_read_writer_v9'
 G_OBJECTIVE = 'task_equal_layer_mean_full_BA_Frobenius_v1'
 
 

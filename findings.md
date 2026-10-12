@@ -11548,3 +11548,13 @@ main一次2.232秒CPU分解已归档原864ROOT/analysis/main_scientific_readout/
 从完整CP864承接同图参数/Adam/RNG到1296，只改目标；真实矩阵拟合也不保证实际hidden、动作或控制保持。
 历史直接因子回归公共方向、端点动作蒸馏局部正例/相邻退化、functional revision极弱写入负证据继续有效。
 完整推导/失败预测/停止线见docs/analyses/proposal_operator_supervision_20261012.md和唯一design§14。
+
+## 442. G细坐标通过target广播间接读内容，是结构风险而非已证实断路（2026-10-12）
+
+main依据Owner最新要求完整核查实际图及最近似历史，无新增模型forward/GPU/episode/旧算术。
+当前六层只有38个target token直接cross-attend条件memory，同rank A/B块共享广播；本地地址/残差/FFN仍允许不同坐标响应。
+当前MT入口p=0，绝对A0仅在端点还原使用；B不显式读取完整生成A。这些事实不证明B硬断路、容量不足或唯一根因。
+原Target-Owned独立heads99→76→86→68、CRW显式A→B137/140对MT153、动作调制122已由main直接查原件，不能当成未试过的新答案。
+参数块按自身query直接选memory是算子明确不同但尚未采纳的候选；本轮不实施、不增加第二主变量。
+固定MT-H/P和共同E只检验首次条件映射，不证明不同失败经历的反馈修订；读取reward本身不构成能力。
+完整核查与算子/历史边界并入docs/analyses/proposal_operator_supervision_20261012.md §8，当前design§14/1296停止线不变。

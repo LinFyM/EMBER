@@ -7,10 +7,18 @@ Owner要求释放四卡尽早产出有用结果；main在读新闭环分数前�
 新总期望1728query；四卡先早期432再control864，candidate继续两卡、864就绪后动态使用实际空余slot。
 CPU派发权使用原abort_dependencies接口串行交接，原G实际进程/SSH退出收据保留；旧CPU退出只作handoff判重，不作科学整批退出。
 旧冻结树不热改，早期复用c35c34b5/v9消费者和保存CP432；ROOT/coordinator/early_candidate432_priority_01保存接手与预算/启动原件。
-当前处于只读注册与实际准入，真实启动/ETA以本协调器后续收据为准；不把准备写成已运行。
+只读CP432/同36 panel及576配对参照经c35实际CPU消费者核对通过；未重算D/端点算术，未新profile。
+新唯一派发owner于21:35:12实际启动，PID1808572/tmux ember-coordinate-early432-20261012；旧CPU owner仅保留在途G退出收据，其末次CPU回报按handoff判重。
+四个resident于21:35:39–51在gpu01:0–3实际launch，slots16/chunk8/group2、source c35c34b5/v9；实际Runtime执行记录4份、首批8端点确认CP432/原MT-H/一次生成/0practice。
+候选原训练继续gpu01:4/5，普通项目6/cap6/node6；各launch双节点核，data1 used1471424172–1471424292/soft2147483648KiB、shared81TiB，<1GiB新增准入通过。
+原20:32整批ETA02:10–03:15保留为修订前预测；按四卡早期1–2h、随后control并与候选原预计至01:09训练重叠，当前早期22:35–23:35、整批次日02:15–04:00；未以尚未完成的query测出固定吞吐，外载/episode长度不确定。
+启动与实际消费者证据ROOT/coordinator/early_candidate432_priority_01/{launch,dispatch_start,admission_cpu,startup_verified,dispatch_revision}.json；原control G实际21:20:47退出0，原收据未改写。
 独立data1 quota/live双节点在launch前核，新增预计<1GiB，大资产/CP不复制，沿slots16/chunk8/group2、不新profile。
 早期完整576允许一次有科学内容的提前交main，原两864完整交付保留，分别判重；无心跳/阶段Queue/第二整批等待者。
 Owner完整WriterVal/Test>MT与10月13日11:00决策目标继续；后继成本清点可串行完成，不阻塞四卡准入。
+CPU清点已完成，原件ROOT/analysis/successor_cost_inventory_20261012/inventory.md：v9 BA交替/formal接口存在，但当前无G自身H、theta未训/后继未注册，未实践端点不能直接入bank或warm。
+旧完整strict400含1133适应+119新final，六worker实际2.081h；现共驻同路径粗情景约4.2h，不能拿576query替代完整Compiler。
+旧全36一轮9theta/81psi执行1.647h含失败，query4的568直接行；query16和大H会加成本，后继规模由main按真实早期/整批证据登记，清点没有自动启动后继。
 
 ## 2026-10-12 最新Owner目标接续：完整Writer与明早11:00
 

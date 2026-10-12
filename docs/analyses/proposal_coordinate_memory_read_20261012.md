@@ -174,3 +174,15 @@ Owner询问训练耗时，main提供两臂native计算约翻倍的异常线索�
 没有定位到本项目可逆调度错误，故不信号任何GPU进程、不改驱动/功率/冻结代码；原owner PID681682、两个G和唯一退出接续保持。已有owner在控制真实退出后立即将释放的四卡用于动态直接query，候选最后可用全部六个项目槽位，不受训练world2限制。candidate CP432尚未到达；实际冻结v9 resume消费者明确拒绝world/rank RNG cardinality变化，没有既有正确的2→4迁移入口。同world换设备不能在当前双节点同样共享且无空闲卡的事实下证明有收益。本次不临场铺迁移工程或回退未保存更新，不中断近完成控制；432恢复only、864唯一读出及所有科学合同保持。
 
 按这一快照最近72更新和现有共驻负载，控制剩132步约.80h，训练约21:20完成；候选剩481步约4.606h，训练约次日01:09完成。后续query仅据既有实际读出和native计算翻倍外推为1–2h，整批当前约**10月13日02:10–03:15 UTC+8**，没有新增绝对截止。原23:10–00:15预测属于启动时负载，已被此修订取代；未来外部负载或新G实际episode长度仍影响wall，不能承诺固定完成时刻。不因本异常扩大科学矩阵、设置新等待者或阶段通知；有限核查一次回main，原整批完成回报保持。
+
+## 11. Owner11点目标与一次候选432提前诊断
+
+Owner最终目标仍是完整Writer在固定validation/test超过强MT，训练任务MT-only初次修正只提供先行信号；11点为希望取得较好效果的交付/决策目标，未要求强杀GPU。主讨论在未读新闭环分数前明确登记候选已保存完整CP432全36/query16一次提前诊断，以尽早缩小科学未知；两864训练/完整匹配比较保持。最新完整执行范围仅见唯一design§15.1，432不与control864作结构因果比较，不构成held/反馈Writer/正式选点。总新增query期望1152→1728，0新增实践、共享更新、native probe或其它中间点。
+
+早期root为ROOT/early_candidate432_query16，CP432/大资产原位只读引用；现有c35 frozen endpoint-query消费者合法验证G stage432，无绕校验或模型改动。CPU核原36 panel/condition及MT/E576身份通过，D与先前科学算术未重算。控制G于21:20:47实际退出0；原CPU owner未消费ready通过已有abort_dependencies接口取消，将派发权串行交给ROOT/coordinator/early_candidate432_priority_01，原在途G/实际退出收据保留。旧CPU退出按dispatch_handoff处理，只有新dispatcher派发读出与承担整批科学完成，不恢复旧队列或设置第二整批等待者。
+
+统一owner于21:35:12启动PID1808572，四个c35/v9 resident在21:35:39–51占gpu01:0–3，原candidate训练继续4/5；slots16/chunk8/group2沿既有实测，不新profile。各job现场核普通6/cap6/node6，独立data1 used1471424172–1471424292/soft2147483648KiB/shared81TiB，预计<1GiB新增。四份Runtime记录及首8合法端点已核CP432、原MT-H、一次生成、0G-practice。稳定身份/准入/原件见新coordinator/{dispatch_revision,launch,dispatch_start,admission_cpu,startup_verified}.json；host-private ops不进Git，原冻结树未热改。
+
+四卡优先早期432，所有就绪早期任务已派发后释放的有效slot及时服务control864；candidate864就绪后也按有效空余slot动态处理。按既有共驻成本四卡早期1–2h，当前22:35–23:35有完整早期结果的预期；尽量把早期与control读出覆盖candidate原预计至01:09的训练窗口，整批暂修订次日02:15–04:00。尚无完整早期query实测，不保证固定速度或正结果；原预测保留为历史。完整432允许一次提前科学交main，原两864整批仍交一次，分别判重，无心跳或task级消息。
+
+后继有限CPU成本/消费者清点原件ROOT/analysis/successor_cost_inventory_20261012/inventory.md，0新forward/episode/profile。v9已经由EndpointTrainer承接BA/实际P-H的G-theta交替及固定Writer400消费者，但当前直接端点没有实践prefix，theta未训练、后继未登记，不能据接口存在称完整方法就绪。旧真实strict400六worker2.081h包含1133适应和119新final，不能用576直接query吞吐代替Compiler成本；共驻同路径粗情景约4.2h，大H/theta与新formal成本缺计时。主讨论据完整早期或整批结果自主冻结后继规模，清点不自动启动旧课程、Actor、held或Test选择。

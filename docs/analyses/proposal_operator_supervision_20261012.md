@@ -333,3 +333,113 @@ profile wall136.697秒/.07594284GPUh，所有模型/optimizer更新discard，临
 CPU调度交接只SIGINT原coordinator PID、保留其G真实退出收据；新owner排他持原delivery.lock，原helper在打开socket前被非阻塞锁排除，
 不是伪造已投递或新增等待者。只有新整批owner发一次真实整批退出；完成/部分读取、CP保全、原件/费用及缺项由实验消费后交main。
 1080仅恢复、1296唯一读出，部分任务/行不得冒称完整576结论，截止或重启后不自动续跑。
+
+## 11. 实际部分退出、配对消费与截止保护失败（2026-10-12）
+
+本批没有完成原全36/576合同。G完整864→1296正常退出，36套真实端点和一次实践均保存；
+读出只完成33条件/528行，其中31条件/496行在15:55前完成持久化，task5/7的32行整组在15:59:27才完成。
+task32/34/35的48行缺失。唯一整批owner于15:59:53退出1；本批不恢复、不补行、不进入任何后段。
+下文时间均为2026-10-12 UTC+8。原件ROOT仍为本文件§6/§9登记的operator_effect_learning1296_query16。
+
+### 11.1 训练完成与控制读出的实际范围
+
+训练来源2a1fb813，后续常驻读出来源c7e76b56，均保持原clean pushed detached身份；两者不混称同一消费者。
+G真实job在13:16:36开始、15:29:43退出0，新增432更新/1728条件，每task48次、累计144次，
+全程MT parent/原真实MT-H、bank0/logicalB4/chunk16、source无梯度。首/末完整36任务块BA loss .999555→.963048，
+同批MT基线1；不能与原factor-MSE loss直接比较。末两rank实际meta梯度均为Gemma .0128606、action 1.96947e−6，
+这是该监督回传的记录，不证明视频知识或执行因果。
+
+完整v8 CP1080/1296均已保存。实际CP1296核得485份Adam状态step1296、两个rank RNG、
+sampler/G_sampler/cursor/version1296、world2/logical4、supervision/bank0，以及明确的v7→v8目标迁移。
+未保存G更新数为0；原CP864保持。1296仍唯一科学读出，1080仅恢复，完整恢复资产不授权截止后自动启动。
+36个path的teacher_demo/MT-H/P/实践初态及RNG与原映射核对通过，均只有一次确定端点生成、一次真实实践；
+query与兼容MT/G864/E原行逐行核对task/scene/state、环境和原生policy RNG及真实初始proprio。
+所有新保存行只是train/non-held机制读出，没有held400或视频因果资格。
+
+| 实际范围 | 条件/配对行 | MT | G864 | G1296 | E | MT→1296 R/G/L |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 15:55前完成 | 31/496 | 302 | 308 | 314 | 394 | 282/32/20 |
+| 逾时保存task5/7 | 2/32 | 13 | 11 | 7 | 26 | 6/1/7 |
+| 全部已保存，含逾时 | 33/528 | 315 | 319 | 321 | 420 | 288/33/27 |
+| 缺失task32/34/35 | 3/48 | 只读参照存在 | 只读参照存在 | 缺失 | 只读参照存在 | 不补造 |
+
+截止前MT→G net+12/churn52/Jaccard .844311，G864→G net+6（R281/G33/L27/churn60）。
+全部已保存MT→G net+6/churn60/Jaccard .827586，G864→G net+2（R287/G34/L32/churn66）。
+逾时两task对MT均net−3，不因不利而删除；保留原始32行并独立标记。
+实际row.finished_at是Runner相对时钟，没有逐行UTC锚，故保守将两整组作为逾时原件；
+不能从15:59持久化时刻断言其中每条episode的精确结束UTC。
+
+全部保存的target train21/336为MT144/G864146/G147/E237；support12/192为171/173/174/183。
+截止前target train19/304为131/135/140/211，support12不变；不将实际metadata中统一的train角色误当目标24任务齐全。
+全部保存suite相对MT净变：Spatial−7/Object+6/Goal+1/Long三task+3/support+3；截止前Spatial−1，其余相同。
+任务净优/平/劣分别为截止前12/13/6、全部保存12/13/8；task13真实+4和task29/36各+2保留，
+同时保留task5/7各−3、task0−2及其它损失。33条件中E-only118行仅传递18（G86416），
+both-success302行保持282（G864280），MT-only13保留6（G8649），both-fail95获15（G86414）。
+teacher选点重合的实际66行MT42/G86441/G46/E53；其余462行为273/278/275/367。
+截止前对应62行39/39/44/50和434行263/269/270/344；不以缺项面板写72/504或完整teacher泛化。
+
+### 11.2 一次全36端点算术与机制含义
+
+已有36个真实端点允许CPU算术，即使3个parent/query完成回执缺失，也不补造该回执。
+一次消费外部wall8.542秒、算术6.406秒/GPUh0；原parent-required脚本保留，按真实path/attempt/权重读取，
+现存33个parent交叉核对，A/B与BA公式未改。端点算术complete只指全36参数，不指整批或资格。
+原件为ROOT/analysis/endpoint_arithmetic/{consume_endpoints.py,statistics.json,consumer_validation.json,launch.json,exit.json}。
+
+完整BA层等权loss .961445（MT1，G864 .999513）；聚合norm ratio .092718/cos .099524/相对平方误差 .990141，
+原864对应.021085/.020679/.999573。直接算子监督确实增大并改善实际BA写入，但仍远未重构E。
+层等权loss与聚合能量相对误差的归一化不同，不把3.86%层等权改善与约.99%聚合改善混算。
+原SG因子MSE为1.000878，A1.011741/B.991192；因子公共能量67.9293%，
+相对自身常量均值的因子条件增益−.002835（A−.012717/B+.005977），27非零E内为−.008454。
+这些是因子坐标诊断，不能直接断言BA空间没有条件信息或将退休factor目标的回退称为训练bug。
+现有528行首5原生动作G/MT RMSE .007055，比原864全576的.003722有所增大，但面板不同，
+正式配对的G1296/G864 RMSE .006657只说明执行变化，不能据此宣称更接近E或主要闭环收益已解释。
+
+原假设“仅A因子改善掩盖实际算子近零”获得更直接的检验：完整A/B上的BA梯度能增加有效写入，
+因此不是已证实的硬性B断路；实际算子拟合仍弱、已保存控制仅小幅净交换、E-only优势大部分未传递。
+这削弱将目标更换本身视为充分修复的解释，不能把31条件小幅收益升级为全36优势，
+也不能因工程缺项抹去已完成训练和不利个例。视频/H内容选择、细坐标条件映射、学习量和真实执行保持仍未唯一辨别。
+本结果与§8列明的Target-Owned/CRW/动作调制负证据共同约束后继；不自动延长、拆头或放大B。
+main消费实际部分证据后自主作出后继科学取舍，执行者不以缺48行自行重启原队列。
+
+### 11.3 两项工程失败、硬截止违约及定向修复
+
+gpu01:6 worker00在完成task32/34/35实践后，首次Long query初始化离屏环境失败：
+mujoco.FatalError: Offscreen framebuffer is not complete, error0x8cdd。
+原log为ROOT/jobs/student_resident_00_gpu01_6/attempt_001/process.log；这是EGL环境失败，不是G训练阴性或已确定CUDA OOM。
+同为slots32的gpu01:0实际成功，现证据不足以断言所有32-slot配置不可用或证明唯一显存原因。
+其3个SQL claim登记failed，没有G query行；整批owner排空其它在途worker后才退出1，没有截止后重试。
+
+gpu02 guard V2在15:50对CPU coordinator做argv身份校验时抛出registered coordinator argv identity mismatch，
+异常中断了之后15:54 TERM/15:54:30 KILL/15:54:55 verify时刻；dispatch_closed存在，后续清空回执缺失。
+原日志未记录具体mismatch PID/argv，历史具体原因未知，不能写成已确诊zombie或PID复用。
+实际consumer的时间检查仍阻止15:50以后新领取；task5/7在15:49:48领取、15:59:27才完成，gpu02:4在15:59:52退出。
+这不是CPU回执晚写导致的假逾时：GPU consumer确实超过15:55，实验session的截止保护没有兑现Owner硬要求。
+gpu01原guard最终15:54:55 cleared=true，所有gpu01 worker在15:51:53前已退出；当前双节点已核无ymdai GPU进程。
+现场只读快照及可读清空结论留ROOT/coordinator/deadline_ops_20261012/post_exit_live_snapshot.json、post_exit_batch_clear.json。
+
+原guard不修改，定向候选deadline_guard_next.py仅在ROOT ops目录保留：已停止/消失/僵尸身份跳过，
+不匹配身份记录观察值且不发信号，CPU派发身份异常不取消后续GPU终止时刻。
+CPU验证复现原异常，再注入同异常测试真实计时路径，owned临时CPU consumer被TERM、无关CPU进程保持运行、final cleared=true。
+证据guard_failure_CPU_validation/{validate.py,validation.json,process.log}；0GPU/0forward/0episode。
+候选没有重新armed或修改冻结训练，不能追认历史截止合规；未来复用仍须按实际本批身份和绝对时刻配置。
+
+### 11.4 实际费用、原件和保全范围
+
+7个真实GPU attempt：G4.437115、学生1.992868，formal合计6.429983GPUh；失败worker费用.073703已计入。
+新目标准入profile .075943另计，总本root6.505926GPUh；不把历史864费用或兼容MT/E/G864行算作新增episode。
+已完成36实践+528 query共564新episode，记录环境步下界124301=8595新实践+115706已保存query；
+复用MT bootstrap8131步另列，path累计environment_steps不能全部作为新增费用。
+失败EGL query可能有未完成初始化/执行，没有完整counter，实际失败query数量/步数未知，不写成0或伪精确全部episode账。
+5个成功worker物理counter累计122941步，与另3个已保存失败组实践1360步合为上述下界。
+
+实际读出启用6张distinct GPU，逐job准入核普通cap6、node最多4，未暂停或信号他人任务。
+正常worker slots32/16/8的reserved峰约25.793/18.803/13.633GiB；gpu02:4结束只剩.030GiB且最晚退出，
+共驻余量/服务竞争是执行限制，不能将单一world2或util高本身当并发禁令，也不从最终余量证明EGL唯一原因。
+读出新增GPU窗口约30min，高于预估15–25min；guard缺陷使最后组未按15:55停止。原估计/启动/失败账均保留。
+
+CPU原件消费命令/exit0/统计在ROOT/analysis/whole_completion_20261012，
+consume_originals.py核job/SQL/实际CP/训练/36实践/配对/费用，complete_tables.py按注册target/support分列。
+ROOT/analysis/first_student_query16_summary.json明确complete=false、missing/late范围，原始配对行在同目录rows.jsonl。
+所有参数/信息墙/配对/完整CP消费检查通过，不表示整批成功；已知EGL、guard及逾时均显式保留。
+原864及新1080/1296完整恢复状态、36权重/H、全部raw rows、失败记录及两个冻结工作树保留。
+开发branch/worktree已在clean集成push后退休，不删除当前关键原件，不自动任何后段或截止后续跑。

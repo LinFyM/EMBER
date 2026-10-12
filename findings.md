@@ -11558,3 +11558,30 @@ main依据Owner最新要求完整核查实际图及最近似历史，无新增�
 参数块按自身query直接选memory是算子明确不同但尚未采纳的候选；本轮不实施、不增加第二主变量。
 固定MT-H/P和共同E只检验首次条件映射，不证明不同失败经历的反馈修订；读取reward本身不构成能力。
 完整核查与算子/历史边界并入docs/analyses/proposal_operator_supervision_20261012.md §8，当前design§14/1296停止线不变。
+
+## 443. BA监督增强实际写入，但全36读出缺项且截止保护失败（2026-10-12）
+
+G864→1296完整432更新正常退出，1728条件/每task48次新增，实际v8完整CP1296的485 Adam step1296、RNG2/cursor/bank0已核。
+36真实端点/实践齐全；首/末完整36-task算子loss .999555→.963048，MT1。一次全36端点CPU算术loss .961445，
+聚合G/E norm ratio .092718/cos .099524/相对误差 .990141，较原864 .021085/.020679/.999573增强仍弱。
+原SG factor MSE1.000878、A1.011741/B.991192，因子公共能量67.929%、条件增益−.002835；
+factor空间回退不称新BA目标bug，也不能由此断言BA没有条件信息。B算子写入可被监督增加，不是已证实硬断路。
+
+截止前31/496为MT302/G864308/G314/E394，MT→G R282/G32/L20/net+12/churn52。
+task5/7逾时32为13/11/7/26，MT→G net−6；全部保存33/528为315/319/321/420，R288/G33/L27/net+6/churn60，
+G864→G R287/G34/L32/net+2。task32/34/35缺48行，均Long；不能称完整576/全36优势或不偏估计。
+全部保存target train21为144/146/147/237、support12为171/173/174/183；suite相对MT为Spatial−7/Object+6/Goal+1/Long三task+3/support+3。
+任务净优/平/劣12/13/8，task13+4、task29/36+2与task5/7各−3/task0−2均保留。
+E-only118行传递18（旧16），both-success302保持282（旧280）；66选点重合行42/41/46/53、462其余273/278/275/367，
+没有独立teacher/held/video因果资格。有限收益与弱BA拟合共同降低“只换监督就充分解决”的支持度，不自动推成唯一架构根因。
+
+缺query因gpu01:6 EGL framebuffer0x8cdd，实践已保存；另一32slots实际成功，不称全部32不可用或已确诊OOM。
+gpu02 guard15:50的CPU coordinator argv身份异常终止后续GPU TERM/KILL/verify，gpu02:4直到15:59:52才退出；
+这是执行者截止保护违约，不能以16:00前最终退出、CPU回执迟写或模型阴性淡化。历史具体mismatch PID/argv原因未知。
+当前退出现场双节点无ymdai GPU；原件保留。定向guard候选记录/跳过未知CPU身份，CPU校验异常不取消本批终止时刻，
+实际临时CPU计时/身份测试通过，未重新armed、未改冻结代码，不追认旧截止合规。
+
+formal7attempt/1失败6.429983GPUh+profile.075943=6.505926；564完成新episode/环境步下界124301，
+复用MT8131步另列，失败query步未知而非0。CP864/1080/1296完整恢复及36权重/H/raw/失败记录/冻结树保留，未保存G更新0。
+ROOT/analysis/whole_completion_20261012和analysis/endpoint_arithmetic保存一次CPU消费/命令/退出/原件；
+完整分析docs/analyses/proposal_operator_supervision_20261012.md §11。本批停止，不自动补query/延长/后段，main消费部分证据自主接续。

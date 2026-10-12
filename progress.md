@@ -1,4 +1,31 @@
-## 2026-10-12 当前硬截止：16:00前结束，15:55前全部GPU退出
+## 2026-10-12 当前结果：operator1296部分退出，截止保护失败；GPU运行已停止
+
+唯一整批owner在UTC07:59:53实际退出1，先核delivery判重后完成一次CPU原件消费；本批不恢复、不补行、不启动任何后段。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/operator_effect_learning1296_query16。
+G真实job退出0、完整v8 CP1296/1080保存，新增432/1728条件各task48；485 Adam step1296、RNG2/cursor1296/world2/logical4/bank0实际核对通过。
+36真实端点/一次实践齐全；仅33条件/528 query保存。截止前31/496为MT302/G864308/G1296=314/E394，MT→G R282/G32/L20/net+12。
+task5/7的32行整组15:59:27才完成，MT13/G86411/G7/E26，MT→G net−6；保留并单列逾时，不算截止内交付。
+全部保存528为MT315/G864319/G321/E420，MT→G R288/G33/L27/net+6；task32/34/35仍缺48行，不能称完整576优势/资格。
+缺项源于gpu01:6 EGL framebuffer0x8cdd，3套实践已保存；不称G训练失败、已证实OOM或科学根因。
+
+gpu02 guard15:50在CPU coordinator argv身份校验抛错，取消后续TERM/KILL/verify；gpu02:4直到15:59:52才退出。
+这是真实超过15:55的GPU运行，实验session的截止保护失败，不能由16:00前最后退出或CPU收据解释成合规。
+原guard/log/逾时行保留，具体历史mismatch PID/argv原因未知；gpu01原guard已cleared，退出现场双节点核无ymdai GPU进程。
+定向guard候选仅保存ROOT/coordinator/deadline_ops_20261012/deadline_guard_next.py，原异常及修复计时路径CPU验证通过，未重新armed。
+CPU身份错误须记录且不触及未知PID，同时不能取消已授权本批的GPU终止时刻；本次修复不追认历史截止通过。
+
+一次CPU端点算术BA loss .961445（MT1/G864 .999513）、聚合norm ratio .092718/cos .099524；实际写入增强仍弱。
+原SG factor MSE1.000878、因子公共能量67.929%、条件增益−.002835，不能直接替代BA条件信息或控制因果判断。
+实际范围的配对/CP/账目消费检查通过，已知工程失败单列；7GPU attempt含1失败，formal6.429983+profile.075943=6.505926GPUh。
+已完成564新episode、记录新增步下界124301；复用MT8131步另列，失败query实际步未知而非0。
+完整分析docs/analyses/proposal_operator_supervision_20261012.md §11，findings§443，唯一design§14登记实际停止。
+稳定原件ROOT/analysis/whole_completion_20261012、analysis/endpoint_arithmetic；CPU消费/算术exit0，无新增forward/episode/GPU。
+原864及新1080/1296完整恢复资产、36权重/H/raw/失败原件、2a1fb813训练与c7e76b56读出冻结树均保留；开发分支/树已退休。
+一次整批交付以coordinator/operator_G1296_deadline_resident_02/{completion_consumed.json,whole_result_main_delivery.json}判重，
+科学接收main 01a12bb0-5273-7462-b5e2-72a18aba7b8d；该回执仅在实际投递后登记状态，不伪称已送达。
+main消费部分证据后自主裁决后继；截止后或重启后没有自动续跑授权。canonical/Git继续由实验独占。
+
+## 2026-10-12 历史硬截止安排：16:00前结束，15:55前全部GPU退出（实际未完全兑现）
 
 UTC06:05:20（14:05）CPU调度排他交接已实际完成，新唯一整批owner PID3749639，tmux ember-operator1296-deadline-resident-20261012。
 新owner原件ROOT/coordinator/operator_G1296_deadline_resident_02/{launch,handoff,startup_verified}.json；
@@ -27,7 +54,7 @@ CPU调度交接由新coordinator/operator_G1296_deadline_resident_02排他持原
 完整CP1080仅恢复，1296唯一读出；现有训练没有任意信号保存接口，保留原完整864及新登记完整点。
 若截止间仍有未保存更新或未完成task/rows，准确报告范围与缺项，不冒充1296完整结论，不自动16:00后或重启续跑。
 
-## 2026-10-12 当前状态：完整BA监督G864→1296有限批已启动
+## 2026-10-12 历史启动：完整BA监督G864→1296有限批
 
 唯一active design §14，完整决定/架构核查/实际验证见docs/analyses/proposal_operator_supervision_20261012.md，findings§441–442。
 计算冻结2a1fb81393b2e483031e41746dd6c5db23717560，clean pushed detached；模型图/Adam/采样/RNG承接原完整v7 CP864，目标/schema显式迁移为v8。

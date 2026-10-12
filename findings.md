@@ -11621,3 +11621,15 @@ E-only134只传22（旧17），both-success321保298（旧296）、MT-only19保1
 ROOT/analysis/query48_recovery_completion_20261012的真实冻结消费/完整2304逻辑行/统计/命令/退出保存；完整分析§13、design§14登记结束。
 CP1080/1296和原864、36端点/H/原行/错误/冻结树保留，复用现有c7e76b56不另建开发树；退出现场两节点无ymdai GPU进程。
 一次整批可靠交main01a12bb0，无心跳/阶段Queue/第二等待者或自动续跑。
+
+## 446. 当前A未封死B拟合；参数块条件选择须用fresh匹配两臂检验（2026-10-12）
+
+G1296实际BA .961445，固定A的最优B .326453、范数/教师中位1.0609；Q/V的A空间捕获.64438/.69203，B空间仅.01652/.17871。
+这是依赖训练E的CPU几何上界，不是生成/部署oracle或证明网络可学；没有GPU/native forward/episode。原样稳定归档operator1296 ROOT/analysis/main_scientific_readout/operator1296_fixed_factor_geometry.py/json，未重算。
+现有A不是B弱拟合的硬瓶颈，不能以先完全学A/放大B/缺不同失败H解释当前不足；当前固定MT-H/共同E理论上可学B。
+真实图仅38target直接读取内容、细坐标共享rank/target广播，是可失败的学习风险，未唯一确诊。
+下一批target_memory_control/block_memory_candidate均fresh，从首更新同BA监督到864，仅将六层memory读取移到local FF后的block；参数形状、随机初始化流、真实L/V/H、MT/P0/E/S_G/D38、logicalB4与任务采样均匹配。
+每臂直接同36/576query，省掉没有消费者的新G-practice，不改query/RNG；旧G1296=348/E455/MT340保留。
+旧925e7b1 chunk×rank直接读取48→75且公共收缩、独立heads/CRW/动作调制负证据继续降低相关直觉支持度。
+两臂仍弱时停止当前Reader+全坐标共同E回归链的入口/宽度/层数补丁，由main重新推导；不能只关本版本名或等待Owner新许可。
+完整推导/结果分支/限制：docs/analyses/proposal_coordinate_memory_read_20261012.md；唯一active design§15，非held/视频/相邻资格。

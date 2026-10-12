@@ -471,3 +471,16 @@ target24净+5、support12净+3，Spatial−7/Object+6/Goal+1/Long+5/support+3；
 完整结果/机制边界/36task原件/累计费用见既有分析§13、findings§445，ROOT/analysis/query48_recovery_completion_20261012。
 累计formal6.727676593+profile .075942840=6.803619433GPUh，612完成新episode/步下界142758，旧失败步未知。
 完整CP和关键权重/H/raw保留；到此不自动任何后段，由main直接消费后续科学裁决，不新增Owner/工程ACK门槛。
+
+## 15. 当前active：fresh匹配参数块直接memory读取（2026-10-12）
+
+本节替代已完成§14的执行状态，保留其全部失败/逾时/恢复完整576及348小幅收益记录。
+完整数据—算子—学习—部署推导、925e7b1最近似负证据、结果分支与停止线仅由[匹配结构分析](../analyses/proposal_coordinate_memory_read_20261012.md)承载；本节引用为完整合同，不复制第二active design。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16；target_memory_control/block_memory_candidate两臂均fresh全部共享状态/未训练θ/Adam/sampler/RNG，seed7/meta原seed，同真实MT-only H/bank0、同36/P0/E/S_G/D38、BA目标从首更新、logicalB4/原优化器。
+唯一结构变量：六层MHA从38target入口移至10064block的local FF后/pool前；旧target入口只在clean pushed frozen控制源，canonical仅候选，不保留双路径。
+两臂864更新=3456条件=96/task，432仅完整恢复、不读出；864唯一出口，不迁旧权重/学生parents/bank，不自动延长。
+各36确定完整38-target端点直接同query16=576，无额外G-practice；总1152新G query，MT/E/G864/G1296真实兼容参照只读复用，72选点重合/504其余分别解释。
+新schema拒旧图；物理执行按真实最长完整L/V/H可丢弃profile及现场双节点吞吐选择，保持完整softmax/梯度，不截断memory。
+常规live6/8、node6、data1独立quota/16GiB预估，无GPUh硬门槛；Owner恢复授权后没有新绝对截止，不复活旧guard/队列。
+初估工程30–60min、并行训练/读出3–5h，以实测修订。一个整批owner及时运行就绪臂/读出，一次真实启动身份/ETA和一次整批完成/异常交main01a12bb0，无心跳/阶段Queue/第二等待者。
+无Teacher/Actor/warm/RL/held/video controls/probe/第三臂/>864授权；本批结果须更新机制支持度与main自主后继，不设工程ACK。

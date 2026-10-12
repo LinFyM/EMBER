@@ -5089,3 +5089,9 @@ G864的同576控制结果保持阴性；main新CPU分解定位因子改善几乎
 原件保存在原864ROOT/analysis/main_scientific_readout/endpoint864_factor_effects.py/json；未重跑。
 完整历史对照和科学决定见[算子监督](analyses/proposal_operator_supervision_20261012.md)、findings§441。
 旧factor-MSE组合停止延长；新同图v7 CP864→v8总1296只换部署算子目标，工程准入与后续状态见progress，不能从本文自动恢复旧链。
+
+## 2026-10-12 固定A/B几何后的fresh匹配条件入口检验登记
+
+G1296完整576=348对MT340的结果与原失败/逾时/恢复48保留；mainCPU固定因子几何说明当前A未封死B拟合，不证明可学/控制。
+新有界授权target-memory control/block-memory candidate均fresh同BA到864、各直接576query，唯一改变条件memory入口；无新G-practice或后段。
+原925e7b1 direct-reading48→75负证据保留，停止线约束Reader+共同E全坐标回归的补丁链。完整推导docs/analyses/proposal_coordinate_memory_read_20261012.md、active design§15；本条为决定登记，不是尚未取得的结果。

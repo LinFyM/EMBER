@@ -1,4 +1,16 @@
-## 2026-10-12 当前交付：完整G1296/query16已消费，main自主决定后继
+## 2026-10-12 当前目标：匹配条件读取结构，完整闭环决定支持度
+
+main完整消费G1296=348/MT340/E455后授权新有限两臂，工程/Git由实验独占，无Owner/main工程ACK。
+唯一active design：docs/designs/video_guided_proposal_writer_20261010.md §15；完整决定与历史反证：docs/analyses/proposal_coordinate_memory_read_20261012.md。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16；target_memory_control/block_memory_candidate均fresh全部状态、同BA从首步到864，432只恢复；仅memory MHA由target移到block。
+每臂36端点直接576query、0新G-practice；总1152新G episode，原MT/E/G864/G1296参照兼容复用；不启动任何后段或第三臂。
+控制复用c7e76b56 clean pushed detached旧计算源，准入就绪先启动；候选独占codex/coordinate-memory-read864开发树并行实现，实际消费者/新schema/profile/push冻结后启动。
+两节点现场GPU01八卡空闲、GPU02多数他人任务，普通cap6；拟控制4rank+候选实测安排，单node6；data1独立quota used1469426020/soft2147483648KiB、shared81TiB，16GiB增量可容纳。
+固定因子几何已归档operator1296 ROOT/analysis/main_scientific_readout，不重跑；当前A非B硬瓶颈，固定MT-H可学B，旧direct-block负证据保留。
+初估工程30–60min、并行compute/readout3–5h，未承诺未经测量加速；真实启动/ETA/冻结/费用随后追加，不覆盖旧记录。
+一个整批owner，一次真实启动与整批完成/异常交main01a12bb0；无心跳/阶段Queue/第二等待者，无新绝对deadline。
+
+## 2026-10-12 历史交付：完整G1296/query16已消费，main自主决定后继
 
 恢复后仅48query的有限leg退出0，原保存端点/实践未重做；全36/576为MT340/G864341/G1296=348/E455。
 MT→G net+8、38gain/30loss，Spatial−7和E-only22/134传递保留；小幅改善不能称明显超强MT或完整方法成立。

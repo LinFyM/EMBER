@@ -589,3 +589,12 @@ G1296/E .088257、MT/E .088126，没有动作距离更接近E的证据。首动�
 training/CP来源仍2a1fb813，评测/消费来源c7e76b56，不能称重新训练或恢复了旧队列。
 新coordinator的completion_consumed.json及whole_result_main_delivery.json只在实际消费/投递后登记，迟到消息据此判重。
 纯启动已可靠投递main 01a12bb0；最终整批一次交同main，无心跳、子阶段Queue或第二等待者。
+
+## 14. 固定因子几何与匹配条件入口检验（2026-10-12）
+
+main一次4.373秒CPU分解、0GPU/forward/episode，原件已原样归档/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/operator_effect_learning1296_query16/analysis/main_scientific_readout/operator1296_fixed_factor_geometry.py/json，未重跑。
+实际BA .961445；固定当前A的最优B loss .326453（MT初始A .504372、G864 A .259121），固定当前B最优A .885587。
+最优B/教师范数中位1.0609、范围.8746–1.7229；Q/V A空间捕获.64438/.69203、B空间.01652/.17871。
+当前A没有封死B拟合空间；不是硬性B断路证明，也不是可部署oracle/学习与控制资格。没有混合LoRA部署或新增探针。
+固定MT-H/共同E可学B，缺不同失败H不解释当前B弱；H多样性仅限定未来反馈修订资格。
+下一项完整推导见[匹配memory入口分析](proposal_coordinate_memory_read_20261012.md)：fresh同BA/864两臂，仅移动memory入口；旧348强参照与925e7b1 direct-reading负证据保留。

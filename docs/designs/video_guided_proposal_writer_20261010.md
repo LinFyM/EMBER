@@ -652,7 +652,7 @@ E-only134传97、both-success321保持305、MT-only19保持8、both-fail102取�
 本批已结束，原8883调查信号false与旧864停止不变，新参数信号true不成为方法资格。无第三同缓存块/Actor/完整Writer/held/Test自动授权，main完整消费后自主登记新的科学决定。
 完整分布与实际链路解释见现有[coordinate分析§18](../analyses/proposal_coordinate_memory_read_20261012.md)；稳定ROOT/analysis/completion_20261013及coordinator/refinement8883_query16_01/exit.json。
 
-## 19. 当前有限准备：固定24849真实学生经历与早期教学内容证据（2026-10-13）
+## 19. 当前有限执行：固定24849真实学生经历与早期教学内容证据（2026-10-13）
 
 main已直接消费4032原行并裁决：G24849=425/MT340/E455，R313/G112/L27、21task净正、仅5task各−1、全部suite净正，去task32/36仍+65/544，满足当前G从MT一次修订明显增益与合理保持的先行要求。仍不是held、完整Writer、视频/H因果或不同经历修订资格。§18已完成；原8883 .50未过/全部负结果和§15旧864停止保留，不追加原144缓存同状态第三时间块，也不立即恢复native前端全梯度或改架构。
 
@@ -682,3 +682,5 @@ main在任何wrong生成/读出前修正原派发遗漏：原task_video_mapping�
 准备30–60min，GPU/IO20–50min、消费10min、总1–2h为初估；旧纯576 query11.2min/六GPU/.96GPUh只支持两个query臂25–40min量级，72 native生成/新H IO需真实修订。11:00是希望效果/判断目标，非强杀或正结果保证，GPUh准确记账无硬cap。
 
 一个实际owner等待整批退出，启动给一次真实身份/准入/ETA，完成或真实异常一次可靠交main01a12bb0；无心跳、子阶段Queue、自Queue、第二等待者或自动共享训练。全交付包括36真实H/兼容信用/producer清单，correct/other/wrong全576的task/suite/train-support/RGL/churn/重叠/E类别/72与504及完整映射，教学读取/实践/query/steps/失败费用/存储/恢复能力。
+
+实际02:53:42.723启动fixed24849_student_video_01/PID3426524，clean pushed detached来源c60bd494。gpu01:0–5六worker：两卡保存端点实践condition_batch16/slots16，四卡控制group4/slots16/frame-chunk16；独立队列动态承接，首个实践workerexit0后原卡立即转other。普通live cap6/node6/独立quota通过，全部参数冻结。启动时整批消费暂估03:25–04:00，真实native生成/H IO与完整物理吞吐在退出后结算，不据启动瞬时显存/util声称充分batch；原预计与科学范围保持。

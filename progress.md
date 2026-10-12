@@ -1,3 +1,15 @@
+## 2026-10-13 02:53 实际启动：六卡固定24849实践与两教学臂
+
+唯一design§19/ROOT=.../terminal24849_student_video_evidence_20261013；owner fixed24849_student_video_01/PID3426524/tmux ember24849-student-video-20261013于02:53:42.723启动，实际六worker于02:53:51–02:54:11启动。
+计算来源c60bd494已集成push，运行树clean detached /data1/user/ymdai/ember_worktrees/terminal24849_evidence_20261013_c60bd494；原完整v9 CP432前端+endpoint24849明确组合，全部参数冻结，0更新。
+gpu01:0/1的保存正确G实践用condition_batch16/slots16，gpu01:2/4做other、3/5做wrong，控制group4/slots16，实际frame-chunk16。每卡独立resident与long-first动态队列，空余立即接未完成控制任务，不锁world4。
+首个实践worker实际exit0/282.916秒；其gpu01:1于02:58:38已承接other新worker，未等待另一个实践或阻塞控制。此记录是启动调度事实，完整36实践/两576结果仍待整批消费。
+每次launch双节点live准入/普通cap6/node6，初始7空闲卡、gpu02他人任务保持；启动快照确认六个实际GPU进程，不以瞬时util/占显存声称满吞吐。独立strg01 data1 quota used1476497532–1476497724KiB/soft2147483648KiB，新增峰值<32GiB可容纳；原大资产只读引用。
+范围仍36正确G新practice+72教学生成+1152G-only query=1188新episode，0正确G再生成/新MT或参照query/梯度。全36rotation18错视频映射在启动前固定，实践初态和query分离。
+按既有六卡query成本和新增native读取/H IO，暂估03:25–04:00完成整批消费；新生成/H保存吞吐尚未充分测出，非硬截止或提速保证，原1–2h初估保留。
+两个实现worktree均clean且已集成；root分支按祖先合并核验、实践分支按实际cherry-pick差异核验后结束生命周期，运行冻结树保留。main新增完整学习源码解释留到整批交付原样归档，不扩在途范围。
+一个总owner直接等待子进程退出并仅整批完成/异常可靠接续实验session，启动一次回main、整批消费/Git后一次科学交付；无心跳/子阶段Queue/第二等待者或自动共享训练。
+
 ## 2026-10-13 当前实施：固定24849学生经历与两教学内容臂，尚未启动GPU
 
 main科学消费确认425/MT340的先行G要求；唯一active design为docs/designs/video_guided_proposal_writer_20261010.md §19，§18完成与原负结果/阈值保持。

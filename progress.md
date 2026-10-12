@@ -1,3 +1,22 @@
+## 2026-10-13 02:06 实际完成：终点24849全576净增85，交main科学消费接续
+
+唯一design§18已完成：refinement8883_query16_01/PID2996926于02:06:41.554退出0，01:24启动至退出wall2559.653秒（42.661min）。冻结训练/读出7179d581；一fit/六query真实job均0，无失败/恢复。
+完整CP8883的166 endpoint Adam/8,761,152参数、sampler/cursor/四rank RNG真实承接，330冻结参数不step；原144 cache/CP432前端/E/P0/S_G/D38只读复用，0新native读取。
+首10min节点update14166/600.746秒，全144 .47569141比8883 .57489586下降17.25%，按预登记继续；首30min全36边界update24849/1800.719秒，全144 .23293421，保存完整终点后退出。
+新增15966更新/63864条件/每task1774次，144个task-demo各406–492次曝光；累计每task2761次。166 Adam均24849、四rank RNG/sampler齐备；仅实际终点原36指定video的一套完整38-target/rank8 LoRA送query，不择10min/视频。
+七臂各576真实配对：MT340/G432337/G864341/G1296=348/G8883=362/G24849=425/E455；global_task_id配对，4032逻辑行与真实source引用保存。
+MT→G24849 R313/G112/L27/net+85/churn139，保持92.06%；8883→24849 R336/G89/L26/net+63/churn115。覆盖36/36，21task净正/10零/5负。
+train24=252对MT169（+83，R149/G103/L20），support12=173对MT171（+2，R164/G9/L7）；Long+30/Object+25/Spatial+20/Goal+8/support+2。去task32/36仍+65/544，较8883广泛，局部损失仍在。
+E-only134取得97（8883=44），both-success321保持305、MT-only19保持8、both-fail102取得15；相邻净+63=53+9−1+2。37 E-only未取得，27 MT损失保持。
+72教师选点重合MT43/G53净+10，504其余MT297/G372净+75；九零E净−1/27非零净+86，不称held/独立teacher泛化或完整Writer/video-H因果资格。
+原36实际端点BA .23492258（全144 .23293421不同口径），公共误差.01022231/中心化误差.22470027；既有首5动作G/E RMSE .039399（MT/E .088126），无新增探针。
+576G-only query，0新生成/实践/query阶段共享更新/参照episode；六卡gpu01:0–5动态slots16/group4九组，实际query11.237min，物理batch9.647、peak allocated11.190/reserved27.965GiB，未重测32或加profile。
+新fit2.063189811+query .962372164=3.025561975GPUh，失败0、121030新环境步；含旧冻结fit8883/读出累计5.247514581，CP432及旧参照保留独立原账不重复计费。
+02:10:29一次双节点核本项目GPU进程0；新root消费前337231872bytes（约322MiB），低于8GiB准入。CPU消费9.274秒/0新forward或episode；首次缺PYTHONPATH的CPU import错误已记，非GPU实验失败。
+稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013；analysis/completion_20261013/{consume.py,statistics.json,paired_raw_rows.jsonl,provenance.json}及coordinator/refinement8883_query16_01/exit.json。
+main旧8883固定condition选择界原样归档原query16_terminal8883/analysis/main_scientific_readout/terminal8883_fixed_choice_bound.json，379固定选择/397逐初态非法union区别已补既有分析，未重跑算术。
+新终点参数调查信号true只表示新loss<=.50，原8883 substantial_teacher_fit=false/.50与旧864停止不改。有限批结束，串行Git后一次可靠交main01a12bb0自主裁决，不自动第三同缓存块/Actor/fullWriter/held/Test。
+
 ## 2026-10-13 01:24 实际启动：完整8883恢复的有界优化→唯一终点576
 
 唯一owner refinement8883_query16_01/PID2996926/tmux ember8883-refinement-20261013于01:24:01.901启动；真实四rank job于01:24:21.986启动，冻结代码7179d581。

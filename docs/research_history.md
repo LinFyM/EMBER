@@ -1,3 +1,13 @@
+## 2026-10-13：有界完整8883恢复后，唯一24849全576净增85
+
+7179d581 clean pushed detached、原144context/冻结CP432、完整endpoint8883/166 Adam/sampler/四rank RNG接续，首10min14166/600.746秒全池.475691下降17.25%，按合同到30min24849/1800.719秒全池.232934后停止；新增15966更新/1774次每task，0native读取/实践。
+原36指定video各一套完整LoRA只读query16，576新增G/六参照复用。MT340/G432337/G864341/G1296=348/G8883=362/G24849=425/E455各576；R313/G112/L27/net85，相邻8883净63，21task净正/10零/5负，覆盖36/36。
+E-only134传97对8883的44、both-success321保持305、MT-only19保持8、both-fail102取得15；train24+83/support12+2，Long+30/Object+25/Spatial+20/Goal+8，去task32/36仍+65/544。72/504分列+10/+75，所有损失与尚缺能力保存。
+一fit/六query均exit0，01:24→02:06 wall42.661min、query11.237min、新3.025562GPUh/121030环境步，含旧冻结阶段累计5.247515；参照及CP432不重复计费。02:10双节点项目GPU0。
+实际参数与控制支持固定合法条件下共享写出可学性，未证明视频H因果、反馈纠错、held或完整Writer。原8883 .50未过与旧864停止不改，无第三同缓存块或后段自动授权。
+稳定原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013，analysis/completion_20261013/{consume.py,statistics.json,paired_raw_rows.jsonl,provenance.json}，完整解释既有coordinate分析§18/findings454/唯一design§18.1。
+main旧8883 fixed-choice原件已归档旧root/analysis/main_scientific_readout，379固定condition选择与397非法逐初态union严格区分，未重跑CPU算术。
+
 ## 2026-10-13：原144冻结context短拟合取得部分教师拟合，有限批结束
 
 cb27adfc clean pushed detached运行，10月12日23:42:42至13日00:00:17，wall17分34.566秒、8实际job/profile收据全0、0新environment episode。

@@ -608,7 +608,7 @@ E-only134传44、both-success321保持296、MT-only19保持9、both-fail102新�
 本次GPU读出wall768.782s、1.055261149GPUh/131251步；此前短fit含profile1.166691458，合计2.221952607，所有GPU已退出。
 到此停止：main消费完整原件后自主决定下一科学干预，当前没有新的训练/完整Writer/held/Test/controls/probe授权；原§17有限合同与启动估计保留历史。
 
-## 18. 新有限授权：完整8883端点状态的有界优化与唯一终点query16（2026-10-13）
+## 18. 已完成：完整8883端点状态的有界优化与唯一终点query16（2026-10-13）
 
 main消费六臂3456实际逻辑行后授权：G362/MT340，R305/G57/L35，E-only44/134支持部分教师控制传递，但全部+22在train24，task32/36贡献14；去二者仅+8/544。
 G1296→8883净+14由E-only多22、both-success少2、MT-only少3、both-fail少3组成；保持缺口不允许自动完整Writer。
@@ -640,3 +640,14 @@ data1独立quota/实用量/共享容量和<8GiB峰值核实，大资产/缓存�
 初估准备20–40min、fit最多30min、query15–35min、消费5–10min，总1–2h；12.8min最近只读query实测不是完整Writer成本，按共驻/消费者实际修订，无强杀截止。
 一个owner接训练退出→唯一terminal→保存端点→query，直接等退出；真实启动一次回main身份/准入/ETA，整批完成或真实异常一次可靠回报，无心跳/阶段Queue/第二等待者。
 两份main CPU原件归档已完成8883 root/analysis/main_scientific_readout，不重算；科学解释并入既有coordinate分析§17和findings453。
+
+
+### 18.1 实际停止、完整读出与本批收口
+
+首节点update14166/600.74585秒，全144 .47569141相对8883 .57489586降低17.25%，按5%规则继续；首30min全36边界update24849/1800.71863秒，全144 .23293421后保存停止。
+新增15966更新/63864条件/1774次每task，完整166 endpoint Adam均24849、sampler/四rank RNG与冻结CP432引用齐备；原144未重建，原36指定teacher_demo的terminal30min LoRA是唯一被测策略，不选10min或video。
+576G-only query完整，六参照兼容引用：MT340/G432337/G864341/G1296=348/G8883=362/G24849=425/E455各576；MT对新G R313/G112/L27/net+85，8883对新G R336/G89/L26/net+63。
+E-only134传97、both-success321保持305、MT-only19保持8、both-fail102取得15；train24+83/support12+2，各suite净正、21task净正/10零/5负，72/504净+10/+75。所有不利行保留，不称held/完整Writer/video-H因果。
+一个fit/六query均0，02:06:41整批退出，wall42.661min；新fit2.063189811+query .962372164=3.025561975GPUh，576episode/121030步，含旧冻结阶段累计5.247514581，参照/CP432不重复计费。
+本批已结束，原8883调查信号false与旧864停止不变，新参数信号true不成为方法资格。无第三同缓存块/Actor/完整Writer/held/Test自动授权，main完整消费后自主登记新的科学决定。
+完整分布与实际链路解释见现有[coordinate分析§18](../analyses/proposal_coordinate_memory_read_20261012.md)；稳定ROOT/analysis/completion_20261013及coordinator/refinement8883_query16_01/exit.json。

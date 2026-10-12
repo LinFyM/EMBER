@@ -700,3 +700,47 @@ other demo从原46–49换为13–16，改变合法教学输入但同task L/MT-H
 
 §19工程准入已消费实际消费者：完整Runtime在CPU绑定真实CP432+endpoint24849，核166张量/8,761,152参数与330前端冻结，7.275秒、0forward/episode/GPU；实际other14与wrong(task32/demo47)双RGB/目标语言/stride5末帧保持读取通过。原检查误要求末段也恰好5，实际原读取器保留末帧，修正的是一次CPU检查而非视频采样。全36映射、原practice初态/seed和1152信用原行可兼容；实际实践prepare/request/persist消费者.776秒，未完成不可bank、权重/旧H/信用只读链接。
 代码保持一个Generator/Runtime和原endpoint图，新增253行的独立保存端点实践消费者；其余扩展现有pipeline组件绑定、既有resident队列、视频映射与参照复用保护。现有文件≤399行；student_worker61行和saved_practice_group63行是同一组claim/restore/实际完成/发布的连续消费者，未因行数拆成新runner。0新测试框架/模型探针，控制旧MT-H直接引用，实践仅真实新G完成后保存组合H，避免启动时复制旧H。
+
+### 19.1 全36教学变化的完整闭环消费
+
+§19于03:16:24实际退出0，8个真实job均0、无失败/恢复。CP432冻结前端+endpoint24849保持，other/wrong各36个真实教学条件生成唯一完整38-target/rank8 LoRA；两臂各576新G-only query。原正确G425、MT340、E455及四旧G臂原件只读复用，九臂5184逻辑行逐global_task_id/init/state/scene/env/native RNG配对，0新参照query、0更新。
+
+| 套件/集合 | MT | correct24849 | other | wrong | E |
+|---|---:|---:|---:|---:|---:|
+| Spatial（96） | 53 | 73 | 73 | 66 | 79 |
+| Object（96） | 34 | 59 | 59 | 54 | 68 |
+| Goal（96） | 49 | 57 | 58 | 60 | 64 |
+| Long（96） | 33 | 63 | 50 | 41 | 61 |
+| support90（192） | 171 | 173 | 174 | 174 | 183 |
+| 全36（576） | 340 | 425 | 414 | 395 | 455 |
+
+MT→other retained309/gained105/lost31、net+74/churn136；MT→wrong R311/G84/L29、net+55/churn113。correct→other R385/G29/L40、net−11/churn69/Jaccard.8480；correct→wrong R356/G39/L69、net−30/churn108/Jaccard.7672；other→wrong R357/G38/L57、net−19/churn95/Jaccard.7898。同checkpoint不同教学臂不是相邻checkpoint比较。
+other相对MT的task净正/零/负为21/10/5、wrong为18/9/9；成功任务覆盖correct36/other35/wrong36。train24 MT169/correct252/other240/wrong221/E272，support12为171/173/174/174/183。去task32/36仍MT337/correct402/other397/wrong383/E430，各G净+65/+60/+46，不能只以两Long高点解释全部G优势。
+
+| MT/E实际能力类别 | 行数 | correct | other | wrong |
+|---|---:|---:|---:|---:|
+| E-only | 134 | 97 | 88 | 70 |
+| both-success | 321 | 305 | 301 | 302 |
+| MT-only | 19 | 8 | 8 | 9 |
+| both-fail | 102 | 15 | 17 | 14 |
+
+correct→other的−11分解为E-only−9、both-success−4、MT-only0、both-fail+2；correct→wrong的−30为−27/−3/+1/−1。other→wrong的−19主要是E-only−18，伴随both-success+1/MT-only+1/both-fail−3，不能把所有涨跌都叫教师迁移。72教师选点重合为MT43/correct53/other54/wrong48/E55，504其余297/372/360/347/400；两部分保留，非独立teacher泛化。零E9的144行为117/116/117/114/117，非零E27的432行为223/309/297/281/338。
+
+教学变化的损失不是全任务一致：Long correct63→other50→wrong41，是correct与other总−11中−13、correct与wrong总−30中−22；Goal wrong60反高于correct57、support两变化臂174反高于correct173。global task36为MT1/correct10/other7/wrong3/E12，global task17为0/9/10/11/12，global task29为0/1/0/4/3。完整36任务、得失初态和旧G重合都保存于ROOT/analysis/completion_20261013/{statistics.json,paired_raw_rows.jsonl}，不隐藏wrong的正例或局部抵消。
+
+### 19.2 本批改变的判断与完整学习的实际边界
+
+全36保存正确G的实际新实践已按完整History审计：25成功、11正常horizon失败，36/36完整且bank资格真实，0截断/model_failure。新G段1477 records/7326控制步+360 settling=7686环境步，原MT段1562 records，组合3039 records/72 episodes/压缩1.163GiB；RGB/proprio/两次flow hidden/动作/反馈与参数producer均齐备。原MT producer、保存正确G24849权重、下一合法初态及完整native RNG/1152条MT-G信用均兼容，信用只读且query不入H。ROOT/analysis/completion_20261013/practice_audit.json保存逐task清单，实际审计CPU121.395秒/0forward或episode；本批other/wrong仍只读取原MT-H，没有把新G实践混入条件或训练。
+
+same-task-other使用未进Writer四视频缓存的13–16 ordinal，整体414仍明显高于MT340，支持当前生成能力不只在原四条视频中的指定示范上生效；它不证明held task、E/meta从未读过的视频或正式50条件K1泛化。wrong比other少19条、主要少取得E-only能力，既有首5动作对E的RMSE由correct .039399/other .041232升至wrong .065967（correct/other .012015、other/wrong .037740）。这支持冻结合法教学内容变化能影响生成与实际控制，不只是形式上读取；它没有唯一拆开操作内容、跨suite视觉风格、目标L与视频冲突，也不单独证明完整操作知识理解。
+wrong仍395、明显高于MT340，且有39条correct失败/wrong成功的初态。大量能力在换成另一任务教学时仍保留，不能把原+85全部归因视频；联合L/真实MT-H、已见36共同E和共享task映射的贡献尚未被这一有限对照分开。没有新开no-video/shuffle/reverse/held来补因果归因，也不因为弱视频增量抹去已证实的正确G能力或另换架构。本轮结果供main在后继学习覆盖和视频证据上取舍，不是新的全部controls开工Gate。
+
+主讨论源码消费原件已原样归档ROOT/analysis/main_scientific_readout/full_writer_learning_after24849_scientific_note.txt，未重跑科学算术或模型。原144样本P=P0，FactorEncoder.input前64个p数值列的数据梯度为零（AdamW衰减另计），Generator.static非MT数值域同样未受原样本训练。因此原425不证明已学任意parent；这不是此前MT-only拟合弱的原因。新36真实G实践给现有F的non-MT P/H和π实际信用提供明确消费者，不能把添加H称为已经学会反馈。
+完整链仍是m=C(T(L,V),H,{P_producer})，Pnew=P0+S_G F((P−P0)/S_G,m)，38层完整sBA作用于当前自身hidden及十步flow/前五动作replan。共同E标签允许对同task忽略P/H的统计解；新P/H必须实际重编码完整prefix/producers，不能错用旧144缓存。theta只读独立query信用，不把query当H或G标签。原两候选condition上限430仅比正确G425多5，磨选择器不能代替新提案/真实修订/held能力。后继学习量、梯度owner、checkpoint与strict400仍由main消费本批后登记；本批没有实现或自动启动旧R5/Actor/完整Writer/held/Test。
+
+### 19.3 完整账目、物理读出与来源澄清
+
+本批02:53:42.723→03:16:24.013，wall1361.290秒（22.688min）；六卡gpu01:0–5在普通cap6/node6内并行，实践两卡结束约4秒后转就绪控制队列，不静态绑task。other/wrong实际物理batch均值10.022/10.148，九group/arm、slots16/group4，peak allocated11.461/11.439GiB、reserved26.113/27.160GiB；实践condition_batch16/slots16但真实batch4.449，不能称batch16已充分利用。各阶段native推理占resident75.22%/79.07%/实践39.29%，env wait14.88%/11.62%/实践36.35%；教学读取和H IO未单独完整计时，generation_seconds合计20.285/20.761秒不等于完整教学Compiler成本。本轮不重测已无收益的slots32、不增开profile或重复episode，不声称绝对最优。
+实践.171664743、other .966873464、wrong .946883456，新增合计2.085421662GPUh，正式失败0；1188新environment episode/257842步（实践7686/other122568/wrong127588），72新教学条件生成、0正确G生成/参照episode/梯度。含此前两缓存fit及query累计7.332936243GPUh，CP432/MT/E/旧G原获取账单保持独立，未重复计费。03:18:32双节点实核本项目GPU进程0。新增根约1.40GiB（含全配对消费），低于32GiB准入，全部data1，大资产、原H和正确端点引用。
+原run_contract保留未改写：new_G_generation/new_teaching_forward=0和顶层student_refresh.readout_mode=endpoint_query_only/post_generation_practice=false是继承的正确保存端点来源子合同，不代表当前全部arm。实际practice子合同为saved_endpoint_practice_only/真实新实践；other/wrong子合同为composed endpoint_query_only/各36新教学读取生成+576 query。ROOT/analysis/completion_20261013/contract_clarification.json按实际原件分列，澄清出处main启动消费后指示及155e22ef记录；未改变运行代码、重跑或抹去原启动合同。
+CPU消费15.030秒、0新forward/episode；首次读取不存在的source complete.code_identity字段错误已保留，正确训练身份来自source已完成coordinator exit，与本批kernel.endpoint_training_code一致。该记录消费者修正不是GPU失败或科学修复。唯一整批实际退出事件判重后完成一次Git及main可靠交付，不加阶段回报/等待者/自动后段。

@@ -1,3 +1,21 @@
+## 2026-10-13 03:16 实际完成：固定24849教学变化与真实学生证据
+
+唯一design§19已结束：owner fixed24849_student_video_01/PID3426524于03:16:24.013退出0，02:53:42.723启动，wall1361.290秒（22.688min）；八实际job均0、无失败/恢复，原启动来源c60bd494及03:25–04:00预测保留。
+同CP432完整冻结前端+endpoint24849，0更新；保存正确G36新实践，other/wrong各36真实教学读取/生成完整38-target/rank8 LoRA、各576新G-only query。合计1188新episode/72生成，0正确G再生成/MT-E或其它参照新episode/梯度。
+九臂各576严格配对/5184逻辑行：MT340/G432337/G864341/G1296=348/G8883=362/correct24849=425/other414/wrong395/E455；G864341为旧factor-MSE参照，不冒称已取消coordinate匹配控制。global/local task、state/scene/env/native RNG与全部实际episode来源齐备。
+MT→other R309/G105/L31/net+74/churn136；MT→wrong R311/G84/L29/net+55/churn113。correct→other R385/G29/L40/net−11，correct→wrong R356/G39/L69/net−30；other→wrong R357/G38/L57/net−19/churn95。
+E-only134取得correct97/other88/wrong70，both-success321保持305/301/302，MT-only19保持8/8/9，both-fail102取得15/17/14。wrong差异主要是E能力取得更少，不把全部gain叫迁移；两变化臂仍明显高于MT。
+train24 MT169/correct252/other240/wrong221/E272，support12=171/173/174/174/183；Long63/50/41对MT33，Spatial73/73/66对MT53，Object59/59/54对MT34，Goal57/58/60对MT49。去32/36仍净+65/+60/+46，局部wrong正例及Long差异保留。
+other/wrong对MT task净正/零/负21/10/5与18/9/9，覆盖correct36/other35/wrong36；72选点重合MT43/correct53/other54/wrong48/E55，504其余297/372/360/347/400。零E9与非零27、完整每task/得失初态/旧G重合均在统计原件，不称独立teacher泛化/held。
+全36真实实践审计通过：25成功/11正常horizon失败，全36bank资格真实，无截断/model failure。新G1477 records/7686步，组合3039 records/72episodes、压缩1.163GiB；原MT-H/producer/下一合法初态/native RNG/保存正确权重/1152只读MT-G信用兼容，query未入H，两个教学臂未用新G-H。
+新实践.171664743+other .966873464+wrong .946883456=2.085421662GPUh，失败0、257842环境步；含两冻结fit和query累计7.332936243，原MT/E/CP432/旧G获取费用保持独立不重计。
+六卡gpu01:0–5动态resident，实践释放约4秒转控制。other/wrong实际batch10.022/10.148，peak allocated11.461/11.439GiB、reserved26.113/27.160GiB；实践batch4.449不称slots16充分batch，教学与H IO未单独完整计时，无新profile/额外episode。
+03:18:32双节点实核本项目GPU进程0；新root含消费约1.40GiB，小于32GiB准入，全data1/大资产引用。CPU配对消费15.030秒、H审计121.395秒，0新forward/episode；首次source complete无code_identity的CPU读取错误保留，仅消费者改读真实source coordinator身份。
+原run_contract不改写：顶层new_G_generation/new_teaching_forward=0及student_refresh.readout_mode=endpoint_query_only/post_generation_practice=false是旧正确保存端点子合同；实际practice为saved_endpoint_practice_only/36新实践，other/wrong各36读取生成+576 query。analysis/completion_20261013/contract_clarification.json分列actual范围与main澄清出处，未因此换代码/重跑。
+main完整学习原件已归档ROOT/analysis/main_scientific_readout/full_writer_learning_after24849_scientific_note.txt；P0数据不教非MT数值输入域、共同E可忽略P/H等边界并入现有analysis/findings，不重跑算术。换教学保持/内容敏感性仍非操作知识唯一因果/完整反馈或held资格。
+稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013；analysis/completion_20261013/{consume.py,statistics.json,paired_raw_rows.jsonl,practice_audit.json,provenance.json}。现有coordinate分析§19/findings456/唯一design§19完成。
+本有限批停止计算，串行Git后一次可靠交main01a12bb0自主裁决；原.50阈值/旧864停止/全部负结果不改，无自动共享训练/Actor/fullWriter/held/Test/controls，唯一整批退出回报已判重，无额外等待者或心跳。
+
 ## 2026-10-13 02:53 实际启动：六卡固定24849实践与两教学臂
 
 唯一design§19/ROOT=.../terminal24849_student_video_evidence_20261013；owner fixed24849_student_video_01/PID3426524/tmux ember24849-student-video-20261013于02:53:42.723启动，实际六worker于02:53:51–02:54:11启动。

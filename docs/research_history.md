@@ -5175,3 +5175,10 @@ early432完整576=337/MT340；control864仅351真实完成行/24task，252/同�
 ### 2026-10-13 先行G能力取得后的有限准备授权
 
 main独立消费24849全4032逻辑行，425对MT340及广泛保持/覆盖满足当前先行G要求；固定两候选condition选择界430仅多5，完整方法/held/video-H仍未资格。§19固定前端CP432+endpoint24849，采36真实实践并作两个教学臂各576，后段学习另登记。原wrong调度漏12 support，经main事前科学裁决全36 actual suite/local rotation18，不改旧formal四suite/held调度。见唯一design§19、coordinate分析§19/findings455，原§18完成和旧阈值/停止记录保留。
+
+### 2026-10-13 固定24849真实学生与教学内容证据完整退出
+
+唯一owner fixed24849_student_video_01于02:53:42.723启动/03:16:24.013退出0；冻结c60bd494，8个真实job均0，36保存正确G实践与other/wrong各36生成/576查询完整，0梯度/正确G再生成/新参照episode。
+九臂5184逻辑行严格配对，MT340/correct425/other414/wrong395/E455；MT→两新臂R309/G105/L31与R311/G84/L29，correct→other净−11、correct→wrong−30；E-only134取得97/88/70。Long内容差异较大、support变化小、wrong局部正例保留，不能归因完整操作理解/held/真实parent修订已成立。
+新增2.085421662GPUh/1188episode/257842步、22.688min，无失败/恢复，旧参考与CP432不重复计费；两节点GPU退出证据齐备。原启动合同继承的零生成/query-only字段保留，以当前arm实际计数澄清；源端点/组合推理/本批执行身份分开。
+原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/analysis/completion_20261013，main源码解释原样归档analysis/main_scientific_readout。见现有coordinate分析§19/findings456；本批到此完成，后继科学由main另登记，无自动训练/Actor/held/Test。

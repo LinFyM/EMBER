@@ -684,3 +684,10 @@ main在任何wrong生成/读出前修正原派发遗漏：原task_video_mapping�
 一个实际owner等待整批退出，启动给一次真实身份/准入/ETA，完成或真实异常一次可靠交main01a12bb0；无心跳、子阶段Queue、自Queue、第二等待者或自动共享训练。全交付包括36真实H/兼容信用/producer清单，correct/other/wrong全576的task/suite/train-support/RGL/churn/重叠/E类别/72与504及完整映射，教学读取/实践/query/steps/失败费用/存储/恢复能力。
 
 实际02:53:42.723启动fixed24849_student_video_01/PID3426524，clean pushed detached来源c60bd494。gpu01:0–5六worker：两卡保存端点实践condition_batch16/slots16，四卡控制group4/slots16/frame-chunk16；独立队列动态承接，首个实践workerexit0后原卡立即转other。普通live cap6/node6/独立quota通过，全部参数冻结。启动时整批消费暂估03:25–04:00，真实native生成/H IO与完整物理吞吐在退出后结算，不据启动瞬时显存/util声称充分batch；原预计与科学范围保持。
+
+### 19.4 有限批完成与授权收口
+
+03:16:24实际exit0，8job均0/无恢复，全部36实践及other/wrong各36生成/576查询齐备；0更新/正确G再生成/参照新episode。correct425/other414/wrong395、MT340/E455；完整配对/全task-suite/得失/72与504和解释见[coordinate分析§19](../analyses/proposal_coordinate_memory_read_20261012.md)。新增1188episode/257842步、2.085421662GPUh，22.688min；GPU已退出。原预计、原阈值及旧停止不改写。
+原启动run_contract的零生成/零教学forward及顶层旧query-only字段属于继承的保存正确端点子合同，已在ROOT/analysis/completion_20261013/contract_clarification.json分列当前arm实际范围和澄清出处；原合同不修改，当前other/wrong实际各36真实读取/生成。原保存端点、完整推理组合与本批读取代码身份分别保留。
+36实践原件完整审计：25成功/11正常horizon失败，全36bank资格真实，新G1477 records/7686步、组合3039 records/72episodes，实际producer与信用清单保存practice_audit.json。原MT-H/正确G权重/1152信用只读引用，query不进H，other/wrong不使用新G-H。
+本节到此完成，没有自动后继共享学习/Actor/fullWriter/held/Test授权。main直接消费完整原件后自主登记后继；新真实P/H给现有G和π提供明确消费者，不构成已学反馈资格，也不要求Owner逐项许可。

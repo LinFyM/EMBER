@@ -11764,3 +11764,13 @@ main直接消费七臂4032原行确认G24849=425对MT340，R313/G112/L27、21tas
 唯一design§19只保留CP432冻结真实前端+共享endpoint24849组合，0更新：原36保存正确G各一次新真实practice，原MT/G各query16信用兼容只读；两教学臂各36生成/576 query，总1188新episode/72新G生成。新G-H有真实non-MT P/H和π经历的明确后继消费者，后段学习仍另登记；E不入部署候选/特权condition，不做轨迹准备后task LoRA微调。
 原task_video_mapping对全36实际仅返回24且遗漏12 support，经main科学修订事前采用四suite+90/local key排序rotation18，全36cross-suite双射，完整manifest固定，不冒充原24轮换或与旧wrong作匹配比较。other demo=(correct+17)%50，在13–16，Writer缓存未见而非E/meta全独立；视频敏感性与换视频保持分别解释，wrong降分不单独证明操作知识。
 原.50历史/旧864停止/负结果保留，原144同状态第三块停止。工程独占Git/clean pushed frozen、双节点6/8/node6、独立data1 quota/<32GiB峰值、一总owner可靠整批交付，无新完整Writer/held/Test/自动学习。
+
+## 456. 固定G换教学大部分保持、错教学降低能力取得，完整反馈学习仍须单独成立（2026-10-13）
+
+§19完整72生成/两576控制已消费：correct425/other414/wrong395，MT340/E455；九臂5184真实逻辑行配对，正确与所有参照只读复用、0更新。MT→other R309/G105/L31净+74，MT→wrong R311/G84/L29净+55；correct→other R385/G29/L40净−11、correct→wrong R356/G39/L69净−30，other→wrong R357/G38/L57净−19。得失与局部正例保留，不以总分代替success-set。
+E-only134分别传97/88/70，both-success321保持305/301/302、MT-only19保持8/8/9、both-fail102取得15/17/14。other→wrong主要E-only少18，条件内容变化影响能力取得的解释得到支持，但跨suite风格/L-V不一致仍未区分，wrong不单独证明操作知识理解。
+train24 correct252/other240/wrong221对MT169，support12=173/174/174对MT171；Long63/50/41承担correct→other−13与correct→wrong−22，Goal wrong60反高于correct57，support两变化臂也高1。去32/36仍+65/+60/+46，三臂成功覆盖36/35/36；other/wrong对MT task净正21/18。72与504、九零E/27非零E及全36task原件均完整，不冒充独立teacher或held。
+未进入Writer四视频缓存的same-task-other仍保持414/576，削弱只有原指定示范才能得到G能力的解释；它并非E/meta从未读过的数据。wrong仍395明显超MT，不能把原+85全部归因视频。既有首5动作G/E RMSE .039399/.041232/.065967与不同内容下的能力差异一致，不是全轨迹或video/H唯一因果证明；不补额外controls来制造资格或据此更换架构。
+main完整学习源码分析已归档ROOT/analysis/main_scientific_readout/full_writer_learning_after24849_scientific_note.txt。原144都P=P0，F.input前64数值列数据梯度为0、static非MT方向未受训（AdamW衰减另计），原425不代表任意parent能力；这不解释旧MT-only弱拟合。新真实G经历提供明确non-MT P/H和π信用消费者，共同E仍允许忽略P/H，添加H不自动成为反馈纠错；完整后段与strict400合同另登记，不自动旧R5/Actor/held/Test。
+36真实G实践均完整且具备bank资格：25成功/11正常horizon失败，新G1477 records/7686环境步，组合72 episodes/3039 records/压缩1.163GiB；producer/保存正确权重/RNG和1152只读MT-G信用已审计，0截断/model failure，query未进入H。本批两教学臂不消费新G-H，H准备不冒充已学修订。
+02:53:42→03:16:24，8正式job0/22.688min、新增2.085421662GPUh/1188episode/257842步，失败0；含两冻结fit阶段和query累计7.332936243，原参考/CP432不重计。六卡动态并行，实际other/wrong batch10.022/10.148、实践4.449，不以slots16称满batch；教学/H IO未单独充分计时。GPU退出、原启动合同继承字段与当前arm计数澄清均有稳定原件，详见既有coordinate分析§19与ROOT/analysis/completion_20261013。旧.50阈值/旧864停止/全部负结果不改，整批到此停止后一次交main裁决。

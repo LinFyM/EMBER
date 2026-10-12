@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, timezone
 import json
+import copy
 import subprocess
 import time
 
@@ -108,9 +109,11 @@ def formal_worker(args,runtime,runner):
         raise ValueError('strict formal version changed')
     stage,update=spec['version'];base=args.root/'validation'/f'{stage}_{update:08d}'/args.video_arm
     tasks={(t['suite'],t['task_id']):t for t in panel['environment']['tasks']}
-    queue=base/'jobs.sqlite'
+    queue=base/'jobs.sqlite';completed_groups=0
     while (claim:=claim_next(queue,worker_id=args.worker_id)) is not None:
         try:
+            tick=time.monotonic();runner_before=copy.deepcopy(runner.components)
+            runtime_before=dict(runtime.components);before_steps=runner.environment_steps
             task=tasks[claim.task_key]
             entries=[r for r in panel['rows'] if r['task']==task['global_task_id'] and r['init_state_id'] in claim.shard.init_state_ids]
             results=[]
@@ -121,6 +124,21 @@ def formal_worker(args,runtime,runner):
                 worker_id=args.worker_id,code_reading_conditions_in_one_persistent_runtime=True))
             complete_job(queue,job_id=claim.shard.job_id,worker_id=args.worker_id,claim_token=claim.claim_token,
                 rows_path=str(relative),rows_bytes=size,row_count=len(results),successes=sum(bool(r['success']) for r in results))
+            from .learning import memory_peak
+            histogram={key:value-runner_before['physical_batch_histogram'].get(key,0)
+                for key,value in runner.components['physical_batch_histogram'].items()}
+            performance=dict(job_id=claim.shard.job_id,condition_batch=args.condition_batch,slots=args.slots,
+                conditions=len(results),seconds=time.monotonic()-tick,
+                actual_new_environment_steps=runner.environment_steps-before_steps,
+                runner={key:value-runner_before[key] for key,value in runner.components.items() if key!='physical_batch_histogram'},
+                physical_batch_histogram=histogram,peak=memory_peak(runtime.device),
+                runtime={key:value-runtime_before.get(key,0.) for key,value in runtime.components.items()})
+            destination=args.root/'metrics'/f'formal_physical_{args.worker_id}.jsonl'
+            destination.parent.mkdir(parents=True,exist_ok=True)
+            with destination.open('a') as stream:stream.write(json.dumps(performance)+'\n')
+            completed_groups+=1
+            if args.max_groups is not None and completed_groups>=args.max_groups:break
+
         except BaseException as error:
             fail_job(queue,job_id=claim.shard.job_id,worker_id=args.worker_id,claim_token=claim.claim_token,error=repr(error))
             raise

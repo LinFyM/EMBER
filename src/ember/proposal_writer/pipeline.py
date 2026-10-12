@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import time
+import copy
 
 import torch
 from safetensors.torch import load_file
@@ -263,7 +264,8 @@ def endpoint_query_group(args,runtime,runner,environment,run,task_ids):
 
 def collect_batch(args,runtime,runner,environment,context,baseline,update,cache):
     """One fixed theta/psi batch shares the persistent official environment workers."""
-    tick=time.monotonic();visit=update//9;panel_by_task=panels(args.root);entries=[];missing=[]
+    tick=time.monotonic();runner_before=copy.deepcopy(runner.components)
+    visit=update//9;panel_by_task=panels(args.root);entries=[];missing=[]
     rounds=read_json(args.root/'run_contract.json')['selector_training']['rounds']
     for task_id in assigned_tasks(context,update):
         task=task_spec(environment,task_id);panel=panel_by_task[task_id]
@@ -288,7 +290,10 @@ def collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
     rewards=query_conditions(runtime,runner,[(e['path'],e['task'],e['panel'],visit,e['destination']/'query') for e in entries],
         mt_reference_version=read_json(args.root/'run_contract.json')['student_refresh']['version'])
     return [e['path'] for e in entries],rewards,dict(collection_and_path_IO_seconds=collection_seconds,
-        independent_query_and_row_IO_seconds=time.monotonic()-query_tick,total_collection_query_seconds=time.monotonic()-tick)
+        independent_query_and_row_IO_seconds=time.monotonic()-query_tick,total_collection_query_seconds=time.monotonic()-tick,
+        runner={key:value-runner_before[key] for key,value in runner.components.items() if key!='physical_batch_histogram'},
+        physical_batch_histogram={key:value-runner_before['physical_batch_histogram'].get(key,0)
+            for key,value in runner.components['physical_batch_histogram'].items()})
 
 
 def rl(args,runtime,runner,environment,context):

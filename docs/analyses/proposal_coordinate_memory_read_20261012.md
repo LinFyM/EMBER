@@ -697,3 +697,6 @@ main独立复算24849的4032原行，确认425对340、合理保持和跨suite�
 other demo从原46–49换为13–16，改变合法教学输入但同task L/MT-H/P和G状态；只能称Writer输入未见video。wrong采用main明示的新全36 rotation18：actual four-suite+90/local key升序，[6,6,6,6,12]构成cross-suite双射；原调度实际漏12个support证据保持。它与旧24下一suite轮换不同，不作历史匹配对照/全部错来源平均效应。三correct/other/wrong的固定LoRA按同query16/RNG评，other保持和wrong敏感性共同更新内容理解假设，单独wrong下降不证明操作知识、weak effect不抹去G控制正例。
 
 唯一design§19、ROOT=.../terminal24849_student_video_evidence_20261013登记36新实践+72新G教学生成+两576控制查询，0新正确/参照query、0更新/held/Test/其它controls。一个调度owner即时并行就绪工作，32GiB峰值以旧真实H体量估算，准备30–60min/执行20–50min/消费10min为待实测预计；不是时间强杀或新的科学Gate。
+
+§19工程准入已消费实际消费者：完整Runtime在CPU绑定真实CP432+endpoint24849，核166张量/8,761,152参数与330前端冻结，7.275秒、0forward/episode/GPU；实际other14与wrong(task32/demo47)双RGB/目标语言/stride5末帧保持读取通过。原检查误要求末段也恰好5，实际原读取器保留末帧，修正的是一次CPU检查而非视频采样。全36映射、原practice初态/seed和1152信用原行可兼容；实际实践prepare/request/persist消费者.776秒，未完成不可bank、权重/旧H/信用只读链接。
+代码保持一个Generator/Runtime和原endpoint图，新增253行的独立保存端点实践消费者；其余扩展现有pipeline组件绑定、既有resident队列、视频映射与参照复用保护。现有文件≤399行；student_worker61行和saved_practice_group63行是同一组claim/restore/实际完成/发布的连续消费者，未因行数拆成新runner。0新测试框架/模型探针，控制旧MT-H直接引用，实践仅真实新G完成后保存组合H，避免启动时复制旧H。

@@ -113,7 +113,10 @@ def _persist(entry, version, error=None):
     path, destination, credit = (entry[k] for k in ('path', 'destination', 'credit'))
     complete = error is None and path.completed_rounds == 1
     history = destination/'history.pt.gz'; temporary = destination/'.history.pt.gz.partial'
-    save_history(temporary, path.history); temporary.replace(history)
+    if len(path.history.episodes)==1 and not path.boundaries:
+        _link(history,path.bootstrap_provenance['source'])
+    else:
+        save_history(temporary, path.history); temporary.replace(history)
     descriptor = dict(path=str(history), records=len(path.history.records), episodes=len(path.history.episodes))
     segment = dict(path=str(history), record_start=entry['bootstrap_records'],
                    records=len(path.history.records)-entry['bootstrap_records'], episode=1, parameter_ref='G_000')

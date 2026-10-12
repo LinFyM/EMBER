@@ -6,7 +6,7 @@ main科学消费确认425/MT340的先行G要求；唯一active design为docs/des
 main已修正wrong函数实际只返回24的遗漏：full36按四suite+90/local key排序轮转18，双射全cross-suite，manifest在任何生成前固定。
 独占codex/terminal24849-evidence实现组合/控制/队列，隔离codex/terminal24849-practice只承接实践消费者；按仓库串行集成push、clean detached正式启动，旧冻结树不热改。
 strg01 data1 used1475613808KiB/soft2147483648KiB，shared81TiB；旧bootstrap602MiB/学生1.4GiB，峰值<32GiB可容纳，不复制大资产。实际launch再live双节点准入、合计6/8/node6，独立工作及时并行。
-预计准备30–60min/执行20–50min/消费10min，总1–2h；72实际读取与H IO须实测修订，11:00非硬截止。一个总owner、启动一次/整批完成或真实异常一次可靠回main，当前尚未声称GPU已运行。
+预计准备30–60min/执行20–50min/消费10min，总1–2h；72实际读取与H IO须实测修订，11:00非硬截止。一个总owner、启动一次/整批完成或真实异常一次可靠回main，当前尚未声称GPU已运行。 CPU实际组件7.275秒/实际实践.776秒通过，0forward/episode；其他/错视频映射和全36原信用已核。02:37双节点快照当前cap6，gpu01有7空闲/gpu02忙，拟gpu01六卡及时并行，正式launch再live核验。
 
 ## 2026-10-13 02:06 实际完成：终点24849全576净增85，交main科学消费接续
 

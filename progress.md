@@ -1,3 +1,20 @@
+## 2026-10-13 00:44 实际完成：固定8883全36/576净增22，交main裁决
+
+唯一design§17已实际结束，owner terminal8883_query16_01/PID2719409于00:44:28退出0，wall768.782秒；7个真实job均exit0，无失败/恢复，576G-only query完整。
+实际读出来源61ea7f86，训练仍cb27adfc/前端完整CP432/endpoint8883；0新G生成、教学forward、实践、共享更新及参照episode，原36固定video/LoRA和官方逐行RNG齐备。
+MT340/G432337/G864341/G1296=348/G8883=362/E455各576严格配对，MT对新G retained305/gained57/lost35/net+22/churn92；覆盖35/36，17task净正/10零/9负。
+train24=191/384对MT169（+22，R139/G52/L30）；support12=171/192对MT171（0，R166/G5/L5）；Long+17/Object+5/Goal+4/Spatial−4/support0，收益不均。
+E-only134传44（G43217/G129622），both-success321保持296、MT-only19保持9、both-fail102新增13；不是所有新增都叫教师能力迁移，90条E-only仍未取得。
+72选点重合MT43/G45净+2，504其余MT297/G317净+20；九零E任务净−2/27非零净+24；不能把此train机制面板当held或完整Writer资格。
+首5动作RMSE G/MT .031013、G/E .077331、MT/E .088126，仅既有原动作算术，非新forward/全轨迹功能相等或video/H因果。
+slots32原定64行成功，但平均真实batch5.878、native plans/s7.715低于当时两slots16的9.283/9.349，组后余量仅2.800GiB；后续worker07立即用16，未重跑/加episode。
+全批物理batch均值9.973、峰值allocated13.261GiB/reserved28.834GiB，native占resident77.09%、env_wait17.15%；未称绝对最优或归因纯物理提速。
+读出1.055261149GPUh/131251新环境步，失败0；此前fit/cache/profile1.166691458，合计2.221952607GPUh。原MT/E/旧G和CP432获取成本保持独立旧账，不重复记费。
+CPU完整消费7.704秒/0新模型forward或episode；已定位汇总器不支持历史未实践端点的来源字段，窄修复f3e878e1已针对实际576原行核验/集成push，读取代码与实际GPU代码分列。
+00:45:20一次双节点核验本项目GPU进程0；新读出实际约39MiB低于1GiB。原预计GPU01:15–01:55/消费01:20–02:05保留为预测，实际更早，不把差异单归因某优化。
+稳定原件ROOT/query16_terminal8883/analysis/completion_20261013/{consume_terminal576.py,statistics.json,paired_raw_rows.jsonl,provenance.json}与coordinator/terminal8883_query16_01/exit.json。
+§16原.50阈值/substantial_teacher_fit=false与全部历史不改；本批到此停止，main消费完整配对后自主接续，无自动训练/完整Writer/held/Test，实验一次可靠完整交付。
+
 ## 2026-10-13 00:32 实际启动：六卡固定8883端点直接query16
 
 读出来源61ea7f86已集成push，main/origin一致；task-owned实现分支删除，独立树转为clean detached /data1/user/ymdai/ember_worktrees/terminal8883_query16_20261013_61ea7f86供在途唯一读出使用。

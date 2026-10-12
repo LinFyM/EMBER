@@ -5146,3 +5146,12 @@ early432完整576=337/MT340；control864仅351真实完成行/24task，252/同�
 原失败/外部信号真实身份/未记录update642未知/旧CPU错误和迟到回执均保留判重，不恢复旧队列。
 [现有分析§14](analyses/proposal_coordinate_memory_read_20261012.md)、findings448及ROOT/analysis/owner_stop_20261012保存完整覆盖/成本/恢复范围。
 后继先以能改变判断的小投入验证有效学习，main继续完整原理分析；当前无新源码/架构/实验授权，也不永久禁止长训练或设新步数菜单。
+
+
+### 2026-10-13 固定8883端点原36/query16：部分控制传递
+
+在全144冻结context短fit终点8883（.574896、原.50信号未通过）之后，main授权固定原36端点576G-only query，0生成/实践/共享更新；原五臂完整只读引用。
+完整结果MT340/G432337/G864341/G1296=348/G8883=362/E455，R305/G57/L35、train24+22/support0、Long+17，E-only134传44，保留不均/损失与未取得能力。
+实际00:31:40–00:44:28 owner、7job0/1.055261149GPUh，含短fit总2.221952607；GPU读出代码61ea7f86，CPU消费f3e878e1仅修复旧direct-G权重来源，不改原行/模型/资格。
+原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/query16_terminal8883/analysis/completion_20261013；完整推理/任务分布/物理与费用见[现有coordinate分析§16.2](analyses/proposal_coordinate_memory_read_20261012.md)，跨轮边界findings452。
+这不是完整Writer/held或video/H因果结论；旧864停止和§16阈值保留，后继由main实际消费后另行登记，不自动复活旧链。

@@ -13,7 +13,7 @@ from .contract import TASKS,OPTIMIZER,seed,CHECKPOINT_SCHEMA,SELECTOR_SCHEMA,G_O
 from .learning import (Baseline,EndpointTrainer,train_endpoint,train_local,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
 from .path import compile_condition,compile_conditions,evaluate_fixed,restore_compilation
-from .supervision import (panels,bootstrap_source,query_once,query_conditions,LocalExamples,register_students,
+from .supervision import (panels,bootstrap_source,query_conditions,LocalExamples,register_students,
                           readonly_E_query,student_data_complete,query_panel)
 
 
@@ -46,38 +46,78 @@ def fixed_G(args,runtime):
 
 def refresh(args,runtime,runner,environment):
     state=load_version(runtime,args.checkpoint);run=read_json(args.root/'run_contract.json')
-    version=run['student_refresh']['version']
     if state['stage']!='G' or state['next_update']!=run['student_refresh']['G_update']:
         raise ValueError('student data only at its registered complete G node')
-    panel=panels(args.root)[args.task];task=task_spec(environment,args.task)
-    destination=args.root/'student_data'/version/f'task_{args.task:04d}'
+    return refresh_group(args,runtime,runner,environment,run,[args.task])
+
+
+def refresh_group(args,runtime,runner,environment,run,task_ids):
+    """One loaded fixed kernel serves independent original conditions and their queries."""
+    tick=time.monotonic();task_ids=tuple(task_ids)
+    if len(task_ids)!=len(set(task_ids)):raise ValueError('student group repeats a condition')
+    version=run['student_refresh']['version'];panel_by_task=panels(args.root)
     readonly_E=run['student_refresh'].get('readonly_E_query',False)
-    if student_data_complete(destination,panel,args.task,require_E=readonly_E):return
-    if (destination/'path.json').exists():path=restore_compilation(destination,runtime)
-    else:
-        history,source=bootstrap_source(args.root,args.task,panel,0,HistoryCache())
-        condition=run['student_refresh']['condition_mapping'][str(args.task)]
-        path=compile_condition(runtime,runner,task,panel,condition['teacher_demo'],identity=destination.name,
-            path_ordinal=condition['path_ordinal'],noise_root=condition['noise_root'],max_rounds=1,uniform=True,student_only=True,
-            bootstrap_history=history,bootstrap_provenance=source)
-        path.save(destination,retain_U=True)
-    if path.completed_rounds!=1:raise ValueError('student refresh needs one real complete G-produced episode')
-    actual=path.boundaries[-1]['actual_parameter_ref']
-    weight_path=destination/f'{actual}.safetensors'
-    history_descriptor=dict(path=str(destination/'history.pt.gz'),records=len(path.history.records),episodes=len(path.history.episodes))
-    rewards=query_once(runtime,runner,path,task,panel,0,destination/'query',
-        mt_reference_version=run.get('previous_student_version'),mt_reference_root=run.get('previous_root'))
-    E=read_json(args.root/'teachers'/f'task_{args.task:04d}'/'E.json')
-    reference=readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',E) if readonly_E else None
-    write_json_atomic(destination/'parent.json',dict(complete=True,task=args.task,version=version,
-        parent=dict(reference=f'{version}_task_{args.task:04d}_{actual}',weights=str(weight_path),histories=[history_descriptor]),
-        actual_generated_parameter_ref=actual,common_E_reference=E['reference'],common_E_weights=E['weights'],
-        actual_producer_refs=list(path.history.states),fixed_scale_reestimated=False,
-        deterministic_endpoint_single_candidate=True,selection_did_not_use_reward_or_query=True,
-        kernel_identity=path.kernel_identity,timings=path.timings,query_rewards=rewards,
-        query_count=len(query_panel(panel,0)),readonly_E_complete=reference is not None,
-        readonly_E_receipt=str(destination/'readonly_E/complete.json') if reference is not None else None,
-        warmstart_source='same actual MT/G pair; no additional uniform R5 collection'))
+    entries=[];missing=[];cache=HistoryCache();env_start=getattr(runner,'environment_steps',None)
+    for task_id in task_ids:
+        panel=panel_by_task[task_id];task=task_spec(environment,task_id)
+        destination=args.root/'student_data'/version/f'task_{task_id:04d}'
+        ready=student_data_complete(destination,panel,task_id,require_E=readonly_E)
+        reused_path=(destination/'path.json').exists()
+        entry=dict(task=task,panel=panel,destination=destination,path=None,already_complete=ready,
+            practice_status='complete' if ready else 'restored' if reused_path else 'new')
+        entries.append(entry)
+        if ready:continue
+        if reused_path:entry['path']=restore_compilation(destination,runtime)
+        else:
+            history,source=bootstrap_source(args.root,task_id,panel,0,cache)
+            condition=run['student_refresh']['condition_mapping'][str(task_id)]
+            missing.append((entry,dict(task=task,panel=panel,demo=condition['teacher_demo'],identity=destination.name,
+                path_ordinal=condition['path_ordinal'],noise_root=condition['noise_root'],max_rounds=1,uniform=True,student_only=True,
+                bootstrap_history=history,bootstrap_provenance=source)))
+    destinations={e['destination'].name:e['destination'] for e,_ in missing}
+    def save_finished(path):path.save(destinations[path.identity],retain_U=True)
+    if missing:
+        compiled=compile_conditions(runtime,runner,[spec for _,spec in missing],on_condition_complete=save_finished)
+        for (entry,_),path in zip(missing,compiled,strict=True):
+            entry['path']=path
+            # Completion saved history/weights once; append only final group timings.
+            saved=read_json(entry['destination']/'path.json');saved['timings']=path.timings
+            write_json_atomic(entry['destination']/'path.json',saved)
+    pending=[e for e in entries if not e['already_complete']]
+    if any(e['path'].completed_rounds!=1 for e in pending):
+        raise ValueError('student refresh needs one real complete G-produced episode')
+    rewards=query_conditions(runtime,runner,[(e['path'],e['task'],e['panel'],0,e['destination']/'query') for e in pending],
+        mt_reference_version=run.get('previous_student_version'),mt_reference_root=run.get('previous_root')) if pending else []
+    for entry,reward in zip(pending,rewards,strict=True):
+        path,destination,task,panel=(entry[k] for k in ('path','destination','task','panel'))
+        task_id=task['global_task_id'];actual=path.boundaries[-1]['actual_parameter_ref']
+        weight_path=destination/f'{actual}.safetensors'
+        history_descriptor=dict(path=str(destination/'history.pt.gz'),records=len(path.history.records),episodes=len(path.history.episodes))
+        E=read_json(args.root/'teachers'/f'task_{task_id:04d}'/'E.json')
+        reference=readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',E) if readonly_E else None
+        write_json_atomic(destination/'parent.json',dict(complete=True,task=task_id,version=version,
+            parent=dict(reference=f'{version}_task_{task_id:04d}_{actual}',weights=str(weight_path),histories=[history_descriptor]),
+            actual_generated_parameter_ref=actual,common_E_reference=E['reference'],common_E_weights=E['weights'],
+            actual_producer_refs=list(path.history.states),fixed_scale_reestimated=False,
+            deterministic_endpoint_single_candidate=True,selection_did_not_use_reward_or_query=True,
+            kernel_identity=path.kernel_identity,timings=path.timings,query_rewards=reward,
+            query_count=len(query_panel(panel,0)),readonly_E_complete=reference is not None,
+            readonly_E_receipt=str(destination/'readonly_E/complete.json') if reference is not None else None,
+            warmstart_source='same actual MT/G pair; no additional uniform R5 collection'))
+    shared=dict(seconds=time.monotonic()-tick,members=[e['destination'].name for e in entries],
+        new_practice_tasks=[e['task']['global_task_id'] for e in entries if e['practice_status']=='new'],
+        restored_practice_tasks=[e['task']['global_task_id'] for e in entries if e['practice_status']=='restored'],
+        completed_tasks_reused=[e['task']['global_task_id'] for e in entries if e['already_complete']],
+        new_environment_steps=None if env_start is None else runner.environment_steps-env_start)
+    results=[]
+    for entry in entries:
+        destination=entry['destination'];parent=read_json(destination/'parent.json')
+        results.append(dict(task=entry['task']['global_task_id'],destination=str(destination),
+            parent_receipt=str(destination/'parent.json'),query_receipt=str(destination/'query/complete.json'),
+            readonly_E_receipt=parent.get('readonly_E_receipt'),actual_generated_parameter_ref=parent['actual_generated_parameter_ref'],
+            query_count=len(query_panel(entry['panel'],0)),query_rewards=parent.get('query_rewards'),
+            already_complete=entry['already_complete'],practice_status=entry['practice_status'],shared_refresh_group=shared))
+    return results
 
 
 def collect_batch(args,runtime,runner,environment,context,baseline,update,cache):

@@ -430,7 +430,10 @@ def main():
     environment=read_json(args.root/'formal_panel.json')['environment'] if args.command=='formal' else read_json(args.root/'run_contract.json')['environment']
     if args.command=='formal' and (not args.worker_id or not args.condition_batch or args.condition_batch<1):
         parser.error('formal needs its persistent queue worker identity and measured condition batch')
-    if not shared and args.command!='formal' and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')
+    resident_student=args.command=='student-data' and bool(args.worker_id)
+    if resident_student and (not args.condition_batch or args.condition_batch<1):
+        parser.error('resident student needs its physical condition batch')
+    if not shared and args.command!='formal' and not resident_student and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')
     runtime=create_runtime(args,context,environment)
     consumer=args.worker_id or (str(args.stop) if shared else f'task{args.task}')
     write_json_atomic(args.root/'code'/f'{args.command}_{consumer}_{identity["commit"]}_rank{context.local_rank:02d}_execution.json',
@@ -450,6 +453,9 @@ def main():
         elif args.command=='formal':
             from .evaluation import formal_worker
             formal_worker(args,runtime,runner)
+        elif resident_student:
+            from .evaluation import student_worker
+            student_worker(args,runtime,runner,environment)
         else:
             from .pipeline import run
             run(args,runtime,runner,environment,context)

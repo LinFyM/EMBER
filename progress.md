@@ -2,12 +2,19 @@
 
 Owner最新要求今天UTC+8 16:00（UTC08:00）前结束，本批目标15:50完成消费，最迟15:55清空本批GPU并禁止继续派发。
 此要求覆盖原中心16:30/上限17:46预测；原启动和预算记录保留，不能转移到gpu02延长截止。
-ROOT/coordinator/deadline_ops_20261012已在双节点独立tmux落地：gpu01 PID1414272、gpu02 PID3577229，UTC05:33实际armed。
-绝对UTC07:50仅SIGINT原coordinator 3494574停止新派发；07:54 TERM本批消费者，07:54:30 KILL残留，07:54:55核验清空。
+ROOT/coordinator/deadline_ops_20261012已在双节点独立tmux落地：初版UTC05:33实际armed，原PID1414272/3577229保留历史。
+当前V2在UTC05:53先armed再退休初版，gpu01 PID1455235、gpu02 PID3683320；从execution_identities.json承接精确新旧消费者及CPU owner。
+绝对UTC07:50仅SIGINT仍需派发的登记CPU coordinator；07:54 TERM本批消费者，07:54:30 KILL残留，07:54:55核验清空。
 按同UID、精确consumer/root argv及PID start_ticks限定，只触及本批进程；实际Batch.run CPU验证停止派发并等待在途job收尾通过。
-不是第二整批退出等待者，无定时消息；原唯一整批回报者保留。guard/armed/cpu_signal_test/deadline_revision原件均在上述目录。
+不是第二整批退出等待者，无定时消息；唯一整批回报责任随CPU交接转移，不增设消息。guard/armed/cpu_signal_test/deadline_revision原件均在上述目录。
 实测update899、近24步18.403s/update，当前两卡G1296约15:30；原两卡读出还需.967h，完整链约16:27，已被硬截止禁止。
-实际chunk32无吞吐收益，当前G仍0/6两卡chunk16/logicalB4；正在合同内核更多实际worker/共驻与吞吐安排，完整576及时完成尚未保证。
+实际chunk32无吞吐收益，当前G仍0/6两卡chunk16/logicalB4；不丢更新、不为扩卡中断当前G。
+常驻student-data已实现：一个Runtime/CP/Runner消费独占condition队列，复用原多condition实践/query算子，36condition/576row/612episode身份不变。
+57项针对性检查及实际SQLite/条件恢复CPU验证通过；按G真实退出事件live择卡，普通上限6/8、node6，不因高util排除可共驻卡。
+候选physical为足够余量卡slots32/group3，中等slots16/group2，小余量slots8/group1；首原定组记录实际吞吐和显存，不另加探针。
+CPU调度交接由新coordinator/operator_G1296_deadline_resident_02排他持原delivery.lock、仅SIGINT原3494574停止旧学生派发；
+原线程继续收取G真实退出，新owner直接等该退出原件后读出，原通知helper在发送前被非阻塞锁排除。
+交接实际状态以新handoff/launch收据为准；训练仍2a1fb813，后续读出另用clean pushed detached来源。完整576及时完成尚未保证。
 完整CP1080仅恢复，1296唯一读出；现有训练没有任意信号保存接口，保留原完整864及新登记完整点。
 若截止间仍有未保存更新或未完成task/rows，准确报告范围与缺项，不冒充1296完整结论，不自动16:00后或重启续跑。
 

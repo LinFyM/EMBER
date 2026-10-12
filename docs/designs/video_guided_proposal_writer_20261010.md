@@ -419,7 +419,19 @@ live双节点/独立quota和真实新目标梯度、恢复消费者由实验验�
 §14绝对时间修订：Owner最新要求2026-10-12 UTC+8 16:00（UTC08:00）前结束，优先15:50完成消费，
 最迟15:55本批GPU全部退出且不再派发；原2.5–4.5h预测保留为历史，不允许移到gpu02延长。
 独立双节点ops guard身份/命令/CPU信号验证见上述ROOT/coordinator/deadline_ops_20261012及run_contract.absolute_deadline_revision。
-15:50只SIGINT原CPU coordinator停止新派发并让在途job收尾；15:54 TERM、15:54:30 KILL本批残留，15:54:55最终核验。
+15:50只SIGINT登记CPU coordinator停止新派发并让在途job收尾；15:54 TERM、15:54:30 KILL本批残留，15:54:55最终核验。
 进程按同UID、精确root/consumer argv和start_ticks验证，仅本批owned范围；该时间措施不增加完成等待者或通知。
 保持1080恢复only/1296唯一出口；不足则保全最近登记完整checkpoint和真实已完成原件，报告未保存更新及缺task/rows，
 不把部分结果冒充576整批、不自动截止后或重启续跑。物理安排仍可在科学合同、live余量/非干扰和6/8卡上限内改善。
+
+§14物理读出修订：继续原训练来源2a1fb813及G进程，从完整1296的真实退出原件交接到独占学生condition动态队列。
+复用现有student-data入口、Runtime/CP/EpisodeRunner、compile_conditions/query_conditions和SQLite队列；每worker只加载一次，
+普通单task也走同一refresh_group主体，不保留平行科学实现。完成的真实practice立即保存，各query逐行保存并按原映射/RNG去重。
+36原condition、576新G query及36 practice共612新episode不变，MT/G864/E仍兼容只读引用；不消费held或把query反馈写入H。
+G退出事件live核双节点并选择至多常规6/8、node6个distinct GPU，允许满足余量及非干扰要求的高util共驻；
+physical候选为free≥40000MiB的slots32/group3/chunk16、≥28000的16/2/8、≥18000的8/1/4。
+这是物理初始安排，不是新科学超参或已验证峰值；首原定组记录实际GPU/EGL余量、batch histogram与吞吐，没有额外episode。
+G~15:30后六卡若接近旧服务速度，读出预估15–25min；竞争、native服务及端点改变的episode长度使完整截止尚未保证。
+原CPU coordinator仅PID级SIGINT停止旧学生派发，ThreadPoolExecutor继续保留G真实退出；新owner持原通知非阻塞lock，
+原helper在发送前被排除，由新owner唯一整批交付。初始与V2 guard历史、精确registry/交接/实际新来源均留run ROOT。
+15:50不新派GPU job或领取condition group；在途组由原绝对guard收尾/停止，保存完整practice与已完成query，不降低1296/576合同。

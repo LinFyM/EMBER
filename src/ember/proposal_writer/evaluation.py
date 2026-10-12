@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import datetime, timezone
 import json
 import subprocess
 import time
@@ -204,3 +205,80 @@ def formal_summary(root,arm='correct'):
     result['breadth']=sum(r['candidate_success']>0 for r in result['per_task'].values())
     write_json_atomic(base/'results.json',result)
     return result
+
+
+def student_queue(root):
+    """One immutable condition per task, using the existing dynamic row queue."""
+    from dataclasses import asdict
+    from .contract import TASKS
+    from .supervision import panels,query_panel
+    root=Path(root);run=read_json(root/'run_contract.json');panel=panels(root)
+    version=run['student_refresh']['version'];base=root/'student_data'/version/'queue'
+    tasks={task['global_task_id']:task for task in run['environment']['tasks']}
+    if set(tasks)!=set(TASKS):raise ValueError('student queue requires the registered full36 tasks')
+    shards=[]
+    for ordinal,task_id in enumerate(TASKS):
+        task=tasks[task_id];states=tuple(query_panel(panel[task_id],0))
+        if len(states)!=run['student_refresh']['query_states_per_parameter']:
+            raise ValueError('student queue cannot shrink the actual query panel')
+        shards.append(EvaluationShard(f'student_{version}_{task_id:04d}',ordinal,task['suite'],task['task_id'],
+            task['horizon'],states,task['horizon']*(len(states)+1),0 if task['horizon']==520 else None))
+    plan=dict(checkpoint=str(root/'checkpoints/G'/f"update_{run['student_refresh']['G_update']:08d}"),
+        logical_tasks=list(TASKS),new_episodes=36*(1+run['student_refresh']['query_states_per_parameter']),
+        shards=[asdict(shard) for shard in shards],condition_mapping=run['student_refresh']['condition_mapping'],
+        G_training_code=run['git'],one_complete_LoRA_per_condition=True)
+    file=base/'queue_plan.json'
+    if file.exists() and read_json(file)!=json.loads(json.dumps(plan)):
+        raise ValueError('student condition queue changed after registration')
+    write_json_atomic(file,plan)
+    initialize_queue(base/'jobs.sqlite',shards,contract_reference=str(root/'run_contract.json'))
+    return base
+
+
+def student_worker(args,runtime,runner,environment):
+    """One frozen resident consumes distinct groups; all policy RNG stays per row."""
+    from .pipeline import load_version,refresh_group
+    from .supervision import query_row
+    from .learning import memory_peak
+    import torch
+    state=load_version(runtime,args.checkpoint);run=read_json(args.root/'run_contract.json')
+    if state['stage']!='G' or state['next_update']!=run['student_refresh']['G_update']:
+        raise ValueError('resident student worker requires the registered final complete G')
+    version=run['student_refresh']['version'];base=args.root/'student_data'/version/'queue'
+    queue=base/'jobs.sqlite';tasks={(t['suite'],t['task_id']):t for t in environment['tasks']}
+    stop=run.get('absolute_deadline_revision',{}).get('target_complete_and_consumed_UTC')
+    groups=0;start=time.monotonic()
+    while stop is None or datetime.now(timezone.utc)<datetime.fromisoformat(stop):
+        claims=[]
+        for _ in range(args.condition_batch):
+            claim=claim_next(queue,worker_id=args.worker_id)
+            if claim is None:break
+            claims.append(claim)
+        if not claims:break
+        task_ids=[tasks[claim.task_key]['global_task_id'] for claim in claims]
+        committed=set()
+        try:
+            tick=time.monotonic();refresh_group(args,runtime,runner,environment,run,task_ids)
+            for claim,task_id in zip(claims,task_ids,strict=True):
+                destination=args.root/'student_data'/version/f'task_{task_id:04d}'
+                parent=read_json(destination/'parent.json');ref=parent['actual_generated_parameter_ref']
+                rows=[query_row(destination/'query'/f'{ref}_{state_id:03d}.json') for state_id in claim.shard.init_state_ids]
+                relative=Path('shards')/claim.shard.job_id/f'attempt_{claim.attempt:03d}.json'
+                size=publish_json_exclusive(base/relative,dict(rows=rows,task=task_id,condition=str(destination),
+                    checkpoint=str(args.checkpoint),worker_id=args.worker_id,shared_group_seconds=time.monotonic()-tick))
+                complete_job(queue,job_id=claim.shard.job_id,worker_id=args.worker_id,claim_token=claim.claim_token,
+                    rows_path=str(relative),rows_bytes=size,row_count=len(rows),successes=sum(bool(r['success']) for r in rows))
+                committed.add(claim.shard.job_id)
+            groups+=1
+            free,total=torch.cuda.mem_get_info(runtime.device)
+            write_json_atomic(base/f'{args.worker_id}_physical.json',dict(groups=groups,
+                elapsed_seconds=time.monotonic()-start,condition_batch=args.condition_batch,slots=runner.slots,
+                completed_task_ids=task_ids,queue=queue_summary(queue),process_GPU_peak=memory_peak(runtime.device),
+                device_free_GiB=free/2**30,device_total_GiB=total/2**30,runner_components=runner.components,
+                actual_new_environment_steps=runner.environment_steps))
+        except BaseException as error:
+            for claim in claims:
+                if claim.shard.job_id not in committed:
+                    fail_job(queue,job_id=claim.shard.job_id,worker_id=args.worker_id,claim_token=claim.claim_token,error=repr(error))
+            raise
+    return queue_summary(queue)

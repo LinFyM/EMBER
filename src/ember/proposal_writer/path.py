@@ -289,7 +289,7 @@ def condition_steps(runtime,task,panel,demo,*,identity,path_ordinal,noise_root,
 
 
 @torch.no_grad()
-def compile_conditions(runtime,runner,specifications):
+def compile_conditions(runtime,runner,specifications,*,on_condition_complete=None):
     """Interleave independent conditions in the existing persistent episode queue."""
     tick=time.monotonic();before=dict(runtime.components);env_start=runner.environment_steps
     active={i:condition_steps(runtime,**spec) for i,spec in enumerate(specifications)}
@@ -298,7 +298,9 @@ def compile_conditions(runtime,runner,specifications):
         try:
             request=next(active[index]) if output is None else active[index].send(output)
         except StopIteration as done:
-            completed[index]=done.value;del active[index];return []
+            completed[index]=done.value;del active[index]
+            if on_condition_complete is not None:on_condition_complete(done.value)
+            return []
         key=request['episode_id']
         if key in owners:raise ValueError('independent conditions require unique actual episode identities')
         owners[key]=index

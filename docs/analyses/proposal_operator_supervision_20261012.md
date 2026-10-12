@@ -310,3 +310,26 @@ profile wall136.697秒/.07594284GPUh，所有模型/optimizer更新discard，临
 
 正式G启动后的两rank code/G_resume回执已确认485份Adam step864、cursor/version864及各rank RNG、MT-only bank0，fresh=false；不只依据profile或命令认定恢复。
 开发分支/隔离树已在clean、集成push且无运行依赖后退休；正式冻结树、原CP864及全部证据保留。
+
+## 10. Owner硬截止与物理读出修订
+
+2026-10-12 Owner新增UTC+8 16:00前结束硬边界：目标15:50完成消费、15:55全部本批GPU退出，不能迁到gpu02延期。
+原3.23h/2.5–4.5h预测保留历史。UTC05:27的真实update899、最近24步均18.403s/update外推G约15:30，
+旧两卡读出3482.84s使完整链约16:27；只改ETA不能满足边界。原训练chunk32无稳定收益，且只在1080/1296保存完整恢复点，
+没有任意信号保存/停在CP边界的消费者；不为拓扑迁移丢弃未保存更新，原G进程/图/Adam/采样/来源保持。
+
+旧G864学生36个真实进程总wall6671.167s，其中compile1404.602、query3673.055，余1593.510包含加载/清理及原件I/O，
+不能全归加载。即使理想去掉全部余项，两卡仍42.3min；因此改为一个模型/Runner常驻、独占领取原condition，
+在现有多condition算子中合波原practice/query，按live GPU余量增加有效worker。高util不是共驻自动排除条件，
+显存峰值、服务竞争和非干扰仍必须用真实准入/首原定组判断。六卡近旧速时读出约15min，保留15–25min安排预期与失败可能；
+新端点可改变停止时长，共驻卡未必等速，不能承诺15:50完整结束。
+
+统一refresh_group保留同真实MT-H、teacher_demo/P/RNG和一套完整LoRA；完成practice即时持久化，query逐行保存、引用MT/E去重。
+模型/Actor/Writer/损失/学习合同没有改变，没有增加GPU探针或任何episode。57项针对性检查、真实SQLite独占领取及恢复消费者CPU验证通过；
+暂态并发代码与后续冻结身份由实验整合，实际source/launch/physical/partial/billing原件留ROOT。
+
+独立双节点tmux guard在UTC05:33初次armed，UTC05:53先armed V2再退休初版；绝对15:50停止新派发，15:54 TERM、
+15:54:30 KILL、15:54:55核验，仅同UID/精确root+consumer argv/start_ticks及实际后代。V2读取execution_identities承接新source/owner。
+CPU调度交接只SIGINT原coordinator PID、保留其G真实退出收据；新owner排他持原delivery.lock，原helper在打开socket前被非阻塞锁排除，
+不是伪造已投递或新增等待者。只有新整批owner发一次真实整批退出；完成/部分读取、CP保全、原件/费用及缺项由实验消费后交main。
+1080仅恢复、1296唯一读出，部分任务/行不得冒称完整576结论，截止或重启后不自动续跑。

@@ -415,3 +415,11 @@ live双节点/独立quota和真实新目标梯度、恢复消费者由实验验�
 旧最长chunk16/32读取profile可复用，但不当成新loss消费者验收；实际验证更新全部discard。
 工程/Git/clean pushed detached/运行恢复/分支生命周期由实验闭环，无main ACK或Owner新许可门槛。
 一次真实启动身份/ETA及唯一整批完成或真实异常回报给main 01a12bb0-5273-7462-b5e2-72a18aba7b8d；无心跳/子阶段Queue/第二等待者。
+
+§14绝对时间修订：Owner最新要求2026-10-12 UTC+8 16:00（UTC08:00）前结束，优先15:50完成消费，
+最迟15:55本批GPU全部退出且不再派发；原2.5–4.5h预测保留为历史，不允许移到gpu02延长。
+独立双节点ops guard身份/命令/CPU信号验证见上述ROOT/coordinator/deadline_ops_20261012及run_contract.absolute_deadline_revision。
+15:50只SIGINT原CPU coordinator停止新派发并让在途job收尾；15:54 TERM、15:54:30 KILL本批残留，15:54:55最终核验。
+进程按同UID、精确root/consumer argv和start_ticks验证，仅本批owned范围；该时间措施不增加完成等待者或通知。
+保持1080恢复only/1296唯一出口；不足则保全最近登记完整checkpoint和真实已完成原件，报告未保存更新及缺task/rows，
+不把部分结果冒充576整批、不自动截止后或重启续跑。物理安排仍可在科学合同、live余量/非干扰和6/8卡上限内改善。

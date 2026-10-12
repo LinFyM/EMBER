@@ -1,7 +1,24 @@
-Owner要求每次仔细思考、符合全部要求并继续自主推进，明早查看不是执行许可门槛；原§16/5–15min/144/0episode合同不变。
-本次工程检查由实验闭环、main不重复工程验收；目前尚未声明GPU已启动，真实启动身份/ETA随后一次可靠回main。
+## 2026-10-13 00:00 最新状态：全144冻结context短拟合已实际完成
 
-## 2026-10-12 最新授权与状态：冻结全144真实context，短拟合实施完成待启动
+唯一design§16本轮已结束：ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit，训练/缓存来源cb27adfc clean pushed detached。
+唯一owner frozen_decoder_fit_01/PID2461249于10月12日23:42:42启动，10月13日00:00:17退出0，实际wall1054.566秒；原启动预测23:55–00:15保留，已按实际完成。
+六卡缓存144完整合法m实际102.997秒/48,045,680bytes；缓存后卸载大source/meta，四rank仅训练166个原endpoint参数，logicalB4与原Adam/cursor/demo流保持。
+全144等权BA读出起点.97882444、5min .83078116、15min .57489586；全36任务均比起点改善，0新environment episode，不以参数改善代替控制增益。
+在首次5min值位于(.10,.90)后按预登记继续，15min首个完整全36边界900.845秒停止，完整终点8883；新增8451更新/33804条件/每task939次，总曝光987/task。
+终点完整endpoint/Adam166均step8883/sampler/四rank RNG及冻结CP432引用齐备；原36固定teacher_demo LoRA和两个节点各144端点保留。
+train24/support12原D单位终点.734437/.255813，各自MT基线1.294751/.410498，组内比例.567242/.623177；不将原单位差异当难度/泛化比较。
+原36面板终点BA .579024，公共误差.027781/中心化误差.551243，条件增益.389582占总增益92.54%；既有teacher均值算术只引用、无额外forward。
+全池.574896未达到预登记<=.50实质拟合信号，属于部分进步；不追加时间/同族补丁、query、Actor/完整Writer/held/Test。main消费本轮后自主决定后继，不等待Owner新许可。
+Owner询问充分利用GPU触发一次有界物理比较：四rank最近36步max-rank均值.102977秒，单卡同全36池logicalB4仅前反传/clip下界.309413秒；20.827秒profile/0optimizer step/0episode。
+四rank有实测吞吐收益，峰值reserved1.174GiB且现场util52–73%，不称绝对最优或已验证向量化batch；启动前未比较是执行遗漏，本次证据与未测边界保留。
+8个实际收据均exit0；cache .123436410+fit1.037469710+profile .005785338=1.166691458GPUh。新root实际873MiB，低于8GiB准入；独立data1 quota/双节点证据原位保留。
+CPU原件消费3.399秒；完成后一次双节点核验ymdai GPU进程0。稳定原件ROOT/analysis/completion_20261013/{consume.py,statistics.json}及coordinator/frozen_decoder_fit_01/exit.json。
+记录欠项：5min读出未保存精确update，不估算补写；终点完整step/曝光与全池节点原件已核。未测闭环/video-H因果/held，非旧全psi exact-resume。
+本轮结果/Git一次可靠交main01a12bb0-5273-7462-b5e2-72a18aba7b8d，处理回执与git_delivery/consumed在稳定analysis；无心跳/自Queue/第二等待者，旧864批永不恢复。
+
+Owner要求每次仔细思考、符合全部要求并继续自主推进，明早查看不是执行许可门槛；本轮已按原§16有限合同完成。
+
+## 2026-10-12 启动前历史：冻结全144真实context，短拟合实施完成待启动
 
 main已消费旧停止原件并登记新独立科学接续；唯一active design为docs/designs/video_guided_proposal_writer_20261010.md §16，完整解释现有coordinate分析§15。
 旧864批永不恢复；候选可恢复只有完整v9 CP432，未保存433–641不使用；control864/351partial保留不补。

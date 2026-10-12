@@ -11694,3 +11694,20 @@ R241/G11/L12不作全36/576或结构匹配结论，缺225不补，candidate864�
 首步起5min全36边界全144L>=.90或<=.10停止，其余只到15min边界；.50仅实质教师拟合调查信号，不是控制标准/固定课程。
 实际曝光与终点决定支持度；若仍弱结合因子864/BA1296/coordinate432停止当前Reader+共享坐标E组合与入口/宽深补丁，不追加同族变体。
 真实控制/完整Writer/held仍由main在实际完整结果后登记，当前0episode。Owner要求分析更充分，必须贯彻实际特征—算子—梯度—部署和历史原则，不能仅换短训练。
+
+
+## 450. 固定真实读取后密集端点更新有部分拟合进展，不能替代控制（2026-10-13）
+
+唯一design§16已实际结束：cb27adfc、原144合法context、CP432 endpoint/Adam承接、四rank logicalB4，0新episode。
+全池BA .97882444→5min .83078116→15min .57489586；完整终点8883，新增8451更新/33804条件/939次每task，全部36任务较起点改善。
+train24/support12按各自MT归一终点比例.567242/.623177；27非零E比例.574730，九零E终点.000661875，不是仅零E分类。
+原36指定端点BA .57902405，公共/条件增益.03139368/.38958227，条件贡献92.5426%；已有teacher均值算术原样引用，未增加forward/几何probe。
+固定m保持给定m时原endpoint偏导并移除native反传，以密集曝光取得较大共享拟合，削弱“完全学不动”；非等曝光因果对照，不唯一证明旧Reader漂移。
+144只有36目标，不能识别video/H贡献或held迁移，BA不按自身hidden控制作用加权，不能按误差降低推算success/RGL/E-only。
+.574896未达预登记<=.50调查信号，属实际部分进步，不为接近阈值自动加时/同族补丁/原query16或后段；main消费原件自主接续，不等Owner许可。
+144节点loss/两节点端点、原36唯一LoRA、完整endpoint checkpoint166 Adam均8883及四rank RNG/sampler/冻结组件引用齐备，非旧全psi exact-resume。
+5min精确update未写记录，不估算补写或重跑；终点完整8451更新/939次每task有全metrics及CP证据。
+六卡缓存103秒/46MiB；四rank完整更新约.103秒、峰值reserved1.174GiB。启动前未做单卡B4比較的遗漏由实验承担，Owner询问后20.827秒profile测得单卡仅前反传下界.309秒。
+四卡有现有接口下wall收益，未证明向量化batch最优，不以util或填卡代表有效吞吐；profile0optimizer step/0episode，未影响在途更新。
+8实际job/profile退出0，总1.166691458GPUh、root873MiB，完成后双节点已核ymdai GPU进程0，CPU消费3.399秒/0新增forward。
+实际完整分布/机制/未测边界见既有coordinate分析§15.4；稳定ROOT/analysis/completion_20261013、coordinator/frozen_decoder_fit_01，旧864永久关闭。

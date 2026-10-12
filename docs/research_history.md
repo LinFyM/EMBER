@@ -1,3 +1,14 @@
+## 2026-10-13：原144冻结context短拟合取得部分教师拟合，有限批结束
+
+cb27adfc clean pushed detached运行，10月12日23:42:42至13日00:00:17，wall17分34.566秒、8实际job/profile收据全0、0新environment episode。
+六卡缓存原144完整m约103秒/46MiB，四rank只训练原endpoint及承接166个Adam状态，15min完整全36边界保存终点8883：新增8451更新/33804条件/939次每task。
+全池BA .97882444→5min .83078116→15min .57489586，全36 task都比起点改善；train24/support12按各自MT归一比例.567242/.623177。
+原36面板终点.579024，条件增益.389582/公共增益.031394，非仅公共输出；原teacher均值算术只引用，未增加forward/控制。
+未达到预登记<=.50调查信号，保留部分进步，不自动延长训练/原query16/完整Writer/held；不是video-H因果或完整方法通过。
+实际四rank完整更新约.103秒，单卡同B4前反传下界.309秒，四卡有吞吐收益但未证明向量化batch最优；启动前未测比较的遗漏及20.827秒profile计费保留。
+总1.166691458GPUh、root873MiB、完整endpoint checkpoint及CP432冻结组件引用保留，双节点已核GPU退出。5min精确update未记录不补猜，终点8883曝光完整。
+稳定原件ROOT/analysis/completion_20261013、coordinator/frozen_decoder_fit_01及现有coordinate分析§15.4；main科学消费后自主接续，无自动恢复旧864。
+
 ## 2026-10-12晚：coordinate低效864批结束，登记真实固定context短拟合
 
 Owner取消固定864义务后本批GPU23:00:19退出、双节点无遗留已核，control CP864/351自然partial、candidate CP432/日志641与209未存更新保留；旧批不恢复。

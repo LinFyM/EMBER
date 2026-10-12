@@ -532,7 +532,13 @@ ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordina
 62项针对性检查与真实fresh prepare/直接query CPU消费者通过；完整最长L/V/H候选profile退出0、5更新全部discard/0episode/.075387129GPUh。chunk16实测20.602秒/26.10GiB reserved，chunk32无收益且42.79GiB，采用16。完整原件/成本/物理依据只在对应分析§9及ROOT，未获得CP864/控制结论。
 普通cap6下控制4+候选2全部有效使用；后续动态读出不受训练rank数限制。候选训练4.4–5h加读出.5–1h，18:12启动后暂估23:10至次日00:15；原3–5h预测保留为初估。唯一owner matched_coordinate_read864_01已独立存活，不加整批等待者/阶段Queue/心跳或新截止。
 
-## 16. 原144真实context冻结与endpoint短拟合（当前独立授权）
+## 16. 原144真实context冻结与endpoint短拟合（本轮已完成）
+
+2026-10-13实际完成状态：cb27adfc冻结来源，23:42:42启动/00:00:17退出0；144完整m缓存102.997秒，四rank仅原endpoint从432至8883。
+全144起点.97882444、5min .83078116、15min .57489586；第一次值允许继续，15min完整全36边界900.845秒保存终点并退出。
+新增8451更新/33804条件/939次每task，166 Adam均step8883/完整sampler-RNG-topology及冻结CP432引用、144端点和原36固定LoRA齐备。
+未达<=.50实质拟合调查信号，保留部分进步；本轮执行范围已结束，不自动加时、原query16或后段，main消费原件后自主登记后继。
+实际分布、条件分解、吞吐比较/未测边界、费用与记录欠项在现有coordinate分析§15.4和progress；下方为本轮预登记合同，旧§15不恢复。
 
 本节是Owner要求研究继续后main登记的新有限授权，不恢复已停止§15，不等待Owner/main工程ACK。
 唯一完整科学解释引用[现有coordinate分析§15](../analyses/proposal_coordinate_memory_read_20261012.md#15-冻结全144真实context现有endpoint的有界共享拟合)。

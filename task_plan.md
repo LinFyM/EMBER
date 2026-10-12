@@ -1,4 +1,12 @@
-## 2026-10-12 当前计划：全144真实context冻结与有界endpoint拟合
+## 2026-10-13 当前交付：短拟合完整原件，main据部分进步自主接续
+
+design§16有限批已完成并停止，0新episode：全144 BA .978824→.830781→.574896，完整endpoint终点8883/新增8451更新/939次每task，所有36任务较起点改善。
+结果是合法固定L/V/MT-H联合条件下的共享写出部分可学性，未达预登记.50信号，也未证明控制、video/H因果或held；不自动追加训练或原query16。
+完整终点/144节点loss/原36 LoRA、task-suite/train24support12、Gram分解、费用与实际退出已消费；稳定原件ROOT/analysis/completion_20261013。
+四rank最近完整轮.103秒/更新，单卡B4仅前反传下界.309秒，支持当前四rank安排，向量化batch最优未测。所有GPU已退出，不用填卡代替有效学习。
+实验完成Git与一次可靠交main；main依据实际缺口接续科学，Owner明早查看不是许可门槛。旧864批/未保存641不恢复，不自动后段、held/Test或同族补丁。
+
+## 2026-10-12 启动前计划：全144真实context冻结与有界endpoint拟合
 
 Owner要求停止低效批后继续研究；main授权唯一design§16，不恢复旧coordinate864批，也不等待新的工程ACK。
 从候选完整v9 CP432保留所有实际L/V/MT-H/P0/E/S_G/D38，缓存原全36×4完整m；仅原166 endpoint参数及Adam状态承接，从cursor432按等权logicalB4继续。

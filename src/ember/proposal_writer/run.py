@@ -366,7 +366,7 @@ def teacher_report(args,runtime,runner,environment):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['prepare','report-references','formal-prepare','formal','teacher','readout','teacher-report','G','student-data','endpoint-query','local','RL','report'])
+    parser.add_argument('command',choices=['prepare','report-references','formal-prepare','formal','teacher','readout','teacher-report','G','student-data','endpoint-query','local','RL','report','frozen-prepare','frozen-cache','frozen-fit'])
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--asset-root',type=Path,default=ASSET_ROOT)
     parser.add_argument('--task',type=int,default=0)
@@ -382,7 +382,12 @@ def main():
     parser.add_argument('--frame-chunk',type=int,default=16)
     parser.add_argument('--slots',type=int,default=8)
     parser.add_argument('--physical-gpu',type=int)
+    parser.add_argument('--shard-index',type=int,default=0)
+    parser.add_argument('--shard-count',type=int,default=1)
     args=parser.parse_args()
+    if args.command=='frozen-prepare':
+        from .frozen_context import prepare as prepare_frozen
+        prepare_frozen(args);return
     if args.command=='prepare':prepare(args);return
     if args.command=='report-references':
         result=report_references(args.root,args.asset_root);print(json.dumps(dict(reused_MT_rows=result['reused_MT_rows'],incompatible_rows=len(result['incompatible_rows']))));return
@@ -395,6 +400,8 @@ def main():
     subprocess.run(['git','merge-base','--is-ancestor',identity['commit'],'origin/main'],check=True)
     write_json_atomic(args.root/'code'/f'{args.command}_{identity["commit"]}.json',identity)
     shared=args.command in ('G','local','RL')
+    if args.command=='frozen-fit':
+        args.physical_gpu=int(os.environ['CUDA_VISIBLE_DEVICES'].split(',')[int(os.environ.get('LOCAL_RANK','0'))])
     if shared:
         args.physical_gpu=int(os.environ['CUDA_VISIBLE_DEVICES'].split(',')[int(os.environ.get('LOCAL_RANK','0'))])
         if args.command not in read_json(args.root/'run_contract.json')['updates']:
@@ -402,6 +409,10 @@ def main():
     if args.physical_gpu is None:parser.error('GPU consumer requires its actual physical GPU')
     context=initialize_distributed(require_numa=True,defer_process_group=True)
     torch.set_num_threads(8)
+    if args.command in ('frozen-cache','frozen-fit'):
+        if not 0<=args.shard_index<args.shard_count:parser.error('invalid real-context task shard')
+        from .frozen_context import run as run_frozen
+        run_frozen(args,context);return
     environment=read_json(args.root/'formal_panel.json')['environment'] if args.command=='formal' else read_json(args.root/'run_contract.json')['environment']
     if args.command=='formal' and (not args.worker_id or not args.condition_batch or args.condition_batch<1):
         parser.error('formal needs its persistent queue worker identity and measured condition batch')

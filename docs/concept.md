@@ -1,3 +1,12 @@
+## 当前阶段：固定真实读取，短时检验现有共享写出可学性（2026-10-12晚）
+
+旧coordinate两864批已停止且不恢复。研究继续，当前唯一active design是video_guided_proposal_writer_20261010.md §16：
+从候选完整v9 CP432冻结真实meta/Reader/static，缓存原全36×4合法完整context，仅训练同一个六层endpoint并承接其Adam状态。
+同task固定L/MT-H/E的144条件只有36独立目标映射；BA监督允许仅凭L识别训练task的统计解，不能用拟合结果识别video/H各自贡献，
+也不能把缺不同失败H用作当前拟合失败借口。真实Z/H与保序读取提供表示路径，不构成已学操作关系的证据。
+这次检验能否廉价取得大幅教师算子拟合；不是新架构/free code、相等曝光因果对照或闭环通过。参数positive后由main决定是否值得原36/query16控制读出，
+不自动Actor、完整Writer、held或重启长native训练。完整取舍、数学链、历史限制与5/15分钟规则见既有coordinate分析§15。
+
 ## 当前阶段：已停止未有效拟合教师的coordinate批（2026-10-12晚）
 
 Owner取消原两864终点，main撤回必须完整等待的决定；半程BA误差约.98、G432337/MT340/E455不足以支持继续该低效投入。

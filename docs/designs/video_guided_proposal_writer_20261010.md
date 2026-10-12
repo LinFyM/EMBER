@@ -531,3 +531,36 @@ ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordina
 §15实际执行补充：17:46控制c7e76b56/world4/gpu01:0–3已启动，18:12候选c35c34b5/v9/world2/gpu01:4/5已启动；控制直接读出c4f53841保持旧v8计算图。三树均clean pushed detached，canonical仅block路径，开发分支/树已核实集成后清理。
 62项针对性检查与真实fresh prepare/直接query CPU消费者通过；完整最长L/V/H候选profile退出0、5更新全部discard/0episode/.075387129GPUh。chunk16实测20.602秒/26.10GiB reserved，chunk32无收益且42.79GiB，采用16。完整原件/成本/物理依据只在对应分析§9及ROOT，未获得CP864/控制结论。
 普通cap6下控制4+候选2全部有效使用；后续动态读出不受训练rank数限制。候选训练4.4–5h加读出.5–1h，18:12启动后暂估23:10至次日00:15；原3–5h预测保留为初估。唯一owner matched_coordinate_read864_01已独立存活，不加整批等待者/阶段Queue/心跳或新截止。
+
+## 16. 原144真实context冻结与endpoint短拟合（当前独立授权）
+
+本节是Owner要求研究继续后main登记的新有限授权，不恢复已停止§15，不等待Owner/main工程ACK。
+唯一完整科学解释引用[现有coordinate分析§15](../analyses/proposal_coordinate_memory_read_20261012.md#15-冻结全144真实context现有endpoint的有界共享拟合)。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit。
+源是旧block_memory_candidate/checkpoints/G/update_00000432完整v9；433–641未保存更新不使用，控制351partial不补、不作匹配结论。
+
+全36=train24+support12，原policy_videos每task4条，共144完整合法context；exact L/action-hidden有序双RGB/stride5、原非空MT-H真实producer/P0/S_G/D38/E路径保持。
+m=冻结CP432的Generator.context(real features,real H,actual states)，保留全部memory，不平均/压缩frames或只取decision，不读offline teacher动作、held、E/ID条件。
+144只是36独立E目标的示范变化；各task固定L/H/E，允许仅L识别train task的统计解，故拟合不能识别video/H贡献。固定MT-H本来可学共同E，不以缺多H解释当前弱拟合。
+原meta/Reader/static/layout/theta/source/MT冻结；唯一梯度owner是原generator.endpoint的input/地址/全部六层/output，不加head、自由code或任务私有LoRA拟合。
+保持完整A=A0+S_A*y_A、B=S_B*y_B与部署s*BA目标；正常BF16、BA loss FP32、rank8/alpha8/38targets/原AdamW lr1e-4、betas(.9,.95)、eps1e-8、wd1e-4、clip1。
+endpoint权重与166个逐参数Adam state从CP432按保存名称与实际构造顺序承接，不按shape猜、不reset动量；其余330参数不step。
+显式梯度owner/物理topology迁移，非exact-resume；cursor432，原logical_tasks与随机demo调用顺序、等权logicalB4/bank0/MT-only H/P保持。
+旧rank0/1 RNG恢复，新rank来源明确登记；无scheduler/LR/rank/scale/seed矩阵或学生bank。
+
+先缓存144并读一次全池CP432 baseline；训练wall从首个有效optimizer.step计。
+首次超过5分钟后的完整9更新/全36轮边界读全144：L>=.90或L<=.10立即保存终点退出；.10<L<.90允许到超过15分钟后的首个全36边界全池终点。
+只读预登记节点、不挑历史最好点，报告真实更新/曝光/吞吐/峰值/读出时间。L<=.50只是实质教师拟合的后续调查信号，非控制/完整Writer资格；.5<L<.9也不自动加时。
+5/15分钟和阈值是本次有限投入规则，不是数学必然/性能标准或未来固定课程。弱结果结合因子864、BA1296、coordinate432与历史负证据关闭当前真实Reader+共享坐标E回归组合及入口/宽深补丁投入，
+不宣称所有Reader/decoder/教师监督不可能；positive也不自动重启几小时native共同训练。
+
+保存全部144起终点loss、task/train24/support12/suite均值，原36固定teacher_demo最终各一套完整LoRA，大小合理时保存全部144端点。
+终点完整endpoint optimizer/sampler/rank RNG及冻结组件CP引用明确；不能当旧全psi exact-resume。小Gram条件分解在同一读出中完成，既有teacher均值原件直接引用，不重跑旧CPU分析。
+其部署链仍是L/V/自身H→冻结真实C→同共享F→38处完整BA→当前自身hidden/十步原生动作→固定LoRA闭环；缓存不是新部署特权。
+无0成本泛化或video/H因果宣称，无新environment episode/Actor/fullWriter/held/Test/control/probe/free-code/shuffle/reverse或自动后继。
+
+缓存可独立任务分片，结束即释放大source/meta；decoder物理安排按实际有效B4吞吐/峰值选，不固定旧world2或为填显存用多于有效条件的rank。
+各launch双节点live、合计6/8/node6、非干扰，data1独立quota/实际用量/共享容量；峰值预计<8GiB，资产原位引用，无GPUh硬cap。
+最小诊断consumer复用FactorEncoder/OperatorObjective/原Runtime，仅当前诊断生命周期使用；不是第二canonical Writer/fallback，结束后按main家族裁决决定退休入口，Git/冻结原件保留。
+工程预计30–60min、缓存5–20min、训练5或15min加两次全池读出均为待实测估计；不设新绝对截止，不承诺正结果或精确95%提速。
+一个实际调度owner、唯一持续退出等待；一次真实启动/ETA与一次完整结果/实际异常可靠交main01a12bb0，无心跳、阶段Queue或第二等待者。

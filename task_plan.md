@@ -1,3 +1,13 @@
+## 2026-10-12 当前计划：全144真实context冻结与有界endpoint拟合
+
+Owner要求停止低效批后继续研究；main授权唯一design§16，不恢复旧coordinate864批，也不等待新的工程ACK。
+从候选完整v9 CP432保留所有实际L/V/MT-H/P0/E/S_G/D38，缓存原全36×4完整m；仅原166 endpoint参数及Adam状态承接，从cursor432按等权logicalB4继续。
+当前工程与CPU导入检查完成，下一步clean pushed detached准入后多卡cache144→全池baseline→5/15min全36边界短拟合→终点checkpoint/144与36端点/账目一次交main。
+首次5min全池L>=.90或<=.10退出，否则到15min；不选最好点、不自动query16、Actor、完整Writer、held/Test或其它probe。
+144条件仅36独立目标，BA拟合不识别video/H贡献、不替代控制。若明显改善由main决定原完整query16；若仍弱关闭当前具体组合的补丁投入而非研究整体。
+初估工程30–60min/cache5–20min/训练5或15min加完整读出，实际吞吐修订；11点为效果/决策目标，无新强杀deadline。
+独占canonical/Git/分支worktree由实验闭环，一个owner和实际退出等待，无心跳/子阶段Queue/第二等待者；当前准备原件新ROOT/analysis/consumer_validation。
+
 ## 2026-10-12 当前计划：coordinate批已停止，学习原理由main接续
 
 Owner取消864固定终点义务，main撤回必须等待两864的决定；训练/未完成读出和依赖已停止，23:00:19本批GPU结束、23:01:51两节点核验无遗留。

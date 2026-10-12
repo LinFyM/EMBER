@@ -316,3 +316,92 @@ Owner最新原话：“没必要非得864步啊，难道以后每个架构都训
 完整停止消费CPU1.665秒/0新增GPU、模型forward或episode，没有重做main先前BA/几何算术，也没有新增探针。ROOT/analysis/owner_stop_20261012/{consume_stop.py,statistics.json,partial_control_paired_raw_rows.jsonl}保存全部账目/覆盖/CP/日志身份；ROOT/coordinator/scoped_readout_recovery_02/owner_stop_*保存精确停止/两节点核验和CPU交接。该owner/exit.json明确Owner科学停止、complete=false、无恢复授权，使原完整终点回报转换为唯一停止回报；不修改早期完整结果或旧失败。停止实际回报优先投递main，文档Git身份随后存analysis/owner_stop_20261012/git_delivery.json，不另发文档ACK或恢复自通知。
 
 当前无执行中的active实验合同，原design§15已结束；§9–13的预测、继续864决定与资源安排均保留历史，不能恢复执行。canonical架构源码此次未改，关键恢复资产和冻结树保留；后继由main依据完整学习原理自主登记，不等待Owner再逐项批准。
+
+## 15. 冻结全144真实context，现有endpoint的有界共享拟合
+
+Owner要求“然后呢？现在停下来干嘛？”，main明确研究继续，旧864批永久关闭。本次只检验当前合法联合条件下同一个共享endpoint能否在短时密集更新中大幅拟合E；
+不改架构、BA标签或部署算子，不把内部positive直接升为完整Writer资格。执行合同只由唯一design§16登记。
+
+### 15.1 实际机制与最近似原件
+
+2026-10-12，main。与已派发的全36×4冻结context短拟合属于同一决定；不扩大实验/探针或授权第二臂。本文由实验在已有analysis与findings串行整合，main不并发修改canonical科研文档。
+
+## 实际改变的算子和梯度
+
+对task t的原4条教学视频v及真实MT经历H_t，CP432的冻结前端记为φ*：
+
+    m_tv = C_φ*(exact-L_t, ordered-RGB_tv, H_t, P0)
+    y_tv = F_θ(0, m_tv)
+    A_tv,l = A0,l + S_A,l y_A,tv,l
+    B_tv,l = S_B,l y_B,tv,l
+    W_tv,l = B_tv,l A_tv,l
+    L = mean_(36 tasks) mean_(4 videos) mean_(38 targets)
+          ||W_tv,l - E_B,t,l E_A,t,l||²_F / D_l
+
+F仍是当前FactorEncoder endpoint全部六层。输入0是(P−P0)/S_G且本批P=P0，并非zero-image或fake action query；m仍由合法原生真实前缀及原probe产生。P0、S_G、D38、全部E和4-video池均原样。m不能把整段视频平均，也不能把某个E或自由task code塞进condition。
+
+缓存m只使其成为同一固定函数值。梯度仍从完整部署BA，经S_A/S_B、同一输出head与全部endpoint参数θ传播；没有逐condition LoRA直接优化、隐藏teacher action输入或轨迹准备后拟合。变化是冻结φ*，不再用当前θ的一步弱损失去同时移动整个读取器。推理仍可从原合法输入运行冻结C_φ*加训练后的F_θ生成完整38-target LoRA，缓存不是新部署特权。
+
+旧完整共同学习在某一步给定φ时，endpoint的偏导与相同m缓存下完全是同一个数学偏导；后续φ不再移动、更新次数按短时预算增加。这不等于已证明“读取器漂移就是根因”，也不是与旧432等曝光的结构对照。它检验在当前读取结果和实际计算条件下，能否把有意义的训练时间主要用于拟合共享写出。若依然弱，就没有理由继续为同组合支付大量native反传。
+
+## 已有记录能支持什么
+
+主讨论重新核实原panel全部36 task的policy_videos长度都为4，总144条件。因此不是把原50视频改成一视频以方便记忆；当前原合同本来就是4条教学视频池。这次保持整个原池和同一task等权规则。四视频共用同一E及MT-H仍允许语言/经历识别task；该检验不证明video/H分别有用，也不证明新视频/新task迁移。
+
+在candidate原两rank的update397–432，共72个日志事件中，全参数梯度norm范围.03553247–.10375525，没有一个超过clip1；所以“末窗被global clipping截没”不符合现有记录。action meta norm约3.68e−7–6.12e−6，但不同参数组norm不能直接当因果影响或有效学习量，也不能据此把action meta定为唯一失效接口。
+
+单个实际update432/rank0：原native forward CUDA stream约9.62s，整条endpoint_backward（包含向native回传）约28.45s，endpoint forward约.325s，operator loss约.364s；实际整步47.71s。该记录支持昂贵路径与末端计算存在数量级差别，但没有单独profile decoder backward，不把28.45s全部称native或精确声称95%可省。这次缓存/专用训练必须给出自身真实吞吐和wall，不以这些混合计时保证提速。
+
+原source始终无梯度。当前m、输出及optimizer都是真实已学CP432；不能把未保存433–641当可恢复状态。旧control351的自然partial是252/351对MT253/351，不形成完整matched864结构结论，也不参与新checkpoint选择。
+
+## 最近似历史已由main核对原件后的约束
+
+main实际读取4ef0685d:src/ember/functional_adaptation/decoder.py：它是32维privileged code加target/rank地址，经两层256 trunk及8个factor-family原生head生成全部76因子。free-code正例不是当前真实视频获取的正例。
+
+main实际读取ac233fa0:docs/research_history.md §3.19–3.23：旧共享decoder在56-task train从1.0404到.4820（功能目标）并有2451/2800相对source2272的真实+179；held自由code为659/750对source646，实际收益小且只恢复54.7% expert新增行。后续真实Writer macro10的131/150对多种参照130–134、主要公共，不能把高absolute归为正确task映射。统一fingerprint以后，1120-step exact BA的train/held loss约.71068/.92128，held638低于source646。解析affine BA的train relative-L2 .5244而held .9797，未压rank或部署；因此也没有“完整教师算子已被共享decoder近乎无误拟合”的历史证明。
+
+旧Native Correction的固定A下界不是有限网络容易达到的证据。main再次读取docs/analyses/native_correction_acquisition_audit.md：ordered200的实际误差.900546，固定A下界.270922，空间内尚未取得.629623。任意B可以更好，不等于共享B网络已学会或只剩视频Reader；当前短拟合不再开任意B/自由code正控。
+
+这些事实降低再做专家插值、拆native head或局部可达证明的投入优先级，并保留“有条件的共享decoder确曾传递部分教师能力”的正事实。此次用的是当前实际L/V/H池，经当前实际F共同拟合；实际positive也只支持这一有限学习命题，不能拼接旧oracle或free-code为完整Writer资格。
+
+## 结果怎样改变下一步
+
+已有E455/576说明同MT基底和rank8允许真实控制净收益；当前337/576且BA约.98说明该能力尚未被G取得。我们不是为了追求漂亮BA而改性能目标，而是先避免在几乎没有教师拟合时花一小时以上读出同量级MT行为。
+
+若短拟合取得大幅BA改善，需要随后按原完整36/query16检查这种参数改善是否传成能力：总分、train24/support12、suite、R/G/L与E-only134等实际传递缺口共同判断。即使G接近E的算子，也只有精确相等才在相同基底与随机性下保证完全相同policy；有限权重误差不能直接保证闭环。
+
+若仍只有几个百分点改善，这次到此结束当前真实读取＋共享坐标教师回归的继续投入，不能用“尚未普遍证明不可能”再排入口/宽深/LR/rank/seed。主讨论须据这一条件下有限共享输出学习仍弱的事实，重新建立下一方法的表示、监督和部署原理；不是等待Owner许可，也不是宣布EMBER整体不可能。
+
+### 15.2 Owner要求充分分析后的解释修订
+
+Owner：“你的分析可能要更充分一点，你要真的贯彻我的各种要求才是”。以下修订不扩实验、探针或验证矩阵。
+
+144个条件只有36独立E目标映射：同task exact L、MT-H和E固定，4视频是示范变化而非新meta-task。
+令m=C(L,V,H,P0)、y=F(0,m)、W_l=(S_B*y_B)(A0+S_A*y_A)。当前标签只给E_t，不按video/H区别操作目标，存在仅用L识别train task便可降loss的统计解；
+这说明拟合不能识别视频贡献，不断言模型已经走捷径或video无信息。缺不同失败H不解释当前监督拟合弱。
+真实native Z/H是语言条件下的视觉/动作计算特征；probe H并非teacher动作或已理解的程序。8query/frame与保序Transformer提供时序表达路径，不能证明操作关系已经学到。
+endpoint的target/rank/side/block地址生成全部因子，没有自身逐层hidden到所需编辑的解析关系；共享E监督仍须学会这种联系。
+BA目标教教师矩阵方向，没有按生成LoRA在真实自身hidden上的控制作用直接加权；梯度可达不能替这一学习要求背书。
+
+实际执行处delta_h=B(A h)，h依赖自身图像/state/L及flow噪声，q/v等38处共同影响十步原生动作与闭环。
+约.98的教师BA误差、首5动作近MT、134个E-only只传17、丢MT29/新增26一起支持“教师能力未充分取得”；不是Reader/decoder/优化唯一根因。
+不能按BA下降比例推算成功率或以norm/条件变化称机制修复。固定m只是去掉昂贵native反传并使同condition函数固定，保持给定m时原endpoint偏导，没有新增标签或私有轨迹拟合。
+positive仅支持合法L/V/H联合条件下的共享写出可学性，不证明旧失败必因Reader漂移；negative也未拆开固定表示和共享输出器。本次不是等曝光因果对照，不加第二臂补归因。
+
+5/15分钟、.90/.10/.50是一次有限操作规则。报告完整144值与实际曝光，不用末batch代替全池。弱结果与已经完成的因子864、BA1296、coordinate432及最近似负证据一起降低这一个组合的投入价值，
+关闭的是当前真实Reader+共享坐标共同E回归及入口/宽深补丁，非所有Reader/decoder/教师监督原理。未普遍证伪也不是再开同族小改动理由。
+main消费完整结果后判断原全36/query16控制是否值得：train24/support12/suite、保持/gain/lost与E-only传递共同看。
+完整Writer迭代须另说明P/H改变为何帮助更好LoRA，不能把共同E任务识别叫反馈纠错；无自动held/Test或长native续训。
+先真实明显超强MT仍是当前阶段，不额外加语言适应/全部视频controls开工门槛；教学有用性、held迁移和无轨迹准备后微调、唯一完整固定LoRA边界继续有效。
+
+### 15.3 实现与准入记录（启动前）
+
+最小诊断消费者frozen_context.py复用现有Runtime→Generator.context、FactorEncoder与OperatorObjective，canonical模型图保持v9；旧全psi训练函数不调用。
+完整源manifest/v9/G/432/world2、G_sampler/sampler/psi_version432、bank0及参数名称逐项验证；endpoint源ID330–495映到新0–165，共166 state/8,761,152参数。
+330冻结参数中319旧Adam state不进入新优化器，11未用state不补；layout是buffer引用，无trainable alias。
+实际CPU导入0.941秒，166 state均step432，完整144与原demo随机调用通过；0GPU/forward/episode。
+根分析consumer_validation保存源码、完整166映射、源CPU检查及本消费者检查；不建立镜像实现的测试框架，不逐tensor/bitwise比对。
+诊断模块<400行，CLI薄分派复用既有入口，无第二Writer/兼容fallback；当前诊断完成后由main家族裁决决定入口退休，冻结源码与原件保留。
+cache时全前端eval/no_grad，fit不加载source/meta且只有endpoint参数；关闭端点激活重算以使用已释放显存，峰值/真实吞吐以实际job结算，不保证未经测量提速。
+2026-10-12 23点后初次data1核：used1,473,135,092KiB/soft2,147,483,648KiB、shared81TiB，<8GiB预估可容纳；各launch再现场核，原大资产只读链接。
+初次两节点快照gpu01各卡约29GiB余量且同用户ycliu计算共驻，gpu02多数忙、部分低利用但内存占用；不当故障，不操作他人。物理选择/实际身份与ETA在启动后补充。

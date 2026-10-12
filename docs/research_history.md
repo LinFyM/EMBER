@@ -1,3 +1,10 @@
+## 2026-10-12晚：coordinate低效864批结束，登记真实固定context短拟合
+
+Owner取消固定864义务后本批GPU23:00:19退出、双节点无遗留已核，control CP864/351自然partial、candidate CP432/日志641与209未存更新保留；旧批不恢复。
+main已消费停止，并根据最早G未拟合E缺口自主登记一次新有限检验：原144合法context固定后仅现有endpoint短时训练，完整源CP432 Adam按名承接。
+当前仅已实现并CPU检查，未取得新拟合或闭环结果。不是新架构/free-code/相等曝光因果对照；既有因子864、BA1296、coordinate432与旧whole-BA/free-code正反边界继续约束取舍。
+唯一定义及历史引用见design§16、[现有coordinate分析§15](analyses/proposal_coordinate_memory_read_20261012.md#15-冻结全144真实context现有endpoint的有界共享拟合)与findings449。启动/结果在progress及新ROOT，0新environment episode授权。
+
 ## 2026-10-12：fresh匹配target/block memory入口，已启动而未形成结果
 
 G1296完整348/MT340/E455仅小幅不均收益；main据实际BA和固定因子空间证据授权两臂匹配fresh，从首更新同BA监督至864，每task96条件，432只恢复。

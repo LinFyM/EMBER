@@ -1,3 +1,20 @@
+Owner要求每次仔细思考、符合全部要求并继续自主推进，明早查看不是执行许可门槛；原§16/5–15min/144/0episode合同不变。
+本次工程检查由实验闭环、main不重复工程验收；目前尚未声明GPU已启动，真实启动身份/ETA随后一次可靠回main。
+
+## 2026-10-12 最新授权与状态：冻结全144真实context，短拟合实施完成待启动
+
+main已消费旧停止原件并登记新独立科学接续；唯一active design为docs/designs/video_guided_proposal_writer_20261010.md §16，完整解释现有coordinate分析§15。
+旧864批永不恢复；候选可恢复只有完整v9 CP432，未保存433–641不使用；control864/351partial保留不补。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit；原全36×4池=144完整真实m，只训练原endpoint、0新episode。
+CPU实际导入检查通过：原ψ496参数，endpoint166/8,761,152参数、Adam166均step432，330冻结参数不step；完整144/原demo选择与cursor432承接。
+新source/gradient-owner schema显式，不称exact-resume；缓存使用原Runtime/Generator.context eval/no_grad，fit只载FactorEncoder/BA目标，不载大source/meta。
+5/15min全36轮边界全池节点和.90/.10停止条件已实现；终点完整恢复state与冻结组件引用、所有144loss/合理大小的端点、原36面板LoRA保存，不自动G-control或后段。
+关闭端点activation重算以利用释放显存，实际峰值/吞吐由job记录；不主张未经测量的95%节省或最优topology。
+旧停止Git e9374122 main/origin clean，已处理主讨论回报；新修改隔离codex/frozen-context-decoder-fit工作树，拟验证/集成push后clean detached执行。
+新root只小metadata与大资产只读链接；data1独立quota核used1473135092KiB/soft2147483648KiB/shared81TiB，8GiB预计可容纳；各launch双节点/额度再现场核。
+首次现场gpu01约29GiB余量但他人100%计算共驻；普通cap6/node6，未启动任何新GPU任务。一个实际owner、启动与完整结果各一次可靠交main，无心跳/自Queue/第二等待者。
+main补充Owner分析充分要求与最近似whole-BA/free-code证据已并入analysis§15/findings449；不因解释追加探针/科学矩阵。
+
 ## 2026-10-12 最新状态：Owner取消864义务，本批已实际停止
 
 Owner明确“没必要非得864步”，main撤回必须等待两864匹配比较；当前G半程约.98 BA误差与337/MT340/E455未有效拟合教师，不继续低效投入。

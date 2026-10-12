@@ -1,3 +1,17 @@
+## 2026-10-13 01:24 实际启动：完整8883恢复的有界优化→唯一终点576
+
+唯一owner refinement8883_query16_01/PID2996926/tmux ember8883-refinement-20261013于01:24:01.901启动；真实四rank job于01:24:21.986启动，冻结代码7179d581。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013；唯一design§18，原§16/17与.50未过不改。
+actual gpu01:0/1/2/3；每rank实核source_Adam8883/RNG来源CP8883 rank0–3/330冻结参数不step，首有效update8884的166 Adam全部前进，endpoint8,761,152参数。
+CPU真实承接检查.986秒、144缓存/36E与下一完整轮36任务均齐备，0模型forward/episode；v2保存端点消费者已用原真实complete/manifest核对，非旧schema fallback。
+每launch双节点现场准入，普通cap6/node6；四卡free45742–46057MiB，data1 quota used1475257984–1475258080KiB/soft2147483648KiB，<8GiB峰值有余量，NCCL_P2P_DISABLE=1/GPU NUMA/deferred NCCL沿用。
+首10min全36边界全144下降不足5%即停，否则首30min全36边界停止；确切节点update/elapsed写原件，仅实际终点一CP/原36LoRA送576query。
+该owner待真实训练退出立即转slots16/group4的live可用六卡动态query，原六参照只读复用；0新native读取/MT/G实践/Actor/bank/held/fullWriter，不再测slots32或新增profile。
+预计完整消费02:00–02:40（early stop/共驻带来范围），非硬截止/正结果保证；原准备20–40min/总1–2h估计保留，实际本轮准备约25min。
+7179d581已集成push，canonical main/origin一致；独占task分支删除，运行树clean detached /data1/user/ymdai/ember_worktrees/endpoint8883_refinement_20261013_7179d581。
+启动证据/命令/四份准入/实际进口与首更新在ROOT/coordinator/refinement8883_query16_01及jobs/endpoint_refinement_from8883，原144目录只读链接。
+只有该真实owner等待训练/query退出并一次整批可靠接续；无阶段Queue/心跳/第二等待者，整批消费/Git后一次交main01a12bb0，本批后无第三同缓存时间块自动授权。
+
 ## 2026-10-13 新有限接续实施中：从完整8883恢复，尚未启动GPU
 
 main消费六臂3456原行，已明确授权唯一design§18；旧§16/17完成与原.50未过保持，旧coordinate864永不恢复。

@@ -6,6 +6,7 @@ gpu01:0/1的保存正确G实践用condition_batch16/slots16，gpu01:2/4做other�
 首个实践worker实际exit0/282.916秒；其gpu01:1于02:58:38已承接other新worker，未等待另一个实践或阻塞控制。此记录是启动调度事实，完整36实践/两576结果仍待整批消费。
 每次launch双节点live准入/普通cap6/node6，初始7空闲卡、gpu02他人任务保持；启动快照确认六个实际GPU进程，不以瞬时util/占显存声称满吞吐。独立strg01 data1 quota used1476497532–1476497724KiB/soft2147483648KiB，新增峰值<32GiB可容纳；原大资产只读引用。
 范围仍36正确G新practice+72教学生成+1152G-only query=1188新episode，0正确G再生成/新MT或参照query/梯度。全36rotation18错视频映射在启动前固定，实践初态和query分离。
+待整批结算澄清（main已核原件）：顶层new_G_generation/new_teaching_forward=0及继承的student_refresh.endpoint_query_only/post_generation_practice=false属于旧保存端点来源子合同，不能代表当前三arm。原启动合同不改写；交付provenance按正确G实践0生成、other/wrong各36计划真实读取/生成分列，并按实际完成数结算，记录澄清出处。不为此中断、重跑、更换在途代码或增开检查。
 按既有六卡query成本和新增native读取/H IO，暂估03:25–04:00完成整批消费；新生成/H保存吞吐尚未充分测出，非硬截止或提速保证，原1–2h初估保留。
 两个实现worktree均clean且已集成；root分支按祖先合并核验、实践分支按实际cherry-pick差异核验后结束生命周期，运行冻结树保留。main新增完整学习源码解释留到整批交付原样归档，不扩在途范围。
 一个总owner直接等待子进程退出并仅整批完成/异常可靠接续实验session，启动一次回main、整批消费/Git后一次科学交付；无心跳/子阶段Queue/第二等待者或自动共享训练。

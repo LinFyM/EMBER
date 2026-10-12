@@ -11711,3 +11711,14 @@ train24/support12按各自MT归一终点比例.567242/.623177；27非零E比例.
 四卡有现有接口下wall收益，未证明向量化batch最优，不以util或填卡代表有效吞吐；profile0optimizer step/0episode，未影响在途更新。
 8实际job/profile退出0，总1.166691458GPUh、root873MiB，完成后双节点已核ymdai GPU进程0，CPU消费3.399秒/0新增forward。
 实际完整分布/机制/未测边界见既有coordinate分析§15.4；稳定ROOT/analysis/completion_20261013、coordinator/frozen_decoder_fit_01，旧864永久关闭。
+
+
+## 451. 广泛的部分端点拟合值得一次固定控制检验，旧阈值与资格不变（2026-10-13）
+
+main直接读取全144原件：27非零E逐task相对自身MT比例min .489257/median .594187/max .695858，27/27改善；36/36四视频都比CP432改善，九零E更近0。
+全144.574896未达预登记<=.50，substantial_teacher_fit=false保留；不改阈值、选择5min/视频或加时。部分但广泛的学习进步使原全36/query16控制读出有判断价值。
+同D38公共固定矩阵的数学loss下界.940825，均值教师可超rank8/未部署，不是constant baseline结果；原36条件/公共增益.389582/.031394按原口径报告。
+这削弱纯公共拟合解释，不识别视频/H因果或held；144只有36独立E目标，固定MT-H可以学习共同E，不能以缺失败H解释监督拟合不足。
+唯一新授权design§17：固定terminal8883原36保存完整LoRA，576新G query、0生成/教学forward/实践/共享更新，五个强参照完整576只读兼容引用。
+结果检验参数进步能否作用于自身hidden/原生动作与闭环，不能由BA下降推成功率；报告完整保持、得失、覆盖、E-only/旧G重叠与72/504。
+到此停止交main，未实践端点无学生bank资格，不自动完整Writer/held/Test/长native训练；旧864批不恢复。两份main原件在原ROOT/analysis/main_scientific_readout，未重跑算术。

@@ -1,3 +1,12 @@
+## 2026-10-13 当前有限计划：固定端点8883全36/576真实控制
+
+main消费完整144原件后授权唯一design§17，保留原substantial_teacher_fit=false；广泛的部分拟合允许实际控制检验，不追加训练或择video/5min。
+直接读取短拟合complete.original36_endpoints，保持原query16/task/init/env/native RNG，576新增G-only episode，0生成/教学forward/实践/共享更新。
+先完成窄saved-endpoint消费者实际CPU检查与Git clean pushed冻结，再按live双节点/独立data1 quota用六卡动态队列，单个原定组验证slots32，其余五卡立即就绪工作。
+完成后完整task/suite/train-support、RGL/churn/旧G重叠、E-only134/both-success321/MT-only19/both-fail102、72/504与账目一次交main；原MT/E/G432/G864/G1296只读复用。
+ROOT=.../frozen_context_decoder_fit/query16_terminal8883；预计准备15–30min/读出40–80min/消费5–10min，按真实执行修订，无强杀截止/GPUh门槛。
+固定8883原36各唯一完整LoRA，无bank资格，读出结束停止；不自动完整Writer/held/Test/Actor或恢复旧864。最终目标与先G从MT过关的顺序保持。
+
 ## 2026-10-13 当前交付：短拟合完整原件，main据部分进步自主接续
 
 design§16有限批已完成并停止，0新episode：全144 BA .978824→.830781→.574896，完整endpoint终点8883/新增8451更新/939次每task，所有36任务较起点改善。

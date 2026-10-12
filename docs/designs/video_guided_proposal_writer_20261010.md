@@ -570,3 +570,31 @@ endpoint权重与166个逐参数Adam state从CP432按保存名称与实际构造
 最小诊断consumer复用FactorEncoder/OperatorObjective/原Runtime，仅当前诊断生命周期使用；不是第二canonical Writer/fallback，结束后按main家族裁决决定退休入口，Git/冻结原件保留。
 工程预计30–60min、缓存5–20min、训练5或15min加两次全池读出均为待实测估计；不设新绝对截止，不承诺正结果或精确95%提速。
 一个实际调度owner、唯一持续退出等待；一次真实启动/ETA与一次完整结果/实际异常可靠交main01a12bb0，无心跳、阶段Queue或第二等待者。
+
+
+## 17. 当前有限授权：固定terminal8883保存端点的原36/query16闭环（2026-10-13）
+
+main已直接消费§16全部144原件、实际目标与历史，保留原<=.50调查信号未通过：全池.574896，原36面板.579024。
+27非零E逐task相对自身MT基线的终点比例min .489257/median .594187/max .695858，27/27改善，36/36四视频均较CP432改善；九零E更近0。
+这属于部分但广泛的实际共享学习进展，main明确授权一次完整控制读出，不追认旧阈值通过或追加学习。
+主讨论两份原样小原件在原ROOT/analysis/main_scientific_readout/{short_fit_terminal_scientific_consumption.json,short_fit_interpretation_bound.txt}，不重算。
+同D38下任何condition不变的矩阵输出loss下界.940825（教师均值可能超rank8，非部署臂）；原36条件/公共增益.389582/.031394，不把其分解混为全144。
+拟合未识别video/H各自贡献，成功率不能由BA降低推算，固定MT-H可以学习共同E的因果边界保持。
+
+唯一输入为ROOT/complete.json.original36_endpoints指向的terminal_15min/update8883原指定teacher_demo完整38-target/rank8 LoRA。
+原ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit；训练来源cb27adfc、冻结前端完整CP432与endpoint8883分列。
+新唯一读出根ROOT/query16_terminal8883，saved-endpoint来源schema明确；实际读取权重/真实MT-H与pairing校验，不装载或运行Writer/Reader，也不生成新的G-H/学生bank资格。
+每task同原query16/task/init/env/native RNG及官方10flow/前5动作重计划口径，36×16=576新增G episode；0新实践/共享更新/教学forward/G生成。
+MT/E/G432/G864/G1296原完整576只读兼容引用，兼容不成立须实际修复或交具体边界，不静默新采参照。
+不按四视频loss择video，不改用5min，不融合/重新生成端点，不运行Actor/完整Writer/held/Test/其它controls/probe。
+
+全576完成后分train24/support12、suite/task、coverage、retained/gained/lost/churn及旧G集合重叠，列E-only134、both-success321、MT-only19、both-fail102；72选点重合与504其余分列。
+若仍是337/341/348附近低量级且新能力被损失抵消，形成较大参数拟合未传成有用控制的新证据；明显超MT且保持/覆盖合理则由main决定后继。
+单次train36面板不是held、完整Writer或video/H因果资格；到此退出，无自动追加时间或后段。
+
+直接复用保存端点restore→query运行面，必要窄适配独占分支验证/集成push后clean detached执行，不热改原冻结树。
+long-first/cost-balanced动态resident队列，独立就绪工作不因局部失败停派；一个实际owner等待worker退出并一次可靠整批交main01a12bb0。
+每launch同时live双节点/6或8合计/node6/非干扰，data1独立quota、实际用量/共享容量；新增峰值预计<1GiB，大资产/完整CP只读引用。
+真实显存余量允许一个原定组验证slots32，其余就绪worker同时使用已实测slots16/group4；按实际吞吐/peak选后续未启动worker，不为profile等待或增加episode。
+准备15–30min、六卡读出40–80min、消费5–10min为已有早期576/恢复组依据的初估，启动后按实际消费者修订；无硬deadline/GPUh门槛。
+只允许一次真实启动/ETA与一次完整结果/真实异常回报，无心跳、子阶段Queue、自Queue或第二等待者；旧864批永久关闭。

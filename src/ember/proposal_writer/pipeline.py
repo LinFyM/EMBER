@@ -5,7 +5,9 @@ from pathlib import Path
 import time
 
 import torch
+from safetensors.torch import load_file
 
+from ember.lora import validate_lora_state
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.pi05_source_setup import initialize_deferred_process_group
 
@@ -31,6 +33,49 @@ def load_version(runtime,directory,*,fixed_psi=True):
         checkpoint_stage=state['stage'],checkpoint_update=state['next_update'])
     if fixed_psi:runtime.freeze_psi()
     return state
+
+
+def saved_endpoint_version(runtime,directory,run):
+    """Validate a fixed terminal endpoint source without loading or running Writer."""
+    from .frozen_context import SCHEMA as endpoint_schema
+    complete=read_json(Path(run['saved_endpoint_complete']));manifest=read_json(Path(directory)/'manifest.json')
+    spec=run['student_refresh'];rows=complete['original36_endpoints']
+    if (run['schema_version']!='ember_frozen_endpoint8883_saved_query16_v1'
+            or complete['schema_version']!=endpoint_schema or not complete['complete']
+            or complete['terminal_node']!='terminal_15min' or complete['terminal_update']!=8883
+            or spec['G_update']!=8883 or Path(complete['checkpoint']).resolve()!=Path(directory).resolve()
+            or manifest['schema_version']!=endpoint_schema or not manifest['complete']
+            or not manifest['full_endpoint_optimizer_rng_sampler'] or manifest['next_update']!=8883
+            or len(rows)!=36 or {r['task'] for r in rows}!=set(TASKS)
+            or any(r['demo']!=spec['condition_mapping'][str(r['task'])]['teacher_demo'] for r in rows)):
+        raise ValueError('saved readout needs the original36 fixed complete terminal8883 endpoints')
+    runtime.saved_endpoint_rows={r['task']:r for r in rows}
+    runtime.version=8883;runtime.psi_frozen=True
+    runtime.fixed_kernel_identity=dict(checkpoint=str(Path(directory).resolve()),psi_version=8883,
+        checkpoint_stage='saved_endpoint',checkpoint_update=8883,checkpoint_schema=endpoint_schema,
+        frozen_frontend_checkpoint=manifest['source_checkpoint'],training_code=run['training_source'],
+        Writer_loaded=False,Writer_forward=False)
+    return dict(stage='saved_endpoint',next_update=8883)
+
+
+def lock_saved_endpoint(runtime,path,destination):
+    """Reference the one previously generated LoRA and the original MT-only H."""
+    row=runtime.saved_endpoint_rows[path.task]
+    if row['demo']!=path.demo:raise ValueError('saved endpoint teaching mapping changed')
+    weights=Path(row['weights']).resolve(strict=True);state=load_file(str(weights))
+    validate_lora_state(state,runtime.lora)
+    if not all(bool(torch.isfinite(v).all()) for v in state.values()):
+        raise ValueError('saved fixed endpoint has nonfinite parameters')
+    path.selected='G_000';path.states[path.selected]=state;path.valid.append(path.selected)
+    path.attempts.append(dict(reference=path.selected,parent='MT300',valid=True,
+        generation='previously_saved_terminal8883_endpoint',decoder_calls=0,
+        saved_weights=str(weights),new_G_generation=False))
+    destination.mkdir(parents=True,exist_ok=True)
+    (destination/'G_000.safetensors').symlink_to(weights)
+    (destination/'history.pt.gz').symlink_to(Path(path.bootstrap_provenance['source']).resolve(strict=True))
+    write_json_atomic(destination/'path.json',dict(**path.manifest(),retained_U=True,
+        untried_reconstruction='not needed; fixed saved endpoint referenced directly',
+        new_G_generation=False,new_G_practice_episodes=0,saved_endpoint_source=str(weights)))
 
 
 def task_spec(contract,task):
@@ -141,10 +186,12 @@ def endpoint_query_group(args,runtime,runner,environment,run,task_ids):
             history,source=bootstrap_source(args.root,task_id,panel,0,cache)
             for _ in bootstrap(path,task,panel,history=history,provenance=source):
                 raise ValueError('direct endpoint readout cannot collect a bootstrap episode')
-            features=runtime.teaching(task_id,path.demo)
-            proposals=generate_candidates(runtime,path,'MT300',features)
-            if len(proposals)!=1:raise ValueError('direct readout requires one full deterministic endpoint')
-            path.selected=proposals[0];path.save(destination,retain_U=True)
+            if run.get('saved_endpoint_complete'):lock_saved_endpoint(runtime,path,destination)
+            else:
+                features=runtime.teaching(task_id,path.demo)
+                proposals=generate_candidates(runtime,path,'MT300',features)
+                if len(proposals)!=1:raise ValueError('direct readout requires one full deterministic endpoint')
+                path.selected=proposals[0];path.save(destination,retain_U=True)
         if (path.sampling_identity!='endpoint_query_only' or path.completed_rounds or path.boundaries
                 or path.outputs or path.decisions or path.practiced!=['MT300'] or len(path.attempts)!=1):
             raise ValueError('direct readout must retain only real MT history and one unpracticed endpoint')
@@ -168,7 +215,9 @@ def endpoint_query_group(args,runtime,runner,environment,run,task_ids):
             kernel_identity=path.kernel_identity,timings=path.timings,query_rewards=reward,
             query_count=len(query_panel(panel,0)),readonly_E_complete=reference['complete'],
             readonly_E_receipt=str(destination/'readonly_E/complete.json'),
-            new_G_practice_episodes=0,real_H_source=path.bootstrap_provenance))
+            new_G_practice_episodes=0,real_H_source=path.bootstrap_provenance,
+            saved_endpoint_source=path.attempts[0].get('saved_weights'),
+            new_G_generations=sum(int(a['decoder_calls']) for a in path.attempts)))
     return [str(args.root/'student_data'/version/f'task_{task_id:04d}') for task_id in task_ids]
 
 

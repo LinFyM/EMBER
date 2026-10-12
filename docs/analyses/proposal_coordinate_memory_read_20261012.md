@@ -480,3 +480,19 @@ Owner询问GPU效率时，一次双节点现场快照显示fit在gpu01:0–3，u
 记录欠项：5min读出没有保存精确update/曝光，不能从mtime或累计时间估算补写；停止由当时实际300s后全36边界及完整144读出执行，15min终点update8883/新增8451/每task939有完整metrics和checkpoint证据。此欠项不伪造为完整节点日志，也不为补记录重跑训练或探针。
 
 稳定原件ROOT/analysis/completion_20261013/{consume.py,statistics.json}、analysis/{baseline_CP432,first_5min,terminal_15min,terminal_operator_decomposition}.json、contexts/complete.json、checkpoints/update_00008883、coordinator/frozen_decoder_fit_01/exit.json；profile_endpoint_world1_B4保留命令/统计/实际退出与计费。Git delivery和可靠main回执进入同一稳定completion目录，原源码/失败停止历史不改写。原启动ETA23:55–00:15保留，实际00:00:17完成；本轮到此交付，不恢复旧864批。
+
+
+## 16. main科学消费后的唯一后继：固定8883端点转为真实控制判断
+
+main直接消费全部144节点原件后确认27非零目标全部相对自身MT改善，终点比例.489257/.594187/.695858（min/median/max）；所有36任务的四视频均较CP432改善，九零E更近0。
+全144.574896未达原<=.50调查信号，substantial_teacher_fit=false原样保留；.5–.9的部分结果仍足以由main判断值得一次原完整控制读出，而不是改阈值或继续训练。
+同D38任意公共常量矩阵loss>=.940825，因四视频重复共同E不改变方差；教师均值可能超rank8且未部署，这只作数学下界。
+低于下界排除在训练任务范围内的纯公共固定输出解释，不能归因video/H或held。原36公共/条件增益.031394/.389582仍按原36口径，不冒充全144分解。
+两份主讨论小原件原样归档ROOT/analysis/main_scientific_readout/short_fit_terminal_scientific_consumption.json及short_fit_interpretation_bound.txt，无重算或新forward。
+
+新的可失败预测是：若参数取得仍未传成有用控制，则8883的全576仍与337/341/348同量级，E-only获得被原MT损失抵消；若明显超MT且合理保持/覆盖，才增强下一项完整方法学习的支持度。
+实际干预只是把固定原36保存LoRA送入原生执行hidden与10步动作的闭环；不按BA降幅预测成功数，不把近教师权重当功能等价。
+固定8883/原指定video、同query16/初态/env/native RNG，MT/E/旧G参照完整只读引用。36×16=576新G query，0新G生成/教学forward/实践/共享更新；未实践端点不进入bank。
+结果必须分task/suite/train24/support12、RGL/churn/旧G重叠，E-only134/both-success321/MT-only19/both-fail102与72/504分列。
+执行合同只在唯一design§17；新根ROOT/query16_terminal8883，六卡动态读出与一个原定组slots32物理验证，不增加科学面板或等待profile。
+本次终点固定，既有§16完整结果/费用及旧864失败停止不改写；无完整Writer/held/Test或自动学习接续资格。

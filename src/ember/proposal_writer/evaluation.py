@@ -227,7 +227,7 @@ def student_queue(root):
             raise ValueError('student queue cannot shrink the actual query panel')
         shards.append(EvaluationShard(f'student_{version}_{task_id:04d}',ordinal,task['suite'],task['task_id'],
             task['horizon'],states,task['horizon']*(len(states)+practice_count),0 if task['horizon']==520 else None))
-    plan=dict(checkpoint=str(root/'checkpoints/G'/f"update_{run['student_refresh']['G_update']:08d}"),
+    plan=dict(checkpoint=run.get('readout_checkpoint',str(root/'checkpoints/G'/f"update_{run['student_refresh']['G_update']:08d}")),
         logical_tasks=list(TASKS),new_episodes=36*(practice_count+run['student_refresh']['query_states_per_parameter']),
         new_G_practice_episodes=36*practice_count,readout_mode='endpoint_query_only' if endpoint_only else 'practice_then_query',
         shards=[asdict(shard) for shard in shards],condition_mapping=run['student_refresh']['condition_mapping'],
@@ -242,22 +242,24 @@ def student_queue(root):
 
 def student_worker(args,runtime,runner,environment):
     """One frozen resident consumes distinct groups; all policy RNG stays per row."""
-    from .pipeline import load_version,refresh_group,endpoint_query_group
+    from .pipeline import load_version,refresh_group,endpoint_query_group,saved_endpoint_version
     from .supervision import query_row
     from .learning import memory_peak
     import torch
-    state=load_version(runtime,args.checkpoint);run=read_json(args.root/'run_contract.json')
+    run=read_json(args.root/'run_contract.json');saved_endpoint=bool(run.get('saved_endpoint_complete'))
+    state=saved_endpoint_version(runtime,args.checkpoint,run) if saved_endpoint else load_version(runtime,args.checkpoint)
     endpoint_only=args.command=='endpoint-query'
     if endpoint_only!=(run['student_refresh'].get('readout_mode')=='endpoint_query_only'):
         raise ValueError('resident command must match its registered practice/query consumer')
     consume=endpoint_query_group if endpoint_only else refresh_group
-    if state['stage']!='G' or state['next_update']!=run['student_refresh']['G_update']:
+    if state['stage']!=('saved_endpoint' if saved_endpoint else 'G') or state['next_update']!=run['student_refresh']['G_update']:
         raise ValueError('resident student worker requires the registered final complete G')
     version=run['student_refresh']['version'];base=args.root/'student_data'/version/'queue'
     queue=base/'jobs.sqlite';tasks={(t['suite'],t['task_id']):t for t in environment['tasks']}
     stop=run.get('absolute_deadline_revision',{}).get('target_complete_and_consumed_UTC')
     groups=0;start=time.monotonic()
     while stop is None or datetime.now(timezone.utc)<datetime.fromisoformat(stop):
+        if getattr(args,'max_groups',None) is not None and groups>=args.max_groups:break
         claims=[]
         for _ in range(args.condition_batch):
             claim=claim_next(queue,worker_id=args.worker_id)

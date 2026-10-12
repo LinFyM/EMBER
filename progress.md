@@ -1,3 +1,16 @@
+## 2026-10-13 当前授权：固定8883保存端点的原全36/query16闭环准备
+
+main完整科学消费短拟合后授权唯一design§17；§16完成/费用与未达.50信号保留，不恢复训练或旧864批。
+固定SOURCE/complete.json.original36_endpoints的terminal15min/update8883原36 LoRA；SOURCE=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit。
+新唯一根SOURCE/query16_terminal8883，只新增576G query，0G生成/教学forward/实践/共享更新/Actor/完整Writer/held/Test；旧五臂各576只读兼容引用。
+训练来源cb27adfc、冻结前端完整CP432、endpoint8883和新的读出代码身份分开，保存端点未实践、不能入bank。
+已有消费者默认载完整Writer，现独占codex/terminal8883-query16作窄saved-input适配；真实CPU restore/request/参照/RNG检查后集成push/clean detached运行。
+现场gpu01:0/1/2/4/5/6有约44GiB余量，普通cap6/node6；data1独立quota used1474324628KiB/soft2147483648KiB/shared81TiB，新输出<1GiB可容纳，each launch再live核验。
+六卡动态long-first resident读出；一个原定group用slots32测真实吞吐/peak，其余就绪五卡slots16/group4并行，不等待profile、不重跑完成行。
+准备15–30min/六卡读出40–80min/消费5–10min为旧实际成本的初估，实际启动后修订；目前仅准备，尚未称GPU启动。
+完整36/576后报告task-suite/train24support12/RGL/churn/旧G重叠/E能力类别/72与504及全部失败费用，main消费后自主取舍；无自动后段。
+一个实际dispatcher/退出owner，真实启动与整批结果各一次可靠交main01a12bb0；无心跳、阶段Queue或第二等待者。
+
 ## 2026-10-13 00:00 最新状态：全144冻结context短拟合已实际完成
 
 唯一design§16本轮已结束：ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit，训练/缓存来源cb27adfc clean pushed detached。

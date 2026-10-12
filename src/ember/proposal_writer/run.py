@@ -377,6 +377,7 @@ def main():
     parser.add_argument('--condition-ordinal',type=int)
     parser.add_argument('--worker-id',help='persistent formal dynamic queue worker identity')
     parser.add_argument('--condition-batch',type=int,help='measured physical independent condition group')
+    parser.add_argument('--max-groups',type=int,help='optional physical worker exit after complete groups')
     parser.add_argument('--video-arm',choices=['correct','other','wrong'],default='correct')
     parser.add_argument('--microbatch',type=int,default=28)
     parser.add_argument('--frame-chunk',type=int,default=16)
@@ -420,6 +421,8 @@ def main():
     if args.command=='endpoint-query' and not resident_student:parser.error('endpoint-query needs its persistent worker identity')
     if resident_student and (not args.condition_batch or args.condition_batch<1):
         parser.error('resident student needs its physical condition batch')
+    if resident_student and args.max_groups is not None and args.max_groups<1:
+        parser.error('physical group limit must be positive')
     if not shared and args.command!='formal' and not resident_student and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')
     runtime=create_runtime(args,context,environment)
     consumer=args.worker_id or (str(args.stop) if shared else f'task{args.task}')

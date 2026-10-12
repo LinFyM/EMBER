@@ -162,3 +162,15 @@ main不重复工程审查。正式来源clean pushed detached，当前记录串�
 实际candidate launch核双节点与strg01独立data1 quota，used1470479352/soft2147483648KiB，项目最终6卡/cap6/node6；16GiB增量与共享81TiB容量可容纳。大资产原位引用，所有新增cache/TMPDIR/output都在data1。单一owner为ROOT/coordinator/matched_coordinate_read864_01，17:46:32启动、gpu02 PID681682、tmux ember-coordinate-memory864-20261012；依赖文件采用事件等待，真实G退出才派发常驻动态query队列，整批实际退出仅一次通知实验session消费。
 
 工程变更已集成main；task-owned codex/coordinate-memory-read864开发分支和开发树在确认等价集成、clean及profile退出后清理。正式训练/读出三个冻结树及关键恢复资产保留。当前没有CP864或576新结果，后续验收按本分析§6完整口径；不把启动、profile、测试或有限loss作为科学通过，也不自动派发任何后段。
+
+## 10. 一次现场效率核查：六卡新共驻与ETA修订（2026-10-12 20:32 UTC+8）
+
+Owner询问训练耗时，main提供两臂native计算约翻倍的异常线索。实验只做一次针对性双节点GPU频率/功率/温度/进程及CPU/NUMA快照，消费现有metrics；没有新模型forward、训练更新、episode或profile。稳定原件在ROOT/coordinator/matched_coordinate_read864_01/efficiency_check_20261012_2030/{gpu_preflight.json,gpu01_live.txt,gpu02_live.txt,metrics_snapshot.json,summary.json}，私有进程身份仅留run原件。
+
+20:32:38快照：控制所有rank完整到732/864，最近72更新均21.75498秒；候选到383/864、均34.47073秒。按实际teaching frame归一，dual-meta CUDA forward由约.043升至.089秒/frame，含native重算的backward由约.128升至.265；候选endpoint forward约.25秒/rank/update，仅小部分。H decode控制1.401→1.423、候选2.827→2.846秒/rank/update，不能由H读取或更多教学帧解释整体翻倍。
+
+现场发现另一个用户约19:42启动的作业覆盖本项目全部gpu01:0–5，每卡额外约16460–16462MiB，本项目原进程仍约27GiB；六卡util均100%。SM当前1710–1740MHz、max1740，温度61–73℃，未见当前SW/HW thermal slowdown；部分SW power cap可瞬时active，当前频率差远小于两倍。CPU近期84–86% idle、CPU/memory PSI零、可用内存约392GiB、无swap；控制四rank绑node0、候选二rank绑node1且大部分内存页本地。双节点没有空闲专用卡；gpu02少数显存有余量卡也有高负载任务，另两张低util卡不足10GiB free。**共享GPU计算争用是目前最有力解释，快照并非停掉竞争任务的因果隔离，也不是硬件故障诊断。**
+
+没有定位到本项目可逆调度错误，故不信号任何GPU进程、不改驱动/功率/冻结代码；原owner PID681682、两个G和唯一退出接续保持。已有owner在控制真实退出后立即将释放的四卡用于动态直接query，候选最后可用全部六个项目槽位，不受训练world2限制。candidate CP432尚未到达；实际冻结v9 resume消费者明确拒绝world/rank RNG cardinality变化，没有既有正确的2→4迁移入口。同world换设备不能在当前双节点同样共享且无空闲卡的事实下证明有收益。本次不临场铺迁移工程或回退未保存更新，不中断近完成控制；432恢复only、864唯一读出及所有科学合同保持。
+
+按这一快照最近72更新和现有共驻负载，控制剩132步约.80h，训练约21:20完成；候选剩481步约4.606h，训练约次日01:09完成。后续query仅据既有实际读出和native计算翻倍外推为1–2h，整批当前约**10月13日02:10–03:15 UTC+8**，没有新增绝对截止。原23:10–00:15预测属于启动时负载，已被此修订取代；未来外部负载或新G实际episode长度仍影响wall，不能承诺固定完成时刻。不因本异常扩大科学矩阵、设置新等待者或阶段通知；有限核查一次回main，原整批完成回报保持。

@@ -9,7 +9,10 @@ ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordina
 两节点launch现场普通cap6，项目4+2实际6卡、node6；candidate data1独立quota used1470479352/soft2147483648KiB、shared81TiB，16GiB增量可容纳。
 固定因子几何已归档operator1296 ROOT/analysis/main_scientific_readout，不重跑；当前A非B硬瓶颈，固定MT-H可学B，旧direct-block负证据保留。
 原初估工程30–60min/并行compute-readout3–5h保留；candidate最长profile chunk16平均20.602s/reserved26.10GiB，chunk32无收益/42.79GiB，采用16，5更新全部discard/0episode/.075387129GPUh，已释放。
-候选首次9更新/完整36平均18.645s，864训练外推4.475h；保留4.4–5h加动态query .5–1h，整批暂估23:10至次日00:15。控制首9更新外推2.796h；物理选择/边界与实际profile见分析§9。
+启动负载时首9更新预测保留：候选18.645s/外推4.475h、整批23:10至次日00:15；控制外推2.796h。该ETA已被下述共驻负载修订取代，不能继续当可靠当前预测。
+Owner耗时询问触发一次20:32双节点现场核查：control732/candidate383，最近72步21.755/34.471s；另一用户约19:42作业共驻全部六卡、每卡约16.46GiB，GPU频率接近max且当前无热降频，CPU/NUMA正常，共享计算争用是最强解释，未作因果隔离或硬件故障定论。
+原owner/两G/冻结代码及全部科学合同保持；无已有2→4 world迁移消费者，不回退未保存更新或中断近完成控制。控制退出后四卡动态query，candidate最后可用六槽位。按20:32快照和现共享速度，candidate训练约次日01:09、query外推1–2h，当前整批ETA10月13日02:10–03:15 UTC+8，无新截止。
+稳定原件coordinator/matched_coordinate_read864_01/efficiency_check_20261012_2030，详细分析§10；0新增forward/update/episode/GPU计算，没有进程信号或新等待者。此次有限检查回main一次，整批完成接续不变。
 唯一owner coordinator/matched_coordinate_read864_01，17:46:32启动、PID681682/tmux ember-coordinate-memory864-20261012；就绪query在真实G退出后动态派发，不受训练world2限制。
 task-owned开发分支/worktree在确认等价集成和profile退出后清理；三个正式冻结树/恢复依赖保留。main/origin已推送科学决定与canonical唯一block实现，运行源码c35冻结不随文档更新。
 原件ROOT/analysis/admission、profile_candidate/attempt_001及coordinator/matched_coordinate_read864_01/{control,candidate}_startup_verified.json；一个真实启动与整批完成/异常交main01a12bb0，无心跳/阶段Queue/第二等待者，无新绝对deadline。

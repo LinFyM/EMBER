@@ -8,7 +8,8 @@ ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/coordina
 62项检查、真实fresh prepare/同36实际曝光及query原件/RNG/参照兼容通过；开发分支/tree已核实集成后清理，正式三冻结树与恢复资产保留。
 双节点launch核当前cap6/项目6/node6，data1 used1470479352/soft2147483648KiB/shared81TiB，16GiB增量可容纳。真实最长profile选chunk16，chunk32无吞吐收益，.075387129GPUh/5discard更新/0episode。
 固定因子几何已归档operator1296 ROOT/analysis/main_scientific_readout，不重跑；当前A非B硬瓶颈，固定MT-H可学B，旧direct-block负证据保留。
-原初估工程30–60min/并行3–5h保留；候选实测首36条件18.645s/有效更新外推4.475h，正式训练4.4–5h加query .5–1h，暂估23:10至次日00:15。控制实测外推2.796h；实际选择与执行原件见现有分析§9。
+原初估工程30–60min/并行3–5h及启动实测首36条件/23:10至次日00:15预测保留为历史，当前不沿用；20:32一次现场核查发现全部六卡新共驻，native计算约翻倍，CPU/NUMA与当前频率未显示相应瓶颈。
+最近72步控制21.755s/732、候选34.471s/383；原owner/科学合同继续，控制结束立即四卡query，candidate终点query可用六卡。缺已有正确2→4迁移消费者，不回退未保存更新或为扩卡停近完成训练；当前共驻负载下整批ETA10月13日02:10–03:15 UTC+8，依据与原件见现有分析§10。
 唯一owner matched_coordinate_read864_01事件等待两臂及就绪query，后续动态读出不受训练rank数限制。一次真实启动与整批完成/异常交main01a12bb0；无心跳/阶段Queue/第二等待者，无新绝对deadline。
 
 ## 2026-10-12 历史交付：完整G1296/query16已消费，main自主决定后继

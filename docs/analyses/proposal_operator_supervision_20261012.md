@@ -443,3 +443,32 @@ ROOT/analysis/first_student_query16_summary.json明确complete=false、missing/l
 所有参数/信息墙/配对/完整CP消费检查通过，不表示整批成功；已知EGL、guard及逾时均显式保留。
 原864及新1080/1296完整恢复状态、36权重/H、全部raw rows、失败记录及两个冻结工作树保留。
 开发branch/worktree已在clean集成push后退休，不删除当前关键原件，不自动任何后段或截止后续跑。
+
+## 12. 算子空间条件分解与恢复后的48行补测授权
+
+Owner于2026-10-12 16:37 UTC+8确认gpu01恢复可用，main登记一个仅补task32/34/35原query16的新leg。
+旧批exit1、15:55违约、32行逾时和partial统计保留；新leg不复活旧队列/已过期guard，也不新增绝对截止。
+ROOT/coordinator/operator_G1296_query48_recovery_01登记新授权、CPU真实保存条件准入、独立整批owner和精确运行原件。
+只读取原保存G1296完整38-target/rank8权重及既定query映射/RNG；不生成新LoRA、不重复36实践、不恢复G训练。
+其余528行原样保留，MT/G864/E只读相同48行引用；本次成功新增只48个G episode，完成后在新analysis中组合全36/576。
+时段必须分原截止内496、原逾时32、恢复后48，不追认旧整批或选掉逾时不利行。
+没有Teacher/Actor/warm/RL/held/controls/probe或>1296；main消费完整读出后自主决定后继。
+
+main一次4.390秒CPU分析已经原样归档ROOT/analysis/main_scientific_readout/operator1296_common_conditional.py及json，
+没有重跑、模型forward或GPU。它平均实际sBA而非分别平均A/B，冻结all36 D38单位：teacher算子均值能量.05917487，
+条件方差.94082513；G1296公共误差.04656572、中心化误差.91487962，总loss .96144534。
+相对MT总改善.03855466中公共拟合.01260915、条件拟合.02594551，占67.2954%；
+自身算子均值误差.98739085大于真实G误差，公共算子能量占44.2479%，不能用因子坐标67.9293%称纯公共输出坍缩。
+27非零E内仍有条件增益.02885908、公共增益.02276304，单位仍冻结all36 D；不只是9零E/27非零类别划分。
+
+层组不均：Q均loss .99490410、V均 .92736630，V贡献全局算子改善约89.24%；
+Q条件增益.00301326、V .04927078。它削弱硬性B断路、全部层学不会或完全无条件映射的说法，
+但不是decoder容量、条件表示、优化或视频/H因果的唯一解释。无约束mean(teacher BA)误差.94082513虽较小，
+其rank可超过8且未经部署，不能当作可部署constant baseline胜过G的结果。
+原528首动作不更接近E、E-only118传18和net+6仍保留；补齐48不会重做该算术或抹去现有负证据。
+
+Owner同时纠正因果边界：当前固定MT-H/共同E监督理论上能够训练B；缺少不同失败经历不能作为B拟合弱的原因或借口。
+H覆盖只限定后续多轮反馈修订资格，初次监督映射的弱拟合仍须沿实际条件特征、坐标/层算子、梯度与部署作用解释。
+本次补测复用c7e76b56冻结消费者的restore_compilation→query_conditions路径；保存path存在时不进入compile_conditions。
+CPU准入实际加载三个原G_000权重，截获全部48请求，核only-G、原init-state/env/native RNG及MT/G864/E兼容；
+尚未把CPU图检查称实际GPU读出成功。现场GPU与独立quota、实测物理执行、启动/ETA以新coordinator真实收据为准。

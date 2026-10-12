@@ -11585,3 +11585,16 @@ formal7attempt/1失败6.429983GPUh+profile.075943=6.505926；564完成新episode
 复用MT8131步另列，失败query步未知而非0。CP864/1080/1296完整恢复及36权重/H/raw/失败记录/冻结树保留，未保存G更新0。
 ROOT/analysis/whole_completion_20261012和analysis/endpoint_arithmetic保存一次CPU消费/命令/退出/原件；
 完整分析docs/analyses/proposal_operator_supervision_20261012.md §11。本批停止，不自动补query/延长/后段，main消费部分证据自主接续。
+
+## 444. G1296有算子条件拟合，因子公共比例不能替代BA分解（2026-10-12）
+
+main一次4.390秒CPU分解实际mean(sBA)，原样归档operator1296ROOT/analysis/main_scientific_readout/operator1296_common_conditional.py/json，未重跑。
+all36冻结D38下E均值能量.05917487、方差.94082513，G公共/中心化误差.04656572/.91487962，总loss .96144534。
+总改善.03855466中公共.01260915、条件.02594551（67.2954%）；自身算子均值误差.98739085高于真实G。
+G算子公共能量44.2479%，不是factor的67.9293%；27非零E内条件增益仍.02885908，公共.02276304，不只是零/非零类别。
+Q/V均loss .99490410/.92736630，V贡献全局改善约89.24%；Q/V条件增益.00301326/.04927078。
+这些削弱纯公共坍缩、硬B断路/全部层学不会的说法，不唯一定位表示、decoder或优化，不证明video/H因果或控制增益。
+无约束teacher算子均值rank可能>8且未部署，不能把其误差.94082513当可部署constant baseline优势。
+Owner纠正固定MT-H/共同E理论上能把B学起来；缺不同失败经历不是当前B拟合弱的解释，H覆盖只约束后续反馈修订资格。
+已保存528的首动作与E不更近、E-only传递18/118和net+6仍保留。Owner16:37确认gpu01恢复后，main仅授权新leg补缺失48query，
+原截止内/逾时/恢复后分列，不重编译/practice/G训练、不改旧partial/失败或重算分解；唯一active§14/对应分析§12登记完整边界。

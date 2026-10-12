@@ -1,4 +1,18 @@
-## 2026-10-12 当前运行：恢复后仅补G1296原缺失48条query
+## 2026-10-12 当前结果：G1296恢复补测完成，全36/576已消费
+
+新有限leg实际17:03:03 UTC+8退出0，三个job只补原保存端点的48G query；无新编译/practice/G更新。
+全36/576为MT340/G864341/G1296=348/E455，MT→G R310/G38/L30/net+8/churn68，旧G→G net+7/churn79。
+时间集合原截止内496/原逾时32/本次恢复48分别302/308/314/394、13/11/7/26、25/22/27/35；旧exit1/15:55违约不追认成功。
+Spatial−7/Object+6/Goal+1/Long+5/support+3，E-only134传22；72重合/504其余各net+4，仍未取得明显超强MT资格。
+真实冻结消费者CPU7.147秒通过完整2304逻辑行/48only-G/场景与RNG/对照兼容/费用，既有端点与BA分解未重算。
+稳定原件ROOT/analysis/query48_recovery_completion_20261012；既有operator分析§13/findings§445/design§14保存全36逐task/机制/边界。
+新增.297693609GPUh/48episode/18457步；本root含profile累计6.803619433GPUh，612完成新episode/步下界142758，旧失败步未知。
+coordinator/operator_G1296_query48_recovery_01实际exit/唯一通知及双节点清空收据已核；旧partial/失败/逾时文件保持。
+CP1080/1296及原864、36权重/H/raw/两个冻结树保留；本leg复用c7e76b56，未创建开发分支/worktree，canonical/Git由实验闭环。
+到此无自动Teacher/Actor/warm/RL/held/controls/probe/>1296；完整消费一次交main01a12bb0自主科学裁决，不设Owner/工程ACK。
+完成投递仅以新coordinator/completion_consumed.json及whole_result_main_delivery.json的实际记录判重；不会因迟到消息重跑。
+
+## 2026-10-12 历史启动：恢复后仅补G1296原缺失48条query
 
 Owner16:37 UTC+8确认gpu01恢复正常、可加速推进；main登记新有界leg，不需Owner/main工程ACK。
 只task32/34/35各原query16，读取保存唯一G1296权重，原教学/MT-H/P/初态/env/native RNG不变；不生成/重复practice/续训。

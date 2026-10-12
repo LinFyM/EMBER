@@ -216,6 +216,44 @@ def test_endpoint_reuses_full_MT_E_and_reads_real_previous_G(tmp_path,teacher_MT
     assert len(runner.requests)==16
 
 
+def test_direct_endpoint_query_reuses_controls_without_practice_or_actor(tmp_path):
+    runtime,path,task,panel,teacher,source,_=previous_control_fixture(tmp_path)
+    path.sampling_identity='endpoint_query_only';path.completed_rounds=0
+    path.boundaries=[];path.decisions=[];path.outputs=[];path.practiced=['MT300']
+    path.valid=['MT300','G_000'];path.attempts=[dict(reference='G_000')]
+    destination=runtime.root/'student_data/endpoint/task_0013';runner=Runner()
+    reward=q.query_once(runtime,runner,path,task,panel,0,destination/'query',
+        mt_reference_root=source,mt_reference_version='previous',endpoint_only=True)
+    q.readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',teacher)
+    assert len(runner.requests)==16 and {r['parameter_ref'] for r in runner.requests}=={'G_000'}
+    assert {r['state_id'] for r in runner.requests}==set(panel['query_states'])
+    assert all(r['noise_root']==q.seed(70,path.task,0) and not r['uses_teaching'] for r in runner.requests)
+    receipt=read_json(destination/'query/complete.json')
+    assert receipt['unpracticed_fixed_endpoint_query'] and receipt['new_G_practice_episodes']==0
+    assert not receipt['unpracticed_candidates_not_queried'] and reward['G_000']==6/16
+    q.query_once(runtime,runner,path,task,panel,0,destination/'query',endpoint_only=True)
+    assert len(runner.requests)==16  # Recovery consumes the saved endpoint's missing rows only.
+    path.boundaries=[dict(actual_parameter_ref='G_000')]
+    with pytest.raises(ValueError,match='unpracticed endpoint'):
+        q.query_once(runtime,runner,path,task,panel,0,destination/'query',endpoint_only=True)
+
+
+def test_direct_endpoint_queue_keeps_full36_query16_and_omits_practice(tmp_path):
+    from ember.proposal_writer.evaluation import student_queue
+    from ember.proposal_writer.contract import TASKS
+    from ember.pi05_eval_queue import queue_summary
+    tasks=[dict(global_task_id=t,suite='libero_90',task_id=t,horizon=400) for t in TASKS]
+    panel=[dict(task_id=t,query_states=list(range(16)),query_count=16) for t in TASKS]
+    write_json_atomic(tmp_path/'panel.json',dict(tasks=panel))
+    write_json_atomic(tmp_path/'run_contract.json',dict(git={'commit':'frozen'},environment={'tasks':tasks},
+        student_refresh=dict(version='direct',G_update=864,query_states_per_parameter=16,
+            readout_mode='endpoint_query_only',post_generation_practice=False,condition_mapping={})))
+    base=student_queue(tmp_path);plan=read_json(base/'queue_plan.json')
+    assert plan['new_episodes']==576 and plan['new_G_practice_episodes']==0
+    assert len(plan['shards'])==36 and all(len(s['init_state_ids'])==16 for s in plan['shards'])
+    assert queue_summary(base/'jobs.sqlite')['status_counts']=={'pending':36}
+
+
 def test_endpoint_recomputes_only_incompatible_E_row(tmp_path):
     runtime,path,task,panel,teacher,source,_=previous_control_fixture(tmp_path)
     file=source/'student_data/previous/task_0013/readonly_E/E_003.json'

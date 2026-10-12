@@ -391,7 +391,7 @@ def teacher_report(args,runtime,runner,environment):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['prepare','report-references','formal-prepare','formal','teacher','readout','teacher-report','G','student-data','local','RL','report'])
+    parser.add_argument('command',choices=['prepare','report-references','formal-prepare','formal','teacher','readout','teacher-report','G','student-data','endpoint-query','local','RL','report'])
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--asset-root',type=Path,default=ASSET_ROOT)
     parser.add_argument('--task',type=int,default=0)
@@ -430,7 +430,8 @@ def main():
     environment=read_json(args.root/'formal_panel.json')['environment'] if args.command=='formal' else read_json(args.root/'run_contract.json')['environment']
     if args.command=='formal' and (not args.worker_id or not args.condition_batch or args.condition_batch<1):
         parser.error('formal needs its persistent queue worker identity and measured condition batch')
-    resident_student=args.command=='student-data' and bool(args.worker_id)
+    resident_student=args.command in ('student-data','endpoint-query') and bool(args.worker_id)
+    if args.command=='endpoint-query' and not resident_student:parser.error('endpoint-query needs its persistent worker identity')
     if resident_student and (not args.condition_batch or args.condition_batch<1):
         parser.error('resident student needs its physical condition batch')
     if not shared and args.command!='formal' and not resident_student and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')

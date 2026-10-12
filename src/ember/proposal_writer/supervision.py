@@ -160,13 +160,19 @@ def reuse_initial_MT(entry,task,root,version,*,source_root=None):
             equivalence='same immutable MT, task/state/official scene/env-policy RNG; identity only names output'))
 
 
-def query_conditions(runtime,runner,conditions,*,mt_reference_version=None,mt_reference_root=None):
+def query_conditions(runtime,runner,conditions,*,mt_reference_version=None,mt_reference_root=None,endpoint_only=False):
     """Batch only missing independent λ/state/RNG queries, never their histories."""
     tick=time.monotonic();entries=[];requests=[];owners={}
     for path,task,panel,visit,destination in conditions:
         destination=Path(destination);destination.mkdir(parents=True,exist_ok=True)
         states=query_panel(panel,visit);noise_root=seed(70,path.task,visit)
-        references=list(dict.fromkeys(ref for node in path.outputs for ref in node['candidates']))
+        if endpoint_only:
+            if (path.sampling_identity!='endpoint_query_only' or path.completed_rounds or path.boundaries
+                    or path.outputs or path.decisions or path.practiced!=['MT300'] or len(path.attempts)!=1
+                    or path.selected not in path.valid or path.selected=='MT300'):
+                raise ValueError('direct query requires one locked, unpracticed endpoint and only real MT-H')
+            references=['MT300',path.selected]
+        else:references=list(dict.fromkeys(ref for node in path.outputs for ref in node['candidates']))
         if {r['init_state_id'] for r in path.history.episodes}.intersection(states):raise ValueError('query initial states leaked into practice')
         entry=dict(path=path,destination=destination,states=states,noise_root=noise_root,references=references,
             new_steps=0,new_episodes=0,reused_rows=[],incompatible_references=[])
@@ -211,7 +217,8 @@ def query_conditions(runtime,runner,conditions,*,mt_reference_version=None,mt_re
         write_json_atomic(destination/'complete.json',dict(complete=True,rewards=rewards,rows=rows,query_states=states,
             query_count=len(states),logical_rows=len(rows),
             policy_env_noise_root=entry['noise_root'],query_excluded_from_H=True,each_parameter_query_once_across_prefixes=True,
-            unpracticed_candidates_not_queried=True,actual_new_environment_steps_this_attempt=entry['new_steps'],
+            unpracticed_candidates_not_queried=not endpoint_only,unpracticed_fixed_endpoint_query=endpoint_only,
+            new_G_practice_episodes=0 if endpoint_only else None,actual_new_environment_steps_this_attempt=entry['new_steps'],
             actual_new_episodes_this_attempt=entry['new_episodes'],shared_query_group_seconds=time.monotonic()-tick,
             actual_new_episodes_total=len(new_rows),actual_new_environment_steps_total=sum(int(r.get('environment_steps',0)) for r in new_rows),
             row_reuse=entry['reused_rows'],incompatible_MT_references=entry['incompatible_references'],

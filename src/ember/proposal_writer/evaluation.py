@@ -216,15 +216,20 @@ def student_queue(root):
     version=run['student_refresh']['version'];base=root/'student_data'/version/'queue'
     tasks={task['global_task_id']:task for task in run['environment']['tasks']}
     if set(tasks)!=set(TASKS):raise ValueError('student queue requires the registered full36 tasks')
+    endpoint_only=run['student_refresh'].get('readout_mode')=='endpoint_query_only'
+    if endpoint_only and run['student_refresh'].get('post_generation_practice') is not False:
+        raise ValueError('direct endpoint queue must omit new G practice explicitly')
+    practice_count=0 if endpoint_only else 1
     shards=[]
     for ordinal,task_id in enumerate(TASKS):
         task=tasks[task_id];states=tuple(query_panel(panel[task_id],0))
         if len(states)!=run['student_refresh']['query_states_per_parameter']:
             raise ValueError('student queue cannot shrink the actual query panel')
         shards.append(EvaluationShard(f'student_{version}_{task_id:04d}',ordinal,task['suite'],task['task_id'],
-            task['horizon'],states,task['horizon']*(len(states)+1),0 if task['horizon']==520 else None))
+            task['horizon'],states,task['horizon']*(len(states)+practice_count),0 if task['horizon']==520 else None))
     plan=dict(checkpoint=str(root/'checkpoints/G'/f"update_{run['student_refresh']['G_update']:08d}"),
-        logical_tasks=list(TASKS),new_episodes=36*(1+run['student_refresh']['query_states_per_parameter']),
+        logical_tasks=list(TASKS),new_episodes=36*(practice_count+run['student_refresh']['query_states_per_parameter']),
+        new_G_practice_episodes=36*practice_count,readout_mode='endpoint_query_only' if endpoint_only else 'practice_then_query',
         shards=[asdict(shard) for shard in shards],condition_mapping=run['student_refresh']['condition_mapping'],
         G_training_code=run['git'],one_complete_LoRA_per_condition=True)
     file=base/'queue_plan.json'
@@ -237,11 +242,15 @@ def student_queue(root):
 
 def student_worker(args,runtime,runner,environment):
     """One frozen resident consumes distinct groups; all policy RNG stays per row."""
-    from .pipeline import load_version,refresh_group
+    from .pipeline import load_version,refresh_group,endpoint_query_group
     from .supervision import query_row
     from .learning import memory_peak
     import torch
     state=load_version(runtime,args.checkpoint);run=read_json(args.root/'run_contract.json')
+    endpoint_only=args.command=='endpoint-query'
+    if endpoint_only!=(run['student_refresh'].get('readout_mode')=='endpoint_query_only'):
+        raise ValueError('resident command must match its registered practice/query consumer')
+    consume=endpoint_query_group if endpoint_only else refresh_group
     if state['stage']!='G' or state['next_update']!=run['student_refresh']['G_update']:
         raise ValueError('resident student worker requires the registered final complete G')
     version=run['student_refresh']['version'];base=args.root/'student_data'/version/'queue'
@@ -258,7 +267,7 @@ def student_worker(args,runtime,runner,environment):
         task_ids=[tasks[claim.task_key]['global_task_id'] for claim in claims]
         committed=set()
         try:
-            tick=time.monotonic();refresh_group(args,runtime,runner,environment,run,task_ids)
+            tick=time.monotonic();consume(args,runtime,runner,environment,run,task_ids)
             for claim,task_id in zip(claims,task_ids,strict=True):
                 destination=args.root/'student_data'/version/f'task_{task_id:04d}'
                 parent=read_json(destination/'parent.json');ref=parent['actual_generated_parameter_ref']

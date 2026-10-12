@@ -12,7 +12,8 @@ from ember.pi05_source_setup import initialize_deferred_process_group
 from .contract import TASKS,OPTIMIZER,seed,CHECKPOINT_SCHEMA,SELECTOR_SCHEMA,G_OBJECTIVE
 from .learning import (Baseline,EndpointTrainer,train_endpoint,train_local,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
-from .path import compile_condition,compile_conditions,evaluate_fixed,restore_compilation
+from .path import (compile_condition,compile_conditions,evaluate_fixed,restore_compilation,
+                   begin_condition,bootstrap,generate_candidates)
 from .supervision import (panels,bootstrap_source,query_conditions,LocalExamples,register_students,
                           readonly_E_query,student_data_complete,query_panel)
 
@@ -118,6 +119,55 @@ def refresh_group(args,runtime,runner,environment,run,task_ids):
             query_count=len(query_panel(entry['panel'],0)),query_rewards=parent.get('query_rewards'),
             already_complete=entry['already_complete'],practice_status=entry['practice_status'],shared_refresh_group=shared))
     return results
+
+
+def endpoint_query_group(args,runtime,runner,environment,run,task_ids):
+    """Lock one deterministic endpoint from real MT-H, without collecting G practice."""
+    spec=run['student_refresh']
+    if spec.get('readout_mode')!='endpoint_query_only' or spec.get('post_generation_practice') is not False:
+        raise ValueError('direct endpoint queries require an explicit no-practice contract')
+    if len(task_ids)!=len(set(task_ids)):raise ValueError('endpoint query group repeats a condition')
+    version=spec['version'];panel_by_task=panels(args.root);cache=HistoryCache();entries=[]
+    for task_id in task_ids:
+        task=task_spec(environment,task_id);panel=panel_by_task[task_id]
+        destination=args.root/'student_data'/version/f'task_{task_id:04d}'
+        if student_data_complete(destination,panel,task_id,require_E=True):continue
+        if (destination/'path.json').exists():path=restore_compilation(destination,runtime)
+        else:
+            condition=spec['condition_mapping'][str(task_id)]
+            path,_=begin_condition(runtime,task,condition['teacher_demo'],destination.name,
+                condition['path_ordinal'],condition['noise_root'],1,None,True,None,False,True)
+            path.sampling_identity='endpoint_query_only'
+            history,source=bootstrap_source(args.root,task_id,panel,0,cache)
+            for _ in bootstrap(path,task,panel,history=history,provenance=source):
+                raise ValueError('direct endpoint readout cannot collect a bootstrap episode')
+            features=runtime.teaching(task_id,path.demo)
+            proposals=generate_candidates(runtime,path,'MT300',features)
+            if len(proposals)!=1:raise ValueError('direct readout requires one full deterministic endpoint')
+            path.selected=proposals[0];path.save(destination,retain_U=True)
+        if (path.sampling_identity!='endpoint_query_only' or path.completed_rounds or path.boundaries
+                or path.outputs or path.decisions or path.practiced!=['MT300'] or len(path.attempts)!=1):
+            raise ValueError('direct readout must retain only real MT history and one unpracticed endpoint')
+        entries.append((path,task,panel,0,destination/'query'))
+    rewards=query_conditions(runtime,runner,entries,mt_reference_version=run['previous_student_version'],
+        mt_reference_root=run['previous_root'],endpoint_only=True) if entries else []
+    for (path,task,panel,_,query),reward in zip(entries,rewards,strict=True):
+        destination=query.parent;E=read_json(args.root/'teachers'/f'task_{path.task:04d}'/'E.json')
+        before=runner.environment_steps
+        reference=readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',E)
+        if runner.environment_steps!=before:
+            raise ValueError('direct endpoint contract requires compatible readonly E reuse')
+        write_json_atomic(destination/'parent.json',dict(complete=True,task=path.task,version=version,
+            parent=None,eligible_for_G_parent_bank=False,readout_mode='endpoint_query_only',
+            actual_generated_parameter_ref=path.selected,generated_weights=str(destination/f'{path.selected}.safetensors'),
+            common_E_reference=E['reference'],common_E_weights=E['weights'],
+            actual_producer_refs=list(path.history.states),fixed_scale_reestimated=False,
+            deterministic_endpoint_single_candidate=True,selection_did_not_use_reward_or_query=True,
+            kernel_identity=path.kernel_identity,timings=path.timings,query_rewards=reward,
+            query_count=len(query_panel(panel,0)),readonly_E_complete=reference['complete'],
+            readonly_E_receipt=str(destination/'readonly_E/complete.json'),
+            new_G_practice_episodes=0,real_H_source=path.bootstrap_provenance))
+    return [str(args.root/'student_data'/version/f'task_{task_id:04d}') for task_id in task_ids]
 
 
 def collect_batch(args,runtime,runner,environment,context,baseline,update,cache):

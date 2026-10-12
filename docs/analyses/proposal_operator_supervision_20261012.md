@@ -287,3 +287,26 @@ rank/target通信仍可承担协作。这不是新增教学信息、分任务参
 历史读取包括上述完整Target-Owned原设计/结果、CRW实际读写/梯度与完整结果、control-calibrated完整设计/结果。
 没有新增训练、CPU模型前向、GPU占用、环境episode、held读取或对历史最终shuffle/reverse的重新设计选择。
 源码核查与数学依赖支持上述结构事实；根因和新架构优越性仍未验证。本文不是工程bug报告或新的实现/启动许可边界。
+
+## 9. 工程准入与真实消费者验证（2026-10-12）
+
+唯一G更新owner已替换为完整BA目标；六层decoder/static/Actor和所有native输入/评测RNG未改。
+新模型schema为v8，旧v7仅允许run contract指定完整CP864的显式目标导入；新同目标恢复保留所有共享参数、Adam、cursor与rank RNG。
+D38直接复用main已有1368条teacher能量原件，未重跑旧864参数分解；范围.00229936198–1.10991009。
+57项针对性检查通过，含Gram/稠密损失与完整AB梯度、B=0不奖励A-only变化、E自身和等价分解。
+
+冻结计算commit 2a1fb81393b2e483031e41746dd6c5db23717560，clean pushed detached。
+新ROOT/profile_new_objective/attempt_001真实L/V/MT-H的两rank验证退出0，485份Adam状态step864及各rank RNG实际恢复；
+v8完整保存/恢复step865通过。5个可丢弃logicalB4/20条件，没有新增episode；源policy无梯度，原CP864不写。
+profile wall136.697秒/.07594284GPUh，所有模型/optimizer更新discard，临时验证CP已在消费后清理。
+最长92帧实测chunk16/32热更新20.9335/20.8611秒、峰值reserved26.3242/42.1875GiB。
+32的单次0.35%改善在正常计时波动内，亦未推翻旧匹配profile的无收益证据；选择16，不再放大64。
+
+本轮正式在2026-10-12 UTC05:16:28启动有限37-job协调器，G实际进程UTC05:16:36启动。
+物理world2来自当前唯一具足够余量且空闲的同节点两卡，非科学上限；读出在G退出事件按live双节点重新选有效卡，并遵守常规6/8、node6。
+独立data1 quota启动准入used1467814172KiB/soft2147483648KiB，16GiB新增峰值可容纳，大资产原位只读。
+新loss真实profile外推中心3.23h（G约2.26h+两卡首学生约.97h），范围2.5–4.5h；完整私有命令/准入/账目留新ROOT。
+只1296固定出口、1080恢复only、36实践+576 query16与一次CPU算术；不自动后段，整批唯一退出回报机制保持。
+
+正式G启动后的两rank code/G_resume回执已确认485份Adam step864、cursor/version864及各rank RNG、MT-only bank0，fresh=false；不只依据profile或命令认定恢复。
+开发分支/隔离树已在clean、集成push且无运行依赖后退休；正式冻结树、原CP864及全部证据保留。

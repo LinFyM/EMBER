@@ -2,11 +2,11 @@
 
 最终目标仍是MT基底完整Writer明显超过强MT。唯一active design §14以实际BA拟合检验当前A-only因子改善与执行写入缺口。
 完整决定docs/analyses/proposal_operator_supervision_20261012.md；不把算子MSE当控制能力或唯一根因。
-执行：实现唯一G损失/受控目标迁移，验证完整AB值与梯度、真实CP864消费者；集成push/clean detached后按live资源启动。
+已实现/验证/集成push并实际启动，冻结2a1fb813；当前G实际独立运行，整批结束后统一消费原件、配对与费用交main。
 新v8保持全部共享参数/Adam/sampler/RNG，bank0/同36/logicalB4，新增432到1296；1080仅恢复、不选点。
 终点36一次G实践+576 query16、引用MT/G864/E原件；一次CPU A/B+BA与公共条件分解及全配对/费用读出。
 不自动Teacher/Actor/warm/RL/held/controls/probe/>1296。工程/运行/Git与分支worktree归实验闭环，main消费整批后自主裁决。
-预计16GiB增量、工程30–60min、正式2.5–4.5h，旧两rank外推中心3.2h；新目标实际profile后修订。
+16GiB增量准入通过；新目标profile136.697秒/.07594284GPUh，正式2.5–4.5h，实测修订中心3.23h。
 
 ## 2026-10-12 历史完成：同v7 G864唯一出口及完整交付
 

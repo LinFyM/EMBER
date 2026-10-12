@@ -1,4 +1,20 @@
-## 2026-10-12 当前状态：完整BA算子监督有限批工程接续
+## 2026-10-12 当前状态：完整BA监督G864→1296有限批已启动
+
+唯一active design §14，完整决定/架构核查/实际验证见docs/analyses/proposal_operator_supervision_20261012.md，findings§441–442。
+计算冻结2a1fb81393b2e483031e41746dd6c5db23717560，clean pushed detached；模型图/Adam/采样/RNG承接原完整v7 CP864，目标/schema显式迁移为v8。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/operator_effect_learning1296_query16。
+唯一coordinator/operator_G1296_students_query16_01于UTC05:16:28真实启动，G实际进程UTC05:16:36；37jobs只G1296+36首学生。
+目前两rank/physical chunk16/logicalB4；这是live资源选择，不是整批并发上限。学生卡在G退出事件live重新选择。
+准入data1独立quota和双节点已核，总物理2/常规cap6，16GiB峰值可容纳；完整命令与私有准入留ROOT。
+57项针对性检查及真实v7导入/v8保存恢复通过，485份Adam状态step864；5个profile更新全部discard、0新episode、.07594284GPUh。
+最长chunk16/32 20.9335/20.8611秒、reserved26.3242/42.1875GiB，32无稳定吞吐收益，选16；正式中心3.23h、范围2.5–4.5h。
+新增432到1296、1080恢复only，MT-only真实H bank0不消费学生bank；终点36实践+同576，引用MT/G864/E，预期612新episode。
+不自动Teacher/Actor/warm/RL/held/controls/probe/>1296。唯一整批退出回报者由协调器负责；无心跳/子阶段Queue/第二等待者。
+实际G code/G_resume_rank_00/01已确认各485份Adam状态step864、cursor/version864、rank RNG0/1、world2与MT-only bank0；fresh=false。
+开发codex/operator-effect-supervision与隔离worktree已确认clean/合入push后退休，收据在coordinator/development_tree_retirement.json；冻结树及必要CP864保留。
+启动和整批实际结果接收仍main 01a12bb0-5273-7462-b5e2-72a18aba7b8d，工程/Git/分支生命周期由实验闭环。
+
+## 2026-10-12 历史准入：完整BA算子监督有限批工程接续
 
 main已消费旧G864；唯一active design §14授权从原完整v7 CP864显式目标迁移到v8，总1296。
 完整决定docs/analyses/proposal_operator_supervision_20261012.md，机制证据见findings§441。

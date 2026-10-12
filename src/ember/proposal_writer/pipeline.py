@@ -8,11 +8,11 @@ import torch
 from safetensors.torch import load_file
 
 from ember.lora import validate_lora_state
-from ember.pi05_source_checkpoint import read_json,write_json_atomic
+from ember.pi05_source_checkpoint import read_json,write_json_atomic,restore_rng
 from ember.pi05_source_setup import initialize_deferred_process_group
 
 from .contract import TASKS,OPTIMIZER,seed,CHECKPOINT_SCHEMA,SELECTOR_SCHEMA,G_OBJECTIVE
-from .learning import (Baseline,EndpointTrainer,train_endpoint,train_local,on_policy_update,checkpoint,assigned_tasks,
+from .learning import (Baseline,EndpointTrainer,train_endpoint,train_local,final_warm_readback,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
 from .path import (compile_condition,compile_conditions,evaluate_fixed,restore_compilation,
                    begin_condition,bootstrap,generate_candidates)
@@ -21,16 +21,11 @@ from .supervision import (panels,bootstrap_source,query_conditions,LocalExamples
 
 
 def load_version(runtime,directory,*,fixed_psi=True):
-    state=torch.load(Path(directory)/'state.pt',map_location='cpu',weights_only=False)
-    if state['schema_version']!=CHECKPOINT_SCHEMA:raise ValueError('retired shared model schema; fresh training required')
-    if state.get('G_objective')!=G_OBJECTIVE:raise ValueError('checkpoint deployment-operator objective changed')
-    runtime.generator.load_state_dict(state['psi']);runtime.actor.load_state_dict(state['theta'])
-    runtime.version=state['psi_version']
-    runtime.generator_optimizer_state=state['generator_optimizer'];runtime.G_sampler=state['G_sampler']
-    runtime.supervision_version=state['supervision_version']
-    runtime.objective_migration=state.get('objective_migration')
+    from .shared_checkpoint import load_state
+    state=load_state(directory,runtime)
     runtime.fixed_kernel_identity=dict(checkpoint=str(Path(directory).resolve()),psi_version=runtime.version,
-        checkpoint_stage=state['stage'],checkpoint_update=state['next_update'])
+        checkpoint_stage=state['stage'],checkpoint_update=state['next_update'],
+        frozen_frontend_checkpoint=runtime.frozen_frontend_checkpoint)
     if fixed_psi:runtime.freeze_psi()
     return state
 
@@ -298,12 +293,18 @@ def collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
 
 def rl(args,runtime,runner,environment,context):
     run=read_json(args.root/'run_contract.json');state=load_version(runtime,args.checkpoint)
-    if state['stage']!='local' or state['next_update']!=run['fixed_local_update']:
+    if state['stage']!=run['initial_writer_stage'] or state['next_update']!=run['fixed_local_update']:
         raise ValueError('RL begins from the registered final-use warmstart')
     if args.stop not in run['updates']['RL'] or args.stop%9:raise ValueError('RL updates must cover complete all36 rounds')
     baseline=Baseline().to(runtime.device);baseline.load_state_dict(state['baseline'])
     optimizer=torch.optim.AdamW(runtime.actor.parameters(),**OPTIMIZER);optimizer.load_state_dict(state['optimizer'])
     baseline_optimizer=torch.optim.AdamW(baseline.parameters(),**OPTIMIZER)
+    baseline_optimizer.load_state_dict(state['baseline_optimizer'])
+    if not args.resume:
+        if state['topology']['world_size']!=context.world_size:
+            raise ValueError('joint physical topology must match the explicitly assembled state')
+        restore_rng(state['rank_rng'][context.rank],context)
+    runtime.training_baseline=baseline;runtime.training_baseline_optimizer=baseline_optimizer
     generator_trainer=EndpointTrainer(runtime,context,args.root)
     generator_updates=run['joint_training']['G_updates_per_batch']
     panel_by_task=panels(args.root)
@@ -339,6 +340,7 @@ def rl(args,runtime,runner,environment,context):
             # G uses retained true H/raw features and parameters, not these prefixes.
             path.native_response_cache.clear()
         timings['append_and_reload_supervision_seconds']=time.monotonic()-append_tick;psi_tick=time.monotonic()
+        generator_trainer.prepare_bank()
         for _ in range(generator_updates):
             generator_trainer.step(runtime.G_sampler['next_update'],stage='joint_G')
         runtime.freeze_psi()
@@ -390,10 +392,27 @@ def report(args,runtime,runner,environment):
 
 
 def run(args,runtime,runner,environment,context):
+    if args.command in ('G','local','assemble'):
+        from .full_writer import initialize,assemble
+        imported=assemble(args,runtime,context) if args.command=='assemble' else initialize(runtime,context,args.root)
+        runtime.training_baseline=imported['baseline']
+        runtime.training_baseline_optimizer=imported['baseline_optimizer']
+        runtime.actor_optimizer_state=imported['actor_optimizer'].state_dict()
+        write_json_atomic(args.root/'code'/f'{args.command}_component_migration_rank_{context.rank:02d}.json',dict(
+            complete=True,migration=imported['migration'],G_next_update=runtime.G_sampler['next_update'],
+            endpoint_optimizer_parameters=len(runtime.generator_optimizer_parameter_names),
+            actual_world_size=context.world_size,not_full_psi_exact_resume=True))
     if args.command=='G':train_endpoint(runtime,context,args.root,stop=args.stop,resume=args.resume)
+    elif args.command=='assemble':
+        initialize_deferred_process_group(context,rendezvous_root=args.root/'rendezvous')
+        checkpoint(args.root,'assembled',90,runtime,imported['actor_optimizer'],context,
+            sampler=runtime.component_samplers['theta'],baseline=imported['baseline'],
+            baseline_optimizer=imported['baseline_optimizer'],generator_optimizer=imported['generator_optimizer'])
     elif args.command=='student-data':refresh(args,runtime,runner,environment)
     elif args.command=='local':
-        fixed_G(args,runtime);baseline=Baseline().to(runtime.device)
-        train_local(runtime,context,args.root,LocalExamples(args.root,runtime),stop=args.stop,resume=args.resume,baseline=baseline)
+        examples=LocalExamples(args.root,runtime)
+        train_local(runtime,context,args.root,examples,stop=args.stop,resume=args.resume,baseline=imported['baseline'])
+        if not (args.root/'analysis/final_warm90_expected_query.json').exists():
+            final_warm_readback(runtime,context,args.root,examples)
     elif args.command=='RL':rl(args,runtime,runner,environment,context)
     elif args.command=='report':report(args,runtime,runner,environment)

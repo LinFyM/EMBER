@@ -404,8 +404,8 @@ def shared_learning_job(root,contract,stage,shared_gpus,stop,slots):
     if stop not in contract['updates'].get(stage,[]):raise ValueError('formal shared update not preregistered')
     chunk=contract.get('physical_execution',{}).get(f'{stage}_frame_chunk_ceiling',16)
     arguments=[stage,'--stop',str(stop),'--slots',str(slots),'--frame-chunk',str(chunk)]
-    if stage=='local':arguments+=['--checkpoint',str(root/'checkpoints/G'/f"update_{contract['fixed_G_update']:08d}")]
-    if stage=='RL':arguments+=['--checkpoint',str(root/'checkpoints/local'/f"update_{contract['fixed_local_update']:08d}")]
+    if stage=='local':arguments+=['--checkpoint',contract['initial_endpoint_checkpoint']]
+    if stage=='RL':arguments+=['--checkpoint',contract['initial_writer_checkpoint']]
     nodes=contract.get('G_checkpoint_updates',contract['updates'][stage]) if stage=='G' else contract['updates'][stage]
     previous=[u for u in nodes if u<=stop and (root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').exists()
         and json.loads((root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').read_text()).get('complete')]

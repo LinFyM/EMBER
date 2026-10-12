@@ -11774,3 +11774,9 @@ train24 correct252/other240/wrong221对MT169，support12=173/174/174对MT171；L
 main完整学习源码分析已归档ROOT/analysis/main_scientific_readout/full_writer_learning_after24849_scientific_note.txt。原144都P=P0，F.input前64数值列数据梯度为0、static非MT方向未受训（AdamW衰减另计），原425不代表任意parent能力；这不解释旧MT-only弱拟合。新真实G经历提供明确non-MT P/H和π信用消费者，共同E仍允许忽略P/H，添加H不自动成为反馈纠错；完整后段与strict400合同另登记，不自动旧R5/Actor/held/Test。
 36真实G实践均完整且具备bank资格：25成功/11正常horizon失败，新G1477 records/7686环境步，组合72 episodes/3039 records/压缩1.163GiB；producer/保存正确权重/RNG和1152只读MT-G信用已审计，0截断/model failure，query未进入H。本批两教学臂不消费新G-H，H准备不冒充已学修订。
 02:53:42→03:16:24，8正式job0/22.688min、新增2.085421662GPUh/1188episode/257842步，失败0；含两冻结fit阶段和query累计7.332936243，原参考/CP432不重计。六卡动态并行，实际other/wrong batch10.022/10.148、实践4.449，不以slots16称满batch；教学/H IO未单独充分计时。GPU退出、原启动合同继承字段与当前arm计数澄清均有稳定原件，详见既有coordinate分析§19与ROOT/analysis/completion_20261013。旧.50阈值/旧864停止/全部负结果不改，整批到此停止后一次交main裁决。
+
+
+## 457. 强首候选和真实P/H覆盖支持一次完整窗口，不自动证明反馈或held（2026-10-13）
+
+§19主讨论直接消费5184原行：425/414/395对MT340，换未入Writer四视频池的同task教学保持大部分能力，wrong少19主要少18 E-only，但仍明显超过MT；跨suite风格/L/V冲突及局部正例未拆开。36真实G-H完整（25成功/11正常horizon失败），query未入H，已有后继F/θ明确消费者。原P0数值parent域未受训不是旧MT-only弱拟合的解释；补实际非MT覆盖也不强迫共同E监督使用P/H。
+main据此授权唯一§20 F-only低成本密集监督+独立θ/真实R5共同窗口及首validation400，而非恢复旧native全G或RL9。F完整Adam24849→30249→38349，local90/RL9/严格400单完整点，实际输入/梯度/阶段与组件状态均须消费者承接；当前只是实施中，不宣称已启动或通过。原pair上限430仅比G425高5，θ不能替主要新能力获取；历史held阴性和原第三同缓存块停止保持。

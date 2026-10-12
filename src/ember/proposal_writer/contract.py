@@ -28,7 +28,7 @@ MT_PATH = Path('/data0/user/ymdai/ember_runs/coverage_retraining_20260920/traini
                '/checkpoints/step_00000300/lora.safetensors')
 OPTIMIZER = dict(lr=1e-4, betas=(.9, .95), eps=1e-8, weight_decay=1e-4)
 SELECTOR_SCHEMA = 'ember_full36_student_joint_conditional_continue_selector_v5'
-CHECKPOINT_SCHEMA = 'ember_full36_coordinate_memory_read_writer_v9'
+CHECKPOINT_SCHEMA = 'ember_full_writer_frozen_frontend_endpoint_v10'
 G_OBJECTIVE = 'task_equal_layer_mean_full_BA_Frobenius_v1'
 
 

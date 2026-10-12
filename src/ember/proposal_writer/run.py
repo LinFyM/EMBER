@@ -46,129 +46,6 @@ def save_state(path, state):
     save_file({k: v.detach().cpu().contiguous() for k, v in state.items()}, str(path))
 
 
-def fresh_learning_registration(args):
-    """Register the sole block-memory graph from fresh state, with one fixed exit."""
-    if getattr(args,'resume',None) is not None or getattr(args,'stop',None)!=864:
-        raise ValueError('block-memory learning requires fresh state and unique exit864')
-    return dict(updates=dict(G=[864]),fixed_G_update=864,G_checkpoint_updates=[432,864],
-        G_bank_mode='MT_only',G_bank_version=0,checkpoint_schema=CHECKPOINT_SCHEMA,
-        shared_initialization='fresh psi/meta/Reader/static/endpoint/theta/Adam/sampler/rank RNG; seed7; zero head',
-        architecture_change='memory attention reads local blocks after FF before pool; target entrance removed',
-        bounded_stop='fresh G864 then same36 endpoints directly query16; no new G practice or later stage')
-
-
-def freeze_operator_scale(root, previous):
-    """Reuse the existing frozen all36 teacher energies without recalculation."""
-    source=(previous/'operator_scale.json').resolve(strict=True);record=read_json(source)
-    lora=read_json(root/'task_lora_contract.json');targets={item['name'] for item in lora['targets']}
-    scaling=lora['adapter']['alpha']/lora['adapter']['rank']
-    if (record['objective']!=G_OBJECTIVE or set(record['D_by_target'])!=targets
-            or set(record['scaling'])!=targets or sorted(row['task'] for row in record['sources'])!=sorted(TASKS)
-            or any(not math.isfinite(v) or v<=0 for v in record['D_by_target'].values())
-            or any(record['scaling'][name]!=scaling for name in targets)):
-        raise ValueError('existing operator denominators need exact all36/38 positive frozen energies')
-    path=root/'operator_scale.json'
-    if path.exists():
-        if path.resolve()!=source:raise ValueError('frozen operator denominator source changed')
-    else:path.symlink_to(source)
-    return path
-
-
-def prepare(args):
-    """Register one bounded Writer exit against the immutable existing bank."""
-    if args.reuse_root is None:raise ValueError('endpoint requires the registered previous E/MT/H and query16 root')
-    root=args.root;previous=args.reuse_root.resolve();old=read_json(previous/'run_contract.json')
-    learning=fresh_learning_registration(args);stop=learning['fixed_G_update']
-    if root.resolve()==previous or tuple(old['training_tasks'])!=TASKS:
-        raise ValueError('new output root and exact audited all36 scope required')
-    if (old['teacher']['selection_per_node'],old['teacher']['report_per_arm'])!=(16,16):
-        raise ValueError('previous teacher selection and independent report must be16/16')
-    root.mkdir(parents=True,exist_ok=True)
-    for cache in ('cuda','triton','huggingface'):(root/'cache'/cache).mkdir(parents=True,exist_ok=True)
-    panel=materialize_panel(root,selection_count=16,report_count=16)
-    previous_panel={r['task_id']:r for r in read_json(previous/'panel.json')['tasks']}
-    links=['initial.safetensors','task_lora_contract.json','bank_scale.json','base/merged_targets.safetensors']
-    condition_mapping={}
-    for row in panel['tasks']:
-        task=row['task_id'];before=previous_panel[task]
-        if any(row[k]!=before[k] for k in ('init_order','video_order','bootstrap_state_id','policy_videos',
-                'practice_states','query_states','teacher_report_states','report_states')):
-            raise ValueError('original initialization/video/bootstrap/practice/query/report mapping changed')
-        E=read_json(previous/'teachers'/f'task_{task:04d}'/'E.json')
-        H=read_json(previous/'bootstrap'/f'task_{task:04d}'/'complete.json')
-        if not E['complete'] or not H['complete'] or H['reference']!='MT300' or not Path(E['weights']).is_file() or not Path(H['history']).is_file():
-            raise ValueError('existing E weights and actual MT bootstrap are required')
-        links.extend([f'teachers/task_{task:04d}/E.json',f'bootstrap/task_{task:04d}/complete.json'])
-        source_path=previous/'student_data'/old['student_refresh']['version']/f'task_{task:04d}'/'path.json'
-        original=read_json(source_path)
-        if (original['completed_rounds']!=1 or len(original['boundaries'])!=1
-                or original['teacher_demo'] not in row['policy_videos']):
-            raise ValueError('same actual first-student teaching/practice condition required')
-        practice=original['boundaries'][0]['row'];ordinal=original['path_ordinal']
-        if (practice['init_state_id']!=row['practice_states'][(ordinal+1)%len(row['practice_states'])]
-                or practice['env_seed']!=seed(32,original['noise_root'],1)
-                or practice['policy_seed_root']!=practice['env_seed']):
-            raise ValueError('previous actual practice mapping differs from the native consumer')
-        condition_mapping[str(task)]=dict(teacher_demo=original['teacher_demo'],path_ordinal=ordinal,
-            noise_root=original['noise_root'],practice_state_id=practice['init_state_id'],
-            practice_noise_root=practice['env_seed'],source_path=str(source_path))
-    for name in links:
-        source=(previous/name).resolve(strict=True);target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
-        if target.exists():
-            if target.resolve()!=source:raise ValueError('reused bank asset destination changed')
-        else:target.symlink_to(source)
-    operator_scale=freeze_operator_scale(root,previous)
-    coordinates={**read_json(previous/'coordinates.json'),'schema_version':SCHEMA,
-        'initial':str(root/'initial.safetensors'),'reused_from':str(previous/'coordinates.json'),'S_G_not_yet_formed':False}
-    if (root/'coordinates.json').exists() and read_json(root/'coordinates.json')!=coordinates:
-        raise ValueError('new coordinates changed')
-    write_json_atomic(root/'coordinates.json',coordinates)
-    contract = dict(schema_version=SCHEMA, stage='fresh-block-memory-and-direct-query',
-        design='docs/designs/video_guided_proposal_writer_20261010.md',
-        source=SOURCE,mt_checkpoint=str(MT_PATH),training_tasks=list(TASKS),panel=str(root/'panel.json'),
-        environment=old['environment'],seed=7,meta_seeds=[202610101,202610102],meta_rank=32,meta_alpha=32,
-        task_rank=8,task_targets=38,task_factors=76,probe_seed=1729,
-        limits=dict(GPU_hours=None,GPU_hours_hard_cap_active=False,added_peak_GiB=16,carry_in_GPU_hours=0.,
-            GPU_hours_policy='actual cost retained; no cumulative GPU-hour hard limit'),
-        previous_root=str(previous),previous_student_version=old['student_refresh']['version'],
-        reused_bank=dict(E='same selected teacher weights',S_G='same task-equal fixed scale',
-            H='same actual MT bootstrap; no new teacher trajectories',MT='same frozen merged base and task initial'),
-        task_initial=str(root/'initial.safetensors'),coordinates=str(root/'coordinates.json'),
-        bank_scale=str(root/'bank_scale.json'),operator_scale=str(operator_scale),updates=dict(G=[stop]),fixed_G_update=stop,
-        student_refresh=dict(version=f'G{stop}_block_memory_candidate_direct_query',G_update=stop,task_count=36,
-            valid_proposal_rule='one deterministic full endpoint; invalid is failure; no success resampling',
-            MT_bootstrap_reference_reused=True,query_states_per_parameter=16,readonly_E_query=True,
-            readonly_previous_G_query=True,condition_mapping=condition_mapping,
-            parameters_and_H_single_source=True,post_refresh_G_only=False,
-            post_generation_practice=False,readout_mode='endpoint_query_only'),
-        generator_parameterization=dict(input='current p=(P-P0)/S_G plus valid mask; true L/V/H context',
-            target='complete deployed s*B_E@A_E; supervision only',output='P0+S_G*e_hat',objective=G_OBJECTIVE,
-            initial_output='fresh zero final Linear; initial output exactly P0',parameter_noise=False,parameter_time=False,
-            current_P_H_are_conditions_not_target_center=True,decoder_layers=6,sender_normalization=True),
-        logical_batch=dict(teacher_queries=28,G_conditions=4,actor_conditions=4),
-        teacher={**old['teacher'],'readonly_reuse':True,'source_root':str(previous)},
-        task_parent_history_sampling='equal task; equal actual parent within task; uniform real H within parent',
-        optimizer=OPTIMIZER,selector_schema=SELECTOR_SCHEMA,future_budget_model_input=False,
-        compilation=dict(bootstrap='same actual MT episode before first G',proposal_attempts=32,
-            proposals_per_decision=1,parameter_decoder_calls=1,response_observations=16,
-            generation='deterministic_MT_centered_endpoint',native_policy_flow_steps=10),
-        selector_training=dict(**{k:v for k,v in old['selector_training'].items() if k not in
-            ('query_states_per_parameter','registered_theta_updates','formal_update_window_not_yet_registered')},
-            query_states_per_parameter=16,registered_theta_updates=None,formal_update_window_not_yet_registered=True),
-        condition_estimate_seconds={'student-data':300.},
-        expected_new_episodes=576,expected_new_query_episodes=576,expected_new_practice_episodes=0,
-        query_independent_of_teacher_selection=False,query_teacher_selection_overlap_per_task=2,
-        exact_resume='same v9 graph/objective/full topology only; no import of retired graph checkpoints',
-        git=git_state(),information_wall='no held offline labels, no per-H Q, no rec/keep; query never in H')
-    contract.update(learning)
-    path=root/'run_contract.json'
-    if path.exists() and read_json(path) != contract:
-        raise ValueError('new run contract changed; append explicit revision rather than overwrite')
-    if not path.exists():write_json_atomic(path,contract)
-    write_json_atomic(root/'bank_ready.json',dict(complete=True,task_count=36,initial_parent='MT300 only',
-        history_episodes=36,readonly_source=str(previous),bank_scale=str(root/'bank_scale.json'),retrained_teachers=False))
-    print(json.dumps(dict(contract=str(path),tasks=len(panel['tasks']),updates=contract['updates'])))
-
 
 def teacher_root(root, task):
     return Path(root)/'teachers'/f'task_{int(task):04d}'
@@ -366,7 +243,7 @@ def teacher_report(args,runtime,runner,environment):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['prepare','report-references','formal-prepare','formal','teacher','readout','teacher-report','G','student-data','endpoint-query','local','RL','report','frozen-prepare','frozen-cache','frozen-fit'])
+    parser.add_argument('command',choices=['prepare','assemble','report-references','formal-prepare','formal','teacher','readout','teacher-report','G','student-data','endpoint-query','local','RL','report'])
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--asset-root',type=Path,default=ASSET_ROOT)
     parser.add_argument('--task',type=int,default=0)
@@ -386,10 +263,9 @@ def main():
     parser.add_argument('--shard-index',type=int,default=0)
     parser.add_argument('--shard-count',type=int,default=1)
     args=parser.parse_args()
-    if args.command=='frozen-prepare':
-        from .frozen_context import prepare as prepare_frozen
-        prepare_frozen(args);return
-    if args.command=='prepare':prepare(args);return
+    if args.command=='prepare':
+        from .full_writer import prepare
+        result=prepare(args);print(json.dumps(dict(root=str(args.root),updates=result['updates'])));return
     if args.command=='report-references':
         result=report_references(args.root,args.asset_root);print(json.dumps(dict(reused_MT_rows=result['reused_MT_rows'],incompatible_rows=len(result['incompatible_rows']))));return
     if args.command=='formal-prepare':
@@ -400,20 +276,14 @@ def main():
         raise ValueError('formal consumers require a clean pushed detached frozen worktree')
     subprocess.run(['git','merge-base','--is-ancestor',identity['commit'],'origin/main'],check=True)
     write_json_atomic(args.root/'code'/f'{args.command}_{identity["commit"]}.json',identity)
-    shared=args.command in ('G','local','RL')
-    if args.command=='frozen-fit':
-        args.physical_gpu=int(os.environ['CUDA_VISIBLE_DEVICES'].split(',')[int(os.environ.get('LOCAL_RANK','0'))])
+    shared=args.command in ('G','local','RL','assemble')
     if shared:
         args.physical_gpu=int(os.environ['CUDA_VISIBLE_DEVICES'].split(',')[int(os.environ.get('LOCAL_RANK','0'))])
-        if args.command not in read_json(args.root/'run_contract.json')['updates']:
+        if args.command!='assemble' and args.command not in read_json(args.root/'run_contract.json')['updates']:
             raise ValueError('shared learning update window must be registered before formal launch')
     if args.physical_gpu is None:parser.error('GPU consumer requires its actual physical GPU')
     context=initialize_distributed(require_numa=True,defer_process_group=True)
     torch.set_num_threads(8)
-    if args.command in ('frozen-cache','frozen-fit'):
-        if not 0<=args.shard_index<args.shard_count:parser.error('invalid real-context task shard')
-        from .frozen_context import run as run_frozen
-        run_frozen(args,context);return
     environment=read_json(args.root/'formal_panel.json')['environment'] if args.command=='formal' else read_json(args.root/'run_contract.json')['environment']
     if args.command=='formal' and (not args.worker_id or not args.condition_batch or args.condition_batch<1):
         parser.error('formal needs its persistent queue worker identity and measured condition batch')
@@ -432,6 +302,9 @@ def main():
     runner=None
     try:
         if args.command=='teacher':fit(args,runtime);return
+        if args.command in ('G','local','assemble'):
+            from .pipeline import run
+            run(args,runtime,None,environment,context);return
         os.environ.update(EMBER_LIBERO_ASSETS_ROOT=environment['libero_paths']['assets'],MUJOCO_GL='egl',
             PYOPENGL_PLATFORM='egl',MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu))
         from ember.pi05_assets import prepare_libero_config,configure_libero_runtime_assets

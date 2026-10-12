@@ -20,6 +20,7 @@ from ember.lora import LORA_A_SUFFIX, LORA_B_SUFFIX
 from .contract import TASKS, OPTIMIZER, seed, CHECKPOINT_SCHEMA, G_OBJECTIVE
 from .path import decision_logits, history_prefix, score_log_probability, load_history, conditional_parent_log_probability
 from .runtime import phase,finish_phases
+from .shared_checkpoint import checkpoint, resume_checkpoint
 
 
 def operator_squared_error(A, B, E_A, E_B, scaling):
@@ -89,72 +90,6 @@ def synchronize_gradients(module, context):
         p.grad.copy_(flat[cursor:cursor + count].reshape_as(p))
         cursor += count
 
-
-def checkpoint(root, stage, update, runtime, optimizer, context, *, sampler, baseline=None, baseline_optimizer=None,
-               generator_optimizer=None):
-    root = Path(root) / 'checkpoints' / stage / f'update_{update:08d}'
-    rng = capture_rng(context)
-    ranks = [None] * context.world_size if context.is_main else None
-    if context.world_size > 1:
-        dist.gather_object(rng, ranks, dst=0)
-    else:
-        ranks = [rng]
-    if context.is_main:
-        root.mkdir(parents=True, exist_ok=False)
-        state = dict(schema_version=CHECKPOINT_SCHEMA, stage=stage, next_update=update,
-            G_objective=G_OBJECTIVE,generation='deterministic_MT_centered_endpoint',
-            objective_migration=getattr(runtime,'objective_migration',None),
-            psi=runtime.generator.state_dict(), theta=runtime.actor.state_dict(), optimizer=optimizer.state_dict(),
-            baseline=baseline.state_dict() if baseline is not None else None,
-            baseline_optimizer=baseline_optimizer.state_dict() if baseline_optimizer is not None else None,
-            sampler=sampler, rank_rng=ranks, topology=dict(world_size=context.world_size,
-                task_order=list(TASKS), logical_condition_batch=4), psi_version=runtime.version,
-            coordinates=dict(rank=8,valid=runtime.lora.parameter_count,center=str(runtime.root/'initial.safetensors'),
-                fixed_bank_scale=str(runtime.bank_scale_path)),
-            fixed_kernel_identity=getattr(runtime,'fixed_kernel_identity',None),
-            generator_optimizer=(generator_optimizer.state_dict() if generator_optimizer is not None else
-                optimizer.state_dict() if stage=='G' else getattr(runtime,'generator_optimizer_state',None)),
-            G_sampler=getattr(runtime,'G_sampler',dict(next_update=update if stage=='G' else 0)),
-            supervision_version=getattr(runtime,'supervision_version',0),
-            parameter_names=dict(psi=list(dict(runtime.generator.named_parameters())),
-                                 theta=list(dict(runtime.actor.named_parameters()))))
-        torch.save(state, root / 'state.pt')
-        write_json_atomic(root / 'manifest.json', dict(schema_version=state['schema_version'], stage=stage,
-            next_update=update, G_objective=G_OBJECTIVE, full_optimizer_rng_sampler=True,
-            complete=True, topology=state['topology'],objective_migration=state['objective_migration']))
-    if context.world_size > 1:
-        dist.barrier(device_ids=[context.local_rank])
-    return root
-
-
-def resume_checkpoint(path, stage, runtime, optimizer, context, *, baseline=None, baseline_optimizer=None,
-                      generator_optimizer=None):
-    path=Path(path).resolve();manifest=read_json(path/'manifest.json')
-    state = torch.load(path / 'state.pt', map_location='cpu', weights_only=False)
-    contract=read_json(runtime.root/'run_contract.json')
-    if contract.get('objective_migration'):
-        raise ValueError('retired graph/objective import cannot initialize the block-memory writer')
-    if (state['schema_version']!=CHECKPOINT_SCHEMA or state.get('G_objective')!=G_OBJECTIVE or state['stage']!=stage
-            or manifest.get('schema_version')!=CHECKPOINT_SCHEMA or not manifest.get('complete')
-            or not manifest.get('full_optimizer_rng_sampler') or manifest['next_update']!=state['next_update']
-            or state['topology']['world_size'] != context.world_size):
-        raise ValueError('resume stage/topology changed; explicit migration needs a recorded new topology contract')
-    if (state['topology']['task_order']!=list(TASKS) or state['topology']['logical_condition_batch']!=4
-            or len(state['rank_rng'])!=context.world_size
-            or state['parameter_names']['psi']!=list(dict(runtime.generator.named_parameters()))
-            or state['parameter_names']['theta']!=list(dict(runtime.actor.named_parameters()))):
-        raise ValueError('complete Writer topology, parameter ownership and rank RNG required')
-    runtime.generator.load_state_dict(state['psi']); runtime.actor.load_state_dict(state['theta'])
-    optimizer.load_state_dict(state['optimizer']); runtime.version = state['psi_version']
-    runtime.generator_optimizer_state=state['generator_optimizer'];runtime.G_sampler=state['G_sampler']
-    runtime.supervision_version=state['supervision_version']
-    runtime.objective_migration=state.get('objective_migration')
-    if generator_optimizer is not None:generator_optimizer.load_state_dict(state['generator_optimizer'])
-    restore_rng(state['rank_rng'][context.rank], context)
-    if baseline is not None:
-        baseline.load_state_dict(state['baseline'])
-        if baseline_optimizer is not None:baseline_optimizer.load_state_dict(state['baseline_optimizer'])
-    return state['next_update']
 
 
 def memory_peak(device):
@@ -374,17 +309,45 @@ def train_local(runtime,context,root,example_loader,*,stop,resume=None,baseline=
                 del logits,loss
             records.append(dict(task=task,condition=path.identity,prefixes=len(prefixes),
                 prefix_mean_loss=sum(losses)/len(losses),source=example['source'],query_excluded_from_H=True))
+            path.native_response_cache.clear()  # Final predictions are frozen in prefix decisions; discard GPU KV.
             del example,path,prefixes,features
         synchronize_gradients(runtime.actor,context)
         norm=torch.nn.utils.clip_grad_norm_(runtime.actor.parameters(),1.,error_if_nonfinite=True)
         optimizer.step();torch.cuda.synchronize(context.device)
         metrics(root,'local',dict(update=update+1,conditions=records,gradient_norm=float(norm),
-            logical_task_batch=logical_tasks(update),seconds=time.monotonic()-tick,psi_frozen=True),context)
+            logical_task_batch=logical_tasks(update),seconds=time.monotonic()-tick,psi_frozen=True,
+            actual_path_cache_hits=example_loader.cache_hits,H_decode_seconds=example_loader.decode_seconds),context)
         if update+1 in contract['updates']['local']:
             checkpoint(root,'local',update+1,runtime,optimizer,context,
                 sampler=dict(next_update=update+1,task_order=list(TASKS),condition_weight=.25,
-                    prefix_reduction='mean within actual condition',data_version=contract['student_refresh']['version']),baseline=baseline)
+                    prefix_reduction='mean within actual condition',data_version=contract['student_refresh']['version']),baseline=baseline,
+                baseline_optimizer=runtime.training_baseline_optimizer)
 
+
+
+@torch.no_grad()
+def final_warm_readback(runtime,context,root,example_loader):
+    runtime.freeze_psi();runtime.actor.eval();rows=[]
+    for index,task in enumerate(TASKS):
+        if index%context.world_size!=context.rank:continue
+        example=example_loader(task,90);path=example['path'];prefix=example['prefixes'][-1]
+        features=runtime.teaching(task,path.demo,video_task=path.video_task)
+        decision=prefix.setdefault('decision',dict(kind='final',candidates=prefix['practiced'],
+            records=prefix['records'],episodes=prefix['episodes'],parent=None))
+        probabilities=decision_logits(runtime,path,decision,features).softmax(-1)
+        reward=[prefix['reward'][name] for name in prefix['practiced']]
+        rows.append(dict(task=task,probabilities=probabilities.cpu().tolist(),references=prefix['practiced'],
+            expected_successes16=16*float((probabilities*probabilities.new_tensor(reward)).sum())))
+        path.native_response_cache.clear()
+    gathered=[None]*context.world_size if context.is_main else None
+    if context.world_size>1:dist.gather_object(rows,gathered,dst=0)
+    else:gathered=[rows]
+    if context.is_main:
+        rows=sorted([row for shard in gathered for row in shard],key=lambda row:row['task'])
+        if [row['task'] for row in rows]!=list(TASKS):raise ValueError('warm expectation requires all36 actual pairs')
+        write_json_atomic(Path(root)/'analysis/final_warm90_expected_query.json',dict(complete=True,rows=rows,
+            expected_successes576=sum(row['expected_successes16'] for row in rows),uniform=382.5,always_G24849=425,
+            posthoc_condition_pair_bound=430,new_environment_episodes=0,checkpoint_selection=False))
 
 def continuation_values(stop_probabilities,query_expectations,*,cost=.001):
     """All truncated-depth values and fixed-main-path adjoints, using actual probabilities."""

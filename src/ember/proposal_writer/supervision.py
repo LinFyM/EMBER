@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from collections import OrderedDict
 import time
 
 import torch.distributed as dist
@@ -10,6 +11,7 @@ from safetensors.torch import load_file
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.pi05_eval_contract import policy_noise_seed
 from .contract import TASKS,seed
+from .learning import HistoryCache
 from .path import fixed_requests,fixed_row,restore_compilation
 
 
@@ -345,6 +347,9 @@ class LocalExamples:
         self.root,self.runtime=Path(root),runtime
         contract=read_json(self.root/'run_contract.json')
         self.data_version=contract['student_refresh']['version']
+        self.saved_practice=contract['student_refresh']['readout_mode']=='saved_endpoint_practice_only'
+        self.cache=OrderedDict();self.cache_limit_bytes=8*1024**3
+        self.cache_hits=0;self.decode_seconds=0.
         self.current={task:self.root/'student_data'/self.data_version/f'task_{task:04d}' for task in TASKS}
         registered=panels(self.root)
         for task,directory in self.current.items():
@@ -353,9 +358,30 @@ class LocalExamples:
                 raise ValueError('same initial student practice/query must cover all36 before final warmstart')
 
     def __call__(self,task,update):
-        directory=self.current[task];path=restore_compilation(directory,self.runtime)
+        directory=self.current[task]
+        while self.cache and sum(HistoryCache.nbytes(vars(value['path'].history)) for value in self.cache.values())>self.cache_limit_bytes:
+            self.cache.popitem(last=False)
+        if task in self.cache:
+            self.cache_hits+=1;self.cache.move_to_end(task)
+            return self.cache[task]
+        tick=time.monotonic();path=restore_compilation(directory,self.runtime)
+        self.decode_seconds+=time.monotonic()-tick
         rewards=read_json(directory/'query/complete.json')['rewards']
+        if self.saved_practice:
+            # These are actual completed final-use prefixes, not fabricated Actor outputs.
+            if (path.outputs or path.decisions or path.sampling_identity!='saved_endpoint_practice_only'
+                    or path.practiced!=['MT300','G_000'] or len(path.boundaries)!=1
+                    or path.boundaries[0]['actual_parameter_ref']!='G_000'
+                    or path.boundaries[0]['episodes']!=2 or len(path.history.episodes)!=2):
+                raise ValueError('final warm needs the actual forced MT/G practice pair')
+            MT=[row for row in path.history.records if row['episode']==0]
+            nodes=[dict(records=len(MT),episodes=1,candidates=['MT300']),
+                   dict(records=path.boundaries[0]['records'],episodes=2,candidates=path.practiced)]
+        else:nodes=path.outputs
         prefixes=[dict(records=node['records'],episodes=node['episodes'],practiced=node['candidates'],
-            reward={ref:rewards[ref] for ref in node['candidates']}) for node in path.outputs]
-        return dict(path=path,prefixes=prefixes,source=dict(kind='initial_actual_student_pair',
-            file=str(directory/'path.json'),data_version=self.data_version,additional_uniform_R5=False))
+            reward={ref:rewards[ref] for ref in node['candidates']}) for node in nodes]
+        example=dict(path=path,prefixes=prefixes,source=dict(kind='initial_actual_student_pair',
+            file=str(directory/'path.json'),data_version=self.data_version,additional_uniform_R5=False,
+            forced_practice_not_on_policy=self.saved_practice,credit_consumer='final expected query only'))
+        self.cache[task]=example
+        return example

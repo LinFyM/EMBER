@@ -1,3 +1,11 @@
+## 2026-10-13 当前授权：完整Writer有限窗口实施中，尚未启动GPU
+
+main已完成§19科学消费，授权唯一design§20：CP432冻结前端+F24849承接原166参数Adam，F5400更新至30249；θ从未训练Actor做90次final warm。两者组装后九个B4真实R5/query16共同批，每批θ→真实bank→900F，最终F38349/完整RL9唯一点，直接接correctK1 validation400；Test关闭。
+§19已结束不重跑，36真实MT/G P/H和1152兼容信用只读引用。只F在G中可训练；θ独立，前端/source冻结，query不进H/F目标。所有P/H对应真实context，非MT H四视频必须真实重编码，不复用旧MT m。原144/P0第三同状态块仍禁止；本次是明确新输入域与完整窗口授权。
+main已纠正practice为[parent,newG]真实两选；固定joint180轮实践，G query至多2880、3060总episode上界非必采满。最大新增joint180实践+2880 query，held每condition最多MT1+修订5及6*(horizon+10)，最终新初态固定唯一LoRA；无其它点/controls/Test。完整checkpoint保存全G/θ/独立optimizer/baseline/两个sampler/bank/RNG/topology，RL1–8恢复only。
+工程分离冻结context/F owner与组件迁移，主线处理Actor/共同状态/评估调度，独占隔离→实际消费者检查→集成push/clean detached启动。03:40独立data1 quota used1478071088KiB/soft2147483648KiB/sharedfree81T，96GiB暂估峰值可容纳；新ROOT尚未创建，不把实现写成训练已开始。
+预计准备45–90min，A/B20–50min/joint1.5–3h/4002–4h，全批4.5–8h；实际完整消费者和现场资源核验后修订。11:00希望效果而非强殺，禁止缩水任务/更新/query口径。一个总owner/启动一次/整批一次可靠交main01a12bb0，科学阴性保留、不当工程故障。
+
 ## 2026-10-13 03:16 实际完成：固定24849教学变化与真实学生证据
 
 唯一design§19已结束：owner fixed24849_student_video_01/PID3426524于03:16:24.013退出0，02:53:42.723启动，wall1361.290秒（22.688min）；八实际job均0、无失败/恢复，原启动来源c60bd494及03:25–04:00预测保留。

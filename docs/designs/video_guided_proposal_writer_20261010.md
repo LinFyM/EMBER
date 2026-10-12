@@ -652,7 +652,7 @@ E-only134传97、both-success321保持305、MT-only19保持8、both-fail102取�
 本批已结束，原8883调查信号false与旧864停止不变，新参数信号true不成为方法资格。无第三同缓存块/Actor/完整Writer/held/Test自动授权，main完整消费后自主登记新的科学决定。
 完整分布与实际链路解释见现有[coordinate分析§18](../analyses/proposal_coordinate_memory_read_20261012.md)；稳定ROOT/analysis/completion_20261013及coordinator/refinement8883_query16_01/exit.json。
 
-## 19. 当前有限执行：固定24849真实学生经历与早期教学内容证据（2026-10-13）
+## 19. 已完成：固定24849真实学生经历与早期教学内容证据（2026-10-13）
 
 main已直接消费4032原行并裁决：G24849=425/MT340/E455，R313/G112/L27、21task净正、仅5task各−1、全部suite净正，去task32/36仍+65/544，满足当前G从MT一次修订明显增益与合理保持的先行要求。仍不是held、完整Writer、视频/H因果或不同经历修订资格。§18已完成；原8883 .50未过/全部负结果和§15旧864停止保留，不追加原144缓存同状态第三时间块，也不立即恢复native前端全梯度或改架构。
 
@@ -691,3 +691,47 @@ main在任何wrong生成/读出前修正原派发遗漏：原task_video_mapping�
 原启动run_contract的零生成/零教学forward及顶层旧query-only字段属于继承的保存正确端点子合同，已在ROOT/analysis/completion_20261013/contract_clarification.json分列当前arm实际范围和澄清出处；原合同不修改，当前other/wrong实际各36真实读取/生成。原保存端点、完整推理组合与本批读取代码身份分别保留。
 36实践原件完整审计：25成功/11正常horizon失败，全36bank资格真实，新G1477 records/7686步、组合3039 records/72episodes，实际producer与信用清单保存practice_audit.json。原MT-H/正确G权重/1152信用只读引用，query不进H，other/wrong不使用新G-H。
 本节到此完成，没有自动后继共享学习/Actor/fullWriter/held/Test授权。main直接消费完整原件后自主登记后继；新真实P/H给现有G和π提供明确消费者，不构成已学反馈资格，也不要求Owner逐项许可。
+
+
+## 20. 当前授权：强G24849后的完整共享Writer有限窗口与唯一validation400（2026-10-13）
+
+main已消费§19全36真实G-H及5184逻辑行，授权本完整窗口；§19已结束且不得重复。correct425/other414/wrong395对MT340，other→wrong少19，其中E-only少18；train24为252/240/221对169，support12为173/174/174对171，Long正确→other少13/→wrong少22，wrong局部正例保留。换未入Writer四视频池的同task教学保持大部分能力，内容变化影响部分能力取得，但wrong仍高于MT、跨suite视觉风格与L/V冲突未分离，不能把+85全部归因教学理解。原36真实G实践25成功/11正常horizon失败、query未入H，允许用于本窗口。
+
+### 20.1 机制、单一图与梯度owner
+
+source+合并MT执行基底冻结，同P0/S_G/D38/E、38-target/rank8。完整G由v9完整CP432双读取meta/Reader/static及其它前端与endpoint24849组合，F为166张量/8,761,152参数；只F可训练，前端/source冻结。F承接24849原Adam/cursor/四rank RNG，同BA算子目标/AdamW/LR/clip1/logicalB4/任务等权；不是全ψ exact-resume，不把仅F旧checkpoint称完整Writer。唯一EndpointTrainer须实际保持这一梯度owner，禁止generator.requires_grad_(True)重新开启全前端。
+θ从CP432随存且未做local/RL的Actor初始化，自己的Reader/static/三head可训练，θ optimizer及独立baseline fresh；不得引入旧RL9。G每parent只生成一个完整确定提案；joint/deployment的practice保留[parent,newG]两选及真实score。真正单候选消费者的forced/零score一般语义保持。φ可固定缓存，θ学习表示每次fresh；E仅F目标/只读参照，不入条件、候选、H或π信用。query只供θ/baseline信用，不入H/F目标/held梯度；自身动作H仅Writer条件，禁止准备轨迹再微调最终task LoRA。
+真实链为m=C(T(L,V),H,{P_producer})，P_new=P0+S_G F((P−P0)/S_G,m)，完整sBA作用于自身hidden及原生动作。原P0训练未教过F数值parent域，真实新P/H补该覆盖；共同E仍允许忽略P/H，不能把覆盖称为反馈利用证实。原两候选condition oracle430仅高于425五条，选择器不能替新提案/泛化。旧RL9候选弱及Context900 held阴性不被当前train收益清零。
+
+### 20.2 两项固定初始学习与组件组装
+
+唯一全36=train24+经审计support12、原panel/allowlist、教学46–49/action-hidden/stride5不变。§19原MT及G24849完整权重/H/producer/1152 MT-G query信用引用，无新refresh/实践/参照query。
+A固定5400次logicalB4 F更新（600遍全36），cursor24849→30249。每task只有真实MT/H_MT与G24849/H_MT+G，task等权→实际parent等权→该parent实际H等权→原四video随机采样，不按成功筛parent。约每parent300/每video75为预期，记录实际曝光而非保证收敛。固定φ的精确输入可一次编码复用；原144 MT cache须身份一致，新G/H×4的144真实m必须重新读取编码，使用真实G的p，不以旧MT m替代。此为明确non-MT覆盖，不是第三个原144/P0同状态时块。
+B固定90次logicalB4 final warm（10遍全36），只消费同实际MT/G pair及16-state信用，condition内实际prefix均值/task等权，F/φ不更新。原forced保存实践不冒称on-policy，无新增STOP监督；相同参数/观测/L/noise的冻结raw/native绝对响应可复用，θ训练表示fresh。只取90终点；允许一次0新环境的全36期望选择读回，对照uniform382.5/alwaysG425/事后430，不用于选点或放行。
+A/B梯度owner独立可真实并行，若串行无明显wall损失也可；禁止第二Writer运行面。两个预登记终点组装同一个初始完整Writer，保留各optimizer/sampler/RNG来源，不拼最佳点；仅初始化/恢复用途，无额外576资格读出。
+
+### 20.3 九个B4实际共同批与完整恢复点
+
+R=5仅本窗口有限展开，不是永久轮数/未来预算输入。共9次logicalB4 θ更新，全36各一条当前ψ/θ的五轮conditional-continue路径。每批严格冻结当前核采路径+独立query16→θ/baseline各一次有效更新→登记所有实际P/H→F900次logicalB4（100遍全36）→下一批重采。joint共8100F，初始加joint共13500，最终Fcursor38349；θ local90后RL9。F每块保持全36等权、实际parent/H分层等权，最后加入者曝光不等如实记录，不只教新四task。
+原解析所有d=1..5均值价值、实际STOP递推、c=.001、条件继续parent分布与score梯度保留。parent只有一个非STOP候选时条件继续score为零，但完整STOP直接梯度仍保留；practice正常两选不得forced或清零。当前核新路径只消费一次θ更新，不在新ψ下重放旧path冒称on-policy；baseline不读query/未来H，外部截断不是STOP正标签。首visit引用实际MT bootstrap及兼容576 MT query；每新G完整实践后在独立原16初态query，失败候选保留，0新E/query作H。
+固定180轮新完整practice、180新G提案；新G实际被实践数量至多180，重新实践parent也执行本轮新初态/原RNG的完整episode。query只覆盖outputs实际已实践参数，同condition同参数16初态只读一次，新增G query至多2880，3060为新增episode上界而非采满要求。未实践提案无query信用、不入真实parent bank；重复parent的新H在该parent内等权，权重不复制。相同真实候选仅按现有语义复用，不据分数省略。每批θ→bank→900F后保存完整G/θ/F optimizer/θ optimizer/baseline及optimizer/两个sampler/bank版本/全部rank RNG/topology/冻结身份。RL1–8仅恢复，RL9同一时刻F38349与θ为唯一资格点；禁止把不同核训练query拼成完整模型分数。
+
+### 20.4 明确自动接唯一correct K1 strict validation400
+
+RL9后直接执行首轮fixed validation8×50不同task-video conditions=400，video_seed7/canonical video_schedule/跨点state-video映射不变；Test关闭，不加其它checkpoint/controls/多预算/held探针。MT300强参照按实际兼容原行引用，不挑弱参照。
+每condition共享Writer冻结，不使用held离线标签或最终评测反馈学习；合法教学+自身实践编译/选择唯一完整38-target LoRA，Writer退出后新初态固定评测。adaptation排除该condition最终初态。外部界限MT bootstrap最多1官方episode+最多5轮实践（可选择旧parent或新G），最多6*(suite horizon+10)步；π可在任意完成节点STOP并按原final分布multinomial采唯一LoRA，非argmax/强制五轮。未来预算不入π/baseline，主动STOP/资源截断/异常/读取/生成/成本均记录。
+报告strict400单完整checkpoint的task/suite、RGL/churn/breadth与逐condition最终LoRA来源；原147/MT153只在实际兼容行并列，不称单因素归因。joint按实际采集核/轮解释首G保持、后续改进/重复/退化及π保护/STOP，不为解释新增环境/H消融或拼资格分数。结果提高/降低完整过程跨task取得能力、已见task映射/有限教学泛化或θ保持等竞争解释，不预归因Reader/数据量/训练不足。
+本窗口到唯一400整批完成立即停止新增计算并交main，main据原件自主接续；不自动延长/换rank/LR/seed/架构，阴性不当bug，单次小正值不称最终目标完成。相邻稳定性、视频必要性与Test尚未完成如实保留。
+
+### 20.5 工程、资源与一次可靠整批接续
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013。全部新增data1，大模型/数据/旧H/144cache/信用原位引用；按新context、180完整H、9全状态CP、held400 H及临时峰值预算<96GiB，正式前核strg01独立quota/个人用量/shared，不套旧query-only体量。只退休生命周期已核实temporary，原formal/raw/当前依赖保留。
+每launch双节点live/cap6或8/node6/非干扰，GPUh准确计账无硬限。rank按完整消费者吞吐选择：原F缓存4rank约.1s/step可参考，joint F-only不套旧native全G吞吐。collect_batch每rank一condition时slots16不是16实践；沿compile_many/query_conditions合批当前同一逻辑B4，保持任务/loss、更新次序及采样流，禁止预采未来会被新ψθ改变的batch。只改变物理执行，不为profile加科学episode/臂；θ表示fresh，完整CP边界迁拓扑显式记录optimizer/RNG，不绕校验/称bitwise。
+初估准备45–90min、A/B含IO20–50min、joint1.5–3h、400约2–4h、全批4.5–8h。依据旧query4 joint1.65h含故障/native全梯度，当前新增3060 episode及F约23–30min计算下界；旧400实际2.081h含1133adapt/119新final/281复用，只是有边界参考。11点是希望有用结果而非强杀/正结果保证；超期说明具体原因、更新ETA，不缩水16query/400或重置时钟。
+独占codex branch/worktree→真实CPU/小消费者验证及必要结构检查→main集成push→clean detached执行；不热改旧冻结代码，不要求main工程ACK。已定位且科学语义不变的工程问题自主隔离恢复，有效行不重做，真正计算/数据/标签/选择/信息墙变化交main具体裁决。一个owner接A/B→组装→joint→RL9→400；启动一次真实身份/资源/ETA，整批完成/实质异常一次可靠回main，无心跳/子阶段Queue/第二等待者。
+
+
+### 20.6 主讨论实践说明纠错与工程owner（2026-10-13）
+
+主讨论直接核源码后确认原派发将确定一套提案误读为practice单候选：原说明是科学误读，非实现bug。最新明确保留[parent,newG]真实π两选，训练与validation一致；180是全practice轮数，G query/3060只为上界。原派发消息历史保留，本节及上述当前合同记录修正来源，不能静默强制新G或student_only。
+保留单一Generator/Runtime/EndpointTrainer与现有compile/query/formal消费者。新增context缓存模块只持冻结输入函数，组件模块只做受控CP432+24849导入/固定A/B组装，完整checkpoint模块统一保存/恢复独立owner；旧fixed原144诊断CLI退休，历史以原冻结源码/原件保留。run旧fresh864注册不再是canonical默认；同一运行面prepare现在登记§20。必要新增文件分别对应缓存、组件迁移、完整状态三个凝聚职责，不建立并行Writer/版本fallback。

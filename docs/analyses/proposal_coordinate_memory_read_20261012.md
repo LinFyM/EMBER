@@ -744,3 +744,11 @@ wrong仍395、明显高于MT340，且有39条correct失败/wrong成功的初态�
 实践.171664743、other .966873464、wrong .946883456，新增合计2.085421662GPUh，正式失败0；1188新environment episode/257842步（实践7686/other122568/wrong127588），72新教学条件生成、0正确G生成/参照episode/梯度。含此前两缓存fit及query累计7.332936243GPUh，CP432/MT/E/旧G原获取账单保持独立，未重复计费。03:18:32双节点实核本项目GPU进程0。新增根约1.40GiB（含全配对消费），低于32GiB准入，全部data1，大资产、原H和正确端点引用。
 原run_contract保留未改写：new_G_generation/new_teaching_forward=0和顶层student_refresh.readout_mode=endpoint_query_only/post_generation_practice=false是继承的正确保存端点来源子合同，不代表当前全部arm。实际practice子合同为saved_endpoint_practice_only/真实新实践；other/wrong子合同为composed endpoint_query_only/各36新教学读取生成+576 query。ROOT/analysis/completion_20261013/contract_clarification.json按实际原件分列，澄清出处main启动消费后指示及155e22ef记录；未改变运行代码、重跑或抹去原启动合同。
 CPU消费15.030秒、0新forward/episode；首次读取不存在的source complete.code_identity字段错误已保留，正确训练身份来自source已完成coordinator exit，与本批kernel.endpoint_training_code一致。该记录消费者修正不是GPU失败或科学修复。唯一整批实际退出事件判重后完成一次Git及main可靠交付，不加阶段回报/等待者/自动后段。
+
+
+## 20. 强候选与真实非MT覆盖后的唯一完整Writer有限检验（2026-10-13）
+
+main§19CPU消费原件已原样归档ROOT/analysis/main_scientific_readout/terminal24849_video_main_scientific_consumption.json，未重跑算术。425/414/395对MT340与换教学仍保大部分能力支持进一步使用当前真实共享F；wrong仍显著超MT、Long差异与局部wrong正例约束把全部增益归因教学。真实36 G-H完整，query信用分离，允许现有F的新P/H域和θ最终选择学习。
+原P0监督不能教F数值parent方向，新P/H是实际覆盖变化；共同E仍允许忽略P/H，不能把增加H称纠错。旧147/400的初G无增益不同于当前强候选，完整后段有一次有限重新检验价值；Context900 held阴性仍约束外推。固定旧pair oracle430只比G425高5，磨旧选择器无法补主要能力缺口。
+唯一合同见active design§20：F独立梯度/Adam24849→5400覆盖→joint9×900=cursor38349，θ独立local90+RL9，实际R5路径/query16与全36分层bank；完整RL9后唯一correctK1 strict validation400。只预登记终点，不恢复native全G训练/CFM/旧RL9，不自动其它点/controls/Test，原144同状态第三块仍禁止。
+结果必须区分更强候选+真实新域是否转成跨task能力、已有task共同E映射是否局限泛化、θ是否保住好候选，按实际轮/核的控制及单完整strict400裁决；BA曝光和loss仅定位。所有科学语义/投入/停止/信息墙/恢复组件身份以§20为单一active合同，工程实现和真实吞吐尚待验证，不把计划当执行。

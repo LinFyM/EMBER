@@ -1,3 +1,16 @@
+## 2026-10-13 00:32 实际启动：六卡固定8883端点直接query16
+
+读出来源61ea7f86已集成push，main/origin一致；task-owned实现分支删除，独立树转为clean detached /data1/user/ymdai/ember_worktrees/terminal8883_query16_20261013_61ea7f86供在途唯一读出使用。
+新唯一owner terminal8883_query16_01/PID2719409/tmux ember-terminal8883-query16-20261013，00:31:40启动；六job00:31:44–00:32:04实际launch，Runtime六份执行记录均齐备。
+实际gpu01:0/1/2/4/5/6，ordinary cap6/node6；每launch同时live双节点、独立data1 quota used1474627744–1474627940KiB/soft2147483648KiB，启动各卡约44–45GiB余量。
+原完整端点8883/38target rank8直接读取，冻结前端CP432/训练来源cb27adfc明确，不装载或调用Writer，不新增教学读取/实践/共享更新，576G-only query。
+CPU实际消费者135.557秒验证原36权重/真实MT-H restore、576G请求及全部MT/E兼容引用/原逐行native RNG，0新模型forward/episode；首CPU Path类型修正原件保留，非GPU失败。
+参考索引实际核MT/E/G432/G864/G1296各576原行及真实episode文件存在；ROOT/query16_terminal8883/analysis/reference_index.json只存指针，不重复采样。
+一个原定4condition组slots32/max_groups1测实际histogram/peak；其余五resident slots16/group4同时执行，后续未启动worker按测量选择，不阻塞/重跑有效行。
+六卡实际Runtime已加载，本批native吞吐/完整group wall尚未测出；按既有早期576=2.904GPUh含失败/恢复32=332s暂估读出01:15–01:55、消费01:20–02:05，非硬截止或提速承诺。
+稳定启动/准入/CPU消费者/来源命令在ROOT/query16_terminal8883/coordinator/terminal8883_query16_01与analysis/consumer_validation；只有该owner等待实际worker退出并一次可靠接续实验session。
+完成后一次核全576、配对得失/E类别/72与504/全部失败费用，串行Git并可靠交main01a12bb0；无心跳、子阶段Queue或第二等待者。旧864训练永不恢复，无自动后段。
+
 ## 2026-10-13 当前授权：固定8883保存端点的原全36/query16闭环准备
 
 main完整科学消费短拟合后授权唯一design§17；§16完成/费用与未达.50信号保留，不恢复训练或旧864批。

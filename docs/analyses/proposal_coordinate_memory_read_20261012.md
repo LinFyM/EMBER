@@ -496,3 +496,13 @@ main直接消费全部144节点原件后确认27非零目标全部相对自身MT
 结果必须分task/suite/train24/support12、RGL/churn/旧G重叠，E-only134/both-success321/MT-only19/both-fail102与72/504分列。
 执行合同只在唯一design§17；新根ROOT/query16_terminal8883，六卡动态读出与一个原定组slots32物理验证，不增加科学面板或等待profile。
 本次终点固定，既有§16完整结果/费用及旧864失败停止不改写；无完整Writer/held/Test或自动学习接续资格。
+
+### 16.1 窄消费者验证与真实启动
+
+61ea7f86只在既有restore→query入口接受明确注册的保存端点，原canonical v9计算图不改；source schema校验8883完整终点，权重/真实MT-H直接引用，未实践端点bank资格仍false。
+实际CPU消费者135.557秒走原36条件构造/恢复及query请求、576MT/E复用：576G-only pending请求，0Writer/教学/native forward或episode；新root无任何伪造G结果。
+四source模块增68行，最大457行，无新canonical Writer/模型/平行fallback；source AST/diff及文档范围检查通过。首CPU JSON Path类型失败在任何GPU前纠正，原件保留。
+实现隔离、集成push、clean detached及分支删除闭环；在途读出冻结树保留，不热改旧cb27adfc/训练CP。主讨论两份原件归档，无重算科学算术。
+00:31:40唯一owner PID2719409实际启动，六job于00:31:44–00:32:04 launch；每次双节点/data1 quota/cap6/node6准入，gpu01:0/1/2/4/5/6实际Runtime执行记录齐备。
+一个原定组slots32/max_groups1、五卡slots16/group4并行，不等待profile；比较真实native plans/s、环境steps/s和峰值/余量，只用于后续未启动物理worker，任务差异不当匹配因果证据。
+本批吞吐尚未测，按旧576成本与恢复32组暂估读出01:15–01:55、消费01:20–02:05；没有新硬截止/GPUh门槛或未测加速承诺。原准备估计保留，结果后更新实际wall。

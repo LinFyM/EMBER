@@ -149,6 +149,8 @@ def endpoint_query_group(args,runtime,runner,environment,run,task_ids):
                 or path.outputs or path.decisions or path.practiced!=['MT300'] or len(path.attempts)!=1):
             raise ValueError('direct readout must retain only real MT history and one unpracticed endpoint')
         entries.append((path,task,panel,0,destination/'query'))
+    # EGL owns memory outside Torch; drop unused generation buffers before resets.
+    if runtime.device.type=='cuda':torch.cuda.empty_cache()
     rewards=query_conditions(runtime,runner,entries,mt_reference_version=run['previous_student_version'],
         mt_reference_root=run['previous_root'],endpoint_only=True) if entries else []
     for (path,task,panel,_,query),reward in zip(entries,rewards,strict=True):

@@ -5117,3 +5117,14 @@ MT340/G432337/旧factorG864341/旧BAG1296=348/E455，R311/G26/L29/net−3，72�
 早期readout2.904308725GPUh含失败.330519542，576完成query/136249步/0practice-update，失败未完成步未知；原在途训练不双计。
 稳定原件ROOT/early_candidate432_query16/analysis/early_completion_20261012，实际event和handoff见原root/coordinator/scoped_readout_recovery_02。
 阶段已按Owner纠正为先G过关、后完整Writer；11点不是必须完成后段或强杀截止，运行效率记录见同分析§12。
+
+
+## 2026-10-12 Owner取消coordinate864固定终点，实际停止保留部分原件
+
+main接受Owner没必要每架构五六小时/非得864的纠正，撤回必须等完整匹配终点；当前G尚未有效拟合E，不称E本身无能力。
+23:00:19本批GPU已结束，23:01:51两节点核验无遗留；control完整864、candidate完整432保留，candidate日志641/未保存433–641共209更新。
+early432完整576=337/MT340；control864仅351真实完成行/24task，252/同身份MT253为partial，不补缺项或称匹配结果；candidate864无query。
+实际927完成新G query/218834步下界/0practice，GPUh上界28.820021373含原profile及失败，费用短停止区间下界28.808964269。
+原失败/外部信号真实身份/未记录update642未知/旧CPU错误和迟到回执均保留判重，不恢复旧队列。
+[现有分析§14](analyses/proposal_coordinate_memory_read_20261012.md)、findings448及ROOT/analysis/owner_stop_20261012保存完整覆盖/成本/恢复范围。
+后继先以能改变判断的小投入验证有效学习，main继续完整原理分析；当前无新源码/架构/实验授权，也不永久禁止长训练或设新步数菜单。

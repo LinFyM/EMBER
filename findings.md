@@ -11666,3 +11666,20 @@ EGL原16已有free0证据、32峰值未知，未扩大slots或铺新profile；�
 新读出clean frozen eac6ebf4/v9、62e615c9/v8与所有旧源保留，分支/工作树生命周期由实验session闭环；不热改旧树。
 早期readout2.904308725GPUh含一失败.330519542、576完成query/136249步、0practice/update；失败未完成步未知，原在途训练不双计。
 实际CPU消费15.575秒/0GPU/forward/episode；稳定raw2880行/5臂各576，分析§12–13及EARLY/analysis/early_completion_20261012保存原件。
+
+
+## 448. 固定终点不能替代有效学习判断；coordinate批已按Owner停止（2026-10-12）
+
+Owner明确没必要非得864/每架构五六小时，main撤回§447后必须等两864的阶段裁决。
+半程在线BA约.98、完整G432337/MT340且E455足以判定当前G未有效拟合教师，停止本批低效训练/未完成读出。
+这不是教师E本身无能力，也不证明所有替代学习原则不可行；后继先用有判断价值的小投入确认有效学习再扩规模。
+不机械固定步数/每架构五六小时，不建立永久长训练禁令或新步数菜单；G未过关不扩完整Writer，main自主研究学习原理。
+22:57:53冻结新派发/失败恢复，23:00:19本批GPU结束，23:01:51双节点确认无本批/ymdai GPU与root进程遗留；不动他人。
+control完整CP864、candidate完整CP432和所有原件保留；candidate两rank日志证明641，未保存433–641共209，642未记录状态未知。
+早期完整576不重跑，control864只保存351真实完成行/24task（20task16行齐、16task有组complete）；G252/同身份MT253是自然完成partial。
+R241/G11/L12不作全36/576或结构匹配结论，缺225不补，candidate864无query不补；原1728终点义务取消。
+927完成新query/0practice、218834完成步下界；未完成步未知。formal上界28.744634244+profile.075387129=28.820021373GPUh，
+总下界28.808964269，差.011057来自四worker短TERM/退出区间；外部停止wait返回码null、未伪造正常退出，旧失败.330519542和G真实255保留。
+原旧matched CPU退出1含重复UTC的TypeError，原件保留，不是重新恢复已关闭计算的理由，迟到消息只判重。
+稳定停止原件ROOT/analysis/owner_stop_20261012和coordinator/scoped_readout_recovery_02/owner_stop_*；CPU1.665秒/0新GPU或forward或episode。
+唯一design§15已结束/无active执行授权；源码/学生架构暂无新改动或实验，原完整回报改为一次可靠停止交main，不加心跳/第二等待者。

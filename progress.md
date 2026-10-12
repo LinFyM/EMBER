@@ -1,4 +1,21 @@
-## 2026-10-12 最新阶段纠正与有界读出效率恢复
+## 2026-10-12 最新状态：Owner取消864义务，本批已实际停止
+
+Owner明确“没必要非得864步”，main撤回必须等待两864匹配比较；当前G半程约.98 BA误差与337/MT340/E455未有效拟合教师，不继续低效投入。
+22:57:53按PID/start ticks/argv先停止scoped新派发；23:00:09对本批G/四读出TERM，一项本批进程未退出后KILL，23:00:19全部GPU进程结束。
+23:01:51一次双节点nvidia/proc核验本批与ymdai GPU进程均0，精确root/旧CPU owner均退出；只信号本批7个根PID/68个核实后代，不动他人/其它任务。
+control完整v8 CP864及原432、candidate完整v9 CP432和所有有效权重/H/原行/失败/冻结树保留；没有新CP或自动恢复。
+candidate两rank原日志均证明最后完成641；未落盘433–641共209更新，642是否完成或部分执行未知，不为保存状态等864或热改保存接口。
+早期432全36/576保持G337/MT340。control864保存351完成G query/24task，20task有16完整行，但只有16task有query组complete收据（256行）；其它95有效原子行也保留。
+control自然完成partial子集G252/MT253、R241/G11/L12，不能称全36/576或结构匹配结果；缺225不补，candidate864未生成读出行不补。
+本root完成新G query927/0practice，环境步下界218834；失败/中止未完成步未知。formal allocation上界28.744634244、profile .075387129，总上界28.820021373GPUh，下界28.808964269。
+四control外部停止收据GPUh取核实退出上界1.988508808、wait退出码null而非0；费用上下界差.011057GPUh来自短TERM/退出区间。G真实SSH退出255、旧失败.330519542均保留。
+ROOT/analysis/owner_stop_20261012/{consume_stop.py,statistics.json,partial_control_paired_raw_rows.jsonl}保存覆盖/CP/日志/账目，CPU1.665秒/0新增GPU/forward/episode。
+ROOT/coordinator/scoped_readout_recovery_02的owner_stop_*原件及exit.json明确Owner科学停止、complete=false、取消依赖/恢复；旧matched exit1含重复UTC的CPU TypeError，原件不改、迟到消息已判重，不恢复旧队列。
+当前无执行中的active实验合同；docs/designs/video_guided_proposal_writer_20261010.md §15现为已结束历史，原864终点/1728期望均取消。
+main继续完整学习原理研究；后继先用有判断价值的小投入验证有效学习再扩规模，不机械五六小时/固定步数，不永久禁止长训练；未拟合是G而非教师E无能力。
+无新源码/学生架构/GPU实验授权，不扩Writer/held或重做早期；停止整批回报替代原864完成回报，owner_stop_main_delivery.json已processing_verified，文档commit归档git_delivery.json，不另发工程回执。
+
+## 2026-10-12 历史阶段纠正与有界读出效率恢复
 
 Owner明确先通过G从MT一次修订的完整闭环证据与合理保持，再训练/评估完整Writer；11:00不要求塞入完整Writer/400，当前无新后段或held授权。
 main已直接消费候选432五臂原2880行并独立确认统计，阶段裁决是原两臂864匹配比较及完整读出继续；不因−3中断、不因loss下降延长。

@@ -291,3 +291,28 @@ main同时核原teachers/task_0013/E.json和task_0020/E.json：两者reference=M
 main直接消费后的阶段裁决是保持原两臂864匹配训练及完整读出，不因−3提前中断，也不因loss下降延长。若两臂864都弱，停止当前Reader+全坐标共同E监督的入口/宽深补丁投入，由main重新论证后继；不是只关闭某个版本名。当前没有后段、held或>864授权，不新增探针或CPU全量几何计算。新scoped dispatcher仍为唯一整批owner，组4收益随已登记原读出统计结算，不延迟科学交付；此记录补充随原两864整批结果带commit，不另发科研或工程回执。
 
 稳定原件：ROOT/early_candidate432_query16/analysis/early_completion_20261012/{consume_early576.py,statistics.json,paired_raw_rows.jsonl}，raw共2880逻辑行/五臂各576，逐行保留真实源；EARLY/analysis/first_student_query16_{summary.json,rows.jsonl}为实际原生消费四臂2304逻辑行。ROOT/coordinator/scoped_readout_recovery_02/early_complete.json是实际完整事件；统计不会覆盖原失败或未来两864输出。
+
+
+## 14. Owner取消固定864义务，未拟合教师的本批已停止（2026-10-12 23:00 UTC+8）
+
+Owner最新原话：“没必要非得864步啊，难道以后每个架构都训练五六个小时？现在这结果都已经烂完了，说明教师根本就没拟合上”。main接受纠正，撤回§13末尾必须等待两864完整匹配比较的安排。半程在线BA误差约.98、完整G432337/MT340且E455已足以判定当前G尚未有效拟合教师；教师E已有真实能力，不能把G拟合失败写成教师E没有能力。原864只是当时的投入安排，不是科学义务，本批不再支付原终点成本；仍保留未完成匹配比较的限制，不为满足形式上的原方案继续低效计算。
+
+先以能改变判断的小投入确认有效学习，再按实际缺口扩大学习及闭环读出，是后继投入原则；不机械给每个架构五六小时或靠固定步数拖延取舍，也不形成永久禁止长训练或新的固定步数菜单。G未有效拟合时不扩完整Writer。最终目标与自主研究继续，main承担完整学习原理分析；本条未授权新源代码、学生架构、训练或其它科学矩阵。
+
+22:57:53按唯一scoped CPU owner2084323的UID/精确argv/start ticks先SIGSTOP阻止新派发/失败恢复，保留排他停止记录。23:00:09对本批7个GPU作业根PID及68个核实后代TERM；一个本批进程在短等待后KILL。23:00:19全部本批GPU身份退出，23:01:51一次双节点nvidia/proc核验本批和ymdai GPU进程均0，精确root及CPU owner也均退出。不操作其它用户/其它任务、reset或改冻结源码，不等完整group/epoch/864。旧matched回执1另外含dict重复UTC的退役CPU错误，真实G SSH退出255与原错误保留；迟到旧完成消息按handoff与Owner停止判重，不视为恢复授权。
+
+恢复资产：控制完整v8 CP864（原432也保留）、候选完整v9 CP432/full optimizer-RNG-sampler。候选两rank metrics各641条，末update均641；源码在optimizer.step、CUDA同步后记录update+1，故最后日志证明完成641。已记录但未落盘433–641共209更新，642是否有未记录部分或已完成未知。无即时合法checkpoint保存接口，未热改或伪造CP641/648，未重复训练；原件/关键权重/H/冻结消费者保留，不将日志当可恢复状态。
+
+| 读出范围 | 有效完成G行 | 涉及task | 16行齐备task | query组complete task | G/同身份MT |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 候选432提前诊断 | 576 | 36 | 36 | 36 | 337/340 |
+| 控制864被中止读出 | 351 | 24 | 20 | 16 | 252/253 |
+| 候选864 | 0 | 0 | 0 | 0 | 无读出 |
+
+控制351行均为runner完成后原子写入的真实G_000 query，精确原MT配对/RNG/proprio和端点CP864身份已核；16task完整query组收据覆盖256行，另外95有效完成行保留，不因组尾未到而删除或补写组complete。自然完成partial子集R241/G11/L12/net−1；长优先/组尾/停止时刻造成覆盖不完整，不能称全36/576、无偏估计或864匹配结构结果。缺225行不补，候选864无端点读出不补；早期完整576及既有强参照不重跑。具体每task覆盖和全部351原行见稳定统计/partial raw，不按成绩挑行。
+
+全root完成新增G query927，0G-practice或后段更新/额外参照episode，完成环境步下界218834；失败/被中止episode步未知而非0。12正式attempt保留，包括早期旧失败.330519542GPUh与本次人为停止。formal allocation上界28.744634244、原discard profile.075387129，总上界28.820021373GPUh；formal下界28.733577140，总下界28.808964269。四被中止control worker原parent wait返回码无法取回，外部Owner-stop收据明确exit_code=null/complete=false，并保留精确进程/信号和退出核验；未伪造0或正常完成。四worker allocation上界1.988508808，TERM至核实退出造成上下界约.011057GPUh差。原control G实际exit0/14.268524629、candidate G实际SSH exit255/9.583292082、early读出2.904308725分别结算；引用资产与旧参照不双计。
+
+完整停止消费CPU1.665秒/0新增GPU、模型forward或episode，没有重做main先前BA/几何算术，也没有新增探针。ROOT/analysis/owner_stop_20261012/{consume_stop.py,statistics.json,partial_control_paired_raw_rows.jsonl}保存全部账目/覆盖/CP/日志身份；ROOT/coordinator/scoped_readout_recovery_02/owner_stop_*保存精确停止/两节点核验和CPU交接。该owner/exit.json明确Owner科学停止、complete=false、无恢复授权，使原完整终点回报转换为唯一停止回报；不修改早期完整结果或旧失败。停止实际回报优先投递main，文档Git身份随后存analysis/owner_stop_20261012/git_delivery.json，不另发文档ACK或恢复自通知。
+
+当前无执行中的active实验合同，原design§15已结束；§9–13的预测、继续864决定与资源安排均保留历史，不能恢复执行。canonical架构源码此次未改，关键恢复资产和冻结树保留；后继由main依据完整学习原理自主登记，不等待Owner再逐项批准。

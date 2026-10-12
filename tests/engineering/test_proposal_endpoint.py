@@ -134,3 +134,66 @@ def test_only_one_deterministic_candidate_is_generated_and_invalid_output_is_not
     with pytest.raises(ValueError,match='invalid deterministic endpoint'):
         owner.generate_candidates(runtime,compiled,'MT300',{})
     assert len(calls)==2 and len(compiled.attempts)==2
+
+
+def test_MT_only_bank_never_reads_existing_student_parents(tmp_path):
+    from ember.pi05_source_checkpoint import write_json_atomic
+    from ember.proposal_writer.contract import TASKS
+    from ember.proposal_writer.learning import EndpointTrainer
+    write_json_atomic(tmp_path/'run_contract.json',dict(G_bank_mode='MT_only',student_refresh=dict(version='old')))
+    for task in TASKS:
+        write_json_atomic(tmp_path/'teachers'/f'task_{task:04d}'/'E.json',dict(weights='teacher'))
+        write_json_atomic(tmp_path/'bootstrap'/f'task_{task:04d}'/'complete.json',
+            dict(complete=True,reference='MT300',history=f'real_MT_H_{task}'))
+    poison=tmp_path/'student_data/old'/f'task_{TASKS[0]:04d}'/'parent.json'
+    poison.parent.mkdir(parents=True);poison.write_text('must not be read')
+    (tmp_path/'G_student_bank.json').write_text('must not be read')
+    trainer=EndpointTrainer.__new__(EndpointTrainer)
+    trainer.root=tmp_path;trainer.runtime=SimpleNamespace()
+    trainer.refresh_bank(0)
+    assert trainer.runtime.supervision_version==0
+    assert all(entry['parents']==[dict(reference='MT300',weights=str(tmp_path/'initial.safetensors'),
+        histories=[f'real_MT_H_{task}'])] for task,entry in trainer.bank.items())
+    with pytest.raises(ValueError,match='version0'):trainer.refresh_bank(1)
+
+
+def test_horizon_jobs_resume_recovery_saves_but_only_qualify864(tmp_path):
+    from ember.pi05_source_checkpoint import write_json_atomic
+    from ember.proposal_writer.batch import shared_learning_job,stage_jobs
+    contract=dict(updates={'G':[864]},G_checkpoint_updates=[432,648,864],
+        G_initial_resume={'checkpoint':'/original/G216'},stage_estimate_seconds={'G_864':12026},
+        student_refresh={'version':'G864','G_update':864})
+    job=shared_learning_job(tmp_path,contract,'G',2,864,16)[0]
+    assert job.arguments[job.arguments.index('--resume')+1]=='/original/G216'
+    write_json_atomic(tmp_path/'checkpoints/G/update_00000432/manifest.json',dict(complete=True))
+    write_json_atomic(tmp_path/'checkpoints/G/update_00000648/manifest.json',dict(complete=False))
+    job=shared_learning_job(tmp_path,contract,'G',2,864,16)[0]
+    assert job.arguments[job.arguments.index('--resume')+1].endswith('update_00000432')
+    with pytest.raises(ValueError,match='not preregistered'):
+        shared_learning_job(tmp_path,contract,'G',2,432,16)
+    write_json_atomic(tmp_path/'run_contract.json',contract)
+    jobs=stage_jobs(tmp_path,'student-data',microbatch=28,slots=16,teacher_devices=[],
+        estimates={},shared_gpus=2,stop=None)
+    assert len(jobs)==36
+    assert all(j.arguments[j.arguments.index('--checkpoint')+1].endswith('update_00000864') for j in jobs)
+
+
+def test_learning_registration_requires_original_complete_v7_and_is_not_fresh(tmp_path):
+    from ember.pi05_source_checkpoint import write_json_atomic
+    from ember.proposal_writer.contract import CHECKPOINT_SCHEMA
+    from ember.proposal_writer.run import endpoint_learning_registration
+    checkpoint=tmp_path/'checkpoints/G/update_00000216';checkpoint.mkdir(parents=True)
+    (checkpoint/'state.pt').touch()
+    manifest=dict(schema_version=CHECKPOINT_SCHEMA,stage='G',next_update=216,complete=True,
+        full_optimizer_rng_sampler=True,topology=dict(world_size=2,logical_condition_batch=4))
+    write_json_atomic(checkpoint/'manifest.json',manifest)
+    old=dict(fixed_G_update=216,git={'commit':'original216'})
+    args=SimpleNamespace(resume=checkpoint,stop=864)
+    record=endpoint_learning_registration(args,tmp_path,old)
+    assert record['updates']=={'G':[864]} and record['G_checkpoint_updates']==[432,648,864]
+    assert record['G_bank_mode']=='MT_only' and 'continue' in record['shared_initialization']
+    assert record['G_initial_resume']['source_code']==old['git']
+    args.stop=648
+    with pytest.raises(ValueError,match='exit864'):endpoint_learning_registration(args,tmp_path,old)
+    args.stop=864;manifest['schema_version']='old_v6';write_json_atomic(checkpoint/'manifest.json',manifest)
+    with pytest.raises(ValueError,match='complete original v7'):endpoint_learning_registration(args,tmp_path,old)

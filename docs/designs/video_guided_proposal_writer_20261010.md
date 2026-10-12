@@ -1,7 +1,7 @@
-> 2026-10-12 authority：本文件仍是唯一active design。当前唯一授权整批为§12的deterministic-endpoint/query16。
-> §11 normalized-flow已完成并由main收口：MT340/G339/E455，传播量级修复但无控制净增；不再启动其warm/RL/held或小扫。
-> 旧full36_common_teacher/1b44903d链亦收口（147/400对MT153），旧课程/xi-time-CFM算子不恢复到新ROOT。
-> 未被§12覆盖的合法读取、静态/Actor及完整方法信息墙继续有效。共同训练后继须main消费本批后另登记。
+> 2026-10-12 authority：本文件仍是唯一active design；当前唯一授权新批为§13同v7 CP216→864学习时长检验。
+> §12确定端点G216/首学生/query16已完整退出0，MT340/G216341/E455；保留阴性，不当成充分学习架构裁决。
+> §11 normalized-flow及旧full36链均已main收口，不恢复旧算子/课程；未被§13覆盖的信息墙与静态/Actor合同保持。
+> 432/648仅完整恢复保存；唯一新科学出口864。共同训练后继须main消费本批后另登记。
 
 # 36任务目标教师、自身实践与交替共同学习：main执行合同
 
@@ -306,13 +306,66 @@ source始终无梯度、首步等真实MT端点标签基线、后续双meta真�
 G预测3600–6600s、读出1800–5400s、整批1.5–3.5h，参考旧G1.491h及本次只612新增episode，实际每次launch再次live准入。
 默认Runtime16/launch每rank实际chunk消费者已验证，正式chunk ceiling16；不保留无当前吞吐收益的更大chunk活动运行面。
 
-### 12.5 有限批执行完成（不登记后继）
+### 12.5 原216有限批执行完成
 
 48fa1247/v7实际G216+36首学生/query16整批退出0；严格576条件MT340/旧G339/新G341/E455，
 MT→新G R314/G27/L26、net+1、churn53，未形成明显超过MT信号。
 端点MSE .961878，输出97.677%编辑能量来自公共均值，条件差异只改善.001424；首5原生动作仍近MT。
 实际完整CP/optimizer/sampler/RNG、每task24训练事件、映射/池隔离/native配对通过；不把内部改善称控制或视频资格。
 612新增episode/143672环境步，整批2.078h/4.121798GPUh、无GPU失败，旧控制引用未重计。
-本节有界运行已经按合同停止，没有自动warm/RL/held/Teacher/controls/probe或新运行授权；
+本节有界运行已经按原合同停止，没有自动warm/RL/held/Teacher/controls/probe；独立新授权见§13；
 完整原件/得失/公共方向与竞争解释见[端点整批分析](../analyses/proposal_deterministic_endpoint_query16_20261012.md)，
 当前消费交付状态看progress，后继科学取舍由main依据完整结果自主登记。
+
+## 13. 同一v7图有限学习时长检验：完整216→864（2026-10-12）
+
+完整事实、算子解释、最近似历史反证与结果分支见
+[学习时长决定](../analyses/proposal_endpoint_learning_horizon_20261012.md)。该文是本节的完整推导，
+本节只登记唯一执行合同；不是第二份active design。原216ROOT/contract/结果不改。
+
+### 13.1 为什么修订216出口判断
+
+216只有24次/task，完整36-task loss持续1→.962570、原生meta信用主要后期增大，未有充分收敛证据。
+原输出97.677%公共能量、条件增益.001424和闭环341对MT340仍是阴性。
+显式修正上一端点决定§6的“阴性后默认改机制”：216是早期行为出口，不充分代表训练后的架构裁决。
+零head初期仅末层得到梯度，之后Reader/meta经W_out转置信用打开；共同特征/标签可先支配末层外积。
+这给出有限时长竞争解释，不保证条件协方差学成。旧直接因子回归公共方向负证据仍有效，不无限续训。
+
+### 13.2 恢复、监督与唯一更新变量
+
+- 从完整48fa1247/v7 CP216继续至总864，新增648更新/2592条件，每task累计96。
+  保留ψ/双meta/Reader/static/未训练θ/optimizer/sampler-cursor/rank RNG/psi_version216及监督version0；非fresh重跑。
+- 同源冻结policy+MT、P0/S_G/共同E/36任务/语言/真实action-hidden视频/MT parent/原MT-H、原采样、
+  masked endpoint MSE/AdamW/clip/logical B4/native10步flow及RNG；唯一科学变量为学习时长，不改图/损失。
+- 新ROOT的实际refresh_bank严格MT_only，supervision_version0；不读取216学生P/H或G_student_bank，
+  query永远不入H/梯度。不能称本批已学习任意parent反馈修订。
+- 可保存432/648完整恢复CP，不生成学生、不读出、不选点；updates.G只登记864科学出口。
+  初次明确--resume原CP216，故障恢复选新root中最高完整恢复点，保留原有效更新和失败账目。
+
+### 13.3 固定全36读出与停止
+
+864后沿原36同teacher_demo/MT-H/P/实践初态/env及policy RNG映射，各一次确定G生成与实际实践；
+同query16新G576，与兼容MT/G216/E原行组成四臂576严格配对。E/G216只读，不入条件/候选/H/信用/梯度；
+E=MT引用同一原行。预计612新增episode，未改变14/16/16/4池和72选点重叠/504其余分列。
+报告任务/suite/train24-support12/breadth/RGL/churn/success overlap、E/MT成功类别以及216→864能力得失；
+保存端点只做一次已有CPU分解并复用首5动作记录，无新forward/probe。
+
+到864+首学生/query16完成即停，不自动Actor/warm/RL/held400/Teacher/controls或>864。
+若仍公共拟合主导且无控制净增，停止再延长当前条件编码+全坐标回归组合，即使loss仍下降；
+不以LR/rank/seed/scale/归一化小扫保护它。若参数条件增强却无控制增益，优先重新论证功能传递；
+若控制净增/保持合理，再由main另登记相邻/held/视频证据，train576不替代正式资格。
+
+### 13.4 资源、冻结与交付
+
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16。
+复用大资产，新增峰值16GiB；现场双节点GPU与strg01 data1独立quota，共享容量分别核验。
+原两rank216训练1.113h/读出.955h，新增训练外推3.34h；整批暂2.5–5.5h，工程20–40min。
+物理rank不是科学变量；完整CP边界可正确迁移、记录optimizer/sampler/已有与新增RNG来源，不能绕过校验/称bitwise。
+相同布局旧最长视频chunk16/32无wall差别、reserved26.322/42.186GiB的profile可复用，保留更新丢弃证据。
+本次现场两张完全空闲gpu01:0/6适用原world2；读出按余量可共驻gpu01:2低占用DA3服务，不把world2变成整批上限。
+常规合计6/8、单node6、非干扰与准确GPUh记账不变，实际选择及预测只由真实准入/吞吐修订。
+
+实验独占canonical/Git，完成工程消费者验证、push/clean detached/实际启动及分支worktree生命周期；
+main接收01a12bb0-5273-7462-b5e2-72a18aba7b8d，无工程ACK停点。
+启动实质身份/ETA一次投递，随后只整批完成/真实异常可靠接续；一个CPU整批owner等真实退出，
+不增心跳、自Queue、子阶段投递或第二等待者。

@@ -183,6 +183,9 @@ class EndpointTrainer:
 
     def refresh_bank(self,version):
         contract=read_json(self.root/'run_contract.json')
+        mode=contract.get('G_bank_mode','actual_parents')
+        if mode not in ('MT_only','actual_parents') or (mode=='MT_only' and version!=0):
+            raise ValueError('registered MT-only endpoint bank requires supervision version0')
         self.bank={t:read_json(self.root/'teachers'/f'task_{t:04d}'/'E.json') for t in TASKS}
         for task in TASKS:
             bootstrap=read_json(self.root/'bootstrap'/f'task_{task:04d}'/'complete.json')
@@ -190,6 +193,8 @@ class EndpointTrainer:
                 raise ValueError('initial G needs registered nonempty MT self practice for all36')
             self.bank[task]['parents']=[dict(reference='MT300',weights=str(self.root/'initial.safetensors'),
                 histories=[bootstrap['history']])]
+        self.runtime.supervision_version=version
+        if mode=='MT_only':return  # Never inspect student parent files or G_student_bank.
         version_name=contract.get('student_refresh',{}).get('version')
         if version_name is not None:
             files=[self.root/'student_data'/version_name/f'task_{task:04d}'/'parent.json' for task in TASKS]
@@ -257,16 +262,29 @@ class EndpointTrainer:
 def train_endpoint(runtime,context,root,*,stop,resume=None):
     contract=read_json(Path(root)/'run_contract.json')
     if stop not in contract['updates']['G'] or stop%9:raise ValueError('registered full36 endpoint rounds required')
+    if contract.get('G_initial_resume') and resume is None:
+        raise ValueError('registered continued endpoint learning cannot start fresh')
     trainer=EndpointTrainer(runtime,context,root)
     initialize_deferred_process_group(context,rendezvous_root=Path(root)/'rendezvous')
     start=resume_checkpoint(resume,'G',runtime,trainer.optimizer,context) if resume else 0
+    if resume is not None:
+        if (runtime.G_sampler['next_update']!=start or runtime.version!=start
+                or start>stop or (contract.get('G_initial_resume') and start<contract['G_initial_resume']['update'])):
+            raise ValueError('complete endpoint resume cursor/version does not match its learning window')
+        steps=[int(s['step']) for s in trainer.optimizer.state.values() if 'step' in s]
+        write_json_atomic(Path(root)/'code'/f'G_resume_rank_{context.rank:02d}.json',dict(
+            complete=True,checkpoint=str(Path(resume).resolve()),next_update=start,psi_version=runtime.version,
+            G_sampler=runtime.G_sampler,supervision_version=runtime.supervision_version,
+            optimizer_state_count=len(trainer.optimizer.state),optimizer_step_min=min(steps),optimizer_step_max=max(steps),
+            world_size=context.world_size,restored_rng_rank=context.rank,logical_condition_batch=4,
+            G_bank_mode=contract.get('G_bank_mode','actual_parents'),fresh=False))
     trainer.refresh_bank(getattr(runtime,'supervision_version',0))
     if resume is None and context.is_main:
         torch.save(dict(schema_version=CHECKPOINT_SCHEMA,psi=runtime.generator.state_dict(),theta=runtime.actor.state_dict(),
             formal_fresh=True,coordinates=str(runtime.root/'coordinates.json'),bank_scale=str(runtime.bank_scale_path)),Path(root)/'initial_models.pt')
     for update in range(start,stop):
         trainer.step(update)
-        if update+1 in contract['updates']['G']:
+        if update+1 in contract.get('G_checkpoint_updates',contract['updates']['G']):
             checkpoint(root,'G',update+1,runtime,trainer.optimizer,context,sampler=dict(seed=20261011,next_update=update+1,
                 logical_batch=4,task_order=list(TASKS),task_weight=1/36,parent_weight='equal actual parent',H_weight='uniform within parent',
                 bank_version=contract.get('G_bank_version',0),history_cache='2GiB and at most2 decoded H per worker; includes raw features'))

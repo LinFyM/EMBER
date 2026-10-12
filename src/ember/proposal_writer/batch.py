@@ -406,13 +406,17 @@ def shared_learning_job(root,contract,stage,shared_gpus,stop,slots):
     arguments=[stage,'--stop',str(stop),'--slots',str(slots),'--frame-chunk',str(chunk)]
     if stage=='local':arguments+=['--checkpoint',str(root/'checkpoints/G'/f"update_{contract['fixed_G_update']:08d}")]
     if stage=='RL':arguments+=['--checkpoint',str(root/'checkpoints/local'/f"update_{contract['fixed_local_update']:08d}")]
-    previous=[u for u in contract['updates'][stage] if u<stop and (root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').exists()]
+    nodes=contract.get('G_checkpoint_updates',contract['updates'][stage]) if stage=='G' else contract['updates'][stage]
+    previous=[u for u in nodes if u<=stop and (root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').exists()
+        and json.loads((root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').read_text()).get('complete')]
     if stage=='RL':
         previous=[saved['next_update']
             for p in (root/'checkpoints/RL').glob('update_*/manifest.json')
             if (saved:=json.loads(p.read_text())).get('complete') and saved.get('stage')=='RL'
             and saved['next_update']<=stop]
     if previous:arguments+=['--resume',str(root/'checkpoints'/stage/f'update_{max(previous):08d}')]
+    elif stage=='G' and contract.get('G_initial_resume'):
+        arguments+=['--resume',contract['G_initial_resume']['checkpoint']]
     seconds=contract.get('stage_estimate_seconds',{}).get(f'{stage}_{stop}',0.)
     return [Job(f'{stage}_{stop:08d}',arguments,estimate_seconds=seconds,gpu_count=shared_gpus)]
 

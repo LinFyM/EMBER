@@ -112,6 +112,12 @@ E只读，不进G条件、Actor候选、信用rewards或H；9个E=MT仍引用MT�
 
 ## 6. 最近似历史及本次可失败预测
 
+> 后续裁决修订（2026-10-12）：本节原216阴性后的默认机制转向由主讨论显式修正。
+> 216每task仅24次、真实loss与meta信用仍持续变化，不构成充分学习架构裁决；原阴性与历史反证保留。
+> 仅授权同v7完整CP216→864的有限时长检验；若864仍公共拟合且无控制净增，停止再延长此组合。
+> 完整理由/分支见[学习时长决定](proposal_endpoint_learning_horizon_20261012.md)及唯一active设计§13。
+
+
 已完整复读`3a6f801:docs/action_forecast_writer_video_expert_manifold_design.md`§24–29，
 以及findings§63和原rethink§9.5–9.9。直接专家因子回归不是未试过的新想法：
 旧raw-MSE+cos/log-scale在rank16/source起点，地址修复后48→75/400，仍向公共方向收缩；

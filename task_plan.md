@@ -1,3 +1,23 @@
+## 2026-10-12 当前授权：同v7完整G216→864有限学习时长检验
+
+main已完整消费原216，显式修正“216阴性后默认改机制”的过早裁决。原341/MT340和公共方向阴性保持；
+24次/task且loss/meta信用仍变化，不称充分学习后的架构失败。唯一active仍为docs/designs/video_guided_proposal_writer_20261010.md §13；
+完整决定见docs/analyses/proposal_endpoint_learning_horizon_20261012.md，跨轮判断findings§439。
+
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16；
+原216 ROOT/contract/原件不改。完整48fa/v7 CP216继续至总864，新增648更新/2592条件、每task累计96；
+相同模型/optimizer/sampler/rank RNG/原MT parent/真实MT-H/固定E/P0/S_G/loss/logical B4，bank version0。
+实际refresh_bank的MT_only隔离已实现，阻断旧学生/联合bank；432/648仅恢复保存，唯一新科学读出864。
+864一次36生成/实践+同query16新G576，兼容MT/G216/E原行引用，预计612新episode；72/504分列。
+到此有限批停止，无自动Actor/warm/RL/held400/Teacher/controls/probe/>864；若仍公共拟合无控制增益，停止继续延长此组合。
+
+55项针对性检查已通过（14.28s）；当前工程接续已完成，尚待集成push/冻结与正式现场启动，不声称新864结果。
+现场两完全空闲gpu01:0/6符合原world2最长视频profile；拟读出加低占用gpu01:2，启动前再准入。
+strg01 data1现场used1464581980/softquota2147483648KiB，新增峰值16GiB足够；不复制大资产。
+原实测外推新增训练3.34h+读出约.6–1.1h，整批暂2.5–5.5h，工程20–40min；预测仍须实际启动修订。
+实验独占canonical/Git/工程/运行恢复/分支生命周期，main科学接收01a12bb0；无工程ACK/Owner逐项许可停点。
+实际启动实质身份/ETA一次回报；此后仅一个CPU整批owner在真实完成/异常可靠接续，无心跳、自Queue、子阶段投递或第二等待者。
+
 ## 2026-10-12 当前状态：确定端点有限批消费完成，后继科学由主讨论接续
 
 最终目标仍为MT基底完整Writer明显超过强MT并解释视频/真实实践怎样进入固定LoRA能力。

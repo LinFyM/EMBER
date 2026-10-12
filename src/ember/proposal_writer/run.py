@@ -45,10 +45,40 @@ def save_state(path, state):
     save_file({k: v.detach().cpu().contiguous() for k, v in state.items()}, str(path))
 
 
+def endpoint_learning_registration(args, previous, old):
+    """Separate the registered learning exit from recovery saves and initialization."""
+    resume=getattr(args,'resume',None)
+    stop=216 if resume is None else 864
+    registration=dict(updates=dict(G=[stop]),fixed_G_update=stop,
+        G_checkpoint_updates=[stop],G_bank_mode='MT_only',G_bank_version=0,
+        shared_initialization='fresh seed7 G/meta/Actor and all optimizers; no previous shared weights',
+        stage_estimate_seconds={f'G_{stop}':5760.},
+        bounded_stop=f'G{stop} then all36 deterministic first students and paired MT/previousG/newG/E query16; no local/RL/held400')
+    if resume is not None:
+        from .contract import CHECKPOINT_SCHEMA
+        resume=Path(resume).resolve()
+        expected=(previous/'checkpoints/G/update_00000216').resolve()
+        manifest=read_json(resume/'manifest.json')
+        if (getattr(args,'stop',None)!=864 or resume!=expected or old['fixed_G_update']!=216
+                or manifest.get('schema_version')!=CHECKPOINT_SCHEMA or manifest.get('stage')!='G'
+                or manifest.get('next_update')!=216 or not manifest.get('complete')
+                or not manifest.get('full_optimizer_rng_sampler') or not (resume/'state.pt').is_file()):
+            raise ValueError('learning horizon requires the complete original v7 G216 and registered exit864')
+        registration.update(G_checkpoint_updates=[432,648,864],
+            shared_initialization='continue complete v7 G216 psi/theta/optimizer/sampler/rank RNG; supervision version0',
+            G_initial_resume=dict(checkpoint=str(resume),update=216,source_root=str(previous),
+                source_code=old['git'],topology=manifest['topology'],supervision_version=0,
+                recovery_only_updates=[432,648],scientific_exit=864),
+            stage_estimate_seconds={'G_864':4008.548594*3},
+            architecture_change='none; same v7 deterministic endpoint graph; learning duration only')
+    return registration
+
+
 def prepare(args):
-    """Register this bounded fresh Writer run against the immutable existing bank."""
-    if args.reuse_root is None:raise ValueError('fresh endpoint requires the registered previous E/MT/H and query16 root')
+    """Register one bounded Writer exit against the immutable existing bank."""
+    if args.reuse_root is None:raise ValueError('endpoint requires the registered previous E/MT/H and query16 root')
     root=args.root;previous=args.reuse_root.resolve();old=read_json(previous/'run_contract.json')
+    learning=endpoint_learning_registration(args,previous,old);stop=learning['fixed_G_update']
     if root.resolve()==previous or tuple(old['training_tasks'])!=TASKS:
         raise ValueError('fresh output root and exact audited all36 scope required')
     if (old['teacher']['selection_per_node'],old['teacher']['report_per_arm'])!=(16,16):
@@ -103,8 +133,8 @@ def prepare(args):
         reused_bank=dict(E='same selected teacher weights',S_G='same task-equal fixed scale',
             H='same actual MT bootstrap; no new teacher trajectories',MT='same frozen merged base and task initial'),
         task_initial=str(root/'initial.safetensors'),coordinates=str(root/'coordinates.json'),
-        bank_scale=str(root/'bank_scale.json'),updates=dict(G=[216]),fixed_G_update=216,
-        student_refresh=dict(version='G216_deterministic_endpoint_first_students',G_update=216,task_count=36,
+        bank_scale=str(root/'bank_scale.json'),updates=dict(G=[stop]),fixed_G_update=stop,
+        student_refresh=dict(version=f'G{stop}_deterministic_endpoint_first_students',G_update=stop,task_count=36,
             valid_proposal_rule='one deterministic full endpoint; invalid is failure; no success resampling',
             MT_bootstrap_reference_reused=True,query_states_per_parameter=16,readonly_E_query=True,
             readonly_previous_G_query=True,condition_mapping=condition_mapping,
@@ -131,6 +161,7 @@ def prepare(args):
         query_independent_of_teacher_selection=False,query_teacher_selection_overlap_per_task=2,
         exact_resume='only matching deterministic-endpoint schema complete checkpoints; retain RNG/topology',
         git=git_state(),information_wall='no held offline labels, no per-H Q, no rec/keep; query never in H')
+    contract.update(learning)
     path=root/'run_contract.json'
     if path.exists() and read_json(path) != contract:
         raise ValueError('new run contract changed; append explicit revision rather than overwrite')

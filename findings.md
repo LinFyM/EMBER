@@ -11492,3 +11492,16 @@ E=MT的task13仍有RMS .172414编辑；非零task17 MSE1.703362→1.644773，但
 一次参数算术原件ROOT/analysis/endpoint_arithmetic保留未重跑，原始formal结果未修改，完整v7恢复CP/初始模型/参数/H及冻结读取树保留。
 有限批按原合同停止，未自动warm/RL/held/Teacher/controls/probe；本次整批一次交01a12bb0主讨论自主科学接续。
 详见docs/analyses/proposal_deterministic_endpoint_query16_20261012.md；下一实际科学合同尚未登记。
+
+## 439. 216早期阴性不能未经曲线校准当作充分学习失败（2026-10-12）
+
+main直接读两rank24轮metrics与真实算子后修正端点决定：首/末全36块loss .999674/.962570，
+每task仅24次、双meta信用主要后期增大；还没有充分收敛证据。原341对MT340、公共能量97.677%、
+条件MSE增益.001424、E-only15/134与Spatial/Goal负效应全部保留，不能改称正例或唯一根因。
+零head初期只有末层信用，共同特征/标签外积可先主导，Reader/meta随后才经W_out转置信用打开；
+该实际算子解释支持一次有界时长检验，不保证后续条件语义学成，也不抹除旧因子回归公共方向反证。
+
+新唯一变量为同v7完整CP216→864，累计96次/task；原模型/optimizer/RNG/MT-only bank0/真实MT-H/loss不变。
+432/648只完整恢复，不读出/选点，864同36/576面板对MT/G216/E原行；无自动warm/RL/held/Teacher/probe。
+864若仍公共拟合且无控制净增，停止再延长当前全坐标回归组合，不以继续降loss或小扫保护假设。
+详细推导与负证据对照见docs/analyses/proposal_endpoint_learning_horizon_20261012.md；执行合同唯一active§13。

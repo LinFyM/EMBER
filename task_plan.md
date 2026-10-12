@@ -7,6 +7,8 @@
 新读出冻结eac6ebf4/v9和62e615c9/v8只修CUDA未用缓存释放，不改模型/输入/目标/schema/逐行RNG；group2→4/slots16/chunk8实际执行，收益待测。
 新owner22:28:35/PID2084323真实启动，gpu01项目6/cap6/node6；原CPU仅保留G实际receipt writer，旧回报按handoff判重。
 早期已于22:34:58全576完成，G432337对MT340，R311/G26/L29/net−3；CPU核原件并优先可靠交main，当前尚未通过G阶段。
+main直接读原件后保持原两864匹配训练/完整读出，不因半程−3中断或loss延长；若两臂仍弱，执行Reader+全坐标共同E入口/宽深补丁停止线并自主重论证后继。
+本次main在线BA窗口/零编辑E正反例/动作链解释只串行补现有分析§13/findings447，不新probe或重算；commit随原整批交付，无独立回执。
 恢复时早期预计22:38–23:10保留为历史；整批暂02:15–04:00。原预测/失败费用保留，物理原件analysis/execution_efficiency_20261012_2215和新coordinator。
 不因局部故障停止无依赖就绪工作，不用slots/utilization声称充分batch；早期完整结果优先可靠交main，后继仍须科学登记。
 

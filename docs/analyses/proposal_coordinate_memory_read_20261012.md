@@ -227,6 +227,22 @@ train24/384为MT169/G432166/G864168/G1296=174/E272，R145/G21/L24/net−3；supp
 
 E-only134仅传17（旧G1296 22）；MT-only19保13（旧12）；both-success321保298（旧298）；both-fail102获9（旧16）。新增26分成17条E-only和9条both-fail，同时原MT成功丢29；未出现把E的大幅能力优势稳定传给G的证据。原已有首5 native action的G432/MT RMSE .004600、G432/E .088068、MT/E .088126，仅作定位，不证明视频/H因果或闭环改善原因。
 
+main已直接读取2880条原始逻辑行，独立重汇总五臂成功集合、E-only及72/504，与上述消费一致；亦读取原始physical histogram和当前源码。随后仅消费各臂update≤432的1728条既有condition event，两臂的(update, task, demo)集合完全相同。以下为main登记的原在线pre-update BA loss，每个窗口36update/144conditions、覆盖全部36任务，MT归一均值为1；不是CP432端点重新评估，没有读取>432、额外forward或按此重新选点。
+
+| 已有更新窗口 | target-memory control | block-memory candidate |
+| --- | ---: | ---: |
+| 1–36 | .9990078252 | .9989982114 |
+| 73–108 | .9961377555 | .9959462064 |
+| 181–216 | .9927474301 | .9921220278 |
+| 289–324 | .9880925465 | .9863297621 |
+| 397–432 | .9840556949 | .9806529301 |
+
+候选末窗只比控制低.003402765，即MT归一尺度约0.34个百分点；候选相对MT基线仍仅低约1.93%。这不能称BA目标已经充分学好而只差后段选择，也不能由微小在线loss优势证明block入口已有控制收益。数值来自主讨论对已有记录的消费，实验侧未重做这项算术。
+
+main同时核原teachers/task_0013/E.json和task_0020/E.json：两者reference=MT300、selected_update=0，weights指initial。同576中task13 MT/E7→G9（+2），task20 MT/E8→G4（−4）。这些正反例都不是恢复E新增能力，说明小幅输出扰动会混合产生局部涨跌；不能把所有G gain都称教师能力迁移，也不能由此断定纯随机或视频没有作用。真正E-only134只传17而丢原MT29，主要缺口仍是有用操作增益未稳定传到固定策略。
+
+已有第一replan前5动作RMSE G/MT .00460045、G/E .08806758、MT/E .08812584，支持初始动作总体仍近MT、未实质更近E；不表示全轨迹行为相同，也不构成video/H因果证明。实际链为L/V/H→逐block MHA→A/B→部署BA→冻结MT基底原生动作，当前梯度监督是BA权重距离，没有动作功能或闭环梯度。细坐标直接读取放宽表示路径，但不会自动保证BA拟合或行为传递；不能将半程阴性唯一归因某模块、学习不足或后段选择。
+
 全部任务原件，不隐去task20−4、task5−3、task0/25−2；task1+3、task13+2也保留：
 
 | task | MT | G432 | 旧G864 | 旧G1296 | E | R/G/L | 净 |
@@ -271,5 +287,7 @@ E-only134仅传17（旧G1296 22）；MT-only19保13（旧12）；both-success321
 此次早期读出新增576个完成G query/136249步，0G-practice/共享更新/参照episode。六attempt一失败，readout allocation 2.904308725GPUh包含失败.330519542，恢复32query/4362步和无领取任务的worker启动开销均计入。失败未完成环境步未知而非0，不能把136249写成全部实际交互步；CP432借用原在途864训练资产，不重复收费或把尚未退出训练费用写成已结算。首次实际query worker启动21:35:38.983至最后退出22:34:58.051，墙钟约59分19秒；失败范围/全局停派造成的空档保留，不用新成功回执改写旧失败。
 
 半程完整读出尚未取得G从MT一次修订的净增益，没有通过当前先行阶段。它降低“将条件入口移到block即可早期显著传递E能力”的支持度，但不单独证明充分学习后的结构失败：曝光是每task48而非最终96，旧参照学习年龄与目标历史不同，未补control432。两臂864才是已登记fresh等曝光结构比较，仍由同一owner继续；不自动停止原训练、不挑最高CP、不借完整Writer/held掩盖这一阴性。完整结果优先可靠交main，后继由main科学消费裁决。
+
+main直接消费后的阶段裁决是保持原两臂864匹配训练及完整读出，不因−3提前中断，也不因loss下降延长。若两臂864都弱，停止当前Reader+全坐标共同E监督的入口/宽深补丁投入，由main重新论证后继；不是只关闭某个版本名。当前没有后段、held或>864授权，不新增探针或CPU全量几何计算。新scoped dispatcher仍为唯一整批owner，组4收益随已登记原读出统计结算，不延迟科学交付；此记录补充随原两864整批结果带commit，不另发科研或工程回执。
 
 稳定原件：ROOT/early_candidate432_query16/analysis/early_completion_20261012/{consume_early576.py,statistics.json,paired_raw_rows.jsonl}，raw共2880逻辑行/五臂各576，逐行保留真实源；EARLY/analysis/first_student_query16_{summary.json,rows.jsonl}为实际原生消费四臂2304逻辑行。ROOT/coordinator/scoped_readout_recovery_02/early_complete.json是实际完整事件；统计不会覆盖原失败或未来两864输出。

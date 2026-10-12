@@ -1,6 +1,10 @@
 ## 2026-10-12 最新阶段纠正与有界读出效率恢复
 
 Owner明确先通过G从MT一次修订的完整闭环证据与合理保持，再训练/评估完整Writer；11:00不要求塞入完整Writer/400，当前无新后段或held授权。
+main已直接消费候选432五臂原2880行并独立确认统计，阶段裁决是原两臂864匹配比较及完整读出继续；不因−3中断、不因loss下降延长。
+main读已有≤432在线全36窗口，末窗control .9840556949/candidate .9806529301，差.003402765不足以称BA充分拟合或结构控制收益。
+task13/20的E均为MT300初始权重，局部+2/−4不都代表教师能力迁移；首5动作近MT仅定位初始行为，非全轨迹/video-H因果。
+新增原件解释并入现有coordinate分析§13/findings447，实验侧不重算/新probe；两864都弱时执行Reader+全坐标共同E入口/宽深补丁停止线，由main重论证后继。
 22:15有界核查已完成原物理统计快照：12个group/384完成G query，实际batch均值8.599、满16调用10.73%，native前缀/flow占resident时间54.47%、环境等待5.22%。
 Torch allocated峰值11.50GiB/reserved20.76GiB，worker03上一完整group记录设备free0，随后21:55:36 EGL切换失败；不能由此唯一断言OOM/GPU故障。
 旧dispatcher把worker03失败扩大成全局停派，worker04/02退出后空卡未及时接任务；这是实验session的调度错误，Owner要求避免重犯，失败/空档费用完整保留。
@@ -18,6 +22,7 @@ target24净−3、support12净0；72选点重合净+4、504其余净−7，E-onl
 新增576query/0practice/0共享更新，已完成步136249，读出2.904308725GPUh包含失败.330519542；失败未完成步未知，训练来源仍在途不重复计费。
 CPU实际冻结消费者15.575s核原配对、CP432/schema、保存权重/RNG与全部六attempt，0新forward/episode。原件early_candidate432_query16/analysis/early_completion_20261012，现有分析§13/findings§447。
 稳定物理原件analysis/execution_efficiency_20261012_2215、coordinator/scoped_readout_recovery_02；早期完整结果与本次效率工作合并可靠交main，原两864由同一owner继续。
+早期/效率合并投递已processing_verified，交付commit076e74c6（当时main与origin一致）；early_result_consumed.json已判重。main本次追加科学解释只做记录，commit随两864整批交付，不单独唤醒。
 恢复时早期预计22:38–23:10保留为历史，实际22:34:58完成；整批暂02:15–04:00沿原candidate关键路径保留不确定性，不承诺提速。
 原早期22:35–23:35及两臂原估计保留历史。早期576与两864完整结果分别一次可靠交main；旧两个CPU回报按handoff判重，不恢复旧队列，无额外等待者/心跳/自动后段。
 

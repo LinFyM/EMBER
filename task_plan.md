@@ -1,3 +1,12 @@
+## 2026-10-13 05:16 实际恢复：完整RL1原范围接RL9与validation400
+
+窄修复6f6a8aa6已集成push，从clean detached新冻结树full_writer_collective_recovery_20261013_6f6a8aa6执行，原1bcb树/失败原件不热改。唯一新owner full_writer24849_collective_recovery_02/PID4112034于05:16:15实际启动，四rank RL恢复job于05:16:31启动，明确--resume完整RL1/F31149、bank1及四rank RNG，初始assembled90身份仍是原kernel来源；不是从头训练或重新warm。
+actual gpu01:0–3，总四卡/普通cap6；本阶段只采当前核逻辑B4，未来批依赖θ/bank/F900更新，无已就绪独立A/B，未为填卡预采未来。RL9后再次live选six/eight可用总量/node6并立即调度就绪strict400 persistent动态评估，不能把joint world4变整批上限。
+每launch双节点现场准入；strg01 data1 used1480429012KiB/soft2147483648KiB、shared81TiB，本root2.34GiB/96GiB合同峰值仍可容纳。source/meta/teacher/cache/旧H均引用，新增全data1。
+已完成A5400/local90/组装/RL1及40实践/240有效G query原样保留，第二批仅补task38缺失16 query。原exit1/3.476801314GPUh与旧启动/ETA不改写；新owner实际续行后整批费用含全部失败，未把未完成RL9/400写成功。
+按真实首共同周期571.8秒、当前较长任务四个不同G/合法query时间及旧完整400约2.08h（STOP分布未知）修订暂估剩余3.5–7h，约08:45–12:15；最长共同/Val路径及共驻可能超出，11点仍软目标、不缩水科学口径。CPU运输复现/修复和完整RL1状态读取已通过，真实后续共同更新/400仍由实际消费者完成后确认。
+一个实际恢复owner直接等待剩余joint→RL9→400并只在整批结束/真实异常接续实验session；旧完成事件已consumed判重，无心跳/第二等待者/额外科学臂/Test/自动后继。
+
 ## 2026-10-13 05:05 完整窗口工程退出，原范围从RL1恢复准备中
 
 原owner full_writer24849_RL9_validation400_01实际exit1；A5400至F30249、local90与完整组装均exit0，共同RL1/F31149完整checkpoint已保存，RL9/validation400尚未完成或启动。此次退出不是完整方法科学结论，原exit1/失败与费用保留。

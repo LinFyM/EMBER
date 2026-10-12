@@ -749,3 +749,5 @@ CPU实际检查：完整496 G/212 θ状态与166 F Adam24849/独立baseline及op
 原科学计算完全保持，仅在collect_batch返回、renderer正常释放后，按本torchrun run-id/port/update隔离CPU FileStore就绪键；等待全部rank完成合法path/query后进入原on_policy_update，等待最多30分钟。不同环境耗时不再占首NCCL同步默认窗口；真实θ/F梯度、B4/任务权重、顺序及采样/RNG合同不变。CPU消费者已复现原故障并通过实际等待函数+原synchronize_gradients，0GPU/模型forward/episode。
 从完整RL1恢复同四rank，保留F/θ/baseline各自optimizer/G及θsampler/bank1/四rank RNG；按原kernel恢复第二批已保存path/真实H、只读有效query行，只补其实际缺项，禁止重复40实践或240有效G query。A5400/local90/组装不重做，无中间科学读出或更换终点。新恢复owner替代已经退出的旧owner，所有失败/成功费用统一结算；新代码须独占隔离检查、main集成push、clean detached执行，不热改1bcb冻结树。
 完整RL9/F38349→唯一strict validation400自动接续授权仍有效，Test及其它后继关闭；旧08:45–12:15总预测保留历史，恢复后的剩余时间据真实完整RL1 571.8秒和最长合法query修订，11点不是硬截止。详细工程证据仅ROOT/analysis/collective_timeout_recovery_20261013，不新增active design。
+
+§20.7实际恢复登记：6f6a8aa6已push、clean detached执行；05:16:15唯一新owner/PID4112034，05:16:31四rank实际RLjob。live gpu01:0–3/cap6/node6，完整RL1同world4承接，仅消费原当前核缺行。F31149/θ1/bank1→最终F38349/θRL9→400范围保持；原失败/有效产物/费用/启动预测不覆盖。完整评测到来后重新live选所有有益可用slot，不以world4收紧整批并发。按首周期571.8秒和最长query实测，暂估恢复后剩余3.5–7h，旧11点软目标保持；已完成CPU验证不冒称剩余真实更新或400完成。

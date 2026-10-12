@@ -80,7 +80,7 @@ def prepare(args):
     root=args.root;previous=args.reuse_root.resolve();old=read_json(previous/'run_contract.json')
     learning=endpoint_learning_registration(args,previous,old);stop=learning['fixed_G_update']
     if root.resolve()==previous or tuple(old['training_tasks'])!=TASKS:
-        raise ValueError('fresh output root and exact audited all36 scope required')
+        raise ValueError('new output root and exact audited all36 scope required')
     if (old['teacher']['selection_per_node'],old['teacher']['report_per_arm'])!=(16,16):
         raise ValueError('previous teacher selection and independent report must be16/16')
     root.mkdir(parents=True,exist_ok=True)
@@ -120,7 +120,7 @@ def prepare(args):
     coordinates={**read_json(previous/'coordinates.json'),'schema_version':SCHEMA,
         'initial':str(root/'initial.safetensors'),'reused_from':str(previous/'coordinates.json'),'S_G_not_yet_formed':False}
     if (root/'coordinates.json').exists() and read_json(root/'coordinates.json')!=coordinates:
-        raise ValueError('fresh coordinates changed')
+        raise ValueError('new coordinates changed')
     write_json_atomic(root/'coordinates.json',coordinates)
     contract = dict(schema_version=SCHEMA, stage='G-and-student-readout',
         design='docs/designs/video_guided_proposal_writer_20261010.md',
@@ -162,6 +162,8 @@ def prepare(args):
         exact_resume='only matching deterministic-endpoint schema complete checkpoints; retain RNG/topology',
         git=git_state(),information_wall='no held offline labels, no per-H Q, no rec/keep; query never in H')
     contract.update(learning)
+    if contract.get('G_initial_resume'):
+        contract['generator_parameterization']['initial_output']='restore learned G216 output; zero Linear was original update0 initialization'
     path=root/'run_contract.json'
     if path.exists() and read_json(path) != contract:
         raise ValueError('new run contract changed; append explicit revision rather than overwrite')

@@ -1,22 +1,33 @@
-## 2026-10-12 当前授权：同v7完整G216→864有限学习时长检验
+## 2026-10-12 同v7 G216→864有限学习批已实际启动
 
-main已完整消费原216，显式修正“216阴性后默认改机制”的过早裁决。原341/MT340和公共方向阴性保持；
-24次/task且loss/meta信用仍变化，不称充分学习后的架构失败。唯一active仍为docs/designs/video_guided_proposal_writer_20261010.md §13；
-完整决定见docs/analyses/proposal_endpoint_learning_horizon_20261012.md，跨轮判断findings§439。
+完整科学决定已推送，唯一active为docs/designs/video_guided_proposal_writer_20261010.md §13；
+详细推导/早期出口修正见docs/analyses/proposal_endpoint_learning_horizon_20261012.md、findings§439。
+保留原216的公共方向与341/MT340阴性；当前新变量仅学习时长，不声称864已有结果。
 
-新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16；
-原216 ROOT/contract/原件不改。完整48fa/v7 CP216继续至总864，新增648更新/2592条件、每task累计96；
-相同模型/optimizer/sampler/rank RNG/原MT parent/真实MT-H/固定E/P0/S_G/loss/logical B4，bank version0。
-实际refresh_bank的MT_only隔离已实现，阻断旧学生/联合bank；432/648仅恢复保存，唯一新科学读出864。
-864一次36生成/实践+同query16新G576，兼容MT/G216/E原行引用，预计612新episode；72/504分列。
-到此有限批停止，无自动Actor/warm/RL/held400/Teacher/controls/probe/>864；若仍公共拟合无控制增益，停止继续延长此组合。
+计算冻结身份b1a21f70cdca1c75367dd616c2e7cd792b372b5f，clean pushed detached工作树为
+/data1/user/ymdai/ember_worktrees/proposal_endpoint_learning864_20261012_b1a21f70。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16。
+唯一coordinator/deterministic_G864_students_query16_01于UTC2026-10-12T00:16:31.288819+00:00真实启动，CPU2054625，
+tmux ember-endpoint-learning864-query16-20261012；G进程UTC2026-10-12T00:16:40.272921+00:00启动，37-job图只含继续G864与36首学生。
+实际命令明确--resume原48fa/v7完整CP216，未复制旧模型或教师；同拓扑world2，gpu01:0/6，物理chunk16/16、logical B4。
+新增648更新/2592条件，累计96/task；G_bank_mode MT_only/version0实际消费者隔离旧学生/联合bank。
+432/648只完整恢复保存，864唯一新科学读出；同36实践+576 query16，MT/G216/E兼容只读引用，预计612新episodes。
 
-55项针对性检查已通过（14.28s）；当前工程接续已完成，尚待集成push/冻结与正式现场启动，不声称新864结果。
-现场两完全空闲gpu01:0/6符合原world2最长视频profile；拟读出加低占用gpu01:2，启动前再准入。
-strg01 data1现场used1464581980/softquota2147483648KiB，新增峰值16GiB足够；不复制大资产。
-原实测外推新增训练3.34h+读出约.6–1.1h，整批暂2.5–5.5h，工程20–40min；预测仍须实际启动修订。
-实验独占canonical/Git/工程/运行恢复/分支生命周期，main科学接收01a12bb0；无工程ACK/Owner逐项许可停点。
-实际启动实质身份/ETA一次回报；此后仅一个CPU整批owner在真实完成/异常可靠接续，无心跳、自Queue、子阶段投递或第二等待者。
+55项检查通过；CPU真实原件准入确认完整CP216的485 optimizer step216/RNG2/cursor216/bank0，
+以及MT/G216/E各576兼容行、全36仅原MT parent/H；原件该coordinator/originals_admission.json。
+最终计算的模型/损失/采样/有效batch均未变；最长视频旧chunk16/32的实测可复用，没有新增profile更新。
+读出只在G实际退出事件按现场启用gpu01:2：原观察DA3服务402MiB、util0，须仍同pid/owner、util≤5、free≥36GiB；
+不满足则用两卡，现场每job仍双节点准入。训练启动项目2卡/常规cap6，读出最多3，不把world2作为整批上限。
+现场strg01 data1 used1464884268/softquota2147483648KiB、新增峰值16GiB；共享81TiB可用；
+实测canonical375GiB/原216ROOT1.9GiB，大资产只读复用，所有新cache/临时写入含TMPDIR在新ROOT/data1。
+训练新增3.34h、读出约.6–1.1h，整批约4–4.5h，宽预期2.5–5.5h；依据原两rank训练4008.55s和读出3436.47s外推。
+
+分支codex/endpoint-learning864和干净开发worktree已在确认集成push/无运行依赖后退休，
+receipt该coordinator/development_tree_retirement.json；原216完整恢复点/正式来源/原件与新冻结树保留。
+本批止于864/首学生/query16，不自动Actor/warm/RL/held400/Teacher/controls/probe/>864；
+若终点仍公共拟合无控制增益，停止继续延长此组合。实验持canonical/Git，main接收01a12bb0。
+启动身份/ETA只投递一次；之后唯一CPU整批owner直接等退出并一条可靠完成/异常接续本实验聊天，
+无心跳、自Queue、子阶段投递或第二等待者。正式恢复消费者回执由该coordinator/startup_verified.json保存。
 
 ## 2026-10-12 确定端点/query16整批退出0，消费完成、交付主讨论
 

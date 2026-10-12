@@ -139,3 +139,10 @@ G_checkpoint_updates为432/648/864。新root的G_bank_mode=MT_only在refresh_ban
 核实际version/cursor并保存每rank恢复消费者收据。原模型、loss、标签、学习率与logical B4没有改变。
 55项针对性检查通过（14.28秒），含已有学生文件无法污染MT-only、恢复点与资格点分离、v7继续身份。
 实际硬件启动仍须clean pushed detached与现场准入；正式身份、资源和启动预测以progress及ROOT原收据为准。
+
+实际启动：b1a21f70 clean pushed detached、原完整v7 CP216继续、同world2/gpu01:0/6/chunk16；
+单一37-job有限依赖图。真实原件准入确认optimizer485/step216/RNG2/bank0及三套历史576兼容。
+G退出后一次现场判定第三读出卡；所有job仍逐次live双节点GPU/独立quota准入。
+预测新增G3.34h+读出.6–1.1h；原root/CP216与新冻结树保留，开发分支/worktree已安全退休。
+准确命令、临时缓存路径、时间与回执存于新ROOT/coordinator/deterministic_G864_students_query16_01；
+当前没有864性能结果，启动信息及后续消费看progress。

@@ -132,19 +132,13 @@ def resume_checkpoint(path, stage, runtime, optimizer, context, *, baseline=None
     path=Path(path).resolve();manifest=read_json(path/'manifest.json')
     state = torch.load(path / 'state.pt', map_location='cpu', weights_only=False)
     contract=read_json(runtime.root/'run_contract.json')
-    migration=contract.get('objective_migration')
-    importing=(migration is not None and path==Path(migration['checkpoint']).resolve())
-    schema=migration['source_schema'] if importing else CHECKPOINT_SCHEMA
-    objective=migration['source_objective'] if importing else G_OBJECTIVE
-    if (state['schema_version']!=schema or state.get('G_objective')!=objective or state['stage']!=stage
-            or manifest.get('schema_version')!=schema or not manifest.get('complete')
+    if contract.get('objective_migration'):
+        raise ValueError('retired graph/objective import cannot initialize the block-memory writer')
+    if (state['schema_version']!=CHECKPOINT_SCHEMA or state.get('G_objective')!=G_OBJECTIVE or state['stage']!=stage
+            or manifest.get('schema_version')!=CHECKPOINT_SCHEMA or not manifest.get('complete')
             or not manifest.get('full_optimizer_rng_sampler') or manifest['next_update']!=state['next_update']
             or state['topology']['world_size'] != context.world_size):
         raise ValueError('resume stage/topology changed; explicit migration needs a recorded new topology contract')
-    if importing and (stage!='G' or state['next_update']!=864 or state['supervision_version']!=0
-            or state['psi_version']!=864 or state['G_sampler']['next_update']!=864
-            or state['sampler'].get('bank_version')!=0):
-        raise ValueError('objective migration requires the complete original MT-only v7 G864')
     if (state['topology']['task_order']!=list(TASKS) or state['topology']['logical_condition_batch']!=4
             or len(state['rank_rng'])!=context.world_size
             or state['parameter_names']['psi']!=list(dict(runtime.generator.named_parameters()))
@@ -154,7 +148,7 @@ def resume_checkpoint(path, stage, runtime, optimizer, context, *, baseline=None
     optimizer.load_state_dict(state['optimizer']); runtime.version = state['psi_version']
     runtime.generator_optimizer_state=state['generator_optimizer'];runtime.G_sampler=state['G_sampler']
     runtime.supervision_version=state['supervision_version']
-    runtime.objective_migration=migration if importing else state.get('objective_migration')
+    runtime.objective_migration=state.get('objective_migration')
     if generator_optimizer is not None:generator_optimizer.load_state_dict(state['generator_optimizer'])
     restore_rng(state['rank_rng'][context.rank], context)
     if baseline is not None:

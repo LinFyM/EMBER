@@ -220,27 +220,19 @@ def test_operator_jobs_resume1080_but_only_qualify1296(tmp_path):
     assert all(j.arguments[j.arguments.index('--checkpoint')+1].endswith('update_00001296') for j in jobs)
 
 
-def test_operator_registration_requires_original_v7_864_and_new_objective(tmp_path):
-    from ember.pi05_source_checkpoint import write_json_atomic
-    from ember.proposal_writer.contract import CHECKPOINT_SCHEMA,G_OBJECTIVE
-    from ember.proposal_writer.run import endpoint_learning_registration
-    checkpoint=tmp_path/'checkpoints/G/update_00000864';checkpoint.mkdir(parents=True)
-    (checkpoint/'state.pt').touch()
-    manifest=dict(schema_version='ember_full36_deterministic_endpoint_writer_v7',stage='G',next_update=864,
-        complete=True,full_optimizer_rng_sampler=True,topology=dict(world_size=2,logical_condition_batch=4))
-    write_json_atomic(checkpoint/'manifest.json',manifest)
-    old=dict(fixed_G_update=864,git={'commit':'original864'})
-    args=SimpleNamespace(resume=checkpoint,stop=1296)
-    record=endpoint_learning_registration(args,tmp_path,old)
-    assert record['updates']=={'G':[1296]} and record['G_checkpoint_updates']==[1080,1296]
-    assert record['G_bank_mode']=='MT_only' and 'continue' in record['shared_initialization']
-    assert record['objective_migration']['destination_schema']==CHECKPOINT_SCHEMA
-    assert record['objective_migration']['destination_objective']==G_OBJECTIVE
-    assert not record['objective_migration']['exact_resume']
-    args.stop=1080
-    with pytest.raises(ValueError,match='exit1296'):endpoint_learning_registration(args,tmp_path,old)
-    args.stop=1296;manifest['schema_version']='old_v6';write_json_atomic(checkpoint/'manifest.json',manifest)
-    with pytest.raises(ValueError,match='complete original v7'):endpoint_learning_registration(args,tmp_path,old)
+def test_block_memory_registration_is_fresh_with_one_864_exit():
+    from ember.proposal_writer.contract import CHECKPOINT_SCHEMA
+    from ember.proposal_writer.run import fresh_learning_registration
+    args=SimpleNamespace(resume=None,stop=864)
+    record=fresh_learning_registration(args)
+    assert record['updates']=={'G':[864]} and record['G_checkpoint_updates']==[432,864]
+    assert record['G_bank_mode']=='MT_only' and record['G_bank_version']==0
+    assert record['checkpoint_schema']==CHECKPOINT_SCHEMA and 'fresh' in record['shared_initialization']
+    assert not record.get('G_initial_resume') and not record.get('objective_migration')
+    args.resume='/retired/v8'
+    with pytest.raises(ValueError,match='fresh state'):fresh_learning_registration(args)
+    args.resume=None;args.stop=432
+    with pytest.raises(ValueError,match='unique exit864'):fresh_learning_registration(args)
 
 
 def test_operator_gram_matches_dense_value_and_full_factor_gradients():

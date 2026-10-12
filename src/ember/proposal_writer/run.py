@@ -36,8 +36,10 @@ def frame_chunk_for_rank(default, context):
 
 
 def create_runtime(args, context, environment):
+    physical=read_json(args.root/'run_contract.json').get('physical_execution',{})
     return Runtime(context.device,asset_root=args.asset_root,root=args.root,
         frame_chunk=frame_chunk_for_rank(args.frame_chunk,context),
+        response_microbatch=physical.get('response_microbatch',16),
         task_ids=tuple(t['global_task_id'] for t in environment['tasks']),task_role=environment['role'])
 
 
@@ -298,7 +300,8 @@ def main():
     consumer=args.worker_id or (str(args.stop) if shared else f'task{args.task}')
     write_json_atomic(args.root/'code'/f'{args.command}_{consumer}_{identity["commit"]}_rank{context.local_rank:02d}_execution.json',
         dict(frame_chunk=runtime.frame_chunk,local_rank=context.local_rank,world_size=context.world_size,
-            physical_gpu=args.physical_gpu,logical_condition_batch=4 if shared else None))
+            response_microbatch=runtime.response_microbatch,physical_gpu=args.physical_gpu,
+            logical_condition_batch=4 if shared else None))
     runner=None
     try:
         if args.command=='teacher':fit(args,runtime);return

@@ -1,14 +1,17 @@
-## 2026-10-12 当前授权：恢复后仅补G1296原缺失48条query
+## 2026-10-12 当前运行：恢复后仅补G1296原缺失48条query
 
 Owner16:37 UTC+8确认gpu01恢复正常、可加速推进；main登记新有界leg，不需Owner/main工程ACK。
 只task32/34/35各原query16，读取保存唯一G1296权重，原教学/MT-H/P/初态/env/native RNG不变；不生成/重复practice/续训。
 MT/G864/E原48行只读兼容引用，其余528（含不利逾时32）保留，原partial/exit1/15:55失败不追认成功。
 新coordinator/operator_G1296_query48_recovery_01独占三项缺失读出，旧队列/guard/绝对时刻不复活；本次无新截止。
 当前已原样归档main算子空间分析、核c7e76b56冻结restore→query实际CPU消费者，48请求only-G/原保存权重和对照兼容通过。
-未改科研源码、不重跑算术；准备现场GPU/独立quota/启动。首次gpu01/strg01 SSH短超时失败，后续实际连接已成功，现场GPU重新核验。
+未改科研源码、不重跑算术。新owner于UTC08:56:31（16:56:31 UTC+8）实际启动，PID409872，tmux ember-operator1296-query48-recovery-20261012。
+冻结c7e76b566e3d50178f9e43dbdaa977bf28fd9d5b；双节点现场核验后，gpu01:0/1/2三个独立worker，slots16/frame-chunk8，项目3卡/当前cap6。
+实际三项Runtime/command准入已核，原件coordinator/operator_G1296_query48_recovery_01/{launch,allocation,startup_verified}.json。
+首次gpu01/strg01 SSH短超时失败，后续实际连接和双节点准入成功；未修改SSH配置/服务。
 data1准入used1469408168/soft2147483648KiB，新增<1GiB、shared81TiB可容纳；ROOT2.1GiB/canonical375GiB，大资产不复制。
 完整BA条件增益.02594551、公共能量44.2479%，不称纯公共坍缩；固定MT-H/共同E可学B，缺不同失败H不能作当前B弱的解释。
-详见既有算子监督分析§12/findings§444/唯一design§14。初估总25–55min，按真实启动资源/吞吐修订。
+详见既有算子监督分析§12/findings§444/唯一design§14。按实际16:56启动暂估GPU读出17:06–17:21、含CPU消费17:11–17:31；未承诺未经测量提速。
 一次真实启动/ETA及唯一整批完成交main 01a12bb0；无心跳、阶段Queue、第二等待者，后继不自动新训练或其它阶段。
 canonical工程/Git独占仍由实验持有；旧批恢复资产/冻结树/错误/计费全部保持。
 

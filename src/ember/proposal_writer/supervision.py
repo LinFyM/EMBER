@@ -342,20 +342,32 @@ def student_data_complete(destination,panel,task,*,require_E):
 
 
 class LocalExamples:
-    """All36 final warmstart uses only the same actual initial MT/G student pairs."""
+    """Final warm consumes registered actual prefixes and independent real query credit."""
     def __init__(self,root,runtime):
         self.root,self.runtime=Path(root),runtime
         contract=read_json(self.root/'run_contract.json')
         self.data_version=contract['student_refresh']['version']
-        self.saved_practice=contract['student_refresh']['readout_mode']=='saved_endpoint_practice_only'
+        mode=contract['student_refresh']['readout_mode']
+        if mode=='saved_endpoint_practice_only':
+            raise ValueError('retired saved practice data cannot become selector transfer pairs')
+        self.forced_pair=mode=='selector_fixed_pair'
         self.cache=OrderedDict();self.cache_limit_bytes=8*1024**3
         self.cache_hits=0;self.decode_seconds=0.
-        self.current={task:self.root/'student_data'/self.data_version/f'task_{task:04d}' for task in TASKS}
+        tasks=contract.get('training_tasks',list(TASKS))
+        if self.forced_pair and (len(tasks)!=72 or len(set(tasks))!=72 or contract['student_refresh'].get('readonly_E_query')):
+            raise ValueError('fixed selector pairs require exactly the registered72 non-held tasks without E credit')
+        self.current={task:self.root/'student_data'/self.data_version/f'task_{task:04d}' for task in tasks}
         registered=panels(self.root)
         for task,directory in self.current.items():
             if not student_data_complete(directory,registered[task],task,
                     require_E=contract['student_refresh'].get('readonly_E_query',False)):
-                raise ValueError('same initial student practice/query must cover all36 before final warmstart')
+                raise ValueError('actual student practice/query must cover every registered task before final warmstart')
+            if self.forced_pair:
+                parent=read_json(directory/'parent.json')
+                if (parent.get('readout_mode')!=mode or parent.get('eligible_for_G_parent_bank')
+                        or not parent.get('final_warm_only') or not parent.get('forced_practice_not_on_policy')
+                        or parent.get('query_count')!=16 or len(query_panel(registered[task],0))!=16):
+                    raise ValueError('forced MT/G pair must be warm-only with real16 credit and no G bank eligibility')
 
     def __call__(self,task,update):
         directory=self.current[task]
@@ -367,12 +379,14 @@ class LocalExamples:
         tick=time.monotonic();path=restore_compilation(directory,self.runtime)
         self.decode_seconds+=time.monotonic()-tick
         rewards=read_json(directory/'query/complete.json')['rewards']
-        if self.saved_practice:
+        if self.forced_pair:
             # These are actual completed final-use prefixes, not fabricated Actor outputs.
-            if (path.outputs or path.decisions or path.sampling_identity!='saved_endpoint_practice_only'
+            if (path.outputs or path.decisions or path.sampling_identity!='selector_fixed_pair'
                     or path.practiced!=['MT300','G_000'] or len(path.boundaries)!=1
                     or path.boundaries[0]['actual_parameter_ref']!='G_000'
-                    or path.boundaries[0]['episodes']!=2 or len(path.history.episodes)!=2):
+                    or path.boundaries[0]['episodes']!=2 or len(path.history.episodes)!=2
+                    or path.completed_rounds!=1 or path.selected!='G_000'
+                    or path.boundaries[0]['records']!=len(path.history.records)):
                 raise ValueError('final warm needs the actual forced MT/G practice pair')
             MT=[row for row in path.history.records if row['episode']==0]
             nodes=[dict(records=len(MT),episodes=1,candidates=['MT300']),
@@ -382,6 +396,6 @@ class LocalExamples:
             reward={ref:rewards[ref] for ref in node['candidates']}) for node in nodes]
         example=dict(path=path,prefixes=prefixes,source=dict(kind='initial_actual_student_pair',
             file=str(directory/'path.json'),data_version=self.data_version,additional_uniform_R5=False,
-            forced_practice_not_on_policy=self.saved_practice,credit_consumer='final expected query only'))
+            forced_practice_not_on_policy=self.forced_pair,credit_consumer='final expected query only'))
         self.cache[task]=example
         return example

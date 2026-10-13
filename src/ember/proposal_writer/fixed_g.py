@@ -14,6 +14,8 @@ from ember.pi05_eval_queue import (EvaluationTask, EvaluationShard, initialize_q
     claim_next, complete_job, fail_job, publish_json_exclusive, queue_summary)
 from .analysis import paired, billing
 from .path import begin_condition, generate_candidates, load_history, history_prefix, cpu_state
+from .endpoint_context import FrozenEndpointContexts
+from ember.writer.runtime import autocast
 
 
 def read_panel(root):
@@ -35,6 +37,26 @@ def read_panel(root):
     keys = {(r['task'], r['init_state_id']) for r in rows}
     if len(rows) != count or len(keys) != count or {r['task'] for r in rows} != set(tasks):
         raise ValueError('fixed-G rows must uniquely cover every registered task')
+    signatures = endpoint_input_identities(rows,tasks)
+    check_cardinality(arm,rows,tasks,signatures,endpoints)
+    return panel
+
+
+def check_cardinality(arm,rows,tasks,signatures,endpoints):
+    """Require complete seen query16 or held single-video-per-state coverage."""
+    if len(signatures) != endpoints:
+        raise ValueError('fixed-G unique endpoint cardinality differs')
+    per_task = [sum(r['task'] == t for r in rows) for t in tasks]
+    if len(tasks) != (36 if arm == 'seen' else 8) or set(per_task) != {16 if arm == 'seen' else 50}:
+        raise ValueError('fixed-G task/query coverage differs')
+    if arm == 'seen' and any(len({r['endpoint_key'] for r in rows if r['task'] == t}) != 1 for t in tasks):
+        raise ValueError('seen query16 requires one shared endpoint per task')
+    if arm == 'held' and any(len({r['teacher_demo'] for r in rows if r['task'] == t}) != 50 for t in tasks):
+        raise ValueError('held K1 requires fifty distinct teaching videos per task')
+
+
+def endpoint_input_identities(rows,tasks):
+    """Bind each complete MT prefix to one legal teaching and paired RNG."""
     signatures = {}
     for row in rows:
         endpoint = row['endpoint_key']
@@ -42,6 +64,7 @@ def read_panel(root):
             raise ValueError('endpoint key must be a stable safe path component')
         signature = {k: row[k] for k in ('task', 'teacher_demo', 'path_source', 'history_source',
             'prefix_records', 'prefix_episodes')}
+        signature['memory_cache'] = row.get('memory_cache')
         if signature['prefix_episodes'] != 1 or signature['prefix_records'] < 1:
             raise ValueError('fixed-G input requires one complete nonempty MT episode')
         if endpoint in signatures and signatures[endpoint] != signature:
@@ -52,16 +75,7 @@ def read_panel(root):
             env_seed=noise, policy_seed_root=noise, **{k: task[k] for k in ('suite', 'task_id', 'language')})
         if any(mt.get(k) != v for k, v in required.items()) or 'registered_scene' not in row:
             raise ValueError('MT reference and fixed-G query identity differ')
-    if len(signatures) != endpoints:
-        raise ValueError('fixed-G unique endpoint cardinality differs')
-    per_task = [sum(r['task'] == t for r in rows) for t in tasks]
-    if len(tasks) != (36 if arm == 'seen' else 8) or set(per_task) != {16 if arm == 'seen' else 50}:
-        raise ValueError('fixed-G task/query coverage differs')
-    if arm == 'seen' and any(len({r['endpoint_key'] for r in rows if r['task'] == t}) != 1 for t in tasks):
-        raise ValueError('seen query16 requires one shared endpoint per task')
-    if arm == 'held' and any(len({r['teacher_demo'] for r in rows if r['task'] == t}) != 50 for t in tasks):
-        raise ValueError('held K1 requires fifty distinct teaching videos per task')
-    return panel
+    return signatures
 
 
 def destination(root, row):
@@ -92,6 +106,28 @@ def prepare_queues(root, *, workers, shard_size=32, recover=False):
     return dict(fixed_g=str(base/'jobs.sqlite'))
 
 
+def cached_endpoint(runtime,row):
+    """The identical frozen MT condition can reuse its complete lawful m."""
+    value=torch.load(row['memory_cache'],map_location='cpu',weights_only=False)
+    identity=dict(frontend_checkpoint=str(Path(runtime.frozen_frontend_checkpoint).resolve()),
+        initial=str((runtime.root/'initial.safetensors').resolve()),
+        bank_scale=str(runtime.bank_scale_path.resolve()),
+        merged_base=str((runtime.root/'base/merged_targets.safetensors').resolve()),
+        source_model=str(Path(runtime.source['model_path']).resolve()),task=row['task'],parent='MT300',
+        parent_weights=str((runtime.root/'initial.safetensors').resolve()),
+        history=dict(path=str(Path(row['history_source']).resolve())))
+    FrozenEndpointContexts.validate(value,identity,row['teacher_demo'])
+    if value['H_records']!=row['prefix_records'] or value['H_episodes']!=1 or value['producers']!=['MT300']:
+        raise ValueError('cached fixed-G memory differs from the complete actual MT prefix')
+    first=row['MT_episode_evidence']
+    if (first['actual_parameter_ref']!='MT300' or first['replans']!=row['prefix_records']
+            or first.get('model_failure') or first.get('budget_truncated')):
+        raise ValueError('cached input must retain its complete MT producer evidence')
+    with autocast(runtime.device):
+        state=runtime.generator.generate(runtime.mt,None,None,None,memory=value['memory'].to(runtime.device))
+    return state,first
+
+
 @torch.no_grad()
 def materialize(args, runtime, panel, row):
     out = args.root/'endpoints'/row['endpoint_key']; out.mkdir(parents=True, exist_ok=True)
@@ -99,11 +135,23 @@ def materialize(args, runtime, panel, row):
     identity = {k: row[k] for k in ('endpoint_key', 'task', 'teacher_demo', 'path_source',
         'history_source', 'prefix_records', 'prefix_episodes')}
     identity.update(checkpoint=panel['checkpoint'], F_cursor=panel['F_cursor'])
+    identity['memory_cache']=row.get('memory_cache')
     with (out/'generation.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if weights.exists():
             if read_json(out/'generation.json')['input_identity'] != identity:
                 raise ValueError('saved fixed-G endpoint belongs to a different condition or kernel')
+            return weights
+        if row.get('memory_cache'):
+            if panel['arm']!='seen':raise ValueError('only the registered seen MT memories are referenced')
+            state,first=cached_endpoint(runtime,row)
+            if any(r['init_state_id']==first['init_state_id'] for r in panel['rows']
+                   if r['endpoint_key']==row['endpoint_key']):raise ValueError('cached MT practice overlaps final query')
+            temporary=weights.with_suffix('.tmp');save_file(cpu_state(state),str(temporary))
+            write_json_atomic(out/'generation.json',dict(input_identity=identity,
+                kernel_identity=runtime.fixed_kernel_identity,MT_episode=first,Actor_called=False,
+                exact_frozen_memory_reused=True,new_practice_episodes=0,no_gradients=True,later_H_or_query_used=False))
+            temporary.replace(weights)
             return weights
         history = load_history(row['history_source']); first = history.episodes[0]
         n = row['prefix_records']; records = history.records[:n]

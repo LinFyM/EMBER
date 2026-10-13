@@ -1,3 +1,12 @@
+## 2026-10-13 当前授权：§22 native FM准备中，尚未启动GPU
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349；完整源v10 RL9/F38349受控目标迁移为v11/native FM，仅原166 F参数/Adam更新，前端/source/MT/θ/baseline冻结。432 B4更新、48,384授权non-held query、固定bank9及1008原合法缓存；独立query visit0..47、参数采样绝对38349→38781，38565只恢复。
+父F38349 seen576独立就绪并行；末F38781 seen576+原held400首G，全部1552新final/472生成、0新实践/Actor/held标签/Test，不替代旧full165或冒称新版θ共同学习。三份固定面板已经CPU冻结原MT-H/教学/scene/RNG，原源资产只读链接、没有重放H或forward。
+初始双节点现场gpu01八卡空闲、gpu02有他人任务，普通cap6；优选四训练+两父readout卡，不锁整批world4。data1独立quota约589GiB余量、shared81TiB，32GiB峰值可容纳；正式launch再次核准。原main工程30–60min/学习25–60min/读出20–35min、重叠1.25–2.5h是待实测估计，11点仍软目标非强杀。
+独占codex分支、单一EndpointTrainer改为FM、受控完整source导入、fixed-g替代已消费first-g；语法/元数据检查与最多两个真实B4可丢弃14/28 profile后完整源/RNG恢复，集成push/clean detached实际执行。一个总owner/启动一次/整批完成或真实异常一次可靠交main；正常阴性不修成bug，不自动第二同表示块/小扫/其它CP/Test。
+
+完成标准：432/两seen及一held全部实际消费、完整task-suite/RGL/churn/费用/配对与Git、一可靠交main；全方法最终目标尚未完成，后台启动/结果须有原件。
+
 ## 2026-10-13 当前交付：首G400完成，广泛迁移仍待解决
 
 唯一design§21已实际完成全部348保存引用/52 own-MT前缀生成/69复用/331新query。首G165对MT153，与完整Writer165总分相同、对full22得/22失；+12中task16占11，去掉后144/143/350，Long净−6。未支持“广泛强首G主要被后段丢掉”的解释，也不能唯一排除后段保持/选择问题。完整Val/Test明显稳定收益目标未完成。

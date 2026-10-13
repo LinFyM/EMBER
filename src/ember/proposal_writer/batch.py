@@ -236,8 +236,12 @@ class Batch:
                 ceiling=int(arguments[arguments.index('--frame-chunk')+1])
                 env['EMBER_META_FRAME_CHUNKS']=','.join(str(min(ceiling,16 if a['free_MiB']>=chunk16_headroom else
                     8 if a['free_MiB']>=21000 else 4)) for a in admissions)
-            command+=[str(self.workspace/'scripts/video_guided_proposal_writer.py'),*arguments,
-                      '--root',str(self.root),'--physical-gpu',str(gpu)]
+            command+=[str(self.workspace/'scripts/video_guided_proposal_writer.py'),*arguments]
+            # One batch owner can dispatch independent fixed readout panels.
+            # Their output roots stay explicit; admission and job billing remain
+            # under this owner's master root, rather than silently overriding it.
+            if '--root' not in arguments:command+=['--root',str(self.root)]
+            command+=['--physical-gpu',str(gpu)]
             return self.launch(job,devices,destination,command,env,admissions)
         finally:
             with self.lock:

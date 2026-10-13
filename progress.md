@@ -1,3 +1,10 @@
+## 2026-10-13 当前授权：§22 native FM准备中，尚未启动GPU
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349；完整源v10 RL9/F38349受控目标迁移为v11/native FM，仅原166 F参数/Adam更新，前端/source/MT/θ/baseline冻结。432 B4更新、48,384授权non-held query、固定bank9及1008原合法缓存；独立query visit0..47、参数采样绝对38349→38781，38565只恢复。
+父F38349 seen576独立就绪并行；末F38781 seen576+原held400首G，全部1552新final/472生成、0新实践/Actor/held标签/Test，不替代旧full165或冒称新版θ共同学习。三份固定面板已经CPU冻结原MT-H/教学/scene/RNG，原源资产只读链接、没有重放H或forward。
+初始双节点现场gpu01八卡空闲、gpu02有他人任务，普通cap6；优选四训练+两父readout卡，不锁整批world4。data1独立quota约589GiB余量、shared81TiB，32GiB峰值可容纳；正式launch再次核准。原main工程30–60min/学习25–60min/读出20–35min、重叠1.25–2.5h是待实测估计，11点仍软目标非强杀。
+独占codex分支、单一EndpointTrainer改为FM、受控完整source导入、fixed-g替代已消费first-g；语法/元数据检查与最多两个真实B4可丢弃14/28 profile后完整源/RNG恢复，集成push/clean detached实际执行。一个总owner/启动一次/整批完成或真实异常一次可靠交main；正常阴性不修成bug，不自动第二同表示块/小扫/其它CP/Test。
+
 ## 2026-10-13 09:06 实际完成：同核首G配对400诊断
 
 §21唯一owner first_G400_01/PID763502于09:06:25.632退出0，八个实际job均exit0/代码46306c07，400行完整。首G165/MT153/完整Writer165；首G对MT R122/G43/L31/net12/churn74，对full R143/G22/L22/net0/churn44。5 task净正、2零、1负，成功覆盖6/8；task16贡献+11，去掉后144/143/350。Spatial51/MT48、Object58/46、Goal38/35、Long18/24，收益未成为广泛明显迁移证据。

@@ -245,7 +245,7 @@ def teacher_report(args,runtime,runner,environment):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['prepare','assemble','report-references','formal-prepare','formal','first-g','teacher','readout','teacher-report','G','student-data','endpoint-query','local','RL','report'])
+    parser.add_argument('command',choices=['prepare','assemble','report-references','formal-prepare','formal','fixed-g','teacher','readout','teacher-report','G','student-data','endpoint-query','local','RL','report'])
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--asset-root',type=Path,default=ASSET_ROOT)
     parser.add_argument('--task',type=int,default=0)
@@ -259,6 +259,8 @@ def main():
     parser.add_argument('--max-groups',type=int,help='optional physical worker exit after complete groups')
     parser.add_argument('--video-arm',choices=['correct','other','wrong'],default='correct')
     parser.add_argument('--microbatch',type=int,default=28)
+    parser.add_argument('--profile-microbatches',type=lambda text:tuple(map(int,text.split(','))),
+                        help='registered discarded native-FM initial batches14,28')
     parser.add_argument('--frame-chunk',type=int,default=16)
     parser.add_argument('--slots',type=int,default=8)
     parser.add_argument('--physical-gpu',type=int)
@@ -287,7 +289,7 @@ def main():
     context=initialize_distributed(require_numa=True,defer_process_group=True)
     torch.set_num_threads(8)
     environment=read_json(args.root/'formal_panel.json')['environment'] if args.command=='formal' else read_json(args.root/'run_contract.json')['environment']
-    if args.command in ('formal','first-g') and (not args.worker_id or not args.condition_batch or args.condition_batch<1):
+    if args.command in ('formal','fixed-g') and (not args.worker_id or not args.condition_batch or args.condition_batch<1):
         parser.error('formal needs its persistent queue worker identity and measured condition batch')
     resident_student=args.command in ('student-data','endpoint-query') and bool(args.worker_id)
     if args.command=='endpoint-query' and not resident_student:parser.error('endpoint-query needs its persistent worker identity')
@@ -295,7 +297,7 @@ def main():
         parser.error('resident student needs its physical condition batch')
     if resident_student and args.max_groups is not None and args.max_groups<1:
         parser.error('physical group limit must be positive')
-    if not shared and args.command not in ('formal','first-g') and not resident_student and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')
+    if not shared and args.command not in ('formal','fixed-g') and not resident_student and args.task not in [t['global_task_id'] for t in environment['tasks']]:raise ValueError('task outside registered consumer role')
     runtime=create_runtime(args,context,environment)
     consumer=args.worker_id or (str(args.stop) if shared else f'task{args.task}')
     write_json_atomic(args.root/'code'/f'{args.command}_{consumer}_{identity["commit"]}_rank{context.local_rank:02d}_execution.json',
@@ -316,10 +318,10 @@ def main():
         runner=EpisodeRunner(runtime,environment,args.physical_gpu,slots=args.slots)
         if args.command=='readout':readout(args,runtime,runner,environment)
         elif args.command=='teacher-report':teacher_report(args,runtime,runner,environment)
-        elif args.command in ('formal','first-g'):
+        elif args.command in ('formal','fixed-g'):
             from .evaluation import formal_worker
-            from .first_g import worker
-            {'formal':formal_worker,'first-g':worker}[args.command](args,runtime,runner)
+            from .fixed_g import worker
+            {'formal':formal_worker,'fixed-g':worker}[args.command](args,runtime,runner)
         elif resident_student:
             from .evaluation import student_worker
             student_worker(args,runtime,runner,environment)

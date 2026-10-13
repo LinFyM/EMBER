@@ -415,7 +415,10 @@ def report(args,runtime,runner,environment):
 
 
 def run(args,runtime,runner,environment,context):
-    if args.command in ('G','local','assemble'):
+    if args.command=='G':
+        from .shared_checkpoint import initialize_native
+        initialize_native(runtime,context,args.root)
+    elif args.command in ('local','assemble'):
         from .full_writer import initialize,assemble
         imported=assemble(args,runtime,context) if args.command=='assemble' else initialize(runtime,context,args.root)
         runtime.training_baseline=imported['baseline']
@@ -425,7 +428,8 @@ def run(args,runtime,runner,environment,context):
             complete=True,migration=imported['migration'],G_next_update=runtime.G_sampler['next_update'],
             endpoint_optimizer_parameters=len(runtime.generator_optimizer_parameter_names),
             actual_world_size=context.world_size,not_full_psi_exact_resume=True))
-    if args.command=='G':train_endpoint(runtime,context,args.root,stop=args.stop,resume=args.resume)
+    if args.command=='G':train_endpoint(runtime,context,args.root,stop=args.stop,resume=args.resume,
+        microbatch=args.microbatch,profile_microbatches=args.profile_microbatches)
     elif args.command=='assemble':
         initialize_deferred_process_group(context,rendezvous_root=args.root/'rendezvous')
         checkpoint(args.root,'assembled',90,runtime,imported['actor_optimizer'],context,

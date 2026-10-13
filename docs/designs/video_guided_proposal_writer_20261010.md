@@ -794,3 +794,38 @@ firstG165/MT153/full165；firstG对MT R122/G43/L31，对full R143/G22/L22。+12�
 wall638.866秒/.931672850GPUh、六卡峰值、失败0；实际batch7.675、peak allocated13.782/reserved32.037GiB。有效32-slot首组与无剩余组的23.754秒continuation开销均结算，不能称已证整轮最优。依赖旧400 MT bootstrap114908步/不可拆GPUh分列不重计，消费前新根143.62MiB/8GiB准入，双节点退出快照无本项目GPU进程。
 
 本合同已完成，停止新增计算，Git和一次可靠整批交main后由其自主登记后继；当前无自动训练/其它诊断/Test。finite first-g入口在main科学消费后退休，冻结源/raw/关键权重继续保留；生命周期清理不是重新执行诊断或新增科学工作。
+
+## 22. 固定表示上的完整端点原生FM校准与固定读出（2026-10-13）
+
+§20、§21均已完成。main消费首G/full同165、MT153且收益集中task16后，明确授权本节；不恢复任何已停止批。完整事前派发原样保存在 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/scientific_dispatch.md`，实际run_contract/三份fixed_g_panel登记全部输入与整数，本节为唯一active后继。机制、竞争解释与最近似历史见现有分析§22。
+
+### 22.1 完整源、唯一梯度owner与目标迁移
+
+起点 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009`：完整v10 RL9/F38349、bank9、四rank RNG、全G/θ、166个F Adam及独立θ/baseline状态。新schema `ember_full_writer_endpoint_native_FM_v11`、目标 `task_equal_cross_episode_native_FM50x7_v1`。v10只允许受控导入这一明确RL9/F38349来源，不是通用shape兼容或原科学合同exact-resume。
+只更新原endpoint166张量/8,761,152参数；双meta/ContextReader/static/source/实际MT合并基底/θ/baseline冻结，图、P0/S_G、38target/rank8不变。承接原F Adam lr1e-4/betas(.9,.95)/eps1e-8/wd1e-4/clip1。完整新checkpoint保存未更新θ及其来源，不能称新版G/θ共同训练。
+唯一监督从operator BA替换为普通native FM。合法L/V/实际P/H先形成完整LoRA，随后28个跨episode query加载真实执行RGB/state/action，按实际flow_sample的 `t*noise+(1-t)*a`/`noise-a`、完整50×7速度MSE回传；32维padding、offset1、冻结source normalization及优化seed7不变。每query等权、B4条件各/4。
+允许76完整A/B因子叶子累积全部query余切，再对同次F作一次精确VJP；`Runtime.task_parameters`供应实际MT合并基底。查询hidden/action不得返送G条件，E仅历史/只读参照，无BA混合/public/prox/额外动作项。
+
+### 22.2 固定bank与训练曝光
+
+原真实bank9只读：149 actual parents、252 P/H前缀、1008合法四视频context。按task→actual parent→该parent真实H各层等权；四教学46..49按原sampler，绝对F cursor38349延续。完整缓存必须身份相同，不补新的教学/native前端读取、不吸入新学生/实践/query。
+QueryStream显式pool0..45，排除全部四教学而非仅当前video；event ordinal20261013、每task独立visit0..47、每visit28 query，与绝对F cursor分开保存。432 B4更新/1728条件/48,384 query，36 task各1344 query，F终点38781。38565（新增216）只恢复；禁止据loss缩短、延长或选点，无新实践、bank更新或θ/reward学习。
+
+### 22.3 已冻结的三项控制读出
+
+1. 父F38349原36指定教学/原MT-H/P0，各query16，共576新增最终episode，可与训练并行；旧F24849=425不能代替当前父分数。
+2. 唯一末F38781同seen576，原MT340/E455/历史24849及本父点只读配对。
+3. 唯一末F38781从原held400各自完整MT bootstrap一episode前缀、P0、exact L和原50不同教学/task生成首G；400新生成/400新final，无Actor或后来H，原firstG165/full165/MT153只读参照。
+
+总新增1552 environment episode、472完整端点；0新MT/G practice、0held离线标签/梯度/选点/Test。最终单套LoRA冻结、Writer退出。旧bootstrap及完整bank的交互费用作为依赖保留，不能称zero-interaction。全部query禁止进H、训练或中途干预。
+报告全部task/suite、train24/support12、R/G/L/churn/sets/coverage、held去task16与MT保持。seen与held同时有清楚合理收益才加强固定表示下功能校准的支持；seen改善而held弱/集中则进一步反对输出修正作为主要迁移解法。正常阴性不是bug。旧full165不改，也不冒称已完成新版多轮Writer/θ学习。
+所有分支在432和三读出完整后停止计算交main；无第二同表示块、BA-FM混合、超参小扫、相邻/controls/Test自动授权。停止线约束固定phi仅校准F即可广泛迁移这一假设。
+
+### 22.4 执行、成本与完成接续
+
+ROOT=`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349`；全data1、源资产/H/cache仅引用，新增峰值32GiB。准备核strg01独立quota used1530127520KiB/soft2147483648KiB及shared81TiB，约589GiB余量；正式每launch再现场核两节点/cap6或8/node6/非干扰。初始现场gpu01八卡空闲，普通cap6；优先同node四训练卡+两父seen卡，末点ready后动态long-first/persistent使用实际空余卡，world4不是整批上限。
+最多两个实际初始B4可丢弃micro14/28 profile，完整源/F Adam/cursor/rank RNG恢复，按实测完整B4最大rank wall和显存/finite选择；不新增episode/科学曝光。最终query复用slots16/32经验，在真实请求选择物理batch，不把曾无严格配对的32当最优。
+工程30–60min、训练25–60min、读出20–35min/重叠总1.25–2.5h均为main待实测估计；按首真实update修订，11点软目标非强杀/正结果保证。必要接口/调度修复独占分支→针对消费者检查→main集成push→clean detached；冻结树不热改。有限first-g入口已消费，由一个fixed-g原生Runtime读出面替代，不留旧新fallback。
+一实际owner接profile/训练、独立父seen、末seen/held及汇总；实际启动一次/整批完成或真实异常一次可靠交main01a12bb0，无心跳/阶段Queue/第二等待者/例行工程ACK。
+
+seen两点严格复用原MT-H/P0/指定教学的完整冻结m，经同一Generator.generate物化新F端点，避免重读同一φ输入；缓存路径、frontend/P0/SG/MTbase/source、demo及MT完整前缀均核验。held400仍只使用各自真实MT前缀与原教学，生成新端点；不借用seen m或旧G结果。

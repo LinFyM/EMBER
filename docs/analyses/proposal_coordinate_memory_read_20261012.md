@@ -869,3 +869,19 @@ slots32实际首组32个task39 Long条件，16960步/409.908秒=41.375步/秒、
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/diagnostics/first_G_validation400_20261013；稳定analysis/completion_20261013/{consume.py,statistics.json,paired_raw_rows.jsonl,provenance.json,runtime_cost.py,runtime_cost.json,complete.json}保留完整三臂1200逻辑行、400来源和账目。配对消费CPU3.265秒，费用核验只读metadata，0额外模型/H重放/GPU/episode；根消费前143.62MiB、symlink不追随，小于8GiB准入，旧49.301GiB原件不复制。
 
 §21已结束新增计算，旧启动/预计09:15–09:40保留历史，11点仍软目标。文档/Git及一次可靠整批交main后由其承担下一科学裁决，不自动同缓存延长/更多Actor/其它臂/Test。有限first-g入口按原设计在main消费后退休，冻结代码与raw/关键权重保留；本次结算未修改源代码或旧正式产物。
+
+## 22. 首G未取得广泛迁移后，检验固定表示的完整原生功能误差
+
+main直接复算首G1200逻辑raw：165/MT153/full165，首G对MT R122/G43/L31，对full R143/G22/L22。task16贡献净+11，去掉144/143；Long18/24。完整流程和首G总分相同且有双向交换，已削弱“广泛强首G主要被后段丢失”的解释；它不能唯一定位θ、STOP、Reader或H。正式full165及旧全部不利任务保持。
+
+当前真实计算为 `m=C_phi(T_phi(L,V),H,producer P)`，`lambda=P0+S_G*F((P-P0)/S_G,m)`。phi来自完整CP432，F经全36强E的BA回归及真实non-MT P/H学习。共同E使同task不同P/H目标仍相同，允许忽略反馈；非MT数值域覆盖不等于反馈纠错或未见task迁移。F24849的correct425/other414/wrong395对MT340是有效控制正例，换教学仍保持多数能力且内容改变部分获取；wrong仍明显超MT，不能把收益全部归视频操作理解。
+BA/D38度量教师矩阵方向，而实际每层 `delta h=B(Ah)` 的h来自当前自身图像/state/L与flow噪声，38处跨层组合改变原生动作和闭环。相同矩阵误差不保证相同执行误差。本次唯一变量是改用同一完整生成LoRA在真实跨episode执行query上的50×7 native FM；查询先独立载入执行RGB/state/action，合法m/lambda已生成，源prefix KV冻结复用，真实factor余切全部回到166参数F。source与读取φ冻结，不改表示、候选头、LoRA rank或输入墙。
+
+最近似历史不是空白：conditional C900固定native/解释器/A，仅38处B的五组生成参数作FM，四task/八video64更新13→24/32，held140→143/400仍低MT153；conditional C900不能混写为Context900。Context900完整151/MT153、seen103/MT93；成熟T的full-FM/额外public FM、state-coupled与denoising RL均有有效学习和负结果。出处 joint_action_effect_credit_diagnostic §2/4、feature_to_operator_mechanism_20260926 §117–119、operator_read_write_learning_design §35–39。本轮不同是已有36强E获得的完整A/B初值及全部真实bank9 P/H支持，支持一次有界检验，不能称过去从未功能监督/全是弱起点或冻结表示必然有效。
+
+竞争预测：若实际seen控制与held都取得清楚能力且保持合理，增强功能距离可修正参数回归偏差的支持，但没有匹配因果对照证明视频理解/反馈；若仅seen进步而held仍弱或集中task16，则反对当前固定表示输出校准解决主要迁移；若seen也不增/退化，则说明当前学习不足/交换，正常阴性不作为工程问题扩扫。loss只定位，不能推算成功率或只赢165便宣布最终完整Writer目标实现。
+唯一design§22固定432→F38781、父seen576/末seen576/末held400；38565恢复only。无第二同表示时间块、参数小扫/BA混合/新probe自动后继。原先.50未过和旧停止不改。新checkpoint虽完整保存冻结θ，不称θ适配新G，后续完整方法由main消费真实读出裁决。
+
+事前派发原件 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/scientific_dispatch.md`。已有main CPU消费与机制解释原样归档 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/analysis/main_scientific_readout/firstG38349_main_scientific_consumption.json`、`full_writer38349_mechanism_interpretation_20261013.txt`，未重复算术/forward/episode。工程准备核166 Adam38349、完整world4 RNG、bank149parent/252H/1008缓存及QueryStream0..47/0..45共48,384身份；这些元数据和语法检查还不证明FM已训练或闭环增益，实际consumer/profile/启动/结果另据原件登记。
+
+seen两点严格复用原MT-H/P0/指定教学的完整冻结m，经同一Generator.generate物化新F端点，避免重读同一φ输入；缓存路径、frontend/P0/SG/MTbase/source、demo及MT完整前缀均核验。held400仍只使用各自真实MT前缀与原教学，生成新端点；不借用seen m或旧G结果。

@@ -35,6 +35,7 @@ class FrozenEndpointContexts:
             merged_base=str((self.root/'base/merged_targets.safetensors').resolve(strict=True)),
             source_model=str(Path(runtime.source['model_path']).resolve(strict=True)))
         self.previous = Path(contract['frozen_context_cache_root']) if contract.get('frozen_context_cache_root') else None
+        self.reuse_only = contract.get('frozen_context_reuse_only', False)
         self.items, self.bytes, self.limit = OrderedDict(), 0, 512*1024**2
         self.parents, self.teachers, self.files = {}, {}, {}
         self.hits, self.loads, self.load_seconds = 0, 0, 0.
@@ -138,6 +139,8 @@ class FrozenEndpointContexts:
                                 if path.exists():
                                     self.validate(torch.load(path,map_location='cpu',weights_only=False),identity,demo)
                                     continue
+                                if self.reuse_only:
+                                    raise ValueError(f'fixed-bank native FM requires an existing exact context: {path}')
                                 value = self.old_MT(identity,demo)
                                 if value is None: pending.append((identity,demo,path))
                                 else:
@@ -154,7 +157,7 @@ class FrozenEndpointContexts:
                 components={k:v-components_before.get(k,0.) for k,v in runtime.components.items()},
                 no_Actor_representation_cache=True, no_labels_in_context=True))
 
-    def get(self, task, parent_index, history_index, demo, parent, teacher):
+    def get(self, task, parent_index, history_index, demo, parent, teacher=None):
         key = task,parent_index,history_index,demo
         if key not in self.files: raise ValueError('the current real bank must be prepared before F updates')
         if key in self.items:
@@ -174,6 +177,6 @@ class FrozenEndpointContexts:
             layout = self.runtime.generator.layout
             packed = layout.pack(load_file(weights)).to(self.runtime.device)
             self.parents[weights] = (packed-layout.center)/layout.scale
-        if task not in self.teachers:
+        if teacher is not None and task not in self.teachers:
             self.teachers[task] = load_file(teacher['weights'],device=str(self.runtime.device))
-        return value,self.parents[weights],self.teachers[task]
+        return value,self.parents[weights],self.teachers.get(task) if teacher is not None else None

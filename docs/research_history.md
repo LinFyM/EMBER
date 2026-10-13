@@ -5207,3 +5207,7 @@ main独立消费24849全4032逻辑行，425对MT340及广泛保持/覆盖满足�
 九臂5184逻辑行严格配对，MT340/correct425/other414/wrong395/E455；MT→两新臂R309/G105/L31与R311/G84/L29，correct→other净−11、correct→wrong−30；E-only134取得97/88/70。Long内容差异较大、support变化小、wrong局部正例保留，不能归因完整操作理解/held/真实parent修订已成立。
 新增2.085421662GPUh/1188episode/257842步、22.688min，无失败/恢复，旧参考与CP432不重复计费；两节点GPU退出证据齐备。原启动合同继承的零生成/query-only字段保留，以当前arm实际计数澄清；源端点/组合推理/本批执行身份分开。
 原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/analysis/completion_20261013，main源码解释原样归档analysis/main_scientific_readout。见现有coordinate分析§19/findings456；本批到此完成，后继科学由main另登记，无自动训练/Actor/held/Test。
+
+## 2026-10-13 后继索引：冻结表示原生FM校准（登记，未启动）
+
+首G400165/MT153/full165已完整科学消费；main据集中迁移不足登记design§22，原BA/source/bank状态迁入166参数F普通native FM，一有限432更新与1552控制episode。历史适用边界及竞争预测见proposal_coordinate_memory_read_20261012 §22/findings462，事前派发 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/scientific_dispatch.md`；登记不是新执行或正结果。旧formal/root/checkpoint与全部负结果保留，无Test。

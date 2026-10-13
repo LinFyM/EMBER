@@ -11810,3 +11810,9 @@ main实际核正式800行及400path：Writer165/MT153，去task16只有145/143�
 原STOP52为首G21/full24/MT24，原finalMT111为46/47/47，原firstG69为30/30/21，原laterG220为89/88/85；由原π选择形成，不作随机化模块因果。实际L/V/MT-H经冻结CP432读取前端、F38349输出完整38处BA后执行，标签E未进held条件；同核初始读出仍不能识别video/H各自贡献，也不能由BA训练改善推出held能力。train425及真实P/H覆盖的正证据与旧Context900/RL9负证据同时保留。
 
 348原G直接引用、52自己完整1episode MT前缀生成、69同scene/RNG复用、331新增final全部核验；0新实践/梯度/Test，原正式165保留。新增10.648min/.931672850GPUh，GPU均退出；依赖旧400 MT实践114908步分列，不能称零交互。实际batch7.675与slots32有效首组/空continuation开销见现有分析§21.3和稳定runtime_cost原件，0额外profile/episode。诊断完成停止新增计算，main消费后自主科学接续，不自动同缓存堆更新或更多Actor训练。
+
+## 462. 参数拟合与原生执行误差的区别须接受固定完整读出（2026-10-13）
+
+首G/full均165/MT153且task16占几乎全部净增，未支持广泛强首G主要被后段丢失；BA监督真实正例与held迁移不足共存。共同E和真实P/H覆盖不强迫反馈利用。实际sBA作用于自身hidden和跨层flow，BA距离与50×7 native执行误差不同。
+main登记唯一design§22：完整RL9/F38349、固定phi/bank9/1008合法m，只166参数F承接Adam做432次普通FM到38781，查询0..45/每task48×28；父seen576+末seen576+末首Gheld400共1552新episode，0practice/Actor/held标签/Test。conditional C900的FM局部正/held弱及Context900151/MT153、成熟T功能/RL负证据保持，不把此次称首次接动作信用或冻结表示普遍正解。新检验只改变误差消费者；全部读出后停止固定phi F-only假设这一投入，无第二同表示块/混合/小扫自动授权。
+完整链和可失败预测见现有分析§22，精确合同见唯一design§22及 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/scientific_dispatch.md`。当前仅准备身份/查询/源码，尚无新训练或闭环结论。

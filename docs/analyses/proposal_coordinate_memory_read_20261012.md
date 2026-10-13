@@ -885,3 +885,5 @@ BA/D38度量教师矩阵方向，而实际每层 `delta h=B(Ah)` 的h来自当�
 事前派发原件 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/scientific_dispatch.md`。已有main CPU消费与机制解释原样归档 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/analysis/main_scientific_readout/firstG38349_main_scientific_consumption.json`、`full_writer38349_mechanism_interpretation_20261013.txt`，未重复算术/forward/episode。工程准备核166 Adam38349、完整world4 RNG、bank149parent/252H/1008缓存及QueryStream0..47/0..45共48,384身份；这些元数据和语法检查还不证明FM已训练或闭环增益，实际consumer/profile/启动/结果另据原件登记。
 
 seen两点严格复用原MT-H/P0/指定教学的完整冻结m，经同一Generator.generate物化新F端点，避免重读同一φ输入；缓存路径、frontend/P0/SG/MTbase/source、demo及MT完整前缀均核验。held400仍只使用各自真实MT前缀与原教学，生成新端点；不借用seen m或旧G结果。
+
+§22执行准入于09:56在CPU层退出，未产生GPU/model/episode证据，故不改变上面科学解释。现场资源变化和过保守idle-only/40GiB筛选已在唯一design§22.5及恢复leg原件记录；同source47edd274的原四rank/两discarded B4/独立父seen恢复未改变主因果变量。新目标实际consumer验证与闭环结果仍须原件，不能用旧17.82GiB显存测量宣称FM通过。

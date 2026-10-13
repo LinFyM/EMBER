@@ -1,3 +1,10 @@
+## 2026-10-13 10:02 实际恢复：§22六卡profile与父seen独立读出
+
+第一CPU owner native_FM38349_fixed_readouts_01于09:56:01实际exit1，尚无GPU job/更新/生成/episode，费用0。现场gpu01在准备期间被他人任务占用，原idle-only/40GiB筛选无候选四卡；这是准入退出，非科学失败。原exit/双节点快照/回报及consumed保存，未改写为成功。
+唯一恢复owner native_FM38349_fixed_readouts_recovery_02/PID1100235于10:02:04启动。冻结47edd274已push clean detached；按实际共驻合同选择低负载、24GiB以上余量，原4rank RNG/逻辑B4/同一源和科学范围不变，不操作他人进程。四卡gpu01:4,5,6,1的真实14/28 profile于10:02:36启动，两父seen worker已于10:02:18/23在gpu02:6/4启动，总6/cap6，未把world4当整批上限。
+两个真实B4仅可丢弃profile，完整F/Adam/source/cursor/RNG恢复后自动接432有效更新至38781；当前尚未以profile宣称正式训练完成或FM有效。新consumer实际峰值/最大rank wall将决定14或28并修订ETA，原main训练25–60min/读出20–35min仍为待实测参考。最终三面板1552新final/472生成、0实践/Actor/held标签/Test及完整停止线保持。
+run root /data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349；恢复launch/physical_admission_decision记录精确身份与共驻依据，strg01每job独立data1准入，32GiB新增峰值合规；旧大资产/H/context均只读引用。一个真实owner持续接profile→训练及三读出；通过profile后给main一次真实启动/实测ETA，整批完成或真实异常一次可靠接续，无心跳/阶段Queue/第二等待者。两task开发树集成清理，正式冻结树保留。
+
 ## 2026-10-13 当前授权：§22 native FM准备中，尚未启动GPU
 
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349；完整源v10 RL9/F38349受控目标迁移为v11/native FM，仅原166 F参数/Adam更新，前端/source/MT/θ/baseline冻结。432 B4更新、48,384授权non-held query、固定bank9及1008原合法缓存；独立query visit0..47、参数采样绝对38349→38781，38565只恢复。

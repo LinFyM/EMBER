@@ -829,3 +829,9 @@ ROOT=`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoin
 一实际owner接profile/训练、独立父seen、末seen/held及汇总；实际启动一次/整批完成或真实异常一次可靠交main01a12bb0，无心跳/阶段Queue/第二等待者/例行工程ACK。
 
 seen两点严格复用原MT-H/P0/指定教学的完整冻结m，经同一Generator.generate物化新F端点，避免重读同一φ输入；缓存路径、frontend/P0/SG/MTbase/source、demo及MT完整前缀均核验。held400仍只使用各自真实MT前缀与原教学，生成新端点；不借用seen m或旧G结果。
+
+### 22.5 准入退出及不改科学语义的共驻恢复（10:02）
+
+原native_FM38349_fixed_readouts_01在09:56:01的CPU选择阶段exit1，0GPU job/费用/episode；准备时空闲卡已被他人任务使用，idle-only/40GiB的未实测准入并不代表本新F-only消费者必需。原快照/exit/交付保留，completion consumed指向唯一recovery_02。
+恢复owner PID1100235使用同一clean pushed frozen47edd274。原消费者实际17.82GiB allocated/18.64GiB reserved只是准入参考，新native目标仍只通过已登记两实际B4 profile14/28量测，不称旧peak证明新目标安全。现场低util及24GiB以上free可按项目共驻授权使用；完整源/四rank RNG/B4/dataflow不变，别人进程不修改。actual profile gpu01:4,5,6,1，父seen gpu02:6/4，共6卡；每job再次双节点/quota/实际余量准入。profile正常结束后恢复起点再运行432更新，其GPUh/所有失败单列，正式学习与科学阴性按原合同处理。
+精确原件 ROOT/coordinator/native_FM38349_fixed_readouts_recovery_02/{launch.json,physical_admission_decision.json}、ROOT/jobs各actual launch。ETA待profile最大rank实际wall修订，11点不变软目标；此资源恢复不新增梯度/episode/科学臂或第二调度者。

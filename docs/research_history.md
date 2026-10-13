@@ -5211,3 +5211,10 @@ main独立消费24849全4032逻辑行，425对MT340及广泛保持/覆盖满足�
 ## 2026-10-13 后继索引：冻结表示原生FM校准（登记，未启动）
 
 首G400165/MT153/full165已完整科学消费；main据集中迁移不足登记design§22，原BA/source/bank状态迁入166参数F普通native FM，一有限432更新与1552控制episode。历史适用边界及竞争预测见proposal_coordinate_memory_read_20261012 §22/findings462，事前派发 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/scientific_dispatch.md`；登记不是新执行或正结果。旧formal/root/checkpoint与全部负结果保留，无Test。
+
+### 2026-10-13 native FM432固定校准与三面板完整结束
+
+完整v10 RL9/F38349→v11 F38781目标迁移，仅166 endpoint/Adam更新，固定phi/真实bank9/1008合法缓存。432有效B4/1728condition/48,384 query、每task48×28及完整四rank RNG核验；两个discarded profile不计训练。原GPU owner恢复02于10:02开始，两个renderer失败后1518有效行/470端点保留；CPU03错误shard_size被校验拒绝0GPU，04仅补缺34 query/2生成，11:28:50.675退出0，原exit1均保留。
+三面板1552new-only final/472端点，父seen427→末431（train24−2/support12+6）、E-only94→90；新held首G158/MT153，R114/G44/L39，父165→158为33得40失，去task16为145/143/350，成功覆盖6/8。旧完整Writer165保持，θ未随新G学习；固定表示输出校准未解决主要迁移问题，结束当前F-only块/混合/小扫投入，不宣布全部FM/Reader不可能。
+实际6.753025254GPUh含两失败job与恢复，GPU owner至齐全86.762min；新增353440环境步/0practice，旧bootstrap/源bank成本引用不重计，GPU退出/独立data1 quota合规。冻结代码47edd274，原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/analysis/completion_20261013；main独立原1552行科学消费原样归档analysis/main_scientific_readout，无重算/forward/H解压。
+完整分析见[coordinate分析§22.1–22.5](analyses/proposal_coordinate_memory_read_20261012.md)、findings464/design§22.6。Owner取消11:00，最新希望今晚新加坡23:00有进展、本次科学判断先不考虑时间；现候选仅讨论，无新增active批/Reader解冻/扩任务/选择器/Test派发。

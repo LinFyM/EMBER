@@ -797,7 +797,7 @@ wall638.866秒/.931672850GPUh、六卡峰值、失败0；实际batch7.675、peak
 
 ## 22. 固定表示上的完整端点原生FM校准与固定读出（2026-10-13）
 
-§20、§21均已完成。main消费首G/full同165、MT153且收益集中task16后，明确授权本节；不恢复任何已停止批。完整事前派发原样保存在 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/scientific_dispatch.md`，实际run_contract/三份fixed_g_panel登记全部输入与整数，本节为唯一active后继。机制、竞争解释与最近似历史见现有分析§22。
+§20、§21均已完成。main消费首G/full同165、MT153且收益集中task16后，明确授权本节；不恢复任何已停止批。完整事前派发原样保存在 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/scientific_dispatch.md`，实际run_contract/三份fixed_g_panel登记全部输入与整数。本节是当时唯一active后继，现已完整结束（§22.6），当前无执行中的科学批；讨论候选不成为新active design。机制、竞争解释与最近似历史见现有分析§22。
 
 ### 22.1 完整源、唯一梯度owner与目标迁移
 
@@ -838,3 +838,11 @@ seen两点严格复用原MT-H/P0/指定教学的完整冻结m，经同一Generat
 
 两真实B4 profile14/28均正常完成；micro28最大rank2.873867秒对14的5.544698秒，峰值allocated17.003966/reserved18.142578GiB，完整源/F Adam/RNG恢复38349。正式432更新按28实际启动，暂估训练23.7min及后读出20–35min，source47edd274冻结不改。Owner随后取消11:00希望时点，不缩减/中断当前432/三面板合同；原预测与软目标记录只作历史。
 14先测含首批query/IO/kernel准备，28后测；上述整体wall用于本批物理选择，不称严格稳态配对1.93倍因果提速或绝对最优。28已容纳每condition完整logical query batch，峰值与实际consumer记录保留，不为继续放大扩大逻辑batch/矩阵。
+
+### 22.6 实际终点、缺项恢复与科学停止（11:28）
+
+正式432更新exit0，唯一完整v11 F38781/166 F Adam/四rank RNG/bank9已经实际核验，48,384 query及每task1344均齐全。两个discarded B4/224 query单列，38565未读出或选点。父seen576、末seen576、末held400全部new-only，472唯一完整端点，0新实践/Actor/held梯度/Test，旧正式full165保持。
+recovery_02原exit1来自两个renderer初始化error0x8cdd，保留1518有效行/470生成；不能确诊唯一OOM或GPU故障。CPU03错误把seen布局16当32，被既有冻结队列校验拒绝，0GPU job；04在同冻结47edd274下按实际16/32布局仅补task34的16和heldtask31的18，共34新final/2生成，于11:28:50.675退出0。没有恢复训练/父seen、没有改动旧有效行或冻结源码。全部失败与有效工作计入6.753025254GPUh，GPU owner至完整wall86.762min；11:36双节点本项目GPU进程0。
+
+父seen427→末431但target24 249→247、support12 178→184；E-only134传递94→90、共同成功321保持309→299。末held158/MT153、旧firstG165→158（33得40失），去task16仅145/143，成功覆盖仍6/8。固定φ仅校准F未解决主要迁移问题，当前投入结束，无第二同表示块/混合/小扫/其它点；不推出所有FM/Reader/视频编译不可能。全部task/suite/能力得失及物理/费用依赖见ROOT/analysis/completion_20261013和现有分析§22.1–22.5。
+Owner取消原11:00目标，最新希望今晚新加坡23:00有进展、科学判断先不考虑时间；无新强杀或缩水协议。main与Owner现在讨论下一步，尚无解冻Reader、扩任务、选择器训练或Test派发。候选不进入本设计的执行合同，本节完成交付后仅保留恢复资产与历史，不自动新计算。

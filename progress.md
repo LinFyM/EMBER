@@ -1,3 +1,16 @@
+## 2026-10-13 11:28 实际完成：§22 native FM432与三完整读出
+
+唯一缺项恢复owner native_FM_fixed_missing34_recovery_04/PID1517323于11:28:50.675（UTC+8）exit0，只补末seen task34的16条及末held task31的18条，新增2个缺失教学生成；原1518有效行/470端点不重做。原两个renderer失败、recovery_02整批exit1及CPU准备recovery_03的错误shard_size32（seen原布局16）均保留，03无GPU job/episode；04直接读取原布局16/32通过既有消费者，不绕校验、不改冻结47edd274。
+
+完整v11 F38781/432有效B4/1728condition/48,384 query已核：166 F Adam38349→38781、四rank RNG、固定bank9/1008缓存、独立每task visit0..47/1344 query、教学46..49全部排除。前端/source/θ/baseline冻结，38565仅恢复，两个discarded B4/224 query不计有效更新。
+父seen427/MT340（R317/G110/L23），末seen431（R312/G119/L28）；父→末R375/G56/L52/net+4/churn108，train24净−2、support12净+6。E-only134获取94→90、both-success321保持309→299；72选点重合52→55、其余504为375→376，不能称target训练能力明显改善或独立teacher泛化。
+末held首G158/MT153（R114/G44/L39/churn83），原首G165→158为R125/G33/L40；Spatial/Object/Goal/Long为50/54/33/21，对MT48/46/35/24。task3/6/11/16/23/26/31/39为40/10/41/13/0/33/21/0；去task16为145/350对143，覆盖6/8。对旧full165为R122/G36/L43，原正式165不改，新G-only不能称新版完整θ已适配。
+
+三面板全部1552新final/472完整38-target端点/353440环境步、0新实践/Actor/held标签/Test；seen复用同输入合法m，held400均只读各自真实MT一episode前缀/50不同教学task及同scene/env/native RNG，0最终query进入H。实际21 GPU job/19成功2失败，共6.753025254GPUh（失败job .131284182，补34 leg .150401542）；正式学习1651.086秒/1.834540554GPUh。实际GPU owner10:02至完成wall86.762min，计最初CPU准入起92.883min，不重置失败时钟。完整profile/费用/真实batch7.615/peak11.859GiB及旧交互成本分列见runtime_cost.json，16/32未作严格配对最优宣称。root实占快照1.803GiB，data1独立quota合规，大资产只读引用。
+11:36双节点退出快照本项目GPU进程0，未操作他人进程；formal冻结树/关键CP/raw/失败仍保留。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349，稳定analysis/completion_20261013保存training_audit、provenance、statistics、runtime_cost及CPU消费者；main原1552行科学消费和全文原样归档analysis/main_scientific_readout，无重跑其主配对算术/forward/H解压/episode。
+
+main已科学消费并结束同phi F-only校准这一假设的当前投入；无自动同表示块、混合、小扫、其它点。Owner最新先讨论下一步，希望今晚新加坡23:00有进展，本次判断先不考虑时间；11:00已取消。当前无执行中的科学批，候选non-held决策器迁移数据尚在讨论，不登记active design或自行实现/采集。本次串行Git与一次可靠交main01a12bb0的实际身份以analysis/completion_20261013/complete.json及main_completion_delivery.json为准，无新等待者/心跳/阶段Queue；最终完整Val/Test目标未完成。下面旧“当前/预计”均为当时时点历史。
+
 ## 2026-10-13 10:02 实际恢复：§22六卡profile与父seen独立读出
 
 第一CPU owner native_FM38349_fixed_readouts_01于09:56:01实际exit1，尚无GPU job/更新/生成/episode，费用0。现场gpu01在准备期间被他人任务占用，原idle-only/40GiB筛选无候选四卡；这是准入退出，非科学失败。原exit/双节点快照/回报及consumed保存，未改写为成功。

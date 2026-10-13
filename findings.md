@@ -11823,3 +11823,11 @@ main登记唯一design§22：完整RL9/F38349、固定phi/bank9/1008合法m，�
 主讨论新增原400/path metadata消费发现：最终MT111全部forced singleton（52未生成G、59未实践G），0有已实践G时主动选MT，不能称final学会择优保底。24 MT损失全部选G；其p(MT)均<.01、median.000115576/mean.000181303，36 gains也仅mean.000160364/median.000108164，支持G偏好及风险区分不足而非唯一bug定位。24 lost有12实践曾成功/12全失败；36 gained为21/15，实践成败不能保证新初态，且本分析未读MT bootstrap成败，不能据held调规则。
 事后换24 lost得189的两个实际输出union界使用未来最终反馈，不是部署分数或全部候选oracle。首G/full同165不能给selector免责；warm90旧pair只有5task MT均值高1/16、expected425.579接近alwaysG425为背景，不唯一归因。减同condition MT常量不改变现有softmax expected-return梯度，relative reward改名不构成修复。
 原件已原样归档旧§20 ROOT/analysis/main_scientific_readout/writer38349_selection_loss_question_20261013.json及_main_message.txt；完整解释现有coordinate分析§20.5。后继独立映射/功能信用/合法好坏候选选择学习尚未冻结，source71不等于Writer已学71。§22 F-only nativeFM不会自动解决phi/task/theta，现432/三面板及信息墙不变；本次0重算/模型/H解压/episode/GPU/新许可或回执。
+
+## 464. 固定表示的native FM校准主要重分配能力，未解决广泛迁移（2026-10-13）
+
+完整432更新/F38781及父seen576、末seen576、末首Gheld400已完成，0新实践/Actor/held标签/Test。父seen427→431（56得52失/churn108），train24 249→247、support12 178→184；E-only134获取94→90、both-success321保持309→299，MT-only8→13、both-fail16→29。72选点重合52→55、其余504 375→376，仅小净增且能力类别改变，不能宣称target训练或教师传递明显改善。
+held158/MT153，R114/G44/L39；旧首G165→新158为33得40失，去task16仅145/143、相对父144仅多1。各task40/10/41/13/0/33/21/0、suite50/54/33/21、成功覆盖6/8；不是全任务普遍崩溃，但未取得广泛有效迁移。对旧full165为36得43失，正式165不改，新θ全程冻结，不称完整新Writer已经学习或获资格。
+166 F Adam38349→38781/四rank RNG、固定bank9、1728 condition/48,384 query、四教学排除/各task1344、source/phi/theta冻结与完整76因子余切VJP已从实际消费者核验；在线窗口FM约.09246–.09651不与BA loss比较或替代闭环。真实学习和负闭环共同削弱固定phi只校准F足以广泛迁移的假设，停止同表示块/混合/小扫；没有相应因果对照，不能唯一诊断Reader或否定所有FM/教学编译。
+原两renderer失败与1518有效行/470端点保留，CPU03布局错误0GPU，04仅补34 final/2生成exit0，不改旧exit1。全批6.753025254GPUh含失败与恢复，GPU执行owner至完整86.762min、1552新episode/353440步，旧MT实践/源bank/400bootstrap成本分列；两节点GPU退出，根1.803GiB全data1。稳定原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/analysis/completion_20261013；main原科学消费在analysis/main_scientific_readout，完整解释现有coordinate分析§22.1–22.5/design§22.6。
+Owner现在先讨论下一步、取消11点，希望今晚新加坡23点有进展，但科学判断先不考虑时间；没有新科学派发，候选不登记active design。额外non-held候选价值学习的方向只能利用已有能力，不能代替G新组合控制，不能用held损失调规则或把Q未经验证动作梯度写入LoRA。原36含drawer/microwave/多物体操作、历史更大任务池/功能路线负证据仍约束取舍，不把36→95作为默认解。完整Val/Test明显稳定超过强MT目标尚未完成，由main承担新方案论证，无例行工程ACK。

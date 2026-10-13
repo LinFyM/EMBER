@@ -899,3 +899,30 @@ BA/D38度量教师矩阵方向，而实际每层 `delta h=B(Ah)` 的h来自当�
 seen两点严格复用原MT-H/P0/指定教学的完整冻结m，经同一Generator.generate物化新F端点，避免重读同一φ输入；缓存路径、frontend/P0/SG/MTbase/source、demo及MT完整前缀均核验。held400仍只使用各自真实MT前缀与原教学，生成新端点；不借用seen m或旧G结果。
 
 §22执行准入于09:56在CPU层退出，未产生GPU/model/episode证据，故不改变上面科学解释。现场资源变化和过保守idle-only/40GiB筛选已在唯一design§22.5及恢复leg原件记录；同source47edd274的原四rank/两discarded B4/独立父seen恢复未改变主因果变量。新目标实际consumer验证与闭环结果仍须原件，不能用旧17.82GiB显存测量宣称FM通过。
+
+### 22.1 完整读出：输出校准主要重分配能力，未改善广泛迁移
+
+父F38349 seen427/576对MT340，R317/G110/L23；末F38781为431，R312/G119/L28。父→末R375/G56/L52、net+4/churn108；target train24为249→247（48得50失），support12为178→184（8得2失）。Spatial/Object/Goal/Long/support90依次77→69、54→57、61→66、57→55、178→184。父点已经有明显训练能力，本轮小净增没有表明target任务取得更强能力，不能用431胜340掩盖主要收益来自旧G。
+
+新held首G158/400对MT153，R114/G44/L39、churn83；原首G165→新158为R125/G33/L40、churn73。各task3/6/11/16/23/26/31/39为40/10/41/13/0/33/21/0，较父−3/+2/+4/−8/0/−5/+3/0；suite50/54/33/21对MT48/46/35/24。task16旧局部优势减少8，去掉后新145/350对MT143，对旧首G144只多1；这不是所有任务普遍崩溃，但收益与损失仍大量交换，成功覆盖保持6/8。对旧full165为36得43失；新点只读首G，旧完整Writer165不变，也没有新版θ共同学习资格。
+
+### 22.2 教师能力类别和72/504：总分上升不等于更多取得E能力
+
+这是合同必需、main主配对原件未含的补充算术，原逐行scene/env/native RNG与实际global_task_id兼容。E-only134的父→末成功94→90（20得24失），MT/E共同成功321为309→299（9得19失）；MT-only19为8→13，二者皆失败102为16→29。普通动作FM不再以E矩阵为目标，可以改变这些能力类别；新增两类收益抵消了E成功获取和保持下降，不能据此宣称教师操作更充分传递，也不能由其唯一诊断F容量或表示根因。
+零E的9task/144行120→126，对MT117；非零E的27task/432行307→305，对MT223，保留两组方向差异。72条teacher选点重合52→55（10得7失），其余504条375→376（46得45失）；其余504的MT297/E400，原G24849为372。72不是独立teacher泛化，504也仍是训练task/原教学条件，不是held。表格和全部集合沿statistics.json保留，无重新计算main已有全体/task/suite配对。
+
+### 22.3 真实梯度与学习证据的解释范围
+
+实际合法m和p先由旧φ/真实bank输入取得，完整76 A/B因子在当前自身RGB/state/L、noise/time的native50×7速度误差上取得余切，再精确VJP到166参数F。432更新/1728条件/48,384 query、任务各48访问与1344 query、Adam38349→38781、四rank RNG、冻结source/φ/θ/baseline均由实际checkpoint/metrics核验；原MT缓存165次和新bank context1563次均是合法精确输入复用，不把来源标签差异当bug。查询不进入m/H，E无新坐标loss，目标迁移不是旧合同exact-resume。
+12个全36任务窗口的在线native-FM均loss在.09246–.09651，首窗.094298、末窗.093507；各窗query/P/H变化，不能当同样本pre/post测量或与旧BA loss相比。真实有效梯度和小内部误差变化不能替代控制读出。本轮主要干预确已按合同实现，但同φ的输出校准没有解决held缺口，训练target24也未净增；因此削弱这一组合足以广泛迁移的假设，不靠更多F-only时间块、混合或小扫保护它。没有Reader解冻/额外任务对照，不能唯一归因表示、覆盖、组合监督或优化，也不能否定所有FM/Reader学习。
+
+### 22.4 工程失败、实际物理安排与完整费用
+
+原CPU准入01 exit1/0GPU费用，原恢复02保留两个renderer初始化error0x8cdd及所有有效工作，整批exit1未改。错误发生在缺失group初始化，原同节点后续成功；没有唯一OOM/硬件故障证明。03恢复准备错误传seen shard_size32，而原布局16，既有校验拒绝/0GPU job；04从实际plan读取seen16/held32，只补缺34行/2生成，未重训/重做父seen或已保存470端点。04退出0不追认旧exit1为成功。
+21实际GPU job/19成功2失败，共6.753025254GPUh：profile .085535430、学习1.834540554、父seen1.192753101、末seen1.122850642、末held2.517345526；失败job .131284182已包含，补34 leg .150401542也已包含。正式学习27.518min，10:02 GPU owner至11:28完整86.762min，包含最初CPU准入为92.883min，不重置失败时钟。新增1552 final/353440步（settling15520），472生成，0新实践；依赖旧36 MT实践、bank9真实H及400 MT bootstrap114908步，不能记作零交互。旧完整Writer批18.857689823GPUh与源/教师/缓存费用引用原记录，不重计或虚构单独bootstrap GPUh。
+四训练rank与两个父seen并行，读出按就绪动态队列用至six物理卡/cap6，缺34只有两个剩余group就立即用两卡，不dummy占卡或固定整批world4。两discarded B4/224 query中28已容纳每condition全部28且真实训练峰allocated17.409GiB；14先冷启动、28后测，不称严格1.93倍稳态提速。88个真实读出group/平均动作batch7.615/峰allocated11.859GiB，slots16有86组1502行、slots32有2组50行；任务/共驻/cold-load不匹配，不据此称32最优。运行时/环境wait等重叠累计不相加为wall。根实占快照1.803GiB<32GiB预估，data1 quota独立合规；11:36两节点本项目GPU进程0，未修改他人任务。
+
+### 22.5 科学裁决、原件与尚未派发的讨论
+
+main已直接读1552当前query及1200历史held行，不新增forward/episode/H解压/梯度。其完整科学消费和原消息原样归档ROOT/analysis/main_scientific_readout/native_FM_main_scientific_consumption_20261013.json及native_FM_main_message_20261013.txt；本节主配对直接引用，不重复其算术。ROOT/analysis/completion_20261013保留training_audit、statistics、provenance、runtime_cost及相应CPU脚本，原四owner exit、失败和全部job原件不改。
+Owner先讨论下一步，取消11:00，希望今晚新加坡23:00有进展，本次判断先不考虑时间。当前无新科学批、Reader解冻、扩任务、选择器学习或Test派发。讨论中的额外审计non-held候选分布/独立query价值学习只能改善已有能力的利用，不能代替G取得新的组合控制；尚未明确目标、共享参数和数据范围，不能登记active design、实施或用held24 lost调规则/把Q的未验证动作梯度写入LoRA。原36已有drawer/microwave/多物体基础操作，历史56/73/75-task与Context/native-FM负证据仍在，不以“基本动作全未覆盖”或36→95默认解代替新原理。完成当前交付，main继续论证后继；停止这一投入不是停止研究，也不是例行Owner许可门槛。

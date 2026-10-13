@@ -25,13 +25,17 @@ def task_panel(root, task):
     return next(row for row in materialize_panel(root)['tasks'] if row['task_id'] == task)
 
 
-def frame_chunk_for_rank(default, context):
-    """Consume the launcher's physical chunks in CUDA-visible rank order."""
-    chunks=os.environ.get('EMBER_META_FRAME_CHUNKS')
+def physical_value_for_rank(variable, default, context):
+    """Consume an explicit physical allocation in CUDA-visible rank order."""
+    chunks=os.environ.get(variable)
     values=[int(value) for value in chunks.split(',')] if chunks is not None else [int(default)]*context.world_size
     if len(values)!=context.world_size or any(value<1 for value in values):
-        raise ValueError('physical meta frame chunks must be positive and match the actual world size')
+        raise ValueError(f'{variable} must be positive and match the actual world size')
     return values[context.local_rank]
+
+
+def frame_chunk_for_rank(default, context):
+    return physical_value_for_rank('EMBER_META_FRAME_CHUNKS',default,context)
 
 
 def create_runtime(args, context, environment):
@@ -88,6 +92,7 @@ def main():
             raise ValueError('shared learning update window must be registered before formal launch')
     if args.physical_gpu is None:parser.error('GPU consumer requires its actual physical GPU')
     context=initialize_distributed(require_numa=True,defer_process_group=True)
+    args.slots=physical_value_for_rank('EMBER_EPISODE_SLOTS',args.slots,context)
     torch.set_num_threads(8)
     environment=read_json(args.root/'formal_panel.json')['environment'] if args.command=='formal' else read_json(args.root/'run_contract.json')['environment']
     if args.command=='formal' and (not args.worker_id or not args.condition_batch or args.condition_batch<1):
@@ -102,7 +107,7 @@ def main():
     consumer=args.worker_id or (str(args.stop) if shared else f'task{args.task}')
     write_json_atomic(args.root/'code'/f'{args.command}_{consumer}_{identity["commit"]}_rank{context.local_rank:02d}_execution.json',
         dict(frame_chunk=runtime.frame_chunk,local_rank=context.local_rank,world_size=context.world_size,
-            response_microbatch=runtime.response_microbatch,physical_gpu=args.physical_gpu,
+            response_microbatch=runtime.response_microbatch,physical_gpu=args.physical_gpu,episode_slots=args.slots,
             logical_condition_batch=4 if shared else None))
     runner=None
     try:

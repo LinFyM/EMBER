@@ -231,14 +231,21 @@ def learn(args, runtime, context):
                 break
         results = []
         for index, microbatch in enumerate((args.microbatch, args.profile_microbatch)):
+            receipt = directory/'profile'/f'configuration_{index}_rank_{context.rank}.json'
+            if receipt.exists():
+                saved = read_json(receipt)
+                if not saved['discarded'] or saved['effective_updates'] != 0:
+                    raise ValueError('profile recovery only reuses completed discarded B4')
+                results.append(saved)
+                continue
             trainer.microbatch = microbatch
             torch.cuda.reset_peak_memory_stats(runtime.device)
             record = trainer.update(conditions)
             results.append(record)
-            write_json_atomic(directory/'profile'/f'configuration_{index}_rank_{context.rank}.json',
-                              dict(record, discarded=True, effective_updates=0))
+            write_json_atomic(receipt, dict(record, discarded=True, effective_updates=0))
         write_json_atomic(directory/'profile'/f'complete_rank_{context.rank}.json', dict(complete=True,
-            discarded_B4=2, effective_updates=0, source_restored_at_formal_start=True, configurations=results))
+            discarded_B4=2, effective_updates=0, source_restored_at_formal_start=True, configurations=results,
+            fresh_source_on_profile_process_start=True))
         return
     start = trainer.resume(args.resume) if args.resume else 0
     for update in range(start, 72):

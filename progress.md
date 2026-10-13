@@ -1,3 +1,10 @@
+## 2026-10-14 07:11 §15四卡16实际接续；首B4恢复/全链信用通过
+
+唯一owner04/PID971830/source51924861于23:06:21Z在gpu01:1/3/6/2实际launch，world4/frame16/microbatch24，首73(global72/原v0)四真实条件/4次完整BA通过；完整D72/485Adam、原rank0/1 RNG恢复与新增rank2/3种子771091015/2330581364来源登记，meta双支/Reader/static/F真实信用、source/T/Actor冻结、D native0保持。最长8.885s、reserved峰值25.633GiB；32/64故障停止，不再从首B4宣称全长H稳定。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_D_adjacent_stability，analysis/launch_acceptance.json与04/first_effective_B4_consumer.json保存实物。先前三失败累计.349143253GPUh/0环境、12未保存完成更新/48编译及未知失败组≤8全部单列，不混入当前保留流；本批仍72保留更新至144/288原条件。各launch双节点/data1独立quota/数量6与node6已实际记录，旧冻结树不热改。
+同owner在端点144后用六卡/slots16/long-first共享seen576+held400就绪队列，初始两面板交错，释放consumer继续接未完成工作；436新读出LoRa/976完整/992 starts/525760步/Test关闭与0新实践/固定函数回读/第三块保持。原派发首次观测22:22:32Z已约48min；依据旧D8整批时间与新四卡16首B4，余wall40–70min，总约90–120min，上沿可超原60–110，原时钟不重置。
+当前实际后台运行，首消费临时observer已结束；只剩一个owner真实子进程退出等待与唯一整批/异常自动唤醒，没有第二等待者/阶段Queue/心跳。模型计算源51924861 clean pushed detached；文档main已串行更新，任务开发branch/worktree已按完整ancestor清理。有限整批退出后实验验收/Git→一次main01a13399科学交付，无自动后继。
+
 ## 2026-10-14 07:04 §15以已完成整批资源事实恢复四卡frame16
 
 owner03/source51924861完成73…83共11个B4后，在84反传因rank3进程41.37GiB/外部2.44GiB余量不足OOM；0环境/完整新checkpoint。11未保存更新及44已完成编译、失败组≤4编译保留于attempt003，并与前两失败累计计费。不能用首B4的39.70GiB判整体稳定，也未逐阶段把GPU空转当进度。

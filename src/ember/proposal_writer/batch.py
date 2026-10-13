@@ -8,7 +8,9 @@ import json
 import math
 import os
 from pathlib import Path
+import select
 import shlex
+import signal
 import socket
 import subprocess
 import threading
@@ -23,6 +25,13 @@ UNMEASURED_TEACHER_SECONDS = 4.4  # Actual shared-card query28 native demoFM com
 
 class DeviceWorkloadFailure(RuntimeError):
     """Located renderer/headroom/OOM failure; quarantine devices, never retry."""
+
+
+def process_identity(pid):
+    """Linux process identity and retained child status for an explicit CPU handoff."""
+    fields = Path(f'/proc/{pid}/stat').read_text().rsplit(')', 1)[1].split()
+    return dict(PID=int(pid), state=fields[0], parent_PID=int(fields[1]),
+                start_ticks=int(fields[19]), wait_status=int(fields[49]))
 
 
 @dataclass
@@ -238,6 +247,9 @@ class Batch:
         with (destination/'process.log').open('w') as log:
             code=subprocess.call(invocation,cwd=self.workspace,env=child_env,stdout=log,stderr=subprocess.STDOUT)
         elapsed=time.time()-start
+        return self._settle(job, devices, destination, receipt, code, elapsed)
+
+    def _settle(self, job, devices, destination, receipt, code, elapsed):
         receipt.update(exit_code=code,elapsed_seconds=elapsed,GPU_hours=len(devices)*elapsed/3600,
             end_utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
         (destination/'exit.json').write_text(json.dumps(receipt,indent=2)+'\n')
@@ -249,6 +261,41 @@ class Batch:
                 'torch.OutOfMemoryError', 'torch.cuda.OutOfMemoryError', 'CUDA out of memory'))
             raise (DeviceWorkloadFailure if scoped else RuntimeError)(failure)
         return job.identity
+
+    def adopt(self, job, device, handoff):
+        """Keep a running child untouched while replacing its stopped CPU coordinator."""
+        destination = Path(handoff['destination'])
+        receipt = json.loads((destination/'launch.json').read_text())
+        parent, launcher = handoff['supervisor'], handoff['launcher']
+        descriptor = os.pidfd_open(launcher['PID'])
+        try:
+            old = process_identity(parent['PID'])
+            child = process_identity(launcher['PID'])
+            if (old['start_ticks'] != parent['start_ticks'] or old['state'] != 'T'
+                    or child['start_ticks'] != launcher['start_ticks']
+                    or child['parent_PID'] != old['PID'] or receipt['job'] != job.identity
+                    or (receipt['admission'][0]['node'], receipt['admission'][0]['physical_gpu']) != device
+                    or (destination/'exit.json').exists()):
+                raise ValueError('adoption requires the identified stopped owner and its original live job')
+            # The stopped parent cannot reap this child or dispatch its old pending jobs.
+            select.select([descriptor], [], [])
+            child = process_identity(launcher['PID'])
+            old = process_identity(parent['PID'])
+            if (child['state'] != 'Z' or child['start_ticks'] != launcher['start_ticks']
+                    or old['state'] != 'T' or old['start_ticks'] != parent['start_ticks']):
+                raise ValueError('original child exit status was not preserved during handoff')
+            code = os.waitstatus_to_exitcode(child['wait_status'])
+            os.kill(parent['PID'], signal.SIGKILL)  # Only the retired CPU owner; never its process group.
+            receipt['coordinator_adoption'] = dict(supervisor=parent, launcher=launcher,
+                replacement_commit=self.code, replacement_workspace=str(self.workspace),
+                original_wait_status=child['wait_status'], original_child_uninterrupted=True,
+                retired_CPU_owner_only=True)
+            start = datetime.datetime.fromisoformat(receipt['start_utc']).timestamp()
+            return self._settle(job, [device], destination, receipt, code, time.time()-start)
+        finally:
+            os.close(descriptor)
+            with self.lock:
+                self.running.pop(device, None)
 
     @staticmethod
     def allocation(job,free):
@@ -288,10 +335,12 @@ class Batch:
             del pending[job.identity]
             futures[executor.submit(self.execute,job,eligible)]=eligible
 
-    def run(self, jobs, *, deferred_devices=None, on_completion=None):
+    def run(self, jobs, *, deferred_devices=None, on_completion=None, adopted_jobs=None):
         pending={job.identity:job for job in jobs};done=set();omitted=set();checked=set();failures=[]
         external=set().union(*(job.dependencies for job in jobs))-pending.keys()
         deferred=dict(deferred_devices or {})
+        adopted=dict(adopted_jobs or {})
+        if not set(adopted)<=pending.keys():raise ValueError('adopted jobs must belong to this finite batch')
         if not set(deferred)<=set(self.devices):raise ValueError('deferred devices must belong to this batch')
         for identity in list(pending):
             file=self.root/'jobs'/identity/'latest.json'
@@ -300,6 +349,14 @@ class Batch:
         if on_completion:on_completion(done)
         with ThreadPoolExecutor(max_workers=len(self.devices)+1) as executor:
             futures={};free=[d for d in self.devices if d not in deferred]
+            for identity, handoff in adopted.items():
+                job=pending.pop(identity)
+                device=tuple(handoff['device'])
+                free.remove(device)
+                launch=json.loads((Path(handoff['destination'])/'launch.json').read_text())
+                self.running[device]=dict(job=identity,estimate_seconds=job.estimate_seconds,
+                    start=datetime.datetime.fromisoformat(launch['start_utc']).timestamp())
+                futures[executor.submit(self.adopt,job,device,handoff)]=device
             if external:futures[executor.submit(dependency_completion,self.root,external)]=None
             while pending or futures:
                 self._release_deferred_devices(deferred,done,free)

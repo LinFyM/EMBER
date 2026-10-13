@@ -11894,3 +11894,9 @@ main原件main_supervision_coverage.json：72 parent/H的角色E38/Gparent20/MTp
 §12正式消费者的normal observation来自128px HDF5，自身真实H是256px；physical micro8保持类别分块可成功，而更大micro24混合类别在cat前直接失败。按现有PI05同一resize_with_pad_torch在拼批前变224，仍只在原policy做range与mask；真实24query CPU检查证明与逐条官方预处理一致，不能以缩query数掩盖该接口缺口。F-only原首B4的实际梯度/冻结组通过与11.181/11.789GiB峰值保留；full-G在共驻余量缩到27,279MiB时frame16 meta反传OOM，改物理frame8属于同学习语义恢复，不改dtype/视频或H长度。
 
 27个去重T的既定最早成功query单次重放：21成、6败，全部原行/噪声/初态与5582步保存；失败类别留空，不换成功状态或把≤72余额当扩采许可。此前科学阴性与工程profile故障分别保留。首owner成本.213567995GPUh，A完整discarded B4一、B零、正式更新/held为0；恢复A只补一个，B最多两个完整B4，均fresh72前重置，不把失败计算抹零或重置派发时钟。
+
+## §12监督覆盖与物理调度边界（2026-10-13）
+
+已完成27既定补录的主讨论原件analysis/main_support_coverage_20261013.json报告51/57T、64/72PH、256/288conditions有T成功支撑；32缺失条件不补采，仍保留正常跨episode原生控制目标。实际角色E38/G-parent20/MT-parent14不等于全部专家纠错，T成功与同producer保持可共用经历但类别等权保持；实际episode/观察计数不双算。以上为现有监督覆盖，未承诺训练收益或多轮G/H作用。
+
+两臂实测最长B4证明micro24比micro8 native消费者更快，完整profile预算已消费，不能为物理调度再加B4。初始cap6且原§23占5卡造成串行只表示当时事实，不使world1/单卡成为科学上限。相同完整计算可在合规卡位或有实测峰值余量的既有物理卡共驻，当前有效全G不得为形式扩卡丢更新/重放；显式CPU owner交接应保留运行子进程/原退出状态/费用并撤销旧pending，不并列启动第二队列或等待者。

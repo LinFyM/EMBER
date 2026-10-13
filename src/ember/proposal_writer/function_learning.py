@@ -33,6 +33,17 @@ def configure_parameters(runtime, arm):
     return [(n, p) for n, p in runtime.generator.named_parameters() if p.requires_grad]
 
 
+def learning_window(root):
+    contract = read_json(Path(root)/'run_contract.json')
+    window = contract.get('learning_window', dict(start=0, stop=72, condition_offset=0))
+    continuation = contract['task'] == 'operator_D_adjacent_stability'
+    if (continuation and (window != dict(start=72, stop=144, condition_offset=72)
+            or set(contract['function_objectives']) != {'operator_only'})) or (
+            not continuation and window != dict(start=0, stop=72, condition_offset=0)):
+        raise ValueError('only the registered D72-to144 condition repeat is authorized')
+    return window
+
+
 def import_source(runtime, root, arm, context):
     source = Path(read_json(Path(root)/'run_contract.json')['source_checkpoint'])
     manifest = read_json(source/'manifest.json')
@@ -45,7 +56,7 @@ def import_source(runtime, root, arm, context):
     runtime.generator.load_state_dict(state['psi'])
     runtime.version = 38349
     owned = configure_parameters(runtime, arm)
-    # Fresh logical stream; old Adam and old rank RNG are deliberately not imported.
+    # Initialize the optimizer container; a continuation restores its complete state before any update.
     value = seed(213, context.rank)
     random.seed(value); np.random.seed(value); torch.manual_seed(value)
     torch.cuda.manual_seed_all(value)
@@ -98,6 +109,9 @@ class NativeFunctionTrainer:
             raise ValueError('positive physical query batch and B4-compatible topology required')
         self.optimizer, self.names = import_source(runtime, root, arm, context)
         self.inputs = FunctionInputs(runtime, root)
+        self.window = learning_window(root)
+        self.resume_provenance = None
+        self.parent_rank_rng = None
         self.operator = OperatorObjective(runtime, root)
         self.native_weight = runtime.function_source['objective']['native_weight']
 
@@ -184,26 +198,70 @@ class NativeFunctionTrainer:
                 optimizer_parameter_names=self.names, rank_rng=ranks, topology=topology,
                 source=self.runtime.function_source, psi_version=self.runtime.version,
                 sampler=dict(next_update=update, task_seed_domain=44, full36_round_updates=9,
-                             condition_order='MT_H1 video46..49 then G_H2 video46..49'),
+                             condition_order='MT_H1 video46..49 then G_H2 video46..49',
+                             condition_offset=self.window['condition_offset'],
+                             next_condition_cursor=update-self.window['condition_offset'],
+                             learning_window=self.window),
+                resume_provenance=self.resume_provenance, parent_rank_rng=self.parent_rank_rng,
                 scheduler=None, scaler=None, frozen_source=True, frozen_targets=True)
             torch.save(state, directory/'state.pt')
             write_json_atomic(directory/'manifest.json', dict(complete=True, schema_version=CHECKPOINT_SCHEMA,
                 arm=self.arm, next_update=update, topology=topology, full_G_optimizer_sampler_RNG=True,
                 parameter_names=self.names, source=self.runtime.function_source,
-                checkpoint_role='sole_scientific_endpoint' if update == 72 else 'recovery_only'))
+                resume_provenance=self.resume_provenance,
+                checkpoint_role='sole_scientific_endpoint' if update == self.window['stop'] else 'recovery_only'))
         if self.context.world_size > 1:
             dist.barrier(device_ids=[self.context.local_rank])
 
     def resume(self, directory):
         state = torch.load(Path(directory)/'state.pt', map_location='cpu', weights_only=False)
-        if (state['schema_version'] != CHECKPOINT_SCHEMA or state['arm'] != self.arm
-                or state['optimizer_parameter_names'] != self.names or state['source'] != self.runtime.function_source
-                or state['topology']['world_size'] != self.context.world_size):
-            raise ValueError('resume requires complete matching scientific stream and rank RNG')
+        manifest = read_json(Path(directory)/'manifest.json')
+        contract = read_json(self.root/'run_contract.json')
+        old_world = state['topology']['world_size']
+        expected_source = dict(self.runtime.function_source, initialization_seed=seed(213, 0))
+        if (not manifest['complete'] or manifest['next_update'] != state['next_update']
+                or state['schema_version'] != CHECKPOINT_SCHEMA or state['arm'] != self.arm
+                or state['optimizer_parameter_names'] != self.names or state['source'] != expected_source
+                or state['topology']['logical_condition_batch'] != 4 or state['topology']['task_order'] != list(TASKS)
+                or len(state['rank_rng']) != old_world or state['sampler']['task_seed_domain'] != 44
+                or state['sampler']['full36_round_updates'] != 9
+                or state['sampler']['condition_order'] != 'MT_H1 video46..49 then G_H2 video46..49'
+                or state['scheduler'] is not None or state['scaler'] is not None
+                or not state['frozen_source'] or not state['frozen_targets']):
+            raise ValueError('resume requires the complete matching source, optimizer and logical stream')
+        parent = contract.get('continuation_checkpoint')
+        from_parent = parent is not None and Path(directory).resolve() == Path(parent).resolve()
+        if from_parent:
+            if (state['next_update'] != self.window['start'] or state['sampler']['next_update'] != 72
+                    or state['sampler'].get('condition_offset', 0) != 0 or self.arm != 'operator_only'
+                    or len(state['optimizer']['state']) != 485 or state['psi_version'] != 38421):
+                raise ValueError('D continuation must enter from its complete original72 boundary')
+        elif (state['sampler'].get('learning_window', dict(start=0, stop=72, condition_offset=0)) != self.window
+                or state['sampler']['next_update'] != state['next_update']
+                or state['sampler'].get('next_condition_cursor', state['next_update'])
+                   != state['next_update']-self.window['condition_offset']):
+            raise ValueError('resume cursor belongs to another registered condition window')
+        if old_world != self.context.world_size and not (from_parent and contract.get('allow_boundary_topology_migration')):
+            raise ValueError('physical topology migration needs the registered complete parent boundary')
         self.runtime.generator.load_state_dict(state['psi'])
         self.runtime.version = state['psi_version']
+        self.runtime.function_source = state['source']
         self.optimizer.load_state_dict(state['optimizer'])
-        restore_rng(state['rank_rng'][self.context.rank], self.context)
+        if any(group[key] != value for group in self.optimizer.param_groups for key, value in OPTIMIZER.items()):
+            raise ValueError('continuation changed the registered AdamW hyperparameters')
+        if self.context.rank < old_world:
+            restore_rng(state['rank_rng'][self.context.rank], self.context)
+        self.parent_rank_rng = state['rank_rng'] if from_parent else state.get('parent_rank_rng')
+        self.resume_provenance = (dict(checkpoint=str(Path(directory).resolve()),
+            old_topology=state['topology'], new_topology=dict(world_size=self.context.world_size, logical_condition_batch=4),
+            optimizer_restored=True, global_cursor=state['next_update'], condition_cursor=0,
+            bitwise_exact_claim=False, rank_rng_sources=[dict(rank=i, parent_rank=i if i < old_world else None,
+                initialization_seed=None if i < old_world else seed(213, i)) for i in range(self.context.world_size)])
+            if from_parent else state.get('resume_provenance'))
+        if self.context.is_main:
+            write_json_atomic(self.root/'arms'/self.arm/'resume_consumption.json', dict(complete=True,
+                checkpoint=str(directory), next_update=state['next_update'], psi_version=self.runtime.version,
+                optimizer_states=len(self.optimizer.state), resume_provenance=self.resume_provenance))
         return state['next_update']
 
 
@@ -213,13 +271,18 @@ def learn(args, runtime, context):
     directory = args.root/'arms'/args.arm
     directory.mkdir(parents=True, exist_ok=True)
     start = trainer.resume(args.resume) if args.resume else 0
-    for update in range(start, 72):
-        visit = update//9
-        conditions = [trainer.inputs.conditions[(task, visit)] for task in logical_tasks(update)]
+    if (trainer.window['start'] and not args.resume) or not trainer.window['start'] <= start <= trainer.window['stop']:
+        raise ValueError('registered continuation requires its full checkpoint and global cursor')
+    for update in range(start, trainer.window['stop']):
+        condition_cursor = update-trainer.window['condition_offset']
+        visit = condition_cursor//9
+        conditions = [trainer.inputs.conditions[(task, visit)] for task in logical_tasks(condition_cursor)]
         record = trainer.update(conditions)
         with (directory/f'metrics_rank_{context.rank}.jsonl').open('a') as handle:
-            handle.write(json.dumps(dict(record, update=update+1))+'\n')
-        if update+1 in (18, 36, 54, 72):
+            handle.write(json.dumps(dict(record, update=update+1, global_update_index=update,
+                condition_update_index=condition_cursor))+'\n')
+        if update+1 in tuple(trainer.window['start']+i for i in (18,36,54,72)):
             trainer.save(update+1)
     write_json_atomic(directory/'complete'/f'train_rank_{context.rank}.json', dict(complete=True,
-        next_update=72, all288_conditions=True, arm=args.arm, physical_world_size=context.world_size))
+        next_update=trainer.window['stop'], all288_conditions=True, arm=args.arm,
+        learning_window=trainer.window, physical_world_size=context.world_size))

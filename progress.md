@@ -1,3 +1,10 @@
+## 2026-10-14 06:48 §14科学消费完成；唯一active为§15 D相邻稳定性
+
+主讨论完整消费§14并采用D保住/改善、C退步分支：D414/175对原G427/165 held净+10、对MT340/153净+22，控制正例保留；C393/158及当前native/lambda补救停止，内部误差恶化不抹去D闭环收益。完整解释只引用PARENT/analysis/main_scientific_readout/interpretation_20261014.md，不重算主讨论分析。
+唯一授权design§15：承接D72完整psi/485 Adam/sampler/rank RNG，global72…143对应原condition0…71，严格再遍历288条件一次；同完整BA/原T/权重/optimizer/信息墙。90/108/126恢复点、144唯一端点seen576+strict firstG400；436新读出LoRA、288训练编译、976完整episode/992 starts/16失败partial/525760步，0新实践/采集/固定函数回读/BCE/Actor/Test/第三块。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_D_adjacent_stability。原数据/资产只读引用，CPU实际288流/36task authority与144端点队列通过；canonical trainer增加受约束continuation与condition cursor，不建平行Writer。data1独立quota已核used1618626628KiB/soft2147483648KiB，48GiB峰值可容纳；双节点现场优选四卡同node训练frame64、端点六worker/16行物理波就绪队列，数量6/8/node6与实际显存准入保留。
+当前工程冻结准备，尚未宣称GPU启动。派发首次本session观测22:22:32Z，原60–110min时钟不重置；首有效B4计入72，恢复/梯度/实际吞吐后给一次实质修正。唯一owner退出或异常→本实验验收/串行Git→一次main01a13399；旧§14回执已消费，无第二等待者/阶段Queue/自动后继。
+
 ## 2026-10-14 05:42 §14整批exit0且完整验收；交main科学裁决
 
 唯一owner03于21:41:38.671683Z真实exit0，原件按ROOT/attempt consumed；两臂完整72、各seen576/strict firstG400和各72函数输入齐全。D仅BA为414/175，C BA+native为393/158；MT340/153、原G38349 427/165。D held对原G得29失19/净+10、对MT得46失24/净+22，C对原G得27失34/净−7、对MT得33失28/净+5。C对D held得22失39/净−17、seen得36失57/净−21；seen相对原G D−13/C−34，全部保持损失保留。

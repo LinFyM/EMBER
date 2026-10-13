@@ -20,12 +20,18 @@ from .learning import HistoryCache, memory_peak
 from .analysis import paired
 
 
+def endpoint_checkpoint(root, arm):
+    root = Path(root)
+    update = read_json(root/'run_contract.json').get('learning_window', {}).get('stop', 72)
+    return root/'arms'/arm/'checkpoints'/f'update_{update:08d}'
+
+
 def make_queue(root, arm, role, *, workers, group):
     root = Path(root)
     panel = read_json(root/'readout_panels'/f'{role}.json')
     base = root/'arms'/arm/'readouts'/role
     base.mkdir(parents=True, exist_ok=True)
-    checkpoint = str(root/'arms'/arm/'checkpoints/update_00000072')
+    checkpoint = str(endpoint_checkpoint(root, arm))
     plan_file = base/'queue_plan.json'
     if plan_file.exists():
         plan = read_json(plan_file)
@@ -48,12 +54,13 @@ def make_queue(root, arm, role, *, workers, group):
 
 
 def readout(args, runtime, runner):
-    checkpoint = args.root/'arms'/args.arm/'checkpoints/update_00000072'
+    checkpoint = endpoint_checkpoint(args.root, args.arm)
     manifest = read_json(checkpoint/'manifest.json')
     state = torch.load(checkpoint/'state.pt', map_location='cpu', weights_only=False)
     if (not manifest['complete'] or manifest['schema_version'] != CHECKPOINT_SCHEMA
-            or manifest['next_update'] != 72 or state['arm'] != args.arm):
-        raise ValueError('readout only accepts the registered sole final G72')
+            or manifest['next_update'] != int(checkpoint.name.split('_')[-1]) or state['arm'] != args.arm
+            or manifest['checkpoint_role'] != 'sole_scientific_endpoint'):
+        raise ValueError('readout only accepts the registered sole final G endpoint')
     runtime.generator.load_state_dict(state['psi']); runtime.freeze_psi()
     panel = read_json(args.root/'readout_panels'/f'{args.readout_role}.json')
     tasks = {(t['suite'], t['task_id']): t for t in panel['environment']['tasks']}

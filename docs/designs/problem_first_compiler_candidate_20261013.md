@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-13。**完整方法已选定；§12完整G控制学习已验收并经主讨论科学消费；§13固定输入函数回读已完成并科学消费；§14同T完整BA与native有界两臂及全部末点已完成工程验收，交主讨论按事前合同科学裁决。当前没有active计算或自动后继，完整方法尚未充分训练与验证。§11接手阴性及独立审阅保持，失败恢复监督已撤下；原§23固定G/θ批已完成并经主讨论科学消费，实际裁决见§10。**
+2026-10-13。**完整方法已选定；§12完整G控制学习已验收并经主讨论科学消费；§13固定输入函数回读已完成并科学消费；§14已完整工程验收并由主讨论科学消费，采用D保住/改善而C退步分支；仅§15 D72→144相邻稳定性批active，C/native/lambda补救停止，完整方法尚未充分训练与验证。§11接手阴性及独立审阅保持，失败恢复监督已撤下；原§23固定G/θ批已完成并经主讨论科学消费，实际裁决见§10。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -532,3 +532,61 @@ source d0e9a1f3 clean pushed detached，6worker共用72动态队列，7job均0/.
 两臂各72/288条件、seen576/firstG400、固定72函数全部验收。D仅BA为414/175，C同BA+native为393/158；原G427/165、MT340/153。D held对原G得29失19/净+10、C得27失34/净−7；C对D净−17，seen对原G D−13/C−34。D覆盖7/8但task23仅1/50、39仍0，C6/8；全部task/suite、保持损失与正例保留。固定72 BA两臂5改善67恶化，native D12/60、C13/59，不将D一次held净增归为总体目标拟合或完整方法资格。
 实际1952完整episode/477689步、944新完整LoRA/2688末点native查询，C训练学生/T各5376、D0；同源/fresh同Adam/数据权重/固定lambda/BA一次/前端信用与完整checkpoint通过。14.577632926GPUh含原两OOM，保留未落盘部分native≤96每student/T未知与CPU误拦。原派发至退出190.992min、seen恢复40.753min；source92d0a234及reader045ee602分开，原失败不改写为成功。
 唯一ROOT为operator_native_joint_learning；完整原件results.json与analysis/completion_20261014/{report.md,acceptance.json,verify.py}，事前科学分支由主讨论消费后裁决，0自动调lambda/LR/续块/实践/Actor/BCE/Test。完整EMBER目标与相邻稳定/视频-H作用仍需实证。
+
+
+# 15. D的相邻控制稳定性：唯一有限接续合同
+
+主讨论01a13399-cba2-7da2-9dc6-df430ca80280在Owner持续自主推进授权下正式派发。§14全部原件已科学消费，详细解释见同目录`interpretation_20261014.md`。实验01a133e5-50f0-7d20-a893-df95c7387630独占实施、工程恢复、根文档/Git、冻结与完整交付；将本合同串行纳入当前唯一design新§15。准备、实现、训练和唯一末点评测均已授权，无例行ACK。
+
+## 裁决与唯一变化
+
+D72为seen414/held175，对原G427/165为seen−13/held+10，对MT340/153为seen+74/held+22；D的held净增集中在task16/31，且有真实保持损失。C为393/158，加入当前native目标没有增量。固定72的两臂BA/native误差恶化不能替代闭环裁决，也不证明D的收益稳定。
+
+采用事前§14“D能保住/改进、C退步”的分支，停止C和native/lambda补救，保留一次D相邻学习检查。唯一变化是D在原目标/输入/优化器下增加一遍原288条件，承接72到144；不改loss、架构、LR、逻辑seed、LoRA rank、T选择、教学、实践或查询。此批检验D175是否可重复保持及继续取得能力，不能被表述成已经学成BA、解决迁移或完整Writer。
+
+主讨论曾考虑先做独立Phi；该准备没有派发或运行。本合同明确不启动BCE/Phi/beta或新行为采集，避免尚未判断D这一控制正例便转去另一个组件。原§23的选择饱和阴性保留，不假装已解决。
+
+## 完整来源与学习合同
+
+PARENT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_native_joint_learning。
+唯一承接点=PARENT/arms/operator_only/checkpoints/update_00000072。
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_D_adjacent_stability。
+
+1. 承接D72完整psi、485个实际Adam状态、sampler、rank RNG及版本；11个旧未使用Reader/static参数没有Adam状态是已确认原结构，不增fake使用。原source/Actor/全部T仍冻结，meta双支、Reader/static/endpoint全按原D参与梯度。不是从原G38349再次fresh，更不是从C或§12 A/B恢复。
+2. 精确保留D的`L=mean_38 ||sBA−sB_TA_T||²/D_l`、原operator_scale、完整T与scaling；每condition BA仅一次，无native训练forward、FM、额外保持/排名/奖励项。目标标签不进G条件；教学仍action-hidden，主条件与真实H沿原信息墙。
+3. 逻辑更新global u=72…143，对应原流位置v=u−72（0…71）。直接使用原`logical_tasks(v)`和`task_visit=v//9`，同36task、H1/H2各原四条video（编号集合46…49，顺序严格沿原condition）、同parent/H/T/类别和已登记原件，完整重复原288条件一次。每9更新36task各一次，每task8次；记录global cursor与原condition cursor，不能给FunctionInputs传visit8…15而越界、偷偷换数据或重新采集。已更新特征和memory每step重算。
+4. 原逻辑B4、condition等权/loss除4后rank SUM、AdamW lr1e−4/betas(.9,.95)/eps1e−8/weight_decay1e−4/clip1及无scheduler保持。追加仅72有效更新。90/108/126为恢复点，144为本批唯一科学端点；不读中点选优、不融合、无第三块。
+5. 原D world2不是新物理上限。允许按实际吞吐选择同节点world1…4；如迁移物理拓扑，须实现完整checkpoint边界迁移，保持上述逻辑流、梯度、有效batch/optimizer，保存原rank RNG与新增rank来源/新旧拓扑，不绕过旧resume检查或称bitwise exact。若沿world2，恢复原rank RNG即可。不同分片低位数值差异按既有政策接受。
+6. 现有`function_learning`是唯一训练owner，增加明确continuation/循环condition cursor的受约束消费，不能复制一套trainer或平行Writer。实际首个B4是有效更新与来源/目标/梯度/吞吐消费者，成功计入本72，不做discarded profile。检查实际使用模块与冻结边界、Adam/cursor承接；不重复逐tensor完整性扫描或造测试框架。真实工程故障在原范围内恢复，科学阴性不改计算。
+
+## 单端点闭环与预算
+
+唯一D144完成原seen36×16=576与strict firstG validation8×50=400，共976个新的完整最终episode。两面板均只从原真实MT-H1/指定教学编译首次G；无需运行Actor或新实践。seen每task一个完整LoRA、held每个task-video condition一个，共436套新38-target/r8完整LoRA；训练288次编译另计。复用原MT-H1、原教学、50视频/task无放回映射、scene/state/env-policy全noise与官方preprocessing/horizon，不能重复D72/MT或用旧后续G路径替代。
+
+原PARENT的D72/C72、S38349及MT全部只读引用；不重新做§13/14固定72函数读回、T native、旧checkpoint或新视频controls。已有训练日志中的真实BA值如实保留，不另建内部诊断面板。旧MT行缺initial_proprio的历史限制保持，不补采来修饰记录。
+
+新完整episode976，工程失败额外partial starts最多16，总新physical starts≤992。保守总环境steps含dummy/失败≤992×530=525760。没有新bootstrap/MT/G实践、query采集、补T成功、held共享梯度或Test。原失败和成本保持，新的失败未知如实登记；正常运行中的在途episode不是失败partial，沿已修复的账目语义。
+
+两个面板须给全部per-task/per-suite、breadth、retained/gained/lost/churn/Jaccard、正负行；主比较D144相对D72、S与MT，明确相邻成功集合交集和失去哪些能力。尤其报告D72新增29/失19相对S的哪些变化被144保持，以及task16/31、23/39的完整分布；不能只报新总数、挑task或用两点union充作得分。D72为有效历史点，本批144为唯一预定新读出，不事后选择每task较好点。
+
+## 事前结果分支
+
+- D144延续D72相对强MT/原G的控制增益，并有相邻success-set保持与合理seen交换：支持这套算子学习取得有限稳定能力；若收益仍集中，明确范围，不能称广泛视频/反馈理解。主讨论据此决定完整Writer下一步，非自动多训。
+- 144的净增消失、退回原G水平或以下，或用大范围能力损失换取少数task涨分：本次不支持D72为稳定进步，停止D同输入/同目标继续曝光；不追加第三块、改LR/seed或用新损失保护它。保留D72原事实而不包装为稳定selected模型。
+- 144与72相近但交换明显：分开报告分数稳定和成功条件稳定，不能把其中一项代替另一项。现有两点足以结束这次有界辨识，不再为等好点自动扩窗。
+
+这些分支以闭环幅度/覆盖/保持决定投入，不设内部BA过线门槛，不要求全部控制或Test先齐全，也不能用内部loss改善代替真实控制。无论结果如何，D175的事实、C158的负增量、旧联合路线历史、选择器失败及缺失任务能力都保留。完整EMBER目标尚未完成，整批后由主讨论继续科学取舍，不等待Owner再许可。
+
+## 资源、实施与可靠接续
+
+全部新内容在data1，新ROOT峰值保守48GiB（完整checkpoint、代码/缓存、436 LoRA和原行），大资产只读引用。每次launch核双节点现场、当前所有项目物理卡/实际显存峰值、strg01独立data1 user quota、个人目录与共享容量；总6/8、单节点6，按实测余量安排，不新增util或固定显存门槛，不动其他任务。无需为此读取/改写旧data0资产。
+
+原D frame8 world2已真实有效、首B4约27秒；本批承接时按已知长H和实际峰值选择frame/world，不固定为world2或用C的OOM替代D峰值。首有效B4后有余量须按真实消费者选择有收益的物理batch/frame/并行；不为填卡扩大科学矩阵，也不为形式扩卡打断接近结束的训练。NCCL_P2P_DISABLE=1、NUMA/deferred NCCL沿合同。
+
+仅一个D训练；端点就绪后，seen与held的生成/评测可独立并行。persistent workers使用long-first共享就绪队列，释放worker接未完成工作，不静态一worker/面板、不把world限制当整批并发限制。只按完成事件等待；原14已完成回执消费，不重启旧owner/旧计算，不设置第二等待者。
+
+工程在独占分支/worktree修改现有消费者，通过必要实际检查后clean push、新clean detached frozen运行；旧92d0a234训练与045ee602读取身份分别保留，不热改。当前函数/算子消费者继续有用途，保留其canonical owner；已结束C/四点一次性调度入口不作为fallback。根状态、findings、history和本设计由实验串行更新，主讨论不做例行工程二审。
+
+初估从本派发起60–110min：准备/承接15–25、D学习20–40、976读出25–45，可按依赖交错。依据原D有效B4约27秒、最近1152条seen六worker40.753min；H2长度、held horizon和共享负载仍有不确定。首次实际消费者若显著改变预估，只给一次具体剩余wall修正，不重置派发时钟。GPUh完整记账、无硬限，不能借此扩大更新/交互/矩阵。
+
+唯一owner执行→真实整批退出/异常→实验验收/串行Git→一次主讨论01a13399回报。无ACK、阶段Queue、心跳或自动后继。当前合同授权全部实施；仅模型/数据/选择/信息墙等科学语义或实际资源边界不确定时报告具体问题，常规工程恢复自主闭环。

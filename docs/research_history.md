@@ -4,6 +4,8 @@
 保存新增7396episode/1782491步，旧MT-H400/114908步及seen/B query只读依赖；失败partial交互额外未知，原失败/费用保留。全费34.272177007GPUh（18收据、3失败2.242225011），首实际GPU05:09:44Z→14:42:31Z=9.546h超原5–8h，恢复不重置时钟。producer clean pushed detached bf2c88b0；原headroom拒绝和归档旧线程投递失败保留，不重启旧session或增加等待者。
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349；完整原行validation/RL_00000018/correct/results.json，末点checkpoints/RL/update_00000018，逐批/状态/配对/账目analysis/completion_20261013/{acceptance.json,report.md}，持久解释findings473。一次交新主讨论01a13399，不自动续该批；§12原独立辨识继续，不能把本批收尾写成目标完成或由小幅交换断言唯一根因。
 
+主讨论已独立科学消费（CPU6.22秒/0新模型-GPU-环境）：MT胜G的比较失败在训练内已存在，4MT出口均无G候选，不能算学成风险回退；保留概率曾增长、实践失败仍最终成功及task31/state6正例，见findings473。科学取舍停止固定G/原expected-query扩曝光，不加同目标块/规则/温度/小扫；BCE候选未验证，不激活phi/beta或遮盖G缺口，§12原合同按§12.6继续。完整解释/可复算原件在上述ROOT/analysis/main_scientific_readout/{interpretation_20261013.md,selector72_readback.py,selector72_main_readback.json}，执行者仅记录、不重复复算/工程验收，原producer/阴性/费用保持。
+
 ## 2026-10-13：同核首G400完整诊断，初始能力与完整流程同为165
 
 §21冻结完整RL9/F38349于08:55:46–09:06:25实际结束，exit0，首G165/强MT153/完整Writer165。首G对MT R122/G43/L31，对full R143/G22/L22；task16净+11、其余350行仅144/143，Long18/24。初始迁移仍小且不均，后段存在双向能力交换，不支持仅靠后段保持即可取得广泛收益的结论，也未唯一拆分组件原因。

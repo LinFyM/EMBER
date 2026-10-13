@@ -1,6 +1,6 @@
 ## 2026-10-13 23:00 §23完整验收；当前执行仍为独立§12末点读出
 
-原§23 fixedG38349 selector72已完成A180/B18及唯一correct400并由CPU实际验收：163/MT153，R123/G40/L30，旧165→163，覆盖6/8，Long净−7。没有取得明显广泛稳定的完整改善，不追加该批训练/控制/Test。完整结果交主讨论01a13399作科学裁决；有限批结束不等同最终目标完成。
+原§23 fixedG38349 selector72已完成A180/B18及唯一correct400并由CPU实际验收：163/MT153，R123/G40/L30，旧165→163，覆盖6/8，Long净−7。主讨论01a13399已完成独立科学消费：停止固定G下继续原expected-query扩曝光的主路线，不加第二同目标块/回退规则/温度/参数小扫；BCE候选机制依据加强但未验证，不激活phi/beta后段或掩盖G缺口。完整论证在原ROOT/analysis/main_scientific_readout/interpretation_20261013.md及同目录可复算原件，候选design§10登记实际分支。有限批结束不等同最终目标完成。
 当前active仅docs/designs/problem_first_compiler_candidate_20261013.md §12的既有有界匹配辨识，两臂72已保存、原四576/400读出沿owner06独立运行和唯一整批唤醒；不重训、读中间分数、重复等待或自动后继。原§23完整验收、费用及交付指针见其ROOT/analysis/completion_20261013/{acceptance.json,report.md}，根记录/Git串行闭环。下面旧状态均保留为历史。
 
 ## 2026-10-13 22:32 §12两72完整复用，四末点读出已实际并行

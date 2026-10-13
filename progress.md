@@ -1,3 +1,8 @@
+## 2026-10-13 §23主讨论科学消费完成；停止原expected-query扩曝光
+
+主讨论01a13399独立消费4组400/A720/B72（CPU6.22秒，0新模型-GPU-环境），执行侧仅阅读并记录。MT胜G反例在训练内已存在，formal有G的396条件全部选G，四MT出口只有MT候选，不能称学成风险回退；部分概率增长、实践失败仍最终成功及task31/state6正例保持。完整辨识/边界见findings473、候选design§10及原ROOT/analysis/main_scientific_readout/{interpretation_20261013.md,selector72_readback.py,selector72_main_readback.json}，不重复复算/工程验收。
+科学裁决停止固定G/原expected-query扩曝光，不加第二同目标块/规则/温度/小扫。BCE机制依据加强但未验证，不激活phi/beta或遮盖G缺口；§12原合同/owner06/四末点读出按§12.6继续，不读取中途分数或新增GPU/面板/等待者/ACK。原producer/阴性/费用及未知保持，记录提交随唯一整批或真实边界回报。
+
 ## 2026-10-13 23:00 §23原批exit0，A180/B18/唯一400完整验收
 
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。owner06/PID3514753于14:42:31Z真实exit0，原唯一completion_delivery已processing_verified唤醒本session，未增加等待者/自通知。local180与RL18实物CPU载入：全G/θ/baseline、独立各Adam、samplers和四rank/source RNG完整，G38349/bank9固定。A720条件/72task各10遍、B72条件各一次，每B4 seen2+novel2；全72B路径actor u−1及五层conditional_continue/真实query16/解析STOP与final信用通过，未实践G不查询，原pair/A/有效B路径全部复用。

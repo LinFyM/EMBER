@@ -1,3 +1,9 @@
+## 2026-10-13 20:50 §12正式full-G已运行；实测配置完成，准备CPU调度交接与A共驻
+
+原owner02/PID1626927已完成剩余三个discarded B4，合计仍2/臂；全读取链/双meta分支/Reader/static/F与native控制实际梯度、source/T冻结核验通过。两臂选择micro24，A/frame16最长54.04s、allocated15.237/reserved16.918GiB；B/frame8最长116.99s、allocated17.716/reserved25.502GiB。full-G真实job learn_full_G_72/attempt_001于12:30:50.770749Z在gpu01:2开始，计算源仍clean pushed detached1c424cd8；此刻F-only尚未启动，不把新安排写成已并行。
+
+新的调度live（.codex/tmp/fullg_prepare_20261013/parallel_dispatch_gpu_snapshot.json）确认两节点无空闲独占卡，目前我们占6张gpu01:0/1/2/5/6/7。原§23最终worker自然继续，gpu01:6余23,806MiB有实际共驻空间；GPU02最高12,953MiB不满足A的实测峰值，不能因高util自动排除卡，也不能新增第7张越过本次6卡数量上限。旧CPU owner固定单卡pending队列，准备以新冻结Batch的显式adopted_jobs承接原SSH子进程：只停止旧CPU调度，使原full-G持续运行、保留原退出码/启动和费用，原子防止旧pending重复发A；新唯一owner再发A并承接同一四末点readout。CPU真实进程0/7两退出路径已验证，子进程在父停止期间持续执行、原状态正确、新臂仅dispatch一次。未追加ML profile/实验行/测试框架，计算代码与科学合同均不变。实际交接/并行随后以launch/PID登记；回滚在新派发前仅恢复旧CPU owner，绝不向GPU或进程组发信号。
+
 ## 2026-10-13 20:28 实际恢复：§12 owner02/PID1626927，同范围已复用数据/A首profile
 
 恢复owner于12:22:41Z真实detached启动，12:22:56Z进入唯一owner，source clean pushed detached1c424cd8，frozen tree=/data1/user/ymdai/ember_worktrees/fullg_native_recovery_frozen_20261013。27重放/5582步全部复用，A第一B4复用，混合128/256官方resize窄修经真实24query CPU通过；新F-only profile actual job已退出后，同GPU上的full-G profile actual job已launch。当前没有新正式更新/held成绩声明。完整profile总≤2B4/臂，完成后源G38349/fresh Adam/sampler/RNG重置→72有效更新/臂→原seen576+strict firstG400/臂。

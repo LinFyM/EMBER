@@ -1,3 +1,9 @@
+## 2026-10-13 20:50 §12实测后的并行接续准备（科学合同不变）
+
+两臂discarded profile已完整通过，选micro24；最长B4 F-only54.04s、full-G117.0s，串行学习205.2min只是当时调度估计，不能锁成全批单卡限制。full-G于12:30:50Z从clean1c424cd8实际启动，连续运行保留更新。双节点live确认原§23占gpu01:0/1/5/6/7，加full-G:2合计6卡；GPU02最大余量12,953MiB不足A实测reserved16.918GiB，gpu01:6余量23,806MiB可供A共驻。准备只交接CPU owner、沿原完整进程接续退出与费用，并在新clean pushed detached调度下启动唯一F-only；真实启动另登记，不暂停§23、不增加profile/episode/更新/读出。仍只一条整批自唤醒验收→main路由。
+
+主讨论支持覆盖原件analysis/main_support_coverage_20261013.json直接引用：51/57T、64/72PH、256/288condition有成功支撑，缺失32condition保留普通查询；不重算/补挑或改类别等权。
+
 ## 2026-10-13 20:28 正常接续：§12唯一恢复owner02已实际运行
 
 PID1626927/source1c424cd8/gpu01:2串行两臂，已复用27重放与A首discardedB4；CPU官方resize窄修通过，实际profile已继续。完整discarded B4仍≤2/臂，后续fresh72与原576/400均由同一owner可靠整批接续；原§23最终评测5卡独立。实际吞吐/ETA待profile，超原数据/profile窗口与工程根因已给main一次具体边界。

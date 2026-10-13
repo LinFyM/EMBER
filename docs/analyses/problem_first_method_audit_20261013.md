@@ -253,3 +253,53 @@ Source原本见过support12和新增36，不能把切回source称为所有训练
 现有文档把MT分支具体化，是一份已审阅的完整候选，不是“MT已胜过source”的结论。
 §23继续完成并评价现有流程；无论该批正负，它单独都不构成source与MT起点的匹配比较。
 后继方法选择必须保留这项未决问题，不能再由继承便利或沉没投入代替判断，也不因这次纠正自动切换整条路线。
+
+## 10. 历史实际用了什么起点
+
+独立只读审计与主讨论核对原始合同后确认：下表没有提供“同一学习组织只换执行起点”的匹配两臂。
+所有相关共享训练均用target24+support12；source71包含support12而不包含target24/validation8/test8的完整等价任务。
+同一训练任务集合不能抵消架构、监督、实践、初始化和更新量的变化。
+
+| 方法 | 实际MT依赖与condition首实践 | 对起点取舍的含义 |
+| --- | --- | --- |
+| T2340，161/400 | 裸source1000；公共A随机、B0=0，Writer fresh共同FM；无实践，视频直接编译 | 真正的source起步正例；不是source实践修订元学习的检验，也不是与当前G的匹配起点实验 |
+| Experience135 | source+完整rank128；decoder复制MT，教学probe用MT；首实践是训练后的D(Q0)，未必仍等于MT | 有MT初始化先验，不能当纯source修订的反证 |
+| Parameter130 | source+完整rank128；网络fresh，但incoming/尺度/probe来自MT；首实践固定MT | 负结果约束这一MT起步组织 |
+| Functional143 | source+完整rank128；energy fresh，incoming/probe/预条件来自MT；首实践固定MT | 同样不能代表source起步；正式143只有FM，没有完成PG阶段 |
+| MT300，153/400 | 由source identity直接共享训练rank128，无Compiler或condition适应 | 强控制参照，不是source/MT元学习的匹配对照 |
+| G38349，完整165/400 | source+合并MT；rank8残差；首实践固定MT，前端及F承接已有学习 | 当前完整正负证据保留，不能推出MT是必要基础 |
+
+T的事实来自[完整设计§2.1](../designs/operator_read_write_learning_design.md)及实际fresh合同
+`/data1/user/ymdai/ember_runs/operator_read_write_learning_20260928/stage1/T/train/attempts/fresh/run_contract.json`；
+2340续训合同保留source identity规则及完整父链。其161与MT153是该轮既定参照，不能把与当前交互165的差额
+解释成起点效应。Experience原件为`experience_conditioned_compiler_20261009/training/run_contract.json`与冻结
+`frozen_76c136a3/src/ember/experience_compiler/interaction.py`；Parameter、Functional及当前G均已核其run_contract与实际执行图。
+
+## 11. 起点进入学习问题的具体位置
+
+令`P_init`为condition首次实际执行的完整控制器，`H`由其和后续真实候选在任务中产生，
+`P_next=G_psi(V,L,H,P)`。改变起点首先改变H的访问状态、成功/失败内容、后续parent与可用候选；
+还可能改变共享梯度所覆盖的控制缺口。不能把“初始更弱所以更需要教学”直接等同于“网络就会学会使用教学”。
+在固定task的最优控制器可相同时，source和MT两侧仍都允许忽略H的task记忆解。
+
+因此应保留两个竞争预测：
+
+- 若训练—新任务的学习需求不匹配是重要限制，source侧可能在共享训练中获得更可迁移的改进规则，
+  即便初始成功率更低，也应体现为新任务上更大的真实适应增益，并最终转成足够高的绝对能力与保持。
+- 若主要限制是读取/写入的迁移、有效任务映射或监督覆盖，source侧可能只增加低水平失败，
+  而不增加可迁移的修订；强MT也可能同时提高初始与最终能力。没有source侧净增益时不能按“学习更像人”接受它。
+
+有辨识力的比较不能把旧G38349直接喂source历史、沿用冻结MT前端，再把下降称作source失败；
+也不能一侧fresh、另一侧使用已学习G，或给source更弱的教师/输出族。两侧应使用同一完整G/决策学习组织、
+共同的合法监督、任务/视频/query流和事件预算，分别真实采集自身起点产生的H。H和后续采样的差别是干预后果，
+不是需要人为抹平的噪声；预先登记并报告其实际分布与成本。
+
+一个可实现的统一控制族是source基础上输出全部38-target rank136因子：它能以一次因子拼接精确容纳现有MT128+残差8教师，
+同时容纳source identity与纯MT两个初始控制器。这里136仅提供该比较的共同表示上界，不主张它是最佳rank；
+不得因为当前r8实现更便宜，就把source限制为无法承接同一目标的族。两侧G的学习参数、初始化和optimizer应相同，
+差别由真正执行的`P_init`开始；source侧不能在最终候选中偷偷保留MT，再把选中MT的能力算成source适应。
+合法MT/专家可以作为两侧相同的共享训练监督，须明确其仅是标签消费者，不是source侧部署输入或后备策略。
+固定全condition目标T仍须避免混合不同成功动作；共同强参照和incoming parent的监督资格/选择规则也必须两侧一致。
+
+这段定义了可以回答问题的比较，尚未选择rank、实现或启动两套fresh训练。若开展，须先把完整学习组织、
+有信息量节点及wall预期收敛为有界合同；不为了起点比较重跑已知历史，不把一次负结果扩大为某种起点普遍不可能。

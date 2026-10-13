@@ -1,3 +1,9 @@
+## 2026-10-14 §14更新与400/函数已齐；计账窄修后仅恢复两组seen576
+
+唯一owner02于20:47:35.652809Z真实exit1，已按ROOT/attempt消费；两臂完整72/checkpoint、各72末点函数及各400原行保存，均不重跑。两组seen队列各96 pending/0原行，剩余1152次final episode；原800次已完整返回/229025环境步，未知额外0。失败在CPU准入把正常在途episode误计入失败partial≤16，未实际越过1952/1968/1043040合同。
+窄修统一至既有analysis.interaction_ledger：所有在途仍计启动数与保守步数，只有settled非零exit的未返回episode占失败额度。实际原事件24个在途允许、16个失败partial允许/24个失败partial拒绝，原800总账和两臂真实H1-LoRA只读复用消费者通过；0新增forward/episode。后续唯一owner03沿新clean pushed detached代码只承接seen，原模型/训练/函数/400计算源92d0a234不变，费用10.594371230GPUh及原OOM/准入失败全保留。
+active仍仅design§14；原派发18:30:39Z计时不重置。恢复准备约10–20min，余seen暂估30–60min，预计超过原90–165min，真实启动和资源再登记。六卡就绪队列并行两臂、自然释放继续接未完成队列；0新实践/重选T/更新/held/Test/额外profile/阶段通知/第二等待者。完整退出一次唤醒实验验收→main01a13399一次交付。
+
 ## 2026-10-14 03:12 §14真实4+2学习已通过首有效B4；唯一owner02
 
 C=operator_plus_native在gpu01:2/7/0/4、world4，于19:01:04.697227Z实际launch，frame16/16/16/8；D=operator_only在gpu01:5/6、world2，于19:00:56.649675Z实际launch，frame8/8。source92d0a234 clean pushed detached=/data1/user/ymdai/ember_worktrees/operator_native_joint_frozen_20261014，两臂同38349/fresh同Adam/原288-T-query-权重-noise流，BA每condition一次后/4与rank SUM、C固定lambda69.25903014646993，所有meta双支/Reader/static/F真实信用与冻结policy/T/Actor首B4通过，4个同条件全部计入72。D native0，C实际student/T各64；D/C最长27.30/25.76s，reserved17.488/29.211GiB。原首批源权重/查询类别与source receipt一致；不读取中途loss趋势或闭环成绩。

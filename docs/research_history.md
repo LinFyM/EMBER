@@ -1,3 +1,7 @@
+## 2026-10-14：§14计账误拦，完整更新/函数/400保留，余seen独立恢复
+
+owner02真实exit1原件在operator_native_joint_learning ROOT/coordinator/operator_native_frame_resume_02/exit.json：完整两臂72/144函数/800 held原行保存，实际800提交返回/229025步/未知0，GPUh10.594371230含原OOM；剩余仅seen1152。CPU把正常在途当失败partial≤16的错误已定位，以原事件前缀和实际H1-LoRA消费者验证统一计账窄修；所有科学上限/模型计算/查询/配对不变，only-seen恢复后再统一验收，不把原exit1改写为0。原派发计时与所有失败保留；源码冻结/唯一owner/启动状态以progress和ROOT原件为准。
+
 ## 2026-10-14：§12主讨论科学消费后授权独立固定输入函数回读
 
 §12完整A404/159、B339/150已消费，停止原配方直接第二块。B在线loss222/288高于A；T_H1弱5task的少7成功无法包办B已学净损88，首chunk更近MT不证全策略collapse，历史独立keep/SEOD/GOMQ边界继承。完整解释/CPU原件在父ROOT/analysis/main_scientific_readout/{interpretation_20261014.md,readback.py,readback.json}，执行者不重算。

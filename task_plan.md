@@ -1,3 +1,8 @@
+## 2026-10-14 §14只剩1152条seen；已保存的更新/函数/400全部复用
+
+owner02真实exit1为CPU计账错误：正常在途误占失败partial≤16；退出实际800完成/229025步/0未知，未越科学上限。两臂72及144函数/800 held原行全部保持，两组seen各576尚未运行；新唯一owner03仅续这1152条，统一计账仍保留physical1968/complete1952/failed16/steps1043040。
+原真实事件计账/同H1完整LoRA消费者已通过，按新clean pushed detached恢复；model math与原source92d0a234不改，0训练/补采/held重跑/Test/目标重选。全部失败/费用及18:30派发时钟保持；准备10–20min/余seen30–60min暂估，超原90–165min如实回报。完成验收后一次交main；没有第二等待者、阶段Queue或自动后继。
+
 ## 2026-10-14 03:12 §14真实4+2学习已通过首有效B4；唯一owner02
 
 C=operator_plus_native在gpu01:2/7/0/4、world4，于19:01:04.697227Z实际launch，frame16/16/16/8；D=operator_only在gpu01:5/6、world2，于19:00:56.649675Z实际launch，frame8/8。source92d0a234 clean pushed detached=/data1/user/ymdai/ember_worktrees/operator_native_joint_frozen_20261014，两臂同38349/fresh同Adam/原288-T-query-权重-noise流，BA每condition一次后/4与rank SUM、C固定lambda69.25903014646993，所有meta双支/Reader/static/F真实信用与冻结policy/T/Actor首B4通过，4个同条件全部计入72。D native0，C实际student/T各64；D/C最长27.30/25.76s，reserved17.488/29.211GiB。原首批源权重/查询类别与source receipt一致；不读取中途loss趋势或闭环成绩。

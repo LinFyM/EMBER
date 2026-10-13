@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 import numpy as np
 from safetensors.torch import load_file
@@ -68,6 +69,50 @@ def billing(root):
                 failed_jobs=sum(r['exit_code'] != 0 for r in rows),
                 attempts=sum(r.get('attempts',1) for r in rows),
                 failed_attempts=sum(r.get('failed_attempts',int(r['exit_code'] != 0)) for r in rows),raw_receipts=rows)
+
+
+def interaction_ledger(root):
+    """Count physical starts and steps; only settled failed jobs consume failure slots."""
+    root = Path(root)
+    contract = read_json(root/'run_contract.json')
+    submitted = finished = known = active = failed = unknown = 0
+    for path in sorted(root.glob('jobs/*/attempt_*/episode_events.jsonl')):
+        exit_path = path.parent/'exit.json'
+        receipt = read_json(exit_path) if exit_path.exists() else None
+        events = []
+        for line in path.read_text().splitlines(keepends=True):
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError:
+                if receipt is None and not line.endswith('\n'):
+                    break  # The live writer has not finished its last event yet.
+                raise
+        starts = {e['episode_id']: e for e in events if e['kind'] == 'submitted_start'}
+        ends = {e['episode_id'] for e in events if e['kind'] == 'finished'}
+        if not ends <= starts.keys():
+            raise ValueError(f'finished episode has no physical start: {path}')
+        missing = starts.keys() - ends
+        if receipt is None:
+            active += len(missing)
+        elif receipt['exit_code'] != 0:
+            failed += len(missing)
+        elif missing:
+            raise ValueError(f'successful job left unreturned episodes: {path}')
+        submitted += len(starts)
+        finished += len(ends)
+        known += max((e['known_environment_steps'] for e in events), default=0)
+        unknown += sum(starts[k]['maximum_steps'] for k in missing)
+    record = dict(submitted_physical_starts_upper_bound=submitted, finished_rollouts=finished,
+        known_environment_steps=known, unreturned_starts_upper_bound=active+failed,
+        active_unreturned_starts=active, failed_partial_starts_upper_bound=failed,
+        additional_unknown_steps_upper_bound=unknown,
+        conservative_environment_steps_upper_bound=known+unknown)
+    if (submitted > contract['physical_starts_maximum']
+            or finished > contract['query_rollouts']
+            or failed > contract['failed_partial_episode_maximum']
+            or known+unknown > contract['environment_steps_maximum']):
+        raise RuntimeError(f'registered physical interaction boundary exceeded: {record}')
+    return record
 
 
 def teacher_summary(root):

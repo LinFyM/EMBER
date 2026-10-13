@@ -784,3 +784,13 @@ ROOT=原full_writer_after24849_20261013/diagnostics/first_G_validation400_202610
 初估准备20–40min，52生成/331query15–40min，共35–80min；依据§19实测1152query+36practice约23min但加载/native长度不确定，实际资源与吞吐后修订。11点软目标，无强杀或正结果保证。一个实际owner，启动一次+整批完成/异常可靠交main一次，无阶段Queue/心跳/第二等待者。
 
 §20 main已完成CPU原件原样归档到旧ROOT/analysis/main_scientific_readout/{full_writer38349_main_scientific_consumption.json,full_writer20_readout_interpretation_20261013.txt,warm90_fixed_pair_scientific_consumption.json}。不重跑main算术；新事前合同、400出处、存储/CPU消费者/命令/身份/费用由新ROOT保留。
+
+### 21.4 实际完成与当前授权状态（2026-10-13 09:06）
+
+唯一owner first_G400_01于09:06:25.632退出0，46306c07 clean pushed detached来源、八job均0；348保存/52 own-MT完整1episode生成/69同G000配对复用/331新final符合合同，400行及每task50不同教学齐备。完整checkpoint仍是原RL9/F38349，0新实践/Actor决策/梯度/Test，原正式full165不改。
+
+firstG165/MT153/full165；firstG对MT R122/G43/L31，对full R143/G22/L22。+12中task16占11，去掉后144/143/350，Long18/24；没有支持广泛强首G主要被完整后段损失的分支，仍需main按完整分布判断初始迁移与保持缺口，不能唯一归因组件。预定义策略形成子集及全部task/suite/集合原件见现有coordinate分析§21.1–21.3、ROOT/analysis/completion_20261013。
+
+wall638.866秒/.931672850GPUh、六卡峰值、失败0；实际batch7.675、peak allocated13.782/reserved32.037GiB。有效32-slot首组与无剩余组的23.754秒continuation开销均结算，不能称已证整轮最优。依赖旧400 MT bootstrap114908步/不可拆GPUh分列不重计，消费前新根143.62MiB/8GiB准入，双节点退出快照无本项目GPU进程。
+
+本合同已完成，停止新增计算，Git和一次可靠整批交main后由其自主登记后继；当前无自动训练/其它诊断/Test。finite first-g入口在main科学消费后退休，冻结源/raw/关键权重继续保留；生命周期清理不是重新执行诊断或新增科学工作。

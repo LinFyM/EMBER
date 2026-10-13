@@ -1,3 +1,13 @@
+## 2026-10-13 09:06 实际完成：同核首G配对400诊断
+
+§21唯一owner first_G400_01/PID763502于09:06:25.632退出0，八个实际job均exit0/代码46306c07，400行完整。首G165/MT153/完整Writer165；首G对MT R122/G43/L31/net12/churn74，对full R143/G22/L22/net0/churn44。5 task净正、2零、1负，成功覆盖6/8；task16贡献+11，去掉后144/143/350。Spatial51/MT48、Object58/46、Goal38/35、Long18/24，收益未成为广泛明显迁移证据。
+
+原348保存G000直接引用，52只用各自真实完整1episode MT bootstrap/exact L/原教学生成一次；69同G000/scene/env/native RNG旧final行复用、331新增最终query。实际52生成/331新episode/95372环境步，0新实践/Actor决策/梯度/Test；原正式Writer165保持。每task50不同教学、400唯一配对、52第一H边界及来源、331新行/69复用已从实际path/attempt/query元数据核验，未重放H或模型。
+
+wall638.866秒（10.648min），新增.931672850GPUh含全部八job/失败0；依赖原400 MT实践114908步，旧formal费用不可单独拆出bootstrap GPUh，不重计。实际峰值六卡gpu01:0–5/cap6，两节点退出快照本项目GPU进程0。22组实际平均动作batch7.675、singleton8.81%、peak allocated13.782/reserved32.037GiB；有效slots32首组有吞吐信号，但后续32 continuation无剩余组，只产生23.754秒/.006598GPUh启动开销，不称整轮提速或最优。
+
+稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/diagnostics/first_G_validation400_20261013；analysis/completion_20261013保存consume.py、statistics.json、1200配对raw、400出处provenance、runtime_cost.py/json及完成记录。根消费前143.62MiB，全data1/大资产只读引用，小于8GiB准入。现有分析§21.1–21.3/findings461/design§21.4承接；原启动和09:15–09:40预测保留历史。当前无执行中的科学批，停止新增计算；Git及一次可靠整批交main01a12bb0后由其自主接续。有限first-g入口按原生命周期在main消费后退休，冻结树/raw/关键权重保留，不自动其它臂/续训/Test，不新设Owner或main工程ACK。
+
 ## 2026-10-13 08:55 实际启动：冻结首G400诊断
 
 唯一§21 owner first_G400_01/PID763502于08:55:46.765实际启动，source46306c07已集成push并从clean detached first_G_validation400_20261013_46306c07执行。现场两节点普通cap6，调度选gpu01:0–5，原348/52/69/331出处和完整RL9/F38349/69复用配对CPU消费者检查通过；冻结树不热改。

@@ -11802,3 +11802,11 @@ RL2快rank04:54:33已进入Actor梯度allreduce，task38慢rank到05:05:29仍完
 main实际核正式800行及400path：Writer165/MT153，去task16只有145/143；最终MT111保持47、首G69为30/MT21、laterG220为88/MT85，子集由旧策略选择，不作修订退化因果。原425/共同训练信用不是当前held首G能力，固定E和新增P/H不强迫利用反馈，旧Context900/RL9负证据仍约束外推。
 
 唯一新§21从同RL9/F38349、原400各自实际MT bootstrap读首G：已有348完整G000含未实践提案直接引用，缺52只读完整1episode前缀真实生成一次；69旧finalG000兼容复用、331新query。它是冻结posthoc机制诊断，不替正式165、checkpoint选择、完整目标或Test。结果决定优先判断初始跨task映射还是完整适应保持，不预先锁θ/Reader唯一根因。原件与主判断见existing coordinate分析§21和唯一design§21；0重复CPU算术/额外探针。
+
+## 461. 同核首G与full总分相同，初始广泛迁移不足仍是实际缺口（2026-10-13）
+
+§21完整400首G165/MT153/full165；首G对MT R122/G43/L31、churn74/Jaccard.62245，对full R143/G22/L22、churn44/Jaccard.76471。5 task净正/2零/1负、覆盖6/8，+12中task16占11，去掉仅144对143；Spatial/Object/Goal/Long净+3/+12/+3/−6。full多保7条MT成功、少取得7条MT失败，净分相同；既不说明行为相同，也没有支持广泛强首G主要被后段丢掉。首G的MT保持与跨task有效获取仍不足，完整后段局部交换也保留，不能唯一归因θ/STOP/H/Reader或否定全部later G。
+
+原STOP52为首G21/full24/MT24，原finalMT111为46/47/47，原firstG69为30/30/21，原laterG220为89/88/85；由原π选择形成，不作随机化模块因果。实际L/V/MT-H经冻结CP432读取前端、F38349输出完整38处BA后执行，标签E未进held条件；同核初始读出仍不能识别video/H各自贡献，也不能由BA训练改善推出held能力。train425及真实P/H覆盖的正证据与旧Context900/RL9负证据同时保留。
+
+348原G直接引用、52自己完整1episode MT前缀生成、69同scene/RNG复用、331新增final全部核验；0新实践/梯度/Test，原正式165保留。新增10.648min/.931672850GPUh，GPU均退出；依赖旧400 MT实践114908步分列，不能称零交互。实际batch7.675与slots32有效首组/空continuation开销见现有分析§21.3和稳定runtime_cost原件，0额外profile/episode。诊断完成停止新增计算，main消费后自主科学接续，不自动同缓存堆更新或更多Actor训练。

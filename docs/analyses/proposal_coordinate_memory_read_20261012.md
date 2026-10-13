@@ -814,3 +814,58 @@ main直接消费正式800行/400path，确认165/MT153且+12中task16占10。最
 同RL9/F38349、同400实际MT bootstrap/语言/教学/最终scene与RNG的first_G_from_same_MT_bootstrap读出，检验初始候选迁移和完整适应保持之间的竞争解释。348实际保存G000/52首前STOP缺失/69兼容原最终复用已实际核400元数据，331新最终query+52真实生成，0新实践/梯度/Actor/其它点/Test。52只用自身第一episode前缀，已有348不重新生成；原正式165保持。具体输入/信息墙/子集解释/结果分支/停止见唯一design§21，不另立active合同。
 
 三份main既有CPU原件原样归档§20ROOT/analysis/main_scientific_readout，分别为full_writer38349_main_scientific_consumption.json、full_writer20_readout_interpretation_20261013.txt、warm90_fixed_pair_scientific_consumption.json，保留启动前假设和final warm解释，不追加算术/模型探针。
+
+### 21.1 完整配对结果：初始提案与完整流程同为165
+
+实际first_G400_01于2026-10-13 09:06:25.632 UTC+8退出0。三臂各400行：MT153、正式full Writer165、首G165。首G对MT retained122/gained43/lost31/net+12/churn74/Jaccard .62245；首G对full为143/22/22/net0/churn44/Jaccard .76471。首G5 task净正、2零、1负，成功覆盖6/8；task16贡献净+11，去掉后144对143/350（R118/G26/L25），full去掉同task为145/143。单次小幅验证收益仍未达到最终明显稳定Val/Test目标。
+
+以下R/G/L均以首G为candidate，分别相对MT与full；task使用global_task_id，suite-local ID不混作跨suite键。
+
+| global task | MT | full | 首G | 首G/MT R/G/L | 首G/full R/G/L |
+|---|---:|---:|---:|---|---|
+| 3 | 41 | 42 | 43 | 37/6/4 | 40/3/2 |
+| 6 | 7 | 7 | 8 | 4/4/3 | 5/3/2 |
+| 11 | 36 | 37 | 37 | 29/8/7 | 33/4/4 |
+| 16 | 10 | 20 | 21 | 4/17/6 | 16/5/4 |
+| 23 | 0 | 0 | 0 | 0/0/0 | 0/0/0 |
+| 26 | 35 | 38 | 38 | 33/5/2 | 36/2/2 |
+| 31 | 24 | 21 | 18 | 15/3/9 | 13/5/8 |
+| 39 | 0 | 0 | 0 | 0/0/0 | 0/0/0 |
+
+| suite，每组100 | MT | full | 首G | 首G/MT R/G/L | 首G/full R/G/L |
+|---|---:|---:|---:|---|---|
+| Spatial | 48 | 49 | 51 | 41/10/7 | 45/6/4 |
+| Object | 46 | 57 | 58 | 33/25/13 | 49/9/8 |
+| Goal | 35 | 38 | 38 | 33/5/2 | 36/2/2 |
+| Long | 24 | 21 | 18 | 15/3/9 | 13/5/8 |
+
+原事前问题是：当前核初始提案是否已取得广泛held能力、随后主要被完整流程损失。完整首G仍只有集中净+12，削弱了这一主要解释的支持度；后段不是获得明显广泛能力的唯一现成缺口。总分相同也不等于策略/行为相同：full比首G多保7条MT成功（129对122），少取得7条MT失败（36对43）。三方成功集合中，MT失败时full独成功6、首G独成功13；MT成功时full独成功16、首G独成功9，剩余双方共同成功143。双向交换不单独指认final selector、STOP、parent、新H或某个later G，也不能据此断言所有后来提案无用。
+
+真实链仍为exact L/action-hidden video/自身MT episode H/P0，经原完整CP432双meta/Reader/static到F38349的38-target完整A/B及sBA，再作用于冻结MT基底的自身hidden和十步动作。首G与full使用同一共享核，差别是实际编译路径与最终被选固定参数；共同E的BA监督允许忽略P/H，覆盖non-MT域并不自动迫使学会针对失败纠错。结果支持继续重估初始跨task映射/读取/目标及能力保持，不能唯一确诊其中一个消费者；训练425、换教学保持和真实P/H覆盖正证据与旧Context900/旧RL9负证据均保留。未运行新video/H消融或其它候选读出，不由本结果证明其因果或checkpoint资格。
+
+### 21.2 预定义子集、出处与信息墙
+
+| 原策略形成的子集 | 行数 | MT/full/首G | 首G/MT R/G/L | 首G/full R/G/L |
+|---|---:|---|---|---|
+| 首生成前STOP | 52 | 24/24/21 | 19/2/5 | 19/2/5 |
+| 原final MT | 111 | 47/47/46 | 37/9/10 | 37/9/10 |
+| 原final firstG | 69 | 21/30/30 | 16/14/5 | 30/0/0 |
+| 原final laterG | 220 | 85/88/89 | 69/20/16 | 76/13/12 |
+| 原结果复用 | 69 | 21/30/30 | 16/14/5 | 30/0/0 |
+| 本次新增query | 331 | 132/135/135 | 106/29/26 | 113/22/22 |
+
+STOP52属于final MT111，子集不能相加当互斥面板；全部由旧π选择形成，不是随机化单部件实验。旧69行是同一G000和最终场景/RNG的实际结果，不重新采样；新增331行完整、无工程失败或预算截断。全400 task/state唯一，每task50不同教学，实际初始state/scene、env/native RNG共同前缀和官方settling10/horizon/成功终止逐行兼容。
+
+348保存G000读取其真实weights，包含未被实践的提案，未重放H/教学或重新生成。52实际generate记录逐项指向该condition自己的MT300完整第一episode：原path零attempt/零修订，其真实bootstrap初态和完整prefix合法、排除最终初态；同source kernel/exact L/teacher/真实P0，只调用一次确定G，无Actor/后段H/最终反馈。400最终唯一LoRA出处和复用来源保存到provenance.json；实际完整RL9/F38349/full state身份及八job源46306c07一致。0新MT/G实践、0梯度/Test/新checkpoint选择，原正式165不改，firstG只是冻结posthoc验证机制诊断。
+
+### 21.3 实际成本、批处理证据与完成状态
+
+08:55:46.766至09:06:25.632，wall638.866秒（10.648min）；八job均exit0，新增.9316728501 GPUh，失败费用0。331新query95372环境步（含3310 settling）；52真实教学生成读取2022个保序双相机时刻/106.220秒。endpoint生成/物化合计.917694秒的局部计时不含native教学、context、H解压及保存IO，不能称完整生成延迟。依赖既有400 MT bootstrap/114908环境步，不称zero-interaction；旧formal400的10.376800786 GPUh含全部编译/实践/query，原记录不能独立拆出bootstrap GPUh，不把它重计为本次费用。
+
+现场两节点准入普通cap6，实际并发峰值六卡gpu01:0–5、单node6；postexit快照本项目GPU进程0。22实际组2406次动作推理、18465 plans，平均batch7.6746、singleton8.81%，peak allocated13.782/reserved32.037GiB。native prefix/flow计时合计318.428/1798.266秒；多环境operation6526.674秒、env等待616.923秒为重叠并发计时，不能相加或占比解释整批wall。
+
+slots32实际首组32个task39 Long条件，16960步/409.908秒=41.375步/秒、平均动作batch17.516、reserved32.037GiB。原slots16 pilot32个task23 Goal条件为36.186步/秒；已完成同horizon peer的32个task31 Long条件为37.410步/秒。任务、成功长度与负载不同，支持有限物理安排选择而非严格配对提速证明；同task39的2行尾组不作为匹配16-slot对照。owner在两pilot完成后登记采用32，但实际continuation已无剩余group，额外23.754秒/.006598GPUh只有启动开销；因此本批只有一个有效32-slot组，不称已兑现整轮加速或证明绝对最优。未新增profile episode、重跑有效行或改变每行RNG。
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/diagnostics/first_G_validation400_20261013；稳定analysis/completion_20261013/{consume.py,statistics.json,paired_raw_rows.jsonl,provenance.json,runtime_cost.py,runtime_cost.json,complete.json}保留完整三臂1200逻辑行、400来源和账目。配对消费CPU3.265秒，费用核验只读metadata，0额外模型/H重放/GPU/episode；根消费前143.62MiB、symlink不追随，小于8GiB准入，旧49.301GiB原件不复制。
+
+§21已结束新增计算，旧启动/预计09:15–09:40保留历史，11点仍软目标。文档/Git及一次可靠整批交main后由其承担下一科学裁决，不自动同缓存延长/更多Actor/其它臂/Test。有限first-g入口按原设计在main消费后退休，冻结代码与raw/关键权重保留；本次结算未修改源代码或旧正式产物。

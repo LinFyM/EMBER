@@ -1,3 +1,9 @@
+## 2026-10-13：同核首G400完整诊断，初始能力与完整流程同为165
+
+§21冻结完整RL9/F38349于08:55:46–09:06:25实际结束，exit0，首G165/强MT153/完整Writer165。首G对MT R122/G43/L31，对full R143/G22/L22；task16净+11、其余350行仅144/143，Long18/24。初始迁移仍小且不均，后段存在双向能力交换，不支持仅靠后段保持即可取得广泛收益的结论，也未唯一拆分组件原因。
+
+实际348原保存G、52各自1episode MT前缀生成、69原final兼容复用、331新最终episode/95372步，0新实践/梯度/Test，原正式165不改。六卡/八job/.931672850GPUh/10.648min，失败0，双节点GPU已释放；原400 MT bootstrap114908步只作依赖、不称零交互。slots32有效首组及无工作continuation开销均保留，不追认整轮最优。稳定诊断ROOT/analysis/completion_20261013及现有coordinate分析§21.1–21.3/findings461/design§21.4保存完整结果、出处、子集和费用；main一次消费后自主裁决后继，无自动计算。
+
 ## 2026-10-13：完整400消费后的同核首G400有限机制诊断登记
 
 §20正式165/MT153已完整交main；main直接复算800行/400path，确认小幅集中收益并明确授权冻结RL9/F38349的首G同400对照。原348保存、52首前STOP缺失、69final首G复用真实核验，当前准备52生成+331新最终episode，0训练/新实践/Test。不重开旧owner/400，posthoc诊断不替正式165或资格；唯一design§21/current progress承接。main三份CPU解释已原样归档旧ROOT/analysis/main_scientific_readout。

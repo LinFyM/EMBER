@@ -1,3 +1,8 @@
+## 2026-10-13 23:00 §23完整验收；当前执行仍为独立§12末点读出
+
+原§23 fixedG38349 selector72已完成A180/B18及唯一correct400并由CPU实际验收：163/MT153，R123/G40/L30，旧165→163，覆盖6/8，Long净−7。没有取得明显广泛稳定的完整改善，不追加该批训练/控制/Test。完整结果交主讨论01a13399作科学裁决；有限批结束不等同最终目标完成。
+当前active仅docs/designs/problem_first_compiler_candidate_20261013.md §12的既有有界匹配辨识，两臂72已保存、原四576/400读出沿owner06独立运行和唯一整批唤醒；不重训、读中间分数、重复等待或自动后继。原§23完整验收、费用及交付指针见其ROOT/analysis/completion_20261013/{acceptance.json,report.md}，根记录/Git串行闭环。下面旧状态均保留为历史。
+
 ## 2026-10-13 22:32 §12两72完整复用，四末点读出已实际并行
 
 唯一owner06/PID2943261/source41bd9587于14:29:04Z进入真实执行，读取两臂原完整72而不重训；四readout于14:29:14–28Z分别launch F-only seen:gpu01:2、full-G seen:6、F-only Val400:1、full-G Val400:7。原§23占0/1/5/6/7，本批共享已有1/6/7及新增2，合计仍6物理卡/node6。所有runtime执行身份/生成实际LoRA已核，seen环境实际submitted，尚无完整576/400成绩声明。GPU2余43,561MiB采用更大物理frame32，同全部frames/noise/8官方slots/group8；其它frame16，未新增profile或科学行。余读出仍估30–60min，原时钟/所有失败2.730081220已结算GPUh保留。真实启动验收analysis/readout_resume06_launch_acceptance.json；05已consumed，根路由owner06单一整批唤醒→实验验收→main，原§23独立/Test封存。

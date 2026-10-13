@@ -1,3 +1,9 @@
+## 2026-10-13：固定G38349 selector72的A180+B18与唯一400完整结束
+
+原§23实际owner06于14:42:31Z exit0，完整G/θ/baseline/各Adam、samplers/四rank RNG与72当前核信用CPU验收通过，旧pair/A/B有效产物复用，Test关闭。唯一400=163/MT153，R123/G40/L30/net10/churn70，覆盖6/8；旧165→163有24得26失。suite净Spatial+5/Object+10/Goal+2/Long−7，task16+7/31−7，23/39仍0；仅4MT final回退，396生成LoRA，395条件走满五轮/5 STOP、1988实践，并未取得更高整体能力。
+保存新增7396episode/1782491步，旧MT-H400/114908步及seen/B query只读依赖；失败partial交互额外未知，原失败/费用保留。全费34.272177007GPUh（18收据、3失败2.242225011），首实际GPU05:09:44Z→14:42:31Z=9.546h超原5–8h，恢复不重置时钟。producer clean pushed detached bf2c88b0；原headroom拒绝和归档旧线程投递失败保留，不重启旧session或增加等待者。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349；完整原行validation/RL_00000018/correct/results.json，末点checkpoints/RL/update_00000018，逐批/状态/配对/账目analysis/completion_20261013/{acceptance.json,report.md}，持久解释findings473。一次交新主讨论01a13399，不自动续该批；§12原独立辨识继续，不能把本批收尾写成目标完成或由小幅交换断言唯一根因。
+
 ## 2026-10-13：同核首G400完整诊断，初始能力与完整流程同为165
 
 §21冻结完整RL9/F38349于08:55:46–09:06:25实际结束，exit0，首G165/强MT153/完整Writer165。首G对MT R122/G43/L31，对full R143/G22/L22；task16净+11、其余350行仅144/143，Long18/24。初始迁移仍小且不均，后段存在双向能力交换，不支持仅靠后段保持即可取得广泛收益的结论，也未唯一拆分组件原因。

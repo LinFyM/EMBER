@@ -11904,3 +11904,10 @@ main原件main_supervision_coverage.json：72 parent/H的角色E38/Gparent20/MTp
 ## §12完整72消费者与调度查询退出的边界（2026-10-13）
 
 两臂在相同固定288条件/72有效B4中完整保存G/Adam/采样与rank RNG，逐行T/全部noise/query类别权重一致，full-G所需meta双支/Reader/static/F与F-only endpoint均取得原生控制梯度，source/Actor保持冻结；源与末点完整，不以11个未产生Adam状态的owned参数自动推断整个读取链无效。此工程证据不能代替首G闭环、视频/H作用或迁移证据，正式576/400尚未启动。GPU CLI一次退出必须保留原诊断；一项瞬时实时查询失败不要求重做训练，也不能绕过两节点/所有权/数量/真实峰值。失去原stderr的原因尚不可还原，保留未知；现场恢复后的窄调度接续只补原输出缺项。
+
+
+## 473. 固定G的72任务选择学习未带来更高完整held表现（2026-10-13）
+
+原§23 A180+B18唯一400完成163/MT153，R123/G40/L30；旧完整165→新163，R139/G24/L26，覆盖仍6/8。Spatial/Object/Goal/Long净+5/+10/+2/−7，task16净+7与31净−7相抵，23/39仍0。MT最终回退仅4/400、396部署生成LoRA，不能把本次小幅MT净收益归为大量fallback，也不能把相对旧点的交换称为明显广泛稳定提升。395条件五轮外部停止、仅5实际STOP，实践1988次多于旧1465，却未转为更高整体能力；降低当前仅加强θ曝光即可迁移利用既有G的支持度，不据此断言θ或G是唯一根因。
+固定G参数并不固定parent/H、后续G输出或final LoRA；旧/新完整流程共同改变路径与选择，收益和能力交换先归完整流程，缺held候选反事实查询时不全部归final。B阶段seen36末prefix expected query均值.759936/MT.590278，source见/G未训36为.749809/.734375，只是不同当前核的训练信用流，不拼成single-checkpoint资格或36新操作。单400尚未提供相邻稳定/视频必要性/Test证据；有限批结束不等于最终目标完成，无自动第二块、Q补丁或追加control。
+全G/θ/baseline/独立Adam、四rank/source RNG、sampler及所有72当前核路径/信用实物验收通过，G/Adam38349/bank9冻结。保存新增7396episode/1782491环境步，旧400MT-H的114908步与seen/B MT query为依赖；失败未落盘交互额外未知，全部18GPU收据含3失败均纳费用34.272177007GPUh。首GPU至退出9.546h超原5–8h，保留恢复/共享负载/失败而不重置时钟。稳定原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349，analysis/completion_20261013/{acceptance.json,report.md}与唯一validation/RL_00000018/correct/results.json。当前§12匹配G控制学习辨识独立继续，未因本结果新增科学范围。

@@ -1,3 +1,10 @@
+## 2026-10-13 23:00 §23原批exit0，A180/B18/唯一400完整验收
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。owner06/PID3514753于14:42:31Z真实exit0，原唯一completion_delivery已processing_verified唤醒本session，未增加等待者/自通知。local180与RL18实物CPU载入：全G/θ/baseline、独立各Adam、samplers和四rank/source RNG完整，G38349/bank9固定。A720条件/72task各10遍、B72条件各一次，每B4 seen2+novel2；全72B路径actor u−1及五层conditional_continue/真实query16/解析STOP与final信用通过，未实践G不查询，原pair/A/有效B路径全部复用。
+唯一strict correct400=163/MT153，R123/G40/L30/net+10/churn70/Jaccard.6373；对旧165是R139/G24/L26/net−2。Spatial/Object/Goal/Long净+5/+10/+2/−7，task16净+7/31净−7，23/39仍0，覆盖6/8。MT最终回退4/400，396实际生成LoRA；395条件走满五轮、5 sampled STOP，1988实践仍未提高整体表现。不能归因全部final选择/宣称稳定、视频因果或Test完成，不自动追加§23计算。
+保存新增7396episode/1782491环境步（pair1260、B3752、held2384），含正常dummy；旧seen1152 query、B MT1152 query及400MT-H/114908步和4MT final为只读依赖。失败未落盘partial交互额外未知，保留原件/费用而不写0。全费34.272177007GPUh，18收据含3GPU失败2.242225011；原headroom拒绝/归档旧线程投递失败亦保留。首GPU05:09:44Z→14:42:31Z=9.546h，超原5–8h，不重置恢复时钟。0验收新forward/rollout/Test，producer clean pushed detached bf2c88b0。
+报告/完整CPU验收/逐批信用/成本：ROOT/analysis/completion_20261013/{report.md,acceptance.json}；formal原行validation/RL_00000018/correct/results.json；末点checkpoints/RL/update_00000018。当前§12 owner06/四既有576-400读出独立接续，不读其分数/暂停/重启/新增等待者，路由仍整批退出→本session验收→main一次。主讨论交付与本次Git指针在同analysis目录保存，旧§23通知按task/ROOT/attempt/consumed判重。
+
 ## 2026-10-13 22:32 §12 actual readout-only owner06已承接四原面板，source41bd9587
 
 owner06/PID2943261于14:29:04.823976Z进入唯一正式执行，frozen clean pushed detached=/data1/user/ymdai/ember_worktrees/fullg_readout_probe_frozen_20261013。原两个72 endpoint/Adam/sampler/RNG及288同流已验收，F训练源8dd68689/B训练源1c424cd8沿原身份保留；后续读取 source41bd9587只修Batch探测记录/有界重探，不改变模型、目标、Query、选择或信息墙。05退出已consumed，原27重放/四discarded B4/两臂72全部复用，不重新训练或采集。

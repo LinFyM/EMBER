@@ -1,3 +1,15 @@
+## 2026-10-13 19:29 当前：§12 canonical消费者已实现并完成CPU核验，待clean冻结启动；§23独立继续
+
+288条件/2304正常查询、27个去重T单次成功重放身份、seen576与strict held400读出面板已冻结到新ROOT。400原own-MT-H首episode索引齐全，0缺项；旧52是补生成G，不是新增MT实践，400全部复用原前缀，bootstrap按原path ordinal取practice state。旧MT400未保存initial_proprio，全部scene/state/RNG/full-noise配对可核，直接旧full-G/firstG proprio仅289行可核；该限制保留，不伪称全部proprio证据。
+
+隔离树沿同Runtime/Generator/practice.native_actions增加完整可微compile、无动作读取的正常query观察接口，单NativeFunctionTrainer的F_only/full_G参数选择，以及复用官方动态queue的首G读出；source/T/历史producer冻结、full-G当前meta/Reader/static重算，Actor不参与新G学习。CPU真实安装18层native数学/38targets/10flow/5x7与microbatch checkpoint梯度核验通过，真实task2 G-H2三类8query及权重消费通过。目标成功与保持查询实际同一经历复用，类别等权保持，唯一episode/观察计账不重复。GPU全G两支meta梯度与完整吞吐尚待正式profile，不把CPU通过称方法有效。
+
+3个新模块按输入/学习/读出职责各约200–260行；执行入口拆为小调度函数，共用一个Writer与EpisodeRunner，追加可选submitted/finished ledger记录失败启动成本，不创建新运行框架。architecture guard无新增硬违规；约800行增长由本session自审，源码target/schema/native及queue均复用，主讨论不重复工程review。旧§23 frozen owner06不热改、不读在途中分数、无第二等待者。
+
+最新quota data1 used1548014756KiB、quota2147483648KiB（约572GiB余量），source完整G state约.102GiB；2臂4点完整G/Adam约2.6GiB，872 LoRA约2.1GiB、27 replay raw与bounded CPU/raw/cache及临时数据保守64GiB。合计原§23160GiB余量仍可容纳。当前两节点全部非空闲，cap6；原批占4卡，新批拟另外2卡独立臂，单节点仍≤6，无util/固定显存筛选。实际GPU调度/launch原件、profile吞吐/峰值与ETA随后登记；本段尚不声称GPU已启动。
+
+以下为历史时点记录。
+
 ## 2026-10-13 18:47 当前：§12两臂native控制学习已完整授权，CPU准备；原§23独立继续
 
 Owner自主推进授权后，主讨论01a13399已派发完整design§12，原件.codex/tmp/full_g_native_identification_20261013/scientific_contract.md全文集成候选design新§12，仅该有界辨识active。原§23 fixedG38349/bank9/A180+B18/唯一correct400/Test关闭及唯一owner06/整批回报保持，不查看其未完成中间分数或重复执行。

@@ -368,6 +368,8 @@ Owner在本轮完整设计交付后明确“好的，接下来你自行开展自
 
 每个task/parent-H，用原相同16初态、官方policy/env noise下的E与实际parent成功数一次选T，较高者胜、同分parent；四视频共享这个固定T。只读兼容原行，先查原件完整性，不按已知结果改16面板或候选。若无法得到某个P/E的真实兼容16配对，须报告具体缺项，由main补齐范围；不得将异noise/不同G记录拼成配对或默默删task。
 
+补充来源口径（不改变合同）：72 parent/H选择角色为E38、Gparent20、MTparent14，21个task两context的T不同、15相同；角色名与实际参数来源分别保留，不能把全部288条件称专家纠错或由T不同证明H操作内容必要。实际需补录27个去重T的既定最早成功query，剩余72上界不改投其它采集。T成功和同producer保持可复用同一episode/状态，保留类别等权，真实独立经历/观察不重复计数。原件inputs/main_supervision_coverage.json与asset_audit.json随run保存。
+
 ### 12.3 控制查询与新采集上界
 
 三类查询遵守§3。同一condition所有类别都用同一T。

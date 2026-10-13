@@ -1,3 +1,7 @@
+## 2026-10-13 19:29 执行节点：§12数据已冻结，canonical消费者CPU通过，串行集成后自主GPU启动
+
+新ROOT已保存完整合同/288条件与正常noise/57实际T/27单次补录/两末点读出；source/parent-H及全部400 own-MT首episode索引已核。code仅一套F/full参数模式；GPU profile≤2B4/臂后fresh重置并72有效更新，终点seen576+400，无Test/新θ/BCE/失败接手监督。实测profile一次修订ETA，整批唯一完成或异常接续。原§23 owner06继续原授权，不能等本批、改变或读取其中途分数。
+
 ## 2026-10-13 18:47 当前计划：实施唯一§12 matched native G辨识，原§23独立
 
 当前完整科学授权为problem_first_compiler_candidate_20261013.md §12，288固定condition/36tasks/MT-H1与G38349-H2；同G38349/fresh同Adam，两臂只改F vs meta/Reader/static/F可训练集合，72有效B4/臂、唯一末seen576+firstG400。0新θ/BCE/失败恢复/Test。原§23独立B18/唯一400/现有整批退出接续不变，不读中间分数或重复等待。

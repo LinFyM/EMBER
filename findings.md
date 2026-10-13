@@ -11880,3 +11880,10 @@ Owner保留6/8总卡及单节点6卡数量上限，取消利用率与固定显�
 Owner新自主授权后main派发完整§12，仅此有界matched辨识active，原§23保持独立。两臂同G38349/fresh同Adam/控制目标/288condition/72B4，差异只F可训练 vs full-G；旧FM432不是匹配baseline。失败恢复项保留删除，0新BCE/θ/held梯度/Test。T/labels/query结果不进condition，full-G重算所有依赖可训练前端的特征，历史producer hidden/动作只是原记录冻结。
 
 只读bank9实物为36tasks/149parents/252PH/1008cache，不把216 appended rows或113有query候选当全bank。新固定已完成seen36 pair是MT-H1/G38349-H2×4video=288，最长92frame/H104与208；36份三控制器query16完整同身份配对。去重T57已有成功raw30、缺27（仅结果/noise完整、RGB轨迹未保存），需按完整新合同单次重放原最早登记成功query，不伪造已有轨迹或换失败病例。新消费者GPU完整图尚未验证，actual profile与闭环仍必须发生，native动作函数/CPU图接通不代表控制学习成立。
+
+
+## 471. 固定T监督有不同来源且类别复用不能充作独立经历；held首MT-H均可复用（2026-10-13）
+
+main原件main_supervision_coverage.json：72 parent/H的角色E38/Gparent20/MTparent14，21task两H context的T不同、15相同；role不等于实际参数源，57去重T按target_id和实际weights保留。不能把全部288条件叫专家纠错，也不能由两个context目标不同证明H操作内容必要，因为完整parent数值本身可区分。实际27个既定缺成功raw仅原最早成功query一次重放，剩余≤72额度不改投补挑。已有T成功与同producer保持可能同一episode/状态，保持类别等权，不改科学权重；独立经历/观察只计一次。
+
+独立静态核400：8task各50无放回教学/固定scene/state/env-policy/full-noise齐全，0前缀缺项；MT-H1含17–104 records，旧fullH须按首边界裁为1episode。52旧诊断仅新G生成，0新MT；原400全复用own-MT首episode，bootstrap state沿practice_states[path_ordinal%49]，与最终初态全分离。旧MT400全缺initial_proprio、旧full与firstG直接proprio仅289 G行，此字段限制保留但不是缺H或允许重采400的理由。实际CPU native10/checkpoint微批梯度及真实G-H2类别权重通过；新full-G实际梯度/性能仍待GPU与终点闭环。

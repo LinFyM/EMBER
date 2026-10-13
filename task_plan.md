@@ -1,3 +1,7 @@
+## 2026-10-13 20:07 当前：§12原范围工程恢复，已完成数据与profile复用
+
+27既定成功支撑补录已完成（21成/6败全保留），0正式更新/held。恢复仅修复128/256观测拼批及降低full-G物理frame16→8；A复用已完成首B4、仅补第二，B最多两完整B4后均fresh72和原末点。全部成本/失败保存，不换病例/多采/增加有效更新或profile完整B4。原§23原owner/唯一整批回报独立。
+
 ## 2026-10-13 19:45 当前实际执行：§12唯一detached owner已承接整条有限批
 
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification，owner1078579/source e7f1a976；固定27补录已launch，profile→fresh72/臂→seen576+firstG400/臂均为同一可靠有限任务的真实依赖，完整合同不变。GPU full-G图与吞吐待2B4实测，之后一次修订ETA；整批完成或真实异常一次唤醒本实验再验收交main。原§23独立继续，无阶段自通知/重复waiter/Test/自动后继。工程隔离树和分支集成后已退休，冻结正式source保留。

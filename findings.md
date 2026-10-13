@@ -11887,3 +11887,10 @@ Owner新自主授权后main派发完整§12，仅此有界matched辨识active，
 main原件main_supervision_coverage.json：72 parent/H的角色E38/Gparent20/MTparent14，21task两H context的T不同、15相同；role不等于实际参数源，57去重T按target_id和实际weights保留。不能把全部288条件叫专家纠错，也不能由两个context目标不同证明H操作内容必要，因为完整parent数值本身可区分。实际27个既定缺成功raw仅原最早成功query一次重放，剩余≤72额度不改投补挑。已有T成功与同producer保持可能同一episode/状态，保持类别等权，不改科学权重；独立经历/观察只计一次。
 
 独立静态核400：8task各50无放回教学/固定scene/state/env-policy/full-noise齐全，0前缀缺项；MT-H1含17–104 records，旧fullH须按首边界裁为1episode。52旧诊断仅新G生成，0新MT；原400全复用own-MT首episode，bootstrap state沿practice_states[path_ordinal%49]，与最终初态全分离。旧MT400全缺initial_proprio、旧full与firstG直接proprio仅289 G行，此字段限制保留但不是缺H或允许重采400的理由。实际CPU native10/checkpoint微批梯度及真实G-H2类别权重通过；新full-G实际梯度/性能仍待GPU与终点闭环。
+
+
+## 472. 原生查询的128/256分辨率须在官方resize后拼批，成功补录阴性如实留空（2026-10-13）
+
+§12正式消费者的normal observation来自128px HDF5，自身真实H是256px；physical micro8保持类别分块可成功，而更大micro24混合类别在cat前直接失败。按现有PI05同一resize_with_pad_torch在拼批前变224，仍只在原policy做range与mask；真实24query CPU检查证明与逐条官方预处理一致，不能以缩query数掩盖该接口缺口。F-only原首B4的实际梯度/冻结组通过与11.181/11.789GiB峰值保留；full-G在共驻余量缩到27,279MiB时frame16 meta反传OOM，改物理frame8属于同学习语义恢复，不改dtype/视频或H长度。
+
+27个去重T的既定最早成功query单次重放：21成、6败，全部原行/噪声/初态与5582步保存；失败类别留空，不换成功状态或把≤72余额当扩采许可。此前科学阴性与工程profile故障分别保留。首owner成本.213567995GPUh，A完整discarded B4一、B零、正式更新/held为0；恢复A只补一个，B最多两个完整B4，均fresh72前重置，不把失败计算抹零或重置派发时钟。

@@ -1,3 +1,13 @@
+## 2026-10-13 20:07 工程承接：§12固定27补录完成，消费首owner退出；复用F-only首profile恢复
+
+matched_native_01真实exit1/11:54:47Z及回报已consumed，旧owner已退出。27个既定T补录完整保存，21成功、6原成功重放转败（13/MT300、17/E、19/E、29/E、37/E、62/E），5582环境步/27 starts，0未知或失败环境启动，绝不换病例或挪用剩余72上界；T成功类别按真实结果留空。全部费用.213567995GPUh，其中补录.149988775、两profile失败合计.063579221，原件/源e7f1a976/退出/自动回报保留，原派发时钟不重置。无72正式更新/held/Test。
+
+F-only第一个micro8/frame16完整B4已有效通过全部native梯度/冻结组，allocated11.181/reserved11.789GiB；第二B4在混合正常128px/真实H256px的张量拼接处失败，未完成update。full-G第一B4在frame16 meta反传CUDA OOM：现场新增他人约14.93GiB占用，launch余量27,279MiB，本进程约24.73GiB，尚无完整profile update。这是工程失败，不是科学性能否决。
+
+窄修在独占codex/fullg-native-consumer-recovery-20261013完成：按安装PI05完全相同resize_with_pad_torch在拼批前规范224，之后原range/mask/原生执行不变；真实task2三类别24query/128与256实际图像CPU消费已核，与逐条官方预处理完全一致，noise仍24x50x32。profile跳过已保存discarded B4，A只补第二完整B4，B补两个完整B4，保留原不完整计算及成本；完整discarded B4总量仍≤2/臂。B仅将物理meta frame chunk改8减峰值，不截H/教学、改标签/目标/更新。27重放与A首profile不重跑，fresh72前仍源权重/Adam/sampler/RNG重置。下一clean pushed detached恢复，实际新GPU图/吞吐尚待消费者。原§23独立、无中途分数读取/新等待者/阶段通知。
+
+以下为历史时点记录。
+
 ## 2026-10-13 19:45 实际启动：§12唯一owner1078579，固定27T重放→两臂profile/72/末点；§23独立
 
 新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification。CPU owner PID1078579于11:41:59Z真实detached派生，11:42:44Z完成runtime入口；clean pushed detached e7f1a976，frozen tree=/data1/user/ymdai/ember_worktrees/fullg_native_frozen_20261013。注册27个既定T重放job已实际launch gpu01:4/8slot，原行噪声/初态保持，不选替代病例；完成后同owner并行F_only:gpu01:4和full_G:gpu01:0各2B4 profile，按真实native credit时间/峰值选择8或24 query microbatch，再各自fresh源权重/Adam/sampler/RNG开始72有效更新，依赖就绪的读出立即沿cost-balanced persistent队列运行。当前尚未取得完整profile/GPU梯度通过或终点性能。

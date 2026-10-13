@@ -56,8 +56,9 @@ def inputs(args):
 def request(case,state,ref,*,identity,snapshot=None,capture=True):
     horizon=case['spec']['horizon'];remaining=horizon+10 if snapshot is None else horizon-snapshot['episode_control_steps']
     return dict(task=case['spec'],state=state,parameter_ref=ref,state_id=case['state'],noise_root=case['noise_root'],
-        episode_id=identity,remaining=remaining,snapshot=snapshot,snapshots=capture,
-        capture_history=capture,capture_phi=False,uses_teaching=False)
+        episode_id=identity,remaining=remaining,snapshots=capture,
+        capture_history=capture,capture_phi=False,uses_teaching=False,
+        **({'snapshot':snapshot} if snapshot is not None else {}))
 
 def row(output,case,arm):
     result=dict(output['row'],global_task_id=case['task'],diagnostic_case=case['identity'],arm=arm,

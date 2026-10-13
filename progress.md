@@ -1,3 +1,19 @@
+## 2026-10-13 15:41当前承接：A180和B1完整，唯一owner恢复B18→correct400
+
+新实验唯一执行者为01a133e5-50f0-7d20-a893-df95c7387630；旧实验01a12bb6已归档，未解除归档或重复派发。已详读前任全部实验session、Owner要求、当前仓库合同及实际消费者。主讨论01a13399-cba2-7da2-9dc6-df430ca80280是唯一整批/科学边界接收方；根状态和工程/Git由新执行者串行维护。
+
+唯一ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。72任务pair/1260新增episode、seen1152只读query及A180均完整复用。A180于14:15:07完成；随后两次CPU调度因旧24GiB/45%筛选退出，0新增GPU计算，原归档旧线程回报失败原件保留。物理恢复04的真实四卡B1完整保存，B2四条完整五轮路径和已保存query保留；14:57:31因rank0换场景时EGL offscreen framebuffer初始化失败退出，非科学阴性，也未证实GPU故障或唯一显存根因。全部exit/consumed/失败回报与5.590179703已结算GPUh保留，未重置原13:09批次时钟。
+
+唯一恢复owner为ROOT/coordinator/selector72_measured_resume_B18_validation400_05/PID3105671，15:41:03启动，15:41:28实际RL attempt003在gpu01:3/1/6/2四rank启动。来源为clean pushed detached bf2c88b0，完整B1恢复、B2有效路径/查询复用，只补缺失；G38349/F Adam/bank9固定、logicalB4 seen2+novel2、原θ/baseline Adam/RNG承接、B18和唯一strict correct400保持，Test关闭。模型/梯度/任务权重/信息墙未改变；物理rank迁移实现与实际CPU消费者检查已通过，4项针对性测试通过。没有B18终点或400结果，不将进程启动写成整批完成。
+
+Owner明确保留总6/8卡、单节点6卡数量上限；取消利用率和固定显存筛选，也不以共享算力导致他人减速为排除条件，不kill/pause/reset/抢占或挤掉他人任务。现场gpu01约24–27GiB余量，据B1 CUDA实测与EGL估算使用每rank16环境/frame16，包含util78%的卡；32环境估算峰值当前不容纳，未宣称已测试或最优。B4没有有用第五训练rank；独立工作已全部就绪消费，后续formal重新检查两节点，在数量上限内并行，不把整批限制为world4。原formal group8实际849秒/17.855GiB、group4两波1097秒/14.318GiB提供吞吐依据；将用本轮原定400行尝试group16，记录实际吞吐与峰值，不增加科学行。量化依据和无GPU调度消费者检查在ROOT/analysis/engineering/measured_allocation_CPU_evidence.json及owner分配记录。
+
+主讨论三个docs已按最新3eb91070串行集成，文档merge f5027976/工程merge bf2c88b0均push main：docs/analyses/problem_first_method_audit_20261013.md、docs/analyses/problem_first_method_review_20261013.md、docs/designs/problem_first_compiler_candidate_20261013.md。问题/源码/历史/原件审查及三轮独立审阅修订已完成；候选非active design、0新科学派发，active仍为原§23，主讨论待完整结果依事前§10裁决方法。source/MT起点尚无因果对照，不因rank8或已有资产默认MT科学优越。
+
+剩余初估3–5.5h，以B1最长完整cycle619秒及旧formal真实吞吐为依据；当前共享负载变化可能延长，须按后续实际消费者结算。唯一CPUowner直接等待其GPU子进程，仅整批退出给新实验session一次可靠唤醒；已有03/04回报已消费判重，未增第二等待者、阶段通知或重复自通知。完整验收后一次交新主讨论，0自动后继/相邻/controls/Test。
+
+以下段落为历史时点记录。
+
 ## 2026-10-13 13:45当前执行：§23真实pair72完成，A180已启动
 
 唯一ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。72任务真实pair数据于13:44:40完整结束，原件为ROOT/coordinator/selector72_prefix_consumer_handoff_02/student-data_complete.json。实际新增36次G生成、36次MT bootstrap实践、72次G实践及1152次novel MT/G query，合计1260 episode；seen1152 query及已有MT-H/保存G只读引用。数据采集完成不构成选择器学习或validation资格，A180/B18/400成绩尚未产生。

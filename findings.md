@@ -11838,3 +11838,10 @@ Owner11:50自主执行授权后main登记唯一design§23：固定原完整RL9/G
 原warm90期望425.579477/alwaysG425，pMT median8.140e−6；旧held lost/gain均极少选MT，支持风险区分不足但非唯一模块归因。dJ/d(zG−zMT)=pG*pMT*(qG−qMT)使反例直接梯度小，改relative reward不变，Adam/共享表示仍可能恢复；不临时reset/换温度/目标或加更新。Actor合法自身H/候选预测有条件价值依据但不给新初态真实结果，实践成功不保证final；旧189未来反馈union不是部署目标或保证。
 使用已有metrics区分真实MT>G反例是否产生、是否学到、是否held迁移，不加GPU读回。更多MT回退/内部值涨/回153或仍165局部均非成功；阴性按真实学习程度解释，不能证明所有H无价值。唯一完整400/RGL/保持/覆盖决定支持度，无自动相邻/controls/Test或第二同数据块，完整研究仍由main接续。
 启动前实际Runtime/源optimizer CPU承接及72身份审计通过，检查本身0forward/episode/GPU。随后真实pair72于13:44:40完整结束，实际36新G生成/1260新增episode，seen1152 query只读引用；13:45:02四rank A180实际launch，尚无A/B终点或400结果。旧CPU exit1已按主动调度交接判重，原五GPU子job均exit0，后续唯一owner2104955继续原合同，不重复有效工作；工程交接不能写成科学阴性或整批完成。Owner最新取消今晚23:00目标，11点亦取消，5–8h只预估、不扩科学范围。原文/选择ROOT/analysis/main_contract与现有coordinate分析§23、design§23持久保存；唯一新主讨论接收方01a13399-cba2-7da2-9dc6-df430ca80280。
+
+
+## 466. 实验交接与资源选择以最新Owner要求为准（2026-10-13）
+
+新实验路由唯一为01a133e5-50f0-7d20-a893-df95c7387630，旧01a12bb6归档不再投递；主讨论01a13399-cba2-7da2-9dc6-df430ca80280负责科学合同与取舍，工程/Git/根三状态由新执行者串行闭环。仅消费原§23，无新增科学派发。
+Owner保留6/8总卡及单节点6卡数量上限，取消利用率与固定显存筛选；允许共享算力的速度竞争，不kill/pause/reset/抢占或挤掉他人任务。显存准入须来自实际模型/物理波次/渲染器/缓存需求，不能把旧24GiB/45%经验值或某个world size变成科学或永久资源限制。EGL初始化失败须保留实际有效路径、完整训练状态与费用再作有界工程恢复，不将其归为科学阴性或未经核实的坏卡。
+主讨论问题/源码/历史/原件审查与三轮独立修订已完成，最新3eb91070三个docs于f5027976合并，随bf2c88b0 push main；详细分析、审阅与候选见docs/analyses/problem_first_method_audit_20261013.md、docs/analyses/problem_first_method_review_20261013.md、docs/designs/problem_first_compiler_candidate_20261013.md。候选非active design，主讨论待原§23完整结果按其§10裁决；source/MT尚无起点因果对照，不因当前rank8/资产继承宣称MT科学更优。完整收益首先归完整流程，固定G参数不代表parent/H或最终LoRA固定。

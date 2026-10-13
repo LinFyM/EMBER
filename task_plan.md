@@ -1,15 +1,16 @@
-## 2026-10-13 当前计划：已授权§23完整选择学习窗口
+## 2026-10-13 当前计划：新执行者接原§23完整选择学习窗口
 
-72任务真实pair于13:44:40全部完成：36新G生成、36 MT实践、72 G实践、1152 novel query，共1260新增episode；seen1152 query只读引用。A180于13:45:02实际启动，gpu01:6/1/3/2四rank，由唯一owner2104955继续B18→完整400。旧CPU exit1已按主动交接判重，原五GPU job均exit0；060485ba仅修formal own-MT prefix的索引校验，0dee frozen未热改，有效产物/失败/费用全保留。已集成的task-owned开发工作树和分支已清理，formal frozen源码保留。依据旧计时暂估剩余4–7h，等待当批真实wall修订，不重置实验起点；当前没有A/B终点或400资格结果。
-Owner已登记唯一新主讨论01a13399-cba2-7da2-9dc6-df430ca80280，整批/真正科学边界只向该接收方可靠交付，原01a12bb0停止接收。其完整机制/架构/训练科学分析及独立审阅修订的设计goal另行推进，本批无额外实验或科学合同变动。
+原pair72和A180完整，B1完整checkpoint及B2四条五轮路径/有效query保留。唯一恢复owner selector72_measured_resume_B18_validation400_05/PID3105671已实际启动四卡RL attempt003，clean pushed detached bf2c88b0；从完整B1恢复，只补缺失，继续固定G38349/bank9的B18→唯一strict correct400。G/F Adam/source/MT冻结、logicalB4 seen2/novel2、θ/baseline Adam/RNG及72任务权重/信息墙不改，Test关闭。旧CPU筛选失败、EGL故障、归档旧线程投递失败与全部费用保留并判重，不重复原数据或把工程失败作科学阴性。实际执行/原件与ETA见progress顶部。
 
-当前批次不因主讨论交接暂停。Owner要求完成后暂缓向旧主讨论汇报，新接收方现已登记；完整结果/费用/工程与Git保存为可交付原件后按唯一整批身份交新主讨论，不主动投递旧主讨论。
+新实验唯一执行者01a133e5-50f0-7d20-a893-df95c7387630负责运行恢复、验收及根状态/工程/Git串行闭环，旧01a12bb6归档不再派发。唯一科学主讨论及整批接收方为01a13399-cba2-7da2-9dc6-df430ca80280。完整checkpoint、当前核路径和信用、400原行/配对/能力保持/交互成本及Git通过后一次可靠交主讨论；只有总owner整批退出回报，没有第二等待者/阶段通知/自动后继。
 
-按唯一design§23与/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/main_contract/scientific_dispatch_20261013.txt直接闭环：72任务审计/固定数据manifest→单一消费者与完整源迁移→CPU及真实consumer准入→集成push/clean detached→真实pair72→A180→当前核B18→唯一完整correct400→科学/费用/Git/一次交main。不是新许可/ACK门槛，旧讨论状态已被Owner11:50和main明确派发替代。
-原G38349/F Adam/bank9冻结，原θ/Adam与baseline承接；原seen36与novel36每B4各2/18更新全72，新增36授权θ/baseline non-held共享学习，不改global52/固定24/8/8、不读held离线标签、Test关闭。pair最多1260新增episode/36生成，seen1152 query/MT-H/保存G只读；A180只final、baseline冻结；B18仅当前核on-policy/5轮/actual[parent,newG]，至多6120新增实践/G query，MT不兼容另1152，0G更新或学生bank追加。唯一完整B18直接Compiler400，旧MT bootstrap精确prefix及MT final兼容引用、后段新θ实际重采。
-关注新数据是否带来MT优于G反例、现有真实metrics是否学到、完整400是否迁移，不能用多选MT或内部值代替净收益/保持/覆盖；不增加GPU读回/探针或拼跨核训练分数。原pMT很小的梯度约束保留，不reset θ/Adam/改温度/CE/valuehead或延长本窗。
-启动前审计和完整Runtime/源Optimizer CPU承接已完成，真实pair已采齐、A180已launch；落实唯一root160GiB峰值/独立data1 quota，physical rank及batch按真实吞吐决定，动态数据/ready query/formal不锁整批world4。必要接口修复科学语义不变时自主闭环，具体科学边界交main，不设例行工程ACK。
-Owner最新取消今晚23:00目标，11点也已取消；原5–8h是待实测预估，不是截止或正结果保证，不因时间增多扩批。一个真实总owner持续退出等待，launch一次及整批完成/异常一次可靠接续，完成400后main据证据裁决，无自动同数据块/相邻/controls/Test。
+Owner保留两节点总6/8卡、单节点6卡上限，取消利用率/固定显存筛选；按实测当前工作峰值和实际吞吐共驻，不挤掉他人任务。现场余量只容纳16环境，因此当前四rank16/frame16；32环境未测。B4无有用第五rank，formal重新按现场条件最多并行6/8卡；本轮原定请求可尝试更大物理并行，保持400行与全部科学参数，不新增矩阵或虚占卡。新增输出全data1，strg01独立quota和原160GiB峰值预算保持。
+
+主讨论最新3eb91070三个docs已集成并push（文档merge f5027976，main工程merge bf2c88b0）。问题/源码/历史/正式原件审查和三轮独立审阅修订完成，指针为docs/analyses/problem_first_method_audit_20261013.md、docs/analyses/problem_first_method_review_20261013.md及docs/designs/problem_first_compiler_candidate_20261013.md。候选非active design、0新科学派发；active仍原§23，完整结果决定下一方法，source/MT科学起点未被既有资产裁决。
+
+原11:00/23:00时点已取消，原预测只供效率判断，不强杀/缩水/选点。没有自动续同数据块、controls或Test；完整Val/Test明显稳定超过强MT、合法教学参与与合理保持的最终目标持续。
+
+以下为历史计划与当时时点授权。
 
 ## 2026-10-13 当前交付：§22完整结束，后继仅讨论
 

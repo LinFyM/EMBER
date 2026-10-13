@@ -25,6 +25,12 @@ G的后期目标是共同专家的BA距离、读取前端冻结在单MT parent/�
 目前不因held低分扩rank或撤掉MT。G从较强G38349完整状态初始化，表示和F均允许在**共享训练**学习；
 这不是原F-only优化器的exact-resume。部署时共享参数全部冻结，condition内没有轨迹拟合或共享参数更新。
 
+解冻链路意味着原CP432的冻结context缓存不能作为可训练G的输入继续使用。可复用原始视频、真实H与不依赖可训练参数的
+source特征；依赖meta、Reader、static的z/h或memory必须在该共享更新的图内重新计算。H中原producer的实际动作/hidden
+仍是冻结的真实经历，不改造成当前P执行的记录。目标T支路独立冻结；固定T与同一查询内可复用其响应，T变化后不能沿用。
+若开展§6匹配辨识，两臂从同一G权重建立新的优化器，F的初始化状态与更新规则一致，只让另一臂增加前端的梯度消费者；
+不把“F沿用旧Adam、完整G重置Adam”混入所谓只解冻前端的比较。具体优化器数值和事件整数属于后续冻结的运行合同。
+
 1. 输入exact language与K=1有序、双相机、stride5的action-hidden视频。仍用真实source/meta prefix读取z、h；
    不加fake query、teacher state、动作反演标签或task-ID输入。
 2. MT先做一次真实实践。合法H保存实际producer、RGB/proprio、执行动作、native hidden与真实成败。

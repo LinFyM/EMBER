@@ -1,3 +1,10 @@
+## 2026-10-14 §13固定72输入回读全部验收；交main科学裁决
+
+唯一owner fixed_inputs_01于18:03:30.849185Z真实exit0，72/72条件、S/A/B/T全部有限响应与原查询/权重/完整noise/原T、216完整LoRA均通过CPU实物验收。实际native10查询5376（学生4032+T1344），原类别位置normal576/T_success512/keep256，缺类别0/8/40保持；0训练/环境/held/Test/选点/补采。整批回执已消费，不新增等待者或重复旧§12/§23。
+同输入T误差均值S/A/B=.002205425/.004634179/.007455544，改善/恶化A16/56、B15/57；H1为13/23与8/28，H2为3/33与7/29。局部保持正例及全任务/目标源/强弱分层保留，不能仅归held迁移或称唯一根因。实际闭环沿原A404/159、B339/150，本读回不选点；main按§13自主科学裁决，当前无在途科学计算/自动后继，有限实验完成不等于最终目标完成。
+6持久worker共用72就绪队列（gpu01五/gpu02一），7job全0、0.453050442GPUh，owner计算5.916min；原派发至GPU退出25.775min，验收另计。实际allocated/reserved峰值15.454/21.701GiB，新增root约.535GiB，source d0e9a1f3 clean pushed detached，原码/依赖不改。
+稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/native_function_fixed_input_readback，results.json与analysis/completion_20261014/{acceptance.json,report.md,complete.json}保存完整原件/费用/Git/唯一main交付。§13计算合同已完成，当前没有新active执行批；main消费后接续，诊断入口按登记生命周期退休。
+
 ## 2026-10-14 02:00 §13实际启动：首真实条件通过，6worker共用72队列
 
 唯一owner3795666于17:57:35Z进入执行，clean pushed detached d0e9a1f3=/data1/user/ymdai/ember_worktrees/native_function_fixed_input_frozen_20261014。首登记最长条件task38/G_H2/visit5于17:57:44Z在gpu01:2 launch，正式输出S/A/B/T各16×5×7、原16×50×32 noise/原权重和三完整LoRA通过，0梯度/optimizer/环境；64native查询与31.85s/17.254GiB reserved全部计入合同，不丢弃profile。

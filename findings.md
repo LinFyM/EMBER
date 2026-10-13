@@ -11930,3 +11930,11 @@ main原件main_supervision_coverage.json：72 parent/H的角色E38/Gparent20/MTp
 
 主讨论独立科学消费确认§12原配方不续第二块，B在线同输入当次loss222/288高于A；原T_H1弱于G仅5task/合计少7成功，不解释B净损88。在线模型/教学/正常查询/H随事件变化，不能把该loss当源末点固定输入误差下降。seen首chunk B对MT RMS.00966/A .05255仅说明首步更近MT，不能称全策略collapse或成败因果；heldMT动作缺字段保持。原Functional revision确已做独立native10 incoming/outgoing keep，但后16自产incoming近MT，不等价于保强G38349；旧F38781是velocity FM，SEOD/GOMQ已有完整native端点监督和局部视频正例，均非新首次。
 完整机制/分层/历史解释直接引用父ROOT/analysis/main_scientific_readout/interpretation_20261014.md及readback.py/readback.json，不复算。新唯一§13授权固定72condition和S/A/B/T完整native10回读，全冻结、0训练/环境/held/Test，最多216编译/10368query；用于区别目标拟合与控制缺口、H域遗忘及前端学习变化，不按内部值选模型或抵销404/159与339/150。原类别/weight/noise与缺失分母不改，真正后继仍须main按幅度与历史裁决，非自动新架构/扫参/BCE。
+
+
+## 476. 固定输入末点函数未取得总体拟合改善，保持缺口随H域显现（2026-10-14）
+
+§13原72条件/S-A-B-T全冻结、0更新/环境/held/Test完整回读。按原类别权重，S/A/B到T均值.002205425/.004634179/.007455544、中位数.000225154/.001586540/.003603762；A16改善56恶化，B15改善57恶化。H1均值.003834264/.004738038/.007676284，A13/23、B8/28；H2均值.000576586/.004530319/.007234804，A3/33、B7/29。不能把原闭环退步仅归held迁移、也不成立“总体固定输入拟合已改善”的前提；不据72步认定全链永不可学或唯一学习根因，完整后继由main按§13分支及历史裁决。
+H1 keep12的S/A/B均值.007113396/.000112536/.000029681、改善A7/B6，但中位数.000002511/.000009423/.000002716，不把均值下降写成普遍收益；H2 keep20均值.000009479/.006312168/.008090178，A0改善20恶化、B5改善15恶化。所有任务/目标来源/原T_H1强弱分层及正负例保留。选择角色E38/G20/MT14与实际target.kind E36/G20/MT16分开，results.T_role组按后者；名字不能改变target_id或实际参数源。
+216完整LoRA、1344类别位置/5376 native10查询（含一次T）通过实际消费者，原query source/权重/完整noise身份与原训练receipt一致；72分母normal/T_success/keep缺0/8/40不补挑，重复成功经历不算独立证据。能力仍沿已完成A404/159与B339/150，不按MSE选择新点/抵销闭环负例。
+6持久worker共用长输入优先队列，7job均0，.453050442GPUh/计算5.916min/派发至退出25.775min，reserved峰值21.701GiB/新增约.535GiB，source d0e9a1f3 clean pushed detached。完整ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/native_function_fixed_input_readback，results.json及analysis/completion_20261014/{report.md,acceptance.json}；main负责科学消费，不自动续块、BCE、选择器、采集、controls或Test。

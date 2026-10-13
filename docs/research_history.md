@@ -5254,3 +5254,9 @@ Owner11:50授权分析后自主执行，main据§22阴性与旧θ偏好/曝光�
 
 
 主讨论6287aff5最终消费接手原件及既定T读出，经针对新阴性的独立审阅撤下失败恢复训练项，完整设计转为同一T正常成功控制与跨episode查询监督完整G，保留独立BCE/完整beta；H不被预称有效修订来源。问题审查/必要验证/设计本轮交付完成，新方法未实施、非active train；原§23不变。最终三个docs为problem_first_method_audit_20261013.md、problem_first_method_review_20261013.md、problem_first_compiler_candidate_20261013.md，均由主讨论独占branch编写、实验侧正常串行集成main。
+
+
+## 2026-10-14：§13原72条件固定函数回读完整交付
+
+原36task×H1/H2×指定教学、S38349/A72/B72/T全冻结，72原行和类别/weight/noise/原参数身份完整，216 LoRA/5376 native10查询、0训练/环境/held/Test。T误差均值S/A/B=.002205425/.004634179/.007455544，A16改善56恶化、B15改善57恶化；两个域均值均未改善，H2普遍损害及H1保持局部正例/均值中位数差异都保留。完整72分母/缺类0-8-40和目标来源分层见findings476，不把科学阴性当bug、唯一根因或自动后继。
+唯一source d0e9a1f3 detached、owner fixed_inputs_01 exit0，首真实条件实测保留，随后6持久worker共用长输入优先队列，7job均0/.453050442GPUh；原派发至退出25.775min（GPU owner5.916min），实际reserved峰值21.701GiB。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/native_function_fixed_input_readback，results/outputs/counts/SQLite预算与analysis/completion_20261014保留，唯一整批交main自主裁决。原§12/§23已消费、Test关闭，没有自动第二块/BCE/采样/新等待者。

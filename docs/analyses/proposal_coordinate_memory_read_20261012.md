@@ -806,3 +806,11 @@ A四rank/B两rank并行、共同四rank、formal六persistent动态worker，普�
 105个不同shared compilation group覆盖400条件，其中8/4/2/1大小分别1/94/6/4；按成员去重的编译时长合计31521.031秒。worker residence/runner环境等待与native/θ统计有重叠，不相加当纯计算，更不能因卡util高称充分优化。后续调度工程的具体需要应从这些实际瓶颈判断，本批不另加profile矩阵。
 
 ROOT实际49.301GiB，低于96GiB预测；新增全data1，source/教师/旧H/cache引用，完整RL9/F38349、原完整恢复点、H/正式raw及失败原件保留。双节点postexit快照本项目GPU进程0，两owner PID已退出；task-owned开发分支已集成清理、正式冻结树clean保留，未删除历史不明worktree。唯一design§20已完成，当前无执行中的科学批；Git集成后仅一次可靠整批交main，main继续自主科学裁决，无例行ACK或新计算默认许可。
+
+## 21. 完整Writer后的首G迁移与能力保持诊断登记
+
+main直接消费正式800行/400path，确认165/MT153且+12中task16占10。最终MT111保持47、首G69为30/MT21、laterG220为88/MT85；由策略选择形成的子集不能直接说明后来修订退化。固定E共同监督可仅识别同task，真实P/H域覆盖未强迫反馈利用，425训练先行正例与旧Context900 held阴/旧RL9阴不能拼成当前泛化资格。
+
+同RL9/F38349、同400实际MT bootstrap/语言/教学/最终scene与RNG的first_G_from_same_MT_bootstrap读出，检验初始候选迁移和完整适应保持之间的竞争解释。348实际保存G000/52首前STOP缺失/69兼容原最终复用已实际核400元数据，331新最终query+52真实生成，0新实践/梯度/Actor/其它点/Test。52只用自身第一episode前缀，已有348不重新生成；原正式165保持。具体输入/信息墙/子集解释/结果分支/停止见唯一design§21，不另立active合同。
+
+三份main既有CPU原件原样归档§20ROOT/analysis/main_scientific_readout，分别为full_writer38349_main_scientific_consumption.json、full_writer20_readout_interpretation_20261013.txt、warm90_fixed_pair_scientific_consumption.json，保留启动前假设和final warm解释，不追加算术/模型探针。

@@ -1,3 +1,9 @@
+## 2026-10-13 当前计划：冻结核首G与完整流程的held配对诊断
+
+主讨论消费§20小幅集中增益后明确授权唯一§21；原无自动后段仅约束旧批，不阻塞新授权。依次完成400出处/69复用/52MT前缀登记、完整RL9消费者核验、隔离集成push clean detached、两节点现场准入与动态331 query/52生成、完整400消费/Git/一次可靠交付。
+读出firstG↔MT与firstG↔full的task/suite/覆盖/RGL/churn/集合重叠及原STOP52/finalMT111/firstG69/laterG220等预定义策略形成子集。若首G强而full损失，进一步判断适应保持；若首G也弱，重估跨任务映射/读取/目标；小差异保留竞争解释。此冻结posthoc诊断不选checkpoint、不替换正式165、不自动开其它臂/训练/Test。
+资源和时效见progress与唯一design§21；当前准备中不声称GPU已跑。原§20完整状态/失败/正式400保持。
+
 ## 2026-10-13 当前交付：完整Writer首strict400已完成，后继待科学裁决
 
 唯一design§20已实际完成全5400/local90/九共同批及唯一RL9/F38349、correctK1 validation400。08:17:53 exit0，Writer165对强MT153，R129/G36/L24，净+12集中于Object/task16，Long净−3；最终明显且广泛Val/Test收益目标尚未取得，不据单次小幅增益完成研究目标。

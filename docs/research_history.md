@@ -1,3 +1,7 @@
+## 2026-10-13：完整400消费后的同核首G400有限机制诊断登记
+
+§20正式165/MT153已完整交main；main直接复算800行/400path，确认小幅集中收益并明确授权冻结RL9/F38349的首G同400对照。原348保存、52首前STOP缺失、69final首G复用真实核验，当前准备52生成+331新最终episode，0训练/新实践/Test。不重开旧owner/400，posthoc诊断不替正式165或资格；唯一design§21/current progress承接。main三份CPU解释已原样归档旧ROOT/analysis/main_scientific_readout。
+
 ## 2026-10-13：强首G后的完整Writer RL9/F38349，strict400小幅且不均净增12
 
 §20于08:17:53.944实际exit0，完整v10 RL9/F38349与400不同task-video条件齐备；原1bcb2601失败和6f6a8aa6恢复身份分别保存，原exit1不追认成功。Writer165/MT153，R129/G36/L24/net12/churn60，Spatial/Object/Goal/Long净+1/+11/+3/−3，task16贡献+10，去掉它145/MT143/350；覆盖仍6/8。旧同400 RL9=147→新165 R125/G40/L22，非单因素比较，未取得最终明显稳定Val/Test成功。

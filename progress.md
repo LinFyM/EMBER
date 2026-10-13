@@ -1,3 +1,10 @@
+## 2026-10-13 当前授权：同一完整RL9的首G配对400诊断实施中
+
+§20已完成165/MT153，main直接消费800行/400path后登记唯一active design§21。原首G348保存、首前STOP52、最终firstG69兼容复用已由CPU实际400元数据核对；本批仅52次真实教学生成+331新最终query，0新bootstrap/实践/梯度/Actor决策/新checkpoint选择/Test。原69、MT400/full400只读引用，原正式165不替换。
+唯一模型v10 RL9/F38349与原400固定state/video/scene/RNG；52只读该condition完整1 episode MT前缀，其余348直接引用完整38-target LoRA。新ROOT=原full_writer_after24849_20261013/diagnostics/first_G_validation400_20261013；旧49GiB H/权重不复制。准备时data1实际used1529677620KiB/soft2147483648KiB、shared81T，8GiB峰值可容纳；GPU尚未启动。
+工程first_g有限出处/读出consumer复用唯一Runtime/Generator/官方EpisodeRunner/动态queue，不新增Writer。已保存参数279待新查询的ready队列优先，52生成独立就绪；69结果CPU复用。正式launch前双节点live/cap6或8/node6，利用本331真实请求有界比较slots/group16与32，记实际batch/吞吐/peak，不加episode/泛化probe或静态task绑卡。
+预估准备20–40min+实际query/52生成15–40min，共35–80min；11点软目标不强杀。单实际owner启动一次/整批完成或异常一次可靠交main01a12bb0，无阶段Queue/心跳/第二等待者；本批完成后停止新增计算由main裁决，不自动续训。
+
 ## 2026-10-13 08:17 实际完成：完整RL9/F38349与strict validation400
 
 唯一design§20有限窗口已结束：恢复owner full_writer24849_collective_recovery_02/PID4112034于08:17:53.944退出0，400完整、无缺项。原04:15:15启动至实际结束wall4.044h；05:16:15恢复leg3.027h，原exit1不改写。初始1bcb2601与恢复/评测6f6a8aa6均为已push clean detached来源，冻结树保持。

@@ -759,3 +759,28 @@ CPU实际检查：完整496 G/212 θ状态与166 F Adam24849/独立baseline及op
 strict400 Writer165/强MT153，R129/G36/L24/net12，收益集中task16、Long净−3，不称最终明显稳定Val/Test目标取得。共同180实践和77被实践G的1232 query信用是九不同采集核定位，不拼完整CP资格；103未实践提案无信用/bank。formal400 MTbootstrap+1465实践+289新G final共2154新episode，主动STOP150、五轮外部退出250，final111 MT原行兼容引用/289唯一G，adapt与最终初态分离。
 
 全过程wall4.044h/18.857689823GPUh含旧失败，3566新episode/910556步；原启动/ETA/失败原件保留。实际资源/状态/完整分布见progress、既有coordinate分析§20.2–20.4与ROOT/analysis/completion_20261013；不再重复活动合同。完整RL9和恢复资产/正式H/raw保留，当前无运行中的科学批；本合同到此停止新增计算，Git及一次可靠整批交main后由其自主登记后继，无自动相邻点/延长/controls/Test，也不以Owner新许可或工程ACK阻塞main取舍。
+
+## 21. 同一完整RL9的首G配对validation400机制诊断（2026-10-13）
+
+### 21.1 原件、问题与唯一科学范围
+
+§20正式Writer165/MT153、R129/G36/L24，小幅且集中，task16净+10，去掉后145/143。main直接复算800行/400path；最终MT111为47成功、最终G00069为30/MT21、laterG220为88/MT85。这些子集由旧策略形成，不能把其净+9/+3直接称后来修订退化。训练425及共同信用不是RL9的held能力；固定E监督与non-MT P/H覆盖仍允许忽略反馈，旧Context900/旧RL9147负证据保留。
+
+唯一完整v10 checkpoint=full_writer_after24849_20261013/checkpoints/RL/update_00000009，F38349/原完整冻结读取前端/source。以原formal_panel和validation/RL_00000009/correct全部400条件的exact L、50不同video/task、各自实际完整MT bootstrap为输入，arm=first_G_from_same_MT_bootstrap。原348保存G000全部直接引用（含未被实践提案），首attempt parentMT300/episodes1/valid/retained_U；52在首前STOP无G000，只读自己完整1episode前缀生成一次。原最终恰G000的69同scene/RNG行只读复用，其余331新最终episode。实际CPU400出处核对已符合348/52/69/331。
+
+0新MT/G实践、0梯度/Actor决策、0checkpoint选择/其它视频臂/全部候选oracle/相邻/Test。52不用后来H/query反馈/其它condition H，不偷换MT起点；348不为形式重放H/教学。每condition最终唯一完整38-target rank8 LoRA固定、Writer退出，原官方flow/场景/env/native noise前缀严格配对。依赖既有400次MT实践，不称zero-interaction；旧依赖成本与新增成本分开。原正式165/失败/完整状态不改写，本posthoc诊断不提供方法qualification。
+
+### 21.2 输出、解释与停止
+
+firstG↔MT、firstG↔full各400逐行R/G/L/churn/集合重叠、task/suite/覆盖；原STOP52、finalMT111、finalfirstG69、finallaterG220及复用69/新增331预先分列。子集都是原策略选出的上下文，不提升为随机化单部件因果；不能逐初态取三臂最好形成方法分数。
+若首G有明显较广收益而full损失，main转向完整适应如何保持利用，不唯一归因θ/STOP/parent/H/laterG；若首G也弱或交换大，重估当前G跨task映射/读取/目标，不靠更多选择器/同缓存续训保护假说；若差小或仍task16集中，保留广泛迁移不足。唯一终点400完整行，不中途按task结果停或增臂，完成即停止新增计算交main自主接续。
+
+### 21.3 唯一消费者、执行与成本
+
+ROOT=原full_writer_after24849_20261013/diagnostics/first_G_validation400_20261013。finite first_g模块只持出处/52直接生成/固定参数读出与配对汇总，使用现有load_version、history_prefix、generate_candidates、官方EpisodeRunner和EvaluationQueue；没有第二Writer/模型fallback。任务结束且main消费后退休诊断入口，冻结代码/raw保留历史。run仅接一个有界命令，旧formal消费者语义保持。
+
+独占codex分支→真实完整CP加载/400出处/69兼容行与队列CPU检查→集成push→clean detached；旧冻结树不热改。源H/348 LoRa/数据/模型只读引用，data1峰值8GiB，独立strg01 quota和相关用量/shared capacity核实，每launch两节点live总6/8/node6。已有279需新query的saved参数队列及时接卡；missing52共享同一owner动态就绪，不阻塞独立ready。persistent long-first/cost-balanced，未绑task/card；本331真实组允许16/32 slots/group有界物理比较，所有有效行保留，0额外episode/profile矩阵，按真实steps/wall/实际推理batch/peak选择，不称配置最大等于充分batch。局部失败隔离，至多一次原范围有界恢复有效缺项，不重跑完成行。
+
+初估准备20–40min，52生成/331query15–40min，共35–80min；依据§19实测1152query+36practice约23min但加载/native长度不确定，实际资源与吞吐后修订。11点软目标，无强杀或正结果保证。一个实际owner，启动一次+整批完成/异常可靠交main一次，无阶段Queue/心跳/第二等待者。
+
+§20 main已完成CPU原件原样归档到旧ROOT/analysis/main_scientific_readout/{full_writer38349_main_scientific_consumption.json,full_writer20_readout_interpretation_20261013.txt,warm90_fixed_pair_scientific_consumption.json}。不重跑main算术；新事前合同、400出处、存储/CPU消费者/命令/身份/费用由新ROOT保留。

@@ -183,7 +183,8 @@ def formal_conditions(args,runtime,runner,panel,rows):
         full=cache.get(source/'history.pt.gz')
         history=history_prefix(full,first['records'],1)
         episode=history.episodes[0]
-        if (episode['actual_parameter_ref']!='MT300' or episode['init_state_id']!=e['row']['practice_states'][0]
+        bootstrap_state=e['row']['practice_states'][previous['path_ordinal']%len(e['row']['practice_states'])]
+        if (episode['actual_parameter_ref']!='MT300' or episode['init_state_id']!=bootstrap_state
                 or episode['env_seed']!=seed(32,previous['noise_root'],0)
                 or episode['policy_seed_root']!=episode['env_seed']):
             raise ValueError('formal MT producer, initial state or native RNG changed')

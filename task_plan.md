@@ -1,14 +1,14 @@
-## 2026-10-13 当前计划：新执行者接原§23完整选择学习窗口
+## 2026-10-13 当前计划：原§23从完整B2恢复，主讨论重审继续
 
-原pair72和A180完整，B1完整checkpoint及B2四条五轮路径/有效query保留。唯一恢复owner selector72_measured_resume_B18_validation400_05/PID3105671已实际启动四卡RL attempt003，clean pushed detached bf2c88b0；从完整B1恢复，只补缺失，继续固定G38349/bank9的B18→唯一strict correct400。G/F Adam/source/MT冻结、logicalB4 seen2/novel2、θ/baseline Adam/RNG及72任务权重/信息墙不改，Test关闭。旧CPU筛选失败、EGL故障、归档旧线程投递失败与全部费用保留并判重，不重复原数据或把工程失败作科学阴性。实际执行/原件与ETA见progress顶部。
+pair72、A180和B2完整，B3四条五轮路径/有效query保留。唯一恢复06 owner PID3514753已启动gpu01:6/7/1/2四rank，环境16/16/8/8，来源为原clean pushed detached bf2c88b0；只补缺失并继续B18→唯一strict correct400。G38349/F Adam/bank9冻结、logicalB4 seen2+novel2/72任务权重、θ/baseline Adam/RNG、信息墙及Test关闭全部不变。原05两次renderer失败及费用/回报已消费保留，实际状态和原件见progress顶部。
 
-新实验唯一执行者01a133e5-50f0-7d20-a893-df95c7387630负责运行恢复、验收及根状态/工程/Git串行闭环，旧01a12bb6归档不再派发。唯一科学主讨论及整批接收方为01a13399-cba2-7da2-9dc6-df430ca80280。完整checkpoint、当前核路径和信用、400原行/配对/能力保持/交互成本及Git通过后一次可靠交主讨论；只有总owner整批退出回报，没有第二等待者/阶段通知/自动后继。
+资源最终恢复原6/8合计、单节点6卡规则；未集成或运行已撤回的固定8卡改动。利用率及固定显存筛选继续取消，以当前任务实际峰值/吞吐安排，后续formal用原定400行评估更大物理波次。B4无有用第五rank，独立formal不锁world4。独立data1 quota、原160GiB峰值与全部成本记录保持。
 
-Owner保留两节点总6/8卡、单节点6卡上限，取消利用率/固定显存筛选；按实测当前工作峰值和实际吞吐共驻，不挤掉他人任务。现场余量只容纳16环境，因此当前四rank16/frame16；32环境未测。B4无有用第五rank，formal重新按现场条件最多并行6/8卡；本轮原定请求可尝试更大物理并行，保持400行与全部科学参数，不新增矩阵或虚占卡。新增输出全data1，strg01独立quota和原160GiB峰值预算保持。
+旧分支和开发树已按生命周期清理，50→6本地/清理15远端/2棵已结束开发树退休；原SHA经9f712eda树不变祖先合并保留，正式资产和未合并/使用中/原件依赖均保留。详细清单ROOT/analysis/engineering/branch_retirement_20261013.json，恢复源正式冻结树不热改。
 
-主讨论最新3eb91070三个docs已集成并push（文档merge f5027976，main工程merge bf2c88b0）。问题/源码/历史/正式原件审查和三轮独立审阅修订完成，指针为docs/analyses/problem_first_method_audit_20261013.md、docs/analyses/problem_first_method_review_20261013.md及docs/designs/problem_first_compiler_candidate_20261013.md。候选非active design、0新科学派发；active仍原§23，完整结果决定下一方法，source/MT科学起点未被既有资产裁决。
+最新主讨论ed73d780三个docs已合入，主讨论新goal继续问题/机制/修正/必要证据重审；旧三轮意见保留，候选尚未完成闭环、非active、0新科学派发。指针仍为docs/analyses/problem_first_method_audit_20261013.md、docs/analyses/problem_first_method_review_20261013.md、docs/designs/problem_first_compiler_candidate_20261013.md。本批结果按相关性供主讨论裁决，不作为其停止分析的门槛，不自行启动讨论中的non-held验证。
 
-原11:00/23:00时点已取消，原预测只供效率判断，不强杀/缩水/选点。没有自动续同数据块、controls或Test；完整Val/Test明显稳定超过强MT、合法教学参与与合理保持的最终目标持续。
+唯一新执行者01a133e5负责根三状态、恢复/验收/工程/Git闭环。总owner仅整批退出/异常唤醒本session一次，已实测05自动回报成功；原件/退出判重后验收完整checkpoint、当前核路径信用、400原行/配对/保持/真实交互及费用，再完整交唯一科学主讨论01a13399。无第二等待者、阶段提醒、额外审阅/自动后继/controls/Test，旧实验归档不解除。
 
 以下为历史计划与当时时点授权。
 

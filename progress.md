@@ -1,3 +1,19 @@
+## 2026-10-13 16:24当前承接：B2完整，恢复B3并继续B18→correct400
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。恢复05于15:59:23实际exit1，两次GPU尝试均在rank3/gpu01:2的16环境query初始化EGL offscreen framebuffer失败；B2完整G/θ/baseline/Adam/四rank RNG与B3四条五轮路径、有效query全部保留。已消费唯一退出回报，完整失败/费用保留，当前累计已结算6.759369197GPUh（含三次实际失败）；不重复pair72/A180/B2/有效路径和原行，不把异常当科学阴性。
+
+EGL→CUDA→物理GPU的映射已用实际driver PCI/EGL属性核实正确；退出后本任务遗留环境子进程为0，未将卡称为故障或声称唯一显存根因。唯一恢复06 owner PID3514753于16:24:36启动，来源仍clean pushed detached bf2c88b0。实际四rank消费者已初始化，gpu01:6/7/1/2、环境16/16/8/8、frame16；仅对本批发生过renderer失败的设备缩小物理波次，不改logicalB4/seen2+novel2/72任务/θ和baseline更新、G38349/F Adam/bank9冻结、B18与唯一strict correct400。B18/400尚未完成。
+
+Owner先提出固定8卡后已撤回，最终恢复原两节点6/8合计条件及单节点6卡规则；8卡调整仅独立开发树/CPU消费者检验，未集成main、未用于GPU运行，该树和分支已撤销。利用率与固定24GiB筛选继续取消，允许共享算力速度竞争，仍不kill/pause/reset/抢占或挤掉他人任务。后续formal在实际可容纳峰值与原数量上限内并行，物理扩波只使用原400行。
+
+分支已按提交/消费者/工作树生命周期清理：50→6本地，删除15条已结束远端分支，保留4条远端。22条原已合并引用直接退休；另20条共28个提交的补丁均已cherry-pick集成，先以tree不变的9f712eda补回main祖先并push，原SHA可追溯，再删引用；两棵已结束clean开发树退休。余下main、主讨论active docs、三个未合并旧工作分支及operator-change-clock原件依赖：后者的readback仍被docs/analyses/operator_clock_evidence_20260930.json引用，完整树及数据保留。正式冻结树/输出/checkpoint未删，清单ROOT/analysis/engineering/branch_retirement_20261013.json。
+
+主讨论最新ed73d780三个docs已正常串行合并（56c21c66）：旧审查和三轮意见保留，但主讨论已启动新goal继续主要问题→机制→修正→必要证据重审，撤回“候选已闭合，只等§23”的过早状态。候选未完成科学闭环、非active design，0新GPU/episode/训练派发；active仍原§23，原批不是主讨论停止分析的门槛。根三状态由本session串行维护。
+
+自动回报已实际验证：05的整批异常回报于本回合自动送达新实验session，原件/consumed判重齐备。06总owner直接等待GPU子进程，退出记录落盘后只向01a133e5新实验session发一次可靠唤醒；我验收后完整交01a13399新主讨论。不存在第二等待者、阶段提醒/心跳或新定时通知，旧归档session不唤醒。剩余3–5.5h仍为基于历史实际cycle/评测的暂估，共享负载与恢复可能延长，不作完成承诺。
+
+以下为历史时点记录。
+
 ## 2026-10-13 15:41当前承接：A180和B1完整，唯一owner恢复B18→correct400
 
 新实验唯一执行者为01a133e5-50f0-7d20-a893-df95c7387630；旧实验01a12bb6已归档，未解除归档或重复派发。已详读前任全部实验session、Owner要求、当前仓库合同及实际消费者。主讨论01a13399-cba2-7da2-9dc6-df430ca80280是唯一整批/科学边界接收方；根状态和工程/Git由新执行者串行维护。

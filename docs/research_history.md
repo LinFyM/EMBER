@@ -1,3 +1,9 @@
+## 2026-10-14：匹配native控制目标72两臂完成，解冻前端未取得闭环增量
+
+同G38349/fresh同Adam/288condition、36task各8遍的F-only与full-G均完整72及末seen576/strict首G400。seen MT340/原G427/A404/B339，Val MT153/原G165/A159/B150；B对A seen R313/G26/L91/net−65，Val R123/G27/L36/net−9。对原G Val A得33失39/net−6，B得28失43/net−15；held breadth仍6/8，两个零task保留。A的Long增益和Spatial损失、B在Spatial相对A的局部改善及其它损失都保存，不认作原生控制目标/全前端学习已解决迁移。
+四GPU退出0后owner06汇总因旧MT原件无global字段而StopIteration/exit1；CPU窄修db1bff33用官方suite/local task/state唯一配对，实际全四消费者通过，原代码/失败与source保留，0新增forward/episode/重训。训练源A8dd68689/B1c424cd8、读出41bd9587；同T/查询/noise/权重、所有需学习前端重算/冻结组/native10前5x7梯度、完整Adam-sampler-RNG与CP72实物通过，只证明消费者实现，负结果不转为bug。
+27补录21成6败/5582步，1979提交返回/497912步总数完整，0额外未知，符合上界；全费10.459490537GPUh含三GPU失败.073219029，原profile4B4消费/错误及旧MT-H依赖保存。最长held读出151min显著超30–60min，首GPU至最后退出5.292h；单worker/面板且未续接释放seen，未证最大吞吐、不重跑。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification，results.json、analysis/completion_20261014/{acceptance.json,report.md}及每arm/readouts/{seen,validation}/results.json；唯一CP72保留，持久解释findings474。一次交新main01a13399按事前§12.6裁决，不自动追加BCE/phi/beta/同块/选点/Test；完整EMBER目标未完成。
+
 ## 2026-10-13：固定G38349 selector72的A180+B18与唯一400完整结束
 
 原§23实际owner06于14:42:31Z exit0，完整G/θ/baseline/各Adam、samplers/四rank RNG与72当前核信用CPU验收通过，旧pair/A/B有效产物复用，Test关闭。唯一400=163/MT153，R123/G40/L30/net10/churn70，覆盖6/8；旧165→163有24得26失。suite净Spatial+5/Object+10/Goal+2/Long−7，task16+7/31−7，23/39仍0；仅4MT final回退，396生成LoRA，395条件走满五轮/5 STOP、1988实践，并未取得更高整体能力。

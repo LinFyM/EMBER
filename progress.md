@@ -1,3 +1,11 @@
+## 2026-10-14 §12四末点完整保存；CPU摘要修复后整批验收
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification。owner06于17:00:25Z真实exit1/StopIteration；四GPU消费者均exit0，F-only seen/Val为404/159，full-G为339/150，全部576/400原行齐全。错误仅为旧MT400没有global_task_id、汇总却按该字段查找。db1bff33已独占窄修/实际4面板消费者通过/main push/clean detached CPU消费：按官方suite/local task/state唯一配对，原source/查询/参数/评测不改，旧exit1不追认0；0新模型forward/GPU/episode/重训。
+MT seen340/Val153、原首G427/165。A对原G seen净−23/Val−6，B为−88/−15；B对A seen得26失91净−65、Val得27失36净−9。A Val对MT R131/G28/L22，B R123/G27/L30，breadth均6/8、23/39仍0。Spatial/Object/Goal/Long A41/53/37/28，B47/45/36/22，对MT48/46/35/24；正反例/保持损失均保留，不把A小幅胜MT或全链梯度接通当过关。
+27既定补录21成/6败/5582步、缺成功类别不补挑；两臂各72/fresh同Adam/source38349/36task各8遍、全部288条件/T/query/完整noise/类别权重一致，checkpoint/RNG/optimizer/冻结组与B meta双支-Reader-static-F信用实际验收。训练源A8dd68689/B1c424cd8，GPU读出41bd9587，新db1bff33只摘要；872完整LoRA、own-MT H1、固定400无放回教学/最终初態/scene-noise严格配对，旧MT initial_proprio缺字段限制保持。
+全账1979提交/1979返回（27+1952）/497912环境步含dummy，未知额外上界0，符合2024/2040/1081200；总10.459490537GPUh含3 GPU失败.073219029及12收据，所有CPU/probe/原件保留。训练A59.30/B81.23min、reserved15.563/18.467GiB；读出最长151min超原30–60min，原11:42首GPU→17:00退出5.292h不重置14:29恢复时钟。owner只有一worker/面板，未把已释放seen接为held worker，不能追认最大吞吐；不为改调度重跑。详细峰值/吞吐/原件在analysis/completion_20261014/acceptance.json。
+canonical results.json、各arm/readouts/{seen,validation}/results.json、原行/queue/生成与唯一CP72齐全；report/acceptance在analysis/completion_20261014。§23已消费不重算；本有限批结束后只交main01a13399按§12.6科学接续，不自动BCE/phi/beta/第二块/Test，没有第二等待者或阶段通知，Git/回报身份随该目录complete/delivery记录。
+
 ## 2026-10-13 §23主讨论科学消费完成；停止原expected-query扩曝光
 
 主讨论01a13399独立消费4组400/A720/B72（CPU6.22秒，0新模型-GPU-环境），执行侧仅阅读并记录。MT胜G反例在训练内已存在，formal有G的396条件全部选G，四MT出口只有MT候选，不能称学成风险回退；部分概率增长、实践失败仍最终成功及task31/state6正例保持。完整辨识/边界见findings473、候选design§10及原ROOT/analysis/main_scientific_readout/{interpretation_20261013.md,selector72_readback.py,selector72_main_readback.json}，不重复复算/工程验收。

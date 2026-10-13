@@ -1,3 +1,8 @@
+## 2026-10-14 §12有限匹配批完整验收，结果交main按§12.6裁决
+
+两臂72/同288条件与seen576/唯一firstG400全部完成并CPU验收。seen MT340/原G427/A404/B339，Val MT153/原G165/A159/B150；B相对A在seen净−65、Val净−9，两臂未提升强原G，工程完成不等于最终目标完成。主讨论01a13399按事前§12.6自主裁决/接续，当前没有自动第二块、BCE/phi/beta、选点或Test执行授权。
+原owner06 exit1是四GPU已exit0后的MT参考global字段误查；db1bff33已clean pushed，只修CPU汇总，用官方suite/local task/state唯一匹配，所有原72/27补录/四读出复用。1979次完整rollout/497912步、10.459490537GPUh及全部原失败保留。原§23已完成并科学消费，停止原expected-query扩曝光；无在途旧批、重复等待或分阶段回报。稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification，results.json与analysis/completion_20261014/{acceptance.json,report.md}，唯一整批交main；下面旧状态均为当时时点历史。
+
 ## 2026-10-13 23:00 §23完整验收；当前执行仍为独立§12末点读出
 
 原§23 fixedG38349 selector72已完成A180/B18及唯一correct400并由CPU实际验收：163/MT153，R123/G40/L30，旧165→163，覆盖6/8，Long净−7。主讨论01a13399已完成独立科学消费：停止固定G下继续原expected-query扩曝光的主路线，不加第二同目标块/回退规则/温度/参数小扫；BCE候选机制依据加强但未验证，不激活phi/beta后段或掩盖G缺口。完整论证在原ROOT/analysis/main_scientific_readout/interpretation_20261013.md及同目录可复算原件，候选design§10登记实际分支。有限批结束不等同最终目标完成。

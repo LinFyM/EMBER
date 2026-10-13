@@ -11915,3 +11915,12 @@ main原件main_supervision_coverage.json：72 parent/H的角色E38/Gparent20/MTp
 主讨论科学消费补充：A72包含14个固定MT query16胜G反例（seen5/新增9），每task10次后仍均无pMT>.5，新增9的中位数1.3135e−4→2.9649e−7；中间概率曾上升、seen task64/101末值约.33/.43保留，不能称完全零梯度。B有6个MT胜全部已实践G的条件，均未选MT；它们来自各u−1采集核，不拼新资格面板，但把比较失败定位到训练内，不能仅归held迁移。正式396个有已实践G的条件最终0次选MT，pMT均值2.688e−7；4个MT出口只有MT候选，不能称学成风险回退。
 源码实际final信用是expected-query，二候选logit差的梯度含pMT(1−pMT)，已有极小pMT会衰减正确经验反例的直接信用；实际轨迹削弱“补曝光自然恢复”的解释，尚未分离共享表示/Jacobian/优化/标签噪声，也不认定所有RL失败。独立BCE/phi候选针对该结构风险的依据加强，仍未验证、不自动启动后段；准确选择不能生成缺失G能力。209个选中G自身实践全败条件仍最终成功38/MT32、187个有成功实践的条件125/MT121，均有选择偏差，不作实践因果或候选反事实。task31/state6的新正例保留，不同H/同名G非同参数；新163对首G165得22失24、去16后146/MT143。
 主讨论明确结束固定G/原expected-query扩曝光主路线，不加第二同目标块、阈值、温度或参数小扫；§12原有界两臂/唯一owner/四读出继续，结果按§12.6裁决，不用BCE遮盖G缺口。完整论证和可复算原件直接引用ROOT/analysis/main_scientific_readout/{interpretation_20261013.md,selector72_readback.py,selector72_main_readback.json}；主讨论CPU6.22秒/0新模型-GPU-环境，执行者仅记录，不重复复算或工程验收。
+
+
+## 474. 原生控制匹配两臂完整阴性，前端有梯度不能替代首G能力（2026-10-14）
+
+§12固定同G38349/fresh同Adam/288condition/36task各8访问/72有效B4，仅改变F-only与meta/Reader/static/F参数组。所有前端依赖随更新重算，native10步前5x7目标、冻结source/T/Actor、同query/noise/类别权重与完整checkpoint/RNG/Adam实物通过。A166 owned/state，B496 owned/485 Adam state且四组/meta双支梯度有效，不以部分未产生Adam的参数证明整个前端无效；上述消费者证据不能证明操作理解/修复/迁移。
+完整seen576为A404/B339、原G427/MT340，B对A得26失91/net−65；完整首G400为A159/B150、原首G165/MT153，B对A得27失36/net−9/churn63。A对MT得28失22/net6，对原G得33失39/net−6；B对MT得27失30/net−3，对原G得28失43/net−15。held coverage均6/8，task23/39仍0，suite Spatial/Object/Goal/Long A41/53/37/28、B47/45/36/22，对MT48/46/35/24。保留局部增益与广泛交换，不能仅挑A胜MT或B在Spatial胜A认定过关；两臂均未提高强原G，全链解冻增量在此窗为负，不推成全链永不可学或自动用BCE遮盖G缺口。
+72 PH的T角色、已有成功支撑和重复经历沿原覆盖审计：27既定补录21成6败、不补挑，51/57T、64/72PH、256/288条件有T成功支撑，缺32条件保留正常query；成功/保持类别可共享经历，不能当两份独立证据。训练面板只1/2episode H、seen部分状态用于T选择/支撑，非独立泛化；本次只首G不认证完整Compiler、H修订、视频必要性、相邻稳定或Test。主讨论按§12.6消费完整原件自主裁决，执行侧不追加同块/参数小扫/phi-beta/Test。
+四个GPU读出全exit0；原owner06的StopIteration源于CPU汇总假定旧MT400含global_task_id，实际只有suite/local task。db1bff33按官方完整身份唯一配对并一次缓存原件，四实际消费者通过，0新GPU/forward/rollout，原exit1与训练/评测源码身份保留，科学阴性不当工程故障补救。源A8dd68689/B1c424cd8、读出41bd9587。1979提交返回/497912环境步含dummy，未知上界0，10.459490537GPUh含三失败.073219029；原MT-H依赖不是zero interaction，旧MT400 initial_proprio限制不因汇总修正而消除。
+实际最长读出151min明显超过30–60min，首GPU至退出5.292h不重置恢复时钟；单worker/面板、seen退出未续接held队列，不能称最大吞吐或让world1变科学上限，后继物理调度应按实际动态就绪消费者与吞吐安排。现有有效结果不为形式扩卡或改调度重跑。稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification，results.json、analysis/completion_20261014/{acceptance.json,report.md}与每臂唯一CP72/各576-400原行完整保留。

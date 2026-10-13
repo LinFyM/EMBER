@@ -1,3 +1,9 @@
+## 2026-10-14 02:00 §13实际启动：首真实条件通过，6worker共用72队列
+
+唯一owner3795666于17:57:35Z进入执行，clean pushed detached d0e9a1f3=/data1/user/ymdai/ember_worktrees/native_function_fixed_input_frozen_20261014。首登记最长条件task38/G_H2/visit5于17:57:44Z在gpu01:2 launch，正式输出S/A/B/T各16×5×7、原16×50×32 noise/原权重和三完整LoRA通过，0梯度/optimizer/环境；64native查询与31.85s/17.254GiB reserved全部计入合同，不丢弃profile。
+同owner后续6个独立world1消费者于17:58:48–17:59:10Z实际launch gpu01:2/7/0/4/5与gpu02:6，6卡合计/node01五，node02一；前三frame64、后三32，真实全部类别≤24查询批，0NCCL/跨节点DDP。统一长输入优先72队列，各worker继续领取剩余条件，编译/native查询分别SQLite原子预算216/10368，未重采/补成功。各launch保存双节点live/data1独立quota/源与费用，first_actual_consumer.json和analysis/launch_acceptance.json保存消费者证据，不读取中间误差或资格分数。
+派发起点17:37:44Z不重置；准备/首消费者约21min，按首真实吞吐/共享负载保守余8–20min，完整结果与成本再结算。整批或异常由唯一owner/exit.json一次唤醒实验01a133e5，消费后一次交main01a13399；无阶段Queue/心跳/第二等待者/自动后继。原§12科学记录与完整§13合同已纳main，当前active仅§13，Test关闭。
+
 ## 2026-10-14 §13已授权并实施准备：固定72输入、S/A/B/T全冻结
 
 主讨论已完整科学消费§12，停止原配方直接第二块，不自动BCE/phi-beta。解释和CPU原件在父ROOT/analysis/main_scientific_readout/{interpretation_20261014.md,readback.py,readback.json}；B当次loss222/288高于A，T_H1弱5task仅少7成功不能解释B损失88；seen首chunk B更近MT只描述首步、不证明整策略collapse，heldMT缺动作字段保持，执行侧不重复复算。

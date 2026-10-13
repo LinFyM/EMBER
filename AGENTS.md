@@ -151,7 +151,7 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
 ## 9. GPU, throughput and numerical policy
 
 - 当前及后续实验不设累计GPU小时硬门槛；GPUh仍准确记账、预测和比较，但不得因累计或预测费用阻止启动、
-  续跑或有实测wall收益的多卡安排，也不为超过历史GPUh计划请求许可。物理卡数、live显存/非干扰、存储和科学
+  续跑或有实测wall收益的多卡安排，也不为超过历史GPUh计划请求许可。物理卡数、live显存/不挤掉他人任务、存储和科学
   范围/更新/交互停止条件继续有效；费用无硬限不授权扩大科学矩阵或无效无限续训。
 
 - 每次launch前同时live检查gpu01与gpu02，按节点、GPU index、显存、utilization和process判断空闲、可共驻、忙或故障。
@@ -159,10 +159,11 @@ memory token、LoRA rank、FactorHeads、layer correspondence和具体decoder都
   评测与共驻占用统一计数，每次launch或resume前核验当前总量及启动后总量。单节点仍至多6张；
   只使用真正提高吞吐的A40，不等待凑卡、不跨节点拼训练碎片、不dummy占卡。
 - Owner允许短时分析例外：现有实验已占满上述卡数上限，而已授权的小分析确需GPU时，可以临时突破卡数上限，
-  分析完成立即释放额外占用。记录用途、预计时长、实际开始/退出和成本；仍须现场准入、不干扰他人任务并计入对应预算。
+  分析完成立即释放额外占用。记录用途、预计时长、实际开始/退出和成本；仍须现场检查、不挤掉他人任务并计入对应预算。
   此例外不扩大实验科学范围，不把额外卡留给常规长训/整轮评测，也不通过连续短任务规避常规上限。
-- 少量显存占用或低util进程不自动排除GPU；只要峰值余量足够且不会显著干扰即可共驻，但不得kill、pause、
-  reset或抢占他人任务。
+- 已有进程或高util不自动排除GPU；按本任务实测显存峰值、现场可用余量和实际吞吐选择共驻。
+  Owner允许共享算力带来的速度竞争，不要求保证他人吞吐不变；不得kill、pause、reset、抢占或以显存占用挤掉他人任务。
+  不设固定24GiB余量或45%利用率门槛；显存需求按实际模型、物理batch、渲染器与缓存估计并验证。上方6/8卡与单节点6卡上限保持。
 - 多卡训练固定`NCCL_P2P_DISABLE=1`、GPU-local NUMA映射和deferred NCCL；独立evaluator不用NCCL。
 - 接受硬件、设备分配、物理batch/microbatch、正常BF16/TF32、kernel和reduction order带来的微小数值差异。
   不影响有效梯度、更新语义、数值稳定性和实际训练/推理行为的差异无需追查或消除，不把逐元素或逐bit一致作为验收目标。

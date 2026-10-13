@@ -11924,3 +11924,9 @@ main原件main_supervision_coverage.json：72 parent/H的角色E38/Gparent20/MTp
 72 PH的T角色、已有成功支撑和重复经历沿原覆盖审计：27既定补录21成6败、不补挑，51/57T、64/72PH、256/288条件有T成功支撑，缺32条件保留正常query；成功/保持类别可共享经历，不能当两份独立证据。训练面板只1/2episode H、seen部分状态用于T选择/支撑，非独立泛化；本次只首G不认证完整Compiler、H修订、视频必要性、相邻稳定或Test。主讨论按§12.6消费完整原件自主裁决，执行侧不追加同块/参数小扫/phi-beta/Test。
 四个GPU读出全exit0；原owner06的StopIteration源于CPU汇总假定旧MT400含global_task_id，实际只有suite/local task。db1bff33按官方完整身份唯一配对并一次缓存原件，四实际消费者通过，0新GPU/forward/rollout，原exit1与训练/评测源码身份保留，科学阴性不当工程故障补救。源A8dd68689/B1c424cd8、读出41bd9587。1979提交返回/497912环境步含dummy，未知上界0，10.459490537GPUh含三失败.073219029；原MT-H依赖不是zero interaction，旧MT400 initial_proprio限制不因汇总修正而消除。
 实际最长读出151min明显超过30–60min，首GPU至退出5.292h不重置恢复时钟；单worker/面板、seen退出未续接held队列，不能称最大吞吐或让world1变科学上限，后继物理调度应按实际动态就绪消费者与吞吐安排。现有有效结果不为形式扩卡或改调度重跑。稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification，results.json、analysis/completion_20261014/{acceptance.json,report.md}与每臂唯一CP72/各576-400原行完整保留。
+
+
+## 475. §12阴性后的固定函数缺口须同输入识别，§13非续训（2026-10-14）
+
+主讨论独立科学消费确认§12原配方不续第二块，B在线同输入当次loss222/288高于A；原T_H1弱于G仅5task/合计少7成功，不解释B净损88。在线模型/教学/正常查询/H随事件变化，不能把该loss当源末点固定输入误差下降。seen首chunk B对MT RMS.00966/A .05255仅说明首步更近MT，不能称全策略collapse或成败因果；heldMT动作缺字段保持。原Functional revision确已做独立native10 incoming/outgoing keep，但后16自产incoming近MT，不等价于保强G38349；旧F38781是velocity FM，SEOD/GOMQ已有完整native端点监督和局部视频正例，均非新首次。
+完整机制/分层/历史解释直接引用父ROOT/analysis/main_scientific_readout/interpretation_20261014.md及readback.py/readback.json，不复算。新唯一§13授权固定72condition和S/A/B/T完整native10回读，全冻结、0训练/环境/held/Test，最多216编译/10368query；用于区别目标拟合与控制缺口、H域遗忘及前端学习变化，不按内部值选模型或抵销404/159与339/150。原类别/weight/noise与缺失分母不改，真正后继仍须main按幅度与历史裁决，非自动新架构/扫参/BCE。

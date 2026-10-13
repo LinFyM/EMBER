@@ -55,7 +55,7 @@ def save_state(path, state):
 def parse_args():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command',choices=['prepare','formal-prepare','formal','student-data','local','RL',
-        'function-prepare','function-train','function-replay','function-readout'])
+        'function-prepare','function-train','function-replay','function-readout','function-fixed-readback'])
     parser.add_argument('--root',type=Path,default=RUN_ROOT)
     parser.add_argument('--asset-root',type=Path,default=ASSET_ROOT)
     parser.add_argument('--task',type=int,default=0)
@@ -127,7 +127,10 @@ def consumer_environment(args,context):
 
 
 def consume(args,runtime,runner,environment,context,resident_student):
-    if args.command=='function-train':
+    if args.command=='function-fixed-readback':
+        from .function_readback import readback
+        readback(args,runtime)
+    elif args.command=='function-train':
         from .function_learning import learn
         learn(args,runtime,context)
     elif args.command=='function-replay':
@@ -170,7 +173,7 @@ def main():
             logical_condition_batch=4 if shared else None))
     runner=None
     try:
-        if args.command in ('local','function-train'):
+        if args.command in ('local','function-train','function-fixed-readback'):
             consume(args,runtime,None,environment,context,resident_student);return
         os.environ.update(EMBER_LIBERO_ASSETS_ROOT=environment['libero_paths']['assets'],MUJOCO_GL='egl',
             PYOPENGL_PLATFORM='egl',MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu))

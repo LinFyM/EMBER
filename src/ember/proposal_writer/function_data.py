@@ -228,3 +228,31 @@ class FunctionInputs:
         noise = torch.stack([torch.randn(50, 32, generator=torch.Generator().manual_seed(q['noise_seed']))
                              for q in queries]).to(self.runtime.device)
         return batch, noise
+
+    def compile(self, condition, *, frozen_memory=False, source=None):
+        """One canonical parent/H/teaching compiler for learning and readback."""
+        runtime = self.runtime
+        parent = self.state(condition['parent_weights'])
+        memory = None
+        cache = self.root/'frozen_F_contexts'/f"{condition['condition_id']}.pt"
+        if frozen_memory and cache.exists():
+            saved = torch.load(cache, map_location='cpu', weights_only=False)
+            if saved['source'] != source:
+                raise ValueError('F-only memory came from a different frozen frontend')
+            memory = saved['memory'].to(runtime.device)
+            features, rows, states = None, None, None
+        else:
+            history = self.histories.get(condition['H'])
+            rows = history.model_rows(runtime)
+            self.histories.remember_features(condition['H'], history)
+            states = history.states
+            features = runtime.teaching(condition['task'], condition['teacher_demo'])
+            if frozen_memory:
+                from ember.writer.runtime import autocast
+                with torch.no_grad(), autocast(runtime.device):
+                    memory = runtime.generator.context(features, rows, states).detach()
+                cache.parent.mkdir(parents=True, exist_ok=True)
+                torch.save(dict(source=source, memory=memory.cpu()), cache)
+        from ember.writer.runtime import autocast
+        with autocast(runtime.device):
+            return runtime.generator.compile(parent, features, rows, states, memory=memory)

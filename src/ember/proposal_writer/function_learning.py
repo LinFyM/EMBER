@@ -95,29 +95,8 @@ class NativeFunctionTrainer:
         self.inputs = FunctionInputs(runtime, root)
 
     def generated(self, condition):
-        runtime = self.runtime
-        parent = self.inputs.state(condition['parent_weights'])
-        memory = None
-        cache = self.root/'frozen_F_contexts'/f"{condition['condition_id']}.pt"
-        if self.arm == 'F_only' and cache.exists():
-            saved = torch.load(cache, map_location='cpu', weights_only=False)
-            if saved['source'] != runtime.function_source['checkpoint']:
-                raise ValueError('F-only memory came from a different frozen frontend')
-            memory = saved['memory'].to(runtime.device)
-            features, rows, states = None, None, None
-        else:
-            history = self.inputs.histories.get(condition['H'])
-            rows = history.model_rows(runtime)
-            self.inputs.histories.remember_features(condition['H'], history)
-            states = history.states
-            features = runtime.teaching(condition['task'], condition['teacher_demo'])
-            if self.arm == 'F_only':
-                with torch.no_grad(), autocast(runtime.device):
-                    memory = runtime.generator.context(features, rows, states).detach()
-                cache.parent.mkdir(parents=True, exist_ok=True)
-                torch.save(dict(source=runtime.function_source['checkpoint'], memory=memory.cpu()), cache)
-        with autocast(runtime.device):
-            return runtime.generator.compile(parent, features, rows, states, memory=memory)
+        return self.inputs.compile(condition, frozen_memory=self.arm == 'F_only',
+                                   source=self.runtime.function_source['checkpoint'])
 
     def condition(self, condition):
         runtime = self.runtime

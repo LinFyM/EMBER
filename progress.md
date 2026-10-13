@@ -1,3 +1,9 @@
+## 2026-10-14 §13已授权并实施准备：固定72输入、S/A/B/T全冻结
+
+主讨论已完整科学消费§12，停止原配方直接第二块，不自动BCE/phi-beta。解释和CPU原件在父ROOT/analysis/main_scientific_readout/{interpretation_20261014.md,readback.py,readback.json}；B当次loss222/288高于A，T_H1弱5task仅少7成功不能解释B损失88；seen首chunk B更近MT只描述首步、不证明整策略collapse，heldMT缺动作字段保持，执行侧不重复复算。
+唯一active设计docs/designs/problem_first_compiler_candidate_20261013.md §13全文合同：原36task×H1/H2×seen指定教学72conditions，原全部类别/完整noise/T，S38349/A72/B72重新编译≤216完整LoRA、总≤10368native10查询，全no_grad，0优化/episode/held/Test/中点/controls。新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/native_function_fixed_input_readback；输入和全部大型资产仅引用父ROOT，缺类保留，不补挑。原§12/§23通知已消费，不重启。
+工程复用FunctionInputs的同一compile与native_actions，提取原训练编译方法以供零更新回读，非平行Writer。72长输入优先SQLite队列按完整condition处理S/A/B/T，任一worker继续领取未完成工作；首次真实condition测量留作正式结果，0discarded profile。当前只准备，未宣称GPU运行；strg01 live data1 used1613077952KiB/soft2147483648KiB、预计8GiB可容纳，双节点live按6/8/node6及实际峰值选择共驻卡，无util或固定显存筛选。预计40–80min沿派发时钟，实际首消费者后修正；工程/冻结/实际启动及唯一整批路由随后登记。
+
 ## 2026-10-14 §12四末点完整保存；CPU摘要修复后整批验收
 
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification。owner06于17:00:25Z真实exit1/StopIteration；四GPU消费者均exit0，F-only seen/Val为404/159，full-G为339/150，全部576/400原行齐全。错误仅为旧MT400没有global_task_id、汇总却按该字段查找。db1bff33已独占窄修/实际4面板消费者通过/main push/clean detached CPU消费：按官方suite/local task/state唯一配对，原source/查询/参数/评测不改，旧exit1不追认0；0新模型forward/GPU/episode/重训。

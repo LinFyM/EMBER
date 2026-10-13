@@ -1,3 +1,8 @@
+## 2026-10-14：§12主讨论科学消费后授权独立固定输入函数回读
+
+§12完整A404/159、B339/150已消费，停止原配方直接第二块。B在线loss222/288高于A；T_H1弱5task的少7成功无法包办B已学净损88，首chunk更近MT不证全策略collapse，历史独立keep/SEOD/GOMQ边界继承。完整解释/CPU原件在父ROOT/analysis/main_scientific_readout/{interpretation_20261014.md,readback.py,readback.json}，执行者不重算。
+新有界合同在同目录fixed_input_contract_20261014.md及唯一候选design§13原文：72固定H1/H2教学条件、源38349/A72/B72与T全冻结，216编译/10368native10查询上界，0环境/训练/held/Test/选点/自动后继。实际工程/消费者/冻结和调度由实验独占，新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/native_function_fixed_input_readback；当前准备，未launch。旧§12/§23原件/费用保持，阶段状态以根记录为准。
+
 ## 2026-10-14：匹配native控制目标72两臂完成，解冻前端未取得闭环增量
 
 同G38349/fresh同Adam/288condition、36task各8遍的F-only与full-G均完整72及末seen576/strict首G400。seen MT340/原G427/A404/B339，Val MT153/原G165/A159/B150；B对A seen R313/G26/L91/net−65，Val R123/G27/L36/net−9。对原G Val A得33失39/net−6，B得28失43/net−15；held breadth仍6/8，两个零task保留。A的Long增益和Spatial损失、B在Spatial相对A的局部改善及其它损失都保存，不认作原生控制目标/全前端学习已解决迁移。

@@ -168,13 +168,22 @@ def summarize(root, arm, role):
     rows = [read_json(base/'conditions'/r['condition_key']/f"query_{r['init_state_id']:03d}.json") for r in panel['rows']]
     if len(rows) != (400 if role == 'validation' else 576):
         raise ValueError('full registered endpoint readout required')
-    mt = []
+    mt, references = [], {}
+    tasks = {t['global_task_id']: t for t in panel['environment']['tasks']}
     for entry in panel['rows']:
-        reference = read_json(Path(entry['MT_source']))
-        candidates = reference['rows']
-        mt.append(next(dict(row, global_task_id=entry['task']) for row in candidates
-            if row['init_state_id'] == entry['init_state_id'] and
-            (row.get('reference') == 'MT300' if role == 'seen' else row.get('global_task_id') == entry['task'])))
+        source = entry['MT_source']
+        if source not in references:
+            references[source] = read_json(Path(source))['rows']
+        task = tasks[entry['task']]
+        matches = [row for row in references[source]
+            if (row['suite'], row['task_id'], row['init_state_id']) ==
+               (task['suite'], task['task_id'], entry['init_state_id'])
+            and row.get('global_task_id', entry['task']) == entry['task']
+            and (role != 'seen' or row.get('reference') == 'MT300')]
+        if len(matches) != 1:
+            raise ValueError(f"MT reference needs one suite/task/state row: {source}, "
+                             f"{task['suite']}/{task['task_id']}/{entry['init_state_id']}; got {len(matches)}")
+        mt.append(dict(matches[0], global_task_id=entry['task']))
     result = dict(complete=True, raw_rows=rows, MT_raw_rows=mt, paired=paired(mt, rows),
         strict_single_checkpoint400=role == 'validation', per_task={}, per_suite={}, queue=queue_summary(base/'jobs.sqlite'))
     for field, output in [('global_task_id', 'per_task'), ('suite', 'per_suite')]:

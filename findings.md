@@ -11786,3 +11786,13 @@ main据此授权唯一§20 F-only低成本密集监督+独立θ/真实R5共同�
 §20的A5400/F30249、local90和完整组装成功，RL1/F31149全G/θ/独立optimizer/baseline/G与θsampler/bank1/四rank RNG完整。local90在同既有MT/G信用上的final期望425.579477，只为warm消费者读回，无新闭环/资格。
 RL2快rank04:54:33已进入Actor梯度allreduce，task38慢rank到05:05:29仍完成合法query并写有效行，越过默认600秒；原ownerexit1不是完整方法阴性或GPU故障证明。40实践/240G query保留，跨采集核不拼完整资格。原费用3.476801314GPUh含失败1.649988668。
 采用同torchrun身份CPU FileStore采集就绪屏障后才开始原θ/NCCL更新，30min有界；实际CPU消费者复现旧超时并通过修复，0新forward/episode。完整RL1同四rank恢复，只补原kernel实际缺行，不重复A/B或已完成path/query；仅工程运行改变，不改科学图、B4、数据、损失、π或唯一RL9/F38349/validation400。停止合同与Test关闭保持。
+
+## 459. 首个强G后完整Writer验证净增12，保持和跨任务传递仍不均（2026-10-13）
+
+唯一§20已实际结束：v10完整RL9/F38349、166 F Adam/独立θ与baseline/两个sampler/bank9/四rank RNG齐全，5400+8100 F更新与local90/RL9真实消费，φ/source冻结。完整correctK1 Val400为165对强MT153，R129/G36/L24、net12/churn60/Jaccard.68254；4task净正/3零/1负、成功覆盖6/8。suite48→49/46→57/35→38/24→21；task16贡献10，去掉它只145对143/350，两个零任务未得能力。旧147→新165的相同400行为R125/G40/L22，非单因素比较。单次小正值不等于最终明显稳定Val/Test目标完成。
+
+共同180真实实践/180提案中77新G获1232独立query信用，103轮重试parent且有新H；bank149parent/252 P-H/1008context，未实践提案无信用或bank。九不同核conditional-continue路径末final信用413/MT340、期望415.714、事后实际候选condition界443，不能拼完整CP资格。34个condition首已实践G401/MT319（544行），43个后来G11改善/16同/16差；选择后局部比较不证明所有再次修订无用。正式150 STOP/250外部五轮退出，851重试parent/614实践新G，最终111 MT/289 G，均按实际分布采唯一完整LoRA。
+
+共同E目标和真实P/H覆盖仍允许忽略反馈；BA在线窗改善与强训练信用不替代held能力、视频/H因果或纠错学习。现有完整链提供局部held正证据，但收益集中、24 MT损失与较弱后续修订保留跨task传递/保持和选择等竞争解释，尚不能唯一归因某模块；不把科学不足当bug或自动开controls/相邻/Test。
+
+04:15→08:17 wall4.044h，formal1.769h；3566新episode/910556步，18.857689823GPUh含原失败1.649988668。group8首组已保留，决策时缺完成可比peer，group4非最优宣称；实际joint/formal动作batch4.540/2.595，slot配置和util不能替吞吐。根49.301GiB/96GiB预测，GPU全退出；失败exit1、历史.50未过/旧864停止及全部不利原件不改。稳定消费ROOT/analysis/completion_20261013，完整解释现有coordinate分析§20.2–20.4；main自主消费接续，不自动延长或第三同缓存块。

@@ -1,3 +1,9 @@
+## 2026-10-13：强首G后的完整Writer RL9/F38349，strict400小幅且不均净增12
+
+§20于08:17:53.944实际exit0，完整v10 RL9/F38349与400不同task-video条件齐备；原1bcb2601失败和6f6a8aa6恢复身份分别保存，原exit1不追认成功。Writer165/MT153，R129/G36/L24/net12/churn60，Spatial/Object/Goal/Long净+1/+11/+3/−3，task16贡献+10，去掉它145/MT143/350；覆盖仍6/8。旧同400 RL9=147→新165 R125/G40/L22，非单因素比较，未取得最终明显稳定Val/Test成功。
+F13500更新/54000条件、local90/九B4 θ与baseline、真实bank9完整；共同180实践/77被实践G/1232新query是九个采集核信用，不凑单完整checkpoint。formal400实际400bootstrap+1465实践+289新G final，111 MT final兼容引用、150主动STOP/250外部五轮退出，0held离线梯度/Test。全批3566episode/910556步、18.857689823GPUh含原失败1.649988668，wall4.044h/formal1.769h，根49.301GiB/GPU退出。
+稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013，analysis/completion_20261013/{statistics.json,training_audit.json,provenance.json,paired_raw_rows.jsonl,joint_credit_raw_rows.jsonl}与现有coordinate分析§20.2–20.4/findings459；完整RL9/原恢复点/真实H/raw与所有正负历史保留。main科学消费后自主接续，本批不自动追加训练/相邻/controls/Test。
+
 ## 2026-10-13：完整Writer原范围工程恢复，RL9/400尚未形成
 
 §20 A5400/F30249、local90和组装成功，完整RL1/F31149保存；原1bcb2601 owner于05:05:41 exit1，快rank的Actor梯度等待超过NCCL600秒，慢rank仍在合法长query写入有效行。原费用3.476801314GPUh/失败1.649988668保留。八path40实践/240有效G query不重做，恢复只从完整RL1接原范围并隔离CPU采集就绪与NCCL窗口；未完成RL9或400，不写完整方法结论。证据ROOT/analysis/collective_timeout_recovery_20261013，唯一design§20.7；原启动/预测和旧结果保持。

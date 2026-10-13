@@ -758,3 +758,51 @@ main§19CPU消费原件已原样归档ROOT/analysis/main_scientific_readout/term
 A固定5400更新/F30249实际866.285秒/4卡，local90实际1429.665秒/2卡，组装63.014秒/4卡均exit0；final warm90按原36既有信用的无梯度期望425.579477/576，相对uniform382.5/alwaysG425/posthoc430，只说明这套pair上final分布结果，不是新闭环或资格选点。
 共同RL1每rank完整周期571.8秒；快任务采集/query154.1–245.8秒而慢任务431.2秒，θ阶段记录含快rank等待，不能把195/284秒全部称Actor算子计算。RL2的task38实际尝试四个不同G，长horizon query在快rank进入同步后仍超过600秒；原未隔离采集等候与NCCL窗口，导致原整批exit1/3.476801314GPUh，其中失败RLjob1.649988668GPUh。保留40真实实践、240有效G query/65287 query环境步；未完成RL9或400，不能消费为完整方法阴性或跨核拼分。
 修复只将合法采集耗时的rank就绪放入CPU FileStore，完整RL1/F31149/θ及baseline optimizer/bank/RNG同world4恢复，原冻结代码/失败/有效rows不改写。CPU复现与实际函数验证不新增环境或模型forward；详细收据ROOT/analysis/collective_timeout_recovery_20261013。科学架构、BA目标/共同E、真实[parent,newG]π、F38349/完整RL9→400合同不变；末轮query仍不得反哺G/H或用于checkpoint选择。
+
+### 20.2 唯一完整RL9/F38349的strict400原件消费
+
+恢复owner于2026-10-13 08:17:53.944（UTC+8）实际exit0，queue400全部完成；原05:05 exit1作为失败历史保留。正式和恢复计算来源6f6a8aa6 clean pushed detached，原初始1bcb2601不热改。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013。稳定消费为ROOT/analysis/completion_20261013/{consume.py,statistics.json,paired_raw_rows.jsonl,joint_credit_raw_rows.jsonl,training_audit.py,training_audit.json,provenance.json,complete.json}，0新模型forward/GPU/环境episode。
+
+全G/θ/baseline、166 F Adam均38349、独立θ与baseline optimizer、两个sampler、bank9、四rank Python/NumPy/CPU/CUDA RNG和原冻结CP432身份真实齐备。θ212个参数中201个有实际Adam状态：196个步99（local90+RL9），5个步9；其余11个未消费路径参数无状态，不把“模块存在”写成全部参数获有效信用。全13500 F更新/54000条件及每task新增600+900均对应实际task→parent→H→video与logicalB4权重；φ/source梯度false。正式只消费这一个完整RL9，不把endpoint或阶段终点冒称完整Writer。
+
+400个(global_task_id,init_state)严格唯一；每个Val task的50个teacher demo各一次，scene/env/native noise与强MT原400行配对。每个condition实际合法adapt排除最终初态，只有已实践的单套完整38-target/rank8 LoRA进入final，final仍multinomial。全部400路径/完成/query元数据及所选权重header shape均核对；实际formal消费者逐condition断言最终初态未进入H，本次不重复解压400份H。无held离线标签或共享/局部optimizer，无最终query入H，无Test。
+
+| 集合（每task50） | MT | Writer | retained | gained | lost | net |
+|---|---:|---:|---:|---:|---:|---:|
+| Spatial task3 | 41 | 42 | 38 | 4 | 3 | +1 |
+| Spatial task6 | 7 | 7 | 4 | 3 | 3 | 0 |
+| Object task11 | 36 | 37 | 30 | 7 | 6 | +1 |
+| Object task16 | 10 | 20 | 7 | 13 | 3 | +10 |
+| Goal task23 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Goal task26 | 35 | 38 | 34 | 4 | 1 | +3 |
+| Long task31 | 24 | 21 | 16 | 5 | 8 | −3 |
+| Long task39 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 全400 | 153 | 165 | 129 | 36 | 24 | +12 |
+
+成功率38.25%→41.25%，净+3个百分点，churn60/Jaccard.68254；保持129/153（84.31%）。task净正/零/负4/3/1，成功覆盖6/8与MT相同，两个零任务未取得能力。suite为Spatial48→49、Object46→57、Goal35→38、Long24→21。task16占净增10/12，去掉它仅145对143/350（R122/G23/L21）；既有Long保持缺口和其余task的得失不能隐藏。它是小幅且不均的held净增，尚不足以宣称最终明显稳定Val/Test目标已完成。
+
+历史旧v5 RL9的147/400与本轮按同400实际task/state/scene/env/native RNG、teacher schedule只读并列：旧→新R125/G40/L22、net+18/churn62/Jaccard.66845；旧对MT为R145/G2/L8。新方法产生更多实际能力变化，也支付更多损失。架构、监督与学习历史同时变化，不能把18归因为单个模块或由“优于旧阴性”替代强MT比较。没有读取旧模型的新schema、没有新增历史参照episode。
+
+### 20.3 共同路径、实际信用与最早可见不足
+
+九个当前核各B4、R5均完整，真实[parent,newG]两选practice forced=false；180轮新实践、180提案中77个新G被实际实践，103轮重试已有parent，后者取得新初态真实H而非旧H替代。只有实际practiced参数按原query16读信用：1232条新G query/576条只读MT信用，103个未实践提案没有query也未入bank。最终bank149个实际parent、252个P/H对、1008个四视频context；重复parent增加其H，不复制parent改变采样权重。实践无budget截断。共同窗口1412新增episode/298340环境步，原失败内已有效的40实践/240 query被合法恢复复用，没有为恢复重采。
+
+各路径末final采样的信用合计413对MT340（R311/G102/L29、net+73/churn131）；末final分布期望415.713821，事后每condition从其实际practiced候选选最高16-state总分的界443。其train24为238对169、support12为175对171；suite Spatial64/MT53、Object58/34、Goal56/49、Long60/33。上述是九个不同pre-update kernel的conditional-continue路径末final信用，未含完整STOP递推价值，不能拼成完整RL9的seen资格分数、不能与固定24849的425作单因素退化结论，也不是可部署oracle。
+
+34个condition实际尝试过至少一套G：首个已实践G401对相同544行MT319（R293/G108/L26）；真正第0提案G_000只在15个condition获得信用，为161对MT132/240，其余21个未尝试不得填成结果。43个后来实际尝试的G相对该condition首个G有11改善、16相同、16更差，16-state差值合计−19；它是选择后的候选比较，非全36固定endpoint或所有五轮都弱的证明。当前路径显示初次有用能力仍存在，而多轮修订未一致带来更多能力；θ的实际末final期望离已有候选界约27.29，不能由此自动授权argmax/强制新G或声称控制信用已经充分教会选择。
+
+正式400中主动STOP150，五轮外部退出250；rounds0/1/2/3/4/5分别52/31/33/18/16/250。实际400 MT bootstrap+1465实践+289新增G final=2154新增episode/612216步，111个final MT原行只读复用；851轮重试parent、614轮实践新G。最后MT/G为111/289；所选G的289个condition为Writer118对MT106，R82/G36/L24，MT子集保留47成功。1465提案的未实践身份、每condition最终LoRA/生成及第一次实践轮次、STOP与final概率都在statistics原件。重复parent是否有价值不能只由计数断言，当前没有额外H消融或未实践提案query来区分。
+
+实际计算链仍是exact L/action-hidden V与自身P/H→冻结CP432原生双meta/Reader/static→同一F输出完整MT中心A/B→38处sBA作用于自身hidden/原生十步动作；只有F接受共同E的BA监督，θ独立接受合法query信用/解析STOP与conditional-continue梯度。初始在线完整36更新窗BA .658036→.185785，joint首窗.216064、最后窗.140222，都是当前数据分布的pre-update窗口均值，非保存CP重新读出，不从loss推成功率。共同E可以在忽略P/H时仍拟合，真实non-MT域和新H的存在不自动证明学会针对失败纠错；BA也没有直接按自身hidden/闭环风险给教师方向加权。
+
+这一结果削弱“完整过程完全不能获得held能力”的解释，但明显的train先行能力与小幅、不均的held收益仍支持跨task传递/能力保持有缺口；已发生的修订与选择记录也保留后段不足的可能。现有原件不能唯一分离F、读取表示、θ或教师监督的原因，不能由这次小正值证明视频/H因果。主讨论据完整原件承担下一取舍，实验侧不把科学不足改成工程故障，不自动追加相邻点、controls、Test或第三同缓存块。
+
+### 20.4 实际投入、物理吞吐与完成状态
+
+全批从04:15:15.189到08:17:53.944，wall14558.755秒（4.044h）；恢复leg10898.546秒（3.027h），formal400 wall6368.153秒（1.769h）。全批3566新episode/910556步。12个实际job收据、1失败，18.857689823GPUh：初始F/local/组装1.826812646，原失败joint1.649988668，成功恢复joint5.004087723，formal10.376800786。失败job包含有效RL1/部分采集，其费用全部保留，不把它全称纯浪费；原teacher/source/参考与以前root费用不重计。旧04:15的4.5–8h及恢复08:45–12:15预测保留为历史，实际早于预测和11点软目标，未缩水口径。
+
+A四rank/B两rank并行、共同四rank、formal六persistent动态worker，普通cap6/node6及每launch双节点live/独立data1 quota原件齐全。F四rank实际更新初始均.1036秒、joint均.1114秒，共同步计算1461.596秒约24.36min；完整共同窗口还包含合法实践/query、新context/θ与IO，不能拿F下界冒充全部成本。实际joint平均动作batch4.540（singleton59.34%）、formal2.595（singleton23.89%），slots16不等于满batch。joint峰值allocated13.550/reserved25.518GiB，formal14.078/17.855GiB，仍有显存余量；当批做了合法首group8、observation microbatch32实际消费，未新增科学episode/slots32重测。group8决策时没有完成的可比peer，采用已测group4并不证明其最优，也没有证据可声称8无收益。
+
+105个不同shared compilation group覆盖400条件，其中8/4/2/1大小分别1/94/6/4；按成员去重的编译时长合计31521.031秒。worker residence/runner环境等待与native/θ统计有重叠，不相加当纯计算，更不能因卡util高称充分优化。后续调度工程的具体需要应从这些实际瓶颈判断，本批不另加profile矩阵。
+
+ROOT实际49.301GiB，低于96GiB预测；新增全data1，source/教师/旧H/cache引用，完整RL9/F38349、原完整恢复点、H/正式raw及失败原件保留。双节点postexit快照本项目GPU进程0，两owner PID已退出；task-owned开发分支已集成清理、正式冻结树clean保留，未删除历史不明worktree。唯一design§20已完成，当前无执行中的科学批；Git集成后仅一次可靠整批交main，main继续自主科学裁决，无例行ACK或新计算默认许可。

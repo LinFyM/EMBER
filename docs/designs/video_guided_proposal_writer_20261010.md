@@ -751,3 +751,11 @@ CPU实际检查：完整496 G/212 θ状态与166 F Adam24849/独立baseline及op
 完整RL9/F38349→唯一strict validation400自动接续授权仍有效，Test及其它后继关闭；旧08:45–12:15总预测保留历史，恢复后的剩余时间据真实完整RL1 571.8秒和最长合法query修订，11点不是硬截止。详细工程证据仅ROOT/analysis/collective_timeout_recovery_20261013，不新增active design。
 
 §20.7实际恢复登记：6f6a8aa6已push、clean detached执行；05:16:15唯一新owner/PID4112034，05:16:31四rank实际RLjob。live gpu01:0–3/cap6/node6，完整RL1同world4承接，仅消费原当前核缺行。F31149/θ1/bank1→最终F38349/θRL9→400范围保持；原失败/有效产物/费用/启动预测不覆盖。完整评测到来后重新live选所有有益可用slot，不以world4收紧整批并发。按首周期571.8秒和最长query实测，暂估恢复后剩余3.5–7h，旧11点软目标保持；已完成CPU验证不冒称剩余真实更新或400完成。
+
+### 20.8 完成状态：唯一完整RL9与correct K1 validation400（2026-10-13 08:17）
+
+§20科学合同已实际完成，恢复owner exit0；旧原owner exit1保持失败历史。A5400/F30249、local90、九批真实[parent,newG]R5/每批θ→bank→900F、F38349完整v10 RL9及唯一400全部齐备。166 F Adam均38349、全G/θ/baseline及独立optimizer/两个sampler/bank9/四rank RNG真实保存；φ/source冻结，未读取Test或held离线监督。
+
+strict400 Writer165/强MT153，R129/G36/L24/net12，收益集中task16、Long净−3，不称最终明显稳定Val/Test目标取得。共同180实践和77被实践G的1232 query信用是九不同采集核定位，不拼完整CP资格；103未实践提案无信用/bank。formal400 MTbootstrap+1465实践+289新G final共2154新episode，主动STOP150、五轮外部退出250，final111 MT原行兼容引用/289唯一G，adapt与最终初态分离。
+
+全过程wall4.044h/18.857689823GPUh含旧失败，3566新episode/910556步；原启动/ETA/失败原件保留。实际资源/状态/完整分布见progress、既有coordinate分析§20.2–20.4与ROOT/analysis/completion_20261013；不再重复活动合同。完整RL9和恢复资产/正式H/raw保留，当前无运行中的科学批；本合同到此停止新增计算，Git及一次可靠整批交main后由其自主登记后继，无自动相邻点/延长/controls/Test，也不以Owner新许可或工程ACK阻塞main取舍。

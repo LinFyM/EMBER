@@ -1,3 +1,10 @@
+## 2026-10-13 当前交付：完整Writer首strict400已完成，后继待科学裁决
+
+唯一design§20已实际完成全5400/local90/九共同批及唯一RL9/F38349、correctK1 validation400。08:17:53 exit0，Writer165对强MT153，R129/G36/L24，净+12集中于Object/task16，Long净−3；最终明显且广泛Val/Test收益目标尚未取得，不据单次小幅增益完成研究目标。
+原件、全状态、真实P/H、400不同教学/独立最终初态、训练信用与全部费用已消费；九个不同采集核的路径分数不拼成完整checkpoint。全批3566新episode/910556步、18.857689823GPUh含原失败，GPU已全部退出。
+工程交付范围：现有分析§20.2–20.4/findings459/history及当前状态串行入Git/push，随后一次可靠交main01a12bb0。当前无自动新训练、其它点、controls或Test；main消费实际全分布后自主登记接续，工程不等待例行ACK，也不擅自把科学不足当bug。
+关键保留：完整RL9/F38349及optimizer/RNG/bank9、原CP432/F24849、原完整恢复点、所有正式raw/H与旧失败；新root49.301GiB/96GiB峰值合同。原第三同状态缓存块、旧864停止、.50未过及所有不利结果保持。11点仍是软目标，实际完成早于原预测，不制造强杀或自动后段。
+
 ## 2026-10-13 05:16 实际恢复：完整RL1原范围接RL9与validation400
 
 窄修复6f6a8aa6已集成push，从clean detached新冻结树full_writer_collective_recovery_20261013_6f6a8aa6执行，原1bcb树/失败原件不热改。唯一新owner full_writer24849_collective_recovery_02/PID4112034于05:16:15实际启动，四rank RL恢复job于05:16:31启动，明确--resume完整RL1/F31149、bank1及四rank RNG，初始assembled90身份仍是原kernel来源；不是从头训练或重新warm。

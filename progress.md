@@ -1,3 +1,14 @@
+## 2026-10-13 08:17 实际完成：完整RL9/F38349与strict validation400
+
+唯一design§20有限窗口已结束：恢复owner full_writer24849_collective_recovery_02/PID4112034于08:17:53.944退出0，400完整、无缺项。原04:15:15启动至实际结束wall4.044h；05:16:15恢复leg3.027h，原exit1不改写。初始1bcb2601与恢复/评测6f6a8aa6均为已push clean detached来源，冻结树保持。
+完整v10 RL9含全G/θ、166个F Adam均38349、独立θ/baseline optimizer、两个sampler、bank9与四rank RNG。F5400+8100共13500更新/54000条件，每task600+900；φ/source全程冻结，local90与九个当前核B4 θ/baseline更新齐备。bank实际149个parent/252个P-H对/1008context，103个未实践提案未入bank。
+唯一correctK1 validation400：Writer165对强MT153，retained129/gained36/lost24/net+12/churn60/Jaccard.68254。Spatial48→49、Object46→57、Goal35→38、Long24→21；4 task净正/3零/1负、成功覆盖6/8。task16贡献+10，去掉它仅145对143/350；不能称明显且广泛成功。历史RL9=147的相同400行只读并列，旧→新R125/G40/L22/net+18，非单因素比较。
+共同窗口实际180实践/180提案，77新G被实践且各query16，共1232新G query；103轮重试parent，无截断。九不同采集核的末final信用413对MT340、期望415.714/事后已实践condition界443，只是训练路径定位，不是完整RL9 seen资格分数。后续43个已实践G相对首个11改善/16相同/16更差，不能以其否定未实践提案。
+正式400实际新MT bootstrap400、实践1465、最终新G query289，MT最终111条兼容引用；共2154新episode/612216步。主动STOP150/外部五轮退出250、52个condition零修订，851轮重试parent/614轮实践新G。全部最终LoRA为同一完整RL9和condition内单套38-target/rank8，final新初态与adapt分离，0held离线标签/梯度/Test。
+全批实际3566新episode/910556步；12 job收据、1失败，18.857689823GPUh（含原失败1.649988668，失败job内有效RL1/部分采集保留，非全部无效开销）。初始1.826812646、成功恢复joint5.004087723、formal10.376800786；旧源/教师/参考费用未重计。formal wall1.769h、six persistent worker/cap6；joint实际平均动作batch4.540、formal2.595，不能以slots16称满batch。group8合法首组已保留，但决策时无完成的可比peer，不声称group4最优。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013；稳定消费analysis/completion_20261013/{consume.py,statistics.json,paired_raw_rows.jsonl,joint_credit_raw_rows.jsonl,training_audit.py,training_audit.json,provenance.json,complete.json}。根49.301GiB，低于96GiB预测；双节点本项目GPU进程已核为0，两owner PID退出，0新增分析forward/episode/GPU。
+当前没有执行中的科学批；§20为完成合同，原完整checkpoint/各恢复点/实际H/raw/失败均保留。完成Git与一次可靠整批交main01a12bb0后由其自主科学裁决，禁止自动延长/第三同缓存块/controls/Test；旧11点软目标与启动/恢复预计保持历史，不将计划当结果。
+
 ## 2026-10-13 05:16 实际恢复：完整RL1原范围接RL9与validation400
 
 窄修复6f6a8aa6已集成push，从clean detached新冻结树full_writer_collective_recovery_20261013_6f6a8aa6执行，原1bcb树/失败原件不热改。唯一新owner full_writer24849_collective_recovery_02/PID4112034于05:16:15实际启动，四rank RL恢复job于05:16:31启动，明确--resume完整RL1/F31149、bank1及四rank RNG，初始assembled90身份仍是原kernel来源；不是从头训练或重新warm。

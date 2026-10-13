@@ -1,3 +1,9 @@
+## 2026-10-14 06:53 §15首有效B4通过后frame64 OOM；四卡frame32恢复
+
+owner02/source df7610f7首有效73(global72/v0)确实承接完整D72/485Adam，两meta支/Reader/static/F全信用、D native0、4条件/4次BA，最长11.843s/最大reserved39.699GiB。下一组反传实际进程43.60GiB OOM；原33.14GiB不完整失败峰值不足以预测完整D64，不能继续当安全峰值。02于22:50:46Z exit1，累计.121221827GPUh、0环境，原件保留并consumed。
+73没有到90保存点，无可恢复D73 psi/Adam/RNG；4条rank原metrics移到原attempt002留证，不混入新有效流。完成但未保存的4次编译/1次更新及失败组至多4次编译单独记工程重算成本，288是保留流编译数，未把未保存前缀写0或冒充discarded profile。本批仍从完整D72作72次保留更新至144，不增逻辑条件/训练端点/目标/episode/native10；四卡frame32沿新clean pushed detached，原两冻结代码不热改。
+唯一新owner03承接旧退出/判重/费用，原22:22:32Z时钟与60–110min预计保持；976末点/992 starts/525760步/Test关闭/无第三块均不变。原首B4通过只认证真实恢复与信用，不保证长H最大内存；64已实测OOM，48没有长H安全余量依据，本次32优先避免重复失败。后续仅首实际消费者实质更新或整批/真实异常回报main，无第二等待者/阶段Queue。
+
 ## 2026-10-14 06:47 §15四rank启动配置窄修；原D72与全部预算保持
 
 唯一owner01/source6c7c2185于22:45:56Z真实exit1：frame配置单值与实际world4不符，Runtime构造前拒绝，0有效更新/模型forward/环境交互，.024166130GPUh及退出原件保留，01已consumed。新owner02只改物理rank配置为64,64,64,64，实际run.physical_value_for_rank四rank消费者已通过；完整D72/485Adam/RNG/global72→144/原288条件/976-992-525760/Test关闭均不变。恢复沿新clean pushed detached冻结，原6c7c与失败launcher原件不热改；22:22:32Z派发首次观测时钟不重置，无第二等待者/阶段通知。

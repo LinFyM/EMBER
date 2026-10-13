@@ -929,6 +929,10 @@ Owner先讨论下一步，取消11:00，希望今晚新加坡23:00有进展，�
 
 ## 23. 固定较强G的选择迁移：新反例、学习和held迁移须分开
 
+工程实现保留一套Runtime/Generator/Actor/compile/query/checkpoint，退休已消费的fixed-g/native-FM及旧component/stage入口；本轮active源码净减约1252行、0新module。架构工具对七处新增/增长复杂条件的信号已在实际owner/调用方审读后记录cohesive exception：主要为受控完整状态导入、原真实H/producer、配对源行复用及有限注册的声明式校验，不拆出第二模型/策略路径。准确信号与所有权、退休依据见ROOT/analysis/engineering/{architecture_final.txt,architecture_self_review.json}，不将工具BLOCK写成自动通过或新增人工审批。
+已修复后续formal own-MT状态检查固定取0的错误：旧算法按video ordinal选择初始化，原真实task3/state1的MT init36而非48，证据取现有H一个前缀、0新forward/episode/GPU。060485ba clean pushed消费者按原ordinal核验，GPU源0dee数据不热改/不重跑，CPU排他交接保存全部真实收据/费用。科学矩阵、参数、标签、梯度/概率与唯一B18/400不变。本轮结果还未产生，不能从接口修复推得选择学习有效。
+Owner指定新主讨论01a13399-cba2-7da2-9dc6-df430ca80280接完整结果及科学边界，旧main不再收尾接收。其独立完整科学审查/机制推导/设计及审阅修订goal与在途§23并行，当前0额外实验授权，科研记录/Git继续串行。
+
 §22的target24未净增/held158削弱固定表示F-only继续校准；保留原G38349/完整θRL9是已取得能力的起点，非改用新FM点。旧seen warm36只有5任务MT略高1/16、425.579477期望接近alwaysG425，后续只9个B4 on-policy，不能假定这些条件足够教会G弱时的选择。新seen/novel各半72任务、A180+B18及唯一完整400一次有限检验真实迁移分布的学习，相对旧joint同时改变组织/曝光，不称同预算单因果；新增36是source已见/G未训、33种不同语言，不能说36新操作或新增source全部71映射。
 
 合法实际链为exact L/ordered双RGB经固定G的φ/Reader与真实MT/G参数/H产生完整LoRa；Actor独立Reader用自身RGB前后、两次native hidden、实际producer参数摘要、proprio/action/执行标记/feedback联系有序教学，候选侧有参数摘要及在已有观测上的原生动作预测。原θ可在真实独立query return上学习给定L/V/P/H的条件期望差，不能凭attention/反馈字段/内部值宣称已经取得；自己的实践成功也不能保证新初态（旧24 lost中12曾成功）。query标签只教共享θ/baseline，既不进H/G条件也不经Q动作梯度写LoRa，held编译冻结/最终Writer退出。

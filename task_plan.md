@@ -1,5 +1,8 @@
 ## 2026-10-13 当前计划：已授权§23完整选择学习窗口
 
+已实际启动72任务真实数据采集；原五GPU job保留，060485ba仅修后续formal own-MT prefix的索引校验，新CPU owner2104955安全承接全部有效数据/退出/费用后继续A180→B18→完整400。原0dee frozen未热改，已集成的三个task-owned开发工作树和分支清理，formal frozen源码保留。依据旧计时暂估剩余4–7h，等待当批真实wall修订，不重置实验起点。
+Owner已登记唯一新主讨论01a13399-cba2-7da2-9dc6-df430ca80280，整批/真正科学边界只向该接收方可靠交付，原01a12bb0停止接收。其完整机制/架构/训练科学分析及独立审阅修订的设计goal另行推进，本批无额外实验或科学合同变动。
+
 当前批次不因主讨论交接暂停。Owner要求完成后暂缓向现主讨论汇报；完整结果/费用/工程与Git先保存为可交付原件，待Owner登记新接收方后按唯一整批身份交付，不主动投递旧主讨论。
 
 按唯一design§23与/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/main_contract/scientific_dispatch_20261013.txt直接闭环：72任务审计/固定数据manifest→单一消费者与完整源迁移→CPU及真实consumer准入→集成push/clean detached→真实pair72→A180→当前核B18→唯一完整correct400→科学/费用/Git/一次交main。不是新许可/ACK门槛，旧讨论状态已被Owner11:50和main明确派发替代。

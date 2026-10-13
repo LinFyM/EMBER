@@ -1,4 +1,14 @@
-## 2026-10-13 当前实施：§23 selector transfer72固定G38349
+## 2026-10-13 13:09实际启动：§23固定G的选择迁移在途
+
+唯一ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。原owner selector72_A180_B18_validation400_01/PID2025779于13:09:44启动；五个实际GPU job13:09:53–13:10:08在gpu01:1/3/6/2/0启动，总5/现场cap6，另外设备高负载或不足24GiB余量，未把world4当整批限制。真正注册72任务的数据采集包含首个clear卡32-slot保留组，其余16-slot/group4；实际吞吐/peak据原件结算，不宣称全局最优。
+
+后续formal MT前缀校验误用practice_states[0]，而旧真实MT bootstrap取video ordinal对应索引；实际task3/state1原H为init36，错误期望48。060485ba已push、clean detached修复，0新episode/forward/GPU探针，模型/数据/损失/RNG/qualification不改。13:23仅向原CPU dispatcher精确PID发SIGINT，线程退出等待保留并核收原五个GPU子job，不发进程组信号、不停GPU worker。13:26:55新唯一派发owner selector72_prefix_consumer_handoff_02/PID2104955启动，接原job收据及有效数据，再接A180→B18→唯一400；旧CPU只作原子job的退出收据收尾，不再派发，不恢复旧队列。原GPU source0dee9028与后续consumer060485ba、真实handoff/失败/费用都保留，不重置13:09计算或此前工程起点。
+
+完整窗口仍是G38349/F Adam/bank9冻结、72任务seen2/novel2、A180+B18及唯一correct400，Test关闭。新主讨论01a13399-cba2-7da2-9dc6-df430ca80280已由Owner登记为唯一接收方，原01a12bb0不再回报；一整批/真实科学边界可靠交新接收方，原唯一实验退出接续不增心跳/阶段Queue/第二等待者。新主讨论另承担完整理论/架构/训练科学审查和独立审阅修订的设计goal，当前消息0新增科学计算；科研状态和工程集成继续串行。
+
+准备与迁移已完成，A/B/400尚未完成，不以后台启动称任务达成。原11:00/23:00均取消，依据旧warm90/实际query与Compiler记录，剩余数据/学习/400暂4–7h，需当批真实消费者计时修订，无强杀/缩水或自动扩整数。大资产全只读复用，160GiB增量与data1独立quota合规。下面启动前和旧接收关系段落仅为历史。
+
+## 2026-10-13 启动前实施：§23 selector transfer72固定G38349
 
 Owner最新计划更换主讨论，要求当前任务完成后不急于向现主讨论汇报；本批继续，结果/原件/工程与费用完整保存，暂缓主动投递01a12bb0，待Owner确定新接收关系。仅保留原唯一整批退出接续实验session，不新增等待者或阶段通知。
 

@@ -883,6 +883,9 @@ B18自动接同一完整G38349+新θ的K1 fixed validation8×50=400，video_seed
 
 ### 23.6 工程、资源、预期与可靠交付
 
+实际GPU数据13:09按0dee9028五卡启动；后续formal own-MT初态校验索引按原video ordinal修正为060485ba，不改模型/科学合同。旧CPU取消新派发、保留GPU子job与退出收据，新owner2104955接有效输入/费用后自动A180/B18/400；旧 frozen不热改，不因metadata修复重做有效episode。确切身份见ROOT/coordinator/selector72_prefix_consumer_handoff_02和analysis/engineering/formal_prefix_index_evidence.json。当前只数据在途，无学习/400结果。
+Owner已经指定新主讨论01a13399-cba2-7da2-9dc6-df430ca80280取代原01a12bb0，整批或实质科学边界一次可靠向新接收方交付；其科学分析/独立审阅修订完整设计goal不扩当前计算。此前接收方待登记与旧UUID仅保留历史，无例行ACK/阶段Queue/心跳。
+
 Owner最新主讨论交接安排覆盖本节原接收关系：本批照常完成，先保存完整结果、原件、费用与工程/Git交付，暂缓主动回报原main01a12bb0，待Owner指定新主讨论。原唯一退出接续实验session仍负责完成消费，不新增阶段消息或第二等待者。
 
 一套Runtime/Generator/Actor/compile/query/shared checkpoint，旧§22 fixed-g及FM训练入口按已消费生命周期退休，历史冻结/tree/CP/raw/失败保存。独占分支隔离→真实消费者检查→main集成push→clean detached正式运行。metadata audit/实际完整Runtime与optimizer CPU加载0forward/episode已完成；真实GPU执行尚待launch，不称模型已训。

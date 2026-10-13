@@ -807,6 +807,18 @@ A四rank/B两rank并行、共同四rank、formal六persistent动态worker，普�
 
 ROOT实际49.301GiB，低于96GiB预测；新增全data1，source/教师/旧H/cache引用，完整RL9/F38349、原完整恢复点、H/正式raw及失败原件保留。双节点postexit快照本项目GPU进程0，两owner PID已退出；task-owned开发分支已集成清理、正式冻结树clean保留，未删除历史不明worktree。唯一design§20已完成，当前无执行中的科学批；Git集成后仅一次可靠整批交main，main继续自主科学裁决，无例行ACK或新计算默认许可。
 
+### 20.5 训练拟合取得425与held选择器偏好的新增证据
+
+主讨论重新核§15–18及operator原件：原因子MSE改善约99.9%来自A而BA误差仍约1；改BA/逐参数块读取的coordinateCP432仅337对MT340。固定原全36×4真实L/V/MT-H、承接同一共享F/Adam后，8883的全池BA .574896对应362，24849进一步有界优化到.232934对应425（MT340/E455，R313/G112/L27，E-only134取得97）。已经证实的是合法固定表示下密集共享优化取得训练控制能力，不能唯一归因此前Reader漂移，也不是逐condition轨迹拟合或held资格；144条件仍只有36独立E目标。前端与任务映射的可迁移性和theta学习须分别接受真实检验。
+
+main本次只读原400摘要与24 loss/36 gain/111 final-MT的path metadata。111个最终MT（47成功）全部是仅MT的forced singleton：52未生成G、59生成但未实践G，0个有已实践G可选时主动回退MT；不能将其描述为final选择器学会择优保底，STOP/practice的其它作用仍保留。24个MT损失全部选G，p(MT) min/median/max/mean为.0000355064585/.000115575695/.000622601307/.00018130296，全部<.01；36 gains的mean/median/max为.000160364465/.000108164459/.000547944161。两组都明显偏G，支持缺少风险区分的担忧；这些是动作选择概率而非成功概率，不唯一证明bug或可事前识别每条损失。
+
+24 lost中所选G有12曾实践成功、12全失败；36 gained中21曾成功、15全失败。新初态与实践初态不同，此分析未读取MT bootstrap成败，不能评价以MT/G实践比较的新规则，更不能从held行拟合阈值。事后把24 lost替MT可得到189/400=153+36，但这是利用最终反馈的两个实际输出union界，不是合法可部署选择器、全部候选oracle、正式成绩或资格；alwaysMT只有153并放弃36 gains。
+
+首G/full均165且22得22失，仅削弱“广泛强首G主要被后段丢掉”，不能给selector免责。源seen warm90旧pair只有5task的MT平均高1/16、expected425.579几乎alwaysG425，为G倾向提供学习背景而非唯一归因。对现有expected-return减同condition MT常量不改变softmax梯度，不把relative reward改名当修复。任务覆盖/表示捷径与选择偏好可能共存；当前F-only FM不会自动修正phi/独立任务覆盖/theta。经审计non-held独立映射、可迁移操作功能信用及合法好坏候选选择学习仅是后继方向，须main在§22完整消费后登记具体合同；source71任务不等于Writer受训71映射。本次不新增任务、selector、架构、held标签或GPU工作。
+
+原样归档 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/analysis/main_scientific_readout/writer38349_selection_loss_question_20261013.json` 及同目录 `writer38349_selection_loss_question_20261013_main_message.txt`。本记录整合未重算main算术、未解压H/forward/新增episode，旧full165及在途§22的432/三面板合同不变。
+
 ## 21. 完整Writer后的首G迁移与能力保持诊断登记
 
 main直接消费正式800行/400path，确认165/MT153且+12中task16占10。最终MT111保持47、首G69为30/MT21、laterG220为88/MT85；由策略选择形成的子集不能直接说明后来修订退化。固定E共同监督可仅识别同task，真实P/H域覆盖未强迫反馈利用，425训练先行正例与旧Context900 held阴/旧RL9阴不能拼成当前泛化资格。

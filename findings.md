@@ -11816,3 +11816,10 @@ main实际核正式800行及400path：Writer165/MT153，去task16只有145/143�
 首G/full均165/MT153且task16占几乎全部净增，未支持广泛强首G主要被后段丢失；BA监督真实正例与held迁移不足共存。共同E和真实P/H覆盖不强迫反馈利用。实际sBA作用于自身hidden和跨层flow，BA距离与50×7 native执行误差不同。
 main登记唯一design§22：完整RL9/F38349、固定phi/bank9/1008合法m，只166参数F承接Adam做432次普通FM到38781，查询0..45/每task48×28；父seen576+末seen576+末首Gheld400共1552新episode，0practice/Actor/held标签/Test。conditional C900的FM局部正/held弱及Context900151/MT153、成熟T功能/RL负证据保持，不把此次称首次接动作信用或冻结表示普遍正解。新检验只改变误差消费者；全部读出后停止固定phi F-only假设这一投入，无第二同表示块/混合/小扫自动授权。
 完整链和可失败预测见现有分析§22，精确合同见唯一design§22及 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/scientific_dispatch.md`。当前仅准备身份/查询/源码，尚无新训练或闭环结论。
+
+## 463. 训练共享拟合与held MT保底选择仍须分开判断（2026-10-13）
+
+原全36×4固定合法context下，同一共享F/Adam的BA .574896→.232934，控制362→425/576（MT340/E455，R313/G112/L27，E-only97/134），说明低成本密集监督可以取得训练能力；144条件仍36独立目标，不证明Reader漂移唯一根因、任务级捷径已排除或held泛化。
+主讨论新增原400/path metadata消费发现：最终MT111全部forced singleton（52未生成G、59未实践G），0有已实践G时主动选MT，不能称final学会择优保底。24 MT损失全部选G；其p(MT)均<.01、median.000115576/mean.000181303，36 gains也仅mean.000160364/median.000108164，支持G偏好及风险区分不足而非唯一bug定位。24 lost有12实践曾成功/12全失败；36 gained为21/15，实践成败不能保证新初态，且本分析未读MT bootstrap成败，不能据held调规则。
+事后换24 lost得189的两个实际输出union界使用未来最终反馈，不是部署分数或全部候选oracle。首G/full同165不能给selector免责；warm90旧pair只有5task MT均值高1/16、expected425.579接近alwaysG425为背景，不唯一归因。减同condition MT常量不改变现有softmax expected-return梯度，relative reward改名不构成修复。
+原件已原样归档旧§20 ROOT/analysis/main_scientific_readout/writer38349_selection_loss_question_20261013.json及_main_message.txt；完整解释现有coordinate分析§20.5。后继独立映射/功能信用/合法好坏候选选择学习尚未冻结，source71不等于Writer已学71。§22 F-only nativeFM不会自动解决phi/task/theta，现432/三面板及信息墙不变；本次0重算/模型/H解压/episode/GPU/新许可或回执。

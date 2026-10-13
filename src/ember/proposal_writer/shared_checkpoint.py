@@ -53,7 +53,7 @@ def load_state(path,runtime):
 def initialize_selector(runtime,context,root):
     from .learning import Baseline
     run=read_json(Path(root)/'run_contract.json');state=load_state(run['learning_migration']['source_checkpoint'],runtime)
-    if context.world_size not in (1,2,4):raise ValueError('logical B4 requires one, two or four physical ranks')
+    if not 1<=context.world_size<=4:raise ValueError('logical B4 supports one through four physical ranks')
     baseline=Baseline().to(runtime.device);baseline.load_state_dict(state['baseline'])
     baseline_optimizer=torch.optim.AdamW(baseline.parameters(),**OPTIMIZER)
     baseline_optimizer.load_state_dict(state['baseline_optimizer'])

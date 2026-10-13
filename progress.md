@@ -1,3 +1,19 @@
+## 2026-10-13 18:47 当前：§12两臂native控制学习已完整授权，CPU准备；原§23独立继续
+
+Owner自主推进授权后，主讨论01a13399已派发完整design§12，原件.codex/tmp/full_g_native_identification_20261013/scientific_contract.md全文集成候选design新§12，仅该有界辨识active。原§23 fixedG38349/bank9/A180+B18/唯一correct400/Test关闭及唯一owner06/整批回报保持，不查看其未完成中间分数或重复执行。
+
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification，尚未新建运行root或GPU launch/episode/update。原36task的固定MT-H1/同核首G38349实际MT+G-H2×video46..49共288condition；A/F-only与B/full-G从同G38349建立fresh同AdamW，source/MT/T/历史producer/尺度冻结，只有可训练参数集合不同。每臂72有效logicalB4更新覆盖全部condition，18/36/54恢复点、72唯一终点；每臂seen576+strict firstG400，0新θ/BCE/失败恢复/Test。正常每condition8query、T成功/同producer保持各至多8，类别等权，完整native高斯noise/10flow/5x7 MSE。最多每臂2个discarded真实B4 profile后重置权重/optimizer/sampler/RNG；结果正负均按合同停止，无自动其它矩阵。
+
+一次静态CPU资产盘点与源码消费者接入并行，read-only子任务不写root/源码、不读§23在途RL。已核36份MT/G query及36份共同E query共1728原行的16state/env-policy/noise/proprio完全兼容，固定同核G generation/1/2episodeH齐全，0缺项；去重T57，已有成功raw30，须按合同一次重放27（E23/MT2/G2），无T零query成功。固定面板最长教学92stride5帧、H1max104/H2max208；完整旧bank9是149parents/252PH/1008cache，后者不作为本批288condition的覆盖主张。细节待审计文件实际消费一次给main，不复算旧科学分数。
+
+已有native_actions接口10步/完整76因子显式checkpoint输入/前5x7输出，可由同一Generator当前图接入；full-G不读取旧依赖可训练前端的z/h/memory，冻结source raw可缓存。实现沿同canonical Runtime/Generator/native接口，两个参数模式；独占codex/fullg-native-function-learning-20261013，worktree=/data1/user/ymdai/ember_worktrees/fullg_function_dev_20261013，从clean main89626362隔离，不热改原frozen运行树。完整新消费者GPU梯度/吞吐尚未验证，不能把接口可调用写成新方法有效。
+
+本次data1 strg01 quota used1545945892KiB、quota2147483648KiB，shared81TiB，相关canonical个人目录21GiB（不跟随资产symlink）；新代码/CPU清单预计<0.2GiB，原§23160GiB与新合同64GiB新增峰值组合可容纳，启动前按实际checkpoint/cache重估。GPU仍原6/8合计/node6，无利用率/固定显存筛选。准备45–90min/数据与profile10–25min/学习30–90min/终点30–60min为合同未实测估计；profile后以实际最长输入/吞吐/峰值一次修订，科学差异或显著超期报具体边界，不静默缩水。独立已就绪任务在资源上限内有收益地并行，整批唯一退出通知，不增加阶段waiter/自Queue。
+
+旧清理完成后当前5本地/3远端分支（主讨论已自行退休其docs树/分支），新工程task分支另按实现生命周期合入清理。主讨论科学记录与旧阴性/成本保留。
+
+以下为历史时点记录。
+
 ## 2026-10-13 18:04 当前：§11接手诊断完整结束，原§23继续B18→唯一400
 
 §11 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/nonheld_takeover_feasibility 于17:51:10实际exit0，32个完整rollout（8 P重放+24 P/E续跑）、12/12登记v4 snapshot槽位和原行全部齐全；8个History已逐一读回，参数出处、初态、snapshot/index、剩余horizon、完整native noise和5x7 finite预测实际消费者核验通过。P败/E成0、P成/E败0、双方成3/双方败9，无缺项。原登记失败8槽全双方败；原登记成功4槽为3双方成/1双方败。task4/state1、25/state33原成功行重放变失败已保留，不补采；按实际重放失败10槽看，仅task4原成功槽双方续跑成，无E独有恢复。

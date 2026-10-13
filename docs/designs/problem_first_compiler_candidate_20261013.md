@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-13。**本文件是经独立审阅与实质修订、由主讨论选定的完整方法设计。接手诊断的0/8失败支撑结果已纳入，撤下未经支持的恢复监督主张。不是active design，也不是新训练派发。**
+2026-10-13。**完整方法已选定；仅§12完整G控制学习的有界匹配辨识为当前active执行设计，不代表完整方法已实施或充分训练。§11接手阴性及独立审阅保持，失败恢复监督已撤下；原§23固定G/θ批独立继续。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -351,3 +351,55 @@ held实践成功/失败也不能当作未选择候选在独立最终初态上的
 当前失败恢复训练项，将主假说与裁决重心改为首G控制迁移，保留完整G/native函数学习和独立BCE。
 两条历史成功在重放中转失败均已保留，没有补挑、补采或自动新训练。
 结果、适用边界及全部0.142699GPUh成本见[主分析§16](../analyses/problem_first_method_audit_20261013.md#16-接手诊断实际阴性及其设计后果)。
+
+## 12. 完整读取链控制学习的匹配辨识（2026-10-13）
+
+Owner在本轮完整设计交付后明确“好的，接下来你自行开展自主推进”。主讨论据此授权本节准备与有界辨识；旧§23固定G/选择学习保持原合同并独立交付。本节初次回答完整G的控制获取与迁移，不实施新的phi/beta或完整交互训练，不恢复失败接手监督。§1–10为完整方法，本节是其第一项可失败辨识；有限学习不等于完整方法已经训练充分。
+
+### 12.1 主要干预与共同来源
+
+从同一完整G38349（原v10 RL/update_00000009，F cursor38349，前端CP432）建立A/F-only和B/full-G两个参数副本。两臂F权重、目标、数据流、源normalization、尺度、逻辑batch、原生执行和新的AdamW均相同；A只有F可训练，B让meta/Reader/static/F共同训练。F不在一臂继承旧Adam、另一臂fresh；两臂均使用新AdamW(lr=1e-4, betas=.9/.95, eps=1e-8, weight_decay=1e-4)，原global grad clip1，数值策略按现行原生BF16/TF32。不做LR/rank/seed/dtype搜索。
+
+两臂共用一个canonical消费者及明确参数集合，不新建平行Writer。B中依赖meta/Reader/static的特征必须在当前图中重算；冻结source的raw embedding可复用；A仅在精确同一冻结前端下复用memory。实际producer的历史hidden/动作和所有T支路冻结。source/MT/固定尺度冻结；最终仍是完整38-target/r8。变更的是共享G学习，部署condition不拟合动作轨迹。
+
+### 12.2 固定输入面板和T
+
+只用原授权36任务（train24+support12），不把§23新36任务加入G梯度。复用已完整的§23 fixed-pair seen36资料：每task两种固定合法上下文，(a) MT parent+原1episode MT-H；(b) 同核首G38349 parent+实际MT/G两个episode的完整H。使用完整真实H，不截去失败或按结果重挑producer。每种上下文配原四条教学video46..49，K=1，共36×2×4=288个condition；不同教学单独读取和生成，不平均视频/LoRA。该有限面板覆盖1/2episode，并不声称已覆盖完整5轮H；后续真实多轮覆盖须另据本轮结论登记。
+
+每个task/parent-H，用原相同16初态、官方policy/env noise下的E与实际parent成功数一次选T，较高者胜、同分parent；四视频共享这个固定T。只读兼容原行，先查原件完整性，不按已知结果改16面板或候选。若无法得到某个P/E的真实兼容16配对，须报告具体缺项，由main补齐范围；不得将异noise/不同G记录拼成配对或默默删task。
+
+### 12.3 控制查询与新采集上界
+
+三类查询遵守§3。同一condition所有类别都用同一T。
+
+1. 正常跨episode查询：每condition取8个合法观测/state/noise，沿现有QueryStream的0..45 episode池确定性采样，排除四教学46..49；只调用T生成目标响应，不读/拟合离线动作作为该目标。native初始noise为按固定seed独立生成的完整50×32高斯噪声，不使用真实动作混合的FM中间态；保留其实际seed/生成器状态以供两臂重放。
+2. T自身成功执行：优先使用已真实保存的T成功episode及完整原noise/观测。缺少记录时，每个去重(task,T)仅重放一次原query16中按登记顺序最早的成功行，保存实际观测/noise和结果；预计上界72个episode，实际T重复则复用。原无成功的T不采此类。重放失败如实留空，不能换state/重放找成功。每condition至多8个按replan位置均匀覆盖的有效query。
+3. 自身成功保持：本有限批只使用T本身是该成功episode实际producer且原观测/noise已保存的资格；其余旧H无snapshot，不补造另一T接手资格，不另采接手。每condition至多8个有效query，多episode先等episode权，episode内按replan均匀覆盖。无资格类别为空，报告全部登记分母/缺失原因，不筛掉condition。
+
+各类先mean，再对可用类别等权；condition与task等权。类别有效query少于8时全取不重复，不以padding改变权重。T完整10步native响应冻结，P完整10步响应有梯度，在现有native_actions返回的前5×7原生动作坐标上计算MSE；冻结normalizer与真实执行一致。训练不是单步FM50或BA误差。T收集与标签不进入H或condition输入，新增成功轨迹只供共享训练监督。
+
+### 12.4 第一有限学习窗与必要读出
+
+本轮每臂72个有效logical B4更新，刚好每task访问2种H×4个教学各一次，共288条件、2304条正常query，额外成功/保持query各至多2304；总上界6912 native训练查询/臂。每9更新全36task一次，沿现有task seed流等权；各task按同一固定的2H×4video顺序遍历，A/B事件、query/noise与T逐行相同。初始cursor归零并同时记录原F38349来源，不称exact-resume。18/36/54只存恢复点，72为本轮唯一科学终点，不读中点选择模型。72来自完整condition覆盖，不声称一次覆盖就是充分学习。
+
+终点两臂各做同一原36×query16=576的首G面板及strict validation8×50=400首G面板。seen用途为控制获取/保持机制读数，部分初态曾用于T选取/成功支撑，因此不冒称独立泛化。每个validation condition复用原兼容的own-MT第一episode前缀与固定state-video/scene/noise映射，生成本臂唯一新LoRA并固定执行一次；50视频各一次，不用旧G路径或Actor选择，不对held反传。旧原MT153、G38349首G165、seen G427/MT340及原完整165只读配对。若现有400 MT-H缺真实兼容项，报告缺项，不默认重新采400或替换映射。
+
+最大新增正式最终query1952，生成872套LoRA；成功支撑重放至多72，合计完整rollout至多2024。允许最多16次失败的部分episode工程启动用于原范围恢复，physical starts上界2040，包含全部失败在内的保守environment steps上界2040×530=1,081,200；实际仍按各task官方horizon与成功即停，不能为凑上界扩采。失败工程启动/实际steps/GPUh另准确计账，不隐去或重新开始计时；工程恢复只补有效缺项。profile不新增环境episode。Test、其它checkpoint、视频controls、额外任务、学习轮数、小扫均不在本批。
+
+### 12.5 运行准备、profile和资源
+
+本节由main随完整派发明确授权后，执行者先冻结上述输入/T/查询manifest，CPU核真实消费者与所有权，再完成clean pushed detached运行；满足已登记合同即可自主launch，不等Owner或main例行ACK。允许最多每臂2个真实logical B4的discarded profile，共4B4，使用已登记输入中代表最长教学/两episodeH的组合，比较有意义的物理query microbatch或frame chunk；两次都完整forward/backward/update，之后恢复各臂原权重、新optimizer及sampler/RNG才计72有效更新。只核finite、预期参数组的有效梯度/冻结组及实际native consumer，不作逐tensor相等、防御性hash或另建测试框架。profile不作为科学checkpoint、不能选loss较好配置，按吞吐/峰值选择物理安排。
+
+全新增产物位于/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification；原资产只读引用。执行者在strg01核独立data1 quota、相关root用量、预计峰值及共享容量；初始新增存储保守估64GiB，必须以实际参数/缓存/保存策略重算，不为满足估计删科学原件。多卡沿现行6/8合计、node6与真实峰值准入，原§23占用一并计数；不固定利用率/空闲门槛、不操作他人进程。优先利用实际可用卡运行独立两臂，逻辑B4不等于必须world4，不跨节点拼训练碎片；保持数据/loss/更新并记录物理拓扑。不能为占卡扩大科学矩阵。
+
+初估准备45–90min、数据/profile10–25min、两臂学习30–90min、终点读出30–60min，可重叠但尚未取得新完整消费者吞吐。profile完成后给main一次有效处理速度、最长输入峰值与修订wall预期；若新证据显示当前窗口会显著超期或实际科学合同不能实现，给具体边界，不能以静默缩水/缩视频/删query处理。GPUh计账但无费用硬上限。完整参数/optimizer/sampler/RNG/schema/topology checkpoint保持；冻结代码不热改，已定位工程窄修可新clean commit承接，科学变更由main裁决。
+
+### 12.6 裁决与接续
+
+两臂必须同时报告全task/suite、breadth、MT/父G retained/gained/lost、churn和success-set重合；held400绝对能力优先，不能由控制loss或seen小升宣布过关。
+- B在held获得跨task净增且保持合理、相对A也有一致优势：提高全链控制学习的支持度；主讨论接续相邻能力及完整实际实践学习，不把一次点称稳定。
+- A/B相近改善：新控制目标/共同输入可能有用，前端解冻增量尚未识别；不把B有梯度当因果证据。
+- 只seen改善或B损害保持/held无实质改善：这批没有解决迁移；不自动重复同一块、增加LR/rank/seed或转去新BCE掩盖G缺口。结合真实更新覆盖/行为及最近历史，主讨论另作机制裁决，不由72阴性推出全链永远不可学。
+- 原§23先完成且出现广泛实质进步：及时纳入优先级；不追认本批成为必跑矩阵，保护已完成有效工作和证据，具体接续由main裁决。
+
+执行者承担独占实现/根三状态/Git/准确账目/实际消费者验证；主讨论不重复工程review。只为整批完成或真实异常保留一个可靠回报，不逐阶段自Queue/陪跑轮询。准备消息与完整授权分清，最终以本节和run contract为准。原§23结果独立交付。下一次科研判断消费本批真实控制与迁移，而非再加一般纸面审阅。

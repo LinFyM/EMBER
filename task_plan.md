@@ -1,3 +1,13 @@
+## 2026-10-13 18:47 当前计划：实施唯一§12 matched native G辨识，原§23独立
+
+当前完整科学授权为problem_first_compiler_candidate_20261013.md §12，288固定condition/36tasks/MT-H1与G38349-H2；同G38349/fresh同Adam，两臂只改F vs meta/Reader/static/F可训练集合，72有效B4/臂、唯一末seen576+firstG400。0新θ/BCE/失败恢复/Test。原§23独立B18/唯一400/现有整批退出接续不变，不读中间分数或重复等待。
+
+先闭环静态来源/T/query/noise/H和new canonical G消费者CPU检查、推送clean detached，再按已授权最多2B4/臂actual profile验证完整native10梯度/有效组/峰值吞吐，恢复原权重/新optimizer/sampler/RNG后自主72有效更新及1952最终query。已核固定seen36三控制器query16兼容/288上下文齐、57去重T有30成功raw/27需一次重放；成功轨迹采集总≤72，完整rollout≤2024、失败部分恢复≤16、physical starts≤2040/总steps≤1081200。不可改初态/换T/补挑失败、缩视频/H/query或增加科学矩阵，实际缺口报main裁决。
+
+工程owner唯一新实验01a133e5，独占开发codex/fullg-native-function-learning-20261013；main root三状态/源码/Git由我串行。数据/控制源审计为独立read-only任务，不开一般审阅。新ROOT按data1独立quota/实际存储估计创建，原资源6/8/node6条件保持；两臂并行不锁world4，实际profile后一次报告吞吐/峰值/ETA，整批完成/真实异常一次可靠交唯一主讨论01a13399。准备/运行/验收不同，不以source接口存在或后台启动称完整方法达成。
+
+以下为历史计划与当时时点授权。
+
 ## 2026-10-13 18:04 当前计划：交付已完成§11，继续原§23唯一B18/correct400
 
 §11固定8 P+24续跑/12槽完整exit0并通过实际消费者验收，0更新/新G/held/Test。没有P败/E成或P成/E败，3双方成/9双方败，原失败8槽全部双方败；原成功重放4/25变失败保留。完整交接及预算/失败/原件见新ROOT/analysis/handoff_report.md和acceptance.json。按明确事前amendment，32完整rollout、physical starts上界40、5951真实科学环境步加80未知失败settling=6031≤10640，全费.142699175GPUh；08:39:45Z派发起点保持，退出17:51:10。临时入口结束退役、冻结8e718be2/Git保留。一次完整交主讨论后不自动训练或扩大恢复面板。

@@ -11873,3 +11873,10 @@ Owner保留6/8总卡及单节点6卡数量上限，取消利用率与固定显�
 
 
 主讨论6287aff5据本次阴性已明确撤下失败接手动作监督及“现成E提供恢复方向”的当前依据，独立审阅同意；完整G/native函数学习、独立BCE/完整beta保留，首G正常成功控制的跨任务编译与能力保持成为主要可检验假说，不预承诺H修订增益。本轮问题/历史/源码审查、必要有界验证与完整设计已经交付，但新方法尚未实施、非active、无新训练派发。最终依据为已集成的method audit/review/candidate三docs，主讨论自己的既定T逐槽复算在§11ROOT/analysis/main_selected_T_readout.json，执行session不重复计算。原§23继续按原合同完成一次交主讨论。
+
+
+## 470. 新§12匹配辨识隔离前端梯度增量，旧bank不能冒充固定面板或成功观测（2026-10-13）
+
+Owner新自主授权后main派发完整§12，仅此有界matched辨识active，原§23保持独立。两臂同G38349/fresh同Adam/控制目标/288condition/72B4，差异只F可训练 vs full-G；旧FM432不是匹配baseline。失败恢复项保留删除，0新BCE/θ/held梯度/Test。T/labels/query结果不进condition，full-G重算所有依赖可训练前端的特征，历史producer hidden/动作只是原记录冻结。
+
+只读bank9实物为36tasks/149parents/252PH/1008cache，不把216 appended rows或113有query候选当全bank。新固定已完成seen36 pair是MT-H1/G38349-H2×4video=288，最长92frame/H104与208；36份三控制器query16完整同身份配对。去重T57已有成功raw30、缺27（仅结果/noise完整、RGB轨迹未保存），需按完整新合同单次重放原最早登记成功query，不伪造已有轨迹或换失败病例。新消费者GPU完整图尚未验证，actual profile与闭环仍必须发生，native动作函数/CPU图接通不代表控制学习成立。

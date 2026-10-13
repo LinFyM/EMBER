@@ -1,3 +1,7 @@
+## 2026-10-13 22:12 §12两臂72完整保存；只恢复原四读出
+
+owner05于14:02:59Z真实exit1，已经按task/ROOT/attempt consumed。两臂均72/288conditions/36task各8访问，source38349/fresh Adam/完整optimizer-sampler-RNG、实际T/查询/noise/类别权重逐行一致；原训练产物全部复用。失败在readout前GPU query CLI exit1，0新增读出episode/held/Test；当时stdout/stderr未保存，不能编造具体节点或失败子查询。现dual-node完整探测已恢复。窄修仅保留每次GPU查询原stdout/stderr/exit及一次有界重探；两节点仍不完整即不launch。下一clean pushed detached owner06只承接两个seen576+两个firstG400，不重训/重放profile或27补录。现原§23占5张，按一个可新增卡位与已占卡共驻，使四原读出及时并行；仍cap6/node6/实测峰值/data1独立quota。
+
 ## 2026-10-13 21:12 §12实际并行吞吐已核，余wall保守80–130min
 
 owner05统一持有原full-G:gpu01:2及F-only:gpu01:6，已核两实际GPU PID1211783/1302441。A头两有效B4为36.29/63.43s、reserved15.531GiB；B一次timing快照37/72，近五中位63.80s。H2后半更长，余学习保守50–70min，原四读出仍估30–60min并依赖就绪交错；整批余80–130min为窗口，不是已测读出或deadline。原件analysis/parallel_dispatch_20261013.json。原§23原五卡与本批合计6物理卡，共驻未加卡；不追加profile/更新/真实行/选点，整批一次回报。

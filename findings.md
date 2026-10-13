@@ -11900,3 +11900,7 @@ main原件main_supervision_coverage.json：72 parent/H的角色E38/Gparent20/MTp
 已完成27既定补录的主讨论原件analysis/main_support_coverage_20261013.json报告51/57T、64/72PH、256/288conditions有T成功支撑；32缺失条件不补采，仍保留正常跨episode原生控制目标。实际角色E38/G-parent20/MT-parent14不等于全部专家纠错，T成功与同producer保持可共用经历但类别等权保持；实际episode/观察计数不双算。以上为现有监督覆盖，未承诺训练收益或多轮G/H作用。
 
 两臂实测最长B4证明micro24比micro8 native消费者更快，完整profile预算已消费，不能为物理调度再加B4。初始cap6且原§23占5卡造成串行只表示当时事实，不使world1/单卡成为科学上限。相同完整计算可在合规卡位或有实测峰值余量的既有物理卡共驻，当前有效全G不得为形式扩卡丢更新/重放；显式CPU owner交接应保留运行子进程/原退出状态/费用并撤销旧pending，不并列启动第二队列或等待者。
+
+## §12完整72消费者与调度查询退出的边界（2026-10-13）
+
+两臂在相同固定288条件/72有效B4中完整保存G/Adam/采样与rank RNG，逐行T/全部noise/query类别权重一致，full-G所需meta双支/Reader/static/F与F-only endpoint均取得原生控制梯度，source/Actor保持冻结；源与末点完整，不以11个未产生Adam状态的owned参数自动推断整个读取链无效。此工程证据不能代替首G闭环、视频/H作用或迁移证据，正式576/400尚未启动。GPU CLI一次退出必须保留原诊断；一项瞬时实时查询失败不要求重做训练，也不能绕过两节点/所有权/数量/真实峰值。失去原stderr的原因尚不可还原，保留未知；现场恢复后的窄调度接续只补原输出缺项。

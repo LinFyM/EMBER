@@ -835,3 +835,6 @@ seen两点严格复用原MT-H/P0/指定教学的完整冻结m，经同一Generat
 原native_FM38349_fixed_readouts_01在09:56:01的CPU选择阶段exit1，0GPU job/费用/episode；准备时空闲卡已被他人任务使用，idle-only/40GiB的未实测准入并不代表本新F-only消费者必需。原快照/exit/交付保留，completion consumed指向唯一recovery_02。
 恢复owner PID1100235使用同一clean pushed frozen47edd274。原消费者实际17.82GiB allocated/18.64GiB reserved只是准入参考，新native目标仍只通过已登记两实际B4 profile14/28量测，不称旧peak证明新目标安全。现场低util及24GiB以上free可按项目共驻授权使用；完整源/四rank RNG/B4/dataflow不变，别人进程不修改。actual profile gpu01:4,5,6,1，父seen gpu02:6/4，共6卡；每job再次双节点/quota/实际余量准入。profile正常结束后恢复起点再运行432更新，其GPUh/所有失败单列，正式学习与科学阴性按原合同处理。
 精确原件 ROOT/coordinator/native_FM38349_fixed_readouts_recovery_02/{launch.json,physical_admission_decision.json}、ROOT/jobs各actual launch。ETA待profile最大rank实际wall修订，11点不变软目标；此资源恢复不新增梯度/episode/科学臂或第二调度者。
+
+两真实B4 profile14/28均正常完成；micro28最大rank2.873867秒对14的5.544698秒，峰值allocated17.003966/reserved18.142578GiB，完整源/F Adam/RNG恢复38349。正式432更新按28实际启动，暂估训练23.7min及后读出20–35min，source47edd274冻结不改。Owner随后取消11:00希望时点，不缩减/中断当前432/三面板合同；原预测与软目标记录只作历史。
+14先测含首批query/IO/kernel准备，28后测；上述整体wall用于本批物理选择，不称严格稳态配对1.93倍因果提速或绝对最优。28已容纳每condition完整logical query batch，峰值与实际consumer记录保留，不为继续放大扩大逻辑batch/矩阵。

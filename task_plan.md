@@ -5,6 +5,10 @@
 两个真实B4仅可丢弃profile，完整F/Adam/source/cursor/RNG恢复后自动接432有效更新至38781；当前尚未以profile宣称正式训练完成或FM有效。新consumer实际峰值/最大rank wall将决定14或28并修订ETA，原main训练25–60min/读出20–35min仍为待实测参考。最终三面板1552新final/472生成、0实践/Actor/held标签/Test及完整停止线保持。
 run root /data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349；恢复launch/physical_admission_decision记录精确身份与共驻依据，strg01每job独立data1准入，32GiB新增峰值合规；旧大资产/H/context均只读引用。一个真实owner持续接profile→训练及三读出；通过profile后给main一次真实启动/实测ETA，整批完成或真实异常一次可靠接续，无心跳/阶段Queue/第二等待者。两task开发树集成清理，正式冻结树保留。
 
+
+正式native_FM432已于2026-10-13T02:04:12.740234+00:00（UTC）启动，microbatch28；两个完整真实B4均通过actual166F/Adam步/冻结前端与source梯度检查，恢复源38349与四rank RNG后才启动正式更新。14/28最大rank耗时5.544698/2.873867秒，28峰值allocated17.003966/reserved18.142578GiB；按完整B4实测暂估训练23.7min、末点读出20–35min，共驻与加载仍可能波动，不将profile加到432有效更新或宣称控制效果。两父seen队列并行，所有科学整数/停止线不变。
+Owner最新“没事，不用管十一点了，我已经醒了，现在是什么情况”已取消11:00希望时点；按实际质量/吞吐完成§22，不因旧时间目标缩减或中断。历史11点要求和预测保留原文，不复活强杀guard；本批仍到唯一38781/三完整面板后停止新增计算交main。
+
 ## 2026-10-13 当前授权：§22 native FM准备中，尚未启动GPU
 
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349；完整源v10 RL9/F38349受控目标迁移为v11/native FM，仅原166 F参数/Adam更新，前端/source/MT/θ/baseline冻结。432 B4更新、48,384授权non-held query、固定bank9及1008原合法缓存；独立query visit0..47、参数采样绝对38349→38781，38565只恢复。

@@ -15,7 +15,7 @@ import threading
 import time
 
 from .contract import ASSET_ROOT, RUN_ROOT, TASKS
-from .analysis import billing, teacher_summary, freeze_bank_scale
+from .analysis import billing
 
 PREFLIGHT = '/data0/user/ymdai/.codex/skills/gpu-preflight/scripts/gpu_preflight.py'
 UNMEASURED_TEACHER_SECONDS = 4.4  # Actual shared-card query28 native demoFM complete update.
@@ -56,31 +56,6 @@ def critical_path_costs(jobs):
         return costs[identity]
     for identity in jobs:cost(identity)
     return costs
-
-
-def initial_jobs(microbatch,slots,teacher_devices,*,root=RUN_ROOT,teacher_update_seconds=None):
-    """Read each complete selection panel before the next teacher segment."""
-    contract=json.loads((Path(root)/'run_contract.json').read_text())
-    nodes=contract['teacher']['readout_updates'];specs={r['global_task_id']:r for r in contract['environment']['tasks']}
-    jobs=[]
-    for task in TASKS:
-        predecessor=None;readouts=[]
-        for node in nodes:
-            if node:
-                identity=f'teacher_{task:04d}_{node:08d}';updates=node-nodes[nodes.index(node)-1]
-                estimates={device:15+updates*seconds for device,seconds in (teacher_update_seconds or {}).items()}
-                jobs.append(Job(identity,['teacher','--task',str(task),'--microbatch',str(microbatch),'--stop',str(node)],
-                    () if predecessor is None else (predecessor,),15+updates*UNMEASURED_TEACHER_SECONDS,
-                    tuple(teacher_devices),estimates,required_free_MiB=18000))
-            readout=f'readout_{task:04d}_{node:08d}';readouts.append(readout)
-            seconds=15+contract['teacher']['selection_per_node']*31.335*specs[task]['horizon']/520
-            jobs.append(Job(readout,['readout','--task',str(task),'--stop',str(node),'--slots',str(slots)],
-                () if node==0 else (identity,predecessor),seconds,required_free_MiB=18000))
-            predecessor=readout
-        seconds=15+2*contract['teacher']['report_per_arm']*31.335*specs[task]['horizon']/520
-        jobs.append(Job(f'teacher_report_{task:04d}',['teacher-report','--task',str(task),'--slots',str(slots)],
-            tuple(readouts),seconds,required_free_MiB=18000,bank_priority=1))
-    return jobs
 
 
 def dependency_completion(root, identities):
@@ -302,36 +277,6 @@ class Batch:
             if set(dependencies)<=done:
                 free.append(device);del deferred[device]
 
-    def _saturated_omissions(self,pending,done,omitted,checked):
-        from ember.pi05_source_checkpoint import read_json,write_json_atomic
-        contract=read_json(self.root/'run_contract.json')
-        if contract.get('teacher',{}).get('saturation_stop')!=16:return
-        nodes=contract['teacher']['readout_updates']
-        for identity in sorted(done-checked):
-            if not identity.startswith('readout_'):continue
-            _,task_text,node_text=identity.split('_');task,node=int(task_text),int(node_text)
-            directory=self.root/'teachers'/f'task_{task:04d}'/'selection'
-            paths=[directory/f'update_{u:08d}'/'complete.json' for u in nodes if u<=node]
-            if not all(p.exists() for p in paths):continue
-            records=[read_json(p) for p in paths]
-            if any(not r['complete'] or len(r['rows'])!=16 for r in records):continue
-            checked.add(identity)
-            saturated=[u for u,r in zip((u for u in nodes if u<=node),records,strict=True)
-                       if sum(bool(row['success']) for row in r['rows'])==16]
-            if not saturated:continue
-            winner=min(saturated);file=self.root/'scientific_omissions'/f'task_{task:04d}.json'
-            old=read_json(file) if file.exists() else dict(omitted_jobs=[])
-            skipped=[key for key in pending if key.startswith((f'teacher_{task:04d}_',f'readout_{task:04d}_'))
-                     and int(key.split('_')[-1])>winner]
-            for key in skipped:del pending[key]
-            omitted.update(skipped);omitted.update(old['omitted_jobs'])
-            write_json_atomic(file,dict(task=task,reason='selection_saturated',selection_successes=16,
-                selection_rows=16,incumbent_update=winner,all_earlier_candidates_complete=True,
-                complete_selection_source=str(directory/f'update_{winner:08d}'/'complete.json'),
-                omitted_jobs=sorted(set(old['omitted_jobs'])|set(skipped)),new_work_not_started=True,
-                prior_attempts_and_actual_scores_preserved=True,
-                in_flight_jobs_not_interrupted=True,existing_late_checkpoint_weights_retained=True))
-
     def _dispatch_ready(self,executor,pending,free,settled,failures,futures):
         costs=critical_path_costs(pending)
         ready=sorted((j for j in pending.values() if set(j.dependencies)<=settled),
@@ -352,7 +297,6 @@ class Batch:
             file=self.root/'jobs'/identity/'latest.json'
             if file.exists() and read_exit(file)==0:
                 done.add(identity);del pending[identity]
-        self._saturated_omissions(pending,done,omitted,checked)
         if on_completion:on_completion(done)
         with ThreadPoolExecutor(max_workers=len(self.devices)+1) as executor:
             futures={};free=[d for d in self.devices if d not in deferred]
@@ -365,37 +309,10 @@ class Batch:
                     raise RuntimeError('pending jobs have missing dependencies')
                 completed,_=wait(futures,return_when=FIRST_COMPLETED)
                 self._consume_completions(completed,futures,executor,done,external,free,failures)
-                self._saturated_omissions(pending,done,omitted,checked)
                 if on_completion:on_completion(done)
             if failures:
                 raise RuntimeError('batch engineering/budget failure: '+ '; '.join(map(str,failures)))
         return sorted(done)
-
-
-def teacher_bank_ready(root, done):
-    """Publish all36 E and MT-bootstrap readiness, independently of reports."""
-    from .run import select_teacher
-    from ember.pi05_source_checkpoint import read_json, write_json_atomic
-    root=Path(root)
-    if (root/'bank_ready.json').exists():return
-    contract=read_json(root/'run_contract.json');nodes=contract['teacher']['readout_updates']
-    for task in TASKS:
-        directory=root/'teachers'/f'task_{task:04d}'
-        omission=root/'scientific_omissions'/f'task_{task:04d}.json'
-        skipped=set(read_json(omission)['omitted_jobs']) if omission.exists() else set()
-        if not (directory/'E.json').exists() and all(f'readout_{task:04d}_{node:08d}' in done|skipped for node in nodes):
-            select_teacher(root,task)
-    if not all((root/'teachers'/f'task_{task:04d}'/'E.json').exists() for task in TASKS):return
-    if not all((root/'bootstrap'/f'task_{task:04d}'/'complete.json').exists() for task in TASKS):return
-    scale=freeze_bank_scale(root)
-    pending=[task for task in TASKS if f'teacher_report_{task:04d}' not in done]
-    entries=[read_json(root/'teachers'/f'task_{t:04d}'/'E.json') for t in TASKS]
-    write_json_atomic(root/'bank_ready.json',dict(complete=True,task_count=len(TASKS),
-        initial_parent_count=len(TASKS),history_episodes=len(TASKS),initial_parent='MT300 only',
-        evaluated_teacher_candidate_count=sum(len(e['evaluated_candidates']) for e in entries),
-        ready_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),bank_scale=str(root/'bank_scale.json'),
-        scale_source_count=len(scale['sources']),independent_teacher_report_pending_tasks=pending,
-        reports_not_used_for_E_or_scale=True))
 
 
 def read_exit(path):
@@ -408,9 +325,9 @@ def shared_learning_job(root,contract,stage,shared_gpus,stop,slots):
     if stop not in contract['updates'].get(stage,[]):raise ValueError('formal shared update not preregistered')
     chunk=contract.get('physical_execution',{}).get(f'{stage}_frame_chunk_ceiling',16)
     arguments=[stage,'--stop',str(stop),'--slots',str(slots),'--frame-chunk',str(chunk)]
-    if stage=='local':arguments+=['--checkpoint',contract['initial_endpoint_checkpoint']]
+    if stage=='local':arguments+=['--checkpoint',contract['source_checkpoint']]
     if stage=='RL':arguments+=['--checkpoint',contract['initial_writer_checkpoint']]
-    nodes=contract.get('G_checkpoint_updates',contract['updates'][stage]) if stage=='G' else contract['updates'][stage]
+    nodes=contract['updates'][stage]
     previous=[u for u in nodes if u<=stop and (root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').exists()
         and json.loads((root/'checkpoints'/stage/f'update_{u:08d}/manifest.json').read_text()).get('complete')]
     if stage=='RL':
@@ -419,91 +336,22 @@ def shared_learning_job(root,contract,stage,shared_gpus,stop,slots):
             if (saved:=json.loads(p.read_text())).get('complete') and saved.get('stage')=='RL'
             and saved['next_update']<=stop]
     if previous:arguments+=['--resume',str(root/'checkpoints'/stage/f'update_{max(previous):08d}')]
-    elif stage=='G' and contract.get('G_initial_resume'):
-        arguments+=['--resume',contract['G_initial_resume']['checkpoint']]
     seconds=contract.get('stage_estimate_seconds',{}).get(f'{stage}_{stop}',0.)
     return [Job(f'{stage}_{stop:08d}',arguments,estimate_seconds=seconds,gpu_count=shared_gpus)]
 
 
-def stage_jobs(root,stage,*,microbatch,slots,teacher_devices,estimates,shared_gpus,stop,
+def stage_jobs(root,stage,*,microbatch=28,slots=16,teacher_devices=(),estimates=None,shared_gpus=None,stop=None,
                physical_workers=None,condition_batch=None,video_arm='correct'):
-    """Independent condition jobs reuse this queue; shared actor batches retain one owner."""
+    """Registered selector stages reuse one dynamic queue and one shared update owner."""
     root=Path(root);contract=json.loads((root/'run_contract.json').read_text())
-    if stage=='teacher-data':return initial_jobs(microbatch,slots,teacher_devices,root=root,teacher_update_seconds=estimates)
-    if stage=='teacher-reports':
-        return [j for j in initial_jobs(microbatch,slots,teacher_devices,root=root,teacher_update_seconds=estimates)
-                if j.identity.startswith('teacher_report_')]
-    if stage in ('G','local','RL'):return shared_learning_job(root,contract,stage,shared_gpus,stop,slots)
-    jobs=[];seconds=contract.get('condition_estimate_seconds',{}).get(stage,0.)
+    if stage in ('local','RL'):return shared_learning_job(root,contract,stage,shared_gpus,stop,slots)
+    if stage not in ('student-data','formal') or not physical_workers or not condition_batch:
+        raise ValueError('selector data/formal requires actual measured workers/group size')
+    from .evaluation import student_queue,formal_queue
     if stage=='student-data':
-        checkpoint=root/'checkpoints/G'/f"update_{contract['student_refresh']['G_update']:08d}"
-        for task in TASKS:jobs.append(Job(f"student_{contract['student_refresh']['version']}_{task:04d}",
-            ['student-data','--task',str(task),'--checkpoint',str(checkpoint),'--slots',str(slots)],estimate_seconds=seconds))
-    elif stage=='training-report':
-        for name,update in contract['training_report']['versions']:
-            checkpoint=root/'checkpoints'/name/f'update_{update:08d}'
-            for task in TASKS:
-                for ordinal in range(contract['training_report']['conditions_per_task']):
-                    jobs.append(Job(f'train_report_{name}_{update:08d}_{task:04d}_{ordinal:03d}',
-                        ['report','--task',str(task),'--condition-ordinal',str(ordinal),'--checkpoint',str(checkpoint),
-                         '--slots',str(slots)],estimate_seconds=seconds))
-    elif stage=='formal':
-        from .evaluation import formal_queue
-        panel=json.loads((root/'formal_panel.json').read_text())
-        if physical_workers is None or physical_workers<1 or condition_batch is None or condition_batch<1:
-            raise ValueError('formal persistent workers need measured positive physical condition batch and devices')
-        formal_queue(root,workers=physical_workers,condition_batch=condition_batch,arm=video_arm)
-        for ordinal in range(physical_workers):
-            identity=f"formal_{Path(panel['checkpoint']).parent.name}_{Path(panel['checkpoint']).name}_{video_arm}_worker{ordinal:03d}"
-            jobs.append(Job(identity,['formal','--worker-id',identity,'--video-arm',video_arm,
-                '--checkpoint',panel['checkpoint'],'--slots',str(slots),'--condition-batch',str(condition_batch)],
-                estimate_seconds=seconds*len(panel['rows'])/physical_workers))
-    if not jobs:raise ValueError('stage has no registered independent work')
-    return jobs
-
-
-def main():
-    import argparse
-    parser=argparse.ArgumentParser()
-    parser.add_argument('stage',choices=['teacher-data','teacher-reports','G','student-data','local','RL','training-report','formal'])
-    parser.add_argument('--shared-gpus',type=int)
-    parser.add_argument('--stop',type=int)
-    parser.add_argument('--bank-only',action='store_true',help='prepare E/H first; reports use their independently frozen consumer')
-    parser.add_argument('--root',type=Path,default=RUN_ROOT)
-    parser.add_argument('--workspace',type=Path,required=True)
-    parser.add_argument('--devices',required=True,help='node:index comma-separated live eligible devices')
-    parser.add_argument('--teacher-devices',default='',help='measured throughput/budget selection, not utilization filter')
-    parser.add_argument('--microbatch',type=int,required=True)
-    parser.add_argument('--slots',type=int,default=8)
-    parser.add_argument('--condition-batch',type=int,help='measured independent formal paths per persistent queue shard')
-    parser.add_argument('--video-arm',choices=['correct','other','wrong'],default='correct')
-    parser.add_argument('--required-free-MiB',type=int,required=True)
-    parser.add_argument('--teacher-update-seconds',action='append',default=[],help='node:index=seconds for a measured complete update')
-    args=parser.parse_args()
-    devices=[(s.split(':')[0],int(s.split(':')[1])) for s in args.devices.split(',')]
-    batch=Batch(args.workspace,devices,root=args.root,required_free_MiB=args.required_free_MiB)
-    teacher_devices=[(v.split(':')[0],int(v.split(':')[1])) for v in args.teacher_devices.split(',') if v]
-    if not set(teacher_devices)<=set(devices):raise ValueError('teacher devices must be in the admitted batch device set')
-    estimates={}
-    for item in args.teacher_update_seconds:
-        location,value=item.split('=');node,gpu=location.split(':');seconds=float(value)
-        if (node,int(gpu)) not in teacher_devices or not math.isfinite(seconds) or seconds<=0:
-            raise ValueError('teacher estimate must be positive and identify an eligible device')
-        estimates[(node,int(gpu))]=seconds
-    jobs=stage_jobs(args.root,args.stage,microbatch=args.microbatch,slots=args.slots,teacher_devices=teacher_devices,
-        estimates=estimates,shared_gpus=args.shared_gpus,stop=args.stop,physical_workers=len(devices),
-        condition_batch=args.condition_batch,video_arm=args.video_arm)
-    if args.bank_only:jobs=[j for j in jobs if not j.identity.startswith('teacher_report_')]
-    done=batch.run(jobs,on_completion=(lambda done:teacher_bank_ready(args.root,done)) if args.stage=='teacher-data' else None)
-    if args.bank_only:
-        print(json.dumps(dict(stage='teacher-bank',complete=True,jobs=done,billing=billing(args.root),independent_report_pending=True)))
-        return
-    summary=teacher_summary(args.root) if args.stage in ('teacher-data','teacher-reports') else None
-    if args.stage=='formal':
-        from .evaluation import formal_summary
-        formal_summary(args.root,args.video_arm)
-    print(json.dumps(dict(stage=args.stage,complete=True,jobs=done,billing=billing(args.root),
-        teacher_report=summary['independent_report'] if summary else None)))
-
-
-if __name__=='__main__':main()
+        student_queue(root);checkpoint=contract['readout_checkpoint']
+    else:
+        checkpoint=contract['formal_report']['checkpoint'];formal_queue(root,workers=physical_workers,condition_batch=condition_batch)
+    return [Job(f'{stage}_worker_{i:02d}',[stage,'--checkpoint',checkpoint,'--slots',str(slots),
+        '--worker-id',f'{stage}_worker_{i:02d}','--condition-batch',str(condition_batch),'--video-arm',video_arm],
+        estimate_seconds=3600,required_free_MiB=24000) for i in range(physical_workers)]

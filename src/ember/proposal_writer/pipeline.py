@@ -1,27 +1,15 @@
-"""Full36 common-target G, supervised final use and conditional-continue actor training."""
-from __future__ import annotations
-
+"""Fixed-G pair collection, final warm and current-kernel selector learning."""
 from pathlib import Path
 from datetime import timedelta
-import os
-import re
-import time
-import copy
-
+import os,re,time,copy
 import torch
-from safetensors.torch import load_file
-
-from ember.lora import validate_lora_state
 from ember.pi05_source_checkpoint import read_json,write_json_atomic,restore_rng
 from ember.pi05_source_setup import initialize_deferred_process_group
-
-from .contract import TASKS,OPTIMIZER,seed,CHECKPOINT_SCHEMA,SELECTOR_SCHEMA,G_OBJECTIVE
-from .learning import (Baseline,EndpointTrainer,train_endpoint,train_local,final_warm_readback,on_policy_update,checkpoint,assigned_tasks,
+from .contract import OPTIMIZER,SELECTOR_SCHEMA,seed
+from .learning import (Baseline,train_local,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
-from .path import (compile_condition,compile_conditions,evaluate_fixed,restore_compilation,
-                   begin_condition,bootstrap,generate_candidates)
-from .supervision import (panels,bootstrap_source,query_conditions,LocalExamples,register_students,
-                          readonly_E_query,student_data_complete,query_panel)
+from .path import compile_conditions,restore_compilation
+from .supervision import panels,bootstrap_source,query_conditions,LocalExamples,query_panel
 
 
 def load_version(runtime,directory,*,fixed_psi=True):
@@ -34,243 +22,16 @@ def load_version(runtime,directory,*,fixed_psi=True):
     return state
 
 
-def saved_endpoint_version(runtime,directory,run):
-    """Validate a fixed terminal endpoint source without loading or running Writer."""
-    from .frozen_context import SCHEMA as endpoint_schema
-    complete=read_json(Path(run['saved_endpoint_complete']));manifest=read_json(Path(directory)/'manifest.json')
-    spec=run['student_refresh'];rows=complete['original36_endpoints']
-    update=spec['G_update']
-    schema = ('ember_terminal_student_video_evidence_v1' if spec.get('readout_mode')=='saved_endpoint_practice_only'
-              else 'ember_frozen_endpoint_saved_query16_v2')
-    if (run['schema_version']!=schema
-            or complete['schema_version']!=endpoint_schema or not complete['complete']
-            or complete['terminal_node']!=run['saved_endpoint_terminal_node'] or complete['terminal_update']!=update
-            or Path(complete['checkpoint']).resolve()!=Path(directory).resolve()
-            or manifest['schema_version']!=endpoint_schema or not manifest['complete']
-            or not manifest['full_endpoint_optimizer_rng_sampler'] or manifest['next_update']!=update
-            or len(rows)!=36 or {r['task'] for r in rows}!=set(TASKS)
-            or any(r['demo']!=spec['condition_mapping'][str(r['task'])]['teacher_demo'] for r in rows)):
-        raise ValueError('saved readout needs the registered36 fixed complete terminal endpoints')
-    runtime.saved_endpoint_rows={r['task']:r for r in rows}
-    runtime.version=update;runtime.psi_frozen=True
-    runtime.fixed_kernel_identity=dict(checkpoint=str(Path(directory).resolve()),psi_version=update,
-        checkpoint_stage='saved_endpoint',checkpoint_update=update,checkpoint_schema=endpoint_schema,
-        frozen_frontend_checkpoint=manifest['source_checkpoint'],training_code=run['training_source'],
-        Writer_loaded=False,Writer_forward=False)
-    return dict(stage='saved_endpoint',next_update=update)
-
-
-def composed_endpoint_version(runtime,directory,run):
-    """Bind the full frozen frontend to its explicitly trained endpoint owner."""
-    from .frozen_context import SCHEMA as endpoint_schema
-    binding=run['inference_components'];directory=Path(directory).resolve(strict=True)
-    frontend=Path(binding['frontend_checkpoint']).resolve(strict=True)
-    manifest=read_json(directory/'manifest.json');front_manifest=read_json(frontend/'manifest.json')
-    complete=read_json(Path(binding['endpoint_complete']))
-    update=run['student_refresh']['G_update']
-    if (run['schema_version']!='ember_terminal_student_video_evidence_v1'
-            or directory!=Path(binding['endpoint_checkpoint']).resolve()
-            or not manifest['complete'] or manifest['schema_version']!=endpoint_schema
-            or not manifest['full_endpoint_optimizer_rng_sampler'] or manifest['next_update']!=update
-            or frontend!=Path(manifest['source_checkpoint']).resolve()
-            or not front_manifest['complete'] or front_manifest['schema_version']!=CHECKPOINT_SCHEMA
-            or not front_manifest['full_optimizer_rng_sampler'] or front_manifest['next_update']!=432
-            or not complete['complete'] or complete['terminal_update']!=update
-            or directory!=Path(complete['checkpoint']).resolve()):
-        raise ValueError('inference requires the registered complete frontend/endpoint composition')
-    source=torch.load(frontend/'state.pt',map_location='cpu',weights_only=False)
-    endpoint=torch.load(directory/'state.pt',map_location='cpu',weights_only=False)
-    names=list(dict(runtime.generator.named_parameters()))
-    endpoint_names=['endpoint.'+name for name,_ in runtime.generator.endpoint.named_parameters()]
-    if (source['schema_version']!=CHECKPOINT_SCHEMA or source['G_objective']!=G_OBJECTIVE
-            or source['next_update']!=432 or source['supervision_version']!=0
-            or source['parameter_names']['psi']!=names or endpoint['parameter_names']!=endpoint_names
-            or endpoint['schema_version']!=endpoint_schema or endpoint['next_update']!=update
-            or endpoint['G_objective']!=G_OBJECTIVE or endpoint['gradient_owner']!='endpoint only'
-            or frontend!=Path(endpoint['frozen_checkpoint']).resolve()):
-        raise ValueError('actual parameter owners differ from the frozen inference binding')
-    runtime.generator.load_state_dict(source['psi'],strict=True)
-    runtime.generator.endpoint.load_state_dict(endpoint['endpoint'],strict=True)
-    runtime.actor.load_state_dict(source['theta'],strict=True)
-    runtime.version=update;runtime.freeze_psi();runtime.actor.eval().requires_grad_(False)
-    runtime.fixed_kernel_identity=dict(checkpoint=str(directory),psi_version=update,
-        checkpoint_stage='composed_endpoint',checkpoint_update=update,checkpoint_schema=endpoint_schema,
-        frozen_frontend_checkpoint=str(frontend),frontend_schema=CHECKPOINT_SCHEMA,
-        endpoint_training_code=run['training_source'],inference_code=run['git'],
-        optimizer_loaded=False,Writer_loaded=True,Writer_forward=True,all_shared_parameters_frozen=True)
-    return dict(stage='composed_endpoint',next_update=update)
-
-
-def lock_saved_endpoint(runtime,path,destination):
-    """Reference the one previously generated LoRA and the original MT-only H."""
-    row=runtime.saved_endpoint_rows[path.task]
-    if row['demo']!=path.demo:raise ValueError('saved endpoint teaching mapping changed')
-    weights=Path(row['weights']).resolve(strict=True);state=load_file(str(weights))
-    validate_lora_state(state,runtime.lora)
-    if not all(bool(torch.isfinite(v).all()) for v in state.values()):
-        raise ValueError('saved fixed endpoint has nonfinite parameters')
-    path.selected='G_000';path.states[path.selected]=state;path.valid.append(path.selected)
-    path.attempts.append(dict(reference=path.selected,parent='MT300',valid=True,
-        generation='previously_saved_terminal_endpoint',decoder_calls=0,
-        saved_weights=str(weights),new_G_generation=False))
-    destination.mkdir(parents=True,exist_ok=True)
-    (destination/'G_000.safetensors').symlink_to(weights)
-    (destination/'history.pt.gz').symlink_to(Path(path.bootstrap_provenance['source']).resolve(strict=True))
-    write_json_atomic(destination/'path.json',dict(**path.manifest(),retained_U=True,
-        untried_reconstruction='not needed; fixed saved endpoint referenced directly',
-        new_G_generation=False,new_G_practice_episodes=0,saved_endpoint_source=str(weights)))
-
-
 def task_spec(contract,task):
     return next(row for row in contract['tasks'] if row['global_task_id']==task)
-
-
-def fixed_G(args,runtime):
-    state=load_version(runtime,args.checkpoint)
-    run=read_json(args.root/'run_contract.json')
-    if state['stage']!='G' or state['next_update']!=run['fixed_G_update']:
-        raise ValueError('registered fixed complete G required; no best-node selection')
-    return run
-
-
-def refresh(args,runtime,runner,environment):
-    state=load_version(runtime,args.checkpoint);run=read_json(args.root/'run_contract.json')
-    if state['stage']!='G' or state['next_update']!=run['student_refresh']['G_update']:
-        raise ValueError('student data only at its registered complete G node')
-    return refresh_group(args,runtime,runner,environment,run,[args.task])
-
-
-def refresh_group(args,runtime,runner,environment,run,task_ids):
-    """One loaded fixed kernel serves independent original conditions and their queries."""
-    tick=time.monotonic();task_ids=tuple(task_ids)
-    if len(task_ids)!=len(set(task_ids)):raise ValueError('student group repeats a condition')
-    version=run['student_refresh']['version'];panel_by_task=panels(args.root)
-    readonly_E=run['student_refresh'].get('readonly_E_query',False)
-    entries=[];missing=[];cache=HistoryCache();env_start=getattr(runner,'environment_steps',None)
-    for task_id in task_ids:
-        panel=panel_by_task[task_id];task=task_spec(environment,task_id)
-        destination=args.root/'student_data'/version/f'task_{task_id:04d}'
-        ready=student_data_complete(destination,panel,task_id,require_E=readonly_E)
-        reused_path=(destination/'path.json').exists()
-        entry=dict(task=task,panel=panel,destination=destination,path=None,already_complete=ready,
-            practice_status='complete' if ready else 'restored' if reused_path else 'new')
-        entries.append(entry)
-        if ready:continue
-        if reused_path:entry['path']=restore_compilation(destination,runtime)
-        else:
-            history,source=bootstrap_source(args.root,task_id,panel,0,cache)
-            condition=run['student_refresh']['condition_mapping'][str(task_id)]
-            missing.append((entry,dict(task=task,panel=panel,demo=condition['teacher_demo'],identity=destination.name,
-                path_ordinal=condition['path_ordinal'],noise_root=condition['noise_root'],max_rounds=1,uniform=True,student_only=True,
-                bootstrap_history=history,bootstrap_provenance=source)))
-    destinations={e['destination'].name:e['destination'] for e,_ in missing}
-    def save_finished(path):path.save(destinations[path.identity],retain_U=True)
-    if missing:
-        compiled=compile_conditions(runtime,runner,[spec for _,spec in missing],on_condition_complete=save_finished)
-        for (entry,_),path in zip(missing,compiled,strict=True):
-            entry['path']=path
-            # Completion saved history/weights once; append only final group timings.
-            saved=read_json(entry['destination']/'path.json');saved['timings']=path.timings
-            write_json_atomic(entry['destination']/'path.json',saved)
-    pending=[e for e in entries if not e['already_complete']]
-    if any(e['path'].completed_rounds!=1 for e in pending):
-        raise ValueError('student refresh needs one real complete G-produced episode')
-    rewards=query_conditions(runtime,runner,[(e['path'],e['task'],e['panel'],0,e['destination']/'query') for e in pending],
-        mt_reference_version=run.get('previous_student_version'),mt_reference_root=run.get('previous_root')) if pending else []
-    for entry,reward in zip(pending,rewards,strict=True):
-        path,destination,task,panel=(entry[k] for k in ('path','destination','task','panel'))
-        task_id=task['global_task_id'];actual=path.boundaries[-1]['actual_parameter_ref']
-        weight_path=destination/f'{actual}.safetensors'
-        history_descriptor=dict(path=str(destination/'history.pt.gz'),records=len(path.history.records),episodes=len(path.history.episodes))
-        E=read_json(args.root/'teachers'/f'task_{task_id:04d}'/'E.json')
-        reference=readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',E) if readonly_E else None
-        write_json_atomic(destination/'parent.json',dict(complete=True,task=task_id,version=version,
-            parent=dict(reference=f'{version}_task_{task_id:04d}_{actual}',weights=str(weight_path),histories=[history_descriptor]),
-            actual_generated_parameter_ref=actual,common_E_reference=E['reference'],common_E_weights=E['weights'],
-            actual_producer_refs=list(path.history.states),fixed_scale_reestimated=False,
-            deterministic_endpoint_single_candidate=True,selection_did_not_use_reward_or_query=True,
-            kernel_identity=path.kernel_identity,timings=path.timings,query_rewards=reward,
-            query_count=len(query_panel(panel,0)),readonly_E_complete=reference is not None,
-            readonly_E_receipt=str(destination/'readonly_E/complete.json') if reference is not None else None,
-            warmstart_source='same actual MT/G pair; no additional uniform R5 collection'))
-    shared=dict(seconds=time.monotonic()-tick,members=[e['destination'].name for e in entries],
-        new_practice_tasks=[e['task']['global_task_id'] for e in entries if e['practice_status']=='new'],
-        restored_practice_tasks=[e['task']['global_task_id'] for e in entries if e['practice_status']=='restored'],
-        completed_tasks_reused=[e['task']['global_task_id'] for e in entries if e['already_complete']],
-        new_environment_steps=None if env_start is None else runner.environment_steps-env_start)
-    results=[]
-    for entry in entries:
-        destination=entry['destination'];parent=read_json(destination/'parent.json')
-        results.append(dict(task=entry['task']['global_task_id'],destination=str(destination),
-            parent_receipt=str(destination/'parent.json'),query_receipt=str(destination/'query/complete.json'),
-            readonly_E_receipt=parent.get('readonly_E_receipt'),actual_generated_parameter_ref=parent['actual_generated_parameter_ref'],
-            query_count=len(query_panel(entry['panel'],0)),query_rewards=parent.get('query_rewards'),
-            already_complete=entry['already_complete'],practice_status=entry['practice_status'],shared_refresh_group=shared))
-    return results
-
-
-def endpoint_query_group(args,runtime,runner,environment,run,task_ids):
-    """Lock one deterministic endpoint from real MT-H, without collecting G practice."""
-    spec=run['student_refresh']
-    if spec.get('readout_mode')!='endpoint_query_only' or spec.get('post_generation_practice') is not False:
-        raise ValueError('direct endpoint queries require an explicit no-practice contract')
-    if len(task_ids)!=len(set(task_ids)):raise ValueError('endpoint query group repeats a condition')
-    version=spec['version'];panel_by_task=panels(args.root);cache=HistoryCache();entries=[]
-    for task_id in task_ids:
-        task=task_spec(environment,task_id);panel=panel_by_task[task_id]
-        destination=args.root/'student_data'/version/f'task_{task_id:04d}'
-        if student_data_complete(destination,panel,task_id,require_E=True):continue
-        if (destination/'path.json').exists():path=restore_compilation(destination,runtime)
-        else:
-            condition=spec['condition_mapping'][str(task_id)]
-            path,_=begin_condition(runtime,task,condition['teacher_demo'],destination.name,
-                condition['path_ordinal'],condition['noise_root'],1,None,True,condition.get('video_task'),False,True)
-            path.sampling_identity='endpoint_query_only'
-            history,source=bootstrap_source(args.root,task_id,panel,0,cache)
-            for _ in bootstrap(path,task,panel,history=history,provenance=source):
-                raise ValueError('direct endpoint readout cannot collect a bootstrap episode')
-            if run.get('saved_endpoint_complete'):lock_saved_endpoint(runtime,path,destination)
-            else:
-                features=runtime.teaching(task_id,path.demo,video_task=path.video_task)
-                proposals=generate_candidates(runtime,path,'MT300',features)
-                if len(proposals)!=1:raise ValueError('direct readout requires one full deterministic endpoint')
-                path.selected=proposals[0];path.save(destination,retain_U=True,history_source=source)
-        if (path.sampling_identity!='endpoint_query_only' or path.completed_rounds or path.boundaries
-                or path.outputs or path.decisions or path.practiced!=['MT300'] or len(path.attempts)!=1):
-            raise ValueError('direct readout must retain only real MT history and one unpracticed endpoint')
-        entries.append((path,task,panel,0,destination/'query'))
-    # EGL owns memory outside Torch; drop unused generation buffers before resets.
-    if runtime.device.type=='cuda':torch.cuda.empty_cache()
-    rewards=query_conditions(runtime,runner,entries,mt_reference_version=run['previous_student_version'],
-        mt_reference_root=run['previous_root'],endpoint_only=True) if entries else []
-    for (path,task,panel,_,query),reward in zip(entries,rewards,strict=True):
-        destination=query.parent;E=read_json(args.root/'teachers'/f'task_{path.task:04d}'/'E.json')
-        before=runner.environment_steps
-        reference=readonly_E_query(runtime,runner,path,task,panel,0,destination/'readonly_E',E)
-        if runner.environment_steps!=before:
-            raise ValueError('direct endpoint contract requires compatible readonly E reuse')
-        write_json_atomic(destination/'parent.json',dict(complete=True,task=path.task,version=version,
-            parent=None,eligible_for_G_parent_bank=False,readout_mode='endpoint_query_only',
-            actual_generated_parameter_ref=path.selected,generated_weights=str(destination/f'{path.selected}.safetensors'),
-            common_E_reference=E['reference'],common_E_weights=E['weights'],
-            actual_producer_refs=list(path.history.states),fixed_scale_reestimated=False,
-            deterministic_endpoint_single_candidate=True,selection_did_not_use_reward_or_query=True,
-            kernel_identity=path.kernel_identity,timings=path.timings,query_rewards=reward,
-            query_count=len(query_panel(panel,0)),readonly_E_complete=reference['complete'],
-            readonly_E_receipt=str(destination/'readonly_E/complete.json'),
-            new_G_practice_episodes=0,real_H_source=path.bootstrap_provenance,
-            video_task=path.video_task,teacher_demo=path.demo,video_arm=run.get('video_arm','correct'),
-            saved_endpoint_source=path.attempts[0].get('saved_weights'),
-            new_G_generations=sum(int(a['decoder_calls']) for a in path.attempts)))
-    return [str(args.root/'student_data'/version/f'task_{task_id:04d}') for task_id in task_ids]
 
 
 def collect_batch(args,runtime,runner,environment,context,baseline,update,cache):
     """One fixed theta/psi batch shares the persistent official environment workers."""
     tick=time.monotonic();runner_before=copy.deepcopy(runner.components)
-    visit=update//9;panel_by_task=panels(args.root);entries=[];missing=[]
+    visit=0;panel_by_task=panels(args.root);entries=[];missing=[]
     rounds=read_json(args.root/'run_contract.json')['selector_training']['rounds']
-    for task_id in assigned_tasks(context,update):
+    for task_id in assigned_tasks(context,update,args.root):
         task=task_spec(environment,task_id);panel=panel_by_task[task_id]
         destination=args.root/'RL_paths'/f'update_{update+1:06d}_task_{task_id:04d}'
         entry=dict(task=task,panel=panel,destination=destination,path=None);entries.append(entry)
@@ -280,8 +41,8 @@ def collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
             entry['path']=restore_compilation(destination,runtime)
         else:
             history,source=bootstrap_source(args.root,task_id,panel,visit,cache)
-            missing.append((entry,dict(task=task,panel=panel,demo=panel['policy_videos'][visit%4],identity=destination.name,
-                path_ordinal=visit,noise_root=seed(7,task_id,visit),max_rounds=rounds,conditional_continue=True,
+            missing.append((entry,dict(task=task,panel=panel,demo=panel['policy_videos'][1],identity=destination.name,
+                path_ordinal=1,noise_root=seed(7,task_id,1),max_rounds=rounds,conditional_continue=True,
                 baseline=baseline,bootstrap_history=history,bootstrap_provenance=source)))
     generation_tick=time.monotonic()
     for (entry,_),path in zip(missing,compile_conditions(runtime,runner,[spec for _,spec in missing]) if missing else [],strict=True):
@@ -315,131 +76,55 @@ def wait_for_collectors(root,context,update):
 
 def rl(args,runtime,runner,environment,context):
     run=read_json(args.root/'run_contract.json');state=load_version(runtime,args.checkpoint)
-    if state['stage']!=run['initial_writer_stage'] or state['next_update']!=run['fixed_local_update']:
-        raise ValueError('RL begins from the registered final-use warmstart')
-    if args.stop not in run['updates']['RL'] or args.stop%9:raise ValueError('RL updates must cover complete all36 rounds')
-    baseline=Baseline().to(runtime.device);baseline.load_state_dict(state['baseline'])
-    optimizer=torch.optim.AdamW(runtime.actor.parameters(),**OPTIMIZER);optimizer.load_state_dict(state['optimizer'])
+    if state['stage']!='local' or state['next_update']!=180 or args.stop!=18:
+        raise ValueError('selector RL starts only from registered A180 and ends at B18')
+    baseline=Baseline().to(runtime.device);baseline.load_state_dict(state['baseline']);baseline.requires_grad_(True)
+    optimizer=torch.optim.AdamW(runtime.actor.parameters(),**OPTIMIZER);optimizer.load_state_dict(state['actor_optimizer'])
     baseline_optimizer=torch.optim.AdamW(baseline.parameters(),**OPTIMIZER)
     baseline_optimizer.load_state_dict(state['baseline_optimizer'])
-    if not args.resume:
-        if state['topology']['world_size']!=context.world_size:
-            raise ValueError('joint physical topology must match the explicitly assembled state')
-        restore_rng(state['rank_rng'][context.rank],context)
+    if state['topology']['world_size']!=context.world_size:
+        raise ValueError('RL topology must match complete A180; explicitly migrate at a full boundary')
     runtime.training_baseline=baseline;runtime.training_baseline_optimizer=baseline_optimizer
-    generator_trainer=EndpointTrainer(runtime,context,args.root)
-    generator_updates=run['joint_training']['G_updates_per_batch']
-    panel_by_task=panels(args.root)
-    query_sampling={str(task):dict(query_rotation=len(query_panel(panel,0)),query_pool_size=len(panel['query_states']))
-        for task,panel in panel_by_task.items()}
-    if not isinstance(generator_updates,int) or generator_updates<1:
-        raise ValueError('joint supervised update block must be explicitly registered')
+    restore_rng(state['rank_rng'][context.rank],context)
     initialize_deferred_process_group(context,rendezvous_root=args.root/'rendezvous')
     start=resume_checkpoint(args.resume,'RL',runtime,optimizer,context,baseline=baseline,
-        baseline_optimizer=baseline_optimizer,generator_optimizer=generator_trainer.optimizer) if args.resume else 0
-    generator_trainer.refresh_bank(runtime.supervision_version)
+        baseline_optimizer=baseline_optimizer) if args.resume else 0
     cache=HistoryCache()
     for update in range(start,args.stop):
-        tick=time.monotonic();runtime.freeze_psi();runtime.actor.eval();baseline.eval()
-        # Cached learning allocations are not used by the next environment phase.
-        # EGL cannot reclaim PyTorch's unused reserved blocks itself.
-        torch.cuda.empty_cache()
+        tick=time.monotonic();runtime.freeze_psi();runtime.actor.eval();baseline.eval();torch.cuda.empty_cache()
         runtime.fixed_kernel_identity=dict(origin_checkpoint=str(args.checkpoint.resolve()),
-            actor_next_update=update,psi_version=runtime.version,G_next_update=runtime.G_sampler['next_update'],
-            supervision_version=runtime.supervision_version,schema=SELECTOR_SCHEMA)
+            actor_next_update=update,psi_version=38349,G_next_update=38349,supervision_version=9,schema=SELECTOR_SCHEMA)
         paths,rewards,timings=collect_batch(args,runtime,runner,environment,context,baseline,update,cache)
-        runner.release_renderers()
-        timings['collector_ready_wait_seconds']=wait_for_collectors(args.root,context,update+1)
+        runner.release_renderers();timings['collector_ready_wait_seconds']=wait_for_collectors(args.root,context,update+1)
         theta_tick=time.monotonic()
         on_policy_update(runtime,context,args.root,update+1,paths,rewards,optimizer,baseline,baseline_optimizer)
         optimizer.zero_grad(set_to_none=True);baseline_optimizer.zero_grad(set_to_none=True)
-        timings['theta_and_baseline_update_seconds']=time.monotonic()-theta_tick;append_tick=time.monotonic()
-        # Theta consumes its whole original kernel first; only then may all psi learn.
-        supervision_version=register_students(args.root,paths,update+1,context)
-        generator_trainer.refresh_bank(supervision_version)
-        for path in paths:
-            generator_trainer.cache.seed(args.root/'RL_paths'/path.identity/'history.pt.gz',path.history)
-            # Prepared native KV belongs to the finished behavior/score consumer.
-            # G uses retained true H/raw features and parameters, not these prefixes.
-            path.native_response_cache.clear()
-        timings['append_and_reload_supervision_seconds']=time.monotonic()-append_tick;psi_tick=time.monotonic()
-        generator_trainer.prepare_bank()
-        for _ in range(generator_updates):
-            generator_trainer.step(runtime.G_sampler['next_update'],stage='joint_G')
-        runtime.freeze_psi()
-        timings['psi_update_block_seconds']=time.monotonic()-psi_tick;checkpoint_tick=time.monotonic()
+        timings['theta_and_baseline_update_seconds']=time.monotonic()-theta_tick
+        for path in paths:path.native_response_cache.clear()
+        assert runtime.G_sampler['next_update']==38349 and runtime.supervision_version==9
         checkpoint(args.root,'RL',update+1,runtime,optimizer,context,
-            sampler=dict(next_update=update+1,task_order=list(TASKS),logical_condition_batch=4,
-                query_sampling=query_sampling,sampling_identity='conditional_continue',
-                actual_depth=run['selector_training']['rounds'],supervision_version=supervision_version,
-                checkpoint_role='registered_node' if update+1 in run['updates']['RL'] else 'recovery_only',
-                alternating_order=['fixed psi/theta collection','theta','append true P/H','psi','resample']),
-            baseline=baseline,baseline_optimizer=baseline_optimizer,generator_optimizer=generator_trainer.optimizer)
-        timings['checkpoint_IO_seconds']=time.monotonic()-checkpoint_tick
-        metrics(args.root,'RL_cycle',dict(update=update+1,full_update_seconds=time.monotonic()-tick,phases=timings,
-            path_timings=[path.timings for path in paths],components=dict(runtime.components),
-            G_updates_after_theta=generator_updates,psi_version=runtime.version,
-            supervision_version=supervision_version),context)
-        del paths
-
-
-def report(args,runtime,runner,environment):
-    state=load_version(runtime,args.checkpoint);run=read_json(args.root/'run_contract.json')
-    specification=run['training_report']
-    if [state['stage'],state['next_update']] not in specification['versions']:
-        raise ValueError('report model was not pre-registered')
-    version=f"{state['stage']}_{state['next_update']:08d}";task=task_spec(environment,args.task)
-    panel=panels(args.root)[args.task];runtime.actor.eval()
-    count=specification['conditions_per_task'];ordinals=range(count) if args.condition_ordinal is None else [args.condition_ordinal]
-    for ordinal in ordinals:
-        destination=args.root/'reports'/version/args.video_arm/f'task_{args.task:04d}_condition_{ordinal:03d}'
-        if (destination/'complete.json').exists():continue
-        tick=time.monotonic();demo=panel['policy_videos'][ordinal%4];video_task=None
-        if args.video_arm=='other':demo=panel['policy_videos'][(ordinal+1)%4]
-        if args.video_arm=='wrong':
-            video_task=specification['wrong_task_mapping'][str(args.task)];demo=panels(args.root)[video_task]['policy_videos'][ordinal%4]
-        if (destination/'path.json').exists():path=restore_compilation(destination,runtime)
-        else:
-            history,source=bootstrap_source(args.root,args.task,panel,ordinal,HistoryCache())
-            path=compile_condition(runtime,runner,task,panel,demo,identity=destination.name,path_ordinal=ordinal,
-                noise_root=seed(8,args.task,ordinal),max_rounds=specification['max_rounds'],video_task=video_task,
-                bootstrap_history=history,bootstrap_provenance=source,
-                external_max_environment_steps=specification['environment_multiplier']*(task['horizon']+10))
-            path.save(destination,retain_U=True)
-        rows=evaluate_fixed(runtime,runner,path,task,panel['report_states'],seed(80,args.task,ordinal))
-        write_json_atomic(destination/'query.json',dict(rows=rows,finite_train_diagnostic=True,
-            single_fixed_task_LoRA=True,feedback_did_not_change_selection=True))
-        write_json_atomic(destination/'complete.json',dict(complete=True,version=version,condition=path.identity,
-            input_arm=args.video_arm,rows=len(rows),environment_steps=path.environment_steps,
-            selected=path.selected,end_to_end_seconds=time.monotonic()-tick,path_timings=path.timings))
+            sampler=dict(next_update=update+1,task_order=run['training_tasks'],logical_condition_batch=4,
+                G_seen_weight=.5,G_novel_weight=.5,sampling_identity='conditional_continue',
+                actual_depth=5,query_visit=0,teaching_pool_ordinal=1,bank_version=9,
+                checkpoint_role='registered_node' if update+1==18 else 'recovery_only',
+                alternating_order=['fixed G/current theta collection','theta and baseline','resample']),
+            baseline=baseline,baseline_optimizer=baseline_optimizer)
+        metrics(args.root,'joint_cycle',dict(theta_update=update+1,G_next_update=38349,
+            supervision_version=9,G_updated=False,G_bank_appended=False,
+            total_cycle_seconds=time.monotonic()-tick,timings=timings,peak=memory_peak(runtime.device)),context)
+    write_json_atomic(args.root/'complete'/f'RL_rank_{context.rank:02d}.json',dict(complete=True,next_update=args.stop,
+        full72_rounds=1,world_size=context.world_size,rank=context.rank,G_cursor=38349,bank_version=9))
 
 
 def run(args,runtime,runner,environment,context):
-    if args.command=='G':
-        from .shared_checkpoint import initialize_native
-        initialize_native(runtime,context,args.root)
-    elif args.command in ('local','assemble'):
-        from .full_writer import initialize,assemble
-        imported=assemble(args,runtime,context) if args.command=='assemble' else initialize(runtime,context,args.root)
-        runtime.training_baseline=imported['baseline']
-        runtime.training_baseline_optimizer=imported['baseline_optimizer']
-        runtime.actor_optimizer_state=imported['actor_optimizer'].state_dict()
-        write_json_atomic(args.root/'code'/f'{args.command}_component_migration_rank_{context.rank:02d}.json',dict(
-            complete=True,migration=imported['migration'],G_next_update=runtime.G_sampler['next_update'],
-            endpoint_optimizer_parameters=len(runtime.generator_optimizer_parameter_names),
-            actual_world_size=context.world_size,not_full_psi_exact_resume=True))
-    if args.command=='G':train_endpoint(runtime,context,args.root,stop=args.stop,resume=args.resume,
-        microbatch=args.microbatch,profile_microbatches=args.profile_microbatches)
-    elif args.command=='assemble':
-        initialize_deferred_process_group(context,rendezvous_root=args.root/'rendezvous')
-        checkpoint(args.root,'assembled',90,runtime,imported['actor_optimizer'],context,
-            sampler=runtime.component_samplers['theta'],baseline=imported['baseline'],
-            baseline_optimizer=imported['baseline_optimizer'],generator_optimizer=imported['generator_optimizer'])
-    elif args.command=='student-data':refresh(args,runtime,runner,environment)
-    elif args.command=='local':
-        examples=LocalExamples(args.root,runtime)
-        train_local(runtime,context,args.root,examples,stop=args.stop,resume=args.resume,baseline=imported['baseline'])
-        if not (args.root/'analysis/final_warm90_expected_query.json').exists():
-            final_warm_readback(runtime,context,args.root,examples)
+    if args.command=='local':
+        from .shared_checkpoint import initialize_selector
+        optimizer,baseline=initialize_selector(runtime,context,args.root)
+        runtime.actor_optimizer_state=optimizer.state_dict()
+        train_local(runtime,context,args.root,LocalExamples(args.root,runtime),stop=args.stop,resume=args.resume,baseline=baseline)
     elif args.command=='RL':rl(args,runtime,runner,environment,context)
-    elif args.command=='report':report(args,runtime,runner,environment)
+    elif args.command=='student-data':
+        load_version(runtime,args.checkpoint)
+        from .student_practice import pair_group
+        pair_group(args,runtime,runner,environment,[args.task])
+    else:raise ValueError('unregistered fixed-G selector consumer')

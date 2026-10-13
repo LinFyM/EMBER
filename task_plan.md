@@ -1,5 +1,7 @@
 ## 2026-10-13 当前计划：已授权§23完整选择学习窗口
 
+当前批次不因主讨论交接暂停。Owner要求完成后暂缓向现主讨论汇报；完整结果/费用/工程与Git先保存为可交付原件，待Owner登记新接收方后按唯一整批身份交付，不主动投递旧主讨论。
+
 按唯一design§23与/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/main_contract/scientific_dispatch_20261013.txt直接闭环：72任务审计/固定数据manifest→单一消费者与完整源迁移→CPU及真实consumer准入→集成push/clean detached→真实pair72→A180→当前核B18→唯一完整correct400→科学/费用/Git/一次交main。不是新许可/ACK门槛，旧讨论状态已被Owner11:50和main明确派发替代。
 原G38349/F Adam/bank9冻结，原θ/Adam与baseline承接；原seen36与novel36每B4各2/18更新全72，新增36授权θ/baseline non-held共享学习，不改global52/固定24/8/8、不读held离线标签、Test关闭。pair最多1260新增episode/36生成，seen1152 query/MT-H/保存G只读；A180只final、baseline冻结；B18仅当前核on-policy/5轮/actual[parent,newG]，至多6120新增实践/G query，MT不兼容另1152，0G更新或学生bank追加。唯一完整B18直接Compiler400，旧MT bootstrap精确prefix及MT final兼容引用、后段新θ实际重采。
 关注新数据是否带来MT优于G反例、现有真实metrics是否学到、完整400是否迁移，不能用多选MT或内部值代替净收益/保持/覆盖；不增加GPU读回/探针或拼跨核训练分数。原pMT很小的梯度约束保留，不reset θ/Adam/改温度/CE/valuehead或延长本窗。

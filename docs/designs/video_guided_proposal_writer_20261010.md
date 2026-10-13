@@ -883,6 +883,8 @@ B18自动接同一完整G38349+新θ的K1 fixed validation8×50=400，video_seed
 
 ### 23.6 工程、资源、预期与可靠交付
 
+Owner最新主讨论交接安排覆盖本节原接收关系：本批照常完成，先保存完整结果、原件、费用与工程/Git交付，暂缓主动回报原main01a12bb0，待Owner指定新主讨论。原唯一退出接续实验session仍负责完成消费，不新增阶段消息或第二等待者。
+
 一套Runtime/Generator/Actor/compile/query/shared checkpoint，旧§22 fixed-g及FM训练入口按已消费生命周期退休，历史冻结/tree/CP/raw/失败保存。独占分支隔离→真实消费者检查→main集成push→clean detached正式运行。metadata audit/实际完整Runtime与optimizer CPU加载0forward/episode已完成；真实GPU执行尚待launch，不称模型已训。
 全新增data1，峰值160GiB计入72pair/360practiceH、恢复CP/400H/LoRa/临时cache；独立strg01 quota/个人用量/shared现场核、大资产原位引用。每launch双节点live、总6或8/node6/非干扰/GPUh无hardcap，动态数据/ready query/formal不锁world4；logicalB4及权重不变，physical rank/group/slots/response micro按真实吞吐/显存选择。有余量在既有请求验证扩大，不追加科学episode或重做有效行。
 事前工程45–90min、pair30–60min、warm20–45min、on-policy2–3h、4001.5–2.5h，总5–8h（旧warm90 rank0 1225s及query16/400依据），实测/共享负载修订。原今晚新加坡23点希望已被Owner“我回来了，晚上十一点的截止时间不用管了，又有多的空余时间推进了”取消，11点也取消；无deadline/强杀/缩水或自动加时扩科学矩阵。

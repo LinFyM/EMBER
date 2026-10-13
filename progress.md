@@ -1,5 +1,7 @@
 ## 2026-10-13 当前实施：§23 selector transfer72固定G38349
 
+Owner最新计划更换主讨论，要求当前任务完成后不急于向现主讨论汇报；本批继续，结果/原件/工程与费用完整保存，暂缓主动投递01a12bb0，待Owner确定新接收关系。仅保留原唯一整批退出接续实验session，不新增等待者或阶段通知。
+
 Owner11:50持续自主执行授权后main登记新完整有限窗口；原“讨论未派发”是此前历史。唯一root=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349，原完整v10 RL9/G38349+θ/Adam/baseline受控承接为v12，G/source/MT/尺度/bank9与F Adam/cursor全冻结；新FM38781不进入本批。当前工程/CPU准入中，尚无本批GPU launch/episode或学习结果，不能把准备说成训练。
 
 新增36通过source71/完整specification-overlap19排除与固定24/8/8审计；run-scoped72任务authority不扩大global52 manifest。原seen36全留，novel36按main事前冻结的18/9/9来源分层选择，33不同exact语言、69与seen42同语言；72共68不同语言。数据/BDDL/init文件metadata及原36身份核验，未读held离线数值标签；原任务选择JSON和全文派发在analysis/main_contract。

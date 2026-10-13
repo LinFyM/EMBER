@@ -216,13 +216,17 @@ class Generator(nn.Module):
         memory = self.context(features, history, states)
         return self.endpoint((parent - self.layout.center) / self.layout.scale, memory=memory)
 
-    @torch.no_grad()
-    def generate(self, parent, features, history, states, *, memory=None):
+    def compile(self, parent, features, history, states, *, memory=None, checkpoint_layers=True):
+        """The complete generated LoRA retains the current Reader/F gradient graph."""
         packed = self.layout.pack(parent).to(self.layout.scale.device)
         memory = self.context(features, history, states) if memory is None else memory
         endpoint = self.endpoint((packed - self.layout.center) / self.layout.scale, memory=memory,
-                                 checkpoint_layers=False).float()
+                                 checkpoint_layers=checkpoint_layers).float()
         return self.layout.unpack(self.layout.center + self.layout.scale * endpoint)
+
+    @torch.no_grad()
+    def generate(self, parent, features, history, states, *, memory=None):
+        return self.compile(parent, features, history, states, memory=memory, checkpoint_layers=False)
 
 
 class Actor(nn.Module):

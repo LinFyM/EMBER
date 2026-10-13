@@ -25,7 +25,10 @@ def learning_tasks(asset_root,root,task_ids,role):
     if role!='train':return load_learning_tasks(asset_root,task_ids,role=role,protocol_path=SOURCE['data_protocol'])
     run=read_json(Path(root)/'run_contract.json');path=Path(run['run_scoped_task_authority'])
     authority=read_json(path);requested=tuple(task_ids)
-    if (authority['schema_version']!='ember_selector_transfer72_task_authorities_v1'
+    function_run=run['schema_version']=='ember_full_g_native_function_identification_v1'
+    schema='ember_full_g_function_task_authorities_v1' if function_run else 'ember_selector_transfer72_task_authorities_v1'
+    roles=['G'] if function_run else ['theta','baseline']
+    if (authority['schema_version']!=schema
             or Path(authority['run_root']).resolve()!=Path(root).resolve()
             or authority['training_tasks']!=run['training_tasks']
             or authority['seen36']!=run['G_seen_tasks'] or authority['novel36']!=run['G_novel_tasks']
@@ -35,7 +38,7 @@ def learning_tasks(asset_root,root,task_ids,role):
     rows={q['authority']['task_id']:q for q in authority['tasks']};output={}
     for task in requested:
         row=rows[task];a=row['authority'];p=Path(a['path'])
-        if (p.stat().st_size!=a['expected_bytes'] or row['gradient_roles']!=['theta','baseline']
+        if (p.stat().st_size!=a['expected_bytes'] or row['gradient_roles']!=roles
                 or len(row['episode_lengths'])!=50):raise ValueError('registered task dataset or label consumer changed')
         if task>=40 and task-40 not in authority['source71_active_local_ids']:
             raise ValueError('source90 task falls outside specification-audited source71')

@@ -111,7 +111,7 @@ def prepare(args):
         source_checkpoint=str(SOURCE_CP),readout_checkpoint=str(SOURCE_CP),initial_writer_checkpoint=str(root/'checkpoints/local/update_00000180'),
         initial_writer_stage='local',fixed_local_update=180,fixed_G_update=38349,
         student_refresh=dict(version='fixed_G38349_pair72',G_update=38349,readout_mode='selector_fixed_pair',
-            readonly_E_query=False,task_count=72,condition_mapping=mapping,practice_mapping=practice),
+            readonly_E_query=False,task_count=72,query_states_per_parameter=16,condition_mapping=mapping,practice_mapping=practice),
         updates=dict(local=[90,180],RL=[18]),logical_batch=dict(actor_conditions=4),
         selector_schema=SELECTOR_SCHEMA,selector_training=dict(selector,rounds=5,continue_cost=.001,
             registered_theta_updates=18,query_states_per_parameter=16),compilation=old['compilation'],

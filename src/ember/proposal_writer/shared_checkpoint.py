@@ -65,7 +65,7 @@ def initialize_selector(runtime,context,root):
         restored_source_rank=context.rank,source_unassigned_ranks=list(range(context.world_size,4)),
         original_four_rank_states_retained=True,logical_batch=4,bitwise_exact_claim=False)
     restore_rng(state['rank_rng'][context.rank],context)
-    write_json_atomic(Path(root)/'code'/f'selector_migration_rank_{context.rank:02d}.json',dict(
+    write_json_atomic(Path(root)/'code'/f'selector_migration_{context.device.type}_rank_{context.rank:02d}.json',dict(
         complete=True,learning_migration=runtime.learning_migration,physical_rng_migration=runtime.physical_rng_migration,
         F_cursor=runtime.G_sampler['next_update'],bank_version=runtime.supervision_version,
         theta_Adam_restored=True,baseline_Adam_restored=True,original_contract_exact_resume=False))

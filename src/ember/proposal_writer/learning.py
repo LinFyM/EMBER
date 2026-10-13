@@ -108,7 +108,7 @@ def metrics(root, stage, record, context):
 
 
 def logical_tasks(update,root=None):
-    """Nine B4 updates form one equal-weight full36 round, independent of topology."""
+    """The registered B4 task stream is independent of physical topology."""
     if root is not None:
         run=read_json(Path(root)/'run_contract.json');epoch,slot=divmod(update,18)
         seen=np.random.default_rng(np.random.SeedSequence([20261013,23,0,epoch])).permutation(run['G_seen_tasks']).tolist()

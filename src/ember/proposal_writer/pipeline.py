@@ -5,7 +5,7 @@ import os,re,time,copy
 import torch
 from ember.pi05_source_checkpoint import read_json,write_json_atomic,restore_rng
 from ember.pi05_source_setup import initialize_deferred_process_group
-from .contract import OPTIMIZER,SELECTOR_SCHEMA
+from .contract import OPTIMIZER,SELECTOR_SCHEMA,seed
 from .learning import (Baseline,train_local,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
 from .path import compile_conditions,restore_compilation

@@ -1,4 +1,12 @@
-## 2026-10-13 13:09实际启动：§23固定G的选择迁移在途
+## 2026-10-13 13:45当前执行：§23真实pair72完成，A180已启动
+
+唯一ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。72任务真实pair数据于13:44:40完整结束，原件为ROOT/coordinator/selector72_prefix_consumer_handoff_02/student-data_complete.json。实际新增36次G生成、36次MT bootstrap实践、72次G实践及1152次novel MT/G query，合计1260 episode；seen1152 query及已有MT-H/保存G只读引用。数据采集完成不构成选择器学习或validation资格，A180/B18/400成绩尚未产生。
+
+A180于13:45:02由060485ba的clean pushed detached消费者实际启动，gpu01:6/1/3/2四rank、logicalB4/seen2+novel2不变；G38349/F Adam/bank9冻结，θ/Adam承接、baseline在warm冻结。唯一owner2104955继续A180→当前核B18→唯一correct400。旧owner于13:44:22实际exit1/KeyboardInterrupt，属于13:23主动CPU调度交接；原五个GPU job均exit0，consumed.json及analysis/engineering/CPU_handoff_closed.json已判重，保留全部收据和费用，不恢复旧派发或重复数据。整批仍在途，不把旧CPU退出称为科学失败或整批完成。
+
+新主讨论01a13399-cba2-7da2-9dc6-df430ca80280是唯一整批/实质科学边界接收方；原01a12bb0不再接收。不增阶段回报、心跳或第二等待者。数据阶段实测自13:09启动约35min，后段时间仍按真实消费者修订，原工程起点/5–8h预测和已取消的11:00/23:00希望时点保留历史。
+
+## 2026-10-13 13:09实际启动及13:26 CPU交接历史
 
 唯一ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。原owner selector72_A180_B18_validation400_01/PID2025779于13:09:44启动；五个实际GPU job13:09:53–13:10:08在gpu01:1/3/6/2/0启动，总5/现场cap6，另外设备高负载或不足24GiB余量，未把world4当整批限制。真正注册72任务的数据采集包含首个clear卡32-slot保留组，其余16-slot/group4；实际吞吐/peak据原件结算，不宣称全局最优。
 

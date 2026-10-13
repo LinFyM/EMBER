@@ -883,12 +883,12 @@ B18自动接同一完整G38349+新θ的K1 fixed validation8×50=400，video_seed
 
 ### 23.6 工程、资源、预期与可靠交付
 
-实际GPU数据13:09按0dee9028五卡启动；后续formal own-MT初态校验索引按原video ordinal修正为060485ba，不改模型/科学合同。旧CPU取消新派发、保留GPU子job与退出收据，新owner2104955接有效输入/费用后自动A180/B18/400；旧 frozen不热改，不因metadata修复重做有效episode。确切身份见ROOT/coordinator/selector72_prefix_consumer_handoff_02和analysis/engineering/formal_prefix_index_evidence.json。当前只数据在途，无学习/400结果。
+实际GPU数据13:09按0dee9028五卡启动，13:44:40完整pair72结束，实际36新G生成/1260新增episode、seen1152 query只读引用；A180于13:45:02在gpu01:6/1/3/2四rank实际launch，B18/400未完成。后续formal own-MT初态校验索引按原video ordinal修正为060485ba，不改模型/科学合同。旧CPU取消新派发后实际exit1，原五GPU job均exit0，已按主动CPU交接消费判重；新唯一owner2104955接有效输入/费用后自动A180/B18/400。旧 frozen不热改，不因metadata修复重做有效episode。确切身份见ROOT/coordinator/selector72_prefix_consumer_handoff_02、旧coordinator的consumed.json及analysis/engineering/formal_prefix_index_evidence.json；无当前学习终点或400结果。
 Owner已经指定新主讨论01a13399-cba2-7da2-9dc6-df430ca80280取代原01a12bb0，整批或实质科学边界一次可靠向新接收方交付；其科学分析/独立审阅修订完整设计goal不扩当前计算。此前接收方待登记与旧UUID仅保留历史，无例行ACK/阶段Queue/心跳。
 
-Owner最新主讨论交接安排覆盖本节原接收关系：本批照常完成，先保存完整结果、原件、费用与工程/Git交付，暂缓主动回报原main01a12bb0，待Owner指定新主讨论。原唯一退出接续实验session仍负责完成消费，不新增阶段消息或第二等待者。
+Owner交接初始要求保留为历史：本批照常完成，先保存完整结果、原件、费用与工程/Git交付，暂缓主动回报原main01a12bb0。新接收方已由上段最新登记确定；原唯一退出接续实验session仍负责完成消费，不新增阶段消息或第二等待者。
 
-一套Runtime/Generator/Actor/compile/query/shared checkpoint，旧§22 fixed-g及FM训练入口按已消费生命周期退休，历史冻结/tree/CP/raw/失败保存。独占分支隔离→真实消费者检查→main集成push→clean detached正式运行。metadata audit/实际完整Runtime与optimizer CPU加载0forward/episode已完成；真实GPU执行尚待launch，不称模型已训。
+一套Runtime/Generator/Actor/compile/query/shared checkpoint，旧§22 fixed-g及FM训练入口按已消费生命周期退休，历史冻结/tree/CP/raw/失败保存。独占分支隔离→真实消费者检查→main集成push→clean detached正式运行。启动前metadata audit/实际完整Runtime与optimizer CPU加载0forward/episode已完成；真实数据采集和A180 launch另见上述收据，不以launch称学习完成。
 全新增data1，峰值160GiB计入72pair/360practiceH、恢复CP/400H/LoRa/临时cache；独立strg01 quota/个人用量/shared现场核、大资产原位引用。每launch双节点live、总6或8/node6/非干扰/GPUh无hardcap，动态数据/ready query/formal不锁world4；logicalB4及权重不变，physical rank/group/slots/response micro按真实吞吐/显存选择。有余量在既有请求验证扩大，不追加科学episode或重做有效行。
 事前工程45–90min、pair30–60min、warm20–45min、on-policy2–3h、4001.5–2.5h，总5–8h（旧warm90 rank0 1225s及query16/400依据），实测/共享负载修订。原今晚新加坡23点希望已被Owner“我回来了，晚上十一点的截止时间不用管了，又有多的空余时间推进了”取消，11点也取消；无deadline/强杀/缩水或自动加时扩科学矩阵。
 一真实owner接data→A180→B18→400→完整消费/Git，launch一次真实身份/资源/ETA、整批完成或实质异常一次可靠交main；正常持续退出等待，无心跳/阶段Queue/第二等待者/例行ACK，有效行/所有失败与费用保留。工程语义不变可自行恢复缺项，科学边界具体交main。

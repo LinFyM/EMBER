@@ -1,3 +1,9 @@
+## 2026-10-14 05:02 §14唯一owner03已恢复：六卡并行两组seen
+
+owner03/PID408276于21:00:53.491592Z启动，源045ee602 clean pushed detached=/data1/user/ymdai/ember_worktrees/operator_joint_seen_resume_frozen_20261014；CPU计账与原两臂H1完整LoRA消费者通过，只恢复1152条seen，原92d0a234的训练72/144函数/800 held不重跑。六个正式worker于21:01:02Z起实际launch：gpu01:2/7/0/4/5、gpu02:6，各独立world1/slots8/既有最大6行shard，D/C交错派发；自然释放只接有未领取shard的队列，无空队列重复runtime加载。
+每次launch现场双节点/数量/data1独立quota核验：总6/node01五/node02一，无util固定显存筛选；此前实际eval reserved14.084GiB，本次workload余量含4GiB runtime/driver，非通用显存门槛。所有source/配对/范围/旧失败费用保持，CP72完整Adam-sampler-rankRNG实物确认（485有状态/496登记参数；11个Reader.empty/static旧未用分支两臂一致，未改图）。原派发18:30:39Z计时，02退出至03准备约13.3min，剩余seen暂估30–60min、预计超原90–165min；原10.594371230GPUh加本次实际累计结算。
+唯一整批callback在03 owner/whole_batch_exit_delivery.json登记，退出/异常才一次唤醒实验验收→main01a13399；没有前台整批等待或第二等待者。原02已consumed，本次开发树/分支经完整ancestor/clean核验已退休，正式冻结树及所有原件保留。Git当前记录与main实质调度回报在该owner原件登记，不增加心跳/阶段Queue/自动后继。
+
 ## 2026-10-14 §14更新与400/函数已齐；计账窄修后仅恢复两组seen576
 
 唯一owner02于20:47:35.652809Z真实exit1，已按ROOT/attempt消费；两臂完整72/checkpoint、各72末点函数及各400原行保存，均不重跑。两组seen队列各96 pending/0原行，剩余1152次final episode；原800次已完整返回/229025环境步，未知额外0。失败在CPU准入把正常在途episode误计入失败partial≤16，未实际越过1952/1968/1043040合同。

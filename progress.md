@@ -1,10 +1,22 @@
+## 2026-10-13 20:28 实际恢复：§12 owner02/PID1626927，同范围已复用数据/A首profile
+
+恢复owner于12:22:41Z真实detached启动，12:22:56Z进入唯一owner，source clean pushed detached1c424cd8，frozen tree=/data1/user/ymdai/ember_worktrees/fullg_native_recovery_frozen_20261013。27重放/5582步全部复用，A第一B4复用，混合128/256官方resize窄修经真实24query CPU通过；新F-only profile actual job已退出后，同GPU上的full-G profile actual job已launch。当前没有新正式更新/held成绩声明。完整profile总≤2B4/臂，完成后源G38349/fresh Adam/sampler/RNG重置→72有效更新/臂→原seen576+strict firstG400/臂。
+
+现场原§23最终评测占5张物理卡，cap6，恢复两臂按1卡gpu01:2串行，不为凑2卡等待；该卡当前余量42,549MiB，B采用frame8，A/frame16/micro8旧B4保留。CPU owner持续等待实际子进程退出，整批完成/异常仅一条既有自通知路由；旧owner01 consumed，全部失败/负例/费用保留。原批不暂停、不读其未完成分数；同卡OOM的14.93GiB为原批worker204，不是他人或坏卡。原10–25min数据/profile估计已超，真实边界已一次发main，实际profile完成后沿既有一次吞吐/ETA回报，不增加stage selfQueue/第二等待者。
+
+Git代码已合main/push，工程开发树/分支已清理，正式freeze和所有原件保留。根状态最新提交继续push，完整科学合同不变。
+
+以下为历史时点记录。
+
+当前资源补充：实时进程已定位OOM同卡共驻的1073946是原§23最终formal worker204，不能记为他人任务或坏卡；原批不暂停。资源准入统一计数，恢复按最新live可用数量选择1或2卡，独立臂可串行；full-G依据原失败本进程24.73GiB及当前余量采用frame8或4，完整H/教学和逻辑B4不变。
+
 ## 2026-10-13 20:07 工程承接：§12固定27补录完成，消费首owner退出；复用F-only首profile恢复
 
 matched_native_01真实exit1/11:54:47Z及回报已consumed，旧owner已退出。27个既定T补录完整保存，21成功、6原成功重放转败（13/MT300、17/E、19/E、29/E、37/E、62/E），5582环境步/27 starts，0未知或失败环境启动，绝不换病例或挪用剩余72上界；T成功类别按真实结果留空。全部费用.213567995GPUh，其中补录.149988775、两profile失败合计.063579221，原件/源e7f1a976/退出/自动回报保留，原派发时钟不重置。无72正式更新/held/Test。
 
-F-only第一个micro8/frame16完整B4已有效通过全部native梯度/冻结组，allocated11.181/reserved11.789GiB；第二B4在混合正常128px/真实H256px的张量拼接处失败，未完成update。full-G第一B4在frame16 meta反传CUDA OOM：现场新增他人约14.93GiB占用，launch余量27,279MiB，本进程约24.73GiB，尚无完整profile update。这是工程失败，不是科学性能否决。
+F-only第一个micro8/frame16完整B4已有效通过全部native梯度/冻结组，allocated11.181/reserved11.789GiB；第二B4在混合正常128px/真实H256px的张量拼接处失败，未完成update。full-G第一B4在frame16 meta反传CUDA OOM：现场新增原§23 formal_worker_204约14.93GiB共驻占用，launch余量27,279MiB，本进程约24.73GiB，尚无完整profile update。这是工程失败，不是科学性能否决。
 
-窄修在独占codex/fullg-native-consumer-recovery-20261013完成：按安装PI05完全相同resize_with_pad_torch在拼批前规范224，之后原range/mask/原生执行不变；真实task2三类别24query/128与256实际图像CPU消费已核，与逐条官方预处理完全一致，noise仍24x50x32。profile跳过已保存discarded B4，A只补第二完整B4，B补两个完整B4，保留原不完整计算及成本；完整discarded B4总量仍≤2/臂。B仅将物理meta frame chunk改8减峰值，不截H/教学、改标签/目标/更新。27重放与A首profile不重跑，fresh72前仍源权重/Adam/sampler/RNG重置。下一clean pushed detached恢复，实际新GPU图/吞吐尚待消费者。原§23独立、无中途分数读取/新等待者/阶段通知。
+窄修在独占codex/fullg-native-consumer-recovery-20261013完成：按安装PI05完全相同resize_with_pad_torch在拼批前规范224，之后原range/mask/原生执行不变；真实task2三类别24query/128与256实际图像CPU消费已核，与逐条官方预处理完全一致，noise仍24x50x32。profile跳过已保存discarded B4，A只补第二完整B4，B补两个完整B4，保留原不完整计算及成本；完整discarded B4总量仍≤2/臂。B仅将物理meta frame chunk按live余量改8或4减峰值，不截H/教学、改标签/目标/更新。27重放与A首profile不重跑，fresh72前仍源权重/Adam/sampler/RNG重置。下一clean pushed detached恢复，实际新GPU图/吞吐尚待消费者。原§23独立、无中途分数读取/新等待者/阶段通知。
 
 以下为历史时点记录。
 

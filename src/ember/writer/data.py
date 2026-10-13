@@ -285,18 +285,10 @@ class FunctionalQueryDataset:
                 stale.close()
         return self._handles[key]
 
-    def __getitem__(self, item: int) -> dict[str, Any]:
+    def observation(self, item: int) -> dict[str, Any]:
+        """Read an authorized query observation without loading action labels."""
         task_id, demo_index, frame_index = self._index[item]
         demo = self._handle(task_id)[f"data/demo_{demo_index}"]
-        actions_ds = demo["actions"]
-        action_start = frame_index + self.action_start_offset
-        stop = min(action_start + self.action_chunk_size, actions_ds.shape[0])
-        valid = stop - action_start
-        valid_actions = np.asarray(actions_ds[action_start:stop], dtype=np.float32)
-        actions = np.repeat(valid_actions[-1:], self.action_chunk_size, axis=0)
-        actions[:valid] = valid_actions
-        action_is_pad = np.ones(self.action_chunk_size, dtype=np.bool_)
-        action_is_pad[:valid] = False
         obs = demo["obs"]
         state = np.concatenate(
             (
@@ -312,14 +304,26 @@ class FunctionalQueryDataset:
                 np.asarray(obs["eye_in_hand_rgb"][frame_index])
             ),
             "observation.state": state,
-            "action": actions,
-            "action_is_pad": action_is_pad,
             "task": self.authorities[task_id].language,
             "task_id": task_id,
             "demo_index": demo_index,
             "frame_index": frame_index,
-            "action_start_index": action_start,
         }
+
+    def __getitem__(self, item: int) -> dict[str, Any]:
+        observation = self.observation(item)
+        task_id, demo_index, frame_index = self._index[item]
+        actions_ds = self._handle(task_id)[f"data/demo_{demo_index}/actions"]
+        action_start = frame_index + self.action_start_offset
+        stop = min(action_start + self.action_chunk_size, actions_ds.shape[0])
+        valid = stop - action_start
+        valid_actions = np.asarray(actions_ds[action_start:stop], dtype=np.float32)
+        actions = np.repeat(valid_actions[-1:], self.action_chunk_size, axis=0)
+        actions[:valid] = valid_actions
+        action_is_pad = np.ones(self.action_chunk_size, dtype=np.bool_)
+        action_is_pad[:valid] = False
+        return dict(observation, action=actions, action_is_pad=action_is_pad,
+                    action_start_index=action_start)
 
     def close(self) -> None:
         for handle in self._handles.values():

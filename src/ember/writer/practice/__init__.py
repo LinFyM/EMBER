@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from copy import deepcopy
 from itertools import chain
 import time
+import json
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -70,6 +72,14 @@ class EpisodeRunner:
         self.components = dict(native_prefix_seconds=0., native_flow_seconds=0., env_operation_seconds=0.,
                                env_wait_seconds=0., plans=0, physical_batch_histogram={})
         self.environment_steps = 0
+        self.event_log = getattr(runtime, 'episode_event_log', None)
+
+    def _event(self, kind, **fields):
+        """Optional submitted/finished accounting survives a failed subprocess."""
+        if self.event_log is not None:
+            path=Path(self.event_log);path.parent.mkdir(parents=True,exist_ok=True)
+            with path.open('a') as stream:
+                stream.write(json.dumps(dict(kind=kind,known_environment_steps=self.environment_steps,**fields))+'\n')
 
     def _start(self, index, request):
         if 'state' not in request or 'parameter_ref' not in request:
@@ -82,6 +92,9 @@ class EpisodeRunner:
         if request.get('registered_scene') is not None:
             episode_contract=deepcopy(self.contract)
             episode_contract['operator_read_write_scene']=request['registered_scene']
+        if self.event_log is not None:
+            self._event('submitted_start',episode_id=request['episode_id'],task=request['task']['global_task_id'],
+                        maximum_steps=request['task']['horizon']+10)
         self.environments.submit(index, 'start', task=request['task'], contract=episode_contract,
             state_id=request['state_id'], noise_root=request['noise_root'], remaining=request.get('remaining'),
             snapshot=request.get('snapshot'), capture_snapshot=request.get('snapshots', False))
@@ -100,6 +113,7 @@ class EpisodeRunner:
         finished = []
         for index, result in results:
             if 'error' in result:
+                self._event('worker_error',confirmed_failed_operation_steps=result.get('confirmed_environment_steps'))
                 raise RuntimeError(result['error'])
             slot = live[index]
             self.components['env_operation_seconds'] += result['operation_seconds']
@@ -132,6 +146,8 @@ class EpisodeRunner:
                 row.update(actual_parameter_ref=slot['request']['parameter_ref'],
                            behavior_actor_uses_teaching=slot['request'].get('uses_teaching', False))
                 slot['history'].episodes.append(row)
+                self._event('finished',episode_id=slot['request']['episode_id'],
+                    environment_steps=row['environment_steps'],success=bool(row['success']))
                 finished.append((index, dict(request=slot['request'], row=row, history=slot['history'])))
             else:
                 slot['ready'] = True
@@ -218,6 +234,7 @@ class EpisodeRunner:
                 self._infer(live, ready)
 
     def close(self):
+        self._event('runner_closed')
         if self.environments is not None:
             self.environments.close()
             self.environments = None

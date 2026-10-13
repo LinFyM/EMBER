@@ -121,6 +121,9 @@ def replay_targets(args, runtime, runner):
         old_trace = row['policy_noise_seeds']
         if trace[:min(len(trace), len(old_trace))] != old_trace[:min(len(trace), len(old_trace))]:
             raise ValueError('registered target replay lost original full noise prefix')
+        left, right = row['initial_proprio'], output['row']['initial_proprio']
+        if len(left) != len(right) or max(abs(a-b) for a, b in zip(left, right)) > 1e-5:
+            raise ValueError('registered target replay changed the actual initial observation')
         save_history(directory/'history.pt.gz', history)
         write_json_atomic(directory/'complete.json', dict(complete=True, target_id=target['target_id'],
             source=target, original_success=bool(row['success']), replay_success=bool(output['row']['success']),

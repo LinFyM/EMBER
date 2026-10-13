@@ -1,3 +1,10 @@
+## 2026-10-14 03:12 §14真实4+2学习已通过首有效B4；唯一owner02
+
+C=operator_plus_native在gpu01:2/7/0/4、world4，于19:01:04.697227Z实际launch，frame16/16/16/8；D=operator_only在gpu01:5/6、world2，于19:00:56.649675Z实际launch，frame8/8。source92d0a234 clean pushed detached=/data1/user/ymdai/ember_worktrees/operator_native_joint_frozen_20261014，两臂同38349/fresh同Adam/原288-T-query-权重-noise流，BA每condition一次后/4与rank SUM、C固定lambda69.25903014646993，所有meta双支/Reader/static/F真实信用与冻结policy/T/Actor首B4通过，4个同条件全部计入72。D native0，C实际student/T各64；D/C最长27.30/25.76s，reserved17.488/29.211GiB。原首批源权重/查询类别与source receipt一致；不读取中途loss趋势或闭环成绩。
+owner01首更大frame64/32在meta反传OOM，0有效更新/0环境交互、两失败.069271152GPUh保留，C部分native调用实际未落盘、每student/T保守上界96保留，未写0费用或漏掉失败。首次把只读峰值用于训练chunk的估计已纠正；新02只缩小物理chunk、不改科学合同/数据/逻辑B4，实际4+2继续。首批观察器跨GPU01/GPU02的NFS inotify不生效曾使停滞判断错误，直接实物首行已核，观察器已结束、GPU训练未中断；整批退出由CPU02 owner本地写/唯一唤醒，不受该观察器限制。
+当前唯一owner=ROOT/coordinator/operator_native_frame_resume_02/PID4132407，01真实exit1已consumed，原码/失败/费用保留。原派发18:30:39Z计时不重置，初估90–165min；按真实首B4、较长H2/共享负载和可交错读出，当前余wall保守60–110min。6卡/node6现场核查，各launch保存独立quota/dual-node快照；训练卡释放后同owner接共享队列消费者，六worker作业/面板可续接剩余shards、不会继承一worker限制。无新profile/实践/补T成功/中点选优/Test/阶段Queue/第二等待者。
+完整合同仍design§14，ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_native_joint_learning，analysis/launch_acceptance.json与02/first_effective_B4_consumer.json保存实物。唯一整批退出→本实验验收/串行Git→main01a13399一次交付；源92d0a234开发分支/树已按clean ancestor集成退休，正式冻结树及原件保留。
+
 ## 2026-10-14 §14已完整授权并实施准备：同T完整BA与native匹配两臂
 
 主讨论直接消费§13全部72响应、六运动维度及实际梯度链；E目标B36全恶化/34端点变化背离T，MT均值收益80%来自task34/H1，H2保持失效，旧v6联合负证据保留。完整原件在旧ROOT/analysis/main_scientific_readout/interpretation_20261014.md，不重复分析。强G主要由冻结前端的F学习取得，不能证明完整前端共同更新已成功；BA目标为同T、不是独立S保持，lambda换算非梯度配平。

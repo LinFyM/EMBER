@@ -1,3 +1,15 @@
+## 2026-10-13 21:12 §12实际并行吞吐已核，余wall保守80–130min
+
+owner05统一持有原full-G:gpu01:2及F-only:gpu01:6，已核两实际GPU PID1211783/1302441。A头两有效B4为36.29/63.43s、reserved15.531GiB；B一次timing快照37/72，近五中位63.80s。H2后半更长，余学习保守50–70min，原四读出仍估30–60min并依赖就绪交错；整批余80–130min为窗口，不是已测读出或deadline。原件analysis/parallel_dispatch_20261013.json。原§23原五卡与本批合计6物理卡，共驻未加卡；不追加profile/更新/真实行/选点，整批一次回报。
+
+## 2026-10-13 21:05 当前§12唯一owner05：原full-G连续，F-only C0失败修复后重新发起
+
+owner05/PID2138773于13:02:26Z承接原完整full-G子进程，02旧pending继续封住；04 CPU coordinator已退休，不保留第二等待者/回报。A第一次发起因冻结目录漏configs而在真实协议authority加载处exit1，0训练更新/环境开始，费用.009639808GPUh保留。新冻结目录从同一8dd68689具备src/scripts/configs完整引用，真实load_evaluation_authorities CPU消费者通过后，A唯一attempt002于13:02:31.947015Z在gpu01:6发起；同G38349/fresh Adam/流/72终点不改。launch现场余量26,699MiB、原§23+本批仍6物理卡、data1 used1,573,086,972KiB/limit2,147,483,648KiB。当前实际头两更新吞吐待事件读取，不称已取得有效并行性能。
+
+## 2026-10-13 20:55 当前§12已接入并行：F-only:6 / 原full-G:2，单一owner04
+
+owner04/PID2038359于12:54:09Z承接，只暂停旧CPU owner02的pending派发，原full-G/SSH进程及12:30:50Z起点连续保留、0更新重放。F-only于12:54:15Z在gpu01:6真实发起，micro24/frame16、源clean pushed detached8dd68689；full-G仍源1c424cd8/micro24/frame8。GPU即时余量25,806MiB/原§23+本批共6卡，data1 quota used1,572,204,256KiB/limit2,147,483,648KiB，原64GiB新增峰值可容纳。实际初始吞吐待两次有效更新，固定72/臂与seen576+firstG400/臂不变。readout额外候选gpu01:1/0/7只在依赖就绪与live准入后启用，不空占卡或再加profile。整批owner04唯一回报，owner02旧队列/回报已由superseded.json封住；原§23整批路由独立。
+
 ## 2026-10-13 20:50 §12实测后的并行接续准备（科学合同不变）
 
 两臂discarded profile已完整通过，选micro24；最长B4 F-only54.04s、full-G117.0s，串行学习205.2min只是当时调度估计，不能锁成全批单卡限制。full-G于12:30:50Z从clean1c424cd8实际启动，连续运行保留更新。双节点live确认原§23占gpu01:0/1/5/6/7，加full-G:2合计6卡；GPU02最大余量12,953MiB不足A实测reserved16.918GiB，gpu01:6余量23,806MiB可供A共驻。准备只交接CPU owner、沿原完整进程接续退出与费用，并在新clean pushed detached调度下启动唯一F-only；真实启动另登记，不暂停§23、不增加profile/episode/更新/读出。仍只一条整批自唤醒验收→main路由。

@@ -1,3 +1,25 @@
+## 2026-10-13 21:12 §12真实并行确认与一次剩余wall修正
+
+actual F-only GPU PID1302441与原full-G PID1211783/SSH1743425同时在gpu01:6/2，原full-G从12:30:50Z连续运行；owner05/PID2138773唯一调度和整批唤醒，02只处于STOP保存旧SSH退出状态、04已退出且superseded。A首两个实际B4 36.2937/63.4331s，allocated15.1995/reserved15.5313GiB，通过native更新，无OOM；这是真实授权72流中的更新，不是新增profile。B只读一次timing（不含loss/score）：13:11:21Z已37/72，近五中位63.7955s、reserved18.4668GiB。不同condition/H长度不可当成设备因果比较；后半H2更长，余学保守50–70min，四正式读出30–60min仍估计并可依赖就绪交错，整批余80–130min。主讨论只收本次具体并行/ETA一次回报，之后按原整批/实质边界。
+
+双节点实际资源/启动/失败/原source与计时的完整一次记录analysis/parallel_dispatch_20261013.json；共6张物理卡而非7张，A与原§23 worker202共驻，GPU02当时最大12,953MiB不足A实测峰值。F调用source8dd68689只改CPU Batch调度，模型/数据/目标/Adam/逻辑查询流同原1c424cd8，B原source不热改。原27重放、四discarded B4、72/臂与seen576/firstG400/臂仍同合同；CPU/bootstrap和C0 authority失败原件/0更新/.009639808GPUh完整保留。不读§23中途分数、不停原任务、不重复等待/阶段Queue或发Test。
+
+## 2026-10-13 21:05 当前真正承接：§12 owner05/PID2138773，F-only attempt002 / 原full-G attempt001
+
+原A attempt001于12:54:50Z真实exit1/34.70s，错误为meta_protocol基于代码root引用configs/pi05_source_corpus_v1/source_manifest.json，稀疏冻结树只有src/scripts而缺此文件。失败发生于Runtime authority加载，0G/Adam/正式更新/episode，.009639807675GPUh计费保留；不是科学阴性或OOM。04仍等待原full-G，因此没有自动whole callback。原02 CPU保持暂停（仅保存原SSH退出状态），原full-G GPU进程/SSH持续；将无活跃子进程的04 CPU于05启动中退休，superseded/consumed原件封住旧回报，不重启full-G。
+
+新frozen=/data1/user/ymdai/ember_worktrees/fullg_parallel_authorities_frozen_20261013，clean pushed detached同8dd68689，真实load_evaluation_authorities CPU检查完整通过、元协议数据/标签/科学口径未改。owner05于13:02:26.710779Z实际启动，沿原learn_full_G_72/attempt001的PID/12:30:50Z起点/计算1c424cd8接续，原运行不丢更新、不暂停或重放；F-only唯一attempt002于13:02:31.947015Z在gpu01:6真实发起，源8dd68689/micro24/frame16、同38349 fresh Adam/同数据流。启动dual-node live确认physical6/node6，余量26,699MiB，quota1,573,086,972/2,147,483,648KiB；没有利用率/固定显存门槛。实际首两更新吞吐还待一次事件读取。原§23独立、不读其未完成分数。
+
+ROOT/coordinator/current_owner.json与02/04 superseded记录已指05，03 CPU bootstrap及04的C0失败已consumed；03/04无迟到whole callback。旧不完整frozen开发副本已退休，Git身份和失败原件保留；新source/完整合同/G38349初始化不变。已登记readout候选2/6/1/0/7仅在原依赖就绪、数量/实测余量合规时用，不以world1给剩余读出加串行限制。05唯一整批退出→本实验验收→main，无新profile/额外episode/训练矩阵/Test。
+
+## 2026-10-13 20:55 §12调度已实际接续：原full-G连续，F-only共驻并行发起
+
+唯一owner04=ROOT/coordinator/matched_native_parallel_04/PID2038359，source8dd68689 clean pushed detached，frozen=/data1/user/ymdai/ember_worktrees/fullg_parallel_frozen_20261013。owner04的启动原件于12:54:09.892915Z记录旧CPU owner02/PID1626927已停止派发，旧full-G SSH1743425/实际GPU1211783持续原代码1c424cd8与原12:30:50.770749Z起点，不向GPU/进程组发信号、丢未保存更新、改checkpoint或重放。旧父进程仅保留原子进程退出状态，新的单一CPU owner用pidfd退出事件消费准确原状态并退休旧父；不是第二个活跃整批等待者。旧owner02/superseded.json与current_owner.json已登记，不让旧pending再发F-only或迟到whole callback。
+
+F-only唯一learn_F_only_72/attempt_001于12:54:15.493586Z发起gpu01:6，micro24/frame16、同G38349/fresh Adam/同流，实际首两更新吞吐尚待消费者。该卡启动余量25,806MiB，需求来自A实测reserved16.918GiB+512MiB，原§23五卡/full-G:2/F-only与原worker共驻:6合计仍6物理卡，node6。双节点live与strg01 quota已随job保存，data1 used1,572,204,256KiB/limit2,147,483,648KiB。新运行额外readout候选1/0/7用于原四面板的及时并行，仅依赖就绪且live余量/数量合规才派，不新增环境病例、profile、梯度更新或Test。原§23 owner06不暂停/重启/中途分数读取/新等待者。
+
+并行接续曾发生一次CPU bootstrap03失败：新no-checkout sparse冻结目录索引未初始化，入口import ember即失败，尚无owner/GPU/环境启动。保留owner.log与exit.json，真实exit状态未捕获如实为null，GPUh/episode为0；旧owner与full-G未触动。已初始化同一Git树索引并确认clean detached，03 consumed后才新建04；非GPU恢复或科学重跑。开发worktree/分支集成后退休，正式frozen及所有失败原件保留。整批成功/异常仍仅owner04一次唤醒本实验，验收后一次main。
+
 ## 2026-10-13 20:50 §12正式full-G已运行；实测配置完成，准备CPU调度交接与A共驻
 
 原owner02/PID1626927已完成剩余三个discarded B4，合计仍2/臂；全读取链/双meta分支/Reader/static/F与native控制实际梯度、source/T冻结核验通过。两臂选择micro24，A/frame16最长54.04s、allocated15.237/reserved16.918GiB；B/frame8最长116.99s、allocated17.716/reserved25.502GiB。full-G真实job learn_full_G_72/attempt_001于12:30:50.770749Z在gpu01:2开始，计算源仍clean pushed detached1c424cd8；此刻F-only尚未启动，不把新安排写成已并行。

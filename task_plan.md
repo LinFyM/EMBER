@@ -1,3 +1,7 @@
+## 2026-10-13 22:32 §12两72完整复用，四末点读出已实际并行
+
+唯一owner06/PID2943261/source41bd9587于14:29:04Z进入真实执行，读取两臂原完整72而不重训；四readout于14:29:14–28Z分别launch F-only seen:gpu01:2、full-G seen:6、F-only Val400:1、full-G Val400:7。原§23占0/1/5/6/7，本批共享已有1/6/7及新增2，合计仍6物理卡/node6。所有runtime执行身份/生成实际LoRA已核，seen环境实际submitted，尚无完整576/400成绩声明。GPU2余43,561MiB采用更大物理frame32，同全部frames/noise/8官方slots/group8；其它frame16，未新增profile或科学行。余读出仍估30–60min，原时钟/所有失败2.730081220已结算GPUh保留。真实启动验收analysis/readout_resume06_launch_acceptance.json；05已consumed，根路由owner06单一整批唤醒→实验验收→main，原§23独立/Test封存。
+
 ## 2026-10-13 22:12 §12两臂72完整保存；只恢复原四读出
 
 owner05于14:02:59Z真实exit1，已经按task/ROOT/attempt consumed。两臂均72/288conditions/36task各8访问，source38349/fresh Adam/完整optimizer-sampler-RNG、实际T/查询/noise/类别权重逐行一致；原训练产物全部复用。失败在readout前GPU query CLI exit1，0新增读出episode/held/Test；当时stdout/stderr未保存，不能编造具体节点或失败子查询。现dual-node完整探测已恢复。窄修仅保留每次GPU查询原stdout/stderr/exit及一次有界重探；两节点仍不完整即不launch。下一clean pushed detached owner06只承接两个seen576+两个firstG400，不重训/重放profile或27补录。现原§23占5张，按一个可新增卡位与已占卡共驻，使四原读出及时并行；仍cap6/node6/实测峰值/data1独立quota。

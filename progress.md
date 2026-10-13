@@ -1,3 +1,13 @@
+## 2026-10-13 22:32 §12 actual readout-only owner06已承接四原面板，source41bd9587
+
+owner06/PID2943261于14:29:04.823976Z进入唯一正式执行，frozen clean pushed detached=/data1/user/ymdai/ember_worktrees/fullg_readout_probe_frozen_20261013。原两个72 endpoint/Adam/sampler/RNG及288同流已验收，F训练源8dd68689/B训练源1c424cd8沿原身份保留；后续读取 source41bd9587只修Batch探测记录/有界重探，不改变模型、目标、Query、选择或信息墙。05退出已consumed，原27重放/四discarded B4/两臂72全部复用，不重新训练或采集。
+
+四真实launch：full-G seen在gpu01:6/14:29:14.739906Z，F-only validation在1/14:29:19.114526Z，full-G validation在7/14:29:23.724246Z，F-only seen在2/14:29:28.345267Z。各job保存dual-node live/quota与失败probe原stdout/stderr/exit，只有完整snapshot可launch；原§23五GPU与本批并集0/1/2/5/6/7=6，node6，未新增卡数/利用率或通用显存门槛。GPU2余43,561MiB用frame32增大实际Meta读取chunk，同固定stride5/全部frames/完整probe和官方noise；其它frame16。条件分组与Episode slots仍8，各panel同固定rows，未追加科学profile、forward诊断或env病例。
+
+实际consumer四个execution.json已核world1/slots8/frame实际值；四面板均已生成合法完整LoRA，两个seen实际submitted8个注册episode。此刻不读中间分数或以初批称完整结果；真正400配对/能力得失/总成本待完整结果统一消费。ROOT实际约2.4GiB，64GiB原峰值与strg01独立quota沿每job核验。剩余四读出估30–60min仍非实测整轮；自原05退出至恢复有约26min工程窗口，整批时钟不重置，所有已结算2.730081220GPUh/5582步和失败保留。
+
+唯一整批路由=coordinator/matched_native_readout_resume_06/exit.json→实验01a133e5→验收一次main01a13399；脚本只包含readout，完成/异常一条自唤醒，无第二等待者/阶段Queue/自动后继/Test。开发树及分支已按main集成退休，正式source与全部证据保留。原§23原owner与整批回报独立、不读其中途分数/暂停/重启。
+
 ## 2026-10-13 22:12 §12消费owner05退出：两臂72已验收，GPU查询故障阻断读出启动
 
 coordinator/matched_native_parallel_05/exit.json真实exit1/14:02:59.918282Z，自通知已消费（consumed.json）。training两个actual receipt均exit0，准确承接原full-G退出状态、旧CPU owner02已退休；F-only与full-G完整72/288/36×8及恢复18/36/54/72保存。CPU实际完整checkpoint/metrics消费通过：F-only166 optimizer-owned/state参数，full-G496 owned/485有实际Adam状态，完整所有权/采样/同初始RNG/所需4组实际梯度与source/Actor冻结均逐更新核；未要求每个参数每步非零。两臂condition/T/query_sources/full-noise/类别权重逐行完全一致，正常跨episode及成功/保持复用没有改权重。原件analysis/owner05_training_acceptance.json；只验收训练工程，不由此宣称闭环有效。

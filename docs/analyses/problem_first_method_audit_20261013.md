@@ -231,7 +231,8 @@ H、source先验还是通用endpoint。其后这36用于θ训练，也不能继�
 原件：`full_writer_after24849_20261013/RL_paths/update_*/path.json`与`query/*.json`（含原始复用链），
 以及`terminal24849_student_video_evidence_20261013/analysis/completion_20261013/paired_raw_rows.jsonl`的E臂；
 两root均位于`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/`。
-临时复算`common_E_parent_target_readout.json`只便于复查，不替代正式原件。
+113组复算保留在前一root的`diagnostics/problem_first_method_audit_20261013/common_E_parent_target_readout.json`，
+只便于复查，不替代正式原件。
 
 ## 9. Source与MT起点尚未得到科学裁决
 

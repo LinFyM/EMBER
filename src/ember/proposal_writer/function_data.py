@@ -213,8 +213,17 @@ class FunctionInputs:
                 ('producer_keep', self.history_queries(keeping))]
 
     def batch(self, queries):
+        from lerobot.policies.pi05.modeling_pi05 import resize_with_pad_torch
         language = self.runtime.tasks[self.current_task].authority.language
         items = [processed(self.runtime, q['raw'], language) for q in queries]
+        resolution = self.runtime.policy.config.image_resolution
+        for item in items:
+            for key, value in item.items():
+                if key.startswith('observation.images.') and value.shape[-2:] != resolution:
+                    # The same official resize precedes concatenation of 128px
+                    # offline and 256px real-practice observations. PI05 then
+                    # applies its unchanged range conversion and image masks.
+                    item[key] = resize_with_pad_torch(value.permute(0, 2, 3, 1), *resolution).permute(0, 3, 1, 2)
         batch = {k: torch.cat([v[k] for v in items]) for k in items[0]}
         noise = torch.stack([torch.randn(50, 32, generator=torch.Generator().manual_seed(q['noise_seed']))
                              for q in queries]).to(self.runtime.device)

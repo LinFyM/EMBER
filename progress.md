@@ -1,3 +1,9 @@
+## 2026-10-14 §14已完整授权并实施准备：同T完整BA与native匹配两臂
+
+主讨论直接消费§13全部72响应、六运动维度及实际梯度链；E目标B36全恶化/34端点变化背离T，MT均值收益80%来自task34/H1，H2保持失效，旧v6联合负证据保留。完整原件在旧ROOT/analysis/main_scientific_readout/interpretation_20261014.md，不重复分析。强G主要由冻结前端的F学习取得，不能证明完整前端共同更新已成功；BA目标为同T、不是独立S保持，lambda换算非梯度配平。
+唯一active design§14全文合同已纳：原G38349/fresh同Adam、完整meta-Reader-static-F、原288条件/唯一T/查询与缺类/72B4，D=L_BA、C=L_BA+69.25903014646993 L_native，每条件BA一次。唯一末点各576+400及原72固定函数读取，0新实践/补录/Test/Actor/BCE/中点选优/第二块。原§13四点CLI退休为同一模块末点消费者，原冻结代码/响应只读保留。
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_native_joint_learning，源数据/模型/输入只读复用；CPU36task authority/288流/72固定子集和队列消费者已核。预计新增64GiB与data1 live独立quota可容纳；双节点按实际峰值/吞吐选1–4 ranks，及时并行独立臂/函数/环境队列，不锁单卡或一worker/面板。当前CPU准备，GPU未启动；原派发起90–165min，首有效B4实測后必要修正，不重置时钟。唯一整批/实际边界交main01a13399，无阶段Queue/第二等待者/重复旧通知。
+
 ## 2026-10-14 §13固定72输入回读全部验收；交main科学裁决
 
 唯一owner fixed_inputs_01于18:03:30.849185Z真实exit0，72/72条件、S/A/B/T全部有限响应与原查询/权重/完整noise/原T、216完整LoRA均通过CPU实物验收。实际native10查询5376（学生4032+T1344），原类别位置normal576/T_success512/keep256，缺类别0/8/40保持；0训练/环境/held/Test/选点/补采。整批回执已消费，不新增等待者或重复旧§12/§23。

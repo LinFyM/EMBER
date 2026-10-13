@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-13。**完整方法已选定；§12完整G控制学习已验收并经主讨论科学消费；§13零训练/零环境的固定输入函数回读已完成并验收，当前无在途科学计算，后继由主讨论消费后裁决，不代表完整方法已实施或充分训练。§11接手阴性及独立审阅保持，失败恢复监督已撤下；原§23固定G/θ批已完成并经主讨论科学消费，实际裁决见§10。**
+2026-10-13。**完整方法已选定；§12完整G控制学习已验收并经主讨论科学消费；§13固定输入函数回读已完成并科学消费，当前唯一active为§14同T完整BA与native两臂学习及末点读出，不代表完整方法已实施或充分训练。§11接手阴性及独立审阅保持，失败恢复监督已撤下；原§23固定G/θ批已完成并经主讨论科学消费，实际裁决见§10。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -465,3 +465,64 @@ MT/E/G/T_H1/T_H2在原seen16面板合计340/455/427/457/463。只有task4/13/20/
 
 72原条件完整，216编译/5376 native10查询，0训练/环境/held/Test；原query/weight/完整noise和T身份通过CPU核验，normal/T_success/keep缺0/8/40保持。S/A/B到T均值.002205425/.004634179/.007455544，A16改善56恶化、B15改善57恶化；H1改善/恶化13/23与8/28，H2为3/33与7/29。局部保持正反例、任务/T来源/原T_H1强弱全部保留，不能仅归held迁移或宣布唯一根因；按上文分支交main消费，0自动后继。目标选择角色与实际target.kind分开，results.T_role组采用实际kind，不以名字改变参数身份。
 source d0e9a1f3 clean pushed detached，6worker共用72动态队列，7job均0/.453050442GPUh；派发至GPU退出25.775min、计算5.916min，原时钟与成本保持。原闭环A404/159、B339/150不被诊断选点改变。稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/native_function_fixed_input_readback，results.json及analysis/completion_20261014/{acceptance.json,report.md}；跨轮记录findings476。
+
+
+# 14. 同一T的完整算子与原生功能共同学习：主讨论执行合同
+
+主讨论01a13399-cba2-7da2-9dc6-df430ca80280依据Owner持续自主推进授权登记。§12、§13已完成且科学阴性保留。本合同授权工程准备、完整两臂学习和唯一末点读出，无例行ACK。请串行纳入现有唯一design的新§14及根状态，旧§13计算完成后退休其一次性四点诊断入口，不建立平行Writer。
+
+## 判断、历史与主要干预
+
+§13同输入原权重误差S/A/B=.002205425/.004634179/.007455544，两域均变差。主讨论直接消费全部72个result.pt：E目标36条件B全部恶化，其中34个动作变化与T−S方向的内积为负；A为24个负方向。G目标20条件B15/A18恶化。MT16条件的均值下降主要来自task34/H1，约占MT误差下降的80%；不能把其余极小数值变化称广泛学成。六个运动维度的平均误差亦从.0004921变为A .0017729/B .0044679，不能只归夹爪。代码/完整原件在本目录readback.py/json，0新forward/GPU/环境。
+
+现有证据削弱稀疏端点动作误差直接驱动原共享G即可获取和保持控制的充分性；尚不唯一识别优化步长、跨条件干扰、表示变化或目标覆盖。原G在相同查询中已有较好函数，不是从零等它学会。完整BA提供每层整个实际作用矩阵的目标，能约束有限查询未直接约束的hidden方向；同一T的BA误差为零时，其native动作函数也与T一致。这是兼容性与局部作用解释，不是可学到、泛化或成功保证。
+
+历史必须继承：CP432/38349确实BA-only，后来的普通FM是替换目标；旧v6-prior却真实同更新FM+全局BA方向/能量+ranking，134→127→105→123；ECP也因正交漂移未获净益。因此不能宣称首次联合或默认参数约束会保护强G。本次用已实际获得强G的逐层D归一化完整Frobenius算子目标，并与同一个T的native10响应联合，无ranking/反事实训练。它约束T而非独立保护S，不得改称源G保持已解决。
+
+唯一主要比较为同一完整G、同初始化/输入/优化器的D=operator_only和C=operator_plus_native。D是必要强参照：C只有超过D及原G/MT才支持功能项有用；C≈D不把全部收益归动作监督。没有新架构、任务、视频controls或自动BCE/Actor。
+
+## 两臂共同来源和精确目标
+
+1. 原完整G38349：/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009。两臂都从这个完整psi初始化，重新建立相同fresh AdamW；不从退步A72/B72接续，不承接其Adam。source/MT基础、Actor、全部T冻结。meta双支、Reader、static、F共同接受各自目标的真实梯度。
+2. 原§12 parent ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification。原36task、288个condition、H1/H2、每域4个原有序video、完整parent/H、唯一T及缺类别全部原样复用。不是新task或目标重选；choice_label和实际target.kind分别保持。教学仍action-hidden，T/查询标签不进入G条件。
+3. 精确复用OperatorObjective及operator_squared_error：38层等权，L_BA=mean_l(||s_l B_P A_P−s_l B_T A_T||_F²/D_l)。D_l和scaling只读源G ROOT/operator_scale.json，来自原36合法教师的冻结尺度；不按本批target.kind或MT零能量重算分母。目标参数就是该condition同一T，不能一项用E、一项用MT/G。
+4. C的L_native保持§12原函数：每个实际可用类别内沿原query/episode/权重均值，类别等权，完整各自native10、纯原50×32 Gaussian及前5×7归一化动作MSE。所有原normal/T_success/producer_keep和空类别保留，没有失败接手、动作FM插值或新标签。D不做native训练forward，但保持完全相同condition/T流。
+5. 固定L_D=L_BA，L_C=L_BA+69.25903014646993*L_native。系数只用源S在§13事前固定72训练条件的两种初始误差换算单位：b0=.15274561323259583，f0=.0022054252407168766，lambda=b0/f0。CPU计算复用原S LoRA与同一OperatorObjective，无模型运行；本目录operator_calibration.py/json为原件。两项初始均值同量级不等于梯度同量级。系数此后固定，不用A/B/C/D成绩调权、按task归一化、动态调权或小扫。
+6. 每condition只加一次BA项，不能随类别/query/microbatch重复加。逻辑B4和task权重严格保持；loss/4后全rank求和，依赖参数的features/memory每次更新重算，目标支路detached。沿现有消费者反传，不用新输出梯度代理或teacher-action输入。
+
+## 有限学习、单末点和原始记录
+
+每臂72个有效逻辑B4，共288个condition，使用原logical_tasks(update)和visit=update//9顺序，每9更新36task各一次。每task8次完整原覆盖，不洗牌或改变H1/H2组织；两臂完全一致。fresh AdamW lr1e−4、betas(.9,.95)、eps1e−8、weight_decay1e−4、clip1，无scheduler变化或warmup。完整checkpoint在18/36/54为恢复，72为唯一读出，禁止中点选择、融合或追加第二块。
+
+记录BA和native分项的实际原权重值、组合loss、既有梯度所有权/finite/峰值/时间和完整sampler/RNG/optimizer，不新建逐tensor审计或探针框架。每次首次真实B4既是有效更新也是消费者/吞吐检查，成功即计入72，不能作为discarded profile重做。若工程失败，保留失败/实际部分状态并只恢复未完成项；模型/目标语义不确定须报告主讨论。
+
+物理world_size由已实现B4分配和真实吞吐选择1至4，不跨节点拼DDP。两臂可独立并行；不因同为完整G而锁单卡，也不为扩卡中断接近完成的学习。NCCL_P2P_DISABLE=1、GPU-local NUMA/deferred NCCL沿原合同。C原24查询物理batch、frame chunk据实际余量选择；D使用真实教师/H/算子消费者测量，不用C的执行峰值冒充D。
+
+## 必须完成的读出和计算范围
+
+每臂唯一72末点均做原seen36×16=576和原strict firstG validation8×50=400，总1952完整最终episode。只用原MT-H1/指定教学编译首次G；原MT、G38349、§12 A/B结果只读引用，不使用旧后续G-H/Actor选择替代新输出。所有原scene/state-video/env-policy RNG、50条teacher无放回、own-MT实践与final状态分离保持。旧MT initial_proprio缺字段限制照实保留，不补新MT或实践。
+
+同时每臂在§13原72条件做一次末点固定输入函数读回，原1344类别位置/权重/noise/T保持，源S/A/B/T已有响应只读复用，不重新运行旧点或T。新增每臂72编译/1344 student native10；其中36个H1编译与seen指定条件相同，直接复用合法新LoRA用于seen。其余held各400独立编译，故训练之外新增完整LoRA上界2*(72+400)=944；不存在中点或其它对照。训练C学生/T各至多6912 native10查询，D训练无native查询；实际数随原类别缺失如实计账。无需为凑上界加数据。
+
+每臂分析须同时给出固定查询的BA/native初末变化、H1/H2、T来源/原T强弱与全部任务分布；真实控制给per-task/suite、breadth、retained/gained/lost/churn和对强MT/原G/D-C的配对。72条件是原288的一部分，不能冒称全训练目标曲线。函数值只定位，不以它挑模型或取代576/400。
+
+无新teacher/MT/G实践、无T成功补录、无held共享梯度、无Test。完整环境调用1952；仅工程重试允许至多16个额外partial starts，总physical starts≤1968，总环境steps（含dummy及失败）≤1,043,040。科学失败不重跑，不替换负例。所有实际数量、未知与费用沿统一ledger，训练编译次数与末点944分开记，不重复核算原§12/13成本。
+
+## 事前裁决与停止
+
+- D能保住/改进而C退步：降低当前native10端点项的优先级，不调lambda/LR救C；D若只回到原G不称新的能力获取。
+- C优于D，并在原G/MT之上有覆盖与合理保持：支持同T算子约束下功能学习有用；仍只取得首次G证据，完整实践修订、相邻稳定/视频-H必要性与Test另须真实结果裁决，不自动晋级。
+- 两臂都未有效学习或丢失原有控制：停止在这套原读取链/MT中心block输出上直接共同更新、靠重配同类监督实现进步的当前主假说；不能换版本名称继续加loss、扫参数或续块。
+- 两臂相近且只恢复旧水平，或仅seen改善而held仍弱/集中：承认稳定化或训练域进步的边界，不能把修复退步当最终目标进展，不沿同目标无限续训。
+
+这些是主讨论消费完整幅度/不利个例后的方法取舍，不预设一个内部loss通过阈值。训练点和qualification arms已固定，不能事后用union、选择较好task或视频制造结果。
+
+## 实施、资源、时间与交付
+
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_native_joint_learning。代码和state/Git由实验01a133e5独占闭环。复用原FunctionInputs/OperatorObjective/native_actions与完整G trainer/evaluator，一个canonical运行面；§13旧四点CLI按生命周期退休，必要相同读出算子由当前消费者复用。actual消费者通过后clean push、新clean detached freeze，旧训练和诊断冻结树不热改。source checkpoint/大资产/旧原行只读引用。
+
+每次launch live核两节点、当前所有项目占用、实际峰值和data1独立quota/目录/共享容量。总6/8、单节点6，不动他人任务。新增峰值保守估64GiB，按实际机制/现有余量准入，不复制大型基础资产。准备好的D/C训练、生成、环境读出及时并行；持久worker共享长任务优先的就绪队列，完成的worker接续未完成工作，不能静态一worker/面板。训练world不是整批并发上限，不等凑卡或用dummy填卡。
+
+初估工程20–40min、两臂学习30–60min、完整末点35–60min及函数回读约5min，合计约90–165min；依据原full-G单卡81min、现成1至4rank逻辑B4和已测6worker读取，环境时长仍有不确定性。计算可依赖就绪交错；首次实际有效B4/队列吞吐若使预估显著变化，给一次具体更新，不重复心跳或重置派发时钟。没有GPUh硬限，真实费用完整记录，不因此扩科学范围。
+
+一个唯一owner执行→整批退出/真实异常→实验验收/串行Git→一次主讨论回报。不发阶段ACK/Queue、不设第二等待者。§12/13原回报按ROOT/attempt已消费，不重启。当前合同授权全部工作，不等主讨论再次许可；完成后由主讨论科学接续，执行者不自动开后继。

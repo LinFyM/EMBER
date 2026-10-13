@@ -5260,3 +5260,8 @@ Owner11:50授权分析后自主执行，main据§22阴性与旧θ偏好/曝光�
 
 原36task×H1/H2×指定教学、S38349/A72/B72/T全冻结，72原行和类别/weight/noise/原参数身份完整，216 LoRA/5376 native10查询、0训练/环境/held/Test。T误差均值S/A/B=.002205425/.004634179/.007455544，A16改善56恶化、B15改善57恶化；两个域均值均未改善，H2普遍损害及H1保持局部正例/均值中位数差异都保留。完整72分母/缺类0-8-40和目标来源分层见findings476，不把科学阴性当bug、唯一根因或自动后继。
 唯一source d0e9a1f3 detached、owner fixed_inputs_01 exit0，首真实条件实测保留，随后6持久worker共用长输入优先队列，7job均0/.453050442GPUh；原派发至退出25.775min（GPU owner5.916min），实际reserved峰值21.701GiB。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/native_function_fixed_input_readback，results/outputs/counts/SQLite预算与analysis/completion_20261014保留，唯一整批交main自主裁决。原§12/§23已消费、Test关闭，没有自动第二块/BCE/采样/新等待者。
+
+
+## 2026-10-14 §13完整科学消费，§14共同算子/功能匹配批授权
+
+§13 main已直接读取72实际响应及源码，E目标36/B全恶化、运动维度与task34 H1/H2冲突并存；完整论证在canonical ROOT/analysis/main_scientific_readout/interpretation_20261014.md，旧v6/ECP联合阴性保留，不称首次联合/保证保护强G。新的design§14授权同G38349/fresh同Adam/原288与唯一T的D(完整BA)和C(同BA+69.25903014646993 native10)，完整前端/F共同学习72B4，各唯一576/400与72固定函数读回。当前CPU准备，不称GPU已启动；source/大资产只读复用，§13旧四点入口按消费生命周期退休，0新实践/补录/Test/第二块。

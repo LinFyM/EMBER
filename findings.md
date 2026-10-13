@@ -11938,3 +11938,10 @@ main原件main_supervision_coverage.json：72 parent/H的角色E38/Gparent20/MTp
 H1 keep12的S/A/B均值.007113396/.000112536/.000029681、改善A7/B6，但中位数.000002511/.000009423/.000002716，不把均值下降写成普遍收益；H2 keep20均值.000009479/.006312168/.008090178，A0改善20恶化、B5改善15恶化。所有任务/目标来源/原T_H1强弱分层及正负例保留。选择角色E38/G20/MT14与实际target.kind E36/G20/MT16分开，results.T_role组按后者；名字不能改变target_id或实际参数源。
 216完整LoRA、1344类别位置/5376 native10查询（含一次T）通过实际消费者，原query source/权重/完整noise身份与原训练receipt一致；72分母normal/T_success/keep缺0/8/40不补挑，重复成功经历不算独立证据。能力仍沿已完成A404/159与B339/150，不按MSE选择新点/抵销闭环负例。
 6持久worker共用长输入优先队列，7job均0，.453050442GPUh/计算5.916min/派发至退出25.775min，reserved峰值21.701GiB/新增约.535GiB，source d0e9a1f3 clean pushed detached。完整ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/native_function_fixed_input_readback，results.json及analysis/completion_20261014/{report.md,acceptance.json}；main负责科学消费，不自动续块、BCE、选择器、采集、controls或Test。
+
+
+## 477. §13主讨论科学消费与§14有界共同学习授权（2026-10-14）
+
+主讨论原72响应CPU分解确认E目标36中B全部恶化/34个变化方向背离T，A24负方向；G目标20中B15/A18恶化。MT16的均值改善约80%来自task34/H1，与其H2原G保持失效并存；运动六维亦恶化，不能只归夹爪或held。完整特征—算子—梯度—部署解释及旧v6/ECP联合负证据直接引用§13 ROOT/analysis/main_scientific_readout/interpretation_20261014.md和readback.py/json，不重算。强G的已获收益主要是冻结前端后F学习，不能当完整链共同更新已成功。
+新§14两臂同原G38349/fresh同Adam及288完整输入/T/72B4，D为原逐层归一化完整BA，C同BA+固定69.25903014646993 native10动作项。原b0=.15274561323259583/f0=.0022054252407168766只换算源初值单位，非梯度配平或性能调权；BA与native同T，BA不是独立保护S。有限比较会按D/C/原G/MT闭环及固定查询初末联合裁决，若两臂失败停止在原读取链/MT中心输出上重配同类监督的主假说，不改名继续补loss/扫参/续块。
+执行合同为design§14、两臂唯一末点各576/400及原72函数回读、1952新最终episode/physical≤1968/steps≤1043040、0新实践/Test。当前仅登记与CPU实施，不称模型已学成；工程独占、统一队列与唯一整批回报按progress，旧§13入口退休且原件保留。

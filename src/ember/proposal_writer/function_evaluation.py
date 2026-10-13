@@ -14,37 +14,10 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_eval_queue import (EvaluationTask, EvaluationShard, build_cost_balanced_shards,
     initialize_queue, claim_next, complete_job, fail_job, publish_json_exclusive, queue_summary)
 from ember.writer.runtime import autocast
+from .contract import TASKS
 from .function_data import CHECKPOINT_SCHEMA
 from .learning import HistoryCache, memory_peak
 from .analysis import paired
-
-
-def prepare_panels(args):
-    audit = read_json(args.input_audit)
-    held = read_json(args.held_prefix_audit)
-    original = read_json(Path(held['source_formal_panel']))
-    if held['counts']['indexed_prefix_compatible'] != 400 or held['counts']['missing_paths_H_receipts_scenes']:
-        raise ValueError('all400 compatible real own-MT prefixes required')
-    rows = [dict(row, H=row['prefix'], condition_key=row['condition_id'],
-                 MT_source=original['MT400_source']) for row in held['rows']]
-    write_json_atomic(args.root/'readout_panels/validation.json', dict(complete=True,
-        role='validation', rows=rows, environment=original['environment'],
-        reference_first_G=str(Path(held['source_firstG_panel']).parent/'results.json'),
-        inherited_initial_proprio_limitations=held['limitations']))
-    run = read_json(args.root/'run_contract.json')
-    seen = []
-    for task in audit['fixed_288_panel']['rows']:
-        receipt = read_json(Path(task['MT_G_query_receipt']))
-        context = task['contexts'][0]
-        for state in receipt['query_states']:
-            seen.append(dict(task=task['task'], init_state_id=state,
-                teacher_demo=task['G38349_designated_demo'], H=context['H'],
-                condition_key=f"task_{task['task']:04d}", noise_root=receipt['policy_env_noise_root'],
-                registered_scene=None, MT_source=task['MT_G_query_receipt']))
-    write_json_atomic(args.root/'readout_panels/seen.json', dict(complete=True, role='train',
-        rows=seen, environment=run['environment'], expected_rows=576,
-        source_readout_is_not_independent_T_selection=True))
-    write_json_atomic(args.root/'inputs/held_prefix_audit.json', held)
 
 
 def make_queue(root, arm, role, *, workers, group):
@@ -143,6 +116,24 @@ def generated_state(runtime, histories, destination, entry, checkpoint):
             generation = read_json(destination/'generation.json')
             if generation['checkpoint'] != str(checkpoint) or generation['teacher_demo'] != entry['teacher_demo']:
                 raise ValueError('existing condition LoRA belongs to another endpoint or video')
+            return weights
+        if 'prior_fixed_input_root' in read_json(runtime.root/'run_contract.json') and entry['task'] in TASKS:
+            # The endpoint reader compiles this exact H1 condition once for both consumers.
+            fixed = read_json(runtime.root/'fixed_input_manifest.json')['conditions']
+            matches = [c for c in fixed if c['task'] == entry['task'] and c['context'] == 'MT_H1'
+                       and c['teacher_demo'] == entry['teacher_demo'] and c['H'] == entry['H']]
+            if len(matches) != 1:
+                raise ValueError('seen first-G must reuse exactly one matching registered H1 compilation')
+            arm = read_json(Path(checkpoint)/'manifest.json')['arm']
+            prior = runtime.root/'outputs'/arm/matches[0]['condition_id']
+            done = read_json(prior/'complete.json')
+            if not done['complete'] or done['checkpoint'] != str(checkpoint):
+                raise ValueError('seen needs its completed sole-endpoint H1 LoRA')
+            weights.symlink_to(prior/'G.safetensors')
+            write_json_atomic(destination/'generation.json', dict(complete=True, checkpoint=str(checkpoint),
+                teacher_demo=entry['teacher_demo'], own_MT_H=entry['H'],
+                one_complete38_target_LoRA=True, no_Actor_or_practice=True,
+                reused_fixed_input_compilation=str(prior/'G.safetensors')))
             return weights
         history = histories.get(entry['H'])
         if (len(history.episodes) != 1 or any(r['parameter_ref'] != 'MT300' for r in history.records)

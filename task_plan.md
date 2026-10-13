@@ -1,3 +1,9 @@
+## 2026-10-14 07:04 §15以已完成整批资源事实恢复四卡frame16
+
+owner03/source51924861完成73…83共11个B4后，在84反传因rank3进程41.37GiB/外部2.44GiB余量不足OOM；0环境/完整新checkpoint。11未保存更新及44已完成编译、失败组≤4编译保留于attempt003，并与前两失败累计计费。不能用首B4的39.70GiB判整体稳定，也未逐阶段把GPU空转当进度。
+已按必要资源调度一次读取旧完整D72的显存/时间字段（未复算分数或loss）：frame8全部144 rank-row最大reserved19.758GiB/allocated17.453GiB，mean35.037/max72.114秒。这支持保留world4、下一frame16；32/64不再重试，旧frame8保留为已完成范围的实际物理参照。模型/监督/optimizer/目标不变，使用同clean pushed detached51924861及新sealed owner04物理参数；无需为仅CLI配置复制冻结代码或新实验面。
+仍从唯一完整D72到144/72保留更新/288原流，失败物理重算全部另账，976末点/992 starts/525760步/0新实践-native10训练-Test保持。最新实际异常及准备/剩余wall如实交main，不等重复工程ACK；一个owner整批或异常唤醒、无第二等待者/阶段Queue。
+
 ## 2026-10-14 06:53 §15首有效B4通过后frame64 OOM；四卡frame32恢复
 
 owner02/source df7610f7首有效73(global72/v0)确实承接完整D72/485Adam，两meta支/Reader/static/F全信用、D native0、4条件/4次BA，最长11.843s/最大reserved39.699GiB。下一组反传实际进程43.60GiB OOM；原33.14GiB不完整失败峰值不足以预测完整D64，不能继续当安全峰值。02于22:50:46Z exit1，累计.121221827GPUh、0环境，原件保留并consumed。

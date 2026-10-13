@@ -80,6 +80,12 @@ def run(args):
     if args.check_only:
         print(json.dumps(dict(complete=True,case_count=8,slot_count=12,all_train24=True,all76_factor_shapes_valid=True,
             shared_E=teachers,zero_GPU=True,zero_episode=True)));return
+    amendment=read_json(args.root/'engineering_start_amendment.json')
+    if (amendment['max_complete_scientific_rollouts']!=32
+        or amendment['max_physical_episode_starts_including_failed_engineering_starts']!=40
+        or amendment['failed_settling_steps_accounted_upper_bound']!=80
+        or amendment['max_total_environment_steps_including_failed_settling']!=10640
+        or amendment['case_identities_and_rng_changed']):raise ValueError('explicit engineering recovery amendment required')
     args.root.mkdir(parents=True,exist_ok=True)
     if (args.root/'complete.json').exists():raise ValueError('completed fixed diagnostic cannot restart')
     code=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
@@ -92,7 +98,8 @@ def run(args):
         max_original_episodes=8,max_paired_continuations=24,max_episodes=32,max_environment_steps=10640,
         snapshot_schema='ember_actual_practice_snapshot_v4',snapshot_index_rule='frozen fractions of actual replay replan count; original case role retained if outcome changes',
         registered_snapshot_denominator=12,updates=0,new_G=0,held=False,Test=False,
-        extra_policy_forward_for_action_comparison=False,added_peak_GiB=4,slots=args.slots))
+        extra_policy_forward_for_action_comparison=False,added_peak_GiB=4,slots=args.slots,
+        engineering_start_amendment=amendment))
     context=initialize_distributed(require_numa=True,defer_process_group=True)
     runtime=Runtime(context.device,root=args.source_root,frame_chunk=16,task_ids=TASKS)
     runtime.policy.eval().requires_grad_(False)
@@ -173,13 +180,21 @@ def run(args):
                 first_chunk_normalized_action_max_abs=float(difference.abs().max()),action_difference_is_not_causal_correctness=True);paired.append(item)
         actual_rows=[value[0] for value in replays.values()]+[item[arm] for item in paired if item['valid'] for arm in ('P','E')]
         steps=sum(r['environment_steps'] for r in actual_rows)
-        if len(actual_rows)>32 or steps>10640:raise ValueError('registered interaction bound exceeded')
+        failed_steps=amendment['failed_settling_steps_accounted_upper_bound']
+        failed_starts=amendment['authorized_failed_engineering_starts_upper_bound']
+        if len(actual_rows)>32 or len(actual_rows)+failed_starts>40 or steps+failed_steps>10640:
+            raise ValueError('amended interaction bound including failed starts/settling exceeded')
         if runtime._generator is not None or runtime._actor is not None:raise ValueError('diagnostic initialized Writer')
         result=dict(complete=True,registered_slot_denominator=12,counts=counts,slots=paired,replays=[x[0] for x in replays.values()],
             original_replay_episodes=8,paired_continuations=len(actual_rows)-8,total_episodes=len(actual_rows),actual_environment_steps=steps,
+            accounted_total_environment_steps_upper_bound=steps+failed_steps,
+            physical_episode_starts_upper_bound=len(actual_rows)+failed_starts,
+            actual_failed_settling_steps=None,failed_settling_steps_accounted_upper_bound=failed_steps,
+            failed_engineering_starts_upper_bound=failed_starts,engineering_start_amendment=amendment,
             updates=0,new_G=0,held=False,Test=False,all_labels_outside_original_H_and_bank=True,phases=phases,
             no_first_chunk_error_or_new_LoRA_causal_claim=True,code_commit=code,peak=memory_peak(runtime.device))
-        write_json_atomic(args.root/'results.json',result);write_json_atomic(args.root/'complete.json',dict(complete=True,results=str(args.root/'results.json'),code_commit=code,total_episodes=len(actual_rows),actual_environment_steps=steps,no_automatic_successor=True))
+        write_json_atomic(args.root/'results.json',result);write_json_atomic(args.root/'complete.json',dict(complete=True,results=str(args.root/'results.json'),code_commit=code,total_episodes=len(actual_rows),actual_environment_steps=steps,
+            accounted_total_environment_steps_upper_bound=steps+failed_steps,physical_episode_starts_upper_bound=len(actual_rows)+failed_starts,no_automatic_successor=True))
         print(json.dumps(dict(complete=True,counts=counts,episodes=len(actual_rows),environment_steps=steps)))
     finally:runner.close();runtime.close()
 

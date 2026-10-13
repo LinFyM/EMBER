@@ -1,3 +1,21 @@
+## 2026-10-13 18:04 当前：§11接手诊断完整结束，原§23继续B18→唯一400
+
+§11 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/nonheld_takeover_feasibility 于17:51:10实际exit0，32个完整rollout（8 P重放+24 P/E续跑）、12/12登记v4 snapshot槽位和原行全部齐全；8个History已逐一读回，参数出处、初态、snapshot/index、剩余horizon、完整native noise和5x7 finite预测实际消费者核验通过。P败/E成0、P成/E败0、双方成3/双方败9，无缺项。原登记失败8槽全双方败；原登记成功4槽为3双方成/1双方败。task4/state1、25/state33原成功行重放变失败已保留，不补采；按实际重放失败10槽看，仅task4原成功槽双方续跑成，无E独有恢复。
+
+这些四task/train24固定案例未取得E独有恢复的证据，不能扩为总体恢复率或新Writer结论。统一T按主讨论原query16规则为4/34取P、17/25取E；17的一成功支撑双方保留、其两失败支撑及25全部三槽未恢复。三双方成功槽首native预测RMS差.341466/.030566/.013285，只描述已产生动作，不认证首chunk错误/纠错因果/新LoRA兼容。0新G/更新/held/Test，原§23 H/bank全只读，结果正负均停，无自动训练/新面板。
+
+科学实际环境步5951，第二工程失败准确reset/settling未知按明确addendum80步预扣，保守总步6031≤10640；32完整科学rollout加未知失败启动的physical starts上界40≤40，原panel整数保留。两GPU失败.026912000GPUh和03 CPU准入0GPU/交互、原source/exit/consumed全留，完整计费.142699175GPUh；有效执行416.83秒/6.95min，原08:39:45Z派发至退出71.42min（准备/修复约64.5min），显著超原20–35min总估计，不重置时钟。CUDA峰allocated10.005/reserved13.770GiB、RSS12.577GiB，输出约.459GiB。实际8环境波次按22,723MiB现场余量选择，更大16预计34,200MiB不容纳；无额外forward/profile/科学行。
+
+原件panel/amendment/contract/history/12snapshot/32原行/results/complete均在ROOT，验收ROOT/analysis/acceptance.json、完整交接analysis/handoff_report.md，实际producer clean pushed detached8e718be2。自通知完整回报已实收且consumed判重；诊断GPU/环境子进程已全部退出。临时诊断入口按完成生命周期从main退役，Git及冻结producer保留；未新建平行Writer或测试框架。raw phase.cumulative_runner两阶段都指向终态总量，分析只使用各phase独立time/plans/steps和整批native总量，记录中已说明；NFS IPC socket退出清理警告不改变实际exit0/原行，日志保留，不追加rollout。
+
+原§23唯一owner06/PID3514753仍存活/无exit，原pair72/A180和最近核验完整B3继续复用，固定G38349/F Adam/bank9、logicalB4/seen2+novel2及全G/θ/baseline/Adam/RNG承接、B18/唯一strict correct400/Test关闭合同不变。没有陪跑重复读进度或另起waiter。原批整批退出仍只可靠唤醒01a133e5一次，我验收后完整交唯一主讨论01a13399；旧01a12bb6归档不恢复。
+
+主讨论最新b9e0acbe三个docs（含b510方法取舍及本次事前工程例外）已串行集成。完整新方法经独立审阅、已选定，但未active train；本次只交接既定诊断，由主讨论按原件决定恢复项范围，不自动训练新BCE/G设计。根三状态和工程/Git仍本session独占。
+
+分支清理完成，6本地/4远端；保留三个未合并旧工作、active docs、operator原readback依赖和main。44旧本地/15旧远端及2已结束clean开发树已退休，28旧SHA经tree不变9f712eda纳入main祖先，正式资产/原件/冻结树保留。资源保持原6/8总量、单节点6卡；利用率/固定显存筛选取消，共驻不挤掉他人任务。
+
+以下为历史时点记录。
+
 ## 2026-10-13 17:40 当前：原§23独立执行；§11接手诊断工程恢复获明确有界裁决
 
 当前有两个独立授权任务。原§23 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349，唯一owner06/PID3514753按原合同继续B18→唯一strict correct400；最近核验完整B3已保存。pair72/1260新增episode、seen1152只读query和A180全部复用，G38349/F Adam/bank9冻结、logicalB4/seen2+novel2及全G/θ/baseline/Adam/RNG承接不变，B18/400尚未完成，Test关闭。不陪跑反复读取进度。

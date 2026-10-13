@@ -11861,3 +11861,12 @@ Owner保留6/8总卡及单节点6卡数量上限，取消利用率与固定显�
 两实际GPU消费者先后因显式snapshot=None不符旧engine请求、TMPDIR过长导致torch IPC AF_UNIX失败，原件/0.026912000已计GPUh保留。第二失败不是0真实交互：8 start已提交，尚无native forward/控制动作，但reset/settling实际未知；main09:35:48Z addendum据此显式允许32完整科学rollout加至多8失败启动，physical starts≤40，失败settling按80步预扣，总环境步仍10640。消费者和complete须保留未知与上下界，不排除失败后宣称总physical starts≤32。再次超边界不能自动扩预算；短TMPDIR/字段和计账窄修不改变模型/信息墙/label/噪声合同。原20–35min总估计已超，真实08:39:45Z派发时钟不重置，当前预测按实际消费者修订。
 
 主讨论09b2a6ae只用旧400/实践计数的固定保守规则165→161、切146/16得20失，作为主讨论已算CPU证据集成，实验session不重复复算或据此开新control。详细原件与限制见已合入的三个method audit docs；完整训练候选尚未active。
+
+
+## 469. 固定失败访态尚未提供E独有恢复支撑，成败改变和原登记分母完整保留（2026-10-13）
+
+授权§11四train24 task/8重放/12槽P/E/32完整rollout已实际齐并验收：P败/E成0、P成/E败0、双方成3/双方败9，无缺项；原失败8槽全双方败。task4/state1及25/state33原成功重放转败保留；按实际重放失败10槽看，task4原成功槽P/E都续跑成，非E独有恢复，余9都败。实际重放成功17/34的2槽双方成，不能以最终都成认证新LoRA兼容或首chunk纠错。当前T按既有标准query16为4/34取P、17/25取E；17一个保持支撑可用，其失败两槽及25全部三槽不提供恢复资格，不能将4/34 E正例误记为当前T额外恢复。该面板有意选定，负证据只降低这些失败访态的恢复监督依据，不能推成所有E/H/完整函数监督无用。
+
+所有8History/12v4 snapshot与index/24续跑的剩余官方H、完整noise/同初态/实际参数引用/5x7 finite动作已核，源初態proprio差0；保留原P首chunk小数值差与成功转败，不为逐位复刻追加forward/改变dtype或episode。三都成槽实际首预测RMS差.341466/.030566/.013285只描述目标内容。0新G/更新/held/Test，源§23 H/bank只读。实际5951环境步含正常dummy80，第二失败准确交互未知预扣80得保守6031≤10640；32完整科学rollout与含失败physical starts上界40分别报告，全费.142699175GPUh/有效6.95min，派发至执行退出71.42min显著超原20–35min，准备/工程原因与两真实失败不抹除。
+
+原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/nonheld_takeover_feasibility，完整report/acceptance在analysis/，producer clean pushed detached8e718be2保留。phase.cumulative_runner为可变对象终态总量，不解释为分阶段计时；用各phase独立seconds/plans/steps及整批native数据。结果正负均停止，临时消费者入口按已结束生命周期退休，原§23 owner06/B18/唯一400独立继续，不能把小诊断完成写成原批或方法目标完成。

@@ -5223,3 +5223,12 @@ main独立消费24849全4032逻辑行，425对MT340及广泛保持/覆盖满足�
 
 Owner11:50授权分析后自主执行，main据§22阴性与旧θ偏好/曝光事实登记原完整G38349固定的72task选择学习：seen36/novel36各半、真实pair72/A180/B18/唯一完整correct400，Test封存。原θ/Adam/baseline/RNG承接，G166 Adam/cursor38349及bank9只读，不reset、不改三head目标或加G/Q梯度。新source任务已经spec审计排除19等价项，run-scopedauthority不扩global52，新增36仅33语言/source已见/G未训。
 当前仅CPU完整Runtime/源state及optimizer承接、元数据与数据消费者准备，未宣称新GPU学习或闭环。事前原文/冻结选择及补充在/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/main_contract；机制/停止见coordinate分析§23/findings465/design§23，旧§22/4ed61和负结果保留。Owner随后取消今晚23点（11点早取消），原5–8h仅预估，不复活guard或扩批。
+
+
+## 2026-10-13：固定non-held接手32次验证完成，未取得E独有恢复
+
+主讨论problem-first设计§11的4/17/25/34/train24、8条保存G38349的P重放/12个实际v4槽位/P与原共同E24续跑实际完成，producer8e718be2、exit0、0新G/更新/held/Test。12槽全部配对齐：0 P败/E成、0 P成/E败、3双方成/9双方败；原登记失败8槽全双方败。task4/state1和25/state33原成功重放转败保留，前者snapshot续跑P/E都成，不能计为E独有恢复。原有成功支撑17/34均保持；3都成首预测动作不同只作内容，不认证纠错或LoRA兼容。面板有意选定，限制总体外推；由主讨论消费并修订恢复监督的实际覆盖，不自动训练候选。
+
+两GPU接口失败snapshot=None/长TMPDIR AF_UNIX及原source/费用全留，第二失败准确settling未知按明确事前amendment80步记：32完整rollout、physical starts上界40、5951科学环境步+80保守6031≤10640、全批.142699175GPUh。03仅CPU峰值准入失败0GPU/交互。派发08:39:45Z→有效启动09:44:13Z→exit0 09:51:10Z，准备/修复64.5min、GPU有效6.95min/总71.42min，原20–35min估计已超，不重置时钟。临时入口验证完成即退休，Git/冻结producer及全部原件保留，原§23独立继续。
+
+稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/nonheld_takeover_feasibility；panel/amendment/run_contract、8个replays History/row、slots/12snapshot/24原行、results/complete、coordinator全部失败/exit/consumed/GPU费用；完整解读analysis/handoff_report.md、实际消费者验收analysis/acceptance.json、原P重放差异analysis/source_replay_comparison.json。

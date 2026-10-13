@@ -1,3 +1,9 @@
+## 2026-10-14：§14两臂共同学习完整交付，BA单臂held净增与函数拟合恶化并存
+
+同源G38349/fresh同Adam/288条件/72逻辑B4的D仅BA与C同BA+native全部完成，seen/held为D414/175、C393/158，原G427/165、MT340/153。D held对原G得29失19/净+10，对MT净+22；C对原G净−7，对D−17，seen两臂对原G−13/−34。D覆盖7/8但task23仅1/50且39仍0，MT四suite48/46/35/24、D51/61/38/25、C46/49/33/30；全部保持/不利个例保留。固定72 BA两臂5改善67恶化，native D12/60、C13/59；一次held净增不证目标总体拟合、相邻稳定或视频-H信用，main按事前§14消费，0自动调权/续块/后段/Test。
+唯一owner03于21:41:38Z真实exit0并consumed；完整72/checkpoint/前端及meta双支信用/冻结组、原query-T-noise-权重/缺类、1952原行与配对/944完整LoRA/144函数读回通过CPU实物验收。全账1952提交返回/477689步/未知0，总14.577632926GPUh含两原OOM/29 GPU收据；CPU误拦和未落盘native每student/T≤96保留。原派发至退出190.992min、seen恢复40.753min，六卡动态接队列最终9seen作业，无空占卡或第二等待者。计算源92d0a234、seen/accounting045ee602，两棵clean detached原件保留；0新GPU/环境验收。
+canonical ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_native_joint_learning，results.json与analysis/completion_20261014/{report.md,acceptance.json,verify.py}保留完整原行/分布/费用/身份；最终main及唯一交主讨论回执见同目录complete.json。当前有限批完成，完整EMBER目标未完成，后继由main科学接续。
+
 ## 2026-10-14：§14计账误拦，完整更新/函数/400保留，余seen独立恢复
 
 owner02真实exit1原件在operator_native_joint_learning ROOT/coordinator/operator_native_frame_resume_02/exit.json：完整两臂72/144函数/800 held原行保存，实际800提交返回/229025步/未知0，GPUh10.594371230含原OOM；剩余仅seen1152。CPU把正常在途当失败partial≤16的错误已定位，以原事件前缀和实际H1-LoRA消费者验证统一计账窄修；所有科学上限/模型计算/查询/配对不变，only-seen恢复后再统一验收，不把原exit1改写为0。原派发计时与所有失败保留；源码冻结/唯一owner/启动状态以progress和ROOT原件为准。

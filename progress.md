@@ -1,3 +1,11 @@
+## 2026-10-14 05:42 §14整批exit0且完整验收；交main科学裁决
+
+唯一owner03于21:41:38.671683Z真实exit0，原件按ROOT/attempt consumed；两臂完整72、各seen576/strict firstG400和各72函数输入齐全。D仅BA为414/175，C BA+native为393/158；MT340/153、原G38349 427/165。D held对原G得29失19/净+10、对MT得46失24/净+22，C对原G得27失34/净−7、对MT得33失28/净+5。C对D held得22失39/净−17、seen得36失57/净−21；seen相对原G D−13/C−34，全部保持损失保留。
+Val Spatial/Object/Goal/Long MT48/46/35/24、D51/61/38/25、C46/49/33/30；D breadth7/8、C6/8，D task23仅1/50、task39仍0。固定72 BA均值S/D/C=.152745613/.323312608/.481264834（两臂5改善67恶化），native=.002205425/.003837930/.005041636（D12/60、C13/59）；H1/H2/T来源/强弱/空类与全部query均保留。一次held净增不证明稳定、目标拟合或视频/H必要性，main按§14分支自主裁决，不自动续块/调权/后段。
+同源G38349/fresh同Adam/288条件与真实Query-T-noise-缺类-类别权重流、BA一次和固定lambda、各72逻辑B4、meta双支/Reader/static/F信用及冻结source/Actor/T、checkpoint/Adam-sampler-RNG已实物验收。C训练student/T各5376、D0；末点各1344，新LoRA944套完整38-target/76因子，seen复用72 H1编译，有效训练576另计。旧OOM未落盘native每student/T≤96未知上界保持，原S/T/MT-H与支持episode成本只引用不重复记账。
+全账1952提交/1952返回/477689步含dummy，未返回/failed partial/额外未知均0；29GPU收据含2原OOM，总14.577632926GPUh，eval reserved峰值14.514GiB，ROOT约4.720GiB。03恢复40.753min，原18:30:39派发至退出190.992min超过初估90–165；恢复30–60估计内完成。初始六seen worker两臂各3，D释放接C，实际9 GPU作业，三空队列D消费者CPU省略。全部GPU子作业退出并结算，无第二等待者/阶段Queue。
+计算源92d0a234，seen/计账源045ee602；两棵clean pushed detached树/原件保留，开发树和分支已退休。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_native_joint_learning，results.json与analysis/completion_20261014/{acceptance.json,verify.py,report.md}为唯一交付；CPU直接消费21.657s/0新增模型或环境。当前有限执行已完成，0 active计算/自动后继/Test；完整EMBER目标尚未完成。main commit/clean push/唯一交付回执随后登记于同目录complete.json，主讨论负责后继科学授权。
+
 ## 2026-10-14 05:02 §14唯一owner03已恢复：六卡并行两组seen
 
 owner03/PID408276于21:00:53.491592Z启动，源045ee602 clean pushed detached=/data1/user/ymdai/ember_worktrees/operator_joint_seen_resume_frozen_20261014；CPU计账与原两臂H1完整LoRA消费者通过，只恢复1152条seen，原92d0a234的训练72/144函数/800 held不重跑。六个正式worker于21:01:02Z起实际launch：gpu01:2/7/0/4/5、gpu02:6，各独立world1/slots8/既有最大6行shard，D/C交错派发；自然释放只接有未领取shard的队列，无空队列重复runtime加载。

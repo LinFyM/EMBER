@@ -11950,3 +11950,10 @@ H1 keep12的S/A/B均值.007113396/.000112536/.000029681、改善A7/B6，但中�
 
 owner02结束时两臂72、144函数、两组400原行完整，剩余seen1152；原实际800完成/229025步/0未返回，费用10.594371230GPUh含原两OOM保留。CPU准入检查把活动worker尚未返回的正常episode当失败partial，曾误触16上限；这不是科学超额、参数/目标缺陷或负结果修复。
 既有analysis统一按attempt exit区分在途与真实失败，启动数/未知步数同时保留。真实事件前缀24在途与16失败partial通过、24失败partial仍拒绝，完整原账与H1-LoRA复用实际消费者通过；只恢复两组seen，不重复更新/编译/400或新增范围。原source92d0a234、费用/失败/时钟均保留，模型表现待完整整批再消费。
+
+## 479. §14同T算子/函数共同学习的完整末点与保留边界（2026-10-14）
+
+D仅BA seen414/held175，C同BA+固定lambda native为393/158；原G427/165、MT340/153。D held对原G R146/G29/L19/net+10、对MT R129/G46/L24/net+22；C对原G R131/G27/L34/net−7、对MT R125/G33/L28/net+5。C对D held R136/G22/L39/net−17，seen R357/G36/L57/net−21；seen对原G D净−13/C−34，损失48/66不抹去。held D7/8、C6/8，D task23只有1成功且39仍0；MT/D/C四suite为48/51/46、46/61/49、35/38/33、24/25/30。原行/不利任务和success-set churn/重合完整保存，单点不认作稳定完整方法资格。
+固定72点BA均值S/D/C=.152745613/.323312608/.481264834，两臂各5改善67恶化；native均值.002205425/.003837930/.005041636、改善/恶化D12/60、C13/59；联合诊断.305491226/.589123902/.830443661，两臂6/66。全部H1/H2/T源/强弱/空类与原query-weight-noise保留，不称完整288学习曲线、目标总体拟合成功或用内部误差改写闭环。D没有native训练forward，完整目标/相邻稳定与视频-H必要性仍待实证；主讨论按§14事前分支消费，不自动调lambda/LR/续块/BCE/后段。
+两臂同完整G38349/fresh同Adam/288条件/36task各8遍/72逻辑B4，BA每condition一次与/4-rank SUM、固定lambda、全前端/meta双支信用/冻结source-T-Actor及完整checkpoint实际验收。训练C student/T各5376、D0，末点各1344新native，944新完整LoRA、seen复用72 H1编译，576有效训练编译另计。原失败未保存native每student/T≤96未知上界不写0；旧MT-H/T支撑只读引用、不重复计费，不把0新增实践称整体零交互。
+实际1952提交返回/477689步/额外未知0、14.577632926GPUh含29收据和两OOM；原CPU误拦保留。原派发至退出190.992min、03恢复40.753min，eval reserved14.514GiB/root4.720GiB。六卡初始D/C各3seen worker，D释放接C后实际9 GPU作业，三空队列消费者CPU省略。计算源92d0a234、seen/计账045ee602 clean pushed detached，旧失败不追认成功。完整ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_native_joint_learning，results.json及analysis/completion_20261014/{acceptance.json,verify.py,report.md}；有限执行完成，科学取舍交main，0新GPU/模型/episode/自动后继/Test。

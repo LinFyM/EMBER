@@ -14,6 +14,10 @@
 
 分支清理完成：本地50→6，删15旧远端后保留4。28旧提交等价补丁经9f712eda tree不变祖先合并保留原SHA；两已结束clean开发树退休，正式冻结树/资产保留。保留main、主讨论active docs、三个未合并工作分支、仍被正式证据引用的operator-change-clock。新任务开发分支验证/合入即清理，冻结运行树按真实依赖保留。清单见原§23ROOT/analysis/engineering/branch_retirement_20261013.json。
 
+17:44:13（UTC09:44:13）修正恢复04/PID3874118实际启动，clean pushed detached8e718be2；短data1 TMPDIR已实际IPC通过，消费者将失败80步预扣、physical starts≤40写入run/results/complete。GPU01:0余量降为22,723MiB，按实际native8 CUDA+EGL需求选8环境，合计5/cap6；16环境预计34,200MiB不再容纳，不等待卡或使用利用率/固定显存筛选。此前03只CPU重新准入因现场负载变化退出，0GPU/0交互/0费用，已consume；两真正GPU失败原件与0.026912000GPUh继续保留。当前没有接手科学结果，完整32内续跑结果正负均停，预计15–25min自真实恢复启动，原派发时钟不重置。
+
+主讨论b5103efb最新三个docs在本正常Git窗口合入：独立审阅与方法选择已完成，单T完整控制函数蒸馏和独立BCE价值/行为学习成为其优先完整设计；完整候选仍非active train，§11诊断决定实际恢复支撑覆盖，原§23独立不改合同。
+
 以下为历史时点记录。
 
 ## 2026-10-13 16:24当前承接：B2完整，恢复B3并继续B18→correct400

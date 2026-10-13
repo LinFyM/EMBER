@@ -1,3 +1,13 @@
+## 2026-10-13 19:45 实际启动：§12唯一owner1078579，固定27T重放→两臂profile/72/末点；§23独立
+
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification。CPU owner PID1078579于11:41:59Z真实detached派生，11:42:44Z完成runtime入口；clean pushed detached e7f1a976，frozen tree=/data1/user/ymdai/ember_worktrees/fullg_native_frozen_20261013。注册27个既定T重放job已实际launch gpu01:4/8slot，原行噪声/初态保持，不选替代病例；完成后同owner并行F_only:gpu01:4和full_G:gpu01:0各2B4 profile，按真实native credit时间/峰值选择8或24 query microbatch，再各自fresh源权重/Adam/sampler/RNG开始72有效更新，依赖就绪的读出立即沿cost-balanced persistent队列运行。当前尚未取得完整profile/GPU梯度通过或终点性能。
+
+双节点live snapshot计原§23 gpu01:1,2,6,7，现cap6/node6，新增两臂实际最多2卡（重放期间仅1），无dummy占卡/利用率或固定24GiB筛选。12288MiB为既有source runtime居留约10GiB的初次消费估计，不是全批统一空闲门槛；profile后以当臂实测峰值更新，不使用假定固定余量。data1 quota每job重新核，64GiB本批峰值及其它现有资产用量已可容纳。短TMPDIR=/data1/user/ymdai/.tmp/efg避免已知IPC长路径错误；submitted/finished/known-step事件用于真实失败结算。
+
+可靠路由实际配置在coordinator/matched_native_01/owner.py、source.json、detached_launch.json及launch.json：只在整批退出/异常向实验01a133e5一次唤醒，本session验收后一次完整交主讨论01a13399；profile只给main一次真实吞吐/ETA修正，不自Queue阶段通知，无第二等待者。原§23 owner06/唯一回报独立不变，不读其中途分数、不暂停/重启。新开发树已集成清理，task分支已删除，正式frozen树/原件保留；主树下一状态提交push后clean。
+
+以下为历史时点记录。
+
 ## 2026-10-13 19:29 当前：§12 canonical消费者已实现并完成CPU核验，待clean冻结启动；§23独立继续
 
 288条件/2304正常查询、27个去重T单次成功重放身份、seen576与strict held400读出面板已冻结到新ROOT。400原own-MT-H首episode索引齐全，0缺项；旧52是补生成G，不是新增MT实践，400全部复用原前缀，bootstrap按原path ordinal取practice state。旧MT400未保存initial_proprio，全部scene/state/RNG/full-noise配对可核，直接旧full-G/firstG proprio仅289行可核；该限制保留，不伪称全部proprio证据。

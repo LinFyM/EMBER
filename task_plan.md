@@ -1,3 +1,7 @@
+## 2026-10-13 19:45 当前实际执行：§12唯一detached owner已承接整条有限批
+
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/full_g_native_function_identification，owner1078579/source e7f1a976；固定27补录已launch，profile→fresh72/臂→seen576+firstG400/臂均为同一可靠有限任务的真实依赖，完整合同不变。GPU full-G图与吞吐待2B4实测，之后一次修订ETA；整批完成或真实异常一次唤醒本实验再验收交main。原§23独立继续，无阶段自通知/重复waiter/Test/自动后继。工程隔离树和分支集成后已退休，冻结正式source保留。
+
 ## 2026-10-13 19:29 执行节点：§12数据已冻结，canonical消费者CPU通过，串行集成后自主GPU启动
 
 新ROOT已保存完整合同/288条件与正常noise/57实际T/27单次补录/两末点读出；source/parent-H及全部400 own-MT首episode索引已核。code仅一套F/full参数模式；GPU profile≤2B4/臂后fresh重置并72有效更新，终点seen576+400，无Test/新θ/BCE/失败接手监督。实测profile一次修订ETA，整批唯一完成或异常接续。原§23 owner06继续原授权，不能等本批、改变或读取其中途分数。

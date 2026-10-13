@@ -1,3 +1,11 @@
+## 2026-10-13 当前计划：已授权§23完整选择学习窗口
+
+按唯一design§23与/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/main_contract/scientific_dispatch_20261013.txt直接闭环：72任务审计/固定数据manifest→单一消费者与完整源迁移→CPU及真实consumer准入→集成push/clean detached→真实pair72→A180→当前核B18→唯一完整correct400→科学/费用/Git/一次交main。不是新许可/ACK门槛，旧讨论状态已被Owner11:50和main明确派发替代。
+原G38349/F Adam/bank9冻结，原θ/Adam与baseline承接；原seen36与novel36每B4各2/18更新全72，新增36授权θ/baseline non-held共享学习，不改global52/固定24/8/8、不读held离线标签、Test关闭。pair最多1260新增episode/36生成，seen1152 query/MT-H/保存G只读；A180只final、baseline冻结；B18仅当前核on-policy/5轮/actual[parent,newG]，至多6120新增实践/G query，MT不兼容另1152，0G更新或学生bank追加。唯一完整B18直接Compiler400，旧MT bootstrap精确prefix及MT final兼容引用、后段新θ实际重采。
+关注新数据是否带来MT优于G反例、现有真实metrics是否学到、完整400是否迁移，不能用多选MT或内部值代替净收益/保持/覆盖；不增加GPU读回/探针或拼跨核训练分数。原pMT很小的梯度约束保留，不reset θ/Adam/改温度/CE/valuehead或延长本窗。
+当前完成审计和完整Runtime/源Optimizer CPU承接，GPU未启动；落实唯一root160GiB峰值/独立data1 quota，physical2/4rank及batch按真实吞吐决定，动态数据/ready query/formal不锁整批world4。必要接口修复科学语义不变时自主闭环，具体科学边界交main，不设例行工程ACK。
+Owner最新取消今晚23:00目标，11点也已取消；原5–8h是待实测预估，不是截止或正结果保证，不因时间增多扩批。一个真实总owner持续退出等待，launch一次及整批完成/异常一次可靠接续，完成400后main据证据裁决，无自动同数据块/相邻/controls/Test。
+
 ## 2026-10-13 当前交付：§22完整结束，后继仅讨论
 
 432有效native-FM更新至唯一v11 F38781、父seen576/末seen576/末held400及有界缺34恢复全部完成。完整1552新final/472端点/353440环境步，0新实践/Actor/held标签/Test；冻结47edd274、全166 Adam/四rank RNG和每task48×28 query来源已实际核验。

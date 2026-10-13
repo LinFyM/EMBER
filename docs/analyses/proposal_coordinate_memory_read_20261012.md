@@ -926,3 +926,14 @@ seen两点严格复用原MT-H/P0/指定教学的完整冻结m，经同一Generat
 
 main已直接读1552当前query及1200历史held行，不新增forward/episode/H解压/梯度。其完整科学消费和原消息原样归档ROOT/analysis/main_scientific_readout/native_FM_main_scientific_consumption_20261013.json及native_FM_main_message_20261013.txt；本节主配对直接引用，不重复其算术。ROOT/analysis/completion_20261013保留training_audit、statistics、provenance、runtime_cost及相应CPU脚本，原四owner exit、失败和全部job原件不改。
 Owner先讨论下一步，取消11:00，希望今晚新加坡23:00有进展，本次判断先不考虑时间。当前无新科学批、Reader解冻、扩任务、选择器学习或Test派发。讨论中的额外审计non-held候选分布/独立query价值学习只能改善已有能力的利用，不能代替G取得新的组合控制；尚未明确目标、共享参数和数据范围，不能登记active design、实施或用held24 lost调规则/把Q的未验证动作梯度写入LoRA。原36已有drawer/microwave/多物体基础操作，历史56/73/75-task与Context/native-FM负证据仍在，不以“基本动作全未覆盖”或36→95默认解代替新原理。完成当前交付，main继续论证后继；停止这一投入不是停止研究，也不是例行Owner许可门槛。
+
+## 23. 固定较强G的选择迁移：新反例、学习和held迁移须分开
+
+§22的target24未净增/held158削弱固定表示F-only继续校准；保留原G38349/完整θRL9是已取得能力的起点，非改用新FM点。旧seen warm36只有5任务MT略高1/16、425.579477期望接近alwaysG425，后续只9个B4 on-policy，不能假定这些条件足够教会G弱时的选择。新seen/novel各半72任务、A180+B18及唯一完整400一次有限检验真实迁移分布的学习，相对旧joint同时改变组织/曝光，不称同预算单因果；新增36是source已见/G未训、33种不同语言，不能说36新操作或新增source全部71映射。
+
+合法实际链为exact L/ordered双RGB经固定G的φ/Reader与真实MT/G参数/H产生完整LoRa；Actor独立Reader用自身RGB前后、两次native hidden、实际producer参数摘要、proprio/action/执行标记/feedback联系有序教学，候选侧有参数摘要及在已有观测上的原生动作预测。原θ可在真实独立query return上学习给定L/V/P/H的条件期望差，不能凭attention/反馈字段/内部值宣称已经取得；自己的实践成功也不能保证新初态（旧24 lost中12曾成功）。query标签只教共享θ/baseline，既不进H/G条件也不经Q动作梯度写LoRa，held编译冻结/最终Writer退出。
+
+二候选δ=zG−zMT，J=pGqG+(1−pG)qMT，dJ/dδ=pG*pMT*(qG−qMT)。main从原warm/readout原件核pMT median8.140e−6，旧held lost median.000115576/gained .000108164，偏好饱和使新反例直接梯度小；减MT常量不改变梯度。现有Actor score在正常autocast后显式float32供softmax，正常BF16继续，不据此reset θ/Adam、换温度/CE/valuehead或追加整数。Adam/共享表示仍可能从真实反例恢复，180步非必然成功或必然失败，原A/B出口与停止线不变。
+
+读取已有训练forward的credit、pMT及gradient区分新任务是否确有MT>G反例、这些反例是否学到、是否在完整400迁移。无需新增GPU读回/探针，训练曲线来自不同核不拼资格。若只有回退/回MT153/集中单task165不能称达目标；若训练未学会，不能外推所有合法H无预测价值；若学会而held无改善，降低当前选择迁移组合优先级。旧事后189依赖未来最终反馈，不可部署/不保证/也不约束θ改变路径后新的候选集合。新的组合生成能力仍需独立证据，本批不自动F-only、Reader解冻、扩池/Q补丁或第二数据块。
+完整合同见唯一design§23与/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/main_contract三份原文/冻结JSON；源v10完整RL9/F38349、θ/Adam/baseline/4rank RNG迁入v12，G166 Adam停38349/bank9只读。CPU实际Runtime/optimizer承接通过，无新forward/episode/GPU结果；当前仅工程准入，不将新授权当已训练。Owner取消今晚23点，原5–8h仅预估，无新deadline或扩批理由。

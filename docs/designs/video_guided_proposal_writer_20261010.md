@@ -846,3 +846,44 @@ recovery_02原exit1来自两个renderer初始化error0x8cdd，保留1518有效�
 
 父seen427→末431但target24 249→247、support12 178→184；E-only134传递94→90、共同成功321保持309→299。末held158/MT153、旧firstG165→158（33得40失），去task16仅145/143，成功覆盖仍6/8。固定φ仅校准F未解决主要迁移问题，当前投入结束，无第二同表示块/混合/小扫/其它点；不推出所有FM/Reader/视频编译不可能。全部task/suite/能力得失及物理/费用依赖见ROOT/analysis/completion_20261013和现有分析§22.1–22.5。
 Owner取消原11:00目标，最新希望今晚新加坡23:00有进展、科学判断先不考虑时间；无新强杀或缩水协议。main与Owner现在讨论下一步，尚无解冻Reader、扩任务、选择器训练或Test派发。候选不进入本设计的执行合同，本节完成交付后仅保留恢复资产与历史，不自动新计算。
+
+## 23. 固定原G38349的选择学习迁移与唯一完整400（2026-10-13）
+
+本节是当前唯一active科学合同。Owner11:50原话“我先去吃饭，你分析完后自主推进，我吃完饭再找你讨论”，main据已完成分析明确授权整链；§22已结束，原讨论未派发仅为旧时点。完整事前派发和补充原文及冻结选择JSON保存在/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/main_contract，本节没有另开平行design。当前工程准备，未launch。
+
+### 23.1 主要问题、固定来源与梯度owner
+
+旧G38349+θRL9完整165/MT153、36得24失，旧warm36 G普遍更强且后续只有9个B4 on-policy，θ缺少真实G迁移情况下的比较曝光。§22 nativeFM target24未净增/held158，不用38781替原较强G。检验固定已有G能力在G未见任务上能否被θ学会使用，不预设θ全部根因或追事后189。相对旧joint同时改变分布/曝光/冻结组织，不称同预算单变量因果。
+唯一源v10 /data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009：完整G38349、θ及Adam、baseline/Adam、samplers与四rank RNG承接。新schema ember_selector_transfer72_fixedG38349_v12为显式任务/组织迁移，非旧合同exact-resume。全部G/source/MT/尺度冻结，F Adam/cursor38349、bank9只读，不append学生bank/teacher/F缓存训练；θ不fresh/reset/拼接。warm baseline冻结，on-policy才更新。新CP保存同一时刻全G+θ/baseline、各optimizer、源cursor与当前阶段/任务调度/RNG/物理拓扑；迁移可承接2/4等实际物理rank，记录未分配源rank状态，不绕校验或称bitwise。
+Actor三head、解析STOP/所有截断深度平均value/conditional-continue score、.001代价、单确定G提案、rank8/38target、原生flow和最终multinomial不变。无价值head/MT bias/阈值/熵/CE或Q→LoRa动作梯度；无G解冻/轨迹准备后拟合最终LoRa。
+
+### 23.2 72任务、run-scoped权限与等权调度
+
+保留原G seen36，加main冻结的source71中G-novel36；显式名单见原selection JSON：40,41,52,53,54,57,59,61,63,66,68,69,72,74,78,80,81,82,99,102,103,104,105,107,108,111,112,114,115,116,119,121,122,124,126,127。global=40+source90 local。source71扣原support12剩59，按KITCHEN29取18/LIVING_ROOM14取9/STUDY16取9及SeedSequence([20261013,23,stratum_index])事前不放回；无按结果换名单。新36只33 exact语言，69与原seen42同语言，source policy已见/G未训，不称36新操作。
+原全90 specification/19排除、真实Bddl/data/init metadata和原36身份审计；完整run-scoped authority在analysis/task_audit/task_authorities.json，只供train72，global52/fixed24/8/8不改，validation/test仍canonical固定authority。新增36仅θ/baseline non-held meta梯度，H为自身真实经历，离线教学只exact L/有序action-hidden双RGB/stride5；任务/路径/场景规范不入模型。
+每B4 seen2+novel2、层内36等权，独立seeded permutation每18更新全72一次。实际实现SeedSequence([20261013,23,0或1,epoch])，与GPU/任务难度/已知结果无关；A10周期、B1周期。source90 horizon400，其他官方协议不变。
+
+### 23.3 固定MT→首G pair数据与final学习
+
+seen36复用§22 parent seenF38349的正确36保存LoRa、兼容576G+576MT query及原MT一episode H，只新增每task保存G一次完整实践，不能用24849参数/G-H替代38349。novel36各真实MT bootstrap→第一合法四视频46..49教学→一次完整G→一次G实践→MT/G各独立query16；无E/offline动作标签。所有72 init_order沿seed(1,task)，query为[36:46]+[14:16]+[32:36]，practice前14，MT0/G1；具体seed/source/producers在run manifest固定，seen原query/MT bootstrap不变。
+G实践forced仅供final数据、无on-policy行为score。query不入H/G/teacher条件，只θ信用；H保留真实RGB/proprio/two-native-hidden/action/feedback与producer。最大1260新增episode/36生成，seen1152 query/旧权重只读；不为profile重复有效行或按成功省略。
+A180 B4/720条件/每task10次，原final expected-query及真实prefix condition内均值保留，θ/Adam承接、G/baseline冻结；90只恢复/180末点。共享Reader/static表示获梯度，不能称三项决策已校准。实际已有forward记录query credit/pMT与gradient，取消旧36 hardcoded425/430读回；不额外GPU读回或挑出口。
+
+### 23.4 B18当前核完整选择学习
+
+由A180完整状态接18次B4，每task一条新condition，四视频下一条（ordinal1），自己的真实MT bootstrap前缀开始。实际五轮conditional-continue，parent/STOP、[parent,newG] practice与final均保留；最多360提案/360真实实践，尝试G数不保证360。未实践G无query或credit，重复parent仍采新初态完整实践；不补强制G。
+每当前固定G/θ批完整路径+独立query→θ/baseline各一次→新θ重新采下一批。原所有截断深度平均value/解析STOP/final/行为score和.001代价不改，无未来预算输入，无旧路径反复on-policy/未来batch预采。query visit0的原16common-noise，path ordinal1与阶段身份区分；MT兼容引用优先，不同noise不冒称同一行。
+G不更新/bank9不追加；CP1–17仅恢复，完整B18唯一出口，未按内部loss选点/延长。最大360practice+5760Gquery=6120新episode，MT不兼容可另1152必须计费；实际重复parent会减少query，不凑上界。
+
+### 23.5 唯一完整correct validation400与停止
+
+B18自动接同一完整G38349+新θ的K1 fixed validation8×50=400，video_seed7/50不同教学task、原scene/state/env/native RNG和MT153/full165参照不变。完整Compiler最多1真实MT bootstrap+5实际practice，可任何已完成节点STOP，final multinomial选唯一完整LoRa；最终新初态Writer退出/不继续适应，0held离线标签或梯度/Test。
+旧400 own MT完整first prefix允许精确兼容引用（原114908步及费用作为依赖），不引用后来G-H/旧Actor路径/G最终结果；若不兼容最多补MT400并计费。新G final实际执行，MT final兼容引用，不离线组合旧400冒充新方法。
+报告task/suite/coverage/RGL/churn/Jaccard、MT回退/候选能力与选择信用、STOP/实际轮数/成本，以及train72 seen/novel/语言重复分列。训练不同核query不拼资格；更多MT回退/回153/仍集中165或内部值涨均不够。一次400不证明相邻稳定/视频必要性/Test。阳性后main另登记必要证据，阴性降低当前仅改选择学习可迁移利用已有G的优先级，不自动第二同数据块/Q补丁，仍继续研究。
+
+### 23.6 工程、资源、预期与可靠交付
+
+一套Runtime/Generator/Actor/compile/query/shared checkpoint，旧§22 fixed-g及FM训练入口按已消费生命周期退休，历史冻结/tree/CP/raw/失败保存。独占分支隔离→真实消费者检查→main集成push→clean detached正式运行。metadata audit/实际完整Runtime与optimizer CPU加载0forward/episode已完成；真实GPU执行尚待launch，不称模型已训。
+全新增data1，峰值160GiB计入72pair/360practiceH、恢复CP/400H/LoRa/临时cache；独立strg01 quota/个人用量/shared现场核、大资产原位引用。每launch双节点live、总6或8/node6/非干扰/GPUh无hardcap，动态数据/ready query/formal不锁world4；logicalB4及权重不变，physical rank/group/slots/response micro按真实吞吐/显存选择。有余量在既有请求验证扩大，不追加科学episode或重做有效行。
+事前工程45–90min、pair30–60min、warm20–45min、on-policy2–3h、4001.5–2.5h，总5–8h（旧warm90 rank0 1225s及query16/400依据），实测/共享负载修订。原今晚新加坡23点希望已被Owner“我回来了，晚上十一点的截止时间不用管了，又有多的空余时间推进了”取消，11点也取消；无deadline/强杀/缩水或自动加时扩科学矩阵。
+一真实owner接data→A180→B18→400→完整消费/Git，launch一次真实身份/资源/ETA、整批完成或实质异常一次可靠交main；正常持续退出等待，无心跳/阶段Queue/第二等待者/例行ACK，有效行/所有失败与费用保留。工程语义不变可自行恢复缺项，科学边界具体交main。

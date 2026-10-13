@@ -1,3 +1,16 @@
+## 2026-10-13 当前实施：§23 selector transfer72固定G38349
+
+Owner11:50持续自主执行授权后main登记新完整有限窗口；原“讨论未派发”是此前历史。唯一root=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349，原完整v10 RL9/G38349+θ/Adam/baseline受控承接为v12，G/source/MT/尺度/bank9与F Adam/cursor全冻结；新FM38781不进入本批。当前工程/CPU准入中，尚无本批GPU launch/episode或学习结果，不能把准备说成训练。
+
+新增36通过source71/完整specification-overlap19排除与固定24/8/8审计；run-scoped72任务authority不扩大global52 manifest。原seen36全留，novel36按main事前冻结的18/9/9来源分层选择，33不同exact语言、69与seen42同语言；72共68不同语言。数据/BDDL/init文件metadata及原36身份核验，未读held离线数值标签；原任务选择JSON和全文派发在analysis/main_contract。
+固定pair数据seen36引用§22 parentG38349的36完整端点、MT-H与1152 query，仅36新G实践；novel36各MT bootstrap→首条合法视频生成→G实践→MT/G query16，最多1260新episode/36生成。query与实践分离，forced pair无on-policy行为分数/E/bank资格。
+A180 B4/720条件/各task10次final expected-query（90只恢复），θ Adam承接、baseline冻结，无额外GPU读回；B18 B4/72条当前核五轮条件继续路径、每批θ/baseline各一次，G始终38349/bank9不append。每批seen2/novel2，每18更新全72；B用四视频下一条与原query16 common-noise/visit0，真实[parent,newG]/STOP/final不改。B上界360实践+5760 G query，MT兼容优先、必要至多另1152；未实践G无信用。
+B18唯一完整点自动接correct K1 validation400，原video_seed7/50不同教学task及scene/env/native RNG，完整Compiler最多1MT+5实际实践、真实STOP/multinomial最终一套完整LoRA、Writer退出。400 own-MT完整前缀兼容则引用（原114908步依赖另列），不复用旧后段路径/G最终结果；Test关闭。训练query不能拼成资格点，所有结果到400消费交main后停止新增计算，无自动同数据块/Q补丁。
+
+完整Runtime CPU构造/实际源state及optimizer加载已通过：166 F Adam38349、θ196状态99/5状态9、baseline4状态9、原4rank RNG保留；G/source冻结/θ可学习/warm baseline冻结，0forward/H解压/episode/GPU。实际72 queue与180任务调度通过seen2/novel2/各task10等权。pair实现单独分支在明确文件范围通过实际36/1152原出处与CPU缺项恢复，开发阶段G未在GPU运行；原consumer/fixed-g生命周期退休，旧冻结/source/raw保持。
+source代码在独占codex工作树集成准备，最终须push main、clean detached，真实GPU消费者/吞吐/peak在本批真实请求内核验；不重复旧结果、造episode或让已就绪任务等无关阶段。准备quota used1532319228KiB/soft2147483648KiB，160GiB增量可容纳，shared81TiB；新H/恢复CP/临时峰值计入预算，大资产原位引用，launch再次现场核两节点/6或8/node6/非干扰。
+Owner最新取消今晚23:00目标、11点早已取消；原希望时点和5–8h工程/数据/warm/joint/formal粗预计保留历史，实际吞吐会修订，无deadline/强杀、不自动扩大整数。一个总owner接全链，真实launch一次身份/资源/ETA，整批完成/异常一次可靠交main01a12bb0，正常退出事件等待，无心跳/阶段Queue/第二等待者/例行ACK。§22完整报告主讨论已明确收到消费，4ed61/原6.753GPUh与所有失败不变。下面旧当前状态均为历史。
+
 ## 2026-10-13 11:28 实际完成：§22 native FM432与三完整读出
 
 唯一缺项恢复owner native_FM_fixed_missing34_recovery_04/PID1517323于11:28:50.675（UTC+8）exit0，只补末seen task34的16条及末held task31的18条，新增2个缺失教学生成；原1518有效行/470端点不重做。原两个renderer失败、recovery_02整批exit1及CPU准备recovery_03的错误shard_size32（seen原布局16）均保留，03无GPU job/episode；04直接读取原布局16/32通过既有消费者，不绕校验、不改冻结47edd274。

@@ -5218,3 +5218,8 @@ main独立消费24849全4032逻辑行，425对MT340及广泛保持/覆盖满足�
 三面板1552new-only final/472端点，父seen427→末431（train24−2/support12+6）、E-only94→90；新held首G158/MT153，R114/G44/L39，父165→158为33得40失，去task16为145/143/350，成功覆盖6/8。旧完整Writer165保持，θ未随新G学习；固定表示输出校准未解决主要迁移问题，结束当前F-only块/混合/小扫投入，不宣布全部FM/Reader不可能。
 实际6.753025254GPUh含两失败job与恢复，GPU owner至齐全86.762min；新增353440环境步/0practice，旧bootstrap/源bank成本引用不重计，GPU退出/独立data1 quota合规。冻结代码47edd274，原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/analysis/completion_20261013；main独立原1552行科学消费原样归档analysis/main_scientific_readout，无重算/forward/H解压。
 完整分析见[coordinate分析§22.1–22.5](analyses/proposal_coordinate_memory_read_20261012.md)、findings464/design§22.6。Owner取消11:00，最新希望今晚新加坡23:00有进展、本次科学判断先不考虑时间；现候选仅讨论，无新增active批/Reader解冻/扩任务/选择器/Test派发。
+
+### 2026-10-13 后继§23登记：固定G的选择迁移窗口（实施，未launch）
+
+Owner11:50授权分析后自主执行，main据§22阴性与旧θ偏好/曝光事实登记原完整G38349固定的72task选择学习：seen36/novel36各半、真实pair72/A180/B18/唯一完整correct400，Test封存。原θ/Adam/baseline/RNG承接，G166 Adam/cursor38349及bank9只读，不reset、不改三head目标或加G/Q梯度。新source任务已经spec审计排除19等价项，run-scopedauthority不扩global52，新增36仅33语言/source已见/G未训。
+当前仅CPU完整Runtime/源state及optimizer承接、元数据与数据消费者准备，未宣称新GPU学习或闭环。事前原文/冻结选择及补充在/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/main_contract；机制/停止见coordinate分析§23/findings465/design§23，旧§22/4ed61和负结果保留。Owner随后取消今晚23点（11点早取消），原5–8h仅预估，不复活guard或扩批。

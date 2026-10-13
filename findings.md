@@ -11831,3 +11831,10 @@ held158/MT153，R114/G44/L39；旧首G165→新158为33得40失，去task16仅14
 166 F Adam38349→38781/四rank RNG、固定bank9、1728 condition/48,384 query、四教学排除/各task1344、source/phi/theta冻结与完整76因子余切VJP已从实际消费者核验；在线窗口FM约.09246–.09651不与BA loss比较或替代闭环。真实学习和负闭环共同削弱固定phi只校准F足以广泛迁移的假设，停止同表示块/混合/小扫；没有相应因果对照，不能唯一诊断Reader或否定所有FM/教学编译。
 原两renderer失败与1518有效行/470端点保留，CPU03布局错误0GPU，04仅补34 final/2生成exit0，不改旧exit1。全批6.753025254GPUh含失败与恢复，GPU执行owner至完整86.762min、1552新episode/353440步，旧MT实践/源bank/400bootstrap成本分列；两节点GPU退出，根1.803GiB全data1。稳定原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/analysis/completion_20261013；main原科学消费在analysis/main_scientific_readout，完整解释现有coordinate分析§22.1–22.5/design§22.6。
 Owner现在先讨论下一步、取消11点，希望今晚新加坡23点有进展，但科学判断先不考虑时间；没有新科学派发，候选不登记active design。额外non-held候选价值学习的方向只能利用已有能力，不能代替G新组合控制，不能用held损失调规则或把Q未经验证动作梯度写入LoRA。原36含drawer/microwave/多物体操作、历史更大任务池/功能路线负证据仍约束取舍，不把36→95作为默认解。完整Val/Test明显稳定超过强MT目标尚未完成，由main承担新方案论证，无例行工程ACK。
+
+## 465. 已授权固定较强G的选择迁移，不能用偏好回退或纸面oracle替代完整闭环（2026-10-13）
+
+Owner11:50自主执行授权后main登记唯一design§23：固定原完整RL9/G38349、θ/Adam/baseline承接，原seen36+审计source71中novel36各半，真实pair72→A180→B18→完整correct400。旧§22阴性降低F-only/解冻优先，不把38781用作G，不认定θ为全部根因；不增加价值head/MT偏置/阈值/熵/CE/Q→LoRa梯度或重训G。源policy已见novel，G未训，36任务33语言且69↔seen42同语言，global52/fixed24/8/8不改。
+原warm90期望425.579477/alwaysG425，pMT median8.140e−6；旧held lost/gain均极少选MT，支持风险区分不足但非唯一模块归因。dJ/d(zG−zMT)=pG*pMT*(qG−qMT)使反例直接梯度小，改relative reward不变，Adam/共享表示仍可能恢复；不临时reset/换温度/目标或加更新。Actor合法自身H/候选预测有条件价值依据但不给新初态真实结果，实践成功不保证final；旧189未来反馈union不是部署目标或保证。
+使用已有metrics区分真实MT>G反例是否产生、是否学到、是否held迁移，不加GPU读回。更多MT回退/内部值涨/回153或仍165局部均非成功；阴性按真实学习程度解释，不能证明所有H无价值。唯一完整400/RGL/保持/覆盖决定支持度，无自动相邻/controls/Test或第二同数据块，完整研究仍由main接续。
+实际Runtime/源optimizer CPU承接及72身份审计通过，0本批forward/episode/GPU launch；实际运行另据原件。Owner最新取消今晚23:00目标，11点亦取消，5–8h只预估、不扩科学范围。原文/选择ROOT/analysis/main_contract与现有coordinate分析§23、design§23持久保存。

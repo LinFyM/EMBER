@@ -44,6 +44,7 @@ def load_state(path,runtime):
     runtime.version=38349;runtime.learning_migration=migration
     runtime.objective_migration=state.get('objective_migration')
     runtime.source_rank_rng=state['rank_rng'] if original else state['source_rank_rng']
+    runtime.retained_rank_rng=list(state.get('retained_rank_rng',state['rank_rng']))
     runtime.source_theta_sampler=state['theta_sampler'] if original else state['source_theta_sampler']
     runtime.physical_rng_migration=state.get('physical_rng_migration')
     runtime.freeze_psi();runtime.policy.eval().requires_grad_(False)
@@ -72,6 +73,30 @@ def initialize_selector(runtime,context,root):
     return optimizer,baseline
 
 
+def restore_physical_rng(path,state,runtime,context,*,stage):
+    """Migrate physical ranks at a complete boundary, retaining inactive RNG."""
+    saved_world=state['topology']['world_size']
+    if (not 1<=context.world_size<=4 or not 0<=context.rank<context.world_size
+            or state['topology']['logical_condition_batch']!=4
+            or len(state['rank_rng'])!=saved_world):
+        raise ValueError('physical resume requires complete rank RNG and logical B4')
+    retained=list(state.get('retained_rank_rng',state['rank_rng']))
+    retained[:saved_world]=state['rank_rng']
+    if len(retained)<context.world_size:
+        raise ValueError('new physical rank has no registered retained RNG source')
+    runtime.retained_rank_rng=retained
+    runtime.physical_rng_migration=dict(source_checkpoint=str(Path(path).resolve()),
+        source_stage=state['stage'],source_update=state['next_update'],source_world_size=saved_world,
+        current_world_size=context.world_size,restored_source_rank=context.rank,
+        source_unassigned_ranks=list(range(context.world_size,len(retained))),
+        retained_rank_count=len(retained),logical_batch=4,bitwise_exact_claim=False)
+    restore_rng(retained[context.rank],context)
+    write_json_atomic(runtime.root/'code'/f'{stage}_physical_resume_{state["next_update"]:08d}_rank_{context.rank:02d}.json',
+        dict(complete=True,physical_rng_migration=runtime.physical_rng_migration,
+            theta_Adam_restored=True,baseline_Adam_restored=True,
+            G_cursor=runtime.G_sampler['next_update'],bank_version=runtime.supervision_version))
+
+
 def checkpoint(root,stage,update,runtime,optimizer,context,*,sampler,baseline=None,baseline_optimizer=None,
                generator_optimizer=None):
     if generator_optimizer is not None:raise ValueError('fixed-G selector has no G optimizer update owner')
@@ -82,6 +107,9 @@ def checkpoint(root,stage,update,runtime,optimizer,context,*,sampler,baseline=No
     if context.world_size>1:dist.gather_object(rng,ranks,dst=0)
     else:ranks=[rng]
     if context.is_main:
+        retained=list(runtime.retained_rank_rng)
+        retained[:context.world_size]=ranks
+        runtime.retained_rank_rng=retained
         destination.mkdir(parents=True,exist_ok=False)
         state=dict(schema_version=CHECKPOINT_SCHEMA,stage=stage,next_update=update,G_objective=OPERATOR_OBJECTIVE,
             generation='deterministic_MT_centered_endpoint',G_gradient_owner='frozen',
@@ -89,7 +117,7 @@ def checkpoint(root,stage,update,runtime,optimizer,context,*,sampler,baseline=No
             optimizer_owner='theta',generator_optimizer=runtime.generator_optimizer_state,
             generator_optimizer_parameter_names=endpoint_names(runtime),actor_optimizer=optimizer.state_dict(),
             baseline=baseline.state_dict(),baseline_optimizer=baseline_optimizer.state_dict(),sampler=sampler,
-            G_sampler=runtime.G_sampler,theta_sampler=sampler,rank_rng=ranks,
+            G_sampler=runtime.G_sampler,theta_sampler=sampler,rank_rng=ranks,retained_rank_rng=retained,
             topology=dict(world_size=context.world_size,task_order=run['training_tasks'],logical_condition_batch=4),
             psi_version=38349,supervision_version=9,learning_migration=runtime.learning_migration,
             source_rank_rng=runtime.source_rank_rng,source_theta_sampler=runtime.source_theta_sampler,
@@ -115,9 +143,10 @@ def checkpoint(root,stage,update,runtime,optimizer,context,*,sampler,baseline=No
 def resume_checkpoint(path,stage,runtime,optimizer,context,*,baseline=None,baseline_optimizer=None,
                       generator_optimizer=None):
     state=load_state(path,runtime)
-    if state['stage']!=stage or state['topology']['world_size']!=context.world_size or state['optimizer_owner']!='theta':
-        raise ValueError('exact stage resume requires saved physical topology and theta owner')
-    optimizer.load_state_dict(state['actor_optimizer']);restore_rng(state['rank_rng'][context.rank],context)
+    if state['stage']!=stage or state['optimizer_owner']!='theta':
+        raise ValueError('stage resume requires the saved stage and theta owner')
+    optimizer.load_state_dict(state['actor_optimizer'])
     if baseline is not None:baseline.load_state_dict(state['baseline'])
     if baseline_optimizer is not None:baseline_optimizer.load_state_dict(state['baseline_optimizer'])
+    restore_physical_rng(path,state,runtime,context,stage=stage)
     return state['next_update']

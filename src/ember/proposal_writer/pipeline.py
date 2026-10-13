@@ -3,13 +3,14 @@ from pathlib import Path
 from datetime import timedelta
 import os,re,time,copy
 import torch
-from ember.pi05_source_checkpoint import read_json,write_json_atomic,restore_rng
+from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.pi05_source_setup import initialize_deferred_process_group
 from .contract import OPTIMIZER,SELECTOR_SCHEMA,seed
 from .learning import (Baseline,train_local,on_policy_update,checkpoint,assigned_tasks,
                        resume_checkpoint,memory_peak,metrics,HistoryCache)
 from .path import compile_conditions,restore_compilation
 from .supervision import panels,bootstrap_source,query_conditions,LocalExamples,query_panel
+from .shared_checkpoint import restore_physical_rng
 
 
 def load_version(runtime,directory,*,fixed_psi=True):
@@ -82,10 +83,8 @@ def rl(args,runtime,runner,environment,context):
     optimizer=torch.optim.AdamW(runtime.actor.parameters(),**OPTIMIZER);optimizer.load_state_dict(state['actor_optimizer'])
     baseline_optimizer=torch.optim.AdamW(baseline.parameters(),**OPTIMIZER)
     baseline_optimizer.load_state_dict(state['baseline_optimizer'])
-    if state['topology']['world_size']!=context.world_size:
-        raise ValueError('RL topology must match complete A180; explicitly migrate at a full boundary')
     runtime.training_baseline=baseline;runtime.training_baseline_optimizer=baseline_optimizer
-    restore_rng(state['rank_rng'][context.rank],context)
+    restore_physical_rng(args.checkpoint,state,runtime,context,stage='RL')
     initialize_deferred_process_group(context,rendezvous_root=args.root/'rendezvous')
     start=resume_checkpoint(args.resume,'RL',runtime,optimizer,context,baseline=baseline,
         baseline_optimizer=baseline_optimizer) if args.resume else 0

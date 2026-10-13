@@ -34,6 +34,29 @@ def process_identity(pid):
                 start_ticks=int(fields[19]), wait_status=int(fields[49]))
 
 
+def live_gpu_snapshot(destination):
+    """Retain failed probes and retry the query once; never launch from missing state."""
+    for attempt, timeout in enumerate((8, 15), 1):
+        result = subprocess.run(['python3', PREFLIGHT, '--nodes', 'gpu01,gpu02', '--json',
+                                 '--timeout-s', str(timeout)], capture_output=True, text=True)
+        prefix = Path(destination)/f'gpu_preflight_attempt_{attempt:02d}'
+        prefix.with_suffix('.stdout.txt').write_text(result.stdout)
+        prefix.with_suffix('.stderr.txt').write_text(result.stderr)
+        prefix.with_suffix('.exit.json').write_text(json.dumps(dict(exit_code=result.returncode,
+            query_timeout_seconds=timeout, UTC=datetime.datetime.now(datetime.timezone.utc).isoformat()))+'\n')
+        try:
+            snapshot = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            snapshot = {}
+        results = snapshot.get('node_results', {})
+        if (result.returncode == 0 and not snapshot.get('bad_nodes')
+                and set(results) == {'gpu01', 'gpu02'}
+                and all(r.get('gpus') and not r.get('process_check_error') for r in results.values())):
+            (Path(destination)/'gpu_preflight.json').write_text(result.stdout)
+            return snapshot
+    raise RuntimeError(f'live two-node allocation query remains incomplete; original probes: {destination}')
+
+
 @dataclass
 class Job:
     identity: str
@@ -127,14 +150,9 @@ class Batch:
     def admit(self, job, node, gpu, destination):
         # Serial admission excludes overlapping launch snapshots within this batch.
         with self.lock:
-            result = subprocess.run(['python3',PREFLIGHT,'--nodes','gpu01,gpu02','--json'],
-                                    check=True,capture_output=True,text=True)
-            snapshot = json.loads(result.stdout)
-            if snapshot['bad_nodes']:
-                raise RuntimeError('live two-node allocation evidence unavailable')
+            snapshot = live_gpu_snapshot(destination)
             quota = subprocess.run(['ssh','-o','BatchMode=yes','-o','ConnectTimeout=10','strg01',
                 "xfs_quota -c 'quota -u -b ymdai' /data1"],check=True,capture_output=True,text=True)
-            (destination/'gpu_preflight.json').write_text(result.stdout)
             (destination/'quota.txt').write_text(quota.stdout)
             devices = [(n,g) for n,r in snapshot['node_results'].items() for g in r.get('gpus',[])]
             idle = sum(not g['processes'] and g['mem_used_mib'] < 1000 for _,g in devices)

@@ -1,3 +1,11 @@
+## 2026-10-13 22:12 §12消费owner05退出：两臂72已验收，GPU查询故障阻断读出启动
+
+coordinator/matched_native_parallel_05/exit.json真实exit1/14:02:59.918282Z，自通知已消费（consumed.json）。training两个actual receipt均exit0，准确承接原full-G退出状态、旧CPU owner02已退休；F-only与full-G完整72/288/36×8及恢复18/36/54/72保存。CPU实际完整checkpoint/metrics消费通过：F-only166 optimizer-owned/state参数，full-G496 owned/485有实际Adam状态，完整所有权/采样/同初始RNG/所需4组实际梯度与source/Actor冻结均逐更新核；未要求每个参数每步非零。两臂condition/T/query_sources/full-noise/类别权重逐行完全一致，正常跨episode及成功/保持复用没有改权重。原件analysis/owner05_training_acceptance.json；只验收训练工程，不由此宣称闭环有效。
+
+失败是readout前GPU-preflight命令exit1（两次待派发consumer），原code check=True导致stdout/stderr未落盘，无法恢复当时究竟哪节点/子查询失效；现双节点完整probe恢复（.codex/tmp/fullg_prepare_20261013/exit05_live_gpu_snapshot.json）。该失败无CUDA readout launch、0新增读出episode/LoRA，保存全部27既定重放/5582步；总已结算2.730081220GPUh含所有profile、C0失败及两臂实际训练，不重置派发时钟。原§23五GPU独立，未读其中途分数/暂停/新等待者。
+
+工程窄修位于独占codex/fullg-readout-probe-recovery-20261013，仅Batch live query：保存失败stdout/stderr/exit，查询可再重探一次，必须取得完整gpu01/gpu02 GPU/process evidence才启动；不把busy/candidate/util筛选变新门槛，也不从partial snapshot继续。CPU消费者覆盖失败→完整、两次失败拒绝和无自动candidate仍可审实际共驻，无新增科学profile/episode/训练/一般审阅。下一owner06/new clean pushed freeze只运行原四末点readout，复用同两个72完整endpoint与全部case panel/queue；source训练身份F8dd/B1c不改，后续读取代码单独登记。准备用4原readout并行工作卡，依赖已齐，不从world1派生串行上限。真正实际启动/物理安排随后按原件登记；整批只一次退出唤醒本实验→验收一次main，Test/后继关闭。
+
 ## 2026-10-13 21:12 §12真实并行确认与一次剩余wall修正
 
 actual F-only GPU PID1302441与原full-G PID1211783/SSH1743425同时在gpu01:6/2，原full-G从12:30:50Z连续运行；owner05/PID2138773唯一调度和整批唤醒，02只处于STOP保存旧SSH退出状态、04已退出且superseded。A首两个实际B4 36.2937/63.4331s，allocated15.1995/reserved15.5313GiB，通过native更新，无OOM；这是真实授权72流中的更新，不是新增profile。B只读一次timing（不含loss/score）：13:11:21Z已37/72，近五中位63.7955s、reserved18.4668GiB。不同condition/H长度不可当成设备因果比较；后半H2更长，余学保守50–70min，四正式读出30–60min仍估计并可依赖就绪交错，整批余80–130min。主讨论只收本次具体并行/ETA一次回报，之后按原整批/实质边界。

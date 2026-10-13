@@ -1,3 +1,7 @@
+## 2026-10-14 06:47 §15四rank启动配置窄修；原D72与全部预算保持
+
+唯一owner01/source6c7c2185于22:45:56Z真实exit1：frame配置单值与实际world4不符，Runtime构造前拒绝，0有效更新/模型forward/环境交互，.024166130GPUh及退出原件保留，01已consumed。新owner02只改物理rank配置为64,64,64,64，实际run.physical_value_for_rank四rank消费者已通过；完整D72/485Adam/RNG/global72→144/原288条件/976-992-525760/Test关闭均不变。恢复沿新clean pushed detached冻结，原6c7c与失败launcher原件不热改；22:22:32Z派发首次观测时钟不重置，无第二等待者/阶段通知。
+
 ## 2026-10-14 06:48 §14科学消费完成；唯一active为§15 D相邻稳定性
 
 主讨论完整消费§14并采用D保住/改善、C退步分支：D414/175对原G427/165 held净+10、对MT340/153净+22，控制正例保留；C393/158及当前native/lambda补救停止，内部误差恶化不抹去D闭环收益。完整解释只引用PARENT/analysis/main_scientific_readout/interpretation_20261014.md，不重算主讨论分析。

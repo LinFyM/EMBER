@@ -11963,3 +11963,5 @@ D仅BA seen414/held175，C同BA+固定lambda native为393/158；原G427/165、MT
 
 主讨论原件科学消费采用D保住/改善、C退步分支，D175相对原G165/MT153的正证据保留，seen414相对原G427损失和task16/31收益集中、task23单例/39零成功均保留。内部BA/native恶化不能替代闭环裁决或证明D175稳定；C158及当前native/lambda补救停止。完整机制/历史/竞争解释直接引用operator_native_joint_learning/analysis/main_scientific_readout/interpretation_20261014.md，不另建分析或复算。
 唯一§15接续D72→144同完整BA/原288输入/T/权重/Adam，全前端信用与冻结source/T/Actor；相邻72新增29/失19对S将逐行核保持，不选中点、不将两点union当分数。一次重复原条件流是本批唯一干预，不能从fresh38349或C开始，也不自动第三块/BCE/Phi。预算/恢复/终点/资源与结果停止分支全文在design§15，ROOT=video_guided_proposal_writer_20261014/operator_D_adjacent_stability。
+
+§15首启动为纯物理配置错误：单值frame与world4校验不符，在模型构造/更新前失败；0更新/环境、.024166130GPUh保留。四rank实际配置消费者修正为64各一项，同完整D72接续与科学预算不变，不将其当科学阴性。

@@ -1,3 +1,21 @@
+## 2026-10-13 17:40 当前：原§23独立执行；§11接手诊断工程恢复获明确有界裁决
+
+当前有两个独立授权任务。原§23 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349，唯一owner06/PID3514753按原合同继续B18→唯一strict correct400；最近核验完整B3已保存。pair72/1260新增episode、seen1152只读query和A180全部复用，G38349/F Adam/bank9冻结、logicalB4/seen2+novel2及全G/θ/baseline/Adam/RNG承接不变，B18/400尚未完成，Test关闭。不陪跑反复读取进度。
+
+主讨论08:39:45Z明确派发独立§11零更新non-held接手可用性诊断，最新docs已含ce2adac1/09b2a6ae，并于5e534d9e推送main。只取task4/17/25/34固定8条原P，12登记pre-action槽位各P/E续跑，0新G/参数更新/held/Test/选点，原H/bank只读。完整训练候选仍非active design；授权范围仅原§23与本次小诊断，主讨论继续科学消费/方法取舍，不自动训练候选。新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/nonheld_takeover_feasibility。
+
+临时188行消费者通过8病例/12槽位/76因子/原行、共同E与RNG的CPU核验；实际17:27:42在gpu01:0/8环境启动294f5f91，43秒后因临时request显式snapshot=None违反现有EpisodeRunner字段约定退出，发生在环境submit之前、0交互，0.012047671GPUh。request窄修经8个真实CPU请求消费，17:31:09使用clean pushed detached5e534d9e启动，53.51秒后在初态tensor IPC返回时因TMPDIR过长超过AF_UNIX地址限制退出，0native forward/控制动作/完整原行，但至多8个reset/settling已发生，准确步数未知，按80步上界计账；0.014864329GPUh。两真实退出的唯一自动回报均已送达新实验session并consumed判重，全部原件/费用保留，不能把第二失败记为0交互或科学阴性。
+
+主讨论09:35:48Z明确addendum允许短TMPDIR修复后继续原8+24有效面板：完整科学rollout仍≤32；physical starts含已失败工程启动上界40；环境步含失败settling仍≤10640，失败未知按80预扣。原面板历史整数不改写，case/noise/12槽位不改；再次失败不得自动扩上限。addendum复制到新ROOT/engineering_start_amendment.json，消费者须在完成记录计入80和≤40。短data1临时路径的真实torch tensor IPC CPU检查已通过，正在完成该窄计账修正和新的clean pushed冻结；当前诊断GPU已退出，原§23不中断。
+
+时间如实记录：准备至首实际启动约48min，超过最初20–35min准备+运行估计；派发08:39:45Z时钟不重置。问题为临时消费者字段和我设置的长IPC临时目录，尚无P/E科学结果。修复/恢复启动至完成暂15–25min，仍待实际批量rollout验证；真实边界及修正预期已回主讨论，未删减12槽位或扩大成训练。
+
+资源最终为原两节点合计6/8条件、单节点6卡；利用率与固定24GiB筛选取消，允许算力竞争，仍不kill/pause/reset/挤掉他人任务。首诊断加入后真实5卡/cap6，data1独立quota核准，原§23160GiB和本诊断4GiB组合峰值可容纳，未复制大资产。科学任务各自一个CPUowner直接等GPU子进程，整批退出仅一次可靠唤醒本session；验收后分别按任务一次交主讨论01a13399，无第二等待者/阶段提醒/心跳。
+
+分支清理完成：本地50→6，删15旧远端后保留4。28旧提交等价补丁经9f712eda tree不变祖先合并保留原SHA；两已结束clean开发树退休，正式冻结树/资产保留。保留main、主讨论active docs、三个未合并工作分支、仍被正式证据引用的operator-change-clock。新任务开发分支验证/合入即清理，冻结运行树按真实依赖保留。清单见原§23ROOT/analysis/engineering/branch_retirement_20261013.json。
+
+以下为历史时点记录。
+
 ## 2026-10-13 16:24当前承接：B2完整，恢复B3并继续B18→correct400
 
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。恢复05于15:59:23实际exit1，两次GPU尝试均在rank3/gpu01:2的16环境query初始化EGL offscreen framebuffer失败；B2完整G/θ/baseline/Adam/四rank RNG与B3四条五轮路径、有效query全部保留。已消费唯一退出回报，完整失败/费用保留，当前累计已结算6.759369197GPUh（含三次实际失败）；不重复pair72/A180/B2/有效路径和原行，不把异常当科学阴性。

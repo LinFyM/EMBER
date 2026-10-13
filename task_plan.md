@@ -1,3 +1,15 @@
+## 2026-10-13 17:40 当前计划：完成原§23与有界§11接手诊断，分任务整批验收
+
+原§23唯一恢复06独立继续固定G38349/bank9、完整A180→B18→唯一strict correct400。最近核验B3完整；不重复原pair72/A180/已保存path/query，不重启活任务或增加等待者。验收同时间完整G/θ/baseline/Adam/各rank RNG、当前核路径与信用、400原行配对/保持/覆盖和所有失败/交互/GPU费用，完成后一次交新主讨论01a13399；Test/自动后继关闭。
+
+主讨论另已授权候选design§11固定non-held8个P/12槽位接手可用性诊断，0新G/更新/held/Test。两次真实启动均因已定位接口/IPC配置错误退出，无native动作或科学结果；第二次仅reset/settling未知，按80步上界计。09:35:48Z addendum明确允许≤32完整rollout、≤40 physical starts、含失败settling≤10640总步；copy在新ROOT/engineering_start_amendment.json，原panel不改。先完成短data1 TMPDIR与消费者计账实际检查、推送clean detached，再自主承接原8+24面板；再次实质缺口不自动扩预算。结果正负均停，12槽位分母/原件/完整noise/实际费用一次交主讨论，不自动训练完整候选。剩余预测15–25min自恢复启动，原08:39派发起点保留。
+
+主讨论三个docs最新09b2a6ae已集成到5e534d9e；问题/历史/源码审查及独立修订保留，最新方法选择由主讨论独立负责，候选未激活训练。root task_plan/progress/findings仍本session独占串行维护。最终资源保持原6/8合计和单节点6卡，取消利用率/固定显存筛选；根据实际模型与渲染峰值选择更大有用波次，不扩大科学行。
+
+旧分支生命周期清理和整批自动退出回报已实际验证；50→6本地、保留4远端，其余三个未合并工作/active docs/原件readback依赖保留。正式冻结树/输出/checkpoint不删，新task开发树及时合入清理。
+
+以下为历史计划与当时时点授权。
+
 ## 2026-10-13 当前计划：原§23从完整B2恢复，主讨论重审继续
 
 pair72、A180和B2完整，B3四条五轮路径/有效query保留。唯一恢复06 owner PID3514753已启动gpu01:6/7/1/2四rank，环境16/16/8/8，来源为原clean pushed detached bf2c88b0；只补缺失并继续B18→唯一strict correct400。G38349/F Adam/bank9冻结、logicalB4 seen2+novel2/72任务权重、θ/baseline Adam/RNG、信息墙及Test关闭全部不变。原05两次renderer失败及费用/回报已消费保留，实际状态和原件见progress顶部。

@@ -107,15 +107,20 @@ def metrics(root, stage, record, context):
         f.write(json.dumps(record) + '\n')
 
 
-def logical_tasks(update):
+def logical_tasks(update,root=None):
     """Nine B4 updates form one equal-weight full36 round, independent of topology."""
+    if root is not None:
+        run=read_json(Path(root)/'run_contract.json');epoch,slot=divmod(update,18)
+        seen=np.random.default_rng(np.random.SeedSequence([20261013,23,0,epoch])).permutation(run['G_seen_tasks']).tolist()
+        novel=np.random.default_rng(np.random.SeedSequence([20261013,23,1,epoch])).permutation(run['G_novel_tasks']).tolist()
+        return seen[2*slot:2*slot+2]+novel[2*slot:2*slot+2]
     round_index,slot=divmod(update,len(TASKS)//4)
     order=np.random.default_rng(seed(44,round_index)).permutation(TASKS).tolist()
     return order[4*slot:4*(slot+1)]
 
 
-def assigned_tasks(context,update):
-    return [t for i,t in enumerate(logical_tasks(update)) if i%context.world_size==context.rank]
+def assigned_tasks(context,update,root=None):
+    return [t for i,t in enumerate(logical_tasks(update,root)) if i%context.world_size==context.rank]
 
 
 class HistoryCache:
@@ -154,179 +159,6 @@ class HistoryCache:
         self.trim()
 
 
-class EndpointTrainer:
-    """The single F-only owner calibrates complete LoRAs on native FM."""
-    def __init__(self,runtime,context,root,*,microbatch=28):
-        from .endpoint_context import FrozenEndpointContexts
-        from .endpoint_fm import NativeEndpointCredit
-        self.runtime,self.context,self.root=runtime,context,Path(root)
-        contract=read_json(self.root/'run_contract.json')
-        if contract.get('G_gradient_owner')!='endpoint':
-            raise ValueError('current shared G training requires the registered endpoint owner')
-        runtime.generator.eval().requires_grad_(False)
-        self.parameters=list(runtime.generator.endpoint.parameters())
-        self.parameter_names=['endpoint.'+name for name,_ in runtime.generator.endpoint.named_parameters()]
-        if len(self.parameters)!=166 or sum(p.numel() for p in self.parameters)!=8761152:
-            raise ValueError('the original complete166-tensor endpoint owner changed')
-        self.optimizer=torch.optim.AdamW(self.parameters,**OPTIMIZER)
-        self.optimizer.owner='endpoint';self.optimizer.parameter_names=self.parameter_names
-        if contract['G_objective']!=G_OBJECTIVE or contract['fixed_bank_version']!=9:
-            raise ValueError('current endpoint owner requires the fixed-bank native FM contract')
-        self.objective=NativeEndpointCredit(runtime,contract['native_FM'],microbatch)
-        self.cache=HistoryCache();self.panel={r['task_id']:r for r in read_json(self.root/'panel.json')['tasks']}
-        if not runtime.bank_scale_path.exists():raise ValueError('complete full36 bank and fixed S_G required')
-        if getattr(runtime,'generator_optimizer_state',None) is not None:
-            if getattr(runtime,'generator_optimizer_parameter_names',None)!=self.parameter_names:
-                raise ValueError('saved endpoint Adam must map the actual166 named parameters')
-            self.optimizer.load_state_dict(runtime.generator_optimizer_state)
-        self.contexts=FrozenEndpointContexts(runtime,context,self.root,self.cache,self.panel)
-        self.refresh_bank(getattr(runtime,'supervision_version',0))
-
-    def prepare_bank(self):
-        self.contexts.prepare(self.bank)
-
-    def refresh_bank(self,version):
-        contract=read_json(self.root/'run_contract.json')
-        if contract['G_bank_mode']!='actual_parents':raise ValueError('native FM requires the actual fixed parent bank')
-        if version!=9 or contract['fixed_bank_version']!=9:
-            raise ValueError('native FM must not absorb a changed or student-expanded bank')
-        self.bank={t:dict(task=t) for t in TASKS}
-        for task in TASKS:
-            bootstrap=read_json(self.root/'bootstrap'/f'task_{task:04d}'/'complete.json')
-            if not bootstrap['complete'] or bootstrap['reference']!='MT300':
-                raise ValueError('initial G needs registered nonempty MT self practice for all36')
-            self.bank[task]['parents']=[dict(reference='MT300',weights=str(self.root/'initial.safetensors'),
-                histories=[bootstrap['history']])]
-        self.runtime.supervision_version=version
-        version_name=contract.get('student_refresh',{}).get('version')
-        if version_name is not None:
-            files=[self.root/'student_data'/version_name/f'task_{task:04d}'/'parent.json' for task in TASKS]
-            if any(file.exists() for file in files):
-                if not all(file.exists() and read_json(file)['complete'] for file in files):
-                    raise ValueError('all36 actual initial student parents must precede joint G updates')
-                for task,file in zip(TASKS,files,strict=True):
-                    self.bank[task]['parents'].append(read_json(file)['parent'])
-        path=self.root/'G_student_bank.json'
-        rows=read_json(path)['rows'] if path.exists() else []
-        for row in rows:
-            if row['joint_update']>version:continue
-            parents=self.bank[row['task']]['parents'];parent=row['parent']
-            existing=next((p for p in parents if p['reference']==parent['reference']),None)
-            if existing is None:parents.append(parent)
-            else:existing['histories'].extend(h for h in parent['histories'] if h not in existing['histories'])
-        self.runtime.supervision_version=version
-
-    def step(self,update,*,stage='G',profile=False):
-        runtime,context,root=self.runtime,self.context,self.root
-        tick=time.monotonic();before=dict(runtime.components)
-        hits_before,loads_before=self.contexts.hits,self.contexts.loads
-        load_before=self.contexts.load_seconds
-        runtime.psi_frozen=False;runtime.generator.eval().requires_grad_(False)
-        runtime.generator.endpoint.train().requires_grad_(True)
-        self.optimizer.zero_grad(set_to_none=True);records=[];profile_failure=None
-        for task in assigned_tasks(context,update):
-            rng=np.random.default_rng(seed(40,task,update));entry=self.bank[task]
-            # No class/category weights: parent cardinality and H cardinality are separate.
-            parent_index=int(rng.integers(len(entry['parents'])));parent_row=entry['parents'][parent_index]
-            history_index=int(rng.integers(len(parent_row['histories'])));history_path=parent_row['histories'][history_index]
-            demo=self.panel[task]['policy_videos'][int(rng.integers(len(self.panel[task]['policy_videos'])))]
-            value,parent,_=self.contexts.get(task,parent_index,history_index,demo,parent_row)
-            with phase(runtime,'endpoint_forward'),autocast(runtime.device):
-                prediction=runtime.generator.endpoint(parent,memory=value['memory'],checkpoint_layers=False)
-            layout=runtime.generator.layout
-            generated=layout.unpack(layout.center+layout.scale*prediction.float())
-            visit=runtime.G_sampler['native_FM']['task_visits'][str(task)]
-            if not 0<=visit<48:raise ValueError('native FM query visit must be independent0..47')
-            F_peak=torch.cuda.max_memory_allocated(runtime.device)/2**30
-            try:
-                credit=self.objective(task,demo,visit,generated)
-            except torch.OutOfMemoryError as error:
-                if not profile:raise
-                profile_failure=str(error);del prediction,generated;torch.cuda.empty_cache();break
-            records.append(dict(task=task,parent=parent_row['reference'],H=history_path,demo=demo,
-                parent_index=parent_index,history_index=history_index,
-                **credit,F_and_frozen_policy_peak_before_native_GiB=F_peak,
-                frames=value['frames'],H_records=value['H_records'],H_episodes=value['H_episodes'],
-                H_producers=value['producers'],context_source=value['source'],missing_label=False))
-            del prediction,generated
-        if profile:
-            failures=[profile_failure]
-            if context.world_size>1:
-                failures=[None]*context.world_size;dist.all_gather_object(failures,profile_failure)
-            if any(failures):
-                self.optimizer.zero_grad(set_to_none=True)
-                return dict(profile_failed=True,failures=failures,seconds=time.monotonic()-tick,
-                            microbatch=self.objective.microbatch)
-        synchronize_gradients(runtime.generator.endpoint,context)
-        norm=torch.nn.utils.clip_grad_norm_(self.parameters,1.,error_if_nonfinite=True)
-        self.optimizer.step();runtime.mark_psi_update();torch.cuda.synchronize(context.device)
-        steps=[int(value['step']) for value in self.optimizer.state.values()]
-        if len(steps)!=166 or min(steps)!=update+1 or max(steps)!=update+1:
-            raise ValueError('the complete166 endpoint Adam states must advance with the actual cursor')
-        finish_phases(runtime)
-        native_sampler=runtime.G_sampler['native_FM']
-        for task in logical_tasks(update):native_sampler['task_visits'][str(task)]+=1
-        runtime.G_sampler=dict(next_update=update+1,logical_batch=4,task_order=list(TASKS),
-            task_weight=1/36,parent_weight='equal actual parent',H_weight='uniform within parent',gradient_owner='endpoint',
-            native_FM=native_sampler)
-        record=dict(update=update+1,events=records,logical_task_batch=logical_tasks(update),gradient_norm=float(norm),
-            endpoint_parameter_tensors=len(self.parameters),Adam_step_min=min(steps),Adam_step_max=max(steps),
-            seconds=time.monotonic()-tick,frozen_context_device_cache_entries=len(self.contexts.items),
-            frozen_context_hits=self.contexts.hits-hits_before,frozen_context_loads=self.contexts.loads-loads_before,
-            frozen_context_load_seconds=self.contexts.load_seconds-load_before,
-            supervision_version=runtime.supervision_version,
-            phases={k:v-before.get(k,0.) for k,v in runtime.components.items()},
-            frontend_has_gradient=any(p.grad is not None for name,p in runtime.generator.named_parameters() if not name.startswith('endpoint.')),
-            source_has_gradient=any(p.grad is not None for p in runtime.policy.parameters()))
-        if record['frontend_has_gradient'] or record['source_has_gradient']:
-            raise ValueError('native FM gradient escaped the sole endpoint owner')
-        metrics(root,stage,record,context)
-        return record
-
-
-def train_endpoint(runtime,context,root,*,stop,resume=None,microbatch=28,profile_microbatches=None):
-    contract=read_json(Path(root)/'run_contract.json')
-    if stop not in contract['updates']['G'] or stop!=38781:raise ValueError('registered native FM terminal required')
-    if contract.get('G_initial_resume') and resume is None:
-        raise ValueError('registered continued endpoint learning cannot start fresh')
-    trainer=EndpointTrainer(runtime,context,root,microbatch=microbatch)
-    initialize_deferred_process_group(context,rendezvous_root=Path(root)/'rendezvous')
-    start=resume_checkpoint(resume,'G',runtime,trainer.optimizer,context,
-        baseline=runtime.training_baseline,baseline_optimizer=runtime.training_baseline_optimizer) if resume else runtime.G_sampler['next_update']
-    if runtime.version!=start or start>stop:
-        raise ValueError('component import must retain the endpoint sampler/version cursor')
-    if resume is not None:
-        if (runtime.G_sampler['next_update']!=start or runtime.version!=start
-                or start>stop or (contract.get('G_initial_resume') and start<contract['G_initial_resume']['update'])):
-            raise ValueError('complete endpoint resume cursor/version does not match its learning window')
-        steps=[int(s['step']) for s in trainer.optimizer.state.values() if 'step' in s]
-        write_json_atomic(Path(root)/'code'/f'G_resume_rank_{context.rank:02d}.json',dict(
-            complete=True,checkpoint=str(Path(resume).resolve()),next_update=start,psi_version=runtime.version,
-            G_sampler=runtime.G_sampler,supervision_version=runtime.supervision_version,
-            optimizer_state_count=len(trainer.optimizer.state),optimizer_step_min=min(steps),optimizer_step_max=max(steps),
-            world_size=context.world_size,restored_rng_rank=context.rank,logical_condition_batch=4,
-            G_bank_mode=contract.get('G_bank_mode','actual_parents'),fresh=False,
-            G_objective=G_OBJECTIVE,objective_migration=runtime.objective_migration))
-    trainer.refresh_bank(getattr(runtime,'supervision_version',0))
-    trainer.prepare_bank()
-    expected_visits=(start-38349)//9
-    if (start<38349 or (start-38349)%9 or runtime.supervision_version!=9
-            or set(runtime.G_sampler['native_FM']['task_visits'].values())!={expected_visits}):
-        raise ValueError('FM absolute cursor and independent per-task query visits changed')
-    if profile_microbatches is not None:
-        from .endpoint_fm import profile_physical_batches
-        profile_physical_batches(trainer,runtime,context,root,start,resume,profile_microbatches)
-        return
-    for update in range(start,stop):
-        trainer.step(update)
-        if update+1 in contract.get('G_checkpoint_updates',contract['updates']['G']):
-            checkpoint(root,'G',update+1,runtime,trainer.optimizer,context,sampler=dict(seed=20261011,next_update=update+1,
-                logical_batch=4,task_order=list(TASKS),task_weight=1/36,parent_weight='equal actual parent',H_weight='uniform within parent',
-                bank_version=runtime.supervision_version,gradient_owner='endpoint',
-                context_cache='exact frozen frontend and real P/H prefix; shared data1 files and bounded device reuse'))
-    trainer.objective.close()
-
-
 def expected_query(logits, rewards):
     return (logits.softmax(-1)*logits.new_tensor(rewards)).sum()
 
@@ -334,14 +166,15 @@ def expected_query(logits, rewards):
 def train_local(runtime,context,root,example_loader,*,stop,resume=None,baseline=None):
     """Mean real prefixes inside a condition, then four equal task conditions."""
     contract=read_json(Path(root)/'run_contract.json')
-    if stop not in contract['updates']['local'] or stop%9:raise ValueError('registered full36 local rounds required')
+    if stop not in contract['updates']['local'] or stop%18:raise ValueError('registered equal seen/novel72 local rounds required')
     runtime.freeze_psi();runtime.actor.train()
     optimizer=torch.optim.AdamW(runtime.actor.parameters(),**OPTIMIZER)
+    optimizer.load_state_dict(runtime.actor_optimizer_state)
     initialize_deferred_process_group(context,rendezvous_root=Path(root)/'rendezvous')
     start=resume_checkpoint(resume,'local',runtime,optimizer,context,baseline=baseline) if resume else 0
     for update in range(start,stop):
         tick=time.monotonic();optimizer.zero_grad(set_to_none=True);records=[]
-        for task in assigned_tasks(context,update):
+        for task in assigned_tasks(context,update,root):
             example=example_loader(task,update);path=example['path'];prefixes=example['prefixes']
             if not prefixes:raise ValueError('local example lacks actual completed prefixes')
             features=runtime.teaching(task,path.demo,video_task=path.video_task);losses=[]
@@ -352,9 +185,11 @@ def train_local(runtime,context,root,example_loader,*,stop,resume=None,baseline=
                 decision=prefix.setdefault('decision',dict(kind='final',candidates=candidates,
                     records=prefix['records'],episodes=prefix['episodes'],parent=None))
                 logits=decision_logits(runtime,path,decision,features);loss=-expected_query(logits,rewards)
+                prefix['training_probabilities']=logits.detach().softmax(-1).cpu().tolist()
                 (loss/(4*len(prefixes))).backward();losses.append(float(loss.detach()))
                 del logits,loss
             records.append(dict(task=task,condition=path.identity,prefixes=len(prefixes),
+                actual_prefix_credit=[dict(candidates=p['practiced'],reward=p['reward'],probabilities=p.get('training_probabilities')) for p in prefixes],
                 prefix_mean_loss=sum(losses)/len(losses),source=example['source'],query_excluded_from_H=True))
             path.native_response_cache.clear()  # Final predictions are frozen in prefix decisions; discard GPU KV.
             del example,path,prefixes,features
@@ -362,39 +197,15 @@ def train_local(runtime,context,root,example_loader,*,stop,resume=None,baseline=
         norm=torch.nn.utils.clip_grad_norm_(runtime.actor.parameters(),1.,error_if_nonfinite=True)
         optimizer.step();torch.cuda.synchronize(context.device)
         metrics(root,'local',dict(update=update+1,conditions=records,gradient_norm=float(norm),
-            logical_task_batch=logical_tasks(update),seconds=time.monotonic()-tick,psi_frozen=True,
+            logical_task_batch=logical_tasks(update,root),seconds=time.monotonic()-tick,psi_frozen=True,
             actual_path_cache_hits=example_loader.cache_hits,H_decode_seconds=example_loader.decode_seconds),context)
         if update+1 in contract['updates']['local']:
             checkpoint(root,'local',update+1,runtime,optimizer,context,
-                sampler=dict(next_update=update+1,task_order=list(TASKS),condition_weight=.25,
+                sampler=dict(next_update=update+1,task_order=contract['training_tasks'],condition_weight=.25,
                     prefix_reduction='mean within actual condition',data_version=contract['student_refresh']['version']),baseline=baseline,
                 baseline_optimizer=runtime.training_baseline_optimizer)
 
 
-
-@torch.no_grad()
-def final_warm_readback(runtime,context,root,example_loader):
-    runtime.freeze_psi();runtime.actor.eval();rows=[]
-    for index,task in enumerate(TASKS):
-        if index%context.world_size!=context.rank:continue
-        example=example_loader(task,90);path=example['path'];prefix=example['prefixes'][-1]
-        features=runtime.teaching(task,path.demo,video_task=path.video_task)
-        decision=prefix.setdefault('decision',dict(kind='final',candidates=prefix['practiced'],
-            records=prefix['records'],episodes=prefix['episodes'],parent=None))
-        probabilities=decision_logits(runtime,path,decision,features).softmax(-1)
-        reward=[prefix['reward'][name] for name in prefix['practiced']]
-        rows.append(dict(task=task,probabilities=probabilities.cpu().tolist(),references=prefix['practiced'],
-            expected_successes16=16*float((probabilities*probabilities.new_tensor(reward)).sum())))
-        path.native_response_cache.clear()
-    gathered=[None]*context.world_size if context.is_main else None
-    if context.world_size>1:dist.gather_object(rows,gathered,dst=0)
-    else:gathered=[rows]
-    if context.is_main:
-        rows=sorted([row for shard in gathered for row in shard],key=lambda row:row['task'])
-        if [row['task'] for row in rows]!=list(TASKS):raise ValueError('warm expectation requires all36 actual pairs')
-        write_json_atomic(Path(root)/'analysis/final_warm90_expected_query.json',dict(complete=True,rows=rows,
-            expected_successes576=sum(row['expected_successes16'] for row in rows),uniform=382.5,always_G24849=425,
-            posthoc_condition_pair_bound=430,new_environment_episodes=0,checkpoint_selection=False))
 
 def continuation_values(stop_probabilities,query_expectations,*,cost=.001):
     """All truncated-depth values and fixed-main-path adjoints, using actual probabilities."""

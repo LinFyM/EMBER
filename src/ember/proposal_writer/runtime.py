@@ -73,7 +73,8 @@ class Runtime:
         tokenizer = self.asset_root / SOURCE['tokenizer']
         self.processor = Pi05LiberoProcessor(stats, tokenizer, 200, str(self.device))
         self.tokenizer = Pi05TeacherPrefixTokenizer(tokenizer, 200, str(self.device))
-        self.tasks = load_learning_tasks(self.asset_root, task_ids, role=task_role, protocol_path=SOURCE['data_protocol'])
+        from .full_writer import learning_tasks
+        self.tasks = learning_tasks(self.asset_root, self.root, task_ids, task_role)
         self.videos = RawTeacherVideoStore([t.authority for t in self.tasks.values()], frame_stride=5, camera_view='dual')
         base_path=self.root/'base/merged_targets.safetensors'
         merged=load_file(str(base_path),device=str(self.device)) if base_path.exists() else None

@@ -168,10 +168,31 @@ def formal_conditions(args,runtime,runner,panel,rows):
         if (destination/'complete.json').exists():continue
         if (destination/'path.json').exists():entry['path']=restore_compilation(destination,runtime)
         else:missing.append(entry)
-    specifications=[dict(task=e['task'],panel=dict(practice_states=e['row']['practice_states']),demo=e['demo'],
-        identity=e['destination'].name,path_ordinal=e['row']['video_ordinal'],noise_root=seed(77,e['row']['task'],e['row']['video_ordinal']),
-        max_rounds=spec['max_rounds'],external_max_environment_steps=spec['environment_multiplier']*(e['task']['horizon']+10),
-        video_task=e['video_task']) for e in missing]
+    specifications=[]
+    from .learning import HistoryCache
+    from .path import history_prefix
+    cache=HistoryCache()
+    reference_root=Path(spec['bootstrap_reference_root'])
+    for e in missing:
+        source=reference_root/e['destination'].name
+        previous=read_json(source/'path.json');first=previous['outputs'][0]
+        if (previous['task_id']!=e['row']['task'] or previous['teacher_demo']!=e['demo']
+                or previous['noise_root']!=seed(77,e['row']['task'],e['row']['video_ordinal'])
+                or first['episodes']!=1 or first['selected']!='MT300'):
+            raise ValueError('formal own MT bootstrap language/video/scene/RNG prefix incompatible')
+        full=cache.get(source/'history.pt.gz')
+        history=history_prefix(full,first['records'],1)
+        episode=history.episodes[0]
+        if (episode['actual_parameter_ref']!='MT300' or episode['init_state_id']!=e['row']['practice_states'][0]
+                or episode['env_seed']!=seed(32,previous['noise_root'],0)
+                or episode['policy_seed_root']!=episode['env_seed']):
+            raise ValueError('formal MT producer, initial state or native RNG changed')
+        descriptor=dict(path=str(source/'history.pt.gz'),records=first['records'],episodes=1,
+            old_complete_path=str(source/'path.json'),old_MT_environment_steps=first['environment_steps'])
+        specifications.append(dict(task=e['task'],panel=dict(practice_states=e['row']['practice_states']),demo=e['demo'],
+            identity=e['destination'].name,path_ordinal=e['row']['video_ordinal'],noise_root=previous['noise_root'],
+            max_rounds=spec['max_rounds'],external_max_environment_steps=spec['environment_multiplier']*(e['task']['horizon']+10),
+            video_task=e['video_task'],bootstrap_history=history,bootstrap_provenance=descriptor))
     for entry,path in zip(missing,compile_conditions(runtime,runner,specifications) if missing else [],strict=True):
         entry['path']=path;entry['new_steps']=path.timings['new_environment_steps']
         path.save(entry['destination'],retain_U=True)
@@ -252,35 +273,28 @@ def evidence_video_conditions(environment,original):
 
 
 def student_queue(root):
-    """One immutable condition per task, using the existing dynamic row queue."""
+    """Immutable72 pair shards; each task retains all16 G-credit rows."""
     from dataclasses import asdict
-    from .contract import TASKS
     from .supervision import panels,query_panel
     root=Path(root);run=read_json(root/'run_contract.json');panel=panels(root)
     version=run['student_refresh']['version'];base=root/'student_data'/version/'queue'
-    tasks={task['global_task_id']:task for task in run['environment']['tasks']}
-    if set(tasks)!=set(TASKS):raise ValueError('student queue requires the registered full36 tasks')
-    mode=run['student_refresh'].get('readout_mode','practice_then_query')
-    endpoint_only=mode=='endpoint_query_only';practice_only=mode=='saved_endpoint_practice_only'
-    if endpoint_only and run['student_refresh'].get('post_generation_practice') is not False:
-        raise ValueError('direct endpoint queue must omit new G practice explicitly')
-    practice_count=0 if endpoint_only else 1
+    tasks={t['global_task_id']:t for t in run['environment']['tasks']}
+    if set(tasks)!=set(run['training_tasks']) or len(tasks)!=72:
+        raise ValueError('pair queue requires the audited72-task run scope')
     shards=[]
-    for ordinal,task_id in enumerate(TASKS):
-        task=tasks[task_id]
-        states=(run['student_refresh']['practice_mapping'][str(task_id)]['init_state_id'],) if practice_only else tuple(query_panel(panel[task_id],0))
-        if not practice_only and len(states)!=run['student_refresh']['query_states_per_parameter']:
-            raise ValueError('student queue cannot shrink the actual query panel')
-        shards.append(EvaluationShard(f'student_{version}_{task_id:04d}',ordinal,task['suite'],task['task_id'],
-            task['horizon'],states,task['horizon']*(1 if practice_only else len(states)+practice_count),0 if task['horizon']==520 else None))
-    plan=dict(checkpoint=run.get('readout_checkpoint',str(root/'checkpoints/G'/f"update_{run['student_refresh']['G_update']:08d}")),
-        logical_tasks=list(TASKS),new_episodes=36 if practice_only else 36*(practice_count+run['student_refresh']['query_states_per_parameter']),
-        new_G_practice_episodes=36*practice_count,readout_mode=mode,
-        shards=[asdict(shard) for shard in shards],condition_mapping=run['student_refresh']['condition_mapping'],
-        G_training_code=run['git'],one_complete_LoRA_per_condition=True)
+    for ordinal,task_id in enumerate(run['training_tasks']):
+        task=tasks[task_id];states=tuple(query_panel(panel[task_id],0))
+        if len(states)!=16:raise ValueError('pair credit needs complete query16')
+        episodes=1 if task_id in run['G_seen_tasks'] else 34
+        shards.append(EvaluationShard(f'pair_{version}_{task_id:04d}',ordinal,task['suite'],task['task_id'],
+            task['horizon'],states,task['horizon']*episodes,None))
+    plan=dict(checkpoint=run['readout_checkpoint'],logical_tasks=run['training_tasks'],new_episode_max=1260,
+        new_G_generation_max=36,new_G_practice_episodes=72,new_MT_bootstrap_episodes=36,
+        reused_query_rows=1152,shards=[asdict(q) for q in shards],
+        condition_mapping=run['student_refresh']['condition_mapping'],fixed_G_cursor=38349)
     file=base/'queue_plan.json'
     if file.exists() and read_json(file)!=json.loads(json.dumps(plan)):
-        raise ValueError('student condition queue changed after registration')
+        raise ValueError('pair queue changed after registration')
     write_json_atomic(file,plan)
     initialize_queue(base/'jobs.sqlite',shards,contract_reference=str(root/'run_contract.json'))
     return base
@@ -288,25 +302,15 @@ def student_queue(root):
 
 def student_worker(args,runtime,runner,environment):
     """One frozen resident consumes distinct groups; all policy RNG stays per row."""
-    from .pipeline import load_version,refresh_group,endpoint_query_group,saved_endpoint_version,composed_endpoint_version
+    from .pipeline import load_version
+    from .student_practice import pair_group
     from .supervision import query_row
     from .learning import memory_peak
     import torch
-    run=read_json(args.root/'run_contract.json');saved_endpoint=bool(run.get('saved_endpoint_complete'))
-    if saved_endpoint:state=saved_endpoint_version(runtime,args.checkpoint,run)
-    elif run.get('inference_components'):state=composed_endpoint_version(runtime,args.checkpoint,run)
-    else:state=load_version(runtime,args.checkpoint)
-    endpoint_only=args.command=='endpoint-query'
-    if endpoint_only!=(run['student_refresh'].get('readout_mode')=='endpoint_query_only'):
-        raise ValueError('resident command must match its registered practice/query consumer')
-    practice_only=run['student_refresh'].get('readout_mode')=='saved_endpoint_practice_only'
-    if practice_only:
-        from .student_practice import saved_practice_group
-        consume=saved_practice_group
-    else:consume=endpoint_query_group if endpoint_only else refresh_group
-    stage='saved_endpoint' if saved_endpoint else ('composed_endpoint' if run.get('inference_components') else 'G')
-    if state['stage']!=stage or state['next_update']!=run['student_refresh']['G_update']:
-        raise ValueError('resident student worker requires the registered final complete G')
+    run=read_json(args.root/'run_contract.json');state=load_version(runtime,args.checkpoint)
+    if (run['student_refresh']['readout_mode']!='selector_fixed_pair' or state['psi_version']!=38349
+            or Path(args.checkpoint).resolve()!=Path(run['readout_checkpoint']).resolve()):
+        raise ValueError('pair data require fixed original complete G38349')
     version=run['student_refresh']['version'];base=args.root/'student_data'/version/'queue'
     queue=base/'jobs.sqlite';tasks={(t['suite'],t['task_id']):t for t in environment['tasks']}
     stop=run.get('absolute_deadline_revision',{}).get('target_complete_and_consumed_UTC')
@@ -322,12 +326,11 @@ def student_worker(args,runtime,runner,environment):
         task_ids=[tasks[claim.task_key]['global_task_id'] for claim in claims]
         committed=set()
         try:
-            tick=time.monotonic();consume(args,runtime,runner,environment,run,task_ids)
+            tick=time.monotonic();pair_group(args,runtime,runner,environment,task_ids)
             for claim,task_id in zip(claims,task_ids,strict=True):
                 destination=args.root/'student_data'/version/f'task_{task_id:04d}'
                 parent=read_json(destination/'parent.json');ref=parent['actual_generated_parameter_ref']
-                rows=[read_json(destination/'practice.json')] if practice_only else [
-                    query_row(destination/'query'/f'{ref}_{state_id:03d}.json') for state_id in claim.shard.init_state_ids]
+                rows=[query_row(destination/'query'/f'{ref}_{state_id:03d}.json') for state_id in claim.shard.init_state_ids]
                 relative=Path('shards')/claim.shard.job_id/f'attempt_{claim.attempt:03d}.json'
                 size=publish_json_exclusive(base/relative,dict(rows=rows,task=task_id,condition=str(destination),
                     checkpoint=str(args.checkpoint),worker_id=args.worker_id,shared_group_seconds=time.monotonic()-tick))

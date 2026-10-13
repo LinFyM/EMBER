@@ -11870,3 +11870,6 @@ Owner保留6/8总卡及单节点6卡数量上限，取消利用率与固定显�
 所有8History/12v4 snapshot与index/24续跑的剩余官方H、完整noise/同初态/实际参数引用/5x7 finite动作已核，源初態proprio差0；保留原P首chunk小数值差与成功转败，不为逐位复刻追加forward/改变dtype或episode。三都成槽实际首预测RMS差.341466/.030566/.013285只描述目标内容。0新G/更新/held/Test，源§23 H/bank只读。实际5951环境步含正常dummy80，第二失败准确交互未知预扣80得保守6031≤10640；32完整科学rollout与含失败physical starts上界40分别报告，全费.142699175GPUh/有效6.95min，派发至执行退出71.42min显著超原20–35min，准备/工程原因与两真实失败不抹除。
 
 原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/nonheld_takeover_feasibility，完整report/acceptance在analysis/，producer clean pushed detached8e718be2保留。phase.cumulative_runner为可变对象终态总量，不解释为分阶段计时；用各phase独立seconds/plans/steps及整批native数据。结果正负均停止，临时消费者入口按已结束生命周期退休，原§23 owner06/B18/唯一400独立继续，不能把小诊断完成写成原批或方法目标完成。
+
+
+主讨论6287aff5据本次阴性已明确撤下失败接手动作监督及“现成E提供恢复方向”的当前依据，独立审阅同意；完整G/native函数学习、独立BCE/完整beta保留，首G正常成功控制的跨任务编译与能力保持成为主要可检验假说，不预承诺H修订增益。本轮问题/历史/源码审查、必要有界验证与完整设计已经交付，但新方法尚未实施、非active、无新训练派发。最终依据为已集成的method audit/review/candidate三docs，主讨论自己的既定T逐槽复算在§11ROOT/analysis/main_selected_T_readout.json，执行session不重复计算。原§23继续按原合同完成一次交主讨论。

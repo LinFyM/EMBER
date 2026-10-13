@@ -5232,3 +5232,6 @@ Owner11:50授权分析后自主执行，main据§22阴性与旧θ偏好/曝光�
 两GPU接口失败snapshot=None/长TMPDIR AF_UNIX及原source/费用全留，第二失败准确settling未知按明确事前amendment80步记：32完整rollout、physical starts上界40、5951科学环境步+80保守6031≤10640、全批.142699175GPUh。03仅CPU峰值准入失败0GPU/交互。派发08:39:45Z→有效启动09:44:13Z→exit0 09:51:10Z，准备/修复64.5min、GPU有效6.95min/总71.42min，原20–35min估计已超，不重置时钟。临时入口验证完成即退休，Git/冻结producer及全部原件保留，原§23独立继续。
 
 稳定ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/nonheld_takeover_feasibility；panel/amendment/run_contract、8个replays History/row、slots/12snapshot/24原行、results/complete、coordinator全部失败/exit/consumed/GPU费用；完整解读analysis/handoff_report.md、实际消费者验收analysis/acceptance.json、原P重放差异analysis/source_replay_comparison.json。
+
+
+主讨论6287aff5最终消费接手原件及既定T读出，经针对新阴性的独立审阅撤下失败恢复训练项，完整设计转为同一T正常成功控制与跨episode查询监督完整G，保留独立BCE/完整beta；H不被预称有效修订来源。问题审查/必要验证/设计本轮交付完成，新方法未实施、非active train；原§23不变。最终三个docs为problem_first_method_audit_20261013.md、problem_first_method_review_20261013.md、problem_first_compiler_candidate_20261013.md，均由主讨论独占branch编写、实验侧正常串行集成main。

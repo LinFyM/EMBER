@@ -1,3 +1,10 @@
+## 2026-10-15 §20原256整批完成；等待主讨论科学消费
+
+唯一local_interchange_bridge_resume_02于2026-10-14T15:58:02.799Z exit0，完整CPU原件验收5.731秒通过：8真实pure-image缓存、16完整38-target/rank8 LoRA、原MT-H36/完整Reader-H-F、256配对原行/逐动作trace/compact/全native noise均齐。同init16条件初始目标物体坐标差0，真实butter_2_main列绑定及标准BDDL已核；首实际4slot16条130.569秒，无额外模型/环境/测试。
+各64条C43/O42/P43/N40；N→P R36/G7/L4/net+3/churn11，逐video+2/−1/+1/+1，低于事前+8。C→O净−1，O→P净+1；原MT7/16只读复用（四教学逻辑28），C相对R27/G16/L1。16共享初态×4教学、P/N场景/轨迹/幅度/阶段/接缝混杂及全部强参照保留，不称strict400资格或隔离动态知识，科学解释交main。
+新256完整/256提交/0失败/69,603步/1.118274517GPUh/carry0，满足256/272/16/111520/在途16；7GPU job全部exit0、两节点任务/本用户CUDA均已释放。01桥接退出零GPU/model/env和费用原件保留，不清零准备时钟。首次15:12:22.781Z→退出45.667min在45–90内，ROOT验收前.579GiB<16GiB预估；原MT-H真实适应1episode/188步/36records及专属历史GPUh未知，旧no-H/H/§18费用/失败另列，方法非零交互。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/local_operation_interchange_25920；完整原件及analysis/engineering_completion_20261015/{acceptance.json,report.md,verify.py,passive_behavior_rows.json,process_release.json}。训练778ff8ea、本批编译执行a55c926e detached、完成记录Git分列；当前无active计算或自动新实验。执行者完成本次根五份记录/push后一次交main01a13399，已登记窄入口待main科学消费后退休；正式原件不动，0第二waiter/阶段Queue/自动retry/Test。
+
 ## 2026-10-14 §20实际正式启动；原批唯一桥接恢复
 
 唯一local_interchange_bridge_resume_02/PID1617247于2026-10-14T15:43:30.364370+00:00从clean pushed detached a55c926e实际启动，GPU编译job于2026-10-14T15:43:41.269819+00:00在gpu01:1经双节点/data1独立quota准入。实际source只复用canonical ImageCompiler/pure_features/完整MT-H36，0新训练。待16完整LoRA就绪后，六个持久共享队列消费者安排gpu01:1/6/7/0/2/5，slots4/4/2/2/2/2、全局在途16；每launch再核live资源，不固定面板归属、不占空卡。原首次15:12:22.781Z派发45–90min保持，当前尚未完成科学读出。

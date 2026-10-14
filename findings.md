@@ -12073,3 +12073,8 @@ main直接消费原1728行与全分布：换视频d_X_target均值V1.081050/VL .
 main已核同top-drawer opening跨scene正例不存在；task43/96相同黄油只有稳定握持下的重力方向关系成立，不能认证完整u或7维动作/抓取/放置等价。冻结三个stride5图像帧的P/N来自同task96 episode自然升/降，横向轨迹、幅度、阶段、场景与接缝混杂保留；不由方向/norm差异宣称动态知识。只按完整闭环原256面板/自身输出证据解释，强MT/首G/D/V/VL和旧失败/费用不削弱。完整合同design§20及新ROOT/inputs；0训练/新实践/held/Test，不追加窗口、VL、aux loss或第三同条件优化。
 
 §20第一次调度退出只因临时owner把canonical Batch的单卡tuple当list，0 GPU/model/env/费用；新02设备归一化已用实际Batch.run验证，冻结科研源码a55c926e不变。CPU桥接通过不是完整模型或真实MuJoCo body认证；本批有效最终episode仍须取得全部逐动作trace/原BDDL及butter_2_main绑定证据。
+
+## 495. §20局部片段完整闭环已交付，较大方向差未出现（2026-10-15）
+
+固定V25920/MT-H36和原冻结三帧映射的256原行齐：C43/O42/P43/N40（各64），C→O R41/G1/L2/net−1，O→P R38/G5/L4/net+1，N→P R36/G7/L4/net+3/churn11，逐video+2/−1/+1/+1，未达到事前+8。MT7/16原件复用，对C四视频逻辑R27/G16/L1/net+15；64格依赖于同16初态，不算64独立MT或strict400。目标body/EEF/逐控制动作/原BDDL、全部不利个例及混杂保留；任务成功仍主要标准，不由position/norm主张握持或动态内容因果。main负责完整科学消费，不自动加窗/剂量/训练/VL/控制。
+工程原件核验5.731s、0额外模型/环境；256提交/完成/0失败/69603步/1.118274517GPUh。纯image8/LoRA16/完整noise/pairing及256逐步trace均齐，实际task43原H188步依赖和旧专属GPUh未知不抹；原01零计算调度退出保留，新02复用a55c926e源码不热改。原dispatch→退出45.667min在45–90内，两节点任务CUDA已释放；完整报告见local_operation_interchange_25920/analysis/engineering_completion_20261015/report.md，完整strong refs与原失败/cost不变。

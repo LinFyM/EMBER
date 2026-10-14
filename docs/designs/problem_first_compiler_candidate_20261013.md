@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–19已交付并由main科学消费；第三个同条件优化窗口停止。当前唯一active为§20固定V25920的局部教学内容移植闭环检验：16完整LoRA、4教学×16原初态×C/O/P/N=256最终episode，无新训练/实践/native查询/held/Test。先取得有界局部内容作用证据，不将其称strict400或方法资格；整批由执行者验收/Git后一次交main。原全部正负结果、失败与费用保留。**
+2026-10-15。**§12–19已交付并由main科学消费；第三个同条件优化窗口停止。§20固定V25920局部教学内容移植已完整工程验收：8真实视频/16完整LoRA/256配对最终episode和被动轨迹齐，C/O/P/N各64为43/42/43/40，P−N3低于事前8。当前无active计算或自动后继；科学解释由main消费。有限非held面板与原混杂、强参照、失败和费用保留，不称strict400或动态机制资格。完整EMBER目标尚未完成。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -1103,3 +1103,7 @@ GPU数仍按Owner两节点合计8/空闲≤10则6、单节点6合同，launch逐
 执行者01a133e5独占代码/根记录/Git：从最新main独占开发、实际消费者定向检查、clean pushed detached正式冻结；记录原778ff8ea训练身份与新读取/评测身份。canonical ImageCompiler/FactorEncoder及既有大资产不热改、不保留新平行Compiler；一次性干预入口在main消费后退休，历史保留Git/frozen/原件。
 将本合同登记到既有`docs/designs/problem_first_compiler_candidate_20261013.md`新§20及task_plan/progress，必要发现/历史写入现有文件；不向AGENTS或稳定Owner要求添加动态运行记录。
 单一实际owner持续等待子进程退出；只在整批完成或真实边界可靠唤醒实验session，工程验收/Git后一次整批交main01a13399。无阶段ACK/Queue/第二等待者/普通状态轮询/自动后继。
+
+### §20 工程完成记录（2026-10-15，不更改事前裁决）
+
+原固定8pure视频、16完整LoRA、4×16×4=256最终episode及逐步trace/全noise/pairing已齐，C43/O42/P43/N40；P−N3、逐video2/−1/1/1，未达到本节事前8。256提交/0失败/69603步/1.118274517GPUh，02 owner45.667min退出，01零计算设备桥接故障原件保留。CPU验收5.731s与必要被动行为原行0额外forward/环境；source训练778ff8ea/固定V25920、本次编译执行a55c926e分列。原256/272/16/111520/在途16合同、所有强参照和场景/阶段/幅度/接缝混杂保持；不以位置证据预先认证抓握、局部方向因果或动态理解。完整工程原件见ROOT/analysis/engineering_completion_20261015/{acceptance.json,report.md,verify.py,passive_behavior_rows.json,process_release.json}。当前批结束，main按原本节消费科学结果并接续；窄入口只在科学消费后退休，无额外病例/训练/控制/Test。

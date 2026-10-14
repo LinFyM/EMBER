@@ -1,3 +1,9 @@
+## 2026-10-15 10条件joint纠正批已实际启动
+
+唯一joint_schema_corrected_01/PID3855813于2026-10-14T22:25:51.829Z从clean pushed detached afe6acc5实际启动，ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/joint_schema_corrected。六实际job已各自live双节点/数量/node6/strg01 data1准入：gpu02:1/7/2/0/4/6，均slots16；原full-native16峰值25.084GiB/MT16峰值25.646GiB支持本批workload35,000MiB余量，16是本批原子分支/final的实际最大注册wave，逻辑nativeB4/权重/优化/参数集合不变，0profile。10独立condition动态long-first+就绪final由六持久worker消费，避免5个task串行两臂或空卡等待。
+180个原producer精确路径/episode code/launch已登记，20bootstrap+160首次分支依赖占9458+20336逻辑control但新增物理0；CPU真实4parent+16cached分支/scorer/credit通过、joint组已可用，测试仅shadow draw，不将dev计算值写入正式baseline。10正式draw均待本批重新评分，空Adam/MT中心由真实首有效native更新接续；没有原proposal/Adam/CP导入。Phi/240patch/原预测全只读link，0TeacherGT/sealed重开。code净增61行、2source文件无新入口，临时旧schema桥随本次科学消费退休；无hard结构违约。
+新936/228126/3360/231486、原16失败剩余额度及每condition96/64horizon逻辑停止保持；实际总费用含此前5.131869526GPUh及本批新增。原18:16:48.556Z/3–6h与main本修订45–90min派发时钟不重置，启动时间单列；没有中途成绩或新的性能结论。原已消费MT回报按ROOT/attempt判重，一owner整批或真实边界实际退出唤醒→验收/Git→main一次，0阶段Queue/第二waiter/自动后继/Test。
+
 ## 2026-10-15 128MT修訂完整验收；唯一active转为10条件joint协议纠正
 
 MT owner03于21:52:59.416Z exit0，新增128提交/128返回/0失败或未知，31486control+1280dummy，.338502315GPUh；总1684提交/返回、334958control+15560dummy=350518步，5.131869526GPUh/carry0，实际final640、有效512。canonical corrected_results.json中MT67/video0 60/video1 58/no_video74；V0对MT R52/G8/L15，V1 R51/G7/L16；no_video0接受/全MT300，+7不称学习增益，同参数正常数值执行差异保留。旧MT64无效原行/旧results/freeze/sealed和完整成本保持。

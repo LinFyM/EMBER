@@ -56,8 +56,8 @@ def main():
     runner=None
     try:
         if args.command=='image-cache':
-            from .image_data import feature_cache
-            feature_cache(args,runtime);return
+            from .image_history import history_cache
+            history_cache(args,runtime);return
         os.environ.update(EMBER_LIBERO_ASSETS_ROOT=environment['libero_paths']['assets'],MUJOCO_GL='egl',
             PYOPENGL_PLATFORM='egl',MUJOCO_EGL_DEVICE_ID=str(args.physical_gpu))
         from ember.pi05_assets import prepare_libero_config,configure_libero_runtime_assets

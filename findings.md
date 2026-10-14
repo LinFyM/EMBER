@@ -12001,3 +12001,8 @@ main直接消费§16原行后的精确边界：2/14改选MT都是tie，严格MT�
 ## 485. §17删除整个H的范围撤回与中止原件（2026-10-14）
 
 Owner追问其他真实经历仍应输入，main明确旧no-H合同超出了仅删除语言条件hidden的干预，现恢复其他真实经历。旧no-H两臂及后继物化/评测已实际停止，原owner exit1按expected_scope_change消费，不能作为去语言路线科学阴性或工程故障。V/VL最近完整4320 checkpoint与未保存更新V4321..6138、VL4321..6017保留，每臂至多下一在途更新未知；0新环境/读出，全部2.371076951GPUh与原frozen源码保留。原144 pure-image缓存为合法可复用资产，原4个集中模块及官方评测owner保留复用。修订V/VL都保留自身RGB/proprio/实际actions/executed/feedback/顺序与实际参数上下文，不输入语言条件hidden；直接L仅VL。完整修订合同尚待main，不从旧no-H checkpoint自行新训或补测。原件指针为image_only_gemma_compiler/analysis/scope_change_settlement.json。
+
+## 486. §17恢复真实MT H1与任务名捷径的准确边界（2026-10-14）
+
+main纠正额外删除整个H的干预，优先修订已完整授权和纳入design§17；与训练内部值无关，旧no-H仅范围中止历史。V/VL都保留一次真实MT经历的前后RGB/proprio/实际actions/executed/feedback/顺序，均移除execution hidden，V无直接L、VL匹配直接L，policy始终L；固定同MT参数上下文由真实base/center确认，不新增fake静态输入网络。H行为可含间接任务信息，Owner要求抑制直接名称索引捷径而非完全语言独立；删文字不能证明教学操作知识，静态视觉/H识别仍是竞争解释。本批不追加controls/探针。
+仅原36 MT-H1+400精确held首prefix、52null沿outputs[0]；已有36/8131步、400/114908步是方法适应依赖、非零交互，不重采或计800独立H。1562/22254records最长104、raw_MT与final初态分离元数据齐；actualfinite由消费者继续核。144教学9.1387GiB纯Gemma原cache只读复用，H冻结vision共享一次约3.121GiB，held流式。fresh core17/VL18/H19、完整E BA与144/B4/2160-8640/1952合同保持，0旧权重Adam复用/H2/新增实践/Test/后继。新ROOT image_only_gemma_with_history，原2.371076951GPUh另记，H_gpu历史不可用整§23费用代替。

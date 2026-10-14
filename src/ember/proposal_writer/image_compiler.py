@@ -11,7 +11,31 @@ from .model import FactorEncoder, attention, positions
 
 COMMON_SEED = 2026101417
 LANGUAGE_SEED = 2026101418
-SCHEMA = 'ember_image_only_gemma_compiler_v1'
+HISTORY_SEED = 2026101419
+FEATURE_SCHEMA = 'ember_image_only_gemma_compiler_v1'
+SCHEMA = 'ember_image_gemma_history_compiler_v2'
+
+
+class HistoryReader(nn.Module):
+    """Actual MT events without an execution-hidden or variable-parent branch."""
+    def __init__(self):
+        super().__init__()
+        self.pre_post = nn.Embedding(2, 256)
+        self.facts = nn.Linear(63, 256)
+        self.event_query = nn.Parameter(torch.randn(1, 256) / 16)
+        self.event_attention, self.correspondence = attention(), attention()
+        layer = nn.TransformerEncoderLayer(256, 4, 1024, dropout=0., batch_first=True, norm_first=True)
+        self.history_time = nn.TransformerEncoder(layer, 4, enable_nested_tensor=False)
+
+    def forward(self, observations, history, teaching):
+        pair, facts = history['prepost'], history['facts']
+        if pair.ndim != 2 or pair.shape[1] != 2 or facts.shape != (len(pair), 63) or not len(pair):
+            raise ValueError('complete nonempty MT events and all63 actual facts required')
+        memory = observations[pair] + self.pre_post.weight[None, :, None]
+        q = self.event_query[None] + self.facts(facts)[:, None] + positions(history['record_indices'])[:, None]
+        event = (q + self.event_attention(q, memory.flatten(1, 2), memory.flatten(1, 2), need_weights=False)[0])[:, 0]
+        related = event + self.correspondence(event[None], teaching[None], teaching[None], need_weights=False)[0][0]
+        return self.history_time(related[None])[0]
 
 
 class ImageReader(nn.Module):
@@ -27,7 +51,7 @@ class ImageReader(nn.Module):
         self.norm = nn.LayerNorm(256)
         self.language = self.correspondence = None
 
-    def forward(self, images, indices, language=None):
+    def teaching(self, images, indices, language=None):
         if images.ndim != 3 or images.shape[1:] != (512, 2048) or len(images) != len(indices):
             raise ValueError('Reader requires all synchronized image-prefix frames and original indices')
         memory = self.image(images) + self.spatial.weight
@@ -45,7 +69,16 @@ class ImageReader(nn.Module):
         if tokens is not None:
             tokens = tokens + self.correspondence(tokens[None], ordered[None], ordered[None], need_weights=False)[0][0]
             ordered = torch.cat((ordered, tokens))
-        return self.norm(ordered)
+        return ordered
+
+    def forward(self, images, indices, history, language=None):
+        if set(history) != {'images', 'prepost', 'facts', 'record_indices'}:
+            raise ValueError('H model inputs exclude hidden, labels, identities and future outcomes')
+        video = self.teaching(images, indices, language)
+        # Project every actual observation once per forward, with gradients for all uses.
+        observations = self.image(history['images']) + self.spatial.weight
+        events = self.history(observations, history, video)
+        return self.norm(torch.cat((video, events)))
 
 
 class ImageCompiler(nn.Module):
@@ -63,9 +96,12 @@ class ImageCompiler(nn.Module):
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(LANGUAGE_SEED)
                 self.reader.language, self.reader.correspondence = nn.Linear(2048, 256), attention()
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(HISTORY_SEED)
+            self.reader.history = HistoryReader()
 
-    def forward(self, images, indices, language=None, *, checkpoint_layers=False):
-        memory = self.reader(images, indices, language)
+    def forward(self, images, indices, history, language=None, *, checkpoint_layers=False):
+        memory = self.reader(images, indices, history, language)
         parent = torch.zeros_like(self.layout.center)
         output = self.decoder(parent, memory=memory, checkpoint_layers=checkpoint_layers)
         return self.layout.unpack(self.layout.center + self.layout.scale * output.float())

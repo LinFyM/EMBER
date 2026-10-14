@@ -5306,3 +5306,10 @@ main解释/合同原件为independent_value_fixed_paths/analysis/main_scientific
 ## 2026-10-14 12:12 §17输入范围纠正；no-H两臂实际中止
 
 根据Owner最新澄清，main撤回自己额外删除整个H的范围选择，修订方向为两臂恢复其他真实经历，仅删除教学/自身执行语言条件hidden。唯一image_compiler_01在04:12:14Z预期exit1；本批两个elastic launcher安全终止、原CPU owner回收退出、gpu01六卡本批进程全部消失，0后继物化/评测/环境/Test。两臂完整4320 checkpoint及未保存V4321..6138/VL4321..6017、每臂至多一个在途未知、2.371076951GPUh与所有原件保留。144纯image缓存/4679帧/9.1387GiB合法只读复用。原cbfbf3e2 frozen不热改，原no-H批按scope-change消费，非科学阴性、不自动恢复或补测；完整修订合同由main后续派发。工程结算在ROOT image_only_gemma_compiler/analysis/scope_change_settlement.json，根状态串行更新。
+
+## 2026-10-14 12:19 §17唯一H范围修订完整派发与CPU工程接续
+
+main已消费原范围停止并直接授权新的image_only_gemma_with_history完整实施/fresh两臂/各576+400。修订原文在independent_value_fixed_paths/analysis/main_scientific_readout/image_only_gemma_H_scope_correction_20261014.md，全文优先纳入design§17；原no-H只是输入范围中止，4320与未保存更新/2.371076951GPUh不作为负证据或warm start。原02:54:45.949Z与修订04:19:48.975Z/预计100–190min分别保留。恢复原train36/held400精确MT_H1：36 episode/8131步/1562records，400/114908步/22254records，52null长度取原outputs[0]，104最长；实际自身63facts/前后图片attention/教学对应/H时序memory共同学，不消费execution hidden，不做fake P，H2不进批。
+144旧pure Gemma cache原地只读、H仅冻结vision共享一次/held流式；两臂共同fresh17/VL18/H19及原BA/流/2160共同节点/8640/1952-1968-1043040保持。Owner进一步明确抑制直接任务名称捷径，不要求间接语言任务信息被删除；稳定requirements/concept已同步，本批VL/hidden计算不改。独立CPU metadata audit无缺项，意外打印嵌入MT_row的未使用边界保留，source manifest白名单隔离且未开held query/results。当前仅工程与实际消费者验证、新冻结准备，GPU尚未启动；根/Git由实验串行闭环，0阶段Queue/第二等待者/自动后继/Test。
+
+Owner随后说“额不是，那最好还是能看懂动态过程才好”“我只是kidding”。main撤回把“他要是有这个本事，也算是读懂视频了”玩笑当作判据放宽的解释；该放宽未纳入稳定要求。此前direct-binding澄清继续：保留合法经历/执行语言，不追求输入完全语言独立，研究仍争取理解利用动态操作过程，视觉任务识别是局部能力；不把本澄清变成全部时序消融的开工门槛、不改§17计算/端点或加GPU任务。

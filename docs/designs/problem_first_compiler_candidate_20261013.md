@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–16有限计算与科学消费已完成。Owner最新要求保留其他真实经历，main已撤回§17删除整个H的范围；原no-H V/VL运行于04:12:14Z实际停止，保留原件与费用，未进行闭环读出，不是科学阴性。当前仅修订H合同准备/CPU资产定位，修订学习尚未启动；V/VL均须保留其他真实经历、仅去掉语言条件hidden，直接L仅VL，policy均保留L。完整修订科学合同待main交付，不恢复旧no-H更新或补测。完整EMBER目标尚未取得。**
+2026-10-14。**§12–16已完成；原§17 no-H于04:12:14Z按范围纠正实际中止。当前唯一active为优先修订§17：两臂fresh共同教学/真实MT H1读取与完整38-target decoder，V无直接L、VL仅多直接L，均不消费execution hidden，policy保持L；各2160共同节点/至多8640及唯一seen576+strict held400已完整授权。原144纯Gemma缓存只读复用，0新实践/训练query/controls/Test/自动后继。方法具有复用MT实践依赖，非零交互；旧no-H费用保留、不是科学阴性。当前独占实现与新正式冻结准备，完整EMBER目标尚未取得。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -779,3 +779,71 @@ ROOT预定 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/i
 本节原no-H合同作为中止历史保留。Owner明确其他真实经历仍应输入；main承认从暂不输入自身语言条件hidden扩大为删除整个H，撤回该额外干预。修订两臂均保留自身RGB/proprio/实际actions/executed/feedback/经历顺序和实际参数上下文，只去掉教学及自身执行的语言条件hidden；V无直接L、VL仅多直接L，policy继续读L。完整H来源、Reader、信息墙、费用与有界训练由main后续完整合同登记，本记录不自行新增范围或启动。
 
 旧ROOT image_only_gemma_compiler唯一owner已停止两臂后续更新和所有后继调度，于04:12:14Z exit1按expected_scope_change消费。最近完整点两臂4320，V未保存4321..6138、VL4321..6017，各至多下一更新在途未知；完整optimizer/sampler/RNG和frozen源码保留，不为凑保存点续算。总2.371076951GPUh/0环境/0读出，原件见同ROOT analysis/scope_change_settlement.json。144纯image缓存与H无关且合法，只读复用于修订；图像/Reader/decoder/queue及官方eval共同算子保留。原no-H未形成有效闭环科学负证据，不自动恢复、补测或追加后继。
+
+
+## §17当前有效H范围修订（完整原文，优先于原no-H文本）
+
+# §17唯一有效修订：保留真实经历，只移除语言条件hidden
+
+2026-10-14，main纠正自己的输入范围。Owner追问“但是其他经历还是输入的吧？”，指出main先前“暂不输入自身经历hidden”的表述与派发稿删除整个H不一致。去掉整个H是main额外扩大的干预；本修订恢复其它真实经历，不归因于训练结果，不把Owner问题机械扩成新科研矩阵。
+
+本文件与 `image_only_gemma_contract_20261014.md` 合成一个合同；有冲突时本文件优先。原no-H执行已于04:12:14Z实际停止，完整4320点及未保存范围、2.371076951GPUh保留，0环境/held读出；不是科学阴性或需修的bug。当前唯一执行面为下面带合法H的V/VL；无并行no-H对照或旧批补测，原冻结/日志/节点保留为范围中止历史。
+
+## 1. 两臂实际条件与准确声明
+
+两臂均输入合法教学V＋真实MT经历H，MT为相同固定起点。主V不接直接任务语言，VL仅增加原登记的直接L Reader入口；两臂实际执行policy继续使用完整L。教学仍是已确定的纯图像source Gemma特征，不含L/action suffix/probe/旧Meta。
+
+H保留：每个实际重规划段的前后双相机RGB、前后8维proprio、最多5×7实际执行动作、5维executed mask、原5维实际feedback、episode/step顺序，以及真实MT producer/参数上下文。**排除H的language-conditioned execution hidden，也不把语言总结、task ID、文件名、query/未来实践/最终评测结果送入模型。** 原raw history里的hidden可留在历史文件中，但新模型及其输入cache不消费它；不通过零hidden假装删除。
+
+H由读过语言的执行policy产生，行为与画面可能带有间接任务信息；因此声明应是“G没有直接L和语言条件hidden入口”，不能声称数学上与语言完全独立或必然只靠教学视频。这是恢复有用经历后的明确代价。恢复H也不证明模型学会利用反馈，固定每task共同E仍允许task识别解。
+
+## 2. 唯一H来源与时间/标签隔离
+
+本有限批仍检验MT起点的首个G，不新增后续实践轮数/选择器。这里只用原一次真实MT bootstrap，完整保留该次经历，而非取后来G的经历或任意挑成功H。
+
+- train36：沿 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/bootstrap/task_XXXX/complete.json` 指向的原MT history；这36份与原E/144 teaching池一致，四个demo各次训练复用该task同一H。元数据实计36 episode、8131环境步含dummy、1562 records、单H最大104 records、1598个去重前后观测上界。原H是授权自身实际MT执行（部分复用原teacher-selection中MT控制臂），不是offline teacher标签；不能据复用称独立数据。
+- validation400：仅按 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/diagnostics/first_G_validation400_20261013/first_g_panel.json` 每个condition的 `history_source` 和 `path_source` 取原真实MT首prefix。原path的 `outputs[0]` 必须episodes=1/selected=MT300，由其records得到精确前缀；部分旧panel的bootstrap_prefix_records为null时直接用这份原path记录，不猜长度/重采。复用现有 `history_prefix` 语义：只保留前缀records及其pre/post观测、episode0、实际MT state，剔除后续G状态/feedback/observations。登记的final init在practice之外，原对应task/video/实际MT/环境与policy RNG均保持。
+
+这400个原MT bootstrap元数据计114908环境步含4000dummy；属于每臂的方法适应依赖。两臂共用同一份真实MT行为事实，物理不重采、不把400算成800条独立实践。原held最终query的奖励/成功/原G结果等仍只用于预注册终点评测比较，不进入H、训练、早停或新输入选择。
+
+执行者只对上述436份精确H做实际输入消费者需要的prefix/producer/shape/finite/分离检查；不重新全扫原全路径，不读held teacher离线actions/state。缺失或不一致报告具体边界，不静默用更晚prefix、别的state、不同H或新采集替代。用户询问并未授权增加H2/72-path训练面板；现有H2只是历史可用资产。
+
+## 3. 恢复H的实际Reader与梯度
+
+教学分支保持原修订前V/VL算子和缓存。自身RGB沿既有 `Runtime.observation_features` 的冻结vision/projector提取每观察512×2048 raw视觉tokens，不输入L，也不添加action expert或Gemma语言prefix。这样保留原H图像表示与消费者合同；暂不额外把自身图片改成Gemma上下文化，从而避免又加一个干预。
+
+H读取复用既有ContextReader的实际事件/时序算子，删除hidden支：
+
+1. 每个前后图像tokens经共享的image Linear2048→256＋既有512空间地址＋新恢复的pre/post地址。可在一个当前forward内对同一实际观测只投影一次后按pre/post引用，梯度仍对应所有实际使用；不得跨optimizer更新缓存投影。
+2. 原63维facts＝proprio16＋实际actions35＋executed5＋feedback5＋episode/step2。event query加入facts投影及原顺序位置，对该段前后图像做4-head attention形成一条event token。
+3. event tokens作为query对本condition的教学memory做correspondence attention，再由4层256/4-head/FF1024/dropout0的history Transformer按实际经历顺序读取。完整有序教学memory与有序H memory拼接，经最终LayerNorm256送入原六层完整LoRA decoder。两臂H结构/输入完全一致，不平均整段H或择取成功片段。
+
+本阶段producer始终是同一完整MT，真实MT权重在冻结base和layout.center中已明确。保留其来源及真实state审计，不把`parameter_ref`字符串嵌入模型；无需新建把同一零残差反复编码的static网络或fake P输入。若未来采用不同P/H，须再明确对应的参数读取合同，不能以本批固定MT冒充已实现任意P修订。
+
+新H模块与原Reader/decoder一起由同一non-held E的完整BA监督更新；H只作条件，绝不把自身动作整理成轨迹后拟合最终LoRA。原Gemma/vision/source/MT/E固定，Reader/H encodings每次重新计算。所有共同参数两臂fresh同初值，原V/VL共有core seed2026101417及VL专属seed2026101418保持；新增共同H模块用独立seed2026101419，避免改变既有core初始化的随机数流。不用no-H训练权重或Adam warm start冒充兼容恢复。
+
+## 4. 原学习/最终读出范围保持，计费声明修正
+
+同原36E、144demo、同预注册task/demo逻辑B4、38层BA/4+rank SUM、Adam/clip/正常BF16、2160共同节点和最多8640更新；仅两臂2160全144均值都>=.95才共同早停，否则同流到8640；4320/6480恢复点。新schema/full optimizer/RNG/cursor/topology明确含H模块，允许完整checkpoint边界的物理迁移。旧no-H的2160/4320及其内部值不能选择本批配置、输出或停止点。
+
+无论早停与否仍各seen576+strict held400，共1952完整final/1968 starts/16 failed partial/1043040新增环境步上限。原强MT/E/首G/D/Phi参照、官方场景/RNG/video mapping与信息墙全部保持。新增采集实践为0，但方法有上述已有MT实践，**撤回“零交互编译”及0适应依赖声明**；分别报告新计算/环境费用、复用H实际episode/步数与其历史成本引用，原旧整个§23费用不冒充仅MT bootstrap费用。
+
+本批仍没有额外H2/G实践、Actor/Phi/PG、controls、Test或自动第二块。相邻稳定性与教学因果资格仍未建立；V vsVL只比较这一共同H条件下的直接L入口，不能把改变H后的方法与已中止no-H运行作闭环因果比较。
+
+## 5. 资产复用、完整冻结与接续
+
+新ROOT建议 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_with_history`；这是新结构fresh的唯一active root，旧no-H root只读中止历史和纯视觉cache来源。保持单canonical source实现，替换当前接口并退休无消费者no-H训练/评测入口，不新增平行Writer或长期fallback。
+
+原144教学cache已经实际完成且source/V/L入口未变，必须只读引用，0重复4679帧Gemma forward。原H训练集纯vision BF16 cache按元数据估计≤3.1211GiB，共有特征约12.26GiB；只保存一个共享H特征副本，原raw RGB/history/MT大权重不复制。held H在实际condition精确prefix上流式编码，至多持久有界临时cache，不创建400全量大特征池；同condition两臂可共用冻结特征，各自learned H/Reader重算、各自输出唯一完整LoRA。
+
+新增峰值仍先按48GiB预算核实，旧no-H已占用的cache/CP继续计入data1 live个人用量。每launch strg01 quota、个人目录/共享容量、双节点现场与总6/8-node6保持，无GPUh硬cap。第一有效36task轮/最长H和视频的实际吞吐/峰值用于物理安排，不能从旧no-H首轮1.9GiB就宣称新H安全；主动利用显存提高实际吞吐，不将旧3+3固化或做无效占卡。
+
+工程预估20–40min、H输入5–15min、两臂并行学习30–90min、物化/1952真实final40–70min可交错；从本修订派发起约100–190min。依据旧no-H已经实际到6k附近、缓存及共用事件读取的新增成本粗估，非保证；首个含最长H的有效周期需据实修正。原10:54:45首次派发时钟和此次范围纠正时间都保留，不把此前约80min准备/运行及中止成本抹去，也不继续把原110–205min当作未改变的准确预测。
+
+执行者独占工程/根记录/Git：新dev→clean pushed main→新的detached frozen版本，不热改旧cbfbf3e2。上一停止回执已消费，0例行ACK/重复工程review；本完整修订直接授权实现、输入物化、fresh学习和唯一读出，无需再等main许可。一个新owner、一条整批或实质边界回报，0阶段Queue/第二等待者；完成后main直接科学消费和自主接续。
+
+### Owner稳定意图澄清（2026-10-14）
+
+抑制的是Compiler用直接任务名称/完整指令/等价标识绕开教学视频的捷径，不要求自身经历的信息与语言完全独立。policy仍读L，语言驱动的RGB/状态/动作/反馈保留；V删直接L和本批删hidden不是永久禁令，VL照常作为匹配对照。视觉静态线索/H仍可能识别任务，去文字不证明理解视频，不新增controls/探针。稳定要求见current_owner_requirements.md和concept.md，现有H1/seed/BA/端点/费用/输入合同不变。
+
+Owner之后明确先前“也算是读懂视频了”为玩笑，希望“最好还是能看懂动态过程”。main已撤回判据放宽，当前目标继续理解并利用教学动态过程，视觉任务识别不自行替代该目标；不新增时序控制开工门槛。此前直接名称绑定与真实经历边界继续，本批计算/源/seed/预算不变。

@@ -1,3 +1,10 @@
+## 2026-10-14 12:19 §17完整H修订已授权；唯一fresh V/VL实现
+
+main完整优先修订已全文纳入design§17，与原image_only_gemma_contract合成且冲突优先；原no-H scope-change结算与2.371076951GPUh保留，不恢复旧权重/Adam、不依据旧内部值选择配置。唯一新ROOT=image_only_gemma_with_history，修订首次user事件04:19:48.975Z/预计100–190min；原02:54:45.949Z派发与04:12:14Z停止另存，原耗时和成本不清零。
+只用train36原frozen_context_decoder_fit bootstrap MT H1及held400 first_g_panel原outputs[0]精确MT前缀，H2不入批；资产元数据36/1562records/8131步/1598obs，400/22254records/114908步/22654obs，最长104，52处null长度按原path，不猜/补采。436个完整MT state shape、producer、RNG与final init分离元数据齐全；finite真实tensor由实际消费者检查，不把元数据认证当GPU资格。实际审计一次误打印嵌入panel MT_row的未使用边界记录H_asset_audit；白名单manifest不保留它，未开held query/results原件或使用其outcome。
+教学144 pure Gemma/4679帧只读复用旧合法9.1387GiB缓存；H图像冻结vision/projector无L读取，缓存独立共享约3.121GiB。两臂实际proprio/action/executed/feedback/episode-step63facts→前后图像attention→教学对应→4层有序H memory与教学memory拼接→完整六层BA decoder，全链共同学；没有hidden支、fake P/static网络或任务ID/filename输入。core17/VL18/H19独立fresh共同种子、同36E/144流/Adam/BA/2160共同决定/8640、各576+400及1952/1968/16/1043040保持。
+Owner最新意图是抑制直接任务名称捷径，真实经历可含间接语言任务信息，不追求完全语言独立；已同步稳定requirements/concept/design，VL/hidden当前计算不因澄清改变，不加controls或探针。data1现场used1558.72GiB/soft2048，旧缓存/CP已计；48GiB新峰值+双代码树可容纳，双节点现场有真实可共驻余量，正式launch仍逐次核。CPU实际MT raw prefix/完整63facts/RNG/shape/finite与完整BA梯度消费者通过：V/VL共享core/H初值、MT零头、H第二步信用5.64e−5/4.79e−5，V直接L与hidden拒绝；实际冻结vision GPU待新H消费者，未冒充通过。结构自审hard0，一个prefix/事件tensor owner及共享H缓存，旧no-H接口退休；当前新clean pushed detached准备，修订GPU学习未启动，不固化旧3+3/旧1.9GiB峰值。唯一新owner/整批或实质边界一次交main01a13399，无阶段Queue/第二等待者/自动后继。
+
 ## 2026-10-14 12:12 §17 no-H范围撤回已执行；修订完整H合同待交付
 
 Owner最新要求保留其他真实经历，main承认旧§17删除整个H扩大了干预并撤回该范围。已先按PID/start_ticks/UID/精确命令冻结本批CPU owner调度，再仅对gpu01本批V/VL两个torch elastic launcher发SIGTERM；原owner只恢复以回收原子进程、结算并退出。04:12:14Z原owner exit1、自动退出回执已按ROOT/attempt consumed为expected_scope_change，非科学阴性/工程失败；gpu01实际核对全部本批consumer已消失，未触及其它任务，后继调度关闭。

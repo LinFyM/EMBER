@@ -15,7 +15,7 @@ from ember.pi05_source_setup import initialize_deferred_process_group
 from ember.writer.runtime import autocast
 from .contract import OPTIMIZER
 from .model import FactorLayout
-from .image_compiler import ImageCompiler, SCHEMA, COMMON_SEED, LANGUAGE_SEED
+from .image_compiler import ImageCompiler, SCHEMA, COMMON_SEED, LANGUAGE_SEED, HISTORY_SEED
 from .image_data import ImageInputs, logical_conditions
 from .learning import OperatorObjective, synchronize_gradients, memory_peak
 
@@ -34,14 +34,14 @@ def load_compiler(root, arm, checkpoint, device):
     if (not manifest['complete'] or state['schema_version'] != SCHEMA or state['arm'] != arm
             or state['next_update'] != manifest['next_update']
             or state['parameter_names'] != list(dict(model.named_parameters()))
-            or state['initialization'] != dict(common_seed=COMMON_SEED, language_seed=LANGUAGE_SEED, fresh=True)):
+            or state['initialization'] != dict(common_seed=COMMON_SEED, language_seed=LANGUAGE_SEED, history_seed=HISTORY_SEED, fresh=True)):
         raise ValueError('image compiler requires its complete matched initialization/schema')
     model.load_state_dict(state['compiler'])
     return model, lora, state
 
 
 def gradient_credit(model):
-    groups = {'Reader':model.reader, 'decoder':model.decoder, 'output':model.decoder.output}
+    groups = {'Reader':model.reader, 'history':model.reader.history, 'decoder':model.decoder, 'output':model.decoder.output}
     result = {}
     for name,module in groups.items():
         gradients = [p.grad for p in module.parameters() if p.grad is not None]
@@ -63,7 +63,7 @@ def save_checkpoint(root, arm, update, model, optimizer, context, run, migration
                 task_video_stream='SeedSequence[20261014,17,stream,cycle,within/task]', task_weight=.25),
             rank_rng=ranks, topology=dict(world_size=context.world_size, logical_B4=4),
             parameter_names=list(dict(model.named_parameters())), optimizer_owner='complete Reader and six-layer decoder',
-            initialization=dict(common_seed=COMMON_SEED, language_seed=LANGUAGE_SEED, fresh=True),
+            initialization=dict(common_seed=COMMON_SEED, language_seed=LANGUAGE_SEED, history_seed=HISTORY_SEED, fresh=True),
             frozen_dependencies=run['frozen_dependencies'], physical_migration=migration)
         torch.save(state, file/'state.pt')
         write_json_atomic(file/'manifest.json', dict(schema_version=SCHEMA, arm=arm, next_update=update,
@@ -81,7 +81,7 @@ def read_node(root, arm, update, model, inputs, teachers, objective, context):
         if ordinal % context.world_size != context.rank: continue
         value = inputs.get(entry['task'],entry['teacher_demo'])
         with autocast(context.device):
-            generated = model(value['z_img'],value['indices'],value['language'] if arm=='VL' else None)
+            generated = model(value['z_img'],value['indices'],value['history'],value['language'] if arm=='VL' else None)
             loss, baseline = objective(generated,teachers[entry['task']])
         rows.append(dict(task=entry['task'],demo=entry['teacher_demo'],frames=entry['frames'],BA=float(loss),MT_BA=float(baseline)))
     collected = [None]*context.world_size if context.is_main else None
@@ -132,13 +132,15 @@ def learn(args, context):
             for entry in assigned:
                 value=inputs.get(entry['task'],entry['demo'])
                 with autocast(context.device):
-                    generated=model(value['z_img'],value['indices'],value['language'] if arm=='VL' else None,
+                    generated=model(value['z_img'],value['indices'],value['history'],value['language'] if arm=='VL' else None,
                         checkpoint_layers=args.checkpoint_layers)
                     loss,baseline=objective(generated,teachers[entry['task']])
                 if not torch.isfinite(loss): raise ValueError('nonfinite complete BA learning objective')
                 (loss/4).backward()
                 records.append(dict(**entry,BA=float(loss.detach()),frames=len(value['indices']),task_weight=.25,
-                    compiler_inputs=['z_img','indices']+(['exact_L_embedding'] if arm=='VL' else [])))
+                    H_records=len(value['history']['facts']),H_observations=len(value['history']['images']),
+                    compiler_inputs=['z_img','indices','MT_H1_RGB_proprio_actions_executed_feedback_order']+(['exact_L_embedding'] if arm=='VL' else []),
+                    execution_hidden_input=False))
             synchronize_gradients(model,context)
             credit=gradient_credit(model)
             if u==initial:first_credit=credit
@@ -160,6 +162,9 @@ def learn(args, context):
                         peak=memory_peak(context.device),first_credit=first_credit,second_credit=second_credit,
                         frozen_cache_GiB=inputs.bytes/2**30,cache_limit_GiB=inputs.limit/2**30,
                         discarded_updates=0,parameter_count=sum(p.numel() for p in model.parameters()))
+                    proof.update(max_registered_H_records=max(len(h['facts']) for h in inputs.histories.values()),
+                        exact_first36task_round_contains_longest_H=True,history_seed=HISTORY_SEED,
+                        execution_hidden_input=False,whole_pool_includes_unique_H=True)
                     write_json_atomic(root/'arms'/arm/'first_task_round.json',proof)
                     print('EMBER_IMAGE_ROUND '+json.dumps(proof),flush=True)
     read_node(root,arm,args.stop,model,inputs,teachers,objective,context)

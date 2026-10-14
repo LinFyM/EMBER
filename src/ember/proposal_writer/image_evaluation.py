@@ -11,6 +11,7 @@ from ember.writer.runtime import autocast
 from .analysis import paired, billing, interaction_ledger
 from .image_compiler import pure_features
 from .image_data import feature_file, publish_record
+from .image_history import encode_history, history_file, model_history
 from .image_learning import load_compiler
 
 
@@ -29,10 +30,14 @@ def compile_condition(root, runtime, models, entry, role, frame_chunk):
             value = torch.load(feature_file(root,task,demo),map_location='cpu',weights_only=False)
         else:
             value = pure_features(runtime,task,demo,frame_chunk=frame_chunk)
+        descriptor = entry['history_descriptor']
+        history = (torch.load(history_file(root,task),map_location='cpu',weights_only=False)
+                   if role=='seen' else encode_history(runtime,descriptor))
+        h = model_history(history,runtime.device)
         z,indices,words = (value[name].to(runtime.device) for name in ('z_img','indices','language'))
         for arm,file in missing.items():
             with torch.no_grad(),autocast(runtime.device):
-                state = models[arm](z,indices,words if arm=='VL' else None)
+                state = models[arm](z,indices,h,words if arm=='VL' else None)
             if len(state)!=76 or any(not torch.isfinite(v).all() for v in state.values()):
                 raise ValueError('compiler must export all38 finite factors')
             file.parent.mkdir(parents=True,exist_ok=True)
@@ -40,8 +45,11 @@ def compile_condition(root, runtime, models, entry, role, frame_chunk):
             save_file({k:v.detach().cpu().contiguous() for k,v in state.items()},str(temporary));temporary.replace(file)
             write_json_atomic(file.with_suffix('.json'),dict(complete=True,checkpoint=str(endpoint(root,arm)),
                 task=task,demo=demo,frames=len(indices),arm=arm,Gemma_language=False,
-                Reader_language=arm=='VL',history=False,task_parameters_input=False,teacher_labels_input=False,
-                real_source=value['source'],unique_complete_LoRA=True,adaptation_episodes=0))
+                Reader_language=arm=='VL',history=True,execution_hidden_input=False,
+                task_parameters_input=False,fixed_real_MT_context=True,teacher_labels_input=False,
+                real_source=value['source'],H_source=history['source'],unique_complete_LoRA=True,
+                adaptation_episodes=1,new_adaptation_episodes=0,
+                reused_MT_environment_steps=descriptor['environment_steps'],practice_state_id=descriptor['practice_state_id']))
     return targets
 
 
@@ -51,12 +59,15 @@ def readout_worker(args,runtime,runner):
     if role=='validation' and arms!=('V','VL'):raise ValueError('held shared reader exports both complete endpoints')
     models={arm:load_compiler(root,arm,endpoint(root,arm),runtime.device)[0].eval().requires_grad_(False) for arm in arms}
     panel=read_json(root/'readout_panels'/f'{role}.json')
+    source = read_json(root/'history_manifest.json')['training' if role=='seen' else 'validation']
+    histories={(e['task'],e.get('init_state_id') if role=='validation' else None):e for e in source}
     tasks={(t['suite'],t['task_id']):t for t in runner.contract['tasks']}
     queue=root/'queues'/f"{'paired_validation' if role=='validation' else arms[0]+'_seen'}.sqlite"
     while (claim:=claim_next(queue,worker_id=args.worker_id)) is not None:
         try:
             task=tasks[claim.task_key]
-            entries=[e for e in panel['rows'] if e['task']==task['global_task_id'] and e['init_state_id'] in claim.shard.init_state_ids]
+            entries=[dict(**e,history_descriptor=histories[e['task'],e['init_state_id'] if role=='validation' else None])
+                for e in panel['rows'] if e['task']==task['global_task_id'] and e['init_state_id'] in claim.shard.init_state_ids]
             requests=[];by_id={}
             for entry in entries:
                 targets=compile_condition(root,runtime,models,entry,role,args.frame_chunk)
@@ -77,7 +88,9 @@ def readout_worker(args,runtime,runner):
                     row.update(first_native_normalized_actions=first['normalized_actions'].tolist(),first_noise_seed=first['noise_seed'])
                 row.update(global_task_id=entry['task'],teacher_demo=entry['teacher_demo'],video_ordinal=entry.get('video_ordinal',0),
                     checkpoint=str(endpoint(root,arm)),compiler_arm=arm,complete_LoRA=str(file),
-                    compiler_exits_before_final_episode=True,unique_complete_LoRA=True,adaptation_episodes=0,
+                    compiler_exits_before_final_episode=True,unique_complete_LoRA=True,adaptation_episodes=1,
+                    new_adaptation_episodes=0,reused_MT_environment_steps=entry['history_descriptor']['environment_steps'],
+                    H_source=entry['history_descriptor']['H'],H_execution_hidden=False,
                     teaching_in_final_episode=False,query_excluded_from_training=True)
                 write_json_atomic(output,row)
             rows=[read_json(item[3]) for item in by_id.values()]
@@ -128,11 +141,17 @@ def summarize(root):
                        for s in sorted({r['suite'] for r in rows})}
             parts[arm]=dict(complete=True,raw_rows=rows,per_task=per_task,per_suite=per_suite,
                 successes=sum(r['success'] for r in rows),breadth=sum(t['successes']>0 for t in per_task),
-                paired={name:paired(base,rows) for name,base in refs.items()},single_checkpoint=True,adaptation_episodes=0)
+                paired={name:paired(base,rows) for name,base in refs.items()},single_checkpoint=True,
+                adaptation_episodes_per_condition=1,new_adaptation_episodes=0)
             write_json_atomic(root/'arms'/arm/'readouts'/role/'results.json',parts[arm])
             result['arms'].setdefault(arm,{})[role]=parts[arm]
         result['V_VL_'+role]=paired(parts['VL']['raw_rows'],parts['V']['raw_rows'])
-    result.update(interaction=interaction_ledger(root),billing=billing(root),endpoint=read_json(root/'endpoint_decision.json'))
+    method=read_json(root/'history_manifest.json')
+    result.update(interaction=interaction_ledger(root),billing=billing(root),endpoint=read_json(root/'endpoint_decision.json'),
+        reused_MT_dependency={role:dict(episodes=len(entries),environment_steps=sum(e['environment_steps'] for e in entries),
+            physical_reuse_shared_across_arms=True,source=str(root/'history_manifest.json'))
+            for role,entries in [('training',method['training']),('validation',method['validation'])]},
+        prior_scope_change=read_json(root/'run_contract.json')['prior_scope_change'],zero_interaction_method=False)
     write_json_atomic(root/'results.json',result)
     write_json_atomic(root/'complete.json',dict(complete=True,finished=1952,Test=False,no_automatic_successor=True))
     return result

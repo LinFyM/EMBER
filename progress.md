@@ -1,3 +1,7 @@
+## 2026-10-15 接口窄修后唯一剩余批已实际恢复
+
+唯一video_effect_interface_resume_02/PID3152552于2026-10-14T20:30:13.532Z从clean pushed detachedfe034f78实际启动；原Phi/训练和首轮native来源8801e701不动。旧owner已退出并按ROOT/attempt消费，6个失败适应队列控制记录在保留原件后复位，全部已完成原行/条件/事务/Actor Adam及RNG复用；0Phi/profile/cache/MT final重复。六个持久消费者动态承接剩余条件和384非MT final，首个登记后续wave采用slots16、其余slots8，按实际返回峰值/吞吐执行；统一2832/16/684160+28320与data196GiB预估、live双节点6/8-node6不变。原14个实际native单元约99–247秒，剩余15条件最多4有效原子更新以及384 final并行粗估40–100min含加载/验收，非新许可门槛或成功保证；原18:16:48.556Z/3–6h不重置。每个job实际GPU/quota回执和恢复源字段保存；一owner实际退出+唯一整批唤醒，验收/Git后一次main，无阶段Queue/第二waiter/自动后继/Test，sealed仍在所有24/512完全冻结后。
+
 ## 2026-10-15 新方法记录接口异常已消费；保留有效原件准备恢复
 
 原video_effect_01于20:11:41.680Z exit1：Phi1120完整、240真实视觉缓存、128 MT final和9完整条件均保留；504提交/504返回、98,511 control+2,160 dummy、0失败partial/未知交互，1.764545632GPUh。两工程根因是接受布尔值为NumPy标量无法JSON序列化，以及适应发布拿3条件数误作4真实共享bootstrap case行数。窄修显式Python bool；队列以真实4bootstrap case结算且单列3条件，最终评测行数校验不变；全缓存请求不构造无用renderer。实际CPU重现/修复以及原task12三完整条件和四真实bootstrap的canonical SQLite消费者通过。所有已保存branch/candidate、native提案/Adam/RNG继续原身份复用，0重训/缓存重算/profile追加/MT final重跑/提前sealed标签；恢复仍2832/16/684160+28320。原件analysis/engineering_recovery_02/failed_attempt_settlement.json与原exit全部保留，原18:16:48.556Z/3–6h不重置。实际native原14outcome峰值reserved19.439GiB、首步A信用0/B38符合初始化；恢复六个持久worker，一worker以原登记16分支下一真实wave验证slots16，其余沿实测slots8，逻辑更新/权重/预算不变，不新增discarded profile。当前正在新clean pushed冻结准备；整批一次唤醒/验收/Git/main机制保持。

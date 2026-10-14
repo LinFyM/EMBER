@@ -1,3 +1,9 @@
+## 2026-10-14 12:57 §17新H真实最长输入与首有效36task轮通过
+
+新ROOT的36份H冻vision队列已由六个actual消费者完成/均exit0，实际train/task32 MT104records/105observations通过exact prefix/MT state/proprio/action/executed/feedback/finite/RNG核验，原H前后图像产出105×512×2048 BF16与104×63 facts；缓存keys没有hidden、无H Gemma/L消费、0教学Gemma重算。该留存输入source计算4.711s，allocated9.102/reserved9.418GiB，含H原RGB/policy加载，仅认证此实际消费者。analysis/actual_H_vision_consumer.json为原件只读验收，未加forward。
+两臂首有效9B4含完整36task/最长104H，V4.819s、VL4.805s（约.535/.534s/B4）；按含CPU/完整9恢复点的初轮粗估全8640为77.1/76.9min，仍在新学习30–90min/整批H派发起100–190min估计内，未根据中途loss/held分数改合同。H真实第二步梯度V5.85e−6/VL9.51e−6，Reader6.38e−5/6.20e−5，全BA信用有实测，不把图接通当闭环有效。实际V/VL参数16,544,064/17,331,776；首轮allocated3.245/3.255GiB、GPU缓存2.005GiB，完整唯一冻结pool可缓存12.271GiB，6GiB留给新H activation/Adam与margin；首轮并非全池或held最长峰值保证。两臂同逻辑流/同MT真实H、fresh core17/VL18/H19及原端点规则继续。
+原no-H中止原件/4320CP/未保存范围/2.371076951GPUh另记，只读教学缓存复用；newROOT无warm start或补测。根科学/稳定Owner意图已集成，开发branch/worktree已清理，正式7f05e3e6冻结保留。唯一owner实际等待/整批或异常一次唤醒本实验，验收/Git后一次main01a13399；无阶段Queue/第二等待者/自动后继/Test，后续等待整批或真实边界。
+
 ## 2026-10-14 12:54 §17带真实H唯一owner实际六卡启动
 
 新image_gemma_MT_history_01/PID2524012从clean pushed detached 7f05e3e6实际启动，gpu01:6/2/1/3/7/0六个持久消费者物化原36份H的冻结vision/projector，144教学Gemma cache原地只读、0重算。现场重新按共享完整12.26GiB池/H峰值及当前余量安排，先均衡两个独立臂的逻辑B4，再按真实free选择节点/卡；本次V6/2/1与VL3/7/0各world3，是现场选择而非固定上限，释放消费者接就绪工作。每launch live双节点/data1独立quota/合计6-node6记录；cache14.2GiB与train17.3GiB仅当前任务初估，无util/通用显存门槛。held原范围真实输入将用frame chunk64/实需19.3GiB估计验证有益物理放大，0额外profile/科学forward或案例。

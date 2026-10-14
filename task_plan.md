@@ -1,3 +1,9 @@
+## 2026-10-14 12:12 §17 no-H范围撤回已执行；修订完整H合同待交付
+
+Owner最新要求保留其他真实经历，main承认旧§17删除整个H扩大了干预并撤回该范围。已先按PID/start_ticks/UID/精确命令冻结本批CPU owner调度，再仅对gpu01本批V/VL两个torch elastic launcher发SIGTERM；原owner只恢复以回收原子进程、结算并退出。04:12:14Z原owner exit1、自动退出回执已按ROOT/attempt consumed为expected_scope_change，非科学阴性/工程失败；gpu01实际核对全部本批consumer已消失，未触及其它任务，后继调度关闭。
+两臂最后完整checkpoint4320/optimizer-sampler-三rank RNG原件保留，V已记录未保存4321..6138、VL4321..6017；各至多一个下一更新可能已执行但未记账到指标的在途不确定性保留，不为凑6480继续。总实际2.371076951GPUh含缓存/已完成2160/中止续学；0物化与readout launch、0环境start/step、0seen/held/Test。完整结算与进程身份见ROOT analysis/scope_change_settlement.json及coordinator/image_compiler_01/scope_*；源cbfbf3e2 frozen未热改，全部缓存/代码/训练原件不删。
+144条4679帧/9.1387GiB source-only纯image缓存合法，与H无关，将只读复用于修订；未形成no-H性能负证据。修订两臂均恢复自身RGB/proprio/实际actions/executed/feedback/经历顺序及实际参数上下文，只去掉教学和自身执行的语言条件hidden；V无直接L、VL多直接L、两臂policy仍L。当前仅CPU资产定位/范围记录，完整H来源/读取/信息墙/费用合同由main形成后实施，0修订GPU学习/原no-H恢复/补测/自动后继；完整EMBER研究未暂停。
+
 ## 2026-10-14 11:50 §17完整纯视觉缓存与两臂真实首轮通过
 
 同一owner/源cbfbf3e2已完成全部144条pure-feature队列，六缓存子进程均exit0，实际wall最长96.743s。原最长task38/demo46的92帧真实source image-prefix产出92×512×2048 BF16，原454帧stride5加末帧453完整；实测chunk32/32/28、source计算3.776s、allocated10.850/reserved11.398GiB，L/action suffix/probe/旧Meta均未进入Gemma。analysis/actual_source_consumer.json只读取本次留存原件，无额外forward。

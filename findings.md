@@ -11997,3 +11997,7 @@ Phi新消费者复用共同编码，beta/G/source冻结，零head首B4只先教h
 main直接消费§16原行后的精确边界：2/14改选MT都是tie，严格MT排序0，6RL末prefix反例0/6；BCE部分回报水平学习不等于候选区分。167对MT净14中task16占9；停止固定G第二Phi/规则/β及dtype补救，完整解释引用原ROOT analysis/main_scientific_readout/interpretation_20261014.md，不把科学阴性当bug或判所有BCE无效。
 唯一新§17相对旧G改变教学h/特征层级/H/训练owner，不能把旧G差异都归去L；只有V对VL隔离直接语言入口。source Gemma前向真实512图像prefix、无L/action suffix/probe/旧meta；V Reader只视频，VL追加冻结exact L词embedding，两policy执行仍读L。没有真实H/候选参数/static任务提示，固定真实MT中心零残差输出完整38 LoRA；纯视觉仍能由物体/背景/终态识别task，拟合或V>VL不证明操作知识。
 原36E/144demos46–49、全38BA/D38、fresh共有seed/Adam/同B4流、共同2160早停/否则8640及各唯一576+400已完整授权；0新query训练/实践/controls/Test。资产audit0缺项，实际4679/max92与heldmax91、B0全零，不据旧coordinates文字重建。CPU仅认证接口/真实流/共享初始化及全BA梯度，未认证source Gemma实际GPU或闭环。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_compiler，全文design§17及inputs/asset_manifest.json，原正负证据和强MT/首G/D高点与邻点保持，无自动第二块。
+
+## 485. §17删除整个H的范围撤回与中止原件（2026-10-14）
+
+Owner追问其他真实经历仍应输入，main明确旧no-H合同超出了仅删除语言条件hidden的干预，现恢复其他真实经历。旧no-H两臂及后继物化/评测已实际停止，原owner exit1按expected_scope_change消费，不能作为去语言路线科学阴性或工程故障。V/VL最近完整4320 checkpoint与未保存更新V4321..6138、VL4321..6017保留，每臂至多下一在途更新未知；0新环境/读出，全部2.371076951GPUh与原frozen源码保留。原144 pure-image缓存为合法可复用资产，原4个集中模块及官方评测owner保留复用。修订V/VL都保留自身RGB/proprio/实际actions/executed/feedback/顺序与实际参数上下文，不输入语言条件hidden；直接L仅VL。完整修订合同尚待main，不从旧no-H checkpoint自行新训或补测。原件指针为image_only_gemma_compiler/analysis/scope_change_settlement.json。

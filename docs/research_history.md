@@ -5302,3 +5302,7 @@ ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/independ
 
 main解释/合同原件为independent_value_fixed_paths/analysis/main_scientific_readout/{interpretation_20261014.md,image_only_gemma_contract_20261014.md}。明确§16两次MT正确选择均为精确tie、严格排序0，停止第二Phi/规则/β；旧完整结果/失败费用不改。Owner自主推进授权下，全文纳入唯一design§17，V真实双RGB经冻结source图像Gemma、有序fresh Reader到完整6层r8/38-target LoRA；VL只Reader额外接L，实际policy均L条件，0H/执行hidden/任务参数/Actor/实践。
 原36+144真实池/all36 E/D38、同seed/freshAdam/完整BA逻辑B4流、2160共同停止/否则8640及各唯一576+400已授权，科学1952/1968/16/1043040和Test关闭。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_compiler，CPU资产/实际原流与完整Decoder梯度通过，纯视觉GPU尚待正式消费者。data1独立quota及相关用量支持48GiB估计，一份9.1387GiB缓存；旧Phi执行面/头/旧CLI与4专属测试按生命周期退休，原正式冻结和权重保留。当前独占dev→main clean pushed→detached准备，启动后只同owner整批/真实异常与main一次交付，原02:54:45.949Z派发/110–205min时钟不重置，不称新完整方法已达到目标。
+
+## 2026-10-14 12:12 §17输入范围纠正；no-H两臂实际中止
+
+根据Owner最新澄清，main撤回自己额外删除整个H的范围选择，修订方向为两臂恢复其他真实经历，仅删除教学/自身执行语言条件hidden。唯一image_compiler_01在04:12:14Z预期exit1；本批两个elastic launcher安全终止、原CPU owner回收退出、gpu01六卡本批进程全部消失，0后继物化/评测/环境/Test。两臂完整4320 checkpoint及未保存V4321..6138/VL4321..6017、每臂至多一个在途未知、2.371076951GPUh与所有原件保留。144纯image缓存/4679帧/9.1387GiB合法只读复用。原cbfbf3e2 frozen不热改，原no-H批按scope-change消费，非科学阴性、不自动恢复或补测；完整修订合同由main后续派发。工程结算在ROOT image_only_gemma_compiler/analysis/scope_change_settlement.json，根状态串行更新。

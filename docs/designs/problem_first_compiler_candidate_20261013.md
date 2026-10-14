@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–16有限计算与科学消费已完成；固定G第二Phi块/规则回退/β后继停止。当前唯一active为§17纯图像source Gemma教学入口的fresh V/VL匹配编译器、2160共同节点/至多8640有效B4与各seen576+strict validation400。完整实施/冻结/训练/读出均已授权；当前CPU实现和正式冻结准备，未宣称GPU启动。0新实践/训练query/MT bootstrap/controls/Test/自动后继。完整EMBER目标尚未取得。**
+2026-10-14。**§12–16有限计算与科学消费已完成。Owner最新要求保留其他真实经历，main已撤回§17删除整个H的范围；原no-H V/VL运行于04:12:14Z实际停止，保留原件与费用，未进行闭环读出，不是科学阴性。当前仅修订H合同准备/CPU资产定位，修订学习尚未启动；V/VL均须保留其他真实经历、仅去掉语言条件hidden，直接L仅VL，policy均保留L。完整修订科学合同待main交付，不恢复旧no-H更新或补测。完整EMBER目标尚未取得。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -773,3 +773,9 @@ ROOT预定 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/i
 先独占dev branch/worktree完成实现、实际消费者窄验证、clean pushed main和detached frozen源再formal launch。验证关注纯图像prefix真实调用/无L与h输入、两臂同公共初值/流、实际模块梯度、完整BA/finite、信息墙与配对；不加全树hash/逐tensor防御扫描、不重复主讨论科学分析。若真实实现改变本合同计算、标签、损失或评测口径，提交具体边界由main裁决；普通已定位工程问题执行者直接修复后新冻结接续。
 
 一个整批调度owner、一条可靠整批或实质异常回报；无阶段Queue/第二等待者/定时日志巡检。新任务完成后执行者工程验收/Git→一次交main01a13399；main随即读取原件、科学裁决和自主接续。没有自动第二训练块、实践、control矩阵或Test。
+
+### §17范围纠正与停止记录（2026-10-14 12:12）
+
+本节原no-H合同作为中止历史保留。Owner明确其他真实经历仍应输入；main承认从暂不输入自身语言条件hidden扩大为删除整个H，撤回该额外干预。修订两臂均保留自身RGB/proprio/实际actions/executed/feedback/经历顺序和实际参数上下文，只去掉教学及自身执行的语言条件hidden；V无直接L、VL仅多直接L，policy继续读L。完整H来源、Reader、信息墙、费用与有界训练由main后续完整合同登记，本记录不自行新增范围或启动。
+
+旧ROOT image_only_gemma_compiler唯一owner已停止两臂后续更新和所有后继调度，于04:12:14Z exit1按expected_scope_change消费。最近完整点两臂4320，V未保存4321..6138、VL4321..6017，各至多下一更新在途未知；完整optimizer/sampler/RNG和frozen源码保留，不为凑保存点续算。总2.371076951GPUh/0环境/0读出，原件见同ROOT analysis/scope_change_settlement.json。144纯image缓存与H无关且合法，只读复用于修订；图像/Reader/decoder/queue及官方eval共同算子保留。原no-H未形成有效闭环科学负证据，不自动恢复、补测或追加后继。

@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–17已完整消费，§18唯一有界优化批现已完整工程验收并待main科学消费；当前无active计算或新执行合同。原§17 no-H中止与真实H批阴性/越界修订/全部费用保留。§18完整承接V/VL8640的Reader/H/F、Adam/sampler/rank RNG，按原10800共同保护规则到唯一25920；VL通过seen投入gate后两臂均完成原strict400，V148/VL141均低于MT153。完整新状态、1952原行/配对、0新失败及增量16.951125519GPUh保留，无自动第三同条件窗口/后继/controls/Test。原教学/H输入、V/VL语言比较、完整38-target输出及policy L保持；完整EMBER目标未完成。**
+2026-10-14。**§12–17已完整消费，§18已完整工程交付并由main开始科学消费；第三个同条件优化窗口停止。当前唯一active为已授权§19：固定25920与原non-held教学/MT-H1缓存，真实跨suite自逆配对的条件组合读出，864唯一Compiler/1728逻辑行。0source/native/训练/环境/held/Test/新LoRA落盘或自动后继。原全部正负结果、旧no-H中止与H失败/费用保留；完整EMBER目标尚未完成。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -942,3 +942,58 @@ main已科学消费§17完整原件；本文件是实际后继授权，交执行
 
 refinement_from8640_01于13:14:02.831776Z exit0；10800两臂全144相对改善8.846%/6.024%，原规则共同到25920。V seen405/MT保留305未过门槛，VL421/保留315及四suite净正通过，故两臂都完成原400；V148/VL141，原各自8640为149/151，MT153/首G165/D175与168/Phi167保留。末点BA .185180/.170819不代替闭环，未选中点/恢复点或加第三窗口。
 完整25920状态/原144等权流/全链信用与872完整38-target LoRA、1952配对原行已9.335s CPU验收；新0失败/480317步/16.951125519GPUh，首次派发到完成213.044min在150–240min内。旧失败/费用/436唯一MT经历依赖与未知成本分列，新增实践/训练query/Test0。source778ff8ea新detached冻结保留，GPU消费者已退出；ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640，完整results.json与analysis/engineering_completion_20261014/{acceptance.json,report.md}。当前本批执行完成、无新active计算；一次main科学消费/取舍接续，不自动重试/后继/追加controls。
+
+## 19. 固定25920编译器的真实输入依赖读出（2026-10-14）
+
+授权原件：/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640/analysis/main_scientific_readout/frozen_input_dependence_contract_20261014.md；首次实际派发13:42:08.415Z，完整合同如下。
+
+# §19：固定25920编译器的输入依赖读出
+
+## 要改变的判断
+
+§18两臂已完整结束：V/VL BA .185180/.170819、seen405/421、held148/141；相对各自8640，seen+33/+68而held−1/−10，强MT仍153。main停止第三个同条件优化窗口。新增训练获取了更多已见E-only能力，但没有形成迁移收益；不能再把主要held缺口简单归为训练量。当前仍无法区分视频内容、自身固定MT经历以及VL直接语言对task→E映射的实际依赖。
+
+本读出仅回答：冻结的已学映射主要随哪些真实输入改变、是否存在输入冗余/交互。结果将决定后继是否优先改变教学与反馈的学习关系，或改变跨任务映射的监督/覆盖；不再机械删除一个入口或追加训练量。算子变化不是成功率、动作知识或动态理解的证明。这里只用非held原训练池，不读取新held离线资料或运行held诊断。
+
+建议唯一ROOT：`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920`。执行者仍为01a133e5-50f0-7d20-a893-df95c7387630，main仅写父ROOT分析目录。原§18原件和科学负结果只读保留。
+
+## 固定来源与干预
+
+- 只读V/VL各完整25920；使用同ImageCompiler数学、source/MT中心、原D38/S_G、36个原E及原144条教学cache和36条MT-H1 cache。模型eval/no-grad，不改任何参数、不重新训练/重算原Gemma/vision cache。
+- 冻结的teacher/own-H/语言均来自合法原36 non-held任务；身份字段只作调度和报告，绝不送入模型。E只在输出后的算术侧，不作为条件。source/runtime不加载旧Meta、Actor、hidden或第二adapter。
+- 固定任务顺序为原training_tasks的global-ID升序（24 target train+12 support），36项。p(t)=向前循环18项，是无不动点、自逆且跨suite的配对；实现前用原authority suite核对每一对，不根据结果调整配对。保留显式36行映射与4个demo ordinal；所有任务原教学均46–49，交换时保持同一demo编号，不截断/反转/乱序/平均帧。
+- 对每个target t、demo d，选择教学来自t或p(t)，H来自t或p(t)。VL再选择exact-L embedding来自t或p(t)。V没有L入口，不构造dummy L。替换教学时其完整z_img和真实frame indices一并来自源任务；替换H时完整images/prepost/facts/record_indices都来自源任务。VL语言来源单独指定，不能被视频cache附带的language静默带走。
+- V完整2×2教学/H组合，VL完整2×2×2教学/H/L组合。完整小型组合用于识别单输入替换可能被其它输入补偿的情况，不把一次替换无反应误称完全不使用该输入。
+- 两端p互为配对，同demo且模型无target-ID输入，实际相同的输入tuple只forward一次并在报告侧复用。以(arm,video_task,demo,H_task,L_task_or_none)为物理键：V18pairs×4demos×4组合=288，VL18×4×8=576，总864次唯一Compiler forward。逻辑报告V144×4=576、VL144×8=1152，共1728行；这是编译器干预读出，0环境episode。正常首个消费者计入864，不新增discarded profile或额外模型检查循环。
+- 全correct(t,d)和全来自p(t)是上述集合内已有输出；不得另重跑。四个correct教学的同task-other差异亦由已有correct输出循环d→下一demo直接计算，0额外forward。这里只是原四条训练教学中的变化，不称未见video保持测试。
+
+## 输出与算术
+
+使用原实际部署算子距离
+
+`d(X,Y) = mean_38 [ ||s_l B^X_l A^X_l - s_l B^Y_l A^Y_l||_F^2 / D_l ]`。
+
+复用已有rank-sized Gram算术与同一scaling/D，不生成大矩阵、不比较LoRA因子坐标的任意gauge。正常FP32 Gram/BF16前向低位差异接受；保留finite/shape及必要身份约束，不新增逐tensor/hash巡检。
+
+每条逻辑行报告：arm/target/demo、三个实际输入来源和组合mask；对E_t与E_p的距离；对全correct目标输出X_t与全correct来源输出X_p的距离；对MT零残差的输出能量。以原原始路径记录来源，E_t=E_p等零距离配对照实标注。
+
+可附教师方向上的标量偏好`q=(d(X,E_t)-d(X,E_p))/d(E_t,E_p)`：Et为−1、Ep为+1。零分母报告undefined并给分母/数量，不能填0或删去对应普通距离。q只描述这两套教师算子方向，不是成功概率或操作理解分数；正交于该方向的变化仍由完整距离保留。无需学习新probe/classifier、阈值、ranking或value模型。
+
+输出全36/四suite+support/零E与非零E、全部per-task与四demo等权统计，原1728逻辑行/864物理forward的对应关系、同task-other原池距离及不利个例。实际correct算术与§18全144节点作正常精度范围的对应读回，不按差异重跑/换dtype；真实shape/状态来源违约才窄修。完整LoRA仅作为计算中的临时值，不部署或保留864套新权重；保存小型原行/aggregate/completion和实际代码、资源/计费证据。
+
+## 事前解释与停止
+
+- 视频替换在H/L保持时几乎不改变输出，H/L替换却广泛推动输出朝其来源E改变，且组合结果一致：加强该已学映射利用非视频线索完成task→E的解释，降低仅改变视频编码/去L/更多相同E曝光能解决目标的优先级。
+- 视频替换产生广泛、明确的目标相关变化：不能把本次失败归为“根本没读视频”；应考虑监督所教的内容与跨任务迁移是否匹配。静态识别和动态理解仍未区分，不因此宣布教学知识已证。
+- 单输入替换小、组合替换大：保留冗余/一致性选择解释，不强行归给单一路径。不同task或两臂结论相反时完整报告，不按均值抹去异质性。
+- 任一分支都不以此内部读出重新选checkpoint、恢复第三个同条件训练窗口或直接认可最终方法。本批到原864唯一forward/小型算术后结束，0自动新干预/更多配对/时序controls/closed-loop/训练/实践/Test。后继由main结合完整§18结果裁决。
+
+## 资源、代码与交付
+
+- 0新增训练更新、0source/native action forward、0环境start/step、0新teacher、0实践、0held/Test。只使用原features的Compiler forward；不应初始化MuJoCo/renderers或大source policy。两个模型可复用一个frozen input池，按输入tuple在pair/demo范围流式计算，临时LoRA不长期堆积。
+- 使用1张真正有余量的A40即可，预计模型计算数分钟；本分析的主要时间是窄consumer实现/输入来源与组合复用检查/冻结和记录。每次launch同时live核两节点、项目当前6/8总量/node6，实际约12.27GiB输入cache及模型/工作区余量按消费者记录，不套通用利用率阈值。无新GPUh硬限；不为一个短读出开无收益多卡或额外profiling矩阵。
+- 新增磁盘预计≤1GiB，所有新内容data1；旧12.27GiB大cache及模型只读引用，不复制，不落盘864套LoRA。建立root前查适用data1独立quota、相关个人用量与共享容量，记录实际新增峰值和保留范围。
+- 可直接复用当前Compiler/state/input/OperatorObjective所有权，新增一个窄的固定状态分析消费者；不复制模型、增加长期fallback或扩成通用实验框架。只做实际来源选择、组合去重、距离消费者的针对性检查。清晰工程问题在本范围自行修复；若改变模型/数据标签/实际条件/预算才回main。
+- 正式读出来自clean pushed detached source，原778ff8ea训练数学/25920身份单列、原冻结不热改；执行者独占必要开发分支、代码、根状态/发现/历史/design§19和Git集成清理，main不并发改仓库。
+- 预计从实际派发到完整交付25–50分钟，含准备/冻结/一次运行/原件消费；864 forward本身预计数分钟，需按实际record修正，不为等时间制造任务。所有费用增量计账，旧§17/18和no-H中止原账不清零。
+- 一个owner和真实退出等待，一条整批或真实边界回报main；0阶段Queue/第二等待者/一般ACK。main继续科学分析，不要求执行者重复其推理。

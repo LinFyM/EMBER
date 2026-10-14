@@ -1,3 +1,9 @@
+## 2026-10-14 §19固定25920输入依赖读出已授权；CPU实现/冻结准备
+
+main已开始消费§18，明确停止第三个同条件优化窗口。唯一新§19固定V/VL25920、原36×4纯教学缓存/36MT-H1/36E/D38；按global-ID升序循环18的显式跨suite、自逆配对，只替换Compiler条件的完整教学/H及VL独立exact L。V2×2、VL2×2×2实际tuple去重864次Compiler/1728逻辑行，同task-other只复用correct输出；0source/native/训练/环境/新实践/held/Test/新LoRA落盘。只报告完整算子距离和真实分母/来源，不能据内部读出宣称成功率或动态知识；不追加时序controls或后继。
+完整合同已纳入design§19；36映射全部与原authority suite核对，L来源不会随video静默交换。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920，只引用原12.27GiB输入池/25920 CP，不复制大资产；data1独立quota现场used1571.67GiB/soft2048GiB、共享余量80T，新ROOT峰值估≤1GiB。初始gpu01:3有空闲A40，实际launch仍由canonical Batch live双节点/6或8-node6/任务峰值核验，约一张卡；CPU实际去重/独立L/零分母与canonical小矩阵Gram消费者已通过，864物理/1728逻辑分母正确；尚未启动GPU。
+首次派发13:42:08.415Z，工程/冻结/计算/验收整批预计25–50min，首次正常消费者计入864；旧§17/18/no-H所有失败与成本只读保留。窄分析消费者复用ImageCompiler/ImageInputs/OperatorObjective，源与根五份记录由执行者独占dev→clean pushed main→detached冻结；单一owner实际子进程退出、仅整批或真实边界一次回报main01a13399，无阶段Queue/第二waiter/自动扩配对、续训或回放。
+
 ## 2026-10-14 §18完整有界优化验收完成；当前无active计算
 
 唯一refinement_from8640_01于13:14:02.831776Z exit0，完整原件CPU验收9.335s通过，19个GPU job全部exit0，精确ROOT/冻结路径核对gpu01无残余consumer。计算source778ff8ea clean pushed detached，原8640完整状态/缓存、原47失败与旧费用只读保留；新完整25920 psi/284与290 Adam step/sampler/三rank RNG、各新增17280有效B4/原144同流与全链信用齐全。当前本批执行完成，暂无新的active执行合同，完整EMBER目标仍未完成；main负责消费与后继科学取舍，0自动第三同条件窗口/重试/controls/Test/第二等待者。

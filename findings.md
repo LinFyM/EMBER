@@ -12051,3 +12051,8 @@ canonical两模块只扩展登记的更新节点/完整恢复校验、可无环�
 同一映射/参数/目标仅增加优化量：V/VL完整8640承接，10800全144改善8.846%/6.024%，按事前规则都到唯一25920；末点mean BA .185180383448/.170818593591。seen372→405、353→421，较各自8640分别得74失41/得94失26；两臂breadth35/36，task29为0。V retainedMT305未达306，VL315且四target suite净正通过，故两臂均支付原400，不放宽gate或择臂。
 held V149→148得28失29，VL151→141得23失33；对MT153 V R127/G21/L26/net−5/churn47，VL R118/G23/L35/net−12/churn58，breadth6/8/task23及39为0。首G165、D175/168、Phi167及完整分布/重合率不削弱；V对VL held净+7而两者均未胜MT。训练面板提升与较低BA没有带来held增量，不预先归因动态视频理解、欠训唯一根因或全方法不可行；完整科学消费/取舍由main负责，0自动第三同条件窗口或额外controls/Test。
 工程9.335s CPU原件验收通过：完整25920 ψ/284与290 Adam/sampler/三rank RNG、原144等权流/全链信用、872完整38-target LoRA、1952唯一原行/场景/全noise配对齐全，0失败/480317步/16.951125519GPUh，首次派发至完成213.044min。旧H12.571101360GPUh/47失败、no-H中止2.371076951GPUh与MT436唯一经历/123039步及未知旧专属费用另列。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640，results.json与analysis/engineering_completion_20261014/{acceptance.json,report.md}；source778ff8ea clean pushed detached，当前无active计算，整批一次交main。
+
+## 491. §18停止同条件优化，§19只读真实输入依赖以定位映射（2026-10-14）
+
+main已消费优化量新增的seen获取/held未增事实，第三个同条件窗口停止；不能继续把主要held缺口简单归为训练量。当前输入冗余/交互以及视频/H/直接L对已学task→E映射的依赖尚未区分，唯一§19仅固定25920/原non-held缓存做跨suite全组合替换。原36 global-ID+18配对全部自逆且跨suite，保留同demo、完整frame indices/MT经历及独立L，864物理tuple复用1728逻辑原行；同task-other不加forward，E只做分析标签。输出距离不是控制能力/动态理解分数，有限结果由main科学消费，不机械删除入口/加曝光/Probe或回放。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920，完整design§19与inputs/scientific_contract.md。约一张A40/≤1GiB增量，0source/native/环境/训练/held/Test/新LoRA保留；原强参照、所有原失败/费用及方法适应依赖只读保持。当前仅CPU准备，正式计算须clean pushed detached、真实消费者及live准入，不把元数据核对当已完成模型读出。

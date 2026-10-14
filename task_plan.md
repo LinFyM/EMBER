@@ -1,3 +1,10 @@
+## 2026-10-14 §20局部内容移植闭环检验已授权；CPU实施/冻结准备
+
+main已消费§19科学原件及入口退休（edeaed45），不重复旧计算。跨scene同top-drawer opening正例不存在，黄油片段只支持稳定握持下的重力方向关系，完整u交换/辅助训练候选已撤回。当前唯一active为design§20：固定V25920、task43原完整36-record MT-H1，8条原真实视频各只读纯image Gemma一次；仅在ImageReader前替换原完整教学三个双相机z_img帧，完整Reader/H/F各重新forward，输出C/O/P/N共16套38-target/r8 LoRA。
+原init16/全env-policy noise root1235739335/source horizon400/官方控制均保持，4video×4arm×16state=256最终episode。MT7/16原件只读复用，不重做或冒充64独立经历；全部强参照、场景/phase/横向运动/幅度/接缝混杂保留。逐控制被动保存实际动作/EEF/目标物体位置/原BDDLfacts，输出不进模型；0新训练/实践/native诊断查询/held/Test/自动后继。该有限面板不认证动态理解或strict400性能，结果由main科学裁决。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/local_operation_interchange_25920，inputs/{scientific_contract.md,cross_scene_operation_audit.json}为合同/冻结数值原件；只引用父778ff8ea训练25920、原H/MT/source大资产，新失败与成本carry0。上限256完整/272提交/16失败/111520步/在途16，新增峰值估≤16GiB，现场data1 quota约1571.96GiB/soft2048GiB（精确原件analysis/initial_quota.txt）；正式launch再核双节点6/8-node6/任务真实余量，不恢复利用率或固定显存筛选。首次派发15:12:22.781Z，准备到交付预计45–90min，不重置时钟。
+执行者独占dev→clean pushed main→新detached冻结。窄一次性消费者复用ImageCompiler/pure_features/EpisodeRunner/现有被动trace和共享持久队列；科学消费后退休入口，源原件保留。一个owner直接等待实际子进程、仅整批完成或实质边界可靠唤醒本实验→验收/Git→main01a13399，无阶段Queue/第二waiter/状态轮询/普通ACK。
+
 ## 2026-10-14 §19科学消费与工程退休闭环；当前无active计算
 
 main已消费原件，确认视频的广泛教师方向相关作用，停止总体忽略视频解释；任务差异/H/L/零E及非动态、非闭环边界保留，第三同条件窗口停止。已退休唯一210行分析入口及完整替代的专属临时副本，共享Compiler/Inputs/Gram、正式463c3b97冻结、原训练/权重/全部原行与费用保留。VL100导航更正为d_X_target=.934986299，原数据未改。

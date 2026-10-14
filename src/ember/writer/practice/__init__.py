@@ -89,9 +89,18 @@ class EpisodeRunner:
         slot = dict(request=request, history=history, raw=None, ready=False, key='', steps=0,
                     pending=None, initial_steps=int(request.get('snapshot', {}).get('episode_control_steps', 0)))
         episode_contract=self.contract
-        if request.get('registered_scene') is not None:
+        if request.get('registered_scene') is not None or request.get('capture_root') is not None:
             episode_contract=deepcopy(self.contract)
+        if request.get('registered_scene') is not None:
             episode_contract['operator_read_write_scene']=request['registered_scene']
+        if request.get('capture_root') is not None:
+            capture=episode_contract.get('diagnostic_occupancy_capture')
+            if not capture:
+                raise ValueError('per-episode capture_root needs registered passive capture')
+            capture_root=Path(request['capture_root'])
+            capture['trajectory_root']=str(capture_root/'trajectories')
+            if capture.get('passive_trace'):
+                capture['passive_trace']['trace_root']=str(capture_root/'continuous_traces')
         if self.event_log is not None:
             self._event('submitted_start',episode_id=request['episode_id'],task=request['task']['global_task_id'],
                         maximum_steps=request['task']['horizon']+10)
@@ -190,8 +199,10 @@ class EpisodeRunner:
                 normalized_actions=torch.nan_to_num(normalized[pos, :5].detach().float().cpu()).clone(),
                 snapshot=slot['snapshot'], noise_seed=seeds[pos]))
             if bool(finite[pos]):
+                capture_fields=({'normalized_chunk':normalized[pos].detach().float().cpu().numpy()}
+                                if self.contract.get('diagnostic_occupancy_capture') else {})
                 self.environments.submit(index, 'step', actions=commands[pos], noise_seed=seeds[pos],
-                                         capture_snapshot=slot['request'].get('snapshots', False))
+                                         capture_snapshot=slot['request'].get('snapshots', False), **capture_fields)
             else:
                 self.environments.submit(index, 'numerical_failure')
 

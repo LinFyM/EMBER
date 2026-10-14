@@ -12067,3 +12067,7 @@ V2×2/VL2×2×2共864唯一Compiler反向复用1728逻辑行，另288同task-oth
 main直接消费原1728行与全分布：换视频d_X_target均值V1.081050/VL .934986，大于同task既见视频变化的36/36，但任务绝对量/差异保留，不把比率当新闭环因果效果。在有定义教师方向的34task，两臂均34/34向供体E移动，V20/34与VL12/34最终更接近供体；停止“整体不读视频”解释，不新增最大化video敏感性/故意压坏wrong的损失。H/L仍参与映射；零E任务的作用和其余明显不同，不能按总体均值删除真实经历或语言信息。
 跨task变化大、同task变化小既与task→E监督相容，也与正确抽象相容；训练池固定输入读出不证明静态记忆、动态操作知识或held能力。§18 seen正例/held阴性保持，第三优化窗口停止；后继方法讨论不自动授权GPU/新训练。完整论证只引用/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640/analysis/main_scientific_readout/{interpretation_20261014.md#§19原件消费,frozen_input_dependence_readback.json}，不重复主讨论汇总。
 执行者原导航VL100把d_X_partner1.057931817误标d_X_target；正确目标距离.934986299，原rows/aggregate/报告表格均正确，原投递原文保留并显式更正。原合同时限已满足，210行one-shot脚本及完整替代的临时副本退休；原463c3b97冻结/原778ff8ea训练/配置/权重/全输出/费用保留，canonical模型/Inputs/Gram未改，0新计算/诊断/交互。实际退休清单与Git身份见/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920/analysis/engineering_retirement_20261014.json。
+
+## 494. §20局部跨scene片段移植检验不等价于完整操作互换（2026-10-14）
+
+main已核同top-drawer opening跨scene正例不存在；task43/96相同黄油只有稳定握持下的重力方向关系成立，不能认证完整u或7维动作/抓取/放置等价。冻结三个stride5图像帧的P/N来自同task96 episode自然升/降，横向轨迹、幅度、阶段、场景与接缝混杂保留；不由方向/norm差异宣称动态知识。只按完整闭环原256面板/自身输出证据解释，强MT/首G/D/V/VL和旧失败/费用不削弱。完整合同design§20及新ROOT/inputs；0训练/新实践/held/Test，不追加窗口、VL、aux loss或第三同条件优化。

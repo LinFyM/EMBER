@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–18已工程交付，main科学消费/取舍持续；第三个同条件优化窗口停止。§19固定25920真实输入依赖读出已完整工程验收：864唯一Compiler/1728逻辑行/288复用same-task-other，0source/native/训练/环境/held/Test/新LoRA落盘。当前无active计算或新执行合同，无自动后继。原全部正负结果、旧no-H中止与H失败/费用保留；完整EMBER目标尚未完成。**
+2026-10-14。**§12–19已交付并由main科学消费；第三个同条件优化窗口停止。当前唯一active为§20固定V25920的局部教学内容移植闭环检验：16完整LoRA、4教学×16原初态×C/O/P/N=256最终episode，无新训练/实践/native查询/held/Test。先取得有界局部内容作用证据，不将其称strict400或方法资格；整批由执行者验收/Git后一次交main。原全部正负结果、失败与费用保留。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -1002,3 +1002,104 @@ refinement_from8640_01于13:14:02.831776Z exit0；10800两臂全144相对改善8
 
 原完整36+四demo的V/VL25920，GPU01:3从clean pushed detached463c3b97实际完成864唯一Compiler/1728逻辑行，每个物理输入反向复用两次，同task-other288条仅复用correct。源教学/H/独立L及完整原行/分层/零分母q null（V32/VL64）CPU验收通过，correct对原25920 node最大差1.1611e−4/均值1.2602e−5，不换dtype/追加forward。原模型/目标/信息墙保持，内部依赖不当成成功率或动态理解；完整科学消费由main负责。
 实际132.996s/.043711594GPUh/0失败，allocated12.605/reserved13.139GiB；source/native/训练/环境/held/Test/新LoRA落盘均0。13:42:08.415Z→14:14:17.561217Z为32.152min，原25–50min时钟保持；ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920保留全原行/aggregate/compatibility/completion/验收，旧正负证据与费用只读。当前本批结束，无自动新配对/时序controls/第三窗口；one-shot分析消费者待main科学消费后退休，原冻结/Git/原件保留。
+
+## 20. 核实跨场景对应后的固定Compiler完整闭环检验
+
+2026-10-14，main科学合同。承接Owner“核实哪些跨场景操作真正可以互换，再设计一个能判断Compiler是否利用这些内容的最小完整闭环实验；不靠辅助loss或延长训练”。
+本批只检验下述固定模型的局部内容利用和移植相容性；不训练新Writer，不恢复§18第三优化窗口，不据本批选择checkpoint或取得方法资格。
+
+### §20 一、实际数据核查改变了什么判断
+
+只读审计合法nonheld任务4/42/43/51/96各demo0–4；原件为relation_grounded_writer_20261006/labels中的NPZ/JSON及其指向的原HDF5/XML。
+main直接补算与留存的完整数值、动作对齐、来源及干预映射：同目录`cross_scene_operation_audit_20261014.json`。
+
+- task4取碗、42放碗、43放黄油并关抽屉都起始于已打开的上层抽屉；不能把扰动当成opening正例。task51才是完整opening。43/51的相同上层机构几何与滑动约束不把相反方向变成同一操作。
+- task43的butter_2与task96的butter_1几何类型一致。五对真实5步持物上升窗，物体分别上升约60–63/57–62mm，gripper全为+1，手物相对位置漂移0.07–0.76mm、姿态漂移0.12–1.46度。
+- 这支持的共同内容只有“在已有稳定握持下，维持当前手物关系并使物体逆重力移动”。对象绑定、抓握变换、横向路径、障碍、目标及停止高度仍属于受体；跨场景抓握位置差6.6–40.0mm、姿态差7.6–15.1度，横向控制也不同。
+- **没有认证整个局部latent、整个7维动作或完整抓取/放置程序可以交换。撤回上一候选中直接交换完整u、据部分物理效果强迫整个u相等的做法。**
+- task96自然下降提供同供体任务/物体/episode的反向内容，但与上升的XY、幅度和所处阶段仍不同。demo4不满足所查的方向负例条件，未凑入配对。
+- NPZ帧表实际是stride5教学帧和旧登记query帧的并集；旧57314有效帧数字不能写成纯stride5帧数。本批所有选定帧都严格位于stride5网格，动作使用obs[i]之后actions[i+1]。
+
+因此先检验**真实局部视频内容能否被已有Compiler有益消费**，不预设它已经编码成解耦的操作方向，也不据这少数配对启动通用跨场景学习器。
+
+### §20 二、唯一问题与预先声明的识别边界
+
+固定接收任务43及其完整正确教学/真实MT经历，比较原视频C、同task另一episode的相容片段O、跨场景同物体上升片段P、与P同一供体episode的自然下降片段N。
+完整冻结LoRA能否容纳P而保留能力，并对N产生不同且有实际控制后果的响应？C/O控制普通局部移植敏感性，P/N固定供体任务、物体与episode身份。
+
+这直接排除“只看整个供体task ID即可解释P/N差异”的简化解释；**不严格隔离运动方向**：片段位置、横向运动、幅度与拼接接缝仍不同。不能仅因N下降就宣称动态理解、因果方向解耦或跨未见task泛化。
+实际自身轨迹用于判断差异首先发生在接近/持物上升/搬运/放置/关抽屉的哪个环节；若只是普遍扰乱或早期无关失败，不能写成操作知识贡献。
+无效或无差异结果只约束这次局部干预及固定模型，不能宣称所有视频信息无用；也不因此自动扩大干预剂量、开更多probe或改loss保护同一假设。
+
+### §20 三、固定资产与完整计算链
+
+模型固定为§18 **V_update_00025920**，训练来源778ff8ea；不比较其它点后择优。选V是为了检验已登记的无直接L入口、并承接§19，非称其最强。
+该V已有seen405/held148，MT340/153、firstG427/165、D72 414/175、D144 414/168与VL421/141全部保留；本任务43旧V48视频9/16、MT7/16、firstG14/16、E15/16、D72 9/16、D14412/16也保留，不隐藏强参照。
+
+接收task43原真实MT-H1完整保留：36 records、practice_state_id=2，来源
+`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0043/history.pt.gz`。
+H的images/prepost/facts/record_indices按现ImageCompiler合同完整读取，不替换为供体H，不删或弱化其动作/状态/反馈，不新增实践。
+
+每条真实双RGB教学按官方预处理和stride5，通过现`pure_features`得到每帧512×2048纯图像Gemma特征；所有输入图像仍是原实拍仿真RGB，不生成图像或动作。
+仅在**ImageReader之前的冻结逐帧输入**处，按下一节替换3帧的完整双相机z_img；保持受体长度、受体frame indices及其余真实帧。
+对每个C/O/P/N条件重新跑全部8×256空间读取、有序video_time、与原完整H的对应读取及六层FactorEncoder，输出一套完整38-target/r8 LoRA。
+不交换旧已全局混合的memory、不把张量命名为已验证的操作token、不平均frames/features/LoRAs、不改language或source权重。
+原生policy始终读取接收task43的exact language；同一condition的完整LoRA冻结后执行，Compiler/teacher输入在最终episode退出。所有官方native10/execute5、双相机180度、256/224、8state/7action、settling10和source任务43 horizon400保持。
+
+**0训练/梯度/新动作监督/aux loss/参数拟合/轨迹拟合/新实践。** 几何/动作标签仅用于本次nonheld片段审计与固定索引；不进入Compiler条件，不接触validation/test标签。混合片段是明确标注的诊断输入，P/N/O不能冒充canonical正确同task教学性能。
+
+### §20 四、唯一冻结片段与评测面板
+
+每格列原始stride5帧；每窗口包含10个真实连续控制动作，所选窗口均gripper全+1、手物相对位置漂移<3mm、姿态漂移<4度。C保留全部原帧。
+选择仅依据已有物理轨迹、持握与方向/幅度，未读取本批Compiler输出或闭环结果。
+
+| 受体task43 demo | 被替换帧 | O：task43另一demo/上升帧 | P：task96同ordinal/上升帧 | N：同一个task96 demo/下降帧 |
+|---|---|---|---|---|
+| 0 | 70,75,80 | 1:75,80,85 | 0:50,55,60 | 0:75,80,85 |
+| 1 | 75,80,85 | 2:70,75,80 | 1:55,60,65 | 1:75,80,85 |
+| 2 | 70,75,80 | 3:70,75,80 | 2:55,60,65 | 2:75,80,85 |
+| 3 | 70,75,80 | 0:70,75,80 | 3:60,65,70 | 3:85,90,95 |
+
+P物体Δz依次+117.4/+113.2/+108.3/+114.2mm，N依次−88.3/−71.2/−58.3/−103.4mm；不称等幅。受体原窗Δz+124.6/+120.6/+116.9/+118.7mm，横向运动差异在原JSON完整保留。
+8条原视频（43与96各demo0–3）由canonical pure_features各读取一次，所有条件复用同一冻结缓存；不创建新的全库缓存。
+
+唯一接收task43 × 4受体教学 × 原16 query初态 × 4臂 = **256个最终episode、16套完整LoRA**。
+初态按旧panel明确列表：`[25,4,47,7,13,35,28,19,12,5,14,21,48,37,36,16]`。全部与本condition实践state2分离。
+每个初态在4条视频/4臂重复配对；env/policy noise root均沿旧task43 `1235739335`，由原policy_noise_seed生成完整noise流，不依赖worker/GPU/arm顺序。
+这是**nonheld有限池完整episode诊断**：只有4教学、16独立初态，重复范围明确；不是50教学无放回、不是strict validation400、不是checkpoint选择或方法资格。
+
+MT参照直接引用已核对的原16行：
+`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/student_data/fixed_G38349_pair72/task_0043/query/complete.json`中`reference=MT300`。
+其16初态、env_seed/policy_seed_root=1235739335与本批一致，已核7/16；不新跑MT。按4视频展开为64逻辑比较时必须同时注明只有16条独立原MT，不把成本或证据算四份。
+
+### §20 五、读出、判断与停止
+
+固定四臂全部执行；不用内部LoRA norm/动作MSE/少量成功进行选点或提前择臂。只有真实工程故障及有效资源边界可以中止；实际科学失败不重跑。
+逐视频/初态原行与C↔O、O↔P、P↔N、C↔MT的retained/gained/lost/churn/success-set overlap均保留；报告64分母及4视频/16初态的重复结构，不把逐行独立CI当可靠结论。
+
+预先登记的**有限面板投入信号**，不作为正式性能门槛：
+
+1. O相对C、P相对O各净丢失不超过4/64，表示没有明显普通移植或跨场景相容性崩塌；小差额不证明统计等价。
+2. P比N至少净多8/64成功，且至少3/4受体视频方向非负，不能由单条视频贡献超过净差的3/4；同时检查完整得失而非只报净数。
+3. 自身执行显示与持物运动有关的响应，且不能主要由接近前的普遍破坏解释；标准任务成功仍为主结果，局部方向或LoRA距离不能代替它。
+4. 正常C的绝对能力必须对照强MT及原firstG；即使1–3出现，也只支持该固定模型上的局部内容贡献。不能把弱于强参照的局部效应升级成继续当前BA优化或新Writer资格。
+
+若C/O本身不稳，结论为干预可解释性不足；若P与N同时破坏，优先判普通场景/接缝干扰；若四臂近似不变，判本次局部内容作用未检出，不等于总体忽略视频；若P保留而N损害且实际行为相符，支持有限的跨场景片段内容利用，仍保留位置/幅度/阶段混杂。
+这些分支都只消费一次固定批；**0自动新片段、扩大剂量、第二checkpoint、VL矩阵、shuffled/reversed、held/Test、辅助loss或续训。** 后继由main结合完整目标与历史重新取舍，不能把本批名字退休后原样再开。
+
+### §20 六、自身行为记录与资源/生命周期
+
+复用现EpisodeRunner、持久环境及已有被动记录能力。记录同一实际最终episode的动作、EEF/proprio、目标黄油位置与必要标准BDDL事实，用于定位最早变化；若已有snapshot足够，可从保存状态作CPU运动学读取，**不额外stepping/reset/rollout/native查询**。
+读取对象位置/阶段仅作输出侧诊断，不能返回Compiler或最终policy；不创建第二Actor/Reader/Probe、通用新标注器或新训练路径。无需接触力GT，不把共移判据称真值抓持。使用现capture_history时关闭无用phi缓存；优先已有被动trace，避免无关大hidden/RGB重复落盘。
+工程上可按真实消费者作窄接口适配；不能修改模型计算/官方评测/配对/片段/科学预算。若必要记录不能由现接口或窄适配取得，报告具体边界，不暗自扩大科研计算。
+
+新ROOT：`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/local_operation_interchange_25920`。
+新增峰值预计≤16GiB（8教学特征约GiB量级、16 LoRA、原行与必要自身trace/临时文件）；大CP/H/source/dataset只引用。创建大缓存/launch前由执行者核strg01 data1独立quota、实际个人用量及共享容量，不据旧额度开工。
+目标256完整starts，失败partial最多16，总submitted≤272；总实际环境步上界 **111520 = 272×(400+10)**。总在途≤16；所有失败、未返启动及已发生费用保留，不以删账处理边界。0新适应或MT复测，0held/Test。
+GPU数仍按Owner两节点合计8/空闲≤10则6、单节点6合同，launch逐次核两节点真实任务余量；独立消费者不需NCCL。就绪评测按真实吞吐/显存安排卡数与slots、成本平衡long-first持久队列，不从旧world3或本批视频数推导额外永久卡数上限。
+首批真实工作计入256，记录吞吐/峰值并据实调物理batch/slots/frame chunk，保持全部逻辑条件不变；没有discarded GPU profile或为低位一致重算。
+派发到完整工程/Git交付初估 **45–90分钟**：准备/冻结20–40，原生缓存与编译约3–8，256条support episode按已有20–60s/条、有效8–16并发估10–35，再加验收收尾；这是估计，不是deadline，也不因超期增加科学范围。首次真实消费者后必要时只修正一次实质ETA。
+
+执行者01a133e5独占代码/根记录/Git：从最新main独占开发、实际消费者定向检查、clean pushed detached正式冻结；记录原778ff8ea训练身份与新读取/评测身份。canonical ImageCompiler/FactorEncoder及既有大资产不热改、不保留新平行Compiler；一次性干预入口在main消费后退休，历史保留Git/frozen/原件。
+将本合同登记到既有`docs/designs/problem_first_compiler_candidate_20261013.md`新§20及task_plan/progress，必要发现/历史写入现有文件；不向AGENTS或稳定Owner要求添加动态运行记录。
+单一实际owner持续等待子进程退出；只在整批完成或真实边界可靠唤醒实验session，工程验收/Git后一次整批交main01a13399。无阶段ACK/Queue/第二等待者/普通状态轮询/自动后继。

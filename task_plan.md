@@ -1,3 +1,8 @@
+## 2026-10-14 12:54 §17带真实H唯一owner实际六卡启动
+
+新image_gemma_MT_history_01/PID2524012从clean pushed detached 7f05e3e6实际启动，gpu01:6/2/1/3/7/0六个持久消费者物化原36份H的冻结vision/projector，144教学Gemma cache原地只读、0重算。现场重新按共享完整12.26GiB池/H峰值及当前余量安排，先均衡两个独立臂的逻辑B4，再按真实free选择节点/卡；本次V6/2/1与VL3/7/0各world3，是现场选择而非固定上限，释放消费者接就绪工作。每launch live双节点/data1独立quota/合计6-node6记录；cache14.2GiB与train17.3GiB仅当前任务初估，无util/通用显存门槛。held原范围真实输入将用frame chunk64/实需19.3GiB估计验证有益物理放大，0额外profile/科学forward或案例。
+首次H授权04:19:48.975Z→owner启动34.485min，在工程20–40min估计内；原02:54:45.949Z时钟及scope-change2.371076951GPUh保留另账。当前仅真实H缓存消费者已运行，fresh共享学习尚未称已完成；首有效36task轮包含最长104H并计入有效9B4，真实新H峰值/吞吐修正ETA，原H派发起100–190min暂沿。实际source vision GPU消费未验收，CPU真实前缀/63facts/RNG/共享init/全BA梯度与接口已通过。唯一owner实际等待所有子进程，整批或异常一次自动唤醒本实验→验收/Git→main01a13399，0阶段Queue/第二等待者/Test/自动后继。正式旧/new冻结保留，已合入开发branch/worktree按生命周期清理。
+
 ## 2026-10-14 12:19 §17完整H修订已授权；唯一fresh V/VL实现
 
 main完整优先修订已全文纳入design§17，与原image_only_gemma_contract合成且冲突优先；原no-H scope-change结算与2.371076951GPUh保留，不恢复旧权重/Adam、不依据旧内部值选择配置。唯一新ROOT=image_only_gemma_with_history，修订首次user事件04:19:48.975Z/预计100–190min；原02:54:45.949Z派发与04:12:14Z停止另存，原耗时和成本不清零。

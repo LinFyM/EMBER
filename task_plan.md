@@ -1,3 +1,9 @@
+## 2026-10-15 原批settling违约已定位；唯一128固定MT修订active
+
+当前唯一active仍为video_effect_parameter_compiler_20261015，范围限design§12/main01a13399明确授权的原8内部probe×init0..15共128固定MT参照修订；0重训/profile/新实践/新sealed读出/held/Test。原384编译final、Phi1120、24完整LoRA/Adam/RNG、32bootstrap及832恢复分支全部保留。普通MT未做dummy10、snapshot分支恢复前额外dummy10是缩进接口违约；原MT64与相对MT−4/−6/+10撤出科学结论，三个编译臂60/58/74间比较保持。
+原1556提交/返回、control303472、实际dummy14280/总317752及4.793367211752468GPUh完整保留；修订单独新增最多128提交、42240control/1280dummy，累计1684/345712/15560/361272，不挪用原16工程失败余量。原final执行512含128无效MT，修订后实际640执行构成512有效配对，不能只算512成本。
+原参数/选择21:01:01.939804Z冻结、sealed21:21:15.600653Z、修订MT在其后；明确一次sealed顺序例外，GT不影响参数/case/seed/MT配置且不重开。旧results/freeze/complete/sealed/128无效原行保留，新产物以corrected_results.json为唯一有效入口。源码只把dummy0移回snapshot分支；CPU实际启动准备+canonical dummy loop四组合重现并核实，正式仍new clean pushed detached。原18:16:48.556Z/3–6h保持；本次裁决25–45min，启动前live双节点6/8-node6/data1独立quota与个人用量。一个owner整批或真实边界→实验验收/Git→main一次，0额外waiter/阶段Queue/普通ACK/自动后继。
+
 ## 2026-10-15 接口窄修后唯一剩余批已实际恢复
 
 唯一video_effect_interface_resume_02/PID3152552于2026-10-14T20:30:13.532Z从clean pushed detachedfe034f78实际启动；原Phi/训练和首轮native来源8801e701不动。旧owner已退出并按ROOT/attempt消费，6个失败适应队列控制记录在保留原件后复位，全部已完成原行/条件/事务/完整LoRA Adam及RNG复用；0Phi/profile/cache/MT final重复。六个持久消费者动态承接剩余条件和384非MT final，首个登记后续wave采用slots16、其余slots8，按实际返回峰值/吞吐执行；统一2832/16/684160+28320与data1新增96GiB预估、live双节点6/8-node6不变。原14个实际native单元约99–247秒，剩余15条件最多4有效原子更新以及384 final并行粗估40–100min含加载/验收，非新许可门槛或成功保证；原18:16:48.556Z/3–6h不重置。每个job实际GPU/quota回执和恢复源字段保存；一owner实际退出+唯一整批唤醒，验收/Git后一次main，无阶段Queue/第二waiter/自动后继/Test，sealed仍在所有24/512完全冻结后。

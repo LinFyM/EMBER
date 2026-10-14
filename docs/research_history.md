@@ -5393,3 +5393,7 @@ Owner要求先不开新实验、认真重审完整历史和接手以来推进。
 ### 2026-10-15 视频效果首批记录接口恢复
 
 video_effect_01/8801e701于20:11:41.680Z exit1，Phi1120/240缓存/9条件/128MT final全部保存；504完整/0失败partial/100671总步/1.764545632GPUh。JSON NumPy bool和适应4bootstrap/3condition发布接口已定位，窄修复用原事务而非重启计算；当前恢复原合同，根记录及ROOT/analysis/engineering_recovery_02为工程出处，不作为新科学结果或预算修订。
+
+## 2026-10-15 视频效果参数编译：原settling违约及固定MT有界替换
+
+原1556真实提交/返回、384有效编译final与128协议无效MT原件保持；缩进窄修恢复ordinary dummy10/snapshot dummy0。主讨论明确授权新增固定128MT，累计1684提交/361272动作步上界；原参数21:01冻结和sealed21:21后再补MT的顺序例外明示，0学习/选点或诊断重算。原ROOT及[design§12](designs/video_effect_parameter_compiler_20261015.md)保存完整先后、invalid原件与成本；修订未完成不作为新的科学成绩。

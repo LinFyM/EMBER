@@ -12093,3 +12093,9 @@ main已核同top-drawer opening跨scene正例不存在；task43/96相同黄油�
 ### 2026-10-15 首批工程退出和真实梯度证据
 
 Phi1120与完整native38/r8梯度均已由实际消费者执行；原首步B38/A0和真实14条原outcome保留，不能称最终能力已通过。退出是NumPy bool记录和适应队列行数接口，504实际episode全部返回，非科学失败或交互预算越界。修复保留实际proposal/Adam/RNG/parent身份，不重选教学或标签、改score/接受阈值；归档原1.764545632GPUh和9条件/128 final，sealed内部教学标签仍关闭。
+
+## 2026-10-15 settling协议违约与有限替换参照
+
+原video_effect final验收严格初始proprio配对失败，定位canonical environment._serve的dummy0误缩进：128MT实际0/报告10；384编译final实际10保持，832snapshot恢复前实际多10按费用和交互保留。原MT64/相对收益撤回，三编译臂60/58/74相互比较有效；不能抹视频臂低于无视频臂的负证据。main明确授权只补固定128MT，sealed只读早于修订MT的例外保留，0改参数/配置/选择，0重算诊断。合同及完整界限见[当前design§12](docs/designs/video_effect_parameter_compiler_20261015.md)与ROOT/inputs/MT_official_settling_amendment_20261015.md；原费4.793367211752468GPUh和实际dummy14280保留。当前仍待有效512验收，不冒称原批科学合规。
+
+主讨论补充的已消费身份事实（不新增复算）：no_video14次更新/0接受，8个final均MT300；74/128不是无视频学习增益。video0/1分别20/18更新、8/7接受；实际改参数仅task0/1/12/21/32，其80行各36成功，对同case no_video45。task13/20/34三臂同MT300但48行成功24/22/29，首noise/proprio一致，保留正常执行不确定性，不能归因视频LoRA损害或以逐tensor/dtype检查/补测消除。128修订MT保持独立正式参照，不选择或平均多MT高点。

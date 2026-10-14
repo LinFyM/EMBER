@@ -101,12 +101,12 @@ def _serve(pipe, contract, physical_gpu, affinity):
                 snapshot = command.get('snapshot')
                 if snapshot is not None:
                     settling = 0
+                    episode_contract['environment']['dummy_settling_steps'] = 0
                 if episode_contract.get('own_physical_observations'):
                     from ember.writer.practice.geometry import PhysicalEntities
                     physical = PhysicalEntities(env, task, episode_contract['libero_paths'])
                 else:
                     physical = None
-                    episode_contract['environment']['dummy_settling_steps'] = 0
                 remaining = command.get('remaining')
                 if remaining is not None:
                     settling = min(settling, int(remaining))

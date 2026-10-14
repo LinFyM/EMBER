@@ -1,3 +1,7 @@
+## 2026-10-15 新方法唯一整批已实际启动
+
+唯一video_effect_01/owner PID2850353于2026-10-14T19:40:14.933Z从clean pushed detached8801e701实际启动；首次18:16:48.556Z和原3–6h预计不重置。代码/学习链81行已集成，OOI216/224整组missing mask与联合四格独立executed mask修订为当前唯一合同。source240条真实双RGB patch缓存仅共享一份，2次预算内首B4物理world2/4比较后fresh同流Phi1120；已就绪MT128 final与缓存/学习按实测资源并行，Phi端点后持久动态队列承接8task/24独立条件与全部512 final。每个GPU job由同一Batch先live双节点/数量/node6/真实余量及strg01 data1独立quota；不新增通用util/固定显存筛选，不碰foreign任务。尚无新的学习/闭环成绩，GPU/native/分支接口由原登记首消费者验证，异常保留有效原件/未知费用后按合同窄修。唯一owner直接等待实际子进程，仅整批exit0/1向本实验唤醒一次，验收/Git后一次main；0阶段Queue、第二waiter、Test或自动后继。ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015，coordinator/launcher_request.json及video_effect_01/launch.json为真实启动出处；全部final冻结后才CPU sealed16份内部教学标签诊断。
+
 ## 2026-10-15 唯一active：视频关系目标与真实分支直接参数编译
 
 Owner已恢复自主科学推进与必要实验授权；主讨论完整派发 [video_effect_parameter_compiler_20261015.md](docs/designs/video_effect_parameter_compiler_20261015.md)，当前唯一active design。旧whole_method_reassessment§9终局Q-only未实施，仅为被后继替代的议案；不恢复旧G/ImageCompiler阶段。

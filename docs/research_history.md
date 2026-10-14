@@ -5383,3 +5383,8 @@ main按ROOT/input_dependence_01消费原件，确认跨suite换视频的广泛�
 ## 2026-10-15 只读完整方法重审索引（分析，非新实验）
 
 Owner要求先不开新实验、认真重审完整历史和接手以来推进。主讨论成稿与一次有界独立科学审查完整纳入[whole_method_reassessment_20261015.md](analyses/whole_method_reassessment_20261015.md)；原分析来源/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640/analysis/main_scientific_readout/whole_method_reassessment_20261015.md留存。保留责任、共同E/BA正例、反馈信用消费者区别、Product等历史和所有未验证反例；后果学习/直接参数修订只是方法议案，未激活design/实现或实验。§20原件与入口保留，未新增逐例因果结论、模型/环境/GPU/测试或数据构建；执行者仅作本次文档集成，最终科学说明由主讨论完成。
+
+
+### 2026-10-15 视频效果直接参数编译实际启动
+
+8801e701纳入唯一新[设计](designs/video_effect_parameter_compiler_20261015.md)及[学习链分析](analyses/video_effect_learning_chain_20261015.md)，退休8个旧ImageCompiler专用入口/模块，公共Runtime/FactorEncoder/EpisodeRunner/native/queue与历史frozen原件保留。当前Phi1120/24条件/512final由video_effect_01单owner于19:40:14.933Z启动；OOI216/224与联合四格科学修订和原3–6h/18:16:48派发沿用。此条为实现与实际启动索引，无新性能结论；run ROOT及launch来源见progress，整批后方可打开内部sealed标签。

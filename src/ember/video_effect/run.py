@@ -172,6 +172,12 @@ def worker(args, runtime, runner, context, tasks):
         try:
             if row['stage'] == 'adapt':
                 bootstrap(args, runtime, runner, task)
+                free,_=torch.cuda.mem_get_info(runtime.device)
+                if runner.slots<8 and free>16*1024**3:
+                    runner.close();runner.slots=8
+                    write_json_atomic(args.root/'physical_slot_selection'/f'{args.worker_id}.json',dict(
+                        initial_valid_bootstrap_slots=4,registered_next_branch_slots=8,free_MiB=int(free/1024**2),
+                        prior_full_native_B4_peak_GiB=25.502,logical_cases_unchanged=True))
                 for arm in ('video0','video1','no_video'):
                     base = args.root / 'conditions' / f'task_{row["task"]:04d}_{arm}'
                     if not (base / 'complete.json').exists():

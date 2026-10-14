@@ -1,3 +1,10 @@
+## 2026-10-15 唯一active：视频关系目标与真实分支直接参数编译
+
+Owner已恢复自主科学推进与必要实验授权；主讨论完整派发 [video_effect_parameter_compiler_20261015.md](docs/designs/video_effect_parameter_compiler_20261015.md)，当前唯一active design。旧whole_method_reassessment§9终局Q-only未实施，仅为被后继替代的议案；不恢复旧G/ImageCompiler阶段。
+本批28项共享Phi监督/224教学/1120逻辑B4更新，8内部probe×两个教学及无视频评分参照=24独立条件，完整MT merged+38-target/r8因子直接native VJP更新，唯一512配对final；无Q/世界模型/BC/FM动作后端、正式held/Test/自动后继。实施前四分支已由main修订为同一Gaussian×Bernoulli联合分布Cartesian四格，其余数量/权重/预算不变。
+当前CPU实施，尚无GPU/model/环境正式计算。共享Phi和关系评分各独占codex worktree，状态恢复/首块事实/terminal物理读出/参数更新/整批编排与根记录Git由本实验独占集成；code-architecture-gate baseline及最终增长记录一次，退休旧ImageCompiler专属入口，历史frozen/原件不动。正式来自new clean pushed detached；run ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015；新增峰值96GiB，data1独立quota已初核余量，正式launch再live双节点6/8/node6。
+限制2832提交/684160control+28320dummy=712480总步/最多16工程失败，按condition96starts及64horizon预留完整原子更新；真实失败和unknown原件计账，0重复waiter/阶段Queue。整批首次派发暂估3–6h，未作新profile保证；首次有效消费者只在吞吐实际改变时修正ETA，完整结果验收/Git后一次交main。
+
 ## 2026-10-15 Owner恢复自主推进授权；当前无新active设计或计算
 
 Owner最新原话：“我困了，睡觉去了，之后你自主推进”“不不不，该开就开，我又不能梦里给你发消息同意你开实验”“不要停下来，明早醒来我检查你的进展”。此前先不开实验限制已明确解除；主讨论可自主决定必要有界科学实验，不等待Owner逐项批准，既有科学/信息墙/评测/资源边界保持。

@@ -7,9 +7,18 @@ import time
 import torch
 
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from ember.pi05_eval_queue import claim_next, complete_job, fail_job
+from ember.pi05_eval_queue import claim_next, complete_job, fail_job, publish_json_exclusive
 from .learning import HistoryCache
 from .path import restore_compilation, history_prefix
+
+
+def publish_value_record(queue, claim, worker_id, file, row_count, *, successes=0):
+    """The canonical queue requires an immutable shards/ receipt, scoped by role."""
+    relative = Path('shards')/queue.stem/claim.shard.job_id/f'attempt_{claim.attempt:03d}.json'
+    size = publish_json_exclusive(queue.parent/relative, dict(record_file=str(file),
+        record_bytes=file.stat().st_size, row_count=row_count))
+    complete_job(queue, job_id=claim.shard.job_id, worker_id=worker_id, claim_token=claim.claim_token,
+        rows_path=str(relative), rows_bytes=size, row_count=row_count, successes=successes)
 
 
 def prefix_inputs(runtime, path, prefix, responses):
@@ -148,10 +157,7 @@ def prepare_native(args, runtime):
                 write_json_atomic(destination, dict(complete=True, path_source=entry['path'], prefixes=prefixes,
                     seconds=time.monotonic()-started, new_queries=sum(p['new_queries'] for p in prefixes),
                     no_environment=True, query_labels_read=False))
-            relative = destination.relative_to(args.root)
-            complete_job(queue, job_id=claim.shard.job_id, worker_id=args.worker_id,
-                claim_token=claim.claim_token, rows_path=str(relative), rows_bytes=destination.stat().st_size,
-                row_count=len(entry['prefixes']), successes=0)
+            publish_value_record(queue,claim,args.worker_id,destination,len(entry['prefixes']))
         except BaseException as error:
             fail_job(queue, job_id=claim.shard.job_id, worker_id=args.worker_id,
                 claim_token=claim.claim_token, error=repr(error))

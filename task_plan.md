@@ -1,3 +1,9 @@
+## 2026-10-14 §16首次缺输入计算完成448；队列发布窄修后接续
+
+owner01/source b77eccc6实际六卡完成6个RL真实输入文件/28缺失prefix项/448 native10查询，全部finite/完整noise/70维final响应已持久保存；随后complete_job因非shards/相对发布路径拒绝，各worker exit1。Phi更新0、环境0、0held最终结果读取，6失败合计.063266839GPUh与全部原件保留，01已按ROOT/attempt consumed。
+修复只统一native/nonheld/held/final的canonical队列不可变shards/回执，按role分namespace，引用原已保存数据不重做448 forward；单一value_data发布owner被各消费者复用。真实已保存输入的CPU复现已通过原complete_job与四role namespace，0新模型/查询/环境。恢复只requeue已退出失败claim，不改source/权重/数据/标签/BCE/180/400选择/5536/416/144480/Test合同；新clean pushed detached源承接，旧b77冻结保留。
+原00:26:16Z首次观测派发与90–180min预估保持，准备时钟不重置；剩余5082既定输入及Phi180/固定读出沿一个owner/整批或异常唯一唤醒执行，无阶段Queue/第二等待者/自动后继。
+
 ## 2026-10-14 §15科学消费完成；唯一active §16固定真实路径独立价值学习
 
 main直接消费§15原件：D144 held净+3对S来自task31+9与其余−6，task23两点1/50成功初态无交集；D72对MT的46新增有33保持。部分控制正例保留，第三个D同目标块及C/native/lambda补救停止；完整解释只引用operator_D_adjacent_stability/analysis/main_scientific_readout/interpretation_20261014.md，不重算科学分析。

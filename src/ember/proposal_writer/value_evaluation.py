@@ -8,10 +8,10 @@ from torch.nn import functional as F
 from safetensors.torch import load_file
 
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from ember.pi05_eval_queue import (EvaluationTask, EvaluationShard, claim_next, complete_job, fail_job,
+from ember.pi05_eval_queue import (EvaluationTask, EvaluationShard, claim_next, fail_job,
     initialize_queue, build_cost_balanced_shards)
 from ember.writer.runtime import autocast
-from .value_data import ValueInputs, prefix_inputs
+from .value_data import ValueInputs, prefix_inputs, publish_value_record
 from .value_learning import initialize_value, phi_logits
 from .learning import memory_peak
 
@@ -78,9 +78,7 @@ def score_values(args, runtime):
                 write_json_atomic(file, dict(complete=True, checkpoint=str(checkpoint), path_source=entry['path'],
                     task=entry['task'], kind=entry['kind'], rows=rows, seconds=time.monotonic()-started,
                     peak=memory_peak(runtime.device), held_outcomes_read=False, new_native_queries=0))
-            complete_job(queue, job_id=claim.shard.job_id, worker_id=args.worker_id, claim_token=claim.claim_token,
-                rows_path=str(file.relative_to(args.root)), rows_bytes=file.stat().st_size,
-                row_count=len(entry['prefixes']), successes=0)
+            publish_value_record(queue,claim,args.worker_id,file,len(entry['prefixes']))
         except BaseException as error:
             fail_job(queue, job_id=claim.shard.job_id, worker_id=args.worker_id, claim_token=claim.claim_token,error=repr(error))
             raise
@@ -199,9 +197,8 @@ def final_episodes(args, runtime, runner):
             rows = [read_json(args.root/'final_rows'/f"{entry['id']}.json") for entry in entries]
             file = args.root/'final_shards'/f'{claim.shard.job_id}_{claim.attempt:03d}.json'
             write_json_atomic(file, dict(rows=rows))
-            complete_job(args.root/'queues/final.sqlite', job_id=claim.shard.job_id, worker_id=args.worker_id,
-                claim_token=claim.claim_token, rows_path=str(file.relative_to(args.root)), rows_bytes=file.stat().st_size,
-                row_count=len(rows), successes=sum(bool(row['success']) for row in rows))
+            publish_value_record(args.root/'queues/final.sqlite',claim,args.worker_id,file,len(rows),
+                                 successes=sum(bool(row['success']) for row in rows))
         except BaseException as error:
             fail_job(args.root/'queues/final.sqlite', job_id=claim.shard.job_id, worker_id=args.worker_id,
                 claim_token=claim.claim_token, error=repr(error))

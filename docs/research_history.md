@@ -5325,3 +5325,8 @@ image_only_gemma_with_history/coordinator/image_gemma_MT_history_01/exit.json：
 image_gemma_H_readout_resume_02 exit1是发布层expected8(actual state)对实际V/VL16行错误，16原held行全部已保存，47 VL seen已补齐；原在途≤16生效，0新增failed episode，预算2015/63/1043040不变。ledger1215 submitted/1168 returned/47未返回上界，known273518+unknown22990=296508，root总7.119625674GPUh；旧no-H2.371076951另存。source b9c8f824数学/Actor正常，训练7f05/8640不改，不重训、不重跑已返回case，不自动新矩阵。
 实际原H104/task31 states0..7/两臂16final完整：framechunk64实际maxvideo56，compile allocated12.401/reserved15.832GiB，execution allocated10.178/reserved14.516GiB，真实349.023s/16含编译与控制、1536 plans。不能据此称最长video91（held）或92（train）已认证，后续原注册最大视频case计入固定读出。原件analysis/actual_H104_held_consumer_02.json、readout_shards/paired_validation/paired_validation_task_0031_part_000_001.json。先前CPU接续检查mock了publisher而漏掉双臂真实计数，属于执行者验证遗漏；现用保存原16行/private queue复现默认expected8拒绝，并通过显式rows_per_state2真实发布，不新增GPU或环境。shared queue默认1保持，既有14 tests通过。
 只在canonical complete_job/image_data.publish_record显式登记每state两行，计数/真实配对分母与原面板一致；首paired回执仅CPU结算，原失败记录不删。新source需clean pushed detached，剩784 held由新唯一owner承接；两seen576和每臂8held有效行保持，无新额度/训练/Teacher/query/controls/Test，不等待main工程ACK。后续六卡持久共享队列、实际slots3/3/3/3/2/2总≤16保护尚未消费的新失败16余量，原case/RNG/官方口径保持；旧source/所有费用和first/H/no-H时钟继续保留。
+
+
+## 2026-10-14 16:02 §17当前六卡正式读出接续
+
+新source8ecddd64 clean/pushed/detached修双臂每state计数；原H104/16行及seen1152 CPU复用，0重训/重跑。唯一resume03/PID3251604于07:59:09Z实起、six physical gpu01:3/2/0/4/5与gpu02:6，slots3/3/3/3/2/2稳态16；原最大held91帧/task39-state48-demo36的4注册final已实过/160.065s，与H104/新source峰值原件在OUT/longest_registered_consumer.json。固定1952/2015/63/1043040与8640/全noise/官方口径不动，新失败episode仍0，47旧保守失败不删。原16/1968越界和no-H scope-change成本历史保留。原时间估计已显著超，07:59起余45–75min依据实际两种physicalbatch原件，main一次有意义ETA修正收件，无阶段ACK/第二waiter/自动后继。全部science结果待原整批验收后main裁决。

@@ -1,3 +1,10 @@
+## 2026-10-14 16:02 §17六卡真实held接续；最长91帧/H104消费者通过
+
+唯一image_gemma_H_paired_publication_resume_03/PID3251604于07:59:09Z从clean pushed detached8ecddd64实际启动；原7f05训练8640和b9c首16实际编译/执行身份分列。两seen576/576及16已完成held只读复用，CPU双臂发布结算不新增forward/环境；剩784 held由gpu01:3/2/0/4/5+gpu02:6六个持久消费者共享long-first队列。释放消费者接未完work，steady slots3/3/3/3/2/2总16，保护仍剩16新增failed额度；22GiB只为当前frame64/H/renderer实需初估，非利用率/通用显存筛选。
+原注册最大held视频task39/state48/demo36=91帧所在原shard4条完整final于08:02:29Z已消费/发布，H104、chunk64/slots3，实际160.065s；compile allocated12.883/reserved13.838GiB，execution9.416/reserved10.133GiB。仅用原输入，0discarded profile/额外actor；原件新OUT/longest_registered_consumer.json，未把训练92帧视为当前held实测。新source仅修每state的双臂回执计数，14既有queue tests及保存原16行真实publisher CPU消费者通过；源均push，task-owned dev分支/worktree清理，原冻结/失败原件保留。
+原04:19:48.975Z H锚/100–190min、06:42:01.831Z恢复35–70min均已显著超期，真实首349s/16消费者及发布错误、实际CPU接口/Git准备延误如实保留；不重置时钟/缩水。按现有8slot与3slot tail实际native耗时/六卡16在途，暂预计07:59起剩45–75min（08:44–09:14Z即16:44–17:14本地），新OUT/runtime_ETA_revision.json留依据并已一次实质修正main；不是deadline或成功保证。root到02的7.119625674GPUh、旧no-H2.371076951另账；后续实际费用与47失败/22990未知步上界全部保留。当前1952/2015/63/1043040与唯一8640/原case/全noise/信息墙/官方控制不改，0新增训练/实践/query/controls/Test/选点。
+唯一本owner实际子进程退出等待+一次整批或真实异常唤醒本实验，消费/Git后一次main科学交付；无第二退出等待者、阶段Queue、自动retry/后继。当前无需主讨论工程ACK，等待原整批可靠回报；数学/完整闭环科学结果尚未验收。
+
 ## 2026-10-14 15:22 §17首真实held已完成，双臂回执计数窄修
 
 image_gemma_H_readout_resume_02 exit1是发布层expected8(actual state)对实际V/VL16行错误，16原held行全部已保存，47 VL seen已补齐；原在途≤16生效，0新增failed episode，预算2015/63/1043040不变。ledger1215 submitted/1168 returned/47未返回上界，known273518+unknown22990=296508，root总7.119625674GPUh；旧no-H2.371076951另存。source b9c8f824数学/Actor正常，训练7f05/8640不改，不重训、不重跑已返回case，不自动新矩阵。

@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–17已完整消费，原§17 no-H中止与真实H批阴性/越界修订/全部费用保留。当前唯一active为已授权§18：完整承接V/VL8640的Reader/H/F、Adam/sampler/rank RNG，仅增加同一映射的优化量；先10800共同有界节点，未共同早停则25920唯一端点，再以预注册seen收益/保持/suite gate决定是否两臂都进入原strict400。当前CPU实施/新冻结准备，尚未宣称GPU启动；0新实践/训练query/native/controls/Test/第三同条件窗口。原教学/H输入、V/VL语言比较、完整38-target输出及policy L保持；完整EMBER目标未完成。**
+2026-10-14。**§12–17已完整消费，原§17 no-H中止与真实H批阴性/越界修订/全部费用保留。当前唯一active为已授权§18：完整承接V/VL8640的Reader/H/F、Adam/sampler/rank RNG，仅增加同一映射的优化量；先10800共同有界节点，未共同早停则25920唯一端点，再以预注册seen收益/保持/suite gate决定是否两臂都进入原strict400。当前778ff8ea新detached正式来源的两臂完整8640恢复已实际六卡执行，首有效36task周期及完整8649CP通过；0新实践/训练query/native/controls/Test/第三同条件窗口。原教学/H输入、V/VL语言比较、完整38-target输出及policy L保持；完整EMBER目标未完成。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)

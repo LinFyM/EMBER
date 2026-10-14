@@ -1,3 +1,8 @@
+## 2026-10-14：§18完整8640承接的实际首周期与冻结身份
+
+正式来源778ff8ea/PID3961404，10:17:46Z唯一owner启动，10:20:28Z两world3臂首9有效B4/全36task/H104与完整8649CP实际通过。原source7f05/8640/Adam与RNG不重置，不复制144教学/36H缓存，不重复旧query/失败或称fresh新初始化。原全链输入/BA/控制与数学不变；actual source身份与父source分列。
+首周期9.223/8.371s含checkpoint，一次前72已完成update纯资源字段核查得到最大rank均值.24895/.22235s与peak8.036/8.049GiB，未读BA/结果；当前学习上界推测71.7/64.0min，不把cache局部占用或旧held峰值当当前全长安全。09:41首次派发150–240min仍沿，准备36.78min/旧成本保留，10800/25920/seen/held分支未科学裁决。整批/科学早停或实际边界一次交main，无阶段通知/第二等待者；task-owned dev集成后清理、正式冻结/原CP及ROOT原件保留。
+
 ## 2026-10-14：§17科学消费后的唯一有界优化量检验§18
 
 主讨论直接消费真实1952原行、两个全144节点与六份实际训练日志，完整解释/CPUreadback在image_only_gemma_with_history/analysis/main_scientific_readout/{interpretation_20261014.md,readback.py,readback.json}。V/VL held149/151对MT153阴性保留，seen372/353及suite损失/support分母保持；删直接L本身未改善迁移支持。BA.527/.532显示条件化拟合但不证明动态教学知识，旧无条件算子下界/冻结前端F-only充分优化正例与强G/D/Phi负边界共同约束取舍。

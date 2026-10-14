@@ -12040,3 +12040,8 @@ ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_on
 main直接消费原完整结果/全144节点/实际日志：V/VL未超过MT held，去直接L本身改善迁移的支持度降低；V seen372中target200/support172、VL353中179/174，原强G427/D414保持。实际BA从2160 .874/.866到8640 .527/.532低于同教师最优无条件算子均值.9408，支持学到与目标相关条件差异，但标签仍36 E/固定MT-H1，不能区分动态视频知识与静态/H任务识别，也不能把fit代替闭环。完整论证原件只引用image_only_gemma_with_history/analysis/main_scientific_readout/interpretation_20261014.md及readback.py/json，不由执行者重做。
 最近似旧冻结前端F-only 8883→24849的同条件优化曾BA.5749→.2329、seen362→425，是有限优化量检验的正依据；当前Reader/H/F共同fresh已到8640，与旧已学前端非等条件，不认定欠训是唯一/主要原因。旧高fit后held165、D175→168及Phi167负边界保留。本§18仅完整resume同映射再有界学，原10800相对改善<5%共同停、25920唯一端点/seen收益保持gate及0第三窗口约束投入，不成为Owner永久阈值或视频机制资格。
 完整合同已纳入唯一design§18，ROOT=image_gemma_H_refinement_from8640，首次实际派发09:41:00.214Z；0新教学/H、实践/训练query/native/Actor/controls/Test。旧H批12.571101360GPUh/原47失败与no-H2.371076951、共享MT436/123039步及未知专属成本只读继承，不清零也不算新ROOT carry-in；新预算1952/1968/16/1043040和16GiB按现场资源实施。工程准备尚非GPU执行或科学改进，main独占科学裁决/接续。
+
+## 489. §18完整状态/控制消费者与实际开始的边界（2026-10-14）
+
+canonical两模块只扩展登记的更新节点/完整恢复校验、可无环境结束的结果消费者和non-held投入gate，未改变数学/目标/输入/完整LoRA或新增Writer。CPU真实模型/Adam恢复284/290 step8640、sampler/RNG、下一36更新全部144流与两控制分支/gate实际消费者通过；唯一owner的共同节点/独立ready见seen/双held逻辑经canonical Batch CPU消费，冻结778ff8ea后实际首36task/8649均保存且全链信用正。模型接通/实际开始不证明优化量有效，10800保护与25920/seen/heldgate结果仍待整批。
+初始live cap6/world3+3具有已测.249/.222s最长rank B4与有效B4/任务权重依据，原完整冻结cache按实需GPU缓存、可用显存用于避免重复搬运，未因首轮小占用声称全最长/最佳物理安排。多卡不更改科学流，未来6/8/node6与slots按真实就绪工作和资源，inflight≤16保护本轮新失败额度。parent12.571GPUh/47失败、旧no-H2.371GPUh及MT436/123039步只读依赖，newcarry0、0重复旧batch或Test。一次首资源核查因首轮墙钟差异而进行，后续正常运行等待唯一整批退出，不陪跑或读中途分数。

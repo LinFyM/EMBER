@@ -1,3 +1,10 @@
+## 2026-10-14 18:20 §18完整8640恢复已实际六卡执行
+
+唯一refinement_from8640_01/PID3961404于10:17:46.900832Z从clean pushed detached778ff8ea实际启动；launch逐job双节点live/data1独立quota后，两臂各world3在gpu01:0/4/5与1/3/6运行。原8640完整Reader/H/F及284/290 Adam step/原sampler/三rank RNG由实际GPU消费者承接；旧ROOT全部CP/cache/原失败与费用只读，0新cache/实践/query/Test，当前尚无新环境读出。
+10:20:28Z两臂首有效9B4(global8640…8648)与36task/最长H104均已保存完整8649CP，Reader/history/decoder/output真实信用正，0discarded profile/更新。首轮9.223/8.371s含完整checkpoint；因与旧首轮墙钟存在差异，做一次只读前72已执行更新的资源核查，不读BA/分数：缓存热后最长rank均值V .24895s/B4、VL .22235s，当前allocated8.036/8.049、reserved9.086/9.299GiB；不是全时/最长held峰值声明。全部frozen池cache_limit12.271GiB按真实assigned条件动态填充，learned Reader/H不缓存；有效B4=4/同任务权重不变。按六卡上限及已知world3吞吐选择平衡3+3，未为扩卡丢更新/加重算；no checkpoint-layers保留旧快路径，无新的6-card固定上限，未来按live6/8/node6与实际收益接续。
+以当前实测两臂最大新增17280学习约71.7/64.0min（旧估61–65，首轮/CP/加载另计），完整进入held仍沿首次09:41:00.214Z派发150–240min，即12:11–13:41Z/20:11–21:41本地粗估，非deadline/正结果保证；准备至owner36.78min较15–35估计略长，文件系统checkout、实际恢复/控制消费者及冻结耗时保留，不重置时钟。当前先共同到10800按全144<5%保护判断，不自动许诺25920或held；若继续则两个唯一25920/seen576/gate/双400完全按§18，不读中途分数改量。
+一个owner直接等待实际子进程，退出或科学早停/异常仅一次唤醒本实验，验收/Git后一次main；启动首周期事件消费者已退出，无第二整批等待者/阶段Queue/自动后继。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640，analysis/{CPU_resume_and_gate_consumer.json,actual_owner_CPU_consumer.json,actual_startup_consumers.json}及coordinator/refinement_from8640_01真实来源/配额/GPU/proof为原件；开发branch/worktree完整入main后清理，正式冻结和源8640保留。
+
 ## 2026-10-14 §18唯一有界优化量检验已授权；CPU实现/冻结准备
 
 主讨论已按原件消费§17，新增唯一§18合同全文纳入当前design；main科学解释指针为image_only_gemma_with_history/analysis/main_scientific_readout/interpretation_20261014.md，执行者不重复科学复算。只有相同映射的优化量改变：两臂完整8640→10800全144节点，若各相对改善均<5%共同停止且0新query；否则同流共同至唯一25920。非held seen各576，仅至少一臂同时≥400成功、MT保留≥306、四target suite净差各≥−4且至少三个净正时，两臂均做原400；不临时放宽或只选一臂。

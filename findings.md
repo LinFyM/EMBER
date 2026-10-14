@@ -12056,3 +12056,8 @@ held V149→148得28失29，VL151→141得23失33；对MT153 V R127/G21/L26/net�
 
 main已消费优化量新增的seen获取/held未增事实，第三个同条件窗口停止；不能继续把主要held缺口简单归为训练量。当前输入冗余/交互以及视频/H/直接L对已学task→E映射的依赖尚未区分，唯一§19仅固定25920/原non-held缓存做跨suite全组合替换。原36 global-ID+18配对全部自逆且跨suite，保留同demo、完整frame indices/MT经历及独立L，864物理tuple复用1728逻辑原行；同task-other不加forward，E只做分析标签。输出距离不是控制能力/动态理解分数，有限结果由main科学消费，不机械删除入口/加曝光/Probe或回放。
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920，完整design§19与inputs/scientific_contract.md。约一张A40/≤1GiB增量，0source/native/环境/训练/held/Test/新LoRA保留；原强参照、所有原失败/费用及方法适应依赖只读保持。当前仅CPU准备，正式计算须clean pushed detached、真实消费者及live准入，不把元数据核对当已完成模型读出。
+
+## 492. §19固定模型真实输入依赖读出交付，不替代闭环解释（2026-10-14）
+
+V2×2/VL2×2×2共864唯一Compiler反向复用1728逻辑行，另288同task-other仅复用correct；全部36/四demo/输入mask与五suite含support/零E分层原行和统计齐全，E只在分析标签侧。Et/Ep算子距离分母为0的q null保留V32/VL64；correct距离对原25920 node最大abs差1.1611e−4、均值1.2602e−5，正常精度范围不重跑。此工程交付只保证固定已学映射的来源选择/组合/算术可读，不把内部依赖当动作知识或held成功率，main按事前分支独立科学消费。
+单卡实际132.996s（setup56.837s），.043711594GPUh，allocated12.605/reserved13.139GiB、0source/native/训练/环境/held/Test/新LoRA保存；原科学阴性/旧费用与适应依赖保持。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920，aggregate与1728原行/864物理映射、同任务距离、fixed_correct_compatibility及analysis/engineering_completion_20261014/{acceptance.json,report.md}为原件。source463c3b97 clean pushed detached/原训练778ff8ea，task-owned dev已清理，当前无active计算/自动后继；窄one-shot消费者在main科学消费后退休，历史以frozen/Git/原件保存。

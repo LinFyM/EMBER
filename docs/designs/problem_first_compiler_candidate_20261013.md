@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–17已完整消费，§18已完整工程交付并由main开始科学消费；第三个同条件优化窗口停止。当前唯一active为已授权§19：固定25920与原non-held教学/MT-H1缓存，真实跨suite自逆配对的条件组合读出，864唯一Compiler/1728逻辑行。0source/native/训练/环境/held/Test/新LoRA落盘或自动后继。原全部正负结果、旧no-H中止与H失败/费用保留；完整EMBER目标尚未完成。**
+2026-10-14。**§12–18已工程交付，main科学消费/取舍持续；第三个同条件优化窗口停止。§19固定25920真实输入依赖读出已完整工程验收：864唯一Compiler/1728逻辑行/288复用same-task-other，0source/native/训练/环境/held/Test/新LoRA落盘。当前无active计算或新执行合同，无自动后继。原全部正负结果、旧no-H中止与H失败/费用保留；完整EMBER目标尚未完成。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -997,3 +997,8 @@ refinement_from8640_01于13:14:02.831776Z exit0；10800两臂全144相对改善8
 - 正式读出来自clean pushed detached source，原778ff8ea训练数学/25920身份单列、原冻结不热改；执行者独占必要开发分支、代码、根状态/发现/历史/design§19和Git集成清理，main不并发改仓库。
 - 预计从实际派发到完整交付25–50分钟，含准备/冻结/一次运行/原件消费；864 forward本身预计数分钟，需按实际record修正，不为等时间制造任务。所有费用增量计账，旧§17/18和no-H中止原账不清零。
 - 一个owner和真实退出等待，一条整批或真实边界回报main；0阶段Queue/第二等待者/一般ACK。main继续科学分析，不要求执行者重复其推理。
+
+### §19 实际完整交付（2026-10-14；原科学范围不改）
+
+原完整36+四demo的V/VL25920，GPU01:3从clean pushed detached463c3b97实际完成864唯一Compiler/1728逻辑行，每个物理输入反向复用两次，同task-other288条仅复用correct。源教学/H/独立L及完整原行/分层/零分母q null（V32/VL64）CPU验收通过，correct对原25920 node最大差1.1611e−4/均值1.2602e−5，不换dtype/追加forward。原模型/目标/信息墙保持，内部依赖不当成成功率或动态理解；完整科学消费由main负责。
+实际132.996s/.043711594GPUh/0失败，allocated12.605/reserved13.139GiB；source/native/训练/环境/held/Test/新LoRA落盘均0。13:42:08.415Z→14:14:17.561217Z为32.152min，原25–50min时钟保持；ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920保留全原行/aggregate/compatibility/completion/验收，旧正负证据与费用只读。当前本批结束，无自动新配对/时序controls/第三窗口；one-shot分析消费者待main科学消费后退休，原冻结/Git/原件保留。

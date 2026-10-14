@@ -1,3 +1,8 @@
+## 2026-10-14 §19完整工程交付；当前无active计算
+
+唯一input_dependence_01/source463c3b97于14:14:17.561217Z exit0；CPU原件验收通过，864唯一Compiler/1728逻辑行/288复用same-task-other分母、原36映射/独立VL L/Gram/D38与真实来源齐全。0source/native/训练/环境/新实践/held/Test/新LoRA落盘，单卡.043711594GPUh，派发至退出32.152min在25–50min内。
+当前本批执行结束，根记录/Git后一次交main科学消费/取舍，完整EMBER目标未完成；无新active执行合同、自动新配对/时序controls/第三同条件窗口或第二等待者。原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920，analysis/engineering_completion_20261014/{acceptance.json,report.md}；窄one-shot入口在main科学消费后退休，formal/Git/原件保留，旧负证据与费用不清零。
+
 ## 2026-10-14 §19固定25920输入依赖读出已授权；CPU实现/冻结准备
 
 main已开始消费§18，明确停止第三个同条件优化窗口。唯一新§19固定V/VL25920、原36×4纯教学缓存/36MT-H1/36E/D38；按global-ID升序循环18的显式跨suite、自逆配对，只替换Compiler条件的完整教学/H及VL独立exact L。V2×2、VL2×2×2实际tuple去重864次Compiler/1728逻辑行，同task-other只复用correct输出；0source/native/训练/环境/新实践/held/Test/新LoRA落盘。只报告完整算子距离和真实分母/来源，不能据内部读出宣称成功率或动态知识；不追加时序controls或后继。

@@ -1,3 +1,10 @@
+## 2026-10-14 §19固定输入依赖整批验收完成；当前无active计算
+
+唯一input_dependence_01于14:14:17.561217Z exit0/complete，0.169s CPU原件验收通过：V288/VL576唯一物理Compiler，共864；V576/VL1152逻辑行共1728，每物理输出反向目标复用两次；另各144同task-other原池距离仅复用correct输出。原36global-ID+18自逆跨suite配对/同demo/完整教学与MT-H1/独立VL L/真实路径已核，零分母q为null保留V32/VL64，五suite含support与四demo/task等权统计齐全。
+correct全288项与各自原25920全144节点对应，最大abs差.000116110、均值.000012602属正常BF16/FP32差，未据差异重跑/换dtype/选点。所有组合、Et/Ep、Xt/Xp、MT能量、q和来源原行保留；仅算子依赖，不称成功概率/动态知识或新的held迁移证据，完整科学消费/后继取舍由main负责。第三个同条件优化窗口仍停止，没有自动新配对/时序controls/训练/实践/closed-loop/Test。
+新真实gpu01:3单卡/1job/1attempt全部exit0，费用.043711594GPUh/carry0/0失败，累计source/native/环境start-step/训练/新实践/held/Test均0，0新LoRA落盘。132.996s包含模型载入/输入池读取56.837s和全部864计算/距离/统计；实际峰值allocated12.605/reserved13.139GiB、host13.773GiB，完整frozen池GPU12.236GiB按实需共享两臂。新ROOT约6.48MiB（验收前6795264bytes）<1GiB初估，大资产只引用；原13:42:08.415Z派发至退出32.152min，在25–50min内。旧§18/17/no-H费用与原47失败/MT依赖分列，不清零。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920，raw physical_rows.jsonl/rows.jsonl/same_task_other.jsonl、aggregate.json、fixed_correct_compatibility.json、completion.json、分析验收{verify.py,acceptance.json,report.md,process_release.json}保留。训练源778ff8ea与实际读出463c3b97 clean pushed detached分别记录；唯一210行窄分析消费者复用canonical模型/输入/Gram，不增Writer，main科学消费后按生命周期退休；开发branch/worktree已完整集成并清理，原冻结保留。根五份记录/Git闭环后一次main交付；迟到回执按ROOT/attempt/consumed判重，当前无新active执行合同或第二等待者。
+
 ## 2026-10-14 §19固定25920输入依赖读出已授权；CPU实现/冻结准备
 
 main已开始消费§18，明确停止第三个同条件优化窗口。唯一新§19固定V/VL25920、原36×4纯教学缓存/36MT-H1/36E/D38；按global-ID升序循环18的显式跨suite、自逆配对，只替换Compiler条件的完整教学/H及VL独立exact L。V2×2、VL2×2×2实际tuple去重864次Compiler/1728逻辑行，同task-other只复用correct输出；0source/native/训练/环境/新实践/held/Test/新LoRA落盘。只报告完整算子距离和真实分母/来源，不能据内部读出宣称成功率或动态知识；不追加时序controls或后继。

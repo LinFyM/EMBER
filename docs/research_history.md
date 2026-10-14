@@ -5359,3 +5359,8 @@ image_gemma_H_readout_resume_02 exit1是发布层expected8(actual state)对实�
 ## 2026-10-14 §19唯一冻结Compiler输入依赖读出授权
 
 首次派发13:42:08.415Z/预计25–50min。§18原完整结果与第三个同条件优化停止保持；§19只读原V/VL25920，原36×4教学/36MT-H1/36E/D38，全36global-ID升序+18跨suite自逆配对和同demo的条件组合。864物理forward复用1728逻辑行，0source/native/环境/新实践/训练/held/Test/新LoRA落盘；实际结果待唯一整批验收后main消费，不自动扩配对或时序controls。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920；完整原文design§19，旧成本只读保留。
+
+## 2026-10-14 §19固定25920输入依赖整批完成
+
+唯一input_dependence_01/source463c3b97（原训练778ff8ea）于14:14:17.561217Z exit0；864唯一Compiler/1728逻辑原行/288复用same-task-other，全36+四demo+原crosssuite自逆配对+独立VL L与零分母q null齐全。correct原25920节点最大abs差1.1611e−4，不换dtype/重跑；只读完整算子依赖，未取得新控制/held或动态知识证据，main科学消费/接续。
+新132.996s消费者/.043711594GPUh/单gpu01:3/0失败，0source/native/训练/环境/实践/held/Test/新LoRA保留；派发到退出32.152min在25–50min内，旧费用和47失败不清零。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920，全原行/aggregate/compatibility/completion和analysis/engineering_completion_20261014验收保留；开发分支树已清理、formal冻树保留，0自动扩配对/时序controls/第三个同条件窗口。

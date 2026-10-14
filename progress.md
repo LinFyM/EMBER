@@ -1,3 +1,11 @@
+## 2026-10-14 §17 H整批完整验收；当前无active计算
+
+唯一owner03于2026-10-14T08:56:12.079803Z exit0，全部32 GPU job收据已结算，owner已退出，双节点本任务consumer已释放。一次4.974s CPU原件验收通过：两臂8640同逻辑B4/144流、完整ψ/Adam/sampler/3rank RNG与实际Reader/history/decoder/output信用，0旧no-H权重/Adam复用；各seen576/held400唯一且固定8640。seen每task固定一条教学共36编译、held8×50无重复视频共400编译，每臂436完整38-target LoRA。当前正式执行完成，main负责整批科学消费与下一项明确派发，无自动后继/Test。
+V seen372/576、held149/400；VL353/576、151/400。held对MT153：V R122/G27/L31/net−4/churn58，VL R125/G26/L28/net−2/churn54。V对VL seenR325/G47/L28/net+19、heldR121/G28/L30/net−2；原G165、D175/168、旧163、Phi167与全部per-task/suite/breadth6/8及能力得失保留。实际弱held结果不作为修bug、补成功或改选点理由。
+完整ledger1952 finished/1999 submitted上界/47 failed上界/0在途，496150完整环境步+3460已证partial=known499610，未知22990→保守522600。原故障16额度已越界历史保留；main修订2015/63/1043040内完成，后续恢复新增failed0。实际注册reset证据范围1961–1997，提交上界不是精确reset。新ROOT12.571101360GPUh/32jobs/4failed、carry-in0，旧no-H2.371076951与未知旧MT计算成本分开；共享旧MT36/8131步+400/114908步不计两份，新增适应/训练query0。
+物理六卡gpu01:3/2/0/4/5与gpu02:6持久共享long-first队列、slots3/3/3/3/2/2总16，原H104/video91消费者计入固定读出。source7f05训练/b9c首16held/8ec余784分列，三个原冻结clean/detached且均已入main；开发branch/worktree已清理。ROOT实际约7.257GiB<48GiB初估，大教学cache只读引用。原H锚04:19:48.975Z至完成276.385min、06:42裁决134.171min，超原预期事实/CPU遗漏与发布修复延误保留；03从07:59起57.043min在修正45–75内。
+原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_with_history，完整results.json、analysis/engineering_completion_20261014/{verify.py,acceptance.json,report.md}、三个attempt exit/旧失败账及原权重保留。完成Git后按ROOT/attempt消费03并一次交main01a13399；迟到本批/旧批回执判重，不重启、不加第二等待者或阶段Queue。
+
 ## 2026-10-14 16:02 §17六卡真实held接续；最长91帧/H104消费者通过
 
 唯一image_gemma_H_paired_publication_resume_03/PID3251604于07:59:09Z从clean pushed detached8ecddd64实际启动；原7f05训练8640和b9c首16实际编译/执行身份分列。两seen576/576及16已完成held只读复用，CPU双臂发布结算不新增forward/环境；剩784 held由gpu01:3/2/0/4/5+gpu02:6六个持久消费者共享long-first队列。释放消费者接未完work，steady slots3/3/3/3/2/2总16，保护仍剩16新增failed额度；22GiB只为当前frame64/H/renderer实需初估，非利用率/通用显存筛选。

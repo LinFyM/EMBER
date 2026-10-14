@@ -1,3 +1,10 @@
+## 2026-10-14 §17 H双臂整批完成；交主讨论科学接续
+
+image_gemma_H_paired_publication_resume_03于08:56:12Z exit0，完整工程验收通过：fresh V/VL各8640有效B4与完整Adam/sampler/3rank RNG、原144教学/36真实MT-H1流、各seen576+strict held400均齐。当前0 active实验计算；下一动作是本次文档Git交付与一次主讨论01a13399整批科学消费，不自动追加训练、controls、Test或后继。完整EMBER目标仍未完成。
+V/VL为372/353 seen、149/151 held；MT340/153、首G427/165、D72 414/175与D144 414/168强参照保持。held未超过MT，不把实际科学非通过当工程bug；V对VL仅隔离本批直接L入口，不由seen增量宣称教学动态知识或held改善。
+原失败47/未知22990步保留，恢复新增失败0；最终1952返回、1999提交上界/47失败上界、known499610/保守522600步均在有效2015/63/1043040内。原1968/16已经越界的历史和main唯一修订不改写。新ROOT12.571101360GPUh/32job含4失败，旧no-H2.371076951另记；原MT共享436经历/123039步是依赖，新增实践/query为0而非零交互方法。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_with_history；results.json、analysis/engineering_completion_20261014/acceptance.json与report.md为完整交付。训练7f05e3e6、首16held实际b9c8f824、余784实际8ecddd64身份分列/冻结保持。H派发→完成276.385min（原100–190），恢复裁决→完成134.171min（原35–70）；03实际57.043min落在修正45–75内，不重置时钟或删中止成本。
+
 ## 2026-10-14 16:02 §17六卡真实held接续；最长91帧/H104消费者通过
 
 唯一image_gemma_H_paired_publication_resume_03/PID3251604于07:59:09Z从clean pushed detached8ecddd64实际启动；原7f05训练8640和b9c首16实际编译/执行身份分列。两seen576/576及16已完成held只读复用，CPU双臂发布结算不新增forward/环境；剩784 held由gpu01:3/2/0/4/5+gpu02:6六个持久消费者共享long-first队列。释放消费者接未完work，steady slots3/3/3/3/2/2总16，保护仍剩16新增failed额度；22GiB只为当前frame64/H/renderer实需初估，非利用率/通用显存筛选。

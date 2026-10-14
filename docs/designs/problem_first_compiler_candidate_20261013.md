@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–16已完成；原§17 no-H于04:12:14Z按范围纠正实际中止。当前唯一active为优先修订§17：两臂fresh共同教学/真实MT H1读取与完整38-target decoder，V无直接L、VL仅多直接L，均不消费execution hidden，policy保持L；各2160共同节点/至多8640及唯一seen576+strict held400已完整授权。原144纯Gemma缓存只读复用，0新实践/训练query/controls/Test/自动后继。方法具有复用MT实践依赖，非零交互；旧no-H费用保留、不是科学阴性。当前独占实现与新正式冻结准备，完整EMBER目标尚未取得。**
+2026-10-14。**§12–16及优先修订§17 H双臂均已完成；原§17 no-H于04:12:14Z按范围纠正中止，费用/原件保留、不作科学阴性。新fresh V/VL各8640有效B4、seen576与strict held400完整，V372/149、VL353/151，强MT340/153、首G427/165、D72 414/175和D144 414/168保持。当前0 active计算，完整原件交主讨论科学消费和下一实际方法裁决；不自动扩训练、controls、Test或后继。两臂真实MT-H1/无execution hidden，V无直接L/VL仅多直接L、policy保持L及唯一完整38-target LoRA不变；有复用MT实践依赖、非零交互，完整EMBER目标尚未取得。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -881,3 +881,10 @@ main已直接读取新ROOT/image_only_gemma_with_history的原image_gemma_MT_his
 ### §17双臂回执计数工程修复（2026-10-14 15:22）
 
 实际首H104共享shard8state/两臂16完整final均已保存，恢复02的exit1仅canonical队列默认一state一行拒绝16行；没有新增partial或GPU故障，0新预算修订。显式rows_per_state2只登记本合同两臂完整输出，默认单臂1保持；CPU真实保存原行与private queue复现/消费通过，14既有queue tests通过。原16行及全seen1152保持，CPU结算首paired后仅剩784 held，原1952/2015/63/1043040、8640唯一端点、输入/噪声/官方控制不变。真实349.023s/16、H104/最大教学56帧与allocator峰值见ROOT/analysis/actual_H104_held_consumer_02.json；不称最长held91帧已过。新frozen source与旧b9c实际编译/7f05训练身份分列，新唯一owner/整批一次回报，无自动后继。
+
+### §17 H双臂完整工程交付（2026-10-14）
+
+image_gemma_H_paired_publication_resume_03于08:56:12Z exit0，原8640/全部有效seen及首16held复用后余784完成。V/VL seen372/353、held149/151；held对MT153净−4/−2、对首G165净−16/−14，D175/168与全部配对得失/分布保持。V对VL seen净+19但held净−2，只有本批直接L匹配对比意义，不称教学动态知识已证或旧G差异由语言单一造成；main按完整原件科学裁决，0自动补训练或对照。
+两臂完整Adam/sampler/3rank RNG、同144真实教学流/fresh共初始化与完整Reader/H/decoder信用、各36 seen固定编译+400 held无放回视频/原scene/noise/官方控制经一次CPU原件验收。每臂436完整38-target LoRA；旧MT436经历/123039步只计共享依赖一份，0新增实践/query/Test、非零交互。当前全部GPU消费者/owner退出。
+最终1952返回/1999提交上界/47失败上界，known499610+unknown22990=522600，恢复新增failed0；旧1968/16越界和main修订2015/63/1043040均保留，不把上界叫精确reset。ROOT12.571101360GPUh/32jobs含4失败，旧no-H2.371076951另列。训练7f05e3e6、首16held b9c8f824、余784 8ecddd64分列；H104/video91固定消费者原件保留。H派发至完成276.385min、恢复裁决134.171min，03实际57.043min在修正45–75内，原超期不清零。
+完整原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_with_history，results.json与analysis/engineering_completion_20261014/{acceptance.json,report.md}。本有限批完整交付、当前无active实验，科学接续由main负责；没有第二等待者或自动后继。

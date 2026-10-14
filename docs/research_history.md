@@ -1,3 +1,11 @@
+## 2026-10-14：§17纯Gemma教学与真实MT-H1匹配V/VL完整结束
+
+H优先修订fresh双臂均完成唯一8640与seen576/strict held400：V372/149、VL353/151；强MT340/153、首G427/165、D72 414/175和D144 414/168保持。V对VL seen得47失28/net+19，held得28失30/net−2；对MT held分别得27失31/net−4及得26失28/net−2，breadth均6/8，task23/39均0/50。当前结果未超过强MT，不能从seen增量宣称held进步、视频操作知识或相对旧G的单一语言因果；main消费完整原件后科学接续。全部原分布、强点、不利条件与阴性保留，0自动新块/controls/Test。
+原no-H按范围纠正中止、4320及未保存范围/2.371076951GPUh保留，不作科学负结果或warm start。新ROOT训练source7f05e3e6、原16held实际b9c8f824与余784实际8ecddd64分列；完整Reader/H/decoder共同种子17/18/19、实际284/290个Adam状态/3rank RNG和同144教学流经CPU原件验收，不新运行模型/环境。两臂各36 seen编译+400 held编译，一套完整38-target/task LoRA，H只原真实MT首prefix、无execution hidden，V无直接L/VL仅匹配直接L，policy仍L。
+首次工程失败1152提交/1105返回/47保守未返回曾超原16上限，main06:42:01.831Z唯一承认47既有+16新增工程余量，2015/63/1043040修订和旧1968/16均保存。02仅双臂发布expected8/实际16层失败，原16有效行CPU结算；03仅补余784 held且新增failed0，最终1952完整、提交上界1999/失败上界47、known499610+unknown22990=522600，实际reset证据范围1961–1997。原成功/失败都留，不据成绩重试。
+03于08:56:12Z exit0；32 GPU receipts/4失败全部结算，新ROOT12.571101360GPUh、carry-in0，旧no-H另记。既有MT436经历/123039步共享复用及未知其专属GPU成本另列；新增practice/query为0但非零交互方法。H派发→完成276.385min（原100–190）、恢复裁决→完成134.171min（原35–70），原准备/发布失误与费用不清零；实际03读出57.043min符合修正45–75。原H104/video91消费者与六卡持久就绪队列/GPU安排保留。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_with_history；results.json、analysis/engineering_completion_20261014/{verify.py,acceptance.json,report.md}、三次coordinator/exit.json、inputs/原修订合同与旧失败账为原件。工程完整验收不等于科学目标完成；本实验无active计算/第二等待者，整批Git交付后一次主讨论01a13399科学消费。
+
 ## 2026-10-14：§14两臂共同学习完整交付，BA单臂held净增与函数拟合恶化并存
 
 同源G38349/fresh同Adam/288条件/72逻辑B4的D仅BA与C同BA+native全部完成，seen/held为D414/175、C393/158，原G427/165、MT340/153。D held对原G得29失19/净+10，对MT净+22；C对原G净−7，对D−17，seen两臂对原G−13/−34。D覆盖7/8但task23仅1/50且39仍0，MT四suite48/46/35/24、D51/61/38/25、C46/49/33/30；全部保持/不利个例保留。固定72 BA两臂5改善67恶化，native D12/60、C13/59；一次held净增不证目标总体拟合、相邻稳定或视频-H信用，main按事前§14消费，0自动调权/续块/后段/Test。

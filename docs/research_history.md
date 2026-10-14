@@ -5379,3 +5379,7 @@ main按ROOT/input_dependence_01消费原件，确认跨suite换视频的广泛�
 ## 2026-10-15 §20完整局部片段闭环工程交付
 
 原local_interchange_bridge_resume_02于10-14 15:58:02.799Z exit0；固定V25920/8pure image/16完整LoRA/MT-H36、256原final及逐控制trace/compact通过5.731s CPU核验。C/O/P/N43/42/43/40各64，P−N3（分视频2/−1/1/1），事前8差异未达到；同初态/全noise及真实body/predicate证据保留，不将有限面板归为动态机制或strict400资格。256episode/0失败/69603步/1.118274517GPUh，carry0；旧01零计算桥接故障和所有method依赖/旧费用仍存。实际a55c926e、原训练778ff8ea/25920分别登记；报告/接受回执在local_operation_interchange_25920/analysis/engineering_completion_20261015。当前无active计算，完成根五记录Git后一次交main科学消费；窄入口待消费后退休，无自动后继/Probe/Test。
+
+## 2026-10-15 只读完整方法重审索引（分析，非新实验）
+
+Owner要求先不开新实验、认真重审完整历史和接手以来推进。主讨论成稿与一次有界独立科学审查完整纳入[whole_method_reassessment_20261015.md](analyses/whole_method_reassessment_20261015.md)；原分析来源/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640/analysis/main_scientific_readout/whole_method_reassessment_20261015.md留存。保留责任、共同E/BA正例、反馈信用消费者区别、Product等历史和所有未验证反例；后果学习/直接参数修订只是方法议案，未激活design/实现或实验。§20原件与入口保留，未新增逐例因果结论、模型/环境/GPU/测试或数据构建；执行者仅作本次文档集成，最终科学说明由主讨论完成。

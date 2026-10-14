@@ -12088,3 +12088,8 @@ main已核同top-drawer opening跨scene正例不存在；task43/96相同黄油�
 ## 2026-10-15 视频效果学习链与当前实施边界
 
 已纳入[实际监督—原生算子—梯度链](docs/analyses/video_effect_learning_chain_20261015.md)。物理关系监督规定可见内容而非已证实因果程序；联合Gaussian×Bernoulli四格为同一首块平滑目标的score估计，native10 VJP不是未扰动部署策略的精确整体梯度。完整38/r8、因子真实单位、A非零/B零首步和新旧状态Jacobian的迁移边界保留；无视频评分参照不等于充分优化语言RL，胜它不能独立证明视频必要性。task25公开OOI owner确实存在但按原registry排除，仅该整组missing监督，不能称全部因果相关实体均已覆盖。当前新实现已集成并启动，不是已获性能/迁移/机制正证据；旧Product、G/BA/Image等正负结果和费用保留。
+
+
+### 2026-10-15 首批工程退出和真实梯度证据
+
+Phi1120与完整native38/r8梯度均已由实际消费者执行；原首步B38/A0和真实14条原outcome保留，不能称最终能力已通过。退出是NumPy bool记录和适应队列行数接口，504实际episode全部返回，非科学失败或交互预算越界。修复保留实际proposal/Adam/RNG/parent身份，不重选教学或标签、改score/接受阈值；归档原1.764545632GPUh和9条件/128 final，sealed内部教学标签仍关闭。

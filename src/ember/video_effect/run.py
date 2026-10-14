@@ -190,8 +190,12 @@ def worker(args, runtime, runner, context, tasks):
             else:
                 output = final_cases(args, runtime, runner, task, row['arm'], claim.shard.init_state_ids)
                 successes = sum(r['success'] for r in output)
+            adapt = row['stage'] == 'adapt'
+            rows = len(claim.shard.init_state_ids) if adapt else len(output)
             _publish(queue, claim, args, dict(complete=True, work=row, output=output,
-                seconds=time.monotonic()-tick, peak=memory_peak(runtime.device), actual_slots=runner.slots), len(output), successes)
+                row_count_basis='shared_bootstrap_cases' if adapt else 'final_cases',
+                compiled_conditions=len(output) if adapt else None,
+                seconds=time.monotonic()-tick, peak=memory_peak(runtime.device), actual_slots=runner.slots), rows, successes)
             work_event('ready', args.worker_id)
         except BaseException as error:
             fail_job(queue,job_id=claim.shard.job_id,worker_id=args.worker_id,claim_token=claim.claim_token,error=repr(error))

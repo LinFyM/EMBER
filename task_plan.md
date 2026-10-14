@@ -1,3 +1,7 @@
+## 2026-10-15 新方法记录接口异常已消费；保留有效原件准备恢复
+
+原video_effect_01于20:11:41.680Z exit1：Phi1120完整、240真实视觉缓存、128 MT final和9完整条件均保留；504提交/504返回、98,511 control+2,160 dummy、0失败partial/未知交互，1.764545632GPUh。两工程根因是接受布尔值为NumPy标量无法JSON序列化，以及适应发布拿3条件数误作4真实共享bootstrap case行数。窄修显式Python bool；队列以真实4bootstrap case结算且单列3条件，最终评测行数校验不变；全缓存请求不构造无用renderer。实际CPU重现/修复以及原task12三完整条件和四真实bootstrap的canonical SQLite消费者通过。所有已保存branch/candidate、native提案/Adam/RNG继续原身份复用，0重训/缓存重算/profile追加/MT final重跑/提前sealed标签；恢复仍2832/16/684160+28320。原件analysis/engineering_recovery_02/failed_attempt_settlement.json与原exit全部保留，原18:16:48.556Z/3–6h不重置。实际native原14outcome峰值reserved19.439GiB、首步A信用0/B38符合初始化；恢复六个持久worker，一worker以原登记16分支下一真实wave验证slots16，其余沿实测slots8，逻辑更新/权重/预算不变，不新增discarded profile。当前正在新clean pushed冻结准备；整批一次唤醒/验收/Git/main机制保持。
+
 ## 2026-10-15 新方法唯一整批已实际启动
 
 唯一video_effect_01/owner PID2850353于2026-10-14T19:40:14.933Z从clean pushed detached8801e701实际启动；首次18:16:48.556Z和原3–6h预计不重置。代码/学习链81行已集成，OOI216/224整组missing mask与联合四格独立executed mask修订为当前唯一合同。source240条真实双RGB patch缓存仅共享一份，2次预算内首B4物理world2/4比较后fresh同流Phi1120；已就绪MT128 final与缓存/学习按实测资源并行，Phi端点后持久动态队列承接8task/24独立条件与全部512 final。每个GPU job由同一Batch先live双节点/数量/node6/真实余量及strg01 data1独立quota；不新增通用util/固定显存筛选，不碰foreign任务。尚无新的学习/闭环成绩，GPU/native/分支接口由原登记首消费者验证，异常保留有效原件/未知费用后按合同窄修。唯一owner直接等待实际子进程，仅整批exit0/1向本实验唤醒一次，验收/Git后一次main；0阶段Queue、第二waiter、Test或自动后继。ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015，coordinator/launcher_request.json及video_effect_01/launch.json为真实启动出处；全部final冻结后才CPU sealed16份内部教学标签诊断。

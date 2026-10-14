@@ -69,7 +69,7 @@ class ActualEpisodes:
                     raise ValueError('saved own episode has incompatible actual producer or RNG')
                 received[identity] = (load_history(path / 'history.pt.gz'), path)
         pending = [r for k, r in expected.items() if k not in received]
-        for result in self.runner.run(pending):
+        for result in self.runner.run(pending) if pending else ():
             request, row, history = result['request'], result['row'], result['history']
             identity = request['episode_id']; path = self.root / 'episodes' / identity
             row.update(global_task_id=request['task']['global_task_id'], episode_id=identity,
@@ -336,8 +336,8 @@ class Compilation:
             previous_maps = self.mappings
             new_scores = [self.score(h, pos) for pos, (h, _) in enumerate(candidate)]
             a, b = sum(r['success'] for r in old_scores), sum(r['success'] for r in new_scores)
-            accepted = b > a or (b == a and self.target is not None and
-                np.mean([r['S_V'] for r in new_scores]) > np.mean([r['S_V'] for r in old_scores]) + 1e-6)
+            accepted = bool(b > a or (b == a and self.target is not None and
+                np.mean([r['S_V'] for r in new_scores]) > np.mean([r['S_V'] for r in old_scores]) + 1e-6))
             if accepted: self.parents, self.parameter_ref = candidate, ref
             else: self.mappings = previous_maps
         if not accepted: self.factors.restore(old)

@@ -5388,3 +5388,8 @@ Owner要求先不开新实验、认真重审完整历史和接手以来推进。
 ### 2026-10-15 视频效果直接参数编译实际启动
 
 8801e701纳入唯一新[设计](designs/video_effect_parameter_compiler_20261015.md)及[学习链分析](analyses/video_effect_learning_chain_20261015.md)，退休8个旧ImageCompiler专用入口/模块，公共Runtime/FactorEncoder/EpisodeRunner/native/queue与历史frozen原件保留。当前Phi1120/24条件/512final由video_effect_01单owner于19:40:14.933Z启动；OOI216/224与联合四格科学修订和原3–6h/18:16:48派发沿用。此条为实现与实际启动索引，无新性能结论；run ROOT及launch来源见progress，整批后方可打开内部sealed标签。
+
+
+### 2026-10-15 视频效果首批记录接口恢复
+
+video_effect_01/8801e701于20:11:41.680Z exit1，Phi1120/240缓存/9条件/128MT final全部保存；504完整/0失败partial/100671总步/1.764545632GPUh。JSON NumPy bool和适应4bootstrap/3condition发布接口已定位，窄修复用原事务而非重启计算；当前恢复原合同，根记录及ROOT/analysis/engineering_recovery_02为工程出处，不作为新科学结果或预算修订。

@@ -261,3 +261,6 @@ Phi固定后，完整读取每个合法教学condition，得到按真实顺序�
 本修订从本派发起暂估45–90min，包括窄导入/冻结/完整计算/验收。依据原受影响27 native更新合计3406.64秒、均126.17秒，最多六持久消费者及160 final，预留加载和工程时间；不是成功保证。原18:16:48.556Z/3–6h首次时钟不重置，所有旧错误和计算成本保留。
 
 执行者独占工程/Git窗口，将本合同纳入当前design与状态，再new clean pushed detached执行；复用唯一canonical compiler与执行器，导入是一次性已知schema迁移，不维护第二学习路径。必要检查聚焦实际导入/评分/预算消费者，不让main重复工程测试。现有MT整批回报照常完成；本新纠正批只有一个实际owner等待子进程退出，只在整批或真实边界可靠唤醒实验后一次交main。无普通ACK、阶段Queue、第二等待者、自动后继或新Test。main收到完整原件后自主科学消费和接续。
+
+§13工程落实：沿canonical ActualEpisodes仅由180个明确旧producer路径登记的schema视图导入，原数组/registry不写回；bootstrap和160首次分支自带MT300/RNG/override/snapshot实际来源。原prediction只读link，所有正式first draw保持baseline待重算，无旧proposal/CP/Adam。source只改compiler/run两个文件（+73/−12，净+61；409/273行、无新source文件/入口）；import load为旧schema一次桥，本实验持有，科学消费后退休其manifest迁移/旧baseline分支，历史formal frozen保留。canonical prediction缓存、独立producer namespace、arm集合与final同参数复用保持单一实现；final复用拆为独立职责，未扩大既有复杂worker/step。code-architecture-gate无hard、仅原复杂函数及必要draw迁移review信号，40–52行函数均≤60，未为形式拆Actor/engine。
+队列以10个独立condition为adapt项，而非5个task串行两视频；20既有bootstrap已登记complete，0重跑或并写共享H；六持久consumer long-first承接10适应+10final，参数/预算/逻辑task权重未改。就绪原件可及时评测，不静态task/GPU，也不提前空占等待不存在的额外阶段。CPU真导入/scorer/credit用真实4parent+16cached分支，shadow draw不进入formal；native完整梯度与fresh Adam由本批首有效更新验证，0额外profile/GT。

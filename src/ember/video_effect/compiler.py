@@ -52,6 +52,32 @@ class ActualEpisodes:
     """Save each returned case immediately; canonical events count partial starts."""
     def __init__(self, root, runner):
         self.root, self.runner = Path(root), runner
+        manifest = self.root / 'joint_schema_imports.json'
+        self.imports = read_json(manifest)['histories'] if manifest.exists() else {}
+
+    def load(self, path):
+        """Interpret only registered old-producer fields; never modify saved H."""
+        history = load_history(path)
+        source = self.imports.get(str(Path(path).resolve()))
+        if source is None:
+            return history
+        if source['original_parameter_ref'] != 'MT300' or source['original_joint_schema'] != 'none0/hinge1/slide2':
+            raise ValueError('unregistered historical joint schema or producer')
+        for observation in history.observations.values():
+            physical = observation['physical']
+            types = np.asarray(physical['joint_type'])
+            if not np.isin(types, (0, 1, 2)).all():
+                raise ValueError('old own joint type is outside its registered schema')
+            q = np.asarray(physical['joint_q']).copy()
+            q[types > 0] = q[types > 0, ::-1]
+            physical['joint_type'] = np.where(types == 1, 2, np.where(types == 2, 1, 0))
+            physical['joint_q'] = q
+            physical['schema_import'] = source
+            registry = physical['registry']
+            physical['registry'] = {**registry, 'schema_import': source, 'entities': [
+                {**entry, 'original_joint_type': entry['joint_type'], 'joint_type':
+                    {0: 0, 1: 2, 2: 1}[entry['joint_type']]} for entry in registry['entities']]}
+        return history
 
     def run(self, requests):
         expected = {r['episode_id']: r for r in requests}
@@ -67,7 +93,7 @@ class ActualEpisodes:
                         or row.get('actual_override_actions') != (np.asarray(request['first_actions']).tolist()
                             if request.get('first_actions') is not None else None)):
                     raise ValueError('saved own episode has incompatible actual producer or RNG')
-                received[identity] = (load_history(path / 'history.pt.gz'), path)
+                received[identity] = (self.load(path / 'history.pt.gz'), path)
         pending = [r for k, r in expected.items() if k not in received]
         for result in self.runner.run(pending) if pending else ():
             request, row, history = result['request'], result['row'], result['history']
@@ -160,15 +186,20 @@ class Compilation:
         self.actual = ActualEpisodes(root, runner)
         self.factors = FullFactors(runtime)
         self.rng = np.random.default_rng(np.random.SeedSequence([20261015, task['global_task_id']]))
+        self.namespace = read_json(self.root / 'run_contract.json').get('compilation_namespace', '')
         self.target = None
         if arm != 'no_video':
-            item = torch.load(feature_file(root, task['global_task_id'], int(arm[-1])), map_location='cpu', weights_only=False)
-            with torch.no_grad(), torch.autocast(runtime.device.type, dtype=torch.bfloat16):
-                pred = phi(item['patches'].to(runtime.device), item['language'].to(runtime.device),
-                    item['language_mask'].to(runtime.device), item['frame_indices'].to(runtime.device))
-            pred = {k: v.detach().float().cpu() if v.is_floating_point() else v.detach().cpu() for k, v in pred.items()}
+            prediction = self.base / 'predicted_teaching.pt'
+            if prediction.exists():
+                pred = torch.load(prediction, map_location='cpu', weights_only=False)
+            else:
+                item = torch.load(feature_file(root, task['global_task_id'], int(arm[-1])), map_location='cpu', weights_only=False)
+                with torch.no_grad(), torch.autocast(runtime.device.type, dtype=torch.bfloat16):
+                    pred = phi(item['patches'].to(runtime.device), item['language'].to(runtime.device),
+                        item['language_mask'].to(runtime.device), item['frame_indices'].to(runtime.device))
+                pred = {k: v.detach().float().cpu() if v.is_floating_point() else v.detach().cpu() for k, v in pred.items()}
+                torch.save(pred, prediction)
             self.target = VideoTarget(pred)
-            torch.save(pred, self.base / 'predicted_teaching.pt')
         self.parents = []; self.mappings = []
         self.update = self.starts = self.control = self.no_accept = 0
         self.parameter_ref = 'MT300'
@@ -187,9 +218,9 @@ class Compilation:
             restore_rng(state['rank_rng'], self.context)
             for key in ('update', 'starts', 'control', 'no_accept', 'parameter_ref', 'mappings'):
                 setattr(self, key, state[key])
-            self.parents = [(load_history(Path(p) / 'history.pt.gz'), Path(p)) for p in state['parents']]
+            self.parents = [(self.actual.load(Path(p) / 'history.pt.gz'), Path(p)) for p in state['parents']]
             return
-        self.parents = [(load_history(self.root / 'bootstrap' / f'task_{self.task["global_task_id"]:04d}' /
+        self.parents = [(self.actual.load(self.root / 'bootstrap' / f'task_{self.task["global_task_id"]:04d}' /
             f'state_{i:03d}' / 'history.pt.gz'), self.root / 'bootstrap' / f'task_{self.task["global_task_id"]:04d}' /
             f'state_{i:03d}') for i in range(16, 20)]
         self.starts = 4
@@ -214,6 +245,13 @@ class Compilation:
             record = read_json(file)
             if record['parent_sources'] != [str(p) for _, p in self.parents]:
                 raise ValueError('saved intervention draw has a different current parent')
+            if record.get('baseline_recompute_required'):
+                if not record.get('original_draw_source') or self.update != 0 or self.parameter_ref != 'MT300':
+                    raise ValueError('baseline migration is restricted to registered original MT first draws')
+                record['baselines'] = [self.score(h, pos)['R'] for pos, (h, _) in enumerate(self.parents)]
+                record['baseline_recompute_required'] = False
+                record['baseline_joint_schema'] = 'none0/slide1/hinge2'
+                write_json_atomic(file, record)
             self.rng.bit_generator.state = record['rng_numpy_after']
             return record
         points, draws, requests, baselines = [], [], [], []
@@ -322,7 +360,7 @@ class Compilation:
         old,credit,nonzero,trust,tests=self._prepare_proposal(samples,credits,draw)
         accepted,candidate=False,[]
         if trust:
-            ref = f'task_{self.task["global_task_id"]:04d}_{self.arm}_proposal_{self.update:03d}'
+            ref = f'{self.namespace}task_{self.task["global_task_id"]:04d}_{self.arm}_proposal_{self.update:03d}'
             state = {k: v.detach() for k, v in self.factors.state().items()}
             validate_lora_state(state, self.runtime.lora)
             weight_file=self.base/f'{ref}.safetensors'

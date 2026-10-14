@@ -105,6 +105,10 @@ def bootstrap(args, runtime, runner, task):
     """Four actual MT cases run ONCE/task, then three independent score consumers."""
     root = args.root / 'bootstrap' / f'task_{task["global_task_id"]:04d}'
     missing = [i for i in range(16, 20) if not (root / f'state_{i:03d}/row.json').exists()]
+    if not missing and (root / 'complete.json').exists():
+        if not read_json(root / 'complete.json')['complete']:
+            raise ValueError('registered bootstrap is incomplete')
+        return
     requests = [case_request(task, runtime.mt, 'MT300', i,
         f'MT_bootstrap_t{task["global_task_id"]:04d}_state_{i:03d}', snapshots=True) for i in missing]
     for history, source in ActualEpisodes(args.root, runner).run(requests):
@@ -115,6 +119,23 @@ def bootstrap(args, runtime, runner, task):
     write_json_atomic(root / 'complete.json', dict(complete=True, unique_episodes=4,
         logical_condition_consumers=3, noise_root=ADAPT_NOISE, states=list(range(16,20)),
         parameters='MT300merged_complete_r8_identity', prefix_source='this_batch_real_own_interaction'))
+
+
+def reuse_same_condition_MT_final(root, directory, condition_name, ref, weights, state_ids):
+    original = read_json(root / 'run_contract.json').get('same_condition_MT_final_reuse_root')
+    if not original or ref != 'MT300': return
+    old = read_json(Path(original) / 'conditions' / condition_name / 'complete.json')
+    if old['final_parameter_ref'] != 'MT300': return
+    for i in state_ids:
+        target = directory / f'state_{i:03d}.json'
+        if target.exists(): continue
+        original_row = Path(original) / 'final' / directory.name / target.name
+        row = read_json(original_row)
+        if row['actual_parameter_ref'] != 'MT300' or row['settling_steps'] != 10:
+            raise ValueError('same-condition MT final source violates fixed policy or settling')
+        row.update(reused_same_condition_MT_final=True, original_execution_row=str(original_row),
+            new_compilation_LoRA=weights, new_compilation_parameter_ref=ref)
+        write_json_atomic(target, row)
 
 
 def final_cases(args, runtime, runner, task, arm, state_ids):
@@ -128,6 +149,7 @@ def final_cases(args, runtime, runner, task, arm, state_ids):
         if not receipt['complete']: raise ValueError('final policy is not frozen')
         weights = receipt['final_LoRA']; ref = receipt['final_parameter_ref']
         state = load_file(weights, device=str(runtime.device))
+        reuse_same_condition_MT_final(args.root, directory, source.name, ref, weights, state_ids)
     requests = [dict(task=task, state=state, parameter_ref=ref, state_id=i,
         noise_root=FINAL_NOISE, episode_id=f'final_t{task["global_task_id"]:04d}_{arm}_state_{i:03d}',
         capture_history=False, capture_hidden=False, capture_phi=False, uses_teaching=False)
@@ -178,7 +200,8 @@ def worker(args, runtime, runner, context, tasks):
                     write_json_atomic(args.root/'physical_slot_selection'/f'{args.worker_id}.json',dict(
                         initial_valid_bootstrap_slots=4,registered_next_branch_slots=8,free_MiB=int(free/1024**2),
                         prior_full_native_B4_peak_GiB=25.502,logical_cases_unchanged=True))
-                for arm in ('video0','video1','no_video'):
+                arms = row.get('arms', ('video0','video1','no_video'))
+                for arm in arms:
                     base = args.root / 'conditions' / f'task_{row["task"]:04d}_{arm}'
                     if not (base / 'complete.json').exists():
                         compiler = Compilation(args.root, runtime, runner, context, task, arm, phi)
@@ -186,7 +209,7 @@ def worker(args, runtime, runner, context, tasks):
                     condition_ready(args.root,row['task'],arm)
                     work_event('ready', args.worker_id)
                 output, successes = [str(args.root / 'conditions' / f'task_{row["task"]:04d}_{arm}/complete.json')
-                    for arm in ('video0','video1','no_video')], 0
+                    for arm in arms], 0
             else:
                 output = final_cases(args, runtime, runner, task, row['arm'], claim.shard.init_state_ids)
                 successes = sum(r['success'] for r in output)

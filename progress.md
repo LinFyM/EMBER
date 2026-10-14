@@ -1,3 +1,9 @@
+## 2026-10-14 15:22 §17首真实held已完成，双臂回执计数窄修
+
+image_gemma_H_readout_resume_02 exit1是发布层expected8(actual state)对实际V/VL16行错误，16原held行全部已保存，47 VL seen已补齐；原在途≤16生效，0新增failed episode，预算2015/63/1043040不变。ledger1215 submitted/1168 returned/47未返回上界，known273518+unknown22990=296508，root总7.119625674GPUh；旧no-H2.371076951另存。source b9c8f824数学/Actor正常，训练7f05/8640不改，不重训、不重跑已返回case，不自动新矩阵。
+实际原H104/task31 states0..7/两臂16final完整：framechunk64实际maxvideo56，compile allocated12.401/reserved15.832GiB，execution allocated10.178/reserved14.516GiB，真实349.023s/16含编译与控制、1536 plans。不能据此称最长video91（held）或92（train）已认证，后续原注册最大视频case计入固定读出。原件analysis/actual_H104_held_consumer_02.json、readout_shards/paired_validation/paired_validation_task_0031_part_000_001.json。先前CPU接续检查mock了publisher而漏掉双臂真实计数，属于执行者验证遗漏；现用保存原16行/private queue复现默认expected8拒绝，并通过显式rows_per_state2真实发布，不新增GPU或环境。shared queue默认1保持，既有14 tests通过。
+只在canonical complete_job/image_data.publish_record显式登记每state两行，计数/真实配对分母与原面板一致；首paired回执仅CPU结算，原失败记录不删。新source需clean pushed detached，剩784 held由新唯一owner承接；两seen576和每臂8held有效行保持，无新额度/训练/Teacher/query/controls/Test，不等待main工程ACK。后续六卡持久共享队列、实际slots3/3/3/3/2/2总≤16保护尚未消费的新失败16余量，原case/RNG/官方口径保持；旧source/所有费用和first/H/no-H时钟继续保留。
+
 ## 2026-10-14 14:42 §17 H读出工程失败及已授权有界恢复
 
 唯一image_gemma_MT_history_01于06:12:33Z exit1并已按ROOT/attempt消费，实际3个VL worker的framebuffer构造或native prefix OOM，0held launch；source7f05e3e6/旧owner与所有原件保留。两臂完整8640 psi/Adam/sampler/rankRNG及共同2160决定均有效，V_seen576、VL_seen529保留（失败shard已有1有效行），只补47 VL/800 held，0重训/新实践/训练query/controls/Test。当前修订工程准备，尚未新launch。

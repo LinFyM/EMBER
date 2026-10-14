@@ -12012,3 +12012,10 @@ main纠正额外删除整个H的干预，优先修订已完整授权和纳入des
 
 fresh H两臂8640完整训练端点与所有有效原行保留；三个16slots VL读出在EGL framebuffer或native prefix OOM退出，按现场free初估14.2GiB不等于最长官方执行含renderers峰值资格。已确认失败partial3460步，47未返回提交保守账必须保留；两次构造失败早于登记state reset但slot归属未知，不能把整批失败归零。EGL仅设备枚举核实CUDA_VISIBLE6→EGL6，0环境start，当前无错卡证据；framebuffer头部余量为待真实消费者认证的工程解释，不能假装已确诊唯一根因。
 main于06:42:01.831Z授权唯一交互修订2015提交/63失败（47已发生+16新余量），1952固定有效final与1043040总steps不变；原1968/16已越界为历史事实，不追认合规，不自动扩第二次额度。原ROOT/analysis/failure_interaction_audit_01.json及inputs/H_readout_engineering_amendment_20261014.*为原件。新恢复只47 VL_seen+800 held并严格skip已保存529 VL/576 V及所有LoRA，训练source7f05e3e6/新评测源分列。旧no-H成本与MT实践依赖仍单列，0新增实践/训练query/Test。
+
+
+## 2026-10-14 15:22 §17首真实held已完成，双臂回执计数窄修
+
+image_gemma_H_readout_resume_02 exit1是发布层expected8(actual state)对实际V/VL16行错误，16原held行全部已保存，47 VL seen已补齐；原在途≤16生效，0新增failed episode，预算2015/63/1043040不变。ledger1215 submitted/1168 returned/47未返回上界，known273518+unknown22990=296508，root总7.119625674GPUh；旧no-H2.371076951另存。source b9c8f824数学/Actor正常，训练7f05/8640不改，不重训、不重跑已返回case，不自动新矩阵。
+实际原H104/task31 states0..7/两臂16final完整：framechunk64实际maxvideo56，compile allocated12.401/reserved15.832GiB，execution allocated10.178/reserved14.516GiB，真实349.023s/16含编译与控制、1536 plans。不能据此称最长video91（held）或92（train）已认证，后续原注册最大视频case计入固定读出。原件analysis/actual_H104_held_consumer_02.json、readout_shards/paired_validation/paired_validation_task_0031_part_000_001.json。先前CPU接续检查mock了publisher而漏掉双臂真实计数，属于执行者验证遗漏；现用保存原16行/private queue复现默认expected8拒绝，并通过显式rows_per_state2真实发布，不新增GPU或环境。shared queue默认1保持，既有14 tests通过。
+只在canonical complete_job/image_data.publish_record显式登记每state两行，计数/真实配对分母与原面板一致；首paired回执仅CPU结算，原失败记录不删。新source需clean pushed detached，剩784 held由新唯一owner承接；两seen576和每臂8held有效行保持，无新额度/训练/Teacher/query/controls/Test，不等待main工程ACK。后续六卡持久共享队列、实际slots3/3/3/3/2/2总≤16保护尚未消费的新失败16余量，原case/RNG/官方口径保持；旧source/所有费用和first/H/no-H时钟继续保留。

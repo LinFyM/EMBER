@@ -13,11 +13,12 @@ from .image_compiler import FEATURE_SCHEMA
 from .image_history import history_file, model_history
 
 
-def publish_record(queue, claim, worker, file, rows, *, successes=0):
+def publish_record(queue, claim, worker, file, rows, *, successes=0, rows_per_state=1):
     relative = Path('shards') / queue.stem / claim.shard.job_id / f'attempt_{claim.attempt:03d}.json'
-    size = publish_json_exclusive(queue.parent/relative, dict(record_file=str(file), row_count=rows))
+    size = publish_json_exclusive(queue.parent/relative, dict(record_file=str(file), row_count=rows,
+        rows_per_state=rows_per_state))
     complete_job(queue, job_id=claim.shard.job_id, worker_id=worker, claim_token=claim.claim_token,
-        rows_path=str(relative), rows_bytes=size, row_count=rows, successes=successes)
+        rows_path=str(relative), rows_bytes=size, row_count=rows, successes=successes,rows_per_state=rows_per_state)
 
 
 def feature_file(root, task, demo):

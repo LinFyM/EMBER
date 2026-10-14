@@ -504,6 +504,7 @@ def complete_job(
     rows_bytes: int,
     row_count: int,
     successes: int,
+    rows_per_state: int = 1,
 ) -> None:
     """Commit a shard only after its immutable raw-row file is published."""
 
@@ -514,6 +515,8 @@ def complete_job(
         or ".." in Path(rows_path).parts
         or rows_bytes <= 0
         or row_count <= 0
+        or not isinstance(rows_per_state, int)
+        or rows_per_state <= 0
         or not 0 <= successes <= row_count
     ):
         raise Pi05EvaluationError("invalid completed evaluation shard summary")
@@ -527,7 +530,7 @@ def complete_job(
         if owner is None:
             connection.rollback()
             raise Pi05EvaluationError("evaluation worker does not own completed shard")
-        expected_rows = len(_decode_shard(owner["payload"]).init_state_ids)
+        expected_rows = len(_decode_shard(owner["payload"]).init_state_ids) * rows_per_state
         if row_count != expected_rows:
             connection.rollback()
             raise Pi05EvaluationError(

@@ -5318,3 +5318,10 @@ Owner随后说“额不是，那最好还是能看懂动态过程才好”“我
 ## 2026-10-14 14:42 §17 H读出退出与有界工程接续
 
 image_only_gemma_with_history/coordinator/image_gemma_MT_history_01/exit.json：06:12:33Z exit1，三个VL seen消费者framebuffer/OOM；两臂8640 complete与V576/VL529有效行不重算，held未启动，新ROOT6.756725625GPUh。原16失败/1968提交合同已越界，ledger 1152提交/1105完成/47未返回，known248652与unknown22990；actual partial3460非零，reset范围9–45不取代47保守账。main明确06:42:01.831Z有界修订2015/63且1952/1043040与原输入/训练/选择不变；未来失败余量16仅此一次，无自动扩容。优先修订原文归档ROOT/inputs/H_readout_engineering_amendment_20261014.md/json，原run_contract留档；§17 canonical design同步全文。执行者修idle renderer与CUDA编译缓存共驻、较小物理slots/真实峰值消费者，新冻结源恢复剩847，原7f05/训练/所有失败/旧no-H2.371076951GPUh保持。此为工程恢复，不预告科学分数或将新方法当已有效；无新训练/实践/query/held条件/Test。
+
+
+## 2026-10-14 15:22 §17首真实held已完成，双臂回执计数窄修
+
+image_gemma_H_readout_resume_02 exit1是发布层expected8(actual state)对实际V/VL16行错误，16原held行全部已保存，47 VL seen已补齐；原在途≤16生效，0新增failed episode，预算2015/63/1043040不变。ledger1215 submitted/1168 returned/47未返回上界，known273518+unknown22990=296508，root总7.119625674GPUh；旧no-H2.371076951另存。source b9c8f824数学/Actor正常，训练7f05/8640不改，不重训、不重跑已返回case，不自动新矩阵。
+实际原H104/task31 states0..7/两臂16final完整：framechunk64实际maxvideo56，compile allocated12.401/reserved15.832GiB，execution allocated10.178/reserved14.516GiB，真实349.023s/16含编译与控制、1536 plans。不能据此称最长video91（held）或92（train）已认证，后续原注册最大视频case计入固定读出。原件analysis/actual_H104_held_consumer_02.json、readout_shards/paired_validation/paired_validation_task_0031_part_000_001.json。先前CPU接续检查mock了publisher而漏掉双臂真实计数，属于执行者验证遗漏；现用保存原16行/private queue复现默认expected8拒绝，并通过显式rows_per_state2真实发布，不新增GPU或环境。shared queue默认1保持，既有14 tests通过。
+只在canonical complete_job/image_data.publish_record显式登记每state两行，计数/真实配对分母与原面板一致；首paired回执仅CPU结算，原失败记录不删。新source需clean pushed detached，剩784 held由新唯一owner承接；两seen576和每臂8held有效行保持，无新额度/训练/Teacher/query/controls/Test，不等待main工程ACK。后续六卡持久共享队列、实际slots3/3/3/3/2/2总≤16保护尚未消费的新失败16余量，原case/RNG/官方口径保持；旧source/所有费用和first/H/no-H时钟继续保留。

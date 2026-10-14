@@ -876,3 +876,8 @@ main已直接读取新ROOT/image_only_gemma_with_history的原image_gemma_MT_his
 
 
 工程消费者：新source只在held编译前释放本任务闲置renderers、编译后归还不用的CUDA缓存，并记录原注册shard的实际编译/执行峰值、耗时与physical batch。新恢复owner只承接缺失47 VL_seen及800 held，按现场余量选择slots4/8及feature chunk，用原最长H/视频输入计入固定读出；不新增discarded profile，不按成绩补挑。训练与有效原行仍沿7f05e3e6来源保留。
+
+
+### §17双臂回执计数工程修复（2026-10-14 15:22）
+
+实际首H104共享shard8state/两臂16完整final均已保存，恢复02的exit1仅canonical队列默认一state一行拒绝16行；没有新增partial或GPU故障，0新预算修订。显式rows_per_state2只登记本合同两臂完整输出，默认单臂1保持；CPU真实保存原行与private queue复现/消费通过，14既有queue tests通过。原16行及全seen1152保持，CPU结算首paired后仅剩784 held，原1952/2015/63/1043040、8640唯一端点、输入/噪声/官方控制不变。真实349.023s/16、H104/最大教学56帧与allocator峰值见ROOT/analysis/actual_H104_held_consumer_02.json；不称最长held91帧已过。新frozen source与旧b9c实际编译/7f05训练身份分列，新唯一owner/整批一次回报，无自动后继。

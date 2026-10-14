@@ -114,7 +114,8 @@ def readout_worker(args,runtime,runner):
                 elapsed_seconds=time.monotonic()-started,compilation_peak=compilation_peak,
                 execution_peak=memory_peak(runtime.device),runner_components=dict(runner.components))
             write_json_atomic(receipt,dict(rows=rows,seconds=time.monotonic(),complete=True,resources=resources))
-            publish_record(queue,claim,args.worker_id,receipt,len(rows),successes=sum(r['success'] for r in rows))
+            publish_record(queue,claim,args.worker_id,receipt,len(rows),successes=sum(r['success'] for r in rows),
+                rows_per_state=len(arms))
             print('EMBER_IMAGE_READOUT '+json.dumps(resources),flush=True)
         except BaseException as error:
             fail_job(queue,job_id=claim.shard.job_id,worker_id=args.worker_id,claim_token=claim.claim_token,error=repr(error))

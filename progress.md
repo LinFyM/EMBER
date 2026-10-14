@@ -1,3 +1,11 @@
+## 2026-10-15 唯一active：N16实践支撑的有限完整方法检验
+
+main完整消费§13后授权当前design§14，首次派发2026-10-14T23:06:33.739733Z、准备至完整交付暂估2–4h。当前独占dev/CPU实现，尚未新GPU/环境计算。只把支撑扩大到init16..31：24独立fresh MT300/空Adam，Phi1120/原16预测/关系评分/四格/native10/38r8/Adam/接受规则保持；四格分母4、外层episode均值16，64分支+16候选的80逻辑请求原子单元，最多80信赖点。每condition192starts/128horizon，预算增两倍但实际修订机会可能更少，不称纯N因果隔离。失败后收束固定Phi关系评分+局部分支nativeAdam家族继续扩量/调参；整体接续由main承担。
+32旧MT bootstrap只读schema视图复用，96新共享MT bootstrap/init20..31，0旧分支/proposal/Adam导入；旧180迁移仅保留32bootstrap来源，纠正专用baseline/复用调度退休，历史frozen与原件不动。全部24端点冻结后做512逻辑final，唯一MT128/67参照只读复用，所有新仍MT条件预先引用该同case MT源；旧noV74不改写、不称学习。0共享训练/新教学/GT/sealed/held/Test或自动后继。
+新ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16，新增峰值80GiB，data1 live独立quota used约1609.8GiB/soft2048、父ROOT约35.8GiB/项目约374.7GiB、shared free80T，预算有余量；每launch再live双节点/6或8总量-node6/真实工作负载峰值。新上限5008提交/1148800control/50080dummy/1198880总步、16工程失败，carry0；旧2184提交/451706步/7.005042365GPUh单列历史，不清零。真实注册wave用于扩大有收益的slots/native microbatch，无新增环境profile；新CP明确N16/逻辑分母/流/RNG，拒绝旧N4 resume。一个owner真实退出可靠整批唤醒，0阶段Queue/心跳/第二waiter；整批验收/五记录/Git后一次交main。
+CPU准备已完成：16支持代数/发布/恢复拒绝/唯一MT引用和实际旧snapshot来源通过；32限定桥与旧纠正入口退休落实，2source净增91行/无新模块，无hard结构违约。74.35GiB推算低于80GiB预估；正在new clean pushed detached冻结，实际native10与N16完整单元尚待正式首消费者，不以CPU检查宣称通过。
+科学原件消费指针：joint_schema_corrected/analysis/main_scientific_readout/corrected_method_scientific_readout_20261015.md及credit_analysis/{report.md,analysis.json}，父analysis/main_scientific_readout/original_method_scientific_readout_20261015.md。主讨论已核37视频更新21接受/实践34/64→45/64与迁移不足；执行不重复统计、GT或评分诊断。
+
 ## 2026-10-15 10条件joint纠正整批已验收；当前无active计算
 
 joint_schema_corrected_01于22:44:51.958Z exit0；clean pushed detached afe6acc5、六持久消费者运行19.002min，全部退出，live双节点本用户CUDA为0。CPU原件验收0.686秒通过，未模型/环境/DTW评分/GT重算。唯一有效读出为`/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/joint_schema_corrected/results.json`，同根`analysis/engineering_completion_20261015/report.md`及acceptance/paired_metrics/condition_records保存完整原件验收和分布。10套完整38-target/r8 LoRA/Adam/流/RNG齐，26次native更新18接受，停止5四成功/2两次无可接受提案/3预算；180旧schema仅导入视图，20bootstrap/160首次MT分支只读复用，原draw重算baseline/credit、fresh MT300/空Adam，0Phi/GT重训或重算。

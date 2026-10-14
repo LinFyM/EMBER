@@ -1,3 +1,7 @@
+## 2026-10-15：纠正方法科学消费与唯一N16后继
+
+主讨论已消费完整corrected_method_scientific_readout_20261015.md、credit_analysis/report.md与analysis.json：保留真实视频零终局分差信用和实践34/64→45/64，完整64/70对MT67/noV74未形成稳定优势；同参数波动不归学习/遗忘。唯一design§14于23:06:33.739733Z派发，N16为有界支撑检验、无新性能结论；24fresh MT/原Phi及目标、192starts/128horizon/最终512保持，32旧bootstrap+96新共享、0旧分支/Adam导入。旧错误/阴性/frozen/2184次451706步7.005042365GPUh保留，GT/sealed不重开。本批2–4h、5008/1198880及16失败明确；失败后停止该家族继续扩量/调参，不自动其它实验。工程准备与真实GPU启动分别记录。
+
 ## 2026-10-15：视频关系参数编译10条件joint协议纠正完整交付
 
 原Φ/teacher schema不变，own slide/hinge与q列恢复预注册语义；180已知旧producer自身physical仅导入视图转换，20唯一MT bootstrap/160首次分支复用占原逻辑预算。10条件fresh MT300/空Adam、原draw重算baseline/credit后26native更新18接受，产生完整最终LoRA/Adam/RNG；不重训Phi、不重开sealed/GT。有效512为MT67/V0 64/V1 70/no_video74：对MT分别得9失12、得12失9，仍低于全MT300的no_video，不能将其+7称学习。原V0 60/V1 58和全部阴性/同参数执行差异保留。

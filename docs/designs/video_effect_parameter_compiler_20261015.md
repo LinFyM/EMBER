@@ -2,7 +2,7 @@
 
 2026-10-15。Owner已明确恢复自主科学推进及必要有界实验，并要求持续推进。本稿由主讨论定案；登记到progress后成为唯一active design。它替代whole_method_reassessment_20261015.md §9尚未实施的终局Q-only议案，不恢复旧G/ImageCompiler、关系G/F或局部J加权FM训练。
 
-当前执行状态：§13有限joint schema纠正及完整512读出已完成并通过原件验收，当前无active计算或自动后继；下列合同及所有修订保留为执行历史，科学接续由main消费原件后决定。
+当前执行状态：§13已完整科学消费；唯一active为§14 N16实践支撑有限检验，当前独占工程/CPU准备，正式启动另记。§13及此前合同、阴性和成本保持历史，不恢复旧批。
 
 监督—原生算子—梯度—新初态迁移的完整科学说明见[学习链分析](../analyses/video_effect_learning_chain_20261015.md)。这是本合同解释，非另一active design或附加执行门槛。
 
@@ -268,3 +268,75 @@ Phi固定后，完整读取每个合法教学condition，得到按真实顺序�
 队列以10个独立condition为adapt项，而非5个task串行两视频；20既有bootstrap已登记complete，0重跑或并写共享H；六持久consumer long-first承接10适应+10final，参数/预算/逻辑task权重未改。就绪原件可及时评测，不静态task/GPU，也不提前空占等待不存在的额外阶段。CPU真导入/scorer/credit用真实4parent+16cached分支，shadow draw不进入formal；native完整梯度与fresh Adam由本批首有效更新验证，0额外profile/GT。
 
 §13实际完成：joint_schema_corrected_01于22:44:51.958Z exit0，执行afe6acc5 clean pushed detached；10完整38-target/r8 LoRA/Adam/RNG、26native更新18接受（5四成功/2两次无接受/3预算停止），CPU原件验收通过。唯一子根results有效MT67/V0 64/V1 70/no_video74；V0对MT R55/G9/L12，V1 R58/G12/L9，no_video全MT300/0接受，不将+7称学习。352旧行+144新final+16同condition MT复用组成512，累计实际final784；旧results/corrected_results/GT/预测均保留、不重算。新增500完整/98748control+2440dummy/1.873172839GPUh，累计2184完整/433706control+18000dummy=451706步/7.005042365GPUh，0失败partial/未知，仍在新旧联合边界内。六worker各slots16、19.002min，0profile，已退出；原派发、全部旧成本及sealed在修订前读取的例外保持。完整分布/配对/停止/资源/代码原件见子根analysis/engineering_completion_20261015/report.md及acceptance/paired_metrics，科学解释由main消费；无自动续块/GT/held/Test。
+
+
+## 14. 16初态实践支撑：一次有界完整方法检验
+
+2026-10-15。主讨论01a13399-cba2-7da2-9dc6-df430ca80280在完整消费joint_schema_corrected后作出本裁决；Owner持续自主推进授权有效。将本合同纳入现有design新§14并登记progress后实施，不等待Owner或main例行ACK。本批是科学后继，不是工程恢复，也不是正式held资格。
+
+### 判断与主要干预
+
+纠正后的完整结果V0 64/V1 70/MT67/no_video74，各128。16个视频condition共37更新21接受，实践成功34/64→45/64；11个真正修改参数的condition最终97/176，对MT92、no_video100。另5个仍MT条件37/80对MT42，其净损失不能称学习遗忘；no_video14更新0接受，+7也不是学习收益。完整数据而非该事后子集裁决方法。
+
+纠正26更新中12次video-only、14次mixed，前者10接受且5次提高实践成功。视频提供了终局差分为零时的实际更新依据。但task12/video0实践1→3、最终仍8/16，task1/video0实践0→1、最终2对MT4；局部接受尚未形成可靠新初态能力。mixed的视频/terminal动作信用范数比中位.00732，不能将损失简单归因视频压过终局；该数不等于参数梯度分量。
+
+本批只改变实践分布支撑的宽度：同一教学下，形成梯度、限制函数变化及接受提案都从原4初态扩大到16初态。实际梯度由(1/4)Σ_e T_e J_e^T g_e改为(1/16)Σ_e T_e J_e^T g_e；同一参数变化须同时面对更多自身访态。它降低只适合四个初态的提案通过机会，并改变经验梯度的状态覆盖与抽样方差；不保证新初态单调，也不解决感知/目标偏差。逻辑batch改变是科学干预，不伪称纯物理batch优化。
+
+这是一项有限的分布支撑检验，不把16升级成永久方法限制，不形成4/8/16菜单。单condition预算只增为原两倍，较宽原子更新可能减少实际修订次数，真实成本与优化机会差异须报告；不把新旧差额称严格隔离的纯初态数量因果效应。
+
+保留原弱证据并下调该方法的优先级。若本次仍只有实践收益、同参数波动或少数任务交换而无完整新初态收益，收束当前“固定Phi关系评分＋真实局部分支＋直接native/Adam参数更新”家族的继续投入，不自动再扩初态、续Phi、改DTW、调权重/LR/rank/seed或换optimizer保护它。旧Gaussian/RB、SDE、LocalField/functional revision及关系G/F的负证据继续有效；本批不复活这些路径。研究整体继续由main裁决。
+
+### 唯一范围与复用
+
+仍为原8内部任务[0,1,12,13,20,21,32,34]，各video0/demo0、video1/demo1及no_video评分参照，共24个独立condition。最终仍为各16初态，四臂512逻辑行；不减少不利任务、不挑视频。只使用既有Phi1120、16份原预测及同一source/merged MT；0共享训练、新教学、新标签、新held/Test或新GT/sealed读出。
+
+每condition fresh MT300中心、空Adam、完整38-target/r8因子，不承接旧适应LoRA/optimizer。实践固定init16..31，最终固定init0..15，严格分开。实践noise root202610150、final202610151；原draw seed20261015/task规则保持，按init升序组织16 parents。N改变使随机流后续消费不同，保存实际流，不声称新旧整个draw逐项相同。三臂在初始MT时配对，之后随真实经历推进。
+
+原32份MT bootstrap(init16..19)具备相同真实起点、policy/noise及snapshot，可按已有明确旧schema来源只读解释后复用；init20..31共96份新MT bootstrap按task物理共享给三臂。旧bootstrap在每condition仍占16项中的4项及原真实control预算，不以复用多买迭代。不要复制大H、patch或模型。旧分支/proposal不导入；不把相同字符串当参数身份。新原件使用独立namespace和subroot。
+
+本批复用32份旧bootstrap所需的窄schema解释桥保留到此次唯一有限批科学消费后退休，原纠正批科学消费已完成。只登记这32个明确producer路径，canonical新H永远使用none0/slide1/hinge2且不二次转换；原180路径中其它旧first-branch导入与纠正专用调度无后继用途，应退休。历史frozen/原件不动，不建通用兼容fallback。
+
+旧sealed已在原参数冻结后、纠正及本批之前读过，此时序明确保存。本次根据真实实践/新初态差距改变支撑分布，不用GT作为评分、输入、标签或选点；0新GT/DTW诊断重算。Phi的内部8任务留出与整个系统已经见过这些训练任务的范围分别说明，不称formal unseen tasks。
+
+### 公式、接受和停止
+
+Phi、mapping/六组距离/DTW/S_V、R=2*success+S_V及no_video的2*success均不变。每个当前parent episode均匀抽一个真实decision，共16点；每点同Gaussian连续30维×Bernoulli五夹爪Cartesian四格，64逻辑分支，均由同一当前LoRA继续。原u/v/p/z、各格executed mask、完整prefix、absolute clock、官方horizon及native noise合同保持。
+
+四格score_credit内部的1/4不变；外层episode平均改为1/16，仍乘各自T_e。全部76叶经真实完整native10/前5×7 raw动作VJP更新，Adam lr.1/betas(.9,.95)/eps1e-8、固定因子单位、clip1均不变。无动作target、BC/FM、Q、世界模型、额外训练头或第二部署adapter。
+
+每parent仍取原四个分位点加本次梯度点，去重后全16 parents最多80点；同noise比较当前和candidate，逐点raw动作RMS≤.1及原最多4次halve规则不变。不新增环境试分选scale。
+
+candidate在相同16实践初态/RNG完整再试。成功数增加接受，减少拒绝；相同则video仅在平均S_V提高>1e-6时接受，no_video拒绝。被拒参数及Adam回退，accepted真实H进入下一次。当前16条全成功、连续两次无可接受提案、或剩余预算不足完成下一完整原子单元即停；不写固定修订次数循环，不因本批结果修改停止规则。
+
+一次原子更新预留64分支+16候选的80逻辑请求及相应最坏control（沿原保守full-horizon预留）。同一物理请求严格可复用时四格仍等权，condition逻辑占额不减少；物理唯一费用单列，不能因去重/旧数据复用扩大更新机会。
+
+### 固定最终读出与解释
+
+唯一算法终点的24套最终参数冻结后，以原官方双相机/8D state/native10/前5/settling10/horizon及原mapping/noise评测。MT参照唯一复用已修订的正式128行（MT67），不重新挑选或平均MT/no_video高点。
+
+若某新condition最终结构性仍为MT300（0已接受更新，或显式恢复原中心），预先规定直接引用同task/init的这份正式MT参照，不重跑相同政策。不能因某次MT旧执行更高而改来源；旧no_video74和旧V所有同参数差异完整保留为历史，不能改写为67。本批逻辑行与新物理执行数分别报告。修改过的参数不能仅凭ref名字或小norm当MT复用，不做逐tensor低位扫描。
+
+主比较V0、V1各128对同一MT及新no_video；per-task/suite、breadth、R/G/L/churn/Jaccard、两视频重合、实际参数身份、实践前后16成功、每更新信用和成本完整报告。最终初态不产生梯度或接受反馈，0checkpoint union/择视频/controls/Test。
+
+主要结果分支：两正确视频均有明显净增、合理保持与多suite覆盖，才提高完整方法支持度；只一条/少任务改善保留局部证据；只增加实践成功继续判迁移不足；no_video也改善则分清通用实践收益与视频增量。内部128不产生strict held400选择资格，也不要求这一批补齐全部视频因果controls。无自动更大批次；整批回main消费后自主接续。
+
+### 资源、吞吐、工程与交付
+
+每condition最多192逻辑环境请求、128×本suite horizon实际control steps；共享输入照占逻辑预算，正常dummy另计。全24适应逻辑请求≤4608、control≤1,013,760。新增final最多384请求/126,720control，MT128只读依赖；工程失败最多16请求，最坏8,320control。新批保守全局上限5008提交、1,148,800control；dummy保守≤50,080（实际snapshot为0、其它正常10），总动作步≤1,198,880。严格共享/复用只减实际费用，不扩大科学矩阵。全失败/无增益不是工程重试。旧2184提交、451706动作步、7.005042365GPUh作为依赖历史单列，不重计为新成本、不覆盖旧invalid原件。
+
+新ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16，先由执行者核strg01 data1独立quota/个人用量/共享容量再建立。新增峰值暂估80GiB：依据上批500新病例/101188动作步/5.767GiB，计本批最大步数、24完整参数/Adam/H/冻结树及临时量；无新大特征缓存。若实际元数据推算超出，在launch前报告具体差额，由main裁决，不写data0。
+
+live双节点总8/6、单节点6上限保持。按就绪工作与实测安排六或其它有益数量的持久worker；64分支wave允许验证更大slots（如32），不能把旧最大wave16当本批永久上限。原16slots约15.54GiB只是旧实际消费者，新的native逻辑B16及最长输入峰值须从本批真实首单元核验；按现场余量、CPU/renderer和实测选择physical microbatch/slots，保留吞吐及不继续放大理由。可用本批原登记首wave逐段增加有效物理并发，所有请求都是正式有用工作，不增加环境profile或dummy。GPU计算profile仅在必要时用原16点最多两次可丢弃重放，正式参数/Adam/RNG不承接，实际费用另计。
+
+从首次本合同派发起暂估完整准备/运行/验收2–4小时。依据纠正批26个N4更新、500新病例、19分钟六卡；本批更宽native及分支成本明显增加，按注册请求和最大control外推，实际提前成功/拒绝/共享会缩短。不是deadline或正结果保证；首真实N16完整单元后据吞吐作一次必要ETA修订，不读分数改量。
+
+执行者独占代码/Git：在现有canonical compiler/run所有者内把实践state集合、外层分母、atomic预留、成功停止和发布计数明确化；四格分母仍4，三臂数量仍3，不能混同。保持一个active运行面，专用旧corrected调度退休；不复制trainer/evaluator。完成真实consumer的N16权重、完整parent/candidate、预算/恢复与发布针对性检查，clean push、新detached冻结后执行。无需main重复工程验收。
+
+完整checkpoint保存全部因子/Adam/流/RNG/N16 schema/参数及H来源，不能把旧N4 CP当新resume。狭窄工程违约由执行者按原科学合同修复并新push/freeze；科学目标/公式/信息墙/预算改变报main具体边界。
+
+一个owner持续等待实际子进程退出，只安排一次整批完成或真实异常的可靠唤醒；不逐阶段Queue/心跳/第二waiter。实验完整验收、五份现有记录串行Git集成后一次回main；无自动后继或Owner再批准门槛。
+
+§14科学消费入口：父ROOT/joint_schema_corrected/analysis/main_scientific_readout/corrected_method_scientific_readout_20261015.md及credit_analysis/{report.md,analysis.json}；主讨论已完整消费，执行不重复CPU统计/GT。首次派发2026-10-14T23:06:33.739733Z与2–4h预计保持。
+
+§14工程落实：同一compiler/run两文件替换N4假设，N16 checkpoint/proposal schema与16个practice IDs严格恢复，四格仍4、16个VJP物理分块统一除16再clip/Adam；最大80信赖点按16物理batch读取。共享bootstrap独立8项只物理执行一次，24独立condition与24final组成56项持久long-first队列，全部24参数端点就绪后才开启final。只剩32旧bootstrap路径解释桥；旧first-branch/baseline导入、纠正同condition旧final复用及mt-final专属入口退休，历史冻结不改。固定MT只有预注册正式128参照，不用旧noV高点。
+注册64分支内的有效wave比较slots16/32，并据实测steps/s与live余量决定下一64；native有效16点由4/8/16物理chunk逐段验证，不新增环境profile。CPU实际canonical代数/队列/MT引用/N4拒绝及真实旧MT snapshot视图通过；不把CPU标量oracle称实际native10通过，真实完整N16将在首正式单元核验。source增长179/删除88、净91行，仅2source/无新模块或Actor；结构无hard，原ActualEpisodes.run18、事务step24与worker20的review信号由清晰事务/执行职责持有，均未过增长>25边界；worker已抽出condition编译职责并缩小。派发23:06:33.739733Z/2–4h、全部旧费和时钟保持。ROOT/disk_projection推算74.35GiB<80GiB预估，source/cache只读link；每launch现场准入，GPU当前尚未启动。

@@ -1,5 +1,10 @@
 # EMBER findings
 
+## 2026-10-15 主讨论完整科学消费与N16有限判断
+
+main已消费纠正后全16视频condition：37更新21接受、实践34/64→45/64，完整新初态64/70仍无稳定强MT优势。11真改参数条件97/176对MT92仅为事后子集，另5仍MT条件37/80对MT42不能叫遗忘，noV14更新0接受不能称+7学习。纠正26更新中12video-only/10接受/5提高实践成功证明视频补出终局零分差信用；task12实践1→3最终8/16、task1 V0实践0→1最终2对MT4保留迁移缺口。mixed动作信用视频/terminal中位.00732不是参数梯度分解，不支持直接调视频权重。完整论证见父ROOT/joint_schema_corrected/analysis/main_scientific_readout/corrected_method_scientific_readout_20261015.md及credit_analysis/{report.md,analysis.json}，原完整旧实现分析见父analysis/main_scientific_readout/original_method_scientific_readout_20261015.md；执行不重复原行分析/GT。
+当前§14只有限扩大实践支撑N4→N16，仍可能受感知/目标偏差、局部信用及参数迁移限制；更宽原子单元/两倍预算不构成纯N隔离。若仍只有实践改善或局部交换，收束该固定Phi关系目标+真实局部分支+直接native/Adam家族的续投，不默认N菜单/权重/优化器小扫；本条没有新性能证据。
+
 ## 2026-10-15 joint schema纠正完整读出：保留局部增益与整体限制
 
 恢复原none0/slide1/hinge2与q列合同后，10条件fresh MT300/空Adam共26native更新18接受；完整512逻辑行MT67/V0 64/V1 70/no_video74。V0对MT得9失12、V1得12失9；两视频均仍低于no_video（分别得8失18、得11失15），breadth均8/8，Long合计7/11对MT11/no_video14。相对旧错误实现60/58，新同臂分别得8失4、得15失3；这份实际改善不能被抹去，也不证明错误是全部低分的唯一原因或完整方法已获资格。no_video14次更新0接受且全MT300，其+7不是学到能力；同参数数值执行差异继续限制因果归属。

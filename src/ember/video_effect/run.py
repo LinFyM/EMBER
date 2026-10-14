@@ -41,11 +41,15 @@ def make_queues(root, run):
     for task in run['environment']['tasks']:
         t = task['global_task_id']
         if t not in PROBES: continue
-        identity = f'adapt_t{t:04d}'
+        identity = f'bootstrap_t{t:04d}'
         mixed.append(EvaluationShard(identity, len(mixed), task['suite'], task['task_id'],
-            task['horizon'], (16, 17, 18, 19), task['horizon'] * 96 * 3))
-        panel[identity] = dict(stage='adapt', task=t)
-        for arm in ('video0', 'video1', 'no_video', 'MT'):
+            task['horizon'], tuple(run['adaptation_states']), task['horizon'] * 12))
+        panel[identity] = dict(stage='bootstrap', task=t)
+        for arm in ('video0', 'video1', 'no_video'):
+            identity = f'adapt_t{t:04d}_{arm}'
+            mixed.append(EvaluationShard(identity, len(mixed), task['suite'], task['task_id'],
+                task['horizon'], tuple(run['adaptation_states']), task['horizon'] * 192))
+            panel[identity] = dict(stage='adapt', task=t, arms=[arm])
             identity = f'final_t{t:04d}_{arm}'
             mixed.append(EvaluationShard(identity, len(mixed), task['suite'], task['task_id'],
                 task['horizon'], tuple(range(16)), task['horizon'] * 16))
@@ -61,13 +65,15 @@ def ready_ids(root):
     plan = read_json(Path(root) / 'queue_plan.json')['panel']
     with sqlite3.connect(Path(root) / 'work.sqlite', timeout=60) as database:
         ready = {row[0] for row in database.execute('SELECT job_id FROM work_ready')}
+    finals = {identity for identity,row in plan.items() if row['stage']=='final'}
     return [identity for identity, row in plan.items()
-            if row['stage']=='adapt' or row.get('arm')=='MT' or identity in ready]
+            if row['stage']=='bootstrap' or (identity in ready and
+                (row['stage']!='final' or finals.issubset(ready)))]
 
 
-def condition_ready(root, task, arm):
+def condition_ready(root, task, arm, *, stage='final'):
     with sqlite3.connect(Path(root) / 'work.sqlite', timeout=60) as database:
-        database.execute('INSERT OR IGNORE INTO work_ready(job_id) VALUES (?)', (f'final_t{task:04d}_{arm}',))
+        database.execute('INSERT OR IGNORE INTO work_ready(job_id) VALUES (?)', (f'{stage}_t{task:04d}_{arm}',))
 
 
 def _publish(queue, claim, args, record, rows, successes=0):
@@ -102,9 +108,10 @@ def features(args, runtime, tasks):
 
 
 def bootstrap(args, runtime, runner, task):
-    """Four actual MT cases run ONCE/task, then three independent score consumers."""
+    """16 MT cases/task: four old cases plus 12 new, physically shared once."""
     root = args.root / 'bootstrap' / f'task_{task["global_task_id"]:04d}'
-    missing = [i for i in range(16, 20) if not (root / f'state_{i:03d}/row.json').exists()]
+    states = read_json(args.root/'run_contract.json')['adaptation_states']
+    missing = [i for i in states if not (root / f'state_{i:03d}/row.json').exists()]
     if not missing and (root / 'complete.json').exists():
         if not read_json(root / 'complete.json')['complete']:
             raise ValueError('registered bootstrap is incomplete')
@@ -116,24 +123,27 @@ def bootstrap(args, runtime, runner, task):
         dest.mkdir(parents=True, exist_ok=True)
         for name in ('history.pt.gz', 'row.json'):
             (dest / name).symlink_to(source / name)
-    write_json_atomic(root / 'complete.json', dict(complete=True, unique_episodes=4,
-        logical_condition_consumers=3, noise_root=ADAPT_NOISE, states=list(range(16,20)),
+    write_json_atomic(root / 'complete.json', dict(complete=True, unique_episodes=len(states),
+        logical_condition_consumers=3, noise_root=ADAPT_NOISE, states=states,
+        old_reused_episodes=4,new_unique_episodes=12,
         parameters='MT300merged_complete_r8_identity', prefix_source='this_batch_real_own_interaction'))
 
 
-def reuse_same_condition_MT_final(root, directory, condition_name, ref, weights, state_ids):
-    original = read_json(root / 'run_contract.json').get('same_condition_MT_final_reuse_root')
-    if not original or ref != 'MT300': return
-    old = read_json(Path(original) / 'conditions' / condition_name / 'complete.json')
-    if old['final_parameter_ref'] != 'MT300': return
+def reuse_fixed_MT_final(root, directory, arm, ref, weights, state_ids):
+    """Every unchanged policy uses the one pre-registered official MT128 source."""
+    if ref != 'MT300': return
+    original = read_json(Path(read_json(root/'run_contract.json')['fixed_MT_reference']))
+    task = int(directory.name.split('_')[1])
+    rows = {r['init_state_id']:r for r in original['rows'] if r['global_task_id']==task and r['arm']=='MT'}
+    if set(rows)!=set(range(16)): raise ValueError('official MT reference is incomplete')
     for i in state_ids:
         target = directory / f'state_{i:03d}.json'
         if target.exists(): continue
-        original_row = Path(original) / 'final' / directory.name / target.name
-        row = read_json(original_row)
+        row = dict(rows[i])
         if row['actual_parameter_ref'] != 'MT300' or row['settling_steps'] != 10:
-            raise ValueError('same-condition MT final source violates fixed policy or settling')
-        row.update(reused_same_condition_MT_final=True, original_execution_row=str(original_row),
+            raise ValueError('official MT source violates fixed policy or settling')
+        row.update(arm=arm,teacher_demo=None if arm in ('MT','no_video') else int(arm[-1]),
+            reused_fixed_MT_reference=True, original_reference=str(read_json(root/'run_contract.json')['fixed_MT_reference']),
             new_compilation_LoRA=weights, new_compilation_parameter_ref=ref)
         write_json_atomic(target, row)
 
@@ -149,12 +159,12 @@ def final_cases(args, runtime, runner, task, arm, state_ids):
         if not receipt['complete']: raise ValueError('final policy is not frozen')
         weights = receipt['final_LoRA']; ref = receipt['final_parameter_ref']
         state = load_file(weights, device=str(runtime.device))
-        reuse_same_condition_MT_final(args.root, directory, source.name, ref, weights, state_ids)
+    reuse_fixed_MT_final(args.root, directory, arm, ref, weights, state_ids)
     requests = [dict(task=task, state=state, parameter_ref=ref, state_id=i,
         noise_root=FINAL_NOISE, episode_id=f'final_t{task["global_task_id"]:04d}_{arm}_state_{i:03d}',
         capture_history=False, capture_hidden=False, capture_phi=False, uses_teaching=False)
         for i in state_ids if not (directory / f'state_{i:03d}.json').exists()]
-    for result in runner.run(requests):
+    for result in runner.run(requests) if requests else ():
         row = result['row']; init = result['request']['state_id']
         if row.get('model_failure') or row.get('budget_truncated'):
             raise RuntimeError('incomplete final case cannot replace a scientific result')
@@ -172,16 +182,30 @@ def work_event(kind, worker):
     print('EMBER_WORK_EVENT ' + json.dumps(dict(kind=kind, worker=worker)), flush=True)
 
 
+def compile_conditions(args, runtime, runner, context, task, arms, phi):
+    outputs=[]
+    for arm in arms:
+        base=args.root/'conditions'/f'task_{task["global_task_id"]:04d}_{arm}'
+        if not (base/'complete.json').exists():
+            compiler=Compilation(args.root,runtime,runner,context,task,arm,phi)
+            compiler.run();del compiler
+        outputs.append(str(base/'complete.json'))
+        condition_ready(args.root,task['global_task_id'],arm)
+        work_event('ready',args.worker_id)
+    return outputs
+
+
 def worker(args, runtime, runner, context, tasks):
     queue = args.root / 'work.sqlite'; plan = read_json(args.root / 'queue_plan.json')['panel']
     phi = None
-    if args.command == 'worker': phi = frozen_phi(args.root, runtime.device)
+    if read_json(args.root/'run_contract.json')['prediction_recompute_enabled']:
+        phi = frozen_phi(args.root, runtime.device)
     while True:
+        with sqlite3.connect(queue,timeout=60) as database:
+            if database.execute("SELECT COUNT(*) FROM jobs WHERE status='failed'").fetchone()[0]: break
         eligible = ready_ids(args.root)
-        if args.command=='mt-final': eligible=[i for i in eligible if plan[i].get('arm')=='MT']
         claim = claim_next(queue, worker_id=args.worker_id, eligible_job_ids=eligible)
         if claim is None:
-            if args.command == 'mt-final': break
             work_event('idle', args.worker_id)
             # The sole owner wakes a persistent consumer on actual new ready work.
             # No interval polling, CPU/GPU forward, or stage self-notification.
@@ -192,31 +216,21 @@ def worker(args, runtime, runner, context, tasks):
         row = plan[claim.shard.job_id]; task = next(t for t in tasks.values() if t['global_task_id']==row['task'])
         tick = time.monotonic()
         try:
-            if row['stage'] == 'adapt':
+            if row['stage'] == 'bootstrap':
                 bootstrap(args, runtime, runner, task)
-                free,_=torch.cuda.mem_get_info(runtime.device)
-                if runner.slots<8 and free>16*1024**3:
-                    runner.close();runner.slots=8
-                    write_json_atomic(args.root/'physical_slot_selection'/f'{args.worker_id}.json',dict(
-                        initial_valid_bootstrap_slots=4,registered_next_branch_slots=8,free_MiB=int(free/1024**2),
-                        prior_full_native_B4_peak_GiB=25.502,logical_cases_unchanged=True))
+                for arm in ('video0','video1','no_video'): condition_ready(args.root,row['task'],arm,stage='adapt')
+                output,successes=[str(args.root/'bootstrap'/f'task_{row["task"]:04d}'/'complete.json')],0
+            elif row['stage'] == 'adapt':
                 arms = row.get('arms', ('video0','video1','no_video'))
-                for arm in arms:
-                    base = args.root / 'conditions' / f'task_{row["task"]:04d}_{arm}'
-                    if not (base / 'complete.json').exists():
-                        compiler = Compilation(args.root, runtime, runner, context, task, arm, phi)
-                        compiler.run(); del compiler
-                    condition_ready(args.root,row['task'],arm)
-                    work_event('ready', args.worker_id)
-                output, successes = [str(args.root / 'conditions' / f'task_{row["task"]:04d}_{arm}/complete.json')
-                    for arm in arms], 0
+                output, successes = compile_conditions(args,runtime,runner,context,task,arms,phi),0
             else:
+                if runner.slots!=16: runner.close();runner.slots=16
                 output = final_cases(args, runtime, runner, task, row['arm'], claim.shard.init_state_ids)
                 successes = sum(r['success'] for r in output)
             adapt = row['stage'] == 'adapt'
-            rows = len(claim.shard.init_state_ids) if adapt else len(output)
+            rows = len(claim.shard.init_state_ids) if row['stage']!='final' else len(output)
             _publish(queue, claim, args, dict(complete=True, work=row, output=output,
-                row_count_basis='shared_bootstrap_cases' if adapt else 'final_cases',
+                row_count_basis='practice_states' if row['stage']!='final' else 'final_cases',
                 compiled_conditions=len(output) if adapt else None,
                 seconds=time.monotonic()-tick, peak=memory_peak(runtime.device), actual_slots=runner.slots), rows, successes)
             work_event('ready', args.worker_id)
@@ -228,7 +242,7 @@ def worker(args, runtime, runner, context, tasks):
 
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('command',choices=['features','train','worker','mt-final'])
+    p.add_argument('command',choices=['features','train','worker'])
     p.add_argument('--root',type=Path,required=True)
     p.add_argument('--worker-id')
     p.add_argument('--resume',type=Path)
@@ -249,6 +263,8 @@ def main():
     write_json_atomic(args.root / 'code' / f'{args.command}_{args.worker_id or context.rank}_{identity["commit"]}.json',
         dict(**identity, world=context.world_size, rank=context.rank, frame_chunk=args.frame_chunk, slots=args.slots))
     if args.command == 'train':
+        if not read_json(args.root/'run_contract.json').get('Phi_training_enabled',True):
+            raise ValueError('this frozen-Phi scientific run forbids shared training')
         from .learning import train
         train(args, context); return
     run = read_json(args.root / 'run_contract.json')

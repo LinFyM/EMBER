@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import math
-from copy import deepcopy
 
 import torch
 from torch import nn
@@ -279,26 +278,3 @@ def candidate_tokens(owner, features, history, states, candidates, responses, co
     values = torch.cat(tokens)[None]
     values = values + owner.set_attention(values, values, values, need_weights=False)[0]
     return owner.norm(values[0])
-
-
-class IndependentValue(nn.Module):
-    """Independent final-use BCE model; no behavior heads or shared parameters."""
-    def __init__(self, beta):
-        super().__init__()
-        object.__setattr__(self, 'layout', beta.layout)
-        self.candidate_query = nn.Parameter(beta.candidate_query.detach().clone())
-        self.context = nn.Parameter(beta.types.weight[2].detach().clone())
-        for name in ('static', 'reader', 'candidate_attention', 'response_attention',
-                     'set_attention', 'responses', 'practiced', 'norm'):
-            setattr(self, name, deepcopy(getattr(beta, name)))
-        self.counts, self.head = nn.Linear(2, 256), nn.Linear(256, 1)
-        for layer in (self.counts, self.head):
-            nn.init.zeros_(layer.weight)
-            nn.init.zeros_(layer.bias)
-        self.requires_grad_(True)
-
-    def forward(self, features, history, states, candidates, responses, counts):
-        if not candidates or 'STOP' in candidates:
-            raise ValueError('Phi only scores the current practiced valid candidate set')
-        values = candidate_tokens(self, features, history, states, candidates, responses, self.context, counts)
-        return self.head(values).squeeze(-1)

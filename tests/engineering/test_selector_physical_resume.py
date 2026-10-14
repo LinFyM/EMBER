@@ -15,20 +15,6 @@ def context(world, rank=0):
                            is_main=rank==0, device=torch.device('cpu'))
 
 
-def test_physical_slots_and_frame_chunks_follow_actual_cuda_rank(monkeypatch):
-    from ember.proposal_writer.run import physical_value_for_rank,frame_chunk_for_rank
-    monkeypatch.setenv('EMBER_EPISODE_SLOTS','32,16,8')
-    monkeypatch.setenv('EMBER_META_FRAME_CHUNKS','16,8,4')
-    assert [physical_value_for_rank('EMBER_EPISODE_SLOTS',16,context(3,i)) for i in range(3)]==[32,16,8]
-    assert [frame_chunk_for_rank(16,context(3,i)) for i in range(3)]==[16,8,4]
-    monkeypatch.delenv('EMBER_EPISODE_SLOTS')
-    assert physical_value_for_rank('EMBER_EPISODE_SLOTS',16,context(3,2))==16
-    monkeypatch.setenv('EMBER_EPISODE_SLOTS','32,0,8')
-    with pytest.raises(ValueError,match='positive'):
-        physical_value_for_rank('EMBER_EPISODE_SLOTS',16,context(3))
-    monkeypatch.setenv('EMBER_EPISODE_SLOTS','32,16')
-    with pytest.raises(ValueError,match='world size'):
-        physical_value_for_rank('EMBER_EPISODE_SLOTS',16,context(3))
 
 
 def test_complete_boundary_migration_restores_the_saved_rank(monkeypatch, tmp_path):

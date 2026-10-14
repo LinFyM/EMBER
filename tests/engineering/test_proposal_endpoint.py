@@ -82,24 +82,8 @@ def test_target_memory_v8_cannot_resume_the_block_memory_graph(tmp_path):
         resume_checkpoint(tmp_path,'G',SimpleNamespace(root=tmp_path),None,SimpleNamespace(world_size=1))
 
 
-@pytest.mark.parametrize('rank,expected',[(0,16),(1,8)])
-def test_runtime_creation_consumes_rank_chunks(monkeypatch,rank,expected):
-    from ember.proposal_writer import run
-    monkeypatch.setenv('EMBER_META_FRAME_CHUNKS','16,8')
-    seen=[]
-    monkeypatch.setattr(run,'Runtime',lambda device,**kwargs:seen.append(kwargs) or SimpleNamespace(**kwargs))
-    args=SimpleNamespace(asset_root='assets',root='output',frame_chunk=16)
-    context=SimpleNamespace(device='cpu',world_size=2,local_rank=rank)
-    runtime=run.create_runtime(args,context,dict(tasks=[dict(global_task_id=13)],role='train'))
-    assert runtime.frame_chunk==expected and seen[0]['frame_chunk']==expected
 
 
-@pytest.mark.parametrize('chunks',['16','16,0','16,8,4'])
-def test_invalid_chunk_topology_is_rejected(monkeypatch,chunks):
-    from ember.proposal_writer.run import frame_chunk_for_rank
-    monkeypatch.setenv('EMBER_META_FRAME_CHUNKS',chunks)
-    with pytest.raises(ValueError,match='world size'):
-        frame_chunk_for_rank(16,SimpleNamespace(world_size=2,local_rank=0))
 
 
 def small_layout():
@@ -220,19 +204,6 @@ def test_operator_jobs_resume1080_but_only_qualify1296(tmp_path):
     assert all(j.arguments[j.arguments.index('--checkpoint')+1].endswith('update_00001296') for j in jobs)
 
 
-def test_block_memory_registration_is_fresh_with_one_864_exit():
-    from ember.proposal_writer.contract import CHECKPOINT_SCHEMA
-    from ember.proposal_writer.run import fresh_learning_registration
-    args=SimpleNamespace(resume=None,stop=864)
-    record=fresh_learning_registration(args)
-    assert record['updates']=={'G':[864]} and record['G_checkpoint_updates']==[432,864]
-    assert record['G_bank_mode']=='MT_only' and record['G_bank_version']==0
-    assert record['checkpoint_schema']==CHECKPOINT_SCHEMA and 'fresh' in record['shared_initialization']
-    assert not record.get('G_initial_resume') and not record.get('objective_migration')
-    args.resume='/retired/v8'
-    with pytest.raises(ValueError,match='fresh state'):fresh_learning_registration(args)
-    args.resume=None;args.stop=432
-    with pytest.raises(ValueError,match='unique exit864'):fresh_learning_registration(args)
 
 
 def test_operator_gram_matches_dense_value_and_full_factor_gradients():

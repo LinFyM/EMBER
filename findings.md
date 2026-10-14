@@ -11991,3 +11991,9 @@ Phi新消费者复用共同编码，beta/G/source冻结，零head首B4只先教h
 固定G38349/beta18原真实路径，只改变共享独立Phi最终选择组合；完整180/576prefix/1286项BCE与有效编码梯度通过。Phi167较旧163得13失9/净+4，较首G165净+2、MT153净+14，低于D72 175与D144168；task与suite分布/成功集合/旧强点及负例全部在/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/independent_value_fixed_paths/results.json。单点不叫稳定完整方法，不能仅因胜旧selector归因主要控制能力已解决。
 原nonheld14个MT优于G pair反例只correct MT2/14（64/101），6个RL末prefix MT优于全部G仍0/6；held396多候选也0MT，4单MT强制出口单列。task等权Phi选中query回报.715856481对beta.715639468，BCE.522808683/Brier.046751195/regret.018590856。这些排序反例在训练内仍有，不宜仅归held外推；也不将此有限安排的阴性推广为独立BCE普遍不可行。工程真实信用与信息墙成立，不把科学不充分当bug续修；主讨论依§16事前分支裁决，无自动第二块/阈值/温度/计数规则或beta更新。
 5530原观测native输入含失败已完成448复用，原940/1573响应只读复用；全400选择先封存后看final。234真实变化候选新final/66783步、162同完整候选+4MT原行复用，旧1988实践/683330步仍为方法依赖，不叫zero-interaction。完整209 Phi参数/198实际Adam step180/4rank RNG齐全；11共同未用结构参数如实记录。工程源码c683ff03、验收与限制见同ROOT analysis/completion_20261014/acceptance.json及report.md；6.776979351GPUh含失败、首次观测119.741min。未新增相邻点/视频controls/Test/新后继。
+
+## 484. §16科学消费与§17纯视觉入口的可失败检验（2026-10-14）
+
+main直接消费§16原行后的精确边界：2/14改选MT都是tie，严格MT排序0，6RL末prefix反例0/6；BCE部分回报水平学习不等于候选区分。167对MT净14中task16占9；停止固定G第二Phi/规则/β及dtype补救，完整解释引用原ROOT analysis/main_scientific_readout/interpretation_20261014.md，不把科学阴性当bug或判所有BCE无效。
+唯一新§17相对旧G改变教学h/特征层级/H/训练owner，不能把旧G差异都归去L；只有V对VL隔离直接语言入口。source Gemma前向真实512图像prefix、无L/action suffix/probe/旧meta；V Reader只视频，VL追加冻结exact L词embedding，两policy执行仍读L。没有真实H/候选参数/static任务提示，固定真实MT中心零残差输出完整38 LoRA；纯视觉仍能由物体/背景/终态识别task，拟合或V>VL不证明操作知识。
+原36E/144demos46–49、全38BA/D38、fresh共有seed/Adam/同B4流、共同2160早停/否则8640及各唯一576+400已完整授权；0新query训练/实践/controls/Test。资产audit0缺项，实际4679/max92与heldmax91、B0全零，不据旧coordinates文字重建。CPU仅认证接口/真实流/共享初始化及全BA梯度，未认证source Gemma实际GPU或闭环。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_compiler，全文design§17及inputs/asset_manifest.json，原正负证据和强MT/首G/D高点与邻点保持，无自动第二块。

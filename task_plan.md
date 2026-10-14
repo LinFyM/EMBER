@@ -1,3 +1,10 @@
+## 2026-10-14 §16已科学消费；唯一active §17纯图像Gemma编译器匹配V/VL
+
+main已直接消费§16：167较首G仅+2；14pair两次改选MT均为精确tie，0严格正确排序，6RL反例0/6。停止固定G第二Phi块/规则/dtype/β补救，解释只引independent_value_fixed_paths/analysis/main_scientific_readout/interpretation_20261014.md，不重算旧科学分析。新授权全文已纳入唯一design§17：V真实视频→冻结vision/projector→source Gemma仅512图像prefix→fresh有序Reader→共同六层完整decoder；VL只在Reader额外接exact L，两臂policy仍读L。没有H、执行hidden、当前task参数、Actor/价值/实践输入。
+原36=24+审计support12、144教学4679stride5帧/最大92、held400最大91、原36E/D38/643584坐标/r8/38-target/实际MT B0零原件齐全。共同seed2026101417/语言独有2026101418、fresh同Adam、完整BA/4+rankSUM与同预注册B4流，2160两mean都>=.95才共同早停，否则两臂至8640；4320/6480仅恢复，9仅工程真实首轮/恢复不作选点。各唯一576+400，共1952/1968/failed16/1043040，0新训练query-实践-MTbootstrap-controls-Test/第二块。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_compiler。data1独立quota实核1548.62GiB/2048、共享容量与个人用量独立，48GiB峰值可容纳；只存一份9.1387GiB冻结视觉缓存，大资产原地引用，held就绪同读各独立LoRA，不落巨型held特征池。CPU实际流/authority/公共初始化/MT零头与全BA梯度通过，实际source Gemma GPU消费者未验收，不冒充运行。新增4个集中模块复用FactorLayout/FactorEncoder/OperatorObjective/EpisodeRunner/queue，退休3个已消费Phi模块/独立头及旧一次性CLI与专属物理配置测试，原冻结/权重不删；当前net源码收缩，结构self-review无新增hard。
+独占dev→main clean pushed→新detached后按live双节点/数量6或8-node6/真实显存吞吐安排缓存与两臂并行。原派发user事件02:54:45.949Z、110–205min不重置；一个owner真实退出等待与可靠整批/异常唤醒，验收/Git后一次main01a13399，无阶段ACK/Queue/第二等待者。完整目标未完成，后继由main科学消费接续。
+
 ## 2026-10-14 10:26 §16独立Phi180有限整批完成；唯一400与工程验收交付
 
 Phi180 strict correct400=167，旧完整163/首G165/MT153/D72 175/D144 168全部保留；对旧完整得13失9净+4，未宣称稳定完整方法或视频因果。原14 pair MT优于G反例正确选MT 2/14、6 RL末prefix反例0/6；held396多候选0次MT，4单MT出口单列。有限180/400已完成，主讨论按原§16自主科学消费接续，0active计算/自动后继/第二块/Test；完整EMBER目标未完成。

@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**完整方法已选；§12–15有限计算和科学消费已完成。§16独立Phi180及唯一correct400有限批亦已完整工程交付：167/400，对旧163净+4、首G165净+2，低于D72 175/D144168；主讨论依事前分支消费接续。当前0active计算/自动后继/第二同目标块，未派发新的训练。没有新G/实践/训练query/β更新/Test；完整EMBER目标尚未取得。**
+2026-10-14。**§12–16有限计算与科学消费已完成；固定G第二Phi块/规则回退/β后继停止。当前唯一active为§17纯图像source Gemma教学入口的fresh V/VL匹配编译器、2160共同节点/至多8640有效B4与各seen576+strict validation400。完整实施/冻结/训练/读出均已授权；当前CPU实现和正式冻结准备，未宣称GPU启动。0新实践/训练query/MT bootstrap/controls/Test/自动后继。完整EMBER目标尚未取得。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -692,3 +692,84 @@ fresh AdamW lr1e−4、betas(.9,.95)、eps1e−8、weight_decay1e−4、clip1，
 唯一Phi180 complete400为167，对旧163 R154/G13/L9/net+4、首G165净+2、MT153净+14、D72 175净−8/D144168净−1，breadth7/8；全部分布、success-set和强参照不删。原14pair MT优于G反例2/14、6RL末prefix0/6，held396多候选0MT且4单MT出口单列。nonheld task等权选中query回报Phi.715856481/beta.715639468，BCE.522808683/Brier.046751195；有限共享安排仍未普遍学成这些训练内排序反例，不只归held迁移，也不推广为BCE普遍无效。科学取舍按上方事前分支由main消费，无自动续训/小扫或规则回退。
 完整G38349/beta18冻结、Phi180/198实际Adam/sampler/4rank RNG、当前prefix及query信息墙/实际模块信用已通过；5530缺输入含首失败448复用，原940/1573响应保留。全400选择先封存后读旧final，162同完整候选+4MT复用、234真实变化候选paired final/66783步，0failed partial/新G-实践-训练query-β-Test；旧1988实践/683330步和旧整ROOT费用仍为依赖。单点没有相邻稳定或视频因果资格。
 canonical原件：/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/independent_value_fixed_paths/{results.json,nonheld_readout.json}，工程acceptance/report/verify在同ROOT analysis/completion_20261014；成功代码c683ff03 clean pushed detached，28 GPU收据6.776979351GPUh含失败，首次观测到退出119.741min。完整原合同和阴性保留，有限批结束，后继需主讨论实际科学接续，不从历史active字样恢复旧实验。
+
+
+## 17. 完整有限合同：纯图像Gemma教学入口与匹配语言对照
+
+main科学裁决，2026-10-14。Owner最新明确“我暂时有点事，你就此继续自主推进”，并提出教学特征提取只输入视频、实际policy执行继续使用语言。本合同是新授权；§16已科学消费并停止，不恢复§14/15/23。唯一执行者01a133e5-50f0-7d20-a893-df95c7387630；工程/运行/Git独占闭环，main负责科学消费，不设例行ACK。
+
+## 1. 要改变的判断、边界与完整方法
+
+最终目标仍是合法教学编译为唯一完整LoRA，在固定Val/Test明显、稳定胜强MT，保持合理覆盖并证明教学有用。现有G训练任务有控制增益，但held165/175→168有限；继续固定候选排序得到167、关键训练反例仍未学会，因此先改变G的条件入口和可训练读取，而非继续选择头。
+
+本批检验两点：去掉教学侧语言及其action-probe h后，视频能否经可学习Reader编译出有效LoRA；在相同视觉特征、标签与优化下，直接给G语言会帮助还是妨碍迁移。主候选V只接有序视频；匹配参照VL只额外接exact L。实际执行policy两臂都接当前RGB/proprio/exact L，MT基底和官方控制不弱化。
+
+这是第一步的完整视频编译方法，不预设实践回路必须保留。两臂均无自身H、execution hidden、当前task参数或候选选择输入；固定MT起点不是任务提示。此选择防止通过自身实践形成另一条语言相关任务入口，也避免把旧Reader/H路线偷偷保留。它不宣称合法自身hidden没有价值，未来是否引入真实反馈须由本批结果另作科学判断，不自动接五轮或任何固定轮数。
+
+本批相对旧G同时改变教学h、特征层级、H及训练owner，不能把与旧G的差异单独归因于去L。**V与VL这一对才隔离直接L入口**；旧强MT153、首G165、D72=175/D144=168仍是闭环参照。训练拟合、seen成功或V>VL均不单独证明操作知识；纯视觉也可利用物体/背景/终态识别任务。
+
+## 2. 实际特征—读取—参数—执行链
+
+复用唯一冻结source/MT merged base、normalization、assets、stride5和真实双相机视频。每帧的两路RGB经原vision tower与projector得到512×2048 patch tokens，再仅把这512个真实图像tokens输入冻结source Gemma原生prefix-only分支。mask为真实有效图像prefix的双向可见，position0…511；`inputs_embeds=[images,None]`，不传文字、无action suffix/noise/state/时间probe。输出post-norm图像hidden z_img为512×2048。不得复用旧含L上下文化z或h，也不加载旧Gemma/Action Meta权重；source所有参数冻结。
+
+两臂共享这份冻结z_img。V的模型输入仅z_img、真实frame indices及有效长度；task/file/demo/ID只供调度审计。VL额外使用相同source tokenizer和冻结语言embedding得到exact L tokens，经独立Linear2048→256投影；不把语言重新送进Gemma，因此视觉表征完全相同。不是给V空字符串、zero-image或无目标action expert。
+
+Reader沿既有有效算子简化：Linear2048→256加512空间/相机地址；每frame 8个共享learned queries对该frame图像tokens做4-head attention；VL在同一attention memory追加有效语言tokens，V不追加。slots加真实frame-index sinusoidal位置后展平为保序序列，4层256维/4-head/FF1024 Transformer读取全过程。VL末端也保留有效语言tokens经既有correspondence attention对ordered sequence读取后的输出；V仅保留ordered视频memory。两臂均经共同的最终LayerNorm256后交给decoder，不新增decision或history token。不平均frames/features，不预存可训练Reader输出。没有history_time、facts、actual-hidden、static parameter或Actor分支；对应无消费者参数不伪造loss或保留trainable空壳。
+
+完整参数decoder复用已验证的FactorLayout和六层endpoint FactorEncoder：38 target/rank8/原643584有效坐标/原bank尺度/原MT中心。输入parent归一化坐标恒为真实MT中心的零残差，仅固定地址和共享可训练参数；每层block→rank→target→rank→block通信及block直接memory attention保持。A=A0+S_A*y_A，B=S_B*y_B，完整76 factors/38处sBA一起导出；无任一task私有lookup/输出embedding或外置控制器。第一步output head全零可使两臂精确从MT行为开始，这不要求所有参数第一步有梯度。
+
+真实部署为z_img(V)→Reader→所有38 BA，合入冻结MT基底后，以语言条件自身h_exec计算Δh=sBAh_exec并原生10-flow闭环。G没有语言仍可通过BA作用于执行时已有的语言条件hidden，这是可表示性；能否学到可迁移视觉—控制映射是本批要测的事情。G/Reader只在final前编译，final同condition只用一套固定LoRA，无teacher输入、在线适配或第二expert。
+
+## 3. Fresh共享训练与监督来源
+
+新结构fresh，不移植旧G、D或Phi的Reader/decoder/optimizer。两臂共同Reader/decoder参数使用一个固定fresh seed2026101417生成后相同复制，VL独有language projection及correspondence attention使用独立seed2026101418，不能因多实例随机数消耗改变公共初始化。VL多出的是语言入口及必要读取参数，实际数量分别报告，不声称总参数数完全相同。冻结source/MT/E/尺度不是fresh对象。单canonical实现用本批V/VL条件开关，禁止复制两套Writer实现；比较结束按main取舍退休失败路径，历史在Git/冻结与formal结果保存。
+
+只用原36=train24+已审计support12和原144合法教学池（每task demos46–49，顺序按原panel）。所有E、D38、S_G、task LoRA contract和panel只读引用 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit` 所引用的唯一all36公共教师权威；不得新选E、增加meta任务、改held划分或重估held尺度。E学习用的原episode0–45与教学46–49跨episode；这是授权non-held共享Writer监督，不是新condition下准备轨迹再微调最终LoRA。
+
+唯一目标为现有 `OperatorObjective` 的38层等权完整sBA Frobenius误差、原all36 D_l归一化。每logicalB4由4个不同task各1条video组成，loss/4后跨物理rank SUM；每9更新遍历36task一次，每连续四遍每task四条video各一次。对于零基update u，round=u//9、slot=u%9、cycle=round//4、within=round%4；task排列为default_rng(SeedSequence([20261014,17,0,cycle,within])).permutation(原TASKS)，取[4*slot:4*slot+4]；该task的video排列为default_rng(SeedSequence([20261014,17,1,cycle,task])).permutation(原panel.policy_videos)，取within。两臂完全相同流；等权36task，不按帧数/任务长度改loss权重。E只进loss，不进G或特征cache。
+
+所有新Reader和六层decoder共同更新，Gemma/vision/source/MT/E固定。AdamW lr1e-4、betas(.9,.95)、eps1e-8、wd1e-4、clip1，无scheduler/rank/LR/seed/scale矩阵；BF16正常算子、BA小Gram与误差FP32。缓存的是冻结z_img和VL冻结词embedding；不得缓存会随更新改变的Reader/memory/decoder特征。0FM/native-action训练目标、0PG/selector、0新环境训练query/实践。
+
+这条梯度链有明确但有限的含义：每层残差R=BA−E_B E_A，使B收到与R A^T成正比的梯度、A收到与B^T R成正比的梯度，再经输出坐标、block-memory attention回到各frame的选择和时序Reader。它教共享Reader把可见内容映射到在其它episodes上学得的控制算子；没有把教学frame的动作当标签输入G。固定Gemma只提供表征，操作语义由这种监督学到与否未获保证；共同E允许视觉任务识别解，而且BA接近不保证闭环接近，所以最终判断仍依赖同初态真实控制与held迁移。
+
+## 4. 有界学习及唯一端点
+
+每臂最多8640个有效B4=34560 condition曝光，144条件各240次；只有36个独立E映射，不能把重复曝光写成新数据。2160是两臂共同的早期学习节点，完整读一次全144 BA/task分布并保存完整checkpoint。如果**两臂**全144均值都≥.95（初始MT的该均值由D38定义为1），两臂共同在2160结束；否则两臂都继续至8640。该规则只限制完全未明显学起的投入，不以loss选历史最佳或只给较弱臂加时。早停也执行下述完整闭环，不由loss推断控制结果。4320/6480仅恢复checkpoint，8640唯一正常端点；2160/末点无其它probe或模型选择。
+
+完整checkpoint包括新Writer/optimizer/sampler-cursor/RNG/topology/schema/初始化和冻结依赖，允许完整边界的显式物理拓扑迁移，保持两臂同逻辑曝光，非bitwise exact。若个别物理失败，保存的有效更新复用并保留失败费用；不把不完整checkpoint暖启动伪称resume。
+
+8640按旧endpoint约0.107s/B4@4rank和本次增加可训练Reader、4679帧/144 pool估计每臂20–60min学习，实际应以第一完整36task轮和最长视频记录修正。这不是每架构必须耗时数小时或未来固定课程；工程异常/资源边界按实际处理，不能用内部loss漂亮保证延长。末点后无自动第二块。
+
+## 5. 两臂各自完整且严格配对的闭环
+
+每臂唯一端点：原36×query16=576 seen，加固定validation8×50=400，合计976；两臂共1952完整final。seen每task用原teacher_demo、原query16 states/scene/policy RNG；复用原MT340/576、E455/576、首G427/576及D414/576等强参照的原行，不重跑旧模型。query16本就是训练内功能读出且部分重叠教师选择，不称独立泛化。
+
+held每臂400个task-video condition，沿已冻结strict state-video schedule，50条video/task各一次。与旧MT153/首G165/旧full163/Phi167/D175/D168复用相同init/scene/env+policy RNG；每condition两个新LoRA须来自各自唯一端点。Gemma冻结教学前向可在一次真实视频读取后供两臂使用，但不得平均两套LoRA。400最终反馈不产生梯度、不用于早停/选点；Test封存。0新MT bootstrap、G实践或迭代修订；这次候选确为零交互编译，不能把旧交互方法也重写为零交互。
+
+工程应复用实际官方scene restoration/10 settling、render256/model224、双相机rotate180、8state/7action、flow10/action5/horizon220/280/300/520及support已登记400，不替换为新默认RNG。总科学上限1952 finished，≤1968 physical starts，≤16 failed partial，含dummy≤1043040环境步；异常缺行保持partial，不缩矩阵/静默补另一seed。无其它checkpoint rollout、wrong/shuffle/reverse/no-video/K或Test。
+
+保存各臂原行、per-task/suite、breadth、相对MT/强G的R/G/L/churn/Jaccard，以及V对VL的相同配对集合。邻点稳定性未运行，不把本批两臂当邻点；不存在跨checkpoint union、逐task拼装或oracle candidate分数。若完整原始参照具有已登记字段缺项，保留限制而非重新采集。
+
+## 6. 事前结果分支
+
+1. 两臂都不能有效拟合/控制：当前冻结image-only Gemma＋Reader/F＋36E学习组合未建立；不据此判视频不够或语言必需，不自动解冻Gemma/扫规模/LR来保护同一弱假设。
+2. 两臂seen学会而held仍弱：训练任务识别/目标回归仍不足以解决迁移；禁止把去L当已证实操作理解，不自动用更多重复曝光救回同一构造。
+3. V明显优于VL且对强MT有宽泛保持与增益：支持在此表示/监督/预算下限制直接L有帮助；仍需后续单点相邻稳定与视频内容controls，不自动打开Test。
+4. VL更好或相近：接受语言可能提供有效归纳线索/更易学，不因Owner提出假设而压低参照；结合seen拟合和held分布判断，不把有限预算差异写成原则否定。
+5. 只胜旧失败支、只有集中小净增、或低于已有强G：如实保留成本差别（新方法0适应），但不是完整性能目标。停止当前有界投入后main仍须自主消费与接续，不能等Owner再许可。
+
+## 7. 实现、资源、时间与交付
+
+ROOT预定 `/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_compiler`，由执行者完成资源检查后创建。原144元数据实计4679帧/max92，BF16 z_img约9.1387GiB；仅训练特征持久共享，held推理就绪即生成两套LoRA后释放特征，不落整套held巨型cache。完整checkpoint/两臂LoRA/日志/临时峰值初估48GiB上限，已有大source/MT/data/tokenizer原地引用；实际quota不足不得转data0。每launch检查strg01独立data1 quota、个人用量及共享容量；双节点实际显存准入、总6/8和node6约束保持，无GPUh硬cap。
+
+冻结视觉特征可用最多6个动态持久消费者；学习不加载大policy，按真实B4/s、长视频峰值选择1–4 ranks/arm及两臂并行组合。相同更新不要求相同物理rank数；有实测可用显存必须验证有收益的物理batch/cache/并行，第一完整36task轮计入有效训练，不另开discarded profile或以首batch推断最长视频。不要因为logicalB4就把整批并发锁4卡；两独立臂、已完成臂的物化/评测及时使用释放资源。learned Reader输出不可跨更新缓存。
+
+两臂从同一冻结纯视觉输入生成LoRA，原576/400队列long-first/cost-balanced，persistent workers，不固定task/GPU或一面板一个worker；各自端点ready可物化/执行，另一臂继续训练，但最终配对只在两完整臂合并后读。训练特征共享避免重复大前向，环境最终原行必须真实执行。
+
+工程30–60min、冻结输入5–15min、并行学习20–60min、两臂物化和1952环境约40–70min且可交错，整批从实际派发起约110–205min；依据旧缓存144仅约103秒（含旧前端）、旧1952整批约191min含工程失败与既有endpoint吞吐，给范围而非保证。首次实测显著改变预计时只修正一次，不重置准备时钟。
+
+复用现有FactorLayout/FactorEncoder、OperatorObjective、checkpoint/queue/official evaluator owners；必要新增集中于纯视觉读取/双臂共享学习消费者，执行者应用结构技能，不扩通用框架或保留第二active Writer。旧完整G/selector/Phi的历史读取可走旧clean frozen代码，当前无消费者的一次性入口按生命周期退休；formal结果、旧冻结与关键权重不删除。科研记录/Git写入与代码集成由执行者串行完成，main本轮只写本analysis原件。
+
+先独占dev branch/worktree完成实现、实际消费者窄验证、clean pushed main和detached frozen源再formal launch。验证关注纯图像prefix真实调用/无L与h输入、两臂同公共初值/流、实际模块梯度、完整BA/finite、信息墙与配对；不加全树hash/逐tensor防御扫描、不重复主讨论科学分析。若真实实现改变本合同计算、标签、损失或评测口径，提交具体边界由main裁决；普通已定位工程问题执行者直接修复后新冻结接续。
+
+一个整批调度owner、一条可靠整批或实质异常回报；无阶段Queue/第二等待者/定时日志巡检。新任务完成后执行者工程验收/Git→一次交main01a13399；main随即读取原件、科学裁决和自主接续。没有自动第二训练块、实践、control矩阵或Test。

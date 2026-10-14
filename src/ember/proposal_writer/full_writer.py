@@ -27,13 +27,14 @@ def learning_tasks(asset_root,root,task_ids,role):
     authority=read_json(path);requested=tuple(task_ids)
     function_run=run['schema_version']=='ember_full_g_native_function_identification_v1'
     value_run=run['schema_version']=='ember_independent_value_fixed_paths_v1'
-    schema=('ember_independent_value_task_authorities_v1' if value_run else
+    image_run=run['schema_version']=='ember_image_only_gemma_compiler_v1'
+    schema=('ember_image_compiler_task_authorities_v1' if image_run else 'ember_independent_value_task_authorities_v1' if value_run else
             'ember_full_g_function_task_authorities_v1' if function_run else 'ember_selector_transfer72_task_authorities_v1')
-    roles=['phi'] if value_run else ['G'] if function_run else ['theta','baseline']
+    roles=['compiler'] if image_run else ['phi'] if value_run else ['G'] if function_run else ['theta','baseline']
     if (authority['schema_version']!=schema
             or Path(authority['run_root']).resolve()!=Path(root).resolve()
             or authority['training_tasks']!=run['training_tasks']
-            or authority['seen36']!=run['G_seen_tasks'] or authority['novel36']!=run['G_novel_tasks']
+            or (not image_run and (authority['seen36']!=run['G_seen_tasks'] or authority['novel36']!=run['G_novel_tasks']))
             or not requested or len(set(requested))!=len(requested)
             or set(requested)-set(run['training_tasks'])):
         raise ValueError('runtime needs the audited exact run-scoped non-held task authority')

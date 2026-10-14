@@ -419,6 +419,7 @@ def claim_next(
     worker_id: str,
     preferred_task: tuple[str, int] | None = None,
     physical_gpu: int | None = None,
+    eligible_job_ids: Sequence[str] | None = None,
 ) -> EvaluationClaim | None:
     """Claim every pending max-horizon shard before ordinary dynamic work."""
 
@@ -429,43 +430,23 @@ def claim_next(
     with closing(_connect(path)) as connection:
         connection.execute("BEGIN IMMEDIATE")
         try:
-            if physical_gpu is None and preferred_task is None:
-                row = connection.execute(
-                    """SELECT job_id, payload FROM jobs WHERE status='pending'
-                    ORDER BY CASE WHEN preferred_gpu IS NOT NULL THEN 0 ELSE 1 END,
-                    estimated_cost DESC, ordinal ASC LIMIT 1"""
-                ).fetchone()
-            elif physical_gpu is None:
-                row = connection.execute(
-                    """SELECT job_id, payload FROM jobs WHERE status='pending'
-                    ORDER BY CASE WHEN preferred_gpu IS NOT NULL THEN 0 ELSE 1 END,
-                    CASE WHEN suite=? AND task_id=? THEN 0 ELSE 1 END,
-                    estimated_cost DESC, ordinal ASC LIMIT 1""",
-                    preferred_task,
-                ).fetchone()
-            elif preferred_task is None:
-                row = connection.execute(
-                    """SELECT job_id, payload FROM jobs WHERE status='pending'
-                    ORDER BY CASE WHEN preferred_gpu IS NOT NULL THEN 0 ELSE 1 END,
-                    CASE
-                        WHEN preferred_gpu=? THEN 0
-                        WHEN preferred_gpu IS NULL THEN 1
-                        ELSE 2 END,
-                    estimated_cost DESC, ordinal ASC LIMIT 1""",
-                    (physical_gpu,),
-                ).fetchone()
-            else:
-                row = connection.execute(
-                    """SELECT job_id, payload FROM jobs WHERE status='pending'
-                    ORDER BY CASE WHEN preferred_gpu IS NOT NULL THEN 0 ELSE 1 END,
-                    CASE
-                        WHEN preferred_gpu=? THEN 0
-                        WHEN preferred_gpu IS NULL THEN 1
-                        ELSE 2 END,
-                    CASE WHEN suite=? AND task_id=? THEN 0 ELSE 1 END,
-                    estimated_cost DESC, ordinal ASC LIMIT 1""",
-                    (physical_gpu, *preferred_task),
-                ).fetchone()
+            where, parameters = "status='pending'", []
+            if eligible_job_ids is not None:
+                if not eligible_job_ids:
+                    connection.commit()
+                    return None
+                where += ' AND job_id IN (' + ','.join('?' for _ in eligible_job_ids) + ')'
+                parameters.extend(eligible_job_ids)
+            order = ['CASE WHEN preferred_gpu IS NOT NULL THEN 0 ELSE 1 END']
+            if physical_gpu is not None:
+                order.append('CASE WHEN preferred_gpu=? THEN 0 WHEN preferred_gpu IS NULL THEN 1 ELSE 2 END')
+                parameters.append(physical_gpu)
+            if preferred_task is not None:
+                order.append('CASE WHEN suite=? AND task_id=? THEN 0 ELSE 1 END')
+                parameters.extend(preferred_task)
+            order.extend(('estimated_cost DESC', 'ordinal ASC'))
+            row = connection.execute('SELECT job_id, payload FROM jobs WHERE ' + where +
+                ' ORDER BY ' + ','.join(order) + ' LIMIT 1', parameters).fetchone()
             if row is None:
                 connection.commit()
                 return None

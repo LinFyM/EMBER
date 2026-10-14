@@ -125,11 +125,12 @@ def quota_headroom(report, *, peak_GiB=128):
 
 class Batch:
     """One coordinator owns resource decisions; completion futures release slots."""
-    def __init__(self, workspace, devices, *, root=RUN_ROOT, required_free_MiB=12000):
+    def __init__(self, workspace, devices, *, root=RUN_ROOT, required_free_MiB=12000, work_event=None):
         self.workspace, self.devices, self.root = Path(workspace), list(devices), Path(root)
         self.lock = threading.Lock()
         self.running = {}
         self.required_free_MiB=required_free_MiB
+        self.work_event=work_event
         self.code = subprocess.check_output(['git','rev-parse','HEAD'],cwd=workspace,text=True).strip()
         if subprocess.check_output(['git','status','--porcelain'],cwd=workspace,text=True).strip() or subprocess.check_output(
                 ['git','branch','--show-current'],cwd=workspace,text=True).strip():
@@ -238,7 +239,12 @@ class Batch:
                 ceiling=int(arguments[arguments.index('--frame-chunk')+1])
                 env['EMBER_META_FRAME_CHUNKS']=','.join(str(min(ceiling,16 if a['free_MiB']>=chunk16_headroom else
                     8 if a['free_MiB']>=21000 else 4)) for a in admissions)
-            command+=[str(self.workspace/'scripts/video_guided_proposal_writer.py'),*arguments]
+            if arguments[0]=='video-effect':
+                command+=['-m','ember.video_effect.run',*arguments[1:]]
+                env['EMBER_EPISODE_EVENT_LOG']=str(destination/'episode_events.jsonl')
+                env['TMPDIR']='/data1/user/ymdai/ember_ipc'
+            else:
+                command+=[str(self.workspace/'scripts/video_guided_proposal_writer.py'),*arguments]
             # One batch owner can dispatch independent fixed readout panels.
             # Their output roots stay explicit; admission and job billing remain
             # under this owner's master root, rather than silently overriding it.
@@ -263,7 +269,19 @@ class Batch:
             remote='cd '+shlex.quote(str(self.workspace))+' && exec '+shlex.join(['env',*[f'{k}={v}' for k,v in env.items()],*command])
             invocation=['ssh','-o','BatchMode=yes','-o','ConnectTimeout=10',node,remote];child_env=os.environ.copy()
         with (destination/'process.log').open('w') as log:
-            code=subprocess.call(invocation,cwd=self.workspace,env=child_env,stdout=log,stderr=subprocess.STDOUT)
+            if self.work_event is None:
+                code=subprocess.call(invocation,cwd=self.workspace,env=child_env,stdout=log,stderr=subprocess.STDOUT)
+            else:
+                child=subprocess.Popen(invocation,cwd=self.workspace,env=child_env,stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
+                try:
+                    for line in child.stdout:
+                        log.write(line);log.flush()
+                        if line.startswith('EMBER_WORK_EVENT '):
+                            self.work_event(job.identity,json.loads(line[len('EMBER_WORK_EVENT '):]),child.stdin)
+                    code=child.wait()
+                finally:
+                    child.stdin.close();child.stdout.close()
         elapsed=time.time()-start
         return self._settle(job, devices, destination, receipt, code, elapsed)
 

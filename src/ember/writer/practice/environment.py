@@ -37,9 +37,11 @@ def budget_truncated(*,remaining,consumed,done,steps,official_horizon):
 def step_environment(env,slot,command,episode_contract,current_raw,controls,task):
     capture = episode_contract.get('diagnostic_occupancy_capture')
     if capture:
+        external = command.get('command_kind') == 'external_saved_action'
         record_replan(slot, {'observation.state': current_raw['proprio']}, {},
-            torch.from_numpy(command['normalized_chunk']).unsqueeze(0),
-            command['actions'][:min(5, controls - slot['steps'])])
+            None if external else torch.from_numpy(command['normalized_chunk']).unsqueeze(0),
+            command['actions'][:min(5, controls - slot['steps'])],
+            command_kind='external_saved_action' if external else 'model_prediction')
     executed = []
     for action in command['actions'][:min(5, controls - slot['steps'])]:
         slot['obs'], reward, done, _ = env.step(action.tolist())
@@ -61,12 +63,18 @@ def step_environment(env,slot,command,episode_contract,current_raw,controls,task
     return result,current_raw,reward,done,len(executed)
 
 
+def physical_result(result,physical,env,slot):
+    if physical is not None:
+        result['physical']=physical.observe(env,slot['obs'])
+        result['absolute_control_step']=int(slot['steps'])
+
+
 def _serve(pipe, contract, physical_gpu, affinity):
     """One active environment per process; reset cannot seed another slot."""
     if affinity:
         os.sched_setaffinity(0, affinity)
     torch.set_num_threads(1)
-    pool, slot = None, None
+    pool, slot, physical = None, None, None
     operation_steps = 0
     started = time.monotonic()
     try:
@@ -93,6 +101,11 @@ def _serve(pipe, contract, physical_gpu, affinity):
                 snapshot = command.get('snapshot')
                 if snapshot is not None:
                     settling = 0
+                if episode_contract.get('own_physical_observations'):
+                    from ember.writer.practice.geometry import PhysicalEntities
+                    physical = PhysicalEntities(env, task, episode_contract['libero_paths'])
+                else:
+                    physical = None
                     episode_contract['environment']['dummy_settling_steps'] = 0
                 remaining = command.get('remaining')
                 if remaining is not None:
@@ -135,6 +148,7 @@ def _serve(pipe, contract, physical_gpu, affinity):
                 raise ValueError('unknown environment slot operation')
             ended = bool(done or slot['steps'] >= controls or command['kind'] == 'numerical_failure')
             result.update(episode_ended=ended, operation_seconds=time.monotonic() - tick)
+            physical_result(result,physical,env,slot)
             if command.get('capture_snapshot') and not ended:
                 result['snapshot'] = capture_snapshot(env, slot['obs'], slot)
             if ended:

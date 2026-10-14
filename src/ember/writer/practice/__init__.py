@@ -87,7 +87,7 @@ class EpisodeRunner:
         capture=request.get('capture_history',True)
         history = History(states={request['parameter_ref']: {k: v.detach().cpu() for k, v in request['state'].items()}} if capture else {})
         slot = dict(request=request, history=history, raw=None, ready=False, key='', steps=0,
-                    pending=None, initial_steps=int(request.get('snapshot', {}).get('episode_control_steps', 0)))
+                    pending=None, initial_steps=int((request.get('snapshot') or {}).get('episode_control_steps', 0)))
         episode_contract=self.contract
         if request.get('registered_scene') is not None or request.get('capture_root') is not None:
             episode_contract=deepcopy(self.contract)
@@ -102,16 +102,21 @@ class EpisodeRunner:
             if capture.get('passive_trace'):
                 capture['passive_trace']['trace_root']=str(capture_root/'continuous_traces')
         if self.event_log is not None:
+            restored = int(request.get('snapshot', {}).get('episode_control_steps', 0)) if request.get('snapshot') else 0
             self._event('submitted_start',episode_id=request['episode_id'],task=request['task']['global_task_id'],
-                        maximum_steps=request['task']['horizon']+10)
+                        maximum_steps=request['task']['horizon'] - restored + (0 if request.get('snapshot') else 10),
+                        maximum_control_steps=request['task']['horizon'] - restored,
+                        maximum_dummy_steps=0 if request.get('snapshot') else 10)
         self.environments.submit(index, 'start', task=request['task'], contract=episode_contract,
             state_id=request['state_id'], noise_root=request['noise_root'], remaining=request.get('remaining'),
             snapshot=request.get('snapshot'), capture_snapshot=request.get('snapshots', False))
         return slot
 
-    def _observation(self, slot, raw, snapshot=None):
+    def _observation(self, slot, raw, snapshot=None, physical=None):
         history = slot['history']
         key = f"{slot['request']['episode_id']}_o{len(history.observations):05d}"
+        if physical is not None:
+            raw = {**raw, 'physical': physical}
         if slot['request'].get('capture_history',True):history.observations[key] = raw
         slot.update(raw=raw, key=key, snapshot=snapshot)
 
@@ -135,12 +140,15 @@ class EpisodeRunner:
                 self.environment_steps += len(executed)
                 actions = torch.zeros(5, 7)
                 actions[:len(executed)] = executed
-                self._observation(slot, result['raw'], result.get('snapshot'))
+                self._observation(slot, result['raw'], result.get('snapshot'), result.get('physical'))
                 if slot['request'].get('capture_history',True) or slot['steps']==0:
                     slot['history'].records.append(dict(pre=pending['pre'], post=slot['key'],
                     hidden=pending['hidden'], snapshot=pending['snapshot'], noise_seed=pending['noise_seed'],
                     failure_type=result.get('failure_type'),
                     normalized_actions=pending['normalized_actions'],
+                    planned_raw_actions=pending['planned_raw_actions'],
+                    requested_actions=pending['requested_actions'],
+                    command_kind=pending['command_kind'],
                     parameter_ref=slot['request']['parameter_ref'], episode=0, step=slot['steps'],
                     proprio=torch.stack((before['proprio'], result['raw']['proprio'])), actions=actions,
                     executed=torch.arange(5) < len(executed),
@@ -149,14 +157,15 @@ class EpisodeRunner:
                                            float(result.get('failure_type') is not None)])))
                 slot['steps'] += len(executed)
             if result['kind'] == 'start':
-                self._observation(slot, result['raw'], result.get('snapshot'))
+                self._observation(slot, result['raw'], result.get('snapshot'), result.get('physical'))
             if result['episode_ended']:
                 row = result['row']
                 row.update(actual_parameter_ref=slot['request']['parameter_ref'],
                            behavior_actor_uses_teaching=slot['request'].get('uses_teaching', False))
                 slot['history'].episodes.append(row)
                 self._event('finished',episode_id=slot['request']['episode_id'],
-                    environment_steps=row['environment_steps'],success=bool(row['success']))
+                    environment_steps=row['environment_steps'],success=bool(row['success']),
+                    control_steps=row['environment_steps']-row['settling_steps'],dummy_steps=row['settling_steps'])
                 finished.append((index, dict(request=slot['request'], row=row, history=slot['history'])))
             else:
                 slot['ready'] = True
@@ -176,7 +185,8 @@ class EpisodeRunner:
         batch = {key: torch.cat([value[key] for value in inputs]) for key in inputs[0]}
         with self.runtime.execution.activate([live[i]['request']['state'] for i in indices]), autocast(self.runtime.device):
             tick = time.monotonic()
-            capture=[pos for pos,index in enumerate(indices) if live[index]['request'].get('capture_history',True)]
+            capture=[pos for pos,index in enumerate(indices) if live[index]['request'].get('capture_history',True)
+                     and live[index]['request'].get('capture_hidden',True)]
             capture_index={pos:i for i,pos in enumerate(capture)}
             phi_capture=[pos for pos,index in enumerate(indices) if pos in capture_index and live[index]['request'].get('capture_phi',True)]
             phi_index={pos:i for i,pos in enumerate(phi_capture)}
@@ -195,13 +205,24 @@ class EpisodeRunner:
             slot = live[index]
             if pos in phi_index:slot['history'].image_features[slot['key']] = velocity.phi[phi_index[pos]].clone()
             evidence=torch.nan_to_num(hidden[capture_index[pos]]).clone() if pos in capture_index else None
+            planned = torch.from_numpy(commands[pos, :5].copy())
+            requested = commands[pos]
+            override = slot['request'].get('first_actions') if slot['steps'] == 0 else None
+            command_kind = 'model_prediction'
+            if override is not None:
+                requested = np.asarray(override, dtype=np.float32)
+                if requested.shape != (5, 7) or not np.isfinite(requested).all():
+                    raise ValueError('registered first intervention must be a finite raw 5x7 block')
+                command_kind = 'external_saved_action'
             slot.update(ready=False, pending=dict(pre=slot['key'], hidden=evidence,
                 normalized_actions=torch.nan_to_num(normalized[pos, :5].detach().float().cpu()).clone(),
+                planned_raw_actions=planned, requested_actions=torch.from_numpy(requested[:5].copy()),
+                command_kind=command_kind,
                 snapshot=slot['snapshot'], noise_seed=seeds[pos]))
             if bool(finite[pos]):
                 capture_fields=({'normalized_chunk':normalized[pos].detach().float().cpu().numpy()}
                                 if self.contract.get('diagnostic_occupancy_capture') else {})
-                self.environments.submit(index, 'step', actions=commands[pos], noise_seed=seeds[pos],
+                self.environments.submit(index, 'step', actions=requested, command_kind=command_kind, noise_seed=seeds[pos],
                                          capture_snapshot=slot['request'].get('snapshots', False), **capture_fields)
             else:
                 self.environments.submit(index, 'numerical_failure')

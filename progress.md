@@ -5,6 +5,8 @@ Owner已恢复自主科学推进与必要实验授权；主讨论完整派发 [v
 当前CPU实施，尚无GPU/model/环境正式计算。共享Phi和关系评分各独占codex worktree，状态恢复/首块事实/terminal物理读出/参数更新/整批编排与根记录Git由本实验独占集成；code-architecture-gate baseline及最终增长记录一次，退休旧ImageCompiler专属入口，历史frozen/原件不动。正式来自new clean pushed detached；run ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015；新增峰值96GiB，data1独立quota已初核余量，正式launch再live双节点6/8/node6。
 限制2832提交/684160control+28320dummy=712480总步/最多16工程失败，按condition96starts及64horizon预留完整原子更新；真实失败和unknown原件计账，0重复waiter/阶段Queue。整批首次派发暂估3–6h，未作新profile保证；首次有效消费者只在吞吐实际改变时修正ETA，完整结果验收/Git后一次交main。
 
+实现所有权（当前CPU消费者已通过，GPU机制尚待正式首批）：新增8个source文件，职责为labels既存标签/OOI墙、perception真实patch关系学习、scoring唯一六组DTW、learning共享stream/完整Phi恢复、compiler真实分支/VJP/完整参数与Adam、run薄正式消费者/持久就绪队列、practice/geometry自身真实物理观测，以及包入口。共用EpisodeRunner/slots/native/PolicyContexts/Batch/SQLite queue保留，source源码净增约674行；退休8个旧ImageCompiler专用文件/入口共1115行，旧formal frozen/Git/原件与公共FactorEncoder等不动。没有第二Actor/环境engine/Writer；新source-owner在整批消费后按需退休任务入口，公共state/score/native能力保留。CPU实际224标签/216OOI、联合四格独立executed mask、旧canonical SQLite动态就绪过滤与源码syntax消费者已通过；未以CPU检查声称native GPU/真实物理闭环已通过。源码复杂函数已按物理绑定、输入加载与提案准备各自职责收敛；queue旧>600行/旧复杂函数未增，领取分支缩减，未进行无关重构。
+
 ## 2026-10-15 Owner恢复自主推进授权；当前无新active设计或计算
 
 Owner最新原话：“我困了，睡觉去了，之后你自主推进”“不不不，该开就开，我又不能梦里给你发消息同意你开实验”“不要停下来，明早醒来我检查你的进展”。此前先不开实验限制已明确解除；主讨论可自主决定必要有界科学实验，不等待Owner逐项批准，既有科学/信息墙/评测/资源边界保持。

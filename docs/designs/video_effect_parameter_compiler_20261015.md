@@ -2,6 +2,8 @@
 
 2026-10-15。Owner已明确恢复自主科学推进及必要有界实验，并要求持续推进。本稿由主讨论定案；登记到progress后成为唯一active design。它替代whole_method_reassessment_20261015.md §9尚未实施的终局Q-only议案，不恢复旧G/ImageCompiler、关系G/F或局部J加权FM训练。
 
+监督—原生算子—梯度—新初态迁移的完整科学说明见[学习链分析](../analyses/video_effect_learning_chain_20261015.md)。这是本合同解释，非另一active design或附加执行门槛。
+
 ## 1. 所解释的不足与本次实质修改
 
 强G的427/576、165/400及BA端点175/168的正证据保留；多实践没有稳定胜过首G、纯V/VL的seen拟合增长没有带来held增长也保留。不能再用更多固定E曝光、去L或一次局部视频依赖来代替反馈怎样形成有用参数修订。
@@ -59,6 +61,12 @@ Phi共享监督只用其余28项：target [2,4,5,7,14,15,17,19,22,25,28,29,35,36
 复用relation_grounded_writer_20261006/labels中对应的既存位置、旋转、关节、语义、mask与registry；按原对齐合同读取，不从RGB伪造sim state，不重建整库。先核实际schema和这224条覆盖；若缺失则回报具体对象，不静默改demo或任务。OOI相关性是新加的训练标签，只从这28项原公开对象关注列表映射到既存实体registry；region owner只作为相关实体，不假装其为区域内/成功谓词。
 
 内部8项的demo0/1仅作为action-hidden教学条件。其离线标签只允许在所有适应、最终读出及模型冻结后，供§11预注册只读诊断使用；不进入Phi共享训练、任务内评分、LoRA更新或checkpoint选择。固定validation/test的任何离线标签均不读，新Test使用为0。
+
+### 4.1 实际schema修订（2026-10-15，主讨论裁决）
+
+224条真实几何标签及stride5/末帧身份齐全。公开OOI region若真实owner存在但被原registry table/floor规则排除，则该任务8条的整组OOI监督mask；实际仅task25的main_table_stove_front_region→main_table。保留224输入和所有其它几何/变化标签，不丢任务、不映flat_stove_1、不造区域/table实体、不读success谓词。实现按已核实arena owner排除事实判定，不设置task25路由；未知owner或解析错误仍raise。
+
+OOI有效条件216/224，各组原1/8系数保持，missing组可导地贡献0，另7组不重归1/7；mask不记0误差或负标签。label metadata保存region/owner/exclusion/groupmask，相关性只作为可表示关注对象proxy，不称所有因果相关实体有完整标签。probe标签仍在最终冻结后sealed读取，同类缺项届时如实报告，不静默替换。
 
 ## 5. 视觉关系模型的具体监督
 

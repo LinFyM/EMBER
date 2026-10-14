@@ -12045,3 +12045,9 @@ main直接消费原完整结果/全144节点/实际日志：V/VL未超过MT held
 
 canonical两模块只扩展登记的更新节点/完整恢复校验、可无环境结束的结果消费者和non-held投入gate，未改变数学/目标/输入/完整LoRA或新增Writer。CPU真实模型/Adam恢复284/290 step8640、sampler/RNG、下一36更新全部144流与两控制分支/gate实际消费者通过；唯一owner的共同节点/独立ready见seen/双held逻辑经canonical Batch CPU消费，冻结778ff8ea后实际首36task/8649均保存且全链信用正。模型接通/实际开始不证明优化量有效，10800保护与25920/seen/heldgate结果仍待整批。
 初始live cap6/world3+3具有已测.249/.222s最长rank B4与有效B4/任务权重依据，原完整冻结cache按实需GPU缓存、可用显存用于避免重复搬运，未因首轮小占用声称全最长/最佳物理安排。多卡不更改科学流，未来6/8/node6与slots按真实就绪工作和资源，inflight≤16保护本轮新失败额度。parent12.571GPUh/47失败、旧no-H2.371GPUh及MT436/123039步只读依赖，newcarry0、0重复旧batch或Test。一次首资源核查因首轮墙钟差异而进行，后续正常运行等待唯一整批退出，不陪跑或读中途分数。
+
+## 490. §18完整优化量增加改善seen，未形成held收益（2026-10-14）
+
+同一映射/参数/目标仅增加优化量：V/VL完整8640承接，10800全144改善8.846%/6.024%，按事前规则都到唯一25920；末点mean BA .185180383448/.170818593591。seen372→405、353→421，较各自8640分别得74失41/得94失26；两臂breadth35/36，task29为0。V retainedMT305未达306，VL315且四target suite净正通过，故两臂均支付原400，不放宽gate或择臂。
+held V149→148得28失29，VL151→141得23失33；对MT153 V R127/G21/L26/net−5/churn47，VL R118/G23/L35/net−12/churn58，breadth6/8/task23及39为0。首G165、D175/168、Phi167及完整分布/重合率不削弱；V对VL held净+7而两者均未胜MT。训练面板提升与较低BA没有带来held增量，不预先归因动态视频理解、欠训唯一根因或全方法不可行；完整科学消费/取舍由main负责，0自动第三同条件窗口或额外controls/Test。
+工程9.335s CPU原件验收通过：完整25920 ψ/284与290 Adam/sampler/三rank RNG、原144等权流/全链信用、872完整38-target LoRA、1952唯一原行/场景/全noise配对齐全，0失败/480317步/16.951125519GPUh，首次派发至完成213.044min。旧H12.571101360GPUh/47失败、no-H中止2.371076951GPUh与MT436唯一经历/123039步及未知旧专属费用另列。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640，results.json与analysis/engineering_completion_20261014/{acceptance.json,report.md}；source778ff8ea clean pushed detached，当前无active计算，整批一次交main。

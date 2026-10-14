@@ -1,3 +1,8 @@
+## 2026-10-14 §18完整交付；当前无active计算
+
+唯一refinement_from8640_01于13:14:02.831776Z exit0，CPU原件验收通过；两臂完整8640承接至25920、各17280新增有效B4、10800共同保护及seen gate均按原合同。seen V405/VL421，strict400 V148/VL141，未超过MT153或各自8640的149/151；完整原行、强参照/能力得失和全部费用保留。新增1952完整episode/0工程失败/480317步/16.951125519GPUh，派发到完成213.044min在150–240min内。
+本批执行完成，现无新active执行合同；工程验收/Git后一次交main科学消费与接续，完整EMBER目标未完成，无自动第三同条件窗口/Test/controls/第二等待者。根进度与findings§490记录结果；原件/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640/analysis/engineering_completion_20261014/{acceptance.json,report.md}，parent8640/原47失败/no-H成本只读保留。
+
 ## 2026-10-14 18:20 §18完整8640恢复已实际六卡执行
 
 唯一refinement_from8640_01/PID3961404于10:17:46.900832Z从clean pushed detached778ff8ea实际启动；launch逐job双节点live/data1独立quota后，两臂各world3在gpu01:0/4/5与1/3/6运行。原8640完整Reader/H/F及284/290 Adam step/原sampler/三rank RNG由实际GPU消费者承接；旧ROOT全部CP/cache/原失败与费用只读，0新cache/实践/query/Test，当前尚无新环境读出。

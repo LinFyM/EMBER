@@ -1,3 +1,10 @@
+## 2026-10-14 §18完整有界优化验收完成；当前无active计算
+
+唯一refinement_from8640_01于13:14:02.831776Z exit0，完整原件CPU验收9.335s通过，19个GPU job全部exit0，精确ROOT/冻结路径核对gpu01无残余consumer。计算source778ff8ea clean pushed detached，原8640完整状态/缓存、原47失败与旧费用只读保留；新完整25920 psi/284与290 Adam step/sampler/三rank RNG、各新增17280有效B4/原144同流与全链信用齐全。当前本批执行完成，暂无新的active执行合同，完整EMBER目标仍未完成；main负责消费与后继科学取舍，0自动第三同条件窗口/重试/controls/Test/第二等待者。
+10800全144相对原8640改善V8.846%/VL6.024%，按合同共同继续至25920。V seen405/MT retained305未通过306保持门槛；VL421/retained315及四suite净收益规则通过，因此两臂均做原strict400，未放宽gate。V held148、VL141，原各自8640为149/151，MT153、首G165、D72 175/D144168、Phi167保留。对各自8640的seen V R331/G74/L41/net+33、VL R327/G94/L26/net+68；held V R120/G28/L29/net−1、VL R118/G23/L33/net−10。对MT held V R127/G21/L26/net−5/churn47，VL R118/G23/L35/net−12/churn58；两臂breadth seen35/36（task29为0）、held6/8（task23/39为0）。本批seen提升未形成held增量，不把内部fit改善当成动态教学理解或补测依据。
+新ledger1952完整/1952提交上界/0失败/0在途/0未知步，共480317环境步，16.951125519GPUh、carry-in0，均在1952/1968/16/1043040合同内。父H批12.571101360GPUh/47失败/522600步上界、旧no-H中止2.371076951GPUh另列；原MT436唯一经历/123039步共享一次、旧专属GPU费用未知，不能称方法零交互。新增实践/训练query0，两臂各36 seen+400 held共872完整38-target LoRA，所有最终失败行有效且不重跑。
+原六卡gpu01 world3+3学习后接持久long-first共享ready队列，slots3/3/3/3/2/2总16，frame chunk64；本批真实H104/video91全部已消费，compile allocated12.915/reserved19.883GiB、execution9.447/10.164GiB。新ROOT实际约4.559GiB<16GiB初估，旧大cache只引用；09:41:00.214Z首次派发到完成213.044min，在原150–240min内，不重置准备时钟。完整原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640，results.json、endpoint_decision.json、seen_gate_decision.json及analysis/engineering_completion_20261014/{verify.py,acceptance.json,report.md,process_release.json,actual_readout_resources.json}。验收/Git后仅一次交main01a13399；迟到回执按ROOT/attempt/consumed判重。
+
 ## 2026-10-14 18:20 §18完整8640恢复已实际六卡执行
 
 唯一refinement_from8640_01/PID3961404于10:17:46.900832Z从clean pushed detached778ff8ea实际启动；launch逐job双节点live/data1独立quota后，两臂各world3在gpu01:0/4/5与1/3/6运行。原8640完整Reader/H/F及284/290 Adam step/原sampler/三rank RNG由实际GPU消费者承接；旧ROOT全部CP/cache/原失败与费用只读，0新cache/实践/query/Test，当前尚无新环境读出。

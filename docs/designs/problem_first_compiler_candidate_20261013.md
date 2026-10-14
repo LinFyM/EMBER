@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–17已完整消费，原§17 no-H中止与真实H批阴性/越界修订/全部费用保留。当前唯一active为已授权§18：完整承接V/VL8640的Reader/H/F、Adam/sampler/rank RNG，仅增加同一映射的优化量；先10800共同有界节点，未共同早停则25920唯一端点，再以预注册seen收益/保持/suite gate决定是否两臂都进入原strict400。当前778ff8ea新detached正式来源的两臂完整8640恢复已实际六卡执行，首有效36task周期及完整8649CP通过；0新实践/训练query/native/controls/Test/第三同条件窗口。原教学/H输入、V/VL语言比较、完整38-target输出及policy L保持；完整EMBER目标未完成。**
+2026-10-14。**§12–17已完整消费，§18唯一有界优化批现已完整工程验收并待main科学消费；当前无active计算或新执行合同。原§17 no-H中止与真实H批阴性/越界修订/全部费用保留。§18完整承接V/VL8640的Reader/H/F、Adam/sampler/rank RNG，按原10800共同保护规则到唯一25920；VL通过seen投入gate后两臂均完成原strict400，V148/VL141均低于MT153。完整新状态、1952原行/配对、0新失败及增量16.951125519GPUh保留，无自动第三同条件窗口/后继/controls/Test。原教学/H输入、V/VL语言比较、完整38-target输出及policy L保持；完整EMBER目标未完成。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -937,3 +937,8 @@ main已科学消费§17完整原件；本文件是实际后继授权，交执行
 - 实验侧独占dev分支/工程修改/根五份记录串行写入，main只写本分析目录。从clean pushed main建立新detached正式冻结，登记旧训练7f05来源、完整8640resume和新source身份，旧冻结不热改。验证后按仓库要求集成push和清理task-owned dev worktree，formal frozen与必要证据保留。
 - 原§17 12.571101360 GPUh、no-H中止2.371076951、旧MT依赖与未知专属费用分别保留；新批增量、继承依赖和累计费用不能混淆。原47失败不转移成新失败额度，也不能被删除。
 - 一个owner负责整批与真实退出事件等待；没有第二等待者、阶段Queue或普通ACK。仅整批完成/正常科学早停/真实异常边界通过一条可靠回报到main。执行者无须接收main日常思考，完成后main直接消费科学原件并自主接续。
+
+### §18 实际完整交付（2026-10-14；原科学合同不改）
+
+refinement_from8640_01于13:14:02.831776Z exit0；10800两臂全144相对改善8.846%/6.024%，原规则共同到25920。V seen405/MT保留305未过门槛，VL421/保留315及四suite净正通过，故两臂都完成原400；V148/VL141，原各自8640为149/151，MT153/首G165/D175与168/Phi167保留。末点BA .185180/.170819不代替闭环，未选中点/恢复点或加第三窗口。
+完整25920状态/原144等权流/全链信用与872完整38-target LoRA、1952配对原行已9.335s CPU验收；新0失败/480317步/16.951125519GPUh，首次派发到完成213.044min在150–240min内。旧失败/费用/436唯一MT经历依赖与未知成本分列，新增实践/训练query/Test0。source778ff8ea新detached冻结保留，GPU消费者已退出；ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640，完整results.json与analysis/engineering_completion_20261014/{acceptance.json,report.md}。当前本批执行完成、无新active计算；一次main科学消费/取舍接续，不自动重试/后继/追加controls。

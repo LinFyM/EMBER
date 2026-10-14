@@ -5349,3 +5349,9 @@ image_gemma_H_readout_resume_02 exit1是发布层expected8(actual state)对实�
 ## 2026-10-14 16:02 §17当前六卡正式读出接续
 
 新source8ecddd64 clean/pushed/detached修双臂每state计数；原H104/16行及seen1152 CPU复用，0重训/重跑。唯一resume03/PID3251604于07:59:09Z实起、six physical gpu01:3/2/0/4/5与gpu02:6，slots3/3/3/3/2/2稳态16；原最大held91帧/task39-state48-demo36的4注册final已实过/160.065s，与H104/新source峰值原件在OUT/longest_registered_consumer.json。固定1952/2015/63/1043040与8640/全noise/官方口径不动，新失败episode仍0，47旧保守失败不删。原16/1968越界和no-H scope-change成本历史保留。原时间估计已显著超，07:59起余45–75min依据实际两种physicalbatch原件，main一次有意义ETA修正收件，无阶段ACK/第二waiter/自动后继。全部science结果待原整批验收后main裁决。
+
+## 2026-10-14 §18有界共同优化完整端点及工程交付
+
+原§17 V/VL8640完整ψ/Adam/sampler/三rank RNG承接；唯一source778ff8ea clean pushed detached/attempt refinement_from8640_01。10800全144相对改善8.846%/6.024%，按共同保护规则都到25920（各新增17280有效B4）。V seen405/MT retained305未过306，VL421/retained315且四suite净正通过，按原合同两臂均做400；未选10800或恢复点。
+结果seen V405/VL421，对各自8640净+33/+68；held V148/VL141，对各自8640得28失29/得23失33，较MT153净−5/−12。首G165/D175与168/Phi167保留；各held breadth6/8/task23与39为0，全部per-task/suite/得失/churn/重合率在原results。工程通过与内部BA下降不等于held收益或动态知识证实，无自动第三同条件窗口。
+新1952完整/1952提交上界/0工程失败/0未知/480317步/16.951125519GPUh，原09:41:00.214Z派发→13:14:02.831776Z为213.044min，在150–240min内。旧H12.571101360GPUh/47失败/522600步上界、no-H2.371076951GPUh、MT436唯一经历/123039步及未知旧专属GPU费用分别保留，newcarry0。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640，analysis/engineering_completion_20261014/{verify.py,acceptance.json,report.md}完成原件验收；根记录/Git完成后一次main科学交付，当前无active计算或后继授权。

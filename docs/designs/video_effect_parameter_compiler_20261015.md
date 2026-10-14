@@ -2,6 +2,8 @@
 
 2026-10-15。Owner已明确恢复自主科学推进及必要有界实验，并要求持续推进。本稿由主讨论定案；登记到progress后成为唯一active design。它替代whole_method_reassessment_20261015.md §9尚未实施的终局Q-only议案，不恢复旧G/ImageCompiler、关系G/F或局部J加权FM训练。
 
+当前执行状态：§13有限joint schema纠正及完整512读出已完成并通过原件验收，当前无active计算或自动后继；下列合同及所有修订保留为执行历史，科学接续由main消费原件后决定。
+
 监督—原生算子—梯度—新初态迁移的完整科学说明见[学习链分析](../analyses/video_effect_learning_chain_20261015.md)。这是本合同解释，非另一active design或附加执行门槛。
 
 ## 1. 所解释的不足与本次实质修改
@@ -264,3 +266,5 @@ Phi固定后，完整读取每个合法教学condition，得到按真实顺序�
 
 §13工程落实：沿canonical ActualEpisodes仅由180个明确旧producer路径登记的schema视图导入，原数组/registry不写回；bootstrap和160首次分支自带MT300/RNG/override/snapshot实际来源。原prediction只读link，所有正式first draw保持baseline待重算，无旧proposal/CP/Adam。source只改compiler/run两个文件（+73/−12，净+61；409/273行、无新source文件/入口）；import load为旧schema一次桥，本实验持有，科学消费后退休其manifest迁移/旧baseline分支，历史formal frozen保留。canonical prediction缓存、独立producer namespace、arm集合与final同参数复用保持单一实现；final复用拆为独立职责，未扩大既有复杂worker/step。code-architecture-gate无hard、仅原复杂函数及必要draw迁移review信号，40–52行函数均≤60，未为形式拆Actor/engine。
 队列以10个独立condition为adapt项，而非5个task串行两视频；20既有bootstrap已登记complete，0重跑或并写共享H；六持久consumer long-first承接10适应+10final，参数/预算/逻辑task权重未改。就绪原件可及时评测，不静态task/GPU，也不提前空占等待不存在的额外阶段。CPU真导入/scorer/credit用真实4parent+16cached分支，shadow draw不进入formal；native完整梯度与fresh Adam由本批首有效更新验证，0额外profile/GT。
+
+§13实际完成：joint_schema_corrected_01于22:44:51.958Z exit0，执行afe6acc5 clean pushed detached；10完整38-target/r8 LoRA/Adam/RNG、26native更新18接受（5四成功/2两次无接受/3预算停止），CPU原件验收通过。唯一子根results有效MT67/V0 64/V1 70/no_video74；V0对MT R55/G9/L12，V1 R58/G12/L9，no_video全MT300/0接受，不将+7称学习。352旧行+144新final+16同condition MT复用组成512，累计实际final784；旧results/corrected_results/GT/预测均保留、不重算。新增500完整/98748control+2440dummy/1.873172839GPUh，累计2184完整/433706control+18000dummy=451706步/7.005042365GPUh，0失败partial/未知，仍在新旧联合边界内。六worker各slots16、19.002min，0profile，已退出；原派发、全部旧成本及sealed在修订前读取的例外保持。完整分布/配对/停止/资源/代码原件见子根analysis/engineering_completion_20261015/report.md及acceptance/paired_metrics，科学解释由main消费；无自动续块/GT/held/Test。

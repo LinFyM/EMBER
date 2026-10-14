@@ -1,5 +1,10 @@
 # EMBER findings
 
+## 2026-10-15 joint schema纠正完整读出：保留局部增益与整体限制
+
+恢复原none0/slide1/hinge2与q列合同后，10条件fresh MT300/空Adam共26native更新18接受；完整512逻辑行MT67/V0 64/V1 70/no_video74。V0对MT得9失12、V1得12失9；两视频均仍低于no_video（分别得8失18、得11失15），breadth均8/8，Long合计7/11对MT11/no_video14。相对旧错误实现60/58，新同臂分别得8失4、得15失3；这份实际改善不能被抹去，也不证明错误是全部低分的唯一原因或完整方法已获资格。no_video14次更新0接受且全MT300，其+7不是学到能力；同参数数值执行差异继续限制因果归属。
+原1120Phi/224输入、216OOI监督、240patch、全部预测与sealed均不重算，180旧physical只在有来源的导入视图转换；原GT受旧schema影响和sealed先读后纠正的例外继续保留。144新final+16同condition MT复用+352原行组成唯一新512；累计784实际final、2184环境提交/返回、451706步和7.005042365GPUh，所有旧阴性/无效参照/额外dummy成本不清零。完整原件及工程验收见`/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/joint_schema_corrected/analysis/engineering_completion_20261015/report.md`及同根results/paired_metrics；完整科学消费由main负责，本条不授权后继计算。
+
 本文件按编号与时点保留跨轮发现、正负证据和适用边界；历史“当前/主监督/下一步”不代表现行方法。
 当前授权、active design及运行状态只看[progress](progress.md)，历史入口见[research_history](docs/research_history.md)。
 

@@ -1,3 +1,9 @@
+## 2026-10-15 当前目标：交付已完成joint纠正整批，由main科学消费
+
+唯一[design§13](docs/designs/video_effect_parameter_compiler_20261015.md)已于22:44:51.958Z exit0并完成CPU原件验收，当前无active计算。10完整LoRA/Adam/RNG、26native更新/18接受及512配对齐；有效MT67/V0 64/V1 70/no_video74，原no_video仍全MT300，不把同参数+7叫学习。完整分布、保持得失和历史阴性保留；此8内部probe读出不代替strict held400。
+新增500完整交互/101188步/1.873172839GPUh，累计2184次/451706步/7.005042365GPUh、实际final784；352旧行+144新final+16同condition MT复用，0失败/未知。180旧schema只读视图及20bootstrap/160首次分支依赖、新freshMT/空Adam/原draw重算均已核；Phi/GT不重算，sealed先于纠正的例外保留。原首次18:16:48.556Z及两级预计不重置。
+本次仅完成根五记录/Git push与一次整批交main01a13399，原件入口为`video_effect_parameter_compiler_20261015/joint_schema_corrected/results.json`和同根`analysis/engineering_completion_20261015/`。六消费者已退出，两节点本用户CUDA为0。无自动续块、其它实验、GT/held/Test或第二等待者；后继科学判断归main，一次性导入桥按科学消费后的既定生命周期处理。
+
 ## 2026-10-15 10条件joint纠正批已实际启动
 
 唯一joint_schema_corrected_01/PID3855813于2026-10-14T22:25:51.829Z从clean pushed detached afe6acc5实际启动，ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/joint_schema_corrected。六实际job已各自live双节点/数量/node6/strg01 data1准入：gpu02:1/7/2/0/4/6，均slots16；原full-native16峰值25.084GiB/MT16峰值25.646GiB支持本批workload35,000MiB余量，16是本批原子分支/final的实际最大注册wave，逻辑nativeB4/权重/优化/参数集合不变，0profile。10独立condition动态long-first+就绪final由六持久worker消费，避免5个task串行两臂或空卡等待。

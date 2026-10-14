@@ -1,3 +1,9 @@
+## 2026-10-15：视频关系参数编译10条件joint协议纠正完整交付
+
+原Φ/teacher schema不变，own slide/hinge与q列恢复预注册语义；180已知旧producer自身physical仅导入视图转换，20唯一MT bootstrap/160首次分支复用占原逻辑预算。10条件fresh MT300/空Adam、原draw重算baseline/credit后26native更新18接受，产生完整最终LoRA/Adam/RNG；不重训Phi、不重开sealed/GT。有效512为MT67/V0 64/V1 70/no_video74：对MT分别得9失12、得12失9，仍低于全MT300的no_video，不能将其+7称学习。原V0 60/V1 58和全部阴性/同参数执行差异保留。
+正式纠正afe6acc5 detached，owner22:25:51.829Z→22:44:51.958Z/19.002min，六持久worker/slots16、0新profile。144新增final+16同condition MT复用、352保留原行；新500完整/101188步/1.873172839GPUh，累计2184完整/451706步/7.005042365GPUh、784实际final；失败partial/未知均0。原参数21:01冻结→sealed21:21→MT修订→本纠正的明确时序例外、旧无效MT/额外dummy及全部费用不抹去。六job已退出，live本用户CUDA0；当前无active计算或自动后继，科学消费归main。
+唯一读出`/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/joint_schema_corrected/results.json`，完整工程交付同根`analysis/engineering_completion_20261015/{report.md,acceptance.json,paired_metrics.json,condition_records.json,verify.py,resources.json,process_release.json}`。训练来源8801e701、原执行fe034f78、MT参照a986e7b2分别保存；一次性导入桥生命周期仍为本批科学消费后退休。
+
 ## 2026-10-14：§18完整8640承接的实际首周期与冻结身份
 
 正式来源778ff8ea/PID3961404，10:17:46Z唯一owner启动，10:20:28Z两world3臂首9有效B4/全36task/H104与完整8649CP实际通过。原source7f05/8640/Adam与RNG不重置，不复制144教学/36H缓存，不重复旧query/失败或称fresh新初始化。原全链输入/BA/控制与数学不变；actual source身份与父source分列。

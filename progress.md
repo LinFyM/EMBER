@@ -1,3 +1,13 @@
+## 2026-10-15 10条件joint纠正整批已验收；当前无active计算
+
+joint_schema_corrected_01于22:44:51.958Z exit0；clean pushed detached afe6acc5、六持久消费者运行19.002min，全部退出，live双节点本用户CUDA为0。CPU原件验收0.686秒通过，未模型/环境/DTW评分/GT重算。唯一有效读出为`/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/joint_schema_corrected/results.json`，同根`analysis/engineering_completion_20261015/report.md`及acceptance/paired_metrics/condition_records保存完整原件验收和分布。10套完整38-target/r8 LoRA/Adam/流/RNG齐，26次native更新18接受，停止5四成功/2两次无可接受提案/3预算；180旧schema仅导入视图，20bootstrap/160首次MT分支只读复用，原draw重算baseline/credit、fresh MT300/空Adam，0Phi/GT重训或重算。
+
+有效512行MT67/video0 64/video1 70/no_video74。V0对MT R55/G9/L12/net−3，V1 R58/G12/L9/net+3；相对no_video分别得8失18、得11失15；两个视频成功集交53、得17失11。breadth均8/8，各task/suite及全部不利条件已保存。no_video原14更新0接受/全MT300，+7不能称学习提升；旧60/58、同参数执行差异及全部低分保留，不将修正等同机制成功或strict held400资格。
+
+512由352未改原行+144新final+16同condition原/新均MT300复用组成，累计实际final784。新增500提交/500返回、98748control+2440dummy=101188步、1.873172839GPUh/carry0，失败partial/未知均0；累计2184实际提交/返回、433706control+18000dummy=451706步、7.005042365GPUh，保留原无效MT/恢复前额外dummy及全部费用，满足新936/231486和累计2620/592758。新根5.767GiB<24GiB预估；全slots16为已登记最大原子wave，最大reserved15.539GiB，0新profile。原18:16:48.556Z/3–6h、本修订45–90min与所有旧成本不重置；训练8801e701、旧执行fe034f78、正式MT参照a986e7b2、本次纠正afe6acc5分列。
+
+原参数21:01冻结→sealed21:21→MT修订→本次纠正的时序例外继续明确，未重开sealed/GT；原文件不覆盖。当前有限合同已完成，验收/Git后一次交main01a13399科学消费，当前无active计算/自动后继/Test/第二waiter。一次性旧schema导入桥仍按登记在本批科学消费后退休，本次完成不提前删除共享源码或formal冻结。
+
 ## 2026-10-15 10条件joint纠正批已实际启动
 
 唯一joint_schema_corrected_01/PID3855813于2026-10-14T22:25:51.829Z从clean pushed detached afe6acc5实际启动，ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/joint_schema_corrected。六实际job已各自live双节点/数量/node6/strg01 data1准入：gpu02:1/7/2/0/4/6，均slots16；原full-native16峰值25.084GiB/MT16峰值25.646GiB支持本批workload35,000MiB余量，16是本批原子分支/final的实际最大注册wave，逻辑nativeB4/权重/优化/参数集合不变，0profile。10独立condition动态long-first+就绪final由六持久worker消费，避免5个task串行两臂或空卡等待。

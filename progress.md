@@ -1,3 +1,9 @@
+## 2026-10-14 11:50 §17完整纯视觉缓存与两臂真实首轮通过
+
+同一owner/源cbfbf3e2已完成全部144条pure-feature队列，六缓存子进程均exit0，实际wall最长96.743s。原最长task38/demo46的92帧真实source image-prefix产出92×512×2048 BF16，原454帧stride5加末帧453完整；实测chunk32/32/28、source计算3.776s、allocated10.850/reserved11.398GiB，L/action suffix/probe/旧Meta均未进入Gemma。analysis/actual_source_consumer.json只读取本次留存原件，无额外forward。
+V/VL三rank并行各已完成首有效9B4/完整36task轮并保存完整恢复点：3.611/3.599s，约.401/.400s/B4，按该初轮粗估全8640约57.8/57.6min；不是warm-cache长期吞吐或已完成末点，原整批110–205min预计仍适用。公共零输出首步Reader梯度0而decoder/output非零，第二步Reader7.29e−5/6.92e−5，完整BA真实信用通过；两臂无discarded profile。首轮主rank峰值allocated1.900/1.911GiB、cache仅.819GiB，不能据此担保全最长视频；每rank冻结GPU缓存上限9.149GiB可覆盖完整144池，学习memory始终重算。六卡已全部用于共享输入及3+3独立学习，持续按就绪角色释放接续；不重做已完成缓存来profile。
+analysis/actual_startup_consumer.json与first_task_round原件保留source/公共初始化/真实梯度/峰值/流/原派发身份。dev worktree及已合入分支已清理，正式冻结保留。一个实际owner与唯一整批或异常自动唤醒继续，0阶段自Queue/第二等待者/Test/自动后继，后续只消费完整原件或真实边界。
+
 ## 2026-10-14 11:47 §17唯一整批owner实际六卡启动
 
 image_compiler_01/PID2201311已从clean pushed detached cbfbf3e2启动，gpu01:5/6/1/3/2/7六个持久消费者生成唯一144视频纯视觉缓存；随后V用5/6/1、VL用3/2/7各三rank独立同流学习。每个实际launch核双节点/data1独立quota/数量6-node6与任务真实余量；无util/通用固定显存筛选，现场空闲不足10卡，保持合计6上限。

@@ -11971,3 +11971,11 @@ D仅BA seen414/held175，C同BA+固定lambda native为393/158；原G427/165、MT
 §15 frame32在11个有效但未保存B4后于第12组41.37GiB加外部2.44GiB OOM，原前缀44编译/11更新与未知组≤4保留计费。必要资源复核显示已完成旧D8所有288输入最大reserved19.758GiB；据此四卡16接续，停止32/64推算，不把内部科学阴性与真实内存故障混同。
 
 §15当前四卡16首真实B4最大reserved25.633GiB/8.885s，全485Adam与meta双支/Reader/static/F信用及冻结组验证；较32同首B4的39.699GiB显著降内存，时间相近，不把此点当全输入资源保证或科学资格。48完成失败编译/12未保存更新与≤8未落盘编译及.349143253GPUh均保留为工程开销，标准有效流不扩大；原派发时钟/唯一整批回报保持。
+
+
+## 481. §15 D的唯一相邻端点与保持交换（2026-10-14）
+
+D144 seen414/held168，D72=414/175、S38349=427/165、MT340/153；新held对72 R149/G19/L26/net−7，Jaccard.768041/churn45；对S R139/G29/L26/net+3、对MT R124/G44/L29/net+15。seen对72 R379/G35/L35/net0/churn70/Jaccard.844098，不能把总分相同称成功条件相同；对S R377/G37/L50/net−13。D72对S的29新增held成功保留18/29，19损失条件恢复8/19，完整原行均保存。held task3/6/11/16/23/26/31/39新分为43/7/37/20/1/33/27/0，四suite Spatial/Object/Goal/Long50/57/34/27、breadth7/8；task16与26均少4，task31多2。原G净收益+10收窄+3，不抹D72事实、不拼两点union或只挑任务，当前结果交main按事前§15裁决，不称稳定广泛编译能力或video/H因果资格。
+原D72完整psi/485Adam/sampler/RNG到144，原288/36task各8与query-T-类别-权重-全noise匹配；归一化完整BA每condition一次、逻辑B4/4-rank SUM、全meta双支/Reader/static/F真实信用、source/T/Actor冻结与D native0通过。144 Adam485均step144、psi version38493、world2→4原/新RNG来源及完整新4/旧2 RNG均保存；11闲置参数不造fake使用。90/108/126恢复点/144唯一科学端点，436完整LoRa与976原行在官方配对预算内，无新实践/标签采集/固定函数/Test。
+实际976 submitted/finished、237361步含9760dummy、0failed partial/未知；13 GPU收据总5.428371164GPUh含3失败.349143253。失败前缀48已完成编译/12未保存更新与≤8未落盘编译真实计账，不写0或当profile；有效保留72/288流不扩。四卡16全B4 mean/max15.404/31.532s、reserved26.504GiB；六卡就绪队列两面板各3起步，seen释放接held，实际9读出job/三空seen省略0 GPU启动。源51924861 clean pushed detached/ROOT约2.279GiB，首次观测派发至退出102.211min、owner58.717/学习19.065/后续39.313，原时钟保持。
+稳定ROOT=video_guided_proposal_writer_20261014/operator_D_adjacent_stability；results.json与analysis/completion_20261014/{acceptance.json,verify.py,report.md}保存逐任务/suite/保持和全部费用。一次CPU实物验收2.54s/0模型/环境；有限执行消费完成，0自动第三块/BCE/后段/新等待者，方法裁决与下一投入仍由主讨论承担。

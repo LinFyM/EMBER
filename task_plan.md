@@ -1,3 +1,10 @@
+## 2026-10-14 08:05 §15有限整批完整验收；一次交主讨论科学接续
+
+D144 seen414/576、strict firstG held168/400；D72=414/175、原G=427/165、MT=340/153。held对D72 R149/G19/L26/net−7/churn45/Jaccard.768041，对原G R139/G29/L26/net+3，对MT R124/G44/L29/net+15；seen同414但对D72得35失35/churn70/Jaccard.844098。原D72相对G新增29的18仍成功，原损失19有8恢复；task16 24→20、31 25→27、26 37→33，task23仍1/39仍0、breadth7/8。完整分布与不利条件保存；净+10收窄为+3，不拼两点union或逐task选优，科学裁决交main，不宣称稳定完整方法。
+从唯一D72完整psi/485Adam/原RNG承接，global72…143对应v0…71、原288条件各一次，原T/全部query类别/权重/noise与D72实际receipt逐项一致；全72 meta双支/Reader/static/F信用/source-T-Actor冻结通过。144完整485Adam均step144，sampler/4rank RNG+原2rank RNG/版本38493/90-108-126恢复点齐；无fresh替代或native训练forward。436完整38-target LoRA、976配对原行、50 videos/task无放回、真实MT-H1/全noise/scene/官方horizon均验收，0新实践/查询/固定函数/Test。
+唯一owner04 exit0于2026-10-14T00:04:44.632788Z已consumed；全部13 GPU收据结算，976 starts=976 finished/237361环境步含dummy、0failed partial/在途/未知。总5.428371164GPUh含前三失败.349143253、48失败已完成编译/12未保存更新及≤8未落盘编译，全部失败成本保留。完整四卡16平均/最长B4 15.404/31.532s、reserved26.504GiB；六卡初始seen/held各3，释放接held，9真实读出job/三空seen消费者CPU省略。源码51924861 clean pushed detached；ROOT约2.279GiB/48GiB预算内。派发首次观测到退出102.211min（原60–110）、有效owner58.717、学习19.065/后续39.313，时钟未重置。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_D_adjacent_stability，results.json及analysis/completion_20261014/{acceptance.json,verify.py,report.md}保留全部原件/一次CPU验收（2.54s、0模型/环境）。下一必要动作仅串行Git/一次main01a13399整批交付并由主讨论自主科学消费接续；当前0 active计算/第三块/BCE/Actor/自动后继/第二等待者，旧§14回执不重启，完整EMBER目标未完成。
+
 ## 2026-10-14 07:11 §15四卡16实际接续；首B4恢复/全链信用通过
 
 唯一owner04/PID971830/source51924861于23:06:21Z在gpu01:1/3/6/2实际launch，world4/frame16/microbatch24，首73(global72/原v0)四真实条件/4次完整BA通过；完整D72/485Adam、原rank0/1 RNG恢复与新增rank2/3种子771091015/2330581364来源登记，meta双支/Reader/static/F真实信用、source/T/Actor冻结、D native0保持。最长8.885s、reserved峰值25.633GiB；32/64故障停止，不再从首B4宣称全长H稳定。

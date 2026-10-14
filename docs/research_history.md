@@ -5280,3 +5280,10 @@ Owner11:50授权分析后自主执行，main据§22阴性与旧θ偏好/曝光�
 ## 2026-10-14 §14主讨论科学消费；§15唯一D相邻稳定性授权
 
 D414/175、C393/158的完整原件由主讨论独立消费，按事前分支保留D控制正例并停止C/native/lambda，单点D不称稳定方法资格。完整解释在operator_native_joint_learning/analysis/main_scientific_readout/interpretation_20261014.md；§14历史失败/费用/原始身份保持，0旧计算重启。新design§15完整合同同目录operator_stability_contract_20261014.md已串行纳入，承接D72全部训练状态再72有效B4至144，唯一576+400，0新实践/固定函数回读/Test/自动后继。新ROOT=video_guided_proposal_writer_20261014/operator_D_adjacent_stability；工程/Git/唯一整批回报由实验独占，原60–110min预计保留。
+
+
+## 2026-10-14 §15 D72→144相邻稳定性有限整批交付
+
+完整D72训练状态再遍历原288条件72次逻辑B4，D144唯一seen576+firstG400为414/168。D72=414/175、S=427/165、MT340/153；held对72得19失26/net−7、对S得29失26/net+3、对MT得44失29/net+15，seen分同但得失各35。原D72新增29的18保留、损失19的8恢复；task16/26少4、31多2，23仍1/39仍0，完整保持与相邻交换见findings481，未做union或逐task选优。
+完整ψ/485Adam至144、sampler/4新RNG+2原RNG/90-108-126恢复点、全meta双支/Reader/static/F信用与冻结source/T/Actor、436完整LoRa/976配对原行均验收；0新实践/采集/native训练/固定函数/Test。真实976 starts/finished、237361步、5.428371164GPUh含3失败，48失败完成编译/12未保存更新与≤8未落盘编译保留。原首次观测派发至exit102.211min（原60–110），有效owner58.717/学习19.065/读出后续39.313，六卡两队列动态接续；source51924861/全部原件保留。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_D_adjacent_stability，results.json与analysis/completion_20261014/{acceptance.json,verify.py,report.md}为canonical交付；owner04 exit0已consumed，有限执行完成不等于最终目标完成。当前0 active计算或自动第三块/BCE，main按事前§15独立裁决并自主科学接续，不以等待Owner新许可停滞。

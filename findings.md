@@ -12006,3 +12006,9 @@ Owner追问其他真实经历仍应输入，main明确旧no-H合同超出了仅�
 
 main纠正额外删除整个H的干预，优先修订已完整授权和纳入design§17；与训练内部值无关，旧no-H仅范围中止历史。V/VL都保留一次真实MT经历的前后RGB/proprio/实际actions/executed/feedback/顺序，均移除execution hidden，V无直接L、VL匹配直接L，policy始终L；固定同MT参数上下文由真实base/center确认，不新增fake静态输入网络。H行为可含间接任务信息，Owner要求抑制直接名称索引捷径而非完全语言独立；删文字不能证明教学操作知识，静态视觉/H识别仍是竞争解释。本批不追加controls/探针。
 仅原36 MT-H1+400精确held首prefix、52null沿outputs[0]；已有36/8131步、400/114908步是方法适应依赖、非零交互，不重采或计800独立H。1562/22254records最长104、raw_MT与final初态分离元数据齐；actualfinite由消费者继续核。144教学9.1387GiB纯Gemma原cache只读复用，H冻结vision共享一次约3.121GiB，held流式。fresh core17/VL18/H19、完整E BA与144/B4/2160-8640/1952合同保持，0旧权重Adam复用/H2/新增实践/Test/后继。新ROOT image_only_gemma_with_history，原2.371076951GPUh另记，H_gpu历史不可用整§23费用代替。
+
+
+## 2026-10-14 §17 H批读出物理失败，不构成科学阴性
+
+fresh H两臂8640完整训练端点与所有有效原行保留；三个16slots VL读出在EGL framebuffer或native prefix OOM退出，按现场free初估14.2GiB不等于最长官方执行含renderers峰值资格。已确认失败partial3460步，47未返回提交保守账必须保留；两次构造失败早于登记state reset但slot归属未知，不能把整批失败归零。EGL仅设备枚举核实CUDA_VISIBLE6→EGL6，0环境start，当前无错卡证据；framebuffer头部余量为待真实消费者认证的工程解释，不能假装已确诊唯一根因。
+main于06:42:01.831Z授权唯一交互修订2015提交/63失败（47已发生+16新余量），1952固定有效final与1043040总steps不变；原1968/16已越界为历史事实，不追认合规，不自动扩第二次额度。原ROOT/analysis/failure_interaction_audit_01.json及inputs/H_readout_engineering_amendment_20261014.*为原件。新恢复只47 VL_seen+800 held并严格skip已保存529 VL/576 V及所有LoRA，训练source7f05e3e6/新评测源分列。旧no-H成本与MT实践依赖仍单列，0新增实践/训练query/Test。

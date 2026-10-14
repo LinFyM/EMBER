@@ -1,5 +1,6 @@
 """Persistent ready endpoint consumers, shared held reading and strict paired rows."""
 from pathlib import Path
+import json
 import time
 
 import torch
@@ -13,6 +14,7 @@ from .image_compiler import pure_features
 from .image_data import feature_file, publish_record
 from .image_history import encode_history, history_file, model_history
 from .image_learning import load_compiler
+from .learning import memory_peak
 
 
 def endpoint(root, arm):
@@ -65,6 +67,12 @@ def readout_worker(args,runtime,runner):
     queue=root/'queues'/f"{'paired_validation' if role=='validation' else arms[0]+'_seen'}.sqlite"
     while (claim:=claim_next(queue,worker_id=args.worker_id)) is not None:
         try:
+            started=time.monotonic()
+            if role=='validation':
+                # Frozen image-prefix compilation and idle EGL contexts need
+                # the same device memory, but never run at the same time.
+                runner.release_renderers()
+            if runtime.device.type=='cuda':torch.cuda.reset_peak_memory_stats(runtime.device)
             task=tasks[claim.task_key]
             entries=[dict(**e,history_descriptor=histories[e['task'],e['init_state_id'] if role=='validation' else None])
                 for e in panel['rows'] if e['task']==task['global_task_id'] and e['init_state_id'] in claim.shard.init_state_ids]
@@ -80,6 +88,10 @@ def readout_worker(args,runtime,runner):
                         parameter_ref=f'{arm}_{endpoint(root,arm).name}',state_id=entry['init_state_id'],
                         noise_root=entry['noise_root'],registered_scene=entry['registered_scene'],episode_id=identity,
                         remaining=task['horizon']+10,capture_history=False,capture_hidden=False,uses_teaching=False))
+            compilation_peak=memory_peak(runtime.device)
+            if runtime.device.type=='cuda':
+                torch.cuda.empty_cache()  # Return dead compilation buffers to EGL.
+                torch.cuda.reset_peak_memory_stats(runtime.device)
             for actual in runner.run(requests):
                 arm,entry,file,output=by_id[actual['request']['episode_id']]
                 row=dict(actual['row'])
@@ -95,8 +107,15 @@ def readout_worker(args,runtime,runner):
                 write_json_atomic(output,row)
             rows=[read_json(item[3]) for item in by_id.values()]
             receipt=root/'readout_shards'/queue.stem/f'{claim.shard.job_id}_{claim.attempt:03d}.json'
-            write_json_atomic(receipt,dict(rows=rows,seconds=time.monotonic(),complete=True))
+            resources=dict(role=role,worker=args.worker_id,shard=claim.shard.job_id,slots=args.slots,
+                frame_chunk=args.frame_chunk,rows=len(rows),new_rollouts=len(requests),
+                H_records_max=max(e['history_descriptor']['H']['records'] for e in entries),
+                teaching_frames_max=max(read_json(item[2].with_suffix('.json'))['frames'] for item in by_id.values()),
+                elapsed_seconds=time.monotonic()-started,compilation_peak=compilation_peak,
+                execution_peak=memory_peak(runtime.device),runner_components=dict(runner.components))
+            write_json_atomic(receipt,dict(rows=rows,seconds=time.monotonic(),complete=True,resources=resources))
             publish_record(queue,claim,args.worker_id,receipt,len(rows),successes=sum(r['success'] for r in rows))
+            print('EMBER_IMAGE_READOUT '+json.dumps(resources),flush=True)
         except BaseException as error:
             fail_job(queue,job_id=claim.shard.job_id,worker_id=args.worker_id,claim_token=claim.claim_token,error=repr(error))
             raise

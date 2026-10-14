@@ -5313,3 +5313,8 @@ main已消费原范围停止并直接授权新的image_only_gemma_with_history�
 144旧pure Gemma cache原地只读、H仅冻结vision共享一次/held流式；两臂共同fresh17/VL18/H19及原BA/流/2160共同节点/8640/1952-1968-1043040保持。Owner进一步明确抑制直接任务名称捷径，不要求间接语言任务信息被删除；稳定requirements/concept已同步，本批VL/hidden计算不改。独立CPU metadata audit无缺项，意外打印嵌入MT_row的未使用边界保留，source manifest白名单隔离且未开held query/results。当前仅工程与实际消费者验证、新冻结准备，GPU尚未启动；根/Git由实验串行闭环，0阶段Queue/第二等待者/自动后继/Test。
 
 Owner随后说“额不是，那最好还是能看懂动态过程才好”“我只是kidding”。main撤回把“他要是有这个本事，也算是读懂视频了”玩笑当作判据放宽的解释；该放宽未纳入稳定要求。此前direct-binding澄清继续：保留合法经历/执行语言，不追求输入完全语言独立，研究仍争取理解利用动态操作过程，视觉任务识别是局部能力；不把本澄清变成全部时序消融的开工门槛、不改§17计算/端点或加GPU任务。
+
+
+## 2026-10-14 14:42 §17 H读出退出与有界工程接续
+
+image_only_gemma_with_history/coordinator/image_gemma_MT_history_01/exit.json：06:12:33Z exit1，三个VL seen消费者framebuffer/OOM；两臂8640 complete与V576/VL529有效行不重算，held未启动，新ROOT6.756725625GPUh。原16失败/1968提交合同已越界，ledger 1152提交/1105完成/47未返回，known248652与unknown22990；actual partial3460非零，reset范围9–45不取代47保守账。main明确06:42:01.831Z有界修订2015/63且1952/1043040与原输入/训练/选择不变；未来失败余量16仅此一次，无自动扩容。优先修订原文归档ROOT/inputs/H_readout_engineering_amendment_20261014.md/json，原run_contract留档；§17 canonical design同步全文。执行者修idle renderer与CUDA编译缓存共驻、较小物理slots/真实峰值消费者，新冻结源恢复剩847，原7f05/训练/所有失败/旧no-H2.371076951GPUh保持。此为工程恢复，不预告科学分数或将新方法当已有效；无新训练/实践/query/held条件/Test。

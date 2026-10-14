@@ -1,3 +1,9 @@
+## 2026-10-14 14:42 §17 H读出工程失败及已授权有界恢复
+
+唯一image_gemma_MT_history_01于06:12:33Z exit1并已按ROOT/attempt消费，实际3个VL worker的framebuffer构造或native prefix OOM，0held launch；source7f05e3e6/旧owner与所有原件保留。两臂完整8640 psi/Adam/sampler/rankRNG及共同2160决定均有效，V_seen576、VL_seen529保留（失败shard已有1有效行），只补47 VL/800 held，0重训/新实践/训练query/controls/Test。当前修订工程准备，尚未新launch。
+新ROOT费用6.756725625GPUh；finished1105/提交1152/47未返回保守上界，known248652=245192完整+3460可证partial，unknown≤22990，原失败16上限已越界，不追认旧批原合同内合规。实际未完成reset证据下限9/上限45及至少两次构造失败不可逐slot归属单列，47保守提交不删为0；root analysis/failure_interaction_audit_01.json保存原件。main于06:42:01.831Z明确批准仅此有界修订：原1968/16历史留档，新累计2015提交/63失败=已发生47+未来16；1952/1043040、原case/RNG/官方口径/8640端点不变，无自动第三次额度扩展。inputs/H_readout_engineering_amendment_20261014.md/json与run_contract原snapshot/有效amendment均已保存，原统一ledger已实际消费新限。
+窄恢复处理EGL/推理共驻，held编译前释放本任务闲置renderers，编译后归还临时CUDA缓存；物理slots4/8先按现场峰值选择，原最长held消费者计入有效读出后按吞吐接续就绪队列，不锁旧pool/world/一worker一面板。CPU实际orchestration复现验证已有行不改、只补缺失arm、原paired scene/noise/端点与释放顺序；未据CPU fixture称GPU安全。训练source与新恢复评测source分列，新clean pushed detached后唯一owner恢复/一次整批或实质边界唤醒，本实验验收/Git后一次交main。原04:19:48.975Z H锚/100–190min、no-H02:54:45.949Z锚与2.371076951GPUh另账；从本裁决起工程+余847粗估35–70min，原整体可能177–212min、超原上界约20min，首实际最长held吞吐后据实修正。
+
 ## 2026-10-14 12:57 §17新H真实最长输入与首有效36task轮通过
 
 新ROOT的36份H冻vision队列已由六个actual消费者完成/均exit0，实际train/task32 MT104records/105observations通过exact prefix/MT state/proprio/action/executed/feedback/finite/RNG核验，原H前后图像产出105×512×2048 BF16与104×63 facts；缓存keys没有hidden、无H Gemma/L消费、0教学Gemma重算。该留存输入source计算4.711s，allocated9.102/reserved9.418GiB，含H原RGB/policy加载，仅认证此实际消费者。analysis/actual_H_vision_consumer.json为原件只读验收，未加forward。

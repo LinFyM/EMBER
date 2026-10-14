@@ -1,3 +1,9 @@
+## 2026-10-15 128MT修訂完整验收；唯一active转为10条件joint协议纠正
+
+MT owner03于21:52:59.416Z exit0，新增128提交/128返回/0失败或未知，31486control+1280dummy，.338502315GPUh；总1684提交/返回、334958control+15560dummy=350518步，5.131869526GPUh/carry0，实际final640、有效512。canonical corrected_results.json中MT67/video0 60/video1 58/no_video74；V0对MT R52/G8/L15，V1 R51/G7/L16；no_video0接受/全MT300，+7不称学习增益，同参数正常数值执行差异保留。旧MT64无效原行/旧results/freeze/sealed和完整成本保持。
+CPU完整原件验收5.794秒通过：1120Phi完整Adam/scheduler/stream/rankRNG、24个38-target/r8因子CP/Adam/RNG、所有原真实native/四格/mask/接受原件、512初始proprio/env与首native-noise配对、1684唯一物理attempt计账；无模型/环境/GT/DTW重算。此次仅确认固定MT和原件交付，不将原27受joint错误影响的更新判为原科学合同通过。newMT冻结读取a986e7b2，未来schema修复d9b704cc；参数21:01冻结→sealed21:21→MT21:48–21:52的例外明示。六job均exit0、live两节点本用户CUDA0；slots16最长两shard177.017/195.539秒，实际reserved25.646/24.199GiB，其余8slot约14.354GiB；完整GPU批270.119秒，0profile。
+主讨论随后明确授权[design§13](docs/designs/video_effect_parameter_compiler_20261015.md)唯一后继：task0/1/20/21/32×两个视频10条件fresh同MT300因子中心/空Adam/原RNG，只恢复原joint schema。原20bootstrap及原MT首次160分支经明确来源的physical视图转换复用；重算原预测baseline/credit，不导入旧proposal/Adam/接受、不重训Phi或GT/sealed。14未受影响条件/224final及此128MT只读复用，新最终最多160。新子根joint_schema_corrected，当前CPU导入/接口准备，尚无新GPU/model/env计算；0自动其它后继。新上限920有效/936含剩余16失败、228126control/3360dummy=231486，新峰值24GiB；原18:16:48.556Z/3–6h和所有原错误成本保留，本修訂45–90min预计。独占dev/Git/newclean detached；一个owner整批或真实边界回报，0阶段Queue/第二waiter/Test。
+
 ## 2026-10-15 固定128MT修订已实际启动；并行修复未来joint schema
 
 唯一video_effect_MT_official_settling_03/PID3637133于21:48:27.645Z从clean pushed detached a986e7b2启动。只读旧384有效final/24LoRA/Phi/sealed；六持久MT消费者，首两者在原16case shard实际用slots16，其余slots8，全部128注册病例计入有效计算/预算、0discarded profile。live所选gpu02:1/7/2/0/4/6当前free约40–45GiB，本用户无其它CUDA，普通cap6/node6；strg01 data1独立used1603.762GiB/soft2048，原ROOT30.072GiB/项目374.745GiB/当前dev.280GiB，共享df另存，新增修订约≤1GiB且原96GiB预估余量仍足够。每launch由Batch再live现场核验，不冻结旧快照。原首次18:16:48.556Z、修订25–45min不重置；唯一owner整批退出唤醒，0第二waiter/阶段Queue/重训/GT重开。

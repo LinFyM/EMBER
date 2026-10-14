@@ -215,3 +215,49 @@ Phi固定后，完整读取每个合法教学condition，得到按真实顺序�
 该字段沿physical_trace/mapping→joint可用mask/有效组分母→DTW/S_V/R→四格credit/native全因子VJP/Adam和接受/后续parent进入原video条件，旧评分、梯度及编译不能称完全执行原合同。原physical joint_type/q和全部H/LoRA/分差/sealed不改写、不重算；不把未来修复当作旧批已经正确。Phi1120/正确teacher schema/patches/sourceMT、真实snapshot/动作、无视频score及已冻结参数final仍可复用；当前128MT补测physical=False不受该字段影响，沿a986e7b2继续。解释性旧类型1↔2和q两列对换有精确schema来源、无值猜测，但未实际应用；是否重编译待main独立有限合同。原snapshot多8320dummy及全部费用另账保持。影响原件ROOT/analysis/engineering_completion_20261015/joint_schema_impact.json；不称此错误已解释低分唯一原因。
 
 读取原保存的Phi预测与固定mapping（0模型/GT/DTW重算）确认影响还包括task0/1，合计task0/1/20/21/32十个video条件、27更新/432分支原score、12接受。原这些mapping所有teacher帧joint项不可用；纠正类型后对应全部帧可以参与。task12/13/34自身与预测均none，不受这项mask错误影响。该事实说明实际评分监督范围少于合同，不能据此推定修正后的R/梯度/接受或性能；完整影响文件已一次交main。
+
+## 13. 受影响10条件一次有限joint schema纠正
+
+2026-10-15，main 01a13399-cba2-7da2-9dc6-df430ca80280明确裁决。Owner持续自主推进授权下接续原video_effect_parameter_compiler_20261015，不等待Owner新许可。现有128固定MT补测继续；本合同授权准备和运行受关节字段错误影响的10个视频condition。不得据此扩展模型、超参数、任务、视频或评测矩阵。
+
+### 科学理由与唯一变化
+
+原teacher监督与评分合同明确none0/slide1/hinge2、q列分别为米/弧度。own bind错误把MuJoCo2/3映射为2/1，并按错误kind写q列。这使task0/1/20/21/32的两个视频条件（10项）原保存预测在全部teacher帧均失去joint评分项，改变有效组分母、DTW、S_V、真实四格credit、完整LoRA更新和后续接受。原27更新/432分支/12接受是实际错误实现证据，不是完整原设计的有效检验；不声称该错误是低性能的唯一原因或修正后必然提高。
+
+唯一干预是恢复已预注册schema。Phi1120、原28/224监督、240 RGB patch缓存、16原predicted_teaching、所有评分形式/归一化/权重/联合动作探索/native10 VJP/Adam/信赖限制/接受/停止规则均冻结。不得新增loss、重训Phi、调DTW或权重、增加教学、换init/seed、做新profile或读取新held/Test资料。
+
+任务集合仅由原保存预测与own字段的实际消费者依赖决定，与原分数高低及sealed GT差方向无关。task12/13/34的6个视频condition，原own和预测均none，评分计算不受这次修正影响；连同8个no_video condition、对应224有效final行原样复用，不重编译。原10个受影响LoRA及其160 final仍保留为原实现证据，不能按新旧谁高挑结果。
+
+### 一次性输入解释与重新编译
+
+新子根为 `/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/joint_schema_corrected`；原ROOT及原frozen/H/CP/评分/sealed均只读。只对明确来自旧错误producer的自身physical字段作有来源的一次性导入：articulated type1与2互换，其q两列互换，type0保持；保留原row/路径、旧新schema、body/joint/qpos地址来源及转换说明。不得猜值、改teacher预测、改RGB/proprio/action/success/完整snapshot/controller/RNG或覆盖旧H。新canonical观察已经用正确schema，不能再转换一次。用必要的真实CPU消费者核对转换后trace与固定mapping一致，不做逐tensor/hash扫描。
+
+五task各init16..19的20个原MT bootstrap物理episode有效且有完整v4 snapshot，只读导入；每视频condition各自消费四个原parent，重新在原初始场景绑定并计算正确基线S_V。32个原bootstrap总资产不重跑。10个condition全部从原同一MT300完整因子中心、u=0、空Adam、原抽样RNG开始；不从旧最终CP继续，不保留旧信用、接受或计数器。
+
+复用这10项原首次更新的160个已实跑分支：原MT parent、snapshot、实际首块override、后续policy和noise身份可直接由原request/row/draw证明；仅其自身physical视图转换schema。保留原uniform point、u/v、四格实际动作及执行mask；重新计算正确parent基线和完整prefix+分支的S_V/R/credit。不能复制旧draw中的baselines或旧prepared proposal/Adam/trust/outcome。原首次分支合计20,336 control、原逻辑四parent合计9,458 control，均占每condition的实践预算，但不新增物理成本。旧分支恢复前额外dummy仍只计原实际费用，不因复用再计，也不从历史费用抹去。
+
+后续分支、native提案和候选全部按当前正确编译过程实际发生，不导入旧非初始branch/candidate或旧已接受参数。新proposal使用独立完整producer身份，不能因文字ref与旧root同名误判为同一LoRA。原第一次物理分支不能安全复用时报告具体身份缺口，不静默重复160次或扩大本合同。
+
+每condition仍96逻辑starts与64×suite horizon control上限，复用的4 parent和16首次分支在计数器中照常占用；保留现有每更新16分支、最多4候选以及完整原子预算预留。共享/导入不购买更多迭代。无改进、四成功、预算停止规则全部不变；旧低分不是重试理由。
+
+### 最终读出与信息边界
+
+每新condition冻结一套完整38-target/r8 LoRA，再读原init0..15、final root202610151、official settling10及所有原控制合同，共最多160条新final。若新condition与其同condition的原最终身份均明确为MT300，可直接复用该condition原有效16行：这是预先规定的同参数原件复用，不按结果选MT高点。不从新旧不同proposal同名、近似张量或分数相似推出同一参数；不新增哈希或逐tensor比对。其余受影响condition一律使用新冻结LoRA的读出，即使较差。
+
+有效整批报告仍为video0、video1、no_video和修正settling的正式MT各128，共512逻辑行。构成为10纠正condition最多160新final + 6未受影响视频96原行 + no_video128原行 + 当前单独补测的128 MT。明确每行是新执行还是复用、原/新编译/评测代码身份，报告per-task/suite、breadth、R/G/L、churn/Jaccard、两个视频的重合、每condition接受/拒绝与预算。无视频14更新0接受、最终全MT300的事实必须保留；同参数重复执行差异不得叫学习或视频损害，不追加采样/逐位复算消除波动。
+
+原sealed诊断已在旧批冻结后读取，且自身joint错误也影响该诊断。纠正发生在这之后，明确记为一次由既定schema合同与源码证实的协议修复，不能声称整个新批仍满足首次未见诊断的原时序。不得重开、重算或追加GT评分，不把原GT的分数/方向用于新梯度、选择、输入、分支或新参数。原内部8项不是formal held；正式Val/Test保持封存。原修正MT的sealed时序例外也保留。
+
+保留旧results、旧complete和当前settling修订的corrected_results；本子批完整后以子根results/aggregate作为恢复原schema后的唯一方法读出入口，不能混写旧方法结果或抹成本。若纠正后仍弱，结束这次完整假设的投入并交main作完整判断，禁止自动续Phi、rank/LR/seed、权重或额外局部probe。
+
+### 资源、工程与回报
+
+五task horizon之和1560，10条件之和3120。新适应control最多64×3120−9458−20336=169886；新final最多16×3120=49920。有效新增最多10×(96−4−16)+160=920环境提交、219806 control。原编译计数每更新固定16分支，96额度最多容纳16完整候选episode/condition，因此新增正常dummy最多3200（160候选+160final）；snapshot恢复分支dummy0。
+
+工程失败沿用全程原16上限而不扩充；执行者据实际事件确认剩余e≤16，未知保守按horizon520。连同这些失败，本修订新增绝对上界936提交、228126 control、3360 dummy，总231486动作步；少于16剩余时相应扣减。与已授权原批+128MT补测上界合并为最多2620提交、573838 control、18920 dummy，总592758，仍不挪用未登记的科学矩阵，也不扩大原16工程失败上限。真实费用按unique执行记，不能把共享逻辑预算当新费用或只报纠正后低成本。
+
+新增峰值暂估24GiB，原30GiB资产只读复用、不复制cache/source/模型；launch前按strg01 data1独立quota、个人实际目录用量、共享容量更新预测。所有新增产物data1。每launch live核双节点6/8总量、单节点6与实测显存，不抢占外人任务；沿用已实测slots16/8及动态持久队列，不另开discarded profile，不固定task/GPU。MT补测仍有活跃GPU时合并计数，CPU准备可并行，真正就绪按吞吐安排。
+
+本修订从本派发起暂估45–90min，包括窄导入/冻结/完整计算/验收。依据原受影响27 native更新合计3406.64秒、均126.17秒，最多六持久消费者及160 final，预留加载和工程时间；不是成功保证。原18:16:48.556Z/3–6h首次时钟不重置，所有旧错误和计算成本保留。
+
+执行者独占工程/Git窗口，将本合同纳入当前design与状态，再new clean pushed detached执行；复用唯一canonical compiler与执行器，导入是一次性已知schema迁移，不维护第二学习路径。必要检查聚焦实际导入/评分/预算消费者，不让main重复工程测试。现有MT整批回报照常完成；本新纠正批只有一个实际owner等待子进程退出，只在整批或真实边界可靠唤醒实验后一次交main。无普通ACK、阶段Queue、第二等待者、自动后继或新Test。main收到完整原件后自主科学消费和接续。

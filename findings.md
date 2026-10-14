@@ -12106,3 +12106,8 @@ Phi1120与完整native38/r8梯度均已由实际消费者执行；原首步B38/A
 该字段沿physical_trace/mapping→joint可用mask/有效组分母→DTW/S_V/R→四格credit/native全因子VJP/Adam和接受/后续parent进入原video条件，旧评分、梯度及编译不能称完全执行原合同。原physical joint_type/q和全部H/LoRA/分差/sealed不改写、不重算；不把未来修复当作旧批已经正确。Phi1120/正确teacher schema/patches/sourceMT、真实snapshot/动作、无视频score及已冻结参数final仍可复用；当前128MT补测physical=False不受该字段影响，沿a986e7b2继续。解释性旧类型1↔2和q两列对换有精确schema来源、无值猜测，但未实际应用；是否重编译待main独立有限合同。原snapshot多8320dummy及全部费用另账保持。影响原件ROOT/analysis/engineering_completion_20261015/joint_schema_impact.json；不称此错误已解释低分唯一原因。
 
 读取原保存的Phi预测与固定mapping（0模型/GT/DTW重算）确认影响还包括task0/1，合计task0/1/20/21/32十个video条件、27更新/432分支原score、12接受。原这些mapping所有teacher帧joint项不可用；纠正类型后对应全部帧可以参与。task12/13/34自身与预测均none，不受这项mask错误影响。该事实说明实际评分监督范围少于合同，不能据此推定修正后的R/梯度/接受或性能；完整影响文件已一次交main。
+
+## 2026-10-15 固定MT修订67/128与新的有限协议纠正
+
+有效512固定读出为MT67/V0 60/V1 58/noV74；配对V0 R52/G8/L15、V1 R51/G7/L16，noV全MT300的+7不作为学习，不能将未改参数差异归因视频LoRA。原错误MT64及相对值撤回，旧128无效执行和832分支多8320dummy完整计账；实际640final，总5.131869526GPUh/350518步/1684提交。MT/原件验收通过，原受joint错误影响27更新仍不符评分字段合同；不以工程完整替代科学结论。原sealed时序/自身joint限制保留，无重读GT。原件ROOT/{corrected_results.json,analysis/engineering_completion_20261015/acceptance.json}。
+main独立授权原10条件一次schema纠正，仅复用既定20bootstrap/160原首次分支，fresh同MT300/Adam/RNG重新计算合法预测分差；其它14条件不重编译。完整[design§13](docs/designs/video_effect_parameter_compiler_20261015.md)保留阴性、预算、同condition MT复用和sealed后修复边界，不称此修正必然救分。当前CPU准备，尚未新计算。

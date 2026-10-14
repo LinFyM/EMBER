@@ -5401,3 +5401,7 @@ video_effect_01/8801e701于20:11:41.680Z exit1，Phi1120/240缓存/9条件/128MT
 ### 2026-10-15 自身关节schema错误与128MT独立修订
 
 main发现MuJoCo slide/hinge编码和q列反置，旧video评分/完整native credit/接受存在实质合同违约；原件与negative/cost保留，不重算或热改。未来入口按原schema窄修，CPU enum/bind/observe通过，影响原件见ROOT分析。原Phi/patches/真实snapshot/actions/无视频score和固定参数final不依赖该错误；当前a986e7b2固定128MT补测继续，0重编译授权。
+
+### 2026-10-15 固定128 MT正式settling修訂完整交付
+
+video_effect_MT_official_settling_03/a986e7b2，21:48:29Z→21:52:59Z，新增128完整/0失败/32766步/.338502315GPUh；累计1684完整/350518步/5.131869526GPUh，640实际final构成512有效。MT67/V0 60/V1 58/noV74，旧MT64无效保留；noV0接受、同参数数值差异不称学习。ROOT corrected_results为本次入口，CPU验收5.794秒，全部GPU已释放。原参数冻结/GT sealed/修正MT先后例外和joint实际违约明示，14未影响condition与10受影响condition分开。后续仅main明确授权[design§13](designs/video_effect_parameter_compiler_20261015.md)有限10条件纠正，非自动扩训或新的性能结果。

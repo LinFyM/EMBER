@@ -1,3 +1,8 @@
+## 2026-10-14 11:47 §17唯一整批owner实际六卡启动
+
+image_compiler_01/PID2201311已从clean pushed detached cbfbf3e2启动，gpu01:5/6/1/3/2/7六个持久消费者生成唯一144视频纯视觉缓存；随后V用5/6/1、VL用3/2/7各三rank独立同流学习。每个实际launch核双节点/data1独立quota/数量6-node6与任务真实余量；无util/通用固定显存筛选，现场空闲不足10卡，保持合计6上限。
+原02:54:45.949Z派发至owner启动52.53min，原110–205min预计不重置。当前实际source Gemma首消费者及第一有效36task轮尚未验收，不将准备或cache视作训练已完成；首轮计入有效9B4并提供吞吐/峰值，2160共同决定与唯一端点不变。短IPC TMPDIR=/data1/user/ymdai/.tmp/eig，防止历史Unix socket长路径故障。owner直接等待所有子进程退出，仅整批结束/实质异常自动唤醒本实验01a133e5，验收/Git后一次交main01a13399，0阶段Queue/第二等待者/自动后继/Test。ROOT原始launch/实际资源/失败费用与代码身份完整保留。
+
 ## 2026-10-14 §16已科学消费；唯一active §17纯图像Gemma编译器匹配V/VL
 
 main已直接消费§16：167较首G仅+2；14pair两次改选MT均为精确tie，0严格正确排序，6RL反例0/6。停止固定G第二Phi块/规则/dtype/β补救，解释只引independent_value_fixed_paths/analysis/main_scientific_readout/interpretation_20261014.md，不重算旧科学分析。新授权全文已纳入唯一design§17：V真实视频→冻结vision/projector→source Gemma仅512图像prefix→fresh有序Reader→共同六层完整decoder；VL只在Reader额外接exact L，两臂policy仍读L。没有H、执行hidden、当前task参数、Actor/价值/实践输入。

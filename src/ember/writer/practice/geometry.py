@@ -69,7 +69,7 @@ def bind_entities(owner,model,bddl):
             body_name = model.body(body).name
             semantic = generic_name(category if body == root else body_name[len(name):])
             joint = internal[0] if internal else None
-            kind = {3: 1, 2: 2}[int(model.jnt_type[joint])] if joint is not None else 0
+            kind = {2: 1, 3: 2}[int(model.jnt_type[joint])] if joint is not None else 0
             entries.append(dict(body=body_name, body_id=body, semantic=semantic,
                 origin='root' if body == root else 'moving', joint_type=kind,
                 joint=model.joint(joint).name if joint is not None else None,

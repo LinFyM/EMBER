@@ -208,3 +208,8 @@ Phi固定后，完整读取每个合法教学condition，得到按真实顺序�
 原2026-10-14T18:16:48.556Z/3–6h不重置；修订从本裁决起25–45min估计，live双节点6/8-node6与data1独立quota/个人用量继续。一个owner只在整批或实际边界唤醒实验，验收/Git后一次交主讨论；无普通ACK、阶段Queue、第二waiter、自通知陪跑或自动后继/Test。
 
 主讨论补充的已消费身份事实（不新增复算）：no_video14次更新/0接受，8个final均MT300；74/128不是无视频学习增益。video0/1分别20/18更新、8/7接受；实际改参数仅task0/1/12/21/32，其80行各36成功，对同case no_video45。task13/20/34三臂同MT300但48行成功24/22/29，首noise/proprio一致，保留正常执行不确定性，不能归因视频LoRA损害或以逐tensor/dtype检查/补测消除。128修订MT保持独立正式参照，不选择或平均多MT高点。
+
+## 2026-10-15 自身关节schema接口违约；仅未来入口窄修
+
+主讨论从原sealed与源码发现own geometry将MuJoCo2 slide编码成2、3 hinge编码成1，并按kind−1写q列；原teacher labels/scoring合同为none0/slide1/hinge2、q[0]米/q[1]弧度。未来canonical bind映射修正为{2:1,3:2}；实际MuJoCo enum/既有label owner及bind→observe CPU消费者通过，0新模型/环境/GT评分。
+该字段沿physical_trace/mapping→joint可用mask/有效组分母→DTW/S_V/R→四格credit/native全因子VJP/Adam和接受/后续parent进入原video条件，旧评分、梯度及编译不能称完全执行原合同。原physical joint_type/q和全部H/LoRA/分差/sealed不改写、不重算；不把未来修复当作旧批已经正确。Phi1120/正确teacher schema/patches/sourceMT、真实snapshot/动作、无视频score及已冻结参数final仍可复用；当前128MT补测physical=False不受该字段影响，沿a986e7b2继续。解释性旧类型1↔2和q两列对换有精确schema来源、无值猜测，但未实际应用；是否重编译待main独立有限合同。原snapshot多8320dummy及全部费用另账保持。影响原件ROOT/analysis/engineering_completion_20261015/joint_schema_impact.json；不称此错误已解释低分唯一原因。

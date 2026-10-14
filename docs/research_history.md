@@ -5397,3 +5397,7 @@ video_effect_01/8801e701于20:11:41.680Z exit1，Phi1120/240缓存/9条件/128MT
 ## 2026-10-15 视频效果参数编译：原settling违约及固定MT有界替换
 
 原1556真实提交/返回、384有效编译final与128协议无效MT原件保持；缩进窄修恢复ordinary dummy10/snapshot dummy0。主讨论明确授权新增固定128MT，累计1684提交/361272动作步上界；原参数21:01冻结和sealed21:21后再补MT的顺序例外明示，0学习/选点或诊断重算。原ROOT及[design§12](designs/video_effect_parameter_compiler_20261015.md)保存完整先后、invalid原件与成本；修订未完成不作为新的科学成绩。
+
+### 2026-10-15 自身关节schema错误与128MT独立修订
+
+main发现MuJoCo slide/hinge编码和q列反置，旧video评分/完整native credit/接受存在实质合同违约；原件与negative/cost保留，不重算或热改。未来入口按原schema窄修，CPU enum/bind/observe通过，影响原件见ROOT分析。原Phi/patches/真实snapshot/actions/无视频score和固定参数final不依赖该错误；当前a986e7b2固定128MT补测继续，0重编译授权。

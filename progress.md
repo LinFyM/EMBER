@@ -1,3 +1,8 @@
+## 2026-10-15 固定128MT修订已实际启动；并行修复未来joint schema
+
+唯一video_effect_MT_official_settling_03/PID3637133于21:48:27.645Z从clean pushed detached a986e7b2启动。只读旧384有效final/24LoRA/Phi/sealed；六持久MT消费者，首两者在原16case shard实际用slots16，其余slots8，全部128注册病例计入有效计算/预算、0discarded profile。live所选gpu02:1/7/2/0/4/6当前free约40–45GiB，本用户无其它CUDA，普通cap6/node6；strg01 data1独立used1603.762GiB/soft2048，原ROOT30.072GiB/项目374.745GiB/当前dev.280GiB，共享df另存，新增修订约≤1GiB且原96GiB预估余量仍足够。每launch由Batch再live现场核验，不冻结旧快照。原首次18:16:48.556Z、修订25–45min不重置；唯一owner整批退出唤醒，0第二waiter/阶段Queue/重训/GT重开。
+主讨论另发现own joint slide/hinge及q列与teacher/scoring相反；未来入口在独占dev窄修、CPU消费者已通过，旧评分/梯度/H/LoRA不重写。当前MTphysical=False不受影响；原视频编译存在接口违约，完整影响一次交main决定是否另给有限重编译合同。两项修复不把旧低分改称成功、不追加科学计算。
+
 ## 2026-10-15 原批settling违约已定位；唯一128固定MT修订active
 
 当前唯一active仍为video_effect_parameter_compiler_20261015，范围限design§12/main01a13399明确授权的原8内部probe×init0..15共128固定MT参照修订；0重训/profile/新实践/新sealed读出/held/Test。原384编译final、Phi1120、24完整LoRA/Adam/RNG、32bootstrap及832恢复分支全部保留。普通MT未做dummy10、snapshot分支恢复前额外dummy10是缩进接口违约；原MT64与相对MT−4/−6/+10撤出科学结论，三个编译臂60/58/74间比较保持。

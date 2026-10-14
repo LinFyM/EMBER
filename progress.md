@@ -1,3 +1,9 @@
+## 2026-10-15 N16实践支撑整批已实际启动
+
+唯一practice_support16_01/PID156315于2026-10-14T23:55:34.866658+00:00从clean pushed detached7a146fc0启动，ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16。六持久job均独立live双节点/6总量-node6/strg01 data1准入，实际gpu02:1/7/2/0/4/6；workload35,000MiB来自旧真实峰值及本批分块安排，非利用率或固定24GiB筛选。初始slots16，注册64分支内按真实steps/s/峰值/live余量比较更大slots；native逻辑16点物理4/8/16分块求同一均值，clip/Adam只一次，0额外环境profile。
+完整§14合同、32旧bootstrap视图、96新共享及16原预测只读引用、56动态就绪项、N16恢复schema与CPU真实consumer均已登记；尚未以启动或CPU代数声称完整native10/迁移通过。全部24端点冻结后才做512逻辑final，原正式MT128/67是唯一MT参照；旧74/所有旧行和sealed例外不改写。80GiB峰值预估的元数据推算74.35GiB，quota现场有余量；新5008/1148800/50080/1198880/failed16、旧2184次451706步7.005042365GPUh和原时钟分列。
+新首次23:06:33.739733Z/2–4h保持，实际准备与GPU启动单列；无阶段Queue、第二waiter、固定日志/成绩轮询、共享训练/GT/held/Test或自动后继。一个owner等待真实子进程退出并可靠整批唤醒，实验验收/Git后一次交main；有决策价值的首N16资源变化才修正ETA，原件physical_consumers/记录。
+
 ## 2026-10-15 唯一active：N16实践支撑的有限完整方法检验
 
 main完整消费§13后授权当前design§14，首次派发2026-10-14T23:06:33.739733Z、准备至完整交付暂估2–4h。当前独占dev/CPU实现，尚未新GPU/环境计算。只把支撑扩大到init16..31：24独立fresh MT300/空Adam，Phi1120/原16预测/关系评分/四格/native10/38r8/Adam/接受规则保持；四格分母4、外层episode均值16，64分支+16候选的80逻辑请求原子单元，最多80信赖点。每condition192starts/128horizon，预算增两倍但实际修订机会可能更少，不称纯N因果隔离。失败后收束固定Phi关系评分+局部分支nativeAdam家族继续扩量/调参；整体接续由main承担。

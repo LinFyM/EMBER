@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**§12–16及优先修订§17 H双臂均已完成；原§17 no-H于04:12:14Z按范围纠正中止，费用/原件保留、不作科学阴性。新fresh V/VL各8640有效B4、seen576与strict held400完整，V372/149、VL353/151，强MT340/153、首G427/165、D72 414/175和D144 414/168保持。当前0 active计算，完整原件交主讨论科学消费和下一实际方法裁决；不自动扩训练、controls、Test或后继。两臂真实MT-H1/无execution hidden，V无直接L/VL仅多直接L、policy保持L及唯一完整38-target LoRA不变；有复用MT实践依赖、非零交互，完整EMBER目标尚未取得。**
+2026-10-14。**§12–17已完整消费，原§17 no-H中止与真实H批阴性/越界修订/全部费用保留。当前唯一active为已授权§18：完整承接V/VL8640的Reader/H/F、Adam/sampler/rank RNG，仅增加同一映射的优化量；先10800共同有界节点，未共同早停则25920唯一端点，再以预注册seen收益/保持/suite gate决定是否两臂都进入原strict400。当前CPU实施/新冻结准备，尚未宣称GPU启动；0新实践/训练query/native/controls/Test/第三同条件窗口。原教学/H输入、V/VL语言比较、完整38-target输出及policy L保持；完整EMBER目标未完成。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -888,3 +888,52 @@ image_gemma_H_paired_publication_resume_03于08:56:12Z exit0，原8640/全部有
 两臂完整Adam/sampler/3rank RNG、同144真实教学流/fresh共初始化与完整Reader/H/decoder信用、各36 seen固定编译+400 held无放回视频/原scene/noise/官方控制经一次CPU原件验收。每臂436完整38-target LoRA；旧MT436经历/123039步只计共享依赖一份，0新增实践/query/Test、非零交互。当前全部GPU消费者/owner退出。
 最终1952返回/1999提交上界/47失败上界，known499610+unknown22990=522600，恢复新增failed0；旧1968/16越界和main修订2015/63/1043040均保留，不把上界叫精确reset。ROOT12.571101360GPUh/32jobs含4失败，旧no-H2.371076951另列。训练7f05e3e6、首16held b9c8f824、余784 8ecddd64分列；H104/video91固定消费者原件保留。H派发至完成276.385min、恢复裁决134.171min，03实际57.043min在修正45–75内，原超期不清零。
 完整原件ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_with_history，results.json与analysis/engineering_completion_20261014/{acceptance.json,report.md}。本有限批完整交付、当前无active实验，科学接续由main负责；没有第二等待者或自动后继。
+
+## 18. 从完整V/VL8640承接的一次有界共同优化（2026-10-14）
+
+授权原件：/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_with_history/analysis/main_scientific_readout/bounded_refinement_contract_20261014.md；首次实际派发2026-10-14T09:41:00.214Z，未重置准备时钟。以下为完整有效合同。
+
+# 唯一后继§18：从V/VL8640承接的一次有界共同优化
+
+## 目标、授权与唯一变化
+
+main已科学消费§17完整原件；本文件是实际后继授权，交执行session01a133e5-50f0-7d20-a893-df95c7387630独立完成实施、运行、工程验收、根记录/Git和一次整批交付。原§17完整阴性、原边界越界/修订、失败及全部成本保留。当前结果没有达到目标，后继只改变同一映射的共享优化量；完整科学依据见同目录interpretation_20261014.md，不需执行者再做科学分析或等待工程ACK。
+
+建议唯一新ROOT：`/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640`。须现场quota核验后建立。旧ROOT及其checkpoint/缓存/原行只读复用；不是重启旧owner或把旧8640结果改成未完成。
+
+## 计算与完整状态
+
+- V、VL分别从原image_only_gemma_with_history/arms/{arm}/checkpoints/update_00008640完整承接compiler、Adam、sampler/cursor与rank RNG；不重置optimizer、不从旧no-H承接、不选择旧内部恢复点。新阶段是resume，不再称fresh训练；fresh来源共同17/VL18/H19保持。
+- 全部模型数学、38-target/r8/643584参数输出、原source+MT和36E、S_G/D38、Adam1e−4/betas(.9,.95)/eps1e−8/wd1e−4/clip1不变。原Reader、HistoryReader与六层F继续共同学习，不冻结任何新模块、不新增辅助损失/native反传/Actor/选择器。
+- 原36×4=144合法教学，demos46–49与E训练0–45、原同task唯一MT-H1、pure source Gemma教学cache、H无execution hidden保持。V无直接L、VL保留同直接L支路；执行policy两臂继续L。真实H的图像/63维事实保留，不要求语言信息独立，不把静态任务识别升级为动态理解。
+- 同一原logical_conditions(root,u,panel)继续从u=8640取流；有效B4、每条件loss/4+rank SUM、task等权及每36更新完整144一次保持。追加17280时每task新增1920次、每demo480次，总计2880/720；没有新增独立meta-task或教学。
+- 允许完整CP边界显式改变物理world1–4及设备/分片，每臂不跨节点拼训练；保持逻辑流、有效batch、权重、optimizer/scheduler/scaler语义与既定RNG迁移记录，不称bitwise exact。正常BF16/TF32/归约低位差异接受，不新增逐tensor一致性检查。
+
+## 有界停止与唯一端点
+
+1. 两臂均追加2160有效更新至10800，各做原全144 BA节点。以各自原8640全144 mean为基准（V .5266833483064046；VL .532420737862089），计算relative_improvement=1-new/old。若两臂均小于.05，共同停止10800，保留完整状态与曲线，0新seen/held环境启动。这是投入保护，不是动态理解或最终性能判据。
+2. 若至少一臂达到.05，则两臂按同原流都继续至唯一25920；最大新增17280更新，不因谁更快/谁分数更高改变两臂逻辑曝光。不用10800选优，不按最佳loss保存输出。可在12960/17280/21600等完整边界保存恢复状态，恢复点不参与结果选择。
+3. 25920各做全144节点并保存全状态；只允许这一终点编译各自原seen36套LoRA、做各576原query读出。训练读出完成之前绝不依据held选择训练量。
+4. 定量seen投入gate：至少一臂同时满足(a)successes≥400/576，即对MT340净增≥60；(b)保留MT成功≥306/340（90%）；(c)四个target suite相对原MT每suite净差均≥−4/96，且至少三个suite净差>0。support12完整报告，不能隐藏；这是本批明确“值得支付held成本”的规则，不成为Owner永久门槛。它允许小幅suite交换，拒绝只有总分但明显局部崩塌的推进。
+5. 若两臂均不满足，整批在1152 seen读出后结束，0新held/Test/controls；不得临时放宽gate或再训练到过线。若至少一臂满足，则V和VL两臂都做原strict paired400，以保留匹配比较，不能只报过gate的一臂。唯一25920、同50-video无放回state-video映射、原正确教学及官方控制全部不变。
+6. 全部结束后交完整结果，0自动第三个同条件训练窗口、0第二block/追加节点/新baseline/controls/Actor/实践/Test。只有真实科学/交互/资源边界才回main；正常阴性按原合同交付。main负责后续科学取舍，无Owner新许可或例行ACK等待。
+
+## 评测、标签与交互
+
+- seen仍为原36任务每task固定teacher_demo、原query16初态/scene/env+policy全noise，原576 MT/E/首G/D72/D144以及§17 V/VL8640只读引用，不重跑参照。所有新LoRA由该臂唯一25920和合法条件产生，不能复用旧8640 LoRA代替。
+- 若进入held，则每臂400 unique task-video conditions，原8task×50video各一次、原state-video/noise/scene映射和原MT-H1 exact prefix保持，compile后Writer退出、最终固定一套完整LoRA。仍render256/model224、双相机180rotate、8state/7action、10flow、5action replan、dummy10、成功终止和原suite horizon。
+- 训练与held的H依赖仍是原36+400 MT经历/123039环境步，双臂共享一次计账；0新实践、0额外训练query、0 held离线标签/梯度、0 Test。held H仍只允许原MT第一episode前缀，后续旧G实践/最终查询结果不进入条件。
+- 最大唯一最终完整query为1952（两seen1152+两held800）；新批最大累计提交1968、failed/partial上界16、累计环境步上界1043040（含settling和所有可证partial及unknown保守账）。若早停或seen gate不通过，未执行部分留0，不补其它案例消耗额度。科学完整失败有效且不重跑，工程失败恢复保留有效行/原case，不抽新视频或初态。
+- 沿用已修复的paired rows_per_state=2实际发布消费者和有效原行接续语义；全局同时在途环境start≤16保护失败余量。资源安排可提高吞吐，不能将首训练batch、Hcache峰值或旧较短视频的峰值冒充当前render/compile/control共驻安全。
+- 输出完整per-task/per-suite/breadth、相对强MT/旧G/D/§17相邻研究节点的R/G/L/churn/success-set重合；8640→25920间隔很大，不冒称近邻稳定性。反例和两臂全部原行保留，不使用oracle/union/融合选点。
+
+## 资源、时间、工程边界
+
+- 所有新增内容只写data1；复用原policy、source、E、normalization、tokenizer、教学9.14GiB与训练H3.12GiB缓存及原H原件，不复制大资产或保存400条件的大型feature池。预估新峰值额外16GiB，包含两臂完整恢复CP、最多872完整LoRA、原行/日志和临时缓存；按真实输出方案重新合计并现场查strg01 data1独立quota/相关个人用量与共享容量。不足时报告具体缺口，不能转data0。
+- 每次launch/resume live检查gpu01+gpu02，沿现行总6/8卡、单节点6卡、实际显存headroom/不干扰规则；不设GPUh硬限，不以利用率通用阈值、固定3+3或一worker一panel安排。训练/cache/compile/eval共享计数，已有ready工作即时按吞吐派发。
+- 原三rank全池实际训练allocated约12.0–12.73GiB/reserved13.64–13.97GiB，V约.21s/B4、VL约.225s/B4；可以按现场真正收益改善物理batch/并行/缓存，保持B4和全部科学语义。利用首个有效完整36task round/原最长真实消费者记录峰值和吞吐，不新增discarded训练或环境profile；保留未继续放大的实测依据。旧held的H104/video91实际compile约12.9GiB与execution约9.4GiB仅作初始安排依据，现场共驻还须有余量。
+- 两臂原三rank并行追加17280约61–65min；复用cache和窄实现/Git准备约15–35min，seen1152估35–65min，若过gate后held800据原六卡03实际57min估50–75min，可并行就绪工作。完整成功进入held的整批预估150–240min，从本合同首次实际派发计；早停约25–50min、seen不合格更早结束。按实际吞吐修正一次实质偏差，原时钟和费用保留，不能为赶预计减面板。
+- 沿用一个canonical ImageCompiler/学习/评测运行面，扩展现有owner承接明确的stage/start/stop和gate；不复制第二Writer或长期旧runner。窄控制面改动无需重做模型或另建通用测试框架；用实际状态读取、共同节点算术/分支、真实已有行publisher等实际消费者完成针对性检查。若改变模型数学/标签/信息墙/有效更新/选择或需要超本批交互/存储边界，回main明确裁决；不以工程修复扩大科学范围。
+- 实验侧独占dev分支/工程修改/根五份记录串行写入，main只写本分析目录。从clean pushed main建立新detached正式冻结，登记旧训练7f05来源、完整8640resume和新source身份，旧冻结不热改。验证后按仓库要求集成push和清理task-owned dev worktree，formal frozen与必要证据保留。
+- 原§17 12.571101360 GPUh、no-H中止2.371076951、旧MT依赖与未知专属费用分别保留；新批增量、继承依赖和累计费用不能混淆。原47失败不转移成新失败额度，也不能被删除。
+- 一个owner负责整批与真实退出事件等待；没有第二等待者、阶段Queue或普通ACK。仅整批完成/正常科学早停/真实异常边界通过一条可靠回报到main。执行者无须接收main日常思考，完成后main直接消费科学原件并自主接续。

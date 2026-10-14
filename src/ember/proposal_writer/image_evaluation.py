@@ -134,21 +134,42 @@ def reference_rows(root,role):
             e.extend(receipt['rows'])
         d=read_json(parent/'operator_native_joint_learning/arms/operator_only/readouts/seen/results.json')['raw_rows']
         d144=read_json(parent/'operator_D_adjacent_stability/arms/operator_only/readouts/seen/results.json')['raw_rows']
-        return dict(MT340=mt,E455=e,firstG427=g,D72_414=d,D144_414=d144)
+        refs = dict(MT340=mt,E455=e,firstG427=g,D72_414=d,D144_414=d144)
+        return with_parent_references(root,role,refs)
     old=Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349')
     mt=[e['MT_row'] for e in read_json(old/'formal_panel.json')['rows']]
     old_full=[read_json(p)['selected'] for p in sorted((old/'validation/RL_00000018/correct').glob('task_*/query.json'))]
     source=Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013')
     g=read_json(source/'diagnostics/first_G_validation400_20261013/results.json')['raw_rows']
-    return dict(MT153=mt,firstG165=g,old_full163=old_full,
+    return with_parent_references(root,role,dict(MT153=mt,firstG165=g,old_full163=old_full,
         Phi167=read_json(parent/'independent_value_fixed_paths/results.json')['rows'],
         D72_175=read_json(parent/'operator_native_joint_learning/arms/operator_only/readouts/validation/results.json')['raw_rows'],
-        D144_168=read_json(parent/'operator_D_adjacent_stability/arms/operator_only/readouts/validation/results.json')['raw_rows'])
+        D144_168=read_json(parent/'operator_D_adjacent_stability/arms/operator_only/readouts/validation/results.json')['raw_rows']))
 
 
-def summarize(root):
-    root=Path(root);result=dict(complete=True,arms={},Test=False,no_automatic_successor=True)
+def with_parent_references(root,role,refs):
+    source = read_json(root/'run_contract.json').get('resume_source')
+    if source:
+        for arm in ('V','VL'):
+            refs[arm+'8640'] = read_json(Path(source)/'arms'/arm/'readouts'/role/'results.json')['raw_rows']
+    return refs
+
+
+def refinement_seen_gate(part,mt_rows):
+    """Only the predeclared nonheld control/retention/suite rule buys both held panels."""
+    suites = ('libero_spatial','libero_object','libero_goal','libero_10')
+    nets = {s:part['per_suite'][s]['successes']-sum(r['success'] for r in mt_rows if r['suite']==s) for s in suites}
+    passed = (part['successes'] >= 400 and part['paired']['MT340']['retained'] >= 306
+        and min(nets.values()) >= -4 and sum(v>0 for v in nets.values()) >= 3)
+    return dict(passed=passed,successes=part['successes'],MT_retained=part['paired']['MT340']['retained'],
+        target_suite_net=nets,positive_target_suites=sum(v>0 for v in nets.values()),
+        thresholds=dict(successes=400,MT_retained=306,each_suite_net_min=-4,positive_suites=3),held_feedback=False)
+
+
+def summarize(root, *, roles=('seen','validation'), complete=True):
+    root=Path(root);result=dict(complete=complete,arms={},Test=False,no_automatic_successor=True)
     for role,count in [('seen',576),('validation',400)]:
+        if role not in roles:continue
         refs=reference_rows(root,role);parts={}
         for arm in ('V','VL'):
             rows=[read_json(p) for p in sorted((root/'arms'/arm/'readouts'/role/'rows').glob('*.json'))]
@@ -173,5 +194,7 @@ def summarize(root):
             for role,entries in [('training',method['training']),('validation',method['validation'])]},
         prior_scope_change=read_json(root/'run_contract.json')['prior_scope_change'],zero_interaction_method=False)
     write_json_atomic(root/'results.json',result)
-    write_json_atomic(root/'complete.json',dict(complete=True,finished=1952,Test=False,no_automatic_successor=True))
+    if complete:
+        write_json_atomic(root/'complete.json',dict(complete=True,finished=result['interaction']['finished_rollouts'],
+            executed_roles=list(roles),Test=False,no_automatic_successor=True))
     return result

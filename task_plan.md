@@ -1,3 +1,10 @@
+## 2026-10-14 §18唯一有界优化量检验已授权；CPU实现/冻结准备
+
+主讨论已按原件消费§17，新增唯一§18合同全文纳入当前design；main科学解释指针为image_only_gemma_with_history/analysis/main_scientific_readout/interpretation_20261014.md，执行者不重复科学复算。只有相同映射的优化量改变：两臂完整8640→10800全144节点，若各相对改善均<5%共同停止且0新query；否则同流共同至唯一25920。非held seen各576，仅至少一臂同时≥400成功、MT保留≥306、四target suite净差各≥−4且至少三个净正时，两臂均做原400；不临时放宽或只选一臂。
+当前新ROOT=image_gemma_H_refinement_from8640已按live data1 quota建立，只引用源8640 CP/144教学/36H缓存/原面板；旧source及原12.571101360GPUh/47失败与no-H2.371076951费用不重启、不carry新失败额度。完整ψ/Adam/流/RNG恢复、10800投入判断/seen gate和允许早停的结果消费者正在窄核验；未启动新GPU。唯一整批owner模板与源码/根记录写域隔离并行准备，0一般review波次。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640；新增峰值16GiB，准备quota used约1567GiB/soft2048GiB、共享容量80T、旧两个ROOT合计约17.35GiB已核；source旧大cache只引用。每launch再live两节点6/8/node6，按实际吞吐选1–4rank/arm/持久long-first就绪队列，总在途环境start≤16。新1952/1968/16/1043040上限/原H1/语言/BA/信息墙/官方控制保持，0新实践/训练query/native/Actor/controls/Test/第三同条件窗口。
+首次派发09:41:00.214Z，完整进入held预计150–240min（准备15–35、并行学习61–65、seen35–65、held50–75可交错）；10800科学早停约25–50min，gate不合格更早结束，均以真实消费者修正。执行者独占dev→main clean push→新detached正式冻结与工程恢复，不等ACK；单一owner实际退出/一次整批或真实边界唤醒本实验→验收/Git→main01a13399，无阶段Queue/第二等待者/自动后继。
+
 ## 2026-10-14 §17 H双臂整批完成；交主讨论科学接续
 
 image_gemma_H_paired_publication_resume_03于08:56:12Z exit0，完整工程验收通过：fresh V/VL各8640有效B4与完整Adam/sampler/3rank RNG、原144教学/36真实MT-H1流、各seen576+strict held400均齐。当前0 active实验计算；下一动作是本次文档Git交付与一次主讨论01a13399整批科学消费，不自动追加训练、controls、Test或后继。完整EMBER目标仍未完成。

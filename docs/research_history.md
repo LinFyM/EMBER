@@ -1,3 +1,9 @@
+## 2026-10-14：§17科学消费后的唯一有界优化量检验§18
+
+主讨论直接消费真实1952原行、两个全144节点与六份实际训练日志，完整解释/CPUreadback在image_only_gemma_with_history/analysis/main_scientific_readout/{interpretation_20261014.md,readback.py,readback.json}。V/VL held149/151对MT153阴性保留，seen372/353及suite损失/support分母保持；删直接L本身未改善迁移支持。BA.527/.532显示条件化拟合但不证明动态教学知识，旧无条件算子下界/冻结前端F-only充分优化正例与强G/D/Phi负边界共同约束取舍。
+§18明确授权同一映射完整8640ψ/Adam/sampler/RNG承接、仅新增优化量，10800共同<5%则0query结束，否则唯一25920→双seen576→定量收益/保持/suite gate决定是否双held400，0第三同条件窗口。所有输入/BA/信息墙/官方口径与旧完整阴性/费用保持；这是假说有界检验，不宣称欠训唯一根因、动态理解或held成功。
+首次实际派发2026-10-14T09:41:00.214Z；新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640，完整合同design§18及inputs/scientific_contract.md，当前CPU实现/新冻结准备、未新launch。实验独占工程/Git/根记录，main继续只写旧ROOT分析；一个整批退出/实际边界一次交付，不重复旧计算或加阶段通知/等待者。
+
 ## 2026-10-14：§17纯Gemma教学与真实MT-H1匹配V/VL完整结束
 
 H优先修订fresh双臂均完成唯一8640与seen576/strict held400：V372/149、VL353/151；强MT340/153、首G427/165、D72 414/175和D144 414/168保持。V对VL seen得47失28/net+19，held得28失30/net−2；对MT held分别得27失31/net−4及得26失28/net−2，breadth均6/8，task23/39均0/50。当前结果未超过强MT，不能从seen增量宣称held进步、视频操作知识或相对旧G的单一语言因果；main消费完整原件后科学接续。全部原分布、强点、不利条件与阴性保留，0自动新块/controls/Test。

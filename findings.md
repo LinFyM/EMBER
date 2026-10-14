@@ -12034,3 +12034,9 @@ fresh V/VL同144合法教学/36MT-H1流/完整BA/8640有效B4，seen372/353对MT
 纯source Gemma教学与真实MT-H1均经实际消费者，V无直接L/VL仅匹配直接L，policy仍读L；共享Reader/H/完整decoder fresh与284/290全Adam/sampler/3rank RNG、同任务流/全链信用齐全。teacher144训练条件与seen固定36教学须区分，每臂seen36+held400共436完整38 LoRA。V/VL差异限本批直接L入口，相对旧G还有共同架构/输入/训练差异；拟合和本次分数不单独认证动态教学知识、去掉所有任务线索或video相对H的因果增量。main消费完整原件后取舍，Owner动态过程目标与真实H保留原则不降低。
 原47未返回提交及unknown22990步保持，原16额度越界不是事后追认合规；main唯一修订2015/63/1043040内最终1952完整/1999提交上界/47失败上界、known499610/保守522600，恢复新增failed0。新ROOT12.571101360GPUh/32job含4失败与旧no-H2.371076951分账；旧436MT经历/123039步共享依赖、历史专属计算成本未知，新增实践/query0而非零交互。H派发276.385min与恢复裁决134.171min显著超原预期，03实际57.043min符合修正45–75，成本/延误不清零。
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_only_gemma_with_history，results.json与analysis/engineering_completion_20261014/{acceptance.json,report.md}为完整工程交付；训练7f05/首16held b9c/余784 8ec、全部失败/原冻结保持。当前0 active计算/自动后继/Test，科学裁决仍由main承担，不把工程完成称完整EMBER目标完成。
+
+## 488. §17科学阴性与一次优化量假说的有限接续（2026-10-14）
+
+main直接消费原完整结果/全144节点/实际日志：V/VL未超过MT held，去直接L本身改善迁移的支持度降低；V seen372中target200/support172、VL353中179/174，原强G427/D414保持。实际BA从2160 .874/.866到8640 .527/.532低于同教师最优无条件算子均值.9408，支持学到与目标相关条件差异，但标签仍36 E/固定MT-H1，不能区分动态视频知识与静态/H任务识别，也不能把fit代替闭环。完整论证原件只引用image_only_gemma_with_history/analysis/main_scientific_readout/interpretation_20261014.md及readback.py/json，不由执行者重做。
+最近似旧冻结前端F-only 8883→24849的同条件优化曾BA.5749→.2329、seen362→425，是有限优化量检验的正依据；当前Reader/H/F共同fresh已到8640，与旧已学前端非等条件，不认定欠训是唯一/主要原因。旧高fit后held165、D175→168及Phi167负边界保留。本§18仅完整resume同映射再有界学，原10800相对改善<5%共同停、25920唯一端点/seen收益保持gate及0第三窗口约束投入，不成为Owner永久阈值或视频机制资格。
+完整合同已纳入唯一design§18，ROOT=image_gemma_H_refinement_from8640，首次实际派发09:41:00.214Z；0新教学/H、实践/训练query/native/Actor/controls/Test。旧H批12.571101360GPUh/原47失败与no-H2.371076951、共享MT436/123039步及未知专属成本只读继承，不清零也不算新ROOT carry-in；新预算1952/1968/16/1043040和16GiB按现场资源实施。工程准备尚非GPU执行或科学改进，main独占科学裁决/接续。

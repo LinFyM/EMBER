@@ -68,7 +68,8 @@ def save_checkpoint(root, arm, update, model, optimizer, context, run, migration
         torch.save(state, file/'state.pt')
         write_json_atomic(file/'manifest.json', dict(schema_version=SCHEMA, arm=arm, next_update=update,
             complete=True, full_optimizer_sampler_RNG=True, parameter_count=sum(p.numel() for p in model.parameters()),
-            topology=state['topology'], role='common_node' if update==2160 else 'recovery_only' if update<8640 else 'sole_normal_endpoint'))
+            topology=state['topology'], role='common_node' if update==run['nodes']['first'] else
+                'sole_normal_endpoint' if update==run['nodes']['normal_endpoint'] else 'recovery_only'))
     if context.world_size > 1: dist.barrier(device_ids=[context.local_rank])
     return file
 
@@ -98,7 +99,10 @@ def read_node(root, arm, update, model, inputs, teachers, objective, context):
 def learn(args, context):
     root, arm = args.root, args.compiler_arm
     run = read_json(root/'run_contract.json')
-    if args.stop not in (2160,8640) or not 1<=context.world_size<=4: raise ValueError('bounded shared learning nodes/world required')
+    nodes = run['nodes']
+    if args.stop not in (nodes['first'],nodes['normal_endpoint']) or not 1<=context.world_size<=4:
+        raise ValueError('registered shared learning nodes/world required')
+    checkpoints = set(nodes['recovery']) | {nodes['first'],nodes['normal_endpoint'],nodes.get('first_round',9)}
     model, lora = compiler(root,arm,context.device)
     optimizer = torch.optim.AdamW(model.parameters(),**OPTIMIZER)
     initial, migration = 0, None
@@ -106,6 +110,12 @@ def learn(args, context):
         model, lora, saved = load_compiler(root,arm,args.resume,context.device)
         optimizer = torch.optim.AdamW(model.parameters(),**OPTIMIZER); optimizer.load_state_dict(saved['optimizer'])
         initial = saved['next_update']; old = saved['topology']['world_size']
+        if (saved['sampler']['next_update'] != initial or saved['sampler']['logical_B4'] != 4
+                or saved['sampler']['task_weight'] != .25 or saved['sampler']['task_order'] != run['training_tasks']
+                or len(saved['rank_rng']) != old or saved['frozen_dependencies'] != run['frozen_dependencies']):
+            raise ValueError('complete original logical sampler/RNG/frozen dependencies required')
+        if run.get('resume_source') and not run['training_start'] <= initial < args.stop:
+            raise ValueError('refinement can only continue its registered complete checkpoint range')
         if context.rank < old: restore_rng(saved['rank_rng'][context.rank],context)
         else:
             value = int(np.random.SeedSequence([20261014,17,2,context.rank]).generate_state(1)[0])
@@ -114,6 +124,7 @@ def learn(args, context):
             restored_RNG_ranks=list(range(min(old,context.world_size))),new_RNG_ranks=list(range(old,context.world_size)),bitwise_exact=False)
         del saved
     else:
+        if run.get('resume_source'):raise ValueError('registered refinement requires full original state')
         value = int(np.random.SeedSequence([20261014,17,2,context.rank]).generate_state(1)[0])
         random.seed(value);np.random.seed(value);torch.manual_seed(value)
     inputs = ImageInputs(root,context.device)
@@ -152,13 +163,13 @@ def learn(args, context):
                 seconds=time.monotonic()-tick,gradient_credit=credit,peak=memory_peak(context.device),
                 source_frozen=True,old_meta=False,teacher_in_condition=False,learned_memory_recomputed=True)
             stream.write(json.dumps(record)+'\n');stream.flush()
-            if u+1 in (9,2160,4320,6480,8640):
+            if u+1 in checkpoints:
                 save_checkpoint(root,arm,u+1,model,optimizer,context,run,migration)
-            if u+1==9:
+            if u+1==nodes.get('first_round',9):
                 periods=torch.tensor(time.monotonic()-started,device=context.device)
                 if context.world_size>1:dist.all_reduce(periods,op=dist.ReduceOp.MAX)
                 if context.is_main:
-                    proof=dict(arm=arm,update=9,effective_B4=9,seconds=float(periods),world=context.world_size,
+                    proof=dict(arm=arm,update=u+1,initial=initial,effective_B4=u+1-initial,seconds=float(periods),world=context.world_size,
                         peak=memory_peak(context.device),first_credit=first_credit,second_credit=second_credit,
                         frozen_cache_GiB=inputs.bytes/2**30,cache_limit_GiB=inputs.limit/2**30,
                         discarded_updates=0,parameter_count=sum(p.numel() for p in model.parameters()))
@@ -172,3 +183,28 @@ def learn(args, context):
         complete=True,initial=initial,next_update=args.stop,seconds=time.monotonic()-started,
         checkpoint=str(root/'arms'/arm/'checkpoints'/f'update_{args.stop:08d}'),cache_hits=inputs.hits,
         GPU_cache_loads=inputs.loads,transfer_seconds=inputs.transfer_seconds,peak=memory_peak(context.device)))
+
+
+def refinement_decision(root):
+    """Consume both registered whole144 nodes; this decides effort, never held selection."""
+    root = Path(root); run = read_json(root/'run_contract.json'); records = {}
+    source = Path(run['resume_source']); expected = {(e['task'],e['teacher_demo']) for e in read_json(root/'input_manifest.json')['training']}
+    for arm in ('V','VL'):
+        parent = read_json(source/'arms'/arm/'nodes/update_00008640.json')
+        directory = root/'arms'/arm; update = run['nodes']['first']
+        node = read_json(directory/'nodes'/f'update_{update:08d}.json')
+        checkpoint = directory/'checkpoints'/f'update_{update:08d}'
+        manifest = read_json(checkpoint/'manifest.json'); finished = read_json(directory/f'training_{update:08d}_complete.json')
+        if (not all(e['complete'] for e in (parent,node,manifest,finished))
+                or parent['update'] != 8640 or node['update'] != update or node['arm'] != arm
+                or manifest['arm'] != arm or manifest['schema_version'] != run['schema_version']
+                or manifest['next_update'] != update or finished['next_update'] != update
+                or not manifest['full_optimizer_sampler_RNG'] or len(node['rows']) != 144
+                or {(e['task'],e['demo']) for e in node['rows']} != expected
+                or not np.isfinite(node['mean_BA']) or not np.isfinite(parent['mean_BA']) or parent['mean_BA'] <= 0):
+            raise ValueError('both complete registered all144 refinement nodes required')
+        records[arm] = dict(old=parent['mean_BA'],new=node['mean_BA'],
+            relative_improvement=1-node['mean_BA']/parent['mean_BA'],checkpoint=str(checkpoint))
+    early = all(e['relative_improvement'] < .05 for e in records.values())
+    return dict(complete=True,arms=records,early_stop=early,endpoint=run['nodes']['first'] if early else run['nodes']['normal_endpoint'],
+        one_shared_decision=True,no_held_feedback=True,no_checkpoint_selection=True)

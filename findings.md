@@ -12071,3 +12071,5 @@ main直接消费原1728行与全分布：换视频d_X_target均值V1.081050/VL .
 ## 494. §20局部跨scene片段移植检验不等价于完整操作互换（2026-10-14）
 
 main已核同top-drawer opening跨scene正例不存在；task43/96相同黄油只有稳定握持下的重力方向关系成立，不能认证完整u或7维动作/抓取/放置等价。冻结三个stride5图像帧的P/N来自同task96 episode自然升/降，横向轨迹、幅度、阶段、场景与接缝混杂保留；不由方向/norm差异宣称动态知识。只按完整闭环原256面板/自身输出证据解释，强MT/首G/D/V/VL和旧失败/费用不削弱。完整合同design§20及新ROOT/inputs；0训练/新实践/held/Test，不追加窗口、VL、aux loss或第三同条件优化。
+
+§20第一次调度退出只因临时owner把canonical Batch的单卡tuple当list，0 GPU/model/env/费用；新02设备归一化已用实际Batch.run验证，冻结科研源码a55c926e不变。CPU桥接通过不是完整模型或真实MuJoCo body认证；本批有效最终episode仍须取得全部逐动作trace/原BDDL及butter_2_main绑定证据。

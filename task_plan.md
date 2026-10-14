@@ -1,3 +1,9 @@
+## 2026-10-14 §20实际正式启动；原批唯一桥接恢复
+
+唯一local_interchange_bridge_resume_02/PID1617247于2026-10-14T15:43:30.364370+00:00从clean pushed detached a55c926e实际启动，GPU编译job于2026-10-14T15:43:41.269819+00:00在gpu01:1经双节点/data1独立quota准入。实际source只复用canonical ImageCompiler/pure_features/完整MT-H36，0新训练。待16完整LoRA就绪后，六个持久共享队列消费者安排gpu01:1/6/7/0/2/5，slots4/4/2/2/2/2、全局在途16；每launch再核live资源，不固定面板归属、不占空卡。原首次15:12:22.781Z派发45–90min保持，当前尚未完成科学读出。
+原01 owner于15:40:20.847Z在单卡tuple→list桥接前退出，GPU/model/环境与费用均0；全部原件保留并按attempt消费，不抹准备时间。新02只修临时operations owner设备归一化，不改或热改冻结科研代码；真实canonical Batch.run CPU消费者已覆盖编译依赖及六worker参数/launch列表。信息墙/shape/原窗口/完整63facts/16行发布消费者通过；首真实model/物体body绑定仍由本批有效消费者核实，不以CPU stand-in称已通过GPU。
+唯一整批或真实异常唤醒已设置为OUT/whole_batch_exit_delivery.json→本实验01a133e5，owner直接等待实际子进程，无第二整批waiter/阶段Queue/自动重试或后继；验收/Git后一次main01a13399。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/local_operation_interchange_25920；原入口按科学消费后退休，全部raw/trace/失败/费用/新旧代码身份保留。
+
 ## 2026-10-14 §20局部内容移植闭环检验已授权；CPU实施/冻结准备
 
 main已消费§19科学原件及入口退休（edeaed45），不重复旧计算。跨scene同top-drawer opening正例不存在，黄油片段只支持稳定握持下的重力方向关系，完整u交换/辅助训练候选已撤回。当前唯一active为design§20：固定V25920、task43原完整36-record MT-H1，8条原真实视频各只读纯image Gemma一次；仅在ImageReader前替换原完整教学三个双相机z_img帧，完整Reader/H/F各重新forward，输出C/O/P/N共16套38-target/r8 LoRA。

@@ -5364,3 +5364,8 @@ image_gemma_H_readout_resume_02 exit1是发布层expected8(actual state)对实�
 
 唯一input_dependence_01/source463c3b97（原训练778ff8ea）于14:14:17.561217Z exit0；864唯一Compiler/1728逻辑原行/288复用same-task-other，全36+四demo+原crosssuite自逆配对+独立VL L与零分母q null齐全。correct原25920节点最大abs差1.1611e−4，不换dtype/重跑；只读完整算子依赖，未取得新控制/held或动态知识证据，main科学消费/接续。
 新132.996s消费者/.043711594GPUh/单gpu01:3/0失败，0source/native/训练/环境/实践/held/Test/新LoRA保留；派发到退出32.152min在25–50min内，旧费用和47失败不清零。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920，全原行/aggregate/compatibility/completion和analysis/engineering_completion_20261014验收保留；开发分支树已清理、formal冻树保留，0自动扩配对/时序controls/第三个同条件窗口。
+
+## 2026-10-14 §19主讨论科学消费与一次性入口退休
+
+main按ROOT/input_dependence_01消费原件，确认跨suite换视频的广泛教师方向相关作用，停止总体忽略视频解释；任务差异/H/L/零E与零分母及非动态、非闭环边界保留。原V视频d_X_target1.081050、VL .934986；执行者导航误写的1.057931817为VL d_X_partner，原rows/aggregate与报告表格未错，原投递文字保留、更正显式登记。科学原件为/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640/analysis/main_scientific_readout/interpretation_20261014.md“§19原件消费”及frozen_input_dependence_readback.json。
+14:34:11.071Z授权0GPU/forward/环境的生命周期收尾，删除唯一210行scripts/frozen_compiler_input_dependence.py与完整替代的task-owned临时副本，保留共享Compiler/Inputs/Gram及正式463c3b97冻结/原训练778ff8ea/25920CP/全配置/rows/aggregate/completion/费用。实际退休Git与清单在/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920/analysis/engineering_retirement_20261014.json；第三同条件窗口仍停止，无新科学派发，退休后仅一次main回执。

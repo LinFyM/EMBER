@@ -12061,3 +12061,9 @@ ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_i
 
 V2×2/VL2×2×2共864唯一Compiler反向复用1728逻辑行，另288同task-other仅复用correct；全部36/四demo/输入mask与五suite含support/零E分层原行和统计齐全，E只在分析标签侧。Et/Ep算子距离分母为0的q null保留V32/VL64；correct距离对原25920 node最大abs差1.1611e−4、均值1.2602e−5，正常精度范围不重跑。此工程交付只保证固定已学映射的来源选择/组合/算术可读，不把内部依赖当动作知识或held成功率，main按事前分支独立科学消费。
 单卡实际132.996s（setup56.837s），.043711594GPUh，allocated12.605/reserved13.139GiB、0source/native/训练/环境/held/Test/新LoRA保存；原科学阴性/旧费用与适应依赖保持。ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920，aggregate与1728原行/864物理映射、同任务距离、fixed_correct_compatibility及analysis/engineering_completion_20261014/{acceptance.json,report.md}为原件。source463c3b97 clean pushed detached/原训练778ff8ea，task-owned dev已清理，当前无active计算/自动后继；窄one-shot消费者在main科学消费后退休，历史以frozen/Git/原件保存。
+
+## 493. §19广泛视频作用与映射迁移边界；科学消费后退休（2026-10-14）
+
+main直接消费原1728行与全分布：换视频d_X_target均值V1.081050/VL .934986，大于同task既见视频变化的36/36，但任务绝对量/差异保留，不把比率当新闭环因果效果。在有定义教师方向的34task，两臂均34/34向供体E移动，V20/34与VL12/34最终更接近供体；停止“整体不读视频”解释，不新增最大化video敏感性/故意压坏wrong的损失。H/L仍参与映射；零E任务的作用和其余明显不同，不能按总体均值删除真实经历或语言信息。
+跨task变化大、同task变化小既与task→E监督相容，也与正确抽象相容；训练池固定输入读出不证明静态记忆、动态操作知识或held能力。§18 seen正例/held阴性保持，第三优化窗口停止；后继方法讨论不自动授权GPU/新训练。完整论证只引用/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640/analysis/main_scientific_readout/{interpretation_20261014.md#§19原件消费,frozen_input_dependence_readback.json}，不重复主讨论汇总。
+执行者原导航VL100把d_X_partner1.057931817误标d_X_target；正确目标距离.934986299，原rows/aggregate/报告表格均正确，原投递原文保留并显式更正。原合同时限已满足，210行one-shot脚本及完整替代的临时副本退休；原463c3b97冻结/原778ff8ea训练/配置/权重/全输出/费用保留，canonical模型/Inputs/Gram未改，0新计算/诊断/交互。实际退休清单与Git身份见/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920/analysis/engineering_retirement_20261014.json。

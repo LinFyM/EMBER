@@ -1,3 +1,9 @@
+## 2026-10-14 §19科学消费完成；一次性分析入口已退休
+
+main已按ROOT/input_dependence_01科学消费§19：跨suite换视频对输出有广泛且教师方向相关的作用，停止“总体忽略视频”的解释；H/L作用、任务异质性及零E/零分母保留。该训练池内部读出仍不证明动态过程理解或held闭环能力，第三个同条件优化窗口停止，父分析中的后继方法讨论不是执行授权。当前无active计算或新实验合同。
+按原生命周期删除唯一210行scripts/frozen_compiler_input_dependence.py及被正式原件完整替代的task-owned临时副本；canonical ImageCompiler/ImageInputs/Gram与当前有效运行面未改。正式463c3b97 detached源码、原778ff8ea训练/25920权重、全部配置/rows/aggregate/completion与费用保留，退休身份见本次Git及/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/frozen_input_dependence_25920/analysis/engineering_retirement_20261014.json。仅CPU引用/差异/原件可用性检查，0GPU/模型forward/环境/训练/新诊断。
+执行者导航文本VL100曾误把d_X_partner=1.057931817写为d_X_target；正确d_X_target=.934986299，原aggregate/rows/报告表格正确且未改、无需重算。本次明确记录更正，保留原投递文字作为历史。科学消费原件：/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/image_gemma_H_refinement_from8640/analysis/main_scientific_readout/interpretation_20261014.md“§19原件消费”及frozen_input_dependence_readback.json。退休授权首次14:34:11.071Z、预计10–20min；完成串行Git/push后仅一次main回执，不派后继或阶段ACK。
+
 ## 2026-10-14 §19固定输入依赖整批验收完成；当前无active计算
 
 唯一input_dependence_01于14:14:17.561217Z exit0/complete，0.169s CPU原件验收通过：V288/VL576唯一物理Compiler，共864；V576/VL1152逻辑行共1728，每物理输出反向目标复用两次；另各144同task-other原池距离仅复用correct输出。原36global-ID+18自逆跨suite配对/同demo/完整教学与MT-H1/独立VL L/真实路径已核，零分母q为null保留V32/VL64，五suite含support与四demo/task等权统计齐全。

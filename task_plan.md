@@ -1,3 +1,12 @@
+## 2026-10-14 §15科学消费完成；唯一active §16固定真实路径独立价值学习
+
+main直接消费§15原件：D144 held净+3对S来自task31+9与其余−6，task23两点1/50成功初态无交集；D72对MT的46新增有33保持。部分控制正例保留，第三个D同目标块及C/native/lambda补救停止；完整解释只引用operator_D_adjacent_stability/analysis/main_scientific_readout/interpretation_20261014.md，不重算科学分析。
+§16全文授权已登记于唯一candidate design：冻结G38349与原selector72 beta18，72pair+72RL真实576prefix/1286候选，独立Phi复制已有final编码/零head与counts投影/fresh Adam，task→prefix→candidate等权BCE，180逻辑B4、60/120仅恢复、180唯一端点。0新G/实践/T/训练query/β更新/Test；14 pair及6 RL反例全部保留，720是144路径曝光，非独立新样本。
+CPU原件清点与真实流通过：缺pair216+RL130响应，346项实际5530 native10（task40两bootstrap各13records），≤5536；旧RL940及held1573复用，4单MT出口不补响应。完整候选权重/原query16/72 exact allowlist齐全，新authority消费者仅phi。最长H624；完整逐prefix原图缓存146.71GiB会超64GiB预估，因此只保存缺失native响应，frozen教学/H特征在有界缓存中复用，Phi Reader/static/memory每次重算。
+Phi180先锁400原condition全部选择再读原final；同完整候选/MT复用原行，其它变化真实paired执行。新增≤400 episode/416starts/16failed partial/144480环境步，原1988实践与费用保持方法依赖，0zero-interaction或行为学习宣称。nonheld144/576一次原输入Phi/beta排序读回，不作选点；强参照MT153/旧163/首G165/D175与168都保留。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/independent_value_fixed_paths。data1独立quota live已核used约1547GiB/soft2048GiB、64GiB可容纳；共享容量及相关个人目录用量有原件。准备双节点live gpu01有6个足够现场余量设备，可安排缺响应持久队列、随后同node1–4rank Phi，再交错nonheld/held评分及新final；无util/固定显存通用门槛，不挤掉外部任务。首次本session观测派发00:26:16Z（实际消息可更早），原90–180min时钟不重置。
+现为CPU实现/冻结准备，未宣称GPU启动。单canonical Actor候选/response/set算子由beta/Phi复用；Phi无STOP/parent/practice行为头。已消费§12–15一次性function-train/readout/readback入口及无消费者四模块按Git生命周期退休，数学算子/正式旧冻结保留，不建第二Writer或通用框架。唯一owner整批或实际异常→本实验验收/Git→main01a13399一次交付，无阶段ACK/自Queue/第二等待者/自动后继。
+
 ## 2026-10-14 08:05 §15有限整批完整验收；一次交主讨论科学接续
 
 D144 seen414/576、strict firstG held168/400；D72=414/175、原G=427/165、MT=340/153。held对D72 R149/G19/L26/net−7/churn45/Jaccard.768041，对原G R139/G29/L26/net+3，对MT R124/G44/L29/net+15；seen同414但对D72得35失35/churn70/Jaccard.844098。原D72相对G新增29的18仍成功，原损失19有8恢复；task16 24→20、31 25→27、26 37→33，task23仍1/39仍0、breadth7/8。完整分布与不利条件保存；净+10收窄为+3，不拼两点union或逐task选优，科学裁决交main，不宣称稳定完整方法。

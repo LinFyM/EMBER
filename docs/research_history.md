@@ -5287,3 +5287,7 @@ D414/175、C393/158的完整原件由主讨论独立消费，按事前分支保�
 完整D72训练状态再遍历原288条件72次逻辑B4，D144唯一seen576+firstG400为414/168。D72=414/175、S=427/165、MT340/153；held对72得19失26/net−7、对S得29失26/net+3、对MT得44失29/net+15，seen分同但得失各35。原D72新增29的18保留、损失19的8恢复；task16/26少4、31多2，23仍1/39仍0，完整保持与相邻交换见findings481，未做union或逐task选优。
 完整ψ/485Adam至144、sampler/4新RNG+2原RNG/90-108-126恢复点、全meta双支/Reader/static/F信用与冻结source/T/Actor、436完整LoRa/976配对原行均验收；0新实践/采集/native训练/固定函数/Test。真实976 starts/finished、237361步、5.428371164GPUh含3失败，48失败完成编译/12未保存更新与≤8未落盘编译保留。原首次观测派发至exit102.211min（原60–110），有效owner58.717/学习19.065/读出后续39.313，六卡两队列动态接续；source51924861/全部原件保留。
 ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_D_adjacent_stability，results.json与analysis/completion_20261014/{acceptance.json,verify.py,report.md}为canonical交付；owner04 exit0已consumed，有限执行完成不等于最终目标完成。当前0 active计算或自动第三块/BCE，main按事前§15独立裁决并自主科学接续，不以等待Owner新许可停滞。
+
+## 2026-10-14 §15科学消费与唯一§16正式接续
+
+§15完整工程交付main499736e0已送达并被主讨论直接消费，科学解释在operator_D_adjacent_stability/analysis/main_scientific_readout/interpretation_20261014.md。D175→168保留部分超MT能力但原G增益收窄且集中，停止第三块。Owner持续自主授权下，main正式派发同目录value_learning_contract_20261014.md；全文纳入唯一design§16，active为固定G38349/beta18路径的独立Phi180与唯一400。新ROOT independent_value_fixed_paths；576真实prefix/1286项、5530缺输入、原1988实践依赖、query/未来H信息墙和180/400/416/144480停止合同登记，0新G/实践/β/Test/自动后继。旧一次性function CLI/无消费者模块退休，原冻结代码与正式资产保留；当前CPU准备不冒充GPU运行。

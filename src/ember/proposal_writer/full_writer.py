@@ -26,8 +26,10 @@ def learning_tasks(asset_root,root,task_ids,role):
     run=read_json(Path(root)/'run_contract.json');path=Path(run['run_scoped_task_authority'])
     authority=read_json(path);requested=tuple(task_ids)
     function_run=run['schema_version']=='ember_full_g_native_function_identification_v1'
-    schema='ember_full_g_function_task_authorities_v1' if function_run else 'ember_selector_transfer72_task_authorities_v1'
-    roles=['G'] if function_run else ['theta','baseline']
+    value_run=run['schema_version']=='ember_independent_value_fixed_paths_v1'
+    schema=('ember_independent_value_task_authorities_v1' if value_run else
+            'ember_full_g_function_task_authorities_v1' if function_run else 'ember_selector_transfer72_task_authorities_v1')
+    roles=['phi'] if value_run else ['G'] if function_run else ['theta','baseline']
     if (authority['schema_version']!=schema
             or Path(authority['run_root']).resolve()!=Path(root).resolve()
             or authority['training_tasks']!=run['training_tasks']

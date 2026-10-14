@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from copy import deepcopy
 
 import torch
 from torch import nn
@@ -245,26 +246,59 @@ class Actor(nn.Module):
 
     def forward(self, kind, features, history, states, candidates, responses):
         type_id = {'parent': 0, 'practice': 1, 'final': 2}[kind]
-        summaries = {key: self.static((self.layout.pack(value).to(self.layout.scale.device) - self.layout.center) / self.layout.scale)
-                     for key, value in states.items()}
-        memory = self.reader(features, history, summaries)
-        context = self.types.weight[type_id]
-        tokens = []
-        for candidate in candidates:
-            q = self.stop_query if candidate == 'STOP' else self.candidate_query
-            q = q + context
-            if candidate != 'STOP':
-                practiced = candidate in {row['parameter_ref'] for row in history} or candidate == 'MT300'
-                q = q + self.practiced.weight[int(practiced)]
-            p = memory if candidate == 'STOP' else torch.cat((memory, summaries[candidate]))
-            q = q + self.candidate_attention(q[None], p[None], p[None], need_weights=False)[0][0]
-            if candidate in responses:
-                response = self.responses(responses[candidate].to(memory.device).float())
-                response = response + positions(torch.arange(len(response), device=memory.device))
-                response = response + self.reader.correspondence(response[None], memory[None], memory[None],
-                                                                  need_weights=False)[0][0]
-                q = q + self.response_attention(q[None], response[None], response[None], need_weights=False)[0][0]
-            tokens.append(q)
-        values = torch.cat(tokens)[None]
-        values = values + self.set_attention(values, values, values, need_weights=False)[0]
-        return self.heads[type_id](self.norm(values[0])).squeeze(-1)
+        values = candidate_tokens(self, features, history, states, candidates, responses,
+                                  self.types.weight[type_id])
+        return self.heads[type_id](values).squeeze(-1)
+
+
+def candidate_tokens(owner, features, history, states, candidates, responses, context, counts=None):
+    """The existing candidate/response/set computation, shared by beta and Phi."""
+    layout = owner.layout
+    summaries = {key: owner.static((layout.pack(value).to(layout.scale.device) - layout.center) / layout.scale)
+                 for key, value in states.items()}
+    memory = owner.reader(features, history, summaries)
+    tokens = []
+    for candidate in candidates:
+        q = owner.stop_query if candidate == 'STOP' else owner.candidate_query
+        q = q + context
+        if candidate != 'STOP':
+            practiced = candidate in {row['parameter_ref'] for row in history} or candidate == 'MT300'
+            q = q + owner.practiced.weight[int(practiced)]
+        if counts is not None:
+            evidence = memory.new_tensor(counts[candidate]).float().log1p()
+            q = q + owner.counts(evidence)
+        p = memory if candidate == 'STOP' else torch.cat((memory, summaries[candidate]))
+        q = q + owner.candidate_attention(q[None], p[None], p[None], need_weights=False)[0][0]
+        if candidate in responses:
+            response = owner.responses(responses[candidate].to(memory.device).float())
+            response = response + positions(torch.arange(len(response), device=memory.device))
+            response = response + owner.reader.correspondence(response[None], memory[None], memory[None],
+                                                              need_weights=False)[0][0]
+            q = q + owner.response_attention(q[None], response[None], response[None], need_weights=False)[0][0]
+        tokens.append(q)
+    values = torch.cat(tokens)[None]
+    values = values + owner.set_attention(values, values, values, need_weights=False)[0]
+    return owner.norm(values[0])
+
+
+class IndependentValue(nn.Module):
+    """Independent final-use BCE model; no behavior heads or shared parameters."""
+    def __init__(self, beta):
+        super().__init__()
+        object.__setattr__(self, 'layout', beta.layout)
+        self.candidate_query = nn.Parameter(beta.candidate_query.detach().clone())
+        self.context = nn.Parameter(beta.types.weight[2].detach().clone())
+        for name in ('static', 'reader', 'candidate_attention', 'response_attention',
+                     'set_attention', 'responses', 'practiced', 'norm'):
+            setattr(self, name, deepcopy(getattr(beta, name)))
+        self.counts, self.head = nn.Linear(2, 256), nn.Linear(256, 1)
+        for layer in (self.counts, self.head):
+            nn.init.zeros_(layer.weight)
+            nn.init.zeros_(layer.bias)
+        self.requires_grad_(True)
+
+    def forward(self, features, history, states, candidates, responses, counts):
+        if not candidates or 'STOP' in candidates:
+            raise ValueError('Phi only scores the current practiced valid candidate set')
+        values = candidate_tokens(self, features, history, states, candidates, responses, self.context, counts)
+        return self.head(values).squeeze(-1)

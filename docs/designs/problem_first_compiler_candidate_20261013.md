@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-13。**完整方法已选定；§12完整G控制学习已验收并经主讨论科学消费；§13固定输入函数回读已完成并科学消费；§14已完整工程验收并由主讨论科学消费，采用D保住/改善而C退步分支；§15 D72→144相邻批已完整工程验收，D144=414/168（D72=414/175），交主讨论按事前分支科学裁决；当前0 active计算或自动后继，C/native/lambda补救停止，完整方法尚未充分训练与验证。§11接手阴性及独立审阅保持，失败恢复监督已撤下；原§23固定G/θ批已完成并经主讨论科学消费，实际裁决见§10。**
+2026-10-14。**完整方法已选；§12–15有限计算和科学消费已完成，D相邻175→168保留部分能力但未支持稳定广泛增益，第三个D同目标块停止。当前唯一active为§16固定原G38349/beta18真实路径的独立Phi180价值学习及唯一correct400；完整工程、冻结、训练和读出已授权。没有新G/实践/训练query/β更新/Test、自动后继或第二同目标块。完整EMBER目标尚未取得。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -597,3 +597,92 @@ PARENT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operat
 D144=seen414/held168，D72=414/175、原G427/165、MT340/153。held相邻R149/G19/L26/net−7/churn45/Jaccard.768041；对原G得29失26/net+3、对MT得44失29/net+15。D72新增29的18保留、损失19的8恢复；seen分同414但得失各35。task16 24→20、26 37→33、31 25→27，23仍1/39仍0，完整不利分布保留；不逐task选优、不给union性能，也不从工程通过认证稳定Writer。主讨论按上述事前分支消费，0自动第三块/BCE/Actor/controls/Test。
 完整485Adam/sampler/RNG至144、288原流/权重/T/noise/全链信用、436 LoRa/976配对原行通过。237361实际步/5.428371164GPUh含前三失败；失败48完成编译/12未保存更新和≤8未落盘编译保留全部费用。首次观测派发至exit102.211min，source51924861 clean pushed detached，四卡16学习19.065min+六卡就绪队列后续39.313min。
 原件直接引用唯一ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/operator_D_adjacent_stability 的results.json及analysis/completion_20261014/{acceptance.json,verify.py,report.md}；findings481/research_history登记。此项有限合同执行完成，完整EMBER目标仍未完成，科学裁决和下一有限投入由主讨论自主接续。
+
+# 16. 固定真实适应路径的独立价值学习：唯一有界执行合同
+
+主讨论01a13399-cba2-7da2-9dc6-df430ca80280依据Owner持续自主推进授权正式派发。§15已科学消费：D175→168，超过MT的部分能力保留，但相对原G净增10→3且集中，停止第三个D同目标块。解释见同目录`interpretation_20261014.md`。本节授权全部工程、数据消费者、Git冻结、训练与唯一400；实验01a133e5-50f0-7d20-a893-df95c7387630独占闭环，串行纳入当前唯一design新§16及根状态。没有例行ACK或新许可门槛。
+
+## 问题与唯一干预
+
+旧§23已有14个MT query优于G的训练反例，重复曝光仍没有正确排序；held396个有已实践G的condition全部选G。`−Σsoftmax(z)_k q_k`的直接logit信用受当前小选择概率抑制。新独立Phi预测各候选成功概率，以逐次真实query的BCE训练，最终argmax；独立编码参数避免同时承受beta的行为/STOP梯度。显式自身成败计数提供易消费证据，但不是硬回退规则，旧计数规则165→161的阴性保持。
+
+本批只改变完整最终选择机制，包含独立BCE、独立参数、中性输出初始化、自身计数和确定argmax，不能把结果单独归因于其中某一项。固定原S=G38349及§23末点beta18，复用真实候选与实践路径，不重新训练G或行为模型。没有PG、baseline训练、T蒸馏、轨迹BC、new beta18或自动旧design§5后段。
+
+选择S是为了固定已有候选/H，清楚检验选择缺口；不重新采集D适应过程而同时改变生成与选择。完整原流程163、同核首G165、D72的175、D144的168与MT153全部保留强参照。只超过旧163不等于达到EMBER目标。这个检验不能生成所有候选都缺失的技能，不掩盖G学习阴性或task23/39缺口。
+
+## 唯一来源、任务与复用依据
+
+OLD=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349。
+SOURCE_G=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009。
+SOURCE_BETA=OLD/checkpoints/RL/update_00000018。
+新ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/independent_value_fixed_paths。
+
+完整G38349（meta/Reader/static/F）冻结；SOURCE_BETA完整parent/practice/STOP行为冻结。其保存的G也是原38349，保持原资产身份，不做逐tensor一致性证明。新共享梯度只属于Phi。
+
+训练只用OLD/run_contract.json、panel.json及analysis/task_audit/task_authorities.json的原explicit72 allowlist、seen36/G未训36分层和provenance。新authority明确消费者phi、沿原exact specification audit，不扩task；G未训36仍是source见过，其中33种独立语言，不能称36个全新操作。held离线资料/最终评估结果不产生梯度。
+
+- pair72：OLD/student_data/fixed_G38349_pair72/task_*，真实MT bootstrap+G实践、完整G_000、history.pt.gz及query/complete.json/原query16。`outputs=[]`是原存储格式；现有LocalExamples从真实H和boundary构造两个prefix，不能据此重新补采。
+- RL72：OLD/RL_paths/*，原72条真实conditional-continue路径、各6个实际outputs、已实践候选完整权重/H、每候选原query16。不同path来自不同旧beta核，是监督Phi的数据，不伪称新beta的on-policy轨迹或给其行为PG信用。
+- held400：OLD/validation/RL_00000018/correct/task_*，全部同一beta18的真实deployment适应过程；输入只来自合法教学、自身H、最后prefix已实践且仍有效候选及其权重/已有native响应。旧query.json/results不进入Phi输入。
+
+已直接核实际path实现：final使用独立branch rng，`path.selected`不进入后续parent/STOP/practice、H或G；决策模块不共享新的可训练Phi参数。固定G/beta后，更换最终选择不改变原适应路径。因此复用原真实经历合法；改变选中LoRA时仍须其真实最终执行，不能用其它候选outcome代替。新最终过程依赖原1988次held实践及其费用，不能称zero-interaction、少实践或学成新行为策略。
+
+主讨论已有只读清点：72 pair、72 RL、400 held的path/H在；RL432个prefix/1070候选项中940已有native响应；held最后prefix共1577项，其中1573已有，缺的4项均为单MT出口，所有多候选末prefix均完整。RL/held已实践候选权重无缺失；pair权重/query等由实际消费者读取时核对。旧原件只引用，不复制大资产、不全树hash。必要资产实际缺失须报告具体边界，不重采或用别的condition替换。
+
+## Phi的完整计算与初始化
+
+复用当前Actor final分支的既有编码算子，独立参数，一个canonical最终选择运行面；不复制第二套Writer或保留可随时回退的平行部署路径。
+
+1. 只读输入是exact language和action-hidden、有序双相机stride5视频，经冻结G meta获得z/h；自身H是实际前后观测、proprio、动作、原生hidden和反馈。原source图像/教学meta特征对Phi detach。离线teacher动作/state、T及query标签不进入这些输入。
+2. Phi复制SOURCE_BETA的static FactorEncoder、ContextReader、candidate_query、candidate/response/set attention、responses投影、practiced embedding和norm。只保留types[final]为一个可训练context向量，不保留没有消费者的STOP query、parent/practice头或其它type向量。beta/G/Phi没有共享可训练参数；beta原完整状态作为冻结行为来源保存。
+3. 候选完整参数摘要、教学/H memory及候选在已见自身RGB/保存native noise上的十步响应，按原candidate/response attention形成256维token，再做集合attention；候选名只是资产/自身episode关联键，不输入task ID、filename或生成序号embedding。
+4. candidate query进入注意力前增加线性`counts([log1p(s_k),log1p(f_k)])`，2→256，权重/bias初始化零。s/f只计当前prefix内该完整候选已结束的自身实践episode，每episode一次，按actual_parameter_ref匹配。query、未来实践、其它path同名G或未结束partial排除；成败沿原success布尔，model_failure候选沿原有效集排除，不人为恢复。计数是输入证据，不是决策规则。
+5. final标量线性头256→1权重/bias初始化零，其余上述模块承接beta18。初始logit0/probability.5是定义，不需额外初始全量模型读出。首有效B4会先教head，不为让所有encoder参数首步梯度非零添加fake loss。fresh AdamW，仅Phi更新，不继承旧expected-query optimizer。
+6. 每候选输出独立z_k及sigmoid(z_k)，不做候选间softmax训练。最终argmax z_k，同分按原固定候选顺序（MT在前）。部署只有一个合法已实践候选时直接选它；训练单候选prefix仍有BCE校准信用，不能照搬旧softmax强制出口的跳过逻辑。
+
+最终只部署选中的一套原完整38-target/r8 LoRA，无平均/融合/第二adapter。G/beta/Phi与搜索在最终评估前退出；完整最终闭环不继续读取teacher或适应。此批不是准备动作轨迹后微调最终LoRA：原候选来自合法视频/H→G，新增学习仅用non-held自身query成败训练共享价值模型。
+
+## 目标、更新与冻结输入
+
+每候选y_k为其原16条独立query的成功率。`BCEWithLogits(z_k,y_k)`等于16个Bernoulli BCE的均值，不增加标签。每path真实prefix等权、每prefix当时已实践候选等权、四task等权：`L=(1/4) Σ_task mean_prefix mean_candidate BCE`。每prefix截断真实H，不让未来实践成功进入早期输入。未实践G不训练、不部署；query只作为label。
+
+唯一180次有效逻辑B4。沿原`logical_tasks(update,root)`的seen2+G未训2和SeedSequence[20261013,23,stratum,epoch]，每18更新72task各一次。epoch=update//18：偶数epoch使用pair的两个真实prefix，奇数使用该task唯一RL路径全部6prefix。共10轮，每task pair5次、RL5次，总720个path曝光，不是720独立样本。loss /4后rank SUM；物理分配不改任务/前缀/候选权重。
+
+fresh AdamW lr1e−4、betas(.9,.95)、eps1e−8、weight_decay1e−4、clip1，无scheduler/warmup/扫描。完整checkpoint60/120只恢复，180唯一科学端点；禁止held中点选优、融合或追加第二同目标块。保存完整G/beta/Phi权重、Phi Adam、sampler/cursor、rank RNG/topology/schema及初始化/来源；旧冻结分支optimizer没有新更新，不称旧Actor exact resume。
+
+首次真实B4计入180并作为真实输入/梯度消费者，成功不discard。确认head及随后实际用到Phi模块的信用、G/beta/source冻结和query未进condition；不要求首步全部tensor非零。必要恢复保留真实失败/未保存更新成本，不把科学阴性当工程故障。
+
+只缓存冻结输入，Phi学习后的Reader/static/memory每次重算。原native响应直接复用；pair共216个候选-prefix项、RL缺130项，共346项，每项原support最多16自身观测，所以新增native10输入查询≤5536，按原实际H/noise补齐一次并保存，不重跑已有940项。held最后1573多候选项均已有，4单MT出口无需新响应；不再编译G。源图像和教学meta特征按现有消费者计算、允许有界缓存，但不保存过期Phi编码。若实际consumer显示清点语义不成立，报具体差异，不静默增查询上限。
+
+训练world1…4单节点由B4实际吞吐决定；源G/meta无梯度，不能沿全G反传峰值假定Phi只能用旧配置。首有效/最长实际prefix记录吞吐和完整峰值，按实测余量选择物理frame/response batch、prefix分块或缓存。没有discarded profile，不用首批峰值冒充全长度；同任务逻辑流不变。NCCL_P2P_DISABLE=1、NUMA/deferred NCCL沿合同。
+
+## 唯一终点的实际读出
+
+**Non-held固定读回：** Phi180一次读取全部144真实路径的576prefix/1286候选项，给出概率、BCE/Brier、经验query排序/选中回报/regret，按task等权并分seen/G未训、pair/RL和原反例。SOURCE_BETA的final分支在同prefix读一次排序参照，不能将其softmax当独立成功率作BCE比较。使用已有输入/响应，无新episode；Phi0全.5仅按初始化定义作参照。14个pair MT>G及6个RL末prefix MT胜全部G的反例均保留。此读回不作checkpoint选择或追加更新门槛，也不把训练域拟合叫泛化。
+
+**唯一strict correct validation400：** 固定Phi180后，对原400适应路径的最后prefix选一个已实践有效候选，先保存全部选择manifest，再由最终汇总读取旧final原行。新选择等于原完整候选时复用其原最终行；选MT时复用同task/state/video映射的官方MT400原行；其它变化必须用新选完整LoRA在原final state/env-policy完整noise上真实执行。不同path都叫G_001不构成同一候选；不能用其它LoRA的outcome或仅候选名匹配。每行注明选择、权重来源与真正新执行/复用来源。
+
+400条件仍为8task各50、每task50条合法教学各一次，完全沿旧mapping/自身适应与最终初态分离、官方预处理/10flow/执行前5/settling10/horizon。最多400新完整episode；工程额外failed partial≤16，physical starts≤416；两task/suite的全400最坏136000步加16×530，新增环境steps≤144480（含dummy/失败）。没有新bootstrap/实践、候选反事实全集query、视频controls、其它checkpoint、Test或新task。旧MT initial_proprio字段缺失的历史限制保持，不补采。
+
+报告400总分、所有task/suite/breadth、对旧完整163/首G165/D72 175/D144 168/MT153的R/G/L/churn/Jaccard和全部原行；分清原4单MT出口与真正比较后选MT。选择后的有限最终样本不提供未选候选的反事实校准。旧1988次适应实践及历史费用是新组合的依赖，不能因复用而记零。单点不证明相邻稳定、视频因果或Test能力，最终结果不回流本次训练/选择。
+
+## 事前裁决与停止
+
+- 训练反例获得排序而held无实质收益：区分成功概率学习与迁移，停止固定G最终选择器作为主要收益来源；不加第二块、阈值/温度/计数规则或自动beta18。
+- 训练反例仍普遍不学成：该完整特征/监督/共享学习安排仍不充分，不只归于held外推，也不默认小扫可救。
+- held较旧163有所恢复，但不及强参照或仍集中、保持差：仅承认局部利用已有能力，不把胜旧弱selector当EMBER目标完成。
+- held在强参照上取得有保持/覆盖的实质进步：支持独立价值模型更好利用已有候选；相邻稳定性、视频作用及缺失技能仍另裁决，无自动后继。
+
+无论哪种分支，D/C/G学习阴性和正例全部保留。不能以MT选择次数、loss下降、oracle union或训练query均值代替最终控制。结束有限批后由主讨论消费并继续研究，无Owner新许可门槛。
+
+## 工程、资源与交付
+
+复用model/path/runtime/supervision的现有owner和真实输入算子；Phi是有独立消费者的新模块，可保留必要共同候选编码，但不泛化成框架或复制并行Writer。旧§14/15的一次性训练/四点调度完成，按生命周期退休无消费者入口；必要算子和正式冻结原件保留。源码在独占分支/worktree实现、实际消费者验证后clean push、新clean detached freeze；旧冻结树不热改。实验独占代码与串行根文档/Git，主讨论不例行工程二审。
+
+新ROOT/data1峰值保守64GiB，含完整checkpoint、代码/有界输入缓存及新final；大型source/旧H/LoRA只读引用。每次launch核双节点live、所有项目物理卡、实际显存与strg01独立data1 quota/相关个人目录/共享容量。总6/8、单节点6、无util通用门槛，不干扰其他任务。缺资源给具体缺口，不切data0或改变科学任务。GPUh全部记账，无硬限，不因此扩矩阵。
+
+冻结输入准备/非held读出可用共享long-first持久队列；Phi180完成后held评分及已准备的最终episode按就绪交错。释放worker接剩余工作，不能一worker/面板或把训练world当整批卡上限；不等凑卡/dummy占卡。不提前读held分数。统一ledger分旧依赖、新native输入、Phi更新/前向、复用/新final、失败及费用，不重复计旧采集。
+
+初估从本派发起90–180min：工程20–40、冻结输入15–30、训练30–60、评分/新final20–40，可交错。依据旧A180四rank每B4中位9.273秒（约28min）、旧实际RL更新中位9.330秒及当前6worker读出；新长H的冷加载/特征计算与共享负载仍有不确定。首实际有效消费者显著改变预估时一次说明，不重置派发时钟或循环读日志。
+
+唯一owner运行→整批实际退出/真实异常→实验验收/串行Git→一次主讨论01a13399回报；无阶段ACK/Queue、心跳或第二等待者。旧§15及更早回执已消费，不重启。当前合同授权完整实施；只有科学语义/信息墙/真实范围或资源边界不明确才报具体问题，工程修复在既有授权内闭环。

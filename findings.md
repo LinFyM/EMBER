@@ -11979,3 +11979,9 @@ D144 seen414/held168，D72=414/175、S38349=427/165、MT340/153；新held对72 R
 原D72完整psi/485Adam/sampler/RNG到144，原288/36task各8与query-T-类别-权重-全noise匹配；归一化完整BA每condition一次、逻辑B4/4-rank SUM、全meta双支/Reader/static/F真实信用、source/T/Actor冻结与D native0通过。144 Adam485均step144、psi version38493、world2→4原/新RNG来源及完整新4/旧2 RNG均保存；11闲置参数不造fake使用。90/108/126恢复点/144唯一科学端点，436完整LoRa与976原行在官方配对预算内，无新实践/标签采集/固定函数/Test。
 实际976 submitted/finished、237361步含9760dummy、0failed partial/未知；13 GPU收据总5.428371164GPUh含3失败.349143253。失败前缀48已完成编译/12未保存更新与≤8未落盘编译真实计账，不写0或当profile；有效保留72/288流不扩。四卡16全B4 mean/max15.404/31.532s、reserved26.504GiB；六卡就绪队列两面板各3起步，seen释放接held，实际9读出job/三空seen省略0 GPU启动。源51924861 clean pushed detached/ROOT约2.279GiB，首次观测派发至退出102.211min、owner58.717/学习19.065/后续39.313，原时钟保持。
 稳定ROOT=video_guided_proposal_writer_20261014/operator_D_adjacent_stability；results.json与analysis/completion_20261014/{acceptance.json,verify.py,report.md}保存逐任务/suite/保持和全部费用。一次CPU实物验收2.54s/0模型/环境；有限执行消费完成，0自动第三块/BCE/后段/新等待者，方法裁决与下一投入仍由主讨论承担。
+
+## 482. §15科学消费后的§16独立价值辨识（2026-10-14）
+
+D144的原G净+3全部来自task31+9，其余−6；task23两点各1成功不重合，D72超过MT的46新增仍有33保持。第三个D同目标块停止，正例及保持交换保留。main解释见原ROOT/analysis/main_scientific_readout/interpretation_20261014.md。
+§16只改变固定G/beta实际路径上的完整最终选择机制（独立BCE/参数/中性head/计数/argmax组合），不能归因单一组件或生成缺失技能。144路径真实576prefix/1286候选与query16齐，新增输入346项/5530 native10而非补采；Phi仅消费当前真实prefix，计数匹配actual_parameter_ref、每结束episode一次，query/未来H排除。400先完整锁选择再看final，原1988适应episode/费用不变。训练反例与held收益分开裁决，强参照和0自动后继保持。
+Phi新消费者复用共同编码，beta/G/source冻结，零head首B4只先教head属初始化定义，后续实际Phi模块信用才有意义；不造fake loss强迫首步非零。冻结缓存不含学习后的Phi表示，最长624 H须用真实全长消费者资源而非首pair峰值推全批。代码/Git/工程由实验独占闭环。

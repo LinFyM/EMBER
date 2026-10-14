@@ -1,3 +1,7 @@
+## 2026-10-15 128固定MT修訂运行；joint未来入口已修，后继编译尚无授权
+
+当前唯一实际计算为owner03/a986e7b2的128固定MT协议修订，不受own joint字段影响；Phi/24编译/384final/GT只读。未来joint enum/q列窄修d9b704cc已clean pushed，CPU实际enum与bind→observe消费者通过；原27更新/10video条件影响报告已交main，未重算评分/GT，未重编译。当前完成口径是固定参照配对和全部原件/费用交付，不将原错误编译写成已符合完整科学合同。保留原完整512实际与新有效512的差别、实际640final费用、sealed早于修订MT的例外；超128新增提交不自动retry。main随后负责科学消费和具体后继合同，本实验不据未来源码修复自动开启计算。
+
 ## 2026-10-15 原批settling违约已定位；唯一128固定MT修订active
 
 当前唯一active仍为video_effect_parameter_compiler_20261015，范围限design§12/main01a13399明确授权的原8内部probe×init0..15共128固定MT参照修订；0重训/profile/新实践/新sealed读出/held/Test。原384编译final、Phi1120、24完整LoRA/Adam/RNG、32bootstrap及832恢复分支全部保留。普通MT未做dummy10、snapshot分支恢复前额外dummy10是缩进接口违约；原MT64与相对MT−4/−6/+10撤出科学结论，三个编译臂60/58/74间比较保持。

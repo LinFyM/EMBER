@@ -213,3 +213,5 @@ Phi固定后，完整读取每个合法教学condition，得到按真实顺序�
 
 主讨论从原sealed与源码发现own geometry将MuJoCo2 slide编码成2、3 hinge编码成1，并按kind−1写q列；原teacher labels/scoring合同为none0/slide1/hinge2、q[0]米/q[1]弧度。未来canonical bind映射修正为{2:1,3:2}；实际MuJoCo enum/既有label owner及bind→observe CPU消费者通过，0新模型/环境/GT评分。
 该字段沿physical_trace/mapping→joint可用mask/有效组分母→DTW/S_V/R→四格credit/native全因子VJP/Adam和接受/后续parent进入原video条件，旧评分、梯度及编译不能称完全执行原合同。原physical joint_type/q和全部H/LoRA/分差/sealed不改写、不重算；不把未来修复当作旧批已经正确。Phi1120/正确teacher schema/patches/sourceMT、真实snapshot/动作、无视频score及已冻结参数final仍可复用；当前128MT补测physical=False不受该字段影响，沿a986e7b2继续。解释性旧类型1↔2和q两列对换有精确schema来源、无值猜测，但未实际应用；是否重编译待main独立有限合同。原snapshot多8320dummy及全部费用另账保持。影响原件ROOT/analysis/engineering_completion_20261015/joint_schema_impact.json；不称此错误已解释低分唯一原因。
+
+读取原保存的Phi预测与固定mapping（0模型/GT/DTW重算）确认影响还包括task0/1，合计task0/1/20/21/32十个video条件、27更新/432分支原score、12接受。原这些mapping所有teacher帧joint项不可用；纠正类型后对应全部帧可以参与。task12/13/34自身与预测均none，不受这项mask错误影响。该事实说明实际评分监督范围少于合同，不能据此推定修正后的R/梯度/接受或性能；完整影响文件已一次交main。

@@ -1,6 +1,6 @@
 ## 2026-10-15 接口窄修后唯一剩余批已实际恢复
 
-唯一video_effect_interface_resume_02/PID3152552于2026-10-14T20:30:13.532Z从clean pushed detachedfe034f78实际启动；原Phi/训练和首轮native来源8801e701不动。旧owner已退出并按ROOT/attempt消费，6个失败适应队列控制记录在保留原件后复位，全部已完成原行/条件/事务/Actor Adam及RNG复用；0Phi/profile/cache/MT final重复。六个持久消费者动态承接剩余条件和384非MT final，首个登记后续wave采用slots16、其余slots8，按实际返回峰值/吞吐执行；统一2832/16/684160+28320与data196GiB预估、live双节点6/8-node6不变。原14个实际native单元约99–247秒，剩余15条件最多4有效原子更新以及384 final并行粗估40–100min含加载/验收，非新许可门槛或成功保证；原18:16:48.556Z/3–6h不重置。每个job实际GPU/quota回执和恢复源字段保存；一owner实际退出+唯一整批唤醒，验收/Git后一次main，无阶段Queue/第二waiter/自动后继/Test，sealed仍在所有24/512完全冻结后。
+唯一video_effect_interface_resume_02/PID3152552于2026-10-14T20:30:13.532Z从clean pushed detachedfe034f78实际启动；原Phi/训练和首轮native来源8801e701不动。旧owner已退出并按ROOT/attempt消费，6个失败适应队列控制记录在保留原件后复位，全部已完成原行/条件/事务/完整LoRA Adam及RNG复用；0Phi/profile/cache/MT final重复。六个持久消费者动态承接剩余条件和384非MT final，首个登记后续wave采用slots16、其余slots8，按实际返回峰值/吞吐执行；统一2832/16/684160+28320与data1新增96GiB预估、live双节点6/8-node6不变。原14个实际native单元约99–247秒，剩余15条件最多4有效原子更新以及384 final并行粗估40–100min含加载/验收，非新许可门槛或成功保证；原18:16:48.556Z/3–6h不重置。每个job实际GPU/quota回执和恢复源字段保存；一owner实际退出+唯一整批唤醒，验收/Git后一次main，无阶段Queue/第二waiter/自动后继/Test，sealed仍在所有24/512完全冻结后。
 
 ## 2026-10-15 新方法记录接口异常已消费；保留有效原件准备恢复
 

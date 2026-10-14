@@ -1,6 +1,6 @@
 # 从实际控制缺口学习完整LoRA：当前优先设计
 
-2026-10-14。**完整方法已选；§12–15有限计算和科学消费已完成，D相邻175→168保留部分能力但未支持稳定广泛增益，第三个D同目标块停止。当前唯一active为§16固定原G38349/beta18真实路径的独立Phi180价值学习及唯一correct400；完整工程、冻结、训练和读出已授权。没有新G/实践/训练query/β更新/Test、自动后继或第二同目标块。完整EMBER目标尚未取得。**
+2026-10-14。**完整方法已选；§12–15有限计算和科学消费已完成。§16独立Phi180及唯一correct400有限批亦已完整工程交付：167/400，对旧163净+4、首G165净+2，低于D72 175/D144168；主讨论依事前分支消费接续。当前0active计算/自动后继/第二同目标块，未派发新的训练。没有新G/实践/训练query/β更新/Test；完整EMBER目标尚未取得。**
 此前称其已经定稿、只需等待§23的判断撤回。§23由实验session独立执行；完成后按实际相关性纳入，不作为本次重审的等待门槛。
 问题与原始证据见
 [主分析](../analyses/problem_first_method_audit_20261013.md)。[独立审阅及修订](../analyses/problem_first_method_review_20261013.md)
@@ -686,3 +686,9 @@ fresh AdamW lr1e−4、betas(.9,.95)、eps1e−8、weight_decay1e−4、clip1，
 初估从本派发起90–180min：工程20–40、冻结输入15–30、训练30–60、评分/新final20–40，可交错。依据旧A180四rank每B4中位9.273秒（约28min）、旧实际RL更新中位9.330秒及当前6worker读出；新长H的冷加载/特征计算与共享负载仍有不确定。首实际有效消费者显著改变预估时一次说明，不重置派发时钟或循环读日志。
 
 唯一owner运行→整批实际退出/真实异常→实验验收/串行Git→一次主讨论01a13399回报；无阶段ACK/Queue、心跳或第二等待者。旧§15及更早回执已消费，不重启。当前合同授权完整实施；只有科学语义/信息墙/真实范围或资源边界不明确才报具体问题，工程修复在既有授权内闭环。
+
+### §16完成记录（2026-10-14，工程验收与实际读出）
+
+唯一Phi180 complete400为167，对旧163 R154/G13/L9/net+4、首G165净+2、MT153净+14、D72 175净−8/D144168净−1，breadth7/8；全部分布、success-set和强参照不删。原14pair MT优于G反例2/14、6RL末prefix0/6，held396多候选0MT且4单MT出口单列。nonheld task等权选中query回报Phi.715856481/beta.715639468，BCE.522808683/Brier.046751195；有限共享安排仍未普遍学成这些训练内排序反例，不只归held迁移，也不推广为BCE普遍无效。科学取舍按上方事前分支由main消费，无自动续训/小扫或规则回退。
+完整G38349/beta18冻结、Phi180/198实际Adam/sampler/4rank RNG、当前prefix及query信息墙/实际模块信用已通过；5530缺输入含首失败448复用，原940/1573响应保留。全400选择先封存后读旧final，162同完整候选+4MT复用、234真实变化候选paired final/66783步，0failed partial/新G-实践-训练query-β-Test；旧1988实践/683330步和旧整ROOT费用仍为依赖。单点没有相邻稳定或视频因果资格。
+canonical原件：/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/independent_value_fixed_paths/{results.json,nonheld_readout.json}，工程acceptance/report/verify在同ROOT analysis/completion_20261014；成功代码c683ff03 clean pushed detached，28 GPU收据6.776979351GPUh含失败，首次观测到退出119.741min。完整原合同和阴性保留，有限批结束，后继需主讨论实际科学接续，不从历史active字样恢复旧实验。

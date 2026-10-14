@@ -1,3 +1,9 @@
+## 2026-10-14 10:26 §16独立Phi180有限整批完成；唯一400与工程验收交付
+
+Phi180 strict correct400=167，旧完整163/首G165/MT153/D72 175/D144 168全部保留；对旧完整得13失9净+4，未宣称稳定完整方法或视频因果。原14 pair MT优于G反例正确选MT 2/14、6 RL末prefix反例0/6；held396多候选0次MT，4单MT出口单列。有限180/400已完成，主讨论按原§16自主科学消费接续，0active计算/自动后继/第二块/Test；完整EMBER目标未完成。
+唯一owner02 exit0已按task/ROOT/attempt consumed，144路径/576prefix/1286项、180有效B4/完整G-beta-Phi/198实际Adam step180/4rank RNG/当前prefix与信息墙均验收。5530补输入含首次已保存448不重复，原RL940/held1573复用；全400选择先封存，162同参数候选+4MT原行复用、234变化候选真实paired final/66783新环境步/0failed partial。旧1988实践/683330步与历史费用仍是方法依赖。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/independent_value_fixed_paths；results.json、nonheld_readout.json与analysis/completion_20261014/{verify.py,acceptance.json,report.md}保留全部原件。全批6.776979351GPUh含失败.063266839、首次观测派发到退出119.741min，原90–180min时钟不重置；成功源c683ff03 clean pushed detached、开发branch/worktree已集成清理，正式冻结保留。下一动作只串行记录/Git与一次main01a13399交付，无阶段ACK/第二等待者/重复旧回报。
+
 ## 2026-10-14 09:01 §16唯一恢复owner02实际六卡缺输入接续
 
 publication_resume_02/PID1450626已从clean pushed detached c683ff03实际启动gpu01:1/3/6/2/7/0六个持久native消费者，01原6个exit1/448已保存输入与.063266839GPUh均复用/保留；新补录计划剩5082，5536上限及0新环境/训练query/G/β/Test不变。data1独立quota和双节点live在各launch重新核验，实际合计6/node6，busy外部进程不按util排除，仅按本消费者余量安排。

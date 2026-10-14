@@ -1,3 +1,11 @@
+## 2026-10-14 10:26 §16独立Phi180有限整批完成；唯一400与工程验收交付
+
+完整Phi180=167/400/breadth7/8。对旧完整163 R154/G13/L9/net+4/churn22/Jaccard.875；对首G165 R139/G28/L26/net+2；对MT153 R123/G44/L30/net+14；对D72 175 R145/G22/L30/net−8，对D144168 R141/G26/L27/net−1。task3/6/11/16/23/26/31/39为43/10/39/19/1/34/21/0，Spatial/Object/Goal/Long53/58/35/21，所有不利条件与强参照保留。14pair反例仅task64/101正确MT(2/14)，6RL末prefix反例0/6；held396多候选全部选G，4单MT强制出口不叫学成回退。nonheld task等权BCE.522808683/Brier.046751195、Phi选中query回报.715856481/beta.715639468/regret.018590856，训练域拟合不当泛化。
+唯一owner02于2026-10-14T02:26:00.449780Z exit0已consumed；原01队列发布失败.063266839GPUh与448已保存native输入全复用，成功源c683ff03 clean pushed detached。144原路径/576prefix/1286项，72task各pair5/RL5、180有效logicalB4、零head首步与后续实际Phi模块信用/固定G38349-beta18-source/当前prefix计数/原query16信息墙通过。60/120仅恢复、180唯一端点完整209 Phi参数/198实际Adam均step180/sampler/4rank RNG；11共同结构参数实际未参与，不虚写全部tensor有信用或造fake loss。最长H624、学习后的Reader/static/memory每更新重算。
+缺输入346项实际5530native10（≤5536）/274ledger全部完整；原RL940和held1573复用，4单MT不补响应。全部400选择封存于02:17:03Z后才读旧final；162同完整候选原行复用+4官方MT原行+234不同候选真实paired final。新增234 starts=234 finished/66783环境步含2340dummy，0failed partial/在途/未知、400/416/144480以内，0新G/实践/训练query/β/Test。原1988实践/683330步依赖及旧§23整ROOT34.272177007GPUh保留引用（非仅held实践费用、未重计新账）；旧4 MT行缺initial_proprio/settling_steps/environment_steps原样保留。
+28 GPU收据总6.776979351GPUh含失败，首次观测派发00:26:16Z→退出119.741min、成功owner84.769min/Phi46.011min。六卡就绪long-first持久队列，四rank学习后nonheld/held初始3+3、释放接未完held，三空nonheld消费者CPU省略，无静态一worker/面板。全180 B4最大rank平均15.128/最长36.932s；allocated15.326/reserved24.484GiB/RSS17.454GiB，不以首批推最长H稳定；native batch16达support cap，frame64实际配置不称128已最优。每launch双节点/data1独立quota/数量6/node6已记录，ROOT约.994GiB/64GiB初估内；无util/通用固定显存门槛，不驱逐外部进程。
+ROOT=/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/independent_value_fixed_paths。analysis/completion_20261014/verify.py CPU8.489s/0模型或环境验收通过，acceptance.json/report.md与原400/全部费用齐全。根状态、findings/history、design§16串行集成，Git/一次main01a13399交付由同目录completion元数据登记。当前有限批结束、0active计算/自动后继/第二同目标块/第二等待者，单点不支持相邻稳定、视频因果或完整目标已达；主讨论自主消费接续，旧§15/14/23不重启。
+
 ## 2026-10-14 09:01 §16唯一恢复owner02实际六卡缺输入接续
 
 publication_resume_02/PID1450626已从clean pushed detached c683ff03实际启动gpu01:1/3/6/2/7/0六个持久native消费者，01原6个exit1/448已保存输入与.063266839GPUh均复用/保留；新补录计划剩5082，5536上限及0新环境/训练query/G/β/Test不变。data1独立quota和双节点live在各launch重新核验，实际合计6/node6，busy外部进程不按util排除，仅按本消费者余量安排。

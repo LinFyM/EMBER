@@ -11985,3 +11985,9 @@ D144 seen414/held168，D72=414/175、S38349=427/165、MT340/153；新held对72 R
 D144的原G净+3全部来自task31+9，其余−6；task23两点各1成功不重合，D72超过MT的46新增仍有33保持。第三个D同目标块停止，正例及保持交换保留。main解释见原ROOT/analysis/main_scientific_readout/interpretation_20261014.md。
 §16只改变固定G/beta实际路径上的完整最终选择机制（独立BCE/参数/中性head/计数/argmax组合），不能归因单一组件或生成缺失技能。144路径真实576prefix/1286候选与query16齐，新增输入346项/5530 native10而非补采；Phi仅消费当前真实prefix，计数匹配actual_parameter_ref、每结束episode一次，query/未来H排除。400先完整锁选择再看final，原1988适应episode/费用不变。训练反例与held收益分开裁决，强参照和0自动后继保持。
 Phi新消费者复用共同编码，beta/G/source冻结，零head首B4只先教head属初始化定义，后续实际Phi模块信用才有意义；不造fake loss强迫首步非零。冻结缓存不含学习后的Phi表示，最长624 H须用真实全长消费者资源而非首pair峰值推全批。代码/Git/工程由实验独占闭环。
+
+## 483. §16完整独立价值学习与唯一400结果（2026-10-14）
+
+固定G38349/beta18原真实路径，只改变共享独立Phi最终选择组合；完整180/576prefix/1286项BCE与有效编码梯度通过。Phi167较旧163得13失9/净+4，较首G165净+2、MT153净+14，低于D72 175与D144168；task与suite分布/成功集合/旧强点及负例全部在/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014/independent_value_fixed_paths/results.json。单点不叫稳定完整方法，不能仅因胜旧selector归因主要控制能力已解决。
+原nonheld14个MT优于G pair反例只correct MT2/14（64/101），6个RL末prefix MT优于全部G仍0/6；held396多候选也0MT，4单MT强制出口单列。task等权Phi选中query回报.715856481对beta.715639468，BCE.522808683/Brier.046751195/regret.018590856。这些排序反例在训练内仍有，不宜仅归held外推；也不将此有限安排的阴性推广为独立BCE普遍不可行。工程真实信用与信息墙成立，不把科学不充分当bug续修；主讨论依§16事前分支裁决，无自动第二块/阈值/温度/计数规则或beta更新。
+5530原观测native输入含失败已完成448复用，原940/1573响应只读复用；全400选择先封存后看final。234真实变化候选新final/66783步、162同完整候选+4MT原行复用，旧1988实践/683330步仍为方法依赖，不叫zero-interaction。完整209 Phi参数/198实际Adam step180/4rank RNG齐全；11共同未用结构参数如实记录。工程源码c683ff03、验收与限制见同ROOT analysis/completion_20261014/acceptance.json及report.md；6.776979351GPUh含失败、首次观测119.741min。未新增相邻点/视频controls/Test/新后继。

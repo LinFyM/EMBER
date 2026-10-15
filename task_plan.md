@@ -1,3 +1,8 @@
+## 2026-10-16 当前批已完成：36参考齐，E/D144有界阴性；写窗口归还main
+
+[整批交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7/analysis/engineering_completion.md)：§9全部36冻结/report齐，E/D144/4 CP/576逻辑行（496实际＋80 source复用）真实退出、验收通过。source218/576、参考502/576、E/D216/576；target48→45/384，support170→171/192，参考288新得仅保10，未保存强参考控制。仅16访问/task，非充分拟合、无视频/held资格。
+所有GPU/环境PID已释放，费用/两消费者失败/原09:05时钟/旧阳阴性保持，Git/push后一次交01a13dd9并归还canonical记录窗口。当前无运行科学计算、未消费pending不恢复；无自动续训/q/Reader/RL/held/Test。主讨论依据原件自主判断并接续，详情与成本/资源见progress。
+
 ## 2026-10-16 当前执行：仅物化/读出owner3761312
 
 20:40:10.102290Z从clean pushed detached39d21bf0接续保存144，未重训。唯一session82830/cell236退出等待；完成496物理/80 source复用读出后整体验收，一次交main并释放记录窗口，详情见progress。

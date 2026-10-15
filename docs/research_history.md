@@ -1,3 +1,10 @@
+## 2026-10-16 reference末四项收尾与source E/D144完整读出
+
+[唯一设计](designs/source_policy_space_compiler_20261015.md)§9/10及[整批原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7/analysis/engineering_completion.md)已完成。§9新增1200更新/304提交/84093步/2.371412875GPUh；5/25/38/43 selected1680/1680/1680/1920、report18/11/3/17，36独立source248→545/648、R241/G304/L7，完整bank冻结。旧32与原有效工作不动。
+E/D144有效更新/4032 query/8064双参考配对、4完整CP，sole144读出source218/ref502/重构216 /576；target48/315/45 /384、support170/187/171 /192，参考288新得仅保10。31 nonidentity真实496请求、五identity80旧source行复用，参数改变未带来参考能力保留；仅有限训练域、参考选点初态面板，非视频/held/充分拟合/相邻稳定结论。旧固定MT128/67不变，相同八任务E/D18，R15/G3/L52、无新MT。
+CS实际496提交/147441步、0环境失败未知/重跑；GPUh2.001268105含torchrun参数失败.004231426。完整144后CPU identity物化消费者失败、saved native中心及解析源锚修复均留原件，0追加训练，24有效文件保持；训练eb78、末物化/读出39d21，§9恢复/新读355396b0，旧selected训练44/0f8身份分开。
+两ROOT GPUh累计[54.015381195,54.123126700]，旧六loader未知区间不记0；历史N16等独立。全部GPU/环境释放，main集成e254→c4、代码/记录push与一次交付后写窗口归还主讨论，当前无自动后继科学计算；后继由main消费自主裁决。
+
 ## 2026-10-16 完整36 source/r8参考冻结；E/D144有界首窗接续
 
 [§9完整验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_final_four_20261016/acceptance.json)确认36/36冻结且report齐，新增1200更新/304提交/84093步/2.371412875GPUh。全部独立source248→selected545/648，R241/G304/L7；五source identity90复用、弱38=3/18及source state46损失均保留。末四selected5/25/38=1680、43=1920，32旧冻结完全保持。参考bank就绪不证明视频或held能力。

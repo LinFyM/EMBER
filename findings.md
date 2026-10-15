@@ -1,3 +1,10 @@
+## 2026-10-16 source/r8参考有效，144 E/D未把控制能力保存下来
+
+[原件与工程验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7/analysis/engineering_completion.md)确认36参考独立source248→selected545/648（R241/G304/L7）且全部按两后继规则冻结。五identity、weak29/38和所有相邻能力交换保留，不能把局部弱例清零整个参考bank的正证据。
+同bank的fresh2层E/6层D/z64、76单位、live零锚、source/r8、同query双控制器native10唯一loss在144次/每task16访问后，source218、参考502、重构216/576；target48→45/384，support170→171/192，source R206/G10/L12，参考新得288仅保10。31输出参数确实变化、原生反传真实，但控制仍接近source；5 source identity80复用不是学习。平均MSE.045855相对忽略代码下界.002869仍高，0更新低于界；不能由此反推完全忽略代码，也不能以不同query的首末loss假称收敛。
+当前证据降低“此144窗已获得可用E/D函数保留”的支持；学习量/信用尺度/参数编码—解码映射及观测分布尚未区分，不将其当工程假图、充分拟合、低维普遍不可能或全部自身交互学习失败。没有视频Reader/held/相邻点控制资格，不凭真实梯度或参数norm正例拼接端到端成功。旧G/BA/native正负与MT153/G165/D72=175/D144=168口径继续独立保持。
+真实消费者修复只涉及torchrun分隔与读取saved mixed-dtype source identity/解析恒等源端点，0重训、保留24有效生成、冻结S/Adam/RNG/流；源码与费用原件可审，阴性不被修补成偏好结果。后继科学取舍交main自主消费，本批不自动扩144或开q/RL。
+
 ## 2026-10-16 完整36 source/r8参考冻结；E/D144有界首窗接续
 
 [§9完整验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_final_four_20261016/acceptance.json)确认36/36冻结且report齐，新增1200更新/304提交/84093步/2.371412875GPUh。全部独立source248→selected545/648，R241/G304/L7；五source identity90复用、弱38=3/18及source state46损失均保留。末四selected5/25/38=1680、43=1920，32旧冻结完全保持。参考bank就绪不证明视频或held能力。

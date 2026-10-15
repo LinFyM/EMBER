@@ -1,3 +1,29 @@
+## 2026-10-16 §9＋§10完整退出并验收；参考齐，E/D144未保存控制能力
+
+最终readout-only owner3761312于2026-10-15T20:56:20.011405Z实际exit0，唯一session82830/cell236退出等待结束。整批[交付报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7/analysis/engineering_completion.md)、同目录results/acceptance/training_acceptance/functional_readout_details/resource_exit及[36参考验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_final_four_20261016/acceptance.json)保留原件。main科学合同e254b6a7已集成为c4ca1220并push，正式design仍唯一source_policy_space_compiler_20261015.md。
+
+|36×16配对范围|source|参考|E/D144|相对source R/G/L|
+|---|---:|---:|---:|---|
+|全部36|218/576|502/576|216/576|206/10/12|
+|target24|48/384|315/384|45/384|39/6/9|
+|source-seen support12|170/192|187/192|171/192|167/4/3|
+|去除五identity的31|138/496|422/496|136/496|126/10/12|
+
+相对参考R213/G3/L289，churn292；参考新获得288例仅保存10，4/36 task净改善。task21由source14降10等不利个例完整保留。31非identity输出B均非零且真实执行496请求；五identity [42,55,64,96,101]的80行复用source，不能称学习。旧固定MT128/67原件保持，同八任务现成配对子集E/D18/128对MT67，R15/G3/L52，0新增MT请求；不外推36/held。
+模型真实native梯度接通并有参数变化，本144窗仍大体source水平，不能称已学好控制函数。平均MSE.045855（selected.048579/other.043131），同query忽略代码下界均值.002869、比15.981，0/144低于界；高于界不能反推完全忽略代码，首末loss用不同query不能当配对曲线。每task仅16访问，不称充分拟合或以此推翻全部低维/自身交互学习。此为reference参数输入、selection初态面板内的训练域函数保留检查，无视频/held/相邻学习稳定资格；无自动288/q/Reader/RL/Test。
+
+§9全部36仍冻结、独立report source248→selected545/648（R241/G304/L7），target60→337/432、support188→208/216；5/25/38/43各selected1680/1680/1680/1920，独立18/11/3/17，weak38及source state46损失保留。原32 selected与983完成事务逐字段保持。31非identity selected真实成功RGB455/558、失败103；五identity90 source复用，全部selected逻辑成功545/648。完整bank现为/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_final_four_20261016/reference_bank.json，全部候选/相邻RGL/producer/费用原件保持。原首8 selected权重训练来源44c0ee3a、新28的23 nonzero selected来自0f8e0023、五项raw source；§9新5个末端CP及新selection/report读取355396b0，未把末点替换原selected。
+
+144有效更新/4032独立观测-noise query/8064逻辑reference-student配对已逐流核验，每task16访问。4个CP完整E/D/220 active Adam/constant scheduler/S/保存identity/完整bank/流/各rank RNG/topology；36为world6、72起world4，36完整边界迁移，不称bitwise exact。实际230720 native flow执行行含reference8064×10、student(8064−560)×10及同量checkpoint replay；source560学生响应恒等复用且半权未重分配。4508实际prefix查询含物理分片重复，不增加逻辑监督query。
+首6有用7/14/28＋6/4/2rank比较选择4rank/14，整步中位2.943s，144全程中位2.850s；0 OOM，未以低显存替代吞吐选择。成功train job含加载总510.854s约8.51min。readout按node整体PSS/slot预算为其它GPU预留8/4槽，31 shard实际16槽4个/8槽22个/4槽5个，端到端plans/s中位7.754/6.825/4.754（不同task/cost，非配对profile）。node cap60、实际最大槽预留52；单worker采样峰56.675GiB/18process/52threads，host available最低276.371GiB。异步PSS不称同时node总峰，训练CPU峰未单独采样。8完整close均无残留，所有记录readout PID已消失，最终双节点本用户CUDA0/control module PID0，foreign未动。
+
+参考ROOT累计46560更新/1303680 FM query/266完整CP、10870提交/2363714 control+108700 dummy=2472414步；本§9新增1200/33600/5 CP/304提交/84093步、0失败未知/重跑，原16额外未用。CS ROOT496提交/142481 control+4960 dummy=147441步，0环境失败未知或有效行重跑，独立16额外未用。CS GPUh精确2.001268105（含首torchrun失败.004231426）；reference ROOT区间[52.014113090,52.121858595]，两ROOT合计[54.015381195,54.123126700]，仅本§9+§10新4.372680980。旧六loader无exit区间和更早N16等依赖独立保持，无GPUh硬限。
+首次参数解析失败80878、完成144训练eb78、最终CPU物化/全部新readout39d21bf0均保留各自clean pushed detached/launch/log/exit。CPU物化修复读取saved native mixed-dtype identity，五源端点使用双锚的解析恒等常量；24已有效nonidentity文件mtime/大小不变，只补12物化/80 source逻辑复用及496执行。0重训，S/Adam/RNG/流未改变，旧冻结没有热改。
+时间：§9 owner19:46:04.560640→20:10:19.443483Z=24.248min；§10接收19:51:01.953Z、CPU准备19:52:32.143Z、首启动20:16:25.735154Z、完成144恢复20:19:13.859893Z、readout-only20:40:10.102290→20:56:20.011405Z=16.165min；接收到最终65.301min。两启动消费者失败/约11min CPU恢复均如实保留，未超修正30–55min剩余估计上界；原reference首派09:05:48.038不重置。
+CS退出ROOT约.617GiB、reference约10.404GiB，新增峰预估12GiB内，未持续采精确磁盘峰；strg01 data1 used1747619008KiB/soft2147483648KiB，data0独立未新增。未复制source/数据、大缓存或held标签。source净增893行/10文件，guard无hard，职责/复用/退役决定沿前记录。三个task-owned clean dev worktree/branch在集成确认后已清理；child两提交gitcherry均等价已在main，formal冻结和main-owned docs树保留。
+
+记录于2026-10-15T21:04:20.479257+00:00。本提交/push后实验侧不再写canonical tracked文件，工程/记录/Git窗口归还主讨论01a13dd9；仅发送一次有原件的整批结果，送达凭证写ROOT/analysis/main_delivery_receipt.json。主讨论负责消费本有界阴性并自主科学接续；当前无运行owner/训练/评估/Queue或自动新实验，不等待Owner例行许可。
+
 ## 2026-10-16 保存144后的唯一读出恢复已实际启动
 
 owner3761312/supervisor3760524于20:40:10.102290Z从clean pushed detached39d21bf0f831f03e41a920c1061f776e49ae943d实际接续同ROOT，冻结树source_control_space_readout_frozen_20261016。完整144及4 CP已存在，owner消费latest144，0新增trainer/更新/query；仅保留24现有LoRA、补剩12与唯一36×16读出。新source identity消费者与node合计slot mix已通过实际CPU入口，旧两owner/原launch/费用/失败和所有有效产物保留。

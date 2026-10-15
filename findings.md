@@ -1,3 +1,9 @@
+## 2026-10-15 source-only参考运行面的工程边界
+
+现有proposal Runtime会读取MT及merged base，不能直接当raw-source起点。本窗由独立reference owner仅加载canonical raw source、38r8 identity及合法query，复用已有LoRA/FM/native/队列/Batch原语；没有复制Writer或引入新的科学架构。旧MT-prox教师路径仍被历史冻结消费者引用，本窗不调用；其全面退役由该历史运行面整体生命周期处理，不让它成为reference默认入口。
+参考实现按contract、training、accounting、worker、coordinator和analysis六项责任分开（另有包入口），净增长超过五source文件，属于本次完整参考生成/候选适应队列/全局交互账本/独立读出的必要范围；没有平行替代相同行为或抽象框架。环境池仍只有原practice owner，生命周期/RGB在其原接口扩展。
+旧N16进程PSS/线程问题不是已证实泄漏：本窗改成import前线程限制、按请求spawn、完整close，并以实际PSS/线程/环境数验收。默认先用历史每env至4.6GiB加父模型/64GiB余量估计合计64slot，真实消费者按实测环境PSS更新准入；吞吐比较只消费已授权行。CPU mock不能证明真实资源下降或reference学会控制。
+
 # EMBER findings
 
 ## 2026-10-15 source/rank8参考函数须先真实成立

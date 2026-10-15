@@ -1,3 +1,7 @@
+## 2026-10-15 source/rank8参考首窗进入工程实施
+
+依据[唯一active合同](designs/source_policy_space_compiler_20261015.md)，原09:05:48.038 UTC派发已接管；只对固定八train任务生成fresh source/r8参考，不恢复N16、MT教师或旧Writer。当前完成小型资产归档、source provenance及CPU工程消费者，无本批正式GPU结果。对话服务中断保留为工程准备耗时，不记为科学失败或重置派发时钟。全部历史正负证据及费用保持。
+
 ## 2026-10-15：source/rank8定案与参考控制器实施取舍
 
 Owner要求生成完整LoRA统一rank8、自主开始推进，并追问功能监督位置及为何不从source新训r8参考。

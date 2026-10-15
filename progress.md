@@ -1,3 +1,11 @@
+## 2026-10-15 source/rank8参考首窗实施中；尚未正式GPU启动
+
+原派发09:05:48.038 UTC、准备09:12:21.600308 UTC保持；对话服务compact连接failed不作为科学失败，不重复原准备或审计。独占开发树source_reference_r8_dev_20261015，环境生命周期隔离提交18b45501已串行集成，main当前记录/Git写窗口归执行。
+CPU实际消费者：八任务/全部50示范metadata与episode/frame cursor；选择平局取早、960后延伸/两后继节点/1920未收束、不提前打开report；全局16额外尝试、未知全上界、有效行拒绝重跑均通过。SQLite连接关闭问题在临时目录清理暴露后已修复并复核。practice数据流6测试通过，含原始双RGB、step0/5/提前terminal7、懒建/关闭/重开与线程环境恢复；没有真实环境smoke或新增交互。
+source provenance已核raw policy/step1000，0 MT载入路径；真实FM更新、完整Adam恢复、GPU吞吐与实际环境进程释放仍待本批首批有效消费者，不用CPU mock替代。
+strg01 data1 live used1735666152KiB/soft2147483648KiB，新增峰值24GiB；ROOT准备约340KiB、开发树8.7MiB，共享data1余80T。gpu02当前available479GiB、swap89MiB；双节点已有live快照，launch再逐worker准入。所有新增data1，不复制source/数据。
+Owner再次要求任何训练评估充分优化：物理7/14/28各两次有用更新，评估4/8/16有用请求，依吞吐及显存/PSS选择；原8slot准备队列仅物理改为16shard，旧小清单保存在inputs/queue_plan_preparation_8slots.json，0已执行科学请求，固定32/18case和seed不变。
+
 ## 2026-10-15 source/rank8参考控制器首窗合同已完成；待串行交执行
 
 Owner固定完整输出rank8，并要求参考LoRA先充分训练/比较性能高点，后续思考严谨。

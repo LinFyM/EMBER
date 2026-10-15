@@ -1,3 +1,10 @@
+## 2026-10-15 source/rank8首窗：执行已接管并实施
+
+执行01a13dbf独占canonical记录/Git；主讨论01a13dd9只读。原首次派发09:05:48.038 UTC保留，准备登记09:12:21.600308 UTC；远程compact连接失败仅属对话服务中断，尚无本批科学失败或重复计算。
+唯一范围仍[当前design](docs/designs/source_policy_space_compiler_20261015.md)八任务fresh source/r8参考。实施与首窗3–6h、条件延伸另1–3h仍为初始未profile估计；正式启动及实际吞吐将另记。
+已复用原生FM、完整LoRA、query、native10/first5、SQLite长任务队列与既有Batch准入/费用；source-only Runtime不加载MT。正式运行前完成CPU消费者、集成/push及clean detached冻结。
+资源优化使用本批有效更新比较microbatch7/14/28各两次，已登记评估shard16以比较slots4/8/16；不增加科学行。按实际环境PSS/线程与host可用内存限制合计环境数，无pending后完整close再训练或等待。
+
 ## 2026-10-15 source/rank8后继：先生成并充分选择参考控制器
 
 唯一active实施合同为[Source/rank8控制空间编译器](docs/designs/source_policy_space_compiler_20261015.md)。

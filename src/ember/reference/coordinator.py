@@ -99,6 +99,9 @@ class Scheduler:
                 if any(statuses[i]!='complete' for i,w in self.panel.items() if w['task']==task and w['kind']=='report'):return False
         return True
 
+    def stop_idle(self,statuses):
+        return self.failed or self.terminal(statuses)
+
     def node_budget(self,worker):
         node=self.worker_node[worker];resources=self.node_resources.get(node,{})
         memory=resources.get('host_memory_KiB',{});members=[w for w,n in self.worker_node.items() if n==node]
@@ -159,7 +162,7 @@ class Scheduler:
                         evaluation_reference=self.evaluation_reference['source'])
                     statuses[identity]='claimed'
             if message is None:
-                if self.failed or self.terminal(statuses):message=dict(command='stop')
+                if self.stop_idle(statuses):message=dict(command='stop')
                 elif worker not in self.idled:
                     self.idled.add(worker);message=dict(command='idle')
                 else:continue

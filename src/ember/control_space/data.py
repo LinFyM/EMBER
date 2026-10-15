@@ -20,6 +20,7 @@ def topology():
 
 def prepare(root):
     """Only a completed full bank can freeze labels and their 76 scalar units."""
+    torch.set_num_threads(8)
     root=Path(root);previous=read_json(REFERENCE_ROOT/'completion.json')
     if not previous.get('reference_bank_ready') or previous.get('owner_failure'):
         raise ValueError('full 36 frozen references and independent reports are not ready')

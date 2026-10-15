@@ -140,6 +140,10 @@ class ReadoutScheduler(Scheduler):
     def terminal(self, statuses):
         return all(statuses[identity]=='complete' for identity in self.panel)
 
+    def stop_idle(self, statuses):
+        # No future producer can create more readout work: release tail workers.
+        return self.failed or all(statuses[identity]!='pending' for identity in self.panel)
+
 
 def publish(root, identity, token, worker, work, output, *, seconds=0., peak_allocated_MiB=0., peak_reserved_MiB=0.):
     rows=output['rows'];path=root/'shards'/f'{identity}.json'

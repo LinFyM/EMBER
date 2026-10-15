@@ -42,7 +42,9 @@ def compute_pack(runtime,model,references,query_bank,entries,counters):
         errors=torch.zeros(len(entries),device=runtime.device)
         counters['identity_student_reuse']=counters.get('identity_student_reuse',0)+len(entries)-len(selected)
         if len(selected):
-            generated=model.forward_many([states[i] for i in learned])
+            # E/D and its subtractive anchors use FP32; native policy uses BF16.
+            with torch.autocast(runtime.device.type,enabled=False):
+                generated=model.forward_many([states[i] for i in learned])
             student_pids=torch.tensor([remap[int(pids[i])] for i in selected],device=runtime.device)
             students=native_actions(runtime,generated,batch,paired_noise[selected],batch_indices=student_pids,
                 prepared_velocity=prefix.select(qids[selected]),call_counter=counters)

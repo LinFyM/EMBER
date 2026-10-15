@@ -1,3 +1,12 @@
+## 2026-10-16 §11已实际接手并完成CPU消费者，准备正式冻结
+
+21:17:18.877Z实际接收，21:17:25.727Z首次准备；执行01a13dbf独占canonical工程/记录/Git，main只读。唯一[design§11](docs/designs/source_policy_space_compiler_20261015.md#11-从144接续的直接算子学习窗口)保持：完整144 E/D/220份Adam状态/4rank RNG及S/bank迁移，只改完整38层sBA目标，0 native训练query/大policy/MT/环境。原09:05:48.038首次参考派发及§9/10有效结果/失败/费用不重置。
+复用ControlSpace、FactorEncoder、rank Gram、原Batch/动态队列/完整runner.close；原native-only主动训练入口/QueryBank/专属credit/四点checkpoint已由本目标替换，历史保存在eb78/39d21 frozen、Git和原件，不留平行trainer。学习/评估仍单入口；旧144只读比较消费者由明确phase元数据承接。批量只增加独立point维，无新参数/跨点通信；两live anchors保留。
+真实CPU验证：271点/38 C（最小.0058504101）、原144/220 Adam/4 RNG、完整cycle72点覆盖36task；两点pack/逐点loss均2.86882162，E/头/记忆梯度相对差至多.000256，原BlockLayer输出及梯度相同；完整576旧行复现218/502/216、288新增保10；新终点/80 identity幂等/16工程尝试实际SQLite边界与物化saved center通过。不是GPU/科学成功。
+结构净增约150行、0新source模块；FactorLayout/Encoder仍唯一owner，loss/流/完整恢复/周期停止/队列/分析各在原模块。guard无hard；prepare/evaluate_pool/finish_cycle的有限循环/事务职责保持，不机械拆碎。新增checkpoint仅rolling+前点+首检查+末点，累计wall/OOM/中断有界成本不重置。
+现场data1 quota used1747790896KiB/soft2147483648KiB，独立余约381GiB；shared80TiB，reference11171725312B、旧144 662462464B，新峰12GiB可容纳。已查双节点，候选gpu02:0/1/2/4/5/7、真空闲或foreign小占用余45GiB，不碰foreign；正式每Popen重新准入，合计cap6/node6。先6rank有用更新比较pack1/2/4/8与6/4/2/1rank，完整9边界按实际吞吐迁移，不能沿旧native配置。CPU分别按node预算；读出复用首窗16/8/4实际吞吐、PSS动态调度和idle完整close。
+本窗整批预计45–90min，正式启动另记；首5min完整271池下降不足5%则停止，否则至15min/10800新增更新，任何有效末点仍唯一576逻辑/496新episode，最大512starts/184960步。0 q/video/RL/held/Test/新参考/自动第二块。当前尚未GPU运行；一次真实退出等待，整批验收/Git后一次回main01a13dd9并归还写窗口。
+
 ## 2026-10-16 main科学消费完成；接续§11直接算子学习
 
 已直接读取576 raw source/reference/generated case、31套完整输出及对应参考、原模型/训练/native消费者与144条日志。

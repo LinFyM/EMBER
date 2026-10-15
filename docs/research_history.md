@@ -1,3 +1,7 @@
+## 2026-10-16 §11完整144的直接算子学习接手
+
+科学分析及近似历史约束见[source_control_space_learning§7–9](analyses/source_control_space_learning_20261015.md#7-144首窗的完整科学消费)。main2685748c派发，21:17:18.877Z执行实际接收；完整bank/S/Adam/RNG迁移，native-only主动训练代码由同一control_space operator目标替换，旧eb78训练/39d21读取及所有原件保持。CPU复用/真实梯度、完整流、配对/物化和预算消费者已通过；未开始新GPU计算，不能写成科学结果。唯一有限合同design§11/新control_operator_from144_seed7，整批时钟/实际费用/退出将由progress及原件承接。
+
 ## 2026-10-16 main消费144与直接算子目标的有限接续
 
 main按实际源码与576 raw配对确认source218/ref502/G216，参考新得288只保10；31完整输出BA norm/reference中位2.26254e-5，

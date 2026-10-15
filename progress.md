@@ -1,3 +1,11 @@
+## 2026-10-15 Owner定案source起点与方法差异澄清；当前无active计算
+
+Owner明确“就从source开始吧，不以MT为基础”，已同步稳定要求、concept与当前候选：
+source恒等LoRA起点、D(z)/q(z|V,L,H)，无MT初始化/合并基底/部署回退；取消三折MT训练与P条件接口。
+Owner质疑旧多轮实践方法是否已用真实后果训练参数生成；核对旧Experience§4确认已有，原概括过宽已纠正。
+完整提案score相对旧SDE semi-gradient是计算路径差别，不是新反馈架构或已证实根因修复；具体比较进入候选§6/findings。
+本轮仅文档修订，无新代码、GPU、GT、held/Test或实验派发。原N16与全部历史结果保持；canonical写窗口仍在main。
+
 ## 2026-10-15 主讨论科学消费及具体方法候选；当前无active计算
 
 已直接读取N16报告及paired/per-task/per-suite/update原件，依原停止合同关闭固定Phi/DTW＋局部native Adam家族继续扩量/调参。

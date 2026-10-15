@@ -1,3 +1,13 @@
+## 2026-10-16 当前目标：固定线性64维基底保存参考控制
+
+main已消费1170原件：224/576对source218/reference502，288参考新增只保13；实际条件hidden已变化而BA方向仍弱，
+停止共同神经E/D的同条件续训。[完整分析§10–11](docs/analyses/source_control_space_learning_20261015.md#10-1170的实际变化不再是原来的微小代码但仍未学到参考方向)与
+唯一[design§12](docs/designs/source_policy_space_compiler_20261015.md#12-固定64维线性参数基底与一次控制保留读出)已登记。
+下一实际批只在原271点/S/source中心一次拟合64维线性U，完整A/B由center+S U z输出；用576逻辑/496新真实闭环判读，
+不以谱或参数误差取代控制，不扫维数/补端点字典/开RL。若广泛保住能力，尽快进入真实视频→代码学习。
+当前合同待Git后实际交执行；35–75分钟、磁盘峰4GiB、512物理提交含16工程尝试/184960步，所有旧成本保留。
+0新参考、视频/q/RL/held/Test；实际派发与运行由progress登记，不将本计划当后台工作。
+
 ## 2026-10-16 当前批完成：§11首检查1170止，闭环224/576
 
 唯一owner315620已实际exit0并完整验收，直接reader35034/295结束。[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_operator_from144_seed7/analysis/engineering_completion.md)：新增1026更新/300.887s，271池BA改善2.963931%未达5%继续投入条件；唯一有效末点仍完成576逻辑/496新闭环。source218/ref502/144216/new224、参考288新增仅保13，五identity80源复用。资源均释放/费用保留，0第二同块或Reader/q/RL/held/Test。当前最终Git/push后一次回main并归还写窗口，main自主科学消费接续；详情见progress。

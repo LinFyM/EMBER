@@ -13,9 +13,9 @@
 学习D(z)产生完整r8；视频及真实H给出连续参数提案；固定D时用独立query回报训练全部提案/停止的联合score。
 旧经验编译已有真实反馈学习，本次不是新的反馈架构原理；source/r8、多任务控制空间、全路径score均仍待实证。
 
-**当前执行§11：消费全部36参考及E/D144阴性后，保留同一E/D，有限学习完整LoRA算子并做一次函数保留闭环。**
-§2–10保留已完成窗口的合同；36参考均已冻结，§10末点没有保存参考能力。§11是新的科学接续，
-不自动延长原native-only目标。没有q、视频Reader或meta-RL计算，
+**当前执行§12：operator1170仍未保存参考控制，撤换共同E/D，一次拟合固定64维线性参数基底并做函数保留闭环。**
+§2–11保留已完成窗口的合同；36参考均已冻结，两个E/D窗口都没有保存广泛参考能力。
+§12是新的表示/拟合合同，不恢复native或operator优化器，也不自动扩大维数。没有q、视频Reader或meta-RL计算，
 也不是完整方法/held资格；参考控制和已知函数重构均不能替代教学编译的实际检验。
 当前不恢复N16、旧Writer、MT教师、Phi、GT/sealed诊断、validation或Test。
 
@@ -474,3 +474,89 @@ launch前查strg01独立data1 quota、实耗及共享容量，live双节点GPU/�
 §9/10原时钟、失败和费用不重置，新接收/准备/启动/退出独立登记。
 执行独占代码/记录/Git，修复及正式train/eval均新clean pushed detached，历史native运行面留在Git/frozen原件。
 只保留一个真正退出等待者，整批验收/Git/释放后一次交main归还写窗口，无阶段Queue、心跳或第二waiter。
+
+## 12. 固定64维线性参数基底与一次控制保留读出
+
+### 12.1 取舍与完整作用链
+
+§11的1170仅224/576，对source218、reference502；参考新增288只保13。全271池BA改善2.963931%，
+31个实际输出的BA norm/reference中位.054568、方向cosine中位.062441。四代表的代码/头前条件变化已明显增大，
+不能继续用144的微小条件差解释全部失败；完整论证及main原件见[控制空间分析§10–11](../analyses/source_control_space_learning_20261015.md#10-1170的实际变化不再是原来的微小代码但仍未学到参考方向)。
+停止共同E/D的同条件加量，改为直接解出source为原点的线性64维因子子空间；不改source、输出r8、参考bank或单位S。
+目标是看同一代码维数在去掉共同神经编解码之后能否保存广泛参考功能；这不是单层架构的等目标因果对照。
+
+唯一固定bank与S从原`control_space_seed7/{bank,units}.json`引用；仍为36task、266非零checkpoint加5个identity，271不同点。
+source中心取原144完整checkpoint所保存的FactorLayout.center，使用其实际有效坐标/FP32物化；
+不重新生成一个数值不同的identity再要求逐元素一致。B=0使z=0为source函数；旧正常精度差异按AGENTS接受。
+原38 targets/76 tensors、643,584个有效标量/512 padding、共同原rank顺序均保持，不做符号/置换/gauge对齐。
+S继续是每tensor一个固定RMS，不改动作/proprio normalization，不引入held统计。
+
+令`r_j=valid((pack(Lambda_j)-center)/S)`。权重严格沿原pool_points：task等权1/36、selected半权、
+其它完整点均分另半权；无其它点时selected全权。五个source点为零向量但保留质量，不能重分配给非零任务。
+构造`M[j,:]=sqrt(w_j)*r_j`，不减bank均值、不用成功率重加权，不只取selected确保其恰好落在子空间。
+一次薄SVD或数学等价小Gram谱分解取得前64个右奇异向量U，按奇异值降序；仅有效坐标参与。
+线性代数实现与CPU/GPU安排由执行按实际内存/吞吐选，允许小Gram更高精度以稳定分解；最终U/输出为FP32。
+若实际数值秩低于64，保留64维接口并以零列填充未识别方向、登记有效秩；不增加随机方向或另扫容差/维数。
+一次求解只产生一个basis，不以闭环、BA或谱解释率选择不同basis/截断值。保存实际采用的分解方法与数值秩定义。
+
+编码/解码唯一为`z=U^T r`、`Lambda(z)=center+S*pad(Uz)`，其中padding始终零，使用现有FactorLayout.unpack。
+完整38层的A/B同时由同一个64维z决定；实际层更新是`s B(z)A(z)`，不是把多个expert算子或最终video LoRA平均。
+编码只在训练标签侧读取参考参数；解码接口只收连续z，运行时不收task ID、参考路径、点编号或完整参考旁路。
+不得为selected加残差缓存、nearest-neighbor、精确端点插值或每task回退。U只在这一次合法共享拟合后冻结。
+本段是新结构的fresh闭式拟合，无Adam/scheduler/optimizer updates；旧144/1170参数和optimizer不迁移。
+
+### 12.2 拟合产物、直接检查与停止范围
+
+仅完整拟合一次，不新增参考、查询、视频、实践或动作轨迹。优先在CPU内存用原只读因子，
+需要GPU时先按live资源准入；不加载大source policy帮助分解，不把未使用GPU占住。
+保存一个canonical basis checkpoint：U、saved center/S/layout、原bank及精确权重、code_dim64、有效秩/谱、
+拟合代码/环境/方法、起止wall与费用、schema和完整状态；无optimizer时明确标注，不伪造训练step或exact-resume状态。
+原子落盘和恢复复用现有机制；中断只从未完成阶段接续，已完成basis/有效物化/环境行不重做。
+
+一次读取全271池并保存原单位下加权因子残差，以及沿§11相同固定C_l的完整BA误差；按task/suite/layer、selected/other报告。
+同时记录所保留谱质量和实际有效维数，均为定位证据，不是控制资格或新选点依据。
+不要求因子小误差、谱高解释率或BA低于人为门槛才允许闭环；finite且结构有效的唯一basis都进入§12.3。
+仅非finite、错误shape/单位/信息墙或真实分解失败触发工程处理，不把科学投影损失当bug修补。
+本批0神经E/D更新、0q/Reader/共享RL、0新native训练query或source/MT训练。
+没有自动改32/128/256维、换单位、拼局部基底、补selected残差或第二拟合块。
+
+### 12.3 唯一投影读出与结果分支
+
+每task selected只通过上述E_linear/D_linear物化一次，36套完整固定LoRA；init0..15/root202610151/official协议不变。
+只读复用原source、选定reference、native144及operator1170逐case作比较；旧schema由其明确元数据读回，
+不加载旧神经E/D为active fallback。五source identity80行明确复用真实source，其余31套真实执行496新episode。
+闭环阶段只载source和已物化的一套LoRA，basis/参考bank/任何编译辅助不在最终policy回路中运行。
+新phase与basis checkpoint路径用真实名字登记，不能把closed-form fit虚构成1171或一次optimizer更新。
+
+正常496提交的control上界171,520、dummy4,960、合计176,480；另有本独立窗口16次工程尝试，
+最多512提交、control179,840、dummy5,120、总184,960步。旧窗口余额不转入、不重置旧成本；未知保守计额，有效行不重跑。
+不新采RGB、H、参考动作轨迹或其它读出面板。弱参考、失败和source损失均保留。
+交付五方逐task/suite/target-support-identity成功集合、R/G/L/churn/breadth和相邻1170重合；
+重点是原参考288新增保留及source218损失，不能只超过弱1170即宣布成功。
+同八task的旧MT67/128只作已有配对子集参照，不新增MT或扩成held/全36结论。
+
+若广泛参考控制被保住，main应尽快登记并启动真实原始教学→z→固定D的学习，不另开latent几何探针链。
+若内部重构好而控制仍差，更新因子近似与必要控制方向的判断；若内部和控制均差，降低固定全局64维子空间优先级。
+两种阴性都不自动扫维数/单位、追加神经补偿或交RL掩盖缺口；main据原件改完整假说，不能停下来等待Owner逐项许可。
+一次输入已知参考权重的训练域控制保留仍不证明视频获取、held迁移或跨checkpoint稳定；不拼成完整方法资格。
+
+### 12.4 代码生命周期、资源与真实接续
+
+复用唯一`ember.control_space`运行面、FactorLayout、只读References/pool权重、operator Gram、source Runtime、
+dynamic long-first persistent queue、预算/退出原语。替换当前active神经E/D/Adam训练路径，旧实现由Git/frozen/原件保存；
+不并存另一个PCA writer/package或按失败自动fallback。共享FactorEncoder若仍有真实其它消费者则保留，不为本次退役误删公共实现。
+结构检查由执行随实际改动完成；main不重复工程测试。实际CPU消费者覆盖合法权重/center/shape、线性编码解码、
+完整物化、原参照配对和新phase预算/恢复，检查真实机制，不新增镜像测试框架或大量逐tensor/bit校验。
+
+新ROOT=`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_linear64_seed7`。
+预计新增磁盘峰4GiB：约158MiB的FP32有效basis、完整原子副本、约89MiB的36输出和有界报告/临时产物；
+原因子bank/source/数据只读引用，不复制。拟合矩阵约0.65GiB FP32，双精度或工作副本计入CPU内存，落盘临时也计磁盘。
+开新root/正式fit前核strg01 data1独立quota、个人实耗/共享容量；CPU按实际node的MemAvailable/PSS准入。
+每次GPU launch同时live查双节点、总6/8及node6；闭环按已有真实显存/CPU峰选择环境slots，进一步有用放大仍以吞吐实测为据。
+不把仅CPU拟合套成多卡训练，不因闲显存扩科学面板；没有累计GPUh硬限。
+
+预计实施/消费者15–35分钟，拟合/物化/读回约2–10分钟，正式496闭环约15–30分钟，整批约35–75分钟。
+这是基于1170实际15.315分钟读出、一次小样本高维分解规模的估计，首次有效工作后按实测修正；显著超期说明具体原因。
+本批接收/准备/fit/环境启动/退出分别记时，原reference首次09:05:48.038及此前所有科学/工程成本独立保留。
+执行独占工程/科研记录/Git，集成push后从新的clean detached正式fit/eval；一个实际退出等待者，
+整批验收/费用/资源释放/Git后一次交main归还写窗口，无心跳、阶段Queue、自通知或第二waiter。

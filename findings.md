@@ -1,3 +1,17 @@
+## 2026-10-16 较大条件变化仍未产生参考方向，改用一次直接线性表示检验
+
+main在1170原件CPU重算576配对/31输出和四原suite代表。218/502/216/224及R209/G15/L9、参考新增288仅保13均复现；
+完整BA norm/reference中位.054568、cos .062441、整体相对平方误差.996229，后者不同于逐层C单位的全池.970361。
+Q平均误差/source .998897，V .949423，主要改善集中少数V层；四代表code/头前hidden已明显变化，不能继续用144微小代码解释全部阴性。
+496真实首plan generated-source MSE1.71559e-5、generated-reference .044324、reference-source .044413，未把参考作用传到同初态首动作。
+这削弱“仅native Jacobian弱”解释，不定位唯一层/优化器或证明64维不够；有限窗不是充分优化。
+
+下一次替换共同E/D为source锚定的加权线性64维因子基底，U来自同271点、76S和原task/point权重，不只包含36端点。
+E=U^T r/D=center+S U z直接解决固定因子单位下线性重构，避免未知编码/解码的共同信用耦合；实际BA仍有二次交叉项。
+固定全局子空间可能缺bank外方向，因子几何不等于控制风险；旧固定A丢失、PCA16功能损失、PPW合法学习阴性及旧G参数监督正例均保留。
+不由新名称、谱解释率或代码正交宣称视频理解/好探索/held迁移。唯一basis仍须同576逻辑控制读出，负结果不自动扫维数或加RL。
+若广泛保存控制，尽快接真实视频学习；这项前提不能变成无限latent探针。完整数学、原件与决策在[分析§10–11](docs/analyses/source_control_space_learning_20261015.md#10-1170的实际变化不再是原来的微小代码但仍未学到参考方向)，实施以design§12/progress为准。
+
 ## 2026-10-16 §11直接算子有限接续仍未广泛保存参考控制
 
 [完整原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_operator_from144_seed7/analysis/engineering_completion.md)：同完整144/Adam/S/bank迁移至1170，1026新增更新/114访问每task、8208参数对，累计300.887s。271全池BA .999999816→.970360512（改善2.963931%）触发首5min停止继续学习，末点有效，仍真实完成496新episode+80源复用。source218/ref502/144216/new224；source R209/G15/L9、参考288新增只保13，target50/384/support174/192，Object/Goal/Long仍2/26/6，不能从比失败144多8例称控制空间已保存。所有任务BA略降不等于控制广泛学习；旧native正负/全部费用保持，不称充分优化或普遍不可能。

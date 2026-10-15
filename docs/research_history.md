@@ -1,3 +1,13 @@
+## 2026-10-16 main消费1170并撤换共同神经E/D
+
+main直接复算576原配对、31输出BA及四代表CPU E/D：source218/ref502/native144为216/operator1170为224，参考288新增保13；
+BA norm比中位.054568/cos .062441、Q相对误差均值.998897，首plan对source MSE1.71559e-5、对reference .044324。
+代码与头前hidden变化已增大，旧144的小条件差不能作为新结果完整解释；仍未把强参考作用写出，未证明充分优化或64维不可能。
+0新policy/GPU/env/重复工程测试；[原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_operator_from144_seed7/analysis/main_scientific_readout/paired_readback.json)与同目录mechanism_readback保留。
+科学取舍见[分析§10–11](analyses/source_control_space_learning_20261015.md#10-1170的实际变化不再是原来的微小代码但仍未学到参考方向)：结束共同E/D加量，
+新design§12以同bank/S/source中心一次加权SVD形成固定64维完整A/B基底，再同面板真实闭环，不以PCA/BA代理选点。
+这是已完成合同而非已运行/有效结果；旧固定A/PCA16/PPW阴性及G参数监督正例边界保持，实际执行以progress为准。
+
 ## 2026-10-16 §11完整144目标迁移的首5min止与576控制读出
 
 正式528a57b1 clean pushed detached，owner315620/supervisor315187在21:27:59.673397→21:50:45.166926Z exit0；派发21:17:18.877/准备21:17:25.727Z及旧09:05首次参考时钟保持。新增1026更新到全局1170，300.887秒、8208参数对、0native训练query；271固定池BA改善2.963931%不足5%，按完整周期停止，首检查=唯一末点，无续15min/回选/第二块。两新完整CP、原220 Adam、scheduler/RNG/S/C/bank/流/停止均验收。

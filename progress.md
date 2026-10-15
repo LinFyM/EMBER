@@ -1,3 +1,19 @@
+## 2026-10-16 main消费1170，§12固定线性64维基底待实际派发
+
+canonical写窗口已由执行交回；main直接读取实际源码、271池层分布/36任务结果，CPU复算576原case及31完整输出/四代表E/D。
+确认224/source218/ref502、参考288新增仅保13；代码与hidden变化已增大，BA norm比中位.054568/cos .062441，Q平均误差.998897，
+首plan generated-source MSE1.71559e-5对generated-reference .044324。0新GPU/policy/环境或工程复验，原件留同ROOT/analysis/main_scientific_readout。
+科学解释和完整历史限制写入[既有分析§10–11](docs/analyses/source_control_space_learning_20261015.md#10-1170的实际变化不再是原来的微小代码但仍未学到参考方向)：
+不把1170继续解释为原144的小代码，也不称充分收敛/低维不可能；结束共同神经E/D继续加量。
+
+唯一active [design§12](docs/designs/source_policy_space_compiler_20261015.md#12-固定64维线性参数基底与一次控制保留读出)：
+同271 bank/76S/source saved center，task等权/selected半权，一次未减均值的加权SVD求64维U；E=U^T r、D=center+S U z。
+替换当前active神经E/D/Adam训练，不改source/r8/参考或作维数扫描；全池因子/BA只定位，唯一有效basis均做36×16真实读出。
+80 source逻辑复用＋496新episode；独立16工程尝试合计最多512提交/184960步，ROOT control_linear64_seed7、新增磁盘峰4GiB。
+source/reference/144/1170原case只读比较，无q/视频Reader/RL/held/Test；预计35–75分钟，首实际工作修正。
+当前是已完成可执行科学合同，尚未新fit/GPU启动；main完成Git后实际派发，执行再独占工程/记录/Git，一个退出等待/一次整批回报。
+旧§11科学/工程原件与1.785346320801GPUh及更早区间费用完整保留，不重置时钟或以PCA代理宣称方法成功。
+
 ## 2026-10-16 §11完整退出并验收，停止此operator块
 
 owner315620于21:50:45.166926Z exit0，session35034/cell295实际结束；owner wall22.758225min、派发到退出33.438165min，首5min按改善不足5%停止，快于45–90min估计。完整[交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_operator_from144_seed7/analysis/engineering_completion.md)/acceptance.json/resource_exit.json：144完整承接至1170，新增1026更新/8208逻辑参数对/0训练query，累计300.887120214秒；271全池误差.999999816→.970360512（2.963931%），首检查=末点只读一次、不回选/追加。220 Adam step1170/scheduler/RNG/S/C/bank/流/计时均齐，保2新CP，旧144/历史费用保持。

@@ -1,3 +1,10 @@
+## 2026-10-15 source/rank8参考首窗完成（8 task；7冻结、1边界）
+
+合同`designs/source_policy_space_compiler_20261015.md`从main9ac2d6ec落实，实际科学代码clean pushed detached44c0ee3a；owner689438于12:55:29.447852 UTC exit0。完整[结果与验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)保留全部候选、相邻R/G/L、独立raw rows、真实RGB与费用。11,040更新/309,120 queries、62完整Adam/RNG CP；2,492环境返回、612,723步，0环境失败/未知/有效行重跑。
+冻结selected：task1/12/13/20/21/32/34分别1200/480/960/720/320/960/960。独立report source26/126→103/126（R22/G81/L4），各task结果17/17/14/12/18/13/12。task0轨迹1920，暂优1680=32/32、末点31/32，仅一后继，未冻结/未report；完整bank尚未准备好，不自动续2160或余28。
+合法MT128/67配对身份均匹配；7冻结子集selection89/112对55/112；加task0暂优为105/128对67/128，但此为教师选点panel，非EMBER/held成功。MT153/G165/D175/168及旧阴性保持。126 selected真实producer RGB中103成功/23失败全保留，只有成功可为辅助正确教学。
+恢复计算14.582890817GPUh精确；首发ready回调失败6loader无原exit，0科学工作但GPU费用[0.085749295,0.193494800]保守区间，总[14.668640113,14.776385618]。初始09:05:48.038派发/准备/首GPU/失败/接续/退出全部保留，至退出3.827614h，原3–6h未超期；ROOT约2.494GiB<24GiB。吞吐、CPU共同准入、57完整close、最终CUDA0及未知测量边界见验收；无自动D/q/RL/held/Test。
+
 ## 2026-10-15 source/rank8参考首窗进入工程实施
 
 依据[唯一active合同](designs/source_policy_space_compiler_20261015.md)，原09:05:48.038 UTC派发已接管；只对固定八train任务生成fresh source/r8参考，不恢复N16、MT教师或旧Writer。当前完成小型资产归档、source provenance及CPU工程消费者，无本批正式GPU结果。对话服务中断保留为工程准备耗时，不记为科学失败或重置派发时钟。全部历史正负证据及费用保持。

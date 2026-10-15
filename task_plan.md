@@ -1,3 +1,10 @@
+## 2026-10-15 source/rank8参考首窗已完整退出；task0到边界，交主讨论接续
+
+唯一owner689438于12:55:29.447852 UTC实际exit0，单次退出等待结束，整批工程验收通过。[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)包含全部候选/相邻成功集合、独立report、62完整CP、真实producer RGB、费用区间和资源释放。
+八任务首窗均按合同跑完；7任务已冻结，task0暂优1680=32/32、末1920=31/32，仅一个后继节点，不称收束，也未开其report。完整8任务bank未准备好；此边界由main消费后自主接续，不自动开2160/其余28/D/q/held/Test，不以等待Owner普通许可替代科学判断。
+7冻结task独立report source26/126→103/126，R22/G81/L4；这只是non-held参考控制器，不是EMBER视频编译/held成功。最初09:05:48.038派发到退出3.827614h，原时钟与首次启动失败完整保留。
+本轮仅完成canonical记录/Git/push并一次回01a13dd9，随后释放记录写窗口；当前无活训练/环境owner或第二waiter。
+
 ## 2026-10-15 当前实际执行：source/r8 owner689438
 
 10:29:19.211831 UTC从clean pushed detached44c0ee3a接续，终端session53221等待真实整批退出。原派发09:05:48.038与所有旧失败/费用保持，无main普通ACK、阶段Queue或第二waiter。

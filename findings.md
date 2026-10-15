@@ -1,3 +1,10 @@
+## 2026-10-15 fresh source/r8参考：容量正例、质量边界及真实资源改进
+
+[首窗原件与验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)证明这八个non-held task从canonical raw source、完整r8、真实50示范FM可学到有用闭环控制：7冻结task独立report26/126→103/126（R22/G81/L4）。它提供合法参考函数/producer质量证据，不能证明视频→参数、低维D(z)、元学习或held迁移已成功，更不改写强MT153、G165、D175/168和旧负证据。
+task0暂优1680已32/32，但1920后继31/32且只一后继点，未冻结/未report；其完整Adam/RNG保留到1920，不把分数天花板当原选点规则通过。task21 source本来16/18、只新得2；task20与34仍弱，34 report8→12同时失3，selection最高18后降13；保留全部候选与success-set，不用训练loss解释掉不利case。
+本次CPU/GPU优化有实际消费者依据：完整逻辑28内7/14/28比较后选14/28，实际6独立trainer可同时运行；评估4/8/16有用请求端到端plans/s中位4.976/6.458/7.163，16收益约10.9%并占单worker约72.7GiB最高PSS。不能按GPU余量机械扩各worker32环境（约140GiB×6超过503GiB）；单worker32重分配未另开profile，不声称全局最优。
+进程问题以生命周期解决：import前线程控制、懒建/增长、连续ready复用，真正idle/转训练/退出完整close，57回执全释放。采样host available最低287.451GiB、退出恢复479GiB，不再持有旧N16式空闲环境；各worker异步PSS不能加成精确同刻总量。首次ready回调漏测导致0科学工作启动失败，GPU成本按实证区间保留；修复了真实退出/费用消费者，不把该工程故障或参考弱点扩为新科学路线。
+
 ## 2026-10-15 source-only参考运行面的工程边界
 
 现有proposal Runtime会读取MT及merged base，不能直接当raw-source起点。本窗由独立reference owner仅加载canonical raw source、38r8 identity及合法query，复用已有LoRA/FM/native/队列/Batch原语；没有复制Writer或引入新的科学架构。旧MT-prox教师路径仍被历史冻结消费者引用，本窗不调用；其全面退役由该历史运行面整体生命周期处理，不让它成为reference默认入口。

@@ -1,3 +1,26 @@
+## 2026-10-15 source/r8首窗exit0并通过完整验收；7冻结、task0未收束
+
+[完整工程验收与结果](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)及同目录acceptance/reference_bank/evaluation_measurements已保存。owner689438从10:29:19.211831至12:55:29.447852 UTC运行146.171min，实际训练/评估为clean pushed detached44c0ee3a；当前源码与此相同，后续仅记录。原09:05:48.038派发至退出3.827614h，准备09:12:21.600308/首GPU10:22:55.092551/首次失败10:24:03.844保持，首窗在原3–6h估计内。
+
+|task|末更新|冻结selected / 暂优|selection /32|独立report source→selected /18|
+|---|---:|---|---:|---|
+|0|1920|1680暂优，未冻结|32|未打开|
+|1|1680|1200|31|0→17|
+|12|960|480|29|0→17|
+|13|1440|960|26|0→14|
+|20|1200|720|19|2→12|
+|21|960|320|32|16→18|
+|32|1440|960|27|0→13|
+|34|1440|960|18|8→12|
+
+全部candidate/相邻R/G/L、完整不利case见原件，不挑末点或融合。task0只有1680之后的1920一个节点，未达到两后继规则，完整8任务bank_ready=false。7冻结selection182/224对source36/224；独立report103/126对26/126，保持22/得81/失4。七任务与合法MT对应selection112子集89对55；若加入task0暂优则105/128对唯一67/128，保持59/得46/失8，含选点偏差且非held。task20/34在MT16子集9对10/7对9，弱点不隐藏；task34最高18/32后降到13/32。
+实际11,040更新/309,120 FM query、62完整38-target/r8 FP32因子/Adam/constant scheduler/episode-frame cursor/Python NumPy Torch CUDA RNG均齐并验证。0 MT初始化/合并/额外高rank执行，0 held/Test/D/q/RL。2,492物理环境提交全返回：587,803control+24,920dummy=612,723步，0环境失败或未决、0有效行重跑，16额外工程环境额度未用。
+126 selected真实raw双RGB含103成功/23失败，252 source/selected捕获shape/uint8/stride5+terminal/producer全部核，实际成功和失败像素亦读取；只有selected成功103条作为此bank正确辅助教学。source不冒充新expert，后续不再stride5/不双rotate。
+精确恢复六job14.582890817GPUh；首次6source loader无exit的旧费用区间[0.085749295,0.193494800]另保留，累计[14.668640113,14.776385618]GPUh，不记0或强行精确。旧launch/log/invalid zero-billing归档及修复消费者齐；该次0更新/环境，不消耗16环境失败额度。
+训练有用比较7/14/28各两次后选14/28，暖态2.076–2.132s/update、约13.1–13.5query/s/活动GPU，peak15.92GiB；实际最多6独立trainer，非固定3。评估4/8/16对应端到端plans/s中位4.976/6.458/7.163，16比8约+10.9%，受CPU共同约束不为填GPU显存盲加。
+按请求懒建/扩容、连续ready复用、真正idle/训练/缩小/退出close；最大80slot预留，单worker最多18进程/165线程、采样PSS最高72.734GiB。57完整close回执均无残留；采样host available最低287.451GiB，异步worker PSS不能伪称同刻总峰。退出后available479GiB/used24GiB/swap88MiB，双节点本用户CUDA0，全部本批记录PID消失，foreign未动。
+ROOT约2.494GiB，低于24GiB；strg01 data1 used1738305440KiB/soft2147483648KiB。没有额外GPU profile/环境smoke、科学扩量或固定周期日志巡查；唯一实际退出等待后整批验收，本轮Git完成后一次回main并释放写锁。
+
 ## 2026-10-15 source/r8同一首窗已从修复冻结版本接续
 
 唯一owner689438（supervisor689390）于10:29:19.211831 UTC实际启动，clean pushed detached44c0ee3a，冻结树source_reference_r8_recovery_frozen_20261015，直接退出等待session53221。原owner及六source进程均已退出核实，才进行接续；ROOT/owner_launch.json只保留当前真实owner，旧launch/exit/log原件在inputs/startup_failure_01，不覆盖或伪造旧回执。

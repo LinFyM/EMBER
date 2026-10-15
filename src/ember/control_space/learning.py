@@ -12,7 +12,7 @@ class References:
 
     def get(self,path):
         if path not in self.cache:
-            if len(self.cache)==32:self.cache.popitem(last=False)
+            if len(self.cache)==271:self.cache.popitem(last=False)
             raw=self.runtime.identity if path is None else load_file(path,device=str(self.runtime.device))
             self.cache[path]={k:raw[k].detach().float() for k in self.names}
         self.cache.move_to_end(path);return self.cache[path]

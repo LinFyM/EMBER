@@ -1,3 +1,9 @@
+## 2026-10-16 §12唯一owner已启动，一次CPU拟合完成
+
+owner1006050/supervisor1005668于22:12:41.893413Z从clean pushed detachedc99502cf0478dd047f7e845dc49166b48d25c520实际启动；新ROOT control_linear64_seed7、冻结树control_linear64_frozen_20261016。原派发22:05:12.992/准备22:05:18.222及09:05:48.038首次参考时钟保持。单一直接退出读取session48175/cell346，无Queue/心跳/第二waiter，继续独占canonical写窗口。
+正式只一次CPU加权未减均值FP64小Gram分解已完成：wall6.633568432秒（含原子basis写出）、numerical_rank266/effective64、保留谱质量.988270296101、峰RSS4.986317GiB，0GPU/optimizer更新。原center/S/271bank及5zero质量保持；basis真实schema路径、谱/秩定义/权重/布局/版本/时钟保存在basis/state.pt/fit_completion.json。谱高不作为闭环资格或选点，任何有限有效basis仍完整执行496新episode+80源复用，未自动加残差/换维数。
+拟合比原2–10min粗估快，目前接续唯一动态闭环，整批预计修正25–45min（仍需实际控制及验收）；actual environment启动/退出由jobs回执保留。GPU仅实际evaluator Popen时逐次双节点cap6/8/node6/真实显存/process及strg01配额准入，CPU期间不占GPU等候。当前尚无新成功率结果，0 q/Reader/RL/held/Test/新参考/第二fit。
+
 ## 2026-10-16 §12已接收并通过CPU消费者，尚未全bank fit
 
 22:05:12.992Z实际接收、22:05:18.222Z首次准备；执行01a13dbf独占canonical工程/记录/Git，main只读。唯一[design§12](docs/designs/source_policy_space_compiler_20261015.md#12-固定64维线性参数基底与一次控制保留读出)已完整消费；旧1170代码/hidden已变而参考方向仍弱，停止共同神经E/D加量，不继续用144小代码概括新结果。

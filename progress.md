@@ -1,3 +1,9 @@
+## 2026-10-16 末四项收尾唯一owner已实际启动
+
+owner2999980/supervisor2999408于2026-10-15T19:46:04.560640Z从clean pushed detached355396b016a2132688288980388e81951af774e6启动，冻结树`/data1/user/ymdai/ember_worktrees/source_reference_final_four_frozen_20261016`；root同前，第三窗`windows/final_four_20261016`保留launch_contract/owner_launch/owner.log与前窗previous原件。实际接收19:41:53.830→启动4.179min，原09:05:48.038首派不重置。
+计划gpu02:0/1/2/4/5/6六独立world1 worker，4个trainer与ready eval动态并行；两张twlu低显存共驻，prelaunch空闲45153/45260MiB，其余四张46068MiB。foreign不动，各Popen原Batch仍live双节点/合计cap6/node6/真实显存进程与quota。prelaunch gpu02 available498137756KiB约475.061GiB，CPU仍按node准入；data1 used1745796316KiB/soft2147483648KiB，ROOT9.351GiB含新metadata，新增6GiB可容纳。
+终端session20947由supervisor直接wait实际owner，实验侧只保留唯一连续退出读取；无自Queue/阶段ACK/第二waiter，不按周期查训练/缓存。预计本窗含实施验收1–2h、受限约3h，非强杀/费用上限。仅5/25/38/43末1920接最多2880，32冻结、旧有效行和预算/信息墙保持；无D/q/RL/held/Test。暂无本窗科学结论，整批退出后验收/Git并一次回01a13dd9归还记录窗口。
+
 ## 2026-10-16 末四项有界收尾已接管实施，尚未GPU启动
 
 实际接收2026-10-15T19:41:53.830Z，首次核验19:42:01.070Z，准备2026-10-15T19:43:49.978248+00:00；原首次09:05:48.038Z和前两窗真实退出保持。唯一active为design§9、main9ed0f942，执行01a13dbf重新独占canonical工程/记录/Git，main只读。

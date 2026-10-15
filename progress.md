@@ -1,3 +1,11 @@
+## 2026-10-16 E/D144已完整训练；仅物化/读出消费者恢复
+
+owner3472728于20:28:57.099122Z exit1，原因发生在GPU全部训练成功后的CPU identity物化guard。0→36六rank job136.412086s/0.227353477GPUh、36→144四rank job374.441818s/0.416046464GPUh均exit0；完整36/72/108/144 CP及144有效更新已保存，0环境提交。连同首次torchrun参数失败，本ROOT已精确0.647631367GPUh，无未决GPU成本；本轮训练约8.51min含各job加载，未超修正预计。
+已核144 CP的native identity：36个因子遵循source BF16模板、40个FP32（含38零B）；CPU新造全FP32模板与保存中心最大差6.1035e-5。原入口误将fresh FP32模板当source输入/比较基准；实际保存identity归一化为0、D(0)为源完整LoRA。CPU并行归约可使等价e(0)相减出现约1.27e-6低位差，不能以bitwise相等作为科研gate或关闭高效kernel。仅修复消费者：读取CP保存的真实identity，五项source端点按E(0)=0/D(0)=identity直接复用该常量，与训练恒等半权/80 source行复用一致；其余31项仍真实D(E(reference))，没有teacher回退。
+真实saved144/source42 CPU物化消费者通过；模型、S/单位、Adam、RNG、流和144更新完全不改、不重训，已有效生成24个nonidentity LoRA保持且记录路径/大小/mtime原件；只补剩余12及唯一读出。训练来源eb78、后续消费者新冻结身份分别登记；原80878/eb78冻结、失败/费用保留。
+同时按已复用的实际8/16吞吐与node合计内存预算调整readout物理调度：为其它就绪GPU保留至少8/4环境槽，再给当前worker16，避免greedy16让有待办的GPU常驻空等。实际已读参考环境估5.625GiB、node cap60的CPU消费者给[16,8,8,8,8,8]共56而非先耗满60后留一GPU空闲；20/40/48/52/56/64/72/96 cap均通过、不超node合计。只改物理波次，16逻辑case/RNG不变，原reference调用默认保留；idle/tail完整close。guard净增893 source行/10文件，无hard，既有职责/退役决定保持。该比较是预算/吞吐预测，不冒称新GPU profile。
+下一步push/新clean detached只接CPU物化+496实际readout（另80 source逻辑复用），不再启动trainer；E/D原16环境额外额度未用。预计读出20–40min，实际Popen仍双节点/显存/quota准入。旧等待session8446/cell214已实际结束；新owner/唯一等待将另记，无自Queue/阶段ACK，整体完成后一次交main。
+
 ## 2026-10-16 首6个有用native更新：选择四卡/14，工程信用已接通
 
 实际同逻辑4×7×2：6rank/batch7两次整步中位5.731972s、4rank/双参考14为2.943350s、2rank/跨task28为5.408835s；0 OOM。峰allocated分别11462.985/13490.990/17720.231MiB，reserved受前次缓存影响单列。14方案真实prefix查询从每更新56降到28；28仍有显存但整步比14慢83.8%，因此不继续将全局工作合到更少卡，按实际全局吞吐选4rank/14，并在原36完整边界接续、释放另外两卡。不是同task严格微批因果profile，不按最低显存选配置。

@@ -1,3 +1,9 @@
+## 2026-10-16 source/r8参考池：广泛能力与库未就绪边界同时保留
+
+[补齐窗口原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_window_20261015/report.md)中，target21冻结教师的独立新初态58→305/378、保持53/新增252/失5，支持同source完整r8在多数目标训练任务可学成真实控制；不是视频编译、共享D或held迁移证据。support11 source本来180/198，selected191；42/55/64/96/101平局选identity的90逻辑行全是source复用，62/95独立success-set也未增加，不能把池平均或参数变化当新能力。四项5/25/38/43未满足后继规则、未开report，不能宣告36 bank ready。
+单个弱点仍会限制后段：task4 selection21/32却report7/18，task29仅2/18，task38暂优13/32且未收束；task4/13/34后期下降以及六个独立source成功损失不被FM loss或整体均值抵消。32冻结report496/576对238，扣除5个identity后27非零teacher406/486对148；收益广泛但异质。实际所有候选/相邻RGL保留，report未回流选点；两后继规则只提供有限收束证据，不是全局最优或充分收敛证明。
+运行面复用首窗证据后新更新microbatch28暖态约2.073s/update、0OOM，eval16端到端约7.164plans/s且CPU按节点准入。128完整close后无进程残留，host采样available最低234.753GiB、退出约477GiB，实际资源与生命周期共同约束并发；异步PSS不可冒充同刻总峰。新增34.974060103GPUh与旧未决区间分开结算，工程/计算完成不能代替整个参考库或EMBER已成功。
+
 ## 2026-10-15 参考库补齐的运行面承接
 
 结构实际净增126 source行/1新helper，无hard违约；原metadata与队列显式迁移、CPU准入同原Scheduler内承接。prepare_window复杂度19的review用于完整且不可省略的初窗/原件/环境一致性检查，45行保持单次迁移职责；没有复制执行路径。

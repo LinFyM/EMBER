@@ -1,3 +1,22 @@
+## 2026-10-16 参考库补齐已exit0并验收；32冻结、4未收束，待一次整批交付
+
+[完整结算](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_window_20261015/report.md)及同目录acceptance/reference_bank/evaluation_measurements保存全部36候选/相邻RGL/churn/真实producer/费用与资源。唯一owner2018633、supervisor2018203从2026-10-15T13:38:55.033389Z至19:29:18.028691Z实际exit0，wall5.839721h；本次13:20:10.797派发至退出6.152009h，旧首次09:05:48.038保持。短于原7–12h估计，实际34320更新低于54000上界、早停与90 identity复用减少工作；不称同任务纯吞吐因果profile。
+task0完整从末1920续至2160=32/32，原平局取早冻结1680，独立source7→17/18；旧首7 selected与全部旧selection/report逐行相同。全部36有限窗口已完成，但5/25/38暂优1680后仅1920一个节点，43暂优1920无后继，四项未冻结、未打开report，完整bank_ready=false；没有自动2160/2400或D启动。
+
+|独立report范围|source→selected|保持/得/失|
+|---|---:|---:|
+|target24中的21冻结任务|58→305 /378|53/252/5|
+|source已见support12中的11冻结任务|180→191 /198|179/12/1|
+|32冻结总计|238→496 /576|232/264/6|
+|扣除5个source identity，27非零teacher|148→406 /486|142/264/6|
+
+42/55/64/96/101选source identity，90个selected逻辑行及RGB复用真实source请求，不能称学习；62/95 report与source成功集合相同。task4 report7/18、29为2/18、38暂优13/32及后期能力损失保留。所有selection暂优（含4未冻结）1008/1152对443；只32冻结911/1024对420，含选点偏差，绝非D/视频编译/held资格。旧唯一MT128/67仍仅原八任务配对子集105/128对67，R59/G46/L8，无新增MT。
+新增34320更新/960960 FM query/199完整CP；ROOT累计45360更新/1270080 query/261 CP，旧62复用原完整验收，新199均检查38r8 FP32因子/Adam step/constant scheduler/episode-frame cursor/Python NumPy CPU CUDA RNG/world1。新增8074物理提交，1694858 control+80740 dummy=1775598步；累计10566提交、2282661+105660=2388321步，0失败/未知/有效行重跑，原16工程额外额度未用。9504 selection+1152 report−90复用=10566，全部start/finish与事务账本相合。旧2492行/612723步及费用原件不回填。
+selected逻辑RGB576条为496成功/80失败，其中90成功为source identity；非identity producer486条、406成功/80失败。全部source/selected逻辑视频真实header、dual256 uint8、stride5+terminal、producerLoRA检查，实际读取新任务成功和失败像素；只有真实成功可作正确辅助教学，不重复stride5/rotate，不冒充离线视频producer。
+新六job精确34.974060103GPUh；首窗[14.668640113,14.776385618]保持；ROOT累计[49.642700215,49.750445720]GPUh，旧6loader无exit区间[.085749295,.193494800]不记0，早前N16等仍独立。所有新实际工作来自clean pushed detached0f8e0023，旧task0 selected/首7训练来源44c0ee3a；task0末2160及新28来自0f8，新读出0f8，均分别登记，不称bitwise exact。
+训练全部34320新更新用microbatch28，最多6训练预留；每task暖态中位2.047–2.138s/update、跨task中位2.073，peak15.920GiB，OOM0。评估真实16环境480有用shard、中位端到端7.164plans/s；8环境17shard为6.201，4环境2shard为4.693，不同task/CP并非配对profile。资源不足才降8/4，不混两node内存。最大请求slot预留52（配置slot求和80含2行尾shard），单worker采样PSS峰76.532GiB/18进程/165线程；host MemAvailable最低234.753GiB，异步worker数据不宣称精确同刻node PSS峰。128完整close无残留，退出全部记录PID消失、双节点ymdai CUDA0、host available约477GiB，foreign未动。
+ROOT退出约9.309GiB含旧2.504GiB，低于新增48GiB估计；strg01 data1 used1746056516KiB/soft2147483648KiB。所有新增data1，无大资产复制。main下游科学准备b67cfc70已集成为0af7b91a、记录0f8e0023并push，报告路径docs/analyses/source_control_space_learning_20261015.md，仅文稿不扩scope。本轮完成Git/push后一次回01a13dd9并归还canonical写窗口；本执行不自动扩这四项或开始D/q/RL/held/Test。
+
 ## 2026-10-15 13:38:55 UTC：参考库补齐唯一owner已实际启动
 
 唯一owner2018633（supervisor2018203）从clean pushed detached `0f8e00230968920e2b2bf544008b22d076b04d00`实际启动；冻结树`/data1/user/ymdai/ember_worktrees/source_reference_completion_frozen_20261015`。同ROOT `windows/completion_20261015/{launch_contract,owner_launch}.json`保留确切command/env/资源/身份；主进程日志为该窗口`owner.log`，原first owner/log/退出费用及工程结算原件保留。

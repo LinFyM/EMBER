@@ -1,3 +1,9 @@
+## 2026-10-16 design§8有限窗口已完成，完整36参考库尚未就绪
+
+[整批原件与验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_window_20261015/report.md)：唯一owner2018633实际exit0，5.839721h，唯一直接退出等待已结束。36任务已读出候选、32冻结，5/25/38/43到1920仍未收束且未开report，须由主讨论消费后决定接续；不恢复旧任务或自动追加节点。
+task0末1920→2160后冻结1680，report7→17；旧7冻结完全保持。target21独立58→305/378、support11为180→191/198；5个source identity与真实参数学习分开。新增34320更新/8074环境提交/1775598步、0环境失败，费用与资源释放均通过，详情见progress。下游科学准备已集成0af7b91a（非计算许可）。
+当前仅做整批Git/push与一次回01a13dd9、释放记录窗口；GPU/环境进程均已退出，无第二waiter/自Queue。main消费后自主承担后继科学接续。
+
 ## 2026-10-15 当前执行：参考库补齐owner2018633
 
 13:38:55.033389Z从clean pushed detached0f8e0023实际启动，唯一直接退出等待session85456。实际启动/命令/资源/时钟见progress及同ROOT/window receipt；当前仅design§8，首7与全部有效工作保留。main下一段[科学准备](docs/analyses/source_control_space_learning_20261015.md)已集成0af7b91a，仅文稿、不扩大当前计算。执行继续独占canonical写窗口直至整批验收/Git/一次回报。

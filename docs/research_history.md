@@ -1,3 +1,9 @@
+## 2026-10-16 source/r8参考库补齐有限窗实际完成
+
+[完整结算](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_window_20261015/report.md)保存全36任务候选/相邻success-set、32冻结和4未收束（5/25/38/43未report）。task0从末1920完整续2160后冻结1680、独立7→17/18，旧首7不改。target21独立58→305/378（R53/G252/L5）、support11为180→191/198（R179/G12/L1）；5 identity producer90行属source复用，不能称学习。非identity27任务148→406/486；弱task4/29/38、后期损失与不确定性全保留，完整36 bank尚未准备好，不是D/视频/held成功。
+唯一owner2018633实际13:38:55.033389→19:29:18.028691 UTC exit0（2026-10-15UTC，当前本地10-16），5.839721h；原首派09:05:48.038和本次派发13:20:10.797分开保留。新增34320更新/960960query/199完整CP/8074环境提交/1775598步，累计45360/1270080/261CP/10566提交/2388321步，0环境失败/未知/重跑；原16额外尝试未消耗。新增34.974060103GPUh，ROOT累计[49.642700215,49.750445720]，含原6loader无exit的非零区间，旧原件独立保持。
+正式冻结0f8e00230968920e2b2bf544008b22d076b04d00；旧selected来源44c0ee3a、新task0末2160/新28及新report来源0f8分别登记。按node资源准入、microbatch28/eval16复用证据、128完整close无残留，host available采样最低234.753GiB。下游科学准备b67cfc70集成为0af7b91a并push，仅文稿。本批整批验收/Git后一次交主讨论01a13dd9归还写窗口，无自动续训/D/q/RL/held/Test。
+
 ## 2026-10-15 source/r8首窗消费后补齐既定36任务池
 
 唯一后继[design§8](designs/source_policy_space_compiler_20261015.md#8-首窗科学消费后的参考库补齐窗口)已由main09b5c1d2派发，实验于13:20:10.797Z接收实施；首窗原[完整结算](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)保持。新增task0末1920→2160及既定其余28fresh参考，不改原7冻结教师；这是参考资产补齐，不是D/视频编译/held结果。首窗scope/预算/失败与费用区间不追溯改写，当前结果待实际运行。

@@ -1,3 +1,9 @@
+## 2026-10-16 首6个有用native更新：选择四卡/14，工程信用已接通
+
+实际同逻辑4×7×2：6rank/batch7两次整步中位5.731972s、4rank/双参考14为2.943350s、2rank/跨task28为5.408835s；0 OOM。峰allocated分别11462.985/13490.990/17720.231MiB，reserved受前次缓存影响单列。14方案真实prefix查询从每更新56降到28；28仍有显存但整步比14慢83.8%，因此不继续将全局工作合到更少卡，按实际全局吞吐选4rank/14，并在原36完整边界接续、释放另外两卡。不是同task严格微批因果profile，不按最低显存选配置。
+首step decoder head grad2.304e-7/E=0符合零头初始化；step2 E grad7.889e-10，后续均有实际非零信用，证明真实native十步反向与E/D连通，不证明已学好或迁移。不同task/query的首6 MSE不能当同面板学习曲线。详细physical_execution.json与training_metrics保留查询/噪声身份、全局均值、actual replay计数和峰值。
+据真实2.94s更新，含36换卡恢复的训练修正为约8–12min、496物理闭环另估20–40min（用§9实际16slot/动态queue吞吐粗估）；整体剩余约30–55min，非GPUh硬限。仅144唯一读出，无科学扩量；原一次直接退出等待和整批回报保持。
+
 ## 2026-10-16 §10同窗恢复owner3472728已实际启动
 
 原20:16首启动/失败/0.004231426GPUh保持；新owner3472728/supervisor3472212于20:19:13.859893Z从clean pushed detached eb78edd7e68a6fd518906011df0f994541896037实际接续，冻结树source_control_space_recovery_frozen_20261016。仅torchrun模块参数分隔修复，原80878失败冻结不动，bank/units/run合同保持；无有效科学行重跑。ROOT/owner_attempts/attempt_002保存新launch/log，attempt_001保留原全部回执/launch_contract。

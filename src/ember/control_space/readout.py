@@ -137,6 +137,20 @@ class ReadoutScheduler(Scheduler):
     def eligible(self, statuses):
         return [identity for identity in self.panel if statuses[identity]=='pending']
 
+    def choose_work(self, worker, ready):
+        self.pending_ready_count=len(ready)
+        return super().choose_work(worker,ready)
+
+    def slot_candidates(self, worker, work, budget):
+        # Preserve useful parallel work on the other GPUs before doubling slots.
+        occupied=budget['occupied'];others=sum(v for k,v in occupied.items() if k!=worker)
+        peers=sum(k!=worker and not v for k,v in occupied.items())
+        peers=min(peers,max(0,getattr(self,'pending_ready_count',1)-1))
+        floor=8 if budget['slot_cap']>=8*budget['workers'] else 4
+        peers=min(peers,max(0,(budget['slot_cap']-others)//floor-1))
+        reserve=peers*floor
+        return tuple(slots for slots in (16,8,4) if others+min(slots,len(work['states']))+reserve<=budget['slot_cap'])
+
     def terminal(self, statuses):
         return all(statuses[identity]=='complete' for identity in self.panel)
 

@@ -109,6 +109,9 @@ def summarize_task(task,spec,arms,*,identity=False):
         identity=identity,cases=len(anchor),success_sets={a:sorted(r['init_state_id'] for r in rows if r['success']) for a,rows in arms.items()})
     comparisons=[(a,b) for i,a in enumerate(arms) for b in list(arms)[i+1:]]
     result['comparisons']={a+'_to_'+b:paired(arms[a],arms[b]) for a,b in comparisons}
+    for value in result['comparisons'].values():
+        union=sorted(set(value['before_successes'])|set(value['after_successes']))
+        value.update(success_set_union=union,jaccard=len(value['retained'])/len(union) if union else 1.)
     if 'reference' in arms:
         gains=set(result['success_sets']['reference'])-set(result['success_sets']['source'])
         result['reference_new_gains']=sorted(gains)
@@ -127,7 +130,10 @@ def aggregate(rows):
         result['comparisons'][name]={k:sum(len(v[k]) for v in values) for k in ('retained','gained','lost')}
         result['comparisons'][name].update(churn=sum(v['churn'] for v in values),success_set_overlap=sum(v['success_set_overlap'] for v in values),
             before=sum(v['before'] for v in values),after=sum(v['after'] for v in values),
-            breadth_improved=sum(v['after']>v['before'] for v in values))
+            breadth_improved=sum(v['after']>v['before'] for v in values),
+            success_set_union=sum(len(v['success_set_union']) for v in values))
+        union=result['comparisons'][name]['success_set_union']
+        result['comparisons'][name]['jaccard']=sum(len(v['retained']) for v in values)/union if union else 1.
     if 'reference' in arms:
         result['reference_new_gains']=sum(len(r['reference_new_gains']) for r in rows)
         result['reference_gains_preserved']={a:sum(len(r['reference_gains_preserved'][a]) for r in rows) for a in arms}
@@ -191,7 +197,8 @@ def adjacent(first,second,tasks):
         for task in sorted({r['global_task_id'] for r in first['raw_rows'][role]}):
             arms={name:[r for r in panel['raw_rows'][role] if r['global_task_id']==task]
                 for name,panel in [('update900',first),('update1800',second)]}
-            rows.append(summarize_task(task,tasks[task],arms))
+            identity=role=='seen' and next(r['identity'] for r in first['seen']['tasks'] if r['task']==task)
+            rows.append(summarize_task(task,tasks[task],arms,identity=identity))
         result[role]=grouped(rows)
     return result
 

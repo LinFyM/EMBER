@@ -1,3 +1,8 @@
+## 2026-10-15 source/r8同一首窗已从修复冻结版本接续
+
+唯一owner689438（supervisor689390）于10:29:19.211831 UTC实际启动，clean pushed detached44c0ee3a，冻结树source_reference_r8_recovery_frozen_20261015，直接退出等待session53221。原owner及六source进程均已退出核实，才进行接续；ROOT/owner_launch.json只保留当前真实owner，旧launch/exit/log原件在inputs/startup_failure_01，不覆盖或伪造旧回执。
+实际首发/准备/首次GPU/失败/本次接续时间均保留；仍同一八task source/r8合同和3120提交/1,063,840步边界，0科学请求已复算。费用正常exit精确计，旧无exit六项另以[0.085749295,0.193494800]GPUh进入账本。后续仍只等待本子进程整批退出后验收及一次回main；普通工程修复不请求Owner重授权。
+
 ## 2026-10-15 首次source/r8启动的事件回调错误已定位修复；0科学工作丢失
 
 owner657701于10:24:03.844 UTC实际exit1，六个source runtime均完成加载/冻结/38r8身份检查，但首次ready回调的dict重复worker字段触发TypeError，尚未派发任何训练/环境请求。0 optimizer update/0环境提交，16环境失败额度未消耗；这不是科学阴性。

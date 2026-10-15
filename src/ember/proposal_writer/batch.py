@@ -187,7 +187,7 @@ class Batch:
         # Other stage coordinators retain their original launch receipts; count their active jobs too.
         owned = {r['job'] for r in self.running.values()}
         for path in (self.root/'jobs').glob('*/attempt_*/launch.json'):
-            if (path.parent/'exit.json').exists():continue
+            if (path.parent/'exit.json').exists() or (path.parent/'exit_interval.json').exists():continue
             launch = json.loads(path.read_text())
             if launch['job'] in owned:continue
             elapsed = time.time()-datetime.datetime.fromisoformat(launch['start_utc']).timestamp()
@@ -277,14 +277,22 @@ class Batch:
             else:
                 child=subprocess.Popen(invocation,cwd=self.workspace,env=child_env,stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
+                callback_error=None
                 try:
                     for line in child.stdout:
                         log.write(line);log.flush()
                         if line.startswith('EMBER_WORK_EVENT '):
                             self.work_event(job.identity,json.loads(line[len('EMBER_WORK_EVENT '):]),child.stdin)
-                    code=child.wait()
+                except BaseException as error:
+                    callback_error=repr(error)
                 finally:
-                    child.stdin.close();child.stdout.close()
+                    child.stdin.close()
+                    for line in child.stdout:log.write(line);log.flush()
+                    code=child.wait();child.stdout.close()
+                receipt['child_exit_code']=code
+                if callback_error:
+                    receipt['coordinator_callback_error']=callback_error
+                    code=code or 1
         elapsed=time.time()-start
         return self._settle(job, devices, destination, receipt, code, elapsed)
 

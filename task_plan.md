@@ -1,3 +1,7 @@
+## 2026-10-15 当前接续：source/r8事件回调工程恢复
+
+首次owner在0更新/0环境派发时失败，原因与非零费用区间见progress。已补实际事件/子进程退出消费者，准备新clean pushed detached继续同一首窗；原时钟、方法、预算和唯一owner/一次整批回报均不变。
+
 ## 2026-10-15 当前执行：source/r8参考首窗已启动
 
 唯一owner657701/10:22:55.092551 UTC/clean pushed detached27ceba01；实际启动详情见progress与ROOT/owner_launch.json。固定八任务、充分选点/独立report和全部边界保持，首次09:05:48.038 UTC不重置。当前一条真实退出等待，无main普通ACK/心跳/阶段Queue或新增科学范围。

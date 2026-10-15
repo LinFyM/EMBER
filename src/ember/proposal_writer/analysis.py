@@ -61,14 +61,19 @@ def parameter_changes(parent, candidate, scales=None):
 def billing(root):
     paths = sorted(Path(root).glob('profile_*/exit.json')) + sorted((Path(root)/'jobs').glob('*/attempt_*/exit.json'))
     rows = [dict(path=str(p), **read_json(p)) for p in paths]
+    intervals=[dict(path=str(p),**read_json(p)) for p in (Path(root)/'jobs').glob('*/attempt_*/exit_interval.json')
+               if not (p.parent/'exit.json').exists()]
     contract_path = Path(root)/'run_contract.json'
     carry = read_json(contract_path)['limits'].get('carry_in_GPU_hours',0.) if contract_path.exists() else 0.
-    current = sum(r['GPU_hours'] for r in rows)
-    return dict(GPU_hours=carry+current, current_root_GPU_hours=current, carry_in_GPU_hours=carry, jobs=len(rows),
+    current = sum(r['GPU_hours'] for r in rows)+sum(r['GPU_hours_lower'] for r in intervals)
+    upper=sum(r['GPU_hours'] for r in rows)+sum(r['GPU_hours_upper'] for r in intervals)
+    return dict(GPU_hours=carry+current,GPU_hours_interval=[carry+current,carry+upper],GPU_hours_is_lower_bound=bool(intervals),
+                current_root_GPU_hours=current, carry_in_GPU_hours=carry, jobs=len(rows)+len(intervals),
                 GPU_hours_limit=None, GPU_hours_hard_cap_active=False,
-                failed_jobs=sum(r['exit_code'] != 0 for r in rows),
-                attempts=sum(r.get('attempts',1) for r in rows),
-                failed_attempts=sum(r.get('failed_attempts',int(r['exit_code'] != 0)) for r in rows),raw_receipts=rows)
+                failed_jobs=sum(r['exit_code'] != 0 for r in rows)+len(intervals),
+                attempts=sum(r.get('attempts',1) for r in rows)+len(intervals),
+                failed_attempts=sum(r.get('failed_attempts',int(r['exit_code'] != 0)) for r in rows)+len(intervals),
+                raw_receipts=rows,unreaped_original_exit_intervals=intervals)
 
 
 def interaction_ledger(root):

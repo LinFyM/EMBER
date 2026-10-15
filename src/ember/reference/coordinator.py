@@ -154,7 +154,7 @@ class Scheduler:
             resource=self.latest_resources.get(worker,{})
             parent=next((p for p in resource.get('per_process',[]) if p['PID']==resource.get('PID')),None)
             if parent:self.parent_GiB=max(self.parent_GiB,parent['PSS_KiB']/1024**2*1.2)
-            with (self.root/'worker_resources.jsonl').open('a') as f:f.write(json.dumps(dict(worker=worker,**event))+'\n')
+            with (self.root/'worker_resources.jsonl').open('a') as f:f.write(json.dumps({**event,'worker':worker})+'\n')
             if event['kind']=='ready':
                 previous=self.running.pop(worker,None);slots=self.running_slots.pop(worker,None)
                 if previous and self.panel[previous]['kind']!='train':

@@ -1,3 +1,10 @@
+## 2026-10-15 首次source/r8启动的事件回调错误已定位修复；0科学工作丢失
+
+owner657701于10:24:03.844 UTC实际exit1，六个source runtime均完成加载/冻结/38r8身份检查，但首次ready回调的dict重复worker字段触发TypeError，尚未派发任何训练/环境请求。0 optimizer update/0环境提交，16环境失败额度未消耗；这不是科学阴性。
+初版Batch回调异常未reap/保存原子进程退出费用，是执行漏测。已补真实Scheduler.event及真实CPU子进程故意回调失败消费者：关闭stdin、drain、wait并保存child退出与coordinator错误；原科学合同不动。修复将新push/clean detached运行，不热改27ceba01。
+旧六PID均已验证不存在，foreign未触碰。原launch/process.log及owner原件保留在ROOT/jobs/*/attempt_001和inputs/startup_failure_01；没有伪造exit0或精确GPUh。按各launch到最后ready日志mtime为下界、现场确认PID消失为上界，旧成本[0.085749295,0.193494800]GPUh；exit_interval.json单列并进入后续费用，原临时zero billing标为invalid归档，不能记0。
+首次派发09:05:48.038、首次准备09:12:21.600308、首次GPU启动10:22:55.092551及首次退出均保持，不重置时钟。当前同一八任务首窗继续工程恢复，无重复owner/有效工作复算或范围增加，仍独占记录/Git。
+
 ## 2026-10-15 source/rank8首窗唯一owner已实际启动
 
 唯一owner PID657701于10:22:55.092551 UTC从clean pushed detached27ceba01启动，supervisor657686直接wait实际子进程，终端session1559保留，无自Queue/第二waiter。冻结树`/data1/user/ymdai/ember_worktrees/source_reference_r8_frozen_20261015`，ROOT为`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7`；命令/环境/设备写入owner_launch.json与逐job launch。

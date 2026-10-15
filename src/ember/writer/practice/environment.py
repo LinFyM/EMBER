@@ -33,6 +33,13 @@ def raw_rgb(obs):
     return images
 
 
+def rgb_result_fields(slot, capture_rgb):
+    """Optional original render evidence on the actual control clock."""
+    if not capture_rgb:
+        return {}
+    return dict(rgb=raw_rgb(slot['obs']), control_step=int(slot['steps']))
+
+
 def raw_observation(obs, language):
     value = libero_policy_input(obs, language)
     images = torch.stack((value['observation.images.base_0_rgb'],
@@ -165,8 +172,7 @@ def _serve(pipe, contract, physical_gpu, affinity):
                 raise ValueError('unknown environment slot operation')
             ended = bool(done or slot['steps'] >= controls or command['kind'] == 'numerical_failure')
             result.update(episode_ended=ended, operation_seconds=time.monotonic() - tick)
-            if capture_rgb:
-                result.update(rgb=raw_rgb(slot['obs']), control_step=int(slot['steps']))
+            result.update(rgb_result_fields(slot, capture_rgb))
             physical_result(result,physical,env,slot)
             if command.get('capture_snapshot') and not ended:
                 result['snapshot'] = capture_snapshot(env, slot['obs'], slot)

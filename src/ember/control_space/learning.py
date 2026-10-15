@@ -32,20 +32,6 @@ class OperatorLoss:
         return torch.stack(errors,-1),torch.stack(baseline,-1)
 
 
-def local_credit(model,references,objective,groups,pack):
-    total=0.;identities=0
-    for start in range(0,len(groups),pack):
-        entries=groups[start:start+pack]
-        learned=[r for r in entries if r['path'] is not None]
-        identities+=len(entries)-len(learned)
-        if not learned:continue  # Its analytic zero retains its original /8 half weight.
-        states=[references.get(r['path']) for r in learned]
-        errors,_=objective(model.forward_pack(states),states)
-        loss=errors.mean(-1).sum()/8
-        loss.backward();total+=float(loss.detach())
-    return total,identities
-
-
 def pool_points(bank):
     """271 distinct points; selected/others weights retain source identity mass."""
     rows=[]
@@ -60,23 +46,28 @@ def pool_points(bank):
 
 
 @torch.no_grad()
-def evaluate_pool(model,references,objective,bank,context,pack):
-    from .checkpoint import gather
-    rows=[];points=pool_points(bank)
-    local=points[len(points)*context.rank//context.world_size:len(points)*(context.rank+1)//context.world_size]
-    for start in range(0,len(local),pack):
-        entries=local[start:start+pack]
-        learned=[r for r in entries if r['path'] is not None]
-        values={}
-        if learned:
-            states=[references.get(r['path']) for r in learned]
-            error,baseline=objective(model.forward_pack(states),states)
-            for p,e,b in zip(learned,error.cpu().tolist(),baseline.cpu().tolist(),strict=True):values[p['path']]=(e,b)
-        for p in entries:
-            error,baseline=values[p['path']] if p['path'] is not None else ([0.]*38,[0.]*38)
-            rows.append(dict(p,error_by_layer=error,source_by_layer=baseline,error=sum(error)/38,source=sum(baseline)/38))
-    all_rows=[r for part in gather(rows,context) for r in part]
-    return dict(rows=all_rows,weighted_error=sum(r['weight']*r['error'] for r in all_rows),
-        source_baseline=sum(r['weight']*r['source'] for r in all_rows),points=len(all_rows),
-        selected=sum(r['weight']*r['error'] for r in all_rows if r['point']==0)*2,
-        other=sum(r['weight']*r['error'] for r in all_rows if r['point']==1)*2)
+def evaluate_pool(model,references,objective,bank,*,vectors=None):
+    """One full-pool projection/BA read, reusing the fit's in-memory coordinates."""
+    points=pool_points(bank)
+    if vectors is None:vectors=torch.stack([model.normalized(references.get(p['path'])) for p in points])
+    projected=model.decode_vectors(vectors@model.basis)
+    source=vectors.double().square().sum(-1)
+    residual=(projected-vectors).double().square().sum(-1)
+    rows=[]
+    for start in range(0,len(points),16):
+        entries=points[start:start+16]
+        states=[references.get(p['path']) for p in entries]
+        generated=[model.from_vector(v) for v in projected[start:start+16]]
+        errors,baseline=objective(generated,states)
+        for i,(p,e,b) in enumerate(zip(entries,errors.tolist(),baseline.tolist(),strict=True),start):
+            rows.append(dict(p,error_by_layer=e,source_by_layer=b,error=sum(e)/38,source=sum(b)/38,
+                factor_squared_error=float(residual[i]),factor_source_squared_norm=float(source[i]),
+                factor_relative_error=float(residual[i]/source[i]) if source[i] else 0.))
+    weighted_source=sum(r['weight']*r['factor_source_squared_norm'] for r in rows)
+    weighted_error=sum(r['weight']*r['factor_squared_error'] for r in rows)
+    return dict(rows=rows,weighted_error=sum(r['weight']*r['error'] for r in rows),
+        source_baseline=sum(r['weight']*r['source'] for r in rows),points=len(rows),
+        selected=sum(r['weight']*r['error'] for r in rows if r['point']==0)*2,
+        other=sum(r['weight']*r['error'] for r in rows if r['point']==1)*2,
+        weighted_factor_squared_error=weighted_error,weighted_factor_source_squared_norm=weighted_source,
+        weighted_factor_relative_error=weighted_error/weighted_source if weighted_source else 0.)

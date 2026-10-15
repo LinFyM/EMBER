@@ -1,3 +1,8 @@
+## 2026-10-16 §10同窗恢复owner3472728已实际启动
+
+原20:16首启动/失败/0.004231426GPUh保持；新owner3472728/supervisor3472212于20:19:13.859893Z从clean pushed detached eb78edd7e68a6fd518906011df0f994541896037实际接续，冻结树source_control_space_recovery_frozen_20261016。仅torchrun模块参数分隔修复，原80878失败冻结不动，bank/units/run合同保持；无有效科学行重跑。ROOT/owner_attempts/attempt_002保存新launch/log，attempt_001保留原全部回执/launch_contract。
+唯一直接等待为session8446/cell214，旧83454/cell208已随实际exit1完成，不存在第二waiter或自Queue。实际GPU子进程仍由Batch逐Popen双节点/显存/quota准入，等待首有用native更新及整批退出，不按固定间隔读日志/缓存；正常只最终一次回主讨论。
+
 ## 2026-10-16 §10启动参数消费者已定位修复，0有效更新
 
 首owner3437638于20:17:09.972350Z exit1；首training child在实际torchrun解析器将子入口--start误配为父--start-method时exit2，尚无模型加载/有效更新/query/环境提交。实际子进程2.538855s、六卡记0.004231426GPUh，不记0；原owner/job/launch/log/exit及launch_contract已保存至owner_attempts/attempt_001和inputs/engineering_failure_001.json。未消耗E/D16环境额外尝试。

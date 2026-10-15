@@ -126,12 +126,14 @@ def _identity(descriptor):
 def get_or_build(runtime, descriptor, destination, frame_chunk=32):
     destination = Path(destination);identity = _identity(descriptor)
     cached = Path(descriptor.get('cache_path', destination))
-    if cached.exists() or 'cache_path' in descriptor:
+    if cached.exists():
         value = _read_cached(cached)
         if (value['video'] != identity
                 or Path(value['source']['model']).resolve() != Path(runtime.source['model_path']).resolve()):
             raise ValueError('cache belongs to another teaching video or frozen source')
         return {key:value[key] for key in ('z_img','indices','source')}
+    if cached != destination:
+        raise FileNotFoundError('referenced immutable feature cache is missing: '+str(cached))
     value = extract(runtime, load_video(runtime, descriptor), frame_chunk=frame_chunk)
     record = dict(value,video=identity,schema_version=FEATURE_SCHEMA,complete=True)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -141,3 +143,54 @@ def get_or_build(runtime, descriptor, destination, frame_chunk=32):
     finally:
         temporary.unlink(missing_ok=True)
     return value
+
+
+def worker(args):
+    """One persistent source replica builds disjoint useful videos, then releases."""
+    import json
+    from ember.pi05_source_setup import initialize_distributed
+    from ember.pi05_source_checkpoint import write_json_atomic
+    from ember.reference.accounting import host_resources
+    from .data import make_runtime,feature_entries
+    context=initialize_distributed(require_numa=True,defer_process_group=True)
+    torch.set_num_threads(8);torch.backends.cuda.matmul.allow_tf32=True
+    runtime=make_runtime(args.root,context.device)
+    entries=[e for i,e in enumerate(feature_entries(args.root)) if i%args.feature_shards==args.feature_shard]
+    # Useful long videos expose real frame-chunk headroom without a disposable probe.
+    longest=sorted((e for e in entries if not Path(e['cache_path']).exists()),key=lambda e:-e['frames'])[:6]
+    first={e['key'] for e in longest};entries=longest+[e for e in entries if e['key'] not in first]
+    measures=[];failures=[];built=reused=frames=0;started=time.monotonic();best=8
+    try:
+        for entry in entries:
+            destination=Path(entry['cache_path']);exists=destination.exists();candidate=best
+            if not exists and len(measures)<6:candidate=(4,8,16,32,64,128)[len(measures)]
+            tick=time.monotonic();torch.cuda.reset_peak_memory_stats();oom=[]
+            while True:
+                try:value=get_or_build(runtime,entry,destination,frame_chunk=candidate);break
+                except torch.cuda.OutOfMemoryError:
+                    oom.append(candidate);torch.cuda.empty_cache()
+                    if candidate<=2:raise
+                    candidate=max(2,candidate//2)
+            seconds=time.monotonic()-tick;count=len(value['indices']);frames+=count
+            if oom:
+                failures.append(dict(key=entry['key'],failed_frame_chunks=oom,recovered_frame_chunk=candidate,seconds_including_retries=seconds))
+                best=min(best,candidate)
+            if exists:reused+=1
+            else:
+                built+=1
+                measure=dict(key=entry['key'],requested_frame_chunk=candidate,actual_max_frame_chunk=max(value['source']['frame_chunks']),
+                    frames=count,seconds=seconds,frames_per_second=count/max(seconds,1e-6),
+                    peak_allocated_MiB=torch.cuda.max_memory_allocated()/2**20,
+                    peak_reserved_MiB=torch.cuda.max_memory_reserved()/2**20,OOM_attempts=oom)
+                if len(measures)<6:
+                    measures.append(measure);finite=[m for m in measures if not m['OOM_attempts']]
+                    best=max(finite or measures,key=lambda m:m['frames_per_second'])['requested_frame_chunk']
+                    print('EMBER_WORK_EVENT '+json.dumps(dict(kind='feature_observation',**measure)),flush=True)
+            del value
+            # Coordinator waits on actual completed files/child events, never timed cache polls.
+            print('EMBER_WORK_EVENT '+json.dumps(dict(kind='feature_complete',key=entry['key'],path=str(destination))),flush=True)
+        result=dict(complete=True,shard=args.feature_shard,shards=args.feature_shards,new_videos=built,reused_videos=reused,
+            frames=frames,seconds=time.monotonic()-started,chosen_frame_chunk=best,measurements=measures,OOM_recoveries=failures,resources=host_resources())
+        write_json_atomic(args.root/'features'/f'worker_{args.feature_shard:02d}.json',result)
+        return result
+    finally:runtime.videos.close();runtime.execution.close()

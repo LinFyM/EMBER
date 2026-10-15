@@ -1,3 +1,13 @@
+## 2026-10-16 §13接手与正式准备（尚无GPU训练结果）
+
+接收22:44:59.573Z、准备22:45:07.991Z，主讨论6c7ce480合同；canonical写窗口归唯一实验执行01a13dbf，main只读。完整范围见[design§13](docs/designs/source_policy_space_compiler_20261015.md#13-固定控制基底上的真实视频初始编译)，旧linear64正例及所有弱结果/成本不变。本批ROOT video_initial_seed7，最多1800更新/201600 FM query/1952新正常episode，独立16工程尝试，累计最多1968提交/699040步。每900/1800各576+400，全576含五identity均真实执行；held只合法RGB，不读offline标签/梯度/Test。
+
+实现沿唯一control_space运行面：model固定只读basis；reader/features负责纯512图像prefix及完整有序Reader；data/learning负责均匀原始/producer流及NativeFlowPrediction、BatchedLoRAInference的实际FM梯度；training/checkpoint保存fresh Reader+Adam/sched/scaler(None)/rank RNG/两类video与query cursor；run一owner并行就绪特征/训练/两节点评估；readout/analysis复用原动态队列/账本/CPU准入/完整close。§12一次fit.py及其主动神经/BA/分解入口退役至Git/frozen，只保留既有basis消费者；无平行Writer或第二decoder。
+
+CPU验收[acceptance.json](/data1/user/ymdai/projects/EMBER/.codex/tmp/video_initial_20261016/acceptance.json)核对完整1800逻辑流、每task原50视频四遍、跨episode排除、辅助池等权、world1/2/4/6的112+4及cotangent链误差≤3.82e-6；code units无floor触发。两个隔离slice分别1a6ebad5→96e46500与4c4ae148/bceee2b0→2b260ed2/c312c9f8；真实原始store/producer RGB/legacy prefix与历史576/held400/队列及延后设备事件消费者均过，无新GPU/env。只有plain RGB/indices进入Reader；旧language字段不读取。代码结构净增约660行/新增3文件/退役1，所有文件<400、无hard，复杂度review为完整schema/pairing与单owner状态机；保留这些紧密合同避免复制校验或分裂运行面。
+
+live存储：data1独立1747980972KiB used/2147483648 soft，192GiB峰可容纳；shared80TiB，相关source家族12.492GB实耗。原始1800/59114帧、producer545/16759帧，已有兼容144条纯image缓存可只读引用；148.189GiB全量估计不裁末帧。正式输出均data1。首有用feature测4/8/16/32/64/128 chunk、FM测7/14/28与多taskpack，完整36周期比较1/2/4/6 ranks；物理重分片不改任何逻辑查询/权重。900后就绪评估先两节点另一host两worker与最多4rank训练并行，训练退出卡立即接1800；延后设备仅等真实900退出事件，无占卡/Queue/第二waiter。CPU按各node合计，idle/stop完整runner.close。暂估整批2.5–4.5h，尚非新Reader实测。原参考09:05:48.038与旧费用区间保留；下一步commit/push/clean detached正式特征与有用训练，实际PID/启动另记。
+
 ## 2026-10-16 main消费linear64，§13初始视频编译合同待实际派发
 
 执行已归还canonical写窗口；main直接核当前control_space/source FM/旧纯图像读取源码与实际576五方行，

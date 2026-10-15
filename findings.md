@@ -1,3 +1,7 @@
+## 2026-10-16 §13实现边界与消费者证据
+
+[设计§13](docs/designs/source_policy_space_compiler_20261015.md#13-固定控制基底上的真实视频初始编译)保持已有linear64控制正例，新增纯图像Reader学习教学获取；本批无H实践，不把FM称真实反馈学习。CPU已验证原始/producer完整视频与跨episode112FM+4aux、原视频四遍和1–6物理分片权重。FM使用可验证的中间LoRA cotangent缓存，再将其完整反传固定D/Reader，数值toy对直接链误差≤3.82e-6；这只证明数学消费者没有切断，不证明科学效果。实际初期source与后续Reader信用/吞吐由首正式有用更新核验。源码只保留一个当前运行面，完成fit退役、basis只读；详细当前状态和证据在progress。
+
 ## 2026-10-16 控制保留正例后，优先检验真实教学获取而非继续参数探针
 
 main逐行复算§12的576五方/496首plan：484/source218/ref502、参考新增252/288、source失6/reference失39；

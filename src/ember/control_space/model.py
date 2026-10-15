@@ -4,7 +4,7 @@ from torch import nn
 from ember.lora import identity_lora_state
 from ember.proposal_writer.model import FactorLayout
 from .data import topology
-from .contract import SCHEMA
+from .contract import BASIS_SCHEMA
 
 
 class ControlSpace(nn.Module):
@@ -45,6 +45,6 @@ class ControlSpace(nn.Module):
 
 def load_basis(path):
     state=torch.load(path,map_location='cpu',weights_only=False)
-    if state['schema']!=SCHEMA or state['phase']!='linear64' or state['optimizer_updates']!=0:
+    if state['schema']!=BASIS_SCHEMA or state['phase']!='linear64' or state['optimizer_updates']!=0:
         raise ValueError('not the unique fresh linear64 basis schema')
     return ControlSpace(topology(),state['center'],state['units'],state['U'])

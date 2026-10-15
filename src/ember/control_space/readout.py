@@ -228,7 +228,7 @@ def worker(args):
             except BaseException as error:
                 fail_job(queue_path(folder),job_id=identity,worker_id=args.worker_id,claim_token=message['claim_token'],error=repr(error))
                 event(kind='failed',worker=args.worker_id,identity=identity,error=repr(error));raise
-    finally:close_runner(runner,args.worker_id);runtime.execution.close()
+    finally:close_runner(runner,args.worker_id);runtime.videos.close();runtime.execution.close()
 
 
 def owner(args,delayed_devices=None):
@@ -252,7 +252,9 @@ def owner(args,delayed_devices=None):
         def execute(job,device):
             # A dependency's actual owner exit releases the GPU, with no polling
             # or resident GPU process while the event is pending.
-            if device in release:release[device].wait()
+            if device in release:
+                release[device].wait()
+                if scheduler.failed or scheduler.terminal(scheduler.statuses()):return job.identity
             return batch.execute(job,device)
         with ThreadPoolExecutor(max_workers=len(jobs)) as executor:
             futures=[executor.submit(execute,job,device) for job,device in zip(jobs,devices)]

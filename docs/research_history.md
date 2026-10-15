@@ -1,3 +1,13 @@
+## 2026-10-15：source/rank8定案与参考控制器实施取舍
+
+Owner要求生成完整LoRA统一rank8、自主开始推进，并追问功能监督位置及为何不从source新训r8参考。
+主讨论消费只读资产/消费者审计后放弃将T2340 r128直接作为本批主监督；现成r8资产均有MT底座，不能误挂raw source。
+新[实施合同](designs/source_policy_space_compiler_20261015.md)先登记八个train任务fresh source/r8参考学习，
+32初态比较多个训练点、末端有界接续、selected冻结后18独立初态读出；Owner要求参考先做好并充分选择性能高点。
+该决定尚无新训练结果，不改变T/G/D/N16历史证据，也不是已经解决控制空间/反馈/held泛化。
+共享函数监督只训练E/D；新condition仍由编译规则产生参数，不能把参考teacher训练程序移为最终任务轨迹微调。
+当前D/q/RL及其余28任务待main根据真实首窗结果接续，无Owner例行许可门槛。
+
 ## 2026-10-15：Owner确定source起点；纠正后继架构新颖性表述
 
 Owner明确后继从source开始、不以MT为基础；当前候选改为source恒等LoRA及D(z)，取消MT起点和三个fold MT。

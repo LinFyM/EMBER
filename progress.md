@@ -1,3 +1,25 @@
+## 2026-10-15 source/rank8参考控制器首窗合同已完成；待串行交执行
+
+Owner固定完整输出rank8，并要求参考LoRA先充分训练/比较性能高点，后续思考严谨。
+已消费01a13dbf只读资产报告：现成r8均为MT残差，source T2340为r128/144条件且实际109/144只是各一初态，
+没有现成合格raw-source/r8 bank，也没有已认证的真实controller→辅助视频集。
+main据此改为从raw source新训练r8参考控制器；不采用旧高rank功能标签作为本批主监督，不加载MT教师。
+唯一active design为`docs/designs/source_policy_space_compiler_20261015.md`，当前只有八个train任务的参考生成/选点/独立读出；
+0已启动本批GPU，0D/q/RL/held/Test。候选完整架构说明同步rank8及Compiler无直接L接口，policy仍读exact L。
+首窗960、六候选、selection32；末端需相邻节点时同轨迹延伸最多1920，冻结selected后report18。
+最大15,360训练更新/430,080 query、3120环境提交/1,063,840步含16失败额度；预计新增峰值24GiB。
+实现+首窗3–6h、延伸另1–3h均为未profile估计；GPU/CPU共同优化、无空闲环境池长期驻留、实际恢复/冻结和唯一回报已写合同。
+本段时点main仍独占tracked/Git；提交推送后消息移交执行，随后main只读、不重复工程验收。
+
+## 2026-10-15 source后继已实际开始资产核实；main补首批合同
+
+Owner明确自主开始并自行分析解决问题。已向唯一新执行01a13dbf派发source编译器资产/接口核实，
+回执`.codex/tmp/main_takeover_20261015/source_compiler_audit_delivery.json`为processing_verified，
+实际turn `01a13e97-6539-7e53-b118-3bd398676a4e`；不是仅排队或口头计划。
+执行只读source控制器来源、合法视频/query与复用消费者，输出临时报告；0 GPU/held/Test/新训练。
+main并行落实完整训练/反馈信用/评估/停止合同，tracked记录与Git仍由main独占；资产报告后接续科学定案和实现派发。
+只需一次有意义的审计回报，不发心跳/普通ACK，不读旧N16进度；原科学停止线和所有旧证据保持。
+
 ## 2026-10-15 Owner定案source起点与方法差异澄清；当前无active计算
 
 Owner明确“就从source开始吧，不以MT为基础”，已同步稳定要求、concept与当前候选：

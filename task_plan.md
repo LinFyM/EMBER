@@ -1,3 +1,23 @@
+## 2026-10-15 source/rank8后继：先生成并充分选择参考控制器
+
+唯一active实施合同为[Source/rank8控制空间编译器](docs/designs/source_policy_space_compiler_20261015.md)。
+Owner已定source起点、完整38-target/rank8、自主推进，以及参考LoRA须充分选择闭环性能高点。
+资产审计完成：现成r8依赖MT，同source T参考为r128；不将二者当本批教师。先在固定八个train任务
+[0,1,12,13,20,21,32,34]从raw source训练fresh r8参考控制器；其它28任务及D/q/meta-RL由main消费结果后接续。
+每task候选80/160/320/480/720/960，固定32初态选择；末端未收束按原轨迹有界延伸至1920，
+所选点冻结后读独立18初态，保留实际成功视频/producer及全部不利结果，不按loss或末步交付。
+合同还明确数据、FM/Adam、全局steps/24GiB峰值、CPU/GPU吞吐与idle释放、恢复和唯一整批回报。
+当前main完成合同/Git后将工程与记录窗口串行交执行01a13dbf；尚无本批GPU训练启动证据。
+预计实施及首窗3–6h、条件延伸另1–3h，未profile；实际吞吐会修正。无held/Test或旧路线恢复。
+
+## 2026-10-15 Owner授权自主落实source后继；资产核实与科学合同并行
+
+已开始实际工作：实验执行01a13dbf在只读边界核实source参考控制器、数据及最小消费者复用，main同步补完整科学实施合同。
+审计单已由消息入口确认接收并实际处理；产物约定`.codex/tmp/source_compiler_asset_audit_20261015/`，预计15–25min。
+main仍独占tracked记录/Git；执行只写该临时报告，不跑GPU/新训练。源起点与信息墙已定，无需Owner再补需求。
+资产结果回来后由main冻结具体首批，串行移交实现/Git；普通实现问题由执行闭环，科学结果由main分析并自主接续。
+当前没有新formal train/eval；首批不是沿旧N16续训，也不把架构名称当作已解决旧失败的依据。
+
 ## 2026-10-15 Owner确定source起点；继续核实后继与旧反馈编译的差别
 
 后继统一从冻结source的恒等任务LoRA开始，不以MT初始化/合并基底/部署回退；强MT保留性能参照。

@@ -1,5 +1,14 @@
 # EMBER findings
 
+## 2026-10-15 新主讨论接手的独立判断与当前优先级
+
+[接手科研判断](docs/analyses/main_takeover_assessment_20261015.md)依据完整前任Owner对话、当前authority、
+相关历史、决定性源码及原件形成；分析完成不等于EMBER已超过MT。同口径MT153、G165、D72=175/D144=168的
+正证据及原选点身份保留，不清零、不事后选点或恢复旧训练。纠正N4的实践改善没有形成整体新初态收益，noV74全MT不称学习。
+优先修复教学/真实后果到可迁移参数修改的学习联系；历史已有FM/真实H/RL，不能简化为此前从未端到端或加RL即可解决。
+source起点、D71及其它最近似方案的实际边界见正文。具体后继架构尚未完成，本文非新active design/实验授权；
+唯一科学执行仍§14/§14.1有限N16恢复，停止线、原件成本及新main路由不变，完整结果后由新主讨论消费接续。
+
 ## 2026-10-15 主讨论完整科学消费与N16有限判断
 
 main已消费纠正后全16视频condition：37更新21接受、实践34/64→45/64，完整新初态64/70仍无稳定强MT优势。11真改参数条件97/176对MT92仅为事后子集，另5仍MT条件37/80对MT42不能叫遗忘，noV14更新0接受不能称+7学习。纠正26更新中12video-only/10接受/5提高实践成功证明视频补出终局零分差信用；task12实践1→3最终8/16、task1 V0实践0→1最终2对MT4保留迁移缺口。mixed动作信用视频/terminal中位.00732不是参数梯度分解，不支持直接调视频权重。完整论证见父ROOT/joint_schema_corrected/analysis/main_scientific_readout/corrected_method_scientific_readout_20261015.md及credit_analysis/{report.md,analysis.json}，原完整旧实现分析见父analysis/main_scientific_readout/original_method_scientific_readout_20261015.md；执行不重复原行分析/GT。

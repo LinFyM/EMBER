@@ -1,3 +1,8 @@
+## 2026-10-16 完整36 source/r8参考冻结；E/D144有界首窗接续
+
+[§9完整验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_final_four_20261016/acceptance.json)确认36/36冻结且report齐，新增1200更新/304提交/84093步/2.371412875GPUh。全部独立source248→selected545/648，R241/G304/L7；五source identity90复用、弱38=3/18及source state46损失均保留。末四selected5/25/38=1680、43=1920，32旧冻结完全保持。参考bank就绪不证明视频或held能力。
+唯一[design§10](docs/designs/source_policy_space_compiler_20261015.md#10-控制空间ed首个有界学习窗口)前提满足；CPU代码已集成与实际消费者核验，待push/新clean detached正式144。只功能E/D，无q/Reader/RL/held/Test或自动延伸。新增包由执行01a13dbf独占，复用source/布局/native/队列/生命周期；10文件分别负责模型、bank/query、credit、优化、CP、读出、分析、合同与薄入口，净增870行，guard无hard。旧reference producer仍是库依赖，未复制Writer；旧路线无active入口恢复。详情见progress，不将CPU接通称科学学习。
+
 ## 2026-10-16 source控制空间首窗合同已集成，CPU实施
 
 主讨论e254b6a7→c4ca1220的[design§10](docs/designs/source_policy_space_compiler_20261015.md#10-控制空间ed首个有界学习窗口)登记source/r8、标签侧参数E与64维D、同query两真实控制器native10唯一功能loss；144末点36×16读出。须先§9全部36冻结/report完毕/bank_ready，当前只CPU实现、不以暂优/32-task替代。旧native负证据不清零；函数保留不证明视频或held迁移。§9运行/时钟/共享16额度保持，§10有独立16工程尝试，无q/Reader/RL/held/Test或自动延训。详情见progress与唯一design。

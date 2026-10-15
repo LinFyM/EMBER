@@ -1,3 +1,13 @@
+## 2026-10-16 §9真实exit0且36参考就绪；§10实现通过CPU消费者
+
+§9原owner2999980/supervisor2999408于2026-10-15T20:10:19.443483Z实际exit0，wall24.248min，短于1–2h估计：只需5段/1200更新，5/25/38在2160收束、43在2400收束；未跑2640/2880。[验收与原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_final_four_20261016/acceptance.json)确认全部36冻结/独立report齐，bank_ready=true；32 frozen和原983完成事务逐字段不变。四selected分别1680/1680/1680/1920，独立source→selected为1→18、0→11、1→3、8→17 /18；38 loss state46保留，43选1920而非末2400。总36独立source248→selected545/648，R241/G304/L7，含5项identity90行；target60→337/432，support188→208/216。这是参考控制器，不是EMBER/video/held结果。
+新增1200更新/33600query/5完整CP，ROOT46560/1303680/266完整CP；新增304物理提交/81053control+3040dummy=84093步，无失败/未知/有效重跑。累计10870提交/2363714control+108700dummy=2472414步，原16工程额外额度仍未用。新增2.371412875GPUh，ROOT累计[52.014113090,52.121858595]，早前六loader未知区间与所有旧费用不变。17完整close无残留，全部新记录PID消失；单worker采样峰46.954GiB/18process/53threads，host available最低343.299GiB，异步PSS不称同刻node峰。
+
+§10 CPU实现已集成：完整38r8锚模型、按task等权76 RMS、确定性4×7×2流、原生10步唯一loss、完整E/D Adam/RNG/流CP、末144物化及36×16动态读出。真实CPU消费者通过锚导数、分片SUM、十步backward重新绑定、same-query KV索引、7/14相同loss/gradient且prefix查询14→7、恒等半权不再分配、恢复/未知上界/独立16失败额度；8条真实target/support旧source行满足新配对消费者。无GPU/E/D学习已发生，真实native图由首授权有效更新继续验收。
+E/D及减法锚用FP32、native BF16/TF32；先6个有用更新比较7/双参考14/跨task28与实际rank安排，36完整边界按吞吐迁移并释放多余卡，保持全局均值/Adam/流。读出继承node级PSS/slot准入、idle完整close；所有pending已派后，空闲尾worker直接退出释放GPU/模型内存。
+结构净增870 source行/10新文件，guard无hard；新包只承担E/D模型、合法bank/查询、功能credit、optimizer/CP、固定读出与分析/薄CLI各自职责。复用reference Runtime/QueryStream、FactorLayout/Encoder、native_actions、原Batch/SQLite/Scheduler/账本/close；旧调用默认不变，无平行Writer/MT运行面。reference是本库producer和原件消费者，未替代它再造trainer；旧研究路线不激活，后续退役由实际消费者和main科学决定，不能删除仍复用的泛型owner。review的credit/训练/OOM状态机与case事务保持单一职责，既有Batch复杂度不扩大框架。
+launch前live双节点：gpu02五空闲及gpu2余45.26GiB，gpu01无本用户CUDA；合计cap6/node6可用gpu02:0/1/2/4/5/6。data1 quota used1746893068KiB/soft2147483648KiB，余约382GiB；reference实际10.364GiB，新E/D峰12GiB独立可容纳，共享80TiB另核。正式Popen仍原Batch每次live双节点/quota/实际headroom，下一步push/new clean detached启动唯一owner，不等待普通许可。原09:05:48.038首派与§9时钟保持，§10接收19:51:01.953Z/准备19:58:57.177968Z，实际启动另记。仍预计学习+读出约0.8–3h未profile；首有用native更新修正。仅整批完成后一次回主讨论，当前继续持有canonical写窗口。
+
 ## 2026-10-16 §9继续，§10已接收并独立CPU实施
 
 实际接收2026-10-15T19:51:01.953Z；主讨论e254b6a7已串行集成至c4ca1220；唯一[design§10](docs/designs/source_policy_space_compiler_20261015.md#10-控制空间ed首个有界学习窗口)授权fresh source/r8 E/D144更新及36×16函数保留闭环，只有§9全部36冻结且独立report完成/bank_ready=true才能GPU训练；不缩成32-task或使用暂优bank。当前§9原owner2999980和唯一真实退出等待保持，原时钟/额度/产物不动；主讨论继续只读canonical。

@@ -1,3 +1,7 @@
+## 2026-10-15 source/r8首窗消费后补齐既定36任务池
+
+唯一后继[design§8](designs/source_policy_space_compiler_20261015.md#8-首窗科学消费后的参考库补齐窗口)已由main09b5c1d2派发，实验于13:20:10.797Z接收实施；首窗原[完整结算](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)保持。新增task0末1920→2160及既定其余28fresh参考，不改原7冻结教师；这是参考资产补齐，不是D/视频编译/held结果。首窗scope/预算/失败与费用区间不追溯改写，当前结果待实际运行。
+
 ## 2026-10-15 source/r8首窗科学消费与完整参考池接续决定
 
 main直接核对raw selection/report、训练轨迹和原生FM/query消费者，确认7冻结独立26→103/126的容量正例及不均匀保持。

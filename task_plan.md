@@ -1,3 +1,10 @@
+## 2026-10-15 13:20:10.797 UTC：参考库补齐窗口已接管实施
+
+唯一范围为[design§8](docs/designs/source_policy_space_compiler_20261015.md#8-首窗科学消费后的参考库补齐窗口)：task0从末1920完整续至2160，另28任务从原source fresh r8；首7冻结不改。执行01a13dbf独占canonical工程/记录/Git，main只读。
+同一ROOT显式revision2保留首窗队列/输入/analysis结算，已完成230工作只读复用；训练仍SCHEMA v1、原Adam/RNG/逻辑28流。尚未启动本次GPU。
+新增最多54000更新/1512000query/10948提交/4043800步，共用原未用16工程环境尝试。新峰值48GiB加旧2.494GiB；本次接收时间与旧09:05:48.038首派分开。
+预计7–12h，更多1920及长失败可12–16h。按首窗真实microbatch14/28和eval8/16吞吐复用，CPU按节点准入；完成实际消费者、push及clean detached冻结后唯一owner直接等待整批退出，一次回main归还写窗口。
+
 ## 2026-10-15 主讨论已消费首窗：收束task0并补齐已审36参考池
 
 唯一active合同为[source/r8 design§8](docs/designs/source_policy_space_compiler_20261015.md#8-首窗科学消费后的参考库补齐窗口)。

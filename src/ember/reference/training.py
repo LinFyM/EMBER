@@ -22,7 +22,7 @@ from ember.writer.learning_data import load_learning_tasks
 from ember.writer.function_credit import FlowSample, NativeFlowPrediction, flow_sample, mean_velocity_loss
 from ember.writer.model import DirectLoRAParameters
 from ember.writer.runtime import autocast
-from .contract import ASSETS, SOURCE, EVALUATION, NORMALIZATION, TASKS, OPTIMIZER, SCHEMA, NODES, checkpoint
+from .contract import ASSETS, SOURCE, EVALUATION, NORMALIZATION, TASKS, OPTIMIZER, SCHEMA, nodes, checkpoint
 
 
 class Runtime:
@@ -133,13 +133,17 @@ def update_model(runtime, owner, model, optimizer, sample, microbatch):
 
 
 def train(runtime, task, start, stop):
-    if task not in TASKS or (start,stop) not in tuple(zip(NODES,NODES[1:])):
+    trajectory=nodes(task)
+    if task not in TASKS or (start,stop) not in tuple(zip(trajectory,trajectory[1:])):
         raise ValueError('unregistered task/update segment')
     torch.manual_seed(7);random.seed(7);np.random.seed(7)
     model=DirectLoRAParameters({k:v.float() for k,v in runtime.identity.items()}).to(runtime.device)
     optimizer=torch.optim.AdamW(model.parameters(),**OPTIMIZER)
     scheduler=torch.optim.lr_scheduler.LambdaLR(optimizer,lambda _:1.)
-    microbatch,measures=(7,[])
+    # Same model/FM/logical28: reuse the first-window useful 7/14/28 evidence.
+    # 28 is within its measured 16.3GiB peak; resumed tasks retain saved size.
+    microbatch,measures=(28,[dict(reused_from='analysis/engineering_completion_20261015',
+        microbatch=28,reason='first-window useful throughput/headroom; no new cold-shape sweep')])
     if start:microbatch,measures=restore(runtime,task,start,model,optimizer,scheduler)
     stream=QueryStream(runtime,task);owner=NativeFlowPrediction(runtime.policy)
     metrics=runtime.root/'training'/f'task_{task:04d}'/'metrics.jsonl'
@@ -151,7 +155,7 @@ def train(runtime, task, start, stop):
             raise RuntimeError('unsaved optimizer updates cannot be silently replayed')
     try:
         for update in range(start,stop):
-            candidate=(7,14,28)[update%3] if update<6 else microbatch
+            candidate=microbatch
             tick=time.monotonic()
             sample,event=stream.sample(runtime,update)
             torch.cuda.synchronize();torch.cuda.reset_peak_memory_stats()
@@ -170,12 +174,8 @@ def train(runtime, task, start, stop):
             measure=dict(microbatch=candidate,seconds=duration,queries_per_second=28/duration,
                 peak_allocated_MiB=torch.cuda.max_memory_allocated()/1024**2,
                 peak_reserved_MiB=torch.cuda.max_memory_reserved()/1024**2,oom_attempts=ooms)
-            if update<6:
-                measures.append(measure)
-                # Second useful update at each physical size removes its cold
-                # shape/kernel startup without adding or discarding training.
-                warmed=measures[3:] or measures
-                microbatch=max(warmed,key=lambda m:m['queries_per_second'])['microbatch']
+            if update<6:measures.append(measure)
+            microbatch=candidate
             event.update(loss=loss,gradient_norm=norm,**measure)
             with metrics.open('a') as handle:handle.write(json.dumps(event)+'\n')
         save_checkpoint(runtime,task,stop,model,optimizer,scheduler,microbatch,measures)

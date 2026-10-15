@@ -1,3 +1,11 @@
+## 2026-10-15 参考库补齐：已接收并在独占分支实施，尚未GPU启动
+
+实际消息接收2026-10-15T13:20:10.797Z（本session原始response_item），首次核验13:20:40Z；原首窗09:05:48.038Z不重置。main09b5c1d2的唯一design§8已读，canonical记录/Git由执行01a13dbf独占，主讨论只读。
+独占dev为`/data1/user/ymdai/ember_worktrees/source_reference_completion_dev_20261015`，分支`codex/source-reference-completion-20261015`。同ROOT将显式修订任务/预算及新队列，保留旧8任务原run/queue/analysis/退出结算；230完成工作、7冻结selected/report及task0末1920原件不重算。
+复用operator_seen_training36环境authority（support global=40+local/horizon400）和现有LearningTask metadata；新28均50合法episode，不新建标签或缓存。source/normalization/38r8/Adam/FM完全保持；新任务复用首窗microbatch28实测，task0恢复原saved physical size，不重复冷形状profile。
+strg01 live data1 used1738578296KiB/soft2147483648KiB，约390GiB余量；共享容量另查80TiB。新增48GiB峰值可容纳，旧ROOT约2.494GiB另计。初步双节点live有7空闲卡，故合计cap6，gpu02原6张空闲可并行；正式每次Popen仍live复核。CPU按节点聚合PSS/线程/环境数准入，真正idle/转train完整close。
+本次预估7–12h，最不利12–16h（非GPUh停止线）。当前为实现/CPU实际消费者阶段；不把计划写成已运行，无D/q/RL/held/Test或旧路线恢复。
+
 ## 2026-10-15 main科学消费完成；参考库补齐合同已登记、待派发
 
 亲自按global_task_id重算全部selection/report配对并核原生FM/query/恢复实现：7冻结source26→103/126，R22/G81/L4。

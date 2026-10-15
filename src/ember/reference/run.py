@@ -110,7 +110,7 @@ def worker(args):
     from ember.pi05_eval_queue import complete_job, fail_job
     from ember.pi05_source_setup import initialize_distributed
     from ember.writer.practice import EpisodeRunner
-    from .contract import SCHEMA
+    from .contract import SCHEMA, queue_path
     from .training import Runtime, train
     from .accounting import host_resources
     context=initialize_distributed(require_numa=True,defer_process_group=True)
@@ -121,7 +121,7 @@ def worker(args):
     prepare_libero_config(args.root/'libero_config');configure_libero_runtime_assets(Path(args.environment['libero_paths']['assets']))
     runtime=Runtime(args.root,context.device);runtime.episode_event_log=os.environ.get('EMBER_EPISODE_EVENT_LOG')
     tasks={t['global_task_id']:t for t in args.environment['tasks']}
-    queue=args.root/'work.sqlite';runner=None
+    queue=queue_path(args.root);runner=None
     try:
         while True:
             event(kind='ready',worker=args.worker_id,resources=host_resources())

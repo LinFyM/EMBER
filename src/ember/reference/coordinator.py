@@ -12,35 +12,10 @@ from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_eval_queue import EvaluationShard, initialize_queue, claim_next
 from ember.proposal_writer.batch import Batch, Job
 from .contract import (SCHEMA,TASKS,BASE,EXTENSIONS,LIMITS,SOURCE,NORMALIZATION,SHARD,
-                       environment_contract,plan,selection_decision)
+                       environment_contract,plan,selection_decision,queue_path,nodes)
 
 
-def prepare(root):
-    path=root/'run_contract.json'
-    if path.exists():
-        run=read_json(path)
-        if run['schema']!=SCHEMA or run['tasks']!=list(TASKS) or run['limits']!=LIMITS:
-            raise ValueError('reference run contract changed')
-        return run
-    environment=environment_contract(root)
-    previous=Path('/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/corrected_results.json')
-    mt=[r for r in read_json(previous)['rows'] if r['arm']=='MT']
-    if len(mt)!=128 or sum(r['success'] for r in mt)!=67:
-        raise ValueError('unique historical MT128/67 identity changed')
-    write_json_atomic(root/'inputs'/'MT128_reference.json',dict(source=str(previous),rows=mt,
-        comparison_only=True,new_MT_execution=False,pairing_requires_actual_rows=True))
-    run=dict(schema=SCHEMA,tasks=list(TASKS),source=SOURCE,normalization=NORMALIZATION,
-        environment=environment,limits=LIMITS,logical_batch=28,rank=8,targets=38,
-        candidates=list(BASE),conditional_extensions=list(EXTENSIONS),selection_states=list(range(32)),
-        report_states=list(range(32,50)),noise_roots=dict(selection=202610151,report=202610152),
-        first_dispatch=read_json(root/'inputs/dispatch.json')['first_dispatch_UTC'],
-        created_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        deployment='one complete source-relative LoRA; no MT; frozen source',
-        scope='eight nonheld reference trajectories only; no compiler/held/Test',
-        environment_lifecycle='lazy spawn; persistent across ready evaluation; full close when idle/before training',
-        physical_execution='two useful updates each7/14/28; useful evaluation slots4/8/16 with aggregate CPU admission')
-    write_json_atomic(path,run)
-    return run
+from .revision import prepare_window as prepare, import_first_window_receipts
 
 
 class Scheduler:
@@ -182,7 +157,9 @@ def owner(args):
     shards=[EvaluationShard(identity,index,w['kind'],w['task'],
         next(t['horizon'] for t in run['environment']['tasks'] if t['global_task_id']==w['task']),
         tuple(w['states']),w['cost']) for index,(identity,w) in enumerate(panel.items())]
-    initialize_queue(root/'work.sqlite',shards,contract_reference=str(root/'run_contract.json'),recover_claims=args.resume,retry_failed=args.resume)
+    initialize_queue(queue_path(root),shards,contract_reference=str(root/'run_contract.json'),recover_claims=args.resume,retry_failed=args.resume)
+    imported=import_first_window_receipts(root)
+    write_json_atomic(root/'windows'/run['window']/'queue_import.json',imported)
     scheduler=Scheduler(root,panel,len(devices))
     batch=Batch(Path.cwd(),devices,root=root,required_free_MiB=34000,work_event=scheduler.event)
     jobs=[Job(f'reference_worker_{i:02d}', ['source-reference','worker','--worker-id',f'reference_worker_{i:02d}','--slots','8'],

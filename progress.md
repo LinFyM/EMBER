@@ -1,3 +1,8 @@
+## 2026-10-16 保存144后的唯一读出恢复已实际启动
+
+owner3761312/supervisor3760524于20:40:10.102290Z从clean pushed detached39d21bf0f831f03e41a920c1061f776e49ae943d实际接续同ROOT，冻结树source_control_space_readout_frozen_20261016。完整144及4 CP已存在，owner消费latest144，0新增trainer/更新/query；仅保留24现有LoRA、补剩12与唯一36×16读出。新source identity消费者与node合计slot mix已通过实际CPU入口，旧两owner/原launch/费用/失败和所有有效产物保留。
+唯一真实退出等待为session82830/cell236；旧session8446/cell214已实际exit1完成，无第二waiter/Queue/普通main ACK。每GPU eval Popen照原Batch fresh双节点/真实显存/6或8-node6/strg01 quota；按节点合计预算选8/16，idle完整close并在无未来待办时退出释放模型。仍预计readout20–40min，CPU消费者恢复占用约11min、无新增GPU科学计算。整体结束统一验收/Git后一次向main回报，继续独占canonical记录窗口。
+
 ## 2026-10-16 E/D144已完整训练；仅物化/读出消费者恢复
 
 owner3472728于20:28:57.099122Z exit1，原因发生在GPU全部训练成功后的CPU identity物化guard。0→36六rank job136.412086s/0.227353477GPUh、36→144四rank job374.441818s/0.416046464GPUh均exit0；完整36/72/108/144 CP及144有效更新已保存，0环境提交。连同首次torchrun参数失败，本ROOT已精确0.647631367GPUh，无未决GPU成本；本轮训练约8.51min含各job加载，未超修正预计。

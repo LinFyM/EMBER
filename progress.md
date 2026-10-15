@@ -1,3 +1,11 @@
+## 2026-10-15 source/rank8首窗唯一owner已实际启动
+
+唯一owner PID657701于10:22:55.092551 UTC从clean pushed detached27ceba01启动，supervisor657686直接wait实际子进程，终端session1559保留，无自Queue/第二waiter。冻结树`/data1/user/ymdai/ember_worktrees/source_reference_r8_frozen_20261015`，ROOT为`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7`；命令/环境/设备写入owner_launch.json与逐job launch。
+计划使用gpu02:0/1/2/4/5/6六卡，每个worker在实际Popen前由原Batch重新live双节点、合计6/8与node6、设备显存/进程及strg01 quota；启动记录不是六worker均已通过的替代证据。launch前gpu02单卡空闲约46068MiB、主机available479GiB；foreign gpu02:3不动。
+原首次派发09:05:48.038 UTC和准备09:12:21.600308 UTC保持；派发到owner启动77.118min含服务连接失败/工程实现/验证/冻结。初始实施+首窗3–6h、条件延伸另1–3h仍为未profile估计，尚无本批闭环性能结论。
+工程验收为CPU scheduler/budget/source provenance及practice6tests；结构guard无hard违约，新七source文件/净增约千行的职责、复用和历史运行面暂留边界已在findings记录。首批有效更新比较7/14/28各两次，评估4/8/16，并在连续ready时复用/懒扩容同一环境池；只有真正idle/转训练/退出才完整close，避免每shard重建。
+当前唯一范围是八个train reference的原轨迹、selection32及冻结后的report18；最大15,360更新/430,080 query、3120物理提交/1,063,840步含16正常额外失败，未知全上界、有效行不重跑。0 MT加载/held/Test/D/q/RL/旧路线恢复。实际GPU FM、Adam续接、RGB和资源释放待真实消费者回执；整批退出后验收/Git并一次回main01a13dd9，再归还记录写窗口。
+
 ## 2026-10-15 source/rank8参考首窗实施中；尚未正式GPU启动
 
 原派发09:05:48.038 UTC、准备09:12:21.600308 UTC保持；对话服务compact连接failed不作为科学失败，不重复原准备或审计。独占开发树source_reference_r8_dev_20261015，环境生命周期隔离提交18b45501已串行集成，main当前记录/Git写窗口归执行。

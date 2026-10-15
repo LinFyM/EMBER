@@ -1,3 +1,7 @@
+## 2026-10-15 当前执行：source/r8参考首窗已启动
+
+唯一owner657701/10:22:55.092551 UTC/clean pushed detached27ceba01；实际启动详情见progress与ROOT/owner_launch.json。固定八任务、充分选点/独立report和全部边界保持，首次09:05:48.038 UTC不重置。当前一条真实退出等待，无main普通ACK/心跳/阶段Queue或新增科学范围。
+
 ## 2026-10-15 source/rank8首窗：执行已接管并实施
 
 执行01a13dbf独占canonical记录/Git；主讨论01a13dd9只读。原首次派发09:05:48.038 UTC保留，准备登记09:12:21.600308 UTC；远程compact连接失败仅属对话服务中断，尚无本批科学失败或重复计算。

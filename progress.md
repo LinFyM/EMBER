@@ -1,3 +1,14 @@
+## 2026-10-15 主讨论科学消费及具体方法候选；当前无active计算
+
+已直接读取N16报告及paired/per-task/per-suite/update原件，依原停止合同关闭固定Phi/DTW＋局部native Adam家族继续扩量/调参。
+V1 71对MT67的有限正例与V0 61/noV62阴性同留；实践66→77/72/80不认证新初态能力。
+旧N4、两次更新限制、全部费用/失败及强G165、D175/168保持；不从本批否定全部RL或推定唯一根因。
+Owner的新请求由[完整方法候选](docs/analyses/policy_space_meta_compiler_proposal_20261015.md)承接：
+以非held跨初态控制函数学习D(P,z)，真实视频/反馈学习完整参数提案分布，固定D时对全部编译决策给独立query信用。
+明确标签、参数更新、最终单LoRA、3折MT任务排除起点、最近似旧方案及可失败条件；没有新实现/GPU/GT/held/Test计算。
+这份算法稿尚非active launch design，具体资产清单/训练曝光/节点/成本仍待实施合同；本轮按Owner要求完成方法论证。
+执行者转交的训练/评估联合优化6行已原样串行集成为24510105并push，实际通知已验证处理；canonical写窗口仍在main。
+
 ## 2026-10-15 14:15 UTC+8 N16有限恢复整批exit0；当前无active计算
 
 唯一practice_support16_resume_02/PID1360022于06:15:43.573Z真实exit0，六job均exit0且已释放；

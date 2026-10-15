@@ -1,5 +1,15 @@
 # EMBER findings
 
+## 2026-10-15 N16停止线与后继候选的真实信用边界
+
+N16两条教学没有一致整体收益，noV实践改善最多而新初态下降；按原合同停止固定Phi/DTW＋局部native Adam家族继续扩量/调参。
+保留V1的task0/32正例及task34损失；两次更新和非纯N设计限制不能被抹去，不扩大为所有实践学习不可能。
+[后继方法候选](docs/analyses/policy_space_meta_compiler_proposal_20261015.md)将完整控制空间与参数提案的学习职责分开：
+前者靠合法控制器的跨初态功能监督，后者靠实际完整编译后的独立query回报；冻结D时才能仅用latent/停止score覆盖全部theta信用。
+同时更新D却只算log q会漏掉行为改变，不能把FM梯度冒称回报梯度；低维/连续生成也不提供控制覆盖保证。
+同language多控制器视频对应在旧讨论稿已提出，不能主张本次首创；task-excluded MT只改变起点知识，不增加独立任务或替代held验证。
+候选尚未实现或证明；现有G/D正证据、旧Experience/Functional/Product等负约束不因新组织清零。
+
 ## 2026-10-15 N16有限完整读出：实践改善与新初态收益仍需分开
 
 [完整24条件/512行原件验收](/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16/analysis/engineering_completion_resume_20261015/report.md)：MT67、V0 61、V1 71、noV62，各128。

@@ -1,3 +1,9 @@
+## 2026-10-16 §11唯一owner已实际启动
+
+owner315620/supervisor315187于21:27:59.673397Z从clean pushed detached528a57b19d57c6889f2cce13c582e12057fffc21启动；ROOT control_operator_from144_seed7，冻结树control_operator_from144_frozen_20261016。原派发21:17:18.877Z/准备21:17:25.727Z保留，准备约10.7min。launch_contract与owner_attempts/attempt_001保存命令/env/原144/C/S/bank/资源/界限。
+唯一直接退出读取session35034/cell295，无Queue或第二waiter。原Batch每实际Popen再查双节点cap6/8/node6/显存和strg01配额；计划gpu02:0/1/2/4/5/7，6rank首有用比较后完整周期择吞吐安排。launch前node MemAvailable分别gpu01 457157236KiB/gpu02 493490440KiB；own PSS分别397215/1824487KiB，不能合并为同机容量；own线程是全用户已有服务基线，不称本批训练线程。active PID substring初查包含自身shell，最终释放按真实Python module argv核验。
+当前尚无新闭环结果，45–90min整批预计保持，首有用事件修正。完整144来源、旧费用和0新query/held/RL等科学边界见下方及design§11。
+
 ## 2026-10-16 §11已实际接手并完成CPU消费者，准备正式冻结
 
 21:17:18.877Z实际接收，21:17:25.727Z首次准备；执行01a13dbf独占canonical工程/记录/Git，main只读。唯一[design§11](docs/designs/source_policy_space_compiler_20261015.md#11-从144接续的直接算子学习窗口)保持：完整144 E/D/220份Adam状态/4rank RNG及S/bank迁移，只改完整38层sBA目标，0 native训练query/大policy/MT/环境。原09:05:48.038首次参考派发及§9/10有效结果/失败/费用不重置。

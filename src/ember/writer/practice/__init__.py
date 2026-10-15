@@ -30,6 +30,11 @@ class History:
     episodes: list = field(default_factory=list)
     image_features: dict = field(default_factory=dict)
     states: dict = field(default_factory=dict)
+    rgb: list = field(default_factory=list)
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.__dict__.setdefault('rgb', [])
 
     def append(self, other):
         offset = len(self.episodes)
@@ -38,6 +43,8 @@ class History:
         self.episodes.extend(other.episodes)
         self.image_features.update(other.image_features)
         self.states.update(other.states)
+        self.rgb.extend({**row, 'episode': row.get('episode', 0) + offset}
+                        for row in getattr(other, 'rgb', []))
 
     def model_rows(self, runtime):
         missing = {key: raw for key, raw in self.observations.items() if key not in self.image_features}
@@ -109,15 +116,26 @@ class EpisodeRunner:
                         maximum_dummy_steps=0 if request.get('snapshot') else 10)
         self.environments.submit(index, 'start', task=request['task'], contract=episode_contract,
             state_id=request['state_id'], noise_root=request['noise_root'], remaining=request.get('remaining'),
-            snapshot=request.get('snapshot'), capture_snapshot=request.get('snapshots', False))
+            snapshot=request.get('snapshot'), capture_snapshot=request.get('snapshots', False),
+            capture_rgb=request.get('capture_rgb', False))
         return slot
 
-    def _observation(self, slot, raw, snapshot=None, physical=None):
+    def _observation(self, slot, raw, snapshot=None, physical=None, rgb=None, control_step=None):
         history = slot['history']
         key = f"{slot['request']['episode_id']}_o{len(history.observations):05d}"
         if physical is not None:
             raw = {**raw, 'physical': physical}
         if slot['request'].get('capture_history',True):history.observations[key] = raw
+        if slot['request'].get('capture_rgb', False):
+            if (not isinstance(rgb, np.ndarray) or rgb.dtype != np.uint8
+                    or rgb.shape != (2, 256, 256, 3) or type(control_step) is not int
+                    or control_step < 0):
+                raise ValueError('RGB capture lost the original render pixels or control clock')
+            frame = dict(episode=0, control_step=control_step, images=rgb.copy())
+            if history.rgb and history.rgb[-1]['control_step'] == control_step:
+                history.rgb[-1] = frame  # Zero-action failure still retains its terminal pixels.
+            else:
+                history.rgb.append(frame)
         slot.update(raw=raw, key=key, snapshot=snapshot)
 
     def _receive(self, live, *, block,timeout=None):
@@ -140,7 +158,8 @@ class EpisodeRunner:
                 self.environment_steps += len(executed)
                 actions = torch.zeros(5, 7)
                 actions[:len(executed)] = executed
-                self._observation(slot, result['raw'], result.get('snapshot'), result.get('physical'))
+                self._observation(slot, result['raw'], result.get('snapshot'), result.get('physical'),
+                                  result.get('rgb'), result.get('control_step'))
                 if slot['request'].get('capture_history',True) or slot['steps']==0:
                     slot['history'].records.append(dict(pre=pending['pre'], post=slot['key'],
                     hidden=pending['hidden'], snapshot=pending['snapshot'], noise_seed=pending['noise_seed'],
@@ -157,7 +176,8 @@ class EpisodeRunner:
                                            float(result.get('failure_type') is not None)])))
                 slot['steps'] += len(executed)
             if result['kind'] == 'start':
-                self._observation(slot, result['raw'], result.get('snapshot'), result.get('physical'))
+                self._observation(slot, result['raw'], result.get('snapshot'), result.get('physical'),
+                                  result.get('rgb'), result.get('control_step'))
             if result['episode_ended']:
                 row = result['row']
                 row.update(actual_parameter_ref=slot['request']['parameter_ref'],

@@ -5,6 +5,7 @@ from copy import deepcopy
 import multiprocessing as mp
 from multiprocessing.connection import wait
 import os
+from threading import Lock
 import time
 import traceback
 
@@ -16,6 +17,20 @@ from ember.pi05_eval.episode import start_fixed_episode, finish_episode_row, upd
 from ember.pi05_eval.trajectory_capture import capture_level, record_replan, record_passive_step
 from ember.pi05_processing import libero_policy_input
 from ember.writer.practice.snapshot import capture_snapshot, restore_snapshot
+
+
+_SPAWN_LOCK = Lock()
+_CHILD_THREADS = ('OMP_NUM_THREADS', 'OMP_THREAD_LIMIT', 'MKL_NUM_THREADS',
+                  'OPENBLAS_NUM_THREADS', 'BLIS_NUM_THREADS', 'VECLIB_MAXIMUM_THREADS',
+                  'NUMEXPR_NUM_THREADS')
+
+
+def raw_rgb(obs):
+    """Original render pixels, before the policy's rotation and resize."""
+    images = np.stack((obs['agentview_image'], obs['robot0_eye_in_hand_image']))
+    if images.shape != (2, 256, 256, 3) or images.dtype != np.uint8:
+        raise ValueError('RGB capture requires real synchronized render256 uint8 views')
+    return images
 
 
 def raw_observation(obs, language):
@@ -74,6 +89,7 @@ def _serve(pipe, contract, physical_gpu, affinity):
     if affinity:
         os.sched_setaffinity(0, affinity)
     torch.set_num_threads(1)
+    torch.set_num_interop_threads(1)
     pool, slot, physical = None, None, None
     operation_steps = 0
     started = time.monotonic()
@@ -87,10 +103,11 @@ def _serve(pipe, contract, physical_gpu, affinity):
             operation_steps = 0
             if command['kind'] == 'release_renderers':
                 pool.close()
-                slot = None
+                slot = physical = env = envs = states = current_raw = result = None
                 pipe.send(dict(kind='release_renderers', operation_seconds=time.monotonic()-tick))
                 continue
             if command['kind'] == 'start':
+                capture_rgb = bool(command.get('capture_rgb', False))
                 task, episode_contract = command['task'], deepcopy(command['contract'])
                 noise_root = command['noise_root']
                 episode_contract['parallel'] = dict(envs_per_replica=1)
@@ -148,6 +165,8 @@ def _serve(pipe, contract, physical_gpu, affinity):
                 raise ValueError('unknown environment slot operation')
             ended = bool(done or slot['steps'] >= controls or command['kind'] == 'numerical_failure')
             result.update(episode_ended=ended, operation_seconds=time.monotonic() - tick)
+            if capture_rgb:
+                result.update(rgb=raw_rgb(slot['obs']), control_step=int(slot['steps']))
             physical_result(result,physical,env,slot)
             if command.get('capture_snapshot') and not ended:
                 result['snapshot'] = capture_snapshot(env, slot['obs'], slot)
@@ -187,20 +206,48 @@ class EnvironmentSlots:
             raise ValueError('slot count must be positive')
         contract = deepcopy(contract)
         contract['parallel'] = dict(envs_per_replica=1)
-        context = mp.get_context('spawn')
-        self.pipes, self.processes, self.pending = [], [], {}
-        affinity = list(os.sched_getaffinity(0))
-        for _ in range(count):
-            parent, child = context.Pipe()
-            process = context.Process(target=_serve, args=(child, contract, physical_gpu, affinity), daemon=True)
-            process.start()
+        self.context = mp.get_context('spawn')
+        self.contract, self.physical_gpu = contract, physical_gpu
+        self.affinity = list(os.sched_getaffinity(0))
+        self.pipes, self.processes, self.pending = [None] * count, [None] * count, {}
+        self.closed = False
+
+    def _start(self, index):
+        parent, child = self.context.Pipe()
+        process = self.context.Process(target=_serve,
+            args=(child, self.contract, self.physical_gpu, self.affinity), daemon=True)
+        try:
+            # spawn inherits these before importing numpy/torch in the child.
+            # Restore the model owner's settings immediately after exec starts.
+            with _SPAWN_LOCK:
+                previous = {name: os.environ.get(name) for name in _CHILD_THREADS}
+                try:
+                    os.environ.update({name: '1' for name in _CHILD_THREADS})
+                    process.start()
+                finally:
+                    for name, value in previous.items():
+                        if value is None:
+                            os.environ.pop(name, None)
+                        else:
+                            os.environ[name] = value
+        except BaseException:
+            parent.close()
+            raise
+        finally:
             child.close()
-            self.pipes.append(parent)
-            self.processes.append(process)
+        self.pipes[index], self.processes[index] = parent, process
 
     def submit(self, index, kind, **fields):
+        if self.closed:
+            raise ValueError('environment slots are closed')
+        if not 0 <= index < len(self.pipes):
+            raise IndexError('environment slot is outside the registered physical capacity')
         if index in self.pending:
             raise ValueError('one environment slot already has an outstanding operation')
+        if self.pipes[index] is None:
+            if kind != 'start':
+                raise ValueError('environment operation preceded its first episode start')
+            self._start(index)
         self.pipes[index].send(dict(kind=kind, **fields))
         self.pending[index] = kind
 
@@ -227,26 +274,39 @@ class EnvironmentSlots:
         return output
 
     def close(self):
+        if self.closed:
+            return
         # Only task-owned child processes are stopped; other GPU users remain.
         while self.pending:
             self.receive(block=True)
         for pipe, process in zip(self.pipes, self.processes, strict=True):
+            if process is None:
+                continue
             try:
                 pipe.send(dict(kind='close'))
             except (BrokenPipeError, EOFError, ConnectionResetError):
                 pass
+        for index, (pipe, process) in enumerate(zip(self.pipes, self.processes, strict=True)):
+            if process is None:
+                continue
             process.join(timeout=20)
             if process.is_alive():
                 process.terminate()
                 process.join(timeout=10)
+            if process.is_alive():
+                raise RuntimeError('owned environment process did not exit during close')
             pipe.close()
+            process.close()
+            self.pipes[index] = self.processes[index] = None
+        self.closed = True
 
     def release_renderers(self):
         """Retain CPU workers while releasing idle GPU renderers before learning."""
         if self.pending:
             raise ValueError('cannot release renderers during an environment operation')
-        for index in range(len(self.pipes)):
-            self.submit(index, 'release_renderers')
+        for index, pipe in enumerate(self.pipes):
+            if pipe is not None:
+                self.submit(index, 'release_renderers')
         while self.pending:
             for _, result in self.receive(block=True):
                 if 'error' in result:

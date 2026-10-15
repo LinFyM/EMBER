@@ -1,3 +1,8 @@
+## 2026-10-16 §11直接算子有限接续仍未广泛保存参考控制
+
+[完整原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_operator_from144_seed7/analysis/engineering_completion.md)：同完整144/Adam/S/bank迁移至1170，1026新增更新/114访问每task、8208参数对，累计300.887s。271全池BA .999999816→.970360512（改善2.963931%）触发首5min停止继续学习，末点有效，仍真实完成496新episode+80源复用。source218/ref502/144216/new224；source R209/G15/L9、参考288新增只保13，target50/384/support174/192，Object/Goal/Long仍2/26/6，不能从比失败144多8例称控制空间已保存。所有任务BA略降不等于控制广泛学习；旧native正负/全部费用保持，不称充分优化或普遍不可能。
+本次只支持该直接目标在当前条件通路/有界曝光下仍弱；非等曝光目标因果对照。E/D实际输入/两个live anchors、完整算子损失/真实梯度与部署固定LoRA均已执行，0视频/held资格。按合同不追加第二同块或小扫，由main消费完整层/任务及最近似历史后改假说。
+
 ## 2026-10-16 §11工程承接边界
 
 [design§11](docs/designs/source_policy_space_compiler_20261015.md#11-从144接续的直接算子学习窗口)只换完整sBA学习目标，承接完整144/Adam/两个live锚和task/point流；271参数点不是271任务。批量独立point维与原算子/实际梯度CPU消费者相容，首有用更新仍须按吞吐/显存选择1–6rank和pack；不能把接通当控制保存。原native216/source218/ref502、参考288新增只保10及旧阴性/费用保持。有限有效末点必须真实闭环，不以BA代理回选或裁掉；尚无GPU/视频/held成功证据。

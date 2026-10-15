@@ -1,3 +1,9 @@
+## 2026-10-16 §11完整144目标迁移的首5min止与576控制读出
+
+正式528a57b1 clean pushed detached，owner315620/supervisor315187在21:27:59.673397→21:50:45.166926Z exit0；派发21:17:18.877/准备21:17:25.727Z及旧09:05首次参考时钟保持。新增1026更新到全局1170，300.887秒、8208参数对、0native训练query；271固定池BA改善2.963931%不足5%，按完整周期停止，首检查=唯一末点，无续15min/回选/第二块。两新完整CP、原220 Adam、scheduler/RNG/S/C/bank/流/停止均验收。
+36×16 source218/ref502/native144216/operator224，相对source R209/G15/L9，相对144 R205/G19/L11；参考288新增仅保13，target50/384/support174/192。5 identity80源复用、31实际496提交/完成，146286实际步，0正式GPU/环境失败/未知/有效重跑，16工程额外未用。GPU费1.785346320801，旧六loader费用区间与全部原件/正负不覆盖。10 close/112 PID退出，双节点0本用户CUDA；4rank/pack2实际优于1/8、2/4、6/1，读出最大52环境槽/node CPU联合准入。
+完整[交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_operator_from144_seed7/analysis/engineering_completion.md)、results/acceptance/resource_exit/operator_pool_breakdown及原rows为证。有限原训练域参考参数输入结果，不是视频/held/相邻稳定资格；不以+8对失败144清零仍弱事实，不自动继续同目标。main消费后自主接续，canonical最终记录身份及窗口归还见progress/Git_delivery。
+
 ## 2026-10-16 §11完整144的直接算子学习接手
 
 科学分析及近似历史约束见[source_control_space_learning§7–9](analyses/source_control_space_learning_20261015.md#7-144首窗的完整科学消费)。main2685748c派发，21:17:18.877Z执行实际接收；完整bank/S/Adam/RNG迁移，native-only主动训练代码由同一control_space operator目标替换，旧eb78训练/39d21读取及所有原件保持。CPU复用/真实梯度、完整流、配对/物化和预算消费者已通过；未开始新GPU计算，不能写成科学结果。唯一有限合同design§11/新control_operator_from144_seed7，整批时钟/实际费用/退出将由progress及原件承接。

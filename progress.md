@@ -1,3 +1,11 @@
+## 2026-10-16 §11完整退出并验收，停止此operator块
+
+owner315620于21:50:45.166926Z exit0，session35034/cell295实际结束；owner wall22.758225min、派发到退出33.438165min，首5min按改善不足5%停止，快于45–90min估计。完整[交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_operator_from144_seed7/analysis/engineering_completion.md)/acceptance.json/resource_exit.json：144完整承接至1170，新增1026更新/8208逻辑参数对/0训练query，累计300.887120214秒；271全池误差.999999816→.970360512（2.963931%），首检查=末点只读一次、不回选/追加。220 Adam step1170/scheduler/RNG/S/C/bank/流/计时均齐，保2新CP，旧144/历史费用保持。
+36×16 source218/ref502/144216/new224；相对source R209/G15/L9/churn24，参考新增288只保13（原10），相对144 R205/G19/L11。target48/315/45/50，support170/187/171/174；五identity80仍全source复用，另496真实。新Object2/Goal26/Long6/Spatial16，task34 source4→2保留；完整四方/任务/suite/BA层分布和弱点见原件。既有MT八task子集new23/128对67，0新MT，不称全36/held资格。
+496提交/完成、141326control+4960dummy=146286，0正式GPU/环境失败/未知/有效行重跑，独立16额外额度未用。GPU费用1.785346320801；关联reference+native144+本窗小计[55.800727516204,55.908473021204]GPUh，原六loader未决/更早历史成本独立保留。
+4rank/pack2实测.292933s更新优于6/1、2/4、1/8，实际释放额外两卡；闭环6worker/最大52槽/node cap60，16/8/4有用吞吐及PSS联合准入。10 close回执无残留，112记录PID全消失，双节点0本用户CUDA/本任务module；single-worker最高PSS59.024GiB、host available最低282.012GiB（异步非同刻node峰）。ROOT退出约.360GiB，data1配额仍充足；正式528a57b1 clean pushed detached，source增149行/0新模块，guard无hard。CPU验收脚本字段/list读取修正没有新增科学计算。
+科学计算已结束，当前仅最终Git/push和一次交main01a13dd9并归还canonical写窗口；0自动第二同块/q/Reader/RL/held/Test/新参考。当前结论是参考作用仍未广泛保存，不称充分拟合、唯一bug或低维不可能；后继由main消费取舍。
+
 ## 2026-10-16 §11首8有用更新选择4rank/point-pack2
 
 原逻辑每步8参数点，实际6rank/pack1、4/2、2/4、1/8各两次：中位.555909/.292933/.414543/.535644秒，每秒14.391/27.310/19.298/14.935点；0 OOM。峰allocated分别735.041/983.011/1620.976/2873.291MiB，reserved含跨配置缓存分别3766/3774/3782/4744MiB。选4rank/pack2，完整153恢复后释放其余两卡；虽显存有余，单卡全部8逻辑点已测且整步慢82.9%，4rank每rank2点已覆盖全部8点，不扩大科学有效batch或为填显存增加点。不同任务/端点/冷热状态的少量有用更新是调度证据，不声称严格微批因果profile或全局最优。

@@ -37,7 +37,7 @@ def prepare(root):
         created_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         deployment='one complete source-relative LoRA; no MT; frozen source',
         scope='eight nonheld reference trajectories only; no compiler/held/Test',
-        environment_lifecycle='lazy spawn; full close after each shard and before training',
+        environment_lifecycle='lazy spawn; persistent across ready evaluation; full close when idle/before training',
         physical_execution='two useful updates each7/14/28; useful evaluation slots4/8/16 with aggregate CPU admission')
     write_json_atomic(path,run)
     return run
@@ -49,7 +49,7 @@ class Scheduler:
         self.lock=threading.Lock();self.waiting={};self.running={};self.scores={t:{} for t in TASKS}
         self.decisions={};self.failed=False;self.eval_counts={};self.latest_resources={}
         self.running_slots={};self.environment_GiB=4.6;self.slot_cap=64;self.parent_GiB=16
-        self.evaluation_measures={}
+        self.evaluation_measures={};self.idled=set()
 
     def statuses(self):
         with closing(sqlite3.connect(self.root/'work.sqlite',timeout=60)) as db:
@@ -138,8 +138,12 @@ class Scheduler:
                 self.running[worker]=identity;self.running_slots[worker]=slots;statuses[identity]='claimed'
             elif self.failed or self.terminal(statuses):
                 message=dict(command='stop')
+            elif worker not in self.idled:
+                self.idled.add(worker);message=dict(command='idle')
             else:continue
-            stream.write(json.dumps(message)+'\n');stream.flush();del self.waiting[worker]
+            stream.write(json.dumps(message)+'\n');stream.flush()
+            if message['command']!='idle':
+                del self.waiting[worker];self.idled.discard(worker)
             with (self.root/'owner_events.jsonl').open('a') as f:
                 f.write(json.dumps(dict(UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),worker=worker,**message))+'\n')
 

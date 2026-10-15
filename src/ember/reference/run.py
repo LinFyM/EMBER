@@ -28,11 +28,11 @@ def save_rgb(folder, init, history, row, weights):
         correct_auxiliary_teaching_eligible=bool(row['success']),producer_LoRA=weights)
 
 
-def cases(args, runtime, work, task):
+def cases(args, runtime, work, task, runner):
+    from copy import deepcopy
     import torch
     from safetensors.torch import load_file
     from ember.pi05_source_checkpoint import read_json, write_json_atomic
-    from ember.writer.practice import EpisodeRunner
     from .contract import checkpoint, parameter_ref
     from .accounting import reserve, finish, host_resources
     root=args.root;kind=work['kind'];t=work['task'];arm=work.get('arm')
@@ -52,7 +52,6 @@ def cases(args, runtime, work, task):
             write_json_atomic(folder/f'state_{init:03d}.json',row)
         return [read_json(folder/f'state_{i:03d}.json') for i in work['states']],dict(source_identity_reuse=True)
     missing=[i for i in work['states'] if not (folder/f'state_{i:03d}.json').exists()]
-    runner=EpisodeRunner(runtime,args.environment,args.physical_gpu,slots=min(args.slots,len(missing)) or 1)
     def requests():
         for init in missing:
             case=f'{kind}_t{t:04d}_{arm or update}_s{init:03d}'
@@ -60,31 +59,43 @@ def cases(args, runtime, work, task):
             yield dict(task=task,state=state,parameter_ref=ref,state_id=init,noise_root=noise_root,
                 episode_id=attempt,capture_history=False,capture_hidden=False,capture_phi=False,
                 capture_rgb=kind=='report',uses_teaching=False)
-    started=time.monotonic();peak_resource=None
-    try:
-        with torch.no_grad():
-            for result in runner.run(requests()) if missing else ():
-                if peak_resource is None:
-                    peak_resource=host_resources()
-                    peak_resource['environment_PIDs']=[p.pid for p in runner.environments.processes if p is not None]
-                row=result['row'];init=result['request']['state_id'];history=result['history']
-                if row.get('model_failure') or row.get('budget_truncated'):
-                    raise RuntimeError('engineering/incomplete result cannot become a scientific row')
-                first=history.records[0]
-                row.update(global_task_id=t,update=update,logical_arm=arm or 'selection',LoRA=weights,
-                    first_noise_seed=first['noise_seed'],first_native_normalized_actions=first['normalized_actions'].tolist(),
-                    full_native_flow_steps=10,executed_chunk=5,source_frozen=True,MT_loaded=False,
-                    producer_parameter_ref=ref,noise_root=noise_root)
-                if kind=='report':
-                    save_rgb(folder,init,history,row,weights)
-                path=folder/f'state_{init:03d}.json'
-                write_json_atomic(path,row);finish(root,result['request']['episode_id'],row,path)
-    finally:
-        runner.close()
+    started=time.monotonic();peak_resource=None;components_before=deepcopy(runner.components)
+    with torch.no_grad():
+        for result in runner.run(requests()) if missing else ():
+            if peak_resource is None:
+                peak_resource=host_resources()
+                peak_resource['environment_PIDs']=[p.pid for p in runner.environments.processes if p is not None]
+            row=result['row'];init=result['request']['state_id'];history=result['history']
+            if row.get('model_failure') or row.get('budget_truncated'):
+                raise RuntimeError('engineering/incomplete result cannot become a scientific row')
+            first=history.records[0]
+            row.update(global_task_id=t,update=update,logical_arm=arm or 'selection',LoRA=weights,
+                first_noise_seed=first['noise_seed'],first_native_normalized_actions=first['normalized_actions'].tolist(),
+                full_native_flow_steps=10,executed_chunk=5,source_frozen=True,MT_loaded=False,
+                producer_parameter_ref=ref,noise_root=noise_root)
+            if kind=='report':
+                save_rgb(folder,init,history,row,weights)
+            path=folder/f'state_{init:03d}.json'
+            write_json_atomic(path,row);finish(root,result['request']['episode_id'],row,path)
     elapsed=time.monotonic()-started
+    components={k:v-components_before[k] for k,v in runner.components.items() if k!='physical_batch_histogram'}
+    components['physical_batch_histogram']={k:v-components_before['physical_batch_histogram'].get(k,0)
+        for k,v in runner.components['physical_batch_histogram'].items()}
     return [read_json(folder/f'state_{i:03d}.json') for i in work['states']],dict(
         seconds=elapsed,new_episodes=len(missing),episodes_per_second=len(missing)/elapsed,
-        peak_environment_resources=peak_resource,after_close_resources=host_resources(),runner=runner.components)
+        peak_environment_resources=peak_resource,after_shard_resources=host_resources(),runner=components)
+
+
+def close_runner(runner,worker):
+    if runner is None:return None
+    from .accounting import host_resources
+    children=[] if runner.environments is None else [p.pid for p in runner.environments.processes if p is not None]
+    runner.close()
+    remaining=[pid for pid in children if Path(f'/proc/{pid}').exists()]
+    event(kind='environments_closed',worker=worker,released_PIDs=children,
+          remaining_environment_PIDs=remaining,resources=host_resources())
+    if remaining:raise RuntimeError('task-owned environments survived complete close')
+    return None
 
 
 def worker(args):
@@ -92,6 +103,7 @@ def worker(args):
     from ember.pi05_source_checkpoint import read_json, write_json_atomic
     from ember.pi05_eval_queue import complete_job, fail_job
     from ember.pi05_source_setup import initialize_distributed
+    from ember.writer.practice import EpisodeRunner
     from .contract import SCHEMA
     from .training import Runtime, train
     from .accounting import host_resources
@@ -103,22 +115,27 @@ def worker(args):
     prepare_libero_config(args.root/'libero_config');configure_libero_runtime_assets(Path(args.environment['libero_paths']['assets']))
     runtime=Runtime(args.root,context.device);runtime.episode_event_log=os.environ.get('EMBER_EPISODE_EVENT_LOG')
     tasks={t['global_task_id']:t for t in args.environment['tasks']}
-    queue=args.root/'work.sqlite'
+    queue=args.root/'work.sqlite';runner=None
     try:
         while True:
             event(kind='ready',worker=args.worker_id,resources=host_resources())
-            line=sys.stdin.readline()
-            if not line:break
-            message=json.loads(line)
+            while True:
+                line=sys.stdin.readline();message=json.loads(line) if line else dict(command='stop')
+                if message['command']!='idle':break
+                runner=close_runner(runner,args.worker_id)
             if message['command']=='stop':break
             work=message['work'];identity=message['identity'];token=message['claim_token']
             args.slots=message.get('slots',args.slots)
             tick=time.monotonic();torch.cuda.reset_peak_memory_stats()
             try:
                 if work['kind']=='train':
+                    runner=close_runner(runner,args.worker_id)
                     output=train(runtime,work['task'],work['start'],work['stop']);successes=0
                 else:
-                    rows,resources=cases(args,runtime,work,tasks[work['task']])
+                    if runner is not None and args.slots<runner.slots:runner=close_runner(runner,args.worker_id)
+                    if runner is None:runner=EpisodeRunner(runtime,args.environment,args.physical_gpu,slots=args.slots)
+                    runner.slots=args.slots
+                    rows,resources=cases(args,runtime,work,tasks[work['task']],runner)
                     output=dict(rows=rows,resources=resources);successes=sum(r['success'] for r in rows)
                 receipt=dict(schema=SCHEMA,identity=identity,work=work,output=output,complete=True,
                     seconds=time.monotonic()-tick,peak_allocated_MiB=torch.cuda.max_memory_allocated()/1024**2,
@@ -132,6 +149,7 @@ def worker(args):
                 event(kind='failed',worker=args.worker_id,identity=identity,error=repr(error))
                 raise
     finally:
+        close_runner(runner,args.worker_id)
         runtime.execution.close()
 
 

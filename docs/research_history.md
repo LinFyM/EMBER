@@ -1,3 +1,11 @@
+## 2026-10-15 source/r8首窗科学消费与完整参考池接续决定
+
+main直接核对raw selection/report、训练轨迹和原生FM/query消费者，确认7冻结独立26→103/126的容量正例及不均匀保持。
+task13/34后期下降、task32同分不同成功集合、task20/34弱于MT内部子集继续约束教师质量，不从loss推断唯一失效机制。
+据此在[active design§8](designs/source_policy_space_compiler_20261015.md#8-首窗科学消费后的参考库补齐窗口)登记
+task0末1920→2160补第二后继，再冻结/独立report；同时沿同配方补其余明确28任务，已冻结7task不改。
+本次尚无后继性能结果，不把参考函数成功当D/视频编译/held成功；旧首窗/费用/强MT与G/D证据保持。
+
 ## 2026-10-15 source/rank8参考首窗完成（8 task；7冻结、1边界）
 
 合同`designs/source_policy_space_compiler_20261015.md`从main9ac2d6ec落实，实际科学代码clean pushed detached44c0ee3a；owner689438于12:55:29.447852 UTC exit0。完整[结果与验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)保留全部候选、相邻R/G/L、独立raw rows、真实RGB与费用。11,040更新/309,120 queries、62完整Adam/RNG CP；2,492环境返回、612,723步，0环境失败/未知/有效行重跑。

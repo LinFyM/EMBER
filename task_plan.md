@@ -1,3 +1,13 @@
+## 2026-10-15 主讨论已消费首窗：收束task0并补齐已审36参考池
+
+唯一active合同为[source/r8 design§8](docs/designs/source_policy_space_compiler_20261015.md#8-首窗科学消费后的参考库补齐窗口)。
+首窗7冻结独立report103/126对source26支持继续准备同source/r8参考；这不认证D/视频/held迁移。
+task0从末1920完整状态续到2160补第二后继，再冻结1680并打开独立report；其余已冻结7task保持不动。
+同时以原配方fresh训练明确其余28task，各自闭环选点/两后继与独立report，不机械跑满1920或按report回调。
+新增上限54,000更新、10,948物理提交/4,043,800步（共用原未消耗16工程尝试）、48GiB新增峰值；
+按首窗实测估计7–12小时，最不利多延伸/长失败可能12–16小时。main冻结合同后串行交执行，当前尚未启动后继GPU。
+main在执行期间落实D的功能学习/闭环检验合同；本批无D/q/RL/held/Test，原强参照和全部负证据保持。
+
 ## 2026-10-15 source/rank8参考首窗已完整退出；task0到边界，交主讨论接续
 
 唯一owner689438于12:55:29.447852 UTC实际exit0，单次退出等待结束，整批工程验收通过。[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)包含全部候选/相邻成功集合、独立report、62完整CP、真实producer RGB、费用区间和资源释放。

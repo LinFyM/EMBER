@@ -13,9 +13,9 @@
 学习D(z)产生完整r8；视频及真实H给出连续参数提案；固定D时用独立query回报训练全部提案/停止的联合score。
 旧经验编译已有真实反馈学习，本次不是新的反馈架构原理；source/r8、多任务控制空间、全路径score均仍待实证。
 
-**当前只执行参考控制器首窗：同source八个训练任务的fresh r8学习、充分闭环选点和独立读出。**
-不是启动D、q或meta-RL，更不是完整方法/held资格。主讨论收到首窗结果后自主判断余下28任务与decoder学习；
-若有实际学习缺口，先解释并解决，不因末端还上升而假称完成，也不机械扩到36或无限续训。
+**当前执行§8：在首窗真实结果基础上，收束task0并补齐已审计36任务池的其余28个参考控制器。**
+§2–7保留首窗合同；§8只明确覆盖其任务范围、task0的延伸节点及本次预算。不是启动D、q或meta-RL，
+更不是完整方法/held资格。参考库完成后仍须检验控制空间和视频编译；不因文件齐全而自动取得后段资格。
 当前不恢复N16、旧Writer、MT教师、Phi、GT/sealed诊断、validation或Test。
 
 ## 2. 已核资产与选择新参考教师的理由
@@ -31,10 +31,10 @@
 38-target形状由`configs/pi05_lora_rank128_aligned.json`读取并通过现有derive接口只改rank/alpha为8。
 tokenizer、LIBERO assets与50示范HDF5均原地复用。source只有冻结推理权重资格，不称可exact-resume的source训练状态。
 
-当前八任务固定为`[0,1,12,13,20,21,32,34]`，均属于train24，每suite两项，继承既有内部面板而非按新结果选任务。
+首窗八任务固定为`[0,1,12,13,20,21,32,34]`，均属于train24，每suite两项，继承既有内部面板而非按新结果选任务。
 完整将来池仍是train24＋已审support12的36任务：
 `[0,1,2,4,5,7,12,13,14,15,17,19,20,21,22,25,28,29,32,34,35,36,37,38,42,43,51,55,56,62,64,73,95,96,97,101]`。
-本窗不训练额外28任务；support12的source已见身份不改变，不能把36全部称source未见。
+首窗不训练额外28任务；其接续现在由§8登记。support12的source已见身份不改变，不能把36全部称source未见。
 审计原始report/assets/resource_estimate由执行在首个run的inputs中保存一次，当前临时来源为
 `.codex/tmp/source_compiler_asset_audit_20261015/`；新增run contract另明确实际采用八任务，不把全目录资产当计算许可。
 
@@ -144,3 +144,65 @@ checkpoint保存全部因子、Adam、step、scheduler状态（constant）、采
 不宣称参考8任务证明36/held迁移；main亲自消费关键原件并作科学接续。
 唯一owner直接等待整批退出并完成验收/Git后，一次回主讨论UUID；无心跳、普通ACK、阶段Queue或第二waiter。
 真正边界或明确科学失效可提前携具体证据回main。到边界停止当前计算不等于项目等待Owner新许可。
+
+## 8. 首窗科学消费后的参考库补齐窗口
+
+### 8.1 决策依据与不变项
+
+main已亲自核对首窗raw selection/report rows、原生FM/query/恢复实现与全部task轨迹。
+7个已冻结task独立report从source26/126到103/126，保持22/得81/失4；这支持同source/r8参考函数可以学成，
+因此继续准备完整已审计36任务池有实际依据。它不证明低维D、视频读出或held迁移已经成立。
+task20/34的弱点、task21较高source能力和task13/34后期下降均保留；不依据report回调其教师。
+首窗原件与结算保持在`analysis/engineering_completion_20261015/`，不覆盖原8任务结论、首次时钟和费用区间。
+
+当前只增加以下两个互不依赖、可并行执行的工作：
+
+- task0从末1920完整Adam/RNG/cursor续到2160；新增selection32，再按原规则冻结selected，之后才打开report18/source18。
+  不从1680重启，不回放1920以前更新。1680已32/32且平局取早，2160读出用于补齐第二个后继节点，
+  不是另搜更高分；本次不继续2400或改用末点。若真实恢复失败，保留事实并按工程边界处理。
+- fresh训练其余28个已审计任务：`[2,4,5,7,14,15,17,19,22,25,28,29,35,36,37,38,42,43,51,55,56,62,64,73,95,96,97,101]`。
+  每task仍同source identity、38r8、50合法示范、logical28/seed7/原Adam/FM/六个首窗节点；
+  960后按原两后继规则只在需要时延伸1200/1440/1680/1920。没有重新训练首批已冻结7个task。
+
+target16按原四suite horizon；support12复用已审`operator_seen_training36` authority、global ID=40+local ID、
+horizon400及对应合法HDF5/50初态。不可把support当四suite任务做整数除法，也不扩到其它LIBERO-90任务。
+selection仍init0..31/root202610151，冻结后report仍init32..49/root202610152，所有信息墙与真实RGB规则不变。
+旧MT128只覆盖首八任务，其余28不补造MT配对、不新增MT评估；全36共同参照是同case raw source。
+若某task在1920仍未收束，明确保持未准备好且不打开report，整批携原件回main自主接续。
+
+### 8.2 原件、运行面和资源
+
+继续使用同一canonical ROOT `reference_seed7`；按显式修订记录扩展计划/合同，完整保留首窗冻结输入、原队列与结算来源。
+旧有效selection/report/CP只读复用，已冻结selected不能被新run的选择函数改写。
+一个canonical reference运行面承接显式task/节点合同，按实际原消费者作最小修改；不复制第二套trainer/evaluator。
+task0恢复保持原训练checkpoint语义；新调度代码身份与原训练来源分别登记，不称bitwise exact。
+工程由执行在独占分支完成、通过实际消费者检查、集成/push后使用新的clean detached冻结版本。
+
+新增最多54,000 optimizer更新/1,512,000 FM query，其中task0为240/6,720，其余28至多各1920。
+新增正常逻辑episode上限10,932（28×388加task0的68），control3,926,000、dummy109,320、总4,035,320步。
+原全局16次工程额外尝试尚未使用，本次继续共用这16次，不重置或另加16：
+新增物理提交最多10,948、control3,934,320、dummy109,480、总4,043,800步。
+连同首窗实际结算，ROOT累计上限为65,040更新/1,821,120 query、13,440提交、
+4,522,123 control＋134,400 dummy＝4,656,523步。历史首次6 loader启动失败GPUh另保留，不能记0。
+有效行不重跑，未知尝试占完整上界；科学失败不是重试理由，扩量不刷新工程失败额度。
+
+新增峰值估计48GiB：新source/selected RGB按stride5加terminal的未压缩上界约27.93GiB，
+加28任务完整候选训练状态、临时原子保存、小缓存及余量；已有ROOT约2.494GiB另计。
+不预建全部video prefix池，不复制source/数据/旧CP。执行launch前用真实schema复核并live检查strg01 data1 quota、
+相关目录和共享容量；不足先回报具体缺口，不能自行切data0。
+
+依首窗实际14.58 GPUh/8task和2.08–2.13s/update，28task加task0预计约7–12小时，
+取决于live可用6–8卡、任务horizon、成功早停及多少任务延伸；若大多到1920且失败长轨迹较多，可能到12–16小时。
+这是含少量工程准备的wall估计，不是GPUh上限或强杀时刻；原09:05:48.038首窗派发保持，本次另记实际派发/启动时钟。
+每次launch双节点live准入，合计6/8、单节点6；独立task可跨节点并行，不以旧world size人为锁死卡数。
+复用实测microbatch与环境PSS/吞吐记录，变化时在本批有用工作中调整；CPU准入按节点合计而非把两主机内存混成一个池。
+训练与就绪评估并行，真正idle环境完整close；不新增无判断价值profile或固定周期轮询。
+
+### 8.3 交付与后继边界
+
+输出完整36任务coverage/未收束列表、所有候选及相邻得失、冻结的唯一teacher、独立report与真实producer视频。
+报告target24和source已见support12的分组结果、task/suite分布、source保持/新得/损失；不能只报池平均数。
+弱teacher保留其资格限制，不根据report挑任务或重新选点；后续D训练不得把不同task数量当作同task视频数量。
+本批不训练D/q/meta-RL，不读held/Test或sealed标签，不恢复旧N16/MT教师。
+main在执行期间完成控制空间的具体学习与闭环判断合同；原件返回后自主分析接续，不等待Owner逐项许可。
+执行接管canonical工程/记录/Git，main只读；只在整批退出验收/push或真实边界时回主讨论一次并归还写窗口。

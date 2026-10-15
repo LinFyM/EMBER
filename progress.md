@@ -1,3 +1,12 @@
+## 2026-10-15 main科学消费完成；参考库补齐合同已登记、待派发
+
+亲自按global_task_id重算全部selection/report配对并核原生FM/query/恢复实现：7冻结source26→103/126，R22/G81/L4。
+task13/34从最高26/18降至末22/13，task32最高与末均27却互换4得4失；loss下降不能证明能力保持。
+据此保留同source/r8可学成的正证据，同时保留弱task/选点偏差和未检验D/视频/held范围。
+已在唯一design§8登记task0末1920→2160及其余28fresh参考；首批7冻结不改、不按report再选点。
+新增计算/原16工程尝试共用/48GiB新增峰值及7–12小时估计均已具体登记；实际新派发/owner/冻结身份由执行落盘。
+本段时点canonical写窗口仍归main，无后继GPU启动证据；推送并移交后main只读，准备D科学合同，不重复工程审查。
+
 ## 2026-10-15 source/r8首窗exit0并通过完整验收；7冻结、task0未收束
 
 [完整工程验收与结果](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)及同目录acceptance/reference_bank/evaluation_measurements已保存。owner689438从10:29:19.211831至12:55:29.447852 UTC运行146.171min，实际训练/评估为clean pushed detached44c0ee3a；当前源码与此相同，后续仅记录。原09:05:48.038派发至退出3.828169h，准备09:12:21.600308/首GPU10:22:55.092551/首次失败10:24:03.844保持，首窗在原3–6h估计内。

@@ -1,3 +1,14 @@
+## 2026-10-15 主讨论消费source/r8原件后的方法判断
+
+同source/r8参考学习已得到广泛但不均匀的正例；首7冻结的独立26→103/126不是单task峰值或参数重构指标。
+它降低“raw source＋rank8无法提供本任务参考能力”的担忧，尚不回答共享D是否保存/组合控制、视频是否提供选择信息。
+选点不能由FM代替：task13闭环26→22、task34 18→13，task20虽loss继续降低但闭环19→18；
+task32最高/末同27而success-set4得4失。训练loss来自不同随机query，只有描述意义，不能据此确诊过拟合或唯一根因。
+task20/34对MT内部16子集仍9对10、7对9；task34独立报告8→12同时丢3个source成功，参考并非统一强于MT。
+因此补齐既定36池以获得真实跨task功能监督，但不回调已看report的教师、不以更多参考文件掩盖D或视频失败。
+task0选择已达32/32，2160仅是从末1920续出的第二后继证据；不能从best点重启或改掉原平局取早规则。
+后继D必须以真实闭环能力和跨初态功能保留裁决；低维坐标足以记住36个标签本身不证明可用控制邻域或held泛化。
+
 ## 2026-10-15 fresh source/r8参考：容量正例、质量边界及真实资源改进
 
 [首窗原件与验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)证明这八个non-held task从canonical raw source、完整r8、真实50示范FM可学到有用闭环控制：7冻结task独立report26/126→103/126（R22/G81/L4）。它提供合法参考函数/producer质量证据，不能证明视频→参数、低维D(z)、元学习或held迁移已成功，更不改写强MT153、G165、D175/168和旧负证据。

@@ -1,3 +1,7 @@
+## 2026-10-16 source控制空间首窗合同已集成，CPU实施
+
+主讨论e254b6a7→c4ca1220的[design§10](docs/designs/source_policy_space_compiler_20261015.md#10-控制空间ed首个有界学习窗口)登记source/r8、标签侧参数E与64维D、同query两真实控制器native10唯一功能loss；144末点36×16读出。须先§9全部36冻结/report完毕/bank_ready，当前只CPU实现、不以暂优/32-task替代。旧native负证据不清零；函数保留不证明视频或held迁移。§9运行/时钟/共享16额度保持，§10有独立16工程尝试，无q/Reader/RL/held/Test或自动延训。详情见progress与唯一design。
+
 ## 2026-10-16 末四项接续的工程承接
 
 第三窗仅为design§9的四项原轨迹加候选，使用同一reference trainer/evaluator/事务账本。保留旧队列identity/ordinal与983完成回执，显式active_tasks和train start≥1920同时禁止其它32、fresh和3120；不把旧pending当新授权。复用第二窗真实micro28/eval16与node级CPU准入，无新profile或新Writer，checkpoint schema/Adam/RNG和逻辑流不变。旧scope的迁移构造已在当前owner替换，历史只由原冻结/contract/queue/Git保存，不留平行runner。

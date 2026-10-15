@@ -1,3 +1,11 @@
+## 2026-10-16 §9继续，§10已接收并独立CPU实施
+
+实际接收2026-10-15T19:51:01.953Z；主讨论e254b6a7已串行集成至c4ca1220；唯一[design§10](docs/designs/source_policy_space_compiler_20261015.md#10-控制空间ed首个有界学习窗口)授权fresh source/r8 E/D144更新及36×16函数保留闭环，只有§9全部36冻结且独立report完成/bank_ready=true才能GPU训练；不缩成32-task或使用暂优bank。当前§9原owner2999980和唯一真实退出等待保持，原时钟/额度/产物不动；主讨论继续只读canonical。
+
+E/D CPU模型已按完整10064块/76因子验证两恒等锚真实导数、D首步零头及后续E信用；约11.75M参数，4个完整CP及原子副本估0.674GiB。实施复用source Runtime、FactorLayout/Encoder、native_actions/真实prefix、数据cursor、队列/Batch/资源生命周期，不加载MT/旧G。独占source与模型子任务在不同worktree、互斥文件；没有新GPU/profile/held/Test。
+
+本窗新增峰值12GiB，144更新/4032query/8064双参考配对，独立最多592starts/217760步含16工程尝试，不刷新reference原16。实施1–2h、学习0.5–2h、读出0.3–1h，合计2–5h粗估；首有用native10反向/7与14及更大物理批吞吐后修正，不套FM速度。CPU准备和实际GPU启动分开登记；最终§9+§10整批验收/Git后一次回01a13dd9、归还写窗口，真实未收束边界例外。
+
 ## 2026-10-16 末四项收尾唯一owner已实际启动
 
 owner2999980/supervisor2999408于2026-10-15T19:46:04.560640Z从clean pushed detached355396b016a2132688288980388e81951af774e6启动，冻结树`/data1/user/ymdai/ember_worktrees/source_reference_final_four_frozen_20261016`；root同前，第三窗`windows/final_four_20261016`保留launch_contract/owner_launch/owner.log与前窗previous原件。实际接收19:41:53.830→启动4.179min，原09:05:48.038首派不重置。

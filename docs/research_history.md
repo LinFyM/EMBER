@@ -1,3 +1,7 @@
+## 2026-10-16 §12线性基底窗口实际接手，尚未全bank拟合
+
+main94138524派发，执行22:05:12.992Z接收/22:05:18.222Z准备；完整分析source_control_space_learning§10–11与design§12已消费。active神经/Adam训练与滚动CP入口退役，由原包内一次fit/真实basis schema接续；旧1170/144及全部formal frozen/原件/费用保持。小型CPU加权分解与直接SVD、实际center/单点完整投影、五方旧raw/schema/预算/幂等消费者通过；0全bank fit或GPU/新环境，不作为科学正例。实际fit/读出/资源成本将由progress和新ROOT原件承接。
+
 ## 2026-10-16 main消费1170并撤换共同神经E/D
 
 main直接复算576原配对、31输出BA及四代表CPU E/D：source218/ref502/native144为216/operator1170为224，参考288新增保13；

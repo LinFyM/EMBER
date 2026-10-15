@@ -1,3 +1,12 @@
+## 2026-10-16 §12已接收并通过CPU消费者，尚未全bank fit
+
+22:05:12.992Z实际接收、22:05:18.222Z首次准备；执行01a13dbf独占canonical工程/记录/Git，main只读。唯一[design§12](docs/designs/source_policy_space_compiler_20261015.md#12-固定64维线性参数基底与一次控制保留读出)已完整消费；旧1170代码/hidden已变而参考方向仍弱，停止共同神经E/D加量，不继续用144小代码概括新结果。
+复用同一control_space、FactorLayout/References/pool权重/operator Gram/Batch/source Runtime/动态队列/账本；active神经模型、Adam/训练/滚动CP入口已替换，一份fit.py替换training.py，旧实现仅Git/frozen/原件。公共FactorEncoder仍有Generator/Actor等真实消费者，保留。结构10既有/替换source文件、净−195行、0新package，guard无hard；pool/案例事务/五方分析职责复杂度16–20保持，不机械拆小函数。
+正式仅一次CPU FP64小Gram分解M=sqrt(w)*r，不减bank均值；rank规则固定lambda>n_rows*eps_FP64*lambda_max，前64右向量FP32，低秩零填无随机补列。原144 CP只mmap读取实际center，不实例化旧神经模型/Adam；原bank/76S/§11 C只读引用。保存真实basis schema/谱/权重/center/布局，无伪1171或optimizer状态；分解stage及原子basis支持未完成阶段接续。
+CPU真消费者通过：小型加权Gram与直接SVD64残差一致、低/零秩零填、保存center z0恒等、单个真实点完整38/r8投影；271权重/5zero质量5/72不重分配。五方原576读回复现source218/ref502/144216/1170224、参考新增保10/13；新schema/无伪update、80身份幂等/实际SQLite16额外边界及物化跳过通过。0全bank fit/GPU/环境发生，不把消费者验证称科学成功。
+strg01 data1 used1747697488KiB/soft2147483648KiB、shared80TiB；旧1170实占387092480B、native144 662462464B，新4GiB磁盘峰可容纳。拟合矩阵FP32约.65GiB、FP64工作矩阵1.30GiB、U/缓存/投影另计，CPU按实际node可用内存准入，不占GPU等CPU拟合。正式fit/eval将在新clean pushed detached；预期整批35–75min，首有效工作修正。
+仅一次basis/271池读回/36×16控制：80源复用+496新请求，独立512提交/184960步含16额外，无新query/参考/RGB/H/q/Reader/RL/held/Test或第二fit。旧09:05首次参考及全部时钟/成本保持；接收/准备/fit/env启动/退出各记。一个owner直接等整批退出，验收/Git后一次交main归还写窗口。
+
 ## 2026-10-16 main消费1170，§12固定线性64维基底待实际派发
 
 canonical写窗口已由执行交回；main直接读取实际源码、271池层分布/36任务结果，CPU复算576原case及31完整输出/四代表E/D。

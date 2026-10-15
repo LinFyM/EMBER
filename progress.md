@@ -1,6 +1,6 @@
 ## 2026-10-15 source/r8首窗exit0并通过完整验收；7冻结、task0未收束
 
-[完整工程验收与结果](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)及同目录acceptance/reference_bank/evaluation_measurements已保存。owner689438从10:29:19.211831至12:55:29.447852 UTC运行146.171min，实际训练/评估为clean pushed detached44c0ee3a；当前源码与此相同，后续仅记录。原09:05:48.038派发至退出3.827614h，准备09:12:21.600308/首GPU10:22:55.092551/首次失败10:24:03.844保持，首窗在原3–6h估计内。
+[完整工程验收与结果](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_20261015/report.md)及同目录acceptance/reference_bank/evaluation_measurements已保存。owner689438从10:29:19.211831至12:55:29.447852 UTC运行146.171min，实际训练/评估为clean pushed detached44c0ee3a；当前源码与此相同，后续仅记录。原09:05:48.038派发至退出3.828169h，准备09:12:21.600308/首GPU10:22:55.092551/首次失败10:24:03.844保持，首窗在原3–6h估计内。
 
 |task|末更新|冻结selected / 暂优|selection /32|独立report source→selected /18|
 |---|---:|---|---:|---|

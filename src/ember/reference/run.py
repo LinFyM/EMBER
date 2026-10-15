@@ -28,6 +28,16 @@ def save_rgb(folder, init, history, row, weights):
         correct_auxiliary_teaching_eligible=bool(row['success']),producer_LoRA=weights)
 
 
+def reuse_source_report(root,folder,task,states):
+    from ember.pi05_source_checkpoint import read_json,write_json_atomic
+    rows=[]
+    for init in states:
+        original=root/'report'/f'task_{task:04d}'/'source'/f'state_{init:03d}.json'
+        row=read_json(original);row.update(logical_arm='selected',physical_reuse=str(original))
+        write_json_atomic(folder/f'state_{init:03d}.json',row);rows.append(row)
+    return rows,dict(source_identity_reuse=True)
+
+
 def cases(args, runtime, work, task, runner):
     from copy import deepcopy
     import torch
@@ -46,11 +56,7 @@ def cases(args, runtime, work, task, runner):
     ref=parameter_ref(t,update);noise_root=202610151 if kind=='selection' else 202610152
     # The selected identity shares the actual source report execution and RGB.
     if kind=='report' and arm=='selected' and update==0:
-        for init in work['states']:
-            original=root/'report'/f'task_{t:04d}'/'source'/f'state_{init:03d}.json'
-            row=read_json(original);row.update(logical_arm='selected',physical_reuse=str(original))
-            write_json_atomic(folder/f'state_{init:03d}.json',row)
-        return [read_json(folder/f'state_{i:03d}.json') for i in work['states']],dict(source_identity_reuse=True)
+        return reuse_source_report(root,folder,t,work['states'])
     missing=[i for i in work['states'] if not (folder/f'state_{i:03d}.json').exists()]
     def requests():
         for init in missing:

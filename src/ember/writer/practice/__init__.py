@@ -251,6 +251,8 @@ class EpisodeRunner:
     def run(self, requests, *, on_completion=None):
         if self.environments is None:
             self.environments = EnvironmentSlots(self.contract, self.physical_gpu, self.slots)
+        else:
+            self.environments.ensure_capacity(self.slots)
         source, live, exhausted = iter(requests), {}, False
         while live or not exhausted:
             for index in range(self.slots):

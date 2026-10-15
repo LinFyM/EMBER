@@ -104,10 +104,25 @@ def test_environment_slots_spawn_only_submitted_slots_with_child_thread_limits(m
     assert len(started)==1 and set(started[0].values())=={'1'}
     assert {name:os.environ.get(name) for name in environment._CHILD_THREADS}==before
     assert slots.pipes[0] is None and slots.processes[5] is not None
+    import pytest
+    with pytest.raises(ValueError,match='operation'):slots.ensure_capacity(16)
+    slots.receive(block=True)
+    original_pipe,original_process=slots.pipes[5],slots.processes[5]
+    from ember.writer.practice import EpisodeRunner
+    runner=EpisodeRunner(None,{},0,slots=8)
+    runner.environments=slots
+    runner.slots=16
+    assert list(runner.run([]))==[]
+    slots.ensure_capacity(4)
+    assert len(slots.pipes)==len(slots.processes)==16 and len(started)==1
+    assert slots.pipes[5] is original_pipe and slots.processes[5] is original_process
+    assert slots.pipes[15] is None
+    for invalid in (0,-1,1.5,True):
+        with pytest.raises(ValueError,match='positive integer'):slots.ensure_capacity(invalid)
+    slots.submit(15,'start');assert len(started)==2
     slots.receive(block=True)
     slots.close();closed_count=len(closed);slots.close()
     assert len(closed)==closed_count and all(process is None for process in slots.processes)
-    import pytest
     with pytest.raises(ValueError,match='closed'):slots.submit(0,'start')
 
 

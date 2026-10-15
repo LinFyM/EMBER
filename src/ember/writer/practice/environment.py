@@ -218,6 +218,18 @@ class EnvironmentSlots:
         self.pipes, self.processes, self.pending = [None] * count, [None] * count, {}
         self.closed = False
 
+    def ensure_capacity(self, count):
+        """Grow idle slot capacity without starting or replacing any process."""
+        if type(count) is not int or count < 1:
+            raise ValueError('slot capacity must be a positive integer')
+        if self.closed:
+            raise ValueError('environment slots are closed')
+        if self.pending:
+            raise ValueError('cannot grow slots during an environment operation')
+        added = max(0, count - len(self.pipes))
+        self.pipes.extend([None] * added)
+        self.processes.extend([None] * added)
+
     def _start(self, index):
         parent, child = self.context.Pipe()
         process = self.context.Process(target=_serve,

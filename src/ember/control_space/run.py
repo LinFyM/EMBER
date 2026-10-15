@@ -107,11 +107,24 @@ def feature_jobs(args,batch,devices,state,executor):
     return futures
 
 
+def completed_segments(root):
+    rows=[read_json(p) for p in sorted((Path(root)/'training').glob('segment_*.json'))]
+    return [row for row in rows if row.get('complete')]
+
+
+def physical_plan(segments,available):
+    observed={r['world_size']:statistics.median(m['seconds'] for m in r['measurements']) for r in segments}
+    fastest=min(observed,key=observed.get) if observed else 1
+    choices=[w for w in observed if w<=min(4,available)]
+    parallel=min(choices,key=lambda w:observed[w]) if choices else 1
+    return observed,fastest,parallel
+
+
 def learn_and_readout(args,batch,train_pool,readout_pool,features,state,executor):
     from .readout import owner as evaluate
     from .checkpoint import path,latest
     start=latest(args.root)
-    segments=[read_json(p) for p in sorted((args.root/'training').glob('segment_*.json')) if read_json(p).get('complete')]
+    segments=completed_segments(args.root)
     while start<900 and (start==0 or not all(f.done() for f in features)):
         stop=9 if start==0 else min(900,((start//90)+1)*90);state.require(required_features(args.root,start,stop))
         segments.append(training_segment(args,batch,train_pool[-1:],start,stop));start=stop
@@ -121,10 +134,7 @@ def learn_and_readout(args,batch,train_pool,readout_pool,features,state,executor
     for size in (2,4,6):
         if size>len(train_pool) or start>=900 or any(r['world_size']==size for r in segments):continue
         result=training_segment(args,batch,train_pool[:size],start,start+9);segments.append(result);start+=9
-    observed={r['world_size']:statistics.median(m['seconds'] for m in r['measurements']) for r in segments}
-    size=min(observed,key=observed.get) if observed else 1
-    choices=[w for w in observed if w<=min(4,len(train_pool))]
-    parallel_size=min(choices,key=lambda w:observed[w]) if choices else 1
+    observed,size,parallel_size=physical_plan(segments,len(train_pool))
     write_json_atomic(args.root/'training/topology_choice.json',dict(observed_seconds_per_update=observed,selected_parallel_training_ranks=parallel_size,selected_before900_ranks=size,
         pure_training_fastest=min(observed,key=observed.get) if observed else size,
         reason='fastest useful ranks before900; after900 allocate fastest<=4 alongside two ready readout workers',

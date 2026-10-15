@@ -1,3 +1,10 @@
+## 2026-10-15 13:38:55 UTC：参考库补齐唯一owner已实际启动
+
+唯一owner2018633（supervisor2018203）从clean pushed detached `0f8e00230968920e2b2bf544008b22d076b04d00`实际启动；冻结树`/data1/user/ymdai/ember_worktrees/source_reference_completion_frozen_20261015`。同ROOT `windows/completion_20261015/{launch_contract,owner_launch}.json`保留确切command/env/资源/身份；主进程日志为该窗口`owner.log`，原first owner/log/退出费用及工程结算原件保留。
+本次接收13:20:10.797Z→启动18.737min；旧首次09:05:48.038Z不重置。使用gpu02:0/1/2/4/5/6六卡计划，每worker Popen前原Batch重新live核双节点6/8、node6、设备真实显存/进程及strg01 data1 quota；owner启动不代替全部worker已准入证据。prelaunch各卡空闲46068MiB，gpu02 MemAvailable502103540KiB约478.84GiB；gpu01另存421568316KiB，未混池。data1 live used1738895876KiB/soft2147483648KiB，实际ROOT2.504GiB，新增峰值48GiB可容纳。
+终端session85456由supervisor直接child.wait，实验侧只保留一个持续退出读取，不按周期查训练/缓存、无自Queue/阶段ACK/第二waiter。预计7–12h（更多1920/长失败可12–16h）仍非GPUh硬限；当前暂无本次训练或闭环结论。整批退出后验收36coverage/target24与source-seen support12/未收束/全部相邻RGL/真实producer/资源费用及Git，一次回主讨论01a13dd9后归还写窗口。
+main下一段[科学准备稿](docs/analyses/source_control_space_learning_20261015.md)已由b67cfc70集成为0af7b91a并push，当前范围仍[design§8](docs/designs/source_policy_space_compiler_20261015.md#8-首窗科学消费后的参考库补齐窗口)，无D/q/RL/held/Test新增许可。
+
 ## 2026-10-15 参考库补齐：已接收并在独占分支实施，尚未GPU启动
 
 main已完成[下一段控制空间学习科学准备](docs/analyses/source_control_space_learning_20261015.md)，由b67cfc70单文件集成；该稿不是当前计算许可，不改变design§8或参考训练/capture/selected。D/q/RL仍未启动，完整36回报后由main消费并正式接续。

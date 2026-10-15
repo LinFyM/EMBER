@@ -26,6 +26,17 @@ class NativeVelocity(nn.Module):
                 native_precision=not torch.is_autocast_enabled(padding.device.type))
         self.register_buffer('padding', padding, persistent=False)
 
+    def select(self, indices):
+        """Index the same frozen prefix for paired suffix controllers, without a forward."""
+        from transformers.cache_utils import DynamicCache
+        selected = NativeVelocity.__new__(NativeVelocity)
+        nn.Module.__init__(selected)
+        selected.policy, selected.phi = self.policy, None
+        selected.cache = DynamicCache(tuple((k.index_select(0, indices), v.index_select(0, indices), sliding)
+                                           for k, v, sliding in self.cache))
+        selected.register_buffer('padding', self.padding.index_select(0, indices), persistent=False)
+        return selected
+
     def forward(self, z, tau):
         time = torch.as_tensor(tau, device=z.device, dtype=torch.float32).expand(len(z))
         return self.policy.model.denoise_step(self.padding, self.cache, z, time)
@@ -68,7 +79,7 @@ def slice_batch(batch, start, stop):
     return {key: value[start:stop] for key, value in batch.items()}
 
 
-def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpointed=True, prepared_velocity=None):
+def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpointed=True, prepared_velocity=None, call_counter=None):
     """Complete ten-step response; rebind all factors on every recomputation.
 
     The frozen prefix is independent of the suffix adapter. Explicit factor
@@ -87,6 +98,9 @@ def native_actions(runtime, states, batch, noise, *, batch_indices=None, checkpo
 
     def denoise(z, tau):
         def call(value, *factors):
+            if call_counter is not None:
+                call_counter['velocity_calls'] = call_counter.get('velocity_calls', 0) + 1
+                call_counter['velocity_rows'] = call_counter.get('velocity_rows', 0) + len(value)
             bound = [dict(zip(keys, factors[i * len(keys):(i + 1) * len(keys)], strict=True))
                      for i in range(len(states))]
             with runtime.execution.activate(bound, batch_indices=batch_indices):

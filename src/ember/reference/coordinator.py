@@ -19,8 +19,10 @@ from .revision import prepare_window as prepare, import_previous_receipts
 
 
 class Scheduler:
-    def __init__(self,root,panel,workers,worker_nodes=None):
+    def __init__(self,root,panel,workers,worker_nodes=None,*,queue_path_fn=None,evaluation_reference_root=None):
         self.root,self.panel,self.workers=root,panel,workers
+        self._queue_path_fn=queue_path_fn or queue_path
+        self.evaluation_reference_root=Path(evaluation_reference_root) if evaluation_reference_root is not None else root
         self.lock=threading.Lock();self.waiting={};self.running={};self.scores={t:{} for t in TASKS}
         self.decisions={};self.failed=False;self.eval_counts={};self.latest_resources={}
         self.running_slots={};self.environment_GiB={};self.parent_GiB={};self.node_resources={}
@@ -29,14 +31,14 @@ class Scheduler:
         self.evaluation_measures={};self.idled=set();self.load_evaluation_reference()
 
     def load_evaluation_reference(self):
-        source=self.root/'analysis/engineering_completion_window_20261015/evaluation_measurements.json'
+        source=self.evaluation_reference_root/'analysis/engineering_completion_window_20261015/evaluation_measurements.json'
         measures=read_json(source);summary={};environment=4.6;shards=[]
         for slots,rows in measures.items():
             summary[slots]=dict(shards=len(rows),native_plans_per_second=statistics.median(
                 r['native_plans_per_second'] for r in rows),end_to_end_plans_per_second=statistics.median(
                 r['end_to_end_plans_per_second'] for r in rows))
             identity=max(rows,key=lambda r:r['PSS_KiB'])['identity']
-            path=self.root/'shards'/f'{identity}.json';shards.append(str(path))
+            path=self.evaluation_reference_root/'shards'/f'{identity}.json';shards.append(str(path))
             peak=read_json(path)['output']['resources']['peak_environment_resources']
             environment=max(environment,max(p['PSS_KiB']/1024**2*1.2 for p in peak['per_process']
                 if p['PID'] in peak['environment_PIDs']))
@@ -44,8 +46,11 @@ class Scheduler:
         self.evaluation_reference=dict(source=str(source),summary=summary,memory_shards=shards,
             default_slots=16,reason='reuse measured throughput; reduce only for node CPU admission')
 
+    def queue_path(self):
+        return self._queue_path_fn(self.root)
+
     def statuses(self):
-        with closing(sqlite3.connect(queue_path(self.root),timeout=60)) as db:
+        with closing(sqlite3.connect(self.queue_path(),timeout=60)) as db:
             return dict(db.execute('SELECT job_id,status FROM jobs'))
 
     def evaluate_selection(self,statuses):
@@ -93,6 +98,9 @@ class Scheduler:
             if decision.get('settled'):
                 if any(statuses[i]!='complete' for i,w in self.panel.items() if w['task']==task and w['kind']=='report'):return False
         return True
+
+    def stop_idle(self,statuses):
+        return self.failed or self.terminal(statuses)
 
     def node_budget(self,worker):
         node=self.worker_node[worker];resources=self.node_resources.get(node,{})
@@ -145,7 +153,7 @@ class Scheduler:
                 # Keep ready learning and evaluation concurrent; each evaluation
                 # claim still uses the existing long-first cost queue.
                 eligible=self.choose_work(worker,ready)
-                claim=claim_next(queue_path(self.root),worker_id=worker,eligible_job_ids=eligible) if eligible else None
+                claim=claim_next(self.queue_path(),worker_id=worker,eligible_job_ids=eligible) if eligible else None
                 if claim is not None:
                     identity=claim.shard.job_id;work=self.panel[identity];slots=self.physical_slots(worker,work)
                     message=dict(command='work',identity=identity,work=work,claim_token=claim.claim_token,slots=slots)
@@ -154,7 +162,7 @@ class Scheduler:
                         evaluation_reference=self.evaluation_reference['source'])
                     statuses[identity]='claimed'
             if message is None:
-                if self.failed or self.terminal(statuses):message=dict(command='stop')
+                if self.stop_idle(statuses):message=dict(command='stop')
                 elif worker not in self.idled:
                     self.idled.add(worker);message=dict(command='idle')
                 else:continue

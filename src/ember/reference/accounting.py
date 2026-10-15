@@ -19,16 +19,16 @@ def connect(root):
     finally:db.close()
 
 
-def reserve(root, case_id, horizon):
+def reserve(root, case_id, horizon, *, limits=LIMITS):
     with connect(root) as db:
         db.execute('BEGIN IMMEDIATE')
         count,unique,control,dummy=db.execute('SELECT count(*),count(distinct case_id),coalesce(sum(control),0),coalesce(sum(dummy),0) FROM attempts').fetchone()
         previous=db.execute('SELECT count(*) FROM attempts WHERE case_id=?',(case_id,)).fetchone()[0]
         if db.execute("SELECT count(*) FROM attempts WHERE case_id=? AND status='complete'",(case_id,)).fetchone()[0]:
             raise ValueError('valid saved interaction must never be rerun')
-        if (count+1>LIMITS['physical_submissions'] or control+horizon>LIMITS['control_steps']
-                or dummy+10>LIMITS['dummy_steps'] or control+dummy+horizon+10>LIMITS['total_steps']
-                or count-unique+(previous>0)>LIMITS['engineering_extra_attempts']):
+        if (count+1>limits['physical_submissions'] or control+horizon>limits['control_steps']
+                or dummy+10>limits['dummy_steps'] or control+dummy+horizon+10>limits['total_steps']
+                or count-unique+(previous>0)>limits['engineering_extra_attempts']):
             raise RuntimeError('global reference interaction boundary reached')
         identity=f'{case_id}_attempt_{previous+1:03d}'
         db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,NULL,NULL)',

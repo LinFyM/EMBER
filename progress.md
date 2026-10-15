@@ -1,3 +1,23 @@
+## 2026-10-16 main消费linear64，§13初始视频编译合同待实际派发
+
+执行已归还canonical写窗口；main直接核当前control_space/source FM/旧纯图像读取源码与实际576五方行，
+CPU只读复算source218/ref502/native216/operator224/linear484，R212/G272/L6、参考R463/G21/L39、参考新增保252/288。
+496首plan对reference MSE7.59479e-5、对source .0454645；原件在control_linear64_seed7/analysis/main_scientific_readout/paired_readback.json。
+没有新GPU/环境或重复工程验证；训练域参数表示正例不变成视频/held证据，所有39参考损失与旧G165/D175/168/V-VL负证据保持。
+
+唯一active [design§13](docs/designs/source_policy_space_compiler_20261015.md#13-固定控制基底上的真实视频初始编译)，完整依据见控制空间分析§12–13。
+固定原U/S/center，fresh无直接L的纯图像有序Reader→64单位化代码→完整38/r8；原始视频跨episodeFM＋.1真实producer代码辅助。
+train24+support12等权，全部原50视频/已有545真实成功RGB；logical4task×28 query，seed7、原Adam设置、最多1800更新。
+900/1800各训练域576与strict validation400；main已核旧400映射每task50无重复/全400匹配官方seed7，MT153场景/噪声原件复用。
+最多1968提交/699040步含本独立16工程尝试；候选只按两点correct400，完整报告相邻R/G/L/churn/suite，不以seen/loss选点。
+H为空只表示初始提案训练，未永久取消真实经历/后继完整信用；0新reference/实践/RL/Test/自动controls/重fit或1800后延伸。
+
+ROOT video_initial_seed7、峰192GiB，实际RawTeacherVideoStore的stride5加terminal核算原始1800/producer545共75873帧、BF16冻结prefix约148.189GiB，已有兼容cache按实际schema可引用；已纠正早先漏计1456个末帧的145.346GiB粗估。
+held特征有界临时、无大资产复制；执行建root/cache前live核strg01 data1独立quota/个人实耗/shared容量，所有新增data1。
+预计实施45–90min、特征20–60min、训练1–2h、评测40–70min，部分重叠，整批约2.5–4.5h；不是新Reader实测，首有用工作修正。
+当前main完成合同后将commit/push并真实派发现有执行01a13dbf，尚未新视频训练；交接后main只读，执行独占工程/记录/Git，唯一整批退出回报。
+原09:05首次参考、§12实际时钟、费用区间、原CP和资源释放证据均保持。
+
 ## 2026-10-16 §12真实完成：线性64保存广泛参考控制，待main接视频学习
 
 owner1006050于22:24:15.315407Z exit0，session48175/cell346实际结束；owner wall11.557033min、派发至退出19.038723min，快于35–75min粗估（CPU拟合6.63秒、实际闭环11.10min、实施约7.5min）。[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_linear64_seed7/analysis/engineering_completion.md)/acceptance.json/resource_exit.json：唯一CPU未减均值加权271点分解，数值秩266/固定有效64、原S/center/5zero权重保持；谱质量.988270296101，因子相对残差.011729703897、BA .012993328097。谱/BA未作门槛；0神经/Adam更新、无伪update，完整basis/state与谱/权重/布局/版本/时钟保存，0第二fit。

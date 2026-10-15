@@ -1,3 +1,13 @@
+## 2026-10-16 当前目标：§13真实视频到固定控制族，准备实际派发
+
+最终目标保持source起点、完整38/r8、合法教学及自身实践编译固定LoRA，在held明显超过强MT并说明视频/反馈作用。
+§12 main已消费576原行及496首动作；484/source218/reference502、参考新增保252/288、reference仍失39，支持进入真实视频学习。
+唯一active [design§13](docs/designs/source_policy_space_compiler_20261015.md#13-固定控制基底上的真实视频初始编译)：固定已有linear64，fresh纯图像有序Reader；原始50视频跨episodeFM＋.1真实producer代码辅助，36task等权、logical4×28，1800更新上界。
+900/1800各seen576＋strict validation400，最多1968环境提交/699040步含16工程尝试；候选只按两点correct400、相邻保持完整报告。
+这是H为空的初始提案，0实践/RL，真实H与全路径反馈仍保留为完整后段；0Test/controls/第二basis fit/新参考/自动延训。
+ROOT video_initial_seed7，192GiB峰含约148.19GiB冻结特征（原视频stride5加terminal）；必须live核data1 quota再建缓存，原资产只读复用。整批暂估2.5–4.5h，按真实有用吞吐修正，无GPUh硬限。
+main完成科学合同/Git后交现有执行01a13dbf独占实现/记录/运行/Git；当前未声称视频训练已启动。旧§12已exit0，不恢复其完成任务。
+
 ## 2026-10-16 当前批完成：§12唯一线性64basis，484/576
 
 一次正式CPU fit/271池读回/36×16实际控制已exit0并验收，[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_linear64_seed7/analysis/engineering_completion.md)。source218/ref502/144216/1170224/new484，参考288新增保252、source损失6，target300/384/support184/192，36任务均有成功。五identity80源复用、496新episode/99045步，0正式失败/未知/重跑；资源释放/费用保留，0第二fit或held/Test。当前最终Git/push后一次交main并归还记录窗口，main消费后登记真实原始视频→z学习；本参数输入训练域正例不等于视频/held资格。

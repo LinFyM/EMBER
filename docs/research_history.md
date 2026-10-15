@@ -1,3 +1,12 @@
+## 2026-10-16 main消费linear64并登记真实视频学习
+
+§12 canonical38a53a7d完成并归还窗口后，main重读实际控制/视觉与FM算子，CPU复算576配对与496已有首plan，无新模型/GPU/环境。
+484/576保住参考新增252/288、source成功212/218；new-reference首动作MSE7.59479e-5，对source .0454645，reference仍失39。
+[原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_linear64_seed7/analysis/main_scientific_readout/paired_readback.json)
+与[完整解释](analyses/source_control_space_learning_20261015.md#12-线性64正例把缺口移到真实教学获取)支持由参数标签侧转向真实视频获取；不认证held或唯一旧神经故障。
+新design§13固定同basis、fresh纯图像有序Reader，原始50视频跨episodeFM＋.1真实producer代码，1800上界/900与1800双seen576和strict400。
+这是完整方法的H空初始提案，后续真实反馈仍保留；0Test/controls/RL/新reference或重fit。完整预算/实际派发与启动见progress，合同登记不冒称已运行。
+
 ## 2026-10-16 §12一次线性64基底正例与完整退出
 
 formal fit/eval c99502cf clean pushed detached，owner1006050/supervisor1005668实际22:12:41.893413→22:24:15.315407Z exit0，派发22:05:12.992/准备22:05:18.222Z，原参考09:05首次时钟保持。一次CPU小Gram加权未减均值分解6.633568秒、rank266/effective64/谱.9882702961、0神经/Adam更新；唯一271池因子残差.0117297039、同C BA .0129933281，未按代理筛选或重fit。

@@ -1,3 +1,16 @@
+## 2026-10-16 控制保留正例后，优先检验真实教学获取而非继续参数探针
+
+main逐行复算§12的576五方/496首plan：484/source218/ref502、参考新增252/288、source失6/reference失39；
+new-reference首动作MSE7.59479e-5，旧1170为.044324，参考作用已经传到真实执行。因子/BA低误差与闭环方向一致，
+但39个参考成功丢失反对等价控制主张，选点初态/训练域与原reference独立545/648仍区分。原件和完整论证在控制空间分析§12–13。
+这降低“64维必然不够”解释的支持，不能唯一归因旧神经某层；不再先扫latent/单位/自由code。当前直接学习视频→固定D。
+
+§13原始跨episodeFM教生成参数作用于另一episode真实状态；辅助545成功RGB具有真实producer对应，避免虚构原始示范的控制器。
+但每task只有一个producer，545不是545个任务或操作模式；共同代码仍允许视觉识别task捷径，代码低误差不证明动态教学理解。
+旧V/VL训练域提高而held不提高、旧G165和D175/168都继续约束判断。纯图像读取本身不是新原理或已知修复。
+当前fresh确定性初始中心/H为空，不先加无消费者的四分量/停止头；完整方法仍保留真实H与全部参数提案/停止的query回报信用。
+两点900/1800的seen576与strict400将区分早期训练域获取和迁移缺口；阴性不自动续训/加同producer视频/RL，正例也不代替后继视频因果与反馈证据。
+
 ## 2026-10-16 §12固定64线性表示保住大量参考控制
 
 [完整原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_linear64_seed7/analysis/engineering_completion.md)：同271 bank/76S/saved source中心/5zero质量，一次未减均值FP64小Gram取固定64，numerical_rank266，谱.9882702961、因子残差.0117297039、BA .0129933281；无神经/Adam/维数搜索/残差字典，有限basis始终真实闭环。source218/ref502/native144216/operator1170224/linear484，参考288新增保252（87.5%）、source R212/G272/L6；target300/384/support184/192，36task均成功，参考R463/G21/L39。原source六损失/参考39损失及弱38/34/20/29保留，五identity80不算学习。

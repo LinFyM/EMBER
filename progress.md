@@ -1,3 +1,10 @@
+## 2026-10-16 §12真实完成：线性64保存广泛参考控制，待main接视频学习
+
+owner1006050于22:24:15.315407Z exit0，session48175/cell346实际结束；owner wall11.557033min、派发至退出19.038723min，快于35–75min粗估（CPU拟合6.63秒、实际闭环11.10min、实施约7.5min）。[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_linear64_seed7/analysis/engineering_completion.md)/acceptance.json/resource_exit.json：唯一CPU未减均值加权271点分解，数值秩266/固定有效64、原S/center/5zero权重保持；谱质量.988270296101，因子相对残差.011729703897、BA .012993328097。谱/BA未作门槛；0神经/Adam更新、无伪update，完整basis/state与谱/权重/布局/版本/时钟保存，0第二fit。
+五方576：source218/ref502/native144216/operator1170224/linear484；source R212/G272/L6/churn278，reference R463/G21/L39/churn60，1170 R217/G267/L7/churn274。参考288新增保252（87.5%，原13），target238/270、support14/18；target48/315/45/50/300，support170/187/171/174/184。36/36task有成功，29task净优于source；五identity80仍源复用，其余31真实404/496。Spatial/Object/Goal/Long新86/80/72/62；source损失0:10、34:4、19:10、35:15、51:9、56:9，参考39丢失和弱38/34/20/29全保留。既有MT八task子集98/128对67，0新MT，不称全36/held或视频EMBER成功。
+496实际提交/完成、94085control+4960dummy=99045，0正式失败/未知/有效行重跑，独立16额外未用。费用0.996805969742GPUh；四关联ROOT旧成本区间累加[56.797533485946,56.905278990946]，原六loader未决及更早独立费用不清零。CPU分解峰RSS4.986GiB/边界PSS4.227GiB（非全CPU连续峰），eval6worker/最多48槽/node总内存准入；7 close回执无残留、78记录PID全消失，双节点0本用户CUDA/本任务module。exit ROOT270524416B，低于4GiB峰预算；strg01独立quota/shared余量充足。
+formal fit/eval同clean pushed detachedc99502cf，active神经/Adam/update路径已替换、旧schema仅原行只读，source净−195行/guard无hard；公共FactorEncoder因真实消费者保留。当前仅最终Git/push和一次交main归还写窗口；完整控制正例支持本训练域64维参数保存，0视频/held/相邻稳定资格，不唯一归因旧神经故障。main消费后自主登记真实视频→z学习，本批不自动扩大/重fit/q/RL。
+
 ## 2026-10-16 §12唯一owner已启动，一次CPU拟合完成
 
 owner1006050/supervisor1005668于22:12:41.893413Z从clean pushed detachedc99502cf0478dd047f7e845dc49166b48d25c520实际启动；新ROOT control_linear64_seed7、冻结树control_linear64_frozen_20261016。原派发22:05:12.992/准备22:05:18.222及09:05:48.038首次参考时钟保持。单一直接退出读取session48175/cell346，无Queue/心跳/第二waiter，继续独占canonical写窗口。

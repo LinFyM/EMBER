@@ -1,3 +1,7 @@
+## 2026-10-16 当前批完成：§12唯一线性64basis，484/576
+
+一次正式CPU fit/271池读回/36×16实际控制已exit0并验收，[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_linear64_seed7/analysis/engineering_completion.md)。source218/ref502/144216/1170224/new484，参考288新增保252、source损失6，target300/384/support184/192，36任务均有成功。五identity80源复用、496新episode/99045步，0正式失败/未知/重跑；资源释放/费用保留，0第二fit或held/Test。当前最终Git/push后一次交main并归还记录窗口，main消费后登记真实原始视频→z学习；本参数输入训练域正例不等于视频/held资格。
+
 ## 2026-10-16 当前执行：§12唯一owner1006050
 
 22:12:41.893413Z从clean pushed detachedc99502cf实际启动，session48175/cell346为唯一实际退出等待。一次CPU全bank拟合已完成：有效64/数值秩266，6.633568s、峰RSS4.986GiB、0optimizer/GPU；谱仅定位，继续唯一36×16实际控制，尚无新控制结果。整批预计25–45min，旧成本/时钟保持，0第二fit/维数扫描/held/Test。实际进度/原件与资源见progress；整批验收/Git后一次回main并归还写窗口。

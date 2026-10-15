@@ -1,3 +1,8 @@
+## 2026-10-16 §12固定64线性表示保住大量参考控制
+
+[完整原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_linear64_seed7/analysis/engineering_completion.md)：同271 bank/76S/saved source中心/5zero质量，一次未减均值FP64小Gram取固定64，numerical_rank266，谱.9882702961、因子残差.0117297039、BA .0129933281；无神经/Adam/维数搜索/残差字典，有限basis始终真实闭环。source218/ref502/native144216/operator1170224/linear484，参考288新增保252（87.5%）、source R212/G272/L6；target300/384/support184/192，36task均成功，参考R463/G21/L39。原source六损失/参考39损失及弱38/34/20/29保留，五identity80不算学习。
+这支持当前训练域内固定64参数代码可以保存广泛参考能力，削弱“仅64容量必然不足”的解释；替代同时改变表示与拟合目标，不能唯一归因旧神经某层/梯度bug或证明普遍低维可迁移。当前仍由标签侧参考参数编码，视频→代码、真实自身反馈和held均未检验；固定A/PCA16/PPW与旧G正负/成本继续约束后续，不用谱本身当控制资格。main按正分支尽快接原始视频学习，本批0自动第二fit/补偿/RL/held。
+
 ## 2026-10-16 §12执行承接与线性代数消费者边界
 
 [design§12](docs/designs/source_policy_space_compiler_20261015.md#12-固定64维线性参数基底与一次控制保留读出)替换共同神经E/D为同source原点、原单位S、271点完整A/B的加权64维线性基底；不是旧144小hidden的继续修补、等目标因果隔离或PCA控制保证。小型CPU分解/编码/实际物化和五方/预算消费者已通过，0正式全bank fit。保持5zero源质量与无bank均值、完整因子生成及source冻结；finite唯一basis均真实闭环。旧224/218/502及288仅保13、固定A/PCA16/PPW负证据与旧G正例继续约束后继判断，0维数扫描/端点残差/字典fallback。

@@ -1,3 +1,9 @@
+## 2026-10-16 §12一次线性64基底正例与完整退出
+
+formal fit/eval c99502cf clean pushed detached，owner1006050/supervisor1005668实际22:12:41.893413→22:24:15.315407Z exit0，派发22:05:12.992/准备22:05:18.222Z，原参考09:05首次时钟保持。一次CPU小Gram加权未减均值分解6.633568秒、rank266/effective64/谱.9882702961、0神经/Adam更新；唯一271池因子残差.0117297039、同C BA .0129933281，未按代理筛选或重fit。
+五方source218/ref502/144216/1170224/linear484 /576；source R212/G272/L6，参考R463/G21/L39、288新增保252。target300/384、support184/192、36task有成功，五identity80复用明示、另31实际496episode；所有不利case和弱参考保留。既有MT八task子集98/128对67仅参照，0新MT/视频/held资格。[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_linear64_seed7/analysis/engineering_completion.md)与results/acceptance/resource_exit/原rows/basis为证。
+496提交/完成、99045实际步、0正式失败/未知/有效重跑，独立16工程额外未用。GPU费用0.996805969742、CPU fit0GPU；旧六loader区间及全部原CP/成本保持。7 close/78 PID退出，双节点0本用户CUDA；active神经/Adam/update路径退役，同包fit接续，净−195source行、公共FactorEncoder保留。科学计算已停止，最终Git/整批回报后归还窗口，main消费后自主接真实视频→z，不自动维数扫描/第二fit/RL。
+
 ## 2026-10-16 §12线性基底窗口实际接手，尚未全bank拟合
 
 main94138524派发，执行22:05:12.992Z接收/22:05:18.222Z准备；完整分析source_control_space_learning§10–11与design§12已消费。active神经/Adam训练与滚动CP入口退役，由原包内一次fit/真实basis schema接续；旧1170/144及全部formal frozen/原件/费用保持。小型CPU加权分解与直接SVD、实际center/单点完整投影、五方旧raw/schema/预算/幂等消费者通过；0全bank fit或GPU/新环境，不作为科学正例。实际fit/读出/资源成本将由progress和新ROOT原件承接。

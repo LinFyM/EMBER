@@ -1,3 +1,18 @@
+## 2026-10-16 144首窗定位：参考作用未形成，不先归因闭环分布
+
+main独立消费31套保存输出的完整BA与576 raw配对：BA norm相对参考比率中位2.26254e-5、相对平方误差中位.999999966；
+496个已有首plan的generated-source MSE6.98733e-6，generated-reference .044353与reference-source .044413接近。
+这些定位和216/source218/ref502的控制一致，支持“目前写出的参数作用仍极小”；不代表无代码信息、唯一原因或bitwise实现违约。
+实际四点E代码非零但经单memory广播/六层条件通路/双锚后的输出变化很小，普通非零梯度不保证形成所需控制。
+短曝光仍可能相关，不能以16访问宣称架构不可能；也不能机械延长原native目标或先交RL。
+
+直接sBA目标提供不经policy动作Jacobian的完整算子信用，故优先给同E/D一次短学习检验；它仍受同一个E/D Jacobian约束，
+统一层单位也不是状态协方差或闭环风险。旧BA充分拟合正例提高该选择的支持，旧BA恶化/held正例及175→168不稳定限制代理解释。
+新的5/15分钟有限窗口保持结构/source/r8/64维/S/bank/Adam，不声称目标与更多曝光已被因果隔离。
+无论是否因低拟合改善早停，有效末点仍做一次真实完整训练域闭环；不能让BA门槛取代已经要求的控制判断。
+若保留仍弱，停止同条件继续加量、修正压缩/写出假说；若保留广泛，尽快接视频→代码，不能继续以latent探针拖延完整方法。
+详细原件、算子与不利个例见既有[控制空间分析§7–9](docs/analyses/source_control_space_learning_20261015.md#7-144首窗的完整科学消费)。
+
 ## 2026-10-16 source/r8参考有效，144 E/D未把控制能力保存下来
 
 [原件与工程验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7/analysis/engineering_completion.md)确认36参考独立source248→selected545/648（R241/G304/L7）且全部按两后继规则冻结。五identity、weak29/38和所有相邻能力交换保留，不能把局部弱例清零整个参考bank的正证据。

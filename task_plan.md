@@ -1,3 +1,14 @@
+## 2026-10-16 当前科学接续：同E/D改为直接算子监督的有限窗口
+
+main已消费36完整参考/144原件并直接重算576配对。参考独立545/648对248；E/D144的216/576对source218、参考502，
+且31套BA范数相对参考中位仅2.26254e-5，实际首plan几乎仍source。当前不足在参考作用尚未形成，不能归为已学好后仅闭环分布丢失。
+唯一active [design§11](docs/designs/source_policy_space_compiler_20261015.md#11-从144接续的直接算子学习窗口)：
+完整144 E/D/Adam承接，结构/z64/S/bank/task-point权重不变；只改完整38层sBA监督，不继续原native-only目标。
+5分钟完整池检查，下降不足5%则停止学习；否则最多15分钟/10800新更新，任一有效终点均唯一36×16控制读出。
+新ROOT control_operator_from144_seed7，最多512新环境提交/184960步含独立16工程尝试，12GiB峰值；整批预计45–90分钟。
+无q/视频Reader/RL/held/Test或自动第二同块。当前科学合同已落实，提交推送后交现有执行01a13dbf独占实施/Git，
+实际接收与启动分别由progress/原件登记；main不把计划写成已经在跑。完整原理及不利历史见既有source_control_space_learning§7–9。
+
 ## 2026-10-16 当前批已完成：36参考齐，E/D144有界阴性；写窗口归还main
 
 [整批交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7/analysis/engineering_completion.md)：§9全部36冻结/report齐，E/D144/4 CP/576逻辑行（496实际＋80 source复用）真实退出、验收通过。source218/576、参考502/576、E/D216/576；target48→45/384，support170→171/192，参考288新得仅保10，未保存强参考控制。仅16访问/task，非充分拟合、无视频/held资格。

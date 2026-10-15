@@ -1,3 +1,13 @@
+## 2026-10-16 main消费144与直接算子目标的有限接续
+
+main按实际源码与576 raw配对确认source218/ref502/G216，参考新得288只保10；31完整输出BA norm/reference中位2.26254e-5，
+已有首plan generated-source MSE6.98733e-6、generated-reference .044353。四个CPU E/D代表定位非零代码至小输出的通路；
+0新GPU/policy/env或工程复验，原件在control_space_seed7/analysis/main_scientific_readout。
+不将此归为已拟合好但闭环分布失败，不声称唯一根因或16访问已充分。完整解释在source_control_space_learning§7–9。
+新design§11仅改变同144 E/D的学习目标为完整38层sBA，承接Adam/结构/S/bank/cursor；5/15分钟与10800更新上界、
+唯一576逻辑控制/最多512物理提交含16工程尝试/184960步/12GiB。旧native144及所有失败/费用保持，0新视频/held/Test。
+当前为主讨论完成合同，实际派发/运行看progress；旧BA/native正负不抹去，不以代理误差或当前新合同宣称EMBER完成。
+
 ## 2026-10-16 reference末四项收尾与source E/D144完整读出
 
 [唯一设计](designs/source_policy_space_compiler_20261015.md)§9/10及[整批原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7/analysis/engineering_completion.md)已完成。§9新增1200更新/304提交/84093步/2.371412875GPUh；5/25/38/43 selected1680/1680/1680/1920、report18/11/3/17，36独立source248→545/648、R241/G304/L7，完整bank冻结。旧32与原有效工作不动。

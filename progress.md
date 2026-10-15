@@ -1,3 +1,21 @@
+## 2026-10-16 main科学消费完成；接续§11直接算子学习
+
+已直接读取576 raw source/reference/generated case、31套完整输出及对应参考、原模型/训练/native消费者与144条日志。
+main重算source218/ref502/G216、source R206/G10/L12、参考新增288仅保10，与执行交付一致。
+CPU已有首plan读回为generated-source MSE6.98733e-6、reference-source .0444128、generated-reference .0443530；
+31非identity完整BA norm比中位2.26254e-5、相对误差中位.999999966，0/12/21/34实际E/D路径亦定位条件差缩小。
+原件在control_space_seed7/analysis/main_scientific_readout；0新GPU/policy/environment/工程复验，四个CPU E/D forward只作科学定位。
+初次scratch因缺PYTHONPATH在import前失败，补实际src路径后完成，0 GPU/模型结果丢失，不把这当科学异常。
+
+决策与完整历史比较进入[source_control_space_learning§7–9](docs/analyses/source_control_space_learning_20261015.md#7-144首窗的完整科学消费)，
+唯一active [design§11](docs/designs/source_policy_space_compiler_20261015.md#11-从144接续的直接算子学习窗口)：
+从144完整E/D/Adam/cursor接续，只改全38层sBA直接目标，保持结构、64维、S/identity、bank、权重与优化超参。
+本次不声称唯一根因、等曝光目标对照或充分拟合；native-only继续加量停止，旧BA/native正负及held175→168限制保持。
+5分钟完整池改善不足5%早停学习，否则至15分钟/10800新增更新；有效末点均唯一576逻辑闭环（80源复用、496新请求），
+新窗口最多512提交/184960步含16工程尝试、12GiB峰值，预计含实施45–90分钟。无新参考/视频/held/Test/RL。
+科学合同提交push后移交01a13dbf，当前尚未派发/启动本窗；main暂持有tracked窗口，不造运行状态。
+旧e254b6a7两文档已核patch等价且origin/main完整包含，main-owned clean docs worktree及本地/远端分支已清理；formal冻结均保留。
+
 ## 2026-10-16 §9＋§10完整退出并验收；参考齐，E/D144未保存控制能力
 
 最终readout-only owner3761312于2026-10-15T20:56:20.011405Z实际exit0，唯一session82830/cell236退出等待结束。整批[交付报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7/analysis/engineering_completion.md)、同目录results/acceptance/training_acceptance/functional_readout_details/resource_exit及[36参考验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_final_four_20261016/acceptance.json)保留原件。main科学合同e254b6a7已集成为c4ca1220并push，正式design仍唯一source_policy_space_compiler_20261015.md。

@@ -13,8 +13,9 @@
 学习D(z)产生完整r8；视频及真实H给出连续参数提案；固定D时用独立query回报训练全部提案/停止的联合score。
 旧经验编译已有真实反馈学习，本次不是新的反馈架构原理；source/r8、多任务控制空间、全路径score均仍待实证。
 
-**当前执行§9–10：末四项参考有界收尾；并行实施E/D，完整36参考冻结后做144更新及一次功能保留读出。**
-§2–8保留已完成窗口的合同；§9覆盖四项接续，§10明确授权首个E/D学习窗口。没有q、视频Reader或meta-RL计算，
+**当前执行§11：消费全部36参考及E/D144阴性后，保留同一E/D，有限学习完整LoRA算子并做一次函数保留闭环。**
+§2–10保留已完成窗口的合同；36参考均已冻结，§10末点没有保存参考能力。§11是新的科学接续，
+不自动延长原native-only目标。没有q、视频Reader或meta-RL计算，
 也不是完整方法/held资格；参考控制和已知函数重构均不能替代教学编译的实际检验。
 当前不恢复N16、旧Writer、MT教师、Phi、GT/sealed诊断、validation或Test。
 
@@ -376,3 +377,100 @@ reference ROOT独立计量。launch前核strg01 data1独立quota/目录实耗及
 §9时钟和费用不重置，§10接收/准备/启动/退出分别登记。若条件满足，参考结束后接续本段不等普通ACK。
 唯一执行者串行拥有代码/记录/Git；保持一个实际退出等待者，无心跳、阶段Queue或self通知。
 整批完成后验收参考收尾及E/D原件、完整状态/消费/费用/资源/Git，一次回主讨论；真实未收束/科学/资源边界可提前携证据回报。
+
+## 11. 从144接续的直接算子学习窗口
+
+### 11.1 实际不足、单项取舍与停止家族
+
+36参考独立report为545/648对source248；但§10标签侧E/D144在原36×16面板仅216/576，对source218、参考502，
+参考新增288例只保存10。main已直接重算576个raw source/reference/generated配对，并读取实际模型、学习消费者与日志。
+31非identity的完整BA范数相对参考比率中位2.26254e-5，整体BA相对平方误差中位0.999999966；
+原首plan动作MSE中，generated对source为6.98733e-6、对reference为0.044353，reference对source为0.044413。
+四个原suite代表0/12/21/34的真实归一化输入RMS约0.936–1.550，E代码norm约0.0128–0.0273，
+D头前条件差RMS约0.000371–0.000883，输出归一化变化RMS约3.38e-5–1.14e-4。
+这是实际参数作用尚小的定位，不是dtype bug、完整忽略代码、唯一根因或低维不可学的证明。
+完整论证及原件见[既有分析§7–9](../analyses/source_control_space_learning_20261015.md#7-144首窗的完整科学消费)。
+
+本次只改变共享E/D的学习目标：停止继续加量当前native-only首段，用全部38层完整sBA误差直接约束参考算子。
+E/D结构、64维、76单位S、source中心、两个live锚、完整bank、task/point权重及Adam超参均保持。
+此目标绕过当前source附近原生十步流的动作Jacobian，但不能绕过E/D自己的弱条件通路；能否学到仍须实际验证。
+旧BA充分优化有过真实控制正例，联合native曾退步；也存在BA变差但闭环上升及后继held不稳，不能称BA普遍更优。
+本窗不是目标/曝光量的等量因果对照，不用它单独归因前窗失败。若仍无实质控制保存，消费后修正表示/写出假说，
+不自动追加第二个同目标时间块、native权重混合或rank/LR/seed/scale小扫，也不把D交RL掩盖缺口。
+
+### 11.2 完整算子目标与参数/标签边界
+
+继承`control_space_seed7/checkpoints/update_00000144/state.pt`的完整E/D、Adam、constant scheduler、
+rank RNG、实际mixed-dtype identity、S与bank；显式登记从native目标迁移至operator目标，不称相同训练目标的exact-resume。
+除必要物理拓扑迁移外不重置optimizer或参数；schema及新phase cursor另登记，旧144及所有科学/工程原件保持。
+标签仍是266个非零更新checkpoint及5个source选定端点，合计271个不同参数点；没有新增参考训练或中间点环境采集。
+
+对于target l，令`U_l(Lambda)=s_l B_l A_l`，`s_l=alpha/rank=1`。每层固定正常数
+
+    C_l = max(E_bank ||U_l(Lambda_ref)||_F^2, 1e-12)
+    L_operator = mean_task mean_two_points mean_38
+                 ||U_l(D(E(Lambda_ref))) - U_l(Lambda_ref)||_F^2 / C_l
+
+E_bank沿原36 task等权、selected权重1/2、其余非零点共权1/2（其内均匀）；若无other则两半均指selected。
+C_l只由固定训练bank一次计算，76个原S不改变；它是每target的统一函数单位，不是每条件重归一化、held统计或改动作normalization。
+参考和C_l全部stopgrad。采用现有`operator_squared_error`的rank-sized Gram精确公式及FP32真实梯度，
+不展开巨大完整权重矩阵、不把A/B坐标MSE当BA、不增加native/BC/FM/对比或latent margin损失。
+每个逻辑更新仍4task×selected/other两点，8点等权；identity半权解析为零且不重分配。
+task/point流从原逻辑cursor144、visit16继续，seed及shuffle domains保持；不按参考成功率、点数或新结果重加权。
+原query cursor112/task作为parent来源保存但本段不消费RGB/proprio/action/noise query，不编造8064式功能响应计数。
+
+训练只需E/D、完整因子和保存identity，不加载source大policy、MT、图像前端、Reader或环境；原生policy仅在最终读出加载。
+E读取完整参考只在共享训练的标签侧；D条件只有64维代码，继续禁止把完整参考旁路送进D或复制为输出。
+部署仍是一套完整source/r8 LoRA，无teacher回退。E/D全部原trainable参数参与；两anchor保留导数，source权重冻结。
+
+### 11.3 渐进投入、完整池读出与唯一终点
+
+本段最多新增10,800个逻辑更新（每task最多1,200次访问、86,400个参数点训练配对）；
+同时给一次累计有效训练wall约15分钟的窗口，先到者在完整36-task周期（9更新）边界停止，最多跨该边界一次。
+首个检查在累计训练wall达到5分钟后的首个完整周期；若更新硬上限先到，则直接作为末点，不另补5分钟。
+计时包含有用forward/backward/sync/step及OOM重试，加载、完整池读回、保存另计真实wall和GPUh；恢复必须承接累计计时，不能重置窗口。
+没有累计GPUh硬限；15分钟是这项具体学习假说的投入安排，不是所有后继架构的永久期限。
+
+起点144、首5分钟节点及唯一终点，最多各一次读取完整固定271点的加权L_operator；源baseline按同C_l计算。
+全池读回不用视频、native policy或环境，不增加训练标签。记录selected/other、task/suite与层误差，恒等零项明示；
+不是用不同query首末loss拼收敛曲线，也不新增多种latent/插值/扰动探针。
+若5分钟节点的全池误差较144起点下降不足5%，结束本次学习；这只停止继续投入，不宣布架构不可能。
+否则继续到15分钟/10,800更新的唯一终点。不得回选中间最低loss或按task选点；若首节点与末点重合只读一次。
+无论早停还是正常终点，有限且数值有效时均做下述一次完整控制读出，防止再以BA代理直接裁掉真实控制正例。
+若出现非finite或真实工程失败，保存失败/有效更新，按现有工程与科学边界处理，不把坏数值LoRA送入环境。
+
+每9更新是完整task周期；按现有完整checkpoint原语保留一个滚动恢复点及上一原子替换点，
+首检查与最终点额外留完整状态。滚动保存建议每90更新或实际约1分钟的完整周期，具体纯恢复频率由执行按吞吐定；
+不累计数百份相同用途中间点。完整保存E/D/Adam/scheduler/RNG/拓扑/S/C_l/bank/task-point cursor/累计计时/停止状态。
+新phase/global update/原144来源分别记录，不覆盖旧四个checkpoint或将目标迁移称bitwise exact。
+
+逻辑8点内按实际吞吐比较更大的有用point pack及同节点1–6 ranks，至多覆盖全部8点；
+可复用同一步live anchors及进程内只读因子cache，不缓存随参数变化的E代码或D hidden。
+首批有用更新完成比较并在完整边界选物理安排；不因过去native的4rank/14查询最快而沿用，也不加载大policy占显存。
+有余量则比较可容纳的更大pack，记录真实point/s、有效update/s、峰值和未继续扩大理由；不得改变8点逻辑均值或新增科学样本。
+各rank先按全局/8累积再SUM，或采用数学等价DDP平均，不能重复除world；优化与读取都复用现有模块，不新增平行控制编译器。
+
+### 11.4 一次真实控制读出、资源与交付
+
+唯一末点生成同36个selected的`D(E(reference))`，每task一套完整固定LoRA，原init0..15、noise root202610151及官方执行不变。
+已有source/reference/144逐case只读配对复用；五source identity的80逻辑行仍明示复用。
+其余31套真实执行496次新episode；常规control上界171,520、dummy4,960、合计176,480步。
+本独立窗口另有16次工程额外尝试，最多512物理提交、control179,840、dummy5,120、合计184,960步。
+它不刷新reference或旧144窗口额度；失败/未知保守计账，有效行不重跑，不新采RGB/完整H或参考动作轨迹。
+
+报告所有task/suite、target/support/identity、source/reference/144/新末点success sets、R/G/L/churn/重合与breadth；
+重点是参考原新增288例保住多少、source原218例损失多少，而非仅比失败144多几例。
+已有同八task MT128/67只作原配对子集参照，不新增MT请求、拼成36任务对照或冒称held超MT。
+本段仍是标签侧参考参数输入、训练域与参考选点初态上的控制保存检查；0视频、held/Test或相邻同目标学习稳定资格。
+广泛保住参考能力才接原视频→代码的实际学习；BA低但闭环差则据完整层/任务分布修订保留假说，
+两者仍弱则停止此E/D直接学习窗口的继续加量，不保护现有压缩结构或直接加RL。科学接续由main自主承担，无Owner例行许可停点。
+
+新ROOT=`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_operator_from144_seed7`；
+预计新增峰值12GiB含完整恢复/原子副本、36输出、指标与有界cache，原reference/144/source/数据只读引用；不复制大资产。
+launch前查strg01独立data1 quota、实耗及共享容量，live双节点GPU/进程/显存、总6或8卡/node6，CPU按节点分别准入。
+训练实际轻量需求不得套旧source-runtime的40GiB门槛；读出按真实峰值及环境PSS安排动态long-first/persistent workers。
+首批实施与消费预计20–45分钟，学习5–15分钟加有界读回/保存，最终闭环约15–30分钟；整批约45–90分钟。
+这是沿144实测8.51分钟含模型加载/16.17分钟readout与本次不加载source训练的预估，首有用工作后据实修正；
+§9/10原时钟、失败和费用不重置，新接收/准备/启动/退出独立登记。
+执行独占代码/记录/Git，修复及正式train/eval均新clean pushed detached，历史native运行面留在Git/frozen原件。
+只保留一个真正退出等待者，整批验收/Git/释放后一次交main归还写窗口，无阶段Queue、心跳或第二waiter。

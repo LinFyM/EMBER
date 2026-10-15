@@ -1,5 +1,8 @@
 ## 2026-10-15 参考库补齐：已接收并在独占分支实施，尚未GPU启动
 
+CPU实际消费者通过：36合法LearningTask/50示范及support12映射/400horizon；旧288队列中230完成原payload/ordinal导入revision2，其余28fresh＋task0末1920→2160初始29训练可执行，首7与全部新report均未重开。task0真实restore恢复76个FP32 Adam step1920/constant scheduler1920/CUDA RNG/world1/cursor；CPU检查只替代CUDA setter，正式GPU仍由原restore执行。原有效行拒绝重跑、共用16额外尝试及unknown全上界实际账本消费者均通过。两节点内存不混用、未反映slot预留、close释放及低资源拒绝/降档九项模拟过，整合后用真实新contract/queue重验。
+工程证据见ROOT/inputs/completion_20261015_engineering。结构净增126 source行，仅新revision.py显式迁移helper；没有新trainer/evaluator。guard无hard，既有读取/病例复杂度review保留；prepare_window的45行/复杂度19集中保留一次性合同/原件迁移，不扩成通用框架。新正式运行以push后的clean detached为准，尚无GPU结果。
+
 实际消息接收2026-10-15T13:20:10.797Z（本session原始response_item），首次核验13:20:40Z；原首窗09:05:48.038Z不重置。main09b5c1d2的唯一design§8已读，canonical记录/Git由执行01a13dbf独占，主讨论只读。
 独占dev为`/data1/user/ymdai/ember_worktrees/source_reference_completion_dev_20261015`，分支`codex/source-reference-completion-20261015`。同ROOT将显式修订任务/预算及新队列，保留旧8任务原run/queue/analysis/退出结算；230完成工作、7冻结selected/report及task0末1920原件不重算。
 复用operator_seen_training36环境authority（support global=40+local/horizon400）和现有LearningTask metadata；新28均50合法episode，不新建标签或缓存。source/normalization/38r8/Adam/FM完全保持；新任务复用首窗microbatch28实测，task0恢复原saved physical size，不重复冷形状profile。

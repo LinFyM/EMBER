@@ -1,5 +1,7 @@
 ## 2026-10-15 参考库补齐的运行面承接
 
+结构实际净增126 source行/1新helper，无hard违约；原metadata与队列显式迁移、CPU准入同原Scheduler内承接。prepare_window复杂度19的review用于完整且不可省略的初窗/原件/环境一致性检查，45行保持单次迁移职责；没有复制执行路径。
+
 [design§8](docs/designs/source_policy_space_compiler_20261015.md#8-首窗科学消费后的参考库补齐窗口)复用唯一reference trainer/evaluator；已有通用LearningTask已支持经审source support，无需复制数据路径。环境映射复用operator_seen_training36原authority，support global=40+local/horizon400。
 首窗吞吐证据可直接支持相同model/FM新任务从microbatch28开始（保留完整逻辑28，saved task0仍恢复原physical size），不再为每任务重复7/14/28冷启动比较。评估复用16优于8的实测证据，同时按每node真实CPU资源降档；GPU显存余量不能替代host PSS/线程/进程生命周期判断。
 修订仅增加一份显式metadata/queue迁移helper，原队列/analysis/费用和有效回执保持；不复制第二trainer/evaluator，不改checkpoint schema或原task0随机流。仅原first7冻结教师可复用，不用report重新选点。当前实施尚无本次训练结论。

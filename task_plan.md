@@ -1,3 +1,7 @@
+## 2026-10-16 当前执行：§10零更新启动工程恢复
+
+首owner参数解析失败已实际退出，0更新/query/环境；已用实际torchrun解析器验证分隔符修复。正在新冻结版本接续同一144，保留原launch/费用/时钟，不新增科学量、无普通ACK。详情见progress。
+
 ## 2026-10-16 当前执行：E/D144唯一owner3437638
 
 20:16:25.735154Z从clean pushed detached80878be8实际启动，原§9已exit0/全36 bank_ready。只有session83454的持续退出读取，首有用native吞吐将决定物理batch/ranks；唯一末144读出，详情与限制见progress及control_space_seed7/launch_contract.json。无q/Reader/RL/held/Test或自动续训，整批一次回01a13dd9。

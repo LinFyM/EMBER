@@ -1,3 +1,8 @@
+## 2026-10-16 §10启动参数消费者已定位修复，0有效更新
+
+首owner3437638于20:17:09.972350Z exit1；首training child在实际torchrun解析器将子入口--start误配为父--start-method时exit2，尚无模型加载/有效更新/query/环境提交。实际子进程2.538855s、六卡记0.004231426GPUh，不记0；原owner/job/launch/log/exit及launch_contract已保存至owner_attempts/attempt_001和inputs/engineering_failure_001.json。未消耗E/D16环境额外尝试。
+纯launcher修复在独占分支增加torchrun的training_script分隔符，安装中的真实get_args_parser已验证module/六rank及子--start/--stop完整转交；无科学合同/数据/模型/更新改变。准备新clean pushed detached接续同一fresh144，旧80878冻结原地不动，原接收/首启动/失败时钟保持，不重复有效工作。
+
 ## 2026-10-16 §10唯一owner已实际启动，待真实native吞吐
 
 owner3437638/supervisor3436838于2026-10-15T20:16:25.735154+00:00从clean pushed detached `80878be83db7e004453aad77bca91dbfe2ad37a9`实际启动，冻结树`/data1/user/ymdai/ember_worktrees/source_control_space_frozen_20261016`；ROOT为`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7`，launch_contract/owner_launch及owner_attempts/attempt_001/owner.log保留确切command/env/来源/资源/时钟。实际接收19:51:01.953Z、首CPU准备19:52:32.143Z、启动20:16:25.735154Z；旧参考首派09:05:48.038Z和§9退出原件不重置。

@@ -1,3 +1,8 @@
+## 2026-10-16 §13唯一owner已正式启动
+
+实际owner1892434/supervisor1890771于23:07:52.528946Z从clean pushed detached93e27530启动；唯一直接退出等待session9852/cell417，0Queue/自通知/第二waiter。正式5个source特征worker已真实产生完整图像prefix，初期long视频从chunk4的约14–18frames/s到chunk32约21frames/s，峰allocated约11GiB；64/128及首批有用FM随后按同一owner执行。不能把当前特征成功写成Reader学习或闭环结果。缓存ready即启动首9更新/完整36任务周期，后续原轨迹完整Adam/RNG/cursor接续；未使用额外监督query。
+原22:44:59.573派发/22:45:07.991准备及参考09:05:48.038不重置。ROOT launch_contract/owner_attempts/inputs/jobs是实际身份/资源/费用原件，旧frozen不热改。当前依然独占canonical记录/Git；整批真实退出、验收和Git后一次交主讨论01a13dd9并归还窗口。
+
 ## 2026-10-16 §13接手与正式准备（尚无GPU训练结果）
 
 接收22:44:59.573Z、准备22:45:07.991Z，主讨论6c7ce480合同；canonical写窗口归唯一实验执行01a13dbf，main只读。完整范围见[design§13](docs/designs/source_policy_space_compiler_20261015.md#13-固定控制基底上的真实视频初始编译)，旧linear64正例及所有弱结果/成本不变。本批ROOT video_initial_seed7，最多1800更新/201600 FM query/1952新正常episode，独立16工程尝试，累计最多1968提交/699040步。每900/1800各576+400，全576含五identity均真实执行；held只合法RGB，不读offline标签/梯度/Test。

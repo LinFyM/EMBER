@@ -18,6 +18,8 @@ def materialize(root):
     saved=torch.load(root/'checkpoints/update_00000144/state.pt',map_location='cpu',weights_only=False)
     if saved['next_update']!=144:raise ValueError('only terminal144 may be read out')
     model=ControlSpace(lora,identity,read_json(root/'units.json'));model.load_state_dict(saved['model']);model.eval()
+    # The native source uses mixed physical dtypes; resume its saved identity.
+    identity={k:v.detach() for k,v in model.layout.unpack(model.layout.center).items()}
     folder=root/'generated';folder.mkdir(exist_ok=True);manifest=[]
     for item in read_json(root/'bank.json')['tasks']:
         destination=folder/f"task_{item['task']:04d}.safetensors"

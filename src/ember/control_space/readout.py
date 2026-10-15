@@ -19,10 +19,39 @@ from ember.reference.accounting import reserve, finish, summary, host_resources
 from ember.reference.analysis import pairing_valid
 from ember.reference.run import close_runner, event
 
-from .contract import TASKS, LIMITS, REFERENCE_ROOT, queue_path
+from .contract import TASKS, REFERENCE_ROOT, queue_path
 
 NOISE_ROOT = 202610151
 STATES = tuple(range(16))
+
+
+def configuration(root):
+    """The retained run contract owns endpoint, phase, budgets and prior rows."""
+    run=read_json(root/'run_contract.json');phase=run.get('phase','native')
+    native=phase=='native' and run.get('schema')=='ember_source_control_space_r8_seed7_v1'
+    update=run.get('endpoint_update',run.get('updates') if native else None)
+    if type(update) is not int or update<=0 or (native and update!=144):
+        raise ValueError('readout requires its unique completed endpoint_update')
+    if not native and (phase!='operator_from144' or update<=144 or not run.get('parent_root')):
+        raise ValueError('operator readout requires the explicit phase and immutable144 parent')
+    limits=run['limits']
+    if any(key not in limits for key in ('physical_submissions','control_steps','dummy_steps','total_steps','engineering_extra_attempts')):
+        raise ValueError('readout contract lacks complete physical interaction limits')
+    return dict(phase=phase,update=update,limits=limits,
+        parent_root=None if native else Path(run['parent_root']),
+        checkpoint=root/f'checkpoints/update_{update:08d}/state.pt')
+
+
+def prior_case(config, task, bank, init, reference_root, source):
+    parent=config['parent_root']
+    if parent is None:return {}
+    previous=configuration(parent)
+    if previous['update']!=144 or previous['parent_root'] is not None:
+        raise ValueError('operator prior must be the original native144 endpoint')
+    path=parent/'readout'/f'task_{task["global_task_id"]:04d}'/f'state_{init:03d}.json'
+    row=saved_case(path,task,bank,reference_root,parent/'generated'/f'task_{task["global_task_id"]:04d}.safetensors',previous)
+    if not pairing_valid([source],[row]):raise ValueError('native144 prior changed the paired source case')
+    return dict(prior144_row=str(path))
 
 
 def inputs(root):
@@ -65,30 +94,35 @@ def reference_case(reference_root, task, bank, init):
     return rows[0],dict(source_row=str(source),reference_row=str(selected))
 
 
-def saved_case(path, task, bank, reference_root, generated):
+def saved_case(path, task, bank, reference_root, generated, config=None):
+    config=configuration(path.parents[2]) if config is None else config
     row=read_json(path);init=int(path.stem.split('_')[-1]);validate_case(row,task,init)
     source,provenance=reference_case(reference_root,task,bank,init)
-    expected=dict(LoRA=str(generated),reconstruction_update=144,reference_update=bank['selected_update'],**provenance)
+    expected=dict(LoRA=str(generated),reconstruction_update=config['update'],reference_update=bank['selected_update'],**provenance,
+        **prior_case(config,task,bank,init,reference_root,source))
+    if config['parent_root'] is not None:expected['phase']=config['phase']
     if any(row.get(key)!=value for key,value in expected.items()) or not pairing_valid([source],[row]):
         raise ValueError('saved readout row has a different frozen LoRA or paired initial observation')
     if bank['selected_update']==0 and row.get('physical_reuse')!=provenance['source_row']:
         raise ValueError('identity readout must identify its original source execution')
-    if bank['selected_update']!=0 and row.get('actual_parameter_ref')!=f'control144_t{task["global_task_id"]:04d}':
+    if bank['selected_update']!=0 and row.get('actual_parameter_ref')!=f'control{config["update"]}_t{task["global_task_id"]:04d}':
         raise ValueError('physical readout changed its actual complete parameter identity')
     return row
 
 
 def identity_cases(root, work, task, bank, reference_root):
+    config=configuration(root)
     folder=root/'readout'/f'task_{work["task"]:04d}';folder.mkdir(parents=True,exist_ok=True)
     generated=root/'generated'/f'task_{work["task"]:04d}.safetensors';rows=[]
     for init in work['states']:
         path=folder/f'state_{init:03d}.json'
         if not path.exists():
             source,provenance=reference_case(reference_root,task,bank,init)
-            row=dict(source,logical_arm='reconstruction',LoRA=str(generated),reconstruction_update=144,
+            provenance.update(prior_case(config,task,bank,init,reference_root,source))
+            row=dict(source,logical_arm='reconstruction',LoRA=str(generated),reconstruction_update=config['update'],phase=config['phase'],
                 reference_update=0,physical_reuse=provenance['source_row'],reused_execution_LoRA=source['LoRA'],**provenance)
             write_json_atomic(path,row)
-        rows.append(saved_case(path,task,bank,reference_root,generated))
+        rows.append(saved_case(path,task,bank,reference_root,generated,config))
     return rows,dict(new_episodes=0,identity_source_reuse=True)
 
 
@@ -96,16 +130,19 @@ def cases(args, runtime, work, task, bank, reference_root, runner):
     from safetensors.torch import load_file
     from ember.lora import validate_lora_state
     if bank['selected_update']==0:return identity_cases(args.root,work,task,bank,reference_root)
+    config=configuration(args.root)
     folder=args.root/'readout'/f'task_{work["task"]:04d}';folder.mkdir(parents=True,exist_ok=True)
     generated=args.root/'generated'/f'task_{work["task"]:04d}.safetensors'
     missing=[init for init in work['states'] if not (folder/f'state_{init:03d}.json').exists()]
     references={init:reference_case(reference_root,task,bank,init) for init in work['states']}
+    for init,(source,provenance) in references.items():
+        provenance.update(prior_case(config,task,bank,init,reference_root,source))
     state=load_file(str(generated),device=str(runtime.device)) if missing else None
     if state is not None:validate_lora_state(state,runtime.lora)
     def requests():
         for init in missing:
-            attempt=reserve(args.root,f'reconstruction_t{work["task"]:04d}_s{init:03d}',task['horizon'],limits=LIMITS)
-            yield dict(task=task,state=state,parameter_ref=f'control144_t{work["task"]:04d}',state_id=init,
+            attempt=reserve(args.root,f'reconstruction_t{work["task"]:04d}_s{init:03d}',task['horizon'],limits=config['limits'])
+            yield dict(task=task,state=state,parameter_ref=f'control{config["update"]}_t{work["task"]:04d}',state_id=init,
                 noise_root=NOISE_ROOT,episode_id=attempt,capture_history=False,capture_hidden=False,
                 capture_phi=False,capture_rgb=False,uses_teaching=False)
     before=deepcopy(runner.components);started=time.monotonic();peak=None
@@ -114,7 +151,7 @@ def cases(args, runtime, work, task, bank, reference_root, runner):
             peak=host_resources();peak['environment_PIDs']=[p.pid for p in runner.environments.processes if p is not None]
         row=result['row'];init=result['request']['state_id'];first=result['history'].records[0]
         row.update(global_task_id=work['task'],logical_arm='reconstruction',LoRA=str(generated),
-            reconstruction_update=144,reference_update=bank['selected_update'],noise_root=NOISE_ROOT,
+            reconstruction_update=config['update'],phase=config['phase'],reference_update=bank['selected_update'],noise_root=NOISE_ROOT,
             first_noise_seed=first['noise_seed'],first_native_normalized_actions=first['normalized_actions'].tolist(),
             full_native_flow_steps=10,executed_chunk=5,source_frozen=True,MT_loaded=False,
             producer_parameter_ref=result['request']['parameter_ref'],**references[init][1])
@@ -126,7 +163,7 @@ def cases(args, runtime, work, task, bank, reference_root, runner):
     components={key:value-before[key] for key,value in runner.components.items() if key!='physical_batch_histogram'}
     components['physical_batch_histogram']={key:value-before['physical_batch_histogram'].get(key,0)
         for key,value in runner.components['physical_batch_histogram'].items()}
-    return [saved_case(folder/f'state_{init:03d}.json',task,bank,reference_root,generated) for init in work['states']],dict(
+    return [saved_case(folder/f'state_{init:03d}.json',task,bank,reference_root,generated,config) for init in work['states']],dict(
         new_episodes=len(missing),seconds=elapsed,episodes_per_second=len(missing)/max(elapsed,1e-6),runner=components,
         peak_environment_resources=peak,after_shard_resources=host_resources())
 
@@ -169,7 +206,9 @@ def publish(root, identity, token, worker, work, output, *, seconds=0., peak_all
 
 
 def prepare_queue(args):
-    run,bank,tasks,reference_root=inputs(args.root)
+    run,bank,tasks,reference_root=inputs(args.root);config=configuration(args.root)
+    manifest=read_json(args.root/'generated/manifest.json')
+    if manifest['checkpoint']!=config['update']:raise ValueError('generated LoRAs do not belong to the terminal checkpoint')
     panel={f'control_t{task:04d}_s00':dict(kind='readout',task=task,states=list(STATES),cost=tasks[task]['horizon']*16)
         for task in TASKS}
     shards=[EvaluationShard(identity,index,tasks[work['task']]['suite'],work['task'],tasks[work['task']]['horizon'],
@@ -248,7 +287,8 @@ def owner(args):
     missing=[str(args.root/'readout'/f'task_{task:04d}'/f'state_{init:03d}.json') for task in TASKS for init in STATES
         if not (args.root/'readout'/f'task_{task:04d}'/f'state_{init:03d}.json').is_file()]
     result=dict(complete=complete and not missing and failure is None,queue=scheduler.statuses(),missing_rows=missing,
-        logical_rows=576-len(missing),identity_reused_rows=80,interactions=summary(args.root),
+        logical_rows=576-len(missing),identity_reused_rows=80,phase=configuration(args.root)['phase'],
+        checkpoint=configuration(args.root)['update'],interactions=summary(args.root),
         owner_failure=failure,owner_elapsed_seconds=time.monotonic()-started,
         end_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat())
     write_json_atomic(args.root/'readout_completion.json',result)

@@ -1,3 +1,8 @@
+## 2026-10-16 §11首8有用更新选择4rank/point-pack2
+
+原逻辑每步8参数点，实际6rank/pack1、4/2、2/4、1/8各两次：中位.555909/.292933/.414543/.535644秒，每秒14.391/27.310/19.298/14.935点；0 OOM。峰allocated分别735.041/983.011/1620.976/2873.291MiB，reserved含跨配置缓存分别3766/3774/3782/4744MiB。选4rank/pack2，完整153恢复后释放其余两卡；虽显存有余，单卡全部8逻辑点已测且整步慢82.9%，4rank每rank2点已覆盖全部8点，不扩大科学有效batch或为填显存增加点。不同任务/端点/冷热状态的少量有用更新是调度证据，不声称严格微批因果profile或全局最优。
+训练未加载大source，6rank启动PSS合计5.38353GiB/144线程，各rank样本来自同节点，不以该启动采样冒充持续峰值。参数模型/梯度CPU检查及首真实operator更新通过；loss变化尚不能称闭环学习成功。累计有效训练5min/最多15min停止线不因吞吐改动；据实际学习计时与旧16.17min闭环预计整批45–65min，首8执行和原派发/首启动/费用保持。唯一session35034/cell295直接等整批退出，无日志周期巡查/阶段Queue/新科学量。
+
 ## 2026-10-16 §11唯一owner已实际启动
 
 owner315620/supervisor315187于21:27:59.673397Z从clean pushed detached528a57b19d57c6889f2cce13c582e12057fffc21启动；ROOT control_operator_from144_seed7，冻结树control_operator_from144_frozen_20261016。原派发21:17:18.877Z/准备21:17:25.727Z保留，准备约10.7min。launch_contract与owner_attempts/attempt_001保存命令/env/原144/C/S/bank/资源/界限。

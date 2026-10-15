@@ -113,7 +113,7 @@ def learn_and_readout(args,batch,train_pool,readout_pool,features,state,executor
     start=latest(args.root)
     segments=[]
     while start<900 and (start==0 or not all(f.done() for f in features)):
-        stop=min(900,((start//90)+1)*90);state.require(required_features(args.root,start,stop))
+        stop=9 if start==0 else min(900,((start//90)+1)*90);state.require(required_features(args.root,start,stop))
         segments.append(training_segment(args,batch,train_pool[-1:],start,stop));start=stop
     for future in features:future.result()
     write_json_atomic(args.root/'features/completion.json',dict(complete=True,UTC=utc(),videos=len(state.ready)))

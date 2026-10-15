@@ -1,5 +1,7 @@
 ## 2026-10-15 参考库补齐：已接收并在独占分支实施，尚未GPU启动
 
+main已完成[下一段控制空间学习科学准备](docs/analyses/source_control_space_learning_20261015.md)，由b67cfc70单文件集成；该稿不是当前计算许可，不改变design§8或参考训练/capture/selected。D/q/RL仍未启动，完整36回报后由main消费并正式接续。
+
 CPU实际消费者通过：36合法LearningTask/50示范及support12映射/400horizon；旧288队列中230完成原payload/ordinal导入revision2，其余28fresh＋task0末1920→2160初始29训练可执行，首7与全部新report均未重开。task0真实restore恢复76个FP32 Adam step1920/constant scheduler1920/CUDA RNG/world1/cursor；CPU检查只替代CUDA setter，正式GPU仍由原restore执行。原有效行拒绝重跑、共用16额外尝试及unknown全上界实际账本消费者均通过。两节点内存不混用、未反映slot预留、close释放及低资源拒绝/降档九项模拟过，整合后用真实新contract/queue重验。
 工程证据见ROOT/inputs/completion_20261015_engineering。结构净增126 source行，仅新revision.py显式迁移helper；没有新trainer/evaluator。guard无hard，既有读取/病例复杂度review保留；prepare_window的45行/复杂度19集中保留一次性合同/原件迁移，不扩成通用框架。新正式运行以push后的clean detached为准，尚无GPU结果。
 

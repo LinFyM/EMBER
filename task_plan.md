@@ -1,5 +1,7 @@
 ## 2026-10-15 13:20:10.797 UTC：参考库补齐窗口已接管实施
 
+main已完成[下一段控制空间学习科学准备](docs/analyses/source_control_space_learning_20261015.md)，由b67cfc70单文件集成；该稿不是当前计算许可，不改变design§8或参考训练/capture/selected。D/q/RL仍未启动，完整36回报后由main消费并正式接续。
+
 唯一范围为[design§8](docs/designs/source_policy_space_compiler_20261015.md#8-首窗科学消费后的参考库补齐窗口)：task0从末1920完整续至2160，另28任务从原source fresh r8；首7冻结不改。执行01a13dbf独占canonical工程/记录/Git，main只读。
 同一ROOT显式revision2保留首窗队列/输入/analysis结算，已完成230工作只读复用；训练仍SCHEMA v1、原Adam/RNG/逻辑28流。尚未启动本次GPU。
 新增最多54000更新/1512000query/10948提交/4043800步，共用原未用16工程环境尝试。新峰值48GiB加旧2.494GiB；本次接收时间与旧09:05:48.038首派分开。

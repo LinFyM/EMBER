@@ -86,32 +86,38 @@ class BlockLayer(nn.Module):
         self.broadcast = nn.Linear(512, 256)
 
     def forward(self, blocks, ranks, targets, group, memory):
+        single = blocks.ndim == 2
+        if single:
+            blocks, ranks, targets, memory = (v.unsqueeze(0) for v in (blocks, ranks, targets, memory))
+        batch = blocks.shape[0]
+        groups = ranks.shape[1] * ranks.shape[2]
         blocks = blocks + self.ff(self.local_norm(blocks))
         if memory.numel():
-            blocks = blocks + self.memory_attention(self.local_norm(blocks)[None], memory[None],
-                                                    memory[None], need_weights=False)[0][0]
-        # Query-weighted pooling within each actual target/rank (A and B together).
+            blocks = blocks + self.memory_attention(self.local_norm(blocks), memory, memory, need_weights=False)[0]
         sender = self.local_norm(blocks)
         scores = (sender * self.rank_query).sum(-1).float() / 16
-        maxima = scores.new_full((ranks.numel() // 256,), -torch.inf).scatter_reduce_(0, group, scores, reduce='amax', include_self=True)
-        weights = (scores - maxima[group]).exp()
-        sums = weights.new_zeros(ranks.numel() // 256).index_add_(0, group, weights)
+        indices = group[None].expand(batch, -1)
+        maxima = scores.new_full((batch, groups), -torch.inf).scatter_reduce_(1, indices, scores, reduce='amax', include_self=True)
+        weights = (scores - maxima.gather(1, indices)).exp()
+        sums = weights.new_zeros(batch, groups).scatter_add_(1, indices, weights)
         values = sender if self.normalize_messages else blocks
-        pooled = blocks.new_zeros((ranks.numel() // 256, 256)).index_add_(0, group, values * (weights / sums[group])[:, None].to(blocks))
+        messages = values * (weights / sums.gather(1, indices))[..., None].to(blocks)
+        pooled = blocks.new_zeros(batch, groups, 256).scatter_add_(1, indices[..., None].expand(-1, -1, 256), messages)
         ranks = ranks + pooled.reshape_as(ranks)
-        q = self.rank_norm(ranks)
-        ranks = ranks + self.rank_attention(q, q, q, need_weights=False)[0]
+        q = self.rank_norm(ranks).flatten(0, 1)
+        ranks = ranks + self.rank_attention(q, q, q, need_weights=False)[0].reshape_as(ranks)
         sender = self.rank_norm(ranks)
         score = (sender * self.target_query).sum(-1).float() / 16
         values = sender if self.normalize_messages else ranks
-        targets = targets + (score.softmax(-1)[..., None].to(ranks) * values).sum(1)
-        q = self.target_norm(targets)[None]
-        targets = targets + self.target_attention(q, q, q, need_weights=False)[0][0]
+        targets = targets + (score.softmax(-1)[..., None].to(ranks) * values).sum(2)
+        q = self.target_norm(targets)
+        targets = targets + self.target_attention(q, q, q, need_weights=False)[0]
         target_message = self.target_norm(targets) if self.normalize_messages else targets
-        ranks = ranks + target_message[:, None]
+        ranks = ranks + target_message[:, :, None]
         rank_message = self.rank_norm(ranks) if self.normalize_messages else ranks
-        context = torch.cat((rank_message.flatten(0, 1)[group], target_message[group // ranks.shape[1]]), -1)
-        return blocks + self.broadcast(context), ranks, targets
+        context = torch.cat((rank_message.flatten(1, 2)[:, group], target_message[:, group // ranks.shape[2]]), -1)
+        result = (blocks + self.broadcast(context), ranks, targets)
+        return tuple(v[0] for v in result) if single else result
 
 
 class FactorEncoder(nn.Module):
@@ -132,13 +138,18 @@ class FactorEncoder(nn.Module):
 
     def forward(self, parent, *, memory=None, checkpoint_layers=True):
         layout = self.layout
+        batched = parent.ndim == 3
         valid = layout.valid.to(parent)
-        blocks = self.input(torch.cat((parent, valid), -1))
+        mask = valid.expand(parent.shape[0], -1, -1) if batched else valid
+        blocks = self.input(torch.cat((parent, mask), -1))
         blocks = blocks + self.target_address(layout.target) + self.rank_address(layout.rank)
         blocks = blocks + self.side_address(layout.side) + self.block_address(layout.coordinate)
         ranks = self.rank_address.weight[None].expand(38, -1, -1)
         targets = self.target_address.weight
-        memory = blocks.new_empty(0, 256) if memory is None else memory
+        if batched:
+            ranks = ranks.expand(parent.shape[0], -1, -1, -1)
+            targets = targets.expand(parent.shape[0], -1, -1)
+        memory = blocks.new_empty((parent.shape[0], 0, 256) if batched else (0, 256)) if memory is None else memory
         for layer in self.layers:
             args = (blocks, ranks, targets, layout.group, memory)
             blocks, ranks, targets = (checkpoint(layer, *args, use_reentrant=False, preserve_rng_state=False)

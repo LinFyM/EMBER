@@ -39,14 +39,14 @@ class ControlSpace(nn.Module):
         return (packed - self.layout.center) / self.layout.scale
 
     def _encode(self, blocks):
-        return self.to_code(self.encoder(blocks).mean(0))
+        return self.to_code(self.encoder(blocks).mean(-2))
 
     def _decode(self, code):
-        if code.shape != (64,):
+        if code.ndim not in (1, 2) or code.shape[-1] != 64:
             raise ValueError('one complete control code must have shape (64,)')
         code = code.to(self.to_memory.weight)
-        memory = self.to_memory(code).unsqueeze(0)
-        return self.decoder(torch.zeros_like(self.layout.center), memory=memory)
+        memory = self.to_memory(code).unsqueeze(-2)
+        return self.decoder(torch.zeros_like(self.layout.center).expand(code.shape[0], -1, -1) if code.ndim == 2 else torch.zeros_like(self.layout.center), memory=memory)
 
     def _factors(self, blocks, anchor):
         packed = self.layout.center.float() + self.layout.scale.float() * (blocks.float() - anchor.float())
@@ -73,3 +73,14 @@ class ControlSpace(nn.Module):
         decoder_anchor = self._decode(zero.new_zeros(64))
         return [self._factors(self._decode(self._encode(self._normalized(state)) - encoder_anchor),
                               decoder_anchor) for state in states]
+
+    def forward_pack(self, states):
+        """Independent point batch with live anchors shared within this call."""
+        if not states:
+            return []
+        blocks = torch.stack([self._normalized(state) for state in states])
+        zero = torch.zeros_like(self.layout.center)
+        codes = self._encode(blocks) - self._encode(zero)
+        outputs = self._decode(codes)
+        anchor = self._decode(zero.new_zeros(64))
+        return [self._factors(output, anchor) for output in outputs]

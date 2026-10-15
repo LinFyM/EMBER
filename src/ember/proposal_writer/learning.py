@@ -27,9 +27,9 @@ def operator_squared_error(A, B, E_A, E_B, scaling):
     """Exact full s*BA residual norm using rank-sized Grams, with FP32 gradients."""
     with torch.autocast(device_type=A.device.type, enabled=False):
         A,B,E_A,E_B=(value.float() for value in (A,B,E_A,E_B))
-        generated=((B.T@B)*(A@A.T)).sum()
-        teacher=((E_B.T@E_B)*(E_A@E_A.T)).sum()
-        cross=((B.T@E_B)*(A@E_A.T)).sum()
+        generated=((B.transpose(-2,-1)@B)*(A@A.transpose(-2,-1))).sum((-2,-1))
+        teacher=((E_B.transpose(-2,-1)@E_B)*(E_A@E_A.transpose(-2,-1))).sum((-2,-1))
+        cross=((B.transpose(-2,-1)@E_B)*(A@E_A.transpose(-2,-1))).sum((-2,-1))
         return scaling**2*(generated+teacher-2*cross),scaling**2*teacher
 
 

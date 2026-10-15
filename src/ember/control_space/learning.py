@@ -1,78 +1,82 @@
-"""Global-mean native10 functional credit with same-query frozen-prefix reuse."""
+"""Full frozen-bank operator credit; no source-policy or query consumer."""
 from collections import OrderedDict
 import torch
 from safetensors.torch import load_file
-from ember.writer.runtime import autocast
-from ember.writer.practice.execution import NativeVelocity,native_actions
+from ember.lora import LORA_A_SUFFIX,LORA_B_SUFFIX
+from ember.proposal_writer.learning import operator_squared_error
 
 
 class References:
+    """Bounded immutable factor cache shared by training and full-pool reads."""
     def __init__(self,runtime,names):self.runtime,self.names=runtime,names;self.cache=OrderedDict()
 
     def get(self,path):
         if path not in self.cache:
-            if len(self.cache)==8:self.cache.popitem(last=False)
+            if len(self.cache)==32:self.cache.popitem(last=False)
             raw=self.runtime.identity if path is None else load_file(path,device=str(self.runtime.device))
-            self.cache[path]={k:raw[k].detach() for k in self.names}
+            self.cache[path]={k:raw[k].detach().float() for k in self.names}
         self.cache.move_to_end(path);return self.cache[path]
 
 
-def compute_pack(runtime,model,references,query_bank,entries,counters):
-    unique=OrderedDict();points=OrderedDict()
-    for row in entries:
-        unique.setdefault((row['task'],row['visit'],row['query']),row)
-        points.setdefault((row['task'],row['point']),row)
-    batch,noise,queries=query_bank.batch(list(unique.values()))
-    qindex={k:i for i,k in enumerate(unique)};pindex={k:i for i,k in enumerate(points)}
-    qids=torch.tensor([qindex[(e['task'],e['visit'],e['query'])] for e in entries],device=runtime.device)
-    pids=torch.tensor([pindex[(e['task'],e['point'])] for e in entries],device=runtime.device)
-    states=[references.get(p['path']) for p in points.values()]
-    with autocast(runtime.device):
-        prefix=NativeVelocity(runtime.policy,batch,capture_phi=False)
-        prepared=prefix.select(qids);paired_noise=noise[qids]
-        counters['prefix_queries']=counters.get('prefix_queries',0)+len(noise)
-        with torch.no_grad():
-            targets=native_actions(runtime,states,batch,paired_noise,batch_indices=pids,
-                checkpointed=False,prepared_velocity=prepared,call_counter=counters)
-        # The anchored source branch is identically its already computed target.
-        # Its half weight remains in /56; it is never reassigned to other rows.
-        learned=[i for i,p in enumerate(points.values()) if p['path'] is not None]
-        remap={p:i for i,p in enumerate(learned)}
-        selected=torch.tensor([i for i,p in enumerate(pids.tolist()) if p in remap],device=runtime.device,dtype=torch.long)
-        errors=torch.zeros(len(entries),device=runtime.device)
-        counters['identity_student_reuse']=counters.get('identity_student_reuse',0)+len(entries)-len(selected)
-        if len(selected):
-            # E/D and its subtractive anchors use FP32; native policy uses BF16.
-            with torch.autocast(runtime.device.type,enabled=False):
-                generated=model.forward_many([states[i] for i in learned])
-            student_pids=torch.tensor([remap[int(pids[i])] for i in selected],device=runtime.device)
-            students=native_actions(runtime,generated,batch,paired_noise[selected],batch_indices=student_pids,
-                prepared_velocity=prefix.select(qids[selected]),call_counter=counters)
-            differences=(students.float()-targets[selected].float()).square().mean((1,2))
-            errors=errors.index_copy(0,selected,differences)
-        loss=errors.sum()/56
-    if loss.requires_grad:loss.backward()
-    responses=[dict(task=e['task'],point=e['point'],query=e['query'],target=t.cpu(),error=float(v))
-               for e,t,v in zip(entries,targets.detach(),errors.detach(),strict=True)]
-    return float(loss.detach()),responses,queries
+class OperatorLoss:
+    def __init__(self,lora,constants):
+        self.layers=[(t.name,lora.alpha/lora.rank,constants[t.name]) for t in lora.targets]
+
+    def __call__(self,generated,reference):
+        errors=[];baseline=[]
+        for name,scale,unit in self.layers:
+            A,B,E_A,E_B=[torch.stack([r[name+suffix] for r in rows]) for rows,suffix in
+                [(generated,LORA_A_SUFFIX),(generated,LORA_B_SUFFIX),(reference,LORA_A_SUFFIX),(reference,LORA_B_SUFFIX)]]
+            error,energy=operator_squared_error(A,B,E_A,E_B,scale)
+            errors.append(error/unit);baseline.append(energy/unit)
+        return torch.stack(errors,-1),torch.stack(baseline,-1)
 
 
-def local_credit(runtime,model,references,query_bank,groups,microbatch,counters):
-    rows=[dict(group,query=q) for group in groups for q in range(7)]
-    total=0.;responses=[];queries=[]
-    for first in range(0,len(rows),microbatch):
-        value,part,addresses=compute_pack(runtime,model,references,query_bank,rows[first:first+microbatch],counters)
-        total+=value;responses.extend(part);queries.extend(addresses)
-    return total,responses,queries
+def local_credit(model,references,objective,groups,pack):
+    total=0.;identities=0
+    for start in range(0,len(groups),pack):
+        entries=groups[start:start+pack]
+        learned=[r for r in entries if r['path'] is not None]
+        identities+=len(entries)-len(learned)
+        if not learned:continue  # Its analytic zero retains its original /8 half weight.
+        states=[references.get(r['path']) for r in learned]
+        errors,_=objective(model.forward_pack(states),states)
+        loss=errors.mean(-1).sum()/8
+        loss.backward();total+=float(loss.detach())
+    return total,identities
 
 
-def response_metrics(responses):
-    if len(responses)!=56:raise ValueError('one logical update must preserve all 56 point/query rows')
-    by_query={};errors={0:[],1:[]}
-    for row in responses:
-        by_query.setdefault((row['task'],row['query']),{})[row['point']]=row['target']
-        errors[row['point']].append(row['error'])
-    lower=sum(float((r[0]-r[1]).square().mean())/4 for r in by_query.values())/28
-    actual=sum(sum(v) for v in errors.values())/56
-    return dict(MSE=actual,selected_MSE=sum(errors[0])/28,other_MSE=sum(errors[1])/28,
-        ignored_code_MSE_lower_bound=lower,MSE_to_lower_bound=actual/lower if lower else None)
+def pool_points(bank):
+    """271 distinct points; selected/others weights retain source identity mass."""
+    rows=[]
+    for item in bank['tasks']:
+        others=[p for p in item['checkpoints'] if p['update']!=item['selected_update']]
+        rows.append(dict(task=item['task'],point=0,path=item['selected_path'],update=item['selected_update'],
+                         weight=.5/36 if others else 1./36))
+        for p in others:
+            rows.append(dict(task=item['task'],point=1,path=p['path'],update=p['update'],weight=.5/36/len(others)))
+    if len(rows)!=271:raise ValueError('fixed bank must contain all 271 distinct parameter points')
+    return rows
+
+
+@torch.no_grad()
+def evaluate_pool(model,references,objective,bank,context,pack):
+    from .checkpoint import gather
+    rows=[];points=pool_points(bank)
+    local=points[len(points)*context.rank//context.world_size:len(points)*(context.rank+1)//context.world_size]
+    for start in range(0,len(local),pack):
+        entries=local[start:start+pack]
+        learned=[r for r in entries if r['path'] is not None]
+        values={}
+        if learned:
+            states=[references.get(r['path']) for r in learned]
+            error,baseline=objective(model.forward_pack(states),states)
+            for p,e,b in zip(learned,error.cpu().tolist(),baseline.cpu().tolist(),strict=True):values[p['path']]=(e,b)
+        for p in entries:
+            error,baseline=values[p['path']] if p['path'] is not None else ([0.]*38,[0.]*38)
+            rows.append(dict(p,error_by_layer=error,source_by_layer=baseline,error=sum(error)/38,source=sum(baseline)/38))
+    all_rows=[r for part in gather(rows,context) for r in part]
+    return dict(rows=all_rows,weighted_error=sum(r['weight']*r['error'] for r in all_rows),
+        source_baseline=sum(r['weight']*r['source'] for r in all_rows),points=len(all_rows),
+        selected=sum(r['weight']*r['error'] for r in all_rows if r['point']==0)*2,
+        other=sum(r['weight']*r['error'] for r in all_rows if r['point']==1)*2)

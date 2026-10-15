@@ -2,7 +2,7 @@
 from pathlib import Path
 import argparse,datetime,fcntl,json,os,socket,subprocess
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
-from .contract import ROOT,REFERENCE_ROOT,SCHEMA
+from .contract import ROOT,REFERENCE_ROOT,SCHEMA,SAVES
 
 
 def owner(args):
@@ -20,15 +20,17 @@ def owner(args):
         # These are actual useful-update events, never status polls or self Queue.
         print('EMBER_TRAINING_OBSERVATION '+json.dumps(event),flush=True)
     batch=Batch(Path.cwd(),devices,root=args.root,required_free_MiB=40000,work_event=observation)
-    phases=[(0,36)] if not (args.root/'checkpoints/update_00000036/state.pt').exists() else []
+    completed=[u for u in SAVES if (args.root/'checkpoints'/f'update_{u:08d}'/'state.pt').is_file()]
+    start=max(completed,default=0)
+    phases=[(0,36)] if start==0 else []
     for start,stop in phases:
         job=Job(f'train_{start:08d}_{stop:08d}',['control-space','train','--start',str(start),'--stop',str(stop)],
             gpu_count=len(devices),estimate_seconds=3600,required_free_MiB=40000)
-        batch.execute(job,devices)
+        batch.execute(job,devices);start=36
     physical=read_json(args.root/'physical_execution.json')
     chosen=devices[:physical['recommended_world_size']]
-    if not (args.root/'checkpoints/update_00000144/state.pt').exists():
-        job=Job('train_00000036_00000144',['control-space','train','--start','36','--stop','144'],
+    if start<144:
+        job=Job(f'train_{start:08d}_00000144',['control-space','train','--start',str(start),'--stop','144'],
             gpu_count=len(chosen),estimate_seconds=7200,required_free_MiB=40000)
         batch.execute(job,chosen)
     materialize(args.root);readout_owner(args);result=analyze(args.root)

@@ -1,3 +1,33 @@
+## 2026-10-15 12:19 UTC+8 实验执行接任；N16中断与未决交互边界
+
+Owner本轮指定本session `01a13dbf-dbc3-7621-82be-87be44a5bca6` 接任前任实验执行
+`01a133e5-50f0-7d20-a893-df95c7387630`；新主讨论将在后续交接，接收UUID尚未登记。
+本轮已读取前任聊天中的Owner要求、近期完整派发/修复/交付，仓库当前目标、稳定科学/工程合同、
+active design及学习链/纠正批科学报告，并核对canonical compiler/scorer/native执行、原件及Git。
+工程实施、运行恢复、资源安排、验收与串行Git由本实验承担，科学范围及预算修订由主讨论裁决。
+以下为接任现场事实，覆盖下方历史“已启动”的运行状态；不更改§14科学合同或将中断判为科学阴性。
+
+唯一未完成批仍为 `video_effect_parameter_compiler_20261015/practice_support16`、attempt
+`practice_support16_01`，正式冻结 `7a146fc0`，接任前main/origin/main为干净的 `c21749e2`。
+现场gpu02已无该批owner/worker/通知进程；`/proc/stat`记录本次开机为2026-10-15T03:30:32Z
+（11:30:32 UTC+8）。原owner PID156315及六worker均不能继续；没有owner/job退出回执、
+整批complete/results或最终冻结记录。最后episode事件在00:25:20Z附近，早于重启；
+不能仅凭重启确定更早停滞的原因。原23:06:33.739733Z首次派发及2–4h预计已超期，时钟不重置。
+
+只读核对work.sqlite：8 complete（6 bootstrap、2 condition）、6 claimed、42 pending；
+已完成condition为task20/video1和task20/no_video，0新final行。6份condition checkpoint及
+5份first_native_unit资源回执存在；部分draw/proposal/outcome可供后续恢复核验，不称整批已验收。
+按六份 `jobs/*/attempt_001/episode_events.jsonl` 的episode身份结算，本批814提交、743 finished；
+743均有保存row，另71未回执且无保存row。已知108042 control+1680 dummy=109722步，
+未决control保守上界18485、dummy0，总步保守128207；旧依赖2184次/451706步/7.005042365GPUh另账不动。
+71是未决交互的保守上界，不是已证实71次完整失败，更不能按0失败结算；缺exit的本批GPUh待重建，不能记0。
+
+恢复前的实际边界：原合同最多16工程失败，无法直接将这71条未决交互全部作为额度内重试。
+保留现有H/LoRA/Adam/RNG、未完成claim、事件与原冻结树，不清账、不重跑有效行、不改面板/seed，
+由新主讨论接收具体事实后明确有限恢复/失败额度合同。恢复时再现场核双节点/data1 quota，
+核完整N16恢复点及唯一owner，将原指向前任的整批回报路由替换为本实验/新主讨论；不叠加第二等待者。
+本轮仅接任核对和状态登记，0新模型/环境/GT/sealed/held/Test计算，未发送给旧主讨论或启动新批。
+
 ## 2026-10-15 N16实践支撑整批已实际启动
 
 唯一practice_support16_01/PID156315于2026-10-14T23:55:34.866658+00:00从clean pushed detached7a146fc0启动，ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16。六持久job均独立live双节点/6总量-node6/strg01 data1准入，实际gpu02:1/7/2/0/4/6；workload35,000MiB来自旧真实峰值及本批分块安排，非利用率或固定24GiB筛选。初始slots16，注册64分支内按真实steps/s/峰值/live余量比较更大slots；native逻辑16点物理4/8/16分块求同一均值，clip/Adam只一次，0额外环境profile。

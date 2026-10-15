@@ -1,3 +1,17 @@
+## 2026-10-15 当前接任目标：保留N16中断证据，向新主讨论交接恢复边界
+
+Owner指定实验执行接任为 `01a13dbf-dbc3-7621-82be-87be44a5bca6`，前任
+`01a133e5-50f0-7d20-a893-df95c7387630` 的合同/代码/产物已按当前任务核读；新主讨论待后续交接。
+唯一未完成科学批仍为design§14/practice_support16、冻结7a146fc0，当前没有存活的owner/worker，
+不是正在运行或已完成。现场与原件差异、恢复点及账目详见progress顶部。
+
+接任核对得到814提交/743完成、71未回执，已知109722步、未决control上界18485；
+6 bootstrap及2 condition complete，0 final，6 claimed/42 pending。71未决不等于已证实71失败，
+也不能按0失败清账；原16工程失败额度不能直接覆盖全部未决重试，须由新主讨论明确有限恢复合同。
+保留所有有效行、H/LoRA/Adam/RNG及旧成本，原派发时钟不重置，不改科学目标或自动扩大额度。
+后续在明确合同内闭环恢复点/费用核验、live资源准入、唯一owner与新整批路由、实际执行、完整验收和Git交付；
+目前仅接任登记，0新计算/GT/held/Test，不向历史接收方恢复派发，不复活其它旧路线。
+
 ## 2026-10-15 N16实践支撑整批已实际启动
 
 唯一practice_support16_01/PID156315于2026-10-14T23:55:34.866658+00:00从clean pushed detached7a146fc0启动，ROOT=/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16。六持久job均独立live双节点/6总量-node6/strg01 data1准入，实际gpu02:1/7/2/0/4/6；workload35,000MiB来自旧真实峰值及本批分块安排，非利用率或固定24GiB筛选。初始slots16，注册64分支内按真实steps/s/峰值/live余量比较更大slots；native逻辑16点物理4/8/16分块求同一均值，clip/Adam只一次，0额外环境profile。

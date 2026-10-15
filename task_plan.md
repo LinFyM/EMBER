@@ -1,3 +1,13 @@
+## 2026-10-15 N16有限恢复已完整验收；无active计算或自动后继
+
+唯一owner与六job于06:15:43.573Z前正常exit0，24终点/Adam/RNG与512配对完成CPU原件验收；
+[完整报告](/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16/analysis/engineering_completion_resume_20261015/report.md)及同目录原件给出MT67/V0 61/V1 71/noV62、48更新21接受、实践及任务/suite/两视频得失。
+原743保存行未重跑，原71各一次恢复，新3305全部返回、0新未知；旧18485control和GPUh区间独立保留，全部有限上限满足。
+7仍MT条件按预注册固定参照复用；不称充分收敛、纯N隔离或held资格。原首次/超期、旧N4及全部正负结果保持。
+Owner内存质询定位到独立环境进程与空闲worker保留环境；退出后used412→17GiB、swap5.8GiB→125MiB，已释放。
+CPU总驻留/idle释放检查遗漏已记录，后续复用运行面先处理；本轮0新增计算/热改/自动扩量。
+串行Git交付后一次向新主讨论01a13dd9回报并释放记录写锁；由其消费和裁决科学接续，执行不自行开新批。
+
 ## 2026-10-15 N16有限恢复已启动，等待唯一owner真实退出后完整验收
 
 practice_support16_resume_02/PID1360022于05:00:51.161Z从clean pushed detached78d4f73e实际启动；

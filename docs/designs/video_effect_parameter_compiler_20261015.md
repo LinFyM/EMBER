@@ -2,7 +2,7 @@
 
 2026-10-15。Owner已明确恢复自主科学推进及必要有界实验，并要求持续推进。本稿由主讨论定案；登记到progress后成为唯一active design。它替代whole_method_reassessment_20261015.md §9尚未实施的终局Q-only议案，不恢复旧G/ImageCompiler、关系G/F或局部J加权FM训练。
 
-当前执行状态：§13已完整科学消费；唯一active为§14 N16实践支撑有限检验，当前独占工程/CPU准备，正式启动另记。§13及此前合同、阴性和成本保持历史，不恢复旧批。
+当前执行状态：§14/§14.1 N16有限恢复已于2026-10-15T06:15:43.573Z完整exit0并通过原件验收，当前无active计算；结果交新主讨论科学消费，无自动后继。§13及此前合同、阴性和成本保持历史，不恢复旧批。
 
 监督—原生算子—梯度—新初态迁移的完整科学说明见[学习链分析](../analyses/video_effect_learning_chain_20261015.md)。这是本合同解释，非另一active design或附加执行门槛。
 
@@ -374,3 +374,14 @@ live双节点6/8-node6、实测峰值与data1独立quota/个人目录用量/80Gi
 CPU真因子/Adam恢复、71 current draw/743保存行及四类有限额度consumer通过，GPU完整单元由正式消费者承接。
 旧owner源码/contract/队列/71身份与费用区间保留于inputs/interruption_recovery_20261015；
 原冻结树不改，canonical操作owner补修订额度/真实区间且取消自通知，实验直接等待退出后验收/Git/一次新main交付。
+
+
+§14/§14.1完整交付（非新授权）：practice_support16_resume_02与六job全exit0；24完整38-target/r8终点、
+因子/Adam/流/RNG、56项和512配对齐。MT67/V0 61/V1 71/noV62；48更新21接受，实践66→77/72/80（/128），
+7仍MT条件按固定MT128/67引用，272新final+240引用。各条件仅2次更新，非充分收敛或纯N因果结论；
+[完整报告](/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16/analysis/engineering_completion_resume_20261015/report.md)保存各task/suite、保持得失、两视频、全部条件及旧N4边界。
+原743有效请求0重跑、旧71各一次恢复，新3305全部返回，累计4119/4048、已知666747+旧未知≤18485步，
+有限上限均满足；原派发/已超期及全部旧费用保持。新7.459967182GPUh、旧无exit[2.346457453,21.469853089]，
+含独立旧依赖总区间[16.811467000,35.934862636]。Owner内存排查发现空闲池高驻留，退出后used412→17GiB，
+任务进程/CUDA已释放；CPU总驻留/idle释放遗漏如实记录，未热改冻结代码或新增profile。0新GT/sealed/held/Test/Phi或自动后继，
+串行Git交付后释放记录写锁，完整科学消费/接续交新主讨论01a13dd9。

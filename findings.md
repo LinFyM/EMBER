@@ -1,5 +1,16 @@
 # EMBER findings
 
+## 2026-10-15 N16有限完整读出：实践改善与新初态收益仍需分开
+
+[完整24条件/512行原件验收](/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16/analysis/engineering_completion_resume_20261015/report.md)：MT67、V0 61、V1 71、noV62，各128。
+V0对MT得9失15、V1得9失5，V1净增来自task0/32各+3及task34−2；V0 task34−4，不利分布保留。
+两视频成功集交55、V1相对V0得16失6；两视频尚无一致整体增益。48更新21接受，实践各66→77/72/80（/128），
+noV实践提高最多但新初态−5，实践接受不是迁移保证。7个仍MT条件只读固定MT参照，不能称学习/遗忘。
+各条件192逻辑请求仅实际2次更新；本批不是充分优化或纯N因果隔离，也不推翻全部交互学习，旧N4与旧正负结果保持。
+旧71潜在失败和18485未知control成本不由重试结果抹平；0新GT/sealed/held/Test/Phi，当前有限执行已完成，科学裁决交新main。
+主机内存排查发现每环境进程数GiB且空闲worker保留池至整批退出：抽样PSS约307GiB，整机used412GiB/swap5.8GiB；
+退出后used17GiB/swap125MiB、任务进程/CUDA已释放。单点不证持续泄漏；CPU合计驻留与idle生命周期是后续运行前需处理的工程遗漏。
+
 ## 2026-10-15 元学习数学基础与尚未冻结的方法取舍
 
 [数学基础分析](docs/analyses/meta_learning_mathematical_foundations_20261015.md)区分可表示、可辨认、可学习与迁移；

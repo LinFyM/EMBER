@@ -1,3 +1,29 @@
+## 2026-10-15 14:15 UTC+8 N16有限恢复整批exit0；当前无active计算
+
+唯一practice_support16_resume_02/PID1360022于06:15:43.573Z真实exit0，六job均exit0且已释放；
+直接子进程退出等待完成，0第二waiter/自通知/阶段Queue。计算74.874min，原首次23:06:33.739733Z至退出7.153h，
+原2–4h已超期事实保持；本次90–150min含准备/验收的预测另列。执行clean pushed detached78d4f73e，src与7a146fc0相同。
+
+[完整工程验收与读出](/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16/analysis/engineering_completion_resume_20261015/report.md)及同目录JSON保存24完整38-target/r8终点、Adam/流/RNG、56完成项和512唯一配对。
+MT67/V0 61/V1 71/noV62（各128）；V0对MT保持52/得9失15，V1保持62/得9失5，noV保持56/得6失11。
+48更新/21接受，V0/V1/noV各16更新、7/6/8接受；实践各66/128→77/72/80，最终实际改参数6/5/6条件。
+7条件未改MT只读固定官方MT128/67，272新final+240固定MT引用；未改参数不称学习/遗忘。
+V1净+4主要task0/32各+3及task34−2；V0 task34−4保留。完整各task/suite、两视频重合55及全部负例见报告。
+192请求下各条件仅2次更新，不称充分收敛、纯N因果隔离或strict held400资格；旧N4及全部正负/GT时序例外保留。
+
+原743有效请求0重跑、71旧未决各一次恢复，新3305提交/3305返回、0新失败/未知；本ROOT累计4119提交/4048返回，
+656987control+9760dummy=666747已知步，旧未知18485control单列，总保守685232，满足5079/1167285/50080/1217365。
+旧依赖2184次/451706步/7.005042365GPUh另账；新恢复7.459967182GPUh，原无exit区间[2.346457453,21.469853089]，
+本ROOT[9.806424635,28.929820271]、含依赖[16.811467000,35.934862636]GPUh，不强行精确。
+完成时strg01本ROOT44.843GiB，新增低于80GiB预测；注册slots16/32/native chunk4/8/16真实消费、0新增环境profile。
+
+Owner针对内存/进程质询的现场排查：退出前整机used412GiB/swap5.8GiB，可读进程PSS抽样约307GiB，
+主要独立环境进程（各数GiB）和其线程池；4个空闲worker仍保留环境至整批退出，非重复owner，单次快照不证明泄漏。
+退出后主机used17GiB/available485GiB/swap125MiB，本用户CUDA0、无本批worker残留，foreign进程未触碰。
+CPU合计驻留/线程数与idle释放未充分纳入本次启动核验，是执行遗漏；后续复用该运行面前须处理，未热改冻结代码。
+具体证据/未知见同目录host_memory_diagnostic.json。0新GT/sealed/held/Test/Phi训练或自动后继。
+本轮串行记录/Git交付后向新主讨论01a13dd9一次整批回报并释放canonical记录写锁，由其消费后接续科学判断。
+
 ## 2026-10-15 13:01 UTC+8 N16有限恢复已实际六卡启动
 
 唯一owner `practice_support16_resume_02` / PID1360022于05:00:51.161Z启动，代码为clean pushed detached

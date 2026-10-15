@@ -1,3 +1,16 @@
+## 2026-10-15：N16一次有限恢复完整退出与原件交付
+
+design§14/§14.1唯一批practice_support16_resume_02于06:15:43.573Z真实exit0，六job全exit0；
+计算78d4f73e与原7a146fc0同src，24完整终点/Adam/流/RNG及512配对通过CPU原件验收。
+MT67/V0 61/V1 71/noV62，各128；48更新21接受，实践66→77/72/80，7仍MT条件固定参照复用，
+272新final+240引用。V0对MT得9失15，V1得9失5；V1 task0/32局部+3与task34−2、V0 task34−4均保留。
+[报告及全部分布](/data1/user/ymdai/ember_runs/video_effect_parameter_compiler_20261015/practice_support16/analysis/engineering_completion_resume_20261015/report.md)；内部有限2更新不称充分收敛/纯N因果/held资格，旧N4与全部正负原件不改写。
+原743保存行未重跑、71未回执各恢复一次，新3305全部返回；累计4119提交/4048返回、已知666747步+旧未知≤18485，
+总保守685232，全部有限额度满足。新恢复7.459967182GPUh，旧无exit[2.346457453,21.469853089]，
+含2184次/451706步/7.005042365GPUh旧依赖总区间[16.811467000,35.934862636]，不伪造精确总费用。
+原首次23:06:33.739733Z至退出7.153h、超期保持。Owner内存质询定位到独立环境进程/空闲池驻留，
+整机used412→17GiB、swap5.8GiB→125MiB；任务/CUDA已释放，启动CPU合计检查遗漏保留。0自动后继/新GT/held/Test，交新main科学消费。
+
 ## 2026-10-15：纠正方法科学消费与唯一N16后继
 
 主讨论已消费完整corrected_method_scientific_readout_20261015.md、credit_analysis/report.md与analysis.json：保留真实视频零终局分差信用和实践34/64→45/64，完整64/70对MT67/noV74未形成稳定优势；同参数波动不归学习/遗忘。唯一design§14于23:06:33.739733Z派发，N16为有界支撑检验、无新性能结论；24fresh MT/原Phi及目标、192starts/128horizon/最终512保持，32旧bootstrap+96新共享、0旧分支/Adam导入。旧错误/阴性/frozen/2184次451706步7.005042365GPUh保留，GT/sealed不重开。本批2–4h、5008/1198880及16失败明确；失败后停止该家族继续扩量/调参，不自动其它实验。工程准备与真实GPU启动分别记录。

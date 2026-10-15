@@ -132,11 +132,14 @@ class Scheduler:
         if training and (active_training<max(1,self.workers//2) or not evaluating):return training
         return evaluating or training
 
+    def slot_candidates(self,worker,work,budget):
+        return (16,8,4)
+
     def physical_slots(self,worker,work):
         if work['kind']=='train':return 0
         budget=self.node_budget(worker);occupied=budget['occupied'];current=occupied[worker]
         others=sum(count for member,count in occupied.items() if member!=worker)
-        for slots in (16,8,4):
+        for slots in self.slot_candidates(worker,work,budget):
             useful=min(slots,len(work['states']))
             extra=max(0,useful-current)*budget['environment_GiB']
             if (others+useful<=budget['slot_cap'] and budget['available_GiB']-

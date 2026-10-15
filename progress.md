@@ -1,3 +1,10 @@
+## 2026-10-16 §10唯一owner已实际启动，待真实native吞吐
+
+owner3437638/supervisor3436838于2026-10-15T20:16:25.735154+00:00从clean pushed detached `80878be83db7e004453aad77bca91dbfe2ad37a9`实际启动，冻结树`/data1/user/ymdai/ember_worktrees/source_control_space_frozen_20261016`；ROOT为`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_space_seed7`，launch_contract/owner_launch及owner_attempts/attempt_001/owner.log保留确切command/env/来源/资源/时钟。实际接收19:51:01.953Z、首CPU准备19:52:32.143Z、启动20:16:25.735154Z；旧参考首派09:05:48.038Z和§9退出原件不重置。
+仅fresh E/D144及唯一36×16函数保留读出。前6有用更新比较batch7/14/28与rank6/4/2，/56全局均值后一次SUM；36完整边界再按实测选拓扑/释放其它卡，72/108亦真实可恢复。selected source零损失合法复用、半权不重分配；末点五identity80逻辑row复用真实source，其余496执行。实际学习/闭环结果尚未知，不以CPU接通称成功。
+计划gpu02:0/1/4/5/6/2同节点六卡；每实际Popen由原Batch再live双节点/cap6或8/node6/实际显存与strg01 data1 quota准入。host gpu02 available500668384KiB、gpu01 452565084KiB分别登记，不混内存；新峰12GiB/独立16额外工程尝试不刷新reference原16。学习+读出0.8–3h仍是粗估，首有用native10反向后修正；无GPUh硬限。
+终端session83454只有一个连续退出/实际事件读取cell208，不查周期进度或缓存、无Queue/第二waiter。§9六GPU与全部记录PID已释放，当前无并行reference训练。继续独占canonical工程/记录/Git；仅整体真实结束验收后一次回主讨论并归还写窗口。
+
 ## 2026-10-16 §9真实exit0且36参考就绪；§10实现通过CPU消费者
 
 §9原owner2999980/supervisor2999408于2026-10-15T20:10:19.443483Z实际exit0，wall24.248min，短于1–2h估计：只需5段/1200更新，5/25/38在2160收束、43在2400收束；未跑2640/2880。[验收与原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_final_four_20261016/acceptance.json)确认全部36冻结/独立report齐，bank_ready=true；32 frozen和原983完成事务逐字段不变。四selected分别1680/1680/1680/1920，独立source→selected为1→18、0→11、1→3、8→17 /18；38 loss state46保留，43选1920而非末2400。总36独立source248→selected545/648，R241/G304/L7，含5项identity90行；target60→337/432，support188→208/216。这是参考控制器，不是EMBER/video/held结果。

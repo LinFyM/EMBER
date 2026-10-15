@@ -6,7 +6,7 @@
 §10 CPU实现已集成：完整38r8锚模型、按task等权76 RMS、确定性4×7×2流、原生10步唯一loss、完整E/D Adam/RNG/流CP、末144物化及36×16动态读出。真实CPU消费者通过锚导数、分片SUM、十步backward重新绑定、same-query KV索引、7/14相同loss/gradient且prefix查询14→7、恒等半权不再分配、恢复/未知上界/独立16失败额度；8条真实target/support旧source行满足新配对消费者。无GPU/E/D学习已发生，真实native图由首授权有效更新继续验收。
 E/D及减法锚用FP32、native BF16/TF32；先6个有用更新比较7/双参考14/跨task28与实际rank安排，36完整边界按吞吐迁移并释放多余卡，保持全局均值/Adam/流。读出继承node级PSS/slot准入、idle完整close；所有pending已派后，空闲尾worker直接退出释放GPU/模型内存。
 结构净增870 source行/10新文件，guard无hard；新包只承担E/D模型、合法bank/查询、功能credit、optimizer/CP、固定读出与分析/薄CLI各自职责。复用reference Runtime/QueryStream、FactorLayout/Encoder、native_actions、原Batch/SQLite/Scheduler/账本/close；旧调用默认不变，无平行Writer/MT运行面。reference是本库producer和原件消费者，未替代它再造trainer；旧研究路线不激活，后续退役由实际消费者和main科学决定，不能删除仍复用的泛型owner。review的credit/训练/OOM状态机与case事务保持单一职责，既有Batch复杂度不扩大框架。
-launch前live双节点：gpu02五空闲及gpu2余45.26GiB，gpu01无本用户CUDA；合计cap6/node6可用gpu02:0/1/2/4/5/6。data1 quota used1746893068KiB/soft2147483648KiB，余约382GiB；reference实际10.364GiB，新E/D峰12GiB独立可容纳，共享80TiB另核。正式Popen仍原Batch每次live双节点/quota/实际headroom，下一步push/new clean detached启动唯一owner，不等待普通许可。原09:05:48.038首派与§9时钟保持，§10接收19:51:01.953Z/准备19:58:57.177968Z，实际启动另记。仍预计学习+读出约0.8–3h未profile；首有用native更新修正。仅整批完成后一次回主讨论，当前继续持有canonical写窗口。
+launch前live双节点：gpu02五空闲及gpu2余45.26GiB，gpu01无本用户CUDA；合计cap6/node6可用gpu02:0/1/2/4/5/6。data1 quota used1746893068KiB/soft2147483648KiB，余约382GiB；reference实际10.364GiB，新E/D峰12GiB独立可容纳，共享80TiB另核。正式Popen仍原Batch每次live双节点/quota/实际headroom，下一步push/new clean detached启动唯一owner，不等待普通许可。原09:05:48.038首派与§9时钟保持，§10接收19:51:01.953Z/首次CPU准备19:52:32.143Z（19:58:57登记），实际启动另记。仍预计学习+读出约0.8–3h未profile；首有用native更新修正。仅整批完成后一次回主讨论，当前继续持有canonical写窗口。
 
 ## 2026-10-16 §9继续，§10已接收并独立CPU实施
 

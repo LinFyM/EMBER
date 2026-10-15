@@ -2,7 +2,6 @@
 from contextlib import closing
 from pathlib import Path
 import datetime
-import json
 import shutil
 import sqlite3
 

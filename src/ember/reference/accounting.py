@@ -3,6 +3,7 @@ from pathlib import Path
 from contextlib import contextmanager
 import os
 import sqlite3
+import socket
 import time
 
 from .contract import LIMITS
@@ -73,4 +74,4 @@ def host_resources():
             details.append(dict(PID=pid,PSS_KiB=process_pss,threads=process_threads))
         except (OSError,StopIteration):continue
     memory={line.split(':')[0]:int(line.split()[1]) for line in Path('/proc/meminfo').read_text().splitlines() if line.startswith(('MemTotal:','MemAvailable:','SwapFree:','SwapTotal:'))}
-    return dict(PID=os.getpid(),PIDs=sorted(observed),processes=len(observed),threads=threads,PSS_KiB=pss,per_process=details,host_memory_KiB=memory)
+    return dict(hostname=socket.gethostname().split('.')[0].lower(),PID=os.getpid(),PIDs=sorted(observed),processes=len(observed),threads=threads,PSS_KiB=pss,per_process=details,host_memory_KiB=memory)

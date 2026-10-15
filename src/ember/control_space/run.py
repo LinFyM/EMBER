@@ -111,7 +111,7 @@ def learn_and_readout(args,batch,train_pool,readout_pool,features,state,executor
     from .readout import owner as evaluate
     from .checkpoint import path,latest
     start=latest(args.root)
-    segments=[]
+    segments=[read_json(p) for p in sorted((args.root/'training').glob('segment_*.json')) if read_json(p).get('complete')]
     while start<900 and (start==0 or not all(f.done() for f in features)):
         stop=9 if start==0 else min(900,((start//90)+1)*90);state.require(required_features(args.root,start,stop))
         segments.append(training_segment(args,batch,train_pool[-1:],start,stop));start=stop
@@ -119,20 +119,21 @@ def learn_and_readout(args,batch,train_pool,readout_pool,features,state,executor
     write_json_atomic(args.root/'features/completion.json',dict(complete=True,UTC=utc(),videos=len(state.ready)))
     # Entire36-task cycles provide useful world-size comparisons without extra labels.
     for size in (2,4,6):
-        if size>len(train_pool) or start>=900:continue
+        if size>len(train_pool) or start>=900 or any(r['world_size']==size for r in segments):continue
         result=training_segment(args,batch,train_pool[:size],start,start+9);segments.append(result);start+=9
     observed={r['world_size']:statistics.median(m['seconds'] for m in r['measurements']) for r in segments}
-    maximum=min(4,len(train_pool));choices=[w for w in observed if w<=maximum]
-    size=min(choices,key=lambda w:observed[w]) if choices else 1
-    write_json_atomic(args.root/'training/topology_choice.json',dict(observed_seconds_per_update=observed,selected_parallel_training_ranks=size,
+    size=min(observed,key=observed.get) if observed else 1
+    choices=[w for w in observed if w<=min(4,len(train_pool))]
+    parallel_size=min(choices,key=lambda w:observed[w]) if choices else 1
+    write_json_atomic(args.root/'training/topology_choice.json',dict(observed_seconds_per_update=observed,selected_parallel_training_ranks=parallel_size,selected_before900_ranks=size,
         pure_training_fastest=min(observed,key=observed.get) if observed else size,
-        reason='useful full36 cycles; reserve two independent readout workers at900 to minimize whole-batch wall',
+        reason='fastest useful ranks before900; after900 allocate fastest<=4 alongside two ready readout workers',
         comparison_is_useful_work_not_paired_profile=True,UTC=utc()))
     if start<900:segments.append(training_segment(args,batch,train_pool[:size],start,900))
     ready=threading.Event()
     eval900=executor.submit(evaluate,replace_args(args,update=900,devices=[f'{n}:{g}' for n,g in readout_pool]))
     eval900.add_done_callback(lambda future:ready.set())
-    if not path(args.root,1800).is_file():segments.append(training_segment(args,batch,train_pool[:size],900,1800))
+    if not path(args.root,1800).is_file():segments.append(training_segment(args,batch,train_pool[:parallel_size],900,1800))
     immediate=train_pool[:min(4,len(train_pool))]
     if eval900.done():
         eval900.result();delayed=[];immediate+=readout_pool
@@ -174,7 +175,7 @@ def main():
     parser.add_argument('--physical-gpu',type=int,default=0);parser.add_argument('--resume',action='store_true')
     parser.add_argument('--start',type=int,default=0);parser.add_argument('--stop',type=int,default=1800)
     parser.add_argument('--update',type=int,choices=CHECKPOINTS,default=900)
-    parser.add_argument('--frame-chunk',type=int,default=16);parser.add_argument('--readout-required-free-MiB',type=int,default=26000)
+    parser.add_argument('--frame-chunk',type=int,default=0);parser.add_argument('--readout-required-free-MiB',type=int,default=26000)
     parser.add_argument('--feature-shard',type=int,default=0);parser.add_argument('--feature-shards',type=int,default=1)
     args=parser.parse_args()
     if subprocess.check_output(['git','status','--porcelain'],text=True).strip() or subprocess.check_output(['git','branch','--show-current'],text=True).strip():

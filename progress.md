@@ -1,3 +1,11 @@
+## 2026-10-16 §13物理调度纠正：117完整边界，0有效更新丢失
+
+实际完整周期中位为1卡13.159/2卡6.633/4卡3.901/6卡3.329秒；原CPU调度将900并行评估的两卡预留提前应用，导致900前也限4卡，已定位为物理调度问题。23:48:14.960Z定向暂停仅本owner与新4rank初始化，核实latest117、4rank尚未写初始化完成topology、0新有效更新，随后只结束记录的五个自有初始化进程并让原owner收尸计费。原attempt001在23:48:32.758529Z exit1，原件不改；非科学非finite失败，117有效/13104 FM query及全部2345冻结特征完整保留，无重跑或环境提交。4rank取消初始化98.420305s/0.109355895GPUh真实计入。
+
+窄修沿同一control_space owner：复用已完成1/2/4/6周期，不重复profile；117完整Reader/67 Adam状态/scheduler/RNG/原流续6rank到900，之后4rank与两个900 readout并行。冻结D/Reader/数据/loss/有效预算/选点和信息墙均不变。评估frame chunk改复用本批实际node测量（GPU01为16、GPU02为64），8/16环境槽按live工作负载余量和原16槽峰加renderer余量选择，不按固定host封死；validation报告分组改为validation8，原标签误写不影响面板或指标。新source须commit/push/clean detached后恢复；旧93e27530不热改。无当前活GPU任务等待工程，不持卡。
+
+原22:44:59.573派发/22:45:07.991准备/23:07:52.528946首次owner及参考09:05时钟均保留；旧wait9852/417已实际结束，无第二waiter。当前仍独占canonical窗口，工程闭环后立即同批接续，不需科学新授权或main复验。
+
 ## 2026-10-16 §13唯一owner已正式启动
 
 实际owner1892434/supervisor1890771于23:07:52.528946Z从clean pushed detached93e27530启动；唯一直接退出等待session9852/cell417，0Queue/自通知/第二waiter。正式5个source特征worker已真实产生完整图像prefix，初期long视频从chunk4的约14–18frames/s到chunk32约21frames/s，峰allocated约11GiB；64/128及首批有用FM随后按同一owner执行。不能把当前特征成功写成Reader学习或闭环结果。缓存ready即启动首9更新/完整36任务周期，后续原轨迹完整Adam/RNG/cursor接续；未使用额外监督query。

@@ -158,8 +158,14 @@ class ReadoutScheduler(Scheduler):
         peers=min(sum(k!=worker and not v for k,v in occupied.items()),max(0,getattr(self,'pending_ready_count',1)-1))
         floor=8 if budget['slot_cap']>=8*budget['workers'] else 4
         peers=min(peers,max(0,(budget['slot_cap']-others)//floor-1))
-        maximum=8 if self.worker_node[worker]=='gpu01' else 16
+        maximum=getattr(self,'worker_max_slots',{}).get(worker,8)
         return tuple(s for s in (16,8,4) if s<=maximum and others+min(s,len(work['states']))+peers*floor<=budget['slot_cap'])
+    def event(self,worker,value,stream):
+        if 'max_slots' in value:
+            if not hasattr(self,'worker_max_slots'):self.worker_max_slots={}
+            self.worker_max_slots[worker]=value['max_slots']
+        return super().event(worker,value,stream)
+
     def terminal(self, statuses):return all(statuses[i]=='complete' for i in self.panel)
     def stop_idle(self, statuses):return self.failed or all(statuses[i]!='pending' for i in self.panel)
 
@@ -189,6 +195,18 @@ def prepare_queue(args):
     return run,tasks,reference_root,panel
 
 
+def feature_chunk(root,hostname,available_MiB,requested=0):
+    if requested>0:return requested
+    rows=[]
+    for path in (Path(root)/'features').glob('worker_*.json'):
+        value=read_json(path)
+        if value['resources']['hostname']!=hostname:continue
+        rows.extend(m for m in value['measurements'] if not m['OOM_attempts']
+            and m['peak_reserved_MiB']+512<=available_MiB)
+    if not rows:raise ValueError('no completed useful source-feature chunk fits current live headroom')
+    return max(rows,key=lambda m:m['frames_per_second'])['requested_frame_chunk']
+
+
 def worker(args):
     import torch
     from ember.pi05_source_setup import initialize_distributed
@@ -198,15 +216,19 @@ def worker(args):
     from .analysis import materialize_shard
     context=initialize_distributed(require_numa=True,defer_process_group=True)
     torch.set_num_threads(8);torch.backends.cuda.matmul.allow_tf32=True
-    if os.uname().nodename.split('.')[0].lower()=='gpu01':args.frame_chunk=min(args.frame_chunk,8)
     run,_,tasks,_=inputs(args.root);environment=run['environment'];folder=phase_root(args.root,args.update)
     os.environ.update(EMBER_LIBERO_ASSETS_ROOT=environment['libero_paths']['assets'],MUJOCO_GL='egl',PYOPENGL_PLATFORM='egl')
     prepare_libero_config(folder/'libero_config');configure_libero_runtime_assets(Path(environment['libero_paths']['assets']))
     runtime=make_runtime(args.root,context.device,include_validation=True)
     runtime.episode_event_log=os.environ.get('EMBER_EPISODE_EVENT_LOG');runner=None
+    available=(torch.cuda.mem_get_info()[0]+torch.cuda.memory_reserved())/2**20
+    args.frame_chunk=feature_chunk(args.root,os.uname().nodename,available,args.frame_chunk)
     try:
         while True:
-            event(kind='ready',worker=args.worker_id,resources=host_resources())
+            # Reuse measured16-slot peak plus renderer margin; no permanent node cap.
+            available=(torch.cuda.mem_get_info()[0]+torch.cuda.memory_reserved())/2**20
+            event(kind='ready',worker=args.worker_id,resources=host_resources(),
+                max_slots=16 if available>=34000 else 8,available_workload_MiB=available,frame_chunk=args.frame_chunk)
             while True:
                 line=sys.stdin.readline();message=json.loads(line) if line else dict(command='stop')
                 if message['command']!='idle':break

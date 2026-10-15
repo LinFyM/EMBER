@@ -11,6 +11,7 @@ from ember.reference.analysis import paired,pairing_valid,read_cases
 from ember.reference.accounting import summary
 from ember.proposal_writer.analysis import billing
 from .model import load_basis
+from .contract import VALIDATION
 from .readout import inputs,panels,phase_root,generated_path,saved_case,UPDATES
 
 HISTORY=Path('/data1/user/ymdai/ember_runs/video_guided_proposal_writer_20261014')
@@ -80,7 +81,7 @@ def materialize_shard(args,runtime,rows):
         del reader,decoder,saved,units;gc.collect()
         if runtime.device.type=='cuda':torch.cuda.empty_cache()
     return dict(generated=len(entries),reused=len(rows)-len(entries),seconds=time.monotonic()-tick,
-        held_cache_disk_bytes=0,Reader_and_decoder_released_before_execution=True)
+        held_cache_disk_bytes=0,frame_chunk=args.frame_chunk,Reader_and_decoder_released_before_execution=True)
 
 
 
@@ -105,7 +106,7 @@ def summarize_task(task,spec,arms,*,identity=False):
     anchor=next(iter(arms.values()))
     if not anchor or any(not values or not paired_rows(anchor,values) for values in arms.values()):
         raise ValueError(f'paired initial state/scene/native noise mismatch for task{task}')
-    result=dict(task=task,suite=spec['suite'],group='target24' if task<40 else 'source_seen_support12',
+    result=dict(task=task,suite=spec['suite'],group='validation8' if task in VALIDATION else ('target24' if task<40 else 'source_seen_support12'),
         identity=identity,cases=len(anchor),success_sets={a:sorted(r['init_state_id'] for r in rows if r['success']) for a,rows in arms.items()})
     comparisons=[(a,b) for i,a in enumerate(arms) for b in list(arms)[i+1:]]
     result['comparisons']={a+'_to_'+b:paired(arms[a],arms[b]) for a,b in comparisons}

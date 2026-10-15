@@ -340,3 +340,31 @@ live双节点总8/6、单节点6上限保持。按就绪工作与实测安排六
 
 §14工程落实：同一compiler/run两文件替换N4假设，N16 checkpoint/proposal schema与16个practice IDs严格恢复，四格仍4、16个VJP物理分块统一除16再clip/Adam；最大80信赖点按16物理batch读取。共享bootstrap独立8项只物理执行一次，24独立condition与24final组成56项持久long-first队列，全部24参数端点就绪后才开启final。只剩32旧bootstrap路径解释桥；旧first-branch/baseline导入、纠正同condition旧final复用及mt-final专属入口退休，历史冻结不改。固定MT只有预注册正式128参照，不用旧noV高点。
 注册64分支内的有效wave比较slots16/32，并据实测steps/s与live余量决定下一64；native有效16点由4/8/16物理chunk逐段验证，不新增环境profile。CPU实际canonical代数/队列/MT引用/N4拒绝及真实旧MT snapshot视图通过；不把CPU标量oracle称实际native10通过，真实完整N16将在首正式单元核验。source增长179/删除88、净91行，仅2source/无新模块或Actor；结构无hard，原ActualEpisodes.run18、事务step24与worker20的review信号由清晰事务/执行职责持有，均未过增长>25边界；worker已抽出condition编译职责并缩小。派发23:06:33.739733Z/2–4h、全部旧费和时钟保持。ROOT/disk_projection推算74.35GiB<80GiB预估，source/cache只读link；每launch现场准入，GPU当前尚未启动。
+
+### 14.1 中断后的唯一有限恢复修订（2026-10-15）
+
+Owner最新指定实验执行01a13dbf-dbc3-7621-82be-87be44a5bca6，主讨论及唯一科学边界/整批接收方
+为01a13dd9-837d-7f33-b15a-4eb170bcf04b（同BCI-GPU02），不再使用旧主讨论/实验回报路由。
+新主讨论明确仅完成本§14，不开其它科学批；旧N4、全部正负结果与原派发/超期事实保持。
+16 bootstrap和每次64分支+16 candidate的80请求，在192逻辑上限内实际至多两个更新机会；
+这是有限支撑检验，不是充分收敛或纯N隔离，也不能由阴性否定全部自身交互学习。
+
+原attempt814提交/743完成，71无回执且无保存row，保守未知control上界18485、dummy0。
+一次性允许这71个明确原科学请求各一个恢复尝试；保留原16正常工程失败额度，后续失败消耗该额度，
+不滚动扩充。累计物理上限修订为5079提交、1167285 control、50080 dummy、1217365总步。
+71是潜在额外失败上界，不称已证实71失败；旧未知18485步单列，不用恢复结果回填原费用。
+有效保存行不得重跑，不增加更新/数据/面板，不改变Phi、奖励、探索、接受、停止或最终512合同。
+新GT/sealed/held/Test和共享训练仍为0。其它未登记未知、不可恢复科学状态或新边界直接报告新主讨论。
+
+原六job无exit，按各launch到最后可证活动的时长给GPUh下界、到本次开机时刻03:30:32Z给上界；
+保留各原件时间及假设，不伪造退出码或精确GPUh。旧依赖2184次/451706步/7.005042365GPUh独立不动。
+恢复前保存原contract/队列及owner源码证据，核完整N16因子/Adam/流/RNG与draw/proposal事务，
+只恢复死亡worker的claim；现存H/模型/预测原地复用，不复制大资产、不修改旧冻结树。
+live双节点6/8-node6、实测峰值与data1独立quota/个人目录用量/80GiB峰值保持。
+
+执行者独占记录/工程/Git，新clean pushed detached接续，主讨论此阶段只读共享仓库。
+仅一个owner，实验直接等待子进程，删除本次新owner的阶段/自Queue回报路径；整批验收/Git后一次向新主讨论交付，
+报告clean commit与记录写锁释放。原首次23:06:33.739733Z/2–4h及超期不重置；
+本次恢复准备、余计算及验收暂估90–150min，依据已存首单元约6–11min、六持久worker与剩余条件量，
+实际事务/资源检查若改变依据则据实修正。完整24condition/512逻辑行与固定MT128/67不变；
+无自动扩此家族或新架构，科学接续由新主讨论消费后裁决。

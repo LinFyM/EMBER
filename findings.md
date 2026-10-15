@@ -1,3 +1,15 @@
+## 2026-10-16 主讨论消费：参考可学性与控制空间难点须分开
+
+32冻结原始配对独立238→496/576，目标21项中四suite分别Spatial74/90、Object95/108、Goal65/90、Long71/90；
+source对应14/0/35/9。收益跨suite，支持raw source/r8有可学参考函数；仍有task4/29及部分能力损失，不能把所有教师称充分强。
+source已见support11为180→191/198，其中五项恒等、两项success-set相同；后继任务等权训练仍须保留其分组，不能用它们抬高新能力主张。
+38相邻13→11实际得6失8、重合5；25的22→21得5失6、重合16。有限两后继只是择点规则，不能证明稳定峰值或唯一最优。
+据此仅补四项仍缺相邻证据的原轨迹，已冻结教师不按独立report回调，也不对弱任务另开参数扫。
+
+对D的判断应是是否保存真实参考函数，而非低维代码是否能记住36个编号。每task保留同query/noise下两个真实checkpoint的功能目标，
+可约束通用adapter借执行语言忽略z的退化；但拟合有限训练轨迹仍不保证邻域可探索、视频可识别或held可迁移。
+旧native功能监督真实接通过且曾弱于BA-only的证据继续有效，不能把“真实梯度”重复当作本次成功保证。
+
 ## 2026-10-16 source/r8参考池：广泛能力与库未就绪边界同时保留
 
 [补齐窗口原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_window_20261015/report.md)中，target21冻结教师的独立新初态58→305/378、保持53/新增252/失5，支持同source完整r8在多数目标训练任务可学成真实控制；不是视频编译、共享D或held迁移证据。support11 source本来180/198，selected191；42/55/64/96/101平局选identity的90逻辑行全是source复用，62/95独立success-set也未增加，不能把池平均或参数变化当新能力。四项5/25/38/43未满足后继规则、未开report，不能宣告36 bank ready。

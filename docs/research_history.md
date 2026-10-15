@@ -1,3 +1,11 @@
+## 2026-10-16 main消费完整参考池并登记末四项有限收尾
+
+主讨论按raw global task/state重算32冻结独立report238→496/576，目标21项58→305、support11项180→191；
+source identity、弱4/29及六个source损失保持。5/25/38/43未收束，38的末相邻得6失8不能称稳定。
+[design§9](designs/source_policy_space_compiler_20261015.md#9-参考库末四项的有界收尾)只允许四项从末1920原完整状态依次至最多2880，
+达到原两后继即提前冻结和report；32冻结不回调。新增上界3840更新/672物理提交含原16共用/251200步/6GiB，预计1–2h。
+这是科学接续登记，实际启动另记；D/视频/held资格尚未建立。原两窗原件、费用和时钟均保留。
+
 ## 2026-10-16 source/r8参考库补齐有限窗实际完成
 
 [完整结算](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_window_20261015/report.md)保存全36任务候选/相邻success-set、32冻结和4未收束（5/25/38/43未report）。task0从末1920完整续2160后冻结1680、独立7→17/18，旧首7不改。target21独立58→305/378（R53/G252/L5）、support11为180→191/198（R179/G12/L1）；5 identity producer90行属source复用，不能称学习。非identity27任务148→406/486；弱task4/29/38、后期损失与不确定性全保留，完整36 bank尚未准备好，不是D/视频/held成功。

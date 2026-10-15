@@ -1,3 +1,13 @@
+## 2026-10-16 main消费补齐原件；末四项收尾合同已登记
+
+亲自按global_task_id重算raw selection/report与相邻集合，确认目标21项58→305/378、support11项180→191/198；
+32冻结总计R232/G264/L6，独立损失为t20/state46、t22/38、t34/42/45/46、t73/43。
+末段38的13→11包含得6失8，25的22→21包含得5失6，不能把净分小变动称稳定。
+已登记唯一design§9：仅5/25/38/43从末1920有界接续至最多2880，仍满足两后继才冻结/开report。
+32冻结和全部旧有效工作保持；新增上界/原16额外尝试共用/6GiB及1–2h估计均明确。
+下游D科学准备已核集成且内容一致，main旧docs worktree及分支生命周期已收束；当前仍无D训练。
+本段为科学登记，真实派发/启动另记，尚不宣称新GPU正在运行；移交前canonical写窗口在main。
+
 ## 2026-10-16 参考库补齐已exit0并验收；32冻结、4未收束，待一次整批交付
 
 [完整结算](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_window_20261015/report.md)及同目录acceptance/reference_bank/evaluation_measurements保存全部36候选/相邻RGL/churn/真实producer/费用与资源。唯一owner2018633、supervisor2018203从2026-10-15T13:38:55.033389Z至19:29:18.028691Z实际exit0，wall5.839721h；本次13:20:10.797派发至退出6.152009h，旧首次09:05:48.038保持。短于原7–12h估计，实际34320更新低于54000上界、早停与90 identity复用减少工作；不称同任务纯吞吐因果profile。

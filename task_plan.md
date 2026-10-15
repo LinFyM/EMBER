@@ -1,3 +1,12 @@
+## 2026-10-16 当前接续：末四项参考收尾，D合同并行落实
+
+主讨论已独立重算全部原始配对与四项近期success-set，消费§8完成原件。
+唯一active design现为[source/r8 §9](docs/designs/source_policy_space_compiler_20261015.md#9-参考库末四项的有界收尾)：
+5/25/38/43从各自末1920完整恢复，按2160/2400/2640/2880及原两后继规则提前停止；其余32冻结不动。
+最大新增3840更新/672物理提交含原16工程尝试共用、251200步、6GiB峰值；预计1–2h，受限可约3h。
+main同时落实D的同task双参考/真实native功能监督与闭环保留合同，当前尚无D训练许可或启动。
+本段提交后移交唯一执行01a13dbf，执行/Git串行；不等待Owner例行确认，不恢复旧N16或held/Test。
+
 ## 2026-10-16 design§8有限窗口已完成，完整36参考库尚未就绪
 
 [整批原件与验收](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/reference_seed7/analysis/engineering_completion_window_20261015/report.md)：唯一owner2018633实际exit0，5.839721h，唯一直接退出等待已结束。36任务已读出候选、32冻结，5/25/38/43到1920仍未收束且未开report，须由主讨论消费后决定接续；不恢复旧任务或自动追加节点。

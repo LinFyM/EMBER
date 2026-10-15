@@ -1,3 +1,7 @@
+## 2026-10-16 末四项接续的工程承接
+
+第三窗仅为design§9的四项原轨迹加候选，使用同一reference trainer/evaluator/事务账本。保留旧队列identity/ordinal与983完成回执，显式active_tasks和train start≥1920同时禁止其它32、fresh和3120；不把旧pending当新授权。复用第二窗真实micro28/eval16与node级CPU准入，无新profile或新Writer，checkpoint schema/Adam/RNG和逻辑流不变。旧scope的迁移构造已在当前owner替换，历史只由原冻结/contract/queue/Git保存，不留平行runner。
+
 ## 2026-10-16 主讨论消费：参考可学性与控制空间难点须分开
 
 32冻结原始配对独立238→496/576，目标21项中四suite分别Spatial74/90、Object95/108、Goal65/90、Long71/90；

@@ -76,7 +76,7 @@ def suite_evidence(tasks):
 
 
 def write_report(destination,result):
-    lines=['# Source/rank8参考库补齐窗口','', '|task|suite|selection候选(update:success/32)|selected|收束|独立report source→selected /18|', '|---|---|---|---|---|---|']
+    lines=['# Source/rank8参考末四项收尾','', '|task|suite|selection候选(update:success/32)|selected|收束|独立report source→selected /18|', '|---|---|---|---|---|---|']
     for t in result['tasks']:
         decision=t['decision'] or {};report=t['independent_report']
         score=str(report['before'])+'→'+str(report['after']) if report else '未打开/未完成'

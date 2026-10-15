@@ -1,3 +1,8 @@
+## 2026-10-16 当前实施：仅末四项，第三个显式窗口
+
+[design§9](docs/designs/source_policy_space_compiler_20261015.md#9-参考库末四项的有界收尾)已于19:41:53.830 UTC实际接收，执行独占工程/记录/Git。仅5/25/38/43从末1920完整续至最多2880、两后继即冻结并首次report，其余32与旧有效工作保留；无D/q/RL/held/Test。
+第三窗按原payload/ordinal复用983完成回执，初始仅4训练可派，显式排除其它pending；累计上限用旧实耗加本窗，不挪用§8未用预算。CPU消费者/stop/budget检查后集成push、clean detached正式运行，1–2h（受限约3h），一个owner/一次整批退出回报。当前尚未GPU启动；详情见progress。
+
 ## 2026-10-16 当前接续：末四项参考收尾，D合同并行落实
 
 主讨论已独立重算全部原始配对与四项近期success-set，消费§8完成原件。

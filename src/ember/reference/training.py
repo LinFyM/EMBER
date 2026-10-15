@@ -22,7 +22,7 @@ from ember.writer.learning_data import load_learning_tasks
 from ember.writer.function_credit import FlowSample, NativeFlowPrediction, flow_sample, mean_velocity_loss
 from ember.writer.model import DirectLoRAParameters
 from ember.writer.runtime import autocast
-from .contract import ASSETS, SOURCE, EVALUATION, NORMALIZATION, TASKS, OPTIMIZER, SCHEMA, nodes, checkpoint
+from .contract import ASSETS, SOURCE, EVALUATION, NORMALIZATION, TASKS, ACTIVE_TASKS, OPTIMIZER, SCHEMA, nodes, checkpoint
 
 
 class Runtime:
@@ -134,7 +134,7 @@ def update_model(runtime, owner, model, optimizer, sample, microbatch):
 
 def train(runtime, task, start, stop):
     trajectory=nodes(task)
-    if task not in TASKS or (start,stop) not in tuple(zip(trajectory,trajectory[1:])):
+    if task not in ACTIVE_TASKS or start<1920 or (start,stop) not in tuple(zip(trajectory,trajectory[1:])):
         raise ValueError('unregistered task/update segment')
     torch.manual_seed(7);random.seed(7);np.random.seed(7)
     model=DirectLoRAParameters({k:v.float() for k,v in runtime.identity.items()}).to(runtime.device)

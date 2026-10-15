@@ -1,4 +1,4 @@
-"""Explicit one-time expansion of the completed first window; never replay it."""
+"""Explicit bounded-window migration; never replay completed scientific work."""
 from contextlib import closing
 from pathlib import Path
 import datetime
@@ -6,65 +6,63 @@ import shutil
 import sqlite3
 
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
-from .contract import (SCHEMA,FIRST_TASKS,NEW_TASKS,TASKS,WINDOW,LIMITS,
-                       environment_contract,checkpoint,queue_path)
+from .contract import (SCHEMA,ACTIVE_TASKS,TASKS,WINDOW,REVISION,LIMITS,checkpoint,queue_path)
 
 
 def prepare_window(root):
     root=Path(root);path=root/'run_contract.json';previous=read_json(path)
-    if previous.get('revision')==2:
-        if (previous['window'],previous['tasks'],previous['limits'])!=(WINDOW,list(TASKS),LIMITS):
-            raise ValueError('reference completion window contract changed')
+    if previous.get('revision')==REVISION:
+        if (previous['window'],previous['tasks'],previous['limits'],previous['active_tasks'])!=(WINDOW,list(TASKS),LIMITS,list(ACTIVE_TASKS)):
+            raise ValueError('reference final-four contract changed')
         return previous
-    if (previous['schema'],previous['tasks'])!=(SCHEMA,list(FIRST_TASKS)):
-        raise ValueError('completion window requires the original eight-task contract')
-    accepted=read_json(root/'analysis/engineering_completion_20261015/acceptance.json')
-    if accepted['FM_queries']!=309120 or not accepted['all_recorded_PIDs_released']:
-        raise ValueError('first window has not been completely accepted/released')
-    manifest=read_json(checkpoint(root,0,1920)/'manifest.json')
-    if not manifest['complete'] or not manifest['full_optimizer_rng_sampler']:
-        raise ValueError('task0 must continue its complete last1920 checkpoint')
+    if (previous['schema'],previous['tasks'],previous.get('revision'))!=(SCHEMA,list(TASKS),2):
+        raise ValueError('final-four window requires the accepted complete second window')
+    accepted=read_json(root/'analysis/engineering_completion_window_20261015/acceptance.json')
+    if (accepted['training_updates'],accepted['physical_submissions'],accepted['unsettled_tasks'])!=(45360,10566,list(ACTIVE_TASKS)) or not accepted['all_recorded_PIDs_released']:
+        raise ValueError('previous window has not been accepted/released with exactly four unresolved tasks')
+    for task in ACTIVE_TASKS:
+        manifest=read_json(checkpoint(root,task,1920)/'manifest.json')
+        if not manifest['complete'] or not manifest['full_optimizer_rng_sampler']:
+            raise ValueError('each active task must continue complete last1920')
     frozen={str(t):read_json(root/'selection'/f'task_{t:04d}'/'selected.json')
-            for t in FIRST_TASKS if t!=0}
-    environment=environment_contract(root)
-    for old in previous['environment']['tasks']:
-        new=next(t for t in environment['tasks'] if t['global_task_id']==old['global_task_id'])
-        if any(new[k]!=v for k,v in old.items()):
-            raise ValueError('expansion changed a first-window environment identity')
+            for t in TASKS if t not in ACTIVE_TASKS}
+    environment=previous['environment']
     window=root/'windows'/WINDOW;archive=window/'previous';archive.mkdir(parents=True,exist_ok=True)
-    names=('run_contract.json','queue_plan.json','work.sqlite','completion.json',
-           'owner_launch.json','owner_exit.json')
-    for name in names:
+    names={'run_contract.json':path,'queue_plan.json':Path(previous['plan']),
+           'work.sqlite':Path(previous['queue']),'completion.json':root/'completion.json',
+           'owner_launch.json':root/'owner_launch.json','owner_exit.json':root/'owner_exit.json'}
+    for name,source in names.items():
         destination=archive/name
-        if not destination.exists():shutil.copy2(root/name,destination)
+        if not destination.exists():shutil.copy2(source,destination)
     (archive/'analysis').mkdir(exist_ok=True)
     for name in ('results.json','selection_rows.json','report_rows.json','producer_videos.json','report.md'):
         destination=archive/'analysis'/name
         if not destination.exists():shutil.copy2(root/'analysis'/name,destination)
     dispatch=read_json(root/'inputs'/f'{WINDOW}_dispatch.json')
-    run=dict(previous,revision=2,window=WINDOW,tasks=list(TASKS),limits=LIMITS,environment=environment,
+    run=dict(previous,revision=REVISION,window=WINDOW,tasks=list(TASKS),limits=LIMITS,environment=environment,
         scope='train24 plus audited source-seen support12 references only; no D/q/RL/held/Test',
-        original_first_window=str(archive),original_contract_commit='44c0ee3a5de19313aafc77f8236377a61fa81fb5',
-        frozen_first_seven=frozen,fresh_tasks=list(NEW_TASKS),task0_continuation=dict(start=1920,stop=2160),
-        completion_dispatch=dispatch,revised_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        physical_execution='reuse first-window useful microbatch28 and evaluation8/16; per-node CPU admission',
-        cumulative_prior_actual=dict(optimizer_updates=11040,FM_queries=309120,physical_submissions=2492,
-            control_steps=587803,dummy_steps=24920,total_steps=612723,engineering_extra_attempts_used=0),
-        additional_maximum=dict(optimizer_updates=54000,FM_queries=1512000,physical_submissions=10948,
-            control_steps=3934320,dummy_steps=109480,total_steps=4043800),
+        previous_window_archive=str(archive),previous_training_code='0f8e00230968920e2b2bf544008b22d076b04d00',
+        frozen_references=frozen,active_tasks=list(ACTIVE_TASKS),fresh_tasks=[],task0_continuation=None,
+        task_continuations={str(t):dict(start=1920,maximum=2880) for t in ACTIVE_TASKS},
+        current_dispatch=dispatch,revised_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        physical_execution='reuse accepted-window useful microbatch28 and evaluation8/16; per-node CPU admission',
+        cumulative_prior_actual=dict(optimizer_updates=45360,FM_queries=1270080,physical_submissions=10566,
+            control_steps=2282661,dummy_steps=105660,total_steps=2388321,engineering_extra_attempts_used=0),
+        additional_maximum=dict(optimizer_updates=3840,FM_queries=107520,physical_submissions=672,
+            control_steps=244480,dummy_steps=6720,total_steps=251200),
         queue=str(queue_path(root)),plan=str(window/'queue_plan.json'))
     write_json_atomic(path,run)
     return run
 
 
-def import_first_window_receipts(root):
-    """Copy completed receipts into the revised queue, preserving the old DB."""
+def import_previous_receipts(root):
+    """Copy prior completed receipts into the revised queue, preserving its DB."""
     root=Path(root);source=root/'windows'/WINDOW/'previous/work.sqlite'
     with closing(sqlite3.connect(source)) as old, closing(sqlite3.connect(queue_path(root))) as new:
         old.row_factory=sqlite3.Row;new.row_factory=sqlite3.Row
         records=list(old.execute('SELECT * FROM jobs'))
         if any(r['status'] not in ('pending','complete') for r in records):
-            raise ValueError('first-window queue has an unresolved physical owner')
+            raise ValueError('previous queue has an unresolved physical owner')
         fields=('status','worker_id','claimed_unix','claim_token','attempt','finished_unix',
                 'rows_path','rows_bytes','row_count','successes','error')
         with new:

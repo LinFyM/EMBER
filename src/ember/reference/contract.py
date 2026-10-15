@@ -10,7 +10,10 @@ NEW_TASKS = (2, 4, 5, 7, 14, 15, 17, 19, 22, 25, 28, 29, 35, 36, 37, 38,
              42, 43, 51, 55, 56, 62, 64, 73, 95, 96, 97, 101)
 # Keep the original eight first so their queue ordinals/payloads are unchanged.
 TASKS = FIRST_TASKS + NEW_TASKS
-WINDOW = 'completion_20261015'
+WINDOW = 'final_four_20261016'
+REVISION = 3
+ACTIVE_TASKS = (5,25,38,43)
+FINAL_EXTENSIONS = (2160,2400,2640,2880)
 BASE = (80, 160, 320, 480, 720, 960)
 EXTENSIONS = (1200, 1440, 1680, 1920)
 NODES = (0, *BASE, *EXTENSIONS)
@@ -20,12 +23,13 @@ SOURCE = 'runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00
 EVALUATION = 'configs/libero_24_8_8_coverage_v1/evaluation.json'
 NORMALIZATION = 'configs/pi05_source_corpus_v1/source_normalization.json'
 OPTIMIZER = dict(lr=1e-4, betas=(.9, .95), eps=1e-8, weight_decay=1e-4)
-LIMITS = dict(optimizer_updates=65040, FM_queries=1821120, physical_submissions=13440,
-              control_steps=4522123, dummy_steps=134400, total_steps=4656523,
-              engineering_extra_attempts=16, added_peak_GiB=48)
+LIMITS = dict(optimizer_updates=49200, FM_queries=1377600, physical_submissions=11238,
+              control_steps=2527141, dummy_steps=112380, total_steps=2639521,
+              engineering_extra_attempts=16, added_peak_GiB=6)
 
 
 def nodes(task):
+    if task in ACTIVE_TASKS:return (*NODES,*FINAL_EXTENSIONS)
     return (*NODES, 2160) if task == 0 else NODES
 
 
@@ -77,7 +81,15 @@ def plan(root, contract):
     for first in range(0,32,SHARD):
         panel[f'selection_t0000_u00002160_s{first:02d}'] = dict(kind='selection',task=0,update=2160,
             states=list(range(first,first+SHARD)),cost=horizon*SHARD)
-    value = dict(schema=SCHEMA, revision=2, window=WINDOW, panel=panel)
+    # Original1299 identities/ordinals stay intact. Only these four trajectories
+    # receive new work; historical untriggered pending work remains ineligible.
+    for t in ACTIVE_TASKS:
+        horizon=next(task['horizon'] for task in contract['tasks'] if task['global_task_id']==t)
+        for before,after in zip((1920,*FINAL_EXTENSIONS),FINAL_EXTENSIONS):
+            panel[f'train_t{t:04d}_u{after:08d}']=dict(kind='train',task=t,start=before,stop=after,states=[0],cost=(after-before)*5)
+            for first in range(0,32,SHARD):
+                panel[f'selection_t{t:04d}_u{after:08d}_s{first:02d}']=dict(kind='selection',task=t,update=after,states=list(range(first,first+SHARD)),cost=horizon*SHARD)
+    value = dict(schema=SCHEMA, revision=REVISION, window=WINDOW, panel=panel)
     path = Path(root)/'windows'/WINDOW/'queue_plan.json'
     if path.exists() and read_json(path) != value:
         raise ValueError('immutable reference work plan changed')
@@ -97,7 +109,7 @@ def selection_decision(scores, task=None):
     later = sum(u > best for u in scores)
     if later >= 2:
         return dict(selected_update=best, settled=True, scores=scores, later_nodes=later)
-    extensions = (*EXTENSIONS,2160) if task == 0 else EXTENSIONS
+    extensions = tuple(u for u in nodes(task) if u>960)
     following = next((u for u in extensions if u not in scores), None)
     return dict(selected_update=best, settled=False, scores=scores,
                 later_nodes=later, next_update=following, window_exhausted=following is None)

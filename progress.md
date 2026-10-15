@@ -1,3 +1,12 @@
+## 2026-10-16 末四项有界收尾已接管实施，尚未GPU启动
+
+实际接收2026-10-15T19:41:53.830Z，首次核验19:42:01.070Z，准备2026-10-15T19:43:49.978248+00:00；原首次09:05:48.038Z和前两窗真实退出保持。唯一active为design§9、main9ed0f942，执行01a13dbf重新独占canonical工程/记录/Git，main只读。
+第三窗`final_four_20261016`复用同ROOT/唯一reference运行面，保留前两窗run/queue/analysis/owner/费用；仅5/25/38/43从末1920完整Adam/RNG/cursor接2160/2400/2640/2880，原两后继规则提前停。原32 selected与旧有效行不动，旧未触发pending不成为计算授权。
+新队列1347项复用原1299 identity/ordinal中的983完成回执；初始仅四个1920→2160训练可执行，所有旧pending排除。train消费者同时拒绝其余32、fresh、3120；相同schema/restore/逻辑28/奖励与selection/report噪声不变。复用第二窗实测micro28与eval16/8/4，不另做profile；CPU仍按node合计PSS/可用内存/预留准入，idle完整close。
+新增上限3840更新/107520query/672物理提交/251200步、6GiB；原ROOT实耗加新增的累计上限49200/1377600/11238提交/2639521步，共用原未用16工程额外尝试，不滚动重置。strg01 data1 live used1745464080KiB/soft2147483648KiB，余量约383GiB；共享df另核80TiB，原ROOT约9.309GiB，新6GiB可容纳。
+初步live gpu02四空闲、0/2/7有twlu约0.8–1GiB占用但余量45GiB，计划按真实16.3GiB训练/既有EGL显存及CPU吞吐用六卡（四trainer不等于整批四卡），正式Popen再live双节点/6或8总量/node6/显存/quota。foreign不动。预计含实施验收1–2h，受限或全跑满约3h，非强杀/GPUh门槛。当前无D/q/RL/held/Test，不把下游科学准备稿当许可。
+实现净增11 source行、0新模块/入口，guard无hard；plan/eligible/migration既有review保持数据驱动登记职责，不复制trainer/evaluator。CPU实际消费者与stop/信息流/原16额度检查见ROOT输入，正式运行待push与clean detached冻结；一个owner直接等整批实际退出后统一验收/Git/一次回主讨论。
+
 ## 2026-10-16 main消费补齐原件；末四项收尾合同已登记
 
 亲自按global_task_id重算raw selection/report与相邻集合，确认目标21项58→305/378、support11项180→191/198；

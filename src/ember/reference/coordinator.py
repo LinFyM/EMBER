@@ -12,10 +12,10 @@ import time
 from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.pi05_eval_queue import EvaluationShard, initialize_queue, claim_next
 from ember.proposal_writer.batch import Batch, Job
-from .contract import TASKS,BASE,SHARD,plan,selection_decision,queue_path,nodes
+from .contract import TASKS,ACTIVE_TASKS,BASE,SHARD,plan,selection_decision,queue_path,nodes
 
 
-from .revision import prepare_window as prepare, import_first_window_receipts
+from .revision import prepare_window as prepare, import_previous_receipts
 
 
 class Scheduler:
@@ -29,7 +29,7 @@ class Scheduler:
         self.evaluation_measures={};self.idled=set();self.load_evaluation_reference()
 
     def load_evaluation_reference(self):
-        source=self.root/'analysis/engineering_completion_20261015/evaluation_measurements.json'
+        source=self.root/'analysis/engineering_completion_window_20261015/evaluation_measurements.json'
         measures=read_json(source);summary={};environment=4.6;shards=[]
         for slots,rows in measures.items():
             summary[slots]=dict(shards=len(rows),native_plans_per_second=statistics.median(
@@ -70,6 +70,7 @@ class Scheduler:
         for identity,work in self.panel.items():
             if statuses[identity]!='pending':continue
             task=work['task'];kind=work['kind'];decision=self.decisions.get(task,{})
+            if task not in ACTIVE_TASKS:continue
             if kind=='train':
                 stop=work['stop'];start=work['start']
                 parent=(start==0 or statuses[f'train_t{task:04d}_u{start:08d}']=='complete')
@@ -209,13 +210,13 @@ def owner(args):
         next(t['horizon'] for t in run['environment']['tasks'] if t['global_task_id']==w['task']),
         tuple(w['states']),w['cost']) for index,(identity,w) in enumerate(panel.items())]
     initialize_queue(queue_path(root),shards,contract_reference=str(root/'run_contract.json'),recover_claims=args.resume,retry_failed=args.resume)
-    imported=import_first_window_receipts(root)
+    imported=import_previous_receipts(root)
     write_json_atomic(root/'windows'/run['window']/'queue_import.json',imported)
     scheduler=Scheduler(root,panel,len(devices),worker_nodes={f'reference_worker_{i:02d}':node for i,(node,_) in enumerate(devices)})
     write_json_atomic(root/'windows'/run['window']/'evaluation_execution.json',scheduler.evaluation_reference)
     batch=Batch(Path.cwd(),devices,root=root,required_free_MiB=34000,work_event=scheduler.event)
     jobs=[Job(f'reference_worker_{i:02d}', ['source-reference','worker','--worker-id',f'reference_worker_{i:02d}','--slots','8'],
-              eligible_devices=(device,),estimate_seconds=6*3600,required_free_MiB=34000) for i,device in enumerate(devices)]
+              eligible_devices=(device,),estimate_seconds=2*3600,required_free_MiB=34000) for i,device in enumerate(devices)]
     started=time.monotonic();failure=None
     # Each future is the actual persistent GPU child. A startup exception must
     # also wake idle peers so no worker waits forever for a dead producer.

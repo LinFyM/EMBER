@@ -368,3 +368,9 @@ live双节点6/8-node6、实测峰值与data1独立quota/个人目录用量/80Gi
 本次恢复准备、余计算及验收暂估90–150min，依据已存首单元约6–11min、六持久worker与剩余条件量，
 实际事务/资源检查若改变依据则据实修正。完整24condition/512逻辑行与固定MT128/67不变；
 无自动扩此家族或新架构，科学接续由新主讨论消费后裁决。
+
+§14.1实际恢复：05:00:51.161Z的practice_support16_resume_02/PID1360022采用clean pushed detached
+78d4f73e，src与原7a146fc0相同；六job分别live双节点/总6-node6/data1准入，实际gpu02:1/7/2/0/4/6。
+CPU真因子/Adam恢复、71 current draw/743保存行及四类有限额度consumer通过，GPU完整单元由正式消费者承接。
+旧owner源码/contract/队列/71身份与费用区间保留于inputs/interruption_recovery_20261015；
+原冻结树不改，canonical操作owner补修订额度/真实区间且取消自通知，实验直接等待退出后验收/Git/一次新main交付。

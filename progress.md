@@ -1,3 +1,25 @@
+## 2026-10-15 13:01 UTC+8 N16有限恢复已实际六卡启动
+
+唯一owner `practice_support16_resume_02` / PID1360022于05:00:51.161Z启动，代码为clean pushed detached
+78d4f73e，冻结树 `/data1/user/ymdai/ember_worktrees/video_effect_n16_recovery_frozen_20261015`；
+与原7a146fc0相比src无变化，仅合同/路由文档变更。canonical运行ROOT和模型/预测/H/CP原地复用，
+旧owner源码以inputs/interruption_recovery_20261015/original_owner_source.py.txt保存；原attempt不写伪造exit。
+当前owner只改操作性额度结算/费用区间/新路由，直接等待真实子进程，不生成自通知或阶段Queue。
+六job的attempt002均已实际live双节点/数量-node6/data1准入并启动，gpu02:1/7/2/0/4/6，现场free约46GiB，
+按旧实测峰值与当前N16分块安排登记35,000MiB workload；初始slots16，原合法wave/物理microbatch规则保持。
+
+CPU实际FullFactors因子/Adam恢复6CP、完整rank RNG载荷/父H来源、71项全部归属保存current draw通过；
+实际缓存消费者复用一个已保存H且未调用runner；原件consumer的提交/control/dummy/总步四类超限均真实拒绝。
+全部743 finished各有保存row，71未回执无row，未以CPU检查代替GPU RNG/完整原子运行认证。
+canonical initialize_queue恢复6死亡claim后8 complete/48 pending，原queue备份保留，0有效行重跑。
+新5079/1167285/50080/1217365及71各一次/正常失败16由owner真实consumer结算，原未知18485不回填。
+
+strg01 quota used1697773300KiB/soft2147483648KiB，相关实际目录独立du：项目402391232512B、
+父ROOT47564832768B、本批9075912704B；保守再加80GiB仍有余量，共享df另为80T。
+资源/原71身份/CPU检查/区间证据集中在ROOT/inputs/interruption_recovery_20261015；
+新恢复90–150min暂估、原23:06:33.739733Z首次派发及超期同时保留。实验直接等待唯一owner整批退出，
+验收/Git后一次交新main01a13dd9；主讨论继续只读共享仓库，0普通ACK/第二waiter/自动后继/GT/held/Test。
+
 ## 2026-10-15 新主讨论已裁决N16一次有限中断恢复；当前工程准备
 
 新主讨论/唯一科学边界与整批接收方为01a13dd9-837d-7f33-b15a-4eb170bcf04b，实验执行为

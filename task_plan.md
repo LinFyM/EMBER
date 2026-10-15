@@ -1,3 +1,12 @@
+## 2026-10-15 N16有限恢复已启动，等待唯一owner真实退出后完整验收
+
+practice_support16_resume_02/PID1360022于05:00:51.161Z从clean pushed detached78d4f73e实际启动；
+六job已live双节点/data1准入，gpu02:1/7/2/0/4/6、初始slots16，src计算与原7a146fc0相同。
+6CP因子/Adam与71 current draw/743有效行缓存、四类实际限额consumer及6死亡claim恢复检查完成；
+strg01 quota/相关目录/80GiB峰值有余量，详见progress顶部与ROOT/inputs/interruption_recovery_20261015。
+直接等待本owner，无自通知/阶段Queue/第二waiter；退出后核24CP/512配对/费用区间/全部分布并串行Git，
+一次回新主讨论01a13dd9且释放记录写锁，0科学自动后继。90–150min恢复预估与原首次/超期均保留。
+
 ## 2026-10-15 当前唯一任务：按新主讨论有限恢复合同完成原N16
 
 主讨论01a13dd9-837d-7f33-b15a-4eb170bcf04b已明确design§14.1：原71未回执各一个恢复尝试，

@@ -241,7 +241,7 @@ class Batch:
                     8 if a['free_MiB']>=21000 else 4)) for a in admissions)
             if arguments[0] in ('video-effect','source-reference','control-space'):
                 module={'video-effect':'ember.video_effect.run','source-reference':'ember.reference.run','control-space':'ember.control_space.run'}[arguments[0]]
-                command+=['-m',module,*arguments[1:]]
+                command+=['-m',*(['--'] if len(devices)>1 else []),module,*arguments[1:]]
                 env['EMBER_EPISODE_EVENT_LOG']=str(destination/'episode_events.jsonl')
                 env['TMPDIR']='/data1/user/ymdai/ember_ipc'
                 if arguments[0] in ('source-reference','control-space'):

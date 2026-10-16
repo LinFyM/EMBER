@@ -1,3 +1,7 @@
+## 2026-10-16 §17训练已完成，原批窄工程接续
+
+180有效更新/720条件/20160 FM query及90/180 CP完整，训练不再运行或补量。首编译owner11:18:40Z因活claim回执提前adopt的调度竞态退出；16有效行/3688步和全部实际候选保留，0unknown/环境额外尝试。CPU复现→窄修验证→集成push→新clean detached --resume完成同一36条件/144query；预算/停止/数据/模型不变。当前修复阶段0活GPU/env，具体见progress和ROOT analysis/engineering_attempt001。
+
 ## 2026-10-16 §17正式有限批执行中
 
 唯一owner2200056于09:03:08.034317Z启动，source0b9b8080为clean pushed detached；当前launch/更新事实以ROOT jobs和完整CP为准，不混入历史。执行180唯一轨迹→36实际条件/144 query→1152八臂配对验收→完整费用/释放/Git→一次回main；0自动后继。时钟/预算/资源见progress及ROOT owner_launch.json。

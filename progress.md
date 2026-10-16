@@ -1,3 +1,9 @@
+## 2026-10-16 §17训练180完成，首次编译调度边界修复中
+
+原owner2200056于11:18:40.403804Z真实exit1，180训练/720条件/20160 FM query已全部有效保存（四train job均exit0，12.17976899822553GPUh），0重训/更新补量。后续worker02/04是owner callback KeyError(pending_proposal)，子进程均正常exit0；不是CUDA/EGL或科学负结果。CPU确定性复现证明：另一worker的refresh在回执先落盘后提前adopt仍inflight候选，原proposed回调二次接收。窄修只让inflight候选由所属claim回调消费；无inflight的恢复仍adopt原子回执，不改ψ/数学/数据/选择/预算。
+
+原16有效实践/3688步（3528control+160dummy）全部保留，账本0unknown/0环境失败/0普通16额度消耗；所有已保存候选继续采用，0有效行重跑。首次总12.390983092387517GPUh（含两callback失败及其它退出）原件留ROOT analysis/engineering_attempt001；两个node本批GPU/owner/env均0，foreign未动。修复需CPU原竞态复现通过、新clean pushed detached后同ROOT --resume，只读180/Adam来源，不重启训练。剩余实施/完整编译读出估30–60min，仍沿原08:30接收与2.5–4.5h预计，不重置旧09:05参考首时钟。主讨论无需工程ACK；只在真实新科学/预算边界或完整退出时回报。
+
 ## 2026-10-16 §17有用吞吐比较完成，接续同一180轨迹
 
 正式首train job于09:03:39.974087Z以4卡启动；前27有效更新/完整checkpoint已完成，4卡完整周期中位35.468s/update；2卡完整周期中位53.581s/update；6卡完整周期中位31.360s/update。实际已从7/14/28扩大到56 query物理FM批，H chunk16→512/image16→128；最大allocated约24.0GiB（reserved约37GiB），没有用最低显存作为目标。顺序完整周期的H长度/cache命中不同，属于实际物理吞吐证据而非同输入因果profile；6卡周期最快，当前从27完整点保留Adam/流/RNG接续至180，logical112/4task不变，未加profile更新/query。

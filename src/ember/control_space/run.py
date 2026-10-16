@@ -115,9 +115,12 @@ class WorkQueue(Scheduler):
         self.ready={};self.alive=set(self.worker_node);self.refresh()
 
     def refresh(self):
+        active={self.work[claim.shard.job_id]['condition'] for claims in self.inflight.values() for claim in claims}
         self.ready={}
-        for compiler in self.compilers.values():
-            request=compiler.next()
+        for identity,compiler in self.compilers.items():
+            # A worker can persist its receipt before delivering proposed. Only
+            # that claim's callback consumes it; restart adoption has no inflight.
+            request=(compiler.state.get('pending') or compiler.state.get('pending_proposal')) if identity in active else compiler.next()
             if request:self.ready[request['identity']]=request
 
     def terminal(self,statuses=None):return all(c.state['query_complete'] for c in self.compilers.values())

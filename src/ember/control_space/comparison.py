@@ -161,7 +161,7 @@ def _completed_path(root,condition,task):
     incumbent,accepted=_incumbent(path['panels'],condition,task)
     if path['incumbent_index']!=incumbent or path['proposal_cursor']!=len(path['panels'])-1:
         raise ValueError('final incumbent or proposal cursor differs from complete actual panels')
-    if path['query_reused']!=(not accepted):raise ValueError('only unchanged initial controllers may reuse their registered queries')
+    if path['query_reused']!=(path['panels'][incumbent]['y']==condition['initial_y']):raise ValueError('only unchanged initial controllers may reuse their registered queries')
     rows=path['query_rows']
     if len(rows)!=4 or {r['init_state_id'] for r in rows}!=set(STATES):raise ValueError('each frozen condition requires four independent query cases')
     for row in rows:_validate_episode(row,task,STATES,202610151)

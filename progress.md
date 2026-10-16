@@ -1,3 +1,17 @@
+## 2026-10-16 §16CPU消费者已通过；正式尚未启动
+
+实际元数据72condition/源144复用40377步与信息墙、初始完整76因子、严格接受/平局/移动中心、两臂同epsilon/pending恢复、完整H归档/原子adopt、8192与固定16工程额均由当前真实函数验证；仿真runner/outcome仅CPU接口夹具，不作科学结果。完整72路径调度消费者通过：16/24整四例动态pack、冻结后query、未触发节点不运行、尾部worker及时退出。证据`.codex/tmp/incumbent_compilation_20261016/{compilation_consumer,queue_consumer}.json`及manifest/practice_consumer。Architecture相对93ffa411无hard、新模块0/净减约780行；现有复杂度review均为边界校验/原子panel/读出聚合，最大函数43行，未引入平行Writer。旧五模块无外部当前消费者，随训练/dense-H退役到Git/frozen；保留Reader数学定义、D及source topology。
+
+恢复遵循新§16普通16工程额度与原子全局账本，旧unknown全额保守、有效archive只adopt；不沿用§15具名恢复合同，也不放宽condition8192。正式ROOT未建，完成集成push和新clean detached及launch现场资源核验后启动；CPU接口通过不是控制能力结论。
+
+## 2026-10-16 §16实际接手与实现
+
+06:33:17.631Z实际接收main93ffa411，06:33:43.357Z首次带时钟准备观测；执行01a13dbf独占canonical工程/记录/Git，main只读。唯一design§16为36task×video/no_video两臂72条件/288逻辑query，冻结Reader900/source38r8/basis/units，先实践初始控制、严格四例成功数改善才移动中心；shared0更新，0新Reader编码/held/Test/自动后继。当前仅CPU实施，未启动本批GPU/实践。
+
+结构沿唯一control_space替换Compilation/owner/worker；CPU原子保存完整候选LoRA后再真实执行，final复用已实践同一文件，不设额外常驻actor。复用native/History/账本/SQLite动态long-first，按完整四例panel拼16/24槽。原始RGB/proprio/动作/native hidden/失败保留；无当前消费者的phi/dense-H及旧§14 FM/PG训练代码退役到Git/frozen，Reader数学定义及模型topology仍保留。source初始144/40377步只读引用且逐condition占8192，两臂状态/预算/RNG游标独立，query只在冻结后读取。
+
+ROOT incumbent_compilation_seed7，新增物理5536/control658087/dummy55360/联合662567、独立16工程额度、不滚动；每condition8192同时约束且完整pending恢复先核所缺四例预算。新增峰64GiB，strg01现场used1912852572KiB/soft2147483648KiB，64GiB峰可覆盖，shared80TiB；不复制旧H/模型/148GiB特征，全部新增data1。预计接收至退出1.5–3h，首有用工作修正；原09:05参考首次时钟及全部历史成本不重置。完成CPU消费者/结构核验、集成push及新clean detached后正式启动，一个owner直接等待整批退出并一次交main归还窗口。
+
 ## 2026-10-16 main消费§15；§16科学合同登记
 
 29b95be1 clean/pushed后执行已归还canonical写窗口。main核原始五臂rows、编译/信用源码和逐task得失：

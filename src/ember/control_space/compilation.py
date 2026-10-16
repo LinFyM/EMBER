@@ -1,169 +1,115 @@
-"""A fixed-theta batch of four complete adaptive parameter compilation paths."""
+"""Atomic task-local incumbent updates; no shared learner or semantic H reader."""
 from pathlib import Path
-import datetime,json,sys,time
 import numpy as np
 import torch
 from safetensors.torch import save_file
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
-from ember.pi05_source_setup import initialize_distributed
-from ember.reference.accounting import host_resources
-from ember.writer.runtime import autocast
-from .contract import condition_id,condition_root,checkpoint,PRACTICE_STEPS,SIGMA,BASIS
-from .features import load_cached
-from .model import load_basis
-from .data import make_runtime
-from .checkpoint import load
+from ember.reference.accounting import connect
+from .contract import PRACTICE_STEPS,SIGMA
+from .practice import condition_spent,specifications,validate_row
 
 
-def emit(**value):print('EMBER_WORK_EVENT '+json.dumps(value),flush=True)
-def archive(root,task):return condition_root(root,task)/'path.json'
-def proposal_seed(task,ordinal):return int(np.random.SeedSequence([7,int(task),0,int(ordinal),202610161]).generate_state(1,dtype=np.uint64)[0]%(2**63-1))
+def proposal_seed(task,ordinal):
+    return int(np.random.SeedSequence([7,int(task),0,int(ordinal),202610161]).generate_state(1,dtype=np.uint64)[0]%(2**63-1))
 
 
-def useful_mean(model,runtime,video,events,state,requested,event_cache=None):
-    candidate=requested;ooms=[];tick=time.monotonic()
-    if runtime.device.type=='cuda':torch.cuda.reset_peak_memory_stats()
-    while True:
-        try:
-            with autocast(runtime.device):
-                y0,memory=video;offset=0 if event_cache is None else event_cache.shape[1]
-                if offset>len(events):raise ValueError('behavior H cache cannot go backwards')
-                new=model.event_memory(events[offset:],memory,event_chunk=candidate,checkpointed=False,first_ordinal=offset)
-                combined=new if event_cache is None else torch.cat((event_cache,new),1)
-                encoded=model.causal_history(combined,checkpointed=False)
-                mu=model.mean_from_encoded(y0,memory,encoded,len(events),torch.tensor(state['best_y'],device=runtime.device),
-                    state['best_successes']/4,PRACTICE_STEPS-state['used_steps']).float()
-            if runtime.device.type=='cuda':torch.cuda.synchronize(runtime.device)
-            return mu,combined,dict(requested_chunk=requested,event_chunk=candidate,events=len(events)-offset,full_H_events=len(events),
-                seconds=time.monotonic()-tick,OOM_attempts=ooms,
-                peak_allocated_MiB=torch.cuda.max_memory_allocated()/2**20 if runtime.device.type=='cuda' else 0.,
-                peak_reserved_MiB=torch.cuda.max_memory_reserved()/2**20 if runtime.device.type=='cuda' else 0.)
-        except torch.cuda.OutOfMemoryError:
-            ooms.append(candidate);torch.cuda.empty_cache()
-            if candidate<=4:raise
-            candidate=max(4,candidate//2)
-
-
-def physical_chunk(measures):
-    candidates=(16,32,64,128,256,512)
-    if len(measures)<len(candidates):return candidates[len(measures)]
-    clean=[r for r in measures if not r['OOM_attempts']]
-    return max(clean,key=lambda r:r['events']/max(1e-6,r['seconds']))['event_chunk'] if clean else 16
+def maximum_panels(horizon):
+    # A nonterminal panel has at least one full-horizon scientific failure;
+    # three successful episodes take at least1 control step plus settling each.
+    return (PRACTICE_STEPS-4*(horizon+10))//(horizon+43)+1
 
 
 class Compilation:
-    def __init__(self,root,event,update):
-        self.root=Path(root);self.event=event;self.task=event['task'];self.update=update
-        folder=condition_root(root,self.task);folder.mkdir(parents=True,exist_ok=True)
-        self.file=archive(root,self.task)
-        self.state=read_json(self.file) if self.file.exists() else dict(task=self.task,v=0,meta_update=update,teacher_demo=event['teacher_demo'],
-            behavior_checkpoint=str(checkpoint(root,update)),history_paths=[],panels=[],proposals=[],used_steps=0,
-            best_y=[0.]*64,best_successes=-1,best_panel=None,next_panel=0,query_complete=False,teaching_reads=0,frame_equivalent=0)
-        if self.state['meta_update']!=update:raise ValueError('a behavior path cannot change theta during collection')
-        self.video=None;self.event_cache=None
+    def __init__(self,root,condition,decoder,units,task):
+        self.root,self.condition,self.decoder,self.units,self.task=Path(root),condition,decoder,units,task
+        self.id=condition['id'];self.file=self.root/'conditions'/self.id/'path.json'
+        self.reused_steps=sum(r['environment_steps'] for r in condition.get('source_initial_rows',[]))
+        if self.file.exists():
+            self.state=read_json(self.file)
+            if (self.state['id'],self.state['initial_y'])!=(self.id,condition['initial_y']):raise ValueError('condition restart changed its initial controller')
+        else:
+            self.state=dict(id=self.id,task=condition['task'],arm=condition['arm'],teacher_demo=condition.get('teacher_demo'),
+                initial_y=condition['initial_y'],initial_LoRA=condition.get('initial_LoRA'),panels=[],proposals=[],proposal_cursor=0,
+                incumbent_index=None,incumbent_y=condition['initial_y'],incumbent_successes=-1,reused_practice_steps=self.reused_steps,
+                condition_steps=self.reused_steps,history_paths=[],frozen=False,query_complete=False,complete=False)
+            if condition.get('source_initial_rows'):
+                rows=condition['source_initial_rows']
+                self.record_panel(dict(identity=self.id+'_practice_000',kind='initial',y=[0.]*64,parameter_ref='raw_source_identity',
+                    ordinal=0,proposal_ordinal=None),rows,reused=True)
+            self.save()
 
     def save(self):write_json_atomic(self.file,self.state)
-    def request(self,role,y,panel):
-        states=self.event['practice_states'] if role=='practice' else self.event['query_states']
-        noise=self.event['practice_noise_root'] if role=='practice' else self.event['query_noise_root']
-        identity=condition_id(self.task)+(f'_practice_{panel:03d}' if role=='practice' else '_query')
-        value=dict(command='panel',identity=identity,request_id=identity,task=self.task,states=states,noise_root=noise,
-            parameter_ref=condition_id(self.task)+f'_parameter_{panel:03d}',y=y,role=role,
-            cache_root=str(self.root/'cache/H'/condition_id(self.task)),behavior_model=self.state['behavior_checkpoint'],
-            meta_update=self.update,condition_id=condition_id(self.task),panel_ordinal=panel)
-        self.state['pending']=value;self.save();return value
+    def spent(self):return condition_spent(self.root,self.id,self.reused_steps)
+
+    def record_panel(self,request,rows,*,reused=False):
+        states=self.condition['practice_states']
+        if len(rows)!=4 or {r['init_state_id'] for r in rows}!=set(states):raise ValueError('a decision requires all four registered practice receipts')
+        rows=sorted(rows,key=lambda r:states.index(r['init_state_id']));score=sum(r['success'] for r in rows)
+        accepted=score>self.state['incumbent_successes'];index=len(self.state['panels'])
+        panel=dict(ordinal=index,identity=request['identity'],kind=request['kind'],y=request['y'],
+            parameter_ref=request['parameter_ref'],rows=rows,history_paths=[r['history_path'] for r in rows],
+            successes=score,steps=sum(r['environment_steps'] for r in rows),proposal_ordinal=request['proposal_ordinal'],accepted=accepted,reused=reused)
+        self.state['panels'].append(panel);self.state['history_paths'].extend(panel['history_paths'])
+        if accepted:self.state.update(incumbent_index=index,incumbent_y=request['y'],incumbent_successes=score)
+        self.state['condition_steps']=self.spent()
+        if self.state['condition_steps']>PRACTICE_STEPS:raise RuntimeError('condition8192 exceeded; preserve all original evidence')
+
+    def ensure_parameters(self,request):
+        destination=Path(request['parameter_ref'])
+        if destination.is_file():return
+        if request['kind']=='initial' or request['role']=='query':raise FileNotFoundError('actual initial/practiced controller is missing')
+        with connect(self.root) as db:
+            prefix=request['role']+'_'+request['identity']+'_state_'
+            count=db.execute('SELECT count(*) FROM attempts WHERE substr(case_id,1,?)=?',(len(prefix),prefix)).fetchone()[0]
+        if count:raise RuntimeError('submitted controller lost its actual saved factors; do not silently rematerialize')
+        state=self.decoder.decode(self.units*torch.tensor(request['y'],dtype=torch.float32))
+        if any(not bool(v.isfinite().all()) for v in state.values()):raise FloatingPointError('nonfinite proposed controller')
+        destination.parent.mkdir(parents=True,exist_ok=True);temporary=destination.with_suffix('.partial')
+        save_file({k:v.detach().float().contiguous() for k,v in state.items()},str(temporary));temporary.replace(destination)
+
+    def request(self,role,y,ordinal,kind,proposal_ordinal=None):
+        identity=self.id+(f'_practice_{ordinal:03d}' if role=='practice' else '_query')
+        file=(self.condition.get('initial_LoRA') if kind=='initial' else
+            str(self.root/'generated'/self.id/f'panel_{ordinal:03d}.safetensors'))
+        if role=='query':file=self.state['selected_LoRA']
+        request=dict(command='panel',identity=identity,request_id=identity,condition_id=self.id,arm=self.condition['arm'],
+            task=self.condition['task'],states=self.condition['practice_states'] if role=='practice' else self.condition['query_states'],
+            noise_root=self.condition['practice_noise_root'] if role=='practice' else self.condition['query_noise_root'],
+            y=y,role=role,parameter_ref=file,LoRA=file,kind=kind,panel_ordinal=ordinal,ordinal=ordinal,
+            proposal_ordinal=proposal_ordinal,reused_practice_steps=self.reused_steps)
+        self.state['pending']=request;self.save();self.ensure_parameters(request);return request
+
+    def next(self):
+        if self.state['query_complete']:return None
+        if 'pending' in self.state:self.ensure_parameters(self.state['pending']);return self.state['pending']
+        if not self.state['panels']:return self.request('practice',self.condition['initial_y'],0,'initial')
+        remaining=PRACTICE_STEPS-self.spent();score=self.state['incumbent_successes']
+        if self.state['frozen'] or score==4 or remaining<4*(self.task['horizon']+10):return self.freeze()
+        ordinal=self.state['proposal_cursor'];seed=proposal_seed(self.condition['task'],ordinal)
+        epsilon=torch.randn(64,generator=torch.Generator().manual_seed(seed),dtype=torch.float32)
+        center=torch.tensor(self.state['incumbent_y'],dtype=torch.float32);y=(center+SIGMA*epsilon).tolist()
+        self.state['proposals'].append(dict(ordinal=ordinal,seed=seed,epsilon=epsilon.tolist(),center_before=center.tolist(),y=y))
+        self.state['proposal_cursor']+=1
+        return self.request('practice',y,len(self.state['panels']),'proposal',ordinal)
+
+    def freeze(self):
+        if not self.state['frozen']:
+            incumbent=self.state['panels'][self.state['incumbent_index']]
+            self.state.update(frozen=True,condition_steps=self.spent(),selected_LoRA=(None if self.condition['arm']=='no_video' and
+                self.state['incumbent_y']==[0.]*64 else incumbent['parameter_ref']),
+                stop_reason='all_four_success' if self.state['incumbent_successes']==4 else 'insufficient_complete_worst_case_panel')
+            self.save()
+        if self.state['incumbent_y']==self.condition['initial_y']:
+            from .comparison import initial_query_rows
+            self.state.update(query_rows=initial_query_rows(self.condition['task'],self.condition['arm']),query_reused=True,query_complete=True,complete=True)
+            self.save();return None
+        return self.request('query',self.state['incumbent_y'],self.state['incumbent_index'],'query')
 
     def accept(self,output):
-        request=self.state.pop('pending');rows=output['rows']
-        if {r['init_state_id'] for r in rows}!=set(request['states']) or len(rows)!=4:raise ValueError('best/return needs one complete four-case panel')
-        order={s:i for i,s in enumerate(request['states'])};rows.sort(key=lambda r:order[r['init_state_id']])
-        if request['role']=='query':
-            self.state.update(query_complete=True,query_rows=rows,R=sum(r['success'] for r in rows)/4,complete=True)
-            self.save();return 'complete'
-        from .practice import condition_spent
-        steps=sum(r['environment_steps'] for r in rows)
-        self.state['used_steps']=max(self.state['used_steps']+steps,condition_spent(self.root,self.task))
-        if self.state['used_steps']>PRACTICE_STEPS:raise ValueError('condition practice exceeded its independent8192 budget')
-        successes=sum(r['success'] for r in rows)
-        self.state['panels'].append(dict(identity=request['identity'],y=request['y'],successes=successes,steps=steps,rows=rows))
-        for row in rows:
-            self.state['history_paths'].extend(str(p) for p in sorted(Path(row['history_path']).parent.glob('attempt_*.pt.gz'))
-                if str(p) not in self.state['history_paths'])
-        if successes>self.state['best_successes']:
-            self.state.update(best_y=request['y'],best_successes=successes,best_panel=request['identity'])
-        self.state['next_panel']+=1;self.save();return 'practice'
-
-    def next(self,model,runtime,decoder,units,event_chunk):
-        from .practice import model_events
-        from .feedback import gaussian_log_prob
-        if self.state['query_complete']:return None
-        if 'pending' in self.state:return self.state['pending']
-        if not self.state['panels']:return self.request('practice',[0.]*64,0)
-        horizon=self.event['horizon'];remaining=PRACTICE_STEPS-self.state['used_steps']
-        if self.state['best_successes']==4 or remaining<4*(horizon+10):
-            y=torch.tensor(self.state['best_y'],device=runtime.device,dtype=torch.float32)
-            state=decoder.decode(units*y);destination=condition_root(self.root,self.task)/'selected.safetensors'
-            if not destination.exists():
-                tmp=destination.with_suffix('.partial');save_file({k:v.detach().float().cpu().contiguous() for k,v in state.items()},str(tmp));tmp.replace(destination)
-            self.state.update(stop_reason='all_four_success' if self.state['best_successes']==4 else 'insufficient_complete_worst_case_panel',selected_LoRA=str(destination))
-            return self.request('query',self.state['best_y'],int(self.state['best_panel'].rsplit('_',1)[1]))
-        if self.video is None:
-            features=load_cached(Path(self.event['original']['cache_path']),runtime.device)
-            if Path(features['source']['model']).resolve()!=Path(runtime.source['model_path']).resolve():
-                raise ValueError('teaching prefix is not the canonical frozen source')
-            with autocast(runtime.device):self.video=model.prepare_video(features['z_img'],features['indices'])
-        events=model_events(runtime,self.state['history_paths'],cache_root=self.root/'cache/H'/condition_id(self.task),image_chunk=event_chunk)
-        mu,self.event_cache,physical=useful_mean(model,runtime,self.video,events,self.state,event_chunk,self.event_cache)
-        y0,memory=self.video
-        ordinal=len(self.state['proposals']);seed=proposal_seed(self.task,ordinal)
-        epsilon=torch.randn(64,generator=torch.Generator().manual_seed(seed),dtype=torch.float32).to(runtime.device)
-        y=mu+SIGMA*epsilon
-        if not bool(torch.isfinite(y).all()):raise FloatingPointError('nonfinite proposal: preserve path without executing invalid factors')
-        physical['resources']=host_resources()
-        self.state['proposals'].append(dict(ordinal=ordinal,seed=seed,physical=physical,y=y.cpu().tolist(),mu=mu.cpu().tolist(),
-            logp=float(gaussian_log_prob(y,mu)),prefix_length=len(events),history_paths=list(self.state['history_paths']),
-            best_y=list(self.state['best_y']),best_score=self.state['best_successes']/4,remaining_steps=remaining,
-            behavior_checkpoint=self.state['behavior_checkpoint']))
-        self.state['teaching_reads']+=1;self.state['frame_equivalent']+=len(memory[0])//8
-        return self.request('practice',y.cpu().tolist(),self.state['next_panel'])
-
-
-@torch.no_grad()
-def collect(args):
-    from .feedback import FeedbackReader
-    context=initialize_distributed(require_numa=True,defer_process_group=True)
-    torch.set_num_threads(8);torch.backends.cuda.matmul.allow_tf32=True
-    runtime=make_runtime(args.root,context.device);saved=load(args.root,args.start)
-    model=FeedbackReader().to(context.device);model.load_state_dict(saved['model']);model.eval().requires_grad_(False)
-    decoder=load_basis(BASIS).to(context.device).requires_grad_(False);units=saved['code_units'].to(context.device)
-    events=read_json(args.root/'batches'/f'meta_{args.start:08d}.json')['events']
-    paths={e['task']:Compilation(args.root,e,args.start) for e in events};pending={}
-    profile_file=args.root/'batches/H_profile.json'
-    measures=read_json(profile_file)['measurements'] if profile_file.exists() else []
-    chunk=physical_chunk(measures);started=time.monotonic();torch.cuda.reset_peak_memory_stats()
-    try:
-        emit(kind='controller_ready',meta_update=args.start,resources=host_resources())
-        initial=[]
-        for task,path in paths.items():
-            request=path.next(model,runtime,decoder,units,chunk)
-            if request:pending[request['identity']]=task;initial.append(request)
-        emit(kind='panel_requests',work=initial)
-        while pending:
-            message=json.loads(sys.stdin.readline())
-            if message['command']!='panel_done':raise RuntimeError('compiler collection interrupted; saved decisions and actual episodes preserved')
-            output=message['output'];task=pending.pop(output['identity']);path=paths[task];path.accept(output)
-            before=len(path.state['proposals']);chunk=physical_chunk(measures)
-            request=path.next(model,runtime,decoder,units,chunk)
-            if len(path.state['proposals'])>before:
-                measures.append(path.state['proposals'][-1]['physical']);write_json_atomic(profile_file,dict(measurements=measures))
-            if request:pending[request['identity']]=task;emit(kind='panel_request',work=request)
-        total_steps=sum(p.state['used_steps']+sum(r['environment_steps'] for r in p.state['query_rows']) for p in paths.values())
-        record=dict(complete=True,meta_update=args.start,conditions=list(paths),seconds=time.monotonic()-started,environment_steps=total_steps,
-            event_chunk=chunk,peak_allocated_MiB=max([torch.cuda.max_memory_allocated()/2**20]+[p['physical']['peak_allocated_MiB'] for c in paths.values() for p in c.state['proposals']]),
-            peak_reserved_MiB=max([torch.cuda.max_memory_reserved()/2**20]+[p['physical']['peak_reserved_MiB'] for c in paths.values() for p in c.state['proposals']]),resources=host_resources(),
-            end_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat())
-        from .practice import history_cache_info
-        record['raw_history_cache']=history_cache_info()
-        write_json_atomic(args.root/'batches'/f'collection_{args.start:08d}.json',record)
-        emit(kind='collection_complete',**record)
-    finally:runtime.videos.close();runtime.execution.close()
+        request=self.state['pending'];rows=output['rows']
+        if len(rows)!=4 or {r['init_state_id'] for r in rows}!=set(request['states']):raise ValueError('partial panel cannot change an incumbent or finish query')
+        for spec,row in zip(specifications(request),sorted(rows,key=lambda r:request['states'].index(r['init_state_id'])),strict=True):
+            validate_row(row,spec,self.task)
+        if request['role']=='practice':self.record_panel(request,rows)
+        else:self.state.update(query_rows=rows,query_reused=False,query_complete=True,complete=True)
+        del self.state['pending'];self.save()

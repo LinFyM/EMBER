@@ -1,3 +1,16 @@
+## 2026-10-17 当前目标：内部任务排除检验控制空间的迁移基础
+
+main已科学消费§18全部原件：119/400对Reader117/MT153，实践505→647仅转独立净2；
+三零task650候选无实践正例，其它损失都发生于严格实践改善后。停止原ψ/FM配方自动加量，不将科学弱收益当bug。
+唯一active为[design§19](docs/designs/source_policy_space_compiler_20261015.md#19-内部任务排除后的控制空间迁移检验)：
+原FIRST_TASKS八项全部63点从bank排除，仅其余28项208点一次重算S/U64，冻结后投影八参考、读出原128初态。
+与source23/reference105/U36=98配对；0神经训练/新reference/实践适应/正式held/Test。
+
+新ROOT control_task_exclusion8_seed7，最多144提交/52000步含本批独立16工程尝试，新增峰4GiB，预计35–75分钟。
+这只检验完整空间构造的跨任务覆盖，不把标签侧投影当视频方法或子空间最优解。
+main完成科学文档/Git后实际派发既有执行01a13dbf，接手后其独占工程/记录/Git；当前不声称GPU已启动。
+完整原件回报后按得失继续完整方法取舍，不自动多fold/维数/单位扫或等待Owner例行许可。
+
 ## 2026-10-17 §18已完成，等待主讨论科学消费
 
 400固定ψ180编译/七臂2800、完整费用/归档/资源验收通过；119 vs Reader117/MT153，未形成清楚迁移。当前无待运行科学任务、无自动续训/scale/controls/Test。完整case/具名pending恢复/区间成本与Git见[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_validation180_seed7/analysis/engineering_completion.md)及progress当前段。

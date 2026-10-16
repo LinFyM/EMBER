@@ -10,14 +10,14 @@
 不以MT初始化、合并或回退，不部署额外高rank分支。强MT153、G165、D175/168与所有负证据保持原身份。
 
 完整方法的候选原理见[控制空间编译分析](../analyses/policy_space_meta_compiler_proposal_20261015.md)：
-固定已验证的D(z)产生完整r8；冻结视频起点，以真实H条件的跨episode功能监督学习完整参数修订。
-旧经验编译已有真实反馈学习，本次不是新的反馈架构原理；已知控制族有训练域先行证据，跨任务迁移和有用经历修订仍待实证。
+固定D(z)产生完整r8，视频读取/实际H学习如何取得和修订控制。旧经验编译已有真实反馈学习，
+本次不是新的反馈原理；训练域先行证据与实际held迁移必须分开，当前原配方已在§18取得弱迁移结果。
 
-**当前实施范围为§18：固定唯一ψ180/Reader900/linear64，完成validation8×50的真实编译与strict paired400。**
-§2–17均保留完成/失败/恢复历史。§17在训练task/已见initial-H上89→93/144（R85/G8/L4）；
-这是进行一次迁移检验的有限依据，不是稳定、held或视频/H因果资格。§16固定单位搜索与§14旧PG不恢复。
-linear64标签侧484/576、旧Reader900/1800 held117/111与MT153/G165/D175/168均保持原身份。
-新批0训练/新reference/重fit/尺度扫描/其它checkpoint/controls/Test；仅本节登记的validation任务内无梯度适应和最终400。
+**当前实施范围为§19：内部整组排除原八task，只用其余28task一次拟合S/U64，再做八参考投影的128闭环。**
+§2–18均保留完成/失败/恢复历史。§17的89→93/144没有在§18变成广泛迁移：完整held117→119，
+实践505→647/1600而独立净2，仍低于MT153，不自动续原ψ配方/scale/PG或其它checkpoint。
+linear64标签侧484/576来自已包含被测任务的bank；当前内部排除检验决定该构造的迁移优先级，
+不是合法视频Compiler成绩或正式held资格。0神经训练/新reference/实践适应/held标签/Test，唯一新拟合和128行仅按§19。
 
 ## 2. 已核资产与选择新参考教师的理由
 
@@ -1526,3 +1526,113 @@ GPUh准确记账但无硬限，设备不足不等待凑卡或擅自改科学规�
 逻辑完整四例或单final、输入/顺序/seed/math不变；缩槽先完整close，再核实际余量，physical_pack回执承接owner的CPU/槽账。
 CPU消费者通过后新clean pushed detached、live双node GPU/CPU/PSS与strg01 data1准入，沿同ROOT --resume；
 0新增训练/Reader重编译/科学面板/Test、0有效行重跑。两次事故全部费用/原冻结保留，仍一个owner直接等整批退出。
+
+
+## 19. 内部任务排除后的控制空间迁移检验
+
+### 19.1 唯一问题、范围与身份
+
+§18固定ψ180完整400为119对Reader117/MT153；实践505→647未转成广泛独立收益，
+三零task的650候选无实践正例。停止原固定起点/旧行为H/纯FM修订自动加量，不改写为工程失败。
+完整事实、实际信用链和最近似历史见[分析§24–25](../analyses/source_control_space_learning_20261015.md#24-完整验证迁移实践改进没有形成广泛的新初态能力)。
+本批仅检验当前全局因子子空间构造能否保存未参与构造的任务控制，决定继续依赖这种空间的优先级。
+不是新的完整Writer、实际validation checkpoint选择或源policy训练；0视频Reader/ψ训练、PG/FM/局部优化、
+实践适应、teacher读取、新reference、held标签、controls和Test。旧§12/14–18全部为完成历史，不自动恢复。
+
+内部排除集合固定为原`ember.reference.contract.FIRST_TASKS`：`[0,1,12,13,20,21,32,34]`，每suite两task。
+它早于当前结果确定，不按这次held分数、参考高点或投影误差挑选。正式24/8/8 split及原71task source审计完全不变。
+仅从`control_space_seed7/bank.json`按任务整组移除八项全部63个点；余28项明确为
+`[2,4,5,7,14,15,17,19,22,25,28,29,35,36,37,38,42,43,51,55,56,62,64,73,95,96,97,101]`，
+203个非零checkpoint加5个identity共208点。原参考选点/所有轨迹与语义等价审计provenance只读，
+不能改为每task随机留episode或把被排除task的中间checkpoint混回。若既有spec审计发现剩余任务有被排除项的
+精确等价重复，报告具体身份边界，不静默换集合。调度task标识不进入任何policy的新增条件输入。
+
+### 19.2 一次拟合的完整数学与信息隔离
+
+唯一source中心使用原`control_linear64_seed7/basis/state.pt`的saved center/layout，
+它是固定初始化A与B=0，不是bank均值；原38targets/76tensor、643584有效坐标/512padding、rank8/alpha8/drop0保持。
+不重造数值不同的identity、不做rank置换/符号或gauge对齐。source动作/proprio normalization原件冻结。
+
+先冻结显式fit清单和权重，再只从上述28项计算76个tensor单位S28：
+每task质量1/28，selected质量一半，其余完整点合计一半并均分；无其它点则selected全权。
+五个identity保留其质量，不重分配给非零项。每tensor先在有效标量上求相对source center变化的均方，
+再按上述权重均值、开方并设下限1e-6。这是参数单位，不是动作归一化。
+旧全36的U/S/code_units以及排除八项的任何权重、轨迹、score或视频都不参与此次拟合。
+允许读取旧basis中指定的center/layout字段，不能把其它字段作为拟合初始化、单位或补充方向。
+
+对208点构造`r_j=valid((pack(Lambda_j)-center)/S28)`及`M_j=sqrt(w_j)*r_j`，
+一次未减均值薄SVD或原FP64小Gram等价实现，取前64右奇异向量U28，最终FP32。
+沿§12已实际采用的数值秩定义，不扫容差；秩不足64只零填充未识别方向并如实报告。
+一次只产生一个basis，0optimizer/神经更新，不按谱/残差/闭环挑第二个构造。
+保存208点、权重、S28、U28、center/layout、谱/有效秩、代码/环境、起止wall/CPU资源及schema；
+无Adam/RNG训练恢复资产时明确标注，不虚构训练step。完整basis原子冻结并写fit completion之后，才打开八项selected参考作投影。
+
+对每个排除task唯一原selected参考，标签侧计算
+
+    z = U28^T valid((pack(Lambda_reference)-center)/S28)
+    Lambda_projected = center + S28 pad(U28 z).
+
+一次物化八套完整LoRA，不加入残差缓存、参考旁路、nearest neighbor、task dictionary、MT或第二adapter。
+没有Reader兼容性问题需要补训：本诊断只使用上述直接投影；不把旧Reader的code_units或64码移植到新U。
+参考因子是授权non-held标签，不是held视频/动作轨迹；本产物只作诊断，不伪装为合法新condition的视频编译结果。
+
+拟合时记录208点的加权因子残差/谱；冻结后一次记录八selected的因子和完整BA投影误差。
+为了和旧U36可比，八项因子误差可在原S36单位下、BA沿§12原固定C_l只作报告；
+这些旧统计必须是fit冻结后的诊断消费者，绝不回到S28/U28构造或选点。
+对零分母报告绝对误差，不制造比值。内部指标不作闭环准入门槛或最终成功标准；
+只要finite/shape/身份有效，就完整执行下面128行，科学损失不触发重拟合。
+
+### 19.3 原有配对面板、输出与判断
+
+八task各init0..15，共128新episode；复用§12的实际registered scene/初态、env/policy RNG、root202610151、
+exact language和official render256/model224、双相机各rotate一次、state8/action7、10flow、每次执行前5action、
+dummy10、成功即终止、suite horizon220/280/300/520。旧schema/元数据按真实来源读取，不用新增hash或逐tensor扫描。
+最终rollout只载source与对应一套物化LoRA；U28、参考bank、任何选择或适应辅助都退出。
+
+主对照只读复用`control_linear64_seed7`原同128行source23、完整reference105、U36投影98，
+reference相对source新增83例，U36保住其中72例；这些是当前已有基线，不是新fit结果。
+四臂共512逻辑case。原行路径和state/seed/scene/noise配对证据在新分析登记；不能只从main汇总JSON复制分数。
+必要schema转换由明确来源适配，不绕过消费者校验。旧first-eight MT67可作为已登记背景，
+不新增MT运行，不将特权投影高于MT当完整方法资格。没有根据结果补其它init、换fold或查询被排除任务的其它checkpoint。
+
+交付全八task/四suite/breadth、三条主比较的R/G/L/churn/Jaccard及具体success-set，
+重点报告reference相对source的新增能力在U36/U28各保持多少、source损失是否扩大，
+并列所有弱task及内部残差/首plan已有动作响应；不新增模型forward探针或native梯度。
+128是预注册内部表示诊断，不能当80/128筛选后选出一个正式held checkpoint。
+
+若广泛保存参考新增控制，降低固定空间仅记住构造task的解释，下一完整方法优先针对获取/行为分布/信用；
+若广泛丢失、退近source，降低这类全局轨迹子空间的优先级，不继续借训练域484保护Reader/H/PG加量。
+混合结果按完整分布判断，不开多fold/维数/单位矩阵。实际结论由main消费原件决定，执行不自动开展后继。
+欧氏因子投影不是子空间中闭环最优解，失败不证明所有64维无解；通过亦不证明视频能找到代码或正式held迁移。
+S和U同时从任务可用集重算，所以这是完整覆盖构造的干预，不能唯一归因U某列或任务数本身。
+
+### 19.4 有限预算、生命周期和交付
+
+新ROOT=`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7`。
+正常128提交、control42240、dummy1280、联合43520；本独立窗口另16工程extra，各最多530联合步。
+累计上限144提交、control50560、dummy1440、联合52000，独立上界不相加。
+旧64余48等历史余额不迁移；旧unknown/失败/所有家族成本和原09:05:48.038参考首次时钟独立保留。
+正常环境失败是科学结果，不重跑；未知全上界计额，仅同pending/同参数/同seed在本工程余额内恢复，
+有效行只adopt、完整fit/物化不重做，真实超界交具体裁决，不滚动充值。
+
+新增磁盘峰4GiB：一个约158MiB FP32 basis及原子副本、八LoRA约20MiB、有界分解/报告/临时产物。
+208×643584 FP32矩阵约0.5GiB，FP64及工作副本计CPU内存；不复制原bank/参考/source/数据/环境，
+不采新视频/H，不删除任何旧formal资产。开ROOT/正式fit前在strg01查data1独立quota、相关个人实耗/共享容量；
+CPU按实际MemAvailable/PSS准入，优先CPU闭式分解，不加载source模型来做分解或占空GPU。
+每次评测launch live查双node，合计6/8、单node6及不挤掉foreign继续有效。
+复用已实测persistent Runtime的16/8/4物理波次和有用case打包，按现场GPU/CPU/PSS安排真实并行；
+没有新H读取阶段，不因此无依据重做32槽profile，也不固定保守batch1。
+
+复用唯一control_space的完整解码/Runtime/动态long-first队列/预算/退出机制，必要闭式拟合算子从§12
+冻结源码恢复到明确的新当前owner；替换已结束§18主动入口，不堆叠第二Writer或保留自动fallback。
+旧271/36与本批208/28的检查必须由真实显式manifest与消费者承接，不能只删除断言；
+旧固定180适应/缓存/恢复代码若已无当前消费者，按结构规则在Git/旧冻结保存历史后退役。
+独占worktree、结构检查、实际输入排除/单位/完整物化/配对/预算恢复消费者、集成push由执行闭环，
+主讨论不重复工程验收；正式fit/eval只从新clean pushed detached运行，不热改旧冻结。
+
+预计实施/消费者20–45分钟、拟合/物化约2–10分钟、128闭环及验收约10–20分钟，整批约35–75分钟。
+依据是§12一次小Gram规模、496闭环约15分钟及已有16/8/4 Runtime；按首有用工作修正，
+显著超期说明实际原因，0累计GPUh硬限/人为强杀deadline。准备/fit/环境启动/退出分别记时。
+执行接手后独占工程/科研记录/Git，main只读；一个owner持续等实际整批退出，
+无自Queue/心跳/第二waiter。完整结果、实际费用/所有失败、归档有效性、资源释放和Git交付后，
+一次回主讨论01a13dd9并归还canonical窗口；main消费后自主接续，不需要Owner例行许可或普通工程ACK。

@@ -1,3 +1,18 @@
+## 2026-10-17 固定功能修订完整held弱迁移与内部覆盖检验定案
+
+main消费§18原400 paths/1873 proposals/逐行配对及实际信用链：119对Reader117/MT153，
+R105/G14/L12，practice505→647/1600；改参数105条件51→53，三零task650提案无实践正例。
+保持旧Reader/MT/G/D各自身份、原失败和39.789932GPUh；不把旧含MT的D175移给当前source-only linear64。
+完整CPU复算保存在§18ROOT analysis/main_scientific_readout，详细机制/历史/未知见
+[分析§24–25](analyses/source_control_space_learning_20261015.md#24-完整验证迁移实践改进没有形成广泛的新初态能力)。
+
+停止原固定起点/旧行为H/纯FM修订自动续训；唯一新[design§19](designs/source_policy_space_compiler_20261015.md#19-内部任务排除后的控制空间迁移检验)
+从271点排除早已固定八task全部63点，其余28/208独立计算S/U64；冻结后八参考投影128闭环，
+对原source23/reference105/U36=98，回答整个空间构造跨任务覆盖的投入价值。
+这是non-held内部标签侧诊断，0神经训练/实践适应/正式held/Test，不变更24/8/8；
+128新增query、独立16工程额、4GiB峰、预计35–75分钟。当前记录是科学合同，不是新运行结果，
+实际接手/Git/启动由随后执行原件补记，整批回main后自主继续。
+
 ## 2026-10-16 main消费功能修订180，登记唯一完整验证迁移
 
 main从§17合法36 paths/126 receipts/配对行确认Reader89→93（R85/G8/L4），target43→48/support46→45；

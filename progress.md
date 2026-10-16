@@ -1,3 +1,24 @@
+## 2026-10-17 main已消费§18，登记唯一§19内部任务排除诊断
+
+已直接读取400 paths/1873 receipts/results/closing及费用归档原件，CPU复算留在§18ROOT
+`analysis/main_scientific_readout`。119对Reader117，R105/G14/L12；105改参数条件51→53，
+295不变66→66，实践505→647；task16/23/39的650提案全部实践0，Goal/Long净失3抵消Spatial/Object净得5。
+固定H功能梯度确已接通，同task共同修正和未知任务空间缺口尚未区分；
+旧Experience/PG/LocalField等证据及含MT的D72/D144身份保持，停止原配方自动加量/小扫。
+完整科学解释见[分析§24–25](docs/analyses/source_control_space_learning_20261015.md#24-完整验证迁移实践改进没有形成广泛的新初态能力)。
+
+当前唯一active [design§19](docs/designs/source_policy_space_compiler_20261015.md#19-内部任务排除后的控制空间迁移检验)：
+排除原FIRST_TASKS八项全部63点，仅28task/208点一次拟合S28/U64，完整source中心/38r8不变；
+冻结后才标签侧投影八个selected参考，原init0..15/root202610151各16，共128新query。
+原source23/reference105/U36=98四臂共512逻辑case；不是正式held或新的数据划分，0神经训练/适应/新视频/Test。
+新ROOT control_task_exclusion8_seed7，144提交/control50560/dummy1440/总52000含独立16工程额、4GiB峰，
+预计35–75分钟；旧成本/事故保留，旧64工程额已用16的剩余余额不迁移。资源准入由执行在新root/launch前live核验。
+
+当前canonical写窗口属于main，科学文档准备与Git交付后实际派发01a13dbf；
+实际接手/冻结/fit/环境启动分别以执行原件登记，不把设计完成当后台运行。
+实施/实际消费者/结构退役/新clean pushed frozen由执行闭环，main不重复工程审核。
+单owner持续退出等待、0Queue/心跳，整批结果/成本/释放/Git一次回main并归还窗口，之后main自主科学接续。
+
 ## 2026-10-17 §18完整400已验收，当前无待运行科学任务
 
 固定CP180完整validation400及七臂2800逻辑行通过：新119/Reader900117/Reader1800111/MT153/G165/D72=175/D144=168。对Reader R105/G14/L12、churn26、breadth5/8，实践505→647/1600而独立final仅净+2；对MT R87/G32/L66，低34。105改参数条件51→53；295保留初始66→66。Spatial37→40/Object42→44/Goal20→18/Long18→17，16/23/39仍0；没有清楚广泛迁移或video/H因果、相邻稳定证据，不把科学弱收益当bug，不自动加量/调尺度/新arm/Test。

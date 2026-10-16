@@ -1295,3 +1295,43 @@ H视觉特征按实际需要逐archive顺序解压/编码，复用pre/post唯一
 以首有用更新/实际H长度/缓存miss和首编译成本修正ETA；显著超期明确原因，无GPUh硬限。
 一个owner持续等待整批真实退出，0Queue自通知/心跳/第二waiter；完成原件/科学读出、全部费用、资源释放和Git后一次回main01a13dd9，
 归还canonical工程/科研记录写窗口。实际边界可提前携证据报告，不因主讨论尚未ACK普通工程而空停。
+
+### 17.7 具名缓存事故与一次有限恢复（main 2026-10-16裁决）
+
+原两次owner/旧run contract/生产代码与全部成本保持。第二次跨node编译缓存key登记后丢失，原376行都是实际物理结果，
+但tensor-only缓存命中身份无法认证；不称全部H读错、普通科学失败或unknown。实际两node CPU原方法夹具也复现丢key，
+底层锁/rename可见性的唯一根因仍未确定。四train job仅gpu02，180结束11:14:27.930406Z早于首gpu01 worker11:14:49.969177Z，
+故CP180保持唯一训练来源，0重训/补量/选90；若新增证据指向同node训练错key，须报告具体边界，不能强行认证。
+
+科学保留集合事先由main按输入来源划定、不按成功分数追认：16个首提案的M/H全部hit=false且直接返回原始输入builder，
+task `[1,2,5,7,12,17,19,20,25,28,32,34,38,43,56,73]` 的practice001共64行/17410步保留；
+其中2/28/56合法首面板4/4后的12query同saved完整LoRA也保留。新增合法adopt共76行，18413control+760dummy=19173。
+原initial即4/4的`[14,22,42,51,55,62,64,96,97,101]`继续保留；共有13完整condition
+`[2,14,22,28,42,51,55,56,62,64,96,97,101]`不得重跑。144/35207初始practice/H及指定Reader900 query来源全部不变。
+
+其余75proposal（71已实践、4未实践）及下游选择/停止不记标准§17；封存恰300物理行（284practice+16query），
+81110control+3000dummy=84110，科学状态`uncertified-cache-provenance`。原实际参数/row/raw H/ledger/proposals/owner费用全部保留，
+不改物理complete为零或unknown，不用其query选择恢复结果。精确76 case IDs/300行和逐condition费用以
+`functional_feedback_seed7/analysis/main_contract/cache_incident_ruling_evidence.json`（原main小证据复制）为唯一具名清单。
+
+仅恢复23task `[0,1,4,5,7,12,13,15,17,19,20,21,25,29,32,34,35,36,37,38,43,73,95]`，
+其中13项保留认证首面板，其余10项回到原initial。按此前完整合法连续前缀重建m/c/H/remaining，用同CP180和正确输入
+重新生成后缀，非采用未认证旧code重做环境。恢复后缀有独立`cache_recovery_001` leg/receipt/LoRA/H/queue身份；
+task/state/env-policy噪声种子不随leg改变。旧有效76行、13完整condition、初始144均只adopt；4旧pending候选封存不采用。
+
+原合法方法2704提交/control318905/dummy27040/total320505及原普通16额度保持；额外仅吸收本次具名事故300行84110已发生支出。
+ROOT累计物理上界现为**3004提交/control400015/dummy30040/联合total404615**，分项独立不可相加；
+扣除原376/99523control/3760dummy/103283total，未来至多2628/control300492/dummy26280/联合301332。
+这不是未来滚动300额度或新16：普通16累计0/16，发现已耗则扣除。每condition合法轨迹仍8192（含initial/认证首面板/新实践/unknown），
+物理实践另受8192+该condition具名旧uncertified practice steps限制；原事故practice79871、query4239分开。
+原ledger不删行，以具名科学有效性表排除旧事故对合法轨迹的影响，全局物理支出始终全额计算。
+同类身份问题再现须带原件报告，不再次清零后缀/充值。
+
+旧run contract及§17.5保持；新增显式恢复authority/预算版本给实际consumer读取。新缓存payload必须绑定requested key/source/reader/观测身份，
+窄工程修复与实际双node小CPU消费者通过后，新clean pushed detached直接恢复，无main工程ACK前置。
+旧可再生特征在保留事故metadata及必要小payload证据后允许退役，不复制整16GiB；raw H/参数/CP/原件保持。
+全局H16GiB/M<1GiB、新旧合计64GiB峰、现场data1 quota/shared/两node6或8/node6/CPU资源边界不变，0新梯度或其它科学面板。
+
+旧13.930277132524383GPUh（训练12.17976899822553）、两次失败、08:30:38.195派发与旧09:05参考首时钟均保留。
+本裁决后修复/有限恢复/完整读出估再45–90min，以实际首有用吞吐修正；超原4.5h时明确事故耗时，无GPUh硬限。
+一个owner直接等待实际退出，完整36/144与八臂报告、事故分层成本/有效性、资源/Git后一次交main并归还写窗口，0自动后继。

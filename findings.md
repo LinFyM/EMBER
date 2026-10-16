@@ -1,3 +1,13 @@
+## 2026-10-16 §17.7：按实际消费者认证连续前缀
+
+main按源码确认hit=false路径直接返回原输入builder，因此16个首提案完整M/H都miss且请求正是initial前缀时，可认证64practice；2/28/56在该合法面板4/4后同saved LoRA的12query也可保留。反之仅某次全miss不能自动认证继承了未认证H/中心的后缀。13完整condition/76新行只adopt，300具名旧后缀封存为来源未认证，非证实读错或科学阴性。恢复仅23个合法前缀，旧query不选恢复范围。CP180单node训练与跨node编译事件按实际时序隔离；新同node疑点仍须报告。裁决/固定清单与事故费用见[design§17.7](docs/designs/source_policy_space_compiler_20261015.md#177-具名缓存事故与一次有限恢复main-2026-10-16裁决)及ROOT analysis/main_contract。
+
+## 2026-10-16 §17冻结缓存的跨节点身份边界
+
+第二编译attempt在entry已返回后下一锁内读取丢失同key。两实际node、六并发CPU小夹具对原缓存方法180次登记复现同型故障：最终仅179key，故这是可复现工程违约；独立锁互斥夹具未见重叠，尚不把唯一根因定成NFS rename或锁层。旧缓存payload仅tensor、身份在另一个JSON索引，已保存物理行不自动等于可认证科学输入。91份提案16份全miss只证明这些调用返回本地builder，不认证整链继承的m/H；不能据此挑行、重跑或将当前结果说成H方法阴性。
+
+180训练均在gpu02、terminal写成后才开始跨node编译；0重训。376物理行/103283步、0unknown及13.930277132524383GPUh保持；23条件完成不是完整36/144读出。原件和两node退出见[工程边界报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_attempt002/engineering_boundary_report.md)。仅CPU缓存修复/真实双node小验证继续，科学有效性/有限恢复交main裁决，不自动改变预算或信息墙。
+
 ## 2026-10-16 §17原子回执与活claim消费者
 
 候选已原子落盘不代表它的活worker回调已被消费。普通refresh不能替另一inflight claim提前adopt；恢复时无inflight才可采用完整回执。首次16物理行有效、0unknown，训练180原件完整，故此为有确定性CPU复现的工程竞态；不能把它算作H方法科学失败，也不能重训或重跑有效行。原件见functional_feedback_seed7/analysis/engineering_attempt001，窄修不改科学合同。

@@ -1,3 +1,11 @@
+## 2026-10-16 §17.7具名有限恢复已授权，尚未重启GPU
+
+main已亲读原件并裁决，11:57:27Z为本地带时钟接收观测：CP180保持唯一来源，0重训/补量；16首提案均fresh builder的64practice及2/28/56的12query共76行/19173步认证adopt，13完整条件不动。其它300行/84110步和75提案封存`uncertified-cache-provenance`，非已证实数值错读/unknown/科学失败；所有原物理complete、H/参数/query/费用保持。23task仅从认证连续前缀恢复一次，新leg防止旧pending/code/queue自动采用，task/state/noise/完整H/V/ψ180与选择规则不变。
+
+唯一[design§17.7](docs/designs/source_policy_space_compiler_20261015.md#177-具名缓存事故与一次有限恢复main-2026-10-16裁决)及ROOT analysis/main_contract保存原main evidence/裁决；原§17.5和run contract保持，新显式恢复合同给真实consumer。累计3004提交/control400015/dummy30040/联合404615，原16累计0/16不充值；合法condition8192、物理8192+具名事故实践并行约束，旧103283/13.930277GPUh不变。
+
+新缓存实际两node6并发180→180唯一key/ID、同shape异source、同key去重及partial/rename退出恢复通过，payload绑定schema/key/source；仅替换索引/缓存身份，无模型数学变化。CPU元数据fixture已经过真实queue/Compilation/ledger consumer：19保留panel/query jobs=76行adopt，23 ready新leg提案、13 complete、旧receipt不可重入、unknown保守计费与8192/有效不重跑通过。结构约净增112行/0新模块/0hard；原条件/报告复杂度保留在明确owner，未复制Writer/runner。当前仍只工程/CPU，新clean pushed detached和live资源准入后才实际接续；此后预计45–90min，原派发08:30及2–4.5h时钟不重置，工程事故超期如实记。一个owner直接退出等待，0Queue/第二waiter/普通mainACK。
+
 ## 2026-10-16 §17跨node缓存科学边界；全部正式计算已停止
 
 第二owner3803561于11:42:51.856546Z真实exit1。前次receipt claim窄修已经在并发实际消费者通过，本次是另一故障：worker04读取真实新H，_TensorCache.entry登记返回file后，get下一次读共享manifest缺失同key；最终H索引也无该key。两node NFS4.2/local_lock=none，atomic JSON manifest+独立flock的跨node一致性是定位方向，底层原因未证实。H仍有2 reserved条目但完整payload存在；payload只有tensor无嵌入key/source，因此不能仅凭当前manifest认证此前H/M命中身份。不能把它当H方法科学阴性，也不能静默重跑或把物理有效当标准科学有效。

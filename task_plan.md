@@ -1,3 +1,7 @@
+## 2026-10-16 §17.7具名恢复的当前计划
+
+main按输入身份固定76新行保留/300事故行封存，13完整条件adopt、23从合法前缀恢复，0重训/选90/补量。缓存跨node修复→独立leg/真实预算与账本consumer→clean pushed detached→live quota/GPU/CPU→一次完整36/144及八臂1152→合法/事故分层成本/全部资源/Git→整批一次main回报。详见progress及[design§17.7](docs/designs/source_policy_space_compiler_20261015.md#177-具名缓存事故与一次有限恢复main-2026-10-16裁决)。当前尚未重启GPU；原103283步/13.930277GPUh和派发时钟全保留，累计3004/404615与合法8192不滚动，0自动后继。
+
 ## 2026-10-16 §17真实科学边界，暂不恢复正式计算
 
 180单node训练完整。两node编译因共享冻结缓存key丢失退出；376物理行/103283步均有效保存且无unknown，但部分候选H/M缓存身份无法认证，36条件仅23完成，不能称整批完成。main已收到具体原件，正待科学有效性/有限恢复裁决；执行只做独占CPU工程修复与两node小缓存验证，不自行重跑/扩budget/重新训练或归还未完成写窗口。详见progress与ROOT analysis/engineering_attempt002。

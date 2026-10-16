@@ -1,3 +1,15 @@
+## 2026-10-16 §17.7具名一次恢复裁决
+
+main直接核实际消费者/376行/91提案，认证16个首提案均fresh builder的64practice及2/28/56的12query，共76行19173步；13完整condition只adopt。其它300行84110步/75proposal封存为来源未认证，不改物理事实/费用，不称全部实际错读/unknown或H方法阴性。仅23task从原initial或认证首面板恢复一次，独立leg防止旧后缀自动采用，0重训/补量/按query挑保留；CP180单node完成先于跨nodeworker的时序保持。完整固定清单和裁决在ROOT analysis/main_contract、[design§17.7](designs/source_policy_space_compiler_20261015.md#177-具名缓存事故与一次有限恢复main-2026-10-16裁决)。
+
+原合法方法2704/320505及普通16保持，已发生事故300/84110独立追加后累计上限3004/control400015/dummy30040/联合404615；合法condition8192和物理8192+具名事故实践并行，原ledger不删不置零。旧13.930277132524383GPUh/两事故与08:30派发保留。窄缓存/leg/账本修复及CPU实际消费者通过后直接新冻结恢复，无main工程ACK；该记录是授权/实施而非GPU已重启，真实launch另记progress。
+
+## 2026-10-16 §17第二编译attempt：跨node冻结缓存边界
+
+76d5480b已修的活claim回执竞态通过实际并发消费者；第二owner3803561于11:42:51.856546Z因另一问题exit1：H索引entry登记返回后下一锁内读缺key。原方法在实际两node六并发CPU180次登记复现丢1key；底层具体锁/可见性原因尚未唯一确定。旧payload无嵌入key/source，既有缓存命中科学身份暂不能认证，不记H假说阴性或完整成功读出。
+
+180训练/720条件/20160FM、全部CP/Adam/流仍保留，不重训；本ROOT累计376物理有效行/103283步，0unknown/环境额外尝试，总13.930277132524383GPUh。36条件23冻结、13未完成。两个node本批GPU/owner/env均已退出，PSS分别约.320/1.739GiB，不混主机或kill foreign。所有原件/manifest/ledger/condition snapshots在[工程边界报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_attempt002/engineering_boundary_report.md)，具体科学裁决已发唯一main01a13dd9；仅CPU缓存一致性修复继续，0自动重跑/重训/预算充值，原派发及参考首时钟保留。
+
 ## 2026-10-16 §17训练完成与首次回执调度故障
 
 原0b9b8080冻结完成180有效更新/20160 query，训练12.17976899822553GPUh。首次编译16实际有效行/3688步后owner11:18:40.403804Z退出，两个callback KeyError且所有GPU子进程exit0；总12.390983092387517GPUh、0unknown。CPU复现定位为inflight回执先落盘被另一worker refresh提前adopt，非H能力阴性/CUDA/环境失败。窄修只恢复claim唯一消费和无inflight重启采用；原预算/初始H/候选/有效行/全部费用与时钟保留，接续同一有限批，不新训。

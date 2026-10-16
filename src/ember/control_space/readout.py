@@ -23,7 +23,7 @@ def propose(root,command,conditions,model,features,physical,device):
             if receipt['request']!=request:raise ValueError('saved actual proposal lost its original input')
         else:
             tick=time.monotonic();features.measurements=[]
-            memory=features.memory(request['original']).to(device)
+            memory=features.memory(request['original'],frame_chunk=32).to(device)
             events=features.events(request['history_paths'],image_chunk=physical['image_chunk'])
             with torch.no_grad(),autocast(device):
                 candidate=model.propose(memory,events,torch.tensor(request['m'],device=device,dtype=torch.float32),
@@ -32,25 +32,45 @@ def propose(root,command,conditions,model,features,physical,device):
             torch.cuda.synchronize(device)
             receipt=dict(request=request,candidate=candidate.float().cpu().tolist(),seconds=time.monotonic()-tick,
                 H_events=len(events),teaching_tokens=memory.shape[1],feature_cache=features.measurements,
-                revision_update=180,checkpoint=str(Path(root)/'checkpoints/update_00000180/state.pt'))
+                revision_update=180,checkpoint=features.revision_checkpoint)
             write_json_atomic(destination,receipt)
         receipts.append(receipt)
     return receipts
 
 
+def frozen_reader(device):
+    import torch
+    from .contract import BASIS,INITIAL_READER
+    from .reader import ImageReader
+    saved=torch.load(INITIAL_READER,map_location='cpu',weights_only=False,mmap=True)
+    if saved['phase']!='video_initial' or saved['next_update']!=900 or saved['frozen_basis']!=str(BASIS):
+        raise ValueError('only the original frozen Reader900 may condition revision')
+    reader=ImageReader();reader.load_state_dict(saved['reader'],strict=True)
+    return reader.to(device).requires_grad_(False).eval()
+
+
 def revision_runtime(root,runtime,device):
     import torch
-    from .contract import SCHEMA,BASIS,INITIAL_READER
-    from .training import frozen_reader
+    from .contract import CHECKPOINT_SCHEMA,BASIS,INITIAL_READER,REVISION_CHECKPOINT,active_run
     from .feedback import RevisionReader
     from .features import FrozenFeatures
-    if read_json(Path(root)/'training_completion.json')['next_update']!=180:raise ValueError('only terminal180 revision may compile')
-    saved=torch.load(Path(root)/'checkpoints/update_00000180/state.pt',map_location='cpu',weights_only=False,mmap=True)
-    if saved['schema']!=SCHEMA or saved['next_update']!=180 or saved['frozen_basis']!=str(BASIS) or saved['frozen_reader']!=str(INITIAL_READER):
+    run=active_run(root)
+    saved=torch.load(REVISION_CHECKPOINT,map_location='cpu',weights_only=False,mmap=True)
+    if (saved['schema']!=CHECKPOINT_SCHEMA or saved['next_update']!=180
+            or saved['frozen_basis']!=str(BASIS) or saved['frozen_reader']!=str(INITIAL_READER)):
         raise ValueError('terminal revision/frozen identity changed')
+    from ember.reference.contract import ASSETS
+    from ember.writer.learning_data import load_learning_tasks
+    from ember.writer.data import RawTeacherVideoStore
+    held=load_learning_tasks(ASSETS,[3,6,11,16,23,26,31,39],role='validation',protocol_path='configs/libero_24_8_8_coverage_v1/protocol.json')
+    runtime.videos=RawTeacherVideoStore([t.authority for t in held.values()],frame_stride=5,camera_view='dual')
     model=RevisionReader();model.load_state_dict(saved['revision'],strict=True)
-    model=model.to(device).requires_grad_(False).eval();reader,_=frozen_reader(device)
-    return model,FrozenFeatures(root,runtime,reader),dict(saved['physical'])
+    model=model.to(device).requires_grad_(False).eval()
+    features=FrozenFeatures(root,runtime,frozen_reader(device));features.revision_checkpoint=str(REVISION_CHECKPOINT)
+    # Reuse the useful long-H chunk evidence; full source/prefix tensors remain
+    # transient, and a physical chunk never changes event/frame order.
+    physical=dict(saved['physical']);physical['image_chunk']=min(64,physical['image_chunk'])
+    return model,features,physical
 
 
 def authorize(root,specs,conditions):
@@ -62,7 +82,7 @@ def authorize(root,specs,conditions):
         pending=state.get('pending')
         if pending is None or state['query_complete']:raise ValueError('worker received an already resolved condition')
         authorized={case_id(s):s for s in specifications(pending)}
-        if set(authorized)!={case_id(s) for s in rows}:raise ValueError('only an entire four-case registered panel may execute')
+        if set(authorized)!={case_id(s) for s in rows}:raise ValueError('only an entire registered practice panel or single final may execute')
         for spec in rows:
             if (spec['task'],spec['arm'])!=(condition['task'],condition['arm']):raise ValueError('condition crossed arm/task')
             if any(spec.get(k)!=v for k,v in authorized[case_id(spec)].items()):raise ValueError('actual sample differs from the atomic pending decision')
@@ -76,9 +96,10 @@ def worker(args):
     from ember.writer.practice import EpisodeRunner
     context=initialize_distributed(require_numa=True,defer_process_group=True)
     torch.set_num_threads(8);torch.backends.cuda.matmul.allow_tf32=True
-    run=read_json(args.root/'run_contract.json');environment=run['environment']
-    if run['phase']!='functional_feedback' or len(environment['tasks'])!=36 or len(run['conditions'])!=36:
-        raise ValueError('only the fixed36 terminal revision conditions are active')
+    from .contract import active_run
+    run=active_run(args.root);environment=run['environment']
+    if len(environment['tasks'])!=8 or len(run['conditions'])!=400:
+        raise ValueError('only validation8/400 fixed180 conditions are active')
     conditions={c['id']:c for c in run['conditions']}
     os.environ.update(EMBER_LIBERO_ASSETS_ROOT=environment['libero_paths']['assets'],MUJOCO_GL='egl',PYOPENGL_PLATFORM='egl')
     prepare_libero_config(args.root/'libero_config');configure_libero_runtime_assets(Path(environment['libero_paths']['assets']))
@@ -92,6 +113,13 @@ def worker(args):
                 if command['command']!='idle':break
                 runner=close_runner(runner,args.worker_id)
             if command['command']=='stop':break
+            if command['command']=='retire':
+                from .lifecycle import retire_condition
+                runner=close_runner(runner,args.worker_id)
+                receipts=[retire_condition(args.root,conditions[i],features,environments_closed=True) for i in command['conditions']]
+                event(kind='retired',worker=args.worker_id,receipts=[dict(condition_id=r['condition_id'],
+                    deleted_raw_bytes=r['deleted_raw_bytes'],permanent_raw_witness=r['permanent_raw_witness']) for r in receipts],resources=host_resources())
+                continue
             if command['command']=='propose':
                 # Long-H inference needs no resident renderer children.
                 runner=close_runner(runner,args.worker_id)
@@ -100,7 +128,7 @@ def worker(args):
                 continue
             if command['command']!='panel':raise ValueError('only current complete panels may execute')
             specs=specifications(command);authorize(args.root,specs,conditions);slots=len(specs)
-            if not 4<=slots<=24 or slots%4:raise ValueError('useful worker packs contain1..6 complete four-case panels')
+            if not 1<=slots<=16:raise ValueError('useful packs contain whole four-practice panels or single actual finals, at most16')
             # EGL allocates outside PyTorch; H temporaries must not pin its room.
             torch.cuda.empty_cache()
             if runner is not None and slots<runner.slots:runner=close_runner(runner,args.worker_id)
@@ -113,4 +141,4 @@ def worker(args):
             except BaseException as error:
                 event(kind='failed',worker=args.worker_id,identity=command['identity'],error=repr(error));raise
     finally:
-        close_runner(runner,args.worker_id);runtime.execution.close()
+        close_runner(runner,args.worker_id);runtime.videos.close();runtime.execution.close()

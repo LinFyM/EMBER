@@ -1,23 +1,4 @@
-"""First36 training paths and independent144 query; no checkpoint/held claim."""
-from ember.reference.analysis import paired,pairing_valid
-
-def summarize_task(task,spec,arms,*,identity=False):
-    anchor=next(iter(arms.values()))
-    if not anchor or any(not values or not pairing_valid(anchor,values) for values in arms.values()):
-        raise ValueError(f'paired initial state/scene/native noise mismatch for task{task}')
-    result=dict(task=task,suite=spec['suite'],group='target24' if task<40 else 'source_seen_support12',
-        identity=identity,cases=len(anchor),success_sets={a:sorted(r['init_state_id'] for r in rows if r['success']) for a,rows in arms.items()})
-    comparisons=[(a,b) for i,a in enumerate(arms) for b in list(arms)[i+1:]]
-    result['comparisons']={a+'_to_'+b:paired(arms[a],arms[b]) for a,b in comparisons}
-    for value in result['comparisons'].values():
-        union=sorted(set(value['before_successes'])|set(value['after_successes']))
-        value.update(success_set_union=union,jaccard=len(value['retained'])/len(union) if union else 1.)
-    if 'reference' in arms:
-        gains=set(result['success_sets']['reference'])-set(result['success_sets']['source'])
-        result['reference_new_gains']=sorted(gains)
-        result['reference_gains_preserved']={a:sorted(gains&set(values)) for a,values in result['success_sets'].items()}
-    return result
-
+"""Shared per-task and paired success-set aggregation for the active readout."""
 
 def aggregate(rows):
     if not rows:return dict(tasks=[],cases=0,successes={},breadth={},comparisons={})

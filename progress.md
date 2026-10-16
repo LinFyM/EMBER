@@ -1,3 +1,17 @@
+## 2026-10-16 §18 CPU消费者与运行面已接通，未启动正式GPU
+
+400官方映射/每task50教学/own-final排除/scene身份、单final实际consumer、32在途+退役后再准入、原子事实归档与init0 witness、64工程额与8192完整面板双预算均已CPU验证；没有运行模型/GPU/环境或创建正式ROOT。证据 [.codex/tmp/functional_feedback_validation180_20261016](/data1/user/ymdai/projects/EMBER/.codex/tmp/functional_feedback_validation180_20261016)。held特征真实RawTeacherVideoStore的synthetic RGB守卫和必要纯prefix算子调用、单SQLite定点回收通过，0高维prefix落盘。
+
+结构自审：复用唯一Compilation/practice/Runtime/queue/cache，退出train菜单并退役control_space旧training/learning/data/checkpoint主动组件，必要frozen Reader和完整basis拓扑分别归readout/model；仅新增lifecycle负责本批有明确授权的消费后事实归档/临时payload退役。active源码净减少，全部文件<400行，无hard结构违约；分支复杂度review集中在合同校验/原子状态事务，不以机械拆分掩盖责任。正式从push/clean detached运行，旧冻结/CP/原件与费用全部只读保留。
+
+## 2026-10-16 §18已实际接手，正在实施
+
+执行01a13dbf在main1e132677的唯一§18范围内独占工程/记录/Git；首次现场时钟13:16:44Z，消息精确到达时间未恢复，未伪造GPU启动。固定外部ψ180/Reader900/source38r8/linear64，400独立validation教学、每condition新initial4实践/8192和单final，0新训练/其它点/Test。仅复用合法初始LoRA与冻结后指定原final；held RGB-only M即时完整读取，0高维prefix落盘。
+
+唯一control_space替换旧训练主动入口；在独占worktree并行完成数据/特征的互不重叠实现，主执行负责状态机、单final队列、32在途H和逐condition事实归档/退役。全部事实/参数/rows长期保留，8个final-init0全链raw H及工程残片保留，392临时raw只在完整消费/冻结/final/审计/fullclose后退役。原§17/Git/费用/全部旧原件不变。
+
+本批33264提交/3446720联合步（独立64工程余量）和逐condition8192双重约束；新增峰96GiB。首次strg01 data1 used1968480768KiB/soft2147483648KiB，余约170.7GiB；shared独立约79.3TiB，family相关实耗230530820KiB。launch前刷新两node/6或8/node6/真实GPU/CPU/PSS与quota。预计6–12h，首有用工作校正；当前GPU尚未启动，完成真实400及资源/费用/Git后一次回main归还窗口，无自动后继。
+
 ## 2026-10-16 main消费§17：登记固定180的strict validation400
 
 canonical b18a15f8已归还main且clean/pushed；本次主讨论只读原件、实际修订源码及并行CPU统计，0新forward/env/共享更新。

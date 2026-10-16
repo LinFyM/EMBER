@@ -1,3 +1,11 @@
+## 2026-10-16 §18已实际接手，正在实施
+
+执行01a13dbf在main1e132677的唯一§18范围内独占工程/记录/Git；首次现场时钟13:16:44Z，消息精确到达时间未恢复，未伪造GPU启动。固定外部ψ180/Reader900/source38r8/linear64，400独立validation教学、每condition新initial4实践/8192和单final，0新训练/其它点/Test。仅复用合法初始LoRA与冻结后指定原final；held RGB-only M即时完整读取，0高维prefix落盘。
+
+唯一control_space替换旧训练主动入口；在独占worktree并行完成数据/特征的互不重叠实现，主执行负责状态机、单final队列、32在途H和逐condition事实归档/退役。全部事实/参数/rows长期保留，8个final-init0全链raw H及工程残片保留，392临时raw只在完整消费/冻结/final/审计/fullclose后退役。原§17/Git/费用/全部旧原件不变。
+
+本批33264提交/3446720联合步（独立64工程余量）和逐condition8192双重约束；新增峰96GiB。首次strg01 data1 used1968480768KiB/soft2147483648KiB，余约170.7GiB；shared独立约79.3TiB，family相关实耗230530820KiB。launch前刷新两node/6或8/node6/真实GPU/CPU/PSS与quota。预计6–12h，首有用工作校正；当前GPU尚未启动，完成真实400及资源/费用/Git后一次回main归还窗口，无自动后继。
+
 ## 2026-10-16 当前目标：固定ψ180的完整验证迁移
 
 main已消费§17合法路径/配对行/实际算子与最近似历史：89→93有有限多target收益，但仍是训练task/已见initial-H，

@@ -61,6 +61,12 @@ def validate_row(row,spec,task):
         if row['behavior_y'] is not None:raise ValueError('saved query must not invent a behavior code')
     elif not torch.allclose(torch.tensor(row['behavior_y']),torch.tensor(spec['y']),atol=1e-6,rtol=1e-6):
         raise ValueError('saved episode has a different actual sampled behavior code')
+    if spec.get('registered_scene'):
+        from .comparison import scene_identity
+        expected_scene=scene_identity(task,spec['state_id'],spec['registered_scene'])
+        actual=row.get('scene_reference') or {}
+        if any(actual.get(k)!=expected_scene[k] for k in ('path','bytes')):
+            raise ValueError('final did not execute its original registered scene')
     steps=row.get('steps',0)
     if (type(row.get('success')) is not bool or not 0<steps<=task['horizon'] or row.get('model_failure')
             or row.get('budget_truncated') or row.get('failure_type') or (not row['success'] and steps!=task['horizon'])
@@ -112,9 +118,7 @@ def load_history(path):
 def condition_spent(root,identity,reused_steps=0):
     prefix='practice_'+identity+'_'
     with connect(root) as db:
-        excluded=(" AND identity NOT IN (SELECT attempt_id FROM scientific_validity WHERE validity='uncertified-cache-provenance')"
-            if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='scientific_validity'").fetchone() else '')
-        spent=db.execute('SELECT coalesce(sum(control+dummy),0) FROM attempts WHERE substr(case_id,1,?)=?'+excluded,
+        spent=db.execute('SELECT coalesce(sum(control+dummy),0) FROM attempts WHERE substr(case_id,1,?)=?',
             (len(prefix),prefix)).fetchone()[0]
     return int(reused_steps)+spent
 
@@ -231,12 +235,12 @@ def panel(root,runtime,runner,command,decoder,units):
     tasks={r['global_task_id']:r for r in run['environment']['tasks']}
     specs=specifications(command);rows={};missing=[]
     for spec in specs:
-        if spec['task'] not in tasks:raise ValueError('practice/query task is outside current36')
+        if spec['task'] not in tasks:raise ValueError('practice/query task is outside validation8')
         saved=adopt(root,spec,tasks[spec['task']])
         if saved is None:
             missing.append(spec)
         else:rows[(spec['identity'],spec['state_id'])]=saved
-    # Old unknowns retain full cost; ordinary retries consume the same finite16.
+    # Old unknowns retain full cost; ordinary retries consume the same finite64.
     # The atomic global ledger and this whole-panel check both apply on resume.
     validate_panel_budget(root,missing,tasks)
     states=decoded_parameters(runtime,decoder,units,missing)
@@ -245,6 +249,7 @@ def panel(root,runtime,runner,command,decoder,units):
             task=tasks[spec['task']];attempt=reserve_episode(root,spec,task['horizon'],run['limits'])
             yield dict(task=task,state=states[spec['parameter_ref']],parameter_ref=spec['parameter_ref'],
                 state_id=spec['state_id'],noise_root=spec['noise_root'],episode_id=attempt,specification=spec,
+                registered_scene=spec.get('registered_scene'),
                 capture_history=spec['role']=='practice',capture_hidden=spec['role']=='practice',
                 capture_phi=False,capture_rgb=False,uses_teaching=False)
     before=deepcopy(runner.components);tick=time.monotonic();peak=None

@@ -1,4 +1,4 @@
-"""One owner for fresh functional H learning and fixed terminal compilation."""
+"""One owner for fixed feedback180 validation400 and audited raw-H retirement."""
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor,as_completed
 from contextlib import closing
@@ -12,25 +12,23 @@ from .contract import REFERENCE_ROOT,BASIS,INITIAL_READER,request_identity
 from .practice import specifications
 from .compilation import Compilation,maximum_panels
 from .model import load_basis
-from .data import feature_entries
+from .lifecycle import receipt_path
 
 
 def utc():return datetime.datetime.now(datetime.timezone.utc).isoformat()
-def queue_path(root):
-    recovery=Path(root)/'recovery_contract.json'
-    return Path(root)/(read_json(recovery)['queue_file'] if recovery.exists() else 'evaluation.sqlite')
+def queue_path(root):return Path(root)/'evaluation.sqlite'
 
 
 def storage_admission(root):
     quota=subprocess.check_output(['ssh','-o','BatchMode=yes','-o','ConnectTimeout=10','strg01',"xfs_quota -c 'quota -u -b ymdai' /data1"],text=True)
-    used,limit=quota_headroom(quota,peak_GiB=64)
+    used,limit=quota_headroom(quota,peak_GiB=96)
     shared=os.statvfs('/data1');free=shared.f_bavail*shared.f_frsize
-    if free<64*2**30:raise RuntimeError('shared data1 free capacity cannot cover64GiB peak')
+    if free<96*2**30:raise RuntimeError('shared data1 free capacity cannot cover96GiB peak')
     relevant=subprocess.check_output(['du','-sk',str(REFERENCE_ROOT.parent)],text=True)
     root.mkdir(parents=True,exist_ok=True)
     (root/'admission').mkdir(exist_ok=True)
     write_json_atomic(root/'admission'/f'storage_{time.time_ns()}.json',dict(UTC=utc(),quota=quota,used_KiB=used,quota_KiB=limit,
-        shared_free_bytes=free,relevant_usage=relevant,additional_peak_GiB=64,new_outputs_filesystem='data1'))
+        shared_free_bytes=free,relevant_usage=relevant,additional_peak_GiB=96,new_outputs_filesystem='data1'))
 
 
 def cpu_snapshot(root,label):
@@ -66,20 +64,12 @@ def gpu_candidates(args,snap,minimum):
     return groups,cap,len(outside)
 
 
-def device_pool(args,*,training=False):
+def device_pool(args):
     folder=args.root/'admission'/f'pool_{time.time_ns()}';folder.mkdir(parents=True)
-    snap=live_gpu_snapshot(folder)
-    groups,cap,outside=gpu_candidates(args,snap,getattr(args,'training_free_MiB',36000) if training else 18000)
-    resources=cpu_snapshot(args.root,'train' if training else 'compile')
-    if not training:
-        groups={n:gs[:max(0,int((resources[n]['memory_KiB']['MemAvailable']/2**20-64)//32))] for n,gs in groups.items()}
-        groups={n:gs for n,gs in groups.items() if gs}
-    selected=[];available=min(6,cap-outside)
-    if training and groups:
-        node=max(groups,key=lambda n:(min(available,len(groups[n])),sum(g['mem_free_mib'] for g in groups[n][:available])))
-        cpu_cap=max(0,int((resources[node]['memory_KiB']['MemAvailable']/2**20-64)//32))
-        selected=[(node,g['index'],g['mem_free_mib']) for g in groups[node][:min(available,cpu_cap)]]
-        groups={}
+    snap=live_gpu_snapshot(folder);groups,cap,outside=gpu_candidates(args,snap,18000)
+    resources=cpu_snapshot(args.root,'compile');selected=[]
+    groups={n:gs[:min(6,max(0,int((resources[n]['memory_KiB']['MemAvailable']/2**20-64)//32)))] for n,gs in groups.items()}
+    groups={n:gs for n,gs in groups.items() if gs};available=max(0,cap-outside)
     while groups and len(selected)<available:
         for node in list(groups):
             gpu=groups[node].pop(0);selected.append((node,gpu['index'],gpu['mem_free_mib']))
@@ -93,23 +83,12 @@ def panel_queue(root,run,tasks):
     work={};shards=[]
     for c in run['conditions']:
         task=tasks[c['task']]
-        nodes=[('practice',i) for i in range(1,maximum_panels(task['horizon']))]+[('query',0)]
+        nodes=[('practice',i) for i in range(maximum_panels(task['horizon']))]+[('query',0)]
         for role,ordinal in nodes:
             identity=request_identity(c,role,ordinal)
             states=c['practice_states'] if role=='practice' else c['query_states']
             work[identity]=dict(condition=c['id'],role=role,ordinal=ordinal)
-            shards.append(EvaluationShard(identity,len(shards),task['suite'],c['task'],task['horizon'],tuple(states),4*(task['horizon']+10)))
-        # Retained old-prefix rows keep their actual producer/episode identities.
-        # They are adopted into this leg's queue, never physically executed again.
-        path=Path(root)/'conditions'/c['id']/'path.json'
-        if path.exists():
-            state=read_json(path);saved=[(p['identity'],'practice',p['ordinal']) for p in state['panels'] if not p['reused']]
-            if state['query_complete'] and not state['query_reused']:saved.append((state['query_rows'][0]['identity'],'query',0))
-            for identity,role,ordinal in saved:
-                if identity in work:continue
-                states=c['practice_states'] if role=='practice' else c['query_states']
-                work[identity]=dict(condition=c['id'],role=role,ordinal=ordinal)
-                shards.append(EvaluationShard(identity,len(shards),task['suite'],c['task'],task['horizon'],tuple(states),4*(task['horizon']+10)))
+            shards.append(EvaluationShard(identity,len(shards),task['suite'],c['task'],task['horizon'],tuple(states),len(states)*(task['horizon']+10)))
     return work,shards
 
 
@@ -118,25 +97,45 @@ class WorkQueue(Scheduler):
     def __init__(self,root,run,workers,capacities):
         super().__init__(root,{},len(workers),worker_nodes={f'worker_{i:02d}':n for i,(n,_) in enumerate(workers)},
             queue_path_fn=queue_path,evaluation_reference_root=REFERENCE_ROOT)
-        self.run=run;self.capacities=capacities;self.inflight={};self.measures=[]
+        self.run=run;self.capacities=capacities;self.inflight={};self.retiring={};self.measures=[]
         self.tasks={s['global_task_id']:s for s in run['environment']['tasks']};self.work,_=panel_queue(root,run,self.tasks)
         decoder=load_basis(BASIS).requires_grad_(False);saved=torch.load(INITIAL_READER,map_location='cpu',mmap=True,weights_only=False)
         units=saved['code_units'].float();del saved
         if units.shape!=(64,) or not bool(units.isfinite().all()) or bool((units<=0).any()):raise ValueError('fixed original code units changed')
-        videos={(e['task'],e['demo']):e for e in feature_entries()}
-        self.compilers={c['id']:Compilation(root,dict(c,original=videos[c['task'],c['teacher_demo']]),decoder,units,self.tasks[c['task']]) for c in run['conditions']}
+        self.compilers={c['id']:Compilation(root,dict(c,original=c['teaching']),decoder,units,self.tasks[c['task']]) for c in run['conditions']}
+        self.retired={i for i in self.compilers if receipt_path(self.root,i).exists()}
+        self.raw_bytes=sum(r.get('history_bytes',0) for c in self.compilers.values() for p in c.state['panels']
+            for r in p['rows'] if Path(r['history_path']).is_file())
+        self.raw_peak=self.raw_bytes;self.pause_admission=False
         self.ready={};self.alive=set(self.worker_node);self.refresh()
 
     def refresh(self):
         active={self.work[claim.shard.job_id]['condition'] for claims in self.inflight.values() for claim in claims}
+        admitted=[c for c in self.compilers.values() if c.state.get('admitted') and c.id not in self.retired]
+        waiting=[c for c in self.compilers.values() if not c.state.get('admitted')]
+        # Full-H admission is independent of worker count; completion immediately
+        # makes room after its atomic audit/retirement, never400 initial panels.
+        waiting.sort(key=lambda c:(-c.task['horizon'],c.condition['final_init'],c.condition['task']))
+        for compiler in waiting[:0 if self.pause_admission else max(0,32-len(admitted))]:
+            compiler.state.update(admitted=True,admitted_UTC=utc());compiler.save();admitted.append(compiler)
         self.ready={}
-        for identity,compiler in self.compilers.items():
-            # A worker can persist its receipt before delivering proposed. Only
-            # that claim's callback consumes it; restart adoption has no inflight.
+        for compiler in admitted:
+            identity=compiler.id
             request=(compiler.state.get('pending') or compiler.state.get('pending_proposal')) if identity in active else compiler.next()
             if request:self.ready[request['identity']]=request
 
-    def terminal(self,statuses=None):return all(c.state['query_complete'] for c in self.compilers.values())
+    def record_storage(self):
+        self.raw_peak=max(self.raw_peak,self.raw_bytes)
+        # 44GiB raw leaves the registered19.3GiB candidates,17GiB caches and
+        # atomic/fault/metadata allowance inside96GiB. Unexpected growth stops
+        # only new admission; admitted complete-H work is never truncated.
+        self.pause_admission=self.raw_bytes>44*2**30
+        write_json_atomic(self.root/'storage_usage.json',dict(raw_bytes=self.raw_bytes,raw_peak_bytes=self.raw_peak,
+            pause_new_admission=self.pause_admission,inflight_limit=32,registered_peak_GiB=96,UTC=utc()))
+        if self.pause_admission:raise RuntimeError('actual raw H exceeds44GiB allocation; preserve active progress and report resource boundary')
+
+    def terminal(self,statuses=None):
+        return all(c.state['query_complete'] and c.id in self.retired for c in self.compilers.values())
     def send(self,stream,value):stream.write(json.dumps(value)+'\n');stream.flush()
 
     def node_budget(self,worker):
@@ -148,7 +147,7 @@ class WorkQueue(Scheduler):
         # §16 measured16 faster end-to-end than24 with actual H; no32 reprobe.
         preferred=min(16,self.capacities[worker]);budget=self.node_budget(worker)
         others=sum(v for k,v in budget['occupied'].items() if k!=worker)
-        for slots in (16,8,4):
+        for slots in (16,8,4,2,1):
             extra=max(0,slots-budget['occupied'][worker])*budget['environment_GiB']
             if (slots<=preferred and others+slots<=budget['slot_cap'] and budget['available_GiB']-budget['unreflected_GiB']-extra>=64):return slots
         return 0
@@ -160,7 +159,7 @@ class WorkQueue(Scheduler):
             if read_json(path)!=value:raise ValueError('adopted shard differs from its original committed rows')
         else:write_json_atomic(path,value)
         complete_job(self.queue_path(),job_id=claim.shard.job_id,worker_id=worker,claim_token=claim.claim_token,
-            rows_path=str(path.relative_to(self.root)),rows_bytes=path.stat().st_size,row_count=4,successes=sum(r['success'] for r in rows))
+            rows_path=str(path.relative_to(self.root)),rows_bytes=path.stat().st_size,row_count=len(rows),successes=sum(r['success'] for r in rows))
 
     def adopt_committed(self):
         # Close a crash gap between an atomic condition decision and queue receipt.
@@ -187,24 +186,38 @@ class WorkQueue(Scheduler):
         self.send(stream,message);del self.waiting[worker]
         with (self.root/'owner_events.jsonl').open('a') as f:f.write(json.dumps(dict(UTC=utc(),worker=worker,CPU_admission=self.node_budget(worker),**message))+'\n')
 
+    def retirement_candidates(self):
+        inflight={i for values in self.retiring.values() for i in values}
+        return [c.id for c in self.compilers.values() if c.state['query_complete']
+            and c.id not in self.retired and c.id not in inflight]
+
+    def claim_pack(self,worker,slots,eligible):
+        claims=[];room=slots;kind=None
+        while room:
+            candidates=[i for i in eligible if (kind is None or self.ready[i]['command']==kind)
+                and (4 if self.ready[i]['command']=='propose' else len(self.ready[i]['states']))<=room]
+            claim=claim_next(self.queue_path(),worker_id=worker,eligible_job_ids=candidates) if candidates else None
+            if claim is None:break
+            claims.append(claim);identity=claim.shard.job_id;eligible.remove(identity)
+            kind=self.ready[identity]['command'];room-=4 if kind=='propose' else len(self.ready[identity]['states'])
+        return claims
+
     def dispatch(self):
         statuses=self.statuses();eligible=[i for i in self.ready if statuses[i]=='pending']
+        completed=self.retirement_candidates()
         for worker,stream in list(self.waiting.items()):
             if worker in self.inflight:
                 if not self.failed:self.send_claims(worker,stream,self.inflight[worker])
                 else:self.send(stream,dict(command='stop'));del self.waiting[worker]
                 continue
+            if completed and not self.failed:
+                chosen=completed[:4];del completed[:4];self.retiring[worker]=chosen
+                self.send(stream,dict(command='retire',conditions=chosen));del self.waiting[worker];continue
             unfinished=sum(not c.state['query_complete'] for c in self.compilers.values())
-            if self.failed or self.terminal() or len(self.alive)>unfinished:
+            remaining=max(1,unfinished+len(completed)+len(self.retiring))
+            if self.failed or self.terminal() or len(self.alive)>remaining:
                 self.send(stream,dict(command='stop'));del self.waiting[worker];self.alive.discard(worker);continue
-            slots=self.slots(worker);claims=[]
-            candidates=list(eligible)
-            for _ in range(slots//4):
-                claim=claim_next(self.queue_path(),worker_id=worker,eligible_job_ids=candidates) if candidates else None
-                if claim is None:break
-                claims.append(claim);eligible.remove(claim.shard.job_id)
-                kind=self.ready[claim.shard.job_id]['command']
-                candidates=[i for i in candidates if i in eligible and self.ready[i]['command']==kind]
+            claims=self.claim_pack(worker,self.slots(worker),eligible)
             if not claims:
                 if worker not in self.idled:self.send(stream,dict(command='idle'));self.idled.add(worker)
                 continue
@@ -234,6 +247,8 @@ class WorkQueue(Scheduler):
             identity=claim.shard.job_id;request=self.ready[identity];rows=groups[identity]
             compiler=self.compilers[request['condition_id']];compiler.accept(dict(rows=rows))
             self.commit(claim,request,rows,worker)
+        self.raw_bytes+=sum(r.get('history_bytes',0) for r in event['rows'] if r['role']=='practice')
+        self.record_storage()
         resource=event['resources'];peak=resource.get('peak_environment_resources')
         if peak:
             self.environment_PIDs[worker]=set(peak['environment_PIDs']);self.resident_slots[worker]=len(peak['environment_PIDs'])
@@ -261,66 +276,19 @@ class WorkQueue(Scheduler):
             elif event['kind']=='environments_closed':
                 if event['remaining_environment_PIDs']:raise RuntimeError('idle/exit retained environment children')
                 self.environment_PIDs.pop(worker,None);self.resident_slots.pop(worker,None)
+            elif event['kind']=='retired':
+                expected=set(self.retiring.pop(worker));actual={r['condition_id'] for r in event['receipts']}
+                if actual!=expected or any(not receipt_path(self.root,i).exists() for i in actual):raise ValueError('retirement lost completed conditions')
+                self.raw_bytes-=sum(r['deleted_raw_bytes'] for r in event['receipts'])
+                self.record_storage()
+                self.retired.update(actual)
+                for i in actual:
+                    compiler=self.compilers[i];compiler.state['raw_H_lifecycle']=str(receipt_path(self.root,i));compiler.save()
+                self.refresh()
             elif event['kind']=='complete':self.complete(worker,event)
             elif event['kind']=='proposed':self.proposed(worker,event)
             elif event['kind']=='ready':self.running_slots.pop(worker,None);self.waiting[worker]=stream
             self.dispatch()
-
-
-def segment_measurement(file,devices,cap):
-    import statistics
-    segment=read_json(file)
-    if not segment['complete']:raise RuntimeError('training child did not complete its segment')
-    measure=dict(world_size=segment['world_size'],devices=devices,total_cap=cap,start=segment['start'],stop=segment['stop'],receipt=str(file),
-        median_update_seconds=statistics.median(m['seconds'] for m in segment['measurements']),
-        limitation='sequential useful cycles have different complete H lengths/cache hits; physical throughput evidence, not a scientific comparison')
-    valid=[m for m in segment['measurements'] if not m['OOM_attempts']]
-    if valid:
-        best=min(valid,key=lambda m:m['seconds'])
-        measure['next_live_headroom_MiB']=max(18000,int(best['peak_allocated_MiB'])+1024)
-    return measure
-
-
-def train_trajectory(args):
-    from .checkpoint import latest,path
-    if (args.root/'training_completion.json').is_file():
-        receipt=read_json(args.root/'training_completion.json')
-        if not receipt['complete'] or receipt['next_update']!=180:raise ValueError('incompatible terminal training receipt')
-        return
-    completed=latest(args.root);measure_file=args.root/'training/topology_comparison.json'
-    measures=read_json(measure_file) if measure_file.exists() else []
-    while completed<180:
-        choices,cap=device_pool(args,training=True);available=len(choices)
-        # Every comparison advances the one valid trajectory at a full9-update boundary.
-        pending=[n for n in (min(4,available),min(2,available),min(6,available)) if n not in {m['world_size'] for m in measures}]
-        if pending:
-            world=pending[0];stop=min(180,completed+9)
-        else:
-            eligible=[m for m in measures if m['world_size']<=available]
-            if not eligible:raise RuntimeError('no measured train topology remains live')
-            world=min(eligible,key=lambda m:m['median_update_seconds'])['world_size'];stop=180
-        selected=[(n,g) for n,g,_ in choices[:world]]
-        if not selected:raise RuntimeError('no same-node useful training allocation')
-        def observation(identity,event,stream):
-            if event['kind']!='training_observation':raise ValueError('unexpected training-owner event')
-            print('EMBER_TRAIN_OBSERVATION '+json.dumps({k:event[k] for k in ('update','world_size','seconds','queries_per_second',
-                'microbatch','actual_max_FM_batch','event_chunk','image_chunk','peak_allocated_MiB','peak_reserved_MiB','FM','head_gradient_norm','body_gradient_norm')}),flush=True)
-        required=getattr(args,'training_free_MiB',36000)
-        batch=Batch(Path.cwd(),selected,root=args.root,required_free_MiB=required,work_event=observation)
-        job=Job(f'train_{completed:08d}_{stop:08d}', ['control-space','train','--start',str(completed),'--stop',str(stop)],
-            eligible_devices=tuple(selected),gpu_count=world,estimate_seconds=max(600,(stop-completed)*60),required_free_MiB=required)
-        batch.execute(job,selected)
-        segment_file=args.root/'training'/f'segment_{completed:08d}_{stop:08d}.json';segment=read_json(segment_file)
-        if not segment['complete'] or segment['stop']!=stop or latest(args.root)!=stop:raise RuntimeError('training child did not save its actual complete boundary')
-        measure=segment_measurement(segment_file,selected,cap)
-        args.training_free_MiB=measure.get('next_live_headroom_MiB',required)
-        measures.append(measure);write_json_atomic(measure_file,measures);completed=stop
-    saved=torch.load(path(args.root,180),map_location='cpu',weights_only=False,mmap=True)
-    stream=saved['stream']
-    if stream['next_update']!=180 or any(v!=20 for v in stream['new_visits'].values()):raise ValueError('terminal stream must contain20 visits/task')
-    segments=[str(p) for p in sorted((args.root/'training').glob('segment_*.json'))]
-    write_json_atomic(args.root/'training_completion.json',dict(complete=True,next_update=180,checkpoint=str(path(args.root,180)),stream=stream,
-        cumulative_training_seconds=saved['training_seconds'],segments=segments,FM_queries=20160,history_conditions=720,end_UTC=utc()))
 
 
 def owner(args):
@@ -330,9 +298,9 @@ def owner(args):
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         if (args.root/'completion.json').exists():raise ValueError('completed finite compilation cannot restart')
         for name in ('shards','packs','proposals','admission'):(args.root/name).mkdir(exist_ok=True)
-        run=prepare(args.root);train_trajectory(args)
+        run=prepare(args.root)
         tasks={s['global_task_id']:s for s in run['environment']['tasks']};work,shards=panel_queue(args.root,run,tasks)
-        reference=args.root/('recovery_contract.json' if run.get('cache_recovery') else 'run_contract.json')
+        reference=args.root/'run_contract.json'
         initialize_queue(queue_path(args.root),shards,contract_reference=str(reference),recover_claims=args.resume,retry_failed=args.resume)
         choices,cap=device_pool(args);workers=[(n,g) for n,g,_ in choices]
         capacities={f'worker_{i:02d}':16 if free>=28000 else 8 for i,(_,_,free) in enumerate(choices)}
@@ -351,23 +319,20 @@ def owner(args):
                     failure=repr(error)
                     with scheduler.lock:scheduler.failed=True;scheduler.dispatch()
         if failure:raise RuntimeError(failure)
-        if not scheduler.terminal():raise RuntimeError('all36 conditions must finish, including each independent query')
+        if not scheduler.terminal():raise RuntimeError('all400 conditions must finish one final and the complete raw-H audit')
         with closing(sqlite3.connect(queue_path(args.root))) as db,db:db.execute("UPDATE jobs SET status='not_triggered' WHERE status='pending'")
         return analyze(args.root)
 
 
 def main():
     from .comparison import ROOT
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('command',choices=['owner','worker','train']);parser.add_argument('--root',type=Path,default=ROOT)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('command',choices=['owner','worker']);parser.add_argument('--root',type=Path,default=ROOT)
     parser.add_argument('--devices',nargs='+');parser.add_argument('--worker-id');parser.add_argument('--slots',type=int,default=24)
     parser.add_argument('--physical-gpu',type=int,default=0);parser.add_argument('--resume',action='store_true')
-    parser.add_argument('--start',type=int,default=0);parser.add_argument('--stop',type=int,default=180);args=parser.parse_args()
+    args=parser.parse_args()
     if subprocess.check_output(['git','status','--porcelain'],text=True).strip() or subprocess.check_output(['git','branch','--show-current'],text=True).strip():raise ValueError('formal compilation requires clean pushed detached source')
     subprocess.run(['git','merge-base','--is-ancestor','HEAD','origin/main'],check=True)
-    if args.command=='train':
-        from .training import train
-        train(args)
-    elif args.command=='worker':
+    if args.command=='worker':
         from .readout import worker
         worker(args)
     else:owner(args)

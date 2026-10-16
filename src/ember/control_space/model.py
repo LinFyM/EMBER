@@ -3,7 +3,8 @@ import torch
 from torch import nn
 from ember.lora import identity_lora_state
 from ember.proposal_writer.model import FactorLayout
-from .data import topology
+from ember.pi05_lora import load_pi05_lora_contract,derive_pi05_lora_rank
+from ember.reference.contract import ASSETS
 from .contract import BASIS_SCHEMA
 
 
@@ -47,4 +48,5 @@ def load_basis(path):
     state=torch.load(path,map_location='cpu',weights_only=False)
     if state['schema']!=BASIS_SCHEMA or state['phase']!='linear64' or state['optimizer_updates']!=0:
         raise ValueError('not the unique fresh linear64 basis schema')
-    return ControlSpace(topology(),state['center'],state['units'],state['U'])
+    lora=derive_pi05_lora_rank(load_pi05_lora_contract(ASSETS/'configs/pi05_lora_rank128_aligned.json'),rank=8)
+    return ControlSpace(lora,state['center'],state['units'],state['U'])

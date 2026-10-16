@@ -22,17 +22,12 @@ class Compilation:
         if self.file.exists():
             self.state=read_json(self.file)
             if (self.state['id'],self.state['initial_y'])!=(self.id,condition['initial_y']):raise ValueError('condition restart changed its initial controller')
-            if self.state.get('execution_leg')!=condition.get('execution_leg'):raise ValueError('condition state differs from its named recovery leg')
         else:
             self.state=dict(id=self.id,task=condition['task'],arm=condition['arm'],teacher_demo=condition.get('teacher_demo'),
                 initial_y=condition['initial_y'],initial_LoRA=condition.get('initial_LoRA'),panels=[],proposals=[],proposal_cursor=0,
                 incumbent_index=None,incumbent_y=condition['initial_y'],incumbent_successes=-1,reused_practice_steps=self.reused_steps,
                 condition_steps=self.reused_steps,history_paths=[],decisions=[],frozen=False,query_complete=False,complete=False)
-            if condition.get('execution_leg'):self.state['execution_leg']=condition['execution_leg']
-            if condition.get('initial_rows'):
-                rows=condition['initial_rows']
-                self.record_panel(dict(identity=self.id+'_practice_000',kind='initial',y=condition['initial_y'],parameter_ref=condition['initial_LoRA'],
-                    ordinal=0,proposal_ordinal=None),rows,reused=True)
+            if condition.get('initial_rows'):raise ValueError('validation initial practice must be new')
             self.save()
 
     def save(self):write_json_atomic(self.file,self.state)
@@ -67,7 +62,6 @@ class Compilation:
     def request(self,role,y,ordinal,kind,proposal_ordinal=None):
         identity=request_identity(self.condition,role,ordinal)
         directory=self.root/'generated'/self.id
-        if self.condition.get('execution_leg'):directory=directory/self.condition['execution_leg']
         file=(self.condition.get('initial_LoRA') if kind=='initial' else
             str(directory/f'panel_{ordinal:03d}.safetensors'))
         if role=='query':file=self.state['selected_LoRA']
@@ -76,7 +70,8 @@ class Compilation:
             noise_root=self.condition['practice_noise_root'] if role=='practice' else self.condition['query_noise_root'],
             y=y,role=role,parameter_ref=file,LoRA=file,kind=kind,panel_ordinal=ordinal,ordinal=ordinal,
             proposal_ordinal=proposal_ordinal,reused_practice_steps=self.reused_steps)
-        if self.condition.get('execution_leg'):request['execution_leg']=self.condition['execution_leg']
+        request['teacher_demo']=self.condition['teacher_demo']
+        if role=='query':request['registered_scene']=self.condition['registered_scene']
         self.state['pending']=request;self.save();self.ensure_parameters(request);return request
 
     def next(self):
@@ -86,6 +81,8 @@ class Compilation:
             request=self.state['pending_proposal'];receipt=self.root/'proposals'/f"{request['identity']}.json"
             if receipt.exists():self.accept_proposal(read_json(receipt));return self.next()
             return request
+        if not self.state['panels']:
+            return self.request('practice',self.condition['initial_y'],0,'initial')
         if self.state.get('stopping_reason'):return self.freeze(self.state['stopping_reason'])
         remaining=PRACTICE_STEPS-self.spent();score=self.state['incumbent_successes']
         if score==4:return self.freeze('all_four_success')
@@ -118,15 +115,16 @@ class Compilation:
             incumbent=self.state['panels'][self.state['incumbent_index']]
             self.state.update(frozen=True,condition_steps=self.spent(),selected_LoRA=incumbent['parameter_ref'],stop_reason=reason)
             self.save()
-        if self.state['incumbent_y']==self.condition['initial_y']:
+        if (self.state['incumbent_y']==self.condition['initial_y']
+                and self.state['selected_LoRA']==self.condition['initial_LoRA']):
             from .comparison import initial_query_rows
-            self.state.update(query_rows=initial_query_rows(self.condition['task'],self.condition['arm']),query_reused=True,query_complete=True,complete=True)
+            self.state.update(query_rows=initial_query_rows(self.condition),query_reused=True,query_complete=True,complete=True)
             self.save();return None
         return self.request('query',self.state['incumbent_y'],self.state['incumbent_index'],'query')
 
     def accept(self,output):
         request=self.state['pending'];rows=output['rows']
-        if len(rows)!=4 or {r['init_state_id'] for r in rows}!=set(request['states']):raise ValueError('partial panel cannot change an incumbent or finish query')
+        if len(rows)!=len(request['states']) or {r['init_state_id'] for r in rows}!=set(request['states']):raise ValueError('partial panel cannot change an incumbent or finish query')
         for spec,row in zip(specifications(request),sorted(rows,key=lambda r:request['states'].index(r['init_state_id'])),strict=True):
             validate_row(row,spec,self.task)
         if request['role']=='practice':self.record_panel(request,rows)

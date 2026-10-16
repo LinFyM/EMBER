@@ -1,3 +1,15 @@
+## 2026-10-16 main消费功能修订180，登记唯一完整验证迁移
+
+main从§17合法36 paths/126 receipts/配对行确认Reader89→93（R85/G8/L4），target43→48/support46→45；
+与旧随机video同practice100而query高7，收益仍有限，原query全零七task仅15突破。
+近方向相邻δ、异质跨task首δ与真实FM信用只支持一些可学参数修正，未区分task映射与经历纠错。
+最近似Experience/G/FM正负、缓存事故300/84110与8 unknown区间、原16.555654GPUh均保留；原始CPU复算在§17ROOT analysis/main_scientific_readout。
+
+新增唯一[source/r8 design§18](designs/source_policy_space_compiler_20261015.md#18-固定功能修订180的完整验证迁移)：
+冻结ψ180/Reader900/D，validation400独立实践后strict同场景/root7读出；0新训练/其它CP/controls/Test。
+每condition8192与final初态排除，新增33264/3446720全局独立预算、96GiB峰和事前H生命周期合同；
+预计6–12h，实际接手/冻结/启动以随后执行原件为准。main科学/Git准备后交原执行独占闭环，完整回报再接续，不自动扩量。
+
 ## 2026-10-16 §17终点180完整方法与具名事故恢复交付
 
 57e8af31派发08:30:38.195Z，fresh经历条件功能修订ψ180/720条件/20160跨episode FM后，最终26a8fbb3冻结owner229518在12:48:33.594620Z exit0，原派发至GPU退出257.923min。36完整编译/144query与八臂1152验收：source58/ref127/Reader89/first73/full79/video86/noV59/new93；Reader→new R85/G8/L4，target43→48/support46→45，breadth30、identity20、reference新增70保存35。实践83→100、12改参数task24→28、126合法提案15接受，15全成功止/21完整面板预算不足止；Object12/14保留，Spatial17/Object11/Goal14/Long6，不利case和交换全留。有限non-held/已见initial-H净+4不认证held/视频-H因果或充分性；无自动360/400/controls/Test，main科学消费后接续。原件见[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_completion.md)。

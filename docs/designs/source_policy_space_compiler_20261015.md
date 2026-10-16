@@ -13,11 +13,11 @@
 固定已验证的D(z)产生完整r8；冻结视频起点，以真实H条件的跨episode功能监督学习完整参数修订。
 旧经验编译已有真实反馈学习，本次不是新的反馈架构原理；已知控制族有训练域先行证据，跨任务迁移和有用经历修订仍待实证。
 
-**当前实施范围为§17：冻结Reader900/linear64，训练真实经历条件的功能修订器，再做完整编译。**
-§2–16均保留完成/失败/恢复历史。§16video实践83→100、独立query89→86；固定单位搜索停止自动加量/调参。
-§17仅fresh修订器180更新及终点原36task完整编译/144独立query；不继续§14的meta9/18/36。
-linear64标签侧484/576及旧900/1800 held117/111保持，不把训练域或已知参数可表示拼成held资格。
-当前不执行held/Test，不恢复N16/旧Writer/MT教师/Phi/GT/sealed诊断，不扩维、重fit、做尺度扫描或沿1800加量。
+**当前实施范围为§18：固定唯一ψ180/Reader900/linear64，完成validation8×50的真实编译与strict paired400。**
+§2–17均保留完成/失败/恢复历史。§17在训练task/已见initial-H上89→93/144（R85/G8/L4）；
+这是进行一次迁移检验的有限依据，不是稳定、held或视频/H因果资格。§16固定单位搜索与§14旧PG不恢复。
+linear64标签侧484/576、旧Reader900/1800 held117/111与MT153/G165/D175/168均保持原身份。
+新批0训练/新reference/重fit/尺度扫描/其它checkpoint/controls/Test；仅本节登记的validation任务内无梯度适应和最终400。
 
 ## 2. 已核资产与选择新参考教师的理由
 
@@ -1335,3 +1335,163 @@ ROOT累计物理上界现为**3004提交/control400015/dummy30040/联合total404
 旧13.930277132524383GPUh（训练12.17976899822553）、两次失败、08:30:38.195派发与旧09:05参考首时钟均保留。
 本裁决后修复/有限恢复/完整读出估再45–90min，以实际首有用吞吐修正；超原4.5h时明确事故耗时，无GPUh硬限。
 一个owner直接等待实际退出，完整36/144与八臂报告、事故分层成本/有效性、资源/Git后一次交main并归还写窗口，0自动后继。
+
+## 18. 固定功能修订180的完整验证迁移
+
+### 18.1 唯一范围与事前判断
+
+main已消费§17合法原件、全部配对分布、实际特征/算子/信用及最近似历史；完整判断见
+[分析§22–23](../analyses/source_control_space_learning_20261015.md#22-功能修订180有了小幅独立收益尚未证明经历纠错)。
+训练task的Reader89→新93有4个target净增，R85/G8/L4，支持进行一次完整迁移检验，不认证H纠错或稳定能力。
+旧随机搜索86、Experience135、首G/完整G165及后续native FM158等正反证据保持；不把本次称首次使用H功能监督。
+
+唯一新增科学工作为**400个独立validation教学condition的完整实际编译及各自一个final query**。
+冻结`functional_feedback_seed7/checkpoints/update_00000180/state.pt`的ψ，训练来源0b9b8080、完整180/720条件/20160 FM已结束；
+Reader900、code_units、linear64 U/S/center、source、normalization、38-target/rank8/alpha8/dropout0全部沿§17冻结。
+不复制/修改旧checkpoint、不使用90、不追加共享或局部optimizer/PG/FM/BA/E/producer训练、不再生成参考函数或重fit D。
+只新增本节validation自身实践，0 held离线动作/state/reward/terminal标签、0 Test、0未登记controls或其它checkpoint读出。
+旧source/Reader/reference资产仅按登记角色使用；不加载MT为起点/底座/回退，不部署第二adapter或expert。
+
+这一批只读一个预固定完整方法，不以400中的部分结果选模型或改停止/预算。
+主要判断相对Reader900117是否有实质跨task增益与保持，以及相对强MT153的完整差距；原>145等历史门槛不复活。
+没有清楚迁移增益或广泛能力交换时，不自动续训同组织/调δ尺度/增加候选；main据实际缺口重新判断。
+多task实质迁移且合理保持时，再按结果另登记相邻稳定性及匹配教学/H证据；单点超过Reader或MT不冒称最终稳定成功。
+无自动第二400、90/360、same-task-other/wrong/no-video/H-null/shuffled/reversed或Test。
+
+### 18.2 400个教学条件、初态与信息墙
+
+唯一validation tasks为`[3,6,11,16,23,26,31,39]`，固定coverage-v1协议不改。
+复用`video_initial_seed7/panels.json`的完整validation400：task、final_init、teacher_demo、video_ordinal、noise root7及registered_scene。
+按`video_schedule.condition_demo_index(seed7, suite, local_task, final_init, correct,50)`核对映射；
+每task50个final init0..49、50条合法教学各恰一次，与§13旧Reader及所有后续checkpoint完全一致，不按worker/GPU顺序生成。
+调度task/path/video ordinal仅用于数据寻址/配对，不输入ψ/Reader作为task-ID route。
+
+每condition实践集合沿§14.5已说明的规则明确启用：
+
+    eligible = [i for i in range(50) if i != final_init]
+    practice_states = default_rng(SeedSequence([7,202610162,task,final_init])).permutation(eligible)[:4]
+    practice_noise_root = 202610161
+
+保存实际四init顺序；同condition每个候选使用同四初态、相同env/policy/noise，不能按结果换面板。
+自身final_init绝不进入它的适应。不同condition可能共用某个init编号，但各自独立实际执行，
+不共享H、成功标签、incumbent、提案/停止状态或其它condition的已选LoRA；不是整个验证集从未见这些编号的主张。
+每condition读取的是其同task固定一条有序教学，K=1/stride5加terminal；不择video、不融合多个LoRA。
+exact L只按原合同进入执行policy，教学仍纯RGB/原frame_indices，不输入直接L、teacher配套标签/filename或人为操作程序。
+真实H的间接语言信息、动作、state、接触/结果可用，不作去信息；它们不进入共享训练或其它condition。
+
+初始控制直接引用`video_initial_seed7/generated/update_00000900/validation/task_XXXX/state_XXX.{json,safetensors}`。
+metadata的code是z，以原正有限code_units恢复u0；完整实际LoRA原文件不重物化、不可改用1800或新的Reader输出。
+旧900由§13原strict400选定，保留该历史，不伪称这次才在seen选定或没有用过validation作旧初始化选择。
+只把白名单身份字段传给编译准备，不读取/传入旧final success、轨迹、动作或其它结果来决定实践。
+
+400条held教学没有持久prefix缓存，不能误用原1800个non-held original entries。
+需要ψ提案时，沿冻结5568f80c旧`features.load_video/extract`的真实RGB-only读取/完整纯图像Gemma数学产生M；
+恢复必要算子至唯一当前owner，不恢复旧完整训练入口。完整M由相同Reader900生成，初始u0仍取上述已有产物。
+只缓存冻结M（全局≤1GiB），不新建400-video高维prefix矩阵；完整prefix在内存消费后释放，未截帧/平均/降低分辨率。
+初始已4/4而不调用ψ的条件无需重新读取M，但初始LoRA已有教学编译仍计入逻辑教学成本，不写成0教学。
+
+### 18.3 同一实际编译规则与最终部署
+
+每condition以初始Reader900完整LoRA新执行四例实践并保存实际完整H；本批没有可复用的合法初始H，
+不能把旧final query（root7、无H）改称实践，或以别的condition相同init/不同教学的H替代。
+initial面板及settling按实际步骤占本condition8192；每个完整候选面板仍含四例。
+唯一提案保持§17实际数学：`u=m+δψ(M,H,m,c/4,remaining/8192)`，再由固定D产生同一完整38/r8 LoRA。
+H事件形状、真实flow0/9 hidden、facts63、行为u、全部事件顺序、教学cross-attention/causal读取均不变。
+无Gaussian、σ/scale菜单、局部LoRA更新、轨迹拟合、外部控制expert或新selector。
+
+每次先检查c=4、剩余不足`4*(horizon+10)`或精确重复已完整实践的64维代码；分别按原规则结束。
+其它有限候选原子保存真实LoRA后完成整个四例面板；严格成功数更高才接受，平局保留较早实际incumbent。
+成功/失败/未选的完整H均可供后续读取，不能只保成功事件或用预算上界当固定提案轮数。
+最终只能选本condition实际完整实践过的一套LoRA，ψ/Reader/M/H/搜索/选择退出final；final反馈绝不再回H或产生梯度。
+pending真实候选及完整行在恢复时只adopt，不重新生成/抽样/按科学失败重试，不挑query来源。
+
+final统一复用原registered-scene（demonstration_transfer_learning_20260927/scenes）、env/policy root7、
+official render256/model224、双相机180度rotate一次、state8/action7、10 flow/执行5、dummy settling10、horizons220/280/300/520。
+final初态、场景、实际噪声与旧Reader/MT严格配对；不把普通reset的近似场景当registered-scene。
+最终u精确保持初始u且沿原初始实际LoRA文件时，在freeze之后引用原Reader900对应一条final row；
+否则真实执行唯一新final query。两分支在事前固定，不根据旧/新query成绩、近似代码/norm或较高source行决定。
+400是逻辑完整面板，新的物理query可因这种固定复用少于400，但不能删掉未改参数条件或重复有效行。
+
+### 18.4 读出、成本和科学解释
+
+完整400结束后报告固定方法对Reader900117、强MT153的每task/suite、breadth、R/G/L/churn、success-set交并/Jaccard。
+只读复用旧Reader1800111、首G165、D72=175、D144=168的同400原件，形成七臂2800逻辑行，
+不增加旧模型forward、重选旧高点或将它们称为相邻ψ点。来源沿§13 results.validation_references及两Reader raw_rows。
+旧MT没有initial_proprio字段的限制保留，沿登记scene路径/bytes、task/state/env/policy和实际首noise核配对；
+与Reader有proprio的配对照常核验，不新增hash侧文件或逐tensor扫描。
+
+分别报告初始未动/实际改参数、初始实践0/非0、首/后续提案、接受次数/停止原因、实践→final的得失和任务覆盖。
+逐condition列实际步数/重置/episode/候选/教学读取与重读/ψ调用/缓存命中，工程未知单列且收费。
+最多一个final query/condition，未测中间候选不能推oracle；不同condition初始化或后段收益不能拼成另一完整方法分数。
+这是有交互适应，不称zero-interaction。全局共享权重固定、held实践只留本condition状态，不视作共享held训练。
+没有视频/H因果消融，故即使提高也先支持整套过程；不能从旧no-video59或注意力/代码几何认证动态操作理解。
+
+### 18.5 新批独立环境上界
+
+400×8192＝**3276800实践联合步骤**，逐condition8192含settling/实际工程未知，不能互借余额。
+400 final最大132000 control＋4000 dummy＝136000；正常联合总上界**3412800**。
+未全成功面板最少horizon+43、开始前须留4×(horizon+10)，各220/280/300/520的面板数数学上界28/22/21/11；
+每suite100个condition，故practice最多32800 episode，加query400，正常最多33200提交。
+这些仅为费用保护上界，不新增轮数菜单或强制跑满。
+
+新独立工程余量**64次episode尝试**（相当于至多四个16槽pack的有限恢复余量），不继承§17或其它旧批未用余额、不滚动充值。
+合计上界为**33264提交 / control3426080 / dummy332640 / 联合total3446720**。
+control上界=3276800−16000最低initial dummy＋132000 query control＋64×520；联合总额另加64×530。
+分项是独立保护，不得相加后替代联合上界；全局额也不覆盖每condition8192。
+未知执行按登记完整上界占额，补跑成功不清旧未知费用；只恢复已存同候选/四初态/噪声，普通科学失败有效不重试。
+无法在原condition与全局额内恢复完整面板、缓存身份不可信或模型科学计算改变时，保留有效原件和具体边界交main，
+不能静默丢行、缩query/实践、扩大矩阵或再次清零后缀。纯工程窄修按现有权限新冻结后自主接续，无例行main工程ACK。
+
+### 18.6 存储与原始经历生命周期
+
+新唯一ROOT：`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_validation180_seed7`。
+新增峰值**96GiB**；旧模型、数据、source、teacher、CP180/Reader900、已生成初始400 LoRA、旧H及原件均只读复用、不复制。
+最近quota快照余量约171GiB只是估算依据；建root/cache/launch前在strg01刷新data1独立quota、相关实际usage和shared容量。
+不得以df代替quota或转入data0；现场不足时按实际缺口处理，不能先启动再解释空间。
+
+本批原始H从创建时就分为以下明确生命周期，完整模型输入一律不变：
+
+- **长期原始H证据**：事前固定每task的final-init0，共8个完整condition的全部实践H；不按结果挑选。
+  工程失败/未知的必要原始残片与身份witness另保留，受64次有限工程余量和总峰约束。
+- **在途完整H工作集**：其余条件的raw RGB、同次native hidden和其它实际输入必须完整保留到该condition冻结、
+  final query完成/指定复用、逐事件事实与全部审计元数据成功原子落盘。只在无pending/worker消费、完整close后才可退役。
+  最多32个在途condition；这是覆盖8GPU×16有效episode槽÷4的原始H存储工作集，不额外限制就绪GPU/最终query吞吐。
+  动态long-first队列优先推进已准入condition并及时回收完成工作集，不能先物理采满400初始H再长期堆积。
+- **全部400长期证据**：原始episode rows、每次真正执行动作/执行mask、pre/post state、reward/success/terminal/truncation/failure、
+  事件顺序和pre/post观测引用、行为代码/真实完整候选LoRA、frame/step/seed、提案请求/receipt、接受/拒绝/停止和全部费用。
+  删除raw payload前保留其schema/身份/shape/字节数和消费/退役回执；不能用summary覆盖原始row或省略失败。
+
+仅对上述本批已声明临时文件实施逐condition退役，不删除旧formal结果/原始H、source数据、checkpoint或归属不明文件。
+未保留raw的392个condition必须明确标记为只保事实/参数/读出，不再称可完整H replay或适应中exact-resume；
+其最终LoRA仍可独立部署/评测，已完成condition不再重开。中断未完成condition的完整H保持，可合法接续。
+审计8条、故障残片及全部实际闭环raw rows均长期保留；不能因归档规则丢掉旧事故/正常科学失败成本。
+
+全局冻结H视觉缓存沿已修复SQLite/payload身份机制≤16GiB，冻结M≤1GiB；同目录ready/reserved/partial/控制文件都计入，
+不得另开平行缓存绕界。原始H退役时同步退役只属于它的可再生缓存条目；其它仍有消费者的输入不得删除。
+不在最后一次ψ读取之前裁H、压缩为少数token、降精度/分辨率或丢帧；不将预存learned H当作另一套近似算法。
+按完整raw张量估算每condition不超过约1.1GiB，32在途＋8保留约44GiB；全部最多7800个新候选LoRA约19.3GiB，
+另17GiB冻结缓存，余量覆盖故障残片、原子临时、元数据/代码。实际长H序列化/峰值须在有用工作核验，不能依赖gzip最好压缩率。
+若超此估计，先暂停新的condition准入、保留已有有效进度并报告具体资源缺口，不截断科学输入或删除指定证据。
+
+### 18.7 执行、吞吐与交付
+
+复用唯一control_space的固定ψ/M/D、Compilation/practice/native Runtime/History/账本/动态队列和已修复缓存；
+当前主动入口改为固定180的validation编译，不保留另一个平行Writer、旧训练恢复菜单或复制一套held实现。
+当前36/四query/已有initial-H的硬编码须按本节显式400condition/八task/单final/新initial事实承接，
+不能仅绕过count校验而让真实consumer仍取旧36 source/历史H或旧query。必要模块的结构/生命周期和实际消费者由执行者闭环。
+保留训练producer0b9b8080与本次读取代码身份分离；新代码须独占开发树、实际消费者核验、集成push后用clean detached冻结。
+不热改26a8fbb3或旧正式工作树；窄工程修复自主新冻结，不让无依赖就绪工作等待无关worker。
+
+每launch/resume live同时核两node GPU/process/显存、quota/shared、CPU/PSS；合计8卡、空闲≤10时6卡，单node≤6，foreign不挤退。
+按实测利用可用显存/有用worker/完整H chunk，不沿用单训练world size作全局吞吐上限；独立compiler/evaluator不启NCCL。
+沿§17有用16槽和H后释放inactive CUDA cache的实际证据，长H阶段close无用环境，panel前给EGL留真实空间；
+不重探已失败32槽或新增无判断价值的profile科学行。新的单final query可按实际就绪case打包，不能补假episode凑四例。
+新冻结M的完整teacher读取可用既有16/32/64 frame chunk吞吐证据结合实际余量选择，不为低位一致固定batch1或逐tensor对比。
+
+预计自实际派发起**6–12h**含必要实施，依据当前H/环境有效吞吐、400条件可能比seen更少早停和6–8张可用A40；
+首批已授权有用condition修正吞吐/peak/总wall预测，不按其成绩选模型/改预算，也不另加profile矩阵。
+GPUh准确记账但无硬限，设备不足不等待凑卡或擅自改科学规模；显著偏离预期应说明实际原因。
+所有历史根的费用、事故区间和最初09:05:48.038参考时钟保持，本新批另记派发/准备/启动/首有用工作/退出。
+单owner持续等待整批实际退出，0自Queue/心跳/第二waiter或固定间隔读共享日志；科学/资源实际边界另报。
+完成后交400原始配对、全部条件/预算/归档原件、完整成本/吞吐/资源释放与Git，向main01a13dd9一次可靠回报并归还写窗口，
+无自动后继。main消费实际结果后自主接续，不以Owner新许可或工程ACK造成停滞。

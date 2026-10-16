@@ -1,3 +1,22 @@
+## 2026-10-16 main消费§17：登记固定180的strict validation400
+
+canonical b18a15f8已归还main且clean/pushed；本次主讨论只读原件、实际修订源码及并行CPU统计，0新forward/env/共享更新。
+合法89→93，新增8/丢4，target净5/support失1；初始query全零七任务只有15取得正例。
+最终首提案组22→22、后续所选组2→6，但中间候选无query，不能称已测后续因果增益。
+同中心相邻δ余弦中位.99917、跨task首δ中位.33887：有task差异、通常近方向修正，未证明H读取错误原因。
+完整科学判断/未知/旧证据见[分析§22–23](docs/analyses/source_control_space_learning_20261015.md#22-功能修订180有了小幅独立收益尚未证明经历纠错)；
+复算小原件置§17ROOT analysis/main_scientific_readout，300事故/75提案不混合法链，原16.555654GPUh及未知区间保持。
+
+唯一新授权 [design§18](docs/designs/source_policy_space_compiler_20261015.md#18-固定功能修订180的完整验证迁移)：
+固定ψ180/Reader900/linear64/source，400不同教学condition独立8192真实实践、各自final init排除，再同原scene/root7 strict400。
+初始已有400 LoRA只读；新的完整H不复用其它条件，0held离线标签/梯度/共享状态/其它点/controls/Test。
+新增33264/control3426080/dummy332640/联合3446720，独立64工程余量；新root functional_feedback_validation180_seed7，峰96GiB。
+完整H输入不缩减，32在途工作集、8条预定全链raw H长期保留，其它raw在冻结/query/全事实审计完成后按预声明临时生命周期退役；
+全部400原始rows/动作state反馈/参数/选择/费用保留，旧资产不删。最近quota余量约171GiB仅估计，执行launch前重新准入。
+预计含实施6–12h，按6–8 A40与完整H/rollout吞吐，实际资源或早停不同据有用工作修正，不是新deadline/GPUh限制。
+当前main科学文档准备；commit/push后向现有执行01a13dbf实际派发并交独占工程/记录/Git窗口，启动以正式回执为准。
+一个owner/整批真实退出回报，main不另开waiter/Queue；完成后自主消费接续，无例行工程ACK。
+
 ## 2026-10-16 §17＋§17.7完整退出并验收
 
 最终owner229518于12:48:33.594620Z真实exit0（attempt005，21.62min）；原08:30:38.195派发至GPU退出257.923min，原2–4.5h上沿内，后续CPU验收/Git另记真实交付时钟。36完整condition/144 query、八臂1152逻辑case/28配对已验收；共享180/720 H条件/20160跨episode FM及90/180完整CP均保留，0重训/补量/held/Test/自动后继。完整[交付报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_completion.md)、results/acceptance/cost_accounting/query_changes/candidate_trajectories/teaching_cost_accounting/useful_throughput/resource_exit提供原件。

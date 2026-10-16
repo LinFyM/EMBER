@@ -1,3 +1,19 @@
+## 2026-10-16 当前目标：固定ψ180的完整验证迁移
+
+main已消费§17合法路径/配对行/实际算子与最近似历史：89→93有有限多target收益，但仍是训练task/已见initial-H，
+同condition修订方向通常接近、旧query全零七task只突破一个，不能认证反馈语义或迁移。
+唯一active [design§18](docs/designs/source_policy_space_compiler_20261015.md#18-固定功能修订180的完整验证迁移)：
+固定ψ180/Reader900/linear64/source38r8，validation8×50完整独立适应及strict paired400；0新训练/其它点/controls/Test。
+每condition四个practice init从另外49个预定抽取、排除自己的final init，8192含重置/未知、完整面板严格改善才保留；
+最终同一LoRA冻结，原registered-scene/root7配对Reader117及MT153，历史G165/D175/168/Reader1800111保留。
+
+新ROOT functional_feedback_validation180_seed7；新增33264提交/control3426080/dummy332640/联合3446720，含本批独立64工程余量，
+不继承旧余额。新增峰96GiB，32在途完整H条件＋事前8条完整H证据；所有400逐事件事实/参数/rows长期保留，
+其余本批raw H仅在完整消费、冻结、final和审计后退役，旧formal/H/模型不删。
+预计派发至交付6–12h，首有用工作修正，无GPUh硬限；实际quota/双node GPU/CPU按launch准入。
+main完成科学合同/Git后交既有执行01a13dbf独占实施/记录/Git，真实接收/启动以回执为准；当前不冒称GPU已启动。
+完整退出后一次回main科学消费，不自动相邻/加量或等待Owner例行许可。
+
 ## 2026-10-16 §17有限批已完成，无自动后继
 
 36完整编译/144query、180共享更新/20160 FM query及八臂1152验收；新93 vs Reader89（R85/G8/L4），target43→48/support46→45，实践83→100。只形成有限non-held/已见initial-H的净+4，main消费原件后裁决后继，0自动360/held/controls/Test。860物理提交/226202保守步/16.555653970374GPUh、300事故封存及8 unknown区间/原16用8、0有效重跑均保留；资源已全退出。详见progress及[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_completion.md)。Git交付后将canonical写窗口归还main01a13dd9，当前执行不再有待运行科学任务。

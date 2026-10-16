@@ -1,3 +1,17 @@
+## 2026-10-16 main解释：修订有净增，task修正与经历纠错仍未区分
+
+§17合法Reader89→93的净4来自target1/4/15/35的净6、37/56失2；task5有得失交换。原全零query七task仅15突破，
+111被拒候选和3中间接受候选未读query，不得归因为selector错过已知oracle。最终12变化任务24→28，24保留起点任务65→65。
+旧随机video和当前方法实践都83→100而独立query86/93，进一步削弱实践总分可直接代替新初态收益的假设。
+新首δ跨task余弦中位.33887，同中心后续δ余弦.99917/相对向量变化中位4.39%，有异质性却未隔离H或动态教学的作用。
+该记录支持固定控制空间中有一些可学修正，不能称已读懂失败原因；m/M/H的task识别和真正经历纠错仍是竞争解释。
+
+当前支持一次固定ψ180的完整held迁移读出，不支持围绕净4加量/调尺度或抹去旧Experience/G/FM负证据。
+完整解释见[分析§22–23](docs/analyses/source_control_space_learning_20261015.md#22-功能修订180有了小幅独立收益尚未证明经历纠错)，
+唯一后继design§18固定全部共享权重、每condition独立合法实践、strict400与旧Reader/MT配对；0其它点/controls/Test。
+400适应H若全留可能超过当前data1余量，因此预先定义完整在途工作集和8条全链证据、所有条件事实/参数/rows长期归档。
+退役只发生在本批完整消费与query/审计之后，不能以省空间截模型输入，也不把已退役raw的条件称可H replay；旧formal资产保持。
+
 ## 2026-10-16 §17：冻结控制映射后，经历条件FM取得有限独立净增
 
 合法完整方法93/144对固定Reader89，R85/G8/L4，target43→48/support46→45、breadth29→30、参考新增70保存29→35；旧V86→93为G10/L3。实践同为83→100并不等于旧随机搜索的同一独立结果：当前12个改参数task24→28，task1/4/15/35有净增，37/56损失及task5同分交换完整保留。Object12/14仍各4，Spatial/Object/Goal/Long为17/11/14/6。完整[原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_completion.md)。

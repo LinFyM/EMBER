@@ -1,3 +1,9 @@
+## 2026-10-17 §20正式冻结前集成核验
+
+976独立视频物化/唯一1180/原子pending保存与有效row adopt、全部实际历史参照/registered_scene、992提交与control/dummy/联合四上限，8项CPU消费者及976 ledger绑定通过；当前测试中的new计数是旧行fixture，不是本批实际结果。最终active源净增1009行、六新文件，结构guard无hard violation；此前职责/退役自审继续适用，完整读出仍只复用唯一queue/Runtime，未留旧fit/U/ψ主动面。原件`.codex/tmp/source_weight_readout_20261017`和`source_weight_compiler_20261017/architecture_final.json`。
+
+实现将先合并push main，再用新clean detached启动唯一owner。正式root/cache/M/train/eval尚未运行；首次现场21:56:50.026590Z及4–7h预计保持，准备约30min。source共享原4rank训练至最后更新wall29290.086s（约32.54454GPUh下界，未含旧失败保存/恢复），reference旧52.01411–52.12186GPUh区间、Reader整家族13.03309GPUh单列已付依赖，不重计为本ROOT或伪称完整从零成本。完成后整批一次回main，无阶段Queue/ACK/第二waiter。
+
 ## 2026-10-17 §20学习/恢复消费者与结构自审
 
 完整1180逻辑流验证：每task1020次视频访问、20160跨episode FM query，576/400官方teacher/state/noise映射正确；1–6rank和7/14/28/56物理query的完整A/B余切与直接全局FM＋.1BA梯度一致。CPU atomic checkpoint验证Adam/scheduler/全流与只保单rolling，CUDA rank RNG尚待真实1000→joint消费者，不冒称已GPU验证。原件`.codex/tmp/source_weight_compiler_20261017/credit/consumer.json`。

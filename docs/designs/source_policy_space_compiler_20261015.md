@@ -783,7 +783,7 @@ sigma=.25是固定bank单位中的一次实现选择，不学习方差、不截�
 每task第v个condition（完整计划v=0..3，当前仅v=0）的教学，固定为§13 seen面板init=v对应的原始teacher_demo。
 这是明确有限面板，当前每task一条、拟议全窗四条；不声称本阶段覆盖全部50或增加独立task，现成原始特征只读复用。
 其4个训练query初态为`[v,v+4,v+8,v+12]`，noise root202610151，正常原生执行；
-practice固定从init16..49用SeedSequence([7,202610161,task,v])无放回取4，同候选复用。
+practice固定从init16..49用SeedSequence([7,202610161,task,v])无放回取4，env/policy noise root202610161，同候选复用。
 query四例永不进入本condition H/选择；最终R为这四例success平均，不用实践分数替代。
 当前每task四个query case（拟议全窗16个）与旧source/reference同state/RNG可比较；只有anchor init=v与旧900同视频，
 当前36条anchor现成配对单独报告，其余不冒称与900逐教学严格配对。首轮36链由不同训练时点产生，不合并成single-checkpoint资格。

@@ -69,7 +69,7 @@ def revision_runtime(root,runtime,device):
     features=FrozenFeatures(root,runtime,frozen_reader(device));features.revision_checkpoint=str(REVISION_CHECKPOINT)
     # Reuse the useful long-H chunk evidence; full source/prefix tensors remain
     # transient, and a physical chunk never changes event/frame order.
-    physical=dict(saved['physical']);physical['image_chunk']=min(64,physical['image_chunk'])
+    physical=dict(saved['physical'])
     return model,features,physical
 
 

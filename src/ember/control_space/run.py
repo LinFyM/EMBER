@@ -70,11 +70,8 @@ def device_pool(args):
     resources=cpu_snapshot(args.root,'compile');selected=[]
     groups={n:gs[:min(6,max(0,int((resources[n]['memory_KiB']['MemAvailable']/2**20-64)//32)))] for n,gs in groups.items()}
     groups={n:gs for n,gs in groups.items() if gs};available=max(0,cap-outside)
-    while groups and len(selected)<available:
-        for node in list(groups):
-            gpu=groups[node].pop(0);selected.append((node,gpu['index'],gpu['mem_free_mib']))
-            if not groups[node]:del groups[node]
-            if len(selected)==available:break
+    ranked=sorted(((n,g) for n,gs in groups.items() for g in gs),key=lambda row:-row[1]['mem_free_mib'])
+    for node,gpu in ranked[:available]:selected.append((node,gpu['index'],gpu['mem_free_mib']))
     if not selected:raise RuntimeError('no live shared device fits actual native/raw-H evaluation')
     return selected,cap
 

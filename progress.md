@@ -1,3 +1,7 @@
+## 2026-10-16 §16首有用物理安排与磁盘证据
+
+正式六worker、node各3，live6卡上限内，GPU02:7/0/6、GPU01:2/3/7；每job均有现场GPU+quota准入。首24槽native9.41–9.84/end6.99–7.46plan/s，warm16已到end7.97–8.10，当前owner按实际端到端吞吐选择16，部分CPU准入较紧pack8；不为显存空再探已EGL失败的32。H archive/主要原张量约.573，按首真实practice步外推最大新H约34GiB，另计完整候选/临时/代码仍在64GiB内。双node第一有用CPU/PSS快照及原件见ROOT/analysis/first_useful_profile.json、CPU_*_first_useful.json，未混两主机内存；无额外profile科学行。仍预计接收1.5–3h内、实际执行约40–80min加整批验收，后续只持续等待唯一owner实际退出，0阶段Queue/普通mainACK。
+
 ## 2026-10-16 §16唯一owner已实际启动
 
 owner376918/supervisor376047于06:54:55.814143Z从新clean pushed detached56c4dc99启动，直接退出readerPTY9269，0Queue/第二waiter；原06:33:17.631接收时钟保留。ROOT/launch_contract和owner_attempts/attempt_001记录完整命令、数据/缓存边界、64GiB峰、独立quota/nodeCPU准入及物理16/24有用比较。此前CPU消费者不是GPU运行；现在真实owner负责唯一72condition/288逻辑query，actualGPU设备与每job首启动以execution/jobs原件登记。新预算/每condition8192/原source144/40377复用保持，0共享训练/Reader重编码/held/Test/自动后继。一个实际退出流持续等整批，费用/资源/Git验收后一次回main。

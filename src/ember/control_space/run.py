@@ -133,7 +133,11 @@ def learning_devices(args,world,*,minimum=12000,label='learning'):
 def launch(args,identity,command,world,*,estimate=600,minimum=12000,exact=False):
     devices=learning_devices(args,world,minimum=minimum,label=identity)
     if exact and len(devices)!=world:raise RuntimeError('profile topology changed before launch; no repeated campaign permitted')
-    batch=Batch(Path.cwd(),devices,root=args.root,required_free_MiB=minimum)
+    def event(job,value,stream):
+        receipt=dict(UTC=utc(),job=job,**value)
+        with (args.root/'work_events.jsonl').open('a') as handle:handle.write(json.dumps(receipt)+'\n')
+        print('EMBER_OWNER_EVENT '+json.dumps(receipt),flush=True)
+    batch=Batch(Path.cwd(),devices,root=args.root,required_free_MiB=minimum,work_event=event)
     job=Job(identity,['control-space',*command],gpu_count=len(devices),estimate_seconds=estimate,required_free_MiB=minimum)
     batch.execute(job,devices);return len(devices)
 

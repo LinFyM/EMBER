@@ -34,7 +34,7 @@ def run(args):
                 results.append(entry)
                 if context.is_main:
                     write_json_atomic(args.root/'profiles'/f'world_{context.world_size}.json',dict(complete=False,disposable=True,world_size=context.world_size,results=results))
-                if context.is_main:print('EMBER_PHYSICAL_PROFILE '+json.dumps({k:v for k,v in entry.items() if k!='memory'}),flush=True)
+                if context.is_main:print('EMBER_WORK_EVENT '+json.dumps(dict(kind='physical_profile',**{k:v for k,v in entry.items() if k!='memory'})),flush=True)
         if not any(e['stage']=='joint' and not e['OOM'] for e in results):raise RuntimeError('no finite disposable native physical profile')
         result=dict(complete=True,disposable=True,formal_initialization_used=False,world_size=context.world_size,results=results,
             actual_BA_equivalents=sum(r['BA_equivalents'] for r in results),actual_joint_equivalents=sum(r['joint_equivalents'] for r in results),

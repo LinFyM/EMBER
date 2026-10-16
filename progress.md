@@ -1,3 +1,13 @@
+## 2026-10-17 §20正式fresh BA已启动，按真实吞吐修正预计
+
+原1800M/59114帧完成：6rank实际434.938s，新build1764/adopt36、仅原prefix读取58331帧，producer0/0高维prefix复制；初失败783–902帧区间和.047937GPUh独立保留。受限profile实际5BA＋4joint/448 FM query，0env/0OOM，临时generator/Adam弃用。
+
+实测1卡BA pack1/row512/checkpoint为11.635s，pack6/row4096/no-checkpoint3.463s，pack36最大逻辑批3.367s/峰29.27GiB；6卡每rank pack6为2.483s/峰5.49GiB。joint1卡micro7为21.084s、实际micro56为19.657s/峰24.42GiB；6卡每rank最大实际21 query、合并多taskpack/row4096为2.474s/峰14.88GiB（每步仍全局112，无重复BA）。选6卡按实测wall，BA每rank已包含全部6个合法条件，不以重复样本填显存；row4096覆盖完整行/列，1卡pack36已验证更大占用收益有限。profile记录均在ROOT profiles/physical_selection。
+
+正式fresh1000 BA的首有效update于22:35:54Z（job train_00000000_00001000），6卡首步3.295s/完整36条件；B头梯度非零、A/body首步0符合零头乘积预期，不能当学习成功。后180 joint由同一完整1000 CP/Adam/流接续，唯一1180 576/400保持。当前actual owner129605/reader1348持续直接退出等待，尚未闭环。
+
+依据真实2.48s BA/2.47s joint更新与旧976 rollout吞吐，剩余训练＋完整读出暂估约1–2h，原4–7h按新直接生成/无长H开销下修；load/保存/任务时长仍计真实wall。首次21:56:50、最初失败和家族09:05:48.038不重置，所有科学/交互/16GiB/992提交/353760上限不变。无阶段main ACK/Queue/第二waiter；整批验收/Git后一次回报。
+
 ## 2026-10-17 §20窄修后同批实际接续
 
 owner129605于2026-10-16T22:24:00.607675+00:00从new clean pushed detached8395a9e1沿同ROOT --resume，PTY59999/直接退出reader1348；旧102364/reader1327已退出。原source_inputs/D/36 ready M只adopt，旧失败/783–902帧区间/.047937GPUh保留。已登记legacy格式定点CPU消费者通过，实际M准备继续；0正式有效更新或环境行复算，尚无本批科学结果。

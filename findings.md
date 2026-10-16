@@ -1,3 +1,9 @@
+## 2026-10-17 固定功能修订180未形成清楚held迁移
+
+[§18完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_validation180_seed7/analysis/engineering_completion.md)：119/400 vs Reader117，R105/G14/L12；实践505→647/1600而独立仅净2，105改参数条件51→53，初始零177条件8→7。task3/11净+5被26/31净−3抵消，breadth仍5/8，16/23/39仍0；强MT153/G165/D175/168保留。首提案最终组29→31、后续组22→22，不是相对首提案的直接因果对照；1768未query候选不得推oracle。支持少量case修正，不支持广泛迁移或H语义；不因弱闭环自动续180/scale，也不推所有经历学习不可能。训练任务净4与完整held净2分开，当前没有新授权或待跑后继。
+
+16具名unknown各一次原pending恢复已验收，旧872有效逐行未变；三个物理8192例外实际超1650专用于中断收尾，不扩大ψ remaining或生成候选。未知旧[720,8480]与39.789932GPUh/全部失败保留。动态16/8/4实际消费者及fullclose已接通；node PSS单独准入，两节点退出零本批进程/环境。356教学M真实构建及H视觉build/hit成本公开，不能把缓存初始LoRA记成零教学或用缩H换吞吐。392 raw退役后保留事实/参数，明确失去完整H replay资格。
+
 ## 2026-10-16 §18物理波次与有限中断成本
 
 0x8cdd当前只证实MjrContext offscreen framebuffer创建失败，现场新增foreign显存共驻是候选因素。16逻辑case按8/4物理槽运行不改变四例选择；完整close和slot回执须覆盖owner CPU并发账。16旧unknown不能因operation0/partial H改记零或已证实科学失败。具名pending准入例外不进入ψ remaining、不增加候选，详见[design§18.8](docs/designs/source_policy_space_compiler_20261015.md#188-engineering_attempt002具名pending恢复修订2026-10-16)及ROOT事故裁决；原训练CP180与872有效行保留。

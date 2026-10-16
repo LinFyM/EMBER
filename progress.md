@@ -1,3 +1,15 @@
+## 2026-10-17 §18完整400已验收，当前无待运行科学任务
+
+固定CP180完整validation400及七臂2800逻辑行通过：新119/Reader900117/Reader1800111/MT153/G165/D72=175/D144=168。对Reader R105/G14/L12、churn26、breadth5/8，实践505→647/1600而独立final仅净+2；对MT R87/G32/L66，低34。105改参数条件51→53；295保留初始66→66。Spatial37→40/Object42→44/Goal20→18/Long18→17，16/23/39仍0；没有清楚广泛迁移或video/H因果、相邻稳定证据，不把科学弱收益当bug，不自动加量/调尺度/新arm/Test。
+
+[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_validation180_seed7/analysis/engineering_completion.md)、results/closing_readout/engineering_acceptance/cost_accounting/useful_throughput/resource_exit/git_delivery保留全部case、成功集合、实践→final、首/后提案、未query候选和不利结果。1873提案/126严格接受；1747拒绝+21中间接受共1768候选未query，不推oracle。固定外部0b9b8080训练来源/新读取26c284ee分开，0新共享训练/held标签/Test。
+
+owner1517475于2026-10-16T20:45:06.719314Z exit0，恢复5.811h；原首次观察13:16:44→退出约7h28m，在6–12h范围内，原事故/家族09:05:48.038时钟不变。9213物理提交（9197有效+16原unknown），确切2515196步、总区间[2515916,2523676]；39.789931998783GPUh/17job全有exit（16成功/1失败）。原872有效SQLite记录逐行不变，16列名恰一次恢复8045步、旧unknown[720,8480]不清零；原64 extra用16余48，全局33264/3446720不增。三项物理收费9550/8196/8480超8192合计1650，均为具名pending收尾；另一项7728，全部有效完整实践≤8192且按原停止线自然止，没有后续提案额度。
+
+实际最多6GPU、单node峰3/4发生于不同时点；useful16/8/4端到端plans/s中位5.436/3.920/2.853（未配对成本样本）。按live余量/每node PSS共同调度，单final不凑假行，0NCCL/0重探32。356完整M构建/13204帧，400旧编译非零教学成本沿原件；H视觉26671 build/1841 hit是当前主要重复计算来源，16GiB全局缓存边界保持，不以丢H避费。678次fullclose/9097子环境释放回执，两node本批owner/GPU/env均0残留、UID zombie0，foreign未动。8预定raw witness2.701GiB/392完整消费后退役、facts1.403GiB及全部LoRA/rows长期保留，392不再可完整H replay/适应exact-resume；ROOT9.440GiB，恢复段committed raw采样峰12.639GiB，非OS连续峰，96GiB完整准入界保持。
+
+CPU消费者/完整验收/Git闭环完成后本整批一次回main01a13dd9并归还canonical工程/科研记录/Git写窗口；main消费后自主裁决下一段。当前§18已结束，无自Queue/第二waiter/自动后继。正式冻结保留，已集成开发树/本地分支清理，clean/pushed身份以git_delivery为准。
+
 ## 2026-10-16 §18同批具名恢复owner1517475已启动
 
 2026-10-16T14:56:28.106039Z，从clean pushed detached26c284ee启动同ROOT --resume；唯一直接退出等待PTY89521/cell1111，旧owner/reader均已结束。872有效行及45完整条件只adopt，16列名unknown各一次原pending恢复；private例外只作用于该已保存面板，原全局预算/8192停止输入不改。训练来源0b9b8080、此前读取0e775e4b/0d9d1a00与新读取26c284ee分列；旧事故、费用和原派发时钟不重置。

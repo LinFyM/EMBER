@@ -5705,3 +5705,10 @@ video_effect_MT_official_settling_03/a986e7b2，21:48:29Z→21:52:59Z，新增12
 ## 2026-10-16 §18 attempt002及具名pending有限恢复
 
 0d9d1a00读出owner1108781于13:45:28.487Z→14:40:00.706Z退出1；gpu02:4 MjrContext framebuffer0x8cdd，不能称已证实CUDA OOM/foreign唯一原因。872有效行/440542步、45完整条件保持，16unknown[720,8480]、总[441262,449022]步与5.327250757880GPUh保留，全部本批资源已退出。main裁决16列名unknown各一次原pending恢复，三个private物理增量2085仅收尾，原全局预算/64工程额/8192科学停止线不变。详见[design§18.8](designs/source_policy_space_compiler_20261015.md#188-engineering_attempt002具名pending恢复修订2026-10-16)及ROOT analysis/engineering_attempt002/main_ruling.json；0新训练/候选/有效行重跑/自动后继。
+
+
+## 2026-10-17 §18固定180完整验证迁移交付
+
+26c284ee读取/0b9b8080训练来源，400完整独立编译/单final、七臂2800通过。新119/Reader900117/Reader1800111/MT153/G165/D72=175/D144=168；对Reader R105/G14/L12、practice505→647/1600、105改参数条件51→53，breadth5/8。Spatial40/Object44/Goal18/Long17，task16/23/39仍0。只有限净2、未形成清楚迁移；原训练36净4/所有旧正负证据继承，0相邻/视频H因果或自动后继。
+
+872旧有效保留、16具名原pending各一次恢复；三项实际9550/8196/8480物理费为特定中断例外、有效完整practice仍≤8192且停止输入不变。9213提交/9197完整/16unknown，确切2515196步，总区间[2515916,2523676]；39.789931998783GPUh/17job全结，原64工程额用16余48，无有效重跑。2026-10-16T20:45:06.719314Z exit0，原观察至退出7h28m，不重置09:05家族时钟。8 witness raw长期、392消费后退役/facts与所有参数rows保留，两node本批进程/GPU/env全退出。完整费用、私有具名例外、生命周期和Git见[原件](../ember_runs/source_policy_space_compiler_20261015/functional_feedback_validation180_seed7/analysis/engineering_completion.md)（实际绝对入口见progress）；交main后归还canonical写窗口，无新计算。

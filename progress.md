@@ -1,3 +1,13 @@
+## 2026-10-17 §19完整128/四臂512验收完成，交付后归还main窗口
+
+唯一28task/208点S28-U64拟合、冻结后八参考投影及128新query全部完成：U28 37/source23/reference105/U36=98；reference新增83保14（U36保72），source R20/G17/L3，对U36 R34/G3/L64、churn67、Jaccard.336634，breadth4/8。Spatial10/Object6/Goal14/Long7，1/13/20/32均0；task34 7/16对U36 6的正例保留。全部task/suite/成功集合与已保存首5×7实际动作统计见[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7/analysis/engineering_completion.md)及results/engineering_acceptance。拟合池因子残差.006805不能替代排除组控制，S/U共同变化、欧氏投影非空间最优，不推出所有64维无解/视频已可编译/held资格。0自动后继。
+
+最终owner3979821于2026-10-16T21:30:50.665006Z exit0，恢复286.978s；首次现场21:05:08→科学退出25.71min，验收/Git另记，原35–75min及家族09:05:48.038均保留。唯一fit19.173s/CPU RSS3.365GiB，fit来源537c6763、前读取56491f82/最终08437d23；两次工程中断与一次CPU诊断重复公开，0重复fit/有效环境行重跑。原退出reader1234已结束，无活owner/第二waiter/Queue。
+
+实际128提交/36500control+1280dummy=37780步，0unknown/工程episode额0/16；总0.446570666035GPUh含准备加载0.098994816674，12实际job均有exit0，owner两次exit1单列。实际峰6卡/node峰4和2；16槽端到端plans/s中位6.810，8槽5.223为不同任务有用样本，不称配对profile。按node CPU/现场显存调度、不重探32；6次fullclose/88环境释放，两node本批owner/GPU/env0、UID zombie0，ROOT0.683GiB<4GiB。旧§18所有有效/unknown区间/39.789932GPUh、全部原件与时钟独立保留，未迁额度。
+
+三formal冻结保留，task-owned开发树/本地分支核实集成后清理，记录/Git身份见ROOT analysis/git_delivery.json。整批一次可靠交main01a13dd9并归还canonical工程/科研记录/Git写窗口，main消费后自主取舍；当前无自动待跑科学工作/旧训练恢复/新fold/Test。
+
 ## 2026-10-17 §19准入窄修后唯一owner已接续
 
 owner3979821于2026-10-16T21:26:03.688621+00:00从clean pushed detached08437d23同ROOT --resume，唯一直接退出PTY19417/cell1234；此前两owner/reader均结束。live-cap拒绝现走未启动withdraw，真实captured idle10/六worker不取消与已启动失败不自动重试的CPU消费者通过；全部现场GPU/CPU准入仍保留，不放宽6/8/node6。唯一fit来源537c6763、前读取56491f82、新读取08437d23各自留存，原0.098994816674GPUh加载费用/0episode事故不清零。原21:05接手及35–75min预计不重置，当前不是128完成声明；完整验收/释放/Git后整批一次回main并归还窗口，0Queue/第二waiter。

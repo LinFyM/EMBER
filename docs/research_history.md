@@ -1,3 +1,11 @@
+## 2026-10-17 §19内部任务排除完整诊断37/128
+
+[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7/analysis/engineering_completion.md)及results/engineering_acceptance/cost_accounting/resource_exit保存四臂512实际行。原FIRST8全部63点排除，明确28task/208点（203非零+5identity）独立76单位/未减均值FP64 Gram一次fit64；冻结后八selected标签侧投影，原init0..15/root202610151/official执行完整128。source23/reference105/U36=98/U28=37，reference新增83保14对原72；source R20/G17/L3，对U36 R34/G3/L64、breadth8→4，task34正例及四项0保留。S/U共同干预、投影非空间最优、无视频/held资格，0自动后继。
+
+唯一fit537c6763耗19.173s/CPU RSS3.365GiB；前读取56491f82和最终08437d23分别登记。str-Path接口和live-cap未启动异常分型两次工程修复均无环境行，全部失败/原件保留；恢复仅adopt basis/8输出，一次额外CPU-only诊断公开，0重新fit。128实际提交/37780步、0unknown/额外episode，总0.446570666035GPUh含加载0.098994816674，12 GPU job均exit0。最终owner3979821于21:30:50.665Z退出，首次现场21:05:08→退出25.71min，原家族09:05:48.038及§18 39.789932GPUh/16unknown区间独立保持。
+
+峰6卡、各node峰4/2，16/8有用吞吐与单node CPU/PSS联合准入；6次完整close/88环境全释放、两node本批进程0、ROOT0.683GiB。formal冻结保留、开发树集成清理，canonical记录/Git后整批一次交main01a13dd9并归还写窗口，由main继续科学消费；本批无训练/FM/PG/适应/教学/新reference/Test或自动科学后继。
+
 ## 2026-10-17 固定功能修订完整held弱迁移与内部覆盖检验定案
 
 main消费§18原400 paths/1873 proposals/逐行配对及实际信用链：119对Reader117/MT153，

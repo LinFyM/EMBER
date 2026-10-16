@@ -1,3 +1,7 @@
+## 2026-10-17 §19已完成，当前无自动待运行科学任务
+
+128新query/四臂512通过完整验收：排除组U28 37对原U36=98/reference105/source23，参考新增83仅保14；完整不利case、局部task34正例及投影非空间最优限制保留。[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7/analysis/engineering_completion.md)记录一次fit、两次窄修/完整费用/资源释放。0.446570666035GPUh、37780步/128提交、0unknown/0额外episode；双node本批GPU/env/owner全退出。Git/整批交付后归还main窗口，0自动新fit/训练/适应/held/Test，主讨论消费后自主裁决。
+
 ## 2026-10-17 §19从冻结产物接续128读出
 
 唯一fit完成后Path接口窄修，新读取56491f82/owner3946954 --resume同ROOT，只采用原basis/八输出。原事故0GPU/0episode；当前单退出PTY26847/cell1210，完整128/512及成本/释放/Git后整批交main，0重新fit/自动后继。详见progress。

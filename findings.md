@@ -1,3 +1,9 @@
+## 2026-10-17 排除任务后，全局因子构造的控制保留明显下降
+
+[§19原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7/analysis/engineering_completion.md)：仅28/208独立S28-U64、冻结后投影原FIRST8，128闭环为37对包含这八项的U36=98及参考105/source23。参考新增83仅保14（原72），source R20/G17/L3，breadth8→4；1/13/20/32为0，task34 7高于原6的局部正例不清零。拟合池加权因子残差.006805，而排除八点S36因子相对误差中位.5902/完整sBA-C36相对误差中位.7233；闭环优先，内部低残差没有迁移认证。
+
+这降低当前完整S/U构造直接跨任务覆盖的支持度；S也重算，非U独立消融，欧氏因子投影不是空间内闭环最优，不能由失败推出所有64维/所有z无解，更不等于Reader或H信用故障。它是内部nonheld标签侧诊断，不是合法视频Compiler/新held划分或400资格。停止本批，0自动折数/维数/单位扫描或恢复旧训练；最近似§12正例、§17/18有限收益与全部旧费用保留。
+
 ## 2026-10-17 §19工程隔离口径
 
 任务排除必须贯穿point manifest、task/selected/other质量、76个有效tensor RMS和Gram，不是删掉271断言或只留episode。新active fit只读取28/208及旧center/layout；旧S36/C_l、八selected函数与旧scores属于冻结后诊断，不进入构造。Runtime只部署八套完整新LoRA，Euclidean投影不是空间内闭环最优，也不构成合法视频Compiler。相关[设计§19](docs/designs/source_policy_space_compiler_20261015.md#19-内部任务排除后的控制空间迁移检验)，当前无新分数。

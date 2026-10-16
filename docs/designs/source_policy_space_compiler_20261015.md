@@ -1,4 +1,4 @@
-# Source/rank8控制空间编译器：参考控制器与实施合同
+# Source/rank8教学参数编译：参考控制器与实施合同
 
 2026-10-15；科学owner为主讨论01a13dd9-837d-7f33-b15a-4eb170bcf04b，唯一实验执行为
 01a13dbf-dbc3-7621-82be-87be44a5bca6。Owner已授权自主落实、分析问题并接续，无例行许可停点。
@@ -9,15 +9,13 @@
 当前后继从冻结raw source起步，所有生成、实践和部署LoRA均为38-target/rank8、alpha=8、dropout=0；
 不以MT初始化、合并或回退，不部署额外高rank分支。强MT153、G165、D175/168与所有负证据保持原身份。
 
-完整方法的候选原理见[控制空间编译分析](../analyses/policy_space_meta_compiler_proposal_20261015.md)：
-固定D(z)产生完整r8，视频读取/实际H学习如何取得和修订控制。旧经验编译已有真实反馈学习，
-本次不是新的反馈原理；训练域先行证据与实际held迁移必须分开，当前原配方已在§18取得弱迁移结果。
+完整方法与历次取舍见[编译分析](../analyses/policy_space_meta_compiler_proposal_20261015.md)。
+旧反馈学习原理保持其真实历史；当前不把自由因子、BA或FM接通重新描述成未经尝试的新原理。
 
-**当前实施范围为§19：内部整组排除原八task，只用其余28task一次拟合S/U64，再做八参考投影的128闭环。**
-§2–18均保留完成/失败/恢复历史。§17的89→93/144没有在§18变成广泛迁移：完整held117→119，
-实践505→647/1600而独立净2，仍低于MT153，不自动续原ψ配方/scale/PG或其它checkpoint。
-linear64标签侧484/576来自已包含被测任务的bank；当前内部排除检验决定该构造的迁移优先级，
-不是合法视频Compiler成绩或正式held资格。0神经训练/新reference/实践适应/held标签/Test，唯一新拟合和128行仅按§19。
+**当前唯一范围为§20：冻结source/Reader900，以实际source权重行列为地址生成完整38/r8；1000次BA＋180次FM/BA，终点576/400。**
+§2–19均为完成/失败/恢复历史。§18实践505→647而held117→119，§19内部排除投影98→37/128，
+停止原固定全局轨迹空间继续加量/微扫；不声称空间唯一根因或所有低维方法无效。
+新候选零交互、无任务内动作轨迹拟合/新reference/额外checkpoint选择/controls/Test；唯一实施合同见§20。
 
 ## 2. 已核资产与选择新参考教师的理由
 
@@ -1636,3 +1634,202 @@ CPU按实际MemAvailable/PSS准入，优先CPU闭式分解，不加载source模�
 执行接手后独占工程/科研记录/Git，main只读；一个owner持续等实际整批退出，
 无自Queue/心跳/第二waiter。完整结果、实际费用/所有失败、归档有效性、资源释放和Git交付后，
 一次回主讨论01a13dd9并归还canonical窗口；main消费后自主接续，不需要Owner例行许可或普通工程ACK。
+
+
+## 20. Source权重地址条件的完整LoRA生成
+
+### 20.1 科学问题、范围和一次完整窗口
+
+§19内部任务排除后U28只有37/128（原U36=98/reference105/source23），参考新增83保14，
+四任务归零。停止固定全局轨迹空间作为当前主路线的继续加量/维数或单位扫/更多fold；
+这不证明原held在U36中无解或所有64维方法不可能。完整分析及最近似自由因子/LocalField历史见
+[分析§26–27](../analyses/source_control_space_learning_20261015.md#26-任务排除后的控制丢失停止把全局轨迹空间当作迁移基础)。
+
+本批唯一新方法：冻结source与Reader900有序视频memory，在source实际线性权重行/列上学习完整38-target/r8因子生成。
+先1000次密集参考算子学习，再同一状态180次真实跨episode FM+BA，唯一终点1180读出seen576和strict validation400。
+这是一个零交互完整教学编译候选；不把未实施的实践反馈学习列为已完成模块。
+0任务内优化/实践/搜索、0动作轨迹恢复再拟合、0新reference、0旧ψ/PG/控制空间恢复、0额外checkpoint选择/controls/Test。
+旧Reader900使用其已登记的900/1800 held选点身份，不改称从未使用validation。
+
+ROOT唯一`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_compiler_seed7`。
+正式任务仍原24/8/8；共享学习沿已审计train24+support12的36-task allowlist，额外12不是新增held数据。
+完整列表为`[0,1,12,13,20,21,32,34,2,4,5,7,14,15,17,19,22,25,28,29,35,36,37,38,42,43,51,55,56,62,64,73,95,96,97,101]`。
+复用已有source71及specification/等价审计、36-task provenance；若实际输入身份有矛盾，报告具体边界，不静默换数据。
+
+### 20.2 输入资产与隔离
+
+- 唯一执行source为§2的aligned source1000原件，动作/state normalization完全不变；source全部冻结。
+  只从该source的实际38目标线性层提取W_l，不加载MT，不把合并MT的历史G/参考当本批权重。
+- 原`control_space_seed7/bank.json`中的36个`selected_path`为共享训练标签；五个identity按真实身份保留，
+  不重选高点、不用query16/report结果重加权、不加载其optimizer。完整参考算子`E_tl=s B^E_tl A^E_tl`，`s=alpha/rank=1`。
+  它们不进入held或新教学condition的前向输入。
+- 初始A0/B0严格沿`control_linear64_seed7/basis/state.pt`的saved source center/layout，B0=0；
+  只读取这两个字段，不读取旧U、code_units或旧因子代码作为新生成器输入。
+  76个输出tensor的标量单位S沿`control_space_seed7/units.json`，是合法训练bank的共享单位，不是条件标签或动作归一化。
+  该单位只改变数值尺度，不把输出限制在bank张成空间。
+- 视频前端仅使用`video_initial_seed7/checkpoints/update_00000900/state.pt`的image/spatial/frame_queries/
+  frame_attention/video_time/norm部分，全部冻结；不执行或使用global query/global attention/output_norm/64维head。
+  数学复用`functional_feedback_frozen_20261016`中`ImageReader.prepare_video`的完整ordered memory路径，
+  实现可抽取既有owner，但不要为得到M顺带依赖旧code decoder或H代码。
+- 教学使用全部真实双相机RGB、stride5含terminal、180度旋转一次、render256/model224。
+  冻结source Gemma只读512真实图像prefix token，无L、state、action suffix或public/fake action probe。
+  每frame八个256维slot、原frame indices的位置编码、四层有序Transformer和norm产生`M[1,8T,256]`，不再全局压成64。
+- 训练只复用`video_initial_seed7/features/manifest.json`里`kind=original`的1800项（36×50，59114采样帧）。
+  545个producer条目不进入本批；不复制高维prefix。冻结M在本ROOT最多1GiB统一有界缓存，
+  全1800项FP32净payload约.451GiB；有实际身份/partial/ready预算，允许逐项复用旧完整M但不能复制整个旧cache。
+- held视频按原validation400映射从合法RGB即时提取完整prefix并生成M，只缓存小M，prefix用后释放。
+  teacher动作/state/reward/terminal/task ID/filename/object pose不作为条件；调度身份只用于取数据及审计。
+  exact language仍进入实际policy和训练FM query，Compiler无直接L/任务标识入口。
+
+### 20.3 生成器的唯一数学与可训练参数
+
+记目标层`W_l∈R^(d_out×d_in)`，原A0为`8×d_in`。按source本身计算并冻结
+`ρ_l=max(RMS(W_l),1e-6)`及`ρA_l=max(RMS(A0_l),1e-6)`，不访问held或参考反馈。
+新生成器fresh seed7，宽256、4 attention heads、FF宽1024/GELU、dropout0。
+所有投影/attention/FF按PyTorch标准初始化；16个query与地址embedding用固定seed7的normal std1/16，
+两最终Linear(256,8)的weight/bias全0。只有本节新生成器参数参与训练。
+
+按实际module kind（q_proj/v_proj/action_in_proj/action_out_proj）和A/B side共享输入投影，
+不同原始宽度保留各自显式projection；同kind各层共用。`e_l`为38个结构target embedding，
+另有module-kind与side embedding；它们是固定网络地址，不是task ID。
+输入P_A/P_B/P_0均为无bias的Linear；其余Linear/attention沿标准bias设置。各处pre-norm独立、跨l共享，LayerNorm eps1e-5。
+
+```
+X^B_li = (W_l[i,:]/ρ_l) P^B_kind + e_l + e_kind + e_B
+X^A_lj = (W_l[:,j]/ρ_l)^T P^A_kind
+          + (A0_l[:,j]/ρA_l)^T P_0 + e_l + e_kind + e_A
+X_l = concat(X^B_l, X^A_l)                       # 每个真实行/列仍有独立token
+Q_l = learned_queries[16,256] + e_l + e_kind
+Z_l = Q_l + Attn(LN(Q_l), LN(X_l), X_l)
+```
+
+A0作为原始rank坐标的静态输入，不提供任何任务控制；P_0是共享Linear(8,256)。
+不对W做SVD截断、不取少数行、不造虚假原生forward。投影及聚合仍有信息压缩，不宣称无损。
+
+把38×16个Z按实际target顺序堆叠，连续两个pre-norm block，每块依次：
+`Z += self_attention(LN(Z))`（全608 tokens）；`Z += cross_attention(LN(Z), M, M)`；
+`Z += FF(LN(Z))`。M带原有时序表示，完整输入不平均frames、不裁长视频。
+随后每层按其完整行/列query读该层的16个Z：
+
+```
+H_l = X_l + Attn(LN(X_l), LN(Z_l), Z_l)
+H_l = H_l + FF(LN(H_l))
+A_l = A0_l + S_A_l * Head_A(LN(H^A_l))^T
+B_l =         S_B_l * Head_B(LN(H^B_l))
+```
+
+最后FF/LN/Head_A/Head_B跨目标共享；B0为零。输入压缩attention、两融合block和输出读取attention/FF参数各自独立，
+同一模块跨l共享。输出恰好76 tensors/完整38-target、643584有效因子标量、rank8/alpha8/drop0。
+无全局U/原型混合、第二LoRA、额外reference残差、MT合并或部署fallback。
+原完整布局/shape/mask定义复用，不把512 padding当训练参数。当前模型与旧Reader/ψ架构不兼容，fresh新checkpoint schema。
+
+初始两头为0使A=A0、B=0，真实执行等于source；首步只能有效教B头、A与更前层暂时零梯度是乘积结构预期。
+后续非零B后A和内部网络须通过同一输出取得真实信用，不通过fake非零张量绕这一事实。
+对实际执行hidden h的作用是`δy=s B_l(M) A_l(M) h`；完整A/B直接生成，非新condition动作拟合。
+
+### 20.4 密集算子学习与实际功能联合学习
+
+仅36个selected参考参与新标签。全局每层常量
+`D_l=max((1/36) sum_t ||E_tl||_F²,1e-12)`，从这36个原算子一次计算并冻结。
+用既有compact Gram/trace `operator_squared_error`算完整Frobenius误差，不物化大密集BA，不引入因子SVD标签。
+每条视频的`L_BA=(1/38) sum_l ||s B_l A_l-E_tl||_F²/D_l`；identity参考E=0也保留等权。
+这是函数监督，A/B可用等价gauge；输出共享S与D均只来自合法训练池，来源显式登记。
+
+阶段A：固定1000个optimizer updates，每update所有36task各一条完整original视频，等权1/36；
+有效batch36，共36000条件消费/每task1000次。各task视频序列按50个一周期无放回：
+`default_rng(SeedSequence([7,202610173,task,cycle])).permutation(50)`，cycle0..19。
+优化唯一L_BA。M冻结缓存，不把原来的36个独立映射说成1800个独立task。
+
+阶段B：承接同一新生成器/Adam状态，固定180个updates，不reset Adam/LR或按阶段A loss另选点。
+每9个update恰好覆盖36task一次；每周期用
+`default_rng(SeedSequence([7,202610174,cycle])).permutation(TASKS)`并连续四个构成一个logical update，cycle0..19。
+每task教师沿阶段A后续visit1000..1019，仍完整同一个50条周期规则。
+每task28条合法离线action query，必须同task且episode不等于本条teacher demo，使用现有FunctionalQueryDataset。
+新query流fresh seed由`SeedSequence([7,202610175,task])`派生并保存；它是新学习，不假称旧Reader/ψ exact-resume。
+采用既有真实FM时间/噪声与source原生action/preprocess合同，实际seed/cursor和28个query来源完整保存。
+
+每update四个task等权、每task28个query等权：`L = L_FM + 0.1 L_BA`。
+共720视频条件/20160 FM queries；不加同视频辅助动作、H目标、PG/reward或其它学习头。
+FM沿实际生成的完整LoRA→source policy prediction计算，再把同一LoRA所有A/B余切回传新生成器；
+可复用§17的detached-leaf native cotangent staging，数学上仍是实际函数loss的链式梯度，不截断成code梯度。
+若四task的query分给不同物理rank，BA质量只计一次（各rank按该task所持query份额/28再乘1/4），
+不能重复4/6倍；DDP平均或sum的实现必须与注册的全局均值一致。
+source/Φ900/参考因子/输入W与A0都冻结；不把自己的动作生成成轨迹标签再训练最终LoRA。
+
+全程AdamW lr1e-4、betas(.9,.95)、eps1e-8、weight_decay1e-4、global clip1、constant LR，fresh初态。
+阶段转换只有上述batch/loss/data源改变，模型/optimizer不重置。完整1180更新是本次窗口，不能称已充分收敛。
+新checkpoint保存generator、optimizer、scheduler/scaler、阶段/全局step、sampler/cursor、每rank RNG、world/topology/schema。
+保留1000/1090/1180三个完整点；另允许单个滚动完整checkpoint供真实恢复，新的原子完整点落地后才退休本ROOT旧滚动副本。
+只有1180进入本批闭环；1090留作成功后的相邻能力证据候选，不自动评测或按loss择点。
+不恢复旧ψ/Reader optimizer，不把普通数值低位差异作为修复理由。
+
+### 20.5 唯一终点的完整闭环与比较
+
+1000+180完成后冻结1180，按`video_initial_seed7/panels.json`的seen/validation身份逐条件编译。
+seen36×init0..15共576，原root202610151；validation任务`[3,6,11,16,23,26,31,39]`×50共400，root7。
+每条件一条original教学、一完整LoRA、一个最终episode，0实践和任务内梯度。不能只生成一个task LoRA覆盖50个视频，
+不能平均最终LoRA或按视频/结果挑输出。validation每task50条全部各一次，correct映射由既有video_schedule确认，
+不受worker/GPU/恢复影响。held不读离线标签，不把旧/新final反馈放入任何生成条件或共享更新。
+
+seen原官方init资产、原query16环境与noise；validation沿Reader900原registered scenes、状态/视频映射和noise。
+官方render256/model224、双相机rotate180一次、state8/action7、10flow steps、执行前5后replan、settling10、
+target horizon220/280/300/520，support12 horizon400，success立即终止。
+先编译冻结完整LoRA，最终episode只加载source+该LoRA及正常自身观测/exact L，Compiler/M/参考/helpers退出。
+新结果不能复用旧episode，即使输出意外接近source；本批976都为实际新query。
+
+seen主要只读参照为同576原source218、selected reference502、U36投影484、Reader900334/Reader1800413；
+MT340及旧完整生成器只在原配对身份可核时作背景，参考选择用过init0..15，不能把502当独立qualification。
+validation只读原Reader900117、Reader1800111、MT153、G165、D72=175、D144=168和§18固定ψ119。
+原MT缺初始proprio字段的已知配对限制保持，按原场景/状态/噪声证据报告，不伪造metadata或重跑参照。
+记录来源并从原rows复算，不仅抄此处数字；同口径primaries是Reader900与MT。
+
+完整报告task/suite/breadth、R/G/L/churn/Jaccard/成功集合、源能力保持/参考新增能力保留，
+明确target24/support12以及seen/held、identity/nonidentity，不把训练池高点与held点拼成一个模型。
+BA/FM曲线、真实各阶段梯度消费者、参数规模/教学读取成本只作解释。内部误差/个别高点不选择checkpoint。
+若训练域也无广泛获取，首先承认本窗口尚未学成自由参数生成；若seen明显而held仍弱，
+说明source权重结构和当前M/监督未解决跨任务编译，不能自动加BA/FM轮数、换seed/scale或恢复64空间。
+若1180已有实质广泛收益、尤其超过MT且保持合理，main另登记相邻1090/必要匹配教学controls；
+本批不自动开启它们，更无Test。最终目标仍未由一个1180点单独满足。
+
+### 20.6 预算、物理执行、生命周期与回报
+
+新增正常评估976提交：seen control203520+dummy5760，validation control132000+dummy4000，
+合计control335520/dummy9760/总345280。独立16工程extra按每项520+10最坏收费：
+本ROOT累计上界**992提交/control343840/dummy9920/总353760**，各上界同时有效不相加。
+没有实践预算；正常科学失败不重跑，unknown保守收费，只能有限恢复原pending同LoRA/state/noise。
+0旧余额迁入、0有效行重跑/重新编译取好结果。真实修复若触及科学/数据/选择边界交main具体裁决。
+
+正式共享学习1180 updates、36720条件消费、20160 FM queries；实际前端构建/重读/缓存命中帧数、
+generator forward数、FM物理batch及每项GPUh分别记录。允许最小消费者/吞吐检查至多8个
+纯BA full-update equivalents及4个joint full-update equivalents（≤448额外FM queries），
+只用合法train池/0环境episode，临时参数不进入正式训练；这是上界不是必须用满的矩阵，真实成本单列。
+不另开验证/教学扰动探针，已有实际generated参数/原始rows可做必要CPU分析。
+
+新增峰16GiB：M全局≤1GiB、约.17GiB实际目标W、976完整LoRA约2.4GiB、三完整checkpoint与一个rolling、
+原子副本/manifest/源码/日志和余量；实现后按真实generator参数量复算，不将估计冒称实测峰。
+新root/cache/正式launch前执行者现场查询strg01 data1独立user quota、相关du和shared容量；
+所有新增只写data1，source/视频prefix/数据/旧参考/旧formal只读复用，0大资产复制/旧原件删除。
+教学M是可重建cache，完成后保留完整材料/消费和身份记录；不创建H raw/archive或高维held prefix树。
+正式保留run contract、完整checkpoint schema/manifest、所有976 LoRAs与raw rows、分析/成本/completion及退出回执。
+
+训练在单node以真实吞吐安排物理rank（node≤6），logical batch36或4×28不因此改变；
+已测§17的4/2/6卡和native microbatch7..56只作起点，不能锁死world4或无视新head实际显存。
+source-W生成分组/梯度checkpoint/完整M chunk/物理microbatch须用实际LoRA/s、query/s、显存峰选，
+在明显余量下验证有用增大，记录未继续放大的实测原因；不改科学width16latent/两block、任务权重或更新数。
+双node每次launch/resume共同live检查GPU/process与CPU/PSS/线程，两node合计6/8、各node6；不挤掉foreign任务。
+训练固定NCCL_P2P_DISABLE=1、GPU-local NUMA/deferred NCCL，独立materialize/eval不用NCCL。
+材料就绪后动态long-first持久workers及16/8/4有用槽评估，可与独立物化并行，统一计卡数；不dummy占卡或重探32。
+
+唯一canonical运行面由执行者按实际ownership重组，旧§19只读fit入口和无当前consumer的U/ψ主动路径退役到Git/frozen，
+不保留平行Writer/fallback。模型/纯数学、数据/训练、物化/评测和owner职责清楚；按code-architecture-gate控制增长，
+复用真实Runtime、完整FactorLayout、FM/BA数学、视频映射、quota与持久队列，不机械复制整个旧目录。
+执行者独占工程/科研状态/Git，隔离开发、实际consumer针对性检查、push并从新clean detached frozen运行；
+main负责科学合同和结果消费，不重复工程审核/测试，不设普通ACK门槛。
+
+整批预计**4–7小时**：实现/消费者约45–90分钟，1800小M准备与1000次纯生成器训练约20–60分钟，
+20160真实FM查询参考§17实耗12.18GPUh（物理2/4/6变化），加新head开销约2–4小时，物化/976评测约20–45分钟。
+这是基于旧native吞吐的新架构估计，不是已测新head时间或截止；首个有用阶段按实测修正wall，不按未完成held分数改方案。
+没有GPU小时硬门槛；显著超期/资源或科学方向改变明确说明。所有历史时钟和费用保持，新root另记本批首次现场/准备/运行/退出。
+Reader900、36参考和source的已付共享成本列为复用依赖，不把新root账本冒充完整方法从零总成本。
+一个owner持续真实退出等待，0Queue自通知/心跳/第二等待者；整批976、完整费用/资源释放/Git后一次回main并归还写窗口。
+发生实际边界只报具体问题，同时完成独立工程工作；正常阴性不当bug，终点完成不自动续训或开启其它矩阵。

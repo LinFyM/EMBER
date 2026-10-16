@@ -1,3 +1,19 @@
+## 2026-10-17 当前目标：source权重坐标上的完整教学参数生成
+
+已科学消费§19实际512行：排除组98→37/128、reference新增83保14，四项归零；task34正例及投影非空间最优限制保持。
+结合§18实践提升而held117→119，停止固定全局轨迹空间继续加量/微扫。科学分析见
+[§26–27](docs/analyses/source_control_space_learning_20261015.md#26-任务排除后的控制丢失停止把全局轨迹空间当作迁移基础)。
+
+唯一active [design§20](docs/designs/source_policy_space_compiler_20261015.md#20-source权重地址条件的完整lora生成)：
+冻结source/Reader900，source实际W行列＋原identity A坐标输入新完整生成器；1000次BA后180次FM+0.1BA，
+预注册终点1180一条教学编译完整38/r8，seen576＋strict validation400。0任务内动作拟合/实践/新reference/controls/Test。
+这是完整候选，旧自由因子V148和含MT的G/D正例均保留；不预称学会反馈、视频因果或最终目标达成。
+
+新ROOT source_weight_compiler_seed7，新增峰16GiB，正常976＋独立16工程额，累计992提交/353760联合步；
+正式1180更新/20160 FM queries，最小一次性消费者/物理profile费用另登记。预计4–7小时，首有用工作据实校准。
+main持有科学记录/Git窗口，完成文档push后实际派发既有执行01a13dbf；接手后工程/记录/Git由执行独占。
+当前准备不冒称已启动GPU。完整结果回报后main自主消费、裁决与接续，不等待Owner普通许可或自Queue。
+
 ## 2026-10-17 §19已完成，当前无自动待运行科学任务
 
 128新query/四臂512通过完整验收：排除组U28 37对原U36=98/reference105/source23，参考新增83仅保14；完整不利case、局部task34正例及投影非空间最优限制保留。[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7/analysis/engineering_completion.md)记录一次fit、两次窄修/完整费用/资源释放。0.446570666035GPUh、37780步/128提交、0unknown/0额外episode；双node本批GPU/env/owner全退出。Git/整批交付后归还main窗口，0自动新fit/训练/适应/held/Test，主讨论消费后自主裁决。

@@ -1,3 +1,22 @@
+## 2026-10-17 main已消费§19，登记唯一§20完整生成候选
+
+已直接读取四臂512 rows、一次fit/八项冻结后诊断及验收/费用/退出原件，CPU独立重算保存在§19ROOT
+`analysis/main_scientific_readout`。U28=37对U36=98/reference105/source23，R34/G3/L64；reference新增83保14。
+拟合池残差.006805与跨任务控制保留不是同一结论，task34高BA误差仍7/16的正例保持。
+科学判断和最近似旧G/V/LocalField比较见[分析§26–27](docs/analyses/source_control_space_learning_20261015.md#26-任务排除后的控制丢失停止把全局轨迹空间当作迁移基础)。
+停止原固定空间续训/微扫/更多fold，不把该阴性扩成所有64维或所有z无解。
+
+当前唯一active [design§20](docs/designs/source_policy_space_compiler_20261015.md#20-source权重地址条件的完整lora生成)：
+新source权重行列条件完整生成器，冻结source/Reader900，1000 BA＋180 FM/BA，终点1180完整576/400；
+共享训练监督只读原36 selected参考和合法跨episode train query，新condition无动作标签/拟合/实践。
+全部38/r8、唯一完整LoRA、direct-L信息墙/Test封存不变；宽256/16latents每target/两融合block属于本次方法，非永久上限。
+新ROOT source_weight_compiler_seed7，16GiB峰/992提交/353760步含独立16工程额；预计4–7h，新head吞吐尚未实测。
+
+旧§19 .446570666035GPUh/37780步/0unknown、§18 39.789931998783GPUh/原事故和全部历史保持；
+新方法复用Reader900/参考/source的已付共享成本仍列依赖，不能当免费全新训练。
+当前canonical窗口为main科学写入，push后实际发送既有执行01a13dbf并转只读；接手/冻结/正式launch分别登记，
+不把设计完成当后台运行。执行者完成实现/消费者/资源/新clean pushed frozen和唯一owner整批交付，无main工程ACK。
+
 ## 2026-10-17 §19完整128/四臂512验收完成，交付后归还main窗口
 
 唯一28task/208点S28-U64拟合、冻结后八参考投影及128新query全部完成：U28 37/source23/reference105/U36=98；reference新增83保14（U36保72），source R20/G17/L3，对U36 R34/G3/L64、churn67、Jaccard.336634，breadth4/8。Spatial10/Object6/Goal14/Long7，1/13/20/32均0；task34 7/16对U36 6的正例保留。全部task/suite/成功集合与已保存首5×7实际动作统计见[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7/analysis/engineering_completion.md)及results/engineering_acceptance。拟合池因子残差.006805不能替代排除组控制，S/U共同变化、欧氏投影非空间最优，不推出所有64维无解/视频已可编译/held资格。0自动后继。

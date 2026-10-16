@@ -1,3 +1,16 @@
+## 2026-10-17 §19内部任务排除完成：原全局空间停止追加投入
+
+`control_task_exclusion8_seed7`一次28task/208点S28-U64 fit后，八参考投影128为37，对source23/reference105/U36=98；
+reference新增83保14，U36→U28 R34/G3/L64，breadth8→4。任务1/13/20/32归零、task34 7/16正例均保留。
+拟合池残差.006805，排除组因子误差中位.5902/BA .7233；S/U共同改变、欧氏投影非闭环最优、原init0..15参与参考选择，
+不将结果写成正式held或所有64维无解。原件和独立读回见ROOT analysis/engineering_completion.md、results.json、main_scientific_readout。
+
+实际128提交/37780步/0unknown/.446570666035GPUh，含中断加载.098994816674；两个零环境行工程中断、
+一次CPU-only诊断重复和所有clock保留。fit537c6763/最终读出08437d23、交付main7c8904a7；双node本批资源退出。
+§18所有旧事故/费用/物理例外与源数据不变。main据§18–19及旧完整因子历史停止固定轨迹空间继续加量，
+登记[design§20](designs/source_policy_space_compiler_20261015.md#20-source权重地址条件的完整lora生成)的source权重条件完整生成；
+这是新候选登记，尚无新结果。科学取舍见[分析§26–27](analyses/source_control_space_learning_20261015.md#26-任务排除后的控制丢失停止把全局轨迹空间当作迁移基础)。
+
 ## 2026-10-17 §19内部任务排除完整诊断37/128
 
 [完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7/analysis/engineering_completion.md)及results/engineering_acceptance/cost_accounting/resource_exit保存四臂512实际行。原FIRST8全部63点排除，明确28task/208点（203非零+5identity）独立76单位/未减均值FP64 Gram一次fit64；冻结后八selected标签侧投影，原init0..15/root202610151/official执行完整128。source23/reference105/U36=98/U28=37，reference新增83保14对原72；source R20/G17/L3，对U36 R34/G3/L64、breadth8→4，task34正例及四项0保留。S/U共同干预、投影非空间最优、无视频/held资格，0自动后继。

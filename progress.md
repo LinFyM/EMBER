@@ -1,3 +1,7 @@
+## 2026-10-17 §19准入窄修后唯一owner已接续
+
+owner3979821于2026-10-16T21:26:03.688621+00:00从clean pushed detached08437d23同ROOT --resume，唯一直接退出PTY19417/cell1234；此前两owner/reader均结束。live-cap拒绝现走未启动withdraw，真实captured idle10/六worker不取消与已启动失败不自动重试的CPU消费者通过；全部现场GPU/CPU准入仍保留，不放宽6/8/node6。唯一fit来源537c6763、前读取56491f82、新读取08437d23各自留存，原0.098994816674GPUh加载费用/0episode事故不清零。原21:05接手及35–75min预计不重置，当前不是128完成声明；完整验收/释放/Git后整批一次回main并归还窗口，0Queue/第二waiter。
+
 ## 2026-10-17 §19实时GPU总量准入窄修
 
 owner3946954于21:22:54.539422Z退出1：最初idle>10选择8卡，逐卡launch时idle降10、实时cap正确降6；第七个未启动worker的拒绝却是普通RuntimeError，绕过既有未启动撤回路径，触发整批停止。六个仅完成source加载的job全部exit0，无环境提交/unknown/额外episode，加载0.098994816674GPUh保留；basis/八LoRA及唯一fit不动。原件ROOT analysis/engineering_attempt002及旧jobs/admission均保留。

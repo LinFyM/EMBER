@@ -26,7 +26,7 @@ class ImageReader(nn.Module):
         nn.init.zeros_(self.head.weight)
         nn.init.zeros_(self.head.bias)
 
-    def forward(self, images, indices, *, checkpoint_layers=False):
+    def prepare_video(self, images, indices, *, checkpoint_layers=False):
         if (images.ndim != 3 or images.shape[1:] != (512, 2048) or not len(images)
                 or indices.ndim != 1 or len(images) != len(indices)
                 or indices.dtype not in (torch.int32, torch.int64)):
@@ -45,4 +45,7 @@ class ImageReader(nn.Module):
         ordered = self.norm(ordered)
         query = self.global_query[None]
         pooled = query + self.global_attention(query, ordered, ordered, need_weights=False)[0]
-        return self.head(self.output_norm(pooled))[0, 0]
+        return self.head(self.output_norm(pooled))[0, 0], ordered
+
+    def forward(self, images, indices, *, checkpoint_layers=False):
+        return self.prepare_video(images, indices, checkpoint_layers=checkpoint_layers)[0]

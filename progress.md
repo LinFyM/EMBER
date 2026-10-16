@@ -1,3 +1,9 @@
+## 2026-10-17 §20唯一正式owner已启动
+
+owner102364于2026-10-16T22:20:10.839568+00:00从clean pushed detached c7ef1372启动唯一ROOT，PTY4877/持续直接退出reader1327。先source输入与36 selected算子常量，再原1800M和受限临时profile，随后唯一fresh1000＋180及976读出；当前owner启动不等于学习或976完成。完整命令/环境在ROOT owner_launch.json，每个实际GPUjob另留两node live GPU/CPU/存储准入及launch/exit。0自Queue/心跳/第二waiter。
+
+首次现场21:56:50.026590Z、4–7h预计和旧家族09:05:48.038Z不重置。代码实现/CPU消费者准备约23min；profile实际吞吐后修正。所有976为新实际episode，992/353760和16GiB/M1GiB硬界不变，旧参照/费用只读依赖。三个隔离组件已串行完整集成，清理其task-owned开发树不动正式frozen/旧资产；canonical记录窗口仍执行者独占，整批科学/资源/费用/Git一次回main后归还。
+
 ## 2026-10-17 §20正式冻结前集成核验
 
 976独立视频物化/唯一1180/原子pending保存与有效row adopt、全部实际历史参照/registered_scene、992提交与control/dummy/联合四上限，8项CPU消费者及976 ledger绑定通过；当前测试中的new计数是旧行fixture，不是本批实际结果。最终active源净增1009行、六新文件，结构guard无hard violation；此前职责/退役自审继续适用，完整读出仍只复用唯一queue/Runtime，未留旧fit/U/ψ主动面。原件`.codex/tmp/source_weight_readout_20261017`和`source_weight_compiler_20261017/architecture_final.json`。

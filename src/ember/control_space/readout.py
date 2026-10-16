@@ -18,8 +18,15 @@ def inputs(root):
     root=Path(root);run=read_json(root/'run_contract.json');panels=read_json(root/'panels.json')
     if run['schema']!=SCHEMA or run['phase']!=PHASE or run['final_update']!=FINAL or panels!=registered_panels():
         raise ValueError('readout must bind the single full1180/seen576/validation400 contract')
-    tasks={role:{t['global_task_id']:t for t in run['environments'][role]['tasks']} for role in panels}
-    if set(tasks['seen'])!=set(TASKS) or set(tasks['validation'])!=set(VALIDATION_TASKS):raise ValueError('only explicit train36/validation8 may execute')
+    tasks={}
+    # The original video owner retained one44-task environment union. Consume
+    # only this role's registered panel; retain the immutable old contract file.
+    for role,required in (('seen',TASKS),('validation',VALIDATION_TASKS)):
+        environment=run['environments'][role];all_tasks={t['global_task_id']:t for t in environment['tasks']}
+        if len(all_tasks)!=len(environment['tasks']) or not set(required)<=set(all_tasks):
+            raise ValueError('role environment is missing an explicitly registered task')
+        tasks[role]={t:all_tasks[t] for t in required}
+        run['environments'][role]=dict(environment,tasks=list(tasks[role].values()))
     return run,tasks,panels
 
 

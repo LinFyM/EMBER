@@ -1,3 +1,11 @@
+## 2026-10-17 §20完整1180训练完成，读出环境角色接口窄修
+
+owner129605于23:32:15.796Z exit1：训练1000/1090/1180三个完整点和1180行真实学习日志均已完成、finite；20160 query/36000 BA/720 joint逻辑条件与36-task实际allowlist一致。readout.inputs才发现原Reader环境是36seen＋8validation共44项的metadata union，新入口错误假定seen字段已仅36；训练并未消费该environment列表（实际流/标签/Runtime均显式36）。尚未建evaluation queue、0环境提交/0物化LoRA；完整训练终点为1180。
+
+窄修从原不可变contract按已登记role面板投影consumer环境，seen所有原生consumer仅36、validation仅8，严格核缺失/重复任务，保留原44 metadata和全部训练状态不覆写。实际ROOT消费者证明92 shards/976条件/345280最坏正常步完全相同；原输入/teacher/state/noise/模型/选择/预算不变。故直接adopt1180，0训练恢复/重复更新/新profile，原件ROOT analysis/engineering_attempt002/failure.json保留。新clean pushed detached后同ROOT继续独立完整读出，旧frozen不热改。
+
+旧owner/reader1348已结束，原23:22后的30–60min估计及21:56首次/家族09:05时钟均保持；修复与验收为额外工程wall。0科学结果声明/0main工程ACK/Queue/第二waiter，全部费用保留。
+
 ## 2026-10-17 §20完整BA1000已保存，已实际接续joint
 
 1000次fresh BA已完成并原子保存完整generator/Adam/scheduler/stream/6rank RNG，训练段exit正常；ROOT training/segment_00000000_00001000.json记录job wall=2734.528s（包含日志/保存，更新计时另存）。同一Adam/模型从完整1000进入180 joint，首有效1001于23:22:29.545Z，112合法跨episode FM query/四task，6rank实际2.593s/峰14868MiB；A/B头与body及完整LoRA native余切均非零。该消费者证明实际恢复/信用接通，不代表学会或held成功。

@@ -1,3 +1,19 @@
+## 2026-10-16 main消费§13；首轮完整参数反馈学习待实际派发
+
+canonical写窗口已归还main，当前基线68226cc3 clean/pushed。main直接核ImageReader、真实FM、History/native消费者和1952原始行/代码，
+无新policy/GPU/环境或重复工程验收。[科学解释](docs/analyses/source_control_space_learning_20261015.md#14-视频初始映射的实际进步与迁移分叉)：
+seen334→413/576、held117→111/400；Object42→23/Long18→8与Spatial37→64的交换保持。
+原始nonidentity代码误差.510301→.224354不等于函数正确；task17最近自身参考仍0/16，末段真实producer辅助亦未充分拟合。
+结束原1800后的纯监督加量，不归因唯一bug、不由本H空阴性推翻全部反馈方法。
+
+唯一active [design§14](docs/designs/source_policy_space_compiler_20261015.md#14-固定控制空间内的完整参数提案与真实反馈学习)：
+固定原D/source/r8，从已选Reader900加fresh真实H读取，Gaussian均值生成完整LoRA；全部实际提案的联合score使用独立4-init query回报。
+原始跨episodeFM辅助保持，共同producer回归退出；source四例实践起步，best完整面板选择，all4成功/实际8192步余量决定停止，不固定轮数。
+当前只实施36task首轮36条完整链/9共享更新/144实际query/1008 FM；后续144链/36更新/strict400只是计划，不自动执行。
+ROOT feedback_proposals_seed7，48GiB峰；最多2848提交/control352672/dummy28480/联合总355712步含独立16工程尝试。
+首轮含实施预计2–4h，actual H/score/吞吐未测，首有用工作修正；无GPUh硬限、两节点6/8/node6及data1独立quota保持。
+main当前只完成科学合同，尚未派发或声称GPU运行；Git后实际交现有01a13dbf独占工程/记录/Git，一个owner退出等待、一次整批交main自主裁决。
+
 ## 2026-10-16 §13实际退出、资源与交付
 
 owner2590448于01:49:06.528824Z真实exit0；900 seen334/576、validation117/400；1800 seen413/576、validation111/400，冻结900。1952新提交/506278步、0环境失败/未知/有效行重跑，本批13.033086503GPUh，ROOT144.038GiB。

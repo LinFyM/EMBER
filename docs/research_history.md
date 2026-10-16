@@ -1,3 +1,14 @@
+## 2026-10-16 main消费视频两点并登记首轮完整反馈编译
+
+§13完整交付已直接消费，原900/1800、source/linear/reference、MT153/G165/D175/168与全部费用保持。
+seen334→413而held117→111；Object/Goal/Long损失与Spatial增长分开，代码靠近和实际功能仍有缺口。
+[科学说明](analyses/source_control_space_learning_20261015.md#14-视频初始映射的实际进步与迁移分叉)保存实际算子/原始行分析、竞争解释和旧反馈方法的真实区别；
+main无新policy/GPU/env或重复工程测试，停止同H空监督轨迹加量。
+
+唯一[design§14](designs/source_policy_space_compiler_20261015.md#14-固定控制空间内的完整参数提案与真实反馈学习)登记固定source/r8/D、Reader900、真实H读取、连续Gaussian提案、完整路径score和独立query。
+当前仅36task一轮36链/9共享更新/144query/1008 FM；完整144链与400计划不自动激活。48GiB峰、355712总步/2848提交含16工程尝试，预计含实施2–4h。
+这是已成文科学合同，实际派发/启动另在progress登记，不写成反馈或held已成功；后继由main消费首轮实际证据自主裁决。
+
 ## 2026-10-16 §13真实教学到固定控制族整批记录
 
 唯一fresh1800更新/201600 FM query、7200原始+7200辅助读取完整结束；900 seen334/576/held117/400，1800 seen413/576/held111/400，依strict400冻结900，held目标未达。五identity亦全真实执行，两点1952新episode/506278步。

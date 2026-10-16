@@ -1,16 +1,11 @@
-"""Atomic task-local incumbent updates; no shared learner or semantic H reader."""
+"""Atomic deterministic H-conditioned task-local revision after fixed psi180."""
 from pathlib import Path
-import numpy as np
 import torch
 from safetensors.torch import save_file
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.reference.accounting import connect
-from .contract import PRACTICE_STEPS,SIGMA
+from .contract import PRACTICE_STEPS
 from .practice import condition_spent,specifications,validate_row
-
-
-def proposal_seed(task,ordinal):
-    return int(np.random.SeedSequence([7,int(task),0,int(ordinal),202610161]).generate_state(1,dtype=np.uint64)[0]%(2**63-1))
 
 
 def maximum_panels(horizon):
@@ -23,7 +18,7 @@ class Compilation:
     def __init__(self,root,condition,decoder,units,task):
         self.root,self.condition,self.decoder,self.units,self.task=Path(root),condition,decoder,units,task
         self.id=condition['id'];self.file=self.root/'conditions'/self.id/'path.json'
-        self.reused_steps=sum(r['environment_steps'] for r in condition.get('source_initial_rows',[]))
+        self.reused_steps=sum(r['environment_steps'] for r in condition.get('initial_rows',[]))
         if self.file.exists():
             self.state=read_json(self.file)
             if (self.state['id'],self.state['initial_y'])!=(self.id,condition['initial_y']):raise ValueError('condition restart changed its initial controller')
@@ -31,10 +26,10 @@ class Compilation:
             self.state=dict(id=self.id,task=condition['task'],arm=condition['arm'],teacher_demo=condition.get('teacher_demo'),
                 initial_y=condition['initial_y'],initial_LoRA=condition.get('initial_LoRA'),panels=[],proposals=[],proposal_cursor=0,
                 incumbent_index=None,incumbent_y=condition['initial_y'],incumbent_successes=-1,reused_practice_steps=self.reused_steps,
-                condition_steps=self.reused_steps,history_paths=[],frozen=False,query_complete=False,complete=False)
-            if condition.get('source_initial_rows'):
-                rows=condition['source_initial_rows']
-                self.record_panel(dict(identity=self.id+'_practice_000',kind='initial',y=[0.]*64,parameter_ref='raw_source_identity',
+                condition_steps=self.reused_steps,history_paths=[],decisions=[],frozen=False,query_complete=False,complete=False)
+            if condition.get('initial_rows'):
+                rows=condition['initial_rows']
+                self.record_panel(dict(identity=self.id+'_practice_000',kind='initial',y=condition['initial_y'],parameter_ref=condition['initial_LoRA'],
                     ordinal=0,proposal_ordinal=None),rows,reused=True)
             self.save()
 
@@ -82,22 +77,41 @@ class Compilation:
     def next(self):
         if self.state['query_complete']:return None
         if 'pending' in self.state:self.ensure_parameters(self.state['pending']);return self.state['pending']
-        if not self.state['panels']:return self.request('practice',self.condition['initial_y'],0,'initial')
+        if 'pending_proposal' in self.state:
+            request=self.state['pending_proposal'];receipt=self.root/'proposals'/f"{request['identity']}.json"
+            if receipt.exists():self.accept_proposal(read_json(receipt));return self.next()
+            return request
+        if self.state.get('stopping_reason'):return self.freeze(self.state['stopping_reason'])
         remaining=PRACTICE_STEPS-self.spent();score=self.state['incumbent_successes']
-        if self.state['frozen'] or score==4 or remaining<4*(self.task['horizon']+10):return self.freeze()
-        ordinal=self.state['proposal_cursor'];seed=proposal_seed(self.condition['task'],ordinal)
-        epsilon=torch.randn(64,generator=torch.Generator().manual_seed(seed),dtype=torch.float32)
-        center=torch.tensor(self.state['incumbent_y'],dtype=torch.float32);y=(center+SIGMA*epsilon).tolist()
-        self.state['proposals'].append(dict(ordinal=ordinal,seed=seed,epsilon=epsilon.tolist(),center_before=center.tolist(),y=y))
-        self.state['proposal_cursor']+=1
-        return self.request('practice',y,len(self.state['panels']),'proposal',ordinal)
+        if score==4:return self.freeze('all_four_success')
+        if remaining<4*(self.task['horizon']+10):return self.freeze('insufficient_complete_worst_case_panel')
+        ordinal=len(self.state['panels']);identity=self.id+f'_practice_{ordinal:03d}'
+        request=dict(command='propose',identity=identity,condition_id=self.id,task=self.condition['task'],arm=self.condition['arm'],
+            ordinal=ordinal,proposal_ordinal=ordinal-1,m=self.state['incumbent_y'],best_score=score/4,remaining_steps=remaining,
+            history_paths=list(self.state['history_paths']),original=self.condition['original'])
+        self.state['pending_proposal']=request;self.save();return request
 
-    def freeze(self):
+    def accept_proposal(self,receipt):
+        request=self.state['pending_proposal']
+        if receipt['request']!=request:raise ValueError('actual deterministic proposal lost its saved causal input')
+        y=torch.as_tensor(receipt['candidate'],dtype=torch.float32)
+        if y.shape!=(64,) or not bool(y.isfinite().all()):raise FloatingPointError('nonfinite deterministic candidate cannot execute')
+        y=y.tolist();repeat=next((p['ordinal'] for p in self.state['panels'] if p['y']==y),None)
+        self.state['decisions'].append(dict(ordinal=request['proposal_ordinal'],y=y,center_before=request['m'],
+            history_paths=request['history_paths'],best_score=request['best_score'],remaining_steps=request['remaining_steps'],
+            repeated_practiced_ordinal=repeat,receipt=str(self.root/'proposals'/f"{request['identity']}.json")))
+        del self.state['pending_proposal']
+        if repeat is not None:
+            self.state['repeated_code']=y;self.state['stopping_reason']='repeated_practiced_code';self.save();return False
+        self.state['proposals'].append(dict(ordinal=request['proposal_ordinal'],y=y,center_before=request['m'],
+            history_paths=request['history_paths'],best_score=request['best_score'],remaining_steps=request['remaining_steps']))
+        self.state['proposal_cursor']+=1
+        self.request('practice',y,request['ordinal'],'proposal',request['proposal_ordinal']);return True
+
+    def freeze(self,reason):
         if not self.state['frozen']:
             incumbent=self.state['panels'][self.state['incumbent_index']]
-            self.state.update(frozen=True,condition_steps=self.spent(),selected_LoRA=(None if self.condition['arm']=='no_video' and
-                self.state['incumbent_y']==[0.]*64 else incumbent['parameter_ref']),
-                stop_reason='all_four_success' if self.state['incumbent_successes']==4 else 'insufficient_complete_worst_case_panel')
+            self.state.update(frozen=True,condition_steps=self.spent(),selected_LoRA=incumbent['parameter_ref'],stop_reason=reason)
             self.save()
         if self.state['incumbent_y']==self.condition['initial_y']:
             from .comparison import initial_query_rows

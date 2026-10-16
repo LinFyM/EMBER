@@ -201,6 +201,7 @@ class FrozenFeatures:
         loaded={}
         def teacher():
             if not loaded:loaded.update(load_cached(entry['cache_path']))
+            if loaded['source']['model']!=self.source:raise ValueError('teaching feature source differs from the frozen execution source')
             return loaded
         def required():return len(teacher()['indices'])*8*256*4
         @torch.no_grad()

@@ -1,3 +1,19 @@
+## 2026-10-16 §17实现与CPU实际消费者核验完成，待正式冻结
+
+唯一control_space已替换§16随机主动面：fresh ψ直接消费冻结完整教学M和实际H，输出m+δ，经同一固定D和原生FM取得真实信用。CPU解析/import、314前缀/180数据流、因果H/零head后真实body梯度、冻结缓存spawn多进程全局预算、native损失cotangent桥的解析梯度、完整Adam/cursor/RNG恢复和一次claim两阶段候选→四例面板均通过。CPU合成输入只验证机制/schema，不是科学行或控制能力；正式ROOT/GPU尚未启动。证据在仓库.codex/tmp/functional_feedback_20261016/{data,history,integration}。
+
+本次净增约1.05k有效源码，五个必要文件按实际消费者分工：feedback只拥ψ事件/因果/决策数学，features只拥冻结M与唯一观测视觉工作集，learning只拥合法query与FM真实cotangent，checkpoint只拥完整原子恢复，training只拥fresh180轨迹；现有data/comparison/compilation/readout/run分别保留数据/分析/条件原子状态/同Runtime消费者/唯一owner调度所有权。复用source Runtime、BatchedLoRAInference/native FM、原始History、queue/Batch账本/close和原FactorLayout/D；没有第二Writer/PG/Gaussian/fallback/通用未来调度。旧§16执行入口和sigma已退役，旧证据由Git/冻结/原件保留。frozen ImageReader仍是当前M消费者，不能删除。该结构是实际H学习+恢复所必需，而非拆出平行版本；新文件均≤250行，run约350行，架构检查无hard，剩余复杂度来自明确合同守卫/状态机，保留原子性而不机械拆分。
+
+训练只在有用有效更新上比较micro7/14/28及更大task pack、H chunk16..512/image16..128，完整9更新边界比较同node实际可用物理rank，再按实测选吞吐；112 query/4task/1更新、全局SUM不重除world。初始显存准入按实际源/native/H工作量估算，首有用周期后按有效峰调整，不是永久余量门槛。36编译共用persistent source Runtime和小ψ，不增加常驻actor卡；长H推断前close无用环境，四例面板用§16实测16优于24证据及node合计CPU准入，不重探32。旧Reader900实际query cursor为2844..2868，接续保存值而非概念2800；ψ与Adam fresh，不称exact resume。
+
+## 2026-10-16 §17实际接手，当前仅实施
+
+实际接收2026-10-16T08:30:38.195Z，首次准备08:30:46.693Z；main57e8af31已clean/push并独占交工程/科研记录/Git给执行01a13dbf，main只读。唯一design§17：冻结Reader900/source38r8/D/units，fresh经历条件功能修订ψ180更新/720条件/20160独立FMquery，终点才36完整编译/144query；0旧meta9/H/Adam、MT、held/Test/新basis/自动后继。当前CPU实施，不把派发记GPU运行。
+
+H只来自§16两臂314完整面板前缀，重建当时m/c/remaining，不读未来/最终best/query。训练task/teacher/query真实游标从900来源接续；label只来自合法跨episodeFM，自己的动作仅H输入。新ROOT functional_feedback_seed7，初始video144/H/35207步强制复用并占8192；新2704提交/control318905/dummy27040/联合320505、独立16不滚动，单condition8192并行约束。新增64GiB含全局16GiB可再生视觉H缓存及小M缓存；旧H/模型/148GiB特征只读，不全物化1256denseH。strg01 data1现场used1935177220KiB/soft2147483648KiB，64GiB峰可覆盖，shared约79.4TiB；launch前再核实时GPU/nodeCPU/quota。
+
+计划：隔离代码所有权并行实现必要H算子/缓存与只读前缀数据；执行主线负责真实FM信用、完整CP/拓扑/调度和确定性实际编译。沿唯一control_space退役随机主动面，不复活PG或平行Writer；针对实际消费者/结构→集成push→新clean detached→有用吞吐比较→180及完整读出→费用/资源/Git一次交main。预计派发至退出2–4.5h（实施45–90/训练45–120/编译读出20–50min部分重叠），首有用更新修正；旧09:05参考时钟/所有费用区间保持。一个owner持续等实际退出，无Queue/心跳/第二waiter。
+
 ## 2026-10-16 main消费§16，登记§17功能修订学习
 
 07a8d29e clean/pushed后canonical写窗口已返main。main核原始七臂rows、72实际参数路径和当前编译源码，

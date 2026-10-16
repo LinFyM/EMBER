@@ -1,3 +1,7 @@
+## 2026-10-16 §17工程消费者边界
+
+实现保留真实native FM→完整因子cotangent→固定D→fresh H修订的信用，CPU解析梯度验证不等于控制能力。训练前缀只消费旧panels并重建当时m/c/剩余量；部署只复用video初始144 H，其后H必须实际产生。Reader900保存query cursor为2844..2868，不能硬写2800。冻结视觉工作集是全局16GiB（ready/reserved/partial共同计）、M≤1GiB，LRU仅本批可再生特征，完整H不截短。CPU机制/生命周期与结构记录见progress，唯一科学合同仍design§17。
+
 ## 2026-10-16 控制起点已保留，下一缺口是可迁移修订的学习
 
 main从§16完整路径确认：参数中心实际移动、视频初始LoRA已被完整实践，仍只有practice83→100而query89→86。

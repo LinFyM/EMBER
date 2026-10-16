@@ -1,3 +1,7 @@
+## 2026-10-16 §18从新冻结接续同批
+
+新owner1108781于2026-10-16T13:45:28.487288+00:00从clean pushed detached 0d9d1a00正式--resume同ROOT，唯一直接退出reader PTY2875/cell1061；旧1050772及reader1044均已结束，没有第二owner/等待者。16有效initial行/7825步、0unknown和首次0.087215730018GPUh保持，只adopt不重跑。原run_contract与全部400/ψ180/scene/RNG/停止/8192/64工程额/96GiB不改，原首次观察13:16:44和家族09:05:48.038时钟不重置。首次准入事故与CPU窄修证据已存ROOT analysis/engineering_attempt001，原owner身份/日志/exit另存owner_attempts/attempt_001，新attempt元数据独立。
+
 ## 2026-10-16 §18首次准入中断，16有效行原样保留
 
 owner1050772于13:38:50.495Z退出1：worker_05在启动前live GPU01:7显存由28080MiB降至27252MiB、低于已选16槽的28000MiB需求，Batch正确拒绝启动；不是CUDA OOM/故障卡或科学阴性。其它5个已启动job均exit0/fullclose，16有效initial实践/7825步、0unknown/0工程episode额外，0.087215730018GPUh全部保留。原启动/失败/费用原件见ROOT analysis/engineering_attempt001，不重置§18或原家族时钟。

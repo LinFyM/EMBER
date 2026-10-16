@@ -1,3 +1,13 @@
+## 2026-10-16 §17.7完整冻结已真实接续
+
+同一已push eac21f1c的新clean detached完整src/configs冻结已通过实际Runtime authority CPU读取，owner49619于12:09:31.634419Z真实启动（attempt004）；独立cache_recovery_001只接续23条件，0新梯度/训练。76认证行/13完整condition、原144初始/H和指定查询均只adopt，300旧事故raw/参数/rows及84110费用封存保持。正式GPU/首有用pack按job原件登记，owner启动不代替有效环境行。一个wrapper直接等子进程实际退出，PTY98750，0Queue/第二waiter；整批验收/Git后一次交main，45–90min仍自具名裁决计且原08:30派发不重置。
+
+## 2026-10-16 §17.7首次恢复启动配置依赖缺失，0新科学行
+
+clean pushed eac21f1c的首次新冻结仅checkout src，漏掉meta_protocol按REPO_ROOT读取的versioned configs；owner14318于12:06:37.244489Z启动、12:07:30.853040Z exit1，六worker在Runtime加载authority前退出，尚无模型forward/新proposal/环境提交。此为执行冻结准备疏漏，非缓存再现或科学阴性。原376/103283、76adopt/300封存和23合法前缀均不变；普通环境16额仍0/16。六启动失败实耗0.01624122010336982GPUh完整保留，累计13.946518352627752GPUh，不抹失败/重置时钟。
+
+原稀疏冻结及attempt003保留；同一pushed eac21f1c新建完整必要src/configs的clean detached，先通过实际Runtime authority CPU消费者再接续同一cache_recovery_001。预算/ψ/原件/H/V/数据/选择均未改，不重复准备或清空23合法prefix，无需main工程ACK。当前恢复启动/退出事实与CPU证据见ROOT analysis/engineering_attempt003，真正GPU就绪吞吐仍以随后job原件记，不把该次启动称有效科学运行。
+
 ## 2026-10-16 §17.7具名有限恢复已授权，尚未重启GPU
 
 main已亲读原件并裁决，11:57:27Z为本地带时钟接收观测：CP180保持唯一来源，0重训/补量；16首提案均fresh builder的64practice及2/28/56的12query共76行/19173步认证adopt，13完整条件不动。其它300行/84110步和75提案封存`uncertified-cache-provenance`，非已证实数值错读/unknown/科学失败；所有原物理complete、H/参数/query/费用保持。23task仅从认证连续前缀恢复一次，新leg防止旧pending/code/queue自动采用，task/state/noise/完整H/V/ψ180与选择规则不变。

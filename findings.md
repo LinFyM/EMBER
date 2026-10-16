@@ -1,3 +1,7 @@
+## 2026-10-16 原生H推断与EGL的GPU内存生命周期
+
+§17恢复中16槽多批成功后，8槽也在MjrContext framebuffer创建0x8cdd退出，不能把某次槽数成功当永久硬件上限或直接称CUDA OOM。实际panel allocated约10–11GiB而H后Torch reserved可34–37GiB；空闲allocator block仍占driver空间，EGL不属于Torch allocator。当前窄修在完整panel前释放inactive缓存，活模型/科学张量与数值合同不变，实际phase CPU消费者验证仅证明调用顺序；是否恢复EGL仍由原pending有用工作验证。8 unknown全额1840记账、原16额度与condition8192均保持，不因单一失败operation0步清零整个pack或重跑有效行。
+
 ## 2026-10-16 §17.7：按实际消费者认证连续前缀
 
 main按源码确认hit=false路径直接返回原输入builder，因此16个首提案完整M/H都miss且请求正是initial前缀时，可认证64practice；2/28/56在该合法面板4/4后同saved LoRA的12query也可保留。反之仅某次全miss不能自动认证继承了未认证H/中心的后缀。13完整condition/76新行只adopt，300具名旧后缀封存为来源未认证，非证实读错或科学阴性。恢复仅23个合法前缀，旧query不选恢复范围。CP180单node训练与跨node编译事件按实际时序隔离；新同node疑点仍须报告。裁决/固定清单与事故费用见[design§17.7](docs/designs/source_policy_space_compiler_20261015.md#177-具名缓存事故与一次有限恢复main-2026-10-16裁决)及ROOT analysis/main_contract。

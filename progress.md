@@ -1,3 +1,11 @@
+## 2026-10-16 §17恢复224行后EGL中断；原16额度内修复接续
+
+owner49619于12:20:35.552148Z真实exit1。新SQLite缓存未再出现key/source身份异常；本轮224新有效行保留，总600complete（control160417/dummy6000），另8 reserved_unknown（task5/task7各4）按1760control+80dummy=1840完整上界保留，不称8全已证实失败或0成本。worker05在MuJoCo MjrContext framebuffer创建0x8cdd，非已证实CUDA OOM；六job均退出，0新训练。attempt004精确0.9469710024860171GPUh，ROOT累计14.893489355113768，含所有启动/回执/cache事故，时钟不重置。
+
+两pending condition的合法已耗（含unknown）3393/4405，余4799/3787，各完整恢复面板920均可覆盖；仅恢复原pending同一实际LoRA/四初态/噪声，不重抽或重提案。8补跑将消费原普通16的8次，不能充值/挪旧额度，unknown1840继续占8192及累计全局。原600有效行只adopt、300旧缓存事故仍独立封存；同cache_recovery_001接续，不再清零任何后缀。
+
+实际panel allocated峰约9.6–11.4GiB，而H之后reserved可到34–37GiB；EGL在PyTorch外分配，存在空闲CUDA缓存挤占renderer空间的可修工程问题，未称唯一根因确诊。窄修只在进入完整panel前释放inactive CUDA cache，不改活tensor/ψ/LoRA/dtype/场景/分辨率/RNG/选择；实际worker CPU消费者已验证释放在创建环境和每个panel前、persistent reuse/fullclose仍保留，0额外GPU/env行。新clean pushed detached后按真实有用pending请求检验，不把CPU接通当EGL已证实修复；若同层失败再现保留原件并带具体边界，不盲目循环。现场双node/quota/CPU仍重新准入，无main工程ACK停点。当前准备新冻结，尚未启动新owner；剩余预计20–45min加窄修，原08:30派发/4.5h上沿超期则明确事故耗时。
+
 ## 2026-10-16 §17.7完整冻结已真实接续
 
 同一已push eac21f1c的新clean detached完整src/configs冻结已通过实际Runtime authority CPU读取，owner49619于12:09:31.634419Z真实启动（attempt004）；独立cache_recovery_001只接续23条件，0新梯度/训练。76认证行/13完整condition、原144初始/H和指定查询均只adopt，300旧事故raw/参数/rows及84110费用封存保持。正式GPU/首有用pack按job原件登记，owner启动不代替有效环境行。一个wrapper直接等子进程实际退出，PTY98750，0Queue/第二waiter；整批验收/Git后一次交main，45–90min仍自具名裁决计且原08:30派发不重置。

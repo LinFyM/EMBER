@@ -1,3 +1,11 @@
+## 2026-10-16 §18正式唯一owner已启动
+
+owner1050772于2026-10-16T13:34:37.002606+00:00从clean pushed detached 0e775e4b启动，冻结路径/data1/user/ymdai/ember_worktrees/functional_validation_frozen_20261016；唯一直接退出reader为PTY5202/cell1044，0自Queue/第二waiter。真实GPU job/episode以ROOT jobs/账本回执为准，不以派发或allocation当已完成计算。ROOT [owner_launch.json](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_validation180_seed7/owner_launch.json)及run_contract保存全部科学/资源身份；准备与原家族09:05:48.038时钟分开。
+
+现场总cap6，按live显存与每node历史实测环境PSS/实际可用CPU共同选择6卡：[['gpu02', 0, 46068], ['gpu02', 1, 46068], ['gpu02', 2, 46068], ['gpu01', 0, 45974], ['gpu01', 2, 28080], ['gpu01', 7, 28080]]；运行面按实际可用16槽动态whole panel/单final打包、32在途条件，0NCCL。H物理chunk复用CP180实际event512/image128的有用证据，不锁低余量默认；panel前释放inactive CUDA缓存，长H/idle完整close。6–12h仍是派发至交付粗估，首有用工作修正；0训练/新点/其它arm/Test。
+
+CPU消费者/代码结构已验收并集成push，task-owned三个开发树/本地分支在验证完整包含后清理，唯一正式冻结保留。执行阶段持续等待真实整批退出，完整400/七臂/成本/归档/资源/Git后一次回main01a13dd9并归还窗口；当前记录时间2026-10-16T13:36:28.382369+00:00。
+
 ## 2026-10-16 §18 CPU消费者与运行面已接通，未启动正式GPU
 
 400官方映射/每task50教学/own-final排除/scene身份、单final实际consumer、32在途+退役后再准入、原子事实归档与init0 witness、64工程额与8192完整面板双预算均已CPU验证；没有运行模型/GPU/环境或创建正式ROOT。证据 [.codex/tmp/functional_feedback_validation180_20261016](/data1/user/ymdai/projects/EMBER/.codex/tmp/functional_feedback_validation180_20261016)。held特征真实RawTeacherVideoStore的synthetic RGB守卫和必要纯prefix算子调用、单SQLite定点回收通过，0高维prefix落盘。

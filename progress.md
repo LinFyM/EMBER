@@ -1,3 +1,9 @@
+## 2026-10-17 §20复用完整1180接续唯一读出
+
+owner484519于23:34:29.730Z从new clean pushed detached fb3eb80e沿同ROOT --resume，PTY13076/直接退出reader1366；旧129605/reader1348均退出。1180训练producer8395a9e1与新读取/物化身份fb3eb80e分列；仅按固定role投影原environment metadata，原44 union/run contract不改、976面板不改。全部1000/1090/1180、M与物理profile只adopt，0训练/数据补量/额外有效行重跑。
+
+当前实际只执行固定1180逐video完整LoRA与976最终episode，无实践/中间点/选择/controls/Test。现场双node GPU/6或8-node6/CPU-PSS/data1准入保留；两次原准备/入口中断费用与原21:56:50首次时钟不重置。一个owner连续退出等待，整批验收/资源/Git后一次回main归还窗口，0自Queue/第二waiter。
+
 ## 2026-10-17 §20完整1180训练完成，读出环境角色接口窄修
 
 owner129605于23:32:15.796Z exit1：训练1000/1090/1180三个完整点和1180行真实学习日志均已完成、finite；20160 query/36000 BA/720 joint逻辑条件与36-task实际allowlist一致。readout.inputs才发现原Reader环境是36seen＋8validation共44项的metadata union，新入口错误假定seen字段已仅36；训练并未消费该environment列表（实际流/标签/Runtime均显式36）。尚未建evaluation queue、0环境提交/0物化LoRA；完整训练终点为1180。

@@ -1,4 +1,4 @@
-§20真实物理比较已完成（5BA＋4joint/448临时query，0env），采用6rank；正式fresh BA首有效更新22:35:54Z。原1000→180/唯一1180/976保持，剩余按实测约1–2h，当前未完成科学读出；owner129605/reader1348唯一直接等待。
+§20真实物理比较已完成（5BA＋4joint/448临时query，0env），采用6rank；正式fresh BA首有效更新22:35:54Z。原1000→180/唯一1180/976保持，剩余按实测约1–2h，当前未完成科学读出；owner484519/reader1366（训练已完成，按fb3eb80e接续唯一读出）唯一直接等待。
 
 当前执行§20首准备中断后，从8395a9e1新clean pushed detached同ROOT接续唯一owner129605（实际UTC见progress/ROOT owner_launch_attempt002）；直接退出reader1348，旧owner/reader均退出，不设Queue/第二waiter。先M和受限物理比较，1000BA→180joint保同Adam，唯一1180完整976；完成后一次科学/费用/资源/Git交main。当前不是1180或闭环完成声明。
 

@@ -1,3 +1,7 @@
+## 2026-10-16 §17 panel显存生命周期窄修后接续
+
+new clean pushed detached26a8fbb3（完整src/configs）通过实际authority及worker phase CPU消费者，owner229518于12:26:56.651044Z真实启动（attempt005）。只在panel前释放inactive Torch CUDA cache给EGL，不改活tensor/方法；同一cache_recovery_001/ψ180，600complete只adopt（其中原300仍封存），8 unknown原1840费用继续记，原pending保存的实际LoRA/代码不重生成。现场quota/双node GPU/CPU重新准入，具体正式GPU开始/有用工作仍以jobs原件为准。原普通16余量承接，八次补跑将占8，0新额度/梯度/科学面板；预计剩余20–45min含有界cache/H重读，旧08:30派发与全部失败/费用不重置。唯一wrapper/PTY7446直接等整批退出，无Queue/第二waiter或main普通ACK。
+
 ## 2026-10-16 §17恢复224行后EGL中断；原16额度内修复接续
 
 owner49619于12:20:35.552148Z真实exit1。新SQLite缓存未再出现key/source身份异常；本轮224新有效行保留，总600complete（control160417/dummy6000），另8 reserved_unknown（task5/task7各4）按1760control+80dummy=1840完整上界保留，不称8全已证实失败或0成本。worker05在MuJoCo MjrContext framebuffer创建0x8cdd，非已证实CUDA OOM；六job均退出，0新训练。attempt004精确0.9469710024860171GPUh，ROOT累计14.893489355113768，含所有启动/回执/cache事故，时钟不重置。

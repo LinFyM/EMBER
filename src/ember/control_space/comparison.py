@@ -218,6 +218,19 @@ def interaction_evidence(root,raw,panels,limits):
     return evidence
 
 
+def paid_dependencies():
+    source_root=(ASSETS/SOURCE).parent.parent;source_summary=read_json(source_root/'run_summary.json')
+    reference=read_json(REFERENCE_ROOT/'analysis/results.json')['billing']
+    video=read_json(VIDEO_ROOT/'analysis/results.json')['billing']
+    return dict(shared_paid_source=str(ASSETS/SOURCE),source_summary=str(source_root/'run_summary.json'),
+        source_training_only_GPU_hours_lower_bound=4*source_summary['wall_seconds']/3600,
+        source_cost_scope='original4 ranks through last update; excludes failed final save/recovery and earlier preparation',
+        shared_paid_reference=str(REFERENCE_ROOT),reference_family_billing=reference,
+        shared_paid_Reader900=str(INITIAL_READER),Reader_family_billing=video,
+        source_center_and_units='old basis saved identity/layout and control_space76S only; no old U/code/neural decoder forward',
+        costs_are_not_from_zero='current-root billing excludes prior source/reference/Reader learning and old failures; do not add shared costs twice')
+
+
 def analyze(root):
     from .readout import inputs,saved_case
     root=Path(root);run,tasks,panels=inputs(root);old,provenance=historical(root,panels);results={};raw={}
@@ -233,9 +246,7 @@ def analyze(root):
         panels=results,raw_rows=raw,provenance=provenance,billing=billing(root),interactions=interactions,limits=run['limits'],
         new_episodes=976,zero_interaction=True,shared_updates=1180,held_offline_labels_read=False,Test=False,
         selection='unique preregistered1180; no mid-window/partial-held selection',automatic_successor=False,
-        dependencies=dict(shared_paid_source=str(ASSETS/SOURCE),shared_paid_reference=str(REFERENCE_ROOT),
-            shared_paid_Reader900=str(INITIAL_READER),Reader_family_billing=read_json(VIDEO_ROOT/'analysis/results.json')['billing'],
-            costs_are_not_from_zero='current-root billing excludes prior source/reference/Reader learning and old failures'))
+        dependencies=paid_dependencies())
     write_json_atomic(root/'analysis/results.json',result);write_json_atomic(root/'completion.json',dict(complete=True,rows=976,result=str(root/'analysis/results.json')))
     lines=['# Source权重条件完整LoRA：唯一1180读出','',
         'seen576：'+str(results['seen']['total']['successes']),'','strict validation400：'+str(results['validation']['total']['successes']),'',

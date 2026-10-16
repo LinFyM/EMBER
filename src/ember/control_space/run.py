@@ -2,6 +2,7 @@
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor,as_completed
 from contextlib import closing
+from itertools import combinations
 import argparse,datetime,fcntl,json,os,shlex,sqlite3,subprocess,time
 import torch
 from ember.pi05_source_checkpoint import write_json_atomic,read_json
@@ -70,8 +71,24 @@ def device_pool(args):
     resources=cpu_snapshot(args.root,'compile');selected=[]
     groups={n:gs[:min(6,max(0,int((resources[n]['memory_KiB']['MemAvailable']/2**20-64)//32)))] for n,gs in groups.items()}
     groups={n:gs for n,gs in groups.items() if gs};available=max(0,cap-outside)
-    ranked=sorted(((n,g) for n,gs in groups.items() for g in gs),key=lambda row:-row[1]['mem_free_mib'])
-    for node,gpu in ranked[:available]:selected.append((node,gpu['index'],gpu['mem_free_mib']))
+    candidates=[(n,g) for n,gs in groups.items() for g in gs]
+    # Reuse the measured environment footprint owned by the existing scheduler.
+    guide=Scheduler(args.root,{},1,evaluation_reference_root=REFERENCE_ROOT)
+    env=guide.reference_environment_GiB
+    def predicted(plan):
+        slots=0
+        for node in groups:
+            here=[g for n,g in plan if n==node];workers=len(here)
+            memory=resources[node]['memory_KiB']['MemAvailable']/2**20
+            cpu_slots=max(0,int((memory-64-workers*16)/env)//4*4)
+            slots+=min(sum(16 if g['mem_free_mib']>=28000 else 8 for g in here),cpu_slots)
+        return slots,sum(g['mem_free_mib'] for _,g in plan)
+    plans=(p for count in range(1,min(available,len(candidates))+1) for p in combinations(candidates,count))
+    best=max(plans,key=predicted,default=())
+    selected=[(n,g['index'],g['mem_free_mib']) for n,g in best]
+    write_json_atomic(folder/'allocation.json',dict(predicted_useful_episode_slots=predicted(best)[0],
+        environment_GiB=env,parent_GiB=16,reserve_GiB=64,devices=selected,
+        reason='joint native VRAM capacity and measured per-node CPU footprint; useful work refines throughput'))
     if not selected:raise RuntimeError('no live shared device fits actual native/raw-H evaluation')
     return selected,cap
 

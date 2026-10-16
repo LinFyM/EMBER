@@ -1,3 +1,9 @@
+## 2026-10-17 §20窄修后同批实际接续
+
+owner129605于2026-10-16T22:24:00.607675+00:00从new clean pushed detached8395a9e1沿同ROOT --resume，PTY59999/直接退出reader1348；旧102364/reader1327已退出。原source_inputs/D/36 ready M只adopt，旧失败/783–902帧区间/.047937GPUh保留。已登记legacy格式定点CPU消费者通过，实际M准备继续；0正式有效更新或环境行复算，尚无本批科学结果。
+
+原21:56:50首次现场与4–7h预计、旧家族09:05:48.038和976/1180/独立费用上限不变；新M/job的双node GPU/CPU/PSS/存储现场准入留原件。当前唯一owner持续直接等实际退出，0Queue/心跳/第二waiter，正常整批验收/Git后一次回main。
+
 ## 2026-10-17 §20首次准备中断及已登记旧图像格式窄修
 
 owner102364于22:21:20.263Z exit1；6rank原M准备job在task0/demo46遇到原manifest明确引用的`ember_image_only_gemma_compiler_v1`，新loader只接受新schema。旧§13 frozen features._read_cached/get_or_build与778ff8ea pure_features证明它是同source纯图像Gemma/stride5+terminal/rotate一次，legacy身份位于顶层task/demo；不是输入污染/科学负结果。原件ROOT analysis/engineering_attempt001/failure.json及SQLite snapshot、job/owner退出完整保留。

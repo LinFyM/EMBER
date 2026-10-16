@@ -1,3 +1,9 @@
+## 2026-10-16 §17有用吞吐比较完成，接续同一180轨迹
+
+正式首train job于09:03:39.974087Z以4卡启动；前27有效更新/完整checkpoint已完成，4卡完整周期中位35.468s/update；2卡完整周期中位53.581s/update；6卡完整周期中位31.360s/update。实际已从7/14/28扩大到56 query物理FM批，H chunk16→512/image16→128；最大allocated约24.0GiB（reserved约37GiB），没有用最低显存作为目标。顺序完整周期的H长度/cache命中不同，属于实际物理吞吐证据而非同输入因果profile；6卡周期最快，当前从27完整点保留Adam/流/RNG接续至180，logical112/4task不变，未加profile更新/query。
+
+首更新head梯度非零/body0，第二步起实际body梯度非零，Native FM→完整因子cotangent→D→ψ实际信用已见，不能据此称学会H纠错。首4卡有用工作node合计UID PSS约20.6GiB（node02，node01约0.32GiB），0训练环境池；后续phase边界PSS较低，未把瞬时快照当真实峰值。估计整批仍在派发后约2.5–4.5h范围，长H/raw解压/冻结视觉工作集与native反向均包含实际update时间，GPUh完整计费但无硬限。下一科学读出仅终点180后的36完整条件/144query；90仅恢复。一个owner/唯一直接退出等待持续，无阶段main回报或额外waiter。
+
 ## 2026-10-16 §17正式owner已启动
 
 新clean pushed detached冻结0b9b8080421a05ec32fd979d591f76707c91b4df，main已集成推送；唯一owner2200056于09:03:08.034317Z启动，派发08:30:38.195Z/准备08:30:46.693Z均保留。ROOT functional_feedback_seed7，启动前strg01 data1 used1935254772KiB/soft2147483648KiB、shared容量及双node实际GPU/process/显存/nodeCPU独立准入原件已留；GPU正式训练启动/首有用更新另按jobs实际记录，不把owner启动当已取得更新。

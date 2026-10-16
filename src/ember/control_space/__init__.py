@@ -1,5 +1,5 @@
-"""Source-relative control-space encoding and complete task LoRA decoding."""
+"""Frozen-source weight addresses to one complete video-conditioned task LoRA."""
 
-from .model import ControlSpace
+from .model import SourceWeightCompiler
 
-__all__ = ['ControlSpace']
+__all__ = ['SourceWeightCompiler']

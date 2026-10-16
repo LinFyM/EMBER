@@ -1,18 +1,24 @@
-"""One internal task-excluded linear64 fit and its fixed128 query readout."""
+"""The single source-weight-conditioned complete-LoRA learning window."""
 from pathlib import Path
-from ember.reference.contract import ROOT as REFERENCE_ROOT,FIRST_TASKS,NEW_TASKS
-BASIS_SCHEMA='ember_source_control_linear64_r8_seed7_v1'
-SCHEMA='ember_source_control_task_exclusion8_r8_seed7_v1'
-PHASE='task_exclusion8_linear64'
-BANK_ROOT=REFERENCE_ROOT.parent/'control_space_seed7'
-LINEAR_ROOT=REFERENCE_ROOT.parent/'control_linear64_seed7'
-OPERATOR_ROOT=REFERENCE_ROOT.parent/'control_operator_from144_seed7'
-CENTER_REFERENCE=LINEAR_ROOT/'basis/state.pt'
-ROOT=REFERENCE_ROOT.parent/'control_task_exclusion8_seed7'
-TASKS=FIRST_TASKS
-FIT_TASKS=NEW_TASKS
-LIMITS=dict(closed_form_fits=1,optimizer_updates=0,physical_submissions=144,control_steps=50560,
-    dummy_steps=1440,total_steps=52000,engineering_extra_attempts=16,added_peak_GiB=4)
-NOISE_ROOT=202610151
-STATES=tuple(range(16))
+from ember.reference.contract import ASSETS,SOURCE,NORMALIZATION,TASKS,ROOT as REFERENCE_ROOT,OPTIMIZER
+
+BASE=REFERENCE_ROOT.parent
+ROOT=BASE/'source_weight_compiler_seed7'
+VIDEO_ROOT=BASE/'video_initial_seed7'
+INITIAL_READER=VIDEO_ROOT/'checkpoints/update_00000900/state.pt'
+BANK_ROOT=BASE/'control_space_seed7'
+CENTER_REFERENCE=BASE/'control_linear64_seed7/basis/state.pt'
+UNITS_FILE=BANK_ROOT/'units.json'
+SCHEMA='ember_source_weight_complete_r8_seed7_v1'
+PHASE='source_weight_compiler'
+PERMANENT=(1000,1090,1180)
+FINAL=1180
+VALIDATION_TASKS=(3,6,11,16,23,26,31,39)
+LIMITS=dict(optimizer_updates=1180,BA_conditions=36000,joint_conditions=720,FM_queries=20160,
+ physical_submissions=992,control_steps=343840,dummy_steps=9920,total_steps=353760,
+ engineering_extra_attempts=16,added_peak_GiB=16,profile_BA_equivalents=8,
+ profile_joint_equivalents=4,profile_FM_queries=448,M_cache_bytes=2**30)
+
 def queue_path(root):return Path(root)/'evaluation.sqlite'
+
+def checkpoint_path(root,update):return Path(root)/'checkpoints'/f'update_{update:08d}'/'state.pt'

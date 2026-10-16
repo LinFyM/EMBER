@@ -1,10 +1,18 @@
-"""Read-only factor sources and complete FP32 operator diagnostics after freezing."""
+"""Selected36 operator supervision and native full-factor cotangent credit."""
 from collections import OrderedDict
+from pathlib import Path
+from types import SimpleNamespace
 import math
 import torch
+from torch.utils.data import default_collate
 from safetensors.torch import load_file
 from ember.lora import LORA_A_SUFFIX,LORA_B_SUFFIX
 from ember.proposal_writer.learning import operator_squared_error
+from ember.pi05_source_checkpoint import read_json,write_json_atomic
+from ember.writer.data import FunctionalQueryDataset
+from ember.writer.function_credit import FlowSample,NativeFlowPrediction,flow_sample,mean_velocity_loss
+from ember.writer.functional import task_logical_batch_policy_rng_seed
+from ember.writer.runtime import autocast
 
 
 class References:
@@ -43,17 +51,86 @@ class OperatorLoss:
         return torch.stack(errors,-1),torch.stack(baseline,-1)
 
 
-def pool_points(bank,expected_tasks,expected_points):
-    """Explicit whole-task pool; source identities keep their original task mass."""
-    tasks=tuple(expected_tasks)
-    if not tasks or len(set(tasks))!=len(tasks):raise ValueError('pool tasks must be explicit and unique')
-    selected=[item for item in bank['tasks'] if item['task'] in tasks]
-    if {item['task'] for item in selected}!=set(tasks) or len(selected)!=len(tasks):raise ValueError('pool task coverage changed')
-    rows=[]
-    for item in selected:
-        others=[p for p in item['checkpoints'] if p['update']!=item['selected_update']]
-        rows.append(dict(task=item['task'],point=0,path=item['selected_path'],update=item['selected_update'],
-            weight=.5/len(tasks) if others else 1./len(tasks)))
-        rows.extend(dict(task=item['task'],point=1,path=p['path'],update=p['update'],weight=.5/len(tasks)/len(others)) for p in others)
-    if len(rows)!=expected_points:raise ValueError('explicit whole-task pool point count changed')
-    return rows
+def prepare_operator(root,inputs,lora):
+    """Once from only the36 selected labels; no old271-point C_l is consumed."""
+    root=Path(root);path=root/'operator_constants.json';rows=read_json(root/'run_contract.json')['references']
+    if path.exists():
+        record=read_json(path)
+        if record['sources']!=rows:raise ValueError('fixed operator labels changed')
+        return record
+    refs=References(SimpleNamespace(device='cpu',identity=inputs['identity']),inputs['identity'],capacity=36)
+    constants={}
+    for target in lora.targets:
+        name=target.name;energy=0.
+        for row in rows:
+            state=refs.get(row['path']);A=state[name+LORA_A_SUFFIX];B=state[name+LORA_B_SUFFIX]
+            _,value=operator_squared_error(A,B,A,B,lora.alpha/lora.rank);energy+=float(value)/36
+        constants[name]=max(energy,1e-12)
+    record=dict(sources=rows,denominators=constants,formula='max(mean36 ||sBA_selected||_F^2,1e-12)',selected_only=True)
+    write_json_atomic(path,record);return record
+
+
+class QueryBank:
+    def __init__(self,runtime):self.runtime=runtime;self.datasets={}
+
+    def sample(self,event,indices):
+        task=event['task']
+        if task not in self.datasets:
+            self.datasets[task]=FunctionalQueryDataset((self.runtime.tasks[task].authority,),demo_indices=tuple(range(50)),
+                action_chunk_size=50,action_start_offset=1,max_open_files_per_worker=1)
+        data=self.datasets[task];rows=data.task_episode_rows[task]
+        if any(demo==event['teacher_demo'] for demo in event['demos']):raise ValueError('FM episode must differ from current teacher')
+        seed=task_logical_batch_policy_rng_seed(optimization_seed=event['query_seed'],task_id=task,task_visit=event['visit'],
+            demo_indices=event['demos'],frame_indices=event['frames'])
+        runs=[]
+        for i in indices:
+            if not runs or i!=runs[-1][-1]+1:runs.append([])
+            runs[-1].append(i)
+        samples=[]
+        for run in runs:
+            batch=default_collate([data[rows[event['demos'][i]][event['frames'][i]]] for i in run])
+            samples.append(flow_sample(self.runtime.policy,self.runtime.processor.training_batch(batch),seed=seed,
+                device=self.runtime.device,random_batch=28,offset=run[0]))
+        return FlowSample(concatenate([s.arguments for s in samples]),torch.cat([s.target for s in samples]),7),seed
+
+    def close(self):
+        for dataset in self.datasets.values():dataset.close()
+
+
+def sliced(value,indices):
+    if isinstance(value,torch.Tensor):return value.index_select(0,indices)
+    return type(value)(sliced(v,indices) for v in value)
+
+
+def concatenate(values):
+    if isinstance(values[0],torch.Tensor):return torch.cat(values)
+    return type(values[0])(concatenate([v[i] for v in values]) for i in range(len(values[0])))
+
+
+def assignments(world,rank):
+    return [(t,[q for q in range(28) if ((t*4+q//7)*world)//16==rank]) for t in range(4)
+        if any(((t*4+q//7)*world)//16==rank for q in range(28))]
+
+
+def fm_credit(runtime,samples,states,teachers,objective,microbatch):
+    """Native and BA cotangents meet on full A/B leaves, then enter generator once."""
+    leaves=[{k:v.detach().requires_grad_(True) for k,v in state.items()} for state in states]
+    sample=FlowSample(concatenate([s.arguments for s in samples]),torch.cat([s.target for s in samples]),7)
+    counts=[len(s.target) for s in samples];which=torch.tensor([i for i,n in enumerate(counts) for _ in range(n)],device=runtime.device)
+    owner=NativeFlowPrediction(runtime.policy);value=0.;batches=[]
+    for first in range(0,len(which),microbatch):
+        last=min(first+microbatch,len(which));index=torch.arange(first,last,device=runtime.device)
+        part=FlowSample(sliced(sample.arguments,index),sample.target[first:last],7)
+        with autocast(runtime.device),runtime.execution.activate(leaves,batch_indices=which[first:last]):
+            loss=mean_velocity_loss(owner(part),part.target,7)*((last-first)/112)
+        loss.backward();value+=float(loss.detach());batches.append(last-first)
+    errors,_=objective(leaves,teachers)
+    weights=errors.new_tensor(counts)/112
+    BA=(errors.mean(-1)*weights).sum();(.1*BA).backward()
+    outputs=[];cotangents=[]
+    for state,leaf in zip(states,leaves,strict=True):
+        for name in state:
+            if leaf[name].grad is not None:outputs.append(state[name]);cotangents.append(leaf[name].grad)
+    credit=sum(float(v.float().square().sum()) for v in cotangents)**.5
+    torch.autograd.backward(outputs,cotangents)
+    return dict(FM=value,BA=float(BA.detach()),LoRA_cotangent_norm=credit,physical_FM_batches=batches,query_rows=len(which))

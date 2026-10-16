@@ -90,7 +90,7 @@ class SourceWeightCompiler(nn.Module):
                 if checkpointed:
                     # Bind side now: backward must not capture a later loop value.
                     def read(x,z,which=side):return self._read_chunk(x,z,which)
-                    value=checkpoint(read,part,Z,use_reentrant=False)
+                    value=checkpoint(read,part,Z,use_reentrant=False,preserve_rng_state=False)
                 else:value=self._read_chunk(part,Z,side)
                 values.append(value)
             sides[side]=torch.cat(values,2)
@@ -109,13 +109,13 @@ class SourceWeightCompiler(nn.Module):
         for group in self.groups:
             if checkpointed:
                 def project(current=group):return self._source(current)
-                X,Z=checkpoint(project,use_reentrant=False)
+                X,Z=checkpoint(project,use_reentrant=False,preserve_rng_state=False)
             else:X,Z=self._source(group)
             source.append(X)
             for offset,index in enumerate(group.indices):blocks[index]=Z[offset]
         Z=torch.stack(blocks).reshape(1,608,256).expand(len(memories),-1,-1)
         for block in self.fusion:
-            Z=checkpoint(block,Z,memory,padding,use_reentrant=False) if checkpointed else block(Z,memory,padding)
+            Z=checkpoint(block,Z,memory,padding,use_reentrant=False,preserve_rng_state=False) if checkpointed else block(Z,memory,padding)
         Z=Z.reshape(len(memories),38,16,256);states=[{} for _ in memories]
         for group,X in zip(self.groups,source,strict=True):
             latent=Z[:,list(group.indices)]

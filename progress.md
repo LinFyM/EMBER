@@ -1,3 +1,15 @@
+## 2026-10-17 §20实际接手与独占实施，未启动正式GPU
+
+执行01a13dbf从main064acf0b接手唯一design§20及canonical工程/科研记录/Git窗口，main只读。首次现场2026-10-16T21:56:50.026590Z，精确消息收到时刻未恢复；ROOT source_weight_compiler_seed7不存在，无重复owner/旧任务复跑，当前不是训练启动声明。预计4–7h，原家族09:05:48.038及全部成本保持。
+
+仅一次fresh完整source权重地址生成：冻结source1000/Reader900完整有序M，1000 BA＋180 joint FM/.1BA、唯一1180 seen576/validation400，0任务内实践/动作轨迹拟合/新reference/其它点/controls/Test。正式976/独立16工程extra/992提交/353760联合步和M全局1GiB/新增16GiB峰不变，profiling最多8 BA＋4 joint/448额外FM queries，临时参数弃用。
+
+唯一control_space按模型/静态权重、冻结视频/身份缓存、逻辑数据/真FM-credit、checkpoint、训练物理调度、最终读出/owner分工；旧§19 fit/全局U主动面退役到Git/frozen，不留平行Writer。模型/权重和memory/cache分别由隔离子树实施，主执行负责训练/运行面与集成。新增cohesive模块是本批完整可执行训练所需，不引入通用未来框架；>1000净行或>5新文件时由执行作结构自审和明确退役说明，不设main工程ACK。
+
+已串行集成视频6bce9431和模型8b761558。新generator4838160参数，W/A0/S不进checkpoint；MemoryReader严格58个state tensors，完全不实例化旧global/64head/H/U；original1800/59114帧、producer0。模型零头/后续A与主体真梯度/变长M padding/物理chunk与checkpoint、payload身份/三进程原子缓存等CPU消费者通过；主线正在核全局36或112均值与BA分片、原始976映射、完整恢复和实际source消费者。正式GPU/缓存/训练必须在新clean pushed detached后。
+
+现场strg01 data1 used1978963468KiB/soft2147483648KiB，相关family241145768KiB、shared约79.3TiB，local MemAvailable506856268KiB；16GiB及预计小资产/完整CP余量准入充足，正式root/launch前刷新quota、双node GPU/6或8/node6及各node CPU/PSS。一个实际owner持续退出等待，0自Queue/心跳/第二waiter；整批976/费用/释放/Git后一次回main归还写窗口，真实边界例外。
+
 ## 2026-10-17 main已消费§19，登记唯一§20完整生成候选
 
 已直接读取四臂512 rows、一次fit/八项冻结后诊断及验收/费用/退出原件，CPU独立重算保存在§19ROOT

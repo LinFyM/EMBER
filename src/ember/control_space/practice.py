@@ -30,16 +30,21 @@ _RAW_CACHE_HITS=0
 def specifications(command):
     common={k:v for k,v in command.items() if k not in ('rows','states','command')}
     values=command.get('rows') or [dict(state_id=s) for s in command['states']]
-    if not 1<=len(values)<=16:raise ValueError('a useful worker pack contains1..16 actual rows')
+    if not 1<=len(values)<=32:raise ValueError('a useful worker pack contains1..32 actual rows')
     result=[]
     for value in values:
         row=dict(common,**value);identity=Path(row['identity'])
         if identity.is_absolute() or '..' in identity.parts:raise ValueError('episode identity must stay under its root')
         if row['role'] not in ('practice','query'):raise ValueError('only registered practice/query may execute')
         row['task']=int(row['task']);row['state_id']=int(row['state_id']);row['noise_root']=int(row['noise_root'])
-        y=torch.as_tensor(row['y'],dtype=torch.float32)
-        if y.shape!=(64,) or not bool(y.isfinite().all()):raise ValueError('behavior y must be a finite actual64-vector')
-        row['y']=y.tolist();result.append(row)
+        if row.get('LoRA'):
+            if row['role']!='query' or not Path(row['LoRA']).is_absolute():raise ValueError('saved complete controllers are query-only')
+            row['y']=None
+        else:
+            y=torch.as_tensor(row['y'],dtype=torch.float32)
+            if y.shape!=(64,) or not bool(y.isfinite().all()):raise ValueError('behavior y must be a finite actual64-vector')
+            row['y']=y.tolist()
+        result.append(row)
     if len({(r['identity'],r['state_id']) for r in result})!=len(result):raise ValueError('pack repeats an episode')
     return result
 
@@ -57,9 +62,11 @@ def validate_row(row,spec,task):
         init_state_id=spec['state_id'],env_seed=spec['noise_root'],policy_seed_root=spec['noise_root'],
         actual_parameter_ref=spec['parameter_ref'],role=spec['role'],identity=spec['identity'],
         settling_steps=10,restored_control_steps=0,source_frozen=True,MT_loaded=False,full_native_flow_steps=10,executed_chunk=5)
-    expected.update({k:spec[k] for k in ('behavior_model','meta_update','condition_id','panel_ordinal') if k in spec})
+    expected.update({k:spec[k] for k in ('behavior_model','meta_update','condition_id','panel_ordinal','LoRA','arm','teacher_demo') if k in spec})
     if any(row.get(k)!=v for k,v in expected.items()):raise ValueError('saved episode producer/panel/native contract changed')
-    if not torch.allclose(torch.tensor(row['behavior_y']),torch.tensor(spec['y']),atol=1e-6,rtol=1e-6):
+    if spec.get('LoRA'):
+        if row['behavior_y'] is not None:raise ValueError('saved controller must not invent a behavior code')
+    elif not torch.allclose(torch.tensor(row['behavior_y']),torch.tensor(spec['y']),atol=1e-6,rtol=1e-6):
         raise ValueError('saved episode has a different actual sampled behavior code')
     steps=row.get('steps',0)
     if (type(row.get('success')) is not bool or not 0<steps<=task['horizon'] or row.get('model_failure')
@@ -193,7 +200,7 @@ def complete_episode(root,runtime,output,spec,task):
         attempt_id=attempt,producer_parameter_ref=spec['parameter_ref'],noise_root=spec['noise_root'],first_noise_seed=first['noise_seed'],
         first_native_normalized_actions=first['normalized_actions'].tolist(),source_frozen=True,MT_loaded=False,
         full_native_flow_steps=10,executed_chunk=5,history_path=str(archive) if spec['role']=='practice' else None)
-    row.update({k:spec[k] for k in ('behavior_model','meta_update','condition_id','panel_ordinal') if k in spec})
+    row.update({k:spec[k] for k in ('behavior_model','meta_update','condition_id','panel_ordinal','LoRA','arm','teacher_demo') if k in spec})
     error=None
     try:validate_row(row,spec,task)
     except ValueError as failure:error=str(failure)
@@ -213,14 +220,17 @@ def complete_episode(root,runtime,output,spec,task):
 
 def decoded_parameters(runtime,decoder,units,specs):
     from ember.lora import validate_lora_state
+    from safetensors.torch import load_file
     states={}
     for spec in specs:
-        ref=spec['parameter_ref'];code=torch.tensor(spec['y'],device=runtime.device)*units
+        ref=spec['parameter_ref']
         if ref not in states:
-            with torch.no_grad():states[ref]=decoder.decode(code)
+            with torch.no_grad():
+                states[ref]=(load_file(spec['LoRA'],device=str(runtime.device)) if spec.get('LoRA') else
+                    decoder.decode(torch.tensor(spec['y'],device=runtime.device)*units))
             validate_lora_state(states[ref],runtime.lora)
             if any(not bool(v.isfinite().all()) for v in states[ref].values()):raise ValueError('nonfinite decoded LoRA cannot execute')
-        elif not torch.allclose(torch.tensor(spec['y']),torch.tensor(next(r['y'] for r in specs if r['parameter_ref']==ref))):
+        elif not spec.get('LoRA') and not torch.allclose(torch.tensor(spec['y']),torch.tensor(next(r['y'] for r in specs if r['parameter_ref']==ref))):
             raise ValueError('one parameter_ref cannot label two actual codes')
     return states
 

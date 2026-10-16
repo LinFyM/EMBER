@@ -1,3 +1,11 @@
+## 2026-10-16 §15实际接手与CPU实施
+
+05:27:06.038Z实际接收main4515c839，05:27:32.260Z首次带时钟准备观测；执行01a13dbf独占canonical代码/记录/Git，main只读。唯一design§15仅124新query（Reader900同v0补108＋真实first-best4套补16），其余596逻辑行按固定原件复用；0训练/新proposal/实践/H/教学读取/Reader forward/held/Test。旧meta9、所有旧CP/路径/费用和参考首次09:05:48.038保持。
+
+现有control_space入口替换为saved-controller owner/worker；query直接加载完整38r8文件，不加载Reader/basis到GPU。复用原source Runtime/native EpisodeRunner、原子交互账本与long-first SQLite队列，panel仅窄扩展saved LoRA及1..32物理槽；新comparison只拥有本次固定720映射、4个真实y的CPU物化及五臂分析，不复制trainer。旧§14恢复入口由Git/frozen保留，本批无学习入口。CPU实际消费者exit0：真实76因子文件、32query pack无H/教学、124唯一SQLite行、valid/partial恢复、unknown不重跑和16额外额度不充值；720映射/known128成功68及十对分析通过。结构guard0hard，新增comparison232行拥有固定映射/分析，复杂度复核为本次验证/事务分支，无平行runtime。正式GPU尚未启动，待本次代码集成push及新clean detached。
+
+ROOT feedback_readout_seed7，新增峰2GiB；140提交/control51200/dummy1400/total52600含独立16工程尝试，不充值/有效行不重跑/unknown完整保守占额。预计45–90min从接收至退出；物理32/24/16有用pack受真实VRAM及每node总PSS/RAM共同准入，首有用工作修正。一个实际owner直接等待整批退出，验收/Git后一次交main并归还写窗口。
+
 ## 2026-10-16 main消费§14，接续已有控制器同教学比较
 
 执行79369d7c clean/pushed后交回canonical窗口，main核原始completion/results/paths和实际反馈/学习/选择源码。

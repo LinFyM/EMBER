@@ -1,3 +1,7 @@
+## 2026-10-16 §15工程复用边界
+
+当前只比较已经存在的完整控制器：saved-LoRA参数引用替换query的D在线解码，原source/native/原子账本和动态队列保持；不需要Reader forward、训练或新H。固定720映射严格保留Reader900同teacher与first-best29项的full原执行，避免同source另换更高旧行。CPU消费者接通及结构核验只支持工程合同，不预判控制结果。唯一科学范围与停止线见[design§15](docs/designs/source_policy_space_compiler_20261015.md#15-首轮已有控制器的同教学独立query比较)。
+
 ## 2026-10-16 非source收益与反馈修订收益须分开
 
 §14原件与主讨论实际源码/CPU路径读回支持：17task产生有用非source参数，68query source13→35；

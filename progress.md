@@ -1,3 +1,9 @@
+## 2026-10-17 §19实时GPU总量准入窄修
+
+owner3946954于21:22:54.539422Z退出1：最初idle>10选择8卡，逐卡launch时idle降10、实时cap正确降6；第七个未启动worker的拒绝却是普通RuntimeError，绕过既有未启动撤回路径，触发整批停止。六个仅完成source加载的job全部exit0，无环境提交/unknown/额外episode，加载0.098994816674GPUh保留；basis/八LoRA及唯一fit不动。原件ROOT analysis/engineering_attempt002及旧jobs/admission均保留。
+
+实际失败snapshot的idle10/六已运行复现通过；仅将两类live-cap拒绝归入已有DeviceWorkloadFailure，沿现有launched=false一次16→8/撤回分支，不改变任何live6/8/node6保护，已启动失败仍抛出且不自动重跑。消费者证明六个其它worker不被取消、已启动失败不重试。新clean pushed detached后同ROOT接续128，不为凑8占卡；当前无活owner/退出reader，原35–75min与21:05时钟保持，0科学字段变化。
+
 ## 2026-10-17 §19窄修后同批接续
 
 真实384旧行及完成basis采用消费者通过，修复已集成push；新clean detached56491f82的唯一owner3946954于2026-10-16T21:21:19.298436+00:00启动同ROOT --resume，PTY26847/cell1210持续直接退出等待，旧owner/reader均已结束。唯一fit来源537c6763与新读取56491f82分列；原19.173s fit/8输出只adopt，0重新拟合/0有效环境行重跑，原事故0GPU/0episode保留。评估GPU live双node/总6或8-node6/各node PSS按真实就绪工作准入。原128/512、16工程额、4GiB峰及原21:05时钟保持，整批完成验收/Git后一次回main并归还窗口。

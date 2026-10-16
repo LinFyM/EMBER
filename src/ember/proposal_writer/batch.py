@@ -24,7 +24,7 @@ UNMEASURED_TEACHER_SECONDS = 4.4  # Actual shared-card query28 native demoFM com
 
 
 class DeviceWorkloadFailure(RuntimeError):
-    """Located renderer/headroom/OOM failure; quarantine devices, never retry."""
+    """Located workload or live admission failure; never blindly retry a live job."""
 
 
 def process_identity(pid):
@@ -163,14 +163,14 @@ class Batch:
             if selected['compute_mode']=='Prohibited' or selected['mem_free_mib'] < (job.required_free_MiB or self.required_free_MiB):
                 raise DeviceWorkloadFailure(f'live device headroom below measured workload requirement: {node}:{gpu}')
             if len(allocated) >= cap or sum(n==node for n,_ in allocated) >= 6:
-                raise RuntimeError('current physical GPU project cap prevents this launch')
+                raise DeviceWorkloadFailure('current physical GPU project cap prevents this launch')
             # Live allocation may include a task-owned process outside this driver's futures.
             outside = {(n,g['index']) for n,g in devices if any(p['owner']=='ymdai' for p in g['processes'])}
             combined = allocated | outside | {(node,gpu)}
             analyses=self.bounded_analysis_devices(devices)
             ordinary=allocated | (outside-analyses) | {(node,gpu)}
             if len(ordinary) > cap or sum(n==node for n,_ in combined)>6:
-                raise RuntimeError('outside project allocation would exceed the shared cap')
+                raise DeviceWorkloadFailure('outside project allocation would exceed the shared cap')
             peak=json.loads((self.root/'run_contract.json').read_text())['limits']['added_peak_GiB']
             used,limit=quota_headroom(quota.stdout,peak_GiB=peak)
             forecast=self.track_cost_estimate(job,node,gpu)

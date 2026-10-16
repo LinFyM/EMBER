@@ -1,3 +1,21 @@
+## 2026-10-16 §14 CPU消费者通过与正式冻结准备
+
+派发02:25:27.046Z、首次工程读取02:25:59.716Z（02:34:27只为落盘观察时刻，非重置起点）。仅36链/9meta更新/144独立query/1008FM；当前尚无正式GPU或环境。Reader900只继承权重，H seed7 fresh/新Adam，code_units/D/source固定。
+
+唯一control_space复用原ImageReader/FM/source Runtime、History/EpisodeRunner/NativeVelocity、动态调度的node/PSS准入与全局账本；新增feedback只管H和Gaussian数学，practice只管实际episode/原子raw H，compilation只管一condition选择/停止与样本前缀。旧1800训练/producer回归/双checkpoint/特征构建主动入口退役，旧初始化schema/原始比较只读。变更1183加/1067删/净116行、3新文件、所有<400、15个peer；无结构hard。较复杂函数为完整配对、原子adopt、资源清单/预算和单owner状态机，保持同一owner比复制路径或机械分裂更清楚。
+
+CPU真实消费者：Reader900数值兼容差0、H未来前缀隔离、zero delta首步/后续全H和视频梯度、原始游标及36等权、全world1..6的112覆盖、全部64/全路径score、一次beta、原始D76因子、query隔离、失败raw及未知上界、原子adopt不重跑、8192含未知/16GiB全局dense锁均过。行为期增量event memory与全量均值CPU误差0；训练完整重算保梯度。原始H压缩与后续原生执行并行、唯一obs BF16 cache、raw H进程内4GiB有界只读复用，batch结束完全释放；不缓存更新中的learned表示。证据均在`.codex/tmp/feedback_proposals_20261016/`，无新科学结果。
+
+资源准备：strg01 data1约1899943896KiB/soft2147483648KiB，48GiB新增峰可容纳；source家族167160164352B、canonical实际402492858368B，shared80TiB。双节点live含foreign但显存足够可共驻，总idle≤10则当前上限6/node6；两node ownPSS约.33/1.39GiB、可用RAM约431.75/470.92GiB，线程547/950是launch前基线。正式每launch刷新，不按util排除foreign或挤掉他人。
+
+有用工作将比较episode1/2/4/可用至6worker（另一个真实proposal消费者计卡，6总量时至多5episodeworker）、同节点1/2/4/6训练rank、FM7..112合法pack及H16..512chunk；保持logical4/112/全路径。每batch固定theta完成全部practice/query才step；就绪独立工作动态long-first，idle完整close、转训练前所有采集进程退出。预计总2–4h、首实际工作修正，无GPUh硬cap；一个真实owner/整批退出等待，0Queue/心跳/第二waiter。
+
+## 2026-10-16 §14首轮实际接手与CPU实施
+
+02:25:27.046Z实际接收b10fc588，执行01a13dbf独占canonical工程/记录/Git，main只读。当前仅36条完整链、9共享更新、144独立query、1008原始跨episodeFM；Reader900权重+fresh seed7 H/fresh Adam，固定source/完整38r8/D/units；0held/Test/自动18或36。当前CPU实施中，尚无本批正式GPU/环境提交。
+
+实现复用唯一control_space、EpisodeRunner/History/NativeVelocity和FM/队列/账本原语，替换§13主动训练与双checkpoint调度；所有实际参数抽样联合score由独立query回报学习。初始900每task100访问/2800已消费FM，底层含teacher跳过的保存cursor2844..2868原值接续，不回拨到2800。隔离子切片只写Reader/H及采集owner，不并发写canonical。存储data1独立quota已核，新增峰48GiB可容纳；launch前刷新两节点/配额/CPU。预计含实施2–4h，首有用H/score吞吐修正，非GPUh硬cap。原参考09:05:48.038及全部旧正负/成本保留；一个实际owner直接等整批退出后交main。
+
 ## 2026-10-16 main消费§13；首轮完整参数反馈学习待实际派发
 
 canonical写窗口已归还main，当前基线68226cc3 clean/pushed。main直接核ImageReader、真实FM、History/native消费者和1952原始行/代码，

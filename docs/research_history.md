@@ -1,3 +1,11 @@
+## 2026-10-17 §20 source权重生成实施与正式启动准备
+
+承接064acf0b科学合同，在唯一control_space退役§19闭式fit/旧U主动入口，新增source W/完整A0地址生成、冻结有序M/身份绑定1GiB缓存、1000BA→180完整因子余切FM/.1BA及唯一976读出。fresh generator4838160参数；Reader只58张量有序body，无旧global/64head/H/MT。完整1180流、跨episode query、1–6rank/7..56物理分片梯度、完整CP/Adam/流和atomic adopt/预算/实际旧rows消费者通过；CPU fixture不是新科学分数，真实GPU机制与吞吐尚待首次有用工作。
+
+六个cohesive新增源文件、净增1009 active行，结构guard无hard违规；模型/静态输入、M/cache、数据/数学/CP、学习/profile、最终物化/评测与单owner职责明确，复用原native/Gram/queue/账本/fullclose，旧Git/frozen保留，不建平行Writer。只1180的新576/400可产生本批结论，无controls/Test/任务内优化或自动续量。source、reference、Reader已付共享成本和所有旧事故不重置。
+
+唯一正式命令将从新clean pushed detached `source_weight_compiler_frozen_20261017` 执行`.venv/bin/python -m ember.control_space.run owner --root /data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_compiler_seed7`，device白名单两node0..7，实际准入统一6/8-node6/单node训练/CPU总PSS与data1 quota。先1800小M，再最多8BA/4joint disposable物理比较，弃用临时参数；同一正式Adam完整1000→1180，976实际episode动态持久评估。新增16GiB/992提交/353760步独立上限，0旧余额转入。首次现场21:56:50.026590Z、原家族09:05:48.038Z保持；预计4–7h，当前只完成实施准备，尚无GPU/新科学ROOT。
+
 ## 2026-10-17 §19内部任务排除完成：原全局空间停止追加投入
 
 `control_task_exclusion8_seed7`一次28task/208点S28-U64 fit后，八参考投影128为37，对source23/reference105/U36=98；

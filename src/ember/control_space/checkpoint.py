@@ -1,72 +1,75 @@
-"""Atomic fresh Reader/Adam/cursor checkpoints and explicit topology migration."""
+"""Independent meta-update transactions, fresh Adam and complete behavior cursors."""
 from pathlib import Path
-import os,random,shutil
+import os,random,shutil,subprocess
 import numpy as np
 import torch
 import torch.distributed as dist
-from ember.pi05_source_checkpoint import capture_rng,restore_rng,write_json_atomic,read_json,barrier
-from .contract import SCHEMA,BASIS
+from ember.pi05_source_checkpoint import read_json,write_json_atomic,barrier
+from .contract import SCHEMA,BASIS,INITIAL_READER,checkpoint as path
 
 
-def path(root,update):return Path(root)/'checkpoints'/f'update_{update:08d}'/'state.pt'
+def rng(context):
+    return dict(python=random.getstate(),numpy=np.random.get_state(),torch_cpu=torch.get_rng_state(),
+        torch_cuda=torch.cuda.get_rng_state(context.device) if context.device.type=='cuda' else None)
 
 
-def save(root,reader,optimizer,scheduler,stream,context,units,physical,*,training_seconds):
+def save(root,model,optimizer,scheduler,stream,context,units,baselines,beta,physical,training_seconds):
     update=stream.next_update;destination=path(root,update).parent
-    local=dict(rank=context.rank,local_rank=context.local_rank,RNG=capture_rng(context),device=str(context.device),
-        NUMA_node=context.numa_node,CPU_affinity=context.cpu_affinity,hostname=os.uname().nodename)
-    states=[None]*context.world_size
-    if context.world_size>1:dist.all_gather_object(states,local)
-    else:states=[local]
+    local=dict(rank=context.rank,RNG=rng(context),hostname=os.uname().nodename,device=str(context.device))
+    ranks=[None]*context.world_size
+    if context.world_size>1:dist.all_gather_object(ranks,local)
+    else:ranks=[local]
     if context.is_main:
         destination.parent.mkdir(parents=True,exist_ok=True)
-        if destination.exists():raise ValueError('saved effective update cannot be silently replaced')
+        if destination.exists():raise ValueError('an effective saved meta update must not be overwritten')
         temporary=destination.with_name(destination.name+f'.partial_{os.getpid()}');temporary.mkdir(exist_ok=False)
-        state=dict(schema=SCHEMA,phase='video_initial',next_update=update,reader=reader.state_dict(),
+        state=dict(code_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=Path(__file__).resolve().parents[3],text=True).strip(),schema=SCHEMA,phase='feedback_proposals',meta_update=update,model=model.state_dict(),
             optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),scaler=None,stream=stream.state_dict(),
-            rank_RNG=states,topology=dict(world_size=context.world_size,hostname=os.uname().nodename,CUDA_VISIBLE_DEVICES=os.environ.get('CUDA_VISIBLE_DEVICES')),
-            frozen_basis=str(BASIS),code_units=units.detach().cpu(),physical=physical,training_seconds=training_seconds)
+            rank_RNG=ranks,topology=dict(world_size=context.world_size,hostname=os.uname().nodename,
+                CUDA_VISIBLE_DEVICES=os.environ.get('CUDA_VISIBLE_DEVICES'),device=str(context.device)),
+            frozen_basis=str(BASIS),initial_reader_checkpoint=str(INITIAL_READER),code_units=units.detach().cpu(),
+            baselines=baselines,beta=beta,physical=physical,training_seconds=training_seconds,
+            behavior_paths=str(Path(root)/'conditions'),fresh_optimizer_from900=True)
         torch.save(state,temporary/'state.pt')
-        write_json_atomic(temporary/'manifest.json',dict(schema=SCHEMA,complete=True,next_update=update,
-            reader=True,Adam=True,scheduler=True,scaler=None,full_stream=True,rank_RNG=context.world_size,frozen_basis=str(BASIS)))
-        temporary.rename(destination);write_json_atomic(Path(root)/'checkpoints/latest.json',dict(update=update,path=str(destination/'state.pt')))
+        write_json_atomic(temporary/'manifest.json',dict(schema=SCHEMA,complete=True,meta_update=update,
+            Adam=True,scheduler=True,RNG_ranks=context.world_size,full_stream=True,beta=beta,full_behavior_paths=True))
+        temporary.rename(destination);write_json_atomic(Path(root)/'checkpoints/latest.json',dict(meta_update=update,path=str(destination/'state.pt')))
         retire(root)
     barrier(context)
 
 
 def retire(root):
-    folder=Path(root)/'checkpoints'
-    rolling=sorted(p for p in folder.glob('update_*') if p.is_dir() and '.partial_' not in p.name and int(p.name.split('_')[-1]) not in (900,1800))
+    folder=Path(root)/'checkpoints';rolling=sorted(p for p in folder.glob('meta_update_*')
+        if '.partial_' not in p.name and int(p.name.split('_')[-1]) not in (0,9))
     for old in rolling[:-2]:
         record=read_json(old/'manifest.json')
-        if record['schema']!=SCHEMA or not record['complete']:raise ValueError('ambiguous checkpoint cannot be retired')
-        with (folder/'retention.jsonl').open('a') as handle:handle.write(__import__('json').dumps(dict(retired=str(old),update=record['next_update']))+'\n')
+        if not record['complete'] or record['schema']!=SCHEMA:raise ValueError('ambiguous checkpoint cannot retire')
+        with (folder/'retention.jsonl').open('a') as f:f.write(__import__('json').dumps(dict(retired=str(old),meta_update=record['meta_update']))+'\n')
         shutil.rmtree(old)
 
 
-def restore(root,update,reader,optimizer,scheduler,context):
-    state=torch.load(path(root,update),map_location='cpu',weights_only=False)
-    if state['schema']!=SCHEMA or state['phase']!='video_initial' or state['next_update']!=update or state['frozen_basis']!=str(BASIS):
-        raise ValueError('Reader resume identity/phase/logical cursor changed')
-    reader.load_state_dict(state['reader'],strict=True);optimizer.load_state_dict(state['optimizer']);scheduler.load_state_dict(state['scheduler'])
-    if context.rank<len(state['rank_RNG']):restore_rng(state['rank_RNG'][context.rank]['RNG'],context);rng='saved_rank'
+def load(root,update):
+    state=torch.load(path(root,update),map_location='cpu',weights_only=False,mmap=True)
+    if (state['schema'],state['phase'],state['meta_update'],state['frozen_basis'])!=(SCHEMA,'feedback_proposals',update,str(BASIS)):
+        raise ValueError('independent feedback checkpoint identity/phase mismatch')
+    return state
+
+
+def restore_rng(state,context):
+    if context.rank<len(state['rank_RNG']):
+        saved=state['rank_RNG'][context.rank]['RNG'];random.setstate(saved['python']);np.random.set_state(saved['numpy']);torch.set_rng_state(saved['torch_cpu'])
+        if saved['torch_cuda'] is not None:torch.cuda.set_rng_state(saved['torch_cuda'],context.device);source='saved_rank'
+        else:torch.cuda.manual_seed(7);source='fresh_CUDA_seed7_from_CPU_initializer'
     else:
-        seed=7+update*1009+context.rank;random.seed(seed);np.random.seed(seed%(2**32));torch.manual_seed(seed);rng=f'new_rank_seed{seed}'
-    migration=dict(from_topology=state['topology'],to_world_size=context.world_size,rank=context.rank,RNG_source=rng,
-        logical_update=update,bitwise_exact=False)
-    return state,migration
+        seed=7+state['meta_update']*1009+context.rank;random.seed(seed);np.random.seed(seed%(2**32));torch.manual_seed(seed);source=f'new_rank_seed{seed}'
+    return dict(from_topology=state['topology'],world_size=context.world_size,rank=context.rank,RNG_source=source,bitwise_exact=False)
 
 
 def latest(root):
-    """A renamed complete transaction wins if the small latest pointer was interrupted."""
-    folder=Path(root)/'checkpoints';updates=[]
-    for item in folder.glob('update_*'):
-        if '.partial_' in item.name or not (item/'manifest.json').is_file():continue
-        record=read_json(item/'manifest.json')
-        if record['schema']!=SCHEMA or not record['complete'] or not (item/'state.pt').is_file():
-            raise ValueError('incomplete named Reader checkpoint')
-        updates.append(record['next_update'])
-    update=max(updates,default=0)
-    if (folder/'latest.json').is_file() and read_json(folder/'latest.json')['update']>update:
-        raise ValueError('latest Reader checkpoint lost its complete state')
-    return update
+    values=[]
+    for p in (Path(root)/'checkpoints').glob('meta_update_*'):
+        if '.partial_' in p.name:continue
+        m=read_json(p/'manifest.json')
+        if m['schema']!=SCHEMA or not m['complete'] or not (p/'state.pt').is_file():raise ValueError('incomplete named meta checkpoint')
+        values.append(m['meta_update'])
+    return max(values,default=-1)

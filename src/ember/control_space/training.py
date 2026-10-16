@@ -1,54 +1,35 @@
-"""Fresh image Reader learning with exact fixed-decoder FM credit and full resume."""
+"""Fresh joint FM and complete-path score updates, one saved meta transaction each."""
 from pathlib import Path
-import datetime,json,time,random
+import json,random,time,shutil
 import numpy as np
 import torch
 import torch.distributed as dist
-from safetensors.torch import load_file
 from ember.pi05_source_setup import initialize_distributed,initialize_deferred_process_group
-from ember.pi05_source_checkpoint import write_json_atomic,read_json,barrier
+from ember.pi05_source_checkpoint import DistributedContext,read_json,write_json_atomic
 from ember.proposal_writer.learning import synchronize_gradients
 from ember.reference.accounting import host_resources
-from .contract import BASIS,OPTIMIZER,SCHEMA
+from .contract import INITIAL_READER,BASIS,OPTIMIZER,condition_root,checkpoint
 from .data import make_runtime,Stream
+from .feedback import FeedbackReader
 from .model import load_basis
-from .reader import ImageReader
-from .learning import QueryBank,update_gradients
-from .checkpoint import save,restore
+from .learning import QueryBank,fm_gradients,pg_gradients,gradient_norm
+from .checkpoint import save,load,restore_rng
 
 
-def label_codes(root):
-    destination=Path(root)/'code_labels.pt'
-    if destination.exists():return torch.load(destination,map_location='cpu',weights_only=False)
-    decoder=load_basis(BASIS);saved=torch.load(BASIS,map_location='cpu',weights_only=False,mmap=True)
-    raw=torch.tensor(saved['spectrum'][:64],dtype=torch.float32);units=raw.clamp_min(1e-6)
-    bank=read_json(Path(root)/'bank.json')['tasks'];labels={}
-    center=decoder.layout.unpack(decoder.layout.center)
-    with torch.no_grad():
-        for row in bank:
-            state=center if row['selected_path'] is None else load_file(row['selected_path'])
-            labels[row['task']]=decoder.encode(state)/units
-    result=dict(schema=SCHEMA,frozen_basis=str(BASIS),code_units=units,floor_triggered=int((raw<1e-6).sum()),
-        producer_y=labels,producer_paths={r['task']:r['selected_path'] for r in bank})
-    temporary=destination.with_suffix('.partial');torch.save(result,temporary);temporary.replace(destination)
-    return result
+def optimizer_for(model):
+    optimizer=torch.optim.AdamW(model.parameters(),**OPTIMIZER)
+    return optimizer,torch.optim.lr_scheduler.LambdaLR(optimizer,lambda _:1.)
 
 
-def initialize(args,context):
-    runtime=make_runtime(args.root,context.device);torch.manual_seed(7);np.random.seed(7);random.seed(7)
-    reader=ImageReader().to(context.device);decoder=load_basis(BASIS).to(context.device).requires_grad_(False)
-    labels=label_codes(args.root);units=labels['code_units'].to(context.device)
-    labels={int(k):v.to(context.device) for k,v in labels['producer_y'].items()}
-    optimizer=torch.optim.AdamW(reader.parameters(),**OPTIMIZER);scheduler=torch.optim.lr_scheduler.LambdaLR(optimizer,lambda _:1.)
-    stream=Stream(args.root);elapsed=0.;migration=dict(fresh=True,seed=7)
-    physical=dict(microbatch=7,task_pack=1,measurements=[])
-    if args.start:
-        state,migration=restore(args.root,args.start,reader,optimizer,scheduler,context)
-        stream=Stream(args.root,state['stream']);elapsed=state['training_seconds'];physical=state['physical']
-        if stream.next_update!=args.start or sum(stream.visits.values())!=4*args.start:raise ValueError('Reader logical stream lost its saved cursor')
-    physical['profiling_new_topology']=not args.start or migration['from_topology']['world_size']!=context.world_size
-    if physical['profiling_new_topology']:physical['measurements']=[]
-    return runtime,reader,decoder,labels,units,optimizer,scheduler,stream,elapsed,physical,migration
+def initialize_fresh(root):
+    if checkpoint(root,0).is_file():return
+    torch.manual_seed(7);np.random.seed(7);random.seed(7)
+    initial=torch.load(INITIAL_READER,map_location='cpu',mmap=True,weights_only=False)
+    model=FeedbackReader();model.video.load_state_dict(initial['reader'],strict=True)
+    optimizer,scheduler=optimizer_for(model);stream=Stream(root)
+    baselines={int(k):v for k,v in read_json(Path(root)/'run_contract.json')['initial_baselines'].items()}
+    save(root,model,optimizer,scheduler,stream,DistributedContext(0,0,1,torch.device('cpu')),initial['code_units'],
+        baselines,None,dict(measurements=[]),0.)
 
 
 def reduction(context,value,op=dist.ReduceOp.SUM):
@@ -57,80 +38,91 @@ def reduction(context,value,op=dist.ReduceOp.SUM):
     return tensor.cpu().tolist()
 
 
-def choice(index,physical):
-    # First useful updates exercise7/14/28, then available multitask/query packs.
-    candidates=((7,1),(14,1),(28,1),(28,2),(56,2),(56,4),(112,4))
-    if index<len(candidates):return candidates[index]
-    finite=[m for m in physical['measurements'] if not m['OOM_attempts']]
-    if not finite:return physical['microbatch'],physical['task_pack']
-    best=min(finite,key=lambda m:m['seconds'])
-    return best['microbatch'],best['task_pack']
+def copy_gradients(model):return [None if p.grad is None else p.grad.detach().float().clone() for p in model.parameters()]
+def norm(values):return float(torch.stack([v.square().sum() for v in values if v is not None]).sum().sqrt()) if any(v is not None for v in values) else 0.
 
 
-def gradients(runtime,reader,decoder,units,labels,queries,events,context,microbatch,pack,optimizer):
-    failures=[]
+def combined_gradients(runtime,model,decoder,units,queries,events,paths,context,physical,optimizer):
+    ooms=[];micro=physical['microbatch'];pack=physical['task_pack'];chunk=physical['event_chunk']
     while True:
-        optimizer.zero_grad(set_to_none=True);error=None;result=None
-        try:result=update_gradients(runtime,reader,decoder,units,labels,queries,events,context,microbatch,pack)
+        optimizer.zero_grad(set_to_none=True);error=None
+        try:
+            fm=fm_gradients(runtime,model,decoder,units,queries,events,context,micro,pack)
+            fm_local=copy_gradients(model);optimizer.zero_grad(set_to_none=True)
+            pg=pg_gradients(runtime,model,paths,events,context,chunk)
         except torch.cuda.OutOfMemoryError as failure:error=repr(failure)
-        failed=reduction(context,int(error is not None),dist.ReduceOp.MAX)
-        if not failed:return result,microbatch,pack,failures
-        failures.append(dict(microbatch=microbatch,task_pack=pack,local_error=error))
-        optimizer.zero_grad(set_to_none=True);torch.cuda.empty_cache()
-        if microbatch>7:microbatch=max(7,microbatch//2)
+        if not reduction(context,int(error is not None),dist.ReduceOp.MAX):break
+        optimizer.zero_grad(set_to_none=True);torch.cuda.empty_cache();ooms.append(dict(microbatch=micro,task_pack=pack,event_chunk=chunk,error=error))
+        if chunk>4:chunk=max(4,chunk//2)
+        elif micro>7:micro=max(7,micro//2)
         elif pack>1:pack=max(1,pack//2)
-        else:raise RuntimeError('registered useful FM workload OOM at minimum physical7/one task')
+        else:raise RuntimeError('minimum useful physical FM/H workload OOM; preserve all actual paths')
+    synchronize_gradients(model,context);pg_global=copy_gradients(model)
+    for p,g in zip(model.parameters(),fm_local,strict=True):p.grad=g
+    synchronize_gradients(model,context);fm_global=copy_gradients(model)
+    return fm_global,pg_global,dict(**fm,**pg,OOM_attempts=ooms,microbatch=micro,task_pack=pack,event_chunk=chunk)
 
 
-def append(root,name,event):
-    path=Path(root)/'training'/name;path.parent.mkdir(parents=True,exist_ok=True)
-    with path.open('a') as handle:handle.write(json.dumps(event)+'\n')
+def apply_update(model,optimizer,scheduler,fm,pg,beta):
+    fn,pn=norm(fm),norm(pg);calibrated=beta is None and pn>0
+    if calibrated:beta=min(1.,.25*fn/pn) if fn>0 else 1.
+    for p,f,g in zip(model.parameters(),fm,pg,strict=True):
+        if f is None and (g is None or beta is None):p.grad=None;continue
+        combined=torch.zeros_like(p) if f is None else f
+        if g is not None and beta is not None:combined=combined+beta*g
+        p.grad=combined
+    head=gradient_norm(model.delta_head.parameters())
+    body=gradient_norm(p for n,p in model.named_parameters() if not n.startswith(('video.','delta_head.')))
+    combined=float(torch.nn.utils.clip_grad_norm_(model.parameters(),1.,error_if_nonfinite=True))
+    applied=fn>0 or pn>0
+    if applied:optimizer.step();scheduler.step()
+    return dict(optimizer_step_applied=applied,FM_norm=fn,PG_norm=pn,beta=beta,beta_calibrated_now=calibrated,gradient_norm=combined,
+        delta_head_norm=head,H_body_norm=body)
 
 
 def train(args):
-    if not 0<=args.start<args.stop<=1800 or args.start%9 or args.stop%9:
-        raise ValueError('training segment must preserve complete36-task cycles within1800')
-    context=initialize_distributed(require_numa=True,defer_process_group=True)
-    torch.set_num_threads(8);torch.backends.cuda.matmul.allow_tf32=True
-    initialized=initialize(args,context)
-    runtime,reader,decoder,labels,units,optimizer,scheduler,stream,elapsed,physical,migration=initialized
-    initialize_deferred_process_group(context,rendezvous_root=args.root/'rendezvous')
-    queries=QueryBank(runtime);measurements=[];started=time.monotonic()
-    append(args.root,f'topology_rank_{context.rank}.jsonl',migration)
+    if not 0<=args.start<9 or args.stop!=args.start+1:raise ValueError('one complete current logical update per train transaction')
+    context=initialize_distributed(require_numa=True,defer_process_group=True);torch.set_num_threads(8)
+    torch.backends.cuda.matmul.allow_tf32=True
+    runtime=make_runtime(args.root,context.device);saved=load(args.root,args.start)
+    model=FeedbackReader().to(context.device);model.load_state_dict(saved['model']);model.train()
+    optimizer,scheduler=optimizer_for(model);optimizer.load_state_dict(saved['optimizer']);scheduler.load_state_dict(saved['scheduler'])
+    migration=restore_rng(saved,context);stream=Stream(args.root,saved['stream']);events=stream.next()
+    recorded=read_json(args.root/'batches'/f'meta_{args.start:08d}.json')['events']
+    events=[dict(e,horizon=r['horizon']) for e,r in zip(events,recorded,strict=True)]
+    if json.loads(json.dumps(events))!=recorded:raise ValueError('behavior/FＭ/task stream changed during fixed-theta batch')
+    paths={e['task']:read_json(condition_root(args.root,e['task'])/'path.json') for e in events}
+    baselines={int(k):v for k,v in saved['baselines'].items()}
+    for task,path in paths.items():
+        if not path.get('query_complete') or path['meta_update']!=args.start:raise ValueError('one whole on-policy path and independent query required')
+        path['baseline_old']=baselines[task]
+    decoder=load_basis(BASIS).to(context.device).requires_grad_(False);units=saved['code_units'].to(context.device)
+    initialize_deferred_process_group(context,rendezvous_root=args.root/'rendezvous');queries=QueryBank(runtime)
+    # Useful updates change only physical packing, never logical112 or path weights.
+    micro=(7,14,28,56,112)[min(args.start,4)];pack=min(4,1+args.start)
+    chunk=(16,32,64,128,256,512)[min(args.start,5)];physical=dict(saved['physical'],microbatch=micro,task_pack=pack,event_chunk=chunk)
+    tick=time.monotonic();torch.cuda.reset_peak_memory_stats()
     try:
-        for update in range(args.start,args.stop):
-            tick=time.monotonic();events=stream.next();micro,pack=choice(update-args.start if physical['profiling_new_topology'] else 99,physical)
-            torch.cuda.reset_peak_memory_stats()
-            result,micro,pack,ooms=gradients(runtime,reader,decoder,units,labels,queries,events,context,micro,pack,optimizer)
-            synchronize_gradients(reader,context)
-            norm=float(torch.nn.utils.clip_grad_norm_(reader.parameters(),1.,error_if_nonfinite=True))
-            optimizer.step();scheduler.step();torch.cuda.synchronize(context.device)
-            seconds=float(reduction(context,time.monotonic()-tick,dist.ReduceOp.MAX));elapsed+=seconds
-            peak=reduction(context,[torch.cuda.max_memory_allocated()/2**20,torch.cuda.max_memory_reserved()/2**20,max(result['physical_FM_batches'])],dist.ReduceOp.MAX)
-            total=reduction(context,[result['FM'],result['weighted_auxiliary'],result['query_rows'],result['auxiliary_rows']])
-            if total[2:]!=[112.,4.]:raise ValueError('physical sharding changed logical FM112/aux4')
-            measure=dict(update=update+1,microbatch=micro,task_pack=pack,seconds=seconds,queries_per_second=112/seconds,
-                peak_allocated_MiB=peak[0],peak_reserved_MiB=peak[1],actual_max_FM_batch=peak[2],OOM_attempts=ooms,world_size=context.world_size)
-            physical.update(microbatch=micro,task_pack=pack)
-            if physical['profiling_new_topology'] and update-args.start<7:physical['measurements'].append(measure)
-            measurements.append(measure)
-            event=dict(result,**measure,gradient_norm=norm,task_visits=[dict(task=e['task'],visit=e['visit'],
-                teacher=e['original']['demo'],auxiliary=e['auxiliary']['key'],demos=e['demos'],frames=e['frames']) for e in events])
-            append(args.root,f'rank_{context.rank}.jsonl',event)
-            if context.is_main:
-                append(args.root,'updates.jsonl',dict(measure,FM=total[0],weighted_auxiliary=total[1],gradient_norm=norm))
-                if update<7:print('EMBER_WORK_EVENT '+json.dumps(dict(kind='training_observation',**measure,FM=total[0],weighted_auxiliary=total[1],
-                    FM_Reader_gradient_norm=result['FM_Reader_gradient_norm'],head_gradient_norm=result['head_gradient_norm'],
-                    body_gradient_norm=result['body_gradient_norm'])),flush=True)
-            if (update+1)%90==0 or update+1==args.stop:
-                save(args.root,reader,optimizer,scheduler,stream,context,units,physical,training_seconds=elapsed)
-        result=dict(complete=True,start=args.start,stop=args.stop,world_size=context.world_size,measurements=measurements,
-            cumulative_training_seconds=elapsed,job_wall_seconds=time.monotonic()-started,resources=host_resources(),
-            end_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat())
+        fm,pg,result=combined_gradients(runtime,model,decoder,units,queries,events,paths,context,physical,optimizer)
+        gradients=apply_update(model,optimizer,scheduler,fm,pg,saved['beta']);beta=gradients['beta']
+        torch.cuda.synchronize(context.device)
+        seconds=reduction(context,time.monotonic()-tick,dist.ReduceOp.MAX)
+        totals=reduction(context,[result['FM'],result['PG'],result['actual_proposals'],result['query_rows']])
+        if totals[3]!=112 or int(totals[2])!=sum(len(p['proposals']) for p in paths.values()):
+            raise ValueError('global FM weights or complete actual proposal score coverage changed')
+        for task,path in paths.items():baselines[task]=.9*baselines[task]+.1*path['R']
+        measure=dict(meta_update=args.stop,seconds=seconds,FM=totals[0],PG=totals[1],actual_proposals=int(totals[2]),
+            FM_queries=112,**gradients,world_size=context.world_size,**{k:result[k] for k in ['microbatch','task_pack','event_chunk','OOM_attempts']},
+            peak_allocated_MiB=reduction(context,torch.cuda.max_memory_allocated()/2**20,dist.ReduceOp.MAX),
+            peak_reserved_MiB=reduction(context,torch.cuda.max_memory_reserved()/2**20,dist.ReduceOp.MAX))
+        physical.update({k:measure[k] for k in ['microbatch','task_pack','event_chunk']});physical['measurements']=[*saved['physical']['measurements'],measure]
+        save(args.root,model,optimizer,scheduler,stream,context,units,baselines,beta,physical,saved['training_seconds']+seconds)
+        folder=args.root/'training';folder.mkdir(exist_ok=True)
+        write_json_atomic(folder/f'meta_{args.stop:08d}_rank_{context.rank}.json',dict(result,measure=measure,migration=migration,
+            resources=host_resources(),tasks=[e['task'] for e in events],returns={t:p['R'] for t,p in paths.items()}))
         if context.is_main:
-            write_json_atomic(args.root/'training'/f'segment_{args.start:08d}_{args.stop:08d}.json',result)
-            print('EMBER_TRAIN_SEGMENT '+json.dumps({k:result[k] for k in ('start','stop','world_size','job_wall_seconds')}),flush=True)
-        return result
+            write_json_atomic(folder/f'meta_{args.stop:08d}.json',dict(complete=True,**measure))
+            print('EMBER_USEFUL_OBSERVATION '+json.dumps(measure),flush=True)
     finally:
         queries.close();runtime.videos.close();runtime.execution.close()
         if dist.is_initialized():dist.destroy_process_group()

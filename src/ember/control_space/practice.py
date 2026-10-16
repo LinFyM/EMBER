@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor,wait,FIRST_COMPLETED,as_completed
 from pathlib import Path
 import gzip
+import fcntl
 import os
 import time
 
@@ -18,6 +21,9 @@ from ember.writer.runtime import autocast
 
 H_SCHEMA='ember_feedback_raw_H_v1'
 PHI_SCHEMA='ember_feedback_unique_observation_phi_v1'
+_RAW_CACHE=OrderedDict()
+_RAW_CACHE_BYTES=0
+_RAW_CACHE_HITS=0
 
 
 def specifications(command):
@@ -94,13 +100,41 @@ def save_history(destination,history,row,spec,*,runtime=None):
 
 
 def load_history(path):
+    global _RAW_CACHE_BYTES,_RAW_CACHE_HITS
+    key=str(Path(path).resolve())
+    if key in _RAW_CACHE:
+        history,size=_RAW_CACHE.pop(key);_RAW_CACHE[key]=(history,size);_RAW_CACHE_HITS+=1;return history
     with gzip.open(path,'rb') as stream:payload=torch.load(stream,map_location='cpu',weights_only=False)
     if payload.get('schema')!=H_SCHEMA or not payload.get('complete'):raise ValueError('incomplete raw H archive')
     history=History(**payload['history']);history._cache_key=payload['cache_key'];history._archive_row=payload['row']
     if history.image_features or any(torch.as_tensor(v).shape!=(64,) for v in history.states.values()):
         raise ValueError('raw H must retain codes, without dense image caches or repeated LoRA factors')
+    primary=sum(r['images'].numel()+r['proprio'].numel()*r['proprio'].element_size() for r in history.observations.values())+sum(r['hidden'].numel()*r['hidden'].element_size() for r in history.records)
+    size=int(primary*1.25)
+    while _RAW_CACHE and _RAW_CACHE_BYTES+size>4*2**30:
+        _,(_,old)=_RAW_CACHE.popitem(last=False);_RAW_CACHE_BYTES-=old
+    if size<=4*2**30:_RAW_CACHE[key]=(history,size);_RAW_CACHE_BYTES+=size
     return history
 
+
+def history_cache_info():return dict(entries=len(_RAW_CACHE),primary_reserved_bytes=_RAW_CACHE_BYTES,hits=_RAW_CACHE_HITS,cache_limit_GiB=4)
+
+
+def condition_spent(root,task):
+    from .contract import condition_id
+    prefix='practice_'+condition_id(task)+'_practice_'
+    with connect(root) as db:
+        return db.execute('SELECT coalesce(sum(control+dummy),0) FROM attempts WHERE substr(case_id,1,?)=?',
+            (len(prefix),prefix)).fetchone()[0]
+
+
+def reserve_episode(root,spec,horizon,limits):
+    if spec['role']!='practice':return reserve(root,case_id(spec),horizon,limits=limits)
+    with (Path(root)/'practice_budget.lock').open('a') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        if condition_spent(root,spec['task'])+horizon+10>8192:
+            raise RuntimeError('condition8192 budget cannot cover another complete episode; retain actual partial panel')
+        return reserve(root,case_id(spec),horizon,limits=limits)
 
 
 def finish_engineering(root,row,path):
@@ -159,7 +193,11 @@ def complete_episode(root,runtime,output,spec,task):
     try:validate_row(row,spec,task)
     except ValueError as failure:error=str(failure)
     row.update(valid_panel_row=error is None,engineering_error=error)
-    if spec['role']=='practice':row['history_bytes']=save_history(archive,history,row,spec,runtime=runtime)
+    if spec['role']=='practice':
+        tick=time.monotonic()
+        row['history_primary_raw_bytes']=sum(r['images'].numel()+r['proprio'].numel()*r['proprio'].element_size() for r in history.observations.values())+sum(r['hidden'].numel()*r['hidden'].element_size() for r in history.records)
+        row['history_bytes']=save_history(archive,history,row,spec,runtime=runtime)
+        row['history_archive_seconds']=time.monotonic()-tick
     write_json_atomic(receipt,row)
     if error is None:write_json_atomic(destination,row)
     if error is None:finish(root,attempt,row,destination)
@@ -190,27 +228,40 @@ def panel(root,runtime,runner,command,decoder,units):
         if spec.get('cache_root') and not Path(spec['cache_root']).resolve().is_relative_to((root/'cache/H').resolve()):
             raise ValueError('transient dense H cache must stay under this run cache/H')
         saved=adopt(root,spec,tasks[spec['task']])
-        if saved is None:missing.append(spec)
+        if saved is None:
+            with connect(root) as db:
+                unknown=db.execute("SELECT count(*) FROM attempts WHERE case_id=? AND status='reserved_unknown'",(case_id(spec),)).fetchone()[0]
+            if unknown:raise RuntimeError('unknown actual interaction has no restorable raw H/row; preserve full charge and report boundary')
+            missing.append(spec)
         else:rows[(spec['identity'],spec['state_id'])]=saved
     states=decoded_parameters(runtime,decoder,units,missing)
     def requests():
         for spec in missing:
-            task=tasks[spec['task']];attempt=reserve(root,case_id(spec),task['horizon'],limits=run['limits'])
+            task=tasks[spec['task']];attempt=reserve_episode(root,spec,task['horizon'],run['limits'])
             yield dict(task=task,state=states[spec['parameter_ref']],parameter_ref=spec['parameter_ref'],
                 state_id=spec['state_id'],noise_root=spec['noise_root'],episode_id=attempt,specification=spec,
                 capture_history=spec['role']=='practice',capture_hidden=spec['role']=='practice',
                 capture_phi=spec['role']=='practice',capture_rgb=False,uses_teaching=False)
     before=deepcopy(runner.components);tick=time.monotonic();peak=None
-    for output in runner.run(requests()) if missing else ():
-        if peak is None:
-            peak=host_resources();peak['environment_PIDs']=[p.pid for p in runner.environments.processes if p is not None]
-        spec=output['request']['specification'];rows[(spec['identity'],spec['state_id'])]=complete_episode(root,runtime,output,spec,tasks[spec['task']])
+    archival_workers=int(command.get('archive_workers',2));pending={}
+    def accept(future):
+        spec=pending.pop(future);rows[(spec['identity'],spec['state_id'])]=future.result()
+    with ThreadPoolExecutor(max_workers=archival_workers) as archive_executor:
+        for output in runner.run(requests()) if missing else ():
+            if peak is None:
+                peak=host_resources();peak['environment_PIDs']=[p.pid for p in runner.environments.processes if p is not None]
+            spec=output['request']['specification']
+            pending[archive_executor.submit(complete_episode,root,runtime,output,spec,tasks[spec['task']])]=spec
+            if len(pending)>=archival_workers*2:
+                done,_=wait(pending,return_when=FIRST_COMPLETED)
+                for future in done:accept(future)
+        for future in as_completed(list(pending)):accept(future)
     elapsed=time.monotonic()-tick;ordered=[rows[(s['identity'],s['state_id'])] for s in specs]
     components={k:v-before[k] for k,v in runner.components.items() if k!='physical_batch_histogram'}
     components['physical_batch_histogram']={k:v-before['physical_batch_histogram'].get(k,0) for k,v in runner.components['physical_batch_histogram'].items()}
     return dict(complete=True,rows=ordered,row_paths=[str(paths(root,s)[0]) for s in specs],
         history_paths=[r['history_path'] for r in ordered if r['history_path']],states=[s['state_id'] for s in specs],
-        resources=dict(new_episodes=len(missing),reused_valid_rows=len(specs)-len(missing),seconds=elapsed,
+        resources=dict(archive_workers=archival_workers,new_episodes=len(missing),reused_valid_rows=len(specs)-len(missing),seconds=elapsed,
             episodes_per_second=len(missing)/max(elapsed,1e-6),runner=components,
             peak_environment_resources=peak,after_panel_resources=host_resources()))
 
@@ -230,6 +281,19 @@ def observation_features(runtime,observations,*,chunk=16):
     return result
 
 
+def allocate_dense(file,count):
+    """All per-condition caches share one16GiB transient allocation budget."""
+    parent=file.parent.parent;parent.mkdir(parents=True,exist_ok=True)
+    with (parent/'.dense_budget.lock').open('a') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        used=sum(p.stat().st_size for pattern in ('*.npy','*.partial_*') for p in parent.rglob(pattern))
+        required=count*512*2048*2+256
+        if used+required>16*2**30:raise RuntimeError('global temporary dense H16GiB limit; raw H preserved')
+        temporary=file.with_suffix(f'.partial_{os.getpid()}')
+        array=np.lib.format.open_memmap(temporary,mode='w+',dtype=np.uint16,shape=(count,512,2048))
+        array.flush();del array;temporary.replace(file)
+
+
 def observation_cache(runtime,history,key,cache_root=None,*,fill_missing=True,image_chunk=16):
     """One BF16 slot per actual observation; event pre/post normally remain views."""
     keys=list(history.observations);source=str(runtime.source['model_path']);filled=set();meta=None
@@ -243,10 +307,8 @@ def observation_cache(runtime,history,key,cache_root=None,*,fill_missing=True,im
             if old['schema']!=PHI_SCHEMA or old['keys']!=keys or old['source']!=source:raise ValueError('dense cache observation/source identity changed')
             filled=set(old['filled']);array=np.load(file,mmap_mode='r+')
         else:
-            temporary=file.with_suffix(f'.partial_{os.getpid()}')
-            array=np.lib.format.open_memmap(temporary,mode='w+',dtype=np.uint16,shape=(len(keys),512,2048));array.flush();del array
             write_json_atomic(meta,dict(schema=PHI_SCHEMA,keys=keys,source=source,filled=[]))
-            temporary.replace(file);array=np.load(file,mmap_mode='r+')
+            allocate_dense(file,len(keys));array=np.load(file,mmap_mode='r+')
         if array.dtype!=np.uint16 or array.shape!=(len(keys),512,2048):raise ValueError('unique observation cache lost BF16 shape')
         tensor=torch.from_numpy(array).view(torch.bfloat16)
     def write(values):

@@ -59,7 +59,7 @@ class FeedbackReader(nn.Module):
         event = event+self.video_attention(event,teaching,teaching,need_weights=False)[0]
         return event[:,0][None]
 
-    def encode_events(self, events, memory, event_chunk=16, checkpointed=True):
+    def event_memory(self, events, memory, event_chunk=16, checkpointed=True, first_ordinal=0):
         if memory.ndim!=3 or memory.shape[0]!=1 or memory.shape[2]!=256 or not memory.shape[1]:
             raise ValueError('history requires the complete legal video memory[1,T*8,256]')
         if type(event_chunk) is not int or event_chunk<=0:raise ValueError('event_chunk must be positive')
@@ -72,16 +72,24 @@ class FeedbackReader(nn.Module):
         for first in range(0,len(events),event_chunk):
             chunk=events[first:first+event_chunk]
             if checkpointed and torch.is_grad_enabled():
-                value=checkpoint(self._event_chunk,chunk,memory,first,use_reentrant=False,preserve_rng_state=False)
-            else:value=self._event_chunk(chunk,memory,first)
+                value=checkpoint(self._event_chunk,chunk,memory,first+first_ordinal,use_reentrant=False,preserve_rng_state=False)
+            else:value=self._event_chunk(chunk,memory,first+first_ordinal)
             chunks.append(value)
-        encoded=torch.cat(chunks,1)
-        mask=torch.ones(len(events),len(events),dtype=torch.bool,device=encoded.device).triu(1)
+        return torch.cat(chunks,1)
+
+    def causal_history(self,encoded,checkpointed=True):
+        count=encoded.shape[1]
+        if not count:return encoded
+        mask=torch.ones(count,count,dtype=torch.bool,device=encoded.device).triu(1)
         if checkpointed and torch.is_grad_enabled():
             for layer in self.history_time.layers:
                 encoded=checkpoint(layer,encoded,src_mask=mask,is_causal=True,use_reentrant=False,preserve_rng_state=False)
             return encoded
         return self.history_time(encoded,mask=mask,is_causal=True)
+
+    def encode_events(self,events,memory,event_chunk=16,checkpointed=True):
+        value=self.event_memory(events,memory,event_chunk,checkpointed)
+        return self.causal_history(value,checkpointed)
 
     def mean_from_encoded(self,y0,memory,encoded,prefix_length,best_y,best_score,remaining_steps):
         if (y0.shape!=(64,) or best_y.shape!=(64,) or encoded.ndim!=3 or encoded.shape[0]!=1

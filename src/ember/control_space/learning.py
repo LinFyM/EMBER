@@ -60,8 +60,6 @@ def assignments(world,rank):
         if any(((t*4+q//7)*world)//16==rank for q in range(28))]
 
 
-def auxiliary_owner(position,world):return (position*4*world)//16
-
 
 def gradient_norm(parameters):
     values=[p.grad.detach().float().square().sum() for p in parameters if p.grad is not None]
@@ -97,23 +95,41 @@ def fm_credit(runtime,samples,states,owned,microbatch):
     return value,credit_norm**.5
 
 
-def update_gradients(runtime,reader,decoder,units,labels,queries,events,context,microbatch,task_pack):
-    owned=assignments(context.world_size,context.rank);fm=aux=credit=0.;seeds={};runtime._FM_batches=[]
-    # Pack real task conditions through the existing per-sample LoRA owner.
+def fm_gradients(runtime,model,decoder,units,queries,events,context,microbatch,task_pack):
+    owned=assignments(context.world_size,context.rank);fm=credit=0.;seeds={};runtime._FM_batches=[]
     for first in range(0,len(owned),task_pack):
         group=owned[first:first+task_pack];states=[];samples=[];mapping=[]
         for local,(position,indices) in enumerate(group):
-            y=reader_output(reader,events[position]['original'],runtime)
+            y=reader_output(model.video,events[position]['original'],runtime)
             states.append(decoder.decode(units*y));sample,seed=queries.sample(events[position],indices);samples.append(sample)
             seeds[events[position]['task']]=seed;mapping.append((local,list(range(len(indices)))))
         value,norm=fm_credit(runtime,samples,states,mapping,microbatch);fm+=value;credit+=norm
-    fm_reader=gradient_norm(reader.parameters())
+    return dict(FM=fm,LoRA_cotangent_norm=credit,noise_time_roots=seeds,
+        physical_FM_batches=runtime._FM_batches,query_rows=sum(len(q) for _,q in owned))
+
+
+def pg_gradients(runtime,model,paths,events,context,event_chunk):
+    from .practice import model_events
+    from .feedback import gaussian_log_prob
+    from .contract import condition_id
+    loss_value=0.;count=0;replays=[]
     for position,event in enumerate(events):
-        if auxiliary_owner(position,context.world_size)!=context.rank:continue
-        y=reader_output(reader,event['auxiliary'],runtime)
-        loss=(y-labels[event['task']]).square().mean()*(.1/4)
-        loss.backward();aux+=float(loss.detach())
-    return dict(FM=fm,weighted_auxiliary=aux,LoRA_cotangent_norm=credit,FM_Reader_gradient_norm=fm_reader,
-        head_gradient_norm=gradient_norm(reader.head.parameters()),body_gradient_norm=gradient_norm(
-            p for n,p in reader.named_parameters() if not n.startswith('head.')),noise_time_roots=seeds,
-        physical_FM_batches=runtime._FM_batches,query_rows=sum(len(q) for _,q in owned),auxiliary_rows=sum(auxiliary_owner(p,context.world_size)==context.rank for p in range(4)))
+        if position%context.world_size!=context.rank:continue
+        path=paths[event['task']];proposals=path['proposals']
+        if not proposals:continue
+        value=load_cached(Path(event['original']['cache_path']),runtime.device)
+        raw=model_events(runtime,path['history_paths'],cache_root=runtime.root/'cache/H'/condition_id(event['task']),image_chunk=event_chunk)
+        with autocast(runtime.device):
+            y0,memory=model.prepare_video(value['z_img'],value['indices'],checkpoint_layers=True)
+            encoded=model.encode_events(raw,memory,event_chunk=event_chunk,checkpointed=True)
+            logps=[]
+            for proposal in proposals:
+                mu=model.mean_from_encoded(y0,memory,encoded,proposal['prefix_length'],
+                    torch.tensor(proposal['best_y'],device=runtime.device),proposal['best_score'],proposal['remaining_steps'])
+                sample=torch.tensor(proposal['y'],device=runtime.device,dtype=torch.float32)
+                logp=gaussian_log_prob(sample,mu);logps.append(logp)
+                replays.append(dict(task=event['task'],ordinal=proposal['ordinal'],behavior_logp=proposal['logp'],
+                    replay_logp=float(logp.detach()),max_mean_difference=float((mu.detach()-torch.tensor(proposal['mu'],device=runtime.device)).abs().max())))
+            loss=-(path['R']-path['baseline_old'])*torch.stack(logps).sum()/4
+        loss.backward();loss_value+=float(loss.detach());count+=len(proposals)
+    return dict(PG=loss_value,actual_proposals=count,replays=replays)

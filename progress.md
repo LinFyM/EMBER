@@ -1,3 +1,17 @@
+## 2026-10-16 §14首轮36链/9更新完整退出与验收
+
+唯一恢复owner1895767于05:08:33.734988Z真实exit0，cell582/PTY19944已结束；36链/9真实Adam更新/144独立query/1008跨episode FM全部完成。首次派发02:25:27.046、准备02:25:59.716、首owner03:04:28.505672、meta3工程接续03:53:39.218827及旧参考09:05:48.038均保留；接收至退出2.719h，原2–4h预计内。没有活GPU/owner/环境或退出等待者，0Queue/自通知/自动后继。
+
+[完整原件与工程交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_proposals_seed7/analysis/engineering_completion.md)，results/acceptance/closing_readout/cost_accounting/useful_throughput/resource_exit保留全部路径、122实际提案及632原始H。query source58/reference127/generated79；source→generated R53/G26/L5，参考新增70保23；target35/96（source14/ref80）、support44/48（source44/ref47）。旧900仅同视频init0锚36有效配对，22→19、R18/G1/L4；其余108不伪配对。
+
+实践52→best90/144，R51/G39/L1；17实际改参数task的68query13→35，19最终source任务76query45→44不得归因学习。11任务source实践4/4即止、0教学编码；其余8读过教学仍选source。9步PG均非零，全部122 sample完整score，beta首步固定0.00018755106293410052；H body首步0/后8步真实非零，完整CP9模型/Adam/RNG/stream/baseline与有限数值验收通过。重放μ最大2.4414e−4/logp.002344为正常BF16/物理差异，不追逐bitwise。
+
+776次物理提交/control199568+dummy7760=207328步；practice632含429正常失败，query144，0工程失败/unknown/有效重算/OOM。55 GPU job全部exit0，共9.325162564582GPUh、0未决；旧五ROOT区间[69.83061998896141,69.9383654939614]独立保持。两节点本批进程0/240次完整close；CPU验收退出后用户总PSS约0.36/1.34GiB（含app），0僵尸，退出资源和strg01独立quota原件齐全；H压缩11.540GiB、ROOT11.946GiB，临时16GiB/新code/原子余量保守峰界30<48，非连续实测峰。
+
+正式来源前3步81c859e6、后6步7a149c3e；meta3无子任务的原子CPU迁移0有效损失，旧冻结/attempt原件保留。1/2/4/5episode worker、1/2/4/6rank与H16..512均用有效工作比较；顺序解压3.188→.434秒，后段训练15.14–25.60秒，真实FM每rank14/21（ceiling112非实批112），无额外科学查询。不同task/版本不当隔离speedup或全局最优。
+
+当前144为变化theta的训练回报，未取得single-checkpoint/held或H/video因果资格；不以实践改善替代独立初态稳定性，不自动18/36、held、controls/Test。最终main clean/pushed/开发树清理及唯一整批回报见ROOT/analysis/Git_delivery.json；Git完成后一次交main01a13dd9并归还canonical写窗口，由main消费后自主接续。
+
 ## 2026-10-16 §14完整meta3自然边界接续I/O修复
 
 03:53:26.599574Z定向核旧owner1172092已保存完整meta3、children为空且全部GPU job退出回执齐全，只结束该CPU coordinator；supervisor03:53:26.783502 exit−15属于明确工程迁移，0有效更新丢失/0实践重跑/0未知额外费用。coordinator_handoff.json和attempt001原件保留，旧81c859e6不热改。

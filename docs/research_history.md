@@ -5590,3 +5590,13 @@ video_effect_MT_official_settling_03/a986e7b2，21:48:29Z→21:52:59Z，新增12
 ## 2026-10-16 §14首窗工程接续：完整meta3，0有效重算
 
 执行独占窗口内，原81c859e6真实保存meta1..3/12链；实测raw H gzip重复seek和5/6worker分配空闲后，以b8bc0b75窄修、7a149c3e新clean pushed detached接续。03:53:26.599574Z确认旧owner无子任务/全部job结算后只退休CPU coordinator，03:53:39.218827Z新owner1895767从完整meta3恢复。全部实际实践/失败/时钟/原冻结与完整账本保留，无科学算子/标签/选择/预算变更；当前整批尚未结束，非新科研结论。
+
+## 2026-10-16 source/r8 §14真实反馈首轮完整交付
+
+[唯一design§14](designs/source_policy_space_compiler_20261015.md)从严格选择Reader900加fresh seed7真实H/Adam，固定source/38r8/basis/units，完成36完整链/9更新/122实际Normal提案/144独立query/1008原始跨episode FM。practice source52→best90/144；query generated79/source58/reference127，R53/G26/L5，参考新增70保23。target35/96、support44/48；旧900同视频锚36为22→19（R18/G1/L4），不把其余108不同teacher当严格比较。17task真实改参数，19最终source，其中11source实践4/4即止不读教学；未改参数的-1不归学习。
+
+首3步81c859e6；meta3无活子任务/全GPU回执齐全后只退休CPU owner，7a149c3e完整模型/Adam/RNG/stream接续3→9；旧attempt−15为明确工程迁移，无有效重算或环境损失。真实H顺序解压修复3.188→.434秒，物理worker/rank/H chunk用本批有效工作比较，后段15.14–25.60秒更新；9次PG真实非零/后8次H body非零，固定beta1.87551e−4。正常BF16重放μ最大2.44e−4保留，不称bitwise exact。
+
+05:08:33.734988Z exit0；原接收/准备/首次owner/参考时钟不改。776实际episode/control199568+dummy7760=207328步，9.325162564582GPUh/55GPU job全exit0，0工程失败/未知/有效重算/OOM。632原始H/429正常失败全留，240完整close/双节点本批GPU环境owner已退出；ROOT11.946GiB、保守新增峰界30GiB<48，独立quota现场原件齐全。旧五ROOT GPUh区间[69.83061998896141,69.9383654939614]独立保持。
+
+[完整原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_proposals_seed7/analysis/engineering_completion.md)及results/acceptance/closing_readout/cost_accounting/useful_throughput/resource_exit/Git_delivery保留所有case、预算、恢复和Git。144是变化theta的训练回报，不能认single-checkpoint/held、H/video因果或充分学习；无自动18/36/held/controls/Test。工程验收/Git后仅一次交main01a13dd9，归还独占写窗口，后继由主讨论消费后自主裁决。

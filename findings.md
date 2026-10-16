@@ -12347,3 +12347,11 @@ main独立授权原10条件一次schema纠正，仅复用既定20bootstrap/160�
 ## §14真实H读取与物理并行的工程事实（2026-10-16）
 
 torch ZIP直接读取gzip seek流会重复解压：本批真实35.6MB/104event档旧3.188秒，一次解压0.434秒，实际load_history0.447秒；只改有界单episode读取，不变H。16可用episode以ceil分给5/6worker会产生空闲，改floor使各worker拿到实际行。前三批步骤吞吐以2worker最高，不能只按卡数推断更快；学习meta3已见真实H body梯度8.87e−5。自然meta3边界、无活子任务后用新冻结7a149c3e恢复原Adam/流，0有效重算。完整科学结论仍待当前36链/9更新结束，详见progress和ROOT原件。
+
+## §14首个完整反馈学习周期：实践改善、独立query与900锚分开（2026-10-16）
+
+36链/9更新/122实际提案、144独立query完整结束。source58/reference127/generated79，R53/G26/L5、breadth20→25；参考新增70保23。target35/96对source14/ref80；support44/48对source44/ref47。Spatial16/24、Object3、Goal14、Long2、support44，不能用整体+21掩盖Object/Long仍弱。旧900只能比较同视频init0锚36，22→19、R18/G1/L4，另外108不同teacher不伪配对。
+
+实践source52→best90/144（R51/G39/L1）；17实际非source输出task的68query13→35（R11/G24/L2）；19任务仍部署source的76query45→44，这些参数未变差异不归因学习，其中11source4/4直接停止且未编码教学。全122 proposal含未选中样本均进联合64维/完整路径score，9PG更新、beta首步固定1.875510629e−4，H body首步零/后续非零与全FM/D信用通过；这不等于有限9步充分、H/video因果或held成功。
+
+完整case/相邻practice R84/G67/L41、各task/suite/identity与所有不利结果见[原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_proposals_seed7/analysis/engineering_completion.md)。776提交/207328步/9.325162564582GPUh，632H含429正常失败全留，0工程失败/unknown/重算/OOM；旧费用区间保持。当前训练theta变化，0single-checkpoint资格、0新held/Test，主讨论消费后再定后继，不自动续同族。

@@ -1,3 +1,8 @@
+## 2026-10-16 当前授权首窗已完成：§14
+
+36完整链/9真实共享更新/144独立query/1008 FM已真实exit0且验收通过。query79/144对source58/ref127，唯一旧900同视频锚19/36对22；实践52→90不能认证H/video作用或single-checkpoint能力。[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_proposals_seed7/analysis/engineering_completion.md)及progress保留成功集合、真实梯度、恢复/费用/资源/代码身份。
+本批9.325162565GPUh/207328步/776提交，0工程失败/unknown/有效重算；GPU与环境全释放。仅在Git clean/pushed后一次回main并归还写窗口，不自动继续18/36或held/controls/Test，由main消费后自主裁决接续，无Owner例行许可前置。
+
 ## 2026-10-16 §14已从完整meta3接续
 
 真实owner1895767从7a149c3e接续，唯一退出reader19944/cell582；旧CPU owner在无活子任务的自然边界退休，前三更新及全部实际行不重算。剩余原6更新继续；I/O测量、资源/梯度和精确时钟见progress，0新科学额度。

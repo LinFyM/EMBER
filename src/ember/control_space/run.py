@@ -1,7 +1,7 @@
 """One first-cycle owner: fixed-theta collection, complete-path update, real exit."""
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor,as_completed
-import argparse,datetime,fcntl,json,math,os,shutil,subprocess,time
+import argparse,datetime,fcntl,json,os,shutil,subprocess,time
 from ember.pi05_source_checkpoint import write_json_atomic,read_json
 from ember.proposal_writer.batch import Batch,Job,live_gpu_snapshot
 from ember.reference.coordinator import Scheduler
@@ -47,7 +47,7 @@ class WorkQueue(Scheduler):
     def __init__(self,root,workers):
         super().__init__(root,{},len(workers),worker_nodes={f'episode_{i:02d}':n for i,(n,_) in enumerate(workers)},evaluation_reference_root=REFERENCE_ROOT)
         self.pending=[];self.panels={};self.inflight={};self.controller=None;self.stopping=False;self.error=None;self.pack=0
-        self.first_observation=False;self.archive_workers=2;self.resources_file=root/'worker_resources.jsonl';self.max_pack=max(1,math.ceil(16/len(workers)))
+        self.first_observation=False;self.archive_workers=2;self.resources_file=root/'worker_resources.jsonl';self.max_pack=max(1,16//len(workers))
 
     def log(self,worker,value):
         with self.resources_file.open('a') as f:f.write(json.dumps({**value,'UTC':utc(),'worker':worker})+'\n')

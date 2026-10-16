@@ -6,6 +6,7 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor,wait,FIRST_COMPLETED,as_completed
 from pathlib import Path
 import gzip
+import io
 import fcntl
 import os
 import time
@@ -104,7 +105,11 @@ def load_history(path):
     key=str(Path(path).resolve())
     if key in _RAW_CACHE:
         history,size=_RAW_CACHE.pop(key);_RAW_CACHE[key]=(history,size);_RAW_CACHE_HITS+=1;return history
-    with gzip.open(path,'rb') as stream:payload=torch.load(stream,map_location='cpu',weights_only=False)
+    # The torch zip reader seeks backwards; seeking through gzip repeatedly
+    # decompresses the same episode. Inflate one bounded episode only once.
+    with gzip.open(path,'rb') as stream:raw=stream.read()
+    payload=torch.load(io.BytesIO(raw),map_location='cpu',weights_only=False)
+    del raw
     if payload.get('schema')!=H_SCHEMA or not payload.get('complete'):raise ValueError('incomplete raw H archive')
     history=History(**payload['history']);history._cache_key=payload['cache_key'];history._archive_row=payload['row']
     if history.image_features or any(torch.as_tensor(v).shape!=(64,) for v in history.states.values()):

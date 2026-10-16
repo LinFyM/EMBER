@@ -101,6 +101,8 @@ def worker(args):
             if command['command']!='panel':raise ValueError('only current complete panels may execute')
             specs=specifications(command);authorize(args.root,specs,conditions);slots=len(specs)
             if not 4<=slots<=24 or slots%4:raise ValueError('useful worker packs contain1..6 complete four-case panels')
+            # EGL allocates outside PyTorch; H temporaries must not pin its room.
+            torch.cuda.empty_cache()
             if runner is not None and slots<runner.slots:runner=close_runner(runner,args.worker_id)
             if runner is None:runner=EpisodeRunner(runtime,environment,args.physical_gpu,slots=slots)
             runner.slots=slots;tick=time.monotonic();torch.cuda.reset_peak_memory_stats()

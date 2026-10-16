@@ -12343,3 +12343,7 @@ Phi1120与完整native38/r8梯度均已由实际消费者执行；原首步B38/A
 
 有效512固定读出为MT67/V0 60/V1 58/noV74；配对V0 R52/G8/L15、V1 R51/G7/L16，noV全MT300的+7不作为学习，不能将未改参数差异归因视频LoRA。原错误MT64及相对值撤回，旧128无效执行和832分支多8320dummy完整计账；实际640final，总5.131869526GPUh/350518步/1684提交。MT/原件验收通过，原受joint错误影响27更新仍不符评分字段合同；不以工程完整替代科学结论。原sealed时序/自身joint限制保留，无重读GT。原件ROOT/{corrected_results.json,analysis/engineering_completion_20261015/acceptance.json}。
 main独立授权原10条件一次schema纠正，仅复用既定20bootstrap/160原首次分支，fresh同MT300/Adam/RNG重新计算合法预测分差；其它14条件不重编译。完整[design§13](docs/designs/video_effect_parameter_compiler_20261015.md)保留阴性、预算、同condition MT复用和sealed后修复边界，不称此修正必然救分。当前CPU准备，尚未新计算。
+
+## §14真实H读取与物理并行的工程事实（2026-10-16）
+
+torch ZIP直接读取gzip seek流会重复解压：本批真实35.6MB/104event档旧3.188秒，一次解压0.434秒，实际load_history0.447秒；只改有界单episode读取，不变H。16可用episode以ceil分给5/6worker会产生空闲，改floor使各worker拿到实际行。前三批步骤吞吐以2worker最高，不能只按卡数推断更快；学习meta3已见真实H body梯度8.87e−5。自然meta3边界、无活子任务后用新冻结7a149c3e恢复原Adam/流，0有效重算。完整科学结论仍待当前36链/9更新结束，详见progress和ROOT原件。

@@ -1,3 +1,11 @@
+## 2026-10-16 §14完整meta3自然边界接续I/O修复
+
+03:53:26.599574Z定向核旧owner1172092已保存完整meta3、children为空且全部GPU job退出回执齐全，只结束该CPU coordinator；supervisor03:53:26.783502 exit−15属于明确工程迁移，0有效更新丢失/0实践重跑/0未知额外费用。coordinator_handoff.json和attempt001原件保留，旧81c859e6不热改。
+
+03:53:39.218827Z唯一新owner1895767/supervisor1894806从clean pushed detached7a149c3e接续同ROOT完整theta/Adam/scheduler/各rankRNG/beta/baseline/原流；唯一直接退出reader19944/cell582。旧stdout reader540/576已结束，工程边界事件等待579亦真实exit0，0Queue/第二waiter。当前仅剩原6meta，未重置派发/准备/首次启动时钟或16失败额度。
+
+前三批采集939.55/673.62/835.02秒，对应20661/19633/19032环境步，worker1/2/4；更新124.16/79.18/72.56秒，rank1/2/4。任务/H量不同，非受控speedup；2worker现有步骤吞吐最高，仍按实际第4批有用5/6worker与训练6rank安排比较再择优。meta3真实H body梯度8.87e−5、delta head.01065，训练峰16.34GiB/无OOM，后续micro/pack仍在科学逻辑112内扩大。新单episode解压/有用worker分配修复只变执行；完整36链/9更新/144query/1008FM与原预算不变。
+
 ## 2026-10-16 §14首个真实更新及窄I/O修复准备
 
 首批[95,56,38,13]完整采集939.55秒/20661环境步；meta1真实保存，FM112/提案8，更新124.16秒，beta一次固定0.00018755106293410052。全8次行为均值重放差0；FM/PG全局梯度norm约.05949/79.2926，zero delta首步H body0/head非零符合初始化，后续真实梯度仍待本批。GPU训练峰11.07GiB，不把接通作为科学成功。

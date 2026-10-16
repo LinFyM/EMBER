@@ -5586,3 +5586,7 @@ main发现MuJoCo slide/hinge编码和q列反置，旧video评分/完整native cr
 ### 2026-10-15 固定128 MT正式settling修訂完整交付
 
 video_effect_MT_official_settling_03/a986e7b2，21:48:29Z→21:52:59Z，新增128完整/0失败/32766步/.338502315GPUh；累计1684完整/350518步/5.131869526GPUh，640实际final构成512有效。MT67/V0 60/V1 58/noV74，旧MT64无效保留；noV0接受、同参数数值差异不称学习。ROOT corrected_results为本次入口，CPU验收5.794秒，全部GPU已释放。原参数冻结/GT sealed/修正MT先后例外和joint实际违约明示，14未影响condition与10受影响condition分开。后续仅main明确授权[design§13](designs/video_effect_parameter_compiler_20261015.md)有限10条件纠正，非自动扩训或新的性能结果。
+
+## 2026-10-16 §14首窗工程接续：完整meta3，0有效重算
+
+执行独占窗口内，原81c859e6真实保存meta1..3/12链；实测raw H gzip重复seek和5/6worker分配空闲后，以b8bc0b75窄修、7a149c3e新clean pushed detached接续。03:53:26.599574Z确认旧owner无子任务/全部job结算后只退休CPU coordinator，03:53:39.218827Z新owner1895767从完整meta3恢复。全部实际实践/失败/时钟/原冻结与完整账本保留，无科学算子/标签/选择/预算变更；当前整批尚未结束，非新科研结论。

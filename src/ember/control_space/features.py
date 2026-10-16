@@ -55,6 +55,52 @@ def load_cached(path,device='cpu'):
     return dict(z_img=value['z_img'].to(device),indices=value['indices'].to(device),source=value['source'])
 
 
+def load_video(runtime,descriptor):
+    """RGB-only store owns stride5, terminal and exactly one180-degree rotation."""
+    if descriptor['kind']!='original':raise ValueError('current teaching is an original RGB-only video')
+    return runtime.videos.load(int(descriptor['task']),int(descriptor['demo']))
+
+
+@torch.no_grad()
+def extract(runtime, video, frame_chunk=32):
+    """Run all512 real image tokens through frozen Gemma, with no L or suffix."""
+    from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks, resize_with_pad_torch
+    from ember.operator_writer.native import _teacher_attention_kernel
+    frames = torch.from_numpy(video.frames)
+    if (frames.dtype != torch.uint8 or frames.ndim != 5 or frames.shape[1:3] != (2, 3)
+            or len(frames) != len(video.frame_indices) or not len(frames)
+            or type(frame_chunk) is not int or frame_chunk <= 0):
+        raise ValueError('source image prefix requires full ordered dual-camera uint8 RGB')
+    indices = _indices(video.frame_indices, video.raw_frame_count)
+    if getattr(runtime, '_generator', None) is not None or runtime.execution._active_state is not None:
+        raise ValueError('pure source image extraction cannot overlap learned or execution adapters')
+    core, bridge = runtime.policy.model, runtime.policy.model.paligemma_with_expert
+    dtype = bridge.paligemma.model.language_model.layers[0].self_attn.q_proj.weight.dtype
+    runtime.policy.eval().requires_grad_(False)
+    images, chunks = [], []
+    started = time.monotonic()
+    for first in range(0, len(frames), frame_chunk):
+        selected = frames[first:first + frame_chunk].to(runtime.device)
+        with autocast(torch.device(runtime.device)):
+            pixels = selected.flatten(0, 1).float().div(255).permute(0, 2, 3, 1)
+            pixels = (resize_with_pad_torch(pixels, 224, 224) * 2 - 1).permute(0, 3, 1, 2)
+            raw = bridge.embed_image(pixels).reshape(len(selected), 512, 2048)
+            padding = torch.ones(len(selected), 512, dtype=torch.bool, device=runtime.device)
+            mask = core._prepare_attention_masks_4d(make_att_2d_masks(padding, torch.zeros_like(padding)))
+            with _teacher_attention_kernel(mask):
+                (z, suffix), _ = bridge(attention_mask=mask,
+                    position_ids=torch.arange(512, device=runtime.device)[None].expand(len(selected), -1),
+                    past_key_values=None, inputs_embeds=[raw.to(dtype), None], use_cache=False, adarms_cond=[None, None])
+            if suffix is not None or z.shape != (len(selected), 512, 2048) or not bool(torch.isfinite(z).all()):
+                raise ValueError('pure image-prefix post-norm output changed')
+            images.append(z.detach().to(dtype=torch.bfloat16, device='cpu').contiguous())
+        chunks.append(len(selected))
+    return dict(z_img=torch.cat(images), indices=indices,
+        source=dict(model=str(runtime.source['model_path']), dual_rgb=True, stride=5, post_norm=True,
+            Gemma_input='512 image tokens only', L_in_Gemma=False, action_suffix=False, probe=False,
+            old_meta_loaded=False, preprocess=dict(PREPROCESS), input_resolution=list(frames.shape[-2:]),
+            raw_frames=video.raw_frame_count, frame_chunks=chunks, seconds=time.monotonic()-started))
+
 @torch.no_grad()
 def observation_features(runtime,observations,*,chunk=16):
     """Actual rotated raw RGB through frozen vision/projector, with no L/suffix."""
@@ -123,7 +169,7 @@ class _TensorCache:
                 db.execute('INSERT OR IGNORE INTO settings VALUES (?,?)',(key,value))
                 if db.execute('SELECT value FROM settings WHERE name=?',(key,)).fetchone()[0]!=value:
                     raise ValueError('wrong frozen cache schema/capacity')
-            if not db.execute('SELECT count(*) FROM tensors').fetchone()[0] and next(self.root.glob('entry_*.pt*'),None):
+            if not db.execute('SELECT count(*) FROM tensors').fetchone()[0] and (next(self.root.glob('entry_*.pt'),None) or next(self.root.glob('entry_*.pt.partial'),None)):
                 raise RuntimeError('unindexed frozen cache payloads need explicit parent forensic cleanup')
 
     @contextmanager
@@ -172,12 +218,38 @@ class _TensorCache:
             db.execute("UPDATE tensors SET status='absent',bytes=0 WHERE key=?",(key,))
 
     @staticmethod
-    def load(destination,key,metadata):
-        with destination.open('rb') as stream:payload=torch.load(stream,map_location='cpu',weights_only=True,mmap=False)
+    def load(destination,key,metadata,*,mmap=False):
+        if mmap:payload=torch.load(destination,map_location='cpu',weights_only=True,mmap=True)
+        else:
+            with destination.open('rb') as stream:payload=torch.load(stream,map_location='cpu',weights_only=True,mmap=False)
         if (not isinstance(payload,dict) or payload.get('schema')!=CACHE_SCHEMA or payload.get('key')!=key
                 or payload.get('metadata')!=metadata or not isinstance(payload.get('value'),torch.Tensor)):
             raise ValueError('frozen cache payload schema/key/source metadata mismatch; preserve evidence')
         return payload['value']
+
+    def evict(self,key,source):
+        with self.transaction() as db:entry=db.execute('SELECT * FROM tensors WHERE key=?',(key,)).fetchone()
+        if entry is None:return dict(key=key,indexed=False,deleted_bytes=0,files=[])
+        file=f'entry_{entry["id"]:010d}.pt';destination=self.root/file;temporary=self.root/(file+'.partial')
+        with _file_lock(self.root/(file+'.lock')):
+            with self.transaction() as db:
+                entry=db.execute('SELECT * FROM tensors WHERE key=?',(key,)).fetchone()
+                if entry is None:return dict(key=key,indexed=False,deleted_bytes=0,files=[])
+                if file!=f'entry_{entry["id"]:010d}.pt':raise RuntimeError('retirement requires all consumers closed')
+                metadata=json.loads(entry['metadata'])
+                if metadata.get('source')!=source:raise ValueError('retirement source differs from the frozen execution source')
+                files=[]
+                if destination.exists():
+                    witness=self.load(destination,key,metadata,mmap=True);del witness
+                    files.append(dict(path=str(destination),bytes=destination.stat().st_size,payload_identity_validated=True))
+                if temporary.exists():
+                    files.append(dict(path=str(temporary),bytes=temporary.stat().st_size,
+                        payload_identity_validated=False,binding='own indexed key/source temporary; never consumed'))
+                for artifact in files:Path(artifact['path']).unlink()
+                db.execute("DELETE FROM tensors WHERE key=?",(key,))
+                (self.root/(file+'.lock')).unlink(missing_ok=True)
+                return dict(key=key,indexed=True,source=source,status_before=entry['status'],
+                    charged_bytes_released=entry['bytes'],deleted_bytes=sum(x['bytes'] for x in files),files=files)
 
     def get(self,key,metadata,required,build):
         tick=time.monotonic();file=self.entry(key,metadata);destination=self.root/file;temporary=self.root/(file+'.partial')
@@ -186,6 +258,8 @@ class _TensorCache:
         with _file_lock(self.root/(file+'.lock')):
             with self.transaction() as db:
                 entry=db.execute('SELECT * FROM tensors WHERE key=?',(key,)).fetchone()
+                if entry is None or file!=f'entry_{entry["id"]:010d}.pt':
+                    raise RuntimeError('cache entry retired while requested; retirement requires all consumers closed')
                 if entry['status'] in ('ready','reserved') and destination.exists():
                     value=self.load(destination,key,metadata);size=destination.stat().st_size
                     if size>entry['bytes']:raise RuntimeError('frozen cache payload exceeds its original reservation')
@@ -219,30 +293,43 @@ class FrozenFeatures:
         self.root,self.runtime=Path(root),runtime
         self.reader=reader_frozen.eval().requires_grad_(False)
         run=read_json(self.root/'run_contract.json')
-        self.reader_identity=run['initial_reader_checkpoint'];self.source=str(runtime.source['model_path'])
+        self.reader_identity=run['initial_reader_checkpoint'];self.source=str(runtime.source['model_path']);self.phase=run.get('phase')
         self.history_cache=_TensorCache(self.root/'cache/H',history_capacity)
         self.memory_cache=_TensorCache(self.root/'cache/M',memory_capacity)
         self.measurements=[]
 
-    def memory(self,entry):
-        if entry.get('kind','original')!='original':raise ValueError('only the registered original teaching is a condition')
-        key=f'task_{int(entry["task"]):04d}_demo_{int(entry["demo"]):03d}'
-        metadata=dict(cache_path=str(entry['cache_path']),reader=self.reader_identity,source=self.source)
+    def memory(self,entry,frame_chunk=32):
+        if entry.get('kind','original')!='original':raise ValueError('only registered original teaching may condition revision')
+        held=entry.get('held',False);task,demo=int(entry['task']),int(entry['demo']);raw_count=count=None
+        if task in (3,6,11,16,23,26,31,39) and not held:raise ValueError('validation teaching requires explicit RGB-only held identity')
+        key=f'task_{task:04d}_demo_{demo:03d}'
+        if held:
+            if task not in (3,6,11,16,23,26,31,39) or 'cache_path' in entry:raise ValueError('held teaching cannot consume a nonheld prefix cache')
+            authority=self.runtime.videos.authorities[task]
+            raw_count,count=self.runtime.videos.frame_counts(task,demo)
+            metadata=dict(held=True,task=task,demo=demo,authority=str(authority.path),authority_bytes=authority.expected_bytes,
+                reader=self.reader_identity,source=self.source,preprocess=PREPROCESS,raw_frames=raw_count)
+        else:metadata=dict(cache_path=str(entry['cache_path']),reader=self.reader_identity,source=self.source)
         loaded={}
         def teacher():
-            if not loaded:loaded.update(load_cached(entry['cache_path']))
-            if loaded['source']['model']!=self.source:raise ValueError('teaching feature source differs from the frozen execution source')
+            if not loaded:
+                loaded.update(extract(self.runtime,load_video(self.runtime,entry),frame_chunk) if held else load_cached(entry['cache_path']))
+            if loaded['source']['model']!=self.source:raise ValueError('teaching source differs from the frozen execution source')
             return loaded
-        def required():return len(teacher()['indices'])*8*256*4
+        def required():return (count if held else len(teacher()['indices']))*8*256*4
         @torch.no_grad()
         def build():
             value=teacher();device=self.runtime.device
             with autocast(device):_,memory=self.reader.prepare_video(value['z_img'].to(device),value['indices'].to(device),checkpoint_layers=False)
             return memory
-        value,measure=self.memory_cache.get(key,metadata,required,build)
+        try:value,measure=self.memory_cache.get(key,metadata,required,build)
+        finally:loaded.clear()  # Full held prefix is RAM-only, never retained across calls.
         if value.ndim!=3 or value.shape[0]!=1 or value.shape[2]!=256 or not value.shape[1] or value.shape[1]%8:
             raise ValueError('frozen teaching memory lost full frame slots')
-        self.measurements.append(dict(kind='teaching',key=key,frames=value.shape[1]//8,**measure))
+        frames=value.shape[1]//8
+        self.measurements.append(dict(kind='teaching',key=key,identity=metadata,held=held,frames=frames,
+            raw_frames=raw_count,frame_equivalent=frames,M_builds=int(not measure['hit']),M_hits=int(measure['hit']),
+            prefix_frames_built=frames if held and not measure['hit'] else 0,new_prefix_files=0,**measure))
         return value
 
     def _observations(self,path,history,image_chunk):
@@ -259,6 +346,18 @@ class FrozenFeatures:
         if phi.shape!=(len(keys),512,2048) or phi.dtype!=torch.bfloat16:raise ValueError('cached H observations lost complete BF16 patches')
         self.measurements.append(dict(kind='history',archive=str(path),frames=len(keys),events=len(history.records),**measure))
         return phi,{key:i for i,key in enumerate(keys)}
+
+    def evict_history(self,archive_paths):
+        """Parent calls after complete close; raw archives/facts are never deleted here."""
+        if self.phase!='functional_feedback_validation180':raise ValueError('raw-H retirement is restricted to this validation batch')
+        keys=[];allowed=(self.root/'episodes').resolve()
+        for path in archive_paths:
+            path=Path(path)
+            if not path.is_absolute() or not path.resolve().is_relative_to(allowed):raise ValueError('retirement requires an own-ROOT absolute episode archive')
+            keys.append(str(path.resolve()))
+        rows=[self.history_cache.evict(key,self.source) for key in dict.fromkeys(keys)]
+        return dict(complete=True,cache_root=str(self.history_cache.root),archives=rows,
+            deleted_bytes=sum(r['deleted_bytes'] for r in rows),raw_deleted=False)
 
     def events(self,history_paths,image_chunk=16):
         if type(image_chunk) is not int or image_chunk<=0:raise ValueError('image_chunk must be positive')

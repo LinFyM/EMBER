@@ -198,7 +198,7 @@ def owner(args):
     from .checkpoint import latest
     from .readout import owner as readout_owner
     from .comparison import analyze
-    storage_admission(args.root)
+    storage_admission(args.root);torch.set_num_threads(8)
     with (args.root/'owner.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         if (args.root/'completion.json').exists():raise ValueError('completed finite source-weight batch cannot restart')

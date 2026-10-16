@@ -1,3 +1,9 @@
+## 2026-10-16 §17正式owner已启动
+
+新clean pushed detached冻结0b9b8080421a05ec32fd979d591f76707c91b4df，main已集成推送；唯一owner2200056于09:03:08.034317Z启动，派发08:30:38.195Z/准备08:30:46.693Z均保留。ROOT functional_feedback_seed7，启动前strg01 data1 used1935254772KiB/soft2147483648KiB、shared容量及双node实际GPU/process/显存/nodeCPU独立准入原件已留；GPU正式训练启动/首有用更新另按jobs实际记录，不把owner启动当已取得更新。
+
+CPU机制/数据流/原子候选及两阶段queue验证通过，architecture净增1055行/5必要文件/0hard，有结构理由和旧主动面退役记录。当前唯一owner沿有用9更新完整周期比较物理安排并接续180，再唯一完整36条件编译；外层直接读stdout并等真实退出，无Queue/第二waiter/固定进度文件轮询。原2–4.5h预计和全部科学停止线保持，首完整长H有效更新后修正。
+
 ## 2026-10-16 §17实现与CPU实际消费者核验完成，待正式冻结
 
 唯一control_space已替换§16随机主动面：fresh ψ直接消费冻结完整教学M和实际H，输出m+δ，经同一固定D和原生FM取得真实信用。CPU解析/import、314前缀/180数据流、因果H/零head后真实body梯度、冻结缓存spawn多进程全局预算、native损失cotangent桥的解析梯度、完整Adam/cursor/RNG恢复和一次claim两阶段候选→四例面板均通过。CPU合成输入只验证机制/schema，不是科学行或控制能力；正式ROOT/GPU尚未启动。证据在仓库.codex/tmp/functional_feedback_20261016/{data,history,integration}。

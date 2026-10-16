@@ -1,3 +1,17 @@
+## 2026-10-16 控制起点已保留，下一缺口是可迁移修订的学习
+
+main从§16完整路径确认：参数中心实际移动、视频初始LoRA已被完整实践，仍只有practice83→100而query89→86。
+video120提案14改善/60平局/46更差；8个零实践task41提案只3个取得正例，query3→3；非零组query86→83，
+所以全零平局不是全部失败的唯一解释。task37实践0→3/query2→1是保留的反例；108/113候选未query，不能把失败归给oracle selector。
+视频起点仍有真实能力，video86对no-video59的差主要继承初始优势；当前搜索没有整体独立增益，停止自动扩量/尺度扫描。
+
+旧Experience已经把H条件修订接到FM/PG，旧G也有多parent/H和native FM，不能把它们说成未训练反馈。
+下一有界改变是冻结已保有484/576控制能力的linear64和Reader900，fresh训练H→64维修订，
+以合法nonheld跨episode实际功能误差教共享修订器；自己的行为动作只作经历输入，新condition不拟合动作轨迹。
+已知D降低同时学巨大decoder的负担，但不保证H语义、功能代理的闭环迁移或未知task可达；36task仍只有36独立映射。
+当前先180更新后完整36适应/144query，主要看超过Reader89且多target保持/新增；无自动续训、held/Test或机制成功声明。
+完整推导、旧证据、实际特征/算子/梯度与限制见[分析§20–21](docs/analyses/source_control_space_learning_20261015.md#20-保住初始控制以后实际参数搜索仍没有教出总体改进)，执行唯一design§17。
+
 ## 2026-10-16 §16：保留视频起点仍未获得整体任务内增益
 
 实际七臂144：source58/reference127/Reader90089/first73/full79/video86/no-video59。video从确定性Reader起步、严格改善实践才移动中心后，实践83→100、12变化任务独立query35→32，R84/G2/L5；no-video实践52→63，query58→59，R56/G3/L2。target video43→41/support46→45，Object12/14各4保住、Object合9→10，但Long5→4等损失保留；视频起点相对无视频仍强27，不是当前搜索新学的27。当前组织没有实现整体独立改进，按§16停止固定单位局部搜索自动加量/调参；不归因唯一工程bug，也不推翻全部视频或交互学习。

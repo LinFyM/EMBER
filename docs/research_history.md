@@ -1,3 +1,16 @@
+## 2026-10-16 main消费§16后更换修订学习组织
+
+07a8d29e归还窗口后，main核72实际路径/配对行/当前算子与旧完整反馈学习证据。
+video实践83→100而query89→86、改参数12task35→32，固定单位随机搜索停止自动加量/调参；
+保留初始控制比旧full79更好，但不是超过已有Reader89。零实践组与非零组均未取得整体迁移，
+未query的108/113候选范围和全部失败/费用保持，不补写oracle或工程故障故事。
+
+新的有限[design§17](designs/source_policy_space_compiler_20261015.md#17-冻结控制空间中的经历条件功能修订学习)
+固定已有D/Reader900，以真实H前缀和合法跨episode FM训练fresh64维修订器，180更新后36完整适应/144query。
+这继承Experience H条件FM/PG135、旧G与functional/N16负证据；具体差别是固定已有控制映射、保护视频起点、直接训练H读取，
+不是第一次反馈学习或已解决held迁移。推导见[分析§20–21](analyses/source_control_space_learning_20261015.md#20-保住初始控制以后实际参数搜索仍没有教出总体改进)。
+新增2704提交/320505步、64GiB峰/预计2–4.5h；实际接手/启动另记progress，当前记录不代表已取得新结果。
+
 ## 2026-10-16 §16完整结束：视频初始控制保留与严格任务内改进
 
 93ffa411派发于06:33:17.631Z，56c4dc99新clean pushed detached正式执行；owner376918于06:54:55.814→07:29:27.207Z exit0，72condition/288逻辑query/七臂1008case验收，0共享训练/新Reader编码/held/Test。结果source58/ref127/Reader90089/first73/full79/video86/no-video59；video实践83→100但query89→86，Reader→video R84/G2/L5/churn7；no-video52→63、58→59，R56/G3/L2。target video41 vsReader43，support45 vs46，identity20继承；reference新增70保28 vs29。Object12/14各4保住、Object9→10，Long5→4等全部得失与12/9个改参数task保留。按预定分支，当前固定单位局部搜索停止自动加量/调参，不把实践增高或video>source误记整体学习成功，不扩400/新arm；main科学消费后自主接续。

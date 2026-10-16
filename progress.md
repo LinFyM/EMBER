@@ -1,3 +1,19 @@
+## 2026-10-16 main消费§16，登记§17功能修订学习
+
+07a8d29e clean/pushed后canonical写窗口已返main。main核原始七臂rows、72实际参数路径和当前编译源码，
+并继承旧Experience H条件FM/PG135、旧G首/完整165及native FM158、functional143/N16等正负证据；
+新video86低于Reader89，实践83→100及保留起点比旧full79更好都不能认证独立改进。
+14次video接受/12task中query35→32，初始零实践8task41提案仅3task获正例、query3→3；
+108/113个未测候选不假称存在oracle优势。完整[分析§20–21](docs/analyses/source_control_space_learning_20261015.md#20-保住初始控制以后实际参数搜索仍没有教出总体改进)。
+
+唯一active [design§17](docs/designs/source_policy_space_compiler_20261015.md#17-冻结控制空间中的经历条件功能修订学习)：
+Reader900/source38r8/linear64/units冻结，fresh ψ读取真实H和有序M给m+δ，合法nonheld跨episode FM经固定D训练H修订。
+H只取§16完整面板前缀，36task等权、180更新/720条件/20160 FM query；90只恢复、终点180唯一读出。
+随后原36task真实完整编译/144query，初始video144/35207步/H复用仍计8192，0Gaussian/局部动作拟合/旧meta9/新held/Test。
+新ROOT functional_feedback_seed7；新增2704/control318905/dummy27040/total320505含新独立16工程尝试，磁盘峰64GiB。
+预计2–4.5h，live quota/双节点6或8卡/node6/有用吞吐/独占新冻结与完整费用合同保持。
+当前是main科学文档/Git准备，不是已运行；提交推送后由执行01a13dbf接独占工程/记录/Git窗口，整批一次回main，不加工程ACK/自通知。
+
 ## 2026-10-16 §16全部完成并验收；停止本有限批新计算
 
 唯一owner376918于07:29:27.207260Z真实exit0（06:54:55.814启动，运行34.52min；06:33:17.631实际派发至退出56.16min，原估1.5–3h未超期）。72condition/288逻辑query、七臂1008case、21对配对均验收；0活owner/GPU/env/退出waiter，0Queue/自动后继。完整[交付报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/incumbent_compilation_seed7/analysis/engineering_completion.md)、results/acceptance/candidate_trajectories/query_changes/cost_accounting/resource_exit保留所有原件与不利case。实际代码56c4dc99，clean pushed detached保留；两个task-owned开发树/分支经clean与集成验证已清理，canonical最终clean/pushed身份及写窗口释放随本次整批回main01a13dd9登记。

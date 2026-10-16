@@ -1,4 +1,21 @@
-## 2026-10-16 当前有限执行已完成：§16
+## 2026-10-16 当前目标：真实经历条件的功能修订学习
+
+main已消费§16原始配对行/72路径、实际算子及最近似完整历史。保留视频起点的搜索practice83→100、query89→86；
+不能用新86高于旧79代替改进自身起点，停止固定单位搜索自动加量/调参。完整判断见
+[分析§20–21](docs/analyses/source_control_space_learning_20261015.md#20-保住初始控制以后实际参数搜索仍没有教出总体改进)。
+
+唯一active为[source/r8 design§17](docs/designs/source_policy_space_compiler_20261015.md#17-冻结控制空间中的经历条件功能修订学习)：
+冻结Reader900/D/source38r8，fresh H修订器180更新，每步4task×28合法跨episode FM、共20160 query；
+真实H取§16完整面板前缀，0未来query/teacher标签，动作监督仅教共享修订器，部署不拟合轨迹。
+终点180固定后做原36task完整编译/144独立query；8192/condition、旧video initial144/35207步复用且占预算，
+新候选m+δ，无Gaussian；完整四例严格改善才保留，失败H仍可影响后续，最终一套固定LoRA。
+主要判断相对Reader89的多target新增与保持，旧no-video59不是新学习器的匹配消融；无自动360/held/controls/Test。
+
+新ROOT functional_feedback_seed7；新增2704提交/control318905/dummy27040/联合320505步，含新独立16工程尝试；
+磁盘峰64GiB含全局16GiB临时冻结H视觉缓存，旧大资产/H只读。预计含实施2–4.5h、首有用工作修正，0GPUh硬限。
+当前为main科学合同/Git准备，尚未声称GPU启动；推送后由现有执行01a13dbf独占实施/记录/Git，完整退出后一次交main科学消费接续。
+
+## 2026-10-16 历史有限执行完成：§16
 
 72条件/288逻辑query及七臂1008case完整验收，0活run/等待者/自动后继。video86低于固定Reader89，实践83→100未转整体query收益；no-video59对source58。按design§16停止当前固定单位局部搜索自动加量/调参，0自动held400/更多arm；main收到完整原件后科学消费并自主接续，无例行Owner许可停点。物理1196/324450步/3.231518597537GPUh、0工程失败/unknown，资源已全释放。详情见progress与[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/incumbent_compilation_seed7/analysis/engineering_completion.md)；Git clean/pushed后本次整批一次交回canonical写窗口。
 

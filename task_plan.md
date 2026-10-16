@@ -1,3 +1,13 @@
+## 2026-10-16 当前目标：§15同教学已有控制器直接比较
+
+main已消费§14全部原件/源码及36路径CPU统计；full79/144对source58，旧900同视频锚22→19。
+首提案后的97候选/101,102实践步只在7task增10个实践成功，尚不知独立query增量；不默认把9步接成36步或完整400。
+唯一[design§15](docs/designs/source_policy_space_compiler_20261015.md#15-首轮已有控制器的同教学独立query比较)：
+复用已保存完整LoRA与原query，补Reader900同v0教学缺108行、first-best缺16行，共124新episode。
+0训练/新实践/新proposal/Reader forward/held/Test；五臂144逐case比较，当前meta9完整状态与所有历史保持。
+新ROOT feedback_readout_seed7；新增峰2GiB、含独立16工程尝试最多140提交/52,600步，预计45–90min。
+main完成科学合同/Git后向现有执行实际派发；合同登记不代表GPU已启动。结束后main按控制/保持/成本自主接续，无例行许可停点。
+
 ## 2026-10-16 当前授权首窗已完成：§14
 
 36完整链/9真实共享更新/144独立query/1008 FM已真实exit0且验收通过。query79/144对source58/ref127，唯一旧900同视频锚19/36对22；实践52→90不能认证H/video作用或single-checkpoint能力。[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_proposals_seed7/analysis/engineering_completion.md)及progress保留成功集合、真实梯度、恢复/费用/资源/代码身份。

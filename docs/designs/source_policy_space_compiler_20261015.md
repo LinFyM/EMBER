@@ -893,3 +893,82 @@ H物理event pack与causal-prefix复用可优化，但须保持完整事件/真�
 一个owner持续等待整批退出，0阶段Queue/心跳/第二waiter；实施/运行/资源释放/Git完成后一次交主讨论并归还canonical窗口。
 main结合真实proposal/独立query/信用/成本决定接续；当前没有自动后3周期、held400或controls。
 这不是Owner许可门槛，main继续自主解决完整目标，不要求例行工程ACK。
+
+## 15. 首轮已有控制器的同教学独立query比较
+
+### 15.1 本批要改变的判断与冻结范围
+
+§14首轮已结束，工程/Git写窗口交回主讨论；完整分析见[分析§16–17](../analyses/source_control_space_learning_20261015.md#16-首轮反馈的真实收益主要发生在哪里)。
+79/144对source58不隔离新增反馈的贡献，旧900同视频36锚22→19尚未覆盖其余108行；
+后97提案/101,102实践步只在7task增加10个实践成功。先判断这些后续工作是否形成独立初态收益，
+不自动把拟议144链/36meta/strict400变为正在执行的任务。
+
+本批0训练、0新proposal、0新practice/H、0新教学视频读取或Reader forward；仅评测已实际保存/抽到的完整控制器。
+raw source、完整38-target/rank8、原basis/center/S/code_units和official执行合同保持；0MT底座、0第二adapter。
+§14 meta9及完整Adam/RNG/stream不变，不选择或继续18/36。所有原训练路径、失败、CP和费用保留。
+
+### 15.2 唯一144-case面板与五臂
+
+36原non-held task，每task query初态[0,4,8,12]、env/policy noise root202610151，沿§14已登记scene与配对。
+每task只使用该§14 v0教学（即§13 seen init0的teacher_demo），不以query结果换教学。
+
+- **source/reference**：只读既有原selection对应初态的实际完整row，不新增运行。reference只是能力参照，不进入编译输入或选择。
+- **Reader900**：只读`video_initial_seed7/generated/update_00000900/seen/task_XXXX/state_000.safetensors`，
+  核其已登记teacher_demo与§14 v0相同；不重新生成/拟合。原同LoRA的init0行36个直接复用，
+  新跑每task init4/8/12，共108行。其余旧seen行使用不同teacher，不能充当本臂。
+- **first-best**：对每个完整§14路径，只在panel0（source）及panel1（若存在）之间，按原successes最大、平局取早选择；
+  source早停没有panel1时保持source。只读已有实践，不增加或重演路径，query不参与这个决定。
+  29个task与full best相同，复用该批116个query；task1/5/19选择source，复用canonical source12行；
+  task4/12/14/43选择实际第一提案，与full不同，新增4×4=16个query。
+  从path中真实首提案y和同一冻结D/units物化这4套完整LoRA；不用mu、重抽y、平均候选或选参考代码代替。
+- **full**：§14现成144个query及最终唯一selected LoRA，只读复用，不重跑。
+
+合计逻辑五臂各144行，新物理episode恰124。不同臂合法的实际LoRA和逻辑身份分别登记；
+同task/state/scene/L、原native noise、10-flow/执行前5、render256/model224、双相机rotate一次、8D state/7D action、
+dummy10、success即止与各suite horizon全部沿现有消费者。最终episode不看教学、H或做适应。
+first-best源复用明确列出来源；同source在不同物理执行的正常数值/控制差异不得算作参数学习，
+已知128行按上述固定口径为68成功，不将19个与full相同source条件另换旧行以选取较高结果。
+不为消除低位差异固定batch1或重跑已有效行。
+
+### 15.3 读出、停止与解释
+
+唯一终点保存全部raw rows、144五方配对、task/suite/target24/support12/五reference identity分组、
+R/G/L/churn/breadth/成功集合重合及reference新增保持。另单列7task/28case的first-best→full，
+其中新16行与source复用12行分开；按source早停、读过教学仍选source、首次及后续非source最佳分别解释。
+各臂实践/读取/候选成本采用既有真实原件：Reader900无实践；first-best为真实source面板加至多首提案面板；
+full包含全部170,804实践步。反事实只截断真实路径前缀，不能把未实际运行的节省声称为本批已节省费用。
+新124读出费用另计；旧§14 9.325162565GPUh/776提交/207,328步与更早全部费用不重复计入或抹去。
+
+这是post-hoc non-held方法诊断，full/first-best源自不同训练theta，不是meta9 single-checkpoint资格。
+Reader900来自已冻结旧correct400选择；新结果不得改变这个选择，不能回头修改本批的臂定义/参数/停止规则以挑选高点。
+first-best对full仅检验后续实际探索与择优的边际控制作用，不能唯一归因H内容或训练本身。
+0held/Test、0wrong/no-video/same-task-other/shuffled/reversed、0CP0同预算重跑或额外面板。
+
+若full不高于Reader900或first-best，主讨论据原件重审当前探索/选择及稀疏信用组织，
+不把“尚未充分训练”当原样扩量的默认理由；这不宣判全部反馈学习、rank8或64维不可行。
+若取得实际跨任务增量，主讨论据保持/覆盖/成本决定有界续学和正式验证；有限正例亦不拼成完整方法成功。
+124有效新行全部结束并分析后停止新计算，一次交主讨论自主裁决，无Owner例行确认门槛或自动后继。
+
+### 15.4 资源与交付
+
+新ROOT=`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_readout_seed7`。
+108 Reader900新增最大38,160 control+1,080 dummy；16 first-best新增最大4,720 control+160 dummy；
+正常合计124次/42,880 control+1,240 dummy=44,120环境步。
+仅本批独立16次工程额外尝试，按最大520+10，合计上限140次/51,200 control+1,400 dummy=52,600步；
+正常科学失败照常计入，不重试；未知保守占额，已有效行不重跑，不挪旧未用额度或自动充值。
+
+新增磁盘峰2GiB：4套完整LoRA实测每套约2.47MiB，原108所用LoRA/全部source、assets、feature/basis均按路径只读；
+余量包含代码冻结树、原始row/分析/日志和原子写临时量。本批不保存新H或视频，不复制大资产。
+建root/物化/launch前仍须live查询strg01 data1独立quota、相关目录实际用量、共享容量及峰值，不能拿旧退出余量当准入。
+每次launch检查gpu01/gpu02，合计6/8卡、单节点6，实际显存/PSS/线程与资源余量准入，不挤出foreign。
+沿既有cost-balanced动态队列、long-first、persistent worker及完整runner.close，选择能实际提高吞吐的worker/physical batch；
+复用既有16/8/4槽实测，在有明确余量和未被既有测量覆盖时按本124有用工作验证更大物理安排。
+不为填显存扩大本面板或重复已有效row。
+
+预计派发至退出45–90分钟，包含约25–60分钟工程接续/实际消费者与约10–25分钟读出/验收；
+依据既有纯控制读出约0.997GPUh/99,045步，本正常44,120步约0.44GPUh的粗略执行外推，另计模型加载/调度，
+不是速度保证。首有用工作修正，保留实际接收/准备/启动/退出和旧时钟。
+沿当前唯一control_space运行面接入本次有限读出，复用reference/runtime/evaluator/账本/analysis；
+不要复制整套Writer或为仅此一次读出建立通用新框架，旧冻结/科学结果不原地改。
+正式来自新clean pushed detached；源码消费者检查、结构guard、运行恢复、Git集成/推送/开发树清理由现有执行者闭环。
+一个整批owner及持续退出等待，不再给同一等待者Queue自通知；结束核原始结果、退出/资源/成本和Git后一次交main01a13dd9并归还写窗口。

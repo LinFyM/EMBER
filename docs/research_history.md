@@ -1,3 +1,14 @@
+## 2026-10-16 main消费§14并登记124个已有控制器query
+
+实际79369d7c交回写窗口后，main读原完整路径/结果及反馈、实际选择与FM/PG源码，并CPU重算36路径。
+full79/source58/ref127、唯一同教学旧900锚22→19保持；后97提案/101,102步仅7task提升实践best80→90，
+相邻μ变化中位.006668、sample y变化2.873153，不由真实梯度或实践择优自然升分认证纠错。
+[科学消费§16–17](analyses/source_control_space_learning_20261015.md#16-首轮反馈的真实收益主要发生在哪里)
+将非source能力、初始视频能力、后续探索/选择和真实反馈学习分开，保留全部历史正反证据。
+唯一新[design§15](designs/source_policy_space_compiler_20261015.md#15-首轮已有控制器的同教学独立query比较)
+补Reader900同v0教学缺108query及first-best缺16，其余原行复用；0训练/新实践/新proposal/Reader forward/held/Test。
+此处是完整科学合同，实际派发/启动另在progress登记；当前有限诊断不作single-checkpoint选择，main消费后自主接续。
+
 ## 2026-10-16 §14首轮实施与原件接续
 
 02:25:27.046Z实际派发、02:25:59.716Z开始工程准备；仅9meta/36完整链，未启用拟议144链/strict400。旧900权重及原query游标接续，新H/fresh optimizer；旧900 Adam、1800与所有source控制族正负/费用不改。只读/采集切片06c07806与a972f1c3、主集成f1609477在隔离树完成，当前CPU接口验收不记GPU科学结果，实际冻结/启动由progress和ROOT launch_contract记录。

@@ -1,3 +1,18 @@
+## 2026-10-16 main消费§14，接续已有控制器同教学比较
+
+执行79369d7c clean/pushed后交回canonical窗口，main核原始completion/results/paths和实际反馈/学习/选择源码。
+独立144为source58/ref127/full79，17改参数task的68行13→35；19最终source的76行45→44不归学习。
+旧900同教学锚22→19，四loss12/14/38/95及gain4保留；其余108旧teacher不同不伪配对。
+CPU复算首提案后97候选/388episode/101,102步，first-best实践80→full90；仅task1/4/5/12/14/19/43改变选择。
+相邻μ L2中位.006668/实际y2.873153，信用非零不等于已学纠错；完整解释在[分析§16–17](docs/analyses/source_control_space_learning_20261015.md#16-首轮反馈的真实收益主要发生在哪里)。
+
+唯一active [design§15](docs/designs/source_policy_space_compiler_20261015.md#15-首轮已有控制器的同教学独立query比较)：
+原Reader900每task v0完整LoRA补108行；first-best在task4/12/14/43补16，另source12/full116复用。
+仅124新query，0训练/新H/实践/提案/视频forward/held/Test，不更改meta9或按诊断选checkpoint。
+ROOT feedback_readout_seed7，新峰2GiB、含16独立工程尝试最多140提交/52,600步，预计派发至退出45–90min；
+正式clean pushed detached、双节点及strg01实时准入/完整释放由执行闭环。当前main完成合同/Git后实际派发，尚未声明新GPU启动。
+工程/Git与科学记录继续串行移交，整批一次回报后main自主决定后继；旧9.325162565GPUh与所有更早费用不改或重计。
+
 ## 2026-10-16 §14首轮36链/9更新完整退出与验收
 
 唯一恢复owner1895767于05:08:33.734988Z真实exit0，cell582/PTY19944已结束；36链/9真实Adam更新/144独立query/1008跨episode FM全部完成。首次派发02:25:27.046、准备02:25:59.716、首owner03:04:28.505672、meta3工程接续03:53:39.218827及旧参考09:05:48.038均保留；接收至退出2.719h，原2–4h预计内。没有活GPU/owner/环境或退出等待者，0Queue/自通知/自动后继。

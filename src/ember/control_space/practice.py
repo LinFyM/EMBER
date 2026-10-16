@@ -55,7 +55,7 @@ def validate_row(row,spec,task):
         init_state_id=spec['state_id'],env_seed=spec['noise_root'],policy_seed_root=spec['noise_root'],
         actual_parameter_ref=spec['parameter_ref'],role=spec['role'],identity=spec['identity'],
         settling_steps=10,restored_control_steps=0,source_frozen=True,MT_loaded=False,full_native_flow_steps=10,executed_chunk=5)
-    expected.update({k:spec[k] for k in ('behavior_model','meta_update','condition_id','panel_ordinal','LoRA','arm','teacher_demo') if k in spec})
+    expected.update({k:spec[k] for k in ('behavior_model','meta_update','condition_id','panel_ordinal','LoRA','arm','teacher_demo','execution_leg') if k in spec})
     if any(row.get(k)!=v for k,v in expected.items()):raise ValueError('saved episode producer/panel/native contract changed')
     if spec['y'] is None:
         if row['behavior_y'] is not None:raise ValueError('saved query must not invent a behavior code')
@@ -110,9 +110,11 @@ def load_history(path):
 
 
 def condition_spent(root,identity,reused_steps=0):
-    prefix='practice_'+identity+'_practice_'
+    prefix='practice_'+identity+'_'
     with connect(root) as db:
-        spent=db.execute('SELECT coalesce(sum(control+dummy),0) FROM attempts WHERE substr(case_id,1,?)=?',
+        excluded=(" AND identity NOT IN (SELECT attempt_id FROM scientific_validity WHERE validity='uncertified-cache-provenance')"
+            if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='scientific_validity'").fetchone() else '')
+        spent=db.execute('SELECT coalesce(sum(control+dummy),0) FROM attempts WHERE substr(case_id,1,?)=?'+excluded,
             (len(prefix),prefix)).fetchone()[0]
     return int(reused_steps)+spent
 
@@ -177,7 +179,7 @@ def complete_episode(root,runtime,output,spec,task):
         attempt_id=attempt,producer_parameter_ref=spec['parameter_ref'],noise_root=spec['noise_root'],first_noise_seed=first['noise_seed'],
         first_native_normalized_actions=first['normalized_actions'].tolist(),source_frozen=True,MT_loaded=False,
         full_native_flow_steps=10,executed_chunk=5,history_path=str(archive) if spec['role']=='practice' else None)
-    row.update({k:spec[k] for k in ('behavior_model','meta_update','condition_id','panel_ordinal','LoRA','arm','teacher_demo') if k in spec})
+    row.update({k:spec[k] for k in ('behavior_model','meta_update','condition_id','panel_ordinal','LoRA','arm','teacher_demo','execution_leg') if k in spec})
     error=None
     try:validate_row(row,spec,task)
     except ValueError as failure:error=str(failure)
@@ -224,7 +226,8 @@ def validate_panel_budget(root,missing,tasks):
 
 
 def panel(root,runtime,runner,command,decoder,units):
-    root=Path(root);run=read_json(root/'run_contract.json')
+    from .contract import active_run
+    root=Path(root);run=active_run(root)
     tasks={r['global_task_id']:r for r in run['environment']['tasks']}
     specs=specifications(command);rows={};missing=[]
     for spec in specs:

@@ -4,7 +4,7 @@ import torch
 from safetensors.torch import save_file
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.reference.accounting import connect
-from .contract import PRACTICE_STEPS
+from .contract import PRACTICE_STEPS,request_identity
 from .practice import condition_spent,specifications,validate_row
 
 
@@ -22,11 +22,13 @@ class Compilation:
         if self.file.exists():
             self.state=read_json(self.file)
             if (self.state['id'],self.state['initial_y'])!=(self.id,condition['initial_y']):raise ValueError('condition restart changed its initial controller')
+            if self.state.get('execution_leg')!=condition.get('execution_leg'):raise ValueError('condition state differs from its named recovery leg')
         else:
             self.state=dict(id=self.id,task=condition['task'],arm=condition['arm'],teacher_demo=condition.get('teacher_demo'),
                 initial_y=condition['initial_y'],initial_LoRA=condition.get('initial_LoRA'),panels=[],proposals=[],proposal_cursor=0,
                 incumbent_index=None,incumbent_y=condition['initial_y'],incumbent_successes=-1,reused_practice_steps=self.reused_steps,
                 condition_steps=self.reused_steps,history_paths=[],decisions=[],frozen=False,query_complete=False,complete=False)
+            if condition.get('execution_leg'):self.state['execution_leg']=condition['execution_leg']
             if condition.get('initial_rows'):
                 rows=condition['initial_rows']
                 self.record_panel(dict(identity=self.id+'_practice_000',kind='initial',y=condition['initial_y'],parameter_ref=condition['initial_LoRA'],
@@ -63,15 +65,18 @@ class Compilation:
         save_file({k:v.detach().float().contiguous() for k,v in state.items()},str(temporary));temporary.replace(destination)
 
     def request(self,role,y,ordinal,kind,proposal_ordinal=None):
-        identity=self.id+(f'_practice_{ordinal:03d}' if role=='practice' else '_query')
+        identity=request_identity(self.condition,role,ordinal)
+        directory=self.root/'generated'/self.id
+        if self.condition.get('execution_leg'):directory=directory/self.condition['execution_leg']
         file=(self.condition.get('initial_LoRA') if kind=='initial' else
-            str(self.root/'generated'/self.id/f'panel_{ordinal:03d}.safetensors'))
+            str(directory/f'panel_{ordinal:03d}.safetensors'))
         if role=='query':file=self.state['selected_LoRA']
         request=dict(command='panel',identity=identity,request_id=identity,condition_id=self.id,arm=self.condition['arm'],
             task=self.condition['task'],states=self.condition['practice_states'] if role=='practice' else self.condition['query_states'],
             noise_root=self.condition['practice_noise_root'] if role=='practice' else self.condition['query_noise_root'],
             y=y,role=role,parameter_ref=file,LoRA=file,kind=kind,panel_ordinal=ordinal,ordinal=ordinal,
             proposal_ordinal=proposal_ordinal,reused_practice_steps=self.reused_steps)
+        if self.condition.get('execution_leg'):request['execution_leg']=self.condition['execution_leg']
         self.state['pending']=request;self.save();self.ensure_parameters(request);return request
 
     def next(self):
@@ -85,7 +90,7 @@ class Compilation:
         remaining=PRACTICE_STEPS-self.spent();score=self.state['incumbent_successes']
         if score==4:return self.freeze('all_four_success')
         if remaining<4*(self.task['horizon']+10):return self.freeze('insufficient_complete_worst_case_panel')
-        ordinal=len(self.state['panels']);identity=self.id+f'_practice_{ordinal:03d}'
+        ordinal=len(self.state['panels']);identity=request_identity(self.condition,'practice',ordinal)
         request=dict(command='propose',identity=identity,condition_id=self.id,task=self.condition['task'],arm=self.condition['arm'],
             ordinal=ordinal,proposal_ordinal=ordinal-1,m=self.state['incumbent_y'],best_score=score/4,remaining_steps=remaining,
             history_paths=list(self.state['history_paths']),original=self.condition['original'])

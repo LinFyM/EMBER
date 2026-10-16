@@ -8,7 +8,7 @@ from ember.pi05_source_checkpoint import write_json_atomic,read_json
 from ember.pi05_eval_queue import EvaluationShard,initialize_queue,claim_next,complete_job,fail_job
 from ember.proposal_writer.batch import Batch,Job,live_gpu_snapshot,quota_headroom
 from ember.reference.coordinator import Scheduler
-from .contract import REFERENCE_ROOT,BASIS,INITIAL_READER
+from .contract import REFERENCE_ROOT,BASIS,INITIAL_READER,request_identity
 from .practice import specifications
 from .compilation import Compilation,maximum_panels
 from .model import load_basis
@@ -16,7 +16,9 @@ from .data import feature_entries
 
 
 def utc():return datetime.datetime.now(datetime.timezone.utc).isoformat()
-def queue_path(root):return Path(root)/'evaluation.sqlite'
+def queue_path(root):
+    recovery=Path(root)/'recovery_contract.json'
+    return Path(root)/(read_json(recovery)['queue_file'] if recovery.exists() else 'evaluation.sqlite')
 
 
 def storage_admission(root):
@@ -93,10 +95,21 @@ def panel_queue(root,run,tasks):
         task=tasks[c['task']]
         nodes=[('practice',i) for i in range(1,maximum_panels(task['horizon']))]+[('query',0)]
         for role,ordinal in nodes:
-            identity=c['id']+(f'_practice_{ordinal:03d}' if role=='practice' else '_query')
+            identity=request_identity(c,role,ordinal)
             states=c['practice_states'] if role=='practice' else c['query_states']
             work[identity]=dict(condition=c['id'],role=role,ordinal=ordinal)
             shards.append(EvaluationShard(identity,len(shards),task['suite'],c['task'],task['horizon'],tuple(states),4*(task['horizon']+10)))
+        # Retained old-prefix rows keep their actual producer/episode identities.
+        # They are adopted into this leg's queue, never physically executed again.
+        path=Path(root)/'conditions'/c['id']/'path.json'
+        if path.exists():
+            state=read_json(path);saved=[(p['identity'],'practice',p['ordinal']) for p in state['panels'] if not p['reused']]
+            if state['query_complete'] and not state['query_reused']:saved.append((state['query_rows'][0]['identity'],'query',0))
+            for identity,role,ordinal in saved:
+                if identity in work:continue
+                states=c['practice_states'] if role=='practice' else c['query_states']
+                work[identity]=dict(condition=c['id'],role=role,ordinal=ordinal)
+                shards.append(EvaluationShard(identity,len(shards),task['suite'],c['task'],task['horizon'],tuple(states),4*(task['horizon']+10)))
     return work,shards
 
 
@@ -142,7 +155,10 @@ class WorkQueue(Scheduler):
 
     def commit(self,claim,request,rows,worker):
         path=self.root/'shards'/f'{claim.shard.job_id}.json'
-        write_json_atomic(path,dict(rows=rows,role=request['role'],condition_id=request['condition_id']))
+        value=dict(rows=rows,role=request['role'],condition_id=request['condition_id'])
+        if path.exists():
+            if read_json(path)!=value:raise ValueError('adopted shard differs from its original committed rows')
+        else:write_json_atomic(path,value)
         complete_job(self.queue_path(),job_id=claim.shard.job_id,worker_id=worker,claim_token=claim.claim_token,
             rows_path=str(path.relative_to(self.root)),rows_bytes=path.stat().st_size,row_count=4,successes=sum(r['success'] for r in rows))
 
@@ -151,7 +167,7 @@ class WorkQueue(Scheduler):
         statuses=self.statuses()
         for c in self.compilers.values():
             entries=[(p['identity'],'practice',p['rows']) for p in c.state['panels'] if not p['reused']]
-            if c.state['query_complete'] and not c.state['query_reused']:entries.append((c.id+'_query','query',c.state['query_rows']))
+            if c.state['query_complete'] and not c.state['query_reused']:entries.append((c.state['query_rows'][0]['identity'],'query',c.state['query_rows']))
             for identity,role,rows in entries:
                 if statuses[identity]=='complete':continue
                 claim=claim_next(self.queue_path(),worker_id='owner_adopt',eligible_job_ids=[identity])
@@ -316,7 +332,8 @@ def owner(args):
         for name in ('shards','packs','proposals','admission'):(args.root/name).mkdir(exist_ok=True)
         run=prepare(args.root);train_trajectory(args)
         tasks={s['global_task_id']:s for s in run['environment']['tasks']};work,shards=panel_queue(args.root,run,tasks)
-        initialize_queue(queue_path(args.root),shards,contract_reference=str(args.root/'run_contract.json'),recover_claims=args.resume,retry_failed=args.resume)
+        reference=args.root/('recovery_contract.json' if run.get('cache_recovery') else 'run_contract.json')
+        initialize_queue(queue_path(args.root),shards,contract_reference=str(reference),recover_claims=args.resume,retry_failed=args.resume)
         choices,cap=device_pool(args);workers=[(n,g) for n,g,_ in choices]
         capacities={f'worker_{i:02d}':16 if free>=28000 else 8 for i,(_,_,free) in enumerate(choices)}
         scheduler=WorkQueue(args.root,run,workers,capacities);scheduler.adopt_committed()

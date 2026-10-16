@@ -1,3 +1,9 @@
+## 2026-10-17 §20真实队列消费者修复后同批接续
+
+owner538112于23:43:08.835Z从new clean pushed detached bd0e37b0沿同ROOT --resume；PTY9495/连续直接退出reader1383。旧484519/reader1366均结束。完整1180训练来源8395、原112读取fb3、新队列/读取bd0分别登记；CPU-only采用原7个完整shard/112有效行，原实际费用/LoRA/rows不动，新物理请求0，后续只跑剩余864。
+
+1000/1090/1180、原1800M和全部profile只adopt，0额外训练/重拟合/有效环境行重跑；总976、992/353760/独立16工程episode余量和16GiB峰保持。新launch现场双node GPU/6或8-node6及CPU/PSS/data1准入留存；原21:56首次及所有失败wall/GPUh保留。唯一owner持续等退出，0自Queue/心跳/第二waiter，整批验收/Git后一次回main。
+
 ## 2026-10-17 §20队列提交接口修复，112有效行保留
 
 owner484519于23:39:22.862Z exit1：7个worker各完成16行后，complete_job误用result_path（实际需relative rows_path/bytes/count/successes），异常分支fail_job又误用reason（实际为error）。原112行/7完整shard、完整LoRA和50917control+1120dummy=52037步均已原子保存/ledger complete，unknown0/工程episodeextra0；7job已退出、0.455625407696GPUh含有效执行全部保留。当前不是科学失败或丢弃112成绩。

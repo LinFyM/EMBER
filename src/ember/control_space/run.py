@@ -300,6 +300,9 @@ class WorkQueue(Scheduler):
                 for i in actual:
                     compiler=self.compilers[i];compiler.state['raw_H_lifecycle']=str(receipt_path(self.root,i));compiler.save()
                 self.refresh()
+            elif event['kind']=='physical_pack':
+                self.running_slots[worker]=event['slots']
+                self.capacities[worker]=event['native_slot_capacity']
             elif event['kind']=='complete':self.complete(worker,event)
             elif event['kind']=='proposed':self.proposed(worker,event)
             elif event['kind']=='ready':self.running_slots.pop(worker,None);self.waiting[worker]=stream

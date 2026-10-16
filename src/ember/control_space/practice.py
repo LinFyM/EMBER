@@ -125,10 +125,12 @@ def condition_spent(root,identity,reused_steps=0):
 
 def reserve_episode(root,spec,horizon,limits):
     if spec['role']!='practice':return reserve(root,case_id(spec),horizon,limits=limits)
+    from .contract import practice_cap,validate_named_retry
     with (Path(root)/'practice_budget.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
-        if condition_spent(root,spec['condition_id'],spec['reused_practice_steps'])+horizon+10>8192:
-            raise RuntimeError('condition8192 cannot cover this complete attempt; keep pending panel and report boundary')
+        with connect(root) as db:validate_named_retry(root,spec,db)
+        if condition_spent(root,spec['condition_id'],spec['reused_practice_steps'])+horizon+10>practice_cap(root,spec):
+            raise RuntimeError('authorized condition bound cannot cover this complete attempt; keep pending panel and report boundary')
         return reserve(root,case_id(spec),horizon,limits=limits)
 
 
@@ -220,13 +222,18 @@ def decoded_parameters(runtime,decoder,units,specs):
 
 def validate_panel_budget(root,missing,tasks):
     """Reserve room for all missing cases before any part of a decision starts."""
+    from .contract import practice_cap,validate_named_retry
     groups={}
     for spec in missing:
         if spec['role']=='practice':groups.setdefault(spec['condition_id'],[]).append(spec)
     for identity,part in groups.items():
         needed=sum(tasks[s['task']]['horizon']+10 for s in part)
-        if condition_spent(root,identity,part[0]['reused_practice_steps'])+needed>8192:
-            raise RuntimeError('pending complete panel cannot be restored inside condition8192; report concrete boundary')
+        caps=[practice_cap(root,s) for s in part]
+        if len(set(caps))!=1:raise ValueError('one pending panel cannot combine recovery authorities')
+        with connect(root) as db:
+            for spec in part:validate_named_retry(root,spec,db)
+        if condition_spent(root,identity,part[0]['reused_practice_steps'])+needed>caps[0]:
+            raise RuntimeError('pending complete panel cannot be restored inside its authorized condition bound; report concrete boundary')
 
 
 def panel(root,runtime,runner,command,decoder,units):

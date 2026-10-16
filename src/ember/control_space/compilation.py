@@ -4,7 +4,7 @@ import torch
 from safetensors.torch import save_file
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.reference.accounting import connect
-from .contract import PRACTICE_STEPS,request_identity
+from .contract import PRACTICE_STEPS,request_identity,practice_cap
 from .practice import condition_spent,specifications,validate_row
 
 
@@ -44,7 +44,7 @@ class Compilation:
         self.state['panels'].append(panel);self.state['history_paths'].extend(panel['history_paths'])
         if accepted:self.state.update(incumbent_index=index,incumbent_y=request['y'],incumbent_successes=score)
         self.state['condition_steps']=self.spent()
-        if self.state['condition_steps']>PRACTICE_STEPS:raise RuntimeError('condition8192 exceeded; preserve all original evidence')
+        if self.state['condition_steps']>practice_cap(self.root,request):raise RuntimeError('condition8192 exceeded; preserve all original evidence')
 
     def ensure_parameters(self,request):
         destination=Path(request['parameter_ref'])

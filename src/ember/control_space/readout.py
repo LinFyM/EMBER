@@ -87,6 +87,31 @@ def authorize(root,specs,conditions):
             if (spec['task'],spec['arm'])!=(condition['task'],condition['arm']):raise ValueError('condition crossed arm/task')
             if any(spec.get(k)!=v for k,v in authorized[case_id(spec)].items()):raise ValueError('actual sample differs from the atomic pending decision')
 
+def physical_slots(logical_rows,project_available_MiB):
+    """Only measured native capacities; a logical four-case panel stays whole."""
+    for slots,required in ((16,28000),(8,18000),(4,14000)):
+        if project_available_MiB>=required:return min(logical_rows,slots)
+    raise RuntimeError('live local memory cannot cover the measured four-slot native workload before environment submission')
+
+
+def panel_runner(runner,runtime,environment,args,logical_rows):
+    import torch
+    from ember.writer.practice import EpisodeRunner
+    def available():
+        torch.cuda.empty_cache()
+        free,_=torch.cuda.mem_get_info(runtime.device)
+        return (free+torch.cuda.memory_allocated(runtime.device))/2**20
+    headroom=available();slots=physical_slots(logical_rows,headroom)
+    if runner is not None and slots<runner.slots:
+        # Existing own EGL allocations are outside PyTorch. Close them before
+        # recalculating the available project share; never credit foreign memory.
+        runner=close_runner(runner,args.worker_id)
+        headroom=available();slots=physical_slots(logical_rows,headroom)
+    if runner is None:runner=EpisodeRunner(runtime,environment,args.physical_gpu,slots=slots)
+    runner.slots=slots
+    return runner,dict(slots=slots,logical_rows=logical_rows,project_available_MiB=headroom,
+        native_slot_capacity=physical_slots(16,headroom))
+
 
 def worker(args):
     import torch
@@ -127,13 +152,11 @@ def worker(args):
                 event(kind='proposed',worker=args.worker_id,identity=command['identity'],receipts=receipts,resources=host_resources())
                 continue
             if command['command']!='panel':raise ValueError('only current complete panels may execute')
-            specs=specifications(command);authorize(args.root,specs,conditions);slots=len(specs)
-            if not 1<=slots<=16:raise ValueError('useful packs contain whole four-practice panels or single actual finals, at most16')
-            # EGL allocates outside PyTorch; H temporaries must not pin its room.
-            torch.cuda.empty_cache()
-            if runner is not None and slots<runner.slots:runner=close_runner(runner,args.worker_id)
-            if runner is None:runner=EpisodeRunner(runtime,environment,args.physical_gpu,slots=slots)
-            runner.slots=slots;tick=time.monotonic();torch.cuda.reset_peak_memory_stats()
+            specs=specifications(command);authorize(args.root,specs,conditions);logical_rows=len(specs)
+            if not 1<=logical_rows<=16:raise ValueError('registered useful packs contain at most16 real cases')
+            runner,admission=panel_runner(runner,runtime,environment,args,logical_rows);slots=runner.slots
+            event(kind='physical_pack',worker=args.worker_id,identity=command['identity'],**admission,resources=host_resources())
+            tick=time.monotonic();torch.cuda.reset_peak_memory_stats()
             try:
                 result=panel(args.root,runtime,runner,command,None,None)
                 event(kind='complete',worker=args.worker_id,identity=command['identity'],**result,seconds=time.monotonic()-tick,slots=slots,

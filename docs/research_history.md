@@ -5700,3 +5700,8 @@ video_effect_MT_official_settling_03/a986e7b2，21:48:29Z→21:52:59Z，新增12
 05:08:33.734988Z exit0；原接收/准备/首次owner/参考时钟不改。776实际episode/control199568+dummy7760=207328步，9.325162564582GPUh/55GPU job全exit0，0工程失败/未知/有效重算/OOM。632原始H/429正常失败全留，240完整close/双节点本批GPU环境owner已退出；ROOT11.946GiB、保守新增峰界30GiB<48，独立quota现场原件齐全。旧五ROOT GPUh区间[69.83061998896141,69.9383654939614]独立保持。
 
 [完整原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_proposals_seed7/analysis/engineering_completion.md)及results/acceptance/closing_readout/cost_accounting/useful_throughput/resource_exit/Git_delivery保留所有case、预算、恢复和Git。144是变化theta的训练回报，不能认single-checkpoint/held、H/video因果或充分学习；无自动18/36/held/controls/Test。工程验收/Git后仅一次交main01a13dd9，归还独占写窗口，后继由主讨论消费后自主裁决。
+
+
+## 2026-10-16 §18 attempt002及具名pending有限恢复
+
+0d9d1a00读出owner1108781于13:45:28.487Z→14:40:00.706Z退出1；gpu02:4 MjrContext framebuffer0x8cdd，不能称已证实CUDA OOM/foreign唯一原因。872有效行/440542步、45完整条件保持，16unknown[720,8480]、总[441262,449022]步与5.327250757880GPUh保留，全部本批资源已退出。main裁决16列名unknown各一次原pending恢复，三个private物理增量2085仅收尾，原全局预算/64工程额/8192科学停止线不变。详见[design§18.8](designs/source_policy_space_compiler_20261015.md#188-engineering_attempt002具名pending恢复修订2026-10-16)及ROOT analysis/engineering_attempt002/main_ruling.json；0新训练/候选/有效行重跑/自动后继。

@@ -1,3 +1,11 @@
+## 2026-10-16 §18具名工程恢复已获裁决，准备新冻结
+
+attempt002因MjrContext framebuffer 0x8cdd退出，872有效/440542步及45完整条件保留；16unknown区间[720,8480]、总[441262,449022]步与5.327250757880GPUh不清零。双节点本批GPU/环境/owner均已退出，foreign不触碰。完整原件见ROOT analysis/engineering_attempt002。
+
+唯一active范围仍[design§18/18.8](docs/designs/source_policy_space_compiler_20261015.md#188-engineering_attempt002具名pending恢复修订2026-10-16)。main授权四个已保存pending面板的16列名unknown各一次恢复，三项pending专用物理cap9830/8351/8480（另一项仍8192），合计增2085；全局预算不增，16重试占原64工程额。旧unknown仍计，停止/ψ的remaining仍按原8192；不重新生成候选、不多开提案。新恢复合同独立于原run_contract，实际消费者绑定原pending/code/LoRA/teacher/state/noise身份，第三次提交拒绝。
+
+本次窄修仅将真实完整logical请求按现场16/8/4物理槽运行，完整close后缩槽、owner承接实际并发。11项真实CPU消费者断言已通过（真实EpisodeRunner八槽完成16逻辑行、单final无补行、具名16占原extra/第三次拒绝/不扩大下一提案remaining）；diff --check通过，6源文件均≤400行、0新模块/入口。原件ROOT analysis/engineering_attempt002/consumer.json；新clean pushed detached后同ROOT接续。原6–12h派发至交付预期及全部旧时钟保持，当前是CPU修复准备，尚未恢复GPU。一个owner持续退出等待，完整400/费用/归档/资源/Git后一次回main并归还写窗口。
+
 ## 2026-10-16 §18首批有用成本校准（一次，非阶段筛点）
 
 14:33:05.824Z的一次真实成本校准：恢复后2857.34s，38条件已完成final并归档；68有用pack/732 episode/369231步包含首次旧有效pack，129实际提案receipt。抽样24次ψ调用中位14.68s/最大31.19s。16/8/4槽端到端plans/s中位6.885/5.469/3.945，native中位9.714/8.293/6.405；物理安排保留16及共享卡按真实headroom的8槽，不新增profile行/32槽探测。

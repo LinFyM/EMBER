@@ -1,3 +1,11 @@
+## 2026-10-16 §18具名工程恢复已获裁决，准备新冻结
+
+attempt002因MjrContext framebuffer 0x8cdd退出，872有效/440542步及45完整条件保留；16unknown区间[720,8480]、总[441262,449022]步与5.327250757880GPUh不清零。双节点本批GPU/环境/owner均已退出，foreign不触碰。完整原件见ROOT analysis/engineering_attempt002。
+
+唯一active范围仍[design§18/18.8](docs/designs/source_policy_space_compiler_20261015.md#188-engineering_attempt002具名pending恢复修订2026-10-16)。main授权四个已保存pending面板的16列名unknown各一次恢复，三项pending专用物理cap9830/8351/8480（另一项仍8192），合计增2085；全局预算不增，16重试占原64工程额。旧unknown仍计，停止/ψ的remaining仍按原8192；不重新生成候选、不多开提案。新恢复合同独立于原run_contract，实际消费者绑定原pending/code/LoRA/teacher/state/noise身份，第三次提交拒绝。
+
+本次窄修仅将真实完整logical请求按现场16/8/4物理槽运行，完整close后缩槽、owner承接实际并发；CPU消费者/新clean pushed detached后同ROOT接续。原6–12h派发至交付预期及全部旧时钟保持，当前是CPU修复准备，尚未恢复GPU。一个owner持续退出等待，完整400/费用/归档/资源/Git后一次回main并归还写窗口。
+
 ## 2026-10-16 §18原批窄工程恢复
 
 首次owner因单卡启动前显存下降安全退出；16/7825有效实践只adopt，0unknown/额外episode。修复局部未启动worker准入失败的整批传播→实际消费者→push/新clean detached→同ROOT --resume，继续原400/单final和96GiB/8192/64工程余量，所有时钟/费用保留。详见progress及ROOT analysis/engineering_attempt001；0科学范围变化/新训练/自动后继。

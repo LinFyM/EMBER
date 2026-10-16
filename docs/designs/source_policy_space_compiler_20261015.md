@@ -1495,3 +1495,34 @@ GPUh准确记账但无硬限，设备不足不等待凑卡或擅自改科学规�
 单owner持续等待整批实际退出，0自Queue/心跳/第二waiter或固定间隔读共享日志；科学/资源实际边界另报。
 完成后交400原始配对、全部条件/预算/归档原件、完整成本/吞吐/资源释放与Git，向main01a13dd9一次可靠回报并归还写窗口，
 无自动后继。main消费实际结果后自主接续，不以Owner新许可或工程ACK造成停滞。
+
+
+### 18.8 engineering_attempt002具名pending恢复修订（2026-10-16）
+
+主讨论01a13dd9的具名裁决原件保存于本ROOT `analysis/engineering_attempt002/main_ruling.json`，
+实际消费者读取单独 `pending_recovery_contract.json`；原run_contract、事故快照、已保存candidate/LoRA/receipt不覆写。
+原owner1108781于13:45:28.487Z启动、14:40:00.706Z退出1，worker03在gpu02:4的MjrContext创建触发0x8cdd；
+仅确定framebuffer incomplete，动态foreign共驻是待验证因素，不称CUDA OOM或唯一原因，foreign保持不触碰。
+872有效行/440542确切步和45完整条件只adopt；16 reserved_unknown保留8480上界及[720,8480]实际区间，
+原总[441262,449022]步/5.327250757880GPUh、原派发/准备/启动与家族09:05:48.038时钟全部保留。
+
+仅下列已保存完整四例允许恢复一次，原teacher/有序states/noise202610161/实际code/参数/proposal input不变：
+
+| condition / pending panel | 已收费 | 本pending专用物理cap | 相对8192增量 |
+| --- | ---: | ---: | ---: |
+| task_0031_state_028 / practice_003 | 7710 | 9830 | 1638 |
+| task_0031_state_029 / practice_002 | 5608 | 8192 | 0 |
+| task_0031_state_030 / practice_002 | 6231 | 8351 | 159 |
+| task_0039_state_031 / practice_002 | 6360 | 8480 | 288 |
+
+16个original unknown attempt_id严格以裁决JSON列名为准，各最多另提交一次；已有效仍只adopt，新的unknown不得第三次尝试。
+最多新增16/8480使用原64工程额，全部提交后used16/remaining48。全局33264/control3426080/dummy332640/total3446720不增。
+三个private增量合计2085只用于上述pending收尾，不可转移，不产生新科学候选，不调用ψ重生成，不清除旧unknown。
+面板完整后仍严格成功数改善才接受，平局保早；停止和ψ输入始终使用**原8192减全部实际/unknown/retry收费**。
+四项会自然按c=4或不足下一完整2120面板停止，不新增固定轮数规则。最终单query沿原精确初始复用/新执行规则，query不回适应。
+报告逐项具名物理例外，不再称全部400物理≤8192；唯一有效实践轨迹仍在原8192内。
+
+物理调度复用同一persistent Runtime及实际EpisodeRunner.run，按panel前现场可用project显存选择既有16/8/4槽，
+逻辑完整四例或单final、输入/顺序/seed/math不变；缩槽先完整close，再核实际余量，physical_pack回执承接owner的CPU/槽账。
+CPU消费者通过后新clean pushed detached、live双node GPU/CPU/PSS与strg01 data1准入，沿同ROOT --resume；
+0新增训练/Reader重编译/科学面板/Test、0有效行重跑。两次事故全部费用/原冻结保留，仍一个owner直接等整批退出。

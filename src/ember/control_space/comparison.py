@@ -197,11 +197,14 @@ def _trajectory(panels):
     return result
 
 
-def _condition_costs(path):
+def _condition_costs(path,root=None):
     rows=[r for p in path['panels'] for r in p['rows']];known=sum(r['environment_steps'] for r in rows);charged=path['condition_steps']
-    if not known<=charged<=8192:raise ValueError('complete actual practice and engineering charges must stay inside8192')
+    from .contract import reported_practice_cap
+    cap=reported_practice_cap(root,path['id']) if root else 8192
+    if not known<=8192 or not known<=charged<=cap:raise ValueError('actual unique practice or named physical recovery exceeded its bound')
     query_steps=sum(r['environment_steps'] for r in path['query_rows'])
-    return dict(logical_practice_steps=charged,known_new_practice_steps=known,engineering_or_unknown_additional_charges=charged-known,
+    return dict(logical_practice_steps=charged,original_method_cap=8192,named_pending_physical_cap=cap,
+        physical_excess_over8192=max(0,charged-8192),known_new_practice_steps=known,engineering_or_unknown_additional_charges=charged-known,
         logical_practice_episodes=len(rows),known_new_practice_episodes=len(rows),reused_old_practice_episodes=0,
         logical_query_steps=query_steps,new_query_steps=0 if path['query_reused'] else query_steps,
         new_query_episodes=0 if path['query_reused'] else 1,old_H_episodes=0,new_H_episodes=len(rows),
@@ -242,7 +245,7 @@ def _condition_summary(root,condition,spec):
         first_effective_revision=accepted[0] if accepted else None,query_reused=unchanged,query_successes=int(row['success']),
         stop_reason=path['stop_reason'],trajectory=_trajectory(panels),decisions=path.get('decisions',[]),
         retained_raw_H_required=condition['retain_raw_H'],raw_H_lifecycle=path.get('raw_H_lifecycle'),
-        costs=dict(_condition_costs(path),**_proposal_costs(path)),query_rows=[row])
+        costs=dict(_condition_costs(path,root),**_proposal_costs(path)),query_rows=[row])
 
 
 def _historical_rows():

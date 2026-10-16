@@ -1,3 +1,7 @@
+## 2026-10-16 §18物理波次与有限中断成本
+
+0x8cdd当前只证实MjrContext offscreen framebuffer创建失败，现场新增foreign显存共驻是候选因素。16逻辑case按8/4物理槽运行不改变四例选择；完整close和slot回执须覆盖owner CPU并发账。16旧unknown不能因operation0/partial H改记零或已证实科学失败。具名pending准入例外不进入ψ remaining、不增加候选，详见[design§18.8](docs/designs/source_policy_space_compiler_20261015.md#188-engineering_attempt002具名pending恢复修订2026-10-16)及ROOT事故裁决；原训练CP180与872有效行保留。
+
 ## 2026-10-16 §18就绪工作与共享显存准入
 
 计划snapshot不是设备预约。16槽选中后单卡free由28080降27252MiB，启动前保护正常触发；该worker没有launch/环境成本，不能让它取消其它已经就绪的工作。仅未启动分支可按已有8槽证据有限降档或撤回，其它worker继续；实际runtime失败/未知预算和pending有效行仍走原原子恢复，不静默重试。科学读出不因本事件改变。

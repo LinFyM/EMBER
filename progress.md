@@ -1,3 +1,9 @@
+## 2026-10-17 §20完整BA1000已保存，已实际接续joint
+
+1000次fresh BA已完成并原子保存完整generator/Adam/scheduler/stream/6rank RNG，训练段exit正常；ROOT training/segment_00000000_00001000.json记录job wall=2734.528s（包含日志/保存，更新计时另存）。同一Adam/模型从完整1000进入180 joint，首有效1001于23:22:29.545Z，112合法跨episode FM query/四task，6rank实际2.593s/峰14868MiB；A/B头与body及完整LoRA native余切均非零。该消费者证明实际恢复/信用接通，不代表学会或held成功。
+
+当前唯一owner129605/reader1348连续等待，终点1180及976完整闭环尚待完成；无1000/1090读出或中途选点。按首joint实测与既有976 rollout，剩余暂估30–60min，原首次21:56:50及全部失败/历史费用保持。source/参考/Reader/identity-S资产旧完整费用和episode计数另列ROOT analysis/dependency_cost_accounting.json，不将新root当从零方法成本。
+
 ## 2026-10-17 §20正式fresh BA已启动，按真实吞吐修正预计
 
 原1800M/59114帧完成：6rank实际434.938s，新build1764/adopt36、仅原prefix读取58331帧，producer0/0高维prefix复制；初失败783–902帧区间和.047937GPUh独立保留。受限profile实际5BA＋4joint/448 FM query，0env/0OOM，临时generator/Adam弃用。

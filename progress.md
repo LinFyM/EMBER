@@ -1,3 +1,9 @@
+## 2026-10-17 §19唯一owner已正式启动
+
+owner3924156于2026-10-16T21:17:50.084280+00:00从clean pushed detached537c6763正式启动；唯一直接退出等待PTY9104/cell1179，0自Queue/第二waiter。CPU拟合→原子冻结→首次打开八selected→128读出按真实依赖执行，GPU仅在读出就绪后live准入，当前启动不冒称128已完成。ROOT [owner_launch.json](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7/owner_launch.json)记录来源、完整命令、208点/28任务及独立预算；首次现场21:05:08与原家族09:05:48.038不重置。
+
+合成Gram/SVD、76单位/identity质量、完整sBA、38r8输出/旧行RNG与proprio配对、有效行原子adopt/16额外尝试等实际CPU消费者通过。旧八任务行使用官方init资产（原件无registered_scene字段），同原资产字节身份/实际proprio/noise配对，不编造旧MT场景。结构净减少约1180行、六个已无当前消费者的H/Reader主动模块退役，旧Git/frozen不动；两个已集成clean开发树/本地分支已清理，正式冻结保留。预计35–75min仍从原派发现场起计，首有用工作修正；整批原件/费用/释放/Git后一次回main并归还写窗口。
+
 ## 2026-10-17 §19实际接手并实施，尚未正式拟合/GPU执行
 
 执行01a13dbf已接手c2ed6d09的唯一[design§19](docs/designs/source_policy_space_compiler_20261015.md#19-内部任务排除后的控制空间迁移检验)，独占canonical工程/科研记录/Git，main只读。首次现场记录2026-10-16T21:05:08.224595Z，精确消息到达时刻未恢复；准备准入21:06:52Z，原家族09:05:48.038不重置。ROOT control_task_exclusion8_seed7现场尚不存在，无重复owner；当前不是GPU运行声明。

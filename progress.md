@@ -1,3 +1,7 @@
+## 2026-10-16 §16唯一owner已实际启动
+
+owner376918/supervisor376047于06:54:55.814143Z从新clean pushed detached56c4dc99启动，直接退出readerPTY9269，0Queue/第二waiter；原06:33:17.631接收时钟保留。ROOT/launch_contract和owner_attempts/attempt_001记录完整命令、数据/缓存边界、64GiB峰、独立quota/nodeCPU准入及物理16/24有用比较。此前CPU消费者不是GPU运行；现在真实owner负责唯一72condition/288逻辑query，actualGPU设备与每job首启动以execution/jobs原件登记。新预算/每condition8192/原source144/40377复用保持，0共享训练/Reader重编码/held/Test/自动后继。一个实际退出流持续等整批，费用/资源/Git验收后一次回main。
+
 ## 2026-10-16 §16CPU消费者已通过；正式尚未启动
 
 实际元数据72condition/源144复用40377步与信息墙、初始完整76因子、严格接受/平局/移动中心、两臂同epsilon/pending恢复、完整H归档/原子adopt、8192与固定16工程额均由当前真实函数验证；仿真runner/outcome仅CPU接口夹具，不作科学结果。完整72路径调度消费者通过：16/24整四例动态pack、冻结后query、未触发节点不运行、尾部worker及时退出。证据`.codex/tmp/incumbent_compilation_20261016/{compilation_consumer,queue_consumer}.json`及manifest/practice_consumer。Architecture相对93ffa411无hard、新模块0/净减约780行；现有复杂度review均为边界校验/原子panel/读出聚合，最大函数43行，未引入平行Writer。旧五模块无外部当前消费者，随训练/dense-H退役到Git/frozen；保留Reader数学定义、D及source topology。

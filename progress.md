@@ -1,3 +1,19 @@
+## 2026-10-16 §15.5主讨论有限恢复裁决已接入实施
+
+main已明确授权原32具名unknown各一次恢复及原12首次，保留原16通用额度、不滚动充值；累计172提交/control66160/dummy1720/total67880，旧32保留15280上界，新恢复另计，不回填/不称32已证实失败。已有80只adopt，0有效重跑/新科学行。唯一[design§15.5](docs/designs/source_policy_space_compiler_20261015.md#155-attempt001渲染故障的有限恢复修订)已登记；新budget副本与原子消费者区分一次恢复32及普通16，不借未用恢复额度。
+
+已将active renderer限24，实际24比16吞吐更高；CPU实际消费者exit0：32具名一次恢复/24+8真实因子panel、旧15280上界不变、valid只adopt、普通16不借未用恢复额度、即使普通16尚全可用亦禁止具名第二次；剩44原子queue为24+20，0GPU/env。结构guard0hard；新冻结后接续。原contract/manifest/attempt001/code e81fa5d4只读保留；恢复准备并非已启动，完成clean/push/freeze和live准入后接续原44，再整批一次交main。
+
+## 2026-10-16 §15实际渲染故障与预算边界
+
+原owner3471868于05:46:33.197387Z exit1；80新query完整有效，12未启动，32pack在MuJoCo framebuffer创建时0x8cdd，无完整行。原32unknown保留14960control+320dummy=15280上界；event合计已知1955步不能恢复逐case，也不按0或已证实32失败记账。独立16工程额度不足全部32一次恢复，已携[原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_readout_seed7/analysis/boundary_attempt001.json)向main报告，processing_verified，未自动充值/恢复。原正常124加32恢复至少156starts（原cap140），保守全normal+32为59400steps（原52600）。
+
+6GPU子任务均真实退出，GPUh0.238637107611，5exit0/1exit1；GPU/owner/环境均0存活，UID PSS退出gpu01约.363GiB/gpu02约1.277GiB、0zombie，foreign未动。24有效9.38794plan/s/peakallocated12137.6MiB/reserved32922MiB；16为6.92–8.10，32定位于EGL而非已证实CUDA OOM。按systematic-debugging窄修active上限24、重用原有效行、按剩余有效工作减少worker，暂不启动恢复或更改科学字段。完整attempt001/原code e81fa5d4原件保留。
+
+## 2026-10-16 §15正式owner已启动
+
+真实owner3471868于2026-10-16T05:42:29.601265+00:00从clean/pushed detached e81fa5d4启动；唯一持续退出reader为PTY10559/cell662，无Queue或第二waiter。[['gpu02', 0, 46068], ['gpu01', 2, 46066], ['gpu02', 6, 46068], ['gpu01', 3, 46066], ['gpu02', 7, 46068], ['gpu01', 7, 46066]]，初始槽{'query_worker_00': 32, 'query_worker_01': 24, 'query_worker_02': 16, 'query_worker_03': 16, 'query_worker_04': 16, 'query_worker_05': 16}；每launch live双节点/6或8总量/node6、strg01及node内存准入，不挤foreign。仅124新query/720逻辑配对，0训练/实践/H/Reader forward/held/Test；有效行不重跑、未知完整保守。首有用batch实测修正吞吐/预计，完成后验收费用/资源/Git一次交main。
+
 ## 2026-10-16 §15实际接手与CPU实施
 
 05:27:06.038Z实际接收main4515c839，05:27:32.260Z首次带时钟准备观测；执行01a13dbf独占canonical代码/记录/Git，main只读。唯一design§15仅124新query（Reader900同v0补108＋真实first-best4套补16），其余596逻辑行按固定原件复用；0训练/新proposal/实践/H/教学读取/Reader forward/held/Test。旧meta9、所有旧CP/路径/费用和参考首次09:05:48.038保持。

@@ -1,3 +1,7 @@
+## 2026-10-16 §15 attempt001有限恢复裁决
+
+首owner05:42:29.601265→05:46:33.197387Z exit1：32路MjrContext offscreen framebuffer0x8cdd、80有效/32unknown/12未启动，6jobs0.238637107611GPUh与15280旧未知上界保留。main明确授具名32各一次恢复、原12首次且保留原16通用额度，累计172/66160control/1720dummy/67880total；不称32已证实失败或改0，0有效重跑。新design§15.5/显式budget副本承接，实际新冻结/恢复身份见progress及ROOT。
+
 ## 2026-10-16 §15有限读出实施接手
 
 4515c839于05:27:06.038Z实际派发；现有执行接管canonical独占窗口。仅补124个已有LoRA query，复用原§14路径/控制器及source/reference原件；0学习/新实践/Reader forward/held/Test，不恢复历史未完成项。新代码沿唯一control_space/原native/账本/队列接续，实际正式启动与退出另记progress及feedback_readout_seed7。旧9.325162565GPUh/207328步/776提交和更早独立区间保持。

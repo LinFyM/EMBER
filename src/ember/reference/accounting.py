@@ -26,9 +26,20 @@ def reserve(root, case_id, horizon, *, limits=LIMITS):
         previous=db.execute('SELECT count(*) FROM attempts WHERE case_id=?',(case_id,)).fetchone()[0]
         if db.execute("SELECT count(*) FROM attempts WHERE case_id=? AND status='complete'",(case_id,)).fetchone()[0]:
             raise ValueError('valid saved interaction must never be rerun')
+        # An explicit finite interruption revision may name old unknown attempts.
+        # Each gets one replacement; these do not replenish the ordinary extras.
+        recovery=limits.get('one_time_recovery_attempt_ids',[]);recovered=0;replacement=False
+        if recovery:
+            old=[db.execute('SELECT case_id,status FROM attempts WHERE identity=?',(i,)).fetchone() for i in recovery]
+            if any(r is None or r[1]!='reserved_unknown' for r in old) or len({r[0] for r in old})!=len(recovery):
+                raise ValueError('finite recovery lost its original named unknown reservations')
+            cases={r[0] for r in old}
+            if case_id in cases and previous!=1:raise RuntimeError('named unknown allows exactly one recovery attempt')
+            recovered=sum(n>1 for c,n in db.execute('SELECT case_id,count(*) FROM attempts GROUP BY case_id') if c in cases)
+            replacement=case_id in cases
         if (count+1>limits['physical_submissions'] or control+horizon>limits['control_steps']
                 or dummy+10>limits['dummy_steps'] or control+dummy+horizon+10>limits['total_steps']
-                or count-unique+(previous>0)>limits['engineering_extra_attempts']):
+                or count-unique-recovered+(previous>0)-replacement>limits['engineering_extra_attempts']):
             raise RuntimeError('global reference interaction boundary reached')
         identity=f'{case_id}_attempt_{previous+1:03d}'
         db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,?,NULL,NULL)',

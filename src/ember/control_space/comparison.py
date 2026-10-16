@@ -173,6 +173,21 @@ def prepare(root):
     write_json_atomic(manifest,plan);return run
 
 
+def execution_contract(root):
+    """A named finite budget amendment leaves the original run/manifest intact."""
+    root=Path(root);original=read_json(root/'run_contract.json');path=root/'run_contract_recovery001.json'
+    if not path.is_file():return original
+    revised=read_json(path)
+    if any(revised.get(k)!=v for k,v in original.items() if k!='limits'):
+        raise ValueError('interruption recovery cannot change the scientific run contract')
+    limits=revised['limits'];expected=dict(LIMITS,physical_submissions=172,control_steps=66160,dummy_steps=1720,total_steps=67880)
+    recovery=limits.get('one_time_recovery_attempt_ids',[])
+    named=[r['attempt'] for r in read_json(root/'analysis/boundary_attempt001.json')['unknown_rows']]
+    if len(recovery)!=32 or sorted(recovery)!=sorted(named) or {k:v for k,v in limits.items() if k!='one_time_recovery_attempt_ids'}!=expected:
+        raise ValueError('only the explicitly named32 once-only recoveries and original16 extras are authorized')
+    return revised
+
+
 def _validate(row,entry,task):
     from ember.pi05_eval_contract import policy_noise_seed
     expected=dict(global_task_id=entry['task'],suite=task['suite'],task_id=task['task_id'],language=task['language'],
@@ -199,7 +214,7 @@ def _costs(tasks):
 
 
 def analyze(root):
-    root=Path(root);run=read_json(root/'run_contract.json');manifest=read_json(root/'manifest.json')
+    root=Path(root);run=execution_contract(root);manifest=read_json(root/'manifest.json')
     if run['schema']!=SCHEMA or manifest['schema']!=SCHEMA:raise ValueError('explicit comparison phase required')
     specs={t['global_task_id']:t for t in run['environment']['tasks']};raw={a:[] for a in ARMS}
     for entry in manifest['mappings']:
@@ -217,7 +232,7 @@ def analyze(root):
         categories={c:grouped([t for t in tasks if t['category']==c]) for c in sorted({t['category'] for t in tasks})},
         controllers=manifest['tasks'],costs=_costs(manifest['tasks']),new_readout_interactions=summary(root),new_readout_billing=billing(root),
         historical_feedback=dict(ROOT=str(FEEDBACK_ROOT),GPU_hours=historical['billing']['GPU_hours'],interactions=historical['interactions'],
-            included_in_new_readout_cost=False),limits=LIMITS,checkpoint_selection=False,held=False,Test=False,
+            included_in_new_readout_cost=False),limits=run['limits'],checkpoint_selection=False,held=False,Test=False,
         scope='posthoc non-held controllers from different training theta; not a single checkpoint or H/video causal qualification')
     folder=root/'analysis';folder.mkdir(exist_ok=True);write_json_atomic(folder/'results.json',result);write_json_atomic(root/'completion.json',result)
     lines=['# 同教学144-case既有控制器五臂比较','',f"全部144：{result['arms']['total']['successes']}",

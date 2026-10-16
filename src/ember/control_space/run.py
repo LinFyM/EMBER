@@ -1,7 +1,7 @@
 """One bounded owner for saved-controller comparison, with no learning entrypoint."""
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor,as_completed
-import argparse,datetime,fcntl,json,os,subprocess,time
+import argparse,datetime,fcntl,json,math,os,sqlite3,subprocess,time
 from ember.pi05_source_checkpoint import write_json_atomic,read_json
 from ember.pi05_eval_queue import EvaluationShard,initialize_queue,claim_next,complete_job,fail_job
 from ember.proposal_writer.batch import Batch,Job,live_gpu_snapshot
@@ -23,9 +23,11 @@ def device_pool(args):
     for n,g in sorted(rows,key=lambda r:-r[1]['mem_free_mib']):
         if (f'{n}:{g["index"]}' in args.devices and g['compute_mode']!='Prohibited'
                 and g['mem_free_mib']>=14000 and (n,g['index']) not in outside):groups.setdefault(n,[]).append(g)
-    # 32+24+4*16 consumes120 useful rows. More replicas would have only a
-    # partial final pack in this124-row window and add another model load.
-    available=min(6,cap-len(outside));selected=[]
+    #24 is the highest actually completed renderer pack;32 failed at EGL
+    #creation. Avoid loading replicas that cannot shorten the remaining work.
+    with sqlite3.connect(queue_path(args.root)) as db:
+        pending=db.execute("SELECT count(*) FROM jobs WHERE status='pending'").fetchone()[0]
+    available=min(6,cap-len(outside),math.ceil(pending/24));selected=[]
     while groups and len(selected)<available:
         for node in list(groups):
             g=groups[node].pop(0);selected.append((node,g['index'],g['mem_free_mib']))
@@ -58,7 +60,7 @@ class WorkQueue(Scheduler):
         if worker in self.eval_counts and self.measures:
             preferred=max(self.measures,key=lambda r:r['native_plans_per_second'])['slots']
         preferred=min(preferred,self.capacities[worker])
-        candidates=[s for s in (32,24,16,8,4) if s<=preferred]
+        candidates=[s for s in (24,16,8,4) if s<=preferred]
         others=sum(v for k,v in budget['occupied'].items() if k!=worker)
         for slots in candidates:
             useful=min(slots,pending);extra=max(0,useful-budget['occupied'][worker])*budget['environment_GiB']
@@ -126,27 +128,27 @@ class WorkQueue(Scheduler):
 
 
 def owner(args):
-    from .comparison import prepare,analyze
+    from .comparison import prepare,analyze,execution_contract
     args.root.mkdir(parents=True,exist_ok=True)
     with (args.root/'owner.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         if (args.root/'completion.json').exists():raise ValueError('completed finite comparison cannot restart')
         for name in ('shards','packs'):(args.root/name).mkdir(exist_ok=True)
-        run=prepare(args.root);tasks={s['global_task_id']:s for s in run['environment']['tasks']}
+        prepare(args.root);run=execution_contract(args.root);tasks={s['global_task_id']:s for s in run['environment']['tasks']}
         shards=[EvaluationShard(case_id(s),i,tasks[s['task']]['suite'],s['task'],tasks[s['task']]['horizon'],
             (s['state_id'],),tasks[s['task']]['horizon']+10) for i,s in enumerate(run['requests'])]
         initialize_queue(queue_path(args.root),shards,contract_reference=str(args.root/'run_contract.json'),
             recover_claims=args.resume,retry_failed=args.resume)
         choices,cap=device_pool(args);workers=[(n,g) for n,g,_ in choices]
-        capacities={f'query_worker_{i:02d}':32 if free>=22000 else 24 if free>=18000 else 16 for i,(_,_,free) in enumerate(choices)}
-        ceilings={worker:min((32,24,16,16,16,16)[i],capacity) for i,(worker,capacity) in enumerate(capacities.items())}
+        capacities={f'query_worker_{i:02d}':24 if free>=40000 else 16 if free>=28000 else 8 if free>=18000 else 4 for i,(_,_,free) in enumerate(choices)}
+        ceilings=dict(capacities)
         scheduler=WorkQueue(args.root,run['requests'],workers,ceilings,capacities)
         write_json_atomic(args.root/'execution.json',dict(devices=choices,total_cap=cap,initial_slot_ceilings=ceilings,
             reused_evaluation_measurements=scheduler.evaluation_reference,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
         batch=Batch(Path.cwd(),workers,root=args.root,required_free_MiB=14000,work_event=scheduler.event)
-        jobs=[Job(f'query_worker_{i:02d}',['control-space','worker','--worker-id',f'query_worker_{i:02d}','--slots','32'],
+        jobs=[Job(f'query_worker_{i:02d}',['control-space','worker','--worker-id',f'query_worker_{i:02d}','--slots','24'],
             eligible_devices=(device,),estimate_seconds=1500,
-            required_free_MiB={32:22000,24:18000,16:14000}[capacities[f'query_worker_{i:02d}']]) for i,device in enumerate(workers)]
+            required_free_MiB={24:40000,16:28000,8:18000,4:14000}[capacities[f'query_worker_{i:02d}']]) for i,device in enumerate(workers)]
         failure=None
         with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
             futures=[pool.submit(batch.execute,j,d) for j,d in zip(jobs,workers)]
@@ -164,7 +166,7 @@ def main():
     from .comparison import ROOT
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('command',choices=['owner','worker'])
     parser.add_argument('--root',type=Path,default=ROOT);parser.add_argument('--devices',nargs='+')
-    parser.add_argument('--worker-id');parser.add_argument('--slots',type=int,default=32)
+    parser.add_argument('--worker-id');parser.add_argument('--slots',type=int,default=24)
     parser.add_argument('--physical-gpu',type=int,default=0);parser.add_argument('--resume',action='store_true');args=parser.parse_args()
     if subprocess.check_output(['git','status','--porcelain'],text=True).strip() or subprocess.check_output(['git','branch','--show-current'],text=True).strip():
         raise ValueError('formal comparison requires clean pushed detached source')

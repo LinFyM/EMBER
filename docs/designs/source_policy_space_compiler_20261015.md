@@ -972,3 +972,15 @@ first-best对full仅检验后续实际探索与择优的边际控制作用，不
 不要复制整套Writer或为仅此一次读出建立通用新框架，旧冻结/科学结果不原地改。
 正式来自新clean pushed detached；源码消费者检查、结构guard、运行恢复、Git集成/推送/开发树清理由现有执行者闭环。
 一个整批owner及持续退出等待，不再给同一等待者Queue自通知；结束核原始结果、退出/资源/成本和Git后一次交main01a13dd9并归还写窗口。
+
+### 15.5 attempt001渲染故障的有限恢复修订
+
+main消费boundary_attempt001原件后明确授权：仅完成原124有效新query目标，已有80有效行只adopt，原12未启动首次执行；对boundary_attempt001.json逐名登记的32 reserved_unknown case各一次恢复。原科学五臂/参数/teacher/scene/RNG/选择/信息墙及2GiB峰不变，0新训练/实践/Reader forward/held/Test。
+
+原32未知全部保留原status和14960control+320dummy=15280上界。event合计1955环境步只是lower bound，单一失败operation0不能代替整pack费用；不称已证实32失败、不记0、不用新恢复回填旧费用。新恢复attempt单独保存实际/未知成本；这32各限一次，不因通用额度再演，若同层失败再现携原件报告。
+
+原16通用工程额度完整保留但不滚动重置；新累计172 submissions/66160control/1720dummy/67880total。算式为原124normal(42880+1240)+本次32旧未知(14960+320)+原16工程(8320+160)。除这32外其它额外工程尝试仍占原16；原valid不可重跑。原run_contract/manifest及attempt001身份保留，新增run_contract_recovery001显式指回原合同；真实reserve事务分别计算已用32恢复与原16普通额度，未用恢复额度不得借给其它重试。
+
+已定位32路失败于MuJoCo MjrContext offscreen framebuffer创建0x8cdd，不是已证实CUDA OOM；24有效完成9.38794plan/s，保留完整环境/数值合同，本批active renderer最高24，不重跑32探针、不升级为永久上限。余44按实际就绪量减少worker；新clean pushed detached及live双节点/CPU/PSS/strg01准入后恢复，不热改e81fa5d4。
+
+05:42:29.601265Z→05:46:33.197387Z的首owner故障、6job(5exit0/1exit1)全部费用0.238637107611GPUh保留；原派发05:27:06.038Z及参考09:05:48.038不重置。GPU/环境/owner已全部退出证据随boundary保留。沿原45–90min整批预计以实测修正，无GPUh硬限；一个owner持续退出等待，完整验收/Git后一次回main并归还窗口，无新增Queue/自通知/第二waiter。

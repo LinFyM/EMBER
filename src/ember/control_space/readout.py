@@ -19,7 +19,8 @@ def worker(args):
     from ember.writer.practice import EpisodeRunner
     context=initialize_distributed(require_numa=True,defer_process_group=True)
     torch.set_num_threads(8);torch.backends.cuda.matmul.allow_tf32=True
-    run=read_json(args.root/'run_contract.json');environment=run['environment']
+    from .comparison import execution_contract
+    run=execution_contract(args.root);environment=run['environment']
     if len(environment['tasks'])!=36:raise ValueError('this window has only36 non-held practice/query tasks')
     os.environ.update(EMBER_LIBERO_ASSETS_ROOT=environment['libero_paths']['assets'],MUJOCO_GL='egl',PYOPENGL_PLATFORM='egl')
     prepare_libero_config(args.root/'libero_config');configure_libero_runtime_assets(Path(environment['libero_paths']['assets']))
@@ -41,7 +42,7 @@ def worker(args):
                 registered=authorized[case_id(spec)]
                 if any(spec.get(k)!=v for k,v in registered.items()):raise ValueError('query differs from the fixed manifest')
             count=len(specs);slots=int(command.get('slots',min(getattr(args,'slots',16),count)))
-            if not 1<=slots<=32:raise ValueError('actual slots must be1..32')
+            if not 1<=slots<=24:raise ValueError('actual saved-controller renderer slots must be1..24')
             if runner is not None and slots<runner.slots:runner=close_runner(runner,args.worker_id)
             if runner is None:runner=EpisodeRunner(runtime,environment,args.physical_gpu,slots=slots)
             runner.slots=slots;tick=time.monotonic();torch.cuda.reset_peak_memory_stats()

@@ -235,8 +235,19 @@ def decoded_parameters(runtime,decoder,units,specs):
     return states
 
 
+def validate_unknown_recovery(root,spec,limits):
+    with connect(root) as db:
+        unknown={r[0] for r in db.execute("SELECT identity FROM attempts WHERE case_id=? AND status='reserved_unknown'",(case_id(spec),))}
+    if not unknown<=set(limits.get('one_time_recovery_attempt_ids',[])):
+        raise RuntimeError('unknown actual interaction has no restorable raw H/row; preserve full charge and report boundary')
+
+
 def panel(root,runtime,runner,command,decoder,units):
-    root=Path(root);run=read_json(root/'run_contract.json');tasks={r['global_task_id']:r for r in run['environment']['tasks']}
+    root=Path(root);run=read_json(root/'run_contract.json')
+    if run.get('phase')=='feedback_readout':
+        from .comparison import execution_contract
+        run=execution_contract(root)
+    tasks={r['global_task_id']:r for r in run['environment']['tasks']}
     specs=specifications(command);rows={};missing=[]
     for spec in specs:
         if spec['task'] not in tasks:raise ValueError('practice/query task is outside current36')
@@ -244,9 +255,7 @@ def panel(root,runtime,runner,command,decoder,units):
             raise ValueError('transient dense H cache must stay under this run cache/H')
         saved=adopt(root,spec,tasks[spec['task']])
         if saved is None:
-            with connect(root) as db:
-                unknown=db.execute("SELECT count(*) FROM attempts WHERE case_id=? AND status='reserved_unknown'",(case_id(spec),)).fetchone()[0]
-            if unknown:raise RuntimeError('unknown actual interaction has no restorable raw H/row; preserve full charge and report boundary')
+            validate_unknown_recovery(root,spec,run['limits'])
             missing.append(spec)
         else:rows[(spec['identity'],spec['state_id'])]=saved
     states=decoded_parameters(runtime,decoder,units,missing)

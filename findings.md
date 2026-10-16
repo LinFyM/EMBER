@@ -1,3 +1,7 @@
+## 2026-10-16 §15渲染容量与账本恢复边界
+
+本批24路实测9.38794原生plan/s，高于16的6.92–8.10；32路在MjrContext framebuffer创建失败，不能由PyTorch allocated较低推定EGL容量，也不误称CUDA OOM。32已提交但无完整回执须全额上界保留，观测1955仅lower bound；一次具名恢复不能充值普通重试预算。科学五臂判断须等原124有效行完整，不能将此工程故障或部分task读出当科学阴性。
+
 ## 2026-10-16 §15工程复用边界
 
 当前只比较已经存在的完整控制器：saved-LoRA参数引用替换query的D在线解码，原source/native/原子账本和动态队列保持；不需要Reader forward、训练或新H。固定720映射严格保留Reader900同teacher与first-best29项的full原执行，避免同source另换更高旧行。CPU消费者接通及结构核验只支持工程合同，不预判控制结果。唯一科学范围与停止线见[design§15](docs/designs/source_policy_space_compiler_20261015.md#15-首轮已有控制器的同教学独立query比较)。

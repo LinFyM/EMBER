@@ -16,6 +16,7 @@ READER_CHECKPOINT = VIDEO_ROOT/'checkpoints/update_00000900/state.pt'
 SOURCE_MODEL = str(ASSETS/SOURCE/'policy')
 VALIDATION = (3, 6, 11, 16, 23, 26, 31, 39)
 FEATURE_SCHEMA = 'ember_source_image_prefix_features_v1'
+LEGACY_SCHEMA = 'ember_image_only_gemma_compiler_v1'
 PREPROCESS = dict(camera_order=['agentview', 'eye_in_hand'], rotation_degrees=180,
     resize='resize_with_pad_torch', model_resolution=224, frame_stride=5, terminal_included=True,
     tokens_per_frame=512, token_width=2048)
@@ -76,13 +77,18 @@ def _indices(indices, raw_count):
 def load_cached(entry):
     value = torch.load(entry['cache_path'], map_location='cpu', weights_only=True, mmap=True)
     source = value['source']; images = value['z_img']
+    schema=value.get('schema_version')
     required = dict(model=SOURCE_MODEL, dual_rgb=True, stride=5, post_norm=True,
-        Gemma_input='512 image tokens only', L_in_Gemma=False, action_suffix=False, probe=False, old_meta_loaded=False,
-        preprocess=PREPROCESS)
+        Gemma_input='512 image tokens only', L_in_Gemma=False, action_suffix=False, probe=False, old_meta_loaded=False)
     identity = dict(kind='original', task=int(entry['task']), demo=int(entry['demo']))
-    if (not value.get('complete') or value.get('schema_version') != FEATURE_SCHEMA or value['video'] != identity
-            or any(source.get(key) != item for key, item in required.items())):
-        raise ValueError('cached teaching is not the actual original pure-source image prefix')
+    actual=(dict(kind='original',task=value.get('task'),demo=value.get('demo')) if schema==LEGACY_SCHEMA else value.get('video'))
+    # The exact legacy schema is already referenced by the frozen §13 manifest
+    # and its pure_features producer. Only z_img/indices are selected; stored L
+    # is mmap-only and never read or returned. No general unknown-schema fallback.
+    if (not value.get('complete') or schema not in (FEATURE_SCHEMA,LEGACY_SCHEMA) or actual!=identity
+            or any(source.get(key)!=item for key,item in required.items())
+            or (schema==FEATURE_SCHEMA and source.get('preprocess')!=PREPROCESS)):
+        raise ValueError(f'original pure-source prefix identity/schema mismatch: {identity}, {schema}')
     indices = _indices(value['indices'], source['raw_frames'])
     if (images.dtype != torch.bfloat16 or images.shape != (len(indices), 512, 2048)
             or len(indices) != entry['frames'] or not bool(images.isfinite().all())):

@@ -1,3 +1,11 @@
+## 2026-10-17 §20首次准备中断及已登记旧图像格式窄修
+
+owner102364于22:21:20.263Z exit1；6rank原M准备job在task0/demo46遇到原manifest明确引用的`ember_image_only_gemma_compiler_v1`，新loader只接受新schema。旧§13 frozen features._read_cached/get_or_build与778ff8ea pure_features证明它是同source纯图像Gemma/stride5+terminal/rotate一次，legacy身份位于顶层task/demo；不是输入污染/科学负结果。原件ROOT analysis/engineering_attempt001/failure.json及SQLite snapshot、job/owner退出完整保留。
+
+窄修仅按已登记known legacy schema读取z_img/indices，严格核source/实际task-demo/纯图像标志/shape/完整帧，不读取或返回旧language tensor；未知schema仍拒绝。实际新格式demo4/旧demo46与错demo拒绝的CPU消费者通过。36个ready M直接adopt，source_inputs/D已完整保存不重建；原783–902 prefix帧当量不确定区间、0.047937221924GPUh全部计费，0正式更新/0profile query/0环境提交。追加逐M实际消费journal，后续中断有直接明细。
+
+旧owner/唯一退出reader1327均已结束，无旧活子进程；修复须新clean pushed detached再同ROOT --resume，不热改c7旧冻结、不重复有效缓存/样本。原首次21:56:50/4–7h和全部旧成本不重置，普通工程无需main ACK。当前尚无科学结果，976/1180/预算与信息墙保持。
+
 ## 2026-10-17 §20唯一正式owner已启动
 
 owner102364于2026-10-16T22:20:10.839568+00:00从clean pushed detached c7ef1372启动唯一ROOT，PTY4877/持续直接退出reader1327。先source输入与36 selected算子常量，再原1800M和受限临时profile，随后唯一fresh1000＋180及976读出；当前owner启动不等于学习或976完成。完整命令/环境在ROOT owner_launch.json，每个实际GPUjob另留两node live GPU/CPU/存储准入及launch/exit。0自Queue/心跳/第二waiter。

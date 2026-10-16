@@ -150,7 +150,10 @@ def memory_worker(args):
     store=MemoryStore(args.root,context.device);start=time.monotonic();measurements=[]
     try:
         for entry in store.training_entries[context.rank::context.world_size]:
-            store.training(entry['task'],entry['demo']);measurements.extend(store.drain_measurements())
+            store.training(entry['task'],entry['demo']);current=store.drain_measurements();measurements.extend(current)
+            path=args.root/'memory'/f'measures_{os.uname().nodename}_{os.getpid()}.jsonl';path.parent.mkdir(parents=True,exist_ok=True)
+            with path.open('a') as handle:
+                for measure in current:handle.write(json.dumps(measure)+'\n')
         torch.cuda.synchronize(context.device)
         write_json_atomic(args.root/'memory'/f'rank_{context.rank}.json',dict(rank=context.rank,world=context.world_size,
             entries=len(measurements),wall_seconds=time.monotonic()-start,measurements=measurements,

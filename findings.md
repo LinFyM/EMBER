@@ -1,3 +1,7 @@
+## 2026-10-16 §15补齐后：既有初始能力高于完整探索流程
+
+严格同v0教学144case，Reader90089/first-best73/full79/source58/ref127；Reader→full R75/G4/L14，breadth29→25，target43→35且Object9→3/Long5→2，不能再把full>source直接算新增反馈成功。后续实际探索/选择仍使first73→full79（G7/L1），新16和source12均净+3，参考新增70的保存18→23，但低于Reader29。first前缀69702实践步、full170804，追加101102步/97提案只在此小面板净6；反事实不是已实现节省。source早停11task未读当前教学，不能归H。此结果降低当前固定探索/经验择优与稀疏信用组织的支持度，不宣判全部反馈学习/64维/r8或9步充分；main据原件裁决后继。原件与适用范围见[§15完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_readout_seed7/analysis/engineering_completion.md)。
+
 ## 2026-10-16 §15渲染容量与账本恢复边界
 
 本批24路实测9.38794原生plan/s，高于16的6.92–8.10；32路在MjrContext framebuffer创建失败，不能由PyTorch allocated较低推定EGL容量，也不误称CUDA OOM。32已提交但无完整回执须全额上界保留，观测1955仅lower bound；一次具名恢复不能充值普通重试预算。科学五臂判断须等原124有效行完整，不能将此工程故障或部分task读出当科学阴性。

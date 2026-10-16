@@ -1,3 +1,17 @@
+## 2026-10-16 §15同教学五臂有限读出完整完成
+
+恢复owner3696619于06:01:29.252261Z exit0；首05:27:06.038Z派发至实际退出34.387分钟，原预计45–90min，故障/修复/旧参考09:05:48.038时钟均保留。124新有效query（72成功/52正常科学失败）、五臂720逻辑case验收通过，无活owner/GPU/环境/退出waiter，0Queue/自动后继。正式源码e81fa5d4→1ff30c7e，旧冻结不热改；最终Git clean/pushed与记录写窗口释放随整批交main。
+
+[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_readout_seed7/analysis/engineering_completion.md)及results/acceptance/cost_accounting/resource_exit/useful_throughput保留原件。全部144：source58/reference127/Reader90089/first-best73/full79。Reader→full R75/G4/L14/churn18；first→full R72/G7/L1/churn8，变化7task28case为6→12；新16为5→8、source复用12为1→4。target24为14/80/43/29/35，support12为44/47/46/44/44；reference新增70保Reader29/first18/full23。既有初始视频控制高于完整流程，后续实际探索/选择有净6有限独立收益，但不能据此认证H/PG纠错或以full>source作为新增反馈成功。非held/变化theta，不选checkpoint、不归正式资格；全部历史正负/强MT保持。
+
+仅物理156提交：124valid实际28016control+1240dummy=29256，原32unknown保留14960+320=15280上界，观察1955仅lower bound；本批保守42976control/1560dummy/44536total，总步区间[31211,44536]。原80均1attempt、具名32各一次恢复、原12首次；原16通用额度实用0/16且不滚动，均在§15.5的172/66160/1720/67880内。8GPUjob（7exit0/1exit1）精确0.364542476932GPUh，含故障0.238637107611；旧§14 9.325162564582294GPUh/207328步/776提交及更早区间不重计。
+
+真实24槽9.388/9.803plan/s，16槽6.924–8.100；32实际EGL framebuffer失败保留、不误称CUDA OOM。恢复只用两worker24+20，0更多profile行；8次完整close释放156环境子进程，双节点GPU/owner/环境0存活/0zombie，UID PSS退出约.348/1.741GiB，foreign未动。ROOT约24.4MiB，所有新增data1/无大资产或H复制，含开发/冻结/小夹具远低2GiB峰。当前有限批停止新计算，整批一次回main后由main科学消费接续，0训练/新实践/held/Test授权。
+
+## 2026-10-16 §15.5原44行已真实恢复
+
+唯一owner3696619于2026-10-16T05:56:36.703370+00:00从新clean/pushed detached1ff30c7e接续；直接退出readerPTY38050/cell687，原cell662已真实结束，0第二waiter/Queue。live设备[['gpu02', 6, 46068], ['gpu01', 2, 46066]]、槽{'query_worker_00': 24, 'query_worker_01': 24}，按原44就绪量仅两worker，不重跑32槽。原80行保持、32具名各一次与12首次，revision账本172/67880及原unknown15280独立保留；正式完整退出/费用/资源/Git后一次交main。
+
 ## 2026-10-16 §15.5主讨论有限恢复裁决已接入实施
 
 main已明确授权原32具名unknown各一次恢复及原12首次，保留原16通用额度、不滚动充值；累计172提交/control66160/dummy1720/total67880，旧32保留15280上界，新恢复另计，不回填/不称32已证实失败。已有80只adopt，0有效重跑/新科学行。唯一[design§15.5](docs/designs/source_policy_space_compiler_20261015.md#155-attempt001渲染故障的有限恢复修订)已登记；新budget副本与原子消费者区分一次恢复32及普通16，不借未用恢复额度。

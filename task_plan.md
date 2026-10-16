@@ -1,3 +1,7 @@
+## 2026-10-16 当前有限批§15已完整交付准备
+
+原124新query/五臂720逻辑case真实完成并验收：Reader90089、first-best73、full79/source58/ref127；完整流程未保住初始控制，后续探索/选择净增6但不认证H信用。原80/32一次恢复/12首次与费用/资源/Git见progress及[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_readout_seed7/analysis/engineering_completion.md)。0活run/waiter/自动后继；记录/Git交付后一次回main归还写窗口，由main科学消费自主接续。
+
 ## 2026-10-16 §15.5同批恢复
 
 按主讨论明确裁决完成原80adopt＋32具名一次恢复＋12首次；累计172提交/67880步、原16普通额度独立保留，2GiB及原科学臂不变。active24/新clean pushed detached后只完成余44，原代码/费用/unknown保留。详见progress/design§15.5；不为故障重跑32或扩大面板。

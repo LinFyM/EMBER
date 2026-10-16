@@ -1,3 +1,9 @@
+## 2026-10-16 §15已有控制器同教学144-case完整结果
+
+124新增有效行/720五臂逻辑case于06:01:29.252261Z完整exit0；source58/ref127/Reader90089/first73/full79。Reader→full R75/G4/L14，first→full R72/G7/L1；target96为14/80/43/29/35，support48为44/47/46/44/44，参考70新增保Reader29/first18/full23。后续探索/选择有限净+6仍未保初始控制，0H/video因果或held/single-checkpoint资格。全部task/suite/identity/breadth/RGL、7变化task/28case/new16/source12与真实前缀69702/full170804实践成本见[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_readout_seed7/analysis/engineering_completion.md)。
+
+首owner e81fa5d4在32EGL framebuffer失败，80valid保留；main具名32各一次恢复+原12首次，1ff30c7e新冻结完成，0valid重算。156物理提交/保守44536步，32旧unknown15280上界与1955 lower bound独立保留；原16通用额度实用0，累计上限172/67880不充值。8GPUjob（1fail）精确0.364542476932GPUh，旧成本不重计。资源完整close/释放，tracked/Git交付后一次回main并归还窗口，无自动新科学计算。
+
 ## 2026-10-16 §15 attempt001有限恢复裁决
 
 首owner05:42:29.601265→05:46:33.197387Z exit1：32路MjrContext offscreen framebuffer0x8cdd、80有效/32unknown/12未启动，6jobs0.238637107611GPUh与15280旧未知上界保留。main明确授具名32各一次恢复、原12首次且保留原16通用额度，累计172/66160control/1720dummy/67880total；不称32已证实失败或改0，0有效重跑。新design§15.5/显式budget副本承接，实际新冻结/恢复身份见progress及ROOT。

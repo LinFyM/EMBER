@@ -1,3 +1,9 @@
+## 2026-10-16 §18同批具名恢复owner1517475已启动
+
+2026-10-16T14:56:28.106039Z，从clean pushed detached26c284ee启动同ROOT --resume；唯一直接退出等待PTY89521/cell1111，旧owner/reader均已结束。872有效行及45完整条件只adopt，16列名unknown各一次原pending恢复；private例外只作用于该已保存面板，原全局预算/8192停止输入不改。训练来源0b9b8080、此前读取0e775e4b/0d9d1a00与新读取26c284ee分列；旧事故、费用和原派发时钟不重置。
+
+CPU实际消费者11项通过，实际冻结authority/配置加载通过；开发树/本地分支已验证main包含后清理，正式冻结保留。新owner launch/owner_attempts/actual_attempt_003单独保留，现场quota/双node GPU与CPU准入写入ROOT admission。一个真实owner持续退出等待，无自Queue/心跳/第二waiter；整批400验收/费用/归档/资源/Git后一次回main01a13dd9，当前不冒称已完成具名恢复或400。
+
 ## 2026-10-16 §18具名工程恢复已获裁决，准备新冻结
 
 attempt002因MjrContext framebuffer 0x8cdd退出，872有效/440542步及45完整条件保留；16unknown区间[720,8480]、总[441262,449022]步与5.327250757880GPUh不清零。双节点本批GPU/环境/owner均已退出，foreign不触碰。完整原件见ROOT analysis/engineering_attempt002。

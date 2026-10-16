@@ -1,3 +1,9 @@
+## 2026-10-16 §18首批有用成本校准（一次，非阶段筛点）
+
+14:33:05.824Z的一次真实成本校准：恢复后2857.34s，38条件已完成final并归档；68有用pack/732 episode/369231步包含首次旧有效pack，129实际提案receipt。抽样24次ψ调用中位14.68s/最大31.19s。16/8/4槽端到端plans/s中位6.885/5.469/3.945，native中位9.714/8.293/6.405；物理安排保留16及共享卡按真实headroom的8槽，不新增profile行/32槽探测。
+
+已提交raw H峰11250153884字节（10.48GiB），当前9.36GiB，32在途/96GiB合同未触发新准入暂停；8 witness/392消费后退役规则保持。该次校准未读取final分数、未筛点或改科学面板。首段long-first、后段短horizon提案次数可能更多，仍保留派发至完整交付6–12h区间，非强杀/预算线。原件 [成本校准](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_validation180_seed7/analysis/first_useful_condition_cost_calibration.json)；此后继续唯一owner/PTY2875/cell1061的实际退出等待，0固定共享日志轮询/Queue/第二waiter。
+
 ## 2026-10-16 §18从新冻结接续同批
 
 新owner1108781于2026-10-16T13:45:28.487288+00:00从clean pushed detached 0d9d1a00正式--resume同ROOT，唯一直接退出reader PTY2875/cell1061；旧1050772及reader1044均已结束，没有第二owner/等待者。16有效initial行/7825步、0unknown和首次0.087215730018GPUh保持，只adopt不重跑。原run_contract与全部400/ψ180/scene/RNG/停止/8192/64工程额/96GiB不改，原首次观察13:16:44和家族09:05:48.038时钟不重置。首次准入事故与CPU窄修证据已存ROOT analysis/engineering_attempt001，原owner身份/日志/exit另存owner_attempts/attempt_001，新attempt元数据独立。

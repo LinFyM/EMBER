@@ -1,3 +1,9 @@
+## 2026-10-16 §13真实教学到固定控制族整批记录
+
+唯一fresh1800更新/201600 FM query、7200原始+7200辅助读取完整结束；900 seen334/576/held117/400，1800 seen413/576/held111/400，依strict400冻结900，held目标未达。五identity亦全真实执行，两点1952新episode/506278步。
+
+[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/video_initial_seed7/analysis/engineering_completion.md)。原attempt001 exit1与取消4rank初始化98.420305s/0.109355895GPUh保留；117完整Reader/Adam/RNG/cursor接续，0有效更新丢失/重算。源代码93e27530→5568f80c，本批13.033086503GPUh；旧参考/144/1170/basis及所有费用区间不改，无自动新科学矩阵。
+
 ## 2026-10-16 §13真实视频初始编译执行接手
 
 main6c7ce480派发22:44:59.573Z、准备22:45:07.991Z，唯一执行01a13dbf接管canonical写窗口。§12已科学消费后，按[design§13](designs/source_policy_space_compiler_20261015.md#13-固定控制基底上的真实视频初始编译)只学习固定D的视频初始码；CPU消费者完成不等于GPU训练/闭环已运行。旧484/576、参考288保252和全部不利39丢失/历史阴性保持。代码/原件身份及实际启动在progress，0第二basis fit或实践/RL/Test授权。

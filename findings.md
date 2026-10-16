@@ -1,3 +1,9 @@
+## 2026-10-16 §13视频初始映射的有限实际结果
+
+固定参数标签投影linear64曾达484/576，本批真实教学Reader为334→413/576；参考288新增仅保116→193，source丢13→12。seen target24为159→232/384、support12为175→181/192，不能混成未知任务迁移。held117→111/400低于MT153/G165/D175/168；900→1800 held R61/G50/L56、churn106，原两点未给出稳定强迁移。
+
+[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/video_initial_seed7/analysis/engineering_completion.md)保留全部task/suite/breadth/RGL、旧正负例和真实消费者。训练域提升与held下降约束当前H空初始映射假设；无controls，不由此宣称动态教学因果作用、充分训练或全部反馈方法失败。
+
 ## 2026-10-16 §13运行面优化依据
 
 真实有用完整周期给出6卡3.329秒/步、4卡3.901秒/步；并行评估未ready前不应预留两卡。沿117完整点做纯物理调度纠正，0有效更新丢弃/重算；初始零head首步body零、后续真实非零与完整67状态Adam已实物验证。feature chunk4..128有用测试支持node01的16/node02的64，最大112FM真实使用约38.5GiB而未比56更快；不能用显存最低替代吞吐。原成本、失败和边界详见progress/ROOT原件，这些是工程消费者证据，尚不是视频闭环正例。

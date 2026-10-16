@@ -1,3 +1,9 @@
+## 2026-10-16 §13实际退出、资源与交付
+
+owner2590448于01:49:06.528824Z真实exit0；900 seen334/576、validation117/400；1800 seen413/576、validation111/400，冻结900。1952新提交/506278步、0环境失败/未知/有效行重跑，本批13.033086503GPUh，ROOT144.038GiB。
+
+[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/video_initial_seed7/analysis/engineering_completion.md)及results/acceptance/resource_exit保留全部原件。14完整close、双节点本批GPU/环境/owner已退出；两退出reader均已完成。93e27530为特征及0..117来源，5568f80c为完整117恢复后训练/两点读出；原取消初始化98.420s及全部时钟/旧费用保留。最终commit/pushed/clean见Git_delivery.json；整批回报时归还canonical写窗口。
+
 ## 2026-10-16 §13同批117恢复已实际启动
 
 唯一owner2590448/supervisor2590069于23:59:21.975170Z从新clean pushed detached5568f80c实际启动，唯一持续退出reader session32708/cell445。原9852/417已真实结束，未新增第二等待者；旧attempt001/原93e27530及全部有效117更新/特征/成本原件保留。完整117 Reader+67 Adam/scheduler/6rank RNG/原task-video-query cursor接续，复用已完成全部卡数测试，0有效重算、0额外监督/环境额度。900前按实测最快6rank，900后4rank+就绪读出两worker并行；剩余暂估2–3.25h，闭环仍为旧吞吐外推，不是本新Reader实测。原派发22:44:59.573、准备22:45:07.991、首次owner23:07:52.528946和参考09:05:48.038均不重置。

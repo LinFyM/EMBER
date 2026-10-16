@@ -3,11 +3,12 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor,as_completed
 from contextlib import closing
 from itertools import combinations
+from dataclasses import replace
 import argparse,datetime,fcntl,json,os,shlex,sqlite3,subprocess,time
 import torch
 from ember.pi05_source_checkpoint import write_json_atomic,read_json
 from ember.pi05_eval_queue import EvaluationShard,initialize_queue,claim_next,complete_job,fail_job
-from ember.proposal_writer.batch import Batch,Job,live_gpu_snapshot,quota_headroom
+from ember.proposal_writer.batch import Batch,Job,DeviceWorkloadFailure,live_gpu_snapshot,quota_headroom
 from ember.reference.coordinator import Scheduler
 from .contract import REFERENCE_ROOT,BASIS,INITIAL_READER,request_identity
 from .practice import specifications
@@ -305,6 +306,38 @@ class WorkQueue(Scheduler):
             self.dispatch()
 
 
+def execute_worker(batch,job,device,scheduler):
+    """A prelaunch shared-device change must not stop unrelated ready work."""
+    def launched():
+        attempts=sorted((scheduler.root/'jobs'/job.identity).glob('attempt_*'))
+        return bool(attempts and (attempts[-1]/'launch.json').exists())
+    error=None
+    try:return batch.execute(job,device)
+    except DeviceWorkloadFailure as failure:
+        if launched():raise
+        error=repr(failure)
+    if scheduler.capacities[job.identity]>8:
+        with scheduler.lock:scheduler.capacities[job.identity]=8
+        arguments=list(job.arguments);arguments[arguments.index('--slots')+1]='8'
+        job=replace(job,arguments=arguments,required_free_MiB=18000)
+        write_json_atomic(scheduler.root/'admission'/f'{job.identity}_reduced_before_launch_{time.time_ns()}.json',
+            dict(worker=job.identity,error=error,device=device,physical_slots=8,required_free_MiB=18000,
+                no_child_launched=True,no_environment_submission=True,UTC=utc()))
+        try:return batch.execute(job,device)
+        except DeviceWorkloadFailure as failure:
+            if launched():raise
+            error=repr(failure)
+    with scheduler.lock:
+        if job.identity in scheduler.inflight or job.identity in scheduler.retiring:
+            raise RuntimeError('prelaunch withdrawal cannot own scientific work')
+        scheduler.alive.discard(job.identity);scheduler.worker_node.pop(job.identity,None)
+        scheduler.waiting.pop(job.identity,None)
+        write_json_atomic(scheduler.root/'admission'/f'{job.identity}_unavailable_{time.time_ns()}.json',
+            dict(worker=job.identity,error=error,device=device,no_child_launched=True,no_environment_submission=True,UTC=utc()))
+        scheduler.dispatch()
+    return job.identity
+
+
 def owner(args):
     from .comparison import prepare,analyze
     storage_admission(args.root);torch.set_num_threads(8)
@@ -326,7 +359,7 @@ def owner(args):
             required_free_MiB={24:40000,16:28000,8:18000}[capacities[f'worker_{i:02d}']]) for i,device in enumerate(workers)]
         failure=None
         with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
-            futures=[pool.submit(batch.execute,j,d) for j,d in zip(jobs,workers)]
+            futures=[pool.submit(execute_worker,batch,j,d,scheduler) for j,d in zip(jobs,workers)]
             for future in as_completed(futures):
                 try:future.result()
                 except BaseException as error:

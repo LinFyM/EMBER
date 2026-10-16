@@ -1,3 +1,9 @@
+## 2026-10-16 §18首次准入中断，16有效行原样保留
+
+owner1050772于13:38:50.495Z退出1：worker_05在启动前live GPU01:7显存由28080MiB降至27252MiB、低于已选16槽的28000MiB需求，Batch正确拒绝启动；不是CUDA OOM/故障卡或科学阴性。其它5个已启动job均exit0/fullclose，16有效initial实践/7825步、0unknown/0工程episode额外，0.087215730018GPUh全部保留。原启动/失败/费用原件见ROOT analysis/engineering_attempt001，不重置§18或原家族时钟。
+
+窄调度修复仅处理有证据“未产生launch.json/未Popen”的DeviceWorkloadFailure：16槽按已有实测降8槽/18GiB一次重新live准入，仍不可用则撤回该未启动worker而不取消其它就绪工作；实际已启动runtime失败不被该路径自动重跑。真实CPU消费者验证三分支通过。原400/ψ180/参数/数据/初态/停止/选择/预算不变，原run_contract不改，16有效行只adopt。新clean pushed detached后--resume同ROOT接续，当前修复阶段0新GPU运行；仍只有一个owner退出等待，不等main工程ACK。
+
 ## 2026-10-16 §18正式唯一owner已启动
 
 owner1050772于2026-10-16T13:34:37.002606+00:00从clean pushed detached 0e775e4b启动，冻结路径/data1/user/ymdai/ember_worktrees/functional_validation_frozen_20261016；唯一直接退出reader为PTY5202/cell1044，0自Queue/第二waiter。真实GPU job/episode以ROOT jobs/账本回执为准，不以派发或allocation当已完成计算。ROOT [owner_launch.json](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_validation180_seed7/owner_launch.json)及run_contract保存全部科学/资源身份；准备与原家族09:05:48.038时钟分开。

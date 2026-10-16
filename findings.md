@@ -1,3 +1,7 @@
+## 2026-10-16 §18就绪工作与共享显存准入
+
+计划snapshot不是设备预约。16槽选中后单卡free由28080降27252MiB，启动前保护正常触发；该worker没有launch/环境成本，不能让它取消其它已经就绪的工作。仅未启动分支可按已有8槽证据有限降档或撤回，其它worker继续；实际runtime失败/未知预算和pending有效行仍走原原子恢复，不静默重试。科学读出不因本事件改变。
+
 ## 2026-10-16 §18工程承接边界
 
 固定180的validation400是独立编译迁移，不恢复§17训练或复用seen initial-H。当前真实消费者须同时承接新initial4、每condition单final/root7 registered scene、held完整纯RGB即时M及32在途H生命周期；只放宽36/4校验不足以满足合同。全部候选完整LoRA/逐事件事实长期保留；退役392临时raw后的条件不能声称完整H replay或适应exact-resume。科学依据与唯一授权见[design§18](docs/designs/source_policy_space_compiler_20261015.md#18-固定功能修订180的完整验证迁移)，当前实施/资源见progress。

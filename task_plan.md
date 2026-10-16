@@ -1,3 +1,7 @@
+## 2026-10-16 §18原批窄工程恢复
+
+首次owner因单卡启动前显存下降安全退出；16/7825有效实践只adopt，0unknown/额外episode。修复局部未启动worker准入失败的整批传播→实际消费者→push/新clean detached→同ROOT --resume，继续原400/单final和96GiB/8192/64工程余量，所有时钟/费用保留。详见progress及ROOT analysis/engineering_attempt001；0科学范围变化/新训练/自动后继。
+
 ## 2026-10-16 §18唯一owner1050772正式启动
 
 13:34:37.003Z从0e775e4b新clean pushed detached执行固定180的400独立编译/单final；当前只有一个owner/持续退出reader5202/cell1044，0Queue。CPU/GPU实际准入、32在途H与归档/64工程余量见progress和ROOT owner_launch。完整验收/Git后一次回main；无自动后继。

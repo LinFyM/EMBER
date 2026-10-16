@@ -1,11 +1,12 @@
 """Every registered video gets one complete1180 LoRA and one real final episode."""
 from pathlib import Path
 from copy import deepcopy
+from contextlib import closing
 from concurrent.futures import ThreadPoolExecutor,as_completed
 import json,os,sys,time,sqlite3,subprocess
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.pi05_eval_contract import policy_noise_seed
-from ember.pi05_eval_queue import EvaluationShard,initialize_queue,complete_job,fail_job
+from ember.pi05_eval_queue import EvaluationShard,initialize_queue,complete_job,fail_job,claim_next
 from ember.reference.accounting import reserve,finish,connect,host_resources,summary
 from ember.reference.coordinator import Scheduler
 from ember.reference.run import close_runner,event
@@ -175,10 +176,10 @@ def worker(args):
                 receipt=dict(complete=True,work=work,output=dict(rows=rows,resources=resources),seconds=time.monotonic()-tick,
                     slots=runner.slots,peak_allocated_MiB=torch.cuda.max_memory_allocated()/2**20,peak_reserved_MiB=torch.cuda.max_memory_reserved()/2**20)
                 path=args.root/'shards'/f'{identity}.json';write_json_atomic(path,receipt)
-                complete_job(queue_path(args.root),job_id=identity,worker_id=args.worker_id,claim_token=message['claim_token'],result_path=path)
+                complete_shard(args.root,identity,args.worker_id,message['claim_token'],rows)
                 event(kind='useful_readout',worker=args.worker_id,identity=identity,seconds=receipt['seconds'],episodes=len(rows),slots=runner.slots)
             except BaseException as error:
-                fail_job(queue_path(args.root),job_id=identity,worker_id=args.worker_id,claim_token=message['claim_token'],reason=repr(error));raise
+                fail_job(queue_path(args.root),job_id=identity,worker_id=args.worker_id,claim_token=message['claim_token'],error=repr(error));raise
     finally:
         runner=close_runner(runner,args.worker_id);compiler.close();runtime.execution.close()
 
@@ -195,6 +196,36 @@ def work_panel(tasks,panels):
     return result
 
 
+def complete_shard(root,identity,worker,token,rows):
+    path=Path(root)/'shards'/f'{identity}.json'
+    complete_job(queue_path(root),job_id=identity,worker_id=worker,claim_token=token,
+        rows_path=str(path.relative_to(root)),rows_bytes=path.stat().st_size,
+        row_count=len(rows),successes=sum(r['success'] for r in rows))
+
+
+def adopt_shards(root,panel,tasks,panels):
+    """Recover only complete published receipts; no GPU or new physical request."""
+    lookup={role:{(p['task'],p['init_state_id']):p for p in values} for role,values in panels.items()};adopted=[]
+    with closing(sqlite3.connect(queue_path(root))) as db:statuses=dict(db.execute('SELECT job_id,status FROM jobs'))
+    for identity,work in panel.items():
+        path=Path(root)/'shards'/f'{identity}.json'
+        if statuses[identity]=='complete' or not path.exists():continue
+        receipt=read_json(path);role=work['role']
+        if not receipt['complete'] or receipt['work']!=work:raise ValueError('partial shard cannot bypass its actual row consumers')
+        rows=[saved_case(root,role,tasks[role][work['task']],lookup[role][work['task'],i]) for i in work['states']]
+        if receipt['output']['rows']!=rows:raise ValueError('published shard and saved per-case rows differ')
+        with connect(root) as db:
+            for row in rows:
+                if db.execute('SELECT status FROM attempts WHERE identity=?',(row['attempt_id'],)).fetchone()!=('complete',):
+                    raise ValueError('CPU shard adoption requires every actual receipt complete')
+        claim=claim_next(queue_path(root),worker_id='CPU_adopt',eligible_job_ids=[identity])
+        if claim is None or claim.shard.job_id!=identity:raise ValueError('saved shard could not acquire its exact pending identity')
+        complete_shard(root,identity,'CPU_adopt',claim.claim_token,rows);adopted.append(dict(identity=identity,rows=len(rows),GPU=False,new_submissions=0))
+    if adopted:
+        write_json_atomic(Path(root)/'analysis'/f'CPU_shard_adoption_{time.time_ns()}.json',dict(adopted=adopted))
+    return adopted
+
+
 def owner(args):
     from .run import execute_worker,device_pool
     run,tasks,panels=inputs(args.root);panel=work_panel(tasks,panels)
@@ -202,7 +233,8 @@ def owner(args):
     if not manifest['complete'] or manifest['schema']!=SCHEMA or manifest['next_update']!=FINAL:raise ValueError('endpoint1180 must be complete before any materialization/evaluation')
     shards=[EvaluationShard(i,n,tasks[w['role']][w['task']]['suite'],w['task'],tasks[w['role']][w['task']]['horizon'],tuple(w['states']),w['cost']) for n,(i,w) in enumerate(panel.items())]
     initialize_queue(queue_path(args.root),shards,contract_reference=str(args.root/'run_contract.json'),recover_claims=args.resume,retry_failed=args.resume)
-    with sqlite3.connect(queue_path(args.root)) as db:statuses=dict(db.execute('SELECT job_id,status FROM jobs'))
+    adopt_shards(args.root,panel,tasks,panels)
+    with closing(sqlite3.connect(queue_path(args.root))) as db:statuses=dict(db.execute('SELECT job_id,status FROM jobs'))
     if all(statuses[i]=='complete' for i in panel):
         write_json_atomic(args.root/'readout_completion.json',dict(complete=True,rows=976,interactions=summary(args.root)));return
     choices,cap=device_pool(args)

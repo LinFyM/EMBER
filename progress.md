@@ -1,3 +1,11 @@
+## 2026-10-17 §20队列提交接口修复，112有效行保留
+
+owner484519于23:39:22.862Z exit1：7个worker各完成16行后，complete_job误用result_path（实际需relative rows_path/bytes/count/successes），异常分支fail_job又误用reason（实际为error）。原112行/7完整shard、完整LoRA和50917control+1120dummy=52037步均已原子保存/ledger complete，unknown0/工程episodeextra0；7job已退出、0.455625407696GPUh含有效执行全部保留。当前不是科学失败或丢弃112成绩。
+
+窄修调用既有真实queue签名，补CPU-only完整shard采用：同checkpoint/teacher/state/noise/参数/有效row/物理ledger逐一绑定后将原claimed逻辑shard完成，GPU前采用112行，不重建LoRA、不重跑环境；queue claim不是新物理尝试。真实SQLite complete/fail与7shard/112实际保存行、第二次adopt0新增的CPU消费者通过，队列读连接显式close；测试初次仅临时NFS目录cleanup失败也记录，不影响科学产物。
+
+原件ROOT analysis/engineering_attempt003/{failure,consumer}.json及queue/interaction快照；训练producer8395、旧读取fb3与新读取身份分列。新clean pushed detached同ROOT继续剩余864行，原976/992/353760/16GiB与停止线不变；旧owner/reader1366退出，无第二waiter/Queue，0训练或数据补量。原21:56首次/所有GPUh和时钟不重置，工程耗时公开，完成整批再一次回main。
+
 ## 2026-10-17 §20复用完整1180接续唯一读出
 
 owner484519于23:34:29.730Z从new clean pushed detached fb3eb80e沿同ROOT --resume，PTY13076/直接退出reader1366；旧129605/reader1348均退出。1180训练producer8395a9e1与新读取/物化身份fb3eb80e分列；仅按固定role投影原environment metadata，原44 union/run contract不改、976面板不改。全部1000/1090/1180、M与物理profile只adopt，0训练/数据补量/额外有效行重跑。

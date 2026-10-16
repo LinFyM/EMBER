@@ -1,3 +1,9 @@
+## 2026-10-17 §20准备首个工程中断：已登记旧图像schema
+
+c7ef1372首次owner102364在1800M准备中因已登记legacy格式被严格新loader拒绝退出，0更新/0profile/FM/0episode；6rank加载/部分M费用0.047937221924GPUh，已证36 M/783帧，下界与在途合计上界902帧均保留。原cache manifest明确指向旧pure_features；旧§13读取owner已支持exact known legacy schema，同source与完整纯图像数学不变，不是新科学数据或负结果。
+
+47972ee6窄修恢复相同身份映射，只取z_img/indices，不读/返回legacy语言，source/shape/stride/纯图像合同与未知schema拒绝保持。实际两格式及错身份CPU检查通过，36 ready M/source_inputs/D只adopt，追加实际消费journal。失败原件/SQLite快照与原job/ownerexit保留ROOT analysis/engineering_attempt001，旧frozen不热改；新clean pushed detached后同ROOT继续，首派发/历史费用不重置，普通工程不等待main ACK。
+
 ## 2026-10-17 §20 source权重生成实施与正式启动准备
 
 承接064acf0b科学合同，在唯一control_space退役§19闭式fit/旧U主动入口，新增source W/完整A0地址生成、冻结有序M/身份绑定1GiB缓存、1000BA→180完整因子余切FM/.1BA及唯一976读出。fresh generator4838160参数；Reader只58张量有序body，无旧global/64head/H/MT。完整1180流、跨episode query、1–6rank/7..56物理分片梯度、完整CP/Adam/流和atomic adopt/预算/实际旧rows消费者通过；CPU fixture不是新科学分数，真实GPU机制与吞吐尚待首次有用工作。

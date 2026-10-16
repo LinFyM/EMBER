@@ -1,3 +1,13 @@
+## 2026-10-16 main消费§15并登记任务内参数改进
+
+主讨论核原五臂rows/实际编译与信用源码：Reader89/full79的差额中，17个非source任务42→35；后续first73→full79净6不抹去。
+旧流程没有实际保留确定性视频输出，且首均值变化不能与共享更新/首次H修正分开；完整分析见
+[控制空间§18–19](analyses/source_control_space_learning_20261015.md#18-同教学完整比较排除了什么又没有排除什么)。
+不恢复meta9后的自动加量、不宣称充分训练或64维/r8不可能。唯一新[design§16](designs/source_policy_space_compiler_20261015.md#16-保留视频初始控制的任务内参数改进)
+固定Reader900/D，用原36task×video/no-video两个完整任务内参数学习臂检验保留起点与实际反馈更新，288逻辑query，0共享训练/held/Test。
+新增物理上限5,536提交/662,567步、64GiB峰，原source首144/40,377步复用且占各condition预算；实际接手/启动另记progress。
+这是科学取舍与有限合同，不是已取得新性能；所有旧正负、费用/失败、原始权重和冻结保持。
+
 ## 2026-10-16 §15已有控制器同教学144-case完整结果
 
 124新增有效行/720五臂逻辑case于06:01:29.252261Z完整exit0；source58/ref127/Reader90089/first73/full79。Reader→full R75/G4/L14，first→full R72/G7/L1；target96为14/80/43/29/35，support48为44/47/46/44/44，参考70新增保Reader29/first18/full23。后续探索/选择有限净+6仍未保初始控制，0H/video因果或held/single-checkpoint资格。全部task/suite/identity/breadth/RGL、7变化task/28case/new16/source12与真实前缀69702/full170804实践成本见[完整交付](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_readout_seed7/analysis/engineering_completion.md)。

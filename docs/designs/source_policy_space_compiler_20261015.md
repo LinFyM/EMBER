@@ -13,11 +13,11 @@
 学习D(z)产生完整r8；视频及真实H给出连续参数提案；固定D时用独立query回报训练全部提案/停止的联合score。
 旧经验编译已有真实反馈学习，本次不是新的反馈架构原理；source/r8、多任务控制空间、全路径score均仍待实证。
 
-**当前执行§14：固定linear64，完成首轮36条真实反馈编译链、9共享更新与144独立query。**
-§2–13保留已完成合同。linear64标签侧为484/576；真实视频900/1800为334/413，held117/111，按预登记冻结900。
-当前结束原H空监督轨迹加量，从Reader900和新H读取开始有限的完整路径学习；不把已知参数可表示拼成held资格。
-只有§14首轮36条non-held编译/9共享更新获准；144链/36更新和完整400是消费首轮后的计划，当前不执行。Test封存；
-不恢复N16/旧Writer/MT教师/Phi/GT/sealed诊断，不自动扩维、重fit基底或沿1800继续。
+**当前实施范围为§16：固定Reader900/linear64，检验从视频初始控制出发的任务内参数改进。**
+§2–15均保留完成/失败/恢复历史。§15同教学144行为Reader90089、first73、full79；完整流程未保初始能力，后续搜索仍有净6。
+§16只做原36task的video/no-video两臂完整编译及各144独立query；共享参数全冻结，不继续§14的meta9/18/36。
+linear64标签侧484/576及旧900/1800 held117/111保持，不把训练域或已知参数可表示拼成held资格。
+当前不执行held/Test，不恢复N16/旧Writer/MT教师/Phi/GT/sealed诊断，不扩维、重fit、改sigma或沿1800加量。
 
 ## 2. 已核资产与选择新参考教师的理由
 
@@ -984,3 +984,132 @@ main消费boundary_attempt001原件后明确授权：仅完成原124有效新que
 已定位32路失败于MuJoCo MjrContext offscreen framebuffer创建0x8cdd，不是已证实CUDA OOM；24有效完成9.38794plan/s，保留完整环境/数值合同，本批active renderer最高24，不重跑32探针、不升级为永久上限。余44按实际就绪量减少worker；新clean pushed detached及live双节点/CPU/PSS/strg01准入后恢复，不热改e81fa5d4。
 
 05:42:29.601265Z→05:46:33.197387Z的首owner故障、6job(5exit0/1exit1)全部费用0.238637107611GPUh保留；原派发05:27:06.038Z及参考09:05:48.038不重置。GPU/环境/owner已全部退出证据随boundary保留。沿原45–90min整批预计以实测修正，无GPUh硬限；一个owner持续退出等待，完整验收/Git后一次回main并归还窗口，无新增Queue/自通知/第二waiter。
+
+## 16. 保留视频初始控制的任务内参数改进
+
+### 16.1 决策依据、资产与唯一范围
+
+§15已完成并交回canonical写窗口；本节是main消费全部原件后的新有限授权，不是恢复§14未实施的后三周期。
+依据见[分析§18–19](../analyses/source_control_space_learning_20261015.md#18-同教学完整比较排除了什么又没有排除什么)：
+Reader90089/144高于first73/full79，后续探索有净6但未补回初始能力；旧流程没有实践确定性Reader输出，
+同链均值对经历变化小，初始均值又同时受共享更新与首次H修正影响。9次更新不等于充分学习，但不再默认按原组织加量。
+
+当前仅原36个non-held任务、每task原v0一条教学、两个固定臂，各一条完整任务内编译和四个独立query，共72condition/288逻辑query。
+共享Reader固定为按原strict400选择的900，完整38-target/rank8、raw source、原U/S/center/code_units全部冻结。
+`video_initial_seed7/checkpoints/update_00000900/state.pt`、`control_linear64_seed7/basis/state.pt`及source只读，
+不导入§14的meta9/Adam/H权重，不用旧full最佳样本或reference参数作为新候选，也不引入MT底座/回退/第二adapter。
+0共享梯度/optimizer更新、0新expert或basis拟合、0teacher动作/state/结果、0held/Test/自动后继。
+这是有交互的任务内参数学习；不得因共享模型冻结就记为zero-interaction，也不伪造新训练checkpoint。
+
+### 16.2 两臂及实际参数更新
+
+记原单位化代码为`u`，实际代码`z=code_units*u`，完整LoRA为原`D(z)`。
+
+- **video**：初始`m`为Reader900对本task原v0合法教学的确定性输出。当前这36个精确视频输出已经存在，
+  复用`video_initial_seed7/generated/update_00000900/seen/task_XXXX/state_000.{json,safetensors}`。
+  JSON的`code`为z，按原900的正有限`code_units`恢复u；初始实际执行优先直接用该完整LoRA，避免重复生成已有产物。
+  这是缓存既有真实视频编译，不是读取reference标签或task→expert字典；检查原checkpoint/basis/teacher_demo来源即可，0新hash。
+  本批0新Reader forward/原生teacher编码；每condition有一条此前实际编译的合法教学，报告这项复用，不能把方法教学成本称为零。
+  后续未缓存视频的正常方法仍须真实Reader forward，本节不提前执行。
+- **no-video**：初始`m=0`、完整source identity。使用完全相同D、单位、原生执行policy/exact L及下述更新，
+  不读取视频/code缓存或其它task参数。它有相同控制基底和正常语言策略，不是充分训练的language-only Compiler。
+
+两臂都先完成初始m的整个实践面板，记录成功整数c∈{0,1,2,3,4}。随后每次：
+
+    epsilon_j = Normal(0,I_64), fixed registered seed;
+    u_j = m + 0.25 * epsilon_j;
+    run all four practice cases with the single complete D(code_units*u_j);
+    if candidate_successes > incumbent_successes: m = u_j;
+    otherwise retain m, including every tie.
+
+每次提案围绕当时实际保留的m；不能仍围绕最初u0、按某个旧task参考、或者平均若干成功样本。
+原sigma=.25不变，不新增温度/方差学习、CMA协方差、学习率、局部梯度、尺度或seed扫描。
+更新只读取本condition真实参数及整个四例成功面板；当前不使用learned H网络/价值头，也不宣称已理解H的视觉内容。
+自身RGB/proprio/实际动作、native hidden和成功/失败事实仍按原History完整保存，不因为可能含语言信息而删减。
+它们不是拟合动作轨迹的数据源；不由保存H暗加BC、离线动作query、FM、PG、producer回归或新共享训练。
+
+每个candidate在整个episode固定，原生policy仍每执行前5 actions后重读自己的观测，正常做10-flow。
+某完整面板四例全成功，或剩余预算不足下一完整面板的`4*(horizon+10)`时结束；最终冻结m的一套完整LoRA。
+不固定修订/重读轮数，不平均LoRA，不选择未完整实践的样本；所有正常有限失败保留，不重抽直到成功。
+经验面板分数不降只是本算法的经验性质，绝不作为独立query能力保持的保证。
+
+### 16.3 配对、原件复用与信息墙
+
+task集合和每task teacher_demo完全沿§14 v0。实践初态沿原
+`SeedSequence([7,202610161,task,0])`从16..49无放回取4；env/policy noise root202610161。
+query仍为[0,4,8,12]、root202610151，与§15五臂严格配对，永不进入H/选择/提案或停止。
+两臂proposal ordinal j从0开始，复用原`SeedSequence([7,task,0,j,202610161])`导出的torch FP32 Normal64。
+同task两臂有相同epsilon_j；臂、GPU、worker、就绪顺序和恢复不进入种子。停止不同可导致实际候选数不同，不能补跑一臂凑相同次数。
+
+以下复用在结果前固定，不按新query结果选择来源：
+
+1. no-video的初始source实践，复用§14 `conditions/task_XXXX_v0/path.json`的panel0及其全部144条原始有效rows/H。
+   参数、四init、环境/policy RNG、官方执行合同逐项沿原登记；共52成功、40,377环境步（38,937 control+1,440 dummy）。
+   这些步照常占各condition的8192额度。物理费用属于§14、不重计，也不能把复用释放出的预算挪给额外探索。
+   原11个source四例全成功condition按同一停止规则直接结束，不重跑source获得另一个成绩。
+2. video的初始确定性控制在这些practice初态没有已登记有效面板，须真实新增144 practice episode，正常失败也完整记录。
+3. 最终m仍是video初始完整LoRA时，引用§15固定Reader900的四条query；no-video最终仍为0时，引用§15 canonical source四条query。
+   这是预先固定的相同控制器复用。凡实际接受了新非零代码，须用其最终完整LoRA真实执行四条新query。
+   不把相同source改换为较高的旧full行，不按单行结果混合来源，不复跑已有有效query。
+4. 原§14/15 full、first-best、reference仅供完成后的报告。构建新适应输入只抽取允许的初始视频代码、source panel0、初态/RNG等字段；
+   不把原path的query_rows/R、best_y或reference选择信息交给新参数更新。
+
+每个arm/task有独立condition ID、m、成功面板、proposal游标、pending状态及8192账本；两臂不得共享新的H、成功代码或预算。
+正常面板各有四条完整回执后才改变m。恢复保留实际样本/旧m/完整与未完成行、RNG游标及全部原始费用，有效行只adopt。
+未知步骤保守占额；工程尝试仍占condition预算，不能用全局16额外额度覆盖每condition硬上限。
+若无法在现有完整预算内恢复，带具体状态/原件交main，不静默裁面板、重置condition或把工程中断算科学失败。
+
+render256/model224、双相机rotate一次、state8/action7、10-flow、执行5、dummy10、成功即止及suite horizon保持。
+所有36为non-held，shared source已见support12身份与五reference identity分别报告；0validation/test离线标签或新任务程序。
+
+### 16.4 完整读出与可失败判断
+
+完成后形成video和no-video各144逻辑query，与固定Reader90089/source58/reference127/first73/full79共七臂读出；
+复用与新增逐行标明。两新臂共享模型恒定，旧full仍是theta0…8历史算法，不能称同checkpoint H因果消融。
+报告每task/suite、target24/support12/identity、breadth、R/G/L、churn、success-set重合及参考新增70的保留；
+尤其保留Object12/14、Long及所有Reader能力损失，不只报实践最高分或成功condition子集。
+按实际初始/最终代码、接受次数、候选ordinal、每次完整成功集合、stop reason分组；参数距离仅定位，不替代闭环。
+原始经历保存但当前未被语义读取必须明示，不将搜索增益称作H网络学会纠错。
+
+每臂分别报告逻辑实践成本、已复用旧成本、新物理steps/episode/GPUh、教学缓存来源/读取、query成本及工程失败/unknown。
+相同8192上限不等于相同实际成本。source复用只节约重复计算，不提供额外适应信息或免费剩余额度。
+本批一条教学/task是明确有限non-held面板，不声称50条视频无放回/held迁移或正式checkpoint资格。
+
+若video完整query未超过其89起点，或改进只存在实践，当前固定单位局部搜索的自动加量/调参停止；
+若和同预算上限no-video相近，不能宣称教学编译带来必要增量；若收益仅少数case/单task交换，保留不确定性，不自动扩400。
+若多个target任务独立净增且合理保留已有能力，再尽快注册strict400，并按具体缺口补same-task/视频机制与稳定性。
+无论哪个分支，main消费后自主接续，不等Owner例行许可；本节没有自动held400、第二种步数/尺度或其它新臂。
+
+### 16.5 预算、执行效率与交付
+
+ROOT=`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/incumbent_compilation_seed7`。
+72condition各8192含settling/reset/失败未知，逻辑practice上界589,824；288query上界101,760 control+2,880 dummy=104,640。
+正常逻辑总步上界694,464。沿§14完整面板计数，practice最多5,376 episode，query288，总5,664逻辑提交。
+source初始144/40,377步是必须复用的已有效工作；本批正常新增物理提交至多5,520、总步654,087。
+本独立批另16次完整工程尝试，不继承§14/15余量：**新增物理上限5,536提交、658,087 control、55,360 dummy、662,567联合总步**。
+各分项独立上界不能相加替代联合上界。其它最终未改参数query复用会进一步减少真实新增，不释放为新科学矩阵。
+没有有效行重跑、普通失败重抽或滚动充值；全局预算与每condition预算同时约束。
+
+新增磁盘峰64GiB。原§14完整raw H压缩11.540GiB/170,804实践步，按本批逻辑最大实践粗估约39.85GiB；
+留足原始H原子临时、完整path/row、少量最终LoRA、代码/冻结树及CPU物化余量，估计不是已测峰。
+不复制source、模型、数据、原148GiB级特征或旧H；no-video初始H只读引用。当前无learned H消费者，不建旧16GiB dense H feature缓存。
+所有新增在data1，建root/缓存/启动前live核strg01独立user quota、相关实耗和共享容量；执行者按首实际H增长核算峰值，
+不足时报告具体缺口，不切data0、不删原始/不截视频。原费用区间与09:05参考首次时钟全部保留，新派发/准备/首启动另记。
+
+唯一control_space运行面复用原D、native/History、原子账本、dynamic long-first persistent queue与完整close。
+替换当前§15固定读出主动入口及§14共享H训练调度；旧原件/冻结/Git保留，只保留读取历史所需消费者，不恢复并行Writer。
+任务内m更新与按arm隔离的condition预算归现有编译owner；代码组织/结构guard、真实消费者、工程恢复、Git与工作树生命周期由实验闭环。
+源码必须新clean pushed detached；不原地改旧冻结。常规工程修复若不改科学计算/数据/选择/信息墙，执行者自行验证换冻结继续。
+
+每次launch现场核gpu01/gpu02的process/显存及当前owner总量，合计6/8、单节点6、NUMA及node合计CPU/PSS准入保持；不排除仅高util设备，不挤掉foreign。
+72条condition互相独立，就绪完整panel按成本动态拼有用工作，不沿用训练logical4造成16环境并发上限。
+独立evaluator不使用NCCL。沿用本环境24槽成功/32槽EGL失败证据，本批不再探32；
+在已有真实工作上比较16/24及实际有用worker数，H捕获/压缩与CPU限制单独测；显存余量须用于有收益的并行，不为填满占卡。
+不为profile增加episode或额外parameter/sample；没有额外actor GPU常驻需求时，CPU物化与episode调度复用已有进程/显存，按实际吞吐选择。
+idle/stop完整关闭环境子进程；最后核owner/GPU/env/worker退出及无残留，费用不能遗漏失败初始化或未回执区间。
+
+含实施预计1.5–3小时：窄编译/预算/缓存复用实施约40–80分钟，实际双臂编译/读出约40–100分钟，部分就绪工作可重叠。
+依据§14有H采集的真实170,804实践步与§15持久24槽约9.4–9.8plan/s；本批没有反复learned H/视频重算和共享训练，
+但多condition并发、raw H压缩和实际早停比例未实测，不把纯query速率当整批保证。首有用工作修正ETA，显著超期明确解释；无GPUh硬限。
+一个owner持续等待整批退出，0Queue自通知/心跳/第二waiter；完整原件、成本/资源/Git闭环后一次回main01a13dd9并归还canonical写窗口。
+当前是科学合同登记，实际接手、正式启动和完成分别据实记录，不以发出消息替代已运行证据。

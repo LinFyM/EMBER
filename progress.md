@@ -1,3 +1,18 @@
+## 2026-10-16 main消费§15；§16科学合同登记
+
+29b95be1 clean/pushed后执行已归还canonical写窗口。main核原始五臂rows、编译/信用源码和逐task得失：
+Reader90089/first73/full79，R75/G4/L14；后续探索R72/G7/L1净+6，17个实际非source任务中Reader42→full35。
+旧流程未实践确定性Reader输出，首均值还受共享更新/首次H修正影响；真实梯度与小量更新不构成已学纠错或充分训练证明。
+完整分析见[§18–19](docs/analyses/source_control_space_learning_20261015.md#18-同教学完整比较排除了什么又没有排除什么)，原正负/成本保持。
+
+唯一active [design§16](docs/designs/source_policy_space_compiler_20261015.md#16-保留视频初始控制的任务内参数改进)：
+固定Reader900和原source/r8/basis/units，从确定性视频初始控制做实际实践；后续围绕当前保留代码生成完整候选，严格成功数改善才移动中心。
+原36task×video/no-video两臂，各144独立query、8192/condition；不加载meta9/H或更新共享模型，0held/Test/自动后继。
+真实H保留；无视频臂复用原source初始144有效行/40,377步且照常占预算，最终参数未改按预指定旧query复用，0有效重跑。
+ROOT incumbent_compilation_seed7；新增上限5,536提交/control658,087/dummy55,360/total662,567（含新独立16工程尝试）、磁盘峰64GiB。
+实施预计1.5–3h，官方执行/独立quota/双节点6或8总卡/node6/原资源与费用合同保持；本批沿已有24成功/32EGL失败证据，不另探32。
+当前仅main科学记录/Git准备，尚未声称新GPU运行。提交推送后向现有执行01a13dbf交独占工程/记录/Git窗口，一个owner真实退出后一次回报。
+
 ## 2026-10-16 §15同教学五臂有限读出完整完成
 
 恢复owner3696619于06:01:29.252261Z exit0；首05:27:06.038Z派发至实际退出34.387分钟，原预计45–90min，故障/修复/旧参考09:05:48.038时钟均保留。124新有效query（72成功/52正常科学失败）、五臂720逻辑case验收通过，无活owner/GPU/环境/退出waiter，0Queue/自动后继。正式源码e81fa5d4→1ff30c7e，旧冻结不热改；最终Git clean/pushed与记录写窗口释放随整批交main。

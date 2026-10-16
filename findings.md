@@ -1,3 +1,12 @@
+## 2026-10-16 保住视频起点不等于保证实践后的泛化
+
+§15完整同教学比较显示Reader89→full79（G4/L14），其中17个实际非source任务42→35；后续探索first73→full79的净6真实保留。
+原§14没有把确定性Reader输出放入实际候选，首均值又受共享更新/首次H修正影响；不能将全部损失唯一归因噪声、H或代码距离。
+此结果支持在后继完整算法中明确保留已生成控制，并检查实际后果是否直接改变下一提案分布；不支持把原9次更新称充分或自动追加27次。
+当前固定Reader900/D，从实际较好代码继续提案只是一个可检验的任务内学习选择，不是已证明解决反馈/未知任务泛化。
+四初态经验成功单调仍可丢新初态能力，二值平局可能没有方向；需完整独立query及同预算上限no-video比较，不能以“保留best”自证有效。
+细节、历史关系和有限停止线见[分析§18–19](docs/analyses/source_control_space_learning_20261015.md#18-同教学完整比较排除了什么又没有排除什么)及design§16。
+
 ## 2026-10-16 §15补齐后：既有初始能力高于完整探索流程
 
 严格同v0教学144case，Reader90089/first-best73/full79/source58/ref127；Reader→full R75/G4/L14，breadth29→25，target43→35且Object9→3/Long5→2，不能再把full>source直接算新增反馈成功。后续实际探索/选择仍使first73→full79（G7/L1），新16和source12均净+3，参考新增70的保存18→23，但低于Reader29。first前缀69702实践步、full170804，追加101102步/97提案只在此小面板净6；反事实不是已实现节省。source早停11task未读当前教学，不能归H。此结果降低当前固定探索/经验择优与稀疏信用组织的支持度，不宣判全部反馈学习/64维/r8或9步充分；main据原件裁决后继。原件与适用范围见[§15完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_readout_seed7/analysis/engineering_completion.md)。

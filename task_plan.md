@@ -1,4 +1,17 @@
-## 2026-10-16 当前有限批§15已完整交付准备
+## 2026-10-16 当前目标：保留视频初始控制的完整参数改进
+
+main已消费§15原始行/源码及成功集合：Reader90089/first73/full79，后续净+6仍未补回初始能力；Object12/14及Long损失不隐藏。
+唯一active [design§16](docs/designs/source_policy_space_compiler_20261015.md#16-保留视频初始控制的任务内参数改进)：
+冻结原Reader900/source/r8/D/units，先实践确定性视频控制，再围绕当时更好的真实代码提案，严格成功数提高才移动中心。
+原36task、video/no-video两个固定臂、各144独立query；共享0更新，0held/Test/自动400，不继续meta9/18/36或sigma扫描。
+实际H完整保存，当前只用完整参数和成功结果更新中心，不声称H网络纠错；视频作用、控制保持和实践到query迁移均由本批检验。
+
+新ROOT incumbent_compilation_seed7，72condition各8192独立上限；source首144旧有效实践/40,377步只读复用并占各自预算。
+新增物理上限5,536提交/662,567联合步含独立16工程尝试，新增磁盘峰64GiB；GPU6/8/node6、data1独立quota与完整释放保持。
+含实施预计1.5–3h，按首真实吞吐修正。main完成科学合同/Git后实际派发现有执行01a13dbf，当前登记不等于GPU已启动。
+完整效果、作用机制与停止判断见[分析§18–19](docs/analyses/source_control_space_learning_20261015.md#18-同教学完整比较排除了什么又没有排除什么)。
+
+## 2026-10-16 已完成：有限批§15完整交付
 
 原124新query/五臂720逻辑case真实完成并验收：Reader90089、first-best73、full79/source58/ref127；完整流程未保住初始控制，后续探索/选择净增6但不认证H信用。原80/32一次恢复/12首次与费用/资源/Git见progress及[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_readout_seed7/analysis/engineering_completion.md)。0活run/waiter/自动后继；记录/Git交付后一次回main归还写窗口，由main科学消费自主接续。
 

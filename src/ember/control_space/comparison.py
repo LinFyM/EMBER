@@ -8,6 +8,7 @@ from ember.reference.analysis import paired,pairing_valid
 from ember.reference.accounting import summary
 from ember.proposal_writer.analysis import billing
 from .analysis import summarize_task,grouped
+from .contract import active_run
 
 BASE=REFERENCE_ROOT.parent
 HISTORY_ROOT=BASE/'incumbent_compilation_seed7'
@@ -98,7 +99,7 @@ def prepare(root):
         run=read_json(file)
         if run['schema']!=SCHEMA or run['phase']!='functional_feedback' or run['limits']!=LIMITS or len(run['conditions'])!=36:
             raise ValueError('existing functional-feedback contract is incompatible')
-        return run
+        return active_run(root,run)
     old=read_json(HISTORY_ROOT/'run_contract.json');environment=old['environment']
     tasks={t['global_task_id']:t for t in environment['tasks']};units=_units();conditions=[];initial=[]
     starts={c['task']:c for c in old['conditions'] if c['arm']=='video'}
@@ -126,7 +127,7 @@ def prepare(root):
         checkpoints=dict(recovery_only=[90],fixed_terminal=180),held=False,Test=False,
         adaptation_inputs='cached Reader900 initial code/LoRA, legal teaching and actually observed runtime H; old later H is training-only',
         teaching_reuse='cached computation is not zero teaching; frozen full Reader memory is consumed by the learned H revision')
-    root.mkdir(parents=True,exist_ok=True);write_json_atomic(file,run);return run
+    root.mkdir(parents=True,exist_ok=True);write_json_atomic(file,run);return active_run(root,run)
 
 
 def initial_query_rows(task,arm=ARM):
@@ -158,13 +159,16 @@ def _incumbent(panels,condition,task):
     return incumbent,accepted
 
 
-def _completed_path(root,condition,task):
+def _completed_path(root,condition,task,quarantined_attempts=()):
     import torch
     path_file=Path(root)/'conditions'/condition['id']/'path.json';path=read_json(path_file)
     if any(path.get(k)!=condition[k] for k in ('id','task','arm')) or not path.get('complete') or not path.get('query_complete'):
         raise ValueError('all36 conditions must actually finish before analysis')
     if not torch.allclose(torch.tensor(path['initial_y']),torch.tensor(condition['initial_y']),atol=1e-6,rtol=1e-6):
         raise ValueError('saved path changed its registered initial code')
+    actual=[r for panel in path['panels'] for r in panel['rows']]+path['query_rows']
+    if any(r.get('attempt_id') in quarantined_attempts for r in actual):
+        raise ValueError('uncertified-cache-provenance attempt cannot enter the recovered scientific chain')
     incumbent,accepted=_incumbent(path['panels'],condition,task)
     if path['incumbent_index']!=incumbent or path['proposal_cursor']!=len(path['panels'])-1:
         raise ValueError('final incumbent or proposal cursor differs from complete actual panels')
@@ -207,9 +211,9 @@ def _condition_costs(path):
         normal_scientific_query_failures=sum(not r['success'] for r in path['query_rows']))
 
 
-def _condition_summary(root,condition,task):
+def _condition_summary(root,condition,task,quarantined_attempts=()):
     import torch
-    file,path,accepted=_completed_path(root,condition,task);panels=path['panels'];initial=panels[0];final=panels[path['incumbent_index']]
+    file,path,accepted=_completed_path(root,condition,task,quarantined_attempts);panels=path['panels'];initial=panels[0];final=panels[path['incumbent_index']]
     known_steps=sum(r['environment_steps'] for p in panels for r in p['rows']);charged=path['condition_steps']
     if not known_steps<=charged<=8192:raise ValueError('known and engineering/unknown practice costs must respect the condition8192 bound')
     if not initial['reused'] or any(p.get('reused') for p in panels[1:]):raise ValueError('only the registered video initial practice is reused')
@@ -251,11 +255,34 @@ def _strata(conditions,tasks):
     return strata
 
 
+def _cache_incident(run):
+    recovery=run.get('cache_recovery')
+    if not recovery:return None
+    evidence=read_json(Path(recovery['authority_path']))
+    retained=evidence['retained'];quarantined=evidence['quarantined']
+    if retained!=dict(submissions=76,control=18413,dummy=760,total=19173):raise ValueError('named76 legal adopted rows changed')
+    if quarantined!=dict(submissions=300,control=81110,dummy=3000,total=84110):raise ValueError('named300 cache-incident costs changed')
+    rows=evidence['quarantined_physical_rows'];case_ids=[r['case_id'] for r in rows]
+    if len(set(case_ids))!=300 or len(set(evidence['retained_physical_case_ids']))!=76:
+        raise ValueError('cache recovery requires the fixed disjoint incident/retained identities')
+    if set(case_ids)&set(evidence['retained_physical_case_ids']):raise ValueError('legal adopted and isolated rows overlap')
+    return dict(authority_path=recovery['authority_path'],leg=recovery['leg'],
+        status='uncertified-cache-provenance',criterion=evidence['criterion'],
+        retained_legal_adopt=retained,quarantined_scientific_evidence=quarantined,
+        retained_case_ids=evidence['retained_physical_case_ids'],quarantined_case_ids=case_ids,
+        quarantined_attempt_ids=[r['identity'] for r in rows],per_condition=evidence['per_condition'],
+        original_real_physical_submissions=376,original_real_physical_steps=103283,
+        physical_costs_included_in_global_billing=True,quarantined_costs_count_against_legal_condition8192=False,
+        original_engineering_attempt_allowance=16,rolling_recharge=False,
+        interpretation='All376 rows are real physical work. Named300 suffix rows have uncertified cache provenance; this does not prove numerical corruption or validate them as algorithm results. Only the76 named legal rows are adopted into the recovered chain.')
+
+
 def analyze(root):
-    root=Path(root);run=read_json(root/'run_contract.json')
+    root=Path(root);run=active_run(root,read_json(root/'run_contract.json'))
     if run['schema']!=SCHEMA or run['phase']!='functional_feedback' or len(run['conditions'])!=36:raise ValueError('wrong functional-feedback phase/schema')
     specs={t['global_task_id']:t for t in run['environment']['tasks']}
-    conditions=[_condition_summary(root,c,specs[c['task']]) for c in run['conditions']]
+    incident=_cache_incident(run);quarantined=set(incident['quarantined_attempt_ids']) if incident else set()
+    conditions=[_condition_summary(root,c,specs[c['task']],quarantined) for c in run['conditions']]
     old=read_json(HISTORY_ROOT/'completion.json');raw={a:old['raw_rows'][a] for a in OLD_ARMS}
     raw[ARM]=[r for c in conditions for r in c['query_rows']]
     if any(len(v)!=144 for v in raw.values()):raise ValueError('the eight-arm readout requires1152 logical rows')
@@ -272,6 +299,7 @@ def analyze(root):
     result=dict(complete=True,schema=SCHEMA,phase='functional_feedback',shared_updates=180,conditions=conditions,
         arms=grouped(tasks),raw_rows=raw,strata=strata,costs={ARM:_arm_costs(conditions,gpu)},
         training=dict(receipt=str(training_file),**training),billing=current,interactions=summary(root),limits=run['limits'],
+        cache_incident=incident,scientific_cost_basis='only legal recovered condition paths; full original/incident/new physical costs remain in interactions and billing',
         historical_seven_arm_costs=dict(ROOT=str(HISTORY_ROOT),billing=old['billing'],
             earlier_five_arm_costs=old['historical_five_arm_costs'],included_in_current_billing=False),
         held=False,Test=False,checkpoint_selection=False,matched_video_or_history_ablation=False,
@@ -287,4 +315,7 @@ def analyze(root):
         '共享训练720经历条件/20160跨episodeFM query；自身动作只作H输入。教学缓存不是零教学，旧H/新H与训练/编译/query费用分开登记。',
         '本批是训练task/已见初始H完整流程诊断，无held/Test或视频/H因果资格。旧full变化theta和旧no-video59均只是历史方法参照。',
         '固定终点180，不以loss/practice挑点；不自动360、调参或扩量。']
+    if incident:
+        lines+=['','缓存事故：旧376行全部是真实物理执行；76行合法adopt，具名300行/84110步仅作uncertified-cache-provenance隔离，未证实数值损坏。',
+            '隔离原件、全部GPUh/物理账本保留；八臂结果只取合法恢复链。事故费用不占恢复科学链8192，原16工程额度不充值；具名逐condition物理上界见cache_incident。']
     (folder/'report.md').write_text('\n'.join(lines)+'\n');return result

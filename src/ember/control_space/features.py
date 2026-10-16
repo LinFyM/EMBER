@@ -7,6 +7,7 @@ from pathlib import Path
 import fcntl
 import json
 import os
+import sqlite3
 import time
 
 import torch
@@ -17,7 +18,7 @@ from .practice import load_history
 
 FEATURE_SCHEMA='ember_source_image_prefix_features_v1'
 LEGACY_SCHEMA='ember_image_only_gemma_compiler_v1'
-CACHE_SCHEMA='ember_frozen_tensor_cache_v1'
+CACHE_SCHEMA='ember_frozen_tensor_cache_v2'
 PREPROCESS=dict(camera_order=['agentview','eye_in_hand'],rotation_degrees=180,
     resize='resize_with_pad_torch',model_resolution=224,frame_stride=5,terminal_included=True,
     tokens_per_frame=512,token_width=2048)
@@ -104,82 +105,111 @@ class _BoundedWriter:
 
 
 class _TensorCache:
-    """Only this run's regenerable tensors; ready+reserved+partial share one cap."""
+    """SQLite owns identities, budget and LRU; immutable payloads identify themselves.
+
+    Old JSON/tensor-only caches require an explicit forensic cleanup before use.
+    No old payload is adopted and no second cache directory bypasses its quota.
+    """
     def __init__(self,root,capacity):
         self.root=Path(root);self.root.mkdir(parents=True,exist_ok=True)
-        self.capacity=int(capacity);self.control=min(8*2**20,max(16384,self.capacity//32))
-        self.manifest=self.root/'manifest.json'
+        self.capacity=int(capacity);self.control=min(8*2**20,max(65536,self.capacity//32))
+        self.database=self.root/'index.sqlite'
+        if (self.root/'manifest.json').exists() or (self.root/'manifest.partial').exists() or next(self.root.glob('tensor_*.pt*'),None):
+            raise RuntimeError('legacy frozen cache needs preserved forensic metadata and explicit parent cleanup before SQLite initialization; no tensor-only adoption')
+        with self.transaction() as db:
+            db.execute('CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY,value TEXT NOT NULL)')
+            db.execute('CREATE TABLE IF NOT EXISTS tensors (id INTEGER PRIMARY KEY AUTOINCREMENT,key TEXT UNIQUE NOT NULL,metadata TEXT NOT NULL,status TEXT NOT NULL,bytes INTEGER NOT NULL,touched REAL NOT NULL)')
+            for key,value in (('schema',CACHE_SCHEMA),('capacity',str(self.capacity))):
+                db.execute('INSERT OR IGNORE INTO settings VALUES (?,?)',(key,value))
+                if db.execute('SELECT value FROM settings WHERE name=?',(key,)).fetchone()[0]!=value:
+                    raise ValueError('wrong frozen cache schema/capacity')
+            if not db.execute('SELECT count(*) FROM tensors').fetchone()[0] and next(self.root.glob('entry_*.pt*'),None):
+                raise RuntimeError('unindexed frozen cache payloads need explicit parent forensic cleanup')
 
     @contextmanager
-    def locked(self):
-        with _file_lock(self.root/'.budget.lock'):
-            state=read_json(self.manifest) if self.manifest.exists() else dict(schema=CACHE_SCHEMA,capacity=self.capacity,next_id=0,entries={})
-            if state['schema']!=CACHE_SCHEMA or state['capacity']!=self.capacity:raise ValueError('wrong frozen cache schema/capacity')
-            yield state
-
-    def save(self,state):
-        encoded=json.dumps(state,indent=2,sort_keys=True)+'\n'
-        if 2*len(encoded.encode())>self.control:raise RuntimeError('frozen cache manifest exceeded control allowance')
-        temporary=self.root/'manifest.partial'
-        with temporary.open('w') as stream:
-            stream.write(encoded);stream.flush();os.fsync(stream.fileno())
-        temporary.replace(self.manifest)
+    def transaction(self):
+        # Rollback journal, never WAL on NFS. A stable database inode plus SQLite
+        # byte-range locks replaces independently cached JSON rename generations.
+        db=sqlite3.connect(self.database,timeout=60,isolation_level=None)
+        db.row_factory=sqlite3.Row
+        db.execute('PRAGMA busy_timeout=60000');db.execute('PRAGMA temp_store=MEMORY')
+        db.execute('PRAGMA synchronous=FULL')
+        if db.execute('PRAGMA journal_mode').fetchone()[0]!='delete':
+            db.close();raise ValueError('frozen cache requires SQLite DELETE rollback journal')
+        try:
+            db.execute('BEGIN IMMEDIATE');yield db
+            size=db.execute('PRAGMA page_count').fetchone()[0]*db.execute('PRAGMA page_size').fetchone()[0]
+            if 3*size>self.control:raise RuntimeError('frozen cache database/journal exceeded control allowance')
+            db.execute('COMMIT')
+        except BaseException:
+            if db.in_transaction:db.execute('ROLLBACK')
+            raise
+        finally:db.close()
 
     def entry(self,key,metadata):
-        with self.locked() as state:
-            if key not in state['entries']:
-                index=state['next_id'];state['next_id']+=1
-                state['entries'][key]=dict(file=f'tensor_{index:08d}.pt',status='absent',bytes=0,metadata=metadata,touched=time.time())
-                self.save(state)
-            entry=state['entries'][key]
-            if entry['metadata']!=metadata:raise ValueError('immutable archive/source feature identity changed')
-            return entry['file']
+        encoded=json.dumps(metadata,sort_keys=True)
+        with self.transaction() as db:
+            db.execute("INSERT OR IGNORE INTO tensors(key,metadata,status,bytes,touched) VALUES (?,?,'absent',0,?)",(key,encoded,time.time()))
+            entry=db.execute('SELECT * FROM tensors WHERE key=?',(key,)).fetchone()
+            if entry['metadata']!=encoded:raise ValueError('immutable archive/source feature identity changed')
+            return f'entry_{entry["id"]:010d}.pt'
 
-    def reserve(self,state,key,needed):
-        entry=state['entries'][key]
-        used=sum(e['bytes'] for e in state['entries'].values())
-        victims=sorted((k for k,e in state['entries'].items() if k!=key and e['status']=='ready'),key=lambda k:state['entries'][k]['touched'])
-        for other in victims:
+    def reserve(self,db,key,needed):
+        used=db.execute('SELECT coalesce(sum(bytes),0) FROM tensors').fetchone()[0]
+        victims=db.execute("SELECT id,key,bytes FROM tensors WHERE key!=? AND status='ready' ORDER BY touched",(key,)).fetchall()
+        for old in victims:
             if used+needed<=self.capacity-self.control:break
-            old=state['entries'][other];(self.root/old['file']).unlink(missing_ok=True)
-            used-=old['bytes'];old.update(status='absent',bytes=0)
+            (self.root/f'entry_{old["id"]:010d}.pt').unlink(missing_ok=True)
+            db.execute("UPDATE tensors SET status='absent',bytes=0 WHERE key=?",(old['key'],));used-=old['bytes']
         available=used+needed<=self.capacity-self.control
-        entry.update(status='reserved' if available else 'absent',bytes=needed if available else 0,touched=time.time())
-        self.save(state);return available
+        db.execute('UPDATE tensors SET status=?,bytes=?,touched=? WHERE key=?',
+            ('reserved' if available else 'absent',needed if available else 0,time.time(),key))
+        return available
 
-    def release(self,key,temporary):
-        with self.locked() as state:
-            temporary.unlink(missing_ok=True);(self.root/state['entries'][key]['file']).unlink(missing_ok=True)
-            state['entries'][key].update(status='absent',bytes=0)
-            self.save(state)
+    def release(self,key,destination,temporary):
+        with self.transaction() as db:
+            temporary.unlink(missing_ok=True);destination.unlink(missing_ok=True)
+            db.execute("UPDATE tensors SET status='absent',bytes=0 WHERE key=?",(key,))
+
+    @staticmethod
+    def load(destination,key,metadata):
+        with destination.open('rb') as stream:payload=torch.load(stream,map_location='cpu',weights_only=True,mmap=False)
+        if (not isinstance(payload,dict) or payload.get('schema')!=CACHE_SCHEMA or payload.get('key')!=key
+                or payload.get('metadata')!=metadata or not isinstance(payload.get('value'),torch.Tensor)):
+            raise ValueError('frozen cache payload schema/key/source metadata mismatch; preserve evidence')
+        return payload['value']
 
     def get(self,key,metadata,required,build):
         tick=time.monotonic();file=self.entry(key,metadata);destination=self.root/file;temporary=self.root/(file+'.partial')
+        # Stable per-key flock only deduplicates builds and releases on death.
+        # All index/budget decisions still belong to the one SQLite transaction.
         with _file_lock(self.root/(file+'.lock')):
-            with self.locked() as state:
-                entry=state['entries'][key]
+            with self.transaction() as db:
+                entry=db.execute('SELECT * FROM tensors WHERE key=?',(key,)).fetchone()
                 if entry['status'] in ('ready','reserved') and destination.exists():
-                    # Keep eviction locked only until CPU torch.load closes its fd.
-                    with destination.open('rb') as stream:value=torch.load(stream,map_location='cpu',weights_only=True,mmap=False)
-                    entry.update(status='ready',bytes=destination.stat().st_size,touched=time.time());self.save(state)
-                    return value,dict(hit=True,cached=True,bytes=entry['bytes'],seconds=time.monotonic()-tick)
-                temporary.unlink(missing_ok=True);entry.update(status='absent',bytes=0);self.save(state)
-            needed=int(required())+65536
-            with self.locked() as state:cached=self.reserve(state,key,needed)
+                    value=self.load(destination,key,metadata);size=destination.stat().st_size
+                    if size>entry['bytes']:raise RuntimeError('frozen cache payload exceeds its original reservation')
+                    db.execute("UPDATE tensors SET status='ready',bytes=?,touched=? WHERE key=?",(size,time.time(),key))
+                    return value,dict(hit=True,cached=True,bytes=size,seconds=time.monotonic()-tick)
+                temporary.unlink(missing_ok=True)
+                db.execute("UPDATE tensors SET status='absent',bytes=0 WHERE key=?",(key,))
+            needed=int(required())+65536+len(key.encode())+len(json.dumps(metadata).encode())
+            with self.transaction() as db:cached=self.reserve(db,key,needed)
             try:
                 value=build().detach().cpu().contiguous()
                 if not cached:return value,dict(hit=False,cached=False,bytes=value.numel()*value.element_size(),seconds=time.monotonic()-tick)
+                payload=dict(schema=CACHE_SCHEMA,key=key,metadata=metadata,value=value)
                 with temporary.open('wb') as raw:
-                    torch.save(value,_BoundedWriter(raw,needed));raw.flush();os.fsync(raw.fileno())
-                with self.locked() as state:
+                    torch.save(payload,_BoundedWriter(raw,needed));raw.flush();os.fsync(raw.fileno())
+                with self.transaction() as db:
                     size=temporary.stat().st_size;temporary.replace(destination)
-                    state['entries'][key].update(status='ready',bytes=size,touched=time.time());self.save(state)
+                    db.execute("UPDATE tensors SET status='ready',bytes=?,touched=? WHERE key=?",(size,time.time(),key))
                 return value,dict(hit=False,cached=True,bytes=size,seconds=time.monotonic()-tick)
             except BufferError:
-                self.release(key,temporary)
+                self.release(key,destination,temporary)
                 return value,dict(hit=False,cached=False,bytes=value.numel()*value.element_size(),seconds=time.monotonic()-tick)
             except BaseException:
-                self.release(key,temporary);raise
+                self.release(key,destination,temporary);raise
 
 
 class FrozenFeatures:

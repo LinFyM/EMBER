@@ -1,3 +1,9 @@
+## 2026-10-16 §14唯一owner已实际启动
+
+owner1172092/supervisor1170787于03:04:28.505672Z从clean pushed detached81c859e6实际启动；ROOT feedback_proposals_seed7，直接stdout/退出reader session83662/cell540为唯一持续等待。0Queue/自通知/第二waiter。原02:25:27.046派发、02:25:59.716准备及参考09:05:48.038均保留。
+
+当前沿唯一9meta/36完整链/144query/1008FM执行，source四例实际起步、8192每condition，query永不回H/选择。rawH/所有实际sample/logp/行为身份及完整CP按合同保留，0held/Test/自动扩窗。源码/实际argv/env/独立quota/GPU节点准入及CPU证据在ROOT launch_contract/inputs/jobs；新H/PG真实吞吐尚待首有效工作，剩余暂估1–2h，不以旧3.20GPUh外推充实测。当前继续独占canonical记录/Git；整批真实退出、验收及Git后一次交main01a13dd9并归还窗口。
+
 ## 2026-10-16 §14 CPU消费者通过与正式冻结准备
 
 派发02:25:27.046Z、首次工程读取02:25:59.716Z（02:34:27只为落盘观察时刻，非重置起点）。仅36链/9meta更新/144独立query/1008FM；当前尚无正式GPU或环境。Reader900只继承权重，H seed7 fresh/新Adam，code_units/D/source固定。

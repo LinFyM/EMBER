@@ -1,3 +1,7 @@
+## 2026-10-17 §19工程隔离口径
+
+任务排除必须贯穿point manifest、task/selected/other质量、76个有效tensor RMS和Gram，不是删掉271断言或只留episode。新active fit只读取28/208及旧center/layout；旧S36/C_l、八selected函数与旧scores属于冻结后诊断，不进入构造。Runtime只部署八套完整新LoRA，Euclidean投影不是空间内闭环最优，也不构成合法视频Compiler。相关[设计§19](docs/designs/source_policy_space_compiler_20261015.md#19-内部任务排除后的控制空间迁移检验)，当前无新分数。
+
 ## 2026-10-17 训练域控制保留不等于未知任务空间覆盖
 
 §18完整119对117是小幅双向交换，practice505→647不能替代新初态净2。

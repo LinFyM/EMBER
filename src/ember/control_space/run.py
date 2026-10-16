@@ -126,9 +126,7 @@ def owner(args):
         result=fit(args.root)
         print('EMBER_FIT_OBSERVATION '+json.dumps({k:result[k] for k in ('wall_seconds','numerical_rank','effective_rank')}),flush=True)
         materialize(args.root)
-        choices,cap=device_pool(args)
-        write_json_atomic(args.root/'execution.json',dict(devices=choices,total_cap=cap,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
-        readout_owner(args,choices)
+        readout_owner(args)
         return analyze(args.root)
 
 

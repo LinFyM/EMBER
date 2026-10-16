@@ -2,18 +2,16 @@
 from pathlib import Path
 from collections import Counter
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
-from ember.reference.contract import ASSETS
+from ember.reference.contract import ASSETS,SOURCE,NORMALIZATION
 from .contract import SCHEMA,PHASE,LIMITS,TASKS,FIT_TASKS,BANK_ROOT,CENTER_REFERENCE,REFERENCE_ROOT
 
 
 def exclusion_bank(bank):
     if len(bank['tasks'])!=36 or {t['task'] for t in bank['tasks']}!=set(TASKS+FIT_TASKS):
         raise ValueError('original audited36 bank changed')
-    tasks=[t for t in bank['tasks'] if t['task'] in FIT_TASKS];points=[]
-    for item in tasks:
-        others=[p for p in item['checkpoints'] if p['update']!=item['selected_update']]
-        points.append(dict(task=item['task'],point=0,path=item['selected_path'],update=item['selected_update'],weight=(.5 if others else 1.)/28))
-        points.extend(dict(task=item['task'],point=1,path=p['path'],update=p['update'],weight=.5/28/len(others)) for p in others)
+    from .learning import pool_points
+    tasks=[t for t in bank['tasks'] if t['task'] in FIT_TASKS]
+    points=pool_points(bank,FIT_TASKS,208)
     if (len(points)!=208 or sum(p['path'] is None for p in points)!=5
             or len({(p['task'],p['update']) for p in points})!=208):raise ValueError('the explicit28 bank must have203 nonzero plus five identities')
     mass=Counter()
@@ -48,7 +46,8 @@ def prepare(root):
         units='76 tensor RMS from fit28 only; mean of valid scalar squares; sqrt;floor1e-6',mean_subtracted=False)
     contract=dict(schema=SCHEMA,phase=PHASE,limits=LIMITS,environment=environment,fit_manifest=str(root/'fit_manifest.json'),
         basis_checkpoint=str(root/'basis/state.pt'),fit_tasks=list(FIT_TASKS),query_tasks=list(TASKS),
-        reference_root=str(REFERENCE_ROOT),seed=7,shared_updates=0,held=False,Test=False)
+        reference_root=str(REFERENCE_ROOT),source_checkpoint=str(ASSETS/SOURCE),normalization=str(ASSETS/NORMALIZATION),
+        rank=8,alpha=8,dropout=0.,targets=38,seed=7,shared_updates=0,held=False,Test=False)
     for name,value in (('fit_bank.json',bank),('fit_manifest.json',manifest),('run_contract.json',contract)):
         path=root/name
         if path.exists() and read_json(path)!=value:raise ValueError('immutable internal exclusion contract changed')

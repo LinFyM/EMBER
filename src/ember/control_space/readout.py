@@ -2,7 +2,7 @@
 from pathlib import Path
 from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor,as_completed
-import json,os,sys,time
+import json,os,sys,time,sqlite3,subprocess
 from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.pi05_eval_contract import policy_noise_seed
 from ember.pi05_eval_queue import EvaluationShard,initialize_queue,complete_job,fail_job
@@ -178,11 +178,16 @@ def worker(args):
     finally:close_runner(runner,args.worker_id);runtime.execution.close()
 
 
-def owner(args,choices):
-    from .run import execute_worker
+def owner(args):
+    from .run import execute_worker,device_pool
     run,tasks,entries=inputs(args.root);panel={f'projected_t{t:04d}':dict(kind='readout',task=t,states=list(STATES),cost=16*(tasks[t]['horizon']+10)) for t in TASKS}
     shards=[EvaluationShard(i,n,tasks[w['task']]['suite'],w['task'],tasks[w['task']]['horizon'],tuple(STATES),w['cost']) for n,(i,w) in enumerate(panel.items())]
     initialize_queue(queue_path(args.root),shards,contract_reference=str(args.root/'run_contract.json'),recover_claims=args.resume,retry_failed=args.resume)
+    with sqlite3.connect(queue_path(args.root)) as db:statuses=dict(db.execute('SELECT job_id,status FROM jobs'))
+    if all(statuses[i]=='complete' for i in panel):
+        write_json_atomic(args.root/'readout_completion.json',dict(complete=True,rows=128,interactions=summary(args.root)));return
+    choices,cap=device_pool(args)
+    write_json_atomic(args.root/'execution.json',dict(devices=choices,total_cap=cap,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
     devices=[(n,g) for n,g,_ in choices];capacities={f'worker_{i:02d}':16 if free>=28000 else 8 for i,(_,_,free) in enumerate(choices)}
     scheduler=ReadoutScheduler(args.root,panel,len(devices),worker_nodes={f'worker_{i:02d}':n for i,(n,_) in enumerate(devices)},
         queue_path_fn=queue_path,evaluation_reference_root=Path(run['reference_root']),capacities=capacities)

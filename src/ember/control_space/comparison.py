@@ -37,6 +37,18 @@ def materialize(root):
         rank=8,targets=38,teacher_input=False,privileged_label_projection=True,
         pairing='old official init files/bytes, actual initial proprio, absolute env/policy noise; reuse stored scene only if present')
     write_json_atomic(root/'evaluation_manifest.json',evaluation)
+    project_selected(root,model,entries)
+    run,tasks,verified=inputs(root)
+    # Source/reference/U36 raw row identities are read, never copied from main's score summary.
+    for task in TASKS:
+        for init in STATES:references(verified[task],tasks[task],init)
+    result=dict(complete=True,basis_checkpoint=str(root/'basis/state.pt'),paths=[e['path'] for e in entries],outputs=8,
+        no_reference_bypass=True,rank=8,targets=38,optimizer_updates=0)
+    write_json_atomic(done,result);return result
+
+
+def project_selected(root,model,entries):
+    """One post-freeze projection and its factor/operator diagnostics."""
     # Old S36/C_l are read for diagnostics only after the new basis is immutable.
     from .learning import OperatorLoss
     from ember.proposal_writer.model import FactorLayout
@@ -64,13 +76,6 @@ def materialize(root):
             U36_existing_factor_relative_error=old['factor_relative_error'],U36_existing_BA_error=old['error'],U36_existing_BA_source=old['source']))
     write_json_atomic(root/'diagnostics/excluded_selected.json',dict(complete=True,fit_frozen_before_open=True,reference_open_UTC=opened,
         records=diagnostics,seconds=time.monotonic()-tick,old_S_C_for_reporting_only=True,additional_policy_forwards=0))
-    run,tasks,verified=inputs(root)
-    # Source/reference/U36 raw row identities are read, never copied from main's score summary.
-    for task in TASKS:
-        for init in STATES:references(verified[task],tasks[task],init)
-    result=dict(complete=True,basis_checkpoint=str(root/'basis/state.pt'),paths=[e['path'] for e in entries],outputs=8,
-        no_reference_bypass=True,rank=8,targets=38,optimizer_updates=0)
-    write_json_atomic(done,result);return result
 
 
 def analyze(root):
@@ -92,6 +97,8 @@ def analyze(root):
             reference_gains_preserved={a:sorted(v&gains) for a,v in sets.items()},provenance=provenance))
         for a,v in values.items():raw[a].extend(v)
     if len(raw['U28'])!=128 or any(len(v)!=128 for v in raw.values()):raise ValueError('only the fixed four-arm512 panel can complete')
+    old_scores={a:sum(r['success'] for r in raw[a]) for a in ('source','reference','U36')}
+    if old_scores!={'source':23,'reference':105,'U36':98}:raise ValueError('old actual128 reference identity changed')
     result=dict(schema=SCHEMA,phase=PHASE,complete=True,arms=grouped(rows),raw_rows=raw,limits=run['limits'],
         interactions=summary(root),billing=billing(root),fit=read_json(root/'fit_completion.json'),
         diagnostic=str(root/'diagnostics/excluded_selected.json'),new_optimizer_updates=0,held=False,Test=False,

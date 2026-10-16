@@ -1,3 +1,13 @@
+## 2026-10-17 §19实际接手并实施，尚未正式拟合/GPU执行
+
+执行01a13dbf已接手c2ed6d09的唯一[design§19](docs/designs/source_policy_space_compiler_20261015.md#19-内部任务排除后的控制空间迁移检验)，独占canonical工程/科研记录/Git，main只读。首次现场记录2026-10-16T21:05:08.224595Z，精确消息到达时刻未恢复；准备准入21:06:52Z，原家族09:05:48.038不重置。ROOT control_task_exclusion8_seed7现场尚不存在，无重复owner；当前不是GPU运行声明。
+
+仅28任务208点独立S28/U64，排除FIRST8全部63点；center/layout只读原basis，冻结fit后才打开八selected/旧S36-C_l诊断。128固定query/四臂512、独立16工程extra/144提交/52000步/4GiB峰不变，0训练/适应/视频/held/Test或后继。已有specification及声明equivalence审计未发现跨两集合的精确重复。
+
+唯一control_space替换§18主动面，原Gram/完整FactorLayout/源Runtime/长任务优先持久队列与16/8/4波次复用；已无当前消费者的六个H/Reader/适应模块从active树退役，旧Git/frozen/全部原件不动。闭式fit/math独立两文件由隔离fit树实现，主执行拥有其余consumer/调度/记录；0并行Writer/科学计算。CPU合成数学与实际metadata/预算/恢复/完整38r8消费者完成后才新clean pushed detached正式一次fit/eval。
+
+strg01 data1独立used1978494360KiB/soft2147483648KiB，shared约79.3TiB、家族相关240429972KiB，CPU MemAvailable507066440KiB；4GiB新增及RAM工作副本准入充足，launch前继续live双node GPU/各node CPU/PSS/总6或8-node6核验。预计完整35–75分钟，首有用工作修正，无GPUh硬限；一个真实owner退出等待，整批验收/费用/释放/Git后一次回main并归还窗口，无普通ACK/Queue/第二waiter。
+
 ## 2026-10-17 main已消费§18，登记唯一§19内部任务排除诊断
 
 已直接读取400 paths/1873 receipts/results/closing及费用归档原件，CPU复算留在§18ROOT

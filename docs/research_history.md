@@ -1,3 +1,9 @@
+## 2026-10-17 §20学习1180完成与读出角色接口修订
+
+8395a9e1生产完整1000/1090/1180 generator+Adam/流/RNG；实际1180更新/36000BA/720joint/20160query有限且只含36allowlist，无新环境。owner129605在训练段正常退出后，读出入口将原44任务环境union误当seen36而拒绝，0queue/0episode/0LoRA；原CP、日志、费用和两次退出保留。
+
+修复只在consumer按原面板投影36seen/8validation，保留原不可变44元数据，92shards/976/345280最坏步与原科学合同一致。训练原本仅引用显式36流/标签/Runtime，未受该metadata字段影响；不重训、不改1180/输入/选择/信息墙。事故及实际ROOT CPU消费者原件在analysis/engineering_attempt002，执行新clean pushed detached同ROOT只接读出，普通工程无需main ACK。
+
 ## 2026-10-17 §20准备首个工程中断：已登记旧图像schema
 
 c7ef1372首次owner102364在1800M准备中因已登记legacy格式被严格新loader拒绝退出，0更新/0profile/FM/0episode；6rank加载/部分M费用0.047937221924GPUh，已证36 M/783帧，下界与在途合计上界902帧均保留。原cache manifest明确指向旧pure_features；旧§13读取owner已支持exact known legacy schema，同source与完整纯图像数学不变，不是新科学数据或负结果。

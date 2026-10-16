@@ -1,3 +1,11 @@
+## 2026-10-16 §16完整结束：视频初始控制保留与严格任务内改进
+
+93ffa411派发于06:33:17.631Z，56c4dc99新clean pushed detached正式执行；owner376918于06:54:55.814→07:29:27.207Z exit0，72condition/288逻辑query/七臂1008case验收，0共享训练/新Reader编码/held/Test。结果source58/ref127/Reader90089/first73/full79/video86/no-video59；video实践83→100但query89→86，Reader→video R84/G2/L5/churn7；no-video52→63、58→59，R56/G3/L2。target video41 vsReader43，support45 vs46，identity20继承；reference新增70保28 vs29。Object12/14各4保住、Object9→10，Long5→4等全部得失与12/9个改参数task保留。按预定分支，当前固定单位局部搜索停止自动加量/调参，不把实践增高或video>source误记整体学习成功，不扩400/新arm；main科学消费后自主接续。
+
+[完整原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/incumbent_compilation_seed7/analysis/engineering_completion.md)保留所有实际候选/seed/center/接受、H、query、21RGL、task/suite/target-support、教学缓存和预算/费用。物理1196＝1112practice＋84query，312490control＋11960dummy＝324450步、6job全exit0、3.231518597536617GPUh，339正常成功/857正常科学失败，0工程失败/unknown/有效重算。source初始144/40377与固定204query只读复用，物理旧费独立不重计；每condition最大8120≤8192，新16普通额度未用、无滚动充值。原§14 9.325162564582294GPUh/207328步及§15 0.36454247693220776GPUh/unknown区间和更早全部成本保持。
+
+缓存36视频编译/1179帧不是0教学；H新20.603GiB/1112份、旧144引用齐，当前m只消费参数/成功，0H语义网络或动作拟合。16/24有用实测后按端到端吞吐16中位7.623选安排，24中位7.222、32不重探；新ROOT21.276GiB低64GiB。35完整close释放360环境子进程，双nodeGPU/owner/env全退出/0zombie，UID PSS恢复约.325/1.225GiB。唯一control_space净退役782source行、0新模块、0hard结构违规，旧冻结/Git保留；两个已集成clean开发树/分支已清理。最终Git及canonical记录写窗口随整批一次交main01a13dd9，0Queue/心跳/第二waiter/自动后继。
+
 ## 2026-10-16 §16有限批实施接手
 
 main93ffa411于06:33:17.631Z实际派发，06:33:43.357Z首次带时钟准备；现有执行接管canonical独占写窗口，主讨论只读。仅原36×video/no_video，固定Reader900/D/source38r8，严格四例改善后移动中心、72条件各8192/288逻辑query，0共享训练/held/Test。原source首144/40377步/H只读复用，旧§14/15所有正负/费用/原件不动。当前CPU实施/消费者不等于已GPU运行，实际新冻结/launch/exit另记progress及新ROOT。

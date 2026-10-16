@@ -1,3 +1,7 @@
+## 2026-10-16 当前有限执行已完成：§16
+
+72条件/288逻辑query及七臂1008case完整验收，0活run/等待者/自动后继。video86低于固定Reader89，实践83→100未转整体query收益；no-video59对source58。按design§16停止当前固定单位局部搜索自动加量/调参，0自动held400/更多arm；main收到完整原件后科学消费并自主接续，无例行Owner许可停点。物理1196/324450步/3.231518597537GPUh、0工程失败/unknown，资源已全释放。详情见progress与[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/incumbent_compilation_seed7/analysis/engineering_completion.md)；Git clean/pushed后本次整批一次交回canonical写窗口。
+
 ## 2026-10-16 当前执行：§16保留初始控制的任务内改进
 
 实际接收93ffa411于06:33:17.631Z，独占实现/记录/Git。仅72条件/288逻辑query，两臂固定900/D、严格实践改善后移动中心，source初始40377步复用并占条件预算；0共享训练/Reader重编码/held/Test。CPU实现与真实消费者→clean/pushed冻结→live资源准入→完整有限批→结果/费用/资源/Git整批回main。详情见progress/design§16，预计1.5–3h；未把派发或实现写成GPU运行。

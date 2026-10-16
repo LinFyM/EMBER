@@ -1,3 +1,17 @@
+## 2026-10-16 §16全部完成并验收；停止本有限批新计算
+
+唯一owner376918于07:29:27.207260Z真实exit0（06:54:55.814启动，运行34.52min；06:33:17.631实际派发至退出56.16min，原估1.5–3h未超期）。72condition/288逻辑query、七臂1008case、21对配对均验收；0活owner/GPU/env/退出waiter，0Queue/自动后继。完整[交付报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/incumbent_compilation_seed7/analysis/engineering_completion.md)、results/acceptance/candidate_trajectories/query_changes/cost_accounting/resource_exit保留所有原件与不利case。实际代码56c4dc99，clean pushed detached保留；两个task-owned开发树/分支经clean与集成验证已清理，canonical最终clean/pushed身份及写窗口释放随本次整批回main01a13dd9登记。
+
+所有144/臂：source58/ref127/Reader90089/first73/full79/**video86/no-video59**；Reader→video R84/G2/L5/churn7/Jaccard.92308，source→no-video R56/G3/L2/churn5；video对no-video净27，但初始优势并非搜索新增。video实践83→100（12task/14接受/120提案），变化任务query35→32；no-video52→63（9task/10接受/122提案），变化query12→13。target96为14/80/43/29/35/41/14；support48为44/47/46/44/44/45/45；identity20全保，breadth20/35/29/23/25/30/19；reference新增70保video28/Reader29/no-video3。Object12/14各4保留，Object合9→10有task15新例；Long5→4，Spatial15→14/Goal14→13/support46→45。全部得失见query_changes，不以实践分数或同分遮掩独立能力丢失。
+
+按§16预定分支，video未超过89，停止本固定单位局部搜索的自动加量/调参；0自动held400/更多候选/新arm。它说明当前参数保留和四例选择组织未带来整体独立改进，不等于视频无用、H已学纠错或所有交互学习不可能。两臂共享模型固定、非held有限面板；旧full变化theta仍仅历史方法比较。完整科学判断交main消费后自主接续，无Owner例行许可或main工程ACK前置。
+
+物理仅1196唯一case各1attempt＝1112practice＋84新query，339成功/857正常科学失败；312490control＋11960dummy＝324450步、6job全exit0、精确3.231518597536617GPUh。工程失败/unknown/有效重算均0，普通额0/16，单condition最大8120≤8192且全局5536/662567等各分项均满足。source初始144/40377步只读复用且占no-video条件预算；query video96/no-video108旧行固定复用，余48/36真实执行。新video624practice/161277步、48query/9977；no-video488practice/143729、36query/9467。混臂GPUh不伪摊：专臂wall可证区间video[.490161,3.155541]、no-video[.075978,2.741357]，非加和；精确总量与共享余项见cost_accounting。旧§14/§15及所有历史时钟/区间独立保留。
+
+video缓存36真实v0编译/1179原有序teacher帧，0新Reader或teacher编码并非0教学；原特征/编译来源及无法精确分摊的历史GPUh明示。1112新H（20.603GiB）与144旧H引用齐全，真实成功/失败档验过RGB256/state8/native[2,50,1024]；当前只消费参数/四例成功，不作H语义/FM/PG/BC。45个最终非source完整38r8文件与实际实践同文件已核；pending/seed/center/严格平局与整组预算均验收，无逐tensor/hash扫描。
+
+93有用pack：16槽52/24槽2，其余8/12/4为CPU或尾部就绪量；16端到端中位7.623/native9.280，24端到端7.222/native9.626，allocated峰12586MiB/reserved32504MiB，未重探32或加profile行。H最终压缩比.620，线程归档p50/p95=1.289/2.319s（并行工作不当pipeline wall），最大授权practice外推H37.11GiB；ROOT21.276GiB加有界临时/小树仍低64GiB。35次完整close释放360环境子进程，双node0本批残留/0zombie，退出UID PSS gpu01.325/gpu02 1.225GiB，各node独立实记；foreign未动。strg01 data1末used1935201028/soft2147483648KiB，旧模型/数据/148GiB缓存无复制、无denseH。
+
 ## 2026-10-16 §16首有用物理安排与磁盘证据
 
 正式六worker、node各3，live6卡上限内，GPU02:7/0/6、GPU01:2/3/7；每job均有现场GPU+quota准入。首24槽native9.41–9.84/end6.99–7.46plan/s，warm16已到end7.97–8.10，当前owner按实际端到端吞吐选择16，部分CPU准入较紧pack8；不为显存空再探已EGL失败的32。H archive/主要原张量约.573，按首真实practice步外推最大新H约34GiB，另计完整候选/临时/代码仍在64GiB内。双node第一有用CPU/PSS快照及原件见ROOT/analysis/first_useful_profile.json、CPU_*_first_useful.json，未混两主机内存；无额外profile科学行。仍预计接收1.5–3h内、实际执行约40–80min加整批验收，后续只持续等待唯一owner实际退出，0阶段Queue/普通mainACK。

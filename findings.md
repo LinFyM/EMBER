@@ -1,3 +1,9 @@
+## 2026-10-16 §16：保留视频起点仍未获得整体任务内增益
+
+实际七臂144：source58/reference127/Reader90089/first73/full79/video86/no-video59。video从确定性Reader起步、严格改善实践才移动中心后，实践83→100、12变化任务独立query35→32，R84/G2/L5；no-video实践52→63，query58→59，R56/G3/L2。target video43→41/support46→45，Object12/14各4保住、Object合9→10，但Long5→4等损失保留；视频起点相对无视频仍强27，不是当前搜索新学的27。当前组织没有实现整体独立改进，按§16停止固定单位局部搜索自动加量/调参；不归因唯一工程bug，也不推翻全部视频或交互学习。
+
+[原件与成本](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/incumbent_compilation_seed7/analysis/engineering_completion.md)：1196实际提交/324450步/3.231518597537GPUh，source144/40377仍占条件预算、204query复用固定来源；0有效重算/工程失败/unknown。完整H已保存但未作语义消费，共享0更新；有限nonheld结果不认证held/正式资格。CPU与有用16/24吞吐、原子恢复/预算、35完整close与双node退出、旧强参照/全部费用保持，完整科学裁决交main接续。
+
 ## 2026-10-16 §16实际作用链的工程边界
 
 当前完整参数改进只消费本condition实际代码和四例成功数；原始H完整保留但不做语义读取或动作拟合。固定CPU D/units物化的完整LoRA先保存再实践，最终引用已实践文件，可保持真实producer身份而不占额外actor GPU。旧learned-H dense特征/重复视频读取无当前消费者，退出这些缓存不删除RGB/native hidden。两臂同epsilon流、独立中心/预算；source复用节约物理重算，不增加8192余量。CPU接通或经验分数单调不证明query保持，科学判断仅看完整配对读出。

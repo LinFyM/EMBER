@@ -234,7 +234,14 @@ def owner(args):
             selection=read_json(args.root/'physical_selection.json');current=latest(args.root)
             if current<1000:run_segment(args,current,1000,selection['BA']);current=1000
             if current<1180:run_segment(args,current,1180,selection['joint'])
-            readout_owner(args)
+            # Use the real joint generator geometry for inference; no new scientific rows/profile.
+            readout_args=argparse.Namespace(**vars(args))
+            readout_args.row_chunk=max(args.row_chunk,selection['joint']['row_chunk'])
+            readout_args.materialize_pack=max(args.materialize_pack,selection['joint']['task_pack'])
+            write_json_atomic(args.root/'readout_physical.json',dict(row_chunk=readout_args.row_chunk,
+                materialize_pack=readout_args.materialize_pack,frame_chunk=readout_args.frame_chunk,
+                basis='same complete generator/native resident physical profile; no gradient at materialization'))
+            readout_owner(readout_args)
             result=analyze(args.root)
             record.update(exit_code=0,end_UTC=utc());write_json_atomic(args.root/'owners'/f'{identity}.json',record)
             return result

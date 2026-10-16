@@ -1,3 +1,9 @@
+## 2026-10-17 §19唯一fit已完成，首次读取接口中断后窄修
+
+owner3924156于21:18:23.613527Z退出1：真实JSON manifest内路径是str，而read_json只接受Path；materialize后的旧行身份读取触发AttributeError。basis已于21:18:20.946328Z冻结，唯一fit19.173s/有效rank64/数值rank203/CPU峰RSS3.365GiB，八套LoRA已原子保存；GPU/环境尚未启动，0episode/0额外尝试。原launch/exit/log及failure.json保留ROOT analysis/engineering_attempt001。
+
+修复仅在真实旧行读取边界转Path；用真实384原行核对原source23/reference105/U36=98、噪声/初态/proprio配对及完成basis只adopt。新clean pushed detached后继续同ROOT，0重新fit/0有效行重跑，原128/16工程额/4GiB峰与派发时钟不变；不等main工程ACK，当前无活owner/退出reader，恢复时单独登记。
+
 ## 2026-10-17 §19唯一owner已正式启动
 
 owner3924156于2026-10-16T21:17:50.084280+00:00从clean pushed detached537c6763正式启动；唯一直接退出等待PTY9104/cell1179，0自Queue/第二waiter。CPU拟合→原子冻结→首次打开八selected→128读出按真实依赖执行，GPU仅在读出就绪后live准入，当前启动不冒称128已完成。ROOT [owner_launch.json](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/control_task_exclusion8_seed7/owner_launch.json)记录来源、完整命令、208点/28任务及独立预算；首次现场21:05:08与原家族09:05:48.038不重置。

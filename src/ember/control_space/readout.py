@@ -37,7 +37,7 @@ def validate_case(row,task,init):
 
 
 def references(entry,task,init):
-    rows={a:read_json(entry[a+'_rows'][init]) for a in ('source','reference','U36')}
+    rows={a:read_json(Path(entry[a+'_rows'][init])) for a in ('source','reference','U36')}
     for row in rows.values():validate_case(row,task,init)
     if rows['source']['update']!=0 or rows['reference']['update']!=entry['selected_update']:
         raise ValueError('reference/source parameter point changed')

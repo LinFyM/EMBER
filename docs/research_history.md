@@ -1,3 +1,11 @@
+## 2026-10-16 §17终点180完整方法与具名事故恢复交付
+
+57e8af31派发08:30:38.195Z，fresh经历条件功能修订ψ180/720条件/20160跨episode FM后，最终26a8fbb3冻结owner229518在12:48:33.594620Z exit0，原派发至GPU退出257.923min。36完整编译/144query与八臂1152验收：source58/ref127/Reader89/first73/full79/video86/noV59/new93；Reader→new R85/G8/L4，target43→48/support46→45，breadth30、identity20、reference新增70保存35。实践83→100、12改参数task24→28、126合法提案15接受，15全成功止/21完整面板预算不足止；Object12/14保留，Spatial17/Object11/Goal14/Long6，不利case和交换全留。有限non-held/已见initial-H净+4不认证held/视频-H因果或充分性；无自动360/400/controls/Test，main科学消费后接续。原件见[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_completion.md)。
+
+训练单node来源0b9b8080的180/Adam/RNG/流保持；首callback竞态→76d5480b窄修、跨node旧JSON缓存身份边界→main§17.7具名76保留/300封存及23前缀恢复，eac21f1c单SQLite+payload身份修复；缺configs启动0行失败保存，随后EGL8未知保[155,1840]并由26a8fbb3仅释放inactive CUDA cache接续，同候选每项一次补跑。原300行84110实际成本/75候选、76合法及全部原始H/参数/失败都保留，0重训/择源/有效重跑；原普通16实用8，无充值。
+
+累计860提交/852complete224362确切步＋8unknown1840上界，保守226202（control217602/dummy8600）、实际区间[224517,226202]；精确16.555653970374GPUh含训练12.179768998226/编译读出4.375884972148及所有34job/10失败，旧所有家族费用/未决区间独立保留。合法condition max8120与物理8192+具名事故及全局3004/404615验收。788新raw H14.196GiB含284事故H，ROOT30.916GiB、全局H缓存16GiB/M<1GiB；所有资产只读复用。84 fullclose/860子进程释放，双node本批GPU/owner/env全0，末PSS .328/1.196GiB、0zombie。本轮恢复五个clean已集成开发树/四远端task分支清理（原实施三树此前已清理），frozen/Git保留；最终main及写窗口交还随git_delivery与一次main回报登记。
+
 ## 2026-10-16 §17.7具名一次恢复裁决
 
 main直接核实际消费者/376行/91提案，认证16个首提案均fresh builder的64practice及2/28/56的12query，共76行19173步；13完整condition只adopt。其它300行84110步/75proposal封存为来源未认证，不改物理事实/费用，不称全部实际错读/unknown或H方法阴性。仅23task从原initial或认证首面板恢复一次，独立leg防止旧后缀自动采用，0重训/补量/按query挑保留；CP180单node完成先于跨nodeworker的时序保持。完整固定清单和裁决在ROOT analysis/main_contract、[design§17.7](designs/source_policy_space_compiler_20261015.md#177-具名缓存事故与一次有限恢复main-2026-10-16裁决)。

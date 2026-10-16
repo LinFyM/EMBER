@@ -1,3 +1,17 @@
+## 2026-10-16 §17＋§17.7完整退出并验收
+
+最终owner229518于12:48:33.594620Z真实exit0（attempt005，21.62min）；原08:30:38.195派发至GPU退出257.923min，原2–4.5h上沿内，后续CPU验收/Git另记真实交付时钟。36完整condition/144 query、八臂1152逻辑case/28配对已验收；共享180/720 H条件/20160跨episode FM及90/180完整CP均保留，0重训/补量/held/Test/自动后继。完整[交付报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_completion.md)、results/acceptance/cost_accounting/query_changes/candidate_trajectories/teaching_cost_accounting/useful_throughput/resource_exit提供原件。
+
+全部144/臂source58/ref127/Reader90089/first73/full79/旧video86/noV59/**functional-feedback93**。Reader→new R85/G8/L4/churn12/Jaccard.876289，target43→48（R40/G8/L3）/support46→45，breadth29→30、五identity20全保；参考70新增保35（Reader29/旧V28）。Spatial15→17/Object9→11/Goal14→14/Long5→6/support46→45；Object12/14各4保住。task1/4各净+1、15净+2、35净+2，37/56各失1，task5同分但success-set交换。实践83→100，12改参数task query24→28；126合法提案/15严格接受，无精确重复，15四例全成功止/21预算不足下一完整面板止。该有限non-held/已见initial-H点有净+4，不称充分训练、held/视频-H因果或超过强MT；旧noV不是匹配ψ消融，后继科学判断由main消费，不自动400/360/controls。
+
+累计860物理提交：852complete（215842control+8520dummy=224362实际步）＋8旧reserved_unknown（155已观察lower/1840上界），总保守计费217602control+8600dummy=226202，实际步区间[224517,226202]。300旧cache事故/84110实际步/75提案（71已实践4未实践）完整封存且不混科学链；76具名认证行全部adopt，8 EGL未知各仅恢复一次、原普通额8/16，合法condition最大8120≤8192且物理8192+具名事故实践亦验收。累计3004/control400015/dummy30040/联合404615均满足。合法方法实际552新有效物理行＝504practice＋48query，96query固定旧Reader复用，初始144/35207/H仍逐condition记预算；无有效行重跑或query择源。
+
+本ROOT精确16.555653970374GPUh，训练12.179768998226、编译/读出4.375884972148；包括原两个callback失败、cache故障、六个configs启动失败和一次EGL失败，34 GPU job attempts/24exit0。原所有历史费用/未决区间及参考09:05:48.038时钟独立保留，0滚动充值或按步数伪摊GPUh。旧cache事故逐行真实，8新未知即使补跑成功也不清1840费用；单一失败operation0不能代替pack观察155/上界1840。
+
+训练实际4/2/6卡完整周期与micro7/14/28/56/H chunk16..512比较，6卡最快31.360s/update，物理迁移保完整Adam/流/RNG不称bitwise。评估83有用pack为4/8/12/16槽25/17/10/31；16槽总体end/native中位5.538/8.793plan/s，释放inactive cache后16槽6个有用pack中位5.069/8.950、allocated/reserved峰11400/27314MiB。不同任务/长度非同输入因果profile，0新增profile行，不重探32。新cache单SQLite+payload身份绑定、全局H16GiB/M<1GiB，旧可再生17.33GB退役留metadata/小witness，raw/formal/模型不删。全部788新raw H 14.196GiB（含284事故H），ROOT终值30.916GiB＜64；strg01 data1 used1968276684/soft2147483648KiB，shared另核。
+
+84次完整close释放860环境子进程；双node本批owner/GPU/env全0、UID zombies均0，末PSS gpu01 .328/gpu02 1.196GiB，节点分别记录，foreign未动。初始缓存36视频/1179帧；训练720 unique teacher/23655帧，物理rank1368次M消费/44909帧当量（720构建648命中）不算更多任务，合法126提案4074帧/事故75提案2542帧另计，不称0教学。训练来源0b9b8080、早期读出76d5480b/eac21f1c、最终正式26a8fbb3均clean pushed detached保留；必要code/结构/实际消费者及所有失败原件齐。本轮恢复五个task-owned开发树（原实施三树此前已清理）和四远端分支均经clean/集成验证清理，旧frozen及main自有树不动。最终main clean/pushed身份与canonical写窗口释放见git_delivery.json；整批一次回main01a13dd9后停止本有限批。
+
 ## 2026-10-16 §17 panel显存生命周期窄修后接续
 
 new clean pushed detached26a8fbb3（完整src/configs）通过实际authority及worker phase CPU消费者，owner229518于12:26:56.651044Z真实启动（attempt005）。只在panel前释放inactive Torch CUDA cache给EGL，不改活tensor/方法；同一cache_recovery_001/ψ180，600complete只adopt（其中原300仍封存），8 unknown原1840费用继续记，原pending保存的实际LoRA/代码不重生成。现场quota/双node GPU/CPU重新准入，具体正式GPU开始/有用工作仍以jobs原件为准。原普通16余量承接，八次补跑将占8，0新额度/梯度/科学面板；预计剩余20–45min含有界cache/H重读，旧08:30派发与全部失败/费用不重置。唯一wrapper/PTY7446直接等整批退出，无Queue/第二waiter或main普通ACK。

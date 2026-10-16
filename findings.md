@@ -1,3 +1,9 @@
+## 2026-10-16 §17：冻结控制映射后，经历条件FM取得有限独立净增
+
+合法完整方法93/144对固定Reader89，R85/G8/L4，target43→48/support46→45、breadth29→30、参考新增70保存29→35；旧V86→93为G10/L3。实践同为83→100并不等于旧随机搜索的同一独立结果：当前12个改参数task24→28，task1/4/15/35有净增，37/56损失及task5同分交换完整保留。Object12/14仍各4，Spatial/Object/Goal/Long为17/11/14/6。完整[原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_completion.md)。
+
+它支持当前完整有限组织在该训练task/已见initial-H面板的实际净+4，不能单由FM/真实梯度或这一个点认证H语义、视频因果、未知任务迁移或充分训练。旧noV59并非ψ匹配消融、旧full79为变化θ历史，强MT153/G165/D175/168及最近似Experience/G/FM正负历史不清零。当前没有held400/相邻点/新controls，后继由main按整体得失消费，不自动加量。事故300行不入标准结果、76认证只adopt、EGL8 unknown按[155,1840]并占预算；这些是工程有效性/费用合同，不作为H科学正负解释。
+
 ## 2026-10-16 原生H推断与EGL的GPU内存生命周期
 
 §17恢复中16槽多批成功后，8槽也在MjrContext framebuffer创建0x8cdd退出，不能把某次槽数成功当永久硬件上限或直接称CUDA OOM。实际panel allocated约10–11GiB而H后Torch reserved可34–37GiB；空闲allocator block仍占driver空间，EGL不属于Torch allocator。当前窄修在完整panel前释放inactive缓存，活模型/科学张量与数值合同不变，实际phase CPU消费者验证仅证明调用顺序；是否恢复EGL仍由原pending有用工作验证。8 unknown全额1840记账、原16额度与condition8192均保持，不因单一失败operation0步清零整个pack或重跑有效行。

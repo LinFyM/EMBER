@@ -1,3 +1,7 @@
+## 2026-10-16 §17有限批已完成，无自动后继
+
+36完整编译/144query、180共享更新/20160 FM query及八臂1152验收；新93 vs Reader89（R85/G8/L4），target43→48/support46→45，实践83→100。只形成有限non-held/已见initial-H的净+4，main消费原件后裁决后继，0自动360/held/controls/Test。860物理提交/226202保守步/16.555653970374GPUh、300事故封存及8 unknown区间/原16用8、0有效重跑均保留；资源已全退出。详见progress及[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_seed7/analysis/engineering_completion.md)。Git交付后将canonical写窗口归还main01a13dd9，当前执行不再有待运行科学任务。
+
 ## 2026-10-16 §17.7具名恢复的当前计划
 
 main按输入身份固定76新行保留/300事故行封存，13完整条件adopt、23从合法前缀恢复，0重训/选90/补量。缓存跨node修复→独立leg/真实预算与账本consumer→clean pushed detached→live quota/GPU/CPU→一次完整36/144及八臂1152→合法/事故分层成本/全部资源/Git→整批一次main回报。详见progress及[design§17.7](docs/designs/source_policy_space_compiler_20261015.md#177-具名缓存事故与一次有限恢复main-2026-10-16裁决)。当前尚未重启GPU；原103283步/13.930277GPUh和派发时钟全保留，累计3004/404615与合法8192不滚动，0自动后继。

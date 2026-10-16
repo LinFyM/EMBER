@@ -1,3 +1,11 @@
+## 2026-10-17 §20学习/恢复消费者与结构自审
+
+完整1180逻辑流验证：每task1020次视频访问、20160跨episode FM query，576/400官方teacher/state/noise映射正确；1–6rank和7/14/28/56物理query的完整A/B余切与直接全局FM＋.1BA梯度一致。CPU atomic checkpoint验证Adam/scheduler/全流与只保单rolling，CUDA rank RNG尚待真实1000→joint消费者，不冒称已GPU验证。原件`.codex/tmp/source_weight_compiler_20261017/credit/consumer.json`。
+
+结构自审：唯一control_space当前15个peer source；静态权重与完整生成模型、冻结M与全局身份缓存、数据/label数学、完整checkpoint、学习/受限profile、最终物化/读出、owner各有单一责任。六个新增模块是替换闭式fit后首次需要的实际学习和有界资源生命周期；旧fit删除，旧U/ψ训练/主动面不保留，historical Git/frozen原件不动。当前源净增约846行/6新文件，guard无hard violation，短函数的shape/身份/循环复合分支为review信号；不为降低数值机械拆分，不创建平行Writer或未来框架。最终读出集成后复核一次范围。
+
+生成器4838160 FP32参数约18.46MiB、两Adam moments约36.91MiB；三永久点/rolling/atomic、实际W约.17GiB、M≤1GiB与976套因子约2.4GiB在16GiB峰内，实际产物增长仍须核实。正式owner先准备原1800有序M，再在授权8BA/4joint/448 query上界内比较physical world/pack/micro/row chunk；profile参数弃用。正式1000→180保同一Adam，不用profile状态。当前未建科学ROOT/未GPU启动，预计4–7h保持。
+
 ## 2026-10-17 §20实际接手与独占实施，未启动正式GPU
 
 执行01a13dbf从main064acf0b接手唯一design§20及canonical工程/科研记录/Git窗口，main只读。首次现场2026-10-16T21:56:50.026590Z，精确消息收到时刻未恢复；ROOT source_weight_compiler_seed7不存在，无重复owner/旧任务复跑，当前不是训练启动声明。预计4–7h，原家族09:05:48.038及全部成本保持。

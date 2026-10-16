@@ -32,9 +32,11 @@ def run(args):
                 except torch.cuda.OutOfMemoryError as failure:
                     optimizer.zero_grad(set_to_none=True);torch.cuda.empty_cache();entry.update(OOM=True,error=repr(failure))
                 results.append(entry)
+                if context.is_main:
+                    write_json_atomic(args.root/'profiles'/f'world_{context.world_size}.json',dict(complete=False,disposable=True,world_size=context.world_size,results=results))
                 if context.is_main:print('EMBER_PHYSICAL_PROFILE '+json.dumps({k:v for k,v in entry.items() if k!='memory'}),flush=True)
         if not any(e['stage']=='joint' and not e['OOM'] for e in results):raise RuntimeError('no finite disposable native physical profile')
-        result=dict(disposable=True,formal_initialization_used=False,world_size=context.world_size,results=results,
+        result=dict(complete=True,disposable=True,formal_initialization_used=False,world_size=context.world_size,results=results,
             actual_BA_equivalents=sum(r['BA_equivalents'] for r in results),actual_joint_equivalents=sum(r['joint_equivalents'] for r in results),
             actual_FM_queries=sum(r['FM_queries'] for r in results),wall_seconds=time.monotonic()-started)
         if context.is_main:write_json_atomic(args.root/'profiles'/f'world_{context.world_size}.json',result)

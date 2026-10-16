@@ -2,7 +2,7 @@
 
 原1800M/59114帧完成：6rank实际434.938s，新build1764/adopt36、仅原prefix读取58331帧，producer0/0高维prefix复制；初失败783–902帧区间和.047937GPUh独立保留。受限profile实际5BA＋4joint/448 FM query，0env/0OOM，临时generator/Adam弃用。
 
-实测1卡BA pack1/row512/checkpoint为11.635s，pack6/row4096/no-checkpoint3.463s，pack36最大逻辑批3.367s/峰29.27GiB；6卡每rank pack6为2.483s/峰5.49GiB。joint1卡micro7为21.084s、实际micro56为19.657s/峰24.42GiB；6卡每rank最大实际21 query、合并多taskpack/row4096为2.474s/峰14.88GiB（每步仍全局112，无重复BA）。选6卡按实测wall，BA每rank已包含全部6个合法条件，不以重复样本填显存；row4096覆盖完整行/列，1卡pack36已验证更大占用收益有限。profile记录均在ROOT profiles/physical_selection。
+实测1卡BA pack1/row512/checkpoint为11.635s，pack6/row4096/no-checkpoint3.463s，pack36最大逻辑批3.367s/峰29270MiB；6卡每rank pack6为2.483s/峰5492MiB。joint1卡micro7为21.084s、实际micro56为19.657s/峰24423MiB；6卡每rank最大实际21 query、合并多taskpack/row4096为2.474s/峰14882MiB（每步仍全局112，无重复BA）。选6卡按实测wall，BA每rank已包含全部6个合法条件，不以重复样本填显存；row4096覆盖完整行/列，1卡pack36已验证更大占用收益有限。profile记录均在ROOT profiles/physical_selection。
 
 正式fresh1000 BA的首有效update于22:35:54Z（job train_00000000_00001000），6卡首步3.295s/完整36条件；B头梯度非零、A/body首步0符合零头乘积预期，不能当学习成功。后180 joint由同一完整1000 CP/Adam/流接续，唯一1180 576/400保持。当前actual owner129605/reader1348持续直接退出等待，尚未闭环。
 

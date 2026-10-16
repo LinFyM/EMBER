@@ -1,3 +1,7 @@
+## 2026-10-16 §17窄修冻结后已真实接续编译
+
+原竞态已确定性CPU复现，修后活claim唯一接收、无inflight重启采用和同一claim转四例面板均通过。新clean pushed detached76d5480ba781012a7fd794af39e05e127a21c3ab，唯一resume owner3803561于11:26:31.192556Z真实启动；原owner/log/execution移为owner_attempts/attempt_001原件，原queue/ledger快照和0.2112140941619873GPUh首次编译费用保留。原180/Adam/90与180CP只读，0新训练；16有效物理行/3688步及已落盘候选只adopt，0unknown/额外环境尝试，科学合同和全部上限不变。现场旧node本批GPU/owner/env已全退出，恢复重新live准入；剩余完整编译/读出预计30–60min，仍承接08:30原派发时钟及整批2.5–4.5h预计。一个直接退出等待，无Queue/第二waiter或普通main ACK。
+
 ## 2026-10-16 §17训练180完成，首次编译调度边界修复中
 
 原owner2200056于11:18:40.403804Z真实exit1，180训练/720条件/20160 FM query已全部有效保存（四train job均exit0，12.17976899822553GPUh），0重训/更新补量。后续worker02/04是owner callback KeyError(pending_proposal)，子进程均正常exit0；不是CUDA/EGL或科学负结果。CPU确定性复现证明：另一worker的refresh在回执先落盘后提前adopt仍inflight候选，原proposed回调二次接收。窄修只让inflight候选由所属claim回调消费；无inflight的恢复仍adopt原子回执，不改ψ/数学/数据/选择/预算。

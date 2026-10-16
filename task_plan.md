@@ -1,3 +1,7 @@
+## 2026-10-16 §17真实科学边界，暂不恢复正式计算
+
+180单node训练完整。两node编译因共享冻结缓存key丢失退出；376物理行/103283步均有效保存且无unknown，但部分候选H/M缓存身份无法认证，36条件仅23完成，不能称整批完成。main已收到具体原件，正待科学有效性/有限恢复裁决；执行只做独占CPU工程修复与两node小缓存验证，不自行重跑/扩budget/重新训练或归还未完成写窗口。详见progress与ROOT analysis/engineering_attempt002。
+
 ## 2026-10-16 §17训练已完成，原批窄工程接续
 
 180有效更新/720条件/20160 FM query及90/180 CP完整，训练不再运行或补量。首编译owner11:18:40Z因活claim回执提前adopt的调度竞态退出；16有效行/3688步和全部实际候选保留，0unknown/环境额外尝试。CPU复现→窄修验证→集成push→新clean detached --resume完成同一36条件/144query；预算/停止/数据/模型不变。当前修复阶段0活GPU/env，具体见progress和ROOT analysis/engineering_attempt001。

@@ -1,3 +1,11 @@
+## 2026-10-16 §17跨node缓存科学边界；全部正式计算已停止
+
+第二owner3803561于11:42:51.856546Z真实exit1。前次receipt claim窄修已经在并发实际消费者通过，本次是另一故障：worker04读取真实新H，_TensorCache.entry登记返回file后，get下一次读共享manifest缺失同key；最终H索引也无该key。两node NFS4.2/local_lock=none，atomic JSON manifest+独立flock的跨node一致性是定位方向，底层原因未证实。H仍有2 reserved条目但完整payload存在；payload只有tensor无嵌入key/source，因此不能仅凭当前manifest认证此前H/M命中身份。不能把它当H方法科学阴性，也不能静默重跑或把物理有效当标准科学有效。
+
+目前376物理行全complete：348practice/97281步、28query/6002步，共99523control+3760dummy=103283，0unknown/0环境额外尝试。36condition已有23冻结/query_complete，其余未完成，不形成完整144结果。原180/720H/20160FM单node gpu02训练和12.17976899822553GPUh完整保留，CP180写成后才首开gpu01 cache writer；本新ROOT已耗13.930277132524383GPUh，所有失败/owner/queue/ledger/候选/H原件保留。原预算及每condition8192不变，0重训/补量。
+
+真实科学边界及原件已发唯一main01a13dd9（ROOT analysis/engineering_attempt002/main_boundary与failure.json），由main裁决既有行/候选科学有效性和有限后继；不问Owner例行许可或main工程ACK。执行继续独占canonical工程/记录/Git，当前仅做零GPU/零环境的缓存一致性修复、实际两node小fixture验证及退出验收，不自动恢复正式批。无活退出等待/Queue/第二waiter；原08:30派发及旧09:05参考时钟不重置。
+
 ## 2026-10-16 §17窄修冻结后已真实接续编译
 
 原竞态已确定性CPU复现，修后活claim唯一接收、无inflight重启采用和同一claim转四例面板均通过。新clean pushed detached76d5480ba781012a7fd794af39e05e127a21c3ab，唯一resume owner3803561于11:26:31.192556Z真实启动；原owner/log/execution移为owner_attempts/attempt_001原件，原queue/ledger快照和0.2112140941619873GPUh首次编译费用保留。原180/Adam/90与180CP只读，0新训练；16有效物理行/3688步及已落盘候选只adopt，0unknown/额外环境尝试，科学合同和全部上限不变。现场旧node本批GPU/owner/env已全退出，恢复重新live准入；剩余完整编译/读出预计30–60min，仍承接08:30原派发时钟及整批2.5–4.5h预计。一个直接退出等待，无Queue/第二waiter或普通main ACK。

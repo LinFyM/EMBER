@@ -1,3 +1,9 @@
+## 2026-10-17 同一原生首写窗口工程恢复owner已启动
+
+新owner1933851/监督1933287于03:13:23.538341Z从clean pushed detached710b5a7d启动，workspace native_operator_jvp_frozen_20261017；原199fc3dc冻结不热改。唯一直接reader1553/PTY17503，旧1542/20292已exit1，无第二owner/waiter或Queue。
+沿原ROOT与未改campaign接续，原profile attempt001 0有效更新/0FM/0环境、0.037065746784GPUh及冻结/失败原件完整保留。具名零消耗恢复与作用域回归证据在analysis/engineering_attempt001；旧首次02:39:51观察、03:06:46启动与家族09:05:48.038均不重置。
+当前只确认恢复owner启动，真实修复/吞吐/有效更新待实际GPU消费者；4更新/448FM及fresh180/144完整范围、资源/预算/停止线不变。root旧owner_exit若仍指1893672只表示旧attempt，不替代当前PID的直接退出回执。
+
 ## 2026-10-17 原生首写工程attempt001：自定义Function关闭forward AD
 
 owner1893672于03:07:55.856997Z exit1，reader1542已结束。profile_first3四rank都在r=J0D处报告native JVP tangent丢失，全部发生在FM sampling/forward之前；0有效更新/0FM/0新环境/0episode extra，无CP或生成参数需要恢复。实际GPU job03:07:21.518568→03:07:54.877796，4卡/0.037065746784GPUh，原失败log/exit、owner launch/exit、campaign时钟与cache均保留analysis/engineering_attempt001。

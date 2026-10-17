@@ -1,5 +1,1 @@
-"""Frozen-source weight addresses to one complete video-conditioned task LoRA."""
-
-from .model import SourceWeightCompiler
-
-__all__ = ['SourceWeightCompiler']
+"""The canonical source-native operator compiler; historical models live in Git."""

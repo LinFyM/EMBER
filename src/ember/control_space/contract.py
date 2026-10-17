@@ -28,6 +28,6 @@ def queue_path(root):
 
 
 def checkpoint_path(root, update):
-    if update not in PERMANENT:
-        raise ValueError('only recovery90 and the unique terminal180 are permanent checkpoints')
+    if type(update) is not int or not 0 < update <= FINAL:
+        raise ValueError('checkpoint is outside the single native first-write trajectory')
     return Path(root)/'checkpoints'/f'update_{update:08d}'/'state.pt'

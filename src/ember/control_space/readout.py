@@ -151,7 +151,7 @@ def worker(args):
     os.environ.update(EMBER_LIBERO_ASSETS_ROOT=environment['libero_paths']['assets'],MUJOCO_GL='egl',PYOPENGL_PLATFORM='egl')
     prepare_libero_config(args.root/'libero_config');configure_libero_runtime_assets(Path(environment['libero_paths']['assets']))
     runtime=Runtime(args.root,context.device);runtime.episode_event_log=os.environ.get('EMBER_EPISODE_EVENT_LOG');runner=None;active_role=None
-    compiler=Materializer(args.root,context.device,runtime,row_chunk=args.row_chunk,pack=args.materialize_pack,frame_chunk=args.frame_chunk)
+    compiler=Materializer(args.root,context.device,runtime)
     try:
         while True:
             event(kind='ready',worker=args.worker_id,resources=host_resources())
@@ -163,10 +163,13 @@ def worker(args):
             work=message['work'];identity=message['identity'];role=work['role'];tick=time.monotonic()
             selected=[lookup[role][work['task'],i] for i in work['states']]
             try:
-                if active_role!=role:
-                    runner=close_runner(runner,args.worker_id)
+                # Dense ten-flow differentiation and idle EGL contexts compete
+                # for the same VRAM. No request is pending at this boundary.
+                runner=close_runner(runner,args.worker_id)
+                torch.cuda.empty_cache()
                 active_role=role;environment=run['environments'][role]
                 torch.cuda.reset_peak_memory_stats();controllers,materialization=compiler.compile(role,selected)
+                compiler.close()  # Final execution consumes only saved complete LoRA.
                 runner,admission=panel_runner(runner,runtime,environment,args,len(selected),message['slots'])
                 event(kind='physical_pack',worker=args.worker_id,identity=identity,**admission,resources=host_resources())
                 rows,resources=cases(args,runtime,work,tasks[role][work['task']],selected,runner)
@@ -244,8 +247,7 @@ def owner(args):
     jobs=[]
     for i,device in enumerate(devices):
         name=f'readout_worker_{i:02d}';slots=capacities[name]
-        arguments=['control-space','worker','--worker-id',name,'--slots',str(slots),'--row-chunk',str(args.row_chunk),
-            '--materialize-pack',str(args.materialize_pack),'--frame-chunk',str(args.frame_chunk)]
+        arguments=['control-space','worker','--worker-id',name,'--slots',str(slots)]
         jobs.append(Job(name,arguments,eligible_devices=(device,),estimate_seconds=3600,required_free_MiB=28000 if slots==16 else 18000))
     with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
         futures=[pool.submit(execute_worker,batch,j,d,scheduler) for j,d in zip(jobs,devices)]

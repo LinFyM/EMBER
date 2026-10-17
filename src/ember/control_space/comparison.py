@@ -57,13 +57,9 @@ def validate_generated(root, role, panel, *, factors=False):
 
 class Materializer:
     """The one compiler seam; four query states share one complete condition LoRA."""
-    def __init__(self, root, device, runtime, *, row_chunk=4096, pack=1, frame_chunk=32,
-                 loader=None, materialize=None):
+    def __init__(self, root, device, runtime, *, loader=None, materialize=None):
         self.root, self.device, self.runtime = Path(root), torch.device(device), runtime
         self.source_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-        self.row_chunk, self.pack, self.frame_chunk = int(row_chunk), int(pack), int(frame_chunk)
-        if min(self.row_chunk, self.pack, self.frame_chunk) < 1:
-            raise ValueError('physical generation sizes must be positive')
         self.loader, self.materialize, self.model = loader, materialize, None
 
     def _ensure(self):
@@ -130,8 +126,7 @@ class Materializer:
                 generated_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat()))
             temporary.rename(destination)
         receipt = dict(new_controllers=len(missing), adopted_controllers=len(unique)-len(missing),
-            query_cases=len(panels), seconds=time.monotonic()-tick, materialize_pack=self.pack,
-            row_chunk=self.row_chunk, frame_chunk=self.frame_chunk)
+            query_cases=len(panels), seconds=time.monotonic()-tick)
         return [validate_generated(self.root, role, p) for p in panels], receipt
 
     def close(self):

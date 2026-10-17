@@ -1,6 +1,5 @@
 """Frozen Reader900 ordered memory; original RGB teaching only, no legacy head."""
 from pathlib import Path
-import time
 
 import torch
 from torch import nn
@@ -15,7 +14,6 @@ from .contract import PREVIOUS_ROOT
 VIDEO_ROOT = REFERENCE_ROOT.parent/'video_initial_seed7'
 READER_CHECKPOINT = VIDEO_ROOT/'checkpoints/update_00000900/state.pt'
 SOURCE_MODEL = str(ASSETS/SOURCE/'policy')
-VALIDATION = (3, 6, 11, 16, 23, 26, 31, 39)
 FEATURE_SCHEMA = 'ember_source_image_prefix_features_v1'
 LEGACY_SCHEMA = 'ember_image_only_gemma_compiler_v1'
 PREPROCESS = dict(camera_order=['agentview', 'eye_in_hand'], rotation_degrees=180,
@@ -97,45 +95,8 @@ def load_cached(entry):
     return dict(z_img=images, indices=indices, source=source)
 
 
-@torch.no_grad()
-def extract(runtime, video, frame_chunk=32):
-    """Exactly the existing real 512-token image-only Gemma path, RAM only."""
-    from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks, resize_with_pad_torch
-    from ember.operator_writer.native import _teacher_attention_kernel
-    frames = torch.from_numpy(video.frames)
-    if (frames.dtype != torch.uint8 or frames.ndim != 5 or frames.shape[1:3] != (2, 3)
-            or len(frames) != len(video.frame_indices) or not len(frames)
-            or type(frame_chunk) is not int or frame_chunk <= 0):
-        raise ValueError('pure image prefix requires all ordered dual-camera uint8 RGB')
-    indices = _indices(video.frame_indices, video.raw_frame_count)
-    if getattr(runtime, '_generator', None) is not None or runtime.execution._active_state is not None:
-        raise ValueError('pure source image extraction requires a closed adapter context')
-    if str(runtime.source['model_path']) != SOURCE_MODEL: raise ValueError('teaching source changed')
-    core, bridge = runtime.policy.model, runtime.policy.model.paligemma_with_expert
-    dtype = bridge.paligemma.model.language_model.layers[0].self_attn.q_proj.weight.dtype
-    images = []; started = time.monotonic()
-    for first in range(0, len(frames), frame_chunk):
-        selected = frames[first:first+frame_chunk].to(runtime.device)
-        with autocast(torch.device(runtime.device)):
-            pixels = selected.flatten(0, 1).float().div(255).permute(0, 2, 3, 1)
-            pixels = (resize_with_pad_torch(pixels, 224, 224)*2-1).permute(0, 3, 1, 2)
-            raw = bridge.embed_image(pixels).reshape(len(selected), 512, 2048)
-            padding = torch.ones(len(selected), 512, dtype=torch.bool, device=runtime.device)
-            mask = core._prepare_attention_masks_4d(make_att_2d_masks(padding, torch.zeros_like(padding)))
-            with _teacher_attention_kernel(mask):
-                (z, suffix), _ = bridge(attention_mask=mask,
-                    position_ids=torch.arange(512, device=runtime.device)[None].expand(len(selected), -1),
-                    past_key_values=None, inputs_embeds=[raw.to(dtype), None], use_cache=False, adarms_cond=[None, None])
-            if suffix is not None or z.shape != (len(selected), 512, 2048) or not bool(z.isfinite().all()):
-                raise ValueError('pure image-prefix post-norm output changed')
-            images.append(z.detach().to(dtype=torch.bfloat16, device='cpu').contiguous())
-    return dict(z_img=torch.cat(images), indices=indices,
-        source=dict(model=SOURCE_MODEL, preprocess=PREPROCESS, raw_frames=video.raw_frame_count,
-            seconds=time.monotonic()-started))
-
-
 class MemoryStore:
-    """One root-wide 1GiB cache for all original training and held M tensors."""
+    """Read-only original teaching memory; no held/producers or old decoder."""
     def __init__(self, root, device='cpu', runtime=None, frame_chunk=32):
         self.root, self.device, self.runtime = Path(root), torch.device(device), runtime
         if type(frame_chunk) is not int or frame_chunk <= 0: raise ValueError('frame_chunk must be positive')
@@ -148,23 +109,8 @@ class MemoryStore:
             raise ValueError('original-only teaching pool must contain exactly 1800 videos/59114 frames')
         self.training_entries = tuple(dict(task=task, demo=demo, frames=self.originals[task, demo]['frames'])
             for task, demo in sorted(self.originals))
-        self.panels = {(int(row['task']), int(row['init_state_id'])): row
-            for row in read_json(VIDEO_ROOT/'panels.json')['validation']}
-        if (set(self.panels) != {(task, init) for task in VALIDATION for init in range(50)}
-                or any({self.panels[task, init]['teacher_demo'] for init in range(50)} != set(range(50))
-                    for task in VALIDATION)):
-            raise ValueError('held RGB mapping must preserve all 400 unique task-video conditions')
         self.cache = ReferencedMemoryCache(self.root/'cache/M',PREVIOUS_ROOT/'cache/M')
-        self.videos, self.measurements = None, []
-
-    def _held_videos(self):
-        if self.runtime is None: raise ValueError('held image extraction needs the caller-owned frozen source Runtime')
-        if self.videos is None:
-            from ember.writer.data import RawTeacherVideoStore
-            from ember.writer.learning_data import load_learning_tasks
-            metadata = load_learning_tasks(ASSETS, VALIDATION, role='validation', protocol_path='configs/libero_24_8_8_coverage_v1/protocol.json')
-            self.videos = RawTeacherVideoStore([row.authority for row in metadata.values()], frame_stride=5, camera_view='dual')
-        return self.videos
+        self.measurements = []
 
     def _memory(self, key, metadata, frames, teacher):
         detail = {}
@@ -193,22 +139,9 @@ class MemoryStore:
             reader=str(READER_CHECKPOINT), preprocess=PREPROCESS, frames=entry['frames'])
         return self._memory(f'original_t{int(task):04d}_d{int(demo):02d}', identity, entry['frames'], lambda: load_cached(entry))
 
-    def held(self, task, init, panel):
-        task, init = int(task), int(init)
-        row = self.panels[(task, init)]
-        fields = ('task', 'init_state_id', 'teacher_demo', 'noise_root')
-        if task not in VALIDATION or any(panel[key] != row[key] for key in fields):
-            raise ValueError('held teaching must match the frozen validation400 RGB-only mapping')
-        demo = int(row['teacher_demo']); videos = self._held_videos()
-        authority = videos.authorities[task]; raw_count, frames = videos.frame_counts(task, demo)
-        identity = dict(held=True, task=task, demo=demo, authority=str(authority.path), authority_bytes=authority.expected_bytes,
-            raw_frames=raw_count, frames=frames, source=SOURCE_MODEL, reader=str(READER_CHECKPOINT), preprocess=PREPROCESS)
-        return self._memory(f'held_t{task:04d}_d{demo:02d}', identity, frames,
-            lambda: extract(self.runtime, videos.load(task, demo), self.frame_chunk))
-
     def drain_measurements(self):
         rows, self.measurements = self.measurements, []
         return rows
 
     def close(self):
-        if self.videos is not None: self.videos.close(); self.videos = None
+        self.reader = None

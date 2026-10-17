@@ -103,33 +103,37 @@ def _raw_archive(path, row):
     return history
 
 
-def _validate_records(history, row):
-    records, observations = history['records'], history['observations']
-    if not records or len(records) != row['replans'] or len(records) != len(row['policy_noise_seeds']):
+def _validate_observation(raw):
+    if raw['images'].dtype != torch.uint8 or raw['images'].shape != (2,3,256,256) or raw['proprio'].shape != (8,):
+        raise ValueError('source H must retain real full-resolution dual RGB and state8')
+
+
+def _validate_record_payload(record,observations):
+    shapes=dict(hidden=(2,50,1024),proprio=(2,8),actions=(5,7),executed=(5,),feedback=(5,))
+    if any(record[k].shape!=v for k,v in shapes.items()) or record['executed'].dtype!=torch.bool:
+        raise ValueError('raw H lost complete native hidden or actual action/fact shapes')
+    executed=int(record['executed'].sum())
+    if not 1<=executed<=5 or record['executed'].tolist()!=[i<executed for i in range(5)]:
+        raise ValueError('raw H execution mask must retain its actual contiguous executed prefix')
+    for key in (record['pre'],record['post']):_validate_observation(observations[key])
+    return executed
+
+
+def _validate_records(history,row):
+    records,observations=history['records'],history['observations']
+    if not records or len(records)!=row['replans'] or len(records)!=len(row['policy_noise_seeds']):
         raise ValueError('raw H lost the actual complete native decision stream')
-    step = 0
-    for ordinal, record in enumerate(records):
-        if (record['episode'] != 0 or record['step'] != step
-                or record['noise_seed'] != row['policy_noise_seeds'][ordinal]
-                or record['parameter_ref'] != row['actual_parameter_ref']
-                or record['hidden'].shape != (2, 50, 1024)
-                or record['proprio'].shape != (2, 8) or record['actions'].shape != (5, 7)
-                or record['executed'].shape != (5,) or record['executed'].dtype != torch.bool
-                or record['feedback'].shape != (5,) or record.get('failure_type')
-                or record.get('command_kind') != 'model_prediction'):
-            raise ValueError('raw H record changed source identity, true facts or complete-flow hidden')
-        executed = int(record['executed'].sum())
-        if not 1 <= executed <= 5 or record['executed'].tolist() != [i < executed for i in range(5)]:
-            raise ValueError('raw H execution mask must retain its actual contiguous executed prefix')
-        for key in (record['pre'], record['post']):
-            raw = observations[key]
-            if raw['images'].dtype != torch.uint8 or raw['images'].shape != (2, 3, 256, 256) or raw['proprio'].shape != (8,):
-                raise ValueError('raw H must retain real full-resolution dual RGB and state8')
-        if ordinal and record['pre'] != records[ordinal - 1]['post']:
+    step=0
+    for ordinal,record in enumerate(records):
+        if (record['episode']!=0 or record['step']!=step
+                or record['noise_seed']!=row['policy_noise_seeds'][ordinal]
+                or record['parameter_ref']!=row['actual_parameter_ref'] or record.get('failure_type')
+                or record.get('command_kind')!='model_prediction'):
+            raise ValueError('raw H record changed source identity or actual chronology')
+        if ordinal and record['pre']!=records[ordinal-1]['post']:
             raise ValueError('raw H decision observations lost their actual chronological chain')
-        step += executed
-    if step != row['steps']:
-        raise ValueError('raw H executed actions do not cover its actual control steps')
+        step+=_validate_record_payload(record,observations)
+    if step!=row['steps']:raise ValueError('raw H executed actions do not cover its actual control steps')
 
 
 def load_source_history(task):
@@ -245,39 +249,47 @@ class SourceHistoryStore:
         return dict(**support, images=images, hidden=hidden, facts=facts, noise_seeds=seeds, noise=noise)
 
     @staticmethod
-    def _validate(value, identity):
-        if not isinstance(value, dict) or value.get('schema') != CACHE_SCHEMA or value.get('identity') != identity:
-            raise ValueError('H cache payload identity/schema differs from the requested actual source histories')
-        support = value['support']
-        if (support['total_decisions'] != sum(s['decisions'] for s in identity['sources'])
-                or support['historical_control_steps'] != sum(s['steps'] for s in identity['sources'])
-                or support['historical_settling_steps'] != 40
-                or support['historical_environment_steps'] != support['historical_control_steps'] + 40):
+    def _support_tensors(support,count):
+        shapes=dict(images=(count,2,512,2048),hidden=(count,2,50,1024),facts=(count,63),noise=(count,50,32))
+        if any(support[k].shape!=shape or not bool(support[k].isfinite().all())
+               or support[k].requires_grad for k,shape in shapes.items()):
+            raise ValueError('frozen H cache lost finite complete selected-event tensors')
+        if (support['images'].dtype!=torch.bfloat16 or len(support['pre'])!=count
+                or len(support['noise_seeds'])!=count or len(support['provenance'])!=count):
+            raise ValueError('frozen H cache lost its selected observation/seed cardinality')
+
+    @staticmethod
+    def _support_events(support,identity):
+        for index,(raw,event) in enumerate(zip(support['pre'],support['provenance'],strict=True)):
+            episode=event['episode']
+            if not 0<=episode<4:raise ValueError('cached event has an unregistered source episode')
+            source=identity['sources'][episode]
+            expected=dict(position=support['positions'][index],init_state_id=support['practice_states'][episode],
+                          row=source['row'],archive=source['archive'],noise_seed=support['noise_seeds'][index])
+            if any(event[k]!=v for k,v in expected.items()):
+                raise ValueError('cached event payload lost actual source row/observation identity')
+            if (not 0<=event['decision']<source['decisions']
+                    or event['position']!=sum(s['decisions'] for s in identity['sources'][:episode])+event['decision']
+                    or event['noise_seed']!=source['noise_seeds'][event['decision']]):
+                raise ValueError('cached event payload lost actual episode/decision/noise provenance')
+            _validate_observation(raw)
+
+    @staticmethod
+    def _validate(value,identity):
+        if not isinstance(value,dict) or value.get('schema')!=CACHE_SCHEMA or value.get('identity')!=identity:
+            raise ValueError('H cache payload identity/schema differs from requested source histories')
+        support=value['support']
+        if (support['total_decisions']!=sum(s['decisions'] for s in identity['sources'])
+                or support['historical_control_steps']!=sum(s['steps'] for s in identity['sources'])
+                or support['historical_settling_steps']!=40
+                or support['historical_environment_steps']!=support['historical_control_steps']+40):
             raise ValueError('cached H support disagrees with the original source panel size/cost')
-        count = min(16, support['total_decisions'])
-        shapes = dict(images=(count, 2, 512, 2048), hidden=(count, 2, 50, 1024),
-                      facts=(count, 63), noise=(count, 50, 32))
-        if any(support[key].shape != shape or not bool(support[key].isfinite().all())
-               or support[key].requires_grad for key, shape in shapes.items()):
-            raise ValueError('frozen H cache payload lost finite complete selected-event tensors')
-        if (support['images'].dtype != torch.bfloat16 or len(support['pre']) != count
-                or len(support['noise_seeds']) != count or len(support['provenance']) != count
-                or support['practice_states'] != identity['condition']['practice_states']
-                or support['positions'] != np.floor(np.linspace(0, support['total_decisions'] - 1, count)).astype(int).tolist()):
+        count=min(16,support['total_decisions'])
+        SourceHistoryStore._support_tensors(support,count)
+        if (support['practice_states']!=identity['condition']['practice_states']
+                or support['positions']!=np.floor(np.linspace(0,support['total_decisions']-1,count)).astype(int).tolist()):
             raise ValueError('frozen H cache payload lost exact original support selection')
-        for index, (raw, event) in enumerate(zip(support['pre'], support['provenance'], strict=True)):
-            episode = event['episode']
-            if (not 0 <= episode < 4 or event['position'] != support['positions'][index]
-                    or not 0 <= event['decision'] < identity['sources'][episode]['decisions']
-                    or event['position'] != sum(s['decisions'] for s in identity['sources'][:episode]) + event['decision']
-                    or event['init_state_id'] != support['practice_states'][episode]
-                    or event['row'] != identity['sources'][episode]['row']
-                    or event['archive'] != identity['sources'][episode]['archive']
-                    or event['noise_seed'] != support['noise_seeds'][index]
-                    or event['noise_seed'] != identity['sources'][episode]['noise_seeds'][event['decision']]
-                    or raw['images'].dtype != torch.uint8 or raw['images'].shape != (2, 3, 256, 256)
-                    or raw['proprio'].shape != (8,)):
-                raise ValueError('cached event payload lost actual episode/observation/noise provenance')
+        SourceHistoryStore._support_events(support,identity)
         return support
 
     def get(self, task):

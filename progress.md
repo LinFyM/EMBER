@@ -1,3 +1,10 @@
+## 2026-10-17 §22唯一正式只读owner已启动
+
+owner1294904于01:44:26.915663Z从clean pushed detached d963e8c3启动，ROOT source_weight_factor_credit_adjacent1090_seed7，直接退出reader1467/PTY42742；launch原件注明当时尚未GPU启动，不能将派发或父进程启动当有效episode。
+唯一原1090/eadfe958只读模型，新976LoRA/episode，0训练/Adam恢复/profile/探针/额外smoke/controls/Test。旧W/D/M只读及6GiB峰/992提交/353760步/16独立extra、35–65min预计保持，家族/旧批时钟费用不重置。
+每个实际worker由既有launcher现场核双node GPU/真实显存/CPU-PSS与data1配额；沿16/8/4有用wave/动态持久队列，不按旧world6固定卡数，不碰foreign。首批实际输出属于原976有效子集，不重跑。
+单一owner持续真实退出等待，0Queue/心跳/第二waiter；整批验收/资源/Git后一次回main并归还窗口，无自动后继。
+
 ## 2026-10-17 §22接手与真实CPU消费者通过（尚未GPU启动）
 
 执行01a13dbf从main b27b78f0接手独占canonical工程/科研记录/Git；首次现场01:39:14.985237Z，预计实施/读取35–65min，验收/Git另计；旧家族/§20/§21时钟和费用保持。
